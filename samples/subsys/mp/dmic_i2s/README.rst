@@ -16,7 +16,7 @@ additional processing stages (gain, filtering …) without modifying the applica
    digraph pipeline {
      rankdir=LR;
      node [shape=box, style=filled, fillcolor="#e8e8e8"];
-     dmic  [label="DMIC\nSource"];
+     dmic  [label="DMIC or I2S\nSource"];
      caps    [label="Caps\nFilter"];
      transform [label="Gain\nTransform"];
      i2s_codec [label="I2S Codec\nSink"];
@@ -25,7 +25,8 @@ additional processing stages (gain, filtering …) without modifying the applica
 
 This pipeline consists of up to four elements:
 
-- **DMIC source** - captures audio frames.
+- **Capture source** - captures audio frames, either from a digital microphone
+  or from an I2S receiver, selected by ``CONFIG_SAMPLE_AUDIO_SOURCE``.
 - **Capsfilter** *(optional)* - enforces a specific audio frame interval. 
 Without it the pipeline still works but uses the default negotiated format.
 - **Gain transform** *(optional)* – applies audio processing such as volume control.
@@ -46,8 +47,8 @@ coherency issues.
 Requirements
 ************
 
-* A board with digital microphone (DMIC) support
-* A board with I2S support
+* A board with a digital microphone (DMIC) or an I2S receiver to capture from
+* A board with I2S support for playback
 * Sufficient RAM for audio buffering
 * DMA support for audio operations
 
@@ -109,7 +110,9 @@ output file:
 The relevant command line options are:
 
 * ``--dmic0_file=<path>`` - PCM fed to the DMIC source. The driver loops the
-  file, so the pipeline never runs out of input.
+  file, so the pipeline never runs out of input. With
+  ``CONFIG_SAMPLE_AUDIO_SOURCE_I2S`` the input comes from ``--i2s_rx_rx=<path>``
+  instead.
 * ``--i2s_tx_tx=<path>`` - PCM written by the I2S codec sink.
 * ``-stop_at=<seconds>`` - stop the simulation after the given time; without it
   the sample runs forever.
@@ -135,6 +138,13 @@ Configuration Options
 
 The sample supports the following configuration options:
 
+* ``CONFIG_SAMPLE_AUDIO_SOURCE`` - which element the pipeline captures with:
+  ``CONFIG_SAMPLE_AUDIO_SOURCE_DMIC`` (default) for a digital microphone, or
+  ``CONFIG_SAMPLE_AUDIO_SOURCE_I2S`` for an I2S receiver. The I2S source needs
+  an ``i2s-codec-rx`` alias. If the capture path runs through a codec, add an
+  ``audio-codec-capture`` alias as well: the sink only ever configures a codec
+  for playback, and codecs that treat the routes as mutually exclusive leave
+  their ADC untouched otherwise.
 * ``CONFIG_SAMPLE_AUDIO_GAIN_PERCENT`` - gain applied by the pipeline, 0 to
   1000 %, default 90 %. 0 mutes, 100 is unity, and values above 100 can clip,
   in which case samples saturate at full scale.
@@ -159,6 +169,8 @@ Devicetree Configuration
 
 The sample requires proper devicetree configuration for:
 
-* ``dmic_dev`` node label for dmic.
-* ``i2s_codec_tx`` node alias for i2s.
-* ``audio_codec`` node label for audio codec.
+* ``dmic_dev`` node label for the DMIC source.
+* ``i2s-codec-rx`` node alias for the I2S source.
+* ``i2s-codec-tx`` node alias for the I2S sink.
+* ``audio_codec`` node label for the playback codec.
+* ``audio-codec-capture`` node alias for a capture codec, if one is needed.

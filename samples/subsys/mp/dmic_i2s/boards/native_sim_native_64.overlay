@@ -7,6 +7,7 @@
 / {
 	aliases {
 		i2s-codec-tx = &i2s_tx0;
+		i2s-codec-rx = &i2s_rx0;
 	};
 };
 
@@ -15,6 +16,10 @@ dmic_dev: &dmic0 {
 };
 
 &i2s_tx0 {
+	status = "okay";
+};
+
+&i2s_rx0 {
 	status = "okay";
 };
 

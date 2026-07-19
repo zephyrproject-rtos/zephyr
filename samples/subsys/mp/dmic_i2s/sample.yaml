@@ -50,3 +50,40 @@ tests:
     harness_config:
       pytest_root:
         - "pytest/test_pipeline.py"
+
+  # The same pipeline reading from an I2S receiver instead of a DMIC. Built for
+  # every board here that has an i2s-codec-rx alias.
+  sample.mp.dmic_i2s.i2s_source:
+    tags:
+      - audio
+      - samples
+    platform_allow:
+      - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mcx_n5xx_evk/mcxn547/cpu0
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_SAMPLE_AUDIO_SOURCE_I2S=y
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Capture started"
+
+  sample.mp.dmic_i2s.i2s_source.output:
+    tags:
+      - audio
+      - samples
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_SAMPLE_AUDIO_SOURCE_I2S=y
+      - CONFIG_SAMPLE_AUDIO_GAIN_PERCENT=200
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_pipeline.py"

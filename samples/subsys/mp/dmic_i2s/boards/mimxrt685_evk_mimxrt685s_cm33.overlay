@@ -7,6 +7,8 @@
 / {
 	aliases {
 		i2s-codec-rx = &i2s0;
+		/* one codec serves both directions on this board */
+		audio-codec-capture = &audio_codec;
 		i2s-codec-tx = &i2s1;
 	};
 };

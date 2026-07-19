@@ -14,6 +14,7 @@
 #include <zephyr/mp/zaud/mp_zaud_i2s_codec_sink.h>
 #include <zephyr/mp/zaud/mp_zaud_gain.h>
 #include <zephyr/mp/zaud/mp_zaud_dmic_src.h>
+#include <zephyr/mp/zaud/mp_zaud_i2s_src.h>
 #include <zephyr/mp/zaud/mp_zaud_buffer_pool.h>
 #include <zephyr/mp/zbase/mp_capsfilter.h>
 
@@ -22,7 +23,7 @@ LOG_MODULE_REGISTER(main);
 #define LOG_LEVEL LOG_LEVEL_DBG
 
 #define PIPE_ID        0
-#define DMIC_SRC_ID    1
+#define AUD_SRC_ID     1
 #define CAPS_FILTER_ID 2
 #define AUD_GAIN_ID    3
 #define I2S_SINK_ID    4
@@ -39,7 +40,13 @@ LOG_MODULE_REGISTER(main);
 __nocache struct k_mem_slab mem_slab;
 
 static struct mp_pipeline pipe;
+#ifdef CONFIG_SAMPLE_AUDIO_SOURCE_I2S
+static struct mp_zaud_i2s_src source;
+#define audio_src_init mp_zaud_i2s_src_init
+#else
 static struct mp_zaud_dmic_src source;
+#define audio_src_init mp_zaud_dmic_src_init
+#endif
 static struct mp_zaud_gain gain;
 static struct mp_zaud_i2s_codec_sink sink;
 static struct mp_caps_filter caps_filter;
@@ -50,7 +57,7 @@ int main(void)
 	int ret = 0;
 
 	MP_ELEMENT_INIT(&pipe, mp_pipeline_init, PIPE_ID);
-	MP_ELEMENT_INIT(&source, mp_zaud_dmic_src_init, DMIC_SRC_ID);
+	MP_ELEMENT_INIT(&source, audio_src_init, AUD_SRC_ID);
 	MP_ELEMENT_INIT(&gain, mp_zaud_gain_init, AUD_GAIN_ID);
 	MP_ELEMENT_INIT(&sink, mp_zaud_i2s_codec_sink_init, I2S_SINK_ID);
 

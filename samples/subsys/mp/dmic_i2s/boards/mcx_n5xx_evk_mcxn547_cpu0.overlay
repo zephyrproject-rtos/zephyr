@@ -17,6 +17,8 @@
 
 &sai0 {
 	mclk-output;
+
+	status = "okay";
 };
 
 &i3c0 {

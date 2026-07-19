@@ -58,23 +58,27 @@ def _apply_gain(data: bytes, gain_percent: int) -> bytes:
 
 def test_pipeline_applies_gain(unlaunched_dut: DeviceAdapter, tmp_path: Path):
     """Run the pipeline and compare its output against the expected samples."""
-    gain_percent = int(
-        unlaunched_dut.device_config.build_dir.joinpath('zephyr', '.config')
-        .read_text()
-        .split('CONFIG_SAMPLE_AUDIO_GAIN_PERCENT=')[1]
-        .split('\n')[0]
+    config = unlaunched_dut.device_config.build_dir.joinpath('zephyr', '.config').read_text()
+
+    gain_percent = int(config.split('CONFIG_SAMPLE_AUDIO_GAIN_PERCENT=')[1].split('\n')[0])
+    i2s_source = 'CONFIG_SAMPLE_AUDIO_SOURCE_I2S=y' in config
+    logger.info(
+        'pipeline gain is %d%%, source is %s', gain_percent, 'I2S' if i2s_source else 'DMIC'
     )
-    logger.info('pipeline gain is %d%%', gain_percent)
 
     input_file = tmp_path / 'input.pcm'
     output_file = tmp_path / 'output.pcm'
     source = _build_input(input_file)
 
+    # The capture source reads from a different option depending on which
+    # element the sample was built with.
+    source_arg = f'--i2s_rx_rx={input_file}' if i2s_source else f'--dmic0_file={input_file}'
+
     # launch() only generates the command when it is still empty, so build it
     # first and then append the native_sim arguments.
     unlaunched_dut.generate_command()
     unlaunched_dut.command += [
-        f'--dmic0_file={input_file}',
+        source_arg,
         f'--i2s_tx_tx={output_file}',
         f'-stop_at={RUN_SECONDS}',
     ]
@@ -98,7 +102,7 @@ def test_pipeline_applies_gain(unlaunched_dut: DeviceAdapter, tmp_path: Path):
         f'pipeline produced {len(produced)} bytes, expected at least {len(source)}'
     )
 
-    # The DMIC driver loops its input file, so compare the first pass only.
+    # The capture driver loops its input file, so compare the first pass only.
     expected = _apply_gain(source, gain_percent)
     produced = produced[: len(expected)]
 
