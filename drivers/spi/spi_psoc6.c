@@ -232,7 +232,7 @@ static int spi_psoc6_configure(const struct device *dev,
 	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
 		spi_psoc6_master_get_defaults(&data->cfg);
 
-		if (spi_cfg->slave > SPI_CHIP_SELECT_COUNT) {
+		if (spi_cfg->slave >= SPI_CHIP_SELECT_COUNT) {
 			LOG_ERR("Slave %d is greater than %d",
 				spi_cfg->slave, SPI_CHIP_SELECT_COUNT);
 			return -EINVAL;
