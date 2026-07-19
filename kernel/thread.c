@@ -1402,7 +1402,7 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats)
 
 	unsigned int num_cpus = arch_num_cpus();
 
-	for (uint8_t i = 0; i < num_cpus; i++) {
+	for (unsigned int i = 0; i < num_cpus; i++) {
 		z_sched_cpu_usage(i, &tmp_stats);
 
 		stats->execution_cycles += tmp_stats.execution_cycles;
