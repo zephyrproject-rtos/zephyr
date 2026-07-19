@@ -201,7 +201,7 @@ static int i2c_bflb_configure_freqs(const struct device *dev, uint32_t frequency
 	phase0 = (phase0 >= 256) ? 256 : phase0;
 	phase1 = (phase1 >= 256) ? 256 : phase1;
 	phase2 = (phase2 >= 256) ? 256 : phase2;
-	phase3 = (phase0 >= 256) ? 256 : phase3;
+	phase3 = (phase3 >= 256) ? 256 : phase3;
 
 	/* calculate data phase */
 	tmp = (phase0 - 1) << I2C_CR_I2C_PRD_D_PH_0_SHIFT;
