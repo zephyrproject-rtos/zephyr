@@ -315,9 +315,29 @@ int mp_zaud_i2s_codec_sink_chainfn(struct mp_pad *pad, struct net_buf *in_buf,
 
 	ret = i2s_write(zaud_i2s_codec_sink->i2s_dev, in_buf->data, bytes_used);
 	if (ret < 0) {
-		LOG_DBG("Failed to write data: %d\n", ret);
-		*out_buf = NULL;
-		return -EIO;
+		/* A transient underrun latches the channel in error and every
+		 * later write fails, so recover and retry instead of ending
+		 * the pipeline.
+		 */
+		LOG_DBG("I2S write failed (%d), recovering TX", ret);
+		(void)i2s_trigger(zaud_i2s_codec_sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_PREPARE);
+		zaud_i2s_codec_sink->started = false;
+		zaud_i2s_codec_sink->count = 0;
+
+		ret = i2s_write(zaud_i2s_codec_sink->i2s_dev, in_buf->data, bytes_used);
+		if (ret < 0) {
+			/*
+			 * i2s_write() did not take the buffer, so its block is
+			 * still ours. Return it to the slab before dropping the
+			 * wrapper: unreferencing only frees the net_buf, and the
+			 * block would otherwise be lost from the pool for good.
+			 */
+			LOG_DBG("I2S TX recovery failed (%d), dropping buffer", ret);
+			k_mem_slab_free(zaud_i2s_codec_sink->mem_slab, in_buf->data);
+			net_buf_unref(in_buf);
+			*out_buf = NULL;
+			return 0;
+		}
 	}
 
 	if (!zaud_i2s_codec_sink->started) {
@@ -326,9 +346,14 @@ int mp_zaud_i2s_codec_sink_chainfn(struct mp_pad *pad, struct net_buf *in_buf,
 			ret = i2s_trigger(zaud_i2s_codec_sink->i2s_dev, I2S_DIR_TX,
 					  I2S_TRIGGER_START);
 			if (ret < 0) {
-				LOG_ERR("Failed to start I2S stream: %d", ret);
+				/* Re-prime and retry on the next buffer. */
+				LOG_DBG("Failed to start I2S stream (%d), will retry", ret);
+				(void)i2s_trigger(zaud_i2s_codec_sink->i2s_dev, I2S_DIR_TX,
+						  I2S_TRIGGER_PREPARE);
+				zaud_i2s_codec_sink->count = 0;
+				net_buf_unref(in_buf);
 				*out_buf = NULL;
-				return -EIO;
+				return 0;
 			}
 			audio_codec_start_output(zaud_i2s_codec_sink->codec_dev);
 			zaud_i2s_codec_sink->started = true;
