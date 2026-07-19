@@ -230,6 +230,12 @@ Display
   :c:enumerator:`PIXEL_FORMAT_BGR_888`, for which the LVGL glue performs the red/blue channel swap
   automatically.
 
+* LVGL now renders directly in its ``RGB565_SWAPPED`` color format for displays reporting
+  :c:enumerator:`PIXEL_FORMAT_RGB_565X`, so :kconfig:option:`CONFIG_LV_COLOR_16_SWAP` is no longer
+  needed for these displays and must not be enabled together with that pixel format, otherwise the
+  buffer ends up byte-swapped twice. The ``t_deck``, ``m5stack_core2`` and ``wio_terminal`` boards
+  no longer enable the option by default.
+
 * The Kconfig options ``CONFIG_ST730X_POWERMODE_LOW`` for ST7305 and ST7306 displays has been
   removed in favour of toggling the low-power-mode property on the device node.
 
