@@ -250,6 +250,15 @@ static void modem_chat_script_next(struct modem_chat *chat, bool initial)
 
 	script_chat = &chat->script->script_chats[chat->script_chat_it];
 
+#if defined(CONFIG_MODEM_CHAT_CONDITIONAL_COMMANDS)
+	if ((script_chat->run_check != NULL) && !script_chat->run_check(chat->user_data)) {
+		/* Current chat should be skipped, reschedule work immediately to run next step */
+		LOG_DBG("skipping: %.*s", script_chat->request_size, script_chat->request);
+		modem_work_schedule(&chat->script_send_timeout_work, K_NO_WAIT);
+		return;
+	}
+#endif
+
 	/* Continue script */
 	if (modem_chat_script_chat_has_request(chat)) {
 		LOG_DBG("sending: %.*s", script_chat->request_size, script_chat->request);
