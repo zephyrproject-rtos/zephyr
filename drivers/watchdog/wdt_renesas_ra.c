@@ -128,8 +128,8 @@ static int wdt_renesas_ra_timeout_calculate(const struct device *dev,
 		return -EINVAL;
 	}
 
-	window_start_idx = (config->window.min * 4 + best_period_ms - 1) / best_period_ms;
-	window_end_idx = (config->window.max * 4 + best_period_ms - 1) / best_period_ms;
+	window_start_idx = MIN((config->window.min * 4 + best_period_ms - 1) / best_period_ms, 4U);
+	window_end_idx = MIN((config->window.max * 4 + best_period_ms - 1) / best_period_ms, 4U);
 
 	if (window_start_lut[window_start_idx] == WDT_WINDOW_INVALID ||
 	    window_end_lut[window_end_idx] == WDT_WINDOW_INVALID) {
