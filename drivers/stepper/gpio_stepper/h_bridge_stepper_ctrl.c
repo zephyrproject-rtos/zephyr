@@ -154,7 +154,7 @@ static int h_bridge_stepper_ctrl_move_by(const struct device *dev, int32_t micro
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static int h_bridge_stepper_ctrl_set_microstep_interval(const struct device *dev,
@@ -204,7 +204,7 @@ static int h_bridge_stepper_ctrl_run(const struct device *dev,
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static int h_bridge_stepper_ctrl_stop(const struct device *dev)
