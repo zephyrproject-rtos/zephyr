@@ -335,7 +335,7 @@ static uint32_t numicro_scc_set_pll_freq(const struct numicro_scc_config *config
 			       (min_nr - 1UL) << CLK_PLLCTL_INDIV_Pos | (min_nf - 2UL);
 
 	/* Wait for PLL clock stable */
-	while (config->regs->STATUS & CLK_STATUS_PLLSTB_Msk) {
+	while ((config->regs->STATUS & CLK_STATUS_PLLSTB_Msk) == 0) {
 	}
 
 	/* Actual PLL output clock frequency */
