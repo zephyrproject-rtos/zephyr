@@ -172,7 +172,7 @@ static bool scan_found_ssid;
 static void scan_result_cb(struct net_mgmt_event_callback *cb, uint64_t event,
 			   struct net_if *iface)
 {
-	struct wifi_scan_result *res = (struct wifi_scan_result *)cb->info;
+	const struct wifi_scan_result *res = cb->info;
 
 	ARG_UNUSED(iface);
 	if (event == NET_EVENT_WIFI_SCAN_RESULT && res != NULL &&
