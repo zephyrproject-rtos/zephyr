@@ -71,8 +71,7 @@ static inline uint32_t ll_i2s_dma_busy(SPI_TypeDef *i2s)
 	return LL_SPI_IsActiveFlag_TXC(i2s) == 0;
 #else
 	/* the I2S Tx empty and busy flags are needed */
-	return (LL_SPI_IsActiveFlag_TXE(i2s) &&
-		!LL_SPI_IsActiveFlag_BSY(i2s));
+	return (!LL_SPI_IsActiveFlag_TXE(i2s) || LL_SPI_IsActiveFlag_BSY(i2s));
 #endif
 }
 
