@@ -218,7 +218,10 @@ static int mp_zaud_i2s_codec_sink_set_caps(struct mp_sink *sink, struct mp_caps 
 {
 	struct mp_zaud_i2s_codec_sink *zaud_i2s_codec_sink = (struct mp_zaud_i2s_codec_sink *)sink;
 	struct i2s_config config;
-	struct audio_codec_cfg audio_cfg;
+	/* mclk_freq is left at 0: the sink cannot know it, so the codec is
+	 * expected to source it from devicetree or a clock controller.
+	 */
+	struct audio_codec_cfg audio_cfg = {0};
 	int ret;
 
 	struct mp_structure *first_structure = mp_caps_get_structure(caps, 0);
