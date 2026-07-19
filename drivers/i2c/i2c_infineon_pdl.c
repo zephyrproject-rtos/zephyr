@@ -648,7 +648,7 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 
 		if ((msg[i].flags & I2C_MSG_READ) != 0) {
 			rx_msg = &msg[i];
-			data->async_pending = CAT1_I2C_PENDING_TX;
+			data->async_pending = CAT1_I2C_PENDING_RX;
 		} else {
 			tx_msg = &msg[i];
 
