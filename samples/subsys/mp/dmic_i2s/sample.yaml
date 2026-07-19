@@ -17,3 +17,36 @@ tests:
       type: one_line
       regex:
         - "Capture started"
+
+  # Run the pipeline headless on native_sim and compare its output against the
+  # input scaled by the configured gain. Unity gain and a gain above unity are
+  # both covered, the latter exercising saturation.
+  sample.mp.dmic_i2s.output.unity_gain:
+    tags:
+      - audio
+      - samples
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_SAMPLE_AUDIO_GAIN_PERCENT=100
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_pipeline.py"
+
+  sample.mp.dmic_i2s.output.amplified:
+    tags:
+      - audio
+      - samples
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_SAMPLE_AUDIO_GAIN_PERCENT=200
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_pipeline.py"
