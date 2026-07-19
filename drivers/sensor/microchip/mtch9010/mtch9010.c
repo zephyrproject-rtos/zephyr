@@ -805,7 +805,7 @@ static int mtch9010_sample_fetch(const struct device *dev, enum sensor_channel c
 	case SENSOR_CHAN_MTCH9010_HEARTBEAT_ERROR_STATE: {
 		/* Returns true if the heartbeat is an error state */
 		mtch9010_update_heartbeat(dev);
-	}
+	} break;
 	default: {
 		return -ENOTSUP;
 	}
