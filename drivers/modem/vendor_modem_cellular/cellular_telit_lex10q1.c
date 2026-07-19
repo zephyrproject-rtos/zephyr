@@ -10,6 +10,8 @@
 
 MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
+MODEM_CHAT_MATCHES_DEFINE(telit_lex10q1_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	telit_lex10q1_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 300),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
@@ -57,11 +59,23 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_lex10q1_shutdown_chat_script,
 			 telit_lex10q1_shutdown_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 10);
 
-static const struct modem_cellular_config_scripts telit_lex10q1_scripts = {
-	.init = &telit_lex10q1_init_chat_script,
-	.dial = &telit_lex10q1_dial_chat_script,
-	.periodic = &telit_lex10q1_periodic_chat_script,
-	.shutdown = &telit_lex10q1_shutdown_chat_script,
+static const struct modem_cellular_vendor_config telit_lex10q1_vendor = {
+	/* clang-format off */
+	.scripts = {
+		.init = &telit_lex10q1_init_chat_script,
+		.dial = &telit_lex10q1_dial_chat_script,
+		.periodic = &telit_lex10q1_periodic_chat_script,
+		.shutdown = &telit_lex10q1_shutdown_chat_script,
+	},
+	.unsol_matches = {
+		.matches = telit_lex10q1_unsol,
+		.size = ARRAY_SIZE(telit_lex10q1_unsol),
+	},
+	/* clang-format on */
+	.power_pulse_duration_ms = 5050,
+	.reset_pulse_duration_ms = 250,
+	.startup_time_ms = 20000,
+	.shutdown_time_ms = 5000,
 };
 
 #define MODEM_CELLULAR_DEVICE_TELIT_LEX10Q1(inst)                                                  \
@@ -75,6 +89,6 @@ static const struct modem_cellular_config_scripts telit_lex10q1_scripts = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 5050, 250, 20000, 5000, false, &telit_lex10q1_scripts)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &telit_lex10q1_vendor);
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TELIT_LEX10Q1)

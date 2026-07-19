@@ -126,3 +126,10 @@ test_trasna_lexi_r10: trasna_lexi_r10 {
 	mdm-power-gpios = <&test_gpio 0 0>;
 	mdm-reset-gpios = <&test_gpio 0 0>;
 };
+
+test_telit_lex10q1: telit_lex10q1 {
+	compatible = "telit,lex10q1";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+	mdm-reset-gpios = <&test_gpio 0 0>;
+};
