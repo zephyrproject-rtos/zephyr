@@ -10,8 +10,21 @@
 
 #define DT_DRV_COMPAT nordic_nrf93m1
 
+struct nrf93m1_modem_cellular_data {
+	/** Common modem data */
+	struct modem_cellular_data data;
+	/** Vendor specific data */
+
+	/** IFC already correctly configured */
+	bool ifc_configured;
+};
+BUILD_ASSERT(offsetof(struct nrf93m1_modem_cellular_data, data) == 0,
+	     "Common data must be at start of struct");
+
 static void nrf93m1_on_bcinfosc(struct modem_chat *chat, char **argv, uint16_t argc,
 				void *user_data);
+static void nrf93m1_on_ifc(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+static bool nrf93m1_ifc_required(void *user_data);
 
 MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 MODEM_CHAT_MATCH_DEFINE(pwd_match, "POWERED DOWN", "", NULL);
@@ -20,11 +33,18 @@ MODEM_CHAT_MATCHES_DEFINE(nordic_nrf93m1_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATC
 			  MODEM_CHAT_MATCH("RDY", "", modem_cellular_chat_on_modem_ready),
 			  MODEM_CHAT_MATCH("%BCINFOSC:", ",", nrf93m1_on_bcinfosc));
 
+/* Multi-line response matches - use partial=true for intermediate lines
+ * so the script doesn't advance until the final OK is received.
+ */
+MODEM_CHAT_MATCHES_DEFINE(nordic_nrf93m1_ifc_matches,
+			  MODEM_CHAT_MATCH_INITIALIZER("+IFC:", ",", nrf93m1_on_ifc, false, true),
+			  MODEM_CHAT_MATCH("OK", "", NULL));
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
-	nordic_nrf93m1_init_chat_script_cmds,
-	MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+IFC=2,2", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("", 100),
+	nordic_nrf93m1_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+IFC?", nordic_nrf93m1_ifc_matches),
+	MODEM_CHAT_SCRIPT_CMD_RESP_COND("AT+IFC=2,2", ok_match, nrf93m1_ifc_required),
+	MODEM_CHAT_SCRIPT_CMD_RESP_NONE_COND("", 100, nrf93m1_ifc_required),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
@@ -101,6 +121,29 @@ static void nrf93m1_on_bcinfosc(struct modem_chat *chat, char **argv, uint16_t a
 	modem_cellular_emit_network_status(data, &evt);
 }
 
+static void nrf93m1_on_ifc(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	struct nrf93m1_modem_cellular_data *vendor_data =
+		CONTAINER_OF(data, struct nrf93m1_modem_cellular_data, data);
+
+	/* IFC configuration is stored in flash, so only needs to be set once.
+	 * If the configuration is already correct, we can skip the delay that needs to be
+	 * respected while the interface is reconfigured.
+	 */
+	vendor_data->ifc_configured =
+		(argc == 3) && (strtol(argv[1], NULL, 10) == 2) && (strtol(argv[2], NULL, 10) == 2);
+}
+
+static bool nrf93m1_ifc_required(void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	struct nrf93m1_modem_cellular_data *vendor_data =
+		CONTAINER_OF(data, struct nrf93m1_modem_cellular_data, data);
+
+	return !vendor_data->ifc_configured;
+}
+
 static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 	/* clang-format off */
 	.scripts = {
@@ -127,7 +170,7 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 #define MODEM_CELLULAR_DEVICE_NORDIC_NRF93M1(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 1500);     \
                                                                                                    \
-	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
+	static struct nrf93m1_modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);            \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
