@@ -654,7 +654,7 @@ static DEVICE_API(display, display_smartbond_driver_api) = {
 		.mode.vsync_pol =	\
 			DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_active) ? 0 : 1,	\
 		.mode.hsync_pol =	\
-			DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_active) ? 0 : 1,	\
+			DT_PROP(DT_INST_CHILD(inst, display_timings), hsync_active) ? 0 : 1,	\
 		.mode.de_pol =	\
 			DT_PROP(DT_INST_CHILD(inst, display_timings), de_active) ? 0 : 1,	\
 		.mode.pixelclk_pol =	\
