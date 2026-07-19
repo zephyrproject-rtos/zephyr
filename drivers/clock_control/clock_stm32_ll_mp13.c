@@ -142,7 +142,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 	case STM32_CLOCK_BUS_APB2:
 		switch (pclken->enr) {
 		case LL_APB2_GRP1_PERIPH_SPI1:
-			*rate = LL_RCC_GetUARTClockFreq(LL_RCC_SPI1_CLKSOURCE);
+			*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI1_CLKSOURCE);
 			break;
 		default:
 			return -ENOTSUP;
