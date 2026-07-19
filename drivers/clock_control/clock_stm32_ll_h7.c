@@ -748,9 +748,9 @@ static int stm32_clock_control_get_subsys_rate(const struct device *clock,
 		}
 #else /* CONFIG_SOC_SERIES_STM32H7RSX */
 		if (IS_ENABLED(STM32_TIMER_PRESCALER)) {
-			*rate = STM32_D2PPRE2 <= 4 ? ahb_clock : apb1_clock * 4;
+			*rate = STM32_D2PPRE2 <= 4 ? ahb_clock : apb2_clock * 4;
 		} else {
-			*rate = STM32_D2PPRE2 <= 2 ? ahb_clock : apb1_clock * 2;
+			*rate = STM32_D2PPRE2 <= 2 ? ahb_clock : apb2_clock * 2;
 		}
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 		break;
