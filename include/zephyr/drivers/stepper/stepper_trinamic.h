@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 
-#define TMC_RAMP_VACTUAL_SHIFT  22
+#define TMC_RAMP_VACTUAL_SHIFT  23
 #define TMC_RAMP_XACTUAL_SHIFT  31
 
 /**
