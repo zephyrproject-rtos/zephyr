@@ -35,9 +35,9 @@ static struct wifi_connect_req_params default_ap_params = {
  * associate" a secured connect against a stale scan entry left by the other
  * test on the same (reused) AP BSSID.
  */
-static uint8_t psk_ssid[] = "ZephyrPsk";
-static uint8_t sae_ssid[] = "ZephyrSae";
-static uint8_t secured_psk[] = "ZephyrPass123";
+static const uint8_t psk_ssid[] = "ZephyrPsk";
+static const uint8_t sae_ssid[] = "ZephyrSae";
+static const uint8_t secured_psk[] = "ZephyrPass123";
 
 static struct wifi_connect_req_params wpa2_psk_params = {
 	.ssid = psk_ssid,
