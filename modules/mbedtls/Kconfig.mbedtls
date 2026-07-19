@@ -98,6 +98,19 @@ config MBEDTLS_SSL_ENCRYPT_THEN_MAC
 	  padding oracle attacks. Disable only if interoperability
 	  with non-compliant peers is required.
 
+config MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
+	bool "Automatic post-handshake buffer resize"
+	depends on !MBEDTLS_SSL_PROTO_TLS1_3
+	help
+	  After the handshake completes, automatically shrink in/out
+	  buffers to match the negotiated Max Fragment Length
+	  (MFL) plus protocol overhead. Without this option the full
+	  MBEDTLS_SSL_IN/OUT_CONTENT_LEN buffer is held for the
+	  connection's lifetime.
+
+	  Requires MBEDTLS_SSL_MAX_FRAGMENT_LENGTH, which is available when
+	  TLS 1.3 is disabled.
+
 endif # MBEDTLS_SSL_PROTO_TLS1_2
 
 if MBEDTLS_SSL_PROTO_TLS1_2 || MBEDTLS_SSL_PROTO_TLS1_3
