@@ -18,6 +18,9 @@
 
 LOG_MODULE_REGISTER(mp_zaud_i2s_codec_sink, CONFIG_MP_LOG_LEVEL);
 
+static enum mp_state_change_return (*sink_parent_change_state)(struct mp_element *,
+							       enum mp_state_change);
+
 #define DEFAULT_PROP_I2S_DEVICE   DEVICE_DT_GET(DT_ALIAS(i2s_codec_tx))
 #define DEFAULT_PROP_CODEC_DEVICE DEVICE_DT_GET(DT_NODELABEL(audio_codec));
 
@@ -111,6 +114,13 @@ static struct mp_caps *mp_zaud_i2s_codec_sink_supported_caps(struct mp_sink *sin
 	if (min_num_buffers < ZAUD_I2S_SINK_START_PRIME) {
 		min_num_buffers = ZAUD_I2S_SINK_START_PRIME;
 	}
+
+#ifdef CONFIG_MP_ZAUD_I2S_CODEC_SINK_SILENCE_PRIME
+	/* The silence prime holds this many buffers before any are returned. */
+	if (min_num_buffers < CONFIG_MP_ZAUD_I2S_CODEC_SINK_SILENCE_PRIME_COUNT) {
+		min_num_buffers = CONFIG_MP_ZAUD_I2S_CODEC_SINK_SILENCE_PRIME_COUNT;
+	}
+#endif
 
 	struct mp_structure *structure = mp_structure_new(
 		MP_MEDIA_AUDIO_PCM, MP_CAPS_SAMPLE_RATE, MP_TYPE_LIST, supported_sample_rate,
@@ -301,7 +311,62 @@ static int mp_zaud_i2s_codec_sink_set_caps(struct mp_sink *sink, struct mp_caps 
 		return ret;
 	}
 
+	zaud_i2s_codec_sink->prime_block_size = config.block_size;
+
 	return 0;
+}
+
+/* A capture source whose receiver is clock-synced to this transmitter produces
+ * nothing until the transmitter runs, while this sink waits for its buffers.
+ * Break that deadlock by starting the transmitter on silence.
+ */
+static enum mp_state_change_return
+mp_zaud_i2s_codec_sink_change_state(struct mp_element *self, enum mp_state_change transition)
+{
+#ifdef CONFIG_MP_ZAUD_I2S_CODEC_SINK_SILENCE_PRIME
+	struct mp_zaud_i2s_codec_sink *sink = (struct mp_zaud_i2s_codec_sink *)self;
+	const uint8_t prime_n = CONFIG_MP_ZAUD_I2S_CODEC_SINK_SILENCE_PRIME_COUNT;
+
+	if (transition == MP_STATE_CHANGE_PAUSED_TO_PLAYING && !sink->started &&
+	    sink->mem_slab != NULL && sink->prime_block_size != 0U) {
+		for (uint8_t p = 0; p < prime_n; p++) {
+			void *blk;
+
+			if (k_mem_slab_alloc(sink->mem_slab, &blk, K_NO_WAIT) != 0) {
+				LOG_WRN("silence-prime: pool exhausted at %u/%u", p, prime_n);
+				break;
+			}
+
+			memset(blk, 0, sink->prime_block_size);
+
+			if (i2s_write(sink->i2s_dev, blk, sink->prime_block_size) < 0) {
+				k_mem_slab_free(sink->mem_slab, blk);
+				break;
+			}
+
+			sink->count++;
+		}
+
+		if (sink->count >= prime_n) {
+			if (i2s_trigger(sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_START) == 0) {
+				sink->started = true;
+				/* Second place the stream starts, so the codec
+				 * output has to be enabled here too.
+				 */
+				audio_codec_start_output(sink->codec_dev);
+				LOG_INF("TX started with %u silence buffers", sink->count);
+			} else {
+				LOG_ERR("silence-prime: TX start failed");
+			}
+		}
+	}
+#endif /* CONFIG_MP_ZAUD_I2S_CODEC_SINK_SILENCE_PRIME */
+
+	if (sink_parent_change_state != NULL) {
+		return sink_parent_change_state(self, transition);
+	}
+
+	return MP_STATE_CHANGE_SUCCESS;
 }
 
 int mp_zaud_i2s_codec_sink_chainfn(struct mp_pad *pad, struct net_buf *in_buf,
@@ -388,9 +453,13 @@ void mp_zaud_i2s_codec_sink_init(struct mp_element *self)
 	sink->sinkpad.chainfn = mp_zaud_i2s_codec_sink_chainfn;
 	sink->set_caps = mp_zaud_i2s_codec_sink_set_caps;
 
+	sink_parent_change_state = self->change_state;
+	self->change_state = mp_zaud_i2s_codec_sink_change_state;
+
 	mp_zaud_i2s_codec_sink_update_caps(sink);
 
 	zaud_i2s_codec_sink->started = false;
 	zaud_i2s_codec_sink->count = 0;
+	zaud_i2s_codec_sink->prime_block_size = 0U;
 	zaud_i2s_codec_sink->mem_slab = NULL;
 }
