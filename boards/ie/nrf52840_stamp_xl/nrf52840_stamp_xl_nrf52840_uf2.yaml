@@ -1,0 +1,19 @@
+identifier: nrf52840_stamp_xl/nrf52840/uf2
+name: nRF52840 Stamp XL
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - usbd
+  - ble
+  - pwm
+  - spi
+  - watchdog
+  - counter
+  - netif:openthread
+  - gpio

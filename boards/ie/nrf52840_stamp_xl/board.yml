@@ -1,0 +1,8 @@
+board:
+  name: nrf52840_stamp_xl
+  full_name: nRF52840 Stamp XL
+  vendor: ie
+  socs:
+  - name: nrf52840
+    variants:
+    - name: uf2
