@@ -20,6 +20,7 @@ config MCUMGR_TRANSPORT_WORKQUEUE_STACK_SIZE
 
 config MCUMGR_TRANSPORT_WORKQUEUE_THREAD_PRIO
 	int "MCUmgr transport workqueue thread priority"
+	default -1 if ZTEST
 	default 3
 	help
 	  Scheduling priority of the MCUmgr transport subsystem work queue.
