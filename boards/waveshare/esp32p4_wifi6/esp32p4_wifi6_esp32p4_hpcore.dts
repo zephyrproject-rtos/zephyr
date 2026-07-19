@@ -1,0 +1,156 @@
+/*
+ * Copyright (c) 2026 Hongquan Li
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32p4/esp32p4_n32r32.dtsi>
+#include "esp32p4_wifi6_esp32p4_hpcore-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <espressif/partitions_0x2000_default_32M.dtsi>
+
+/ {
+	model = "ESP32-P4-WIFI6 HP Core";
+	compatible = "espressif,esp32p4";
+
+	chosen {
+		zephyr,sram = &sramhp;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		sdhc0 = &sdhc0;
+		sw0 = &boot_button;
+		watchdog0 = &wdt0;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		boot_button: button {
+			label = "Boot Button";
+			gpios = <&gpio1 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+/* Pre-v3 (v1.3) silicon: valid CPU frequencies are 90/180/360 MHz */
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(360)>;
+};
+
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(360)>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&i2s0 {
+	status = "disabled";
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+};
+
+&spi2 {
+	status = "disabled";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&coretemp {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+&dma_axi {
+	status = "okay";
+};
+
+zephyr_udc0: &usb_otg {
+	status = "okay";
+};
+
+&sdhc {
+	sdhc0: sdhc@0 {
+		status = "okay";
+		bus-width = <4>;
+		max-bus-freq = <40000000>;
+		/* GPIO45: SD card power enable (active-low) */
+		pwr-gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		clk-pin = <43>;
+		cmd-pin = <44>;
+		d0-pin = <39>;
+		d1-pin = <40>;
+		d2-pin = <41>;
+		d3-pin = <42>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&ldo {
+	status = "okay";
+
+	ldo1@1 {
+		reg = <1>;
+		regulator-name = "ldo1";
+		regulator-init-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	ldo2@2 {
+		reg = <2>;
+		regulator-name = "ldo2";
+		regulator-init-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	ldo4@4 {
+		reg = <4>;
+		regulator-name = "ldo4";
+		regulator-init-microvolt = <3300000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+};
