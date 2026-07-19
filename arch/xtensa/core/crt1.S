@@ -37,7 +37,6 @@
 
 	.text
 	.align 4
-	.literal_position
 
 _start:
 #if XCHAL_HAVE_CP

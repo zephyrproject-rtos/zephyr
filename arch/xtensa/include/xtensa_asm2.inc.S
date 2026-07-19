@@ -791,7 +791,7 @@ _not_triple_fault:
 	and a0, a0, a2
 	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 .else
-	rsr a0, eps\LVL
+	rsr.eps\LVL a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_ps_OFFSET
 .endif
 
@@ -802,7 +802,7 @@ _not_triple_fault:
 	mov a3, a0
 #endif
 
-	rsr a0, epc\LVL
+	rsr.epc\LVL a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_pc_OFFSET
 
 	/* What's happening with this jump is that the L32R
