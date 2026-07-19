@@ -568,6 +568,8 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 #ifdef CONFIG_AMBIQ_SDIO_ASYNC
 		if ((ui32Status & 0xFFFF) == AM_HAL_STATUS_SUCCESS) {
 			if (k_sem_take(dev_data->async_sem, K_MSEC(data->timeout_ms))) {
+				k_mutex_unlock(&dev_data->access_mutex);
+				pm_device_runtime_put_async(dev, K_MSEC(2));
 				return -ETIMEDOUT;
 			}
 		}
