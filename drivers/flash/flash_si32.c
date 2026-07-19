@@ -56,11 +56,11 @@ static bool flash_si32_valid_range(off_t offset, uint32_t size, bool write)
 
 	if (write) {
 		if ((offset % SOC_NV_FLASH_WRITE_BLOCK_SIZE) != 0) {
-			return -EINVAL;
+			return false;
 		}
 
 		if ((size % SOC_NV_FLASH_WRITE_BLOCK_SIZE) != 0) {
-			return -EINVAL;
+			return false;
 		}
 	}
 
