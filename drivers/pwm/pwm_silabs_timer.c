@@ -44,7 +44,7 @@ static int silabs_timer_pwm_set_cycles(const struct device *dev, uint32_t channe
 	bool invert_polarity = (flags & PWM_POLARITY_MASK) == PWM_POLARITY_INVERTED;
 	const struct silabs_timer_pwm_config *config = dev->config;
 
-	if (channel > config->num_channels) {
+	if (channel >= config->num_channels) {
 		return -EINVAL;
 	}
 
@@ -101,7 +101,7 @@ static int silabs_timer_pwm_get_cycles_per_sec(const struct device *dev, uint32_
 	uint32_t clock_rate;
 	int err;
 
-	if (channel > config->num_channels) {
+	if (channel >= config->num_channels) {
 		return -EINVAL;
 	}
 
