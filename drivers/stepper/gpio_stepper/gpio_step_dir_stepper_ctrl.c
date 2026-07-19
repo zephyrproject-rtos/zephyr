@@ -166,7 +166,7 @@ static int gpio_step_dir_stepper_ctrl_set_microstep_interval(const struct device
 		return -EINVAL;
 	}
 
-	if (microstep_interval_ns < 2 * data->step_width_ns) {
+	if (!data->dual_edge && (microstep_interval_ns < 2 * data->step_width_ns)) {
 		LOG_ERR("Step interval too small for configured step width");
 		return -EINVAL;
 	}
