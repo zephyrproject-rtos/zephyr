@@ -579,6 +579,9 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 		dma_channel_tx->periph_id = dma_channel->periph_id;
 
 		ret = dma_esp32_config_rx(dev, dma_channel_rx, config_dma);
+		if (ret < 0) {
+			break;
+		}
 		ret = dma_esp32_config_tx(dev, dma_channel_tx, config_dma);
 		break;
 	case PERIPHERAL_TO_MEMORY:
