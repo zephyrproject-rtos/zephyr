@@ -8,7 +8,7 @@
 #include <zephyr/pm/state.h>
 #include <zephyr/toolchain.h>
 
-BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
+BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)) && (DT_CPUS_NUM_OKAY > 0),
 	     "cpus node not defined in Devicetree");
 
 #define DEFINE_CPU_STATES(n) \
@@ -16,16 +16,16 @@ BUILD_ASSERT(DT_NODE_EXISTS(DT_PATH(cpus)),
 		= PM_STATE_INFO_LIST_FROM_DT_CPU(n);
 #define CPU_STATE_REF(n) pmstates_##n
 
-DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(cpus), DEFINE_CPU_STATES);
+DT_CPUS_FOREACH_OKAY(DEFINE_CPU_STATES);
 
 /** CPU power states information for each CPU */
 static const struct pm_state_info *cpus_states[] = {
-	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), CPU_STATE_REF, (,))
+	DT_CPUS_FOREACH_OKAY_SEP(CPU_STATE_REF, (,))
 };
 
 /** Number of states for each CPU */
 static const uint8_t states_per_cpu[] = {
-	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_NUM_CPU_POWER_STATES, (,))
+	DT_CPUS_FOREACH_OKAY_SEP(DT_NUM_CPU_POWER_STATES, (,))
 };
 
 #define DEFINE_DISABLED_PM_STATE(node) \

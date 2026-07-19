@@ -45,6 +45,7 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_compat_enabled,<compatible string>)
    $(dt_compat_enabled_num,<compatible string>)
    $(dt_compat_on_bus,<compatible string>,<bus>)
+   $(dt_cpus_num)
    $(dt_gpio_hogs_enabled)
    $(dt_has_compat,<compatible string>)
    $(dt_highest_controller_irq_number,<node path>,<cell>)

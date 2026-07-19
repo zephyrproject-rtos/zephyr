@@ -924,7 +924,7 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 
 #define HART_CONTEXTS(i, n) IF_ENABLED(IS_EQ(DT_INST_IRQN_BY_IDX(n, i), DT_INST_IRQN(n)), (i,))
 #define PLIC_HART_CONTEXT_DECLARE(n)                                                               \
-	INTC_PLIC_STATIC const uint32_t plic_hart_contexts_##n[DT_CHILD_NUM(DT_PATH(cpus))] = {    \
+	INTC_PLIC_STATIC const uint32_t plic_hart_contexts_##n[DT_CPUS_NUM_OKAY] = {               \
 		LISTIFY(DT_INST_NUM_IRQS(n), HART_CONTEXTS, (), n)}
 
 #define PLIC_INTC_CONFIG_INIT(n)                                                                   \
