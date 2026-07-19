@@ -140,8 +140,23 @@ static int dummy_codec_init(const struct device *dev)
 	return 0;
 }
 
+/* The API helpers dereference these without a NULL check, so they must be
+ * provided even though this codec has no output stage.
+ */
+static void dummy_codec_start_output(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static void dummy_codec_stop_output(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
 static DEVICE_API(audio_codec, dummy_codec_api) = {
 	.configure = dummy_codec_configure,
+	.start_output = dummy_codec_start_output,
+	.stop_output = dummy_codec_stop_output,
 	.set_property = dummy_codec_set_property,
 	.start = dummy_codec_start,
 	.stop = dummy_codec_stop,
