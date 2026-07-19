@@ -514,7 +514,7 @@ static int set_iir_config(const struct sensor_value *iir, const struct device *d
 	dsp_config[0] = BMP5_SET_BITSLICE(dsp_config[0], BMP5_SHDW_SET_IIR_PRESS, BMP5_ENABLE);
 
 	/* Configure IIR filter */
-	dsp_config[1] = iir->val1;
+	dsp_config[1] = BMP5_SET_BITSLICE(dsp_config[1], BMP5_SET_IIR_TEMP, iir->val1);
 	dsp_config[1] = BMP5_SET_BITSLICE(dsp_config[1], BMP5_SET_IIR_PRESS, iir->val2);
 
 	/* Set IIR configuration */
