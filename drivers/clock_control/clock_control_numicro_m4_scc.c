@@ -431,7 +431,7 @@ static int numicro_scc_init(const struct device *dev)
 
 	if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_lxt))) {
 		ret = numicro_scc_start_clock_source(config, CLK_PWRCTL_LXTEN_Pos,
-						     CLK_PWRCTL_HIRCEN_Pos);
+						     CLK_STATUS_LXTSTB_Pos);
 		if (ret < 0) {
 			LOG_WRN("Failed to get LXT stable");
 		}
