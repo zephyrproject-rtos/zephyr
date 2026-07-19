@@ -697,8 +697,10 @@ static int eusart_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_
 	key = irq_lock();
 
 	if (data->rx_next_buffer) {
+		irq_unlock(key);
 		return -EBUSY;
 	} else if (!data->dma_rx.enabled) {
+		irq_unlock(key);
 		return -EACCES;
 	}
 
