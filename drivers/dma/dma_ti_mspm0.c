@@ -23,8 +23,8 @@ LOG_MODULE_REGISTER(ti_mspm0_dma, CONFIG_DMA_LOG_LEVEL);
 /* Data Transfer Width */
 #define DMA_TI_MSPM0_DATAWIDTH_BYTE	1
 #define DMA_TI_MSPM0_DATAWIDTH_HALF	2
-#define DMA_TI_MSPM0_DATAWIDTH_WORD	3
-#define DMA_TI_MSPM0_DATAWIDTH_LONG	4
+#define DMA_TI_MSPM0_DATAWIDTH_WORD	4
+#define DMA_TI_MSPM0_DATAWIDTH_LONG	8
 
 struct dma_ti_mspm0_config {
 	DMA_Regs *regs;
