@@ -101,10 +101,11 @@ int tmc50xx_read(const struct device *dev, const uint8_t reg_addr, uint32_t *reg
 
 static void log_stallguard(const struct device *dev, const uint32_t drv_status)
 {
+	struct tmc50xx_data *data = dev->data;
 	int32_t position;
 	int err;
 
-	err = tmc50xx_read_actual_position(dev, &position);
+	err = tmc50xx_read_actual_position(dev, data->work_index, &position);
 	if (err != 0) {
 		LOG_ERR("%s: Failed to read XACTUAL register", dev->name);
 		return;
