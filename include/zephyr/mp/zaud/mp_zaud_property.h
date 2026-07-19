@@ -43,6 +43,10 @@ enum prop_zaud_src {
 	PROP_ZAUD_SRC_SLAB_PTR = PROP_SRC_LAST + 1,
 	/** Audio source device */
 	PROP_ZAUD_SRC_DEVICE,
+	/** Capture codec device, NULL when the source needs no codec */
+	PROP_ZAUD_SRC_CODEC_DEVICE,
+	/** Clock role configuration for audio source (controller/target) */
+	PROP_ZAUD_SRC_CLK_ROLE,
 };
 
 /**
