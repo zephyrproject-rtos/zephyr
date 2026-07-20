@@ -183,7 +183,9 @@ static void process_data(struct k_work *work)
 	data->prev_buttons_data = data->curr_buttons_data;
 
 	/** Sliders */
-	for (int i = 0; i < data->touch_instance.p_cfg->num_sliders; i++) {
+	const int num_sliders = data->touch_instance.p_cfg->num_sliders;
+
+	for (int i = 0; i < num_sliders; i++) {
 		if (data->curr_sliders_position[i] != data->prev_sliders_position[i]) {
 			input_report_abs(dev, config->sliders[i].event,
 					 data->curr_sliders_position[i], true, K_FOREVER);
