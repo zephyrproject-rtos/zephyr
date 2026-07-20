@@ -143,12 +143,6 @@ int stm32_gpioport_configure_pin(const struct device *port,
  * @retval <0 Unspecified error
  */
 int stm32_gpiomgr_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t flags);
-
-/**
- * @deprecated
- * @note Only available when !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_pwr_wkupctrl).
- */
-int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio);
 #endif /* defined(CONFIG_STM32_WKUP_PINS) */
 
 /*
