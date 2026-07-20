@@ -479,8 +479,8 @@ static void verify_dhcpv6_no_reconfigure_accept(struct net_if *iface,
 	net_pkt_cursor_restore(pkt, &backup);
 }
 
-static void verify_dhcpv6_oro_sol_max_rt(struct net_if *iface,
-					 struct net_pkt *pkt)
+static void verify_dhcpv6_oro_option(struct net_if *iface, struct net_pkt *pkt,
+				     enum dhcpv6_option_code option)
 {
 	struct net_pkt_cursor backup;
 	uint16_t length;
@@ -499,15 +499,26 @@ static void verify_dhcpv6_oro_sol_max_rt(struct net_if *iface,
 		zassert_ok(ret, "ORO read error");
 		length -= sizeof(uint16_t);
 
-		if (oro == DHCPV6_OPTION_CODE_SOL_MAX_RT) {
+		if (oro == option) {
 			break;
 		}
 	}
 
-	zassert_equal(oro, DHCPV6_OPTION_CODE_SOL_MAX_RT,
-		      "No SOL_MAX_RT option request present");
+	zassert_equal(oro, option, "Requested option %u is not present", option);
 
 	net_pkt_cursor_restore(pkt, &backup);
+}
+
+static void verify_dhcpv6_oro_sol_max_rt(struct net_if *iface,
+					 struct net_pkt *pkt)
+{
+	verify_dhcpv6_oro_option(iface, pkt, DHCPV6_OPTION_CODE_SOL_MAX_RT);
+}
+
+static void verify_dhcpv6_oro_inf_max_rt(struct net_if *iface,
+					 struct net_pkt *pkt)
+{
+	verify_dhcpv6_oro_option(iface, pkt, DHCPV6_OPTION_CODE_INF_MAX_RT);
 }
 
 static void verify_solicit_message(struct net_if *iface, struct net_pkt *pkt)
@@ -536,6 +547,28 @@ ZTEST(dhcpv6_tests, test_solicit_message_format)
 
 	ret = dhcpv6_send_solicit(test_ctx.iface);
 	zassert_ok(ret, "dhcpv6_send_solicit failed");
+
+	ret = k_sem_take(&test_ctx.tx_sem, K_SECONDS(1));
+	zassert_ok(ret, "Packet not transmitted");
+}
+
+static void verify_info_request_message(struct net_if *iface, struct net_pkt *pkt)
+{
+	verify_dhcpv6_header(iface, pkt, DHCPV6_MSG_TYPE_INFORMATION_REQUEST);
+	verify_dhcpv6_clientid(iface, pkt);
+	verify_dhcpv6_no_serverid(iface, pkt);
+	verify_dhcpv6_elapsed_time(iface, pkt, 0, 10);
+	verify_dhcpv6_oro_inf_max_rt(iface, pkt);
+}
+
+ZTEST(dhcpv6_tests, test_info_request_message_format)
+{
+	int ret;
+
+	set_dhcpv6_test_fn(verify_info_request_message);
+
+	ret = dhcpv6_send_info_request(test_ctx.iface);
+	zassert_ok(ret, "dhcpv6_send_info_request failed");
 
 	ret = k_sem_take(&test_ctx.tx_sem, K_SECONDS(1));
 	zassert_ok(ret, "Packet not transmitted");
@@ -674,6 +707,8 @@ ZTEST(dhcpv6_tests, test_retransmissions_keep_transaction_id)
 		bool needs_addr;
 	} test_cases[] = {
 		{ DHCPV6_MSG_TYPE_SOLICIT, dhcpv6_send_solicit, false, false },
+		{ DHCPV6_MSG_TYPE_INFORMATION_REQUEST, dhcpv6_send_info_request,
+		  false, false },
 		{ DHCPV6_MSG_TYPE_REQUEST, dhcpv6_send_request, true, false },
 		{ DHCPV6_MSG_TYPE_CONFIRM, dhcpv6_send_confirm, false, true },
 		{ DHCPV6_MSG_TYPE_RENEW, dhcpv6_send_renew, true, true },
@@ -995,8 +1030,26 @@ static int set_reply_options_other_server(struct net_if *iface, struct net_pkt *
 	return 0;
 }
 
+static int set_info_reply_options(struct net_if *iface, struct net_pkt *pkt,
+				  enum dhcpv6_msg_type msg_type)
+{
+	int ret;
+
+	ret = dhcpv6_add_option_clientid(pkt, &iface->config.dhcpv6.clientid);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dhcpv6_add_option_serverid(pkt, &test_serverid);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return add_max_rt_options(pkt);
+}
+
 /* Verify that DHCPv6 client accepts Reply messages in Requesting, Confirming,
- * Renewing and Rebinding states
+ * Renewing, Rebinding and Information-requesting states.
  */
 ZTEST(dhcpv6_tests, test_input_reply)
 {
@@ -1012,7 +1065,8 @@ ZTEST(dhcpv6_tests, test_input_reply)
 
 		pkt = test_dhcpv6_create_message(test_ctx.iface,
 						 DHCPV6_MSG_TYPE_REPLY,
-						 set_reply_options);
+						 state == NET_DHCPV6_INFO_REQUESTING ?
+						 set_info_reply_options : set_reply_options);
 		zassert_not_null(pkt, "Failed to create pkt");
 
 		result = net_ipv6_input(pkt);
@@ -1022,12 +1076,18 @@ ZTEST(dhcpv6_tests, test_input_reply)
 		case NET_DHCPV6_REQUESTING:
 		case NET_DHCPV6_RENEWING:
 		case NET_DHCPV6_REBINDING:
+		case NET_DHCPV6_INFO_REQUESTING:
 			zassert_equal(result, NET_OK, "Message should've been processed");
 
 			/* Confirm is an exception, as it does not update
 			 * address on an interface (only status OK is expected).
 			 */
-			if (state == NET_DHCPV6_CONFIRMING) {
+			if (state == NET_DHCPV6_CONFIRMING ||
+			    state == NET_DHCPV6_INFO_REQUESTING) {
+				zassert_equal(test_ctx.iface->config.dhcpv6.sol_max_rt,
+					      test_sol_max_rt, "Invalid SOL_MAX_RT value");
+				zassert_equal(test_ctx.iface->config.dhcpv6.inf_max_rt,
+					      test_inf_max_rt, "Invalid INF_MAX_RT value");
 				break;
 			}
 
@@ -1097,6 +1157,68 @@ ZTEST(dhcpv6_tests, test_input_reply_rejects_unselected_server)
 
 		net_pkt_unref(pkt);
 	}
+}
+
+static int set_reply_options_fail_max_rt(struct net_if *iface, struct net_pkt *pkt,
+					 enum dhcpv6_msg_type msg_type)
+{
+	int ret;
+
+	ret = dhcpv6_add_option_clientid(pkt, &iface->config.dhcpv6.clientid);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dhcpv6_add_option_serverid(pkt, &test_serverid);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dhcpv6_add_option_header(pkt, DHCPV6_OPTION_CODE_STATUS_CODE,
+				       DHCPV6_OPTION_STATUS_CODE_HEADER_SIZE);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = net_pkt_write_be16(pkt, DHCPV6_STATUS_NOT_ON_LINK);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return add_max_rt_options(pkt);
+}
+
+/* RFC 8415, ch. 21.24/21.25: SOL_MAX_RT and INF_MAX_RT MUST be applied even
+ * when the message carries a failure Status Code.
+ */
+ZTEST(dhcpv6_tests, test_input_reply_max_rt_on_failure)
+{
+	enum net_verdict result;
+	struct net_pkt *pkt;
+
+	/* Start from the defaults so a server-provided update is detectable.
+	 * Use Information-requesting state: a failure Reply there is dropped
+	 * without any outgoing message, keeping the test side-effect free.
+	 */
+	test_ctx.iface->config.dhcpv6.sol_max_rt = DHCPV6_SOL_MAX_RT;
+	test_ctx.iface->config.dhcpv6.inf_max_rt = DHCPV6_INF_MAX_RT;
+	test_ctx.iface->config.dhcpv6.state = NET_DHCPV6_INFO_REQUESTING;
+
+	pkt = test_dhcpv6_create_message(test_ctx.iface, DHCPV6_MSG_TYPE_REPLY,
+					 set_reply_options_fail_max_rt);
+	zassert_not_null(pkt, "Failed to create pkt");
+
+	result = net_ipv6_input(pkt);
+	zassert_equal(result, NET_OK, "Message should've been processed");
+
+	zassert_equal(test_ctx.iface->config.dhcpv6.sol_max_rt, test_sol_max_rt,
+		      "SOL_MAX_RT not applied on failure Reply");
+	zassert_equal(test_ctx.iface->config.dhcpv6.inf_max_rt, test_inf_max_rt,
+		      "INF_MAX_RT not applied on failure Reply");
+
+	net_pkt_unref(pkt);
+
+	test_ctx.iface->config.dhcpv6.state = NET_DHCPV6_DISABLED;
 }
 
 static void test_solicit_expect_request_send_reply(struct net_if *iface,
@@ -1210,6 +1332,69 @@ ZTEST(dhcpv6_tests, test_solicit_exchange)
 					   test_prefix_len);
 	zassert_not_null(addr, "Address not configured on the interface");
 	zassert_not_null(prefix, "Prefix not configured on the interface");
+}
+
+static void test_info_request_send_reply(struct net_if *iface, struct net_pkt *pkt)
+{
+	struct net_pkt *reply;
+	int result;
+
+	verify_dhcpv6_header(iface, pkt, DHCPV6_MSG_TYPE_INFORMATION_REQUEST);
+	verify_dhcpv6_clientid(iface, pkt);
+	verify_dhcpv6_no_serverid(iface, pkt);
+	verify_dhcpv6_oro_inf_max_rt(iface, pkt);
+
+	zassert_equal(iface->config.dhcpv6.state, NET_DHCPV6_INFO_REQUESTING,
+		      "Invalid state");
+
+	set_dhcpv6_test_fn(NULL);
+
+	reply = test_dhcpv6_create_message(test_ctx.iface,
+					   DHCPV6_MSG_TYPE_REPLY,
+					   set_info_reply_options);
+	zassert_not_null(reply, "Failed to create pkt");
+
+	result = net_ipv6_input(reply);
+	zassert_equal(result, NET_OK, "Message should've been processed");
+
+	zassert_equal(iface->config.dhcpv6.state, NET_DHCPV6_BOUND,
+		      "Invalid state");
+	zassert_equal(iface->config.dhcpv6.inf_max_rt, test_inf_max_rt,
+		      "Invalid INF_MAX_RT value");
+	zassert_true(net_ipv6_addr_cmp(&iface->config.dhcpv6.addr,
+				       net_ipv6_unspecified_address()),
+		     "Address should not be configured");
+	zassert_true(net_ipv6_addr_cmp(&iface->config.dhcpv6.prefix,
+				       net_ipv6_unspecified_address()),
+		     "Prefix should not be configured");
+
+	/* Reply had no Information Refresh Time option, so the default applies
+	 * and a refresh must be scheduled (not left running forever).
+	 */
+	zassert_equal(iface->config.dhcpv6.info_refresh_time,
+		      DHCPV6_IRT_DEFAULT * MSEC_PER_SEC,
+		      "Invalid information refresh time");
+	zassert_not_equal(iface->config.dhcpv6.timeout, UINT64_MAX,
+			  "Information refresh not scheduled");
+
+	k_sem_give(&test_ctx.exchange_complete_sem);
+}
+
+ZTEST(dhcpv6_tests, test_info_request_exchange)
+{
+	struct net_dhcpv6_params params = { 0 };
+	int ret;
+
+	test_ctx.reset_dhcpv6 = true;
+	memset(&test_ctx.iface->config.dhcpv6, 0,
+	       sizeof(test_ctx.iface->config.dhcpv6));
+
+	set_dhcpv6_test_fn(test_info_request_send_reply);
+
+	net_dhcpv6_start(test_ctx.iface, &params);
+
+	ret = k_sem_take(&test_ctx.exchange_complete_sem, K_SECONDS(3));
+	zassert_ok(ret, "Exchange not completed in required time");
 }
 
 static void expect_request_send_reply(struct net_if *iface, struct net_pkt *pkt)

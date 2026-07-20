@@ -439,6 +439,11 @@ struct net_if_dhcpv6 {
 	/** Maximum Information-request retransmit timeout, milliseconds. */
 	uint32_t inf_max_rt;
 
+	/** Information-request refresh interval, milliseconds; 0 means never
+	 *  refresh (infinity).
+	 */
+	uint32_t info_refresh_time;
+
 	/** Current best server preference received. */
 	int16_t server_preference;
 
