@@ -283,17 +283,19 @@ static struct net_pkt *eth_rx(const struct device *dev)
 	ETH_TypeDef *eth = config->regs;
 	struct net_pkt *pkt = NULL;
 
-	if ((dma_rx_desc_current->Status & ETH_DMARxDesc_OWN) != 0U) {
+	uint32_t desc_status = dma_rx_desc_current->Status;
+
+	if ((desc_status & ETH_DMARxDesc_OWN) != 0U) {
 		return NULL; /* Not error, simply packet has not arrived yet */
 	}
 
-	if (((dma_rx_desc_current->Status & ETH_DMARxDesc_ES) != 0U) ||
-	    ((dma_rx_desc_current->Status & (ETH_DMARxDesc_FS | ETH_DMARxDesc_LS)) !=
+	if (((desc_status & ETH_DMARxDesc_ES) != 0U) ||
+	    ((desc_status & (ETH_DMARxDesc_FS | ETH_DMARxDesc_LS)) !=
 	     (ETH_DMARxDesc_FS | ETH_DMARxDesc_LS))) {
 		goto release_desc; /* Drop descriptor if it is corrupt, or not a full frame */
 	}
 
-	size_t total_len = ((dma_rx_desc_current->Status & ETH_DMARxDesc_FL) >>
+	size_t total_len = ((desc_status & ETH_DMARxDesc_FL) >>
 			    ETH_DMARXDESC_FRAME_LENGTHSHIFT) -
 			   sizeof(uint32_t); /* This discards CRC (checked by hardware) */
 
