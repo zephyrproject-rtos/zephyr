@@ -639,6 +639,15 @@ int nxp_wifi_internal_tx(const struct device *dev, struct net_pkt *pkt, bool pkt
 	/* Save the ethernet header */
 	net_pkt_set_overwrite(pkt, false);
 	net_pkt_read(pkt, ((outbuf_t *)wmm_outbuf)->eth_header, ETH_HDR_LEN);
+	/* The ETH header has been copied into outbuf->eth_header.
+	 * If the first frag only contained the ETH header, remove it
+	 * to free one tx_buf back to the pool.
+	 */
+	if (pkt->frags != NULL && pkt->frags->len == ETH_HDR_LEN &&
+	    pkt->frags->frags != NULL) {
+		net_pkt_frag_del(pkt, NULL, pkt->frags);
+	}
+
 	((outbuf_t *)wmm_outbuf)->buffer = pkt;
 	/* Save the data payload pointer without ethernet header */
 	if (net_pkt_len > ETH_HDR_LEN) {
