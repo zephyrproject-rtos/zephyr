@@ -12,7 +12,20 @@ name: QEMU Windows Probe
 # If A streams and B does not, the guest is fine and the pipe path is at fault.
 # If neither streams, the guest itself is stalling on Windows.
 
+# This is a temporary diagnostic. Drop it once the stall is understood.
 on:
+  pull_request:
+    branches:
+      - main
+      - v*-branch
+      - collab-*
+    # Kept narrow on purpose. This is a diagnostic, not a gate, and it has no
+    # business running on unrelated pull requests.
+    paths:
+      - '.github/workflows/qemu_windows_probe.yaml'
+      - 'scripts/ci/qemu_pipe_probe.py'
+      - 'scripts/pylib/twister/twisterlib/handlers.py'
+      - 'boards/qemu/cortex_m0/**'
   workflow_dispatch:
     inputs:
       timeout:
@@ -22,6 +35,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   probe:
@@ -60,8 +77,11 @@ jobs:
         working-directory: zephyr
         shell: bash
         env:
-          PROBE_TIMEOUT: ${{ inputs.timeout }}
+          # 'inputs' is empty on a pull_request event, so default here.
+          PROBE_TIMEOUT: ${{ inputs.timeout || '30' }}
         run: |
+          PROBE_TIMEOUT="${PROBE_TIMEOUT:-30}"
+
           QEMU=$(find "$GITHUB_WORKSPACE/zephyr-sdk" -name 'qemu-system-arm.exe' | head -1)
           echo "QEMU: $QEMU"
           "$QEMU" --version
