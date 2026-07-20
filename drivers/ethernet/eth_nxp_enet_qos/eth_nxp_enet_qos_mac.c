@@ -157,7 +157,8 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	LOG_DBG("Setting up TX descriptors for packet %p", pkt);
 
 	/* Reset the descriptors */
-	memset((void *)data->tx.descriptors, 0, sizeof(union nxp_enet_qos_tx_desc) * frags_count);
+	memset((void *)data->tx.descriptors, 0,
+	       sizeof(union nxp_enet_qos_tx_desc) * ((frags_count + 1) / 2));
 
 	/* Setting up the descriptors  */
 	fragment = pkt->frags;
