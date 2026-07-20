@@ -1731,6 +1731,15 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 		return ret;
 	}
 
+	if ((iface->config.dhcpv6.state == NET_DHCPV6_REQUESTING ||
+	     iface->config.dhcpv6.state == NET_DHCPV6_RENEWING) &&
+	    (iface->config.dhcpv6.serverid.length != duid.length ||
+	     memcmp(&iface->config.dhcpv6.serverid.duid, &duid.duid,
+		    iface->config.dhcpv6.serverid.length) != 0)) {
+		NET_ERR("Server ID mismatch");
+		return -EBADMSG;
+	}
+
 	/* Verify TID. */
 	if (memcmp(iface->config.dhcpv6.tid, tid,
 		   sizeof(iface->config.dhcpv6.tid)) != 0) {
