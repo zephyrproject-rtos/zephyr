@@ -79,9 +79,9 @@ struct renesas_rx_ctsu_config {
 	uint8_t *channels_index_map;
 	uint8_t *button_position_index;
 	/** Touch components */
-	touch_button_context_t *buttons;
-	touch_slider_context_t *sliders;
-	touch_wheel_context_t *wheels;
+	const touch_button_context_t *buttons;
+	const touch_slider_context_t *sliders;
+	const touch_wheel_context_t *wheels;
 };
 
 struct renesas_rx_ctsu_data {
@@ -530,11 +530,11 @@ static int renesas_rx_ctsu_init(const struct device *dev)
 		}                                                                                  \
 	}                                                                                          \
                                                                                                    \
-	static touch_button_context_t buttons_##idx[] = {                                          \
+	static const touch_button_context_t buttons_##idx[] = {                                    \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, BUTTON_GET_CONTEXT)};                       \
-	static touch_slider_context_t sliders_##idx[] = {                                          \
+	static const touch_slider_context_t sliders_##idx[] = {                                    \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, SLIDER_GET_CONTEXT)};                       \
-	static touch_wheel_context_t wheels_##idx[] = {                                            \
+	static const touch_wheel_context_t wheels_##idx[] = {                                      \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, WHEEL_GET_CONTEXT)};                        \
                                                                                                    \
 	static touch_button_cfg_t                                                                  \
