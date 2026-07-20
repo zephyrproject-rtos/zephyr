@@ -18,6 +18,9 @@ struct nxp_irtc_config {
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clock_src)
 	uint8_t clock_src;
 #endif
+#if defined(CONFIG_RTC_CALIBRATION)
+	uint32_t clock_frequency;
+#endif
 	bool share_counter;
 	uint8_t alarm_match_flag;
 };
@@ -335,18 +338,124 @@ static int nxp_irtc_update_set_callback(const struct device *dev, rtc_update_cal
 #endif /* CONFIG_RTC_UPDATE */
 #if defined(CONFIG_RTC_CALIBRATION)
 
+/*
+ * Coarse compensation maps the signed calibration (in parts-per-billion) onto
+ * the IRTC COMPEN register. With fine compensation disabled (CTRL[FINEEN] = 0):
+ *   - COMPEN[7:0]  = correction value, a two's-complement count of RTC source
+ *                    clock cycles added to / removed from the cycles used to
+ *                    generate one 1 Hz tick, applied once per interval.
+ *   - COMPEN[15:8] = compensation interval in seconds.
+ * The interval is fixed at 1 s here, so the fractional frequency correction is
+ * value / cycles-per-second, i.e. ppb = value * 1e9 / cycles. The source clock
+ * frequency is taken from the node's clock-frequency property (16.384 kHz or
+ * 32.768 kHz), giving an LSB of ~61036 or ~30518 ppb and a range of roughly
+ * -7.8M..+7.8M or -3.9M..+3.9M ppb (value in -128..+127) respectively, which
+ * covers the RTC calibration API's tested range. clock-frequency is used
+ * rather than CTRL[CLK_SEL] because that field is not readable / configured on
+ * every IRTC platform (e.g. RT700 does not set clock-src).
+ *
+ * A positive COMPEN correction value adds source clock cycles to the 1 Hz
+ * generation, lengthening the second and slowing the RTC down (measured on
+ * MCXN236 hardware). The RTC API defines positive calibration as increasing
+ * the RTC frequency, so the value is negated in both directions.
+ */
+#define RTC_NXP_IRTC_COMP_INTERVAL  1U
+#define RTC_NXP_IRTC_PPB_PER_HZ     1000000000LL
+#define RTC_NXP_IRTC_COMP_VALUE_MIN (-128)
+#define RTC_NXP_IRTC_COMP_VALUE_MAX (127)
+
 static int nxp_irtc_set_calibration(const struct device *dev, int32_t calibration)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(calibration);
-	return -ENOTSUP;
+	const struct nxp_irtc_config *config = dev->config;
+	RTC_Type *irtc_reg = config->base;
+	int64_t cycles_per_sec = config->clock_frequency;
+	int64_t value;
+	uint16_t reg;
+
+	if (config->share_counter) {
+		/* The time counters are owned by the primary IRTC instance. */
+		return -EPERM;
+	}
+
+	/*
+	 * value = -round(calibration * cycles / 1e9); negated because a positive
+	 * COMPEN value slows the RTC down while a positive calibration must speed
+	 * it up. Round to nearest to minimize quantization error;
+	 * get_calibration() reports the resulting programmed value so a
+	 * set()/get() round-trips at the hardware resolution.
+	 */
+	value = -(((int64_t)calibration * cycles_per_sec +
+		   ((calibration >= 0 ? RTC_NXP_IRTC_PPB_PER_HZ : -RTC_NXP_IRTC_PPB_PER_HZ) / 2)) /
+		  RTC_NXP_IRTC_PPB_PER_HZ);
+
+	if (value < RTC_NXP_IRTC_COMP_VALUE_MIN || value > RTC_NXP_IRTC_COMP_VALUE_MAX) {
+		return -EINVAL;
+	}
+
+	uint32_t key = irq_lock();
+
+	nxp_irtc_unlock_registers(irtc_reg);
+
+	/*
+	 * With CTRL[FINEEN] = 0 the RM requires compensation to be disabled
+	 * through CTRL[COMP_EN] before COMPEN is changed for the first time,
+	 * so always disable it around the COMPEN update.
+	 */
+	reg = irtc_reg->CTRL & (uint16_t)~(RTC_CTRL_FINEEN_MASK | RTC_CTRL_COMP_EN_MASK);
+	irtc_reg->CTRL = reg;
+
+	/* COMPEN[7:0] = value (two's complement), COMPEN[15:8] = interval. */
+	irtc_reg->COMPEN = RTC_COMPEN_COMPEN_VAL(((uint16_t)((uint8_t)value)) |
+						 ((uint16_t)RTC_NXP_IRTC_COMP_INTERVAL << 8U));
+
+	/* Enable coarse compensation. */
+	irtc_reg->CTRL = reg | RTC_CTRL_COMP_EN_MASK;
+
+	irq_unlock(key);
+
+	return 0;
 }
 
 static int nxp_irtc_get_calibration(const struct device *dev, int32_t *calibration)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(calibration);
-	return -ENOTSUP;
+	const struct nxp_irtc_config *config = dev->config;
+	RTC_Type *irtc_reg = config->base;
+	uint16_t compen;
+	int8_t value;
+	uint8_t interval;
+
+	if (!calibration) {
+		return -EINVAL;
+	}
+
+	if (config->share_counter) {
+		/* The time counters are owned by the primary IRTC instance. */
+		return -EPERM;
+	}
+
+	if ((irtc_reg->CTRL & RTC_CTRL_COMP_EN_MASK) == 0U) {
+		/* Compensation disabled. */
+		*calibration = 0;
+		return 0;
+	}
+
+	compen = RTC_NXP_GET_REG_FIELD(irtc_reg, COMPEN, COMPEN_VAL);
+
+	/* COMPEN[7:0] is a signed correction value; COMPEN[15:8] is the interval. */
+	value = (int8_t)(compen & 0xFFU);
+	interval = (uint8_t)(compen >> 8U);
+
+	if (interval == 0U) {
+		/* A zero compensation interval also disables compensation. */
+		*calibration = 0;
+		return 0;
+	}
+
+	/* ppb = -value * 1e9 / (cycles-per-second * interval), negated as in set(). */
+	*calibration = (int32_t)(((int64_t)-value * RTC_NXP_IRTC_PPB_PER_HZ) /
+				 ((int64_t)config->clock_frequency * interval));
+
+	return 0;
 }
 
 #endif /* CONFIG_RTC_CALIBRATION */
@@ -455,11 +564,18 @@ static DEVICE_API(rtc, rtc_nxp_irtc_driver_api) = {
 #define NXP_IRTC_CLOCK_SELECTION_INIT(n)
 #endif
 
+#if defined(CONFIG_RTC_CALIBRATION)
+#define NXP_IRTC_CLOCK_FREQUENCY_INIT(n) .clock_frequency = DT_INST_PROP(n, clock_frequency),
+#else
+#define NXP_IRTC_CLOCK_FREQUENCY_INIT(n)
+#endif
+
 #define RTC_NXP_IRTC_DEVICE_INIT(n)                                                                \
 	NXP_IRTC_CONFIG_FUNC(n)                                                                    \
 	static const struct nxp_irtc_config nxp_irtc_config_##n = {                                \
 		.base = (RTC_Type *)DT_INST_REG_ADDR(n),                                           \
 		NXP_IRTC_CLOCK_SELECTION_INIT(n)                                \
+		NXP_IRTC_CLOCK_FREQUENCY_INIT(n)                                \
 		.share_counter = DT_INST_PROP(n, share_counter),                \
 		.is_output_clock_enabled = DT_INST_PROP(n, output_clk_en),                         \
 		.irq_config_func = nxp_irtc_config_func_##n,                                       \
