@@ -30,6 +30,11 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
+#if defined(CONFIG_NET_STATISTICS)
+#include "net_stats.h"
+#endif
+
+#include "ppp_internal.h"
 
 typedef enum net_verdict (*ppp_l2_callback_t)(struct net_if *iface,
 					      struct net_pkt *pkt);
@@ -537,6 +542,162 @@ static void test_send_ppp_8(void)
 		zassert_true(false, "Timeout, packet not received");
 	}
 }
+
+/* HDLC-wrap a frame: append the FCS, delimit with 0x7e and escape the body. */
+static size_t hdlc_wrap(uint8_t *out, const uint8_t *frame, size_t len)
+{
+	uint16_t fcs = crc16_ccitt(0xffff, frame, len) ^ 0xffff;
+	size_t pos = 0;
+
+	out[pos++] = 0x7e;
+	for (size_t i = 0; i < len + 2; i++) {
+		uint8_t b;
+
+		if (i < len) {
+			b = frame[i];
+		} else if (i == len) {
+			/* FCS is transmitted low octet first */
+			b = fcs & 0xff;
+		} else {
+			b = fcs >> 8;
+		}
+
+		if (b == 0x7e || b == 0x7d || b < 0x20) {
+			out[pos++] = 0x7d;
+			out[pos++] = b ^ 0x20;
+		} else {
+			out[pos++] = b;
+		}
+	}
+	out[pos++] = 0x7e;
+
+	return pos;
+}
+
+/* 0x0023 has the even-high/odd-low octets required of a PPP protocol number
+ * and PFC compresses it to the single octet 0x23.
+ */
+#define TEST_PFC_PROTOCOL 0x0023
+
+static struct k_sem proto_handler_sem;
+static uint8_t proto_handler_data[32];
+static size_t proto_handler_data_len;
+
+static void test_proto_init(struct ppp_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+
+static enum net_verdict test_proto_handler(struct ppp_context *ctx, struct net_if *iface,
+					   struct net_pkt *pkt)
+{
+	size_t len = net_pkt_remaining_data(pkt);
+
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(iface);
+
+	proto_handler_data_len = 0;
+	if (len <= sizeof(proto_handler_data) && net_pkt_read(pkt, proto_handler_data, len) == 0) {
+		proto_handler_data_len = len;
+	}
+
+	k_sem_give(&proto_handler_sem);
+
+	return NET_OK;
+}
+
+PPP_PROTOCOL_REGISTER(TEST_PFC, TEST_PFC_PROTOCOL, test_proto_init, test_proto_handler, NULL, NULL,
+		      NULL, NULL);
+
+static void pfc_iface_setup(void)
+{
+	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
+	zassert_not_null(net_iface, "PPP interface not found!");
+
+	/* Drive the real L2 receive path, not the HDLC-decode capture
+	 * callback.
+	 */
+	ppp_l2_register_pkt_cb(NULL);
+	net_if_up(net_iface);
+}
+
+ZTEST(net_ppp_test_suite, test_pfc_protocol_receive)
+{
+	/* Payload including bytes that need HDLC escaping */
+	static const uint8_t payload[] = {0x7e, 0x7d, 0x11, 0x00, 0x23, 0x45, 0xff, 0x03};
+	/* FF 03 | 23 | payload: PFC-compressed 1-octet protocol */
+	uint8_t compressed[3 + sizeof(payload)] = {0xff, 0x03, 0x23};
+	/* FF 03 | 00 23 | payload: full 2-octet protocol */
+	uint8_t uncompressed[4 + sizeof(payload)] = {0xff, 0x03, 0x00, 0x23};
+	uint8_t wire[2 * (sizeof(uncompressed) + 2) + 2];
+	size_t wire_len;
+
+	memcpy(&compressed[3], payload, sizeof(payload));
+	memcpy(&uncompressed[4], payload, sizeof(payload));
+
+	pfc_iface_setup();
+	k_sem_init(&proto_handler_sem, 0, 1);
+
+	/* A PFC-compressed frame must reach the protocol handler */
+	wire_len = hdlc_wrap(wire, compressed, sizeof(compressed));
+	ppp_driver_feed_data(wire, wire_len);
+
+	zassert_ok(k_sem_take(&proto_handler_sem, WAIT_TIME_LONG),
+		   "Timeout, PFC frame not received");
+	zassert_equal(proto_handler_data_len, sizeof(payload), "PFC payload length incorrect");
+	zassert_mem_equal(proto_handler_data, payload, sizeof(payload), "PFC payload incorrect");
+
+	/* The uncompressed form must decode to the same payload */
+	wire_len = hdlc_wrap(wire, uncompressed, sizeof(uncompressed));
+	ppp_driver_feed_data(wire, wire_len);
+
+	zassert_ok(k_sem_take(&proto_handler_sem, WAIT_TIME_LONG),
+		   "Timeout, uncompressed frame not received");
+	zassert_equal(proto_handler_data_len, sizeof(payload),
+		      "Uncompressed payload length incorrect");
+	zassert_mem_equal(proto_handler_data, payload, sizeof(payload),
+			  "Uncompressed payload incorrect");
+}
+
+#if defined(CONFIG_NET_STATISTICS) && defined(CONFIG_NET_STATISTICS_IPV4)
+ZTEST(net_ppp_test_suite, test_pfc_ip_frame_receive)
+{
+	/* IPv4/UDP packet; net_ipv4_input() counts it in ipv4.recv before any
+	 * further checks, which only happens if the compressed protocol octet
+	 * alone was removed and the packet still starts with the 0x45 version
+	 * nibble.
+	 */
+	static const uint8_t ip_packet[] = {
+		0x45, 0x00, 0x00, 0x29, 0x87, 0x6e, 0x40, 0x00, 0xe8, 0x11, 0xc1, 0xe9, 0x03, 0xfb,
+		0x05, 0x20, 0x0a, 0x2b, 0x36, 0x26, 0x25, 0x12, 0x8c, 0x3e, 0x00, 0x15, 0xbd, 0xf3,
+		0x2d, 0x00, 0x0b, 0x00, 0x07, 0x00, 0x04, 0x00, 0x04, 0x0a, 0x00, 0x0a, 0x00,
+	};
+	/* FF 03 | 21 | IPv4 packet: IP protocol 0x0021 PFC-compressed */
+	uint8_t frame[3 + sizeof(ip_packet)] = {0xff, 0x03, 0x21};
+	uint8_t wire[2 * (sizeof(frame) + 2) + 2];
+	uint32_t recv_before;
+	size_t wire_len;
+
+	memcpy(&frame[3], ip_packet, sizeof(ip_packet));
+
+	pfc_iface_setup();
+
+	recv_before = GET_STAT(net_iface, ipv4.recv);
+
+	wire_len = hdlc_wrap(wire, frame, sizeof(frame));
+	ppp_driver_feed_data(wire, wire_len);
+
+	for (int i = 0; i < 20; i++) {
+		if (GET_STAT(net_iface, ipv4.recv) != recv_before) {
+			break;
+		}
+		k_msleep(50);
+	}
+
+	zassert_equal(GET_STAT(net_iface, ipv4.recv), recv_before + 1,
+		      "PFC IP frame did not reach IPv4 processing");
+}
+#endif /* CONFIG_NET_STATISTICS && CONFIG_NET_STATISTICS_IPV4 */
 
 ZTEST(net_ppp_test_suite, test_net_ppp)
 {
