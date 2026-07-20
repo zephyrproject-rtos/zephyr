@@ -6,6 +6,16 @@
 
 / {
 	soc {
+		power@46020800 {
+			wakeup-controller {
+				wkup@8 {
+					wkup-gpios = <&gpiof 2 STM32_PWR_WKUP_EVT_SRC_0>,
+						     <&gpioa 7 STM32_PWR_WKUP_EVT_SRC_1>,
+						     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
+				};
+			};
+		};
+
 		usart2: serial@40004400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004400 0x400>;
@@ -75,13 +85,5 @@
 			interrupts = <106 0>;
 			status = "disabled";
 		};
-	};
-};
-
-&pwr {
-	wkup-pin@8 {
-		wkup-gpios = <&gpiof 2 STM32_PWR_WKUP_EVT_SRC_0>,
-			     <&gpioa 7 STM32_PWR_WKUP_EVT_SRC_1>,
-			     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
 	};
 };
