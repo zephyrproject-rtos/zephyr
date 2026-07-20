@@ -20,6 +20,9 @@ static uint8_t test_prefix_len = 64;
 static uint8_t test_preference;
 static struct net_dhcpv6_duid_storage test_serverid;
 static struct net_dhcpv6_duid_storage test_other_serverid;
+static uint8_t test_expected_tid[DHCPV6_TID_SIZE];
+static enum dhcpv6_msg_type test_expected_msg_type;
+static uint8_t test_stable_tid_msg_count;
 static struct net_mgmt_event_callback net_mgmt_cb;
 
 typedef void (*test_dhcpv6_pkt_fn_t)(struct net_if *iface,
@@ -28,6 +31,8 @@ typedef void (*test_dhcpv6_pkt_fn_t)(struct net_if *iface,
 typedef int (*test_dhcpv6_options_fn_t)(struct net_if *iface,
 					struct net_pkt *pkt,
 					enum dhcpv6_msg_type msg_type);
+
+typedef int (*test_dhcpv6_send_fn_t)(struct net_if *iface);
 
 struct test_dhcpv6_context {
 	uint8_t mac[sizeof(struct net_eth_addr)];
@@ -290,6 +295,30 @@ static void verify_dhcpv6_header(struct net_if *iface, struct net_pkt *pkt,
 	zassert_ok(ret, "DHCPv6 header incomplete (tid)");
 	zassert_mem_equal(tid, iface->config.dhcpv6.tid, sizeof(tid),
 			  "Transaction ID doesn't match ID of the current exchange");
+}
+
+static void verify_stable_tid_message(struct net_if *iface, struct net_pkt *pkt)
+{
+	uint8_t tid[DHCPV6_TID_SIZE];
+	uint8_t type;
+	int ret;
+
+	ARG_UNUSED(iface);
+
+	(void)net_pkt_skip(pkt, NET_IPV6UDPH_LEN);
+
+	ret = net_pkt_read_u8(pkt, &type);
+	zassert_ok(ret, "DHCPv6 header incomplete (type)");
+	zassert_equal(type, test_expected_msg_type,
+		      "Invalid message type %u, expected %u",
+		      type, test_expected_msg_type);
+
+	ret = net_pkt_read(pkt, tid, sizeof(tid));
+	zassert_ok(ret, "DHCPv6 header incomplete (tid)");
+	zassert_mem_equal(tid, test_expected_tid, sizeof(tid),
+			  "Transaction ID changed between retransmissions");
+
+	test_stable_tid_msg_count++;
 }
 
 static void verify_dhcpv6_clientid(struct net_if *iface, struct net_pkt *pkt)
@@ -606,6 +635,59 @@ ZTEST(dhcpv6_tests, test_rebind_message_format)
 
 	ret = k_sem_take(&test_ctx.tx_sem, K_SECONDS(1));
 	zassert_ok(ret, "Packet not transmitted");
+}
+
+ZTEST(dhcpv6_tests, test_retransmissions_keep_transaction_id)
+{
+	static const struct {
+		enum dhcpv6_msg_type type;
+		test_dhcpv6_send_fn_t send_fn;
+		bool needs_serverid;
+		bool needs_addr;
+	} test_cases[] = {
+		{ DHCPV6_MSG_TYPE_SOLICIT, dhcpv6_send_solicit, false, false },
+		{ DHCPV6_MSG_TYPE_REQUEST, dhcpv6_send_request, true, false },
+		{ DHCPV6_MSG_TYPE_CONFIRM, dhcpv6_send_confirm, false, true },
+		{ DHCPV6_MSG_TYPE_RENEW, dhcpv6_send_renew, true, true },
+		{ DHCPV6_MSG_TYPE_REBIND, dhcpv6_send_rebind, false, true },
+	};
+	int ret;
+
+	set_dhcpv6_test_fn(verify_stable_tid_message);
+
+	for (size_t i = 0; i < ARRAY_SIZE(test_cases); i++) {
+		test_expected_tid[0] = 0x10;
+		test_expected_tid[1] = 0x20;
+		test_expected_tid[2] = test_cases[i].type;
+		test_expected_msg_type = test_cases[i].type;
+		test_stable_tid_msg_count = 0;
+
+		memcpy(test_ctx.iface->config.dhcpv6.tid, test_expected_tid,
+		       sizeof(test_expected_tid));
+
+		if (test_cases[i].needs_serverid) {
+			set_fake_server_duid(test_ctx.iface);
+		}
+
+		if (test_cases[i].needs_addr) {
+			set_test_addr_on_iface(test_ctx.iface);
+		} else {
+			clear_test_addr_on_iface(test_ctx.iface);
+		}
+
+		ret = test_cases[i].send_fn(test_ctx.iface);
+		zassert_ok(ret, "First DHCPv6 message send failed");
+		ret = k_sem_take(&test_ctx.tx_sem, K_SECONDS(1));
+		zassert_ok(ret, "First DHCPv6 packet not transmitted");
+
+		ret = test_cases[i].send_fn(test_ctx.iface);
+		zassert_ok(ret, "Retransmitted DHCPv6 message send failed");
+		ret = k_sem_take(&test_ctx.tx_sem, K_SECONDS(1));
+		zassert_ok(ret, "Retransmitted DHCPv6 packet not transmitted");
+
+		zassert_equal(test_stable_tid_msg_count, 2,
+			      "Unexpected transmitted DHCPv6 packet count");
+	}
 }
 
 static int set_generic_client_options(struct net_if *iface, struct net_pkt *pkt,
