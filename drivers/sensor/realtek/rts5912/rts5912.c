@@ -13,6 +13,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/policy.h>
 
@@ -36,6 +37,9 @@ struct tach_rts5912_data {
 	uint16_t count;
 	struct k_work_delayable sample_timeout;
 	uint8_t discard;
+#ifndef CONFIG_TACH_RTS5912_ASYNC_FETCH
+	struct k_sem sem;
+#endif
 };
 
 #define COUNT_100KHZ_SEC	100000U
@@ -53,6 +57,12 @@ static void tach_rts5912_isr_off(const struct device *dev)
 	if (tach->int_en & TACHO_INTEN_CNTRDYEN) {
 		tach->int_en = 0;
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+#ifndef CONFIG_TACH_RTS5912_ASYNC_FETCH
+		struct tach_rts5912_data *const data = dev->data;
+
+		k_sem_give(&data->sem);
+#endif
 	}
 }
 
@@ -123,9 +133,17 @@ static int tach_rts5912_sample_fetch(const struct device *dev, enum sensor_chann
 
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
+#ifndef CONFIG_TACH_RTS5912_ASYNC_FETCH
+		k_sem_reset(&data->sem);
+#endif
+
 		k_work_reschedule(&data->sample_timeout, K_MSEC(PIN_STUCK_TIMEOUT_MS));
 	}
 	irq_unlock(key);
+
+#ifndef CONFIG_TACH_RTS5912_ASYNC_FETCH
+	k_sem_take(&data->sem, K_FOREVER);
+#endif
 
 	return 0;
 }
@@ -188,6 +206,10 @@ static int tach_rts5912_init(const struct device *dev)
 #endif
 
 	k_work_init_delayable(&data->sample_timeout, tach_rts5912_timeout_handler);
+
+#ifndef CONFIG_TACH_RTS5912_ASYNC_FETCH
+	k_sem_init(&data->sem, 0, 1);
+#endif
 
 	/* write one clear the status */
 	tach->status = TACHO_STS_LIMIT | TACHO_STS_CHG | TACHO_STS_CNTRDY;
