@@ -18,7 +18,7 @@ static void adxl345_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 			(const struct sensor_read_config *) iodev_sqe->sqe.iodev->data;
 	const struct device *dev = cfg->sensor;
 	int rc;
-	uint32_t min_buffer_len = sizeof(struct adxl345_dev_data);
+	uint32_t min_buffer_len = sizeof(struct adxl345_sample);
 	uint8_t *buffer;
 	uint32_t buffer_len;
 
