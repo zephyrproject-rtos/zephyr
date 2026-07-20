@@ -5,6 +5,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <freq.h>
+#include <zephyr/dt-bindings/clock/mspm_clock.h>
 
 / {
 	cpus {
@@ -19,7 +20,105 @@
 		};
 	};
 
+	ckm: clock-module {
+		compatible = "ti,mspm-clk";
+		#clock-cells = <1>;
+	};
+
+	clocks: clocks {
+		hfclk: hfclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm-clk";
+			status = "disabled";
+		};
+
+		lfclk: lfclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm-clk";
+			clock-frequency = <32768>;
+			clocks = <&lfosc>;
+		};
+
+		ulpclk: ulpclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm-clk";
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+
+		mclk: mclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm-clk";
+			clock-frequency = <DT_FREQ_M(32)>;
+			clocks = <&sysosc>;
+		};
+
+		mfpclk: mfpclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm-clk";
+			clock-frequency = <DT_FREQ_M(4)>;
+			clocks = <&sysosc>;
+			status = "disabled";
+		};
+
+		canclk: canclk {
+			#clock-cells = <1>;
+			compatible = "ti,mspm-clk";
+			status = "disabled";
+		};
+
+		syspll: syspll {
+			compatible = "ti,mspm-pll";
+			clocks = <&sysosc>;
+			p-div = <2>;
+			q-div = <5>;
+			clk1-div = <2>;
+			clk2x-div = <2>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	oscillators: oscillators {
+		hfxt: hfxt {
+			#clock-cells = <0>;
+			compatible = "ti,mspm-osc";
+			clock-frequency = <DT_FREQ_M(40)>;
+			status = "disabled";
+		};
+
+		lfxt: lfxt {
+			#clock-cells = <0>;
+			compatible = "ti,mspm-osc";
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		lfosc: lfosc {
+			#clock-cells = <0>;
+			compatible = "ti,mspm-osc";
+			clock-frequency = <32768>;
+		};
+
+		sysosc: sysosc {
+			#clock-cells = <0>;
+			compatible = "ti,mspm-osc";
+			clock-frequency = <DT_FREQ_M(32)>;
+		};
+	};
+
 	soc {
+		sysctl: syscon@400af000 {
+			compatible = "syscon";
+			reg = <0x400af000 0x2000>;
+			status = "disabled";
+		};
+
+		factoryregion: syscon@80111000 {
+			compatible = "syscon";
+			reg = <0x80111000 0x80>;
+			status = "disabled";
+		};
+
 		sram0: memory@30000000 {
 			compatible = "mmio-sram";
 		};
