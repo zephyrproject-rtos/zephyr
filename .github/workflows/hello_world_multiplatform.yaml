@@ -31,6 +31,9 @@ jobs:
         os: [ubuntu-24.04, ubuntu-24.04-arm, macos-14, windows-2025]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
+    env:
+      # Overridden by the build step with the real, native output path.
+      TWISTER_OUT: twister-out
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -78,6 +81,14 @@ jobs:
           elif [ "${{ runner.os }}-${{ runner.arch }}" == "Linux-ARM64" ]; then
             EXTRA_TWISTER_FLAGS="--exclude-platform native_sim/native"
           fi
+          # Record where twister writes its output, as a native path, so that
+          # the upload step below can find it. Windows redirects the output
+          # directory, and upload-artifact cannot resolve a POSIX path there.
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            echo "TWISTER_OUT=$(cygpath -m /tmp/twister-out)" >> $GITHUB_ENV
+          else
+            echo "TWISTER_OUT=$PWD/twister-out" >> $GITHUB_ENV
+          fi
           west twister \
               -p native_sim -p qemu_cortex_m0 -p qemu_riscv32 -p qemu_riscv64 \
               --runtime-artifact-cleanup \
@@ -93,7 +104,10 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
+          name: twister-logs-${{ matrix.os }}
           if-no-files-found: ignore
-          path:
-            zephyr/twister-out/*/samples/hello_world/sample.basic.helloworld/build.log
-            zephyr/twister-out/*/samples/cpp/hello_world/sample.cpp.helloworld/build.log
+          path: |
+            ${{ env.TWISTER_OUT }}/**/build.log
+            ${{ env.TWISTER_OUT }}/**/handler.log
+            ${{ env.TWISTER_OUT }}/**/qemu.stdout
+            ${{ env.TWISTER_OUT }}/**/qemu.stderr
