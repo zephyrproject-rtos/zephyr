@@ -635,6 +635,66 @@ def test_testplan_parse_configuration(tmp_path, config_yaml, expected_scenarios)
             assert sorted(level.scenarios) == sorted(expected_scenarios[level.name])
 
 
+def test_testplan_parse_build_toolchains(tmp_path):
+    tmp_config_file = tmp_path / 'config_file.yaml'
+    tmp_config_file.write_text(
+"""\
+platforms:
+  build_toolchains:
+    plat1:
+      - host/gnu
+      - host/llvm
+"""
+    )
+
+    tc = TestConfiguration(tmp_config_file)
+    assert tc.build_toolchains == {'plat1': ['host/gnu', 'host/llvm']}
+
+
+def test_testplan_parse_build_toolchains_default(tmp_path):
+    tmp_config_file = tmp_path / 'config_file.yaml'
+    tmp_config_file.write_text('platforms:\n  increased_platform_scope: true\n')
+
+    tc = TestConfiguration(tmp_config_file)
+    assert tc.build_toolchains == {}
+
+
+TESTDATA_TOOLCHAINS = [
+    # testsuite integration_toolchains win over everything else
+    (['zephyr', 'llvm'], ['host/gnu'], None, 'arm', ['zephyr', 'llvm']),
+    # platform build_toolchains multiply the builds
+    ([], ['host/gnu', 'host/llvm'], None, 'posix', ['host/gnu', 'host/llvm']),
+    # posix/unit platforms default to a single host toolchain
+    ([], [], None, 'posix', ['host/gnu']),
+    # otherwise the platform's preferred toolchain, then the environment's
+    ([], [], 'gnuarmemb', 'arm', ['gnuarmemb']),
+    ([], [], None, 'arm', ['zephyr/gnu']),
+]
+
+@pytest.mark.parametrize(
+    'integration_toolchains, build_toolchains, preferred_toolchain, arch, expected',
+    TESTDATA_TOOLCHAINS,
+    ids=['integration', 'build_toolchains', 'posix default', 'preferred', 'environment']
+)
+def test_testplan_get_toolchains(
+    integration_toolchains,
+    build_toolchains,
+    preferred_toolchain,
+    arch,
+    expected
+):
+    testplan = TestPlan(env=mock_twister_env())
+    testplan.env.toolchain = 'zephyr/gnu'
+    ts = mock.Mock(integration_toolchains=integration_toolchains)
+    plat = mock.Mock(
+        build_toolchains=build_toolchains,
+        preferred_toolchain=preferred_toolchain,
+        arch=arch
+    )
+
+    assert testplan.get_toolchains(ts, plat) == expected
+
+
 TESTDATA_2 = [
     ([], [], False),
     (['ts1.tc3'], [], True),
@@ -1284,6 +1344,7 @@ def test_testplan_add_configurations(
     testplan.test_config = mock.Mock()
     testplan.test_config.override_default_platforms = override_default_platforms
     testplan.test_config.default_platforms = ['p3', 'p1e1']
+    testplan.test_config.build_toolchains = {}
 
     def mock_gen_plat(board_roots, soc_roots, arch_roots):
         assert [tmp_path] == board_roots
