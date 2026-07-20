@@ -1282,7 +1282,7 @@ void net_pkt_trim_buffer(struct net_pkt *pkt)
 			}
 
 			buf->frags = NULL;
-			net_buf_unref(buf);
+			net_pkt_frag_unref(buf);
 		} else {
 			prev = buf;
 		}
@@ -2352,7 +2352,7 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 			if (buf) {
 				pkt->buffer = buf->frags;
 				buf->frags = NULL;
-				net_buf_unref(buf);
+				net_pkt_frag_unref(buf);
 			}
 
 			net_pkt_cursor_init(pkt);
