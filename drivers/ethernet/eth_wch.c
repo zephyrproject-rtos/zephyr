@@ -541,7 +541,6 @@ static void eth_wch_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	net_if_carrier_off(iface);
-	net_lldp_set_lldpdu(iface);
 
 	if (device_is_ready(config->phy_dev)) {
 		phy_link_callback_set(config->phy_dev, phy_link_state_changed, (void *)dev);
