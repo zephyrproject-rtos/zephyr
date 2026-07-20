@@ -172,13 +172,6 @@ struct modem_cellular_data {
 
 	struct modem_chat_script board_init_script;
 
-	/* PPP */
-	/** @endcond */
-
-	/** PPP context used for the modem data connection. Must not be NULL. */
-	struct modem_ppp *ppp;
-
-	/** @cond INTERNAL_HIDDEN */
 	struct net_mgmt_event_callback net_mgmt_event_callback;
 
 	enum modem_cellular_state state;
@@ -305,6 +298,7 @@ struct modem_cellular_vendor_config {
 struct modem_cellular_config {
 	const struct device *uart;
 	const struct modem_cellular_vendor_config *vendor;
+	struct modem_ppp *ppp;
 	struct gpio_dt_spec power_gpio;
 	struct gpio_dt_spec reset_gpio;
 	struct gpio_dt_spec wake_gpio;
@@ -537,6 +531,7 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.vendor = vendor_config,                                                           \
+		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \
 		.wake_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_wake_gpios, {}),                   \
