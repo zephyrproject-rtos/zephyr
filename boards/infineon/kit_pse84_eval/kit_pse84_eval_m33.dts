@@ -33,6 +33,22 @@
 	};
 };
 
+/*
+ * On the Secure CM33 image, the on-chip RRAM data array must
+ * be accessed through the Secure address alias. The shared board memory map
+ * (kit_pse84_eval_memory_map.dtsi) declares the RRAM soc-nv-flash at the
+ * Non-Secure data alias (0x22000000) so that the Non-Secure (m33_ns) and CM55
+ * images work. A Secure master accessing the Non-Secure data alias
+ * precise-bus-faults (observed BFAR 0x22051000, the storage_partition_rram
+ * base) on the first RRAM partition access, while the controller MMIO at
+ * 0x42200000 is reachable. Re-point only the data node to the Secure alias
+ * (0x32000000) for this Secure image; the controller MMIO alias is unchanged.
+ */
+&rram0 {
+	reg = <0x32000000 DT_SIZE_K(512)>;
+	ranges = <0x0 0x32000000 DT_SIZE_K(512)>;
+};
+
 &mcwdt0 {
 	status = "okay";
 };
