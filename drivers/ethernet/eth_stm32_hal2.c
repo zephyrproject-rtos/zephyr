@@ -131,7 +131,7 @@ hal_status_t rx_channel_callback(hal_eth_handle_t *h_eth, uint32_t channel, void
 	if (!frag || size == 0U || size > frag->size) {
 		LOG_ERR("RX: Invalid frag or size");
 		if (frag) {
-			net_buf_unref(frag);
+			net_pkt_frag_unref(frag);
 		}
 		return HAL_ERROR;
 	}
@@ -141,7 +141,7 @@ hal_status_t rx_channel_callback(hal_eth_handle_t *h_eth, uint32_t channel, void
 
 	if (!pkt) {
 		LOG_ERR("RX: net_pkt_rx_alloc failed");
-		net_buf_unref(frag);
+		net_pkt_frag_unref(frag);
 		return HAL_ERROR;
 	}
 
