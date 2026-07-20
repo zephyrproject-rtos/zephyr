@@ -8,7 +8,7 @@
 #include <zephyr/canbus/j1939.h>
 
 /// Initialize timer functions
-void J1939Timer_Init(void);
+void j1939_timer_init(void);
 
 /// @brief Calculate elapsed time
 /// @note The first time this function is called, the return value is undefined.  Subsequent
@@ -18,17 +18,17 @@ void J1939Timer_Init(void);
 /// elapsedTime pointer is NULL, then the function will return 0
 /// @param elapsedTime Previous time
 /// @return See note
-J1939_Timer_T J1939Timer_Elapse(J1939_Timer_T *elapsedTime);
+j1939_timer_t j1939_timer_elapse(j1939_timer_t *elapsedTime);
 
 /// @brief Determine the current time
 /// @return Current time in milliseconds
-J1939_Timer_T J1939Timer_GetTime(void);
+j1939_timer_t j1939_timer_get_time(void);
 
 /// Application layer specific initialization needs
-void J1939Timer_App_Init(void);
+void j1939_timer_app_init(void);
 
 /// @brief Application specific handling of getting the current system time.
 /// @return Current time in milliseconds
-J1939_Timer_T J1939Timer_App_GetTime(void);
+j1939_timer_t j1939_timer_app_get_time(void);
 
 #endif

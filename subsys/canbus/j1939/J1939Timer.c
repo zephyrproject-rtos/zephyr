@@ -6,20 +6,20 @@
 #include <zephyr/kernel.h>
 
 /**************************************************************************************************/
-void J1939Timer_Init(void)
+void j1939_timer_init(void)
 {
-   J1939Timer_App_Init();
+   j1939_timer_app_init();
 }
 
 /**************************************************************************************************/
-J1939_Timer_T J1939Timer_Elapse(J1939_Timer_T *elapsedTime)
+j1939_timer_t j1939_timer_elapse(j1939_timer_t *elapsedTime)
 {
-   J1939_Timer_T currentTime = J1939Timer_GetTime();
-   J1939_Timer_T delta = 0;
+   j1939_timer_t currentTime = j1939_timer_get_time();
+   j1939_timer_t delta = 0;
 
    if (elapsedTime)
    {
-      delta = (J1939_Timer_T)(currentTime - *elapsedTime);
+      delta = (j1939_timer_t)(currentTime - *elapsedTime);
       *elapsedTime = currentTime;
    }
 
@@ -27,7 +27,7 @@ J1939_Timer_T J1939Timer_Elapse(J1939_Timer_T *elapsedTime)
 }
 
 /**************************************************************************************************/
-J1939_Timer_T J1939Timer_GetTime(void)
+j1939_timer_t j1939_timer_get_time(void)
 {
-   return (J1939_Timer_T)k_uptime_get_32();
+   return (j1939_timer_t)k_uptime_get_32();
 }

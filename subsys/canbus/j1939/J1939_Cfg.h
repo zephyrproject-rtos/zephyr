@@ -8,25 +8,6 @@
 #include <CriticalSectionManager.h>
 
 /***************************************************************************************************
- *  Name Management
- **************************************************************************************************/
-
-/// Defining this will allow for application name management at runtime.
-// #define J1939_NAME_MANAGEMENT
-
-// The following defines determine if the Name parameter is changeable via the Name Management
-// system. Uncomment the define for the changeable parameters.
-
-// #define J1939NM_MFG_CODE_CHANGEABLE
-// #define J1939NM_ECU_INSTANCE_CHANGEABLE
-// #define J1939NM_FUNCTION_INSTANCE_CHANGEABLE
-// #define J1939NM_FUNCTION_CHANGEABLE
-// #define J1939NM_VEHICLE_SYSTEM_CHANGEABLE
-// #define J1939NM_VEHICLE_SYSTEM_INSTANCE_CHANGEABLE
-// #define J1939NM_INDUSTRY_GROUP_CHANGEABLE
-// #define J1939NM_ARBITRARY_ADDRESS_CAPABLE_CHANGEABLE
-
-/***************************************************************************************************
  *  Memory Access Buffer Testing
  **************************************************************************************************/
 
@@ -51,7 +32,7 @@
 // #define J1939_PERIODIC_ROUTINE
 
 #ifdef J1939_PERIODIC_ROUTINE
-#define J1939_PERIODIC_ROUTINE_MS ((J1939_Millisecond_T)10)
+#define J1939_PERIODIC_ROUTINE_MS ((j1939_millisecond_t)10)
 #endif
 
 /***************************************************************************************************
@@ -92,10 +73,10 @@
 
 #ifdef J1939AC_SELF_CONFIGURABLE
 /// Starting source address when performing arbitrary address claim.
-#define J1939AC_ARBITRARY_MIN_SOURCE_ADDRESS ((J1939_SourceAddress_T)(0x87))
+#define J1939AC_ARBITRARY_MIN_SOURCE_ADDRESS ((j1939_source_address_t)(0x87))
 
 /// Last source address to attempt when performing arbitrary address claim.
-#define J1939AC_ARBITRARY_MAX_SOURCE_ADDRESS ((J1939_SourceAddress_T)(0xF8))
+#define J1939AC_ARBITRARY_MAX_SOURCE_ADDRESS ((j1939_source_address_t)(0xF8))
 
 // Configure how many alternate address you wish to use when you lose arbitration
 // We subtract one because we don't put the default address in the arbitrary list
@@ -131,7 +112,7 @@
 #define J1939DM1_MAX_DTCS (40)
 
 /// How often to traverse the received DTC table looking for DTCs that have timed out
-#define J1939DM1_DTC_UPDATE_MS ((J1939_Millisecond_T)100)
+#define J1939DM1_DTC_UPDATE_MS ((j1939_millisecond_t)100)
 #endif
 
 /// J1939 Receive DM2 messages from other modules
@@ -140,7 +121,7 @@
 #ifdef J1939DM2_RECEIVE
 /// This defines how long we will wait after sending a DM2 request to the global address before
 /// we consider the unit to have timed out
-#define J1939DM2_REQUEST_TIMEOUT_MS ((J1939_Millisecond_T)(1000))
+#define J1939DM2_REQUEST_TIMEOUT_MS ((j1939_millisecond_t)(1000))
 /// Maximum number of total DTC's that can be on the CAN bus for all units
 /// @warning Must be <= 250
 #define J1939DM2_MAX_DTCS (40)
@@ -197,8 +178,8 @@
 #ifdef J1939_MEMORY_ACCESS
 /// Define the timeout periods for various situations.  These are not well defined by
 /// the standard but the default values are typically sufficent.
-#define J1939MA_SECURITY_TIMEOUT_MS ((J1939_Millisecond_T)100)
-#define J1939MA_BIN_DATA_RECEIVE_TIMEOUT_MS ((J1939_Millisecond_T)3000)
+#define J1939MA_SECURITY_TIMEOUT_MS ((j1939_millisecond_t)100)
+#define J1939MA_BIN_DATA_RECEIVE_TIMEOUT_MS ((j1939_millisecond_t)3000)
 
 /// Enable this define if you want to support directed spatial memory accesses.  By default we
 /// only support direct memory access
@@ -220,74 +201,6 @@
 #define J1939MA_RESPONSE_PRIORITY (J1939_Priority_6)
 #define J1939MA_BIN_DATA_TRANSFER_PRIORITY (J1939_Priority_6)
 #endif
-
-/***************************************************************************************************
- * Transport Layer
- **************************************************************************************************/
-#ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
-// Configure the priority of the transport messages
-#define J1939TP_PRIORITY (J1939_Priority_7)
-
-/// Some projects only need transmit capability, and can reduce the required flash by disabling
-/// transport receive support
-// #define J1939TP_RECEIVE_DISABLED
-
-/// Number of buffers allowed to be used for receiving transport sessions simutanously.
-#define J1939TP_NUMBER_OF_TP_RX_SESSIONS (3)
-
-/// Number of packets to allow before flow control between sender and receiver is required. Put 255
-/// here if flow control is not required.
-#define J1939TP_MAX_PACKETS (16)
-
-/// The following sizes (except for MAX) are arbitrary.  They should be tailored to the
-/// types of messages used in the application as well as how much RAM your target has.
-/// Max length of our supported PGNS is 128
-#define J1939TP_BUFFER_SMALL_SIZE (128)
-#define J1939TP_BUFFER_MEDIUM_SIZE (512)
-#define J1939TP_BUFFER_LARGE_SIZE (576)
-#define J1939TP_BUFFER_MAX_SIZE (1785)
-
-/// The numbers of each sized buffer. These numbers should also be tailored.
-/// These buffers are used to hold incoming and outgoing transport protocol
-/// data. A buffer with size of zero is not used.
-#define J1939TP_NUM_SMALL_BUFFERS (2)
-#define J1939TP_NUM_MEDIUM_BUFFERS (1)
-#define J1939TP_NUM_LARGE_BUFFERS (0)
-#define J1939TP_NUM_MAX_BUFFERS (0)
-
-/// Total number of transport buffers of all sizes
-#define J1939TP_NUM_ALL_BUFFERS                                                                    \
-   (J1939TP_NUM_SMALL_BUFFERS + J1939TP_NUM_MEDIUM_BUFFERS + J1939TP_NUM_LARGE_BUFFERS +           \
-    J1939TP_NUM_MAX_BUFFERS)
-
-/// Total number of transport protocol transmit sessions we'll allow at any one time.
-/// This number should always be less than or equal to J1939TP_NUM_ALL_BUFFERS
-/// If you want to gaurentee that there will always be a transport buffer available for
-/// a receive session it should be less than J1939TP_NUM_ALL_BUFFERS
-#define J1939TP_NUM_TRANSMIT_SESSIONS J1939TP_NUM_ALL_BUFFERS
-
-/// This allows the user to define the minimum delay between groups of packets.  This time is
-/// also influenced by the call rate of J1939_Task().  It is allowable to set this
-/// time to zero for the fastest possible transmit rate.
-#define J1939TP_MILLISECONDS_BETWEEN_PACKET_GROUPS (0)
-
-/// If you set the above define to zero, you can control how many back to back messages are queued
-/// back-to-back for non-BAM transport transmit sessions using the following defines.  Be careful
-/// how you use these.  J1939TP_MAX_TOTAL_MESSAGES_QUEUED_FOR_ALL_SESSIONS must be greater than or
-/// equal to J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION.  It is possible to "starve" one transport
-/// session until a previous one is completed if you configure these settings in certain ways.  If
-/// you must force a minimum time between individual messages in a transport session, set the define
-/// above to this time and set J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION to 1
-#define J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION (5)
-#define J1939TP_MAX_TOTAL_MESSAGES_QUEUED_FOR_ALL_SESSIONS (20)
-
-#endif
-
-/***************************************************************************************************
- * Interface Layer
- **************************************************************************************************/
-#include <zephyr/canbus/j1939.h>
-#define J1939_NUM_NODES (J1939_DT_NUM_NODES)
 
 
 /***************************************************************************************************

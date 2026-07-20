@@ -4,16 +4,15 @@
  */
 #include <J1939Ac.h>
 #include <J1939Timer.h>
-#include <J1939_Cfg.h>
 
-#ifdef J1939_NAME_MANAGEMENT
+#ifdef CONFIG_J1939_NAME_MANAGEMENT
 #include "J1939Nm.h"
 #endif
 
-//lint -esym(522, J1939Ac_App_Init)
-//lint -esym(522, J1939Ac_App_ConfigureArbitraryAddressClaimAddresses)
+//lint -esym(522, j1939_ac_app_init)
+//lint -esym(522, j1939_ac_app_configure_arbitrary_address_claim_addresses)
 
-// TODO : Use these defines to configure your J1939 NAME in J1939Ac_App_GenerateName()
+// TODO : Use these defines to configure your J1939 NAME in j1939_ac_app_generate_name()
 /// INDUSTRY_GROUP: (3 bit field)
 ///          0 - Global
 ///          1 - On Highway Equipment
@@ -44,35 +43,35 @@
 #define MANUFACTURER_CODE (0)
 
 #ifdef J1939AC_SELF_CONFIGURABLE
-static void J1939Ac_App_ConfigureArbitraryAddressClaimAddresses(void);
+static void j1939_ac_app_configure_arbitrary_address_claim_addresses(void);
 #endif
 
 /**************************************************************************************************/
-void J1939Ac_App_Init(void)
+void j1939_ac_app_init(void)
 {
 #ifdef J1939AC_SELF_CONFIGURABLE
-   J1939Ac_App_ConfigureArbitraryAddressClaimAddresses();
+   j1939_ac_app_configure_arbitrary_address_claim_addresses();
 #endif
 
    // TODO: Add any application specific code required here
 }
 
 /**************************************************************************************************/
-void J1939Ac_App_Task(const struct can_frame *message)
+void j1939_ac_app_task(const struct can_frame *message)
 {
    (void)message;
    // TODO: Add any application specific code required here
 }
 
 /**************************************************************************************************/
-void J1939Ac_App_GenerateName(J1939_Node_T node)
+void j1939_ac_app_generate_name(j1939_node_t node)
 {
-   J1939_Name_T name;
+   j1939_name_t name;
 
    // TODO Build up the name for this module if not using USE_DEFINED_NAME
 
-#ifdef J1939_NAME_MANAGEMENT
-      J1939Nm_GetCurrentName(node, &name);
+#ifdef CONFIG_J1939_NAME_MANAGEMENT
+      j1939_nm_get_current_name(node, &name);
 #else
       // TODO This number should be pulled from the hardware serial number or other similar
       // information
@@ -93,38 +92,38 @@ void J1939Ac_App_GenerateName(J1939_Node_T node)
       name.reservedBit = 0;
 
 #endif
-      (void)J1939Ac_SetNameConfigNode(node, &name);
+      (void)j1939_ac_set_name_config_node(node, &name);
 }
 
 /**************************************************************************************************/
-J1939_SourceAddress_T J1939Ac_App_GetDefaultSourceAddress(J1939_Node_T node)
+j1939_source_address_t j1939_ac_app_get_default_source_address(j1939_node_t node)
 {
    // This function returns the source address the unit should use to attempt an address claim.
    // It can be hard-coded, stored in EEPROM, determined by strapping pins, etc.  This function
    // MUST be able to determine the default source address prior to the J1939 layer being
    // initialized.
 
-    J1939_SourceAddress_T source = J1939_NULL_ADDRESS;
-    source  = (J1939_SourceAddress_T)node->source_address;
+    j1939_source_address_t source = J1939_NULL_ADDRESS;
+    source  = (j1939_source_address_t)node->source_address;
     return source;
 }
 
 #ifdef J1939AC_SELF_CONFIGURABLE
 /**************************************************************************************************/
-static void J1939Ac_App_ConfigureArbitraryAddressClaimAddresses(void)
+static void j1939_ac_app_configure_arbitrary_address_claim_addresses(void)
 {
-   J1939_Counter_T currentIndex = 0;
+   j1939_counter_t currentIndex = 0;
 
-   for (J1939_Node_T node = 0; node < CAN_NUM_NODES; node++)
+   for (j1939_node_t node = 0; node < CAN_NUM_NODES; node++)
    {
-      for (J1939_Counter_T listIndex = 0; listIndex < J1939AC_ALT_ADDRESS_LIST_LENGTH; listIndex++)
+      for (j1939_counter_t listIndex = 0; listIndex < J1939AC_ALT_ADDRESS_LIST_LENGTH; listIndex++)
       {
          // Leave the default address out of the list
          if (J1939_NODE_ADDRESS_0 != (J1939AC_ARBITRARY_MIN_SOURCE_ADDRESS + listIndex))
          {
-            J1939Ac_SetArbitraryListEntry(
+            j1939_ac_set_arbitrary_list_entry(
                 node, currentIndex,
-                (J1939_SourceAddress_T)(J1939AC_ARBITRARY_MIN_SOURCE_ADDRESS + listIndex));
+                (j1939_source_address_t)(J1939AC_ARBITRARY_MIN_SOURCE_ADDRESS + listIndex));
             currentIndex++;
          }
       }

@@ -5,17 +5,17 @@
 #include "J1939List.h"
 #include <zephyr/canbus/j1939.h>
 
-extern inline J1939List_Element_T J1939List_GetHeadElement(const J1939List_T *klist);
-extern inline J1939List_Element_T J1939List_GetNextElement(const J1939List_T *klist,
-                                                           J1939List_Element_T element);
+extern inline j1939_list_element_t j1939_list_get_head_element(const j1939_list_t *klist);
+extern inline j1939_list_element_t j1939_list_get_next_element(const j1939_list_t *klist,
+                                                           j1939_list_element_t element);
 
 #ifndef _C166
 /// @brief Implements teh `_prior` instruction of the C167 micros.
 /// @param wWord 16-bit value to shift
 /// @return Number of shifts occurred
-static inline J1939_Counter_T _prior(unsigned int wWord)
+static inline j1939_counter_t _prior(unsigned int wWord)
 {
-   J1939_Counter_T byCount = 0;
+   j1939_counter_t byCount = 0;
 
    // This implements the _prior instruction available on the C16x micros.
    if (wWord != 0)
@@ -34,34 +34,34 @@ unsigned int _prior(unsigned int);
 #endif
 
 /**************************************************************************************************/
-static inline void J1939List_SetAvailableBit(uint16_t index, J1939List_List_T *list)
+static inline void j1939_list_set_available_bit(uint16_t index, j1939_list_list_t *list)
 {
    uint16_t computedIndex = index / LINKED_LIST_BITS_PER_BYTE;
 
    __ASSERT_NO_MSG(list != NULL);
 
    list[computedIndex] =
-       (J1939List_List_T)(list[computedIndex] |
-                          (J1939List_List_T)(1 << (index % LINKED_LIST_BITS_PER_BYTE)));
+       (j1939_list_list_t)(list[computedIndex] |
+                          (j1939_list_list_t)(1 << (index % LINKED_LIST_BITS_PER_BYTE)));
 }
 
 /**************************************************************************************************/
-static inline void J1939List_ClearAvailableBit(uint16_t index, J1939List_List_T *list)
+static inline void j1939_list_clear_available_bit(uint16_t index, j1939_list_list_t *list)
 {
    __ASSERT_NO_MSG(list != NULL);
 
    list[index / LINKED_LIST_BITS_PER_BYTE] &=
-       (J1939List_Element_T) ~(J1939List_Element_T)(1 << (index % LINKED_LIST_BITS_PER_BYTE));
+       (j1939_list_element_t) ~(j1939_list_element_t)(1 << (index % LINKED_LIST_BITS_PER_BYTE));
 }
 
 /**************************************************************************************************/
-static inline J1939List_Element_T J1939List_GetBit(uint16_t wWord)
+static inline j1939_list_element_t j1939_list_get_bit(uint16_t wWord)
 {
-   return (J1939List_Element_T)(15 - _prior((unsigned int)wWord));
+   return (j1939_list_element_t)(15 - _prior((unsigned int)wWord));
 }
 
 /**************************************************************************************************/
-void J1939List_Init(J1939List_T *list, J1939List_Size_T size)
+void j1939_list_init(j1939_list_t *list, j1939_list_size_t size)
 {
    uint16_t index;
 
@@ -92,7 +92,7 @@ void J1939List_Init(J1939List_T *list, J1939List_Size_T size)
 }
 
 /**************************************************************************************************/
-J1939List_Element_T J1939List_GetNewElement(J1939List_T *list)
+j1939_list_element_t j1939_list_get_new_element(j1939_list_t *list)
 {
    uint16_t index;
    uint16_t result = (uint16_t)-1; /* If there's none available, return -1 */
@@ -104,10 +104,10 @@ J1939List_Element_T J1939List_GetNewElement(J1939List_T *list)
          if (list->available[index] != 0)
          {
             /* Get an available bit */
-            result = J1939List_GetBit(list->available[index]);
+            result = j1939_list_get_bit(list->available[index]);
 
             /* Clear the bit in the available bit array */
-            J1939List_ClearAvailableBit(result, &list->available[index]);
+            j1939_list_clear_available_bit(result, &list->available[index]);
 
             /* byReturn is the bit position from the current word - get the bit position from
                the beginning of the array */
@@ -117,13 +117,13 @@ J1939List_Element_T J1939List_GetNewElement(J1939List_T *list)
       }
    }
 
-   return (J1939List_Element_T)result;
+   return (j1939_list_element_t)result;
    //lint -e818 Suppress const warning.
 }
 
 /**************************************************************************************************/
-void J1939List_InsertAfter(J1939List_T *list, J1939List_Element_T newElement,
-                           J1939List_Element_T oldElement)
+void j1939_list_insert_after(j1939_list_t *list, j1939_list_element_t newElement,
+                           j1939_list_element_t oldElement)
 {
    if (list)
    {
@@ -141,7 +141,7 @@ void J1939List_InsertAfter(J1939List_T *list, J1939List_Element_T newElement,
 }
 
 /**************************************************************************************************/
-void J1939List_FreeElement(J1939List_T *list, J1939List_Element_T element)
+void j1939_list_free_element(j1939_list_t *list, j1939_list_element_t element)
 {
    uint16_t index;
 
@@ -170,7 +170,7 @@ void J1939List_FreeElement(J1939List_T *list, J1939List_Element_T element)
             }
          }
 
-         J1939List_SetAvailableBit(element, list->available);
+         j1939_list_set_available_bit(element, list->available);
          list->list[element] = LINKED_LIST_NO_ELEMENT;
       }
    }

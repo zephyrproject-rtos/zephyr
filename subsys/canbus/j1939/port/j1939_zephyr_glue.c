@@ -34,8 +34,8 @@ static void j1939_legacy_work_handler(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	// J1939Timer_Update((J1939_Timer_T)CONFIG_J1939_LEGACY_TASK_PERIOD_MS);
-	J1939_Task();
+	// j1939_timer_update((j1939_timer_t)CONFIG_J1939_LEGACY_TASK_PERIOD_MS);
+	j1939_task();
 
 	k_work_schedule(&j1939_legacy_work,
 			K_MSEC(CONFIG_J1939_LEGACY_TASK_PERIOD_MS));
@@ -43,7 +43,7 @@ static void j1939_legacy_work_handler(struct k_work *work)
 
 static int j1939_legacy_init(void)
 {
-	J1939_Init();
+	j1939_init();
 
 	k_work_init_delayable(&j1939_legacy_work, j1939_legacy_work_handler);
 	k_work_schedule(&j1939_legacy_work,

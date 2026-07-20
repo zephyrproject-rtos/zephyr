@@ -8,32 +8,31 @@
 #include "J1939Tp.h"
 #include "J1939Timer.h"
 #include <Can_Transmit.h>
-#include <J1939_Cfg.h>
 
 // All configured nodes from devicetree
 extern struct j1939_dt_node_cfg* j1939_nodes[];
 
 #ifdef J1939_ENABLE_RECEIVED_PGN_SUPPORT
-typedef struct J1939_ReceivePgnHandler_S
+typedef struct j1939_receive_pgn_handler_s
 {
-   J1939_Pgn_T pgn;
-   J1939_ReceivedPgnCallback_T handler;
-} J1939_ReceivePgnHandler_T;
+   j1939_pgn_t pgn;
+   j1939_received_pgn_callback_t handler;
+} j1939_receive_pgn_handler_t;
 #endif
 
-static J1939_Timer_T J1939_LastCurrentTime;
+static j1939_timer_t j1939_last_current_time;
 
 #ifdef J1939_ENABLE_RECEIVED_PGN_SUPPORT
-static J1939_ReceivePgnHandler_T J1939_ReceivedPgnHandlers[J1939_NUM_NODES]
+static j1939_receive_pgn_handler_t j1939_received_pgn_handlers[CONFIG_J1939_NODES_COUNT]
                                                           [J1939_RECEIVED_PGN_LIST_MAX];
-static J1939_Counter_T J1939_ReceivedPgnRecordIndex[J1939_NUM_NODES];
+static j1939_counter_t j1939_received_pgn_record_index[CONFIG_J1939_NODES_COUNT];
 #endif
 
 #if defined(J1939DM1_RECEIVE) || defined(J1939DM2_RECEIVE)
-static J1939_Timer_T J1939_UpdateDtcTimer;
+static j1939_timer_t j1939_update_dtc_timer;
 #endif
 #ifdef J1939_PERIODIC_ROUTINE
-static J1939_Timer_T J1939_PeriodicRoutineTimer;
+static j1939_timer_t j1939_periodic_routine_timer;
 #endif
 
 /// @brief Determine by which means the message should be routed. Keeps the rest of the code cleaner
@@ -41,14 +40,14 @@ static J1939_Timer_T J1939_PeriodicRoutineTimer;
 /// @param message Message to be processed
 /// @param can_dev CAN device the message was received on
 /// @return True if CAN will not free memory, false if CAN will free memory
-static bool J1939_RouteCanMessages(const struct can_frame *message, const struct device *can_dev);
+static bool j1939_route_can_messages(const struct can_frame *message, const struct device *can_dev);
 
 /// @brief CAN RX callback entrypoint used by can_add_rx_filter().
-static void J1939_RxFilterCallback(const struct device *dev, struct can_frame *frame,
+static void j1939_rx_filter_callback(const struct device *dev, struct can_frame *frame,
                                    void *user_data);
 
 /// @brief Returns true when this node is the first node configured on its CAN bus.
-static bool J1939_IsFirstNodeOnBus(size_t node_index);
+static bool j1939_is_first_node_on_bus(size_t node_index);
 
 #if defined(J1939_LOOPBACK_ENABLE)
 /// @brief When LoopBack feature is enabled, this function is used by the callback which will
@@ -57,7 +56,7 @@ static bool J1939_IsFirstNodeOnBus(size_t node_index);
 /// @param message Message to be processed
 /// @param can_dev CAN device the message was received on
 /// @return True if CAN will not free memory, false if CAN will free memory
-static inline bool J1939_RouteWithLoopback(const struct can_frame *message, const struct device *can_dev);
+static inline bool j1939_route_with_loopback(const struct can_frame *message, const struct device *can_dev);
 #else
 /// @brief When LoopBack feature is disabled, this function is used by the callback which will
 /// process recieved message and pass the information to the proper processing routines when the
@@ -65,7 +64,7 @@ static inline bool J1939_RouteWithLoopback(const struct can_frame *message, cons
 /// @param message Message to be processed
 /// @param can_dev CAN device the message was received on
 /// @return True if CAN will not free memory, false if CAN will free memory
-static inline bool J1939_RouteWithoutLoopback(const struct can_frame *message, const struct device *can_dev);
+static inline bool j1939_route_without_loopback(const struct can_frame *message, const struct device *can_dev);
 #endif
 
 /// @brief Runs the specific funciton in J1939_App_RoutingTable for the PGN in the current message
@@ -73,90 +72,90 @@ static inline bool J1939_RouteWithoutLoopback(const struct can_frame *message, c
 /// @param pf PF of message being processed
 /// @param node J1939 node associated with the message being processed
 /// @return True if CAN will not free the memory, false if CAN will free message memory
-static inline bool J1939_RunMessageCallback(const struct can_frame *message,
-                                             J1939_PduFormat_T pf,
-                                             J1939_Node_T node);
+static inline bool j1939_run_message_callback(const struct can_frame *message,
+                                             j1939_pdu_format_t pf,
+                                             j1939_node_t node);
 
 /**************************************************************************************************/
-void J1939_Init(void)
+void j1939_init(void)
 {
 #if defined(CANTIME_FREE_RUNNING_TIMER)
-   J1939Timer_Init();
+   j1939_timer_init();
 #endif
 
 // TODO: do we really need "virtual nodes", can't we just send multiple SAs from the same physical node?  
 //This was originally added to support multiple SAs from the same physical node, but it adds a lot of complexity and overhead.  
 //If we can just send multiple SAs from the same physical node, we can eliminate this complexity and overhead.
    // Initialize J1939 Interface for all nodes
-//    for (J1939_Node_T index = 0; index < J1939_NUM_NODES; index++)
+//    for (j1939_node_t index = 0; index < CONFIG_J1939_NODES_COUNT; index++)
 //    {
-//       J1939_DisableVirtualModeTransmit((J1939_Node_T)index);
+//       j1939_disable_virtual_mode_transmit((j1939_node_t)index);
 //    }
 
    // Set our initial number of PGN request messages to zero
-   for (uint8_t node_index = 0; node_index < J1939_DT_NUM_NODES; node_index++)
+   for (uint8_t node_index = 0; node_index < CONFIG_J1939_NODES_COUNT; node_index++)
    {
-      J1939_Node_T node = j1939_nodes[node_index];
-      node->J1939_RequestedPgnCount = 0;
+      j1939_node_t node = j1939_nodes[node_index];
+      node->j1939_requested_pgn_count = 0;
       for (uint8_t index = 0U; index < CONFIG_J1939_MAX_PGN_REQUEST_MESSAGES; index++)
       {
-         node->J1939_PgnRequestList[index].isUsed = false;
-         node->J1939_PgnRequestList[index].source = J1939_GLOBAL_ADDRESS;
-         node->J1939_PgnRequestList[index].pgn = (J1939_Pgn_T)0;
-         node->J1939_PgnRequestList[index].isRequested = false;
+         node->j1939_pgn_request_list[index].isUsed = false;
+         node->j1939_pgn_request_list[index].source = J1939_GLOBAL_ADDRESS;
+         node->j1939_pgn_request_list[index].pgn = (j1939_pgn_t)0;
+         node->j1939_pgn_request_list[index].isRequested = false;
       }
 
 #ifdef J1939_ENABLE_RECEIVED_PGN_SUPPORT
-      for (J1939_Counter_T index = 0; index < J1939_RECEIVED_PGN_LIST_MAX; index++)
+      for (j1939_counter_t index = 0; index < J1939_RECEIVED_PGN_LIST_MAX; index++)
       {
-         node->J1939_ReceivedPgnHandlers[index].pgn = 0;
-         node->J1939_ReceivedPgnHandlers[index].handler = NULL;
+         node->j1939_received_pgn_handlers[index].pgn = 0;
+         node->j1939_received_pgn_handlers[index].handler = NULL;
       }
 
-      node->J1939_ReceivedPgnRecordIndex = 0;
+      node->j1939_received_pgn_record_index = 0;
 #endif
    }
 
-#ifdef J1939_NAME_MANAGEMENT
-   J1939Nm_Init();
+#ifdef CONFIG_J1939_NAME_MANAGEMENT
+   j1939_nm_init();
 #endif
 
    // Initialize Address claimed. Whether we do or not we must still init!
-   J1939Ac_Init();
+   j1939_ac_init();
 
 #ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
    // Initialize transport protocol.
-   J1939Tp_Init();
+   j1939_tp_init();
 #endif
 
 #ifdef J1939_MEMORY_ACCESS
    // Initialize Memory Access
-   J1939Ma_Init();
+   j1939_ma_init();
 #endif
 
 #ifdef J1939_DIAGNOSTICS
    // Initialize Diagnostics
-   J1939Diag_Init();
+   j1939_diag_init();
 #endif
 
 #if defined(J1939DM4_TRANSMIT) || defined(J1939DM4_RECEIVE)
-   J1939Dm4_Init();
+   j1939_dm4_init();
 #endif
 
    // Init the elapsed time counter.  The first call returns an invalid value, so we ignore it
-   J1939_LastCurrentTime = 0;
-   (void)J1939Timer_Elapse(&J1939_LastCurrentTime);
+   j1939_last_current_time = 0;
+   (void)j1939_timer_elapse(&j1939_last_current_time);
 
    // Initialize the timers for the periodic routine and the DTC counter
 #ifdef J1939_PERIODIC_ROUTINE
-   J1939_PeriodicRoutineTimer = 0;
+   j1939_periodic_routine_timer = 0;
 #endif
 
 #if defined(J1939DM1_RECEIVE) || defined(J1939DM2_RECEIVE)
-   J1939_UpdateDtcTimer = 0;
+   j1939_update_dtc_timer = 0;
 #endif
 
-   J1939_App_Init();
+   j1939_app_init();
 
    // Initialize callback such that we get all messages when they are dequeued. Send to the
    // Routing function for distribution to the J1939 services.
@@ -167,16 +166,16 @@ void J1939_Init(void)
 
 //    TODO - I feel like there should be a compile time way to do this, leaving for now
 //    loop through all j1939 nodes and register the callback for each physical bus
-   for (size_t node_index = 0; node_index < J1939_NUM_NODES; node_index++)
+   for (size_t node_index = 0; node_index < CONFIG_J1939_NODES_COUNT; node_index++)
    {
       const struct device *can_dev = j1939_nodes[node_index]->can_dev;
 
-      if ((can_dev == NULL) || !J1939_IsFirstNodeOnBus(node_index))
+      if ((can_dev == NULL) || !j1939_is_first_node_on_bus(node_index))
       {
          continue;
       }
 
-      int filter_id = can_add_rx_filter(can_dev, J1939_RxFilterCallback, NULL, &filter);
+      int filter_id = can_add_rx_filter(can_dev, j1939_rx_filter_callback, NULL, &filter);
 
       if (filter_id < 0)
       {
@@ -186,13 +185,13 @@ void J1939_Init(void)
 }
 
 /**************************************************************************************************/
-bool J1939_TransmitPgnRequest(J1939_Pgn_T pgn, J1939_DestinationAddress_T destination,
-                                      J1939_Node_T node)
+bool j1939_transmit_pgn_request(j1939_pgn_t pgn, j1939_destination_address_t destination,
+                                      j1939_node_t node)
 {
    uint8_t data[CAN_MAX_DLC] = {0};
 
    // Need to make sure the PGN we request is valid
-   if (!J1939_IsPgnValid(pgn))
+   if (!j1939_is_pgn_valid(pgn))
    {
       return false;
    }
@@ -202,30 +201,30 @@ bool J1939_TransmitPgnRequest(J1939_Pgn_T pgn, J1939_DestinationAddress_T destin
    data[2] = LOBYTE(HIWORD(pgn));
 
    // This is one of the few J1939 messages we can send out with only 3 bytes.
-   return J1939_TransmitPgn(J1939_Priority_6, J1939_REQUEST_PGN, destination, data, 3, node);
+   return j1939_transmit_pgn(J1939_Priority_6, J1939_REQUEST_PGN, destination, data, 3, node);
 }
 
 /**************************************************************************************************/
-bool J1939_IsPgnRequested(J1939_Pgn_T pgn, J1939_SourceAddress_T *source, J1939_Node_T node)
+bool j1939_is_pgn_requested(j1939_pgn_t pgn, j1939_source_address_t *source, j1939_node_t node)
 {
-      // Note: We don't need multi-thread protection here because of how J1939_RegisterRequestPgn()
+      // Note: We don't need multi-thread protection here because of how j1939_register_request_pgn()
       // is implemented
-      for (uint8_t index = 0; index < node->J1939_RequestedPgnCount; index++)
+      for (uint8_t index = 0; index < node->j1939_requested_pgn_count; index++)
       {
          if (index < CONFIG_J1939_MAX_PGN_REQUEST_MESSAGES)
          {
-            if ((pgn == node->J1939_PgnRequestList[index].pgn) &&
-                (node->J1939_PgnRequestList[index].isUsed))
+            if ((pgn == node->j1939_pgn_request_list[index].pgn) &&
+                (node->j1939_pgn_request_list[index].isUsed))
             {
                if (source)
                {
-                  *source = node->J1939_PgnRequestList[index].source;
+                  *source = node->j1939_pgn_request_list[index].source;
                }
 
-               if (node->J1939_PgnRequestList[index].isRequested)
+               if (node->j1939_pgn_request_list[index].isRequested)
                {
                   // we reset the request, because we assume the application will respond.
-                  node->J1939_PgnRequestList[index].isRequested = false;
+                  node->j1939_pgn_request_list[index].isRequested = false;
                   return true;
                }
                else
@@ -243,56 +242,56 @@ bool J1939_IsPgnRequested(J1939_Pgn_T pgn, J1939_SourceAddress_T *source, J1939_
 }
 
 /**************************************************************************************************/
-void J1939_Task(void)
+void j1939_task(void)
 {
    // Find amount of time which has gone by since last time this function was called.
-   J1939_Timer_T elapsedCanTime = J1939Timer_Elapse(&J1939_LastCurrentTime);
+   j1939_timer_t elapsedCanTime = j1939_timer_elapse(&j1939_last_current_time);
 
    (void)elapsedCanTime;
 
-   J1939Ac_Task();
+   j1939_ac_task();
 
 #ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
    // The following two functions process the transport protocol.
-#ifndef J1939TP_RECEIVE_DISABLED
-   J1939Tp_UpdateReceiveMessageTimes(elapsedCanTime);
+#ifndef CONFIG_CONFIG_CONFIG_CONFIG_J1939TP_RECEIVE_DISABLED
+   j1939_tp_update_receive_message_times(elapsedCanTime);
 #endif
-   J1939Tp_UpdateSendMessageTimes(elapsedCanTime);
+   j1939_tp_update_send_message_times(elapsedCanTime);
 #endif
 
-   for (uint16_t node_index = 0; node_index < J1939_DT_NUM_NODES; node_index++)
+   for (uint16_t node_index = 0; node_index < CONFIG_J1939_NODES_COUNT; node_index++)
    {
     // TODO - this is a bit of a hack to get the node information into the various processing functions.
-      J1939_Node_T node = j1939_nodes[node_index];
+      j1939_node_t node = j1939_nodes[node_index];
 #ifdef J1939_MEMORY_ACCESS
-      J1939Ma_Task(node);
+      j1939_ma_task(node);
 
 #ifdef J1939MA_TRANSMIT_READ_WRITE_REQUEST
-      J1939Ma_ProcessTransmitCommands(node);
+      j1939_ma_process_transmit_commands(node);
 #endif
 #endif
 
 #ifdef J1939_DIAGNOSTICS
 #ifdef J1939DM1_TRANSMIT
-      J1939Dm1_Transmit(node);
+      j1939_dm1_transmit(node);
 #endif
 
 #ifdef J1939DM13_ENABLE
-      J1939Dm13_Process(node);
+      j1939_dm13_process(node);
 #endif
 #endif
    }
 
 #if defined(J1939DM1_RECEIVE)
-   J1939_UpdateDtcTimer = (J1939_UpdateDtcTimer + elapsedCanTime);
-   if (J1939_UpdateDtcTimer >= J1939DM1_DTC_UPDATE_MS)
+   j1939_update_dtc_timer = (j1939_update_dtc_timer + elapsedCanTime);
+   if (j1939_update_dtc_timer >= J1939DM1_DTC_UPDATE_MS)
    {
-      J1939Dm1_UpdateActiveDtcTable(J1939_UpdateDtcTimer);
-      J1939_UpdateDtcTimer = 0;
+      j1939_dm1_update_active_dtc_table(j1939_update_dtc_timer);
+      j1939_update_dtc_timer = 0;
    }
 #endif
 
-   J1939_App_Task();
+   j1939_app_task();
 
 #ifdef J1939_TRANSMIT_QUEUE_HANDLING
    Can_Transmit_SendQueues();
@@ -300,17 +299,17 @@ void J1939_Task(void)
 }
 
 /**************************************************************************************************/
-void J1939_Acknowledge(const J1939_Pgn_T pgn, J1939_Response_T control,
-                       const J1939_DestinationAddress_T destination, J1939_Node_T node)
+void j1939_acknowledge(const j1939_pgn_t pgn, j1939_response_t control,
+                       const j1939_destination_address_t destination, j1939_node_t node)
 {
-   J1939_Arbitration_T id;
-   J1939_SourceAddress_T source = node->source_address;
+   j1939_arbitration_t id;
+   j1939_source_address_t source = node->source_address;
    uint8_t data[CAN_MAX_DLC];
 
    // Build the response ID
-   id = J1939_BuildMessageId(
+   id = j1939_build_message_id(
        0, 0, J1939_Priority_6,
-       J1939_BuildPgnFromPdu(J1939_PGN_ACK_PF, (J1939_PduSpecific_T)destination), source);
+       j1939_build_pgn_from_pdu(J1939_PGN_ACK_PF, (j1939_pdu_specific_t)destination), source);
 
    // Build the response message
    data[0] = (uint8_t)control;
@@ -323,23 +322,23 @@ void J1939_Acknowledge(const J1939_Pgn_T pgn, J1939_Response_T control,
    data[7] = LOBYTE(HIWORD(pgn));
 
    // Send out the message
-   (void)J1939_BuildAndQueueMessage(node, id, 8, true, data);
+   (void)j1939_build_and_queue_message(node, id, 8, true, data);
 }
 
 /**************************************************************************************************/
-bool J1939_FlagPgnRequest(J1939_Pgn_T pgn, J1939_SourceAddress_T source, J1939_Node_T node)
+bool j1939_flag_pgn_request(j1939_pgn_t pgn, j1939_source_address_t source, j1939_node_t node)
 {
    bool result = false;
 
-      for (uint8_t index = 0; index < node->J1939_RequestedPgnCount; index++)
+      for (uint8_t index = 0; index < node->j1939_requested_pgn_count; index++)
       {
          if (index < CONFIG_J1939_MAX_PGN_REQUEST_MESSAGES)
          {
-            if ((pgn == node->J1939_PgnRequestList[index].pgn) &&
-                node->J1939_PgnRequestList[index].isUsed)
+            if ((pgn == node->j1939_pgn_request_list[index].pgn) &&
+                node->j1939_pgn_request_list[index].isUsed)
             {
-               node->J1939_PgnRequestList[index].source = source;
-               node->J1939_PgnRequestList[index].isRequested = true;
+               node->j1939_pgn_request_list[index].source = source;
+               node->j1939_pgn_request_list[index].isRequested = true;
                result = true;
                break;
             }
@@ -350,13 +349,13 @@ bool J1939_FlagPgnRequest(J1939_Pgn_T pgn, J1939_SourceAddress_T source, J1939_N
 }
 
 /**************************************************************************************************/
-bool J1939_RegisterRequestPgn(J1939_Pgn_T pgn, J1939_Node_T node)
+bool j1939_register_request_pgn(j1939_pgn_t pgn, j1939_node_t node)
 {
-   J1939_Counter_T index;
+   j1939_counter_t index;
    bool result = false;
    bool setCurrentEntry = false;
 
-   if (!J1939_IsPgnValid(pgn))
+   if (!j1939_is_pgn_valid(pgn))
    {
       // Invalid PGN
       return false;
@@ -365,15 +364,15 @@ bool J1939_RegisterRequestPgn(J1939_Pgn_T pgn, J1939_Node_T node)
     for (index = 0; index < CONFIG_J1939_MAX_PGN_REQUEST_MESSAGES; index++)
     {
         // Find if the PGN is in the list and update it or put it in the first unused space.
-        if (pgn == node->J1939_PgnRequestList[index].pgn)
+        if (pgn == node->j1939_pgn_request_list[index].pgn)
         {
             setCurrentEntry = true;
             break;
         }
-        else if (!node->J1939_PgnRequestList[index].isUsed)
+        else if (!node->j1939_pgn_request_list[index].isUsed)
         {
             // We need to add a PGN to the list, increment the count.
-            node->J1939_RequestedPgnCount++;
+            node->j1939_requested_pgn_count++;
             setCurrentEntry = true;
             break;
         }
@@ -385,9 +384,9 @@ bool J1939_RegisterRequestPgn(J1939_Pgn_T pgn, J1939_Node_T node)
     // someone was relying on it for something
     if (setCurrentEntry && (index < CONFIG_J1939_MAX_PGN_REQUEST_MESSAGES))
     {
-        node->J1939_PgnRequestList[index].pgn = pgn;
-        node->J1939_PgnRequestList[index].isUsed = true;
-        node->J1939_PgnRequestList[index].isRequested = false;
+        node->j1939_pgn_request_list[index].pgn = pgn;
+        node->j1939_pgn_request_list[index].isUsed = true;
+        node->j1939_pgn_request_list[index].isRequested = false;
         result = true;
     }
 
@@ -396,12 +395,12 @@ bool J1939_RegisterRequestPgn(J1939_Pgn_T pgn, J1939_Node_T node)
 }
 
 /**************************************************************************************************/
-bool J1939_TransmitPgn(J1939_Priority_T priority, J1939_Pgn_T pgn,
-                       J1939_DestinationAddress_T destination, uint8_t *data,
-                       J1939_Counter_T count, J1939_Node_T node)
+bool j1939_transmit_pgn(j1939_priority_t priority, j1939_pgn_t pgn,
+                       j1939_destination_address_t destination, uint8_t *data,
+                       j1939_counter_t count, j1939_node_t node)
 {
-   J1939_Arbitration_T id;
-   J1939_Pgn_T tempPgn = pgn;
+   j1939_arbitration_t id;
+   j1939_pgn_t tempPgn = pgn;
    bool dataPage;
    bool extendedDataPage;
    bool result;
@@ -410,7 +409,7 @@ bool J1939_TransmitPgn(J1939_Priority_T priority, J1939_Pgn_T pgn,
    (void)tempPgn; // Not used with some configurations, silence compiler warning
 
    // The PGN should not have a destination address embedded in it.
-   if (J1939_IsPgnValid(pgn))
+   if (j1939_is_pgn_valid(pgn))
    {
       // If PF < 240(0xF0), we must make sure the Id contains the destination
       // address information, or add it in.  We have already checked the
@@ -419,36 +418,36 @@ bool J1939_TransmitPgn(J1939_Priority_T priority, J1939_Pgn_T pgn,
       {
          // Add in the destination information for our message ID only if
          // eight or less bytes of data to send.
-         pgn = pgn + (J1939_Pgn_T)destination;
+         pgn = pgn + (j1939_pgn_t)destination;
       }
 
       // Extract the Data Page bits from the PGN
-      dataPage = J1939_GetDataPageFromPgn(pgn);
-      extendedDataPage = J1939_GetExtendedDataPageFromPgn(pgn);
+      dataPage = j1939_get_data_page_from_pgn(pgn);
+      extendedDataPage = j1939_get_extended_data_page_from_pgn(pgn);
 
       // First check how many bytes to send.  If more than 8 we use transport
       // protocol.  Otherwise we queue it up.
       if (count <= CAN_MAX_DLC)
       {
          // Create the identifier for the message
-        id = J1939_BuildMessageId(dataPage, extendedDataPage, priority, pgn,
+        id = j1939_build_message_id(dataPage, extendedDataPage, priority, pgn,
                                    node->source_address);
 
          // Send the message out to the appropriate node.
-         result = J1939_BuildAndQueueMessage(node, id, count, true, data);
+         result = j1939_build_and_queue_message(node, id, count, true, data);
 
 #ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
          // Attempt to release the buffer in case the caller allocated a transport buffer
          // Release the transport buffer.
-         J1939Tp_FreeBuffer(data);
+         j1939_tp_free_buffer(data);
 #endif
       }
       else
       {
 #ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
          // Send out the message via transport protocol.
-         if (J1939Tp_Message_Accepted ==
-             J1939Tp_TransmitMultiPacket(tempPgn, destination, count, data, node))
+         if (j1939_tp_message_accepted ==
+             j1939_tp_transmit_multi_packet(tempPgn, destination, count, data, node))
          {
             result = true;
          }
@@ -458,7 +457,7 @@ bool J1939_TransmitPgn(J1939_Priority_T priority, J1939_Pgn_T pgn,
          }
 
          // Release the transport buffer.
-         J1939Tp_FreeBuffer(data);
+         j1939_tp_free_buffer(data);
 #else
          // No transport layer, cannot send multipacket. Drop down and return false.
          result = false;
@@ -470,7 +469,7 @@ bool J1939_TransmitPgn(J1939_Priority_T priority, J1939_Pgn_T pgn,
 #ifdef CONFIG_J1939_TRANSPORT_PROTOCOL
       // Attempt to release the buffer in case the caller allocated a transport buffer
       // Release the transport buffer.
-      J1939Tp_FreeBuffer(data);
+      j1939_tp_free_buffer(data);
 #endif
 
       // Invalid PGN - We should not transmit an invalid PGN
@@ -481,19 +480,19 @@ bool J1939_TransmitPgn(J1939_Priority_T priority, J1939_Pgn_T pgn,
 }
 
 /**************************************************************************************************/
-bool J1939_RequestPgn(const struct can_frame *message, J1939_Node_T node)
+bool j1939_request_pgn(const struct can_frame *message, j1939_node_t node)
 {
-   J1939_Pgn_T pgn;
-   J1939_SourceAddress_T requestSource;
-   J1939_PduSpecific_T ps;
-   J1939_PduFormat_T pf;
-   J1939_SourceAddress_T source;
+   j1939_pgn_t pgn;
+   j1939_source_address_t requestSource;
+   j1939_pdu_specific_t ps;
+   j1939_pdu_format_t pf;
+   j1939_source_address_t source;
 
    if (message)
    {
-      ps = J1939_GetPduSpecific(message->id);
-      pf = J1939_GetPduFormat(message->id);
-      source = J1939_GetSourceAddress(message->id);
+      ps = j1939_get_pdu_specific(message->id);
+      pf = j1939_get_pdu_format(message->id);
+      source = j1939_get_source_address(message->id);
 
       // Determine the source address, if it was sent globally then set the source address to global
       if (ps == J1939_GLOBAL_ADDRESS)
@@ -512,61 +511,61 @@ bool J1939_RequestPgn(const struct can_frame *message, J1939_Node_T node)
       {
       case J1939_ADDRESS_CLAIMED_PGN:
          // Handle the address claim request
-         J1939Ac_ProcessRequest(node);
+         j1939_ac_process_request(node);
          break;
 
 #ifdef J1939DM1_TRANSMIT
       case J1939_DM1_PGN:
          // Send DM1 active errors
-         J1939Dm1_Response(source, ps, message->node);
+         j1939_dm1_response(source, ps, message->node);
          break;
 #endif
 
 #ifdef J1939DM2_TRANSMIT
       case J1939_DM2_PGN:
          // Send DM2 prev active dtcs.
-         J1939Dm2_ProcessRequest(source, ps, message->node);
+         j1939_dm2_process_request(source, ps, message->node);
          break;
 #endif
 
 #ifdef J1939DM3_ENABLE
       case J1939_DM3_PGN:
          // Clear prev active dtcs & send Ack.
-         J1939Dm3_Task(message);
+         j1939_dm3_task(message);
          break;
 #endif
 
 #if defined(J1939DM4_TRANSMIT)
       case J1939_DM4_PGN:
-         J1939Dm4_ProcessRequest(source, ps, message->node);
+         j1939_dm4_process_request(source, ps, message->node);
          break;
 #endif
 
 #ifdef J1939DM5_ENABLE
       case J1939_DM5_PGN:
          // Diagnostic readiness. Number of active and prev active dtcs etc...
-         J1939Dm5Process(source, message->node);
+         j1939_dm5_process(source, message->node);
          break;
 #endif
 
 #ifdef J1939DM11_ENABLE
       case J1939_DM11_PGN:
          // clear active dtcs & send Ack.
-         J1939Dm11_Task(message);
+         j1939_dm11_task(message);
          break;
 #endif
 
       default:
          // Check if the PGN is in the request list. If so set the boolean for the PGN
          // request to true.
-         if (!J1939_FlagPgnRequest(pgn, requestSource, node))
+         if (!j1939_flag_pgn_request(pgn, requestSource, node))
          {
             // The PGN was not in the request list. If we are here, we do not support the
             // request.  J1939 says we should Nack the PGN request if it was not to a global
             // destination address.
             if (!((pf >= J1939_PDUF_240) || (ps == J1939_GLOBAL_ADDRESS)))
             {
-               J1939_Acknowledge(pgn, J1939_Response_Nack, (J1939_DestinationAddress_T)source,
+               j1939_acknowledge(pgn, J1939_Response_Nack, (j1939_destination_address_t)source,
                                  node);
             }
          }
@@ -581,7 +580,7 @@ bool J1939_RequestPgn(const struct can_frame *message, J1939_Node_T node)
 }
 
 /**************************************************************************************************/
-bool J1939_IsPgnValid(J1939_Pgn_T pgn)
+bool j1939_is_pgn_valid(j1939_pgn_t pgn)
 {
    return (!(((pgn & 0xFF00) < 0xF000) && (pgn & 0x00FF)));
 }
@@ -590,22 +589,22 @@ bool J1939_IsPgnValid(J1939_Pgn_T pgn)
 // static inline bool J1939_IsMessageForMe(const struct can_frame *message) //lint !e528
 // {
 //    bool result = false;
-//    J1939_PduSpecific_T ps;
-//    J1939_PduFormat_T pf;
+//    j1939_pdu_specific_t ps;
+//    j1939_pdu_format_t pf;
 
 //    __ASSERT_NO_MSG(message != NULL);
 
-//    ps = J1939_GetPduSpecific(message->id);
-//    pf = J1939_GetPduFormat(message->id);
+//    ps = j1939_get_pdu_specific(message->id);
+//    pf = j1939_get_pdu_format(message->id);
 
 //    if ((pf >= J1939_PDUF_240) || (ps == J1939_GLOBAL_ADDRESS))
 //    {
 //       result = true;
 //    }
-//    else if (J1939Ac_GetState(message->node) == J1939Ac_State_Claimed)
+//    else if (j1939_ac_get_state(message->node) == J1939_AC_STATE_CLAIMED)
 //    {
 //       // Don't look for messages to our source address until we have successfully claimed it
-//       if (ps == (J1939_PduSpecific_T)J1939Ac_GetSourceAddress(message->node))
+//       if (ps == (j1939_pdu_specific_t)j1939_ac_get_source_address(message->node))
 //       {
 //          result = true;
 //       }
@@ -615,31 +614,31 @@ bool J1939_IsPgnValid(J1939_Pgn_T pgn)
 // }
 
 /**************************************************************************************************/
-static bool J1939_RouteCanMessages(const struct can_frame *message, const struct device *can_dev)
+static bool j1939_route_can_messages(const struct can_frame *message, const struct device *can_dev)
 {
    /*lint -esym(838, result) ignore issues with not using previous set version of this variable*/
    bool result = false; // Allow Driver to free the message memory by default
 
 #if defined(J1939_LOOPBACK_ENABLE)
-   result = J1939_RouteWithLoopback(message, can_dev);
+   result = j1939_route_with_loopback(message, can_dev);
 #else
-   result = J1939_RouteWithoutLoopback(message, can_dev);
+   result = j1939_route_without_loopback(message, can_dev);
 #endif
 
    return result;
 }
 
 /**************************************************************************************************/
-static void J1939_RxFilterCallback(const struct device *dev, struct can_frame *frame,
+static void j1939_rx_filter_callback(const struct device *dev, struct can_frame *frame,
                                    void *user_data)
 {
    (void)user_data;
 
-   (void)J1939_RouteCanMessages(frame, dev);
+   (void)j1939_route_can_messages(frame, dev);
 }
 
 /**************************************************************************************************/
-static bool J1939_IsFirstNodeOnBus(size_t node_index)
+static bool j1939_is_first_node_on_bus(size_t node_index)
 {
    for (size_t index = 0; index < node_index; index++)
    {
@@ -653,27 +652,27 @@ static bool J1939_IsFirstNodeOnBus(size_t node_index)
 }
 
 /**************************************************************************************************/
-bool J1939_DefaultRoute(const struct can_frame *message, J1939_Node_T node)
+bool j1939_default_route(const struct can_frame *message, j1939_node_t node)
 {
 #ifdef J1939_ENABLE_RECEIVED_PGN_SUPPORT
 
    __ASSERT_NO_MSG(message != NULL);
 
    // Extract the PGN
-   J1939_Pgn_T pgn = J1939_GetPgn(message->id);
+   j1939_pgn_t pgn = j1939_get_pgn(message->id);
 //    uint8_t node = message->node;
    uint16_t node = 0; // TODO: Replace with actual node retrieval
 
    // Search through the list and see if the PGN is in the list
-   // NOTE: Multi-thread protection not needed because of how J1939_RegisterReceivePgnCallback()
+   // NOTE: Multi-thread protection not needed because of how j1939_register_receive_pgn_callback()
    // is implemented
-   for (J1939_Counter_T index = 0; index < J1939_ReceivedPgnRecordIndex[node]; index++)
+   for (j1939_counter_t index = 0; index < j1939_received_pgn_record_index[node]; index++)
    {
-      if (pgn == J1939_ReceivedPgnHandlers[node][index].pgn)
+      if (pgn == j1939_received_pgn_handlers[node][index].pgn)
       {
-         if (J1939_ReceivedPgnHandlers[node][index].handler)
+         if (j1939_received_pgn_handlers[node][index].handler)
          {
-            (void)J1939_ReceivedPgnHandlers[node][index].handler(message);
+            (void)j1939_received_pgn_handlers[node][index].handler(message);
          }
       }
    }
@@ -687,18 +686,18 @@ bool J1939_DefaultRoute(const struct can_frame *message, J1939_Node_T node)
 }
 
 /**************************************************************************************************/
-bool J1939_PduF254Process(const struct can_frame *message, J1939_Node_T node)
+bool j1939_pdu_f254_process(const struct can_frame *message, j1939_node_t node)
 {
 #if defined(J1939DM1_RECEIVE) || defined(J1939DM2_RECEIVE) || defined(J1939DM4_RECEIVE)
-   J1939_PduSpecific_T ps;
-   J1939_SourceAddress_T source;
+   j1939_pdu_specific_t ps;
+   j1939_source_address_t source;
 
    __ASSERT_NO_MSG(message != NULL);
 
    if (message && (message->node < CAN_NUM_NODES))
    {
-      ps = J1939_GetPduSpecific(message->arbitration);
-      source = J1939_GetSourceAddress(message->arbitration);
+      ps = j1939_get_pdu_specific(message->arbitration);
+      source = j1939_get_source_address(message->arbitration);
 
       // These variables are not used in all cases so we need to suppress a warning
       (void)ps;
@@ -708,7 +707,7 @@ bool J1939_PduF254Process(const struct can_frame *message, J1939_Node_T node)
       if (ps == J1939_ACTIVE_DTC_PS)
       {
          // Send address and message data to DM1 processing function.
-         J1939Dm1_Receive(source, (Can_DataByte_T *)message->data, 6, message->node);
+         j1939_dm1_receive(source, (can_data_byte_t *)message->data, 6, message->node);
 
 #ifndef J1939_PASSTHROUGH_FOR_254_MESSAGES
          return false;
@@ -719,7 +718,7 @@ bool J1939_PduF254Process(const struct can_frame *message, J1939_Node_T node)
 #ifdef J1939DM2_RECEIVE
       if (ps == J1939_PREVIOUS_ACTIVE_PS)
       {
-         J1939Dm2_ProcessReceived(source, (Can_DataByte_T *)message->data, 6, message->node);
+         j1939_dm2_process_received(source, (can_data_byte_t *)message->data, 6, message->node);
 
 #ifndef J1939_PASSTHROUGH_FOR_254_MESSAGES
          return false;
@@ -731,7 +730,7 @@ bool J1939_PduF254Process(const struct can_frame *message, J1939_Node_T node)
       if (ps == J1939_FREEZE_FRAME_PS)
       {
          // Send address and message data to DM4 processing function.
-         J1939Dm4_ProcessReceived(source, message->data, message->length, message->node);
+         j1939_dm4_process_received(source, message->data, message->length, message->node);
 
 #ifndef J1939_PASSTHROUGH_FOR_254_MESSAGES
          return false;
@@ -744,23 +743,23 @@ bool J1939_PduF254Process(const struct can_frame *message, J1939_Node_T node)
 
    // Let the application specific routines handle it
    /*lint -esym(613, message)*/
-   return J1939_App_Pf254Process(message, node);
+   return j1939_app_pf254_process(message, node);
 }
 
 #ifdef J1939_ENABLE_RECEIVED_PGN_SUPPORT
 /**************************************************************************************************/
-bool J1939_RegisterReceivePgnCallback(J1939_Pgn_T pgn, J1939_ReceivedPgnCallback_T handler,
-                                              J1939_Node_T node)
+bool j1939_register_receive_pgn_callback(j1939_pgn_t pgn, j1939_received_pgn_callback_t handler,
+                                              j1939_node_t node)
 {
    bool result = false;
 
    if (handler != NULL)
    {
-      if (J1939_ReceivedPgnRecordIndex[node] < J1939_RECEIVED_PGN_LIST_MAX)
+      if (j1939_received_pgn_record_index[node] < J1939_RECEIVED_PGN_LIST_MAX)
       {
-         J1939_ReceivedPgnHandlers[node][J1939_ReceivedPgnRecordIndex[node]].pgn = pgn;
-         J1939_ReceivedPgnHandlers[node][J1939_ReceivedPgnRecordIndex[node]].handler = handler;
-         J1939_ReceivedPgnRecordIndex[node]++;
+         j1939_received_pgn_handlers[node][j1939_received_pgn_record_index[node]].pgn = pgn;
+         j1939_received_pgn_handlers[node][j1939_received_pgn_record_index[node]].handler = handler;
+         j1939_received_pgn_record_index[node]++;
          result = true;
       }
    }
@@ -770,9 +769,9 @@ bool J1939_RegisterReceivePgnCallback(J1939_Pgn_T pgn, J1939_ReceivedPgnCallback
 #endif
 
 /**************************************************************************************************/
-J1939_Pgn_T J1939_GetPgn(J1939_Arbitration_T messageId)
+j1939_pgn_t j1939_get_pgn(j1939_arbitration_t messageId)
 {
-   J1939_Pgn_T result;
+   j1939_pgn_t result;
 
    // Per the J1939 standard, a PGN is a 24-bit value with the bits defined as:
    // [0-7] Group Extension
@@ -785,7 +784,7 @@ J1939_Pgn_T J1939_GetPgn(J1939_Arbitration_T messageId)
    result = ((messageId >> 8) & 0x3FFFF);
 
    // If the PF is less than 0xF0, then the group extension should be set to zero
-   if (J1939_GetPduFormat(result) < J1939_PDUF_240)
+   if (j1939_get_pdu_format(result) < J1939_PDUF_240)
    {
       result &= 0x3FF00;
    }
@@ -794,10 +793,10 @@ J1939_Pgn_T J1939_GetPgn(J1939_Arbitration_T messageId)
 }
 
 /**************************************************************************************************/
-J1939_Pgn_T J1939_BuildPgn(bool extendedDataPage, bool dataPage,
-                           J1939_PduFormat_T pduf, J1939_GroupExtension_T groupExtension)
+j1939_pgn_t j1939_build_pgn(bool extendedDataPage, bool dataPage,
+                           j1939_pdu_format_t pduf, j1939_group_extension_t groupExtension)
 {
-   J1939_Pgn_T result;
+   j1939_pgn_t result;
 
    result = MAKEWORD(groupExtension, pduf);
    result |= (((uint32_t)dataPage) << 16);
@@ -812,25 +811,25 @@ J1939_Pgn_T J1939_BuildPgn(bool extendedDataPage, bool dataPage,
 }
 
 /**************************************************************************************************/
-void J1939_EnableVirtualModeTransmit(J1939_Node_T node)
+void j1939_enable_virtual_mode_transmit(j1939_node_t node)
 {
     node->transmission_enabled = true;
 }
 
 /**************************************************************************************************/
-void J1939_DisableVirtualModeTransmit(J1939_Node_T node)
+void j1939_disable_virtual_mode_transmit(j1939_node_t node)
 {
     node->transmission_enabled = false;
 }
 
 /**************************************************************************************************/
-bool J1939_IsVirtualNodeTransmitEnabled(J1939_Node_T node)
+bool j1939_is_virtual_node_transmit_enabled(j1939_node_t node)
 {
    return node->transmission_enabled;
 }
 
 /**************************************************************************************************/
-bool J1939_BuildAndQueueMessage(J1939_Node_T node, J1939_Arbitration_T arbitration,
+bool j1939_build_and_queue_message(j1939_node_t node, j1939_arbitration_t arbitration,
                                 uint16_t dataLength, bool isExtendedMessage,
                                 const uint8_t *data)
 {
@@ -842,17 +841,17 @@ bool J1939_BuildAndQueueMessage(J1939_Node_T node, J1939_Arbitration_T arbitrati
 
 #if defined(J1939_LOOPBACK_ENABLE)
 /**************************************************************************************************/
-static inline bool J1939_RouteWithLoopback(const struct can_frame *message)
+static inline bool j1939_route_with_loopback(const struct can_frame *message)
 {
    // Msg object to replace physical node to address node when running handler
    struct can_frame msg;
    bool result = false;
-   J1939_Node_T addressNode;
+   j1939_node_t addressNode;
    uint16_t physicalNode;
-   J1939_PduFormat_T pf = J1939_GetPduFormat(message->arbitration);
-   J1939_PduSpecific_T ps = J1939_GetPduSpecific(message->arbitration);
+   j1939_pdu_format_t pf = j1939_get_pdu_format(message->arbitration);
+   j1939_pdu_specific_t ps = j1939_get_pdu_specific(message->arbitration);
 
-   J1939_Node_T loopbackNode;
+   j1939_node_t loopbackNode;
 
    // Is this a broadcast message?
    if (pf >= J1939_PDUF_240 || ps == J1939_GLOBAL_ADDRESS)
@@ -861,46 +860,46 @@ static inline bool J1939_RouteWithLoopback(const struct can_frame *message)
       if (message->TransmitLoopbackMessage)
       {
          loopbackNode =
-             J1939_GetJ1939NodeFromSourceAddress(J1939_GetSourceAddress(message->arbitration));
-         physicalNode = J1939_GetCanNode(loopbackNode);
+             j1939_get_j1939_node_from_source_address(j1939_get_source_address(message->arbitration));
+         physicalNode = j1939_get_can_node(loopbackNode);
       }
       else
       {
          // If this is not a loopback message set values to transmit to all addressNodes
-         loopbackNode = J1939_NUM_NODES + 1;
+         loopbackNode = CONFIG_J1939_NODES_COUNT + 1;
          physicalNode = message->node;
       }
       // Transmit to all address nodes
-      for (addressNode = 0; addressNode < J1939_NUM_NODES; addressNode++)
+      for (addressNode = 0; addressNode < CONFIG_J1939_NODES_COUNT; addressNode++)
       {
          // Linked to the physical node of the loopback addressNode
-         if (J1939_GetCanNode(addressNode) == physicalNode)
+         if (j1939_get_can_node(addressNode) == physicalNode)
          {
             // Except for the transmitting loopback not itself
             if (addressNode != loopbackNode)
             {
                msg = *message;
                msg.node = addressNode;
-               result = J1939_RunMessageCallback(&msg, pf);
+               result = j1939_run_message_callback(&msg, pf);
             }
          }
       }
    }
    // Is a message for a specific address node?
-   else if (J1939_GetJ1939NodeFromSourceAddress(ps) < J1939_NUM_NODES)
+   else if (j1939_get_j1939_node_from_source_address(ps) < CONFIG_J1939_NODES_COUNT)
    {
       msg = *message;
-      msg.node = J1939_GetJ1939NodeFromSourceAddress(ps);
-      result = J1939_RunMessageCallback(&msg, pf);
+      msg.node = j1939_get_j1939_node_from_source_address(ps);
+      result = j1939_run_message_callback(&msg, pf);
    }
 
    return result;
 }
 #else
 
-static inline bool J1939_GetNode(uint8_t sourceAddress, J1939_Node_T *node)
+static inline bool j1939_get_node(uint8_t sourceAddress, j1939_node_t *node)
 {
-   for (size_t node_index = 0; node_index < J1939_NUM_NODES; node_index++)
+   for (size_t node_index = 0; node_index < CONFIG_J1939_NODES_COUNT; node_index++)
    {
       if (j1939_nodes[node_index]->source_address == sourceAddress)
       {
@@ -913,20 +912,20 @@ static inline bool J1939_GetNode(uint8_t sourceAddress, J1939_Node_T *node)
 }
 
 /**************************************************************************************************/
-static inline bool J1939_RouteWithoutLoopback(const struct can_frame *message, const struct device *can_dev)
+static inline bool j1939_route_without_loopback(const struct can_frame *message, const struct device *can_dev)
 {
    bool result = false;
-   J1939_PduSpecific_T ps = J1939_GetPduSpecific(message->id);
-   J1939_PduFormat_T pf = J1939_GetPduFormat(message->id);
+   j1939_pdu_specific_t ps = j1939_get_pdu_specific(message->id);
+   j1939_pdu_format_t pf = j1939_get_pdu_format(message->id);
 
-   J1939_Node_T node;
+   j1939_node_t node;
 
    // Determine if the message is for us or global and what we should do with it.
-   if ((J1939_GetNode(ps, &node) ||         // put this first to ensure node gets filled in
+   if ((j1939_get_node(ps, &node) ||         // put this first to ensure node gets filled in
        (pf >= J1939_PDUF_240) ||
        (ps == J1939_GLOBAL_ADDRESS)))
    {
-      result = J1939_RunMessageCallback(message, pf, node);
+      result = j1939_run_message_callback(message, pf, node);
    }
 
    return result;
@@ -934,9 +933,9 @@ static inline bool J1939_RouteWithoutLoopback(const struct can_frame *message, c
 #endif
 
 /**************************************************************************************************/
-static inline bool J1939_RunMessageCallback(const struct can_frame *message,
-                                             J1939_PduFormat_T pf,
-                                             J1939_Node_T node)
+static inline bool j1939_run_message_callback(const struct can_frame *message,
+                                             j1939_pdu_format_t pf,
+                                             j1939_node_t node)
 {
    bool result = false;
    // Call the function in the routing table.  This eliminates lots of checks with a case

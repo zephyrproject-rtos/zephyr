@@ -29,14 +29,14 @@ static struct j1939_dt_node_cfg diag_node_s = 	{                                
 		.vehicle_system_instance = 1,
 		.industry_group          = 1,
 		.arbitrary_address_capable = false,
-		.node_state              = J1939Ac_State_WaitingStartupInit,
+		.node_state              = J1939_AC_STATE_WAITING_STARTUP_INIT,
 		.ac_timestamp            = 0,
 		.recorded_bus_info_count = 0,
 		.transmission_enabled    = false,
-        .J1939Tp_TransmitBam     = false,
+        .j1939_tp_transmit_bam     = false,
 	};
 
-static J1939_Node_T diag_node = &diag_node_s;
+static j1939_node_t diag_node = &diag_node_s;
 
 struct j1939_dt_node_cfg* j1939_nodes[] = {&diag_node_s};
 
@@ -65,7 +65,7 @@ int main(void)
 
         // TODO - looks like this is sending before address claim is complete
         // Need to implement a method to prevent sending from an unclaimed address
-        J1939_TransmitPgn(
+        j1939_transmit_pgn(
             J1939_Priority_6,      // Priority.
             0x1200, // PGN.
             0x34,           // Source Address to reply to

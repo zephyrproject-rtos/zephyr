@@ -10,6 +10,15 @@ menuconfig J1939
 
 if J1939
 
+config J1939_NODES_COUNT
+    int "Number of CAN nodes used on this device"
+    range 1 253
+    default 1
+    help
+      This is the number of CAN nodes that the user wants to have on this device,
+      across all CAN buses.  i.e. 1 CAN node on bus 1, 2 CAN nodes on bus 2
+      means this value should be 3.  This is used to allocate memory for the J1939 stack.
+
 config J1939_MAX_NODES_IN_SYSTEM
 	int "Max number of CAN nodes possible on a single bus"
 	range 1 253
@@ -19,11 +28,112 @@ config J1939_MAX_NODES_IN_SYSTEM
 	  Used to store tracking of CAN name of other nodes.
 	  253 is max since the source address is only a byte and 0xFE is NULL and 0xFF is global.
 
-config J1939_TRANSPORT_PROTOCOL
+menuconfig J1939_TRANSPORT_PROTOCOL
     bool "Enables J1939 Transport Protocol"
     default y
     help
       Enables sending more than 8 bytes under a single PGN in standard CAN.
+
+if J1939_TRANSPORT_PROTOCOL
+
+config J1939TP_PRIORITY
+    int "J1939 Transport Protocol Message Priority"
+    range 1 7
+    default 7
+
+config J1939TP_RECEIVE_DISABLED
+    bool "Disable J1939 Transport Protocol receive support"
+    default n
+
+config J1939TP_NUMBER_OF_TP_RX_SESSIONS
+    int "Number of buffers allowed to be used for receiving transport sessions simultaneously"
+    default 3
+
+config J1939TP_MAX_PACKETS
+    int "Number of packets to allow before flow control between sender and receiver is required"
+    default 16
+
+config J1939TP_BUFFER_SMALL_SIZE
+    int "Small buffer size for J1939 Transport Protocol"
+    default 128
+
+config J1939TP_BUFFER_MEDIUM_SIZE
+    int "Medium buffer size for J1939 Transport Protocol"
+    default 512
+
+config J1939TP_BUFFER_LARGE_SIZE
+    int "Large buffer size for J1939 Transport Protocol"
+    default 576
+
+config J1939TP_BUFFER_MAX_SIZE
+    int "Max buffer size for J1939 Transport Protocol"
+    default 1785
+
+config J1939TP_NUM_SMALL_BUFFERS
+    int "Number of small buffers for J1939 Transport Protocol"
+    default 2
+
+config J1939TP_NUM_MEDIUM_BUFFERS
+    int "Number of medium buffers for J1939 Transport Protocol"
+    default 1
+
+config J1939TP_NUM_LARGE_BUFFERS
+    int "Number of large buffers for J1939 Transport Protocol"
+    default 0
+
+config J1939TP_NUM_MAX_BUFFERS
+    int "Number of max buffers for J1939 Transport Protocol"
+    default 0
+
+config J1939TP_NUM_ALL_BUFFERS
+    int "Total number of buffers for J1939 Transport Protocol"
+    default 3
+    help
+      Sum of J1939TP_NUM_SMALL_BUFFERS, J1939TP_NUM_MEDIUM_BUFFERS, J1939TP_NUM_LARGE_BUFFERS, and J1939TP_NUM_MAX_BUFFERS
+
+config J1939TP_NUM_TRANSMIT_SESSIONS
+    int "Number of transport protocol transmit sessions"
+    default J1939TP_NUM_ALL_BUFFERS
+    help
+      Total number of transport protocol transmit sessions we'll allow at any one time.
+      This number should always be less than or equal to J1939TP_NUM_ALL_BUFFERS
+      If you want to gaurentee that there will always be a transport buffer available for
+      a receive session it should be less than J1939TP_NUM_ALL_BUFFERS
+
+config J1939TP_MILLISECONDS_BETWEEN_PACKET_GROUPS
+    int "Milliseconds between packet groups for J1939 Transport Protocol"
+    default 0
+    help
+      This allows the user to define the minimum delay between groups of packets.  This time is
+      also influenced by the call rate of J1939_Task().  It is allowable to set this
+      time to zero for the fastest possible transmit rate.
+
+
+config J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION
+    int "Max messages queued per transport session"
+    default 5
+    help
+      If you set J1939TP_MILLISECONDS_BETWEEN_PACKET_GROUPS to zero, you can control how many back to back messages are queued
+      back-to-back for non-BAM transport transmit sessions using the following defines.  Be careful
+      how you use these.  J1939TP_MAX_TOTAL_MESSAGES_QUEUED_FOR_ALL_SESSIONS must be greater than or
+      equal to J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION.  It is possible to "starve" one transport
+      session until a previous one is completed if you configure these settings in certain ways.  If
+      you must force a minimum time between individual messages in a transport session, set the define
+      above to this time and set J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION to 1
+
+config J1939TP_MAX_TOTAL_MESSAGES_QUEUED_FOR_ALL_SESSIONS
+    int "Max total messages queued for all transport sessions"
+    default 20
+    help
+      If you set J1939TP_MILLISECONDS_BETWEEN_PACKET_GROUPS to zero, you can control how many back to back messages are queued
+      back-to-back for non-BAM transport transmit sessions using the following defines.  Be careful
+      how you use these.  J1939TP_MAX_TOTAL_MESSAGES_QUEUED_FOR_ALL_SESSIONS must be greater than or
+      equal to J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION.  It is possible to "starve" one transport
+      session until a previous one is completed if you configure these settings in certain ways.  If
+      you must force a minimum time between individual messages in a transport session, set the define
+      above to this time and set J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION to 1
+
+endif # J1939_TRANSPORT_PROTOCOL
 
 config J1939TP_NUM_ALLOWED_RECEIVE_PGN
     int "Max number of unique TP PGNs that can be registered for receive"
@@ -41,20 +151,6 @@ config J1939_MAX_PGN_REQUEST_MESSAGES
     help
       How many requests for PGN's this module supports on each address node
       ECU ID, Software ID, Protocol ID
-
-config J1939_LEGACY_CAN_RX_BUFFER_SIZE
-	int "Legacy shim RX queue capacity"
-	range 8 256
-	default 64
-	help
-	  Compatibility value used by the imported stack's configuration checks.
-
-config J1939_LEGACY_CAN_TX_BUFFER_SIZE_PER_NODE
-	int "Legacy shim TX queue capacity per node"
-	range 8 512
-	default 64
-	help
-	  Compatibility value used by the imported stack's configuration checks.
 
 config J1939_LEGACY_TIME_APP_SOURCE
 	bool "Use legacy J1939Timer_App.c time source"
@@ -77,5 +173,56 @@ config J1939_LEGACY_TASK_PERIOD_MS
 	depends on J1939_LEGACY_AUTO_INIT
 	help
 	  Period used by the Zephyr delayed work loop that calls J1939_Task.
+
+menuconfig J1939_NAME_MANAGEMENT
+    bool "Enable J1939 Name Management"
+    default n
+    help
+      Enable this to allow the stack to manage the J1939 NAME of this node and other nodes on the bus.
+
+if J1939_NAME_MANAGEMENT
+
+config J1939_NM_MFG_CODE_CHANGEABLE
+    bool "Allow manufacturer code to be changed with Name Management"
+    default n
+    help
+      Allow the manufacturer code to be changed via Name Management.
+config J1939_NM_ECU_INSTANCE_CHANGEABLE
+    bool "Allow ECU instance to be changed with Name Management"
+    default n
+    help
+      Allow the ECU instance to be changed via Name Management.
+config J1939_NM_FUNCTION_INSTANCE_CHANGEABLE
+    bool "Allow function instance to be changed with Name Management"
+    default n
+    help
+      Allow the function instance to be changed via Name Management.
+config J1939_NM_FUNCTION_CHANGEABLE
+    bool "Allow function to be changed with Name Management"
+    default n
+    help
+      Allow the function to be changed via Name Management.
+config J1939_NM_VEHICLE_SYSTEM_CHANGEABLE
+    bool "Allow vehicle system to be changed with Name Management"
+    default n
+    help
+      Allow the vehicle system to be changed via Name Management.
+config J1939_NM_VEHICLE_SYSTEM_INSTANCE_CHANGEABLE
+    bool "Allow vehicle system instance to be changed with Name Management"
+    default n
+    help
+      Allow the vehicle system instance to be changed via Name Management.
+config J1939_NM_INDUSTRY_GROUP_CHANGEABLE
+    bool "Allow industry group to be changed with Name Management"
+    default n
+    help
+      Allow the industry group to be changed via Name Management.
+config J1939_NM_ARBITRARY_ADDRESS_CAPABLE_CHANGEABLE
+    bool "Allow arbitrary address capable flag to be changed with Name Management"
+    default n
+    help
+      Allow the arbitrary address capable flag to be changed via Name Management.
+
+endif # J1939_NAME_MANAGEMENT
 
 endif # J1939
