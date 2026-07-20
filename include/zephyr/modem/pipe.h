@@ -31,6 +31,14 @@ enum modem_pipe_event {
 	MODEM_PIPE_EVENT_CLOSED,
 };
 
+/** Fragment of multi-part data */
+struct modem_pipe_data_fragment {
+	/** Data pointer */
+	const uint8_t *data;
+	/** Length of data in @a data */
+	size_t size;
+};
+
 /**
  * @cond INTERNAL_HIDDEN
  */
@@ -52,13 +60,19 @@ typedef int (*modem_pipe_api_open)(void *data);
 
 typedef int (*modem_pipe_api_transmit)(void *data, const uint8_t *buf, size_t size);
 
+typedef int (*modem_pipe_api_transmit_chain)(void *data,
+					     const struct modem_pipe_data_fragment *frags,
+					     size_t num_frags);
+
 typedef int (*modem_pipe_api_receive)(void *data, uint8_t *buf, size_t size);
 
 typedef int (*modem_pipe_api_close)(void *data);
 
 struct modem_pipe_api {
 	modem_pipe_api_open open;
+	/* Only one of 'transmit' and 'transmit_chain' needs to be implemented */
 	modem_pipe_api_transmit transmit;
+	modem_pipe_api_transmit_chain transmit_chain;
 	modem_pipe_api_receive receive;
 	modem_pipe_api_close close;
 };
@@ -126,6 +140,21 @@ int modem_pipe_open_async(struct modem_pipe *pipe);
 void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback, void *user_data);
 
 /**
+ * @brief Transmit a chain of data buffers through pipe
+ *
+ * @param pipe Pipe to transmit through
+ * @param frags Array of data fragments to transmit
+ * @param num_frags Number of fragments in @a frags
+ *
+ * @return Number of bytes placed in pipe (0 if pipe closed)
+ * @retval -errno code on error
+ *
+ * @warning This call must be non-blocking
+ */
+int modem_pipe_transmit_chain(struct modem_pipe *pipe, const struct modem_pipe_data_fragment *frags,
+			      size_t num_frags);
+
+/**
  * @brief Transmit data through pipe
  *
  * @param pipe Pipe to transmit through
@@ -137,7 +166,15 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
  *
  * @warning This call must be non-blocking
  */
-int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size);
+static inline int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size)
+{
+	const struct modem_pipe_data_fragment frag = {
+		.data = buf,
+		.size = size,
+	};
+
+	return modem_pipe_transmit_chain(pipe, &frag, 1);
+}
 
 /**
  * @brief Receive data through pipe
