@@ -201,6 +201,15 @@ static uint32_t dhcpv6_next_retransmit_time(int prev_retransmit_time,
 	return retransmit_time;
 }
 
+static uint32_t dhcpv6_sol_max_rt(struct net_if *iface)
+{
+	if (iface->config.dhcpv6.sol_max_rt != 0U) {
+		return iface->config.dhcpv6.sol_max_rt;
+	}
+
+	return DHCPV6_SOL_MAX_RT;
+}
+
 /* DHCPv6 packet encoding functions */
 
 static int dhcpv6_add_header(struct net_pkt *pkt, enum dhcpv6_msg_type type,
@@ -1242,6 +1251,31 @@ static int dhcpv6_parse_option_dns_servers(struct net_pkt *pkt, uint16_t length,
 	return 0;
 }
 
+static int dhcpv6_parse_option_max_rt(struct net_pkt *pkt, uint16_t length,
+				      uint32_t *max_rt)
+{
+	uint32_t max_rt_s;
+	int ret;
+
+	if (length != sizeof(max_rt_s)) {
+		return -EMSGSIZE;
+	}
+
+	ret = net_pkt_read_be32(pkt, &max_rt_s);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (max_rt_s < DHCPV6_MAX_RT_MIN / MSEC_PER_SEC ||
+	    max_rt_s > DHCPV6_MAX_RT_MAX / MSEC_PER_SEC) {
+		return -ERANGE;
+	}
+
+	*max_rt = max_rt_s * MSEC_PER_SEC;
+
+	return 0;
+}
+
 static int dhcpv6_find_option(struct net_pkt *pkt, enum dhcpv6_option_code opt_code,
 			      uint16_t *opt_len)
 {
@@ -1389,6 +1423,44 @@ static int dhcpv6_find_status_code(struct net_pkt *pkt, uint16_t *status)
 	net_pkt_cursor_restore(pkt, &backup);
 
 	return ret;
+}
+
+static int dhcpv6_find_max_rt(struct net_pkt *pkt, enum dhcpv6_option_code opt_code,
+			      uint32_t *max_rt)
+{
+	struct net_pkt_cursor backup;
+	uint16_t length;
+	int ret;
+
+	net_pkt_cursor_backup(pkt, &backup);
+
+	ret = dhcpv6_find_option(pkt, opt_code, &length);
+	if (ret == 0) {
+		ret = dhcpv6_parse_option_max_rt(pkt, length, max_rt);
+	}
+
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return ret;
+}
+
+static void dhcpv6_update_max_rt_options(struct net_if *iface, struct net_pkt *pkt)
+{
+	uint32_t max_rt;
+
+	/* RFC 8415, ch. 21.24 and 21.25: a client MUST process a valid
+	 * SOL_MAX_RT/INF_MAX_RT option even if the message carries a Status
+	 * Code option indicating a failure. A missing, malformed or
+	 * out-of-range option is simply ignored and MUST NOT cause the message
+	 * to be discarded.
+	 */
+	if (dhcpv6_find_max_rt(pkt, DHCPV6_OPTION_CODE_SOL_MAX_RT, &max_rt) == 0) {
+		iface->config.dhcpv6.sol_max_rt = max_rt;
+	}
+
+	if (dhcpv6_find_max_rt(pkt, DHCPV6_OPTION_CODE_INF_MAX_RT, &max_rt) == 0) {
+		iface->config.dhcpv6.inf_max_rt = max_rt;
+	}
 }
 
 static int dhcpv6_handle_dns_server_option(struct net_pkt *pkt)
@@ -1620,6 +1692,12 @@ static int dhcpv6_handle_advertise(struct net_if *iface, struct net_pkt *pkt,
 		return -EBADMSG;
 	}
 
+	/* RFC 8415, ch. 21.24/21.25: process SOL_MAX_RT/INF_MAX_RT before any
+	 * status-based decision, as they MUST be honored even when the message
+	 * indicates a failure (e.g. an Advertise with NoAddrsAvail).
+	 */
+	dhcpv6_update_max_rt_options(iface, pkt);
+
 	/* Verify status code. */
 	ret = dhcpv6_find_status_code(pkt, &status);
 	if (ret < 0) {
@@ -1630,8 +1708,6 @@ static int dhcpv6_handle_advertise(struct net_if *iface, struct net_pkt *pkt,
 		/* Ignore. */
 		return 0;
 	}
-
-	/* TODO Process SOL_MAX_RT/INF_MAX_RT options. */
 
 	/* Verify server preference. */
 	ret = dhcpv6_find_server_preference(pkt, &server_preference);
@@ -1750,7 +1826,11 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 		return -EBADMSG;
 	}
 
-	/* TODO Process SOL_MAX_RT/INF_MAX_RT options. */
+	/* RFC 8415, ch. 21.24/21.25: process SOL_MAX_RT/INF_MAX_RT before any
+	 * status-based decision, as they MUST be honored even when the Reply
+	 * carries a failure Status Code.
+	 */
+	dhcpv6_update_max_rt_options(iface, pkt);
 
 	/* Verify status code. */
 	ret = dhcpv6_find_status_code(pkt, &status);
@@ -2098,7 +2178,7 @@ static uint64_t dhcpv6_manage_timers(struct net_if *iface, int64_t now)
 		iface->config.dhcpv6.retransmit_timeout =
 			dhcpv6_next_retransmit_time(
 				iface->config.dhcpv6.retransmit_timeout,
-				DHCPV6_SOL_MAX_RT);
+				dhcpv6_sol_max_rt(iface));
 
 		(void)dhcpv6_send_solicit(iface);
 		dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
@@ -2325,6 +2405,8 @@ void net_dhcpv6_start(struct net_if *iface, struct net_dhcpv6_params *params)
 	NET_DBG("Starting DHCPv6 on iface %p", iface);
 
 	iface->config.dhcpv6.params = *params;
+	iface->config.dhcpv6.sol_max_rt = DHCPV6_SOL_MAX_RT;
+	iface->config.dhcpv6.inf_max_rt = DHCPV6_INF_MAX_RT;
 
 	if (sys_slist_is_empty(&dhcpv6_ifaces)) {
 		net_mgmt_add_event_callback(&dhcpv6_mgmt_cb);
