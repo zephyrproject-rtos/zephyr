@@ -470,7 +470,6 @@ static void posix_thread_finalize(struct posix_thread *t, void *retval)
 	sys_snode_t *node_l, *node_s;
 	pthread_key_obj *key_obj;
 	pthread_thread_data *thread_spec_data;
-	sys_snode_t *node_key_data, *node_key_data_s, *node_key_data_prev = NULL;
 	struct pthread_key_data *key_data;
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&t->key_list, node_l, node_s) {
@@ -482,22 +481,10 @@ static void posix_thread_finalize(struct posix_thread *t, void *retval)
 			}
 
 			SYS_SEM_LOCK(&pthread_key_lock) {
-				SYS_SLIST_FOR_EACH_NODE_SAFE(
-					&key_obj->key_data_l,
-					node_key_data,
-					node_key_data_s) {
-					key_data = (struct pthread_key_data *)node_key_data;
-					if (&key_data->thread_data == thread_spec_data) {
-						sys_slist_remove(
-							&key_obj->key_data_l,
-							node_key_data_prev,
-							node_key_data
-						);
-						k_free(key_data);
-						break;
-					}
-					node_key_data_prev = node_key_data;
-				}
+				key_data = CONTAINER_OF(thread_spec_data, struct pthread_key_data,
+							thread_data);
+				sys_dlist_remove(&key_data->node);
+				k_free(key_data);
 			}
 		}
 	}
