@@ -13,40 +13,6 @@
 
 LOG_MODULE_REGISTER(video_controls, CONFIG_VIDEO_LOG_LEVEL);
 
-static inline const char *const *video_get_std_menu_ctrl(uint32_t id)
-{
-	static char const *const power_line_frequency[] = {
-		"Disabled", "50 Hz", "60 Hz", "Auto", NULL,
-	};
-	static char const *const exposure_auto[] = {
-		"Auto Mode", "Manual Mode", "Shutter Priority Mode", "Aperture Priority Mode", NULL,
-	};
-	static char const *const colorfx[] = {
-		"None", "Black & White", "Sepia", "Negative", "Emboss", "Sketch", "Sky Blue",
-		"Grass Green", "Skin Whiten", "Vivid", "Aqua", "Art Freeze", "Silhouette",
-		"Solarization", "Antique", "Set Cb/Cr", NULL,
-	};
-	static char const *const camera_orientation[] = {
-		"Front", "Back", "External", NULL,
-	};
-
-	switch (id) {
-	/* User control menus */
-	case VIDEO_CID_POWER_LINE_FREQUENCY:
-		return power_line_frequency;
-
-	/* Camera control menus */
-	case VIDEO_CID_EXPOSURE_AUTO:
-		return exposure_auto;
-	case VIDEO_CID_COLORFX:
-		return colorfx;
-	case VIDEO_CID_CAMERA_ORIENTATION:
-		return camera_orientation;
-	default:
-		return NULL;
-	}
-}
-
 /* By definition, the cluster is in manual mode if the primary control value is 0 */
 static inline bool is_cluster_manual(const struct video_ctrl *primary)
 {
