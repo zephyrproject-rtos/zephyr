@@ -44,6 +44,7 @@ static int set_iir_config(const struct sensor_value *iir, const struct device *d
 static int get_power_mode(enum bmp5_powermode *powermode, const struct device *dev);
 static int set_power_mode(enum bmp5_powermode powermode, const struct device *dev);
 
+#ifdef CONFIG_SENSOR_ASYNC_API
 #ifdef CONFIG_PM_DEVICE
 static int bmp581_pm_busy_check(const struct device *dev)
 {
@@ -55,13 +56,14 @@ static int bmp581_pm_busy_check(const struct device *dev)
 	}
 	return 0;
 }
-#else
+#else /* CONFIG_PM_DEVICE */
 static inline int bmp581_pm_busy_check(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return 0;
 }
-#endif
+#endif /* CONFIG_PM_DEVICE */
+#endif /* CONFIG_SENSOR_ASYNC_API */
 
 static int set_power_mode(enum bmp5_powermode powermode, const struct device *dev)
 {
