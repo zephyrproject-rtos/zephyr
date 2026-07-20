@@ -1,5 +1,5 @@
 # Copyright (c) 2018 Nordic Semiconductor ASA
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig SETTINGS
@@ -314,6 +314,12 @@ config SETTINGS_TFM_PSA_LAZY_PERSIST_DELAY_MS
 	  work item is scheduled. The delay is useful in cases where a write may
 	  block a time-sensitive event, for example Bluetooth pairing, which requires a
 	  sequence of settings writes.
+
+config SETTINGS_TFM_PSA_CHUNK_DELAY_MS
+	int "Milliseconds delay between writing chunks of settings data"
+	default 100
+	help
+	  Sets the delay between writing each chunk of settings data.
 
 endif # SETTINGS_TFM_PSA
 
