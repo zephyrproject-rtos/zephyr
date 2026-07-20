@@ -12,8 +12,7 @@
 #define LOWORD(l) ((uint16_t)((uint32_t)(l) & 0xFFFFU))
 #define HIWORD(l) ((uint16_t)(((uint32_t)(l) >> 16) & 0xFFFFU))
 #define MAKEWORD(lo, hi) ((uint16_t)(((uint16_t)(uint8_t)(lo)) | ((uint16_t)(uint8_t)(hi) << 8)))
-#define MAKEDWORD(lo, hi)                                                                 \
-   ((uint32_t)(((uint32_t)(uint16_t)(lo)) | ((uint32_t)(uint16_t)(hi) << 16)))
+#define MAKEDWORD(lo, hi) ((uint32_t)(((uint32_t)(uint16_t)(lo)) | ((uint32_t)(uint16_t)(hi) << 16)))
 #define ELEMENTS(a) (sizeof(a) / sizeof((a)[0]))
 
 #define J1939_DT_NUM_NODES 1
@@ -59,26 +58,25 @@ typedef uint32_t j1939_millisecond_t;
 typedef uint32_t j1939_microsecond_t;
 
 /* Failure mode identification codes as defined by J1939, appendix A, SAE J1939-71 Draft JUN98. */
-typedef enum j1939_fmi_e
-{
-   J1939_Fmi_0, /* Valid, but above normal operating range. */
-   J1939_Fmi_1, /* Valid, but below normal operating range. */
-   J1939_Fmi_2, /* Data erratic, intermittent or incorrect. */
-   J1939_Fmi_3, /* Voltage above normal, or shorted to high source. */
-   J1939_Fmi_4, /* Voltage below normal, or shorted to low source. */
-   J1939_Fmi_5, /* Current below normal, or open circuit. */
-   J1939_Fmi_6, /* Current above normal, or grounded circuit. */
-   J1939_Fmi_7, /* Mechanical system not responding or out of adjustment. */
-   J1939_Fmi_8, /* Abnormal frequency, pulse width or period. */
-   J1939_Fmi_9, /* Abnormal update rate. */
-   J1939_Fmi_10, /* Abnormal rate of change. */
-   J1939_Fmi_11, /* Failure code not identifiable. */
-   J1939_Fmi_12, /* Bad intelligent device or component. */
-   J1939_Fmi_13, /* Out of calibration. */
-   J1939_Fmi_14, /* Special Instructions. */
-                      /* FMI_15 to FMI_30 Not defined. */
-   J1939_Fmi_31 = 31, /* Not available */
-   J1939_Fmi_255 = 255
+typedef enum j1939_fmi_e {
+	J1939_Fmi_0, /* Valid, but above normal operating range. */
+	J1939_Fmi_1, /* Valid, but below normal operating range. */
+	J1939_Fmi_2, /* Data erratic, intermittent or incorrect. */
+	J1939_Fmi_3, /* Voltage above normal, or shorted to high source. */
+	J1939_Fmi_4, /* Voltage below normal, or shorted to low source. */
+	J1939_Fmi_5, /* Current below normal, or open circuit. */
+	J1939_Fmi_6, /* Current above normal, or grounded circuit. */
+	J1939_Fmi_7, /* Mechanical system not responding or out of adjustment. */
+	J1939_Fmi_8, /* Abnormal frequency, pulse width or period. */
+	J1939_Fmi_9, /* Abnormal update rate. */
+	J1939_Fmi_10, /* Abnormal rate of change. */
+	J1939_Fmi_11, /* Failure code not identifiable. */
+	J1939_Fmi_12, /* Bad intelligent device or component. */
+	J1939_Fmi_13, /* Out of calibration. */
+	J1939_Fmi_14, /* Special Instructions. */
+	/* FMI_15 to FMI_30 Not defined. */
+	J1939_Fmi_31 = 31, /* Not available */
+	J1939_Fmi_255 = 255
 } j1939_fmi_t;
 
 typedef uint32_t j1939_spn_fmi_t;
@@ -127,22 +125,20 @@ typedef uint16_t j1939_dm4_freeze_frame_vehicle_speed_t;
 #define J1939_TP_CONN_MANAGEMENT_PF J1939_PDUF_236
 
 /* Declarations for Priority Bits in Identifiers */
-typedef enum j1939_priority_e
-{
-   J1939_Priority_0,
-   J1939_Priority_1,
-   J1939_Priority_2,
-   J1939_Priority_3,
-   J1939_Priority_4,
-   J1939_Priority_5,
-   J1939_Priority_6,
-   J1939_Priority_7,
+typedef enum j1939_priority_e {
+	J1939_Priority_0,
+	J1939_Priority_1,
+	J1939_Priority_2,
+	J1939_Priority_3,
+	J1939_Priority_4,
+	J1939_Priority_5,
+	J1939_Priority_6,
+	J1939_Priority_7,
 } j1939_priority_t;
 
-typedef enum j1939_response_e
-{
-   J1939_Response_Ack,
-   J1939_Response_Nack
+typedef enum j1939_response_e {
+	J1939_Response_Ack,
+	J1939_Response_Nack
 } j1939_response_t;
 
 typedef uint32_t j1939_id_number_t;
@@ -172,19 +168,17 @@ typedef struct j1939_name_s
 
 
 /* TODO - definitely not a great way to do this but not sure where to put this now */
-typedef enum j1939_ac_state_e
-{
-   J1939_AC_STATE_WAITING_STARTUP_INIT,
-   J1939_AC_STATE_START,
-   J1939_AC_STATE_WAITING,
-   J1939_AC_STATE_CLAIMED,
-   J1939_AC_STATE_LOST_CONTENTION,
-   J1939_AC_STATE_WAITING_CANNOT_CLAIM,
-   J1939_AC_STATE_CANNOT_CLAIM
+typedef enum j1939_ac_state_e {
+	J1939_AC_STATE_WAITING_STARTUP_INIT,
+	J1939_AC_STATE_START,
+	J1939_AC_STATE_WAITING,
+	J1939_AC_STATE_CLAIMED,
+	J1939_AC_STATE_LOST_CONTENTION,
+	J1939_AC_STATE_WAITING_CANNOT_CLAIM,
+	J1939_AC_STATE_CANNOT_CLAIM
 } j1939_ac_state_t;
 
-typedef struct j1939_ac_record_bus_info_s
-{
+typedef struct j1939_ac_record_bus_info_s {
    uint8_t source; /* Source address associated with the name pointer below */
 #if defined(J1939_RECORD_ADDRESS_CLAIMED_NAMES)
    j1939_name_t name;
@@ -192,8 +186,7 @@ typedef struct j1939_ac_record_bus_info_s
 } j1939_ac_record_bus_info_t;
 
 /* Structure definition for items which may be requested by another module on the bus. */
-typedef struct J1939_PgnRequest_S
-{
+typedef struct J1939_PgnRequest_S {
    uint16_t pgn; /* PGN registered and requested */
    uint8_t source; /* Source address of registered or requested PGN */
    bool isRequested; /* True if PGN has been requested */

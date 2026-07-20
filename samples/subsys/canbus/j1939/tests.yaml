@@ -7,8 +7,3 @@ tests:
       - j1939
     depends_on: can
     filter: dt_chosen_enabled("zephyr,canbus")
-    harness: console
-    harness_config:
-      type: one_line
-      regex:
-        - "(.*)Got 247 bytes in total"

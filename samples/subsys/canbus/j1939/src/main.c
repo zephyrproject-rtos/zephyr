@@ -13,6 +13,19 @@
 
 #define SLEEP_TIME K_MSEC(1000)
 
+static struct k_work_delayable j1939_work;
+
+static void j1939_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	// j1939_timer_update((j1939_timer_t)CONFIG_J1939_TASK_PERIOD_MS);
+	j1939_task();
+
+	k_work_schedule(&j1939_work,
+			K_MSEC(10));
+}
+
 const struct device *const can_dev1 = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
 #define J1939_DIAG_NODE DT_NODELABEL(diag_node)
@@ -54,6 +67,12 @@ int main(void)
 		printf("Error starting CAN controller [%d]", ret);
 		return 0;
 	}
+
+    j1939_init();
+
+	k_work_init_delayable(&j1939_work, j1939_work_handler);
+	k_work_schedule(&j1939_work,
+			K_MSEC(10));
 
 	printf("Finished init.\n");
 

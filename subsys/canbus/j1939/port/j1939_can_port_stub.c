@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Deere & Company
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <zephyr/drivers/can.h>
 #include <Can_Transmit.h>
 #include <stddef.h>

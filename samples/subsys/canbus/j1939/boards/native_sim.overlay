@@ -4,15 +4,15 @@
  */
 
 / {
-    chosen {
-        zephyr,canbus = &can0;
-    };
+	chosen {
+		zephyr,canbus = &can0;
+	};
 };
 
 &can0 {
-    status = "okay";
-    /* adjust zcan0 to desired host interface or create an alternative
-     * name, e.g.: sudo ip link property add dev vcan0 altname zcan0
-     */
-    host-interface = "vcan0";
+	status = "okay";
+	/* adjust zcan0 to desired host interface or create an alternative
+	 * name, e.g.: sudo ip link property add dev vcan0 altname zcan0
+	 */
+	host-interface = "vcan0";
 };

@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2026 Deere & Company
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef CAN_TRANSMIT_H_
 #define CAN_TRANSMIT_H_
 
