@@ -144,8 +144,8 @@ static int nunchuk_init(const struct device *dev)
 	struct nunchuk_data *data = dev->data;
 	int ret;
 
-	uint8_t init_seq_1[2] = {0xf0, 0x55};
-	uint8_t init_seq_2[2] = {0xfb, 0x00};
+	static const uint8_t init_seq_1[2] = {0xf0, 0x55};
+	static const uint8_t init_seq_2[2] = {0xfb, 0x00};
 	uint8_t buffer[NUNCHUK_READ_SIZE];
 
 	data->dev = dev;
