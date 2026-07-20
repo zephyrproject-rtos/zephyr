@@ -659,6 +659,15 @@ before opening a new Pull Request:
 
    ./scripts/ci/check_compliance.py -c <commit range>
 
+The checks run sequentially by default. Pass ``--parallel`` (or ``-p N`` to
+limit the number of worker processes to ``N``) to run them in parallel, which
+can significantly reduce the total runtime, especially for the Kconfig-based
+checks.
+
+.. code-block:: bash
+
+   ./scripts/ci/check_compliance.py --parallel -c <commit range>
+
 .. note::
    On Windows if the .pl extension has not yet been associated with an
    application, then the first time a .pl file is run without specifying an

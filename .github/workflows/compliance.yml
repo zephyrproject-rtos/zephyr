@@ -94,7 +94,7 @@ jobs:
         if [ "${{ github.actor }}" == "dependabot[bot]" ]; then
           excludes="$excludes -e Identity"
         fi
-        ./scripts/ci/check_compliance.py --annotate $excludes -c origin/${BASE_REF}..
+        ./scripts/ci/check_compliance.py --annotate $excludes --parallel -c origin/${BASE_REF}..
 
     - name: upload-results
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
