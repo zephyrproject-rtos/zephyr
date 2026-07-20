@@ -6,11 +6,18 @@
 
 #include <zephyr/drivers/modem/modem_cellular.h>
 
+#include <stdlib.h>
+#include <string.h>
+
 #define DT_DRV_COMPAT quectel_eg25_g
+
+static void quectel_eg25_g_on_qeng(struct modem_chat *chat, char **argv, uint16_t argc,
+				   void *user_data);
 
 MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
-MODEM_CHAT_MATCHES_DEFINE(quectel_eg25_g_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
+MODEM_CHAT_MATCHES_DEFINE(quectel_eg25_g_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES,
+			  MODEM_CHAT_MATCH("+QENG: ", ",", quectel_eg25_g_on_qeng));
 
 /*
  * AT+CMUX <port_speed> is specified in 3GPP TS 27.007 defining values 1..6 (up to 230400);
@@ -85,11 +92,68 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg25_g_periodic_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSQ", csq_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSQ", csq_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+QENG=\"servingcell\"", ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_eg25_g_periodic_chat_script,
 			 quectel_eg25_g_periodic_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 4);
+
+/*
+ * Field positions in the LTE serving-cell report:
+ * +QENG: "servingcell",<state>,"LTE",<is_tdd>,<mcc>,<mnc>,<cellid>,<pcid>,
+ *        <earfcn>,<freq_band_ind>,<ul_bw>,<dl_bw>,<tac>,<rsrp>,<rsrq>,...
+ * argv[0] is the "+QENG: " prefix, so field N is argv[N]. Other RATs use a
+ * different layout and are ignored (see the RAT guard below).
+ */
+
+/* RAT token as it appears in argv, i.e. with the QENG surrounding quotes. */
+#define QENG_LTE_RAT_TOKEN "\"LTE\""
+
+enum {
+	QENG_LTE_RAT = 3,
+	QENG_LTE_MCC = 5,
+	QENG_LTE_MNC = 6,
+	QENG_LTE_CELLID = 7,
+	QENG_LTE_PCID = 8,
+	QENG_LTE_EARFCN = 9,
+	QENG_LTE_BAND = 10,
+	QENG_LTE_TAC = 13,
+	QENG_LTE_RSRP = 14,
+	QENG_LTE_RSRQ = 15,
+	QENG_LTE_MIN_ARGC = 16,
+};
+
+static void quectel_eg25_g_on_qeng(struct modem_chat *chat, char **argv, uint16_t argc,
+				   void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	struct cellular_evt_network_status evt = {
+		.status = data->registration_status_lte,
+		.access_tech = data->access_tech,
+	};
+
+	/*
+	 * Only the LTE report carries the fields below; a shorter line (state
+	 * SEARCH/LIMSRV) or a non-LTE RAT has a different layout.
+	 */
+	if (argc < QENG_LTE_MIN_ARGC || strcmp(argv[QENG_LTE_RAT], QENG_LTE_RAT_TOKEN) != 0) {
+		return;
+	}
+
+	/* mcc/mnc are decimal, cellid/tac hexadecimal, all unquoted. */
+	evt.cell.lte.mcc = (uint16_t)strtoul(argv[QENG_LTE_MCC], NULL, 10);
+	evt.cell.lte.mnc = (uint16_t)strtoul(argv[QENG_LTE_MNC], NULL, 10);
+	evt.cell.lte.gci = (uint32_t)strtoul(argv[QENG_LTE_CELLID], NULL, 16);
+	evt.cell.lte.phys_cell_id = (uint16_t)strtoul(argv[QENG_LTE_PCID], NULL, 10);
+	evt.cell.lte.earfcn = (uint32_t)strtoul(argv[QENG_LTE_EARFCN], NULL, 10);
+	evt.cell.lte.band = (uint16_t)strtoul(argv[QENG_LTE_BAND], NULL, 10);
+	evt.cell.lte.tac = (uint32_t)strtoul(argv[QENG_LTE_TAC], NULL, 16);
+	evt.cell.lte.rsrp = (int16_t)strtol(argv[QENG_LTE_RSRP], NULL, 10);
+	evt.cell.lte.rsrq = (int8_t)strtol(argv[QENG_LTE_RSRQ], NULL, 10);
+
+	modem_cellular_emit_network_status(data, &evt);
+}
 
 static const struct modem_cellular_vendor_config quectel_eg25_g_vendor = {
 	/* clang-format off */
