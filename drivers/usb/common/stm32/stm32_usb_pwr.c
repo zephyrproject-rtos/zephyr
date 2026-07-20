@@ -115,6 +115,18 @@ int stm32_usb_pwr_enable(void)
 	 */
 	LL_PWR_EnableVddUSB();
 #endif
+
+#if defined(PWR_USBSCR_OTGHSEN) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+	/*
+	 * On series with an embedded OTG_HS PHY (STM32H5E5/H5F5), that PHY
+	 * has an analog supply of its own, separate from VDDUSB, gated by
+	 * PWR->USBSCR.OTGHSEN. Until it is switched on the core clock domain
+	 * stays down and GRSTCTL.CSRST never clears, so USB_CoreReset() spins
+	 * for the full HAL_USB_TIMEOUT and the controller never comes up.
+	 */
+	LL_PWR_EnableUSBOTGHSPhy();
+#endif /* PWR_USBSCR_OTGHSEN && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
+
 	/* Successful control flow in series-specific code above
 	 * will fall here. Set `err` to success value in a single
 	 * place to avoid duplication.
@@ -195,6 +207,11 @@ int stm32_usb_pwr_disable(void)
 	/* Enable VDDUSB power isolation */
 	LL_PWR_DisableVddUSB();
 #endif
+
+#if defined(PWR_USBSCR_OTGHSEN) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+	/* Switch off the embedded OTG_HS PHY supply */
+	LL_PWR_DisableUSBOTGHSPhy();
+#endif /* PWR_USBSCR_OTGHSEN && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
 
 fini:
 	k_sem_give(&pwr_refcount_mutex);
