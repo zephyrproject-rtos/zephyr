@@ -889,8 +889,15 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 		goto end_unlock;
 	}
 
-	/* prepare tx buffer */
-	memset(ctx->buf, 0, burst_size + ADIN2111_WRITE_HEADER_SIZE);
+	/* Only the trailing pad needs zeroing; header and payload are written below */
+	{
+		size_t data_end = ADIN2111_WRITE_HEADER_SIZE + ADIN2111_FRAME_HEADER_SIZE + pkt_len;
+		size_t total = ADIN2111_WRITE_HEADER_SIZE + burst_size;
+
+		if (total > data_end) {
+			memset(ctx->buf + data_end, 0, total - data_end);
+		}
+	}
 
 	/* spi header */
 	*(uint16_t *)ctx->buf = net_htons(ADIN2111_TXN_CTRL_TX_REG);
