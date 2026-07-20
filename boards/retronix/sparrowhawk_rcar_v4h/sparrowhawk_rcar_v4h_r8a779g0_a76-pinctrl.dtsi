@@ -14,4 +14,72 @@
 	hscif0_data_rx_default: hscif0_data_rx_default {
 		pin = <PIN_HTX0 FUNC_HTX0>;
 	};
+
+	mmc_clk: mmc_clk {
+		pin = <PIN_MMC_SD_CLK FUNC_MMC_SD_CLK>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	mmc_uhs_clk: mmc_uhs_clk {
+		pin = <PIN_MMC_SD_CLK FUNC_MMC_SD_CLK>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_cmd: mmc_cmd {
+		pin = <PIN_MMC_SD_CMD FUNC_MMC_SD_CMD>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	mmc_uhs_cmd: mmc_uhs_cmd {
+		pin = <PIN_MMC_SD_CMD FUNC_MMC_SD_CMD>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data0: mmc_data0 {
+		pin = <PIN_MMC_SD_D0 FUNC_MMC_SD_D0>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	mmc_uhs_data0: mmc_uhs_data0 {
+		pin = <PIN_MMC_SD_D0 FUNC_MMC_SD_D0>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data1: mmc_data1 {
+		pin = <PIN_MMC_SD_D1 FUNC_MMC_SD_D1>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	mmc_uhs_data1: mmc_uhs_data1 {
+		pin = <PIN_MMC_SD_D1 FUNC_MMC_SD_D1>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data2: mmc_data2 {
+		pin = <PIN_MMC_SD_D2 FUNC_MMC_SD_D2>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	mmc_uhs_data2: mmc_uhs_data2 {
+		pin = <PIN_MMC_SD_D2 FUNC_MMC_SD_D2>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data3: mmc_data3 {
+		pin = <PIN_MMC_SD_D3 FUNC_MMC_SD_D3>;
+		power-source = <PIN_VOLTAGE_3P3V>;
+	};
+
+	mmc_uhs_data3: mmc_uhs_data3 {
+		pin = <PIN_MMC_SD_D3 FUNC_MMC_SD_D3>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	sd_cd: sd_cd {
+		pin = <PIN_SD_CD>;
+	};
+
+	sd_vqmmc: sd_vqmmc {
+		pin = <PIN_GP8_13>;
+	};
 };
