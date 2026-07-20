@@ -14,7 +14,9 @@ tests:
     min_ram: 20
     min_flash: 33
   sample.sensor.shell.pytest:
-    platform_exclude: qemu_rx
+    platform_exclude:
+      - qemu_rx
+      - qemu_riscv64/qemu_virt_riscv64 # Flaky
     filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
     min_ram: 40
     harness: pytest
