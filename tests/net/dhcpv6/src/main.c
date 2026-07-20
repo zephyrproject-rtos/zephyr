@@ -226,7 +226,8 @@ static void dhcpv6_tests_before(void *fixture)
 	memset(&test_ctx.iface->config.dhcpv6, 0,
 	       sizeof(test_ctx.iface->config.dhcpv6));
 
-	dhcpv6_generate_client_duid(test_ctx.iface);
+	zassert_ok(dhcpv6_generate_client_duid(test_ctx.iface),
+		   "Cannot generate client DUID");
 	test_ctx.iface->config.dhcpv6.state = NET_DHCPV6_DISABLED;
 	test_ctx.iface->config.dhcpv6.addr_iaid = 10;
 	test_ctx.iface->config.dhcpv6.prefix_iaid = 20;
@@ -240,6 +241,23 @@ static void dhcpv6_tests_before(void *fixture)
 
 	net_if_ipv6_addr_rm(test_ctx.iface, &test_addr);
 	net_if_ipv6_prefix_rm(test_ctx.iface, &test_prefix, test_prefix_len);
+}
+
+ZTEST(dhcpv6_tests, test_client_duid_rejects_too_large_link_addr)
+{
+	struct net_linkaddr *lladdr = net_if_get_link_addr(test_ctx.iface);
+	uint8_t old_len = lladdr->len;
+	int ret;
+
+	lladdr->len = sizeof(test_ctx.iface->config.dhcpv6.clientid.duid.buf) -
+		      DHCPV6_DUID_LL_HEADER_SIZE + 1;
+
+	ret = dhcpv6_generate_client_duid(test_ctx.iface);
+	zassert_equal(ret, -EMSGSIZE, "Expected oversized DUID failure, got %d", ret);
+
+	lladdr->len = old_len;
+	zassert_ok(dhcpv6_generate_client_duid(test_ctx.iface),
+		   "Cannot restore client DUID");
 }
 
 static void dhcpv6_tests_after(void *fixture)
