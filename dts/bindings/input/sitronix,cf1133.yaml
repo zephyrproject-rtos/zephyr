@@ -8,7 +8,7 @@ description: CF1133 capacitive touch panels
 
 compatible: "sitronix,cf1133"
 
-include: i2c-device.yaml
+include: [i2c-device.yaml, touchscreen-common.yaml]
 
 properties:
   int-gpios:

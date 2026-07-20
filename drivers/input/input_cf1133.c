@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/input/input.h>
+#include <zephyr/input/input_touch.h>
 #include <zephyr/logging/log.h>
 #include <stdbool.h>
 
@@ -64,6 +65,8 @@ LOG_MODULE_REGISTER(cf1133, CONFIG_INPUT_LOG_LEVEL);
 
 /* CF1133 configuration (DT) */
 struct cf1133_config {
+	/** Common touchscreen config, must stay first. */
+	struct input_touchscreen_common_config common;
 	/** I2C bus. */
 	struct i2c_dt_spec bus;
 #ifdef CONFIG_INPUT_CF1133_INTERRUPT
@@ -71,6 +74,8 @@ struct cf1133_config {
 	struct gpio_dt_spec int_gpio;
 #endif
 };
+
+INPUT_TOUCH_STRUCT_CHECK(struct cf1133_config);
 
 /* CF1133 data */
 struct cf1133_data {
@@ -212,14 +217,12 @@ static int cf1133_process(const struct device *dev)
 
 		if (!data->pressed_old) {
 			/* Finger pressed */
-			input_report_abs(dev, INPUT_ABS_X, x, false, K_FOREVER);
-			input_report_abs(dev, INPUT_ABS_Y, y, false, K_FOREVER);
+			input_touchscreen_report_pos(dev, x, y, K_FOREVER);
 			input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
 			LOG_DBG("Finger is touching x = %i y = %i", x, y);
 		} else if (data->pressed_old) {
 			/* Continuous pressed */
-			input_report_abs(dev, INPUT_ABS_X, x, false, K_FOREVER);
-			input_report_abs(dev, INPUT_ABS_Y, y, false, K_FOREVER);
+			input_touchscreen_report_pos(dev, x, y, K_FOREVER);
 			LOG_DBG("Finger keeps touching x = %i y = %i", x, y);
 		}
 	} else {
@@ -320,6 +323,7 @@ static int cf1133_init(const struct device *dev)
 
 #define CF1133_INIT(index)								\
 	static const struct cf1133_config cf1133_config_##index = {			\
+		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),		\
 		.bus = I2C_DT_SPEC_INST_GET(index),					\
 		IF_ENABLED(CONFIG_INPUT_CF1133_INTERRUPT,				\
 		(.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),			\
