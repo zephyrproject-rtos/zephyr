@@ -135,6 +135,10 @@ typedef void (* ISR)(const void *);
         else:
             swt = None
 
+        # Pre-pass: count level-2 sources per CPU line so a lone source can be
+        # placed directly on its line instead of behind a dispatcher.
+        self.__config.note_second_level_lines(intlist["interrupts"])
+
         # Process intlist and write to the tables created
         for irq, flags, func, param in intlist["interrupts"]:
             if self.__config.test_isr_direct(flags):
@@ -278,6 +282,14 @@ typedef void (* ISR)(const void *);
         isr = self.__config.swt_shared_handler
         self.write_isr_case_block(fp, i, isr, arg)
 
+    def write_isr_case_l1_dispatcher(self, fp, i):
+        fp.write(f"\t\tcase {i}:\n")
+        fp.write("\t\t{\n")
+        fp.write(f"\t\t\tentry->isr = (ISR){self.__config.swt_l2_dispatcher};\n")
+        fp.write(f"\t\t\tentry->arg = (const void *){i:#x};\n")
+        fp.write("\t\t\tbreak;\n")
+        fp.write("\t\t}\n")
+
     def write_isr_case_default_block(self, fp):
         fp.write("\t\tdefault:\n")
         fp.write("\t\t{\n")
@@ -289,10 +301,19 @@ typedef void (* ISR)(const void *);
         fp.write("}\n")
 
     def write_isr_table_switch(self, fp):
+        if any(
+            len(self.__swt[i]) == 0 and self.__config.get_l1_dispatcher_line(i)
+            for i in range(self.__nv)
+        ):
+            fp.write(f"extern void {self.__config.swt_l2_dispatcher}(const void *);\n\n")
+
         self.write_isr_switch_start(fp)
 
         for i in range(self.__nv):
             if len(self.__swt[i]) == 0:
+                if self.__config.get_l1_dispatcher_line(i):
+                    # CPU line shared by 2+ static level-2 sources
+                    self.write_isr_case_l1_dispatcher(fp, i)
                 # Unused interrupt - default will be used
                 continue
             elif len(self.__swt[i]) == 1:
@@ -305,6 +326,14 @@ typedef void (* ISR)(const void *);
         self.write_isr_case_default_block(fp)
 
     def write_isr_table_array(self, fp):
+        # Declare the flat-layout shared-line dispatcher if any 1st-level slot
+        # of the table is going to reference it (see get_l1_dispatcher_line).
+        if any(
+            len(self.__swt[i]) == 0 and self.__config.get_l1_dispatcher_line(i)
+            for i in range(self.__nv)
+        ):
+            fp.write(f"extern void {self.__config.swt_l2_dispatcher}(const void *);\n\n")
+
         if not self.__config.check_sym("CONFIG_DYNAMIC_INTERRUPTS"):
             fp.write("const ")
         fp.write(f"struct _isr_table_entry __sw_isr_table _sw_isr_table[{self.__nv}] = {{\n")
@@ -314,9 +343,15 @@ typedef void (* ISR)(const void *);
 
         for i in range(self.__nv):
             if len(self.__swt[i]) == 0:
-                # Not used interrupt
-                param = "0x0"
-                func = self.__config.swt_spurious_handler
+                if self.__config.get_l1_dispatcher_line(i):
+                    # CPU line shared by 2+ static level-2 sources: its slot
+                    # carries the dispatcher, keyed on the line number
+                    param = f"{i:#x}"
+                    func = self.__config.swt_l2_dispatcher
+                else:
+                    # Not used interrupt
+                    param = "0x0"
+                    func = self.__config.swt_spurious_handler
             elif len(self.__swt[i]) == 1:
                 # Single interrupt
                 param = f"{self.__swt[i][0][0]:#x}"
