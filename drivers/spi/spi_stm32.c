@@ -2061,8 +2061,13 @@ static int transceive(const struct device *dev,
 	if (use_dma &&
 	    ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 	     (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs)))) {
-		LOG_ERR("SPI DMA transfers not supported on cached memory");
-		return -ENOTSUP;
+		LOG_WRN("SPI DMA transfers not supported on cached memory.");
+		if (IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT)) {
+			LOG_WRN("Falling back to interrupt mode.");
+		} else {
+			LOG_WRN("Falling back to polling mode.");
+		}
+		use_dma = false;
 	}
 #endif /* CONFIG_DCACHE && CONFIG_SPI_STM32_DMA && !CONFIG_SPI_RTIO */
 
