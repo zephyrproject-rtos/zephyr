@@ -1429,7 +1429,7 @@ static inline int sensor_value_to_fixed_point(uint32_t *val, struct sensor_value
 
 		*val = (uint32_t)(raw & BIT64_MASK(num_bits));
 	} else {
-		if (!IN_RANGE(raw, 0, BIT64_MASK(num_bits))) {
+		if (!IN_RANGE(raw, 0, (int64_t)BIT64_MASK(num_bits))) {
 			return -ERANGE;
 		}
 
