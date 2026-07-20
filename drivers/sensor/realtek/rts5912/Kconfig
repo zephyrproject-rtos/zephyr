@@ -15,3 +15,11 @@ config TACH_RTS5912_DISCARD_SAMPLES
 	  Discard the first two sample on fetch(), this is useful when the
 	  tachometer is used while the chip is in a low power state, as the
 	  first two samples can be unreliable.
+
+config TACH_RTS5912_ASYNC_FETCH
+	bool "Asynchronous sample fetch"
+	depends on TACH_RTS5912
+	help
+	  Make sample_fetch() asynchronous by returning immediately without waiting
+	  for the tachometer reading to complete. Note that this is not the normal
+	  behavior of the Zephyr sensor sample fetch API.
