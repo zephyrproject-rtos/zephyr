@@ -11,8 +11,7 @@
 #define PIPE_EVENT_RECEIVE_READY_BIT BIT(2)
 #define PIPE_EVENT_TRANSMIT_IDLE_BIT BIT(3)
 
-static void pipe_set_callback(struct modem_pipe *pipe,
-			      modem_pipe_api_callback callback,
+static void pipe_set_callback(struct modem_pipe *pipe, modem_pipe_api_callback callback,
 			      void *user_data)
 {
 	K_SPINLOCK(&pipe->spinlock) {
@@ -35,9 +34,7 @@ static uint32_t pipe_test_events(struct modem_pipe *pipe, uint32_t events)
 	return k_event_test(&pipe->event, events);
 }
 
-static uint32_t pipe_await_events(struct modem_pipe *pipe,
-				  uint32_t events,
-				  k_timeout_t timeout)
+static uint32_t pipe_await_events(struct modem_pipe *pipe, uint32_t events, k_timeout_t timeout)
 {
 	return k_event_wait(&pipe->event, events, false, timeout);
 }
@@ -62,9 +59,18 @@ static int pipe_call_open(struct modem_pipe *pipe)
 	return pipe->api->open(pipe->data);
 }
 
-static int pipe_call_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size)
+static int pipe_call_transmit_chain(struct modem_pipe *pipe,
+				    const struct modem_pipe_data_fragment *frags, size_t num_frags)
 {
-	return pipe->api->transmit(pipe->data, buf, size);
+	if (pipe->api->transmit_chain) {
+		/* Native support for `transmit_chain` */
+		return pipe->api->transmit_chain(pipe->data, frags, num_frags);
+	}
+	/* Fallback to legacy `transmit` (send first part of chain only).
+	 * This is valid because the `transmit_chain` API is documented as queuing as many bytes as
+	 * it can, not necessarily all the bytes provided.
+	 */
+	return pipe->api->transmit(pipe->data, frags[0].data, frags[0].size);
 }
 
 static int pipe_call_receive(struct modem_pipe *pipe, uint8_t *buf, size_t size)
@@ -133,14 +139,15 @@ void modem_pipe_attach(struct modem_pipe *pipe, modem_pipe_api_callback callback
 	}
 }
 
-int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size)
+int modem_pipe_transmit_chain(struct modem_pipe *pipe, const struct modem_pipe_data_fragment *frags,
+			      size_t num_frags)
 {
-	if (!pipe_test_events(pipe, PIPE_EVENT_OPENED_BIT)) {
+	if (!pipe_test_events(pipe, PIPE_EVENT_OPENED_BIT) || (num_frags == 0)) {
 		return 0;
 	}
 
 	pipe_clear_events(pipe, PIPE_EVENT_TRANSMIT_IDLE_BIT);
-	return pipe_call_transmit(pipe, buf, size);
+	return pipe_call_transmit_chain(pipe, frags, num_frags);
 }
 
 int modem_pipe_receive(struct modem_pipe *pipe, uint8_t *buf, size_t size)
