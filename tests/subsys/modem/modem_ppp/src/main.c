@@ -45,6 +45,15 @@ static uint8_t ppp_frame_wrapped[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21, 0x7D, 
 
 static uint8_t ppp_frame_unwrapped[] = {0xC0, 0x21, 0x01, 0x01, 0x00, 0x04};
 
+/*
+ * Same frame as ppp_frame_wrapped but with the Address (0xFF) and Control
+ * (0x03) fields omitted (ACFC). The receiver must start the frame on the first
+ * non-0xFF byte and deliver the same payload. The LCP protocol (0xC0 0x21) is
+ * used because its first octet is not an HDLC-escaped value.
+ */
+static uint8_t ppp_frame_wrapped_acfc[] = {0x7E, 0xC0, 0x21, 0x7D, 0x21, 0x7D, 0x21,
+					   0x7D, 0x20, 0x7D, 0x24, 0xD1, 0xB5, 0x7E};
+
 /* Custom ACCM (Only 0-15 need to be escaped) */
 static uint32_t accm_custom1 = 0x0000ffff;
 static uint8_t ppp_frame_wrapped_accm1[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0x21, 0x16, 0x7D,
@@ -73,6 +82,31 @@ static uint8_t ip_frame_unwrapped_with_protocol[] = {
 	0x00, 0x21, 0x45, 0x00, 0x00, 0x29, 0x87, 0x6E, 0x40, 0x00, 0xE8, 0x11, 0xC1, 0xE9, 0x03,
 	0xFB, 0x05, 0x20, 0x0A, 0x2B, 0x36, 0x26, 0x25, 0x12, 0x8C, 0x3E, 0x00, 0x15, 0xBD, 0xF3,
 	0x2D, 0x00, 0x0B, 0x00, 0x07, 0x00, 0x04, 0x00, 0x04, 0x0A, 0x00, 0x0A, 0x00};
+
+/*
+ * Same IP frame as ip_frame_wrapped but with the FF 03 Address/Control header
+ * omitted (ACFC). The 2-octet IP protocol 0x0021 keeps its high octet 0x00,
+ * which HDLC escapes to 0x7D 0x20, so the receiver must unescape the first
+ * protocol octet when it starts the frame.
+ */
+static uint8_t ip_frame_wrapped_acfc[] = {
+	0x7E, 0x7D, 0x20, 0x21, 0x45, 0x7D, 0x20, 0x7D, 0x20, 0x29, 0x87, 0x6E, 0x40, 0x7D,
+	0x20, 0xE8, 0x7D, 0x31, 0xC1, 0xE9, 0x7D, 0x23, 0xFB, 0x7D, 0x25, 0x20, 0x7D, 0x2A,
+	0x2B, 0x36, 0x26, 0x25, 0x7D, 0x32, 0x8C, 0x3E, 0x7D, 0x20, 0x7D, 0x35, 0xBD, 0xF3,
+	0x2D, 0x7D, 0x20, 0x7D, 0x2B, 0x7D, 0x20, 0x7D, 0x27, 0x7D, 0x20, 0x7D, 0x24, 0x7D,
+	0x20, 0x7D, 0x24, 0x7D, 0x2A, 0x7D, 0x20, 0x7D, 0x2A, 0x7D, 0x20, 0xD4, 0x31, 0x7E};
+
+/*
+ * Same IP frame with both ACFC and PFC applied, as the Neoway N717 sends
+ * IP data once ACFC is negotiated: no FF 03 header and the protocol
+ * compressed to the single octet 0x21.
+ */
+static uint8_t ip_frame_wrapped_pfc_acfc[] = {
+	0x7E, 0x21, 0x45, 0x7D, 0x20, 0x7D, 0x20, 0x29, 0x87, 0x6E, 0x40, 0x7D, 0x20, 0xE8,
+	0x7D, 0x31, 0xC1, 0xE9, 0x7D, 0x23, 0xFB, 0x7D, 0x25, 0x20, 0x7D, 0x2A, 0x2B, 0x36,
+	0x26, 0x25, 0x7D, 0x32, 0x8C, 0x3E, 0x7D, 0x20, 0x7D, 0x35, 0xBD, 0xF3, 0x2D, 0x7D,
+	0x20, 0x7D, 0x2B, 0x7D, 0x20, 0x7D, 0x27, 0x7D, 0x20, 0x7D, 0x24, 0x7D, 0x20, 0x7D,
+	0x24, 0x7D, 0x2A, 0x7D, 0x20, 0x7D, 0x2A, 0x7D, 0x20, 0xD4, 0x31, 0x7E};
 
 static uint8_t corrupt_start_end_ppp_frame_wrapped[] = {0x2A, 0x46, 0x7E, 0x7E, 0xFF, 0x7D, 0x23,
 							0xC0, 0x21, 0x7D, 0x21, 0x7D, 0x21, 0x7D,
@@ -420,6 +454,91 @@ ZTEST(modem_ppp, test_corrupt_start_end_ppp_frame_receive)
 	net_pkt_cursor_init(pkt);
 	net_pkt_read(pkt, buffer, pkt_len);
 	zassert_true(memcmp(buffer, ppp_frame_unwrapped, pkt_len) == 0,
+		     "Received net pkt data incorrect");
+}
+
+ZTEST(modem_ppp, test_acfc_ppp_frame_receive)
+{
+	struct net_pkt *pkt;
+	size_t pkt_len;
+
+	/* Frame with the FF 03 Address/Control header omitted (ACFC) */
+	modem_backend_mock_put(&mock, ppp_frame_wrapped_acfc, sizeof(ppp_frame_wrapped_acfc));
+
+	/* Give modem ppp time to process received frame */
+	k_msleep(1000);
+
+	/* Validate frame received on mock network interface */
+	zassert_true(received_packets_len == 1, "Expected to receive one network packet");
+
+	pkt = received_packets[0];
+	pkt_len = net_pkt_get_len(pkt);
+
+	/* An ACFC frame must decode to the same payload as the FF 03 form */
+	zassert_true(pkt_len == sizeof(ppp_frame_unwrapped), "Received net pkt data len incorrect");
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_read(pkt, buffer, pkt_len);
+	zassert_true(memcmp(buffer, ppp_frame_unwrapped, pkt_len) == 0,
+		     "Received net pkt data incorrect");
+}
+
+/*
+ * Pure ACFC for IP: the frame omits FF 03 and carries the full 2-octet IP
+ * protocol 0x0021, whose high octet 0x00 is HDLC-escaped (0x7D 0x20), so the
+ * first protocol octet must be unescaped when the frame starts.
+ */
+ZTEST(modem_ppp, test_acfc_ip_frame_receive)
+{
+	struct net_pkt *pkt;
+	size_t pkt_len;
+
+	/* IP frame with the FF 03 header omitted (ACFC), 2-octet protocol */
+	modem_backend_mock_put(&mock, ip_frame_wrapped_acfc, sizeof(ip_frame_wrapped_acfc));
+
+	/* Give modem ppp time to process received frame */
+	k_msleep(1000);
+
+	/* Validate frame received on mock network interface */
+	zassert_true(received_packets_len == 1, "Expected to receive one network packet");
+
+	pkt = received_packets[0];
+	pkt_len = net_pkt_get_len(pkt);
+
+	/* Must decode to the same payload as the FF 03 form, including protocol */
+	zassert_true(pkt_len == sizeof(ip_frame_unwrapped_with_protocol),
+		     "Received net pkt data len incorrect");
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_read(pkt, buffer, pkt_len);
+	zassert_true(memcmp(buffer, ip_frame_unwrapped_with_protocol, pkt_len) == 0,
+		     "Received net pkt data incorrect");
+}
+
+ZTEST(modem_ppp, test_pfc_acfc_ip_frame_receive)
+{
+	struct net_pkt *pkt;
+	size_t pkt_len;
+
+	/* IP frame with no FF 03 header and a 1-octet protocol (PFC + ACFC) */
+	modem_backend_mock_put(&mock, ip_frame_wrapped_pfc_acfc, sizeof(ip_frame_wrapped_pfc_acfc));
+
+	/* Give modem ppp time to process received frame */
+	k_msleep(1000);
+
+	/* Validate frame received on mock network interface */
+	zassert_true(received_packets_len == 1, "Expected to receive one network packet");
+
+	pkt = received_packets[0];
+	pkt_len = net_pkt_get_len(pkt);
+
+	/* Must decode to the compressed 1-octet protocol followed by the IP packet */
+	zassert_true(pkt_len == sizeof(ip_frame_unwrapped_with_protocol) - 1,
+		     "Received net pkt data len incorrect");
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_read(pkt, buffer, pkt_len);
+	zassert_true(memcmp(buffer, &ip_frame_unwrapped_with_protocol[1], pkt_len) == 0,
 		     "Received net pkt data incorrect");
 }
 
