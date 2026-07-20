@@ -9,11 +9,14 @@ config CRYPTO_INFINEON_MXCRYPTOLITE
 	depends on DT_HAS_INFINEON_MXCRYPTOLITE_CRYPTO_ENABLED
 	select MFD
 	select USE_INFINEON_MXCRYPTOLITE_AES
-	select USE_INFINEON_MXCRYPTOLITE_SHA256
+	select USE_INFINEON_MXCRYPTOLITE_SHA if SOC_DIE_PSC3M6
+	select USE_INFINEON_MXCRYPTOLITE_SHA256 if !SOC_DIE_PSC3M6
 	help
 	  Enable the Infineon MXCRYPTOLITE hardware-accelerated crypto driver
 	  for supported devices.  Provides AES-128 ECB, CBC, CTR, and CCM cipher
 	  operations and SHA-256 hash operations via the Zephyr crypto API.
+	  On PSC3M6 devices, the unified cy_cryptolite_sha driver is used
+	  instead, which additionally provides SHA-384 and SHA-512.
 
 if CRYPTO_INFINEON_MXCRYPTOLITE
 
