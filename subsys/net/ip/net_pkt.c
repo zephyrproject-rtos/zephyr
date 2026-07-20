@@ -190,6 +190,8 @@ static void net_pkt_alloc_add(void *alloc_data, bool is_pkt,
 		net_pkt_allocs[i].alloc_data = alloc_data;
 		net_pkt_allocs[i].func_alloc = func;
 		net_pkt_allocs[i].line_alloc = line;
+		net_pkt_allocs[i].func_free = NULL;
+		net_pkt_allocs[i].line_free = 0;
 
 		return;
 	}
@@ -1047,11 +1049,13 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 
 		timeout = sys_timepoint_timeout(end);
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 		NET_FRAG_CHECK_IF_NOT_IN_USE(new, new->ref + 1);
+#endif
 
 		net_pkt_alloc_add(new, false, caller, line);
 
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 		NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
 			pool2str(pool), get_name(pool), get_frees(pool),
 			new, new->ref, caller, line);
@@ -1067,7 +1071,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 	return first;
 error:
 	if (first) {
-		net_buf_unref(first);
+		net_pkt_frag_unref(first);
 	}
 
 #if defined(CONFIG_NET_PKT_ALLOC_STATS)
@@ -1105,15 +1109,19 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 
 	buf = net_buf_alloc_len(pool, size + headroom, timeout);
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_FRAG_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
-
-	net_pkt_alloc_add(buf, false, caller, line);
-
-	NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
-		pool2str(pool), get_name(pool), get_frees(pool),
-		buf, buf->ref, caller, line);
+	if (buf) {
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+		NET_FRAG_CHECK_IF_NOT_IN_USE(buf, buf->ref + 1);
 #endif
+
+		net_pkt_alloc_add(buf, false, caller, line);
+
+#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+		NET_DBG("%s (%s) [%d] frag %p ref %u (%s():%d)",
+			pool2str(pool), get_name(pool), get_frees(pool),
+			buf, buf->ref, caller, line);
+#endif
+	}
 
 #if defined(CONFIG_NET_PKT_ALLOC_STATS)
 	if (buf) {
@@ -1588,9 +1596,7 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, k_timeout_t timeout)
 
 	net_pkt_set_vlan_tag(pkt, NET_VLAN_TAG_UNSPEC);
 
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	net_pkt_alloc_add(pkt, true, caller, line);
-#endif
 
 	net_pkt_cursor_init(pkt);
 
