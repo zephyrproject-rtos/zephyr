@@ -719,14 +719,6 @@ static int spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 		 * Fill the TxFIFO until threshold is reached or all data for the transfer are sent.
 		 */
 		spi_stm32_send_fifo(spi, data);
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
-			/* After first transmit, disable TXP. The goal is to use DXP from then on.
-			 * This keeps Tx and Rx synchronized and avoids overruns.
-			 */
-			LL_SPI_DisableIT_TXP(spi);
-		}
-#endif /* CONFIG_SPI_STM32_INTERRUPT */
 	}
 
 	if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX && LL_SPI_IsActiveFlag_EOT(spi)) {
@@ -902,20 +894,17 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (!IS_ENABLED(CONFIG_SPI_RTIO) || LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+	if (LL_SPI_GetTransferSize(spi) != 0U) {
 		LL_SPI_EnableIT_EOT(spi);
-		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
-			LL_SPI_EnableIT_DXP(spi);
-		}
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 	ll_enable_int_errors(spi);
 
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (transfer_dir == STM32_SPI_FULL_DUPLEX &&
-	    LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
+	if (transfer_dir == STM32_SPI_FULL_DUPLEX && LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
 		struct spi_stm32_data *data = dev->data;
 
+#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		/* Non-H7 full-duplex master: seed the TX pipeline with the first
 		 * frame and enable RXNE only. Each RXNE ISR reads one received
 		 * frame then sends the next, keeping exactly one frame in flight.
@@ -923,8 +912,17 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 		 */
 		data->tx_len -= spi_stm32_send_next_frame(spi, data, 0U);
 		ll_enable_int_rx_not_empty(spi);
-	} else {
+#else
+		if (LL_SPI_GetTransferSize(spi) != 0U) {
+			/* H7 full-duplex master: fill the TX FIFO with as many frames as
+			 * possible, up to the FIFO threshold. The DXP ISR will keep the
+			 * FIFO full until all data is sent.
+			 */
+			spi_stm32_send_fifo(spi, data);
+			LL_SPI_EnableIT_DXP(spi);
+		}
 #endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+	} else {
 		if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX) {
 			ll_enable_int_rx_not_empty(spi);
 		}
@@ -932,9 +930,7 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 		if (transfer_dir != STM32_SPI_HALF_DUPLEX_RX) {
 			ll_enable_int_tx_empty(spi);
 		}
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	}
-#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	irq_enable(cfg->irq_line);
