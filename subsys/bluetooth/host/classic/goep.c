@@ -170,7 +170,7 @@ static const struct bt_obex_transport_ops goep_rfcomm_transport_ops = {
 	.disconnect = goep_rfcomm_disconnect,
 };
 
-static int goep_rfcomm_init(struct bt_conn *conn, struct bt_goep *goep)
+static void goep_rfcomm_init(struct bt_conn *conn, struct bt_goep *goep)
 {
 	struct bt_goep_transport_v1 *goep_transport_v1 = goep->v1;
 	uint32_t mtu;
@@ -183,11 +183,8 @@ static int goep_rfcomm_init(struct bt_conn *conn, struct bt_goep *goep)
 	/* Set the default MTU to the largest value that the configuration can support */
 	goep->obex.rx.mtu = mtu;
 
-	if (goep->obex.rx.mtu < GOEP_MIN_MTU) {
-		LOG_ERR("GOEP RFCOMM MTU less than minimum size (%d < %d)", goep->obex.rx.mtu,
-			GOEP_MIN_MTU);
-		return -EINVAL;
-	}
+	__ASSERT(goep->obex.rx.mtu >= GOEP_MIN_MTU, "GOEP RFCOMM MTU less than minimum size "
+		 "(%d < %d)", goep->obex.rx.mtu, GOEP_MIN_MTU);
 
 	bt_obex_reg_transport(&goep->obex, &goep_rfcomm_transport_ops);
 
@@ -196,8 +193,6 @@ static int goep_rfcomm_init(struct bt_conn *conn, struct bt_goep *goep)
 	goep_transport_v1->dlc.mtu = goep->obex.rx.mtu;
 	goep_transport_v1->dlc.ops = &goep_rfcomm_ops;
 	goep_transport_v1->dlc.required_sec_level = BT_SECURITY_L2;
-
-	return 0;
 }
 
 static int goep_rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_server *server,
@@ -225,11 +220,7 @@ static int goep_rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_server *ser
 		return -EINVAL;
 	}
 
-	err = goep_rfcomm_init(conn, goep);
-	if (err != 0) {
-		LOG_ERR("Fail to init goep");
-		return err;
-	}
+	goep_rfcomm_init(conn, goep);
 
 	*dlc = &goep->v1->dlc;
 
@@ -275,11 +266,7 @@ int bt_goep_transport_rfcomm_connect(struct bt_conn *conn, struct bt_goep *goep,
 		return -EINVAL;
 	}
 
-	err = goep_rfcomm_init(conn, goep);
-	if (err != 0) {
-		LOG_ERR("Fail to init goep");
-		return err;
-	}
+	goep_rfcomm_init(conn, goep);
 
 	err = bt_rfcomm_dlc_connect(conn, &goep->v1->dlc, channel);
 	if (err != 0) {
@@ -465,7 +452,7 @@ static const struct bt_obex_transport_ops goep_l2cap_transport_ops = {
 	.disconnect = goep_l2cap_disconnect,
 };
 
-static int goep_l2cap_init(struct bt_conn *conn, struct bt_goep *goep)
+static void goep_l2cap_init(struct bt_conn *conn, struct bt_goep *goep)
 {
 	struct bt_goep_transport_v2 *goep_transport_v2 = goep->v2;
 	uint32_t mtu;
@@ -478,11 +465,8 @@ static int goep_l2cap_init(struct bt_conn *conn, struct bt_goep *goep)
 	/* Set the default MTU to the largest value that the configuration can support */
 	goep->obex.rx.mtu = mtu;
 
-	if (goep->obex.rx.mtu < GOEP_MIN_MTU) {
-		LOG_ERR("GOEP L2CAP MTU less than minimum size (%d < %d)", goep->obex.rx.mtu,
-			GOEP_MIN_MTU);
-		return -EINVAL;
-	}
+	__ASSERT(goep->obex.rx.mtu >= GOEP_MIN_MTU, "GOEP L2CAP MTU less than minimum size "
+		 "(%d < %d)", goep->obex.rx.mtu, GOEP_MIN_MTU);
 
 	bt_obex_reg_transport(&goep->obex, &goep_l2cap_transport_ops);
 
@@ -503,8 +487,6 @@ static int goep_l2cap_init(struct bt_conn *conn, struct bt_goep *goep)
 	goep_transport_v2->chan.rx.fcs = BT_L2CAP_BR_FCS_16BIT;
 	goep_transport_v2->chan.chan.ops = &goep_l2cap_ops;
 	goep_transport_v2->chan.required_sec_level = BT_SECURITY_L2;
-
-	return 0;
 }
 
 static int goep_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
@@ -532,11 +514,7 @@ static int goep_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *serve
 		return -EINVAL;
 	}
 
-	err = goep_l2cap_init(conn, goep);
-	if (err != 0) {
-		LOG_ERR("Fail to init goep");
-		return err;
-	}
+	goep_l2cap_init(conn, goep);
 
 	*chan = &goep->v2->chan.chan;
 	atomic_set(&goep->_state, BT_GOEP_TRANSPORT_CONNECTING);
@@ -588,11 +566,7 @@ int bt_goep_transport_l2cap_connect(struct bt_conn *conn, struct bt_goep *goep, 
 		return -EBUSY;
 	}
 
-	err = goep_l2cap_init(conn, goep);
-	if (err != 0) {
-		LOG_ERR("Fail to init goep");
-		return err;
-	}
+	goep_l2cap_init(conn, goep);
 
 	err = bt_l2cap_chan_connect(conn, &goep->v2->chan.chan, psm);
 	if (err != 0) {
