@@ -203,7 +203,7 @@ int pfc_rcar_set_bias(uintptr_t pfc_base, uint16_t pin, uint16_t flags)
 
 #ifdef CONFIG_PINCTRL_RCAR_VOLTAGE_CONTROL
 
-__maybe_unused const struct pfc_pocctrl_reg pfc_r8a77951_r8a77961_volt_regs[] = {
+__maybe_unused static const struct pfc_pocctrl_reg pfc_r8a77951_r8a77961_volt_regs[] = {
 	{
 		.offset = 0x0380,
 		.pins = {
@@ -248,7 +248,7 @@ __maybe_unused const struct pfc_pocctrl_reg pfc_r8a77951_r8a77961_volt_regs[] = 
  * R-Car V4H has one POC register per GPIO group.  The SDHI pins are in
  * GPIO group 3 and POC3 is at offset 0x0a0 in that group's PFC window.
  */
-__maybe_unused const struct pfc_pocctrl_reg pfc_r8a779g0_volt_regs[] = {
+__maybe_unused static const struct pfc_pocctrl_reg pfc_r8a779g0_volt_regs[] = {
 	{
 		.offset = 0x00a0,
 		.pins = {
