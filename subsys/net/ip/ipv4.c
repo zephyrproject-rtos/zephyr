@@ -302,6 +302,9 @@ static enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
 		return NET_OK;
 	}
 
+	/* iface is NULL here so that net_if_ipv4_addr_onlink() searches all
+	 * interfaces for the best on-link match, mirroring the IPv6 path.
+	 */
 	if (net_if_ipv4_addr_onlink(&iface, &dst_ip)) {
 		ret = net_route_packet_if(pkt, iface);
 		if (ret < 0) {
