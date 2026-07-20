@@ -18,3 +18,11 @@ config TEST_MUX_SET_VALUE_B
 	  A second state value, used to confirm read-back tracks the latest
 	  write. Must be valid for the target controller and differ from
 	  TEST_MUX_SET_VALUE_A.
+
+config TEST_MUX_HAS_DISCONNECT
+	bool "Fixture supports mux_control_disconnect()"
+	help
+	  Set when the board fixture wires an enable line so the controller
+	  implements mux_control_disconnect(). When enabled, the test observes
+	  the enable line via gpio_emul_output_get_dt(); when disabled, the test
+	  asserts mux_control_disconnect() returns -ENOSYS.

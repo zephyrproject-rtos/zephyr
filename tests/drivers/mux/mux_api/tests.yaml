@@ -22,3 +22,13 @@ tests:
     extra_configs:
       - CONFIG_TEST_MUX_SET_VALUE_A=17
       - CONFIG_TEST_MUX_SET_VALUE_B=1
+  drivers.mux.gpio:
+    filter: dt_compat_enabled("gpio-mux")
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_TEST_MUX_SET_VALUE_A=3
+      - CONFIG_TEST_MUX_SET_VALUE_B=6
+      - CONFIG_TEST_MUX_HAS_DISCONNECT=y
