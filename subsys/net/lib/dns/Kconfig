@@ -331,6 +331,24 @@ config MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION
 	  Chapter 9. By doing so, Zephyr network services are discoverable
 	  using e.g. 'avahi-browse -t -r _services._dns-sd._udp.local'.
 
+config MDNS_RESPONDER_ANNOUNCE_DNS_SD
+	bool "Include DNS-SD service records in mDNS announcements"
+	depends on MDNS_RESPONDER_PROBE
+	help
+	  RFC 6762 Section 8.3 requires the startup announcement to contain
+	  all of a responder's newly registered resource records, not just
+	  address records -- this covers the shared PTR record and unique
+	  SRV/TXT records for every DNS-SD service registered via
+	  DNS_SD_REGISTER_SERVICE() (and any records set through
+	  mdns_responder_set_ext_records()).
+
+	  Enable this for full RFC 6762 compliance. Leave disabled to keep
+	  announcements limited to address records only (smaller, less
+	  frequent traffic on startup) -- clients that actively query for
+	  services (e.g. avahi-browse) are unaffected either way, since
+	  normal query/response handling already answers DNS-SD queries
+	  regardless of this option.
+
 endif # MDNS_RESPONDER_DNS_SD
 
 module = MDNS_RESPONDER
