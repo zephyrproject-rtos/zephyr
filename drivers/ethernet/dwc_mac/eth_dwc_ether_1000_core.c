@@ -249,7 +249,7 @@ static void dwmac_receive(const struct device *dev)
 		p->rx_frags[d_idx] = NULL;
 
 		if (p->rx_pkt == NULL) {
-			net_buf_unref(frag);
+			net_pkt_frag_unref(frag);
 			continue;
 		}
 
@@ -261,7 +261,7 @@ static void dwmac_receive(const struct device *dev)
 			eth_stats_update_errors_rx(p->iface);
 			net_pkt_unref(p->rx_pkt);
 			p->rx_pkt = NULL;
-			net_buf_unref(frag);
+			net_pkt_frag_unref(frag);
 			continue;
 		}
 

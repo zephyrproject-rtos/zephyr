@@ -207,7 +207,7 @@ static void gmac_free_rx_bufs(struct net_buf **rx_frag_list, uint16_t len)
 {
 	for (int i = 0; i < len; i++) {
 		if (rx_frag_list[i] != NULL) {
-			net_buf_unref(rx_frag_list[i]);
+			net_pkt_frag_unref(rx_frag_list[i]);
 			rx_frag_list[i] = NULL;
 		}
 	}
