@@ -1120,6 +1120,8 @@ class ProjectBuilder(FilterBuilder):
             'handler.log',
             'handler_stderr.log',
             'build.log',
+            'qemu.stdout',
+            'qemu.stderr',
             'device.log',
             'recording.csv',
             'rom.json',

@@ -1272,6 +1272,8 @@ class QEMUWinHandler(Handler):
         super().__init__(instance, type_str, options, generator_cmd, suite_name_check)
         self.pid_fn = os.path.join(instance.build_dir, "qemu.pid")
         self.fifo_fn = os.path.join(instance.build_dir, "qemu-fifo")
+        self.stdout_fn = os.path.join(instance.build_dir, "qemu.stdout")
+        self.stderr_fn = os.path.join(instance.build_dir, "qemu.stderr")
         self.pipe_handle = None
         self.pid = 0
         self.thread = None
@@ -1497,8 +1499,12 @@ class QEMUWinHandler(Handler):
         self.thread.daemon = True
         self.thread.start()
 
-        with subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
-                              cwd=self.build_dir) as proc:
+        with (
+            open(self.stdout_fn, "w") as stdout_fp,
+            open(self.stderr_fn, "w") as stderr_fp,
+            subprocess.Popen(command, stdout=stdout_fp, stderr=stderr_fp,
+                             cwd=self.build_dir) as proc
+        ):
             thread_max_time = time.time() + self.get_test_timeout()
 
             self._monitor_output(queue, self.get_test_timeout(), self.log_fn, self.pid_fn, harness,
