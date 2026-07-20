@@ -117,17 +117,6 @@ config BT_BLUENRG_ACI
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
 
-config BT_STM32_IPM
-	bool
-	default y
-	depends on DT_HAS_ST_STM32WB_RF_ENABLED
-	select USE_STM32_HAL_CORTEX
-	select HAS_STM32LIB
-	select BT_HCI_SETUP
-	help
-	  STM32WB HCI driver using the shared memory transport between
-	  CPU1 and the wireless coprocessor on CPU2.
-
 config BT_STM32WBA
 	bool
 	default y
