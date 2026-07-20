@@ -1249,6 +1249,13 @@ class QEMUWinHandler(Handler):
      for these to collect whether the test passed or failed.
      """
 
+    # How long to wait between attempts to attach to QEMU's console pipe.
+    PIPE_OPEN_RETRY_INTERVAL = 0.01
+
+    # How long the monitor blocks on the character queue before re-checking
+    # the test deadline. Must not be 0, or the monitor spins on a full core.
+    QUEUE_POLL_INTERVAL = 0.1
+
     def __init__(
         self,
         instance,
@@ -1334,21 +1341,30 @@ class QEMUWinHandler(Handler):
         return command
 
     def _enqueue_char(self, queue):
+        pipe_path = r"\\.\pipe\\" + self.fifo_fn
+
         while not self.stop_thread:
-            if not self.pipe_handle:
+            if self.pipe_handle is None:
                 try:
-                    self.pipe_handle = os.open(r"\\.\pipe\\" + self.fifo_fn, os.O_RDONLY)
-                except FileNotFoundError as e:
-                    if e.args[0] == 2:
-                        # Pipe is not opened yet, try again after a delay.
-                        time.sleep(1)
+                    self.pipe_handle = os.open(pipe_path, os.O_RDONLY)
+                except OSError:
+                    # QEMU creates the pipe only once it starts, and anything
+                    # it writes before we attach is lost. Poll frequently so
+                    # the boot banner is not missed, and retry on any error,
+                    # as the pipe may also be transiently busy.
+                    time.sleep(self.PIPE_OPEN_RETRY_INTERVAL)
                 continue
 
-            c = ""
             try:
                 c = os.read(self.pipe_handle, 1)
-            finally:
-                queue.put(c)
+            except OSError:
+                # Pipe went away, e.g. QEMU exited. Report as EOF.
+                c = b""
+
+            queue.put(c)
+
+            if c == b"":
+                break
 
     def _monitor_output(
         self,
@@ -1373,10 +1389,10 @@ class QEMUWinHandler(Handler):
             this_timeout = int((timeout_time - time.time()) * 1000)
             if this_timeout < 0:
                 try:
-                    if self.pid and this_timeout > 0:
+                    if self.pid:
                         # there's possibility we polled nothing because
                         # of not enough CPU time scheduled by host for
-                        # QEMU process during p.poll(this_timeout)
+                        # QEMU process during the wait
                         cpu_time = self._get_cpu_time(self.pid)
                         if cpu_time < timeout and _status == TwisterStatus.NONE:
                             timeout_time = time.time() + (timeout - cpu_time)
@@ -1402,7 +1418,7 @@ class QEMUWinHandler(Handler):
                     self.pid = int(pid_file.read())
 
             try:
-                c = queue.get_nowait()
+                c = queue.get(timeout=self.QUEUE_POLL_INTERVAL)
             except Empty:
                 continue
             try:
@@ -1474,14 +1490,15 @@ class QEMUWinHandler(Handler):
         self.stop_thread = False
         queue = Queue()
 
+        # Start the reader before QEMU, so that we attach to the console pipe
+        # as soon as QEMU creates it. Output written before we attach is lost.
+        logger.debug(f"Spawning QEMUHandler Thread for {self.name}")
+        self.thread = threading.Thread(target=self._enqueue_char, args=(queue,))
+        self.thread.daemon = True
+        self.thread.start()
+
         with subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
                               cwd=self.build_dir) as proc:
-            logger.debug(f"Spawning QEMUHandler Thread for {self.name}")
-
-            self.thread = threading.Thread(target=self._enqueue_char, args=(queue,))
-            self.thread.daemon = True
-            self.thread.start()
-
             thread_max_time = time.time() + self.get_test_timeout()
 
             self._monitor_output(queue, self.get_test_timeout(), self.log_fn, self.pid_fn, harness,
@@ -1505,8 +1522,12 @@ class QEMUWinHandler(Handler):
 
         logger.debug(f"return code from QEMU ({self.pid}): {self.returncode}")
 
-        os.close(self.pipe_handle)
-        self.pipe_handle = None
+        self.stop_thread = True
+
+        if self.pipe_handle is not None:
+            with contextlib.suppress(OSError):
+                os.close(self.pipe_handle)
+            self.pipe_handle = None
 
         self._update_instance_info(harness, failure_type=failure_type)
 
