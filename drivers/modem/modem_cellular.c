@@ -187,6 +187,65 @@ void modem_cellular_emit_event(struct modem_cellular_data *data,
 	}
 }
 
+/*
+ * Compares the fields that constitute a network-status change. Signal quality
+ * (rsrp/rsrq) is deliberately excluded: it fluctuates on nearly every poll and
+ * would otherwise re-fire the event continuously.
+ */
+static bool modem_cellular_network_status_equal(const struct cellular_evt_network_status *a,
+						const struct cellular_evt_network_status *b)
+{
+	if (a->status != b->status || a->access_tech != b->access_tech) {
+		return false;
+	}
+
+	/* Cell identity */
+	if (a->cell.lte.mcc != b->cell.lte.mcc || a->cell.lte.mnc != b->cell.lte.mnc ||
+	    a->cell.lte.tac != b->cell.lte.tac || a->cell.lte.gci != b->cell.lte.gci) {
+		return false;
+	}
+
+	/* Radio channel */
+	if (a->cell.lte.earfcn != b->cell.lte.earfcn || a->cell.lte.band != b->cell.lte.band ||
+	    a->cell.lte.phys_cell_id != b->cell.lte.phys_cell_id) {
+		return false;
+	}
+
+	return true;
+}
+
+void modem_cellular_emit_network_status(struct modem_cellular_data *data,
+					const struct cellular_evt_network_status *status)
+{
+	bool changed;
+
+	/* api_lock serialises the cache against get_network_status(); emitters run
+	 * on the modem work queue and must not already hold it. The cache always
+	 * takes the latest value (so the getter reports current signal), but the
+	 * change test ignores signal quality.
+	 */
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	changed = !data->network_status_valid ||
+		  !modem_cellular_network_status_equal(&data->network_status, status);
+	data->network_status = *status;
+	data->network_status_valid = true;
+	k_mutex_unlock(&data->api_lock);
+
+	/* Emit outside the lock, and only on a real change so periodic pollers do
+	 * not re-fire the event every cycle.
+	 */
+	if (changed) {
+		modem_cellular_emit_event(data, CELLULAR_EVENT_NETWORK_STATUS_CHANGED, status);
+	}
+}
+
+static void modem_cellular_invalidate_network_status(struct modem_cellular_data *data)
+{
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	data->network_status_valid = false;
+	k_mutex_unlock(&data->api_lock);
+}
+
 static void modem_cellular_emit_modem_info(struct modem_cellular_data *data,
 					   enum cellular_modem_info_type field)
 {
@@ -529,11 +588,19 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 							   modem_cellular_is_registered(data))));
 
 	if (modem_cellular_is_registered(data)) {
+		/* Drop any cached serving cell on a registration change; it is stale
+		 * until the next periodic poll, so get_network_status() reports no
+		 * data rather than the previous (deregistered) snapshot.
+		 */
+		if (registration_prev != registration_status) {
+			modem_cellular_invalidate_network_status(data);
+		}
+
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	} else {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
-		/* If we transitioned into a deregistered state, issue a NETWORK_STATUS event,
-		 * as we cannot guarantee periodic network status AT commands will respond normally.
+		/* On deregistration report the status, as periodic network status AT
+		 * commands are not guaranteed to respond normally.
 		 */
 		if (registration_prev != registration_status) {
 			struct cellular_evt_network_status evt = {
@@ -541,8 +608,7 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 				.access_tech = data->access_tech,
 			};
 
-			modem_cellular_emit_event(data, CELLULAR_EVENT_NETWORK_STATUS_CHANGED,
-						  &evt);
+			modem_cellular_emit_network_status(data, &evt);
 		}
 	}
 	modem_cellular_emit_reg_state(data, registration_status);
@@ -2423,6 +2489,25 @@ static int modem_cellular_get_registration_status(const struct device *dev,
 	return ret;
 }
 
+static int modem_cellular_get_network_status(const struct device *dev,
+					     struct cellular_evt_network_status *status)
+{
+	struct modem_cellular_data *data = dev->data;
+	int ret = 0;
+
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+
+	if (data->network_status_valid) {
+		*status = data->network_status;
+	} else {
+		ret = -ENODATA;
+	}
+
+	k_mutex_unlock(&data->api_lock);
+
+	return ret;
+}
+
 static int modem_cellular_set_apn(const struct device *dev, const char *apn)
 {
 	struct modem_cellular_data *data = dev->data;
@@ -2527,6 +2612,7 @@ DEVICE_API(cellular, modem_cellular_api) = {
 	.get_signal = modem_cellular_get_signal,
 	.get_modem_info = modem_cellular_get_modem_info,
 	.get_registration_status = modem_cellular_get_registration_status,
+	.get_network_status = modem_cellular_get_network_status,
 	.set_apn = modem_cellular_set_apn,
 	.set_callback = modem_cellular_set_callback,
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS, (.get_stats = modem_cellular_get_stats,))
