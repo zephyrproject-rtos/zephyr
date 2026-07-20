@@ -120,24 +120,26 @@ static int xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 			break;
 		}
 
+		elf_word got_entry_read = read_got_entry(got_entry);
+
 		/* Relocate a local symbol: Xtensa specific. Seems to only be used with PIC */
 		unsigned int sh_ndx;
 
 		for (sh_ndx = 0; sh_ndx < ext->sect_cnt; sh_ndx++) {
-			if (ext->sect_hdrs[sh_ndx].sh_addr <= *got_entry &&
-			    *got_entry <
-			    ext->sect_hdrs[sh_ndx].sh_addr + ext->sect_hdrs[sh_ndx].sh_size) {
+			if (ext->sect_hdrs[sh_ndx].sh_addr <= got_entry_read &&
+			    got_entry_read < ext->sect_hdrs[sh_ndx].sh_addr +
+						     ext->sect_hdrs[sh_ndx].sh_size) {
 				break;
 			}
 		}
 
 		if (sh_ndx == ext->sect_cnt) {
-			LOG_ERR("%#x not found in any of the sections", *got_entry);
+			LOG_ERR("%#x not found in any of the sections", got_entry_read);
 			return -ENOENT;
 		}
 
 		update_got_entry(got_entry,
-				 read_got_entry(got_entry) +
+				 got_entry_read +
 					 (uintptr_t)llext_loaded_sect_ptr(ldr, ext, sh_ndx) -
 					 ext->sect_hdrs[sh_ndx].sh_addr);
 		break;
