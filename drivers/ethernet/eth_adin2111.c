@@ -266,12 +266,11 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 	rca &= ADIN2111_BUFSTS_RCA_MASK;
 
 	/* Preare all tx headers */
+	hdr = ADIN2111_OA_DATA_HDR_DNC;
+	hdr |= eth_adin2111_oa_get_parity(hdr);
+	hdr = sys_cpu_to_be32(hdr);
 	for (i = 0, len = 0; i < rca; ++i) {
-		hdr = ADIN2111_OA_DATA_HDR_DNC;
-		hdr |= eth_adin2111_oa_get_parity(hdr);
-
-		*(uint32_t *)&ctx->oa_tx_buf[len] = sys_cpu_to_be32(hdr);
-
+		*(uint32_t *)&ctx->oa_tx_buf[len] = hdr;
 		len += sizeof(uint32_t) + ctx->oa_cps;
 	}
 
