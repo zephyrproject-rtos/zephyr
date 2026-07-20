@@ -96,7 +96,7 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 	while (true) {
 		count = linux_socketcan_read_data(data->dev_fd, (void *)(&sframe),
 						   sizeof(sframe), &msg_confirm);
-		if (count >= 0) {
+		if (count > 0) {
 			if (msg_confirm) {
 				data->tx_callback(dev, 0, data->tx_user_data);
 				k_sem_give(&data->tx_idle);
@@ -124,7 +124,8 @@ static void rx_thread(void *arg1, void *arg2, void *arg3)
 				(frame.flags & CAN_FRAME_RTR) != 0 ? ", RTR frame" : "");
 
 			dispatch_frame(dev, &frame);
-		} else if (nsi_host_get_errno() != EAGAIN && nsi_host_get_errno() != EWOULDBLOCK) {
+		} else if (count == -1 &&
+			nsi_host_get_errno() != EAGAIN && nsi_host_get_errno() != EWOULDBLOCK) {
 			LOG_WRN("linux_socketcan_read_data reported err: %s",
 				strerror(nsi_host_get_errno()));
 		}

@@ -102,7 +102,7 @@ int linux_socketcan_read_data(int fd, void *buf, size_t buf_len, bool *msg_confi
 
 	int ret = (int)recvmsg(fd, &msg, MSG_DONTWAIT);
 
-	if (ret != -1) {
+	if (ret > 0) {
 		if (msg_confirm != NULL) {
 			*msg_confirm = (msg.msg_flags & MSG_CONFIRM) != 0;
 		}
