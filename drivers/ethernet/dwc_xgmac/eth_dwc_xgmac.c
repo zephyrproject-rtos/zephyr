@@ -1401,7 +1401,7 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 							       (context.q_id * dma_ch_cfg->tdrl) +
 							       context.pkt_desc_id);
 		arch_dcache_invd_range(context.tx_desc, sizeof(context.tx_desc));
-		arch_dcache_flush_range(frag->data, CONFIG_NET_BUF_DATA_SIZE);
+		arch_dcache_flush_range(frag->data, frag->len);
 		context.tx_desc->tdes0 = (uint32_t)POINTER_TO_UINT(frag->data);
 		context.tx_desc->tdes1 = (uint32_t)(POINTER_TO_UINT(frag->data) >> 32u);
 		tdes2_flgs = frag->len;
