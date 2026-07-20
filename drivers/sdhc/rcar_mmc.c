@@ -8,6 +8,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/disk.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -73,6 +74,7 @@ struct mmc_rcar_cfg {
 	const struct pinctrl_dev_config *pcfg;
 	const struct device *regulator_vqmmc;
 	const struct device *regulator_vmmc;
+	struct gpio_dt_spec cd_gpio;
 
 	uint32_t max_frequency;
 
@@ -1512,6 +1514,10 @@ static int rcar_mmc_get_card_present(const struct device *dev)
 		return 1;
 	}
 
+	if (cfg->cd_gpio.port != NULL) {
+		return gpio_pin_get_dt(&cfg->cd_gpio);
+	}
+
 	return !!(rcar_mmc_read_reg32(dev, RCAR_MMC_INFO1) & RCAR_MMC_INFO1_CD);
 }
 
@@ -2094,6 +2100,20 @@ static int rcar_mmc_init(const struct device *dev)
 		goto exit_unmap;
 	}
 
+	if (cfg->cd_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->cd_gpio)) {
+			LOG_ERR("%s: card-detect GPIO is not ready", dev->name);
+			ret = -ENODEV;
+			goto exit_unmap;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("%s: failed to configure card-detect GPIO: %d", dev->name, ret);
+			goto exit_unmap;
+		}
+	}
+
 	if (!device_is_ready(cfg->cpg_dev)) {
 		LOG_ERR("%s: error cpg_dev isn't ready", dev->name);
 		ret = -ENODEV;
@@ -2158,6 +2178,7 @@ exit_unmap:
 		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),                        \
 		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),                        \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                             \
 		.regulator_vqmmc = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), vqmmc_supply)),        \
 		.regulator_vmmc = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), vmmc_supply)),          \
 		.max_frequency = DT_INST_PROP(n, max_bus_freq),                                    \
