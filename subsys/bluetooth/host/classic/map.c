@@ -1318,7 +1318,7 @@ static const struct bt_obex_server_ops mce_mns_ops = {
 #define MNS_L2CAP_SERVER(server)  CONTAINER_OF(server, struct bt_map_mce_mns_l2cap_server, server)
 static int mce_mns_accept(struct bt_conn *conn, void *server, uint8_t type, struct bt_goep **goep)
 {
-	struct bt_map_mce_mns *mce_mns;
+	struct bt_map_mce_mns *mce_mns = NULL;
 	int err;
 
 	LOG_DBG("MCE MNS %s accept", type == MAP_TRANSPORT_TYPE_RFCOMM ? "RFCOMM" : "L2CAP");
@@ -1346,10 +1346,7 @@ static int mce_mns_accept(struct bt_conn *conn, void *server, uint8_t type, stru
 		return err;
 	}
 
-	if (mce_mns == NULL || mce_mns->_cb == NULL) {
-		LOG_WRN("Invalid parameter");
-		return -EINVAL;
-	}
+	__ASSERT(mce_mns != NULL && mce_mns->_cb != NULL, "Invalid mce_mns instance or callback");
 
 	mce_mns->goep.transport_ops = &mce_mns_transport_ops;
 	if (type == MAP_TRANSPORT_TYPE_RFCOMM) {
@@ -1926,7 +1923,7 @@ static const struct bt_obex_server_ops mse_mas_ops = {
 #define MAS_L2CAP_SERVER(server)  CONTAINER_OF(server, struct bt_map_mse_mas_l2cap_server, server)
 static int mse_mas_accept(struct bt_conn *conn, void *server, uint8_t type, struct bt_goep **goep)
 {
-	struct bt_map_mse_mas *mse_mas;
+	struct bt_map_mse_mas *mse_mas = NULL;
 	int err;
 
 	LOG_DBG("MSE MAS %s accept", type == MAP_TRANSPORT_TYPE_RFCOMM ? "RFCOMM" : "L2CAP");
@@ -1954,10 +1951,7 @@ static int mse_mas_accept(struct bt_conn *conn, void *server, uint8_t type, stru
 		return err;
 	}
 
-	if (mse_mas == NULL || mse_mas->_cb == NULL) {
-		LOG_WRN("Invalid parameter");
-		return -EINVAL;
-	}
+	__ASSERT(mse_mas != NULL && mse_mas->_cb != NULL, "Invalid mse_mas instance or callback");
 
 	mse_mas->goep.transport_ops = &mse_mas_transport_ops;
 	if (type == MAP_TRANSPORT_TYPE_RFCOMM) {
