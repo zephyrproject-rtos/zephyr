@@ -3129,6 +3129,10 @@ def _main(args):
             test.run()
         except EndTest:
             pass
+        except KeyboardInterrupt:
+            # Let Ctrl-C (SIGINT) abort the whole run instead of being turned
+            # into a failure for the current check while the loop carries on.
+            raise
         except BaseException:
             test.failure(f"An exception occurred in {test.name}:\n{traceback.format_exc()}")
 
@@ -3198,6 +3202,9 @@ def main(argv=None):
 
     try:
         n_fails = _main(args)
+    except KeyboardInterrupt:
+        # Abort cleanly on Ctrl-C rather than dumping a traceback.
+        sys.exit("Interrupted")
     except BaseException:
         # Catch BaseException instead of Exception to include stuff like
         # SystemExit (raised by sys.exit())
