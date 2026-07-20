@@ -190,6 +190,7 @@ family:
     - name: stm32l151xb
     - name: stm32l151xba
     - name: stm32l151xc
+    - name: stm32l151xe
     - name: stm32l152xc
     - name: stm32l152xe
   - name: stm32l4x
