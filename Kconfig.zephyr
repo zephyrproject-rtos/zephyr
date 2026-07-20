@@ -817,6 +817,16 @@ config BUILD_OUTPUT_BIN
 	  Build a "raw" binary zephyr/zephyr.bin in the build directory.
 	  The name of this file can be customized with CONFIG_KERNEL_BIN_NAME.
 
+config COMPRESS_OUTPUT_BIN
+	bool "Compress the output binary with LZ4"
+	depends on BUILD_OUTPUT_BIN
+	help
+	  When enabled, the build post-processing runs LZ4 compression on
+	  the zephyr.bin output file, producing zephyr.bin.lz4 in the build
+	  directory. The name of this file follows CONFIG_KERNEL_BIN_NAME.
+	  The output uses the LZ4 block format compatible with LZ4_decompress_safe().
+	  Requires the Python lz4 package (see scripts/requirements-base.txt).
+
 config BUILD_OUTPUT_EFI
 	bool "Build as an EFI application"
 	default n
