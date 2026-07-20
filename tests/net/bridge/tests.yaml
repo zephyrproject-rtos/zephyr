@@ -34,3 +34,10 @@ tests:
       - CONFIG_NET_IPV6=y
       - CONFIG_HWINFO=y
       - CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC=y
+  # Exercise the configured bridge MAC prefix option.
+  net.eth_bridge.ip.prefix_mac:
+    extra_configs:
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_ETHERNET_BRIDGE_PREFIX_MAC=y
+      - CONFIG_NET_ETHERNET_BRIDGE_MAC_PREFIX="02:34:56:78:9a"

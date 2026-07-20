@@ -56,7 +56,24 @@ config NET_ETHERNET_BRIDGE_UNIQUE_MAC
 	  get distinct addresses. Falls back to a random address when no device
 	  ID is available.
 
+config NET_ETHERNET_BRIDGE_PREFIX_MAC
+	bool "Stable MAC address from configured prefix"
+	help
+	  Assign a stable MAC address by appending the bridge index to a
+	  configured five-octet MAC address prefix. The resulting address is the
+	  same across reboots so peers' caches stay valid.
+
 endchoice
+
+config NET_ETHERNET_BRIDGE_MAC_PREFIX
+	string "Bridge MAC address prefix"
+	depends on NET_ETHERNET_BRIDGE_PREFIX_MAC
+	default "02:00:00:00:00"
+	help
+	  Five-octet colon-separated MAC address prefix used for bridge
+	  interfaces. The bridge index is used as the final octet, so bridge0
+	  with prefix "02:00:00:00:00" gets "02:00:00:00:00:00" and bridge1
+	  gets "02:00:00:00:00:01".
 
 config NET_ETHERNET_BRIDGE_TXRX_DEBUG
 	bool "Debug received and sent packets in bridge"
