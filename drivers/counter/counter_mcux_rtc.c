@@ -236,6 +236,80 @@ static void mcux_rtc_isr(const struct device *dev)
 	RTC_StartTimer(config->base);
 }
 
+#if defined(CONFIG_COUNTER_CALIBRATION)
+
+/*
+ * Calibration maps the signed parts-per-billion value onto the RTC Time
+ * Compensation Register (TCR). TCR[7:0] configures the number of 32.768 kHz
+ * source clock cycles per second as (32768 - value), with value a
+ * two's-complement -128..+127, so a positive value shortens the second and
+ * speeds the counter up, matching the counter API sign convention. TCR[15:8]
+ * (CIR) holds the compensation interval in seconds minus one; it is kept at 0
+ * (compensate every second), giving ppb = value * 1e9 / 32768, ~30518 ppb per
+ * LSB over a range of roughly -3.9M..+3.9M ppb. The register is double
+ * buffered and safe to write while the counter is running; writing 0 disables
+ * compensation. Compensation counts 32.768 kHz oscillator cycles, so it is
+ * not supported when the prescaler runs from the LPO clock.
+ */
+#define MCUX_RTC_OSC_CYCLES_PER_SEC 32768
+#define MCUX_RTC_PPB_PER_HZ         1000000000LL
+#define MCUX_RTC_COMP_VALUE_MIN     (-128)
+#define MCUX_RTC_COMP_VALUE_MAX     (127)
+
+static int mcux_rtc_set_calibration(const struct device *dev, int32_t calibration)
+{
+	const struct counter_config_info *info = dev->config;
+	const struct mcux_rtc_config *config = CONTAINER_OF(info, struct mcux_rtc_config, info);
+	int64_t value;
+
+	if (DT_INST_ENUM_IDX(0, clock_source) == 1) {
+		return -ENOTSUP;
+	}
+
+	/*
+	 * value = round(calibration * 32768 / 1e9); get_calibration() reports
+	 * the programmed value so a set()/get() round-trips at the hardware
+	 * resolution.
+	 */
+	value = ((int64_t)calibration * MCUX_RTC_OSC_CYCLES_PER_SEC +
+		 ((calibration >= 0 ? MCUX_RTC_PPB_PER_HZ : -MCUX_RTC_PPB_PER_HZ) / 2)) /
+		MCUX_RTC_PPB_PER_HZ;
+
+	if (value < MCUX_RTC_COMP_VALUE_MIN || value > MCUX_RTC_COMP_VALUE_MAX) {
+		return -EINVAL;
+	}
+
+	config->base->TCR = RTC_TCR_CIR(0U) | RTC_TCR_TCR((uint8_t)value);
+
+	return 0;
+}
+
+static int mcux_rtc_get_calibration(const struct device *dev, int32_t *calibration)
+{
+	const struct counter_config_info *info = dev->config;
+	const struct mcux_rtc_config *config = CONTAINER_OF(info, struct mcux_rtc_config, info);
+	uint32_t reg;
+	int8_t value;
+	uint8_t interval;
+
+	if (DT_INST_ENUM_IDX(0, clock_source) == 1) {
+		return -ENOTSUP;
+	}
+
+	reg = config->base->TCR;
+
+	/* Read back the programmed TCR/CIR fields, not the read-only TCV/CIC. */
+	value = (int8_t)((reg & RTC_TCR_TCR_MASK) >> RTC_TCR_TCR_SHIFT);
+	interval = (uint8_t)((reg & RTC_TCR_CIR_MASK) >> RTC_TCR_CIR_SHIFT);
+
+	*calibration = (int32_t)(((int64_t)value * MCUX_RTC_PPB_PER_HZ) /
+				 ((int64_t)MCUX_RTC_OSC_CYCLES_PER_SEC * ((int64_t)interval + 1)));
+
+	return 0;
+}
+
+#endif /* CONFIG_COUNTER_CALIBRATION */
+
 static int mcux_rtc_init(const struct device *dev)
 {
 	const struct counter_config_info *info = dev->config;
@@ -282,6 +356,10 @@ static DEVICE_API(counter, mcux_rtc_driver_api) = {
 	.set_top_value = mcux_rtc_set_top_value,
 	.get_pending_int = mcux_rtc_get_pending_int,
 	.get_top_value = mcux_rtc_get_top_value,
+#if defined(CONFIG_COUNTER_CALIBRATION)
+	.set_calibration = mcux_rtc_set_calibration,
+	.get_calibration = mcux_rtc_get_calibration,
+#endif /* CONFIG_COUNTER_CALIBRATION */
 };
 
 static struct mcux_rtc_data mcux_rtc_data_0;
