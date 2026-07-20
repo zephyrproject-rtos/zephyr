@@ -84,6 +84,7 @@ jobs:
               --force-color \
               --inline-logs \
               -T samples/hello_world \
+              -T samples/synchronization \
               -T samples/cpp/hello_world \
               -v \
               $EXTRA_TWISTER_FLAGS
