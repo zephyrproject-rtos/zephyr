@@ -1073,5 +1073,9 @@ void ethernet_init(struct net_if *iface)
 	}
 #endif
 
+	if ((caps & ETHERNET_LLDP) != 0) {
+		net_lldp_set_lldpdu(iface);
+	}
+
 	ctx->is_init = true;
 }
