@@ -25,7 +25,7 @@ struct sbus_input_channel {
 	uint32_t zephyr_code;
 };
 
-const struct uart_config uart_cfg_sbus = {
+static const struct uart_config uart_cfg_sbus = {
 	.baudrate = 100000,
 	.parity = UART_CFG_PARITY_EVEN,
 	.stop_bits = UART_CFG_STOP_BITS_2,
