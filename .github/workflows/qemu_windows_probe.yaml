@@ -1,0 +1,106 @@
+name: QEMU Windows Probe
+
+# Manual diagnostic for the qemu_cortex_m0 stall seen on Windows runners.
+#
+# Twister drives QEMU through a named pipe chardev and reads the guest console
+# from it. This workflow runs the same images without twister, so that a stall
+# in the guest can be told apart from a stall in the console plumbing:
+#
+#   probe A: console straight to a file, no pipe involved at all
+#   probe B: the pipe chardev twister uses, read by a standalone reader
+#
+# If A streams and B does not, the guest is fine and the pipe path is at fault.
+# If neither streams, the guest itself is stalling on Windows.
+
+on:
+  workflow_dispatch:
+    inputs:
+      timeout:
+        description: 'Seconds to let each QEMU probe run'
+        required: false
+        default: '30'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          path: zephyr
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: 3.12
+
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@5ec39f5cba83346d83a836dfed1524270c660e28 # v1.0.14
+        with:
+          app-path: zephyr
+          toolchains: arm-zephyr-eabi
+          ccache-cache-key: probe-windows-2025
+
+      - name: Build samples
+        working-directory: zephyr
+        shell: bash
+        run: |
+          set -x
+          for s in hello_world synchronization; do
+            west build -p -b qemu_cortex_m0 -d /tmp/b-$s samples/$s
+          done
+
+      - name: Probe QEMU without twister
+        working-directory: zephyr
+        shell: bash
+        env:
+          PROBE_TIMEOUT: ${{ inputs.timeout }}
+        run: |
+          QEMU=$(find "$GITHUB_WORKSPACE/zephyr-sdk" -name 'qemu-system-arm.exe' | head -1)
+          echo "QEMU: $QEMU"
+          "$QEMU" --version
+
+          mkdir -p /tmp/probe
+
+          for s in hello_world synchronization; do
+            elf=$(cygpath -m /tmp/b-$s/zephyr/zephyr.elf)
+
+            # Probe A: console to a file. No pipe, no reader, no twister.
+            echo "=== probe A: $s (console to file) ==="
+            timeout "$PROBE_TIMEOUT" "$QEMU" \
+              -cpu cortex-m0 -machine microbit -nographic \
+              -kernel "$elf" > /tmp/probe/$s-A.txt 2>/tmp/probe/$s-A.err || true
+
+            # Probe B: the chardev twister uses, with a standalone reader.
+            echo "=== probe B: $s (pipe chardev) ==="
+            fifo=$(cygpath -m /tmp/probe/$s-fifo)
+            python "$GITHUB_WORKSPACE/zephyr/scripts/ci/qemu_pipe_probe.py" \
+              --qemu "$QEMU" --elf "$elf" --fifo "$fifo" \
+              --timeout "$PROBE_TIMEOUT" \
+              > /tmp/probe/$s-B.txt 2>&1 || true
+          done
+
+      - name: Report
+        if: always()
+        shell: bash
+        run: |
+          for f in /tmp/probe/*.txt /tmp/probe/*.err; do
+            [ -f "$f" ] || continue
+            echo "########## $f ($(wc -c < "$f") bytes) ##########"
+            cat "$f"
+            echo
+          done
+
+      - name: Upload probe output
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: qemu-windows-probe
+          if-no-files-found: warn
+          path: /tmp/probe/**
