@@ -440,14 +440,12 @@ static int sy1xx_mac_send(const struct device *dev, struct net_pkt *pkt)
 	data->temp.tx_len = 0;
 	do {
 		/* copy fragment to buffer */
-		for (uint32_t i = 0; i < frag->len; i++) {
-			if (data->temp.tx_len < MAX_MAC_PACKET_LEN) {
-				data->temp.tx[data->temp.tx_len++] = frag->data[i];
-			} else {
-				LOG_ERR("tx buffer overflow");
-				return -ENOMEM;
-			}
+		if (data->temp.tx_len + frag->len > MAX_MAC_PACKET_LEN) {
+			LOG_ERR("tx buffer overflow");
+			return -ENOMEM;
 		}
+		memcpy(&data->temp.tx[data->temp.tx_len], frag->data, frag->len);
+		data->temp.tx_len += frag->len;
 
 		frag = frag->frags;
 	} while (frag);
