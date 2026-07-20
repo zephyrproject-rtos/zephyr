@@ -7,7 +7,8 @@
 #   nordic_vpr_launcher_from_array(<launcher_image> <vpr_app>)
 #
 # Ensures <vpr_app> is configured and built before <launcher_image>, passes the remote
-# generated include directory to the launcher, and enables CONFIG_NORDIC_VPR_LAUNCHER_FROM_ARRAY.
+# generated include directory to the launcher, and enables CONFIG_NORDIC_VPR_LAUNCHER_FROM_ARRAY
+# and CONFIG_NORDIC_VPR_LAUNCHER_DECOMPRESS with matching compression on <vpr_app>.
 function(nordic_vpr_launcher_from_array launcher_image vpr_app)
   if(SB_CONFIG_VPR_LAUNCHER_FROM_ARRAY)
     sysbuild_add_dependencies(CONFIGURE ${launcher_image} ${vpr_app})
@@ -16,7 +17,9 @@ function(nordic_vpr_launcher_from_array launcher_image vpr_app)
     set(remote_inc_dir "${CMAKE_BINARY_DIR}/${vpr_app}/zephyr/include/generated")
     set_config_string(${launcher_image} CONFIG_NRF_REMOTE_IMAGE_INC_DIR "${remote_inc_dir}")
     set_config_bool(${launcher_image} CONFIG_NORDIC_VPR_LAUNCHER_FROM_ARRAY 1)
+    set_config_bool(${launcher_image} CONFIG_NORDIC_VPR_LAUNCHER_DECOMPRESS 1)
     set_config_bool(${vpr_app} CONFIG_GENERATE_INC_FILE_FOR_TARGET 1)
+    set_config_bool(${vpr_app} CONFIG_COMPRESS_OUTPUT_BIN 1)
   endif()
 endfunction()
 

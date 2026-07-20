@@ -23,6 +23,9 @@
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(hibernation_ram_block)
 #include <hal/nrf_memconf.h>
 #endif
+#if defined(CONFIG_NORDIC_VPR_LAUNCHER_DECOMPRESS)
+#include <lz4.h>
+#endif
 
 LOG_MODULE_REGISTER(nordic_vpr_launcher, CONFIG_NORDIC_VPR_LAUNCHER_LOG_LEVEL);
 
@@ -69,6 +72,27 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 	static const uint8_t vpr_image[] __aligned(sizeof(uint32_t)) = {
 		#include <bin/image.inc>
 	};
+#if defined(CONFIG_NORDIC_VPR_LAUNCHER_DECOMPRESS)
+	void *dst = (void *)config->exec_addr;
+	const size_t compressed_size = sizeof(vpr_image);
+	const size_t exec_size = DT_REG_SIZE(DT_INST_PHANDLE(0, execution_memory));
+	int decompressed_size;
+
+	BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
+		     "Decompression requires a single VPR instance");
+
+	LOG_INF("Decompressing VPR image (%zu bytes) to %p (%zu bytes max)",
+		compressed_size, dst, exec_size);
+
+	decompressed_size = LZ4_decompress_safe((const char *)vpr_image, (char *)dst,
+						(int)compressed_size, (int)exec_size);
+	if (decompressed_size < 0) {
+		LOG_ERR("LZ4 decompression failed: %d", decompressed_size);
+		return -EIO;
+	}
+
+	LOG_INF("Decompressed VPR image to %zu bytes", (size_t)decompressed_size);
+#else
 	uint64_t *dst = (uint64_t *)config->exec_addr;
 	uint64_t *src = (uint64_t *)vpr_image;
 	size_t total_size = sizeof(vpr_image);
@@ -87,6 +111,7 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 
 		memcpy(dst8, src8, total_size);
 	}
+#endif
 #elif DT_ANY_INST_HAS_PROP_STATUS_OKAY(source_memory)
 	if (config->size > 0U) {
 		LOG_DBG("Loading VPR (%p) from %p to %p (%zu bytes)", config->vpr,
