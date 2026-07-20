@@ -603,8 +603,6 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 		goto fail;
 	}
 
-	dhcpv6_generate_tid(iface);
-
 	if (dhcpv6_add_header(pkt, msg_type, iface->config.dhcpv6.tid) < 0) {
 		goto fail;
 	}
@@ -1479,6 +1477,7 @@ static void dhcpv6_enter_soliciting(struct net_if *iface)
 	iface->config.dhcpv6.server_preference = -1;
 	iface->config.dhcpv6.exchange_start = k_uptime_get();
 
+	dhcpv6_generate_tid(iface);
 	(void)dhcpv6_send_solicit(iface);
 	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
 }
@@ -1490,6 +1489,7 @@ static void dhcpv6_enter_requesting(struct net_if *iface)
 	iface->config.dhcpv6.retransmissions = 0;
 	iface->config.dhcpv6.exchange_start = k_uptime_get();
 
+	dhcpv6_generate_tid(iface);
 	(void)dhcpv6_send_request(iface);
 	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
 }
@@ -1501,6 +1501,7 @@ static void dhcpv6_enter_renewing(struct net_if *iface)
 	iface->config.dhcpv6.retransmissions = 0;
 	iface->config.dhcpv6.exchange_start = k_uptime_get();
 
+	dhcpv6_generate_tid(iface);
 	(void)dhcpv6_send_renew(iface);
 	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
 }
@@ -1512,6 +1513,7 @@ static void dhcpv6_enter_rebinding(struct net_if *iface)
 	iface->config.dhcpv6.retransmissions = 0;
 	iface->config.dhcpv6.exchange_start = k_uptime_get();
 
+	dhcpv6_generate_tid(iface);
 	(void)dhcpv6_send_rebind(iface);
 	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
 }
@@ -1523,6 +1525,7 @@ static void dhcpv6_enter_confirming(struct net_if *iface)
 	iface->config.dhcpv6.retransmissions = 0;
 	iface->config.dhcpv6.exchange_start = k_uptime_get();
 
+	dhcpv6_generate_tid(iface);
 	(void)dhcpv6_send_confirm(iface);
 	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
 }
