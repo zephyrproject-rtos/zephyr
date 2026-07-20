@@ -21,9 +21,10 @@ LOG_MODULE_REGISTER(analog_axis_settings, CONFIG_INPUT_LOG_LEVEL);
 static void analog_axis_calibration_log(const struct device *dev)
 {
 	struct analog_axis_calibration cal;
+	int axes = analog_axis_num_axes(dev);
 	int i;
 
-	for (i = 0; i < analog_axis_num_axes(dev); i++) {
+	for (i = 0; i < axes; i++) {
 		analog_axis_calibration_get(dev, i, &cal);
 
 		LOG_INF("%s: ch: %d min: %d max: %d deadzone: %d",
