@@ -327,7 +327,7 @@ static int nxp_irtc_update_set_callback(const struct device *dev, rtc_update_cal
 					void *user_data)
 {
 	ARG_UNUSED(dev);
-	ARG_UNUSED(calibration);
+	ARG_UNUSED(callback);
 	ARG_UNUSED(user_data);
 	return -ENOTSUP;
 }
