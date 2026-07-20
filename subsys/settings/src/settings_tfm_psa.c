@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2019 Laczen
  * Copyright (c) 2019 Nordic Semiconductor ASA
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,33 +59,75 @@ static struct settings_store default_settings_psa = {.cs_itf = &settings_psa_itf
 #error "No PSA backend selected"
 #endif /* CONFIG_SETTINGS_TFM_PSA_BACKEND */
 
+struct chunk_work_data {
+	const uint8_t *data_ptr;
+	size_t remaining;
+	psa_storage_uid_t uid;
+	struct k_work_delayable dwork;
+};
+
+static struct chunk_work_data chunk_worker_data;
+
 /* Ensure Key configured max size does not exceed reserved Key range */
-BUILD_ASSERT(sizeof(entries) / SETTINGS_PSA_MAX_ASSET_SIZE <=
+BUILD_ASSERT((sizeof(entries) - 1) / SETTINGS_PSA_MAX_ASSET_SIZE <
 	     SETTINGS_PSA_UID_RANGE_SIZE,
 	     "entries array exceeds reserved PSA storage UID range");
 
-static int store_entries(void)
+static void store_chunk_fn(struct k_work *work)
+{
+	struct k_work_delayable *delayable = k_work_delayable_from_work(work);
+	struct chunk_work_data *data = CONTAINER_OF(delayable, struct chunk_work_data, dwork);
+	psa_status_t status;
+	size_t write_size;
+
+	write_size = MIN(data->remaining, SETTINGS_PSA_MAX_ASSET_SIZE);
+	status = SETTINGS_PSA_SET(data->uid, write_size, data->data_ptr, PSA_STORAGE_FLAG_NONE);
+	if (status) {
+		LOG_ERR("Error storing %zu bytes of metadata! Bytes Remaining: %zu, status: "
+			"%d",
+			write_size, data->remaining, status);
+		return;
+	}
+
+	data->data_ptr += write_size;
+	data->remaining -= write_size;
+	data->uid++;
+
+	if (data->remaining > 0) {
+		k_work_schedule(&chunk_worker_data.dwork,
+				K_MSEC(CONFIG_SETTINGS_TFM_PSA_CHUNK_DELAY_MS));
+	} else {
+		LOG_DBG("PSA entries stored successfully - bytes_saved: %zu num_entries: %d "
+			"max_uid: %lld",
+			sizeof(entries), entries_count, data->uid);
+	}
+}
+
+static void store_entries(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	chunk_worker_data.uid = SETTINGS_PSA_UID_RANGE_BEGIN;
+	chunk_worker_data.remaining = sizeof(entries);
+	chunk_worker_data.data_ptr = (const uint8_t *)&entries;
+
+	k_work_reschedule(&chunk_worker_data.dwork, K_NO_WAIT);
+}
+
+static int store_entries_sync(void)
 {
 	psa_status_t status;
 	psa_storage_uid_t uid = SETTINGS_PSA_UID_RANGE_BEGIN;
-	size_t write_size = SETTINGS_PSA_MAX_ASSET_SIZE;
 	size_t remaining = sizeof(entries);
+	size_t write_size;
 	const uint8_t *data_ptr = (const uint8_t *)&entries;
 
-	/*
-	 * Each storage UID is treated like a sector. Data is written to each KV pair until
-	 * that data field is full, before incrementing the UID. This is done to minimize the
-	 * number of allocated UIDs and to allocate bytes in the most efficient way.
-	 */
 	while (remaining > 0) {
-		if (remaining < SETTINGS_PSA_MAX_ASSET_SIZE) {
-			write_size = remaining;
-		}
-
+		write_size = MIN(remaining, SETTINGS_PSA_MAX_ASSET_SIZE);
 		status = SETTINGS_PSA_SET(uid, write_size, data_ptr, PSA_STORAGE_FLAG_NONE);
 		if (status) {
-			LOG_ERR("Error storing %d bytes of metadata! Bytes Remaining: %d, status: "
-				"%d",
+			LOG_ERR("Error storing %zu bytes of metadata! Bytes Remaining: %zu, "
+				"status: %d",
 				write_size, remaining, status);
 			return status;
 		}
@@ -95,7 +137,7 @@ static int store_entries(void)
 		uid++;
 	}
 
-	LOG_DBG("PSA entries stored successfully - bytes_saved: %d num_entries: %d max_uid: %lld",
+	LOG_DBG("PSA entries stored successfully - bytes_saved: %zu num_entries: %d max_uid: %lld",
 		sizeof(entries), entries_count, uid);
 
 	return 0;
@@ -260,13 +302,6 @@ static int settings_psa_save(struct settings_store *cs, const char *name, const 
 	return 0;
 }
 
-void worker_persist_entries_struct_fn(struct k_work *work)
-{
-	k_mutex_lock(&worker_mutex, K_FOREVER);
-	store_entries();
-	k_mutex_unlock(&worker_mutex);
-}
-
 int settings_backend_init(void)
 {
 	/* Load settings from storage */
@@ -279,7 +314,7 @@ int settings_backend_init(void)
 		}
 
 		/* If resource does not exist, we need to allocate it */
-		status = store_entries();
+		status = store_entries_sync();
 		if (status != PSA_SUCCESS) {
 			LOG_ERR("Error %s metadata: status %d", "storing", status);
 			return -EIO;
@@ -289,7 +324,8 @@ int settings_backend_init(void)
 	settings_dst_register(&default_settings_psa);
 	settings_src_register(&default_settings_psa);
 
-	k_work_init_delayable(&worker, worker_persist_entries_struct_fn);
+	k_work_init_delayable(&chunk_worker_data.dwork, store_chunk_fn);
+	k_work_init_delayable(&worker, store_entries);
 
 	return 0;
 }
