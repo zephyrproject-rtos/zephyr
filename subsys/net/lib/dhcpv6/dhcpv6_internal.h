@@ -51,6 +51,9 @@
 #define DHCPV6_SOL_MAX_DELAY 1000 /* Max delay of first Solicit, milliseconds */
 #define DHCPV6_SOL_TIMEOUT 1000 /* Initial Solicit timeout, milliseconds */
 #define DHCPV6_SOL_MAX_RT 3600000 /* Max Solicit timeout value, milliseconds */
+#define DHCPV6_INF_MAX_RT 3600000 /* Max Information-request timeout value, milliseconds */
+#define DHCPV6_MAX_RT_MIN 60000 /* Minimum server-provided max RT, milliseconds */
+#define DHCPV6_MAX_RT_MAX 86400000 /* Maximum server-provided max RT, milliseconds */
 #define DHCPV6_REQ_TIMEOUT 1000 /* Initial Request timeout, milliseconds */
 #define DHCPV6_REQ_MAX_RT 30000 /* Max Request timeout value, milliseconds */
 #define DHCPV6_REQ_MAX_RC 10 /* Max Request retry attempts */

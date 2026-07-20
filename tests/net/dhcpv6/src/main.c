@@ -18,6 +18,8 @@ static struct net_in6_addr test_prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 
 					   0, 0, 0, 0, 0, 0, 0, 0 } } };
 static uint8_t test_prefix_len = 64;
 static uint8_t test_preference;
+static uint32_t test_sol_max_rt = 120000;
+static uint32_t test_inf_max_rt = 180000;
 static struct net_dhcpv6_duid_storage test_serverid;
 static struct net_dhcpv6_duid_storage test_other_serverid;
 static uint8_t test_expected_tid[DHCPV6_TID_SIZE];
@@ -130,6 +132,30 @@ static void set_fake_server_duid(struct net_if *iface)
 	       sizeof(test_serverid));
 }
 
+static int add_max_rt_options(struct net_pkt *pkt)
+{
+	int ret;
+
+	ret = dhcpv6_add_option_header(pkt, DHCPV6_OPTION_CODE_SOL_MAX_RT,
+				       sizeof(uint32_t));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = net_pkt_write_be32(pkt, test_sol_max_rt / MSEC_PER_SEC);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dhcpv6_add_option_header(pkt, DHCPV6_OPTION_CODE_INF_MAX_RT,
+				       sizeof(uint32_t));
+	if (ret < 0) {
+		return ret;
+	}
+
+	return net_pkt_write_be32(pkt, test_inf_max_rt / MSEC_PER_SEC);
+}
+
 #define TEST_MSG_SIZE 256
 
 static struct net_pkt *test_dhcpv6_create_message(
@@ -239,6 +265,8 @@ static void dhcpv6_tests_before(void *fixture)
 	test_ctx.iface->config.dhcpv6.addr_iaid = 10;
 	test_ctx.iface->config.dhcpv6.prefix_iaid = 20;
 	test_ctx.iface->config.dhcpv6.exchange_start = k_uptime_get();
+	test_ctx.iface->config.dhcpv6.sol_max_rt = DHCPV6_SOL_MAX_RT;
+	test_ctx.iface->config.dhcpv6.inf_max_rt = DHCPV6_INF_MAX_RT;
 	test_ctx.iface->config.dhcpv6.params = (struct net_dhcpv6_params){
 		.request_addr = true,
 		.request_prefix = true,
@@ -803,6 +831,11 @@ static int set_advertise_options(struct net_if *iface, struct net_pkt *pkt,
 		return ret;
 	}
 
+	ret = add_max_rt_options(pkt);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -835,6 +868,10 @@ ZTEST(dhcpv6_tests, test_input_advertise)
 			zassert_mem_equal(&test_ctx.iface->config.dhcpv6.serverid.duid,
 					  &test_serverid.duid, test_serverid.length,
 					  "Invalid Server ID value");
+			zassert_equal(test_ctx.iface->config.dhcpv6.sol_max_rt,
+				      test_sol_max_rt, "Invalid SOL_MAX_RT value");
+			zassert_equal(test_ctx.iface->config.dhcpv6.inf_max_rt,
+				      test_inf_max_rt, "Invalid INF_MAX_RT value");
 
 			break;
 		default:
@@ -901,6 +938,11 @@ static int set_reply_options(struct net_if *iface, struct net_pkt *pkt,
 	}
 
 	ret = dhcpv6_add_option_ia_pd(pkt, &test_ia_pd, true);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = add_max_rt_options(pkt);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1001,6 +1043,10 @@ ZTEST(dhcpv6_tests, test_input_reply)
 			zassert_equal(test_ctx.iface->config.dhcpv6.prefix_len,
 				      test_prefix_len, "Invalid prefix len (state %s)",
 				      net_dhcpv6_state_name(state));
+			zassert_equal(test_ctx.iface->config.dhcpv6.sol_max_rt,
+				      test_sol_max_rt, "Invalid SOL_MAX_RT value");
+			zassert_equal(test_ctx.iface->config.dhcpv6.inf_max_rt,
+				      test_inf_max_rt, "Invalid INF_MAX_RT value");
 
 			break;
 		default:
