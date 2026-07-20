@@ -847,7 +847,7 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 		/* SG descriptors have 64-byte alignment requirements */
 		/* we check this here, for each descriptor */
 		__ASSERT(
-			nextdesc & XILINX_AXI_DMA_SG_DESCRIPTOR_ADDRESS_MASK == 0,
+			(nextdesc & XILINX_AXI_DMA_SG_DESCRIPTOR_ADDRESS_MASK) == 0,
 			"SG descriptor address %p (offset %u) was not aligned to 64-byte boundary!",
 			(void *)nextdesc, i);
 
