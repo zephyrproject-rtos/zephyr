@@ -1053,6 +1053,19 @@ int udc_stm32_init(const struct device *dev)
 	}
 #endif /* CONFIG_STM32_HAL2 */
 
+#if defined(STM32H5F5xx) || defined(STM32H5E5xx)
+	/*
+	 * HAL defect: USB_CoreInit() only releases the transceiver
+	 * power-down (GCCFG.PWRDWN) for USB_OTG_HS_EMBEDDED_PHY, so an
+	 * instance using the embedded FS PHY is left powered down and
+	 * presents no pull-up on D+/D-. Release it here until the HAL is
+	 * fixed.
+	 */
+	if (cfg->selected_phy == PCD_PHY_EMBEDDED) {
+		priv->pcd.Instance->GCCFG |= USB_OTG_GCCFG_PWRDWN;
+	}
+#endif /* STM32H5F5xx || STM32H5E5xx */
+
 	if (HAL_PCD_Stop(&priv->pcd) != HAL_OK) {
 		return -EIO;
 	}
