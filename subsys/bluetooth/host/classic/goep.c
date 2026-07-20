@@ -175,7 +175,6 @@ static int goep_rfcomm_init(struct bt_conn *conn, struct bt_goep *goep)
 	struct bt_goep_transport_v1 *goep_transport_v1 = goep->v1;
 	uint32_t mtu;
 	uint32_t hdr_size;
-	int err;
 
 	hdr_size = BT_L2CAP_HDR_SIZE + BT_RFCOMM_OVERHEAD_SIZE;
 
@@ -190,11 +189,7 @@ static int goep_rfcomm_init(struct bt_conn *conn, struct bt_goep *goep)
 		return -EINVAL;
 	}
 
-	err = bt_obex_reg_transport(&goep->obex, &goep_rfcomm_transport_ops);
-	if (err != 0) {
-		LOG_ERR("Fail to reg transport ops");
-		return err;
-	}
+	bt_obex_reg_transport(&goep->obex, &goep_rfcomm_transport_ops);
 
 	goep->_acl = conn;
 	goep_transport_v1->goep = goep;
@@ -475,7 +470,6 @@ static int goep_l2cap_init(struct bt_conn *conn, struct bt_goep *goep)
 	struct bt_goep_transport_v2 *goep_transport_v2 = goep->v2;
 	uint32_t mtu;
 	uint32_t hdr_size;
-	int err;
 
 	hdr_size = sizeof(struct bt_l2cap_hdr);
 
@@ -490,11 +484,7 @@ static int goep_l2cap_init(struct bt_conn *conn, struct bt_goep *goep)
 		return -EINVAL;
 	}
 
-	err = bt_obex_reg_transport(&goep->obex, &goep_l2cap_transport_ops);
-	if (err != 0) {
-		LOG_ERR("Fail to reg transport ops");
-		return err;
-	}
+	bt_obex_reg_transport(&goep->obex, &goep_l2cap_transport_ops);
 
 	goep->_acl = conn;
 	goep_transport_v2->goep = goep;
