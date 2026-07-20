@@ -194,7 +194,9 @@ static void process_data(struct k_work *work)
 	}
 
 	/** Wheels */
-	for (int i = 0; i < data->touch_instance.p_cfg->num_wheels; i++) {
+	const int num_wheels = data->touch_instance.p_cfg->num_wheels;
+
+	for (int i = 0; i < num_wheels; i++) {
 		if (data->curr_wheels_position[i] != data->prev_wheels_position[i]) {
 			input_report_abs(dev, config->wheels[i].event,
 					 data->curr_wheels_position[i], true, K_FOREVER);
