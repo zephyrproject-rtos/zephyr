@@ -23,6 +23,12 @@ properties:
         type: array
         items:
           type: string
+      build_toolchains:
+        type: object
+        additionalProperties:
+          type: array
+          items:
+            type: string
     additionalProperties: false
   levels:
     type: array

@@ -158,6 +158,23 @@ arch:
 toolchain:
   The list of supported toolchains that can build this board. This should match
   one of the values used for :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` when building on the command line
+build_toolchains:
+  An optional list of toolchains that every test assigned to this platform should
+  be built with. Twister creates one test instance per toolchain in the list, each
+  in its own build directory, instead of picking a single toolchain for the
+  platform. For example, to build everything on ``native_sim`` with both GCC and
+  Clang:
+
+  .. code-block:: yaml
+
+      build_toolchains:
+        - host/gnu
+        - host/llvm
+
+  Because this multiplies build time, it is usually better to leave it out of the
+  board definition and enable it only for CI, using the ``build_toolchains``
+  option of the :ref:`Twister configuration file <twister_test_config>`.
+  A test scenario's ``integration_toolchains`` takes precedence over this option.
 ram:
   Available RAM on the board (specified in KB). This is used to match test scenario
   requirements.  If not specified we default to 128KB.
@@ -1932,6 +1949,14 @@ The following options control platform filtering in twister:
 - ``default_platforms``: A list of additional default platforms to add. This list
   can either be used to replace the existing default platforms or can extend it
   depending on the value of ``override_default_platforms``.
+- ``build_toolchains``: A mapping of platform names to the list of toolchains
+  every test assigned to that platform should be built with. Twister creates one
+  test instance per toolchain, each in its own build directory. This sets, or
+  overrides, the ``build_toolchains`` option of the board definition; an empty
+  list disables multi-toolchain builds for a platform that requests them. Since
+  this multiplies build time, it is typically enabled only in the configuration
+  file used by CI (``tests/test_config_ci.yaml``) so that local runs keep
+  building each test once.
 
 And example platforms configuration:
 
@@ -1942,6 +1967,10 @@ And example platforms configuration:
 	  increased_platform_scope: false
 	  default_platforms:
 	    - qemu_x86
+	  build_toolchains:
+	    native_sim:
+	      - host/gnu
+	      - host/llvm
 
 
 Test Level Configuration

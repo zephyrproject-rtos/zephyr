@@ -84,6 +84,9 @@ class Platform:
         self.simulators: list[Simulator] = []
         self.simulation: str = "na"
         self.supported_toolchains = []
+        self.preferred_toolchain = None
+        # toolchains this platform should build every test with, one build each
+        self.build_toolchains = []
         self.env = []
         self.env_satisfied = True
         self.filter_data = dict()
@@ -157,6 +160,10 @@ class Platform:
         self.preferred_toolchain = variant_data.get("preferred_toolchain",
                                                     data.get("preferred_toolchain",
                                                              None))
+
+        self.build_toolchains = variant_data.get("build_toolchains",
+                                                 data.get("build_toolchains",
+                                                          self.build_toolchains)) or []
 
         support_toolchain_variants = {
           # we don't provide defaults for 'arc' intentionally: some targets can't be built with GNU
