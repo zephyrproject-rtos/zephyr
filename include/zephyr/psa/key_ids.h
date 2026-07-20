@@ -28,21 +28,21 @@ typedef uint32_t psa_key_id_t;
  *  https://github.com/openthread/openthread/blob/thread-reference-20230706/src/core/config/platform.h#L138
  */
 #define ZEPHYR_PSA_OPENTHREAD_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x20000
-#define ZEPHYR_PSA_OPENTHREAD_KEY_ID_RANGE_SIZE  0x10000 /* 64 Ki */
+#define ZEPHYR_PSA_OPENTHREAD_KEY_ID_RANGE_SIZE  0x10000 /**< 64 Ki */
 
 /** PSA key ID range to be used by Matter. The base ID is equal to the default value upstream:
  * https://github.com/project-chip/connectedhomeip/blob/v1.4.0.0/src/crypto/CHIPCryptoPALPSA.h#L55
  */
 #define ZEPHYR_PSA_MATTER_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x30000
-#define ZEPHYR_PSA_MATTER_KEY_ID_RANGE_SIZE  0x10000 /* 64 Ki */
+#define ZEPHYR_PSA_MATTER_KEY_ID_RANGE_SIZE  0x10000 /**< 64 Ki */
 
 /** PSA key ID range to be used by Bluetooth Mesh. */
 #define ZEPHYR_PSA_BT_MESH_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x20000000
-#define ZEPHYR_PSA_BT_MESH_KEY_ID_RANGE_SIZE  0xC000 /* 48 Ki */
+#define ZEPHYR_PSA_BT_MESH_KEY_ID_RANGE_SIZE  0xC000 /**< 48 Ki */
 
 /** PSA key ID range to be used by Wi-Fi credentials management. */
 #define ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x20010000
-#define ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_SIZE  0x100 /* 256 */
+#define ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_SIZE  0x100 /**< 256 */
 
 /** PSA key ID range to be used by FIDO2. */
 #define ZEPHYR_PSA_FIDO2_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x20011000
@@ -50,6 +50,6 @@ typedef uint32_t psa_key_id_t;
 
 /** PSA key ID range to be used by the end-user application. */
 #define ZEPHYR_PSA_APPLICATION_KEY_ID_RANGE_BEGIN (psa_key_id_t)0x30000000
-#define ZEPHYR_PSA_APPLICATION_KEY_ID_RANGE_SIZE  0x100000 /* 1 Mi */
+#define ZEPHYR_PSA_APPLICATION_KEY_ID_RANGE_SIZE  0x100000 /**< 1 Mi */
 
 #endif /* ZEPHYR_INCLUDE_PSA_KEY_IDS_H_ */
