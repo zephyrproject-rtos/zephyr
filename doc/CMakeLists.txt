@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 project(Zephyr-Kernel-Doc LANGUAGES)
 
 set(MIN_WEST_VERSION 1.0.0)

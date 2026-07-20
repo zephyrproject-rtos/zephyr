@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 set(REMOTE_ZEPHYR_DIR ${CMAKE_CURRENT_BINARY_DIR}/../timer_wakeup_lpcore/zephyr)
 

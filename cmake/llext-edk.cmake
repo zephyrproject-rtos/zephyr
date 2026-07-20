@@ -22,7 +22,7 @@
 #  - cmake llext-edk include-dirs
 #  - west topdir
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 # initialize the same paths as the main CMakeLists.txt for consistency
 set(PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR})
