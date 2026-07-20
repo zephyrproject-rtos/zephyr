@@ -47,7 +47,8 @@ if(NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
     list(APPEND ext_names init_fini)
 endif()
 
-if(CONFIG_LLEXT_RODATA_NO_RELOC)
+if(CONFIG_LLEXT_RODATA_NO_RELOC AND NOT CONFIG_XTENSA)
+    # Xtensa linker rejects relocations in .rodata even with -fPIC
     list(APPEND ext_names rodata_no_reloc)
 endif()
 
