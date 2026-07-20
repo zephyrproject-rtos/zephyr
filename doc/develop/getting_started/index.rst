@@ -33,7 +33,7 @@ Click the operating system you are using.
    .. group-tab:: macOS
 
       Select :menuselection:`System Settings --> General --> Software Update`
-      andd install any available updates. See `this Apple support topic
+      and install any available updates. See `this Apple support topic
       <https://support.apple.com/en-us/HT201541>`_ for more details.
 
       .. note::
