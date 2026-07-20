@@ -54,18 +54,39 @@ extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
 #define MDNS_TTL CONFIG_MDNS_RESPONDER_TTL /* In seconds */
 
+/* v4_svc/v6_svc are shared between the per-interface listener dispatch below (needs
+ * MDNS_MAX_IPV4/6_IFACE_COUNT fds, one per interface) and, when probing is enabled,
+ * send_probe()'s temporary DNS resolve context (needs DNS_RESOLVER_MAX_POLL fds for its
+ * own server list). net_socket_service_register() fully replaces the previously
+ * registered set on every call rather than accumulating (see cleanup_svc_events() in
+ * sockets_service.c), so sizing only needs to cover whichever of the two is larger, not
+ * their sum -- but it does need to cover both, since the same static object is reused for
+ * both purposes at different times. Without this, dns_resolve_init_with_svc() silently
+ * fails with -ENOMEM ("Too many file descriptors") whenever DNS_RESOLVER_MAX_POLL exceeds
+ * the interface count, which is the common case (DNS_RESOLVER_MAX_POLL is at least 2 with
+ * IPv4+IPv6 mDNS both enabled, vs. the interface-count Kconfigs' default of 1) -- every
+ * probe then times out and the responder never starts.
+ */
+#if defined(CONFIG_MDNS_RESPONDER_PROBE)
+#define MDNS_V4_SVC_POLL_COUNT MAX(MDNS_MAX_IPV4_IFACE_COUNT, DNS_RESOLVER_MAX_POLL)
+#define MDNS_V6_SVC_POLL_COUNT MAX(MDNS_MAX_IPV6_IFACE_COUNT, DNS_RESOLVER_MAX_POLL)
+#else
+#define MDNS_V4_SVC_POLL_COUNT MDNS_MAX_IPV4_IFACE_COUNT
+#define MDNS_V6_SVC_POLL_COUNT MDNS_MAX_IPV6_IFACE_COUNT
+#endif
+
 #if defined(CONFIG_NET_IPV4)
 static struct mdns_responder_context v4_ctx[MAX_IPV4_IFACE_COUNT];
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v4_svc, dns_dispatcher_svc_handler,
-				      MDNS_MAX_IPV4_IFACE_COUNT);
+				      MDNS_V4_SVC_POLL_COUNT);
 #endif
 
 #if defined(CONFIG_NET_IPV6)
 static struct mdns_responder_context v6_ctx[MAX_IPV6_IFACE_COUNT];
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v6_svc, dns_dispatcher_svc_handler,
-				      MDNS_MAX_IPV6_IFACE_COUNT);
+				      MDNS_V6_SVC_POLL_COUNT);
 #endif
 
 static struct net_mgmt_event_callback mgmt_iface_cb;
