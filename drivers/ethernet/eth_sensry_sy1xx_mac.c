@@ -387,9 +387,7 @@ static int sy1xx_mac_low_level_send(const struct device *dev, uint8_t *tx, uint1
 	}
 
 	/* copy data to dma buffer */
-	for (uint32_t i = 0; i < len; i++) {
-		data->dma_buffers->tx[i] = tx[i];
-	}
+	memcpy(data->dma_buffers->tx, tx, len);
 
 	/* start dma transfer */
 	SY1XX_UDMA_START_TX(cfg->base_addr, (uint32_t)data->dma_buffers->tx, len, 0);
