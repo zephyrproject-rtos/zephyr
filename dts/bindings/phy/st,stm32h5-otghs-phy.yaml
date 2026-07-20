@@ -1,0 +1,66 @@
+# Copyright (c) 2026 Arkadiusz Grzelka
+# Copyright (c) 2026 Linumiz GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32H5 OTG_HS embedded PHY.
+
+    Covers the embedded High-Speed PHY built into STM32H5E5x/STM32H5F5x
+    parts. It is the same PHY IP as the one described by
+    st,stm32u5-otghs-phy, but on this family the reference-clock selector
+    and the PHY enable/reset controls live in RCC (CCIPR4.OTGPHYREFCKSEL,
+    AHB2ENR.OTGPHYEN, AHB2RSTR.OTGHSPHYRST) instead of the SYSCFG
+    OTGHSPHYCR register, hence a distinct compatible.
+
+compatible: "st,stm32h5-otghs-phy"
+
+include: [phy-controller.yaml, reset-device.yaml]
+
+properties:
+  "#phy-cells":
+    const: 0
+
+  clocks:
+    required: true
+    description: |
+      First entry gates the PHY block itself (RCC_AHB2ENR.OTGPHYEN).
+      Second entry selects the OTG_HS kernel clock (RCC_CCIPR4.OTGHSSEL)
+      using the OTGHS_SEL() macro. Supported configurations:
+
+        /* HSE */
+        clocks = <&rcc STM32_CLOCK(AHB2, 13)>,
+                 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>;
+
+        /* PLL3_Q */
+        clocks = <&rcc STM32_CLOCK(AHB2, 13)>,
+                 <&rcc STM32_SRC_PLL3_Q OTGHS_SEL(1)>;
+
+        /* HSE/2 */
+        clocks = <&rcc STM32_CLOCK(AHB2, 13)>,
+                 <&rcc (STM32_SRC_HSE | STM32_CLOCK_DIV(2)) OTGHS_SEL(2)>;
+
+        /* PLL1_Q/2 */
+        clocks = <&rcc STM32_CLOCK(AHB2, 13)>,
+                 <&rcc (STM32_SRC_PLL1_Q | STM32_CLOCK_DIV(2)) OTGHS_SEL(3)>;
+
+  resets:
+    required: true
+    description: |
+      PHY reset line (RCC_AHB2RSTR.OTGHSPHYRST), deasserted by the driver
+      before the PHY clock is turned on.
+
+  clock-reference:
+    type: string
+    required: true
+    enum:
+      - "16M"
+      - "19_2M"
+      - "20M"
+      - "24M"
+      - "26M"
+      - "32M"
+    description: |
+      Reference clock frequency fed to the PHY PLL, written to
+      RCC_CCIPR4.OTGPHYREFCKSEL. This must match the frequency actually
+      produced by the kernel clock selected through the second `clocks`
+      entry, otherwise the PHY PLL will not lock.

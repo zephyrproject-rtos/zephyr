@@ -42,6 +42,12 @@ config STM32_PHY_U5OTGHSPHY
 	help
 	  Enable STM32 U5OTGHS embedded High-Speed PHY driver.
 
+config STM32_PHY_H5OTGHSPHY
+	def_bool y
+	depends on DT_HAS_ST_STM32H5_OTGHS_PHY_ENABLED
+	help
+	  Enable STM32H5 embedded OTG_HS High-Speed PHY driver.
+
 module = STM32_USB_COMMON
 module-str = STM32 USB common code
 source "subsys/logging/Kconfig.template.log_config"
