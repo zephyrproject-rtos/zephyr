@@ -755,7 +755,7 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 	modem_cellular_clear_registration_status(data);
 	modem_cellular_notify_user_pipes_disconnected(data);
 	modem_chat_release(&data->chat);
-	modem_ppp_release(data->ppp);
+	modem_ppp_release(config->ppp);
 	modem_cmux_release(&data->cmux);
 	modem_pipe_close_async(data->uart_pipe);
 	k_sem_give(&data->suspended_sem);
@@ -1162,7 +1162,7 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 		link_addr_len = MIN(NET_LINK_ADDR_MAX_LENGTH, imei_len);
 		link_addr_ptr = data->imei + (imei_len - link_addr_len);
 
-		err = net_if_set_link_addr(modem_ppp_get_iface(data->ppp), link_addr_ptr,
+		err = net_if_set_link_addr(modem_ppp_get_iface(config->ppp), link_addr_ptr,
 					   link_addr_len, NET_LINK_UNKNOWN);
 		if (err) {
 			LOG_WRN("Failed to set link address on PPP interface (%d)", err);
@@ -1515,9 +1515,9 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		modem_chat_attach(&data->chat, data->dlci1_pipe);
 
 		/* PHY is now up and searching for network */
-		net_if_carrier_on(modem_ppp_get_iface(data->ppp));
+		net_if_carrier_on(modem_ppp_get_iface(config->ppp));
 
-		if (modem_ppp_attach(data->ppp, data->dlci2_pipe) < 0) {
+		if (modem_ppp_attach(config->ppp, data->dlci2_pipe) < 0) {
 			LOG_ERR("Failed to attach PPP to DLCI2");
 			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SUSPEND);
 			break;
@@ -1618,7 +1618,7 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
-		net_if_carrier_off(modem_ppp_get_iface(data->ppp));
+		net_if_carrier_off(modem_ppp_get_iface(config->ppp));
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
@@ -1638,7 +1638,9 @@ static int modem_cellular_on_await_registered_state_leave(struct modem_cellular_
 
 static int modem_cellular_on_registered_state_enter(struct modem_cellular_data *data)
 {
-	net_if_dormant_off(modem_ppp_get_iface(data->ppp));
+	const struct modem_cellular_config *config = data->dev->config;
+
+	net_if_dormant_off(modem_ppp_get_iface(config->ppp));
 	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 	return 0;
 }
@@ -1660,7 +1662,7 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
 		modem_cellular_script_failed(data);
 		if (modem_cellular_is_script_retry_exceeded(data)) {
-			net_if_carrier_off(modem_ppp_get_iface(data->ppp));
+			net_if_carrier_off(modem_ppp_get_iface(config->ppp));
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
 			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
 			LOG_WRN("Maximum script failures reached, restarting modem");
@@ -1699,16 +1701,16 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
 		break;
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
-		if (net_if_is_admin_up(modem_ppp_get_iface(data->ppp))) {
+		if (net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
 			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_SUSPEND:
-		net_if_carrier_off(modem_ppp_get_iface(data->ppp));
+		net_if_carrier_off(modem_ppp_get_iface(config->ppp));
 		modem_chat_release(&data->chat);
-		modem_ppp_release(data->ppp);
+		modem_ppp_release(config->ppp);
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
 	case MODEM_CELLULAR_EVENT_RING:
@@ -1729,7 +1731,9 @@ static int modem_cellular_on_registered_state_leave(struct modem_cellular_data *
 
 static int modem_cellular_on_await_ppp_dead_state_enter(struct modem_cellular_data *data)
 {
-	net_if_dormant_on(modem_ppp_get_iface(data->ppp));
+	const struct modem_cellular_config *config = data->dev->config;
+
+	net_if_dormant_on(modem_ppp_get_iface(config->ppp));
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS, (data->stats.link_drops += 1));
 
 	return 0;
@@ -1739,6 +1743,7 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 						 enum modem_cellular_event evt)
 {
 	const struct modem_cellular_config *config = data->dev->config;
+
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_RING:
 		LOG_DBG("RING received!");
@@ -1762,9 +1767,11 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 
 static int modem_cellular_on_await_ppp_dead_state_leave(struct modem_cellular_data *data)
 {
-	net_if_carrier_off(modem_ppp_get_iface(data->ppp));
+	const struct modem_cellular_config *config = data->dev->config;
+
+	net_if_carrier_off(modem_ppp_get_iface(config->ppp));
 	modem_chat_release(&data->chat);
-	modem_ppp_release(data->ppp);
+	modem_ppp_release(config->ppp);
 
 	return 0;
 }
@@ -1778,9 +1785,11 @@ static int modem_cellular_on_init_power_off_state_enter(struct modem_cellular_da
 
 static void modem_cellular_cmux_cleanup(struct modem_cellular_data *data)
 {
+	const struct modem_cellular_config *config = data->dev->config;
+
 	modem_cellular_notify_user_pipes_disconnected(data);
 	modem_chat_release(&data->chat);
-	modem_ppp_release(data->ppp);
+	modem_ppp_release(config->ppp);
 }
 
 static void modem_cellular_init_power_off_event_handler(struct modem_cellular_data *data,
