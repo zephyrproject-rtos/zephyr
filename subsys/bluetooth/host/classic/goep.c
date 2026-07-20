@@ -199,7 +199,7 @@ static int goep_rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_server *ser
 			      struct bt_rfcomm_dlc **dlc)
 {
 	struct bt_goep_transport_rfcomm_server *rfcomm_server;
-	struct bt_goep *goep;
+	struct bt_goep *goep = NULL;
 	int err;
 
 	rfcomm_server = CONTAINER_OF(server, struct bt_goep_transport_rfcomm_server, rfcomm);
@@ -215,10 +215,8 @@ static int goep_rfcomm_accept(struct bt_conn *conn, struct bt_rfcomm_server *ser
 		return err;
 	}
 
-	if (goep == NULL || goep->v1 == NULL || goep->v2 != NULL || goep->transport_ops == NULL) {
-		LOG_DBG("Invalid parameter");
-		return -EINVAL;
-	}
+	__ASSERT(goep != NULL && goep->v1 != NULL && goep->v2 == NULL &&
+		 goep->transport_ops != NULL, "Invalid parameter of GOEP RFCOMM transport");
 
 	goep_rfcomm_init(conn, goep);
 
@@ -493,7 +491,7 @@ static int goep_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *serve
 			     struct bt_l2cap_chan **chan)
 {
 	struct bt_goep_transport_l2cap_server *l2cap_server;
-	struct bt_goep *goep;
+	struct bt_goep *goep = NULL;
 	int err;
 
 	l2cap_server = CONTAINER_OF(server, struct bt_goep_transport_l2cap_server, l2cap);
@@ -509,10 +507,8 @@ static int goep_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *serve
 		return err;
 	}
 
-	if (goep == NULL || goep->v2 == NULL || goep->v1 != NULL || goep->transport_ops == NULL) {
-		LOG_DBG("Invalid parameter");
-		return -EINVAL;
-	}
+	__ASSERT(goep != NULL && goep->v2 != NULL && goep->v1 == NULL &&
+		 goep->transport_ops != NULL, "Invalid parameter of GOEP L2CAP transport");
 
 	goep_l2cap_init(conn, goep);
 
