@@ -1048,13 +1048,17 @@
 			clock-mux = <2>;
 			/* Audio PLL Output Frequency is determined by:
 			 * (Fref * (DIV_SELECT + NUM/DENOM)) / POST_DIV
-			 * = (24MHz * (32 + 77 / 100)) / 1 = 786.48 MHz
+			 * = (24MHz * (32 + 96 / 125)) / 1 = 786.432 MHz
+			 * This can generate sample rates 8 kHz, 16 kHz, 32 kHz, 48 kHz, etc.
+			 * An alternative PLL frequency is:
+			 * = (24MHz * (30 + 66 / 625)) / 1 = 722.5344 MHz
+			 * to generate samples rates 11.025 kHz, 22.05 kHz, 44.1 kHz, etc.
 			 */
 			pll-clocks = <&anatop 0x70 0xc000 0>,
 				     <&anatop 0x70 0x7f 32>,
 				     <&anatop 0x70 0x180000 1>,
-				     <&anatop 0x80 0x3fffffff 77>,
-				     <&anatop 0x90 0x3fffffff 100>;
+				     <&anatop 0x80 0x3fffffff 96>,
+				     <&anatop 0x90 0x3fffffff 125>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			/* The maximum input frequency into the SAI mclk input is 300MHz
 			 * Based on this requirement, pre-div must be at least 3
@@ -1088,17 +1092,17 @@
 			clock-mux = <2>;
 			pre-div = <0>;
 			podf = <63>;
-			pll-clocks = <&anatop 0x70 0xc000 0x0>,
+			pll-clocks = <&anatop 0x70 0xc000 0>,
 				     <&anatop 0x70 0x7f 32>,
 				     <&anatop 0x70 0x180000 1>,
-				     <&anatop 0x80 0x3fffffff 77>,
-				     <&anatop 0x90 0x3fffffff 100>;
+				     <&anatop 0x80 0x3fffffff 96>,
+				     <&anatop 0x90 0x3fffffff 125>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x4 0x100000>;
 			interrupts = <57 0>;
 			dmas = <&edma0 0 21>, <&edma0 0 22>;
 			dma-names = "rx", "tx";
-			nxp,tx-channel = <0>;
+			nxp,tx-channel = <1>;
 			nxp,tx-dma-channel = <3>;
 			nxp,rx-dma-channel = <4>;
 			status = "disabled";
@@ -1118,14 +1122,14 @@
 			pll-clocks = <&anatop 0x70 0xc000 0>,
 				     <&anatop 0x70 0x7f 32>,
 				     <&anatop 0x70 0x180000 1>,
-				     <&anatop 0x80 0x3fffffff 77>,
-				     <&anatop 0x90 0x3fffffff 100>;
+				     <&anatop 0x80 0x3fffffff 96>,
+				     <&anatop 0x90 0x3fffffff 125>;
 			pll-clock-names = "src", "lp", "pd", "num", "den";
 			pinmuxes = <&iomuxcgpr 0x4 0x200000>;
 			interrupts = <58 0>, <59 0>;
 			dmas = <&edma0 0 83>, <&edma0 0 84>;
 			dma-names = "rx", "tx";
-			nxp,tx-channel = <0>;
+			nxp,tx-channel = <1>;
 			nxp,tx-dma-channel = <5>;
 			nxp,rx-dma-channel = <6>;
 			status = "disabled";
