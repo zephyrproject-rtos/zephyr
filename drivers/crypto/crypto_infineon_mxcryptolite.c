@@ -20,7 +20,11 @@ LOG_MODULE_REGISTER(crypto_infineon_mxcryptolite, CONFIG_CRYPTO_LOG_LEVEL);
 
 #include "cy_cryptolite_aes.h"
 #include "cy_cryptolite_aes_ccm.h"
+#if defined(CONFIG_USE_INFINEON_MXCRYPTOLITE_SHA)
+#include "cy_cryptolite_sha.h"
+#else
 #include "cy_cryptolite_sha256.h"
+#endif
 
 #define MXCRYPTOLITE_CAPS (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS | CAP_NO_IV_PREFIX)
 
@@ -52,7 +56,12 @@ struct mxcryptolite_session {
 	uint16_t ccm_nonce_len;
 
 	/* Hash fields */
+#if defined(CONFIG_USE_INFINEON_MXCRYPTOLITE_SHA)
+	cy_stc_cryptolite_context_sha_t sha_ctx;
+	cy_en_cryptolite_sha_mode_t sha_mode;
+#else
 	cy_stc_cryptolite_context_sha256_t sha256_ctx;
+#endif
 };
 
 struct mxcryptolite_config {
@@ -425,6 +434,41 @@ static int mxcryptolite_hash_op(struct hash_ctx *ctx, struct hash_pkt *pkt, bool
 
 	mfd_infineon_mxcryptolite_lock(cfg->mfd, K_FOREVER);
 
+#if defined(CONFIG_USE_INFINEON_MXCRYPTOLITE_SHA)
+	rc = Cy_Cryptolite_Sha_Update(base, pkt->in_buf, pkt->in_len, &s->sha_ctx);
+	if (rc != CY_CRYPTOLITE_SUCCESS) {
+		mfd_infineon_mxcryptolite_unlock(cfg->mfd);
+		LOG_ERR("SHA update failed: %d", (int)rc);
+		return -EIO;
+	}
+
+	if (finish) {
+		rc = Cy_Cryptolite_Sha_Finish(base, pkt->out_buf, &s->sha_ctx);
+		(void)Cy_Cryptolite_Sha_Free(base, &s->sha_ctx);
+		if (rc != CY_CRYPTOLITE_SUCCESS) {
+			mfd_infineon_mxcryptolite_unlock(cfg->mfd);
+			LOG_ERR("SHA finish failed: %d", (int)rc);
+			return -EIO;
+		}
+
+		/* Re-init context so the session can be reused for another
+		 * hash_compute() call without requiring a new session.
+		 */
+		rc = Cy_Cryptolite_Sha_Init(base, s->sha_mode, &s->sha_ctx);
+		if (rc != CY_CRYPTOLITE_SUCCESS) {
+			mfd_infineon_mxcryptolite_unlock(cfg->mfd);
+			LOG_ERR("SHA re-init failed: %d", (int)rc);
+			return -EIO;
+		}
+
+		rc = Cy_Cryptolite_Sha_Start(base, &s->sha_ctx);
+		if (rc != CY_CRYPTOLITE_SUCCESS) {
+			mfd_infineon_mxcryptolite_unlock(cfg->mfd);
+			LOG_ERR("SHA restart failed: %d", (int)rc);
+			return -EIO;
+		}
+	}
+#else
 	rc = Cy_Cryptolite_Sha256_Update(base, pkt->in_buf, pkt->in_len, &s->sha256_ctx);
 	if (rc != CY_CRYPTOLITE_SUCCESS) {
 		mfd_infineon_mxcryptolite_unlock(cfg->mfd);
@@ -446,11 +490,12 @@ static int mxcryptolite_hash_op(struct hash_ctx *ctx, struct hash_pkt *pkt, bool
 			}
 		}
 	}
+#endif
 
 	mfd_infineon_mxcryptolite_unlock(cfg->mfd);
 
 	if (rc != CY_CRYPTOLITE_SUCCESS) {
-		LOG_ERR("SHA-256 failed: %d", (int)rc);
+		LOG_ERR("SHA failed: %d", (int)rc);
 		return -EIO;
 	}
 
@@ -462,11 +507,30 @@ static int mxcryptolite_hash_begin_session(const struct device *dev, struct hash
 {
 	struct mxcryptolite_session *s;
 
+#if defined(CONFIG_USE_INFINEON_MXCRYPTOLITE_SHA)
+	cy_en_cryptolite_sha_mode_t sha_mode;
+
+	switch (algo) {
+	case CRYPTO_HASH_ALGO_SHA256:
+		sha_mode = CY_CRYPTOLITE_MODE_SHA256;
+		break;
+	case CRYPTO_HASH_ALGO_SHA384:
+		sha_mode = CY_CRYPTOLITE_MODE_SHA384;
+		break;
+	case CRYPTO_HASH_ALGO_SHA512:
+		sha_mode = CY_CRYPTOLITE_MODE_SHA512;
+		break;
+	default:
+		LOG_ERR("CRYPTOLITE unsupported hash algo: %d", (int)algo);
+		return -ENOTSUP;
+	}
+#else
 	/* CRYPTOLITE only supports SHA-256 */
 	if (algo != CRYPTO_HASH_ALGO_SHA256) {
 		LOG_ERR("CRYPTOLITE only supports SHA-256, got: %d", (int)algo);
 		return -ENOTSUP;
 	}
+#endif
 
 	if ((ctx->flags & ~MXCRYPTOLITE_CAPS) != 0U) {
 		LOG_ERR("Unsupported flag combination: 0x%x", ctx->flags);
@@ -479,8 +543,11 @@ static int mxcryptolite_hash_begin_session(const struct device *dev, struct hash
 	}
 
 	s->is_hash = true;
+#if defined(CONFIG_USE_INFINEON_MXCRYPTOLITE_SHA)
+	s->sha_mode = sha_mode;
+#endif
 
-	/* Initialize and start the SHA-256 context at session creation
+	/* Initialize and start the SHA context at session creation
 	 * so that hash_op can stream Update calls.
 	 */
 	const struct mxcryptolite_config *cfg = dev->config;
@@ -489,15 +556,27 @@ static int mxcryptolite_hash_begin_session(const struct device *dev, struct hash
 
 	mfd_infineon_mxcryptolite_lock(cfg->mfd, K_FOREVER);
 
+#if defined(CONFIG_USE_INFINEON_MXCRYPTOLITE_SHA)
+	rc = Cy_Cryptolite_Sha_Init(base, s->sha_mode, &s->sha_ctx);
+	if (rc != CY_CRYPTOLITE_SUCCESS) {
+		mfd_infineon_mxcryptolite_unlock(cfg->mfd);
+		LOG_ERR("SHA init failed: %d", (int)rc);
+		mxcryptolite_session_free(dev, s);
+		return -EIO;
+	}
+
+	rc = Cy_Cryptolite_Sha_Start(base, &s->sha_ctx);
+#else
 	rc = Cy_Cryptolite_Sha256_Init(base, &s->sha256_ctx);
 	if (rc == CY_CRYPTOLITE_SUCCESS) {
 		rc = Cy_Cryptolite_Sha256_Start(base, &s->sha256_ctx);
 	}
+#endif
 
 	mfd_infineon_mxcryptolite_unlock(cfg->mfd);
 
 	if (rc != CY_CRYPTOLITE_SUCCESS) {
-		LOG_ERR("SHA-256 session init failed: %d", (int)rc);
+		LOG_ERR("SHA session init failed: %d", (int)rc);
 		mxcryptolite_session_free(dev, s);
 		return -EIO;
 	}
