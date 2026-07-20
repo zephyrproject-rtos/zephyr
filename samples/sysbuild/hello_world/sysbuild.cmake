@@ -11,4 +11,9 @@ if(DEFINED SB_CONFIG_REMOTE_BOARD)
 
   add_dependencies(${DEFAULT_IMAGE} remote)
   sysbuild_add_dependencies(FLASH ${DEFAULT_IMAGE} remote)
+
+  # Additional operations if nordic vpr launcher with loading from array is used.
+  if(SB_CONFIG_VPR_LAUNCHER_FROM_ARRAY)
+    nordic_vpr_launcher_from_array(${DEFAULT_IMAGE} remote)
+  endif()
 endif()

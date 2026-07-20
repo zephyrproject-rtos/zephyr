@@ -32,3 +32,8 @@ if(SB_CONFIG_BOARD_MIMXRT1160_EVK_MIMXRT1166_CM7 OR
   # Let's build the remote application first
   add_dependencies(${DEFAULT_IMAGE} ${REMOTE_APP})
 endif()
+
+if(SB_CONFIG_VPR_LAUNCHER_FROM_ARRAY)
+  # Additional operations if nordic vpr launcher with loading from array is used.
+  nordic_vpr_launcher_from_array(${DEFAULT_IMAGE} ${REMOTE_APP})
+endif()
