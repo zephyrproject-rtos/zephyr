@@ -2067,19 +2067,24 @@ static int transceive(const struct device *dev,
 		return 0;
 	}
 
-	if (asynchronous && !IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT) && !use_dma) {
-		LOG_ERR("Asynchronous transfer needs interrupts or DMA");
-		return -ENOTSUP;
-	}
-
 #if defined(CONFIG_DCACHE) && defined(CONFIG_SPI_STM32_DMA) && !defined(CONFIG_SPI_RTIO)
 	if (use_dma &&
 	    ((tx_bufs != NULL && !spi_buf_set_in_nocache(tx_bufs)) ||
 	     (rx_bufs != NULL && !spi_buf_set_in_nocache(rx_bufs)))) {
-		LOG_ERR("SPI DMA transfers not supported on cached memory");
-		return -ENOTSUP;
+		LOG_WRN_ONCE("SPI DMA transfers not supported on cached memory.");
+		if (IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT)) {
+			LOG_WRN_ONCE("Falling back to interrupt mode.");
+		} else {
+			LOG_WRN_ONCE("Falling back to polling mode.");
+		}
+		use_dma = false;
 	}
 #endif /* CONFIG_DCACHE && CONFIG_SPI_STM32_DMA && !CONFIG_SPI_RTIO */
+
+	if (asynchronous && !IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT) && !use_dma) {
+		LOG_ERR("Asynchronous transfer needs interrupts or DMA");
+		return -ENOTSUP;
+	}
 
 	spi_context_lock(&data->ctx, asynchronous, cb, userdata, config);
 
