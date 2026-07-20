@@ -589,9 +589,8 @@ static struct net_pkt *gmac_extract_and_replace_buffers(struct gmac_queue *queue
 		frag = new_frag;
 		rx_frag_list[tail] = frag;
 		rx_desc->status = 0U;
-		rx_desc->addr &= (~GMAC_RXW0_ADDR);
-		rx_desc->addr |= ((uint32_t)frag->data & GMAC_RXW0_ADDR);
-		rx_desc->addr &= (~GMAC_RXW0_OWNERSHIP);
+		rx_desc->addr = ((uint32_t)frag->data & GMAC_RXW0_ADDR) |
+				(rx_desc->addr & GMAC_RXW0_WRAP);
 
 		MODULO_INC(tail, rx_desc_list->len);
 		rx_desc = &rx_desc_list->buf_desc[tail];
