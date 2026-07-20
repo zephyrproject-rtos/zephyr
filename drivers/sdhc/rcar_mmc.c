@@ -8,6 +8,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/disk.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -29,6 +30,18 @@ LOG_MODULE_REGISTER(rcar_mmc, CONFIG_LOG_DEFAULT_LEVEL);
 #define MMC_POLL_FLAGS_TIMEOUT_US 100000
 #define MMC_POLL_FLAGS_ONE_CYCLE_TIMEOUT_US 1
 #define MMC_BUS_CLOCK_FREQ 800000000
+
+#ifdef CONFIG_SD_CMD_TIMEOUT
+#define RCAR_MMC_CMD_TIMEOUT CONFIG_SD_CMD_TIMEOUT
+#else
+#define RCAR_MMC_CMD_TIMEOUT 200
+#endif
+
+#ifdef CONFIG_SD_DATA_TIMEOUT
+#define RCAR_MMC_DATA_TIMEOUT CONFIG_SD_DATA_TIMEOUT
+#else
+#define RCAR_MMC_DATA_TIMEOUT 10000
+#endif
 
 #ifdef CONFIG_RCAR_MMC_DMA_SUPPORT
 #define ALIGN_BUF_DMA __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT)
@@ -73,6 +86,7 @@ struct mmc_rcar_cfg {
 	const struct pinctrl_dev_config *pcfg;
 	const struct device *regulator_vqmmc;
 	const struct device *regulator_vmmc;
+	struct gpio_dt_spec cd_gpio;
 
 	uint32_t max_frequency;
 
@@ -1512,6 +1526,10 @@ static int rcar_mmc_get_card_present(const struct device *dev)
 		return 1;
 	}
 
+	if (cfg->cd_gpio.port != NULL) {
+		return gpio_pin_get_dt(&cfg->cd_gpio);
+	}
+
 	return !!(rcar_mmc_read_reg32(dev, RCAR_MMC_INFO1) & RCAR_MMC_INFO1_CD);
 }
 
@@ -1602,11 +1620,11 @@ static int rcar_mmc_execute_tuning(const struct device *dev)
 	}
 
 	cmd.response_type = SD_RSP_TYPE_R1;
-	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	cmd.timeout_ms = RCAR_MMC_CMD_TIMEOUT;
 
 	data.blocks = 1;
 	data.data = dev_data->tuning_buf;
-	data.timeout_ms = CONFIG_SD_DATA_TIMEOUT;
+	data.timeout_ms = RCAR_MMC_DATA_TIMEOUT;
 	if (dev_data->host_io.bus_width == SDHC_BUS_WIDTH4BIT) {
 		data.block_size = sizeof(tun_block_4_bits_bus);
 		tun_block_ptr = tun_block_4_bits_bus;
@@ -1659,7 +1677,7 @@ static int rcar_mmc_execute_tuning(const struct device *dev)
 				struct sdhc_command stop_cmd = {
 					.opcode = SD_STOP_TRANSMISSION,
 					.response_type = SD_RSP_TYPE_R1b,
-					.timeout_ms = CONFIG_SD_CMD_TIMEOUT,
+					.timeout_ms = RCAR_MMC_CMD_TIMEOUT,
 				};
 
 				rcar_mmc_request(dev, &stop_cmd, NULL);
@@ -2094,6 +2112,20 @@ static int rcar_mmc_init(const struct device *dev)
 		goto exit_unmap;
 	}
 
+	if (cfg->cd_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->cd_gpio)) {
+			LOG_ERR("%s: card-detect GPIO is not ready", dev->name);
+			ret = -ENODEV;
+			goto exit_unmap;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("%s: failed to configure card-detect GPIO: %d", dev->name, ret);
+			goto exit_unmap;
+		}
+	}
+
 	if (!device_is_ready(cfg->cpg_dev)) {
 		LOG_ERR("%s: error cpg_dev isn't ready", dev->name);
 		ret = -ENODEV;
@@ -2158,6 +2190,7 @@ exit_unmap:
 		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),                        \
 		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),                        \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                             \
 		.regulator_vqmmc = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), vqmmc_supply)),        \
 		.regulator_vmmc = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), vmmc_supply)),          \
 		.max_frequency = DT_INST_PROP(n, max_bus_freq),                                    \
