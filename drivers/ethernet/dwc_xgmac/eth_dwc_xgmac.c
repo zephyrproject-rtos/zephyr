@@ -1360,7 +1360,7 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
 	struct xgmac_dma_chnl_config *dma_ch_cfg =
 		(struct xgmac_dma_chnl_config *)&dev_conf->dma_chnl_cfg;
-	uint32_t tdes2_flgs, tdes3_flgs, tdes3_fd_flg;
+	uint32_t tdes2_flgs, tdes3_flgs, tdes3_fd_flg, pkt_len;
 
 	if (!pkt || !pkt->frags) {
 		LOG_ERR("%s: cannot TX, invalid argument", dev->name);
@@ -1382,6 +1382,7 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 
+	pkt_len = net_pkt_get_len(pkt);
 	context.q_id = net_tx_priority2tc(net_pkt_priority(pkt));
 	context.descmeta = (struct xgmac_dma_tx_desc_meta *)&dev_data->tx_desc_meta[context.q_id];
 	context.pkt_desc_id = context.descmeta->next_to_use;
@@ -1408,7 +1409,7 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 #ifdef CONFIG_ETH_DWC_XGMAC_TX_CS_OFFLOAD
 			     XGMAC_TDES3_CS_EN_MSK |
 #endif
-			     net_pkt_get_len(pkt);
+			     pkt_len;
 		tdes3_fd_flg = 0;
 
 		if (!frag->frags) { /* check last fragment of the packet */
@@ -1447,7 +1448,7 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 	/* unlock the TX desc ring */
 	(void)k_mutex_unlock(&(context.descmeta->ring_lock));
 
-	UPDATE_ETH_STATS_TX_BYTE_CNT(dev_data, net_pkt_get_len(pkt));
+	UPDATE_ETH_STATS_TX_BYTE_CNT(dev_data, pkt_len);
 	UPDATE_ETH_STATS_TX_PKT_CNT(dev_data, 1u);
 
 	return 0;
