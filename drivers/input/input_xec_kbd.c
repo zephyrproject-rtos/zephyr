@@ -195,7 +195,7 @@ static const struct input_kbd_matrix_api xec_kbd_api = {
 /* To enable wakeup, set the "wakeup-source" on the keyboard scanning device
  * node.
  */
-static struct xec_kbd_config xec_kbd_cfg_0 = {
+static const struct xec_kbd_config xec_kbd_cfg_0 = {
 	.common = INPUT_KBD_MATRIX_DT_INST_COMMON_CONFIG_INIT(0, &xec_kbd_api),
 	.base = DT_INST_REG_ADDR(0),
 	.girq = DEV_CFG_GIRQ(0),
