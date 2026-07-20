@@ -11,5 +11,7 @@
 };
 
 &pwr {
-	status = "okay";
+	wakeup-controller {
+		status = "okay";
+	};
 };
