@@ -180,17 +180,27 @@ static bool modem_backend_uart_isr_transmit_buf_above_limit(struct modem_backend
 	return backend->isr.transmit_buf_put_limit < get_transmit_buf_length(backend);
 }
 
-static int modem_backend_uart_isr_transmit(void *data, const uint8_t *buf, size_t size)
+static int modem_backend_uart_isr_transmit_chain(void *data,
+						 const struct modem_pipe_data_fragment *frags,
+						 size_t num_frags)
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
-	int written;
+	int written = 0;
+	int put;
 
 	if (modem_backend_uart_isr_transmit_buf_above_limit(backend) == true) {
 		return 0;
 	}
 
 	uart_irq_tx_disable(backend->uart);
-	written = ring_buf_put(&backend->isr.transmit_rb, buf, size);
+	for (int i = 0; i < num_frags; i++) {
+		put = ring_buf_put(&backend->isr.transmit_rb, frags[i].data, frags[i].size);
+		written += put;
+		if (put < frags[i].size) {
+			/* No more space in buffer, terminate */
+			break;
+		}
+	}
 	uart_irq_tx_enable(backend->uart);
 
 	/* Update transmit buf capacity tracker */
@@ -268,7 +278,7 @@ static int modem_backend_uart_isr_close(void *data)
 
 static const struct modem_pipe_api modem_backend_uart_isr_api = {
 	.open = modem_backend_uart_isr_open,
-	.transmit = modem_backend_uart_isr_transmit,
+	.transmit_chain = modem_backend_uart_isr_transmit_chain,
 	.receive = modem_backend_uart_isr_receive,
 	.close = modem_backend_uart_isr_close,
 };
