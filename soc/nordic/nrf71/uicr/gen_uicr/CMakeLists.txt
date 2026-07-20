@@ -44,10 +44,10 @@ add_custom_target(runners_yaml_props_target)
 
 # Copy over Kconfig and dts files from the main image
 get_filename_component(default_image_binary_dir ${DEFAULT_IMAGE_EDT_PICKLE} DIRECTORY)
-zephyr_file_copy(${default_image_binary_dir}/.config ${PROJECT_BINARY_DIR}/.config
+file(COPY_FILE ${default_image_binary_dir}/.config ${PROJECT_BINARY_DIR}/.config
   ONLY_IF_DIFFERENT
 )
-zephyr_file_copy(${default_image_binary_dir}/edt.pickle ${PROJECT_BINARY_DIR}/edt.pickle
+file(COPY_FILE ${default_image_binary_dir}/edt.pickle ${PROJECT_BINARY_DIR}/edt.pickle
   ONLY_IF_DIFFERENT
 )
 import_kconfig(CONFIG_ ${default_image_binary_dir}/.config)
