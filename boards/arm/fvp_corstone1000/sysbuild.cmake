@@ -266,6 +266,10 @@ else()
   )
 endif()
 
+if(SB_CONFIG_BOARD_FVP_CORSTONE1000_CORSTONE1000_EXTSYS)
+  list(APPEND tfm_cmake_args -DEXTERNAL_SYSTEM_SUPPORT=ON)
+endif()
+
 # TF-M's corstone1000 platform builds the CryptoCell (cc3xx) PSA crypto driver
 # unconditionally: BL1 links it to verify boot images, so it is a hard
 # dependency rather than an optional accelerator.  TF-M would otherwise clone it
@@ -385,10 +389,26 @@ else()
   set(tfa_build_debug "0")
 endif()
 
-# Get the Zephyr binary from the main image. Its name comes from the image's
+# Get the host Zephyr binary
+set(host_image ${DEFAULT_IMAGE})
+
+# To complete the platform boot flow when targeting the external-system,
+# sysbuild builds TF-M BL1 and TF-A BL2, and provides Hello World as the
+# Cortex-A35 host's BL33 payload.
+if(SB_CONFIG_BOARD_FVP_CORSTONE1000_CORSTONE1000_EXTSYS)
+  set(host_image hello_world_a35)
+
+  ExternalZephyrProject_Add(
+    APPLICATION ${host_image}
+    SOURCE_DIR ${ZEPHYR_BASE}/samples/hello_world
+    BOARD fvp_corstone1000/corstone1000/a35
+  )
+endif()
+
+# Get the Zephyr binary from the host image. Its name comes from the image's
 # CONFIG_KERNEL_BIN_NAME, which is only known at generate time.
-set(zephyr_bl33_name $<TARGET_PROPERTY:${DEFAULT_IMAGE},CONFIG_KERNEL_BIN_NAME>)
-set(zephyr_bl33 ${CMAKE_BINARY_DIR}/${DEFAULT_IMAGE}/zephyr/${zephyr_bl33_name}.bin)
+set(zephyr_bl33_name $<TARGET_PROPERTY:${host_image},CONFIG_KERNEL_BIN_NAME>)
+set(zephyr_bl33 ${CMAKE_BINARY_DIR}/${host_image}/zephyr/${zephyr_bl33_name}.bin)
 
 # TF-A build arguments shared by the Corstone-1000 Cortex-A320/Cortex-A35 variants
 # Aligned with Yocto meta-arm CORSTONE1000-2025.12 reference build
@@ -480,7 +500,7 @@ ExternalProject_Add(
 )
 
 # TF-A depends on Zephyr being built first
-add_dependencies(tfa_host ${DEFAULT_IMAGE})
+add_dependencies(tfa_host ${host_image})
 
 # TF-A output directory
 if(SB_CONFIG_BOARD_CORSTONE1000_TFA_DEBUG)
@@ -559,7 +579,7 @@ add_custom_command(
     --nt-fw ${zephyr_bl33}
     --tos-fw-config ${tfa_output_dir}/fdts/corstone1000_spmc_manifest.dtb
     ${CORSTONE1000_FIRMWARE_DIR}/fip.bin
-  DEPENDS tfa_bl2_signed tfa_host ${DEFAULT_IMAGE}
+  DEPENDS tfa_bl2_signed tfa_host ${host_image}
     ${CORSTONE1000_FIRMWARE_DIR}/bl2_signed.bin ${zephyr_bl33}
   COMMENT "Creating FIP with signed TF-A BL2"
 )
@@ -616,6 +636,6 @@ message(STATUS "  - cs1000.bin: Combined flash image with TF-M and TF-A FIP")
 # are assembled before forwarding to the sub-build's run target.
 add_custom_target(run
   COMMAND ${CMAKE_COMMAND} --build ${CMAKE_BINARY_DIR}/${DEFAULT_IMAGE} --target run
-  DEPENDS tfm_bl1 combined_flash
+  DEPENDS tfm_bl1 combined_flash ${DEFAULT_IMAGE}
   USES_TERMINAL
 )
