@@ -258,6 +258,10 @@ typedef int (*cellular_api_get_registration_status)(const struct device *dev,
 						    enum cellular_access_technology tech,
 						    enum cellular_registration_status *status);
 
+/** API for getting the last reported network (serving cell) status */
+typedef int (*cellular_api_get_network_status)(const struct device *dev,
+					       struct cellular_evt_network_status *status);
+
 /** API for programming APN */
 typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
 
@@ -282,6 +286,8 @@ __subsystem struct cellular_driver_api {
 	cellular_api_get_modem_info get_modem_info;
 	/** @driver_ops_optional @copybrief cellular_get_registration_status */
 	cellular_api_get_registration_status get_registration_status;
+	/** @driver_ops_optional @copybrief cellular_get_network_status */
+	cellular_api_get_network_status get_network_status;
 	/** @driver_ops_optional @copybrief cellular_set_apn */
 	cellular_api_set_apn set_apn;
 	/** @driver_ops_optional @copybrief cellular_set_callback */
@@ -417,6 +423,33 @@ static inline int cellular_get_registration_status(const struct device *dev,
 	}
 
 	return api->get_registration_status(dev, tech, status);
+}
+
+/**
+ * @brief Get the last reported network (serving cell) status
+ *
+ * @details Returns the most recent network status the driver has observed,
+ * as delivered by @ref CELLULAR_EVENT_NETWORK_STATUS_CHANGED. It does not
+ * trigger a fresh query.
+ *
+ * @param dev Cellular network device instance
+ * @param status Destination for the network status snapshot
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS API is not supported by cellular network device.
+ * @retval -ENODATA No current network status (before the first report, or after
+ * a registration change until the next poll refreshes it).
+ */
+static inline int cellular_get_network_status(const struct device *dev,
+					      struct cellular_evt_network_status *status)
+{
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
+
+	if (api->get_network_status == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_network_status(dev, status);
 }
 
 /**

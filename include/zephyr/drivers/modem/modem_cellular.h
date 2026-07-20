@@ -173,6 +173,8 @@ struct modem_cellular_data {
 	uint8_t rssi;
 	uint8_t rsrp;
 	uint8_t rsrq;
+	struct cellular_evt_network_status network_status;
+	bool network_status_valid;
 	uint8_t imei[MODEM_CELLULAR_DATA_IMEI_LEN];
 	uint8_t model_id[MODEM_CELLULAR_DATA_MODEL_ID_LEN];
 	uint8_t imsi[MODEM_CELLULAR_DATA_IMSI_LEN];
@@ -337,6 +339,14 @@ extern const struct cellular_driver_api modem_cellular_api;
 
 void modem_cellular_emit_event(struct modem_cellular_data *data, enum cellular_event evt,
 			       const void *payload);
+
+/*
+ * Store the latest serving-cell status and emit CELLULAR_EVENT_NETWORK_STATUS_CHANGED
+ * only when it changed, ignoring signal quality (rsrp/rsrq) so periodic polls do not
+ * re-fire the event on signal fluctuation.
+ */
+void modem_cellular_emit_network_status(struct modem_cellular_data *data,
+					const struct cellular_evt_network_status *status);
 
 void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t argc,
 				 void *user_data);
