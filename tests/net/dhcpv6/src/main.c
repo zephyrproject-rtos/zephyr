@@ -19,6 +19,7 @@ static struct net_in6_addr test_prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 
 static uint8_t test_prefix_len = 64;
 static uint8_t test_preference;
 static struct net_dhcpv6_duid_storage test_serverid;
+static struct net_dhcpv6_duid_storage test_other_serverid;
 static struct net_mgmt_event_callback net_mgmt_cb;
 
 typedef void (*test_dhcpv6_pkt_fn_t)(struct net_if *iface,
@@ -100,12 +101,12 @@ static void clear_test_addr_on_iface(struct net_if *iface)
 	test_ctx.iface->config.dhcpv6.prefix_len = 0;
 }
 
-static void generate_fake_server_duid(void)
+static void generate_fake_server_duid(struct net_dhcpv6_duid_storage *serverid,
+				      uint8_t id)
 {
-	struct net_dhcpv6_duid_storage *serverid = &test_serverid;
 	struct dhcpv6_duid_ll *duid_ll =
 				(struct dhcpv6_duid_ll *)&serverid->duid.buf;
-	uint8_t fake_mac[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06 };
+	uint8_t fake_mac[] = { 0x01, 0x02, 0x03, 0x04, 0x05, id };
 
 	memset(serverid, 0, sizeof(*serverid));
 
@@ -205,7 +206,8 @@ static void *dhcpv6_tests_setup(void)
 	k_sem_init(&test_ctx.tx_sem, 0, 1);
 	k_sem_init(&test_ctx.exchange_complete_sem, 0, 1);
 
-	generate_fake_server_duid();
+	generate_fake_server_duid(&test_serverid, 0x06);
+	generate_fake_server_duid(&test_other_serverid, 0x07);
 
 	net_mgmt_init_event_callback(&net_mgmt_cb, evt_handler, NET_EVENT_IF_UP);
 	net_mgmt_add_event_callback(&net_mgmt_cb);
@@ -824,6 +826,51 @@ static int set_reply_options(struct net_if *iface, struct net_pkt *pkt,
 	return 0;
 }
 
+static int set_reply_options_other_server(struct net_if *iface, struct net_pkt *pkt,
+					  enum dhcpv6_msg_type msg_type)
+{
+	struct dhcpv6_ia_na test_ia_na = {
+		.iaid = iface->config.dhcpv6.addr_iaid,
+		.t1 = 60,
+		.t2 = 120,
+		.iaaddr.addr = test_addr,
+		.iaaddr.preferred_lifetime = 120,
+		.iaaddr.valid_lifetime = 240,
+	};
+	struct dhcpv6_ia_pd test_ia_pd = {
+		.iaid = iface->config.dhcpv6.prefix_iaid,
+		.t1 = 60,
+		.t2 = 120,
+		.iaprefix.prefix = test_prefix,
+		.iaprefix.prefix_len = test_prefix_len,
+		.iaprefix.preferred_lifetime = 120,
+		.iaprefix.valid_lifetime = 240,
+	};
+	int ret;
+
+	ret = dhcpv6_add_option_clientid(pkt, &iface->config.dhcpv6.clientid);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dhcpv6_add_option_serverid(pkt, &test_other_serverid);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dhcpv6_add_option_ia_na(pkt, &test_ia_na, true);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dhcpv6_add_option_ia_pd(pkt, &test_ia_pd, true);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
 /* Verify that DHCPv6 client accepts Reply messages in Requesting, Confirming,
  * Renewing and Rebinding states
  */
@@ -878,6 +925,46 @@ ZTEST(dhcpv6_tests, test_input_reply)
 			zassert_equal(result, NET_DROP, "Should've drop the message");
 			break;
 
+		}
+
+		net_pkt_unref(pkt);
+	}
+}
+
+ZTEST(dhcpv6_tests, test_input_reply_rejects_unselected_server)
+{
+	enum net_verdict result;
+	struct net_pkt *pkt;
+	enum net_dhcpv6_state state;
+
+	for (state = NET_DHCPV6_REQUESTING; state <= NET_DHCPV6_REBINDING; state++) {
+		test_ctx.iface->config.dhcpv6.state = state;
+
+		set_fake_server_duid(test_ctx.iface);
+		clear_test_addr_on_iface(test_ctx.iface);
+
+		pkt = test_dhcpv6_create_message(test_ctx.iface,
+						 DHCPV6_MSG_TYPE_REPLY,
+						 set_reply_options_other_server);
+		zassert_not_null(pkt, "Failed to create pkt");
+
+		result = net_ipv6_input(pkt);
+
+		switch (state) {
+		case NET_DHCPV6_REQUESTING:
+		case NET_DHCPV6_RENEWING:
+			zassert_equal(result, NET_DROP,
+				      "Reply from unselected server accepted in state %s",
+				      net_dhcpv6_state_name(state));
+			break;
+		case NET_DHCPV6_CONFIRMING:
+		case NET_DHCPV6_REBINDING:
+			zassert_equal(result, NET_OK,
+				      "Reply from any server rejected in state %s",
+				      net_dhcpv6_state_name(state));
+			break;
+		default:
+			break;
 		}
 
 		net_pkt_unref(pkt);
