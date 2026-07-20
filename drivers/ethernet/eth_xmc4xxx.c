@@ -670,12 +670,15 @@ static struct net_pkt *eth_xmc4xxx_rx_pkt(const struct device *dev)
 			}
 		}
 
-prepare_dma_descriptor:
+prepare_dma_descriptor: {
+		struct net_buf *rx_buf = dev_data->rx_frag_list[tail];
+
 		/* Prepare the current DMA descriptor for the next reception. */
-		dma_desc->buffer1 = (uint32_t)dev_data->rx_frag_list[tail]->data;
-		dma_desc->length = dev_data->rx_frag_list[tail]->size |
+		dma_desc->buffer1 = (uint32_t)rx_buf->data;
+		dma_desc->length = rx_buf->size |
 				   ETH_RX_DMA_DESC_SECOND_ADDR_CHAINED_MASK;
 		dma_desc->status = ETH_MAC_DMA_RDES0_OWN;
+	}
 
 		if (tail == frame_end_index) {
 			/* Time to leave the loop. */
