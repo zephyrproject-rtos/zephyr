@@ -2257,12 +2257,18 @@ out:
 	k_mutex_unlock(&lock);
 }
 
-static void dhcpv6_generate_client_duid(struct net_if *iface)
+static int dhcpv6_generate_client_duid(struct net_if *iface)
 {
 	struct net_linkaddr *lladdr = net_if_get_link_addr(iface);
 	struct net_dhcpv6_duid_storage *clientid = &iface->config.dhcpv6.clientid;
 	struct dhcpv6_duid_ll *duid_ll =
 				(struct dhcpv6_duid_ll *)&clientid->duid.buf;
+
+	if (lladdr == NULL ||
+	    lladdr->len > sizeof(clientid->duid.buf) - DHCPV6_DUID_LL_HEADER_SIZE) {
+		NET_ERR("Link address too large for DHCPv6 DUID");
+		return -EMSGSIZE;
+	}
 
 	memset(clientid, 0, sizeof(*clientid));
 
@@ -2273,6 +2279,8 @@ static void dhcpv6_generate_client_duid(struct net_if *iface)
 	memcpy(duid_ll->ll_addr, lladdr->addr, lladdr->len);
 
 	clientid->length = DHCPV6_DUID_LL_HEADER_SIZE + lladdr->len;
+
+	return 0;
 }
 
 /* DHCPv6 public API */
@@ -2289,6 +2297,14 @@ void net_dhcpv6_start(struct net_if *iface, struct net_dhcpv6_params *params)
 
 	if (!params->request_addr && !params->request_prefix) {
 		NET_ERR("Information Request not supported yet");
+		goto out;
+	}
+
+	/* Generate the client DUID before any observable side effects so that a
+	 * failure leaves the interface untouched (not registered, no START
+	 * event emitted).
+	 */
+	if (dhcpv6_generate_client_duid(iface) < 0) {
 		goto out;
 	}
 
@@ -2312,7 +2328,6 @@ void net_dhcpv6_start(struct net_if *iface, struct net_dhcpv6_params *params)
 		iface->config.dhcpv6.prefix_iaid = net_if_get_by_iface(iface);
 	}
 
-	dhcpv6_generate_client_duid(iface);
 	dhcpv6_enter_state(iface, NET_DHCPV6_INIT);
 	dhcpv6_reschedule();
 
