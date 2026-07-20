@@ -46,6 +46,14 @@ void soc_early_init_hook(void)
 	    (!IS_ENABLED(CONFIG_USB_DEVICE_DRIVER) && !IS_ENABLED(CONFIG_UDC_DRIVER))) {
 		/* Disable USB Type-C dead battery pull-down behavior */
 		LL_PWR_DisableUCPDDeadBattery();
+	} else {
+		/*
+		 * An earlier boot stage in the same power cycle (a bootloader
+		 * chain-loading this image without a hardware reset) may have
+		 * disabled the pull-downs already, so restore them explicitly
+		 * rather than merely skipping the disable above.
+		 */
+		LL_PWR_EnableUCPDDeadBattery();
 	}
 
 #endif /* PWR_UCPDR_UCPD_DBDIS */
