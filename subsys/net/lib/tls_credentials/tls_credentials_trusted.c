@@ -8,6 +8,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/psa/ps_ids.h>
 
 #include <psa/protected_storage.h>
 
@@ -27,8 +28,6 @@ LOG_MODULE_REGISTER(tls_credentials_trusted,
  * The ToC contains a list of CONFIG_TLS_MAX_CREDENTIALS_NUMBER UIDs
  * of credentials, can be 0 if slot is free.
  */
-
-#define PSA_PS_CRED_ID		0xC2E0ULL
 
 #define CRED_MAX_SLOTS	CONFIG_TLS_MAX_CREDENTIALS_NUMBER
 
@@ -50,7 +49,10 @@ static bool credentials_loaded;
 static inline psa_storage_uid_t tls_credential_get_uid(uint32_t tag,
 						       uint16_t type)
 {
-	return PSA_PS_CRED_ID << 48 |
+	BUILD_ASSERT(ZEPHYR_PSA_TLS_CREDENTIALS_PS_UID_RANGE_SIZE ==
+		     1ULL << (8 * (sizeof(tag) + sizeof(type))));
+
+	return ZEPHYR_PSA_TLS_CREDENTIALS_PS_UID_RANGE_BEGIN |
 	       (type & 0xffffULL) << 32 |
 	       (tag & 0xffffffff);
 }
