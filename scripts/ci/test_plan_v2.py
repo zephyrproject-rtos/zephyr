@@ -500,6 +500,8 @@ class TwisterExecutor:
     def _build_cmd(self, call, save_path):
         cmd = [str(self._zephyr_base / "scripts" / "twister"), "-c"]
 
+        cmd += ["--test-config", "tests/test_config_ci.yaml"]
+
         for pattern in call.test_patterns:
             cmd += ["--test-pattern", pattern]
 
