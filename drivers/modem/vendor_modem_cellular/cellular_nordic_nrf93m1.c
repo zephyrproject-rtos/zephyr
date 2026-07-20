@@ -98,7 +98,7 @@ static void nrf93m1_on_bcinfosc(struct modem_chat *chat, char **argv, uint16_t a
 		evt.cell.lte.band = 0;
 	}
 
-	modem_cellular_emit_event(data, CELLULAR_EVENT_NETWORK_STATUS_CHANGED, &evt);
+	modem_cellular_emit_network_status(data, &evt);
 }
 
 static const struct modem_cellular_vendor_config nrf93m1_vendor = {
