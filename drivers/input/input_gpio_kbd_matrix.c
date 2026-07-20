@@ -70,10 +70,12 @@ static void gpio_kbd_matrix_drive_column(const struct device *dev, int col)
 		return;
 	}
 
+	uint32_t changed = data->last_col_state ^ state;
+
 	for (int i = 0; i < common->col_size; i++) {
 		const struct gpio_dt_spec *gpio = &cfg->col_gpio[i];
 
-		if ((data->last_col_state ^ state) & BIT(i)) {
+		if (changed & BIT(i)) {
 			if (cfg->col_drive_inactive) {
 				gpio_pin_set_dt(gpio, state & BIT(i));
 			} else if (state & BIT(i)) {
