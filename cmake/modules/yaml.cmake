@@ -491,7 +491,7 @@ function(yaml_save)
    endif()
 
   file(WRITE ${yaml_file}.tmp "${yaml_out}")
-  zephyr_file_copy(${yaml_file}.tmp ${yaml_file} ONLY_IF_DIFFERENT)
+  file(COPY_FILE ${yaml_file}.tmp ${yaml_file} ONLY_IF_DIFFERENT)
   file(REMOVE ${yaml_file}.tmp)
 
   set(save_target ${ARG_YAML_NAME}_yaml_saved)

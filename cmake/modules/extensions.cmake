@@ -3213,37 +3213,19 @@ endfunction()
 # Usage:
 #   zephyr_file_copy(<oldname> <newname> [ONLY_IF_DIFFERENT])
 #
-# Zephyr file copy extension.
-# This function is similar to CMake function
-# 'file(COPY_FILE <oldname> <newname> [ONLY_IF_DIFFERENT])'
-# introduced with CMake 3.21.
-#
-# Because the minimal required CMake version with Zephyr is 3.20, this function
-# is not guaranteed to be available.
-#
-# When using CMake version 3.21 or newer 'zephyr_file_copy()' simply calls
-# 'file(COPY_FILE...)' directly.
-# When using CMake version 3.20, the implementation will execute using CMake
-# for running command line tool in a subprocess for identical functionality.
+# Deprecated: this function only existed because 'file(COPY_FILE ...)' was
+# not available with CMake 3.20; call 'file(COPY_FILE ...)' directly instead.
 function(zephyr_file_copy oldname newname)
+  message(DEPRECATION
+          "zephyr_file_copy() is deprecated, use file(COPY_FILE ...) instead."
+  )
   set(options ONLY_IF_DIFFERENT)
   cmake_parse_arguments(ZEPHYR_FILE_COPY "${options}" "" "" ${ARGN})
 
-  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21.0)
-    if(ZEPHYR_FILE_COPY_ONLY_IF_DIFFERENT)
-      set(copy_file_options ONLY_IF_DIFFERENT)
-    endif()
-    file(COPY_FILE ${oldname} ${newname} ${copy_file_options})
-  else()
-    if(ZEPHYR_FILE_COPY_ONLY_IF_DIFFERENT)
-      set(copy_file_command copy_if_different)
-    else()
-      set(copy_file_command copy)
-    endif()
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E ${copy_file_command} ${oldname} ${newname}
-    )
+  if(ZEPHYR_FILE_COPY_ONLY_IF_DIFFERENT)
+    set(copy_file_options ONLY_IF_DIFFERENT)
   endif()
+  file(COPY_FILE ${oldname} ${newname} ${copy_file_options})
 endfunction()
 
 # Usage:
@@ -4978,7 +4960,7 @@ function(zephyr_dt_import)
       COMMAND_ERROR_IS_FATAL ANY
     )
 
-    zephyr_file_copy(${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
+    file(COPY_FILE ${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
     file(REMOVE ${gen_dts_cmake_temp})
   endif()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
