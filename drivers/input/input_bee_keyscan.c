@@ -160,6 +160,8 @@ static void bee_keyscan_process_matrix(const struct device *dev, uint8_t new_pre
 	const struct bee_keyscan_config *config = dev->config;
 	const struct input_kbd_matrix_common_config *cfg_common = &config->common;
 	kbd_row_t *matrix_new_state = cfg_common->matrix_new_state;
+	const uint8_t row_size = cfg_common->row_size;
+	const uint8_t col_size = cfg_common->col_size;
 	__maybe_unused struct bee_keyscan_data *data = dev->data;
 	__maybe_unused KEYSCAN_TypeDef *keyscan = config->reg;
 
@@ -167,7 +169,7 @@ static void bee_keyscan_process_matrix(const struct device *dev, uint8_t new_pre
 	KeyScan_Cmd(keyscan, DISABLE);
 #endif
 
-	for (int c = 0; c < cfg_common->col_size; c++) {
+	for (int c = 0; c < col_size; c++) {
 		matrix_new_state[c] = 0;
 	}
 
@@ -175,7 +177,7 @@ static void bee_keyscan_process_matrix(const struct device *dev, uint8_t new_pre
 		uint8_t r = new_keys[i].row;
 		uint8_t c = new_keys[i].column;
 
-		if (r >= cfg_common->row_size || c >= cfg_common->col_size) {
+		if (r >= row_size || c >= col_size) {
 			continue;
 		}
 
