@@ -9,6 +9,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 
+#include <ctype.h>
+
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/net_log.h>
@@ -261,6 +263,54 @@ static void random_linkaddr(uint8_t *linkaddr, size_t len)
 	set_laa_unicast(linkaddr);
 }
 
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_PREFIX_MAC)
+static bool is_bridge_mac_prefix_valid(const char *prefix)
+{
+	for (size_t i = 0; i < sizeof("xx:xx:xx:xx:xx") - 1; i++) {
+		if ((i % 3) == 2) {
+			if (prefix[i] != ':') {
+				return false;
+			}
+		} else if (!isxdigit((unsigned char)prefix[i])) {
+			return false;
+		}
+	}
+
+	return prefix[sizeof("xx:xx:xx:xx:xx") - 1] == '\0';
+}
+
+static void prefix_linkaddr(uint8_t *linkaddr, size_t len, uint8_t id)
+{
+	int ret;
+
+	(void)memset(linkaddr, 0, len);
+
+	if (!is_bridge_mac_prefix_valid(CONFIG_NET_ETHERNET_BRIDGE_MAC_PREFIX)) {
+		NET_DBG("Invalid bridge MAC prefix \"%s\", using random link address",
+			CONFIG_NET_ETHERNET_BRIDGE_MAC_PREFIX);
+		random_linkaddr(linkaddr, len);
+		return;
+	}
+
+	ret = net_bytes_from_str(linkaddr, NET_ETH_ADDR_LEN - 1,
+				 CONFIG_NET_ETHERNET_BRIDGE_MAC_PREFIX);
+	if (ret < 0) {
+		NET_DBG("Cannot parse bridge MAC prefix \"%s\" (%d), using random link address",
+			CONFIG_NET_ETHERNET_BRIDGE_MAC_PREFIX, ret);
+		random_linkaddr(linkaddr, len);
+		return;
+	}
+
+	linkaddr[NET_ETH_ADDR_LEN - 1] = id;
+
+	/* A bridge MAC address must be unicast. Preserve the configured U/L bit
+	 * so users can provide either a locally administered prefix or their
+	 * assigned OUI.
+	 */
+	linkaddr[0] &= ~0x01;
+}
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_PREFIX_MAC */
+
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC)
 /* Derive a stable MAC address from the hardware device ID so that it stays the
  * same across reboots. The bridge index is mixed in so that multiple bridge
@@ -328,6 +378,8 @@ static void bridge_iface_init(struct net_if *iface)
 	 */
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC)
 	unique_linkaddr(vctx->lladdr.addr, NET_ETH_ADDR_LEN, ctx->id);
+#elif defined(CONFIG_NET_ETHERNET_BRIDGE_PREFIX_MAC)
+	prefix_linkaddr(vctx->lladdr.addr, NET_ETH_ADDR_LEN, ctx->id);
 #else
 	random_linkaddr(vctx->lladdr.addr, NET_ETH_ADDR_LEN);
 #endif

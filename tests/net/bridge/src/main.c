@@ -371,13 +371,25 @@ static void test_bridge_link_addr(void)
 		      "bridge link address type is %u, expected NET_LINK_ETHERNET",
 		      lladdr->type);
 
-	/* Whether random or derived from the device id, the address must be a
-	 * locally administered unicast MAC.
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_PREFIX_MAC)
+	{
+		static const uint8_t expected_addr[NET_ETH_ADDR_LEN] = {
+			0x02, 0x34, 0x56, 0x78, 0x9a, 0x00
+		};
+
+		zassert_mem_equal(lladdr->addr, expected_addr, sizeof(expected_addr),
+				  "bridge link address does not use configured prefix");
+	}
+#else
+	/* Random and device-id-derived addresses must be locally administered.
+	 * A configured prefix may use a globally assigned OUI, so it is checked
+	 * separately above.
 	 */
 	zassert_equal(lladdr->addr[0] & 0x01, 0x00,
 		      "bridge link address is not unicast");
 	zassert_equal(lladdr->addr[0] & 0x02, 0x02,
 		      "bridge link address is not locally administered");
+#endif
 }
 
 /*
