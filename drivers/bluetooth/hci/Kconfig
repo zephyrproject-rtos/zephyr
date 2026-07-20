@@ -128,6 +128,24 @@ config BT_STM32_IPM
 	  STM32WB HCI driver using the shared memory transport between
 	  CPU1 and the wireless coprocessor on CPU2.
 
+config BT_STM32_IPM_FW_INFO_CHECK
+	bool "STM32WB wireless firmware runtime check"
+	default y
+	depends on BT_STM32_IPM
+	help
+	  Validate at runtime that the STM32WB wireless stack running on CPU2
+	  matches the expected stack type and version used by the driver.
+
+config BT_STM32_IPM_FW_CHECK_STRICT
+	bool "Fail initialization on STM32WB wireless firmware mismatch"
+	default y
+	depends on BT_STM32_IPM_FW_INFO_CHECK
+	help
+	  If enabled, Bluetooth initialization fails when the detected CPU2
+	  wireless firmware stack type or version does not match expectations.
+	  If disabled, mismatches are logged as warnings and initialization
+	  continues.
+
 config BT_STM32WBA
 	bool
 	default y
