@@ -412,6 +412,15 @@ void HAL_PCDEx_SetConnectionState(stm32_pcd_handle_t *hpcd, uint8_t state)
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 	const struct udc_stm32_config *cfg = priv->dev->config;
 
+#if defined(CONFIG_SOC_SERIES_STM32L1X)
+	/* On STM32L1 series, the USB D+ pull-up is controlled by software. */
+	if (state) {
+		LL_SYSCFG_EnableUSBPullUp();
+	} else {
+		LL_SYSCFG_DisableUSBPullUp();
+	}
+#endif /* CONFIG_SOC_SERIES_STM32L1X */
+
 	if (cfg->disconnect_gpio.port != NULL) {
 		gpio_pin_configure_dt(&cfg->disconnect_gpio,
 				      state ? GPIO_OUTPUT_ACTIVE : GPIO_OUTPUT_INACTIVE);
