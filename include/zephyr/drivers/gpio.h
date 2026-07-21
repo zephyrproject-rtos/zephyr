@@ -680,7 +680,7 @@ struct gpio_dt_spec {
  * @param inst @c DT_DRV_COMPAT instance number
  * @param ngpios number of GPIOs
  * @return the bitmask of allowed gpios
- * @see GPIO_DT_NGPIOS_PORT_PIN_MASK_EXC()
+ * @see GPIO_DT_PORT_PIN_MASK_NGPIOS_EXC()
  */
 #define GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(inst, ngpios)	\
 		GPIO_DT_PORT_PIN_MASK_NGPIOS_EXC(DT_DRV_INST(inst), ngpios)
