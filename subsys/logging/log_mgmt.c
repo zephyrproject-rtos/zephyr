@@ -231,6 +231,7 @@ static const char *link_source_name_get(uint8_t domain_id, uint32_t source_id)
 		err = log_link_get_source_name(link, rel_domain_id, source_id,
 					       cached, &cache_size);
 		if (err < 0) {
+			log_cache_release(&sname_cache, cached);
 			return NULL;
 		}
 
