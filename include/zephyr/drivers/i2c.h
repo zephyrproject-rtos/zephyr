@@ -88,12 +88,11 @@ extern "C" {
 
 /**
  * @brief Complete I2C DT information
- *
- * @param bus is the I2C bus
- * @param addr is the target address
  */
 struct i2c_dt_spec {
+	/** I2C bus */
 	const struct device *bus;
+	/** Target address */
 	uint16_t addr;
 };
 
@@ -544,7 +543,7 @@ static inline bool i2c_is_read_op(const struct i2c_msg *msg)
  *
  * @param msg The message to check
  * @retval true The I2C message includes a stop.
- * @retval false The I2C message includes a stop.
+ * @retval false The I2C message does not include a stop.
  */
 static inline bool i2c_is_stop_op(const struct i2c_msg *msg)
 {
@@ -556,7 +555,7 @@ static inline bool i2c_is_stop_op(const struct i2c_msg *msg)
  *
  * @param msg The message to check
  * @return true if the I2C message includes a restart
- * @return false if the I2C message includes a restart
+ * @return false if the I2C message does not include a restart
  */
 static inline bool i2c_is_restart_op(const struct i2c_msg *msg)
 {
