@@ -129,8 +129,6 @@ struct log_output {
  * @param output Pointer to log_output struct.
  * @param msg Pointer to log_msg struct.
  * @param flags Flags used for text formatting options.
- *
- * @return Function pointer based on Kconfigs defined for backends.
  */
 typedef void (*log_format_func_t)(const struct log_output *output,
 					struct log_msg *msg, uint32_t flags);
