@@ -1,0 +1,52 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32V00x AFIO
+
+compatible: "wch,afio"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    required: true
+    const: 1
+
+child-binding:
+  description: |
+    Each child node defines the configuration for a particular state.
+  child-binding:
+    description: |
+      The grandchild nodes group pins that share the same pin configuration.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-high-impedance
+          - bias-pull-up
+          - bias-pull-down
+          - drive-open-drain
+          - drive-push-pull
+          - output-high
+          - output-low
+
+    properties:
+      slew-rate:
+        type: string
+        default: "max-speed-2mhz"
+        enum:
+          - "max-speed-10mhz"
+          - "max-speed-2mhz"
+          - "max-speed-30mhz"
+
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should
+          be defined using pre-defined macros.

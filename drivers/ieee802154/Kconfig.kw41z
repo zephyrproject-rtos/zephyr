@@ -1,0 +1,27 @@
+# NXP KW41Z configuration options
+
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_KW41Z
+	bool "NXP KW41Z Driver support"
+	default y
+	depends on DT_HAS_NXP_KW41Z_IEEE802154_ENABLED
+	select REQUIRES_FULL_LIBC
+
+if IEEE802154_KW41Z
+
+config IEEE802154_KW41Z_INIT_PRIO
+	int "KW41Z initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not change it unless
+	  you know what you are doing. It has to start before the net stack.
+
+config KW41_DBG_TRACE
+	bool "Simplified debug tracing of events"
+	help
+	  The value depends on your debugging needs. This generates an encoded
+	  trace of events without going to debug logging to avoid timing impact
+	  on running code. The buffer is post analyzed via the debugger.
+endif

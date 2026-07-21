@@ -1,0 +1,27 @@
+identifier: rpi_pico/rp2040/mcuboot
+name: Raspberry Pi Pico - MCUboot
+type: mcu
+arch: arm
+flash: 2048
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - pico_gpio
+  - pico_i2c
+  - pico_spi
+  - pico_serial
+  - uart
+  - gpio
+  - adc
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm
+  - flash
+  - dma
+  - counter
+  - clock
+  - usbd

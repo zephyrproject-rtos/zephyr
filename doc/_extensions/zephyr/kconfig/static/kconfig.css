@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Kconfig search */
+
+#__kconfig-search .input-container {
+    border-radius: 5px;
+    border: 1px solid rgba(149, 157, 165, 0.2);
+    box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px !important;
+    margin-bottom: 0.5rem;
+    width: 100%;
+    height: 60px;
+}
+
+#__kconfig-search .input-container input {
+    border-radius: 5px 0px 0px 5px;
+    font-size: 18px;
+    width: 90%;
+    height: 100%;
+    padding: 0.75rem;
+    border: none;
+    box-shadow: none !important;
+}
+
+#__kconfig-search .input-container input:focus,
+#__kconfig-search .input-container input:active {
+    outline: none;
+}
+
+#__kconfig-search .input-container button {
+    font-size: 22px;
+    border-radius: 0px 5px 5px 0px;
+    float: right;
+    width: 10%;
+    height: 100%;
+    border: none;
+    background-color: lightgrey;
+}
+
+#__kconfig-search select {
+    border-radius: 5px;
+    border: 1px solid rgba(149, 157, 165, 0.2);
+    box-shadow: unset;
+    color: black;
+}
+
+#__kconfig-search .search-tools {
+    display: flex;
+    flex-direction: row;
+    margin: 0.25rem 0.1rem 1.5rem;
+}
+
+#__kconfig-search .results-per-page-container {
+    margin-left: auto;
+}
+
+#__kconfig-search .results-per-page-title {
+    padding-right: 1rem;
+}
+
+#__kconfig-search .search-nav {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#__kconfig-search .search-nav > p {
+    padding: 0 1rem;
+    margin: 0;
+}
+
+/* Kconfig entries */
+
+.kconfig ul {
+    margin-bottom: 0 !important;
+}

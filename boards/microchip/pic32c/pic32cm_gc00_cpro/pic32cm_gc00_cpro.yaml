@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: pic32cm_gc00_cpro
+name: PIC32CM GC00 Curiosity Pro
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+flash: 512
+ram: 128
+supported:
+  - gpio
+  - pinctrl
+vendor: microchip

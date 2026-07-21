@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timer0 {
+	status = "okay";
+	interrupts = <TG0_T0_LEVEL_INTR_SOURCE 1 0>;
+
+	counter {
+		status = "okay";
+	};
+};
+
+&timer1 {
+	status = "okay";
+	interrupts = <TG0_T1_LEVEL_INTR_SOURCE 2 0>;
+
+	counter {
+		status = "okay";
+	};
+};
+
+&timer2 {
+	status = "okay";
+	interrupts = <TG1_T0_LEVEL_INTR_SOURCE 3 0>;
+
+	counter {
+		status = "okay";
+	};
+};

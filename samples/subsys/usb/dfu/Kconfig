@@ -1,0 +1,36 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "USB DFU sample options"
+
+config APP_USB_DFU_USE_FLASH_BACKEND
+	select FLASH
+	select FLASH_MAP
+	select STREAM_FLASH
+	select IMG_MANAGER
+	select IMG_ERASE_PROGRESSIVELY
+	bool "Option to clear the flash area before mounting"
+	help
+	  Use this to force an existing file system to be created.
+
+if APP_USB_DFU_USE_FLASH_BACKEND
+
+config USBD_DFU_FLASH
+	default y
+
+config USBD_DFU_FLASH_SLOT0
+	default n
+
+config USBD_DFU_FLASH_SLOT1
+	default y
+
+endif
+
+endmenu
+
+# Source common USB sample options used to initialize new experimental USB
+# device stack. The scope of these options is limited to USB samples in project
+# tree, you cannot use them in your own application.
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+source "Kconfig.zephyr"

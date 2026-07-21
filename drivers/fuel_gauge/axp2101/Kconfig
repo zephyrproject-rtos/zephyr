@@ -1,0 +1,14 @@
+# Zephyr axp2101 fuel-gauge device
+
+# Copyright (c) 2025 Felix Moessbauer
+# SPDX-License-Identifier: Apache-2.0
+
+config FUEL_GAUGE_AXP2101
+	bool "X-Powers AXP2101 fuel gauge"
+	default y
+	depends on DT_HAS_X_POWERS_AXP2101_FUEL_GAUGE_ENABLED
+	depends on DT_HAS_X_POWERS_AXP2101_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable driver for the x-powers axp2101 fuel gauge device.

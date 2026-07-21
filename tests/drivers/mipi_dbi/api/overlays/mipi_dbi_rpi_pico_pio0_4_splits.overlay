@@ -1,0 +1,29 @@
+/*
+ * Copyright 2025 Christoph Schnetzler
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma {
+	status = "okay";
+};
+
+&pio0 {
+	status = "okay";
+
+	mipi_dbi: mipi_dbi {
+		status = "okay";
+		compatible = "raspberrypi,pico-mipi-dbi-pio";
+		reset-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		cs-gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+		dc-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+		wr-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		data-pin-splits = <&mipi_dbi 3 2>,
+				  <&mipi_dbi 13 2>,
+				  <&mipi_dbi 6 2>,
+				  <&mipi_dbi 16 10>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#data-pin-split-cells = <2>;
+	};
+};

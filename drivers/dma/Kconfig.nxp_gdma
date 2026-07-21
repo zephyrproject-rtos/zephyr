@@ -1,0 +1,11 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_NXP_GDMA
+	bool "NXP GDMA driver"
+	default y
+	depends on DT_HAS_NXP_GDMA_ENABLED
+	help
+	  DMA driver for NXP GDMA (General DMA) controller.
+	  This driver supports memory-to-memory, memory-to-peripheral,
+	  and peripheral-to-memory transfers.

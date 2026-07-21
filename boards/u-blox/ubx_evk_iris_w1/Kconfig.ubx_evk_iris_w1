@@ -1,0 +1,6 @@
+# EVK-IRIS-W1 board configuration
+# Copyright (c) 2025 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UBX_EVK_IRIS_W1
+	select SOC_PART_NUMBER_RW612ETA2I

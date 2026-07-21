@@ -1,0 +1,8 @@
+tests:
+  pm.power_domain.device:
+    tags:
+      - pm
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

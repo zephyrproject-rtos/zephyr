@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+DT_COMPAT_CMSDK_TIMER := arm,cmsdk-timer
+
+config CMSDK_APB_TIMER
+	bool "CMSDK APB Timer as system clock"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+	depends on $(dt_node_has_compat,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),$(DT_COMPAT_CMSDK_TIMER))
+	select TICKLESS_CAPABLE
+	default y if SYS_CLOCK_EXISTS
+	help
+	  Enable support for the CMSDK APB Timer as the system clock.
+
+if CMSDK_APB_TIMER
+
+config CMSDK_APB_TIMER_MIN_DELAY_OVERRIDE
+	bool "Override the value of minimum delay cycles"
+
+config CMSDK_APB_TIMER_MIN_DELAY_CYCLES
+	int "Minimum delay cycles"
+	depends on CMSDK_APB_TIMER_MIN_DELAY_OVERRIDE
+	default 1024
+	help
+	  The value set overrides the default minimum delay cycles value.
+
+endif # CMSDK_APB_TIMER

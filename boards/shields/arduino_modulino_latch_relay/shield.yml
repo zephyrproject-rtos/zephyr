@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026, Silicon Labs
+
+shield:
+  name: arduino_modulino_latch_relay
+  full_name: Arduino Modulino Latch Relay
+  vendor: arduino
+  supported_features:
+    - regulator

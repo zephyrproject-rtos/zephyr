@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		light-sensor = &adafruit_ltr329;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_ltr329: ltr329@29 {
+		compatible = "liteon,ltr329";
+		reg = <0x29>;
+	};
+};

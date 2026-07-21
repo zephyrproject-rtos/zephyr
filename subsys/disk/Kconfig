@@ -1,0 +1,16 @@
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DISK_ACCESS
+	bool "Disk Interface"
+	select DISK_DRIVERS
+	help
+	  Enable disk access over a supported media backend like FLASH or RAM
+
+if DISK_ACCESS
+
+module = DISK
+module-str = disk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_ACCESS

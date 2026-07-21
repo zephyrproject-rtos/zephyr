@@ -1,0 +1,111 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: RX Renesas Capatitive Touch Sensing Unit
+
+compatible: "renesas,rx-ctsu"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  max-num-sensors:
+    type: int
+    required: true
+    description: Maximum number of sensors available in the CTSU
+
+  low-voltage-mode:
+    type: boolean
+    description: |
+      Enable low voltage mode
+      In this mode, the CTSU will work with lower voltage
+      This mode is useful when the system is working with low voltage
+
+  tscap-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      CTSU TSCAP Pin
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+child-binding:
+  description: CTSU Sensor Component
+
+  properties:
+    component-type:
+      type: string
+      required: true
+      enum:
+        - "button"
+        - "slider"
+        - "wheel"
+      description: |
+        Type of component
+
+    ssdiv:
+      type: int
+      default: 1
+      description: |
+        Spectrum Diffusion Frequency Division Setting
+        - 0:      4.00 <= Base Clock Frequency fb (MHz)
+        - 1..14:  4.00/(ssdiv+1) <= fb < 4.00/(ssdiv)
+        - 15:     fb < 0.27
+
+    so:
+      type: int
+      default: 0x074
+      description: |
+        Sensor Offset Adjustment (10 bits):
+        Current offset amount
+
+    snum:
+      type: int
+      default: 3
+      description: |
+        Set the number of measurements = snum + 1
+
+    sdpa:
+      type: int
+      default: 7
+      description: |
+        Base Clock Setting (5 bits)(0 - 31):
+        Operating clock divided by 2*(sdpa+1)
+
+    resolution:
+      type: int
+      default: 100
+      description: Resolution of wheel or slider
+
+    channels-num:
+      type: array
+      required: true
+      description: |
+        Channels number that are used by the component
+        In case of "slider" or "wheel", channels should be placed in order
+          as they are on the slider or wheel. (from the lowest value to the highest value)
+        In case of "button", there must be only 1 element in array.
+        Otherwise, CTSU will not working.
+
+    touch-count-threshold:
+      type: int
+      default: 1500
+      description: |
+        Count threshold to determine touching or not
+        In case of "slider" or "wheel",
+          this is the threshold to start the position calculation
+
+    threshold-range:
+      type: int
+      default: 500
+      description: |
+        Range of threshold: if count > threshold + range => touching
+                            if count < threshold => untouch
+
+    zephyr,code:
+      type: int
+      required: true
+      description: Key code to emit.

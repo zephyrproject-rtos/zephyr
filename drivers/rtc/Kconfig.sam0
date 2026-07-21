@@ -1,0 +1,10 @@
+# Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_ATMEL_SAM0
+	bool "Atmel SAM RTC driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM0_RTC_ENABLED \
+		&& !$(dt_nodelabel_bool_prop,rtc,systimer)
+	help
+	  Atmel Real-Time Clock (RTC) driver used on SAM0 SoC series.

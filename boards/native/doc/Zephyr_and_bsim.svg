@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events"
+		xmlns:v="http://schemas.microsoft.com/visio/2003/SVGExtensions/" width="8.38583in" height="4.40945in"
+		viewBox="0 0 603.78 317.48" xml:space="preserve" color-interpolation-filters="sRGB" class="st12">
+	<v:documentProperties v:langID="1033" v:metric="true" v:viewMarkup="false">
+		<v:userDefs>
+			<v:ud v:nameU="msvSubprocessMaster" v:prompt="" v:val="VT4(Rectangle)"/>
+			<v:ud v:nameU="msvNoAutoConnect" v:val="VT0(1):26"/>
+		</v:userDefs>
+	</v:documentProperties>
+
+	<style type="text/css">
+	<![CDATA[
+		.st1 {fill:#ebf1df;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st2 {fill:#000000;font-family:Arial;font-size:0.916672em}
+		.st3 {font-size:1em}
+		.st4 {fill:none;stroke:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st5 {fill:#000000;font-family:Arial;font-size:1.08334em}
+		.st6 {fill:#ebf1df;fill-opacity:0.75;stroke:#000000;stroke-dasharray:5.25,3.75,0,3.75;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st7 {fill:#fcebdd;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.75}
+		.st8 {stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.24}
+		.st9 {marker-end:url(#mrkr4-53);marker-start:url(#mrkr4-51);stroke:#612621;stroke-width:5}
+		.st10 {fill:#612621;fill-opacity:1;stroke:#612621;stroke-opacity:1;stroke-width:0.73529411764706}
+		.st11 {stroke:#000000;stroke-dasharray:0,20;stroke-linecap:round;stroke-linejoin:round;stroke-width:4}
+		.st12 {fill:none;fill-rule:evenodd;font-size:12px;overflow:visible;stroke-linecap:square;stroke-miterlimit:3}
+	]]>
+	</style>
+
+	<defs id="Markers">
+		<g id="lend4">
+			<path d="M 2 1 L 0 0 L 2 -1 L 2 1 " style="stroke:none"/>
+		</g>
+		<marker id="mrkr4-51" class="st10" v:arrowType="4" v:arrowSize="1" v:setback="2.648" refX="2.648" orient="auto"
+				markerUnits="strokeWidth" overflow="visible">
+			<use xlink:href="#lend4" transform="scale(1.36) "/>
+		</marker>
+		<marker id="mrkr4-53" class="st10" v:arrowType="4" v:arrowSize="1" v:setback="2.72" refX="-2.72" orient="auto"
+				markerUnits="strokeWidth" overflow="visible">
+			<use xlink:href="#lend4" transform="scale(-1.36,-1.36) "/>
+		</marker>
+	</defs>
+	<g v:mID="4" v:index="4" v:groupContext="foregroundPage">
+		<title>Zephyr+SIM1</title>
+		<v:pageProperties v:drawingScale="0.0393701" v:pageScale="0.0393701" v:drawingUnits="24" v:shadowOffsetX="8.50394"
+				v:shadowOffsetY="-8.50394"/>
+		<v:layer v:name="Connector" v:index="0"/>
+		<g id="shape1-1" v:mID="1" v:groupContext="shape" transform="translate(96.5271,-72.455)">
+			<title>Sheet.1</title>
+			<desc>HW models</desc>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="48.189" cy="296.22" width="96.38" height="42.5197"/>
+			<rect x="0" y="274.961" width="96.378" height="42.5197" class="st1"/>
+			<text x="4" y="299.52" class="st2" v:langID="6153"><v:paragraph/><v:tabList/>HW models<v:tabChar/></text>		</g>
+		<g id="shape2-4" v:mID="2" v:groupContext="shape" transform="translate(107.866,-117.809)">
+			<title>Sheet.2</title>
+			<desc>Drivers</desc>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="42.5197" cy="277.795" width="85.04" height="79.3701"/>
+			<path d="M0 317.48 L85.04 317.48 L85.04 238.11 L28.68 238.11 L28.35 263.62 L0 263.62 L0 317.48 Z" class="st1"/>
+			<text x="10.11" y="294.3" class="st2" v:langID="6153"><v:paragraph/><v:tabList/><v:newlineChar/><v:newlineChar/>Drivers</text>		</g>
+		<g id="shape3-7" v:mID="3" v:groupContext="shape" transform="translate(8.65313,-72.4252)">
+			<title>Sheet.3</title>
+			<desc>POSIX Arch</desc>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="48.189" cy="277.78" width="96.38" height="79.3999"/>
+			<path d="M0 317.45 L85.04 317.48 L85.04 272.27 L96.38 272.27 L96.38 238.08 L0 238.08 L0 317.45 Z" class="st1"/>
+			<text x="31.38" y="274.48" class="st2" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>POSIX<v:lf/><tspan
+						x="36.88" dy="1.2em" class="st3">Arch</tspan></text>		</g>
+		<g id="shape4-11" v:mID="4" v:groupContext="shape" transform="translate(8.65313,-154.66)">
+			<title>Sheet.4</title>
+			<desc>Zephyr Kernel</desc>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="62.3622" cy="296.22" width="124.73" height="42.5197"/>
+			<path d="M0 317.48 L96.38 317.48 L96.38 297.64 L124.72 297.64 L124.72 274.96 L85.04 274.96 L0 274.96 L0 317.48 Z"
+					class="st1"/>
+			<text x="45.24" y="292.92" class="st2" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>Zephyr<v:lf/><tspan
+						x="46.46" dy="1.2em" class="st3">Kernel</tspan></text>		</g>
+		<g id="shape5-15" v:mID="5" v:groupContext="shape" transform="translate(8.65313,-200.014)">
+			<title>Sheet.5</title>
+			<desc>Application</desc>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="92.126" cy="289.134" width="184.26" height="56.6929"/>
+			<rect x="0" y="260.787" width="184.252" height="56.6929" class="st1"/>
+			<text x="65.22" y="292.43" class="st2" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>Application</text>		</g>
+		<g id="shape6-18" v:mID="6" v:groupContext="shape" transform="translate(33.4563,-283.465)">
+			<title>Sheet.6</title>
+			<desc>One Zephyr bsim device binary</desc>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="67.3228" cy="303.307" width="134.65" height="28.3465"/>
+			<rect x="0" y="289.134" width="134.646" height="28.3465" class="st4"/>
+			<text x="17.47" y="299.41" class="st5" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>One Zephyr bsim <tspan
+						x="29.02" dy="1.2em" class="st3">device binary</tspan></text>		</g>
+		<g id="shape7-22" v:mID="7" v:groupContext="shape" transform="translate(158.889,-72.4252)">
+			<title>Sheet.7</title>
+			<desc>radio stack</desc>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="17.0079" cy="255.103" width="34.02" height="124.754"/>
+			<path d="M0 317.48 L34.02 317.48 L34.02 192.73 L0 192.73 L0 317.48 Z" class="st6"/>
+			<text x="4.78" y="245.2" class="st2" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>radio <tspan x="4.17"
+						dy="1.2em" class="st3">stack</tspan><v:newlineChar/></text>		</g>
+		<g id="shape8-26" v:mID="8" v:groupContext="shape" transform="translate(8.65313,-7.08661)">
+			<title>Sheet.8</title>
+			<desc>Host OS Kernel (i.e. Linux)</desc>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="293.386" cy="296.22" width="586.78" height="42.5197"/>
+			<rect x="0" y="274.961" width="586.772" height="42.5197" class="st7"/>
+			<text x="227.97" y="306.12" class="st2" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/><v:newlineChar/>Host OS Kernel (i.e. Linux)</text>		</g>
+		<g id="shape10-29" v:mID="10" v:groupContext="shape" transform="translate(8.65313,-269.291)">
+			<title>Bracket</title>
+			<v:userDefs>
+				<v:ud v:nameU="visVersion" v:val="VT0(11):26"/>
+			</v:userDefs>
+			<path d="M0 317.48 A5.09365 5.09365 0 0 1 4.5 312.98 L89.27 312.98 A5.09365 5.09365 -180 0 0 93.77 308.48 A5.09365 5.09365
+						 -180 0 0 98.27 312.98 L179.75 312.98 A5.09365 5.09365 0 0 1 184.25 317.48" class="st8"/>
+		</g>
+		<g id="shape11-32" v:mID="11" v:groupContext="shape" transform="translate(249.598,-72.4252)">
+			<title>Sheet.11</title>
+			<desc>bsim Phy binary</desc>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="35.4331" cy="289.134" width="70.87" height="56.6929"/>
+			<rect x="0" y="260.787" width="70.8661" height="56.6929" class="st1"/>
+			<text x="23.82" y="279.23" class="st2" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>bsim<v:newlineChar/><tspan
+						x="25.96" dy="1.2em" class="st3">Phy<v:newlineChar/></tspan><tspan x="20.45" dy="1.2em" class="st3">binary</tspan></text>		</g>
+		<g id="shape12-37" v:mID="12" v:groupContext="shape" transform="translate(445.189,-70.8661)">
+			<title>Sheet.12</title>
+			<desc>Other device binary</desc>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="35.4331" cy="289.134" width="70.87" height="56.6929"/>
+			<rect x="0" y="260.787" width="70.8661" height="56.6929" class="st1"/>
+			<text x="4.25" y="285.83" class="st2" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>Other device <tspan
+						x="20.45" dy="1.2em" class="st3">binary</tspan></text>		</g>
+		<g id="shape13-41" v:mID="13" v:groupContext="shape" transform="translate(348.811,-72.4252)">
+			<title>Sheet.13</title>
+			<desc>Other device binary</desc>
+			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
+			<v:textRect cx="35.4331" cy="289.134" width="70.87" height="56.6929"/>
+			<rect x="0" y="260.787" width="70.8661" height="56.6929" class="st1"/>
+			<text x="4.25" y="285.83" class="st2" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>Other device <tspan
+						x="20.45" dy="1.2em" class="st3">binary</tspan></text>		</g>
+		<g id="shape22-45" v:mID="22" v:groupContext="shape" transform="translate(185.818,-43.937)">
+			<title>Sheet.22</title>
+			<path d="M0 296.7 L0 297.06 L0 300.47 A12.5275 20.044 -180 0 0 10.63 317.48 L62.01 317.48 A10.3705 16.5929 -180 0 0 70.87
+						 299.91 L70.87 297.06" class="st9"/>
+		</g>
+		<g id="shape23-54" v:mID="23" v:groupContext="shape" transform="translate(311.14,-43.937)">
+			<title>Sheet.23</title>
+			<path d="M0 296.7 L0 297.06 L0 300.47 A8.16264 20.044 -180 0 0 6.93 317.48 L40.4 317.48 A6.75722 16.5929 -180 0 0 46.17
+						 299.91 L46.17 297.06" class="st9"/>
+		</g>
+		<g id="shape24-61" v:mID="24" v:groupContext="shape" transform="translate(295.102,-35.4331)">
+			<title>Sheet.24</title>
+			<path d="M0 288.2 L0 288.56 L0 296.22 A28.0352 25.055 -180 0 0 23.79 317.48 L138.77 317.48 A23.2082 20.7411 -180 0 0
+						 158.59 295.51 L158.59 288.56" class="st9"/>
+		</g>
+		<g id="shape25-68" v:mID="25" v:groupContext="shape" transform="translate(533.063,-99.2126)">
+			<title>Sheet.25</title>
+			<path d="M0 317.48 L64.9 317.48" class="st11"/>
+		</g>
+	</g>
+</svg>

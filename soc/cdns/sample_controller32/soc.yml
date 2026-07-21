@@ -1,0 +1,4 @@
+series:
+- name: sample_controller32
+  socs:
+  - name: sample_controller32

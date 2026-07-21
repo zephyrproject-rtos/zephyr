@@ -1,0 +1,6 @@
+board:
+  name: fk723m1_zgt6
+  full_name: FK723M1-ZGT6
+  vendor: fanke
+  socs:
+    - name: stm32h723xx

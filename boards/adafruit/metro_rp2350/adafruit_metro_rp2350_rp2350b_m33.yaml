@@ -1,0 +1,20 @@
+identifier: adafruit_metro_rp2350/rp2350b/m33
+name: Adafruit Metro RP2350 (Cortex-M33)
+type: mcu
+arch: arm
+flash: 16384
+ram: 520
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - clock
+  - counter
+  - dma
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart

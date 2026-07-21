@@ -1,0 +1,61 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MTCH9010
+	bool "MTCH9010"
+	default y
+	depends on DT_HAS_MICROCHIP_MTCH9010_ENABLED
+	help
+	Configure the MTCH9010 driver
+
+if MTCH9010
+
+	config MTCH9010_RESET_ON_STARTUP
+		bool "Reset MTCH9010 on Startup"
+		default y
+		help
+		  Resets the MTCH9010 before the driver configures it.
+		  If disabled and the MTCH9010 was configured already, configuration will fail.
+
+	config MTCH9010_LOCK_ON_STARTUP
+		bool "Save MTCH9010 Settings on Startup"
+		default n
+		help
+		  If set, this option will assert SYS_LK after initialization.
+		  The sensor will use these parameters if SYS_LK is asserted on the next POR.
+
+	config MTCH9010_SAMPLE_DELAY_TIMEOUT_MS
+		int "Maximum wait time to get a sample (ms)"
+		default 500
+		help
+		  Sets the maximum amount of time in milliseconds to wait for a response from the MTCH9010
+		  when asking for a sample. Conductive mode is much faster than capacitive mode.
+
+	config MTCH9010_OVERRIDE_DELAY_ENABLE
+		bool "Override Delay if not Wake on Request"
+		default y
+		help
+		  If the MTCH9010 has a sleep period defined, the wake pin will not wake the device.
+		  If this option is set, the API will allow for <sleep period + timeout> length
+		  delays during fetch. Otherwise, the API will use the normal timeout, and likely fail.
+
+	config MTCH9010_REFERENCE_AVERAGING_COUNT
+		int "Reference Averaging Count"
+		default 1
+		range 1 64
+		help
+		  If the MTCH9010 is using the current measurement as its reference, then this
+		  is the number of samples to average.
+
+	config MTCH9010_HEARTBEAT_MONITORING_ENABLE
+		bool "Heartbeat Monitoring"
+		default y
+		help
+		  Configures monitoring of the heartbeat output
+
+	# Logging Settings
+	module = MTCH9010
+	module-str = MTCH9010
+	source "subsys/logging/Kconfig.template.log_config"
+
+endif

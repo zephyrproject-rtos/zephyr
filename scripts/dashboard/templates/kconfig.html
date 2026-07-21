@@ -1,0 +1,75 @@
+<!--
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+SPDX-License-Identifier: Apache-2.0
+-->
+{% extends "base.html" %}
+
+{% block head %}
+
+<script src="static/js/kconfig.js"></script>
+
+{% endblock %}
+
+{% block content %}
+
+<div class="row rst-content mb-3">
+  <div class="col">
+    <code class="literal p-1">
+      {{build.kconfig_file.absolute()}}
+    </code>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col">
+    <table class="table table-hover table-sm" id="kconfigTable">
+      <thead>
+        <tr>
+          <th class="ps-0" colspan="2"><input id="kconfigFilter"
+            class="form-control" type="search" placeholder="Filter Kconfigs..."/>
+          </th>
+          <th class="text-center">Value</th>
+          <th>Source</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for kc in build.kconfigs %}
+        <tr {% if kc.src == "unset" %}class="text-secondary"{% endif %}>
+          <td class="text-end font-small align-middle">
+            {{kc.sym_type}}
+          </td>
+          <td>
+            {{kc.name}}
+            {% if not kc.visible %}
+            <i class="bi bi-eye-slash text-secondary" title="Hidden symbol"></i>
+            {% endif %}
+            {% if kconfig_browser and "CONFIG_DT_HAS_" not in kc.name %}
+            <a href="{{kconfig_browser}}#{{kc.name}}"
+               title="View Kconfig documentation.">
+              <i class="bi bi-info-circle ms-2"></i>
+            </a>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if kc.src == "unset" %}
+            <i>Not set</i>
+            {% else %}
+            {{kc.value}}
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {{kc.src_html()|safe}}
+          </td>
+          <td>
+            {{kc.loc_html()|safe}}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

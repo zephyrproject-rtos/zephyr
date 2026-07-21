@@ -1,0 +1,15 @@
+# Copyright (c) 2023, CSIRO
+# SPDX-License-Identifier: Apache-2.0
+
+include: [base.yaml, pm.yaml]
+
+description: |
+  This binding provides resources required to build and run the
+  tests/subsys/pm/device_power_domains test in Zephyr.
+
+compatible: "test-device-pm"
+
+properties:
+  alternate-domain:
+    type: phandle
+    description: Secondary domain the driver uses.

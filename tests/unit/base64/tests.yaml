@@ -1,0 +1,4 @@
+tests:
+  utilities.base64:
+    tags: base64
+    type: unit

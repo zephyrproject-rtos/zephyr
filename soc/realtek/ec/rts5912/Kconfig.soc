@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+config SOC_SERIES_RTS5912
+	bool
+	select SOC_FAMILY_REALTEK_EC
+	help
+	  Enable support for REALTEK EC MCU series
+
+config SOC_SERIES
+	default "rts5912" if SOC_SERIES_RTS5912
+
+config SOC_RTS5912
+	bool
+	select SOC_SERIES_RTS5912
+
+config SOC_SERIES_RTS5915
+	bool
+	help
+	  The Token for the RTS5915. There are no driver or software changes needed.
+
+config SOC_RTS5915
+	bool
+	select SOC_SERIES_RTS5915
+	select SOC_SERIES_RTS5912
+	select SOC_RTS5912
+	help
+	  The RTS5915 is a repackage of the RTS5912. There are no driver or software
+	  changes needed.
+
+config SOC
+	default "rts5912" if SOC_RTS5912
+	default "rts5915" if SOC_RTS5915

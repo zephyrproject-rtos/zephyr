@@ -1,0 +1,23 @@
+boards:
+- name: nrf52_bsim
+  full_name: nRF52 simulated board (BabbleSim)
+  vendor: zephyr
+  socs:
+  - name: native
+- name: nrf5340bsim
+  full_name: nRF5340 simulated boards (BabbleSim)
+  vendor: zephyr
+  socs:
+  - name: nrf5340
+- name: nrf54l15bsim
+  full_name: nRF54L15 simulated boards (BabbleSim)
+  vendor: zephyr
+  socs:
+  - name: nrf54l15
+- name: nrf54lm20bsim
+  full_name: nRF54LM20 simulated boards (BabbleSim)
+  vendor: zephyr
+  socs:
+  - name: nrf54lm20a
+# Note the 53 and 54 are referring to the real SOC yamls, but we only use their name and cpu-cluster
+# definitions. In practice these board uses the same native SOC (SOC_POSIX) as the nrf52_bsim

@@ -1,0 +1,48 @@
+# STM32N6570 DISCOVERY board configuration
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32N6570_DK
+
+configdefault NET_L2_ETHERNET
+	default y
+
+configdefault OTP
+	default y if ETH_STM32_HAL && NVMEM
+
+# MEMC needs to be enabled in order to store
+# LTDC frame buffer and video buffer pool to external PSRAM
+config MEMC
+	default y if STM32_LTDC || VIDEO
+
+if DISPLAY
+configdefault I2C_STM32_V2_TIMING
+	default y if INPUT
+endif # DISPLAY
+
+if VIDEO
+# Place video buffer pool into the PSRAM
+config VIDEO_BUFFER_POOL_ZEPHYR_REGION
+	default y
+
+config VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME
+	default "PSRAM"
+
+# Place VENC internal buffer into the PSRAM
+if VIDEO_STM32_VENC
+
+choice VIDEO_STM32_VENC_MEM_ALLOC
+	default VIDEO_STM32_VENC_HEAP_ALLOC
+endchoice
+
+config VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION
+	default y
+
+config VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION_NAME
+	default "PSRAM"
+
+endif # VIDEO_STM32_VENC
+endif # VIDEO
+
+endif # BOARD_STM32N6570_DK

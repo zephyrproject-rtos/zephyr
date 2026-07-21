@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config USE_VARIABLE_LENGTH_DATA
+	bool "Use variable length data in GATT Write without Response"
+	help
+	  Use increasing and decreasing length data in GATT Write without
+	  Response.
+
+config USE_CONN_UPDATE_ITERATION_ONCE
+	bool "Test Connection Update"
+	help
+	  Perform Connection Update for a single iteration.
+
+config USE_PHY_UPDATE_ITERATION_ONCE
+	bool "Test PHY Update"
+	depends on BT_USER_PHY_UPDATE
+	help
+	  Perform PHY Update for a single iteration.

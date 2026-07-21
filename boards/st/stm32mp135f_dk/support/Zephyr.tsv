@@ -1,0 +1,5 @@
+#Opt	Id	Name	Type	IP	Offset	Binary
+P	0x1	fsbl-openbl	Binary	none	0x0	External_Mem_Loader_A7.stm32
+P	0x3	fsbl-extfl	Binary	none	0x0	SD_Ext_Loader.bin
+P	0x4	fsbl-app	Binary	mmc0	0x0000080	FSBLA_Sdmmc1_A7_Signed.bin
+P	0x5	fsbl-app	Binary	mmc0	0x0000500	zephyr_Signed.bin

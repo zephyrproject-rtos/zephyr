@@ -1,0 +1,103 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Includes base bindings at multiple levels (binding,
+# child-binding, grandchild-binding):
+#
+#   include: base.yaml
+#   child-binding:
+#     include: base.yaml
+#     child-binding:
+#       include: base.yaml
+#
+# Which properties are specified at which levels is summarized below
+# for convenience.
+#
+# Child-binding level:
+#   From top-level "include:" element.
+#   - child-prop-1 (amended)
+#   - child-prop-2
+#   - child-prop-enum
+#   From "child-binding: include:" element.
+#   - prop-1 (amended)
+#   - prop-2 (amended)
+#   - prop-enum (amended)
+#
+# Grandchild-binding level:
+#   From top-level "include:" element.
+#   - grandchild-prop-1 (amended)
+#   - grandchild-prop-2
+#   - grandchild-prop-enum
+#   From "child-binding: include:" element.
+#   - child-prop-1 (amended)
+#   - child-prop-2
+#   - child-prop-enum
+#   From "child-binding: child-binding: include:" element.
+#   - prop-1 (amended)
+#   - prop-2 (amended)
+#   - prop-enum (amended)
+#
+# Grand-grandchild-binding level:
+#   From "child-binding: include:" element.
+#   - child-prop-1
+#   - child-prop-2
+#   - child-prop-enum
+#   From "child-binding: child-binding: include:" element.
+#   - grandchild-prop-1
+#   - grandchild-prop-2
+#   - grandchild-prop-enum
+
+description: Description of 'base_multi.yaml'.
+
+include:
+  - name: base.yaml
+    child-binding:
+      property-allowlist: [child-prop-1, child-prop-2, child-prop-enum]
+      child-binding:
+        property-allowlist: [grandchild-prop-1, grandchild-prop-2, grandchild-prop-enum]
+
+child-binding:
+  include:
+    - name: base.yaml
+      property-allowlist: [prop-1, prop-2, prop-enum]
+      child-binding:
+        property-allowlist: [child-prop-1, child-prop-2, child-prop-enum]
+        child-binding:
+          property-allowlist: [grandchild-prop-1, grandchild-prop-2, grandchild-prop-enum]
+
+  properties:
+    # Amend top-level "include:" element.
+    child-prop-1:
+      const: 0xf1
+    # Amend this "child-binding: include:" element.
+    prop-1:
+      const: 0xf1
+    prop-2:
+      description: New description (child).
+    prop-enum:
+      required: true
+      default: FOO
+
+  child-binding:
+    include:
+      - name: base.yaml
+        property-allowlist: [prop-1, prop-2, prop-enum]
+        child-binding:
+          property-allowlist: [child-prop-1, child-prop-2, child-prop-enum]
+          child-binding:
+            property-allowlist: [grandchild-prop-1, grandchild-prop-2, grandchild-prop-enum]
+
+    properties:
+      # Amend above top-level "include:" element.
+      grandchild-prop-1:
+        const: 0xf2
+      # Amend above "child-binding: include:" element.
+      child-prop-1:
+        const: 0xf2
+      # Amend this "child-binding: child-binding: include:" element.
+      prop-1:
+        const: 0xf2
+      prop-2:
+        description: New description (grandchild).
+      prop-enum:
+        required: true
+        default: FOO

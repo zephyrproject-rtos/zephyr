@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  sifli,cfg:
+    type: phandle
+    description: Phandle to the SiFli SF32LB System Configuration (HPSYS_CFG)

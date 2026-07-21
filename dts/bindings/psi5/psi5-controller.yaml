@@ -1,0 +1,141 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: PSI5 (Peripheral Sensor Interface) Controller
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    Each child node defines the configuration of a PSI5 channel
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: Channel identifier.
+
+    async-mode:
+      type: boolean
+      description: |
+        Determines the channel operation mode. When set to true, the channel operates in
+        asynchronous mode with only the receive function active. When set to false,
+        the channel operates in synchronous mode with both transmit and receive functions active.
+
+    period-sync-pulse-us:
+      type: int
+      description: |
+        Specifies the period of the internally generated synchronization pulses, measured in
+        microseconds (us). This value determines the length of each synchronization pulse used
+        in the system.
+
+    pulse-width-0-us:
+      type: int
+      description: |
+        Specifies the duration of the pulse width for a data bit value '0', measured in
+        microseconds (us).
+
+    pulse-width-1-us:
+      type: int
+      description: |
+        Specifies the duration of the pulse width for a data bit value '1', measured in
+        microseconds (us).
+
+    decoder-start-offset-us:
+      type: int
+      description: |
+        Specifies the duration for which the Manchester decoder remains inactive after the
+        falling edge of a synchronization pulse, measured in microseconds (us). This value
+        determines the delay before the decoder starts processing incoming signals again.
+
+    tx-frame:
+      type: string
+      enum:
+        - "short-31-1s"
+        - "short-5-0s"
+        - "long-31-1s"
+        - "long-5-0s"
+        - "x-long-31-1s"
+        - "x-long-frame-5-0s"
+        - "xx-long-frame"
+        - "non-standard-frame"
+      description: |
+        Specifies the transmitter mode. Each mode defines the frame length and
+        the start condition for data transmission:
+          - short-31-1s: Short Frame (V1.3) with at least 31 consecutive '1' bits
+            as the start condition
+          - short-5-0s: Short Frame (V1.3) with at least 5 consecutive '0' bits
+            as the start condition
+          - long-31-1s: Long Frame (V1.3) with at least 31 consecutive '1' bits
+            as the start condition
+          - long-5-0s: Long Frame (V1.3) with at least 5 consecutive '0' bits
+            as the start condition
+          - x-long-31-1s: X-Long Frame (V1.3) with at least 31 consecutive '1' bits
+            as the start condition
+          - x-long-5-0s: X-Long Frame (V1.3) with at least 5 consecutive '0' bits
+            as the start condition
+          - xx-long: XX-Long (V2.0)
+          - non-standard: Non Standard Length
+
+    rx-bitrate-kbps:
+      type: int
+      required: true
+      enum:
+        - 125
+        - 189
+      description: |
+        Selects the receive message bitrate in kbps. This setting determines the speed at
+        which data is received.
+
+  child-binding:
+    description: |
+      Each child node defines the configuration of a channel RX slot
+
+    properties:
+      reg:
+        type: int
+        required: true
+        description: Channel RX slot identifier.
+
+      duration-us:
+        type: int
+        required: true
+        description: |
+          Specifies the duration of a slot, starting from the rising edge of the
+          timing synchronization pulse and ending at the final slot.
+
+      start-offset-us:
+        type: int
+        required: true
+        description: |
+          Specifies the time offset at which the slot should start, measured from the
+          rising edge of the timing synchronization pulse.
+
+      data-length:
+        type: int
+        required: true
+        description: |
+          Specifies the number of bits in a slot, with valid lengths ranging from 8 to 28 bits.
+
+      data-msb-first:
+        type: boolean
+        description: |
+          Specifies the endianness type for data slot. Set to 1 when data is interpreted with the
+          Most Significant Bit (MSB) first.
+
+      has-smc:
+        type: boolean
+        description: |
+          Specifies whether data slot has Serial Messaging Channel (SMC) field. Set to 1 when
+          the bit (M0, M1) SMC is present in the Rx Message.
+
+      has-parity:
+        type: boolean
+        description: |
+          Specifies whether data slot has parity field. Set to 1 when the Parity field is
+          present in the Rx Message; otherwise, the CRC field is present.

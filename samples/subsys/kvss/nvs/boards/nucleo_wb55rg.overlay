@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+
+&flash0 {
+	partitions {
+		/* Set 12KB of storage at the end of 1st half of flash (dual core constraints) */
+		storage_partition: partition@7d000 {
+			label = "storage";
+			reg = <0x0007d000 DT_SIZE_K(12)>;
+		};
+	};
+};

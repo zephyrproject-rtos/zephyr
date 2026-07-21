@@ -1,0 +1,24 @@
+identifier: nucleo_wba55cg
+name: ST Nucleo WBA55CG
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - counter
+  - crc
+  - crypto
+  - gpio
+  - i2c
+  - rng
+  - rtc
+  - spi
+  - watchdog
+ram: 128
+flash: 1024
+vendor: st

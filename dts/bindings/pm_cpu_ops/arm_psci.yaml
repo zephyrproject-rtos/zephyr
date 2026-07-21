@@ -1,0 +1,18 @@
+# Copyright (c) 2023, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: This Power State Coordination Interface (PSCI) defines a standard
+            interface for power management that can be used by operating system
+            vendors, for supervisory software working at different levels of
+            privilege on an ARM device.
+
+include: base.yaml
+
+properties:
+  method:
+    type: string
+    required: true
+    description: The method of calling the PSCI firmware.
+    enum:
+      - smc
+      - hvc

@@ -1,0 +1,60 @@
+/*
+ * Dashboard icons CSS file.
+ * Generated from fontello.com, see README.md for more information.
+ * Actual images are from Bootstrap Icons (https://icons.getbootstrap.com/).
+ *
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+@font-face {
+  font-family: 'icons';
+  src: url('../font/icons.woff2?35877872') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+[class^="bi-"]:before, [class*=" bi-"]:before {
+  font-family: "icons";
+  font-style: normal;
+  font-weight: normal;
+  speak: never;
+
+  display: inline-block;
+  text-decoration: inherit;
+  width: 1em;
+  margin-right: .2em;
+  text-align: center;
+  /* opacity: .8; */
+
+  /* For safety - reset parent styles, that can break glyph codes*/
+  font-variant: normal;
+  text-transform: none;
+
+  /* fix buttons height, for twitter bootstrap */
+  line-height: 1em;
+
+  /* Animation center compensation - margins should be symmetric */
+  /* remove if not needed */
+  margin-left: .2em;
+
+  /* you can be more comfortable with increased icons size */
+  /* font-size: 120%; */
+
+  /* Font smoothing. That was taken from TWBS */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Uncomment for 3D effect */
+  /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
+}
+
+.bi-caret-right-fill:before { content: '\e800'; } /* '' */
+.bi-caret-down-fill:before { content: '\e801'; } /* '' */
+.bi-file-code:before { content: '\e802'; } /* '' */
+.bi-folder:before { content: '\e803'; } /* '' */
+.bi-file-earmark:before { content: '\e804'; } /* '' */
+.bi-file-binary:before { content: '\e805'; } /* '' */
+.bi-info-circle:before { content: '\e806'; } /* '' */
+.bi-eye-slash:before { content: '\e807'; } /* '' */
+.bi-exclamation-circle:before { content: '\e808'; } /* '' */

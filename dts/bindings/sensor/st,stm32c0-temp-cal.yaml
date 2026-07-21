@@ -1,0 +1,17 @@
+# Copyright (c) 2023, Benjamin Björnsson <benjamin.bjornsson@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 TEMP for production calibrated sensors with a single calibration temperature.
+
+compatible: "st,stm32c0-temp-cal"
+
+include: "st,stm32-temp-cal-common.yaml"
+
+properties:
+  nvmem-cell-names:
+    description: |
+      One NVMEM cell must be provided: TS_CAL1
+
+      This cell corresponds to the eponymous calibration parameter.
+    enum: ["TS_CAL1"]

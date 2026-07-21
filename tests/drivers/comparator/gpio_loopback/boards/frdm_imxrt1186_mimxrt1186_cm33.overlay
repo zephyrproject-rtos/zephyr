@@ -1,0 +1,46 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &acmp3;
+	};
+
+	zephyr,user {
+		/* GPIO_AD_17 (J2-13) output connect to GPIO_AD_29 (J2-5, ACMP3_IN2). */
+		test-gpios = <&gpio4 17 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	acmp3_default: acmp3_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_29_acmp3_in2>;
+			drive-strength = "high";
+		};
+	};
+};
+
+&acmp3 {
+	pinctrl-0 = <&acmp3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	positive-mux-input = "IN2";
+	negative-mux-input = "IN7"; /* DAC output */
+
+	/* The external positive input pad must be sampled through the ACMP
+	 * discrete-mode network on this SoC, matching the mcux_acmp sensor
+	 * driver configuration for the i.MX RT118x family.
+	 */
+	discrete-mode-enable-positive-channel;
+
+	dac-vref-source = "VIN2"; /* VDDA_1P8_IN, VIN1 tied to GND on this chip */
+	dac-value = <127>;
+	dac-enable;
+};

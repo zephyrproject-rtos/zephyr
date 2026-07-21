@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2022 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include "../psoc6_04/psoc6_04.64-tqfp.dtsi"
+
+/delete-node/ &scb3;
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

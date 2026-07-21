@@ -1,0 +1,8 @@
+# Copyright (c) 2021, Ilya Tagunov
+# SPDX-License-Identifier: Apache-2.0
+
+description: Semtech SX1276 LoRa Modem
+
+compatible: "semtech,sx1276"
+
+include: semtech,sx127x-base.yaml

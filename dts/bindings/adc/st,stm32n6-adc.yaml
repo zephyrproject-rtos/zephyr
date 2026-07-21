@@ -1,0 +1,16 @@
+# Copyright (c) 2024 STMicroelectronics
+
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        STM32N6 ADC
+
+        This compatible stands for STM32N6 ADC.
+
+compatible: "st,stm32n6-adc"
+
+include:
+  - name: st,stm32-adc.yaml
+    property-blocklist:
+      - st,adc-clock-source
+      - st,adc-prescaler

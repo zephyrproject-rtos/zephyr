@@ -1,0 +1,10 @@
+/*
+ * Copyright (C) 2025 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1_default {
+	group1 {
+		bias-pull-up;
+	};
+};

@@ -1,0 +1,18 @@
+# Copyright 2026 Silicon Labs
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_MODULINO_LATCH_RELAY
+	bool "Arduino Modulino Latch Relay"
+	default y
+	depends on DT_HAS_ARDUINO_MODULINO_LATCH_RELAY_ENABLED
+	select I2C
+	help
+	  Enable the Arduino Modulino Latch Relay driver.
+
+config REGULATOR_MODULINO_LATCH_RELAY_INIT_PRIORITY
+	int "Arduino Modulino Latch Relay driver init priority"
+	default 85
+	depends on REGULATOR_MODULINO_LATCH_RELAY
+	help
+	  Init priority for the Arduino Modulino Latch Relay driver.
+	  It must be greater than I2C init priority.

@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	counter0: counter@88888888 {
+		compatible = "xlnx,xps-timer-1.00.a";
+		reg = <0x88888888 0x10000>;
+		interrupt-parent = <&nvic>;
+		interrupts = <4 0>;
+		clock-frequency = <100000000>;
+		xlnx,count-width = <0x20>;
+		xlnx,gen0-assert = <0x1>;
+		xlnx,gen1-assert = <0x1>;
+		xlnx,one-timer-only = <0x0>;
+		xlnx,trig0-assert = <0x1>;
+		xlnx,trig1-assert = <0x1>;
+	};
+};

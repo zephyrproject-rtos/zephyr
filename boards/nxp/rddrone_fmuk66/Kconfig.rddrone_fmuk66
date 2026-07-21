@@ -1,0 +1,6 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RDDRONE_FMUK66
+	select SOC_MK66F18
+	select SOC_PART_NUMBER_MK66FN2M0VLQ18

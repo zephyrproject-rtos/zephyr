@@ -1,0 +1,143 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024, Nordic Semiconductor ASA
+
+# JSON schema for basic validation of the Zephyr build info YAML file.
+
+type: object
+properties:
+  version:
+    type: string
+  cmake:
+    type: object
+    properties:
+      application:
+        type: object
+        properties:
+          source-dir:
+            type: string
+          configuration-dir:
+            type: string
+        additionalProperties: false
+      board:
+        type: object
+        properties:
+          name:
+            type: string
+          qualifiers:
+            type: string
+          revision:
+            type: string
+          path:
+            type: array
+            items:
+              type: string
+        required:
+          - name
+        additionalProperties: false
+      devicetree:
+        type: object
+        properties:
+          files:
+            type: array
+            items:
+              type: string
+          user-files:
+            type: array
+            items:
+              type: string
+          extra-user-files:
+            type: array
+            items:
+              type: string
+          include-dirs:
+            type: array
+            items:
+              type: string
+          bindings-dirs:
+            type: array
+            items:
+              type: string
+        additionalProperties: false
+      images:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            source-dir:
+              type: string
+            type:
+              type: string
+          additionalProperties: false
+      kconfig:
+        type: object
+        properties:
+          files:
+            type: array
+            items:
+              type: string
+          user-files:
+            type: array
+            items:
+              type: string
+          extra-user-files:
+            type: array
+            items:
+              type: string
+        additionalProperties: false
+      llext-edk:
+        type: object
+        properties:
+          file:
+            type: string
+          remove-cflags:
+            type: array
+            items:
+              type: string
+          append-cflags:
+            type: array
+            items:
+              type: string
+        additionalProperties: false
+      sysbuild:
+        type: boolean
+      toolchain:
+        type: object
+        properties:
+          name:
+            type: string
+          version:
+            type: string
+          path:
+            type: string
+        additionalProperties: false
+      zephyr:
+        type: object
+        properties:
+          zephyr-base:
+            type: string
+          version:
+            type: string
+        additionalProperties: false
+      vendor-specific:
+        type: object
+        additionalProperties:
+          type: object
+          additionalProperties:
+            type: string
+    additionalProperties: false
+  west:
+    type: object
+    properties:
+      command:
+        type: string
+      topdir:
+        type: string
+      version:
+        type: string
+    additionalProperties: false
+required:
+  - version
+additionalProperties: false

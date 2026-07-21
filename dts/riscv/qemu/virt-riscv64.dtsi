@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <qemu/virt-riscv.dtsi>
+
+/ {
+	cpus {
+		riscv,isa-base = "rv64i";
+		riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei", "zicntr";
+	};
+};

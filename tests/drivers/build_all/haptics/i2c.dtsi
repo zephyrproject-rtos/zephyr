@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2024 Cirrus Logic, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ **************************************
+ */
+
+drv2605@0 {
+	compatible = "ti,drv2605";
+	reg = <0x0>;
+	status = "okay";
+
+	actuator-mode = "LRA";
+};
+
+test_i2c_cs40l50@1 {
+	compatible = "cirrus,cs40l50";
+	reg = <0x1>;
+	status = "okay";
+};
+
+test_i2c_cs40l51@2 {
+	compatible = "cirrus,cs40l51";
+	reg = <0x2>;
+	status = "okay";
+};
+
+test_i2c_cs40l52@3 {
+	compatible = "cirrus,cs40l52";
+	reg = <0x3>;
+	status = "okay";
+};
+
+test_i2c_cs40l53@4 {
+	compatible = "cirrus,cs40l53";
+	reg = <0x4>;
+	status = "okay";
+};
+
+test_i2c_cs40l26@5 {
+	compatible = "cirrus,cs40l26";
+	reg = <0x5>;
+	status = "okay";
+};
+
+test_cs40l27@6 {
+	compatible = "cirrus,cs40l27";
+	reg = <0x6>;
+	status = "okay";
+};
+
+test_i2c_tm6605@7 {
+	compatible = "titanmec,tm6605";
+	reg = <0x7>;
+	status = "okay";
+};

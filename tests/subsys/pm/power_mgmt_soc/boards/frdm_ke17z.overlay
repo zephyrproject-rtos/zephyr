@@ -1,0 +1,27 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lptmr0 {
+	/delete-property/ prescale-glitch-filter-bypass;
+	prescale-glitch-filter = <4>;
+	status = "okay";
+};
+
+&idle {
+	exit-latency-us = <100>;
+};
+
+&stop {
+	exit-latency-us = <500>;
+};
+
+&pstop1 {
+	exit-latency-us = <300>;
+};
+
+&pstop2 {
+	exit-latency-us = <200>;
+};

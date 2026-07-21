@@ -1,0 +1,18 @@
+# Copyright (c) 2018 Christian Taedcke
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32PG12B
+	bool
+	select SOC_FAMILY_SILABS_S1
+	help
+	  Silicon Labs EFR32PG12B (Pearl Gecko) Series MCU
+
+config SOC_EFM32PG12B500F1024GL125
+	bool
+	select SOC_SERIES_EFM32PG12B
+
+config SOC_SERIES
+	default "efm32pg12b" if SOC_SERIES_EFM32PG12B
+
+config SOC
+	default "efm32pg12b500f1024gl125" if SOC_EFM32PG12B500F1024GL125

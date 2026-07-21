@@ -1,0 +1,10 @@
+# Copyright (c) 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_LIBSBC_MODULE
+	bool
+
+config LIBSBC
+	bool "libsbc Support"
+	help
+	  This option enables Low Complexity Subband Codec (SBC)

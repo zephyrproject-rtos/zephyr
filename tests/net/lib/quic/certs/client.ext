@@ -1,0 +1,7 @@
+basicConstraints=CA:FALSE
+keyUsage = digitalSignature
+extendedKeyUsage = clientAuth
+subjectAltName = @alt_names
+
+[alt_names]
+DNS.1 = test-client

@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2021 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	/* Connect MCP7940N MFP pin TP9 to P0.04 */
+	extrtc0: mcp7940n@6f {
+		int-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+	};
+};

@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2025 Space Cubics Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <arm/armv7-r.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <amd/versal.dtsi>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r5f";
+			reg = <0>;
+		};
+	};
+
+	tcm: memory@0 {
+		device_type = "memory";
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x00000000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "TCM";
+	};
+
+	soc {
+		interrupt-parent = <&gic>;
+
+		gic: interrupt-controller@f9000000 {
+			compatible = "arm,gic-v1", "arm,gic";
+			reg = <0xf9000000 0x1000>,
+			      <0xf9001000 0x1000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+	};
+};

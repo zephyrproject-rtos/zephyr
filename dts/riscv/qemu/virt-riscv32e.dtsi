@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <qemu/virt-riscv.dtsi>
+
+/ {
+	cpus {
+		riscv,isa-base = "rv32e";
+		riscv,isa-extensions = "e", "m", "a", "c", "zicsr", "zifencei";
+	};
+};

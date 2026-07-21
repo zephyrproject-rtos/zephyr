@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO pins exposed on the DCMI camera connector used for interfacing
+  with the OV2640, OV7670, and OV5640 camera sensors.
+
+  Connector layout (not mapped GPIOs in parentheses):
+
+    (1)   OV_STROBE (Unused)                 (2)   AGND
+     3    DVP_SDA                            (4)   AVDD-2V8
+     5    DVP_SCL                            (6)   DVP_RST
+     7    DVP_VSYNC                           8    DVP_PWDN
+     9    DVP_HSYNC                          (10)  DVDD-1V5
+    (11)  2V8                                 12   DVP_D7
+     13   DVP_XCLK                            14   DVP_D6
+    (15)  GND                                 16   DVP_D5
+     17   DVP_PCLK                            18   DVP_D4
+     19   DVP_D0                              20   DVP_D3
+     21   DVP_D1                              22   DVP_D2
+    (23)  AF-2V8                             (24)  GND
+
+compatible: "weact,dcmi-camera-connector"
+
+include: [gpio-nexus.yaml, base.yaml]

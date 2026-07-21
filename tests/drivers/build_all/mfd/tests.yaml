@@ -1,0 +1,9 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - mfd
+tests:
+  drivers.mfd.build:
+    platform_allow:
+      - native_sim

@@ -1,0 +1,124 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP High Speed Comparator (HSCMP)
+
+compatible: "nxp,hscmp"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+  - reset-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  resets:
+    required: true
+
+  power-mode:
+    type: string
+    enum:
+      - "low_speed"
+      - "high_speed"
+      - "nano_power"
+    description: |
+      Select comparator power/speed mode.
+
+  hysteresis-mode:
+    type: string
+    enum:
+      - "LEVEL0"
+      - "LEVEL1"
+      - "LEVEL2"
+      - "LEVEL3"
+    description: |
+      Comparator hysteresis level.
+
+  enable-stop-mode:
+    type: boolean
+    description: |
+      Allow the comparator to remain enabled in STOP mode.
+
+  invert-output:
+    type: boolean
+    description: |
+      Invert comparator output.
+
+  enable-pin-out:
+    type: boolean
+    description: |
+      Drive comparator output on the associated pin.
+
+  use-unfiltered-output:
+    type: boolean
+    description: |
+      Route unfiltered comparator output to COUT.
+      When false, the filtered output is used and filter parameters
+      are taken from filter-count and filter-period.
+
+  filter-count:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Number of consecutive samples that must agree before updating
+      the filtered output. Set to 0 to bypass the filter.
+
+  filter-period:
+    type: int
+    description: |
+      Sampling period for the filter in bus clock cycles.
+      Valid range: 0 - 255.
+
+  dac-vref-source:
+    type: string
+    enum:
+      - "VREFH0"
+      - "VREFH1"
+    description: |
+      DAC reference high-voltage source selection.
+
+  dac-value:
+    type: int
+    description: |
+      8-bit DAC code used when an input channel is set to DAC output.
+      Valid range: 0 - 255.
+
+  positive-mux-input:
+    type: string
+    enum:
+      - "IN0"
+      - "IN1"
+      - "IN2"
+      - "IN3"
+      - "IN4"
+      - "IN5"
+      - "DAC"
+    description: |
+      Positive input multiplexer selection. "DAC" routes the internal DAC output.
+
+  negative-mux-input:
+    type: string
+    enum:
+      - "IN0"
+      - "IN1"
+      - "IN2"
+      - "IN3"
+      - "IN4"
+      - "IN5"
+      - "DAC"
+    description: |
+      Negative input multiplexer selection. "DAC" routes the internal DAC output.
+
+  nxp,references:
+    type: phandle-array
+    description: |
+      References to required regulators which must be enabled for HSCMP to function

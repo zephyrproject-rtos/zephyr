@@ -1,0 +1,11 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_EMULATOR
+	bool "OTP memory emulation driver"
+	default y
+	depends on DT_HAS_ZEPHYR_OTP_EMUL_ENABLED
+	help
+	  Enable OTP emulator driver which can be used for testing purposes.
+	  It will use a static RAM buffer per instance whose size is defined
+	  in the device tree node of the OTP device.

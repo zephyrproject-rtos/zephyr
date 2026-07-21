@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2025 NVIDIA Corporation <jholdsworth@nvidia.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config OPENRISC_TICK_TIMER
+	bool "OpenRISC Tick Timer"
+	depends on OPENRISC
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the OpenRISC Tick timer.

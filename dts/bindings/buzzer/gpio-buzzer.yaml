@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: GPIO-driven active buzzer
+
+description: |
+    Active buzzers contain their own oscillator and produce a fixed tone whenever they are
+    powered. The Zephyr driver toggles a single GPIO line; the buzzer API's frequency argument is
+    interpreted as on/off only (zero = stop, non-zero = sound). The actual tone is determined by
+    the buzzer part itself.
+
+compatible: "gpio-buzzer"
+
+include: base.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO line driving the buzzer. Typically wired with the active level corresponding to
+      "buzzer on".

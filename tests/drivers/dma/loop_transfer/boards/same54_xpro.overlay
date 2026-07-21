@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2025 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+tst_dma0: &dmac {
+	status = "okay";
+};

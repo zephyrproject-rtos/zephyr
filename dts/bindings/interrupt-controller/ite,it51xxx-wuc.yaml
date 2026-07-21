@@ -1,0 +1,38 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE Wake-Up Controller (WUC)
+compatible: "ite,it51xxx-wuc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  wakeup-controller:
+    type: boolean
+    description: |
+      conveys that this node is a wakeup controller
+
+  hw-either-edge-supported:
+    type: boolean
+    description: |
+      hardware supports either-edge triggering.
+
+  both-edge-trigger:
+    type: boolean
+    description: |
+      Rising-edge or falling-edge triggered is selected.
+      This property is ignored if `hw-either-edge-supported`
+      is present.
+
+  "#wuc-cells":
+    type: int
+    required: true
+    description: |
+      number of items to expect in a wakeup controller specifier
+    const: 1
+
+wuc-cells:
+  - mask

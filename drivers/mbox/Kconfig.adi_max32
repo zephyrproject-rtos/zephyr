@@ -1,0 +1,10 @@
+# Copyright 2025 Analog Devices, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_ADI_MAX32_SEMA
+	bool "ADI MAX32 SEMA mailbox driver"
+	default y
+	depends on DT_HAS_ADI_MBOX_MAX32_SEMA_ENABLED
+	help
+	  Driver for ADI MAX32 SEMA peripheral mailbox
+	  functionality.

@@ -1,0 +1,43 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  This file needs to be included by devices that need to specify a set of pin
+  controller states. The maximum number of supported states is 5 (pinctrl-0 ...
+  pinctrl-4) but it can be incremented if required.
+
+  The bindings file for each pin controller driver implementation should provide
+  more information on what is the expected pin configuration format.
+
+properties:
+  pinctrl-0:
+    type: phandles
+    description: |
+      Pin configuration/s for the first state. Content is specific to the
+      selected pin controller driver implementation.
+
+  pinctrl-1:
+    type: phandles
+    description: |
+      Pin configuration/s for the second state. See pinctrl-0.
+
+  pinctrl-2:
+    type: phandles
+    description: |
+      Pin configuration/s for the third state. See pinctrl-0.
+
+  pinctrl-3:
+    type: phandles
+    description: |
+      Pin configuration/s for the fourth state. See pinctrl-0.
+
+  pinctrl-4:
+    type: phandles
+    description: |
+      Pin configuration/s for the fifth state. See pinctrl-0.
+
+  pinctrl-names:
+    type: string-array
+    description: |
+      Names for the provided states. The number of names needs to match the
+      number of states.

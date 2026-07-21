@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Khai Do
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OPI_ZERO2W
+	select SOC_SUN50I_H618

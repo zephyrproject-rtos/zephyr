@@ -1,0 +1,37 @@
+# Copyright (c) 2021 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_L2_VIRTUAL
+	bool "Virtual L2 support"
+	help
+	  Add a virtual L2 layer driver. This is needed if you have a L2
+	  layer that depends on other L2 layer. Like running VPN on top of
+	  Ethernet.
+
+if NET_L2_VIRTUAL
+
+config NET_L2_VIRTUAL_MGMT
+	bool "Virtual interface network management interface"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	help
+	  Enable support net_mgmt virtual interface which can be used to
+	  configure at run-time the L2 settings.
+
+config NET_L2_VIRTUAL_MAX_NAME_LEN
+	int "Max length of the virtual L2 layer name"
+	default 32
+	range 8 128
+	help
+	  Indicate the max name length, including the terminating NULL byte.
+	  Reduce this value to conserve memory.
+
+module = NET_L2_VIRTUAL
+module-dep = NET_LOG
+module-str = Log level for virtual L2 layer
+module-help = Enables virtual L2 to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+source "subsys/net/l2/virtual/ipip/Kconfig"
+
+endif # NET_L2_VIRTUAL

@@ -1,0 +1,7 @@
+# Copyright 2024 Tobias Kässer <t.kaesser@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TTGO_T7V1_5
+	select SOC_ESP32
+	select SOC_ESP32_PROCPU if BOARD_TTGO_T7V1_5_ESP32_PROCPU
+	select SOC_ESP32_APPCPU if BOARD_TTGO_T7V1_5_ESP32_APPCPU

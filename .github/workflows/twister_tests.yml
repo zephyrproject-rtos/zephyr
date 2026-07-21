@@ -1,0 +1,76 @@
+# Copyright (c) 2020 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Twister TestSuite
+
+on:
+  push:
+    branches:
+    - main
+    - v*-branch
+    - collab-*
+    paths:
+    - 'scripts/pylib/**'
+    - 'scripts/twister'
+    - 'scripts/tests/twister/**'
+    - '.github/workflows/twister_tests.yml'
+    - 'scripts/schemas/twister/'
+  pull_request:
+    branches:
+    - main
+    - v*-branch
+    paths:
+    - 'scripts/pylib/**'
+    - 'scripts/twister'
+    - 'scripts/tests/twister/**'
+    - '.github/workflows/twister_tests.yml'
+    - 'scripts/schemas/twister/'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  twister-tests:
+    name: Twister Unit Tests
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        python-version: ['3.12', '3.13']
+        os: [ubuntu-24.04]
+    steps:
+    - name: checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
+
+    - name: Install Python packages
+      run: |
+        pip install -r scripts/requirements-actions.txt --require-hashes
+
+    - name: Run pytest for twisterlib
+      env:
+        ZEPHYR_BASE: ./
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      run: |
+        echo "Run twister tests"
+        PYTHONPATH=./scripts/tests pytest ./scripts/tests/twister
+    - name: Run pytest for pytest-twister-harness
+      env:
+        ZEPHYR_BASE: ./
+        ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+        PYTHONPATH: ./scripts/pylib/pytest-twister-harness/src:${PYTHONPATH}
+      run: |
+        echo "Run twister tests"
+        pytest ./scripts/pylib/pytest-twister-harness/tests

@@ -1,0 +1,12 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Measurement Specialties HTU21D Humidity and Temperature Sensor
+
+description: |
+  TE Connectivity (Measurement Specialties) HTU21D digital humidity and
+  temperature sensor. This is compatible with the Sensirion SHT21.
+
+compatible: "meas,htu21d"
+
+include: sensirion,sht21.yaml

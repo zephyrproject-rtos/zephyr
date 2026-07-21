@@ -1,0 +1,6 @@
+tests:
+  libraries.lockfree:
+    platform_exclude:
+      - m2gl025_miv # renode times out
+    tags:
+      - lockfree

@@ -1,0 +1,15 @@
+# Copyright 2019, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: RV32M1 Generic FSK programmable modem node
+
+compatible: "openisa,rv32m1-genfsk"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

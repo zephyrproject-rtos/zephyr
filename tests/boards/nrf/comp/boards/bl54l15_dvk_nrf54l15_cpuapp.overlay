@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/comparator/nrf-comp.h>
+
+/ {
+	aliases {
+		test-comp = &comp;
+	};
+
+	zephyr,user {
+		first-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		second-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&led3 {
+	status = "disabled";
+};
+
+&button0 {
+	status = "disabled";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&comp {
+	status = "okay";
+	psel = <NRF_COMP_AIN4>;
+	refsel = "AREF";
+	extrefsel = <NRF_COMP_AIN3>;
+	sp-mode = "NORMAL";
+	th-up = <36>;
+	th-down = <30>;
+	isource = "DISABLED";
+	enable-hyst;
+};

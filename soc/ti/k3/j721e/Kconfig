@@ -1,0 +1,14 @@
+# Copyright (c) 2023 Enphase Energy
+# Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_J721E_R5
+	select ARM
+	select CPU_CORTEX_R5
+	select CPU_HAS_ARM_MPU
+	select VFP_SP_D16
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	select TI_VIM
+	select TI_DM_TIMER
+	select UART_NS16550_ACCESS_WORD_ONLY if UART_NS16550
+	select SOC_EARLY_INIT_HOOK

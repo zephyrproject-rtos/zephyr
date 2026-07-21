@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
+
+description: |
+  The device exposes eight GPIO lines that can be individually configured as inputs or outputs, with
+  optional pull-up / pull-down resistors. An interrupt output (INT, open-drain, active-low) signals
+  input transitions away from a per-pin programmable default state.
+
+  The chip has two fixed I2C addresses depending on the ADDR pin: 0x43 (ADDR tied low) and 0x44
+  (ADDR tied high).
+
+compatible: "diodes,pi4ioe5v6408"
+
+include: [i2c-device.yaml, gpio-controller.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    required: true
+    const: 8
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      Connection for the open-drain INT output. When set, the driver enables interrupt support and
+      dispatches GPIO callbacks on input transitions matching the configured edges.
+
+gpio-cells:
+  - pin
+  - flags

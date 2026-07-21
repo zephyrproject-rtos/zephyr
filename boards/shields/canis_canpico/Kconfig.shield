@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Steve Boylan
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_CANIS_CANPICO
+	def_bool $(shields_list_contains,canis_canpico)

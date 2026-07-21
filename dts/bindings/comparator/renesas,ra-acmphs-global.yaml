@@ -1,0 +1,49 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA ACMPHS (High-Speed Analog COMParator) Global
+
+  The following example displays the minimum node layout:
+
+    acmphs_global: acmphs_global@deadbeef {
+            compatible = "renesas,ra-acmphs-global";
+            reg = <0xdeadbeef 0x200>;
+            status = "disabled";
+
+            acmphs0: acmphs0 {
+                    ...
+            };
+    };
+
+  If the pin-output-enable is selected in the comparator controller node,
+  this global node needs to define the VCOUT pin to enable output on that pin.
+
+  Note: The VCOUT pinctrl for the comparator global node is already defined
+  on each board that supported comparator. Please check the board’s pinctrl
+  before defining it.
+
+    acmphs_vcout: acmphs_vcout {
+            group1 {
+                    /* VCOUT */
+                    psels = <RA_PSEL(RA_PSEL_ACMPHS_VCOUT, ..., ...)>;
+            };
+    };
+
+    &acmphs_global {
+            pinctrl-0 = <&acmphs_vcout>;
+            pinctrl-names = "default";
+            status = "okay";
+
+            acmphs0 {
+                    ...
+            };
+    };
+
+  Note: There is only one VCOUT shared across all comparator controller nodes.
+  Therefore, the VCOUT value is the logical OR of the output signals from all
+  comparator controllers that have pin-output-enable enabled.
+
+compatible: "renesas,ra-acmphs-global"
+
+include: [base.yaml, pinctrl-device.yaml]

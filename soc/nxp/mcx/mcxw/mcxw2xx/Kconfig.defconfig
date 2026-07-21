@@ -1,0 +1,101 @@
+# Copyright 2025-2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_MCXW2XX
+
+# MCXW23 uses SYSTICK timer as the kernel timer by default.
+# OS timer is reserved to replace SYSTICK during low power events for system wakeup.
+# This dual-timer approach maintains accurate connectivity timing while enabling
+# efficient low power operation.
+configdefault MCUX_OS_TIMER
+	default n
+
+choice SYSTEM_TIMER_LPM_COMPANION
+	default SYSTEM_TIMER_LPM_COMPANION_HOOKS
+endchoice
+
+config NUM_IRQS
+	default 61
+
+DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
+DT_OSTIMER_CLK_PATH := $(dt_nodelabel_path,clk_32k)
+
+configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
+	# MCXW23 clocks the OS event timer from the 32.768 kHz RTC oscillator (PMC
+	# OSTIMERCLKSEL resets to 32.768 kHz and the HAL never reselects it; MCXW23
+	# RM 45.4.11.2.24), unlike other NXP parts where OSTIMER is 1 MHz. The rate
+	# is taken from the clk_32k fixed-clock node rather than hardcoded. Note:
+	# selecting OSTIMER trades timing precision (~1 ms tick, ~30 us resolution)
+	# for low-power always-on operation, so SysTick stays the default where
+	# fine-grained timing is needed.
+	default $(dt_node_int_prop_int,$(DT_OSTIMER_CLK_PATH),clock-frequency) if MCUX_OS_TIMER
+	default $(dt_node_int_prop_int,$(DT_SYSCLK_PATH),clock-frequency) if CORTEX_M_SYSTICK
+
+configdefault SYS_CLOCK_TICKS_PER_SEC
+	# 32.768 kHz / 1024 = 32 cycles per tick exactly when OSTIMER is the timer.
+	default 1024 if MCUX_OS_TIMER
+	default 1000 if PM
+
+# Set to the minimal size of data which can be written.
+config FLASH_FILL_BUFFER_SIZE
+	default 512
+
+if BT
+
+config FPU
+	default y
+
+config BT_BUF_ACL_TX_COUNT
+	default 8
+
+config BT_LONG_WQ_STACK_SIZE
+	default 2048
+
+config MAIN_STACK_SIZE
+	default 2048
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+endif # BT
+
+if PM
+
+# Enable PM_DEVICE for Suspend mode and Standby mode,
+# because some devices can't work in these modes.
+configdefault PM_DEVICE
+	default y if "$(dt_nodelabel_enabled,standby)" || "$(dt_nodelabel_enabled,suspend)"
+
+configdefault PM_POLICY_DEVICE_CONSTRAINTS
+	default y if PM_DEVICE
+
+configdefault IDLE_STACK_SIZE
+	default 640
+
+configdefault TICKLESS_KERNEL
+	default y
+
+choice PM_PREWAKEUP_CONV_MODE
+	default PM_PREWAKEUP_CONV_MODE_CEIL
+endchoice # PM_PREWAKEUP_CONV_MODE
+
+configdefault MCUX_OS_TIMER_MIN_DELAY
+	default 100
+
+if BT
+choice PM_POLICY
+	default PM_POLICY_CUSTOM
+endchoice
+endif # BT
+
+endif # PM
+
+if PM_DEVICE
+
+configdefault POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
+
+endif # SOC_SERIES_MCXW2XX

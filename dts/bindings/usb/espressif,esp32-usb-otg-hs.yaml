@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+#
+description: |
+  Espressif USB-OTG high-speed controller (DWC2 compatible) with the internal
+  UTMI PHY. The high-speed PHY uses dedicated pins that are not mapped to the
+  GPIO peripheral, so no pad configuration is required.
+
+compatible: "espressif,esp32-usb-otg-hs"
+
+include: ["snps,dwc2.yaml"]
+
+properties:
+  clocks:
+    required: true

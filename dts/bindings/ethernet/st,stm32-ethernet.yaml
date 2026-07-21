@@ -1,0 +1,10 @@
+# Copyright (c) 2020, Linaro Limited
+# Copyright (c) 2024, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ST STM32 Ethernet MAC, a child node of the Ethernet controller.
+
+compatible: "st,stm32-ethernet"
+
+include: st,stm32-ethernet-common.yaml

@@ -1,0 +1,12 @@
+shields:
+  - name: x_nucleo_wb05kn1_spi
+    full_name: X-NUCLEO-WB05KN1 (SPI)
+    vendor: st
+    supported_features:
+      - bluetooth
+
+  - name: x_nucleo_wb05kn1_uart
+    full_name: X-NUCLEO-WB05KN1 (UART)
+    vendor: st
+    supported_features:
+      - bluetooth

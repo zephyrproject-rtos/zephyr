@@ -1,0 +1,26 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_FAKE
+	bool "Fake regulator driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_REGULATOR_ENABLED
+	help
+	  Enable support for the FFF-based fake regulator driver.
+
+if REGULATOR_FAKE
+
+config REGULATOR_FAKE_COMMON_INIT_PRIORITY
+	int "Fake regulator driver init priority (common part)"
+	default 75
+	help
+	  Init priority for the fake regulator driver (common part).
+
+config REGULATOR_FAKE_INIT_PRIORITY
+	int "Fake regulator driver init priority"
+	default 76
+	help
+	  Init priority for the fake regulator driver. It must be
+	  greater than REGULATOR_FAKE_COMMON_INIT_PRIORITY.
+
+endif

@@ -1,0 +1,6 @@
+board:
+  name: motion_2350_pro
+  full_name: Motion 2350 Pro
+  vendor: cytron
+  socs:
+  - name: rp2350a

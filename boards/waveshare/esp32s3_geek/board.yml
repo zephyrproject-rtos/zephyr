@@ -1,0 +1,6 @@
+board:
+  name: esp32s3_geek
+  full_name: ESP32-S3-GEEK
+  vendor: waveshare
+  socs:
+  - name: esp32s3

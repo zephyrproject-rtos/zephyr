@@ -1,0 +1,27 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Test binding for 3 levels of "child-binding".
+
+  Previous versions of Zephyr only allowed up to two levels of
+  "child-binding:" in a YAML file. This file is used to test that the
+  restriction no longer holds.
+
+compatible: "vnd,great-grandchild-bindings"
+
+include: [base.yaml]
+
+child-binding:
+  description: child node, no properties
+
+  child-binding:
+    description: grandchild node, no properties
+
+    child-binding:
+      description: great-grandchild node, ggc-prop property
+
+      properties:
+        ggc-prop:
+          type: int
+          required: true

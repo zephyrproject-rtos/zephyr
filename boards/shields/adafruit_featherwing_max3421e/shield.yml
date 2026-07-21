@@ -1,0 +1,6 @@
+shields:
+  - name: adafruit_featherwing_max3421e
+    full_name: Adafruit FeatherWing MAX3421E
+    vendor: adafruit
+    supported_features:
+      - usb

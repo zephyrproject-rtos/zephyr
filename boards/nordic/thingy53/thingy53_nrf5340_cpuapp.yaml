@@ -1,0 +1,18 @@
+identifier: thingy53/nrf5340/cpuapp
+name: Thingy53-NRF5340-application-MCU
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 448
+flash: 1024
+supported:
+  - ble
+  - gpio
+  - i2c
+  - pwm
+  - watchdog
+  - usbd
+  - netif:openthread
+vendor: nordic

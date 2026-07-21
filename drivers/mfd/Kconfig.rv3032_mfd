@@ -1,0 +1,19 @@
+# Copyright (c) 2025 Baylibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_RV3032
+	bool "MFD driver for RV3032"
+	default y
+	depends on DT_HAS_MICROCRYSTAL_RV3032_MFD_ENABLED
+	depends on GPIO
+	select I2C
+	help
+	  Enable MFD driver for RV3032 RTC
+
+config MFD_MICROCRYSTAL_RV3032_INIT_PRIORITY
+	int "Init priority of rv3032 MFD"
+	depends on MFD_RV3032
+	default 50
+	help
+	  Initialization priority for the Microcrystal rv3032c7 MFD driver.
+	  It must be proor the RTC, COUNTER and Sensor driver init priority.

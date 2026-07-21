@@ -1,0 +1,6 @@
+shield:
+  name: ti_bp_bassensorsmkii
+  full_name: BP-BASSENSORSMKII
+  vendor: ti
+  supported_features:
+    - sensor

@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l1/stm32l1.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l151", "st,stm32l1", "simple-bus";
+	};
+};

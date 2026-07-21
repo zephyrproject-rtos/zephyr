@@ -1,0 +1,6 @@
+# Copyright (c) 2021, Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: VND MBOX controller (0 cell)
+
+compatible: "vnd,mbox-zero-cell"

@@ -1,0 +1,30 @@
+#
+# Copyright 2022, 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: lpcxpresso55s36
+name: NXP LPCXpresso55S36
+type: mcu
+arch: arm
+ram: 112
+flash: 246
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - arduino_gpio
+  - can
+  - comparator
+  - counter
+  - dac
+  - flash
+  - gpio
+  - gint
+  - pwm
+  - usb_device
+  - usbd
+  - watchdog
+vendor: nxp

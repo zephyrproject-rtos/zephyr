@@ -1,0 +1,12 @@
+shields:
+  - name: mikroe_wifi_bt_click_arduino
+    full_name: WIFI BLE Click (Arduino)
+    vendor: mikroe
+    supported_features:
+      - wifi
+
+  - name: mikroe_wifi_bt_click_mikrobus
+    full_name: WIFI BLE Click (MikroBus)
+    vendor: mikroe
+    supported_features:
+      - wifi

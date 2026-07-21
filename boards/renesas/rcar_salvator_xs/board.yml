@@ -1,0 +1,6 @@
+board:
+  name: rcar_salvator_xs
+  full_name: R-Car Salvator-XS
+  vendor: renesas
+  socs:
+  - name: r8a77961

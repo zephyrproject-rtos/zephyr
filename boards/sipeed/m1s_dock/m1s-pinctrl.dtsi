@@ -1,0 +1,77 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <GPIO15_UART0_RX>,
+				 <GPIO14_UART0_TX>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	uart0_sleep: uart0_sleep {
+		group1 {
+			pinmux = <GPIO15_UART0_RX>,
+				 <GPIO14_UART0_TX>;
+			bias-high-impedance;
+		};
+	};
+
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <GPIO17_UART1_RX>,
+				 <GPIO16_UART1_TX>;
+			bias-pull-up;
+			input-schmitt-enable;
+		};
+	};
+
+	uart1_sleep: uart1_sleep {
+		group1 {
+			pinmux = <GPIO17_UART1_RX>,
+				 <GPIO16_UART1_TX>;
+			bias-high-impedance;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <GPIO6_I2C0_SCL>,
+				 <GPIO7_I2C0_SDA>;
+			bias-pull-up;
+			input-schmitt-enable;
+			drive-strength = <1>;
+		};
+	};
+
+	sdhc0_default: sdhc0_default {
+		group_cmd {
+			pinmux = <GPIO1_SDH_CMD>;
+			bias-pull-up;
+			input-schmitt-enable;
+			drive-strength = <1>;
+		};
+
+		group_clk {
+			pinmux = <GPIO0_SDH_CLK>;
+			bias-pull-up;
+			input-schmitt-enable;
+			drive-strength = <1>;
+		};
+
+		group_data {
+			pinmux = <GPIO2_SDH_DAT0>,
+				 <GPIO3_SDH_DAT1>,
+				 <GPIO4_SDH_DAT2>,
+				 <GPIO5_SDH_DAT3>;
+			bias-pull-up;
+			input-schmitt-enable;
+			drive-strength = <1>;
+		};
+	};
+};

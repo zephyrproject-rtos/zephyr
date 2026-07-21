@@ -1,0 +1,26 @@
+# Copyright (c) 2025 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+        rv3032c7 RTC counter driver
+
+compatible: "microcrystal,rv3032-counter"
+
+include: base.yaml
+
+properties:
+  frequency:
+    type: int
+    required: true
+    enum:
+      - 4096
+      - 64
+      - 1
+      - 0
+    description: |
+      Clock freq used for timer functionality
+        clk freq   period
+        4096hz     224.14us
+        64h        15.625ms
+        1hz        1s
+        1/60hz     60s (this case is presented as 0)

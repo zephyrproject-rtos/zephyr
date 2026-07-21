@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Pavlo Hamov <pasha.gamov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_CC32XX
+	bool "CC32XX ADC driver"
+	default y
+	depends on DT_HAS_TI_CC32XX_ADC_ENABLED
+	help
+	  This option enables the CC32XX ADC driver.

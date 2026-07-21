@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2024, Kickmaker
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: CF1133 capacitive touch panels
+
+compatible: "sitronix,cf1133"
+
+include: i2c-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt GPIO. Used by the controller to signal touch data is
+      available. Active low.

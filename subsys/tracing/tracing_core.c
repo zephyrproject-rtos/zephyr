@@ -1,0 +1,237 @@
+/*
+ * Copyright (c) 2019 Intel corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Disable syscall tracing for all calls from this compilation unit to avoid
+ * undefined symbols as the macros are not expanded recursively
+ */
+#define DISABLE_SYSCALL_TRACING
+
+#include <zephyr/init.h>
+#include <string.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sys/atomic.h>
+#include <tracing_core.h>
+#include <tracing_buffer.h>
+#include <tracing_backend.h>
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP
+#include <zephyr/timing/timing.h>
+#endif
+
+#define TRACING_CMD_ENABLE  "enable"
+#define TRACING_CMD_DISABLE "disable"
+
+enum tracing_state {
+	TRACING_DISABLE = 0,
+	TRACING_ENABLE
+};
+
+static atomic_t tracing_state;
+static atomic_t tracing_packet_drop_num;
+struct k_spinlock tracing_lock;
+/*
+ * Output is fanned out to every registered backend. The common case is a single
+ * backend, so cache it and a "more than one" flag to keep the hot path a direct
+ * call rather than a section walk (which is measurably slower for high-rate
+ * synchronous backends).
+ */
+static struct tracing_backend *primary_backend;
+static bool multiple_backends;
+
+#ifdef CONFIG_TRACING_ASYNC
+#define TRACING_THREAD_NAME "tracing_thread"
+
+static k_tid_t tracing_thread_tid;
+static struct k_thread tracing_thread;
+static struct k_timer tracing_thread_timer;
+static K_SEM_DEFINE(tracing_thread_sem, 0, 1);
+static K_THREAD_STACK_DEFINE(tracing_thread_stack,
+			CONFIG_TRACING_THREAD_STACK_SIZE);
+
+static void tracing_thread_func(void *dummy1, void *dummy2, void *dummy3)
+{
+	uint8_t *transferring_buf;
+	uint32_t transferring_length, tracing_buffer_max_length;
+
+	tracing_thread_tid = k_current_get();
+
+	tracing_buffer_max_length = tracing_buffer_capacity_get();
+
+	while (true) {
+		if (tracing_buffer_is_empty()) {
+			k_sem_take(&tracing_thread_sem, K_FOREVER);
+		} else {
+			transferring_length =
+				tracing_buffer_get_claim(
+						&transferring_buf,
+						tracing_buffer_max_length);
+			tracing_buffer_handle(transferring_buf,
+					      transferring_length);
+			tracing_buffer_get_finish(transferring_length);
+		}
+	}
+}
+
+static void tracing_thread_timer_expiry_fn(struct k_timer *timer)
+{
+	k_sem_give(&tracing_thread_sem);
+}
+#endif
+
+static void tracing_set_state(enum tracing_state state)
+{
+	atomic_set(&tracing_state, state);
+}
+
+void tracing_set_enabled(bool enable)
+{
+	tracing_set_state(enable ? TRACING_ENABLE : TRACING_DISABLE);
+}
+
+static int tracing_init(void)
+{
+	tracing_buffer_init();
+
+	/*
+	 * Output goes to the configured backend (CONFIG_TRACING_BACKEND_NAME) plus
+	 * any additional backend registered under a different name - e.g. one added
+	 * by an out-of-tree module with TRACING_BACKEND_DEFINE(), which then receives
+	 * the same stream with no edits to the core tree. Backends sharing the
+	 * configured name (used by some tests to substitute a capture backend) are
+	 * treated as an override: only the configured one runs, as before.
+	 */
+	primary_backend = tracing_backend_get(CONFIG_TRACING_BACKEND_NAME);
+	tracing_backend_init(primary_backend);
+
+	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+		if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
+			tracing_backend_init(backend);
+			multiple_backends = true;
+		}
+	}
+
+	atomic_set(&tracing_packet_drop_num, 0);
+
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP
+	timing_init();
+	timing_start();
+#endif
+
+	if (IS_ENABLED(CONFIG_TRACING_HANDLE_HOST_CMD)) {
+		tracing_set_state(TRACING_DISABLE);
+	} else {
+		tracing_set_state(TRACING_ENABLE);
+	}
+
+#ifdef CONFIG_TRACING_ASYNC
+	k_timer_init(&tracing_thread_timer,
+		     tracing_thread_timer_expiry_fn, NULL);
+
+	k_thread_create(&tracing_thread, tracing_thread_stack,
+			K_THREAD_STACK_SIZEOF(tracing_thread_stack),
+			tracing_thread_func, NULL, NULL, NULL,
+			K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+	k_thread_name_set(&tracing_thread, TRACING_THREAD_NAME);
+#endif
+
+	return 0;
+}
+
+/* The init level is configurable (TRACING_INIT_LEVEL): a lower level captures
+ * more of the boot sequence. PRE_KERNEL_2 is the earliest supported (sync only,
+ * after the system timer so timestamps are valid); async tracing needs the
+ * kernel for its drainer thread, so it cannot go below POST_KERNEL.
+ */
+#define TRACING_INIT_LEVEL                                                                         \
+	COND_CASE_1(CONFIG_TRACING_INIT_LEVEL_PRE_KERNEL_2, (PRE_KERNEL_2),                        \
+		    CONFIG_TRACING_INIT_LEVEL_POST_KERNEL, (POST_KERNEL), (APPLICATION))
+
+SYS_INIT(tracing_init, TRACING_INIT_LEVEL, CONFIG_TRACING_INIT_PRIORITY);
+
+/* At PRE_KERNEL_2 the system timer initializes at the same level; tracing must
+ * run after it or k_cycle_get_32() is not yet ticking and event timestamps are
+ * invalid. Every in-tree timer registers sys_clock_driver_init() at PRE_KERNEL_2
+ * with SYSTEM_CLOCK_INIT_PRIORITY, so require a strictly higher tracing priority.
+ */
+#if defined(CONFIG_TRACING_INIT_LEVEL_PRE_KERNEL_2) && defined(CONFIG_SYS_CLOCK_EXISTS)
+BUILD_ASSERT(CONFIG_TRACING_INIT_PRIORITY > CONFIG_SYSTEM_CLOCK_INIT_PRIORITY,
+	     "Tracing at PRE_KERNEL_2 must init after the system timer: set "
+	     "TRACING_INIT_PRIORITY > SYSTEM_CLOCK_INIT_PRIORITY for valid timestamps");
+#endif
+
+#ifdef CONFIG_TRACING_ASYNC
+void tracing_trigger_output(bool before_put_is_empty)
+{
+	if (before_put_is_empty) {
+		k_timer_start(&tracing_thread_timer,
+			      K_MSEC(CONFIG_TRACING_THREAD_WAIT_THRESHOLD),
+			      K_NO_WAIT);
+	}
+}
+
+bool is_tracing_thread(void)
+{
+	return (!k_is_in_isr() && (k_current_get() == tracing_thread_tid));
+}
+#endif
+
+bool is_tracing_enabled(void)
+{
+	return atomic_get(&tracing_state) == TRACING_ENABLE;
+}
+
+void tracing_cmd_handle(uint8_t *buf, uint32_t length)
+{
+	if (strncmp(buf, TRACING_CMD_ENABLE, length) == 0) {
+		tracing_set_state(TRACING_ENABLE);
+	} else if (strncmp(buf, TRACING_CMD_DISABLE, length) == 0) {
+		tracing_set_state(TRACING_DISABLE);
+	}
+}
+
+void tracing_buffer_handle(uint8_t *data, uint32_t length)
+{
+	tracing_backend_output(primary_backend, data, length);
+
+	if (!multiple_backends) {
+		return;
+	}
+
+	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+		if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
+			tracing_backend_output(backend, data, length);
+		}
+	}
+}
+
+void tracing_packet_drop_handle(void)
+{
+	atomic_inc(&tracing_packet_drop_num);
+}
+
+uint32_t tracing_packet_drop_count_get(void)
+{
+	return (uint32_t)atomic_get(&tracing_packet_drop_num);
+}
+
+int tracing_backends_flush(void)
+{
+	int ret = tracing_backend_flush(primary_backend);
+
+	if (multiple_backends) {
+		STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+			if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
+				int backend_ret = tracing_backend_flush(backend);
+
+				if ((backend_ret != 0) && (ret == 0)) {
+					ret = backend_ret;
+				}
+			}
+		}
+	}
+
+	return ret;
+}

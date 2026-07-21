@@ -1,0 +1,14 @@
+identifier: weact_stm32g030_core
+name: WeAct Studio STM32G030 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - i2c
+  - spi
+ram: 8
+flash: 32
+vendor: weact

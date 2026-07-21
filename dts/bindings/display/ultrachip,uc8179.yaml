@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Andreas Sandberg
+# SPDX-License-Identifier: Apache-2.0
+
+description: UltraChip UC8179 EPD controller
+
+compatible: "ultrachip,uc8179"
+
+include: ultrachip,uc81xx-common.yaml

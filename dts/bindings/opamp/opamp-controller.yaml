@@ -1,0 +1,151 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  functional-mode:
+    required: true
+    type: string
+    enum:
+      - "differential"
+      - "inverting"
+      - "non_inverting"
+      - "follower"
+      - "standalone"
+    description: |
+      Selects opamp functional mode.
+
+      a) differential mode
+
+      - Signals applied to both inputs
+      - Amplifies the difference between two input signals
+      - Common-mode signals are rejected
+      - Used in instrumentation and noise rejection
+      - Vout = (Rf/Rin) * (Vin2 - Vin1), where Rf is the feedback resistor
+        and Rin is the input resistor, with gain (Rf/Rin)
+
+               Rin        Rf
+      Vin1 --/\/\/\--*--/\/\/\-----
+                     |            |
+                     |     |\     |
+                     ------|- \   |
+                           |   >--*-- Vout
+                     ------|+ /
+                     |     |/
+                     |
+      Vin2 --/\/\/\--*--/\/\/\-----
+               Rin        Rf      |
+                                 GND
+
+      b) inverting mode
+
+      - Input signal applied to inverting (-) terminal
+      - Non-inverting (+) terminal connected to ground
+      - Feedback resistor connects output to inverting input
+      - Output is 180° out of phase with input
+      - Vout = (-Rf/Rin) * Vin, where Rf is the feedback resistor
+        and Rin is the input resistor, s.t. gain is (-Rf/Rin)
+
+              Rin        Rf
+      Vin --/\/\/\--*--/\/\/\-----
+                    |            |
+                    |     |\     |
+                    ------|- \   |
+                          |   >--*-- Vout
+                    ------|+ /
+                    |     |/
+                  GND
+
+      c) non_inverting mode
+
+      - Input signal applied to non-inverting (+) terminal
+      - Inverting (-) terminal connected to feedback network
+      - Output is in phase with input
+      - Vout = (1 + (Rf/Rin)) * Vin, where Rf is the feedback resistor
+        and Rin is the input resistor, s.t. gain is (1 + (Rf/Rin))
+
+            Rin        Rf
+       |--/\/\/\--*--/\/\/\-----
+       |          |            |
+      GND         |     |\     |
+                  ------|- \   |
+                        |   >--*-- Vout
+              Vin ------|+ /
+                        |/
+
+      d) follower mode (voltage follower or buffer)
+
+      - Special case of non-inverting amplifier
+      - Vout = 1 * Vin, s.t. gain is 1
+      - Direct feedback from output to inverting input
+      - Very high input impedance, very low output impedance
+      - Used for impedance matching
+
+          --------------
+          |            |
+          |     |\     |
+          ------|- \   |
+                |   >--*-- Vout
+      Vin ------|+ /
+                |/
+
+      e) standalone mode
+
+      - The opamp mode is defined by external circuitry
+
+                |\
+      Vin- -----|- \
+                |   >---- Vout
+      Vin+ -----|+ /
+                |/
+
+      References:
+        - https://www.electronics-tutorials.ws/category/opamp
+
+  programmable-gain:
+    type: string-array
+    enum:
+      - "OPAMP_GAIN_1_7"
+      - "OPAMP_GAIN_1_3"
+      - "OPAMP_GAIN_1"
+      - "OPAMP_GAIN_5_3"
+      - "OPAMP_GAIN_2"
+      - "OPAMP_GAIN_11_5"
+      - "OPAMP_GAIN_3"
+      - "OPAMP_GAIN_4"
+      - "OPAMP_GAIN_13_3"
+      - "OPAMP_GAIN_7"
+      - "OPAMP_GAIN_8"
+      - "OPAMP_GAIN_15"
+      - "OPAMP_GAIN_16"
+      - "OPAMP_GAIN_31"
+      - "OPAMP_GAIN_32"
+      - "OPAMP_GAIN_33"
+      - "OPAMP_GAIN_63"
+      - "OPAMP_GAIN_64"
+    description: |
+      If the OPAMP supports programmable gain, then the gain of
+      the opamp can be changed dynamically at runtime. The gain
+      value needs to be one of the enumerations above.
+      Gain selection:
+      - OPAMP_GAIN_1_7  : x 1/7
+      - OPAMP_GAIN_1_3  : x 1/3
+      - OPAMP_GAIN_1    : x 1
+      - OPAMP_GAIN_5_3  : x 5/3
+      - OPAMP_GAIN_2    : x 2
+      - OPAMP_GAIN_11_5 : x 11/5
+      - OPAMP_GAIN_3    : x 3
+      - OPAMP_GAIN_4    : x 4
+      - OPAMP_GAIN_13_3 : x 13/3
+      - OPAMP_GAIN_7    : x 7
+      - OPAMP_GAIN_8    : x 8
+      - OPAMP_GAIN_15   : x 15
+      - OPAMP_GAIN_16   : x 16
+      - OPAMP_GAIN_31   : x 31
+      - OPAMP_GAIN_32   : x 32
+      - OPAMP_GAIN_33   : x 33
+      - OPAMP_GAIN_63   : x 63
+      - OPAMP_GAIN_64   : x 64

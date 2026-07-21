@@ -1,0 +1,16 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mikrobus_i2c {
+	status = "okay";
+
+	ccs811_mikroe_air_quality_3_click: ccs811@5a {
+		compatible = "ams,ccs811";
+		reg = <0x5a>;
+		reset-gpios = <&mikrobus_header 1 GPIO_ACTIVE_LOW>;
+		wake-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+	};
+};

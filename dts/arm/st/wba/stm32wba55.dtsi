@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ * Copyright (c) 2025 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <st/wba/stm32wba52.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32wba55", "st,stm32wba", "simple-bus";
+
+		sai1: sai1@40015400 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40015400 0x400>;
+			ranges = <0x0 0x40015400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
+				 <&rcc STM32_SRC_PLL1_P SAI1_SEL(0)>;
+			status = "disabled";
+
+			sai1_a: sai1a@4 {
+				reg = <0x4 0x20>;
+				dmas = <&gpdma1 1 17 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai1_b: sai1b@24 {
+				reg = <0x24 0x20>;
+				dmas = <&gpdma1 0 18 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
+&pwr {
+	wkup-pin@2 {
+		reg = <0x2>;
+		wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_EVT_SRC_0>,
+			     <&gpioc 13 STM32_PWR_WKUP_EVT_SRC_1>;
+	};
+};

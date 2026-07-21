@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	reg = <0x0 DT_SIZE_K(128)>;
+	erase-blocks = <&flash 8 8192>, <&flash 2 32768>;
+};

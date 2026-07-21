@@ -1,0 +1,20 @@
+# Private config options for sip svc stress test app
+
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Intel Agilex SiP SVC stress test"
+
+config PACKETS_PER_ITERATION
+	int
+	default 3
+	help
+	  Number of SYNC and ASYNC packets to be sent per iteration
+
+config ITERATIONS
+	int
+	default 7
+	help
+	  Number of iterations to be performed.
+
+source "Kconfig.zephyr"

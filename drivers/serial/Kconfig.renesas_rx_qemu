@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_RENESAS_RX_QEMU
+	bool "Renesas RX Series UART Driver"
+	default y
+	depends on DT_HAS_RENESAS_RX_UART_SCI_QEMU_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable Renesas RX series UART driver.

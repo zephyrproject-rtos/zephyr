@@ -1,0 +1,20 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+DT_COMPAT_NXP_STM := nxp,stm
+
+config MCUX_STM_TIMER
+	bool "MCUX STM system timer"
+	default y
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+	depends on $(dt_node_has_compat,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),$(DT_COMPAT_NXP_STM))
+	select TICKLESS_CAPABLE
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	help
+	  Use the NXP System Timer Module (STM) peripheral as Zephyr's system timer.
+
+	  This driver uses the MCUXpresso SDK STM driver (fsl_stm) directly.
+	  It supports both tickful and tickless kernel operation.

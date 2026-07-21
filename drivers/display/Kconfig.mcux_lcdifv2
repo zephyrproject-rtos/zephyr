@@ -1,0 +1,37 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DISPLAY_MCUX_LCDIFV2
+	bool "MCUX LCDIFV2 driver"
+	default y
+	depends on DT_HAS_NXP_IMX_LCDIFV2_ENABLED
+	select PINCTRL
+	help
+	  Enable support for mcux LCDIFV2 driver.
+
+if DISPLAY_MCUX_LCDIFV2
+
+config MCUX_LCDIFV2_FB_NUM
+	int "Framebuffers to allocate in driver"
+	default 1
+	range 0 2
+	help
+	  Number of framebuffers to allocate in LCDIFV2 driver. Driver allocated
+	  framebuffers are required to support partial display updates.
+	  The driver has been validated to support 0 through 2 framebuffers.
+	  Note that hardware will likely perform best if zero driver
+	  framebuffers are allocated by the driver, and the application
+	  implements double framebuffering by always calling display_write with
+	  a buffer equal in size to the connected panel.
+
+config MCUX_LCDIFV2_FB_SIZE
+	int "Framebuffer size required by the LCDIFV2 driver"
+	default 3686400
+	help
+	  LCDIFV2 driver allocates framebuffers to support partial display updates.
+	  The framebuffer size is computed as : panel_width * panel_height * bpp.
+	  The default value is set to afford for a default resolution of 1280x720 and
+	  4-bytes pixel format, e.g. ARGB8888. Applications should change this value
+	  according to the actual used resolution and format to optimize the heap size.
+
+endif # DISPLAY_MCUX_LCDIFV2

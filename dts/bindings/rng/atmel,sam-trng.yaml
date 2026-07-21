@@ -1,0 +1,15 @@
+# Copyright (c) 2018, Aurelien Jarno
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM RNG
+
+compatible: "atmel,sam-trng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

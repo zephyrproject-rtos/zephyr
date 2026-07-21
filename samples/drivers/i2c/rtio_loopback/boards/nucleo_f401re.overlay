@@ -1,0 +1,18 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* I2C bus pins are exposed on the ST morpho and Arduino headers.
+ *
+ *  Bus        SDA               SCL
+ *          Pin   Hdr         Pin   Hdr
+ *  i2c1    PB9   CN5:9       PB8   CN5:10
+ *  i2c3    PC9   CN10:1      PA8   CN9:8
+ *
+ * Short Pin PB9 to PC9, and PB8 to PA8, for the test to pass.
+ */
+
+/ {
+	aliases {
+		i2c-controller = &i2c1;
+		i2c-controller-target = &i2c3;
+	};
+};

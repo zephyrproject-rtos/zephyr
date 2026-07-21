@@ -1,0 +1,14 @@
+# Copyright (c) 2018, Yannis Damigos
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding is to be used by all the usb transceivers which are built-in
+    with USB IP
+
+compatible: "usb-nop-xceiv"
+
+include: phy-controller.yaml
+
+properties:
+  "#phy-cells":
+    const: 0

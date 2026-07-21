@@ -1,0 +1,14 @@
+identifier: esp32s3_matrix/esp32s3/procpu
+name: ESP32-S3-Matrix PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - spi
+  - watchdog
+  - pinmux
+  - nvs
+  - display
+vendor: waveshare

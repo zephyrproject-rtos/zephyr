@@ -1,0 +1,22 @@
+# Private config options for dac sample
+
+# Copyright (c) 2025 NXP
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DAC sample application"
+
+source "Kconfig.zephyr"
+
+ZEPHYR_USER := zephyr,user
+
+config DAC_SAMPLE_RUN
+	bool "Run DAC sample application"
+	default y if $(dt_node_has_prop,/$(ZEPHYR_USER),dac)
+	help
+	  platform supports dac sample
+
+config DAC_BUFFER_NOT_SUPPORT
+	bool "DAC on board/SoC does not support output buffer mode"
+	help
+	  If this config is turned on, the sample will run with no output buffer enabled

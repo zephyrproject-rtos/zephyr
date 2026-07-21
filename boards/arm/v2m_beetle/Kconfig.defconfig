@@ -1,0 +1,15 @@
+# ARM V2M Beetle Board configuration options
+
+# Copyright (c) 2016 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_V2M_BEETLE
+
+if SERIAL
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif # SERIAL
+
+endif # BOARD_V2M_BEETLE

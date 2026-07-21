@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Siratul Islam
+# SPDX-License-Identifier: Apache-2.0
+
+config BIOMETRICS_EMUL
+	bool "Emulated biometrics driver"
+	default y
+	depends on DT_HAS_ZEPHYR_BIOMETRICS_EMUL_ENABLED
+	help
+	  Enable emulated biometrics driver for testing.

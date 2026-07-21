@@ -1,0 +1,17 @@
+sample:
+  name: STM32 ADC Power Management
+tests:
+  sample.boards.stm32.power_mgmt.adc:
+    tags:
+      - adc
+      - power
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Device ready"
+    filter: dt_compat_enabled("zephyr,power-state") and
+            dt_compat_enabled("st,stm32-adc") and
+            dt_compat_enabled("st,stm32-lptim")
+    extra_args: "CONFIG_DEBUG=y"
+    platform_allow: nucleo_wb55rg

@@ -1,0 +1,16 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lpcmp0 {
+	/delete-property/ clocks;
+	#io-channel-cells = <2>;
+	function-clock = "CMP_CLOCK";
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+	status = "okay";
+	positive-mux-input = "IN0";
+	negative-mux-input = "DAC";
+};

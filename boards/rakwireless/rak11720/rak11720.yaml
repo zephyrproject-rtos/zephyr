@@ -1,0 +1,21 @@
+identifier: rak11720
+name: RAK11720
+type: mcu
+arch: arm
+ram: 384
+flash: 976
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - watchdog
+  - counter
+  - gpio
+  - spi
+  - i2c
+  - lora
+testing:
+  ignore_tags:
+    - net
+vendor: rak

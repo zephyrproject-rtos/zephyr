@@ -1,0 +1,10 @@
+/* i2s-node0 is the receiver
+ * i2s-node1 is the transmitter
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s_rx;
+		i2s-node1 = &i2s_tx;
+	};
+};

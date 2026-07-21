@@ -1,0 +1,27 @@
+#
+# SPDX-FileCopyrightText: <text>Copyright 2024-2025 Arm Limited and/or its
+# affiliates <open-source-office@arm.com></text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_MHUV3
+	bool "ARM MHUv3 mailbox driver"
+	depends on DT_HAS_ARM_MHUV3_ENABLED
+	default y
+	help
+	  Driver for Arm MHUv3 (Message Handling Unit v3)
+
+if MBOX_MHUV3
+
+config MBOX_MHUV3_NUM_DBCH
+	int "ARM MHUv3 mailbox doorbell number of channels"
+	default 0
+	help
+	  Maximum number of doorbell channels allowed in the Postbox/Mailbox.
+	  This number has to be less than or equal to (NUM_DBCH + 1) in PBX_DBCH_CFG0/MBX_DBCH_CFG0 registers.
+	  If the doorbell extension is supported then this number has to be bigger than zero.
+	  MHUv3 allows up to 128 doorbell channels.
+	  This configuration parameter is needed to avoid the dynamic memory allocation of doorbell channels
+	  data structures.
+
+endif

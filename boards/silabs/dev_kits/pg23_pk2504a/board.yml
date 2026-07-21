@@ -1,0 +1,6 @@
+board:
+  name: pg23_pk2504a
+  full_name: EFM32PG23 Pro Kit (PG23-PK2504A)
+  vendor: silabs
+  socs:
+    - name: efm32pg23b310f512im48

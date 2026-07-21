@@ -1,0 +1,22 @@
+identifier: bg27_rb4110b
+name: EFR32BG27 2.4 GHz 4 dBm DCDC Buck CSP Radio Board (BG27-RB4110B, BRD4110B)
+type: mcu
+arch: arm
+ram: 64
+flash: 768
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - bluetooth
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - gpio
+  - flash
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

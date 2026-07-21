@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * PINCTRL pin definitions for MEC175x family.
+ * Refer to datasheets for MEC175x to know which pins are
+ * in a variant and package combination.
+ */
+
+#include <zephyr/dt-bindings/pinctrl/mchp-xec-pinctrl.h>
+#include "mec5-common-pinctrl.dtsi"
+
+&pinctrl {
+	/omit-if-no-ref/ i3c01_host_sda_gpio012: i3c01_host_sda_gpio012 {
+		pinmux = <MCHP_XEC_PINMUX(0012, MCHP_AF5)>;
+	};
+
+	/omit-if-no-ref/ i3c01_host_scl_gpio013: i3c01_host_scl_gpio013 {
+		pinmux = <MCHP_XEC_PINMUX(0013, MCHP_AF5)>;
+	};
+
+	/omit-if-no-ref/ i3c01_target_sda_gpio012: i3c01_target_sda_gpio012 {
+		pinmux = <MCHP_XEC_PINMUX(0012, MCHP_AF6)>;
+	};
+
+	/omit-if-no-ref/ i3c01_target_scl_gpio013: i3c01_target_scl_gpio013 {
+		pinmux = <MCHP_XEC_PINMUX(0013, MCHP_AF6)>;
+	};
+
+	/omit-if-no-ref/ i3c00_host_sda_gpio132: i3c00_host_sda_gpio132 {
+		pinmux = <MCHP_XEC_PINMUX(0132, MCHP_AF2)>;
+	};
+
+	/omit-if-no-ref/ i3c00_host_scl_gpio140: i3c00_host_scl_gpio140 {
+		pinmux = <MCHP_XEC_PINMUX(0140, MCHP_AF2)>;
+	};
+
+	/omit-if-no-ref/ i3c00_target_sda_gpio132: i3c00_target_sda_gpio132 {
+		pinmux = <MCHP_XEC_PINMUX(0132, MCHP_AF3)>;
+	};
+
+	/omit-if-no-ref/ i3c00_target_scl_gpio140: i3c00_target_scl_gpio140 {
+		pinmux = <MCHP_XEC_PINMUX(0140, MCHP_AF3)>;
+	};
+
+	/omit-if-no-ref/ i3c02_host_scl_gpio230: i3c02_host_scl_gpio230 {
+		pinmux = <MCHP_XEC_PINMUX(0230, MCHP_AF2)>;
+	};
+
+	/omit-if-no-ref/ i3c02_host_sda_gpio231: i3c02_host_sda_gpio231 {
+		pinmux = <MCHP_XEC_PINMUX(0231, MCHP_AF2)>;
+	};
+
+	/omit-if-no-ref/ i3c02_target_scl_gpio230: i3c02_target_scl_gpio230 {
+		pinmux = <MCHP_XEC_PINMUX(0230, MCHP_AF3)>;
+	};
+
+	/omit-if-no-ref/ i3c02_target_sda_gpio231: i3c02_target_sda_gpio231 {
+		pinmux = <MCHP_XEC_PINMUX(0231, MCHP_AF3)>;
+	};
+};

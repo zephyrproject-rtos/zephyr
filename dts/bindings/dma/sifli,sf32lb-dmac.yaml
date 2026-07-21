@@ -1,0 +1,38 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SF32LB DMA Controller
+
+  DMA consumers must specify 3 cells:
+  - channel: DMA channel number
+  - request: DMA request (see sf32lbxx-dma.h)
+  - config: DMA channel configuration (bitfield, see sf32lb-dma-config.h)
+
+compatible: "sifli,sf32lb-dmac"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  dma-channels:
+    required: true
+
+  dma-requests:
+    required: true
+
+  "#dma-cells":
+    const: 3
+
+dma-cells:
+  - channel
+  - request
+  - config

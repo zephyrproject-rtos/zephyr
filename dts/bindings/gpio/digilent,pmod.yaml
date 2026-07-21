@@ -1,0 +1,36 @@
+# Copyright (c) 2023 Elektronikutvecklingsbyrån EUB AB
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on a Digilent Pmod interface.
+
+    This binding provides a nexus mapping for 8 pins where parent pins 0
+    through 3 correspond to IO1 through IO4, and parent pins 4 through 7
+    correspond to IO5 through IO8, as depicted below for a 12-pin connector.
+
+    12-pin Pmod interface:
+
+        0 IO1                    IO5   4
+        1 IO2                    IO6   5
+        2 IO3                    IO7   6
+        3 IO4                    IO8   7
+        - GND                    GND   -
+        - VDD                    VDD   -
+
+    This binding can also be used with the 6-pin Pmod connector variant which
+    is a proper subset of the 12-pin connector. In that case parent pins 4
+    through 7 are omitted from the GPIO nexus node, resulting in a mapping
+    as depicted below.
+
+    6-pin Pmod interface:
+
+        0 IO1
+        1 IO2
+        2 IO3
+        3 IO4
+        - GND
+        - VDD
+
+compatible: "digilent,pmod"
+
+include: [gpio-nexus.yaml, base.yaml]

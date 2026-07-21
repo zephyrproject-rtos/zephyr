@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Embeint Pty Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# Digital microphone common configuration
+
+properties:
+  clk-frequency-min:
+    type: int
+    required: true
+    description: |
+      Minimum frequency of the PDM clock pin.
+  clk-frequency-max:
+    type: int
+    required: true
+    description: |
+      Maximum frequency of the PDM clock pin.
+  clk-duty-cycle-min:
+    type: int
+    required: true
+    description: |
+      Minimum duty-cycle of the PDM clock pin.
+  clk-duty-cycle-max:
+    type: int
+    required: true
+    description: |
+      Maximum duty-cycle of the PDM clock pin.
+  channel-left:
+    type: boolean
+    description: |
+      Left PDM channel is present.
+  channel-right:
+    type: boolean
+    description: |
+      Right PDM channel is present.

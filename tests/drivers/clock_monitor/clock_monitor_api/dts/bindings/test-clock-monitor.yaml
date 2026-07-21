@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Test fixture binding for the clock_monitor API test suite.
+
+  Each child node names one clock_monitor instance to exercise and
+  carries optional per-instance expectations, e.g.:
+
+    / {
+        clock-monitor-test {
+            compatible = "test-clock-monitor";
+
+            fm {
+                monitor = <&cmu_1>;
+                measure-expected-hz = <48000000>;
+            };
+        };
+    };
+
+compatible: "test-clock-monitor"
+
+child-binding:
+  description: One clock_monitor instance under test.
+
+  properties:
+    monitor:
+      type: phandle
+      required: true
+      description: The clock_monitor device to exercise.
+
+    measure-expected-hz:
+      type: int
+      default: 0
+      description: |
+        Nominal frequency (Hz) of the clock measured by this instance.
+        When non-zero, the suite asserts that the measured value lies
+        within measure-tolerance-ppm of this value. 0 skips the
+        accuracy check (e.g. for WINDOW-only instances).
+
+    measure-tolerance-ppm:
+      type: int
+      default: 50000
+      description: |
+        Accepted plus/minus deviation of the measured frequency from
+        measure-expected-hz, in parts-per-million.

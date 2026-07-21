@@ -1,0 +1,23 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "PWM loopback test"
+
+config TEST_PWM_PERIOD_NSEC
+	int "Test PWM period in nanoseconds"
+	default 100000000
+
+config TEST_PWM_PULSE_NSEC
+	int "Test PWM pulse in nanoseconds"
+	default 15000000
+
+config TEST_PWM_PERIOD_USEC
+	int "Test PWM period in microseconds"
+	default 100000
+
+config TEST_PWM_PULSE_USEC
+	int "Test PWM pulse in microseconds"
+	default 75000
+
+source "Kconfig.zephyr"

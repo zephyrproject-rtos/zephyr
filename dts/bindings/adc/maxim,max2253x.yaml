@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Gabriele Zampieri <opensource@arsenaling.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Maxim MAX2253x ADC Controller
+
+compatible: "maxim,max2253x"
+
+include: [adc-controller.yaml, spi-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      gpio connected to nINT
+
+io-channel-cells:
+  - input

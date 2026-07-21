@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 Open Pixel Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flexcomm4 {
+	status = "okay";
+
+	eeprom0: eeprom@50 {
+		reg = <0x50>;
+		size = <256>;
+		compatible = "zephyr,i2c-target-eeprom";
+		status = "okay";
+	};
+};

@@ -1,0 +1,13 @@
+# GPIO emulation using SDL keyboard events
+#
+# Copyright (c) 2022, Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_EMUL_SDL
+	bool "SDL GPIO emulation"
+	default y
+	depends on DT_HAS_ZEPHYR_GPIO_EMUL_SDL_ENABLED
+	depends on GPIO_EMUL
+	depends on HAS_SDL
+	help
+	  Enable GPIO emulation using SDL keyboard events.

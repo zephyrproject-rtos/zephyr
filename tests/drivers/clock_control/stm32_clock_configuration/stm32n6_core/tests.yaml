@@ -1,0 +1,22 @@
+common:
+  timeout: 5
+  platform_allow:
+    - stm32n6570_dk/stm32n657xx/sb
+    - nucleo_n657x0_q/stm32n657xx/sb
+  integration_platforms:
+    - stm32n6570_dk/stm32n657xx/sb
+tests:
+  drivers.clock.stm32_clock_configuration.n6.hsi_64:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsi_64.overlay"
+  drivers.clock.stm32_clock_configuration.n6.cpu_pll_hsi_600_sysclk_pll_hsi_400:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hsi_600_400.overlay"
+  # HSE test on boards that have a HSE: stm32n6570_dk
+  drivers.clock.stm32_clock_configuration.n6.hse_48:
+    platform_allow: stm32n6570_dk/stm32n657xx/sb
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse_48.overlay"
+  drivers.clock.stm32_clock_configuration.n6.cpu_pll_hse_600_sysclk_pll_hse_400:
+    platform_allow: stm32n6570_dk/stm32n657xx/sb
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse_600_400.overlay"
+  drivers.clock.stm32_clock_configuration.n6.cpu_pll_hse_200_sysclk_pll_hse_200:
+    platform_allow: stm32n6570_dk/stm32n657xx/sb
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/pll_hse_200.overlay"

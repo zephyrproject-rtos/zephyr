@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon HPPASS Comparator Slope Generator (CSG) MFD.
+
+description: |
+  The CSG block within the HPPASS subsystem contains multiple identical
+  slices, each pairing a 10-bit 30 Msps DAC with a high-speed comparator.
+  This MFD driver owns the combined comparator interrupt and dispatches
+  per-slice callbacks to child comparator and DAC devices.
+
+  This node must be a child of an "infineon,hppass-analog" parent.
+
+compatible: "infineon,hppass-csg"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Base address and size of the CSG register block within the HPPASS
+      address space.
+
+  interrupts:
+    required: true
+    description: |
+      Combined comparator interrupt for all CSG slices.
+
+  clocks:
+    required: true
+    description: |
+      Phandle to the peripheral clock divider used by the CSG block.
+
+  clk-dst:
+    type: int
+    required: true
+    description: |
+      PDL clock destination index (en_clk_dst_t) for the CSG peripheral
+      clock assignment.
+
+  infineon,num-slices:
+    type: int
+    required: true
+    min: 1
+    max: 8
+    description: |
+      Number of CSG slices present in this instance.
+
+  infineon,slice-reg-spacing:
+    type: int
+    required: true
+    description: |
+      Byte stride between consecutive slice register sets.
+
+  infineon,dac-observe-blank-cycles:
+    type: int
+    default: 0
+    min: 0
+    max: 31
+    description: |
+      Number of DAC output blanking cycles (VDAC_OUT_BLANK.BLANK_CNT)
+      applied when the DAC observability route is switched.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1

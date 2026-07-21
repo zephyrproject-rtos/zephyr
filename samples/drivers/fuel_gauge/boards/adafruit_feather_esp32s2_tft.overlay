@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		fuel-gauge0 = &lc709203f;
+	};
+};
+
+&i2c0 {
+	lc709203f: lc709203f@0b {
+		compatible = "onnn,lc709203f";
+		status = "okay";
+		reg = <0x0b>;
+		power-domains = <&i2c_reg>;
+		apa = "500mAh";
+		battery-profile = <0x01>;
+	};
+};

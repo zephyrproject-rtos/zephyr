@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM Cortex-M1 CPU
+
+compatible: "arm,cortex-m1"
+
+include: arm,cortex-m.yaml

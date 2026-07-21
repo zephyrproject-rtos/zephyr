@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MIKROE_TWO_WIRE_ETH_CLICK
+
+# LAN865X is an Ethernet MAC+PHY controller on SPI
+configdefault NET_L2_ETHERNET
+	default y
+
+endif # SHIELD_MIKROE_TWO_WIRE_ETH_CLICK

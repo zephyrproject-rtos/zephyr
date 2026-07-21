@@ -1,0 +1,68 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		qdec0 = &eqdc0;
+		qenca = &phase_a;
+		qencb = &phase_b;
+	};
+
+	encoder-emulate {
+		compatible = "gpio-leds";
+
+		phase_a: phase_a {
+			gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
+		};
+
+		phase_b: phase_b {
+			gpios = <&gpio3 17 GPIO_ACTIVE_LOW>;
+		};
+	};
+};
+
+/*  J3-13 ---> J3-3 (EQDC PHASEA)
+ *  J1-5 --->  J3-1 (EQDC PHASEB)
+ */
+&pinctrl {
+	eqdc_pinmux: eqdc_pinmux {
+		group0 {
+			pinmux = <TRIG_IN3_P1_13>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <TRIG_IN10_P3_31>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+};
+
+&inputmux0 {
+	status = "okay";
+};
+
+&eqdc0 {
+	status = "okay";
+	pinctrl-0 = <&eqdc_pinmux>;
+	pinctrl-names = "default";
+	counts-per-revolution = <120>;
+	revolution-count-mode = <1>;
+	prescaler = <15>;
+	input-filter-period = <1>;
+	/* Route TRIG_IN3 (P1_13) to EQDC PHASEA and TRIG_IN10 (P3_31) to
+	 * EQDC PHASEB through INPUTMUX0. Connection values are
+	 * inputmux_connection_t enums from fsl_inputmux_connections.h:
+	 *   kINPUTMUX_TrigIn3ToQdc0Phasea  = 0x3700001b
+	 *   kINPUTMUX_TrigIn10ToQdc0Phaseb = 0x36c00022
+	 */
+	inputmux-connections = <&inputmux0 0 0x3700001b>,
+			       <&inputmux0 0 0x36c00022>;
+};

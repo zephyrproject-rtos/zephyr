@@ -1,0 +1,15 @@
+# Copyright 2025 James Bennion-Pedley <james@bojit.org>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Contains the Ethernet MAC and the MDIO as child nodes.
+
+compatible: "wch,ethernet-controller"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true

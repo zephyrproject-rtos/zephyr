@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Target */
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_clk_gpf2_default
+		     &i2c0_data_gpf3_default>;
+	pinctrl-names = "default";
+
+	target-enable;
+	target-shared-fifo-mode;
+
+	eeprom0: eeprom@52 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x52>;
+		size = <256>;
+	};
+};
+
+&i2c1 {
+	/delete-property/ fifo-enable;   /* FIFO2 */
+};
+
+/* HOST */
+&i2c4 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c4_clk_gpe0_default
+		     &i2c4_data_gpe7_default>;
+	pinctrl-names = "default";
+
+	fifo-enable;   /* FIFO2 */
+
+	eeprom1: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};

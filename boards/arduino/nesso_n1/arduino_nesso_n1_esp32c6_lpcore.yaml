@@ -1,0 +1,17 @@
+identifier: arduino_nesso_n1/esp32c6/lpcore
+name: Arduino Nesso N1 LP Core
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - cpu
+testing:
+  only_tags:
+    - introduction
+  ignore_tags:
+    - kernel
+    - posix
+    - chre
+    - cpp
+vendor: arduino

@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: rtl8721f_evb
+name: Realtek rtl8721f evaluation board
+vendor: realtek
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 4096
+supported:
+  - pinctrl
+  - serial
+  - gpio

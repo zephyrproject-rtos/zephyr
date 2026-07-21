@@ -1,0 +1,17 @@
+# Management configuration options
+
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Device Management"
+
+source "subsys/mgmt/ec_host_cmd/Kconfig"
+
+source "subsys/mgmt/mcumgr/Kconfig"
+
+source "subsys/mgmt/hawkbit/Kconfig"
+
+source "subsys/mgmt/updatehub/Kconfig"
+
+source "subsys/mgmt/osdp/Kconfig"
+
+endmenu

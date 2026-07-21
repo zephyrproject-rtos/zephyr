@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RZN2L
+	select ARM
+	select CPU_CORTEX_R52
+	select CPU_HAS_ARM_MPU
+	select HAS_RENESAS_RZ_FSP
+	select ARM_ARCH_TIMER
+	select GIC_SINGLE_SECURITY_STATE
+	select SOC_RESET_HOOK
+	select SOC_EARLY_INIT_HOOK
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER

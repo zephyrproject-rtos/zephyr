@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: pic32cz_ca80_cult
+  full_name: PIC32CZ CA80 Curiosity Ultra
+  vendor: microchip
+  socs:
+    - name: pic32cz8110ca80208

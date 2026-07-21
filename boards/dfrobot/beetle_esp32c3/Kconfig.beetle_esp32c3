@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Mikołaj Rosowski
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BEETLE_ESP32C3
+	select SOC_ESP32C3_FN4

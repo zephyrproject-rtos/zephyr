@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_MCUX_RGM
+	bool "NXP MC_RGM reset cause"
+	default y
+	depends on DT_HAS_NXP_MC_RGM_ENABLED
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable the NXP MC_RGM (Reset Generation Module) hwinfo driver for
+	  reset cause reporting on NXP MCUs with the MC_RGM module, such as the
+	  MCXE family.

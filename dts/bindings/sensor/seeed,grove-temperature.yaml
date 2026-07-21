@@ -1,0 +1,19 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Grove NTC Temperature Sensor
+
+compatible: "seeed,grove-temperature"
+
+include: sensor-device.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      IO channel associated with the NTC voltage
+
+  v1p0:
+    type: boolean
+    description: |
+      Set to indicate a v1.0 sensor.  Leave unset for v1.1 or v1.2.

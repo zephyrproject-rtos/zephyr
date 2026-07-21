@@ -1,0 +1,31 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_RENESAS_RX_CGC
+	bool "RX CGC driver"
+	default y
+	depends on SOC_FAMILY_RENESAS_RX
+	help
+	  Enable support for Renesas RX CGC driver.
+
+if CLOCK_CONTROL_RENESAS_RX_CGC
+
+config CLOCK_CONTROL_RENESAS_RX_ROOT
+	bool "Renesas RX root clock source"
+	default y
+	help
+	  Enable Renesas RX root clock
+
+config CLOCK_CONTROL_RENESAS_RX_PLL
+	bool "Renesas RX root clock source"
+	default y
+	help
+	  Enable Renesas RX PLL
+
+config CLOCK_CONTROL_RENESAS_RX_PCLK
+	bool "Renesas RX root clock source"
+	default y
+	help
+	  Enable Renesas RX PCLK
+
+endif

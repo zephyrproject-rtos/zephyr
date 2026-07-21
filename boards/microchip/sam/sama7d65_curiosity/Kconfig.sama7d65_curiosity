@@ -1,0 +1,7 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_SAMA7D65_CURIOSITY
+	select SOC_SAMA7D65

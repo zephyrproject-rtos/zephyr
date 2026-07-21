@@ -1,0 +1,23 @@
+identifier: beetle_rp2350/rp2350a/m33
+name: DFRobot Beetle RP2350 (Cortex M33)
+type: mcu
+arch: arm
+flash: 2048
+ram: 520
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - clock
+  - counter
+  - dma
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - usbd
+  - watchdog

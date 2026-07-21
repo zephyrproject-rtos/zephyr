@@ -1,0 +1,2132 @@
+# vim: set syntax=python ts=4 :
+#
+# Copyright (c) 2018-2025 Intel Corporation
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+import contextlib
+import logging
+import multiprocessing as mp
+import os
+import pathlib
+import pickle
+import re
+import shutil
+import subprocess
+import sys
+import time
+import traceback
+from collections import deque
+from collections.abc import Iterator
+from math import log10
+from multiprocessing import Lock, Process, Value
+from multiprocessing.managers import BaseManager
+
+import elftools
+import yaml
+from colorama import Fore
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
+from packaging import version
+from twisterlib.cmakecache import CMakeCache
+from twisterlib.constants import SIM_PROGRAM_CMAKE_VARS, canonical_zephyr_base
+from twisterlib.error import (
+    BuildError,
+    ConfigurationError,
+    NoDeviceAvailableException,
+    NoRequiredApplicationNotReadyException,
+    StatusAttributeError,
+    TwisterException,
+)
+from twisterlib.hardwaredata import CompoundHardwareData
+from twisterlib.hardwareutil import HardwareReservationManager
+from twisterlib.log_helper import setup_logging
+from twisterlib.statuses import TwisterStatus
+
+if version.parse(elftools.__version__) < version.parse('0.24'):
+    sys.exit("pyelftools is out of date, need version 0.24 or later")
+
+# Job server only works on Linux for now.
+if sys.platform == 'linux':
+    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
+
+from domains import Domains
+from twisterlib.coverage import run_coverage_instance
+from twisterlib.environment import TwisterEnv
+from twisterlib.harness import Harness, HarnessImporter
+from twisterlib.log_helper import log_command
+from twisterlib.platform import Platform
+from twisterlib.sidecars import SidecarImporter
+from twisterlib.testinstance import TestInstance
+from twisterlib.testplan import change_skip_to_error_if_integration
+from twisterlib.testsuite import TestSuite
+
+# Prefer 'fork' on POSIX to maintain pre-3.14 behavior
+if os.name == "posix":
+    with contextlib.suppress(RuntimeError):
+        mp.set_start_method("fork")
+
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
+
+import expr_parser
+from anytree import Node, RenderTree
+
+logger = logging.getLogger('twister')
+
+# Instance reason set when a pipeline stage assigns an illegal TwisterStatus
+# (StatusAttributeError). Shared by every stage handler in ProjectBuilder.process.
+INCORRECT_STATUS_REASON = 'Incorrect status assignment'
+# Instance reason set when CMake dt/kconfig filtering excludes an instance.
+RUNTIME_FILTER_REASON = 'runtime filter'
+
+
+class AtomicCounter:
+    '''Data descriptor for a lock-protected multiprocessing counter.
+
+    Reading, writing and incrementing all take the backing Value's lock so
+    the counter is safe to share across the ProjectBuilder worker processes.
+    The Value itself is created eagerly by ExecutionCounter.__init__ (before
+    the object is forked into workers) and stored on the instance under a
+    private, underscore-prefixed name.
+    '''
+    def __set_name__(self, owner, name):
+        self.attr = '_' + name
+
+    def _value(self, obj):
+        return getattr(obj, self.attr)
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        value = self._value(obj)
+        with value.get_lock():
+            return value.value
+
+    def __set__(self, obj, value):
+        shared = self._value(obj)
+        with shared.get_lock():
+            shared.value = value
+
+    def increment(self, obj, by=1):
+        shared = self._value(obj)
+        with shared.get_lock():
+            shared.value += by
+
+
+class ExecutionCounter:
+    '''
+    Most of the stats are at test instance level
+    Except that case statistics are for cases of ALL test instances
+
+    total = yaml test scenarios * applicable platforms
+    done := instances that reached report_out stage of the pipeline
+    done = filtered_configs + passed + failed + error
+    completed = done - filtered_static
+    filtered_configs = filtered_runtime + filtered_static
+
+    pass rate = passed / (total - filtered_configs)
+    case pass rate = passed_cases / (cases - filtered_cases - skipped_cases)
+
+    Every counter below is an AtomicCounter descriptor. In addition to the
+    locked attribute (``results.passed``, ``results.passed = n``) each one
+    exposes a ``<name>_increment(value=1)`` method, synthesised on demand by
+    __getattr__.
+    '''
+    # instances that go through the pipeline, updated by report_out()
+    done = AtomicCounter()
+    iteration = AtomicCounter()
+    # instances that actually executed and passed, updated by report_out()
+    passed = AtomicCounter()
+    # instances that are built but not runnable, updated by report_out()
+    notrun = AtomicCounter()
+    # static filter + runtime filter + build skipped,
+    # updated by update_counting_before_pipeline() and report_out()
+    filtered_configs = AtomicCounter()
+    # cmake filter + build skipped, updated by report_out()
+    filtered_runtime = AtomicCounter()
+    # static filtered at yaml parsing time,
+    # updated by update_counting_before_pipeline()
+    filtered_static = AtomicCounter()
+    # updated by report_out() in pipeline
+    error = AtomicCounter()
+    failed = AtomicCounter()
+    skipped = AtomicCounter()
+    # initialized to number of test instances
+    total = AtomicCounter()
+
+    #######################################
+    # TestCase counters for all instances #
+    #######################################
+    # updated in report_out
+    cases = AtomicCounter()
+    # updated by update_counting_before_pipeline() and report_out()
+    skipped_cases = AtomicCounter()
+    filtered_cases = AtomicCounter()
+    # updated by report_out() in pipeline
+    passed_cases = AtomicCounter()
+    notrun_cases = AtomicCounter()
+    failed_cases = AtomicCounter()
+    error_cases = AtomicCounter()
+    blocked_cases = AtomicCounter()
+    # Incorrect statuses
+    none_cases = AtomicCounter()
+    started_cases = AtomicCounter()
+
+    warnings = AtomicCounter()
+
+    def __init__(self, total=0):
+        # Create every counter's shared Value eagerly, before this object is
+        # forked into worker processes, so all processes share the same memory.
+        for descriptor in type(self).__dict__.values():
+            if isinstance(descriptor, AtomicCounter):
+                setattr(self, descriptor.attr, Value('i', 0))
+        self.total = total
+        self.lock = Lock()
+
+    def __getattr__(self, name):
+        # Synthesise `<counter>_increment(value=1)` for each AtomicCounter.
+        # __getattr__ only fires for attributes not found normally, so this
+        # never shadows the descriptors or real methods above.
+        suffix = '_increment'
+        if name.endswith(suffix):
+            descriptor = type(self).__dict__.get(name[:-len(suffix)])
+            if isinstance(descriptor, AtomicCounter):
+                return lambda value=1: descriptor.increment(self, value)
+        raise AttributeError(
+            f"{type(self).__name__!r} object has no attribute {name!r}"
+        )
+
+    @staticmethod
+    def _find_number_length(n):
+        if n > 0:
+            length = int(log10(n))+1
+        elif n == 0:
+            length = 1
+        else:
+            length = int(log10(-n))+2
+        return length
+
+    def summary(self):
+        selected_cases = self.cases - self.filtered_cases
+        selected_configs = self.done - self.filtered_static - self.filtered_runtime
+
+
+        root = Node("Summary")
+
+        Node(f"Total test suites: {self.total}", parent=root)
+        processed_suites = Node(f"Processed test suites: {self.done}", parent=root)
+        filtered_suites = Node(
+            f"Filtered test suites: {self.filtered_configs}",
+            parent=processed_suites
+        )
+        Node(f"Filtered test suites (static): {self.filtered_static}", parent=filtered_suites)
+        Node(f"Filtered test suites (at runtime): {self.filtered_runtime}", parent=filtered_suites)
+        selected_suites = Node(f"Selected test suites: {selected_configs}", parent=processed_suites)
+        Node(f"Skipped test suites: {self.skipped}", parent=selected_suites)
+        Node(f"Passed test suites: {self.passed}", parent=selected_suites)
+        Node(f"Built only test suites: {self.notrun}", parent=selected_suites)
+        Node(f"Failed test suites: {self.failed}", parent=selected_suites)
+        Node(f"Errors in test suites: {self.error}", parent=selected_suites)
+
+        total_cases = Node(f"Total test cases: {self.cases}", parent=root)
+        Node(f"Filtered test cases: {self.filtered_cases}", parent=total_cases)
+        selected_cases_node = Node(f"Selected test cases: {selected_cases}", parent=total_cases)
+        Node(f"Passed test cases: {self.passed_cases}", parent=selected_cases_node)
+        Node(f"Skipped test cases: {self.skipped_cases}", parent=selected_cases_node)
+        Node(f"Built only test cases: {self.notrun_cases}", parent=selected_cases_node)
+        Node(f"Blocked test cases: {self.blocked_cases}", parent=selected_cases_node)
+        Node(f"Failed test cases: {self.failed_cases}", parent=selected_cases_node)
+        error_cases_node = Node(
+            f"Errors in test cases: {self.error_cases}",
+            parent=selected_cases_node
+        )
+
+        if self.none_cases or self.started_cases:
+            Node(
+                "The following test case statuses should not appear in a proper execution",
+                parent=error_cases_node
+            )
+        if self.none_cases:
+            Node(f"Statusless test cases: {self.none_cases}", parent=error_cases_node)
+        if self.started_cases:
+            Node(f"Test cases only started: {self.started_cases}", parent=error_cases_node)
+
+        for pre, _, node in RenderTree(root):
+            print(f"{pre}{node.name}")
+
+
+class CMake:
+    config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
+    dt_re = re.compile('([A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
+
+    def __init__(self, testsuite: TestSuite, platform: Platform, source_dir, build_dir, jobserver):
+
+        self.cwd = None
+        self.capture_output = True
+
+        self.defconfig = {}
+        self.cmake_cache = {}
+
+        self.instance = None
+        self.testsuite = testsuite
+        self.platform = platform
+        self.source_dir = source_dir
+        self.build_dir = build_dir
+        self.log = "build.log"
+
+        self.default_encoding = sys.getdefaultencoding()
+        self.jobserver = jobserver
+
+    def parse_generated(self, filter_stages=None):
+        self.defconfig = {}
+        return {}
+
+    def run_build(self, args=None):
+        if args is None:
+            args = []
+
+        logger.debug(f"Building {self.source_dir} for {self.platform.name}")
+
+        cmake_args = []
+        cmake_args.extend(args)
+        cmake = shutil.which('cmake')
+        cmd = [cmake] + cmake_args
+        kwargs = dict()
+
+        if self.capture_output:
+            kwargs['stdout'] = subprocess.PIPE
+            # CMake sends the output of message() to stderr unless it's STATUS
+            kwargs['stderr'] = subprocess.STDOUT
+
+        if self.cwd:
+            kwargs['cwd'] = self.cwd
+
+        start_time = time.time()
+        if sys.platform == 'linux':
+            p = self.jobserver.popen(cmd, **kwargs)
+        else:
+            p = subprocess.Popen(cmd, **kwargs)
+        logger.debug(f'Running {" ".join(cmd)}')
+
+        out, _ = p.communicate()
+
+        ret = {}
+        duration = time.time() - start_time
+        self.instance.build_time += duration
+        if p.returncode == 0:
+            msg = (
+                f"Finished building {self.source_dir} for {self.platform.name}"
+                f" in {duration:.2f} seconds"
+            )
+            logger.debug(msg)
+
+            if not self.instance.run:
+                self.instance.status = TwisterStatus.NOTRUN
+                self.instance.add_missing_case_status(TwisterStatus.NOTRUN, "Test was built only")
+            else:
+                self.instance.status = TwisterStatus.PASS
+            ret = {"returncode": p.returncode}
+
+            if out:
+                log_msg = out.decode(self.default_encoding)
+                with open(
+                    os.path.join(self.build_dir, self.log),
+                    "a",
+                    encoding=self.default_encoding
+                ) as log:
+                    log.write(log_msg)
+            else:
+                return None
+        else:
+            # A real error occurred, raise an exception
+            log_msg = ""
+            if out:
+                log_msg = out.decode(self.default_encoding)
+                with open(
+                    os.path.join(self.build_dir, self.log),
+                    "a",
+                    encoding=self.default_encoding
+                ) as log:
+                    log.write(log_msg)
+
+            if log_msg:
+                pattern = (
+                    r"region `(FLASH|ROM|RAM|ICCM|DCCM|SRAM|"
+                    r"dram\d_\d_seg|iram\d_\d_seg)' "
+                    "overflowed by"
+                )
+                overflow_found = re.findall(pattern, log_msg)
+
+                imgtool_overflow_found = re.findall(
+                    r"Error: Image size \(.*\) \+ trailer \(.*\) exceeds requested size",
+                    log_msg
+                )
+                if overflow_found and not self.options.overflow_as_errors:
+                    logger.debug(f"Test skipped due to {overflow_found[0]} Overflow")
+                    self.instance.status = TwisterStatus.SKIP
+                    self.instance.reason = f"{overflow_found[0]} overflow"
+                    change_skip_to_error_if_integration(self.options, self.instance)
+                elif imgtool_overflow_found and not self.options.overflow_as_errors:
+                    self.instance.status = TwisterStatus.SKIP
+                    self.instance.reason = "imgtool overflow"
+                    change_skip_to_error_if_integration(self.options, self.instance)
+                else:
+                    self.instance.status = TwisterStatus.ERROR
+                    self.instance.reason = "Build failure"
+
+            ret = {
+                "returncode": p.returncode
+            }
+
+        return ret
+
+    def run_cmake(self, args="", filter_stages=None):
+        if filter_stages is None:
+            filter_stages = []
+
+        if not self.options.disable_warnings_as_errors:
+            warnings_as_errors = 'y'
+            gen_edt_args = "--edtlib-Werror"
+        else:
+            warnings_as_errors = 'n'
+            gen_edt_args = ""
+
+        warning_command = 'CONFIG_COMPILER_WARNINGS_AS_ERRORS'
+        if self.instance.sysbuild:
+            warning_command = 'SB_' + warning_command
+
+        logger.debug(f"Running cmake on {self.source_dir} for {self.platform.name}")
+        cmake_args = [
+            f'-B{self.build_dir}',
+            f'-DTC_RUNID={self.instance.run_id}',
+            f'-DTC_NAME={self.instance.testsuite.name}',
+            f'-D{warning_command}={warnings_as_errors}',
+            f'-DEXTRA_GEN_EDT_ARGS={gen_edt_args}',
+            f'-G{self.env.generator}',
+            f'-DPython3_EXECUTABLE={pathlib.Path(sys.executable).as_posix()}'
+        ]
+
+        if self.instance.testsuite.harness == 'bsim':
+            cmake_args.extend([
+                '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON',
+                '-DCONFIG_ASSERT=y',
+                '-DCONFIG_COVERAGE=y'
+            ])
+
+        if self.instance.toolchain:
+            cmake_args.append(f'-DZEPHYR_TOOLCHAIN_VARIANT={self.instance.toolchain}')
+
+        # If needed, run CMake using the package_helper script first, to only run
+        # a subset of all cmake modules. This output will be used to filter
+        # testcases, and the full CMake configuration will be run for
+        # testcases that should be built
+        if filter_stages:
+            cmake_filter_args = [
+                f'-DMODULES={",".join(filter_stages)}',
+                f'-P{canonical_zephyr_base}/cmake/package_helper.cmake',
+            ]
+
+        if self.instance.sysbuild and not filter_stages:
+            logger.debug(f"Building {self.source_dir} using sysbuild")
+            source_args = [
+                f'-S{canonical_zephyr_base}/share/sysbuild',
+                f'-DAPP_DIR={self.source_dir}'
+            ]
+        else:
+            source_args = [
+                f'-S{self.source_dir}'
+            ]
+        cmake_args.extend(source_args)
+
+        cmake_args.extend(args)
+
+        cmake_opts = [f'-DBOARD={self.platform.name}']
+        cmake_args.extend(cmake_opts)
+
+        if self.instance.testsuite.required_snippets:
+            cmake_opts = [
+                '-DSNIPPET={}'.format(';'.join(self.instance.testsuite.required_snippets))
+            ]
+            cmake_args.extend(cmake_opts)
+
+        cmake = shutil.which('cmake')
+        cmd = [cmake] + cmake_args
+
+        if filter_stages:
+            cmd += cmake_filter_args
+
+        kwargs = dict()
+
+        # A sidecar may need environment or extra CMake arguments for the
+        # configure step (e.g. the virtiofs sidecar injects a -chardev socket
+        # path into QEMU's flags; the net-tools sidecar bakes the host interface
+        # name and addresses). Ask it generically so the runner stays agnostic of
+        # any specific sidecar; an unknown name is reported later by the run stage.
+        try:
+            sidecar = SidecarImporter.get_sidecar(self.instance.sidecar)
+        except ValueError:
+            sidecar = None
+        if sidecar is not None:
+            sidecar.configure(self.instance)
+            sidecar_env = sidecar.cmake_env(self.build_dir)
+            if sidecar_env:
+                env = os.environ.copy()
+                env.update(sidecar_env)
+                kwargs['env'] = env
+            cmd += sidecar.cmake_args(self.build_dir)
+
+        log_command(logger, "Calling cmake", cmd)
+
+        if self.capture_output:
+            kwargs['stdout'] = subprocess.PIPE
+            # CMake sends the output of message() to stderr unless it's STATUS
+            kwargs['stderr'] = subprocess.STDOUT
+
+        if self.cwd:
+            kwargs['cwd'] = self.cwd
+
+        start_time = time.time()
+        if sys.platform == 'linux':
+            p = self.jobserver.popen(cmd, **kwargs)
+        else:
+            p = subprocess.Popen(cmd, **kwargs)
+        out, _ = p.communicate()
+
+        duration = time.time() - start_time
+        self.instance.build_time += duration
+
+        if p.returncode == 0:
+            filter_results = self.parse_generated(filter_stages)
+            msg = (
+                f"Finished running cmake {self.source_dir} for {self.platform.name}"
+                f" in {duration:.2f} seconds"
+            )
+            logger.debug(msg)
+            ret = {
+                    'returncode': p.returncode,
+                    'filter': filter_results
+                    }
+        else:
+            self.instance.status = TwisterStatus.ERROR
+            self.instance.reason = "CMake build failure"
+
+            for tc in self.instance.testcases:
+                tc.status = self.instance.status
+
+            logger.error(f"CMake build failure: {self.source_dir} for {self.platform.name}")
+            ret = {"returncode": p.returncode}
+
+        if out:
+            os.makedirs(self.build_dir, exist_ok=True)
+            with open(
+                os.path.join(self.build_dir, self.log),
+                "a",
+                encoding=self.default_encoding
+            ) as log:
+                log_msg = out.decode(self.default_encoding)
+                log.write(log_msg)
+
+        return ret
+
+
+class FilterBuilder(CMake):
+
+    def __init__(self, testsuite: TestSuite, platform: Platform, source_dir, build_dir, jobserver):
+        super().__init__(testsuite, platform, source_dir, build_dir, jobserver)
+
+        self.log = "config-twister.log"
+
+    def parse_generated(self, filter_stages=None):
+        if filter_stages is None:
+            filter_stages = []
+
+        if self.platform.name == "unit_testing":
+            return {}
+
+        if self.instance.sysbuild and not filter_stages:
+            # Load domain yaml to get default domain build directory
+            domain_path = os.path.join(self.build_dir, "domains.yaml")
+            domains = Domains.from_file(domain_path)
+            logger.debug(f"Loaded sysbuild domain data from {domain_path}")
+            self.instance.domains = domains
+            domain_build = domains.get_default_domain().build_dir
+            if not os.path.isabs(domain_build):
+                domain_build = os.path.normpath(
+                    os.path.join(self.build_dir, domain_build)
+                )
+            cmake_cache_path = os.path.join(domain_build, "CMakeCache.txt")
+            defconfig_path = os.path.join(domain_build, "zephyr", ".config")
+            edt_pickle = os.path.join(domain_build, "zephyr", "edt.pickle")
+        else:
+            cmake_cache_path = os.path.join(self.build_dir, "CMakeCache.txt")
+            # .config is only available after kconfig stage in cmake.
+            # If only dt based filtration is required package helper call won't produce .config
+            if not filter_stages or "kconfig" in filter_stages:
+                defconfig_path = os.path.join(self.build_dir, "zephyr", ".config")
+            # dt is compiled before kconfig,
+            # so edt_pickle is available regardless of choice of filter stages
+            edt_pickle = os.path.join(self.build_dir, "zephyr", "edt.pickle")
+
+
+        if not filter_stages or "kconfig" in filter_stages:
+            with open(defconfig_path) as fp:
+                defconfig = {}
+                for line in fp.readlines():
+                    m = self.config_re.match(line)
+                    if not m:
+                        if line.strip() and not line.startswith("#"):
+                            sys.stderr.write(f"Unrecognized line {line}\n")
+                        continue
+                    defconfig[m.group(1)] = m.group(2).strip()
+
+            self.defconfig = defconfig
+
+        cmake_conf = {}
+        try:
+            cache = CMakeCache.from_file(cmake_cache_path)
+        except FileNotFoundError:
+            cache = {}
+
+        for k in iter(cache):
+            cmake_conf[k.name] = k.value
+
+        self.cmake_cache = cmake_conf
+
+        filter_data = {
+            "ARCH": self.platform.arch,
+            "PLATFORM": self.platform.name
+        }
+        filter_data.update(os.environ)
+        if not filter_stages or "kconfig" in filter_stages:
+            filter_data.update(self.defconfig)
+        filter_data.update(self.cmake_cache)
+
+        if self.testsuite and self.testsuite.filter:
+            try:
+                if os.path.exists(edt_pickle):
+                    with open(edt_pickle, 'rb') as f:
+                        edt = pickle.load(f)
+                else:
+                    edt = None
+                ret = expr_parser.parse(self.testsuite.filter, filter_data, edt)
+
+            except (ValueError, SyntaxError) as se:
+                sys.stderr.write(f"Failed processing {self.testsuite.yamlfile}\n")
+                raise se
+
+            if not ret:
+                return {
+                    os.path.join(
+                        self.platform.name,
+                        self.instance.toolchain,
+                        self.testsuite.name
+                    ): True
+                }
+            else:
+                return {
+                    os.path.join(
+                        self.platform.name,
+                        self.instance.toolchain,
+                        self.testsuite.name
+                    ): False
+                }
+        else:
+            self.platform.filter_data = filter_data
+            return filter_data
+
+
+class ProjectBuilder(FilterBuilder):
+
+    # Optional post-build checks, run when --post-build-checks is enabled.
+    # Each entry is the name of a bound method returning None on success or a
+    # human-readable reason string on failure. Extend the pipeline by adding a
+    # new method name here rather than modifying run_post_build_checks().
+    POST_BUILD_CHECKS = (
+        "check_no_nested_git_repos",
+    )
+
+    def __init__(self, instance: TestInstance, env: TwisterEnv, jobserver, **kwargs):
+        super().__init__(
+            instance.testsuite,
+            instance.platform,
+            instance.testsuite.source_dir,
+            instance.build_dir,
+            jobserver
+        )
+
+        self.log = "build.log"
+        self.instance: TestInstance = instance
+        self.filtered_tests = 0
+        self.options = env.options
+        self.env = env
+
+    @property
+    def trace(self) -> bool:
+        return self.options.verbose > 2
+
+    def log_info(self, filename, inline_logs, log_only_failed=False):
+        filename = os.path.abspath(os.path.realpath(filename))
+        if inline_logs:
+            logger.info(f"{filename:-^100}")
+
+            if log_only_failed:
+                any_found = False
+                for tc in self.instance.testcases:
+                    if not tc.reason:
+                        continue
+                    logger.error(
+                        f"\n{str(tc.name).center(100, '_')}\n"
+                        f"{tc.reason}\n"
+                        f"{100*'_'}\n"
+                        f"{tc.output}"
+                    )
+                    any_found = True
+                if any_found:
+                    return
+
+            try:
+                with open(filename) as fp:
+                    data = fp.read()
+            except Exception as e:
+                data = f"Unable to read log data ({e!s})\n"
+
+            # Remove any coverage data from the dumped logs
+            data = re.sub(
+                r"GCOV_COVERAGE_DUMP_START.*GCOV_COVERAGE_DUMP_END",
+                "GCOV_COVERAGE_DUMP_START\n...\nGCOV_COVERAGE_DUMP_END",
+                data,
+                flags=re.DOTALL,
+            )
+            logger.error(data)
+
+            logger.info(f"{filename:-^100}")
+
+        else:
+            logger.error("see: " + Fore.YELLOW + filename + Fore.RESET)
+
+    def log_info_file(self, inline_logs):
+        build_dir = self.instance.build_dir
+        h_log = f"{build_dir}/handler.log"
+        he_log = f"{build_dir}/handler_stderr.log"
+        b_log = f"{build_dir}/build.log"
+        v_log = f"{build_dir}/valgrind.log"
+        d_log = f"{build_dir}/device.log"
+        script_log = f"{build_dir}/twister_harness.log"
+
+        if os.path.exists(v_log) and "Valgrind" in self.instance.reason:
+            self.log_info(f"{v_log}", inline_logs)
+        elif os.path.exists(script_log) and os.path.getsize(script_log) > 0:
+            self.log_info(f"{script_log}", inline_logs, log_only_failed=True)
+        elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
+            self.log_info(f"{h_log}", inline_logs)
+        elif os.path.exists(he_log) and os.path.getsize(he_log) > 0:
+            self.log_info(f"{he_log}", inline_logs)
+        elif os.path.exists(d_log) and os.path.getsize(d_log) > 0:
+            self.log_info(f"{d_log}", inline_logs)
+        else:
+            self.log_info(f"{b_log}", inline_logs)
+
+    def _add_to_processing_queue(self, processing_queue: deque, op: str, additionals: dict=None):
+        if additionals is None:
+            additionals = {}
+        try:
+            if op:
+                task = dict({'op': op, 'test': self.instance}, **additionals)
+                processing_queue.append(task)
+        # Only possible RuntimeError source here is a mutation of the processing_queue during
+        # iteration. If that happens, we ought to consider the whole processing_queue corrupted.
+        except RuntimeError as e:
+            logger.error(f"RuntimeError: {e}")
+            traceback.print_exc()
+
+    def process(self, processing_queue: deque, processing_ready: dict[str, TestInstance],
+                message, lock, results: ExecutionCounter):
+        next_op = None
+        additionals = {}
+
+        op = message.get('op')
+        options = self.options
+        if not logger.handlers:
+            setup_logging(options.outdir, options.log_file, options.log_level, options.timestamps)
+        self.instance.setup_handler(self.env)
+
+        if op == "filter":
+            try:
+                ret = self.cmake(filter_stages=self.instance.filter_stages)
+                if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
+                    next_op = 'report'
+                else:
+                    # Here we check the dt/kconfig filter results coming from running cmake
+                    if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
+                        logger.debug(f"filtering {self.instance.name}")
+                        self.instance.status = TwisterStatus.FILTER
+                        self.instance.reason = RUNTIME_FILTER_REASON
+                        results.filtered_runtime_increment()
+                        self.instance.add_missing_case_status(TwisterStatus.FILTER)
+                        next_op = 'report'
+                    else:
+                        next_op = 'cmake'
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = INCORRECT_STATUS_REASON
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+            finally:
+                self._add_to_processing_queue(processing_queue, next_op)
+
+        # The build process, call cmake and build with configured generator
+        elif op == "cmake":
+            try:
+                ret = self.cmake()
+                if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
+                    next_op = 'report'
+                elif self.options.cmake_only:
+                    if self.instance.status == TwisterStatus.NONE:
+                        logger.debug(f"CMake only: PASS {self.instance.name}")
+                        self.instance.status = TwisterStatus.NOTRUN
+                        self.instance.add_missing_case_status(TwisterStatus.NOTRUN, 'CMake only')
+                    next_op = 'report'
+                else:
+                    # Here we check the runtime filter results coming from running cmake
+                    if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
+                        logger.debug(f"filtering {self.instance.name}")
+                        self.instance.status = TwisterStatus.FILTER
+                        self.instance.reason = RUNTIME_FILTER_REASON
+                        results.filtered_runtime_increment()
+                        self.instance.add_missing_case_status(TwisterStatus.FILTER)
+                        next_op = 'report'
+                    else:
+                        next_op = 'build'
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = INCORRECT_STATUS_REASON
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+            finally:
+                self._add_to_processing_queue(processing_queue, next_op)
+
+        elif op == "build":
+            try:
+                logger.debug(f"build test: {self.instance.name}")
+                ret = self.build()
+                if not ret:
+                    self.instance.status = TwisterStatus.ERROR
+                    self.instance.reason = "Build Failure"
+                    next_op = 'report'
+                else:
+                    # Count skipped cases during build, for example
+                    # due to ram/rom overflow.
+                    if  self.instance.status == TwisterStatus.SKIP:
+                        results.skipped_increment()
+                        self.instance.add_missing_case_status(
+                            TwisterStatus.SKIP,
+                            self.instance.reason
+                        )
+
+                    if ret.get('returncode', 1) > 0:
+                        self.instance.add_missing_case_status(
+                            TwisterStatus.BLOCK,
+                            self.instance.reason
+                        )
+                        next_op = 'report'
+                    else:
+                        if self.instance.testsuite.harness in ['ztest', 'test']:
+                            logger.debug(
+                                f"Determine test cases for test instance: {self.instance.name}"
+                            )
+                            try:
+                                self.determine_testcases(results)
+                                next_op = 'post_build'
+                            except BuildError as e:
+                                logger.error(str(e))
+                                self.instance.status = TwisterStatus.ERROR
+                                self.instance.reason = str(e)
+                                next_op = 'report'
+                        else:
+                            next_op = 'post_build'
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = INCORRECT_STATUS_REASON
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+            finally:
+                self._add_to_processing_queue(processing_queue, next_op)
+
+        # Run post-build checks on the freshly built artifacts
+        elif op == "post_build":
+            try:
+                ret = self.post_build()
+                if ret.get('returncode', 1) > 0:
+                    self.instance.status = TwisterStatus.ERROR
+                    self.instance.reason = ret.get('reason', 'Post-build check failure')
+                    self.instance.add_missing_case_status(
+                        TwisterStatus.BLOCK,
+                        self.instance.reason
+                    )
+                    next_op = 'report'
+                else:
+                    next_op = 'gather_metrics'
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = INCORRECT_STATUS_REASON
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+            finally:
+                self._add_to_processing_queue(processing_queue, next_op)
+
+        elif op == "gather_metrics":
+            try:
+                ret = self.gather_metrics(self.instance)
+                if not ret or ret.get('returncode', 1) > 0:
+                    self.instance.status = TwisterStatus.ERROR
+                    self.instance.reason = "Build Failure at gather_metrics."
+                    next_op = 'report'
+                elif self.instance.run and self.instance.handler.ready:
+                    next_op = 'run'
+                else:
+                    if self.instance.status == TwisterStatus.NOTRUN:
+                        run_conditions =  (
+                            f"(run:{self.instance.run},"
+                            f" handler.ready:{self.instance.handler.ready})"
+                        )
+                        logger.debug(f"Instance {self.instance.name} can't run {run_conditions}")
+                        self.instance.add_missing_case_status(
+                            TwisterStatus.NOTRUN,
+                            "Nowhere to run"
+                        )
+                    next_op = 'report'
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = INCORRECT_STATUS_REASON
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+            finally:
+                self._add_to_processing_queue(processing_queue, next_op)
+
+        # Run the generated binary using one of the supported handlers
+        elif op == "run":
+            processing_queue_updated = False
+            try:
+                if self.ensure_required_apps_ready(processing_ready):
+                    with self.reserve_hardware() as ready_to_run:
+                        if ready_to_run:
+                            logger.debug(f"run test: {self.instance.name}")
+                            self.run()
+                            logger.debug(f"run status: {self.instance.name} {self.instance.status}")
+
+                # to make it work with pickle
+                self.instance.handler.thread = None
+
+                next_op = "coverage" if self.options.coverage else "report"
+                additionals = {
+                    "status": self.instance.status,
+                    "reason": self.instance.reason
+                }
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = INCORRECT_STATUS_REASON
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+                additionals = {}
+            except (NoDeviceAvailableException, NoRequiredApplicationNotReadyException):
+                if processing_ready.get(self.instance.name) is None:
+                    # Register this instance as ready (build succeeded) so that other instances
+                    # listing it as a required application can unblock and proceed.
+                    # This also handles mutual dependencies between instances,
+                    # letting the pair resolve without deadlock.
+                    # The entry will be overwritten with the final state in the 'report' stage.
+                    with lock:
+                        processing_ready.update({self.instance.name: self.instance})
+
+                # no device available to run the test or required application not ready,
+                # add the task back to the pipeline to process it later
+                processing_queue.appendleft(message)
+                processing_queue_updated = True
+                # to avoid busy waiting
+                time.sleep(1)
+            finally:
+                if not processing_queue_updated:
+                    self._add_to_processing_queue(processing_queue, next_op, additionals)
+
+        # Run per-instance code coverage
+        elif op == "coverage":
+            try:
+                logger.debug(f"Run coverage for '{self.instance.name}'")
+                self.instance.coverage_status, self.instance.coverage = \
+                        run_coverage_instance(self.options, self.instance)
+                next_op = 'report'
+                additionals = {
+                    "status": self.instance.status,
+                    "reason": self.instance.reason
+                }
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = f"{INCORRECT_STATUS_REASON} on {op}"
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = 'report'
+                additionals = {}
+            finally:
+                self._add_to_processing_queue(processing_queue, next_op, additionals)
+
+        # Report results and output progress to screen
+        elif op == "report":
+            try:
+                with lock:
+                    processing_ready.update({self.instance.name: self.instance})
+                    self.report_out(results)
+
+                if not self.options.coverage:
+                    if self.options.prep_artifacts_for_testing:
+                        next_op = 'cleanup'
+                        additionals = {"mode": "device"}
+                    elif self.options.runtime_artifact_cleanup == "pass" and \
+                        self.instance.status in [TwisterStatus.PASS, TwisterStatus.NOTRUN]:
+                        next_op = 'cleanup'
+                        additionals = {"mode": "passed"}
+                    elif self.options.runtime_artifact_cleanup == "all":
+                        next_op = 'cleanup'
+                        additionals = {"mode": "all"}
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = INCORRECT_STATUS_REASON
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                next_op = None
+                additionals = {}
+            finally:
+                self._add_to_processing_queue(processing_queue, next_op, additionals)
+
+        elif op == "cleanup":
+            try:
+                mode = message.get("mode")
+                if mode == "device":
+                    self.cleanup_device_testing_artifacts()
+                elif (
+                    mode == "passed"
+                    or (mode == "all" and self.instance.reason != "CMake build failure")
+                ):
+                    self.cleanup_artifacts()
+            except StatusAttributeError as sae:
+                logger.error(str(sae))
+                self.instance.status = TwisterStatus.ERROR
+                reason = INCORRECT_STATUS_REASON
+                self.instance.reason = reason
+                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+
+    def demangle(self, symbol_name):
+        if symbol_name[:2] == '_Z':
+            try:
+                cpp_filt = subprocess.run(
+                    'c++filt',
+                    input=symbol_name,
+                    text=True,
+                    check=True,
+                    capture_output=True
+                )
+                if self.trace:
+                    logger.debug(f"Demangle: '{symbol_name}'==>'{cpp_filt.stdout}'")
+                return cpp_filt.stdout.strip()
+            except Exception as e:
+                logger.error(f"Failed to demangle '{symbol_name}': {e}")
+        return symbol_name
+
+    def determine_testcases(self, results):
+        logger.debug(f"Determine test cases for test suite: {self.instance.testsuite.id}")
+
+        new_ztest_unit_test_regex = re.compile(r"z_ztest_unit_test__([^\s]+?)__([^\s]*)")
+        detected_cases = []
+
+        elf_file = self.instance.get_elf_file()
+        with open(elf_file, "rb") as elf_fp:
+            elf = ELFFile(elf_fp)
+
+            for section in elf.iter_sections():
+                if isinstance(section, SymbolTableSection):
+                    for sym in section.iter_symbols():
+                        # It is only meant for new ztest fx
+                        # because only new ztest fx exposes test functions precisely.
+                        m_ = new_ztest_unit_test_regex.search(sym.name)
+                        if not m_:
+                            continue
+                        # Demangle C++ symbols
+                        m_ = new_ztest_unit_test_regex.search(self.demangle(sym.name))
+                        if not m_:
+                            continue
+                        # The 1st capture group is new ztest suite name.
+                        # The 2nd capture group is new ztest unit test name.
+                        new_ztest_suite = m_[1]
+                        if self.trace and \
+                           new_ztest_suite not in self.instance.testsuite.ztest_suite_names:
+                            # This can happen if a ZTEST_SUITE name is macro-generated
+                            # in the test source files, e.g. based on DT information.
+                            logger.debug(
+                                f"Unexpected Ztest suite '{new_ztest_suite}' is "
+                                f"not present in: {self.instance.testsuite.ztest_suite_names}"
+                            )
+                        test_func_name = m_[2].replace("test_", "", 1)
+                        testcase_id = self.instance.testsuite.compose_case_name(
+                            f"{new_ztest_suite}.{test_func_name}"
+                        )
+                        detected_cases.append(testcase_id)
+
+        logger.debug(
+            f"Test instance {self.instance.name} already has {len(self.instance.testcases)} "
+            f"testcase(s) known: {self.instance.testcases}"
+        )
+        if detected_cases:
+            logger.debug(f"Detected {len(detected_cases)} Ztest case(s): "
+                         f"[{', '.join(detected_cases)}] in {elf_file}")
+            tc_keeper = {
+                tc.name: {'status': tc.status, 'reason': tc.reason}
+                for tc in self.instance.testcases
+            }
+            self.instance.testcases.clear()
+            self.instance.testsuite.testcases.clear()
+
+            for testcase_id in detected_cases:
+                testcase = self.instance.add_testcase(name=testcase_id)
+                self.instance.testsuite.add_testcase(name=testcase_id)
+
+                # Keep previous statuses and reasons
+                tc_info = tc_keeper.get(testcase_id, {})
+                if not tc_info and self.trace:
+                    # Also happens when Ztest uses macros, eg. DEFINE_TEST_VARIANT
+                    logger.debug(f"Ztest case '{testcase_id}' discovered for "
+                                 f"'{self.instance.testsuite.source_dir_rel}' "
+                                 f"with {list(tc_keeper)}")
+                testcase.status = tc_info.get('status', TwisterStatus.NONE)
+                testcase.reason = tc_info.get('reason')
+
+
+    def cleanup_artifacts(self, additional_keep: list[str] = None):
+        if additional_keep is None:
+            additional_keep = []
+        logger.debug(f"Cleaning up {self.instance.build_dir}")
+        allow = [
+            os.path.join('zephyr', '.config'),
+            'handler.log',
+            'handler_stderr.log',
+            'build.log',
+            'device.log',
+            'recording.csv',
+            'rom.json',
+            'ram.json',
+            'build_info.yml',
+            'zephyr/zephyr.dts',
+            # below ones are needed to make --test-only work as well
+            'Makefile',
+            'CMakeCache.txt',
+            'build.ninja',
+            os.path.join('CMakeFiles', 'rules.ninja')
+            ]
+
+        allow += additional_keep
+        allow += self.options.keep_artifacts
+
+        if self.options.runtime_artifact_cleanup == 'all':
+            allow += [os.path.join('twister', 'testsuite_extra.conf')]
+
+        allow = [os.path.join(self.instance.build_dir, file) for file in allow]
+
+        for dirpath, dirnames, filenames in os.walk(self.instance.build_dir, topdown=False):
+            for name in filenames:
+                path = os.path.join(dirpath, name)
+                if path not in allow:
+                    os.remove(path)
+            # Remove empty directories and symbolic links to directories
+            for dir in dirnames:
+                path = os.path.join(dirpath, dir)
+                if os.path.islink(path):
+                    os.remove(path)
+                elif not os.listdir(path):
+                    os.rmdir(path)
+
+    def cleanup_device_testing_artifacts(self):
+        logger.debug(f"Cleaning up for Device Testing {self.instance.build_dir}")
+
+        files_to_keep = self._get_binaries()
+        files_to_keep.append(os.path.join('zephyr', 'runners.yaml'))
+        files_to_keep.append(os.path.join('zephyr', 'edt.pickle'))
+
+        if self.instance.sysbuild and self.instance.domains:
+            files_to_keep.append('domains.yaml')
+            for domain in self.instance.domains.get_domains():
+                files_to_keep += self._get_artifact_allow_list_for_domain(domain.name)
+
+        self.cleanup_artifacts(files_to_keep)
+
+        self._sanitize_files()
+
+    def _get_artifact_allow_list_for_domain(self, domain: str) -> list[str]:
+        """
+        Return a list of files needed to test a given domain.
+        """
+        allow = [
+            os.path.join(domain, 'build.ninja'),
+            os.path.join(domain, 'CMakeCache.txt'),
+            os.path.join(domain, 'CMakeFiles', 'rules.ninja'),
+            os.path.join(domain, 'Makefile'),
+            os.path.join(domain, 'zephyr', '.config'),
+            os.path.join(domain, 'zephyr', 'runners.yaml'),
+            os.path.join(domain, 'zephyr', 'edt.pickle')
+            ]
+        return allow
+
+    def _get_binaries(self) -> list[str]:
+        """
+        Get list of binaries paths (absolute or relative to the
+        self.instance.build_dir), basing on information from platform.binaries
+        or runners.yaml. If they are not found take default binaries like
+        "zephyr/zephyr.hex" etc.
+        """
+        binaries: list[str] = []
+
+        platform = self.instance.platform
+        if platform.binaries:
+            for binary in platform.binaries:
+                binaries.append(os.path.join('zephyr', binary))
+
+        # Get binaries for a single-domain build
+        binaries += self._get_binaries_from_runners()
+        # Get binaries in the case of a multiple-domain build
+        if self.instance.sysbuild and self.instance.domains:
+            for domain in self.instance.domains.get_domains():
+                binaries += self._get_binaries_from_runners(domain.name)
+
+        # if binaries was not found in platform.binaries and runners.yaml take default ones
+        if len(binaries) == 0:
+            binaries = [
+                os.path.join('zephyr', 'zephyr.hex'),
+                os.path.join('zephyr', 'zephyr.bin'),
+                os.path.join('zephyr', 'zephyr.elf'),
+                os.path.join('zephyr', 'zephyr.exe'),
+            ]
+        return binaries
+
+    def _get_binaries_from_runners(self, domain='') -> list[str]:
+        """
+        Get list of binaries paths (absolute or relative to the
+        self.instance.build_dir) from runners.yaml file. May be used for
+        multiple-domain builds by passing in one domain at a time.
+        """
+
+        runners_file_path: str = os.path.join(self.instance.build_dir,
+                                              domain, 'zephyr', 'runners.yaml')
+        if not os.path.exists(runners_file_path):
+            return []
+
+        with open(runners_file_path) as file:
+            runners_content: dict = yaml.load(file, Loader=SafeLoader)
+
+        if 'config' not in runners_content:
+            return []
+
+        runners_config: dict = runners_content['config']
+        binary_keys: list[str] = ['elf_file', 'hex_file', 'bin_file']
+
+        binaries: list[str] = []
+        for binary_key in binary_keys:
+            binary_path = runners_config.get(binary_key)
+            if binary_path is None:
+                continue
+            if os.path.isabs(binary_path):
+                binaries.append(binary_path)
+            else:
+                binaries.append(os.path.join(domain, 'zephyr', binary_path))
+
+        return binaries
+
+    def _sanitize_files(self):
+        """
+        Sanitize files to make it possible to flash those file on different
+        computer/system.
+        """
+        self._sanitize_runners_file()
+        self._sanitize_zephyr_base_from_files()
+
+        if self.instance.sysbuild and self.instance.domains:
+            for domain in self.instance.domains.get_domains():
+                self._sanitize_runners_file(domain.name)
+                self._sanitize_zephyr_base_from_files(domain.name)
+
+    def _sanitize_runners_file(self, domain: str = ''):
+        """
+        Replace absolute paths of binary files for relative ones. The base
+        directory for those files is f"{self.instance.build_dir}/{domain}/zephyr"
+        for domain builds, or f"{self.instance.build_dir}/zephyr" otherwise.
+        """
+        runners_dir_path: str = os.path.join(self.instance.build_dir, domain, 'zephyr')
+        runners_file_path: str = os.path.join(runners_dir_path, 'runners.yaml')
+        if not os.path.exists(runners_file_path):
+            return
+
+        with open(runners_file_path) as file:
+            runners_content_text = file.read()
+            runners_content_yaml: dict = yaml.load(runners_content_text, Loader=SafeLoader)
+
+        if 'config' not in runners_content_yaml:
+            return
+
+        runners_config: dict = runners_content_yaml['config']
+        binary_keys: list[str] = ['elf_file', 'hex_file', 'bin_file']
+
+        for binary_key in binary_keys:
+            binary_path = runners_config.get(binary_key)
+            # sanitize only paths which exist and are absolute
+            if binary_path is None or not os.path.isabs(binary_path):
+                continue
+            binary_path_relative = os.path.relpath(binary_path, start=runners_dir_path)
+            runners_content_text = runners_content_text.replace(binary_path, binary_path_relative)
+
+        with open(runners_file_path, 'w') as file:
+            file.write(runners_content_text)
+
+    def _sanitize_zephyr_base_from_files(self, domain: str = ''):
+        """
+        Remove Zephyr base paths from selected files.
+        """
+        files_to_sanitize = [
+            'CMakeCache.txt',
+            os.path.join('zephyr', 'runners.yaml'),
+        ]
+        for file_path in files_to_sanitize:
+            file_path = os.path.join(self.instance.build_dir, domain, file_path)
+            if not os.path.exists(file_path):
+                continue
+
+            with open(file_path) as file:
+                data = file.read()
+
+            # add trailing slash at the end of canonical_zephyr_base if it does not exist:
+            path_to_remove = os.path.join(canonical_zephyr_base, "")
+            data = data.replace(path_to_remove, "")
+
+            with open(file_path, 'w') as file:
+                file.write(data)
+
+    @staticmethod
+    def _add_instance_testcases_to_status_counts(instance, results, decrement=False):
+        increment_value = -1 if decrement else 1
+        for tc in instance.testcases:
+            match tc.status:
+                case TwisterStatus.PASS:
+                    results.passed_cases_increment(increment_value)
+                case TwisterStatus.NOTRUN:
+                    results.notrun_cases_increment(increment_value)
+                case TwisterStatus.BLOCK:
+                    results.blocked_cases_increment(increment_value)
+                case TwisterStatus.SKIP:
+                    results.skipped_cases_increment(increment_value)
+                case TwisterStatus.FILTER:
+                    results.filtered_cases_increment(increment_value)
+                case TwisterStatus.ERROR:
+                    results.error_cases_increment(increment_value)
+                case TwisterStatus.FAIL:
+                    results.failed_cases_increment(increment_value)
+                # Statuses that should not appear.
+                # Crashing Twister at this point would be counterproductive,
+                # but having those statuses in this part of processing is an error.
+                case TwisterStatus.NONE:
+                    results.none_cases_increment(increment_value)
+                    logger.warning(f'A None status detected in instance {instance.name},'
+                                 f' test case {tc.name}.')
+                    results.warnings_increment(1)
+                case TwisterStatus.STARTED:
+                    results.started_cases_increment(increment_value)
+                    logger.warning(f'A started status detected in instance {instance.name},'
+                                 f' test case {tc.name}.')
+                    results.warnings_increment(1)
+                case _:
+                    logger.warning(
+                        f'An unknown status "{tc.status}" detected in instance {instance.name},'
+                        f' test case {tc.name}.'
+                    )
+                    results.warnings_increment(1)
+
+
+    @staticmethod
+    def _colored_count(count, status, always=False):
+        # Right-aligned, 4-wide count coloured with the status colour when it is
+        # non-zero (or `always`), otherwise reset to neutral.
+        color = TwisterStatus.get_color(status) if always or count > 0 else Fore.RESET
+        return f"{color}{count:>4}{Fore.RESET}"
+
+    def report_out(self, results):
+        total_to_do = results.total - results.filtered_static
+        total_tests_width = len(str(total_to_do))
+        results.done_increment()
+        instance = self.instance
+        if results.iteration == 1:
+            results.cases_increment(len(instance.testcases))
+
+        self._add_instance_testcases_to_status_counts(instance, results)
+
+        status = (
+            f'{TwisterStatus.get_color(instance.status)}{str.upper(instance.status)}{Fore.RESET}'
+        )
+
+        def name_columns(instance, plat_width, ts_width):
+            # try to compensate for a platform name longer than plat_width
+            # by reclaiming extra spaces after the testsuite name, if any
+            plat_name = instance.platform.name
+            ts_name = instance.testsuite.name
+            plat_extra = max(0, len(plat_name) - plat_width)
+            ts_width = max(0, ts_width - plat_extra)
+            return f"{plat_name:<{plat_width}} {ts_name:<{ts_width}}"
+
+        if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
+            if instance.status == TwisterStatus.ERROR:
+                results.error_increment()
+            else:
+                results.failed_increment()
+            if self.options.verbose:
+                status += " " + instance.reason
+            else:
+                logger.error(
+                    f"{name_columns(instance, 25, 50)}"
+                    f" {status}: {instance.reason}"
+                )
+            if not self.options.verbose:
+                self.log_info_file(self.options.inline_logs)
+        elif instance.status == TwisterStatus.SKIP:
+            results.skipped_increment()
+        elif instance.status == TwisterStatus.FILTER:
+            results.filtered_configs_increment()
+        elif instance.status == TwisterStatus.PASS:
+            results.passed_increment()
+        elif instance.status == TwisterStatus.NOTRUN:
+            results.notrun_increment()
+        else:
+            logger.debug(f"Unknown status = {instance.status}")
+            status = Fore.YELLOW + "UNKNOWN" + Fore.RESET
+
+        if self.options.verbose:
+            if self.options.cmake_only:
+                more_info = "cmake"
+            elif instance.status in [TwisterStatus.SKIP, TwisterStatus.FILTER]:
+                more_info = instance.reason
+            else:
+                if instance.handler.ready and instance.run:
+                    more_info = instance.handler.type_str
+                    htime = instance.execution_time
+                    if instance.hardware_id:
+                        more_info += f": {instance.hardware_id},"
+                    if htime:
+                        more_info += f" {htime:.3f}s"
+                else:
+                    more_info = "build"
+
+                if ( instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]
+                     and hasattr(self.instance.handler, 'seed')
+                     and self.instance.handler.seed is not None ):
+                    more_info += "/seed: " + str(self.options.seed)
+                if instance.toolchain:
+                    more_info += f" <{instance.toolchain}>"
+            logger.info(
+                f"{results.done - results.filtered_static:>{total_tests_width}}/{total_to_do}"
+                f" {name_columns(instance, 25, 50)}"
+                f" {status} ({more_info})"
+            )
+
+            if self.options.verbose > 1:
+                for tc in self.instance.testcases:
+                    color = TwisterStatus.get_color(tc.status)
+                    logger.info(f'    {" ":<{total_tests_width+25+4}} {tc.name:<75} '
+                                f'{color}{str.upper(tc.status.value):<12}{Fore.RESET}'
+                                f'{" " + tc.reason if tc.reason else ""}')
+
+            if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
+                self.log_info_file(self.options.inline_logs)
+        else:
+            completed_perc = 0
+            if total_to_do > 0:
+                completed_perc = int(
+                    (float(results.done - results.filtered_static) / total_to_do) * 100
+                )
+
+            unfiltered = results.done - results.filtered_static
+            complete_section = (
+                f"{TwisterStatus.get_color(TwisterStatus.PASS)}"
+                f"{unfiltered:>4}/{total_to_do:>4}"
+                f"{Fore.RESET}  {completed_perc:>2}%"
+            )
+            notrun_section = self._colored_count(
+                results.notrun, TwisterStatus.NOTRUN, always=True
+            )
+            filtered_section = self._colored_count(
+                results.filtered_configs, TwisterStatus.SKIP
+            )
+            failed_section = self._colored_count(results.failed, TwisterStatus.FAIL)
+            error_section = self._colored_count(results.error, TwisterStatus.ERROR)
+            sys.stdout.write(
+                f"INFO    - Total complete: {complete_section}"
+                f"  built (not run): {notrun_section},"
+                f" filtered: {filtered_section},"
+                f" failed: {failed_section},"
+                f" error: {error_section}\r"
+            )
+        sys.stdout.flush()
+
+    @staticmethod
+    def cmake_assemble_args(extra_args, handler, conf_files, extra_conf_files, extra_overlay_confs,
+                            extra_dtc_overlay_files, cmake_extra_args,
+                            build_dir):
+        # Retain quotes around config options
+        config_options = [arg for arg in extra_args if arg.startswith(("CONFIG_", "SB_CONFIG_"))]
+        args = [arg for arg in extra_args if not arg.startswith(("CONFIG_", "SB_CONFIG_"))]
+
+        args_expanded = ["-D{}".format(a.replace('"', '\"')) for a in config_options]
+
+        if handler.ready:
+            args.extend(handler.args)
+
+        if conf_files:
+            args.append(f"CONF_FILE=\"{';'.join(conf_files)}\"")
+
+        if extra_conf_files:
+            args.append(f"EXTRA_CONF_FILE=\"{';'.join(extra_conf_files)}\"")
+
+        if extra_dtc_overlay_files:
+            args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
+
+        # merge overlay files into one variable
+        overlays = extra_overlay_confs.copy()
+
+        additional_overlay_path = os.path.join(
+            build_dir, "twister", "testsuite_extra.conf"
+        )
+        if os.path.exists(additional_overlay_path):
+            overlays.append(additional_overlay_path)
+
+        if overlays:
+            args.append(f"OVERLAY_CONFIG=\"{' '.join(overlays)}\"")
+
+        # Build the final argument list
+        args_expanded.extend(["-D{}".format(a.replace('"', '\"')) for a in cmake_extra_args])
+        args_expanded.extend(["-D{}".format(a.replace('"', '')) for a in args])
+
+        return args_expanded
+
+    def cmake(self, filter_stages=None):
+        if filter_stages is None:
+            filter_stages = []
+        args = []
+        for va in self.testsuite.extra_args.copy():
+            cond_args = va.split(":")
+            if cond_args[0] == "arch" and len(cond_args) == 3:
+                if self.instance.platform.arch == cond_args[1]:
+                    args.append(cond_args[2])
+            elif cond_args[0] == "platform" and len(cond_args) == 3:
+                if self.instance.platform.name == cond_args[1]:
+                    args.append(cond_args[2])
+            elif cond_args[0] == "simulation" and len(cond_args) == 3:
+                if self.instance.platform.simulation == cond_args[1]:
+                    args.append(cond_args[2])
+            else:
+                if cond_args[0] in ["arch", "platform", "simulation"]:
+                    logger.warning(f"Unexpected extra_args: {va}")
+                args.append(va)
+
+
+        args = self.cmake_assemble_args(
+            args,
+            self.instance.handler,
+            self.testsuite.conf_files,
+            self.testsuite.extra_conf_files,
+            self.testsuite.extra_overlay_confs,
+            self.testsuite.extra_dtc_overlay_files,
+            self.options.extra_args, # CMake extra args
+            self.instance.build_dir,
+        )
+        return self.run_cmake(args,filter_stages)
+
+    def build(self):
+        harness = HarnessImporter.get_harness(self.instance.testsuite.harness.capitalize())
+        build_result = self.run_build(['--build', self.build_dir])
+        try:
+            if harness:
+                harness.instance = self.instance
+                harness.build()
+        except ConfigurationError as error:
+            self.instance.status = TwisterStatus.ERROR
+            self.instance.reason = str(error)
+            logger.error(self.instance.reason)
+            return
+        return build_result
+
+    def post_build(self):
+        """Post-build processing against the freshly built artifacts.
+
+        This stage always runs after a successful build. It first resolves
+        simulator availability (which may mark the instance as not run), then
+        runs the optional post-build checks. The two concerns are handled by
+        dedicated methods.
+        """
+        self.check_simulator_availability()
+        return self.run_post_build_checks()
+
+    def check_simulator_availability(self):
+        """Mark the instance as not run if its simulator binary, resolved at
+        CMake configure time (recorded in CMakeCache), was not found.
+
+        Availability of such simulators (e.g. Arm FVP) cannot be determined
+        during test planning, so it is checked here once the build has run.
+        """
+        if self.instance.run and (sim_reason := self._simulator_unavailable_reason()):
+            logger.debug(f"Instance {self.instance.name} can't run: {sim_reason}")
+            self.instance.run = False
+            self.instance.status = TwisterStatus.NOTRUN
+            self.instance.reason = sim_reason
+            self.instance.add_missing_case_status(TwisterStatus.NOTRUN, sim_reason)
+
+    def run_post_build_checks(self):
+        """Run the optional post-build checks, gated by ``--post-build-checks``.
+
+        Each check named in ``POST_BUILD_CHECKS`` returns ``None`` on success
+        or a human-readable reason string on failure; the first failing check
+        short-circuits and fails the build.
+        """
+        if not self.options.post_build_checks:
+            return {"returncode": 0}
+
+        for check_name in self.POST_BUILD_CHECKS:
+            reason = getattr(self, check_name)()
+            if reason:
+                logger.error(
+                    f"Post-build check '{check_name}' failed for "
+                    f"{self.instance.name}: {reason}"
+                )
+                return {"returncode": 1, "reason": reason}
+        return {"returncode": 0}
+
+    def check_no_nested_git_repos(self):
+        """Post-build check: a test or platform must never clone a git tree
+        into its build directory. Detect any nested git repository (a ``.git``
+        directory or file) under the build directory and fail if found.
+        """
+        found = []
+        for dirpath, dirnames, filenames in os.walk(self.instance.build_dir):
+            if '.git' in dirnames:
+                found.append(os.path.join(dirpath, '.git'))
+                # Do not descend into the discovered repository.
+                dirnames.remove('.git')
+            if '.git' in filenames:
+                found.append(os.path.join(dirpath, '.git'))
+        if found:
+            return (
+                "git repository cloned into build directory during build: "
+                + ", ".join(found)
+            )
+        return None
+
+    def run(self):
+
+        instance = self.instance
+
+        if instance.handler.ready:
+            logger.debug(f"Reset instance status from '{instance.status}' to None before run.")
+            instance.status = TwisterStatus.NONE
+
+            if(self.options.seed is not None and instance.platform.name.startswith("native_")):
+                self.parse_generated()
+                if('CONFIG_FAKE_ENTROPY_NATIVE_SIM' in self.defconfig and
+                    self.defconfig['CONFIG_FAKE_ENTROPY_NATIVE_SIM'] == 'y'):
+                    instance.handler.seed = self.options.seed
+
+            if self.options.extra_test_args and instance.platform.arch == "posix":
+                instance.handler.extra_test_args = self.options.extra_test_args
+
+            harness: Harness = HarnessImporter.get_harness(instance.testsuite.harness.capitalize())
+            try:
+                harness.configure(instance)
+            except ConfigurationError as error:
+                instance.status = TwisterStatus.ERROR
+                instance.reason = str(error)
+                logger.error(instance.reason)
+                return
+
+            # A sidecar (selected with the `sidecar:` field, or attached by
+            # twister e.g. for ivshmem coverage) provisions a host-side resource
+            # around the run, e.g. a virtiofsd daemon or an ivshmem backing file.
+            # It is set up before the test executes by whichever path runs it --
+            # a harness that executes the test itself, or the handler -- and torn
+            # down afterwards. Teardown always runs once the sidecar has been
+            # configured, including when setup() failed part way through, so a
+            # sidecar never leaks what it already provisioned.
+            try:
+                sidecar = SidecarImporter.get_sidecar(instance.sidecar)
+            except ValueError as error:
+                instance.status = TwisterStatus.ERROR
+                instance.reason = str(error)
+                logger.error(instance.reason)
+                return
+            if sidecar is not None:
+                sidecar.configure(instance)
+
+            try:
+                # Provision on its own, before anything executes the test: a
+                # sidecar must never be short-circuited away by how the test is
+                # run. setup() reports whether execution should proceed at all.
+                proceed = sidecar.setup() if sidecar is not None else True
+
+                # If the harness does not handle execution itself, delegate to
+                # the handler.
+                if proceed and not harness.run(instance.handler.get_test_timeout()):
+                    instance.handler.handle(harness)
+            finally:
+                if sidecar is not None:
+                    sidecar.teardown()
+
+        sys.stdout.flush()
+
+    def gather_metrics(self, instance: TestInstance):
+        build_result = {"returncode": 0}
+        if self.options.create_rom_ram_report:
+            build_result = self.run_build(['--build', self.build_dir, "--target", "footprint"])
+        if self.options.enable_size_report and not self.options.cmake_only:
+            self.calc_size(instance=instance, from_buildlog=self.options.footprint_from_buildlog)
+        else:
+            instance.metrics["used_ram"] = 0
+            instance.metrics["used_rom"] = 0
+            instance.metrics["available_rom"] = 0
+            instance.metrics["available_ram"] = 0
+        return build_result
+
+    def _cmake_cache_path(self) -> str:
+        """Path to the CMakeCache.txt holding this instance's build variables.
+
+        For sysbuild builds the application image (and therefore variables
+        such as the simulator executable) lives in the default domain's build
+        directory rather than the top-level build directory.
+        """
+        build_dir = self.build_dir
+        if self.instance.sysbuild:
+            domain_path = os.path.join(build_dir, "domains.yaml")
+            try:
+                domains = Domains.from_file(domain_path)
+            except FileNotFoundError:
+                return os.path.join(build_dir, "CMakeCache.txt")
+            domain_build = domains.get_default_domain().build_dir
+            if not os.path.isabs(domain_build):
+                domain_build = os.path.normpath(os.path.join(build_dir, domain_build))
+            build_dir = domain_build
+        return os.path.join(build_dir, "CMakeCache.txt")
+
+    def _simulator_unavailable_reason(self) -> str | None:
+        """Return a reason string if the instance's simulator binary was not
+        found at CMake configure time, otherwise None.
+
+        Some simulators (e.g. Arm FVP) resolve their executable at configure
+        time via find_program(), and the binary that gets used can vary with
+        the build configuration, so their availability cannot be determined
+        during test planning. The result is recorded in CMakeCache, which is
+        inspected here after the build.
+        """
+        simulator = self.instance.platform.simulator_by_name(self.options.sim_name)
+        if simulator is None:
+            return None
+
+        cmake_var = SIM_PROGRAM_CMAKE_VARS.get(simulator.name)
+        if cmake_var is None:
+            return None
+
+        try:
+            cache = CMakeCache.from_file(self._cmake_cache_path())
+        except FileNotFoundError:
+            return None
+
+        value = cache.get(cmake_var)
+        if value is None or str(value).endswith("-NOTFOUND"):
+            return f"{simulator.name} simulator binary not found"
+
+        return None
+
+    @staticmethod
+    def calc_size(instance: TestInstance, from_buildlog: bool):
+        if instance.status not in [TwisterStatus.ERROR, TwisterStatus.FAIL, TwisterStatus.SKIP]:
+            if instance.platform.type not in ["native", "qemu", "unit"]:
+                generate_warning = bool(instance.platform.type == "mcu")
+                size_calc = instance.calculate_sizes(
+                    from_buildlog=from_buildlog,
+                    generate_warning=generate_warning
+                )
+                instance.metrics["used_ram"] = size_calc.get_used_ram()
+                instance.metrics["used_rom"] = size_calc.get_used_rom()
+                instance.metrics["available_rom"] = size_calc.get_available_rom()
+                instance.metrics["available_ram"] = size_calc.get_available_ram()
+            else:
+                instance.metrics["used_ram"] = 0
+                instance.metrics["used_rom"] = 0
+                instance.metrics["available_rom"] = 0
+                instance.metrics["available_ram"] = 0
+            instance.metrics["handler_time"] = instance.execution_time
+
+    def _are_all_required_apps_success(
+            self, instance: TestInstance, processing_ready: dict[str, TestInstance]
+    ) -> bool:
+        """Verify that all required applications were successfully built."""
+        found_failed_app = False
+        for required_app in instance.required_applications:
+            inst = processing_ready.get(required_app)
+            if inst.status not in (TwisterStatus.PASS, TwisterStatus.NOTRUN):
+                logger.debug(f"{required_app}: Required application failed: {inst.reason}")
+                found_failed_app = True
+        return not found_failed_app
+
+    def ensure_required_apps_ready(self, processing_ready: dict[str, TestInstance]) -> bool:
+        """Check that all required applications have finished building.
+
+        Raises NoRequiredApplicationNotReadyException if any required application
+        has not yet completed, deferring this instance for later processing.
+        Returns False and marks the instance as SKIP if any required application
+        failed. Returns True when all required applications are available and successful.
+        """
+        if not self.instance.required_applications:
+            return True
+
+        instance = self.instance
+        for required_app in instance.required_applications:
+            if processing_ready.get(required_app) is None:
+                raise NoRequiredApplicationNotReadyException(
+                    f"Required application '{required_app}' is not ready"
+                )
+
+        if not self._are_all_required_apps_success(instance, processing_ready):
+            instance.status = TwisterStatus.SKIP
+            for tc in instance.testcases:
+                tc.status = TwisterStatus.SKIP
+            instance.reason = "Required application failed"
+            instance.required_applications = []
+            return False
+
+        # required applications are ready, clear to not process them later
+        instance.required_applications = []
+        return True
+
+    @contextlib.contextmanager
+    def reserve_hardware(self) -> Iterator[bool]:
+        """Context manager for reserving hardware for a test instance.
+
+        Yields True if the hardware was successfully reserved, False otherwise.
+        The hardware is automatically released when the context is exited.
+        """
+        if self.instance.handler.type_str == "device":
+            hwmgr = HardwareReservationManager(
+                self.env.hwm, self.instance.platform.name, self.testsuite.harness_config
+            )
+            try:
+                hwmgr.reserve_duts()
+                self.instance.reserved_duts = hwmgr.get_reserved_duts_as_compound_hardware_data()
+                self.instance.update_reserved_duts_with_required_applications()
+                if self.instance.reserved_duts:
+                    self.instance.hardware_id = "+".join(
+                        [str(dut.id) for dut in self.instance.reserved_duts]
+                    )
+                yield True
+            except TwisterException as error:
+                self.instance.status = TwisterStatus.FAIL
+                self.instance.reason = str(error)
+                logger.error(self.instance.reason)
+                yield False
+            finally:
+                hwmgr.release_duts(
+                    failed=self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]
+                )
+                self.instance.reserved_duts = []
+
+        else:
+            # No hardware reservation needed for non-device handlers
+            for _ in range(1 + len(self.testsuite.harness_config.required_devices)):
+                self.instance.reserved_duts.append(
+                    CompoundHardwareData(platform=self.instance.platform.name)
+                )
+            self.instance.update_reserved_duts_with_required_applications()
+            yield True
+
+
+class TwisterRunner:
+
+    def __init__(self, instances, suites, env) -> None:
+        self.options = env.options
+        self.env = env
+        self.instances: dict[str, TestInstance] = instances
+        self.suites: dict[str, TestSuite] = suites
+        self.jobs = 1
+        self.results = None
+        self.jobserver = None
+
+    def run(self):
+
+        retries = self.options.retry_failed + 1
+
+        BaseManager.register('deque', deque, exposed=['append', 'appendleft', 'pop'])
+        BaseManager.register('get_dict', dict)
+        manager = BaseManager()
+        manager.start()
+
+        self.results = ExecutionCounter(total=len(self.instances))
+        self.iteration = 0
+        processing_queue: deque = manager.deque()
+        processing_ready: dict[str, TestInstance] = manager.get_dict()
+
+        # Set number of jobs
+        if self.options.jobs:
+            self.jobs = self.options.jobs
+        elif self.options.build_only:
+            self.jobs = mp.cpu_count() * 2
+        else:
+            self.jobs = mp.cpu_count()
+
+        if sys.platform == "linux":
+            if os.name == 'posix':
+                self.jobserver = GNUMakeJobClient.from_environ(jobs=self.options.jobs)
+                if not self.jobserver:
+                    self.jobserver = GNUMakeJobServer(self.jobs)
+                elif self.jobserver.jobs:
+                    self.jobs = self.jobserver.jobs
+            # TODO: Implement this on windows/mac also
+            else:
+                self.jobserver = JobClient()
+
+            logger.info(f"JOBS: {self.jobs}")
+
+        self.update_counting_before_pipeline()
+
+        while True:
+            self.results.iteration_increment()
+
+            if self.results.iteration > 1:
+                logger.info(f"{self.results.iteration} Iteration:")
+                time.sleep(self.options.retry_interval)  # waiting for the system to settle down
+                self.results.done = self.results.total - self.results.failed
+                self.results.failed = 0
+                if self.options.retry_build_errors:
+                    self.results.done -= self.results.error
+                    self.results.error = 0
+            else:
+                self.results.done = self.results.filtered_static + self.results.skipped
+
+            self.execute(processing_queue, processing_ready)
+
+            for inst in processing_ready.values():
+                inst.metrics["handler_time"] = inst.execution_time
+                self.instances[inst.name] = inst
+
+            print("")
+
+            retry_errors = False
+            if self.results.error and self.options.retry_build_errors:
+                retry_errors = True
+
+            retries = retries - 1
+            if retries == 0 or ( self.results.failed == 0 and not retry_errors):
+                break
+
+        self.show_brief()
+
+    def update_counting_before_pipeline(self):
+        '''
+        Updating counting before pipeline is necessary because statically filtered
+        test instance never enter the pipeline. While some pipeline output needs
+        the static filter stats. So need to prepare them before pipeline starts.
+        '''
+        for instance in self.instances.values():
+            if instance.status == TwisterStatus.FILTER and instance.reason != 'runtime filter':
+                self.results.filtered_static_increment()
+                self.results.filtered_configs_increment()
+                self.results.filtered_cases_increment(len(instance.testsuite.testcases))
+                self.results.cases_increment(len(instance.testsuite.testcases))
+            elif instance.status == TwisterStatus.SKIP and "overflow" not in instance.reason:
+                self.results.skipped_increment()
+                self.results.skipped_cases_increment(len(instance.testsuite.testcases))
+                self.results.cases_increment(len(instance.testsuite.testcases))
+            elif instance.status == TwisterStatus.ERROR:
+                self.results.error_increment()
+
+    def show_brief(self):
+        logger.info(
+            f"{len(self.suites)} test scenarios ({len(self.instances)} configurations) selected,"
+            f" {self.results.filtered_configs} configurations filtered"
+            f" ({self.results.filtered_static} by static filter,"
+            f" {self.results.filtered_configs - self.results.filtered_static} at runtime)."
+        )
+
+    def add_tasks_to_queue(
+        self,
+        processing_queue: deque,
+        build_only=False,
+        test_only=False,
+        retry_build_errors=False
+    ):
+        for instance in self.instances.values():
+            if build_only:
+                instance.run = False
+
+            no_retry_statuses = [
+                TwisterStatus.PASS,
+                TwisterStatus.SKIP,
+                TwisterStatus.FILTER,
+                TwisterStatus.NOTRUN
+            ]
+            if not retry_build_errors:
+                no_retry_statuses.append(TwisterStatus.ERROR)
+
+            if instance.status not in no_retry_statuses:
+                logger.debug(f"adding {instance.name}")
+                if instance.status != TwisterStatus.NONE:
+                    instance.retries += 1
+                instance.status = TwisterStatus.NONE
+                # Previous states should be removed from the stats
+                if self.results.iteration > 1:
+                    ProjectBuilder._add_instance_testcases_to_status_counts(
+                        instance,
+                        self.results,
+                        decrement=True
+                    )
+
+                # Check if cmake package_helper script can be run in advance.
+                instance.filter_stages = []
+                if instance.testsuite.filter:
+                    instance.filter_stages = self.get_cmake_filter_stages(
+                        instance.testsuite.filter,
+                        expr_parser.reserved.keys()
+                    )
+
+                if not instance.testsuite.build:
+                    if instance.run:
+                        processing_queue.append({"op": "run", "test": instance})
+                    else:
+                        instance.status = TwisterStatus.NOTRUN
+                        instance.reason = "Nothing to build"
+                        processing_queue.append({"op": "report", "test": instance})
+                elif test_only and instance.run:
+                    processing_queue.append({"op": "run", "test": instance})
+                elif instance.filter_stages and "full" not in instance.filter_stages:
+                    processing_queue.append({"op": "filter", "test": instance})
+                else:
+                    cache_file = os.path.join(instance.build_dir, "CMakeCache.txt")
+                    if os.path.exists(cache_file) and self.env.options.aggressive_no_clean:
+                        processing_queue.append({"op": "build", "test": instance})
+                    else:
+                        processing_queue.append({"op": "cmake", "test": instance})
+
+    def process_tasks(
+            self, processing_queue: deque, processing_ready: dict[str, TestInstance],
+            lock, results: ExecutionCounter
+    ) -> bool:
+        while True:
+            try:
+                task = processing_queue.pop()
+            except IndexError:
+                break
+            else:
+                instance: TestInstance = task['test']
+                pb = ProjectBuilder(instance, self.env, self.jobserver)
+                pb.process(processing_queue, processing_ready, task, lock, results)
+                if (
+                    self.env.options.quit_on_failure
+                    and pb.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]
+                ):
+                    try:
+                        while True:
+                            processing_queue.pop()
+                    except IndexError:
+                        pass
+        return True
+
+    def pipeline_mgr(self, processing_queue: deque, processing_ready: dict[str, TestInstance],
+                     lock, results: ExecutionCounter):
+        try:
+            if sys.platform == 'linux':
+                with self.jobserver.get_job():
+                    return self.process_tasks(processing_queue, processing_ready, lock, results)
+            else:
+                return self.process_tasks(processing_queue, processing_ready, lock, results)
+        except Exception as e:
+            logger.error(f"General exception: {e}\n{traceback.format_exc()}")
+            sys.exit(1)
+
+    def execute(self, processing_queue: deque, processing_ready: dict[str, TestInstance]):
+        lock = Lock()
+        logger.info("Adding tasks to the queue...")
+        self.add_tasks_to_queue(processing_queue, self.options.build_only, self.options.test_only,
+                                retry_build_errors=self.options.retry_build_errors)
+        logger.info("Added initial list of jobs to queue")
+
+        processes = []
+
+        for _ in range(self.jobs):
+            p = Process(target=self.pipeline_mgr,
+                        args=(processing_queue, processing_ready, lock, self.results, ))
+            processes.append(p)
+            p.start()
+        logger.debug(f"Launched {self.jobs} jobs")
+
+        try:
+            for p in processes:
+                p.join()
+                if p.exitcode != 0:
+                    logger.error(f"Process {p.pid} failed, aborting execution")
+                    for proc in processes:
+                        proc.terminate()
+                    sys.exit(1)
+        except KeyboardInterrupt:
+            logger.info("Execution interrupted")
+            for p in processes:
+                p.terminate()
+
+    @staticmethod
+    def get_cmake_filter_stages(filt, logic_keys):
+        """Analyze filter expressions from test yaml
+        and decide if dts and/or kconfig based filtering will be needed.
+        """
+        dts_required = False
+        kconfig_required = False
+        full_required = False
+        filter_stages = []
+
+        # Compress args in expressions like "function('x', 'y')"
+        # so they are not split when splitting by whitespaces
+        filt = filt.replace(", ", ",")
+        # Remove logic words
+        for k in logic_keys:
+            filt = filt.replace(f"{k} ", "")
+        # Remove brackets
+        filt = filt.replace("(", "")
+        filt = filt.replace(")", "")
+        # Splite by whitespaces
+        filt = filt.split()
+        for expression in filt:
+            if expression.startswith("dt_"):
+                dts_required = True
+            elif expression.startswith("CONFIG"):
+                kconfig_required = True
+            else:
+                full_required = True
+
+        if full_required:
+            return ["full"]
+        if dts_required:
+            filter_stages.append("dts")
+        if kconfig_required:
+            filter_stages.append("kconfig")
+
+        return filter_stages

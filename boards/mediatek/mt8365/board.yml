@@ -1,0 +1,6 @@
+boards:
+  - name: mt8365
+    full_name: MT8365 ADSP
+    vendor: mediatek
+    socs:
+      - name: mt8365

@@ -1,0 +1,107 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA LVD (Low-voltage detection) Controller
+
+  The following example displays the minimum node layout:
+
+    lvd1: lvd@4001e0e0 {
+            compatible = "renesas,ra-lvd";
+            reg = <0x4001e0e0 0x02>;
+            channel = <1>;
+            status = "disabled";
+    };
+
+  Enabling the comparator controller node requires setting the minimum
+  default configuration of the comparator. This includes selecting the
+  positive and negative inputs.
+  Note: negative input of this controller is selected through specific
+  voltage threshold levels, and positive input is Vcc
+
+    &lvd1 {
+          lvd-action = "maskable-interrupt";
+          voltage_level = <384>;
+          lvd-trigger = "rising";
+          reset-negation-timing = <0>;
+          status = "okay";
+    };
+
+compatible: "renesas,ra-lvd"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+  voltage-level:
+    required: true
+    type: int
+    description: |
+      Specifies the voltage detection level for each channel.
+      This value can be mapped to voltage level that is shown in the HWM.
+      Example:
+        On RA8P1:
+        - To set the voltage detection level to 3.86 V, specify '0x03'.
+        - To set the voltage detection level to 1.90 V, specify '0x0C'.
+        ...
+      Note:
+        - Do not set to a value that is prohibited in the HWM.
+      For specific voltage detection support levels of each RA MCU series,
+      please refer to the HWM.
+
+  noise-filter:
+    type: int
+    enum: [1, 2, 4, 8, 16]
+    default: 16
+    description: |
+      Select the LOCO divisor for the hardware digital debounce filter.
+      Larger divisors provide a longer debounce and take longer for the output to update.
+      Set to 1 to disable the filter (or if the filter is not supported).
+
+  lvd-trigger:
+    default: "falling"
+    type: string
+    enum:
+      - "rising"
+      - "falling"
+      - "both"
+    description: |
+      Specifies the voltage detection conditions and influences interrupt conditions.
+
+  reset-only:
+    type: boolean
+    description: |
+      This property indicate that the channel only support the reset action
+      (no interrupt and monitoring).
+
+  lvd-action:
+    required: true
+    type: string
+    enum:
+      - "non-maskable-interrupt"
+      - "maskable-interrupt"
+      - "reset"
+      - "no-action"
+    description: |
+      Choose the action to be taken when the LVD is detected.
+      If "reset-only" properties is true, action will always be "reset".
+
+  reset-negation-timing:
+    type: int
+    default: 0
+    enum: [0, 1]
+    description: |
+      Specifies the time when the system release (negate) from reset
+      When action is "reset", trigger is "falling" (system reset when Vcc < Vdet):
+        - 0: Reset negation occurs after Vcc > Vdet + stabilization time.
+        - 1: Reset negation occurs after assertion of the reset + stabilization time.
+      When action is "reset", trigger is "rising" (system reset when Vcc > Vdet):
+        - 0: Reset negation occurs after Vcc < Vdet - stabilization time.
+        - 1: DO NOT set this value.
+      When action is other than "reset", this property is ignored.

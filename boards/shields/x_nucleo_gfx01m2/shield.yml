@@ -1,0 +1,6 @@
+shield:
+  name: x_nucleo_gfx01m2
+  full_name: X-NUCLEO-GFX01M2 Display Shield
+  vendor: st
+  supported_features:
+    - display

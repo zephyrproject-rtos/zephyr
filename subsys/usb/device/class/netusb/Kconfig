@@ -1,0 +1,94 @@
+# netusb configuration options
+
+# Copyright (c) 2017 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "USB Device Networking support"
+
+config USB_DEVICE_NETWORK
+	bool
+	select NET_L2_ETHERNET
+
+config USB_DEVICE_NETWORK_ECM
+	bool "USB Ethernet Control Model (ECM) Networking device"
+	select USB_DEVICE_NETWORK
+	select USB_COMPOSITE_DEVICE
+	help
+	  Ethernet Control Model (ECM) is a part of  Communications Device
+	  Class (CDC) USB protocol specified by USB-IF.
+
+config USB_DEVICE_NETWORK_EEM
+	bool "USB Ethernet Emulation Model (EEM) Networking device"
+	select USB_DEVICE_NETWORK
+	help
+	  Ethernet Emulation Model (EEM) is part of  Communications Device
+	  Class (CDC) USB protocol and can be used to encapsulate Ethernet
+	  frames for transport over USB.
+
+config USB_DEVICE_NETWORK_RNDIS
+	bool "USB Remote NDIS (RNDIS) Networking device"
+	select USB_DEVICE_NETWORK
+	select USB_COMPOSITE_DEVICE
+	help
+	  Remote NDIS (RNDIS) is commonly used Microsoft vendor protocol with
+	  Specification available from Microsoft web site.
+
+if USB_DEVICE_NETWORK_ECM
+
+config CDC_ECM_INTERRUPT_EP_MPS
+	int
+	default 16
+	help
+	  CDC ECM class interrupt endpoint size
+
+config CDC_ECM_BULK_EP_MPS
+	int
+	default 512 if USB_DC_HAS_HS_SUPPORT
+	default 64
+	help
+	  CDC ECM class bulk endpoint size
+
+config USB_DEVICE_NETWORK_ECM_MAC
+	string "USB ECM Host OS MAC Address"
+	default "00005E005301"
+	help
+	  MAC Host OS Address string.
+	  MAC Address which would be assigned to network device, created in
+	  the Host's Operating System. Use RFC 7042 Documentation values as
+	  default MAC.
+
+endif # USB_DEVICE_NETWORK_ECM
+
+config CDC_EEM_BULK_EP_MPS
+	int
+	default 512 if USB_DC_HAS_HS_SUPPORT
+	default 64
+	depends on USB_DEVICE_NETWORK_EEM
+
+if USB_DEVICE_NETWORK_RNDIS
+
+config RNDIS_INTERRUPT_EP_MPS
+	int
+	default 16
+	help
+	  RNDIS interrupt endpoint size
+
+config RNDIS_BULK_EP_MPS
+	int
+	default 512 if USB_DC_HAS_HS_SUPPORT
+	default 64
+	help
+	  RNDIS bulk endpoint size
+
+endif # USB_DEVICE_NETWORK_RNDIS
+
+if USB_DEVICE_NETWORK
+
+module = USB_DEVICE_NETWORK
+module-dep = LOG
+module-str = USB Device Network log level
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # USB_DEVICE_NETWORK
+
+endmenu # USB Device Networking support

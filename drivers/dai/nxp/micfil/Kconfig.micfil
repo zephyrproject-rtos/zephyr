@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_NXP_MICFIL
+	bool "NXP Pulse Density Modulation Microphone Interface (MICFIL) driver"
+	default y
+	depends on DT_HAS_NXP_DAI_MICFIL_ENABLED
+	select PINCTRL
+	help
+		Select this to enable NXP PDM MICFIL driver.

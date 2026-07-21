@@ -1,0 +1,12 @@
+# Copyright 2024 Daniel DeGrasse <daniel@degrasse.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SECOND_CORE_MCUX_LAUNCHER
+	bool "Load minimal application to primary core to boot secondary one"
+	default y if (SOC_MIMXRT1176_CM4 || SOC_MIMXRT1166_CM4)
+	depends on SOC_SERIES_IMXRT11XX
+	help
+	  Load a minimal application to the primary core to boot the secondary
+	  one. The primary core will be loaded with the samples/basic/minimal
+	  application, and the appropriate configuration will be set to
+	  boot the secondary core during startup.

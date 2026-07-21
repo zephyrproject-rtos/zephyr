@@ -1,0 +1,38 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32H2
+	bool
+	select SOC_FAMILY_ESPRESSIF_ESP32
+
+config SOC_ESP32_H2_MINI_H2
+	bool
+	select SOC_ESP32H2
+
+config SOC_ESP32_H2_MINI_H4
+	bool
+	select SOC_ESP32H2
+
+config SOC_ESP32_H2_WROOM_02C_H2
+	bool
+	select SOC_ESP32H2
+
+config SOC_ESP32_H2_WROOM_02C_H4
+	bool
+	select SOC_ESP32H2
+
+config SOC_ESP32H2
+	bool
+	select SOC_SERIES_ESP32H2
+
+config SOC_SERIES
+	default "esp32h2" if SOC_SERIES_ESP32H2
+
+config SOC
+	default "esp32h2" if SOC_ESP32H2
+
+config SOC_PART_NUMBER
+	default "ESP32_H2_MINI_1_H2S" if SOC_ESP32_H2_MINI_H2
+	default "ESP32_H2_MINI_1_H4S" if SOC_ESP32_H2_MINI_H4
+	default "ESP32_H2_WROOM_02C_H2S" if SOC_ESP32_H2_WROOM_02C_H2
+	default "ESP32_H2_WROOM_02C_H4S" if SOC_ESP32_H2_WROOM_02C_H4

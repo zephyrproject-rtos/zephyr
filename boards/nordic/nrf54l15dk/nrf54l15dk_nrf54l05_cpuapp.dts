@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54l05_cpuapp.dtsi>
+#include "nrf54l_05_10_15_cpuapp_common.dtsi"
+
+/ {
+	compatible = "nordic,nrf54l15dk_nrf54l05-cpuapp";
+	model = "Nordic nRF54L15 DK nRF54L05 Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+/* Include default memory partition configuration file */
+#include <vendor/nordic/nrf54l05_cpuapp_partition.dtsi>

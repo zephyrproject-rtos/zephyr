@@ -1,0 +1,21 @@
+# Texas Instruments SimpleLink Family
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2017 Zephyr Contributors
+
+if SOC_FAMILY_TI_SIMPLELINK
+
+rsource "*/Kconfig"
+
+config HAS_TI_CCFG
+	bool
+	help
+	  Selected when CCFG (Customer Configuration) registers
+	  appear at the end of flash
+
+config TI_SIMPLELINK_DYNAMIC_DPL_OBJECTS
+	bool
+	help
+	  Turn on dynamic memory allocation for DPL objects. Reserves
+	  extra memory for this.
+
+endif # SOC_FAMILY_TI_SIMPLELINK

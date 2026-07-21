@@ -1,0 +1,6 @@
+board:
+  name: frdm_mcxa344
+  full_name: FRDM-MCXA344
+  vendor: nxp
+  socs:
+  - name: mcxa344

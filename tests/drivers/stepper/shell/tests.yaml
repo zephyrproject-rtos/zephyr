@@ -1,0 +1,11 @@
+common:
+  tags:
+    - drivers
+    - stepper
+    - shell
+
+tests:
+  drivers.stepper.shell:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

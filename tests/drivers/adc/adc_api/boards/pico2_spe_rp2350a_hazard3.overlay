@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025 KWS Computersysteme Gmbh
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Pico2-SPE is compatible with the Pico-SPE , so reuse. */
+#include "rpi_pico.overlay"
+
+&adc {
+	status = "okay";
+};

@@ -1,0 +1,24 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	soc {
+		sram_nocache: memory@21070000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x21070000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "SRAMNOCACHE";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		};
+	};
+};
+
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x21000000 DT_SIZE_K(448)>;
+};
+
+tst_dma0: &edma {};

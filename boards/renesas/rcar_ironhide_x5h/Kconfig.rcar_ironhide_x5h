@@ -1,0 +1,5 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RCAR_IRONHIDE_X5H
+	select SOC_R8A78000_R52 if BOARD_RCAR_IRONHIDE_X5H_R8A78000_R52

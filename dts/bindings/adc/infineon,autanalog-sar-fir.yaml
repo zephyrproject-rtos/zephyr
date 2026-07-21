@@ -1,0 +1,118 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon AutAnalog SAR ADC FIR Filter
+
+description: |
+  FIR filter configuration for the Infineon AutAnalog SAR ADC.
+
+  Up to 2 FIR filters (64-tap each) are available for post-processing of ADC
+  conversion results. Each filter can be independently configured with its own
+  source channel, coefficient set, and output options.
+
+  FIR filter nodes must be named "fir-0" and/or "fir-1" under the parent
+  SAR ADC node, corresponding to FIR filter hardware indices 0 and 1
+  respectively.
+
+compatible: "infineon,autanalog-sar-fir"
+
+properties:
+  channel-source:
+    type: int
+    default: 0
+    description: |
+      Selects the ADC channel to use as the FIR filter input.
+      If omitted (defaults to DISABLED), the channel source must be
+      configured via the pseudo-channel's zephyr,input-positive property
+      or at runtime using the vendor-specific API.
+      Use IFX_AUTANALOG_SAR_FIR_CH_* constants from
+      <dt-bindings/adc/infineon-autanalog-sar.h>.
+        IFX_AUTANALOG_SAR_FIR_CH_DISABLED (0)  - Disabled
+        IFX_AUTANALOG_SAR_FIR_CH_GPIO0    (1)  - GPIO channel 0
+        IFX_AUTANALOG_SAR_FIR_CH_GPIO1    (2)  - GPIO channel 1
+        IFX_AUTANALOG_SAR_FIR_CH_GPIO2    (3)  - GPIO channel 2
+        IFX_AUTANALOG_SAR_FIR_CH_GPIO3    (4)  - GPIO channel 3
+        IFX_AUTANALOG_SAR_FIR_CH_GPIO4    (5)  - GPIO channel 4
+        IFX_AUTANALOG_SAR_FIR_CH_GPIO5    (6)  - GPIO channel 5
+        IFX_AUTANALOG_SAR_FIR_CH_GPIO6    (7)  - GPIO channel 6
+        IFX_AUTANALOG_SAR_FIR_CH_GPIO7    (8)  - GPIO channel 7
+        IFX_AUTANALOG_SAR_FIR_CH_MUX0     (9)  - MUX channel 0
+        IFX_AUTANALOG_SAR_FIR_CH_MUX1     (10) - MUX channel 1
+        IFX_AUTANALOG_SAR_FIR_CH_MUX2     (11) - MUX channel 2
+        IFX_AUTANALOG_SAR_FIR_CH_MUX3     (12) - MUX channel 3
+        IFX_AUTANALOG_SAR_FIR_CH_MUX4     (13) - MUX channel 4
+        IFX_AUTANALOG_SAR_FIR_CH_MUX5     (14) - MUX channel 5
+        IFX_AUTANALOG_SAR_FIR_CH_MUX6     (15) - MUX channel 6
+        IFX_AUTANALOG_SAR_FIR_CH_MUX7     (16) - MUX channel 7
+        IFX_AUTANALOG_SAR_FIR_CH_MUX8     (17) - MUX channel 8
+        IFX_AUTANALOG_SAR_FIR_CH_MUX9     (18) - MUX channel 9
+        IFX_AUTANALOG_SAR_FIR_CH_MUX10    (19) - MUX channel 10
+        IFX_AUTANALOG_SAR_FIR_CH_MUX11    (20) - MUX channel 11
+        IFX_AUTANALOG_SAR_FIR_CH_MUX12    (21) - MUX channel 12
+        IFX_AUTANALOG_SAR_FIR_CH_MUX13    (22) - MUX channel 13
+        IFX_AUTANALOG_SAR_FIR_CH_MUX14    (23) - MUX channel 14
+        IFX_AUTANALOG_SAR_FIR_CH_MUX15    (24) - MUX channel 15
+
+  coefficients:
+    type: array
+    description: |
+      Array of FIR filter coefficients in Q1.15 fixed-point format.
+      The number of elements determines the filter tap count (1 to 64).
+
+      Values use two's complement notation with the decimal point fixed to
+      the right of the most significant bit. Valid range:
+      -32768 (approximately -1.0) to 32767 (approximately +1.0) with a
+      resolution of 1/32768.
+
+      Examples:
+        0.25  = 0x2000 (8192)
+        -0.25 = 0xFFFFE000 (-8192, sign-extended to 32-bit cell)
+        0.5   = 0x4000 (16384)
+
+  shift-sel:
+    type: int
+    default: 0
+    description: |
+      FIR filter output scaling. Shifts the FIR output right by the
+      specified number of bits. Valid range: 0 to 16.
+
+  wait-tap-init:
+    type: boolean
+    description: |
+      If set, the FIR filter waits for (tap-count) updates before
+      outputting first valid data. If not set, the FIR generates a
+      trigger after each update.
+
+  fir-limit:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4]
+    description: |
+      Range detection configuration for the FIR filter output.
+      Use IFX_AUTANALOG_SAR_LIMIT_* constants from
+      <dt-bindings/adc/infineon-autanalog-sar.h>.
+        IFX_AUTANALOG_SAR_LIMIT_DISABLED (0) - Disabled (default)
+        IFX_AUTANALOG_SAR_LIMIT_STC0     (1) - Limit config 0
+        IFX_AUTANALOG_SAR_LIMIT_STC1     (2) - Limit config 1
+        IFX_AUTANALOG_SAR_LIMIT_STC2     (3) - Limit config 2
+        IFX_AUTANALOG_SAR_LIMIT_STC3     (4) - Limit config 3
+
+  fifo-sel:
+    type: int
+    default: 0
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    description: |
+      FIFO selection for routing FIR filter output.
+      Use IFX_AUTANALOG_SAR_FIFO_* constants from
+      <dt-bindings/adc/infineon-autanalog-sar.h>.
+        IFX_AUTANALOG_SAR_FIFO_DISABLED (0) - Disabled (default)
+        IFX_AUTANALOG_SAR_FIFO_0        (1) - FIFO 0
+        IFX_AUTANALOG_SAR_FIFO_1        (2) - FIFO 1
+        IFX_AUTANALOG_SAR_FIFO_2        (3) - FIFO 2
+        IFX_AUTANALOG_SAR_FIFO_3        (4) - FIFO 3
+        IFX_AUTANALOG_SAR_FIFO_4        (5) - FIFO 4
+        IFX_AUTANALOG_SAR_FIFO_5        (6) - FIFO 5
+        IFX_AUTANALOG_SAR_FIFO_6        (7) - FIFO 6
+        IFX_AUTANALOG_SAR_FIFO_7        (8) - FIFO 7

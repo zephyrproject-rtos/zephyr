@@ -1,0 +1,13 @@
+common:
+  sysbuild: true
+  build_only: true
+  tags:
+    - sysbuild
+    - pytest
+  platform_allow:
+    - nrf9160dk/nrf9160
+  integration_platforms:
+    - nrf9160dk/nrf9160
+
+tests:
+  buildsystem.sysbuild.merged.hex: {}

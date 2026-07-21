@@ -1,0 +1,31 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_NXP_ENET_QOS
+	bool "NXP ENET QoS MDIO driver"
+	default y
+	depends on DT_HAS_NXP_ENET_QOS_MDIO_ENABLED
+	help
+	  Enable NXP ENET QOS (Quality of Service) MDIO driver.
+
+if MDIO_NXP_ENET_QOS
+
+config MDIO_NXP_ENET_QOS_RECHECK_COUNT
+	int "Number of times to recheck MDIO transaction status"
+	default 3
+	help
+	  Number of times that the driver should recheck the status
+	  of an MDIO bus transaction before timing out
+	  Timeout time is:
+	  CONFIG_MDIO_NXP_ENET_QOS_RECHECK_TIME * CONFIG_MDIO_NXP_ENET_QOS_RECHECK_COUNT
+
+config MDIO_NXP_ENET_QOS_RECHECK_TIME
+	int "Time between rechecks of transaction status (us)"
+	default 100
+	help
+	  The amount of time in microseconds that the driver should
+	  busy wait between checks of the MDIO transaction status.
+	  Timeout time is:
+	  CONFIG_MDIO_NXP_ENET_QOS_RECHECK_TIME * CONFIG_MDIO_NXP_ENET_QOS_RECHECK_COUNT
+
+endif

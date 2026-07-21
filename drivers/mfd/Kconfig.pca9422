@@ -1,0 +1,11 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_PCA9422
+	bool "NXP PCA9422 PMIC multi-function device driver"
+	default y
+	depends on DT_HAS_NXP_PCA9422_ENABLED
+	select I2C
+	help
+	  Enable the NXP PCA9422 PMIC multi-function device driver.
+	  This PMIC provides a charger/regulator function via I2C bus.

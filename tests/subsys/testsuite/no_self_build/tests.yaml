@@ -1,0 +1,16 @@
+common:
+  tags:
+    - test_framework
+  platform_type:
+    - mcu
+    - native
+  extra_configs:
+    - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+
+tests:
+  no_self_build.pytest:
+    build: false
+    required_applications:
+      - application: sample.basic.helloworld
+        path: $ZEPHYR_BASE/samples/hello_world
+    harness: pytest

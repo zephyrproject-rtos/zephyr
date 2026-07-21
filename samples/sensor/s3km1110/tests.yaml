@@ -1,0 +1,13 @@
+sample:
+  name: Iclegend S3KM1110 sample
+tests:
+  sample.sensor.s3km1110:
+    tags:
+      - sensors
+      - shield
+    extra_args: SHIELD=seeed_xiao_hsp24
+    platform_allow:
+      - xiao_esp32c6/esp32c6/hpcore
+    integration_platforms:
+      - xiao_esp32c6/esp32c6/hpcore
+    filter: dt_compat_enabled("iclegend,s3km1110")

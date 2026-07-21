@@ -1,0 +1,26 @@
+common:
+  tags:
+    - net
+    - usb
+  min_ram: 192
+  depends_on: usb_device
+  build_only: true
+  platform_exclude:
+    - native_sim
+    - native_sim/native/64
+sample:
+  description: Samples for legacy CDC ECM, CDC EEM, RNDIS functions
+  name: Legacy ECM EEM RNDIS
+tests:
+  sample.usb.legacy.cdc_ecm:
+    extra_configs:
+      - CONFIG_USB_DEVICE_NETWORK_ECM=y
+      - CONFIG_USB_DEVICE_NETWORK_EEM=n
+  sample.usb.legacy.cdc_eem:
+    extra_configs:
+      - CONFIG_USB_DEVICE_NETWORK_ECM=n
+      - CONFIG_USB_DEVICE_NETWORK_EEM=y
+  sample.usb.legacy.rndis:
+    extra_configs:
+      - CONFIG_USB_DEVICE_NETWORK_ECM=n
+      - CONFIG_USB_DEVICE_NETWORK_RNDIS=y

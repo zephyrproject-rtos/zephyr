@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Jonas Berg
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ADAFRUIT_MAX17048
+	def_bool $(shields_list_contains,adafruit_max17048)

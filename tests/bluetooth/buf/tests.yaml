@@ -1,0 +1,30 @@
+common:
+  tags:
+    - bluetooth
+    - host
+
+tests:
+  bluetooth.buf:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_BT_HCI_ACL_FLOW_CONTROL=y
+  bluetooth.buf.no_acl_flow_control:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_BT_HCI_ACL_FLOW_CONTROL=n
+  bluetooth.buf.hci_raw:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_BT_HCI_RAW=y

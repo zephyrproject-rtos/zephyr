@@ -1,0 +1,43 @@
+# Copyright (c) 2023, Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_DURATION_S
+	int "Number of seconds to run the test"
+	range 1 21600
+	default 5
+	help
+	   Duration for the test, in seconds. The range has a reblatively high
+	   upper bound because we should expect that eventfd_read() and
+	   eventfd_write() are stable enough to run for an arbitrarily long
+	   period of time without encountering any race conditions.
+
+config TEST_TIMEOUT_S
+	int "Number of seconds to run the test"
+	range 1 21600
+	default 10
+
+config TEST_STACK_SIZE
+	int "Size of each thread stack in this test"
+	default 2048
+	help
+	  The minimal stack size required to run a no-op thread.
+
+config TEST_EXTRA_ASSERTIONS
+	bool "Add extra assertions into the hot path"
+	help
+	  In order to get a true benchmark, there should be as few branches
+	  as possible on the hot path. Say 'y' here to add extra assertions
+	  on the hot path as well to verify functionality.
+
+config TEST_EXTRA_QUIET
+	bool "Do not print out regular reports"
+	help
+	  In order to get a true benchmark, there should be as few branches
+	  as possible on the hot path. Say 'y' here to skip reporting.
+
+module = EVENTFD_TEST
+module-str = eventfd
+source "subsys/logging/Kconfig.template.log_config"

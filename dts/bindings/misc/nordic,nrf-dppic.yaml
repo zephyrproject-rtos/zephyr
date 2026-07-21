@@ -1,0 +1,23 @@
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Nordic DPPIC (Distributed Programmable Peripheral Interconnect Controller)
+
+compatible: "nordic,nrf-dppic"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  channels:
+    type: int
+    required: true
+    description: Number of channels implemented by the DPPIC instance.
+
+  groups:
+    type: int
+    required: true
+    description: Number of channel groups implemented by the DPPIC instance.

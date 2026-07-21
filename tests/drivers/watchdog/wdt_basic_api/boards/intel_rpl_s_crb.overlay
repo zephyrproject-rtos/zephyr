@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tco_wdt {
+	status = "okay";
+};

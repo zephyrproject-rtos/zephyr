@@ -1,0 +1,27 @@
+identifier: weact_esp32s3_mini/esp32s3/appcpu
+name: WeAct Studio ESP32-S3-Mini APPCPU
+vendor: weact
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+    - flash
+    - cpp
+    - posix
+    - watchdog
+    - logging
+    - kernel
+    - pm
+    - gpio
+    - crypto
+    - eeprom
+    - heap
+    - cmsis_rtos
+    - jwt
+    - zdsp

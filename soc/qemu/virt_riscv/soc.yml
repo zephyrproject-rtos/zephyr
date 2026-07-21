@@ -1,0 +1,6 @@
+family:
+- name: qemu_virt_riscv
+  socs:
+  - name: qemu_virt_riscv32
+  - name: qemu_virt_riscv32e
+  - name: qemu_virt_riscv64

@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Marcin Lyda <elektromarcin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Micro Crystal RV8803 Extreme Low Power Real-Time Clock Module
+
+compatible: "microcrystal,rv8803"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt output
+      Interrupt output used by the chip to notify various
+      events, such as alarm event, update event, external
+      events etc.
+
+  clkout-frequency:
+    type: int
+    description: |
+      CLKOUT value [Hz]
+      This field enables to select output frequency on
+      CLKOUT pin.
+    enum:
+      - 1
+      - 1024
+      - 32768

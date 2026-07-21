@@ -1,0 +1,142 @@
+/*
+ * Copyright (c) 2025 Realtek Semiconductor, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/interrupt-controller/rts5817_intc.h>
+#include <zephyr/dt-bindings/pinctrl/rts5817_pinctrl.h>
+#include <zephyr/dt-bindings/reset/rts5817_reset.h>
+#include <zephyr/dt-bindings/clock/rts5817_clock.h>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			clock-frequency = <DT_FREQ_M(240)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(256)>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+
+		dlink_ldo: dlink_ldo@401e1000 {
+			compatible = "syscon";
+			reg = <0x401e1000 0x30>;
+			reg-io-width = <4>;
+			status = "okay";
+		};
+
+		dlink_sys: dlink_sys@401e2000 {
+			compatible = "syscon";
+			reg = <0x401e2000 0x200>;
+			reg-io-width = <4>;
+			status = "okay";
+		};
+
+		clks: clks@40100300 {
+			compatible = "realtek,rts5817-clock";
+			reg = <0x40100300 0x100>,
+			      <0x40150000 0x10>,
+			      <0x40000018 0x4>;
+			#clock-cells = <1>;
+			status = "disabled";
+		};
+
+		reset: reset@40100200 {
+			compatible = "realtek,rts5817-reset";
+			reg = <0x40100200 0x100>;
+			#reset-cells = <1>;
+			status = "disabled";
+		};
+
+		pinctrl: pinctrl@40110000 {
+			compatible = "realtek,rts5817-pinctrl";
+			reg = <0x40110000 0x800>,
+			      <0x401e2074 0x4>,
+			      <0x401e2080 0xc>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+		};
+
+		watchdog: watchdog@40100048 {
+			compatible = "realtek,rts5817-watchdog";
+			reg = <0x40100048 0x4>;
+			status = "disabled";
+		};
+
+		uart0: dwapb@40120000 {
+			compatible = "ns16550";
+			reg = <0x40120000 0x100>;
+			reg-shift = <2>;
+			interrupt-parent = <&nvic>;
+			interrupts = <IRQ_NUM_UART0 0>;
+			clocks = <&clks RTS_FP_CLK_UART0>;
+			resets = <&reset SYS_FORCE_RST_UART0>;
+			status = "disabled";
+		};
+
+		uart1: dwapb@40128000 {
+			compatible = "ns16550";
+			reg = <0x40128000 0x100>;
+			reg-shift = <2>;
+			interrupt-parent = <&nvic>;
+			interrupts = <IRQ_NUM_UART1 0>;
+			clocks = <&clks RTS_FP_CLK_UART1>;
+			resets = <&reset SYS_FORCE_RST_UART1>;
+			status = "disabled";
+		};
+
+		regulator: regulator {
+			compatible = "realtek,rts5817-regulator";
+			syscon-ldo = <&dlink_ldo>;
+			syscon-sys = <&dlink_sys>;
+			status = "disabled";
+
+			dvdds {
+				regulator-min-microvolt = <1000000>;
+				regulator-max-microvolt = <1200000>;
+				regulator-always-on;
+			};
+
+			svio {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-init-microvolt = <1800000>;
+				ocp-enable;
+			};
+
+			sva {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-init-microvolt = <3000000>;
+				ocp-enable;
+			};
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

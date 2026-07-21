@@ -1,0 +1,36 @@
+name: ST Nucleo H7S3L8 nucleo
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - watchdog
+  - dma
+  - entropy
+  - adc
+  - octospi
+  - can
+  - canfd
+  - netif:eth
+  - rtc
+vendor: st
+variants:
+  nucleo_h7s3l8/stm32h7s3xx:
+    twister: true
+    ram: 456
+    flash: 64
+  nucleo_h7s3l8/stm32h7s3xx/ext_flash_app:
+    sysbuild: true
+    ram: 456
+    flash: 8191  # size in kB of 1 app slot minus MCUboot header size (1KB)
+    testing:
+      ignore_tags:
+        - arch
+        - arm
+        - clib
+        - cpp
+        - kernel
+        - posix
+        - cmsis-dsp

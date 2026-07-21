@@ -1,0 +1,8 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI Stellaris flash controller
+
+compatible: "ti,stellaris-flash-controller"
+
+include: flash-controller.yaml

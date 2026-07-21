@@ -1,0 +1,18 @@
+sample:
+  description: Sample, that can be used for testing profiling perf tool
+  name: perf sample
+
+tests:
+  sample.perf:
+    tags:
+      - perf
+      - profiling
+    extra_configs:
+      - CONFIG_PROFILING_PERF_BUFFER_SIZE=128
+    filter: CONFIG_RISCV or CONFIG_X86
+    integration_platforms:
+      - qemu_riscv64
+      - qemu_riscv32
+      - qemu_x86_64
+      - qemu_x86
+    harness: pytest

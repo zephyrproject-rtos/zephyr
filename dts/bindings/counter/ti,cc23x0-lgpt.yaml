@@ -1,0 +1,26 @@
+# Copyright (c) Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: CC23x0 LGPT counter driver
+
+properties:
+  freq:
+    type: int
+    description: clock frequency (only used for external clock sources)
+
+  interrupts:
+    required: true
+
+  clk-prescale:
+    type: int
+    required: true
+    description: Counter clock prescale
+
+  max-top-value:
+    type: int
+    required: true
+    description: Max allowed value for counter
+
+compatible: "ti,cc23x0-lgpt"
+
+include: base.yaml

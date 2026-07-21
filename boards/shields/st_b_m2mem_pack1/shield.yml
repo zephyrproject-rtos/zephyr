@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+
+shields:
+  - name: b_m2mem_pack1_mb1927_18ba
+    full_name: B-M2MEM-PACK1 MB1927-18BA
+    vendor: st
+    supported_features:
+      - mtd
+      - led
+
+  - name: b_m2mem_pack1_mb1927_33ba
+    full_name: B-M2MEM-PACK1 MB1927-33BA
+    vendor: st
+    supported_features:
+      - mtd
+      - led
+
+  - name: b_m2mem_pack1_mb1928_33la
+    full_name: B-M2MEM-PACK1 MB1928-33LA
+    vendor: st
+    supported_features:
+      - mtd
+      - led
+
+  - name: b_m2mem_pack1_mb1928_33lb
+    full_name: B-M2MEM-PACK1 MB1928-33LB
+    vendor: st
+    supported_features:
+      - mtd
+      - led

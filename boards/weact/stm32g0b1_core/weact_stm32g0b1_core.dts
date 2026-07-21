@@ -1,0 +1,88 @@
+/*
+ * Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright (c) 2026 Paul Wedeck <paulwedeck@gmail.com>
+ *
+ *  SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <st/g0/stm32g0b1Xb.dtsi>
+#include <st/g0/stm32g0b1c(b-c-e)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "WeAct STM32G0B1 Core Board";
+	compatible = "weact,stm32g0b1core";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+
+	aliases {
+		led0 = &led;
+		sw0 = &button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led: led {
+			gpios = <&gpioc 6 GPIO_ACTIVE_LOW>;
+			label = "LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button: button {
+			label = "User";
+			gpios = <&gpioc 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(8)>;
+};
+
+&clk_hsi48 {
+	status = "okay";
+	crs-usb-sof;
+};
+
+&pll {
+	div-m = <1>;
+	mul-n = <16>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(64)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	current-speed = <115200>;
+	pinctrl-names = "default";
+	status = "okay";
+};

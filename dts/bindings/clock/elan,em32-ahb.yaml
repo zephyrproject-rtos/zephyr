@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Elan Microelectronics Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Elan eM32F967 AHB Clock Controller Node
+
+compatible: "elan,em32-ahb"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clock-source:
+    type: int
+    description: ID of output clock source
+    required: true
+
+  clock-frequency:
+    type: int
+    description: ID of output clock frequency
+    required: true
+
+  clock-divider:
+    type: int
+    description: ID of output clock divider
+    required: true
+
+  "#clock-cells":
+    const: 0

@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Nicolas Belin <nbelin@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Hall-effect pulse-output flow meter.
+
+  The sensor outputs one pulse per fixed volume increment on pulse-gpios.
+  The driver counts pulses and converts to volume using pulses-per-liter.
+  Volume is reported on SENSOR_CHAN_VOLUME (liters, val1 = whole liters,
+  val2 = microliters), flow rate on SENSOR_CHAN_FLOW_RATE (L/min).
+  Runtime calibration is available via SENSOR_ATTR_CALIBRATION
+  (val1 = pulses/liter, val2 = 0). Volume threshold triggers use
+  SENSOR_TRIG_THRESHOLD on SENSOR_CHAN_VOLUME with SENSOR_ATTR_UPPER_THRESH
+  (one-shot, disarms after firing or on NULL handler).
+
+compatible: "zephyr,flow-meter"
+
+include: sensor-device.yaml
+
+properties:
+  pulse-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Input GPIO connected to the Hall-effect sensor output.
+      Each active edge represents one pulse (volume increment).
+
+  power-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO used to power the flow meter module.
+      Driven active during initialization and held throughout operation.
+
+  pulses-per-liter:
+    type: int
+    required: true
+    min: 1
+    description: |
+      Number of pulses produced per liter of flow.
+      This is the factory calibration value for the specific sensor and
+      can be overridden at runtime via SENSOR_ATTR_CALIBRATION.

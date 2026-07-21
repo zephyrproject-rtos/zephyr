@@ -1,0 +1,11 @@
+sample:
+  name: USB audio headset sample
+tests:
+  sample.usb.legacy.audio.headset:
+    depends_on: usb_device
+    tags: usb
+    build_only: true
+    arch_exclude: posix
+    integration_platforms:
+      - nrf52840dk/nrf52840
+      - nrf5340dk/nrf5340/cpuapp

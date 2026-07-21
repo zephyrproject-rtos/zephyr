@@ -1,0 +1,22 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_BEE_KEYSCAN
+	bool "Realtek Bee series input keyscan driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_KEYSCAN_ENABLED
+	select INPUT_KBD_MATRIX
+	select HAL_REALTEK_BEE_KEYSCAN
+	select PINCTRL
+	help
+	  This option enables the input keyscan driver for Realtek Bee SoCs.
+
+config BEE_INPUT_KEYSCAN_AUTOSCAN_MODE
+	bool "Config scanmode for bee keyscan"
+	default n
+	depends on INPUT_BEE_KEYSCAN
+	help
+	  In auto mode, scanning is triggered by hardware, resulting in shorter and more precise intervals.
+	  This is suitable for latency-sensitive scenarios requiring higher scanning speeds.
+	  In manual mode, the system can enter sleep mode between scans when the PM feature is enabled.
+	  This is suitable for power-sensitive scenarios where energy efficiency is the priority.

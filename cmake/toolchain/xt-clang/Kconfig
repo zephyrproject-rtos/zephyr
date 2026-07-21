@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if DT_HAS_CDNS_TENSILICA_XTENSA_LX7_ENABLED
+
+choice COMPILER_CODEGEN_VLIW
+	default COMPILER_CODEGEN_VLIW_DISABLED if USERSPACE
+
+endchoice
+
+endif # DT_HAS_CDNS_TENSILICA_XTENSA_LX7_ENABLED

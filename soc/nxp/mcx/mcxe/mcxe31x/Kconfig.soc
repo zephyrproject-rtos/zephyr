@@ -1,0 +1,68 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MCXE31X
+	bool
+	select SOC_FAMILY_MCXE
+
+config SOC_SERIES
+	default "mcxe31x" if SOC_SERIES_MCXE31X
+
+config SOC_MCXE315
+	bool
+	select SOC_SERIES_MCXE31X
+
+config SOC_MCXE316
+	bool
+	select SOC_SERIES_MCXE31X
+
+config SOC_MCXE317
+	bool
+	select SOC_SERIES_MCXE31X
+
+config SOC_MCXE31B
+	bool
+	select SOC_SERIES_MCXE31X
+
+config SOC
+	default "mcxe315" if SOC_MCXE315
+	default "mcxe316" if SOC_MCXE316
+	default "mcxe317" if SOC_MCXE317
+	default "mcxe31b" if SOC_MCXE31B
+
+config SOC_PART_NUMBER_MCXE315MLF
+	bool
+	select SOC_MCXE315
+
+config SOC_PART_NUMBER_MCXE315MPA
+	bool
+	select SOC_MCXE315
+
+config SOC_PART_NUMBER_MCXE316MLF
+	bool
+	select SOC_MCXE316
+
+config SOC_PART_NUMBER_MCXE316MPA
+	bool
+	select SOC_MCXE316
+
+config SOC_PART_NUMBER_MCXE317MPA
+	bool
+	select SOC_MCXE317
+
+config SOC_PART_NUMBER_MCXE317MPB
+	bool
+	select SOC_MCXE317
+
+config SOC_PART_NUMBER_MCXE31BMPB
+	bool
+	select SOC_MCXE31B
+
+config SOC_PART_NUMBER
+	default "MCXE315MLF" if SOC_PART_NUMBER_MCXE315MLF
+	default "MCXE315MPA" if SOC_PART_NUMBER_MCXE315MPA
+	default "MCXE316MLF" if SOC_PART_NUMBER_MCXE316MLF
+	default "MCXE316MPA" if SOC_PART_NUMBER_MCXE316MPA
+	default "MCXE317MPA" if SOC_PART_NUMBER_MCXE317MPA
+	default "MCXE317MPB" if SOC_PART_NUMBER_MCXE317MPB
+	default "MCXE31BMPB" if SOC_PART_NUMBER_MCXE31BMPB

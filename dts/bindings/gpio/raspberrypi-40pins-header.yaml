@@ -1,0 +1,35 @@
+# Copyright (c) 2023 Joel Guittet
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on Raspberry Pi 40-pin header.
+
+    The Raspberry Pi layout provides a 2x20 pins header.
+
+    This binding provides a nexus mapping for 28 pins as depicted below.
+
+        -  3V3                  5V               -
+        0  GPIO2/I2C1_SDA       5V               -
+        1  GPIO3/I2C1_SCL       GND              -
+        2  GPIO4                GPIO14/UART0_TXD 3
+        -  GND                  GPIO15/UART0_RXD 4
+        5  GPIO17               GPIO18           6
+        7  GPIO27               GND              -
+        8  GPIO22               GPIO23           9
+        -  3V3                  GPIO24           10
+        11 GPIO10/SPI0_MOSI     GND              -
+        12 GPIO9/SPI0_MISO      GPIO25           13
+        14 GPIO11/SPI0_SCLK     GPIO8/SPI0_CE0   15
+        -  GND                  GPIO7/SPI0_CE1   16
+        17 ID_SD/I2C0_SDA       ID_SC/I2C0_SCL   18
+        19 GPIO5                GND              -
+        20 GPIO6                GPIO12           21
+        22 GPIO13               GND              -
+        23 GPIO19               GPIO16           24
+        25 GPIO26               GPIO20           26
+        -  GND                  GPIO21           27
+
+
+compatible: "raspberrypi-40pins-header"
+
+include: [gpio-nexus.yaml, base.yaml]

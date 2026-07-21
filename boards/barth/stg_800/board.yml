@@ -1,0 +1,6 @@
+board:
+  name: stg_800
+  full_name: STG-800 lococube mini-PLC
+  vendor: barth
+  socs:
+    - name: stm32f091xc

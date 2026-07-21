@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_H563ZI
+	select SOC_STM32H563XX

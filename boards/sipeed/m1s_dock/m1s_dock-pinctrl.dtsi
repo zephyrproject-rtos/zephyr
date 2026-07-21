@@ -1,0 +1,16 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	white_pwm_pinctrl: white_pwm_pinctrl {
+		group1 {
+			pinmux = <GPIO8_PWM0_CH0P>;
+			bias-pull-up;
+			input-schmitt-enable;
+			drive-strength = <1>;
+		};
+	};
+};

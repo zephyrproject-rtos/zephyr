@@ -1,0 +1,28 @@
+# ON Semiconductor FUSB307 TCPC configuration options
+
+# Copyright (c) 2025 Jianxiong Gu <jianxiong.gu@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_TCPC_FUSB307
+	bool "USB-C TCPC device controller driver"
+	select USBC_TCPC_TCPCI
+	default y
+	depends on DT_HAS_ONNN_FUSB307_TCPC_ENABLED
+	help
+	  Enable Type-C Port Controller driver for FUSB307.
+
+if USBC_TCPC_FUSB307
+
+config USBC_TCPC_FUSB307_INIT_DELAY
+	int "FUSB307 init delay"
+	default 5
+	help
+	  Delay between each try of the TCPC initialization
+
+config USBC_TCPC_FUSB307_INIT_RETRIES
+	int "FUSB307 init retries"
+	default 10
+	help
+	  Number of initialization tries that will be performed
+
+endif

@@ -1,0 +1,58 @@
+# Copyright (c) 2025-2026 Microchip Technologies Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip Watchdog g1 driver
+
+description: |
+  Microchip Watchdog driver bindings.
+
+  Group g1 Watchdog driver supports following hardware peripherals:
+    - module name="WDT" id="U2251" version="1.1.0"
+
+compatible: "microchip,wdt-g1"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Specifies the base address and size of the register block for the watchdog
+      timer.
+
+  clocks:
+    required: true
+    description: |
+     Defines the clock sources used by the watchdog timer peripheral.
+
+  clock-names:
+    required: true
+    description: |
+      Names of the clocks referenced in the "clocks" property, used to identify
+      the clock sources
+
+  max-installable-timeout-count:
+    type: int
+    required: true
+    description: |
+      Specifies the maximum number of timeout counts that can be configured for
+      the watchdog timer.
+
+  max-timeout-window:
+    type: int
+    required: true
+    description: |
+      Defines the maximum timeout window period for the watchdog timer.
+
+  max-timeout-window-mode:
+    type: int
+    required: true
+    description: |
+      Indicates the maximum timeout period in window mode for the watchdog
+      timer.
+
+  min-window-limit:
+    type: int
+    required: true
+    description: |
+      Indicates the minimum window limit for the watchdog timer in window mode

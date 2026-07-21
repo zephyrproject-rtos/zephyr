@@ -1,0 +1,9 @@
+tests:
+  net.mcp.server:
+    tags: mcp net
+    min_ram: 320
+    min_flash: 180
+    timeout: 120
+    platform_allow:
+      - native_sim
+      - qemu_x86

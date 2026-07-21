@@ -1,0 +1,6 @@
+board:
+  name: dt_bl10_devkit
+  full_name: DT-BL10 coexistence Module Development Kit
+  vendor: doiting
+  socs:
+    - name: bl602c20q2i

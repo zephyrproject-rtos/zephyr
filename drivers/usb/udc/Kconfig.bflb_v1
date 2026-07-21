@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_BFLB_V1
+	bool "Bouffalo Lab USB device controller driver (USB v1 block)"
+	default y
+	depends on DT_HAS_BFLB_UDC_1_ENABLED
+	select EVENTS
+	select PINCTRL
+	help
+	  USB device controller driver for Bouffalo Lab SoCs with the v1 USB
+	  block (BL702/BL706). Supports USB 1.1 Full-Speed with 8 endpoints,
+	  each supporting IN and OUT.
+
+if UDC_BFLB_V1
+
+config UDC_BFLB_V1_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 1024
+	help
+	  Bouffalo Lab USB device controller driver internal thread stack size.
+
+config UDC_BFLB_V1_THREAD_PRIORITY
+	int "UDC controller driver thread priority"
+	default 8
+	help
+	  Bouffalo Lab USB device controller driver thread priority.
+
+endif # UDC_BFLB_V1

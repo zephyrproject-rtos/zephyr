@@ -1,0 +1,36 @@
+# Copyright (c) 2017-2021 Linaro Limited
+# Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright (c) 2026 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MPS3
+	bool
+	select SOC_FAMILY_ARM
+	help
+	  Enable support for ARM MPS3 MCU Series
+
+config SOC_SERIES
+	default "mps3" if SOC_SERIES_MPS3
+
+config SOC_CORSTONE300
+	bool
+	select SOC_SERIES_MPS3
+
+config SOC_CORSTONE310
+	bool
+	select SOC_SERIES_MPS3
+
+config SOC_AN536
+	bool
+	select SOC_SERIES_MPS3
+
+config SOC_AN536_CPU0
+	bool
+	select SOC_AN536
+	help
+	  Arm Cortex-R52 CPU0 for the MPS3 AN536 platform.
+
+config SOC
+	default "corstone300" if SOC_CORSTONE300
+	default "corstone310" if SOC_CORSTONE310
+	default "an536" if SOC_AN536

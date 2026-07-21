@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-LCT Version 2 node for npcx variant
+
+compatible: "nuvoton,npcx-lct-v2"
+
+include: ["nuvoton,npcx-lct-base.yaml"]
+
+properties:
+  lct-wui:
+    type: phandle
+    required: true
+    description: |
+        Mapping table between Wake-Up Input (WUI) and LCT count down reaches zero.
+        For example,
+           lct-wui = <&wui_lct>;
+
+  maximum-cnt-in-sec:
+    type: int
+    required: true
+    const: 619919999
+    description: |
+      The maximum count that the LCT module can support.
+      One count means 1 second.
+      This version can support (1025 weeks - 1 second).

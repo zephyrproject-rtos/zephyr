@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Hudson C. Dalpra
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.w1.build:
+    build_only: true
+    tags:
+      - drivers
+      - w1
+    depends_on:
+      - gpio
+    integration_platforms:
+      - native_sim

@@ -1,0 +1,25 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &hscmp0;
+	};
+
+	zephyr,user {
+		/* P0-10 (LPC55S36-EVK J9-7) output connect to P1-5 (LPC55S36-EVK J9-9). */
+		test-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&hscmp0 {
+	positive-mux-input = "IN3";
+	negative-mux-input = "DAC";
+	dac-vref-source = "VREFH1";
+	dac-value = <127>;
+};

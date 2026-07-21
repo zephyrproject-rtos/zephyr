@@ -1,0 +1,42 @@
+name: Error numbers
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/errno.yml'
+      - 'lib/libc/minimal/include/errno.h'
+      - 'scripts/ci/errno.py'
+      - 'SDK_VERSION'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-errno:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          path: zephyr
+
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@5ec39f5cba83346d83a836dfed1524270c660e28 # v1.0.14
+        with:
+          app-path: zephyr
+          toolchains: 'arm-zephyr-eabi'
+          west-group-filter: -hal,-tools,-bootloader,-babblesim
+          west-project-filter: -nrf_hw_models
+          enable-ccache: false
+
+      - name: Run errno.py
+        working-directory: zephyr
+        run: |
+          export ZEPHYR_SDK_INSTALL_DIR=${{ github.workspace }}/zephyr-sdk
+          export ZEPHYR_BASE=${PWD}
+          ./scripts/ci/errno.py

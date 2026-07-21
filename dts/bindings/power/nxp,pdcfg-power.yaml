@@ -1,0 +1,17 @@
+# Copyright 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Properties for NXP power management through the PDCFG register
+
+compatible: "nxp,pdcfg-power"
+
+include: zephyr,power-state.yaml
+
+properties:
+  deep-sleep-config:
+    type: array
+    description: |
+      An array of values written to the PDSLEEPCFG registers that controls the
+      power to various blocks while the CPU is in deep sleep mode. These values
+      are programmed to the sleep configuration registers before entering deep
+      sleep mode.

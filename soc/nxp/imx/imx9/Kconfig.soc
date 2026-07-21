@@ -1,0 +1,11 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMX9
+	bool
+	select SOC_FAMILY_NXP_IMX
+
+config SOC_SERIES
+	default "imx9" if SOC_SERIES_IMX9
+
+rsource "*/Kconfig.soc"

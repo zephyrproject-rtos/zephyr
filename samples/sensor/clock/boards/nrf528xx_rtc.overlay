@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2024 Cienet
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,sensor-clock = &rtc0;
+	};
+};

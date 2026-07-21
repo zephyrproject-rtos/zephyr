@@ -1,0 +1,14 @@
+# Cirque Pinnacle 1CA027 touch controller based device configuration options
+#
+# Copyright (c) 2024 Ilia Kharin
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_PINNACLE
+	bool "Cirque Pinnacle 1CA027 Touch Controller Based Device"
+	default y
+	depends on DT_HAS_CIRQUE_PINNACLE_ENABLED
+	select GPIO
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_CIRQUE_PINNACLE),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_CIRQUE_PINNACLE),spi)
+	help
+	  Enable driver for Cirque Pinnacle 1CA027 tracked input device.

@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_INFINEON_MXCRYPTOLITE_TRNG
+	bool "Infineon MXCRYPTOLITE TRNG entropy driver"
+	default y
+	depends on DT_HAS_INFINEON_MXCRYPTOLITE_TRNG_ENABLED
+	select MFD
+	select ENTROPY_HAS_DRIVER
+	select USE_INFINEON_MXCRYPTOLITE_TRNG
+	help
+	  Enable the True Random Number Generator entropy driver for
+	  Infineon devices that include the MXRYPTOLITE IP.

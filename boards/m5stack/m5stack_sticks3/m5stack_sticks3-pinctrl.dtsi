@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 Hsiu-Chi Tsai
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Pin assignments from the M5Stack StickS3 official PinMap.
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO47>,
+				 <I2C0_SCL_GPIO48>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+};

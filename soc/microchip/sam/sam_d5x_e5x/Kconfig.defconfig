@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+
+config NUM_IRQS
+	default 137
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+endif # SOC_FAMILY_MICROCHIP_SAM_D5X_E5X

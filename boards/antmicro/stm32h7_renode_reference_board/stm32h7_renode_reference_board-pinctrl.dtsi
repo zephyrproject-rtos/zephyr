@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h753xihx-pinctrl.dtsi>
+
+&pinctrl {
+	fdcan1_rx_pd0: fdcan1_rx_pd0 {
+		pinmux = <STM32_PINMUX('D', 0, AF9)>;
+		bias-pull-up;
+	};
+
+	fdcan1_tx_pd1: fdcan1_tx_pd1 {
+		pinmux = <STM32_PINMUX('D', 1, AF9)>;
+	};
+
+	fdcan2_rx_pb12: fdcan2_rx_pb12 {
+		pinmux = <STM32_PINMUX('B', 12, AF9)>;
+		bias-pull-up;
+	};
+
+	fdcan2_tx_pb13: fdcan2_tx_pb13 {
+		pinmux = <STM32_PINMUX('B', 13, AF9)>;
+	};
+
+	quadspi_ncs_pb10: quadspi_ncs_pb10 {
+		pinmux = <STM32_PINMUX('B', 10, AF9)>;
+	};
+};

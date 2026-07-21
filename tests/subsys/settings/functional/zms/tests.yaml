@@ -1,0 +1,9 @@
+tests:
+  settings.functional.zms:
+    platform_allow:
+      - qemu_x86
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - settings
+      - zms

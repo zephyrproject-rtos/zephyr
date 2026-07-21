@@ -1,0 +1,15 @@
+description: |
+  Bouffalo Lab Timer Channel (Counter).
+
+  Child of a "bflb,timer" node. The reg property holds the channel index
+  (0 or 1).
+
+compatible: "bflb,timer-channel"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true

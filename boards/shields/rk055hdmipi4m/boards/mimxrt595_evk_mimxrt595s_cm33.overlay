@@ -1,0 +1,19 @@
+/*
+ * Copyright 2023, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Configure FlexSPI2 to use 1KB of AHB RX buffer for GPU/Display master.
+ * This will improve performance when using external pSRAM.
+ */
+&flexspi2 {
+	rx-buffer-config = <1 7 11 1024>;
+};
+
+/* GT911 IRQ GPIO is active low on this board, and needs probing mode */
+&gt911_rk055hdmipi4m {
+	irq-gpios = <&nxp_mipi_connector 29 GPIO_ACTIVE_LOW>;
+	alt-addr = <0x14>;
+};

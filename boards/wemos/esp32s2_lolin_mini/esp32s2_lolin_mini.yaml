@@ -1,0 +1,14 @@
+identifier: esp32s2_lolin_mini
+name: Lolin ESP32-S2 Mini
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - watchdog
+  - uart
+testing:
+  ignore_tags:
+    - bluetooth
+vendor: wemos

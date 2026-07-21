@@ -1,0 +1,67 @@
+# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Synaptics SR100 Pin controller Node
+    Based on pincfg-node.yaml binding.
+
+    Note: `bias-disable` and `input-enable` are default pin configurations.
+           They will be applied in case no `bias-foo` or `input-bar` properties
+           are set.
+
+compatible: "syna,sr100-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+      This binding gives a base representation of the Synaptics pins configuration
+
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-disable
+        - bias-bus-hold
+        - bias-pull-up
+        - bias-pull-down
+        - drive-strength
+        - input-enable
+        - input-disable
+        - input-schmitt-enable
+        - input-schmitt-disable
+        - slew-rate
+
+  properties:
+    pincfg:
+      type: int
+      description: |
+        Register offset of pin configuration (drive strength, slew-rate etc.).
+    port:
+      type: int
+      description: |
+        Port control configuration (input pin routing). The following macro is
+        available to define this part of the configuration:
+        - SRXXX_PORT_PINMUX(reg, bit, mode, mask)
+    pinmux:
+      required: true
+      type: int
+      description: |
+        Pin muxing configuration. The bitfield contains the following fields:
+        - ctrl [ 0.. 2]: Pinmux controller (0..3): in Global, AON, LPS, SWIRE
+        - bit  [ 3.. 7]: Bit offset in register for pinmux configuration
+        - mode [ 8..10]: Alternate function
+        - mask [11..14]: Mask for mode/alternate function setting
+        - reg  [16..23]: Register offset for pinmux configuration
+        - cfg  [24..31]: Register offset for pin configuration
+
+        To simplify the usage, macros are available to generate the "pinmux"
+        field:
+        - SRXXX_GLOBAL_PINMUX(reg, bit, mode, cfg)
+        - SRXXX_AON_PINMUX(reg, bit, mode, cfg)
+        - SRXXX_LPS_PINMUX(reg, bit, mode, cfg)
+        - SRXXX_SWIRE_PINMUX(bit, mode)
+        - SRXXX_FIXED_PINMUX(cfg) (for pins with fixed mode/function)

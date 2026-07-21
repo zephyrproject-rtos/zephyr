@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2019, Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: TI SimpleLink CC13xx/CC26xx RTC
+
+compatible: "ti,cc13xx-cc26xx-rtc-timer"
+
+include: rtc.yaml
+
+properties:
+  reg:
+    required: true

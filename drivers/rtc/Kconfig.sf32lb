@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_SF32LB
+	bool "RTC driver for SF32LB family of MCUs"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_RTC_ENABLED
+	help
+	  Enable RTC driver for SF32LB series of MCUs

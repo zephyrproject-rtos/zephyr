@@ -1,0 +1,12 @@
+# BH1730 ambient light sensor configuration options
+
+# Copyright (c) 2025, Borislav Kereziev
+# SPDX-License-Identifier: Apache-2.0
+
+config BH1730
+	bool "BH1730 Ambient Light Sensor"
+	default y
+	depends on DT_HAS_ROHM_BH1730_ENABLED
+	select I2C
+	help
+		Enable driver for BH1730 ambient light sensor.

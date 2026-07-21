@@ -1,0 +1,6 @@
+board:
+  name: stm32h7_renode_reference_board
+  full_name: STM32H7 Renode Reference Platform
+  vendor: antmicro
+  socs:
+    - name: stm32h753xx

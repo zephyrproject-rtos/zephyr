@@ -1,0 +1,30 @@
+# Copyright (c) 2026 CodeWrights GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 pin controller with High-Speed Low-Voltage (HSLV) support
+
+  Identical to the "regular" pin controller with "st,stm32-pinctrl" compatible,
+  with an additional "High-Speed Low-Voltage" feature. This feature allows to
+  increase their maximum speed at low voltage.
+
+  This pin controller can be found on STM32H5 series.
+
+compatible: "st,stm32h5-pinctrl"
+
+include: "st,stm32-pinctrl.yaml"
+
+child-binding:
+  properties:
+    st,hslv-enable:
+      type: boolean
+      description: |
+        Enable High-Speed Low-Voltage (HSLV) mode for pin.
+
+        HSLV mode is available only on specific I/O pins and can
+        only be used if the corresponding bit in option bytes is
+        enabled. Refer to your device's Datasheet and Reference
+        Manual for more details.
+
+        WARNING: Enabling HSLV mode when I/O supply voltage for
+        a given I/O pin is above 2.7V can damage the device.

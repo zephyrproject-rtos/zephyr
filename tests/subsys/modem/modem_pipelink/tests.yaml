@@ -1,0 +1,7 @@
+# Copyright (c) 2024 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  modem.modem_pipelink:
+    tags: modem_pipelink
+    harness: ztest

@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Michael Hope <michaelh@juju.nz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch32v00x-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <USART1_TX_PC0_3>;
+			output-high;
+			drive-push-pull;
+		};
+
+		group2 {
+			pinmux = <USART1_RX_PC1_3>;
+			bias-pull-up;
+		};
+	};
+
+	usart2_default: usart2_default {
+		group1 {
+			pinmux = <USART2_TX_PD2_3>;
+			output-high;
+			drive-push-pull;
+		};
+
+		group2 {
+			/* PD3 is connected to USB_DN. Remove SB4 before using. */
+			pinmux = <USART2_RX_PD3_3>;
+			bias-pull-up;
+		};
+	};
+
+	blue_pwm_pinctrl: blue_pwm_pinctrl {
+		group1 {
+			pinmux = <TIM1_CH1_PC4_3>;
+			output-high;
+			drive-push-pull;
+		};
+	};
+};

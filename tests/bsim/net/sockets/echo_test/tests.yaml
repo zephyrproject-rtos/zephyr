@@ -1,0 +1,31 @@
+common:
+  depends_on: bsim
+  harness: bsim
+  harness_config:
+    fixture:
+      - bsim_multi_test
+  platform_allow:
+    - nrf52_bsim/native # This one is sufficient to test the stack, others are also likely to work
+  tags:
+    - net
+    - socket
+
+tests:
+  net.sockets.echo_test.802154:
+    extra_args: EXTRA_CONF_FILE="overlay-802154.conf"
+    harness_config:
+      bsim_exe_name: tests_bsim_net_sockets_echo_test_prj_conf_overlay-802154_conf
+      tests_scripts:
+        - tests_scripts/echo_test_802154.sh
+    required_applications:
+      - application: sample.net.sockets.echo_server.802154.bsim
+        path: $ZEPHYR_BASE/samples/net/sockets/echo_server
+  net.sockets.echo_test.openthread:
+    extra_args: EXTRA_CONF_FILE="overlay-ot.conf"
+    harness_config:
+      bsim_exe_name: tests_bsim_net_sockets_echo_test_prj_conf_overlay-ot_conf
+      tests_scripts:
+        - tests_scripts/echo_test_ot.sh
+    required_applications:
+      - application: sample.net.sockets.echo_server.openthread.bsim
+        path: $ZEPHYR_BASE/samples/net/sockets/echo_server

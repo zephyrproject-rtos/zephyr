@@ -1,0 +1,14 @@
+boards:
+  - name: mcx_n9xx_evk
+    full_name: MCX-N9XX-EVK
+    vendor: nxp
+    socs:
+      - name: mcxn947
+        variants:
+          - name: qspi
+            cpucluster: 'cpu0'
+  - name: mcx_n5xx_evk
+    full_name: MCX-N5XX-EVK
+    vendor: nxp
+    socs:
+      - name: mcxn547

@@ -1,0 +1,7 @@
+# MAX32660EVSYS boards configuration
+
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MAX32660EVSYS
+	select SOC_MAX32660

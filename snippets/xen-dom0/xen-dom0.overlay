@@ -1,0 +1,25 @@
+/*
+ * Copyright (C) 2023 EPAM Systems.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	interrupt-parent = <&gic>;
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	chosen {
+		zephyr,console = &xen_consoleio_hvc;
+		zephyr,shell-uart = &xen_consoleio_hvc;
+	};
+
+	psci {
+		method = "hvc";
+	};
+
+	xen_consoleio_hvc: hvc {
+		compatible = "xen,hvc-consoleio";
+		status = "okay";
+	};
+};

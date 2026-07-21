@@ -1,0 +1,23 @@
+# Copyright (c) 2025 John Lin
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_CYW43
+	bool "Infineon CYW43 GPIO driver"
+	default y
+	depends on DT_HAS_INFINEON_CYW43_GPIO_ENABLED
+	depends on WIFI_AIROC
+	help
+	  Enable GPIO driver for the Infineon CYW43 WiFi chip.
+	  Exposes WL_GPIO0-2 as standard Zephyr GPIO pins.
+	  Pin 0 is the onboard LED on Pico W / Pico 2 W.
+
+if GPIO_CYW43
+
+config GPIO_CYW43_INIT_PRIORITY
+	int "CYW43 GPIO initialization priority"
+	default 82
+	help
+	  CYW43 GPIO initialization priority. Must be higher than
+	  the WiFi driver initialization priority.
+
+endif # GPIO_CYW43

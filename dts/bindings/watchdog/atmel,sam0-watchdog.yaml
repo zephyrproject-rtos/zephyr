@@ -1,0 +1,12 @@
+description: Atmel SAM0 watchdog
+
+compatible: "atmel,sam0-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

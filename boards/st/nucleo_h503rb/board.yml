@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Arrow Electronics.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: nucleo_h503rb
+  full_name: Nucleo H503RB
+  vendor: st
+  socs:
+    - name: stm32h503xx

@@ -1,0 +1,12 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* Connect pin (PA10) D2 of the CN9:2 to D8 (PA9) of the CN5:1 */
+dut: &usart1 {
+	dmas = <&dma1 4 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&dma1 5 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+};
+
+&dma1 {
+	status = "okay";
+};

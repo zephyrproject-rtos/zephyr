@@ -1,0 +1,6 @@
+series:
+- name: emsk
+  socs:
+  - name: emsk_em7d
+  - name: emsk_em9d
+  - name: emsk_em11d

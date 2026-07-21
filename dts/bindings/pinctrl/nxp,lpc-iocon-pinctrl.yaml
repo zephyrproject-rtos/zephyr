@@ -1,0 +1,139 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  LPC pinctrl node. This node defines pin configurations in pin groups, and has
+  the 'pinctrl' node identifier in the SOC's devicetree. Each group within the
+  pin configuration defines a peripheral's pin configuration. Each numbered
+  subgroup represents pins with shared configuration for that peripheral. The
+  'pinmux' property of each group selects the pins to be configured with these
+  properties. For example, here is a configuration for FLEXCOMM0 pins:
+
+  pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
+    group0 {
+      pinmux = <FC0_TXD_SCL_MISO_WS_PIO0_30>,
+              <FC0_RXD_SDA_MOSI_DATA_PIO0_29>;
+      slew-rate = "standard";
+    };
+  };
+
+  If only the required properties are supplied, the ICON_PIO register will
+  be assigned the following values:
+  IOCON_FUNC=<pin mux selection>,
+  IOCON_MODE=0,
+  IOCON_SLEW=<slew-rate selection>,
+  IOCON_INVERT=0,
+  IOCON_DIGIMODE=1,
+  IOCON_OD=0,
+
+  Values for I2C type and analog type pins have the following defaults:
+  IOCON_ASW=0
+  IOCON_SSEL=0
+  IOCON_FILTEROFF=1
+  IOCON_ECS=0
+  IOCON_EGP=1
+  IOCON_I2CFILTER=1
+
+  Note the inherited pinctrl properties defined below have the following effects:
+  drive-open-drain: IOCON_OD=1
+  bias-pull-up: IOCON_MODE=2
+  bias-pull-down: IOCON_MODE=1
+  drive-push-pull: IOCON_MODE=3
+
+  Note: for the LPC11u6x, the following fields are also supported:
+  IOCON_HYS- set by input-schmitt-enable
+  IOCON_S_MODE- set by nxp,digital-filter
+  IOCON_CLKDIV- set by nxp,filter-clock-div
+  IOCON_FILTR- set by nxp,analog-filter
+
+
+compatible: "nxp,lpc-iocon-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: LPC IOCON pin controller pin group
+  child-binding:
+    description: |
+      LPC IOCON pin controller pin configuration node
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-open-drain
+          - bias-pull-up
+          - bias-pull-down
+          - drive-push-pull
+          - input-schmitt-enable
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Pin mux selection for this group. See the SOC level pinctrl header
+          file in NXP's HAL for a defined list of these options.
+      slew-rate:
+        default: "standard"
+        type: string
+        enum:
+          - "standard"
+          - "fast"
+        description: |
+          Pin output slew rate. Sets the SLEW field in the IOCON register.
+          defaults to standard slew rate, due to this being the reset value of
+          the field.
+          0 SLEW_0- standard mode, output slew rate is slower
+          1 SLEW_1- fast mode, output slew rate is faster
+      nxp,invert:
+        type: boolean
+        description: |
+          Invert the pin input logic level
+      nxp,analog-mode:
+        type: boolean
+        description: |
+          Set the pin to analog mode. Sets DIGIMODE=0, and ASW=1. Only valid for
+          analog type pins. Selects ASW0 on LPC55s3x family
+      nxp,analog-alt-mode:
+        type: boolean
+        description: |
+          Select the pin's alternate analog mode. Valid on LPC55s3x family SOCs
+          when DIGIMODE=0. Only valid for analog type pins. Sets ASW1.
+      power-source:
+        type: string
+        enum:
+          - "3v3"
+          - "1v8"
+        description: |
+          Pin output power source. Only valid for I2C mode pins running in I2C
+          mode.
+      nxp,digital-filter:
+        type: boolean
+        description: |
+          Digital input filter. Noise pulses below 10ms are filtered out.
+      nxp,i2c-filter:
+        type: string
+        enum:
+          - "slow"
+          - "fast"
+        description: |
+          I2C glitch filter speed. Only valid for I2C mode pins. Fast mode
+          typically only required for High speed I2C.
+      nxp,i2c-speed:
+        type: string
+        enum:
+          - "slow"
+          - "fast"
+        description: |
+          I2C speed. Only valid for I2C mode pins. Fast mode should be used for
+          fast mode plus I2C.
+      nxp,i2c-pullup:
+        type: boolean
+        description: |
+          Enable I2C pullup resistor. If not present, pin is open drain in I2C
+          mode. Only valid for I2C mode pins in I2C mode
+      nxp,i2c-mode:
+        type: boolean
+        description: |
+          Enable I2C mode for a pin. If not present, pin is in GPIO mode. Only
+          valid for I2C mode pins

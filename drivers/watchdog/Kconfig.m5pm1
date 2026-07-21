@@ -1,0 +1,18 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_M5PM1
+	bool "M5Stack M5PM1 watchdog driver"
+	default y
+	depends on DT_HAS_M5STACK_M5PM1_WDT_ENABLED
+	select MFD
+	help
+	  Enable the watchdog driver for the M5Stack M5PM1.
+
+config WDT_M5PM1_INIT_PRIORITY
+	int "M5PM1 watchdog driver initialization priority"
+	depends on WDT_M5PM1
+	default 82
+	help
+	  Initialization priority for the M5PM1 watchdog driver. It must be
+	  greater than the MFD initialization priority.

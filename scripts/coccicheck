@@ -1,0 +1,243 @@
+#!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-2.0
+#
+
+ZEPHYR_BASE=$( builtin cd "$( dirname "$DIR" )" && pwd ${PWD_OPT})
+DIR="$(dirname $(readlink -f $0))/.."
+SPATCH="`which ${SPATCH:=spatch}`"
+
+if [ ! -x "$SPATCH" ]; then
+    echo 'spatch is part of the Coccinelle project and is available at http://coccinelle.lip6.fr/'
+    exit 1
+fi
+
+VERBOSE=0
+usage="Usage: ./scripts/coccicheck [OPTIONS]... [DIRECTORY|FILE]...
+
+OPTIONS:
+-------
+
+-m= , --mode=		specify the mode use {report, patch, org, context, chain}
+-v= , --verbose=	enable verbose output {1}
+-j= , --jobs=		number of jobs to use {0 - `nproc`}
+-c= , --cocci=		specify cocci script to use
+-d= , --debug=		specify file to store debug log
+-f= , --sp-flag=	pass additional flag to spatch
+-h  , --help		display help and exit
+
+Default values if any OPTION is not supplied:
+--------------------------------------------
+
+mode	= report
+verbose = 0 (disabled)
+jobs	= maximum jobs available on the machine
+cocci	= all cocci scripts available at scripts/coccinelle/*
+
+If no [DIRECTORY|FILE] is supplied, entire codebase is processed.
+
+For detailed documentation refer: doc/guides/coccinelle.rst"
+
+for i in "$@"
+do
+	case $i in
+		-m=*|--mode=*)
+			MODE="${i#*=}"
+			shift # past argument=value
+			;;
+		-v=*|--verbose=*)
+			VERBOSE="${i#*=}"
+			shift # past argument=value
+			;;
+		-j=*|--jobs=*)
+			J="${i#*=}"
+			shift
+			;;
+		-c=*|--cocci=*)
+			COCCI="${i#*=}"
+			shift
+			;;
+		-d=*|--debug=*)
+			DEBUG_FILE="${i#*=}"
+			shift
+			;;
+		-f=*|--sp-flag=*)
+			SPFLAGS="${i#*=}"
+			shift
+			;;
+		-h|--help)
+			echo "$usage"
+			exit 1
+			;;
+		*)
+			FILE="${i#*=}"
+			if [ ! -e "$FILE" ]; then
+				echo "unknown option: '${i#*=}'"
+				echo "$usage"
+				exit 2
+			fi
+			;;
+	esac
+done
+
+FLAGS="--very-quiet"
+
+if [ "$FILE" = "" ] ; then
+	OPTIONS="--dir $ZEPHYR_BASE"
+else
+	OPTIONS="--dir $FILE"
+fi
+
+if [ -z "$J" ]; then
+	NPROC=$(getconf _NPROCESSORS_ONLN)
+else
+	NPROC="$J"
+fi
+
+OPTIONS="--macro-file $ZEPHYR_BASE/scripts/coccinelle/macros.h $OPTIONS"
+
+if [ "$FILE" != "" ] ; then
+    OPTIONS="--patch $ZEPHYR_BASE $OPTIONS"
+fi
+
+if [ "$NPROC" != "1" ]; then
+	# Using 0 should work as well, refer to _SC_NPROCESSORS_ONLN use on
+	# https://github.com/rdicosmo/parmap/blob/master/setcore_stubs.c
+	OPTIONS="$OPTIONS --jobs $NPROC --chunksize 1"
+fi
+
+if [ "$MODE" = "" ] ; then
+	echo 'You have not explicitly specified the mode to use. Using default "report" mode.'
+	echo 'Available modes are the following: 'patch', 'report', 'context', 'org''
+	echo 'You can specify the mode with "./scripts/coccicheck --mode=<mode>"'
+	echo 'Note however that some modes are not implemented by some semantic patches.'
+    MODE="report"
+fi
+
+if [ "$MODE" = "chain" ] ; then
+	echo 'You have selected the "chain" mode.'
+	echo 'All available modes will be tried (in that order): patch, report, context, org'
+elif [ "$MODE" = "report" -o "$MODE" = "org" ] ; then
+    FLAGS="--no-show-diff $FLAGS"
+fi
+
+    echo ''
+    echo 'Please check for false positives in the output before submitting a patch.'
+    echo 'When using "patch" mode, carefully review the patch before submitting it.'
+    echo ''
+
+run_cmd_parmap() {
+	if [ $VERBOSE -ne 0 ] ; then
+		echo "Running ($NPROC in parallel): $@"
+	fi
+	echo $@ >>$DEBUG_FILE
+	$@ 2>>$DEBUG_FILE
+	err=$?
+	if [[ $err -ne 0 ]]; then
+		echo "coccicheck failed"
+		exit $err
+	fi
+}
+
+# You can override heuristics with SPFLAGS, these must always go last
+OPTIONS="$OPTIONS $SPFLAGS"
+
+coccinelle () {
+    COCCI="$1"
+    OPT=`grep "Options:" $COCCI | cut -d':' -f2`
+    VIRTUAL=`grep "virtual" $COCCI | cut -d' ' -f2`
+
+    if [[ $VIRTUAL = "" ]]; then
+	    echo "No available modes found in \"$COCCI\" script."
+	    echo "Consider adding virtual rules to the script."
+	    exit 1
+    elif [[ $VIRTUAL != *"$MODE"* ]]; then
+	    echo "Invalid mode \"$MODE\" supplied!"
+	    echo "Available modes for \"`basename $COCCI`\" are: "$VIRTUAL""
+
+	    if [[ $VIRTUAL == *report* ]]; then
+		    MODE=report
+	    elif [[ $VIRTUAL == *context* ]]; then
+		    MODE=context
+	    elif [[ $VIRTUAL == *patch* ]]; then
+		    MODE=patch
+	    else
+		    MODE=org
+	    fi
+	    echo "Using random available mode: \"$MODE\""
+	    echo ''
+    fi
+
+    if [ $VERBOSE -ne 0 ] ; then
+
+	FILE=${COCCI#$ZEPHYR_BASE/}
+
+	echo "Processing `basename $COCCI`"
+	echo "with option(s) \"$OPT\""
+	echo ''
+	echo 'Message example to submit a patch:'
+
+	sed -ne 's|^///||p' $COCCI
+
+	if [ "$MODE" = "patch" ] ; then
+	    echo ' The semantic patch that makes this change is available'
+	elif [ "$MODE" = "report" ] ; then
+	    echo ' The semantic patch that makes this report is available'
+	elif [ "$MODE" = "context" ] ; then
+	    echo ' The semantic patch that spots this code is available'
+	elif [ "$MODE" = "org" ] ; then
+	    echo ' The semantic patch that makes this Org report is available'
+	else
+	    echo ' The semantic patch that makes this output is available'
+	fi
+	echo " in $FILE."
+	echo ''
+	echo ' More information about semantic patching is available at'
+	echo ' http://coccinelle.lip6.fr/'
+	echo ''
+
+	if [ "`sed -ne 's|^//#||p' $COCCI`" ] ; then
+	    echo 'Semantic patch information:'
+	    sed -ne 's|^//#||p' $COCCI
+	    echo ''
+	fi
+    fi
+
+    if [ "$MODE" = "chain" ] ; then
+	run_cmd_parmap $SPATCH -D patch   \
+		$FLAGS --cocci-file $COCCI $OPT $OPTIONS               || \
+	run_cmd_parmap $SPATCH -D report  \
+		$FLAGS --cocci-file $COCCI $OPT $OPTIONS --no-show-diff || \
+	run_cmd_parmap $SPATCH -D context \
+		$FLAGS --cocci-file $COCCI $OPT $OPTIONS               || \
+	run_cmd_parmap $SPATCH -D org     \
+		$FLAGS --cocci-file $COCCI $OPT $OPTIONS --no-show-diff || exit 1
+    elif [ "$MODE" = "rep+ctxt" ] ; then
+	run_cmd_parmap $SPATCH -D report  \
+		$FLAGS --cocci-file $COCCI $OPT $OPTIONS --no-show-diff && \
+	run_cmd_parmap $SPATCH -D context \
+		$FLAGS --cocci-file $COCCI $OPT $OPTIONS || exit 1
+    else
+	run_cmd_parmap $SPATCH -D $MODE   $FLAGS --cocci-file $COCCI $OPT $OPTIONS || exit 1
+    fi
+
+    MODE=report
+}
+
+if [ "$DEBUG_FILE" != "/dev/null" -a "$DEBUG_FILE" != "" ]; then
+	if [ -f $DEBUG_FILE ]; then
+		echo "Debug file \"$DEBUG_FILE\" exists, bailing ..."
+		exit
+	fi
+else
+	DEBUG_FILE="/dev/null"
+fi
+
+if [ "$COCCI" = "" ] ; then
+    for f in `find $ZEPHYR_BASE/scripts/coccinelle/ -name '*.cocci' -type f | sort`; do
+	coccinelle $f
+	echo '-------------------------------------------------------------------------'
+	echo ''
+    done
+else
+    coccinelle $COCCI
+fi

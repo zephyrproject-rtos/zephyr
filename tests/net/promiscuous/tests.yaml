@@ -1,0 +1,7 @@
+tests:
+  net.promisc:
+    min_ram: 16
+    tags:
+      - net
+      - promisc
+    depends_on: netif

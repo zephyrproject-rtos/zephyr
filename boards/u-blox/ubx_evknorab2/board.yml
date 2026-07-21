@@ -1,0 +1,68 @@
+board:
+  name: ubx_evknorab2
+  full_name: EVK-NORA-B2
+  vendor: u-blox
+  socs:
+    - name: nrf54l05
+    - name: nrf54l10
+      variants:
+        - name: ns
+          cpucluster: cpuapp
+    - name: nrf54l15
+      variants:
+        - name: xip
+          cpucluster: cpuflpr
+        - name: ns
+          cpucluster: cpuapp
+runners:
+  run_once:
+    '--recover':
+      - runners:
+          - nrfjprog
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - ubx_evknorab2/nrf54l05/cpuapp
+              - ubx_evknorab2/nrf54l05/cpuflpr
+              - ubx_evknorab2/nrf54l10/cpuapp
+              - ubx_evknorab2/nrf54l10/cpuflpr
+              - ubx_evknorab2/nrf54l10/cpuapp/ns
+              - ubx_evknorab2/nrf54l15/cpuapp
+              - ubx_evknorab2/nrf54l15/cpuapp/ns
+              - ubx_evknorab2/nrf54l15/cpuflpr
+              - ubx_evknorab2/nrf54l15/cpuflpr/xip
+    '--erase':
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - ubx_evknorab2/nrf54l05/cpuapp
+              - ubx_evknorab2/nrf54l05/cpuflpr
+              - ubx_evknorab2/nrf54l10/cpuapp
+              - ubx_evknorab2/nrf54l10/cpuflpr
+              - ubx_evknorab2/nrf54l10/cpuapp/ns
+              - ubx_evknorab2/nrf54l15/cpuapp
+              - ubx_evknorab2/nrf54l15/cpuapp/ns
+              - ubx_evknorab2/nrf54l15/cpuflpr
+              - ubx_evknorab2/nrf54l15/cpuflpr/xip
+    '--reset':
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+        run: last
+        groups:
+          - boards:
+              - ubx_evknorab2/nrf54l05/cpuapp
+              - ubx_evknorab2/nrf54l05/cpuflpr
+              - ubx_evknorab2/nrf54l10/cpuapp
+              - ubx_evknorab2/nrf54l10/cpuflpr
+              - ubx_evknorab2/nrf54l10/cpuapp/ns
+              - ubx_evknorab2/nrf54l15/cpuapp
+              - ubx_evknorab2/nrf54l15/cpuapp/ns
+              - ubx_evknorab2/nrf54l15/cpuflpr
+              - ubx_evknorab2/nrf54l15/cpuflpr/xip

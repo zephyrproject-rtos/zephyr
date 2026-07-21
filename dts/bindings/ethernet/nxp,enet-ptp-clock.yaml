@@ -1,0 +1,12 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP ENET PTP (Precision Time Protocol) Clock
+
+compatible: "nxp,enet-ptp-clock"
+
+include: ["base.yaml", "pinctrl-device.yaml"]
+
+properties:
+  interrupts:
+    required: true

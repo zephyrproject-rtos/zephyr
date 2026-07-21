@@ -1,0 +1,17 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_AXP192_AXP2101
+	bool "X-Powers AXP192/AXP2101 LED driver"
+	default y
+	depends on DT_HAS_X_POWERS_AXP192_LED_ENABLED || DT_HAS_X_POWERS_AXP2101_LED_ENABLED
+	depends on DT_HAS_X_POWERS_AXP192_ENABLED || DT_HAS_X_POWERS_AXP2101_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable the AXP192/AXP2101 LED driver.
+
+	  AXP192 and AXP2101 are multi-functional integrated Power Management IC (PMIC).
+	  This driver is for its LED controller feature.
+	  This LED controller can control the lighting using a register,
+	  and can also light up in response to the charging status.

@@ -1,0 +1,5 @@
+description: STM32 LPUART
+
+compatible: "st,stm32-lpuart"
+
+include: st,stm32-uart-base.yaml

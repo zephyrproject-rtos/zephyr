@@ -1,0 +1,24 @@
+description: NUVOTON NUMICRO FAMILY UART
+
+compatible: "nuvoton,numicro-uart"
+
+include: [uart-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  resets:
+    required: true
+
+  clocks:
+    required: true
+
+  stop-bits:
+    default: "1"
+
+  data-bits:
+    default: 8
+
+  pinctrl-0:
+    required: true

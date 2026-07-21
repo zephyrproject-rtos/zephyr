@@ -1,0 +1,15 @@
+common:
+  depends_on: spi
+  tags:
+    - drivers
+    - spi
+  filter: dt_alias_exists("spi-ram")
+  harness: ztest
+  harness_config:
+    fixture: spi_ram
+tests:
+  drivers.spi.ram:
+    depends_on: spi
+    tags:
+      - drivers
+      - spi

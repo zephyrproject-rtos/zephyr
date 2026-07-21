@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MICROCHIP_PIC32CK_SG_GC
+	select ARM
+	select MICROCHIP_PIC32C
+	select CPU_CORTEX_M33
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	select ARMV8_M_DSP
+	select CPU_HAS_FPU
+	select CPU_CORTEX_M_HAS_DWT

@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: LiteX LiteSDCard SDHC
+
+compatible: "litex,mmc"
+
+include: [sdhc.yaml]
+
+properties:
+  bus-width:
+    type: int
+    enum:
+      - 1
+      - 4
+      - 8
+    default: 4
+
+  interrupts:
+    required: true

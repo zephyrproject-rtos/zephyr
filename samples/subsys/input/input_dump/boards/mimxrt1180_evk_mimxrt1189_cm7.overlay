@@ -1,0 +1,7 @@
+/*
+ * Copyright 2025-2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mimxrt1180_evk_mimxrt1189_cm33.overlay"

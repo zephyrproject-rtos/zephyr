@@ -1,0 +1,40 @@
+# AMEBA SPI configuration
+
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_AMEBA
+	bool "AMEBA SPI driver"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_SPI_ENABLED
+	select PINCTRL
+	help
+		Enables support for AMEBA SPI driver.
+
+if SPI_AMEBA
+
+choice SPI_AMEBA_OPERATION_MODE
+	prompt "AMEBA SPI Operation Mode"
+	default SPI_AMEBA_POLLING
+	help
+	  Select the operation mode for AMEBA SPI driver.
+
+	config SPI_AMEBA_INTERRUPT
+		bool "AMEBA SPI interrupt mode"
+		help
+			Enables interrupt support for AMEBA SPI driver.
+
+	config SPI_AMEBA_DMA
+		bool "AMEBA SPI DMA Support"
+		select DMA
+		help
+			Enable the SPI DMA mode.
+
+	config SPI_AMEBA_POLLING
+		bool "AMEBA SPI polling mode"
+		help
+			Enable the SPI polling mode.
+
+endchoice
+
+endif # SPI_AMEBA

@@ -1,0 +1,11 @@
+# Copyright 2023 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_SBS_CUTOFF_EXTENSION
+	bool "Test Battery Cutoff"
+	help
+	  Enabling this option adds test sources that verify if the battery cutoff extension to the
+	  SBS driver are functional.

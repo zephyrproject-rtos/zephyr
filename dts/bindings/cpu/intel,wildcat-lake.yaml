@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel Wildcat Lake CPU
+
+compatible: "intel,wildcat-lake"
+
+include: cpu.yaml

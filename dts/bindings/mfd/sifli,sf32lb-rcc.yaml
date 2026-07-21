@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiFli SF32LB RCC (Reset and Clock Control) if a multi-function peripheral in
+  charge of reset and clock control for all SoC peripherals. Child nodes are
+  used to represent each functional block.
+
+compatible: "sifli,sf32lb-rcc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

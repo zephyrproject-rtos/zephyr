@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dac/silabs-vdac.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&vdac0 0>;
+		io-channel-names = "dac1";
+	};
+};
+
+&vdac0 {
+	status = "okay";
+	voltage-reference = "AVDD";
+
+	channel@0 {
+		reg = <0>;
+		aux-output = <VDAC_OUTPUT_AUX>;
+		zephyr,resolution = <12>;
+	};
+};

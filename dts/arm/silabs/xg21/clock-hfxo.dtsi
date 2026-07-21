@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_K(38400)>;
+};
+
+&em01grpaclk {
+	clocks = <&hfxo>;
+};
+
+&hfrcodpll {
+	status = "disabled";
+};
+
+&hfxo {
+	status = "okay";
+};
+
+&itm {
+	swo-ref-frequency = <DT_FREQ_K(38400)>;
+};
+
+&sysclk {
+	clocks = <&hfxo>;
+};

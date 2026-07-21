@@ -1,0 +1,38 @@
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Specialization of Bosch m_can CAN FD controller for Atmel SAM0
+
+compatible: "atmel,sam0-can"
+
+include:
+  - name: bosch,m_can-base.yaml
+  - name: pinctrl-device.yaml
+  - name: atmel,assigned-clocks.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  atmel,assigned-clocks:
+    required: true
+
+  atmel,assigned-clock-names:
+    required: true
+
+  divider:
+    type: int
+    required: true
+    description: Clock divider of GLCK7 used by CAN as clock source

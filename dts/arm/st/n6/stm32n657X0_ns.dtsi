@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Overlay DTSI file for using non-secure address ranges for IOMEM peripherals
+ * and internal RAMs.
+ */
+
+#include <mem.h>
+
+/ {
+	axisram12@34000000 {
+		ranges = <0x34000000 0x24000000 DT_SIZE_M(2)>;
+	};
+
+	soc {
+		peripherals@40000000 {
+			ranges = <0x50000000 0x40000000 DT_SIZE_M(256)>,
+				 <0x30000000 0x20000000 DT_SIZE_M(256)>;
+		};
+	};
+};

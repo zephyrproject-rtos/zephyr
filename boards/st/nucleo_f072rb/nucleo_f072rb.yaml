@@ -1,0 +1,24 @@
+identifier: nucleo_f072rb
+name: ST Nucleo F072RB
+type: mcu
+arch: arm
+ram: 16
+flash: 128
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - rtc
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: st

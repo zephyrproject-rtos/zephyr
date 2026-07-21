@@ -1,0 +1,7 @@
+# Copyright (c) 2016 Piotr Mienkowski
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SAM_V71_XULT
+	select SOC_SAMV71Q21 if BOARD_SAM_V71_XULT_SAMV71Q21
+	select SOC_SAMV71Q21B if BOARD_SAM_V71_XULT_SAMV71Q21B

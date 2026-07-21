@@ -1,0 +1,31 @@
+# ST Microelectronics STM32F1 MCU line
+
+# Copyright (c) 2016 Open-RnD Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+# Kconfig symbols common to STM32F1 series
+
+if SOC_SERIES_STM32F1X
+
+# STM32F103x8 must be exposed as STM32F103xB at HAL level.
+# STM32F105xB must be exposed as STM32F105xC at HAL level.
+configdefault STM32CUBE_SOC_NAME_OVERRIDE
+	default "stm32f103xb" if SOC_STM32F103X8
+	default "stm32f105xc" if SOC_STM32F105XB
+
+# adjust the fallback because of the LSI oscaillator characteristics
+config TASK_WDT_HW_FALLBACK_DELAY
+	depends on TASK_WDT_HW_FALLBACK
+	default 200
+
+if PM
+
+config COUNTER
+	default y
+
+endif # PM
+
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x5ee21072" if SOC_STM32F103XE
+
+endif # SOC_SERIES_STM32F1X

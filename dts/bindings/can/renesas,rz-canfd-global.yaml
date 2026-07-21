@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ CANFD controller global
+
+compatible: "renesas,rz-canfd-global"
+
+include: [base.yaml]
+
+properties:
+  interrupts:
+    required: true

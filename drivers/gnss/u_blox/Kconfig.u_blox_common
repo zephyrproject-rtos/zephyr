@@ -1,0 +1,23 @@
+# Copyright 2024 NXP
+# Copyright (c) 2025 Croxel Inc.
+# Copyright (c) 2025 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+if GNSS_U_BLOX
+
+if GNSS_SATELLITES
+
+config GNSS_U_BLOX_SATELLITES_COUNT
+	int "U-Blox maximum satellite count"
+	default 24
+	help
+	  Maximum number of satellites that the U-Blox drivers can decode.
+	  This does not affect the number of satellites the device is tracking,
+	  only how many are reported in the satellites callback.
+
+endif # GNSS_SATELLITES
+
+config GNSS_U_BLOX_RESET_ON_INIT
+	bool "Reset GNSS on init using reset pin"
+
+endif # GNSS_U_BLOX

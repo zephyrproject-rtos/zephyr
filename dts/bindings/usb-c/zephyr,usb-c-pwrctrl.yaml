@@ -1,0 +1,35 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This device manages USB-C VBUS and VCONN power rails.
+    Uses GPIOs to enable/disable power paths and an optional PWM channel to
+    adjust the VBUS source voltage.
+
+compatible: "zephyr,usb-c-pwrctrl"
+
+include: base.yaml
+
+properties:
+  source-en-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO to enable VBUS source output.
+
+  vconn1-en-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO to enable VCONN on CC1.
+
+  vconn2-en-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO to enable VCONN on CC2.
+
+  dcdc-en-gpios:
+    type: phandle-array
+    description: GPIO to enable DCDC converter for VBUS source voltage regulation.
+
+  pwms:
+    type: phandle-array
+    description: PWM for VBUS source voltage selection.

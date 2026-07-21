@@ -1,0 +1,47 @@
+#
+# Schema to validate a YAML file describing a Zephyr test configuration.
+#
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: object
+properties:
+  options:
+    type: object
+    properties:
+      integration_mode:
+        type: array
+        items:
+          type: string
+    additionalProperties: false
+  platforms:
+    type: object
+    properties:
+      override_default_platforms:
+        type: boolean
+      increased_platform_scope:
+        type: boolean
+      default_platforms:
+        type: array
+        items:
+          type: string
+    additionalProperties: false
+  levels:
+    type: array
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        adds:
+          type: array
+          items:
+            type: string
+        inherits:
+          type: array
+          items:
+            type: string
+      required:
+        - name
+      additionalProperties: false
+additionalProperties: false

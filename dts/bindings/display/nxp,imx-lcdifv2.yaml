@@ -1,0 +1,20 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX LCDIFV2 (LCD Interface v2) controller
+
+compatible: "nxp,imx-lcdifv2"
+
+include: [lcd-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  backlight-gpios:
+    type: phandle-array
+    description:
+      Backlight GPIO specifier

@@ -1,0 +1,2 @@
+This test case verifies that kernel fatal error handling works correctly
+when CONFIG_MULTITHREADING=n.

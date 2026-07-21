@@ -1,0 +1,6 @@
+board:
+  name: stm32mp135f_dk
+  full_name: STM32MP135F-DK Discovery
+  vendor: st
+  socs:
+    - name: stm32mp135fxx

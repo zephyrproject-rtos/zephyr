@@ -1,0 +1,7 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/MCXN547VDF-pinctrl.h>
+#include "mcx_nx4x_evk-pinctrl.dtsi"

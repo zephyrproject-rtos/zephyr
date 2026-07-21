@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2025 Espressif Systems (Shanghai) CO LTD
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "ESP32 I2S Loopback Test"
+
+source "Kconfig.zephyr"
+
+config I2S_TEST_SEPARATE_DEVICES
+	bool "Use two separate I2S ports for loopback"
+	help
+	  Use separate I2S ports for transmit and receive.
+
+config I2S_TEST_USE_GPIO_LOOPBACK
+	bool "Use GPIO loopback"
+	help
+	  Use wiring between the data-out and data-in pins for looping back data.
+
+config I2S_TEST_ALLOWED_DATA_DISCARD
+	int "Allowed discard in received data"
+	default 0
+	help
+	  Maximum allowed discard between sent and received samples

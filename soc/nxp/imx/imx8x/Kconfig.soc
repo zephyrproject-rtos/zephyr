@@ -1,0 +1,36 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMX8X
+	bool
+	select SOC_FAMILY_NXP_IMX
+
+config SOC_SERIES
+	default "imx8x" if SOC_SERIES_IMX8X
+
+config SOC_MIMX8QX6
+	bool
+	select SOC_SERIES_IMX8X
+
+config SOC
+	default "mimx8qx6" if SOC_MIMX8QX6
+
+config SOC_MIMX8QX6_ADSP
+	bool
+	select SOC_MIMX8QX6
+	help
+	  Enable support for NXP i.MX 8QXP Audio DSP
+
+config SOC_TOOLCHAIN_NAME
+	string
+	default "nxp_imx_adsp" if SOC_MIMX8QX6_ADSP
+
+config SOC_PART_NUMBER_MIMX8QX6AVLFZ
+	bool
+
+config SOC_PART_NUMBER_MIMX8QX6CVLDZ
+	bool
+
+config SOC_PART_NUMBER
+	default "MIMX8QX6AVLFZ" if SOC_PART_NUMBER_MIMX8QX6AVLFZ
+	default "MIMX8QX6CVLDZ" if SOC_PART_NUMBER_MIMX8QX6CVLDZ

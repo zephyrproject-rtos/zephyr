@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Analog Devices Inc.
+# Copyright (c) 2024 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: MAX22017 GPIO
+
+compatible: "adi,max22017-gpio"
+
+include: gpio-controller.yaml
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

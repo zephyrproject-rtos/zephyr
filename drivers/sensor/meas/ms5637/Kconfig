@@ -1,0 +1,11 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config MS5637
+	bool "MS5637 Pressure and Temperature Sensor"
+	default y
+	depends on DT_HAS_MEAS_MS5637_ENABLED
+	select I2C
+	help
+	  Enable driver for the TE Connectivity MS5637 digital
+	  pressure and temperature sensor over I2C.

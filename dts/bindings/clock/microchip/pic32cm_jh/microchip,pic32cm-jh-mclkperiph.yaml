@@ -1,0 +1,45 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CM_JH MCLK (Main Clock) peripheral
+
+description: |
+  Main Clock Controller provides synchronous system clocks to the modules
+  connected to the AHBx and the APBx buses.
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cm-jh-mclkperiph"
+
+properties:
+  "#clock-cells":
+    const: 1
+    type: int
+    description: |
+      The subsystem cell is to identify a clock controller sub-system.
+
+      The subsystem can be referred from include\zephyr\dt-bindings\clock\mchp_pic32cm_jh_clock.h,
+      under the MCLKPERIPH_TYPE section of ids.
+      All clock control API use this value to specify the clock on which the API operates.
+      Since subsystem is opaque to the user, it can be accessed from the devicetree node and used.
+
+clock-cells:
+  - subsystem
+
+child-binding:
+  properties:
+    subsystem:
+      type: int
+      required: true
+      description: |
+        Clock subsystem
+
+    mclk-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      required: true
+      description: |
+        Enable mclk to the peripheral
+        0: to disable, 1: to enable

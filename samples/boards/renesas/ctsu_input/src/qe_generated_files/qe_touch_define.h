@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef QE_TOUCH_DEFINE_H
+#define QE_TOUCH_DEFINE_H
+
+/* Macro definitions */
+#define QE_TOUCH_VERSION 0x0420
+
+#define CTSU_CFG_NUM_SELF_ELEMENTS 6
+
+#define CTSU_CFG_NUM_MUTUAL_ELEMENTS 0
+
+#define TOUCH_CFG_MONITOR_ENABLE 1
+#define TOUCH_CFG_NUM_BUTTONS    2
+#define TOUCH_CFG_NUM_SLIDERS    1
+#define TOUCH_CFG_NUM_WHEELS     0
+#define TOUCH_CFG_PAD_ENABLE     0
+
+#define QE_TOUCH_MACRO_CTSU_IP_KIND 1
+
+#define CTSU_CFG_VCC_MV           3300
+#define CTSU_CFG_LOW_VOLTAGE_MODE 0
+
+#define CTSU_CFG_PCLK_DIVISION 0
+
+#define CTSU_CFG_TSCAP_PORT 0x0C04
+
+#define CTSU_CFG_NUM_SUMULTI 1
+
+#define CTSU_CFG_TARGET_VALUE_QE_SUPPORT 1
+
+#define CTSU_CFG_NUM_AUTOJUDGE_SELF_ELEMENTS   0
+#define CTSU_CFG_NUM_AUTOJUDGE_MUTUAL_ELEMENTS 0
+
+/* Button State Mask for each configuration. */
+#define CONFIG01_INDEX_BUTTON1  0
+#define CONFIG01_MASK_BUTTON1   (1ULL << CONFIG01_INDEX_BUTTON1)
+#define CONFIG01_INDEX_BUTTON02 1
+#define CONFIG01_MASK_BUTTON02  (1ULL << CONFIG01_INDEX_BUTTON02)
+
+#endif /* QE_TOUCH_DEFINE_H */

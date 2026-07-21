@@ -1,0 +1,22 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensor
+
+include: base.yaml
+
+compatible: "vnd,sensor"
+
+properties:
+  sample-period:
+    type: int
+    required: true
+
+  sample-size:
+    type: int
+    required: true
+
+  max-msgs:
+    type: int
+    required: true

@@ -1,0 +1,44 @@
+# Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM0 basic timer counter (TC) operating in 32-bit wide mode
+
+compatible: "atmel,sam0-tc32"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+  - name: atmel,assigned-clocks.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  atmel,assigned-clocks:
+    required: true
+
+  atmel,assigned-clock-names:
+    required: true
+
+  prescaler:
+    type: int
+    description: Timer prescaler
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 64
+      - 256
+      - 1024

@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&keyscan {
+	pinctrl-0 = <&keyscan_default>;
+	pinctrl-names = "default";
+	row-size = <2>;
+	col-size = <2>;
+	debounce-down-ms = <10>;
+	debounce-up-ms = <10>;
+	poll-period-us = <10000>;
+	release-time-us = <5000>;
+	status = "okay";
+};
+
+&pinctrl {
+	keyscan_default: keyscan_default {
+		group1 {
+			psels = <BEE_PSEL(KEY_COL_0, P0_0)>,
+				<BEE_PSEL(KEY_COL_1, P0_1)>;
+			output-enable;
+			output-low;
+			bias-disable;
+		};
+
+		group2 {
+			psels = <BEE_PSEL(KEY_ROW_0, P2_6)>,
+				<BEE_PSEL(KEY_ROW_1, P2_7)>;
+			output-disable;
+			bias-pull-up;
+			bias-pull-strong;
+		};
+	};
+};

@@ -1,0 +1,48 @@
+# Copyright (c) 2026 EXALT Technologies.
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 PSRAM device on mspi bus
+
+compatible: "st,psram-device"
+
+include: ["mspi-device.yaml", "jedec,jesd216.yaml"]
+
+properties:
+  st,timing-config:
+    type: array
+    default: [0]
+    description: |
+      Array of tuples to configure the timing parameters.
+      Currently supports only one parameter per tuple (turnaround_cycles).
+      Can be extended to include more timing fields in the future.
+
+  drive-strength:
+    type: int
+    default: 0
+    description: |
+      Drive strength code:
+      - 0: Full
+      - 1: Half
+      - 2: 1/4
+      - 3: 1/8
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  aps-version:
+    type: string
+    default: generic
+    enum:
+      - generic
+      - APS256
+      - APS6408L
+    description: |
+      Specifies the AP Memory pSRAM variant connected to the MSPI interface.
+
+  read-command:
+    required: true
+
+  write-command:
+    required: true

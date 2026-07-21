@@ -1,0 +1,14 @@
+# Copyright (c) 2023 KNS Group LLC (YADRO)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PROFILING
+	bool "Profiling tools"
+	help
+	  Enable profiling tools, such as perf
+
+if PROFILING
+
+source "subsys/profiling/perf/Kconfig"
+
+endif

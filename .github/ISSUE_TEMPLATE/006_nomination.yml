@@ -1,0 +1,58 @@
+name: Collaborator Nomination
+description: Nominate a GitHub user for the Collaborator role
+labels: [Role Nomination]
+assignees: ['nashif']
+type: Task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Background
+
+        The [TSC Project Roles](https://docs.zephyrproject.org/latest/project/project_roles.html) defines the main roles for the Zephyr Project, including Maintainer, Collaborator, and Contributor.
+
+        The Collaborator role is a significant recognition of a contributor's dedication and impact on the Zephyr project. Collaborators have the ability to review and merge pull requests, manage issues, and contribute to the overall direction of the project.
+
+        Use this form to nominate a GitHub user for the Collaborator role. Please provide detailed information about the nominee's contributions to the Zephyr project, including links to pull requests they have authored or reviewed that demonstrate their dedication and impact.
+
+        Reference this nomination when adding yourself to the MAINTAINERS file as a Collaborator.
+
+  - type: input
+    id: full-name
+    attributes:
+      label: Full Name
+      description: Full name of the nominated contributor.
+      placeholder: e.g., Jane Doe
+    validations:
+      required: true
+
+  - type: input
+    id: github-username
+    attributes:
+      label: GitHub Username
+      description: GitHub handle of the nominated contributor.
+      placeholder: e.g., @janedoe
+    validations:
+      required: true
+
+  - type: input
+    id: organization
+    attributes:
+      label: Organization
+      description: Organization the nominee is affiliated with (optional).
+      placeholder: e.g., Acme Corp
+    validations:
+      required: false
+
+  - type: textarea
+    id: supporting-documents
+    attributes:
+      label: Supporting Documents
+      description: Provide links to 3–5 pull requests authored or reviewed by the nominee that demonstrate their dedication to the Zephyr project.
+      placeholder: |
+        e.g.,
+        - https://github.com/zephyrproject-rtos/zephyr/pull/12345
+        - https://github.com/zephyrproject-rtos/zephyr/pull/23456
+        - https://github.com/zephyrproject-rtos/zephyr/pull/34567
+    validations:
+      required: true

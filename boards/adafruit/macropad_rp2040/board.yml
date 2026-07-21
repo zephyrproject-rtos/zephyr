@@ -1,0 +1,6 @@
+board:
+  name: adafruit_macropad_rp2040
+  full_name: Adafruit MacroPad RP2040
+  vendor: adafruit
+  socs:
+    - name: rp2040

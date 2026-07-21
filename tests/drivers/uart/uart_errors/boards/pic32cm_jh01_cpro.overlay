@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* connect PA12(EXT1.14) to PB17(EXT1.5) and PA13(EXT1.13) to PB16(EXT1.6) */
+
+dut: &sercom2 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom2_uart_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 0x2 0x6>, <&dmac 0x3 0x7>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+dut_aux: &sercom5 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom5_uart_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 0x4 0xc>, <&dmac 0x5 0xd>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&pinctrl {
+	sercom2_uart_default: sercom2_uart_default {
+		group1 {
+			pinmux = <PA12C_SERCOM2_PAD0>,
+				 <PA13C_SERCOM2_PAD1>;
+		};
+	};
+
+	sercom5_uart_default: sercom5_uart_default {
+		group1 {
+			pinmux = <PB16C_SERCOM5_PAD0>,
+				 <PB17C_SERCOM5_PAD1>;
+		};
+	};
+};

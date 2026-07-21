@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config RISCV_CUSTOM_CSR_VEXRISCV_CACHE
+	bool
+	default y
+	depends on ARCH_CACHE
+	help
+	  This option enables cache support for VexRiscv family of CPUs.

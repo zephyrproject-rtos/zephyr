@@ -1,0 +1,9 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_NXP_IMX_MU
+	bool "NXP i.MX Message Unit (MU) driver"
+	default y
+	depends on DT_HAS_NXP_MBOX_IMX_MU_ENABLED
+	help
+	  Driver for NXP i.MX Message Unit.

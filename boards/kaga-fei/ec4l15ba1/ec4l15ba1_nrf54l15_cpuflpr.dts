@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 KAGA FEI Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf54l15_cpuflpr.dtsi>
+#include "ec4l15ba1_common.dtsi"
+
+/ {
+	model = "KAGA FEI EC4L15BA1 nRF54L15 FLPR MCU";
+	compatible = "kaga-fei,ec4l15ba1_nrf54l15-cpuflpr";
+
+	chosen {
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+		zephyr,code-partition = &cpuflpr_code_partition;
+		zephyr,flash = &cpuflpr_rram;
+		zephyr,sram = &cpuflpr_sram;
+	};
+};
+
+&cpuflpr_rram {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		cpuflpr_code_partition: partition@0 {
+			label = "image-0";
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(96)>;
+		};
+	};
+};
+
+&grtc {
+	owned-channels = <3 4>;
+	status = "okay";
+};
+
+&uart30 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};

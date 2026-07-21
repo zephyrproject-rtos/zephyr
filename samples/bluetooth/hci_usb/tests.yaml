@@ -1,0 +1,11 @@
+sample:
+  name: Bluetooth over USB sample
+tests:
+  sample.bluetooth.hci_usb:
+    harness: bluetooth
+    depends_on:
+      - usbd
+      - ble
+    tags:
+      - usb
+      - bluetooth

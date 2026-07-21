@@ -1,0 +1,28 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "NVS Sample Configuration"
+
+config NVS_SAMPLE_MAX_REBOOT
+	int "Maximum reboot counter value"
+	default 5
+	range 1 1000
+	help
+	  Maximum number of reboots to perform before resetting the counter.
+
+config NVS_SAMPLE_REBOOT_COUNTDOWN
+	int "Reboot countdown value (in iterations)"
+	default 5
+	range 1 60
+	help
+	  Number of countdown iterations to wait before rebooting the device.
+	  Each iteration takes NVS_SAMPLE_SLEEP_TIME milliseconds.
+
+config NVS_SAMPLE_SLEEP_TIME
+	int "Sleep time between reboot countdown iterations (in milliseconds)"
+	default 100
+	range 10 10000
+	help
+	  Duration in milliseconds to sleep between reboot countdown iterations.
+
+source "Kconfig.zephyr"

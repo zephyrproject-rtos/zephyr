@@ -1,0 +1,11 @@
+tests:
+  drivers.pinctrl.nrf:
+    tags:
+      - drivers
+      - pinctrl
+    vendor_allow:
+      - nordic
+    platform_exclude:
+      - thingy53/nrf5340/cpunet
+    integration_platforms:
+      - qemu_cortex_m0/nrf51822

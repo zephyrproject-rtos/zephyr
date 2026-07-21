@@ -1,0 +1,6 @@
+board:
+  name: tyzs3
+  full_name: TYZS3
+  vendor: tuya
+  socs:
+  - name: efr32mg13p732f512gm48

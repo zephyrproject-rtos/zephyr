@@ -1,0 +1,19 @@
+identifier: weact_stm32f446_core
+name: WeAct Studio STM32F446 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 512
+supported:
+  - counter
+  - spi
+  - i2c
+  - uart
+  - can
+  - gpio
+  - watchdog
+  - backup_sram
+vendor: weact

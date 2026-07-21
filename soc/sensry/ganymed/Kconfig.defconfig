@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 sensry.io
+
+if SOC_SERIES_SY1XX
+
+rsource "*/Kconfig.defconfig"
+
+endif

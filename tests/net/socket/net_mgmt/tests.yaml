@@ -1,0 +1,15 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - socket
+    - net_mgmt
+    - userspace
+  min_ram: 21
+tests:
+  net.socket.mgmt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.socket.mgmt.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y

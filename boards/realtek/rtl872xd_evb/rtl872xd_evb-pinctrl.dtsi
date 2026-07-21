@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2024 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/amebad-pinctrl.h>
+
+&pinctrl {
+	compatible = "realtek,ameba-pinctrl";
+
+	/* PA30 is SWD_CLK, PA31 is SWD_DAT(both pull-up internally) */
+	loguart_default: loguart_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 8, AMEBA_LOGUART)>,        /* RXD */
+				 <AMEBA_PINMUX('A', 7, AMEBA_LOGUART)>;        /* TXD */
+			bias-pull-up;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('A', 25, AMEBA_I2C)>,
+				 <AMEBA_PINMUX('A', 26, AMEBA_I2C)>;
+			bias-pull-up;
+		};
+	};
+
+	/* amebad spi1 only be master */
+	spi1_default: spi1_default {
+		group1 {
+			pinmux = <AMEBA_PINMUX('B', 6, AMEBA_SPIM)>,/* AMEBA_SPI1_CLK */
+				 <AMEBA_PINMUX('B', 4, AMEBA_SPIM)>,/* AMEBA_SPI1_MOSI */
+				 <AMEBA_PINMUX('B', 5, AMEBA_SPIM)>;/* AMEBA_SPI1_MISO */
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <AMEBA_PINMUX('B', 7, AMEBA_SPIM)>;/* AMEBA_SPI1_CS */
+			bias-pull-up;
+		};
+	};
+
+	/* NOTE: PB4~PB7 CANNOT be selected by ADC and CTC simultaneously!!! */
+	/omit-if-no-ref/ adc_in0_pb4: adc_in0_pb4 {
+		pinmux = <AMEBA_PINMUX('B', 4, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in1_pb5: adc_in1_pb5 {
+		pinmux = <AMEBA_PINMUX('B', 5, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in2_pb6: adc_in2_pb6 {
+		pinmux = <AMEBA_PINMUX('B', 6, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in3_pb7: adc_in3_pb7 {
+		pinmux = <AMEBA_PINMUX('B', 7, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in4_pb1: adc_in4_pb1 {
+		pinmux = <AMEBA_PINMUX('B', 1, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in5_pb2: adc_in5_pb2 {
+		pinmux = <AMEBA_PINMUX('B', 2, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+
+	/omit-if-no-ref/ adc_in6_pb3: adc_in6_pb3 {
+		pinmux = <AMEBA_PINMUX('B', 3, AMEBA_GPIO)>;
+		digital-input-disable;
+	};
+};

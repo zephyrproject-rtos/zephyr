@@ -1,0 +1,240 @@
+/*
+ * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+#include <nordic/nrf52840_partition_uf2_sdv7.dtsi>
+#include <zephyr/dt-bindings/adc/nrf-saadc.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "wio_tracker_l1-pinctrl.dtsi"
+
+/ {
+	model = "Seeed Wio Tracker L1";
+	compatible = "seeed,wio-tracker-l1";
+
+	chosen {
+		zephyr,display = &oled;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	trackball {
+		compatible = "gpio-keys";
+
+		tb_up: tb_up {
+			gpios = <&gpio1 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Trackball Up";
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		tb_down: tb_down {
+			gpios = <&gpio0 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Trackball Down";
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		tb_left: tb_left {
+			gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Trackball Left";
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		tb_right: tb_right {
+			gpios = <&gpio1 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Trackball Right";
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+
+		tb_press: tb_press {
+			gpios = <&gpio1 5 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Trackball Press";
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc 7>;
+		output-ohms = <1000000>;
+		full-ohms = <2000000>;
+		power-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+	};
+
+	buzzer: buzzer {
+		compatible = "pwm-buzzer";
+		pwms = <&pwm0 0 PWM_HZ(2700) PWM_POLARITY_NORMAL>;
+	};
+
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+		lora0 = &lora;
+		gnss = &gnss;
+		buzzer0 = &buzzer;
+		watchdog0 = &wdt0;
+	};
+};
+
+&reg0 {
+	status = "okay";
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&uicr {
+	gpio-as-nreset;
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&adc {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@7 {
+		reg = <7>;
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,vref-mv = <600>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 40)>;
+		zephyr,input-positive = <NRF_SAADC_AIN7>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	oled: sh1106@3d {
+		compatible = "sinowealth,sh1106";
+		reg = <0x3d>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <2>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+	};
+};
+
+&i2c1 {
+	compatible = "nordic,nrf-twim";
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-1 = <&i2c1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <9600>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	gnss: gnss-nmea-generic {
+		compatible = "gnss-nmea-generic";
+		status = "okay";
+	};
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&spi3 {
+	compatible = "nordic,nrf-spim";
+	status = "okay";
+	cs-gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi3_default>;
+	pinctrl-1 = <&spi3_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		reset-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		rx-enable-gpios = <&gpio1 8 GPIO_ACTIVE_HIGH>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+	};
+};
+
+&qspi {
+	status = "okay";
+	pinctrl-0 = <&qspi_default>;
+	pinctrl-1 = <&qspi_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	p25q16h: p25q16h@0 {
+		compatible = "nordic,qspi-nor";
+		reg = <0>;
+		sck-frequency = <104000000>;
+		quad-enable-requirements = "S2B1v1";
+		jedec-id = [85 60 15];
+		sfdp-bfp = [e5 20 f9 ff ff ff ff 07 44 eb 08 6b 08 3b 80 bb
+			    fe ff ff ff ff ff 00 ff ff ff 44 eb 0c 20 0f 52
+			    10 d8 08 81];
+		size = <16777216>;
+		has-dpd;
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <8000>;
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>

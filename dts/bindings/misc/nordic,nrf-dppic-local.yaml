@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic Local DPPIC
+  (Distributed Programmable Peripheral Interconnect Controller)
+
+  Updated DPPIC binding set for Nordic products that have local DPPIC instances
+  with inter-bridge functionality.
+
+compatible: "nordic,nrf-dppic-local"
+
+include: ["nordic,nrf-dppic.yaml", "nordic,nrf-dppic-links.yaml"]

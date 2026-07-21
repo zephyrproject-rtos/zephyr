@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/ra/ra8/r7fa8e1ax.dtsi>
+#include <arm/renesas/ra/ra8/r7fa8e1xf.dtsi>
+#include <arm/renesas/ra/ra8/r7fa8e1xx-100.dtsi>

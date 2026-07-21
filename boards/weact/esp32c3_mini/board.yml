@@ -1,0 +1,6 @@
+board:
+  name: weact_esp32c3_mini
+  full_name: ESP32-C3-Mini
+  vendor: weact
+  socs:
+    - name: esp32c3

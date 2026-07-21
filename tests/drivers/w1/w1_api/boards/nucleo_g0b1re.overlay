@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2022 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&usart1_tx_pc4 {
+	/*
+	 * enable open-drain drive such that no external push-pull to
+	 * open-drain converter is required. An external pull-up resistor
+	 * with approximately R=5k resistance is suggested.
+	 * Also a fixture connecting tx and rx pin is needed.
+	 */
+	drive-open-drain;
+	bias-pull-up;
+};

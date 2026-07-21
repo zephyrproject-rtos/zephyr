@@ -1,0 +1,14 @@
+# NEORV32 TRNG configuration
+
+# Copyright (c) 2021 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_NEORV32_TRNG
+	bool "NEORV32 TRNG"
+	default y
+	depends on DT_HAS_NEORV32_TRNG_ENABLED
+	depends on SYSCON
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the True Random Number Generator (TRNG) driver for
+	  the NEORV32.

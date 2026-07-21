@@ -1,0 +1,7 @@
+shield:
+  name: rtk0eg0019b01002bj
+  full_name: RTK0EG0019B01002BJ Capacitive Touch Application Shield
+  vendor: renesas
+  supported_features:
+    - input
+    - gpio

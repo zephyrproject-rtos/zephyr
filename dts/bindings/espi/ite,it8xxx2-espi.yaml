@@ -1,0 +1,14 @@
+# Copyright (c) 2023 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT8XXX2 ESPI controller
+
+compatible: "ite,it8xxx2-espi"
+
+include: espi-controller.yaml
+
+properties:
+  wucctrl:
+    type: phandles
+    description: |
+      eSPI node WUC interrupt.

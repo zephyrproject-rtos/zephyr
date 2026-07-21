@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Benjamin Cabé <benjamin@zephyrproject.org>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_LTE_IOT10_CLICK
+	def_bool $(shields_list_contains,mikroe_lte_iot10_click)

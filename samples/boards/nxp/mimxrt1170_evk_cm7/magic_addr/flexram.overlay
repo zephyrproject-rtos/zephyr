@@ -1,0 +1,19 @@
+/* default fuse */
+&flexram {
+	flexram,bank-spec = <FLEXRAM_DTCM>,
+			    <FLEXRAM_DTCM>,
+			    <FLEXRAM_DTCM>,
+			    <FLEXRAM_DTCM>,
+			    <FLEXRAM_ITCM>,
+			    <FLEXRAM_ITCM>,
+			    <FLEXRAM_ITCM>,
+			    <FLEXRAM_ITCM>,
+			    <FLEXRAM_DTCM>,
+			    <FLEXRAM_DTCM>,
+			    <FLEXRAM_DTCM>,
+			    <FLEXRAM_DTCM>,
+			    <FLEXRAM_ITCM>,
+			    <FLEXRAM_ITCM>,
+			    <FLEXRAM_ITCM>,
+			    <FLEXRAM_ITCM>;
+};

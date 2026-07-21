@@ -1,0 +1,48 @@
+# STM32 VENC driver configuration options
+
+# Copyright (c) 2025 STMicroelectronics.
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_STM32_VENC
+	bool "STM32 video encoder (VENC) driver"
+	default y
+	depends on DT_HAS_ST_STM32_VENC_ENABLED
+	depends on VIDEO_ENCODER_H264
+	select HAS_STM32LIB
+	select USE_STM32_LL_VENC
+	select RESET
+	help
+	  Enable driver for STM32 video encoder peripheral.
+
+if VIDEO_STM32_VENC
+
+# See hal_stm32/lib/vc8000nanoe/inc/encdebug.h
+module = VC8000NANOE
+module-str = vc8000nanoe
+source "subsys/logging/Kconfig.template.log_config"
+
+choice VIDEO_STM32_VENC_MEM_ALLOC
+	prompt "Select allocator for VENC internal memory"
+
+config VIDEO_STM32_VENC_SMH_ALLOC
+	bool "Shared-Multi-Heap"
+
+config VIDEO_STM32_VENC_HEAP_ALLOC
+	bool "Heap"
+
+endchoice
+
+config VIDEO_STM32_VENC_HEAP_SIZE
+	int "VENC internal memory pool size in byte"
+	depends on VIDEO_STM32_VENC_HEAP_ALLOC
+	default 7340032
+
+config VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION
+	bool "Place VENC internal memory pool in a Zephyr memory-region"
+	depends on VIDEO_STM32_VENC_HEAP_ALLOC
+
+config VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION_NAME
+	string "Name of the zephyr memory-region for memory pool"
+	depends on VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION
+
+endif

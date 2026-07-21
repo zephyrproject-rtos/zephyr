@@ -1,0 +1,6 @@
+board:
+  name: am243x_evm
+  full_name: TI AM243x-EVM
+  vendor: ti
+  socs:
+  - name: am2434

@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Foss Analytical A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: Maxim MAX31826 1-Wire temperature sensor
+
+compatible: "maxim,max31826"
+
+include: [sensor-device.yaml, w1-slave.yaml]

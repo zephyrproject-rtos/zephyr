@@ -1,0 +1,19 @@
+# Copyright (c) 2026 RISE Lab, IIT Madras
+# SPDX-License-Identifier: Apache-2.0
+
+description: Shakti UART
+
+compatible: "shakti,uart"
+
+include: [uart-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+
+  current-speed:
+    required: true

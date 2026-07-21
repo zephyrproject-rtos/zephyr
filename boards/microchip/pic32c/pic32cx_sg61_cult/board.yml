@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: pic32cx_sg61_cult
+  full_name: PIC32CX SG61 Curiosity Ultra
+  vendor: microchip
+  socs:
+    - name: pic32cx1025sg61128

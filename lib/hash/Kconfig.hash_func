@@ -1,0 +1,46 @@
+# Copyright (c) 2022 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Hash Function Support"
+
+config SYS_HASH_FUNC32
+	bool "Hash function support"
+	help
+	  Enable this option to support hash functions.
+
+if SYS_HASH_FUNC32
+
+config SYS_HASH_FUNC32_DJB2
+	bool "Daniel J. Bernstein's hash function (djb2)"
+
+config SYS_HASH_FUNC32_MURMUR3
+	bool "Murmur3 hash function"
+
+choice SYS_HASH_FUNC32_CHOICE
+	prompt "Default system-wide 32-bit hash function"
+	default SYS_HASH_FUNC32_CHOICE_MURMUR3
+	help
+	  The default system-wide 32-bit hash function is sys_hash32().
+
+config SYS_HASH_FUNC32_CHOICE_DJB2
+	bool "Default 32-bit hash is djb2"
+	select SYS_HASH_FUNC32_DJB2
+
+config SYS_HASH_FUNC32_CHOICE_MURMUR3
+	bool "Default 32-bit hash is Murmur3"
+	select SYS_HASH_FUNC32_MURMUR3
+
+config SYS_HASH_FUNC32_CHOICE_IDENTITY
+	bool "Default 32-bit hash is the identity"
+	help
+	  This is the naive identity hash function. It only works for strings
+	  either 1, 2, 4, or 8 bytes in length and so is suitable for scalar
+	  values such as keys in a Hashmap. It is implemented as a static
+	  inline function.
+
+endchoice # SYS_HASH_FUNC_CHOICE
+
+endif # SYS_HASH_FUNC
+
+endmenu

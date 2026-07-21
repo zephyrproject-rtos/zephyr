@@ -1,0 +1,89 @@
+/*
+ * Copyright (c) 2025 Realtek Semiconductor, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_RTS5817_GPLL_REG_H_
+#define ZEPHYR_DRIVERS_CLOCK_CONTROL_RTS5817_GPLL_REG_H_
+
+#define R_SYSPLL_CFG     0x0
+#define R_SYSPLL_NF_CODE 0x4
+#define R_SYSPLL_CTL     0x8
+#define R_SYSPLL_STS     0xC
+
+/* Bits of R_SYSPLL_CFG (0X0000) */
+
+#define PLL_ORDER_OFFSET 0
+#define PLL_ORDER_MASK   BIT(0)
+
+#define PLL_BYPASS_PI_OFFSET 1
+#define PLL_BYPASS_PI_MASK   BIT(1)
+
+#define PLL_REG_CCO_BIG_KVCO_OFFSET 2
+#define PLL_REG_CCO_BIG_KVCO_MASK   BIT(2)
+
+#define PLL_REG_CCO_SEL_OFFSET 3
+#define PLL_REG_CCO_SEL_MASK   BIT(3)
+
+#define PLL_REG_CP_OFFSET 4
+#define PLL_REG_CP_MASK   GENMASK(6, 4)
+
+#define REG_EN_DCP_OFFSET 7
+#define REG_EN_DCP_MASK   BIT(7)
+
+#define REG_PI_BIAS_OFFSET 8
+#define REG_PI_BIAS_MASK   GENMASK(9, 8)
+
+#define PLL_REG_PI_CAP_OFFSET 10
+#define PLL_REG_PI_CAP_MASK   GENMASK(11, 10)
+
+#define REG_PI_EN_OFFSET 12
+#define REG_PI_EN_MASK   GENMASK(14, 12)
+
+#define PLL_REG_PI_SEL_OFFSET 15
+#define PLL_REG_PI_SEL_MASK   BIT(15)
+
+#define REG_SD_OFFSET 16
+#define REG_SD_MASK   GENMASK(17, 16)
+
+#define PLL_REG_SEL_VLDO_OFFSET 18
+#define PLL_REG_SEL_VLDO_MASK   GENMASK(19, 18)
+
+#define REG_SR_H_OFFSET 20
+#define REG_SR_H_MASK   GENMASK(22, 20)
+
+#define PLL_REG_EN_NEW_OFFSET 23
+#define PLL_REG_EN_NEW_MASK   BIT(23)
+
+#define REG_SC_H_OFFSET 24
+#define REG_SC_H_MASK   BIT(24)
+
+/* Bits of R_SYSPLL_NF_CODE (0X0004) */
+
+#define N_SSC_OFFSET 0
+#define N_SSC_MASK   GENMASK(8, 0)
+
+#define F_SSC_OFFSET 16
+#define F_SSC_MASK   GENMASK(27, 16)
+
+/* Bits of R_SYSPLL_CTL (0X0008) */
+
+#define POW_SYSPLL_OFFSET 0
+#define POW_SYSPLL_MASK   BIT(0)
+
+#define PLL_LOAD_EN_OFFSET 1
+#define PLL_LOAD_EN_MASK   BIT(1)
+
+#define SYSPLL_REF_SEL_OFFSET 2
+#define SYSPLL_REF_SEL_MASK   BIT(2)
+
+/* Bits of R_SYSPLL_STS (0X000C) */
+
+#define PLL_CLK_TFBAK_OFFSET 0
+#define PLL_CLK_TFBAK_MASK   BIT(0)
+
+#define PLL_CKUSABLE_OFFSET 1
+#define PLL_CKUSABLE_MASK   BIT(1)
+
+#endif /* ZEPHYR_DRIVERS_CLOCK_CONTROL_RTS5817_GPLL_REG_H_ */

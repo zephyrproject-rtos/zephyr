@@ -1,0 +1,38 @@
+# Common RTC configuration
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if NRF_RTC_TIMER || NRF_GRTC_TIMER
+choice
+	prompt "Clock startup policy"
+	default SYSTEM_CLOCK_WAIT_FOR_STABILITY
+
+config SYSTEM_CLOCK_NO_WAIT
+	bool "No wait"
+	help
+	  System clock source is initiated but does not wait for clock readiness.
+	  When this option is picked, system clock may not be ready when code relying
+	  on kernel API is executed. Requested timeouts will be prolonged by the
+	  remaining startup time.
+
+config SYSTEM_CLOCK_WAIT_FOR_AVAILABILITY
+	bool "Wait for availability"
+	help
+	  System clock source initialization waits until clock is available. In some
+	  systems, clock initially runs from less accurate source which has faster
+	  startup time and then seamlessly switches to the target clock source when
+	  it is ready. When this option is picked, system clock is available after
+	  system clock driver initialization but it may be less accurate. Option is
+	  equivalent to waiting for stability if clock source does not have
+	  intermediate state.
+
+config SYSTEM_CLOCK_WAIT_FOR_STABILITY
+	bool "Wait for stability"
+	help
+	  System clock source initialization waits until clock is stable. When this
+	  option is picked, system clock is available and stable after system clock
+	  driver initialization.
+
+endchoice
+endif # NRF_RTC_TIMER || NRF_GRTC_TIMER

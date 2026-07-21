@@ -1,0 +1,10 @@
+identifier: nucleo_wba65ri/stm32wba65xx/ns
+name: ST Nucleo WBA65RI with TF-M and non-secure firmware
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 384
+flash: 512
+vendor: st

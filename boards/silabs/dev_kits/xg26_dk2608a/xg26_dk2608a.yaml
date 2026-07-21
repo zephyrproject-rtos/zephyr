@@ -1,0 +1,24 @@
+identifier: xg26_dk2608a
+name: EFR32xG26 Dev Kit (xG26-DK2608A, BRD2608A)
+type: mcu
+arch: arm
+ram: 512
+flash: 3200
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - bluetooth
+  - comparator
+  - counter
+  - dac
+  - dma
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - i2c
+  - watchdog
+vendor: silabs

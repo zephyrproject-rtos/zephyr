@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: mcb_rx14t
+name: Renesas MCB-RX14T
+type: mcu
+arch: rx
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - gpio
+  - serial
+  - timer
+ram: 12
+flash: 128
+testing:
+  timeout_multiplier: 5

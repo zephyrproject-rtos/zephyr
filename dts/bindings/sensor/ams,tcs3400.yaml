@@ -1,0 +1,15 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMS TCS3400 Color Light-to-Digital Converter
+
+compatible: "ams,tcs3400"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      INT pin GPIO identifier, open-drain, active low.

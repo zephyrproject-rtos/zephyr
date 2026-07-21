@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: nPM1304 GPIO Controller
+
+compatible: "nordic,npm1304-gpio"
+
+include: gpio-controller.yaml
+
+gpio-cells:
+  - pin
+  - flags

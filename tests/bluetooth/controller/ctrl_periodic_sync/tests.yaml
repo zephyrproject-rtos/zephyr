@@ -1,0 +1,8 @@
+common:
+  tags:
+    - bluetooth
+    - bt_periodic_sync
+    - bt_ull_llcp
+tests:
+  bluetooth.controller.ctrl_periodic_sync.test:
+    type: unit

@@ -1,0 +1,33 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Wakeup Unit (WUU) acting as a Wakeup Controller (WUC).
+
+  This binding is used by SoCs that consume the WUU through the WUC
+  subsystem (i.e. via "wakeup-ctrls" properties), and therefore must
+  declare the "#wakeup-ctrl-cells" property required by wuc-controller.
+
+  SoCs that only need the legacy "nxp,wuu" interrupt-controller view
+  should keep using the binding under
+  dts/bindings/interrupt-controller/nxp,wuu.yaml.
+
+compatible: "nxp,wuc-wuu"
+
+include: [base.yaml, wuc-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  '#wakeup-ctrl-cells':
+    type: int
+    const: 1
+    description: |
+      Number of cells in wakeup-ctrls property.
+
+wakeup-ctrl-cells:
+  - id

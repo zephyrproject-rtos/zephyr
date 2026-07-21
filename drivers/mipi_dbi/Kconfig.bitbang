@@ -1,0 +1,11 @@
+# Copyright 2024 Stefan Gloor
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_BITBANG
+	bool "MIPI DBI bit banging driver"
+	default y
+	depends on DT_HAS_ZEPHYR_MIPI_DBI_BITBANG_ENABLED
+	select GPIO
+	help
+	  Enable support for MIPI DBI bit banging driver. This driver implements
+	  a MIPI-DBI mode A and B compatible controller using GPIO.

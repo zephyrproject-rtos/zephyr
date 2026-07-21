@@ -1,0 +1,50 @@
+# Copyright (c) 2020 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Publish commit for daily testing
+
+on:
+  schedule:
+  - cron: '50 22 * * *'
+  push:
+    branches:
+    - refs/tags/*
+
+permissions:
+  contents: read
+
+jobs:
+  get_version:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    if: github.repository == 'zephyrproject-rtos/zephyr'
+
+    steps:
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@517a711dbcd0e402f90c77e7e2f81e849156e31d # v6.2.2
+      with:
+        aws-access-key-id: ${{ vars.AWS_TESTING_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_TESTING_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: checkout
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+
+    - name: Set up Python
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+      with:
+        python-version: 3.12
+        cache: pip
+        cache-dependency-path: scripts/requirements-actions.txt
+
+    - name: Install Python packages
+      run: |
+        pip install -r scripts/requirements-actions.txt --require-hashes
+
+    - name: Upload to AWS S3
+      run: |
+        python3 scripts/ci/version_mgr.py --update .
+        aws s3 cp versions.json s3://testing.zephyrproject.org/daily_tests/versions.json

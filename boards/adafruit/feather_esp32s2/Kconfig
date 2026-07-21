@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Google, LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096
+
+config BOARD_NEEDS_LATE_HOOK
+	bool
+	default y if BOARD_ADAFRUIT_FEATHER_ESP32S2_TFT || BOARD_ADAFRUIT_FEATHER_ESP32S2_TFT_REVERSE
+	select BOARD_LATE_INIT_HOOK

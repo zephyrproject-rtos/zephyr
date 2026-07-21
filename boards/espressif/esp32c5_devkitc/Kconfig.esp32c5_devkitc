@@ -1,0 +1,9 @@
+# ESP32C5 devkitc board configuration
+
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32C5_DEVKITC
+	select SOC_ESP32_C5_WROOM_1_N8R4
+	select SOC_ESP32C5_HPCORE if BOARD_ESP32C5_DEVKITC_ESP32C5_HPCORE
+	select SOC_ESP32C5_LPCORE if BOARD_ESP32C5_DEVKITC_ESP32C5_LPCORE

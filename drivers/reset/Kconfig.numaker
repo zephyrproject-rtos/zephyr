@@ -1,0 +1,11 @@
+# Nuvoton NuMaker Reset Controller configuration options
+
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_NUMAKER
+	bool "Nuvoton NuMaker reset controller driver"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_RST_ENABLED
+	help
+	  This option enables the reset controller driver for Nuvoton NuMaker MCUs.

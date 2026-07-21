@@ -1,0 +1,22 @@
+# CAN transceiver configuration options
+
+# Copyright (c) 2022 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+menu "CAN transceiver drivers"
+
+config CAN_TRANSCEIVER_INIT_PRIORITY
+	int "CAN transceiver driver init priority"
+	default 45
+	help
+	  CAN transceiver device driver initialization priority.
+
+config CAN_TRANSCEIVER_GPIO
+	bool "GPIO controlled CAN transceiver"
+	default y
+	depends on DT_HAS_CAN_TRANSCEIVER_GPIO_ENABLED
+	select GPIO
+	help
+	  Enable support for GPIO controlled CAN transceivers.
+
+endmenu

@@ -1,0 +1,6 @@
+board:
+  name: glyph_c3
+  full_name: Glyph-C3
+  vendor: pcbcupid
+  socs:
+  - name: esp32c3

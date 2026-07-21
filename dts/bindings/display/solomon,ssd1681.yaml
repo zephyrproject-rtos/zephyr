@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Andreas Sandberg
+# SPDX-License-Identifier: Apache-2.0
+
+description: Solomon Systech SSD1681 200x200 EPD display controller
+
+compatible: "solomon,ssd1681"
+
+include: solomon,ssd16xx-common.yaml

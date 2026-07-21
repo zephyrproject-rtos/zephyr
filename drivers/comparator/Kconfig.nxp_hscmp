@@ -1,0 +1,11 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_NXP_HSCMP
+	bool "NXP HSCMP comparator driver"
+	default y
+	depends on DT_HAS_NXP_HSCMP_ENABLED
+	select PINCTRL
+	select CLOCK_CONTROL
+	select RESET
+	select REGULATOR

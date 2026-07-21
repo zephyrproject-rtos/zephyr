@@ -1,0 +1,67 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "nxp,lpc11u6x-pinctrl"
+
+include:
+  - name: base.yaml
+  - name: nxp,lpc-iocon-pinctrl.yaml
+    child-binding:
+      child-binding:
+        property-allowlist:
+          - pinmux
+          - nxp,invert
+          - nxp,analog-mode
+          - nxp,i2c-mode
+          - nxp,i2c-filter
+
+child-binding:
+  description: LPC IOCON pin controller pin group
+  child-binding:
+    description: |
+      LPC IOCON pin controller pin configuration node
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-open-drain
+          - bias-pull-up
+          - bias-pull-down
+          - drive-push-pull
+          - input-schmitt-enable
+
+    properties:
+      nxp,digital-filter:
+        type: int
+        default: 0
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+        description: |
+          Enable digital filter. Set number of clock cycles to use as rejection
+          threshold for input pulses. 0 disables the filter. Only valid for
+          lpc11u6x SOC. Filter defaults to disabled, as this is default reset
+          value for SOC
+      nxp,filter-clock-div:
+        type: int
+        default: 0
+        enum:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+        description: |
+          set peripheral clock divider for input filter sampling clock
+          IOCONCLKDIV. Only valid for lpc11u6x SOC. Default to 0, as this
+          is the default reset value for the SOC.
+      nxp,disable-analog-filter:
+        type: boolean
+        description: |
+          Disable fixed 10 ns input glitch analog filter. Only valid for lpc11u6x
+          SOC, on analog pins. Note that this filter is enabled on reset, hence
+          the choice to make disabling the filter opt-in

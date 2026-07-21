@@ -1,0 +1,18 @@
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Maxim MAX31790 6-channel I2C-bus PWM controller
+
+compatible: "maxim,max31790-pwm"
+
+include: [pwm-controller.yaml, base.yaml]
+
+on-bus: max31790
+
+properties:
+  "#pwm-cells":
+    const: 2
+
+pwm-cells:
+  - channel
+  - period

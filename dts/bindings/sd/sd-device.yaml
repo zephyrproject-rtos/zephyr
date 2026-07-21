@@ -1,0 +1,7 @@
+# Copyright 2022 NXP
+
+# Fields common to all SD devices
+
+on-bus: sd
+
+include: [base.yaml]

@@ -1,0 +1,21 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+DT_COMPAT_NXP_RTC_JDP := nxp,rtc-jdp
+
+config MCUX_RTC_JDP_TIMER
+	bool "MCUX RTC JDP system timer"
+	default y
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+	depends on $(dt_node_has_compat,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),$(DT_COMPAT_NXP_RTC_JDP))
+	select TICKLESS_CAPABLE
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	help
+	  This module implements a kernel device driver for the NXP RTC (JDP
+	  generation) and provides the standard "system clock driver" interfaces.
+	  Because the RTC keeps running across all low-power states it can serve as
+	  the system tick source without a companion timer. The instance to use is
+	  selected via the zephyr,system-timer chosen property.

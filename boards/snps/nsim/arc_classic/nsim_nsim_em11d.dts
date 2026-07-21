@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2022 Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nsim_em.dtsi"
+
+#define XCCM_ADDR c0000000
+#define XCCM_SIZE DT_SIZE_K(64)
+#define YCCM_ADDR e0000000
+#define YCCM_SIZE DT_SIZE_K(64)
+
+/ {
+	model = "snps,nsim_em";
+	compatible = "snps,nsim_em";
+
+	xccm0: xccm@XCCM_ADDR {
+		compatible = "arc,xccm";
+		reg = <DT_ADDR(XCCM_ADDR) XCCM_SIZE>;
+	};
+
+	yccm0: yccm@YCCM_ADDR {
+		compatible = "arc,yccm";
+		reg = <DT_ADDR(YCCM_ADDR) YCCM_SIZE>;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <5000000>;
+};

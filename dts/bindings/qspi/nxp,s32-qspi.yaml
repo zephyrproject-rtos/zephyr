@@ -1,0 +1,208 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP S32 Quad Serial Peripheral Interface (QSPI) Controller.
+
+  QSPI acts as an interface to up to two serial flash memory devices, each with
+  up to eight bidirectional bidirectional data lines, depending on the platform.
+
+compatible: "nxp,s32-qspi"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: qspi
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+  data-rate:
+    type: string
+    enum:
+      - SDR
+      - DDR
+    description: |
+      Selects the read mode:
+      - Single Data Rate (SDR): sampling of incoming data occurs on single edges.
+      - Double Data Rate (DDR): sampling of incoming data occurs on both edges.
+
+  hold-time-2x:
+    type: boolean
+    description: |
+      Set to align incoming data with 2x serial flash half clock, when in DDR
+      mode. Otherwise, data will be aligned to the posedge of the controller's
+      internal reference clock.
+
+  sample-delay-half-cycle:
+    type: boolean
+    description: |
+      Set to use half-cycle early DQS delay when sampling received data.
+
+  sample-phase-inverted:
+    type: boolean
+    description: |
+      Set to sample received data at inverted clock.
+
+  cs-setup-time:
+    type: int
+    default: 3
+    description: |
+      Chip select setup time, in serial clock cycles. A bigger value will pull
+      the CS signal earlier before the transaction starts.
+      The default corresponds to the reset value of the register field.
+
+  cs-hold-time:
+    type: int
+    default: 3
+    description: |
+      Chip select hold time, in serial clock cycles. A bigger value will release
+      the CS signal later after the transaction ends.
+      The default corresponds to the reset value of the register field.
+
+  column-space:
+    type: int
+    default: 0
+    description: |
+      Column Address Space bit width. For example, if the column address is
+      [2:0] of QSPI_SFAR/AHB address, then the column address space bit width
+      must be 3. If there is no column address separation in any serial flash
+      device connected to this controller, this value must be programmed to 0.
+      The default corresponds to the reset value of the register field.
+
+  word-addressable:
+    type: boolean
+    description: |
+      Set if the serial flash device connected to this controller is word
+      (2 bytes) addressable.
+
+  byte-swapping:
+    type: boolean
+    description: |
+      In case of Octal DDR mode, specifies whether a word unit composed of two
+      bytes from posedge and negedge of a single DQS cycle needs to be swapped.
+
+  ahb-buffers-masters:
+    type: array
+    description: |
+      Masters ID's for the AHB receive buffers. The master ID of every incoming
+      request is checked and the data is returned or fetched into the
+      corresponding associated buffer. The maximum number of buffers is SoC
+      specific.
+
+  ahb-buffers-sizes:
+    type: array
+    description: |
+      Sizes (in bytes) of the AHB receive buffers. The maximum buffer size and
+      maximum number of buffers is SoC specific.
+
+  ahb-buffers-all-masters:
+    type: boolean
+    description: |
+      Any access from a master not associated with any other buffer is routed to
+      the last buffer.
+
+  a-rx-clock-source:
+    type: string
+    enum:
+      - LOOPBACK
+      - LOOPBACK DQS
+      - INTERNAL DQS
+      - EXTERNAL DQS
+    description: |
+      Selects DQS clock source for sampling read data at side A:
+      - LOOPBACK: use loopback clock from dummy internal PAD as strobe signal.
+      - LOOPBACK DQS: use loopback clock from PAD as strobe signal.
+      - INTERNAL DQS: use internally generated strobe signal.
+      - EXTERNAL DQS: use external strobe signal.
+
+  a-io2-idle-high:
+    type: boolean
+    description: |
+      Set if the logic level of IO2 signal output of this controller must be
+      driven high in the inactive state.
+      This property applies to side A of the controller.
+
+  a-io3-idle-high:
+    type: boolean
+    description: |
+      Set if the logic level of IO3 signal output of this controller must be
+      driven high in the inactive state.
+      This property applies to side A of the controller.
+
+  a-dll-mode:
+    type: string
+    enum:
+      - BYPASSED
+      - MANUAL UPDATE
+      - AUTO UPDATE
+    default: BYPASSED
+    description: |
+      DLL mode. The supported modes depends on the SoC.
+      This property applies to side A of the controller.
+
+  a-dll-freq-enable:
+    type: boolean
+    description: |
+      Selects delay-chain for high frequency of operation.
+      This property applies to side A of the controller.
+
+  a-dll-ref-counter:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    default: 1
+    description: |
+      Select the "n+1" interval of DLL phase detection and reference delay
+      updating interval.
+      Minimum recommended value is 1 (reset value).
+      This property applies to side A of the controller.
+
+  a-dll-resolution:
+    type: int
+    enum: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    default: 2
+    description: |
+      Minimum resolution for DLL phase detector to remain locked/unlocked based
+      on flash memory clock jitter.
+      The minimum value is 2 (reset value).
+      This property applies to side A of the controller.
+
+  a-dll-coarse-delay:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    default: 0
+    description: |
+      This field sets the number of delay elements in each delay tap. The field
+      is used to overwrite DLL-generated delay values.
+      Default to 0 (reset value).
+      This property applies to side A of the controller.
+
+  a-dll-fine-delay:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    default: 0
+    description: |
+      This field sets the number of fine offset delay elements up to 16 in
+      incoming DQS.
+      Default to 0 (reset value).
+      This property applies to side A of the controller.
+
+  a-dll-tap-select:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    default: 0
+    description: |
+      Selects the Nth tap provided by the slave delay-chain.
+      Default to 0 (reset value).
+      This property applies to side A of the controller.
+
+child-binding:
+  description: NXP S32 QuadSPI port
+
+  include: nxp,s32-qspi-device.yaml

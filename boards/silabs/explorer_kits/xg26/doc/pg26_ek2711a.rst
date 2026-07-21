@@ -1,0 +1,86 @@
+.. zephyr:board:: pg26_ek2711a
+
+Overview
+********
+
+The `EFM32PG26 Explorer Kit`_ is a small form factor development and evaluation platform based on
+the `EFM32PG26 MCU`_. The Explorer Kit is focused on rapid prototyping and concept creation of IoT
+applications.
+
+.. _EFM32PG26 Explorer Kit:
+   https://www.silabs.com/development-tools/mcu/32-bit/efm32pg26-explorer-kit
+
+.. _EFM32PG26 MCU:
+   https://www.silabs.com/wireless/zigbee/efr32mg26-series-2-socs
+
+Hardware
+********
+
+- EFM32PG26B500F3200IM68 MCU
+- CPU core: ARM Cortex®-M33 with FPU
+- Flash memory: 3200 kB
+- RAM: 512 kB
+- Operation frequency: 2.4 GHz
+- Crystals for LFXO (32.768 kHz) and HFXO (39 MHz) on the board.
+
+For more information about the EFM32PG26 MCU and Explorer Kit, refer to these documents:
+
+- `EFM32PG26 Datasheet`_
+- `EFM32PG26 Reference Manual`_
+- `PG26-EK2711A User Guide`_
+
+.. _EFM32PG26 Datasheet:
+   https://www.silabs.com/documents/public/data-sheets/efm32pg26-datasheet.pdf
+
+.. _EFM32PG26 Reference Manual:
+   https://www.silabs.com/documents/public/reference-manuals/efm32pg26-rm.pdf
+
+.. _PG26-EK2711A User Guide:
+   https://www.silabs.com/documents/public/user-guides/ug608-brd2711a-user-guide.pdf
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
+System Clock
+============
+
+The EFM32PG26 MCU is configured to use the HFRCODPLL oscillator at 78 MHz as the system clock,
+locked to the 39 MHz crystal oscillator on the board.
+
+Serial Port
+===========
+
+The EFM32PG26 MCU has 3 USARTs and 4 EUSARTs.
+USART0 is connected to the board controller and is used for the console.
+
+Programming and Debugging
+*************************
+
+.. zephyr:board-supported-runners::
+
+Flashing
+========
+
+Connect the Explorer Kit to your host computer using the USB port.
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: pg26_ek2711a
+   :goals: flash
+
+Open a serial terminal (minicom, putty, etc.) with the following settings:
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
+
+Reset the board and you should see the following message in the terminal:
+
+.. code-block:: console
+
+   Hello World! pg26_ek2711a
