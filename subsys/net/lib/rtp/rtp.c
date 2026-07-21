@@ -53,7 +53,7 @@ static int rtp_session_start_rx(struct rtp_session *session)
 	}
 #endif /* CONFIG_NET_IPV6 */
 	default:
-		/* Ignore */
+		break; /* Ignore */
 	}
 #endif /* CONFIG_RTP_LOG_LEVEL >= LOG_LEVEL_DBG */
 
@@ -129,7 +129,7 @@ static int rtp_session_start_tx(struct rtp_session *session)
 	}
 #endif /* CONFIG_NET_IPV6 */
 	default:
-		/* Ignore */
+		break; /* Ignore */
 	}
 #endif /* CONFIG_RTP_LOG_LEVEL >= LOG_LEVEL_DBG */
 
@@ -172,7 +172,7 @@ static int rtp_session_stop_rx(struct rtp_session *session)
 	}
 #endif /* CONFIG_NET_IPV6 */
 	default:
-		/* Ignore */
+		break; /* Ignore */
 	}
 #endif
 
@@ -221,7 +221,7 @@ static int rtp_session_stop_tx(struct rtp_session *session)
 	}
 #endif /* CONFIG_NET_IPV6 */
 	default:
-		/* Ignore */
+		break; /* Ignore */
 	}
 #endif /* CONFIG_RTP_LOG_LEVEL >= LOG_LEVEL_DBG */
 
