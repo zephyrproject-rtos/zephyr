@@ -193,10 +193,12 @@
 		interrupts = <1 0>;
 	};
 
-	wuu: system-modules@92000 {
-		compatible = "nxp,wuu";
+	wuu: wakeup-controller@92000 {
+		compatible = "nxp,wuc-wuu", "nxp,wuu";
 		reg = <0x92000 0x1000>;
 		interrupts = <18 0>;
+		#wakeup-ctrl-cells = <1>;
+		status = "disabled";
 	};
 
 	mbox_a: mbox@c4000 {
