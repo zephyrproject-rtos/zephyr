@@ -103,7 +103,7 @@ struct input_kbd_matrix_api {
 	 * interrupts row pin changes.
 	 *
 	 * @param dev Pointer to the keyboard matrix device.
-	 * @param enable Whether detection mode has to be enabled or disabled.
+	 * @param enabled Whether detection mode has to be enabled or disabled.
 	 */
 	void (*set_detect_mode)(const struct device *dev, bool enabled);
 };
