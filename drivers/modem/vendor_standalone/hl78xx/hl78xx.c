@@ -2454,7 +2454,7 @@ static void hl78xx_run_pmc_cfg_script_event_handler(struct hl78xx_data *data, en
 	}
 }
 
-static int hl78xx_on_run_pmc_cfg_script_state_leave(struct hl78xx_data *data)
+static int hl78xx_on_pmc_cfg_script_state_leave(struct hl78xx_data *data)
 {
 	data->status.restart.config_pending = false;
 	return 0;
@@ -3926,7 +3926,7 @@ const static struct hl78xx_state_handlers hl78xx_state_table[] = {
 	},
 	[MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT] = {
 		hl78xx_on_pmc_cfg_script_state_enter,
-		hl78xx_on_run_pmc_cfg_script_state_leave,
+		hl78xx_on_pmc_cfg_script_state_leave,
 		hl78xx_run_pmc_cfg_script_event_handler
 	},
 	[MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT] = {
