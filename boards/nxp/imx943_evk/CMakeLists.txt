@@ -23,13 +23,17 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
     if(CONFIG_SOC_MIMX94398_M7_0)
       set(AHAB_CONFIG_FILE "imx943_evk_mimx94398_m7_0_ahab.yaml")
       set(M_IMAGE_NAME "cortex_m7_app")
+      set(MSEL "4")
     elseif(CONFIG_SOC_MIMX94398_M7_1)
       set(AHAB_CONFIG_FILE "imx943_evk_mimx94398_m7_1_ahab.yaml")
       set(M_IMAGE_NAME "cortex_m7_2_app")
+      set(MSEL "5")
     elseif(CONFIG_SOC_MIMX94398_M33)
       set(AHAB_CONFIG_FILE "imx943_evk_mimx94398_m33_ahab.yaml")
       set(M_IMAGE_NAME "cortex_m33_2_app")
+      set(MSEL "3")
     endif()
+    if(SPSDK_VERSION VERSION_GREATER_EQUAL "3.8.0")
     file(WRITE ${CMAKE_BINARY_DIR}/zephyr/${AHAB_CONFIG_FILE}
       "
       family: mimx943
@@ -48,8 +52,12 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
                 lpddr_dmem_qb:  ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_dmem_qb_v202409.bin
                 oei_ddr:        ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/oei-m33-ddr-${DDR_FW}.bin
               - system_manager: ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/m33_image-mx94alt.bin
+                meta_data_msel: ${MSEL}
               - ${M_IMAGE_NAME}:  ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
     ")
+    else()
+      message(FATAL_ERROR "meta_data_msel is not supported when SPSDK's version less than 3.8.0!")
+    endif()
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
       COMMAND ${7Z_EXECUTABLE} x ${ZEPHYR_HAL_NXP_MODULE_DIR}/zephyr/blobs/imx-boot-firmware/${FIRMWARE_RELEASE}.bin -o./imx-boot-firmware -aos -bso0 -bse1
       COMMAND ${7Z_EXECUTABLE} x imx-boot-firmware/${FIRMWARE_RELEASE} -aos -bso0 -bse1
