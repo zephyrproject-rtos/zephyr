@@ -1173,7 +1173,6 @@ static int lan78xx_rx_rearm_slot(struct lan78xx_ctx *ctx, struct lan78xx_rx_slot
 
 	net_buf_reset(slot->xfer->buf);
 	slot->xfer->mps = ctx->ep_mps.bulk_in;
-	slot->xfer->buf->len = LAN78XX_CFG_RX_BUF_SIZE;
 
 	ret = lan78xx_norm_async_ok(usbh_xfer_enqueue(ctx->udev, slot->xfer));
 	if (ret == 0) {
@@ -1196,7 +1195,6 @@ static int lan78xx_intr_rearm(struct lan78xx_ctx *ctx)
 
 	net_buf_reset(slot->xfer->buf);
 	slot->xfer->mps = ctx->ep_mps.intr_in;
-	slot->xfer->buf->len = LAN78XX_INTR_LEN;
 
 	ret = lan78xx_norm_async_ok(usbh_xfer_enqueue(ctx->udev, slot->xfer));
 	if (ret == 0) {
