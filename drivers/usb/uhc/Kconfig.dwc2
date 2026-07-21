@@ -12,6 +12,16 @@ config UHC_DWC2
 
 if UHC_DWC2
 
+config UHC_DWC2_DMA
+	bool "DWC2 buffer DMA mode"
+	default y
+	help
+	  Use the DWC2 internal DMA controller for host transfers when the
+	  hardware supports it. Disable this option to use the slave-mode FIFO
+	  transfer path. Hardware without internal DMA also uses the slave-mode
+	  path regardless of this option. Slave mode serializes transfers on one
+	  host channel so a complete packet always fits in the selected FIFO.
+
 config UHC_DWC2_STACK_SIZE
 	int "UHC DWC2 driver thread stack size"
 	default 512
