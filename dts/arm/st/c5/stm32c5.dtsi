@@ -194,6 +194,10 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+			};
 		};
 
 		exti: interrupt-controller@44022000 {
