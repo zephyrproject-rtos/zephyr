@@ -26,8 +26,8 @@ additional processing stages (gain, filtering …) without modifying the applica
 This pipeline consists of up to four elements:
 
 - **Capture source** - captures audio frames, either from a digital microphone
-  or from an I2S receiver, selected by ``CONFIG_SAMPLE_AUDIO_SOURCE``.
-- **Capsfilter** *(optional)* - enforces a specific audio frame interval. 
+  or from an I2S receiver, selected by ``CONFIG_SAMPLE_AUDIO_SOURCE_*``.
+- **Capsfilter** *(optional)* - enforces a specific audio frame interval.
 Without it the pipeline still works but uses the default negotiated format.
 - **Gain transform** *(optional)* – applies audio processing such as volume control.
 - **I2S codec sink** – renders the resulting audio frames through an I2S codec to a speaker.
@@ -138,7 +138,7 @@ Configuration Options
 
 The sample supports the following configuration options:
 
-* ``CONFIG_SAMPLE_AUDIO_SOURCE`` - which element the pipeline captures with:
+* ``CONFIG_SAMPLE_AUDIO_SOURCE_*`` - which element the pipeline captures with:
   ``CONFIG_SAMPLE_AUDIO_SOURCE_DMIC`` (default) for a digital microphone, or
   ``CONFIG_SAMPLE_AUDIO_SOURCE_I2S`` for an I2S receiver. The I2S source needs
   an ``i2s-codec-rx`` alias. If the capture path runs through a codec, add an
