@@ -15,6 +15,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(stm32_usb_pwr, CONFIG_STM32_USB_COMMON_LOG_LEVEL);
 
+#define STM32H5_VDDUSB_READY_TIMEOUT_US 1000
+
 /*
  * Keep track of whether power is already
  * enabled here to simplify the USB drivers.
@@ -40,6 +42,13 @@ int stm32_usb_pwr_enable(void)
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
+	LL_PWR_EnableUSBVoltageDetector();
+	if (!WAIT_FOR(LL_PWR_IsActiveFlag_VDDUSB(), STM32H5_VDDUSB_READY_TIMEOUT_US, NULL)) {
+		LOG_WRN("VDDUSB ready flag (PWR->VMSR.USB33RDY) not set within %u us, "
+			"continuing anyway",
+			STM32H5_VDDUSB_READY_TIMEOUT_US);
+	}
+
 	LL_PWR_EnableVddUSB();
 
 # if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
