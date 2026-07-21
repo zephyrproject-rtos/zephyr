@@ -87,7 +87,6 @@ extern "C" {
  *  @param _min_bitpool sbc codec min bit pool. for example: 18
  *  @param _max_bitpool sbc codec max bit pool. for example: 35
  *  @param _delay_report delay report capability
- *  @
  */
 #define BT_A2DP_SBC_SINK_EP(_name, _freq, _ch_mode, _blk_len, _subband, _alloc_mthd, _min_bitpool, \
 			    _max_bitpool, _delay_report)                                           \
@@ -468,6 +467,7 @@ struct bt_a2dp_cb {
 	 * reconfigured.
 	 *
 	 *  @param[in] stream    Pointer to stream object.
+	 *  @param[in] codec_cfg Codec configuration.
 	 *  @param[out] rsp_err_code  give the error code if response error.
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 *
@@ -783,6 +783,7 @@ struct bt_a2dp_stream_ops {
 #if defined(CONFIG_BT_A2DP_SINK)
 	/** @brief the media streaming data, only for sink
 	 *
+	 *  @param stream the stream object
 	 *  @param buf the data buf
 	 *  @param seq_num the sequence number
 	 *  @param ts the time stamp
