@@ -761,9 +761,9 @@ extern "C" {
 #define BT_MESH_MODEL_ID_LARGE_COMP_DATA_SRV       0x0012
 /** Large Composition Data Client */
 #define BT_MESH_MODEL_ID_LARGE_COMP_DATA_CLI       0x0013
-/** Solicitation PDU RPL Configuration Client */
-#define BT_MESH_MODEL_ID_SOL_PDU_RPL_SRV	   0x0014
 /** Solicitation PDU RPL Configuration Server */
+#define BT_MESH_MODEL_ID_SOL_PDU_RPL_SRV	   0x0014
+/** Solicitation PDU RPL Configuration Client */
 #define BT_MESH_MODEL_ID_SOL_PDU_RPL_CLI	   0x0015
 /** Private Proxy Server */
 #define BT_MESH_MODEL_ID_ON_DEMAND_PROXY_SRV	   0x000c
