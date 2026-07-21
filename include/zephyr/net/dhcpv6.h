@@ -55,6 +55,12 @@ struct net_dhcpv6_duid_storage {
 	uint8_t length;
 };
 
+#ifdef CONFIG_NET_DHCPV6_MAX_DOWNSTREAM
+#define NET_DHCPV6_MAX_DOWNSTREAM CONFIG_NET_DHCPV6_MAX_DOWNSTREAM
+#else
+#define NET_DHCPV6_MAX_DOWNSTREAM 1
+#endif
+
 struct net_if;
 
 /** @endcond */
@@ -63,6 +69,17 @@ struct net_if;
 struct net_dhcpv6_params {
 	bool request_addr : 1; /**< Request IPv6 address. */
 	bool request_prefix : 1; /**< Request IPv6 prefix. */
+	/** Number of valid entries in @ref downstream_ifaces. */
+	uint8_t downstream_count;
+	/** Optional downstream interface indices. When a prefix is delegated
+	 *  (request_prefix), each listed interface is turned into a downstream
+	 *  link of a requesting router (RFC 8415): it is assigned a distinct
+	 *  /64 carved from the delegated prefix (the Nth entry gets the Nth
+	 *  /64), which is then advertised via Router Advertisements. Requires
+	 *  @kconfig{CONFIG_NET_IPV6_RA}. A @ref downstream_count of 0 means the
+	 *  delegated prefix is only installed on @p iface.
+	 */
+	int downstream_ifaces[NET_DHCPV6_MAX_DOWNSTREAM];
 };
 
 /**
