@@ -320,8 +320,6 @@ static int lan78xx_read32_nolock(struct lan78xx_ctx *ctx, uint16_t reg, uint32_t
 	}
 
 	net_buf_reset(nb);
-	nb->len = LAN78XX_REG_ACCESS_LEN;
-	memset(nb->data, 0, LAN78XX_REG_ACCESS_LEN);
 
 	ret = usbh_req_setup(ctx->udev, LAN78XX_REQTYPE_VENDOR_IN_DEV, LAN78XX_USB_REQ_READ_REG, 0,
 			     reg, LAN78XX_REG_ACCESS_LEN, nb);
