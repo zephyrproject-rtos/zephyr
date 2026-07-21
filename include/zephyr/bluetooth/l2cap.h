@@ -642,7 +642,7 @@ struct bt_l2cap_chan_ops {
 	 *  controller.
 	 *
 	 *  @param chan The channel which has made encryption status changed.
-	 *  @param status HCI status of performed security procedure caused
+	 *  @param hci_status HCI status of performed security procedure caused
 	 *  by channel security requirements. The value is populated
 	 *  by HCI layer and set to 0 when success and to non-zero (reference to
 	 *  HCI Error Codes) when security/authentication failed.
