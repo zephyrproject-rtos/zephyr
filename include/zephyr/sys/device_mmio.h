@@ -305,7 +305,7 @@ static inline void device_unmap(mm_reg_t virt_addr, size_t size)
 	._mmio = Z_DEVICE_MMIO_ROM_INITIALIZER(node_id)
 
 /**
- * @def DEVICE_MMIO_MAP(device, flags)
+ * @def DEVICE_MMIO_MAP(dev, flags)
  *
  * @brief Map MMIO memory into the address space
  *
