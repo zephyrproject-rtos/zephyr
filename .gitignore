@@ -129,3 +129,5 @@ ZephyrModuleFile.txt
 
 # Node dependecies
 node_modules
+get-pip.py
+zephyr-sdk-*.tar.xz

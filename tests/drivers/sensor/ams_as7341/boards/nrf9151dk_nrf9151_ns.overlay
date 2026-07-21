@@ -1,0 +1,33 @@
+// Copyright (c) 2026 Dotcom IoT LLP
+// SPDX-License-Identifier: Apache-2.0
+
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_default>;
+	pinctrl-1 = <&i2c2_sleep>;
+	pinctrl-names = "default", "sleep";
+
+	as7341: as7341@39 {
+		compatible = "ams,as7341";
+		reg = <0x39>;
+		status = "okay";
+	};
+};
+
+&pinctrl {
+	/omit-if-no-ref/ i2c2_default: i2c2_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SCL, 0, 31)>,
+				<NRF_PSEL(TWIM_SDA, 0, 30)>;
+			bias-pull-up;
+		};
+	};
+
+	/omit-if-no-ref/ i2c2_sleep: i2c2_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SCL, 0, 31)>,
+				<NRF_PSEL(TWIM_SDA, 0, 30)>;
+			low-power-enable;
+		};
+	};
+};

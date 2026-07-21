@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMS AS7341 spectral sensor
+
+compatible: "ams,as7341"
+
+include: [sensor-device.yaml, i2c-device.yaml]

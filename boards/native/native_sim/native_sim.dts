@@ -119,7 +119,7 @@
 		status = "okay";
 	};
 
-	i2c0: i2c@100 {
+	test_i2c: i2c0: i2c@100 {
 		status = "okay";
 		compatible = "zephyr,i2c-emul-controller";
 		clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -129,7 +129,16 @@
 		reg = <0x100 4>;
 	};
 
-	spi0: spi@200 {
+	test_i3c: i3c0: i3c@500 {
+		compatible = "zephyr,i3c-emul-controller";
+		clock-frequency = <12500000>;
+		#address-cells = <3>;
+		#size-cells = <0>;
+		reg = <0x500 0x100>;
+		status = "okay";
+	};
+
+	test_spi: spi0: spi@200 {
 		status = "okay";
 		compatible = "zephyr,spi-emul-controller";
 		clock-frequency = <50000000>;

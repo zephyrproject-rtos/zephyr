@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Dotcom IoT LLP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	as7341: as7341@39 {
+		compatible = "ams,as7341";
+		reg = <0x39>;
+		status = "okay";
+	};
+};

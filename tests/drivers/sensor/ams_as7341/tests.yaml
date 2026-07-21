@@ -1,0 +1,12 @@
+tests:
+  drivers.ams_as7341:
+    tags:
+      - drivers
+      - sensor
+    depends_on: i2c
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: ztest
+    # build_only: true
