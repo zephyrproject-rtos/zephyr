@@ -7,8 +7,11 @@
 
 #include <zephyr/kernel.h>
 #include <errno.h>
+#include <zephyr/logging/log.h>
 
 #include "lvgl_display.h"
+
+LOG_MODULE_DECLARE(lvgl, CONFIG_LV_Z_LOG_LEVEL);
 
 #ifdef CONFIG_LV_Z_FLUSH_THREAD
 
@@ -97,6 +100,12 @@ int set_lvgl_rendering_cb(lv_display_t *display)
 					display);
 		break;
 	case PIXEL_FORMAT_RGB_565X:
+		if (IS_ENABLED(CONFIG_LV_COLOR_16_SWAP)) {
+			LOG_ERR("RGB_565X cannot be used with CONFIG_LV_COLOR_16_SWAP "
+				"(double byte swap)");
+			err = -ENOTSUP;
+			break;
+		}
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565_SWAPPED);
 		lv_display_set_flush_cb(display, lvgl_flush_cb_16bit);
 		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,
