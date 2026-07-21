@@ -1,0 +1,10 @@
+tests:
+  drivers.clock_control.xclk_wiz:
+    build_only: true
+    filter: dt_compat_enabled("xlnx,clkx5-wiz-1.0")
+    platform_allow:
+      - versal2_apu
+      - versal2_rpu
+    tags:
+      - drivers
+      - clock_control
