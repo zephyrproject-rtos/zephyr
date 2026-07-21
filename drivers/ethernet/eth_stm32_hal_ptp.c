@@ -16,7 +16,7 @@
 
 #include "eth_stm32_hal_priv.h"
 
-#define DT_DRV_COMPAT st_stm32_ethernet
+#define DT_DRV_COMPAT snps_dwmac_ptp_clock
 
 LOG_MODULE_REGISTER(eth_stm32_hal_ptp, CONFIG_ETHERNET_LOG_LEVEL);
 
@@ -47,17 +47,11 @@ const struct device *eth_stm32_get_ptp_clock(const struct device *dev,
 	return dev_data->ptp_clock;
 }
 
-struct ptp_context {
-	struct eth_stm32_hal_dev_data *eth_dev_data;
-};
-
-static struct ptp_context ptp_stm32_0_context;
-
 static int ptp_clock_stm32_set(const struct device *dev,
 			      struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->data;
-	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
+	const struct device *eth_dev = dev->config;
+	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	unsigned int key;
 
@@ -87,8 +81,8 @@ static int ptp_clock_stm32_set(const struct device *dev,
 static int ptp_clock_stm32_get(const struct device *dev,
 			      struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->data;
-	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
+	const struct device *eth_dev = dev->config;
+	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	unsigned int key;
 	uint32_t second_2;
@@ -120,8 +114,8 @@ static int ptp_clock_stm32_get(const struct device *dev,
 
 static int ptp_clock_stm32_adjust(const struct device *dev, int increment)
 {
-	struct ptp_context *ptp_context = dev->data;
-	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
+	const struct device *eth_dev = dev->config;
+	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	int key, ret;
 
@@ -164,8 +158,8 @@ static int ptp_clock_stm32_adjust(const struct device *dev, int increment)
 
 static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 {
-	struct ptp_context *ptp_context = dev->data;
-	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
+	const struct device *eth_dev = dev->config;
+	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	int key, ret;
 	uint32_t addend_val;
@@ -283,20 +277,18 @@ BUILD_ASSERT(NSEC_PER_SEC % CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ == 0,
 BUILD_ASSERT(NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ <= UINT8_MAX,
 	     "PTP clock period is more than 255 nanoseconds");
 
-static int ptp_stm32_init(const struct device *port)
+static int ptp_stm32_init(const struct device *dev)
 {
-	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(mac));
-	struct eth_stm32_hal_dev_data *eth_dev_data = dev->data;
-	const struct eth_stm32_hal_dev_cfg *eth_cfg = dev->config;
-	struct ptp_context *ptp_context = port->data;
+	const struct device *const eth_dev = dev->config;
+	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
+	const struct eth_stm32_hal_dev_cfg *eth_cfg = eth_dev->config;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	int ret;
 	uint32_t ptp_clk_rate;
 	uint32_t ss_incr_ns = NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ;
 	uint32_t addend_val;
 
-	eth_dev_data->ptp_clock = port;
-	ptp_context->eth_dev_data = eth_dev_data;
+	eth_dev_data->ptp_clock = dev;
 
 	eth_stm32_ptp_enable_timestamping(heth);
 
@@ -343,6 +335,8 @@ static int ptp_stm32_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_DEFINE(stm32_ptp_clock_0, PTP_CLOCK_NAME, ptp_stm32_init,
-		NULL, &ptp_stm32_0_context, NULL, POST_KERNEL,
-		CONFIG_ETH_STM32_HAL_PTP_CLOCK_INIT_PRIO, &api);
+#define PTP_CLOCK_STM32_INIT(n)                                                                    \
+	DEVICE_DT_INST_DEFINE(n, ptp_stm32_init, NULL, NULL, DEVICE_DT_GET(DT_INST_PARENT(n)),     \
+			      POST_KERNEL, CONFIG_PTP_CLOCK_INIT_PRIORITY, &api);
+
+DT_INST_FOREACH_STATUS_OKAY(PTP_CLOCK_STM32_INIT)
