@@ -133,7 +133,7 @@ void *bt_vocs_svc_decl_get(struct bt_vocs *vocs);
  * Get the Bluetooth connection pointer of a Audio Input Control Service
  * client instance.
  *
- * @param vocs    Audio Input Control Service client instance pointer.
+ * @param vocs    Volume Offset Control Service client instance pointer.
  * @param conn    Connection pointer.
  *
  * @return 0 if success, errno on failure.
