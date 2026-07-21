@@ -3,7 +3,7 @@
 if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
   AND "$ENV{USE_NXP_SPSDK_IMAGE}" STREQUAL "y"))
   find_program(7Z_EXECUTABLE 7z REQUIRED)
-  set(FIRMWARE_RELEASE "imx943-evk-boot-firmware-6.12.34-2.1.0")
+  set(FIRMWARE_RELEASE "imx943-evk-boot-firmware-6.18.20-2.0.0")
   # Parse SPSDK version
   execute_process(
     COMMAND spsdk --version
@@ -38,7 +38,7 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
       output:                   ${CMAKE_BINARY_DIR}/zephyr/flash.bin
       containers:
         - binary_container:
-            path:               ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/mx943a0-ahab-container.img
+            path:               ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/mx943a1-ahab-container.img
         - container:
             srk_set: none
             images:
@@ -71,7 +71,7 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
       output:                   ${CMAKE_BINARY_DIR}/zephyr/primary_ahab.bin
       containers:
         - binary_container:
-            path:               ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/mx943a0-ahab-container.img
+            path:               ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/mx943a1-ahab-container.img
         - container:
             srk_set: none
             images:
