@@ -41,13 +41,15 @@ enum net_dhcpv6_state {
 
 #define DHCPV6_TID_SIZE 3
 
-#ifndef CONFIG_NET_DHCPV6_DUID_MAX_LEN
-#define CONFIG_NET_DHCPV6_DUID_MAX_LEN 22
+#ifdef CONFIG_NET_DHCPV6_DUID_MAX_LEN
+#define NET_DHCPV6_DUID_MAX_LEN CONFIG_NET_DHCPV6_DUID_MAX_LEN
+#else
+#define NET_DHCPV6_DUID_MAX_LEN 22
 #endif
 
 struct net_dhcpv6_duid_raw {
 	uint16_t type;
-	uint8_t buf[CONFIG_NET_DHCPV6_DUID_MAX_LEN];
+	uint8_t buf[NET_DHCPV6_DUID_MAX_LEN];
 } __packed;
 
 struct net_dhcpv6_duid_storage {
