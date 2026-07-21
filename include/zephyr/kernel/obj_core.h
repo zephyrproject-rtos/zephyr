@@ -487,7 +487,7 @@ int k_obj_core_stats_reset(struct k_obj_core *obj_core);
 int k_obj_core_stats_disable(struct k_obj_core *obj_core);
 
 /**
- * @brief Reset the stats associated with the kernel object
+ * @brief Resume gathering the stats associated with the kernel object
  *
  * This function resumes the gathering of statistics associated with the kernel
  * object core specified by @a obj_core.
