@@ -1013,7 +1013,7 @@ enum net_verdict net_if_try_send_data(struct net_if *iface,
 /**
  * @brief Send a packet through a net iface
  *
- * This is equivalent to net_if_try_queue_tx with an infinite timeout
+ * This is equivalent to net_if_try_send_data with an infinite timeout
  * @param iface Pointer to a network interface structure
  * @param pkt Pointer to a net packet to send
  *
@@ -3588,6 +3588,7 @@ extern int net_stats_prometheus_scrape(struct prometheus_collector *collector,
  * Enables to use of `NET_IF_GET` above the instantiation macro.
  *
  * @param dev_id Device ID provided to `NET_IF_INIT` or `NET_IF_OFFLOAD_INIT`
+ * @param inst Instance identifier
  */
 #define NET_IF_DECLARE(dev_id, inst) \
 	static struct net_if NET_IF_GET_NAME(dev_id, inst)
