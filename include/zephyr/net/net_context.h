@@ -529,7 +529,7 @@ static inline void net_context_set_state(struct net_context *context,
  *
  * @param context Network context.
  *
- * @return Network state.
+ * @return Network address family.
  */
 static inline net_sa_family_t net_context_get_family(struct net_context *context)
 {
@@ -1435,7 +1435,7 @@ void net_context_foreach(net_context_cb_t cb, void *user_data);
  * pools.
  *
  * @param context Context that will use the given net_buf pools.
- * @param tx_pool Pointer to the function that will return TX pool
+ * @param tx_slab Pointer to the function that will return TX pool
  * to the caller. The TX pool is used when sending data to network.
  * There is one TX net_pkt for each network packet that is sent.
  * @param data_pool Pointer to the function that will return DATA pool
