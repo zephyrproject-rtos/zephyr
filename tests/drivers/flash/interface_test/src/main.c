@@ -33,6 +33,18 @@ static const size_t number_of_slots = test_area_size / PATTERN_SIZE;
 
 static int verify_block(off_t pos, uint8_t *expected_data, size_t size)
 {
+#if DT_NODE_HAS_COMPAT(TEST_FLASH_CONTROLLER_NODE, jedec_spi_nand)
+	enum flash_block_status status;
+	if (spi_nand_is_bad_block(flash_controller, pos, &status) != 0) {
+		return -EINVAL;
+	}
+
+	if (status == FLASH_BLOCK_BAD) {
+		printk("Encountered a bad block! Skipping.\n");
+		return 0;
+	}
+#endif
+
 	uint8_t buffer[size];
 
 	if (flash_read(flash_controller, pos, buffer, size) != 0) {
