@@ -345,6 +345,10 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			ptp_clock0: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+			};
 		};
 
 		crc: crc1: crc@58009000 {
