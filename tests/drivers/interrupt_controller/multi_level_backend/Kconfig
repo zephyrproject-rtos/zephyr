@@ -6,8 +6,9 @@ if RISCV
 config NUM_IRQS
 	int
 	# let's pretend that the level 1 supports 64 lines
-	# (MAX_IRQ_PER_AGGREGATOR x (NUM_2ND_LEVEL_AGGREGATORS + NUM_3RD_LEVEL_AGGREGATORS)) + 64
-	# (64 x 4) + 64 = 320
+	# (MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR x NUM_2ND_LEVEL_AGGREGATORS) +
+	# (MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR x NUM_3RD_LEVEL_AGGREGATORS) + 64
+	# (64 x 2) + (32 x 2) + 64 = 256, rounded up to 320
 	default 320
 
 endif # RISCV
