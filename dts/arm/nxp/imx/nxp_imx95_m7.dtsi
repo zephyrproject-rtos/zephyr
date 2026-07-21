@@ -1052,6 +1052,77 @@
 					status = "disabled";
 				};
 
+				/*
+				 * NETC Virtual Station Interfaces (VFs), ENETC-grouped in pairs:
+				 * ENETC0 -> VSI0/1, ENETC1 -> VSI2/3, ENETC2 -> VSI4/5. All
+				 * disabled here; a board enables the VF assigned to this core.
+				 */
+				enetc0_vsi0: ethernet@4cd20000 {
+					compatible = "nxp,imx-netc-vsi";
+					reg = <0x4cd20000 0x10000>,
+					      <0x4ca10000 0x1000>;
+					reg-names = "port", "pfconfig";
+					mac-index = <0>;
+					si-index = <0x13>;
+					clocks = <&scmi_clk IMX95_CLK_BUSNETCMIX>;
+					status = "disabled";
+				};
+
+				enetc0_vsi1: ethernet@4cd30000 {
+					compatible = "nxp,imx-netc-vsi";
+					reg = <0x4cd30000 0x10000>,
+					      <0x4ca20000 0x1000>;
+					reg-names = "port", "pfconfig";
+					mac-index = <0>;
+					si-index = <0x24>;
+					clocks = <&scmi_clk IMX95_CLK_BUSNETCMIX>;
+					status = "disabled";
+				};
+
+				enetc1_vsi0: ethernet@4cd40000 {
+					compatible = "nxp,imx-netc-vsi";
+					reg = <0x4cd40000 0x10000>,
+					      <0x4ca50000 0x1000>;
+					reg-names = "port", "pfconfig";
+					mac-index = <1>;
+					si-index = <0x15>;
+					clocks = <&scmi_clk IMX95_CLK_BUSNETCMIX>;
+					status = "disabled";
+				};
+
+				enetc1_vsi1: ethernet@4cd50000 {
+					compatible = "nxp,imx-netc-vsi";
+					reg = <0x4cd50000 0x10000>,
+					      <0x4ca60000 0x1000>;
+					reg-names = "port", "pfconfig";
+					mac-index = <1>;
+					si-index = <0x26>;
+					clocks = <&scmi_clk IMX95_CLK_BUSNETCMIX>;
+					status = "disabled";
+				};
+
+				enetc2_vsi0: ethernet@4cd60000 {
+					compatible = "nxp,imx-netc-vsi";
+					reg = <0x4cd60000 0x10000>,
+					      <0x4ca90000 0x1000>;
+					reg-names = "port", "pfconfig";
+					mac-index = <2>;
+					si-index = <0x17>;
+					clocks = <&scmi_clk IMX95_CLK_BUSNETCMIX>;
+					status = "disabled";
+				};
+
+				enetc2_vsi1: ethernet@4cd70000 {
+					compatible = "nxp,imx-netc-vsi";
+					reg = <0x4cd70000 0x10000>,
+					      <0x4caa0000 0x1000>;
+					reg-names = "port", "pfconfig";
+					mac-index = <2>;
+					si-index = <0x28>;
+					clocks = <&scmi_clk IMX95_CLK_BUSNETCMIX>;
+					status = "disabled";
+				};
+
 				emdio: mdio@4cb00000 {
 					compatible = "nxp,imx-netc-emdio";
 					reg = <0x4cb00000 0x100000>,
