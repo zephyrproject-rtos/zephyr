@@ -175,7 +175,7 @@ enum coap_response_code {
 	COAP_RESPONSE_CODE_NOT_ACCEPTABLE = COAP_MAKE_RESPONSE_CODE(4, 6),
 	/** 4.08 - Request Entity Incomplete */
 	COAP_RESPONSE_CODE_INCOMPLETE = COAP_MAKE_RESPONSE_CODE(4, 8),
-	/** 4.12 - Precondition Failed */
+	/** 4.09 - Conflict */
 	COAP_RESPONSE_CODE_CONFLICT = COAP_MAKE_RESPONSE_CODE(4, 9),
 	/** 4.12 - Precondition Failed */
 	COAP_RESPONSE_CODE_PRECONDITION_FAILED = COAP_MAKE_RESPONSE_CODE(4, 12),
@@ -1189,8 +1189,8 @@ struct coap_reply *coap_reply_next_unused(
  * coap_pending_clear().
  *
  * @param response The received response
- * @param pendings Pointer to the array of #coap_reply structures
- * @param len Size of the array of #coap_reply structures
+ * @param pendings Pointer to the array of #coap_pending structures
+ * @param len Size of the array of #coap_pending structures
  *
  * @return pointer to the associated #coap_pending structure, NULL in
  * case none could be found.
