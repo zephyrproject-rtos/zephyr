@@ -12,6 +12,7 @@ supported:
   - hwinfo
   - netif:eth
   - netif:wifi
+  - pulse_io
   - sdhc
   - spi
   - uart
