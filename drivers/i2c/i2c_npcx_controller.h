@@ -66,6 +66,7 @@ struct i2c_ctrl_config {
 	uintptr_t base;              /* i2c controller base address */
 	struct npcx_clk_cfg clk_cfg; /* clock configuration */
 	uint8_t irq;                 /* i2c controller irq */
+	k_timeout_t transfer_timeout;
 #ifdef CONFIG_I2C_TARGET
 	/* i2c wake-up input source configuration */
 	const struct npcx_wui smb_wui;
