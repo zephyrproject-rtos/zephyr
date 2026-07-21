@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(uhc_dwc2, CONFIG_UHC_DRIVER_LOG_LEVEL);
 #define RESET_HOLD_MS		CONFIG_UHC_DWC2_RESET_HOLD_MS
 #define RESET_RECOVERY_MS	CONFIG_UHC_DWC2_RESET_RECOVERY_MS
 #define SET_ADDR_DELAY_MS	CONFIG_UHC_DWC2_SET_ADDR_DELAY_MS
+#define RESUME_SIGNAL_MS	20U
 #define MAX_CHANNELS		16
 
 enum uhc_dwc2_event {
@@ -123,6 +124,10 @@ struct uhc_dwc2_data {
 	bool debouncing;
 	/* Root port has an attached device */
 	bool has_device;
+	/* Root port is in USB suspend state */
+	bool suspended;
+	/* The UHC client has enabled Start-of-Frame generation */
+	bool sof_enabled;
 };
 
 struct usb_dwc2_reg *uhc_dwc2_get_base(const struct device *dev)
@@ -175,6 +180,36 @@ static inline void dwc2_set_power(struct usb_dwc2_reg *const base, const bool po
 		hprt &= ~USB_DWC2_HPRT_PRTPWR;
 	}
 	sys_write32(hprt & (~USB_DWC2_HPRT_W1C_MSK), (mem_addr_t)&base->hprt);
+}
+
+static inline void dwc2_set_suspend(struct usb_dwc2_reg *const base, const bool suspend)
+{
+	uint32_t hprt;
+
+	hprt = sys_read32((mem_addr_t)&base->hprt);
+	if (suspend) {
+		hprt |= USB_DWC2_HPRT_PRTSUSP;
+	} else {
+		hprt &= ~USB_DWC2_HPRT_PRTSUSP;
+	}
+
+	sys_write32(hprt & ~USB_DWC2_HPRT_W1C_MSK, (mem_addr_t)&base->hprt);
+}
+
+static inline void dwc2_set_resume(struct usb_dwc2_reg *const base, const bool resume)
+{
+	uint32_t hprt;
+
+	hprt = sys_read32((mem_addr_t)&base->hprt);
+	if (resume) {
+		/* Resume signaling exits suspend and drives K-state on the bus. */
+		hprt &= ~USB_DWC2_HPRT_PRTSUSP;
+		hprt |= USB_DWC2_HPRT_PRTRES;
+	} else {
+		hprt &= ~USB_DWC2_HPRT_PRTRES;
+	}
+
+	sys_write32(hprt & ~USB_DWC2_HPRT_W1C_MSK, (mem_addr_t)&base->hprt);
 }
 
 static int dwc2_flush_rx_fifo(struct usb_dwc2_reg *const base)
@@ -1987,20 +2022,54 @@ static int uhc_dwc2_unlock(const struct device *const dev)
 
 static int uhc_dwc2_sof_enable(const struct device *const dev)
 {
-	LOG_WRN("%s has not been implemented", __func__);
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
-	return -ENOSYS;
+	if (priv->suspended) {
+		return -EBUSY;
+	}
+
+	if (priv->sof_enabled) {
+		return -EALREADY;
+	}
+
+	/*
+	 * DWC2 generates SOFs automatically while an enabled host port is not
+	 * suspended. SOF interrupt delivery is independent and is intentionally
+	 * left masked unless the driver has an internal consumer for it.
+	 */
+	dwc2_set_suspend(base, false);
+	priv->sof_enabled = true;
+
+	return 0;
 }
 
 static int uhc_dwc2_bus_suspend(const struct device *const dev)
 {
-	LOG_WRN("%s has not been implemented", __func__);
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
-	return -ENOSYS;
+	if (priv->suspended) {
+		return -EALREADY;
+	}
+
+	if (priv->free_chs != priv->numhstchnl) {
+		LOG_WRN("Cannot suspend while transfers are active");
+		return -EBUSY;
+	}
+
+	dwc2_set_suspend(base, true);
+	priv->suspended = true;
+	priv->sof_enabled = false;
+
+	uhc_submit_event(dev, UHC_EVT_SUSPENDED, 0);
+
+	return 0;
 }
 
 static int uhc_dwc2_bus_reset(const struct device *const dev)
 {
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
 	int ret;
 
 	ret = port_reset(dev);
@@ -2009,6 +2078,9 @@ static int uhc_dwc2_bus_reset(const struct device *const dev)
 		return ret;
 	}
 
+	priv->suspended = false;
+	priv->sof_enabled = false;
+
 	uhc_submit_event(dev, UHC_EVT_RESETED, 0);
 
 	return 0;
@@ -2016,9 +2088,24 @@ static int uhc_dwc2_bus_reset(const struct device *const dev)
 
 static int uhc_dwc2_bus_resume(const struct device *const dev)
 {
-	LOG_WRN("%s has not been implemented", __func__);
+	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 
-	return -ENOSYS;
+	/* USB 2.0 requires resume signaling for at least 20 ms. */
+	dwc2_set_resume(base, true);
+
+	uhc_unlock_internal(dev);
+	k_msleep(RESUME_SIGNAL_MS);
+	uhc_lock_internal(dev, K_FOREVER);
+
+	dwc2_set_resume(base, false);
+	priv->suspended = false;
+	/* Clients call uhc_sof_enable() after resume. */
+	priv->sof_enabled = false;
+
+	uhc_submit_event(dev, UHC_EVT_RESUMED, 0);
+
+	return 0;
 }
 
 static int uhc_dwc2_enqueue(const struct device *const dev, struct uhc_transfer *const xfer)
