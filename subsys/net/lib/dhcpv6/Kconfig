@@ -49,6 +49,16 @@ config NET_DHCPV6_DNS_SERVER_VIA_INTERFACE
 
 if NET_DHCPV6
 
+config NET_DHCPV6_MAX_DOWNSTREAM
+	int "Maximum number of downstream interfaces for prefix delegation"
+	default 1
+	range 1 16
+	help
+	  Maximum number of downstream interfaces onto which a delegated prefix
+	  (IA_PD) can be sub-delegated by a requesting router. Each downstream
+	  interface listed in net_dhcpv6_params is assigned a distinct /64
+	  carved from the delegated prefix.
+
 config NET_DHCPV6_SEND_RELEASE_ON_STOP
 	bool "Send DHCPv6 Release when the client is stopped"
 	help
