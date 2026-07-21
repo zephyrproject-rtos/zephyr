@@ -30,6 +30,10 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			ptp_clock1: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+			};
 		};
 	};
 };
