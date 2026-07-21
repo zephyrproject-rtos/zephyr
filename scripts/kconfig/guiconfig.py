@@ -61,6 +61,7 @@ $srctree is supported through Kconfiglib.
 import errno
 import os
 import re
+import sys
 
 from tkinter import *
 import tkinter.ttk as ttk
