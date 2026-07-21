@@ -264,7 +264,7 @@ static inline int z_impl_w1_write_byte(const struct device *dev, uint8_t byte)
 __syscall int w1_read_block(const struct device *dev, uint8_t *buffer, size_t len);
 
 /**
- * @brief Write a block of data from the 1-Wire bus.
+ * @brief Write a block of data to the 1-Wire bus.
  *
  * @param[in] dev    Pointer to the device structure for the driver instance.
  * @param[in] buffer Pointer to transmitting buffer.
@@ -562,7 +562,7 @@ int w1_write_read(const struct device *dev, const struct w1_slave_config *config
  * Note: Filtering on families is not supported.
  *
  * @param[in] dev       Pointer to the device structure for the driver instance.
- * @param command       Can either be W1_SEARCH_ALARM or W1_SEARCH_ROM.
+ * @param command       Can either be W1_CMD_SEARCH_ALARM or W1_CMD_SEARCH_ROM.
  * @param family        W1_SEARCH_ALL_FAMILIES searcheas all families,
  *                      filtering on a specific family is not yet supported.
  * @param callback      Application callback handler function to be called
