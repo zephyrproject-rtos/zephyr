@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiWx91x clock route under an HP, ULP, or AON clock manager.
+
+  Describes a clock path applied at manager init: which SIWX91X_CLK_* is
+  configured (from the node label via SIWX91X_CLOCK_NODE_TO_ID in
+  clock_control_silabs_siwx91x_common.h) and which source drives it (clocks property).
+
+  Child of an HP, ULP, or AON clock manager: Domain references (ref_hp_mux),
+  shared PLL reference (ref_pll_mux), and peripheral defaults (ulp_uart_mux)
+  use this compatible.
+
+  Optional clock-div programs a hardware divider when the clock path
+  has a divider register. Stored in silabs_siwx91x_clock_control_data;
+  applied at boot by the manager driver and via clock_control_configure().
+
+compatible: "silabs,siwx91x-clock-route"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: Parent clock source (single phandle).
+
+  "#clock-cells":
+    const: 0
+
+  clock-div:
+    type: int
+    description: Optional hardware divider factor (0 or omitted = no divider programmed).

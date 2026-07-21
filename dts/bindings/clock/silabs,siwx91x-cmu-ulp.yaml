@@ -1,0 +1,29 @@
+# Copyright (c) 2024-2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiWx91x Ultra Low Power (ULP) clock manager.
+
+  Controls clocks for the ULP subsystem: ULP UART, ULP I2C, ULP DMA,
+  ULP I2S, ULP ADC, ULP SSI, and ULP peripheral reference paths.
+
+compatible: "silabs,siwx91x-cmu-ulp"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    type: string-array
+    required: true
+    description: |
+      Register block for the ULP clock manager:
+        - ulpclk: ULPSS peripheral clock enable and configuration
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clkid
