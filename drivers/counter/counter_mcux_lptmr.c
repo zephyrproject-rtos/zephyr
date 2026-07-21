@@ -17,6 +17,7 @@
 #include <fsl_lptmr.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/drivers/wuc.h>
+#include <zephyr/pm/device.h>
 
 /*
  * Skip the instance reserved as the system timer via zephyr,system-timer.
@@ -186,8 +187,12 @@ static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
 		return ret;
 	}
 
-	/* Arm the wakeup controller so the companion's alarm can wake the SoC. */
-	if (mcux_lptmr_is_wakeup_source(dev) && config->is_companion) {
+	/*
+	 * Arm the wakeup controller so the alarm can wake the SoC: for the
+	 * system-timer companion, or when enabled as a wakeup source at run time.
+	 */
+	if (mcux_lptmr_is_wakeup_source(dev) &&
+	    (config->is_companion || pm_device_wakeup_is_enabled(dev))) {
 		int err = wuc_enable_wakeup_source_dt(&config->wuc);
 
 		if (err != 0) {
@@ -495,6 +500,20 @@ static int mcux_lptmr_reset(const struct device *dev)
 	return 0;
 }
 
+static int mcux_lptmr_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+
+	/* No device power state to manage; needed only to register a pm_device. */
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_SUSPEND:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static int mcux_lptmr_init(const struct device *dev)
 {
 	const struct mcux_lptmr_config *config = dev->config;
@@ -518,7 +537,7 @@ static int mcux_lptmr_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	return 0;
+	return pm_device_driver_init(dev, mcux_lptmr_pm_action);
 }
 
 static DEVICE_API(counter, mcux_lptmr_driver_api) = {
@@ -611,7 +630,9 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 		.wakeup_source = DT_INST_PROP_OR(n, wakeup_source, 0),		\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n, &mcux_lptmr_init, NULL,			\
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_lptmr_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(n, &mcux_lptmr_init, PM_DEVICE_DT_INST_GET(n),	\
 		&mcux_lptmr_data_##n,						\
 		&mcux_lptmr_config_##n,						\
 		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,			\
