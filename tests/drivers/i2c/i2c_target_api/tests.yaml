@@ -58,6 +58,7 @@ tests:
       - frdm_mcxa366
       - frdm_mcxa577
       - frdm_mcxc242
+      - frdm_mcxe31b
       - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0
       - it51xxx_evb/it51526aw
