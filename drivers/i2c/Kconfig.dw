@@ -12,15 +12,16 @@ menuconfig I2C_DW
 	help
 	  Enable the Design Ware I2C driver
 
+if I2C_DW
+
 config I2C_DW_CLOCK_SPEED
 	int "Set the clock speed for I2C"
-	depends on I2C_DW
 	default 100 if I2C_RTS5912
 	default 32
 
 config I2C_DW_LPSS_DMA
 	bool "Use I2C integrated DMA for asynchronous transfer"
-	depends on (I2C_DW && !I2C_RTS5912)
+	depends on !I2C_RTS5912
 	select DMA
 	select DMA_INTEL_LPSS
 	help
@@ -30,7 +31,6 @@ config I2C_DW_LPSS_DMA
 
 config I2C_DW_RW_TIMEOUT_MS
 	int "Set the Read/Write timeout in milliseconds"
-	depends on I2C_DW
 	default 100
 
 config I2C_DW_EXTENDED_SUPPORT
@@ -47,7 +47,6 @@ config I2C_DW_PM_POLICY_STATE_LOCK
 
 config I2C_DW_IC_CLK_FREQ_OPTIMIZATION
 	bool "Core Clock Frequency Optimization"
-	depends on I2C_DW
 	help
 	  Enable hardware optimization to reduce the required I2C core clock frequency.
 
@@ -57,3 +56,5 @@ config I2C_DW_IC_CLK_FREQ_OPTIMIZATION
 
 	  Enable this option only if your hardware IP supports this specific latency
 	  reduction feature.
+
+endif # I2C_DW
