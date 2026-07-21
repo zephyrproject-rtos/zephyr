@@ -23,6 +23,8 @@ ZTEST(pulse_io_api, test_capabilities)
 	zassert_true(caps.supports_tx);
 	zassert_true(caps.supports_rx);
 	zassert_equal(caps.num_channels, 4);
+	zassert_equal(caps.tx_channel_mask, BIT_MASK(4));
+	zassert_equal(caps.rx_channel_mask, BIT_MASK(4));
 }
 
 ZTEST(pulse_io_api, test_channel_lifecycle)
