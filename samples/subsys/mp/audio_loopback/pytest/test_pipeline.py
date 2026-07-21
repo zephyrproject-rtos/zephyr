@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Check that the dmic_i2s pipeline actually processes audio on native_sim.
+Check that the audio_loopback pipeline actually processes audio on native_sim.
 
 The native_sim DMIC driver reads its input from a file and the native_sim I2S
 driver writes its output to one, so the whole pipeline can be run headless and

@@ -1,5 +1,5 @@
-.. zephyr:code-sample:: dmic-i2s
-   :name: dmic-i2s pipeline
+.. zephyr:code-sample:: audio-loopback
+   :name: Audio loopback pipeline
 
       Build an audio pipeline that captures audio frames and applies gain control before playing them back.
 
@@ -7,7 +7,7 @@ Description
 ***********
 
 This sample replaces and extends the basic :zephyr:code-sample:`i2s-codec` sample
-(``samples/drivers/i2s/i2s_codec``) by rebuilding the same dmic-to-i2s workflow
+(``samples/drivers/i2s/i2s_codec``) by rebuilding the same capture-to-playback workflow
 on top of the MP pipeline framework.  The pipeline approach makes it easy to insert
 additional processing stages (gain, filtering …) without modifying the application logic.
 
@@ -61,12 +61,12 @@ be exercised entirely on the host. See `Running on native_sim`_.
 Building and Running
 ********************
 
-This sample can be found under :zephyr_file:`samples/subsys/mp/dmic_i2s/src/main.c`.
+This sample can be found under :zephyr_file:`samples/subsys/mp/audio_loopback/src/main.c`.
 
 For :zephyr:board:`mimxrt685_evk`, build this sample application with the following commands:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/mp/dmic_i2s
+   :zephyr-app: samples/subsys/mp/audio_loopback
    :board: mimxrt685_evk/mimxrt685s/cm33
    :goals: build flash
    :compact:
@@ -95,7 +95,7 @@ sink writes PCM to another, so the pipeline runs without any audio hardware.
 Build it with:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/subsys/mp/dmic_i2s
+   :zephyr-app: samples/subsys/mp/audio_loopback
    :board: native_sim/native/64
    :goals: build
    :compact:
@@ -131,7 +131,7 @@ scale ramp through the pipeline and compares the output:
 
 .. code-block:: console
 
-   west twister -p native_sim/native/64 -T samples/subsys/mp/dmic_i2s
+   west twister -p native_sim/native/64 -T samples/subsys/mp/audio_loopback
 
 Configuration Options
 *********************

@@ -1,8 +1,8 @@
 sample:
-  name: DMIC to I2S pipeline sample
+  name: Audio loopback pipeline sample
 
 tests:
-  sample.mp.dmic_i2s:
+  sample.mp.audio_loopback:
     tags:
       - audio
       - samples
@@ -21,7 +21,7 @@ tests:
   # Run the pipeline headless on native_sim and compare its output against the
   # input scaled by the configured gain. Unity gain and a gain above unity are
   # both covered, the latter exercising saturation.
-  sample.mp.dmic_i2s.output.unity_gain:
+  sample.mp.audio_loopback.output.unity_gain:
     tags:
       - audio
       - samples
@@ -36,7 +36,7 @@ tests:
       pytest_root:
         - "pytest/test_pipeline.py"
 
-  sample.mp.dmic_i2s.output.amplified:
+  sample.mp.audio_loopback.output.amplified:
     tags:
       - audio
       - samples
@@ -53,7 +53,7 @@ tests:
 
   # The same pipeline reading from an I2S receiver instead of a DMIC. Built for
   # every board here that has an i2s-codec-rx alias.
-  sample.mp.dmic_i2s.i2s_source:
+  sample.mp.audio_loopback.i2s_source:
     tags:
       - audio
       - samples
@@ -72,7 +72,7 @@ tests:
       regex:
         - "Capture started"
 
-  sample.mp.dmic_i2s.i2s_source.output:
+  sample.mp.audio_loopback.i2s_source.output:
     tags:
       - audio
       - samples
