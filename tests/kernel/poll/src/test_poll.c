@@ -63,7 +63,7 @@ static volatile bool wake_up_by_poll = true;
  */
 ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 {
-	struct fifo_msg msg = { NULL, FIFO_MSG_VALUE }, *msg_ptr;
+	struct fifo_msg fifo_msg = { NULL, FIFO_MSG_VALUE }, *fifo_msg_ptr;
 	unsigned int signaled;
 	char msgq_recv_buf[MSGQ_MSG_SIZE] = {0};
 	char msgq_msg[MSGQ_MSG_SIZE] = MSGQ_MSG_VALUE;
@@ -143,7 +143,7 @@ ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 #endif /* CONFIG_USERSPACE */
 
 	/* test polling events that are already ready */
-	zassert_false(k_fifo_alloc_put(&no_wait_fifo, &msg));
+	zassert_false(k_fifo_alloc_put(&no_wait_fifo, &fifo_msg));
 	k_poll_signal_raise(&no_wait_signal, SIGNAL_RESULT);
 	zassert_false(k_msgq_put(mq, msgq_msg, K_NO_WAIT));
 
@@ -153,10 +153,10 @@ ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 	zassert_equal(k_sem_take(&no_wait_sem, K_NO_WAIT), 0);
 
 	zassert_equal(events[1].state, K_POLL_STATE_FIFO_DATA_AVAILABLE);
-	msg_ptr = k_fifo_get(&no_wait_fifo, K_NO_WAIT);
-	zassert_not_null(msg_ptr);
-	zassert_equal(msg_ptr, &msg);
-	zassert_equal(msg_ptr->msg, FIFO_MSG_VALUE);
+	fifo_msg_ptr = k_fifo_get(&no_wait_fifo, K_NO_WAIT);
+	zassert_not_null(fifo_msg_ptr);
+	zassert_equal(fifo_msg_ptr, &fifo_msg);
+	zassert_equal(fifo_msg_ptr->msg, FIFO_MSG_VALUE);
 
 	zassert_equal(events[2].state, K_POLL_STATE_SIGNALED);
 	k_poll_signal_check(&no_wait_signal, &signaled, &result);
@@ -205,7 +205,7 @@ static K_FIFO_DEFINE(wait_fifo);
 static struct k_poll_signal wait_signal =
 	K_POLL_SIGNAL_INITIALIZER(wait_signal);
 
-struct fifo_msg wait_msg = { NULL, FIFO_MSG_VALUE };
+struct fifo_msg wait_fifo_msg = { NULL, FIFO_MSG_VALUE };
 
 K_PIPE_DEFINE(wait_pipe, 32, 1);
 
@@ -251,7 +251,7 @@ static void poll_wait_helper(void *use_queuelike, void *msgq, void *p3)
 	uintptr_t flags = (uintptr_t)use_queuelike;
 
 	if (flags & USE_FIFO) {
-		k_fifo_alloc_put(&wait_fifo, &wait_msg);
+		k_fifo_alloc_put(&wait_fifo, &wait_fifo_msg);
 	}
 
 	k_poll_signal_raise(&wait_signal, SIGNAL_RESULT);
@@ -279,7 +279,7 @@ enum check_results_event_type {
 /* check results for multiple events */
 void check_results(struct k_poll_event *events, uint32_t event_type, bool is_available)
 {
-	struct fifo_msg *msg_ptr;
+	struct fifo_msg *fifo_msg_ptr;
 	char msgq_recv_buf[MSGQ_MSG_SIZE] = {0};
 	char msg[] = MSGQ_MSG_VALUE;
 	char pipe_recv_buf[sizeof(PIPE_DATA) + 4];
@@ -302,10 +302,10 @@ void check_results(struct k_poll_event *events, uint32_t event_type, bool is_ava
 	case CHECK_FIFO:
 		if (is_available) {
 			zassert_equal(events->state, K_POLL_STATE_FIFO_DATA_AVAILABLE);
-			msg_ptr = k_fifo_get(&wait_fifo, K_NO_WAIT);
-			zassert_not_null(msg_ptr);
-			zassert_equal(msg_ptr, &wait_msg);
-			zassert_equal(msg_ptr->msg, FIFO_MSG_VALUE);
+			fifo_msg_ptr = k_fifo_get(&wait_fifo, K_NO_WAIT);
+			zassert_not_null(fifo_msg_ptr);
+			zassert_equal(fifo_msg_ptr, &wait_fifo_msg);
+			zassert_equal(fifo_msg_ptr->msg, FIFO_MSG_VALUE);
 			zassert_equal(events->tag, TAG_1);
 			/* reset to not ready */
 			events->state = K_POLL_STATE_NOT_READY;
