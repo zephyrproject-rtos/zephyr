@@ -1780,6 +1780,68 @@ bool bt_obex_has_header(struct net_buf *buf, uint8_t id);
  */
 bool bt_obex_has_app_param(struct net_buf *buf, uint8_t id);
 
+/** @brief Generate nonce for OBEX authentication challenge.
+ *
+ *  Generates a nonce value used in OBEX authentication challenges.
+ *  The nonce is used to prevent replay attacks during authentication.
+ *
+ *  @param pwd Password bytes used for nonce generation.
+ *  @param pwd_len Length of @p pwd in bytes.
+ *  @param nonce Output buffer to store the generated nonce
+ *               (@ref BT_OBEX_CHALLENGE_TAG_NONCE_LEN bytes).
+ *
+ *  @return 0 on success, negative error code on failure.
+ *
+ *  @warning OBEX authentication uses MD5, which is cryptographically weak.
+ *           It provides only limited security.
+ */
+int bt_obex_generate_nonce(const uint8_t *pwd, size_t pwd_len,
+			   uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN]);
+
+/** @brief Calculate request digest for OBEX authentication response.
+ *
+ *  Computes the MD5 digest for an authentication response based on the password
+ *  and received nonce. This digest is sent to prove knowledge of the password
+ *  without transmitting the password itself.
+ *
+ *  @param pwd Password bytes used for authentication.
+ *  @param pwd_len Length of @p pwd in bytes.
+ *  @param nonce Nonce value received in the authentication challenge
+ *               (@ref BT_OBEX_CHALLENGE_TAG_NONCE_LEN bytes).
+ *  @param digest Output buffer to store the calculated request digest
+ *                (@ref BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN bytes).
+ *
+ *  @return 0 on success, negative error code on failure.
+ *
+ *  @warning OBEX authentication uses MD5, which is cryptographically weak.
+ *           It provides only limited security.
+ */
+int bt_obex_calculate_request_digest(const uint8_t *pwd, size_t pwd_len,
+				     const uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN],
+				     uint8_t digest[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN]);
+
+/** @brief Verify OBEX authentication response.
+ *
+ *  Verifies that the received request digest matches the expected value
+ *  computed from the password and nonce. Used by the authenticating party
+ *  to validate the peer's authentication response.
+ *
+ *  @param pwd Password bytes used for authentication.
+ *  @param pwd_len Length of @p pwd in bytes.
+ *  @param nonce Nonce value that was sent in the authentication challenge
+ *               (@ref BT_OBEX_CHALLENGE_TAG_NONCE_LEN bytes).
+ *  @param digest Request digest received from the peer
+ *                (@ref BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN bytes).
+ *
+ *  @return 0 if authentication succeeds, negative error code on failure.
+ *
+ *  @warning OBEX authentication uses MD5, which is cryptographically weak.
+ *           It provides only limited security.
+ */
+int bt_obex_verify_auth_response(const uint8_t *pwd, size_t pwd_len,
+				 const uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN],
+				 const uint8_t digest[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN]);
+
 #ifdef __cplusplus
 }
 #endif
