@@ -62,7 +62,7 @@ struct bt_pbap_app {
 	struct net_buf *tx_buf;
 	uint8_t srm_state;
 	uint16_t peer_mopl;
-	uint8_t pwd[APP_PBAP_PWD_MAX_LENGTH];
+	char pwd[APP_PBAP_PWD_MAX_LENGTH];
 	uint8_t local_auth_challenge_nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN];
 	uint8_t peer_auth_challenge_nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN];
 	uint8_t auth_state;
@@ -828,9 +828,10 @@ static int pbap_pce_handle_connect_success(struct bt_pbap_app *pbap_app, struct 
 		bt_shell_error("Authentication verification failed");
 		return -EINVAL;
 	}
-	err = bt_pbap_verify_authentication(pbap_app->local_auth_challenge_nonce,
-					    (uint8_t *)bt_auth.data, pbap_app->pwd);
 
+	err = bt_obex_verify_auth_response((const uint8_t *)pbap_app->pwd, strlen(pbap_app->pwd),
+					   pbap_app->local_auth_challenge_nonce,
+					   bt_auth.data);
 	if (err == 0) {
 		bt_shell_print("Authentication verified successfully");
 		bt_shell_print("Connection established with authentication");
@@ -1480,8 +1481,9 @@ static int pbap_pse_verify_local_auth(struct bt_pbap_app *pbap_app, struct net_b
 		return err;
 	}
 
-	err = bt_pbap_verify_authentication(pbap_app->local_auth_challenge_nonce,
-					    (uint8_t *)bt_auth.data, pbap_app->pwd);
+	err = bt_obex_verify_auth_response((const uint8_t *)pbap_app->pwd, strlen(pbap_app->pwd),
+					   pbap_app->local_auth_challenge_nonce,
+					   bt_auth.data);
 
 	bt_shell_print("auth %s", err == 0 ? "success" : "fail");
 	return err;
@@ -2236,7 +2238,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 
 static int cmd_add_auth_challenge(const struct shell *sh, size_t argc, char *argv[])
 {
-	uint8_t length;
+	size_t length;
 	int err;
 	struct bt_obex_tlv data;
 
@@ -2252,13 +2254,15 @@ static int cmd_add_auth_challenge(const struct shell *sh, size_t argc, char *arg
 
 	length = strlen(argv[1]);
 	if (length >= APP_PBAP_PWD_MAX_LENGTH) {
-		bt_shell_error("the length is too long, %d >= %d", length, APP_PBAP_PWD_MAX_LENGTH);
+		bt_shell_error("the length is too long, %zu >= %u", length,
+			       APP_PBAP_PWD_MAX_LENGTH);
 		return -EINVAL;
 	}
 	memcpy(g_pbap_app->pwd, argv[1], length);
 	g_pbap_app->pwd[length] = '\0';
 
-	err = bt_pbap_calculate_nonce(g_pbap_app->pwd, g_pbap_app->local_auth_challenge_nonce);
+	err = bt_obex_generate_nonce((const uint8_t *)g_pbap_app->pwd, length,
+				     g_pbap_app->local_auth_challenge_nonce);
 	if (err != 0) {
 		bt_shell_error("generate auth_challenge nonce failed, err : %d", err);
 		return -EINVAL;
@@ -2279,7 +2283,7 @@ static int cmd_add_auth_challenge(const struct shell *sh, size_t argc, char *arg
 
 static int cmd_add_auth_response(const struct shell *sh, size_t argc, char *argv[])
 {
-	uint8_t length;
+	size_t length;
 	int err;
 	struct bt_obex_tlv data;
 	uint8_t bt_auth_data[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN] = {0};
@@ -2296,7 +2300,8 @@ static int cmd_add_auth_response(const struct shell *sh, size_t argc, char *argv
 
 	length = strlen(argv[1]);
 	if (length >= APP_PBAP_PWD_MAX_LENGTH) {
-		bt_shell_error("the length is too long, %d >= %d", length, APP_PBAP_PWD_MAX_LENGTH);
+		bt_shell_error("the length is too long, %zu >= %u", length,
+			       APP_PBAP_PWD_MAX_LENGTH);
 		return -EINVAL;
 	}
 	memcpy(g_pbap_app->pwd, argv[1], length);
@@ -2305,8 +2310,9 @@ static int cmd_add_auth_response(const struct shell *sh, size_t argc, char *argv
 	data.type = BT_OBEX_RESPONSE_TAG_REQ_DIGEST;
 	data.data_len = BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN;
 	data.data = bt_auth_data;
-	err = bt_pbap_calculate_rsp_digest(g_pbap_app->pwd, g_pbap_app->peer_auth_challenge_nonce,
-					   bt_auth_data);
+	err = bt_obex_calculate_request_digest((const uint8_t *)g_pbap_app->pwd, length,
+					       g_pbap_app->peer_auth_challenge_nonce,
+					       bt_auth_data);
 	if (err != 0) {
 		bt_shell_error("generate auth_challenge response failed, err : %d", err);
 		return -EINVAL;

@@ -22,6 +22,11 @@
 #include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/bluetooth/classic/obex.h>
 
+#if defined(CONFIG_BT_OBEX_AUTH)
+#include <psa/crypto.h>
+#include <mbedtls/constant_time.h>
+#endif /* CONFIG_BT_OBEX_AUTH */
+
 #include "obex_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_GOEP_LOG_LEVEL
@@ -4665,3 +4670,106 @@ const char *bt_obex_rsp_code_to_str(enum bt_obex_rsp_code rsp_code)
 	return rsp_code_str;
 }
 #endif /* CONFIG_BT_OEBX_RSP_CODE_TO_STR */
+
+#if defined(CONFIG_BT_OBEX_AUTH)
+int bt_obex_generate_nonce(const uint8_t *pwd, size_t pwd_len,
+			   uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN])
+{
+	int64_t timestamp = k_uptime_get();
+	uint8_t data[CONFIG_BT_OBEX_AUTH_PWD_LEN + 1U + sizeof(timestamp)];
+	struct net_buf_simple buf;
+	size_t len;
+	int err;
+
+	if (pwd == NULL || nonce == NULL || pwd_len == 0 || pwd_len > CONFIG_BT_OBEX_AUTH_PWD_LEN) {
+		return -EINVAL;
+	}
+
+	LOG_WRN("OBEX authentication relies on legacy MD5-based OBEX authentication");
+
+	net_buf_simple_init_with_data(&buf, data, sizeof(data));
+	net_buf_simple_reset(&buf);
+
+	net_buf_simple_add_mem(&buf, (uint8_t *)&timestamp, sizeof(timestamp));
+	net_buf_simple_add_u8(&buf, (uint8_t)':');
+	net_buf_simple_add_mem(&buf, pwd, pwd_len);
+	err = psa_hash_compute(PSA_ALG_MD5, (const unsigned char *)buf.data, buf.len, nonce,
+			       BT_OBEX_CHALLENGE_TAG_NONCE_LEN, &len);
+	if (err != 0) {
+		LOG_ERR("Generate nonce failed %d", err);
+		return err;
+	}
+
+	if (len != BT_OBEX_CHALLENGE_TAG_NONCE_LEN) {
+		LOG_ERR("Generated nonce len is invalid (%zu != %zu)", len,
+			BT_OBEX_CHALLENGE_TAG_NONCE_LEN);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+int bt_obex_calculate_request_digest(const uint8_t *pwd, size_t pwd_len,
+				     const uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN],
+				     uint8_t digest[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN])
+{
+	uint8_t data[CONFIG_BT_OBEX_AUTH_PWD_LEN + BT_OBEX_CHALLENGE_TAG_NONCE_LEN + 1U];
+	struct net_buf_simple buf;
+	size_t len;
+	int err;
+
+	if (pwd == NULL || nonce == NULL || digest == NULL || pwd_len == 0 ||
+	    pwd_len > CONFIG_BT_OBEX_AUTH_PWD_LEN) {
+		return -EINVAL;
+	}
+
+	LOG_WRN("OBEX authentication relies on legacy MD5-based OBEX authentication");
+
+	net_buf_simple_init_with_data(&buf, data, sizeof(data));
+	net_buf_simple_reset(&buf);
+
+	net_buf_simple_add_mem(&buf, nonce, BT_OBEX_CHALLENGE_TAG_NONCE_LEN);
+	net_buf_simple_add_u8(&buf, (uint8_t)':');
+	net_buf_simple_add_mem(&buf, pwd, pwd_len);
+
+	err = psa_hash_compute(PSA_ALG_MD5, (const unsigned char *)buf.data, buf.len, digest,
+			       BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN, &len);
+	if (err != 0) {
+		LOG_ERR("Generate request-digest failed %d", err);
+		return err;
+	}
+
+	if (len != BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN) {
+		LOG_ERR("Generated request-digest len is invalid (%zu != %zu)", len,
+			BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN);
+		return -EINVAL;
+	}
+	return 0;
+}
+
+int bt_obex_verify_auth_response(const uint8_t *pwd, size_t pwd_len,
+				 const uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN],
+				 const uint8_t digest[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN])
+{
+	uint8_t calc_digest[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN];
+	int err;
+
+	if (pwd == NULL || nonce == NULL || digest == NULL || pwd_len == 0 ||
+	    pwd_len > CONFIG_BT_OBEX_AUTH_PWD_LEN) {
+		return -EINVAL;
+	}
+
+	err = bt_obex_calculate_request_digest(pwd, pwd_len, nonce, calc_digest);
+	if (err != 0) {
+		LOG_ERR("Failed to calculate request digest %d", err);
+		return err;
+	}
+
+	err = mbedtls_ct_memcmp(calc_digest, digest, BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN);
+	if (err != 0) {
+		LOG_ERR("Request-digest is invalid");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_OBEX_AUTH */
