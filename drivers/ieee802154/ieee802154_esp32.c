@@ -320,6 +320,7 @@ free_net_ack:
 free_esp_ack:
 	esp_ieee802154_receive_handle_done(data->ack_frame);
 	data->ack_frame = NULL;
+	data->ack_frame_info = NULL;
 
 	return err;
 }
@@ -330,6 +331,7 @@ void IRAM_ATTR esp_ieee802154_transmit_done(const uint8_t *tx_frame, const uint8
 {
 	esp32_data.ack_frame = ack_frame;
 	esp32_data.ack_frame_info = ack_frame_info;
+	esp32_data.tx_error = ESP_IEEE802154_TX_ERR_NONE;
 
 	k_sem_give(&esp32_data.tx_wait);
 }
@@ -337,6 +339,8 @@ void IRAM_ATTR esp_ieee802154_transmit_done(const uint8_t *tx_frame, const uint8
 /* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
 void IRAM_ATTR esp_ieee802154_transmit_failed(const uint8_t *frame, esp_ieee802154_tx_error_t error)
 {
+	esp32_data.tx_error = error;
+
 	k_sem_give(&esp32_data.tx_wait);
 }
 
@@ -360,6 +364,14 @@ static int esp32_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode, s
 	memcpy(data->tx_psdu + 1, payload, payload_len);
 
 	k_sem_reset(&data->tx_wait);
+	data->tx_error = ESP_IEEE802154_TX_ERR_NONE;
+
+	/* Start from a clean state: a transmission that times out never reaches
+	 * handle_ack(), so pointers from the previous transmission would
+	 * otherwise stay live and be released a second time.
+	 */
+	data->ack_frame = NULL;
+	data->ack_frame_info = NULL;
 
 	switch (tx_mode) {
 	case IEEE802154_TX_MODE_DIRECT:
@@ -399,11 +411,27 @@ static int esp32_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode, s
 
 	if (err != 0) {
 		LOG_ERR("TX timeout");
-	} else {
-		handle_ack(data);
+		return -EIO;
 	}
 
-	return err == 0 ? 0 : -EIO;
+	switch (data->tx_error) {
+	case ESP_IEEE802154_TX_ERR_NONE:
+		break;
+	case ESP_IEEE802154_TX_ERR_CCA_BUSY:
+	case ESP_IEEE802154_TX_ERR_COEXIST:
+		return -EBUSY;
+	case ESP_IEEE802154_TX_ERR_NO_ACK:
+	case ESP_IEEE802154_TX_ERR_INVALID_ACK:
+		return -ENOMSG;
+	case ESP_IEEE802154_TX_ERR_SECURITY:
+		return -EINVAL;
+	default:
+		return -EIO;
+	}
+
+	handle_ack(data);
+
+	return 0;
 }
 
 static int esp32_start(const struct device *dev)
