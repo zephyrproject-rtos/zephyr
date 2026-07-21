@@ -163,10 +163,10 @@ struct bt_gmap_feat {
 	enum bt_gmap_bgr_feat bgr_feat;
 };
 
-/** @brief Hearing Access Service Client callback structure. */
+/** @brief Gaming Audio Profile callback structure. */
 struct bt_gmap_cb {
 	/**
-	 * @brief Callback function for bt_has_discover.
+	 * @brief Callback function for bt_gmap_discover().
 	 *
 	 * This callback is called when discovery procedure is complete.
 	 *
