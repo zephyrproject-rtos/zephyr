@@ -24,7 +24,10 @@ LOG_MODULE_REGISTER(nxp_imx_eth);
 #include "../eth.h"
 #include "eth_nxp_imx_netc_priv.h"
 
+#ifdef CONFIG_ETH_NXP_IMX_MSGINTR
+/* Devices sharing the MSGINTR line; msgintr_isr dispatches Tx/Rx across them. */
 const struct device *netc_dev_list[NETC_DRV_MAX_INST_SUPPORT];
+#endif
 
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
 static void netc_eth_pkt_get_timestamp(struct net_pkt *pkt, const struct device *ptp_clock,
@@ -205,7 +208,7 @@ static int netc_eth_rx(const struct device *dev)
 	return ret;
 }
 
-static void netc_eth_rx_thread(void *arg1, void *unused1, void *unused2)
+void netc_eth_rx_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = (const struct device *)arg1;
 	struct netc_eth_data *data = dev->data;
@@ -233,6 +236,14 @@ static void netc_eth_rx_thread(void *arg1, void *unused1, void *unused2)
 	}
 }
 
+void netc_eth_tx_coalesce_init(struct netc_eth_data *data)
+{
+	/* HAL leaves Tx coalescing regs unset: fire after ICPT frames, ICTT timeout. */
+	data->handle.hw.si->BDR[0].TBICR1 = ENETC_SI_TBICR1_ICTT(NETC_TX_COALESCE_TICKS);
+	data->handle.hw.si->BDR[0].TBICR0 =
+		ENETC_SI_TBICR0_ICEN_MASK | ENETC_SI_TBICR0_ICPT(NETC_TX_COALESCE_FRAMES);
+}
+
 #ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 
 static void netc_tx_isr_handler(const void *arg)
@@ -240,8 +251,9 @@ static void netc_tx_isr_handler(const void *arg)
 	const struct device *dev = (const struct device *)arg;
 	struct netc_eth_data *data = dev->data;
 
-	EP_CleanTxIntrFlags(&data->handle, 1, 0);
-	data->tx_done = true;
+	/* Clear both Tx flags (per-frame and threshold). */
+	EP_CleanTxIntrFlags(&data->handle, 1, 1);
+	k_sem_give(&data->tx_sem);
 }
 
 static void netc_rx_isr_handler(const void *arg)
@@ -272,17 +284,67 @@ static void msgintr_isr(void)
 		data = dev->data;
 		/* Transmit interrupt */
 		if (irqs & (1 << config->tx_intr_msg_data)) {
-			EP_CleanTxIntrFlags(&data->handle, 1, 0);
-			data->tx_done = true;
+			EP_CleanTxIntrFlags(&data->handle, 1, 1);
+			k_sem_give(&data->tx_sem);
 		}
 		/* Receive interrupt */
 		if (irqs & (1 << config->rx_intr_msg_data)) {
 			EP_CleanRxIntrFlags(&data->handle, 1);
 			k_sem_give(&data->rx_sem);
 		}
+#ifdef CONFIG_DT_HAS_NXP_IMX_NETC_VSI_ENABLED
+		/* VSI PSI->VSI message interrupt (e.g. link-status notify) */
+		if (config->is_vsi && (irqs & (1 << config->msg_intr_msg_data))) {
+			netc_eth_vsi_msg_isr(dev);
+		}
+#endif
 	}
 
 	SDK_ISR_EXIT_BARRIER;
+}
+
+/*
+ * Register the device with the shared MSGINTR, point its SI Tx/Rx MSI-X vectors
+ * at that line, hook the ISR once, and unmask. msgintr_isr dispatches to every
+ * device registered here. The MSI-X function-enable itself lives in the SI
+ * function config (EP_Init for the PSI, the PSI owner for the VSI); this only
+ * owns the SI-side table.
+ */
+void netc_eth_msgintr_arm(const struct device *dev)
+{
+	const struct netc_eth_config *config = dev->config;
+	struct netc_eth_data *data = dev->data;
+	uint32_t msg_addr = MSGINTR_GetIntrSelectAddr(NETC_MSGINTR, NETC_MSGINTR_CHANNEL);
+
+	for (int i = 0; i < NETC_DRV_MAX_INST_SUPPORT; i++) {
+		if (!netc_dev_list[i]) {
+			netc_dev_list[i] = dev;
+			break;
+		}
+	}
+
+	if (!irq_is_enabled(NETC_MSGINTR_IRQ)) {
+		IRQ_CONNECT(NETC_MSGINTR_IRQ, 0, msgintr_isr, 0, 0);
+		irq_enable(NETC_MSGINTR_IRQ);
+	}
+
+	data->handle.hw.msixTable[NETC_TX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
+	data->handle.hw.msixTable[NETC_TX_MSIX_ENTRY_IDX].msgData = config->tx_intr_msg_data;
+	data->handle.hw.msixTable[NETC_RX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
+	data->handle.hw.msixTable[NETC_RX_MSIX_ENTRY_IDX].msgData = config->rx_intr_msg_data;
+
+	EP_MsixSetEntryMask(&data->handle, NETC_TX_MSIX_ENTRY_IDX, false);
+	EP_MsixSetEntryMask(&data->handle, NETC_RX_MSIX_ENTRY_IDX, false);
+
+#ifdef CONFIG_DT_HAS_NXP_IMX_NETC_VSI_ENABLED
+	/* VSI has a third entry for the PSI->VSI message (link-notify) interrupt. */
+	if (config->is_vsi) {
+		data->handle.hw.msixTable[NETC_MSG_MSIX_ENTRY_IDX].msgAddr = msg_addr;
+		data->handle.hw.msixTable[NETC_MSG_MSIX_ENTRY_IDX].msgData =
+			config->msg_intr_msg_data;
+		EP_MsixSetEntryMask(&data->handle, NETC_MSG_MSIX_ENTRY_IDX, false);
+	}
+#endif
 }
 
 #endif
@@ -291,12 +353,11 @@ int netc_eth_init_common(const struct device *dev)
 {
 	const struct netc_eth_config *config = dev->config;
 	struct netc_eth_data *data = dev->data;
-	netc_msix_entry_t msix_entry[NETC_MSIX_ENTRY_NUM];
+	netc_msix_entry_t msix_entry[config->msix_entry_num];
 	netc_rx_bdr_config_t rx_bdr_config = {0};
 	netc_tx_bdr_config_t tx_bdr_config = {0};
 	netc_bdr_config_t bdr_config = {0};
 	ep_config_t ep_config;
-	uint32_t msg_addr;
 	status_t result;
 
 	config->bdr_init(&bdr_config, &rx_bdr_config, &tx_bdr_config);
@@ -320,12 +381,13 @@ int netc_eth_init_common(const struct device *dev)
 	/* MSIX entry configuration */
 #ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 	int ret;
+	uint32_t msg_addr;
 
 	if (config->msi_dev == NULL) {
 		LOG_ERR("MSI device is not configured");
 		return -ENODEV;
 	}
-	ret = its_setup_deviceid(config->msi_dev, config->msi_device_id, NETC_MSIX_ENTRY_NUM);
+	ret = its_setup_deviceid(config->msi_dev, config->msi_device_id, config->msix_entry_num);
 	if (ret != 0) {
 		LOG_ERR("Failed to setup device ID for MSI: %d", ret);
 		return ret;
@@ -363,19 +425,8 @@ int netc_eth_init_common(const struct device *dev)
 		irq_enable(data->rx_intid);
 	}
 #else
-	msg_addr = MSGINTR_GetIntrSelectAddr(NETC_MSGINTR, NETC_MSGINTR_CHANNEL);
 	msix_entry[NETC_TX_MSIX_ENTRY_IDX].control = kNETC_MsixIntrMaskBit;
-	msix_entry[NETC_TX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
-	msix_entry[NETC_TX_MSIX_ENTRY_IDX].msgData = config->tx_intr_msg_data;
-
 	msix_entry[NETC_RX_MSIX_ENTRY_IDX].control = kNETC_MsixIntrMaskBit;
-	msix_entry[NETC_RX_MSIX_ENTRY_IDX].msgAddr = msg_addr;
-	msix_entry[NETC_RX_MSIX_ENTRY_IDX].msgData = config->rx_intr_msg_data;
-
-	if (!irq_is_enabled(NETC_MSGINTR_IRQ)) {
-		IRQ_CONNECT(NETC_MSGINTR_IRQ, 0, msgintr_isr, 0, 0);
-		irq_enable(NETC_MSGINTR_IRQ);
-	}
 #endif
 
 	/* Endpoint configuration. */
@@ -387,12 +438,13 @@ int netc_eth_init_common(const struct device *dev)
 	ep_config.userData = data;
 	ep_config.reclaimCallback = NULL;
 	ep_config.msixEntry = &msix_entry[0];
-	ep_config.entryNum = NETC_MSIX_ENTRY_NUM;
+	ep_config.entryNum = config->msix_entry_num;
 	ep_config.port.ethMac.miiMode = config->phy_mode;
 	ep_config.port.ethMac.miiSpeed = kNETC_MiiSpeed100M;
 	ep_config.port.ethMac.miiDuplex = kNETC_MiiFullDuplex;
-	ep_config.rxCacheMaintain = true;
-	ep_config.txCacheMaintain = true;
+	/* Buffers/BD rings are non-cacheable; skip HAL cache ops (DSB still runs). */
+	ep_config.rxCacheMaintain = false;
+	ep_config.txCacheMaintain = false;
 
 	config->generate_mac(&data->mac_addr[0]);
 
@@ -412,16 +464,18 @@ int netc_eth_init_common(const struct device *dev)
 		}
 	}
 
-	for (int i = 0; i < NETC_DRV_MAX_INST_SUPPORT; i++) {
-		if (!netc_dev_list[i]) {
-			netc_dev_list[i] = dev;
-			break;
-		}
-	}
+	netc_eth_tx_coalesce_init(data);
 
+#ifdef CONFIG_ETH_NXP_IMX_NETC_MSI_GIC
 	/* Unmask MSIX message interrupt. */
 	EP_MsixSetEntryMask(&data->handle, NETC_TX_MSIX_ENTRY_IDX, false);
 	EP_MsixSetEntryMask(&data->handle, NETC_RX_MSIX_ENTRY_IDX, false);
+#else
+	/* Point the SI MSI-X table at the shared MSGINTR, hook the ISR, unmask. */
+	netc_eth_msgintr_arm(dev);
+#endif
+
+	k_sem_init(&data->tx_sem, 0, 1);
 
 	k_sem_init(&data->rx_sem, 0, 1);
 	k_thread_create(&data->rx_thread, data->rx_thread_stack,
@@ -433,14 +487,50 @@ int netc_eth_init_common(const struct device *dev)
 	return 0;
 }
 
+/* Reclaim completed Tx BDs, recycling their ring slots. */
+static void netc_eth_tx_reclaim(const struct device *dev)
+{
+	struct netc_eth_data *data = dev->data;
+	netc_tx_frame_info_t *frame_info;
+
+	do {
+		frame_info = EP_ReclaimTxDescCommon(&data->handle, &data->handle.txBdRing[0], 0,
+						    true);
+		if (frame_info != NULL) {
+			if (frame_info->status != kNETC_EPTxSuccess) {
+				eth_stats_update_errors_tx(data->iface);
+			}
+			memset(frame_info, 0, sizeof(netc_tx_frame_info_t));
+		}
+	} while (frame_info != NULL);
+}
+
+/*
+ * Submit one frame to Tx ring 0. DSA passes a caller-built BD carrying the
+ * egress port (EP_SendFrameCommon); otherwise EP_SendFrame honours ep_tx_opt.
+ */
+static status_t netc_eth_tx_submit(struct netc_eth_data *data, netc_frame_struct_t *frame,
+				   netc_tx_bd_t *txDesc, ep_tx_opt *opt)
+{
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
+	if (txDesc != NULL) {
+		return EP_SendFrameCommon(&data->handle, &data->handle.txBdRing[0], 0, frame, NULL,
+					  txDesc, data->handle.cfg.txCacheMaintain);
+	}
+#else
+	ARG_UNUSED(txDesc);
+#endif
+	return EP_SendFrame(&data->handle, 0, frame, NULL, opt);
+}
+
 int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct netc_eth_data *data = dev->data;
-	netc_buffer_struct_t buff = {.buffer = data->tx_buff, .length = sizeof(data->tx_buff)};
+	netc_buffer_struct_t buff;
 	netc_frame_struct_t frame = {.buffArray = &buff, .length = 1};
-	netc_tx_frame_info_t *frame_info;
 	struct net_if *iface_dst;
 	size_t pkt_len = net_pkt_get_len(pkt);
+	uint16_t slot;
 #if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
 	struct ethernet_context *eth_ctx = net_if_l2_data(data->iface);
 #endif
@@ -457,6 +547,12 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	__ASSERT(pkt, "Packet pointer is NULL");
 
 	iface_dst = data->iface;
+
+	if (pkt_len > CONFIG_ETH_NXP_IMX_TX_RING_BUF_SIZE) {
+		LOG_ERR("Frame length %zu exceeds tx buffer size", pkt_len);
+		eth_stats_update_errors_tx(iface_dst);
+		return -EMSGSIZE;
+	}
 
 	/*
 	 * Pseudo MAC connects to internal switch port.
@@ -486,7 +582,10 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 		opt.flags |= kEP_TX_OPT_REQ_TS;
 	}
 #endif
-	/* Copy packet to tx buffer */
+
+	/* Copy into the current ring slot's buffer; it stays valid until reclaim. */
+	slot = data->handle.txBdRing[0].producerIndex;
+	buff.buffer = data->tx_buff[slot];
 	buff.length = (uint16_t)pkt_len;
 	ret = net_pkt_read(pkt, buff.buffer, pkt_len);
 	if (ret) {
@@ -495,14 +594,13 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 		goto error;
 	}
 
-	/* Send */
-	data->tx_done = false;
-
 #if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
+	netc_tx_bd_t txDesc[2] = {0};
+	netc_tx_bd_t *txbd = NULL;
+
 	if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
 		const struct dsa_port_config *port_cfg = net_if_get_device(iface_dst)->config;
 		const int dst_port = port_cfg->port_idx;
-		netc_tx_bd_t txDesc[2] = {0};
 
 		txDesc[0].standard.flags = NETC_SI_TXDESCRIP_RD_FLQ(2) |
 					   NETC_SI_TXDESCRIP_RD_SMSO_MASK |
@@ -512,50 +610,57 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 			txDesc[0].standard.flags |= NETC_SI_TXDESCRIP_RD_TSR_MASK;
 		}
 #endif
-		result = EP_SendFrameCommon(&data->handle, &data->handle.txBdRing[0], 0, &frame,
-					    NULL, &txDesc[0], data->handle.cfg.txCacheMaintain);
-	} else {
-		result = EP_SendFrame(&data->handle, 0, &frame, NULL, &opt);
+		txbd = &txDesc[0];
 	}
 #else
-	result = EP_SendFrame(&data->handle, 0, &frame, NULL, &opt);
+	netc_tx_bd_t *txbd = NULL;
 #endif
+
+	/* Full ring (kStatus_Busy): reclaim and retry, then block on tx_sem, don't drop. */
+	result = netc_eth_tx_submit(data, &frame, txbd, &opt);
+	while (result == kStatus_Busy) {
+		netc_eth_tx_reclaim(dev);
+		result = netc_eth_tx_submit(data, &frame, txbd, &opt);
+		if (result == kStatus_Busy) {
+			k_sem_take(&data->tx_sem, K_FOREVER);
+		}
+	}
 	if (result != kStatus_Success) {
 		LOG_ERR("Failed to tx frame");
 		ret = -EIO;
 		goto error;
 	}
 
-	while (!data->tx_done) {
-	}
-
-	do {
-		frame_info = EP_ReclaimTxDescCommon(&data->handle, &data->handle.txBdRing[0],
-						    0, true);
-		if (frame_info != NULL) {
-			if (frame_info->status != kNETC_EPTxSuccess) {
-				memset(frame_info, 0, sizeof(netc_tx_frame_info_t));
-				LOG_ERR("Failed to tx frame");
-				ret = -EIO;
-				goto error;
-			}
-
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
-			if (frame_info->isTsAvail) {
-				netc_eth_pkt_get_timestamp(pkt, cfg->ptp_clock,
-							   frame_info->timestamp);
-				net_if_add_tx_timestamp(pkt);
-			}
+	/* Busy-wait for this frame's completion, then read its egress timestamp. */
+	if ((opt.flags & (uint32_t)kEP_TX_OPT_REQ_TS) != 0U) {
+		netc_tx_frame_info_t *frame_info;
+		k_timepoint_t deadline = sys_timepoint_calc(NETC_TIMEOUT);
+		bool stamped = false;
+
+		do {
+			frame_info = EP_ReclaimTxDescCommon(&data->handle,
+							    &data->handle.txBdRing[0], 0, true);
+			if (frame_info != NULL) {
+				if (frame_info->isTsAvail) {
+					netc_eth_pkt_get_timestamp(pkt, cfg->ptp_clock,
+								   frame_info->timestamp);
+					net_if_add_tx_timestamp(pkt);
+					stamped = true;
+				}
 #if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT)
-			if (eth_ctx->dsa_port == DSA_CONDUIT_PORT && frame_info->isTxTsIdAvail) {
-				dsa_netc_port_txtsid(net_if_get_device(iface_dst),
-						     frame_info->txtsid);
+				if (eth_ctx->dsa_port == DSA_CONDUIT_PORT &&
+				    frame_info->isTxTsIdAvail) {
+					dsa_netc_port_txtsid(net_if_get_device(iface_dst),
+							     frame_info->txtsid);
+					stamped = true;
+				}
+#endif
+				memset(frame_info, 0, sizeof(netc_tx_frame_info_t));
 			}
+		} while (!stamped && !sys_timepoint_expired(deadline));
+	}
 #endif
-#endif
-			memset(frame_info, 0, sizeof(netc_tx_frame_info_t));
-		}
-	} while (frame_info != NULL);
 
 	ret = 0;
 error:
@@ -579,6 +684,30 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev __maybe
 
 	return caps;
 }
+
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+struct net_stats_eth *netc_eth_get_stats(const struct device *dev, struct net_if *iface __unused)
+{
+	struct netc_eth_data *data = dev->data;
+	const struct netc_eth_config *cfg = dev->config;
+
+#ifdef CONFIG_DT_HAS_NXP_IMX_NETC_VSI_ENABLED
+	/* Stats are only available once the VSI is fully ready. */
+	if (cfg->is_vsi && !data->si_ready) {
+		return &data->stats;
+	}
+#else
+	ARG_UNUSED(cfg);
+#endif
+
+	/* SITDFCR counts frames discarded on this SI's transmit path. */
+#ifdef ENETC_SI_SITDFCR_COUNT_MASK
+	data->stats.tx_dropped = data->handle.hw.si->SITDFCR;
+#endif
+
+	return &data->stats;
+}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
 int netc_eth_set_config(const struct device *dev, struct net_if *iface __unused,
 			enum ethernet_config_type type, const struct ethernet_config *config)

@@ -4,11 +4,13 @@
 menuconfig ETH_NXP_IMX_NETC
 	bool "NXP IMX Ethernet and Network Controller (NETC) driver"
 	default y
-	depends on DT_HAS_NXP_IMX_NETC_PSI_ENABLED
+	depends on DT_HAS_NXP_IMX_NETC_PSI_ENABLED || DT_HAS_NXP_IMX_NETC_VSI_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	help
 	  Enable Ethernet and Network Controller (NETC) driver for NXP IMX SoCs.
+	  Supports both the Physical Station Interface (PSI) and the Virtual
+	  Station Interface (VSI).
 
 if ETH_NXP_IMX_NETC
 
@@ -70,7 +72,7 @@ config ETH_NXP_IMX_TX_RING_LEN
 
 config ETH_NXP_IMX_TX_RING_BUF_SIZE
 	int "TX ring data buffer size"
-	default 1000
+	default 1518
 	range 64 1536
 	help
 	  Size, in bytes, of the TX data buffer. The size must be big enough to
@@ -98,5 +100,27 @@ config ETH_NXP_IMX_RX_RING_BUF_SIZE
 	help
 	  Size, in bytes, of the RX data buffer. The size must be big enough to
 	  store one complete Ethernet frame, and be a multiple of 8.
+
+if DT_HAS_NXP_IMX_NETC_VSI_ENABLED
+
+config ETH_NXP_IMX_NETC_VSI_INIT_PRIORITY
+	int "VSI init priority"
+	default 82
+	help
+	  Initialization priority of the NETC Virtual Station Interface (VSI)
+	  driver. Must be greater than the ENET MDIO/block-controller init
+	  priority and than the network stack init.
+
+config ETH_NXP_IMX_NETC_VSI_READY_POLL_INTERVAL_MS
+	int "VSI readiness-gate poll interval (ms)"
+	default 100
+	range 1 10000
+	help
+	  Interval at which the VSI service thread polls its readiness gates before
+	  the first SI access: the optional SCMI clock-status gate (when the node
+	  has a "clocks" property) and the parent PF's SR-IOV VF-enable bits in
+	  ECAM. Both are fault-free (they never touch the not-yet-decoding SI).
+
+endif # DT_HAS_NXP_IMX_NETC_VSI_ENABLED
 
 endif # ETH_NXP_IMX_NETC
