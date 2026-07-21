@@ -16,6 +16,15 @@
 		};
 	};
 
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <HSADC0_A0_P3_9>,
+				 <HSADC0_A1_P3_4>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
 	pinmux_aon_lpuart0: pinmux_aon_lpuart0 {
 		group0 {
 			pinmux = <AON_LPUART0_TX_P0_6>,
