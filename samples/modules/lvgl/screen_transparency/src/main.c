@@ -16,11 +16,52 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app, CONFIG_LOG_DEFAULT_LEVEL);
 
+#ifdef CONFIG_APP_DRAW_BACKGROUND_CHECKERBOARD
+
+/* Number of checkerboard squares along the X axis. */
+#define CHECKER_COLS 40
+
+static void checkerboard_draw_cb(lv_event_t *e)
+{
+	lv_layer_t *layer = lv_event_get_layer(e);
+	lv_display_t *disp = lv_display_get_default();
+	int32_t hor = lv_display_get_horizontal_resolution(disp);
+	int32_t ver = lv_display_get_vertical_resolution(disp);
+	int32_t sq = LV_MAX(hor / CHECKER_COLS, 1);
+	lv_draw_rect_dsc_t dsc;
+
+	lv_draw_rect_dsc_init(&dsc);
+	dsc.bg_opa = LV_OPA_COVER;
+	dsc.bg_color = lv_color_black();
+
+	/* The bottom layer already has an opaque white background, so only the
+	 * black squares need to be drawn on top of it.
+	 */
+	for (int32_t y = 0; y < ver; y += sq) {
+		for (int32_t x = 0; x < hor; x += sq) {
+			if ((((x / sq) + (y / sq)) & 1) == 0) {
+				continue;
+			}
+
+			lv_area_t coords = {
+				.x1 = x,
+				.y1 = y,
+				.x2 = x + sq - 1,
+				.y2 = y + sq - 1,
+			};
+
+			lv_draw_rect(layer, &dsc, &coords);
+		}
+	}
+}
+
+#endif /* CONFIG_APP_DRAW_BACKGROUND_CHECKERBOARD */
+
 static void initialize_gui(void)
 {
 	lv_obj_t *label;
 
-	/* Configure screen and background for transparency */
+	/* Configure the screen for transparency */
 	lv_obj_set_style_bg_opa(lv_screen_active(), LV_OPA_TRANSP, LV_PART_MAIN);
 	lv_obj_set_style_bg_opa(lv_layer_bottom(), LV_OPA_TRANSP, LV_PART_MAIN);
 
@@ -71,3 +112,18 @@ int main(void)
 
 	return 0;
 }
+
+#ifdef CONFIG_APP_DRAW_BACKGROUND_CHECKERBOARD
+	/* This board has no separate hardware layer behind the LVGL framebuffer,
+	 * so paint an opaque black/white checkerboard on the bottom layer to give
+	 * the transparent screen a defined background to composite over.
+	 */
+	lv_obj_set_style_bg_opa(lv_layer_bottom(), LV_OPA_COVER, LV_PART_MAIN);
+	lv_obj_set_style_bg_color(lv_layer_bottom(), lv_color_white(), LV_PART_MAIN);
+	lv_obj_add_event_cb(lv_layer_bottom(), checkerboard_draw_cb, LV_EVENT_DRAW_MAIN, NULL);
+	lv_obj_invalidate(lv_layer_bottom());
+#else
+	/* Default: keep the bottom layer transparent, so a separate hardware
+	 * layer (e.g. a video plane for an OSD overlay) shows through.
+	 */
+#endif
