@@ -24,6 +24,7 @@ There is a limited set of such conditions:
 
 - a semaphore becomes available
 - a kernel FIFO contains data ready to be retrieved
+- a kernel LIFO contains data ready to be retrieved
 - a kernel message queue contains data ready to be retrieved
 - a kernel pipe contains data ready to be retrieved
 - a poll signal is raised
