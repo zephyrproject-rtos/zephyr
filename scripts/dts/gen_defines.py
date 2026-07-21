@@ -316,6 +316,7 @@ def write_special_props(node: edtlib.Node) -> None:
     write_interrupts(node)
     write_compatibles(node)
     write_status(node)
+    write_cpu_name_flag(node)
 
     # Macros that are special to bindings inherited from Linux, which
     # we can't capture with the current bindings language.
@@ -622,6 +623,13 @@ def write_children(node: edtlib.Node) -> None:
 
 def write_status(node: edtlib.Node) -> None:
     out_dt_define(f"{node.z_path_id}_STATUS_{str2ident(node.status)}", 1)
+
+
+def write_cpu_name_flag(node: edtlib.Node) -> None:
+    # Flags nodes whose name strictly matches "cpu@<hex>", used by
+    # devicetree/cpu.h to identify CPU nodes by name instead of device_type.
+    if node.name.startswith("cpu@") and node.unit_addr is not None:
+        out_dt_define(f"{node.z_path_id}_NAME_IS_CPU_UNIT_ADDR", 1)
 
 
 def write_pinctrls(node: edtlib.Node) -> None:
