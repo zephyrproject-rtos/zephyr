@@ -1298,6 +1298,8 @@ static inline int z_impl_adc_get_decoder(const struct device *dev,
  * Returns the voltage corresponding to @ref ADC_REF_INTERNAL,
  * measured in millivolts.
  *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
  * @return a positive value is the reference voltage value.  Returns
  * zero if reference voltage information is not available.
  */
