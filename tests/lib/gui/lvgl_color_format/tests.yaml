@@ -1,0 +1,16 @@
+common:
+  tags:
+    - display
+    - gui
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+tests:
+  libraries.gui.lvgl.rgb565x:
+    extra_configs:
+      - CONFIG_LV_COLOR_16_SWAP=n
+  libraries.gui.lvgl.rgb565x.swap_rejected:
+    extra_configs:
+      - CONFIG_LV_COLOR_16_SWAP=y
