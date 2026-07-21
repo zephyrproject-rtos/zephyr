@@ -32,4 +32,14 @@
 				<BEE_PSEL_GPIOA_10_P1_2>;
 		};
 	};
+
+	can_default: can_default {
+		group1 {
+			psels = <BEE_PSEL(A2C_TX, P3_4)>,
+				<BEE_PSEL(A2C_RX, P3_5)>;
+			output-enable;
+			output-high;
+			bias-disable;
+		};
+	};
 };

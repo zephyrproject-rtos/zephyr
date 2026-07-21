@@ -76,6 +76,12 @@ tests:
   drivers.can.build_all.rcar:
     platform_allow:
       - rcar_h3ulcb/r8a77951/r7
+  drivers.can.build_all.realtek_bee:
+    extra_configs:
+      - CONFIG_CAN_FD_MODE=n
+      - CONFIG_CAN_MANUAL_RECOVERY_MODE=n
+    platform_allow:
+      - rtl87x2g_evb_a/rtl8762gku
   drivers.can.build_all.renesas_ra:
     platform_allow:
       - aik_ra8d1
