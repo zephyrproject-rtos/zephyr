@@ -63,7 +63,10 @@ class Snippet:
         '''Process the data in a snippet.yml file, after it is loaded into a
         python object and validated by jsonschema.'''
         def append_value(variable, value):
-            if variable in ('SB_EXTRA_CONF_FILE', 'EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE'):
+            if variable in (
+                'SB_EXTRA_CONF_FILE', 'EXTRA_DTC_OVERLAY_FILE',
+                'EXTRA_CONF_FILE', 'FORCED_CONF_FILE'
+            ):
                 paths = []
                 if not isinstance(value, list):
                     value = [value]

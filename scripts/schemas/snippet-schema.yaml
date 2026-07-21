@@ -53,6 +53,12 @@ $defs:
           - type: array
             items:
               type: string
+      FORCED_CONF_FILE:
+        oneOf:
+          - type: string
+          - type: array
+            items:
+              type: string
       SB_EXTRA_CONF_FILE:
         oneOf:
           - type: string
