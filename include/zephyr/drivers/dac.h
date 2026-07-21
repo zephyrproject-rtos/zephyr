@@ -595,7 +595,7 @@ static inline int dac_millivolts_to_raw(uint32_t ref_mv, uint8_t resolution, uin
 }
 
 /**
- * @brief Convert a raw DAC value to microvolts.
+ * @brief Convert a microvolts value to a raw DAC value.
  *
  * @see dac_x_to_raw_fn
  */
