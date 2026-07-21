@@ -137,6 +137,16 @@ struct pulse_io_caps {
 	/** Maximum glitch-filter width, in ticks; 0 if no filter. */
 	uint32_t rx_filter_max_ticks;
 
+	/**
+	 * Bitmask of channels usable for TX (bit N = channel N).
+	 * Hardware with dedicated TX and RX channels reports disjoint
+	 * masks; fully symmetric hardware sets both masks to all
+	 * channels.
+	 */
+	uint32_t tx_channel_mask;
+	/** Bitmask of channels usable for RX (bit N = channel N). */
+	uint32_t rx_channel_mask;
+
 	/** Width of the duty field in CELL mode; 0 for level-only cells. */
 	uint8_t cell_duty_bits;
 	/** Total number of independent channels on this instance. */

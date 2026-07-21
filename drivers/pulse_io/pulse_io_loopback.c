@@ -48,6 +48,8 @@ static int lb_get_capabilities(const struct device *dev, struct pulse_io_caps *c
 		.min_tick_ns = 1,
 		.max_tick_ns = 1000000,
 		.max_duration_ticks = INT32_MAX,
+		.tx_channel_mask = BIT_MASK(data->num_channels),
+		.rx_channel_mask = BIT_MASK(data->num_channels),
 		.num_channels = data->num_channels,
 	};
 	return 0;
