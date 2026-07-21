@@ -288,6 +288,12 @@ static DEVICE_API(ptp_clock, api) = {
 	.rate_adjust = ptp_clock_stm32_rate_adjust,
 };
 
+BUILD_ASSERT(NSEC_PER_SEC % CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ == 0,
+	     "PTP clock period must be an integer nanosecond value");
+
+BUILD_ASSERT(NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ <= UINT8_MAX,
+	     "PTP clock period is more than 255 nanoseconds");
+
 static int ptp_stm32_init(const struct device *port)
 {
 	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(mac));
@@ -297,7 +303,7 @@ static int ptp_stm32_init(const struct device *port)
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	int ret;
 	uint32_t ptp_clk_rate;
-	uint32_t ss_incr_ns;
+	uint32_t ss_incr_ns = NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ;
 	uint32_t addend_val;
 
 	eth_dev_data->ptp_clock = port;
@@ -315,16 +321,6 @@ static int ptp_stm32_init(const struct device *port)
 		return -EIO;
 	}
 
-	/* Program the subsecond increment register based on the PTP clock freq */
-	if (NSEC_PER_SEC % CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ != 0) {
-		LOG_ERR("PTP clock period must be an integer nanosecond value");
-		return -EINVAL;
-	}
-	ss_incr_ns = NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ;
-	if (ss_incr_ns > UINT8_MAX) {
-		LOG_ERR("PTP clock period is more than %d nanoseconds", UINT8_MAX);
-		return -EINVAL;
-	}
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 	heth->Instance->MACSSIR = ss_incr_ns << ETH_MACMACSSIR_SSINC_Pos;
 #else
