@@ -132,6 +132,8 @@
 #define TOOLCHAIN_HAS_C_AUTO_TYPE               1
 
 #include <zephyr/toolchain/gcc.h>
+/* Synopsys MetaWare pragma unroll support is unknown. */
+#undef TOOLCHAIN_PRAGMA_UNROLL
 
 #undef BUILD_ASSERT
 #if defined(__cplusplus) && (__cplusplus >= 201103L)
