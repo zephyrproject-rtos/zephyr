@@ -1508,15 +1508,15 @@ static inline int i3c_configure(const struct device *dev,
 }
 #if defined(CONFIG_I3C_CONTROLLER) || defined(__DOXYGEN__)
 /**
- * @brief Get the controller device configuration for an I3C device.
+ * @brief Set the controller device configuration for an I3C device.
  *
- * This function retrieves the configuration parameters specific to an
- * I3C controller device. It is a type-safe wrapper around @ref i3c_config_get
+ * This function applies the configuration parameters specific to an
+ * I3C controller device. It is a type-safe wrapper around @ref i3c_configure
  * that ensures the correct structure type is passed.
  *
  * @param dev Pointer to the I3C controller device instance.
  * @param config Pointer to a @ref i3c_config_controller structure
- *               where the configuration will be stored.
+ *               containing the configuration to apply.
  *
  * @retval 0 on success.
  * @retval -EIO General Input/Output errors.
@@ -1530,15 +1530,15 @@ static inline int i3c_configure_controller(const struct device *dev,
 #endif /* CONFIG_I3C_CONTROLLER */
 #if defined(CONFIG_I3C_TARGET) || defined(__DOXYGEN__)
 /**
- * @brief Get the target device configuration for an I3C device.
+ * @brief Set the target device configuration for an I3C device.
  *
- * This function retrieves the configuration parameters specific to an
- * I3C target device. It is a type-safe wrapper around @ref i3c_config_get
+ * This function applies the configuration parameters specific to an
+ * I3C target device. It is a type-safe wrapper around @ref i3c_configure
  * that ensures the correct structure type is passed.
  *
  * @param dev Pointer to the I3C controller device instance.
  * @param config Pointer to a @ref i3c_config_target structure
- *                    where the configuration will be stored.
+ *                    containing the configuration to apply.
  *
  * @retval 0 on success.
  * @retval -EIO General Input/Output errors.
@@ -1585,7 +1585,7 @@ static inline int i3c_config_get(const struct device *dev,
 /**
  * @brief Get the controller device configuration for an I3C device.
  *
- * This function sets the configuration parameters specific to an
+ * This function gets the configuration parameters specific to an
  * I3C controller device. It is a type-safe wrapper around @ref i3c_config_get
  * that ensures the correct structure type is passed.
  *
@@ -1607,7 +1607,7 @@ static inline int i3c_config_get_controller(const struct device *dev,
 /**
  * @brief Get the target device configuration for an I3C device.
  *
- * This function sets the configuration parameters specific to an
+ * This function gets the configuration parameters specific to an
  * I3C target device. It is a type-safe wrapper around @ref i3c_config_get
  * that ensures the correct structure type is passed.
  *
@@ -2133,7 +2133,7 @@ static inline int i3c_ibi_enable(struct i3c_device_desc *target)
 /**
  * @brief Disable IBI of a target device.
  *
- * This enables IBI of a target device where the IBI has already been
+ * This disables IBI of a target device where the IBI has already been
  * request.
  *
  * @param target I3C target device descriptor.
@@ -2180,7 +2180,7 @@ static inline int i3c_ibi_has_payload(struct i3c_device_desc *target)
  * Note that BCR must have been obtained from device and
  * i3c_device_desc::bcr must be set.
  *
- * @return True if IBI has payload, false otherwise.
+ * @return True if device is IBI capable, false otherwise.
  */
 static inline int i3c_device_is_ibi_capable(struct i3c_device_desc *target)
 {
