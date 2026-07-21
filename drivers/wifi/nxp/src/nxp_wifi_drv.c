@@ -412,11 +412,15 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 static int nxp_wifi_cpu_reset(uint8_t enable)
 {
 	int err = 0;
-#if DT_NODE_HAS_PROP(DT_DRV_INST(0), sd_gpios) &&    \
-	DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), sd_gpios)
+	const int reset_assert_ms = 100;
+	const int reset_release_ms = 300;
 
 	struct gpio_dt_spec sdio_reset = GPIO_DT_SPEC_GET(DT_DRV_INST(0), sd_gpios);
+
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
 	struct gpio_dt_spec pwr_gpios = GPIO_DT_SPEC_GET(DT_DRV_INST(0), pwr_gpios);
+#endif
 
 	if (!gpio_is_ready_dt(&sdio_reset)) {
 		LOG_ERR("Error: failed to configure sdio_reset %s pin %d", sdio_reset.port->name,
@@ -424,57 +428,69 @@ static int nxp_wifi_cpu_reset(uint8_t enable)
 		return -EIO;
 	}
 
-	/* Configure sdio_reset as output  */
-	err = gpio_pin_configure_dt(&sdio_reset, GPIO_OUTPUT);
+	err = gpio_pin_configure_dt(&sdio_reset, GPIO_OUTPUT_INACTIVE);
 	if (err) {
 		LOG_ERR("Error %d: failed to configure sdio_reset %s pin %d", err,
 				sdio_reset.port->name, sdio_reset.pin);
 		return err;
 	}
 
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
 	if (!gpio_is_ready_dt(&pwr_gpios)) {
 		LOG_ERR("Error: failed to configure pwr_gpios %s pin %d", pwr_gpios.port->name,
 				pwr_gpios.pin);
 		return -EIO;
 	}
 
-	/* Configure wlan-power-io as an output  */
-	err = gpio_pin_configure_dt(&pwr_gpios, GPIO_OUTPUT);
+	err = gpio_pin_configure_dt(&pwr_gpios, GPIO_OUTPUT_INACTIVE);
 	if (err) {
 		LOG_ERR("Error %d: failed to configure pwr_gpios %s pin %d", err,
 				pwr_gpios.port->name, pwr_gpios.pin);
 		return err;
 	}
+#endif
 
 	if (enable) {
-		/* Set SDIO reset pin as high  */
+		/* Assert reset first. For GPIO_ACTIVE_LOW this drives the line low. */
 		err = gpio_pin_set_dt(&sdio_reset, 1);
 		if (err) {
 			return err;
 		}
-		/* wait for reset done */
-		k_sleep(K_MSEC(100));
+		k_sleep(K_MSEC(reset_assert_ms));
 
-		/* Set power gpio pin as high  */
-		err = gpio_pin_set_dt(&pwr_gpios, 1);
-		if (err) {
-			return err;
-		}
-	} else {
-		/* Set SDIO reset pin as low */
+		/* Release reset. For GPIO_ACTIVE_LOW this drives the line high. */
 		err = gpio_pin_set_dt(&sdio_reset, 0);
 		if (err) {
 			return err;
 		}
 
-		/* Set power gpio pin as low */
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
+		/* Set power gpio pin as active  */
+		err = gpio_pin_set_dt(&pwr_gpios, 1);
+		if (err) {
+			return err;
+		}
+#endif
+
+		/* Hold time after reset release before first SDIO command. */
+		k_sleep(K_MSEC(reset_release_ms));
+	} else {
+		/* Keep module in reset when disabled. */
+		err = gpio_pin_set_dt(&sdio_reset, 1);
+		if (err) {
+			return err;
+		}
+
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
+		/* Set power gpio pin as inactive */
 		err = gpio_pin_set_dt(&pwr_gpios, 0);
 		if (err) {
 			return err;
 		}
+#endif
+
+		k_sleep(K_MSEC(reset_assert_ms));
 	}
-	/* wait for reset done */
-	k_sleep(K_MSEC(100));
 #endif
 
 	return err;
