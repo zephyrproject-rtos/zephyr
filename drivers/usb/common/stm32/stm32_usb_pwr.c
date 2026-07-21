@@ -15,6 +15,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(stm32_usb_pwr, CONFIG_STM32_USB_COMMON_LOG_LEVEL);
 
+/* No datasheet timing constant is published for VMSR.USB33RDY; it settles
+ * well under a millisecond, so 1 ms is a generous bound.
+ */
+#define STM32H5_VDDUSB_READY_TIMEOUT_US 1000
+
 /*
  * Keep track of whether power is already
  * enabled here to simplify the USB drivers.
@@ -132,6 +137,29 @@ int stm32_usb_pwr_enable(void)
 	while (!LL_PWR_IsActiveFlag_USBBOOSTRDY()) {
 		/* Wait for USB OTG booster to be ready */
 	}
+#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+	/* Enable the voltage detector and wait for VDDUSB ready (VMSR.USB33RDY)
+	 * before switching VDDUSB on. Without this wait USB_CoreReset() spins
+	 * for the full HAL_USB_TIMEOUT polling GRSTCTL and never comes up.
+	 */
+	LL_PWR_EnableUSBVoltageDetector();
+	if (!WAIT_FOR(LL_PWR_IsActiveFlag_VDDUSB(), STM32H5_VDDUSB_READY_TIMEOUT_US, NULL)) {
+		LOG_WRN("VDDUSB ready flag (PWR->VMSR.USB33RDY) not set within %u us, "
+			"continuing anyway",
+			STM32H5_VDDUSB_READY_TIMEOUT_US);
+	}
+
+	/* Enable VDDUSB */
+	LL_PWR_EnableVDDUSB();
+
+# if defined(PWR_USBSCR_OTGHSEN) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+	/* OTG_HS PHY has its own supply switch (PWR->USBSCR.OTGHSEN), separate
+	 * from VDDUSB above. Without it GRSTCTL.CSRST never clears and
+	 * HAL_PCD_Init() fails - confirmed on stm32h5f5j_dk (USBSCR
+	 * 0x03000000, GRSTCTL 0x80000001).
+	 */
+	LL_PWR_EnableUSBOTGHSPhy();
+# endif /* PWR_USBSCR_OTGHSEN && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
 #elif defined(PWR_USBSCR_USB33SV) || defined(PWR_SVMCR_USV)
 	/*
 	 * VDDUSB independent USB supply (PWR clock is on)
