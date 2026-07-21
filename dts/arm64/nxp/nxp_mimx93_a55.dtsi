@@ -561,6 +561,19 @@
 		status = "disabled";
 	};
 
+	usdhc3: usdhc@428b0000 {
+		compatible = "nxp,imx-usdhc";
+		reg = <0x428b0000 0x10000>;
+		interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_USDHC3_CLK 0 0>;
+		max-current-330 = <1020>;
+		max-current-180 = <1020>;
+		max-bus-freq = <208000000>;
+		min-bus-freq = <400000>;
+		status = "disabled";
+	};
+
 	enet: enet@42890000 {
 		compatible = "nxp,enet";
 		reg = <0x42890000 DT_SIZE_K(64)>;
