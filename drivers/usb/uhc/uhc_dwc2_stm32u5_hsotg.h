@@ -38,9 +38,7 @@ struct uhc_dwc2_stm32u5_data {
 
 static inline struct usb_dwc2_reg *uhc_dwc2_stm32u5_base(const struct device *const dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-
-	return config->base;
+	return uhc_dwc2_get_base(dev);
 }
 
 static inline int uhc_dwc2_stm32u5_enable_clk(const struct uhc_dwc2_stm32u5_config *const cfg)

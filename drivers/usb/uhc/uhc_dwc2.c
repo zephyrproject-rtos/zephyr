@@ -1286,8 +1286,7 @@ static void ch_start_bulk(struct uhc_dwc2_channel *ch)
 
 static void ch_start_interrupt(const struct device *dev, struct uhc_dwc2_channel *ch)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	struct uhc_transfer *const xfer = ch->xfer;
 	uint16_t pkt_cnt;
 	uint32_t hctsiz;
