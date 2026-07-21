@@ -259,10 +259,10 @@ int bt_micp_mic_ctlr_conn_get(const struct bt_micp_mic_ctlr *mic_ctlr,
 			      struct bt_conn **conn);
 
 /**
- * @brief Get the volume controller from a connection pointer
+ * @brief Get the Microphone Controller from a connection pointer
  *
- * Get the Volume Control Profile Volume Controller pointer from a connection pointer.
- * Only volume controllers that have been initiated via bt_micp_mic_ctlr_discover() can be
+ * Get the Microphone Control Profile Microphone Controller pointer from a connection pointer.
+ * Only microphone controllers that have been initiated via bt_micp_mic_ctlr_discover() can be
  * retrieved.
  *
  * @param conn     Connection pointer.
