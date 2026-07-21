@@ -66,6 +66,11 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFIRC_to_MAIN_CLK);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_gpio0))
+	CLOCK_EnableClock(kCLOCK_GateAonPORT);
+	CLOCK_EnableClock(kCLOCK_GateAonGPIO);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	RESET_ReleasePeripheralReset(kGPIO1_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GateGPIO1);
@@ -153,6 +158,13 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO16K_to_AON_KPP);
 	CLOCK_EnableClock(kCLOCK_GateAonKPP);
 	RESET_ReleasePeripheralReset(kAonKPP_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
+	CLOCK_AttachClk(kFRO12M_to_ADC0);
+	CLOCK_SetClockDiv(kCLOCK_DivADC0, 1U);
+	RESET_ReleasePeripheralReset(kADC0_RST_SHIFT_RSTn);
+	CLOCK_EnableClock(kCLOCK_GateADC0);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr0)) || \
