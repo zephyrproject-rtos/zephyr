@@ -65,7 +65,7 @@ zephyr_library_sources(nrfx_glue.c)
 zephyr_library_sources(${HELPERS_DIR}/nrfx_flag32_allocator.c)
 zephyr_library_sources_ifdef(CONFIG_HAS_NORDIC_RAM_CTRL       ${HELPERS_DIR}/nrfx_ram_ctrl.c)
 
-if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
+if(CONFIG_NRFX_GPPI)
   zephyr_library_sources_ifdef(CONFIG_HAS_HW_NRF_PPI ${HELPERS_DIR}/nrfx_gppi_ppi.c)
   zephyr_library_sources_ifndef(CONFIG_HAS_HW_NRF_PPI ${HELPERS_DIR}/nrfx_gppi_dppi.c)
   if(NOT CONFIG_NRF_DONT_USE_STABLE_BSP)
@@ -124,11 +124,6 @@ zephyr_library_sources_ifdef(CONFIG_NRFX_WDT     ${SRC_DIR}/nrfx_wdt.c)
 
 if(CONFIG_NRFX_TWI OR CONFIG_NRFX_TWIM)
   zephyr_library_sources(${SRC_DIR}/nrfx_twi_twim.c)
-endif()
-
-if(CONFIG_SOC_SERIES_NRF54H AND CONFIG_NRFX_GPPI_V1)
-  zephyr_library_sources(${HELPERS_DIR}/internal/nrfx_gppiv1_ipct.c)
-  zephyr_library_sources(${HELPERS_DIR}/internal/nrfx_gppiv1_shim.c)
 endif()
 
 # Get the SVD file for the current SoC
