@@ -65,6 +65,10 @@
 	};
 };
 
+&hash {
+	status = "okay";
+};
+
 &rng {
 	status = "okay";
 };
