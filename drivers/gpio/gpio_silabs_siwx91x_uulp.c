@@ -237,7 +237,7 @@ static DEVICE_API(gpio, gpio_siwx91x_uulp_api) = {
 	static int gpio_siwx91x_init_uulp_##idx(const struct device *dev)                          \
 	{                                                                                          \
 		sys_write32(0, DT_INST_REG_ADDR_BY_NAME(idx, int) + UULP_REG_INTERRUPT_CONFIG);    \
-		sl_si91x_gpio_set_uulp_npss_pin_mux(0,0);                                          \
+		sl_si91x_gpio_set_uulp_npss_pin_mux(0, 0);                                         \
 		IRQ_CONNECT(DT_INST_IRQ(idx, irq), DT_INST_IRQ(idx, priority),                     \
 			    gpio_siwx91x_uulp_isr, DEVICE_DT_GET(DT_DRV_INST(idx)), 0);            \
 		irq_enable(DT_INST_IRQ(idx, irq));                                                 \
