@@ -49,6 +49,18 @@ struct scmi_clock_parent_config {
 	uint32_t parent_id;
 };
 
+struct scmi_clock_config_get_request {
+	uint32_t clk_id;
+	uint32_t flags;
+};
+
+struct scmi_clock_config_get_reply {
+	int32_t status;
+	uint32_t attributes;
+	uint32_t config;
+	uint32_t extended_config_val;
+};
+
 struct scmi_clock_get_permissions_reply {
 	int32_t status;
 	uint32_t permissions;
@@ -256,6 +268,52 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 	}
 
 	return scmi_status_to_errno(status);
+}
+
+int scmi_clock_config_get(struct scmi_protocol *proto, uint32_t clk_id,
+			  uint32_t flags, uint32_t *config)
+{
+	struct scmi_message msg, reply;
+	struct scmi_clock_config_get_request request;
+	struct scmi_clock_config_get_reply reply_buffer;
+	int ret;
+	bool use_polling;
+
+	/* sanity checks */
+	if (!proto || !config) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_CLOCK) {
+		return -EINVAL;
+	}
+
+	request.clk_id = clk_id;
+	request.flags = flags;
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CLOCK_CONFIG_GET,
+					SCMI_COMMAND, proto->id, 0x0);
+	msg.len = sizeof(request);
+	msg.content = &request;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(reply_buffer);
+	reply.content = &reply_buffer;
+
+	use_polling = k_is_pre_kernel();
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (reply_buffer.status != SCMI_SUCCESS) {
+		return scmi_status_to_errno(reply_buffer.status);
+	}
+
+	*config = reply_buffer.config;
+
+	return 0;
 }
 
 static int scmi_clock_attributes_v2(struct scmi_protocol *proto, uint32_t clk_id,
