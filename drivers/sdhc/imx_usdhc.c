@@ -67,6 +67,7 @@ struct usdhc_config {
 	uint8_t nusdhc;
 	const struct gpio_dt_spec pwr_gpio;
 	const struct gpio_dt_spec detect_gpio;
+	bool non_removable;
 	bool detect_dat3;
 	bool detect_cd;
 	bool no_180_vol;
@@ -967,6 +968,8 @@ static int imx_usdhc_get_card_present(const struct device *dev)
 		data->card_present = USDHC_DetectCardInsert(base);
 	} else if (cfg->detect_gpio.port) {
 		data->card_present = gpio_pin_get_dt(&cfg->detect_gpio) > 0;
+	} else if (cfg->non_removable) {
+		data->card_present = true;
 	} else {
 		LOG_WRN("No card detection method configured, assuming card "
 			"is present");
@@ -1167,6 +1170,8 @@ static int imx_usdhc_init(const struct device *dev)
 		if (ret) {
 			return ret;
 		}
+	} else if (cfg->non_removable) {
+		LOG_INF("No power control GPIO defined for non-removable SDIO device");
 	} else {
 		LOG_WRN("No power control GPIO defined. Without power control,\n"
 			"the SD card may fail to communicate with the host");
@@ -1251,6 +1256,7 @@ static DEVICE_API(sdhc, usdhc_api) = {
 		.nusdhc = n,                                                                       \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
 		.detect_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                         \
+		.non_removable = DT_INST_PROP(n, non_removable),                                   \
 		.data_timeout = DT_INST_PROP(n, data_timeout),                                     \
 		.detect_dat3 = DT_INST_PROP(n, detect_dat3),                                       \
 		.detect_cd = DT_INST_PROP(n, detect_cd),                                           \
