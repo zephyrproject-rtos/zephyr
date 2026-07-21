@@ -19,3 +19,10 @@ properties:
       GPIO controlling the external VBUS power switch in USB host mode.
       The GPIO, if defined, is used by the vendor quirk, and is active when USB
       host is enabled.
+
+  st,force-vbus-valid:
+    type: boolean
+    description: |
+      Force the DWC2 A- and B-session-valid inputs in USB host mode. Enable this
+      on host-only boards where the VBUS detector cannot provide a valid session
+      indication, for example when using a self-powered downstream device.

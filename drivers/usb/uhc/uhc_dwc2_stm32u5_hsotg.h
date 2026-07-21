@@ -30,11 +30,16 @@ struct uhc_dwc2_stm32u5_config {
 	const struct pinctrl_dev_config *pcfg;
 	/* External VBUS power-switch enable, optional */
 	struct gpio_dt_spec vbus_gpio;
+	bool force_vbus_valid;
 };
 
 struct uhc_dwc2_stm32u5_data {
 	uint32_t reserved;
 };
+
+#define UHC_DWC2_STM32U5_SESSION_VALID_OVERRIDE					\
+	(USB_DWC2_GOTGCTL_AVALOEN | USB_DWC2_GOTGCTL_AVALOVAL |		\
+	 USB_DWC2_GOTGCTL_BVALOEN | USB_DWC2_GOTGCTL_BVALOVAL)
 
 static inline struct usb_dwc2_reg *uhc_dwc2_stm32u5_base(const struct device *const dev)
 {
@@ -163,18 +168,37 @@ static inline int uhc_dwc2_stm32u5_shutdown(const struct device *const dev)
 	return 0;
 }
 
-/*
- * Enable the PHY pulldown resistors so the root port detects a device
- * connecting, and clear the device-mode VBUS overrides (as the STM32 HAL
- * USB_HostInit() does).
- */
+static inline void uhc_dwc2_stm32u5_configure_vbus(const struct device *const dev)
+{
+	const struct uhc_dwc2_stm32u5_config *const cfg = UHC_DWC2_QUIRK_CONFIG(dev);
+	struct usb_dwc2_reg *const base = uhc_dwc2_stm32u5_base(dev);
+	const mem_addr_t gotgctl = (mem_addr_t)&base->gotgctl;
+	const mem_addr_t ggpio = (mem_addr_t)&base->ggpio;
+
+	/* Device-mode VBUS overrides do not apply to the host configuration. */
+	sys_clear_bits(ggpio, USB_OTG_GCCFG_VBVALEXTOEN | USB_OTG_GCCFG_VBVALOVAL);
+
+	if (cfg->force_vbus_valid) {
+		/*
+		 * Keep the U5 VBUS detector enabled to preserve the PHY state used by
+		 * working boards, but override the DWC2 session-valid inputs when the
+		 * board cannot provide a usable VBUS indication.
+		 */
+		sys_set_bits(ggpio, USB_OTG_GCCFG_VBDEN);
+		sys_set_bits(gotgctl, UHC_DWC2_STM32U5_SESSION_VALID_OVERRIDE);
+	} else {
+		sys_clear_bits(ggpio, USB_OTG_GCCFG_VBDEN);
+		sys_clear_bits(gotgctl, UHC_DWC2_STM32U5_SESSION_VALID_OVERRIDE);
+	}
+}
+
+/* Enable the PHY pulldown resistors and configure host-session validity. */
 static inline int uhc_dwc2_stm32u5_pre_enable(const struct device *const dev)
 {
 	const mem_addr_t ggpio = (mem_addr_t)&uhc_dwc2_stm32u5_base(dev)->ggpio;
 
 	sys_set_bits(ggpio, USB_OTG_GCCFG_PULLDOWNEN);
-	sys_clear_bits(ggpio, USB_OTG_GCCFG_VBDEN | USB_OTG_GCCFG_VBVALEXTOEN |
-			      USB_OTG_GCCFG_VBVALOVAL);
+	uhc_dwc2_stm32u5_configure_vbus(dev);
 
 	return 0;
 }
@@ -198,9 +222,14 @@ static inline int uhc_dwc2_stm32u5_post_enable(const struct device *const dev)
 static inline int uhc_dwc2_stm32u5_disable(const struct device *const dev)
 {
 	const struct uhc_dwc2_stm32u5_config *const cfg = UHC_DWC2_QUIRK_CONFIG(dev);
+	struct usb_dwc2_reg *const base = uhc_dwc2_stm32u5_base(dev);
 
 	if (cfg->vbus_gpio.port != NULL) {
 		(void)gpio_pin_set_dt(&cfg->vbus_gpio, 0);
+	}
+	if (cfg->force_vbus_valid) {
+		sys_clear_bits((mem_addr_t)&base->gotgctl,
+			       UHC_DWC2_STM32U5_SESSION_VALID_OVERRIDE);
 	}
 
 	return 0;
@@ -236,6 +265,7 @@ static inline int uhc_dwc2_stm32u5_disable(const struct device *const dev)
 		.phy_ref_clk = UHC_DWC2_STM32U5_PHY_REF_CLK(n),				\
 		.pcfg = UHC_DWC2_STM32U5_PCFG(n),					\
 		.vbus_gpio = GPIO_DT_SPEC_INST_GET_OR(n, vbus_gpios, {0}),		\
+		.force_vbus_valid = DT_INST_PROP(n, st_force_vbus_valid),			\
 	};										\
 											\
 	static struct uhc_dwc2_stm32u5_data uhc_dwc2_quirk_data_##n;			\
