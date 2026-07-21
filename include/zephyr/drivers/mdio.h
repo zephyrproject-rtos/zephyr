@@ -129,7 +129,7 @@ static inline int z_impl_mdio_write(const struct device *dev, uint8_t prtad,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  * @retval -ETIMEDOUT If transaction timedout on the bus
- * @retval -ENOSYS if write using Clause 45 access is not supported
+ * @retval -ENOSYS if read using Clause 45 access is not supported
  */
 __syscall int mdio_read_c45(const struct device *dev, uint8_t prtad,
 			    uint8_t devad, uint16_t regad, uint16_t *data);
