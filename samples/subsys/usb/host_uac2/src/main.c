@@ -12,6 +12,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/usb/usbh.h>
 #include <zephyr/usb/class/usbh_uac2.h>
@@ -22,7 +23,8 @@ USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
 
 /* Sine wave generation parameters */
 #define SINE_TONE_FREQUENCY_HZ		1000
-#define SINE_TONE_AMPLITUDE		16000
+#define SINE_TONE_AMPLITUDE_16		16000
+#define SINE_TONE_AMPLITUDE_24		(SINE_TONE_AMPLITUDE_16 << 8)
 #define SINE_TWO_PI			6.28318530717958647692
 
 /* Host volume level range */
@@ -326,8 +328,7 @@ static void init_sine_wave(struct sine_wave_ctx *ctx,
 	ctx->phase_increment  = SINE_TWO_PI * SINE_TONE_FREQUENCY_HZ / sample_rate;
 }
 
-/* Generate sine wave samples */
-static uint16_t generate_sine_wave(uint8_t *buffer, uint16_t max_len, void *user_data)
+static uint16_t generate_sine_wave_16(uint8_t *buffer, uint16_t max_len, void *user_data)
 {
 	struct sine_wave_ctx *ctx = (struct sine_wave_ctx *)user_data;
 	uint16_t bytes_per_frame  = ctx->channels * ctx->bytes_per_sample;
@@ -352,7 +353,7 @@ static uint16_t generate_sine_wave(uint8_t *buffer, uint16_t max_len, void *user
 	}
 
 	for (frame = 0U; frame < num_frames; frame++) {
-		sample = (int16_t)(sin(ctx->phase) * SINE_TONE_AMPLITUDE);
+		sample = (int16_t)(sin(ctx->phase) * SINE_TONE_AMPLITUDE_16);
 
 		for (ch = 0U; ch < ctx->channels; ch++) {
 			out16[sample_idx++] = sample;
@@ -365,6 +366,56 @@ static uint16_t generate_sine_wave(uint8_t *buffer, uint16_t max_len, void *user
 	}
 
 	return actual_len;
+}
+
+static uint16_t generate_sine_wave_24(uint8_t *buffer, uint16_t max_len, void *user_data)
+{
+	struct sine_wave_ctx *ctx = (struct sine_wave_ctx *)user_data;
+	uint16_t bytes_per_frame  = ctx->channels * ctx->bytes_per_sample;
+	uint16_t num_frames;
+	uint16_t actual_len;
+	uint16_t sample_idx = 0U;
+	int32_t sample;
+	uint16_t frame;
+	uint8_t  ch;
+
+	if (bytes_per_frame == 0U) {
+		return 0U;
+	}
+
+	num_frames = max_len / bytes_per_frame;
+	actual_len = num_frames * bytes_per_frame;
+
+	for (frame = 0U; frame < num_frames; frame++) {
+		sample = (int32_t)(sin(ctx->phase) * SINE_TONE_AMPLITUDE_24);
+
+		for (ch = 0U; ch < ctx->channels; ch++) {
+			sys_put_le24(sample, &buffer[sample_idx * 3U]);
+			sample_idx++;
+		}
+
+		ctx->phase += ctx->phase_increment;
+		if (ctx->phase >= SINE_TWO_PI) {
+			ctx->phase -= SINE_TWO_PI;
+		}
+	}
+
+	return actual_len;
+}
+
+/* Generate sine wave samples */
+static uint16_t generate_sine_wave(uint8_t *buffer, uint16_t max_len, void *user_data)
+{
+	struct sine_wave_ctx *ctx = (struct sine_wave_ctx *)user_data;
+
+	if (ctx->bytes_per_sample == 2U) {
+		return generate_sine_wave_16(buffer, max_len, user_data);
+	} else if (ctx->bytes_per_sample == 3U) {
+		return generate_sine_wave_24(buffer, max_len, user_data);
+	}
+
+	LOG_ERR("%u bits per sample is not supported in this demo.", ctx->bytes_per_sample * 8);
+	return max_len;
 }
 
 static uint16_t audio_in_callback(uint8_t *data, uint16_t len, void *user_data)
