@@ -5,26 +5,19 @@ title: MCUmgr SMP transport over SPI
 
 description: |
   The device operates as an SPI peripheral and receives raw SMP packets from an
-  SPI controller. The controller asserts request-gpios to command the peripheral
-  to service one SPI transaction. The peripheral asserts data-ready-gpios when
-  an SMP response is available for the controller to read.
+  SPI controller. The peripheral asserts data-ready-gpios when an SMP response
+  is available for the controller to read.
 
 compatible: "zephyr,smp-spi"
 
 include: spi-device.yaml
 
 properties:
-  request-gpios:
-    type: phandle-array
-    required: true
-    description: |
-      GPIO driven by the SPI controller to signal the peripheral.
-
   data-ready-gpios:
     type: phandle-array
     required: true
     description: |
-      GPIO driven by the SPI peripheral to signal controller.
+      GPIO driven by the SPI peripheral to signal the controller.
 
 examples:
   - |
@@ -37,7 +30,6 @@ examples:
             compatible = "zephyr,smp-spi";
             reg = <0>;
             spi-max-frequency = <1000000>;
-            request-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
             data-ready-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
         };
     };

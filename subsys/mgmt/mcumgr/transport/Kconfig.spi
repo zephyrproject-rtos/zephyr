@@ -13,16 +13,16 @@
 
 menuconfig MCUMGR_TRANSPORT_SPI
 	bool "SPI MCUmgr SMP transport"
-	depends on SPI_SLAVE
-	depends on SPI
-	depends on GPIO
+	depends on MULTITHREADING
+	depends on SPI_SLAVE && SPI && GPIO
+	select SPI_ASYNC
+	depends on DT_HAS_ZEPHYR_SMP_SPI_ENABLED
 	select MCUMGR_TRANSPORT_REASSEMBLY
 	help
 	  Enables handling of SMP commands received over SPI. The device operates
 	  as an SPI peripheral and exchanges raw SMP packets with the SPI
-	  controller. A request GPIO tells the peripheral to service an SPI
-	  transaction and a data-ready GPIO signals when a response is available
-	  for the controller to read.
+	  controller. A data-ready GPIO signals when a response is available for
+	  the controller to read.
 
 if MCUMGR_TRANSPORT_SPI
 

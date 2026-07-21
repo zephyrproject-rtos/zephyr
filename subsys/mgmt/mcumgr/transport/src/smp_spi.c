@@ -16,6 +16,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
 #include <zephyr/net_buf.h>
@@ -31,28 +32,58 @@ LOG_MODULE_DECLARE(mcumgr_smp, CONFIG_MCUMGR_TRANSPORT_LOG_LEVEL);
 
 #define SMP_SPI_NODE DT_DRV_INST(0)
 
-#if !DT_NODE_HAS_STATUS(SMP_SPI_NODE, okay)
-#error "zephyr,smp-spi devicetree node is missing or disabled"
-#endif
-
 #define SMP_SPI_OPERATION (SPI_OP_MODE_SLAVE | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)
 
-static const struct spi_dt_spec smp_spi = SPI_DT_SPEC_GET(SMP_SPI_NODE, SMP_SPI_OPERATION);
-static const struct gpio_dt_spec request_gpio = GPIO_DT_SPEC_GET(SMP_SPI_NODE, request_gpios);
+static const struct spi_dt_spec smp_spi_spec = SPI_DT_SPEC_GET(SMP_SPI_NODE, SMP_SPI_OPERATION);
 static const struct gpio_dt_spec data_ready_gpio =
 	GPIO_DT_SPEC_GET(SMP_SPI_NODE, data_ready_gpios);
 
 static uint8_t rx_buf[CONFIG_MCUMGR_TRANSPORT_SPI_MTU];
 static uint8_t tx_buf[CONFIG_MCUMGR_TRANSPORT_SPI_MTU];
 static uint8_t tx_packet[CONFIG_MCUMGR_TRANSPORT_NETBUF_SIZE];
+static struct spi_buf rx_spi_buf = {
+	.buf = rx_buf,
+	.len = sizeof(rx_buf),
+};
+static struct spi_buf tx_spi_buf = {
+	.buf = tx_buf,
+	.len = sizeof(tx_buf),
+};
+static const struct spi_buf_set rx_spi_buf_set = {
+	.buffers = &rx_spi_buf,
+	.count = 1,
+};
+static const struct spi_buf_set tx_spi_buf_set = {
+	.buffers = &tx_spi_buf,
+	.count = 1,
+};
 
+/*
+ * tx_done_sem serializes complete SMP responses: MCUmgr output takes it
+ * before queuing a response and SPI completion gives it after the controller
+ * drains the final response chunk. tx_lock protects the shared TX buffers and
+ * offsets because MCUmgr output and async SPI completion run in different
+ * contexts while a response is active.
+ */
 static struct k_mutex tx_lock;
-static K_SEM_DEFINE(tx_sem, 1, 1);
+static K_SEM_DEFINE(tx_done_sem, 1, 1);
 static uint16_t tx_len;
 static uint16_t tx_offset;
+static uint16_t tx_chunk_len;
+static int spi_completion_result;
 
 static struct smp_transport smp_spi_transport;
-static struct gpio_callback request_gpio_cb;
+
+#ifdef CONFIG_SMP_CLIENT
+static struct smp_client_transport_entry smp_spi_client_transport = {
+	.smpt = &smp_spi_transport,
+	.smpt_type = SMP_SPI_TRANSPORT,
+};
+#endif
+
+static void smp_spi_callback(const struct device *dev, int result, void *userdata);
+static void smp_spi_work_handler(struct k_work *work);
+static K_WORK_DEFINE(smp_spi_work, smp_spi_work_handler);
 
 static bool smp_spi_empty_header(const uint8_t *data)
 {
@@ -75,16 +106,29 @@ static void smp_spi_data_ready_set(bool ready)
 	}
 }
 
-static int smp_spi_reassembly_collect(const uint8_t *data)
+static int smp_spi_reassembly_collect(const uint8_t *data, uint16_t len)
 {
 	uint16_t chunk_len;
 	int expected;
 	int rc;
 
 	expected = smp_reassembly_expected(&smp_spi_transport);
+	if (len == 0) {
+		if (expected >= 0) {
+			return smp_reassembly_drop(&smp_spi_transport);
+		}
+
+		return 0;
+	}
+
 	if (expected < 0) {
 		const struct smp_hdr *hdr = (const struct smp_hdr *)data;
 		uint16_t packet_len;
+
+		if (len < sizeof(struct smp_hdr)) {
+			LOG_ERR("Invalid SPI SMP packet length: %u", len);
+			return -EINVAL;
+		}
 
 		if (smp_spi_empty_header(data)) {
 			return 0;
@@ -96,9 +140,9 @@ static int smp_spi_reassembly_collect(const uint8_t *data)
 			return -EMSGSIZE;
 		}
 
-		chunk_len = MIN(packet_len, sizeof(rx_buf));
+		chunk_len = MIN(packet_len, len);
 	} else {
-		chunk_len = MIN((uint16_t)expected, sizeof(rx_buf));
+		chunk_len = MIN((uint16_t)expected, len);
 	}
 
 	rc = smp_reassembly_collect(&smp_spi_transport, data, chunk_len);
@@ -118,7 +162,7 @@ static int smp_spi_tx_pkt(struct net_buf *nb)
 {
 	int ret = 0;
 
-	k_sem_take(&tx_sem, K_FOREVER);
+	k_sem_take(&tx_done_sem, K_FOREVER);
 	k_mutex_lock(&tx_lock, K_FOREVER);
 
 	if (nb->len > sizeof(tx_packet)) {
@@ -135,7 +179,7 @@ static int smp_spi_tx_pkt(struct net_buf *nb)
 out:
 	k_mutex_unlock(&tx_lock);
 	if (ret != 0) {
-		k_sem_give(&tx_sem);
+		k_sem_give(&tx_done_sem);
 	}
 	smp_packet_free(nb);
 
@@ -149,15 +193,10 @@ static uint16_t smp_spi_get_mtu(const struct net_buf *nb)
 	return CONFIG_MCUMGR_TRANSPORT_SPI_MTU;
 }
 
-/*
- * The SPI controller toggles request-gpios for each raw SMP chunk transaction.
- * The peripheral drives data-ready-gpios while response chunks are queued.
- */
-static uint16_t smp_spi_prepare_tx(void)
+/* The peripheral drives data-ready-gpios while response chunks are queued. */
+static uint16_t smp_spi_prepare_tx_locked(void)
 {
 	uint16_t chunk_len = 0;
-
-	k_mutex_lock(&tx_lock, K_FOREVER);
 
 	memset(tx_buf, 0, sizeof(tx_buf));
 
@@ -166,25 +205,24 @@ static uint16_t smp_spi_prepare_tx(void)
 		memcpy(tx_buf, &tx_packet[tx_offset], chunk_len);
 	}
 
-	k_mutex_unlock(&tx_lock);
-
 	return chunk_len;
 }
 
-static void smp_spi_finish_tx(uint16_t chunk_len)
+static void smp_spi_finish_tx(void)
 {
 	bool drained = false;
 
 	k_mutex_lock(&tx_lock, K_FOREVER);
 
-	if (chunk_len > 0) {
-		tx_offset += chunk_len;
+	if (tx_chunk_len > 0) {
+		tx_offset += tx_chunk_len;
 	}
 
 	if (tx_offset >= tx_len) {
 		tx_len = 0;
 		tx_offset = 0;
-		drained = chunk_len > 0;
+		drained = tx_chunk_len > 0;
+		tx_chunk_len = 0;
 		smp_spi_data_ready_set(false);
 	} else {
 		smp_spi_data_ready_set(true);
@@ -193,110 +231,78 @@ static void smp_spi_finish_tx(uint16_t chunk_len)
 	k_mutex_unlock(&tx_lock);
 
 	if (drained) {
-		k_sem_give(&tx_sem);
+		k_sem_give(&tx_done_sem);
 	}
+}
+
+static int smp_spi_arm_transfer(void)
+{
+	int ret;
+
+	k_mutex_lock(&tx_lock, K_FOREVER);
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	tx_chunk_len = smp_spi_prepare_tx_locked();
+
+	k_mutex_unlock(&tx_lock);
+
+	ret = spi_transceive_cb(smp_spi_spec.bus, &smp_spi_spec.config, &tx_spi_buf_set,
+				&rx_spi_buf_set, smp_spi_callback, NULL);
+	if (ret < 0) {
+		LOG_ERR("Failed to arm SPI SMP transfer: %d", ret);
+	}
+
+	return ret;
+}
+
+static void smp_spi_callback(const struct device *dev, int result, void *userdata)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(userdata);
+
+	spi_completion_result = result;
+	(void)k_work_submit(&smp_spi_work);
 }
 
 static void smp_spi_work_handler(struct k_work *work)
 {
-	struct spi_buf rx = {
-		.buf = rx_buf,
-		.len = sizeof(rx_buf),
-	};
-	struct spi_buf tx = {
-		.buf = tx_buf,
-		.len = sizeof(tx_buf),
-	};
-	const struct spi_buf_set rx_set = {
-		.buffers = &rx,
-		.count = 1,
-	};
-	const struct spi_buf_set tx_set = {
-		.buffers = &tx,
-		.count = 1,
-	};
+	uint16_t rx_len;
 	int ret;
-	uint16_t tx_chunk_len;
 
 	ARG_UNUSED(work);
 
-	memset(rx_buf, 0, sizeof(rx_buf));
-	tx_chunk_len = smp_spi_prepare_tx();
-
-	ret = spi_transceive_dt(&smp_spi, &tx_set, &rx_set);
-	if (ret < 0) {
-		LOG_ERR("SPI SMP transceive failed: %d", ret);
-		goto out;
+	if (spi_completion_result < 0) {
+		LOG_ERR("SPI SMP transfer failed: %d", spi_completion_result);
+	} else {
+		rx_len = MIN((uint16_t)spi_completion_result, (uint16_t)sizeof(rx_buf));
+		smp_spi_finish_tx();
+		(void)smp_spi_reassembly_collect(rx_buf, rx_len);
 	}
 
-	smp_spi_finish_tx(tx_chunk_len);
-	(void)smp_spi_reassembly_collect(rx_buf);
-
-out:
-	ret = gpio_pin_interrupt_configure_dt(&request_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = smp_spi_arm_transfer();
 	if (ret < 0) {
-		LOG_ERR("Failed to enable SPI SMP request GPIO interrupt: %d", ret);
+		LOG_ERR("Failed to re-arm SPI SMP transfer: %d", ret);
 	}
 }
 
-static K_WORK_DEFINE(smp_spi_work, smp_spi_work_handler);
-
-static void smp_spi_request_gpio_callback(const struct device *port,
-					  struct gpio_callback *cb,
-					  gpio_port_pins_t pins)
-{
-	int ret;
-
-	ARG_UNUSED(port);
-	ARG_UNUSED(cb);
-	ARG_UNUSED(pins);
-
-	ret = gpio_pin_interrupt_configure_dt(&request_gpio, GPIO_INT_DISABLE);
-	if (ret < 0) {
-		LOG_ERR("Failed to disable SPI SMP request GPIO interrupt: %d", ret);
-	}
-
-	(void)k_work_submit(&smp_spi_work);
-}
-
-static int smp_spi_init(void)
+static void smp_spi_start(void)
 {
 	int rc;
 
-	if (!spi_is_ready_dt(&smp_spi)) {
+	if (!spi_is_ready_dt(&smp_spi_spec)) {
 		LOG_ERR("SPI device not ready");
-		return -ENODEV;
-	}
-
-	if (!gpio_is_ready_dt(&request_gpio)) {
-		LOG_ERR("SPI SMP request GPIO not ready");
-		return -ENODEV;
+		return;
 	}
 
 	if (!gpio_is_ready_dt(&data_ready_gpio)) {
 		LOG_ERR("SPI SMP data-ready GPIO not ready");
-		return -ENODEV;
-	}
-
-	rc = gpio_pin_configure_dt(&request_gpio, GPIO_INPUT);
-	if (rc < 0) {
-		LOG_ERR("Failed to configure SPI SMP request GPIO: %d", rc);
-		return rc;
+		return;
 	}
 
 	rc = gpio_pin_configure_dt(&data_ready_gpio, GPIO_OUTPUT_INACTIVE);
 	if (rc < 0) {
 		LOG_ERR("Failed to configure SPI SMP data-ready GPIO: %d", rc);
-		return rc;
-	}
-
-	gpio_init_callback(&request_gpio_cb, smp_spi_request_gpio_callback,
-			   BIT(request_gpio.pin));
-
-	rc = gpio_add_callback(request_gpio.port, &request_gpio_cb);
-	if (rc < 0) {
-		LOG_ERR("Failed to add SPI SMP request GPIO callback: %d", rc);
-		return rc;
+		return;
 	}
 
 	k_mutex_init(&tx_lock);
@@ -307,24 +313,17 @@ static int smp_spi_init(void)
 	rc = smp_transport_init(&smp_spi_transport);
 	if (rc != 0) {
 		LOG_ERR("SPI SMP transport init failed: %d", rc);
-		return rc;
+		return;
 	}
 
 #ifdef CONFIG_SMP_CLIENT
-	static struct smp_client_transport_entry smp_spi_client_transport;
-
-	smp_spi_client_transport.smpt = &smp_spi_transport;
-	smp_spi_client_transport.smpt_type = SMP_SPI_TRANSPORT;
 	smp_client_transport_register(&smp_spi_client_transport);
 #endif
 
-	rc = gpio_pin_interrupt_configure_dt(&request_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	rc = smp_spi_arm_transfer();
 	if (rc < 0) {
-		LOG_ERR("Failed to enable SPI SMP request GPIO interrupt: %d", rc);
-		return rc;
+		LOG_ERR("Failed to arm SPI SMP transfer: %d", rc);
 	}
-
-	return 0;
 }
 
-SYS_INIT(smp_spi_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+MCUMGR_HANDLER_DEFINE(smp_spi, smp_spi_start);
