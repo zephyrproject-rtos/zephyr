@@ -205,6 +205,28 @@ static bool modem_ppp_is_byte_expected(uint8_t byte, uint8_t expected_byte)
 	return false;
 }
 
+static void modem_ppp_start_acfc_frame(struct modem_ppp *ppp, uint8_t byte)
+{
+	ppp->rx_pkt = net_pkt_rx_alloc_with_buffer(ppp->iface, CONFIG_MODEM_PPP_NET_BUF_FRAG_SIZE,
+						   NET_AF_UNSPEC, 0, K_NO_WAIT);
+	if (ppp->rx_pkt == NULL) {
+		LOG_WRN("Dropped frame, no net_pkt available");
+		ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
+		return;
+	}
+
+	net_pkt_cursor_init(ppp->rx_pkt);
+	if (net_pkt_write_u8(ppp->rx_pkt, byte) < 0) {
+		net_pkt_unref(ppp->rx_pkt);
+		ppp->rx_pkt = NULL;
+		ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
+		return;
+	}
+
+	LOG_DBG("Receiving ACFC PPP frame");
+	ppp->receive_state = MODEM_PPP_RECEIVE_STATE_WRITING;
+}
+
 static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 {
 	switch (ppp->receive_state) {
@@ -241,11 +263,30 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			ppp->receive_offset = 1;
 			break;
 		}
-		if (modem_ppp_is_byte_expected(byte, 0xFF)) {
+		if (byte == 0xFF) {
 			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_CTRL;
-		} else {
-			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
+			break;
 		}
+		if (byte == MODEM_PPP_CODE_ESCAPE) {
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF_UNESCAPE;
+			break;
+		}
+		modem_ppp_start_acfc_frame(ppp, byte);
+		break;
+
+	case MODEM_PPP_RECEIVE_STATE_HDR_FF_UNESCAPE:
+		if (byte == MODEM_PPP_CODE_DELIMITER) {
+			/* 7D 7E is an aborted frame, look for the next one */
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF;
+			break;
+		}
+		byte ^= MODEM_PPP_VALUE_ESCAPE;
+		if (byte == 0xFF) {
+			/* Escaped Address field, not an ACFC frame */
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_CTRL;
+			break;
+		}
+		modem_ppp_start_acfc_frame(ppp, byte);
 		break;
 
 	case MODEM_PPP_RECEIVE_STATE_HDR_CTRL_UNESCAPE:
