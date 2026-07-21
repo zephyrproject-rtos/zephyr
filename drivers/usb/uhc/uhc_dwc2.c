@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT snps_dwc2
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/byteorder.h>
@@ -101,6 +102,8 @@ struct uhc_dwc2_channel {
 	atomic_t events;
 	/* Channel transfer helpers */
 	uint32_t length;
+	/* Start of the buffer programmed for the current transfer stage */
+	uint8_t *buf;
 	/* Channel transfer data helpers */
 	struct uhc_dwc2_channel_data *data;
 };
@@ -154,6 +157,27 @@ static inline uint8_t calc_next_pid(const uint8_t pid, const uint32_t pkt_cnt)
 	return (pid == USB_DWC2_HCTSIZ_PID_DATA0) ?
 		USB_DWC2_HCTSIZ_PID_DATA1 :
 		USB_DWC2_HCTSIZ_PID_DATA0;
+}
+
+static inline void dwc2_dma_prepare(const void *buf, const size_t length, const bool is_in)
+{
+	if (buf == NULL || length == 0U) {
+		return;
+	}
+
+	if (is_in) {
+		/* Preserve adjacent dirty bytes, then discard stale cache data. */
+		sys_cache_data_flush_and_invd_range((void *)buf, length);
+	} else {
+		sys_cache_data_flush_range((void *)buf, length);
+	}
+}
+
+static inline void dwc2_dma_complete(const void *buf, const size_t length)
+{
+	if (buf != NULL && length != 0U) {
+		sys_cache_data_invd_range((void *)buf, length);
+	}
 }
 
 static inline void dwc2_set_reset(struct usb_dwc2_reg *const base, const bool reset)
@@ -696,6 +720,7 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 		actual_len = ch->length - remaining;
 
 		if (usb_reqtype_is_to_host(setup)) {
+			dwc2_dma_complete(ch->buf, actual_len);
 			net_buf_add(xfer->buf, actual_len);
 
 			LOG_DBG("Control DATA IN completed, prog=%u, rem=%u, act=%u, tailroom=%zu",
@@ -726,6 +751,9 @@ static inline void ch_process_control(struct uhc_dwc2_channel *ch)
 	hctsiz = usb_dwc2_set_hctsiz_pid(USB_DWC2_HCTSIZ_PID_DATA1) |
 		usb_dwc2_set_hctsiz_pktcnt(pkt_cnt) |
 		usb_dwc2_set_hctsiz_xfersize(size);
+
+	ch->buf = dma_addr;
+	dwc2_dma_prepare(dma_addr, size, next_dir_is_in);
 
 	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
 	sys_write32((uint32_t) dma_addr, (mem_addr_t)&ch->regs->hcdma);
@@ -1150,6 +1178,7 @@ static void ch_complete_bulk(const struct device *dev, struct uhc_dwc2_channel *
 
 		/* Device may send a short packet, use the actual length */
 		actual_len = ch->length - remaining;
+		dwc2_dma_complete(ch->buf, actual_len);
 		net_buf_add(xfer->buf, actual_len);
 	}
 
@@ -1176,6 +1205,7 @@ static void ch_complete(const struct device *dev, struct uhc_dwc2_channel *ch)
 		}
 		break;
 	case USB_EP_TYPE_BULK:
+	case USB_EP_TYPE_INTERRUPT:
 		ch_complete_bulk(dev, ch);
 		break;
 	default:
@@ -1194,6 +1224,7 @@ static void ch_release(const struct device *dev, struct uhc_dwc2_channel *ch)
 	/* Release channel */
 	ch->xfer = NULL;
 	ch->data = NULL;
+	ch->buf = NULL;
 	ch->halt_cancel = false;
 	priv->free_chs++;
 
@@ -1262,6 +1293,9 @@ static void ch_start_control(struct uhc_dwc2_channel *ch)
 
 	LOG_HEXDUMP_DBG(setup, 8, "SETUP");
 
+	ch->buf = xfer->setup_pkt;
+	dwc2_dma_prepare(ch->buf, sizeof(struct usb_setup_packet), false);
+
 	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
 	sys_write32((uint32_t)xfer->setup_pkt, (mem_addr_t)&ch->regs->hcdma);
 
@@ -1303,6 +1337,9 @@ static void ch_start_bulk(struct uhc_dwc2_channel *ch)
 		LOG_HEXDUMP_DBG(xfer->buf->data, ch->length, "BULK OUT");
 	}
 
+	ch->buf = dma_addr;
+	dwc2_dma_prepare(dma_addr, ch->length, USB_EP_DIR_IS_IN(xfer->ep));
+
 	pkt_cnt = calc_packet_count(ch->length, xfer->mps);
 
 	hctsiz = usb_dwc2_set_hctsiz_pid(ch->data->next_pid) |
@@ -1332,6 +1369,8 @@ static void ch_start_interrupt(const struct device *dev, struct uhc_dwc2_channel
 
 	ch->length = MIN(net_buf_tailroom(xfer->buf), xfer->mps);
 	dma_addr = net_buf_tail(xfer->buf);
+	ch->buf = dma_addr;
+	dwc2_dma_prepare(dma_addr, ch->length, true);
 
 	LOG_DBG("INT IN ep=%02Xh, mps=%u, interval=%u, size=%u, pid=%u",
 		xfer->ep,
@@ -1802,6 +1841,12 @@ static void ch_handle_events(const struct device *dev, struct uhc_dwc2_channel *
 			ch_complete(dev, ch);
 		} else {
 			LOG_ERR("Channel%d has unhandled events", ch->index);
+		}
+
+		if (err != 0 &&
+		    (sys_read32((mem_addr_t)&ch->regs->hcchar) & USB_DWC2_HCCHAR_EPDIR)) {
+			/* DMA may have written partial IN data before the failure. */
+			dwc2_dma_complete(ch->buf, ch->length);
 		}
 
 		ch_release(dev, ch);
