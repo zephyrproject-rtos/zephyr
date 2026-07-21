@@ -43,6 +43,10 @@
 	arm,num-irq-priority-bits = <3>;
 };
 
+&rtc {
+	interrupts = <140 0>, <141 0>, <142 0>;
+};
+
 &aon_qtmr0 {
 	interrupts = <151 0>;
 };

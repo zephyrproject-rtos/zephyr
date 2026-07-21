@@ -68,7 +68,7 @@
 	rtc: rtc@9a000 {
 		compatible = "nxp,rtc-analog";
 		reg = <0x9a000 0x1000>;
-		interrupts = <140 0>, <141 0>, <142 0>;
+		interrupts = <13 0>, <14 0>, <15 0>;
 		interrupt-names = "alarm0", "alarm1", "alarm2";
 		alarms-count = <3>;
 		status = "disabled";
