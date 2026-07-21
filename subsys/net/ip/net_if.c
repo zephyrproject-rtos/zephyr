@@ -3181,6 +3181,119 @@ void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix)
 	prefix_timer_remove(prefix);
 }
 
+#if defined(CONFIG_NET_IPV6_RA)
+int net_if_ipv6_prefix_set_advertise(struct net_if *iface,
+				     const struct net_in6_addr *prefix,
+				     uint8_t len, bool advertise)
+{
+	struct net_if_ipv6_prefix *ifprefix;
+	int ret = -ENOENT;
+
+	net_if_lock(iface);
+
+	ifprefix = net_if_ipv6_prefix_lookup(iface, prefix, len);
+	if (ifprefix == NULL) {
+		goto out;
+	}
+
+	ifprefix->is_advertised = advertise;
+	ret = 0;
+
+	/* Send an advertisement immediately so downstream hosts pick up
+	 * the change without waiting for the periodic timer.
+	 */
+	if (advertise && iface->config.ip.ipv6 != NULL &&
+	    iface->config.ip.ipv6->is_router && net_if_is_up(iface)) {
+		(void)net_ipv6_send_ra(iface, NULL);
+	}
+
+out:
+	net_if_unlock(iface);
+
+	return ret;
+}
+
+int net_if_ipv6_router_start(struct net_if *iface)
+{
+	struct net_in6_addr all_routers;
+	struct net_if_ipv6 *ipv6;
+	bool iface_up;
+	int ret = 0;
+
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (ipv6 == NULL) {
+		net_if_unlock(iface);
+		return -ENOTSUP;
+	}
+
+	ipv6->is_router = true;
+	iface_up = net_if_is_up(iface);
+
+	net_if_unlock(iface);
+
+	/* Join the all-routers multicast group (ff02::2) so that the interface
+	 * receives Router Solicitations from downstream hosts and can answer
+	 * them with a Router Advertisement (RFC 4861 ch. 2.2 and 6.2.6).
+	 *
+	 * This is done without holding net_if_lock(): net_ipv6_mld_join()
+	 * transmits an MLD report whose TX path locks other interfaces, so
+	 * joining under the lock could deadlock (ABBA). net_ipv6_mld_join() is
+	 * idempotent, so no explicit "already joined" check is needed.
+	 */
+	net_ipv6_addr_create_ll_allrouters_mcast(&all_routers);
+	ret = net_ipv6_mld_join(iface, &all_routers);
+	if (ret == -ENOTSUP) {
+		/* MLD compiled out: still register the address locally so that
+		 * solicitations to it are accepted.
+		 */
+		(void)net_if_ipv6_maddr_add(iface, &all_routers);
+		ret = 0;
+	} else if (ret < 0 && ret != -ENETDOWN) {
+		NET_ERR("Cannot join all routers address for %d (%d)",
+			net_if_get_by_iface(iface), ret);
+	} else {
+		ret = 0;
+	}
+
+	if (iface_up) {
+		(void)net_ipv6_send_ra(iface, NULL);
+	}
+
+	return ret;
+}
+
+int net_if_ipv6_router_stop(struct net_if *iface)
+{
+	struct net_in6_addr all_routers;
+	struct net_if_ipv6 *ipv6;
+
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (ipv6 == NULL) {
+		net_if_unlock(iface);
+		return -ENOTSUP;
+	}
+
+	ipv6->is_router = false;
+
+	net_if_unlock(iface);
+
+	/* Leave the all-routers multicast group joined in router_start().
+	 * Done without net_if_lock() held for the same ABBA reason as the join
+	 * above (net_ipv6_mld_leave() transmits an MLD report).
+	 */
+	net_ipv6_addr_create_ll_allrouters_mcast(&all_routers);
+	if (net_ipv6_mld_leave(iface, &all_routers) == -ENOTSUP) {
+		(void)net_if_ipv6_maddr_rm(iface, &all_routers);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_NET_IPV6_RA */
+
 struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
 						const struct net_in6_addr *addr)
 {
