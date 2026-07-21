@@ -18,6 +18,41 @@
 		zephyr,flash-controller = &flashctrl0;
 	};
 
+	clocks {
+
+		xtal_mhz: xtal_mhz {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(40)>;
+			status = "okay";
+		};
+
+		xtal_khz: xtal_khz {
+			compatible = "silabs,siwx91x-physical-clock";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			silabs,startup-time-us = <2500000>;
+			status = "okay";
+		};
+
+		rc_mhz: rc_mhz {
+			compatible = "silabs,siwx91x-physical-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_M(32)>;
+			silabs,startup-time-us = <10>;
+			status = "okay";
+		};
+
+		rc_khz: rc_khz {
+			compatible = "silabs,siwx91x-physical-clock";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_K(32)>;
+			silabs,startup-time-us = <500>;
+			status = "okay";
+		};
+
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -99,14 +134,225 @@
 	};
 
 	soc {
-		clock0: clock@46000000 {
-			compatible = "silabs,siwx91x-clock";
-			reg = <0x46000000 0x100>,
-			      <0x46000800 0x100>,
-			      <0x24041400 0x100>,
-			      <0x24048000 0x200>;
+		cmu_aon: cmu-aon@24048000 {
+			compatible = "silabs,siwx91x-cmu-aon";
+			reg = <0x24048000 0x100>,
+			      <0x24048100 0x100>;
+
+			reg-names = "mcu_aon","mcu_fsm";
 			#clock-cells = <1>;
 			status = "okay";
+
+			ref_hp_mux: ref-hp-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&xtal_mhz>;
+			};
+
+			ref_ulp_mux: ref-ulp-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&xtal_mhz>;
+			};
+
+			/* Low-Power State machines clock */
+			aon_ref_hf_mux: aon-ref-hf-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&rc_mhz>;
+			};
+
+			/* Shared clock for watchdog/Deep-sleep timer and GPIO timestamping in the UULP domain */
+			aon_ref_lf_mux: aon-ref-lf-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&xtal_khz>;
+			};
+
+			/* RTC and watchdog LF muxes are fixed to UULP LF ref in hardware. */
+			/* SYSRTC source: sleeptimer / HAL, not a clock-route child here. */
+		};
+
+		cmu_ulp: cmu-ulp@24041400 {
+			compatible = "silabs,siwx91x-cmu-ulp";
+			reg = <0x24041400 0x100>;
+			reg-names = "ulpclk";
+			#clock-cells = <1>;
+			status = "okay";
+
+			/* ULP AHB / processor interface clock (not owned by a single peripheral). */
+			ulp_ref_cpu_mux: ulp-ref-cpu-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clock-div = <1>;
+				clocks = <&ref_ulp_mux>;
+			};
+
+			/* Sleep sensor clock - APB bus clock to configure uulp peripheral clocks */
+			ulp_ref_aon_mux: ulp-slp-sensor-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clock-div = <2>;
+				clocks = <&ulp_ref_cpu_mux>;
+			};
+
+			ulp_uart_mux: ulp-uart-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clock-div = <1>;
+				clocks = <&rc_mhz>;
+			};
+
+			ulp_i2s_mux: ulp-i2s-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clock-div = <1>;
+				clocks = <&ref_ulp_mux>;
+			};
+
+			ulp_ssi_mux: ulp-ssi-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clock-div = <1>;
+				clocks = <&ref_ulp_mux>;
+			};
+
+			ulp_adc_mux: ulp-adc-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&ref_ulp_mux>;
+			};
+
+			ulp_timer_mux: ulp-timer-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&ref_ulp_mux>;
+			};
+		};
+
+		cmu_hp: cmu-hp@46000000 {
+			compatible = "silabs,siwx91x-cmu-hp";
+			reg = <0x46000000 0x100>,
+			      <0x46008000 0x100>;
+			reg-names = "m4clk", "misc_config";
+			#clock-cells = <1>;
+			status = "okay";
+
+			cpu_mux: hp_proc-ref-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&pll_soc>;
+				clock-div = <1>;
+			};
+
+			/* Not used currently */
+			cpu_lp_mux: cpu-lp-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&rc_khz>;
+			};
+
+			hp_ref_ulp_mux: hp-ref-ulp-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&cpu_mux>;
+				clock-div = <1>;
+			};
+
+			/* Shared PLL reference mux (one source for SoC/INTF/I2S PLLs). */
+			ref_pll_mux: pll-ref-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&xtal_mhz>;
+			};
+
+			pll_intf: pll-intf {
+				compatible = "silabs,siwx91x-pll";
+				#clock-cells = <0>;
+				clocks = <&ref_pll_mux>;
+				clock-frequency = <DT_FREQ_M(160)>;
+				status = "okay";
+			};
+
+			pll_soc: pll-soc {
+				compatible = "silabs,siwx91x-pll";
+				#clock-cells = <0>;
+				clocks = <&ref_pll_mux>;
+				clock-frequency = <DT_FREQ_M(180)>;
+				status = "okay";
+			};
+
+			pll_i2s: pll-i2s {
+				compatible = "silabs,siwx91x-pll";
+				#clock-cells = <0>;
+				clocks = <&ref_pll_mux>;
+				/* Check Siwg917 refference manual (section 6.12.7)
+				 * for supported frequencies
+				 */
+				clock-frequency = <DT_FREQ_K(12288)>;
+				status = "okay";
+			};
+
+			qspi_mux: qspi-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&pll_intf>;
+				/* clk_out = clk_in / (2 * clock-div)      */
+				/* if clock-div is 0, clk_out = clk_in / 2 */
+				clock-div = <1>;
+			};
+
+			qspi2_mux: qspi2-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&pll_intf>;
+				/* clk_out = clk_in / (2 * clock-div)      */
+				/* if clock-div is 0, clk_out = clk_in / 2 */
+				clock-div = <1>;
+			};
+
+			uart0_mux: uart0-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&pll_intf>;
+				clock-div = <1>;
+			};
+
+			uart1_mux: uart1-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&pll_intf>;
+				clock-div = <1>;
+			};
+
+			ssi_mux: ssi-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&pll_intf>;
+				clock-div = <1>;
+			};
+
+			i2s_mux: i2s-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&pll_i2s>;
+				/* clk_out = clk_in / ( 2 * clock-div)      */
+				/* if clock-div is 0 or 1, clk_out = clk_in */
+				clock-div = <0>;
+			};
+
+			gspi_mux: gspi-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&pll_intf>;
+			};
+
+			pin_out_mux: pin-out-mux {
+				compatible = "silabs,siwx91x-clock-route";
+				#clock-cells = <0>;
+				clocks = <&xtal_mhz>;
+				clock-div = <0>;
+			};
 		};
 
 		pinctrl0: pinctrl@46130000 {
@@ -120,6 +366,7 @@
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			clocks = <&cmu_hp SIWX91X_CLK_QSPI>;
 
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
@@ -135,6 +382,7 @@
 			reg = <0x12040000 0x200>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			clocks = <&cmu_hp SIWX91X_CLK_QSPI2>;
 			status = "disabled";
 		};
 
@@ -151,7 +399,7 @@
 			reg = <0x24041800 0x1000>;
 			interrupts = <12 0>;
 			reg-shift = <2>;
-			clocks = <&clock0 SIWX91X_CLK_ULP_UART>;
+			clocks = <&cmu_ulp SIWX91X_CLK_ULP_UART>;
 			current-speed = <115200>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
@@ -163,7 +411,7 @@
 			reg = <0x44000000 0x1000>;
 			interrupts = <38 0>;
 			reg-shift = <2>;
-			clocks = <&clock0 SIWX91X_CLK_UART0>;
+			clocks = <&cmu_hp SIWX91X_CLK_UART0>;
 			current-speed = <115200>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
@@ -175,7 +423,7 @@
 			reg = <0x45020000 0x1000>;
 			interrupts = <39 0>;
 			reg-shift = <2>;
-			clocks = <&clock0 SIWX91X_CLK_UART1>;
+			clocks = <&cmu_hp SIWX91X_CLK_UART1>;
 			current-speed = <115200>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
@@ -185,7 +433,7 @@
 		rng0: rng@45090000 {
 			compatible = "silabs,siwx91x-rng";
 			reg = <0x45090000 0x8>;
-			clocks = <&clock0 SIWX91X_CLK_RNG>;
+			clocks = <&cmu_hp SIWX91X_CLK_RNG>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
 		};
@@ -197,9 +445,9 @@
 				     <56 0>, <57 0>, <58 0>, <59 0>;
 			interrupt-names = "PIN0", "PIN1", "PIN2", "PIN3",
 					  "PIN4", "PIN5", "PIN6", "PIN7";
-
 			#address-cells = <1>;
 			#size-cells = <0>;
+			clocks = <&cmu_hp SIWX91X_CLK_GPIO>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
 
@@ -255,9 +503,9 @@
 			interrupts = <18 0>;
 			interrupt-names = "ULP";
 			silabs,ulp;
-
 			#address-cells = <1>;
 			#size-cells = <0>;
+			clocks = <&cmu_ulp SIWX91X_CLK_ULP_GPIO>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
 
@@ -280,10 +528,10 @@
 			reg-names = "ret", "int";
 			interrupts = <21 0>;
 			interrupt-names = "UULP";
-
 			gpio-controller;
 			#gpio-cells = <2>;
-			ngpios = <5>;
+			ngpios = <4>;
+			clocks = <&cmu_ulp SIWX91X_CLK_UULP_GPIO>;
 			status = "okay";
 		};
 
@@ -294,7 +542,7 @@
 			reg = <0x24040000 0x100>;
 			interrupts = <13 0>;
 			interrupt-names = "i2c2";
-			clocks = <&clock0 SIWX91X_CLK_ULP_I2C>;
+			clocks = <&cmu_ulp SIWX91X_CLK_ULP_I2C>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
 			status = "disabled";
@@ -307,7 +555,7 @@
 			reg = <0x44010000 0x100>;
 			interrupts = <42 0>;
 			interrupt-names = "i2c0";
-			clocks = <&clock0 SIWX91X_CLK_I2C0>;
+			clocks = <&cmu_hp SIWX91X_CLK_I2C0>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
 			status = "disabled";
@@ -320,7 +568,7 @@
 			reg = <0x47040000 0x100>;
 			interrupts = <61 0>;
 			interrupt-names = "i2c1";
-			clocks = <&clock0 SIWX91X_CLK_I2C1>;
+			clocks = <&cmu_hp SIWX91X_CLK_I2C1>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
 			status = "disabled";
@@ -333,7 +581,7 @@
 			reg = <0x24078000 0x82c>;
 			interrupts = <10 0>;
 			interrupt-names = "ulpdma";
-			clocks = <&clock0 SIWX91X_CLK_ULP_UDMA>;
+			clocks = <&cmu_ulp SIWX91X_CLK_ULP_UDMA>;
 			silabs,sram-region = <&sram_dma1>;
 			#dma-cells = <1>;
 			dma-channels = <12>;
@@ -349,7 +597,7 @@
 			reg = <0x44030000 0x82c>;
 			interrupts = <33 0>;
 			interrupt-names = "dma0";
-			clocks = <&clock0 SIWX91X_CLK_UDMA>;
+			clocks = <&cmu_hp SIWX91X_CLK_UDMA>;
 			#dma-cells = <1>;
 			dma-channels = <32>;
 			power-domains = <&siwx91x_soc_pd>;
@@ -364,7 +612,7 @@
 			reg = <0x21080000 0x1720>;
 			interrupts = <31 0>;
 			interrupt-names = "gpdma";
-			clocks = <&clock0 SIWX91X_CLK_GPDMA>;
+			clocks = <&cmu_hp SIWX91X_CLK_GPDMA>;
 			silabs,channel-reg-base = <0x21081004>;
 			silabs,dma-channel-count = <8>;
 			#dma-cells = <2>;
@@ -380,7 +628,7 @@
 			reg = <0x47070000 0x14c>;
 			interrupts = <48 0>;
 			interrupt-names = "pwm";
-			clocks = <&clock0 SIWX91X_CLK_PWM>;
+			clocks = <&cmu_hp SIWX91X_CLK_PWM>;
 			#pwm-cells = <2>;
 			silabs,ch-prescaler = <64 64 64 64>;
 			power-domains = <&siwx91x_soc_pd>;
@@ -393,7 +641,7 @@
 			reg = <0x24048200 0x40>;
 			interrupts = <28 0>;
 			interrupt-names = "rtc";
-			clocks = <&clock0 SIWX91X_CLK_RTC>;
+			clocks = <&cmu_aon SIWX91X_CLK_RTC>;
 			status = "disabled";
 		};
 
@@ -404,7 +652,7 @@
 			reg = <0x24048300 0x1c>;
 			interrupts = <20 0>;
 			interrupt-names = "watchdog";
-			clocks = <&clock0 SIWX91X_CLK_WATCHDOG>;
+			clocks = <&cmu_aon SIWX91X_CLK_WATCHDOG>;
 			status = "disabled";
 		};
 
@@ -413,8 +661,8 @@
 			reg = <0x24048c00 0x78>;
 			interrupts = <22 0>;
 			interrupt-names = "sysrtc";
-			clock-frequency = <DT_FREQ_K(32)>;
-			prescaler = <1>;
+			/* Only informative, managed by sleeptimer driver configuration file sl_sleeptimer_hal_si91x_sysrtc.c*/
+			clocks = <&cmu_aon SIWX91X_CLK_SYSRTC>;
 			status = "disabled";
 		};
 
@@ -425,15 +673,15 @@
 			reg = <0x45030000 0xbc>;
 			interrupts = <46 0>;
 			interrupt-names = "gspi";
-			clocks = <&clock0 SIWX91X_CLK_GSPI>;
 			dmas = <&gpdma 0 11>, <&gpdma 1 10>;
 			dma-names = "tx", "rx";
+			clocks = <&cmu_hp SIWX91X_CLK_GSPI>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
-		i2s0: i2s@47050000 {
+		i2s: i2s@47050000 {
 			compatible = "silabs,siwx91x-i2s";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -442,7 +690,8 @@
 			interrupt-names = "i2s0";
 			silabs,channel-group = <0>;
 			silabs,max-channel-count = <2>;
-			clocks = <&clock0 SIWX91X_CLK_I2S>, <&clock0 SIWX91X_CLK_STATIC_I2S>;
+			clocks = <&cmu_hp SIWX91X_CLK_I2S>,
+				 <&cmu_hp SIWX91X_CLK_STATIC_I2S>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
 			status = "disabled";
@@ -457,8 +706,8 @@
 			interrupt-names = "ulpi2s";
 			silabs,channel-group = <0>;
 			silabs,max-channel-count = <1>;
-			clocks = <&clock0 SIWX91X_CLK_ULP_I2S>,
-				 <&clock0 SIWX91X_CLK_ULP_STATIC_I2S>;
+			clocks = <&cmu_ulp SIWX91X_CLK_ULP_I2S>,
+				 <&cmu_ulp SIWX91X_CLK_ULP_STATIC_I2S>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
 			status = "disabled";
@@ -472,7 +721,7 @@
 			interrupts = <11 0>;
 			interrupt-names = "adc0";
 			silabs,adc-sampling-rate = <100000>;
-			clocks = <&clock0 SIWX91X_CLK_ULP_ADC>;
+			clocks = <&cmu_ulp SIWX91X_CLK_ULP_ADC>;
 			#io-channel-cells = <1>;
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;

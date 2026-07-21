@@ -21,7 +21,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
-#define UULP_GPIO_COUNT           5
+#define UULP_GPIO_COUNT           4
 #define UULP_REG_INTERRUPT_CONFIG 0x10
 
 /* Types */
@@ -221,6 +221,13 @@ static DEVICE_API(gpio, gpio_siwx91x_uulp_api) = {
 #endif
 };
 
+/* Changing NPSS GPIO 0 mode to 0 (NPSS_GPIO is UULP GPIO) in the init.
+* By default the mode for uulpgpio 0 is 1 
+* (see rm p.290 section "Pad Configuration and GPIO Mode Reset Values")
+* The original comment said that is allow to:"disable buck-boost enable mode"
+* but never manage to prove that because of lack of documentation about this mode.
+* (see rm p.307 section "UULP VBAT GPIO Pin Multiplexing")
+*/
 #define GPIO_PORT_INIT(idx)                                                                        \
 	static const struct gpio_siwx91x_uulp_config gpio_siwx91x_port_config##idx = {             \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx)                                     \
@@ -230,6 +237,7 @@ static DEVICE_API(gpio, gpio_siwx91x_uulp_api) = {
 	static int gpio_siwx91x_init_uulp_##idx(const struct device *dev)                          \
 	{                                                                                          \
 		sys_write32(0, DT_INST_REG_ADDR_BY_NAME(idx, int) + UULP_REG_INTERRUPT_CONFIG);    \
+		sl_si91x_gpio_set_uulp_npss_pin_mux(0,0);                                          \
 		IRQ_CONNECT(DT_INST_IRQ(idx, irq), DT_INST_IRQ(idx, priority),                     \
 			    gpio_siwx91x_uulp_isr, DEVICE_DT_GET(DT_DRV_INST(idx)), 0);            \
 		irq_enable(DT_INST_IRQ(idx, irq));                                                 \

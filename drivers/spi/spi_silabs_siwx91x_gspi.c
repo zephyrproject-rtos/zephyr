@@ -659,7 +659,7 @@ static int gspi_siwx91x_pm_action(const struct device *dev, enum pm_device_actio
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
 		ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
-		if (ret < 0 && ret != -EALREADY) {
+		if (ret != 0 && ret != -EALREADY) {
 			return ret;
 		}
 
@@ -734,7 +734,7 @@ static DEVICE_API(spi, gspi_siwx91x_driver_api) = {
 	static const struct gspi_siwx91x_config gspi_config_##inst = {                             \
 		.reg = (GSPI0_Type *)DT_INST_REG_ADDR(inst),                                       \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, clkid),                                      \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.mosi_overrun = (uint8_t)SPI_MOSI_OVERRUN_DT(inst),                                \
 	};                                                                                         \
