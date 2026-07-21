@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-FileCopyrightText: 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Consumer fixture for the ADGM3121 mux backend test. Carries mux-controls
+  and mux-states pointing at the ADGM3121 controller under test (SPI or GPIO
+  mode, chosen per overlay).
+
+compatible: "vnd,mux-consumer-test"
+
+include: [base.yaml, mux-consumer.yaml]
