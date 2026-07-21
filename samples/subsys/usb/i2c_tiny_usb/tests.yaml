@@ -1,0 +1,14 @@
+sample:
+  name: i2c-tiny-usb bridge
+tests:
+  sample.subsys.usb.i2c_tiny_usb:
+    depends_on:
+      - usbd
+      - i2c
+    filter: dt_nodelabel_enabled("zephyr_i2c")
+    tags:
+      - usb
+      - i2c
+    build_only: true
+    integration_platforms:
+      - adafruit_feather_rp2040
