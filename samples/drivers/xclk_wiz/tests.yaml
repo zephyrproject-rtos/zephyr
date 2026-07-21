@@ -1,0 +1,16 @@
+sample:
+  name: Xilinx AXI Clocking Wizard EA Sample
+  description: >
+    Demonstrates Early Access (EA) clock_control APIs for the Xilinx AXI
+    Clocking Wizard IP (xlnx,clkx5-wiz-1.0) on AMD Versal Gen 2 (Telluride).
+    Exercises clock output enable, clock output rate set, and clock output
+    rate get for CLKOUT0 across several target frequencies.
+tests:
+  sample.drivers.xclk_wiz:
+    platform_allow:
+      - versal2_apu
+      - versal2_rpu
+    tags:
+      - clock_control
+      - xlnx
+      - versal2
