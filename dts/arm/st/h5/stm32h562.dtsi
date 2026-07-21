@@ -553,6 +553,11 @@
 			};
 		};
 
+		hash: crypto@420c0400 {
+			st,has-sha384-algorithm;
+			st,has-sha512-algorithm;
+		};
+
 		rng: rng@420c0800 {
 			nist-config = <0xf00e00>;
 			health-test-config = <0x6a91>;
