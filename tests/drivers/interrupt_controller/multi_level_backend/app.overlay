@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Aggregators fabricated by the ISR table placement test. Instance 0 of the
+ * level 2 compatible stands for aggregator 0, which is the plic; only
+ * instance 1, on CPU line 10, is registered. The level 3 instances sit on
+ * level 2 IRQs 5 and 7 of the plic, matching CONFIG_3RD_LVL_INTR_0x_OFFSET in
+ * the isr_table_placement scenario.
+ */
+
+/ {
+	test_l2_agg0: test-l2-agg0 {
+		compatible = "vnd,l2-placement-intc";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupts-extended = <&{/cpus/cpu@0/interrupt-controller} 11>;
+	};
+
+	test_l2_agg1: test-l2-agg1 {
+		compatible = "vnd,l2-placement-intc";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupts-extended = <&{/cpus/cpu@0/interrupt-controller} 10>;
+	};
+
+	test_l3_agg0: test-l3-agg0 {
+		compatible = "vnd,l3-placement-intc";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupts-extended = <&plic 5 1>;
+	};
+
+	test_l3_agg1: test-l3-agg1 {
+		compatible = "vnd,l3-placement-intc";
+		interrupt-controller;
+		#interrupt-cells = <1>;
+		interrupts-extended = <&plic 7 1>;
+	};
+};
