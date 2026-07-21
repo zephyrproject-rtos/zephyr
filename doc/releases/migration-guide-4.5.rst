@@ -394,6 +394,14 @@ Haptics
   and :dtcompatible:`cirrus,cs40l53`. Applications using the old compatible must update their
   devicetree nodes accordingly.
 
+I2C
+===
+
+* The ITE I2C controllers :dtcompatible:`ite,enhance-i2c`
+  :dtcompatible:`ite,it51xxx-i2c` :dtcompatible:`ite,it8xxx2-i2c` transfer
+  timeout is now using the generic ``zephyr,transfer-timeout-ms`` property
+  instead of ``transfer-timeout-ms``, default to 500ms.
+
 Input
 =====
 

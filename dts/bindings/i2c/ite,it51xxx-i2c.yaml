@@ -32,12 +32,6 @@ properties:
     description: |
       The SDA pin for the selected port.
 
-  transfer-timeout-ms:
-    type: int
-    default: 500
-    description: |
-      Maximum time allowed for an I2C transfer.
-
   port-num:
     type: int
     required: true

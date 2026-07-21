@@ -2044,7 +2044,7 @@ BUILD_ASSERT((NUM_FIFO_CTRL_OFFSET_INSTS == 0) ||
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),                               \
 		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),                               \
-		.transfer_timeout_ms = DT_INST_PROP(inst, transfer_timeout_ms),                    \
+		.transfer_timeout_ms = I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst),                      \
 		.bitrate = DT_INST_PROP(inst, clock_frequency),                                    \
 		.i2c_irq_base = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                  \
 		.i2cs_irq_base = DT_INST_IRQ_BY_IDX(inst, 1, irq),                                 \
