@@ -81,7 +81,7 @@ Samples
    .. code-block:: console
 
       *** Booting Zephyr OS build v4.3.0 ***
-      Hello World! qcc744m_evk/bl618m05q2i
+      Hello World! qcc744m_evk/qcc744
 
 Congratulations, you have ``qcc744m_evk`` configured and running Zephyr.
 

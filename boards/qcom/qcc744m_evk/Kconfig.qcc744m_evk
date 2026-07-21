@@ -3,4 +3,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_QCC744M_EVK
-	select SOC_BL618M05Q2I
+	select SOC_QCC744

@@ -3,4 +3,4 @@ board:
   full_name: QCC744M Evaluation Kit
   vendor: qcom
   socs:
-    - name: bl618m05q2i
+    - name: qcc744

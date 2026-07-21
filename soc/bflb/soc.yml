@@ -17,6 +17,7 @@ family:
     - name: bl618m05q2i
     - name: bl618m50q2i
     - name: bl618m65q2i
+    - name: qcc744
   - name: bl616cl
     socs:
     - name: bl616cl3240
