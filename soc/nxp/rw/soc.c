@@ -310,6 +310,10 @@ __weak __ramfunc void clock_init(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet)) && CONFIG_NET_L2_ETHERNET && CONFIG_ETH_DRIVER
+	/* Re-assert TDDR_PDB: MCUboot may have cleared it
+	 * via CLOCK_DeinitTddrRefClk() in soc_early_init_hook()
+	 */
+	SYSCTL2->PLL_CTRL |= SYSCTL2_PLL_CTRL_TDDR_PDB_MASK;
 	RESET_PeripheralReset(kENET_IPG_RST_SHIFT_RSTn);
 	RESET_PeripheralReset(kENET_IPG_S_RST_SHIFT_RSTn);
 #else
