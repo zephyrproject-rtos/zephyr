@@ -1052,7 +1052,7 @@ static inline int z_impl_espi_write_flash(const struct device *dev,
 }
 
 /**
- * @brief Sends a write request packet for shared flash.
+ * @brief Sends an erase request packet for shared flash.
  *
  * This routine provides an interface to send a request to erase the flash
  * components shared between the eSPI controller and eSPI targets.
