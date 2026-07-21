@@ -23,6 +23,7 @@ module-str = pulse_io
 source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
+source "drivers/pulse_io/Kconfig.esp32"
 source "drivers/pulse_io/Kconfig.loopback"
 # zephyr-keep-sorted-stop
 
