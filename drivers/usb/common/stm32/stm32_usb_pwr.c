@@ -16,6 +16,15 @@
 LOG_MODULE_REGISTER(stm32_usb_pwr, CONFIG_STM32_USB_COMMON_LOG_LEVEL);
 
 /*
+ * No HAL/datasheet timing constant is published for VMSR.USB33RDY: the flag
+ * reflects a comparator against an internal reference and is expected to
+ * settle in well under a millisecond. 1 ms is a generous bound for that -
+ * two orders of magnitude below the 100 ms PHY-clock-stable timeout used for
+ * a similar (but genuinely slower, PLL-based) ready wait in udc_numaker.c.
+ */
+#define STM32H5_VDDUSB_READY_TIMEOUT_US 1000
+
+/*
  * Keep track of whether power is already
  * enabled here to simplify the USB drivers.
  */
@@ -100,6 +109,35 @@ int stm32_usb_pwr_enable(void)
 	while (!LL_PWR_IsActiveFlag_USBBOOSTRDY()) {
 		/* Wait for USB OTG booster to be ready */
 	}
+#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+	/*
+	 * Enable the USB 3.3V voltage detector/monitor first and wait for
+	 * VDDUSB to be reported ready (VMSR.USB33RDY) before switching VDDUSB
+	 * itself on. Without this wait the USB PHY/OTG core never sees valid
+	 * analog power: USB_CoreReset() then spins for the full
+	 * HAL_USB_TIMEOUT polling GRSTCTL and the controller never comes up.
+	 */
+	LL_PWR_EnableUSBVoltageDetector();
+	if (!WAIT_FOR(LL_PWR_IsActiveFlag_VDDUSB(), STM32H5_VDDUSB_READY_TIMEOUT_US, NULL)) {
+		LOG_WRN("VDDUSB ready flag (PWR->VMSR.USB33RDY) not set within %u us, "
+			"continuing anyway",
+			STM32H5_VDDUSB_READY_TIMEOUT_US);
+	}
+
+	/* Enable VDDUSB */
+	LL_PWR_EnableVDDUSB();
+
+# if defined(PWR_USBSCR_OTGHSEN) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
+	/*
+	 * The embedded OTG_HS PHY has its own analog supply switch, separate
+	 * from the generic VDDUSB enable above: PWR->USBSCR.OTGHSEN. Without
+	 * it GRSTCTL.CSRST never clears and USB_CoreReset() spins for the
+	 * full HAL_USB_TIMEOUT -- verified on stm32h5f5j_dk hardware: USBSCR
+	 * read 0x03000000 (USB33DEN|USB33SV, OTGHSEN clear) and GRSTCTL read
+	 * 0x80000001 (AHBIDL set, CSRST stuck) while HAL_PCD_Init() failed.
+	 */
+	LL_PWR_EnableUSBOTGHSPhy();
+# endif /* PWR_USBSCR_OTGHSEN && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs) */
 #elif defined(PWR_USBSCR_USB33SV) || defined(PWR_SVMCR_USV)
 	/*
 	 * VDDUSB independent USB supply (PWR clock is on)
