@@ -444,9 +444,7 @@ static int eth_xmc4xxx_send(const struct device *dev, struct net_pkt *pkt)
 			dma_desc->status |= ETH_MAC_DMA_TDES0_FS;
 
 #if defined(CONFIG_NET_GPTP)
-			struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-			if (net_ntohs(hdr->type) == NET_ETH_PTYPE_PTP) {
+			if (net_pkt_is_tx_timestamping(pkt)) {
 				dma_desc->status |= ETH_MAC_DMA_TDES0_TTSE;
 			}
 #endif

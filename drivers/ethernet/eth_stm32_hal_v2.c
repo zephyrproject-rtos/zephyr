@@ -182,10 +182,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		.CRCPadCtrl = ETH_CRC_PAD_INSERT,
 	};
 
-#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	bool timestamped_frame;
-#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
-
 	__ASSERT_NO_MSG(pkt != NULL);
 	__ASSERT_NO_MSG(pkt->frags != NULL);
 
@@ -206,9 +202,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	buf_header = &dev_data->tx_buffer_header[ctx->first_tx_buffer_index];
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	timestamped_frame = eth_stm32_is_ptp_pkt(net_pkt_iface(pkt), pkt) ||
-		net_pkt_is_tx_timestamping(pkt);
-	if (timestamped_frame) {
+	if (net_pkt_is_tx_timestamping(pkt)) {
 		/* Enable transmit timestamp */
 		if (HAL_ETH_PTP_InsertTxTimestamp(heth) != HAL_OK) {
 			res = -EIO;
@@ -295,9 +289,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 			ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC : ETH_CHECKSUM_DISABLE,
 		.CRCPadCtrl = ETH_CRC_PAD_INSERT,
 	};
-#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	bool timestamped_frame;
-#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 	__ASSERT_NO_MSG(pkt != NULL);
 	__ASSERT_NO_MSG(pkt->frags != NULL);
@@ -312,9 +303,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	buf_header = &dev_data->tx_buffer_header[ctx->first_tx_buffer_index];
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	timestamped_frame = eth_stm32_is_ptp_pkt(net_pkt_iface(pkt), pkt) ||
-			    net_pkt_is_tx_timestamping(pkt);
-	if (timestamped_frame) {
+	if (net_pkt_is_tx_timestamping(pkt)) {
 		/* Enable transmit timestamp */
 		if (HAL_ETH_PTP_InsertTxTimestamp(heth) != HAL_OK) {
 			return -EIO;

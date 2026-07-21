@@ -451,9 +451,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	status_t result;
 	int ret;
 	ep_tx_opt opt = {0};
-#ifdef CONFIG_PTP_CLOCK_NXP_NETC
-	bool pkt_is_gptp;
-#endif
+
 	__ASSERT(pkt, "Packet pointer is NULL");
 
 	iface_dst = data->iface;
@@ -480,8 +478,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 #endif
 
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
-	pkt_is_gptp = net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
-	if ((pkt_is_gptp || net_pkt_is_tx_timestamping(pkt)) &&
+	if (net_pkt_is_tx_timestamping(pkt) &&
 	    (netc_eth_get_ptp_clock(dev, data->iface) != NULL)) {
 		opt.flags |= kEP_TX_OPT_REQ_TS;
 	}
@@ -508,7 +505,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 					   NETC_SI_TXDESCRIP_RD_SMSO_MASK |
 					   NETC_SI_TXDESCRIP_RD_PORT(dst_port);
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
-		if (pkt_is_gptp || net_pkt_is_tx_timestamping(pkt)) {
+		if (net_pkt_is_tx_timestamping(pkt)) {
 			txDesc[0].standard.flags |= NETC_SI_TXDESCRIP_RD_TSR_MASK;
 		}
 #endif
