@@ -25,7 +25,6 @@
 #ifdef CONFIG_HL78XX_GNSS
 #include "hl78xx_gnss.h"
 #endif /* CONFIG_HL78XX_GNSS */
-#define MAX_SCRIPT_AT_CMD_RETRY 3
 
 #define MDM_NODE                         DT_ALIAS(modem)
 /* Check phandle target status for a specific phandle index */
@@ -102,8 +101,8 @@ static const char *hl78xx_state_str(enum hl78xx_state state)
 		return "set baudrate";
 	case MODEM_HL78XX_STATE_RUN_INIT_SCRIPT:
 		return "run init script";
-	case MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT:
-		return "init fail diagnostic script ";
+	case MODEM_HL78XX_STATE_RECOVERY:
+		return "recovery";
 	case MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT:
 		return "run rat cfg script";
 	case MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT:
@@ -1858,6 +1857,53 @@ static void hl78xx_resume_uart(const struct hl78xx_config *config)
 #endif /* CONFIG_PM_DEVICE */
 }
 
+static void hl78xx_clear_script_failure(struct hl78xx_data *data)
+{
+	data->script_failure.recovery_rule = NULL;
+	data->script_failure.result = MODEM_CHAT_SCRIPT_RESULT_SUCCESS;
+	data->script_failure.origin_state = MODEM_HL78XX_STATE_IDLE;
+	data->script_failure.script_chat_index = 0U;
+	data->script_failure.valid = false;
+}
+
+static void hl78xx_clear_recovery(struct hl78xx_data *data)
+{
+	data->script_recovery.attempted_rule = NULL;
+	data->script_recovery.attempts = 0U;
+	hl78xx_clear_script_failure(data);
+}
+
+static void hl78xx_confirm_recovery(struct hl78xx_data *data, enum hl78xx_state state,
+				    enum hl78xx_event event)
+{
+	const struct hl78xx_script_recovery_rule *rule = data->script_recovery.attempted_rule;
+
+	if ((rule == NULL) || (rule->success_state != state) || (rule->success_event != event)) {
+		return;
+	}
+
+	LOG_INF("Script recovery successful after %u attempt(s)", data->script_recovery.attempts);
+
+	hl78xx_clear_recovery(data);
+}
+
+static void hl78xx_handle_recovery_unavailable(struct hl78xx_data *data)
+{
+	if (!data->script_failure.valid) {
+		hl78xx_clear_recovery(data);
+		hl78xx_enter_restart_fallback_state(data);
+		return;
+	}
+
+	/*
+	 * Clear the active failure context, but retain attempted_rule and
+	 * attempts until recovery is confirmed, idle is entered, or a new
+	 * lifecycle is explicitly started.
+	 */
+	hl78xx_clear_script_failure(data);
+	hl78xx_enter_restart_fallback_state(data);
+}
+
 /* -------------------------------------------------------------------------
  * State machine handlers
  * - state enter/leave and per-state event handlers
@@ -2041,7 +2087,6 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 		/* Reset per-cycle flag so AT_CMD_READY is dispatched exactly once. */
 		data->status.at_cmd_ready_sent = false;
 		data->status.boot.init_sequence_completed = false;
-
 		LOG_DBG("Current baudrate after post-restart script: %d",
 			data->status.uart.current_baudrate);
 #if defined(CONFIG_MODEM_HL78XX_AUTOBAUD_ONLY_IF_COMMS_FAIL) ||                                    \
@@ -2061,10 +2106,11 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 #ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_SET_BAUDRATE);
 #else
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
 #endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
+		break;
 	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
 		break;
 
 	default:
@@ -2121,8 +2167,7 @@ static void hl78xx_set_baudrate_event_handler(struct hl78xx_data *data, enum hl7
 		} else {
 			LOG_ERR("Baud rate configuration failed after %d attempts",
 				data->status.uart.baudrate_detection_retry);
-			hl78xx_enter_state(data,
-					   MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT);
+			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
 		}
 		break;
 
@@ -2152,6 +2197,8 @@ static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum 
 {
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+		hl78xx_confirm_recovery(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT, evt);
+
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT);
 		break;
 
@@ -2162,88 +2209,76 @@ static void hl78xx_run_init_script_event_handler(struct hl78xx_data *data, enum 
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
 		break;
 
-	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT);
-		break;
-
-	default:
-		break;
-	}
-}
-
-static int hl78xx_on_run_init_diagnose_script_state_enter(struct hl78xx_data *data)
-{
-	hl78xx_run_init_fail_script_async(data);
-	return 0;
-}
-
-static void hl78xx_run_init_fail_script_event_handler(struct hl78xx_data *data,
-						      enum hl78xx_event evt)
-{
-	const struct hl78xx_config *config = data->devices.hl78xx->config;
-
-	switch (evt) {
-	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
-		if (data->status.ksrep == 0) {
-			hl78xx_run_enable_ksup_urc_script_async(data);
-			hl78xx_start_timer(data, K_MSEC(config->shutdown_time_ms));
-		} else {
-			if (hl78xx_gpio_is_enabled(&config->mdm_gpio_reset)) {
-				hl78xx_enter_state(data, MODEM_HL78XX_STATE_RESET_PULSE);
-			}
-		}
-		break;
-	case MODEM_HL78XX_EVENT_TIMEOUT:
-		LOG_ERR("Modem initialization failed after diagnostic script");
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
-		break;
 	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
-#ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_SET_BAUDRATE);
-#else
-		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
-			hl78xx_enter_state(data, MODEM_HL78XX_STATE_POWER_ON_PULSE);
-			break;
-		}
-
-		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_reset)) {
-			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RESET_PULSE);
-			break;
-		}
-
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
-#endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
-		break;
-	case MODEM_HL78XX_EVENT_BUS_CLOSED:
-		break;
-
-	case MODEM_HL78XX_EVENT_SUSPEND:
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
-		break;
-
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
-		if (!hl78xx_gpio_is_enabled(&config->mdm_gpio_wake) &&
-		    IS_ENABLED(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)) {
-			LOG_ERR("The modem wake pin is not enabled. Make sure that modem low-power "
-				"mode is disabled. If you’re unsure, enable it by adding the "
-				"corresponding DTS configuration entry.");
-		}
-
-		if (data->status.script_fail_counter++ < MAX_SCRIPT_AT_CMD_RETRY) {
-			if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
-				hl78xx_enter_state(data, MODEM_HL78XX_STATE_POWER_ON_PULSE);
-				break;
-			}
-			if (hl78xx_gpio_is_enabled(&config->mdm_gpio_reset)) {
-				hl78xx_enter_state(data, MODEM_HL78XX_STATE_RESET_PULSE);
-				break;
-			}
-		}
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RECOVERY);
 		break;
+
 	default:
 		break;
 	}
+}
+
+static int hl78xx_on_recovery_state_enter(struct hl78xx_data *data)
+{
+	struct hl78xx_script_failure *script_failure = &data->script_failure;
+	const struct hl78xx_script_recovery_rule *rule;
+
+	enum hl78xx_state resume_state;
+	int ret;
+
+	if (!script_failure->valid) {
+		LOG_WRN("Recovery entered without script failure context");
+
+		hl78xx_handle_recovery_unavailable(data);
+		return 0;
+	}
+
+	rule = script_failure->recovery_rule;
+
+	if (rule == NULL) {
+		LOG_WRN("No recovery rule for failed script command");
+
+		hl78xx_clear_recovery(data);
+		hl78xx_enter_restart_fallback_state(data);
+		return 0;
+	}
+
+	if (rule->action == NULL) {
+		LOG_ERR("Recovery rule has no action");
+
+		hl78xx_clear_recovery(data);
+		hl78xx_enter_restart_fallback_state(data);
+		return 0;
+	}
+
+	if (data->script_recovery.attempted_rule != rule) {
+		data->script_recovery.attempted_rule = rule;
+		data->script_recovery.attempts = 0U;
+	}
+
+	if (data->script_recovery.attempts >= rule->max_attempts) {
+		LOG_ERR("Script recovery attempts exhausted");
+
+		hl78xx_handle_recovery_unavailable(data);
+		return 0;
+	}
+
+	data->script_recovery.attempts++;
+
+	ret = rule->action(data, script_failure);
+	if (ret < 0) {
+		LOG_ERR("Script recovery action failed: %d", ret);
+
+		hl78xx_handle_recovery_unavailable(data);
+		return 0;
+	}
+
+	resume_state = rule->resume_state;
+	hl78xx_clear_script_failure(data);
+	hl78xx_enter_state(data, resume_state);
+
+	return 0;
 }
 
 static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
@@ -2413,8 +2448,6 @@ error:
 
 static void hl78xx_run_pmc_cfg_script_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
-	const struct hl78xx_config *config = data->devices.hl78xx->config;
-
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_TIMEOUT:
 		if (hl78xx_is_config_restart_pending(data)) {
@@ -2438,16 +2471,7 @@ static void hl78xx_run_pmc_cfg_script_event_handler(struct hl78xx_data *data, en
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
 		break;
 	case MODEM_HL78XX_EVENT_SCRIPT_REQUIRE_RESTART:
-		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_pwr_on)) {
-			hl78xx_enter_state(data, MODEM_HL78XX_STATE_POWER_ON_PULSE);
-			break;
-		}
-
-		if (hl78xx_gpio_is_enabled(&config->mdm_gpio_reset)) {
-			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RESET_PULSE);
-			break;
-		}
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		hl78xx_enter_restart_fallback_state(data);
 		break;
 	default:
 		break;
@@ -3471,6 +3495,8 @@ static int hl78xx_on_idle_state_enter(struct hl78xx_data *data)
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
 	}
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+	hl78xx_clear_recovery(data);
+
 	modem_chat_release(&data->chat);
 	modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
 	modem_pipe_close_async(data->uart_pipe);
@@ -3502,7 +3528,6 @@ static void hl78xx_idle_event_handler(struct hl78xx_data *data, enum hl78xx_even
 			hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_POWER_ON);
 			break;
 		}
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT);
 		break;
 
 	case MODEM_HL78XX_EVENT_SUSPEND:
@@ -3914,10 +3939,10 @@ const static struct hl78xx_state_handlers hl78xx_state_table[] = {
 		NULL,
 		hl78xx_run_init_script_event_handler
 	},
-	[MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT] = {
-		hl78xx_on_run_init_diagnose_script_state_enter,
+	[MODEM_HL78XX_STATE_RECOVERY] = {
+		hl78xx_on_recovery_state_enter,
 		NULL,
-		hl78xx_run_init_fail_script_event_handler
+		NULL
 	},
 	[MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT] = {
 		hl78xx_on_rat_cfg_script_state_enter,
