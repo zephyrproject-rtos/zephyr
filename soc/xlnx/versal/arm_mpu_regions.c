@@ -32,6 +32,11 @@ extern const uint32_t __rom_region_mpu_size_bits;
 #define XLNX_VERSAL_SRAM_IS_OCM \
 	DT_SAME_NODE(DT_CHOSEN(zephyr_sram), DT_NODELABEL(ocm))
 
+/* Calculate OCM region size based on device tree */
+#define XLNX_VERSAL_OCM_NODE DT_NODELABEL(ocm)
+#define XLNX_VERSAL_OCM_REGION_SIZE \
+	REGION_CUSTOMED_MEMORY_SIZE(DT_REG_SIZE(XLNX_VERSAL_OCM_NODE) / 1024U)
+
 /*
  * Calculate MPU region size based on memory size
  * MPU regions must be power-of-2 sized and naturally aligned
@@ -158,11 +163,11 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 DEVICE_SHAREABLE |
 			 NOT_EXEC}),
 
-	/* Region 3: OCM overlay - 256KB normal cacheable memory from 0xFFFC0000 */
+	/* Region 3: OCM overlay - size from device tree */
 	MPU_REGION_ENTRY(
 		"ocm",
-		0xFFFC0000,
-		REGION_256K,
+		DT_REG_ADDR(XLNX_VERSAL_OCM_NODE),
+		XLNX_VERSAL_OCM_REGION_SIZE,
 		{.rasr = FULL_ACCESS_Msk |
 			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE}),
 
