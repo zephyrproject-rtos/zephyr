@@ -326,6 +326,7 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	if (rat_config_request == HL78XX_RAT_MODE_NONE) {
 		return -EINVAL;
 	}
+	/* Skip band configuration for variants that do not require it. */
 	if (config->variant->cfg_skip_band_for_rat &&
 	    config->variant->cfg_skip_band_for_rat(data, rat_config_request)) {
 		return 0;
@@ -368,7 +369,9 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 error:
 	return ret;
 }
+
 #ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+
 int hl78xx_rat_ntn_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		       enum hl78xx_cell_rat_mode rat_config_request)
 {
@@ -2017,4 +2020,97 @@ void byte_to_binary_str(uint8_t byte, char *output)
 		output[7 - i] = (byte & (1 << i)) ? '1' : '0';
 	}
 	output[8] = '\0';
+}
+
+int hl78xx_recover_kbndcfg(struct hl78xx_data *data, const struct hl78xx_script_failure *failure)
+{
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
+	char hex_bndcfg[MDM_BAND_HEX_STR_LEN] = {0};
+	char cmd_bnd[80] = {0};
+	bool band_config_written = false;
+	int ret;
+
+	ARG_UNUSED(failure);
+
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+	for (int rat = HL78XX_RAT_CAT_M1; rat <= HL78XX_RAT_NB1; rat++) {
+#else
+	/*
+	 * Without AUTORAT, use the selected RAT when available. Fall back to
+	 * CAT-M1 if the stored RAT cannot be used with KBNDCFG.
+	 */
+	int rat = data->status.registration.rat_mode;
+
+	if (rat != HL78XX_RAT_CAT_M1 && rat != HL78XX_RAT_NB1) {
+		LOG_WRN("Unsupported RAT mode %d, using CAT-M1 for recovery", rat);
+		rat = HL78XX_RAT_CAT_M1;
+	}
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+		if (config->variant->cfg_skip_band_for_rat &&
+		    config->variant->cfg_skip_band_for_rat(data, rat)) {
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+			continue;
+#else
+		return -ENOTSUP;
+#endif
+		}
+
+		memset(hex_bndcfg, 0, sizeof(hex_bndcfg));
+		memset(cmd_bnd, 0, sizeof(cmd_bnd));
+
+		ret = hl78xx_get_expected_band_config_for_rat(data, rat, hex_bndcfg,
+							      sizeof(hex_bndcfg));
+		if (ret < 0) {
+			LOG_ERR("Failed to get band configuration for RAT %d: %d", rat, ret);
+			return ret;
+		}
+
+		ret = snprintf(cmd_bnd, sizeof(cmd_bnd), "AT+KBNDCFG=%d,%s", rat, hex_bndcfg);
+		if ((ret < 0) || ((size_t)ret >= sizeof(cmd_bnd))) {
+			LOG_ERR("Failed to construct KBNDCFG command for RAT %d", rat);
+			return -ENOMEM;
+		}
+
+		ret = modem_dynamic_cmd_send(data, NULL, cmd_bnd, strlen(cmd_bnd),
+					     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
+					     MDM_CMD_TIMEOUT, false);
+		if (ret < 0) {
+			LOG_ERR("Failed to restore band configuration for RAT %d: %d", rat, ret);
+			return ret;
+		}
+		band_config_written = true;
+
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+	}
+#endif
+	if (!band_config_written) {
+		LOG_WRN("No band configuration was written during recovery");
+		return -ENOTSUP;
+	}
+	return 0;
+}
+
+int hl78xx_recover_post_restart_timeout(struct hl78xx_data *data,
+					const struct hl78xx_script_failure *failure)
+{
+	int ret;
+
+	ARG_UNUSED(failure);
+
+	ret = hl78xx_run_init_fail_script(data);
+	if (ret < 0) {
+		LOG_ERR("Failed to query KSREP configuration: %d", ret);
+		return ret;
+	}
+
+	if (data->status.ksrep == 0) {
+		ret = hl78xx_run_enable_ksup_urc_script(data);
+		if (ret < 0) {
+			LOG_ERR("Failed to enable KSUP URC: %d", ret);
+			return ret;
+		}
+		data->status.boot.is_booted_previously = true;
+	}
+
+	return 0;
 }
