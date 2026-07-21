@@ -459,7 +459,7 @@ typedef int (*can_send_t)(const struct device *dev,
 
 /**
  * @brief Callback API upon adding an RX filter
- * See @a can_add_rx_callback() for argument description
+ * See @a can_add_rx_filter() for argument description
  */
 typedef int (*can_add_rx_filter_t)(const struct device *dev,
 				   can_rx_callback_t callback,
