@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
@@ -81,6 +80,17 @@ uint32_t get_pllout_frequency(void)
 					 pll_div(STM32_PLL_DIVISOR));
 }
 
+#if defined(CONFIG_SOC_SERIES_STM32L1X) && DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb)
+#define STM32_USB_PLL_VCO_FREQ                                                                     \
+	(STM32_PLL_MULTIPLIER * COND_CASE_1(IS_ENABLED(STM32_PLL_SRC_HSI), (STM32_HSI_FREQ),       \
+					    IS_ENABLED(STM32_PLL_SRC_HSE), (STM32_HSE_FREQ), (0)))
+BUILD_ASSERT(STM32_USB_PLL_VCO_FREQ == MHZ(96),
+	     "USB on STM32L1 requires PLL VCO = 96 MHz so that the USB clock equals 48 MHz");
+#endif /* CONFIG_SOC_SERIES_STM32L1X && st_stm32_usb okay */
+
+#else  /* !defined(STM32_PLL_ENABLED) */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_SOC_SERIES_STM32L1X) || !DT_HAS_COMPAT_STATUS_OKAY(st_stm32_usb),
+	     "USB on STM32L1 requires the PLL to be enabled");
 #endif /* defined(STM32_PLL_ENABLED) */
 
 /**
