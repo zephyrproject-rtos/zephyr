@@ -553,6 +553,8 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 		sect_base = (uintptr_t) llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
 
+		size_t tgt_sect_size = ext->sect_hdrs[shdr->sh_info].sh_size;
+
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
 			ret = llext_seek(ldr, shdr->sh_offset + j * shdr->sh_entsize);
@@ -572,11 +574,10 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			 * start of the write; the field width is relocation-type
 			 * specific and left to the per-arch handler.
 			 */
-			if (rel.r_offset >= ext->sect_hdrs[shdr->sh_info].sh_size) {
+			if (rel.r_offset >= tgt_sect_size) {
 				LOG_ERR("relocation r_offset %#zx out of section %d "
 					"(size %#zx)",
-					(size_t)rel.r_offset, shdr->sh_info,
-					(size_t)ext->sect_hdrs[shdr->sh_info].sh_size);
+					(size_t)rel.r_offset, shdr->sh_info, tgt_sect_size);
 				return -ENOEXEC;
 			}
 
