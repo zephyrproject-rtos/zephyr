@@ -2123,7 +2123,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param iface Network interface to use for the filter operation
-	 * @param packet filter settings
+	 * @param filter Filter settings
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
@@ -2219,7 +2219,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param iface Network interface to use for the RTS threshold operation
-	 * @param RTS threshold value
+	 * @param rts_threshold RTS threshold value
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
@@ -2513,7 +2513,7 @@ void wifi_mgmt_raise_ap_sta_disconnected_event(struct net_if *iface,
  * @brief Raise P2P device found event
  *
  * @param iface Network interface
- * @param device_info P2P device information
+ * @param peer_info P2P device information
  */
 void wifi_mgmt_raise_p2p_device_found_event(struct net_if *iface,
 		struct wifi_p2p_device_info *peer_info);
