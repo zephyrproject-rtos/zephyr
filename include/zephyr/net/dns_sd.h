@@ -183,7 +183,7 @@ extern "C" {
  * @param service name of the service, such as "_tftp"
  * @param domain the domain of the service, such as "local" or "zephyrproject.org"
  * @param text information for the DNS TXT record
- * @param port a pointer to the port number that this service will use
+ * @param port the port number that this service will use
  *
  * @see <a href="https://tools.ietf.org/html/rfc6763">RFC 6763</a>
  */
