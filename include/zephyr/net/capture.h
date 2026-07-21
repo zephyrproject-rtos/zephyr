@@ -207,6 +207,8 @@ static inline int net_capture_send(const struct device *dev, struct net_if *ifac
 #endif
 }
 
+/** @endcond */
+
 /**
  * @brief Check if the network packet needs to be captured or not.
  *        This is called for every network packet being sent.
@@ -376,8 +378,6 @@ static inline void net_capture_foreach(net_capture_cb_t cb, void *user_data)
 	ARG_UNUSED(user_data);
 }
 #endif
-
-/** @endcond */
 
 /**
  * @}
