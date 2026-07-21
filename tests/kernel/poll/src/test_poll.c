@@ -267,9 +267,17 @@ static void poll_wait_helper(void *use_queuelike, void *msgq, void *p3)
 	}
 }
 
+enum check_results_event_type {
+	CHECK_IGNORE,
+	CHECK_SIGNAL,
+	CHECK_SEM,
+	CHECK_FIFO,
+	CHECK_MSGQ,
+	CHECK_PIPE,
+};
+
 /* check results for multiple events */
-void check_results(struct k_poll_event *events, uint32_t event_type,
-		bool is_available)
+void check_results(struct k_poll_event *events, uint32_t event_type, bool is_available)
 {
 	struct fifo_msg *msg_ptr;
 	char msgq_recv_buf[MSGQ_MSG_SIZE] = {0};
@@ -278,7 +286,7 @@ void check_results(struct k_poll_event *events, uint32_t event_type,
 	int result;
 
 	switch (event_type) {
-	case K_POLL_TYPE_SEM_AVAILABLE:
+	case CHECK_SEM:
 		if (is_available) {
 			zassert_equal(events->state, K_POLL_STATE_SEM_AVAILABLE);
 			zassert_equal(k_sem_take(&wait_sem, K_NO_WAIT), 0);
@@ -291,7 +299,7 @@ void check_results(struct k_poll_event *events, uint32_t event_type,
 			zassert_equal(events->tag, TAG_0);
 		}
 		break;
-	case K_POLL_TYPE_DATA_AVAILABLE:
+	case CHECK_FIFO:
 		if (is_available) {
 			zassert_equal(events->state, K_POLL_STATE_FIFO_DATA_AVAILABLE);
 			msg_ptr = k_fifo_get(&wait_fifo, K_NO_WAIT);
@@ -305,7 +313,7 @@ void check_results(struct k_poll_event *events, uint32_t event_type,
 			zassert_equal(events->state, K_POLL_STATE_NOT_READY);
 		}
 		break;
-	case K_POLL_TYPE_SIGNAL:
+	case CHECK_SIGNAL:
 		if (is_available) {
 			zassert_equal(wait_events[2].state, K_POLL_STATE_SIGNALED);
 			zassert_equal(wait_signal.signaled, 1);
@@ -318,10 +326,10 @@ void check_results(struct k_poll_event *events, uint32_t event_type,
 			zassert_equal(events->state, K_POLL_STATE_NOT_READY);
 		}
 		break;
-	case K_POLL_TYPE_IGNORE:
+	case CHECK_IGNORE:
 		zassert_equal(wait_events[3].state, K_POLL_STATE_NOT_READY);
 		break;
-	case K_POLL_TYPE_MSGQ_DATA_AVAILABLE:
+	case CHECK_MSGQ:
 		if (is_available) {
 			zassert_equal(events->state, K_POLL_STATE_MSGQ_DATA_AVAILABLE);
 
@@ -334,7 +342,7 @@ void check_results(struct k_poll_event *events, uint32_t event_type,
 			zassert_equal(events->state, K_POLL_STATE_NOT_READY);
 		}
 		break;
-	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
+	case CHECK_PIPE:
 		if (is_available) {
 			zassert_equal(events->state, K_POLL_STATE_PIPE_DATA_AVAILABLE);
 			result = k_pipe_read(&wait_pipe, pipe_recv_buf,
@@ -447,24 +455,24 @@ ZTEST(poll_api_1cpu, test_poll_wait)
 	zassert_equal(rc, 0);
 	/* all events should be available. */
 
-	check_results(&wait_events[0], K_POLL_TYPE_SEM_AVAILABLE, true);
-	check_results(&wait_events[1], K_POLL_TYPE_DATA_AVAILABLE, true);
-	check_results(&wait_events[2], K_POLL_TYPE_SIGNAL, true);
-	check_results(&wait_events[3], K_POLL_TYPE_IGNORE, true);
-	check_results(&wait_events[4], K_POLL_TYPE_MSGQ_DATA_AVAILABLE, true);
-	check_results(&wait_events[5], K_POLL_TYPE_PIPE_DATA_AVAILABLE, true);
+	check_results(&wait_events[0], CHECK_SEM, true);
+	check_results(&wait_events[1], CHECK_FIFO, true);
+	check_results(&wait_events[2], CHECK_SIGNAL, true);
+	check_results(&wait_events[3], CHECK_IGNORE, true);
+	check_results(&wait_events[4], CHECK_MSGQ, true);
+	check_results(&wait_events[5], CHECK_PIPE, true);
 
 	/* verify events are not ready anymore */
 	zassert_equal(k_poll(wait_events, ARRAY_SIZE(wait_events),
 			     K_SECONDS(1)), -EAGAIN);
 	/* all events should not be available. */
 
-	check_results(&wait_events[0], K_POLL_TYPE_SEM_AVAILABLE, false);
-	check_results(&wait_events[1], K_POLL_TYPE_DATA_AVAILABLE, false);
-	check_results(&wait_events[2], K_POLL_TYPE_SIGNAL, false);
-	check_results(&wait_events[3], K_POLL_TYPE_IGNORE, false);
-	check_results(&wait_events[4], K_POLL_TYPE_MSGQ_DATA_AVAILABLE, false);
-	check_results(&wait_events[5], K_POLL_TYPE_PIPE_DATA_AVAILABLE, false);
+	check_results(&wait_events[0], CHECK_SEM, false);
+	check_results(&wait_events[1], CHECK_FIFO, false);
+	check_results(&wait_events[2], CHECK_SIGNAL, false);
+	check_results(&wait_events[3], CHECK_IGNORE, false);
+	check_results(&wait_events[4], CHECK_MSGQ, false);
+	check_results(&wait_events[5], CHECK_PIPE, false);
 
 	/*
 	 * Wait for 2 out of 4 non-ready events to become ready from a higher
@@ -483,11 +491,11 @@ ZTEST(poll_api_1cpu, test_poll_wait)
 
 	zassert_equal(rc, 0);
 
-	check_results(&wait_events[0], K_POLL_TYPE_SEM_AVAILABLE, true);
-	check_results(&wait_events[1], K_POLL_TYPE_DATA_AVAILABLE, false);
-	check_results(&wait_events[2], K_POLL_TYPE_SIGNAL, true);
-	check_results(&wait_events[4], K_POLL_TYPE_MSGQ_DATA_AVAILABLE, false);
-	check_results(&wait_events[5], K_POLL_TYPE_PIPE_DATA_AVAILABLE, false);
+	check_results(&wait_events[0], CHECK_SEM, true);
+	check_results(&wait_events[1], CHECK_FIFO, false);
+	check_results(&wait_events[2], CHECK_SIGNAL, true);
+	check_results(&wait_events[4], CHECK_MSGQ, false);
+	check_results(&wait_events[5], CHECK_PIPE, false);
 
 	/*
 	 * Wait for each event to be ready from a lower priority thread, one at
@@ -502,44 +510,44 @@ ZTEST(poll_api_1cpu, test_poll_wait)
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
 	zassert_equal(rc, 0);
 
-	check_results(&wait_events[0], K_POLL_TYPE_SEM_AVAILABLE, true);
-	check_results(&wait_events[1], K_POLL_TYPE_DATA_AVAILABLE, false);
-	check_results(&wait_events[2], K_POLL_TYPE_SIGNAL, false);
-	check_results(&wait_events[4], K_POLL_TYPE_MSGQ_DATA_AVAILABLE, false);
-	check_results(&wait_events[5], K_POLL_TYPE_PIPE_DATA_AVAILABLE, false);
+	check_results(&wait_events[0], CHECK_SEM, true);
+	check_results(&wait_events[1], CHECK_FIFO, false);
+	check_results(&wait_events[2], CHECK_SIGNAL, false);
+	check_results(&wait_events[4], CHECK_MSGQ, false);
+	check_results(&wait_events[5], CHECK_PIPE, false);
 
 	/* fifo */
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
 
 	zassert_equal(rc, 0);
 
-	check_results(&wait_events[0], K_POLL_TYPE_SEM_AVAILABLE, false);
-	check_results(&wait_events[1], K_POLL_TYPE_DATA_AVAILABLE, true);
-	check_results(&wait_events[2], K_POLL_TYPE_SIGNAL, false);
-	check_results(&wait_events[4], K_POLL_TYPE_MSGQ_DATA_AVAILABLE, false);
-	check_results(&wait_events[5], K_POLL_TYPE_PIPE_DATA_AVAILABLE, false);
+	check_results(&wait_events[0], CHECK_SEM, false);
+	check_results(&wait_events[1], CHECK_FIFO, true);
+	check_results(&wait_events[2], CHECK_SIGNAL, false);
+	check_results(&wait_events[4], CHECK_MSGQ, false);
+	check_results(&wait_events[5], CHECK_PIPE, false);
 
 	/* poll signal */
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
 
 	zassert_equal(rc, 0);
 
-	check_results(&wait_events[0], K_POLL_TYPE_SEM_AVAILABLE, false);
-	check_results(&wait_events[1], K_POLL_TYPE_DATA_AVAILABLE, false);
-	check_results(&wait_events[2], K_POLL_TYPE_SIGNAL, true);
-	check_results(&wait_events[4], K_POLL_TYPE_MSGQ_DATA_AVAILABLE, false);
-	check_results(&wait_events[5], K_POLL_TYPE_PIPE_DATA_AVAILABLE, false);
+	check_results(&wait_events[0], CHECK_SEM, false);
+	check_results(&wait_events[1], CHECK_FIFO, false);
+	check_results(&wait_events[2], CHECK_SIGNAL, true);
+	check_results(&wait_events[4], CHECK_MSGQ, false);
+	check_results(&wait_events[5], CHECK_PIPE, false);
 
 	/* message queue */
 	rc = k_poll(wait_events, ARRAY_SIZE(wait_events), K_SECONDS(1));
 
 	zassert_equal(rc, 0);
 
-	check_results(&wait_events[0], K_POLL_TYPE_SEM_AVAILABLE, false);
-	check_results(&wait_events[1], K_POLL_TYPE_DATA_AVAILABLE, false);
-	check_results(&wait_events[2], K_POLL_TYPE_SIGNAL, false);
-	check_results(&wait_events[4], K_POLL_TYPE_MSGQ_DATA_AVAILABLE, true);
-	check_results(&wait_events[5], K_POLL_TYPE_PIPE_DATA_AVAILABLE, false);
+	check_results(&wait_events[0], CHECK_SEM, false);
+	check_results(&wait_events[1], CHECK_FIFO, false);
+	check_results(&wait_events[2], CHECK_SIGNAL, false);
+	check_results(&wait_events[4], CHECK_MSGQ, true);
+	check_results(&wait_events[5], CHECK_PIPE, false);
 
 	k_thread_abort(tid1);
 	k_thread_abort(tid2);
