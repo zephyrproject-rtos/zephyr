@@ -82,6 +82,9 @@ struct flash_mspi_nor_config {
 #if defined(CONFIG_MSPI_MEMMAP)
 	struct mspi_memmap_cfg memmap_cfg;
 #endif
+#if defined(CONFIG_FLASH_MSPI_MEMMAP_READ)
+	uint32_t memmap_base_addr;
+#endif
 #if defined(WITH_SUPPLY_GPIO)
 	struct gpio_dt_spec supply;
 #endif
@@ -137,6 +140,9 @@ struct flash_mspi_nor_data {
 	struct mspi_dev_cfg mspi_dev_read_cfg;
 	const struct mspi_dev_cfg *write_cfg;
 	struct mspi_dev_cfg mspi_dev_write_cfg;
+#if defined(CONFIG_FLASH_MSPI_MEMMAP_READ)
+	struct mspi_dev_cfg xip_cfg;
+#endif
 };
 
 #ifdef __cplusplus
