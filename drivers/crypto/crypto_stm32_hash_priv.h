@@ -19,6 +19,7 @@ typedef HASH_HandleTypeDef	stm32_hash_handle_t;
 #define STM32_HASH_MAX_DIGEST_SIZE (32)
 
 struct crypto_stm32_hash_config {
+	HASH_TypeDef *base;
 	const struct reset_dt_spec reset;
 	struct stm32_pclken pclken;
 };
