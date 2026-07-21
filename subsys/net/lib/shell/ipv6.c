@@ -133,7 +133,7 @@ static void address_info_cb(struct net_if *iface, void *user_data)
 	snprintk(remaining_str, sizeof(remaining_str) - 1, "infinite");
 #endif /* CONFIG_NET_NATIVE_IPV6 */
 
-		PR("%s  \t%s\t%14s\t%ld\t%s/%d%s\n",
+		PR("%-8s  \t%s\t%14s\t%ld\t%s/%d%s\n",
 		   addrtype2str(ipv6->unicast[i].addr_type),
 		   addrstate2str(ipv6->unicast[i].addr_state),
 		   remaining_str, atomic_get(&ipv6->unicast[i].atomic_ref),
