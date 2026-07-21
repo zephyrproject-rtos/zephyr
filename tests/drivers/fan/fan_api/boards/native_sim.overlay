@@ -1,0 +1,20 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_pwm: pwm {
+		compatible = "zephyr,fake-pwm";
+		status = "okay";
+		#pwm-cells = <2>;
+		frequency = <10000000>;
+	};
+
+	test_fan: fan {
+		compatible = "fan-pwm";
+		status = "okay";
+		pwms = <&test_pwm 0 40000>;
+	};
+};

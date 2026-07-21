@@ -33,6 +33,7 @@ Peripherals
    espi.rst
    entropy.rst
    edac/index.rst
+   fan.rst
    flash.rst
    fuel_gauge.rst
    gnss.rst
