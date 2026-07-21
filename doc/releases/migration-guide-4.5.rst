@@ -1154,6 +1154,14 @@ Modules
 * Support for the `CANopenNode <https://github.com/CANopenNode/CANopenNode>`_ protocol stack was
   moved to an :ref:`external module<external_module_canopennode>`.
 
+lvgl
+====
+
+* The ``zephyr,lvgl-pointer-input`` devicetree binding marks the ``swap-xy``, ``invert-x``, and
+  ``invert-y`` properties as **deprecated**. Users should instead add these properties to the
+  underlying touch input controller device node, where they are now the canonical location for
+  such transformations.
+
 hal_nxp
 =======
 
