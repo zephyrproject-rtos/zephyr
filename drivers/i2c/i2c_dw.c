@@ -845,6 +845,7 @@ bool i2c_dw_is_busy(const struct device *dev)
 static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t slave_address)
 {
+	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
 	struct i2c_msg *cur_msg = msgs;
 	uint8_t msg_left = num_msgs;
@@ -964,7 +965,7 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 		}
 
 		/* Wait for transfer to be done */
-		ret = k_sem_take(&dw->device_sync_sem, K_MSEC(CONFIG_I2C_DW_RW_TIMEOUT_MS));
+		ret = k_sem_take(&dw->device_sync_sem, rom->transfer_timeout);
 		if (ret != 0) {
 			if (test_bit_con_master_mode(reg_base)) {
 				/* Trigger abort and wait for it to complete. */
@@ -1624,6 +1625,7 @@ static int i2c_dw_initialize(const struct device *dev)
 		.hcnt_offset = (int16_t)DT_INST_PROP_OR(n, hcnt_offset, 0),                        \
 		.fs_spk_len = MAX((uint8_t)DT_INST_PROP_OR(n, fs_spike_len, 0), DW_IC_SPKLEN_MIN), \
 		.hs_spk_len = MAX((uint8_t)DT_INST_PROP_OR(n, hs_spike_len, 0), DW_IC_SPKLEN_MIN), \
+		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(inst),                            \
 		TIMEOUT_DW_CONFIG(n) RESET_DW_CONFIG(n) PINCTRL_DW_CONFIG(n) I2C_DW_INIT_PCIE(n)   \
 			I2C_CONFIG_DMA_INIT(n) CLOCK_DW_CONFIG(n)};                                \
 	BUILD_ASSERT(DT_INST_PROP_OR(n, sda_hold_tx, 0) <= 0xffff, "Invalid SDA_HOLD_TX value");   \

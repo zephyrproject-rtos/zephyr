@@ -157,6 +157,7 @@ struct i2c_dw_rom_config {
 	int16_t hcnt_offset;
 	uint8_t fs_spk_len;
 	uint8_t hs_spk_len;
+	k_timeout_t transfer_timeout;
 
 #if I2C_DW_PINCTRL_ENABLED
 	const struct pinctrl_dev_config *pcfg;
