@@ -489,6 +489,26 @@
 				rotation = <0>;
 				pwms = <&test_pwm 0 PWM_MSEC(20) 0>;
 			};
+
+			test_uc8253_waveshare_epaper_hat_sku22698: uc8253@28 {
+				compatible = "ultrachip,uc8253";
+				reg = <0x28>;
+				mipi-max-frequency = <4000000>;
+				width = <240>;
+				height = <360>;
+				busy-gpios = <&test_gpio 0 0>;
+				softstart = [37 3d 3d];
+
+				full {
+					pwr = [03 10 3f 3f 03];
+					cdi = <0x17>;
+					tcon = <0x22>;
+					pll = <0x09>;
+					vdcs = <0x07>;
+				};
+
+				status = "okay";
+			};
 		};
 
 		test_mipi_dbi_xfr_16bit_write_only {
