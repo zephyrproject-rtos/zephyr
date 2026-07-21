@@ -2399,7 +2399,7 @@ struct bt_conn_cb {
 	 *  connection has changed.
 	 *
 	 *  @param conn Connection object.
-	 *  @param info Connection LE PHY information.
+	 *  @param param Connection LE PHY information.
 	 */
 	void (*le_phy_updated)(struct bt_conn *conn,
 			       struct bt_conn_le_phy_info *param);
@@ -2549,7 +2549,7 @@ struct bt_conn_cb {
 	 *
 	 *  @param conn Connection object.
 	 *  @param status HCI status of complete event.
-	 *  @param remote_cs_capabilities Pointer to CS Capabilities on success or NULL otherwise.
+	 *  @param params Pointer to CS Capabilities on success or NULL otherwise.
 	 */
 	void (*le_cs_read_remote_capabilities_complete)(struct bt_conn *conn,
 							uint8_t status,
