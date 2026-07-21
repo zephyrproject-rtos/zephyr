@@ -416,12 +416,10 @@ class Script(Harness):
     def run(self, timeout: float) -> bool:
         self.instance.testcases = []
         for script in self._get_test_scripts():
-            rc = -1
             if not os.path.exists(script):
-                reason = f"{script} not found!"
-                logger.error(reason)
-                self._add_testcase_from_script(script, rc, reason=reason)
+                self._handle_missing_script(script)
                 continue
+            rc = -1
             duration = 0.0
             cmd = self._build_script_command(script)
             logger.debug(f"Running command: {shlex.join(cmd)}")
@@ -436,6 +434,13 @@ class Script(Harness):
         self.instance.record(self.recording)
         self._update_test_status()
         return True
+
+    def _handle_missing_script(self, script: str) -> None:
+        reason = f"{script} not found!"
+        logger.error(reason)
+        self._add_testcase_from_script(script, rc=-1, reason=reason)
+        with open(self.log_file_path, 'a') as log_file:
+            log_file.write(reason + '\n\n')
 
     def _get_env(self) -> dict[str, str]:
         """Return environment variables with BOARD set to the platform name."""
