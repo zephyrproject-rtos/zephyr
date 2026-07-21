@@ -61,7 +61,10 @@
 };
 
 zephyr_udc0: &usbd {
-	status = "disabled";
+	clocks = <&clk_apb>;
+	interrupts = <4 0>, <5 0>, <6 0>, <7 0>, <8 0>, <9 0>;
+	interrupt-names = "setup", "suspend", "resume", "reset", "epx_in", "epx_out";
+	status = "okay";
 };
 
 &uid {
