@@ -1244,25 +1244,25 @@ static pentry_t flags_to_entry(uint32_t flags)
 }
 
 /* map new region virt..virt+size to phys with provided arch-neutral flags */
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	int ret;
 
 	ret = range_map_unlocked(virt, phys, size, flags_to_entry(flags),
 				 MASK_ALL, 0);
 	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	return ret;
 }
 
 /* unmap region addr..addr+size, reset entries and flush TLB */
-void arch_mem_unmap(void *addr, size_t size)
+int arch_mem_unmap(void *addr, size_t size)
 {
 	int ret;
 
 	ret = range_map_unlocked(addr, 0, size, 0, 0,
 				 OPTION_FLUSH | OPTION_CLEAR);
 	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	return ret;
 }
 
 #ifdef K_MEM_IS_VM_KERNEL
@@ -2032,7 +2032,7 @@ int arch_page_phys_get(void *virt, uintptr_t *phys)
  */
 #define MMU_LRU_TRACK	MMU_G
 
-void arch_mem_page_out(void *addr, uintptr_t location)
+int arch_mem_page_out(void *addr, uintptr_t location)
 {
 	int ret;
 	pentry_t mask = PTE_MASK | MMU_P | MMU_A | MMU_LRU_TRACK;
@@ -2046,10 +2046,10 @@ void arch_mem_page_out(void *addr, uintptr_t location)
 	ret = range_map(addr, location, CONFIG_MMU_PAGE_SIZE, MMU_A, mask,
 			OPTION_FLUSH);
 	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	return ret;
 }
 
-void arch_mem_page_in(void *addr, uintptr_t phys)
+int arch_mem_page_in(void *addr, uintptr_t phys)
 {
 	int ret;
 	pentry_t mask = PTE_MASK | MMU_P | MMU_D | MMU_A | MMU_LRU_TRACK;
@@ -2057,7 +2057,7 @@ void arch_mem_page_in(void *addr, uintptr_t phys)
 	ret = range_map(addr, phys, CONFIG_MMU_PAGE_SIZE, MMU_P, mask,
 			OPTION_FLUSH);
 	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	return ret;
 }
 
 #ifdef CONFIG_EVICTION_LRU
@@ -2158,7 +2158,7 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
 	 * else in this case.
 	 */
 	if (all_pte == 0) {
-		return ARCH_DATA_PAGE_NOT_MAPPED;
+		return SYS_MM_VM_DATA_PAGE_NOT_MAPPED;
 	}
 
 #if defined(CONFIG_USERSPACE) && !defined(CONFIG_X86_COMMON_PAGE_TABLE)
@@ -2200,17 +2200,17 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *phys, bool clear_accessed)
 	}
 
 	/* We don't filter out any other bits in the PTE and the kernel
-	 * ignores them. For the case of ARCH_DATA_PAGE_NOT_MAPPED,
+	 * ignores them. For the case of SYS_MM_VM_DATA_PAGE_NOT_MAPPED,
 	 * we use a bit which is never set in a real PTE (the PAT bit) in the
 	 * current system.
 	 *
-	 * The other ARCH_DATA_PAGE_* macros are defined to their corresponding
+	 * The other SYS_MM_VM_DATA_PAGE_* macros are defined to their corresponding
 	 * bits in the PTE.
 	 */
 	return (uintptr_t)all_pte;
 }
 
-enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
+enum sys_mm_vm_page_location arch_page_location_get(void *addr, uintptr_t *location)
 {
 	pentry_t pte;
 	int level;
@@ -2222,14 +2222,14 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
 
 	if (pte == 0) {
 		/* Not mapped */
-		return ARCH_PAGE_LOCATION_BAD;
+		return SYS_MM_VM_PAGE_LOCATION_BAD;
 	}
 
 	__ASSERT(level == PTE_LEVEL, "bigpage found at %p", addr);
 	*location = (uintptr_t)get_entry_phys(pte, PTE_LEVEL);
 
 	if ((pte & MMU_P) != 0) {
-		return ARCH_PAGE_LOCATION_PAGED_IN;
+		return SYS_MM_VM_PAGE_LOCATION_PAGED_IN;
 	}
 
 #ifdef CONFIG_EVICTION_LRU
@@ -2239,11 +2239,11 @@ enum arch_page_location arch_page_location_get(void *addr, uintptr_t *location)
 	 * paged-out entries.
 	 */
 	if ((pte & MMU_LRU_TRACK) != 0) {
-		return ARCH_PAGE_LOCATION_PAGED_IN;
+		return SYS_MM_VM_PAGE_LOCATION_PAGED_IN;
 	}
 #endif
 
-	return ARCH_PAGE_LOCATION_PAGED_OUT;
+	return SYS_MM_VM_PAGE_LOCATION_PAGED_OUT;
 }
 
 #ifdef CONFIG_X86_KPTI

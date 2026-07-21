@@ -35,10 +35,10 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/mm/demand_paging.h>
+#include <zephyr/mem_mgmt/system_vm/backend.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/util.h>
 #include <mmu.h>
-#include <kernel_arch_interface.h>
 
 /*
  * Page frames are ordered according to their access pattern. Using a regular
@@ -117,10 +117,11 @@ static void lru_pf_remove(uint32_t pf_idx)
 	    (LRU_PF_HEAD != 0) &&
 	    (lru_pf_queue[LRU_PF_HEAD].next != 0)) {
 		struct k_mem_page_frame *pf = idx_to_pf(LRU_PF_HEAD);
-		uintptr_t flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, true);
+		uintptr_t flags = sys_mm_vm_backend_mem_page_info_get(k_mem_page_frame_to_virt(pf),
+								      NULL, true);
 
 		/* clearing the accessed flag expected only on loaded pages */
-		__ASSERT((flags & ARCH_DATA_PAGE_LOADED) != 0, "");
+		__ASSERT((flags & SYS_MM_VM_DATA_PAGE_LOADED) != 0, "");
 		ARG_UNUSED(flags);
 	}
 }
@@ -168,10 +169,11 @@ struct k_mem_page_frame *k_mem_paging_eviction_select(bool *dirty_ptr)
 	}
 
 	struct k_mem_page_frame *pf = idx_to_pf(head_pf_idx);
-	uintptr_t flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, false);
+	uintptr_t flags = sys_mm_vm_backend_mem_page_info_get(k_mem_page_frame_to_virt(pf), NULL,
+							      false);
 
 	__ASSERT(k_mem_page_frame_is_evictable(pf), "");
-	*dirty_ptr = ((flags & ARCH_DATA_PAGE_DIRTY) != 0);
+	*dirty_ptr = ((flags & SYS_MM_VM_DATA_PAGE_DIRTY) != 0);
 	return pf;
 }
 

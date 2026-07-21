@@ -106,7 +106,7 @@ config MMU
 	select KERNEL_VM_SUPPORT
 	help
 	  This option is enabled when the CPU's memory management unit is active
-	  and the arch_mem_map() API is available.
+	  and the sysm_mm_vm_backend_mem_map() API is available.
 
 if MMU
 config MMU_PAGE_SIZE

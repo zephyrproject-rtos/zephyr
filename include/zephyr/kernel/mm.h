@@ -126,9 +126,9 @@ extern "C" {
  * addresses in that range are accessed. This is incompatible with
  * K_MEM_MAP_LOCK.
  *
- * When this flag is specified, the phys argument to arch_mem_map()
+ * When this flag is specified, the phys argument to sys_mm_vm_backend_mem_map()
  * is interpreted as a backing store location value not a physical address.
- * This is very similar to arch_mem_page_out() in that regard.
+ * This is very similar to sys_mm_vm_backend_mem_page_out() in that regard.
  * Two special location values are defined: ARCH_UNPAGED_ANON_ZERO and
  * ARCH_UNPAGED_ANON_UNINIT. Those are to be used with anonymous memory
  * mappings for zeroed and uninitialized pages respectively.
