@@ -6746,6 +6746,8 @@ enum _poll_states_bits {
 #define K_POLL_TYPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_DATA_AVAILABLE)
 /** Poll for data becoming available in a FIFO. */
 #define K_POLL_TYPE_FIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
+/** Poll for data becoming available in a LIFO. */
+#define K_POLL_TYPE_LIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
 /** Poll for data becoming available in a message queue. */
 #define K_POLL_TYPE_MSGQ_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_MSGQ_DATA_AVAILABLE)
 /** Poll for data becoming available in a pipe. */
@@ -6779,6 +6781,8 @@ enum k_poll_modes {
 #define K_POLL_STATE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
 /** Data became available in a FIFO. */
 #define K_POLL_STATE_FIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
+/** Data became available in a LIFO. */
+#define K_POLL_STATE_LIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
 /** Data became available in a message queue. */
 #define K_POLL_STATE_MSGQ_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_MSGQ_DATA_AVAILABLE)
 /** Data became available in a pipe. */
@@ -6871,6 +6875,8 @@ struct k_poll_event {
 		struct k_sem *sem, *_typed_K_POLL_TYPE_SEM_AVAILABLE;
 		/** FIFO being polled. */
 		struct k_fifo *fifo, *_typed_K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+		/** LIFO being polled. */
+		struct k_lifo *lifo, *_typed_K_POLL_TYPE_LIFO_DATA_AVAILABLE;
 		/** Queue being polled. */
 		struct k_queue *queue, *_typed_K_POLL_TYPE_DATA_AVAILABLE;
 		/** Message queue being polled. */
