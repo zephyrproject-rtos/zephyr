@@ -764,6 +764,62 @@ static int dhcpv6_send_confirm(struct net_if *iface)
 	return ret;
 }
 
+/* Release the currently leased address(es)/prefix(es), RFC 8415 ch. 18.2.7. */
+static int dhcpv6_send_release(struct net_if *iface)
+{
+	int ret;
+	struct net_pkt *pkt;
+	struct dhcpv6_options_include options = {
+		.clientid = true,
+		.serverid = true,
+		.elapsed_time = true,
+		.ia_na = iface->config.dhcpv6.params.request_addr,
+		.iaaddr = iface->config.dhcpv6.params.request_addr,
+		.ia_pd = iface->config.dhcpv6.params.request_prefix,
+		.iaprefix = iface->config.dhcpv6.params.request_prefix,
+	};
+
+	pkt = dhcpv6_create_message(iface, DHCPV6_MSG_TYPE_RELEASE, &options);
+	if (pkt == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = net_send_data(pkt);
+	if (ret < 0) {
+		net_pkt_unref(pkt);
+	}
+
+	return ret;
+}
+
+/* Decline address(es) that were found to be already in use (e.g. DAD
+ * failure), RFC 8415 ch. 18.2.8.
+ */
+static int dhcpv6_send_decline(struct net_if *iface)
+{
+	int ret;
+	struct net_pkt *pkt;
+	struct dhcpv6_options_include options = {
+		.clientid = true,
+		.serverid = true,
+		.elapsed_time = true,
+		.ia_na = true,
+		.iaaddr = true,
+	};
+
+	pkt = dhcpv6_create_message(iface, DHCPV6_MSG_TYPE_DECLINE, &options);
+	if (pkt == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = net_send_data(pkt);
+	if (ret < 0) {
+		net_pkt_unref(pkt);
+	}
+
+	return ret;
+}
+
 /* DHCPv6 packet parsing functions */
 
 static int dhcpv6_parse_option_clientid(struct net_pkt *pkt, uint16_t length,
@@ -1700,6 +1756,7 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 	int64_t now = k_uptime_get();
 	uint16_t status = 0;
 	bool rediscover = false;
+	bool requesting = false;
 	int ret;
 
 	if (iface->config.dhcpv6.state != NET_DHCPV6_REQUESTING &&
@@ -1799,6 +1856,19 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 		if (iface->config.dhcpv6.prefix_iaid != ia_pd.iaid) {
 			return -EBADMSG;
 		}
+	}
+
+	/* DHCPv6 RFC8415, ch. 18.2.10.1. If the client receives a Reply to a
+	 * Renew or Rebind and any of the IAs carries a NoBinding status, the
+	 * client sends a Request message for those IAs.
+	 */
+	if ((iface->config.dhcpv6.state == NET_DHCPV6_RENEWING ||
+	     iface->config.dhcpv6.state == NET_DHCPV6_REBINDING) &&
+	    (ia_na.status == DHCPV6_STATUS_NO_BINDING ||
+	     ia_pd.status == DHCPV6_STATUS_NO_BINDING)) {
+		NET_DBG("NoBinding on Renew/Rebind, restarting from Request");
+		requesting = true;
+		goto out;
 	}
 
 	/* Valid response received, store received data. */
@@ -1908,7 +1978,9 @@ prefix:
 	}
 
 out:
-	if (rediscover) {
+	if (requesting) {
+		dhcpv6_enter_state(iface, NET_DHCPV6_REQUESTING);
+	} else if (rediscover) {
 		dhcpv6_enter_state(iface, NET_DHCPV6_SOLICITING);
 	} else {
 		dhcpv6_enter_state(iface, NET_DHCPV6_BOUND);
@@ -2215,6 +2287,32 @@ static void dhcpv6_timeout(struct k_work *work)
 	}
 }
 
+/* Return true if the address that failed Duplicate Address Detection is the
+ * one the DHCPv6 server leased to us. NET_EVENT_IPV6_DAD_FAILED carries the
+ * offending address in cb->info (needs CONFIG_NET_MGMT_EVENT_INFO, which
+ * NET_DHCPV6_DECLINE_ON_DAD_FAILURE selects). Without a match we must not
+ * decline, otherwise a DAD failure on an unrelated address (e.g. a privacy
+ * extension address) would needlessly tear down our lease.
+ */
+static bool dhcpv6_dad_failed_for_lease(struct net_mgmt_event_callback *cb,
+					struct net_if *iface)
+{
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	if (cb->info == NULL ||
+	    cb->info_length != sizeof(struct net_in6_addr)) {
+		return false;
+	}
+
+	return net_ipv6_addr_cmp((const struct net_in6_addr *)cb->info,
+				 &iface->config.dhcpv6.addr);
+#else
+	ARG_UNUSED(cb);
+	ARG_UNUSED(iface);
+
+	return false;
+#endif
+}
+
 static void dhcpv6_iface_event_handler(struct net_mgmt_event_callback *cb,
 				       uint64_t mgmt_event, struct net_if *iface)
 {
@@ -2249,6 +2347,23 @@ static void dhcpv6_iface_event_handler(struct net_mgmt_event_callback *cb,
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
 		dhcpv6_enter_state(iface, NET_DHCPV6_INIT);
+	} else if (IS_ENABLED(CONFIG_NET_DHCPV6_DECLINE_ON_DAD_FAILURE) &&
+		   mgmt_event == NET_EVENT_IPV6_DAD_FAILED) {
+		/* The address the server leased to us collided on the link.
+		 * Tell the server not to hand it out again, RFC 8415
+		 * ch. 18.2.8, and restart negotiation. Ignore DAD failures for
+		 * any other address on the interface.
+		 */
+		if (iface->config.dhcpv6.params.request_addr &&
+		    iface->config.dhcpv6.state == NET_DHCPV6_BOUND &&
+		    dhcpv6_dad_failed_for_lease(cb, iface)) {
+			NET_DBG("DAD failed, declining lease on iface %p", iface);
+			(void)dhcpv6_send_decline(iface);
+			net_if_ipv6_addr_rm(iface, &iface->config.dhcpv6.addr);
+			memset(&iface->config.dhcpv6.addr, 0,
+			       sizeof(struct net_in6_addr));
+			dhcpv6_enter_state(iface, NET_DHCPV6_SOLICITING);
+		}
 	}
 
 	dhcpv6_reschedule();
@@ -2340,6 +2455,14 @@ void net_dhcpv6_stop(struct net_if *iface)
 		NET_DBG("Stopping DHCPv6 on iface %p, state %s", iface,
 			net_dhcpv6_state_name(iface->config.dhcpv6.state));
 
+		/* Politely return the lease to the server before tearing the
+		 * configuration down, RFC 8415 ch. 18.2.7.
+		 */
+		if (IS_ENABLED(CONFIG_NET_DHCPV6_SEND_RELEASE_ON_STOP) &&
+		    iface->config.dhcpv6.state == NET_DHCPV6_BOUND) {
+			(void)dhcpv6_send_release(iface);
+		}
+
 		(void)dhcpv6_enter_state(iface, NET_DHCPV6_DISABLED);
 
 		if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
@@ -2391,7 +2514,9 @@ int net_dhcpv6_init(void)
 
 	k_work_init_delayable(&dhcpv6_timeout_work, dhcpv6_timeout);
 	net_mgmt_init_event_callback(&dhcpv6_mgmt_cb, dhcpv6_iface_event_handler,
-				     NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
+				     NET_EVENT_IF_DOWN | NET_EVENT_IF_UP |
+				     (IS_ENABLED(CONFIG_NET_DHCPV6_DECLINE_ON_DAD_FAILURE) ?
+				      NET_EVENT_IPV6_DAD_FAILED : 0));
 
 	return 0;
 }

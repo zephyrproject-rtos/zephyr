@@ -49,6 +49,26 @@ config NET_DHCPV6_DNS_SERVER_VIA_INTERFACE
 
 if NET_DHCPV6
 
+config NET_DHCPV6_SEND_RELEASE_ON_STOP
+	bool "Send DHCPv6 Release when the client is stopped"
+	help
+	  When enabled, the DHCPv6 client sends a Release message to the server
+	  when it is stopped while holding a lease (RFC 8415 ch. 18.2.7), so the
+	  server can free the assigned address(es)/prefix(es) immediately. When
+	  disabled (default), the lease is simply abandoned and the client relies
+	  on lease expiry on the server side.
+
+config NET_DHCPV6_DECLINE_ON_DAD_FAILURE
+	bool "Send DHCPv6 Decline on duplicate address detection failure"
+	depends on NET_IPV6_DAD
+	select NET_MGMT_EVENT_INFO
+	help
+	  When enabled, if Duplicate Address Detection fails for an address
+	  assigned via DHCPv6, the client sends a Decline message to the server
+	  (RFC 8415 ch. 18.2.8), removes the offending address and restarts
+	  negotiation. When disabled (default), a DAD failure on a DHCPv6
+	  address is ignored, matching the previous behaviour.
+
 module = NET_DHCPV6
 module-dep = NET_LOG
 module-str = Log level for DHCPv6 client
