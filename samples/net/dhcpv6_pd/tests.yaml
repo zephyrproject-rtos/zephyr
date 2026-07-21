@@ -1,0 +1,20 @@
+sample:
+  name: DHCPv6 Prefix Delegation
+tests:
+  sample.net.dhcpv6_pd.client:
+    harness: net
+    depends_on: netif
+    tags:
+      - net
+      - dhcpv6
+    platform_allow:
+      - native_sim
+  sample.net.dhcpv6_pd.server:
+    harness: net
+    depends_on: netif
+    extra_args: EXTRA_CONF_FILE=overlay-server.conf
+    tags:
+      - net
+      - dhcpv6
+    platform_allow:
+      - native_sim
