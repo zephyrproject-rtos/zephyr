@@ -187,14 +187,14 @@ enum bt_gap_adv_prop {
 #define BT_GAP_PER_ADV_MAX_INTERVAL             0xFFFF /* 81.91875 s */
 
 /**
- * @brief Convert periodic advertising interval (N * 0.625 ms) to microseconds
+ * @brief Convert advertising interval (N * 0.625 ms) to microseconds
  *
  * Value range of @p _interval is @ref BT_LE_ADV_INTERVAL_MIN to @ref BT_LE_ADV_INTERVAL_MAX
  */
 #define BT_GAP_ADV_INTERVAL_TO_US(_interval) ((uint32_t)((_interval) * 625U))
 
 /**
- * @brief Convert periodic advertising interval (N * 0.625 ms) to milliseconds
+ * @brief Convert advertising interval (N * 0.625 ms) to milliseconds
  *
  * Value range of @p _interval is @ref BT_LE_ADV_INTERVAL_MIN to @ref BT_LE_ADV_INTERVAL_MAX
  *
@@ -294,7 +294,7 @@ enum bt_gap_adv_prop {
  * Value range of @p _timeout is 100000 to 163840000
  *
  * @note If @p _timeout is not a multiple of the unit, it will round down to nearest.
- * For example BT_GAP_MS_TO_PER_ADV_SYNC_TIMEOUT(4005000) will become 4000000 microseconds
+ * For example BT_GAP_US_TO_PER_ADV_SYNC_TIMEOUT(4005000) will become 4000000 microseconds
  */
 #define BT_GAP_US_TO_PER_ADV_SYNC_TIMEOUT(_timeout)                                                \
 	(BT_GAP_MS_TO_PER_ADV_SYNC_TIMEOUT((_timeout) / USEC_PER_MSEC))
