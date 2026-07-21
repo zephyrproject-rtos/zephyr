@@ -11,6 +11,10 @@ zephyr_library_sources(src/nxp_wifi_net.c)
 
 zephyr_include_directories(incl)
 
+  if(CONFIG_PM_DEVICE AND (CONFIG_NXP_IW610 OR CONFIG_NXP_IW61X OR CONFIG_NXP_IW416))
+    zephyr_include_directories(${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/gpc)
+  endif()
+
 zephyr_library_link_libraries_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT hostap)
 
 if(CONFIG_CODE_DATA_RELOCATION)
