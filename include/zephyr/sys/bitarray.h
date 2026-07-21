@@ -189,11 +189,11 @@ int sys_bitarray_xor(sys_bitarray_t *dst, sys_bitarray_t *other, size_t num_bits
 /**
  * Find nth bit set in region
  *
- * This counts the number of bits set (@p count) in a
- * region (@p offset, @p num_bits) and returns the index (@p found_at)
- * of the nth set bit, if it exists, as long with a zero return value.
+ * This searches the region (@p offset, @p num_bits) and returns the index
+ * (@p found_at) of the nth set bit, if it exists, along with a zero return
+ * value.
  *
- * If it does not exist, @p found_at is not updated and the method returns
+ * If it does not exist, @p found_at is not updated and the method returns 1.
  *
  * @param[in]  bitarray Bitarray struct
  * @param[in]  n        Nth bit set to look for
