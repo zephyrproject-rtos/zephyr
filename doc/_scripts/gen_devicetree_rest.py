@@ -21,6 +21,7 @@ from pathlib import Path
 import dts_binding_types
 import gen_helpers
 from devicetree import edtlib
+from driver_api_index import load_driver_sources
 
 ZEPHYR_BASE = Path(__file__).parents[2]
 
@@ -330,59 +331,6 @@ def load_base_binding():
         sys.exit(f'Expected to find base.yaml at {base_yaml}')
     return edtlib.Binding(os.fspath(base_yaml), base_includes, require_compatible=False,
                           require_description=False)
-
-def load_driver_sources():
-    driver_sources = {}
-    dt_drv_compat_occurrences = defaultdict(list)
-
-    dt_drv_compat_pattern = re.compile(r"#define DT_DRV_COMPAT\s+(.*)")
-    device_dt_inst_define_pattern = re.compile(r"DEVICE_DT_INST_DEFINE")
-
-    folders_to_scan = ["boards", "drivers", "modules", "soc", "subsys"]
-
-    # When looking at folders_to_scan, a file is considered as a likely driver source if:
-    # - There is only one and only one file with a "#define DT_DRV_COMPAT <compatible>" for a given
-    #   compatible.
-    # - or, a file contains both a "#define DT_DRV_COMPAT <compatible>" and a
-    #   DEVICE_DT_INST_DEFINE(...) call.
-
-    for folder in folders_to_scan:
-        for dirpath, _, filenames in os.walk(ZEPHYR_BASE / folder):
-            for filename in filenames:
-                if not filename.endswith(('.c', '.h')):
-                    continue
-                filepath = Path(dirpath) / filename
-                with open(filepath, encoding="utf-8") as f:
-                    content = f.read()
-
-                relative_path = filepath.relative_to(ZEPHYR_BASE)
-
-                # Find all DT_DRV_COMPAT occurrences in the file
-                dt_drv_compat_matches = dt_drv_compat_pattern.findall(content)
-                for compatible in dt_drv_compat_matches:
-                    dt_drv_compat_occurrences[compatible].append(relative_path)
-
-                if dt_drv_compat_matches and device_dt_inst_define_pattern.search(content):
-                    for compatible in dt_drv_compat_matches:
-                        if compatible in driver_sources:
-                            # Mark as ambiguous if multiple files define the same compatible
-                            driver_sources[compatible] = None
-                        else:
-                            driver_sources[compatible] = relative_path
-
-    # Remove ambiguous driver sources
-    driver_sources = {k: v for k, v in driver_sources.items() if v is not None}
-
-    # Consider DT_DRV_COMPATs with only one occurrence as driver sources
-    for compatible, occurrences in dt_drv_compat_occurrences.items():
-        if compatible not in driver_sources and len(occurrences) == 1:
-            path = occurrences[0]
-            # Assume the driver is defined in the enclosing folder if it's a header file
-            if path.suffix == ".h":
-                path = path.parent
-            driver_sources[compatible] = path
-
-    return driver_sources
 
 def dump_content(bindings, base_binding, vnd_lookup, type_lookup, driver_sources, out_dir,
                  turbo_mode):
