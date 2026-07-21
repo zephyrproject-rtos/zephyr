@@ -57,9 +57,51 @@ static void checkerboard_draw_cb(lv_event_t *e)
 
 #endif /* CONFIG_APP_DRAW_BACKGROUND_CHECKERBOARD */
 
+static const lv_font_t *ui_font(int32_t screen_dim)
+{
+#if LV_FONT_MONTSERRAT_48
+	if (screen_dim >= 480) {
+		return &lv_font_montserrat_48;
+	}
+#endif
+#if LV_FONT_MONTSERRAT_28
+	if (screen_dim >= 240) {
+		return &lv_font_montserrat_28;
+	}
+#endif
+	return LV_FONT_DEFAULT;
+}
+
+static void add_label(lv_obj_t *parent, const char *text, lv_color_t color,
+		      const lv_font_t *font, int32_t col, int32_t col_span, int32_t row)
+{
+	int32_t lh = lv_font_get_line_height(font);
+	lv_obj_t *label = lv_label_create(parent);
+
+	lv_label_set_text(label, text);
+	lv_obj_set_style_text_font(label, font, LV_PART_MAIN);
+	lv_obj_set_style_text_color(label, color, LV_PART_MAIN);
+
+	lv_obj_set_style_bg_opa(label, LV_OPA_50, LV_PART_MAIN);
+	lv_obj_set_style_bg_color(label, lv_color_black(), LV_PART_MAIN);
+	lv_obj_set_style_pad_all(label, lh / 4, LV_PART_MAIN);
+	lv_obj_set_style_radius(label, lh / 4, LV_PART_MAIN);
+
+	lv_obj_set_grid_cell(label, LV_GRID_ALIGN_CENTER, col, col_span,
+			     LV_GRID_ALIGN_CENTER, row, 1);
+}
+
 static void initialize_gui(void)
 {
-	lv_obj_t *label;
+	lv_display_t *disp = lv_display_get_default();
+	int32_t screen_dim = LV_MIN(lv_display_get_horizontal_resolution(disp),
+				    lv_display_get_vertical_resolution(disp));
+	const lv_font_t *font = ui_font(screen_dim);
+	int32_t lh = lv_font_get_line_height(font);
+	static const int32_t col_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_CONTENT,
+					  LV_GRID_TEMPLATE_LAST};
+	static const int32_t row_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
+	lv_obj_t *grid;
 
 	/* Configure the screen for transparency */
 	lv_obj_set_style_bg_opa(lv_screen_active(), LV_OPA_TRANSP, LV_PART_MAIN);
@@ -79,23 +121,18 @@ static void initialize_gui(void)
 	lv_obj_set_style_bg_opa(lv_layer_bottom(), LV_OPA_TRANSP, LV_PART_MAIN);
 #endif
 
-	/* Create a label, set its text and align it to the center */
-	label = lv_label_create(lv_screen_active());
-	lv_label_set_text(label, "Hello, world!");
-	lv_obj_set_style_text_color(label, lv_color_hex(0xff00ff), LV_PART_MAIN);
-	lv_obj_align(label, LV_ALIGN_CENTER, 0, -20);
-	label = lv_label_create(lv_screen_active());
-	lv_label_set_text(label, "RED");
-	lv_obj_set_style_text_color(label, lv_color_hex(0xff0000), LV_PART_MAIN);
-	lv_obj_align(label, LV_ALIGN_CENTER, -70, 20);
-	label = lv_label_create(lv_screen_active());
-	lv_label_set_text(label, "GREEN");
-	lv_obj_set_style_text_color(label, lv_color_hex(0x00ff00), LV_PART_MAIN);
-	lv_obj_align(label, LV_ALIGN_CENTER, 0, 20);
-	label = lv_label_create(lv_screen_active());
-	lv_label_set_text(label, "BLUE");
-	lv_obj_set_style_text_color(label, lv_color_hex(0x0000ff), LV_PART_MAIN);
-	lv_obj_align(label, LV_ALIGN_CENTER, 70, 20);
+	grid = lv_obj_create(lv_screen_active());
+	lv_obj_remove_style_all(grid);
+	lv_obj_set_size(grid, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+	lv_obj_set_grid_dsc_array(grid, col_dsc, row_dsc);
+	lv_obj_set_style_pad_row(grid, lh / 2, LV_PART_MAIN);
+	lv_obj_set_style_pad_column(grid, lh / 2, LV_PART_MAIN);
+	lv_obj_center(grid);
+
+	add_label(grid, "Hello, world!", lv_color_hex(0xff00ff), font, 0, 3, 0);
+	add_label(grid, "RED", lv_color_hex(0xff0000), font, 0, 1, 1);
+	add_label(grid, "GREEN", lv_color_hex(0x00ff00), font, 1, 1, 1);
+	add_label(grid, "BLUE", lv_color_hex(0x0000ff), font, 2, 1, 1);
 }
 
 int main(void)
