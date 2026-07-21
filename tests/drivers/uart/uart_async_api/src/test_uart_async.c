@@ -733,6 +733,11 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 	zassert_equal(memcmp(tx_buf, rx_buf, xfer_len), 0, "Buffers not equal");
 
 	uart_rx_disable(uart_dev);
+	/* uart_rx_disable() is asynchronous: wait for RX_DISABLED (the final
+	 * event of the teardown) before re-enabling, otherwise uart_rx_enable()
+	 * can return -EBUSY while the previous receive is still being disabled.
+	 */
+	zassert_ok(k_sem_take(&rx_disabled, K_USEC(t_us + rx_timeout_us)), "RX_DISABLED timeout");
 	xfer_len = 95;
 	err = uart_rx_enable(uart_dev, rx_buf, xfer_len, rx_timeout_us);
 	zassert_equal(err, 0);
