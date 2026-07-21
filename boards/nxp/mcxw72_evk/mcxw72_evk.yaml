@@ -17,3 +17,5 @@ supported:
   - pwm
   - spi
   - uart
+  - netif:openthread
+vendor: nxp
