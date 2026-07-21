@@ -140,7 +140,7 @@ endif # SHELL_REMOTE
 config GPPI_EXT_ALLOCATOR
 	bool "GPPI external allocator"
 	depends on IPC_SERVICE
-	depends on NRFX_GPPI && !NRFX_GPPI_V1
+	depends on NRFX_GPPI
 	help
 	  Enable GPPI external allocator server role. Server registers an IPC
 	  endpoint used for cross-core GPPI resource allocation.
@@ -148,9 +148,7 @@ config GPPI_EXT_ALLOCATOR
 config GPPI_EXT_ALLOCATOR_CLI
 	bool "GPPI external allocator client"
 	depends on IPC_SERVICE
-	depends on NRFX_GPPI && !NRFX_GPPI_V1
-	depends on RISCV_CORE_NORDIC_VPR
-	default y
+	depends on NRFX_GPPI
 	select NRFX_GPPI_EXT_ALLOCATOR
 	help
 	  Enable GPPI external allocator client role. Client core provides

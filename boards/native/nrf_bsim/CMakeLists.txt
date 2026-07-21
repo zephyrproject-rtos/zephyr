@@ -36,7 +36,7 @@ zephyr_library_sources(
 zephyr_library_sources(${ZEPHYR_BASE}/soc/nordic/common/gpiote_nrfx.c)
 
 # Include gppi_init from real SOC code if enabled
-if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
+if(CONFIG_NRFX_GPPI)
   zephyr_library_sources(${ZEPHYR_BASE}/soc/nordic/common/gppi_init.c)
 endif()
 
