@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/icmp.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/random/random.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
@@ -2321,6 +2322,355 @@ int net_ipv6_start_rs(struct net_if *iface)
 	return net_ipv6_send_rs(iface);
 }
 
+#if defined(CONFIG_NET_IPV6_ND_RA_TX)
+/* Router Advertisement transmission constants from RFC 4861 ch. 10. */
+#define MIN_DELAY_BETWEEN_RAS 3000 /* ms */
+#define MAX_RA_DELAY_TIME     500  /* ms */
+
+static struct k_work_delayable ipv6_ra_timer;
+static struct k_work_delayable ipv6_ra_solicited_timer;
+
+static int add_ra_prefix_option(struct net_pkt *pkt,
+				struct net_if_ipv6_prefix *prefix)
+{
+	struct net_icmpv6_nd_opt_hdr opt_hdr = {
+		.type = NET_ICMPV6_ND_OPT_PREFIX_INFO,
+		.len = (sizeof(struct net_icmpv6_nd_opt_hdr) +
+			sizeof(struct net_icmpv6_nd_opt_prefix_info)) / 8U,
+	};
+	struct net_icmpv6_nd_opt_prefix_info pfx_info = { 0 };
+	uint32_t lifetime;
+
+	if (prefix->is_infinite) {
+		lifetime = NET_IPV6_ND_INFINITE_LIFETIME;
+	} else {
+		lifetime = net_timeout_remaining(&prefix->lifetime,
+						 k_uptime_get_32());
+	}
+
+	pfx_info.prefix_len = prefix->len;
+	pfx_info.flags = NET_ICMPV6_RA_FLAG_ONLINK | NET_ICMPV6_RA_FLAG_AUTONOMOUS;
+	pfx_info.valid_lifetime = net_htonl(lifetime);
+	pfx_info.preferred_lifetime = net_htonl(lifetime);
+	net_ipv6_addr_copy_raw(pfx_info.prefix, prefix->prefix.s6_addr);
+
+	if (net_pkt_write(pkt, &opt_hdr, sizeof(opt_hdr)) ||
+	    net_pkt_write(pkt, &pfx_info, sizeof(pfx_info))) {
+		return -ENOBUFS;
+	}
+
+	return 0;
+}
+
+int net_ipv6_send_ra(struct net_if *iface, const struct net_in6_addr *dst)
+{
+	struct net_icmpv6_ra_hdr ra_hdr = { 0 };
+	struct net_in6_addr dst_addr;
+	struct net_if_ipv6 *ipv6;
+	const struct net_in6_addr *src;
+	struct net_pkt *pkt = NULL;
+	bool is_multicast;
+	uint8_t llao_len;
+	size_t pkt_len;
+	int adv_count = 0;
+	int ret = -ENOBUFS;
+
+	is_multicast = (dst == NULL);
+	if (is_multicast) {
+		net_ipv6_addr_create_ll_allnodes_mcast(&dst_addr);
+		dst = &dst_addr;
+	}
+
+	/* The prefix array is walked twice below, so keep the interface
+	 * locked while the advertisement is constructed. The lock is released
+	 * before the packet is handed over to the TX path, as that may need
+	 * to take the lock of another interface.
+	 */
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (ipv6 == NULL) {
+		ret = -ENOTSUP;
+		goto unlock;
+	}
+
+	/* Router Advertisements must be sourced from a link-local address. */
+	src = net_if_ipv6_get_ll(iface, NET_ADDR_PREFERRED);
+	if (src == NULL) {
+		NET_DBG("No LL address for RA on iface %d",
+			net_if_get_by_iface(iface));
+		ret = -EADDRNOTAVAIL;
+		goto unlock;
+	}
+
+	llao_len = get_llao_len(iface);
+
+	ARRAY_FOR_EACH(ipv6->prefix, i) {
+		if (ipv6->prefix[i].is_used && ipv6->prefix[i].is_advertised) {
+			adv_count++;
+		}
+	}
+
+	pkt_len = sizeof(struct net_icmpv6_ra_hdr) + llao_len +
+		  adv_count * (sizeof(struct net_icmpv6_nd_opt_hdr) +
+			       sizeof(struct net_icmpv6_nd_opt_prefix_info));
+
+	pkt = net_pkt_alloc_with_buffer(iface, pkt_len, NET_AF_INET6,
+					NET_IPPROTO_ICMPV6, ND_NET_BUF_TIMEOUT);
+	if (pkt == NULL) {
+		ret = -ENOMEM;
+		goto unlock;
+	}
+
+	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_ND_HOP_LIMIT);
+
+	ra_hdr.cur_hop_limit = net_if_ipv6_get_hop_limit(iface);
+	ra_hdr.router_lifetime =
+		net_htons(CONFIG_NET_IPV6_ND_RA_TX_ROUTER_LIFETIME);
+
+	if (net_ipv6_create(pkt, src, dst) ||
+	    net_icmpv6_create(pkt, NET_ICMPV6_RA, 0) ||
+	    net_pkt_write(pkt, &ra_hdr, sizeof(ra_hdr))) {
+		goto drop;
+	}
+
+	if (llao_len > 0U &&
+	    !set_llao(pkt, net_if_get_link_addr(iface), llao_len,
+		      NET_ICMPV6_ND_OPT_SLLAO)) {
+		goto drop;
+	}
+
+	ARRAY_FOR_EACH(ipv6->prefix, i) {
+		if (!ipv6->prefix[i].is_used || !ipv6->prefix[i].is_advertised) {
+			continue;
+		}
+
+		if (add_ra_prefix_option(pkt, &ipv6->prefix[i]) < 0) {
+			goto drop;
+		}
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, NET_IPPROTO_ICMPV6);
+
+	dbg_addr_sent("Router Advertisement", src, dst, pkt);
+
+	/* Rate limiting of the multicast advertisements is based on this
+	 * timestamp, so take it before the packet is actually sent.
+	 */
+	if (is_multicast) {
+		ipv6->ra_last_sent = k_uptime_get();
+	}
+
+	net_if_unlock(iface);
+
+	if (net_send_data(pkt) < 0) {
+		net_stats_update_ipv6_nd_drop(iface);
+		net_pkt_unref(pkt);
+
+		return -EINVAL;
+	}
+
+	net_stats_update_icmp_sent(iface);
+	net_stats_update_ipv6_nd_sent(iface);
+
+	return 0;
+
+drop:
+	net_pkt_unref(pkt);
+
+unlock:
+	net_if_unlock(iface);
+
+	return ret;
+}
+
+static bool ipv6_ra_have_router(void)
+{
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+
+		if (ipv6 != NULL && ipv6->is_router) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* Periodically transmit unsolicited Router Advertisements on all router
+ * interfaces.
+ */
+static void ipv6_ra_timeout(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+
+		if (ipv6 == NULL || !ipv6->is_router) {
+			continue;
+		}
+
+		if (!net_if_is_up(iface)) {
+			continue;
+		}
+
+		(void)net_ipv6_send_ra(iface, NULL);
+	}
+
+	if (ipv6_ra_have_router()) {
+		k_work_reschedule(&ipv6_ra_timer,
+				  K_SECONDS(CONFIG_NET_IPV6_ND_RA_TX_INTERVAL));
+	}
+}
+
+void net_ipv6_ra_update_timer(void)
+{
+	if (ipv6_ra_have_router()) {
+		/* Do not restart an already running period. */
+		k_work_schedule(&ipv6_ra_timer,
+				K_SECONDS(CONFIG_NET_IPV6_ND_RA_TX_INTERVAL));
+	} else {
+		(void)k_work_cancel_delayable(&ipv6_ra_timer);
+	}
+}
+
+/* Reschedule the solicited advertisement timer according to the earliest
+ * advertisement that is still due.
+ */
+static void ipv6_ra_solicited_update(void)
+{
+	int64_t now = k_uptime_get();
+	int64_t next = 0;
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		struct net_if_ipv6 *ipv6;
+
+		net_if_lock(iface);
+
+		ipv6 = iface->config.ip.ipv6;
+		if (ipv6 != NULL && ipv6->ra_pending_at != 0 &&
+		    (next == 0 || ipv6->ra_pending_at < next)) {
+			next = ipv6->ra_pending_at;
+		}
+
+		net_if_unlock(iface);
+	}
+
+	if (next != 0) {
+		k_work_reschedule(&ipv6_ra_solicited_timer,
+				  K_MSEC(MAX(next - now, 0)));
+	}
+}
+
+/* Transmit the Router Advertisements that were requested by a received Router
+ * Solicitation and that are now due.
+ */
+static void ipv6_ra_solicited_timeout(struct k_work *work)
+{
+	int64_t now = k_uptime_get();
+
+	ARG_UNUSED(work);
+
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		struct net_if_ipv6 *ipv6;
+		bool do_send = false;
+
+		net_if_lock(iface);
+
+		ipv6 = iface->config.ip.ipv6;
+		if (ipv6 != NULL && ipv6->ra_pending_at != 0 &&
+		    ipv6->ra_pending_at <= now) {
+			ipv6->ra_pending_at = 0;
+			do_send = ipv6->is_router && net_if_is_up(iface);
+		}
+
+		net_if_unlock(iface);
+
+		if (do_send) {
+			(void)net_ipv6_send_ra(iface, NULL);
+		}
+	}
+
+	ipv6_ra_solicited_update();
+}
+
+static enum net_verdict handle_rs_input(struct net_icmp_ctx *ctx,
+					struct net_pkt *pkt,
+					struct net_icmp_ip_hdr *hdr,
+					struct net_icmp_hdr *icmp_hdr,
+					void *user_data)
+{
+	struct net_if *iface = net_pkt_iface(pkt);
+	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
+	uint16_t length = net_pkt_get_len(pkt);
+	struct net_if_ipv6 *ipv6;
+	int64_t now, due;
+
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(user_data);
+
+	dbg_addr_recv("Router Solicitation", &ip_hdr->src, &ip_hdr->dst, pkt);
+
+	net_stats_update_ipv6_nd_recv(iface);
+
+	/* Validate the solicitation as required by RFC 4861 ch. 6.1.1. The
+	 * hop limit check makes sure that the solicitation originates from
+	 * this link and cannot be spoofed by an off-link sender.
+	 */
+	if (length < (sizeof(struct net_ipv6_hdr) +
+		      sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_rs_hdr))) {
+		goto drop;
+	}
+
+	if (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) {
+		goto drop;
+	}
+
+	if (icmp_hdr->code != 0U) {
+		goto drop;
+	}
+
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (ipv6 == NULL || !ipv6->is_router) {
+		net_if_unlock(iface);
+		goto drop;
+	}
+
+	/* Answer the solicitation with a (multicast) Router Advertisement,
+	 * RFC 4861 ch. 6.2.6. The advertisement is delayed by a random amount
+	 * of time and consecutive multicast advertisements are kept at least
+	 * MIN_DELAY_BETWEEN_RAS apart so that a burst of solicitations cannot
+	 * be amplified into a burst of advertisements.
+	 */
+	if (ipv6->ra_pending_at == 0) {
+		now = k_uptime_get();
+		due = now + (int64_t)(sys_rand32_get() % MAX_RA_DELAY_TIME);
+
+		if (due - ipv6->ra_last_sent < MIN_DELAY_BETWEEN_RAS) {
+			due = ipv6->ra_last_sent + MIN_DELAY_BETWEEN_RAS;
+		}
+
+		ipv6->ra_pending_at = due;
+	}
+
+	net_if_unlock(iface);
+
+	ipv6_ra_solicited_update();
+
+	return NET_OK;
+
+drop:
+	net_stats_update_ipv6_nd_drop(iface);
+
+	return NET_DROP;
+}
+#endif /* CONFIG_NET_IPV6_ND_RA_TX */
+
 static inline struct net_nbr *handle_ra_neighbor(struct net_pkt *pkt, uint8_t len,
 						 struct net_in6_addr *ra_src)
 {
@@ -3082,6 +3432,10 @@ static struct net_icmp_ctx na_ctx;
 static struct net_icmp_ctx ra_ctx;
 #endif /* CONFIG_NET_IPV6_ND */
 
+#if defined(CONFIG_NET_IPV6_ND_RA_TX)
+static struct net_icmp_ctx rs_ctx;
+#endif /* CONFIG_NET_IPV6_ND_RA_TX */
+
 #if defined(CONFIG_NET_IPV6_PMTU_PTB)
 static struct net_icmp_ctx ptb_ctx;
 #endif /* CONFIG_NET_IPV6_PMTU_PTB */
@@ -3191,6 +3545,22 @@ void net_ipv6_nbr_init(void)
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_RA),
 			ret);
 	}
+#endif
+
+#if defined(CONFIG_NET_IPV6_ND_RA_TX)
+	ret = net_icmp_init_ctx(&rs_ctx, NET_AF_INET6, NET_ICMPV6_RS, 0,
+				handle_rs_input);
+	if (ret < 0) {
+		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_RS),
+			ret);
+	}
+
+	/* The advertisement timers are only started once an interface
+	 * actually takes the router role, see net_ipv6_ra_update_timer().
+	 */
+	k_work_init_delayable(&ipv6_ra_timer, ipv6_ra_timeout);
+	k_work_init_delayable(&ipv6_ra_solicited_timer,
+			      ipv6_ra_solicited_timeout);
 #endif
 
 #if defined(CONFIG_NET_IPV6_PMTU_PTB)
