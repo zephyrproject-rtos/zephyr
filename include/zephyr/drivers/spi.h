@@ -550,7 +550,7 @@ struct spi_dt_spec {
  * spi_dt_spec</tt> by reading the relevant bus, frequency, slave, and cs
  * data from the devicetree.
  *
- * @important Multiple fields are automatically constructed by this macro
+ * @note Multiple fields are automatically constructed by this macro
  * which must be checked before use. @ref spi_is_ready_dt performs the required
  * @ref device_is_ready checks.
  *
