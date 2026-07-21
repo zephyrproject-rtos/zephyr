@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
- * SPDX-FileCopyrightText: Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -40,12 +40,24 @@ bool usbh_class_is_matching(const struct usbh_class_filter *const filter_rules,
 void usbh_class_init_all(void);
 
 /**
- * @brief Probe an USB device function against all available host class instances.
+ * Reserve class instances for all functions of a given configuration.
  *
- * Try to match a class from the global list of all system classes using their filter rules
- * and return status to update the state of each matched class.
+ * Match device-level and interface-level functions against registered
+ * class drivers, marking matched class nodes as RESERVED for
+ * subsequent usbh_class_probe_device() to bind.
  *
- * The first matching host class driver is going to stop the scanning, and become the one in use.
+ * @param[in] udev USB device to match against
+ * @param[in] cfg_desc Configuration descriptor pointer
+ *
+ * @retval true  At least one class instance was reserved
+ * @retval false No match found
+ */
+bool usbh_class_match_device(struct usb_device *const udev, const void *cfg_desc);
+
+/**
+ * @brief Probe all matched USB classes of current USB device.
+ *
+ * Try to probe all class instances that matched, which are identified by usbh_class_match_device().
  *
  * @param[in] udev USB device to probe.
  */
