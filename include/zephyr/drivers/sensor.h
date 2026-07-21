@@ -1130,7 +1130,7 @@ static inline int sensor_stream(const struct rtio_iodev *iodev, struct rtio *ctx
 /**
  * @brief Blocking one shot read of samples from a sensor into a buffer
  *
- * Using @p cfg, read data from the device by using the provided RTIO context
+ * Using @p iodev, read data from the device by using the provided RTIO context
  * @p ctx. This call will generate a @ref rtio_sqe that will be given the provided buffer. The call
  * will wait for the read to complete before returning to the caller.
  *
@@ -1173,7 +1173,7 @@ static inline int sensor_read(const struct rtio_iodev *iodev, struct rtio *ctx, 
 /**
  * @brief One shot non-blocking read with pool allocated buffer
  *
- * Using @p cfg, read one snapshot of data from the device by using the provided RTIO context
+ * Using @p iodev, read one snapshot of data from the device by using the provided RTIO context
  * @p ctx. This call will generate a @ref rtio_sqe that will leverage the RTIO's internal
  * mempool when the time comes to service the read.
  *
