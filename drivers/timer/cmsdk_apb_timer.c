@@ -150,11 +150,6 @@ void sys_clock_unused(void)
 	k_spinlock_key_t key = sys_clock_lock();
 
 	timer_driver_set_reload(TIMER_CORE_CYCLES_MAX);
-	/* The hardware no longer matches what the core armed, so drop its
-	 * cached deadline or the next sys_clock_set_timeout() landing on the
-	 * same tick would be skipped with the long reload still in flight.
-	 */
-	timer_core_armed_deadline = UINT64_MAX;
 	sys_clock_unlock(key);
 }
 

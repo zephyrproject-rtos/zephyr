@@ -432,13 +432,9 @@ void sys_clock_unused(void)
 	/* Fast CPUs and a 24 bit counter mean that even idle systems need to
 	 * wake up multiple times per second. With no timeout pending and sloppy
 	 * idle allowing the uptime to drift, shut off the counter entirely.
-	 * The hardware no longer matches what the core armed, so drop its
-	 * cached deadline or the next sys_clock_set_timeout() landing on the
-	 * same tick would be skipped with the counter stopped.
 	 */
 	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 	last_load = TIMER_STOPPED;
-	timer_core_armed_deadline = UINT64_MAX;
 }
 
 #if !defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE)
