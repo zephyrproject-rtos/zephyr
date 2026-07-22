@@ -73,6 +73,16 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 	case CRYPTO_HASH_ALGO_SHA256:
 		hash_cfg.algorithm = HAL_HASH_ALGO_SHA256;
 		break;
+#if DT_INST_PROP(0, st_has_sha384_algorithm)
+	case CRYPTO_HASH_ALGO_SHA384:
+		hash_cfg.algorithm = HAL_HASH_ALGO_SHA384;
+		break;
+#endif /* DT_INST_PROP(0, st_has_sha384_algorithm) */
+#if DT_INST_PROP(0, st_has_sha512_algorithm)
+	case CRYPTO_HASH_ALGO_SHA512:
+		hash_cfg.algorithm = HAL_HASH_ALGO_SHA512;
+		break;
+#endif /* DT_INST_PROP(0, st_has_sha512_algorithm) */
 	default:
 		k_sem_give(&data->device_sem);
 		LOG_ERR("Unsupported algorithm in handler: %d", session->algo);
@@ -105,6 +115,18 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 		status = HAL_HASHEx_SHA256_Start(&data->hhash, pkt->in_buf, pkt->in_len,
 						 pkt->out_buf, HAL_MAX_DELAY);
 		break;
+#if DT_INST_PROP(0, st_has_sha384_algorithm)
+	case CRYPTO_HASH_ALGO_SHA384:
+		status = HAL_HASHEx_SHA384_Start(&data->hhash, pkt->in_buf, pkt->in_len,
+						 pkt->out_buf, HAL_MAX_DELAY);
+		break;
+#endif /* DT_INST_PROP(0, st_has_sha384_algorithm) */
+#if DT_INST_PROP(0, st_has_sha512_algorithm)
+	case CRYPTO_HASH_ALGO_SHA512:
+		status = HAL_HASHEx_SHA512_Start(&data->hhash, pkt->in_buf, pkt->in_len,
+						 pkt->out_buf, HAL_MAX_DELAY);
+		break;
+#endif /* DT_INST_PROP(0, st_has_sha512_algorithm) */
 	default:
 		k_sem_give(&data->device_sem);
 		LOG_ERR("Unsupported algorithm in handler: %d", session->algo);
@@ -132,6 +154,12 @@ static int stm32_hash_begin_session(const struct device *dev, struct hash_ctx *c
 	switch (algo) {
 	case CRYPTO_HASH_ALGO_SHA224:
 	case CRYPTO_HASH_ALGO_SHA256:
+#if DT_INST_PROP(0, st_has_sha384_algorithm)
+	case CRYPTO_HASH_ALGO_SHA384:
+#endif /* DT_INST_PROP(0, st_has_sha384_algorithm) */
+#if DT_INST_PROP(0, st_has_sha512_algorithm)
+	case CRYPTO_HASH_ALGO_SHA512:
+#endif /* DT_INST_PROP(0, st_has_sha512_algorithm) */
 		break;
 	default:
 		LOG_ERR("Unsupported hash algorithm: %d", algo);
