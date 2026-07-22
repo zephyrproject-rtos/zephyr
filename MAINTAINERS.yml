@@ -5975,6 +5975,7 @@ TI MSPM Platforms:
     - glneo
   collaborators:
     - d-philpot
+    - Aman-Lachhiramka-ti
   files:
     - soc/ti/mspm/
     - boards/ti/*mspm*/
