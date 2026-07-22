@@ -62,6 +62,18 @@
 		};
 	};
 
+	backup_sram: memory@3c000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "zephyr,memory-region", "st,stm32-backup-sram";
+		reg = <0x3c000000 DT_SIZE_K(8)>;
+		ranges = <0x3c000000 0x3c000000 DT_SIZE_K(8)>;
+		clocks = <&rcc STM32_CLOCK(MEM, 6)>;
+		zephyr,memory-region = "BACKUP_SRAM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		status = "disabled";
+	};
+
 	clocks {
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
