@@ -17,7 +17,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
-static const uint8_t hid_report_desc[] = HID_KEYBOARD_REPORT_DESC();
+static const uint8_t hid_report_desc[] = HID_KEYBOARD_REPORT_DESC(HID_KEY_MENU);
 
 enum kb_leds_idx {
 	KB_LED_NUMLOCK = 0,
