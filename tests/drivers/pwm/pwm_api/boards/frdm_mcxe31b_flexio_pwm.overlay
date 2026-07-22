@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* PWM signal is visible on J4-4 (PTE15, FXIO_D2). */
+/ {
+	aliases {
+		pwm-test = &flexio_pwm;
+	};
+};
+
+&flexio {
+	flexio_pwm: flexio_pwm {
+		compatible = "nxp,flexio-pwm";
+		#pwm-cells = <3>;
+		status = "okay";
+		pinctrl-0 = <&pinmux_flexio_pwm>;
+		pinctrl-names = "default";
+
+		pwm_0 {
+			pin-id = <2>;
+			prescaler = <1>;
+		};
+	};
+};
