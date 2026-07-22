@@ -13,7 +13,7 @@
 #include <zephyr/audio/dmic.h>
 #include <zephyr/ztest.h>
 
-static const struct device *dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic_dev));
+static const struct device *dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic0));
 
 #define SAMPLE_BIT_WIDTH CONFIG_SAMPLE_BIT_WIDTH
 #define PDM_CHANNELS     CONFIG_SAMPLE_PDM_CHANNELS
