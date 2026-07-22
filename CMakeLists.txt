@@ -1454,6 +1454,21 @@ if(CONFIG_GEN_ISR_TABLES)
     list(APPEND GEN_ISR_TABLE_EXTRA_ARG --vector-table)
   endif()
 
+  # On multi-level interrupt configurations also print a decoded view of the
+  # intlist (per-entry level/line decomposition and shared-line summary) each
+  # time the tables are regenerated, and keep a copy in isr_intlist.txt.
+  set(dump_isr_intlist_command)
+  if(CONFIG_MULTI_LEVEL_INTERRUPTS)
+    set(dump_isr_intlist_command
+      COMMAND ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/build/dump_isr_intlist.py
+      --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
+      --intlist-section .intList
+      --intlist-section intList
+      --output isr_intlist.txt
+    )
+  endif()
+
   # isr_tables.c is generated from ${ZEPHYR_LINK_STAGE_EXECUTABLE} by
   # gen_isr_tables.py
   add_custom_command(
@@ -1468,6 +1483,7 @@ if(CONFIG_GEN_ISR_TABLES)
     $<$<BOOL:${CONFIG_BIG_ENDIAN}>:--big-endian>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
     ${GEN_ISR_TABLE_EXTRA_ARG}
+    ${dump_isr_intlist_command}
     DEPENDS ${ZEPHYR_LINK_STAGE_EXECUTABLE}
     COMMAND_EXPAND_LISTS
     )
