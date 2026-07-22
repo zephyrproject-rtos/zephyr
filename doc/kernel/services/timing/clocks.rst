@@ -265,6 +265,31 @@ comparatively simple API.
   :c:func:`sys_clock_announce`, which the kernel needs to test newly
   arriving timeouts for expiration.
 
+* The driver may optionally provide a :c:func:`sys_clock_unused` call.  The
+  kernel invokes it, in place of :c:func:`sys_clock_set_timeout`, when no
+  timeout is pending and :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE`
+  allows the system uptime to drift.  A driver may use it to halt its counter
+  and stop taking interrupts until the next :c:func:`sys_clock_set_timeout`
+  resumes it.  Unlike :c:func:`sys_clock_disable`, this is a resumable pause,
+  not a teardown.  The default implementation preserves the legacy contract by
+  passing ``K_TICKS_FOREVER`` to :c:func:`sys_clock_set_timeout`, the
+  long-standing "no deadline" signal, so a driver that has not migrated to
+  this hook keeps working, whether it stops its clock on that signal or just
+  programs a maximal wait; the signal is deprecated together with that
+  default.
+
+* The driver may optionally provide a :c:func:`sys_clock_idle_enter` call,
+  which the power-management path uses in place of
+  :c:func:`sys_clock_set_timeout` when the CPU is about to enter low-power
+  idle, passing the number of ticks until the next expected wakeup.  A driver
+  that can hand off to a low-power wakeup timer (or otherwise reconfigure for
+  sleep) does so here; recovery happens in :c:func:`sys_clock_idle_exit`.  The
+  default implementation programs the wakeup through
+  :c:func:`sys_clock_set_timeout` with its deprecated ``idle`` argument set to
+  ``true``, so a driver that still keys its low-power handling on that argument
+  keeps working, and a driver with no low-power handling needs no
+  implementation.
+
 Timer Driver Locking
 --------------------
 

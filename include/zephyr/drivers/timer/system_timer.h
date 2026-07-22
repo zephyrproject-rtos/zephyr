@@ -174,8 +174,12 @@ bool sys_clock_is_locked(void);
  * lock held.
  *
  * @param ticks Timeout in tick units
- * @param idle Hint to the driver that the system is about to enter
- *        the idle state immediately after setting the timeout
+ * @param idle Deprecated. The kernel always passes false: the idle-entry
+ *        hint this argument used to carry moved to sys_clock_idle_enter(),
+ *        whose default implementation calls this function with true so a
+ *        driver still keying on the argument keeps working. Retained for
+ *        source compatibility and scheduled for removal in a future
+ *        release; new code must ignore it.
  */
 void sys_clock_set_timeout(uint32_t ticks, bool idle);
 

@@ -670,11 +670,30 @@ Timer
   :c:func:`sys_clock_announce_locked` now take their tick count as an unsigned
   ``uint32_t`` rather than a signed ``int32_t``. Out-of-tree system timer drivers must
   update their :c:func:`sys_clock_set_timeout` definition accordingly, otherwise the build
-  fails with a conflicting-types error. The kernel now also caps the requested timeout at
-  ``SYS_CLOCK_MAX_WAIT`` and no longer passes ``K_TICKS_FOREVER`` to the driver, so such
-  drivers no longer need to clamp the request against the :c:func:`sys_clock_announce`
-  range or special-case ``K_TICKS_FOREVER``; only their own hardware cycle-count limits
-  still need enforcing (:github:`111022`).
+  fails with a conflicting-types error. The kernel now also caps a requested wait at
+  ``SYS_CLOCK_MAX_WAIT``, so such drivers no longer need to clamp it against the
+  :c:func:`sys_clock_announce` range; only their own hardware cycle-count limits still
+  need enforcing. ``K_TICKS_FOREVER`` is only ever passed as the sloppy-idle
+  "no deadline" signal described below (:github:`111022`).
+
+* Under ``CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE``, the kernel now calls the new weak
+  :c:func:`sys_clock_unused` hook when no timeout is pending, rather than deciding in
+  :c:func:`sys_clock_set_timeout` itself. The default :c:func:`sys_clock_unused` passes
+  ``K_TICKS_FOREVER`` (``UINT32_MAX`` as the unsigned tick argument) to
+  :c:func:`sys_clock_set_timeout`, the long-standing "no deadline" signal, so an
+  out-of-tree timer driver keying on ``ticks == K_TICKS_FOREVER`` keeps stopping its
+  clock as before, and one without that branch programs a maximal wait, which sloppy
+  idle tolerates by definition. The signal is deprecated: the clock-stop ultimately
+  belongs in a :c:func:`sys_clock_unused` implementation, to which drivers will
+  migrate one at a time (:github:`114342`).
+
+* The ``bool idle`` argument of :c:func:`sys_clock_set_timeout` is deprecated; the
+  low-power idle hint moved to the new weak :c:func:`sys_clock_idle_enter` hook. The
+  kernel now always passes ``false``, except that the default
+  :c:func:`sys_clock_idle_enter` forwards the idle entry as ``true``, so an out-of-tree
+  timer driver keying on the argument keeps working unchanged. Such drivers should move
+  their ``idle``-specific handling to :c:func:`sys_clock_idle_enter`; the argument will
+  be removed in a future release (:github:`114342`).
 
 USB
 ===

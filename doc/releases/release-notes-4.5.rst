@@ -162,6 +162,17 @@ Deprecated APIs and options
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
     Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
+* Timer
+
+  * The ``bool idle`` argument of :c:func:`sys_clock_set_timeout` is deprecated: the
+    low-power idle hint moved to the new weak :c:func:`sys_clock_idle_enter` hook and the
+    kernel now always passes ``false`` (the default :c:func:`sys_clock_idle_enter`
+    forwards ``true`` for drivers that have not migrated). The ``K_TICKS_FOREVER``
+    "no deadline" clock-stop signal under
+    :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE` is likewise deprecated in favour
+    of the new weak :c:func:`sys_clock_unused` hook, whose default still forwards it
+    for drivers that have not migrated.
+
 * Video
 
   * All functions in the video driver API (``<zephyr/drivers/video.h>``) have moved to the video
