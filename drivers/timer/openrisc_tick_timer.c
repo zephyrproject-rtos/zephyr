@@ -16,7 +16,12 @@
 
 static ALWAYS_INLINE void set_compare(uint32_t time)
 {
-	openrisc_write_spr(SPR_TTMR, SPR_TTMR_IE | SPR_TTMR_CR | time);
+	/* TTMR.IP is cleared by writing 0 and unaffected by writing 1, so
+	 * writing it back keeps a match that raced this rewrite pending
+	 * instead of silently dropping it. The ISR acknowledges by writing
+	 * TTMR with IP cleared (clear_compare()).
+	 */
+	openrisc_write_spr(SPR_TTMR, SPR_TTMR_IE | SPR_TTMR_CR | SPR_TTMR_IP | time);
 }
 
 static ALWAYS_INLINE void clear_compare(void)
@@ -45,7 +50,7 @@ static ALWAYS_INLINE int32_t cyc_diff(uint32_t a, uint32_t b)
  * width. TTMR matches only TTCR[27:0] == TP, so timer_driver_set_compare() bumps an
  * already-past target at least MIN_DELAY ahead rather than let it wait for the
  * 28-bit count to wrap, meeting the core's "must not miss a past deadline"
- * contract; writing TTMR also clears the pending interrupt.
+ * contract.
  */
 #define TIMER_CORE_CYCLES_WIDTH 28
 #define TIMER_CORE_BACKEND_COMPARE
@@ -78,12 +83,12 @@ void z_openrisc_timer_isr(void)
 		sys_trace_isr_enter();
 	}
 
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Disarm; the kernel re-arms through sys_clock_set_timeout() after
-		 * the announce. A tickful kernel re-arms in timer_core_announce().
-		 */
-		clear_compare();
-	}
+	/* Acknowledge (clear TTMR.IP) and disarm; set_compare() preserves a
+	 * pending IP, so this write is the only place the interrupt is acked.
+	 * The kernel re-arms through sys_clock_set_timeout() after the
+	 * announce; a tickful kernel re-arms in timer_core_announce().
+	 */
+	clear_compare();
 
 	timer_core_announce();
 
