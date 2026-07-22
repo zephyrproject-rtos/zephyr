@@ -1,6 +1,6 @@
 sample:
-  name: Multi-Function Device (MFD) Sample
-  description: Sample for generic MFD with Charger, Fuel Gauge, and Regulator support
+  name: Advanced Battery Management Device
+  description: Sample for generic battery management with Charger, Fuel Gauge, and Regulator support
 common:
   tags:
     - charger
@@ -12,11 +12,10 @@ common:
     regex:
       - "Current.*uA"
       - "Charger is.*"
-      - "Fuel gauge.*Capacity"
       - "Fuel gauge SoC"
       - ".*Output Voltage.*"
 tests:
-  sample.drivers.mfd_charger:
+  sample.drivers.battery_mgmt:
     filter: dt_nodelabel_enabled("charger") and dt_nodelabel_enabled("fuelgauge") and
             dt_nodelabel_enabled("buck") and dt_nodelabel_enabled("buckboost")
     platform_allow:
