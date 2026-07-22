@@ -12,6 +12,7 @@ supported:
   - gpio
   - pinctrl
   - uart
+  - pwm
   - spi
   - vref
   - counter
