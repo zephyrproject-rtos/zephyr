@@ -4,6 +4,13 @@ common:
   tags:
     - smf
 tests:
+  libraries.smf.esmf:
+    extra_configs:
+      - CONFIG_SMF_ESMF=y
+  libraries.smf.esmf.hierarchical:
+    extra_configs:
+      - CONFIG_SMF_ESMF=y
+      - CONFIG_SMF_ANCESTOR_SUPPORT=y
   libraries.smf.flat: {}
   libraries.smf.hierarchical:
     extra_configs:

@@ -341,6 +341,13 @@ New Samples
 Libraries / Subsystems
 **********************
 
+* ESMF
+
+  * Added a new :ref:`esmf` (ESMF), a table-driven event dispatcher built on
+    top of the :ref:`smf`. It provides guard callbacks, action callbacks, and
+    wildcard event matching via a static transition table. Enable with
+    :kconfig:option:`CONFIG_SMF_ESMF`.
+
 * Crypto
 
   * Added AES CFB and OFB cipher mode support.

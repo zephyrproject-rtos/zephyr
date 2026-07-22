@@ -36,6 +36,7 @@ OS Services
    profiling/index.rst
    shell/index.rst
    serialization/index.rst
+   esmf/index.rst
    smf/index.rst
    storage/index.rst
    sensing/index.rst
