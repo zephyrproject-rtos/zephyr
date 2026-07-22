@@ -191,19 +191,24 @@ static int xspi_write_access(struct flash_stm32_xspi_data *dev_data,
 		return -EIO;
 	}
 
-#ifdef CONFIG_FLASH_STM32_XSPI_DMA
+#if defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
+	/* Use blocking transmit - IRQs are locked while memmap is off */
+	hal_ret = HAL_XSPI_Transmit(&dev_data->hxspi, (uint8_t *)data,
+				    HAL_XSPI_TIMEOUT_DEFAULT_VALUE);
+#elif defined(CONFIG_FLASH_STM32_XSPI_DMA)
 	hal_ret = HAL_XSPI_Transmit_DMA(&dev_data->hxspi, (uint8_t *)data);
-#else
+#else /* !CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION && !CONFIG_FLASH_STM32_XSPI_DMA */
 	hal_ret = HAL_XSPI_Transmit_IT(&dev_data->hxspi, (uint8_t *)data);
-#endif
+#endif /* CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
 
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("%d: Failed to write data", hal_ret);
 		return -EIO;
 	}
 
+#if !defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
 	k_sem_take(&dev_data->sync, K_FOREVER);
-
+#endif /* !CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
 	return dev_data->cmd_status;
 }
 
@@ -423,6 +428,13 @@ static int stm32_xspi_wait_auto_polling(struct flash_stm32_xspi_data *dev_data,
 {
 	dev_data->cmd_status = 0;
 
+#if defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
+	/* Use blocking polling - IRQs are locked while memmap is off */
+	if (HAL_XSPI_AutoPolling(&dev_data->hxspi, s_config, timeout_ms) != HAL_OK) {
+		return -EIO;
+	}
+	return dev_data->cmd_status;
+#else
 	if (HAL_XSPI_AutoPolling_IT(&dev_data->hxspi, s_config) != HAL_OK) {
 		XSPI_LOG_ERR("XSPI AutoPoll failed");
 		return -EIO;
@@ -441,6 +453,7 @@ static int stm32_xspi_wait_auto_polling(struct flash_stm32_xspi_data *dev_data,
 	 * cmd_status.
 	 */
 	return dev_data->cmd_status;
+#endif /* CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
 }
 
 /*
@@ -1135,9 +1148,16 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 
 #if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
 	bool was_memmap = false;
+	unsigned int irq_key = 0;
 
 	if (stm32_xspi_is_memorymap(dev_data)) {
 		was_memmap = true;
+
+		if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
+			/* Lock IRQs for entire operation - ISR handlers are in flash */
+			irq_key = irq_lock();
+		}
+
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		ret = stm32_xspi_abort(dev);
 
@@ -1276,6 +1296,10 @@ erase_end:
 			while (1) {
 				/* Infinite loop to prevent further execution */
 			}
+		}
+		if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
+			/* Unlock IRQs only after memmap is restored */
+			irq_unlock(irq_key);
 		}
 	}
 #endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
@@ -1452,10 +1476,17 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 
 #if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
 	bool was_memmap = false;
+	unsigned int irq_key = 0;
 
 	if (stm32_xspi_is_memorymap(dev_data)) {
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		was_memmap = true;
+
+		if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
+			/* Lock IRQs for entire operation - ISR handlers are in flash */
+			irq_key = irq_lock();
+		}
+
 		ret = stm32_xspi_abort(dev);
 
 		if (ret != 0) {
@@ -1565,6 +1596,10 @@ write_end:
 			while (1) {
 				/* Infinite loop to prevent further execution */
 			}
+		}
+		if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
+			/* Unlock IRQs only after memmap is restored */
+			irq_unlock(irq_key);
 		}
 	}
 #endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
