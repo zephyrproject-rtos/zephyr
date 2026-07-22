@@ -1895,6 +1895,21 @@ static inline uint8_t spi_nor_convert_write_to_4b(const uint8_t opcode)
 	}
 }
 
+static inline uint32_t xspi_default_write_opcode(uint8_t data_mode,
+						  bool four_byte_opcodes)
+{
+	switch (data_mode) {
+	case XSPI_OCTO_MODE:
+		return SPI_NOR_OCMD_PAGE_PRG;
+	case XSPI_QUAD_MODE:
+		return SPI_NOR_CMD_PP_1_4_4;
+	case XSPI_DUAL_MODE:
+		return SPI_NOR_CMD_PP_1_1_2;
+	default:
+		return four_byte_opcodes ? SPI_NOR_CMD_PP_4B : SPI_NOR_CMD_PP;
+	}
+}
+
 static int spi_nor_process_bfp(const struct device *dev,
 			       const struct jesd216_param_header *php,
 			       const struct jesd216_bfp *bfp)
@@ -1935,20 +1950,7 @@ static int spi_nor_process_bfp(const struct device *dev,
 
 	/* use PP opcode based on configured data mode if nothing is set in DTS */
 	if (data->write_opcode == SPI_NOR_WRITEOC_NONE) {
-		switch (dev_cfg->data_mode) {
-		case XSPI_OCTO_MODE:
-			data->write_opcode = SPI_NOR_OCMD_PAGE_PRG;
-			break;
-		case XSPI_QUAD_MODE:
-			data->write_opcode = SPI_NOR_CMD_PP_1_4_4;
-			break;
-		case XSPI_DUAL_MODE:
-			data->write_opcode = SPI_NOR_CMD_PP_1_1_2;
-			break;
-		default:
-			data->write_opcode = SPI_NOR_CMD_PP;
-			break;
-		}
+		data->write_opcode = xspi_default_write_opcode(dev_cfg->data_mode, false);
 	}
 
 	if (dev_cfg->data_mode != XSPI_OCTO_MODE) {
@@ -2143,6 +2145,20 @@ static int flash_stm32_xspi_init(const struct device *dev)
 				     (clock_control_subsys_t) &dev_cfg->pclken)
 				     == CLOCK_CONTROL_STATUS_ON) {
 		if (stm32_xspi_is_memorymap(dev_data)) {
+
+			/* Full init is bypassed when already in XIP ext-flash mode,
+			 * so set required runtime defaults here.
+			 */
+			if ((dev_cfg->four_byte_opcodes) || (dev_cfg->flash_size > BIT(24))) {
+				dev_data->address_width = 4U;
+			} else if (dev_data->address_width == 0U) {
+				dev_data->address_width = 3U;
+			}
+
+			if (dev_data->write_opcode == SPI_NOR_WRITEOC_NONE) {
+				dev_data->write_opcode = xspi_default_write_opcode(
+					dev_cfg->data_mode, dev_cfg->four_byte_opcodes);
+			}
 			XSPI_LOG_DBG("NOR init'd in MemMapped mode");
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 			ret = setup_pages_layout(dev);
