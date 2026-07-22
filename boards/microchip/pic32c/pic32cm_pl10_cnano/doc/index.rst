@@ -55,6 +55,10 @@ Programming & Debugging
 
 .. zephyr:board-supported-runners::
 
+Flash Using MPLAB IPE
+=====================
+For instructions on flashing using MPLAB IPE see :ref:`microchip-mplab-ipe-flashing`.
+
 Setting Up the Debug Interface
 ==============================
 
