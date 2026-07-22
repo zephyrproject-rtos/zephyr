@@ -4,4 +4,4 @@
 
 compatible: "bosch,bmi260"
 
-include: [i2c-device.yaml, "bosch,bmi260.yaml"]
+include: ["i2c-device.yaml", "bosch,bmi260.yaml"]
