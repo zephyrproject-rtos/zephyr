@@ -104,4 +104,23 @@
 			output-enable;
 		};
 	};
+
+	pinmux_sai_0: pinmux_sai_0 {
+		group1 {
+			/* Each entry combines the pad's output mux with its
+			 * own IMCR input path (input buffer enabled), so the
+			 * receiver samples the transmitter's data, bit clock
+			 * and frame sync directly on-pad — TX->RX loopback
+			 * without external wiring:
+			 * PTB2  D0   out (MSCR34 SSS=6)  + RX D0   in (IMCR316)
+			 * PTC12 BCLK out (MSCR76 SSS=7)  + RX BCLK in (IMCR315)
+			 * PTC13 SYNC out (MSCR77 SSS=7)  + RX SYNC in (IMCR321)
+			 */
+			pinmux = <NXP_SIUL2_PINMUX(0, 0, 34, 6, 316, 1)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 76, 7, 315, 1)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 77, 7, 321, 1)>;
+			output-enable;
+			input-enable;
+		};
+	};
 };
