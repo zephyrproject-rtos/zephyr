@@ -18,7 +18,7 @@
 #include <zephyr/logging/log.h>
 
 #include "osif_zephyr_impl.h"
-#include "mem_types.h"
+#include <mem_types.h>
 
 LOG_MODULE_REGISTER(osif);
 
