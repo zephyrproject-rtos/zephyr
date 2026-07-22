@@ -38,7 +38,7 @@ jobs:
       testplan: ${{ steps.test-plan.outputs.has_testplan }}
     env:
       MATRIX_SIZE: 10
-      PUSH_MATRIX_SIZE: 25
+      PUSH_MATRIX_SIZE: 30
       WEEKLY_MATRIX_SIZE: 200
       TESTS_PER_BUILDER: 900
       BASE_REF: ${{ github.base_ref }}
