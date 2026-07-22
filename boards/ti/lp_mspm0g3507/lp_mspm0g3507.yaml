@@ -15,4 +15,5 @@ supported:
   - dac
   - spi
   - vref
+  - pwm
 vendor: ti
