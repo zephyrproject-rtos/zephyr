@@ -157,6 +157,19 @@
 			};
 		};
 
+		dmac: dmac@44802000 {
+			compatible = "microchip,dmac-g2-dma";
+			reg = <0x44802000 0x50>;
+			interrupts = <42 0>, <43 0>, <44 0>, <45 0>, <46 0>;
+			interrupt-names = "ch0", "ch1", "ch2", "ch3", "ch4-7";
+			num-dedicated-irqs = <4>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_DMAC_AHB>;
+			clock-names = "mclk";
+			dma-channels = <8>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
 		sercom0: sercom@44808000 {
 			compatible = "microchip,sercom-g1";
 			reg = <0x44808000 0x38>;
