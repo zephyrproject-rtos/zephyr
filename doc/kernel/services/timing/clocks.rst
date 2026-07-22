@@ -329,28 +329,6 @@ counter driver can be trivially implemented also:
   as no more than one tick can be detected as having elapsed (because
   otherwise an interrupt would have been received).
 
-Generic Tickless Core
----------------------
-
-The per-driver work described above -- the cycle-to-tick conversion, the
-announce baseline, the tick-aligned deadline computation and the counter wrap
-and range handling -- is nearly identical across tickless drivers, and its
-small hand-rolled divergences are a recurring source of timer bugs.
-:zephyr_file:`drivers/timer/system_timer_generic.h` provides that logic once,
-as an implementation header a driver includes after defining a few cycle-domain
-primitives: a counter read plus either an absolute-compare or a relative-reload
-arming function. The header then emits :c:func:`sys_clock_set_timeout`,
-:c:func:`sys_clock_elapsed` and :c:func:`sys_clock_cycle_get_32` /
-:c:func:`sys_clock_cycle_get_64` on the driver's behalf and owns the announce
-baseline, so the driver stays in the cycle domain and never manipulates ticks
-directly. It states its counter width and, only when the counter does not run
-at the system clock rate, its frequency.
-
-New timer drivers that support tickless operation should build on this header
-rather than reimplement the tick accounting; most in-tree drivers already do.
-The header itself documents the exact set of feature macros and primitives a
-driver provides.
-
 
 SMP Details
 -----------
