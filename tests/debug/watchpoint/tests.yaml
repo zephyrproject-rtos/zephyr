@@ -1,0 +1,39 @@
+tests:
+  debug.watchpoint:
+    tags:
+      - debug
+      - watchpoint
+    platform_allow:
+      - qemu_riscv32
+      - qemu_riscv64
+    integration_platforms:
+      - qemu_riscv32
+      - qemu_riscv64
+
+  debug.watchpoint.smp:
+    tags:
+      - debug
+      - watchpoint
+      - smp
+    platform_allow:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    integration_platforms:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+
+  debug.watchpoint.userspace:
+    tags:
+      - debug
+      - watchpoint
+      - userspace
+    platform_allow:
+      - qemu_riscv32
+      - qemu_riscv64
+    integration_platforms:
+      - qemu_riscv32
+      - qemu_riscv64
+    extra_configs:
+      - CONFIG_USERSPACE=y
