@@ -893,16 +893,34 @@
 	};
 
 	sai_0: sai@36c000 {
-		compatible = "nxp,sai";
+		compatible = "nxp,mcux-i2s";
 		reg = <0x36c000 0x100>;
 		interrupts = <174 0>;
+		clocks = <&mc_cgm MCUX_SAI0_CLK>;
+		dmas = <&edma 3 55>, <&edma 4 56>;
+		dma-names = "rx", "tx";
+		nxp,rx-dma-channel = <3>;
+		nxp,tx-dma-channel = <4>;
+		nxp,bclk-source = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
 		status = "disabled";
 	};
 
 	sai_1: sai@4dc000 {
-		compatible = "nxp,sai";
+		compatible = "nxp,mcux-i2s";
 		reg = <0x4dc000 0x100>;
 		interrupts = <175 0>;
+		clocks = <&mc_cgm MCUX_SAI1_CLK>;
+		dmas = <&edma 19 56>, <&edma 20 57>;
+		dma-names = "rx", "tx";
+		nxp,rx-dma-channel = <19>;
+		nxp,tx-dma-channel = <20>;
+		nxp,bclk-source = <0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#pinmux-cells = <2>;
 		status = "disabled";
 	};
 
