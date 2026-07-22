@@ -451,7 +451,7 @@ static int set_gyro_range(const struct device *dev, const struct sensor_value *r
 static int8_t write_config_file(const struct device *dev)
 {
 	const struct bmi260_config *cfg = dev->config;
-	int8_t ret = 0;
+	int ret;
 	uint8_t addr_array[2] = { 0 };
 
 	LOG_DBG("writing config file %s", cfg->feature->name);
