@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Connect PA0 (PWM output, pwma0 CH0, TIMA0 CCP0) to PA29 (capture input,
+ * pwmg8 CH0, TIMG8 CCP0) with a wire before running this test.
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&pwma0 0 0 PWM_POLARITY_NORMAL>,
+		       <&pwmg8 0 0 PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	timg8_ccp0_pa29 {
+		input-enable;
+		bias-pull-down;
+	};
+};
+
+&timg8 {
+	ti,clk-div = <8>;
+	ti,clk-prescaler = <255>;
+	status = "okay";
+
+	pwmg8: pwmg8 {
+		pinctrl-0 = <&timg8_ccp0_pa29>;
+		pinctrl-names = "default";
+		ti,cc-index = <0>;
+		ti,cc-mode = "PULSE_WIDTH";
+		ti,period = <0xffff>;
+		status = "okay";
+	};
+};
