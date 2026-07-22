@@ -270,16 +270,9 @@ static inline void hpet_timer_comparator_set_safe(uint64_t next)
  * is rearmed by hpet_timer_comparator_set_safe(), satisfying the core's "must
  * not miss a past deadline" contract. Under QEMU SMP the shared counter can be
  * observed reading backwards, handled via TIMER_CORE_COUNTER_NONMONOTONIC.
- *
- * The counter is genuinely 64 bits wide even on a 32-bit CPU, so declare its
- * width rather than take the core's native-register default: a 32-bit mask
- * would alias any delta beyond 2^32 cycles, and the comparator (checked
- * against the full 64-bit count) would then be armed a whole 2^32-cycle
- * period behind the counter.
  */
 #define TIMER_CORE_BACKEND_COMPARE
 #define TIMER_CORE_64BIT_CYCLES
-#define TIMER_CORE_CYCLES_WIDTH 64
 #if defined(CONFIG_SMP) && defined(CONFIG_QEMU_TARGET)
 #define TIMER_CORE_COUNTER_NONMONOTONIC
 #endif

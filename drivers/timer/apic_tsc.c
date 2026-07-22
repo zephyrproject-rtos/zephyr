@@ -96,11 +96,6 @@ static void set_trigger(uint64_t deadline)
  */
 #define TIMER_CORE_BACKEND_COMPARE
 #define TIMER_CORE_64BIT_CYCLES
-/* The TSC is 64 bits wide regardless of the CPU's register width: declare it
- * so a 32-bit build does not fall back to the native-register default and
- * alias deltas beyond 2^32 cycles.
- */
-#define TIMER_CORE_CYCLES_WIDTH 64
 
 static inline uint64_t timer_driver_cycle_get(void)
 {
