@@ -54,6 +54,23 @@ config ARM_NSC_REGION_BASE_ADDRESS
 	  a Non-Secure Callable section, depending on the available
 	  security attribution unit (SAU or IDAU) for a given SOC.
 
+config ARM_NSC_REGION_IN_NS_ALIAS
+	bool "NSC region is placed in the Non-Secure alias address space"
+	depends on ARM_NSC_REGION_BASE_ADDRESS != 0
+	help
+	  Select this when ARM_NSC_REGION_BASE_ADDRESS falls in the
+	  Non-Secure alias range (e.g. 0x00000000-0x0FFFFFFF on an
+	  AN521 with IDAU region 0).  On such platforms the IDAU marks
+	  NS-alias addresses as ns=true, which is required for QEMU to
+	  preserve the SAU NSC attribute and allow SG veneer calls.
+
+	  The board must define a DTS memory node with the property
+	  zephyr,memory-region = "NSC_NS_ALIAS" whose address range
+	  covers ARM_NSC_REGION_BASE_ADDRESS.  That region is used as
+	  the linker MEMORY region for the .gnu.sgstubs section so that
+	  the GNU ld location-counter check does not trigger a
+	  "cannot move location counter backwards" error.
+
 config ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
 	bool "Non-Secure Firmware uses Secure Entry functions"
 	depends on ARM_NONSECURE_FIRMWARE
@@ -100,6 +117,29 @@ config ARM_SECURE_DOMAIN_ENTRY_SVC
 	  an EXC_RETURN into Non-Secure Thread mode.  Select this on silicon
 	  where BXNS raises INVTRAN despite all architectural preconditions
 	  being met (e.g. Infineon PSE84 and PSC3).
+
+config ARM_FIRMWARE_HAS_SECURE_CALLS
+	bool "Secure Firmware exposes __secure_call functions"
+	depends on ARM_SECURE_FIRMWARE
+	select ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
+	select SECURE_CALLS
+	help
+	  Enables the __secure_call code-generation pipeline for this Secure
+	  image. The build system will scan headers for __secure_call-decorated
+	  function declarations and generate z_secure_mrsh_* entry points with
+	  the cmse_nonsecure_entry attribute. These are compiled into the Secure
+	  image and exported via libentryveneers.a for use by the Non-Secure image.
+
+config ARM_FIRMWARE_USES_SECURE_CALLS
+	bool "Non-Secure Firmware uses __secure_call functions"
+	depends on ARM_NONSECURE_FIRMWARE
+	select ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
+	select SECURE_CALLS
+	help
+	  Enables the __secure_call NS-side inline stubs for this Non-Secure
+	  image. The generated stubs pack arguments into uintptr_t values and
+	  call through the Secure veneer library (libentryveneers.a). Requires
+	  that the Secure image was built with ARM_FIRMWARE_HAS_SECURE_CALLS.
 
 endmenu
 

@@ -860,6 +860,15 @@ config BUSYWAIT_CPU_LOOPS_PER_USEC
 
 menu "Security Options"
 
+config SECURE_CALLS
+	bool
+	help
+	  Hidden option enabling the __secure_call code-generation pipeline: the
+	  build scans headers for __secure_call-decorated declarations and
+	  generates the cross-boundary wrappers and entry veneers. Selected by the
+	  architecture-specific options that actually expose or consume secure
+	  calls (e.g. ARM_FIRMWARE_HAS_SECURE_CALLS / ARM_FIRMWARE_USES_SECURE_CALLS).
+
 config REQUIRES_STACK_CANARIES
 	bool
 	help
