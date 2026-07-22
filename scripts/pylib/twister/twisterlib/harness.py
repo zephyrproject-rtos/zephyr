@@ -245,8 +245,18 @@ class Robot(Harness):
         else:
             command.append(os.path.join(handler.sourcedir, self.path))
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env) as renode_test_proc:
+        try:
+            renode_test_proc = subprocess.Popen(command, stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env)
+        except FileNotFoundError as err:
+            reason = f"Robot test executable '{command[0]}' not found: {err.strerror}"
+            logger.warning(reason)
+            self.instance.status = TwisterStatus.SKIP
+            self.instance.reason = reason
+            self.instance.add_missing_case_status(TwisterStatus.SKIP)
+            return
+
+        with renode_test_proc:
             out, _ = renode_test_proc.communicate()
 
             self.instance.execution_time = time.time() - start_time
