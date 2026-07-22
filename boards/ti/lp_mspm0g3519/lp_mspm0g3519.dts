@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	model = "TI LP_MSPM0G3519";
@@ -143,4 +144,19 @@
 	status = "okay";
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
+};
+
+&tima0 {
+	ti,clk-div = <8>;
+	ti,clk-prescaler = <255>;
+};
+
+&pwma0 {
+	status = "okay";
+
+	pinctrl-0 = <&tima0_ccp0_pa0>;
+	pinctrl-names = "default";
+	ti,cc-index = <0>;
+	ti,pwm-mode = "EDGE_ALIGN";
+	ti,period = <3906>; /* ~100 ms at 39,062 Hz */
 };
