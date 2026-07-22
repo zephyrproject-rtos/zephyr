@@ -1,0 +1,8 @@
+sample:
+  name: DMX512 Input Sample
+tests:
+  sample.dmx.input:
+    build_only: true
+    tags:
+      - dmx
+    filter: dt_nodelabel_enabled("dmx0")

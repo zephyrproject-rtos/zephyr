@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  DMX512-A interface using interrupt-driven UART reception.
+
+  Break detection uses framing-error reporting via uart_err_check()
+  in the UART IRQ callback. Portable across all platforms with
+  interrupt-driven UART support.
+
+  The parent UART must set the framing-error-reporting property
+  (see uart-controller.yaml) so the driver knows the correct
+  drain strategy after a break.
+
+  The device must be a child of a UART controller node. The UART is
+  configured at runtime to 250000 baud, 8N2 when the interface is
+  enabled.
+
+  Example:
+
+    &uart1 {
+        dmx0: dmx {
+            compatible = "zephyr,dmx-uart-isr";
+            de-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+            re-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+        };
+    };
+
+compatible: "zephyr,dmx-uart-isr"
+
+include: uart-device.yaml
+
+properties:
+  de-gpios:
+    type: phandle-array
+    description: |
+      Driver-enable pin of the RS-485 transceiver.
+      Active high when transmitting. Optional.
+
+  re-gpios:
+    type: phandle-array
+    description: |
+      Receiver-enable pin of the RS-485 transceiver.
+      Active low to enable reception. Optional.
+
+  rx-buf-size:
+    type: int
+    description: |
+      Size in bytes of the per-interface receive ring buffer.
+      Overrides the global CONFIG_DMX_RX_BUF_SIZE for this instance.

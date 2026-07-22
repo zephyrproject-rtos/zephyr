@@ -8,6 +8,7 @@ Connectivity
 
    bluetooth/index.rst
    canbus/index.rst
+   dmx/index.rst
    networking/index.rst
    lora_lorawan/index.rst
    usb/index.rst
