@@ -128,7 +128,15 @@ void sys_clock_idle_enter(uint32_t ticks)
 		return;
 	}
 
-	uint64_t timeout_us = ((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	/* The deadline is tick-aligned but the LP timer starts counting here,
+	 * mid-tick, so a period of the full `ticks` would wake up to one tick
+	 * after the deadline; in deep sleep the LP timer is the only wake
+	 * source, so that is a timeout served late. Shorten the period by one
+	 * tick so the wake lands at or before the deadline instead; the floor
+	 * conversion rounds the same safe way.
+	 */
+	uint32_t lp_ticks = (ticks > 0U) ? (ticks - 1U) : 0U;
+	uint64_t timeout_us = k_ticks_to_us_floor64(lp_ticks);
 
 	lptim_pre_idle = esp32_lptim_hook_on_lpm_entry(timeout_us);
 	systimer_pre_idle = get_systimer_alarm();
