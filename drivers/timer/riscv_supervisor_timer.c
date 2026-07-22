@@ -53,9 +53,16 @@ static uint64_t stime(void)
  * Free-running "time" counter plus an absolute SBI set-timer deadline: a
  * COMPARE backend. The generic core owns the tick accounting and the clock
  * lock; the driver only reads the counter and programs the deadline.
+ *
+ * The "time" CSR is 64 bits wide even on RV32, so declare its width rather
+ * than take the core's native-register default: a 32-bit mask would alias
+ * any delta beyond 2^32 cycles, and the SBI deadline (compared against the
+ * full 64-bit count) would then be set a whole 2^32-cycle period behind the
+ * counter.
  */
 #define TIMER_CORE_BACKEND_COMPARE
 #define TIMER_CORE_64BIT_CYCLES
+#define TIMER_CORE_CYCLES_WIDTH 64
 
 static inline uint64_t timer_driver_cycle_get(void)
 {
