@@ -782,20 +782,20 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x40015400 0x400>;
-			ranges = <0x0 0x40015400 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
 			status = "disabled";
 
-			sai1_a: sai1a@4 {
-				reg = <0x4 0x20>;
+			sai1_a: sai1a@40015404 {
+				reg = <0x40015404 0x20>;
 				dmas = <&dma1 1 108 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
 			};
 
-			sai1_b: sai1b@24 {
-				reg = <0x24 0x20>;
+			sai1_b: sai1b@40015424 {
+				reg = <0x40015424 0x20>;
 				dmas = <&dma1 2 109 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
