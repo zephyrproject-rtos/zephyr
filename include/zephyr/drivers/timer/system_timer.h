@@ -253,21 +253,6 @@ uint32_t sys_clock_elapsed(void);
 void sys_clock_disable(void);
 
 /**
- * @brief Notify the timer driver that the system clock is currently unused.
- *
- * Called by the kernel when no timeout is pending and
- * @kconfig{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} allows the system uptime to drift.
- * A driver may use this to halt the counter and stop generating interrupts
- * until the next sys_clock_set_timeout(), which resumes normal operation.
- *
- * Unlike sys_clock_disable(), this is a resumable pause, not a teardown. The
- * default implementation is a no-op: a driver that does nothing here simply
- * stops being reprogrammed and quiesces on its own, so sloppy idle is available
- * to every driver without extra code.
- */
-void sys_clock_unused(void);
-
-/**
  * @brief Hardware cycle counter
  *
  * Timer drivers are generally responsible for the system cycle
