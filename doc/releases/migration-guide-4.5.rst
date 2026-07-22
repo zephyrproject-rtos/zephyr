@@ -666,6 +666,23 @@ Syscon
 Timer
 =====
 
+* Tickless system-timer drivers should no longer carry their own tick handling.
+  The implementation header :file:`drivers/timer/system_timer_generic.h` now
+  owns the accounting that each driver used to reimplement by hand, and got
+  subtly wrong: the cycle-to-tick conversion, the announce baseline, the
+  tick-aligned deadline computation and the counter range clamp (including the
+  wrap handling of a narrow counter). A driver reduces to a few cycle-domain
+  primitives (a cycle-counter read plus an absolute-compare or relative-reload
+  arm) and includes the header once, which emits
+  :c:func:`sys_clock_set_timeout`, :c:func:`sys_clock_elapsed` and
+  :c:func:`sys_clock_cycle_get_32` / :c:func:`sys_clock_cycle_get_64`. In-tree
+  tickless drivers are being converted to it, one driver at a time;
+  out-of-tree drivers, new or existing, are strongly encouraged to do the same
+  rather than track the kernel interface by hand. A driver built on the core
+  needs no action for the interface changes below, as it no longer defines
+  those entry points itself; those notes apply only to the residual cases
+  where the hardware genuinely cannot be expressed through the core.
+
 * :c:func:`sys_clock_set_timeout`, :c:func:`sys_clock_announce` and
   :c:func:`sys_clock_announce_locked` now take their tick count as an unsigned
   ``uint32_t`` rather than a signed ``int32_t``. Out-of-tree system timer drivers must
