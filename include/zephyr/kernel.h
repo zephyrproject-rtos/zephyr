@@ -2599,8 +2599,10 @@ __syscall void *k_queue_peek_tail(struct k_queue *queue);
  * @brief Peek element next to the one provided in the queue
  *
  * Return element next to the one provided without removing it.
- * This operation requires finding the provided element before returning the next one,
- * hence requiring O(N) time.
+ * This operation requires finding the provided element before returning the next one.
+ * The lookup is performed with a payload pointer, for this reason, if the same pointer is equeued
+ * multiple times with k_queue_alloc_append() the first occurrencee will be returned.
+ * This operation requires O(N) time.
  *
  * @param queue Address of the queue.
  * @param data Address of the element which next is being returned.
@@ -3243,8 +3245,11 @@ struct k_fifo {
  */
 #define k_fifo_peek_next(fifo, data)                                                               \
 	({                                                                                         \
-		void *fpt_ret = k_queue_peek_next(&(fifo)->_queue, data);                          \
-		fpt_ret;                                                                           \
+		void *_data = data;                                                                \
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, peek_next, fifo, _data);                   \
+		void *fpn_ret = k_queue_peek_next(&(fifo)->_queue, _data);                         \
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, peek_next, fifo, _data, fpn_ret);           \
+		fpn_ret;                                                                           \
 	})
 
 /**
