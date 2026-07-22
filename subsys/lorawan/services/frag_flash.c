@@ -24,6 +24,7 @@ struct frag_cache_entry {
 
 static struct frag_cache_entry frag_cache[FRAG_MAX_REDUNDANCY];
 static uint32_t frag_size;
+static size_t offset;
 static int cached_frags;
 static bool use_cache;
 
@@ -32,6 +33,8 @@ static const struct flash_area *fa;
 int frag_flash_init(uint32_t fragment_size)
 {
 	int err;
+	struct flash_sector first_sector;
+	uint32_t sector_count = 1;
 
 	if (fragment_size > FRAG_MAX_SIZE) {
 		return -ENOSPC;
@@ -40,6 +43,7 @@ int frag_flash_init(uint32_t fragment_size)
 	frag_size = fragment_size;
 	cached_frags = 0;
 	use_cache = false;
+	offset = 0;
 
 	err = flash_area_open(TARGET_IMAGE_AREA, &fa);
 	if (err) {
@@ -52,6 +56,31 @@ int frag_flash_init(uint32_t fragment_size)
 
 	LOG_DBG("Finished erasing flash area");
 
+#if IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET) &&                                \
+	defined(SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN)
+	err = flash_area_sectors(fa, &sector_count, &first_sector);
+	if (err && err != -ENOMEM) {
+		return err;
+	}
+
+	/* We only need the first sector size to calculate the upload offset. */
+	if (sector_count < SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN) {
+		return -ENOENT;
+	}
+
+	offset = first_sector.fs_size;
+	if (offset == 0) {
+		return -EINVAL;
+	}
+
+	if (offset >= fa->fa_size) {
+		LOG_ERR("Invalid swap offset %zu for area size %zu", offset, fa->fa_size);
+		return -EINVAL;
+	}
+
+	LOG_DBG("Swap-using-offset active, FUOTA write offset: %zu bytes", offset);
+#endif
+
 	return err;
 }
 
@@ -60,9 +89,10 @@ int8_t frag_flash_write(uint32_t addr, uint8_t *data, uint32_t size)
 	int8_t err = 0;
 
 	if (!use_cache) {
-		LOG_DBG("Writing %u bytes to addr 0x%X", size, addr);
+		LOG_DBG("Writing %u bytes to addr 0x%X (effective 0x%zX)", size, addr,
+			offset + addr);
 
-		err = flash_area_write(fa, addr, data, size);
+		err = flash_area_write(fa, offset + addr, data, size);
 	} else {
 		LOG_DBG("Caching %u bytes for addr 0x%X", size, addr);
 
@@ -102,7 +132,7 @@ int8_t frag_flash_read(uint32_t addr, uint8_t *data, uint32_t size)
 		}
 	}
 
-	return flash_area_read(fa, addr, data, size) == 0 ? 0 : -1;
+	return flash_area_read(fa, offset + addr, data, size) == 0 ? 0 : -1;
 }
 
 void frag_flash_use_cache(void)
@@ -116,7 +146,7 @@ void frag_flash_finish(void)
 
 	for (int i = 0; i < cached_frags; i++) {
 		LOG_DBG("Writing %u bytes to addr 0x%x", frag_size, frag_cache[i].addr);
-		flash_area_write(fa, frag_cache[i].addr, frag_cache[i].data, frag_size);
+		flash_area_write(fa, offset + frag_cache[i].addr, frag_cache[i].data, frag_size);
 	}
 
 	flash_area_close(fa);
