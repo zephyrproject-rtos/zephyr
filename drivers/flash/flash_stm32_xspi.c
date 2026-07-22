@@ -52,6 +52,7 @@
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/barrier.h>
 
 #include "spi_nor.h"
 #include "jesd216.h"
@@ -1075,19 +1076,7 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 		return -ENOTSUP;
 	}
 
-	xspi_lock_thread(dev);
-
-#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE)
-	if (stm32_xspi_is_memorymap(dev_data)) {
-		/* Abort ongoing transfer to force CS high/BUSY deasserted */
-		ret = stm32_xspi_abort(dev);
-		if (ret != 0) {
-			XSPI_LOG_ERR("Failed to abort memory-mapped access before erase");
-			goto erase_end;
-		}
-	}
-#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE */
-
+	/* Prepare erase command before entering XSPI critical section. */
 	XSPI_RegularCmdTypeDef cmd_erase = {0};
 
 	cmd_erase.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
@@ -1098,6 +1087,28 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 #ifdef XSPI_CCR_SIOO
 	cmd_erase.SIOOMode = HAL_XSPI_SIOO_INST_EVERY_CMD;
 #endif /* XSPI_CCR_SIOO */
+
+	xspi_lock_thread(dev);
+
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE)
+	bool was_memmap = false;
+
+	if (stm32_xspi_is_memorymap(dev_data)) {
+		was_memmap = true;
+		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		ret = stm32_xspi_abort(dev);
+
+		if (ret != 0) {
+			XSPI_LOG_ERR("Failed to abort memory-mapped access before erase");
+			goto erase_end;
+		}
+		if (stm32_xspi_is_memorymap(dev_data)) {
+			/* Abort failed, still in memory map mode */
+			ret = -EAGAIN;
+			goto erase_end;
+		}
+	}
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE */
 
 	if (stm32_xspi_mem_ready(dev_data, data_mode, data_rate) != 0) {
 		XSPI_LOG_ERR("Erase failed : flash busy");
@@ -1211,6 +1222,14 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 	/* Ends the erase operation */
 
 erase_end:
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE)
+	if (was_memmap) {
+		if (stm32_xspi_set_memorymap(dev_data, data_mode, data_rate) != 0) {
+			/* Failed to restore memory map mode */
+			ret = -EIO;
+		}
+	}
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE */
 	xspi_unlock_thread(dev);
 
 	return ret;
@@ -1360,20 +1379,30 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 		return 0;
 	}
 
+	/* Build page-program command before entering XSPI critical section. */
+	XSPI_RegularCmdTypeDef cmd_pp = xspi_prepare_cmd(data_mode, data_rate);
+
 	xspi_lock_thread(dev);
 
 #if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE)
+	bool was_memmap = false;
+
 	if (stm32_xspi_is_memorymap(dev_data)) {
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		was_memmap = true;
 		ret = stm32_xspi_abort(dev);
+
 		if (ret != 0) {
 			XSPI_LOG_ERR("Failed to abort memory-mapped access before write");
 			goto write_end;
 		}
+		if (stm32_xspi_is_memorymap(dev_data)) {
+			/* Abort failed, still in memory map mode */
+			ret = -EAGAIN;
+			goto write_end;
+		}
 	}
 #endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE */
-	/* page program for STR or DTR mode */
-	XSPI_RegularCmdTypeDef cmd_pp = xspi_prepare_cmd(data_mode, data_rate);
 
 	/* using 32bits address also in SPI/STR mode */
 	cmd_pp.Instruction = dev_data->write_opcode;
@@ -1468,6 +1497,14 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 	/* Ends the write operation */
 
 write_end:
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE)
+	if (was_memmap) {
+		if (stm32_xspi_set_memorymap(dev_data, data_mode, data_rate) != 0) {
+			/* Failed to restore memory map mode */
+			ret = -EIO;
+		}
+	}
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE */
 	xspi_unlock_thread(dev);
 
 	return ret;
