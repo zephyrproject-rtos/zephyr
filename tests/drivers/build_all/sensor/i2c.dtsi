@@ -31,6 +31,7 @@
 #include <zephyr/dt-bindings/sensor/apds9253.h>
 #include <zephyr/dt-bindings/sensor/tmp11x.h>
 #include <zephyr/dt-bindings/sensor/tmp114.h>
+#include <zephyr/dt-bindings/sensor/icm566xx.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -1641,4 +1642,20 @@ test_i2c_tmp451: tmp451@d5 {
 	compatible = "ti,tmp451";
 	reg = <0xd5>;
 	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_icm56686: icm56686@68 {
+	compatible = "invensense,icm56686";
+	reg = <0x68>;
+	int-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+
+	accel-fs = <0>;
+	accel-odr = <13>;
+	accel-lpf = <1>;
+	accel-pwr-mode = <2>;
+
+	gyro-fs = <0>;
+	gyro-odr = <13>;
+	gyro-lpf = <1>;
+	gyro-pwr-mode = <2>;
 };
