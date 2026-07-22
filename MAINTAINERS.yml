@@ -2837,6 +2837,8 @@ Documentation Infrastructure:
     - "area: Timer"
   tests:
     - drivers.timer
+    - kernel
+    - arch
 
 "Drivers: Time Aware GPIO":
   status: maintained
