@@ -1,0 +1,50 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 EXALT Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+
+/ {
+	aliases {
+		flash0 = &m95p32_x_nucleo_pgeez1;
+		mspi0 = &octospi1;
+	};
+};
+
+&octospi1 {
+	compatible = "st,stm32-ospi-controller";
+	clock-frequency = <DT_FREQ_M(50)>;
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	duplex = "MSPI_HALF_DUPLEX";
+	pinctrl-0 = <&octospim_p1_clk_pb10 &octospim_p1_ncs_pa2
+		     &octospim_p1_io0_pe12 &octospim_p1_io1_pb0
+		     &octospim_p1_io2_pe14 &octospim_p1_io3_pe15>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	m95p32_x_nucleo_pgeez1: eeprom@0 {
+		compatible = "jedec,nor";
+		reg = <0>;
+		size = <DT_SIZE_M(32)>; /* 32 Mbits */
+		jedec-id = [20 00 16];
+		sfdp-bfp = [f5 20 c1 ff ff ff ff 01 00 00 08 6b 08 3b 00 00
+			    ee ff ff ff ff ff 00 00 ff ff 00 00 09 db 0c 20
+			    10 d8 00 00 04 08 0c 00 90 f3 0e 00 00 00 00 80
+			    00 00 00 00 04 bd d5 5c 00 00 00 00 11 10 00 00
+			    00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff];
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_SINGLE";
+		read-io-mode = "MSPI_IO_MODE_QUAD_1_1_4";
+		write-io-mode = "MSPI_IO_MODE_SINGLE";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+		read-command = <0x6b>; /* FQREAD: 1-1-4 quad-output fast read */
+		write-command = <0x0a>; /* PGPR: single-line page program */
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_3_BYTE";
+		status = "okay";
+	};
+};
