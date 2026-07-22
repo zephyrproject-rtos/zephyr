@@ -240,7 +240,7 @@ static int bq40z50_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		break;
 
 	case FUEL_GAUGE_CHARGE_CUTOFF:
-		ret = bq40z50_i2c_read(dev, BQ40Z50_MANUFACTURERACCESS, (uint8_t *)&tmp_val,
+		ret = bq40z50_i2c_read(dev, BQ40Z50_OPERATIONSTATUS, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
 		val->cutoff = IS_BIT_SET(tmp_val, BQ40Z50_OPERATION_STATUS_XCHG_BIT);
 		break;
