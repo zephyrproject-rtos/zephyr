@@ -379,6 +379,9 @@ void sys_trace_thread_info(struct k_thread *thread);
 #define sys_port_trace_k_queue_peek_tail(queue, ret)                                               \
 	SEGGER_SYSVIEW_RecordU32x2(TID_QUEUE_PEAK_TAIL, (uint32_t)(uintptr_t)queue, (int32_t)ret)
 
+#define sys_port_trace_k_queue_peek_next(queue, data, ret)                                         \
+	SEGGER_SYSVIEW_RecordU32x2(TID_QUEUE_PEAK_NEXT, (uint32_t)(uintptr_t)queue, (int32_t)ret)
+
 #define sys_port_trace_k_fifo_init_enter(fifo)                                                     \
 	SEGGER_SYSVIEW_RecordU32(TID_FIFO_INIT, (uint32_t)(uintptr_t)fifo)
 #define sys_port_trace_k_fifo_init_exit(fifo) SEGGER_SYSVIEW_RecordEndCall(TID_FIFO_INIT)
@@ -429,6 +432,11 @@ void sys_trace_thread_info(struct k_thread *thread);
 	SEGGER_SYSVIEW_RecordU32(TID_FIFO_PEAK_TAIL, (uint32_t)(uintptr_t)fifo)
 #define sys_port_trace_k_fifo_peek_tail_exit(fifo, ret)                                            \
 	SEGGER_SYSVIEW_RecordEndCall(TID_FIFO_PEAK_TAIL)
+
+#define sys_port_trace_k_fifo_peek_next_enter(fifo, data)                                          \
+	SEGGER_SYSVIEW_RecordU32(TID_FIFO_PEAK_NEXT, (uint32_t)(uintptr_t)fifo)
+#define sys_port_trace_k_fifo_peek_next_exit(fifo, data, ret)                                      \
+	SEGGER_SYSVIEW_RecordEndCall(TID_FIFO_PEAK_NEXT)
 
 #define sys_port_trace_k_lifo_init_enter(lifo)                                                     \
 	SEGGER_SYSVIEW_RecordU32(TID_LIFO_INIT, (uint32_t)(uintptr_t)lifo)
