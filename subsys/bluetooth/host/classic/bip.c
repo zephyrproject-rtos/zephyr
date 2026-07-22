@@ -1651,9 +1651,9 @@ int bt_bip_disconnect_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct
 		return -EINVAL;
 	}
 
-	err = bt_obex_disconnect_rsp(&server->_server, rsp_code, NULL);
+	err = bt_obex_disconnect_rsp(&server->_server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send conn rsp %d", err);
+		LOG_ERR("Failed to send disconnect rsp %d", err);
 		return err;
 	}
 
