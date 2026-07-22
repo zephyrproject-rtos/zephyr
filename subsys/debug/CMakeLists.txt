@@ -25,6 +25,11 @@ add_subdirectory_ifdef(
   gdbstub
   )
 
+add_subdirectory_ifdef(
+  CONFIG_DEBUGPOINT
+  debugpoint
+  )
+
 zephyr_sources_ifdef(
   CONFIG_MIPI_STP_DECODER
   mipi_stp_decoder.c
@@ -39,3 +44,8 @@ zephyr_sources_ifdef(
   CONFIG_CS_TRACE_DEFMT
   coresight/cs_trace_defmt.c
 )
+
+add_subdirectory_ifdef(
+  CONFIG_WATCHPOINT
+  watchpoint
+  )
