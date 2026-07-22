@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ARM_SSE200_SPCTRL
+	bool "ARM SSE-200 SPCTRL driver"
+	depends on ARM_SECURE_FIRMWARE
+	default y if DT_HAS_ARM_SSE_200_SPCTRL_ENABLED
+	select PPC
+	help
+	  Enables the driver for the ARM SSE-200 Secure Privilege Control
+	  Register block.  At PRE_KERNEL_1 init it programs the NSCCFG
+	  register according to the nsccfg DTS property, telling the IDAU
+	  which SRAM banks are Non-Secure Callable.
