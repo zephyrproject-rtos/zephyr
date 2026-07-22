@@ -76,7 +76,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == (uint32_t)K_TICKS_FOREVER) {
 		key = k_spin_lock(&lock);
 		/* Disable the LPTIMER events */
 		cyhal_lptimer_enable_event(&lptimer_obj, CYHAL_LPTIMER_COMPARE_MATCH,

@@ -269,7 +269,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	 * be ignored, as 32-bits timer will overflow in a not-long time.
 	 */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
-	    ticks == SYS_CLOCK_MAX_WAIT) {
+	    ticks == (uint32_t)K_TICKS_FOREVER) {
 		timer0_control_register_set(0);
 		timer0_count_register_set(0);
 		timer0_limit_register_set(0);
@@ -300,7 +300,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #endif
 #else
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
-	    ticks == SYS_CLOCK_MAX_WAIT) {
+	    ticks == (uint32_t)K_TICKS_FOREVER) {
 		timer0_control_register_set(0);
 		timer0_count_register_set(0);
 		timer0_limit_register_set(0);

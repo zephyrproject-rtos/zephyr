@@ -122,7 +122,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	uint32_t next_cycle;
 	uint32_t count;
 
-	if (ticks == SYS_CLOCK_MAX_WAIT) {
+	if (ticks == (uint32_t)K_TICKS_FOREVER) {
 		next_cycle = (last_tick * CYC_PER_TICK) + CYCLES_MAX;
 	} else if (ticks == 0) {
 		next_cycle = MXC_TMR_GetCount(regs) + (CYC_PER_TICK * 3 / 2);

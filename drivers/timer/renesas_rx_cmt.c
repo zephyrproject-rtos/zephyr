@@ -214,7 +214,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	}
 
 	/* Nothing to do when the kernel has no near deadline to schedule. */
-	if (ticks == SYS_CLOCK_MAX_WAIT) {
+	if (ticks == (uint32_t)K_TICKS_FOREVER) {
 		return;
 	}
 

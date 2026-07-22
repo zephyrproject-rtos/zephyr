@@ -94,7 +94,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	data->cycle_count += pending_cycles;
 	unannounced_cycles = data->cycle_count - data->announced_cycles;
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == (uint32_t)K_TICKS_FOREVER) {
 		/*
 		 * No pending timeout and no future timer interrupt required:
 		 * wait as long as the hardware allows.
