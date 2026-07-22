@@ -23,6 +23,7 @@
 
 #include <zephyr/kernel.h>
 
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/pm/device.h>
@@ -34,9 +35,22 @@
 #define TRANSFER_LOOPS (4)
 #define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
 
+/*
+ * Place DMA buffers in non-cacheable memory when a D-cache is present, so that
+ * DMA reads and writes are coherent without explicit cache maintenance.
+ * Fall back to ordinary BSS when no D-cache exists or no nocache region is
+ * configured, in which case sys_cache_data_flush/invd_range() are no-ops.
+ */
+#if defined(CONFIG_DCACHE) && defined(CONFIG_NOCACHE_MEMORY)
+static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE]
+	__used __nocache;
+static __aligned(DMA_DATA_ALIGNMENT) uint8_t
+	rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] __used __nocache;
+#else
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t
 	rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] = { { 0 } };
+#endif
 
 volatile uint32_t transfer_count;
 volatile uint32_t done;
@@ -56,6 +70,13 @@ static void test_transfer(const struct device *dev, uint32_t id)
 		dma_block_cfg.source_address = (uint32_t)tx_data;
 		dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 #endif
+		/*
+		 * Flush tx_data so DMA reads committed data, and invalidate the
+		 * next rx slot so the CPU will not see stale cache lines after
+		 * the DMA writes to it.
+		 */
+		sys_cache_data_flush_range(tx_data, sizeof(tx_data));
+		sys_cache_data_invd_range(rx_data[transfer_count], sizeof(rx_data[0]));
 
 		zassert_ok(dma_config(dev, id, &dma_cfg), "Not able to config transfer %d",
 			   transfer_count + 1);
@@ -140,6 +161,13 @@ static int test_loop(const struct device *dma)
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 #endif
+	/*
+	 * Flush tx_data to memory before DMA reads it, and invalidate the first
+	 * rx slot so the CPU will not observe stale cache lines after the DMA
+	 * writes to it.
+	 */
+	sys_cache_data_flush_range(tx_data, sizeof(tx_data));
+	sys_cache_data_invd_range(rx_data[0], sizeof(rx_data[0]));
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
@@ -163,6 +191,12 @@ static int test_loop(const struct device *dma)
 	}
 
 	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
+
+	/*
+	 * Invalidate all rx slots before reading so the CPU sees what the DMA
+	 * wrote, not stale cache lines.
+	 */
+	sys_cache_data_invd_range(rx_data, sizeof(rx_data));
 
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
 		TC_PRINT("RX data Loop %d\n", i);
@@ -233,6 +267,8 @@ static int test_loop_suspend_resume(const struct device *dma)
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 #endif
+	sys_cache_data_flush_range(tx_data, sizeof(tx_data));
+	sys_cache_data_invd_range(rx_data[0], sizeof(rx_data[0]));
 
 	unsigned int irq_key;
 
@@ -310,6 +346,8 @@ static int test_loop_suspend_resume(const struct device *dma)
 	}
 
 	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
+
+	sys_cache_data_invd_range(rx_data, sizeof(rx_data));
 
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
 		TC_PRINT("RX data Loop %d\n", i);
@@ -414,6 +452,8 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 #endif
+	sys_cache_data_flush_range(tx_data, sizeof(tx_data));
+	sys_cache_data_invd_range(rx_data[0], sizeof(rx_data[0]));
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
@@ -458,6 +498,8 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	}
 
 	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
+
+	sys_cache_data_invd_range(rx_data, sizeof(rx_data));
 
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
 		TC_PRINT("RX data Loop %d\n", i);

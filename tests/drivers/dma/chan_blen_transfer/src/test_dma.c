@@ -16,6 +16,7 @@
  *   -# Data is transferred correctly from src to dest
  */
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/ztest.h>
@@ -91,6 +92,14 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 
 	k_sem_reset(&transfer_end_sem);
 
+	/*
+	 * Flush tx_data so the DMA reads committed data from memory, and
+	 * invalidate rx_data (including guard area) so the CPU will not observe
+	 * stale cache lines after the DMA writes to it.
+	 */
+	sys_cache_data_flush_range(tx_data, TEST_BUF_SIZE);
+	sys_cache_data_invd_range(rx_data, TEST_BUF_SIZE + GUARD_BUF_SIZE);
+
 	if (dma_start(dma, chan_id)) {
 		TC_PRINT("ERROR: transfer\n");
 		return TC_FAIL;
@@ -114,6 +123,12 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 		TC_PRINT("DMA transfer error\n");
 		return TC_FAIL;
 	}
+
+	/*
+	 * Invalidate rx_data again after DMA completion to ensure the CPU reads
+	 * what the DMA actually wrote, not any speculatively cached lines.
+	 */
+	sys_cache_data_invd_range(rx_data, TEST_BUF_SIZE + GUARD_BUF_SIZE);
 
 	TC_PRINT("DMA transfer successful\n");
 	TC_PRINT("%s\n", rx_data);
@@ -180,5 +195,29 @@ ZTEST(dma_m2m, test_tst_dma1_m2m_chan1_burst16)
 #endif /* CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS > 1 */
 
 #if CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS > 2
-#error "Update test_dma.c to add ZTEST cases for tst_dma2 and beyond."
+ZTEST(dma_m2m, test_tst_dma2_m2m_chan0_burst8)
+{
+	RUN_DMA_M2M_TEST(tst_dma2, CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 8);
+}
+
+ZTEST(dma_m2m, test_tst_dma2_m2m_chan1_burst8)
+{
+	RUN_DMA_M2M_TEST(tst_dma2, CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 8);
+}
+
+#if CONFIG_DMA_TRANSFER_BURST16
+ZTEST(dma_m2m, test_tst_dma2_m2m_chan0_burst16)
+{
+	RUN_DMA_M2M_TEST(tst_dma2, CONFIG_DMA_TRANSFER_CHANNEL_NR_0, 16);
+}
+
+ZTEST(dma_m2m, test_tst_dma2_m2m_chan1_burst16)
+{
+	RUN_DMA_M2M_TEST(tst_dma2, CONFIG_DMA_TRANSFER_CHANNEL_NR_1, 16);
+}
+#endif
+#endif /* CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS > 2 */
+
+#if CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS > 3
+#error "Update test_dma.c to add ZTEST cases for tst_dma3 and beyond."
 #endif
