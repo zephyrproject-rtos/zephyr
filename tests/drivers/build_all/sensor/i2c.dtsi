@@ -1642,3 +1642,8 @@ test_i2c_tmp451: tmp451@d5 {
 	reg = <0xd5>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_mlx90632: mlx90632@d6 {
+	compatible = "melexis,mlx90632";
+	reg = <0xd6>;
+};

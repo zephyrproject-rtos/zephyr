@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) Michele Tavecchio <tavecchiomichele03@gmail.com>
+# SPDX-FileCopyrightText: Copyright (c) Alessandro Sola <alessandrosola03@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+
+menuconfig MLX90632
+	bool "MLX90632 Infrared Temperature Sensor"
+	default y
+	depends on DT_HAS_MELEXIS_MLX90632_ENABLED
+	select I2C
+	help
+	  Enable driver for MLX90632 infrared temperature sensor.
+
+if MLX90632
+
+choice MLX90632_MODE
+	prompt "Operating Mode"
+	default MLX90632_MODE_CONTINUOUS
+	help
+	  Select the measurement mode for the sensor.
+
+config MLX90632_MODE_CONTINUOUS
+	bool "Continuous Mode"
+	help
+	  Measurements are executed continuously.
+
+config MLX90632_MODE_STEP
+	bool "Step Mode"
+	help
+	  Device remains active but waits for a Start of Conversion (SOC) command.
+
+config MLX90632_MODE_SLEEPING_STEP
+	bool "Sleeping Step Mode"
+	help
+	  Device sleeps between measurements to save power (2.5uA).
+
+endchoice
+
+config MLX90632_REFRESH_RATE
+	int "Refresh Rate (0...7)"
+	range 0 7
+	default 2
+	help
+	  Set the refresh rate.
+	  Medical Mode: 0=0.5Hz, 1=1Hz, 2=2Hz, 3=4Hz, 4=8Hz, 5=16Hz, 6=32Hz, 7=64Hz.
+	  Extended Mode: 0=0.16Hz, 1=0.32Hz, 2=0.65Hz, 3=1.3Hz, 4=2.6Hz, 5=5Hz, 6=10Hz, 7=20Hz.
+
+config MLX90632_EXTENDED_MODE
+	bool "Extended Range Mode"
+	default n
+	help
+	  Enable the extended range measurement mode for the MLX90632 sensor.
+	  This changes the measurement type (meas_select = 0x11) and uses
+	  extended RAM registers and calculations.
+endif # MLX90632
