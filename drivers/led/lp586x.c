@@ -289,7 +289,7 @@ static int lp586x_init(const struct device *dev)
 		const struct led_info *led_info = lp586x_led_to_info(config, led);
 		int channel = led_info->index + led_info->num_colors - 1;
 
-		if (channel > config->max_channels) {
+		if (channel >= config->max_channels) {
 			LOG_ERR("Invalid LED channel %d (max %d)", channel, config->max_channels);
 			return -EINVAL;
 		}
