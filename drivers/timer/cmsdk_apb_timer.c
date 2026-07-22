@@ -30,32 +30,11 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(TIMER_NODE, arm_cmsdk_timer),
 		    (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define MAX_CYC UINT32_MAX
 
-/* Minimum reload the driver will program: the closest-in timeout it can
- * schedule. It must exceed the longest the timer interrupt can stay masked, or
- * the counter wraps more than once between elapsed_cyc()'s reads and a period
- * is lost. That is a wall-clock property, so derive it from a fixed time
- * (converted to cycles at the counter rate, at init) rather than a fixed cycle
- * count, which is a different wall-clock time on every clock. The
- * CMSDK_APB_TIMER_MIN_DELAY_OVERRIDE Kconfig still takes precedence, and a
- * two-cycle hardware floor keeps the reload from being degenerate on a slow
- * clock where the time budget rounds below it.
- */
-#define CMSDK_MIN_DELAY_US 10U
-
-static inline uint32_t cmsdk_min_delay(void)
-{
 #ifdef CONFIG_CMSDK_APB_TIMER_MIN_DELAY_OVERRIDE
-	uint32_t cyc = CONFIG_CMSDK_APB_TIMER_MIN_DELAY_CYCLES;
+#define MIN_DELAY_CYCLES CONFIG_CMSDK_APB_TIMER_MIN_DELAY_CYCLES
 #else
-	uint32_t cyc = k_us_to_cyc_ceil32(CMSDK_MIN_DELAY_US);
+#define MIN_DELAY_CYCLES MAX(1024U, ((uint32_t)(CYC_PER_TICK / 16U)))
 #endif
-	return MAX(2U, cyc);
-}
-
-/* Minimum reload, derived from the cycle rate in sys_clock_driver_init(). See
- * cmsdk_min_delay().
- */
-static uint32_t min_delay;
 
 typedef uint32_t cycle_t;
 
@@ -169,12 +148,12 @@ void sys_clock_set_timeout(uint32_t ticks)
 	unannounced_cycles = data->cycle_count - data->announced_cycles;
 
 	if ((int32_t)unannounced_cycles < 0) {
-		load_to_be_set = min_delay;
+		load_to_be_set = MIN_DELAY_CYCLES;
 	} else {
 		int64_t want = ((uint64_t)data->last_elapsed + ticks) * CYC_PER_TICK;
 		int64_t delta_cycles = want - unannounced_cycles;
 
-		load_to_be_set = CLAMP(delta_cycles, (int64_t)min_delay, (int64_t)MAX_CYC);
+		load_to_be_set = CLAMP(delta_cycles, (int64_t)MIN_DELAY_CYCLES, (int64_t)MAX_CYC);
 	}
 
 	data->load = load_to_be_set;
@@ -248,7 +227,6 @@ static int sys_clock_driver_init(void)
 	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
 	const struct tmr_cmsdk_apb_cfg *cfg = &cfg_inst0;
 
-	min_delay = cmsdk_min_delay();
 	data->last_elapsed = 0;
 	data->load = CYC_PER_TICK;
 	cfg->timer->reload = CYC_PER_TICK;
