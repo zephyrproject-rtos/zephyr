@@ -244,27 +244,7 @@ bool z_nxp_os_timer_ignore_timer_wakeup(void)
 	return (wait_forever || counter_remaining_ticks);
 }
 
-void sys_clock_unused(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
-	/* No real wakeup deadline: track it for the counter-overflow wakeup
-	 * bookkeeping, then program the match as far out as the hardware allows.
-	 */
-	wait_forever = true;
-#endif
-	OSTIMER_SetMatchValue(base, MAX_CYC + last_count - cyc_sys_compensated, NULL);
-	counter_remaining_ticks = 0;
-
-	k_spin_unlock(&lock, key);
-}
-
-void sys_clock_idle_enter(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Only for tickless kernel system */
@@ -273,29 +253,19 @@ void sys_clock_idle_enter(uint32_t ticks)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 	/* We intercept calls from idle with a 0 tick count when PM=y */
-	if (ticks == 0) {
+	if (idle && (ticks == 0)) {
 		mcux_os_timer_set_lp_counter_timeout();
 		/* A low power counter has been started. No need to
 		 * go further, simply return
 		 */
 		return;
 	}
-#endif
-	sys_clock_set_timeout(ticks);
-}
-
-void sys_clock_set_timeout(uint32_t ticks)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Only for tickless kernel system */
-		return;
-	}
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
-	/* A real deadline is being scheduled; the "no deadline" case is handled
-	 * by sys_clock_unused() instead.
+	/* When using a counter for certain low power modes, set this flag when the requested
+	 * delay is forever. This is to keep track of wakeup sources in case of counter overflows.
 	 */
-	wait_forever = false;
+	wait_forever = (ticks == SYS_CLOCK_MAX_WAIT);
+#else
+	ARG_UNUSED(idle);
 #endif
 	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 

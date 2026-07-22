@@ -105,8 +105,9 @@ static void radio_timer_txrx_wkup_isr(void *args)
 }
 #endif /* CONFIG_SOC_STM32WB06XX || CONFIG_SOC_STM32WB07XX */
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(idle);
 
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		uint32_t current_time, delay;

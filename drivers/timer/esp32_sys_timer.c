@@ -22,17 +22,26 @@
 
 #include "esp32_sys_timer.h"
 
+#define CYC_PER_TICK ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec()	\
+			      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#define MAX_CYC 0xffffffffu
+#define MAX_TICKS ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_NODELABEL(systimer0));
 #endif
 
+#define TICKLESS IS_ENABLED(CONFIG_TICKLESS_KERNEL)
+
 #if defined(CONFIG_PM)
 static uint64_t systimer_pre_idle;
 static uint64_t lptim_pre_idle;
 static bool timeout_idle;
 #endif
+
+static struct k_spinlock lock;
+static uint64_t last_count;
 
 /* Systimer HAL layer object */
 static systimer_hal_context_t systimer_hal;
@@ -56,60 +65,114 @@ static uint64_t get_systimer_alarm(void)
 	return systimer_hal_get_counter_value(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
 }
 
-/*
- * Free-running 64-bit systimer counter plus a one-shot alarm: a COMPARE
- * backend. The core owns the tick accounting; the driver reads the counter and
- * arms the alarm. timer_driver_set_compare() keeps a target that is too close (or
- * behind after latency) at least MIN_DELAY ahead so the alarm is not missed.
- */
-#define TIMER_CORE_BACKEND_COMPARE
-#define TIMER_CORE_64BIT_CYCLES
-/*
- * The systimer unit counter is 52-bit, read back as a 64-bit value. Declare its
- * real width: the default native register width would be 32 bits on the RISC-V
- * parts, masking announce deltas to 32 bits and truncating a light-sleep
- * compensation longer than 2^32 cycles (~268 s at 16 MHz) in sys_clock_idle_exit();
- * 52 also keeps the masked delta wrap-correct at the counter's true wrap.
- */
-#define TIMER_CORE_CYCLES_WIDTH 52
-
-static inline uint64_t timer_driver_cycle_get(void)
+static uint64_t sys_timer_elapsed_ticks(uint64_t now)
 {
-	/* sys_clock_disable() deinitializes the HAL and clears dev; a stray core
-	 * read afterwards must not dereference it.
-	 */
-	if (systimer_hal.dev == NULL) {
-		return 0;
-	}
-	return get_systimer_alarm();
+	uint64_t dticks = (uint64_t)((now - last_count) / CYC_PER_TICK);
+
+	last_count += dticks * CYC_PER_TICK;
+
+	return dticks;
 }
-
-static void timer_driver_set_compare(uint64_t cycles)
-{
-	/* Same post-sys_clock_disable() guard as timer_driver_cycle_get(): once
-	 * the HAL is deinitialized and dev cleared, a stray arm must not
-	 * dereference it.
-	 */
-	if (systimer_hal.dev == NULL) {
-		return;
-	}
-
-	uint64_t curr = get_systimer_alarm();
-
-	if ((int64_t)(cycles - curr) < MIN_DELAY) {
-		cycles = curr + MIN_DELAY;
-	}
-	set_systimer_alarm(cycles);
-}
-
-#include "system_timer_generic.h"
 
 static void IRAM_ATTR sys_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 	systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
 
-	timer_core_announce();
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	uint64_t now = get_systimer_alarm();
+	uint64_t dticks = sys_timer_elapsed_ticks(now);
+
+	if (!TICKLESS) {
+		uint64_t next = last_count + CYC_PER_TICK;
+
+		if ((int64_t)(next - now) < MIN_DELAY) {
+			next += CYC_PER_TICK;
+		}
+		set_systimer_alarm(next);
+	}
+
+	k_spin_unlock(&lock, key);
+	sys_clock_announce(dticks);
+}
+
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
+{
+#if defined(CONFIG_TICKLESS_KERNEL)
+	if (systimer_hal.dev == NULL) {
+		return;
+	}
+
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	uint64_t now = get_systimer_alarm();
+	uint32_t adj, cyc = ticks * CYC_PER_TICK;
+
+	/* Round up to next tick boundary. */
+	adj = (uint32_t)(now - last_count) + (CYC_PER_TICK - 1);
+	if (cyc <= MAX_CYC - adj) {
+		cyc += adj;
+	} else {
+		cyc = MAX_CYC;
+	}
+	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
+
+	if ((int32_t)(cyc + last_count - now) < MIN_DELAY) {
+		cyc += CYC_PER_TICK;
+	}
+
+	set_systimer_alarm(cyc + last_count);
+
+#if defined(CONFIG_PM)
+	if (idle) {
+		uint64_t timeout_us =
+			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+		lptim_pre_idle = esp32_lptim_hook_on_lpm_entry(timeout_us);
+		systimer_pre_idle = get_systimer_alarm();
+		timeout_idle = true;
+	}
+#else
+	ARG_UNUSED(idle);
+#endif
+
+	k_spin_unlock(&lock, key);
+#endif
+}
+
+uint32_t sys_clock_elapsed(void)
+{
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return 0;
+	}
+
+	if (systimer_hal.dev == NULL) {
+		return 0;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	uint32_t ret = ((uint32_t)get_systimer_alarm() - (uint32_t)last_count) / CYC_PER_TICK;
+
+	k_spin_unlock(&lock, key);
+	return ret;
+}
+
+uint32_t sys_clock_cycle_get_32(void)
+{
+	if (systimer_hal.dev == NULL) {
+		return 0;
+	}
+	return (uint32_t)get_systimer_alarm();
+}
+
+uint64_t sys_clock_cycle_get_64(void)
+{
+	if (systimer_hal.dev == NULL) {
+		return 0;
+	}
+	return get_systimer_alarm();
 }
 
 void sys_clock_disable(void)
@@ -120,28 +183,13 @@ void sys_clock_disable(void)
 }
 
 #if defined(CONFIG_PM)
-void sys_clock_idle_enter(uint32_t ticks)
-{
-	sys_clock_set_timeout(ticks);
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || systimer_hal.dev == NULL) {
-		return;
-	}
-
-	uint64_t timeout_us = ((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-	lptim_pre_idle = esp32_lptim_hook_on_lpm_entry(timeout_us);
-	systimer_pre_idle = get_systimer_alarm();
-	timeout_idle = true;
-}
-
 void sys_clock_idle_exit(void)
 {
 	if (!timeout_idle) {
 		return;
 	}
 
-	k_spinlock_key_t key = sys_clock_lock();
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	uint64_t lptim_now = esp32_lptim_hook_on_lpm_exit();
 	uint64_t systimer_now = get_systimer_alarm();
@@ -163,10 +211,15 @@ void sys_clock_idle_exit(void)
 	systimer_ll_set_counter_value(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK, new_value);
 	systimer_ll_apply_counter_value(systimer_hal.dev, SYSTIMER_COUNTER_OS_TICK);
 
+	systimer_now = get_systimer_alarm();
+	uint64_t dticks = sys_timer_elapsed_ticks(systimer_now);
+
 	timeout_idle = false;
 
+	k_spin_unlock(&lock, key);
+
 	/* Announce OS ticks as systimer remained stalled while in light sleep */
-	timer_core_announce_from(key);
+	sys_clock_announce(dticks);
 }
 #endif
 
@@ -194,9 +247,8 @@ static int sys_clock_driver_init(void)
 #if defined(CONFIG_SMP)
 	systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, 1, true);
 #endif
-
-	/* Seed the announce baseline from the systimer and arm the first tick. */
-	timer_core_init();
+	last_count = get_systimer_alarm();
+	set_systimer_alarm(last_count + CYC_PER_TICK);
 	return 0;
 }
 

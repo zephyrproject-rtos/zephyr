@@ -118,8 +118,9 @@ static void rtc_jdp_set_compare(uint32_t compare)
 	}
 }
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(idle);
 
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -127,9 +128,20 @@ void sys_clock_set_timeout(uint32_t ticks)
 		return;
 	}
 
-	uint64_t wait_ticks = (uint64_t)last_elapsed + (uint64_t)ticks;
-	uint64_t wait_cycles = wait_ticks * (uint64_t)cycles_per_tick;
-	uint32_t cycles = (wait_cycles > cycles_max) ? cycles_max : (uint32_t)wait_cycles;
+	uint32_t cycles;
+
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		/*
+		 * No pending timeout and no future timer interrupt required:
+		 * wait as long as the hardware allows.
+		 */
+		cycles = cycles_max;
+	} else {
+		uint64_t wait_ticks = (uint64_t)last_elapsed + (uint64_t)ticks;
+		uint64_t wait_cycles = wait_ticks * (uint64_t)cycles_per_tick;
+
+		cycles = (wait_cycles > cycles_max) ? cycles_max : (uint32_t)wait_cycles;
+	}
 
 	rtc_jdp_set_compare(last_count + cycles);
 }

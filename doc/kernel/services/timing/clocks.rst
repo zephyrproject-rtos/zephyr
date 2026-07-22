@@ -265,26 +265,6 @@ comparatively simple API.
   :c:func:`sys_clock_announce`, which the kernel needs to test newly
   arriving timeouts for expiration.
 
-* The driver may optionally provide a :c:func:`sys_clock_unused` call.  The
-  kernel invokes it, in place of :c:func:`sys_clock_set_timeout`, when no
-  timeout is pending and :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE`
-  allows the system uptime to drift.  A driver may use it to halt its counter
-  and stop taking interrupts until the next :c:func:`sys_clock_set_timeout`
-  resumes it.  Unlike :c:func:`sys_clock_disable`, this is a resumable pause,
-  not a teardown; the default implementation is a no-op, so a driver that does
-  nothing here simply stops being reprogrammed and quiesces on its own, and
-  sloppy idle is available to every driver without extra code.
-
-* The driver may optionally provide a :c:func:`sys_clock_idle_enter` call,
-  which the power-management path uses in place of
-  :c:func:`sys_clock_set_timeout` when the CPU is about to enter low-power
-  idle, passing the number of ticks until the next expected wakeup.  A driver
-  that can hand off to a low-power wakeup timer (or otherwise reconfigure for
-  sleep) does so here; recovery happens in :c:func:`sys_clock_idle_exit`.  The
-  default implementation just programs the wakeup through
-  :c:func:`sys_clock_set_timeout`, so a driver with no low-power handling needs
-  no implementation.
-
 Timer Driver Locking
 --------------------
 
@@ -328,28 +308,6 @@ counter driver can be trivially implemented also:
 * The driver can return zero for every call to :c:func:`sys_clock_elapsed`
   as no more than one tick can be detected as having elapsed (because
   otherwise an interrupt would have been received).
-
-Generic Tickless Core
----------------------
-
-The per-driver work described above -- the cycle-to-tick conversion, the
-announce baseline, the tick-aligned deadline computation and the counter wrap
-and range handling -- is nearly identical across tickless drivers, and its
-small hand-rolled divergences are a recurring source of timer bugs.
-:zephyr_file:`drivers/timer/system_timer_generic.h` provides that logic once,
-as an implementation header a driver includes after defining a few cycle-domain
-primitives: a counter read plus either an absolute-compare or a relative-reload
-arming function. The header then emits :c:func:`sys_clock_set_timeout`,
-:c:func:`sys_clock_elapsed` and :c:func:`sys_clock_cycle_get_32` /
-:c:func:`sys_clock_cycle_get_64` on the driver's behalf and owns the announce
-baseline, so the driver stays in the cycle domain and never manipulates ticks
-directly. It states its counter width and, only when the counter does not run
-at the system clock rate, its frequency.
-
-New timer drivers that support tickless operation should build on this header
-rather than reimplement the tick accounting; most in-tree drivers already do.
-The header itself documents the exact set of feature macros and primitives a
-driver provides.
 
 
 SMP Details

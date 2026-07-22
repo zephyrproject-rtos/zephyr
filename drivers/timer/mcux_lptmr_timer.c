@@ -66,13 +66,14 @@ static inline uint32_t counter_delta(uint32_t now, uint32_t then)
 	return (now - then) & COUNTER_MAX;
 }
 
-void sys_clock_unused(void)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
-	LPTMR_DisableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
-}
+	ARG_UNUSED(idle);
 
-void sys_clock_set_timeout(uint32_t ticks)
-{
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		LPTMR_DisableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
+		return;
+	}
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;

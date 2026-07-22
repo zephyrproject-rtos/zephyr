@@ -315,20 +315,14 @@ static inline uint32_t z_clock_lptim_getcounter(void)
 	return lp_time;
 }
 
-void sys_clock_unused(void)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
+	/* new LPTIM AutoReload value to set (aligned on Kernel ticks) */
+	uint32_t next_arr = 0;
+	int err;
 
-	/* No timeout pending: turn the LPTIM off entirely (unclocked, never
-	 * waking up). It is restored by the next sys_clock_set_timeout().
-	 */
-	clock_control_off(clk_ctrl, (clock_control_subsys_t)&lptim_clk[0]);
-}
+	ARG_UNUSED(idle);
 
-void sys_clock_idle_enter(uint32_t ticks)
-{
 #ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
 	const struct pm_state_info *next;
 
@@ -336,7 +330,7 @@ void sys_clock_idle_enter(uint32_t ticks)
 
 	/* Check if STANBY or STOP3 is requested */
 	timeout_stdby = false;
-	if (next != NULL) {
+	if ((next != NULL) && idle) {
 #ifdef CONFIG_PM_S2RAM
 		if (next->state == PM_STATE_SUSPEND_TO_RAM) {
 			timeout_stdby = true;
@@ -383,23 +377,21 @@ void sys_clock_idle_enter(uint32_t ticks)
 	}
 #endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
 
-	sys_clock_set_timeout(ticks);
-}
-
-void sys_clock_set_timeout(uint32_t ticks)
-{
-	/* new LPTIM AutoReload value to set (aligned on Kernel ticks) */
-	uint32_t next_arr = 0;
-	int err;
-
-#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
-	timeout_stdby = false;
-#endif
-
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
+	/*
+	 * The kernel has no pending timeout, which it signals with
+	 * ticks == SYS_CLOCK_MAX_WAIT. Under sloppy idle the LPTIM can be
+	 * turned off entirely (never waking up, not clocked anymore).
+	 * Without sloppy idle we fall through and schedule the (capped)
+	 * timeout so the uptime tick count stays correct.
+	 */
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
+		return;
+	}
 	/*
 	 * When CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = n, ticks equals to INT_MAX
 	 * is treated as a maximum possible value LPTIM_MAX_TIMEBASE (16bit counter)

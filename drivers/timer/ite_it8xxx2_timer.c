@@ -223,22 +223,11 @@ static void free_run_timer_overflow_isr(const void *unused)
 	 */
 }
 
-void sys_clock_unused(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	IT8XXX2_EXT_CTRLX(EVENT_TIMER) &= ~IT8XXX2_EXT_ETXEN;
-	k_spin_unlock(&lock, key);
-}
-
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	uint32_t hw_cnt;
 
+	ARG_UNUSED(idle);
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Always return for non-tickless kernel system */
@@ -251,7 +240,18 @@ void sys_clock_set_timeout(uint32_t ticks)
 	/* Disable event timer */
 	IT8XXX2_EXT_CTRLX(EVENT_TIMER) &= ~IT8XXX2_EXT_ETXEN;
 
-	{
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		/*
+		 * The kernel has no pending timeout, which it signals with
+		 * ticks == SYS_CLOCK_MAX_WAIT. Under sloppy idle no future
+		 * timer interrupt is required, so leave the event timer
+		 * disabled and stop waking up. Without sloppy idle we fall
+		 * through to the else and still schedule the (capped) timeout
+		 * so the uptime tick count stays correct.
+		 */
+		k_spin_unlock(&lock, key);
+		return;
+	} else {
 		uint32_t next_cycs;
 		uint32_t now;
 		uint32_t dcycles;

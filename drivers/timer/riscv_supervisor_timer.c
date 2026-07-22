@@ -6,16 +6,41 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <limits.h>
+
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/arch/riscv/sbi.h>
 
+#define CYC_PER_TICK (uint32_t)(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
+/* the unsigned long cast limits divisions to native CPU register width */
+#define cycle_diff_t   unsigned long
+#define CYCLE_DIFF_MAX (~(cycle_diff_t)0)
+
+/*
+ * Maximum number of cycles to wait between two sys_clock_announce() reports:
+ * the elapsed cycle count must fit in a cycle_diff_t before it is divided down
+ * to ticks. Reserve 1/4 of the range as headroom for the unavoidable IRQ
+ * servicing latency so a late report still fits, then add the LSB so the value
+ * clears a run of low set bits for a nicer literal in the generated assembly.
+ */
+#define CYCLES_MAX_1 ((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_2 (CYCLES_MAX_1 / 2 + CYCLES_MAX_1 / 4)
+#define CYCLES_MAX   (CYCLES_MAX_2 + LSB_GET(CYCLES_MAX_2))
+
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = IRQ_S_TIMER;
 #endif
+
+static struct k_spinlock lock;
+static uint64_t last_count;
+static uint64_t last_ticks;
+static uint32_t last_elapsed;
 
 static void sbi_set_timer(uint64_t deadline)
 {
@@ -49,44 +74,82 @@ static uint64_t stime(void)
 #endif
 }
 
-/*
- * Free-running "time" counter plus an absolute SBI set-timer deadline: a
- * COMPARE backend. The generic core owns the tick accounting and the clock
- * lock; the driver only reads the counter and programs the deadline.
- *
- * The "time" CSR is 64 bits wide even on RV32, so declare its width rather
- * than take the core's native-register default: a 32-bit mask would alias
- * any delta beyond 2^32 cycles, and the SBI deadline (compared against the
- * full 64-bit count) would then be set a whole 2^32-cycle period behind the
- * counter.
- */
-#define TIMER_CORE_BACKEND_COMPARE
-#define TIMER_CORE_64BIT_CYCLES
-#define TIMER_CORE_CYCLES_WIDTH 64
-
-static inline uint64_t timer_driver_cycle_get(void)
-{
-	return stime();
-}
-
-static inline void timer_driver_set_compare(uint64_t cycles)
-{
-	sbi_set_timer(cycles);
-}
-
-#include "system_timer_generic.h"
-
 static void timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	timer_core_announce();
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	uint64_t now = stime();
+	uint64_t dcycles = now - last_count;
+	uint32_t dticks = (cycle_diff_t)dcycles / CYC_PER_TICK;
+
+	last_count += (cycle_diff_t)dticks * CYC_PER_TICK;
+	last_ticks += dticks;
+	last_elapsed = 0;
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		uint64_t next = last_count + CYC_PER_TICK;
+
+		sbi_set_timer(next);
+	}
+
+	k_spin_unlock(&lock, key);
+	sys_clock_announce(dticks);
+}
+
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
+{
+	ARG_UNUSED(idle);
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	uint64_t cyc;
+
+	cyc = (last_ticks + last_elapsed + ticks) * CYC_PER_TICK;
+	if ((cyc - last_count) > CYCLES_MAX) {
+		cyc = last_count + CYCLES_MAX;
+	}
+	sbi_set_timer(cyc);
+
+	k_spin_unlock(&lock, key);
+}
+
+uint32_t sys_clock_elapsed(void)
+{
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return 0;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&lock);
+	uint64_t now = stime();
+	uint64_t dcycles = now - last_count;
+	uint32_t dticks = (cycle_diff_t)dcycles / CYC_PER_TICK;
+
+	last_elapsed = dticks;
+	k_spin_unlock(&lock, key);
+	return dticks;
+}
+
+uint32_t sys_clock_cycle_get_32(void)
+{
+	return (uint32_t)stime();
+}
+
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return stime();
 }
 
 static int sys_clock_driver_init(void)
 {
 	IRQ_CONNECT(IRQ_S_TIMER, 0, timer_isr, NULL, 0);
-	timer_core_init();
+	last_ticks = stime() / CYC_PER_TICK;
+	last_count = last_ticks * CYC_PER_TICK;
+	sbi_set_timer(last_count + CYC_PER_TICK);
 	irq_enable(IRQ_S_TIMER);
 	return 0;
 }
@@ -94,7 +157,7 @@ static int sys_clock_driver_init(void)
 #ifdef CONFIG_SMP
 void smp_timer_init(void)
 {
-	timer_core_smp_prime();
+	sbi_set_timer(last_count + CYC_PER_TICK);
 	irq_enable(IRQ_S_TIMER);
 }
 #endif
