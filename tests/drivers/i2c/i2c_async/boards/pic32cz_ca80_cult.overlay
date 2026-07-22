@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sercom9_i2c_default: sercom9_i2c_default {
+		group1 {
+			pinmux = <PD28D_SERCOM9_PAD0>,
+				 <PD29D_SERCOM9_PAD1>;
+		};
+	};
+};
+
+&sercom9 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom9_i2c_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 2 0x17>, <&dmac 3 0x18>;
+	dma-names = "rx", "tx";
+	status = "okay";
+
+	eeprom0: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};
