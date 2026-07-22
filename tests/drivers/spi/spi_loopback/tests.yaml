@@ -274,6 +274,7 @@ tests:
       - platform:mimxrt1040_evk:DTC_OVERLAY_FILE="boards/mimxrt1040_evk_flexio_spi.overlay"
       - platform:frdm_imxrt1186/mimxrt1186/cm33:DTC_OVERLAY_FILE="boards/frdm_imxrt1186_flexio_spi.overlay"
       - platform:frdm_imxrt1186/mimxrt1186/cm7:DTC_OVERLAY_FILE="boards/frdm_imxrt1186_flexio_spi.overlay"
+      - platform:frdm_mcxe31b/mcxe31b:DTC_OVERLAY_FILE="boards/frdm_mcxe31b_flexio_spi.overlay"
     filter: CONFIG_DT_HAS_NXP_FLEXIO_ENABLED and
             CONFIG_DT_HAS_NXP_FLEXIO_SPI_ENABLED
     platform_allow:
@@ -285,6 +286,7 @@ tests:
       - mimxrt1040_evk
       - frdm_imxrt1186/mimxrt1186/cm33
       - frdm_imxrt1186/mimxrt1186/cm7
+      - frdm_mcxe31b
   drivers.spi.nrf54h_fast_2mhz:
     extra_args:
       - DTC_OVERLAY_FILE="boards/nrf54h20dk_nrf54h20_cpuapp_fast.overlay"
