@@ -2562,6 +2562,23 @@ __syscall void *k_queue_peek_head(struct k_queue *queue);
 __syscall void *k_queue_peek_tail(struct k_queue *queue);
 
 /**
+ * @brief Peek element next to the one provided in the queue
+ *
+ * Return element next to the one provided without removing it.
+ * This operation requires finding the provided element before returning the next one,
+ * hence requiring O(N) time.
+ *
+ * @param queue Address of the queue.
+ * @param data Address of the element which next is being returned.
+ *
+ * @return element next to the one provided
+ * @return NULL if data is NULL
+ * @return NULL if the element provided is not in the list
+ * @return NULL if the element provided has no next
+ */
+__syscall void *k_queue_peek_next(struct k_queue *queue, void *data);
+
+/**
  * @brief Statically define and initialize a queue.
  *
  * The queue can be accessed outside the module where it is defined using:
@@ -3160,6 +3177,27 @@ struct k_fifo {
 	void *fpt_ret = k_queue_peek_tail(&(fifo)->_queue); \
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, peek_tail, fifo, fpt_ret); \
 	fpt_ret; \
+	})
+
+/**
+ * @brief Peek element next to the one provided in the FIFO queue
+ *
+ * Return element next to the one provided without removing it.
+ * This operation requires finding the provided element before returning the next one,
+ * hence requiring O(N) time.
+ *
+ * @param fifo Address of the FIFO queue.
+ * @param data Address of the element which next is being returned.
+ *
+ * @return element next to the one provided
+ * @return NULL if data is NULL
+ * @return NULL if the element provided is not in the list
+ * @return NULL if the element provided has no next
+ */
+#define k_fifo_peek_next(fifo, data)                                                               \
+	({                                                                                         \
+		void *fpt_ret = k_queue_peek_next(&(fifo)->_queue, data);                          \
+		fpt_ret;                                                                           \
 	})
 
 /**
