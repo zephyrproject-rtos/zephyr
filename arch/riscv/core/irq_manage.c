@@ -109,14 +109,17 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 				void (*routine)(const void *parameter), const void *parameter,
 				uint32_t flags)
 {
-	int rc;
-
 	ARG_UNUSED(priority);
 
-	rc = z_soc_irq_flags_clear(irq, flags);
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+	int rc = z_soc_irq_flags_clear(irq, flags);
+
 	if (rc < 0) {
 		return rc;
 	}
+#else
+	ARG_UNUSED(flags);
+#endif
 
 	return z_isr_uninstall(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, routine,
 			       parameter);
