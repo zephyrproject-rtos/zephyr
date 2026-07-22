@@ -1134,9 +1134,13 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 	xspi_lock_thread(dev);
 
 #if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
+	bool was_memmap = false;
+
 	if (stm32_xspi_is_memorymap(dev_data)) {
+		was_memmap = true;
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		ret = stm32_xspi_abort(dev);
+
 		if (ret != 0) {
 			XSPI_LOG_ERR("Failed to abort memory-mapped access before erase");
 			goto erase_end;
@@ -1265,6 +1269,17 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 	/* Ends the erase operation */
 
 erase_end:
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
+	if (was_memmap) {
+		if (stm32_xspi_set_memorymap(dev_data, data_mode, data_rate) != 0) {
+			/* Failed to restore memory map mode */
+			while (1) {
+				/* Infinite loop to prevent further execution */
+			}
+		}
+	}
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
+
 	stm32_xspi_invalidate_mmap_cache(dev, erase_addr, erase_size);
 
 	xspi_unlock_thread(dev);
@@ -1436,9 +1451,13 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 	xspi_lock_thread(dev);
 
 #if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
+	bool was_memmap = false;
+
 	if (stm32_xspi_is_memorymap(dev_data)) {
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
+		was_memmap = true;
 		ret = stm32_xspi_abort(dev);
+
 		if (ret != 0) {
 			XSPI_LOG_ERR("Failed to abort memory-mapped access before write");
 			goto write_end;
@@ -1539,6 +1558,16 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 	/* Ends the write operation */
 
 write_end:
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
+	if (was_memmap) {
+		if (stm32_xspi_set_memorymap(dev_data, data_mode, data_rate) != 0) {
+			/* Failed to restore memory map mode */
+			while (1) {
+				/* Infinite loop to prevent further execution */
+			}
+		}
+	}
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
 	stm32_xspi_invalidate_mmap_cache(dev, write_addr, write_size);
 
 	xspi_unlock_thread(dev);
