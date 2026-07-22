@@ -63,7 +63,7 @@ static inline void timer_driver_set_compare(uint64_t cycles)
 
 	uint32_t now = get_count() & MAX_CYC;
 
-	while (cyc_diff(next, now) <= 0) {
+	while (cyc_diff(next, now) < (int32_t)MIN_DELAY) {
 		next = (now + MIN_DELAY) & MAX_CYC;
 		set_compare(next);
 		now = get_count() & MAX_CYC;
