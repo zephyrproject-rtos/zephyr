@@ -751,12 +751,23 @@ def west_projects(manifest=None):
     return None
 
 
+def project_module_path(project):
+    # Honor userdata.module-path if exist
+    userdata = getattr(project, 'userdata', None)
+    if not isinstance(userdata, dict):
+        return project.posixpath
+    module_path = userdata.get('module-path')
+    if not module_path:
+        return project.posixpath
+    return PurePath(project.posixpath, module_path).as_posix()
+
+
 def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
                   extra_modules=None, require_yaml_validation=True):
 
     if modules is None:
         west_projs = west_projs or west_projects(manifest)
-        modules = ([p.posixpath for p in west_projs['projects']]
+        modules = ([project_module_path(p) for p in west_projs['projects']]
                    if west_projs else [])
 
     if extra_modules is None:
