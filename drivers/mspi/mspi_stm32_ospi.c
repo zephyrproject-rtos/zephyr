@@ -159,9 +159,29 @@ static OSPI_RegularCmdTypeDef mspi_stm32_ospi_prepare_cmd(uint8_t cfg_mode, uint
 		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_4_LINES;
 		cmd_tmp.DataMode = HAL_OSPI_DATA_4_LINES;
 		break;
+	case MSPI_IO_MODE_QUAD_1_4_4:
+		cmd_tmp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_4_LINES;
+		cmd_tmp.DataMode = HAL_OSPI_DATA_4_LINES;
+		break;
+	case MSPI_IO_MODE_QUAD_1_1_4:
+		cmd_tmp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+		cmd_tmp.DataMode = HAL_OSPI_DATA_4_LINES;
+		break;
 	case MSPI_IO_MODE_DUAL:
 		cmd_tmp.InstructionMode = HAL_OSPI_INSTRUCTION_2_LINES;
 		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_2_LINES;
+		cmd_tmp.DataMode = HAL_OSPI_DATA_2_LINES;
+		break;
+	case MSPI_IO_MODE_DUAL_1_2_2:
+		cmd_tmp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_2_LINES;
+		cmd_tmp.DataMode = HAL_OSPI_DATA_2_LINES;
+		break;
+	case MSPI_IO_MODE_DUAL_1_1_2:
+		cmd_tmp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
 		cmd_tmp.DataMode = HAL_OSPI_DATA_2_LINES;
 		break;
 	default:
