@@ -1,13 +1,31 @@
+/*
+ * Copyright (c) 2025 Google LLC.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The fake reset registers below are backed by plain SRAM, so the words
+ * they occupy must not be part of the RAM the kernel links into: a write
+ * through the reset driver would clobber whatever data or function
+ * pointer the linker happened to place there (moving with every layout
+ * change). Shrink the kernel's view of the 64 KiB SRAM by one KiB and
+ * place the registers in the carved-out tail.
+ */
+&sram0 {
+	reg = <0x20000000 0xfc00>;
+};
+
 / {
-	reset0: reset@20000004 {
+	reset0: reset@2000fc00 {
 		compatible = "reset-mmio";
-		reg = <0x20000004 0x4>;
+		reg = <0x2000fc00 0x4>;
 		num-resets = <16>;
 	};
 
-	reset1: reset@20000008 {
+	reset1: reset@2000fc04 {
 		compatible = "reset-mmio";
-		reg = <0x20000008 0x4>;
+		reg = <0x2000fc04 0x4>;
 		num-resets = <16>;
 		active-low;
 	};
