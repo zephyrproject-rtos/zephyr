@@ -90,7 +90,11 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 
 #if defined(CONFIG_CAN_NXP_LPC_MCAN)
 	if ((uint32_t)sub_system == MCUX_MCAN_CLK) {
+#if defined(CONFIG_SOC_SERIES_LPC546XX)
+		CLOCK_EnableClock(kCLOCK_Mcan0);
+#else
 		CLOCK_EnableClock(kCLOCK_Mcan);
+#endif
 	}
 #endif /* defined(CONFIG_CAN_NXP_LPC_MCAN) */
 #if defined(CONFIG_COUNTER_NXP_MRT)
@@ -620,8 +624,12 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 
 #if defined(CONFIG_CAN_NXP_LPC_MCAN)
 	case MCUX_MCAN_CLK:
+#if defined(CONFIG_SOC_SERIES_LPC546XX)
+		*rate = CLOCK_GetMCanClkFreq(0);
+#else
 		*rate = CLOCK_GetMCanClkFreq();
 		break;
+#endif
 #endif /* defined(CONFIG_CAN_NXP_LPC_MCAN) */
 
 #if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
