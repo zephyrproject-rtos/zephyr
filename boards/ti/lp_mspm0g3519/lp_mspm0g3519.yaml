@@ -14,6 +14,7 @@ supported:
   - can
   - counter
   - dac
+  - pwm
   - spi
   - vref
   - trng
