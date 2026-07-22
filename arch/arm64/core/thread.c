@@ -148,8 +148,19 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->callee_saved.lr = (uint64_t)z_arm64_exit_exc;
 
 	thread->switch_handle = thread;
-#if defined(CONFIG_ARM64_STACK_PROTECTION)
+#if defined(CONFIG_ARM64_SAFE_EXCEPTION_STACK)
+	/*
+	 * Needed by z_arm64_quick_stack_check() so it can tell a real stack
+	 * overflow from a healthy SP_EL1 and switch to the safe exception
+	 * stack. On targets without CONFIG_ARM64_STACK_PROTECTION (no
+	 * ARM_MPU, e.g. plain MMU-based Cortex-A), Z_ARM64_STACK_GUARD_SIZE
+	 * is 0, so this is just the stack's base address with no guard
+	 * region -- still enough to catch SP running past the whole
+	 * allocated stack instead of silently corrupting adjacent memory.
+	 */
 	thread->arch.stack_limit = (uint64_t)stack + Z_ARM64_STACK_GUARD_SIZE;
+#endif
+#if defined(CONFIG_ARM64_STACK_PROTECTION)
 	z_arm64_thread_mem_domains_init(thread);
 #endif
 
