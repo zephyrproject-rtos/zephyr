@@ -206,32 +206,6 @@ static uint64_t timer_core_last_cycle;
 static uint64_t timer_core_last_tick;
 static uint32_t timer_core_last_elapsed;
 
-#if defined(TIMER_CORE_BACKEND_RELOAD)
-/* A catch-up reload (floored at TIMER_CORE_MIN_DELAY because the deadline is
- * already due, or because the un-announced span is about to overrun
- * TIMER_CORE_CYCLES_MAX) is in flight. Programming a reload restarts the
- * counter, so a stream of set_timeout() calls arriving faster than the floor
- * would rewrite the reload before it can expire and postpone the announce
- * indefinitely; while this is set, timer_core_arm() leaves the hardware alone
- * so the pending fire gets through. Cleared by the announce.
- */
-static bool timer_core_catchup;
-#endif
-
-/* Tick-aligned deadline currently armed in the hardware, or UINT64_MAX when
- * nothing is known to be armed (initially, and after each announce, which
- * consumes the programmed deadline). timer_core_arm() programs the hardware
- * only when the deadline actually moves: the kernel re-evaluates its earliest
- * timeout on every add and abort (a timeslice reset is one of each), so
- * back-to-back calls usually land on the same tick boundary, and rewriting
- * the timer for those is pure churn. For a RELOAD backend the rewrite is
- * worse than churn: it restarts the counter, so a sustained stream of
- * rewrites (e.g. timeslice resets from a syscall-heavy thread) keeps any
- * period from ever completing and postpones the announce for the duration of
- * the stream.
- */
-static uint64_t timer_core_armed_deadline = UINT64_MAX;
-
 /* Whole ticks elapsed since the last announce, from the current counter. */
 static inline uint32_t timer_core_delta_ticks(void)
 {
@@ -265,13 +239,6 @@ static inline uint32_t timer_core_delta_ticks(void)
  */
 static void timer_core_arm(uint32_t ticks)
 {
-	uint64_t deadline_tick = timer_core_last_tick + timer_core_last_elapsed + ticks;
-
-	if (deadline_tick == timer_core_armed_deadline) {
-		return;
-	}
-	timer_core_armed_deadline = deadline_tick;
-
 #if defined(TIMER_CORE_BACKEND_COMPARE)
 	/*
 	 * Absolute, tick-aligned deadline. last_cycle is linear (its low
@@ -279,7 +246,8 @@ static void timer_core_arm(uint32_t ticks)
 	 * truncates the value to its comparator width when it writes it, so a
 	 * linear deadline is correct for both wide and narrow counters.
 	 */
-	uint64_t deadline = deadline_tick * TIMER_CORE_CYC_PER_TICK;
+	uint64_t deadline = (timer_core_last_tick + timer_core_last_elapsed + ticks) *
+			    TIMER_CORE_CYC_PER_TICK;
 
 	if ((deadline - timer_core_last_cycle) > TIMER_CORE_CYCLES_MAX) {
 		deadline = timer_core_last_cycle + TIMER_CORE_CYCLES_MAX;
@@ -312,20 +280,6 @@ static void timer_core_arm(uint32_t ticks)
 		rel = (int64_t)TIMER_CORE_CYCLES_MAX - (int64_t)done;
 	}
 	if (rel < (int64_t)TIMER_CORE_MIN_DELAY) {
-		/*
-		 * The announce is due (or overdue): fire as soon as the floor
-		 * allows. If a floored reload is already in flight, leave it
-		 * to expire rather than restart the counter, or a set_timeout()
-		 * stream arriving faster than the floor (e.g. timeslice resets
-		 * from a syscall-heavy thread) would push the fire point out
-		 * forever and freeze announced time for the storm's duration.
-		 * No incoming deadline can need to fire sooner than the floor
-		 * anyway.
-		 */
-		if (timer_core_catchup) {
-			return;
-		}
-		timer_core_catchup = true;
 		rel = TIMER_CORE_MIN_DELAY;
 	}
 	timer_driver_set_reload((uint64_t)rel);
@@ -368,14 +322,6 @@ static void timer_core_announce_from(k_spinlock_key_t key)
 	timer_core_last_cycle += (uint64_t)dticks * TIMER_CORE_CYC_PER_TICK;
 	timer_core_last_tick += dticks;
 	timer_core_last_elapsed = 0;
-	/* The programmed deadline is consumed (or obsolete): the kernel decides
-	 * the next one after the announce, and it must reach the hardware even
-	 * if it lands on the same tick.
-	 */
-	timer_core_armed_deadline = UINT64_MAX;
-#if defined(TIMER_CORE_BACKEND_RELOAD)
-	timer_core_catchup = false;
-#endif
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 #if defined(TIMER_CORE_BACKEND_COMPARE)
