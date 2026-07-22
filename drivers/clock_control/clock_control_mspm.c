@@ -32,24 +32,23 @@
 #define DT_LFCLK    DT_NODELABEL(lfclk)
 #define DT_LFCLK_IN DT_NODELABEL(lfclk_in)
 #define DT_LFXT     DT_NODELABEL(lfxt)
+#define DT_MCLK     DT_NODELABEL(mclk)
 #define DT_SYSOSC   DT_NODELABEL(sysosc)
 #define DT_SYSPLL   DT_NODELABEL(syspll)
+#define DT_ULPCLK   DT_NODELABEL(ulpclk)
 
 #define DT_HFCLK_CLOCKS_CTRL  DT_CLOCKS_CTLR(DT_HFCLK)
 #define DT_LFCLK_CLOCKS_CTRL  DT_CLOCKS_CTLR(DT_LFCLK)
+#define DT_MCLK_CLOCKS_CTRL   DT_CLOCKS_CTLR(DT_MCLK)
 #define DT_SYSPLL_CLOCKS_CTRL DT_CLOCKS_CTLR(DT_SYSPLL)
 
-#define MSPM_ULPCLK_DIV COND_CODE_1(					\
-		DT_NODE_HAS_PROP(DT_NODELABEL(ulpclk), clk_div),	\
-		(CONCAT(DL_SYSCTL_ULPCLK_DIV_,				\
-			DT_PROP(DT_NODELABEL(ulpclk), clk_div))),	\
-		(0))
+#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_HFCLK) || DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_SYSPLL)
+#define MSPM_MCLK_USES_HSCLK 1
+#endif
 
-#define MSPM_MCLK_DIV COND_CODE_1(					\
-		DT_NODE_HAS_PROP(DT_NODELABEL(mclk), clk_div),		\
-		(CONCAT(DL_SYSCTL_MCLK_DIVIDER_,			\
-			DT_PROP(DT_NODELABEL(mclk), clk_div))),		\
-		(0))
+#define MSPM_ULPCLK_DIV DT_PROP_OR(DT_ULPCLK, clk_div, 1)
+
+#define MSPM_MCLK_DIV DT_PROP_OR(DT_MCLK, clk_div, 1)
 
 #define MSPM_MFPCLK_DIV COND_CODE_1(					\
 		DT_NODE_HAS_PROP(DT_NODELABEL(mfpclk), clk_div),	\
@@ -157,7 +156,6 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_HFCLK_CLOCKS_CTRL), "HFCLK source not en
 BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_LFCLK_CLOCKS_CTRL), "LFCLK external source not enabled");
 #endif
 
-#define DT_MCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mclk))
 #define DT_MFPCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mfpclk))
 
 struct mspm_clk_cfg {
@@ -442,6 +440,66 @@ static int clock_mspm_config_lfclk(void)
 }
 #endif /* MSPM_LFCLK_USES_EXT */
 
+static int clock_mspm_config_mclk(void)
+{
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->SOCLOCK;
+
+#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_SYSOSC) && (DT_SYSOSC_FREQ == 4000000)
+	/* configure MDIV */
+	soclock->MCLKCFG = (soclock->MCLKCFG & ~SYSCTL_MCLKCFG_MDIV) |
+			   FIELD_PREP(SYSCTL_MCLKCFG_MDIV, SYSCTL_MCLKCFG_MDIV_VAL(MSPM_MCLK_DIV));
+#endif
+
+	/* configure UDIV */
+	soclock->MCLKCFG =
+		(soclock->MCLKCFG & ~SYSCTL_MCLKCFG_UDIV) |
+		FIELD_PREP(SYSCTL_MCLKCFG_UDIV, SYSCTL_MCLKCFG_UDIV_VAL(mspm_ulpclk_cfg.clk_div));
+
+#if MSPM_MCLK_USES_HSCLK
+
+#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_HFCLK)
+	/* set HFCLK as HSCLK source */
+	soclock->HSCLKCFG |= SYSCTL_HSCLKCFG_HSCLKSEL;
+#elif DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_SYSPLL)
+	/* set SYSPLL as HSCLK source */
+	soclock->HSCLKCFG &= ~SYSCTL_HSCLKCFG_HSCLKSEL;
+#endif
+
+	/* verify that HSCLK started */
+	if (!WAIT_FOR((soclock->CLKSTATUS & SYSCTL_CLKSTATUS_HSCLKGOOD) != 0,
+		      MSPM_CLK_WAIT_TIMEOUT_US, NULL)) {
+		return -ETIMEDOUT;
+	}
+
+	/* use HSCLK as MCLK source */
+	soclock->MCLKCFG |= SYSCTL_MCLKCFG_USEHSCLK;
+
+	/* verify that MCLK is sourced from HSCLK */
+	if (!WAIT_FOR((soclock->CLKSTATUS & SYSCTL_CLKSTATUS_HSCLKMUX) != 0,
+		      MSPM_CLK_WAIT_TIMEOUT_US, NULL)) {
+		return -ETIMEDOUT;
+	}
+
+#elif DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_LFCLK)
+	/* leave SYSOSCCFG running and leave it at base frequency */
+	soclock->SYSOSCCFG =
+		(soclock->SYSOSCCFG & ~(SYSCTL_SYSOSCCFG_FREQ | SYSCTL_SYSOSCCFG_DISABLE)) |
+		FIELD_PREP(SYSCTL_SYSOSCCFG_FREQ, SYSCTL_SYSOSCCFG_FREQ_BASE);
+
+	/* use LFCLK as MCLK source */
+	soclock->MCLKCFG |= SYSCTL_MCLKCFG_USELFCLK;
+
+	/* verify that MCLK is sourced from LFCLK */
+	if (!WAIT_FOR((soclock->CLKSTATUS & SYSCTL_CLKSTATUS_CURMCLKSEL) != 0,
+		      MSPM_CLK_WAIT_TIMEOUT_US, NULL)) {
+		return -ETIMEDOUT;
+	}
+#endif /* MSPM_MCLK_USES_HSCLK */
+
+	return 0;
+}
+
 static int clock_mspm_init(const struct device *dev)
 {
 	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
@@ -450,14 +508,6 @@ static int clock_mspm_init(const struct device *dev)
 	/* set SYSOSCFG frequency */
 	soclock->SYSOSCCFG = (soclock->SYSOSCCFG & ~SYSCTL_SYSOSCCFG_FREQ) |
 			     FIELD_PREP(SYSCTL_SYSOSCCFG_FREQ, MSPM_SYSOSC_FREQ);
-
-#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(sysosc)) && (DT_SYSOSC_FREQ == 4000000)
-	DL_SYSCTL_setMCLKDivider(MSPM_MCLK_DIV);
-#endif
-
-#if DT_NODE_HAS_PROP(DT_NODELABEL(ulpclk), clk_div)
-	DL_SYSCTL_setULPCLKDivider(mspm_ulpclk_cfg.clk_div);
-#endif
 
 #if MSPM_SYSPLL_ENABLED
 	{
@@ -489,18 +539,13 @@ static int clock_mspm_init(const struct device *dev)
 	}
 #endif
 
-#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk))
-	DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK,
-				DL_SYSCTL_HSCLK_SOURCE_HFCLK);
+	{
+		int ret = clock_mspm_config_mclk();
 
-#elif DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(syspll))
-	DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK,
-				DL_SYSCTL_HSCLK_SOURCE_SYSPLL);
-
-#elif DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(lfclk))
-	DL_SYSCTL_setMCLKSource(SYSOSC, LFCLK, false);
-
-#endif /* DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk)) */
+		if (ret < 0) {
+			return ret;
+		}
+	}
 
 #if MSPM_MFPCLK_ENABLED
 #if DT_SAME_NODE(DT_MFPCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk))
