@@ -12,10 +12,11 @@
  * - subtimer 0 is programmed as a one-shot down-counter for the next deadline
  *   in tickless mode, or as a periodic source when CONFIG_TICKLESS_KERNEL=n.
  *
- * GPTIMER has no absolute compare register, only a relative reload, so this is
- * a RELOAD backend: the free-running subtimer 1 is the cycle source and the
- * generic core turns a tick-aligned deadline into the relative delay loaded
- * into subtimer 0.
+ * GPTIMER has no absolute compare register, so a tick-aligned absolute
+ * deadline is computed against the free-running counter and programmed as a
+ * relative delay (subtimer 0 reload). The ISR derives the number of elapsed
+ * ticks from the free-running counter, so a late or coalesced interrupt
+ * announces every elapsed tick rather than dropping it.
  */
 
 #define DT_DRV_COMPAT gaisler_gptimer
@@ -32,16 +33,23 @@
  */
 #define PRESCALER 8U
 
-/* The subtimers run at the system cycle rate divided by the shared prescaler.
- * That is the rate timer_driver_cycle_get() reports, so the core derives its
- * cycles-per-tick from it; only the public sys_clock_cycle_get_32() scales back
- * up to the system cycle rate.
+/* Counter cycles per kernel tick (the subtimer clock is HW cycles / PRESCALER).
+ * Derived from CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC so it tracks the system clock.
  */
-#define TIMER_CORE_CYCLES_PER_SEC (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / PRESCALER)
+#define CYC_PER_TICK \
+	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / PRESCALER / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
+/* A programmed delay is detected as already-passed via a signed 32-bit delta
+ * in sys_clock_set_timeout() and is loaded into a 32-bit reload, so it must
+ * stay below 2^31 cycles.
+ */
+#define MAX_CYCLES 0x7FFFFFFFU
+#define MAX_TICKS  (MAX_CYCLES / CYC_PER_TICK)
 
 /* Smallest delay programmed into subtimer 0. program_subtimer0() writes
  * reload = delay - 1, so delay must be at least 2 to avoid a reload of 0
- * (and the wraparound for delay == 0).
+ * (and the wraparound for delay == 0); a deadline at or before "now" fires
+ * as soon as possible and the ISR catches up.
  */
 #define MIN_DELAY_CYC 2U
 
@@ -89,10 +97,13 @@ static int get_timer_irq(void)
 
 static uint32_t gptimer_ctrl_clear_ip;
 
-/* Free-running up-counter (subtimer 1) in subtimer cycles. Wraps every 2^32
- * cycles; the core masks deltas against its baseline so this stays correct
- * across a single wrap.
+/* Free-running up-counter (subtimer 1) in cycles. Wraps every 2^32 cycles;
+ * unsigned subtraction against the announce baseline stays correct across a
+ * single wrap.
  */
+static uint32_t announced_cyc; /* counter value at the last announce (tick-aligned) */
+static uint32_t last_elapsed;  /* ticks reported by the last sys_clock_elapsed() */
+
 static inline uint32_t up_counter(volatile struct gptimer_regs *regs)
 {
 	return 0U - regs->timer[1].counter;
@@ -114,39 +125,23 @@ static void program_subtimer0(volatile struct gptimer_regs *regs, uint32_t delay
 	tmr->ctrl = ctrl;
 }
 
-#define TIMER_CORE_BACKEND_RELOAD
-#define TIMER_CORE_MIN_DELAY MIN_DELAY_CYC
-#define TIMER_CORE_HAVE_CYCLE_GET_32
-
-static inline uint64_t timer_driver_cycle_get(void)
-{
-	return up_counter(get_regs());
-}
-
-static void timer_driver_set_reload(uint32_t cycles)
-{
-	program_subtimer0(get_regs(), cycles);
-}
-
-#include "system_timer_generic.h"
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	/* Scale the subtimer count back up to the system cycle rate the kernel
-	 * expects.
-	 */
-	return up_counter(get_regs()) * PRESCALER;
-}
-
 static void timer_isr(const void *unused)
 {
 	ARG_UNUSED(unused);
 	volatile struct gptimer_regs *regs = get_regs();
 	volatile struct gptimer_timer_regs *tmr = &regs->timer[0];
+	uint32_t dticks;
 
 	if ((tmr->ctrl & GPTIMER_CTRL_IP) == 0) {
 		return; /* interrupt not for us */
 	}
+
+	/* Whole ticks elapsed since the last announce, taken from the
+	 * free-running counter so a late interrupt catches up every tick.
+	 */
+	dticks = (up_counter(regs) - announced_cyc) / CYC_PER_TICK;
+	announced_cyc += dticks * CYC_PER_TICK;
+	last_elapsed = 0;
 
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* One-shot: stop and clear pending; sys_clock_set_timeout()
@@ -159,7 +154,60 @@ static void timer_isr(const void *unused)
 			    GPTIMER_CTRL_EN | gptimer_ctrl_clear_ip;
 	}
 
-	timer_core_announce();
+	sys_clock_announce(dticks);
+}
+
+void sys_clock_set_timeout(uint32_t ticks)
+{
+	volatile struct gptimer_regs *regs = get_regs();
+	uint32_t target, now;
+	int32_t delay;
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	/* Cap to the cycle-count window: ticks * CYC_PER_TICK must stay below
+	 * 2^31 so the signed delay delta below cannot wrap. The kernel already
+	 * caps the requested tick count (SYS_CLOCK_MAX_WAIT), so this is the
+	 * only limit the driver still has to enforce.
+	 */
+	if (ticks > MAX_TICKS) {
+		ticks = MAX_TICKS;
+	}
+
+	/* Absolute, tick-aligned deadline from the last announce, programmed as
+	 * a relative delay. last_elapsed is the tick count already reported via
+	 * sys_clock_elapsed(), so the fire lands on the requested tick boundary
+	 * regardless of the sub-tick offset of the counter.
+	 */
+	target = announced_cyc + (last_elapsed + ticks) * CYC_PER_TICK;
+	now = up_counter(regs);
+	delay = target - now;
+	if (delay < (int32_t)MIN_DELAY_CYC) {
+		delay = MIN_DELAY_CYC;
+	}
+	program_subtimer0(regs, delay);
+}
+
+uint32_t sys_clock_elapsed(void)
+{
+	volatile struct gptimer_regs *regs = get_regs();
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return 0;
+	}
+
+	last_elapsed = (up_counter(regs) - announced_cyc) / CYC_PER_TICK;
+	return last_elapsed;
+}
+
+uint32_t sys_clock_cycle_get_32(void)
+{
+	volatile struct gptimer_regs *regs = get_regs();
+
+	/* Scale the counter back up to the system cycle rate the kernel expects. */
+	return up_counter(regs) * PRESCALER;
 }
 
 static void init_downcounter(volatile struct gptimer_timer_regs *tmr)
@@ -189,21 +237,19 @@ static int sys_clock_driver_init(void)
 		gptimer_ctrl_clear_ip = GPTIMER_CTRL_IP;
 	}
 
+	/* Anchor the announce baseline to "now" so curr_tick == 0 maps to the
+	 * current free-running counter value.
+	 */
+	announced_cyc = up_counter(regs);
+
 	irq_connect_dynamic(timer_interrupt, 0, timer_isr, NULL, 0);
 	irq_enable(timer_interrupt);
 
-	/* Seed the announce baseline from the free-running counter. In tickless
-	 * mode this also arms the first deadline (one tick out) and the kernel
-	 * reprograms via sys_clock_set_timeout() thereafter.
+	/* Program the first deadline: one tick away. In tickless mode the
+	 * kernel reprograms via sys_clock_set_timeout(); in periodic mode this
+	 * is the recurring tick.
 	 */
-	timer_core_init();
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Periodic mode: subtimer 0 auto-restarts (CTRL_RS) every tick and
-		 * the core never reprograms it.
-		 */
-		program_subtimer0(regs, TIMER_CORE_CYC_PER_TICK);
-	}
+	program_subtimer0(regs, CYC_PER_TICK);
 
 	return 0;
 }
