@@ -7,6 +7,7 @@ menuconfig WIFI_ESP32
 	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
 	depends on !SMP
 	select THREAD_CUSTOM_DATA
+	select EVENTS
 	select NET_L2_WIFI_MGMT
 	select NET_L2_ETHERNET
 	select NET_L2_ETHERNET_MGMT
@@ -319,6 +320,65 @@ config ESP32_WIFI_TASK_STACK_SIZE
 	  and the stack depth requested by the blob at runtime, so a higher
 	  Kconfig value only raises the floor.
 
+config ESP32_WIFI_EVENT_TASK_STACK_SIZE
+	int "Wi-Fi event task stack size"
+	default 2048
+	help
+	  Stack size of the event task that runs the Wi-Fi and mesh event
+	  handlers. The Wi-Fi library posts events from its own task; the
+	  handlers run on this dedicated task instead so a handler cannot
+	  overrun the library task stack or stall the library task.
+
+config ESP32_WIFI_EVENT_TASK_PRIORITY
+	int "Wi-Fi event task priority"
+	default 4
+	help
+	  Preemptible priority of the Wi-Fi event task. Keep it above the
+	  application threads so connect and disconnect state changes are
+	  handled promptly. A caller that must observe a state change before
+	  continuing synchronizes on the event rather than relying on this
+	  task preempting it.
+
+config ESP32_WIFI_STA_START_TIMEOUT
+	int "Wi-Fi station-start wait timeout (ms)"
+	default 1000
+	help
+	  Time a connect request waits for the station-started event, which is
+	  handled on the event task, before it gives up. Raise it if a connect
+	  fails with the station not in station mode under a heavy event load.
+
+config ESP32_WIFI_EVENT_QUEUE_SIZE
+	int "Wi-Fi event queue depth"
+	default 16
+	help
+	  Number of posted events buffered between the Wi-Fi library task and
+	  the event task. Each queued entry carries an inline copy of the event
+	  payload, so the RAM cost is this depth times the entry size.
+
+	  Events are delivered asynchronously on the event task rather than
+	  inline on the library task, which keeps handler work off that task.
+	  The mesh needs this: it brings the network stack up (DHCP server, NAT
+	  and routes) from an event handler, which neither fits the library task
+	  stack nor should block it.
+
+	  A post carries the timeout its caller asked for. The libraries post
+	  most events without waiting, so a full queue drops those and logs at
+	  error level; the events able to fill it are the ones that suits, softAP
+	  client churn and mesh routing updates, which the next event or a
+	  re-parent supersedes. The queue is sized to absorb those bursts. A
+	  caller that must not lose its event waits instead, except from the
+	  event task itself, which drains this queue and so never waits on it.
+
+	  Losing a station or softAP state transition this way leaves the driver
+	  state stale until the next one, which is why the depth covers a burst
+	  of them several times over. Reaching it takes the event task being
+	  starved outright, since its handlers only update state and raise a
+	  network management event. The driver state stays readable through
+	  NET_REQUEST_WIFI_IFACE_STATUS in that case, and the notification hop
+	  to the application has its own backpressure in the network management
+	  layer (see NET_MGMT_EVENT_QUEUE_SIZE and NET_MGMT_EVENT_QUEUE_TIMEOUT).
+	  Raise this depth at the cost of more RAM if drops are ever seen.
+
 config ESP32_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
 	int "Minimum active time"
 	range 8 60
@@ -369,6 +429,200 @@ config ESP32_WIFI_SOFTAP_SUPPORT
 	default y
 	help
 	  Hidden option to enable Wi-Fi SoftAP functions in WPA supplicant and RF libraries.
+
+menuconfig WIFI_ESP32_MESH
+	bool "ESP Wi-Fi mesh support"
+	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || \
+		SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6
+	select ESP32_WIFI_SOFTAP_SUPPORT
+	help
+	  Enable the self-organizing multi-hop Wi-Fi mesh network stack.
+	  Each node runs Wi-Fi in combined AP and station mode: the station
+	  interface links upward to a parent, the softAP interface accepts
+	  child nodes. Only the root node reaches the external IP network.
+	  Not available on ESP32-C2 and ESP32-H2.
+
+if WIFI_ESP32_MESH
+
+config WIFI_ESP32_MESH_MAX_LAYER
+	int "Maximum mesh layer (tree depth)"
+	default 25
+	range 1 25
+	help
+	  Maximum number of layers (tree depth) the mesh may grow to. The root
+	  is layer 1, its direct children layer 2, and so on. Nodes that would
+	  attach deeper than this limit are refused, bounding the tree height.
+	  The routing table on the root is sized for the whole sub-network, so
+	  the maximum node count is roughly MAX_LAYER * MAX_CONNECTIONS + 1.
+
+config WIFI_ESP32_MESH_MAX_CONNECTIONS
+	int "Maximum direct child connections per node"
+	default 6
+	range 1 10
+	help
+	  Maximum number of direct child nodes a single node accepts on its
+	  softAP interface. This is a per-node fan-out limit, not a whole-network
+	  limit: nodes beyond this count attach one layer deeper instead, so the
+	  network still grows by extending the tree. A larger value makes a
+	  flatter tree (more RAM per node for the extra links); a smaller value
+	  makes a deeper tree. Each direct link consumes Wi-Fi RX/TX buffers from
+	  the system heap, so a node acting as root or as an intermediate hub for
+	  several children needs more heap than a leaf (see the sample prj.conf
+	  for CONFIG_HEAP_MEM_POOL_SIZE guidance).
+
+config WIFI_ESP32_MESH_EVENT_HANDLERS
+	int "Maximum registered mesh event handlers"
+	default 12
+	range 4 32
+	help
+	  Size of the event handler table used to dispatch Wi-Fi and mesh
+	  events. It must cover both the application handlers and the handlers
+	  the mesh stack registers internally, which the application cannot
+	  count; a handler registered beyond this limit is dropped.
+
+config WIFI_ESP32_MESH_START_TIMEOUT
+	int "Mesh-start wait timeout (ms)"
+	default 2000
+	help
+	  Time esp_wifi_mesh_start() waits for the mesh stack to report
+	  MESH_EVENT_STARTED before it proceeds to re-deliver the initial
+	  station-start event. The wait ends as soon as the event arrives; this
+	  is only the upper bound before it gives up and continues anyway.
+
+config WIFI_ESP32_MESH_CHANNEL
+	int "Mesh channel (0 = auto, 1-13 = fixed)"
+	default 0
+	range 0 13
+	help
+	  Channel the mesh network operates on. 0 lets the mesh select the
+	  channel by scanning, which is required when the router channel is
+	  unknown. A fixed value 1-13 pins the channel; all nodes must then
+	  use the same one.
+
+config WIFI_ESP32_MESH_ROUTER_SSID
+	string "Router SSID"
+	default "myssid"
+	help
+	  SSID of the router the root node connects to for external network
+	  access. The mesh stack requires a router SSID to be set, so this
+	  carries a placeholder rather than an empty default. Set it to the
+	  router in use: a node left on the placeholder finds no such network
+	  and keeps searching for a parent.
+
+config WIFI_ESP32_MESH_ROUTER_PSK
+	string "Router password"
+	default "mypassword"
+	help
+	  Password of the router the root node connects to. Leave empty for an
+	  open router.
+
+config WIFI_ESP32_MESH_AP_PSK
+	string "Mesh softAP password"
+	default "meshpassword"
+	help
+	  Password protecting the inter-node mesh softAP links. Must be at
+	  least 8 characters and identical on every node.
+
+config WIFI_ESP32_MESH_ID
+	string "Mesh network ID (6 bytes, colon-separated hex)"
+	default "12:34:56:78:9a:bc"
+	help
+	  Unique 6-byte identifier of this mesh network, written as six
+	  colon-separated hex octets. Nodes only join a mesh that advertises
+	  the same ID, so every node in one network must use the same value and
+	  different networks sharing a channel must use different IDs.
+
+config WIFI_ESP32_MESH_ASSOC_EXPIRE
+	int "Idle child association expiry (seconds)"
+	default 10
+	range 1 60
+	help
+	  How long a node keeps a child association without traffic before
+	  releasing it. When a child re-parents, its previous parent holds the
+	  now-dead association until this expiry, keeping one of its child slots
+	  occupied; with few connections per node a long expiry can stall the
+	  tree from converging. 10 seconds matches the value used with mesh
+	  power save disabled.
+
+config WIFI_ESP32_MESH_XON_QSIZE
+	int "Mesh receive flow-control queue size"
+	default 128
+	range 16 256
+	help
+	  Number of packets the mesh receive queue holds before applying flow
+	  control to upstream senders. A larger queue tolerates bigger traffic
+	  bursts at the cost of RAM.
+
+config WIFI_ESP32_MESH_VOTE_PERCENTAGE
+	int "Root election vote percentage threshold"
+	default 100
+	range 1 100
+	help
+	  Percentage of votes a candidate needs to be approved as root during
+	  self-organized election, as a whole percent (100 = unanimous). Only
+	  relevant in the auto role.
+
+config WIFI_ESP32_MESH_SEND_BLOCK_TIME_MS
+	int "Mesh send block time (milliseconds)"
+	default 30000
+	range 0 60000
+	help
+	  How long esp_wifi_mesh_send() blocks waiting for buffer space under
+	  congestion before failing. A longer time lets bursts drain instead of
+	  dropping frames; 0 fails immediately when no buffer is available.
+
+choice WIFI_ESP32_MESH_ROLE
+	prompt "Mesh role of this node"
+	default WIFI_ESP32_MESH_ROLE_AUTO
+	help
+	  Selects how this node takes its place in the mesh tree.
+
+config WIFI_ESP32_MESH_ROLE_AUTO
+	bool "Self-organized (elect root by router reachability)"
+	help
+	  Default self-organized behavior: the node scans, and if it can reach
+	  the router it votes to become the root, otherwise it attaches to an
+	  in-range mesh node as a child. A router is required for the election.
+
+config WIFI_ESP32_MESH_FORCE_ROOT
+	bool "Force this node to be the root (fixed root)"
+	help
+	  Designate this node as the fixed root of the mesh. It never elects and
+	  always sits at the top of the tree. With a router configured it keeps
+	  the self-organized behavior that drives its association to the router
+	  and the reconnection maintaining that uplink; without one the parent
+	  search is stopped, since there is no parent to find and the search
+	  would disrupt its softAP. A router is still required for children to
+	  auto-attach: a fully router-less mesh needs each child to be given an
+	  explicit parent, which this driver does not do.
+	  The other nodes must be built as fixed children
+	  (WIFI_ESP32_MESH_FORCE_CHILD) so they accept this designated root
+	  instead of running an election.
+
+config WIFI_ESP32_MESH_FORCE_CHILD
+	bool "Force this node to stay a child (never become root)"
+	help
+	  Prevent this node from becoming root, so it always attaches to another
+	  node as a child. Useful with a fixed root, and on a bench where every
+	  board can hear the router and would otherwise each elect itself root
+	  instead of forming one tree.
+
+endchoice # WIFI_ESP32_MESH_ROLE
+
+config WIFI_ESP32_MESH_IP
+	bool "IP over mesh"
+	select NET_L2_ETHERNET
+	help
+	  Build the Ethernet-over-mesh network interface so IP runs on top of
+	  the mesh transport. It carries Ethernet frames as the mesh payload,
+	  letting the Zephyr network stack (addresses, DHCP, NAT, sockets) run
+	  unmodified over the mesh. Without this option the mesh only carries
+	  application data through esp_wifi_mesh_send()/esp_wifi_mesh_recv().
+
+	  The IP-level policy (addresses, DHCP server, NAT, routes) is left to
+	  the application; the driver only provides the transport interface.
+
+endif # WIFI_ESP32_MESH
 
 config ESP32_WIFI_MBEDTLS_CRYPTO
 	bool "Use MbedTLS crypto APIs"
