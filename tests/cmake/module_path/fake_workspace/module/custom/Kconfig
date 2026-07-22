@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+
+config MODULE_PATH_TEST_OPTION
+	bool "Fake option used to test module_path attribute"
+	default y
