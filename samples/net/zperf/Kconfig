@@ -32,4 +32,53 @@ configdefault NRF_WIFI_DATA_HEAP_SIZE
 	default 30000 if NRF_WIFI_ZERO_COPY_TX
 	default 50000
 
+config ZPERF_LOOPBACK_SELFTEST
+	bool "Self-driven loopback throughput run"
+	depends on NET_ZPERF && NET_ZPERF_SERVER
+	help
+	  When enabled, the sample does not wait for shell input. Instead it
+	  starts an in-guest UDP and TCP receiver on the loopback interface,
+	  runs a client upload against it, and prints machine-parseable
+	  throughput results ("ZPERF-RESULT ...") followed by a "ZPERF-DONE"
+	  marker. Combined with QEMU icount mode this yields a deterministic,
+	  host-speed-independent throughput regression metric.
+
+if ZPERF_LOOPBACK_SELFTEST
+
+config ZPERF_LOOPBACK_SELFTEST_DURATION_MS
+	int "Loopback selftest transfer duration (ms)"
+	default 1000
+	help
+	  Duration of each (UDP and TCP) upload run.
+
+config ZPERF_LOOPBACK_SELFTEST_PACKET_SIZE
+	int "Loopback selftest packet size (bytes)"
+	default 1220
+	range 1 16384
+	help
+	  Payload size used for each upload. Keep it small enough that the IP
+	  packet (payload + IP + UDP headers) fits within CONFIG_NET_LOOPBACK_MTU
+	  unless IP fragmentation is enabled, and below
+	  CONFIG_NET_ZPERF_MAX_PACKET_SIZE. The default of 1220 is the IPv6 TCP
+	  MSS at a 1280 byte MTU (1280 - 40 IPv6 - 20 TCP): with it every write
+	  is one full-sized segment for both IPv4 and IPv6, so TCP throughput is
+	  comparable across families. Larger values (e.g. 1232) still fit the
+	  IPv4 MSS but exceed the IPv6 MSS, which splits each IPv6 write into a
+	  full segment plus a tiny runt and roughly halves IPv6 TCP throughput.
+	  Near-MTU packets also better expose data-touching costs (checksums,
+	  buffer walking) than tiny packets.
+
+config ZPERF_LOOPBACK_SELFTEST_RATE_KBPS
+	int "Loopback selftest target rate (kbps)"
+	default 0
+	help
+	  Target upload rate in kbps. Use 0 to send as fast as possible (best
+	  for measuring the maximum throughput / catching CPU-cost regressions).
+
+config ZPERF_LOOPBACK_SELFTEST_PORT
+	int "Loopback selftest server port"
+	default 5001
+
+endif # ZPERF_LOOPBACK_SELFTEST
+
 source "Kconfig.zephyr"
