@@ -87,9 +87,10 @@ tests:
       - ophelia4ev/nrf54l15/cpuapp
       - pic32cm_jh01_cpro
       - pic32cx_sg41_cult
+      - pic32cz_ca80_cult
+      - sam_e54_xpro
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52
-      - sam_e54_xpro
     integration_platforms:
       - max32690evkit/max32690/m4
       - nrf54l15dk/nrf54l15/cpuapp
