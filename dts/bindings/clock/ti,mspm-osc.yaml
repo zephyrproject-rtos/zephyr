@@ -2,9 +2,9 @@
 # Copyright (c) 2025 Linumiz
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI MSPM0 oscillator
+description: TI MSPM oscillator
 
-compatible: "ti,mspm0-osc"
+compatible: "ti,mspm-osc"
 
 include: [fixed-clock.yaml, base.yaml]
 

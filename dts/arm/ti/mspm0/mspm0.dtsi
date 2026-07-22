@@ -126,27 +126,27 @@
 	oscillators: oscillators {
 		hfxt: hfxt {
 			#clock-cells = <0>;
-			compatible = "ti,mspm0-osc";
+			compatible = "ti,mspm-osc";
 			clock-frequency = <DT_FREQ_M(32)>;
 			status = "disabled";
 		};
 
 		lfxt: lfxt {
 			#clock-cells = <0>;
-			compatible = "ti,mspm0-osc";
+			compatible = "ti,mspm-osc";
 			clock-frequency = <DT_FREQ_M(32)>;
 			status = "disabled";
 		};
 
 		lfosc: lfosc {
 			#clock-cells = <0>;
-			compatible = "ti,mspm0-osc";
+			compatible = "ti,mspm-osc";
 			clock-frequency = <32768>;
 		};
 
 		sysosc: sysosc {
 			#clock-cells = <0>;
-			compatible = "ti,mspm0-osc";
+			compatible = "ti,mspm-osc";
 			clock-frequency = <DT_FREQ_M(32)>;
 		};
 	};
