@@ -73,6 +73,34 @@ config ARM_ENTRY_VENEERS_LIB_NAME
 	  Firmware that contains secure entry functions, and allows
 	  the Non-Secure Firmware to call into the Secure Firmware.
 
+config ARM_SAU
+	bool "Configure SAU via arch_security_partition API"
+	depends on ARM_TRUSTZONE_M && ARM_SECURE_FIRMWARE
+	depends on !BUILD_WITH_TFM
+	select ARCH_HAS_SECURITY_PARTITION
+	help
+	  Enables Zephyr's arch-neutral SAU driver (sau.c).  The driver
+	  implements arch_security_partition_configure/enable/disable and
+	  arch_security_partition_region_count using the ARMv8-M SAU registers.
+
+	  Disable this option when TF-M is used as the Secure-world OS
+	  (CONFIG_BUILD_WITH_TFM), since TF-M owns the SAU in that case.
+
+config ARM_SECURE_DOMAIN_ENTRY_SVC
+	bool "Enter the Non-Secure domain via SVC exception return"
+	depends on ARM_SAU
+	help
+	  Selects how arch_secure_domain_swap() transfers control into the
+	  Non-Secure world.
+
+	  When disabled (default) the Non-Secure world is entered with the
+	  architectural BXNS instruction.
+
+	  When enabled it is entered instead via an SVC whose handler performs
+	  an EXC_RETURN into Non-Secure Thread mode.  Select this on silicon
+	  where BXNS raises INVTRAN despite all architectural preconditions
+	  being met (e.g. Infineon PSE84 and PSC3).
+
 endmenu
 
 endif # ARM_TRUSTZONE_M

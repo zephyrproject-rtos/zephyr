@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: CPU security-attribution region table
+
+description: |
+  Region table for the arch security-partition API (ARMv8-M SAU, and
+  equivalents on other architectures).  Each child node describes one
+  address region and the security attribution to apply to it; Secure-world
+  code reads the children and passes them to
+  arch_security_partition_configure().
+
+  Example:
+
+    security_partition {
+        compatible = "zephyr,security-partition";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        region@0 {
+            reg = <0x00000000 0x10000000>;
+            zephyr,attr = "non-secure";
+        };
+        region@18110000 {
+            reg = <0x18110000 0x2000>;
+            zephyr,attr = "non-secure-callable";
+        };
+    };
+
+compatible: "zephyr,security-partition"
+
+child-binding:
+  description: One security-attributed address region.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: "<base size> of the region, in bytes."
+
+    zephyr,attr:
+      type: string
+      required: true
+      enum:
+        - "secure"
+        - "non-secure"
+        - "non-secure-callable"
+      description: |
+        Security attribution for the region.  The enum order matches
+        enum arch_security_attr (secure, non-secure, non-secure-callable),
+        so DT_ENUM_IDX() maps directly onto it.

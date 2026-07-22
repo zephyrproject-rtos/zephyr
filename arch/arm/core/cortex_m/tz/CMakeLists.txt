@@ -36,3 +36,5 @@ endif()
 zephyr_link_libraries_ifdef(CONFIG_ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
   ${CMAKE_BINARY_DIR}/${CONFIG_ARM_ENTRY_VENEERS_LIB_NAME}
   )
+
+zephyr_library_sources_ifdef(CONFIG_ARM_SAU sau.c)

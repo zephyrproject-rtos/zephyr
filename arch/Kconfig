@@ -813,6 +813,14 @@ config ARCH_HAS_TIMING_FUNCTIONS
 config ARCH_HAS_TRUSTED_EXECUTION
 	bool
 
+config ARCH_HAS_SECURITY_PARTITION
+	bool
+	help
+	  Selected by architectures that provide the arch_security_partition_*
+	  API (arch/security_partition.h).  On ARMv8-M this is the SAU driver
+	  (CONFIG_ARM_SAU).  Other architectures may select this symbol when
+	  they implement an equivalent security attribution unit.
+
 config ARCH_HAS_STACK_PROTECTION
 	bool
 
