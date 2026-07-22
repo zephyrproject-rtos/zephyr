@@ -126,7 +126,7 @@ static int set_accel_odr_osr(const struct device *dev, const struct sensor_value
 {
 	struct bmi260_data *data = dev->data;
 	uint8_t acc_conf, odr_bits, pwr_ctrl, osr_bits;
-	int ret = 0;
+	int ret;
 
 	if (!odr && !osr){
 		return ret;
