@@ -24,6 +24,8 @@ struct chsc6x_config {
 	chsc6x_read_data_fn read_data;
 };
 
+INPUT_TOUCH_STRUCT_CHECK(struct chsc6x_config);
+
 struct chsc6x_data {
 	const struct device *dev;
 	struct k_work work;
