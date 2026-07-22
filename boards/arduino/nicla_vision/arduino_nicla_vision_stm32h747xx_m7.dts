@@ -23,9 +23,9 @@
 	};
 
 	aliases {
+		dmic0 = &dmic_dev;
 		led0 = &red_led;
 		led1 = &green_led;
-		dmic-dev = &dmic_dev;
 	};
 
 	otghs_ulpi_phy: otghs_ulpis_phy {
