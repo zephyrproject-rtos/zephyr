@@ -5,6 +5,9 @@ on:
       - main
       - v*-branch
       - collab-*
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
 permissions:
   contents: read
 
@@ -13,8 +16,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  clang-build:
+  check-clang-trigger:
+    runs-on: ubuntu-latest
     if: github.repository_owner == 'zephyrproject-rtos'
+    outputs:
+      run_clang: ${{ steps.check.outputs.run_clang }}
+    steps:
+      - name: Check trigger
+        id: check
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo "run_clang=true" >> "$GITHUB_OUTPUT"
+          else
+            # Check for 'clang' (case-insensitive) in the PR title
+            if echo "$PR_TITLE" | grep -qFi "clang"; then
+               echo "run_clang=true" >> "$GITHUB_OUTPUT"
+            else
+               echo "run_clang=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+  clang-build:
+    needs: check-clang-trigger
+    if: needs.check-clang-trigger.outputs.run_clang == 'true'
     runs-on:
       group: zephyr-runner-v2-linux-x64-4xlarge
     container:
