@@ -2068,10 +2068,6 @@
       </item>
       <item>
         <table>48</table>
-        <row>2</row>
-      </item>
-      <item>
-        <table>48</table>
         <row>3</row>
       </item>
       <item>
@@ -2413,10 +2409,6 @@
       <item>
         <table>60</table>
         <row>4</row>
-      </item>
-      <item>
-        <table>61</table>
-        <row>1</row>
       </item>
       <item>
         <table>61</table>
@@ -3121,14 +3113,6 @@
       <item>
         <table>92</table>
         <row>4</row>
-      </item>
-      <item>
-        <table>92</table>
-        <row>5</row>
-      </item>
-      <item>
-        <table>92</table>
-        <row>6</row>
       </item>
       <item>
         <table>92</table>
@@ -3942,10 +3926,6 @@
         <row>2</row>
       </item>
       <item>
-        <table>5</table>
-        <row>3</row>
-      </item>
-      <item>
         <table>6</table>
         <row>1</row>
       </item>
@@ -3976,6 +3956,18 @@
       <item>
         <table>6</table>
         <row>14</row>
+      </item>
+      <item>
+        <table>6</table>
+        <row>16</row>
+      </item>
+      <item>
+        <table>6</table>
+        <row>17</row>
+      </item>
+      <item>
+        <table>6</table>
+        <row>18</row>
       </item>
       <item>
         <table>8</table>
@@ -4328,6 +4320,18 @@
       <item>
         <table>15</table>
         <row>15</row>
+      </item>
+      <item>
+        <table>15</table>
+        <row>17</row>
+      </item>
+      <item>
+        <table>15</table>
+        <row>18</row>
+      </item>
+      <item>
+        <table>15</table>
+        <row>19</row>
       </item>
       <item>
         <table>17</table>
@@ -5172,6 +5176,14 @@
         <row>2</row>
       </item>
       <item>
+        <table>13</table>
+        <row>3</row>
+      </item>
+      <item>
+        <table>13</table>
+        <row>3a</row>
+      </item>
+      <item>
         <table>14</table>
         <row>1</row>
       </item>
@@ -5400,83 +5412,83 @@
         <row>9</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>1</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>2</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>3</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>4</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>5</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>6</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>7</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>8</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>9</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>10</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>11</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>12</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>13</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>14</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>14a</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>15</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>16</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>17</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>18</row>
       </item>
       <item>
-        <table>20A</table>
+        <table>20a</table>
         <row>19</row>
       </item>
       <item>
@@ -8716,6 +8728,10 @@
         <table>2a</table>
         <row>2</row>
       </item>
+      <item>
+        <table>3</table>
+        <row>2</row>
+      </item>
     </profile>
     <profile>
       <name>L2CAP</name>
@@ -8941,10 +8957,6 @@
         <row>3</row>
       </item>
       <item>
-        <table>5</table>
-        <row>4</row>
-      </item>
-      <item>
         <table>6</table>
         <row>1</row>
       </item>
@@ -8979,6 +8991,18 @@
       <item>
         <table>6</table>
         <row>14</row>
+      </item>
+      <item>
+        <table>6</table>
+        <row>16</row>
+      </item>
+      <item>
+        <table>6</table>
+        <row>17</row>
+      </item>
+      <item>
+        <table>6</table>
+        <row>18</row>
       </item>
       <item>
         <table>8</table>
@@ -9219,6 +9243,18 @@
       <item>
         <table>18</table>
         <row>15</row>
+      </item>
+      <item>
+        <table>18</table>
+        <row>17</row>
+      </item>
+      <item>
+        <table>18</table>
+        <row>18</row>
+      </item>
+      <item>
+        <table>18</table>
+        <row>19</row>
       </item>
       <item>
         <table>18a</table>
@@ -10664,6 +10700,14 @@
       <item>
         <table>3</table>
         <row>6</row>
+      </item>
+      <item>
+        <table>3a</table>
+        <row>1</row>
+      </item>
+      <item>
+        <table>3a</table>
+        <row>2</row>
       </item>
       <item>
         <table>4</table>
@@ -12552,10 +12596,6 @@
         <row>3</row>
       </item>
       <item>
-        <table>5</table>
-        <row>4</row>
-      </item>
-      <item>
         <table>6</table>
         <row>1</row>
       </item>
@@ -12582,6 +12622,14 @@
       <item>
         <table>6</table>
         <row>13</row>
+      </item>
+      <item>
+        <table>6</table>
+        <row>14</row>
+      </item>
+      <item>
+        <table>6</table>
+        <row>15</row>
       </item>
       <item>
         <table>8</table>
@@ -12845,6 +12893,10 @@
       </item>
       <item>
         <table>18</table>
+        <row>1b</row>
+      </item>
+      <item>
+        <table>18</table>
         <row>2</row>
       </item>
       <item>
@@ -12874,6 +12926,10 @@
       <item>
         <table>18</table>
         <row>15</row>
+      </item>
+      <item>
+        <table>18</table>
+        <row>17</row>
       </item>
     </profile>
     <profile>
