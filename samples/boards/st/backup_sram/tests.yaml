@@ -10,3 +10,4 @@ tests:
       - st
     integration_platforms:
       - nucleo_f207zg/stm32f207xx
+      - stm32n6570_dk/stm32n657xx/sb
