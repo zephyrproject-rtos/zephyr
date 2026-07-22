@@ -111,6 +111,10 @@ extern FUNC_NORETURN void z_riscv_userspace_enter(k_thread_entry_t user_entry,
 int z_irq_do_offload(void);
 #endif
 
+#ifdef CONFIG_DEBUGPOINT
+int z_riscv_debugpoint_handle(struct arch_esf *esf);
+#endif
+
 #ifdef CONFIG_FPU_SHARING
 void arch_flush_local_fpu(void);
 void arch_flush_fpu_ipi(unsigned int cpu);
