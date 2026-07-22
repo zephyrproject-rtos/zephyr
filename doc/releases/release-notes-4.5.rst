@@ -527,6 +527,14 @@ Other notable changes
     :c:func:`sys_clock_idle_enter`, where :c:func:`sys_clock_idle_exit` is
     guaranteed to follow.
 
+  * Tickless system-timer drivers can now be built on a shared implementation
+    header, :file:`drivers/timer/system_timer_generic.h`, which owns the tick
+    accounting each driver previously open-coded: the cycle-to-tick conversion,
+    the announce baseline, the tick-aligned deadline and the counter wrap and
+    range handling. A driver reduces to a few cycle-domain primitives, a
+    cycle-counter read plus an absolute-compare arm. See the
+    :ref:`migration guide <migration_4.5>` for how to use it (:github:`115844`).
+
 * Wi-Fi
 
   * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
