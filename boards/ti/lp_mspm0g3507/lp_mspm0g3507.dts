@@ -114,6 +114,15 @@
 	pinctrl-names = "default";
 };
 
+/*
+ * Slow TIMA0 to 39,062 Hz so LED PWM periods (20 ms - 1.68 s)
+ * fit in the 16-bit counter: 80 MHz / (div=8 * (prescaler+1)=256)
+ */
+&tima0 {
+	ti,clk-div = <8>;
+	ti,clk-prescaler = <255>;
+};
+
 &pwma0 {
 	status = "okay";
 
@@ -121,7 +130,7 @@
 	pinctrl-names = "default";
 	ti,cc-index = <0>;
 	ti,pwm-mode = "EDGE_ALIGN";
-	ti,period = <1000>;
+	ti,period = <3906>; /* ~100 ms at 39,062 Hz */
 };
 
 &canfd0 {
