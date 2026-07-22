@@ -156,6 +156,38 @@ int k_ipi_work_add(struct k_ipi_work *work, uint32_t cpu_bitmask,
 	return 0;
 }
 
+static void ipi_work_signal_mask(uint32_t cpu_bitmask)
+{
+	if (cpu_bitmask == 0U) {
+		return;
+	}
+
+#ifdef CONFIG_ARCH_HAS_DIRECTED_IPIS
+	arch_sched_directed_ipi(cpu_bitmask);
+#else
+	arch_sched_broadcast_ipi();
+#endif
+}
+
+int z_ipi_work_submit(struct k_ipi_work *work, uint32_t cpu_bitmask,
+		      k_ipi_func_t func)
+{
+	unsigned int cpu_id = _current_cpu->id;
+	uint32_t target_mask = cpu_bitmask &
+			       (IPI_ALL_CPUS_MASK & ~BIT(cpu_id));
+	int ret = k_ipi_work_add(work, target_mask, func);
+
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* A direct IPI also services pending requests for the target CPUs. */
+	atomic_and(&_kernel.pending_ipi, ~((atomic_val_t)target_mask));
+	ipi_work_signal_mask(target_mask);
+
+	return 0;
+}
+
 int k_ipi_work_wait(struct k_ipi_work *work, k_timeout_t timeout)
 {
 	uint32_t rv = k_event_wait_all(&work->event, work->bitmask,

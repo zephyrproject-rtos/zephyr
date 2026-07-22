@@ -12,6 +12,8 @@ endmenu
 
 menu "Debugging Options"
 
+source "subsys/debug/debugpoint/Kconfig"
+
 config DEBUG
 	bool "Build kernel with debugging enabled"
 	help
@@ -369,3 +371,5 @@ config CS_TRACE_DEFMT
 	help
 	  Module is decoding data which is formatted using Coresight
 	  Trace Formatter, e.g. when data is put into ETR (Embedded Trace Router).
+
+rsource "watchpoint/Kconfig"
