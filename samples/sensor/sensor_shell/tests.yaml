@@ -22,7 +22,13 @@ tests:
     extra_configs:
       - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
       - platform:iotdk/arc_iot:CONFIG_ARC_IOT_CUSTOM_CPU_IDLE=y
-    extra_args: DTC_OVERLAY_FILE=fake_sensor.overlay
+    extra_args:
+      - DTC_OVERLAY_FILE=fake_sensor.overlay
+      # The interrupt-driven shell cannot echo the next command within the harness's
+      # 1 s timeout while draining the large "sensor get" burst under QEMU icount
+      # mode, which advances virtual time slowly in wall-clock terms. Disable icount
+      # so the guest runs at host speed.
+      - simulation:qemu:CONFIG_QEMU_ICOUNT=n
     integration_platforms:
       - native_sim
   sample.sensor.shell.shields:
