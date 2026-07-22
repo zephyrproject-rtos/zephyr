@@ -30,7 +30,48 @@
 
 #if defined(CONFIG_PRINTK_SYNC)
 static struct k_spinlock lock;
-#endif
+
+static ALWAYS_INLINE bool printk_lock(k_spinlock_key_t *key)
+{
+#ifdef CONFIG_SPIN_VALIDATE
+	/*
+	 * vprintk()/z_impl_k_str_out() can be re-entered on the same CPU
+	 * when an assertion fires while a message is still being printed
+	 * (for example a spinlock validation failure on this very `lock`,
+	 * reported through assert_print()). Re-acquiring `lock` in that
+	 * case would fail validation again and recurse through
+	 * assert_print() -> vprintk() -> k_spin_lock() forever, until the
+	 * stack overflows. If this CPU already owns the lock, skip taking
+	 * it again and print directly instead.
+	 *
+	 * Reading the current CPU id must be done with local interrupts
+	 * masked: _current_cpu asserts the calling thread is not migratable
+	 * (!z_smp_cpu_mobile()), which is only guaranteed while interrupts
+	 * are locked. printk() is routinely called from preemptible thread
+	 * context, so dereferencing _current_cpu directly would trip that
+	 * assertion.
+	 */
+	unsigned int irq_key = arch_irq_lock();
+	bool self_owned = (lock.thread_cpu != 0U) &&
+			  ((lock.thread_cpu & 3U) == _current_cpu->id);
+
+	arch_irq_unlock(irq_key);
+
+	if (self_owned) {
+		return false;
+	}
+#endif /* CONFIG_SPIN_VALIDATE */
+	*key = k_spin_lock(&lock);
+	return true;
+}
+
+static ALWAYS_INLINE void printk_unlock(bool locked, k_spinlock_key_t key)
+{
+	if (locked) {
+		k_spin_unlock(&lock, key);
+	}
+}
+#endif /* CONFIG_PRINTK_SYNC */
 
 #ifdef CONFIG_PRINTK
 /**
@@ -125,7 +166,8 @@ void vprintk(const char *fmt, va_list ap)
 	} else {
 		compiler_barrier();
 #ifdef CONFIG_PRINTK_SYNC
-		k_spinlock_key_t key = k_spin_lock(&lock);
+		k_spinlock_key_t key;
+		bool locked = printk_lock(&key);
 #endif
 
 #ifdef CONFIG_PICOLIBC
@@ -137,7 +179,7 @@ void vprintk(const char *fmt, va_list ap)
 #endif
 
 #ifdef CONFIG_PRINTK_SYNC
-		k_spin_unlock(&lock, key);
+		printk_unlock(locked, key);
 #endif
 	}
 }
@@ -147,7 +189,8 @@ void z_impl_k_str_out(char *c, size_t n)
 {
 	size_t i;
 #ifdef CONFIG_PRINTK_SYNC
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key;
+	bool locked = printk_lock(&key);
 #endif
 
 	for (i = 0; i < n; i++) {
@@ -155,7 +198,7 @@ void z_impl_k_str_out(char *c, size_t n)
 	}
 
 #ifdef CONFIG_PRINTK_SYNC
-	k_spin_unlock(&lock, key);
+	printk_unlock(locked, key);
 #endif
 }
 
