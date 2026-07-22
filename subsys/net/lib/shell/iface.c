@@ -82,7 +82,7 @@ static void print_supported_ethernet_capabilities(
 
 #ifdef CONFIG_PTP_CLOCK
 	if (net_eth_get_ptp_clock(iface) != NULL) {
-		PR("\t%s\n", "IEEE 802.1AS gPTP clock");
+		PR("\t%s\n", "IEEE 1588 PTP clock");
 	}
 #endif
 }
