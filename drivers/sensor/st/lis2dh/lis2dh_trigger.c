@@ -80,6 +80,49 @@ static int lis2dh_trigger_drdy_set(const struct device *dev,
 	return 0;
 }
 
+static int lis2dh_trigger_fifo_full_set(const struct device *dev,
+										enum sensor_channel chan,
+										sensor_trigger_handler_t handler,
+										const struct sensor_trigger *trig)
+{
+	const struct lis2dh_config *cfg = dev->config;
+	struct lis2dh_data *lis2dh = dev->data;
+	int status;
+
+	if (cfg->gpio_drdy.port == NULL) {
+		LOG_ERR("trigger_set FIFO_FULL int not supported");
+		return -ENOTSUP;
+	}
+
+	setup_int1(dev, false);
+
+	/* cancel potentially pending trigger */
+	atomic_clear_bit(&lis2dh->trig_flags, TRIGGED_INT1);
+
+	status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL3,
+					   LIS2DH_EN_FIFO_OVRN_INT1, 0);
+
+	lis2dh->handler_drdy = handler;
+	lis2dh->trig_drdy = trig;
+	if ((handler == NULL) || (status < 0)) {
+		return status;
+	}
+
+	lis2dh->chan_drdy = chan;
+
+	/* serialize start of int1 in thread to synchronize output sampling
+	 * and first interrupt. this avoids concurrent bus context access.
+	 */
+	atomic_set_bit(&lis2dh->trig_flags, START_TRIG_INT1);
+#if defined(CONFIG_LIS2DH_TRIGGER_OWN_THREAD)
+	k_sem_give(&lis2dh->gpio_sem);
+#elif defined(CONFIG_LIS2DH_TRIGGER_GLOBAL_THREAD)
+	k_work_submit(&lis2dh->work);
+#endif
+
+	return 0;
+}
+
 static int lis2dh_start_trigger_int1(const struct device *dev)
 {
 	int status;
@@ -283,6 +326,8 @@ int lis2dh_trigger_set(const struct device *dev,
 		return lis2dh_trigger_anym_set(dev, handler, trig);
 	} else if (trig->type == SENSOR_TRIG_TAP) {
 		return lis2dh_trigger_tap_set(dev, handler, trig);
+	} else if (trig->type == SENSOR_TRIG_FIFO_FULL) {
+		return lis2dh_trigger_fifo_full_set(dev, trig->chan , handler, trig);
 	}
 
 	return -ENOTSUP;
