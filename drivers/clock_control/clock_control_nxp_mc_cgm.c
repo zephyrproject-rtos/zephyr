@@ -115,6 +115,10 @@ static const struct mc_cgm_gate_entry mc_cgm_gate_map[] = {
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_ADC_COUNT),
 		MC_CGM_GATE_ENTRY, (,), ADC, Adc),
 #endif
+#if defined(CONFIG_I2S_MCUX_SAI) && defined(FSL_FEATURE_SOC_I2S_COUNT)
+	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_I2S_COUNT),
+		MC_CGM_GATE_ENTRY, (,), SAI, Sai),
+#endif
 };
 
 /*
@@ -156,6 +160,10 @@ static const struct mc_cgm_rate_entry mc_cgm_rate_map[] = {
 #if defined(CONFIG_ADC_NXP_SAR_ADC) && defined(FSL_FEATURE_SOC_ADC_COUNT)
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_ADC_COUNT),
 		MC_CGM_RATE_ENTRY, (,), ADC, Adc),
+#endif
+#if defined(CONFIG_I2S_MCUX_SAI) && defined(FSL_FEATURE_SOC_I2S_COUNT)
+	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_I2S_COUNT),
+		MC_CGM_RATE_ENTRY, (,), SAI, Sai),
 #endif
 };
 
