@@ -1,9 +1,22 @@
+common:
+  tags:
+    - kernel
+    - timer
 tests:
   kernel.timer.starve:
+    # 90 seconds crosses hundreds of narrow-counter wrap periods and
+    # thousands of restart/busy-wait iterations: enough to exercise the
+    # starved-announce and rearm paths in routine CI runs.
+    timeout: 400
+    extra_configs:
+      - CONFIG_APP_STOP_S=90
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
+      - qemu_or1k/qemu_or1k
+  kernel.timer.starve.soak:
+    # The original hour-long soak, for manual runs with --enable-slow.
     slow: true
     timeout: 3700
-    tags:
-      - kernel
-      - timer
     integration_platforms:
       - qemu_x86
