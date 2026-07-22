@@ -9,10 +9,26 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mspm_clock_control.h>
 
+#include <soc_cpuss.h>
+#include <soc_factoryregion.h>
 #include <soc_sysctl.h>
 
 #include <ti/driverlib/driverlib.h>
 #include <string.h>
+
+#if defined(SOC_DEVICE_FAMILY_MSPM33_C321X)
+#define MSPM_REQUIRES_SYSPLLPARAM2
+#endif
+
+#if DT_NODE_EXISTS(MSPM_CPUSS_NODE)
+#define MSPM_HAS_CPUSS
+#endif
+
+#define MSPM_CLK_WAIT_TIMEOUT_US (100)
+
+#define DT_HFCLK  DT_NODELABEL(hfclk)
+#define DT_SYSOSC DT_NODELABEL(sysosc)
+#define DT_SYSPLL DT_NODELABEL(syspll)
 
 #define MSPM_ULPCLK_DIV COND_CODE_1(					\
 		DT_NODE_HAS_PROP(DT_NODELABEL(ulpclk), clk_div),	\
@@ -48,6 +64,54 @@
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(syspll), okay)
 #define MSPM_SYSPLL_ENABLED 1
 #endif
+
+#if MSPM_SYSPLL_ENABLED
+
+#define MSPM_SYSPLL_PDIV      DT_PROP(DT_SYSPLL, p_div)
+#define MSPM_SYSPLL_QDIV      DT_PROP(DT_SYSPLL, q_div)
+#define MSPM_SYSPLL_HAS_CLK2X DT_NODE_HAS_PROP(DT_SYSPLL, clk2x_div)
+#define MSPM_SYSPLL_CLK2X_DIV DT_PROP_OR(DT_SYSPLL, clk2x_div, 1)
+#define MSPM_SYSPLL_HAS_CLK1  DT_NODE_HAS_PROP(DT_SYSPLL, clk1_div)
+#define MSPM_SYSPLL_CLK1_DIV  DT_PROP_OR(DT_SYSPLL, clk1_div, 1)
+#define MSPM_SYSPLL_HAS_CLK0  DT_NODE_HAS_PROP(DT_SYSPLL, clk0_div)
+#define MSPM_SYSPLL_CLK0_DIV  DT_PROP_OR(DT_SYSPLL, clk0_div, 1)
+
+#if MSPM_SYSPLL_HAS_CLK2X && MSPM_SYSPLL_HAS_CLK0
+#error "Only CLK2X or CLK0 can be enabled at a time on the SYSPLL"
+#endif
+
+BUILD_ASSERT(IS_POWER_OF_TWO(MSPM_SYSPLL_PDIV) && MSPM_SYSPLL_PDIV <= 8,
+	     "SYSPLL PDIV must be 1, 2, 4, or 8");
+
+#if DT_SAME_NODE(DT_CLOCKS_CTLR(DT_SYSPLL), DT_HFCLK)
+#define MSPM_SYSPLL_REF_FREQ DT_PROP(DT_HFCLK, clock_frequency)
+#elif DT_SAME_NODE(DT_CLOCKS_CTLR(DT_SYSPLL), DT_SYSOSC)
+#define MSPM_SYSPLL_REF_FREQ DT_SYSOSC_FREQ
+#else
+#error "Invalid SYSPLL source"
+#endif
+
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_CLOCKS_CTLR(DT_SYSPLL)), "SYSPLL source not enabled");
+
+#define MSPM_SYSPLL_LOOPIN_FREQ_MHZ ((MSPM_SYSPLL_REF_FREQ / MSPM_SYSPLL_PDIV) / MHZ(1))
+
+#if MSPM_SYSPLL_LOOPIN_FREQ_MHZ >= 4 && MSPM_SYSPLL_LOOPIN_FREQ_MHZ < 8
+#define MSPM_SYSPLL_PARAM0_FIELD PLLSTARTUP0_4_8
+#define MSPM_SYSPLL_PARAM1_FIELD PLLSTARTUP1_4_8
+#elif MSPM_SYSPLL_LOOPIN_FREQ_MHZ >= 8 && MSPM_SYSPLL_LOOPIN_FREQ_MHZ < 16
+#define MSPM_SYSPLL_PARAM0_FIELD PLLSTARTUP0_8_16
+#define MSPM_SYSPLL_PARAM1_FIELD PLLSTARTUP1_8_16
+#elif MSPM_SYSPLL_LOOPIN_FREQ_MHZ >= 16 && MSPM_SYSPLL_LOOPIN_FREQ_MHZ < 32
+#define MSPM_SYSPLL_PARAM0_FIELD PLLSTARTUP0_16_32
+#define MSPM_SYSPLL_PARAM1_FIELD PLLSTARTUP1_16_32
+#elif MSPM_SYSPLL_LOOPIN_FREQ_MHZ >= 32 && MSPM_SYSPLL_LOOPIN_FREQ_MHZ <= 48
+#define MSPM_SYSPLL_PARAM0_FIELD PLLSTARTUP0_32_48
+#define MSPM_SYSPLL_PARAM1_FIELD PLLSTARTUP1_32_48
+#else
+#error "SYSPLL fLOOPIN out of supported range (4-48 MHz)"
+#endif
+
+#endif /* MSPM_SYSPLL_ENABLED */
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(hfxt), okay)
 #define MSPM_HFCLK_ENABLED 1
@@ -93,38 +157,6 @@ static struct mspm_clk_cfg mspm_mfpclk_cfg = {
 #if MSPM_HFCLK_ENABLED
 static struct mspm_clk_cfg mspm_hfclk_cfg = {
 	.clk_freq = DT_PROP(DT_NODELABEL(hfclk), clock_frequency),
-};
-#endif
-
-#if MSPM_SYSPLL_ENABLED
-/* basic checks of the devicetree to follow */
-#if (DT_NODE_HAS_PROP(DT_NODELABEL(syspll), clk2x_div) && \
-	DT_NODE_HAS_PROP(DT_NODELABEL(syspll), clk0_div))
-#error "Only CLK2X or CLK0 can be enabled at a time on the SYSPLL"
-#endif
-
-static DL_SYSCTL_SYSPLLConfig clock_mspm_cfg_syspll = {
-	.inputFreq = DL_SYSCTL_SYSPLL_INPUT_FREQ_32_48_MHZ,
-	.sysPLLMCLK = DL_SYSCTL_SYSPLL_MCLK_CLK2X,
-	.sysPLLRef = DL_SYSCTL_SYSPLL_REF_SYSOSC,
-	.rDivClk2x = (DT_PROP_OR(DT_NODELABEL(syspll), clk2x_div, 1) - 1),
-	.rDivClk1 = (DT_PROP_OR(DT_NODELABEL(syspll), clk1_div, 1) - 1),
-	.rDivClk0 = (DT_PROP_OR(DT_NODELABEL(syspll), clk0_div, 1) - 1),
-	.qDiv = (DT_PROP(DT_NODELABEL(syspll), q_div) - 1),
-	.pDiv = CONCAT(DL_SYSCTL_SYSPLL_PDIV_,
-		       DT_PROP(DT_NODELABEL(syspll), p_div)),
-	.enableCLK2x = COND_CODE_1(
-		DT_NODE_HAS_PROP(DT_NODELABEL(syspll), clk2x_div),
-		(DL_SYSCTL_SYSPLL_CLK2X_ENABLE),
-		(DL_SYSCTL_SYSPLL_CLK2X_DISABLE)),
-	.enableCLK1 = COND_CODE_1(
-		DT_NODE_HAS_PROP(DT_NODELABEL(syspll), clk1_div),
-		(DL_SYSCTL_SYSPLL_CLK1_ENABLE),
-		(DL_SYSCTL_SYSPLL_CLK1_DISABLE)),
-	.enableCLK0 = COND_CODE_1(
-		DT_NODE_HAS_PROP(DT_NODELABEL(syspll), clk0_div),
-		(DL_SYSCTL_SYSPLL_CLK0_ENABLE),
-		(DL_SYSCTL_SYSPLL_CLK0_DISABLE)),
 };
 #endif
 
@@ -183,6 +215,124 @@ static int clock_mspm_get_rate(const struct device *dev,
 	return 0;
 }
 
+#if MSPM_SYSPLL_ENABLED
+static void clock_mspm_sypll_params(void)
+{
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->SOCLOCK;
+	volatile struct mspm_factoryregion_regs *factoryregion = MSPM_FACTORY_REGS;
+
+#if defined(MSPM_HAS_CPUSS)
+	volatile struct mspm_cpuss_regs *cpuss = MSPM_CPUSS_REGS;
+	uint32_t old_cpuss_ctl = cpuss->CTL;
+
+	/* disable flash cache before reading tuning registers */
+	cpuss->CTL &= ~CPUSS_CTL_ICACHE;
+#endif /* MSPM_HAS_CPUSS */
+
+	/* copy PLL tuning params for actual fLOOPIN range */
+	soclock->SYSPLLPARAM0 = factoryregion->MSPM_SYSPLL_PARAM0_FIELD;
+	soclock->SYSPLLPARAM1 = factoryregion->MSPM_SYSPLL_PARAM1_FIELD;
+
+#if defined(MSPM_REQUIRES_SYSPLLPARAM2)
+	soclock->SYSPLLPARAM2 = factoryregion->SYSPLLPARAM2;
+	soclock->SYSPLLLDOCTL = factoryregion->SYSPLLLDOCTL;
+	soclock->SYSPLLLDOPROG = factoryregion->SYSPLLLDOPROG;
+#endif
+
+#if defined(MSPM_HAS_CPUSS)
+	/* restore CPUSS flash cache control */
+	cpuss->CTL = old_cpuss_ctl;
+#endif /* MSPM_HAS_CPUSS */
+}
+
+static int clock_mspm_config_syspll(void)
+{
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->SOCLOCK;
+
+	/* disable SYSPLL */
+	soclock->HSCLKEN &= ~SYSCTL_HSCLKEN_SYSPLLEN;
+
+	/* wait for SYSPLL to disable */
+	if (!WAIT_FOR((soclock->CLKSTATUS & SYSCTL_CLKSTATUS_SYSPLLOFF) != 0,
+		      MSPM_CLK_WAIT_TIMEOUT_US, NULL)) {
+		return -ETIMEDOUT;
+	}
+
+#if DT_SAME_NODE(DT_SYSPLL_CLOCKS_CTRL, DT_HFCLK)
+	/* set SYSPLL reference to HFCLK */
+	soclock->SYSPLLCFG0 |= SYSCTL_SYSPLLCFG0_SYSPLLREF;
+#else
+	/* set SYSPLL reference to SYSOSC */
+	soclock->SYSPLLCFG0 &= ~SYSCTL_SYSPLLCFG0_SYSPLLREF;
+#endif
+
+	/* set predivider */
+	soclock->SYSPLLCFG1 =
+		(soclock->SYSPLLCFG1 & ~SYSCTL_SYSPLLCFG1_PDIV) |
+		FIELD_PREP(SYSCTL_SYSPLLCFG1_PDIV, SYSCTL_SYSPLLCFG1_PDIV_VAL(MSPM_SYSPLL_PDIV));
+
+	/* configure SYSPLL parameters from factory constants */
+	clock_mspm_sypll_params();
+
+	/* set QDIV */
+	soclock->SYSPLLCFG1 =
+		(soclock->SYSPLLCFG1 & ~SYSCTL_SYSPLLCFG1_QDIV) |
+		FIELD_PREP(SYSCTL_SYSPLLCFG1_QDIV, SYSCTL_SYSPLLCFG1_QDIV_VAL(MSPM_SYSPLL_QDIV));
+
+	/* set syspllclk2x divider */
+	if (MSPM_SYSPLL_HAS_CLK2X) {
+		soclock->SYSPLLCFG0 =
+			(soclock->SYSPLLCFG0 & ~SYSCTL_SYSPLLCFG0_RDIVCLK2X) |
+			SYSCTL_SYSPLLCFG0_ENABLECLK2X |
+			FIELD_PREP(SYSCTL_SYSPLLCFG0_RDIVCLK2X,
+				   SYSCTL_SYSPLLCFG0_RDIV_VAL(MSPM_SYSPLL_CLK2X_DIV));
+	} else {
+		soclock->SYSPLLCFG0 &= ~SYSCTL_SYSPLLCFG0_ENABLECLK2X;
+	}
+
+	/* set syspllclk1 divider */
+	if (MSPM_SYSPLL_HAS_CLK1) {
+		soclock->SYSPLLCFG0 = (soclock->SYSPLLCFG0 & ~SYSCTL_SYSPLLCFG0_RDIVCLK1) |
+				      SYSCTL_SYSPLLCFG0_ENABLECLK1 |
+				      FIELD_PREP(SYSCTL_SYSPLLCFG0_RDIVCLK1,
+						 SYSCTL_SYSPLLCFG0_RDIV_VAL(MSPM_SYSPLL_CLK1_DIV));
+	} else {
+		soclock->SYSPLLCFG0 &= ~SYSCTL_SYSPLLCFG0_ENABLECLK1;
+	}
+
+	/* set syspllclk0 divider */
+	if (MSPM_SYSPLL_HAS_CLK0) {
+		soclock->SYSPLLCFG0 = (soclock->SYSPLLCFG0 & ~SYSCTL_SYSPLLCFG0_RDIVCLK0) |
+				      SYSCTL_SYSPLLCFG0_ENABLECLK0 |
+				      FIELD_PREP(SYSCTL_SYSPLLCFG0_RDIVCLK0,
+						 SYSCTL_SYSPLLCFG0_RDIV_VAL(MSPM_SYSPLL_CLK0_DIV));
+	} else {
+		soclock->SYSPLLCFG0 &= ~SYSCTL_SYSPLLCFG0_ENABLECLK0;
+	}
+
+#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_SYSPLL)
+	if (MSPM_SYSPLL_HAS_CLK2X) {
+		soclock->SYSPLLCFG0 |= SYSCTL_SYSPLLCFG0_MCLK2XVCO;
+	} else {
+		soclock->SYSPLLCFG0 &= ~SYSCTL_SYSPLLCFG0_MCLK2XVCO;
+	}
+#endif
+
+	/* enable SYSPLL */
+	soclock->HSCLKEN |= SYSCTL_HSCLKEN_SYSPLLEN;
+
+	/* wait for SYSPLL to enable */
+	if (!WAIT_FOR((soclock->CLKSTATUS & SYSCTL_CLKSTATUS_SYSPLLGOOD) != 0,
+		      MSPM_CLK_WAIT_TIMEOUT_US, NULL)) {
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+#endif
+
 static int clock_mspm_init(const struct device *dev)
 {
 	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
@@ -201,16 +351,13 @@ static int clock_mspm_init(const struct device *dev)
 #endif
 
 #if MSPM_SYSPLL_ENABLED
-#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(syspll))
-	if (clock_mspm_cfg_syspll.enableCLK0 == DL_SYSCTL_SYSPLL_CLK0_ENABLE) {
-		clock_mspm_cfg_syspll.sysPLLMCLK = DL_SYSCTL_SYSPLL_MCLK_CLK0;
+	{
+		int ret = clock_mspm_config_syspll();
+
+		if (ret < 0) {
+			return ret;
+		}
 	}
-#endif
-#if DT_SAME_NODE(DT_SYSPLL_CLOCKS_CTRL, DT_NODELABEL(hfclk))
-	clock_mspm_cfg_syspll.sysPLLRef = DL_SYSCTL_SYSPLL_REF_HFCLK;
-#endif
-	DL_SYSCTL_configSYSPLL(
-			(DL_SYSCTL_SYSPLLConfig *)&clock_mspm_cfg_syspll);
 #endif
 
 #if MSPM_HFCLK_ENABLED
