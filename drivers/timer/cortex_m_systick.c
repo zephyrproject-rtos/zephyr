@@ -159,9 +159,10 @@ static cycle_t cycle_pre_idle;
  * holds the amount of elapsed HW cycles due to (possibly) multiple
  * timer wraps (overflows).
  *
- * @param val_out Optional pointer to store the SysTick->VAL snapshot (val2)
- *                used in the calculation, so a caller needing that raw value
- *                gets it with no gap after the measurement (see
+ * @param val_out Optional pointer to store the raw SysTick->VAL snapshot
+ *                (val2, as read, before wrap-realignment) used in the
+ *                calculation, so a caller needing that raw value gets it
+ *                with no gap after the measurement (see
  *                timer_driver_set_reload()).
  *
  * Prerequisites:
@@ -202,6 +203,10 @@ static uint32_t elapsed(uint32_t *val_out)
 	 * So the count in val2 is post-wrap and last_load needs to be
 	 * added if and only if COUNTFLAG is set or val1 < val2.
 	 */
+	if (val_out != NULL) {
+		*val_out = val2;
+	}
+
 	if (val1 == 0) {
 		val1 = last_load;
 	}
@@ -216,10 +221,6 @@ static uint32_t elapsed(uint32_t *val_out)
 		/* We know there was a wrap, but we might not have
 		 * seen it in CTRL, so clear it. */
 		(void)SysTick->CTRL;
-	}
-
-	if (val_out != NULL) {
-		*val_out = val2;
 	}
 
 	return (last_load - val2) + overflow_cyc;
