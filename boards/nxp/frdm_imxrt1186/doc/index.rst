@@ -184,6 +184,14 @@ For FRDM-iMXRT1186, the following network interfaces present:
 - ``swp4``: DSA CPU port. Not a user port.
 - ``eth0``: DSA conduit port. Not a user port.
 
+On the FRDM-iMXRT1186 board, the two Ethernet connectors are shared between
+the NETC (``ETH0``/``ETH2``) and EtherCAT (``ECAT0``/``ECAT1``) interfaces.
+Set the following jumpers to route the connectors to NETC before using the
+network interfaces:
+
+- ``ETH0`` instead of ``ECAT0``: J12 short pins 1-2, J13 short pins 2-3.
+- ``ETH2`` instead of ``ECAT1``: J18 short pins 1-2, J17 short pins 2-3.
+
 .. note::
 
    DHCP is expected to work on ``swp0`` and ``swp2``.
