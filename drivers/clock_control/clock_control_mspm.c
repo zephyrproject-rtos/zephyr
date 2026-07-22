@@ -29,10 +29,14 @@
 #define DT_HFCLK    DT_NODELABEL(hfclk)
 #define DT_HFCLK_IN DT_NODELABEL(hfclk_in)
 #define DT_HFXT     DT_NODELABEL(hfxt)
+#define DT_LFCLK    DT_NODELABEL(lfclk)
+#define DT_LFCLK_IN DT_NODELABEL(lfclk_in)
+#define DT_LFXT     DT_NODELABEL(lfxt)
 #define DT_SYSOSC   DT_NODELABEL(sysosc)
 #define DT_SYSPLL   DT_NODELABEL(syspll)
 
 #define DT_HFCLK_CLOCKS_CTRL  DT_CLOCKS_CTLR(DT_HFCLK)
+#define DT_LFCLK_CLOCKS_CTRL  DT_CLOCKS_CTLR(DT_LFCLK)
 #define DT_SYSPLL_CLOCKS_CTRL DT_CLOCKS_CTLR(DT_SYSPLL)
 
 #define MSPM_ULPCLK_DIV COND_CODE_1(					\
@@ -148,8 +152,12 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_HFCLK_CLOCKS_CTRL), "HFCLK source not en
 #define MSPM_CANCLK_ENABLED 1
 #endif
 
+#if DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFXT) || DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFCLK_IN)
+#define MSPM_LFCLK_USES_EXT 1
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_LFCLK_CLOCKS_CTRL), "LFCLK external source not enabled");
+#endif
+
 #define DT_MCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mclk))
-#define DT_LFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(lfclk))
 #define DT_MFPCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mfpclk))
 
 struct mspm_clk_cfg {
@@ -400,6 +408,40 @@ static int clock_mspm_config_hfclk(void)
 }
 #endif
 
+#if MSPM_LFCLK_USES_EXT
+static int clock_mspm_config_lfclk(void)
+{
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->SOCLOCK;
+
+#if DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFXT)
+	/* disable low power mode and set drive strength to lowest */
+	soclock->LFCLKCFG &= ~(SYSCTL_LFCLKCFG_LOWCAP | SYSCTL_LFCLKCFG_XT1DRIVE);
+
+	/* start LFXT */
+	soclock->LFXTCTL =
+		FIELD_PREP(SYSCTL_LFXTCTL_KEY, SYSCTL_LFXTCTL_KEY_VAL) | SYSCTL_LFXTCTL_STARTLFXT;
+
+	/* wait for LFXT to stabilize */
+	if (!WAIT_FOR((soclock->CLKSTATUS & SYSCTL_CLKSTATUS_LFXTGOOD) != 0,
+		      MSPM_CLK_WAIT_TIMEOUT_US, NULL)) {
+		return -ETIMEDOUT;
+	}
+
+	/* set LFCLK source as LFXT */
+	soclock->LFXTCTL =
+		FIELD_PREP(SYSCTL_LFXTCTL_KEY, SYSCTL_LFXTCTL_KEY_VAL) | SYSCTL_LFXTCTL_SETUSELFXT;
+
+#elif DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFCLK_IN)
+	/* set LFCLK source as LFCLK_IN */
+	soclock->EXLFCTL =
+		FIELD_PREP(SYSCTL_EXLFCTL_KEY, SYSCTL_EXLFCTL_KEY_VAL) | SYSCTL_EXLFCTL_SETUSEEXLF;
+#endif
+
+	return 0;
+}
+#endif /* MSPM_LFCLK_USES_EXT */
+
 static int clock_mspm_init(const struct device *dev)
 {
 	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
@@ -437,13 +479,14 @@ static int clock_mspm_init(const struct device *dev)
 	}
 #endif
 
-#if DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_NODELABEL(lfxt))
-	DL_SYSCTL_LFCLKConfig config = {0};
+#if MSPM_LFCLK_USES_EXT
+	{
+		int ret = clock_mspm_config_lfclk();
 
-	DL_SYSCTL_setLFCLKSourceLFXT(&config);
-#elif DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_NODELABEL(lfdig_in))
-	DL_SYSCTL_setLFCLKSourceEXLF();
-
+		if (ret < 0) {
+			return ret;
+		}
+	}
 #endif
 
 #if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk))
