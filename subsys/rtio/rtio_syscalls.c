@@ -74,6 +74,29 @@ static inline int z_vrfy_rtio_cqe_get_mempool_buffer(const struct rtio *r, struc
 
 static inline int z_vrfy_rtio_sqe_cancel(struct rtio_sqe *sqe)
 {
+	/*
+	 * sqe is an opaque handle returned by rtio_sqe_copy_in_get_handles();
+	 * it points into a kernel-resident SQE pool, not into user memory, so a
+	 * K_SYSCALL_MEMORY_READ check is wrong here. A malicious user could
+	 * still pass an arbitrary pointer, which the impl's CONTAINER_OF would
+	 * turn into an arbitrary kernel write of RTIO_SQE_CANCELED. Bound the
+	 * handle against the actual SQE pools before forwarding.
+	 */
+	bool valid = false;
+	uintptr_t addr = (uintptr_t)CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
+
+	STRUCT_SECTION_FOREACH(rtio_sqe_pool, p) {
+		uintptr_t base = (uintptr_t)p->pool;
+		uintptr_t end = base + (uintptr_t)p->pool_size * sizeof(struct rtio_iodev_sqe);
+
+		if (addr >= base && addr < end &&
+		    (addr - base) % sizeof(struct rtio_iodev_sqe) == 0) {
+			valid = true;
+			break;
+		}
+	}
+
+	K_OOPS(K_SYSCALL_VERIFY_MSG(valid, "invalid sqe handle"));
 	return z_impl_rtio_sqe_cancel(sqe);
 }
 #include <zephyr/syscalls/rtio_sqe_cancel_mrsh.c>
@@ -84,6 +107,9 @@ static inline int z_vrfy_rtio_sqe_copy_in_get_handles(struct rtio *r, const stru
 	K_OOPS(K_SYSCALL_OBJ(r, K_OBJ_RTIO));
 
 	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(sqes, sqe_count, sizeof(struct rtio_sqe)));
+	if (handle != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(handle, sizeof(*handle)));
+	}
 	struct rtio_sqe *sqe;
 	uint32_t acquirable = rtio_sqe_acquirable(r);
 
