@@ -66,20 +66,6 @@ static void lptimer_interrupt_handler(void *handler_arg, cyhal_lptimer_event_t e
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : (delta_ticks > 0));
 }
 
-void sys_clock_unused(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	/* Disable the LPTIMER events */
-	cyhal_lptimer_enable_event(&lptimer_obj, CYHAL_LPTIMER_COMPARE_MATCH,
-				   LPTIMER_INTR_PRIORITY, false);
-	k_spin_unlock(&lock, key);
-}
-
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -87,6 +73,15 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	k_spinlock_key_t key = {0};
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		key = k_spin_lock(&lock);
+		/* Disable the LPTIMER events */
+		cyhal_lptimer_enable_event(&lptimer_obj, CYHAL_LPTIMER_COMPARE_MATCH,
+					   LPTIMER_INTR_PRIORITY, false);
+		k_spin_unlock(&lock, key);
 		return;
 	}
 
