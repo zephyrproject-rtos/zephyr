@@ -32,18 +32,9 @@
 #define TIMER_IRQ DSP_WCT_IRQ(COMPARATOR_IDX)
 #endif
 
-#define CYC_PER_TICK	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC	\
-			/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_CYC		0xFFFFFFFFUL
-#define MAX_TICKS	((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
-#define MIN_DELAY	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 100000)
-
-BUILD_ASSERT(MIN_DELAY < CYC_PER_TICK);
 BUILD_ASSERT(COMPARATOR_IDX >= 0 && COMPARATOR_IDX <= 1);
 
 #define DSP_WCT_CS_TT(x)                     BIT(4 + x)
-
-static uint64_t last_count;
 
 /* Not using current syscon driver due to overhead due to MMU support */
 #define SYSCON_REG_ADDR	DT_REG_ADDR(DT_INST_PHANDLE(0, syscon))
@@ -98,76 +89,46 @@ static uint32_t count32(void)
 	return counter_lo;
 }
 
+/*
+ * Free-running 64-bit wall clock plus an absolute comparator.  Arming disarms
+ * the comparator, writes both halves and rearms it, so a counter that reaches
+ * the target during that sequence leaves the match unarmed, and on a 64-bit
+ * counter it never comes round again.  That is the COMPARE_EXACT backend: the
+ * core rewrites through its verify loop until the target is genuinely ahead
+ * of the counter.
+ *
+ * The wall clock is a genuine 64-bit counter on a 32-bit CPU, hence the stated
+ * width.  Both cycle getters stay the driver's own: count32() reads the low
+ * half in a single access.
+ */
+#define TIMER_CORE_BACKEND_COMPARE_EXACT
+#define TIMER_CORE_COUNTER_WIDTH 64
+#define TIMER_CORE_HAVE_CYCLE_GET_32
+#define TIMER_CORE_HAVE_CYCLE_GET_64
+
+static inline uint64_t timer_driver_cycle_get(void)
+{
+	return count();
+}
+
+static inline void timer_driver_set_compare(uint64_t cycles)
+{
+	set_compare(cycles);
+}
+
+#include "system_timer_generic.h"
+
 static void compare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
-	uint64_t curr;
-	uint64_t dticks;
 
 	k_spinlock_key_t key = sys_clock_lock();
-
-	curr = count();
-	dticks = (curr - last_count) / CYC_PER_TICK;
 
 	/* Clear the triggered bit */
 	sys_write32(sys_read32(DSPWCTCS_ADDR) | DSP_WCT_CS_TT(COMPARATOR_IDX),
 			DSPWCTCS_ADDR);
 
-	last_count += dticks * CYC_PER_TICK;
-
-#ifndef CONFIG_TICKLESS_KERNEL
-	uint64_t next = last_count + CYC_PER_TICK;
-
-	if ((int64_t)(next - curr) < MIN_DELAY) {
-		next += CYC_PER_TICK;
-	}
-	set_compare(next);
-#endif
-
-	sys_clock_announce_locked(dticks, key);
-}
-
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	ARG_UNUSED(idle);
-
-	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
-
-#ifdef CONFIG_TICKLESS_KERNEL
-	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
-
-	uint64_t curr = count();
-	uint64_t next;
-	uint32_t adj, cyc = ticks * CYC_PER_TICK;
-
-	/* Round up to next tick boundary */
-	adj = (uint32_t)(curr - last_count) + (CYC_PER_TICK - 1);
-	if (cyc <= MAX_CYC - adj) {
-		cyc += adj;
-	} else {
-		cyc = MAX_CYC;
-	}
-	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
-	next = last_count + cyc;
-
-	if (((uint32_t)next - (uint32_t)curr) < MIN_DELAY) {
-		next += CYC_PER_TICK;
-	}
-
-	set_compare(next);
-#endif
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-	uint64_t ret = (count() - last_count) / CYC_PER_TICK;
-
-	return (uint32_t)ret;
+	timer_core_announce_from(key);
 }
 
 uint32_t sys_clock_cycle_get_32(void)
@@ -209,11 +170,8 @@ void smp_timer_init(void)
 
 static int sys_clock_driver_init(void)
 {
-	uint64_t curr = count();
-
 	IRQ_CONNECT(TIMER_IRQ, 0, compare_isr, 0, 0);
-	set_compare(curr + CYC_PER_TICK);
-	last_count = curr;
+	timer_core_init();
 	irq_init();
 	return 0;
 }
