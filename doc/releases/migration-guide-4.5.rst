@@ -817,6 +817,17 @@ Timer
   Refer to the :ref:`system timer driver documentation <system_timer_drivers>`
   for the precise semantics (:github:`115844`).
 
+* Tickless system-timer drivers should no longer carry their own tick handling.
+  The implementation header :file:`drivers/timer/system_timer_generic.h` now
+  owns the accounting that each driver used to reimplement by hand, and got
+  subtly wrong: the cycle-to-tick conversion, the announce baseline, the
+  tick-aligned deadline computation and the counter range clamp, including the
+  wrap handling of a narrow counter. A driver reduces to a few cycle-domain
+  primitives, a cycle-counter read plus an absolute-compare arm, and includes
+  the header once, which emits :c:func:`sys_clock_set_timeout`,
+  :c:func:`sys_clock_elapsed` and :c:func:`sys_clock_cycle_get_32` /
+  :c:func:`sys_clock_cycle_get_64` (:github:`115844`).
+
 USB
 ===
 
