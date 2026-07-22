@@ -1,0 +1,9 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+name: nxp-wifi-hostap
+description: |
+  NXP WPA supplicant/hostapd configuration with enterprise,
+  DPP, WPS, and EAP-TLSv1.3 support.
+append:
+  FORCED_CONF_FILE: nxp-wifi-hostap.conf

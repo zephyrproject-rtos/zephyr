@@ -1,0 +1,16 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+name: nxp-wifi
+description: |
+  NXP Wi-Fi platform configuration including driver enablement,
+  zero-copy networking, power management, performance tuning,
+  and code relocation. Applicable to RW612 (integrated) and
+  IW610/IW612 (external module via SDIO).
+append:
+  FORCED_CONF_FILE: nxp-wifi.conf
+
+boards:
+  /.*mimxrt1060.*/:
+    append:
+      FORCED_CONF_FILE: boards/mimxrt1060.conf
