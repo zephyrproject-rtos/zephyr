@@ -55,6 +55,8 @@ struct mspi_stm32_conf {
 	const struct stm32_pclken *pclken;
 	const struct pinctrl_dev_config *pcfg;
 	bool dma_specified;
+	uint32_t cs_boundary;
+	bool ssht_enable;
 	uint32_t ospim_clk_port;
 	uint32_t ospim_dqs_port;
 	uint32_t ospim_ncs_port;
@@ -81,7 +83,11 @@ union mspi_stm32_handle {
 	QSPI_HandleTypeDef qspi;
 #endif
 #ifdef CONFIG_MSPI_STM32_XSPI
+#if defined(CONFIG_STM32_HAL2)
+	hal_xspi_handle_t xspi;
+#else
 	XSPI_HandleTypeDef xspi;
+#endif
 #endif
 };
 
@@ -102,8 +108,13 @@ struct mspi_stm32_data {
 	DMA_HandleTypeDef hdma;
 #endif
 #ifdef CONFIG_MSPI_STM32_XSPI
+#if defined(CONFIG_STM32_HAL2)
+	hal_dma_handle_t hdma_tx;
+	hal_dma_handle_t hdma_rx;
+#else
 	DMA_HandleTypeDef hdma_tx;
 	DMA_HandleTypeDef hdma_rx;
+#endif
 #endif
 };
 
