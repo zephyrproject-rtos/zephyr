@@ -383,11 +383,12 @@ void sys_clock_idle_enter(uint32_t ticks)
 	}
 #endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
 
-	sys_clock_set_timeout(ticks);
+	sys_clock_set_timeout(ticks, false);
 }
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(idle);
 	/* new LPTIM AutoReload value to set (aligned on Kernel ticks) */
 	uint32_t next_arr = 0;
 	int err;

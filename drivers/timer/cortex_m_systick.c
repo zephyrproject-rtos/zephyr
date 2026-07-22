@@ -329,8 +329,9 @@ void sys_clock_unused(void)
 	last_load = TIMER_STOPPED;
 }
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(idle);
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 #if defined(CONFIG_TICKLESS_KERNEL)
@@ -478,7 +479,7 @@ void sys_clock_idle_enter(uint32_t ticks)
 	overflow_cyc = 0;
 #endif /* !CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
 #else /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
-	sys_clock_set_timeout(ticks);
+	sys_clock_set_timeout(ticks, false);
 #endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
 }
 

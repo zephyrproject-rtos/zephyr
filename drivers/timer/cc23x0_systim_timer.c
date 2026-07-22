@@ -52,8 +52,9 @@ static int sys_clock_driver_init(void);
 /*
  * Set system clock timeout.
  */
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(idle);
 
 	/* Get current value as early as possible */
 	uint32_t now_tick = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);

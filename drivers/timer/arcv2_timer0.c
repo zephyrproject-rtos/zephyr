@@ -271,7 +271,7 @@ void sys_clock_unused(void)
 #endif
 }
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 #if SMP_TIMER_DRIVER
 #if defined(CONFIG_TICKLESS_KERNEL)

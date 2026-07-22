@@ -167,7 +167,7 @@ static void reprogram_next(uint32_t ticks_elapsed)
 	    z_timeout_q_next_expiry() == K_TICKS_FOREVER) {
 		sys_clock_unused();
 	} else {
-		sys_clock_set_timeout(next_timeout(ticks_elapsed));
+		sys_clock_set_timeout(next_timeout(ticks_elapsed), false);
 	}
 }
 
@@ -227,7 +227,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 				 */
 				ticks_elapsed = elapsed();
 			}
-			sys_clock_set_timeout(next_timeout(ticks_elapsed));
+			sys_clock_set_timeout(next_timeout(ticks_elapsed), false);
 		}
 	}
 

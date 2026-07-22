@@ -127,8 +127,9 @@ static void set_timeout(uint32_t ticks, bool idle)
 #endif
 }
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(idle);
 	set_timeout(ticks, false);
 }
 

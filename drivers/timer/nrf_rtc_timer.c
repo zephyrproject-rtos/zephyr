@@ -682,8 +682,9 @@ void sys_clock_unused(void)
 	sys_busy = false;
 }
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(idle);
 	uint64_t target_time;
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
