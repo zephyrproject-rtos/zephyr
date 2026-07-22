@@ -190,8 +190,14 @@ BUILD_ASSERT(offsetof(struct mspm_gptimer_counter_regs, IFCTL_01) == 0x80U);
 #ifndef GPTIMER_CCACT_01_LACT_CCP_HIGH
 #define GPTIMER_CCACT_01_LACT_CCP_HIGH 0x00000008U
 #endif
+#ifndef GPTIMER_CCACT_01_LACT_CCP_LOW
+#define GPTIMER_CCACT_01_LACT_CCP_LOW 0x00000010U
+#endif
 #ifndef GPTIMER_CCACT_01_CDACT_CCP_LOW
 #define GPTIMER_CCACT_01_CDACT_CCP_LOW 0x00000080U
+#endif
+#ifndef GPTIMER_CCACT_01_CDACT_CCP_HIGH
+#define GPTIMER_CCACT_01_CDACT_CCP_HIGH 0x00000040U
 #endif
 #ifndef GPTIMER_CCACT_01_CUACT_CCP_LOW
 #define GPTIMER_CCACT_01_CUACT_CCP_LOW 0x00000400U
@@ -212,14 +218,14 @@ BUILD_ASSERT(offsetof(struct mspm_gptimer_counter_regs, IFCTL_01) == 0x80U);
 #endif
 
 /* CPU_INT interrupt bits — same position in IMASK, RIS, ICLR */
-#define GPTIMER_INT_ZERO_BIT     BIT(1)
+#define GPTIMER_INT_ZERO_BIT     BIT(0) /* Z: zero/underflow event */
 #define GPTIMER_INT_CCD_MASK(ch) BIT(4U + (ch))
 
 #define MSPM_PWM_CC_MAX 4U
 
 /* Replaces DL_TIMER_PWM_MODE */
 enum pwm_mspm_mode {
-	PWM_MSPM_EDGE_ALIGN,    /* down-count: LACT=HIGH, CDACT=LOW */
+	PWM_MSPM_EDGE_ALIGN,    /* down-count: LACT=LOW, CDACT=HIGH */
 	PWM_MSPM_EDGE_ALIGN_UP, /* up-count:   ZACT=HIGH, CUACT=LOW */
 	PWM_MSPM_CENTER_ALIGN,  /* up-down:    CUACT=HIGH, CDACT=LOW */
 };
@@ -260,6 +266,7 @@ struct pwm_mspm_data {
 	pwm_flags_t flags;
 	void *user_data;
 	bool is_synced;
+	bool armed;
 #endif
 };
 
@@ -320,15 +327,44 @@ static inline void mspm_pwm_write_ifctl(struct mspm_gptimer_regs *base, uint8_t 
 
 /* PWM output helpers */
 
+/*
+ * DOWN-counting EDGE_ALIGN: LACT (reload) and CDACT (CC match) toggle the
+ * pin so it's HIGH for exactly `pulse` ticks. At the 0% and 100% duty
+ * boundaries CC coincides with LOAD/reload, so LACT and CDACT would fire
+ * on the same tick — pick a single fixed action instead of toggling to
+ * avoid a spurious 1-tick glitch at either extreme.
+ */
+static inline uint32_t mspm_pwm_edge_align_ccact(uint32_t pulse, uint32_t load)
+{
+	if (pulse == 0U) {
+		return GPTIMER_CCACT_01_LACT_CCP_LOW;
+	}
+	if (pulse >= load) {
+		return GPTIMER_CCACT_01_LACT_CCP_HIGH;
+	}
+	return GPTIMER_CCACT_01_LACT_CCP_LOW | GPTIMER_CCACT_01_CDACT_CCP_HIGH;
+}
+
+/*
+ * UP-DOWN counting CENTER_ALIGN: LOAD holds period/2 (up-down counting
+ * doubles the effective tick count). CC must be the symmetric offset from
+ * the peak that gives `pulse` total ticks of HIGH time: load - pulse/2.
+ */
+static inline uint32_t mspm_pwm_center_align_cc(uint32_t load, uint32_t pulse)
+{
+	return load - (pulse / 2U);
+}
+
 static void mspm_pwm_setup_cc_chan(struct mspm_gptimer_regs *base, uint8_t ch,
 				   enum pwm_mspm_mode mode, uint32_t pulse)
 {
 	uint32_t ccact;
 	uint32_t ccupd;
+	uint32_t cc_val = pulse;
 
 	switch (mode) {
 	case PWM_MSPM_EDGE_ALIGN:
-		ccact = GPTIMER_CCACT_01_LACT_CCP_HIGH | GPTIMER_CCACT_01_CDACT_CCP_LOW;
+		ccact = mspm_pwm_edge_align_ccact(pulse, base->COUNTERREGS.LOAD);
 		ccupd = GPTIMER_CCCTL_01_CCUPD_ZERO_EVT;
 		break;
 	case PWM_MSPM_EDGE_ALIGN_UP:
@@ -338,6 +374,7 @@ static void mspm_pwm_setup_cc_chan(struct mspm_gptimer_regs *base, uint8_t ch,
 	default: /* PWM_MSPM_CENTER_ALIGN */
 		ccact = GPTIMER_CCACT_01_CUACT_CCP_HIGH | GPTIMER_CCACT_01_CDACT_CCP_LOW;
 		ccupd = GPTIMER_CCCTL_01_CCUPD_ZERO_LOAD_EVT;
+		cc_val = mspm_pwm_center_align_cc(base->COUNTERREGS.LOAD, pulse);
 		break;
 	}
 
@@ -345,7 +382,7 @@ static void mspm_pwm_setup_cc_chan(struct mspm_gptimer_regs *base, uint8_t ch,
 	mspm_pwm_write_ccctl(base, ch, GPTIMER_CCCTL_01_COC_COMPARE | ccupd);
 	mspm_pwm_write_octl(base, ch, 0U);
 	mspm_pwm_write_ifctl(base, ch, GPTIMER_IFCTL_01_ISEL_CCPX_INPUT);
-	mspm_pwm_write_cc(base, ch, pulse);
+	mspm_pwm_write_cc(base, ch, cc_val);
 }
 
 static void mspm_pwm_setup_output(const struct pwm_mspm_config *config, struct pwm_mspm_data *data)
@@ -367,6 +404,13 @@ static void mspm_pwm_setup_output(const struct pwm_mspm_config *config, struct p
 		break;
 	}
 
+	if (config->mode == PWM_MSPM_CENTER_ALIGN) {
+		/* Up-down counting doubles the effective tick count; LOAD
+		 * must hold period/2 to match pwm_mspm_set_cycles() and the
+		 * CC offset math in mspm_pwm_setup_cc_chan().
+		 */
+		data->period >>= 1;
+	}
 	base->COUNTERREGS.LOAD = data->period;
 
 	for (i = 0; i < config->cc_idx_cnt; i++) {
@@ -414,7 +458,21 @@ static int pwm_mspm_set_cycles(const struct device *dev, uint32_t channel, uint3
 	data->period = period;
 
 	base->COUNTERREGS.LOAD = period;
-	mspm_pwm_write_cc(base, config->cc_idx[channel], pulse_cycles);
+
+	if (config->mode == PWM_MSPM_CENTER_ALIGN) {
+		mspm_pwm_write_cc(base, config->cc_idx[channel],
+				  mspm_pwm_center_align_cc(period, pulse_cycles));
+	} else {
+		mspm_pwm_write_cc(base, config->cc_idx[channel], pulse_cycles);
+	}
+
+	if (config->mode == PWM_MSPM_EDGE_ALIGN) {
+		/* Re-evaluate the 0%/100% CDACT special case; see
+		 * mspm_pwm_edge_align_ccact() for why this is needed.
+		 */
+		mspm_pwm_write_ccact(base, config->cc_idx[channel],
+				     mspm_pwm_edge_align_ccact(pulse_cycles, period));
+	}
 
 	k_mutex_unlock(&data->lock);
 
@@ -437,17 +495,22 @@ static int pwm_mspm_get_cycles_per_sec(const struct device *dev, uint32_t channe
 
 #ifdef CONFIG_PWM_CAPTURE
 
+/*
+ * Which channel triggers the capture interrupt depends on cap_mode, not on
+ * the requested capture TYPE: PULSE_WIDTH always triggers on the rise
+ * channel (cc_idx[0]^1) regardless of PERIOD/PULSE/BOTH, since that's the
+ * only channel actually wired to fire an interrupt (mspm_pwm_setup_capture()
+ * never arms cc_idx[0]'s own interrupt in PULSE_WIDTH mode). Gating on the
+ * TYPE flags instead of cap_mode would arm the wrong, unconfigured channel
+ * for EDGE_TIME mode whenever PERIOD/PULSE/BOTH is requested there.
+ */
 static uint32_t mspm_pwm_cap_intr_mask(const struct pwm_mspm_config *config,
 				       const struct pwm_mspm_data *data)
 {
-	switch (data->flags & PWM_CAPTURE_TYPE_MASK) {
-	case PWM_CAPTURE_TYPE_PULSE:
-	case PWM_CAPTURE_TYPE_BOTH:
-	case PWM_CAPTURE_TYPE_PERIOD:
-		return GPTIMER_INT_CCD_MASK(!(config->cc_idx[0])) | GPTIMER_INT_ZERO_BIT;
-	default:
-		return GPTIMER_INT_CCD_MASK(config->cc_idx[0]);
+	if (data->cap_mode == PWM_MSPM_CAP_PULSE_WIDTH) {
+		return GPTIMER_INT_CCD_MASK(config->cc_idx[0] ^ 1U) | GPTIMER_INT_ZERO_BIT;
 	}
+	return GPTIMER_INT_CCD_MASK(config->cc_idx[0]);
 }
 
 static void mspm_pwm_setup_capture(const struct device *dev, const struct pwm_mspm_config *config,
@@ -467,6 +530,7 @@ static void mspm_pwm_setup_capture(const struct device *dev, const struct pwm_ms
 					     GPTIMER_CCCTL_01_CCOND_CC_TRIG_RISE);
 		mspm_pwm_write_ifctl(base, ch, isel);
 		base->COMMONREGS.CCPD &= ~GPTIMER_CCPD_OUTPUT_MASK(ch);
+		base->COUNTERREGS.CTRCTL = GPTIMER_CTRCTL_CM_DOWN | GPTIMER_CTRCTL_REPEAT_REPEAT_1;
 	} else {
 		uint8_t ch_fall = config->cc_idx[0];
 		uint8_t ch_rise = ch_fall ^ 1U;
@@ -504,16 +568,7 @@ static int pwm_mspm_configure_capture(const struct device *dev, uint32_t channel
 		return -EINVAL;
 	}
 
-	switch (flags & PWM_CAPTURE_TYPE_MASK) {
-	case PWM_CAPTURE_TYPE_PULSE:
-	case PWM_CAPTURE_TYPE_BOTH:
-	case PWM_CAPTURE_TYPE_PERIOD:
-		intr_mask = GPTIMER_INT_CCD_MASK(!(config->cc_idx[0])) | GPTIMER_INT_ZERO_BIT;
-		break;
-	default:
-		intr_mask = GPTIMER_INT_CCD_MASK(config->cc_idx[0]);
-		break;
-	}
+	intr_mask = mspm_pwm_cap_intr_mask(config, data);
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
@@ -526,6 +581,34 @@ static int pwm_mspm_configure_capture(const struct device *dev, uint32_t channel
 	data->flags = flags;
 	data->callback = cb;
 	data->user_data = user_data;
+
+	if (data->cap_mode == PWM_MSPM_CAP_PULSE_WIDTH) {
+		struct mspm_gptimer_regs *base = config->base;
+		uint8_t ch_fall = config->cc_idx[0];
+		uint8_t ch_rise = ch_fall ^ 1U;
+		bool inverted = flags & PWM_POLARITY_INVERTED;
+
+		/*
+		 * "pulse" is always computed as (time of ch_rise's edge) -
+		 * (time of ch_fall's edge). Under normal polarity that is
+		 * RISE-to-FALL, i.e. the HIGH duration. Under inverted
+		 * polarity the caller expects "pulse" to mean the LOW
+		 * duration instead, so swap which physical edge each
+		 * channel captures: ch_fall now triggers on RISE and
+		 * ch_rise now triggers on FALL, making the same
+		 * last_sample-minus-cc0 formula yield FALL-to-RISE (the
+		 * LOW duration). Mirrors the edge-swap approach used by
+		 * pwm_stm32's init_capture_channels().
+		 */
+		mspm_pwm_write_ccctl(base, ch_fall,
+				     GPTIMER_CCCTL_01_COC_CAPTURE |
+					     (inverted ? GPTIMER_CCCTL_01_CCOND_CC_TRIG_RISE
+						       : GPTIMER_CCCTL_01_CCOND_CC_TRIG_FALL));
+		mspm_pwm_write_ccctl(base, ch_rise,
+				     GPTIMER_CCCTL_01_COC_CAPTURE |
+					     (inverted ? GPTIMER_CCCTL_01_CCOND_CC_TRIG_FALL
+						       : GPTIMER_CCCTL_01_CCOND_CC_TRIG_RISE));
+	}
 
 	k_mutex_unlock(&data->lock);
 	return 0;
@@ -558,6 +641,15 @@ static int pwm_mspm_enable_capture(const struct device *dev, uint32_t channel)
 		return -EBUSY;
 	}
 
+	/*
+	 * Re-baseline on every arm, not just after disable_capture(): a
+	 * caller may legitimately re-enable without disabling first (e.g.
+	 * back-to-back single-shot captures), and the CC registers may hold
+	 * a stale capture from whatever ran before this arm.
+	 */
+	data->is_synced = false;
+	data->armed = false;
+
 	base->COUNTERREGS.CTR = data->period;
 	base->COUNTERREGS.CTRCTL |= GPTIMER_CTRCTL_EN_ENABLED;
 	base->CPU_INT.ICLR = intr_mask;
@@ -586,6 +678,7 @@ static int pwm_mspm_disable_capture(const struct device *dev, uint32_t channel)
 	base->CPU_INT.IMASK &= ~intr_mask;
 	base->COUNTERREGS.CTRCTL &= ~GPTIMER_CTRCTL_EN_MASK;
 	data->is_synced = false;
+	data->armed = false;
 
 	k_mutex_unlock(&data->lock);
 	return 0;
@@ -596,28 +689,56 @@ static void mspm_pwm_cc_isr(const struct device *dev)
 	const struct pwm_mspm_config *config = dev->config;
 	struct pwm_mspm_data *data = dev->data;
 	struct mspm_gptimer_regs *base = config->base;
+	uint32_t raw_ris;
 	uint32_t ris;
 	uint32_t cc0 = 0;
 	uint32_t cc1 = 0;
 	uint32_t period;
 	uint32_t pulse;
 
-	ris = base->CPU_INT.RIS & mspm_pwm_cap_intr_mask(config, data);
-	base->CPU_INT.ICLR = ris;
+	/*
+	 * Clear every pending bit (raw_ris), not just the ones relevant to
+	 * this capture (ris), so coincidental compare matches on unrelated
+	 * CC channels (e.g. CC4/CC5 defaulting to COMPARE mode with CC=0)
+	 * don't linger set in RIS indefinitely.
+	 */
+	raw_ris = base->CPU_INT.RIS;
+	ris = raw_ris & mspm_pwm_cap_intr_mask(config, data);
+	base->CPU_INT.ICLR = raw_ris;
 
 	if (!ris) {
 		return;
 	}
 
 	if (ris & GPTIMER_INT_ZERO_BIT) {
-		if (data->callback && !(data->flags & PWM_CAPTURE_MODE_CONTINUOUS)) {
-			data->callback(dev, 0, 0, 0, -ERANGE, data->user_data);
-			base->COUNTERREGS.CTRCTL &= ~GPTIMER_CTRCTL_EN_MASK;
+		if (!(data->flags & PWM_CAPTURE_MODE_CONTINUOUS)) {
+			if (data->callback) {
+				data->callback(dev, 0, 0, 0, -ERANGE, data->user_data);
+				base->COUNTERREGS.CTRCTL &= ~GPTIMER_CTRCTL_EN_MASK;
+			}
+			return;
 		}
-		return;
+		/*
+		 * Continuous mode: ZERO is just the free-running counter's
+		 * periodic wrap, not a capture error. A CC edge can land in
+		 * the same ISR entry (the wrap period doesn't divide evenly
+		 * into the PWM period) — fall through to process it instead
+		 * of dropping it.
+		 */
+		if (!(ris & ~GPTIMER_INT_ZERO_BIT)) {
+			return;
+		}
 	}
 
-	if (data->flags & PWM_CAPTURE_TYPE_PERIOD) {
+	if (data->cap_mode == PWM_MSPM_CAP_PULSE_WIDTH) {
+		/*
+		 * cc1 (rise-edge capture) is the interrupt trigger source for
+		 * PULSE_WIDTH mode and the sync/period/pulse anchor for every
+		 * capture type, not just PWM_CAPTURE_TYPE_PERIOD. Gating this
+		 * read on the PERIOD flag left cc1/last_sample stuck at 0 for
+		 * PULSE-only captures, making period compute to 0 and the
+		 * capture callback never fire (timeout).
+		 */
 		cc1 = mspm_pwm_read_cc(base, config->cc_idx[0] ^ 1U);
 	}
 
@@ -631,15 +752,34 @@ static void mspm_pwm_cc_isr(const struct device *dev)
 		cc0 = mspm_pwm_read_cc(base, config->cc_idx[0]);
 	}
 
+	if (data->cap_mode == PWM_MSPM_CAP_PULSE_WIDTH && !data->armed) {
+		/*
+		 * First full interval after arming can straddle a leftover
+		 * edge from whatever waveform ran before capture was armed
+		 * (e.g. pwm_set() right before enable_capture(), no settle
+		 * delay). Discard it and re-baseline instead of reporting
+		 * a bogus period/pulse.
+		 */
+		data->armed = true;
+		data->last_sample = cc1;
+		return;
+	}
+
 	if (!(data->flags & PWM_CAPTURE_MODE_CONTINUOUS)) {
 		base->COUNTERREGS.CTRCTL &= ~GPTIMER_CTRCTL_EN_MASK;
 		data->is_synced = false;
 	}
 
-	period = (data->last_sample - cc1 + UINT16_MAX) % UINT16_MAX;
-	pulse = (data->last_sample - cc0 + UINT16_MAX) % UINT16_MAX;
+	period = (data->last_sample - cc1) & 0xFFFFU;
+	pulse = (data->last_sample - cc0) & 0xFFFFU;
 
-	/* fixme: random intermittent cc0 > cc1 due to capture block timing */
+	/*
+	 * Residual defensive guard: cc0/cc1 should structurally never
+	 * produce pulse > period once armed (see the `armed` discard
+	 * above, which handles the one confirmed cause of this). Kept as
+	 * a graceful fallback for any unconfirmed capture-block timing
+	 * edge case rather than reporting a nonsensical pulse width.
+	 */
 	if (pulse > period) {
 		pulse -= period;
 	}
@@ -734,6 +874,10 @@ static DEVICE_API(pwm, pwm_mspm_driver_api) = {
 #define MSPM_PWM_IRQ_REGISTER(n)
 #endif
 
+/* Only output-capable instances (no ti,cc-mode) skip ISR registration. */
+#define MSPM_PWM_IRQ_REGISTER_IF_CAPTURE(n)                                                        \
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_cc_mode), (MSPM_PWM_IRQ_REGISTER(n)), ())
+
 #define MSPM_PWM_MODE(tok) _CONCAT(PWM_MSPM_, tok)
 #define MSPM_CAP_MODE(tok) _CONCAT(PWM_MSPM_CAP_, tok)
 
@@ -754,7 +898,7 @@ static DEVICE_API(pwm, pwm_mspm_driver_api) = {
 			()))) };                                 \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	MSPM_PWM_IRQ_REGISTER(n)                                                                   \
+	MSPM_PWM_IRQ_REGISTER_IF_CAPTURE(n)                                                        \
                                                                                                    \
 	static const struct pwm_mspm_config pwm_mspm_config_##n = {                                \
 		.base = (struct mspm_gptimer_regs *)DT_REG_ADDR(DT_INST_PARENT(n)),                \
