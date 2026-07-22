@@ -24,6 +24,15 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_st7789v);
 
+#define ST7789V_MADCTL_ROTATION_MASK                                                               \
+	(ST7789V_MADCTL_MX_RIGHT_TO_LEFT | ST7789V_MADCTL_MY_BOTTOM_TO_TOP |                       \
+	 ST7789V_MADCTL_MV_REVERSE_MODE)
+
+struct st7789v_rotation_cfg {
+	uint16_t x_offset;
+	uint16_t y_offset;
+	uint8_t madctl;
+};
 struct st7789v_config {
 	const struct device *mipi_dbi;
 	const struct mipi_dbi_config dbi_config;
@@ -47,17 +56,21 @@ struct st7789v_config {
 	uint16_t width;
 	uint8_t ready_time_ms;
 	uint32_t pixel_format;
+	uint16_t x_offset;
+	uint16_t y_offset;
+
+	const struct st7789v_rotation_cfg *rotation_map;
 };
 
 struct st7789v_data {
 	uint16_t x_offset;
 	uint16_t y_offset;
+	enum display_orientation orientation;
 };
 
-#define ST7789V_PIXEL_SIZE(fmt)	DISPLAY_BITS_PER_PIXEL(fmt) / BITS_PER_BYTE
+#define ST7789V_PIXEL_SIZE(fmt) DISPLAY_BITS_PER_PIXEL(fmt) / BITS_PER_BYTE
 
-static void st7789v_set_lcd_margins(const struct device *dev,
-				    uint16_t x_offset, uint16_t y_offset)
+static void st7789v_set_lcd_margins(const struct device *dev, uint16_t x_offset, uint16_t y_offset)
 {
 	struct st7789v_data *data = dev->data;
 
@@ -65,13 +78,13 @@ static void st7789v_set_lcd_margins(const struct device *dev,
 	data->y_offset = y_offset;
 }
 
-static int st7789v_transmit(const struct device *dev, uint8_t cmd,
-			    uint8_t *tx_data, size_t tx_count)
+static int st7789v_transmit(const struct device *dev, uint8_t cmd, uint8_t *tx_data,
+			    size_t tx_count)
 {
 	const struct st7789v_config *config = dev->config;
 
-	return mipi_dbi_command_write(config->mipi_dbi, &config->dbi_config,
-				      cmd, tx_data, tx_count);
+	return mipi_dbi_command_write(config->mipi_dbi, &config->dbi_config, cmd, tx_data,
+				      tx_count);
 }
 
 static int st7789v_exit_sleep(const struct device *dev)
@@ -120,8 +133,8 @@ static int st7789v_blanking_off(const struct device *dev)
 	return st7789v_transmit(dev, ST7789V_CMD_DISP_ON, NULL, 0);
 }
 
-static int st7789v_set_mem_area(const struct device *dev, const uint16_t x,
-				 const uint16_t y, const uint16_t w, const uint16_t h)
+static int st7789v_set_mem_area(const struct device *dev, const uint16_t x, const uint16_t y,
+				const uint16_t w, const uint16_t h)
 {
 	struct st7789v_data *data = dev->data;
 	uint16_t spi_data[2];
@@ -143,15 +156,12 @@ static int st7789v_set_mem_area(const struct device *dev, const uint16_t x,
 	return st7789v_transmit(dev, ST7789V_CMD_RASET, (uint8_t *)&spi_data[0], 4);
 }
 
-static int st7789v_write(const struct device *dev,
-			 const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
+static int st7789v_write(const struct device *dev, const uint16_t x, const uint16_t y,
+			 const struct display_buffer_descriptor *desc, const void *buf)
 {
 	const struct st7789v_config *config = dev->config;
 	struct display_buffer_descriptor mipi_desc;
-	const uint8_t *write_data_start = (uint8_t *) buf;
+	const uint8_t *write_data_start = (uint8_t *)buf;
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
 	enum display_pixel_format pixfmt = config->pixel_format;
@@ -160,10 +170,9 @@ static int st7789v_write(const struct device *dev,
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT((desc->pitch * pixel_size * desc->height) <= desc->buf_size,
-			"Input buffer too small");
+		 "Input buffer too small");
 
-	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)",
-		desc->width, desc->height, x, y);
+	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height, x, y);
 	ret = st7789v_set_mem_area(dev, x, y, desc->width, desc->height);
 	if (ret < 0) {
 		return ret;
@@ -205,17 +214,24 @@ static int st7789v_write(const struct device *dev,
 }
 
 static void st7789v_get_capabilities(const struct device *dev,
-			      struct display_capabilities *capabilities)
+				     struct display_capabilities *capabilities)
 {
 	const struct st7789v_config *config = dev->config;
+	struct st7789v_data *data = dev->data;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
-	capabilities->x_resolution = config->width;
-	capabilities->y_resolution = config->height;
+	if (data->orientation == DISPLAY_ORIENTATION_ROTATED_90 ||
+	    data->orientation == DISPLAY_ORIENTATION_ROTATED_270) {
+		capabilities->x_resolution = config->height;
+		capabilities->y_resolution = config->width;
+	} else {
+		capabilities->x_resolution = config->width;
+		capabilities->y_resolution = config->height;
+	}
 
 	capabilities->supported_pixel_formats = config->pixel_format;
 	capabilities->current_pixel_format = config->pixel_format;
-	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->current_orientation = data->orientation;
 }
 
 static inline uint8_t st7789v_get_colmod(enum display_pixel_format fmt)
@@ -232,7 +248,7 @@ static inline uint8_t st7789v_get_colmod(enum display_pixel_format fmt)
 }
 
 static int st7789v_set_pixel_format(const struct device *dev,
-			     const enum display_pixel_format pixel_format)
+				    const enum display_pixel_format pixel_format)
 {
 	const struct st7789v_config *config = dev->config;
 
@@ -245,13 +261,95 @@ static int st7789v_set_pixel_format(const struct device *dev,
 }
 
 static int st7789v_set_orientation(const struct device *dev,
-			    const enum display_orientation orientation)
+				   const enum display_orientation orientation)
 {
-	if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-		return 0;
+	const struct st7789v_config *config = dev->config;
+	struct st7789v_data *data = dev->data;
+	uint8_t madctl = config->mdac;
+	uint16_t new_x = config->x_offset;
+	uint16_t new_y = config->y_offset;
+	int ret;
+	int rot_idx = -1;
+
+	switch (orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		/* Base state is always config base values */
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		rot_idx = 0;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		rot_idx = 1;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		rot_idx = 2;
+		break;
+	default:
+		return -ENOTSUP;
 	}
-	LOG_ERR("Changing display orientation not implemented");
-	return -ENOTSUP;
+
+	if (rot_idx >= 0) {
+
+		if (config->rotation_map) {
+			madctl = config->rotation_map[rot_idx].madctl;
+			new_x = config->rotation_map[rot_idx].x_offset;
+			new_y = config->rotation_map[rot_idx].y_offset;
+		} else {
+			if ((config->mdac & ST7789V_MADCTL_ROTATION_MASK) != 0) {
+				LOG_ERR("Panel base mdac has rotation bits set; "
+					"explicit rotation-90/180/270 map required "
+					"for non-NORMAL orientations");
+				return -ENOTSUP;
+			}
+
+			/* In case we don't have rotation_map we fallback to the generic logic,
+			 * given that the mdac don't have set bits.
+			 */
+
+			uint16_t w = config->width;
+			uint16_t h = config->height;
+			uint16_t bx = config->x_offset;
+			uint16_t by = config->y_offset;
+
+			/* Since base mdac has no rotation bits, limits are strictly 240x320 */
+			uint16_t max_x = 240;
+			uint16_t max_y = 320;
+
+			madctl &= ~ST7789V_MADCTL_ROTATION_MASK;
+
+			switch (orientation) {
+			case DISPLAY_ORIENTATION_ROTATED_90:
+				madctl |= ST7789V_MADCTL_MV_REVERSE_MODE |
+					  ST7789V_MADCTL_MY_BOTTOM_TO_TOP;
+				new_x = by;
+				new_y = (max_x >= w + bx) ? (max_x - w - bx) : 0;
+				break;
+			case DISPLAY_ORIENTATION_ROTATED_180:
+				madctl |= ST7789V_MADCTL_MY_BOTTOM_TO_TOP |
+					  ST7789V_MADCTL_MX_RIGHT_TO_LEFT;
+				new_x = (max_x >= w + bx) ? (max_x - w - bx) : 0;
+				new_y = (max_y >= h + by) ? (max_y - h - by) : 0;
+				break;
+			case DISPLAY_ORIENTATION_ROTATED_270:
+				madctl |= ST7789V_MADCTL_MV_REVERSE_MODE |
+					  ST7789V_MADCTL_MX_RIGHT_TO_LEFT;
+				new_x = (max_y >= h + by) ? (max_y - h - by) : 0;
+				new_y = bx;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	ret = st7789v_transmit(dev, ST7789V_CMD_MADCTL, &madctl, 1);
+	if (ret == 0) {
+		data->x_offset = new_x;
+		data->y_offset = new_y;
+		data->orientation = orientation;
+	}
+
+	return ret;
 }
 
 static int st7789v_lcd_init(const struct device *dev)
@@ -261,18 +359,15 @@ static int st7789v_lcd_init(const struct device *dev)
 	uint8_t tmp;
 	int ret;
 
-	st7789v_set_lcd_margins(dev, data->x_offset,
-				data->y_offset);
+	st7789v_set_lcd_margins(dev, data->x_offset, data->y_offset);
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_CMD2EN,
-			       (uint8_t *)config->cmd2en_param,
+	ret = st7789v_transmit(dev, ST7789V_CMD_CMD2EN, (uint8_t *)config->cmd2en_param,
 			       sizeof(config->cmd2en_param));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_PORCTRL,
-			       (uint8_t *)config->porch_param,
+	ret = st7789v_transmit(dev, ST7789V_CMD_PORCTRL, (uint8_t *)config->porch_param,
 			       sizeof(config->porch_param));
 	if (ret < 0) {
 		return ret;
@@ -324,8 +419,7 @@ static int st7789v_lcd_init(const struct device *dev)
 		}
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_PWCTRL1,
-			       (uint8_t *)config->pwctrl1_param,
+	ret = st7789v_transmit(dev, ST7789V_CMD_PWCTRL1, (uint8_t *)config->pwctrl1_param,
 			       sizeof(config->pwctrl1_param));
 	if (ret < 0) {
 		return ret;
@@ -366,29 +460,25 @@ static int st7789v_lcd_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_PVGAMCTRL,
-			       (uint8_t *)config->pvgam_param,
+	ret = st7789v_transmit(dev, ST7789V_CMD_PVGAMCTRL, (uint8_t *)config->pvgam_param,
 			       sizeof(config->pvgam_param));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_NVGAMCTRL,
-			       (uint8_t *)config->nvgam_param,
+	ret = st7789v_transmit(dev, ST7789V_CMD_NVGAMCTRL, (uint8_t *)config->nvgam_param,
 			       sizeof(config->nvgam_param));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_RAMCTRL,
-			       (uint8_t *)config->ram_param,
+	ret = st7789v_transmit(dev, ST7789V_CMD_RAMCTRL, (uint8_t *)config->ram_param,
 			       sizeof(config->ram_param));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = st7789v_transmit(dev, ST7789V_CMD_RGBCTRL,
-			       (uint8_t *)config->rgb_param,
+	ret = st7789v_transmit(dev, ST7789V_CMD_RGBCTRL, (uint8_t *)config->rgb_param,
 			       sizeof(config->rgb_param));
 	return ret;
 }
@@ -433,8 +523,7 @@ static int st7789v_init(const struct device *dev)
 }
 
 #ifdef CONFIG_PM_DEVICE
-static int st7789v_pm_action(const struct device *dev,
-			     enum pm_device_action action)
+static int st7789v_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	int ret;
 
@@ -463,48 +552,94 @@ static DEVICE_API(display, st7789v_api) = {
 	.set_orientation = st7789v_set_orientation,
 };
 
-#define ST7789V_WORD_SIZE(inst)								\
-	((DT_INST_STRING_UPPER_TOKEN(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE) ?     \
-	SPI_WORD_SET(8) : SPI_WORD_SET(9))
-#define ST7789V_INIT(inst)								\
-	static const struct st7789v_config st7789v_config_ ## inst = {			\
-		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(inst)),                        \
-		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,                             \
-						      ST7789V_WORD_SIZE(inst) |         \
-						      SPI_OP_MODE_MASTER, 0),           \
-		.vcom = DT_INST_PROP(inst, vcom),					\
-		.gctrl = DT_INST_PROP(inst, gctrl),					\
-		.vdv_vrh_enable = (DT_INST_NODE_HAS_PROP(inst, vrhs)			\
-					&& DT_INST_NODE_HAS_PROP(inst, vdvs)),		\
-		.vrh_value = DT_INST_PROP_OR(inst, vrhs, 0),				\
-		.vdv_value = DT_INST_PROP_OR(inst, vdvs, 0),				\
-		.mdac = DT_INST_PROP(inst, mdac),					\
-		.gamma = DT_INST_PROP(inst, gamma),					\
-		.lcm = DT_INST_PROP(inst, lcm),						\
-		.inversion_on = !DT_INST_PROP(inst, inversion_off),			\
-		.porch_param = DT_INST_PROP(inst, porch_param),				\
-		.cmd2en_param = DT_INST_PROP(inst, cmd2en_param),			\
-		.pwctrl1_param = DT_INST_PROP(inst, pwctrl1_param),			\
-		.pvgam_param = DT_INST_PROP(inst, pvgam_param),				\
-		.nvgam_param = DT_INST_PROP(inst, nvgam_param),				\
-		.ram_param = DT_INST_PROP(inst, ram_param),				\
-		.rgb_param = DT_INST_PROP(inst, rgb_param),				\
-		.width = DT_INST_PROP(inst, width),					\
-		.height = DT_INST_PROP(inst, height),					\
-		.ready_time_ms = DT_INST_PROP(inst, ready_time_ms),			\
-		.pixel_format = DT_INST_PROP(inst, pixel_format),			\
-	};										\
-											\
-	static struct st7789v_data st7789v_data_ ## inst = {				\
-		.x_offset = DT_INST_PROP(inst, x_offset),				\
-		.y_offset = DT_INST_PROP(inst, y_offset),				\
-	};										\
-											\
-	PM_DEVICE_DT_INST_DEFINE(inst, st7789v_pm_action);				\
-											\
-	DEVICE_DT_INST_DEFINE(inst, &st7789v_init, PM_DEVICE_DT_INST_GET(inst),		\
-			&st7789v_data_ ## inst, &st7789v_config_ ## inst,		\
-			POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,			\
-			&st7789v_api);
+#define ST7789V_HAS_ROTATION_MAP(inst)                                                             \
+	UTIL_AND(DT_INST_NODE_HAS_PROP(inst, rotation_90),                                         \
+		 UTIL_AND(DT_INST_NODE_HAS_PROP(inst, rotation_180),                               \
+			  DT_INST_NODE_HAS_PROP(inst, rotation_270)))
+
+/* Returns 1 if ANY of them exist */
+#define ST7789V_HAS_ANY_ROTATION_MAP(inst)                                                         \
+	UTIL_OR(DT_INST_NODE_HAS_PROP(inst, rotation_90),                                          \
+		UTIL_OR(DT_INST_NODE_HAS_PROP(inst, rotation_180),                                 \
+			DT_INST_NODE_HAS_PROP(inst, rotation_270)))
+
+#define ST7789V_ROTATION_MAP(inst)                                                                 \
+	BUILD_ASSERT(DT_INST_PROP_LEN(inst, rotation_90) == 3,                                     \
+		     "ST7789V: rotation-90 must have 3 elements <x y madctl>");                    \
+	BUILD_ASSERT(DT_INST_PROP_LEN(inst, rotation_180) == 3,                                    \
+		     "ST7789V: rotation-180 must have 3 elements <x y madctl>");                   \
+	BUILD_ASSERT(DT_INST_PROP_LEN(inst, rotation_270) == 3,                                    \
+		     "ST7789V: rotation-270 must have 3 elements <x y madctl>");                   \
+	static const struct st7789v_rotation_cfg rot_map_##inst[] = {                              \
+		{                                                                                  \
+			.x_offset = DT_INST_PROP_BY_IDX(inst, rotation_90, 0),                     \
+			.y_offset = DT_INST_PROP_BY_IDX(inst, rotation_90, 1),                     \
+			.madctl = DT_INST_PROP_BY_IDX(inst, rotation_90, 2),                       \
+		},                                                                                 \
+		{                                                                                  \
+			.x_offset = DT_INST_PROP_BY_IDX(inst, rotation_180, 0),                    \
+			.y_offset = DT_INST_PROP_BY_IDX(inst, rotation_180, 1),                    \
+			.madctl = DT_INST_PROP_BY_IDX(inst, rotation_180, 2),                      \
+		},                                                                                 \
+		{                                                                                  \
+			.x_offset = DT_INST_PROP_BY_IDX(inst, rotation_270, 0),                    \
+			.y_offset = DT_INST_PROP_BY_IDX(inst, rotation_270, 1),                    \
+			.madctl = DT_INST_PROP_BY_IDX(inst, rotation_270, 2),                      \
+		}};
+
+#define ST7789V_ROTATION_MAP_INIT(inst)                                                            \
+	COND_CODE_1(ST7789V_HAS_ROTATION_MAP(inst), (ST7789V_ROTATION_MAP(inst)), ())
+
+#define ST7789V_WORD_SIZE(inst)                                                                    \
+	((DT_INST_STRING_UPPER_TOKEN(inst, mipi_mode) == MIPI_DBI_MODE_SPI_4WIRE)                  \
+		 ? SPI_WORD_SET(8)                                                                 \
+		 : SPI_WORD_SET(9))
+#define ST7789V_INIT(inst)                                                                         \
+	BUILD_ASSERT(ST7789V_HAS_ROTATION_MAP(inst) == ST7789V_HAS_ANY_ROTATION_MAP(inst),         \
+		     "ST7789V: Must provide either ALL rotation maps (90, 180, 270) or NONE");     \
+	ST7789V_ROTATION_MAP_INIT(inst)                                                            \
+	static const struct st7789v_config st7789v_config_##inst = {                               \
+		.mipi_dbi = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
+		.dbi_config = MIPI_DBI_CONFIG_DT_INST(                                             \
+			inst, ST7789V_WORD_SIZE(inst) | SPI_OP_MODE_MASTER, 0),                    \
+		.vcom = DT_INST_PROP(inst, vcom),                                                  \
+		.gctrl = DT_INST_PROP(inst, gctrl),                                                \
+		.vdv_vrh_enable =                                                                  \
+			(DT_INST_NODE_HAS_PROP(inst, vrhs) && DT_INST_NODE_HAS_PROP(inst, vdvs)),  \
+		.vrh_value = DT_INST_PROP_OR(inst, vrhs, 0),                                       \
+		.vdv_value = DT_INST_PROP_OR(inst, vdvs, 0),                                       \
+		.mdac = DT_INST_PROP(inst, mdac),                                                  \
+		.gamma = DT_INST_PROP(inst, gamma),                                                \
+		.lcm = DT_INST_PROP(inst, lcm),                                                    \
+		.inversion_on = !DT_INST_PROP(inst, inversion_off),                                \
+		.porch_param = DT_INST_PROP(inst, porch_param),                                    \
+		.cmd2en_param = DT_INST_PROP(inst, cmd2en_param),                                  \
+		.pwctrl1_param = DT_INST_PROP(inst, pwctrl1_param),                                \
+		.pvgam_param = DT_INST_PROP(inst, pvgam_param),                                    \
+		.nvgam_param = DT_INST_PROP(inst, nvgam_param),                                    \
+		.ram_param = DT_INST_PROP(inst, ram_param),                                        \
+		.rgb_param = DT_INST_PROP(inst, rgb_param),                                        \
+		.width = DT_INST_PROP(inst, width),                                                \
+		.height = DT_INST_PROP(inst, height),                                              \
+		.ready_time_ms = DT_INST_PROP(inst, ready_time_ms),                                \
+		.pixel_format = DT_INST_PROP(inst, pixel_format),                                  \
+		.x_offset = DT_INST_PROP(inst, x_offset),                                          \
+		.y_offset = DT_INST_PROP(inst, y_offset),                                          \
+		.rotation_map =                                                                    \
+			COND_CODE_1(ST7789V_HAS_ROTATION_MAP(inst),		\
+					(rot_map_##inst),				\
+					(NULL)),       \
+	};                                                                                         \
+                                                                                                   \
+	static struct st7789v_data st7789v_data_##inst = {                                         \
+		.x_offset = DT_INST_PROP(inst, x_offset),                                          \
+		.y_offset = DT_INST_PROP(inst, y_offset),                                          \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, st7789v_pm_action);                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, &st7789v_init, PM_DEVICE_DT_INST_GET(inst),                    \
+			      &st7789v_data_##inst, &st7789v_config_##inst, POST_KERNEL,           \
+			      CONFIG_DISPLAY_INIT_PRIORITY, &st7789v_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ST7789V_INIT)
