@@ -97,7 +97,6 @@ static void IRAM_ATTR sys_timer_isr(void *arg)
 
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
-	ARG_UNUSED(idle);
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 #if defined(CONFIG_TICKLESS_KERNEL)
@@ -124,25 +123,22 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	}
 
 	set_systimer_alarm(cyc + last_count);
-#endif
-}
 
 #if defined(CONFIG_PM)
-void sys_clock_idle_enter(uint32_t ticks)
-{
-	sys_clock_set_timeout(ticks, false);
+	if (idle) {
+		uint64_t timeout_us =
+			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || systimer_hal.dev == NULL) {
-		return;
+		lptim_pre_idle = esp32_lptim_hook_on_lpm_entry(timeout_us);
+		systimer_pre_idle = get_systimer_alarm();
+		timeout_idle = true;
 	}
-
-	uint64_t timeout_us = ((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-	lptim_pre_idle = esp32_lptim_hook_on_lpm_entry(timeout_us);
-	systimer_pre_idle = get_systimer_alarm();
-	timeout_idle = true;
-}
+#else
+	ARG_UNUSED(idle);
 #endif
+
+#endif
+}
 
 uint32_t sys_clock_elapsed(void)
 {

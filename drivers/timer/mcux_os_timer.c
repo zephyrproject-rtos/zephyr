@@ -264,7 +264,7 @@ void sys_clock_unused(void)
 	k_spin_unlock(&lock, key);
 }
 
-void sys_clock_idle_enter(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Only for tickless kernel system */
@@ -273,30 +273,19 @@ void sys_clock_idle_enter(uint32_t ticks)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 	/* We intercept calls from idle with a 0 tick count when PM=y */
-	if (ticks == 0) {
+	if (idle && (ticks == 0)) {
 		mcux_os_timer_set_lp_counter_timeout();
 		/* A low power counter has been started. No need to
 		 * go further, simply return
 		 */
 		return;
 	}
-#endif
-	sys_clock_set_timeout(ticks, false);
-}
-
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	ARG_UNUSED(idle);
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Only for tickless kernel system */
-		return;
-	}
-
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 	/* A real deadline is being scheduled; the "no deadline" case is handled
 	 * by sys_clock_unused() instead.
 	 */
 	wait_forever = false;
+#else
+	ARG_UNUSED(idle);
 #endif
 	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
