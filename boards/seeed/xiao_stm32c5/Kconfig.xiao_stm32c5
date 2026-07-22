@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Seeed Technology Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XIAO_STM32C5
+	select SOC_STM32C5A3XX
