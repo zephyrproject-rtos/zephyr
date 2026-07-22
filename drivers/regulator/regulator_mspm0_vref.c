@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <zephyr/dt-bindings/clock/mspm_clock.h>
 #include <zephyr/dt-bindings/regulator/mspm0_vref.h>
 #include <zephyr/logging/log.h>
 
@@ -248,7 +248,7 @@ static DEVICE_API(regulator, mspm0_vref_api) = {
 		.regs = (VREF_Regs *)DT_INST_REG_ADDR(n),					\
 		.vref_clock_cfg = {								\
 			.clockSel =								\
-			MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(n, clk)),		\
+			MSPM_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(n, clk)),		\
 			.divideRatio = VREF_CLOCK_DIVIDE_RATIO(n),				\
 		},										\
 	};											\

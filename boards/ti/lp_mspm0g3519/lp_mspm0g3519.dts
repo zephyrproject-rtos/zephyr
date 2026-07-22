@@ -9,7 +9,7 @@
 
 #include <ti/mspm0/g/mspm0g3519.dtsi>
 #include <ti/mspm0/g/mspm0g1x0x_g3x0x-pinctrl.dtsi>
-#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <zephyr/dt-bindings/clock/mspm_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -126,7 +126,7 @@
 	cs-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	clocks = <&ckm MSPM0_CLOCK_MCLK>;
+	clocks = <&ckm MSPM_CLOCK_MCLK>;
 };
 
 &spi1 {
@@ -136,7 +136,7 @@
 	cs-gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	clocks = <&ckm MSPM0_CLOCK_MCLK>;
+	clocks = <&ckm MSPM_CLOCK_MCLK>;
 };
 
 &vref0 {

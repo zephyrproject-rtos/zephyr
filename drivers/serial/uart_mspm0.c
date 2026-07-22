@@ -11,7 +11,7 @@
 /* Zephyr includes */
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#include <zephyr/drivers/clock_control/mspm_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/irq.h>
@@ -21,7 +21,7 @@
 
 struct uart_mspm0_config {
 	UART_Regs *regs;
-	const struct mspm0_sys_clock *clock_subsys;
+	const struct mspm_sys_clock *clock_subsys;
 	const struct pinctrl_dev_config *pinctrl;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
@@ -81,7 +81,7 @@ static int uart_mspm0_install_configuration(const struct device *dev)
 	 * from the selected current-speed
 	 */
 	ret = clock_control_get_rate(clk_dev,
-				(struct mspm0_sys_clock *)config->clock_subsys,
+				(struct mspm_sys_clock *)config->clock_subsys,
 				&clock_rate);
 	if (ret < 0) {
 		return ret;
@@ -497,22 +497,22 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 												\
 	PINCTRL_DT_INST_DEFINE(index);								\
 												\
-	static const struct mspm0_sys_clock mspm0_uart_sys_clock##index =			\
-		MSPM0_CLOCK_SUBSYS_FN(index);							\
+	static const struct mspm_sys_clock mspm_uart_sys_clock##index =			\
+		MSPM_CLOCK_SUBSYS_FN(index);							\
 												\
 	MSP_UART_IRQ_DEFINE(index);								\
 												\
 	static const struct uart_mspm0_config uart_mspm0_cfg_##index = {			\
 		.regs = (UART_Regs *)DT_INST_REG_ADDR(index),					\
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),				\
-		.clock_subsys = &mspm0_uart_sys_clock##index,					\
+		.clock_subsys = &mspm_uart_sys_clock##index,					\
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,					\
 			   (.irq_config_func = uart_mspm0_##index##_irq_register,))		\
 		};										\
 												\
 	static struct uart_mspm0_data uart_mspm0_data_##index = {				\
 		.uart_clockconfig = {								\
-			.clockSel = MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(index, clk)), \
+			.clockSel = MSPM_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(index, clk)), \
 			.divideRatio = MSPM0_MAIN_CLK_DIV(index),				\
 		 },										\
 		.current_speed = DT_INST_PROP(index, current_speed),				\

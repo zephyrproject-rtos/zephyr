@@ -6,7 +6,7 @@
  */
 
 #include <arm/armv6-m.dtsi>
-#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <zephyr/dt-bindings/clock/mspm_clock.h>
 #include <freq.h>
 
 / {
@@ -197,7 +197,7 @@
 		vref0: vref@40030000 {
 			compatible = "ti,mspm0-vref";
 			reg = <0x40030000 0x2000>;
-			clocks = <&ckm MSPM0_CLOCK_BUSCLK>;
+			clocks = <&ckm MSPM_CLOCK_BUSCLK>;
 			ti,clk-div = <0x1>;
 			off-on-delay-us = <200>;
 			regulator-uv = <1400000>;
@@ -236,7 +236,7 @@
 			reg = <0x40108000 0x2000>;
 			interrupts = <15 0>;
 			current-speed = <115200>;
-			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clocks = <&ckm MSPM_CLOCK_ULPCLK>;
 			clk-div = <1>;
 			status = "disabled";
 		};

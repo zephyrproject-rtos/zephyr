@@ -9,7 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#include <zephyr/drivers/clock_control/mspm_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
@@ -62,7 +62,7 @@ LOG_MODULE_REGISTER(spi_mspm0, CONFIG_SPI_LOG_LEVEL);
 
 struct spi_mspm0_config {
 	DEVICE_MMIO_ROM;
-	const struct mspm0_sys_clock *clock_subsys;
+	const struct mspm_sys_clock *clock_subsys;
 	const struct pinctrl_dev_config *pinctrl;
 	DL_SPI_CLOCK clock_sel;
 };
@@ -310,14 +310,14 @@ static int spi_mspm0_init(const struct device *dev)
 #define MSPM0_SPI_INIT(inst)									\
 	PINCTRL_DT_INST_DEFINE(inst);								\
 												\
-	static const struct mspm0_sys_clock mspm0_spi_sys_clock##inst =				\
-		MSPM0_CLOCK_SUBSYS_FN(inst);							\
+	static const struct mspm_sys_clock mspm_spi_sys_clock##inst =				\
+		MSPM_CLOCK_SUBSYS_FN(inst);							\
 												\
 	static const struct spi_mspm0_config spi_mspm0_config_##inst = {			\
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),					\
-		.clock_subsys = &mspm0_spi_sys_clock##inst,					\
+		.clock_subsys = &mspm_spi_sys_clock##inst,					\
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
-		.clock_sel = MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(inst, clk)),	\
+		.clock_sel = MSPM_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(inst, clk)),	\
 	};											\
 												\
 	static struct spi_mspm0_data spi_mspm0_data_##inst = {					\

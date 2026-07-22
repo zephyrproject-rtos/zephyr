@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT ti_mspm0_timer_pwm
 
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#include <zephyr/drivers/clock_control/mspm_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/irq.h>
@@ -32,7 +32,7 @@ enum mspm0_capture_mode {
 };
 
 struct pwm_mspm0_config {
-	const struct mspm0_sys_clock clock_subsys;
+	const struct mspm_sys_clock clock_subsys;
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
 	GPTIMER_Regs *base;
@@ -520,7 +520,7 @@ static void mspm0_cc_isr(const struct device *dev)
 		},								\
 		.cc_idx_cnt = DT_INST_PROP_LEN(n, ti_cc_index),			\
 		.clk_config = {							\
-			.clockSel = MSPM0_CLOCK_PERIPH_REG_MASK(		\
+			.clockSel = MSPM_CLOCK_PERIPH_REG_MASK(		\
 				DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n),	\
 						      0, clk)),			\
 			.divideRatio = MSPM0_CLK_DIV(DT_PROP(DT_INST_PARENT(n),	\

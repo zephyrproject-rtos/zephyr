@@ -8,7 +8,7 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#include <zephyr/drivers/clock_control/mspm_clock_control.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
@@ -30,7 +30,7 @@ struct counter_mspm0_config {
 	struct counter_config_info counter_info;
 	GPTIMER_Regs *base;
 	const struct device *clock_dev;
-	const struct mspm0_sys_clock clock_subsys;
+	const struct mspm_sys_clock clock_subsys;
 	DL_Timer_ClockConfig clk_config;
 	void (*irq_config_func)(void);
 };
@@ -280,7 +280,7 @@ static void counter_mspm0_isr(void *arg)
 			},								\
 		.irq_config_func = (mspm0_ ## n ##_irq_register),			\
 		.clk_config = {								\
-			.clockSel = MSPM0_CLOCK_PERIPH_REG_MASK(			\
+			.clockSel = MSPM_CLOCK_PERIPH_REG_MASK(			\
 				DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, clk)),	\
 			.divideRatio = MSPM0_CLK_DIV(DT_PROP(DT_INST_PARENT(n),		\
 						     ti_clk_div)),			\
