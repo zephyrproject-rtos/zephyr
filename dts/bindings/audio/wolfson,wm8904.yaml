@@ -33,3 +33,10 @@ properties:
       On such platforms, the driver assumes the MCLK frequency to be equal
       to (fs-ratio * <sample rate>), where the sample rate comes from the
       audio codec configuration provided at runtime.
+  input-pga-select:
+    type: int
+    enum: [1, 2, 3]
+    description: |
+      Selects the WM8904 input PGA source channel.
+      Only single-ended input mode is supported.
+      On the 32-pin QFN package, only channels 1 and 2 are supported.
