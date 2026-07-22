@@ -50,7 +50,7 @@ static inline void timer_driver_set_compare(uint64_t cycles)
 
 	uint32_t now = get_cp0_count();
 
-	while ((int32_t)(next - now) < (int32_t)MIN_DELAY) {
+	while ((int32_t)(next - now) <= 0) {
 		next = now + MIN_DELAY;
 		set_cp0_compare(next);
 		now = get_cp0_count();
