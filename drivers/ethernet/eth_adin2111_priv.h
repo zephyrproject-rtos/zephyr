@@ -13,6 +13,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/net/net_if.h>
 #include <ethernet/eth_stats.h>
+#include "oa_tc6.h"
 
 /* SPI frequency maximum, based on clock cycle time */
 #define ADIN2111_SPI_MAX_FREQUENCY		25000000U
@@ -189,32 +190,11 @@
 #define ADIN2111_PHYID_OUI			0xa0ef
 
 /* Open Alliance definitions */
-#define ADIN2111_OA_ALLOC_TIMEOUT		K_MSEC(10)
-/* Max setting to a max RCA of 255 68-bytes chunks */
-#define ADIN2111_OA_BUF_SZ			(255U * 68U)
-
-#define ADIN2111_OA_CTL_LEN_PROT		16U
-#define ADIN2111_OA_CTL_LEN			12U
-#define ADIN2111_OA_CTL_MMS			BIT(24)
-#define ADIN2111_OA_CTL_WNR			BIT(29)
-
-#define ADIN2111_OA_DATA_HDR_DNC		BIT(31)
-#define ADIN2111_OA_DATA_HDR_NORX		BIT(29)
 #define ADIN2111_OA_DATA_HDR_VS			22U
-#define ADIN2111_OA_DATA_HDR_DV			BIT(21)
-#define ADIN2111_OA_DATA_HDR_SV			BIT(20)
-#define ADIN2111_OA_DATA_HDR_EV			BIT(14)
-#define ADIN2111_OA_DATA_HDR_EBO		8U
-
-#define ADIN2111_OA_DATA_FTR_SYNC		BIT(29)
-#define ADIN2111_OA_DATA_FTR_EBO		8U
-#define ADIN2111_OA_DATA_FTR_DV			BIT(21)
-#define ADIN2111_OA_DATA_FTR_SV			BIT(20)
-#define ADIN2111_OA_DATA_FTR_EV			BIT(14)
-#define ADIN2111_OA_DATA_FTR_SWO		16U
-#define ADIN2111_OA_DATA_FTR_SWO_MSK		GENMASK(19, 16)
-#define ADIN2111_OA_DATA_FTR_EBO		8U
-#define ADIN2111_OA_DATA_FTR_EBO_MSK		GENMASK(13, 8)
+/* Max setting to a max configured RCA 68-bytes chunks */
+#define ADIN2111_OA_RX_BURST_SZ (CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT * (64U + OA_TC6_FTR_SIZE))
+/* Maximum size for TX buffer during read data */
+#define ADIN2111_OA_TX_BURST_SZ (CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT * (OA_TC6_HDR_SIZE + 64U))
 
 enum adin2111_chips_id {
 	ADIN2111_MAC = 0,
@@ -236,16 +216,16 @@ struct adin2111_data {
 	uint8_t *buf;
 	/* Port 0: PHY 1, Port 1: PHY 2 */
 	const struct device *port[2];
-	uint8_t *oa_tx_buf;
-	uint8_t *oa_rx_buf;
 	uint16_t ifaces_left_to_init;
 	uint16_t scur;
+	uint8_t *oarxbuf;
+	uint8_t *oatxbuf;
 	struct gpio_callback gpio_int_callback;
 	bool oa;
 	bool oa_prot;
-	uint8_t oa_cps;
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_ADIN2111_IRQ_THREAD_STACK_SIZE);
 	struct k_thread rx_thread;
+	struct oa_tc6 tc6;
 };
 
 struct adin2111_port_data {
@@ -263,6 +243,10 @@ struct adin2111_port_config {
 	const uint16_t phy_addr;
 };
 
+static inline uint32_t adin2111_oa_to_tc6_reg(uint16_t reg)
+{
+    return (reg >= 0x30U) ? MMS_REG(1U, reg) : MMS_REG(0U, reg);
+}
 int eth_adin2111_reg_write(const struct device *dev, const uint16_t reg, uint32_t val);
 
 int eth_adin2111_reg_read(const struct device *dev, const uint16_t reg, uint32_t *val);
