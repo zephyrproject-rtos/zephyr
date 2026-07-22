@@ -24,6 +24,12 @@ properties:
       This pin defaults to active high when consumed by the wlan cpu power.
       The property value should ensure the flags properly describe the signal
       that is presented to the driver.
+  ext1-pwren-gpios:
+    type: phandle-array
+    description: |
+      EXT1_PWREN pin - controls VPCIe_3V3 power supply to M.2 module.
+      Must be asserted HIGH before the M.2 module can be powered.
+      On FRDM-IMX91, this is PCAL6524 pin 13 (P1_5).
 
   sd-gpios:
     type: phandle-array

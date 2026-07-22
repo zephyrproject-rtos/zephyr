@@ -448,6 +448,12 @@ config NXP_WIFI_DRIVER_TASK_STACK_SIZE
 	help
 	  This option specifies the size of the stack used by the wifi driver task.
 
+config NXP_WIFI_CORE_TASK_STACK_SIZE
+	int "Wifi core task stack size"
+	default 2048
+	help
+	  This option specifies the size of the stack used by the wifi core task.
+
 config NXP_WIFI_SCAN_TASK_STACK_SIZE
 	int "Wifi scan task stack size"
 	default 2048
