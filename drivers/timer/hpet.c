@@ -349,18 +349,6 @@ void smp_timer_init(void)
 	 */
 }
 
-void sys_clock_unused(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	uint32_t reg = hpet_gconf_get();
-
-	reg &= ~GCONF_ENABLE;
-	hpet_gconf_set(reg);
-}
-
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -368,6 +356,15 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 #if defined(CONFIG_TICKLESS_KERNEL)
+	uint32_t reg;
+
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		reg = hpet_gconf_get();
+		reg &= ~GCONF_ENABLE;
+		hpet_gconf_set(reg);
+		return;
+	}
+
 	/* The comparator is 64-bit, so the requested timeout needs no clamp. */
 	uint64_t cyc = (last_tick + last_elapsed + ticks) * cyc_per_tick;
 

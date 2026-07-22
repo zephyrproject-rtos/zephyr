@@ -193,18 +193,6 @@ static void free_run_timer_overflow_isr(const void *unused)
 	/* TODO: to increment 32-bit "top half" here for software 64-bit timer emulation. */
 }
 
-void sys_clock_unused(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	ext_timer_disable(EVENT_TIMER);
-	k_spin_unlock(&lock, key);
-}
-
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -222,6 +210,18 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	/* Disable event timer */
 	ext_timer_disable(EVENT_TIMER);
 
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		/*
+		 * The kernel has no pending timeout, which it signals with
+		 * ticks == SYS_CLOCK_MAX_WAIT. Under sloppy idle no future
+		 * timer interrupt is required, so leave the event timer
+		 * disabled and stop waking up. Without sloppy idle we fall
+		 * through and still schedule the (capped) timeout so the
+		 * uptime tick count stays correct.
+		 */
+		k_spin_unlock(&lock, key);
+		return;
+	}
 	/*
 	 * If ticks <= 1 means the kernel wants the tick announced as soon as possible,
 	 * ideally no more than one system tick in the future. So set event timer count

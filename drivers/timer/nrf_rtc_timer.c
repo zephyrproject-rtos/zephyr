@@ -667,21 +667,6 @@ bail:
 	return err;
 }
 
-void sys_clock_unused(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	/* No timeout pending: follow the free-running-compare model and stop
-	 * reprogramming. The last compare still catches the counter wrap and
-	 * the next sys_clock_set_timeout() re-arms us, so sloppy idle needs no
-	 * periodic wakeup here. Only clear the busy flag consumed by the
-	 * overflow trigger path.
-	 */
-	sys_busy = false;
-}
-
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -691,17 +676,22 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	target_time = last_count +
-		      ((uint64_t)last_elapsed + (uint64_t)ticks) * CYC_PER_TICK;
-	/* Clamp to fit the 24-bit compare register and keep the
-	 * anchor in its valid range (see anchor_update). A resulting
-	 * target in the past is fine: compare_set forces an immediate
-	 * IRQ and the handler catches up in one shot.
-	 */
-	if ((target_time - last_count) > MAX_CYCLES) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
 		target_time = last_count + MAX_CYCLES;
+		sys_busy = false;
+	} else {
+		target_time = last_count +
+			      ((uint64_t)last_elapsed + (uint64_t)ticks) * CYC_PER_TICK;
+		/* Clamp to fit the 24-bit compare register and keep the
+		 * anchor in its valid range (see anchor_update). A resulting
+		 * target in the past is fine: compare_set forces an immediate
+		 * IRQ and the handler catches up in one shot.
+		 */
+		if ((target_time - last_count) > MAX_CYCLES) {
+			target_time = last_count + MAX_CYCLES;
+		}
+		sys_busy = true;
 	}
-	sys_busy = true;
 
 	compare_set(SYS_CLOCK_CH, target_time, sys_clock_timeout_handler, NULL, false);
 }

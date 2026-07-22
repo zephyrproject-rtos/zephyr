@@ -315,18 +315,6 @@ static inline uint32_t z_clock_lptim_getcounter(void)
 	return lp_time;
 }
 
-void sys_clock_unused(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	/* No timeout pending: turn the LPTIM off entirely (unclocked, never
-	 * waking up). It is restored by the next sys_clock_set_timeout().
-	 */
-	clock_control_off(clk_ctrl, (clock_control_subsys_t)&lptim_clk[0]);
-}
-
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	/* new LPTIM AutoReload value to set (aligned on Kernel ticks) */
@@ -393,6 +381,17 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
+	/*
+	 * The kernel has no pending timeout, which it signals with
+	 * ticks == SYS_CLOCK_MAX_WAIT. Under sloppy idle the LPTIM can be
+	 * turned off entirely (never waking up, not clocked anymore).
+	 * Without sloppy idle we fall through and schedule the (capped)
+	 * timeout so the uptime tick count stays correct.
+	 */
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
+		return;
+	}
 	/*
 	 * When CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = n, ticks equals to INT_MAX
 	 * is treated as a maximum possible value LPTIM_MAX_TIMEBASE (16bit counter)
