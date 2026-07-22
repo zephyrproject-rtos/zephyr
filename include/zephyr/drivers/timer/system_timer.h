@@ -272,6 +272,23 @@ void sys_clock_disable(void);
 void sys_clock_unused(void);
 
 /**
+ * @brief Notify the timer driver that the CPU is entering low-power idle.
+ *
+ * Called by the power-management / idle path when the CPU is about to be put
+ * to sleep, with @p ticks until the next expected wakeup. A driver that can
+ * hand off to a low-power wakeup timer (or otherwise reconfigure for sleep)
+ * does so here. The default implementation programs the wakeup through
+ * sys_clock_set_timeout() with its deprecated idle argument set to true, so a
+ * driver that has not migrated to this hook (and still keys its low-power
+ * handling on that argument) behaves exactly as before, and a driver with no
+ * low-power handling needs no implementation. Recovery happens in
+ * sys_clock_idle_exit().
+ *
+ * @param ticks Ticks until the next expected wakeup.
+ */
+void sys_clock_idle_enter(uint32_t ticks);
+
+/**
  * @brief Hardware cycle counter
  *
  * Timer drivers are generally responsible for the system cycle

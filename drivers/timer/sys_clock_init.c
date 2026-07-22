@@ -38,3 +38,14 @@ void __weak sys_clock_unused(void)
 	 */
 	sys_clock_set_timeout((uint32_t)K_TICKS_FOREVER, false);
 }
+
+void __weak sys_clock_idle_enter(uint32_t ticks)
+{
+	/* The idle hint used to travel as sys_clock_set_timeout()'s second
+	 * argument. Passing true here keeps a driver that has not migrated to
+	 * this hook behaving exactly as before; the argument is deprecated and
+	 * carries no information for migrated drivers, which learn about idle
+	 * entry by overriding this hook.
+	 */
+	sys_clock_set_timeout(ticks, true);
+}
