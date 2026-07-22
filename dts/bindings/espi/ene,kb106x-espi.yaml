@@ -1,0 +1,98 @@
+# Copyright (c) 2026 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE ESPI controller
+
+compatible: "ene,kb106x-espi"
+
+include: [espi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    description: register space
+    required: true
+
+  espivw-reg:
+    type: int
+    description: espivw register space
+    required: true
+
+  espivw-tab:
+    type: int
+    description: espivw table space
+    required: true
+
+  espioob-reg:
+    type: int
+    description: espioob register space
+    required: true
+
+  espifa-reg:
+    type: int
+    description: espifa register space
+    required: true
+
+  hif-reg:
+    type: int
+    description: espi hif register space
+    required: true
+
+  kbc-reg:
+    type: int
+    description: espi kbc register space
+    required: true
+
+  eci-reg:
+    type: int
+    description: espi eci register space
+    required: true
+
+  dbi-reg:
+    type: int
+    description: espi debug io register space
+    required: true
+
+  legi-reg:
+    type: int
+    description: espi legacy io register space
+    required: true
+
+  mbx-reg:
+    type: int
+    description: espi mailbox io register space
+    required: true
+
+  uart-reg:
+    type: int
+    description: espi uart io register space
+    required: true
+
+  rst-gpios:
+    type: phandle-array
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  eci-port:
+    type: int
+
+  dbi0-port:
+    type: int
+
+  dbi1-port:
+    type: int
+
+  oob-max-timeout:
+    type: int
+
+  fa-max-timeout:
+    type: int
