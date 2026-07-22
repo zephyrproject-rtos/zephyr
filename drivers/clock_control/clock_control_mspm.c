@@ -5,8 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mspm_clock_control.h>
+
+#include <soc_sysctl.h>
 
 #include <ti/driverlib/driverlib.h>
 #include <string.h>
@@ -31,9 +34,9 @@
 
 #define DT_SYSOSC_FREQ	DT_PROP(DT_NODELABEL(sysosc), clock_frequency)
 #if DT_SYSOSC_FREQ == 32000000
-#define SYSOSC_FREQ	DL_SYSCTL_SYSOSC_FREQ_BASE
+#define MSPM_SYSOSC_FREQ SYSCTL_SYSOSCCFG_FREQ_BASE
 #elif DT_SYSOSC_FREQ == 4000000
-#define SYSOSC_FREQ	DL_SYSCTL_SYSOSC_FREQ_4M
+#define MSPM_SYSOSC_FREQ SYSCTL_SYSOSCCFG_FREQ_4M
 #else
 #error "Set SYSOSC clock frequency not supported"
 #endif
@@ -182,8 +185,12 @@ static int clock_mspm_get_rate(const struct device *dev,
 
 static int clock_mspm_init(const struct device *dev)
 {
-	/* setup clocks based on specific rates */
-	DL_SYSCTL_setSYSOSCFreq(SYSOSC_FREQ);
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->SOCLOCK;
+
+	/* set SYSOSCFG frequency */
+	soclock->SYSOSCCFG = (soclock->SYSOSCCFG & ~SYSCTL_SYSOSCCFG_FREQ) |
+			     FIELD_PREP(SYSCTL_SYSOSCCFG_FREQ, MSPM_SYSOSC_FREQ);
 
 #if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(sysosc)) && (DT_SYSOSC_FREQ == 4000000)
 	DL_SYSCTL_setMCLKDivider(MSPM_MCLK_DIV);
