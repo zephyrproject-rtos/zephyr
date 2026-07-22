@@ -1,0 +1,25 @@
+sample:
+  description: This app demonstrates firmware update using the PSA Firmware
+    Update API with TF-M on the secure side and Zephyr on the non-secure side.
+  name: TF-M FWU example
+common:
+  sysbuild: true
+  tags:
+    - trusted-firmware-m
+    - mcuboot
+  integration_platforms:
+    - mps2/an521/cpu0/ns
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "TF-M FWU on .*"
+      - "FWU installed, .*"
+      - "Swapped application booted on .*"
+      - "FWU completed successfully"
+tests:
+  sample.tfm.tfm_fwu:
+    tags:
+      - trusted-firmware-m
+    platform_allow:
+      - mps2/an521/cpu0/ns
