@@ -180,19 +180,19 @@ DSA master port. DSA master port support is TODO work.
 
 For FRDM-iMXRT1186, the following network interfaces present:
 
-- ``swp0`` and ``swp2``: user ports which can be used.
-- ``swp4``: DSA CPU port. Not a user port.
+- ``swp0`` and ``swp1``: user ports which can be used.
+- ``swp2``: DSA CPU port. Not a user port.
 - ``eth0``: DSA conduit port. Not a user port.
 
 .. note::
 
-   To have the Ethernet operations on ETH0 (``swp0``) and ETH2 (``swp2``), set the
+   To have the Ethernet operations on ETH0 (``swp0``) and ETH2 (``swp1``), set the
    jumpers as follows:
 
    - ETH0: set **J12** to pins 1-2 and **J13** to pins 2-3.
    - ETH2: set **J18** to pins 1-2 and **J17** to pins 2-3.
 
-   DHCP is expected to work on ``swp0`` and ``swp2``.
+   DHCP is expected to work on ``swp0`` and ``swp1``.
 
 .. code-block:: none
 
