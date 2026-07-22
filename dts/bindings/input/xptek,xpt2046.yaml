@@ -4,7 +4,7 @@
 description: Driver for XPT2046 touch IC
 compatible: "xptek,xpt2046"
 
-include: spi-device.yaml
+include: [spi-device.yaml, touchscreen-common.yaml]
 
 properties:
   int-gpios:
