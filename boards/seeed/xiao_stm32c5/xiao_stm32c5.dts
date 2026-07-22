@@ -16,6 +16,7 @@
 #include <st/c5/stm32c5a3Xg.dtsi>
 #include <st/c5/stm32c5(9-a)3z(e-g)tx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "seeed_xiao_connector.dtsi"
 
@@ -35,6 +36,7 @@
 		led0 = &user_led;
 		watchdog0 = &iwdg;
 		can0 = &fdcan2;
+		flash1 = &ext_flash;
 		imu0 = &lsm6ds3tr_c;
 		imu-heater = &imu_heater_pwm;
 	};
@@ -224,6 +226,25 @@
 	pinctrl-names = "default";
 	phys = <&can_phy0>;
 	status = "okay";
+};
+
+&xspi1 {
+	pinctrl-0 = <&xspi1_clk_pb2 &xspi1_ncs1_pb10
+		     &xspi1_io0_pb1 &xspi1_io1_pa5
+		     &xspi1_io2_pa7 &xspi1_io3_pa6>;
+	pinctrl-names = "default";
+	dlyb-bypass;
+	status = "okay";
+
+	ext_flash: py25q128ha@0 {
+		compatible = "st,stm32-xspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(128)>;
+		spi-bus-width = <XSPI_SPI_MODE>;
+		data-rate = <XSPI_STR_TRANSFER>;
+		ospi-max-frequency = <DT_FREQ_M(48)>;
+		status = "okay";
+	};
 };
 
 &rtc {
