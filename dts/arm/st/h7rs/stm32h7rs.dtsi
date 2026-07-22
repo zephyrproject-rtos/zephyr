@@ -1064,21 +1064,21 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x42005800 0x400>;
-			ranges = <0x0 0x42005800 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(0)>;
 			status = "disabled";
 
-			sai1_a: sai1a@4 {
-				reg = <0x4 0x20>;
+			sai1_a: sai1a@42005804 {
+				reg = <0x42005804 0x20>;
 				dmas = <&gpdma1 1 63 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
 			};
 
-			sai1_b: sai1b@24 {
-				reg = <0x24 0x20>;
+			sai1_b: sai1b@42005824 {
+				reg = <0x42005824 0x20>;
 				dmas = <&gpdma1 0 64 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
