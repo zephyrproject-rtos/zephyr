@@ -13,9 +13,6 @@
 #include <soc_factoryregion.h>
 #include <soc_sysctl.h>
 
-#include <ti/driverlib/driverlib.h>
-#include <string.h>
-
 #if defined(SOC_DEVICE_FAMILY_MSPM33_C321X)
 #define MSPM_REQUIRES_SYSPLLPARAM2
 #endif
@@ -33,6 +30,7 @@
 #define DT_LFCLK_IN DT_NODELABEL(lfclk_in)
 #define DT_LFXT     DT_NODELABEL(lfxt)
 #define DT_MCLK     DT_NODELABEL(mclk)
+#define DT_MFPCLK   DT_NODELABEL(mfpclk)
 #define DT_SYSOSC   DT_NODELABEL(sysosc)
 #define DT_SYSPLL   DT_NODELABEL(syspll)
 #define DT_ULPCLK   DT_NODELABEL(ulpclk)
@@ -40,6 +38,7 @@
 #define DT_HFCLK_CLOCKS_CTRL  DT_CLOCKS_CTLR(DT_HFCLK)
 #define DT_LFCLK_CLOCKS_CTRL  DT_CLOCKS_CTLR(DT_LFCLK)
 #define DT_MCLK_CLOCKS_CTRL   DT_CLOCKS_CTLR(DT_MCLK)
+#define DT_MFPCLK_CLOCKS_CTRL DT_CLOCKS_CTLR(DT_MFPCLK)
 #define DT_SYSPLL_CLOCKS_CTRL DT_CLOCKS_CTLR(DT_SYSPLL)
 
 #if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_HFCLK) || DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_SYSPLL)
@@ -50,11 +49,7 @@
 
 #define MSPM_MCLK_DIV DT_PROP_OR(DT_MCLK, clk_div, 1)
 
-#define MSPM_MFPCLK_DIV COND_CODE_1(					\
-		DT_NODE_HAS_PROP(DT_NODELABEL(mfpclk), clk_div),	\
-		(CONCAT(DL_SYSCTL_HFCLK_MFPCLK_DIVIDER_,		\
-			DT_PROP(DT_NODELABEL(mfpclk), clk_div))),	\
-		(0))
+#define MSPM_MFPCLK_DIV DT_PROP_OR(DT_MFPCLK, clk_div, 1)
 
 #define DT_SYSOSC_FREQ	DT_PROP(DT_NODELABEL(sysosc), clock_frequency)
 #if DT_SYSOSC_FREQ == 32000000
@@ -156,8 +151,6 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_HFCLK_CLOCKS_CTRL), "HFCLK source not en
 BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_LFCLK_CLOCKS_CTRL), "LFCLK external source not enabled");
 #endif
 
-#define DT_MFPCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mfpclk))
-
 struct mspm_clk_cfg {
 	uint32_t clk_div;
 	uint32_t clk_freq;
@@ -201,8 +194,7 @@ static int clock_mspm_off(const struct device *dev, clock_control_subsys_t sys)
 	return 0;
 }
 
-static int clock_mspm_get_rate(const struct device *dev,
-				clock_control_subsys_t sys,
+static int clock_mspm_get_rate(const struct device *dev, clock_control_subsys_t sys,
 				uint32_t *rate)
 {
 	struct mspm_sys_clock *sys_clock = (struct mspm_sys_clock *)sys;
@@ -500,6 +492,32 @@ static int clock_mspm_config_mclk(void)
 	return 0;
 }
 
+#if MSPM_MFPCLK_ENABLED
+static int clock_mspm_config_mfpclk(void)
+{
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->SOCLOCK;
+
+#if DT_SAME_NODE(DT_MFPCLK_CLOCKS_CTRL, DT_HFCLK)
+	/* set MFPCLK divider */
+	soclock->GENCLKCFG =
+		(soclock->GENCLKCFG & ~SYSCTL_GENCLKCFG_HFCLK4MFPCLKDIV) |
+		FIELD_PREP(SYSCTL_GENCLKCFG_HFCLK4MFPCLKDIV,
+			   SYSCTL_GENCLKCFG_HFCLK4MFPCLKDIV_VAL(mspm_mfpclk_cfg.clk_div));
+
+	/* set HFCLK as MFPCLK source */
+	soclock->GENCLKCFG |= SYSCTL_GENCLKCFG_MFPCLKSRC;
+#else
+	/* set SYSOSC as MFPCLK source */
+	soclock->GENCLKCFG &= ~SYSCTL_GENCLKCFG_MFPCLKSRC;
+#endif
+
+	/* enable MFPCLKEN */
+	soclock->GENCLKEN |= SYSCTL_GENCLKEN_MFPCLKEN;
+	return 0;
+}
+#endif /* MSPM_MFPCLK_ENABLED */
+
 static int clock_mspm_init(const struct device *dev)
 {
 	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
@@ -548,13 +566,13 @@ static int clock_mspm_init(const struct device *dev)
 	}
 
 #if MSPM_MFPCLK_ENABLED
-#if DT_SAME_NODE(DT_MFPCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk))
-	DL_SYSCTL_setHFCLKDividerForMFPCLK(mspm_mfpclk_cfg.clk_div);
-	DL_SYSCTL_setMFPCLKSource(DL_SYSCTL_MFPCLK_SOURCE_HFCLK);
-#else
-	DL_SYSCTL_setMFPCLKSource(DL_SYSCTL_MFPCLK_SOURCE_SYSOSC);
-#endif
-	DL_SYSCTL_enableMFPCLK();
+	{
+		int ret = clock_mspm_config_mfpclk();
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
 #endif /* MSPM_MFPCLK_ENABLED */
 
 	return 0;
@@ -566,6 +584,5 @@ static DEVICE_API(clock_control, clock_mspm_driver_api) = {
 	.get_rate = clock_mspm_get_rate,
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(ckm), &clock_mspm_init, NULL, NULL, NULL,
-		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		 &clock_mspm_driver_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(ckm), &clock_mspm_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_mspm_driver_api);
