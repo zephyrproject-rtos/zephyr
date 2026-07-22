@@ -20,5 +20,6 @@ supported:
   - adc
   - hwinfo
   - pwm
+  - i2s
   - spi
 vendor: nxp
