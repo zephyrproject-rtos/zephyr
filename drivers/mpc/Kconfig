@@ -1,0 +1,24 @@
+# Memory Protection Controller (MPC) drivers
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Memory Protection Controller (MPC) drivers"
+
+config MPC
+	bool
+	help
+	  Set by any Memory Protection Controller (MPC) driver to indicate
+	  that the mpc_configure_all() API (<zephyr/drivers/mpc/mpc.h>) is
+	  available.  Individual MPC drivers select this symbol; application
+	  and Secure-image code can test CONFIG_MPC instead of naming a
+	  specific driver.
+
+# zephyr-keep-sorted-start
+source "drivers/mpc/arm_tz_mpc/Kconfig"
+source "drivers/mpc/infineon_mxs40_mpc/Kconfig"
+# zephyr-keep-sorted-stop
+
+endmenu

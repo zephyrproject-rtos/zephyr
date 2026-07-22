@@ -1,0 +1,24 @@
+# Peripheral Protection Controller (PPC) drivers
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Peripheral Protection Controller (PPC) drivers"
+
+config PPC
+	bool
+	help
+	  Set by any Peripheral Protection Controller (PPC) driver to indicate
+	  that the ppc_configure_ns_all() API (<zephyr/drivers/ppc/ppc.h>) is
+	  available.  Individual PPC drivers select this symbol; application and
+	  Secure-image code can test CONFIG_PPC instead of naming a specific
+	  driver.
+
+# zephyr-keep-sorted-start
+source "drivers/ppc/arm_sse200_spctrl/Kconfig"
+source "drivers/ppc/infineon_mxs40_ppc/Kconfig"
+# zephyr-keep-sorted-stop
+
+endmenu

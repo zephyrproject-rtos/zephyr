@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Shared base for ARM Memory Protection Controller (MPC) hardware nodes.
+# Include this file instead of base.yaml in concrete MPC bindings.
+#
+# Concrete bindings add their own child-binding section that describes
+# the per-region properties.  The child reg property encodes
+# <offset size> within the memory governed by the parent MPC instance.
+
+description: ARM Memory Protection Controller base properties.
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    type: int
+    const: 1
+
+  "#size-cells":
+    type: int
+    const: 1
+
+  violation-response:
+    type: string
+    enum:
+      - "razwi"
+      - "bus-error"
+    default: "razwi"
+    description: |
+      Response generated when a protection violation occurs on this MPC.
+      "razwi"     - Read-As-Zero / Write-Ignored (hardware default)
+      "bus-error" - Generate a bus fault to the initiating master
