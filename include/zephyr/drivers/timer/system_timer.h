@@ -173,12 +173,11 @@ bool sys_clock_is_locked(void);
  * @note This function is called by the kernel with the system clock
  * lock held.
  *
- * A driver entering low-power idle is notified separately through
- * sys_clock_idle_enter(); this call carries no idle hint.
- *
  * @param ticks Timeout in tick units
+ * @param idle Hint to the driver that the system is about to enter
+ *        the idle state immediately after setting the timeout
  */
-void sys_clock_set_timeout(uint32_t ticks);
+void sys_clock_set_timeout(uint32_t ticks, bool idle);
 
 /**
  * @brief Timer idle exit notification

@@ -98,8 +98,9 @@ static uint32_t sleeptimer_clock_elapsed(struct sleeptimer_timer_data *timer)
 	}
 }
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(idle);
 
 	sleeptimer_clock_set_timeout(ticks, &g_sleeptimer_timer_data);
 }

@@ -65,7 +65,7 @@ void z_openrisc_timer_isr(void)
 	}
 }
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 #if defined(CONFIG_TICKLESS_KERNEL)
 	/*
@@ -85,6 +85,7 @@ void sys_clock_set_timeout(uint32_t ticks)
 
 #else  /* CONFIG_TICKLESS_KERNEL */
 	ARG_UNUSED(ticks);
+	ARG_UNUSED(idle);
 #endif
 }
 

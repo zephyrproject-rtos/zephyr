@@ -167,12 +167,13 @@ void sys_clock_unused(void)
 	SYSCTR_DisableInterrupts(CMP_BASE, TIMER_CMP_INT_MASK);
 }
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	uint64_t next_cycle;
 	uint64_t now;
 	uint64_t min;
 
+	ARG_UNUSED(idle);
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;

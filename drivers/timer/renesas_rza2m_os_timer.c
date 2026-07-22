@@ -103,8 +103,9 @@ static void ostm_irq_handler(const struct device *dev)
 	sys_clock_announce(delta_ticks);
 }
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(idle);
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;

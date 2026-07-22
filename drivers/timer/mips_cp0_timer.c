@@ -61,8 +61,9 @@ static void timer_isr(const void *arg)
 	sys_clock_announce(TICKLESS ? dticks : 1);
 }
 
-void sys_clock_set_timeout(uint32_t ticks)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(idle);
 
 	if (!TICKLESS) {
 		return;
