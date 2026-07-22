@@ -1647,6 +1647,13 @@ static int build_client_hello(struct quic_tls_context *ctx,
 		pos += host_len;
 	}
 
+	/* supported_versions (7) and signature_algorithms (8) are fixed-size
+	 * and written back to back.
+	 */
+	if (pos + 15 > buf_size) {
+		return -ENOBUFS;
+	}
+
 	/* supported_versions extension (mandatory for TLS 1.3) */
 	buf[pos++] = 0x00;
 	buf[pos++] = 0x2b;  /* Extension type: supported_versions */
@@ -1697,6 +1704,10 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	{
 		size_t groups_len = (have_x25519 ? 2U : 0U) + 2U;
 
+		if (pos + 6 + groups_len > buf_size) {
+			return -ENOBUFS;
+		}
+
 		buf[pos++] = 0x00;
 		buf[pos++] = 0x0a;  /* Extension type: supported_groups */
 		buf[pos++] = ((2 + groups_len) >> 8) & 0xFF;
@@ -1716,6 +1727,11 @@ static int build_client_hello(struct quic_tls_context *ctx,
 		size_t entry_x25519 = have_x25519 ? (2 + 2 + ctx->ecdh_public_key_len) : 0;
 		size_t entry_secp = 2 + 2 + ctx->ecdh_public_key2_len;
 		size_t ks_list_len = entry_x25519 + entry_secp;
+		size_t ks_needed = 6 + ks_list_len; /* ext hdr + list len + entries */
+
+		if (pos + ks_needed > buf_size) {
+			return -ENOBUFS;
+		}
 
 		buf[pos++] = 0x00;
 		buf[pos++] = 0x33;  /* Extension type: key_share */
@@ -1753,6 +1769,10 @@ static int build_client_hello(struct quic_tls_context *ctx,
 			alpn_list_len += 1 + strlen(ctx->options.alpn_list[i]);
 		}
 
+		if (pos + 6 + alpn_list_len > buf_size) {
+			return -ENOBUFS;
+		}
+
 		buf[pos++] = 0x00;
 		buf[pos++] = 0x10;  /* Extension type: ALPN */
 		buf[pos++] = ((alpn_list_len + 2) >> 8) & 0xFF;
@@ -1778,6 +1798,10 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	}
 
 	/* QUIC transport parameters extension */
+	if (pos + 4 + ctx->local_tp_len > buf_size) {
+		return -ENOBUFS;
+	}
+
 	buf[pos++] = 0x00;
 	buf[pos++] = 0x39;  /* Extension type: quic_transport_parameters */
 	buf[pos++] = (ctx->local_tp_len >> 8) & 0xFF;
@@ -1791,6 +1815,10 @@ static int build_client_hello(struct quic_tls_context *ctx,
 		uint32_t obfuscated_ticket_age = tls_client_ticket_age(ctx);
 
 		/* psk_key_exchange_modes extension (required with pre_shared_key) */
+		if (pos + 6 > buf_size) {
+			return -ENOBUFS;
+		}
+
 		buf[pos++] = 0x00;
 		buf[pos++] = TLS_EXT_PSK_KEY_EXCHANGE_MODES;
 		buf[pos++] = 0x00;
@@ -1800,6 +1828,10 @@ static int build_client_hello(struct quic_tls_context *ctx,
 
 		if (quic_0rtt_enabled() && ctx->early_data_offered) {
 			/* early_data extension is advertised in ClientHello only when armed. */
+			if (pos + 4 > buf_size) {
+				return -ENOBUFS;
+			}
+
 			buf[pos++] = 0x00;
 			buf[pos++] = TLS_EXT_EARLY_DATA;
 			buf[pos++] = 0x00;
@@ -1809,6 +1841,10 @@ static int build_client_hello(struct quic_tls_context *ctx,
 		/* pre_shared_key MUST be the final ClientHello extension. */
 		identities_len = 2 + ctx->psk_identity_len + 4;
 		ext_data_len = 2 + identities_len + 2 + 1 + ctx->ks.hash_len;
+
+		if (pos + 4 + ext_data_len > buf_size) {
+			return -ENOBUFS;
+		}
 
 		buf[pos++] = 0x00;
 		buf[pos++] = TLS_EXT_PRE_SHARED_KEY;
