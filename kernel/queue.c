@@ -438,6 +438,8 @@ void *z_impl_k_queue_peek_next(struct k_queue *queue, void *data)
 out:
 	k_spin_unlock(&queue->lock, key);
 
+	SYS_PORT_TRACING_OBJ_FUNC(k_queue, peek_next, queue, data, ret);
+
 	return ret;
 }
 
@@ -473,6 +475,7 @@ static inline void *z_vrfy_k_queue_peek_tail(struct k_queue *queue)
 
 static inline void *z_vrfy_k_queue_peek_next(struct k_queue *queue, void *data)
 {
+	K_OOPS(K_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 	return z_impl_k_queue_peek_next(queue, data);
 }
 #include <zephyr/syscalls/k_queue_peek_next_mrsh.c>

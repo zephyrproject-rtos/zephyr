@@ -3196,7 +3196,9 @@ struct k_fifo {
  */
 #define k_fifo_peek_next(fifo, data)                                                               \
 	({                                                                                         \
+		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_fifo, peek_next, fifo, data);                    \
 		void *fpt_ret = k_queue_peek_next(&(fifo)->_queue, data);                          \
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_fifo, peek_next, fifo, data, fpt_ret);            \
 		fpt_ret;                                                                           \
 	})
 
