@@ -72,6 +72,11 @@ static uint64_t mtime(void)
 #define TIMER_CORE_BACKEND_COMPARE
 #define TIMER_CORE_HAVE_CYCLE_GET_32
 #define TIMER_CORE_HAVE_CYCLE_GET_64
+/* mtime is 64 bits wide even on RV32: declare its width rather than take the
+ * native-register default, which would mask deltas to 32 bits there and alias
+ * any gap beyond 2^32 cycles.
+ */
+#define TIMER_CORE_CYCLES_WIDTH 64
 
 static inline uint64_t timer_driver_cycle_get(void)
 {
