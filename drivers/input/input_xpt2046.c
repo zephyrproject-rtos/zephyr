@@ -8,12 +8,14 @@
 
 #include <zephyr/drivers/spi.h>
 #include <zephyr/input/input.h>
+#include <zephyr/input/input_touch.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(xpt2046, CONFIG_INPUT_LOG_LEVEL);
 
 struct xpt2046_config {
+	const struct input_touchscreen_common_config common;
 	const struct spi_dt_spec bus;
 	const struct gpio_dt_spec int_gpio;
 	uint16_t min_x;
@@ -35,6 +37,8 @@ struct xpt2046_data {
 	uint32_t last_y;
 	bool pressed;
 };
+
+INPUT_TOUCH_STRUCT_CHECK(struct xpt2046_config);
 
 enum xpt2046_channel {
 	CH_TEMP0 = 0,
@@ -170,8 +174,7 @@ static void xpt2046_work_handler(struct k_work *kw)
 	if (pressed) {
 		LOG_DBG("raw: x=%4u y=%4u ==> x=%4d y=%4d", meas.x, meas.y, x, y);
 
-		input_report_abs(data->dev, INPUT_ABS_X, x, false, K_FOREVER);
-		input_report_abs(data->dev, INPUT_ABS_Y, y, false, K_FOREVER);
+		input_touchscreen_report_pos(data->dev, x, y, K_FOREVER);
 		input_report_key(data->dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
 
 		data->last_x = x;
@@ -247,6 +250,7 @@ static int xpt2046_init(const struct device *dev)
 		.screen_size_x = DT_INST_PROP(index, touchscreen_size_x),                          \
 		.screen_size_y = DT_INST_PROP(index, touchscreen_size_y),                          \
 		.reads = DT_INST_PROP(index, reads),                                               \
+		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                           \
 	};                                                                                         \
 	static struct xpt2046_data xpt2046_data_##index;                                           \
 	DEVICE_DT_INST_DEFINE(index, xpt2046_init, NULL, &xpt2046_data_##index,                    \
