@@ -46,6 +46,24 @@ BUILD_ASSERT((!IS_ENABLED(CONFIG_APIC_TIMER_TSC) &&
 #define IA32_TSC_DEADLINE_MSR 0x6e0
 #define IA32_TSC_ADJUST_MSR   0x03b
 
+#define CYC_PER_TICK (uint32_t)(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC \
+				/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
+/* the unsigned long cast limits divisors to native CPU register width */
+#define cycle_diff_t unsigned long
+#define CYCLE_DIFF_MAX (~(cycle_diff_t)0)
+
+/*
+ * Maximum number of cycles to wait between two sys_clock_announce() reports:
+ * the elapsed cycle count must fit in a cycle_diff_t before it is divided down
+ * to ticks. Reserve 1/4 of the range as headroom for the unavoidable IRQ
+ * servicing latency so a late report still fits, then add the LSB so the value
+ * clears a run of low set bits for a nicer literal in the generated assembly.
+ */
+#define CYCLES_MAX_1	((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_2	(CYCLES_MAX_1 / 2 + CYCLES_MAX_1 / 4)
+#define CYCLES_MAX	(CYCLES_MAX_2 + LSB_GET(CYCLES_MAX_2))
+
 struct apic_timer_lvt {
 	uint8_t vector   : 8;
 	uint8_t unused0  : 8;
@@ -54,6 +72,9 @@ struct apic_timer_lvt {
 	uint32_t unused2 : 13;
 };
 
+static uint64_t last_cycle;
+static uint64_t last_tick;
+static uint32_t last_elapsed;
 static union { uint32_t val; struct apic_timer_lvt lvt; } lvt_reg;
 
 static ALWAYS_INLINE uint64_t rdtsc(void)
@@ -88,32 +109,82 @@ static void set_trigger(uint64_t deadline)
 	}
 }
 
-/*
- * Free-running 64-bit TSC plus an absolute deadline (the TSC_DEADLINE MSR, or
- * the local APIC timer ICR in one-shot mode as a fallback): a COMPARE backend.
- * The core owns the tick accounting; the driver reads the counter and arms the
- * deadline.
- */
-#define TIMER_CORE_BACKEND_COMPARE
-#define TIMER_CORE_64BIT_CYCLES
-
-static inline uint64_t timer_driver_cycle_get(void)
-{
-	return rdtsc();
-}
-
-static inline void timer_driver_set_compare(uint64_t cycles)
-{
-	set_trigger(cycles);
-}
-
-#include "system_timer_generic.h"
-
 static void isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	timer_core_announce();
+	k_spinlock_key_t key = sys_clock_lock();
+	uint64_t curr_cycle = rdtsc();
+	uint64_t delta_cycles = curr_cycle - last_cycle;
+	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
+
+	last_cycle += (cycle_diff_t)delta_ticks * CYC_PER_TICK;
+	last_tick += delta_ticks;
+	last_elapsed = 0;
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		uint64_t next_cycle = last_cycle + CYC_PER_TICK;
+
+		set_trigger(next_cycle);
+	}
+
+	sys_clock_announce_locked(delta_ticks, key);
+}
+
+void sys_clock_set_timeout(uint32_t ticks)
+{
+
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	uint64_t next_cycle;
+
+	next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
+	if ((next_cycle - last_cycle) > CYCLES_MAX) {
+		next_cycle = last_cycle + CYCLES_MAX;
+	}
+
+	/*
+	 * Interpreted strictly, the IA SDM description of the
+	 * TSC_DEADLINE MSR implies that it will trigger an immediate
+	 * interrupt if we try to set an expiration across the 64 bit
+	 * rollover.  Unfortunately there's no way to test that as on
+	 * real hardware it requires more than a century of uptime,
+	 * but this is cheap and safe.
+	 */
+	if (next_cycle < last_cycle) {
+		next_cycle = UINT64_MAX;
+	}
+	set_trigger(next_cycle);
+}
+
+uint32_t sys_clock_elapsed(void)
+{
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return 0;
+	}
+
+	uint64_t curr_cycle = rdtsc();
+	uint64_t delta_cycles = curr_cycle - last_cycle;
+	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
+
+	last_elapsed = delta_ticks;
+	return delta_ticks;
+}
+
+uint32_t sys_clock_cycle_get_32(void)
+{
+	return (uint32_t) rdtsc();
+}
+
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return rdtsc();
 }
 
 static inline uint32_t timer_irq(void)
@@ -214,8 +285,11 @@ static int sys_clock_driver_init(void)
 	 */
 	__asm__ volatile("mfence" ::: "memory");
 
-	/* Seed the announce baseline from the TSC and arm the first tick. */
-	timer_core_init();
+	last_tick = rdtsc() / CYC_PER_TICK;
+	last_cycle = last_tick * CYC_PER_TICK;
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		set_trigger(last_cycle + CYC_PER_TICK);
+	}
 	irq_enable(timer_irq());
 
 	return 0;
