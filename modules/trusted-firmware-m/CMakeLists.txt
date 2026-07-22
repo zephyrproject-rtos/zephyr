@@ -221,9 +221,17 @@ if(CONFIG_BUILD_WITH_TFM)
   # TODO: Add support for cross-compile toolchain variant
   # TODO: Enforce GCC version check against TF-M compiler requirements
   if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "zephyr")
-    set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
-    set(TFM_TOOLCHAIN_PREFIX "arm-zephyr-eabi")
-    set(TFM_TOOLCHAIN_PATH ${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi/bin)
+    if(${TOOLCHAIN_VARIANT_COMPILER} STREQUAL "gnu")
+      set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
+      set(TFM_TOOLCHAIN_PREFIX "arm-zephyr-eabi")
+      set(TFM_TOOLCHAIN_PATH ${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi/bin)
+    elseif(${TOOLCHAIN_VARIANT_COMPILER} STREQUAL "llvm")
+      set(TFM_TOOLCHAIN_FILE "toolchain_ATFE.cmake")
+      set(TFM_TOOLCHAIN_PREFIX "arm-none-eabi")
+      set(TFM_TOOLCHAIN_PATH ${ZEPHYR_SDK_INSTALL_DIR}/llvm/bin)
+    else()
+      message(FATAL_ERROR "Unsupported TOOLCHAIN_VARIANT_COMPILER: ${TOOLCHAIN_VARIANT_COMPILER}")
+    endif()
   elseif(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "gnuarmemb")
     set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
     set(TFM_TOOLCHAIN_PREFIX "arm-none-eabi")
@@ -307,7 +315,8 @@ if(CONFIG_BUILD_WITH_TFM)
     COMMAND ${CMAKE_COMMAND}
       -G${CMAKE_GENERATOR}
       -DTFM_TOOLCHAIN_FILE=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/${TFM_TOOLCHAIN_FILE}
-      -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}
+      -DCMAKE_PROGRAM_PATH=${TFM_TOOLCHAIN_PATH}
+      -DCROSS_COMPILE=${TFM_TOOLCHAIN_PREFIX}
       -DCMAKE_BUILD_TYPE=${TFM_CMAKE_BUILD_TYPE}
       -DTFM_PLATFORM=${CONFIG_TFM_BOARD}
       -DCONFIG_TFM_BUILD_LOG_QUIET=ON
