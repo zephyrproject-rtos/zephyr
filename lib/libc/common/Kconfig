@@ -104,6 +104,14 @@ config COMMON_LIBC_STRNLEN
 	help
 	  common implementation of strnlen().
 
+config COMMON_LIBC_SIGNAL
+	bool
+	help
+	  Common implementation of the ISO C <signal.h> functions signal() and raise(), and of the
+	  SIGABRT behaviour of abort(), in terms of the kernel k_sig_* API. Selected by each C
+	  library that relies on it; without it those functions come from the C library, where they
+	  have no way to reach Zephyr threads.
+
 config COMMON_LIBC_THRD
 	bool "C11 <threads.h> API support"
 	depends on DYNAMIC_THREAD

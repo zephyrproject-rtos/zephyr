@@ -22,6 +22,10 @@ zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_THRD
     source/thrd/tss.c
     )
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_REMOVE source/stdio/remove.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_SIGNAL
+    source/signal/raise.c
+    source/signal/signal.c
+    )
 
 if(NOT CONFIG_ERRNO_IN_TLS AND NOT CONFIG_LIBC_ERRNO)
   zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/sys/errno_private.h)

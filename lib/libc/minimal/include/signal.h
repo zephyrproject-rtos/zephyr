@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2024 Synopsys
- * Copyright (c) 2025 Tenstorrent AI ULC
- *
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,6 +10,16 @@
 extern "C" {
 #endif
 
+/*
+ * Only what ISO C (7.14 "Signal handling <signal.h>") requires is declared here.
+ * POSIX additions live in <zephyr/posix/posix_signal.h>, included below, which expands to
+ * nothing unless _POSIX_C_SOURCE is defined.
+ */
+
+#define SIG_DFL ((void (*)(int))0)
+#define SIG_ERR ((void (*)(int))-1)
+#define SIG_IGN ((void (*)(int))1)
+
 #define SIGABRT 6
 #define SIGFPE  8
 #define SIGILL  4
@@ -19,19 +27,9 @@ extern "C" {
 #define SIGSEGV 11
 #define SIGTERM 15
 
-#define SIG_DFL ((sighandler_t)0)
-#define SIG_IGN ((sighandler_t)1)
-#define SIG_ERR ((sighandler_t)(-1))
-
 typedef long sig_atomic_t;
 
-#if !defined(_SIGHANDLER_T_DECLARED) && !defined(__sighandler_t_defined)
-typedef void (*sighandler_t)(int sig);
-#define _SIGHANDLER_T_DECLARED
-#define __sighandler_t_defined
-#endif
-
-sighandler_t signal(int sig, sighandler_t handler);
+void (*signal(int sig, void (*func)(int)))(int);
 int raise(int sig);
 
 #ifdef __cplusplus
