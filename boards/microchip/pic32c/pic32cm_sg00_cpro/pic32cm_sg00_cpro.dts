@@ -204,3 +204,7 @@
 	dma-names = "rx", "tx";
 	status = "okay";
 };
+
+&dmac {
+	status = "okay";
+};
