@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Secure Call TrustZone Secure Image"
+
+config SECURE_CALL_NS_IMAGE_BASE
+	hex "Non-Secure image vector table base (Non-Secure alias)"
+	help
+	  Address of the Non-Secure image's vector table in the Non-Secure
+	  address alias. The Secure image points the Non-Secure VTOR here and
+	  reads the Non-Secure initial SP/PC from it. Board-specific; set in the
+	  per-board Kconfig fragment.
+
+config SECURE_CALL_NS_IMAGE_BASE_SECURE_ALIAS
+	hex "Non-Secure image vector table base (Secure alias)"
+	help
+	  The same physical location as SECURE_CALL_NS_IMAGE_BASE but reached
+	  through the Secure address alias. The Secure image reads the Non-Secure
+	  vector table through this alias before the MPC restricts Secure access
+	  to the region.
+
+source "Kconfig.zephyr"

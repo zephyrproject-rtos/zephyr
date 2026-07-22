@@ -2411,6 +2411,21 @@ Documentation Infrastructure:
   tests:
     - drivers.mipi_dsi
 
+"Drivers: MPC":
+  status: maintained
+  maintainers:
+    - teburd
+  files:
+    - doc/hardware/peripherals/mpc.rst
+    - drivers/mpc/
+    - dts/bindings/memory-controllers/arm,mpc-base.yaml
+    - dts/bindings/memory-controllers/arm,tz-mpc.yaml
+    - dts/bindings/misc/infineon,mxs40-mpc.yaml
+    - include/zephyr/drivers/mpc/
+    - include/zephyr/drivers/misc/arm_tz_mpc/
+  labels:
+    - "area: MPC"
+
 "Drivers: MSPI":
   status: maintained
   maintainers:
@@ -2568,6 +2583,21 @@ Documentation Infrastructure:
     - dts/bindings/pm_cpu_ops/
   labels:
     - "area: PM CPU ops"
+
+"Drivers: PPC":
+  status: maintained
+  maintainers:
+    - teburd
+  files:
+    - doc/hardware/peripherals/ppc.rst
+    - drivers/ppc/
+    - dts/bindings/arm/arm,sse-200-spctrl.yaml
+    - dts/bindings/ppc/
+    - include/zephyr/drivers/ppc/
+    - include/zephyr/drivers/misc/arm_sse200_spctrl/
+    - include/zephyr/dt-bindings/ppc/
+  labels:
+    - "area: PPC"
 
 "Drivers: PS2":
   status: odd fixes
@@ -5733,6 +5763,24 @@ Samples:
     - samples/
   labels:
     - "area: Samples"
+
+"Secure calls":
+  status: maintained
+  maintainers:
+    - teburd
+  files:
+    - arch/arm/core/cortex_m/tz/sau.c
+    - doc/services/secure_call.rst
+    - include/zephyr/arch/secure_domain.h
+    - include/zephyr/arch/security_partition.h
+    - include/zephyr/internal/secure_call_handler.h
+    - include/zephyr/secure_call.h
+    - scripts/build/gen_secure_calls.py
+    - scripts/build/parse_secure_calls.py
+    - scripts/tests/build/test_parse_gen.py
+    - tests/secure_call/
+  labels:
+    - "area: Secure calls"
 
 Secure storage:
   status: maintained

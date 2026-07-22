@@ -1,0 +1,55 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Place .gnu.sgstubs at 0x18110000 (CBUS S-alias flash).
+ * BUILD_OUTPUT_ADJUST_LMA +0x48000000 maps this to SAHB 0x60110000 for flashing.
+ * The SAU marks this address NSC so NS callers can BLXNS to 0x18110001.
+ */
+
+/ {
+	/*
+	 * Linker MEMORY region that holds the CMSE SG veneers (.gnu.sgstubs).
+	 * Sized to match the SAU NSC window below (region@18110000, 0x2000): the
+	 * veneers must stay within the NSC-marked range to be callable from NS.
+	 * The handful of __secure_call stubs are tiny, so 8K is ample headroom.
+	 */
+	nsc_ns_alias: memory@18110000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x18110000 DT_SIZE_K(8)>;
+		zephyr,memory-region = "NSC_NS_ALIAS";
+	};
+
+	/*
+	 * SAU region table (see arch_security_partition_configure()).
+	 *
+	 * All of the CBUS NS flash alias (0x00000000-0x0FFFFFFF) is NS; the CBUS
+	 * S range defaults to Secure except the explicit NSC veneer window at
+	 * CONFIG_ARM_NSC_REGION_BASE_ADDRESS (0x18110000).  SRAM NS alias and the
+	 * peripheral/upper address space are NS.
+	 */
+	security_partition: security-partition {
+		compatible = "zephyr,security-partition";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		region@0 {
+			reg = <0x00000000 0x10000000>;
+			zephyr,attr = "non-secure";
+		};
+		region@18110000 {
+			reg = <0x18110000 0x2000>;
+			zephyr,attr = "non-secure-callable";
+		};
+		region@20000000 {
+			reg = <0x20000000 0x10000000>;
+			zephyr,attr = "non-secure";
+		};
+		region@40000000 {
+			reg = <0x40000000 0xc0000000>;
+			zephyr,attr = "non-secure";
+		};
+	};
+};
