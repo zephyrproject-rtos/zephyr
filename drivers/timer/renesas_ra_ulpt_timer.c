@@ -7,6 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/sys_clock.h>
 #include <soc.h>
 
@@ -41,43 +42,96 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 2,
 /* Macro to get ELC event for ULPT interrupt based on the channel. */
 #define ELC_EVENT_ULPT_INT(channel) CONCAT(ELC_EVENT_ULPT, channel, _INT)
 
-/*
- * INST1 free-runs and provides the cycle counter (its down-counter read back
- * inverted counts up); INST0 is armed with a relative delay and its underflow
- * announces ticks. That makes this a RELOAD backend whose cycle source is a
- * genuine free-running counter, so the generic core owns the tick accounting
- * and the tick-aligned deadline.
- */
-#define TIMER_CORE_BACKEND_RELOAD
-#define TIMER_CORE_MIN_DELAY (RA_ULPT_RELOAD_MIN + RA_ULPT_RELOAD_DELAY)
+/* Calculated constants for timer operation. */
+#define CYCLE_PER_TICK ((sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC))
+#define MAX_TICKS      ((k_ticks_t)(RA_ULPT_RELOAD_MAX / CYCLE_PER_TICK) - 1)
 
-static inline uint64_t timer_driver_cycle_get(void)
-{
-	return ~RA_ULPT_INST1_REG->ULPTCNT;
-}
-
-static void timer_driver_set_reload(uint32_t cycles)
-{
-	/* INST0 counts down 'cycles' then underflows. Account for the fixed
-	 * reload delay of the hardware and the off-by-one of the count register.
-	 */
-	RA_ULPT_INST0_REG->ULPTCNT = (cycles - RA_ULPT_RELOAD_DELAY) - 1U;
-}
-
-#include "system_timer_generic.h"
+/* Static variables for maintaining timer state. */
+static uint32_t cycle_announced;
+static struct k_spinlock lock;
 
 static void ra_ulpt_timer_isr(void)
 {
+	uint32_t cycles;
+	uint32_t dcycles;
+	uint32_t dticks;
 	IRQn_Type irq = R_FSP_CurrentIrqGet();
 
 	/* Clear pending IRQ to prevent re-triggering. */
 	R_BSP_IrqStatusClear(irq);
 
 	if (RA_ULPT_INST0_REG->ULPTCR_b.TUNDF) {
-		/* Clear the underflow flag and let the core announce. */
+		k_spinlock_key_t key = k_spin_lock(&lock);
+
+		if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+			/* Calculate elapsed cycles and ticks. */
+			cycles = ~RA_ULPT_INST1_REG->ULPTCNT;
+			dcycles = cycles - cycle_announced;
+			dticks = dcycles / CYCLE_PER_TICK;
+			cycle_announced += dticks * CYCLE_PER_TICK;
+		} else {
+			/* In tickful mode, announce one tick at a time. */
+			dticks = 1;
+		}
+		/* Clear the underflow flag. */
 		RA_ULPT_INST0_REG->ULPTCR_b.TUNDF = 0;
-		timer_core_announce();
+		k_spin_unlock(&lock, key);
+
+		/* Announce the elapsed ticks to the kernel. */
+		sys_clock_announce(dticks);
 	}
+}
+
+void sys_clock_set_timeout(uint32_t ticks)
+{
+
+	/* Timeout configuration is unsupported in tickful mode. */
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	/* Preserve the original behavior even though it looks wrong; to be
+	 * revisited.
+	 */
+	if (ticks >= 1) {
+		ticks -= 1;
+	}
+	if (ticks > MAX_TICKS) {
+		ticks = MAX_TICKS;
+	}
+
+	/* Calculate the timer delay in cycles. */
+	uint32_t cycles = ~RA_ULPT_INST1_REG->ULPTCNT;
+	uint32_t unannounced = cycles - cycle_announced;
+	uint32_t delay = ticks * CYCLE_PER_TICK;
+
+	/* Adjust delay to align with tick boundaries. */
+	delay += unannounced;
+	delay = DIV_ROUND_UP(delay, CYCLE_PER_TICK) * CYCLE_PER_TICK;
+	delay -= unannounced;
+	delay = MAX(delay, RA_ULPT_RELOAD_MIN + RA_ULPT_RELOAD_DELAY);
+	delay -= RA_ULPT_RELOAD_DELAY;
+
+	/* Update the timer counter. */
+	RA_ULPT_INST0_REG->ULPTCNT = delay - 1U;
+}
+
+uint32_t sys_clock_elapsed(void)
+{
+	/* Elapsed time calculation is unsupported in tickful mode. */
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return 0;
+	}
+
+	/* Calculate and return the number of elapsed cycles. */
+	uint32_t cycles = ~RA_ULPT_INST1_REG->ULPTCNT - cycle_announced;
+
+	return (cycles / CYCLE_PER_TICK);
+}
+
+uint32_t sys_clock_cycle_get_32(void)
+{
+	return ~RA_ULPT_INST1_REG->ULPTCNT;
 }
 
 static int sys_clock_driver_init(void)
@@ -115,7 +169,7 @@ static int sys_clock_driver_init(void)
 	RA_ULPT_INST1_REG->ULPTCMSR = 0U;
 
 	/* Initialize timer counters. */
-	RA_ULPT_INST0_REG->ULPTCNT = TIMER_CORE_CYC_PER_TICK - 1U;
+	RA_ULPT_INST0_REG->ULPTCNT = CYCLE_PER_TICK - 1U;
 	RA_ULPT_INST1_REG->ULPTCNT = RA_ULPT_RELOAD_MAX;
 
 	/* Set up interrupts for timer instance 0. */
@@ -133,11 +187,7 @@ static int sys_clock_driver_init(void)
 				   RA_ULPT_INST0_REG->ULPTCR_b.TCSTF);
 	FSP_HARDWARE_REGISTER_WAIT(RA_ULPT_INST1_REG->ULPTCR_b.TSTART,
 				   RA_ULPT_INST1_REG->ULPTCR_b.TCSTF);
-
-	/* Seed the core baseline from the free-running counter and arm the first
-	 * tick.
-	 */
-	timer_core_init();
+	cycle_announced = 0U;
 
 	return 0;
 }
