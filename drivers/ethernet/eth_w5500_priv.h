@@ -56,8 +56,8 @@
 #define S0_CR_SEND		0x20 /* SEND command */
 #define S0_CR_RECV		0x40 /* RECV command */
 #define W5500_S0_IR		(W5500_S0_REGS + W5500_Sn_IR)
-#define S0_IR_SENDOK		0x10 /* complete sending */
-#define S0_IR_RECV		0x04 /* receiving data */
+#define S0_IR_SENDOK		0x10 /* complete sending BIT(4) */
+#define S0_IR_RECV		0x04 /* receiving data BIT(2) */
 #define W5500_S0_SR		(W5500_S0_REGS + W5500_Sn_SR)
 #define S0_SR_MACRAW		0x42 /* mac raw mode */
 #define W5500_S0_TX_FSR		(W5500_S0_REGS + W5500_Sn_TX_FSR)
@@ -101,11 +101,15 @@ struct w5500_runtime {
 	struct net_if *iface;
 
 	K_KERNEL_STACK_MEMBER(thread_stack,
-			      CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE);
+			CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack_rx,
+			CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE);
 	struct k_thread thread;
+	struct k_thread thread_rx;
 	uint8_t mac_addr[6];
 	struct gpio_callback gpio_cb;
 	struct k_sem tx_sem;
+	struct k_sem rx_sem;
 	struct k_sem int_sem;
 	struct phy_link_state state;
 	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
