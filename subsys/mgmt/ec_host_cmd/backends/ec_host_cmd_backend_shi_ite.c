@@ -511,14 +511,27 @@ PINCTRL_DT_INST_DEFINE(0);
 #ifdef CONFIG_PM_DEVICE
 static int shi_ite_pm_cb(const struct device *dev, enum pm_device_action action)
 {
+	const struct shi_it8xxx2_cfg *cfg = dev->config;
 	struct shi_it8xxx2_data *data = dev->data;
-	int ret = 0;
+	int ret;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
 		shi_ite_set_state(data, SHI_STATE_DISABLED);
+
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to configure gpio pins", dev->name);
+			return ret;
+		}
 		break;
 	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to configure SHI pins", dev->name);
+			return ret;
+		}
+
 		shi_ite_set_state(data, SHI_STATE_READY_TO_RECV);
 		break;
 	default:
@@ -526,12 +539,15 @@ static int shi_ite_pm_cb(const struct device *dev, enum pm_device_action action)
 		break;
 	}
 
-	return ret;
+	return 0;
 }
 #endif
 
 /* Assume only one peripheral */
 PM_DEVICE_DT_INST_DEFINE(0, shi_ite_pm_cb);
+
+BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED),
+	     "CONFIG_PM_DEVICE_SYSTEM_MANAGED must be enabled when using CONFIG_PM_DEVICE_RUNTIME");
 
 static const struct ec_host_cmd_backend_api ec_host_cmd_api = {
 	.init = shi_ite_backend_init,
