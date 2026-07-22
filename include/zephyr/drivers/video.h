@@ -513,7 +513,7 @@ static inline int video_driver_set_stream(const struct device *dev, bool enable,
 		return -ENOSYS;
 	}
 
-	return api->set_stream(dev, true, type);
+	return api->set_stream(dev, enable, type);
 }
 
 /**
