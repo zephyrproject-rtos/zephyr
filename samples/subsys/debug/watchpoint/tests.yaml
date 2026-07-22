@@ -1,0 +1,19 @@
+sample:
+  name: Memory watchpoint
+  description: Identify an instruction that writes to a monitored address
+tests:
+  sample.debug.watchpoint:
+    tags:
+      - debug
+      - watchpoint
+    platform_allow:
+      - qemu_riscv32
+      - qemu_riscv64
+    integration_platforms:
+      - qemu_riscv32
+      - qemu_riscv64
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Watchpoint sample complete"
