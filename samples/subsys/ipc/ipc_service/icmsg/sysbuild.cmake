@@ -15,3 +15,8 @@ ExternalZephyrProject_Add(
 
 native_simulator_set_child_images(${DEFAULT_IMAGE} remote)
 native_simulator_set_final_executable(${DEFAULT_IMAGE})
+
+if(SB_CONFIG_VPR_LAUNCHER_FROM_ARRAY)
+  # Additional operations if nordic vpr launcher with loading from array is used.
+  nordic_vpr_launcher_from_array(${DEFAULT_IMAGE} remote)
+endif()

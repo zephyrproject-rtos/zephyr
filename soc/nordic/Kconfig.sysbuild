@@ -4,6 +4,14 @@
 config HAS_NORDIC_VPR_LAUNCHER_IMAGE
 	bool
 
+config HAS_NORDIC_COPROC_LAUNCHER_IMAGE
+	bool
+
+config NORDIC_COPROC_LAUNCHER
+	bool "Nordic coprocessor launcher"
+	default y
+	depends on HAS_NORDIC_COPROC_LAUNCHER_IMAGE
+
 rsource "common/uicr/Kconfig.sysbuild"
 rsource "common/vpr/Kconfig.sysbuild"
 orsource "*/Kconfig.sysbuild"

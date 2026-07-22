@@ -3,6 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+&uart136 {
+	status = "okay";
+};
+
 &tbm {
 	status = "okay";
 };

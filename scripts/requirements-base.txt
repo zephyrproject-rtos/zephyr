@@ -33,6 +33,9 @@ anytree
 # intelhex used by mergehex.py
 intelhex
 
+# used by compress_bin.py
+lz4
+
 # it's west
 # Keep the version identical to the minimum required in cmake/modules/west.cmake
 west>=0.14.0

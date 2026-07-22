@@ -25,3 +25,8 @@ sysbuild_add_dependencies(FLASH ${DEFAULT_IMAGE} remote_app)
 if(SB_CONFIG_BOOTLOADER_MCUBOOT)
   sysbuild_add_dependencies(FLASH remote_app mcuboot)
 endif()
+
+if(SB_CONFIG_VPR_LAUNCHER_FROM_ARRAY)
+  # Additional operations if nordic vpr launcher with loading from array is used.
+  nordic_vpr_launcher_from_array(${DEFAULT_IMAGE} remote_app)
+endif()

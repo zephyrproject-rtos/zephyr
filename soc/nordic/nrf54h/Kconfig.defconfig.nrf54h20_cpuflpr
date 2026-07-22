@@ -10,4 +10,7 @@ config NUM_IRQS
 config ASSERT
 	default n
 
+config NRF_PERIPHCONF_SECTION
+	default y
+
 endif # SOC_NRF54H20_CPUFLPR

@@ -1,0 +1,11 @@
+manifest:
+  remotes:
+    - name: upstream
+      url-base: https://github.com/zephyrproject-rtos
+  projects:
+    - name: lz4
+      revision: 0ad20d0fc4ec70d6f4c3d399357e59d0544cf07f
+      path: modules/lib/lz4
+      remote: upstream
+      groups:
+        - optional

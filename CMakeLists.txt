@@ -1834,6 +1834,42 @@ if(CONFIG_BUILD_OUTPUT_BIN)
   endif()
 endif()
 
+if(CONFIG_COMPRESS_OUTPUT_BIN)
+  set(KERNEL_BIN_LZ4_NAME ${KERNEL_BIN_NAME}.lz4)
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/compress_bin.py
+            --input ${KERNEL_BIN_NAME}
+            --output ${KERNEL_BIN_LZ4_NAME}
+  )
+  list(APPEND
+    post_build_byproducts
+    ${KERNEL_BIN_LZ4_NAME}
+  )
+  set(BYPRODUCT_KERNEL_BIN_LZ4_NAME "${PROJECT_BINARY_DIR}/${KERNEL_BIN_LZ4_NAME}"
+      CACHE FILEPATH "Kernel LZ4 compressed binary file" FORCE)
+endif()
+
+if(CONFIG_GENERATE_INC_FILE_FOR_TARGET)
+  message(WARNING "generating binary image")
+  if(CONFIG_COMPRESS_OUTPUT_BIN)
+    set(image_inc_input ${KERNEL_BIN_LZ4_NAME})
+  else()
+    set(image_inc_input ${KERNEL_BIN_NAME})
+  endif()
+  list(APPEND
+    post_build_commands
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/include/generated/bin
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/file2hex.py
+            --file ${PROJECT_BINARY_DIR}/${image_inc_input}
+            > ${PROJECT_BINARY_DIR}/include/generated/bin/image.inc
+  )
+  list(APPEND
+    post_build_byproducts
+    include/generated/bin/image.inc
+  )
+endif()
+
 if(CONFIG_BUILD_OUTPUT_UF2)
   if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
     set(code_address "${CONFIG_FLASH_BASE_ADDRESS}")

@@ -6,4 +6,7 @@ if SOC_NRF9280_CPUPPR
 config HAS_NORDIC_VPR_LAUNCHER_IMAGE
 	default y
 
+config HAS_NORDIC_COPROC_LAUNCHER_IMAGE
+	default y
+
 endif

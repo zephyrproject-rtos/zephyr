@@ -13,3 +13,4 @@ supported:
   - gpio
   - counter
 vendor: nordic
+sysbuild: true

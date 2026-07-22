@@ -1,0 +1,3 @@
+name: nordic-net
+append:
+  EXTRA_CONF_FILE: nordic-net.conf

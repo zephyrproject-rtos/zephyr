@@ -9,3 +9,9 @@ config VPR_LAUNCHER
 	  Include VPR launcher in build.
 	  VPR launcher is a minimal sample built for an ARM core that starts given VPR core.
 	  It is based on samples/basic/minimal with an appropriate snippet.
+
+config VPR_LAUNCHER_FROM_ARRAY
+	bool "VPR launcher from array"
+	help
+	  Use local array with VPR code instead of device tree partition.
+	  Can only be used for an application with a single VPR core.

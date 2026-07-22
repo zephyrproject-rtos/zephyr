@@ -23,4 +23,19 @@ config NORDIC_VPR_LAUNCHER_INIT_PRIORITY
 	help
 	  The init priority of the VPR coprocessor launcher.
 
+config NORDIC_VPR_LAUNCHER_FROM_ARRAY
+	bool "Use local array with VPR code instead of device tree partition"
+	help
+	  Use local array with VPR code instead of device tree partition.
+	  Can only be used for a single VPR core.
+
+config NORDIC_VPR_LAUNCHER_DECOMPRESS
+	bool "Decompress LZ4-compressed VPR image"
+	depends on NORDIC_VPR_LAUNCHER_FROM_ARRAY
+	select LZ4
+	help
+	  Decompress the embedded VPR image with LZ4 before loading it into
+	  execution memory. Requires the VPR application to be built with
+	  CONFIG_COMPRESS_OUTPUT_BIN so that image.inc contains compressed data.
+
 endif # NORDIC_VPR_LAUNCHER
