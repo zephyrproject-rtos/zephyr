@@ -545,6 +545,21 @@ static int decode_string_buf(const struct json_token *token, char *str, size_t s
 	return 0;
 }
 
+static int decode_string(const struct json_token *token, char **str)
+{
+
+	*token->end = '\0';
+	*str = token->start;
+
+	size_t len = strlen(*str)+1;
+	int ret = json_unescape_string(*str, *str, len, len);
+
+	if (ret < 0) {
+		return -EINVAL;
+	}
+	return 0;
+}
+
 static int decode_int32(const struct json_token *token, int32_t *num)
 {
 	/* FIXME: strtod() is not available in newlib/minimal libc,
@@ -984,10 +999,7 @@ static int64_t decode_value(struct json_obj *obj,
 	case JSON_TOK_STRING: {
 		char **str = field;
 
-		*value->end = '\0';
-		*str = value->start;
-
-		return 0;
+		return decode_string(value, str);
 	}
 	case JSON_TOK_STRING_BUF: {
 		char *str = field;
@@ -1976,9 +1988,7 @@ static int64_t decode_mixed_value(struct json_obj *obj,
 	case JSON_TOK_STRING: {
 		char **str_ptr = field;
 
-		*value->end = '\0';
-		*str_ptr = value->start;
-		return 0;
+		return decode_string(value, str_ptr);
 	}
 	case JSON_TOK_STRING_BUF: {
 		char *str_buf = field;
