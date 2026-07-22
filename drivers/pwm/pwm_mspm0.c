@@ -22,16 +22,16 @@
 LOG_MODULE_REGISTER(pwm_mspm0, CONFIG_PWM_LOG_LEVEL);
 
 /* capture and compare block count per timer */
-#define MSPM0_TIMER_CC_COUNT		2
-#define MSPM0_TIMER_CC_MAX		4
-#define MSPM0_CC_INTR_BIT_OFFSET	4
+#define MSPM_PWM_CC_COUNT		2
+#define MSPM_PWM_CC_MAX		4
+#define MSPM_CC_INTR_BIT_OFFSET	4
 
-enum mspm0_capture_mode {
-	CMODE_EDGE_TIME,
-	CMODE_PULSE_WIDTH
+enum pwm_mspm_cap_mode {
+	PWM_MSPM_CAP_EDGE_TIME,
+	PWM_MSPM_CAP_PULSE_WIDTH
 };
 
-struct pwm_mspm0_config {
+struct pwm_mspm_config {
 	const struct mspm0_sys_clock clock_subsys;
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
@@ -40,20 +40,20 @@ struct pwm_mspm0_config {
 #ifdef CONFIG_PWM_CAPTURE
 	void (*irq_config_func)(const struct device *dev);
 #endif
-	uint8_t	cc_idx[MSPM0_TIMER_CC_MAX];
+	uint8_t	cc_idx[MSPM_PWM_CC_MAX];
 	uint8_t cc_idx_cnt;
 	bool is_capture;
 };
 
-struct pwm_mspm0_data {
-	uint32_t pulse_cycle[MSPM0_TIMER_CC_MAX];
+struct pwm_mspm_data {
+	uint32_t pulse_cycle[MSPM_PWM_CC_MAX];
 	uint32_t period;
 	struct k_mutex lock;
 
 	DL_TIMER_PWM_MODE out_mode;
 #ifdef CONFIG_PWM_CAPTURE
 	uint32_t last_sample;
-	enum mspm0_capture_mode cmode;
+	enum pwm_mspm_cap_mode cmode;
 	pwm_capture_callback_handler_t callback;
 	pwm_flags_t flags;
 	void *user_data;
@@ -61,8 +61,8 @@ struct pwm_mspm0_data {
 #endif
 };
 
-static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config,
-				struct pwm_mspm0_data *data)
+static void mspm_pwm_setup_output(const struct pwm_mspm_config *config,
+				struct pwm_mspm_data *data)
 {
 	int i;
 	DL_Timer_PWMConfig pwmcfg = { 0 };
@@ -72,7 +72,7 @@ static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config,
 	pwmcfg.pwmMode = data->out_mode;
 
 	for (i = 0; i < config->cc_idx_cnt; i++) {
-		if (config->cc_idx[i] >= MSPM0_TIMER_CC_COUNT) {
+		if (config->cc_idx[i] >= MSPM_PWM_CC_COUNT) {
 			pwmcfg.isTimerWithFourCC = true;
 			break;
 		}
@@ -92,14 +92,14 @@ static void mspm0_setup_pwm_out(const struct pwm_mspm0_config *config,
 	DL_Timer_startCounter(config->base);
 }
 
-static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
+static int pwm_mspm_set_cycles(const struct device *dev, uint32_t channel,
 			       uint32_t period_cycles, uint32_t pulse_cycles,
 			       pwm_flags_t flags)
 {
-	const struct pwm_mspm0_config *config = dev->config;
-	struct pwm_mspm0_data *data = dev->data;
+	const struct pwm_mspm_config *config = dev->config;
+	struct pwm_mspm_data *data = dev->data;
 
-	if (channel >= MSPM0_TIMER_CC_MAX) {
+	if (channel >= MSPM_PWM_CC_MAX) {
 		LOG_ERR("Invalid channel");
 		return -EINVAL;
 	}
@@ -128,10 +128,10 @@ static int mspm0_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int mspm0_pwm_get_cycles_per_sec(const struct device *dev,
+static int pwm_mspm_get_cycles_per_sec(const struct device *dev,
 					uint32_t channel, uint64_t *cycles)
 {
-	const struct pwm_mspm0_config *config = dev->config;
+	const struct pwm_mspm_config *config = dev->config;
 	DL_Timer_ClockConfig clkcfg;
 	uint32_t clock_rate;
 	int ret;
@@ -156,10 +156,10 @@ static int mspm0_pwm_get_cycles_per_sec(const struct device *dev,
 }
 
 #ifdef CONFIG_PWM_CAPTURE
-#define MSPM0_CTRCTL_CAC_CCCTL_ACOND(x) (x << 10)
+#define MSPM_CTRCTL_CAC_CCCTL_ACOND(x) (x << 10)
 
-static void mspm0_set_combined_mode(const struct pwm_mspm0_config *config,
-				    struct pwm_mspm0_data *data)
+static void mspm_pwm_set_combined_mode(const struct pwm_mspm_config *config,
+				    struct pwm_mspm_data *data)
 {
 	DL_Timer_setLoadValue(config->base, data->period);
 	DL_Timer_setCaptureCompareInput(config->base, 0,
@@ -185,18 +185,18 @@ static void mspm0_set_combined_mode(const struct pwm_mspm0_config *config,
 
 	DL_Timer_setCounterControl(config->base,
 				   DL_TIMER_CZC_CCCTL0_ZCOND,
-				   MSPM0_CTRCTL_CAC_CCCTL_ACOND(config->cc_idx[0]),
+				   MSPM_CTRCTL_CAC_CCCTL_ACOND(config->cc_idx[0]),
 				   DL_TIMER_CLC_CCCTL0_LCOND);
 
 	DL_Timer_setCounterRepeatMode(config->base, DL_TIMER_REPEAT_MODE_ENABLED);
 	DL_Timer_setCounterMode(config->base, DL_TIMER_COUNT_MODE_DOWN);
 }
 
-static void mspm0_setup_capture(const struct device *dev,
-				const struct pwm_mspm0_config *config,
-				struct pwm_mspm0_data *data)
+static void mspm_pwm_setup_capture(const struct device *dev,
+				const struct pwm_mspm_config *config,
+				struct pwm_mspm_data *data)
 {
-	if (data->cmode == CMODE_EDGE_TIME) {
+	if (data->cmode == PWM_MSPM_CAP_EDGE_TIME) {
 		DL_Timer_CaptureConfig cc_cfg = { 0 };
 
 		cc_cfg.inputChan = config->cc_idx[0];
@@ -205,21 +205,21 @@ static void mspm0_setup_capture(const struct device *dev,
 
 		DL_Timer_initCaptureMode(config->base, &cc_cfg);
 	} else {
-		mspm0_set_combined_mode(config, data);
+		mspm_pwm_set_combined_mode(config, data);
 	}
 
 	DL_Timer_enableClock(config->base);
 	config->irq_config_func(dev);
 }
 
-static int mspm0_capture_configure(const struct device *dev,
+static int pwm_mspm_configure_capture(const struct device *dev,
 				   uint32_t channel,
 				   pwm_flags_t flags,
 				   pwm_capture_callback_handler_t cb,
 				   void *user_data)
 {
-	const struct pwm_mspm0_config *config = dev->config;
-	struct pwm_mspm0_data *data = dev->data;
+	const struct pwm_mspm_config *config = dev->config;
+	struct pwm_mspm_data *data = dev->data;
 	uint32_t intr_mask;
 
 	if (config->is_capture != true ||
@@ -233,13 +233,13 @@ static int mspm0_capture_configure(const struct device *dev,
 	case PWM_CAPTURE_TYPE_BOTH:
 	case PWM_CAPTURE_TYPE_PERIOD:
 		/* CCD1/CCD0 event for capture index 0/1 respectively */
-		intr_mask = BIT(!(config->cc_idx[0]) + MSPM0_CC_INTR_BIT_OFFSET) |
+		intr_mask = BIT(!(config->cc_idx[0]) + MSPM_CC_INTR_BIT_OFFSET) |
 			    DL_TIMER_INTERRUPT_ZERO_EVENT;
 		break;
 
 	default:
 		/* edge time event */
-		intr_mask = BIT(config->cc_idx[0] + MSPM0_CC_INTR_BIT_OFFSET);
+		intr_mask = BIT(config->cc_idx[0] + MSPM_CC_INTR_BIT_OFFSET);
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -260,10 +260,10 @@ static int mspm0_capture_configure(const struct device *dev,
 	return 0;
 }
 
-static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
+static int pwm_mspm_enable_capture(const struct device *dev, uint32_t channel)
 {
-	const struct pwm_mspm0_config *config = dev->config;
-	struct pwm_mspm0_data *data = dev->data;
+	const struct pwm_mspm_config *config = dev->config;
+	struct pwm_mspm_data *data = dev->data;
 	uint32_t intr_mask;
 
 	if (config->is_capture != true ||
@@ -282,13 +282,13 @@ static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
 	case PWM_CAPTURE_TYPE_BOTH:
 	case PWM_CAPTURE_TYPE_PERIOD:
 		/* CCD1/CCD0 event for capture index 0/1 respectively */
-		intr_mask = BIT(!(config->cc_idx[0]) + MSPM0_CC_INTR_BIT_OFFSET) |
+		intr_mask = BIT(!(config->cc_idx[0]) + MSPM_CC_INTR_BIT_OFFSET) |
 			    DL_TIMER_INTERRUPT_ZERO_EVENT;
 		break;
 
 	default:
 		/* edge time event */
-		intr_mask = BIT(config->cc_idx[0] + MSPM0_CC_INTR_BIT_OFFSET);
+		intr_mask = BIT(config->cc_idx[0] + MSPM_CC_INTR_BIT_OFFSET);
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -309,10 +309,10 @@ static int mspm0_capture_enable(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int mspm0_capture_disable(const struct device *dev, uint32_t channel)
+static int pwm_mspm_disable_capture(const struct device *dev, uint32_t channel)
 {
-	const struct pwm_mspm0_config *config = dev->config;
-	struct pwm_mspm0_data *data = dev->data;
+	const struct pwm_mspm_config *config = dev->config;
+	struct pwm_mspm_data *data = dev->data;
 	uint32_t intr_mask;
 
 	if (config->is_capture != true ||
@@ -326,13 +326,13 @@ static int mspm0_capture_disable(const struct device *dev, uint32_t channel)
 	case PWM_CAPTURE_TYPE_BOTH:
 	case PWM_CAPTURE_TYPE_PERIOD:
 		/* CCD1/CCD0 event for capture index 0/1 respectively */
-		intr_mask = BIT(!(config->cc_idx[0]) + MSPM0_CC_INTR_BIT_OFFSET) |
+		intr_mask = BIT(!(config->cc_idx[0]) + MSPM_CC_INTR_BIT_OFFSET) |
 			    DL_TIMER_INTERRUPT_ZERO_EVENT;
 		break;
 
 	default:
 		/* edge time event */
-		intr_mask = BIT(config->cc_idx[0] + MSPM0_CC_INTR_BIT_OFFSET);
+		intr_mask = BIT(config->cc_idx[0] + MSPM_CC_INTR_BIT_OFFSET);
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -346,10 +346,10 @@ static int mspm0_capture_disable(const struct device *dev, uint32_t channel)
 }
 #endif
 
-static int pwm_mspm0_init(const struct device *dev)
+static int pwm_mspm_init(const struct device *dev)
 {
-	const struct pwm_mspm0_config *config = dev->config;
-	struct pwm_mspm0_data *data = dev->data;
+	const struct pwm_mspm_config *config = dev->config;
+	struct pwm_mspm_data *data = dev->data;
 	int err;
 
 	k_mutex_init(&data->lock);
@@ -374,30 +374,30 @@ static int pwm_mspm0_init(const struct device *dev)
 				(DL_Timer_ClockConfig *)&config->clk_config);
 	if (config->is_capture) {
 #ifdef CONFIG_PWM_CAPTURE
-		mspm0_setup_capture(dev, config, data);
+		mspm_pwm_setup_capture(dev, config, data);
 #endif
 	} else {
-		mspm0_setup_pwm_out(config, data);
+		mspm_pwm_setup_output(config, data);
 	}
 
 	return 0;
 }
 
-static DEVICE_API(pwm, pwm_mspm0_driver_api) = {
-	.set_cycles = mspm0_pwm_set_cycles,
-	.get_cycles_per_sec = mspm0_pwm_get_cycles_per_sec,
+static DEVICE_API(pwm, pwm_mspm_driver_api) = {
+	.set_cycles = pwm_mspm_set_cycles,
+	.get_cycles_per_sec = pwm_mspm_get_cycles_per_sec,
 #ifdef CONFIG_PWM_CAPTURE
-	.configure_capture = mspm0_capture_configure,
-	.enable_capture = mspm0_capture_enable,
-	.disable_capture = mspm0_capture_disable,
+	.configure_capture = pwm_mspm_configure_capture,
+	.enable_capture = pwm_mspm_enable_capture,
+	.disable_capture = pwm_mspm_disable_capture,
 #endif
 };
 
 #ifdef CONFIG_PWM_CAPTURE
-static void mspm0_cc_isr(const struct device *dev)
+static void mspm_pwm_cc_isr(const struct device *dev)
 {
-	const struct pwm_mspm0_config *config = dev->config;
-	struct pwm_mspm0_data *data = dev->data;
+	const struct pwm_mspm_config *config = dev->config;
+	struct pwm_mspm_data *data = dev->data;
 	uint32_t status;
 	uint32_t cc1 = 0;
 	uint32_t cc0 = 0;
@@ -431,14 +431,14 @@ static void mspm0_cc_isr(const struct device *dev)
 
 	/* ignore the unsynced counter value for pwm mode */
 	if (data->is_synced == false &&
-	    data->cmode != CMODE_EDGE_TIME) {
+	    data->cmode != PWM_MSPM_CAP_EDGE_TIME) {
 		data->last_sample = cc1;
 		data->is_synced = true;
 		return;
 	}
 
 	if (data->flags & PWM_CAPTURE_TYPE_PULSE ||
-	    data->cmode == CMODE_EDGE_TIME) {
+	    data->cmode == PWM_MSPM_CAP_EDGE_TIME) {
 		cc0 = DL_Timer_getCaptureCompareValue(config->base,
 						      config->cc_idx[0]);
 	}
@@ -464,49 +464,50 @@ static void mspm0_cc_isr(const struct device *dev)
 	data->last_sample = cc1;
 }
 
-#define MSP_CC_IRQ_REGISTER(n)							\
-	static void mspm0_cc_## n ##_irq_register(const struct device *dev)	\
+#define MSPM_PWM_IRQ_REGISTER(n)							\
+	static void mspm_pwm_##n##_irq_register(const struct device *dev)	\
 	{									\
-		const struct pwm_mspm0_config *config = dev->config;		\
+		const struct pwm_mspm_config *config = dev->config;		\
 		if (!config->is_capture) {					\
 			return;							\
 		}								\
 		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(n)),				\
-			    DT_IRQ(DT_INST_PARENT(n), priority), mspm0_cc_isr,	\
+			    DT_IRQ(DT_INST_PARENT(n), priority), mspm_pwm_cc_isr,	\
 			    DEVICE_DT_INST_GET(n), 0);				\
 		irq_enable(DT_IRQN(DT_INST_PARENT(n)));				\
 	}
 #else
-#define MSP_CC_IRQ_REGISTER(n)
+#define MSPM_PWM_IRQ_REGISTER(n)
 #endif
 
-#define MSPM0_PWM_MODE(mode)		DT_CAT(DL_TIMER_PWM_MODE_, mode)
-#define MSPM0_CAPTURE_MODE(mode)	DT_CAT(CMODE_, mode)
-#define MSPM0_CLK_DIV(div)		DT_CAT(DL_TIMER_CLOCK_DIVIDE_, div)
+#define MSPM_PWM_MODE(mode)		DT_CAT(DL_TIMER_PWM_MODE_, mode)
+#define MSPM_CAP_MODE(mode)	DT_CAT(CMODE_, mode)
+#define MSPM_CLK_DIV(div)		DT_CAT(DL_TIMER_CLOCK_DIVIDE_, div)
 
-#define MSPM0_CC_IDX_ARRAY(node_id, prop, idx)	\
+#define MSPM_CC_IDX_ARRAY(node_id, prop, idx)	\
 				 DT_PROP_BY_IDX(node_id, prop, idx),
 
-#define MSPM0_PWM_DATA(n)	\
-	.out_mode = MSPM0_PWM_MODE(DT_STRING_TOKEN(DT_DRV_INST(n),		\
+#define MSPM_PWM_DATA(n)	\
+	.out_mode = MSPM_PWM_MODE(DT_STRING_TOKEN(DT_DRV_INST(n),		\
 				   ti_pwm_mode)),
 
-#define MSPM0_CAPTURE_DATA(n)		\
+#define MSPM_CAPTURE_DATA(n)		\
 	IF_ENABLED(CONFIG_PWM_CAPTURE,	\
-	(.cmode = MSPM0_CAPTURE_MODE(DT_STRING_TOKEN(DT_DRV_INST(n), ti_cc_mode)),))
+	(.cmode = MSPM_CAP_MODE(DT_STRING_TOKEN(DT_DRV_INST(n), ti_cc_mode)),))
 
-#define PWM_DEVICE_INIT_MSPM0(n)						\
-	static struct pwm_mspm0_data pwm_mspm0_data_ ## n = {			\
+#define PWM_DEVICE_INIT_MSPM(n)						\
+	static struct pwm_mspm_data pwm_mspm_data_##n = {			\
 		.period = DT_PROP(DT_DRV_INST(n), ti_period),			\
 		COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_pwm_mode),	\
-			    (MSPM0_PWM_DATA(n)), ())				\
+			    (MSPM_PWM_DATA(n)), ())				\
 		COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_cc_mode),	\
-			    (MSPM0_CAPTURE_DATA(n)), ())			\
+			    (MSPM_CAPTURE_DATA(n)), ())			\
 	};									\
 	PINCTRL_DT_INST_DEFINE(n);						\
-	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_cc_mode), (MSP_CC_IRQ_REGISTER(n)), ())	\
+	COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_cc_mode),	\
+		    (MSPM_PWM_IRQ_REGISTER(n)), ())				\
 										\
-	static const struct pwm_mspm0_config pwm_mspm0_config_ ## n = {		\
+	static const struct pwm_mspm_config pwm_mspm_config_##n = {		\
 		.base = (GPTIMER_Regs *)DT_REG_ADDR(DT_INST_PARENT(n)),		\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_IDX(		\
 						DT_INST_PARENT(n), 0)),		\
@@ -516,29 +517,29 @@ static void mspm0_cc_isr(const struct device *dev)
 		},								\
 		.cc_idx = {							\
 			DT_INST_FOREACH_PROP_ELEM(n, ti_cc_index,		\
-						  MSPM0_CC_IDX_ARRAY)		\
+						  MSPM_CC_IDX_ARRAY)		\
 		},								\
 		.cc_idx_cnt = DT_INST_PROP_LEN(n, ti_cc_index),			\
 		.clk_config = {							\
 			.clockSel = MSPM0_CLOCK_PERIPH_REG_MASK(		\
 				DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n),	\
 						      0, clk)),			\
-			.divideRatio = MSPM0_CLK_DIV(DT_PROP(DT_INST_PARENT(n),	\
+			.divideRatio = MSPM_CLK_DIV(DT_PROP(DT_INST_PARENT(n),	\
 						     ti_clk_div)),		\
 			.prescale = DT_PROP(DT_INST_PARENT(n), ti_clk_prescaler),\
 		},								\
 		.is_capture = DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_cc_mode),	\
 		IF_ENABLED(CONFIG_PWM_CAPTURE,					\
 		(.irq_config_func = COND_CODE_1(DT_NODE_HAS_PROP(DT_DRV_INST(n), ti_cc_mode),	\
-						(mspm0_cc_## n ##_irq_register), (NULL))))	\
+						(mspm_pwm_##n##_irq_register), (NULL))))	\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(n,						\
-			      pwm_mspm0_init,					\
+			      pwm_mspm_init,					\
 			      NULL,						\
-			      &pwm_mspm0_data_ ## n,				\
-			      &pwm_mspm0_config_ ## n,				\
+			      &pwm_mspm_data_##n,				\
+			      &pwm_mspm_config_##n,				\
 			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY,		\
-			      &pwm_mspm0_driver_api);
+			      &pwm_mspm_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT_MSPM0)
+DT_INST_FOREACH_STATUS_OKAY(PWM_DEVICE_INIT_MSPM)
