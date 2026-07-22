@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  subsys.morse.api:
+    tags:
+      - morse
+      - subsys
+    platform_allow:
+      - native_sim
