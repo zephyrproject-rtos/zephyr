@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config INFINEON_MXS40_MPC
+	bool "Infineon MXS40 Memory Protection Controller driver"
+	depends on ARM_SECURE_FIRMWARE
+	default y if DT_HAS_INFINEON_MXS40_MPC_ENABLED
+	select MPC
+	help
+	  Enables the devicetree-driven driver for the Infineon MXS40 Memory
+	  Protection Controller.  mpc_configure_all() programs each enabled
+	  "infineon,mxs40-mpc" node's violation response and controlled memory
+	  regions from the protection-context configuration expressed in the DTS.

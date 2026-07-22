@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon MXS40 Peripheral Protection Controller (PPC)
+
+description: |
+  Infineon MXS40 PPC hardware block. Configures access rights for
+  peripheral bus slots governed by a single PPC instance (PERI0 or PERI1).
+
+  nonsecure-regions lists the specific cy_en_prot_region_t enum values (as
+  integers) that are opened for non-secure access. The driver calls
+  Cy_Ppc_ConfigAttrib() (secAttribute=NON_SECURE, privAttribute=NONPRIV) and
+  Cy_Ppc_SetPcMask() for each listed region. Only the curated set of regions
+  the non-secure world actually needs (e.g. the console SCB) should be listed;
+  sweeping every region bus-faults on self-protection / SROM-locked slots.
+  This mirrors the Infineon BSP "M33_M55" non-secure PPC domain used by TF-M.
+
+  Example (PPC0, opening the PERI0 console SCB path to NS):
+
+    ppc0: ppc@52020000 {
+        compatible = "infineon,mxs40-ppc";
+        reg = <0x52020000 0x2000>;
+        /* MAIN, GR1..GR5 groups, PCLK0_MAIN, SCB2 (console) */
+        nonsecure-regions = <0x00 0x02 0x03 0x04 0x05 0x06 0x10 0x130>;
+        pc-mask = <0xE6>;
+        status = "okay";
+    };
+
+compatible: "infineon,mxs40-ppc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  nonsecure-regions:
+    type: array
+    required: true
+    description: |
+      List of cy_en_prot_region_t integer values describing the peripheral
+      protection regions to configure for non-secure access.
+
+  pc-mask:
+    type: int
+    default: 0xE6
+    description: |
+      Bitmask of protection contexts (PCs 0-7) that are granted access.
+      Default 0xE6 matches the Infineon BSP / TF-M non-secure domain
+      (PC1, PC2, PC5, PC6, PC7; the non-secure CM33 runs as PC5).

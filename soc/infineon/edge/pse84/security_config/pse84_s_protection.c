@@ -254,10 +254,18 @@ const cy_stc_ppc_attribute_t cycfg_unused_ppc_cfg = {
 
 cy_rslt_t cy_ppc_unsecure_init(PPC_Type *base, cy_en_prot_region_t start, cy_en_prot_region_t end)
 {
-	cy_rslt_t ret = Cy_Ppc_InitPpc(base, CY_PPC_BUS_ERR);
+	/* Skip Cy_Ppc_InitPpc (CTL write): PSE84 restricts PPC CTL writes to SROM PC.
+	 * Leave the SROM-configured response (RZWI default) as-is.
+	 */
+	cy_rslt_t ret = CY_PPC_SUCCESS;
 
 	for (cy_en_prot_region_t region = start; ret == CY_PPC_SUCCESS && region <= end; region++) {
-		/* Not sure why yet, but writing to these two cause a fault. Skip for now... */
+		/*
+		 * Skip PPC1's own self-protection regions.  Like the CTL register
+		 * above, these slots are owned by the SROM protection context, so
+		 * writing them from the Secure context raises a bus fault; they keep
+		 * their boot-ROM configuration.
+		 */
 		if (region == PROT_PERI1_PPC1_PPC_PPC_SECURE ||
 		    region == PROT_PERI1_PPC1_PPC_PPC_NONSECURE) {
 			continue;

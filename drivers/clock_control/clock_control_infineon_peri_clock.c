@@ -47,6 +47,17 @@ static inline en_clk_dst_t peri_pclk_build_en_clk_dst(uint8_t output, uint8_t gr
 
 static int ifx_cat1_peri_clock_init(const struct device *dev)
 {
+#if defined(CONFIG_SOC_SERIES_PSE84) && defined(CONFIG_ARM_FIRMWARE_USES_SECURE_CALLS)
+	/*
+	 * Minimal non-secure image: a Secure image (which owns the PERI/clock
+	 * block) has already configured every peripheral clock divider, including
+	 * the one feeding the shared console SCB.  Re-programming the divider here
+	 * would both touch Secure-owned PERI registers (bus fault) and change the
+	 * live console baud rate.  Leave the Secure-configured clocks untouched.
+	 */
+	ARG_UNUSED(dev);
+	return 0;
+#else
 	struct ifx_peri_clock_data *const data = dev->data;
 	en_clk_dst_t clk_dst;
 
@@ -85,6 +96,7 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 	}
 
 	return 0;
+#endif /* CONFIG_SOC_SERIES_PSE84 && CONFIG_ARM_FIRMWARE_USES_SECURE_CALLS */
 }
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)

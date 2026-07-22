@@ -6,6 +6,7 @@
  */
 
 #include <mem.h>
+#include <zephyr/dt-bindings/ppc/infineon-edge-ppc.h>
 
 / {
 	sram0: sram0@34000000 {
@@ -1413,6 +1414,226 @@
 			mmio-reg-bit-pos = <5>;
 			mmio-peri-hf-src = <1>;
 			mmio-peri-div = <3>;
+		};
+
+		/*
+		 * Memory Protection Controllers (MPC)
+		 *
+		 * Each node covers one MPC hardware block. Child nodes describe
+		 * the (offset, size) ranges within the controlled memory, with
+		 * pc-configs listing the (pc, secure, access) 3-tuples that
+		 * govern which protection contexts may access each range.
+		 *
+		 * A "pc" (protection context) is the identity of a bus master: the
+		 * MPC grants that master access to the region.  On PSE84:
+		 *   PC2 = CM33 Secure, PC5 = CM33 Non-Secure, PC6 = CM55,
+		 *   PC7 = debug/DAP.  (The "M33_M55" non-secure domain uses
+		 *   pc-mask 0xE6 = PC1,2,5,6,7.)
+		 *
+		 * pc-configs encoding (per cy_stc_mpc_rot_cfg_t):
+		 *   pc     : 2, 5, 6, or 7 (see above)
+		 *   secure : 0 = Secure,  1 = Non-Secure  (cy_en_mpc_sec_attr_t)
+		 *   access : 0 = none, 1 = R, 2 = W, 3 = RW  (cy_en_mpc_access_attr_t)
+		 */
+
+		/* RRAMC0 MPC - RRAM requires separate SROM-level init; skip all auto-config */
+		mpc_rram0: mpc@52211000 {
+			compatible = "infineon,mxs40-mpc";
+			reg = <0x52211000 0x1000>;
+			skip-auto-config;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			/* M33-S: PC2/PC7 Secure RW */
+			region@11000 {
+				reg = <0x00011000 0x0004A000>;
+				pc-configs = <2 0 3  7 0 3>;
+			};
+
+			/* M33-M55 shared: PC2/PC5/PC6/PC7 Non-Secure RW */
+			region@5b000 {
+				reg = <0x0005B000 0x00008000>;
+				pc-configs = <2 1 3  5 1 3  6 1 3  7 1 3>;
+			};
+		};
+
+		/* RAMC0 MPC - SRAM bank 0 */
+		mpc_ramc0: mpc@52234000 {
+			compatible = "infineon,mxs40-mpc";
+			reg = <0x52234000 0x1000>;
+			violation-response = "bus-error";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			/* M33-S: PC2/PC7 Secure RW */
+			region@1000 {
+				reg = <0x00001000 0x00057000>;
+				pc-configs = <2 0 3  7 0 3>;
+			};
+
+			/* M33-NS: PC2/PC5/PC7 Non-Secure RW */
+			region@58000 {
+				reg = <0x00058000 0x00028000>;
+				pc-configs = <2 1 3  5 1 3  7 1 3>;
+			};
+		};
+
+		/* RAMC1 MPC - SRAM bank 1 */
+		mpc_ramc1: mpc@52244000 {
+			compatible = "infineon,mxs40-mpc";
+			reg = <0x52244000 0x1000>;
+			violation-response = "bus-error";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			/* M33-NS: PC2/PC5/PC7 Non-Secure RW */
+			region@0 {
+				reg = <0x00000000 0x0003D000>;
+				pc-configs = <2 1 3  5 1 3  7 1 3>;
+			};
+
+			/* M33-M55 shared: PC2/PC5/PC6/PC7 Non-Secure RW */
+			region@3d000 {
+				reg = <0x0003D000 0x00043000>;
+				pc-configs = <2 1 3  5 1 3  6 1 3  7 1 3>;
+			};
+		};
+
+		/*
+		 * SMIF0 cache AHB MPC - external flash cache path.
+		 * SMIF0 has two MPCs; the names mirror the hardware blocks:
+		 *   mpc_smif0_cache = SMIF0_CACHE_BLOCK_CACHEBLK_AHB_MPC0 @ 0x54454000
+		 *   mpc_smif0_axi   = SMIF0_CORE_AXI_MPC0               @ 0x54463000
+		 */
+		mpc_smif0_cache: mpc@54454000 {
+			compatible = "infineon,mxs40-mpc";
+			reg = <0x54454000 0x1000>;
+			violation-response = "bus-error";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			/* M33-S: PC2/PC7 Secure RW */
+			region@100000 {
+				reg = <0x00100000 0x00200000>;
+				pc-configs = <2 0 3  7 0 3>;
+			};
+
+			/* M33-NS: PC2/PC5/PC7 Non-Secure RW.
+			 * bus-nonsecure marks these blocks Non-Secure in the
+			 * non-ROT (IDAU/BXNS) security-attribute LUT so the NS
+			 * image in this flash is reachable from the NS world.
+			 */
+			region@300000 {
+				reg = <0x00300000 0x00240000>;
+				pc-configs = <2 1 3  5 1 3  7 1 3>;
+				bus-nonsecure;
+			};
+
+			/* M55: PC2/PC6/PC7 Non-Secure RW */
+			region@500000 {
+				reg = <0x00500000 0x00300000>;
+				pc-configs = <2 1 3  6 1 3  7 1 3>;
+			};
+		};
+
+		/* SMIF0 core AXI MPC - external flash AXI path */
+		mpc_smif0_axi: mpc@54463000 {
+			compatible = "infineon,mxs40-mpc";
+			reg = <0x54463000 0x1000>;
+			violation-response = "bus-error";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			/* M33-S: PC2/PC7 Secure RW */
+			region@100000 {
+				reg = <0x00100000 0x00200000>;
+				pc-configs = <2 0 3  7 0 3>;
+			};
+
+			/* M33-NS: PC2/PC5/PC7 Non-Secure RW */
+			region@300000 {
+				reg = <0x00300000 0x00240000>;
+				pc-configs = <2 1 3  5 1 3  7 1 3>;
+			};
+
+			/* M55: PC2/PC6/PC7 Non-Secure RW */
+			region@500000 {
+				reg = <0x00500000 0x00300000>;
+				pc-configs = <2 1 3  6 1 3  7 1 3>;
+			};
+		};
+
+		/* SOCMEM SRAM MPC - large SoC memory */
+		mpc_socmem: mpc@54642000 {
+			compatible = "infineon,mxs40-mpc";
+			reg = <0x54642000 0x1000>;
+			violation-response = "bus-error";
+			infineon,enable-socmem;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			/* M55: PC2/PC6/PC7 Non-Secure RW */
+			region@0 {
+				reg = <0x00000000 0x00040000>;
+				pc-configs = <2 1 3  6 1 3  7 1 3>;
+			};
+
+			/* M33-M55 shared: PC2/PC5/PC6/PC7 Non-Secure RW */
+			region@40000 {
+				reg = <0x00040000 0x004C0000>;
+				pc-configs = <2 1 3  5 1 3  6 1 3  7 1 3>;
+			};
+		};
+
+		/*
+		 * Peripheral Protection Controllers (PPC)
+		 *
+		 * nonsecure-regions lists the cy_en_prot_region_t region indices to
+		 * open for NS access, mirroring the Infineon BSP / TF-M "M33_M55"
+		 * non-secure PPC domain (pc-mask 0xE6, NON_SECURE/NONPRIV).  Only the
+		 * console SCB path is opened; a full sweep bus-faults on
+		 * self-protection / SROM-locked slots.
+		 *
+		 * The PROT_PERI*_* names come from <zephyr/dt-bindings/ppc/
+		 * infineon-edge-ppc.h> (mirroring the HAL pse84_config.h enum).  A
+		 * future enhancement could reference peripheral nodes directly
+		 * (e.g. nonsecure-peripherals = <&scb2>) by giving each peripheral its
+		 * PROT region and having the driver deref the phandles.
+		 */
+
+		/* PPC0 - PERI0 peripheral bus (MAIN, GR1..GR5, PCLK0, console SCB2). */
+		ppc0: ppc@52020000 {
+			compatible = "infineon,mxs40-ppc";
+			reg = <0x52020000 0x2000>;
+			nonsecure-regions = <PROT_PERI0_MAIN
+					     PROT_PERI0_GR1_GROUP
+					     PROT_PERI0_GR2_GROUP
+					     PROT_PERI0_GR3_GROUP
+					     PROT_PERI0_GR4_GROUP
+					     PROT_PERI0_GR5_GROUP
+					     PROT_PERI0_PERI_PCLK0_MAIN
+					     PROT_PERI0_SCB2>;
+			pc-mask = <0xE6>;
+			status = "okay";
+		};
+
+		/* PPC1 - PERI1 peripheral bus. The console SCB is on PERI0/PPC0;
+		 * PPC1 is left disabled until a peripheral there needs NS access.
+		 * (PERI1 region indices are offset by 0x10000000, so PROT_PERI1_MAIN
+		 * == 0x10000000 — see infineon-edge-ppc.h.)
+		 */
+		ppc1: ppc@54020000 {
+			compatible = "infineon,mxs40-ppc";
+			reg = <0x54020000 0x2000>;
+			nonsecure-regions = <PROT_PERI1_MAIN>;
+			pc-mask = <0xE6>;
+			status = "disabled";
 		};
 	};
 };

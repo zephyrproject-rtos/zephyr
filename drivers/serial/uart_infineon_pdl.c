@@ -1294,6 +1294,23 @@ static int ifx_cat1_uart_init(const struct device *dev)
 	cy_rslt_t result;
 	int ret;
 
+#if defined(CONFIG_SOC_SERIES_PSE84) && defined(CONFIG_ARM_FIRMWARE_USES_SECURE_CALLS)
+	/*
+	 * Minimal non-secure image: the Secure image already muxed the pins, set
+	 * this SCB's peripheral clock, and ran Cy_SCB_UART_Init + Enable on it (it
+	 * is the shared console SCB).  Repeating any of that from NS faults
+	 * (HSIOM / PERI clock are Secure-owned and not opened to PC5) or resets the
+	 * live console.  poll_out() uses Cy_SCB_UART_Put(reg_addr, ...), which needs
+	 * only the already-enabled SCB, so the driver is fully functional for
+	 * console output without re-initialising the hardware.
+	 */
+	ARG_UNUSED(data);
+	ARG_UNUSED(config);
+	ARG_UNUSED(result);
+	ARG_UNUSED(ret);
+	return 0;
+#endif
+
 	/* Dedicate SCB HW resource */
 	data->hw_resource.type = IFX_RSC_SCB;
 	data->hw_resource.block_num = ifx_cat1_uart_get_hw_block_num(config->reg_addr);

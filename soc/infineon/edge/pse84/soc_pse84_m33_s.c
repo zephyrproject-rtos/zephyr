@@ -20,6 +20,26 @@
 
 #include <pse84_boot.h>
 
+#if defined(CONFIG_ARM_FIRMWARE_HAS_SECURE_CALLS)
+#include <zephyr/arch/secure_domain.h>
+#include <cmsis_core.h>
+
+/*
+ * PSE84 overrides only the vector-table write of the generic secure-domain
+ * backend; the world-crossing hand-off itself is the arch SVC flow selected by
+ * CONFIG_ARM_SECURE_DOMAIN_ENTRY_SVC (BXNS raises INVTRAN on this silicon).
+ *
+ * In addition to SCB_NS->VTOR, the Infineon CM33 wrapper keeps its own shadow
+ * of the Non-Secure vector table base (MXCM33 CM33_NS_VECTOR_TABLE_BASE) which
+ * must also be programmed.
+ */
+void z_arch_secure_domain_set_vector_table(uintptr_t base)
+{
+	SCB_NS->VTOR = (uint32_t)base;
+	MXCM33->CM33_NS_VECTOR_TABLE_BASE = (uint32_t)base;
+}
+#endif /* CONFIG_ARM_FIRMWARE_HAS_SECURE_CALLS */
+
 static void systeminit_enable_clocks(void)
 {
 	/* Void all return types to suppress compiler warnings about unused return values */
