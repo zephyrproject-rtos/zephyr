@@ -38,6 +38,8 @@
 #include <hal/nrf_mpc.h>
 #include <hal/nrf_lfxo.h>
 
+#include "wicr_setup.h"
+
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 #define LFXO_NODE DT_NODELABEL(lfxo)
@@ -190,6 +192,12 @@ void soc_early_init_hook(void)
 	mpc_configuration();
 	grtc_configuration();
 	ipct_configuration();
+#endif
+
+#if defined(CONFIG_SOC_NRF71_WICR)
+	if (wicr_setup() != 0) {
+		LOG_ERR("WICR programming failed");
+	}
 #endif
 
 #if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
