@@ -2,13 +2,11 @@ sample:
   name: Bluetooth HCI UART
   description: Allows Zephyr to provide Bluetooth connectivity via UART
 tests:
-  sample.bluetooth.hci_uart:
+  sample.bluetooth.hci_uart.ti_lpf3.ll_qual:
     harness: bluetooth
+    extra_configs:
+      - CONFIG_BT_CTLR_TI_LL_QUAL=y
     platform_allow:
-      - lp_em_cc2340r5
-      - lp_em_cc2340r5moda
-      - lp_em_cc2340r53
-      - lp_em_cc2340r53_wcsp
       - lp_em_cc2745r10_q1/cc2745r10_q1
       - lp_em_cc2745r10_q1/cc2755r10
       - lp_em_cc2755p10
@@ -16,18 +14,25 @@ tests:
     tags:
       - uart
       - bluetooth
-  sample.bluetooth.hci_uart.ti_lpf3.flowcontrol:
+  sample.bluetooth.hci_uart.ti_lpf3.ll_qual_flow_control:
     harness: bluetooth
+    extra_configs:
+      - CONFIG_BT_CTLR_TI_LL_QUAL=y
     platform_allow:
+      - lp_em_cc2340r5
+      - lp_em_cc2340r5moda
       - lp_em_cc2340r53
+      - lp_em_cc2340r53_wcsp
     extra_args: DTC_OVERLAY_FILE=./boards/ti_lpf3_flowcontrol.overlay
     tags:
       - uart
       - bluetooth
-  sample.bluetooth.hci_uart.ti_lpf3.test_mode:
+  sample.bluetooth.hci_uart.ti_lpf3.swat_tests:
     harness: bluetooth
     extra_configs:
       - CONFIG_BT_TI_SWAT_TEST_MODE=y
+      - CONFIG_BT_HCI_VS=y
+      - CONFIG_BT_CTLR_TI_LL_QUAL=y
     platform_allow:
       - lp_em_cc2340r5
       - lp_em_cc2340r5moda
