@@ -17,7 +17,7 @@
 
 #include "pcm1681.h"
 
-LOG_MODULE_REGISTER(pcm1681);
+LOG_MODULE_REGISTER(pcm1681, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 
 union pcm1681_bus_spec {
 	struct i2c_dt_spec i2c;
