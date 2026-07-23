@@ -244,3 +244,17 @@ family:
       cpuclusters:
       - name: m33
       - name: m55
+
+runners:
+  run_once:
+    '--erase':
+    - run: first
+      runners:
+      - all
+      groups:
+      # Qualifiers are matched as regexes, so a single pattern covers every
+      # pse8xx part number. The m33 and m55 cores of a die are flashed together,
+      # so grouping them here makes --erase run once, before the first core.
+      - qualifiers:
+        - pse8[0-9a-z]+/m33
+        - pse8[0-9a-z]+/m55
