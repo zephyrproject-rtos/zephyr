@@ -4436,6 +4436,8 @@ void k_work_queue_start(struct k_work_q *queue,
  * @param cfg optional additional configuration parameters.  Pass @c
  * NULL if not required, to use the defaults documented in
  * k_work_queue_config.
+ *
+ * @satisfies ZEP-SRS-38-41
  */
 void k_work_queue_run(struct k_work_q *queue, const struct k_work_queue_config *cfg);
 
@@ -4748,6 +4750,8 @@ int k_work_reschedule(struct k_work_delayable *dwork,
  *
  * @retval true if call had to wait for completion
  * @retval false if work was already idle
+ *
+ * @satisfies ZEP-SRS-38-42
  */
 bool k_work_flush_delayable(struct k_work_delayable *dwork,
 			    struct k_work_sync *sync);
@@ -4803,6 +4807,8 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork);
  * running handler to complete, or scheduled or submitted operations were
  * cancelled);
  * @retval false otherwise
+ *
+ * @satisfies ZEP-SRS-38-43
  */
 bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
 				  struct k_work_sync *sync);

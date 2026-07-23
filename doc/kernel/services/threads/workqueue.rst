@@ -112,7 +112,7 @@ Delayable Work
 **************
 
 .. design:: DESIGN-WORKQ-DELAYABLE Delayable Work
-   :fulfills: ZEP-SRS-38-20 ZEP-SRS-38-21 ZEP-SRS-38-22 ZEP-SRS-38-23 ZEP-SRS-38-24 ZEP-SRS-38-25 ZEP-SRS-38-26
+   :fulfills: ZEP-SRS-38-20 ZEP-SRS-38-21 ZEP-SRS-38-22 ZEP-SRS-38-23 ZEP-SRS-38-24 ZEP-SRS-38-25 ZEP-SRS-38-26 ZEP-SRS-38-35 ZEP-SRS-38-36
 
 An ISR or a thread may need to schedule a work item that is to be processed
 only after a specified period of time, rather than immediately. This can be
@@ -186,7 +186,7 @@ System Workqueue
 *****************
 
 .. design:: DESIGN-WORKQ-SYSTEM System Workqueue
-   :fulfills: ZEP-SRS-38-10
+   :fulfills: ZEP-SRS-38-10 ZEP-SRS-38-33
 
 The kernel defines a workqueue known as the *system workqueue*, which is
 available to any application or kernel code that requires workqueue support.
@@ -209,7 +209,7 @@ Defining and Controlling a Workqueue
 ====================================
 
 .. design:: DESIGN-WORKQ-MANAGEMENT Work Queue Management
-   :fulfills: ZEP-SRS-38-1 ZEP-SRS-38-2 ZEP-SRS-38-4 ZEP-SRS-38-5 ZEP-SRS-38-6 ZEP-SRS-38-7 ZEP-SRS-38-8
+   :fulfills: ZEP-SRS-38-1 ZEP-SRS-38-2 ZEP-SRS-38-4 ZEP-SRS-38-5 ZEP-SRS-38-6 ZEP-SRS-38-7 ZEP-SRS-38-8 ZEP-SRS-38-29 ZEP-SRS-38-30 ZEP-SRS-38-31 ZEP-SRS-38-32 ZEP-SRS-38-41
 
 A workqueue is defined using a variable of type :c:struct:`k_work_q`.
 The workqueue is initialized by defining the stack area used by its
@@ -258,7 +258,7 @@ Submitting a Work Item
 ======================
 
 .. design:: DESIGN-WORKQ-SUBMIT Work Item Submission
-   :fulfills: ZEP-SRS-38-9 ZEP-SRS-38-11 ZEP-SRS-38-12
+   :fulfills: ZEP-SRS-38-9 ZEP-SRS-38-11 ZEP-SRS-38-12 ZEP-SRS-38-34
 
 A work item is defined using a variable of type :c:struct:`k_work`.  It must
 be initialized by calling :c:func:`k_work_init`, unless it is defined using
@@ -381,7 +381,7 @@ Synchronizing with Work Items
 =============================
 
 .. design:: DESIGN-WORKQ-SYNC Synchronizing with Work Items
-   :fulfills: ZEP-SRS-38-15 ZEP-SRS-38-19
+   :fulfills: ZEP-SRS-38-15 ZEP-SRS-38-19 ZEP-SRS-38-42 ZEP-SRS-38-43
 
 While the state of both regular and delayable work items can be determined
 from any context using :c:func:`k_work_busy_get()` and
