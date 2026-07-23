@@ -709,7 +709,7 @@ class Reporting:
                     status = Fore.RED + status.upper() + Fore.RESET
                 logger.info(
                     f"{cnt}) {instance.testsuite.name} on {instance.platform.name}"
-                    f" {status} ({instance.reason})"
+                    f" ({instance.toolchain}) {status} ({instance.reason})"
                 )
                 example_instance = instance
             if cnt == count:

@@ -643,7 +643,7 @@ class TestRunner:
 
 
         assert re.search(
-            r'one_fail_one_pass.agnostic.group1.subgroup2 on qemu_x86/atom failed \(.*\)', err)
+            r'one_fail_one_pass.agnostic.group1.subgroup2 on qemu_x86/atom \(.*\) failed \(.*\)', err)
 
 
         select_search = re.search(select_regex, err, re.MULTILINE)
