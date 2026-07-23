@@ -6,6 +6,9 @@ common:
     - native_sim
   integration_platforms:
     - native_sim
+  integration_toolchains:
+    # Only build/run with gcc so we don't try to run in parallel (in the same port) with clang
+    - host/gnu
   harness: pytest
 tests:
   net.sockets.tls12.psk_kex:
