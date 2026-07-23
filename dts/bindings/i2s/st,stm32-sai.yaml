@@ -12,7 +12,7 @@ properties:
     required: true
 
   ranges:
-    type: array
+    type: compound
     required: true
 
   "#address-cells":
