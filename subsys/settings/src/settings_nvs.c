@@ -107,6 +107,10 @@ static uint16_t settings_nvs_cache_match(struct settings_nvs *cf, const char *na
 			continue;
 		}
 
+		if ((size_t)rc >= len) {
+			continue;
+		}
+
 		rdname[rc] = '\0';
 
 		if (strcmp(name, rdname)) {
@@ -191,6 +195,10 @@ static int settings_nvs_load(struct settings_store *cs,
 			continue;
 		}
 
+		if ((size_t)rc1 >= sizeof(name)) {
+			continue;
+		}
+
 		/* Found a name, this might not include a trailing \0 */
 		name[rc1] = '\0';
 		read_fn_arg.fs = &cf->cf_nvs;
@@ -264,6 +272,10 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 			if (rc == -ENOENT) {
 				write_name_id = name_id;
 			}
+			continue;
+		}
+
+		if ((size_t)rc >= sizeof(rdname)) {
 			continue;
 		}
 
