@@ -139,7 +139,7 @@ static void mcux_gau_adc_read_samples(struct k_work *work)
 	/* using this variable to prevent buffer overflow */
 	size_t length = data->results_length;
 
-	while ((ADC_GetFifoDataCount(base) > 0) && (--length > 0)) {
+	while ((ADC_GetFifoDataCount(base) > 0) && (length-- > 0)) {
 		*(data->results++) = (uint16_t)ADC_GetConversionResult(base);
 	}
 
@@ -206,9 +206,13 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 	}
 
 	/* Buffer must hold (number of samples per channel) * (number of channels) samples */
-	if ((sequence->options != NULL && sequence->buffer_size <
-	    ((1 + sequence->options->extra_samplings) * num_channels)) ||
-	    (sequence->options == NULL && sequence->buffer_size < num_channels)) {
+	size_t needed = num_channels * sizeof(uint16_t);
+
+	if (sequence->options != NULL) {
+		needed *= (1U + sequence->options->extra_samplings);
+	}
+
+	if (sequence->buffer_size < needed) {
 		LOG_ERR("Buffer size too small");
 		return -ENOMEM;
 	}
@@ -267,7 +271,7 @@ static int mcux_gau_adc_do_read(const struct device *dev,
 	}
 
 	data->results = sequence->buffer;
-	data->results_length = sequence->buffer_size;
+	data->results_length = sequence->buffer_size / sizeof(uint16_t);
 	data->repeat = sequence->buffer;
 
 	adc_context_start_read(&data->ctx, sequence);
