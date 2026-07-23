@@ -12,7 +12,7 @@
 #include <zephyr/devicetree/clocks.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(wolfson_wm8904);
+LOG_MODULE_REGISTER(wolfson_wm8904, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 
 #include "wm8904.h"
 
