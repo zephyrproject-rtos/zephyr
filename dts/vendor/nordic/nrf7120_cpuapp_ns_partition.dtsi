@@ -45,28 +45,28 @@
 			ranges = <0x0 0x0 DT_SIZE_K(416)>;
 		};
 
-		sram01_ns: sram0_ns@60000 {
+		sram01_ns: sram0_ns@68000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			/* Non-Secure RAM */
-			reg = <0x60000 DT_SIZE_K(256)>; /* 0x2008_0000 */
-			ranges = <0x0 0x60000 DT_SIZE_K(256)>;
+			reg = <0x68000 DT_SIZE_K(256)>; /* 0x2008_0000 */
+			ranges = <0x0 0x68000 DT_SIZE_K(256)>;
 		};
 
-		sram02_ns: sram0_ns@a0000 {
+		sram02_ns: sram0_ns@a8000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			/* Non-Secure RAM */
-			reg = <0xa0000 DT_SIZE_K(128)>; /* 0x200C_0000 */
-			ranges = <0x0 0xa0000 DT_SIZE_K(128)>;
+			reg = <0xa8000 DT_SIZE_K(128)>; /* 0x200C_0000 */
+			ranges = <0x0 0xa8000 DT_SIZE_K(128)>;
 		};
 
-		sram03_ns: sram0_ns@c0000 {
+		sram03_ns: sram0_ns@c8000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
 			/* Non-Secure RAM */
-			reg = <0xc0000 DT_SIZE_K(120)>; /* 0x200E_0000 */
-			ranges = <0x0 0xc0000 DT_SIZE_K(120)>;
+			reg = <0xc8000 DT_SIZE_K(120)>; /* 0x200E_0000 */
+			ranges = <0x0 0xc8000 DT_SIZE_K(120)>;
 		};
 	};
 };
