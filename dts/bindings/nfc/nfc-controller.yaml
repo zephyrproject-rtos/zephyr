@@ -1,0 +1,8 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: NFC Controller Common
+
+description: Fields shared by every NFC controller.
+
+include: [base.yaml]

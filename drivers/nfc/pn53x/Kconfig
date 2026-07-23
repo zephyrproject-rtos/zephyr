@@ -1,0 +1,23 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config NFC_PN53X
+	bool "NXP PN53x NFC controller"
+	default y
+	depends on DT_HAS_NXP_PN53X_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_NXP_PN53X),i2c)
+	help
+	  Enable the NXP PN53x (PN531/PN532/PN533) NFC controller, which resolves
+	  and activates targets in its own firmware.
+
+if NFC_PN53X
+
+config NFC_PN53X_POLL_STACK_SIZE
+	int "PN53x poll thread stack size"
+	default 2048
+	help
+	  Stack size of the per-device thread that runs offloaded target polling.
+	  The user target callback runs in this context, including any
+	  nfc_offload_exchange() calls, which use sizable frame buffers.
+
+endif # NFC_PN53X

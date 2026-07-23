@@ -1,0 +1,23 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP PN53x (PN531/PN532/PN533)
+
+description: NFC controller on I2C, resolving and activating targets in firmware.
+
+compatible: "nxp,pn53x"
+
+include: [nfc-controller.yaml, i2c-device.yaml]
+
+on-bus: i2c
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: RSTPD_N reset / power-down line (active low).
+
+  irq-gpios:
+    type: phandle-array
+    description: |
+      IRQ line the controller asserts when a response is ready. Optional; the
+      I2C backend falls back to polling the readiness status byte.
