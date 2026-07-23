@@ -1548,7 +1548,7 @@ static int pre_init_listener(void)
 
 	ARRAY_FOR_EACH(v6_ctx, i) {
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV6)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV6)) {
 			continue;
 		}
 
@@ -1580,7 +1580,7 @@ static int pre_init_listener(void)
 
 	ARRAY_FOR_EACH(v4_ctx, i) {
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV4)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV4)) {
 			continue;
 		}
 
@@ -1660,7 +1660,7 @@ static int init_listener(void)
 		}
 
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV6)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV6)) {
 			zsock_close(v6);
 			continue;
 		}
@@ -1762,7 +1762,7 @@ static int init_listener(void)
 		}
 
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV4)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV4)) {
 			zsock_close(v4);
 			continue;
 		}
