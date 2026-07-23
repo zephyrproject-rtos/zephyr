@@ -82,7 +82,7 @@ static struct net_context contexts[NET_MAX_CONTEXT];
 /* We need to lock the contexts array as these APIs are typically called
  * from applications which are usually run in task context.
  */
-static struct k_sem contexts_lock;
+static K_SEM_DEFINE(contexts_lock, 1, K_SEM_MAX_LIMIT);
 
 bool net_context_is_reuseaddr_set(struct net_context *context)
 {
@@ -4460,9 +4460,4 @@ const char *net_context_state(struct net_context *context)
 	}
 
 	return NULL;
-}
-
-void net_context_init(void)
-{
-	k_sem_init(&contexts_lock, 1, K_SEM_MAX_LIMIT);
 }
