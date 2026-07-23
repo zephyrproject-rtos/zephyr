@@ -941,3 +941,56 @@ endif # SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32S3
 endif # PM && TICKLESS_KERNEL
 
 endif # BT_ESP32
+
+config BT_HCI_ESP_HOSTED_MCU
+	bool
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP_HOSTED_MCU_BT_HCI_ENABLED
+	select ESP_HOSTED_MCU
+	help
+	  Bluetooth HCI driver for a controller on an external Espressif
+	  coprocessor running esp-hosted-mcu coprocessor firmware. The controller
+	  is reached as HCI H4 frames over the shared esp-hosted-mcu transport
+	  (SPI or SDIO), the same link used for Wi-Fi.
+
+	  The coprocessor is a separate part, so its Bluetooth capabilities
+	  are a property of that part rather than of this host. An ESP32-C2,
+	  C3, C5, C6, H2 or S3 coprocessor provides a Bluetooth 5.0 LE
+	  controller, while an ESP32 provides Bluetooth 4.2 LE and BR/EDR
+	  and has no extended advertising. Select the host features to match
+	  the coprocessor in use.
+
+if BT_HCI_ESP_HOSTED_MCU
+
+# Size each discardable buffer to hold a full extended advertising report.
+configdefault BT_BUF_EVT_DISCARDABLE_SIZE
+	default 255
+
+# Advertising reports arrive in bursts.
+configdefault BT_BUF_EVT_DISCARDABLE_COUNT
+	default 32
+
+# Keep the legacy advertising commands, since a Bluetooth 4.2 coprocessor
+# has no extended advertising.
+configdefault BT_EXT_ADV_LEGACY_SUPPORT
+	default y if BT_EXT_ADV
+
+# The driver send path frames every HCI packet on the tx processor thread.
+configdefault BT_TX_PROCESSOR_STACK_SIZE
+	default 2048
+
+config BT_HCI_ESP_HOSTED_MCU_RX_STACK_SIZE
+	int "esp-hosted-mcu HCI receive thread stack size"
+	default 2048
+	help
+	  Stack size for the thread that reconstructs and delivers received HCI
+	  frames. Delivery is moved off the shared esp-hosted-mcu receive thread so
+	  it cannot stall the Wi-Fi path while waiting on a host buffer pool.
+
+config BT_HCI_ESP_HOSTED_MCU_RX_PRIO
+	int "esp-hosted-mcu HCI receive thread cooperative priority"
+	default 7
+	help
+	  Cooperative priority for the esp-hosted-mcu HCI receive thread.
+
+endif # BT_HCI_ESP_HOSTED_MCU
