@@ -12,7 +12,6 @@ properties:
     required: true
 
   ranges:
-    type: array
     required: true
 
   "#address-cells":
