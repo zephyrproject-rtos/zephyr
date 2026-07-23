@@ -1687,6 +1687,81 @@ static inline int sensor_value_from_micro(struct sensor_value *val, int64_t micr
 }
 
 /**
+ * @brief Convert a centi-unit integer value to a Q31 fixed-point value.
+ *
+ * @param centi The input value in centi (1/100) SI units.
+ * @param shift The shift (number of integer bits) the value is encoded with (0 to 31).
+ * @return The converted Q31 fixed-point value, saturated to the q31 range.
+ */
+static inline q31_t sensor_q31_from_centi(int64_t centi, int8_t shift)
+{
+	int64_t scaled = (centi * (int64_t)BIT(31 - shift)) / 100LL;
+
+	return (q31_t)CLAMP(scaled, INT32_MIN, INT32_MAX);
+}
+/**
+ * @brief Convert a milli-unit integer value to a Q31 fixed-point value.
+ *
+ * @param milli The input value in milli (1/1000) SI units.
+ * @param shift The shift (number of integer bits) the value is encoded with (0 to 31).
+ * @return The converted Q31 fixed-point value, saturated to the q31 range.
+ */
+static inline q31_t sensor_q31_from_milli(int64_t milli, int8_t shift)
+{
+	int64_t scaled = (milli * (int64_t)BIT(31 - shift)) / 1000LL;
+
+	return (q31_t)CLAMP(scaled, INT32_MIN, INT32_MAX);
+}
+/**
+ * @brief Convert a micro-unit integer value to a Q31 fixed-point value.
+ *
+ * @param micro The input value in micro (1/1000000) SI units.
+ * @param shift The shift (number of integer bits) the value is encoded with (0 to 31).
+ * @return The converted Q31 fixed-point value, saturated to the q31 range.
+ */
+static inline q31_t sensor_q31_from_micro(int64_t micro, int8_t shift)
+{
+	int64_t scaled = (micro * (int64_t)BIT(31 - shift)) / 1000000LL;
+
+	return (q31_t)CLAMP(scaled, INT32_MIN, INT32_MAX);
+}
+
+/**
+ * @brief Convert a Q31 fixed-point value to a centi-unit integer value.
+ *
+ * @param value The Q31 fixed-point value.
+ * @param shift The shift the value was encoded with.
+ * @return The converted value in centi (1/100) SI units.
+ */
+static inline int64_t sensor_q31_to_centi(q31_t value, int8_t shift)
+{
+	return ((int64_t)value * 100LL) / (int64_t)BIT(31 - shift);
+}
+
+/**
+ * @brief Convert a Q31 fixed-point value to a milli-unit integer value.
+ *
+ * @param value The Q31 fixed-point value.
+ * @param shift The shift the value was encoded with.
+ * @return The converted value in milli (1/1000) SI units.
+ */
+static inline int64_t sensor_q31_to_milli(q31_t value, int8_t shift)
+{
+	return ((int64_t)value * 1000LL) / (int64_t)BIT(31 - shift);
+}
+/**
+ * @brief Convert a Q31 fixed-point value to a micro-unit integer value.
+ *
+ * @param value The Q31 fixed-point value.
+ * @param shift The shift the value was encoded with.
+ * @return The converted value in micro (1/1000000) SI units.
+ */
+static inline int64_t sensor_q31_to_micro(q31_t value, int8_t shift)
+{
+	return ((int64_t)value * 1000000LL) / (int64_t)BIT(31 - shift);
+}
+
+/**
  * @}
  */
 

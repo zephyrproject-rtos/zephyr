@@ -62,6 +62,89 @@ and trigger handling are solved.
    :ref:`rtio` compliant communication access to the sensor. Typically this means
    an :ref:`rtio` enabled bus driver for SPI or I2C.
 
+.. _sensor-fixed-point:
+
+Fixed-point values
+******************
+
+Decoded sensor data is returned as :c:type:`q31_t` fixed-point values. A
+``q31_t`` is a 32-bit signed integer container paired with a *shift* that places
+the binary point, letting drivers report fractional readings without using
+floating point.
+
+Q notation and the shift
+========================
+
+Fixed-point numbers are written using the notation :math:`Q_{m.n}`, where:
+
+:math:`m`
+   number of integer bits
+
+:math:`n`
+   number of fractional bits
+
+Zephyr's sensor subsystem uses a 32-bit signed container and specifies only
+:math:`m` as the shift:
+
+.. math::
+
+   Q_{m.(31-m)} \quad\quad 0 \leq m \leq 31
+
+with one sign bit and :math:`31 - m` fractional bits.
+
+The shift value is a tradeoff between  precision for range, increases in shift value
+increase range of real numbers the value can occupy at the cost of the step or value
+per lsb being larger and hence the loss of precision
+
+For example, a shift of 10 (10 integer bits and 21 fractional bits) encoded value spans:
+
+.. math::
+
+   -2^{10} \leq \text{value} < 2^{10} \quad\quad (-1024 \leq \text{value} < 1024)
+
+while the value per LSB (the smallest encodable step) is:
+
+.. math::
+
+   \text{value per LSB} = \frac{1}{2^{31 - m}}
+
+which is :math:`1 / 2^{21}` at a shift of 10.
+
+Scaling raw sensor samples
+==========================
+
+Sensors are usually read as ``int16`` or ``int24`` raw counts. The resolution is
+then set by the full-scale range (:math:`FS`) the sensor maps onto its
+integer-only representation of width :math:`N` bits:
+
+.. math::
+
+   \text{value per LSB} = \frac{FS}{2^{N - 1}}
+
+For example, an accelerometer with a +/-8 g full-scale range read as a signed
+16-bit sample resolves:
+
+.. math::
+
+   \frac{8}{2^{15}} = \frac{8}{32768} = \frac{1}{4096} \text{ g per LSB}
+
+A driver converts the raw count to an SI value using this scale (and offset, if any),
+then encodes that value as ``q31_t`` at the channel's shift.
+
+Conversion helpers
+==================
+
+The following helpers convert between an integer SI value (in micro, milli, or
+centi units) and the ``q31_t`` representation at a given shift:
+
+* :c:func:`sensor_q31_from_micro`, :c:func:`sensor_q31_from_milli`,
+  :c:func:`sensor_q31_from_centi`
+* :c:func:`sensor_q31_to_micro`, :c:func:`sensor_q31_to_milli`,
+  :c:func:`sensor_q31_to_centi`
+
+The :zephyr_file:`tests/drivers/sensor/utils` test suite exercises these helpers
+with ``int16`` samples for an IMU and a temperature sensor as worked examples.
+
 Polling Read
 ************
 
