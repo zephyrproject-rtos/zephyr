@@ -510,6 +510,64 @@ check to avoid invoking :c:func:`k_work_flush` or
 submit the work while you're checking (generally because you're holding a lock
 that prevents access to state used for submission).
 
+
+Priority Ordering (Experimental)
+*********************************
+
+.. warning::
+   This is an experimental feature.
+
+When :kconfig:option:`CONFIG_WORKQUEUE_ITEM_PRIORITY` is enabled, work items can
+be assigned a priority value that determines their execution order within a work
+queue. This feature is useful when certain work items need to be processed before
+others, regardless of submission order.
+
+Concepts
+========
+
+**Priority Values**
+
+Work items are assigned a priority using :c:func:`k_work_init_priority`.
+
+* **0** = highest priority (executed first)
+* **255** = lowest priority (executed last)
+* **K_WORK_PRIORITY_DEFAULT (128)** = default priority (middle of range)
+
+Work items initialized with :c:func:`k_work_init()` receive the default priority
+of 128.
+
+**Priority Ordering**
+
+When a work item is submitted to a queue, it is inserted in priority order:
+
+* Work items with lower numeric priority values execute before those with higher values
+* Work items with equal priority maintain FIFO (first-in, first-out) ordering
+* The queue always processes the highest priority pending item next
+
+Interaction with Flush
+======================
+
+Flush operations bypass priority ordering. When :c:func:`k_work_flush()` is called,
+an internal "flusher" work item is inserted immediately after the target work item
+in the queue using direct list manipulation.
+
+Limitations
+===========
+
+Current limitations of priority ordering:
+
+* **Delayable work:** :c:func:`k_work_init_delayable()` does not support priority
+  assignment.
+
+Configuration
+=============
+
+To enable priority ordering, set:
+
+.. code-block:: kconfig
+
+   CONFIG_WORKQUEUE_ITEM_PRIORITY=y
+
 Suggested Uses
 **************
 

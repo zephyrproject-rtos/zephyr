@@ -4302,6 +4302,46 @@ typedef void (*k_work_handler_t)(struct k_work *work);
 void k_work_init(struct k_work *work,
 		  k_work_handler_t handler);
 
+/**
+ * @brief Default priority for work items.
+ *
+ * Work items initialized with k_work_init() receive this default priority value.
+ * The value is in the middle of the priority range (0-255), allowing applications
+ * to create both higher priority (values < 128) and lower priority (values > 128)
+ * work items relative to the default.
+ *
+ * Only used when CONFIG_WORKQUEUE_ITEM_PRIORITY is enabled.
+ */
+#define K_WORK_PRIORITY_DEFAULT 128
+
+/**
+ * @brief Priority level thresholds for work items.
+ *
+ * These constants define the boundaries between the three priority lists.
+ *
+ * Priority ranges:
+ * - HIGH:   0-84   (K_WORK_PRIORITY_HIGH_MAX)
+ * - NORMAL: 85-170 (K_WORK_PRIORITY_NORMAL_MAX)
+ * - LOW:    171-255
+ */
+#define K_WORK_PRIORITY_HIGH_MAX    84
+#define K_WORK_PRIORITY_NORMAL_MAX  170
+
+/** @brief Initialize a work structure with priority.
+ *
+ * Similar to k_work_init() but allows specifying a priority for the work item.
+ *
+ * It is only available when CONFIG_WORKQUEUE_ITEM_PRIORITY is enabled.
+ * @isr_ok
+ *
+ * @param work the work structure to be initialized.
+ * @param handler the handler to be invoked by the work item.
+ * @param prio the priority of the work item Default priority is K_WORK_PRIORITY_DEFAULT (128).
+ */
+void k_work_init_priority(struct k_work *work,
+					 k_work_handler_t handler,
+					 uint8_t prio);
+
 /** @brief Busy state flags from the work item.
  *
  * A zero return value indicates the work item appears to be idle.
@@ -4945,6 +4985,14 @@ struct k_work {
 	 * It can be RUNNING and CANCELING simultaneously.
 	 */
 	uint32_t flags;
+
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+	/* Priority of the work item.
+	 * Work items with equal priority maintain FIFO ordering.
+	 * Default value is K_WORK_PRIORITY_DEFAULT (128).
+	 */
+	uint8_t priority;
+#endif
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4955,6 +5003,7 @@ struct k_work {
  */
 #define Z_WORK_INITIALIZER(work_handler) { \
 	.handler = (work_handler), \
+	IF_ENABLED(CONFIG_WORKQUEUE_ITEM_PRIORITY, (.priority = K_WORK_PRIORITY_DEFAULT,)) \
 }
 /**
  * INTERNAL_HIDDEN @endcond
@@ -5137,8 +5186,17 @@ struct k_work_q {
 	 * work module spinlock is held.
 	 */
 
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+	/* Three priority-ordered lists of k_work items to be worked.
+	 * Items are dequeued in order: pending_high, pending_normal, pending_low.
+	 */
+	sys_slist_t pending_high;    /* Priority 0-84 */
+	sys_slist_t pending_normal;  /* Priority 85-170 */
+	sys_slist_t pending_low;     /* Priority 171-255 */
+#else
 	/* List of k_work items to be worked. */
 	sys_slist_t pending;
+#endif
 
 	/* Wait queue for idle work thread. */
 	_wait_q_t notifyq;

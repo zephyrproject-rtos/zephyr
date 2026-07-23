@@ -60,6 +60,56 @@ static inline uint32_t flags_get(const uint32_t *flagp)
 	return *flagp;
 }
 
+
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+/* Get the appropriate priority list for a given work item priority */
+static inline sys_slist_t *get_priority_list(struct k_work_q *queue, uint8_t priority)
+{
+	if (priority <= K_WORK_PRIORITY_HIGH_MAX) {
+		return &queue->pending_high;
+	} else if (priority <= K_WORK_PRIORITY_NORMAL_MAX) {
+		return &queue->pending_normal;
+	} else {
+		return &queue->pending_low;
+	}
+}
+
+/* Get the next non-empty priority list */
+static inline sys_slist_t *get_next_pending_list(struct k_work_q *queue)
+{
+	if (!sys_slist_is_empty(&queue->pending_high)) {
+		return &queue->pending_high;
+	} else if (!sys_slist_is_empty(&queue->pending_normal)) {
+		return &queue->pending_normal;
+	} else if (!sys_slist_is_empty(&queue->pending_low)) {
+		return &queue->pending_low;
+	}
+	return NULL;
+}
+
+/* Check if all priority lists are empty */
+static inline bool all_pending_lists_empty(struct k_work_q *queue)
+{
+	return sys_slist_is_empty(&queue->pending_high) &&
+	       sys_slist_is_empty(&queue->pending_normal) &&
+	       sys_slist_is_empty(&queue->pending_low);
+}
+
+/* Find a work item in any of the priority lists */
+static inline sys_slist_t *find_work_in_lists(struct k_work_q *queue,
+					       struct k_work *work)
+{
+	if (sys_slist_find(&queue->pending_high, &work->node, NULL)) {
+		return &queue->pending_high;
+	} else if (sys_slist_find(&queue->pending_normal, &work->node, NULL)) {
+		return &queue->pending_normal;
+	} else if (sys_slist_find(&queue->pending_low, &work->node, NULL)) {
+		return &queue->pending_low;
+	}
+	return NULL;
+}
+#endif /* CONFIG_WORKQUEUE_ITEM_PRIORITY */
+
 /* Lock to protect the internal state of all work items, work queues,
  * and pending_cancels.
  */
@@ -73,6 +123,12 @@ static inline void init_flusher(struct z_work_flusher *flusher)
 	struct k_work *work = &flusher->work;
 	k_sem_init(&flusher->sem, 0, 1);
 	k_work_init(&flusher->work, handle_flush);
+	/* Note: If CONFIG_WORKQUEUE_ITEM_PRIORITY is enabled, the flusher's
+	 * priority field is set to K_WORK_PRIORITY_DEFAULT by k_work_init()
+	 * above, but this value is never used. Flushers bypass priority-based
+	 * insertion and are inserted directly via sys_slist_insert() in
+	 * queue_flusher_locked().
+	 */
 	flag_set(&work->flags, K_WORK_FLUSHING_BIT);
 }
 
@@ -161,6 +217,22 @@ void k_work_init(struct k_work *work,
 	SYS_PORT_TRACING_OBJ_INIT(k_work, work);
 }
 
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+void k_work_init_priority(struct k_work *work,
+			   k_work_handler_t handler,
+			   uint8_t prio)
+{
+	__ASSERT_NO_MSG(work != NULL);
+	__ASSERT_NO_MSG(handler != NULL);
+	__ASSERT_NO_MSG((work->flags & K_WORK_MASK) == 0);
+
+	*work = (struct k_work)Z_WORK_INITIALIZER(handler);
+	work->priority = prio;
+
+	SYS_PORT_TRACING_OBJ_INIT(k_work, work);
+}
+#endif
+
 static inline int work_busy_get_locked(const struct k_work *work)
 {
 	return flags_get(&work->flags) & K_WORK_MASK;
@@ -194,10 +266,21 @@ static void queue_flusher_locked(struct k_work_q *queue,
 	init_flusher(flusher);
 
 	if ((flags_get(&work->flags) & K_WORK_QUEUED) != 0U) {
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+		sys_slist_t *list = find_work_in_lists(queue, work);
+
+		__ASSERT_NO_MSG(list != NULL);
+		sys_slist_insert(list, &work->node, &flusher->work.node);
+#else
 		sys_slist_insert(&queue->pending, &work->node,
 				 &flusher->work.node);
+#endif
 	} else {
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+		sys_slist_prepend(&queue->pending_high, &flusher->work.node);
+#else
 		sys_slist_prepend(&queue->pending, &flusher->work.node);
+#endif
 	}
 }
 
@@ -212,7 +295,15 @@ static inline void queue_remove_locked(struct k_work_q *queue,
 				       struct k_work *work)
 {
 	if (flag_test_and_clear(&work->flags, K_WORK_QUEUED_BIT)) {
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+		sys_slist_t *list = find_work_in_lists(queue, work);
+
+		if (list != NULL) {
+			(void)sys_slist_find_and_remove(list, &work->node);
+		}
+#else
 		(void)sys_slist_find_and_remove(&queue->pending, &work->node);
+#endif
 	}
 }
 
@@ -283,7 +374,50 @@ static inline int queue_submit_locked(struct k_work_q *queue,
 	} else if (plugged && !draining) {
 		ret = -EBUSY;
 	} else {
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+		/* Insert work item in priority order within the appropriate list.
+		 * Items with equal priority maintain FIFO ordering.
+		 */
+		sys_slist_t *target_list = get_priority_list(queue, work->priority);
+		sys_snode_t *tail = sys_slist_peek_tail(target_list);
+
+		if (tail == NULL) {
+			sys_slist_append(target_list, &work->node);
+		} else {
+			struct k_work *tail_work = CONTAINER_OF(tail, struct k_work, node);
+
+			if (work->priority >= tail_work->priority) {
+				/* Priority is >= tail, append at end (FIFO for equal priority) */
+				sys_slist_append(target_list, &work->node);
+			} else {
+				sys_snode_t *prev = NULL;
+				sys_snode_t *node;
+
+				SYS_SLIST_FOR_EACH_NODE(target_list, node) {
+					struct k_work *queued_work =
+						CONTAINER_OF(node, struct k_work, node);
+
+					/* Skip flushers in priority comparison */
+					if (flag_test(&queued_work->flags, K_WORK_FLUSHING_BIT)) {
+						prev = node;
+						continue;
+					}
+
+					if (work->priority < queued_work->priority) {
+						sys_slist_insert(target_list, prev, &work->node);
+						goto inserted;
+					}
+					prev = node;
+				}
+
+				sys_slist_append(target_list, &work->node);
+inserted:
+				;
+			}
+		}
+#else
 		sys_slist_append(&queue->pending, &work->node);
+#endif
 		ret = 1;
 		(void)notify_queue_locked(queue);
 	}
@@ -683,7 +817,12 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		bool yield;
 
 		/* Check for and prepare any new work. */
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+		sys_slist_t *active_list = get_next_pending_list(queue);
+		node = (active_list != NULL) ? sys_slist_get(active_list) : NULL;
+#else
 		node = sys_slist_get(&queue->pending);
+#endif
 		if (node != NULL) {
 			/* Mark that there's some work active that's
 			 * not on the pending list.
@@ -787,8 +926,13 @@ static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 		}
 
 		flag_clear(&queue->flags, K_WORK_QUEUE_BUSY_BIT);
-		yield = (!flag_test(&queue->flags, K_WORK_QUEUE_NO_YIELD_BIT) &&
-			 !sys_slist_is_empty(&queue->pending));
+		yield = (!flag_test(&queue->flags, K_WORK_QUEUE_NO_YIELD_BIT)
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+			 && !all_pending_lists_empty(queue)
+#else
+			 && !sys_slist_is_empty(&queue->pending)
+#endif
+			);
 		k_spin_unlock(&work_lock, key);
 
 		/* Optionally yield to prevent the work queue from
@@ -833,7 +977,13 @@ void k_work_queue_run(struct k_work_q *queue, const struct k_work_queue_config *
 	}
 #endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+	sys_slist_init(&queue->pending_high);
+	sys_slist_init(&queue->pending_normal);
+	sys_slist_init(&queue->pending_low);
+#else
 	sys_slist_init(&queue->pending);
+#endif
 	z_waitq_init(&queue->notifyq);
 	z_waitq_init(&queue->drainq);
 	queue->thread_id = _current;
@@ -860,7 +1010,13 @@ void k_work_queue_start(struct k_work_q *queue,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, start, queue);
 
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+	sys_slist_init(&queue->pending_high);
+	sys_slist_init(&queue->pending_normal);
+	sys_slist_init(&queue->pending_low);
+#else
 	sys_slist_init(&queue->pending);
+#endif
 	z_waitq_init(&queue->notifyq);
 	z_waitq_init(&queue->drainq);
 
@@ -916,7 +1072,12 @@ int k_work_queue_drain(struct k_work_q *queue,
 	if (((flags_get(&queue->flags)
 	      & (K_WORK_QUEUE_BUSY | K_WORK_QUEUE_DRAIN)) != 0U)
 	    || plug
-	    || !sys_slist_is_empty(&queue->pending)) {
+#ifdef CONFIG_WORKQUEUE_ITEM_PRIORITY
+	    || !all_pending_lists_empty(queue)
+#else
+	    || !sys_slist_is_empty(&queue->pending)
+#endif
+	    ) {
 		flag_set(&queue->flags, K_WORK_QUEUE_DRAIN_BIT);
 		if (plug) {
 			flag_set(&queue->flags, K_WORK_QUEUE_PLUGGED_BIT);
