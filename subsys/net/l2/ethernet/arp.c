@@ -27,7 +27,6 @@ LOG_MODULE_REGISTER(net_arp, CONFIG_NET_ARP_LOG_LEVEL);
 #define NET_BUF_TIMEOUT K_MSEC(100)
 #define ARP_REQUEST_TIMEOUT (2 * MSEC_PER_SEC)
 
-static bool arp_cache_initialized;
 static struct arp_entry arp_entries[CONFIG_NET_ARP_TABLE_SIZE];
 
 static sys_slist_t arp_free_entries = SYS_SLIST_STATIC_INIT(&arp_free_entries);
@@ -1044,17 +1043,11 @@ void net_arp_init(void)
 {
 	int i;
 
-	if (arp_cache_initialized) {
-		return;
-	}
-
 	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
 		/* Inserting entry as free with initialised packet queue */
 		k_fifo_init(&arp_entries[i].pending_queue);
 		sys_slist_prepend(&arp_free_entries, &arp_entries[i].node);
 	}
-
-	arp_cache_initialized = true;
 
 #if defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION)
 	k_work_reschedule(&arp_gratuitous_work,
