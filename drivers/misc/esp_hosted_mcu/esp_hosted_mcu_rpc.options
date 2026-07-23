@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+# Fixed-size byte fields. esp_wifi limits: SSID 32, password 64, BSSID 6.
+*.ssid max_size:32
+*.password max_size:64
+*.bssid max_size:6
+*.mac max_size:6
+
+# Scan results are variable-count and can be large; keep them off the
+# static message and let nanopb malloc them via a callback pointer.
+*.ap_records type:FT_POINTER
