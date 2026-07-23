@@ -477,17 +477,40 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 /**
  * Implements (part of) the MCPS-DATA.request/confirm primitives, see sections 8.3.2/3.
  */
+static int copy_pkt_to_frame(struct net_buf *frame_buf, const struct net_buf *pkt_buf,
+			     size_t pkt_len, uint8_t authtag_len)
+{
+	size_t tailroom = net_buf_tailroom(frame_buf);
+	size_t copied;
+
+	if (authtag_len > tailroom || pkt_len > tailroom - authtag_len) {
+		return -EMSGSIZE;
+	}
+
+	copied = net_buf_linearize(net_buf_tail(frame_buf), tailroom - authtag_len, pkt_buf, 0,
+				   pkt_len);
+	if (copied != pkt_len) {
+		NET_ERR("Failed to copy packet to frame (%zu/%zu)", copied, pkt_len);
+		return -EINVAL;
+	}
+
+	net_buf_add(frame_buf, copied);
+
+	return 0;
+}
+
 static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
+	struct net_buf *pkt_buf;
 	uint8_t ll_hdr_len = 0, authtag_len = 0;
 	static struct net_buf *frame_buf;
-	static struct net_buf *pkt_buf;
+	size_t pkt_len;
 	bool send_raw = false;
+	bool requires_fragmentation = false;
 	int len;
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	struct ieee802154_6lo_fragment_ctx frag_ctx;
-	int requires_fragmentation = 0;
 #endif
 
 	if (frame_buf == NULL) {
@@ -541,15 +564,24 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 
 #ifdef CONFIG_NET_6LO
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
-		requires_fragmentation =
-			ieee802154_6lo_encode_pkt(iface, pkt, &frag_ctx, ll_hdr_len, authtag_len);
-		if (requires_fragmentation < 0) {
-			return requires_fragmentation;
+		int ret;
+
+		ret = ieee802154_6lo_encode_pkt(iface, pkt, &frag_ctx, ll_hdr_len, authtag_len);
+		if (ret < 0) {
+			return ret;
 		}
+
+		requires_fragmentation = (ret != 0);
 #else
 		ieee802154_6lo_encode_pkt(iface, pkt, NULL, ll_hdr_len, authtag_len);
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 #endif /* CONFIG_NET_6LO */
+	}
+
+	pkt_len = net_pkt_get_len(pkt);
+	if (!requires_fragmentation && ll_hdr_len + pkt_len + authtag_len > IEEE802154_MTU) {
+		NET_ERR("Frame too long: %zu", ll_hdr_len + pkt_len + authtag_len);
+		return -EMSGSIZE;
 	}
 
 	net_capture_pkt(iface, pkt);
@@ -567,16 +599,20 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		if (requires_fragmentation) {
 			pkt_buf = ieee802154_6lo_fragment(&frag_ctx, frame_buf, true);
 		} else {
-			net_buf_add_mem(frame_buf, pkt_buf->data, pkt_buf->len);
-			pkt_buf = pkt_buf->frags;
+			ret = copy_pkt_to_frame(frame_buf, pkt->buffer, pkt_len, authtag_len);
+			if (ret < 0) {
+				return ret;
+			}
+
+			pkt_buf = NULL;
 		}
 #else
-		if (ll_hdr_len + pkt_buf->len + authtag_len > IEEE802154_MTU) {
-			NET_ERR("Frame too long: %d", pkt_buf->len);
-			return -EINVAL;
+		ret = copy_pkt_to_frame(frame_buf, pkt->buffer, pkt_len, authtag_len);
+		if (ret < 0) {
+			return ret;
 		}
-		net_buf_add_mem(frame_buf, pkt_buf->data, pkt_buf->len);
-		pkt_buf = pkt_buf->frags;
+
+		pkt_buf = NULL;
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 
 		__ASSERT_NO_MSG(authtag_len <= net_buf_tailroom(frame_buf));
