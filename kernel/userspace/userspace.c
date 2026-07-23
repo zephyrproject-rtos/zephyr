@@ -350,6 +350,12 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 					      size_t size)
 {
 	struct dyn_obj *dyn;
+	size_t overflow_test;
+
+	/* Check if the requested memory won't cause an overflow */
+	if (size_add_overflow(obj_size_get(otype), size, &overflow_test)) {
+		return NULL;
+	}
 
 	dyn = z_thread_aligned_alloc(align, sizeof(struct dyn_obj));
 	if (dyn == NULL) {
