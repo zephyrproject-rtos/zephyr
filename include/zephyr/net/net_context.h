@@ -1453,7 +1453,7 @@ static inline void net_context_setup_pools(struct net_context *context,
 	context->data_pool = data_pool;
 }
 #else
-#define net_context_setup_pools(context, tx_pool, data_pool)
+#define net_context_setup_pools(context, tx_slab, data_pool)
 #endif
 
 /**
