@@ -1040,6 +1040,43 @@ STM32
   Explicitly set :kconfig:option:`CONFIG_NUM_IRQS` to an appropriate value to solve these issues.
   (:ref:`The following documentation page <setting_configuration_values>` explains how to do it)
 
+* The ``bt_hci_wba`` and ``ieee802154`` node definitions have been moved from
+  :zephyr_file:`dts/arm/st/wba/stm32wba.dtsi` to
+  :zephyr_file:`dts/arm/st/wba/stm32wba52.dtsi`, since Bluetooth and IEEE 802.15.4
+  are only supported on STM32WBA5x and STM32WBA6x variants. Out-of-tree boards
+  based on ``stm32wba.dtsi`` that do not inherit from ``stm32wba52.dtsi`` must
+  define these nodes explicitly in their board devicetree.
+
+* :dtcompatible:`st,hci-stm32wba` and :dtcompatible:`st,stm32wba-ieee802154` nodes
+  (with node labels ``bt_hci_wba`` and ``ieee802154`` respectively) include the
+  ``radio`` and ``radio-sw-low`` interrupt names in the ``interrupts`` and
+  ``interrupt-names`` properties. These ``interrupts`` properties are used during
+  radio IRQ management.
+  The ``radio`` interrupt is mapped on the dedicated RADIO IRQ while the ``radio-sw-low``
+  interrupt is mapped on an available IRQ (HASH IRQ by default).
+
+* The ``radio-sw-low`` interrupt entry is now **mandatory** in the ``bt_hci_wba``
+  and ``ieee802154`` nodes. The radio IRQ numbers are no longer hardcoded in the
+  SoC layer but are read from the devicetree. Out-of-tree boards must add both interrupt
+  entries to their board devicetree overlay:
+
+  The IRQ numbers and priorities in the following example are specific to Nucleo WBA
+  boards. Replace them with values that match your board IRQ mapping.
+
+  .. code-block:: devicetree
+
+     &bt_hci_wba {
+         /* Use an available IRQ for Radio SW Low Process (e.g. HASH IRQ if unused) */
+         interrupts = <66 0>, <61 14>;
+         interrupt-names = "radio", "radio-sw-low";
+     };
+
+     &ieee802154 {
+         /* Use an available IRQ for Radio SW Low Process (e.g. HASH IRQ if unused) */
+         interrupts = <66 0>, <61 14>;
+         interrupt-names = "radio", "radio-sw-low";
+     };
+
 Timer
 =====
 
