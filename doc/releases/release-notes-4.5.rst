@@ -371,7 +371,8 @@ Libraries / Subsystems
 
   * Introducing a video subsystem that inherits all the function names previously in
     video drivers.
-* ZBus
+
+* Zbus
 
   * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION` now works without requiring
     a dedicated pool on every channel (channels fall back to the shared pool until
