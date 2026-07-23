@@ -197,6 +197,14 @@ void soc_early_init_hook(void)
 	power_manager_slave_init();
 	platform_pm_init();
 
+#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+	/* Route interrupts to Non-Secure state. */
+	setup_non_secure_nvic();
+#endif
+}
+
+void soc_late_init_hook(void)
+{
 	/* Initialize OSC32 SDM software timer. */
 	init_osc_sdm_timer();
 
@@ -210,14 +218,6 @@ void soc_early_init_hook(void)
 	/* Initialize thermal compensation tracking. */
 	thermal_tracking_timer_init();
 
-#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
-	/* Route interrupts to Non-Secure state. */
-	setup_non_secure_nvic();
-#endif
-}
-
-void soc_late_init_hook(void)
-{
 	/* Initialize HW AES mutex. */
 	hw_aes_mutex_init();
 
