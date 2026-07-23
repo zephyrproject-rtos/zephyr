@@ -232,7 +232,7 @@ static void resubmit_work_handler(struct k_work *work)
  * @ingroup kernel_workqueue_tests
  * @see k_work_submit()
  * @see k_work_schedule()
- * @verifies ZEP-SRS-26-13
+ * @verifies ZEP-SRS-38-13
  */
 ZTEST(workqueue_triggered, test_resubmit)
 {
@@ -353,7 +353,7 @@ static void coop_delayed_work_cancel_main(void *p1, void *p2, void *p3)
  * @ingroup kernel_workqueue_tests
  * @see k_work_schedule()
  * @see k_work_cancel_delayable()
- * @verifies ZEP-SRS-26-24
+ * @verifies ZEP-SRS-38-24
  */
 ZTEST(workqueue_delayed, test_delayed_cancel)
 {
@@ -398,7 +398,7 @@ ZTEST(workqueue_delayed, test_delayed_cancel)
  * @ingroup kernel_workqueue_tests
  * @see k_work_delayable_is_pending()
  * @see k_work_schedule()
- * @verifies ZEP-SRS-26-16
+ * @verifies ZEP-SRS-38-16
  */
 ZTEST(workqueue_delayed, test_delayed_pending)
 {
@@ -454,9 +454,9 @@ ZTEST(workqueue_delayed, test_delayed_pending)
  * @ingroup kernel_workqueue_tests
  * @see k_work_schedule()
  * @see k_work_reschedule()
- * @verifies ZEP-SRS-26-21
- * @verifies ZEP-SRS-26-22
- * @verifies ZEP-SRS-26-23
+ * @verifies ZEP-SRS-38-21
+ * @verifies ZEP-SRS-38-22
+ * @verifies ZEP-SRS-38-23
  */
 ZTEST(workqueue_delayed, test_delayed)
 {
@@ -562,7 +562,7 @@ static void test_triggered_trigger(void)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_poll_init(), k_work_poll_submit()
- * @verifies ZEP-SRS-26-27
+ * @verifies ZEP-SRS-38-27
  */
 ZTEST(workqueue_triggered, test_triggered)
 {
@@ -607,7 +607,7 @@ ZTEST(workqueue_triggered, test_triggered)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_poll_init(), k_work_poll_submit()
- * @verifies ZEP-SRS-26-27
+ * @verifies ZEP-SRS-38-27
  */
 ZTEST(workqueue_triggered, test_already_triggered)
 {
@@ -671,7 +671,7 @@ static void triggered_resubmit_work_handler(struct k_work *work)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_poll_init(), k_work_poll_submit()
- * @verifies ZEP-SRS-26-27
+ * @verifies ZEP-SRS-38-27
  */
 ZTEST(workqueue_triggered, test_triggered_resubmit)
 {
@@ -727,7 +727,7 @@ ZTEST(workqueue_triggered, test_triggered_resubmit)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_poll_init(), k_work_poll_submit()
- * @verifies ZEP-SRS-26-27
+ * @verifies ZEP-SRS-38-27
  */
 ZTEST(workqueue_triggered, test_triggered_no_wait)
 {
@@ -771,7 +771,7 @@ ZTEST(workqueue_triggered, test_triggered_no_wait)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_poll_init(), k_work_poll_submit()
- * @verifies ZEP-SRS-26-27
+ * @verifies ZEP-SRS-38-27
  */
 ZTEST(workqueue_triggered, test_triggered_no_wait_expired)
 {
@@ -813,7 +813,7 @@ ZTEST(workqueue_triggered, test_triggered_no_wait_expired)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_poll_init(), k_work_poll_submit()
- * @verifies ZEP-SRS-26-27
+ * @verifies ZEP-SRS-38-27
  */
 ZTEST(workqueue_triggered, test_triggered_wait)
 {
@@ -860,7 +860,7 @@ ZTEST(workqueue_triggered, test_triggered_wait)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_poll_init(), k_work_poll_submit()
- * @verifies ZEP-SRS-26-27
+ * @verifies ZEP-SRS-38-27
  */
 ZTEST(workqueue_triggered, test_triggered_wait_expired)
 {
@@ -959,7 +959,7 @@ static void test_triggered_from_msgq_start(void)
  * @ingroup kernel_workqueue_tests
  * @see k_work_poll_init()
  * @see k_work_poll_submit_to_queue()
- * @verifies ZEP-SRS-26-27
+ * @verifies ZEP-SRS-38-27
  */
 ZTEST(workqueue_triggered, test_triggered_from_msgq)
 {
@@ -995,7 +995,7 @@ ZTEST(workqueue_triggered, test_triggered_from_msgq)
  * @ingroup kernel_workqueue_tests
  * @see K_WORK_DELAYABLE_DEFINE()
  * @see k_work_init_delayable()
- * @verifies ZEP-SRS-26-20
+ * @verifies ZEP-SRS-38-20
  */
 ZTEST(workqueue_triggered, test_delayed_work_define)
 {
@@ -1028,7 +1028,7 @@ ZTEST(workqueue_triggered, test_delayed_work_define)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_poll_cancel()
- * @verifies ZEP-SRS-26-28
+ * @verifies ZEP-SRS-38-28
  */
 ZTEST(workqueue_triggered, test_triggered_cancel)
 {

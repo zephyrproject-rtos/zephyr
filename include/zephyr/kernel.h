@@ -4218,7 +4218,7 @@ typedef void (*k_work_handler_t)(struct k_work *work);
  *
  * @param handler the handler to be invoked by the work item.
  *
- * @satisfies ZEP-SRS-26-9
+ * @satisfies ZEP-SRS-38-9
  */
 void k_work_init(struct k_work *work,
 		  k_work_handler_t handler);
@@ -4237,7 +4237,7 @@ void k_work_init(struct k_work *work,
  * @return a mask of flags K_WORK_DELAYED, K_WORK_QUEUED,
  * K_WORK_RUNNING, K_WORK_CANCELING, and K_WORK_FLUSHING.
  *
- * @satisfies ZEP-SRS-26-16
+ * @satisfies ZEP-SRS-38-16
  */
 int k_work_busy_get(const struct k_work *work);
 
@@ -4254,7 +4254,7 @@ int k_work_busy_get(const struct k_work *work);
  *
  * @return true if and only if k_work_busy_get() returns a non-zero value.
  *
- * @satisfies ZEP-SRS-26-16
+ * @satisfies ZEP-SRS-38-16
  */
 static inline bool k_work_is_pending(const struct k_work *work);
 
@@ -4278,10 +4278,10 @@ static inline bool k_work_is_pending(const struct k_work *work);
  * @retval -EINVAL if @p queue is null and the work item has never been run.
  * @retval -ENODEV if @p queue has not been started.
  *
- * @satisfies ZEP-SRS-26-11
- * @satisfies ZEP-SRS-26-12
- * @satisfies ZEP-SRS-26-14
- * @satisfies ZEP-SRS-26-32
+ * @satisfies ZEP-SRS-38-11
+ * @satisfies ZEP-SRS-38-12
+ * @satisfies ZEP-SRS-38-14
+ * @satisfies ZEP-SRS-38-32
  */
 int k_work_submit_to_queue(struct k_work_q *queue,
 			   struct k_work *work);
@@ -4294,8 +4294,8 @@ int k_work_submit_to_queue(struct k_work_q *queue,
  *
  * @return as with k_work_submit_to_queue().
  *
- * @satisfies ZEP-SRS-26-10
- * @satisfies ZEP-SRS-26-12
+ * @satisfies ZEP-SRS-38-10
+ * @satisfies ZEP-SRS-38-12
  */
 int k_work_submit(struct k_work *work);
 
@@ -4323,7 +4323,7 @@ int k_work_submit(struct k_work *work);
  * @retval true if call had to wait for completion
  * @retval false if work was already idle
  *
- * @satisfies ZEP-SRS-26-15
+ * @satisfies ZEP-SRS-38-15
  */
 bool k_work_flush(struct k_work *work,
 		  struct k_work_sync *sync);
@@ -4347,8 +4347,8 @@ bool k_work_flush(struct k_work *work,
  * @return the k_work_busy_get() status indicating the state of the item after all
  * cancellation steps performed by this call are completed.
  *
- * @satisfies ZEP-SRS-26-17
- * @satisfies ZEP-SRS-26-18
+ * @satisfies ZEP-SRS-38-17
+ * @satisfies ZEP-SRS-38-18
  */
 int k_work_cancel(struct k_work *work);
 
@@ -4382,7 +4382,7 @@ int k_work_cancel(struct k_work *work);
  * cancelled);
  * @retval false otherwise
  *
- * @satisfies ZEP-SRS-26-19
+ * @satisfies ZEP-SRS-38-19
  */
 bool k_work_cancel_sync(struct k_work *work, struct k_work_sync *sync);
 
@@ -4395,7 +4395,7 @@ bool k_work_cancel_sync(struct k_work *work, struct k_work_sync *sync);
  *
  * @param queue the queue structure to be initialized.
  *
- * @satisfies ZEP-SRS-26-1
+ * @satisfies ZEP-SRS-38-1
  */
 void k_work_queue_init(struct k_work_q *queue);
 
@@ -4418,10 +4418,10 @@ void k_work_queue_init(struct k_work_q *queue);
  * NULL if not required, to use the defaults documented in
  * k_work_queue_config.
  *
- * @satisfies ZEP-SRS-26-2
- * @satisfies ZEP-SRS-26-29
- * @satisfies ZEP-SRS-26-30
- * @satisfies ZEP-SRS-26-31
+ * @satisfies ZEP-SRS-38-2
+ * @satisfies ZEP-SRS-38-29
+ * @satisfies ZEP-SRS-38-30
+ * @satisfies ZEP-SRS-38-31
  */
 void k_work_queue_start(struct k_work_q *queue,
 			k_thread_stack_t *stack, size_t stack_size,
@@ -4473,8 +4473,8 @@ static inline k_tid_t k_work_queue_thread_get(struct k_work_q *queue);
  * @retval 0 if call did not have to wait
  * @retval negative if wait was interrupted or failed
  *
- * @satisfies ZEP-SRS-26-5
- * @satisfies ZEP-SRS-26-6
+ * @satisfies ZEP-SRS-38-5
+ * @satisfies ZEP-SRS-38-6
  */
 int k_work_queue_drain(struct k_work_q *queue, bool plug);
 
@@ -4491,7 +4491,7 @@ int k_work_queue_drain(struct k_work_q *queue, bool plug);
  * @retval 0 if successfully unplugged
  * @retval -EALREADY if the work queue was not plugged.
  *
- * @satisfies ZEP-SRS-26-7
+ * @satisfies ZEP-SRS-38-7
  */
 int k_work_queue_unplug(struct k_work_q *queue);
 
@@ -4514,7 +4514,7 @@ int k_work_queue_unplug(struct k_work_q *queue);
  * @retval -ETIMEDOUT if the work queue did not stop within the stipulated timeout
  * @retval -ENOTSUP if the work queue is essential
  *
- * @satisfies ZEP-SRS-26-8
+ * @satisfies ZEP-SRS-38-8
  */
 int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout);
 
@@ -4531,7 +4531,7 @@ int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout);
  *
  * @param handler the handler to be invoked by the work item.
  *
- * @satisfies ZEP-SRS-26-20
+ * @satisfies ZEP-SRS-38-20
  */
 void k_work_init_delayable(struct k_work_delayable *dwork,
 			   k_work_handler_t handler);
@@ -4611,7 +4611,7 @@ static inline k_ticks_t k_work_delayable_expires_get(
  * @return the number of ticks until the timer that will schedule the work
  * item will expire, or zero if the item is not scheduled.
  *
- * @satisfies ZEP-SRS-26-25
+ * @satisfies ZEP-SRS-38-25
  */
 static inline k_ticks_t k_work_delayable_remaining_get(
 	const struct k_work_delayable *dwork);
@@ -4643,7 +4643,7 @@ static inline k_ticks_t k_work_delayable_remaining_get(
  * @retval -ENODEV if @p delay is @c K_NO_WAIT and
  *         k_work_submit_to_queue() fails with this code.
  *
- * @satisfies ZEP-SRS-26-21
+ * @satisfies ZEP-SRS-38-21
  */
 int k_work_schedule_for_queue(struct k_work_q *queue,
 			       struct k_work_delayable *dwork,
@@ -4662,7 +4662,7 @@ int k_work_schedule_for_queue(struct k_work_q *queue,
  *
  * @return as with k_work_schedule_for_queue().
  *
- * @satisfies ZEP-SRS-26-36
+ * @satisfies ZEP-SRS-38-36
  */
 int k_work_schedule(struct k_work_delayable *dwork,
 				   k_timeout_t delay);
@@ -4702,7 +4702,7 @@ int k_work_schedule(struct k_work_delayable *dwork,
  * @retval -ENODEV if @p delay is @c K_NO_WAIT and
  *         k_work_submit_to_queue() fails with this code.
  *
- * @satisfies ZEP-SRS-26-23
+ * @satisfies ZEP-SRS-38-23
  */
 int k_work_reschedule_for_queue(struct k_work_q *queue,
 				 struct k_work_delayable *dwork,
@@ -4720,7 +4720,7 @@ int k_work_reschedule_for_queue(struct k_work_q *queue,
  *
  * @return as with k_work_reschedule_for_queue().
  *
- * @satisfies ZEP-SRS-26-23
+ * @satisfies ZEP-SRS-38-23
  */
 int k_work_reschedule(struct k_work_delayable *dwork,
 				     k_timeout_t delay);
@@ -4772,7 +4772,7 @@ bool k_work_flush_delayable(struct k_work_delayable *dwork,
  * @return the k_work_delayable_busy_get() status indicating the state of the
  * item after all cancellation steps performed by this call are completed.
  *
- * @satisfies ZEP-SRS-26-24
+ * @satisfies ZEP-SRS-38-24
  */
 int k_work_cancel_delayable(struct k_work_delayable *dwork);
 
@@ -4979,7 +4979,7 @@ struct k_work_delayable {
  * @param work Symbol name for delayable work item object
  * @param work_handler Function to invoke each time work item is processed.
  *
- * @satisfies ZEP-SRS-26-35
+ * @satisfies ZEP-SRS-38-35
  */
 #define K_WORK_DELAYABLE_DEFINE(work, work_handler) \
 	struct k_work_delayable work \
@@ -5229,7 +5229,7 @@ struct k_work_user {
  * @param work Symbol name for work item object
  * @param work_handler Function to invoke each time work item is processed.
  *
- * @satisfies ZEP-SRS-26-38
+ * @satisfies ZEP-SRS-38-38
  */
 #define K_WORK_USER_DEFINE(work, work_handler) \
 	struct k_work_user work = Z_WORK_USER_INITIALIZER(work_handler)
@@ -5243,7 +5243,7 @@ struct k_work_user {
  * @param work Address of work item.
  * @param handler Function to invoke each time work item is processed.
  *
- * @satisfies ZEP-SRS-26-37
+ * @satisfies ZEP-SRS-38-37
  */
 static inline void k_work_user_init(struct k_work_user *work,
 				    k_work_user_handler_t handler)
@@ -5290,7 +5290,7 @@ static inline bool k_work_user_is_pending(struct k_work_user *work)
  * @retval -ENOMEM if no memory for thread resource pool allocation
  * @retval 0 Success
  *
- * @satisfies ZEP-SRS-26-40
+ * @satisfies ZEP-SRS-38-40
  */
 static inline int k_work_user_submit_to_queue(struct k_work_user_q *work_q,
 					      struct k_work_user *work)
@@ -5332,7 +5332,7 @@ static inline int k_work_user_submit_to_queue(struct k_work_user_q *work_q,
  * @param name optional thread name.  If not null a copy is made into the
  *		thread's name buffer.
  *
- * @satisfies ZEP-SRS-26-39
+ * @satisfies ZEP-SRS-38-39
  */
 void k_work_user_queue_start(struct k_work_user_q *work_q,
 				    k_thread_stack_t *stack,
@@ -5389,7 +5389,7 @@ struct k_work_poll {
  * @param work Symbol name for work item object
  * @param work_handler Function to invoke each time work item is processed.
  *
- * @satisfies ZEP-SRS-26-34
+ * @satisfies ZEP-SRS-38-34
  */
 #define K_WORK_DEFINE(work, work_handler) \
 	struct k_work work = Z_WORK_INITIALIZER(work_handler)
@@ -5440,7 +5440,7 @@ void k_work_poll_init(struct k_work_poll *work,
  * @retval -EINVAL Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  *
- * @satisfies ZEP-SRS-26-27
+ * @satisfies ZEP-SRS-38-27
  */
 int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 				       struct k_work_poll *work,
@@ -5479,7 +5479,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
  * @retval -EINVAL Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  *
- * @satisfies ZEP-SRS-26-27
+ * @satisfies ZEP-SRS-38-27
  */
 int k_work_poll_submit(struct k_work_poll *work,
 				     struct k_poll_event *events,
@@ -5500,7 +5500,7 @@ int k_work_poll_submit(struct k_work_poll *work,
  * @retval 0 Work item canceled.
  * @retval -EINVAL Work item is being processed or has completed its work.
  *
- * @satisfies ZEP-SRS-26-28
+ * @satisfies ZEP-SRS-38-28
  */
 int k_work_poll_cancel(struct k_work_poll *work);
 

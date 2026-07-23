@@ -32,7 +32,7 @@ static void work_handler(struct k_work *work)
  * @ingroup kernel_workqueue_tests
  * @see k_work_queue_start()
  * @see k_work_queue_stop()
- * @verifies ZEP-SRS-26-8
+ * @verifies ZEP-SRS-38-8
  */
 ZTEST(workqueue_api, test_k_work_queue_start_stop)
 {
@@ -88,7 +88,7 @@ ZTEST(workqueue_api, test_k_work_queue_start_stop)
  * @ingroup kernel_workqueue_tests
  * @see k_work_queue_start()
  * @see k_work_queue_stop()
- * @verifies ZEP-SRS-26-8
+ * @verifies ZEP-SRS-38-8
  */
 ZTEST(workqueue_api, test_k_work_queue_stop_sys_thread)
 {
@@ -153,7 +153,7 @@ static void run_q_main(void *workq_ptr, void *sem_ptr, void *p3)
  * @see k_work_queue_run()
  * @see k_work_queue_stop()
  * @see k_work_queue_drain()
- * @verifies ZEP-SRS-26-8
+ * @verifies ZEP-SRS-38-8
  */
 ZTEST(workqueue_api, test_k_work_queue_run_stop)
 {
@@ -206,7 +206,7 @@ ZTEST(workqueue_api, test_k_work_queue_run_stop)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_queue_start(), k_work_queue_thread_get()
- * @verifies ZEP-SRS-26-2
+ * @verifies ZEP-SRS-38-2
  */
 ZTEST(workqueue_api, test_k_work_queue_priority)
 {
@@ -241,7 +241,7 @@ static void remaining_noop_handler(struct k_work *work)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_schedule(), k_work_delayable_remaining_get()
- * @verifies ZEP-SRS-26-25
+ * @verifies ZEP-SRS-38-25
  */
 ZTEST(workqueue_api, test_k_work_delayable_remaining)
 {

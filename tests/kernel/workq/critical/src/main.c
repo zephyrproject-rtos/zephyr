@@ -185,7 +185,7 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
  *
  * @ingroup kernel_workqueue_tests
  * @see k_work_queue_start()
- * @verifies ZEP-SRS-26-12
+ * @verifies ZEP-SRS-38-12
  */
 ZTEST(kernel_offload_wq, test_offload_workqueue)
 {
