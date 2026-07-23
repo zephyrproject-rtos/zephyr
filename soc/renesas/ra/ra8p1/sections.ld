@@ -6,6 +6,9 @@
 
 #include <zephyr/devicetree.h>
 
+/* Emit option setting sections only when standalone app OR MCUboot itself */
+#if !defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_MCUBOOT)
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(option_setting_ofs0))
 SECTION_DATA_PROLOGUE(.option_setting_ofs0, DT_REG_ADDR(DT_NODELABEL(option_setting_ofs0)),)
 {
