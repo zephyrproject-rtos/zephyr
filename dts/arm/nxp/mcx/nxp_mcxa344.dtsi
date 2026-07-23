@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
@@ -180,6 +181,71 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			nxp,kinetis-port = <&porte>;
+		};
+
+		freqme0: freqme@40009000 {
+			compatible = "nxp,freqme";
+			reg = <0x40009000 0x10>;
+			interrupts = <54 0>;
+			clocks = <&syscon MCUX_FREQME_CLK>;
+			status = "disabled";
+
+			reference-sources {
+				ref-fro-hf-div {
+					default-source;
+					inputmux-connection = <&inputmux0 0
+							       NXP_FREQME_REF_FRO_HF_DIV>;
+					clocks = <&syscon MCUX_FRO_HF_DIV_CLK>;
+				};
+
+				ref-fro-12m {
+					inputmux-connection = <&inputmux0 0 NXP_FREQME_REF_FRO_12M>;
+					clocks = <&syscon MCUX_FRO_12M_CLK>;
+				};
+			};
+
+			target-sources {
+				/*
+				 * Targets without a clocks / clock-frequency provider have an
+				 * unknown or board-specific rate: MEASURE only, no WINDOW
+				 * auto-derive. CLK_IN / CLK_IN0 / CLK_IN1 are external input
+				 * pins; SLOW_CLK is a divided clock whose rate varies.
+				 */
+				tar-fro-12m {
+					default-source;
+					inputmux-connection = <&inputmux0 0 NXP_FREQME_TAR_FRO_12M>;
+					clocks = <&syscon MCUX_FRO_12M_CLK>;
+				};
+
+				tar-fro-hf-div {
+					inputmux-connection = <&inputmux0 0
+							       NXP_FREQME_TAR_FRO_HF_DIV>;
+					clocks = <&syscon MCUX_FRO_HF_DIV_CLK>;
+				};
+
+				tar-clk-in {
+					inputmux-connection = <&inputmux0 0 NXP_FREQME_TAR_CLK_IN>;
+				};
+
+				tar-clk-16k1 {
+					inputmux-connection = <&inputmux0 0
+							       NXP_FREQME_TAR_CLK_16K1>;
+					clock-frequency = <16384>;
+				};
+
+				tar-slow-clk {
+					inputmux-connection = <&inputmux0 0
+							       NXP_FREQME_TAR_SLOW_CLK>;
+				};
+
+				tar-clk-in0 {
+					inputmux-connection = <&inputmux0 0 NXP_FREQME_TAR_CLK_IN0>;
+				};
+
+				tar-clk-in1 {
+					inputmux-connection = <&inputmux0 0 NXP_FREQME_TAR_CLK_IN1>;
+				};
+			};
 		};
 
 		lpuart0: lpuart@4009f000 {

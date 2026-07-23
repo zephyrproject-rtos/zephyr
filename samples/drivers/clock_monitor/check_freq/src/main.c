@@ -16,6 +16,7 @@
 #include <errno.h>
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_monitor.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -24,6 +25,33 @@
 LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 
 #define MONITOR DEVICE_DT_GET(DT_ALIAS(clock_monitor))
+
+/* Enable the clocks a board declares in its clock-monitor-required-clocks node. */
+#if DT_HAS_COMPAT_STATUS_OKAY(clock_monitor_required_clocks)
+
+#define REQUIRED_CLOCK_ON(node_id, prop, idx)                                  \
+	do {                                                                   \
+		const struct device *_clk =                                    \
+			DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_IDX(node_id, idx));    \
+		if (device_is_ready(_clk)) {                                   \
+			(void)clock_control_on(_clk,                           \
+				(clock_control_subsys_t)(uintptr_t)            \
+				DT_CLOCKS_CELL_BY_IDX(node_id, idx, name));    \
+		}                                                              \
+	} while (0)
+
+static void enable_required_clocks(void)
+{
+	DT_FOREACH_PROP_ELEM_SEP(
+		DT_COMPAT_GET_ANY_STATUS_OKAY(clock_monitor_required_clocks),
+		clocks, REQUIRED_CLOCK_ON, (;));
+}
+
+#else
+
+static void enable_required_clocks(void) {}
+
+#endif
 
 /*
  * Tunable parameters come straight from Kconfig
@@ -55,6 +83,9 @@ int main(void)
 		LOG_ERR("%s is not ready", dev->name);
 		return -ENODEV;
 	}
+
+	/* Ensure any board-declared source clocks are running before configuring. */
+	enable_required_clocks();
 
 	struct clock_monitor_config cfg = {
 		.mode = CLOCK_MONITOR_MODE_WINDOW,

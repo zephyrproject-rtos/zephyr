@@ -257,6 +257,10 @@
 	status = "okay";
 };
 
+&freqme0 {
+	status = "okay";
+};
+
 &flexcan0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan0>;

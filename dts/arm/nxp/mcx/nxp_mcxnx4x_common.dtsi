@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
@@ -130,6 +131,85 @@
 		reset: reset {
 			compatible = "nxp,lpc-syscon-reset";
 			#reset-cells = <1>;
+		};
+	};
+
+	inputmux0: inputmux@6000 {
+		compatible = "nxp,inputmux";
+		reg = <0x6000 0x1000>;
+		#inputmux-cells = <2>;
+	};
+
+	freqme0: freqme@11000 {
+		compatible = "nxp,freqme";
+		reg = <0x11000 0x10>;
+		interrupts = <71 0>;
+		clocks = <&syscon MCUX_FREQME_CLK>;
+		status = "disabled";
+
+		reference-sources {
+			ref-cpu-ahb {
+				default-source;
+				inputmux-connection = <&inputmux0 0
+						       NXP_FREQME_MCXN_REF_CPU_AHB_CLK>;
+				clocks = <&syscon MCUX_CPU_AHB_CLK>;
+			};
+
+			ref-fro-hf {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_MCXN_REF_FRO_HF>;
+				clocks = <&syscon MCUX_FRO_HF_CLK>;
+			};
+
+			ref-fro-12m {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_MCXN_REF_FRO_12M>;
+				clocks = <&syscon MCUX_FRO_12M_CLK>;
+			};
+
+			ref-osc32k {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_MCXN_REF_OSC32K>;
+				clock-frequency = <32768>;
+			};
+		};
+
+		target-sources {
+			/*
+			 * Targets without a clocks / clock-frequency provider are
+			 * MEASURE only (no WINDOW auto-derive): CLK_IN / CLK_IN0 /
+			 * CLK_IN1 are external input pins.
+			 */
+			tar-fro-12m {
+				default-source;
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_MCXN_TAR_FRO_12M>;
+				clocks = <&syscon MCUX_FRO_12M_CLK>;
+			};
+
+			tar-fro-hf {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_MCXN_TAR_FRO_HF>;
+				clocks = <&syscon MCUX_FRO_HF_CLK>;
+			};
+
+			tar-clk-in {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_MCXN_TAR_CLK_IN>;
+			};
+
+			tar-osc32k {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_MCXN_TAR_OSC32K>;
+				clock-frequency = <32768>;
+			};
+
+			tar-cpu-ahb {
+				inputmux-connection = <&inputmux0 0
+						       NXP_FREQME_MCXN_TAR_CPU_AHB_CLK>;
+				clocks = <&syscon MCUX_CPU_AHB_CLK>;
+			};
+
+			tar-clk-in0 {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_MCXN_TAR_CLK_IN0>;
+			};
+
+			tar-clk-in1 {
+				inputmux-connection = <&inputmux0 0 NXP_FREQME_MCXN_TAR_CLK_IN1>;
+			};
 		};
 	};
 
