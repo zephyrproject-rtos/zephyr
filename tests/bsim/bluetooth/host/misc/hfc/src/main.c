@@ -18,7 +18,7 @@
 
 #include "testlib/att_read.h"
 
-#include <argparse.h>		/* For get_device_nbr() */
+#include <bsim_args_runner.h>		/* For get_device_nbr() */
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
 

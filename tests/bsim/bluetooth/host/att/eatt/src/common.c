@@ -8,7 +8,7 @@
 
 #include "babblekit/testcase.h"
 #include "common.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 
 struct bt_conn *default_conn;
 
