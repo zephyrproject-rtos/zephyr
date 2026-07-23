@@ -29,6 +29,80 @@ config BT_H5
 	  Bluetooth three-wire (H:5) UART driver. Implementation of HCI
 	  Three-Wire UART Transport Layer.
 
+config BT_HCI_ESP_HOSTED_MCU
+	bool
+	default y
+	depends on DT_HAS_ESPRESSIF_BT_HCI_ESP_HOSTED_MCU_ENABLED
+	select ESP_HOSTED_MCU
+	help
+	  Bluetooth HCI driver for a controller on an external Espressif
+	  coprocessor running esp-hosted-mcu coprocessor firmware. The controller
+	  is reached as HCI H4 frames over the shared esp-hosted-mcu transport
+	  (SPI or SDIO), the same link used for Wi-Fi.
+
+	  The coprocessor is a separate part, so its Bluetooth capabilities
+	  are a property of that part rather than of this host. An ESP32-C2,
+	  C3, C5, C6, H2 or S3 coprocessor provides a Bluetooth 5.0 LE
+	  controller, while an ESP32 provides Bluetooth 4.2 LE and BR/EDR
+	  and has no extended advertising. Select the host features to match
+	  the coprocessor in use.
+
+if BT_HCI_ESP_HOSTED_MCU
+
+# The controller owns its ACL buffers and does not accept the host buffer
+# size command, so host-side ACL flow control must stay off.
+config BT_HCI_ACL_FLOW_CONTROL
+	default n
+
+# A Bluetooth 5.0 coprocessor reports scan results as extended advertising
+# reports, which are discardable events. An extended report can be large, so
+# widen each discardable buffer to hold one; harmless on a coprocessor
+# without extended advertising.
+config BT_BUF_EVT_DISCARDABLE_SIZE
+	default 255
+
+# Advertising reports arrive in bursts, so provide enough discardable buffers
+# that a burst is not silently dropped waiting for the host to drain them.
+config BT_BUF_EVT_DISCARDABLE_COUNT
+	default 32
+
+# Extended advertising is not enabled for the coprocessor by default. Its
+# capabilities are not known when the host is built: a Bluetooth 4.2 part
+# has no extended advertising at all. An application that needs it, on a
+# coprocessor that provides it, selects BT_EXT_ADV itself. Keep the legacy
+# commands available in that case, since they work on either generation.
+config BT_EXT_ADV_LEGACY_SUPPORT
+	default y if BT_EXT_ADV
+
+# The host frames and checksums every HCI packet on these threads, which
+# is deeper than an on-die controller needs. Size them for the framed
+# transport so pairing from a connected callback does not overflow; the
+# tx processor was the thread measured overflowing during pairing.
+config BT_RX_STACK_SIZE
+	default 2560
+
+config BT_LONG_WQ_STACK_SIZE
+	default 2048
+
+config BT_TX_PROCESSOR_STACK_SIZE
+	default 2048
+
+config BT_HCI_ESP_HOSTED_MCU_RX_STACK_SIZE
+	int "esp-hosted-mcu HCI receive thread stack size"
+	default 2048
+	help
+	  Stack size for the thread that reconstructs and delivers received HCI
+	  frames. Delivery is moved off the shared esp-hosted-mcu receive thread so
+	  it cannot stall the Wi-Fi path while waiting on a host buffer pool.
+
+config BT_HCI_ESP_HOSTED_MCU_RX_PRIO
+	int "esp-hosted-mcu HCI receive thread cooperative priority"
+	default 7
+	help
+	  Cooperative priority for the esp-hosted-mcu HCI receive thread.
+
+endif # BT_HCI_ESP_HOSTED_MCU
+
 config BT_HCI_IPC
 	bool
 	default y
