@@ -149,17 +149,17 @@ void soc_early_init_hook(void)
 	power_manager_master_init();
 	power_manager_slave_init();
 	platform_pm_init();
+}
 
+void soc_late_init_hook(void)
+{
 	/* Initialize OSC32 SDM software timer. */
 	init_osc_sdm_timer();
 
 	/* Initialize PHY hardware control. */
 	phy_hw_control_init(false);
 	phy_init(false);
-}
 
-void soc_late_init_hook(void)
-{
 	/* Initialize HW AES mutex. */
 	hw_aes_create_mutex();
 
