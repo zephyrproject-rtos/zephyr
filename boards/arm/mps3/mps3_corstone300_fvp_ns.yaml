@@ -1,4 +1,4 @@
-# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: mps3/corstone300/fvp/ns
@@ -7,6 +7,9 @@ type: mcu
 arch: arm
 ram: 1920
 flash: 3072
+simulation:
+  - name: armfvp
+    exec: FVP_Corstone_SSE-300_Ethos-U55
 toolchain:
   - gnuarmemb
   - zephyr
