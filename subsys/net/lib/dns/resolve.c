@@ -474,6 +474,7 @@ static int register_dispatcher(struct dns_resolve_context *ctx,
 			       const struct net_in6_addr *addr6,
 			       const struct net_in_addr *addr4)
 {
+	k_mutex_init(&server->dispatcher.lock);
 	server->dispatcher.type = DNS_SOCKET_RESOLVER;
 	server->dispatcher.cb = dispatcher_cb;
 	server->dispatcher.fds = ctx->fds;
