@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include <bs_pc_backchannel.h>
 #include "mesh/crypto.h"
 #include <zephyr/bluetooth/hci.h>
