@@ -523,6 +523,89 @@ out:
 	return result;
 }
 
+static bool test_partitioned_pkt_sending(const uint8_t *payload, size_t payload_len,
+					 const size_t *frag_sizes, size_t frag_count)
+{
+	static const uint8_t broadcast_addr[IEEE802154_SHORT_ADDR_LENGTH] = {0xff, 0xff};
+	struct ieee802154_mpdu mpdu;
+	struct net_pkt *pkt;
+	size_t offset = 0;
+	bool result = false;
+
+	k_sem_reset(&driver_lock);
+
+	pkt = net_pkt_alloc_on_iface(net_iface, K_FOREVER);
+	if (pkt == NULL) {
+		NET_ERR("*** Failed to allocate partitioned packet");
+		return false;
+	}
+
+	net_pkt_lladdr_src(pkt)->type = NET_LINK_IEEE802154;
+	net_pkt_lladdr_dst(pkt)->type = NET_LINK_IEEE802154;
+	if (net_linkaddr_set(net_pkt_lladdr_dst(pkt), broadcast_addr, sizeof(broadcast_addr)) < 0) {
+		NET_ERR("*** Failed to set destination address");
+		goto release_pkt;
+	}
+
+	for (size_t i = 0; i < frag_count; i++) {
+		struct net_buf *frag;
+
+		frag = net_pkt_get_frag(pkt, frag_sizes[i], K_FOREVER);
+		if (frag == NULL) {
+			NET_ERR("*** Failed to allocate packet fragment");
+			goto release_pkt;
+		}
+
+		net_buf_add_mem(frag, payload + offset, frag_sizes[i]);
+		net_pkt_frag_add(pkt, frag);
+		offset += frag_sizes[i];
+	}
+
+	if (offset != payload_len) {
+		NET_ERR("*** Fragment sizes do not match payload length");
+		goto release_pkt;
+	}
+
+	if (net_if_send_data(net_iface, pkt) != NET_OK) {
+		NET_ERR("*** Failed to send partitioned packet");
+		goto release_pkt;
+	}
+
+	pkt = NULL;
+	k_yield();
+	if (k_sem_take(&driver_lock, K_SECONDS(1)) < 0) {
+		NET_ERR("*** Timed out waiting for partitioned packet");
+		goto out;
+	}
+
+	if (current_pkt->frags == NULL || current_pkt->frags->frags != NULL) {
+		NET_ERR("*** Packet storage fragments became MAC frame boundaries");
+		goto release_frame;
+	}
+
+	if (!ieee802154_validate_frame(current_pkt->frags->data, current_pkt->frags->len, &mpdu)) {
+		NET_ERR("*** Sent partitioned packet is not valid");
+		goto release_frame;
+	}
+
+	if (mpdu.payload_length != payload_len || memcmp(mpdu.payload, payload, payload_len)) {
+		NET_ERR("*** Sent partitioned payload differs from source");
+		goto release_frame;
+	}
+
+	result = true;
+
+release_frame:
+	net_pkt_frag_unref(current_pkt->frags);
+	current_pkt->frags = NULL;
+out:
+	return result;
+
+release_pkt:
+	net_pkt_unref(pkt);
+	goto out;
+}
+
 static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
 {
 	struct ieee802154_mpdu mpdu;
@@ -1311,6 +1394,25 @@ ZTEST(ieee802154_l2, test_sending_ns_pkt_with_short_addr)
 	ret = test_ns_sending(&test_ns_pkt, true);
 
 	zassert_true(ret, "NS sent");
+}
+
+ZTEST(ieee802154_l2, test_sending_partitioned_pkt)
+{
+	static const uint8_t payload[] = {
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a,
+		0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+		0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+	};
+	static const size_t one_frag[] = {sizeof(payload)};
+	static const size_t two_frags[] = {1, sizeof(payload) - 1};
+	static const size_t three_frags[] = {7, 5, sizeof(payload) - 12};
+
+	zassert_true(test_partitioned_pkt_sending(payload, sizeof(payload), one_frag,
+						  ARRAY_SIZE(one_frag)));
+	zassert_true(test_partitioned_pkt_sending(payload, sizeof(payload), two_frags,
+						  ARRAY_SIZE(two_frags)));
+	zassert_true(test_partitioned_pkt_sending(payload, sizeof(payload), three_frags,
+						  ARRAY_SIZE(three_frags)));
 }
 
 ZTEST(ieee802154_l2, test_parsing_ack_pkt)
