@@ -124,6 +124,7 @@
 			compatible = "sifli,sf32lb-lcdc";
 			reg = <0x50008000 0x1000>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_LCDC1>;
+			interrupts = <63 0>;
 			status = "disabled";
 
 			mipi-dbi {
