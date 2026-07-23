@@ -306,6 +306,10 @@ New Drivers
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
     (:dtcompatible:`diodes,pi4ioe5v6408`).
 
+* Sensors
+
+  * Sensirion SCD30 CO2 sensor (:dtcompatible:`sensirion,scd30`).
+
 * Input
 
   * VIRTIO input device (:dtcompatible:`virtio,input`).
