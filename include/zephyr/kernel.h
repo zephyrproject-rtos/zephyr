@@ -4039,6 +4039,24 @@ typedef void (*k_work_handler_t)(struct k_work *work);
 void k_work_init(struct k_work *work,
 		  k_work_handler_t handler);
 
+#ifdef CONFIG_SYSTEM_WORKQUEUE_PRIORITY_ORDERING
+/** @brief Initialize a work structure with priority.
+ *
+ * Similar to k_work_init() but allows specifying a priority for the work item.
+ * Lower numerical values indicate higher priority. Work items with equal
+ * priority maintain FIFO ordering.
+ *
+ * @isr_ok
+ *
+ * @param work the work structure to be initialized.
+ * @param handler the handler to be invoked by the work item.
+ * @param prio the priority of the work item (0 = highest priority).
+ */
+void k_work_init_priority(struct k_work *work,
+			   k_work_handler_t handler,
+			   uint8_t prio);
+#endif
+
 /** @brief Busy state flags from the work item.
  *
  * A zero return value indicates the work item appears to be idle.
@@ -4682,6 +4700,13 @@ struct k_work {
 	 * It can be RUNNING and CANCELING simultaneously.
 	 */
 	uint32_t flags;
+
+#ifdef CONFIG_SYSTEM_WORKQUEUE_PRIORITY_ORDERING
+	/* Priority of the work item. Lower values indicate higher priority.
+	 * Work items with equal priority maintain FIFO ordering.
+	 */
+	uint8_t priority;
+#endif
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -4690,9 +4715,16 @@ struct k_work {
 /**
  * @cond INTERNAL_HIDDEN
  */
+#ifdef CONFIG_SYSTEM_WORKQUEUE_PRIORITY_ORDERING
+#define Z_WORK_INITIALIZER(work_handler) { \
+	.handler = (work_handler), \
+	.priority = 0, \
+}
+#else
 #define Z_WORK_INITIALIZER(work_handler) { \
 	.handler = (work_handler), \
 }
+#endif
 /**
  * INTERNAL_HIDDEN @endcond
  */
