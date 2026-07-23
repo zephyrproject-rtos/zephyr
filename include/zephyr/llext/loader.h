@@ -122,7 +122,7 @@ struct llext_loader {
 	 * @param[in] ldr Loader
 	 * @param[in] pos Position to obtain a pointer to
 	 *
-	 * @returns a pointer into the buffer or `NULL` if not supported
+	 * @returns a pointer into the buffer or `NULL` if not supported or pointer out of bounds.
 	 */
 	void *(*peek)(struct llext_loader *ldr, size_t pos);
 
