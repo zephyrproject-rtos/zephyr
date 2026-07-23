@@ -20,5 +20,6 @@ config NFC_INIT_PRIORITY
 	  NFC controller driver device initialization priority.
 
 source "drivers/nfc/pn53x/Kconfig"
+source "drivers/nfc/mfrc522/Kconfig"
 
 endif # NFC_DRIVERS

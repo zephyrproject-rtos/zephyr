@@ -1,0 +1,10 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config NFC_MFRC522
+	bool "NXP MFRC522 reader"
+	default y
+	depends on DT_HAS_NXP_MFRC522_ENABLED
+	select SPI
+	help
+	  Enable the NXP MFRC522 ISO/IEC 14443A reader.

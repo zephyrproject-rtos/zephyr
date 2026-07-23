@@ -1,0 +1,23 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP MFRC522
+
+description: ISO/IEC 14443 Type A reader on SPI.
+
+compatible: "nxp,mfrc522"
+
+include: [nfc-controller.yaml, spi-device.yaml]
+
+on-bus: spi
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: NRSTPD reset / power-down line (active low).
+
+  irq-gpios:
+    type: phandle-array
+    description: |
+      IRQ line the reader asserts on transceive completion. Optional; the
+      driver falls back to polling the interrupt status register.
