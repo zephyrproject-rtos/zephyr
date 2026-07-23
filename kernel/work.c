@@ -1117,7 +1117,8 @@ static int schedule_for_queue_locked(struct k_work_q **queuep,
  * @return true if and only if work had been delayed so the timeout
  * was cancelled.
  */
-static inline bool unschedule_locked(struct k_work_delayable *dwork)
+static inline bool unschedule_locked(struct k_work_delayable *dwork,
+				     k_spinlock_key_t *key)
 {
 	bool ret = false;
 	struct k_work *work = &dwork->work;
@@ -1129,6 +1130,23 @@ static inline bool unschedule_locked(struct k_work_delayable *dwork)
 	 */
 	if (flag_test_and_clear(&work->flags, K_WORK_DELAYED_BIT)) {
 		ret = z_abort_timeout(&dwork->timeout) == 0;
+
+		/* Clearing K_WORK_DELAYED_BIT above claims the wake from the
+		 * timeout handler, so a racing in-flight work_timeout() will
+		 * bail. But it may still be about to dereference
+		 * dwork->work.flags: wait for it to complete before we return,
+		 * as callers may free dwork or re-arm the same delayable for a
+		 * new schedule once we return.
+		 *
+		 * Dropping work.c::lock lets the blocked handler take it and
+		 * run to completion. On uniprocessor there is nothing in
+		 * flight (holding the lock disables interrupts) so this is a
+		 * no-op.
+		 */
+		while (z_timeout_is_inflight(&dwork->timeout)) {
+			k_spin_unlock(&lock, *key);
+			*key = k_spin_lock(&lock);
+		}
 	}
 
 	return ret;
@@ -1145,9 +1163,10 @@ static inline bool unschedule_locked(struct k_work_delayable *dwork)
  *
  * @return k_work_busy_get() flags
  */
-static int cancel_delayable_async_locked(struct k_work_delayable *dwork)
+static int cancel_delayable_async_locked(struct k_work_delayable *dwork,
+					 k_spinlock_key_t *key)
 {
-	(void)unschedule_locked(dwork);
+	(void)unschedule_locked(dwork, key);
 
 	return cancel_async_locked(&dwork->work);
 }
@@ -1199,7 +1218,7 @@ int k_work_reschedule_for_queue(struct k_work_q *queue, struct k_work_delayable 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	/* Remove any active scheduling. */
-	(void)unschedule_locked(dwork);
+	(void)unschedule_locked(dwork, &key);
 
 	/* Schedule the work item with the new parameters. */
 	ret = schedule_for_queue_locked(&queue, dwork, delay);
@@ -1229,7 +1248,7 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, cancel_delayable, dwork);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	int ret = cancel_delayable_async_locked(dwork);
+	int ret = cancel_delayable_async_locked(dwork, &key);
 
 	k_spin_unlock(&lock, key);
 
@@ -1256,7 +1275,7 @@ bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
 	bool need_wait = false;
 
 	if (pending) {
-		(void)cancel_delayable_async_locked(dwork);
+		(void)cancel_delayable_async_locked(dwork, &key);
 		need_wait = cancel_sync_locked(&dwork->work, canceller);
 	}
 
@@ -1298,7 +1317,7 @@ bool k_work_flush_delayable(struct k_work_delayable *dwork,
 	/* If unscheduling did something then submit it.  Ignore a
 	 * failed submission (e.g. when cancelling).
 	 */
-	if (unschedule_locked(dwork)) {
+	if (unschedule_locked(dwork, &key)) {
 		struct k_work_q *queue = dwork->queue;
 
 		(void)submit_to_queue_locked(work, &queue);
