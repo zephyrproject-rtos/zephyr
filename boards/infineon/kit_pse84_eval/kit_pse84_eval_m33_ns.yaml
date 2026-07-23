@@ -18,3 +18,4 @@ supported:
   - bluetooth
   - wifi
   - flash
+  - spi
