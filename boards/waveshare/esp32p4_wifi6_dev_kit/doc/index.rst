@@ -9,7 +9,8 @@ of NOR flash and provides wired connectivity (USB, 100M Ethernet, MicroSD),
 audio, MIPI CSI/DSI interfaces and a 40-pin GPIO header. Wireless
 connectivity comes from an on-board ESP32-C6 module connected over SDIO.
 
-This board definition targets the ESP32-P4 high-performance (HP) core.
+This board definition provides both high-performance (HP) core and
+low-power (LP) core targets.
 
 Hardware
 ********
