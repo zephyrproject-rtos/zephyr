@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_VIRTIO
+	bool "VIRTIO GPIO driver"
+	default y
+	depends on DT_HAS_VIRTIO_GPIO_ENABLED
+	select VIRTIO
+	help
+	  Enable driver for VIRTIO GPIO devices.
+
+	  Every operation is a round trip to the virtio device, so the GPIO API
+	  can only be used from a thread, including from the interrupt callbacks
+	  fired by this driver.
