@@ -150,13 +150,22 @@ Run through twister
 ===================
 
 The :file:`tests.yaml` scenario ``sample.net.zperf.loopback_icount`` uses the
-``console`` harness and records the two throughput values into the twister JSON
+``console`` harness and records the throughput values into the twister JSON
 report:
 
 .. code-block:: console
 
    ./scripts/twister -p qemu_x86 -s sample.net.zperf.loopback_icount \
        --outdir ../build/zperf_run
+
+The scenario is allowed on both ``qemu_x86`` (32-bit) and ``qemu_x86_64``
+(64-bit); run the latter for a 64-bit data point (for example to exercise the
+64-bit checksum fast path):
+
+.. code-block:: console
+
+   ./scripts/twister -p qemu_x86_64 -s sample.net.zperf.loopback_icount \
+       --outdir ../build/zperf_run64
 
 Baseline and regression gate
 ============================
