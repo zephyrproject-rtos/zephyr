@@ -523,6 +523,15 @@
 				#gpio-cells = <2>;
 				gpio-controller;
 			};
+
+			test_i2c_max7321: max7321@22 {
+				compatible = "adi,max7321";
+				reg = <0x22>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				int-gpios = <&test_gpio 0 0>;
+			};
 		};
 
 		nct3807_alert_1 {
