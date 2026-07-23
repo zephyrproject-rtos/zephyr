@@ -180,8 +180,8 @@ DSA master port. DSA master port support is TODO work.
 
 For FRDM-iMXRT1186, the following network interfaces present:
 
-- ``swp0`` and ``swp2``: user ports which can be used.
-- ``swp4``: DSA CPU port. Not a user port.
+- ``swp0`` and ``swp1``: user ports which can be used.
+- ``swp2``: DSA CPU port. Not a user port.
 - ``eth0``: DSA conduit port. Not a user port.
 
 On the FRDM-iMXRT1186 board, the two Ethernet connectors are shared between
@@ -194,7 +194,7 @@ network interfaces:
 
 .. note::
 
-   DHCP is expected to work on ``swp0`` and ``swp2``.
+   DHCP is expected to work on ``swp0`` and ``swp1``.
 
 .. code-block:: none
 
