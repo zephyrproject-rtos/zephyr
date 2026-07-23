@@ -23,12 +23,27 @@
 #include <esp_intr_alloc.h>
 #include <esp_timer.h>
 #include <hal/gpio_hal.h>
+
+/*
+ * SoCs whose SDMMC slots have no dedicated IO_MUX pins must route the
+ * bus through the GPIO matrix. ESP32-P4 uses it for slot 1 only;
+ * ESP32-S3 uses it for every slot.
+ */
+#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32S3)
+#define SDHC_ESP32_USE_GPIO_MATRIX 1
+#endif
+
 #if defined(CONFIG_SOC_SERIES_ESP32P4)
 #include <hal/gpio_ll.h>
 #include <soc/io_mux_struct.h>
 #include <soc/gpio_struct.h>
 #else
 #include <hal/rtc_io_hal.h>
+#endif
+#if defined(SDHC_ESP32_USE_GPIO_MATRIX)
+#include <hal/gpio_ll.h>
+#include <hal/sdmmc_periph.h>
+#include <esp_rom_gpio.h>
 #endif
 #include <soc/io_mux_reg.h>
 #include <soc/sdmmc_reg.h>
@@ -96,7 +111,7 @@ struct sdhc_esp32_config {
 struct sdhc_esp32_data {
 
 	uint8_t bus_width;  /* Bus width used by the slot (can change during execution) */
-	uint32_t bus_clock; /* Value in Hz. ESP-IDF functions use kHz instead */
+	uint32_t bus_clock; /* Value in Hz; the low-level helpers use kHz */
 
 	enum sdhc_power power_mode;
 	enum sdhc_timing_mode timing;
@@ -106,6 +121,11 @@ struct sdhc_esp32_data {
 	bool s_is_app_cmd;
 	sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT] __aligned(SDMMC_DESC_ALIGN);
 	struct sdmmc_transfer_state s_cur_transfer;
+#ifdef CONFIG_SDHC_ESP32_SDIO
+	sdhc_interrupt_cb_t sdio_cb;
+	void *sdio_cb_user_data;
+	int sdio_int_sources;
+#endif
 };
 
 /**********************************************************************
@@ -203,8 +223,8 @@ static int sdmmc_host_wait_for_event(struct sdhc_esp32_data *data, int timeout_m
 static int handle_idle_state_events(struct sdhc_esp32_data *data)
 {
 	/* Handle any events which have happened in between transfers.
-	 * Under current assumptions (no SDIO support) only card detect events
-	 * can happen in the idle state.
+	 * SDIO card interrupts are delivered through the registered callback,
+	 * not this queue, so only card detect events surface in the idle state.
 	 */
 	struct sdmmc_event evt;
 
@@ -654,6 +674,18 @@ static int sdmmc_host_do_transaction(const struct device *dev, int slot,
 			goto out;
 		}
 
+		/*
+		 * make_hw_cmd() cannot describe a transfer that is not a whole
+		 * number of blocks, so reject it here instead of letting it
+		 * build a descriptor the controller would misinterpret.
+		 */
+		if ((cmdinfo->blklen == 0) || ((cmdinfo->datalen % cmdinfo->blklen) != 0)) {
+			LOG_DBG("%s: invalid block length: total=%d blklen=%d", __func__,
+				cmdinfo->datalen, cmdinfo->blklen);
+			ret = ESP_ERR_INVALID_SIZE;
+			goto out;
+		}
+
 		if ((((intptr_t)cmdinfo->data % 4) != 0) || !esp_ptr_dma_capable(cmdinfo->data)) {
 			LOG_DBG("%s: buffer %p can not be used for DMA", __func__, cmdinfo->data);
 			ret = ESP_ERR_INVALID_ARG;
@@ -946,6 +978,34 @@ static void configure_pin_iomux(int gpio_num)
 #endif
 }
 
+#if defined(SDHC_ESP32_USE_GPIO_MATRIX)
+/*
+ * Route a pin to the SDMMC peripheral through the GPIO matrix. Slots that
+ * have no dedicated IO_MUX pins (SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX) can only
+ * reach the controller this way. The same signal index feeds both the input
+ * and output connections; for the clock pin only the output path is wired.
+ */
+static void configure_pin_gpio_matrix(int gpio_num, uint32_t signal_idx, bool is_output_only)
+{
+	if (gpio_num == GPIO_NUM_NC) {
+		return;
+	}
+
+	gpio_ll_func_sel(GPIO_LL_GET_HW(0), gpio_num, PIN_FUNC_GPIO);
+	gpio_ll_pulldown_dis(GPIO_LL_GET_HW(0), gpio_num);
+	gpio_ll_pullup_en(GPIO_LL_GET_HW(0), gpio_num);
+	gpio_ll_set_drive_capability(GPIO_LL_GET_HW(0), gpio_num, GPIO_DRIVE_CAP_3);
+
+	if (!is_output_only) {
+		gpio_ll_input_enable(GPIO_LL_GET_HW(0), gpio_num);
+		esp_rom_gpio_connect_in_signal(gpio_num, signal_idx, false);
+	}
+
+	gpio_ll_output_enable(GPIO_LL_GET_HW(0), gpio_num);
+	esp_rom_gpio_connect_out_signal(gpio_num, signal_idx, false, false);
+}
+#endif
+
 /**********************************************************************
  * Zephyr API
  **********************************************************************/
@@ -1220,6 +1280,18 @@ static int sdhc_esp32_request(const struct device *dev, struct sdhc_command *cmd
 		esp_cmd.flags = SCF_CMD_AC | SCF_RSP_R5;
 		break;
 
+#if defined(CONFIG_SDHC_ESP32_SDIO)
+	case SDIO_RW_EXTENDED:
+		if (!data || data->block_size == 0 || data->blocks == 0) {
+			return -EINVAL;
+		}
+		esp_cmd.flags = SCF_CMD_ADTC | SCF_RSP_R5;
+		if (!(cmd->arg & BIT(SDIO_CMD_ARG_RW_SHIFT))) {
+			esp_cmd.flags |= SCF_CMD_READ;
+		}
+		break;
+#endif
+
 	case SDIO_SEND_OP_COND:
 		esp_cmd.flags = SCF_CMD_BCR | SCF_RSP_R4;
 		break;
@@ -1368,7 +1440,33 @@ static void IRAM_ATTR sdio_esp32_isr(void *arg)
 
 	struct sdmmc_event event;
 	struct k_msgq *queue = data->s_host_ctx.event_queue;
-	uint32_t pending = sdmmc_ll_get_intr_status(sdio_hw) & 0xFFFF;
+	/*
+	 * The card interrupt bits live at 16 and 17 and are dispatched
+	 * separately below, so the event queue only ever carries the low
+	 * 16 command and data sources.
+	 */
+	uint32_t raw = sdmmc_ll_get_intr_status(sdio_hw);
+	uint32_t pending = raw & 0xFFFF;
+
+#ifdef CONFIG_SDHC_ESP32_SDIO
+	uint32_t io_bit = (cfg->slot == 0) ? SDMMC_LL_EVENT_IO_SLOT0 : SDMMC_LL_EVENT_IO_SLOT1;
+
+	if (raw & io_bit) {
+		/*
+		 * Mask the source so it does not re-trigger before the consumer
+		 * has handled it, and clear the latched status: the bit is
+		 * write-1-to-clear and never self-clears, so leaving it set
+		 * would re-enter this handler as soon as the source is
+		 * unmasked. A card still asserting DAT1 re-latches it at once.
+		 */
+		sdio_hw->intmask.val &= ~io_bit;
+		sdio_hw->rintsts.val = io_bit;
+
+		if (data->sdio_cb) {
+			data->sdio_cb(dev, SDHC_INT_SDIO, data->sdio_cb_user_data);
+		}
+	}
+#endif
 
 	sdio_hw->rintsts.val = pending;
 	event.sdmmc_status = pending;
@@ -1405,15 +1503,37 @@ static int sdhc_esp32_init(const struct device *dev)
 	}
 
 	/*
-	 * Pins below are only defined for ESP32. For SoC's with GPIO matrix feature
-	 * please use pinctrl for pin configuration.
+	 * Slots wired to dedicated IO_MUX pins are configured through the fixed
+	 * IO_MUX function. Slots with no IO_MUX pins (ESP32-P4 slot 1, every
+	 * ESP32-S3 slot) must be routed through the GPIO matrix using the
+	 * per-slot signal indices.
 	 */
+#if defined(SDHC_ESP32_USE_GPIO_MATRIX)
+	if (SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX(cfg->slot)) {
+		const sdmmc_slot_io_info_t *sig = &sdmmc_slot_gpio_sig[cfg->slot];
+
+		configure_pin_gpio_matrix(cfg->clk_pin, sig->clk, true);
+		configure_pin_gpio_matrix(cfg->cmd_pin, sig->cmd, false);
+		configure_pin_gpio_matrix(cfg->d0_pin, sig->d0, false);
+		configure_pin_gpio_matrix(cfg->d1_pin, sig->d1, false);
+		configure_pin_gpio_matrix(cfg->d2_pin, sig->d2, false);
+		configure_pin_gpio_matrix(cfg->d3_pin, sig->d3, false);
+	} else {
+		configure_pin_iomux(cfg->clk_pin);
+		configure_pin_iomux(cfg->cmd_pin);
+		configure_pin_iomux(cfg->d0_pin);
+		configure_pin_iomux(cfg->d1_pin);
+		configure_pin_iomux(cfg->d2_pin);
+		configure_pin_iomux(cfg->d3_pin);
+	}
+#else
 	configure_pin_iomux(cfg->clk_pin);
 	configure_pin_iomux(cfg->cmd_pin);
 	configure_pin_iomux(cfg->d0_pin);
 	configure_pin_iomux(cfg->d1_pin);
 	configure_pin_iomux(cfg->d2_pin);
 	configure_pin_iomux(cfg->d3_pin);
+#endif
 
 	/* GPIO matrix routed pins */
 	if (cfg->pcfg != NULL) {
@@ -1500,6 +1620,83 @@ static int sdhc_esp32_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_SDHC_ESP32_SDIO
+static int sdhc_esp32_enable_interrupt(const struct device *dev, sdhc_interrupt_cb_t callback,
+				       int sources, void *user_data)
+{
+	const struct sdhc_esp32_config *cfg = dev->config;
+	struct sdhc_esp32_data *data = dev->data;
+	sdmmc_dev_t *sdio_hw = (sdmmc_dev_t *)cfg->sdio_hw;
+	uint32_t io_bit;
+
+	if (sources & ~SDHC_INT_SDIO) {
+		return -ENOTSUP;
+	}
+
+	io_bit = (cfg->slot == 0) ? SDMMC_LL_EVENT_IO_SLOT0 : SDMMC_LL_EVENT_IO_SLOT1;
+
+	/*
+	 * The card interrupt callback runs from the ISR and the consumer
+	 * re-arms from there, so this must stay callable with interrupts
+	 * locked. intmask is shared with the ISR, so an interrupt lock is
+	 * what guards the read-modify-write; a mutex would neither help
+	 * against the ISR nor be usable from it.
+	 */
+	unsigned int key = irq_lock();
+
+	data->sdio_cb = callback;
+	data->sdio_cb_user_data = user_data;
+	/* The API replaces the enabled set rather than adding to it. */
+	data->sdio_int_sources = sources;
+
+	/*
+	 * Clear any status latched while the source was masked before
+	 * unmasking, so a stale bit does not fire the handler immediately.
+	 * The card interrupt is level driven, so a card that is still
+	 * asserting DAT1 sets the bit again right away and nothing is lost.
+	 */
+	if (sources & SDHC_INT_SDIO) {
+		sdio_hw->rintsts.val = io_bit;
+		sdio_hw->intmask.val |= io_bit;
+	} else {
+		sdio_hw->intmask.val &= ~io_bit;
+	}
+
+	irq_unlock(key);
+
+	return 0;
+}
+
+static int sdhc_esp32_disable_interrupt(const struct device *dev, int sources)
+{
+	const struct sdhc_esp32_config *cfg = dev->config;
+	struct sdhc_esp32_data *data = dev->data;
+	sdmmc_dev_t *sdio_hw = (sdmmc_dev_t *)cfg->sdio_hw;
+	uint32_t io_bit;
+
+	if (sources & ~SDHC_INT_SDIO) {
+		return -ENOTSUP;
+	}
+
+	io_bit = (cfg->slot == 0) ? SDMMC_LL_EVENT_IO_SLOT0 : SDMMC_LL_EVENT_IO_SLOT1;
+
+	/* Callable from the card interrupt callback, so no mutex here. */
+	unsigned int key = irq_lock();
+
+	sdio_hw->intmask.val &= ~io_bit;
+
+	data->sdio_int_sources &= ~sources;
+	if (data->sdio_int_sources == 0) {
+		data->sdio_cb = NULL;
+		data->sdio_cb_user_data = NULL;
+	}
+
+	irq_unlock(key);
+
+	return 0;
+}
+#endif /* CONFIG_SDHC_ESP32_SDIO */
+
 static DEVICE_API(sdhc, sdhc_api) = {
 	.reset = sdhc_esp32_reset,
 	.request = sdhc_esp32_request,
@@ -1507,6 +1704,10 @@ static DEVICE_API(sdhc, sdhc_api) = {
 	.get_card_present = sdhc_esp32_get_card_present,
 	.card_busy = sdhc_esp32_card_busy,
 	.get_host_props = sdhc_esp32_get_host_props,
+#ifdef CONFIG_SDHC_ESP32_SDIO
+	.enable_interrupt = sdhc_esp32_enable_interrupt,
+	.disable_interrupt = sdhc_esp32_disable_interrupt,
+#endif
 };
 
 #define SDHC_ESP32_INIT(n)                                                                         \
@@ -1551,7 +1752,9 @@ static DEVICE_API(sdhc, sdhc_api) = {
 					.ddr50_support = false,                                    \
 					.sdr104_support = false,                                   \
 					.sdr50_support = false,                                    \
-					.bus_8_bit_support = false},                               \
+					.bus_8_bit_support = false,                                \
+					.sdio_async_interrupt_support =                            \
+						IS_ENABLED(CONFIG_SDHC_ESP32_SDIO)},               \
 			  .bus_4_bit_support = DT_INST_PROP(n, bus_width) == 4,                    \
 			  .hs200_support = false,                                                  \
 			  .hs400_support = false}};                                                \
