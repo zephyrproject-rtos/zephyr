@@ -2336,6 +2336,17 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 			rem = length;
 		}
 
+		if (rem < left && c_op->pos == c_op->buf->data) {
+			/* Pulling from the front of the fragment: advance
+			 * the data pointer instead of moving the remaining
+			 * payload down.
+			 */
+			(void)net_buf_pull(c_op->buf, rem);
+			c_op->pos = c_op->buf->data;
+			length -= rem;
+			continue;
+		}
+
 		c_op->buf->len -= rem;
 		left -= rem;
 		if (left) {
