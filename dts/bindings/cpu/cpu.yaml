@@ -27,4 +27,12 @@ properties:
     description: d-cache line size
   enable-method:
     type: string
+    enum:
+      - "psci"
+      - "spin-table"
     description: Enable method for cpu, either it is "psci" or "spin-table"
+  cpu-release-addr:
+    type: array
+    description: |
+      Address of the release mailbox used by the spin-table enable-method to
+      bring CPU out of reset.
