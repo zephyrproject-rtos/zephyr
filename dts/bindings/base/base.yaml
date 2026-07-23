@@ -79,6 +79,27 @@ properties:
         - one with base address 0x1000, size 0x2000, and name "foo"
         - another with base address 0x3000, size 0x4000, and name "bar"
 
+  # Does not follow the 'type: array' scheme, but gets type-checked
+  # by the code. Declare it here just so that other bindings can make it
+  # 'required: true' easily if they want to.
+  ranges:
+    type: compound
+    description: |
+      Information used to define a mapping (or translation) between the address
+      space of a bus (the "child address space") and the address space of the
+      bus node's parent (the "parent address space").
+
+      The "ranges" property is typically empty, or a sequence of triplets
+      (child bus address, parent bus address, length).
+
+      If the "ranges" property is empty, it specifies that the parent and child
+      address spaces are identical and no address translation is required.
+
+      If the "ranges" property is not present in a bus node, it is assumed that
+      no mapping exists between children of the node and the parent address space.
+
+      For details, see "2.3.8 ranges" in Devicetree Specification v0.4.
+
   interrupts:
     type: array
     description: |
