@@ -8,10 +8,12 @@
 menuconfig GPIO_PCF857X
 	bool "PCF857X I2C GPIO chip"
 	default y
-	depends on DT_HAS_NXP_PCF857X_ENABLED
+	depends on DT_HAS_NXP_PCF857X_ENABLED || DT_HAS_ADI_MAX7321_ENABLED
 	select I2C
 	help
 	  Enable driver for PCF857X I2C GPIO chip.
+	  This driver also supports the Analog Devices MAX7321 I2C port
+	  expander, which uses a compatible communication protocol.
 
 config GPIO_PCF857X_INIT_PRIORITY
 	int "Init priority"

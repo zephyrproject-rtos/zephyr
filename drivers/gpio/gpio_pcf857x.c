@@ -3,14 +3,14 @@
  * 2022 Ithinx GmbH
  * 2023 Amrith Venkat Kesavamoorthi <amrith@mr-beam.org>
  * 2023 Mr Beam Lasers GmbH.
+ * 2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
  * @see https://www.nxp.com/docs/en/data-sheet/PCF8575.pdf
  * @see https://www.nxp.com/docs/en/data-sheet/PCF8574_PCF8574A.pdf
+ * @see https://www.analog.com/media/en/technical-documentation/data-sheets/MAX7321.pdf
  */
-
-#define DT_DRV_COMPAT nxp_pcf857x
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -68,9 +68,13 @@ static int pcf857x_process_input(const struct device *dev, gpio_port_value_t *va
 
 	rc = i2c_read_dt(&drv_cfg->i2c, rx_buf, drv_data->num_bytes);
 	if (rc != 0) {
-		LOG_ERR("%s: failed to read from device: %d", dev->name, rc);
+		LOG_ERR("%s: failed to read from device: %d (n=%d)", dev->name, rc,
+			drv_data->num_bytes);
 		return -EIO;
 	}
+
+	LOG_DBG("%s: RX n=%d bytes=%02x %02x", dev->name, drv_data->num_bytes, rx_buf[0],
+		rx_buf[1]);
 
 	if (value) {
 		*value = sys_get_le16(rx_buf); /*format P17-P10..P07-P00 (bit15-bit8..bit7-bit0)*/
@@ -172,7 +176,15 @@ static int pcf857x_port_set_raw(const struct device *dev, uint16_t mask, uint16_
 		return -EWOULDBLOCK;
 	}
 
-	if ((drv_data->pins_cfg.configured_as_outputs & value) != value) {
+	/*
+	 * These parts are quasi-bidirectional open-drain: writing a 1 releases
+	 * the pin to high-impedance (its input/pulled-up state) while writing a
+	 * 0 actively pulls it low. Releasing a pin high is therefore always
+	 * safe, so only reject attempts to actively drive a pin that is not
+	 * configured as an output low. The set of pins being pulled low is
+	 * mask & ~value.
+	 */
+	if (((mask & ~value) & ~drv_data->pins_cfg.configured_as_outputs) != 0U) {
 		LOG_ERR("Pin(s) is/are configured as input which should be output.");
 		return -EOPNOTSUPP;
 	}
@@ -184,9 +196,14 @@ static int pcf857x_port_set_raw(const struct device *dev, uint16_t mask, uint16_
 	tx_buf |= ~drv_data->pins_cfg.configured_as_outputs;
 	sys_put_le16(tx_buf, tx_buf_p);
 
+	LOG_DBG("%s: TX n=%d bytes=%02x %02x (tx_buf=0x%04x outputs=0x%04x)", dev->name,
+		drv_data->num_bytes, tx_buf_p[0], tx_buf_p[1], tx_buf,
+		drv_data->pins_cfg.configured_as_outputs);
+
 	rc = i2c_write_dt(&drv_cfg->i2c, tx_buf_p, drv_data->num_bytes);
 	if (rc != 0) {
-		LOG_ERR("%s: failed to write output port: %d", dev->name, rc);
+		LOG_ERR("%s: failed to write output port: %d (bytes=%02x %02x n=%d)", dev->name, rc,
+			tx_buf_p[0], tx_buf_p[1], drv_data->num_bytes);
 		k_sem_give(&drv_data->lock);
 		return -EIO;
 	}
@@ -215,7 +232,14 @@ static int pcf857x_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	uint16_t temp_pins = drv_data->pins_cfg.outputs_state;
 	uint16_t temp_outputs = drv_data->pins_cfg.configured_as_outputs;
 
-	if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN | GPIO_DISCONNECTED | GPIO_SINGLE_ENDED)) {
+	if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN | GPIO_DISCONNECTED)) {
+		return -ENOTSUP;
+	}
+	/*
+	 * The PCF857x and MAX7321 are open-drain parts, so open-drain is the
+	 * natural output mode and is accepted. Open-source is not supported.
+	 */
+	if ((flags & GPIO_SINGLE_ENDED) && !(flags & GPIO_LINE_OPEN_DRAIN)) {
 		return -ENOTSUP;
 	}
 	if (flags & GPIO_INPUT) {
@@ -308,7 +332,8 @@ static int pcf857x_pin_interrupt_configure(const struct device *dev, gpio_pin_t 
 {
 	const struct pcf857x_drv_cfg *drv_cfg = dev->config;
 
-	if (!drv_cfg->gpio_int.port) {
+	/* Disabling interrupts is always allowed, even without an INT line. */
+	if (mode != GPIO_INT_MODE_DISABLED && !drv_cfg->gpio_int.port) {
 		return -ENOTSUP;
 	}
 
@@ -339,6 +364,30 @@ static int pcf857x_init(const struct device *dev)
 	if (!device_is_ready(drv_cfg->i2c.bus)) {
 		LOG_ERR("%s is not ready", drv_cfg->i2c.bus->name);
 		return -ENODEV;
+	}
+
+	/*
+	 * Put the device into a known state: all pins released high
+	 * (high-impedance / input with pull-up on these open-drain parts).
+	 * This also primes input_port_last with the initial pin state.
+	 *
+	 * These transfers are best-effort: a transient bus glitch on the very
+	 * first access must not prevent the device from becoming ready, so a
+	 * failure here is logged but not treated as fatal.
+	 */
+	drv_data->pins_cfg.configured_as_outputs = 0U;
+	drv_data->pins_cfg.outputs_state = 0xFFFFU;
+
+	uint8_t init_buf[2] = {0xFFU, 0xFFU};
+
+	rc = i2c_write_dt(&drv_cfg->i2c, init_buf, drv_data->num_bytes);
+	if (rc != 0) {
+		LOG_WRN("%s: failed to initialize output port: %d", dev->name, rc);
+	}
+
+	rc = pcf857x_process_input(dev, NULL);
+	if (rc != 0) {
+		LOG_WRN("%s: failed to read initial state: %d", dev->name, rc);
 	}
 
 	/* If the INT line is available, configure the callback for it. */
@@ -384,19 +433,24 @@ static DEVICE_API(gpio, pcf857x_drv_api) = {
 	.manage_callback = pcf857x_manage_callback,
 };
 
-#define GPIO_PCF857X_INST(idx)                                                                     \
-	static const struct pcf857x_drv_cfg pcf857x_cfg##idx = {                                   \
+#define GPIO_PCF857X_INST(idx, pfx)                                                                \
+	static const struct pcf857x_drv_cfg pfx##_cfg##idx = {                                     \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                    \
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(idx, int_gpios, {0}),                         \
 		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
 	};                                                                                         \
-	static struct pcf857x_drv_data pcf857x_data##idx = {                                       \
-		.lock = Z_SEM_INITIALIZER(pcf857x_data##idx.lock, 1, 1),                           \
+	static struct pcf857x_drv_data pfx##_data##idx = {                                         \
+		.lock = Z_SEM_INITIALIZER(pfx##_data##idx.lock, 1, 1),                             \
 		.work = Z_WORK_INITIALIZER(pcf857x_work_handler),                                  \
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
-		.num_bytes = DT_INST_ENUM_IDX(idx, ngpios) + 1,                                    \
+		.num_bytes = DT_INST_PROP(idx, ngpios) / 8,                                        \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, pcf857x_init, NULL, &pcf857x_data##idx, &pcf857x_cfg##idx,      \
+	DEVICE_DT_INST_DEFINE(idx, pcf857x_init, NULL, &pfx##_data##idx, &pfx##_cfg##idx,          \
 			      POST_KERNEL, CONFIG_GPIO_PCF857X_INIT_PRIORITY, &pcf857x_drv_api);
 
-DT_INST_FOREACH_STATUS_OKAY(GPIO_PCF857X_INST);
+#define DT_DRV_COMPAT nxp_pcf857x
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCF857X_INST, pcf857x)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_max7321
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCF857X_INST, max7321)
