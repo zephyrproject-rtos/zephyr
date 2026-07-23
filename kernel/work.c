@@ -608,7 +608,7 @@ bool k_work_cancel_sync(struct k_work *work,
  *
  * @param record Timeout record embedded in the work queue.
  *
- * @satisfies ZEP-SRS-26-26
+ * @satisfies ZEP-SRS-38-26
  */
 static void work_timeout_handler(struct _timeout *record)
 {
@@ -687,9 +687,9 @@ static void work_timeout_stop_locked(struct k_work_q *queue)
  * @param p2 unused
  * @param p3 unused
  *
- * @satisfies ZEP-SRS-26-3
- * @satisfies ZEP-SRS-26-4
- * @satisfies ZEP-SRS-26-13
+ * @satisfies ZEP-SRS-38-3
+ * @satisfies ZEP-SRS-38-4
+ * @satisfies ZEP-SRS-38-13
  */
 static void work_queue_main(void *workq_ptr, void *p2, void *p3)
 {
@@ -1029,7 +1029,7 @@ int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout)
  *
  * @param to Timeout record embedded in the delayable work item.
  *
- * @satisfies ZEP-SRS-26-22
+ * @satisfies ZEP-SRS-38-22
  */
 static void work_timeout(struct _timeout *to)
 {

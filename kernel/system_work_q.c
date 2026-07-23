@@ -26,7 +26,7 @@ struct k_work_q k_sys_work_q;
  * shared system work queue is available to application and kernel
  * code once the kernel is up.
  *
- * @satisfies ZEP-SRS-26-33
+ * @satisfies ZEP-SRS-38-33
  */
 static void sys_work_q_init(void)
 {

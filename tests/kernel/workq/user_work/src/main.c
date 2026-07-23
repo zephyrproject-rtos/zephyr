@@ -197,8 +197,8 @@ void *workq_setup(void)
  * @see k_work_user_submit_to_queue()
  * @see k_work_user_is_pending()
  * @see k_object_access_grant()
- * @verifies ZEP-SRS-26-11
- * @verifies ZEP-SRS-26-13
+ * @verifies ZEP-SRS-38-11
+ * @verifies ZEP-SRS-38-13
  */
 ZTEST_USER(workqueue_api, test_workq_user_mode)
 {
