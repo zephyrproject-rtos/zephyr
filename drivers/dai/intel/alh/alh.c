@@ -146,6 +146,11 @@ static const struct dai_properties *dai_alh_get_properties(const struct device *
 	uint32_t offset = dir == DAI_DIR_PLAYBACK ?
 		ALH_TXDA_OFFSET : ALH_RXDA_OFFSET;
 
+	if (stream_id < 0 || (size_t)stream_id >= ARRAY_SIZE(alh_handshake_map)) {
+		LOG_ERR("invalid stream_id %d", stream_id);
+		return NULL;
+	}
+
 	prop->fifo_address = dai_base(dp) + offset + ALH_STREAM_OFFSET * stream_id;
 	prop->fifo_depth = ALH_GPDMA_BURST_LENGTH;
 	prop->dma_hs_id = alh_handshake_map[stream_id];
