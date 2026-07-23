@@ -61,6 +61,14 @@ config CLOCK_CONTROL_MPFS_PLL
 	help
 	  Enable clock controller driver for Microchip Polarfire family.
 
+config CLOCK_CONTROL_MPFS_CLK
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_MPFS_CLK_ENABLED
+	select CLOCK_CONTROL_MCHP_COMMON
+	help
+	  Enable clock controller driver for Microchip Polarfire family.
+
 if CLOCK_CONTROL_MCHP_COMMON
 
 config CLOCK_CONTROL_MCHP_CONFIG_BOOTUP
