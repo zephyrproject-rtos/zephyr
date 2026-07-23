@@ -192,17 +192,22 @@ static void flush_print_buf(const struct shell *sh)
 static int print_coredump_hdr(const struct shell *sh, uint8_t *buf)
 {
 	struct coredump_hdr_t *hdr = (struct coredump_hdr_t *)buf;
+	uint16_t tgt_code_idx;
 
 	if (memcmp(hdr->id, "ZE", sizeof(char)*2) != 0) {
 		shell_print(sh, "Not a Zephyr coredump header");
 		return -EINVAL;
 	}
 
+	tgt_code_idx = sys_le16_to_cpu(hdr->tgt_code);
+	if (tgt_code_idx >= ARRAY_SIZE(coredump_target_code2str)) {
+		/* If out of bound, treat this as unknown (index 0). */
+		tgt_code_idx = 0U;
+	}
+
 	shell_print(sh, "**** Zephyr Coredump ****");
 	shell_print(sh, "\tVersion %u", hdr->hdr_version);
-	shell_print(sh, "\tTarget: %s",
-		    coredump_target_code2str[sys_le16_to_cpu(
-				    hdr->tgt_code)]);
+	shell_print(sh, "\tTarget: %s", coredump_target_code2str[tgt_code_idx]);
 	shell_print(sh, "\tPointer size: %u",
 		    (uint16_t)BIT(hdr->ptr_size_bits));
 	shell_print(sh, "\tFlag: %u", hdr->flag);
