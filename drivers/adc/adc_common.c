@@ -48,3 +48,19 @@ int adc_gain_invert(enum adc_gain gain,
 
 	return rv;
 }
+
+int adc_sequence_validate_buffer(const struct adc_sequence *sequence,
+				 uint8_t active_channels, size_t data_size)
+{
+	size_t needed = (size_t)active_channels * data_size;
+
+	if (sequence->options) {
+		needed *= (1 + sequence->options->extra_samplings);
+	}
+
+	if (sequence->buffer_size < needed) {
+		return -ENOMEM;
+	}
+
+	return 0;
+}
