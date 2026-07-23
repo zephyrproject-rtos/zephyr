@@ -22,6 +22,7 @@ config I2C_INFINEON_CAT1_PDL
 	depends on !USE_INFINEON_LEGACY_HAL
 	select USE_INFINEON_I2C
 	select PINCTRL
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  This option enables the PDL based I2C driver for the Infineon CAT1 family.
 
