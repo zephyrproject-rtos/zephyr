@@ -126,6 +126,24 @@
 	  IF_ENABLED(CONFIG_XIP, (MPU_RASR_XN_Msk |)) size | P_RW_U_NA_Msk)}
 #define REGION_RAM_NOCACHE_ATTR(size)                                                              \
 	{(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | MPU_RASR_XN_Msk | size | P_RW_U_NA_Msk)}
+#if defined(CONFIG_ARMV7_R)
+#define REGION_RAM_PRIV_RW_ATTR(size)                                                              \
+	{                                                                                          \
+		(NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE | NOT_EXEC |      \
+		 (size) | P_RW_U_NA_Msk)                                                          \
+	}
+#define REGION_RAM_PRIV_RO_ATTR(size)                                                              \
+	{                                                                                          \
+		(NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE | NOT_EXEC |      \
+		 (size) | P_RO_U_NA_Msk)                                                          \
+	}
+#define REGION_RAM_PRIV_TEXT_ATTR(size)                                                            \
+	{(NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE | (size) | P_RO_U_NA_Msk)}
+#define REGION_RAM_PRIV_RWX_ATTR(size)                                                             \
+	{(NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE | (size) | P_RW_U_NA_Msk)}
+#define REGION_SHARED_MEM_USERSPACE_ATTR(size)                                                     \
+	{(NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE | NOT_EXEC | (size) | P_RW_U_RW_Msk)}
+#endif /* CONFIG_ARMV7_R */
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
 #define REGION_FLASH_ATTR(size)                                                                    \
 	{(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE | size | P_RW_U_RO_Msk)}
