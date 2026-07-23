@@ -161,6 +161,21 @@ config AARCH64_IMAGE_HEADER
 	  This option enables standard ARM64 boot image header used by Linux
 	  and understood by loaders such as u-boot on Xen xl tool.
 
+config ARM64_SAVE_BOOT_FDT
+	bool "Save boot device tree blob on early boot"
+	depends on ARMV8_A
+	help
+	  Copy the device tree blob passed in x0 by the arm64 boot protocol
+	  into a static buffer early in reset so it can be parsed later.
+
+config ARM64_BOOT_FDT_MAX_SIZE
+	hex "Maximum boot device tree blob size"
+	default 0x8000
+	depends on ARM64_SAVE_BOOT_FDT
+	help
+	  Maximum number of bytes reserved for the boot device tree blob saved
+	  during early boot.
+
 config KOBJECT_TEXT_AREA
 	default 1024 if UBSAN
 	default 512 if TEST
