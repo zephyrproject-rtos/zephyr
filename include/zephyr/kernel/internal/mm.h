@@ -122,11 +122,11 @@ static inline uintptr_t k_mem_phys_addr(void *virt)
 #elif defined(CONFIG_MMU)
 	__ASSERT(
 #if CONFIG_KERNEL_VM_BASE != 0
-		 (addr >= CONFIG_KERNEL_VM_BASE) &&
+		 (addr >= (uintptr_t)CONFIG_KERNEL_VM_BASE) &&
 #endif /* CONFIG_KERNEL_VM_BASE != 0 */
 #if (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE) != 0
-		 (addr < (CONFIG_KERNEL_VM_BASE +
-			  (CONFIG_KERNEL_VM_SIZE))),
+		 (addr < ((uintptr_t)CONFIG_KERNEL_VM_BASE +
+			  ((uintptr_t)CONFIG_KERNEL_VM_SIZE))),
 #else
 		 false,
 #endif /* CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE != 0 */
