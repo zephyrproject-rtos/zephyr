@@ -230,11 +230,30 @@ static void ifx_cat1_i2c_event_handler(void *callback_arg, uint32_t event)
 {
 	const struct device *dev = (const struct device *)callback_arg;
 	struct ifx_cat1_i2c_data *data = dev->data;
+	const struct ifx_cat1_i2c_config *const config = dev->config;
 
 	if (((CY_SCB_I2C_MASTER_ERR_EVENT | CY_SCB_I2C_SLAVE_ERR_EVENT) & event) != 0) {
 		(void)_i2c_abort_async(dev);
+		/*
+		 * Abort does not confirm the master went idle when it times out,
+		 * so clear the async state unconditionally. This stops the
+		 * interrupt handler from starting a spurious read after a failed
+		 * write and leaving a stale completion for the next transfer.
+		 */
+		data->pending = CAT1_I2C_PENDING_NONE;
 		data->error = true;
 		k_sem_give(&data->transfer_sem);
+	} else if ((data->async_pending == CAT1_I2C_PENDING_TX_RX) &&
+		   ((CY_SCB_I2C_MASTER_WR_CMPLT_EVENT & event) != 0) &&
+		   (data->pending == CAT1_I2C_PENDING_TX_RX)) {
+		/*
+		 * Chain the read phase only after the write phase completes. A
+		 * write to an absent target reports its address NACK through the
+		 * error event above, so the read is never issued and cannot
+		 * return stale data.
+		 */
+		data->pending = CAT1_I2C_PENDING_RX;
+		Cy_SCB_I2C_MasterRead(config->base, &data->rx_config, &data->context);
 	} else if (((data->async_pending == CAT1_I2C_PENDING_TX_RX) &&
 		    ((CY_SCB_I2C_MASTER_RD_CMPLT_EVENT & event) != 0)) ||
 		   (data->async_pending != CAT1_I2C_PENDING_TX_RX)) {
