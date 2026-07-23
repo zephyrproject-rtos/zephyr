@@ -609,7 +609,7 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 	}
 
 	if (status == -ENOBUFS) {
-		/* We can monitor net_pkt/net_buf availability, so just wait. */
+		/* We can't monitor net_pkt/net_buf availability, so just wait. */
 		k_sleep(K_MSEC(*retry_timeout));
 	}
 
