@@ -440,6 +440,15 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
            directory).
          - ``always``: Always make the build folder pristine before building, if
            a build system is present.
+   * - ``build.sdk``
+     - String. If given, selects the :ref:`Zephyr SDK <toolchain_zephyr_sdk>`
+       that :ref:`west build <west-building>` uses, on a per-workspace basis,
+       without having to set the ``ZEPHYR_SDK_INSTALL_DIR`` environment
+       variable. The value is either the SDK version number (e.g. ``0.16.4``,
+       which is resolved to the matching installed SDK) or the path to an SDK
+       installation directory. A ``-DZEPHYR_SDK_INSTALL_DIR=...`` argument
+       given on the command line, or a value already present in the CMake
+       cache, takes precedence over this option.
    * - ``build.sysbuild``
      - Boolean, default ``false``. If ``true``, build application using the
        sysbuild infrastructure.
