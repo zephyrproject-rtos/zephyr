@@ -39,6 +39,8 @@ def testinstance(tmp_path: Path) -> TestInstance:
     )
     testinstance.handler.options.fixture = ['fixture1:option1', 'fixture2']
     testinstance.handler.type_str = 'native'
+    # Real handlers default this to None; a sidecar may set it per instance.
+    testinstance.handler.extra_test_args = None
     testinstance.build_dir = tmp_path
     return testinstance
 
@@ -95,6 +97,30 @@ def test_pytest_command_extra_test_args(testinstance: TestInstance):
     pytest_harness.configure(testinstance)
     pytest_harness.generate_command()
     assert pytest_harness.pytest_params.extra_test_args == ' '.join(extra_test_args)
+
+
+def test_pytest_command_no_extra_test_args_off_native(testinstance: TestInstance):
+    # Only the binary handler, which runs native targets, carries handler-set
+    # run args; a QEMU handler has no such attribute and must not be asked.
+    pytest_harness = Pytest()
+    testinstance.handler.type_str = 'qemu'
+    del testinstance.handler.extra_test_args
+    testinstance.handler.options.extra_test_args = ['-no-rt']
+    pytest_harness.configure(testinstance)
+    pytest_harness.generate_command()
+    assert pytest_harness.pytest_params.extra_test_args == ''
+
+
+def test_pytest_command_sidecar_extra_test_args(testinstance: TestInstance):
+    # A sidecar sets run args on this instance's handler (e.g. the can sidecar
+    # passes the host interface it created). They must reach the pytest harness
+    # as well, appended after any given on the command line.
+    pytest_harness = Pytest()
+    testinstance.handler.options.extra_test_args = ['-no-rt']
+    testinstance.handler.extra_test_args = ['--can-if=zcan0']
+    pytest_harness.configure(testinstance)
+    pytest_harness.generate_command()
+    assert pytest_harness.pytest_params.extra_test_args == '-no-rt --can-if=zcan0'
 
 
 def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
