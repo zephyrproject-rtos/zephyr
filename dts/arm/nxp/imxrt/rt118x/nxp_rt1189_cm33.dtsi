@@ -1,0 +1,9 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SOC DTS for MIMXRT1189 CM33 core */
+
+#include <nxp/imxrt/rt118x/nxp_rt118x_cm33.dtsi>

@@ -5,19 +5,19 @@
  */
 
 /*
- * RT1186-specific overrides for RT118x family.
+ * RT1182-specific overrides for RT118x family.
  *
- * The RT1186 has fewer pins than RT1189, so some GPIO pins that exist
- * on RT1189 are not available on RT1186. This file overrides the GPIO
- * pinmux properties to only include pins available on the RT1186 package.
+ * The RT1182 has fewer pins than RT1189, so some GPIO pins that exist
+ * on RT1189 are not available on RT1182. This file overrides the GPIO
+ * pinmux properties to only include pins available on the RT1182 package.
  *
- * GPIO pin availability on RT1186:
+ * GPIO pin availability on RT1182:
  * - GPIO1: All 28 pins (io00-io27) - Same as RT1189
- * - GPIO2: All 32 pins (io00-io31) - Same as RT1189
- * - GPIO3: Only io00-io22, io29-io30 (missing io23-io28, io31)
+ * - GPIO2: Only io00-io17, io26-io31 (missing io18-io25)
+ * - GPIO3: Only io00-io09 (missing io10-io30)
  * - GPIO4: Only io12-io19, io29-io31 (missing io00-io11, io20-io28)
- * - GPIO5: Only io06-io07, io10-io21 (missing io00-io05, io08-io09, io22-io31)
- * - GPIO6: Only io14-io27 (missing io00-io13, io28-io31)
+ * - GPIO5: Only io10-io21 (missing io00-io09)
+ * - GPIO6: Not available on this package
  */
 
 &gpio1 {
@@ -54,6 +54,7 @@
 
 &gpio2 {
 	ngpios = <32>;
+	gpio-reserved-ranges = <18 8>;
 	pinmux = <&iomuxc_gpio_emc_b1_00_gpio2_io00>,
 		 <&iomuxc_gpio_emc_b1_01_gpio2_io01>,
 		 <&iomuxc_gpio_emc_b1_02_gpio2_io02>,
@@ -72,14 +73,6 @@
 		 <&iomuxc_gpio_emc_b1_15_gpio2_io15>,
 		 <&iomuxc_gpio_emc_b1_16_gpio2_io16>,
 		 <&iomuxc_gpio_emc_b1_17_gpio2_io17>,
-		 <&iomuxc_gpio_emc_b1_18_gpio2_io18>,
-		 <&iomuxc_gpio_emc_b1_19_gpio2_io19>,
-		 <&iomuxc_gpio_emc_b1_20_gpio2_io20>,
-		 <&iomuxc_gpio_emc_b1_21_gpio2_io21>,
-		 <&iomuxc_gpio_emc_b1_22_gpio2_io22>,
-		 <&iomuxc_gpio_emc_b1_23_gpio2_io23>,
-		 <&iomuxc_gpio_emc_b1_24_gpio2_io24>,
-		 <&iomuxc_gpio_emc_b1_25_gpio2_io25>,
 		 <&iomuxc_gpio_emc_b1_26_gpio2_io26>,
 		 <&iomuxc_gpio_emc_b1_27_gpio2_io27>,
 		 <&iomuxc_gpio_emc_b1_28_gpio2_io28>,
@@ -90,7 +83,7 @@
 
 &gpio3 {
 	ngpios = <31>;
-	gpio-reserved-ranges = <23 6>, <31 1>;
+	gpio-reserved-ranges = <10 21>;
 	pinmux = <&iomuxc_gpio_emc_b1_32_gpio3_io00>,
 		 <&iomuxc_gpio_emc_b1_33_gpio3_io01>,
 		 <&iomuxc_gpio_emc_b1_34_gpio3_io02>,
@@ -100,22 +93,7 @@
 		 <&iomuxc_gpio_emc_b1_38_gpio3_io06>,
 		 <&iomuxc_gpio_emc_b1_39_gpio3_io07>,
 		 <&iomuxc_gpio_emc_b1_40_gpio3_io08>,
-		 <&iomuxc_gpio_emc_b1_41_gpio3_io09>,
-		 <&iomuxc_gpio_emc_b2_00_gpio3_io10>,
-		 <&iomuxc_gpio_emc_b2_01_gpio3_io11>,
-		 <&iomuxc_gpio_emc_b2_02_gpio3_io12>,
-		 <&iomuxc_gpio_emc_b2_03_gpio3_io13>,
-		 <&iomuxc_gpio_emc_b2_04_gpio3_io14>,
-		 <&iomuxc_gpio_emc_b2_05_gpio3_io15>,
-		 <&iomuxc_gpio_emc_b2_06_gpio3_io16>,
-		 <&iomuxc_gpio_emc_b2_07_gpio3_io17>,
-		 <&iomuxc_gpio_emc_b2_08_gpio3_io18>,
-		 <&iomuxc_gpio_emc_b2_09_gpio3_io19>,
-		 <&iomuxc_gpio_emc_b2_10_gpio3_io20>,
-		 <&iomuxc_gpio_emc_b2_11_gpio3_io21>,
-		 <&iomuxc_gpio_emc_b2_12_gpio3_io22>,
-		 <&iomuxc_gpio_emc_b2_19_gpio3_io29>,
-		 <&iomuxc_gpio_emc_b2_20_gpio3_io30>;
+		 <&iomuxc_gpio_emc_b1_41_gpio3_io09>;
 };
 
 &gpio4 {
@@ -136,10 +114,8 @@
 
 &gpio5 {
 	ngpios = <22>;
-	gpio-reserved-ranges = <0 6>, <8 2>, <22 10>;
-	pinmux = <&iomuxc_gpio_sd_b1_02_gpio5_io06>,
-		 <&iomuxc_gpio_sd_b1_03_gpio5_io07>,
-		 <&iomuxc_gpio_sd_b2_00_gpio5_io10>,
+	gpio-reserved-ranges = <0 10>;
+	pinmux = <&iomuxc_gpio_sd_b2_00_gpio5_io10>,
 		 <&iomuxc_gpio_sd_b2_01_gpio5_io11>,
 		 <&iomuxc_gpio_sd_b2_02_gpio5_io12>,
 		 <&iomuxc_gpio_sd_b2_03_gpio5_io13>,
@@ -154,20 +130,67 @@
 };
 
 &gpio6 {
-	ngpios = <28>;
-	gpio-reserved-ranges = <0 14>, <28 4>;
-	pinmux = <&iomuxc_gpio_b2_00_gpio6_io14>,
-		 <&iomuxc_gpio_b2_01_gpio6_io15>,
-		 <&iomuxc_gpio_b2_02_gpio6_io16>,
-		 <&iomuxc_gpio_b2_03_gpio6_io17>,
-		 <&iomuxc_gpio_b2_04_gpio6_io18>,
-		 <&iomuxc_gpio_b2_05_gpio6_io19>,
-		 <&iomuxc_gpio_b2_06_gpio6_io20>,
-		 <&iomuxc_gpio_b2_07_gpio6_io21>,
-		 <&iomuxc_gpio_b2_08_gpio6_io22>,
-		 <&iomuxc_gpio_b2_09_gpio6_io23>,
-		 <&iomuxc_gpio_b2_10_gpio6_io24>,
-		 <&iomuxc_gpio_b2_11_gpio6_io25>,
-		 <&iomuxc_gpio_b2_12_gpio6_io26>,
-		 <&iomuxc_gpio_b2_13_gpio6_io27>;
+	/*
+	 * The GPIO6 block exists on this part, but the package exposes none
+	 * of its pins, and the inherited pinmux references pads that do not
+	 * exist in the RT1182 package pinctrl files.
+	 */
+	/delete-property/ pinmux;
+	status = "disabled";
 };
+
+/* RT1182 only has 8 LPUART blocks */
+/delete-node/ &lpuart9;
+/delete-node/ &lpuart10;
+/delete-node/ &lpuart11;
+/delete-node/ &lpuart12;
+
+/* RT1182 only has 3 LPI2C blocks */
+/delete-node/ &lpi2c4;
+/delete-node/ &lpi2c5;
+/delete-node/ &lpi2c6;
+
+/* RT1182 only has 2 FLEXCAN blocks: CAN1/CAN3 */
+/delete-node/ &flexcan2;
+
+/* RT1182 only has 3 TPM blocks */
+/delete-node/ &tpm4;
+/delete-node/ &tpm5;
+/delete-node/ &tpm6;
+
+/* RT1182 only has 1 LPTMR block */
+/delete-node/ &lptmr2;
+/delete-node/ &lptmr3;
+
+/* RT1182 only has 4 QTMR blocks */
+/delete-node/ &qtmr5;
+/delete-node/ &qtmr6;
+/delete-node/ &qtmr7;
+/delete-node/ &qtmr8;
+
+/* RT1182 only has 2 FLEXPWM blocks: FLEXPWM3/4 */
+/delete-node/ &flexpwm1;
+/delete-node/ &flexpwm2;
+
+/* RT1182 only has 1 SAI block */
+/delete-node/ &sai2;
+/delete-node/ &sai3;
+/delete-node/ &sai4;
+
+/* RT1182 only has 1 ACMP block: ACMP3 */
+/delete-node/ &acmp1;
+/delete-node/ &acmp2;
+/delete-node/ &acmp4;
+
+/* RT1182 only has 1 USDHC block: USDHC2 */
+/delete-node/ &usdhc1;
+
+/* RT1182 has no USB blocks */
+/delete-node/ &usb1;
+/delete-node/ &usb2;
+/delete-node/ &usbphy1;
+/delete-node/ &usbphy2;
+
+/* Single-core part: no CM7, so the CM33<->CM7 MU mailboxes are unusable */
+/delete-node/ &mbox1_a;
+/delete-node/ &mbox2_a;

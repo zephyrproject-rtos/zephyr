@@ -519,6 +519,34 @@ NXP
   ``zephyr,system-timer`` chosen property, so boards that added the overlay
   described in the Zephyr 4.4 migration guide can remove it.
 
+* The i.MX RT118x series DTSI files were moved from ``dts/arm/nxp/imxrt/`` into
+  the series-specific subdirectory ``dts/arm/nxp/imxrt/rt118x/``, and boards now
+  include a single part-core composer file ``nxp_rt118<part>_cm<core>.dtsi``
+  instead of the series-core file plus a separate part overlay. Out-of-tree
+  boards must update their devicetree includes accordingly (:github:`110228`).
+
+  Example for a part that previously needed the series file plus a part
+  overlay:
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/imxrt/nxp_rt118x_cm7.dtsi>
+    #include <nxp/imxrt/nxp_rt1186.dtsi>
+
+    /* After */
+    #include <nxp/imxrt/rt118x/nxp_rt1186_cm7.dtsi>
+
+  Example for a part that previously used the series file directly:
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/imxrt/nxp_rt118x_cm33.dtsi>
+
+    /* After */
+    #include <nxp/imxrt/rt118x/nxp_rt1189_cm33.dtsi>
+
 PWM
 ===
 

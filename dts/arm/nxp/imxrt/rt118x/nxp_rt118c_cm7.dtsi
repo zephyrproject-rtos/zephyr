@@ -1,0 +1,11 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SOC DTS for MIMXRT118C CM7 core */
+
+/* RT118C shares the same package and pin layout as RT1186, minus NETC. */
+#include <nxp/imxrt/rt118x/nxp_rt1186_cm7.dtsi>
+#include <nxp/imxrt/rt118x/nxp_rt118c.dtsi>
