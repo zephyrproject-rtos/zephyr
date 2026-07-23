@@ -256,6 +256,21 @@ New APIs and options
   * Add :c:func:`net_dhcpv4_set_reboot_hint` to seed the DHCPv4 client with a
     previously leased address for INIT-REBOOT.
 
+* Power Management
+
+  * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_WRN_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_ERR_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_WRN_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_ERR_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_DBG_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_DBG_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT`
+
 * Ring buffer
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
