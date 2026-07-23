@@ -5,4 +5,7 @@ config TEST_MUTEX_API_THREAD_CREATE_TICKS
 	int "Wait time (in ticks) after thread creation"
 	default 42
 
+config MAX_THREAD_BYTES
+	default 5 if USERSPACE
+
 source "Kconfig"
