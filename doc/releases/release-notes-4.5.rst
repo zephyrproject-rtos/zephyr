@@ -270,6 +270,21 @@ New APIs and options
     (:kconfig:option:`CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL`) to enable or
     disable the mDNS responder on a network interface at runtime.
 
+* Power Management
+
+  * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_WRN_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_ERR_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_WRN_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_ERR_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_DBG_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_DBG_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT`
+
 * Ring buffer
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
