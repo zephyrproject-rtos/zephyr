@@ -26,6 +26,37 @@
 
 .. _zephyr_4.4:
 
+.. _zephyr_4.4.2:
+
+Zephyr 4.4.2
+############
+
+This is a bugfix release for Zephyr 4.4.1.
+
+Security Vulnerability Related
+******************************
+
+The following CVEs are addressed by this release:
+
+
+Issues fixed
+************
+
+The following issues are addressed by this release:
+
+
+Mbed TLS / TF-PSA-Crypto
+************************
+
+Mbed TLS was updated to version 4.1.1/3.6.7, and TF-PSA-Crypto to version 1.1.1.
+They address a number of CVEs.
+
+Release notes can be found at:
+
+* https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-4.1.1
+* https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.7
+* https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.1
+
 .. _zephyr_4.4.1:
 
 Zephyr 4.4.1
@@ -35,6 +66,8 @@ This is a bugfix release for Zephyr 4.4.0.
 
 Security Vulnerability Related
 ******************************
+
+The following CVEs are addressed by this release:
 
 * :cve:`2026-7656` Under embargo until 2026-06-25
 
