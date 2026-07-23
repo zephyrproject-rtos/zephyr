@@ -180,6 +180,125 @@ def test_cmake_args(monkeypatch, test_case):
     b._run_cmake(board='any', origin=None)
 
 
+def _run_cmake_for_sdk(
+    monkeypatch, config_values, cmake_opts=None, cmake_cache=None, installed_sdks=None
+):
+    """Drive Build._run_cmake and return the forwarded CMake arguments."""
+    b = Build()
+    b.config = _FakeConfig(config_values)
+    b.run_cmake = True
+    b.source_dir = 'source_dir'
+    b.build_dir = 'build_dir'
+    b.args = Namespace(
+        cmake_opts=cmake_opts or [],
+        snippets=None,
+        shields=None,
+        extra_conf_files=None,
+        extra_dtc_overlay_files=None,
+        sysbuild=None,
+        dry_run=False,
+    )
+    if cmake_cache is not None:
+        b.cmake_cache = cmake_cache
+
+    captured = {}
+
+    def run_cmake_mock(final_cmake_args, dry_run, env):
+        captured['args'] = final_cmake_args
+
+    monkeypatch.setattr('build.run_cmake', run_cmake_mock)
+    monkeypatch.setattr('build.west_topdir', lambda start=None, fall_back=True: '/west/topdir')
+    monkeypatch.setattr(b, '_banner', lambda _: True)
+    if installed_sdks is not None:
+        monkeypatch.setattr('build.find_installed_sdks', lambda: installed_sdks)
+
+    b._run_cmake(board='any', origin=None)
+    return captured['args']
+
+
+def test_sdk_config_path(monkeypatch, tmp_path):
+    """build.sdk set to a directory is forwarded as ZEPHYR_SDK_INSTALL_DIR."""
+    sdk_dir = tmp_path / 'zephyr-sdk-0.16.4'
+    sdk_dir.mkdir()
+
+    args = _run_cmake_for_sdk(monkeypatch, {'build.sdk': str(sdk_dir)})
+    assert f'-DZEPHYR_SDK_INSTALL_DIR={sdk_dir.as_posix()}' in args
+
+
+def test_sdk_config_version(monkeypatch, tmp_path):
+    """build.sdk set to a version is resolved to the matching install dir."""
+    sdk_dir = tmp_path / 'zephyr-sdk-0.16.4'
+    sdk_dir.mkdir()
+
+    args = _run_cmake_for_sdk(
+        monkeypatch,
+        {'build.sdk': '0.16.4'},
+        installed_sdks=[('0.16.4', sdk_dir), ('0.16.3', tmp_path / 'other')],
+    )
+    assert f'-DZEPHYR_SDK_INSTALL_DIR={sdk_dir.as_posix()}' in args
+
+
+def test_sdk_config_unset(monkeypatch):
+    """No ZEPHYR_SDK_INSTALL_DIR is forwarded when build.sdk is unset."""
+    args = _run_cmake_for_sdk(monkeypatch, {})
+    assert not any(a.startswith('-DZEPHYR_SDK_INSTALL_DIR') for a in args)
+
+
+@pytest.mark.parametrize('value', ['', '   '])
+def test_sdk_config_empty(monkeypatch, value):
+    """An empty or whitespace-only build.sdk is treated as unset."""
+    args = _run_cmake_for_sdk(monkeypatch, {'build.sdk': value})
+    assert not any(a.startswith('-DZEPHYR_SDK_INSTALL_DIR') for a in args)
+
+
+def test_sdk_config_path_expanduser(monkeypatch, tmp_path):
+    """A '~'-prefixed build.sdk path is expanded before forwarding."""
+    sdk_dir = tmp_path / 'zephyr-sdk-0.16.4'
+    sdk_dir.mkdir()
+    # '~' resolves from HOME on POSIX and from USERPROFILE on Windows.
+    monkeypatch.setenv('HOME', str(tmp_path))
+    monkeypatch.setenv('USERPROFILE', str(tmp_path))
+
+    args = _run_cmake_for_sdk(monkeypatch, {'build.sdk': '~/zephyr-sdk-0.16.4'})
+    assert f'-DZEPHYR_SDK_INSTALL_DIR={sdk_dir.as_posix()}' in args
+
+
+def test_sdk_config_unknown_version(monkeypatch):
+    """An unresolvable build.sdk value aborts the build."""
+    b = Build()
+    b.config = _FakeConfig({'build.sdk': '9.9.9'})
+    b.args = Namespace(cmake_opts=[])
+    monkeypatch.setattr('build.find_installed_sdks', lambda: [('0.16.4', Path('/opt/sdk'))])
+
+    with pytest.raises(SystemExit):
+        b._sdk_cmake_opt()
+
+
+def test_sdk_config_overridden_by_cmdline(monkeypatch, tmp_path):
+    """A command-line ZEPHYR_SDK_INSTALL_DIR overrides build.sdk."""
+    sdk_dir = tmp_path / 'zephyr-sdk-0.16.4'
+    sdk_dir.mkdir()
+
+    args = _run_cmake_for_sdk(
+        monkeypatch, {'build.sdk': str(sdk_dir)}, cmake_opts=['-DZEPHYR_SDK_INSTALL_DIR=/other/sdk']
+    )
+    assert '-DZEPHYR_SDK_INSTALL_DIR=/other/sdk' in args
+    assert f'-DZEPHYR_SDK_INSTALL_DIR={sdk_dir.as_posix()}' not in args
+
+
+def test_sdk_config_overridden_by_cache(monkeypatch, tmp_path):
+    """A cached ZEPHYR_SDK_INSTALL_DIR overrides build.sdk."""
+    sdk_dir = tmp_path / 'zephyr-sdk-0.16.4'
+    sdk_dir.mkdir()
+
+    args = _run_cmake_for_sdk(
+        monkeypatch,
+        {'build.sdk': str(sdk_dir)},
+        cmake_cache={'ZEPHYR_SDK_INSTALL_DIR': '/cached/sdk'},
+    )
+    assert f'-DZEPHYR_SDK_INSTALL_DIR={sdk_dir.as_posix()}' not in args
+
+
 def test_test_item_updates_source_dir(tmp_path, monkeypatch):
     """Test: _resolve_test_item sets source_dir from test path, not CWD."""
     sample_dir = tmp_path / 'samples' / 'app'
