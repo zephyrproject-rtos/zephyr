@@ -111,6 +111,21 @@ def test_pytest_command_sidecar_extra_test_args(testinstance: TestInstance):
     assert pytest_harness.pytest_params.extra_test_args == '-no-rt --can-if=zcan0'
 
 
+def test_pytest_command_sidecar_params(testinstance: TestInstance):
+    # What the sidecar provisioned must reach the test through the parameters
+    # file the plugin reads.
+    pytest_harness = Pytest()
+    testinstance.sidecar_obj = mock.Mock(
+        pytest_params=mock.Mock(return_value={'iface': 'zcan0'})
+    )
+    pytest_harness.configure(testinstance)
+    pytest_harness.generate_command()
+
+    assert pytest_harness.pytest_params.sidecar_params == {'iface': 'zcan0'}
+    with open(pytest_harness.pytest_config_file) as f:
+        assert yaml.safe_load(f)['sidecar_params'] == {'iface': 'zcan0'}
+
+
 def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
     pytest_harness = Pytest()
     pytest_args_from_yaml = '--extra-option'

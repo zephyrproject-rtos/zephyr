@@ -310,6 +310,25 @@ def test_can_setup_brings_up_iface_and_passes_native_arg(tmp_path):
     assert instance.handler.extra_test_args == [f"--can-if={sidecar.iface}"]
 
 
+def test_can_pytest_params_reports_iface(tmp_path):
+    # A pytest test drives the host end of the bus itself, so the sidecar hands
+    # it the interface it created.
+    instance = _make_instance(tmp_path, {"can": {"iface": "zcan9"}})
+    sidecar = CanSidecar()
+    sidecar.configure(instance)
+
+    assert sidecar.pytest_params() == {"iface": "zcan9"}
+
+
+def test_sidecar_pytest_params_default_is_empty(tmp_path):
+    # A sidecar that provisions nothing a test needs to know reports nothing.
+    instance = _make_instance(tmp_path)
+    sidecar = Sidecar()
+    sidecar.configure(instance)
+
+    assert sidecar.pytest_params() == {}
+
+
 def test_can_setup_does_not_duplicate_native_arg(tmp_path):
     instance = _make_instance(tmp_path)
     instance.platform.arch = "posix"

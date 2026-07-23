@@ -1675,6 +1675,9 @@ class ProjectBuilder(FilterBuilder):
                 return
             if sidecar is not None:
                 sidecar.configure(instance)
+                # Let a harness reach the sidecar (e.g. the pytest harness passes
+                # what it provisioned on to the test).
+                instance.sidecar_obj = sidecar
 
             try:
                 # Provision on its own, before anything executes the test: a

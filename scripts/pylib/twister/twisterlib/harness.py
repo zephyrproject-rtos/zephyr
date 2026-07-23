@@ -627,6 +627,13 @@ class Pytest(Script):
         if extra_test_args and handler.type_str == 'native':
             self.pytest_params.extra_test_args = shlex.join(extra_test_args)
 
+        # Pass on what the sidecar provisioned (e.g. the CAN interface it
+        # created) so the host side of the test can reach it. Read here rather
+        # than at configure() time because the runner has since run setup(), so
+        # values only known once the resource exists are included.
+        if self.instance.sidecar_obj is not None:
+            self.pytest_params.sidecar_params = self.instance.sidecar_obj.pytest_params()
+
         # Add any additional pytest args from YAML or CLI
         command.extend(config.pytest_args)
         if handler.options.pytest_args:

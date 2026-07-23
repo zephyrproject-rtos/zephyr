@@ -89,6 +89,11 @@ class CanSidecar(Sidecar):
         iface = self.config.iface or get_can_iface_name(build_dir)
         return [f'-DCONFIG_CAN_QEMU_IFACE_NAME="{iface}"']
 
+    def pytest_params(self) -> dict[str, str]:
+        # A pytest test drives the host end of the bus itself (e.g. opening a
+        # python-can socket), so it needs the interface this instance created.
+        return {'iface': self.iface}
+
     def _ip(self, *args):
         cmd = []
         if os.geteuid() != 0:
