@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lfclk {
+	k32src = "rc";
+	k32src-accuracy-ppm = <250>;
+};
