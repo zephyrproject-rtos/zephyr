@@ -56,8 +56,8 @@ struct ieee802154_esp32_rx_msg {
 
 static struct ieee802154_esp32_data esp32_data;
 
-K_MSGQ_DEFINE(ieee802154_esp32_rx_msgq, sizeof(struct ieee802154_esp32_rx_msg),
-	      CONFIG_IEEE802154_ESP32_RX_BUFFER_SIZE, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(ieee802154_esp32_rx_msgq, struct ieee802154_esp32_rx_msg,
+			  CONFIG_IEEE802154_ESP32_RX_BUFFER_SIZE);
 
 static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx)
 {

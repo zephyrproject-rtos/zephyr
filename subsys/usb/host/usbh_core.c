@@ -24,11 +24,8 @@ static struct k_thread usbh_thread_data;
 static K_KERNEL_STACK_DEFINE(usbh_bus_stack, CONFIG_USBH_STACK_SIZE);
 static struct k_thread usbh_bus_thread_data;
 
-K_MSGQ_DEFINE(usbh_msgq, sizeof(struct uhc_event),
-	      CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
-
-K_MSGQ_DEFINE(usbh_bus_msgq, sizeof(struct uhc_event),
-	      CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
+K_MSGQ_DEFINE_STATIC_TYPE(usbh_msgq, struct uhc_event, CONFIG_USBH_MAX_UHC_MSG);
+K_MSGQ_DEFINE_STATIC_TYPE(usbh_bus_msgq, struct uhc_event, CONFIG_USBH_MAX_UHC_MSG);
 
 static int usbh_event_carrier(const struct device *dev,
 			      const struct uhc_event *const event)

@@ -18,7 +18,7 @@ LOG_MODULE_REGISTER(esp_hosted, CONFIG_WIFI_LOG_LEVEL);
 static struct k_thread esp_hosted_event_thread;
 K_THREAD_STACK_DEFINE(esp_hosted_event_stack, CONFIG_WIFI_ESP_HOSTED_EVENT_TASK_STACK_SIZE);
 
-K_MSGQ_DEFINE(esp_hosted_msgq, sizeof(CtrlMsg), 8, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(esp_hosted_msgq, CtrlMsg, 8);
 
 static esp_hosted_config_t esp_hosted_config = {
 	.reset_gpio = GPIO_DT_SPEC_INST_GET(0, reset_gpios),
