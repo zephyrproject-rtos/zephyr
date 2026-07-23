@@ -1,0 +1,4 @@
+tests:
+  kernel.mutex.deadlock:
+    tags:
+      - kernel

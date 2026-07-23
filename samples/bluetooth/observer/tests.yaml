@@ -37,7 +37,7 @@ tests:
     extra_configs:
       # debug.conf enables the thread analyzer; shrink the analyzer thread's
       # stack so that it fits alongside the dedicated Bluetooth RX thread.
-      - CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE=640
+      - CONFIG_THREAD_ANALYZER_AUTO_STACK_SIZE=512
     platform_allow:
       - bbc_microbit
     integration_platforms:
