@@ -10,6 +10,12 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
+#define LPC55S6X_IAP_BASE 50034000
+#define LPC55S6X_FLASH_BASE 10000000
+#define LPC55S6X_FLASH_RESERVED_BASE 1009d800
+#define LPC55S6X_UUID_BASE 1009fc70
+#define LPC55S6X_BOOT_ROM_BASE 13000000
+
 / {
 	soc {
 		sram: sram@14000000 {
@@ -18,15 +24,17 @@
 
 		peripheral: peripheral@50000000 {
 			ranges = <0x0 0x50000000 0x10000000>;
-
-			iap: flash-controller@34000 {
-				ranges = <0x0 0x10000000 0x3020000>;
-			};
 		};
 	};
 };
 
 #include "nxp_lpc55S6x_common.dtsi"
+
+#undef LPC55S6X_IAP_BASE
+#undef LPC55S6X_FLASH_BASE
+#undef LPC55S6X_FLASH_RESERVED_BASE
+#undef LPC55S6X_UUID_BASE
+#undef LPC55S6X_BOOT_ROM_BASE
 
 /*
  * Explicitly enable IAP after we include the common LPC55S6X dtsi file,
