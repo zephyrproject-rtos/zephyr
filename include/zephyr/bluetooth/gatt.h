@@ -81,8 +81,19 @@ enum bt_gatt_perm {
 
 	/** @brief Attribute prepare write permission.
 	 *
-	 *  If set, allows prepare writes with use of ``BT_GATT_WRITE_FLAG_PREPARE``
-	 *  passed to write callback.
+	 *  This permission is a Zephyr extension; it is not defined by the
+	 *  Bluetooth Core Specification.
+	 *
+	 *  If set, prepare writes (used for long writes and reliable writes)
+	 *  invoke the attribute write callback with
+	 *  @ref BT_GATT_WRITE_FLAG_PREPARE before the value is queued. The
+	 *  callback must return ``0`` to accept the prepare write; any other
+	 *  return value is converted to an ATT error. If this permission is
+	 *  not set, prepare writes are accepted by default (subject to normal
+	 *  write permissions).
+	 *
+	 *  Do not confuse this with @ref BT_GATT_CEP_RELIABLE_WRITE, which is
+	 *  a Characteristic Extended Property bit from the specification.
 	 */
 	BT_GATT_PERM_PREPARE_WRITE = BIT(6),
 
@@ -490,7 +501,25 @@ struct bt_gatt_chrc {
 };
 
 /** Characteristic Extended Properties Bit field values */
+
+/**
+ *  @brief Characteristic Extended Property: Reliable Write
+ *
+ *  If set in the Characteristic Extended Properties descriptor, the
+ *  characteristic supports reliable writes as defined by the Bluetooth Core
+ *  Specification.
+ *
+ *  This is unrelated to @ref BT_GATT_PERM_PREPARE_WRITE, which is a
+ *  Zephyr-specific attribute permission that controls whether prepare writes
+ *  solicit an authorization callback.
+ */
 #define BT_GATT_CEP_RELIABLE_WRITE		0x0001
+
+/**
+ *  @brief Characteristic Extended Property: Writable Auxiliaries
+ *
+ *  If set, the Characteristic User Description descriptor is writable.
+ */
 #define BT_GATT_CEP_WRITABLE_AUX		0x0002
 
 /** @brief Characteristic Extended Properties Attribute Value.
