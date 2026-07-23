@@ -479,10 +479,6 @@ int siwx91x_nwp_apply_power_profile(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_PM)) {
-		sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
-	}
-
 	return 0;
 }
 
@@ -527,6 +523,10 @@ static int siwx91x_nwp_init(const struct device *dev)
 	ret = siwx91x_nwp_apply_power_profile(dev, NULL);
 	if (ret) {
 		return -EINVAL;
+	}
+
+	if (IS_ENABLED(CONFIG_PM)) {
+		sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
 	}
 
 	config->config_irq(dev);
