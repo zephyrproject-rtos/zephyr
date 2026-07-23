@@ -26,6 +26,10 @@
 #include "nxp_mcxl.dtsi"
 #include "nxp_mcxl_aon.dtsi"
 
+&aon_gpio0 {
+	interrupts = <132 0>, <133 0>;
+};
+
 &fmu {
 	flash: flash@0 {
 		compatible = "soc-nv-flash";
