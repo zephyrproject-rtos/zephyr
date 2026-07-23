@@ -265,6 +265,12 @@ st_cam_i2c: &i2c1 {
 		irq-gpios = <&gpioe 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		status = "okay";
 	};
+
+	audio_codec: wm8904g@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a>;
+		status = "okay";
+	};
 };
 
 &i2s6 {
