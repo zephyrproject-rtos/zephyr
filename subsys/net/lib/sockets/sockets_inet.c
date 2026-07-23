@@ -601,7 +601,7 @@ static int send_check_and_wait(struct net_context *ctx, int status,
 
 	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		*retry_timeout =
-			MIN(*retry_timeout, k_ticks_to_ms_floor32(timeout.ticks));
+			MIN(*retry_timeout, k_ticks_to_ms_ceil32(timeout.ticks));
 	}
 
 	if (ctx->cond.lock) {
