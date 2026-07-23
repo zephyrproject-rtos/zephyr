@@ -23,9 +23,10 @@ LOG_MODULE_REGISTER(i2c_infineon, CONFIG_I2C_LOG_LEVEL);
 
 #include "cy_scb_i2c.h"
 
+#include "i2c-priv.h"
+
 #ifdef CONFIG_I2C_INFINEON_BUS_RECOVERY
 #include "i2c_bitbang.h"
-#include "i2c-priv.h"
 #include <zephyr/drivers/gpio.h>
 #endif /* CONFIG_I2C_INFINEON_BUS_RECOVERY */
 
@@ -717,7 +718,14 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	return ifx_cat1_i2c_configure(dev, I2C_MODE_CONTROLLER | I2C_SPEED_SET(I2C_SPEED_STANDARD));
+	/* Bring the bus up at the data rate requested by the devicetree
+	 * "clock-frequency" property instead of a fixed STANDARD speed, so a
+	 * controller is usable at the configured rate without an explicit
+	 * i2c_configure() call.
+	 */
+	return ifx_cat1_i2c_configure(dev,
+				      I2C_MODE_CONTROLLER |
+					      i2c_map_dt_bitrate(config->master_frequency));
 }
 
 void _i2c_free(const struct device *dev)
