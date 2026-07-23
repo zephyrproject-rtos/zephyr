@@ -20,6 +20,7 @@ from build_helpers import (
     BUILD_HELPERS_LOGGER,
     FIND_BUILD_DIR_DESCRIPTION,
     find_build_dir,
+    find_installed_sdks,
     forward_logging_to_west,
     is_zephyr_build,
     load_domains,
@@ -661,6 +662,53 @@ class Build(Forceable):
                 self.source_dir = self._find_source_dir()
                 self._sanity_check_source_dir()
 
+    def _sdk_cmake_opt(self):
+        # Turn the 'build.sdk' configuration option, if set, into a
+        # '-DZEPHYR_SDK_INSTALL_DIR=...' CMake argument. Returns None if
+        # there is nothing to forward.
+        sdk = self.config.get('build.sdk', default='').strip()
+        if not sdk:
+            return None
+
+        # An explicit '-DZEPHYR_SDK_INSTALL_DIR=...' on the command line, or a
+        # value already stored in the CMake cache, takes precedence over the
+        # configuration option.
+        user_opts = self.args.cmake_opts or []
+        if any(opt.startswith('-DZEPHYR_SDK_INSTALL_DIR') for opt in user_opts):
+            return None
+
+        cache = getattr(self, 'cmake_cache', None)
+        if cache and cache.get('ZEPHYR_SDK_INSTALL_DIR'):
+            return None
+
+        sdk_dir = self._resolve_sdk(sdk)
+        return f'-DZEPHYR_SDK_INSTALL_DIR={sdk_dir.as_posix()}'
+
+    def _resolve_sdk(self, sdk):
+        # Resolve the 'build.sdk' value to a Zephyr SDK install directory.
+        # The value is either an install directory ('~' and environment
+        # variables are expanded) or a version number. Always returns a Path.
+        path = pathlib.Path(os.path.expandvars(sdk)).expanduser()
+        if path.is_dir():
+            return path
+
+        try:
+            installed = dict(find_installed_sdks())
+        except Exception as e:
+            self.die(f'failed to enumerate installed Zephyr SDKs: {e}')
+
+        if sdk in installed:
+            return installed[sdk]
+
+        available = ', '.join(sorted(installed)) if installed else 'none'
+        self.die(
+            f"build.sdk is set to '{sdk}', which is neither an existing "
+            'directory nor an installed Zephyr SDK version '
+            f'(installed: {available}).\n'
+            "Set it to a valid value with 'west config build.sdk "
+            "<version-or-path>', or install the SDK with 'west sdk install'."
+        )
+
     def _run_cmake(self, board, origin):
         if board is None and self.config.getboolean('build.board_warn', default=True):
             self.wrn('This looks like a fresh build and BOARD is unknown;',
@@ -680,6 +728,9 @@ class Build(Forceable):
             cmake_opts = [f'-DBOARD={board}']
         else:
             cmake_opts = []
+        sdk_opt = self._sdk_cmake_opt()
+        if sdk_opt:
+            cmake_opts.append(sdk_opt)
         if self.args.cmake_opts:
             cmake_opts.extend(self.args.cmake_opts)
         if self.args.snippets:
