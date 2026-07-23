@@ -319,6 +319,10 @@ class ConstType:
     def __repr__(self):
         return f"<const {self.child_type}>"
 
+    @property
+    def size(self):
+        return type_env[self.child_type].size
+
     def has_kobject(self):
         if self.child_type not in type_env:
             return False
