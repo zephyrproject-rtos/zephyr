@@ -3,7 +3,6 @@
 
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
-DT_COMPAT_NXP_SYSCTR := nxp,sysctr
 
 config MCUX_SYSCTR_TIMER
 	bool "MCUX System Counter (SYS_CTR) timer"
