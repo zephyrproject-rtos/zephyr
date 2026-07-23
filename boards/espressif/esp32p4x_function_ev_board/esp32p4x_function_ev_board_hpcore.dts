@@ -21,6 +21,7 @@
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp_hosted_mcu_hci;
 	};
 
 	aliases {
@@ -37,6 +38,11 @@
 			gpios = <&gpio1 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
+	};
+
+	esp_hosted_mcu_hci: esp-hosted-mcu-hci {
+		compatible = "espressif,bt-hci-esp-hosted-mcu";
+		status = "okay";
 	};
 };
 
@@ -126,6 +132,11 @@
 };
 
 &sdhc {
+	/*
+	 * Slot 0 drives the micro-SD socket and slot 1 the on-board ESP32-C6
+	 * esp-hosted-mcu slave. Both share the single SDMMC controller, which
+	 * serialises transactions between them.
+	 */
 	sdhc0: sdhc@0 {
 		status = "okay";
 		bus-width = <4>;
@@ -140,6 +151,27 @@
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
 			disk-name = "SD";
+			status = "okay";
+		};
+	};
+
+	sdhc1: sdhc@1 {
+		status = "okay";
+		bus-width = <4>;
+		max-bus-freq = <40000000>;
+		clk-pin = <18>;
+		cmd-pin = <19>;
+		d0-pin = <14>;
+		d1-pin = <15>;
+		d2-pin = <16>;
+		d3-pin = <17>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		esp_hosted_mcu: esp-hosted-mcu@0 {
+			compatible = "espressif,esp-hosted-mcu-sdio";
+			reg = <0>;
+			reset-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
 			status = "okay";
 		};
 	};
