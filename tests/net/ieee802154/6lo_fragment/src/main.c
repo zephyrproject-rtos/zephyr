@@ -493,7 +493,29 @@ static bool test_fragment(struct net_fragment_data *data)
 	}
 
 	if (!ieee802154_6lo_requires_fragmentation(pkt, 0, 0)) {
-		f_pkt = pkt;
+		size_t pkt_len = net_pkt_get_len(pkt);
+		size_t copied;
+
+		f_pkt = net_pkt_alloc(K_FOREVER);
+		if (f_pkt == NULL) {
+			goto end;
+		}
+
+		dfrag = net_pkt_get_frag(f_pkt, pkt_len, K_FOREVER);
+		if (dfrag == NULL) {
+			goto end;
+		}
+
+		net_pkt_frag_add(f_pkt, dfrag);
+
+		copied = net_buf_linearize(dfrag->data, net_buf_tailroom(dfrag), pkt->buffer, 0,
+					   pkt_len);
+		if (copied != pkt_len) {
+			goto end;
+		}
+
+		net_buf_add(dfrag, copied);
+		net_pkt_unref(pkt);
 		pkt = NULL;
 
 		goto reassemble;
