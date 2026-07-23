@@ -29,6 +29,19 @@ void virtio_isr(const struct device *dev, uint8_t isr_status, uint16_t virtqueue
 				);
 
 				/*
+				 * The used ring is written by the (untrusted) device.
+				 * A descriptor id beyond the queue size would index
+				 * recv_cbs[]/desc[] out of bounds and lead to an
+				 * arbitrary callback pointer being invoked below.
+				 */
+				if (chain_head >= vq->num) {
+					LOG_ERR("invalid used ring id %u (num %u)",
+						chain_head, vq->num);
+					vq->last_used_idx++;
+					continue;
+				}
+
+				/*
 				 * We are making a copy here, because chain will be
 				 * returned before invoking the callback and may be
 				 * overwritten by the time callback is called. This
