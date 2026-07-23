@@ -615,8 +615,17 @@ class Pytest(Script):
         self.pytest_params.duts = self.instance.reserved_duts
         self.pytest_params.required_builds = self.instance.required_build_dirs
 
-        if handler.options.extra_test_args and handler.type_str == 'native':
-            self.pytest_params.extra_test_args = shlex.join(handler.options.extra_test_args)
+        # Arguments for the test binary come from two places: the ones the user
+        # passed on the command line, and the ones set on this instance's handler
+        # (a sidecar adds its own, e.g. the can sidecar passes the host interface
+        # it created). The binary handler already appends both; do the same here
+        # so a pytest test gets them too.
+        extra_test_args = [
+            *(handler.options.extra_test_args or []),
+            *(handler.extra_test_args or []),
+        ]
+        if extra_test_args and handler.type_str == 'native':
+            self.pytest_params.extra_test_args = shlex.join(extra_test_args)
 
         # Add any additional pytest args from YAML or CLI
         command.extend(config.pytest_args)
