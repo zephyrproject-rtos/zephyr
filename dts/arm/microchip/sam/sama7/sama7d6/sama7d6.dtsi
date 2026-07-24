@@ -19,6 +19,10 @@
 		rtc = &rtc;
 	};
 
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -218,6 +222,15 @@
 			compatible = "microchip,sha-g1-crypto";
 			reg = <0xe1604000 0x100>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 78>;
+			status = "disabled";
+		};
+
+		trng: rng@e160c000 {
+			compatible = "microchip,trng-g2-entropy";
+			reg = <0xe160c000 0x100>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 92 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 92>;
 			status = "disabled";
 		};
 
