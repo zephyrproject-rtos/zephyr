@@ -1,0 +1,47 @@
+# Copyright (c) 2026 Anuj Deshpande
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_THEJAS32
+
+config NUM_IRQS
+	default 44
+
+choice UART_NS16550_VARIANT
+	# The UART's FIFO-mode receive interrupts do not work on this SoC: with
+	# FIFOs enabled, neither the trigger level nor the character timeout
+	# raises an interrupt, so received data sits in the FIFO unnoticed. In
+	# 16450 mode the received data available interrupt fires per character.
+	default UART_NS16550_VARIANT_NS16450
+endchoice
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	# The machine timer's mtime register increments at the core clock divided
+	# by 4000, i.e. 100 MHz / 4000 = 25 kHz. This is not documented anywhere;
+	# it was measured on hardware against the mcycle CSR (exact 4000:1 ratio)
+	# and matches C-DAC's FreeRTOS port, which uses SYS_CLK_FREQ / 4000.
+	default 25000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	# mtime advances only 25 times per millisecond; a 1 kHz tick keeps a
+	# sensible number of timer counts per tick.
+	default 1000
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+config 2ND_LVL_INTR_00_OFFSET
+	# Level-1 IRQ line of the machine external interrupt, which the THEJAS32
+	# interrupt controller is wired to.
+	default 11
+
+# The image runs from SRAM; nothing is executed in place.
+config XIP
+	default n
+
+endif # SOC_THEJAS32
