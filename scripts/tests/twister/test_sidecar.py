@@ -9,6 +9,10 @@ from unittest import mock
 
 import pytest
 from twisterlib.sidecars import Sidecar, SidecarImporter, sidecar_config_schema
+from twisterlib.sidecars.can import (
+    CanSidecar,
+    get_can_iface_name,
+)
 from twisterlib.sidecars.virtiofs import (
     VirtiofsSidecar,
     get_virtiofs_socket_path,
@@ -215,3 +219,143 @@ def test_virtiofs_teardown_terminates_daemon(tmp_path):
     proc.wait.assert_called_once()
     assert sidecar._virtiofsd_proc is None
     assert not os.path.exists(sidecar.socket_path)
+
+
+# --- can --------------------------------------------------------------------
+
+def test_get_can_iface_name_is_short_and_unique():
+    iface = get_can_iface_name("/some/long/build/dir")
+    assert iface.startswith("zcan") and len(iface) <= 15
+    assert iface == get_can_iface_name("/some/long/build/dir")
+    assert get_can_iface_name("/other") != iface
+
+
+def test_can_configure_reads_namespaced_config(tmp_path):
+    instance = _make_instance(
+        tmp_path, {"can": {"iface": "vcan9", "tools_apps": ["echo {iface}"]}}
+    )
+    sidecar = CanSidecar()
+    sidecar.configure(instance)
+
+    assert sidecar.iface == "vcan9"
+    assert sidecar.tools_apps == ["echo {iface}"]
+
+
+def test_can_configure_defaults_without_config(tmp_path):
+    instance = _make_instance(tmp_path)
+    sidecar = CanSidecar()
+    sidecar.configure(instance)
+
+    assert sidecar.iface == get_can_iface_name(instance.build_dir)
+    assert sidecar.tools_apps == []
+
+
+def test_can_cmake_args_bake_iface_name(tmp_path):
+    instance = _make_instance(tmp_path)
+    sidecar = CanSidecar()
+    sidecar.configure(instance)
+
+    args = sidecar.cmake_args(instance.build_dir)
+    iface = get_can_iface_name(instance.build_dir)
+    assert args == [f'-DCONFIG_CAN_QEMU_IFACE_NAME="{iface}"']
+
+
+def test_can_setup_skips_without_root(tmp_path):
+    instance = _make_instance(tmp_path)
+    sidecar = CanSidecar()
+    sidecar.configure(instance)
+
+    with mock.patch("os.geteuid", return_value=1000), mock.patch(
+        "subprocess.run", return_value=mock.Mock(returncode=1, stderr="")
+    ):
+        assert sidecar.setup() is False
+
+    assert instance.status == TwisterStatus.SKIP
+    assert "root or passwordless sudo" in instance.reason
+
+
+def test_can_setup_skips_when_vcan_unsupported(tmp_path):
+    instance = _make_instance(tmp_path)
+    sidecar = CanSidecar()
+    sidecar.configure(instance)
+
+    def _run(cmd, *args, **kwargs):
+        # The sudo probe succeeds; creating the vcan interface does not.
+        if "link" in cmd and "add" in cmd:
+            return mock.Mock(returncode=1, stderr="not supported")
+        return mock.Mock(returncode=0, stderr="")
+
+    with mock.patch("os.geteuid", return_value=0), mock.patch("subprocess.run", side_effect=_run):
+        assert sidecar.setup() is False
+
+    assert instance.status == TwisterStatus.SKIP
+    assert "vcan" in instance.reason
+
+
+def test_can_setup_brings_up_iface_and_passes_native_arg(tmp_path):
+    instance = _make_instance(tmp_path)
+    instance.platform.arch = "posix"
+    instance.handler = mock.Mock(extra_test_args=[])
+    sidecar = CanSidecar()
+    sidecar.configure(instance)
+
+    with mock.patch("os.geteuid", return_value=0), mock.patch(
+        "subprocess.run", return_value=mock.Mock(returncode=0, stderr="")
+    ) as run_mock:
+        assert sidecar.setup() is True
+
+    commands = [call.args[0] for call in run_mock.call_args_list]
+    assert ["ip", "link", "add", "dev", sidecar.iface, "type", "vcan"] in commands
+    assert ["ip", "link", "set", "up", sidecar.iface] in commands
+    assert instance.handler.extra_test_args == [f"--can-if={sidecar.iface}"]
+
+
+def test_can_pytest_params_reports_iface(tmp_path):
+    # A pytest test drives the host end of the bus itself, so the sidecar hands
+    # it the interface it created.
+    instance = _make_instance(tmp_path, {"can": {"iface": "zcan9"}})
+    sidecar = CanSidecar()
+    sidecar.configure(instance)
+
+    assert sidecar.pytest_params() == {"iface": "zcan9"}
+
+
+def test_sidecar_pytest_params_default_is_empty(tmp_path):
+    # A sidecar that provisions nothing a test needs to know reports nothing.
+    instance = _make_instance(tmp_path)
+    sidecar = Sidecar()
+    sidecar.configure(instance)
+
+    assert sidecar.pytest_params() == {}
+
+
+def test_can_setup_does_not_duplicate_native_arg(tmp_path):
+    instance = _make_instance(tmp_path)
+    instance.platform.arch = "posix"
+    instance.handler = mock.Mock(extra_test_args=[])
+    sidecar = CanSidecar()
+    sidecar.configure(instance)
+
+    with mock.patch("os.geteuid", return_value=0), mock.patch(
+        "subprocess.run", return_value=mock.Mock(returncode=0, stderr="")
+    ):
+        assert sidecar.setup() is True
+        assert sidecar.setup() is True
+
+    assert instance.handler.extra_test_args == [f"--can-if={sidecar.iface}"]
+
+
+def test_can_teardown_removes_iface(tmp_path):
+    instance = _make_instance(tmp_path)
+    sidecar = CanSidecar()
+    sidecar.configure(instance)
+    sidecar._started = True
+
+    with mock.patch("os.geteuid", return_value=0), mock.patch(
+        "subprocess.run", return_value=mock.Mock(returncode=0)
+    ) as run_mock:
+        sidecar.teardown()
+
+    commands = [call.args[0] for call in run_mock.call_args_list]
+    assert ["ip", "link", "del", sidecar.iface] in commands
+    assert sidecar._started is False

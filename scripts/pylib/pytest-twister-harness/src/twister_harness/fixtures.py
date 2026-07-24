@@ -29,6 +29,23 @@ def twister_harness_config(request: pytest.FixtureRequest) -> TwisterHarnessConf
 
 
 @pytest.fixture(scope='session')
+def sidecar_params(twister_harness_config: TwisterHarnessConfig) -> dict[str, str]:
+    """Return what the sidecar attached to this test provisioned on the host.
+
+    A sidecar brings up a host-side resource around the run (see the twister
+    sidecar documentation) and reports what a test needs to reach it, for
+    example the name of the CAN interface it created::
+
+        def test_can(sidecar_params):
+            bus = can.Bus(channel=sidecar_params['iface'], interface='socketcan')
+
+    The mapping is empty when no sidecar is attached or it reports nothing.
+    """
+    test_params = twister_harness_config.test_params
+    return test_params.sidecar_params if test_params else {}
+
+
+@pytest.fixture(scope='session')
 def device_object(twister_harness_config: TwisterHarnessConfig) -> Generator[DeviceAdapter, None, None]:
     """Return device object - without run application."""
     device_config: DeviceConfig = twister_harness_config.devices[0]
