@@ -40,7 +40,6 @@ static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 		break;
 	case RTIO_OP_TINY_TX:
 		break;
-
 #ifdef CONFIG_RTIO_OP_DELAY
 	case RTIO_OP_DELAY:
 		/* Carries only a timeout value and opaque userdata; the iodev (the
