@@ -7,7 +7,6 @@
 zephyr_sources_ifdef(CONFIG_SOC_VERSAL_RPU soc.c)
 zephyr_sources_ifdef(CONFIG_SOC_VERSAL_RPU_OCM_BOOT rpu_ocm_boot.S)
 zephyr_sources_ifdef(CONFIG_SOC_VERSAL_RPU_OCM_BOOT rpu_ocm_mpu_init.c)
-zephyr_sources_ifdef(CONFIG_ARM_MMU arm_mmu_regions.c)
 
 zephyr_sources_ifdef(
   CONFIG_ARM_MPU
