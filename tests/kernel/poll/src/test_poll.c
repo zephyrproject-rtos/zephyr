@@ -499,7 +499,7 @@ ZTEST(poll_api_1cpu, test_poll_wait)
 	check_results(&wait_events[1], K_POLL_TYPE_DATA_AVAILABLE, false);
 	check_results(&wait_events[2], K_POLL_TYPE_SIGNAL, true);
 	check_results(&wait_events[4], K_POLL_TYPE_MSGQ_DATA_AVAILABLE, false);
-	check_results(&wait_events[4], K_POLL_TYPE_PIPE_DATA_AVAILABLE, false);
+	check_results(&wait_events[5], K_POLL_TYPE_PIPE_DATA_AVAILABLE, false);
 
 	/*
 	 * Wait for each event to be ready from a lower priority thread, one at
