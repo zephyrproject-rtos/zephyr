@@ -21,6 +21,7 @@
 #elif defined(CONFIG_SOC_SERIES_RTL8752H)
 #include <rtl876x_rcc.h>
 #include <rtl876x_gdma.h>
+#include <fmc_platform.h>
 #else
 #error "Unsupported Realtek Bee SoC series"
 #endif
@@ -35,6 +36,14 @@ LOG_MODULE_REGISTER(dma_bee, CONFIG_DMA_LOG_LEVEL);
 	 (id) == 6 || (id) == 7 || (id) == 8)
 #elif defined(CONFIG_SOC_SERIES_RTL8752H)
 #define DMA_HAS_MULTI_BLOCK_MODE(id) ((id) == 0 || (id) == 1)
+#endif
+
+#if defined(CONFIG_SOC_SERIES_RTL87X2G)
+#define DMA_BEE_ADDR(addr) ((uint32_t)addr)
+#elif defined(CONFIG_SOC_SERIES_RTL8752H)
+#define DMA_BEE_ADDR(addr)                                                                         \
+	(FMC_IS_SPIC0_CACHEABLE_ADDR(addr) ? (FMC_MAIN0_NON_CACHE_ADDR((uint32_t)(addr)))          \
+					   : (uint32_t)(addr))
 #endif
 
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
@@ -261,8 +270,8 @@ static int configure_multi_block(struct dma_bee_data *data, uint32_t channel,
 			return -EINVAL;
 		}
 
-		lli_ptr_array[i]->SAR = (uint32_t)(cur_block->source_address);
-		lli_ptr_array[i]->DAR = (uint32_t)(cur_block->dest_address);
+		lli_ptr_array[i]->SAR = DMA_BEE_ADDR(cur_block->source_address);
+		lli_ptr_array[i]->DAR = DMA_BEE_ADDR(cur_block->dest_address);
 
 		if (i < dma_cfg->block_count - 1) {
 			next_lli = (uint32_t)(lli_ptr_array[i + 1]);
@@ -380,8 +389,8 @@ static int dma_bee_configure(const struct device *dev, uint32_t channel, struct 
 
 	dma_init_struct.GDMA_SourceInc = dma_cfg->head_block->source_addr_adj;
 	dma_init_struct.GDMA_DestinationInc = dma_cfg->head_block->dest_addr_adj;
-	dma_init_struct.GDMA_SourceAddr = dma_cfg->head_block->source_address;
-	dma_init_struct.GDMA_DestinationAddr = dma_cfg->head_block->dest_address;
+	dma_init_struct.GDMA_SourceAddr = DMA_BEE_ADDR(dma_cfg->head_block->source_address);
+	dma_init_struct.GDMA_DestinationAddr = DMA_BEE_ADDR(dma_cfg->head_block->dest_address);
 	dma_init_struct.GDMA_ChannelPriority = dma_cfg->channel_priority;
 
 	if (DMA_HAS_MULTI_BLOCK_MODE(dma_channel_num)) {
@@ -424,8 +433,8 @@ static int dma_bee_reload(const struct device *dev, uint32_t channel, uint32_t s
 
 	if (!DMA_HAS_MULTI_BLOCK_MODE(dma_channel_num)) {
 		GDMA_SetBufferSize(dma_channel, size);
-		GDMA_SetSourceAddress(dma_channel, src);
-		GDMA_SetDestinationAddress(dma_channel, dst);
+		GDMA_SetSourceAddress(dma_channel, DMA_BEE_ADDR(src));
+		GDMA_SetDestinationAddress(dma_channel, DMA_BEE_ADDR(dst));
 
 		data->channels[channel].total_size = size;
 	} else {
@@ -434,8 +443,8 @@ static int dma_bee_reload(const struct device *dev, uint32_t channel, uint32_t s
 			return -EINVAL;
 		}
 
-		data->channels[channel].dma_lli[0]->SAR = (uint32_t)src;
-		data->channels[channel].dma_lli[0]->DAR = (uint32_t)dst;
+		data->channels[channel].dma_lli[0]->SAR = DMA_BEE_ADDR(src);
+		data->channels[channel].dma_lli[0]->DAR = DMA_BEE_ADDR(dst);
 		data->channels[channel].dma_lli[0]->LLP = 0;
 		if (data->channels[channel].cfg.channel_direction == PERIPHERAL_TO_MEMORY) {
 			data->channels[channel].dma_lli[0]->CTL_HIGH =
