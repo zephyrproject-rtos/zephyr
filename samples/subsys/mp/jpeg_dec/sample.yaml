@@ -1,0 +1,25 @@
+sample:
+  name: MJPEG file decode pipeline
+
+tests:
+  sample.mp.mjpeg.decode:
+    tags:
+      - mp
+      - video
+      - filesystem
+    platform_allow:
+      - native_sim/native/64
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    integration_platforms:
+      - native_sim/native/64
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    harness: console
+    extra_args:
+      - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD="rk055hdmipi4ma0"
+      - platform:mimxrt1170_evk@B/mimxrt1176/cm7:SHIELD="rk055hdmipi4ma0"
+    harness_config:
+      type: one_line
+      regex:
+        - "End of stream"
