@@ -51,3 +51,13 @@ tests:
       - native_sim/native/64
     extra_args:
       - CONFIG_MP_IMG=y
+
+  mp.fs.build:
+    tags:
+      - subsys
+      - mp
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_MP_FS=y
