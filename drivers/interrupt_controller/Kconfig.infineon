@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config INFINEON_INTC_CAT1
+	bool "Infineon CAT1 CPUSS system interrupt multiplexer"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_INTC_ENABLED
+	depends on SOC_FAMILY_INFINEON_CAT1
+	select MULTI_LEVEL_INTERRUPTS
+	select 2ND_LEVEL_INTERRUPTS
+	help
+	  Infineon CAT1 CPUSS interrupt multiplexer driver using
+	  Zephyr multi-level interrupt framework. System interrupts
+	  are level 2, NvicMux lines are level 1 aggregators.
+	  The _sw_isr_table is generated at build time in ROM.

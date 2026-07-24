@@ -90,6 +90,8 @@ endif()
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1C)
   zephyr_library_compile_definitions_ifdef(CONFIG_SOC_XMC7200_CORE_NAME_M7_0 CORE_NAME_CM7_0)
   zephyr_library_compile_definitions_ifdef(CONFIG_SOC_XMC7200_CORE_NAME_M7_1 CORE_NAME_CM7_1)
+  zephyr_library_compile_definitions_ifdef(CONFIG_SOC_CYT4DN_CORE_M7_0 CORE_NAME_CM7_0)
+  zephyr_library_compile_definitions_ifdef(CONFIG_SOC_CYT4DN_CORE_M7_1 CORE_NAME_CM7_1)
 endif()
 
 if(CONFIG_SOC_SERIES_PSC3)

@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon CAT1 CPUSS system interrupt multiplexer.
+
+  The CAT1 CPUSS routes peripheral system interrupts onto NvicMux NVIC
+  lines through a programmable multiplexer. This node is a container
+  for the individual mux channel nodes (infineon,cat1-intc-mux).
+
+  Peripherals set their interrupt-parent to a specific mux channel
+  child node to select which NvicMux line they are routed to.
+
+compatible: "infineon,cat1-intc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
