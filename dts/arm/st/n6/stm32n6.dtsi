@@ -390,7 +390,7 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				reg = <0x56020000 0x4400>;
-				ranges = <0x56020000 0x56020000 0x4400>;
+				ranges;
 
 				gpioa: gpio@56020000 {
 					compatible = "st,stm32-gpio";
