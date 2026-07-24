@@ -1,5 +1,6 @@
 # Copyright (c) 2023 Enphase Energy
 # Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_AM64X
@@ -27,6 +28,18 @@ config SOC_AM2434_M4
 	select SOC_SERIES_AM64X_M4
 
 config SOC_AM2434_R5F0_0
+	bool
+	select SOC_SERIES_AM64X_R5
+
+config SOC_AM2434_R5F0_1
+	bool
+	select SOC_SERIES_AM64X_R5
+
+config SOC_AM2434_R5F1_0
+	bool
+	select SOC_SERIES_AM64X_R5
+
+config SOC_AM2434_R5F1_1
 	bool
 	select SOC_SERIES_AM64X_R5
 

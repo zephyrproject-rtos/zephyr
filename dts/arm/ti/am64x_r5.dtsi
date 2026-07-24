@@ -43,10 +43,51 @@
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
-	sram: memory@70080000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x70080000 DT_SIZE_K(256)>;
-		zephyr,memory-region = "SRAM";
+	msram: memory@70000000 {
+		reg = <0x70000000 DT_SIZE_M(2)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x70000000 DT_SIZE_M(2)>;
+
+		msram0: memory@0 {
+			compatible = "mmio-sram";
+			reg = <0x0 DT_SIZE_K(256)>;
+		};
+
+		msram1: memory@40000 {
+			compatible = "mmio-sram";
+			reg = <0x40000 DT_SIZE_K(256)>;
+		};
+
+		msram2: memory@80000 {
+			compatible = "mmio-sram";
+			reg = <0x80000 DT_SIZE_K(256)>;
+		};
+
+		msram3: memory@c0000 {
+			compatible = "mmio-sram";
+			reg = <0xc0000 DT_SIZE_K(256)>;
+		};
+
+		msram4: memory@100000 {
+			compatible = "mmio-sram";
+			reg = <0x100000 DT_SIZE_K(256)>;
+		};
+
+		msram5: memory@140000 {
+			compatible = "mmio-sram";
+			reg = <0x140000 DT_SIZE_K(256)>;
+		};
+
+		msram6: memory@180000 {
+			compatible = "mmio-sram";
+			reg = <0x180000 DT_SIZE_K(256)>;
+		};
+
+		msram7: memory@1c0000 {
+			compatible = "mmio-sram";
+			reg = <0x1c0000 DT_SIZE_K(256)>;
+		};
 	};
 
 	vim: interrupt-controller@2fff0000 {
