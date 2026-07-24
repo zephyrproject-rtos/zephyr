@@ -22,7 +22,9 @@ The board included peripherals:
 - Type-C USB-to-UART port (CH343P) for power, flashing and serial console
 - Two stacked USB-A ports on the USB OTG 2.0 HS controller (CH334F hub),
   host/device function switchable via jumper
-- 100M Ethernet RJ45 port, with a reserved PoE module header
+- 100M Ethernet RJ45 port with an IC+ IP101GR PHY (RMII: clk=50, tx_en=49,
+  txd0=34, txd1=35, crs_dv=28, rxd0=29, rxd1=30; SMI: mdc=31, mdio=52;
+  reset=GPIO51, PHY address 1), with a reserved PoE module header
 - 2-lane MIPI CSI camera connector
 - 2-lane MIPI DSI display connector
 - ES8311 audio codec with speaker PA, microphone and 3.5mm headphone jack
@@ -35,9 +37,9 @@ The board included peripherals:
 - Boot (GPIO35) and reset buttons
 
 Three internal LDO regulators are configured as always-on: ``ldo1`` and
-``ldo4`` at 3.3 V, and ``ldo2`` at 1.8 V. MIPI DSI/CSI, I2S audio, Ethernet
-and the ESP32-C6 SDIO wireless co-processor are not enabled in this initial
-board port.
+``ldo4`` at 3.3 V, and ``ldo2`` at 1.8 V. MIPI DSI/CSI, I2S audio and the
+ESP32-C6 SDIO wireless co-processor are not enabled in this initial board
+port.
 
 .. include:: ../../../espressif/common/soc-esp32p4-features.rst
    :start-after: espressif-soc-esp32p4-features

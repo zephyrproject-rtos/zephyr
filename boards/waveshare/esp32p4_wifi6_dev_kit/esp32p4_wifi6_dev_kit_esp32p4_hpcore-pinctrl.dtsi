@@ -40,4 +40,23 @@
 				 <I2S0_O_SD_GPIO9>;
 		};
 	};
+
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <SMI_MDC_GPIO31>,
+				 <SMI_MDIO_GPIO52>;
+		};
+	};
+
+	rmii_default: rmii_default {
+		group1 {
+			pinmux = <RMII_CLK_GPIO50>,
+				 <RMII_TX_EN_GPIO49>,
+				 <RMII_TXD0_GPIO34>,
+				 <RMII_TXD1_GPIO35>,
+				 <RMII_CRS_DV_GPIO28>,
+				 <RMII_RXD0_GPIO29>,
+				 <RMII_RXD1_GPIO30>;
+		};
+	};
 };

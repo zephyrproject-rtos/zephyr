@@ -10,6 +10,7 @@ testing:
 supported:
   - counter
   - entropy
+  - ethernet
   - gpio
   - hwinfo
   - i2c
