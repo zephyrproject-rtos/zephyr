@@ -567,6 +567,62 @@ static int udc_renesas_ra_clock_check(const struct device *dev)
 	return 0;
 }
 
+static int udc_renesas_ra_register_eps(const struct device *dev, uint16_t mps)
+{
+	const struct udc_renesas_ra_config *config = dev->config;
+	struct udc_renesas_ra_data *priv = udc_get_private(dev);
+	bool peripheral_is_5_eps_usbfs = (config->num_of_eps == 5) &&
+					(priv->udc_cfg.module_number == 0);
+	int err;
+
+	for (int i = 0; i < config->num_of_eps; i++) {
+		config->ep_cfg_out[i].caps.out = 1;
+		config->ep_cfg_in[i].caps.in = 1;
+
+		if (i == 0) {
+			config->ep_cfg_out[i].caps.control = 1;
+			config->ep_cfg_out[i].caps.mps = 64;
+			config->ep_cfg_in[i].caps.control = 1;
+			config->ep_cfg_in[i].caps.mps = 64;
+		} else if (i <= 2 && peripheral_is_5_eps_usbfs) {
+			config->ep_cfg_out[i].caps.bulk = 1;
+			config->ep_cfg_in[i].caps.bulk = 1;
+			config->ep_cfg_out[i].caps.mps = mps;
+			config->ep_cfg_in[i].caps.mps = mps;
+		} else if (peripheral_is_5_eps_usbfs) {
+			config->ep_cfg_out[i].caps.interrupt = 1;
+			config->ep_cfg_in[i].caps.interrupt = 1;
+			config->ep_cfg_out[i].caps.mps = mps;
+			config->ep_cfg_in[i].caps.mps = mps;
+		} else {
+			config->ep_cfg_out[i].caps.bulk = 1;
+			config->ep_cfg_out[i].caps.interrupt = 1;
+			config->ep_cfg_out[i].caps.iso = 1;
+			config->ep_cfg_out[i].caps.mps = mps;
+			config->ep_cfg_in[i].caps.bulk = 1;
+			config->ep_cfg_in[i].caps.interrupt = 1;
+			config->ep_cfg_in[i].caps.iso = 1;
+			config->ep_cfg_in[i].caps.mps = mps;
+		}
+
+		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
+		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
+		if (err != 0) {
+			LOG_ERR("Failed to register endpoint");
+			return err;
+		}
+
+		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
+		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
+		if (err != 0) {
+			LOG_ERR("Failed to register endpoint");
+			return err;
+		}
+	}
+
+	return 0;
+}
+
 static int udc_renesas_ra_driver_preinit(const struct device *dev)
 {
 	const struct udc_renesas_ra_config *config = dev->config;
@@ -617,44 +673,9 @@ static int udc_renesas_ra_driver_preinit(const struct device *dev)
 		mps = 1024;
 	}
 
-	for (int i = 0; i < config->num_of_eps; i++) {
-		config->ep_cfg_out[i].caps.out = 1;
-		if (i == 0) {
-			config->ep_cfg_out[i].caps.control = 1;
-			config->ep_cfg_out[i].caps.mps = 64;
-		} else {
-			config->ep_cfg_out[i].caps.bulk = 1;
-			config->ep_cfg_out[i].caps.interrupt = 1;
-			config->ep_cfg_out[i].caps.iso = 1;
-			config->ep_cfg_out[i].caps.mps = mps;
-		}
-
-		config->ep_cfg_out[i].addr = USB_EP_DIR_OUT | i;
-		err = udc_register_ep(dev, &config->ep_cfg_out[i]);
-		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
-			return err;
-		}
-	}
-
-	for (int i = 0; i < config->num_of_eps; i++) {
-		config->ep_cfg_in[i].caps.in = 1;
-		if (i == 0) {
-			config->ep_cfg_in[i].caps.control = 1;
-			config->ep_cfg_in[i].caps.mps = 64;
-		} else {
-			config->ep_cfg_in[i].caps.bulk = 1;
-			config->ep_cfg_in[i].caps.interrupt = 1;
-			config->ep_cfg_in[i].caps.iso = 1;
-			config->ep_cfg_in[i].caps.mps = mps;
-		}
-
-		config->ep_cfg_in[i].addr = USB_EP_DIR_IN | i;
-		err = udc_register_ep(dev, &config->ep_cfg_in[i]);
-		if (err != 0) {
-			LOG_ERR("Failed to register endpoint");
-			return err;
-		}
+	err = udc_renesas_ra_register_eps(dev, mps);
+	if (err != 0) {
+		return err;
 	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_usbhs)
