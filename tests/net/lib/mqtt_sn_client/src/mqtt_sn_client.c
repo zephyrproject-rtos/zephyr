@@ -273,6 +273,9 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_handle_advertise)
 	err = k_sem_take(&mqtt_sn_cb_sem, K_SECONDS(10));
 	zassert_equal(err, 0, "Timed out waiting for callback.");
 
+	/* Wait for system work queue to update internal state. */
+	k_sleep(K_SECONDS(1));
+
 	zassert_true(sys_slist_is_empty(&mqtt_client->gateways), "GW not cleared on timeout");
 	zassert_equal(evt_cb_data.called, 4, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_DISCONNECTED, "Wrong event");
@@ -508,6 +511,9 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_publish_qos0)
 	zassert_equal(err, 0, "Timed out waiting for callback.");
 	assert_msg_send(1, 20, &gw_addr);
 
+	/* Wait for system work queue to update internal state. */
+	k_sleep(K_SECONDS(1));
+
 	/* Expect publishes to be empty - all done */
 	zassert_true(sys_slist_is_empty(&mqtt_client->publish), "Publish not empty");
 
@@ -594,6 +600,8 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_regack)
 	assert_msg_send(0, 0, NULL);
 
 	/* Expect one more REGISTER and one PUBLISH to be sent */
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(10));
+	zassert_equal(err, 0, "Timed out waiting for callback.");
 	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(10));
 	zassert_equal(err, 0, "Timed out waiting for callback.");
 	assert_msg_send(2, 20, &gw_addr);
