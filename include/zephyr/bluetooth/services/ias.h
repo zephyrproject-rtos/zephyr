@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Immediate Alert Service (IAS) API.
+ * @ingroup bt_ias
+ */
+
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_IAS_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_IAS_H_
 
