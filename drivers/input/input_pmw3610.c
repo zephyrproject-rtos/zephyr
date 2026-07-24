@@ -120,6 +120,7 @@ static int pmw3610_read(const struct device *dev,
 			uint8_t addr, uint8_t *value, uint8_t len)
 {
 	const struct pmw3610_config *cfg = dev->config;
+	int ret;
 
 	const struct spi_buf tx_buf = {
 		.buf = &addr,
@@ -130,22 +131,23 @@ static int pmw3610_read(const struct device *dev,
 		.count = 1,
 	};
 
-	struct spi_buf rx_buf[] = {
-		{
-			.buf = NULL,
-			.len = sizeof(addr),
-		},
-		{
-			.buf = value,
-			.len = len,
-		},
+	struct spi_buf rx_buf = {
+		.buf = value,
+		.len = len,
 	};
 	const struct spi_buf_set rx = {
-		.buffers = rx_buf,
-		.count = ARRAY_SIZE(rx_buf),
+		.buffers = &rx_buf,
+		.count = 1,
 	};
 
-	return spi_transceive_dt(&cfg->spi, &tx, &rx);
+	ret = spi_write_dt(&cfg->spi, &tx);
+	if (ret) {
+		goto release;
+	}
+	ret = spi_read_dt(&cfg->spi, &rx);
+release:
+	spi_release_dt(&cfg->spi);
+	return ret;
 }
 
 static int pmw3610_read_reg(const struct device *dev, uint8_t addr, uint8_t *value)
@@ -156,6 +158,7 @@ static int pmw3610_read_reg(const struct device *dev, uint8_t addr, uint8_t *val
 static int pmw3610_write_reg(const struct device *dev, uint8_t addr, uint8_t value)
 {
 	const struct pmw3610_config *cfg = dev->config;
+	int ret;
 
 	uint8_t write_buf[] = {addr | SPI_WRITE, value};
 	const struct spi_buf tx_buf = {
@@ -167,7 +170,9 @@ static int pmw3610_write_reg(const struct device *dev, uint8_t addr, uint8_t val
 		.count = 1,
 	};
 
-	return spi_write_dt(&cfg->spi, &tx);
+	ret = spi_write_dt(&cfg->spi, &tx);
+	spi_release_dt(&cfg->spi);
+	return ret;
 }
 
 static int pmw3610_spi_clk_on(const struct device *dev)
@@ -562,7 +567,8 @@ static int pmw3610_pm_action(const struct device *dev,
 #endif
 
 #define PMW3610_SPI_MODE (SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | \
-			  SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
+			  SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB | \
+			  SPI_HOLD_ON_CS | SPI_LOCK_ON)
 
 #define PMW3610_INIT(n)								\
 	static const struct pmw3610_config pmw3610_cfg_##n = {			\
