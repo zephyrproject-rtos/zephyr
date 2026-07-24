@@ -1,0 +1,6 @@
+board:
+  name: mc1board
+  full_name: MC1 Board
+  vendor: zhaw
+  socs:
+    - name: stm32h573xx

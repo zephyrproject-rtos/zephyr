@@ -1,0 +1,38 @@
+# MC1 board configuration
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Institute of Embedded Systems ZHAW
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_MC1BOARD
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+endif # NETWORKING
+
+if DISK_DRIVER_SDMMC
+
+config SDMMC_STM32_CLOCK_CHECK
+	default n
+
+endif # DISK_DRIVER_SDMMC
+
+if DISPLAY
+
+# Required to enable LCD backlight
+config REGULATOR
+	default y
+
+config INPUT
+	default y if LVGL
+
+config I2C_STM32_V2_TIMING
+	default y if INPUT
+
+endif # DISPLAY
+
+endif # BOARD_MC1BOARD

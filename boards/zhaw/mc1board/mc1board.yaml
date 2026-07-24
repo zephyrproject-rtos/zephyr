@@ -1,0 +1,26 @@
+identifier: mc1board
+name: ZHAW MC1 board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 640
+flash: 2048
+supported:
+  - gpio
+  - uart
+  - watchdog
+  - entropy
+  - dma
+  - adc
+  - dac
+  - netif:eth
+  - pwm
+  - counter
+  - spi
+  - octospi
+  - can
+  - i2c
+  - rtc
+  - usbd
+vendor: zhaw
