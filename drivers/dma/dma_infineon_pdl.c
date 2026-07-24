@@ -37,6 +37,13 @@ struct ifx_cat1_dma_channel {
 	uint32_t error_callback_dis: 1;
 	uint32_t sw_triggered: 1;
 
+	/* Kept out of the bitfield above on purpose: suspend()/resume()/stop()
+	 * update this from contexts that can preempt a channel (re)configuration,
+	 * and a read-modify-write of a shared bitfield word would race with the
+	 * other bits. A standalone byte is stored atomically.
+	 */
+	bool suspended;
+
 	cy_stc_dma_descriptor_t descr[DESCRIPTOR_COUNT];
 	IRQn_Type irq;
 
@@ -60,6 +67,16 @@ int ifx_cat1_dma_trig(const struct device *dev, uint32_t channel)
 {
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
 	struct ifx_cat1_dma_data *data = dev->data;
+
+	/* While the channel is suspended, defer the software trigger. The
+	 * transfer is restarted by ifx_cat1_dma_resume(). This prevents a
+	 * software-rechained transfer (e.g. a new transfer kicked from the
+	 * completion callback) from re-triggering the channel while it is
+	 * meant to be paused.
+	 */
+	if (data->channels[channel].suspended) {
+		return 0;
+	}
 
 	/* Set SW trigger for the channel */
 	if (data->channels[channel].sw_triggered) {
@@ -324,14 +341,83 @@ static int ifx_cat1_dma_start(const struct device *dev, uint32_t channel)
 static int ifx_cat1_dma_stop(const struct device *dev, uint32_t channel)
 {
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	struct ifx_cat1_dma_data *data = dev->data;
 
 	if (channel >= cfg->num_channels) {
 		LOG_ERR("Unsupported channel");
 		return -EINVAL;
 	}
 
+	/* A full stop clears any pending suspended state. */
+	data->channels[channel].suspended = false;
+
 	/* Disable DMA channel */
 	Cy_DMA_Channel_Disable(cfg->regs, channel);
+
+	return 0;
+}
+
+static int ifx_cat1_dma_suspend(const struct device *dev, uint32_t channel)
+{
+	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	struct ifx_cat1_dma_data *data = dev->data;
+
+	if (channel >= cfg->num_channels) {
+		LOG_ERR("Unsupported channel");
+		return -EINVAL;
+	}
+
+	/* Suspend is realized by withholding the software trigger, so it only
+	 * applies to software-triggered transfers. A hardware-triggered channel
+	 * is advanced by its peripheral trigger, which this driver cannot gate,
+	 * so report that suspend is unsupported for it instead of silently
+	 * failing to pause.
+	 */
+	if (!data->channels[channel].sw_triggered) {
+		return -ENOTSUP;
+	}
+
+	/* Pause by withholding the next software trigger: mark the channel
+	 * suspended so a software-rechained transfer (e.g. one kicked from the
+	 * completion callback) does not re-trigger it until ifx_cat1_dma_resume()
+	 * runs. The in-flight one-shot descriptor is allowed to finish on its
+	 * own; the channel is deliberately NOT disabled here because per the DW
+	 * TRM disabling an actively transferring channel by software leaves its
+	 * state undefined.
+	 */
+	data->channels[channel].suspended = true;
+
+	return 0;
+}
+
+static int ifx_cat1_dma_resume(const struct device *dev, uint32_t channel)
+{
+	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	struct ifx_cat1_dma_data *data = dev->data;
+
+	if (channel >= cfg->num_channels) {
+		LOG_ERR("Unsupported channel");
+		return -EINVAL;
+	}
+
+	/* Only a channel that was actually suspended can be resumed. Resuming a
+	 * running or already-completed channel would issue a software trigger
+	 * with no valid current descriptor and raise a CURR_PTR_NULL error.
+	 */
+	if (!data->channels[channel].suspended) {
+		return -EINVAL;
+	}
+
+	/* Clear the suspended state so the software trigger is issued again. */
+	data->channels[channel].suspended = false;
+
+	/* Re-enable the channel (idempotent if the gated restart already did) and
+	 * re-issue the software trigger so the withheld transfer continues,
+	 * mirroring ifx_cat1_dma_start().
+	 */
+	Cy_DMA_Channel_Enable(cfg->regs, channel);
+
+	ifx_cat1_dma_trig(dev, channel);
 
 	return 0;
 }
@@ -341,12 +427,18 @@ int ifx_cat1_dma_reload(const struct device *dev, uint32_t channel, uint32_t src
 {
 	struct ifx_cat1_dma_data *data = dev->data;
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
-	cy_stc_dma_descriptor_t *descriptor = &data->channels[channel].descr[0];
+	cy_stc_dma_descriptor_t *descriptor;
 
 	if (channel >= cfg->num_channels) {
 		LOG_ERR("Unsupported channel");
 		return -EINVAL;
 	}
+
+	/* descr is an inline array member (cy_stc_dma_descriptor_t descr[]), so
+	 * &descr[0] is always valid; unlike the HAL driver where descr is a
+	 * pointer that needs a NULL check, no NULL check is required here.
+	 */
+	descriptor = &data->channels[channel].descr[0];
 
 	/* Set a descriptor for the specified DMA channel
 	 *
@@ -464,9 +556,15 @@ static int ifx_cat1_dma_get_status(const struct device *dev, uint32_t channel,
 		uint32_t total_transfer_size = get_total_size(dev, channel);
 		uint32_t transferred_size = get_transferred_size(dev, channel);
 
-		/* pending_length expressed in user units (items), same as get_total/get_transferred
+		/* pending_length is in user units (items), same as get_total/get_transferred.
+		 * transferred_size can momentarily read >= total when the transfer has just
+		 * completed; clamp to avoid an unsigned underflow wrapping to a huge value.
 		 */
-		stat->pending_length = total_transfer_size - transferred_size;
+		if (total_transfer_size > transferred_size) {
+			stat->pending_length = total_transfer_size - transferred_size;
+		} else {
+			stat->pending_length = 0;
+		}
 	} else {
 		stat->pending_length = 0;
 	}
@@ -565,6 +663,8 @@ static DEVICE_API(dma, ifx_cat1_dma_api) = {
 	.config = ifx_cat1_dma_config,
 	.start = ifx_cat1_dma_start,
 	.stop = ifx_cat1_dma_stop,
+	.suspend = ifx_cat1_dma_suspend,
+	.resume = ifx_cat1_dma_resume,
 	.reload = ifx_cat1_dma_reload,
 	.get_status = ifx_cat1_dma_get_status,
 };
