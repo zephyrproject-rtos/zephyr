@@ -335,7 +335,12 @@ int lll_init(void)
 #endif /* !CONFIG_BT_CTLR_DYNAMIC_INTERRUPTS */
 
 	/* Enable Radio interrupt on radio state disabled; after tx or rx or explicitly disabled */
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+	nrf_radio_int_enable(NRF_RADIO, (HAL_RADIO_INTENSET_END_Msk |
+					 HAL_RADIO_INTENSET_DISABLED_Msk));
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 	nrf_radio_int_enable(NRF_RADIO, HAL_RADIO_INTENSET_DISABLED_Msk);
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 	/* Enable IRQs */
 	irq_enable(HAL_RADIO_IRQn);
@@ -478,6 +483,31 @@ int lll_reset(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_CTLR_ZLI)
+static void mfy_ll_rx_sched(void *param)
+{
+	ARG_UNUSED(param);
+
+	ll_rx_sched();
+}
+
+void ll_iso_rx_sched(void)
+{
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, mfy_ll_rx_sched};
+
+	/* Ignore mayfly_enqueue failure on repeated enqueue call */
+	(void)mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 0,
+			     &mfy);
+}
+
+#else /* !CONFIG_BT_CTLR_ZLI */
+void ll_iso_rx_sched(void)
+{
+	ll_rx_sched();
+}
+#endif /* !CONFIG_BT_CTLR_ZLI */
 
 void lll_disable(void *param)
 {
@@ -939,9 +969,8 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	    (event.curr.abort_cb != NULL) ||
 	    (ready_short != NULL) ||
 	    ((ready != NULL) && (is_resume != 0U)) ||
-	    (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN) &&
-	     (prepare_param->defer == 0U) &&
-	     (event.curr.has_margin == 0U))) {
+	    (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN) && (prepare_param->defer == 0U) &&
+	     (event.curr.has_margin == 0U) && (is_resume == 0U))) {
 #if defined(CONFIG_BT_CTLR_LOW_LAT)
 		lll_prepare_cb_t resume_cb;
 #endif /* CONFIG_BT_CTLR_LOW_LAT */
@@ -959,6 +988,12 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		if (is_resume || prepare_param->defer) {
 			return -EINPROGRESS;
+		}
+
+		if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)) {
+			if (event.curr.abort_cb != NULL) {
+				event.curr.has_margin = 0U;
+			}
 		}
 
 		/* Find any short prepare */
@@ -1024,6 +1059,7 @@ int lll_prepare_resolve(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	event.curr.is_abort_cb = is_abort_cb;
 	event.curr.abort_cb = abort_cb;
 
+	/* Next prepare needs margin */
 	if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)) {
 		event.curr.has_margin = 0U;
 	}
@@ -1292,15 +1328,17 @@ static void preempt(void *param)
 		 * event.curr.param is NULL. Let us setup the preempt timeout to
 		 * ensure the margin for certain.
 		 */
-		if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN) &&
-		    (event.curr.abort_cb == NULL)) {
-			/* Previous event is done before the prepare margin for
-			 * the event ready in the pipeline when we are here now.
-			 */
-			event.curr.has_margin = 1U;
+		if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)) {
+			if (event.curr.abort_cb == NULL) {
+				/* Previous event is done before the prepare margin for
+				 * the event ready in the pipeline when we are here now.
+				 */
+				LL_ASSERT_DBG(event.curr.has_margin == 0U);
+				event.curr.has_margin = 1U;
 
-			/* Execute the enqueued ready LLL prepare callbacks */
-			ull_prepare_dequeue(TICKER_USER_ID_LLL);
+				/* Execute the enqueued ready LLL prepare callbacks */
+				ull_prepare_dequeue(TICKER_USER_ID_LLL);
+			}
 		}
 
 		return;
@@ -1400,13 +1438,6 @@ preempt_find_preemptor:
 		LL_ASSERT_ERR(ready->prepare_param.param == param);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)) {
-		/* Here prepare margin has expired while a previous event is
-		 * active, set the flag and proceed with abort.
-		 */
-		event.curr.has_margin = 1U;
-	}
-
 	/* Check if current event want to continue */
 	err = event.curr.is_abort_cb(ready->prepare_param.param, event.curr.param, &resume_cb);
 	if (!err || (err == -EBUSY)) {
@@ -1437,6 +1468,14 @@ preempt_find_preemptor:
 		}
 
 		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_LLL_PREPARE_AT_MARGIN)) {
+		/* Here prepare margin has expired while a previous event is
+		 * active, set the flag and proceed with abort.
+		 */
+		LL_ASSERT_DBG(event.curr.has_margin == 0U);
+		event.curr.has_margin = 1U;
 	}
 
 	/* Abort the current event */

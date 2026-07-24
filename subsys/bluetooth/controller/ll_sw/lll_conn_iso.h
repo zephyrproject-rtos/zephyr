@@ -8,6 +8,18 @@
 #define LLL_CIS_FLUSH_PENDING   1
 #define LLL_CIS_FLUSH_COMPLETE  2
 
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+/* Per-CIS channel-selection (PRN) state saved/restored when bouncing
+ * between CISes during interleaved subevent traversal.
+ */
+struct lll_conn_iso_data_chan_interleaved {
+	uint16_t prn_s;      /* Channel PRN state */
+	uint16_t remap_idx;  /* Channel remap index */
+	uint16_t id;         /* data_chan_id for this CIS */
+	uint8_t  chan_use;   /* Current channel in use */
+};
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
+
 struct lll_conn_iso_stream_rxtx {
 	uint64_t payload_count:39; /* cisPayloadCounter */
 	uint64_t phy_flags:1;      /* S2 or S8 coding scheme */
@@ -97,7 +109,11 @@ struct lll_conn_iso_group {
 	uint32_t num_cis:5;   /* Number of CISes in this CIG */
 	uint32_t role:1;      /* 0: CENTRAL, 1: PERIPHERAL*/
 	uint32_t paused:1;    /* 1: CIG is paused */
+#if defined(CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED)
+	uint32_t packing:1;   /* 0: sequential, 1: interleaved */
+#else
 	uint32_t rfu0:1;
+#endif /* CONFIG_BT_CTLR_CONN_ISO_INTERLEAVED */
 
 	/* ISO interval to calculate timestamp under FT > 1,
 	 * maximum ISO interval of 4 seconds can be represented in 22-bits.
