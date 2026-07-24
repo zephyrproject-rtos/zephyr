@@ -124,6 +124,14 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if 
 	caps |= ETHERNET_HW_VLAN;
 #endif
 
+#ifdef CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN
+	caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
+#endif
+
+#ifdef CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
+	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD;
+#endif
+
 	return caps;
 }
 
@@ -166,6 +174,10 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	/* initial flag values */
 	des2_flags = 0;
 	des3_flags = TDES3_FD | TDES3_OWN;
+
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN)) {
+		des3_flags |= TDES3_CIC;
+	}
 
 	/* map packet fragments */
 	d_idx = p->tx_desc_head;
@@ -718,6 +730,11 @@ int dwmac_probe(const struct device *dev)
 	DWMAC_REG_WRITE(DMA_CHn_RXDESC_LIST_ADDR(0), RXDESC_PHYS_L(0));
 	DWMAC_REG_WRITE(DMA_CHn_TXDESC_RING_LENGTH(0), NB_TX_DESCS - 1);
 	DWMAC_REG_WRITE(DMA_CHn_RXDESC_RING_LENGTH(0), NB_RX_DESCS - 1);
+
+	/* setup RX checksum offloading */
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN)) {
+		DWMAC_REG_WRITE(MAC_CONF, DWMAC_REG_READ(MAC_CONF) | MAC_CONF_IPC);
+	}
 
 	return 0;
 }
