@@ -73,7 +73,6 @@ if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 
   add_subdirectory(mtb-template-pse8xxgp)
   add_subdirectory(mtb-srf)
-  add_subdirectory(serial-memory)
   add_subdirectory(zephyr-ifx-cycfg)
   add_subdirectory(mtb-dsl-pse8xxgp)
 
