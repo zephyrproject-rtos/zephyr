@@ -62,10 +62,10 @@ extern "C" {
 
 /** Protocol numbers from IANA/BSD */
 enum net_ip_protocol {
-	NET_IPPROTO_IP = 0,            /**< IP protocol (pseudo-val for setsockopt() */
+	NET_IPPROTO_IP = 0,            /**< IP protocol (pseudo-val for setsockopt()) */
 	NET_IPPROTO_ICMP = 1,          /**< ICMP protocol   */
 	NET_IPPROTO_IGMP = 2,          /**< IGMP protocol   */
-	NET_IPPROTO_ETH_P_ALL = 3,     /**< Every packet. from linux if_ether.h   */
+	NET_IPPROTO_ETH_P_ALL = 3,     /**< Every packet, from Linux if_ether.h   */
 	NET_IPPROTO_IPIP = 4,          /**< IPIP tunnels    */
 	NET_IPPROTO_TCP = 6,           /**< TCP protocol    */
 	NET_IPPROTO_UDP = 17,          /**< UDP protocol    */
@@ -222,7 +222,7 @@ struct net_sockaddr_can {
  * The protocol (protocol type) selects for which feature the socket is used.
  *
  * When used with bind(), the nm_pid field of the net_sockaddr_nm can be
- * filled with the calling thread' own id. The nm_pid serves here as the local
+ * filled with the calling thread's own ID. The nm_pid serves here as the local
  * address of this net_mgmt socket. The application is responsible for picking
  * a unique integer value to fill in nm_pid.
  */
@@ -249,7 +249,7 @@ struct net_sockaddr_in6_ptr {
 	net_sa_family_t		sin6_family;   /**< NET_AF_INET6           */
 	uint16_t		sin6_port;     /**< Port number            */
 	struct net_in6_addr    *sin6_addr;     /**< IPv6 address           */
-	uint8_t			sin6_scope_id; /**< interfaces for a scope */
+	uint8_t			sin6_scope_id; /**< Interfaces for a scope */
 };
 
 /** Socket address struct for IPv4 where address is a pointer */
@@ -516,7 +516,7 @@ extern const struct net_in6_addr net_in6addr_loopback;
 /** IPv4 address initializer */
 #define NET_INADDR_ANY_INIT { { { NET_INADDR_ANY } } }
 
-/** IPv6 loopback address initializer */
+/** IPv4 loopback address initializer */
 #define NET_INADDR_LOOPBACK_INIT  { { { 127, 0, 0, 1 } } }
 
 /** Max length of the IPv4 address as a string. Defined by POSIX. */
@@ -710,7 +710,7 @@ static inline const char *net_addr_type2str(enum net_addr_type type)
 #define NET_IPV6_NEXTHDR_NONE        59
 
 /**
- * This 2 unions are here temporarily, as long as net_context.h will
+ * These 2 unions are here temporarily, as long as net_context.h will
  * be still public and not part of the core only.
  */
 union net_ip_header {
@@ -2178,9 +2178,9 @@ int net_port_get(struct net_sockaddr *addr, uint16_t *port);
  *          accounting for wraparound effects.
  *
  * @param seq1 First sequence number
- * @param seq2 Seconds sequence number
+ * @param seq2 Second sequence number
  *
- * @return < 0 if seq1 < seq2, 0 if seq1 == seq2, > 0 if seq > seq2
+ * @return < 0 if seq1 < seq2, 0 if seq1 == seq2, > 0 if seq1 > seq2
  */
 static inline int32_t net_tcp_seq_cmp(uint32_t seq1, uint32_t seq2)
 {
@@ -2193,9 +2193,9 @@ static inline int32_t net_tcp_seq_cmp(uint32_t seq1, uint32_t seq2)
  * @details This is convenience function on top of net_tcp_seq_cmp().
  *
  * @param seq1 First sequence number
- * @param seq2 Seconds sequence number
+ * @param seq2 Second sequence number
  *
- * @return True if seq > seq2
+ * @return True if seq1 > seq2
  */
 static inline bool net_tcp_seq_greater(uint32_t seq1, uint32_t seq2)
 {
