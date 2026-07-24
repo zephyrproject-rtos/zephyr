@@ -21,6 +21,38 @@
 			compatible = "arm,cortex-a72";
 			reg = <0>;
 			clock-frequency = <DT_FREQ_M(540)>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0x000000d8>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a72";
+			reg = <1>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0x000000e0>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
+		};
+
+		cpu2: cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a72";
+			reg = <2>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0x000000e8>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
+		};
+
+		cpu3: cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a72";
+			reg = <3>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0x000000f0>;
 			i-cache-line-size = <64>;
 			d-cache-line-size = <64>;
 		};
