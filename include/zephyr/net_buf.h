@@ -95,10 +95,10 @@ struct net_buf_simple {
 	 *
 	 * To determine the max length, use net_buf_simple_max_len(), not #size!
 	 */
-	uint16_t len;
+	uint32_t len;
 
 	/** Amount of data that net_buf_simple#__buf can store. */
-	uint16_t size;
+	uint32_t size;
 
 	/** Start of the data storage. Not to be accessed directly
 	 *  (the data pointer should be used instead).
@@ -1104,10 +1104,10 @@ struct net_buf {
 			uint8_t *data;
 
 			/** Length of the data behind the data pointer. */
-			uint16_t len;
+			uint32_t len;
 
 			/** Amount of data that this buffer can store. */
-			uint16_t size;
+			uint32_t size;
 
 			/** Start of the data storage. Not to be accessed
 			 *  directly (the data pointer should be used

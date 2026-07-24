@@ -1681,7 +1681,8 @@ static int dns_write(struct dns_resolve_context *ctx,
 	enum dns_query_type query_type;
 	struct net_sockaddr *server;
 	int server_addr_len;
-	uint16_t dns_id, len;
+	uint16_t dns_id;
+	uint32_t len;
 	int ret, sock, family;
 	char *query_name;
 
@@ -1693,7 +1694,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 
 	len = buf_len;
 
-	ret = dns_msg_pack_query(buf, &len, (uint16_t)max_len,
+	ret = dns_msg_pack_query(buf, &len, max_len,
 				 dns_qname->data, dns_qname->len, dns_id,
 				 (enum dns_rr_type)query_type);
 	if (ret < 0) {
@@ -1870,7 +1871,7 @@ int dns_resolve_cancel_with_name(struct dns_resolve_context *ctx,
 
 	if (query_name) {
 		struct net_buf *buf;
-		uint16_t len;
+		uint32_t len;
 		int ret;
 
 		/* Use net_buf as a temporary buffer to store the packed
