@@ -28,7 +28,10 @@ static inline void external_antenna(bool on)
 	gpio_pin_configure_dt(&pcb_gpio, (on ? GPIO_OUTPUT_INACTIVE : GPIO_OUTPUT_ACTIVE));
 }
 
-static int board_particle_xenon_init(void)
+/* Runs as the board late init hook, after all POST_KERNEL device init,
+ * so the GPIO driver is available.
+ */
+void board_late_init_hook(void)
 {
 
 	/*
@@ -37,11 +40,4 @@ static int board_particle_xenon_init(void)
 	 * antenna.
 	 */
 	external_antenna(false);
-
-	return 0;
 }
-
-/* needs to be done after GPIO driver init, which is at
- * POST_KERNEL:KERNEL_INIT_PRIORITY_DEFAULT.
- */
-SYS_INIT(board_particle_xenon_init, POST_KERNEL, 99);
