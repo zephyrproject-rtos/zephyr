@@ -11,7 +11,7 @@
 extern "C" {
 #endif
 
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 /** @brief GRTC timer compare event handler.
  *

@@ -6,7 +6,7 @@
 
 #include <zephyr/arch/arm/arch.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/timing/timing.h>
 #include <soc.h>
 

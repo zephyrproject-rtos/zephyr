@@ -6,7 +6,7 @@
 
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 /* List of fakes used by this unit tester */
 #define KERNEL_FFF_FAKES_LIST(FAKE)                                                                \

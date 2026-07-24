@@ -8,7 +8,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <soc.h>
 
 #define DT_DRV_COMPAT renesas_ra_ulpt_timer

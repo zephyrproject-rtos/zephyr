@@ -36,7 +36,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/devicetree/counter-capture.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <stdbool.h>
 
 #include <zephyr/dt-bindings/counter/counter-capture.h>

@@ -7,7 +7,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 int bt_long_wq_schedule(struct k_work_delayable *dwork, k_timeout_t timeout);
 int bt_long_wq_reschedule(struct k_work_delayable *dwork, k_timeout_t timeout);

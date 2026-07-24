@@ -18,7 +18,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/slist.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 enum bt_iso_cig_state {
 	BT_ISO_CIG_STATE_IDLE,

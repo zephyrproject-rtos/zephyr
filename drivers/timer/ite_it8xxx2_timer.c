@@ -10,7 +10,7 @@
 #include <zephyr/dt-bindings/interrupt-controller/ite-intc.h>
 #include <soc.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

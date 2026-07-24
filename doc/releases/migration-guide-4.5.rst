@@ -23,6 +23,9 @@ the :ref:`release notes<zephyr_4.5>`.
 Common
 ******
 
+* Header files :file:`include/zephyr/sys_clock.h` is deprecated and will be removed in a future
+  release. One shall include :file:`include/zephyr/sys/clock.h` instead.
+
 Build System
 ************
 

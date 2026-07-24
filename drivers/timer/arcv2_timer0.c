@@ -6,7 +6,7 @@
  */
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/arch/arc/v2/aux_regs.h>
 #include <zephyr/irq.h>

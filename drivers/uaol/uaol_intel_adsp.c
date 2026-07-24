@@ -14,7 +14,7 @@
 #include <adsp_shim.h>
 #include <adsp_timestamp.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>

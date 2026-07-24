@@ -6,7 +6,7 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #include "soc_miwu.h"
 

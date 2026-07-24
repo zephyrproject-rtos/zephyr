@@ -8,7 +8,7 @@
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/drivers/stepper/stepper.h>
 
 #include <gpio_stepper_common.h>

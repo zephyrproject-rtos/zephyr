@@ -6,7 +6,7 @@
 
 #include <zephyr/pm/policy.h>
 #include <zephyr/sys/time_units.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/ztest.h>
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)

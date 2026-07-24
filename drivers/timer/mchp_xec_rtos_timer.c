@@ -11,7 +11,7 @@
 #include <soc.h>
 #include <zephyr/arch/common/sys_io.h>
 #include <zephyr/drivers/timer/system_timer.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/spinlock.h>
 #include <cmsis_core.h>
 #include <zephyr/irq.h>

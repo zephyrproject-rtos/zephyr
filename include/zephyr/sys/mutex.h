@@ -23,7 +23,7 @@ extern "C" {
 #ifdef CONFIG_USERSPACE
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 struct sys_mutex {
 	/* Currently unused, but will be used to store state for fast mutexes

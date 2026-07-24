@@ -14,7 +14,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/math_extras.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <ksched.h>
 #include <kthread.h>
 #include <wait_q.h>
