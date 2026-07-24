@@ -5,6 +5,7 @@
  */
 
 #include <mem.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	soc {
@@ -50,6 +51,28 @@
 		rx-fifo-size = <4>;
 		tx-fifo-size = <4>;
 	};
+
+	lpi2c0: i2c@9a000 {
+		compatible = "nxp,lpi2c";
+		reg = <0x9a000 0x1000>;
+		interrupts = <26 0>;
+		clocks = <&syscon MCUX_LPI2C0_CLK>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	lpi2c1: i2c@9b000 {
+		compatible = "nxp,lpi2c";
+		reg = <0x9b000 0x1000>;
+		interrupts = <27 0>;
+		clocks = <&syscon MCUX_LPI2C1_CLK>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
 };
 
 &fmu {
@@ -86,4 +109,8 @@
 
 &aon_qtmr1 {
 	interrupts = <152 0>;
+};
+
+&aon_lpi2c0 {
+	interrupts = <128 0>;
 };

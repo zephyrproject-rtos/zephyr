@@ -30,6 +30,8 @@
 		watchdog0 = &wwdt0;
 		spi-0 = &lpspi0;
 		spi-1 = &lpspi1;
+		i2c-0 = &lpi2c0;
+		i2c-1 = &lpi2c1;
 	};
 
 	leds {
@@ -128,4 +130,22 @@
 
 &wwdt0 {
 	status = "okay";
+};
+
+&lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c0>;
+	pinctrl-names = "default";
+};
+
+&lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+};
+
+&aon_lpi2c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_aon_lpi2c0>;
+	pinctrl-names = "default";
 };
