@@ -99,7 +99,7 @@ static int vrt_xfer_control(const struct device *dev,
 		LOG_DBG("Handle SETUP stage");
 		uvb_pkt = uvb_alloc_pkt(UVB_REQUEST_SETUP,
 					xfer->udev->addr, USB_CONTROL_EP_OUT,
-					xfer->setup_pkt, sizeof(xfer->setup_pkt));
+					xfer->setup_pkt, 8);
 		if (uvb_pkt == NULL) {
 			LOG_ERR("Failed to allocate UVB packet");
 			return -ENOMEM;
