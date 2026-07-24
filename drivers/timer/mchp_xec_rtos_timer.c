@@ -182,7 +182,7 @@ static uint32_t last_announcement; /* last time we called sys_clock_announce() *
  * Writing a new value to preload only takes effect once the count
  * register reaches 0.
  */
-void sys_clock_set_timeout(uint32_t n, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t n, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -243,7 +243,7 @@ void sys_clock_set_timeout(uint32_t n, bool idle)
  * sys_clock_announce in the ISR. The caller casts uint32_t to int32_t.
  * We must make sure bit[31] is 0 in the return value.
  */
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	uint32_t ccr;
 	uint32_t ticks;
@@ -322,7 +322,7 @@ static void xec_rtos_timer_isr(const void *arg)
 	sys_clock_announce(1);
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	return 0U;
 }

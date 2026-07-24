@@ -244,7 +244,7 @@ bool z_nxp_os_timer_ignore_timer_wakeup(void)
 	return (wait_forever || counter_remaining_ticks);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Only for tickless kernel system */
@@ -293,7 +293,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Always return 0 for tickful kernel system */

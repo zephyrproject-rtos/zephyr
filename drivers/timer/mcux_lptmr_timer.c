@@ -66,7 +66,7 @@ static inline uint32_t counter_delta(uint32_t now, uint32_t then)
 	return (now - then) & COUNTER_MAX;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -150,7 +150,7 @@ void sys_clock_disable(void)
 	LPTMR_StopTimer(LPTMR_BASE);
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;

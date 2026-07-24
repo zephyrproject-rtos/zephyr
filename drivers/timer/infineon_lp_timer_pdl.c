@@ -92,7 +92,7 @@ static void lptimer_delay(uint32_t cycles)
 	Cy_MCWDT_Enable(lptimer, CY_MCWDT_CTR0 | CY_MCWDT_CTR1, 0);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	uint32_t delay_cycles;
 
@@ -115,7 +115,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	k_spin_unlock(&lock, key);
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	BUILD_ASSERT(CYCLES_PER_TICK > 0);
 

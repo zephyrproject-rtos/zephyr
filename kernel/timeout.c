@@ -27,7 +27,7 @@ static uint64_t curr_tick;
 static struct k_spinlock timeout_lock;
 
 /* Ticks left to process in the currently-executing sys_clock_announce() */
-static uint32_t announce_remaining;
+static sys_clock_ticks_t announce_remaining;
 
 /* CPU id currently inside sys_clock_announce_locked()'s firing loop, or -1
  * when no CPU is. The SMP early-return below ensures at most one CPU is in
@@ -69,7 +69,7 @@ static inline void inflight_mark_superseded(void)
 					       INFLIGHT_SUPERSEDED_BIT);
 }
 
-static uint32_t elapsed(void)
+static sys_clock_ticks_t elapsed(void)
 {
 	/*
 	 * While *this* CPU is executing sys_clock_announce_locked()'s firing
@@ -121,10 +121,10 @@ static uint32_t elapsed(void)
  * backend has to reproduce it: the backend only reports the delta to its
  * earliest pending timeout via z_timeout_q_next_expiry().
  */
-static uint32_t next_timeout(uint32_t ticks_elapsed)
+static sys_clock_ticks_t next_timeout(sys_clock_ticks_t ticks_elapsed)
 {
 	k_ticks_t next = z_timeout_q_next_expiry();
-	uint32_t dticks;
+	sys_clock_ticks_t dticks;
 
 	/*
 	 * sys_clock_announce() reports the ticks elapsed since the previous
@@ -164,7 +164,7 @@ static uint32_t next_timeout(uint32_t ticks_elapsed)
 	}
 
 	/* Otherwise wait until the timeout, relative to now (0 if due). */
-	dticks = (uint32_t)next;
+	dticks = (sys_clock_ticks_t)next;
 
 	return (dticks > ticks_elapsed) ? (dticks - ticks_elapsed) : 0;
 }
@@ -185,7 +185,7 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	to->fn = fn;
 
 	K_SPINLOCK(&timeout_lock) {
-		uint32_t ticks_elapsed;
+		sys_clock_ticks_t ticks_elapsed;
 		bool has_elapsed = false;
 		k_ticks_t dticks;
 
@@ -315,7 +315,7 @@ int32_t z_get_next_timeout_expiry(void)
 	int32_t ret = (int32_t) K_TICKS_FOREVER;
 
 	K_SPINLOCK(&timeout_lock) {
-		uint32_t t = next_timeout(elapsed());
+		sys_clock_ticks_t t = next_timeout(elapsed());
 
 		/*
 		 * next_timeout() is unsigned; only fold it into the signed
@@ -329,7 +329,7 @@ int32_t z_get_next_timeout_expiry(void)
 	return ret;
 }
 
-void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
+void sys_clock_announce_locked(sys_clock_ticks_t ticks, k_spinlock_key_t key)
 {
 	/* We release the lock around the callbacks below, so on SMP
 	 * systems someone might be already running the loop.  Don't
