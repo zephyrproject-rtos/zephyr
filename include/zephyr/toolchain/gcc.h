@@ -353,6 +353,15 @@ do {                                                                    \
  * -wno-deprecated, which has implications for -Werror.
  */
 
+/**
+ * @brief Request the compiler to fully unroll a loop up to @p n iterations.
+ *
+ * @param n Maximum iteration count (must be a literal integer).
+ */
+#ifndef TOOLCHAIN_PRAGMA_UNROLL
+#define TOOLCHAIN_PRAGMA_UNROLL(n) _Pragma("GCC unroll " #n)
+#endif
+
 /*
  * Expands to nothing and generates a warning. Used like
  *
