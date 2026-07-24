@@ -1456,25 +1456,15 @@ static size_t zsock_recv_stream_immediate(struct net_context *ctx, uint8_t **buf
 	size_t len;
 	size_t pkt_len;
 	size_t recv_len = 0;
-	struct net_pkt *pkt;
+	struct net_pkt *pkt, *next = NULL;
 	struct net_pkt_cursor backup;
-	struct net_pkt *origin = NULL;
 	const bool do_recv = !(buf == NULL || max_len == NULL);
 	size_t _max_len = (max_len == NULL) ? SIZE_MAX : *max_len;
 	const bool peek = (flags & ZSOCK_MSG_PEEK) == ZSOCK_MSG_PEEK;
 
-	while (_max_len > 0) {
-		/* only peek until we know we can dequeue and / or requeue buffer */
-		pkt = k_fifo_peek_head(&ctx->recv_q);
-		if (pkt == NULL || pkt == origin) {
-			break;
-		}
+	pkt = k_fifo_peek_head(&ctx->recv_q);
 
-		if (origin == NULL) {
-			/* mark first pkt to avoid cycles when observing */
-			origin = pkt;
-		}
-
+	while (_max_len > 0 && pkt != NULL) {
 		pkt_len = net_pkt_remaining_data(pkt);
 		len = MIN(_max_len, pkt_len);
 		recv_len += len;
@@ -1494,6 +1484,8 @@ static size_t zsock_recv_stream_immediate(struct net_context *ctx, uint8_t **buf
 			}
 		}
 
+		next = k_fifo_peek_next(&ctx->recv_q, pkt);
+
 		if (do_recv && !peek) {
 			if (len == pkt_len) {
 				/* dequeue empty packets when not observing */
@@ -1509,10 +1501,9 @@ static size_t zsock_recv_stream_immediate(struct net_context *ctx, uint8_t **buf
 
 				net_pkt_unref(pkt);
 			}
-		} else if (!do_recv || peek) {
-			/* requeue packets when observing */
-			k_fifo_put(&ctx->recv_q, k_fifo_get(&ctx->recv_q, K_NO_WAIT));
 		}
+
+		pkt = next;
 	}
 
 	if (do_recv) {
