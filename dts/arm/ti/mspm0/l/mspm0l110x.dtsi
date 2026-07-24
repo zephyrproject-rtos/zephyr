@@ -22,7 +22,7 @@
 			reg = <0x40100000 0x2000>;
 			interrupts = <13 0>;
 			current-speed = <115200>;
-			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clocks = <&ckm MSPM_CLOCK_ULPCLK>;
 			clk-div = <1>;
 			status = "disabled";
 		};

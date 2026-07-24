@@ -185,6 +185,13 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+* The TI MSPM0 clock, oscillator, and PLL bindings have been renamed from
+  :dtcompatible:`ti,mspm0-clk`, :dtcompatible:`ti,mspm0-osc`, and
+  :dtcompatible:`ti,mspm0-pll` to :dtcompatible:`ti,mspm-clk`,
+  :dtcompatible:`ti,mspm-osc`, and :dtcompatible:`ti,mspm-pll` respectively, to
+  match the broader device family naming. Out-of-tree devicetree files using
+  the old compatibles must be updated to the new names.
+
 Controller Area Network (CAN)
 =============================
 

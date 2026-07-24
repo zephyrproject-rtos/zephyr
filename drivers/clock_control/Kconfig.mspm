@@ -1,0 +1,11 @@
+# TI MSPM Family
+
+# Copyright (c) 2025, Texas Instruments Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_MSPM
+	bool "TI MSPM clock"
+	default y
+	depends on $(dt_nodelabel_enabled_with_compat,ckm,$(DT_COMPAT_TI_MSPM_CLK))
+	help
+	  This option enables TI MSPM Clock Control

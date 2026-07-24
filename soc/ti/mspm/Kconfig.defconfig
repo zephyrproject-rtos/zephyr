@@ -14,10 +14,10 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
-DT_MSPM0_MCLK_PATH := $(dt_nodelabel_path,mclk)
-DT_MSPM0_MCLK_CPU_FREQ := $(dt_node_int_prop_int,$(DT_MSPM0_MCLK_PATH),clock-frequency)
+DT_MSPM_MCLK_PATH := $(dt_nodelabel_path,mclk)
+DT_MSPM_MCLK_CPU_FREQ := $(dt_node_int_prop_int,$(DT_MSPM_MCLK_PATH),clock-frequency)
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default "$(DT_MSPM0_MCLK_CPU_FREQ)" if !SOC_SERIES_MSPM33C
+	default "$(DT_MSPM_MCLK_CPU_FREQ)" if !SOC_SERIES_MSPM33C
 
 endif # SOC_FAMILY_TI_MSPM

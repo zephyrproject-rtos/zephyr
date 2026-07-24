@@ -2,9 +2,9 @@
 # Copyright (c) 2025 Linumiz
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI MSPM0 Clock
+description: TI MSPM Clock
 
-compatible: "ti,mspm0-clk"
+compatible: "ti,mspm-clk"
 
 include: [clock-controller.yaml, base.yaml]
 

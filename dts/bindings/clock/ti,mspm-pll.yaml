@@ -1,9 +1,9 @@
 # Copyright (c) 2024 Texas Instruments Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI MSPM0 Phase Locked Loop
+description: TI MSPM Phase Locked Loop
 
-compatible: "ti,mspm0-pll"
+compatible: "ti,mspm-pll"
 
 include: [clock-controller.yaml, base.yaml]
 
@@ -38,19 +38,19 @@ properties:
     type: int
     description: |
       CLK0 PLL output is only enabled if the divider is present. Use CLK0 on
-      the MSPM0 to output to the MCLK, UCLK, and CPUCLK
+      the MSPM to output to the MCLK, UCLK, and CPUCLK
       Valid Range: 1 - 16
 
   clk1-div:
     type: int
     description: |
       CLK1 PLL output is only enabled if the divider is present. Use CLK1 on
-      the MSPM0 to output to the CANCLK, FCC, or output via EXCLK
+      the MSPM to output to the CANCLK, FCC, or output via EXCLK
       Valid Range: 1 - 16
 
   clk2x-div:
     type: int
     description: |
       CLK2X PLL output is only enabled if the divider is present. Use CLK2X on
-      the MSPM0 to output to the MCLK, UCLK, and CPUCLK instead of CLK0
+      the MSPM to output to the MCLK, UCLK, and CPUCLK instead of CLK0
       Valid Range: 1 - 16

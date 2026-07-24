@@ -6,7 +6,7 @@
  */
 
 #include <arm/armv6-m.dtsi>
-#include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <zephyr/dt-bindings/clock/mspm_clock.h>
 #include <freq.h>
 
 / {
@@ -77,40 +77,40 @@
 	};
 
 	ckm: clock-module {
-		compatible = "ti,mspm0-clk";
+		compatible = "ti,mspm-clk";
 		#clock-cells = <1>;
 	};
 
 	clocks: clocks {
 		hfclk: hfclk {
 			#clock-cells = <1>;
-			compatible = "ti,mspm0-clk";
+			compatible = "ti,mspm-clk";
 			status = "disabled";
 		};
 
 		lfclk: lfclk {
 			#clock-cells = <1>;
-			compatible = "ti,mspm0-clk";
+			compatible = "ti,mspm-clk";
 			clock-frequency = <32768>;
 			clocks = <&lfosc>;
 		};
 
 		ulpclk: ulpclk {
 			#clock-cells = <1>;
-			compatible = "ti,mspm0-clk";
+			compatible = "ti,mspm-clk";
 			clock-frequency = <DT_FREQ_M(32)>;
 		};
 
 		mclk: mclk {
 			#clock-cells = <1>;
-			compatible = "ti,mspm0-clk";
+			compatible = "ti,mspm-clk";
 			clock-frequency = <DT_FREQ_M(32)>;
 			clocks = <&sysosc>;
 		};
 
 		mfpclk: mfpclk {
 			#clock-cells = <1>;
-			compatible = "ti,mspm0-clk";
+			compatible = "ti,mspm-clk";
 			clock-frequency = <DT_FREQ_M(4)>;
 			clocks = <&sysosc>;
 			status = "disabled";
@@ -118,7 +118,7 @@
 
 		canclk: canclk {
 			#clock-cells = <1>;
-			compatible = "ti,mspm0-clk";
+			compatible = "ti,mspm-clk";
 			status = "disabled";
 		};
 	};
@@ -126,32 +126,50 @@
 	oscillators: oscillators {
 		hfxt: hfxt {
 			#clock-cells = <0>;
-			compatible = "ti,mspm0-osc";
+			compatible = "ti,mspm-osc";
 			clock-frequency = <DT_FREQ_M(32)>;
 			status = "disabled";
 		};
 
 		lfxt: lfxt {
 			#clock-cells = <0>;
-			compatible = "ti,mspm0-osc";
+			compatible = "ti,mspm-osc";
 			clock-frequency = <DT_FREQ_M(32)>;
 			status = "disabled";
 		};
 
 		lfosc: lfosc {
 			#clock-cells = <0>;
-			compatible = "ti,mspm0-osc";
+			compatible = "ti,mspm-osc";
 			clock-frequency = <32768>;
 		};
 
 		sysosc: sysosc {
 			#clock-cells = <0>;
-			compatible = "ti,mspm0-osc";
+			compatible = "ti,mspm-osc";
 			clock-frequency = <DT_FREQ_M(32)>;
 		};
 	};
 
 	soc {
+		sysctl: syscon@400af000 {
+			compatible = "syscon";
+			reg = <0x400af000 0x2000>;
+			status = "disabled";
+		};
+
+		cpuss: syscon@40400000 {
+			compatible = "syscon";
+			reg = <0x40400000 0x2000>;
+			status = "disabled";
+		};
+
+		factoryregion: syscon@41c40000 {
+			compatible = "syscon";
+			reg = <0x41c40000 0x400>;
+			status = "disabled";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
@@ -179,7 +197,7 @@
 		vref0: vref@40030000 {
 			compatible = "ti,mspm0-vref";
 			reg = <0x40030000 0x2000>;
-			clocks = <&ckm MSPM0_CLOCK_BUSCLK>;
+			clocks = <&ckm MSPM_CLOCK_BUSCLK>;
 			ti,clk-div = <0x1>;
 			off-on-delay-us = <200>;
 			regulator-uv = <1400000>;
@@ -218,7 +236,7 @@
 			reg = <0x40108000 0x2000>;
 			interrupts = <15 0>;
 			current-speed = <115200>;
-			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clocks = <&ckm MSPM_CLOCK_ULPCLK>;
 			clk-div = <1>;
 			status = "disabled";
 		};

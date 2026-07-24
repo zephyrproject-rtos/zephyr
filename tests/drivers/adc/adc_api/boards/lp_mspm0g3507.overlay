@@ -13,7 +13,7 @@
 };
 
 &adc0 {
-	clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+	clocks = <&ckm MSPM_CLOCK_ULPCLK>;
 	ti,clk-divider = <1>;
 	ti,clk-range = <6>;
 	max-result-reg = <12>;

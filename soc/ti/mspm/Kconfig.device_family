@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_MSPM0_DEVICE_FAMILY_L11XX_L13XX
+	bool
+	default y if (SOC_MSPM0L1105 || \
+		      SOC_MSPM0L1106 || \
+		      SOC_MSPM0L1303 || \
+		      SOC_MSPM0L1304 || \
+		      SOC_MSPM0L1305 || \
+		      SOC_MSPM0L1306 || \
+		      SOC_MSPM0L1343 || \
+		      SOC_MSPM0L1344 || \
+		      SOC_MSPM0L1345 || \
+		      SOC_MSPM0L1346)
+
+config SOC_MSPM0_DEVICE_FAMILY_L122X_L222X
+	bool
+	default y if (SOC_MSPM0L1227 || \
+		      SOC_MSPM0L1228 || \
+		      SOC_MSPM0L2227 || \
+		      SOC_MSPM0L2228)
+
+config SOC_MSPM0_DEVICE_FAMILY_L111X
+	bool
+	default y if SOC_MSPM0L1117
+
+config SOC_MSPM0_DEVICE_FAMILY_G1X0X_G3X0X
+	bool
+	default y if (SOC_MSPM0G1105 || \
+		      SOC_MSPM0G1106 || \
+		      SOC_MSPM0G1107 || \
+		      SOC_MSPM0G1505 || \
+		      SOC_MSPM0G1506 || \
+		      SOC_MSPM0G1507 || \
+		      SOC_MSPM0G3105 || \
+		      SOC_MSPM0G3106 || \
+		      SOC_MSPM0G3107 || \
+		      SOC_MSPM0G3505 || \
+		      SOC_MSPM0G3506 || \
+		      SOC_MSPM0G3507)
+
+config SOC_MSPM0_DEVICE_FAMILY_GX51X
+	bool
+	default y if (SOC_MSPM0G1518 || \
+		      SOC_MSPM0G1519 || \
+		      SOC_MSPM0G3518 || \
+		      SOC_MSPM0G3519)
+
+config SOC_MSPM33_DEVICE_FAMILY_C321X
+	bool
+	default y if SOC_MSPM33C321A
+
+config SOC_MSPM_DEVICE_FAMILY_TYPE
+	string
+	default "MSPM0_L11XX_L13XX" if SOC_MSPM0_DEVICE_FAMILY_L11XX_L13XX
+	default "MSPM0_L122X_L222X" if SOC_MSPM0_DEVICE_FAMILY_L122X_L222X
+	default "MSPM0_L111X"       if SOC_MSPM0_DEVICE_FAMILY_L111X
+	default "MSPM0_G1X0X_G3X0X" if SOC_MSPM0_DEVICE_FAMILY_G1X0X_G3X0X
+	default "MSPM0_GX51X"       if SOC_MSPM0_DEVICE_FAMILY_GX51X
+	default "MSPM33_C321X"      if SOC_MSPM33_DEVICE_FAMILY_C321X

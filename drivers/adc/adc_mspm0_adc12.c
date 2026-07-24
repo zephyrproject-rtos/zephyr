@@ -19,8 +19,8 @@ LOG_MODULE_REGISTER(adc_mspm0);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/dt-bindings/clock/mspm0_clock.h>
-#include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#include <zephyr/dt-bindings/clock/mspm_clock.h>
+#include <zephyr/drivers/clock_control/mspm_clock_control.h>
 
 #include <ti/driverlib/dl_adc12.h>
 
@@ -78,7 +78,7 @@ struct adc_mspm0_cfg {
 	const struct pinctrl_dev_config *pinctrl;
 	void (*irq_cfg_func)(void);
 	const struct device *vref_config;
-	const struct mspm0_sys_clock *clock_subsys;
+	const struct mspm_sys_clock *clock_subsys;
 	const uint8_t divider;
 	const uint8_t max_result;
 	bool auto_pwdn;
@@ -151,7 +151,7 @@ static int adc_mspm0_validate_sampling_time(const struct adc_mspm0_cfg *config, 
 	uint8_t wakeup_cycles;
 
 	ret = clock_control_get_rate(DEVICE_DT_GET(DT_NODELABEL(ckm)),
-				     (struct mspm0_sys_clock *)config->clock_subsys, &clock_rate);
+				     (struct mspm_sys_clock *)config->clock_subsys, &clock_rate);
 	if (ret < 0) {
 		return ret;
 	}
@@ -563,17 +563,17 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 			    DEVICE_DT_INST_GET(index), 0);                                         \
 		irq_enable(DT_INST_IRQN(index));                                                   \
 	}											   \
-	static const struct mspm0_sys_clock mspm0_adc_sys_clock##index =                           \
-						MSPM0_CLOCK_SUBSYS_FN(index);			   \
+	static const struct mspm_sys_clock mspm_adc_sys_clock##index =                           \
+						MSPM_CLOCK_SUBSYS_FN(index);			   \
                                                                                                    \
 	static const struct adc_mspm0_cfg adc_mspm0_cfg_##index = {                                \
 		.base = (ADC12_Regs *)DT_INST_REG_ADDR(index),                                     \
 		.irq_cfg_func = adc_mspm0_cfg_func_##index,                                        \
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                  \
-		.clock_subsys = &mspm0_adc_sys_clock##index,					   \
+		.clock_subsys = &mspm_adc_sys_clock##index,					   \
 		.divider = ADC_CLOCK_DIV(index),						   \
 		.clock_config = {.clockSel =							   \
-				     MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(index, clk)), \
+				     MSPM_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(index, clk)), \
 				 .freqRange = ADC_DT_CLOCK_RANGE(index),                           \
 				 .divideRatio = ADC_DT_CLOCK_DIV(index)},                          \
 		.max_result = DT_INST_PROP(index, max_result_reg),                                 \

@@ -11,7 +11,7 @@
 #include "can_mcan.h"
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#include <zephyr/drivers/clock_control/mspm_clock_control.h>
 #include <zephyr/logging/log.h>
 
 /* Driverlib includes */
@@ -45,7 +45,7 @@ LOG_MODULE_REGISTER(can_mspm0_canfd, CONFIG_CAN_LOG_LEVEL);
 
 struct can_mspm0_canfd_config {
 	MCAN_Regs *ti_canfd_base;
-	const struct mspm0_sys_clock *clock_subsys;
+	const struct mspm_sys_clock *clock_subsys;
 	mm_reg_t mcan_base;
 	mem_addr_t mram;
 	const struct pinctrl_dev_config *pinctrl;
@@ -104,7 +104,7 @@ static int can_mspm0_canfd_get_core_clock(const struct device *dev, uint32_t *ra
 	uint32_t clock_rate, clk_div;
 	int ret;
 
-	ret = clock_control_get_rate(clk_dev, (struct mspm0_sys_clock *)config->clock_subsys,
+	ret = clock_control_get_rate(clk_dev, (struct mspm_sys_clock *)config->clock_subsys,
 				     &clock_rate);
 	if (ret < 0) {
 		return ret;
@@ -265,8 +265,8 @@ static const struct can_mcan_ops can_mspm0_canfd_ops = {
 		irq_enable(DT_INST_IRQN(inst));							\
 	}											\
 												\
-	static const struct mspm0_sys_clock can_mspm0_canfd_sys_clock_##inst =			\
-		MSPM0_CLOCK_SUBSYS_FN(inst);							\
+	static const struct mspm_sys_clock can_mspm_canfd_sys_clock_##inst =			\
+		MSPM_CLOCK_SUBSYS_FN(inst);							\
 												\
 	PINCTRL_DT_INST_DEFINE(inst);								\
 												\
@@ -278,7 +278,7 @@ static const struct can_mcan_ops can_mspm0_canfd_ops = {
 												\
 	static const struct can_mspm0_canfd_config can_mspm0_canfd_cfg_##inst = {		\
 		.ti_canfd_base = (MCAN_Regs *)DT_REG_ADDR_BY_NAME(DT_DRV_INST(inst), ti_canfd),	\
-		.clock_subsys = &can_mspm0_canfd_sys_clock_##inst,				\
+		.clock_subsys = &can_mspm_canfd_sys_clock_##inst,				\
 		.clock_cfg = {									\
 			.clockSel = MSPM0_MCAN_CLK_SEL,						\
 			.divider = MCAN_DT_CLK_DIV_ENUM(inst),					\
