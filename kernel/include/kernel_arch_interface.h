@@ -618,6 +618,25 @@ uintptr_t arch_page_info_get(void *addr, uintptr_t *location,
  */
 int arch_printk_char_out(int c);
 
+/**
+ * Report whether it is currently safe to synchronize printk() output
+ * with a spinlock
+ *
+ * Definition of this function is optional. Some architectures cannot
+ * safely execute the atomic instructions used by the CONFIG_PRINTK_SYNC
+ * spinlock during certain early-boot windows -- for example arm64, where
+ * LSE atomics require the MMU to already be enabled. Returning false here
+ * during such a window lets printk() skip locking instead of faulting;
+ * since no other CPU is capable of racing during that window either, this
+ * is provably still safe.
+ *
+ * The default __weak implementation always returns true.
+ *
+ * @return true if printk() may take its internal spinlock, false if it
+ *         must skip synchronization entirely for this call
+ */
+bool arch_printk_sync_safe(void);
+
 #ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
 /**
  * Set thread name hook

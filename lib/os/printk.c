@@ -31,6 +31,11 @@
 #if defined(CONFIG_PRINTK_SYNC)
 static struct k_spinlock lock;
 
+__attribute__((weak)) bool arch_printk_sync_safe(void)
+{
+	return true;
+}
+
 static ALWAYS_INLINE bool printk_lock(k_spinlock_key_t *key)
 {
 #ifdef CONFIG_SPIN_VALIDATE
@@ -61,6 +66,18 @@ static ALWAYS_INLINE bool printk_lock(k_spinlock_key_t *key)
 		return false;
 	}
 #endif /* CONFIG_SPIN_VALIDATE */
+
+	if (!arch_printk_sync_safe()) {
+		/*
+		 * Some architectures cannot safely execute the lock's atomic
+		 * instructions this early (see arch_printk_sync_safe()). No
+		 * other CPU can be printing at the same time in that window
+		 * either, so skipping the lock here is safe, not just
+		 * expedient.
+		 */
+		return false;
+	}
+
 	*key = k_spin_lock(&lock);
 	return true;
 }
