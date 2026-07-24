@@ -691,6 +691,22 @@
 		};
 	};
 
+	ana_cmpr0: ana_cmpr0 {
+		compatible = "espressif,esp32-ana-cmpr";
+		unit = <0>;
+		interrupts = <GPIO_PAD_COMP_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+		interrupt-parent = <&intc>;
+		status = "disabled";
+	};
+
+	ana_cmpr1: ana_cmpr1 {
+		compatible = "espressif,esp32-ana-cmpr";
+		unit = <1>;
+		interrupts = <GPIO_PAD_COMP_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+		interrupt-parent = <&intc>;
+		status = "disabled";
+	};
+
 	ldo: ldo {
 		compatible = "espressif,esp32-regulator";
 		#address-cells = <1>;

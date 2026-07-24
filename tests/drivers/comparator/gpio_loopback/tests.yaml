@@ -94,3 +94,8 @@ tests:
       - FILE_SUFFIX="ptcomp"
     platform_allow:
       - kit_pse84_eval/pse846gps2dbzc4a/m55
+  drivers.comparator.gpio_loopback.espressif_ana_cmpr:
+    platform_allow:
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32h2_devkitm/esp32h2
