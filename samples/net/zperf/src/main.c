@@ -32,6 +32,18 @@ LOG_MODULE_REGISTER(zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #define SELFTEST_DURATION_MS CONFIG_ZPERF_LOOPBACK_SELFTEST_DURATION_MS
 #define SELFTEST_PACKET_SIZE CONFIG_ZPERF_LOOPBACK_SELFTEST_PACKET_SIZE
 #define SELFTEST_RATE_KBPS   CONFIG_ZPERF_LOOPBACK_SELFTEST_RATE_KBPS
+#define SELFTEST_FRAG_PACKET_SIZE CONFIG_ZPERF_LOOPBACK_SELFTEST_FRAG_PACKET_SIZE
+
+/* Non-default socket priority applied to every upload so that, when more than
+ * one traffic class is configured, traffic is routed through the per-traffic-
+ * class threads (net_tc.c) instead of the caller's context. Set to -1 (i.e. do
+ * not set SO_PRIORITY) when priority support is not compiled in.
+ */
+#if defined(CONFIG_NET_CONTEXT_PRIORITY)
+#define SELFTEST_PRIORITY NET_PRIORITY_VI
+#else
+#define SELFTEST_PRIORITY (-1)
+#endif
 
 /* Loopback addresses used for both the server bind and the client connect.
  * The loopback driver assigns 127.0.0.1 and ::1 to the loopback interface, so
@@ -50,6 +62,9 @@ LOG_MODULE_REGISTER(zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 BUILD_ASSERT(((uint64_t)SELFTEST_PACKET_SIZE * 8U * 1000000U) / 1024U + 1U <=
 		     UINT32_MAX,
 	     "Unlimited-rate loopback selftest packet size overflows rate_kbps");
+BUILD_ASSERT(((uint64_t)SELFTEST_FRAG_PACKET_SIZE * 8U * 1000000U) / 1024U + 1U <=
+		     UINT32_MAX,
+	     "Unlimited-rate loopback selftest frag packet size overflows rate_kbps");
 
 static void selftest_session_cb(enum zperf_status status,
 				struct zperf_results *result,
@@ -82,7 +97,8 @@ static void selftest_fill_addr(struct net_sockaddr *addr, int family)
 	}
 }
 
-static void selftest_fill_upload(struct zperf_upload_params *param, int family)
+static void selftest_fill_upload(struct zperf_upload_params *param, int family,
+				 uint32_t packet_size, bool tcp_nodelay)
 {
 	uint32_t rate_kbps = SELFTEST_RATE_KBPS;
 
@@ -91,17 +107,18 @@ static void selftest_fill_upload(struct zperf_upload_params *param, int family)
 		 * 64-bit to avoid overflowing the intermediate product for
 		 * near-MTU packet sizes, then store the (small enough) result.
 		 */
-		rate_kbps = (uint32_t)(((uint64_t)SELFTEST_PACKET_SIZE * 8U *
+		rate_kbps = (uint32_t)(((uint64_t)packet_size * 8U *
 					1000000U) / 1024U + 1U);
 	}
 
 	memset(param, 0, sizeof(*param));
 	selftest_fill_addr(&param->peer_addr, family);
 	param->duration_ms = SELFTEST_DURATION_MS;
-	param->packet_size = SELFTEST_PACKET_SIZE;
+	param->packet_size = packet_size;
 	param->rate_kbps = rate_kbps;
 	param->unix_offset_us = (uint64_t)k_uptime_get() * USEC_PER_MSEC;
-	param->options.priority = -1;
+	param->options.priority = SELFTEST_PRIORITY;
+	param->options.tcp_nodelay = tcp_nodelay ? 1 : 0;
 }
 
 /* Machine-parseable throughput line for the twister console harness. */
@@ -119,7 +136,7 @@ static void selftest_report(const char *proto, struct zperf_results *res)
 	       (uint32_t)(kbps / 1000U), (uint32_t)(kbps % 1000U));
 }
 
-static int selftest_run_udp(int family, const char *label)
+static int selftest_run_udp(int family, const char *label, uint32_t packet_size)
 {
 	struct zperf_download_params dl = { .port = SELFTEST_PORT };
 	struct zperf_upload_params ul;
@@ -136,7 +153,7 @@ static int selftest_run_udp(int family, const char *label)
 		return ret;
 	}
 
-	selftest_fill_upload(&ul, family);
+	selftest_fill_upload(&ul, family, packet_size, false);
 	ret = zperf_udp_upload(&ul, &res);
 	(void)zperf_udp_download_stop();
 	if (ret < 0) {
@@ -148,7 +165,7 @@ static int selftest_run_udp(int family, const char *label)
 	return 0;
 }
 
-static int selftest_run_tcp(int family, const char *label)
+static int selftest_run_tcp(int family, const char *label, bool tcp_nodelay)
 {
 	struct zperf_download_params dl = { .port = SELFTEST_PORT };
 	struct zperf_upload_params ul;
@@ -162,7 +179,7 @@ static int selftest_run_tcp(int family, const char *label)
 		return ret;
 	}
 
-	selftest_fill_upload(&ul, family);
+	selftest_fill_upload(&ul, family, SELFTEST_PACKET_SIZE, tcp_nodelay);
 	ret = zperf_tcp_upload(&ul, &res);
 	(void)zperf_tcp_download_stop();
 	if (ret < 0) {
@@ -174,30 +191,65 @@ static int selftest_run_tcp(int family, const char *label)
 	return 0;
 }
 
+/* Whether the extra, intentionally-fragmenting UDP run should be performed for
+ * the given family (needs the matching IP fragmentation support compiled in).
+ */
+static bool selftest_frag_enabled(int family)
+{
+	if (family == NET_AF_INET6) {
+		return IS_ENABLED(CONFIG_NET_IPV6_FRAGMENT);
+	}
+
+	return IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT);
+}
+
 static void selftest_run_family(int family, const char *udp_label,
-				const char *tcp_label)
+				const char *udp_frag_label,
+				const char *tcp_label,
+				const char *tcp_nodelay_label)
 {
 	int ret;
 
-	ret = selftest_run_udp(family, udp_label);
+	ret = selftest_run_udp(family, udp_label, SELFTEST_PACKET_SIZE);
 	if (ret < 0) {
 		printk("ZPERF-RESULT %s_mbps=error(%d)\n", udp_label, ret);
 	}
 
-	ret = selftest_run_tcp(family, tcp_label);
+	/* Oversized datagram: forces IP fragmentation on TX and reassembly on
+	 * RX. Only meaningful when fragmentation is compiled in.
+	 */
+	if (selftest_frag_enabled(family)) {
+		ret = selftest_run_udp(family, udp_frag_label,
+				       SELFTEST_FRAG_PACKET_SIZE);
+		if (ret < 0) {
+			printk("ZPERF-RESULT %s_mbps=error(%d)\n",
+			       udp_frag_label, ret);
+		}
+	}
+
+	ret = selftest_run_tcp(family, tcp_label, false);
 	if (ret < 0) {
 		printk("ZPERF-RESULT %s_mbps=error(%d)\n", tcp_label, ret);
+	}
+
+	/* Same transfer with Nagle disabled to cover the TCP_NODELAY send path. */
+	ret = selftest_run_tcp(family, tcp_nodelay_label, true);
+	if (ret < 0) {
+		printk("ZPERF-RESULT %s_mbps=error(%d)\n", tcp_nodelay_label,
+		       ret);
 	}
 }
 
 static void run_loopback_selftest(void)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		selftest_run_family(NET_AF_INET, "udp4", "tcp4");
+		selftest_run_family(NET_AF_INET, "udp4", "udp4_frag", "tcp4",
+				    "tcp4_nodelay");
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		selftest_run_family(NET_AF_INET6, "udp6", "tcp6");
+		selftest_run_family(NET_AF_INET6, "udp6", "udp6_frag", "tcp6",
+				    "tcp6_nodelay");
 	}
 
 	printk("ZPERF-DONE\n");
