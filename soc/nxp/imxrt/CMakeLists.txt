@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 add_subdirectory(${SOC_SERIES})
@@ -78,4 +78,16 @@ endif()
 
 if(CONFIG_SOC_SERIES_IMXRT118X)
   zephyr_linker_sources_ifdef(CONFIG_SOC_SERIES_IMXRT118X SECTIONS container.ld)
+endif()
+
+if(CONFIG_NXP_IMXRT_AMP_DSP)
+  if(CONFIG_XTENSA)
+    # Remote (DSP) image: slice the resulting ELF into flat binaries
+    include(${CMAKE_CURRENT_SOURCE_DIR}/common/amp_dsp/dsp_remote_imgs.cmake)
+    nxp_imxrt_amp_dsp_remote_imgs()
+  else()
+    # Primary (ARM) image: embed the DSP binaries and add dsp_start().
+    include(${CMAKE_CURRENT_SOURCE_DIR}/common/amp_dsp/dsp_load.cmake)
+    nxp_imxrt_amp_dsp_load()
+  endif()
 endif()

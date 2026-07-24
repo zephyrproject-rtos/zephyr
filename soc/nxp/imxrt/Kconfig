@@ -1,4 +1,4 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_NXP_IMXRT
@@ -145,6 +145,17 @@ config NXP_IMX_EXTERNAL_HYPERRAM
 	  This setting should be enabled when the application uses HYPERRAM,
 	  or an MPU region will be defined to disable cached access to the
 	  HYPERRAM memory space.
+
+config NXP_IMXRT_AMP_DSP
+	bool "Build the DSP remote image support"
+	help
+	  Set automatically by sysbuild when NXP_IMXRT_BUILD_AMP_DSP is enabled.
+	  On the primary (ARM) image this embeds the HiFi4 DSP binaries
+	  and adds the dsp_start() loader. On the remote (DSP) image this
+	  slices the ELF into the loadable reset/text/data binaries.
+
+	  This symbol is driven by sysbuild (nxp_imxrt_add_dsp_remote) and is
+	  not meant to be set by hand in application configuration.
 
 config SECOND_CORE_MCUX
 	bool "Dual core operation on the RT multi-core series"
