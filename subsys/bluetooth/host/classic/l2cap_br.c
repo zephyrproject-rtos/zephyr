@@ -1222,6 +1222,19 @@ static struct net_buf *l2cap_br_get_next_sdu(struct bt_l2cap_br_chan *br_chan)
 	return NULL;
 }
 
+static bool l2cap_br_retransmit_is_required(struct bt_l2cap_br_chan *br_chan)
+{
+	struct bt_l2cap_br_window *tx_win, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_chan->_pdu_outstanding, tx_win, next, node) {
+		if (tx_win->retransmit) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_buf *sdu)
 {
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
@@ -1235,11 +1248,13 @@ static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_b
 	}
 
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME)) {
-		return true;
+		if (sys_slist_peek_head(&br_chan->_pdu_outstanding) != NULL) {
+			return true;
+		}
 	}
 
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES)) {
-		return true;
+		return l2cap_br_retransmit_is_required(br_chan);
 	}
 
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
