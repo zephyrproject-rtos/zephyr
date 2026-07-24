@@ -1,9 +1,8 @@
 /*
- * copyright (c) (2016-2025), Cypress Semiconductor Corporation
- * (an Infineon company) or an affiliate of Cypress Semiconductor Corporation.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
- *
  */
 
 / {
@@ -26,16 +25,20 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		slot0_partition: partition@12000000 {
-			reg = <0x12000000 DT_SIZE_K(128)>;
+		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "slot0_s";
+			reg = <0x0 DT_SIZE_K(128)>;
 		};
 
-		slot0_ns_partition: partition@2010000 {
-			reg = <0x02010000 DT_SIZE_K(128)>;
+		slot0_ns_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			label = "slot0_ns";
+			reg = <0x20000 DT_SIZE_K(128)>;
 		};
 	};
 };

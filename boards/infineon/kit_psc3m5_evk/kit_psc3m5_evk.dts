@@ -1,5 +1,7 @@
 /*
- * Copyright (c) 2025 Cypress Semiconductor Corporation.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,7 +15,8 @@
 / {
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,flash = &slot0_partition;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flash_controller;
 		zephyr,console = &uart3;
 		zephyr,shell-uart = &uart3;
 		zephyr,canbus = &can1;
@@ -26,5 +29,9 @@
 };
 
 &mxcryptolite_trng {
+	status = "okay";
+};
+
+&flash_controller {
 	status = "okay";
 };

@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT     infineon_flash_controller
+#define DT_DRV_COMPAT infineon_flash_controller
 
 #include <string.h>
 #include <assert.h>
@@ -22,10 +22,15 @@
 #define IFX_FLASH_BASE DT_REG_ADDR(SOC_NV_FLASH_NODE)
 #define IFX_FLASH_SIZE DT_REG_SIZE(SOC_NV_FLASH_NODE)
 #define IFX_FLASH_MAX  (IFX_FLASH_BASE + IFX_FLASH_SIZE)
+#define IFX_FLASH_ROW_WORDS (DT_PROP(SOC_NV_FLASH_NODE, erase_block_size) / sizeof(uint32_t))
 
 BUILD_ASSERT(IFX_FLASH_SIZE > 0, "Flash size must be greater than 0");
 
 BUILD_ASSERT(IFX_FLASH_MAX > IFX_FLASH_BASE, "Flash max_addr must be greater than base_addr");
+
+BUILD_ASSERT(DT_PROP(SOC_NV_FLASH_NODE, write_block_size) ==
+		     DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
+	     "Infineon flash: write_block_size must equal erase_block_size");
 
 struct ifx_flash_config {
 	uint32_t base_addr;
@@ -34,12 +39,16 @@ struct ifx_flash_config {
 	const size_t erase_block_size;
 };
 
+static K_MUTEX_DEFINE(flash_write_lock);
+
 static struct flash_parameters flash_parameters = {
 	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
-	.erase_value = 0xFF,
+	.erase_value = CONFIG_FLASH_INFINEON_ERASE_VALUE,
+	/* clang-format off */
 	.caps = {
-			.no_explicit_erase = true,
-		},
+		.no_explicit_erase = IS_ENABLED(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE),
+	},
+	/* clang-format on */
 };
 
 static int flash_ifx_write(const struct device *dev, off_t offset, const void *data,
@@ -47,10 +56,16 @@ static int flash_ifx_write(const struct device *dev, off_t offset, const void *d
 {
 	const struct ifx_flash_config *cfg = dev->config;
 	uint32_t write_offset;
-	const uint8_t *src_ptr = data;
+	const uint32_t row_len = cfg->write_block_size;
+	const uint8_t *src_ptr;
 
-	uint32_t row_len = cfg->write_block_size;
+	static uint32_t __aligned(4) row_buf[IFX_FLASH_ROW_WORDS];
 	cy_en_flashdrv_status_t status;
+	int ret = 0;
+
+	if (data == NULL) {
+		return -EINVAL;
+	}
 
 	if (remaining_len == 0) {
 		return 0;
@@ -65,51 +80,44 @@ static int flash_ifx_write(const struct device *dev, off_t offset, const void *d
 		return -EINVAL;
 	}
 
-	if ((cfg->max_addr - cfg->base_addr) < offset) {
+	if ((cfg->max_addr - cfg->base_addr) < (uint32_t)offset) {
 		/* offset does not fit within flash memory range */
 		return -EINVAL;
 	}
 
+	src_ptr = data;
 	write_offset = cfg->base_addr + offset;
 	/* check bounds before starting write */
 	if ((cfg->max_addr - write_offset) < remaining_len) {
 		return -EINVAL;
 	}
 
-	/*
-	 * row_len is always a multiple of 4, so source pointer alignment is
-	 * invariant across iterations — check once before the loop.
-	 */
-	if (((uintptr_t)src_ptr & 0x3) != 0) {
-		/* Source not 4-byte aligned; stage each row through an aligned buffer */
-		uint32_t __aligned(4) row_buf[row_len / sizeof(uint32_t)];
+	k_mutex_lock(&flash_write_lock, K_FOREVER);
 
-		while (remaining_len > 0) {
-			memcpy(row_buf, src_ptr, row_len);
-			status = Cy_Flash_WriteRow(write_offset, row_buf);
-			if (status != CY_FLASH_DRV_SUCCESS) {
-				return -EIO;
-			}
+	while (remaining_len > 0) {
+		memcpy(row_buf, src_ptr, row_len);
 
-			write_offset += row_len;
-			src_ptr += row_len;
-			remaining_len -= row_len;
+#if defined(CONFIG_SOC_SERIES_PSC3)
+		/* PSC3 advertises explicit erase (no_explicit_erase = false) */
+		status = Cy_Flash_ProgramRow(write_offset, row_buf);
+#else
+		/* PSoC4 auto-erases the row as part of the write. */
+		status = Cy_Flash_WriteRow(write_offset, row_buf);
+#endif
+
+		if (status != CY_FLASH_DRV_SUCCESS) {
+			ret = -EIO;
+			break;
 		}
-	} else {
-		while (remaining_len > 0) {
-			status = Cy_Flash_WriteRow(write_offset,
-						   (const uint32_t *)src_ptr);
-			if (status != CY_FLASH_DRV_SUCCESS) {
-				return -EIO;
-			}
 
-			write_offset += row_len;
-			src_ptr += row_len;
-			remaining_len -= row_len;
-		}
+		write_offset += row_len;
+		src_ptr += row_len;
+		remaining_len -= row_len;
 	}
 
-	return 0;
+	k_mutex_unlock(&flash_write_lock);
+
+	return ret;
 }
 
 static int flash_ifx_read(const struct device *dev, off_t offset, void *data, size_t remaining_len)
@@ -137,22 +145,22 @@ static int flash_ifx_read(const struct device *dev, off_t offset, void *data, si
 }
 
 /**
- * @note The PSoC4 flash hardware automatically erases rows before writing
- * when using Cy_Flash_WriteRow(). This driver sets caps.no_explicit_erase = true
- * to indicate that explicit erase is not required for write operations.
+ * @note On PSC3: Cy_Flash_EraseRow() performs a true
+ * hardware row erase by calling Boot-ROM cyboot_flash_erase_row in blocking
+ * mode.  An explicit erase is required before programming, so
+ * caps.no_explicit_erase is set to false for PSC3.
  *
- * However, this function implements erase by writing the erase value (0xFF)
- * to the flash using the same write mechanism. This ensures API compatibility
- * while leveraging the hardware's auto-erase-on-write behavior.
+ * @note On PSoC4: Cy_Flash_WriteRow() automatically erases rows before
+ * programming.  caps.no_explicit_erase is set to true for PSoC4 to reflect
+ * that callers do not need to erase before writing.
  */
 static int flash_ifx_erase(const struct device *dev, off_t offset, size_t size)
 {
 	const struct ifx_flash_config *cfg = dev->config;
 	uint32_t row_len = cfg->erase_block_size;
 	uint32_t erase_offset;
-
-	uint32_t __aligned(4) row_buf[row_len / sizeof(uint32_t)];
 	cy_en_flashdrv_status_t status;
+	int ret = 0;
 
 	if (size == 0) {
 		return 0;
@@ -178,21 +186,47 @@ static int flash_ifx_erase(const struct device *dev, off_t offset, size_t size)
 	if ((cfg->max_addr - erase_offset) < size) {
 		return -EINVAL;
 	}
-	/* Erase by writing 0xFF to each row */
-	while (size > 0) {
-		/* Fill row buffer with erase value (0xFF) */
-		memset((void *)row_buf, 0xFF, row_len);
 
-		status = Cy_Flash_WriteRow(erase_offset, (const uint32_t *)row_buf);
+	k_mutex_lock(&flash_write_lock, K_FOREVER);
+
+#if defined(CONFIG_SOC_SERIES_PSC3)
+	/* PSC3 will use dedicated EraseRow for a true hardware erase */
+	while (size > 0) {
+		status = Cy_Flash_EraseRow(erase_offset);
 		if (status != CY_FLASH_DRV_SUCCESS) {
-			return -EIO;
+			ret = -EIO;
+			break;
 		}
 
 		erase_offset += row_len;
 		size -= row_len;
 	}
+#else
+	/* On PSoC4, we write the erase value to the row, as
+	 * there is no dedicated erase operation (an erase is
+	 * always performed before a write).
+	 */
+	{
+		static uint32_t __aligned(4) row_buf[IFX_FLASH_ROW_WORDS];
 
-	return 0;
+		memset(row_buf, CONFIG_FLASH_INFINEON_ERASE_VALUE, sizeof(row_buf));
+
+		while (size > 0) {
+			status = Cy_Flash_WriteRow(erase_offset, row_buf);
+			if (status != CY_FLASH_DRV_SUCCESS) {
+				ret = -EIO;
+				break;
+			}
+
+			erase_offset += row_len;
+			size -= row_len;
+		}
+	}
+#endif
+
+	k_mutex_unlock(&flash_write_lock);
+
+	return ret;
 }
 
 static const struct flash_parameters *flash_ifx_get_parameters(const struct device *dev)
@@ -214,8 +248,8 @@ static int flash_ifx_get_size(const struct device *dev, uint64_t *size)
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout flash_pages_layout = {
 	.pages_count =
-		DT_REG_SIZE(SOC_NV_FLASH_NODE) / DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
-	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
+		DT_REG_SIZE(SOC_NV_FLASH_NODE) / DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
+	.pages_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
 };
 
 static void flash_ifx_page_layout(const struct device *dev,
