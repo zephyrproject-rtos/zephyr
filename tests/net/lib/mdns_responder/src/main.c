@@ -985,6 +985,13 @@ ZTEST(test_mdns_responder, test_group_recovery_after_carrier_off_on)
 		     "Responder did not recover after carrier came back");
 }
 
+/* The next two tests verify which interfaces the configured responder policy enables.
+ * iface1 is dummy0 and iface2 is dummy1 (default names for the two dummy interfaces).
+ * The policy test scenarios use allowlist "dummy0" and denylist "dummy1", so in both cases
+ * iface1 runs mDNS while iface2 does not. Under the default ALL policy both
+ * interfaces run mDNS.
+ */
+
 /* Recovery must also work on interfaces other than the first one. The old
  * NET_EVENT_IF_UP handler never rejoined the IPv6 MLD group (ff02::fb) for
  * any interface, so a second interface lost mDNS after a down/up cycle. (Its
@@ -996,11 +1003,13 @@ ZTEST(test_mdns_responder, test_second_iface_group_recovery_after_down_up)
 {
 	struct net_if *iface2 = net_if_get_by_index(2);
 
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
 	zassert_not_null(iface2, "Second interface is NULL");
 
-	zassert_true(ipv4_group_joined(iface2),
+	zexpect_true(ipv4_group_joined(iface2),
 		     "iface2 IPv4 mDNS group not joined before the link went down");
-	zassert_true(ipv6_group_joined(iface2),
+	zexpect_true(ipv6_group_joined(iface2),
 		     "iface2 IPv6 mDNS group not joined before the link went down");
 
 	zassert_ok(net_if_down(iface2), "Cannot bring the second interface down");
@@ -1008,10 +1017,132 @@ ZTEST(test_mdns_responder, test_second_iface_group_recovery_after_down_up)
 
 	k_sleep(K_MSEC(100));
 
-	zassert_true(ipv4_group_joined(iface2),
+	zexpect_true(ipv4_group_joined(iface2),
 		     "iface2 IPv4 mDNS group not rejoined after the interface came back up");
-	zassert_true(ipv6_group_joined(iface2),
+	zexpect_true(ipv6_group_joined(iface2),
 		     "iface2 IPv6 mDNS group not rejoined after the interface came back up");
 }
+
+/* With a non-default interface policy in effect, the responder must operate on
+ * the allowed interface (iface1) and stay off the excluded one (iface2). The
+ * excluded interface must never join the mDNS multicast groups, not even after
+ * a link recovery that would otherwise rejoin them.
+ */
+ZTEST(test_mdns_responder, test_iface_policy_excludes_iface2)
+{
+	struct net_if *iface2 = net_if_get_by_index(2);
+
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
+	zassert_not_null(iface2, "Second interface is NULL");
+
+	/* The allowed interface still runs mDNS. */
+	zexpect_true(ipv4_group_joined(iface1),
+		     "policy-allowed iface1 not in the IPv4 mDNS group");
+	zexpect_true(ipv6_group_joined(iface1),
+		     "policy-allowed iface1 not in the IPv6 mDNS group");
+
+	/* The excluded interface must not be a member of either group. */
+	zexpect_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv4 mDNS group");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv6 mDNS group");
+
+	zassert_ok(net_if_down(iface2), "Cannot bring the second interface down");
+	zassert_ok(net_if_up(iface2), "Cannot bring the second interface back up");
+
+	k_sleep(K_MSEC(100));
+
+	/* A recovery cycle must not sneak the excluded interface into the group. */
+	zexpect_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv4 mDNS group on recovery");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv6 mDNS group on recovery");
+}
+
+#if defined(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL)
+/* The runtime control API must be able to take the responder off an interface
+ * that it is currently running on, and put it back. Disabling drops the mDNS
+ * multicast memberships (and closes the listener socket); enabling restores
+ * them so that the responder answers queries again.
+ */
+ZTEST(test_mdns_responder, test_runtime_disable_then_enable_iface)
+{
+	zassert_true(ipv4_group_joined(iface1),
+		     "iface1 not in the IPv4 mDNS group at start");
+	zassert_true(ipv6_group_joined(iface1),
+		     "iface1 not in the IPv6 mDNS group at start");
+
+	zassert_ok(mdns_responder_disable_iface(iface1),
+		   "Cannot disable the responder on iface1");
+	k_sleep(K_MSEC(100));
+
+	zassert_false(ipv4_group_joined(iface1),
+		      "iface1 still in the IPv4 mDNS group after disable");
+	zassert_false(ipv6_group_joined(iface1),
+		      "iface1 still in the IPv6 mDNS group after disable");
+
+	zassert_ok(mdns_responder_enable_iface(iface1),
+		   "Cannot re-enable the responder on iface1");
+	k_sleep(K_MSEC(100));
+
+	zassert_true(ipv4_group_joined(iface1),
+		     "iface1 not rejoined the IPv4 mDNS group after enable");
+	zassert_true(ipv6_group_joined(iface1),
+		     "iface1 not rejoined the IPv6 mDNS group after enable");
+	zassert_true(responder_answers_query(),
+		     "Responder did not answer after being re-enabled");
+}
+
+/* Argument validation for the runtime control API. */
+ZTEST(test_mdns_responder, test_runtime_iface_control_bad_args)
+{
+	zassert_equal(mdns_responder_enable_iface(NULL), -EINVAL,
+		      "enable_iface(NULL) should return -EINVAL");
+	zassert_equal(mdns_responder_disable_iface(NULL), -EINVAL,
+		      "disable_iface(NULL) should return -EINVAL");
+}
+
+#if !defined(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL)
+/* A runtime enable must override the build-time policy: an interface excluded
+ * by the policy (iface2 == dummy1) can still be turned on at runtime, and
+ * turned back off again.
+ */
+ZTEST(test_mdns_responder, test_runtime_enable_overrides_policy)
+{
+	struct net_if *iface2 = net_if_get_by_index(2);
+
+	zassert_not_null(iface2, "Second interface is NULL");
+
+	/* Policy keeps iface2 off. */
+	zassert_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 is in the IPv4 mDNS group");
+	zassert_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 is in the IPv6 mDNS group");
+
+	/* Runtime enable overrides the policy. */
+	zassert_ok(mdns_responder_enable_iface(iface2),
+		   "Cannot enable the responder on iface2");
+	k_sleep(K_MSEC(100));
+
+	zassert_true(ipv4_group_joined(iface2),
+		     "iface2 not in the IPv4 mDNS group after runtime enable");
+	zassert_true(ipv6_group_joined(iface2),
+		     "iface2 not in the IPv6 mDNS group after runtime enable");
+
+	/* Turning it back off must drop the memberships again. Leave iface2 in
+	 * the off state so the rest of the suite sees the policy default.
+	 */
+	zassert_ok(mdns_responder_disable_iface(iface2),
+		   "Cannot disable the responder on iface2");
+	k_sleep(K_MSEC(100));
+
+	zassert_false(ipv4_group_joined(iface2),
+		      "iface2 still in the IPv4 mDNS group after runtime disable");
+	zassert_false(ipv6_group_joined(iface2),
+		      "iface2 still in the IPv6 mDNS group after runtime disable");
+}
+#endif /* !CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL */
+#endif /* CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL */
 
 ZTEST_SUITE(test_mdns_responder, NULL, test_setup, before, cleanup, NULL);

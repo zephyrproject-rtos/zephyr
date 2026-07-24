@@ -32,6 +32,7 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_service.h>
 #include <zephyr/net/igmp.h>
+#include <zephyr/net/mdns_responder.h>
 
 #include "dns_sd.h"
 #include "dns_pack.h"
@@ -53,6 +54,150 @@ extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 #define MDNS_LISTEN_PORT 5353
 
 #define MDNS_TTL CONFIG_MDNS_RESPONDER_TTL /* In seconds */
+
+#if defined(CONFIG_NET_INTERFACE_NAME_LEN)
+#define INTERFACE_NAME_LEN CONFIG_NET_INTERFACE_NAME_LEN
+#else
+#define INTERFACE_NAME_LEN 0
+#endif
+
+#define MDNS_MAX_IFACE_COUNT MAX(MAX_IPV4_IFACE_COUNT, MAX_IPV6_IFACE_COUNT)
+
+#if defined(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL)
+static inline bool mdns_iface_policy_allows(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return true;
+}
+#else
+/* Return true if the given interface name is found in the configured comma
+ * separated interface list. Leading and trailing whitespace around each list
+ * entry is ignored.
+ */
+static bool iface_name_in_list(const char *name)
+{
+	const char *p = CONFIG_MDNS_RESPONDER_IFACE_LIST;
+	size_t name_len = strlen(name);
+
+	while (*p != '\0') {
+		const char *start;
+		size_t len;
+
+		/* Skip leading whitespace */
+		while (*p == ' ' || *p == '\t') {
+			p++;
+		}
+
+		start = p;
+
+		/* Find the end of this entry */
+		while (*p != '\0' && *p != ',') {
+			p++;
+		}
+
+		len = p - start;
+
+		/* Trim trailing whitespace */
+		while (len > 0 &&
+		       (start[len - 1] == ' ' || start[len - 1] == '\t')) {
+			len--;
+		}
+
+		if (len == name_len && strncmp(start, name, len) == 0) {
+			return true;
+		}
+
+		/* Skip the comma separator */
+		if (*p == ',') {
+			p++;
+		}
+	}
+
+	return false;
+}
+
+/* Decide whether the build-time interface policy allows the mDNS responder to
+ * operate on the given interface.
+ */
+static bool mdns_iface_policy_allows(struct net_if *iface)
+{
+	char name[INTERFACE_NAME_LEN + 1];
+	bool in_list;
+
+	if (iface == NULL) {
+		return false;
+	}
+
+	if (net_if_get_name(iface, name, sizeof(name)) < 0) {
+		in_list = false;
+	} else {
+		in_list = iface_name_in_list(name);
+	}
+
+	if (IS_ENABLED(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALLOWLIST)) {
+		return in_list;
+	}
+
+	/* CONFIG_MDNS_RESPONDER_IFACE_POLICY_DENYLIST */
+	return !in_list;
+}
+#endif /* CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL */
+
+#if defined(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL)
+/* Per-interface runtime override of the build-time policy, indexed by
+ * (interface index - 1). Defaults to "follow policy".
+ */
+enum mdns_iface_ctrl {
+	MDNS_IFACE_CTRL_DEFAULT = 0,
+	MDNS_IFACE_CTRL_ENABLED,
+	MDNS_IFACE_CTRL_DISABLED,
+};
+
+static enum mdns_iface_ctrl iface_ctrl[MDNS_MAX_IFACE_COUNT];
+static bool listeners_running;
+
+static void mdns_mark_running(bool running)
+{
+	listeners_running = running;
+}
+
+/* Decide whether the mDNS responder should operate on a given interface. A
+ * runtime override set through mdns_responder_{enable,disable}_iface() takes
+ * precedence over the build-time policy.
+ */
+static bool mdns_iface_is_enabled(struct net_if *iface)
+{
+	int idx;
+
+	if (iface == NULL) {
+		return false;
+	}
+
+	idx = net_if_get_by_iface(iface) - 1;
+	if (idx >= 0 && idx < (int)ARRAY_SIZE(iface_ctrl)) {
+		if (iface_ctrl[idx] == MDNS_IFACE_CTRL_ENABLED) {
+			return true;
+		}
+
+		if (iface_ctrl[idx] == MDNS_IFACE_CTRL_DISABLED) {
+			return false;
+		}
+	}
+
+	return mdns_iface_policy_allows(iface);
+}
+#else
+static inline void mdns_mark_running(bool running)
+{
+	ARG_UNUSED(running);
+}
+
+static inline bool mdns_iface_is_enabled(struct net_if *iface)
+{
+	return mdns_iface_policy_allows(iface);
+}
+#endif /* CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL */
 
 /* v4_svc/v6_svc are shared between the per-interface listener dispatch below (needs
  * MDNS_MAX_IPV4/6_IFACE_COUNT fds, one per interface) and, when probing is enabled,
@@ -187,6 +332,10 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 				     uint64_t mgmt_event, struct net_if *iface)
 
 {
+	if (!mdns_iface_is_enabled(iface)) {
+		return;
+	}
+
 	if (mgmt_event == NET_EVENT_IF_UP) {
 		/* When the interface comes back up (e.g. Ethernet cable was
 		 * reattached), the stack has left the mDNS multicast groups if
@@ -1086,6 +1235,10 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 	bool probe_started = false;
 	int ret;
 
+	if (!mdns_iface_is_enabled(iface)) {
+		return;
+	}
+
 #if defined(CONFIG_NET_IPV4)
 	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
 		ARRAY_FOR_EACH(v4_ctx, i) {
@@ -1260,6 +1413,10 @@ static void iface_ipv6_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
+	if (!mdns_iface_is_enabled(iface)) {
+		return;
+	}
+
 	ret = net_ipv6_mld_join(iface, addr);
 	if (ret < 0) {
 		NET_DBG("Cannot join %s IPv6 multicast group (%d)",
@@ -1282,6 +1439,10 @@ static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 	int ret;
 
 	if (!net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		return;
+	}
+
+	if (!mdns_iface_is_enabled(iface)) {
 		return;
 	}
 
@@ -1314,12 +1475,6 @@ static void setup_ipv4_addr(struct net_sockaddr_in *local_addr)
 	net_if_foreach(iface_ipv4_cb, &local_addr->sin_addr);
 }
 #endif /* CONFIG_NET_IPV4 */
-
-#if defined(CONFIG_NET_INTERFACE_NAME_LEN)
-#define INTERFACE_NAME_LEN CONFIG_NET_INTERFACE_NAME_LEN
-#else
-#define INTERFACE_NAME_LEN 0
-#endif
 
 static int dispatcher_cb(struct dns_socket_dispatcher *ctx, int sock,
 			 struct net_sockaddr *addr, size_t addrlen,
@@ -1393,7 +1548,11 @@ static int pre_init_listener(void)
 
 	ARRAY_FOR_EACH(v6_ctx, i) {
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV6)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV6)) {
+			continue;
+		}
+
+		if (!mdns_iface_is_enabled(iface)) {
 			continue;
 		}
 
@@ -1421,7 +1580,11 @@ static int pre_init_listener(void)
 
 	ARRAY_FOR_EACH(v4_ctx, i) {
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV4)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV4)) {
+			continue;
+		}
+
+		if (!mdns_iface_is_enabled(iface)) {
 			continue;
 		}
 
@@ -1497,14 +1660,19 @@ static int init_listener(void)
 		}
 
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV6)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV6)) {
+			zsock_close(v6);
+			continue;
+		}
+
+		if (!mdns_iface_is_enabled(iface)) {
 			zsock_close(v6);
 			continue;
 		}
 
 		ifindex = net_if_get_by_iface(iface);
 
-		ret = net_if_get_name(iface, name, INTERFACE_NAME_LEN);
+		ret = net_if_get_name(iface, name, sizeof(name));
 		if (ret < 0) {
 			NET_DBG("Cannot get interface name for %d (%d)",
 				ifindex, ret);
@@ -1594,14 +1762,19 @@ static int init_listener(void)
 		}
 
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV4)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV4)) {
+			zsock_close(v4);
+			continue;
+		}
+
+		if (!mdns_iface_is_enabled(iface)) {
 			zsock_close(v4);
 			continue;
 		}
 
 		ifindex = net_if_get_by_iface(iface);
 
-		ret = net_if_get_name(iface, name, INTERFACE_NAME_LEN);
+		ret = net_if_get_name(iface, name, sizeof(name));
 		if (ret < 0) {
 			NET_DBG("Cannot get interface name for %d (%d)",
 				ifindex, ret);
@@ -1665,6 +1838,160 @@ static int init_listener(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL)
+static K_MUTEX_DEFINE(reconfigure_lock);
+
+/* Tear down every listener socket and its dispatcher registration. The sockets
+ * are recreated for the interfaces that remain enabled by init_listener().
+ */
+static void mdns_close_listeners(void)
+{
+#if defined(CONFIG_NET_IPV6)
+	ARRAY_FOR_EACH(v6_ctx, i) {
+		int sock = v6_ctx[i].sock;
+
+		if (sock < 0) {
+			continue;
+		}
+
+		(void)dns_dispatcher_unregister(&v6_ctx[i].dispatcher);
+		(void)zsock_close(sock);
+		v6_ctx[i].sock = -1;
+
+		ARRAY_FOR_EACH(v6_ctx[i].fds, j) {
+			v6_ctx[i].fds[j].fd = -1;
+		}
+	}
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	ARRAY_FOR_EACH(v4_ctx, i) {
+		int sock = v4_ctx[i].sock;
+
+		if (sock < 0) {
+			continue;
+		}
+
+		(void)dns_dispatcher_unregister(&v4_ctx[i].dispatcher);
+		(void)zsock_close(sock);
+		v4_ctx[i].sock = -1;
+
+		ARRAY_FOR_EACH(v4_ctx[i].fds, j) {
+			v4_ctx[i].fds[j].fd = -1;
+		}
+	}
+#endif /* CONFIG_NET_IPV4 */
+}
+
+/* Leave the mDNS multicast groups on the given interface. init_listener()
+ * rejoins them on the interfaces that remain enabled.
+ */
+static void mdns_leave_groups_cb(struct net_if *iface, void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+#if defined(CONFIG_NET_IPV4)
+	if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		struct net_sockaddr_in addr4;
+
+		create_ipv4_addr(&addr4);
+		(void)net_ipv4_igmp_leave(iface, &addr4.sin_addr);
+	}
+#endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_IPV6)
+	if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		struct net_sockaddr_in6 addr6;
+
+		create_ipv6_addr(&addr6);
+		(void)net_ipv6_mld_leave(iface, &addr6.sin6_addr);
+	}
+#endif /* CONFIG_NET_IPV6 */
+}
+
+/* Rebuild the responder listeners to match the current per-interface state.
+ * Everything is torn down and set up again so that both newly enabled and
+ * newly disabled interfaces are handled by the existing setup path.
+ */
+static void mdns_reconfigure_listeners(void)
+{
+	k_mutex_lock(&reconfigure_lock, K_FOREVER);
+
+	if (!listeners_running) {
+		/* The initial listener setup has not run yet; it will honor the
+		 * current runtime state, so there is nothing to rebuild.
+		 */
+		goto out;
+	}
+
+#if defined(CONFIG_MDNS_RESPONDER_PROBE)
+	/* Stop any in-flight probing before tearing the sockets down. Only the
+	 * contexts that were configured have an initialized probe timer.
+	 */
+#if defined(CONFIG_NET_IPV6)
+	ARRAY_FOR_EACH(v6_ctx, i) {
+		if (v6_ctx[i].iface != NULL) {
+			(void)k_work_cancel_delayable(&v6_ctx[i].probe_timer);
+		}
+	}
+#endif
+#if defined(CONFIG_NET_IPV4)
+	ARRAY_FOR_EACH(v4_ctx, i) {
+		if (v4_ctx[i].iface != NULL) {
+			(void)k_work_cancel_delayable(&v4_ctx[i].probe_timer);
+		}
+	}
+#endif
+#endif /* CONFIG_MDNS_RESPONDER_PROBE */
+
+	mdns_close_listeners();
+
+	net_if_foreach(mdns_leave_groups_cb, NULL);
+
+#if defined(CONFIG_MDNS_RESPONDER_PROBE)
+	(void)pre_init_listener();
+#endif
+	(void)init_listener();
+
+out:
+	k_mutex_unlock(&reconfigure_lock);
+}
+
+static int mdns_set_iface_ctrl(struct net_if *iface, enum mdns_iface_ctrl ctrl)
+{
+	int idx;
+
+	if (iface == NULL) {
+		return -EINVAL;
+	}
+
+	idx = net_if_get_by_iface(iface) - 1;
+	if (idx < 0 || idx >= (int)ARRAY_SIZE(iface_ctrl)) {
+		return -ERANGE;
+	}
+
+	if (iface_ctrl[idx] == ctrl) {
+		return 0;
+	}
+
+	iface_ctrl[idx] = ctrl;
+
+	mdns_reconfigure_listeners();
+
+	return 0;
+}
+
+int mdns_responder_enable_iface(struct net_if *iface)
+{
+	return mdns_set_iface_ctrl(iface, MDNS_IFACE_CTRL_ENABLED);
+}
+
+int mdns_responder_disable_iface(struct net_if *iface)
+{
+	return mdns_set_iface_ctrl(iface, MDNS_IFACE_CTRL_DISABLED);
+}
+#endif /* CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL */
 
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
 
@@ -1964,6 +2291,11 @@ static void do_init_listener(struct k_work *work)
 			init_listener_done = true;
 		};
 
+		/* Allow runtime enable/disable to rebuild the listeners now
+		 * that the initial setup has run.
+		 */
+		mdns_mark_running(true);
+
 		mark_needs_announce(NULL, true);
 		announce_count = 0;
 		announce_start(work);
@@ -2031,7 +2363,14 @@ static int mdns_responder_init(void)
 
 	return ret;
 #else
-	return init_listener();
+	int ret = init_listener();
+
+	/* Allow runtime enable/disable to rebuild the listeners now that the
+	 * initial setup has run.
+	 */
+	mdns_mark_running(true);
+
+	return ret;
 #endif
 }
 

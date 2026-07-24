@@ -280,6 +280,56 @@ config MDNS_RESPONDER_INIT_PRIO
 	  Note that if NET_CONFIG_AUTO_INIT is enabled, then this value
 	  should be bigger than its value.
 
+choice
+	prompt "mDNS responder interface policy"
+	default MDNS_RESPONDER_IFACE_POLICY_ALL
+	help
+	  Select on which network interfaces the mDNS responder operates.
+	  This allows the responder to be kept off interfaces that do not
+	  need local service discovery, or that have hardware which is not
+	  ready when the responder is initialized.
+
+config MDNS_RESPONDER_IFACE_POLICY_ALL
+	bool "All interfaces"
+	help
+	  The mDNS responder attaches to every network interface. This is
+	  the default and backward compatible behavior.
+
+config MDNS_RESPONDER_IFACE_POLICY_ALLOWLIST
+	bool "Only listed interfaces"
+	select NET_INTERFACE_NAME
+	help
+	  The mDNS responder attaches only to interfaces whose name is
+	  listed in MDNS_RESPONDER_IFACE_LIST.
+
+config MDNS_RESPONDER_IFACE_POLICY_DENYLIST
+	bool "All except listed interfaces"
+	select NET_INTERFACE_NAME
+	help
+	  The mDNS responder attaches to every interface except those whose
+	  name is listed in MDNS_RESPONDER_IFACE_LIST.
+
+endchoice
+
+config MDNS_RESPONDER_IFACE_LIST
+	string "Comma separated list of interface names"
+	depends on MDNS_RESPONDER_IFACE_POLICY_ALLOWLIST || MDNS_RESPONDER_IFACE_POLICY_DENYLIST
+	help
+	  Comma separated list of network interface names (for example
+	  "eth0,wlan0") that the interface policy applies to. Interface
+	  names are used instead of interface indexes because the indexes
+	  can change depending on configuration.
+
+config MDNS_RESPONDER_RUNTIME_IFACE_CONTROL
+	bool "Runtime control of the mDNS responder per interface"
+	help
+	  Provide mdns_responder_enable_iface() and
+	  mdns_responder_disable_iface() so that the application can enable or
+	  disable the mDNS responder on a specific network interface at
+	  runtime. The runtime setting overrides the build-time interface
+	  policy for that interface. When this option is not set, the
+	  responder follows the build-time interface policy only.
+
 config MDNS_RESPONDER_PROBE
 	bool "mDNS probing support [EXPERIMENTAL]"
 	select NET_CONNECTION_MANAGER
