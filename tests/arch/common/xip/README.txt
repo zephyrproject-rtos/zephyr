@@ -2,36 +2,32 @@ Title: Execute in Place (XIP) Support
 
 Description:
 
-This test verifies XIP is working
+This test verifies that Execute in Place (XIP) works as expected. The
+fact that the test image boots and runs is itself a good indication that
+XIP is functioning; the xip suite additionally checks that global variable
+initialization is correct, confirming that initialized data is available
+when running from a XIP image.
 
---------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
-Building and Running Project:
+Building and Running:
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+Build and run with twister, for example on QEMU:
 
-    make run
+    twister -p qemu_x86/atom/xip -T tests/arch/common/xip
 
---------------------------------------------------------------------------------
+Or build and run a single platform directly with west:
 
-Troubleshooting:
+    west build -b qemu_x86/atom/xip tests/arch/common/xip
+    west build -t run
 
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
-
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
-
---------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 Sample Output:
 
-Starting XIP tests
+Running TESTSUITE xip
 ===================================================================
-Test globals
+START - test_globals
+ PASS - test_globals
 ===================================================================
-PROJECT EXECUTION SUCCESSFUL
+TESTSUITE xip succeeded

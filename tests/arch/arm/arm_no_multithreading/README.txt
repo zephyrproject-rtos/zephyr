@@ -2,44 +2,36 @@ Title: Test to verify the no multithreading use-case (ARM Only)
 
 Description:
 
-This test verifies that a Zephyr build without multithreading
-support (CONFIG_MULTITHREADING=n) works as expected. Only for
-ARM Cortex-M targets. In detail the test verifies that
-- system boots to main()
-- PSP points to the main stack
-- PSPLIM is set to the main stack base (if applicable)
-- FPU state is reset (if applicable)
-- Interrupts are enabled when switching to main()
-- Interrupts may be registered and serviced
-- Activating PendSV triggers a Reserved Exception error
+This test verifies that a Zephyr build without multithreading support
+(CONFIG_MULTITHREADING=n) works as expected. It is only for ARM Cortex-M
+targets.
+
+Because multithreading is disabled there is no threaded Ztest suite; the
+test runs from test_main() and checks that the system boots to main() with
+PSP and PSPLIM pointing into the main stack, that the FPU state is reset
+(when CONFIG_FPU is enabled) and interrupts are enabled on entry to main(),
+that activating PendSV escalates to a Reserved Exception
+(K_ERR_CPU_EXCEPTION) caught by the fatal-error handler, and that an
+interrupt can be dynamically registered, enabled, pended and serviced on a
+free NVIC line.
 
 ---------------------------------------------------------------------------
 
-Building and Running Project:
+Building and Running:
 
-This project outputs to the console.  It can be built and executed on QEMU as
-follows:
+Build and run with twister, for example on QEMU:
 
-    ninja/make run
+    twister -p qemu_cortex_m0 -T tests/arch/arm/arm_no_multithreading
 
----------------------------------------------------------------------------
+Or build and run a single platform directly with west:
 
-Troubleshooting:
-
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
-
-    ninja/make clean    # discard results of previous builds
-                        # but keep existing configuration info
-or
-    ninja/make pristine # discard results of previous builds
-                        # and restore pre-defined configuration info
+    west build -b qemu_cortex_m0 tests/arch/arm/arm_no_multithreading
+    west build -t run
 
 ---------------------------------------------------------------------------
 
 Sample Output:
 
-*** Booting Zephyr OS build zephyr-v2.6.0-349-g032d10878792  ***
 ARM no-multithreading test
 E: ***** Reserved Exception ( -2) *****
 E: r0/a1:  0x0000001b  r1/a2:  0x000044d8  r2/a3:  0xe000ed00
@@ -51,5 +43,3 @@ E: Current thread: (nil) (unknown)
 Caught system error -- reason 0
 Available IRQ line: 25
 ARM no multithreading test successful
-===================================================================
-PROJECT EXECUTION SUCCESSFUL

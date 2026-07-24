@@ -3,43 +3,37 @@ Title: sprintf() APIs
 Description:
 
 This test verifies that sprintf() and its variants operate as expected.
+The sprintf suite exercises the integer, string, floating-point and
+miscellaneous conversion specifiers, the snprintf()/vsnprintf()/vsprintf()
+truncation and return-length behaviour, and the return values of the
+printf()/fprintf()/putc()/fwrite() family.  Some cases are conditional on
+the selected libc's floating-point support and on the console
+configuration.
 
---------------------------------------------------------------------------------
+See the Doxygen comments on the individual test functions for per-case
+details.
 
-Building and Running Project:
+---------------------------------------------------------------------------
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+Building and Running:
 
-    make run
+Build and run with twister, for example on QEMU:
 
---------------------------------------------------------------------------------
+    twister -p qemu_x86 -T tests/lib/sprintf
 
-Troubleshooting:
+Or build and run a single platform directly with west:
 
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
+    west build -b qemu_x86 tests/lib/sprintf
+    west build -t run
 
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
+---------------------------------------------------------------------------
 
---------------------------------------------------------------------------------
 Sample Output:
 
-tc_start() - Test sprintf APIs
-
+Running TESTSUITE sprintf
 ===================================================================
-Testing sprintf() with integers ....
-Testing snprintf() ....
-Testing vsprintf() ....
-Testing vsnprintf() ....
-Testing sprintf() with strings ....
-Testing sprintf() with misc options ....
-Testing sprintf() with doubles ....
+START - test_sprintf_integer
+ PASS - test_sprintf_integer
+...
 ===================================================================
-PASS - RegressionTask.
-===================================================================
-PROJECT EXECUTION SUCCESSFUL
+TESTSUITE sprintf succeeded

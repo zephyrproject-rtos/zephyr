@@ -1,63 +1,41 @@
 Title: Test to verify advanced features of ARM Cortex-M interrupt handling.
 
 Description:
-This test suite verifies the behavior of CONFIG_ZERO_LATENCY_IRQS and
-CONFIG_DYNAMIC_DIRECT_INTERRUPTS at runtime (ARM Only)
 
-The first test verifies the behavior of CONFIG_DYNAMIC_DIRECT_INTERRUPTS
-at runtime. In particular, it tests that dynamic direct IRQs may be
-installed at run-time in the software interrupt table.
-Only for ARMv7-M and ARMv8-M Mainline targets.
+This test suite verifies advanced features of ARM Cortex-M interrupt
+handling at runtime. It is only for ARM Cortex-M targets.
 
-The second test verifies the behavior of CONFIG_ZERO_LATENCY_IRQS at runtime.
-In particular, it tests that IRQs configured with the IRQ_ZERO_LATENCY
-flag are assigned the highest priority in the system (and, therefore,
-cannot be masked-out by irq_lock()).
-Only for ARMv7-M and ARMv8-M Mainline targets.
+The arm_irq_advanced_features suite verifies dynamic direct interrupts
+(CONFIG_DYNAMIC_DIRECT_INTERRUPTS), zero-latency interrupts
+(CONFIG_ZERO_LATENCY_IRQS) that fire even while interrupts are masked with
+irq_lock(), and the IRQ target-state API for TrustZone-M enabled Cortex-M
+Mainline CPUs. Cases are skipped on targets that do not support the
+corresponding feature.
 
-The third test verifies the behavior of the IRQ Target State API for
-TrustZone-M enabled Cortex-M Mainline CPUs.
+See the Doxygen comments on the individual test functions for per-case
+details.
 
 ---------------------------------------------------------------------------
 
-Building and Running Project:
+Building and Running:
 
-This project outputs to the console.  It can be built and executed on QEMU as
-follows:
+Build and run with twister, for example on QEMU:
 
-    ninja/make run
+    twister -p mps2/an385 -T tests/arch/arm/arm_irq_advanced_features
 
----------------------------------------------------------------------------
+Or build and run a single platform directly with west:
 
-Troubleshooting:
-
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
-
-    ninja/make clean    # discard results of previous builds
-                        # but keep existing configuration info
-or
-    ninja/make pristine # discard results of previous builds
-                        # and restore pre-defined configuration info
+    west build -b mps2/an385 tests/arch/arm/arm_irq_advanced_features
+    west build -t run
 
 ---------------------------------------------------------------------------
 
 Sample Output:
 
-*** Booting Zephyr OS build zephyr-v2.1.0-358-g9ac0a8c10a2e  ***
-Running test suite arm_irq_advanced_features
+Running TESTSUITE arm_irq_advanced_features
 ===================================================================
-starting test - test_arm_dynamic_direct_interrupts
-PASS - test_arm_dynamic_direct_interrupts
+START - test_arm_dynamic_direct_interrupts
+ PASS - test_arm_dynamic_direct_interrupts
+...
 ===================================================================
-starting test - test_arm_zero_latency_irqs
-Available IRQ line: 57
-PASS - test_arm_zero_latency_irqs
-===================================================================
-starting test - test_arm_irq_target_state
-Available IRQ line: 93
-PASS - test_arm_irq_target_state
-===================================================================
-Test suite arm_irq_advanced_features succeeded
-===================================================================
-PROJECT EXECUTION SUCCESSFUL
+TESTSUITE arm_irq_advanced_features succeeded
