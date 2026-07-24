@@ -91,6 +91,11 @@ config ADC_DEFAULT_RTIO
 	  This option enables the default RTIO handler for ADC devices that do not
 	  implement stream functionality.
 
+config ADC_THRESHOLD
+	bool "ADC threshold and event monitoring support"
+	help
+	  Enable support for ADC threshold and event monitoring.
+
 module = ADC
 module-str = ADC
 source "subsys/logging/Kconfig.template.log_config"

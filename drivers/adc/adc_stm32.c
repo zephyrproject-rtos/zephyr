@@ -929,6 +929,221 @@ static int adc_stm32_oversampling(const struct device *dev, uint8_t ratio)
 }
 #endif /* CONFIG_SOC_SERIES_STM32xxx */
 
+#ifdef CONFIG_ADC_THRESHOLD
+static int check_thresholds(const struct device *dev, const struct adc_sequence *sequence,
+			int32_t *low_value, int32_t *high_value, bool diff)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	int32_t max_threshold;
+	int32_t lower_threshold;
+	int32_t upper_threshold;
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	/*
+	 * Threshold resolution corresponds to configured ADC resolution
+	 * Threshold value higher than (2^resolution - 1) can not trigger threshold event
+	 */
+	lower_threshold = *low_value;
+	upper_threshold = *high_value;
+	max_threshold = BIT_MASK(sequence->resolution);
+#elif defined(CONFIG_SOC_SERIES_STM32C5X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32N6X) || \
+	defined(CONFIG_SOC_SERIES_STM32U3X)
+	/*
+	 * Thresholds must be left aligned to (table_raw_resolution[0] - 1) bits
+	 * LSBs out of resolution range must be set to 0
+	 */
+	lower_threshold = *low_value << (config->table_raw_resolution[0] - sequence->resolution);
+	upper_threshold = *high_value << (config->table_raw_resolution[0] - sequence->resolution);
+	max_threshold = BIT_MASK(config->table_raw_resolution[0]);
+#elif defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U0X)
+	/*
+	 * Without oversampling :
+	 * Thresholds must be left aligned to (table_raw_resolution[0] - 1) bits
+	 * LSBs out of resolution range must be set to 0
+	 * With oversampling :
+	 * Comparison is performed between ADC_DR[15:4] and H/LT1[11:0], losing 4 bits of
+	 * comparison range. Limits needs to be shifted left by 4 bits to compensate
+	 */
+	if (sequence->oversampling == 0) {
+		lower_threshold = *low_value <<
+				  (config->table_raw_resolution[0] - sequence->resolution);
+		upper_threshold = *high_value <<
+				   (config->table_raw_resolution[0] - sequence->resolution);
+		max_threshold = BIT_MASK(config->table_raw_resolution[0]);
+	} else {
+		lower_threshold = (*low_value >> 4);
+		upper_threshold = (*high_value >> 4);
+		max_threshold = BIT_MASK(sequence->resolution - 4);
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32U5X)
+	ADC_TypeDef *adc = config->base;
+
+	if (adc == ADC4) {
+		/*
+		 * Without oversampling :
+		 * Thresholds must be left aligned to (table_raw_resolution[0] - 1) bits
+		 * LSBs out of resolution range must be set to 0
+		 * With oversampling :
+		 * Comparison is performed between ADC_DR[15:4] and H/LT1[11:0], losing 4 bits of
+		 * comparison range. Limits needs to be shifted left by 4 bits to compensate
+		 */
+		if (sequence->oversampling == 0) {
+			lower_threshold = *low_value <<
+					  (config->table_raw_resolution[0] - sequence->resolution);
+			upper_threshold = *high_value <<
+					   (config->table_raw_resolution[0] - sequence->resolution);
+			max_threshold = BIT_MASK(config->table_raw_resolution[0]);
+		} else {
+			lower_threshold = (*low_value >> 4);
+			upper_threshold = (*high_value >> 4);
+			max_threshold = BIT_MASK(sequence->resolution - 4);
+		}
+	} else {
+		/*
+		 * Thresholds must be left aligned to (table_raw_resolution[0] - 1) bits
+		 * LSBs out of resolution range must be set to 0
+		 */
+		lower_threshold = *low_value <<
+				  (config->table_raw_resolution[0] - sequence->resolution);
+		upper_threshold = *high_value <<
+				   (config->table_raw_resolution[0] - sequence->resolution);
+		max_threshold = BIT_MASK(config->table_raw_resolution[0]);
+	}
+#endif
+
+#if ANY_ADC_HAS_DIFFERENTIAL_SUPPORT
+	if (diff) {
+		lower_threshold = lower_threshold / 2 + max_threshold / 2;
+		upper_threshold = upper_threshold / 2 + max_threshold / 2;
+	}
+#endif
+
+	switch (sequence->threshold_mode) {
+	case ADC_THRESHOLD_MODE_LOWER:
+		upper_threshold = max_threshold;
+		if (lower_threshold > max_threshold || lower_threshold < 0) {
+			LOG_ERR("Lower threshold (%d) out of bound : [%d, %d]", lower_threshold,
+				max_threshold, 0);
+			return -EINVAL;
+		}
+		break;
+	case ADC_THRESHOLD_MODE_UPPER:
+		lower_threshold = 0;
+		if (upper_threshold > max_threshold || upper_threshold < 0) {
+			LOG_ERR("Upper threshold (%d) out of bound : [%d, %d]", upper_threshold,
+				max_threshold, 0);
+			return -EINVAL;
+		}
+		break;
+	case ADC_THRESHOLD_MODE_OUTSIDE:
+		if (lower_threshold > max_threshold || lower_threshold < 0) {
+			LOG_ERR("Lower threshold (%d) out of bound : [%d, %d]", lower_threshold,
+				max_threshold, 0);
+			return -EINVAL;
+		}
+		if (upper_threshold > max_threshold || upper_threshold < 0) {
+			LOG_ERR("Upper threshold (%d) out of bound : [%d, %d]", upper_threshold,
+				max_threshold, 0);
+			return -EINVAL;
+		}
+		if (lower_threshold > upper_threshold) {
+			LOG_ERR("Upper threshold should be higher than lower threshold");
+		}
+		break;
+	default:
+		LOG_ERR("Threshold mode not supported");
+		return -EINVAL;
+	}
+
+	*low_value = lower_threshold;
+	*high_value = upper_threshold;
+
+	LOG_DBG("upper_threshold : %d", upper_threshold);
+
+	return 0;
+}
+
+static int adc_stm32_thresholds_set(const struct device *dev, const struct adc_sequence *sequence)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = config->base;
+	uint32_t selected_channels = sequence->channels;
+	int32_t lower_threshold = sequence->lower_threshold;
+	int32_t upper_threshold = sequence->upper_threshold;
+	bool diff_ch_used = false;
+
+	if (sequence->threshold_mode == ADC_THRESHOLD_MODE_DISEABLE) {
+#if defined(CONFIG_SOC_SERIES_STM32C5X)
+		LL_ADC_SetAnalogWDScope(adc, LL_ADC_AWD1, LL_ADC_GROUP_NONE, LL_ADC_CHANNEL_NONE)
+#elif defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X)
+		LL_ADC_SetAnalogWDMonitChannels(adc, LL_ADC_AWD_DISABLE);
+#else
+		LL_ADC_SetAnalogWDMonitChannels(adc, LL_ADC_AWD1, LL_ADC_AWD_DISABLE);
+#endif
+		LL_ADC_DisableIT_AWD1(adc);
+
+		LOG_DBG("Threshold monitoring disabled");
+
+		return 0;
+	}
+
+#if ANY_ADC_HAS_DIFFERENTIAL_SUPPORT
+	if (LL_ADC_GetChannelSingleDiff(adc, selected_channels) != 0) {
+		diff_ch_used = true;
+	}
+#endif /* ANY_ADC_HAS_DIFFERENTIAL_SUPPORT */
+
+	int err = check_thresholds(dev, sequence, &lower_threshold, &upper_threshold, diff_ch_used);
+
+	if (err != 0) {
+		LOG_ERR("Invalid threshold values");
+		return err;
+	}
+
+	if (selected_channels) {
+#if defined(CONFIG_SOC_SERIES_STM32C5X)
+		LL_ADC_SetAnalogWDThresholds(adc, LL_ADC_AWD1, LL_ADC_AWD_THRESHOLD_LOW,
+					     (uint32_t) lower_threshold);
+		LL_ADC_SetAnalogWDThresholds(adc, LL_ADC_AWD1, LL_ADC_AWD_THRESHOLD_HIGH,
+					     (uint32_t) upper_threshold);
+		LL_ADC_SetAnalogWDScope(adc, LL_ADC_AWD1, LL_ADC_GROUP_REGULAR, LL_ADC_CHANNEL_ALL)
+#elif defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
+	DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X)
+		LL_ADC_SetAnalogWDThresholds(adc, LL_ADC_AWD_THRESHOLD_LOW,
+					     (uint32_t) lower_threshold);
+		LL_ADC_SetAnalogWDThresholds(adc, LL_ADC_AWD_THRESHOLD_HIGH,
+					     (uint32_t) upper_threshold);
+		LL_ADC_SetAnalogWDMonitChannels(adc, LL_ADC_AWD_ALL_CHANNELS_REG);
+#else
+		LL_ADC_SetAnalogWDThresholds(adc, LL_ADC_AWD1, LL_ADC_AWD_THRESHOLD_LOW,
+					     (uint32_t) lower_threshold);
+		LL_ADC_SetAnalogWDThresholds(adc, LL_ADC_AWD1, LL_ADC_AWD_THRESHOLD_HIGH,
+					     (uint32_t) upper_threshold);
+		LL_ADC_SetAnalogWDMonitChannels(adc, LL_ADC_AWD1, LL_ADC_AWD_ALL_CHANNELS_REG);
+#endif
+		LL_ADC_EnableIT_AWD1(adc);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_ADC_THRESHOLD */
+
 #ifdef CONFIG_ADC_STM32_DMA
 static void dma_callback(const struct device *dev, void *user_data,
 			 uint32_t channel, int status)
@@ -1182,6 +1397,13 @@ static int start_inj_read(const struct device *dev, const struct adc_sequence *s
 		return err;
 	}
 
+#ifdef CONFIG_ADC_THRESHOLD
+	if (sequence->threshold != NULL) {
+		LOG_ERR("Device driver does not support analog watchdog for injected channels yet");
+		return -ENOTSUP;
+	}
+#endif /* CONFIG_ADC_THRESHOLD */
+
 	adc_stm32_enable(adc);
 
 	LL_ADC_EnableIT_JEOS(adc);
@@ -1279,6 +1501,14 @@ static int start_read(const struct device *dev,
 #endif
 	}
 
+#ifdef CONFIG_ADC_THRESHOLD
+	err = adc_stm32_thresholds_set(dev, sequence);
+	if (err < 0) {
+		LOG_ERR("Threshold monitoring error: %d", err);
+		return err;
+	}
+#endif /* CONFIG_ADC_THRESHOLD */
+
 	/*
 	 * Make sure the ADC is enabled as it might have been disabled earlier
 	 * to set the resolution, to set the oversampling or to perform the
@@ -1363,11 +1593,56 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 }
 
 #if !defined(CONFIG_ADC_STM32_DMA) || defined(CONFIG_ADC_STM32_INJECTED_CHANNELS)
+static inline uint32_t get_sequencer_channel(const struct adc_stm32_cfg *config,
+					     uint8_t samples_count)
+{
+	ADC_TypeDef *adc = config->base;
+
+#if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE)
+
+	if (config->sequencer_type == SEQUENCER_PROGRAMMABLE) {
+#if defined(CONFIG_SOC_SERIES_STM32C0X) || \
+	(defined(CONFIG_SOC_SERIES_STM32F3X) && defined(ADC5_V1_1)) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G4X) || \
+	defined(CONFIG_SOC_SERIES_STM32H5X) || \
+	defined(CONFIG_SOC_SERIES_STM32H7X) || \
+	defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32L5X) || \
+	defined(CONFIG_SOC_SERIES_STM32U0X) || \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
+		return LL_ADC_REG_GetSequencerRanks(adc, table_rank[samples_count])
+		       >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS;
+#else
+		return LL_ADC_REG_GetSequencerRanks(adc, table_rank[samples_count]);
+#endif
+	}
+#endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE) */
+
+#if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_FIXED)
+	if (config->sequencer_type == SEQUENCER_FIXED) {
+		uint32_t channels = LL_ADC_REG_GetSequencerChannels(adc);
+		uint32_t ch;
+
+		while (channels != 0) {
+			ch = find_lsb_set(channels) - 1;
+			if (ch == samples_count) {
+				return ch;
+			}
+
+			channels &= ~BIT(ch);
+		}
+	}
+#endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_FIXED) */
+	return ENOTSUP;
+}
+
 static void adc_stm32_isr(const struct device *dev)
 {
 	struct adc_stm32_data *data = dev->data;
 	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
 	ADC_TypeDef *adc = config->base;
+	uint32_t conversion_result;
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	if (LL_ADC_IsActiveFlag_OVR(adc)) {
@@ -1401,9 +1676,23 @@ static void adc_stm32_isr(const struct device *dev)
 #else
 	if (LL_ADC_IsActiveFlag_EOC(adc) == 1) {
 #endif
+		conversion_result = LL_ADC_REG_ReadConversionData32(adc);
+#ifdef CONFIG_ADC_THRESHOLD
+		if (LL_ADC_IsActiveFlag_AWD1(adc) == 1) {
+			LL_ADC_ClearFlag_AWD1(adc);
+			uint32_t channel_id = get_sequencer_channel(config, data->samples_count);
+
+			if (channel_id == ENOTSUP) {
+				LOG_ERR("Unexpected sample count : %d", data->samples_count);
+			} else {
+				adc_context_on_threshold_event(&data->ctx, dev, channel_id,
+							       conversion_result);
+			}
+		}
+#endif
 
 #ifndef CONFIG_ADC_STREAM
-		*data->buffer++ = LL_ADC_REG_ReadConversionData32(adc);
+		*data->buffer++ = conversion_result;
 		/* ISR is triggered after each conversion, and at the end-of-sequence. */
 		if (++data->samples_count == data->channel_count) {
 			data->samples_count = 0;
@@ -1439,7 +1728,7 @@ static void adc_stm32_isr(const struct device *dev)
 					    sizeof(struct adc_stm32_rtio_data) +
 					    data->samples_count * sizeof(adc_data_size_t));
 
-		*read_buf = LL_ADC_REG_ReadConversionData32(adc);
+		*read_buf = conversion_result;
 
 		if (++data->samples_count == data->channel_count) {
 			data->samples_count = 0;
@@ -2208,7 +2497,19 @@ static int adc_stm32_get_decoder(const struct device *dev, const struct adc_deco
 
 	return 0;
 }
-#endif
+#endif /* CONFIG_ADC_STREAM */
+
+#ifdef CONFIG_ADC_THRESHOLD
+static int adc_stm32_set_threshold_callback(const struct device *dev,
+					    adc_threshold_callback callback,
+					    void *user_data)
+{
+	struct adc_stm32_data *data = dev->data;
+
+	adc_context_set_threshold_callback(&data->ctx, callback, user_data);
+	return 0;
+}
+#endif /* CONFIG_ADC_THRESHOLD */
 
 static DEVICE_API(adc, api_stm32_driver_api) = {
 	.channel_setup = adc_stm32_channel_setup,
@@ -2221,6 +2522,9 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 	.submit = adc_stm32_submit_stream,
 	.get_decoder = adc_stm32_get_decoder,
 #endif /* CONFIG_ADC_STREAM */
+#ifdef CONFIG_ADC_THRESHOLD
+	.set_threshold_callback = adc_stm32_set_threshold_callback,
+#endif /* CONFIG_ADC_THRESHOLD */
 };
 
 /* Macros for ADC clock source and prescaler */

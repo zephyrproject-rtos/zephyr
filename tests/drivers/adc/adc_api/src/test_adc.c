@@ -349,15 +349,15 @@ ZTEST_USER(adc_basic, test_task_different_priorities_sequences)
 /*
  * test_adc_sample_with_interval
  */
-static uint32_t my_sequence_identifier = 0x12345678;
-static void *user_data = &my_sequence_identifier;
+static uint32_t value_to_pass = 0x12345678;
+static void *value_ptr = &value_to_pass;
 
 static enum adc_action sample_with_interval_callback(const struct device *dev,
 						     const struct adc_sequence *sequence,
 						     uint16_t sampling_index)
 {
-	if (sequence->options->user_data != &my_sequence_identifier) {
-		user_data = sequence->options->user_data;
+	if (sequence->options->user_data != &value_to_pass) {
+		value_ptr = sequence->options->user_data;
 		return ADC_ACTION_FINISH;
 	}
 
@@ -371,7 +371,7 @@ static int test_task_with_interval(void)
 	const struct adc_sequence_options options = {
 		.interval_us     = 100 * 1000UL,
 		.callback        = sample_with_interval_callback,
-		.user_data       = user_data,
+		.user_data       = value_ptr,
 		.extra_samplings = 4,
 	};
 	struct adc_sequence sequence = {
@@ -393,9 +393,9 @@ static int test_task_with_interval(void)
 	}
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
-	zassert_equal(user_data, sequence.options->user_data,
+	zassert_equal(value_ptr, sequence.options->user_data,
 		"Invalid user data: %p, expected: %p",
-		user_data, sequence.options->user_data);
+		value_ptr, sequence.options->user_data);
 
 	check_samples(1 + options.extra_samplings, m_sample_buffer, BUFFER_SIZE);
 
@@ -526,4 +526,64 @@ static int test_task_invalid_request(void)
 ZTEST_USER(adc_basic, test_adc_invalid_request)
 {
 	zassert_true(test_task_invalid_request() == TC_PASS);
+}
+
+#ifdef CONFIG_ADC_THRESHOLD
+static void test_threshold_callback(const struct device *dev, uint8_t channel_id, uint32_t value,
+				     void *user_data)
+{
+	struct adc_sequence sequence = *(struct adc_sequence *)user_data;
+
+	zassert_true(value > sequence.upper_threshold,
+		"Unexpected : value (%d) should be superior than upper_threhsold (%d)",
+		value, sequence.upper_threshold);
+	zassert_not_equal(sequence.threshold_mode, ADC_THRESHOLD_MODE_DISEABLE,
+		"Unexpected : threshold callback triggered with threshold disabled");
+}
+
+static int test_task_threshold(void)
+{
+	int ret;
+	bool cb_called = false;
+	const struct device *dev = get_adc_device();
+
+	struct adc_sequence sequence = {
+		.buffer = m_sample_buffer,
+		.buffer_size = sizeof(m_sample_buffer),
+		.threshold_mode = ADC_THRESHOLD_MODE_UPPER,
+		.lower_threshold = 0,
+		.upper_threshold = 512,
+#if CONFIG_TEST_ADC_CALIBRATE_REQUIRED
+		.calibrate = true,
+#endif
+	};
+
+	ret = adc_set_threshold_callback(dev, test_threshold_callback, &sequence);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("Threshold API not supported by driver %s\n", dev->name);
+		ztest_test_skip();
+	}
+	zassert_equal(ret, 0, "adc_set_threshold_callback failed with %d", ret);
+
+	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
+
+	ret = adc_read_dt(&adc_channels[0], &sequence);
+	zassert_equal(ret, 0, "adc_read() with threshold failed: %d", ret);
+
+	cb_called = false;
+	sequence.threshold_mode = ADC_THRESHOLD_MODE_DISEABLE;
+	ret = adc_read_dt(&adc_channels[0], &sequence);
+	zassert_equal(ret, 0, "adc_read() with threshold diseabled failed: %d", ret);
+
+	return TC_PASS;
+}
+#endif /* CONFIG_ADC_THRESHOLD */
+
+ZTEST(adc_basic, test_adc_threshold)
+{
+#if defined(CONFIG_ADC_THRESHOLD)
+	zassert_true(test_task_threshold() == TC_PASS);
+#else
+	ztest_test_skip();
+#endif /* defined(CONFIG_ADC_THRESHOLD) */
 }

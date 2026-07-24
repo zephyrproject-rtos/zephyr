@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Smile
+
+config THRESHOLD_RESOLUTION
+	int "Set the resolution of the readings."
+	default 12
+
+config THRESHOLD_UPPER_VALUE_MV
+	int "Set the upper threshold voltage in millivolts."
+	default 500
+
+source "Kconfig.zephyr"

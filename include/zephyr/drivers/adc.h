@@ -64,6 +64,42 @@ enum adc_gain {
 };
 
 /**
+ * @brief Apply the application of gain to a raw value.
+ *
+ * For example, if the gain passed in is ADC_GAIN_1_6 and the
+ * referenced value is 60, the value after the function returns is 10.
+ *
+ * @param gain the gain used to amplify the input signal.
+ *
+ * @param value a pointer to a value that initially does not have
+ * the effect of the applied gain but has that effect applied when
+ * this function successfully returns. If the gain cannot be
+ * applied the value remains unchanged.
+ *
+ * @retval 0 if the gain was successfully applied
+ * @retval -EINVAL if the gain could not be interpreted
+ */
+int adc_gain_apply(enum adc_gain gain, int32_t *value);
+
+/**
+ * @brief Apply the application of gain to a raw value.
+ *
+ * For example, if the gain passed in is ADC_GAIN_1_6 and the
+ * referenced value is 60, the value after the function returns is 10.
+ *
+ * @param gain the gain used to amplify the input signal.
+ *
+ * @param value a pointer to a value that initially does not have
+ * the effect of the applied gain but has that effect applied when
+ * this function successfully returns. If the gain cannot be
+ * applied the value remains unchanged.
+ *
+ * @retval 0 if the gain was successfully applied
+ * @retval -EINVAL if the gain could not be interpreted
+ */
+int adc_gain_apply_64(enum adc_gain gain, int64_t *value);
+
+/**
  * @brief Invert the application of gain to a measurement value.
  *
  * For example, if the gain passed in is ADC_GAIN_1_6 and the
@@ -721,6 +757,35 @@ struct adc_sequence_options {
 };
 
 /**
+ * @brief Options for when to trigger an interrupt
+ */
+enum adc_threshold_mode {
+	/** Disable threshold monitoring */
+	ADC_THRESHOLD_MODE_DISEABLE,
+	/** Trigger when value falls below lower_limit */
+	ADC_THRESHOLD_MODE_LOWER,
+	/** Trigger when value exceeds upper_limit */
+	ADC_THRESHOLD_MODE_UPPER,
+	/** Trigger when value is below lower_limit or above upper_limit */
+	ADC_THRESHOLD_MODE_OUTSIDE,
+	/** Trigger when value is strictly between limits */
+	ADC_THRESHOLD_MODE_INSIDE,
+};
+
+/**
+ * @brief Type definition of the optional callback function to be called when a threshold event
+ * trigger.
+ *
+ * @param dev Pointer to the device structure for the driver
+ *	      instance.
+ * @param channel_id Identifier of the channel that triggered the callback
+ * @param value	     Conversion result
+ * @param user_data  Pointer for additionnal context
+ */
+typedef void (*adc_threshold_callback)(const struct device *dev, uint8_t channel_id, uint32_t value,
+	      void *user_data);
+
+/**
  * @brief Structure defining an ADC sampling sequence.
  */
 struct adc_sequence {
@@ -800,6 +865,23 @@ struct adc_sequence {
 	 * ignore this flag.
 	 */
 	bool calibrate;
+
+#ifdef CONFIG_ADC_THRESHOLD
+	/**
+	 * Lower threshold value.
+	 * Raw ADC value for lower threshold to compare with conversion result.
+	 */
+	int32_t lower_threshold;
+
+	/**
+	 * Upper threshold value.
+	 * Raw ADC value for upper threshold to compare with conversion result.
+	 */
+	int32_t upper_threshold;
+
+	/** Threshold mode. */
+	enum adc_threshold_mode threshold_mode;
+#endif /* CONFIG_ADC_THRESHOLD */
 };
 
 struct adc_data_header {
@@ -1011,6 +1093,14 @@ typedef int (*adc_api_read_async)(const struct device *dev,
 				  struct k_poll_signal *async);
 
 /**
+ * @brief Type definition of ADC API function for setting a threshold callback
+ * See adc_set_threshold_callback() for argument descriptions.
+ */
+typedef int (*adc_api_set_threshold_callback)(const struct device *dev,
+					      adc_threshold_callback callback,
+					      void *user_data);
+
+/**
  * @driver_ops{ADC}
  */
 __subsystem struct adc_driver_api {
@@ -1036,6 +1126,13 @@ __subsystem struct adc_driver_api {
 	 * @kconfig_dep{CONFIG_ADC_STREAM}
 	 */
 	adc_api_get_decoder get_decoder;
+#endif
+#if defined(CONFIG_ADC_THRESHOLD) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional Set ADC threshold callback.
+	 * @kconfig_dep{CONFIG_ADC_THRESHOLD}
+	 */
+	adc_api_set_threshold_callback set_threshold_callback;
 #endif
 	/**
 	 * @driver_ops_mandatory Internal reference voltage, in millivolts.
@@ -1293,6 +1390,35 @@ static inline int z_impl_adc_get_decoder(const struct device *dev,
 #endif /* CONFIG_ADC_STREAM */
 
 /**
+ * @brief Set ADC threshold callback.
+ *
+ * @param dev	    Pointer to the device structure for the driver instance.
+ * @param callback  Callback function.
+ * @param user_data User data passed to callback.
+ *
+ * @retval 0	    On success.
+ * @retval -ENOTSUP If the driver or hardware does not support threshold monitoring.
+ */
+__syscall int adc_set_threshold_callback(const struct device *dev,
+					 adc_threshold_callback callback,
+					 void *user_data);
+
+#ifdef CONFIG_ADC_THRESHOLD
+static inline int z_impl_adc_set_threshold_callback(const struct device *dev,
+						    adc_threshold_callback callback,
+						    void *user_data)
+{
+	const struct adc_driver_api *api = DEVICE_API_GET(adc, dev);
+
+	if (api->set_threshold_callback == NULL) {
+		return -ENOTSUP;
+	}
+	return api->set_threshold_callback(dev, callback, user_data);
+}
+
+#endif /* CONFIG_ADC_THRESHOLD */
+
+/**
  * @brief Get the internal reference voltage.
  *
  * Returns the voltage corresponding to @ref ADC_REF_INTERNAL,
@@ -1457,6 +1583,174 @@ static inline int adc_raw_to_millivolts_dt(const struct adc_dt_spec *spec, int32
 static inline int adc_raw_to_microvolts_dt(const struct adc_dt_spec *spec, int32_t *valp)
 {
 	return adc_raw_to_x_dt_chan(adc_raw_to_microvolts, spec, &spec->channel_cfg, valp);
+}
+
+/**
+ * @brief Conversion from a specific voltage unit to a raw ADC value
+ *
+ * This function performs the necessary conversion to transform a physical voltage to a raw ADC
+ * measurement.
+ *
+ * @param ref_mv the reference voltage used for the measurement, in
+ * millivolts.  This may be from adc_ref_internal() or a known
+ * external reference.
+ *
+ * @param gain the ADC gain configuration used to sample the input
+ *
+ * @param resolution the number of bits in the absolute value of the
+ * sample.  For differential sampling this needs to be one less than the
+ * resolution in struct adc_sequence.
+ *
+ * @param valp pointer to the physical voltage value on input, and the
+ * corresponding output value on successful conversion. If
+ * conversion fails the stored value is left unchanged.
+ *
+ * @retval 0 on successful conversion
+ * @retval -EINVAL if the gain is not applicable
+ */
+typedef int (*adc_x_to_raw_fn)(int32_t ref_mv, enum adc_gain gain, uint8_t resolution,
+			       int32_t *valp);
+
+/**
+ * @brief Convert millivolts to raw ADC value.
+ *
+ * @see adc_x_to_raw_fn
+ */
+static inline int adc_millivolts_to_raw(int32_t ref_mv, enum adc_gain gain, uint8_t resolution,
+					int32_t *valp)
+{
+	int64_t adc_raw = (int64_t)*valp << resolution;
+	int ret = adc_gain_apply_64(gain, &adc_raw);
+
+	if (ret == 0) {
+		if (ref_mv == 0) {
+			return -EINVAL;
+		}
+
+		adc_raw = adc_raw / (int64_t) ref_mv;
+
+		if (adc_raw > INT32_MAX || adc_raw < INT32_MIN) {
+			__ASSERT_MSG_INFO("conversion result is out of range");
+		}
+
+		*valp = (int32_t)adc_raw;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Convert microvolts value to raw ADC value.
+ *
+ * @see adc_x_to_raw_fn
+ */
+static inline int adc_microvolts_to_raw(int32_t ref_mv,
+					enum adc_gain gain,
+					uint8_t resolution,
+					int32_t *valp)
+{
+	int64_t adc_raw = (int64_t)*valp << resolution;
+	int ret = adc_gain_apply_64(gain, &adc_raw);
+
+	if (ret == 0) {
+		if (ref_mv == 0) {
+			return -EINVAL;
+		}
+
+		adc_raw = adc_raw / (int64_t) ref_mv / 1000;
+
+		if (adc_raw > INT32_MAX || adc_raw < INT32_MIN) {
+			__ASSERT_MSG_INFO("conversion result is out of range");
+		}
+
+		*valp = (int32_t)adc_raw;
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Convert an physical voltage unit to a raw ADC value.
+ *
+ * @param[in] conv_func Function that converts to the raw ADC value.
+ * @param[in] spec ADC specification from Devicetree.
+ * @param[in] channel_cfg Channel configuration used for sampling. This can be
+ * either the configuration from @a spec, or an alternate sampling configuration
+ * based on @a spec, for example a different gain value.
+ * @param[in,out] valp Pointer to the physical voltage value on input, and the
+ * corresponding output value on successful conversion. If conversion fails
+ * the stored value is left unchanged.
+ *
+ * @return A value from adc_x_to_raw_fn or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see adc_x_to_raw_fn
+ */
+static inline int adc_x_to_raw_dt_chan(adc_x_to_raw_fn conv_func,
+					    const struct adc_dt_spec *spec,
+					    const struct adc_channel_cfg *channel_cfg,
+					    int32_t *valp)
+{
+	int32_t vref_mv;
+	uint8_t resolution;
+
+	if (!spec->channel_cfg_dt_node_exists) {
+		return -ENOTSUP;
+	}
+
+	if (channel_cfg->reference == ADC_REF_INTERNAL) {
+		vref_mv = (int32_t)adc_ref_internal(spec->dev);
+	} else {
+		vref_mv = spec->vref_mv;
+	}
+
+	resolution = spec->resolution;
+
+	/*
+	 * For differential channels, one bit less needs to be specified
+	 * for resolution to achieve correct conversion.
+	 */
+	if (channel_cfg->differential) {
+		resolution -= 1U;
+	}
+
+	return conv_func(vref_mv, channel_cfg->gain, resolution, valp);
+}
+
+
+/**
+ * @brief Convert millivolts value to raw ADC value using information stored
+ * in a struct adc_dt_spec.
+ *
+ * @param[in] spec ADC specification from Devicetree.
+ * @param[in,out] valp Pointer to the millivolts value on input, and the
+ * corresponding raw ADC value on successful conversion. If conversion fails
+ * the stored value is left unchanged.
+ *
+ * @return A value from adc_millivolts_to_raw() or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see adc_millivolts_to_raw()
+ */
+static inline int adc_millivolts_to_raw_dt(const struct adc_dt_spec *spec, int32_t *valp)
+{
+	return adc_x_to_raw_dt_chan(adc_millivolts_to_raw, spec, &spec->channel_cfg, valp);
+}
+
+/**
+ * @brief Convert microvolts value to raw ADC value using information stored
+ * in a struct adc_dt_spec.
+ *
+ * @param[in] spec ADC specification from Devicetree.
+ * @param[in,out] valp Pointer to the microvolts value value on input, and the
+ * corresponding raw ADC value on successful conversion. If conversion fails
+ * the stored value is left unchanged.
+ *
+ * @return A value from adc_microvolts_to_raw() or -ENOTSUP if information from
+ * Devicetree is not valid.
+ * @see adc_microvolts_to_raw()
+ */
+static inline int adc_microvolts_to_raw_dt(const struct adc_dt_spec *spec, int32_t *valp)
+{
+	return adc_x_to_raw_dt_chan(adc_microvolts_to_raw, spec, &spec->channel_cfg, valp);
 }
 
 /**
