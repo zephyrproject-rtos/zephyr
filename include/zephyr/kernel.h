@@ -5790,7 +5790,7 @@ __syscall int k_msgq_put(struct k_msgq *msgq, const void *data, k_timeout_t time
  * @retval 0 Message sent.
  * @retval -ENOMSG Returned without waiting or queue purged.
  * @satisfies ZEP-SRS-31-5
- * @satisfies ZEP-SRS-31-18
+ * @satisfies ZEP-SRS-31-9
  */
 __syscall int k_msgq_put_front(struct k_msgq *msgq, const void *data);
 
@@ -5889,6 +5889,8 @@ __syscall uint32_t k_msgq_num_free_get(struct k_msgq *msgq);
  *
  * @param msgq Address of the message queue.
  * @param attrs pointer to message queue attribute structure.
+ *
+ * @satisfies ZEP-SRS-31-21
  */
 __syscall void  k_msgq_get_attrs(struct k_msgq *msgq,
 				 struct k_msgq_attrs *attrs);
@@ -6209,6 +6211,7 @@ struct k_pipe {
  * @satisfies ZEP-SRS-32-3
  * @satisfies ZEP-SRS-32-5
  * @satisfies ZEP-SRS-32-9
+ * @satisfies ZEP-SRS-32-11
  */
 __syscall int k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len,
 			   k_timeout_t timeout);
@@ -6230,6 +6233,7 @@ __syscall int k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len,
  * @satisfies ZEP-SRS-32-4
  * @satisfies ZEP-SRS-32-6
  * @satisfies ZEP-SRS-32-9
+ * @satisfies ZEP-SRS-32-12
  */
 __syscall int k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len,
 			  k_timeout_t timeout);
@@ -7292,6 +7296,8 @@ struct k_poll_event {
  * @param obj Kernel object or poll signal.
  *
  * @satisfies ZEP-SRS-33-2
+ *
+ * @satisfies ZEP-SRS-33-11
  */
 
 void k_poll_event_init(struct k_poll_event *event, uint32_t type,
