@@ -50,4 +50,5 @@ static int cmd_kernel_thread_unwind(const struct shell *sh, size_t argc, char **
 	return 0;
 }
 
-KERNEL_THREAD_CMD_ARG_ADD(unwind, NULL, "Unwind a thread.", cmd_kernel_thread_unwind, 1, 1);
+KERNEL_THREAD_CMD_ARG_ADD(unwind, NULL, "Unwind a thread <thread_id>",
+						cmd_kernel_thread_unwind, 1, 1);
