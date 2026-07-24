@@ -22,8 +22,8 @@
  * Copyright (c) 2007, Keir Fraser
  */
 
-#ifndef __XEN_PUBLIC_HVM_PARAMS_H__
-#define __XEN_PUBLIC_HVM_PARAMS_H__
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_HVM_PARAMS_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_HVM_PARAMS_H_
 
 #include "hvm_op.h"
 
@@ -38,4 +38,4 @@
 #define HVM_PARAM_CONSOLE_PFN		17
 #define HVM_PARAM_CONSOLE_EVTCHN	18
 
-#endif /* __XEN_PUBLIC_HVM_PARAMS_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_HVM_PARAMS_H_ */

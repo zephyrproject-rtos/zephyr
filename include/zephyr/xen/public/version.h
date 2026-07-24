@@ -10,8 +10,8 @@
  * Copyright (c) 2025 EPAM Systems
  */
 
-#ifndef __XEN_PUBLIC_VERSION_H__
-#define __XEN_PUBLIC_VERSION_H__
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_VERSION_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_VERSION_H_
 
 #include "xen.h"
 
@@ -26,4 +26,4 @@
 #define XENVER_extraversion 1
 #define XEN_EXTRAVERSION_LEN 16
 
-#endif /* __XEN_PUBLIC_VERSION_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_VERSION_H_ */

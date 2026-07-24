@@ -4,8 +4,8 @@
  * Copyright (c) 2004, Intel Corporation.
  */
 
-#ifndef _IOREQ_H_
-#define _IOREQ_H_
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_HVM_IOREQ_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_HVM_IOREQ_H_
 
 #define IOREQ_READ  1
 #define IOREQ_WRITE 0
@@ -112,7 +112,7 @@ typedef struct buffered_iopage buffered_iopage_t;
 #define ACPI_GPE0_BLK_ADDRESS     ACPI_GPE0_BLK_ADDRESS_V0
 #define ACPI_GPE0_BLK_LEN         ACPI_GPE0_BLK_LEN_V0
 
-#endif /* _IOREQ_H_ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_HVM_IOREQ_H_ */
 
 /*
  * Local variables:

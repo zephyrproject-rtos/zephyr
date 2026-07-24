@@ -26,8 +26,8 @@
  * Copyright 2011 (C) Citrix Systems
  */
 
-#ifndef __XEN_PUBLIC_ARCH_ARM_H__
-#define __XEN_PUBLIC_ARCH_ARM_H__
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_ARCH_ARM_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_ARCH_ARM_H_
 
 #include <zephyr/kernel.h>
 
@@ -486,4 +486,4 @@ typedef uint64_t xen_callback_t;
 typedef struct xen_pmu_arch { uint8_t dummy; } xen_pmu_arch_t;
 #endif /* __ASSEMBLY__ */
 
-#endif /* __XEN_PUBLIC_ARCH_ARM_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_ARCH_ARM_H_ */

@@ -26,8 +26,8 @@
  * Copyright (c) 2005, Keir Fraser <keir@xensource.com>
  */
 
-#ifndef __XEN_PUBLIC_SCHED_H__
-#define __XEN_PUBLIC_SCHED_H__
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_SCHED_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_SCHED_H_
 
 #include "event_channel.h"
 
@@ -198,4 +198,4 @@ DEFINE_XEN_GUEST_HANDLE(sched_pin_override_t);
 /* Maximum valid shutdown reason. */
 #define SHUTDOWN_MAX		5
 
-#endif /* __XEN_PUBLIC_SCHED_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_SCHED_H_ */

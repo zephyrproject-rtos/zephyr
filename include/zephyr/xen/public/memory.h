@@ -26,8 +26,8 @@
  * Copyright (c) 2005, Keir Fraser <keir@xensource.com>
  */
 
-#ifndef __XEN_PUBLIC_MEMORY_H__
-#define __XEN_PUBLIC_MEMORY_H__
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_MEMORY_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_MEMORY_H_
 
 #include "xen.h"
 
@@ -239,4 +239,4 @@ struct xen_mem_acquire_resource {
 typedef struct xen_mem_acquire_resource xen_mem_acquire_resource_t;
 DEFINE_XEN_GUEST_HANDLE(xen_mem_acquire_resource_t);
 
-#endif /* __XEN_PUBLIC_MEMORY_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_MEMORY_H_ */

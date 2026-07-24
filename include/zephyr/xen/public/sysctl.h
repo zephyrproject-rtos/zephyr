@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef __XEN_PUBLIC_SYSCTL_H__
-#define __XEN_PUBLIC_SYSCTL_H__
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_SYSCTL_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_SYSCTL_H_
 
 #if !defined(CONFIG_XEN_DOM0)
 #error "sysctl operations are intended for use by node control tools only"
@@ -180,4 +180,4 @@ struct xen_sysctl {
 typedef struct xen_sysctl xen_sysctl_t;
 DEFINE_XEN_GUEST_HANDLE(xen_sysctl_t);
 
-#endif /* __XEN_PUBLIC_SYSCTL_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_SYSCTL_H_ */

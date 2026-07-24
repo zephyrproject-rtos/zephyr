@@ -26,8 +26,8 @@
  * Copyright (c) 2005, Keir Fraser
  */
 
-#ifndef __XEN_PUBLIC_IO_CONSOLE_H__
-#define __XEN_PUBLIC_IO_CONSOLE_H__
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_IO_CONSOLE_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_IO_CONSOLE_H_
 
 typedef uint32_t XENCONS_RING_IDX;
 
@@ -45,4 +45,4 @@ struct xencons_interface {
 DEFINE_XEN_FLEX_RING(xencons);
 #endif
 
-#endif /* __XEN_PUBLIC_IO_CONSOLE_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_IO_CONSOLE_H_ */

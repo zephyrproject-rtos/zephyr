@@ -10,8 +10,8 @@
  * @ingroup xen_device_model
  */
 
-#ifndef ZEPHYR_XEN_DMOP_H_
-#define ZEPHYR_XEN_DMOP_H_
+#ifndef ZEPHYR_INCLUDE_XEN_DMOP_H_
+#define ZEPHYR_INCLUDE_XEN_DMOP_H_
 
 #include <zephyr/xen/public/hvm/dm_op.h>
 
@@ -142,4 +142,4 @@ int dmop_set_irq_level(domid_t domid, uint32_t irq, uint8_t level);
 
 /** @} */
 
-#endif /* ZEPHYR_XEN_DMOP_H_ */
+#endif /* ZEPHYR_INCLUDE_XEN_DMOP_H_ */

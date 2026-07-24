@@ -26,8 +26,8 @@
  * Copyright (c) 2004, K A Fraser
  */
 
-#ifndef __XEN_PUBLIC_XEN_H__
-#define __XEN_PUBLIC_XEN_H__
+#ifndef ZEPHYR_INCLUDE_XEN_PUBLIC_XEN_H_
+#define ZEPHYR_INCLUDE_XEN_PUBLIC_XEN_H_
 
 #if defined(CONFIG_ARM64)
 #include "arch-arm.h"
@@ -394,4 +394,4 @@ typedef struct xenctl_bitmap xenctl_bitmap_t;
 
 #endif /* !__ASSEMBLY__ */
 
-#endif /* __XEN_PUBLIC_XEN_H__ */
+#endif /* ZEPHYR_INCLUDE_XEN_PUBLIC_XEN_H_ */
