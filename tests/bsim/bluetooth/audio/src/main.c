@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,6 +49,8 @@ extern struct bst_test_list *test_gmap_ugg_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_gmap_ugt_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_ccp_call_control_client_install(struct bst_test_list *tests);
 extern struct bst_test_list *test_ccp_call_control_server_install(struct bst_test_list *tests);
+extern struct bst_test_list *
+test_bap_broadcast_source_assistant_collocated_install(struct bst_test_list *tests);
 
 bst_test_install_t test_installers[] = {
 	test_vcp_install,
@@ -90,6 +93,7 @@ bst_test_install_t test_installers[] = {
 	test_gmap_ugt_install,
 	test_ccp_call_control_client_install,
 	test_ccp_call_control_server_install,
+	test_bap_broadcast_source_assistant_collocated_install,
 	NULL,
 };
 
