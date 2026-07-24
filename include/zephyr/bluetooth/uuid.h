@@ -1492,7 +1492,7 @@ struct bt_uuid_any {
  */
 #define BT_UUID_HRS_BODY_SENSOR_VAL 0x2a38
 /**
- *  @brief HRS Characteristic Control Point
+ *  @brief HRS Characteristic Body Sensor Location
  */
 #define BT_UUID_HRS_BODY_SENSOR \
 	BT_UUID_DECLARE_16(BT_UUID_HRS_BODY_SENSOR_VAL)
@@ -5139,7 +5139,7 @@ struct bt_uuid_any {
  */
 #define BT_UUID_GMAS_VAL 0x1858
 /**
- *  @brief Common Audio Service
+ *  @brief Gaming Service
  */
 #define BT_UUID_GMAS	 BT_UUID_DECLARE_16(BT_UUID_GMAS_VAL)
 
