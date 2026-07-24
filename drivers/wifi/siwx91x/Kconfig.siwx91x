@@ -66,6 +66,20 @@ config WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP
 	    user configures NULL frame-based.
 	  - Switches to NULL frame-based only when traffic increases.
 
+config WIFI_SILABS_SIWX91X_HIGH_PERFORMANCE
+	bool "Relocate networking data path to RAM"
+	select CODE_DATA_RELOCATION_SRAM
+	help
+	  Relocate critical Wi-Fi and networking data-path functions from flash
+	  to RAM. When disabled, the data path executes from flash.
+
+	  Uses approximately 33 KB of additional RAM. On SiWx91x-based boards,
+	  enabling this option improves TCP throughput by about 170–210%
+	  and UDP throughput by about 100–160%.
+
+	  Cryptographic code is not relocated, so TLS throughput is largely
+	  unaffected by this option.
+
 config WIFI_SILABS_SIWX91X_MFP
 	bool "802.11w Management Frame Protection (MFP) support"
 	default y
