@@ -30,17 +30,10 @@ config INTEL_ADSP_FWREADY_MSG
 	  Send a firmware ready message to the host once the system is up
 	  and running.
 
-config INTEL_ADSP_IPC
-	bool "Driver for the host IPC interrupt delivery"
-	select DEPRECATED
-	help
-	  Deprecated config for IPC. Will be removed in the future.
-
 config INTEL_ADSP_IPC_OLD_INTERFACE
 	bool "Expose old interface for the IPC"
 	depends on IPC_SERVICE_BACKEND_INTEL_ADSP_HOST_IPC
 	default y
-	select INTEL_ADSP_IPC
 	help
 	  Expose the old IPC interface (intel_adsp_ipc_* functions) to
 	  maintain backward compatibility.
