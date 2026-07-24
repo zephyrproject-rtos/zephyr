@@ -20,7 +20,7 @@
 #define NUMBER_OF_CHANNELS  2
 /* Such block length provides an echo with the delay of 100 ms. */
 #define SAMPLES_PER_BLOCK   ((SAMPLE_FREQUENCY / 10) * NUMBER_OF_CHANNELS)
-#define INITIAL_BLOCKS      2
+#define INITIAL_BLOCKS      4
 #define TIMEOUT             1000
 
 #define BLOCK_SIZE  (BYTES_PER_SAMPLE * SAMPLES_PER_BLOCK)
