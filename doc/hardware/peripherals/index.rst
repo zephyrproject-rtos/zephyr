@@ -49,6 +49,7 @@ Peripherals
    memc.rst
    mspi.rst
    mbox.rst
+   mux.rst
    opamp.rst
    otp/index.rst
    pcie.rst

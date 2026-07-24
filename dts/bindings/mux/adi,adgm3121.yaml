@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-FileCopyrightText: 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices ADGM3121 DPDT MEMS switch (DC-24GHz), SPI control mode,
+  exposed as a MUX controller.
+
+  The four MEMS switches (SW1..SW4) are modeled as a single control line
+  whose state is a 4-bit switch bitmask: bit i selects SW(i+1), 1 = closed.
+  mux_control_disconnect() opens all four switches (mask = 0).
+
+  Example:
+
+    &spi1 {
+        adgm3121: adgm3121@0 {
+            compatible = "adi,adgm3121";
+            reg = <0>;
+            spi-max-frequency = <10000000>;
+            #mux-control-cells = <0>;
+            #mux-state-cells = <1>;
+        };
+    };
+
+    consumer {
+        mux-controls = <&adgm3121>;        /* runtime switch mask */
+        mux-states   = <&adgm3121 0x5>;    /* static: SW1 + SW3 closed */
+    };
+
+compatible: "adi,adgm3121"
+
+include: [spi-device.yaml, mux-controller.yaml]
+
+properties:
+  "#mux-control-cells":
+    const: 0
+
+  "#mux-state-cells":
+    const: 1
+
+mux-state-cells:
+  - switches

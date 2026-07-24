@@ -8,9 +8,9 @@
 #include <errno.h>
 #include <stdint.h>
 #include <fsl_eqdc.h>
-#include <fsl_inputmux.h>
 #include <zephyr/drivers/sensor/eqdc_mcux.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/mux.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/irq.h>
@@ -19,14 +19,13 @@
 
 LOG_MODULE_REGISTER(eqdc_mcux, CONFIG_SENSOR_LOG_LEVEL);
 
-/* One INPUTMUX route (PHASEA / PHASEB) decoded from the inputmux-connections
- * phandle-array. The connection value is an inputmux_connection_t taken from
- * fsl_inputmux_connections.h.
+/* One INPUTMUX route (PHASEA / PHASEB) decoded from the mux-states
+ * phandle-array. The trailing state cell is an inputmux_connection_t taken
+ * from fsl_inputmux_connections.h and applied via the mux subsystem.
  */
-struct eqdc_mcux_inputmux_entry {
-	INPUTMUX_Type *base;
-	uint16_t channel;
-	uint32_t connection;
+struct eqdc_mcux_mux_entry {
+	const struct device *dev;
+	const struct mux_state *state;
 };
 
 struct eqdc_mcux_config {
@@ -42,8 +41,8 @@ struct eqdc_mcux_config {
 	uint8_t input_filter_period;
 	uint8_t input_filter_count;
 	void (*irq_config_func)(const struct device *dev);
-	const struct eqdc_mcux_inputmux_entry *inputmux_entries;
-	uint8_t inputmux_entries_count;
+	const struct eqdc_mcux_mux_entry *mux_entries;
+	uint8_t mux_entries_count;
 };
 
 struct eqdc_mcux_data {
@@ -314,14 +313,21 @@ static int eqdc_mcux_init_pins(const struct device *dev)
 		return ret;
 	}
 
-	/* Route the EQDC phase inputs through INPUTMUX */
-	for (uint8_t i = 0; i < config->inputmux_entries_count; i++) {
-		const struct eqdc_mcux_inputmux_entry *entry = &config->inputmux_entries[i];
+	/* Route the EQDC phase inputs through INPUTMUX via the mux subsystem */
+	for (uint8_t i = 0; i < config->mux_entries_count; i++) {
+		const struct eqdc_mcux_mux_entry *entry = &config->mux_entries[i];
+		int err;
 
-		INPUTMUX_Init(entry->base);
-		INPUTMUX_AttachSignal(entry->base, entry->channel,
-				      (inputmux_connection_t)entry->connection);
-		INPUTMUX_Deinit(entry->base);
+		if (!device_is_ready(entry->dev)) {
+			LOG_ERR("mux controller %s not ready", entry->dev->name);
+			return -ENODEV;
+		}
+
+		err = mux_state_apply(entry->dev, entry->state);
+		if (err) {
+			LOG_ERR("failed to apply mux state %u: %d", i, err);
+			return err;
+		}
 	}
 
 	return 0;
@@ -385,25 +391,25 @@ static int eqdc_mcux_init(const struct device *dev)
 	return 0;
 }
 
-#define EQDC_MCUX_INPUTMUX_ENTRY(node_id, prop, idx)					\
+#define EQDC_MCUX_MUX_ENTRY(node_id, prop, idx)						\
 	{										\
-		.base = (INPUTMUX_Type *)DT_REG_ADDR(DT_PHANDLE_BY_IDX(node_id, prop, idx)), \
-		.channel = (uint16_t)DT_PHA_BY_IDX(node_id, prop, idx, channel),	\
-		.connection = (uint32_t)DT_PHA_BY_IDX(node_id, prop, idx, connection),	\
+		.dev   = MUX_STATE_DT_DEV_GET_BY_IDX(node_id, idx),			\
+		.state = MUX_STATE_DT_GET_BY_IDX(node_id, idx),				\
 	}
 
 #define EQDC_MCUX_INPUTMUX_DEFINE(n)							\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, inputmux_connections),			\
-		    (static const struct eqdc_mcux_inputmux_entry			\
-			    eqdc_mcux_inputmux_entries_##n[] = {			\
-			    DT_INST_FOREACH_PROP_ELEM_SEP(n, inputmux_connections,	\
-							  EQDC_MCUX_INPUTMUX_ENTRY, (,))}; \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states),				\
+		    (MUX_STATE_DT_INST_SPEC_DEFINE_ALL(n);				\
+		     static const struct eqdc_mcux_mux_entry				\
+			    eqdc_mcux_mux_entries_##n[] = {				\
+			    DT_INST_FOREACH_PROP_ELEM_SEP(n, mux_states,		\
+							  EQDC_MCUX_MUX_ENTRY, (,))};	\
 		    ), ())
 
 #define EQDC_MCUX_INPUTMUX_INIT(n)							\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, inputmux_connections),			\
-		    (.inputmux_entries = eqdc_mcux_inputmux_entries_##n,		\
-		     .inputmux_entries_count = DT_INST_PROP_LEN(n, inputmux_connections),), \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states),				\
+		    (.mux_entries = eqdc_mcux_mux_entries_##n,				\
+		     .mux_entries_count = ARRAY_SIZE(eqdc_mcux_mux_entries_##n),),	\
 		    ())
 
 #ifdef CONFIG_EQDC_MCUX_TRIGGER
