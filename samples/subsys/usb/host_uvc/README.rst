@@ -213,7 +213,7 @@ Logging Configuration
 
 - :kconfig:option:`CONFIG_LOG` - Enable logging
 - :kconfig:option:`CONFIG_LOG_BUFFER_SIZE` - Log buffer size
-- :kconfig:option:`CONFIG_USBH_UVC_LOG_LEVEL_INF` - UVC driver log level
+- :kconfig:option:`CONFIG_USBH_VIDEO_LOG_LEVEL_INF` - UVC driver log level
 
 Troubleshooting
 ***************
@@ -250,7 +250,7 @@ or enable optimizations:
 - :kconfig:option:`CONFIG_APP_VIDEO_FRAME_WIDTH`
 - :kconfig:option:`CONFIG_APP_VIDEO_FRAME_HEIGHT`
 - :kconfig:option:`CONFIG_APP_VIDEO_TARGET_FPS`
-- :kconfig:option:`CONFIG_USBH_UVC_LOG_LEVEL_WRN`
+- :kconfig:option:`CONFIG_USBH_VIDEO_LOG_LEVEL_WRN`
 - :kconfig:option:`CONFIG_DEBUG_OPTIMIZATIONS`
 - :kconfig:option:`CONFIG_SPEED_OPTIMIZATIONS`
 
