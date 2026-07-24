@@ -110,7 +110,46 @@
 			size = <256>;
 			timeout = <5>;
 			status = "okay";
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				eeprom0_eui48: eui48@fa {
+					reg = <0xfa 6>;
+					#nvmem-cell-cells = <0>;
+				};
+			};
 		};
+	};
+};
+
+&gmac0 {
+	status = "okay";
+
+	pinctrl-0 = <&pinctrl_gmac0_default>;
+	pinctrl-names = "default";
+
+	phy-connection-type = "rgmii";
+	phy-handle = <&gmac0_phy>;
+
+	nvmem-cells = <&eeprom0_eui48>;
+	nvmem-cell-names = "mac_address";
+};
+
+&gmac0_mdio {
+	status = "okay";
+
+	pinctrl-0 = <&pinctrl_gmac0_mdio_default>;
+	pinctrl-names = "default";
+
+	gmac0_phy: ethernet-phy@7 {
+		compatible = "microchip,lan8840";
+		int-gpios = <&pioc 1 GPIO_ACTIVE_LOW>;
+		microchip,rgmii-delay = "id";
+		reg = <7>;
+		status = "okay";
 	};
 };
 
@@ -154,6 +193,35 @@
 			pinmux = <PIN_PD14__CANTX3>,
 				 <PIN_PD15__CANRX3>;
 			bias-disable;
+		};
+	};
+
+	pinctrl_gmac0_default: gmac0_default {
+		group1 {
+			pinmux = <PIN_PA26__G0_TX0>,
+				 <PIN_PA27__G0_TX1>,
+				 <PIN_PB4__G0_TX2>,
+				 <PIN_PB5__G0_TX3>,
+				 <PIN_PA29__G0_RX0>,
+				 <PIN_PA30__G0_RX1>,
+				 <PIN_PB2__G0_RX2>,
+				 <PIN_PB6__G0_RX3>,
+				 <PIN_PA25__G0_TXCTL>,
+				 <PIN_PB3__G0_RXCK>,
+				 <PIN_PA28__G0_RXCTL>;
+			bias-disable;
+		};
+
+		gmac0_txck_default {
+			pinmux = <PIN_PB1__G0_REFCK>;
+			bias-pull-up;
+		};
+	};
+
+	pinctrl_gmac0_mdio_default: gmac0_mdio_default {
+		group1 {
+			pinmux = <PIN_PA31__G0_MDC>,
+				 <PIN_PB0__G0_MDIO>;
 		};
 	};
 
