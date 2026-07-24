@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 Liu Changjie <liucj1228@outlook.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <xhsc/f4/hc32f4a0.dtsi>
+#include <zephyr/dt-bindings/pinctrl/hc32-pinctrl.h>
+
+/ {
+	model = "JLC SkyStar HC32F4A0PITB";
+	compatible = "jlc,skystar-hc32f4a0pitb";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+};
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <HC32_USART1_TX_PA9>, <HC32_USART1_RX_PA10>;
+		};
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

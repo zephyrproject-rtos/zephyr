@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Liu Changjie <liucj1228@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_HC32
+	bool "XHSC HC32 pin controller driver"
+	default y
+	depends on DT_HAS_XHSC_HC32_PINCTRL_ENABLED
+	depends on HAS_HC32_DDL
+	select HC32_LL_GPIO
+	help
+	  Enable pin control support for XHSC HC32 SoCs.

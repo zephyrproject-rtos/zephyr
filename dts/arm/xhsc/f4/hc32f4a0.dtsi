@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2026 Liu Changjie <liucj1228@outlook.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/clock/hc32f4a0-clock.h>
+
+/ {
+	pinctrl: pinctrl {
+		compatible = "xhsc,hc32-pinctrl";
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m4f";
+			reg = <0>;
+			clock-frequency = <8000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv7m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	soc {
+		sram0: memory@1ffe0000 {
+			compatible = "mmio-sram";
+			reg = <0x1ffe0000 DT_SIZE_K(512)>;
+		};
+
+		flash-controller@40010400 {
+			compatible = "xhsc,hc32f4a0-flash-controller";
+			reg = <0x40010400 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_M(2)>;
+				write-block-size = <4>;
+			};
+		};
+
+		usart1: serial@4001cc00 {
+			compatible = "xhsc,hc32-usart";
+			reg = <0x4001cc00 0x400>;
+			current-speed = <115200>;
+			fcg3-periph = <HC32_FCG3_USART1>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
