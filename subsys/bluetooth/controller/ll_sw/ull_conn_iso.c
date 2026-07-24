@@ -739,9 +739,6 @@ void ull_conn_iso_ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 			ull_iso_lll_event_prepare(cis->lll.handle, cis->lll.event_count_prepare);
 		}
-
-		/* Latch datapath validity entering event */
-		cis->lll.datapath_ready_rx = cis->hdr.datapath_out != NULL;
 	}
 
 	/* Update the CIG reference point for this event. Event 0 for the
