@@ -18,6 +18,12 @@ LOG_MODULE_REGISTER(ICM45686_DECODER, CONFIG_SENSOR_LOG_LEVEL);
 
 #define DT_DRV_COMPAT invensense_icm45686
 
+/* Hardware timestamp resolution: 16μs per tick (TMST_RESOL=1 in TMST_WOM_CONFIG).
+ * Each 20-byte FIFO packet contains a 16-bit hardware timestamp at this resolution.
+ * The signed int16_t delta handles 16-bit wraparound, valid for batch spans < 524ms.
+ */
+#define ICM45686_HW_TS_NS_PER_TICK UINT32_C(16000) /* 16μs in ns */
+
 static int icm45686_get_shift(enum sensor_channel channel, int accel_fs, int gyro_fs, int8_t *shift)
 {
 	switch (channel) {
@@ -459,6 +465,22 @@ static int icm45686_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 		return 0;
 	}
 
+	uint16_t total = edata->header.fifo_count;
+
+	/*
+	 * Each 20-byte FIFO packet contains a 16-bit hardware timestamp at 16μs resolution.
+	 * The last packet's timestamp correlates with the host IRQ time (edata->header.timestamp).
+	 * Casting the delta to int16_t handles 16-bit counter wraparound — valid for batch
+	 * spans up to ±32767 * 16μs ≈ ±524ms.
+	 *
+	 * base_timestamp_ns = host_irq_time + (ts_first - ts_last) * 16μs
+	 *                   ≈ host time of the first sample in the batch
+	 */
+	uint16_t ts_first = (total > 0) ? frame_begin[0].timestamp : 0;
+	uint16_t ts_last  = (total > 0) ? frame_begin[total - 1].timestamp : 0;
+	int32_t  span_ns  = (int16_t)(ts_first - ts_last) * (int32_t)ICM45686_HW_TS_NS_PER_TICK;
+	uint64_t base_ts  = edata->header.timestamp + (int64_t)span_ns;
+
 	while (count < max_count && (*fit < edata->header.fifo_count)) {
 		struct icm45686_encoded_fifo_payload *fdata = &frame_begin[*fit];
 
@@ -473,6 +495,10 @@ static int icm45686_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			return -ENOTSUP;
 		}
 
+		/* Per-packet delta from first sample using hardware timestamps */
+		uint32_t hw_delta_ns = (uint32_t)((int16_t)(fdata->timestamp - ts_first) *
+						   (int32_t)ICM45686_HW_TS_NS_PER_TICK);
+
 		switch (chan_spec.chan_type) {
 		case SENSOR_CHAN_ACCEL_XYZ:
 		case SENSOR_CHAN_GYRO_XYZ: {
@@ -482,7 +508,8 @@ static int icm45686_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			icm45686_get_shift(chan_spec.chan_type, edata->header.accel_fs,
 					   edata->header.gyro_fs, &out->shift);
 
-			out->header.base_timestamp_ns = edata->header.timestamp;
+			out->header.base_timestamp_ns = base_ts;
+			out->readings[count].timestamp_delta = hw_delta_ns;
 
 			err = icm45686_fifo_read_imu_from_packet((uint8_t *)fdata, is_accel, 0,
 								 &out->readings[count].x);
@@ -501,7 +528,8 @@ static int icm45686_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 			icm45686_get_shift(chan_spec.chan_type, edata->header.accel_fs,
 					   edata->header.gyro_fs, &out->shift);
 
-			out->header.base_timestamp_ns = edata->header.timestamp;
+			out->header.base_timestamp_ns = base_ts;
+			out->readings[count].timestamp_delta = hw_delta_ns;
 			out->readings[count].temperature =
 				icm45686_fifo_read_temp_from_packet((uint8_t *)fdata);
 			break;
