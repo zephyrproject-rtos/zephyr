@@ -98,6 +98,10 @@ struct uart_stm32_data {
 	struct uart_dma_stream dma_tx;
 	uint8_t *rx_next_buffer;
 	size_t rx_next_buffer_len;
+	/* RXNE interrupt enable state saved when async RX is enabled,
+	 * restored when async RX is disabled.
+	 */
+	bool rx_irq_enabled;
 #endif
 #ifdef CONFIG_PM
 	bool tx_poll_stream_on;

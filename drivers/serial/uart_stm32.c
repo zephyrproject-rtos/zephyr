@@ -1624,6 +1624,9 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 	LL_USART_DisableIT_IDLE(usart);
 #endif /* HAS_RTO */
 
+	/* Disable error interrupt to prevent spurious ISRs when async RX is disabled */
+	LL_USART_DisableIT_ERROR(usart);
+
 	uart_stm32_dma_rx_flush(dev, STM32_ASYNC_STATUS_TIMEOUT);
 
 	async_evt_rx_buf_release(data);
@@ -1645,8 +1648,16 @@ static int uart_stm32_async_rx_disable(const struct device *dev)
 	data->rx_next_buffer = NULL;
 	data->rx_next_buffer_len = 0;
 
-	/* When async rx is disabled, enable interruptible instance of uart to function normally */
-	ll_usart_irq_rx_enable(usart);
+	/* Restore the RXNE interrupt to the state it had before async RX was
+	 * enabled. This keeps the receiver quiet for pure async users (no
+	 * spurious per-byte ISRs) while still restoring interrupt-driven mode
+	 * for users that switch back to it (e.g. a shell).
+	 */
+	if (data->rx_irq_enabled) {
+		ll_usart_irq_rx_enable(usart);
+	} else {
+		ll_usart_irq_rx_disable(usart);
+	}
 
 	LOG_DBG("rx: disabled");
 
@@ -1961,6 +1972,11 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 	data->dma_rx.buffer_length = buf_size;
 	data->dma_rx.counter = 0;
 	data->dma_rx.timeout = timeout;
+
+	/* Save the RXNE interrupt state so it can be restored when async RX is
+	 * disabled (e.g. when switching back to the interrupt-driven API).
+	 */
+	data->rx_irq_enabled = ll_usart_is_enabled_rxne(usart) != 0;
 
 	/* Disable RX interrupts to let DMA to handle it */
 	ll_usart_irq_rx_disable(usart);
