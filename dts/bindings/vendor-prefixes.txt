@@ -115,6 +115,7 @@ bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
 blackberry	BlackBerry Limited
+bliiot	BLIIoT Technology Co., Ltd.
 blues	Blues Wireless
 blutek	BluTek Power
 boe	BOE Technology Group Co., Ltd.
