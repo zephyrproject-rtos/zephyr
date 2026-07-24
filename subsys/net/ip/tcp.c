@@ -4227,7 +4227,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 
 		in = (struct net_sockaddr_in *)&local_addr;
 
-		if (net_sin_ptr(&context->local)->sin_addr) {
+		if (net_context_is_local_addr_set(context)) {
 			net_ipaddr_copy(&in->sin_addr,
 					net_sin_ptr(&context->local)->sin_addr);
 		}
@@ -4246,7 +4246,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 
 		in6 = (struct net_sockaddr_in6 *)&local_addr;
 
-		if (net_sin6_ptr(&context->local)->sin6_addr) {
+		if (net_context_is_local_addr_set(context)) {
 			net_ipaddr_copy(&in6->sin6_addr,
 				net_sin6_ptr(&context->local)->sin6_addr);
 		}

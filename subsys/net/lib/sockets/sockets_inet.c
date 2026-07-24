@@ -3354,7 +3354,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct net_sockaddr *addr,
 	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == NET_AF_INET) {
 		struct net_sockaddr_in addr4 = { 0 };
 
-		if (net_sin_ptr(&ctx->local)->sin_addr == NULL) {
+		if (!net_context_is_local_addr_set(ctx)) {
 			errno = EINVAL;
 			return -1;
 		}
@@ -3374,7 +3374,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct net_sockaddr *addr,
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->local.family == NET_AF_INET6) {
 		struct net_sockaddr_in6 addr6 = { 0 };
 
-		if (net_sin6_ptr(&ctx->local)->sin6_addr == NULL) {
+		if (!net_context_is_local_addr_set(ctx)) {
 			errno = EINVAL;
 			return -1;
 		}

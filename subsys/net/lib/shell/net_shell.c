@@ -87,7 +87,7 @@ void get_addresses(struct net_context *context,
 		   char addr_remote[], int remote_len)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV6) && context->local.family == NET_AF_INET6) {
-		if (net_sin6_ptr(&context->local)->sin6_addr != NULL) {
+		if (net_context_is_local_addr_set(context)) {
 			snprintk(addr_local, local_len, "[%s]:%u",
 				 net_sprint_ipv6_addr(
 					 net_sin6_ptr(&context->local)->sin6_addr),
@@ -102,7 +102,7 @@ void get_addresses(struct net_context *context,
 			 net_ntohs(net_sin6(&context->remote)->sin6_port));
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && context->local.family == NET_AF_INET) {
-		if (net_sin_ptr(&context->local)->sin_addr != NULL) {
+		if (net_context_is_local_addr_set(context)) {
 			snprintk(addr_local, local_len, "%s:%d",
 				 net_sprint_ipv4_addr(
 					 net_sin_ptr(&context->local)->sin_addr),
