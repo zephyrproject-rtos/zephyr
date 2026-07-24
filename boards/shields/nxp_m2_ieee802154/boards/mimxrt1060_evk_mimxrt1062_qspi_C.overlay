@@ -1,0 +1,65 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * RT1060 EVKC — NXP M.2 IEEE 802.15.4 SPI RCP
+ */
+
+/* Free GPIO_B0_xx — required for LPSPI4 */
+&lcdif {
+	status = "disabled";
+};
+
+&m2_bt_module {
+	/delete-property/ sdio-reset-gpios;
+	/delete-property/ w-disable-gpios;
+};
+
+&pinctrl {
+	pinmux_lpspi4_ieee802154: pinmux_lpspi4_ieee802154 {
+		group0 {
+			pinmux = <&iomuxc_gpio_b0_01_lpspi4_sdi>,
+				 <&iomuxc_gpio_b0_02_lpspi4_sdo>,
+				 <&iomuxc_gpio_b0_03_lpspi4_sck>;
+			bias-pull-down;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+
+		group1 {
+			/* CS GPIO */
+			pinmux = <&iomuxc_gpio_b0_00_gpio2_io00>;
+			bias-pull-up;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+
+		group2 {
+			/* SPI INT GPIO — ACTIVE_LOW, pull-up */
+			pinmux = <&iomuxc_gpio_b0_04_gpio2_io04>;
+			bias-pull-up;
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+};
+
+&lpspi4 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi4_ieee802154>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+
+	hdlc_rcp_spi: hdlc_rcp_if_spi@0 {
+		compatible = "spi,hdlc-rcp-if";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+		int-gpios = <&gpio2 4 GPIO_ACTIVE_LOW>;
+		reset-assert-time = <30>;
+		reset-delay = <500>;
+		status = "okay";
+	};
+};

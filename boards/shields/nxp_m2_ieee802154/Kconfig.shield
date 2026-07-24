@@ -1,0 +1,5 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_NXP_M2_2EL_2LL_IEEE802154
+	def_bool $(shields_list_contains,nxp_m2_2el_2ll_ieee802154)
