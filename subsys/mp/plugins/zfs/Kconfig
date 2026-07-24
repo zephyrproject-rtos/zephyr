@@ -1,0 +1,29 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MP_PLUGIN_ZFS
+	bool "Filesystem plugin support"
+	depends on FILE_SYSTEM
+
+if MP_PLUGIN_ZFS
+
+config MP_PLUGIN_ZFS_BLOCK_SIZE
+	int "Size of a buffer to read/write from/to a file"
+	default 4096
+	help
+	  Default blocksize (read/write chunk size) used when the element blocksize
+	  property is not set.
+	  Also used as the size of each internal buffer when zfilesrc falls back to
+	  its own static buffer pool.
+
+config MP_PLUGIN_ZFS_NUM_BUFS
+	int "Number of buffers in the internal output pool"
+	range 1 255
+	default 1
+	help
+	  Number of static buffers in zfilesrc's internal net_buf pool.
+	  1 may be enough for fully synchronous pipelines; use >1 if downstream can
+	  retain buffers asynchronously.
+	  If downstream proposes a pool, zfilesrc uses it instead.
+
+endif # MP_PLUGIN_ZFS
