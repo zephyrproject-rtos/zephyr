@@ -171,6 +171,114 @@ the most recent ones to the oldest ones. If it finds a valid ATE with a matching
 its data and returns the number of bytes that were read.
 If a history count is provided and different than 0, older data with same ID is retrieved.
 
+ZMS entry enumeration (iterator API)
+====================================
+
+Applications can enumerate stored entries without supplying a predefined list of IDs.
+This is useful when IDs are derived from payload data (for example packed addresses) and the
+application does not keep a separate index in flash.
+
+This API family is generally used at boot, when the application rebuilds its in-memory state from
+the ID/length metadata persisted in ZMS.
+
+  The iterator API consists of:
+
+- :c:func:`zms_iter_init` to initialize iterator state.
+- :c:func:`zms_iter_init_with_config` to initialize iterator state with optional ID mask and
+  inclusive ID range and predicate filters.
+- :c:func:`zms_iter_next` to retrieve one live entry (unique ID) at a time.
+- :c:func:`zms_iter_next_all` to retrieve all matching entries (full history, including delete markers).
+
+Choosing between :c:func:`zms_iter_next` and :c:func:`zms_iter_next_all`
+--------------------------------------------------------------------------
+
+- :c:func:`zms_iter_next` returns unique live ``(id, len)`` pairs:
+
+  - Sector/header entries are skipped.
+  - Delete markers (entries with ``len == 0``) are skipped.
+  - If the same ID appears multiple times in storage history, only the newest valid occurrence is
+    returned.
+  - To guarantee uniqueness, ZMS checks for newer entries of each candidate ID, which can require
+    additional scanning.
+
+- :c:func:`zms_iter_next_all` is faster and returns all matching ``(id, len)`` pairs as encountered:
+
+  - Historical entries for the same ID are returned.
+  - Delete markers (entries with ``len == 0``) are returned.
+  - No uniqueness filtering is performed.
+  - The application is responsible for filtering/compacting the returned pairs according to its
+    own policy.
+
+  Use :c:func:`zms_iter_init_with_config` when you want to enumerate only IDs matching a bitmask,
+  a specific inclusive ID range, a predicate callback, or any combination of those filters.
+
+Iterator return values
+----------------------
+
+Calling either :c:func:`zms_iter_next` or :c:func:`zms_iter_next_all` returns:
+
+- ``1`` when an entry is found; output arguments contain ID and data length.
+- ``0`` when there are no more entries to enumerate.
+- Negative errno on error (for example ``-EINVAL``, ``-EIO``, ``-ENXIO``).
+
+The iterator reports metadata only (ID and length). Data can then be read explicitly using
+:c:func:`zms_read` for the latest value, or :c:func:`zms_read_hist` for older revisions.
+
+Concurrency and snapshot behavior
+---------------------------------
+
+The iterator captures a traversal boundary when :c:func:`zms_iter_init` is called.
+Entries written after initialization are not part of that traversal.
+
+Do not call :c:func:`zms_write` (including delete operations) on the same :c:struct:`zms_fs`
+between two iterator-step calls (:c:func:`zms_iter_next` or :c:func:`zms_iter_next_all`).
+If a write triggers garbage collection while iterating, iterator behavior is undefined.
+
+Usage example
+-------------
+
+.. code-block:: c
+
+  struct zms_iter iter;
+  bool predicate_id_not_2(zms_id_t id)
+  {
+    return id != (zms_id_t)2;
+  }
+
+  struct zms_iter_config iter_config = {
+    .mask_id = (zms_id_t)0x03,
+    .min_id = (zms_id_t)0x01,
+    .max_id = (zms_id_t)0x03,
+    .use_mask = true,
+    .use_range = true,
+    .use_predicate = true,
+    .predicate_func = predicate_id_not_2,
+  };
+  zms_id_t id;
+  size_t len;
+  int rc;
+
+  rc = zms_iter_init_with_config(&fs, &iter, &iter_config);
+  if (rc) {
+    /* handle error */
+  }
+
+  while ((rc = zms_iter_next(&fs, &iter, &id, &len)) == 1) {
+    /* id: entry ID matching configured mask/range/predicate, len: current stored size */
+    printk("id=0x%llx len=%zu\n", (unsigned long long)id, len);
+  }
+
+  if (rc < 0) {
+    /* handle iterator error */
+  }
+
+Zero-initialize :c:struct:`zms_iter_config` or leave ``use_mask``, ``use_range``, and
+``use_predicate`` disabled to keep the default behavior: accept all IDs and the full
+``zms_id_t`` range.
+
+To determine how many revisions exist for an ID returned by the iterator,
+call :c:func:`zms_read_hist` with increasing ``cnt`` until ``-ENOENT`` is returned.
+
 ZMS free space calculation
 ==========================
 
@@ -444,6 +552,8 @@ Version 1
   and reinitialization on mount failure)
 - Supports a lookup cache to speed up repeated ID lookups with optional per-instance cache
   configuration to customize the cache size on a per-partition basis
+- Supports live-entry enumeration without predeclared ID lists via
+  :c:func:`zms_iter_init` and :c:func:`zms_iter_next`
 
 Future features
 ===============
