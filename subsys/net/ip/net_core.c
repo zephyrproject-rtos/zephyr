@@ -665,27 +665,24 @@ static void init_rx_queues(void)
 	 */
 	net_if_init();
 
-	/* This will take the interface up and start everything. */
-	net_if_post_init();
-
-	/* Things to init after network interface is working */
+	/* Things to init after network interface is init */
 	net_post_init();
 }
 
-static inline int services_init(void)
+static inline void services_init(void)
 {
 	int status;
 
 	socket_service_init();
 
 	status = net_dhcpv4_init();
-	if (status) {
-		return status;
+	if (status != 0) {
+		return;
 	}
 
 	status = net_dhcpv6_init();
 	if (status != 0) {
-		return status;
+		return;
 	}
 
 	net_dhcpv4_server_init();
@@ -700,8 +697,6 @@ static inline int services_init(void)
 	net_quic_init();
 
 	net_shell_init();
-
-	return status;
 }
 
 static int net_init(void)
@@ -720,7 +715,12 @@ static int net_init(void)
 
 	init_rx_queues();
 
-	return services_init();
+	services_init();
+
+	/* This will take the interface up and start everything. */
+	net_if_post_init();
+
+	return 0;
 }
 
 SYS_INIT(net_init, POST_KERNEL, CONFIG_NET_INIT_PRIO);
