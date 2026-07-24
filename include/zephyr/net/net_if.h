@@ -300,6 +300,11 @@ enum net_if_flag {
 	/** Mutex locking on TX data path disabled on the interface. */
 	NET_IF_NO_TX_LOCK,
 
+	/** Interface is a loopback interface, all traffic sent to it is
+	 * looped back to the same device without leaving it.
+	 */
+	NET_IF_LOOPBACK,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
@@ -3063,8 +3068,13 @@ bool net_if_need_calc_rx_checksum(struct net_if *iface,
 static inline bool net_if_need_calc_rx_checksum(struct net_if *iface,
 						enum net_if_checksum_type chksum_type)
 {
-	ARG_UNUSED(iface);
 	ARG_UNUSED(chksum_type);
+
+	if (IS_ENABLED(CONFIG_NET_LOOPBACK_SKIP_CHECKSUM) &&
+	    net_if_flag_is_set(iface, NET_IF_LOOPBACK)) {
+		return false;
+	}
+
 	return true;
 }
 #endif /* CONFIG_NET_CHECKSUM_OFFLOAD */
@@ -3087,8 +3097,13 @@ bool net_if_need_calc_tx_checksum(struct net_if *iface,
 static inline bool net_if_need_calc_tx_checksum(struct net_if *iface,
 						enum net_if_checksum_type chksum_type)
 {
-	ARG_UNUSED(iface);
 	ARG_UNUSED(chksum_type);
+
+	if (IS_ENABLED(CONFIG_NET_LOOPBACK_SKIP_CHECKSUM) &&
+	    net_if_flag_is_set(iface, NET_IF_LOOPBACK)) {
+		return false;
+	}
+
 	return true;
 }
 #endif /* CONFIG_NET_CHECKSUM_OFFLOAD */

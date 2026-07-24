@@ -50,6 +50,8 @@ static void loopback_init(struct net_if *iface)
 	net_if_set_link_addr(iface, "\x00\x00\x5e\x00\x53\xff", 6,
 			     NET_LINK_DUMMY);
 
+	net_if_flag_set(iface, NET_IF_LOOPBACK);
+
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		struct net_in_addr ipv4_loopback = NET_INADDR_LOOPBACK_INIT;
 		struct net_in_addr netmask = { { { 255, 0, 0, 0 } } };
@@ -104,6 +106,46 @@ int loopback_get_num_dropped_packets(void)
 
 #endif
 
+/* The packet can be handed over to the RX path without copying it if
+ * nobody else holds a reference to it or to its buffers. Otherwise the
+ * original data must be preserved, e.g. TCP keeps a reference to the
+ * packet data for a possible retransmission.
+ */
+static bool loopback_can_reuse_pkt(struct net_pkt *pkt)
+{
+	struct net_buf *buf;
+
+	/* TCP segments can sit in the peer's receive queue for an
+	 * arbitrarily long time. Reusing the original packet would tie
+	 * up the TX packet/buffer pools there, starving the sender.
+	 * Keep the copy for TCP so that the receive window keeps being
+	 * backed by the RX pools.
+	 */
+	if (IS_ENABLED(CONFIG_NET_TCP)) {
+		if (net_pkt_family(pkt) == NET_AF_INET &&
+		    NET_IPV4_HDR(pkt)->proto == NET_IPPROTO_TCP) {
+			return false;
+		}
+
+		if (net_pkt_family(pkt) == NET_AF_INET6 &&
+		    NET_IPV6_HDR(pkt)->nexthdr == NET_IPPROTO_TCP) {
+			return false;
+		}
+	}
+
+	if (atomic_get(&pkt->atomic_ref) != 1) {
+		return false;
+	}
+
+	for (buf = pkt->buffer; buf != NULL; buf = buf->frags) {
+		if (buf->ref > 1U) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct net_pkt *cloned;
@@ -129,15 +171,25 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	/* We should simulate normal driver meaning that if the packet is
-	 * properly sent (which is always in this driver), then the packet
-	 * must be dropped. This is very much needed for TCP packets where
-	 * the packet is reference counted in various stages of sending.
-	 */
-	cloned = net_pkt_rx_clone(pkt, K_MSEC(100));
-	if (!cloned) {
-		res = -ENOMEM;
-		goto out;
+	if (loopback_can_reuse_pkt(pkt)) {
+		/* Nobody else holds a reference to the packet or its
+		 * buffers, so it can be handed over to the RX path as is,
+		 * without paying for a full copy. The reference taken here
+		 * is released by the RX path, the TX reference is released
+		 * by the L2 when this function returns.
+		 */
+		cloned = net_pkt_ref(pkt);
+	} else {
+		/* We should simulate normal driver meaning that if the packet is
+		 * properly sent (which is always in this driver), then the packet
+		 * must be dropped. This is very much needed for TCP packets where
+		 * the packet is reference counted in various stages of sending.
+		 */
+		cloned = net_pkt_rx_clone(pkt, K_MSEC(100));
+		if (!cloned) {
+			res = -ENOMEM;
+			goto out;
+		}
 	}
 
 	/* We need to swap the IP addresses because otherwise
@@ -145,23 +197,33 @@ static int loopback_send(const struct device *dev, struct net_pkt *pkt)
 	 *
 	 * Some of the network tests require that addresses are not swapped so allow
 	 * the test to control this remotely.
+	 *
+	 * Note that "cloned" and "pkt" may be the same packet, so the swap
+	 * must go through a temporary copy of the source address.
 	 */
 	if (!COND_CODE_1(CONFIG_NET_TEST, (loopback_dont_swap_addresses), (false))) {
 		if (net_pkt_family(pkt) == NET_AF_INET6) {
+			uint8_t addr[NET_IPV6_ADDR_SIZE];
+
+			net_ipv6_addr_copy_raw(addr, NET_IPV6_HDR(pkt)->src);
 			net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->src,
 					       NET_IPV6_HDR(pkt)->dst);
 			net_ipv6_addr_copy_raw(NET_IPV6_HDR(cloned)->dst,
-					       NET_IPV6_HDR(pkt)->src);
+					       addr);
 		} else {
+			uint8_t addr[NET_IPV4_ADDR_SIZE];
+
+			net_ipv4_addr_copy_raw(addr, NET_IPV4_HDR(pkt)->src);
 			net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->src,
 					       NET_IPV4_HDR(pkt)->dst);
 			net_ipv4_addr_copy_raw(NET_IPV4_HDR(cloned)->dst,
-					       NET_IPV4_HDR(pkt)->src);
+					       addr);
 		}
 	}
 
 	res = net_recv_data(net_pkt_iface(cloned), cloned);
 	if (res < 0) {
+		net_pkt_unref(cloned);
 		LOG_ERR("Data receive failed.");
 	}
 
