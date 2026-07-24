@@ -118,6 +118,12 @@
 		reset-gpios = <&gpioe 1 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpioq 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 	};
+
+	audio_codec: wm8904@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a>;
+		fs-ratio = <256>;
+	};
 };
 
 &clk_hse {
@@ -193,6 +199,25 @@
 	pll-src = <3>;
 	ic-div = <2>;
 	status = "okay";
+};
+
+/*
+ * SAI1:
+ * f_IC7 = 8.214 MHz (1.536 GHz / 187, +0.27%)
+ * Suitable for 16 kHz audio sample rates with div-512 SAI MCLK divider
+ * 8.214 MHz / 512 = 16.043 kHz
+ *
+ * f_IC7 = 11.294 MHz (1.536 GHz / 136, +0.04%)
+ * Suitable for 44.1 kHz audio sample rates with div-256 SAI MCLK divider
+ * 11.294 MHz / 256 = 44.117 kHz
+ *
+ * f_IC7 = 12.288 MHz (1.536 GHz / 125, 0.00%)
+ * Suitable for 48 kHz audio sample rates with div-256 SAI MCLK divider
+ * 12.288 MHz / 256 = 48.000 kHz
+ */
+&ic7 {
+	pll-src = <2>;
+	ic-div = <136>;
 };
 
 &ic10 {
@@ -607,4 +632,27 @@ zephyr_jpegenc: &jpeg {
 	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
+};
+
+&sai1 {
+	clocks = <&rcc STM32_CLOCK(APB2, 21)>,
+		 <&rcc STM32_SRC_IC7 SAI1_SEL(2)>;
+};
+
+&sai1_a {
+	pinctrl-0 = <&sai1_mclk_a_pg7 &sai1_sd_a_pb7
+		     &sai1_fs_a_pb0 &sai1_sck_a_pb6>;
+	pinctrl-names = "default";
+
+	mclk-enable;
+	mclk-divider = "div-256";
+	dma-names = "tx";
+};
+
+&sai1_b {
+	pinctrl-0 = <&sai1_sd_b_pe3>;
+	pinctrl-names = "default";
+
+	synchronous;
+	dma-names = "rx";
 };
