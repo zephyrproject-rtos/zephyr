@@ -1586,6 +1586,55 @@
 				status = "disabled";
 			};
 
+			mdf1: mdf@52025000 {
+				compatible = "st,stm32-mdf";
+				reg = <0x52025000 0x1000>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 16)>,
+					 <&rcc STM32_SRC_IC8 MDF1_SEL(3)>;
+				clock-names = "pclk", "aclk";
+				resets = <&rctl STM32_RESET(AHB2, 16)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+				status = "disabled";
+
+				filter@52025080 {
+					reg = <0x52025080 0x80>;
+					interrupts = <142 0>;
+					status = "disabled";
+				};
+
+				filter@52025100 {
+					reg = <0x52025100 0x80>;
+					interrupts = <143 0>;
+					status = "disabled";
+				};
+
+				filter@52025180 {
+					reg = <0x52025180 0x80>;
+					interrupts = <144 0>;
+					status = "disabled";
+				};
+
+				filter@52025200 {
+					reg = <0x52025200 0x80>;
+					interrupts = <145 0>;
+					status = "disabled";
+				};
+
+				filter@52025280 {
+					reg = <0x52025280 0x80>;
+					interrupts = <146 0>;
+					status = "disabled";
+				};
+
+				filter@52025300 {
+					reg = <0x52025300 0x80>;
+					interrupts = <147 0>;
+					status = "disabled";
+				};
+			};
+
 			dma2d: dma@58021000 {
 				compatible = "st,stm32-dma2d";
 				reg = <0x58021000 0x1000>;
