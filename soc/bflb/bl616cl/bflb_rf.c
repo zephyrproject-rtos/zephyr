@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * Copyright The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,21 +16,58 @@
 
 #include <bflb_soc.h>
 #include <wl_api.h>
-#include <rfparam/rfparam_adapter.h>
+#include <aon_reg.h>
 
-LOG_MODULE_REGISTER(bflb_rf, LOG_LEVEL_ERR);
+LOG_MODULE_REGISTER(bflb_rf, LOG_LEVEL_DBG);
 
-#define XTAL_FREQ DT_PROP(DT_NODELABEL(clk_crystal), clock_frequency)
+#define XTAL_FREQ	DT_PROP(DT_NODELABEL(clk_crystal), clock_frequency)
 
-#define AON_BASE_ADDR       0x2000f000U
-#define AON_XTAL_CFG_OFFSET 0x884U
-#define AON_XTAL_CFG_ADDR   (AON_BASE_ADDR + AON_XTAL_CFG_OFFSET)
-#define CAPCODE_IN_POS      22U
-#define CAPCODE_OUT_POS     16U
-#define CAPCODE_MSK         0x3fU
+#define WIFI_NODE	DT_INST(0, bflb_wifi6)
+#define BT_NODE		DT_INST(0, bflb_bt_hci)
 
-#define BFLB_EFUSE_DEFAULT_TRIM 0x80U
-#define TEMPERATURE_MP_DEFAULT  35
+#define AON_XTAL_CFG_ADDR	(AON_BASE + AON_XTAL_CORE0_OFFSET)
+#define CAPCODE_IN_POS		AON_XTAL_CAPCODE_IN_AON_POS
+#define CAPCODE_OUT_POS		AON_XTAL_CAPCODE_OUT_AON_POS
+#define CAPCODE_MSK		0xffU
+
+#define BFLB_EFUSE_DEFAULT_TRIM	0x80U
+#define TEMPERATURE_MP_DEFAULT	35
+
+#define RFPARAM_ERR_PARAM_CHECK -50
+
+#define DT_COPY_I8(node, prop, dst, n)                                                             \
+	do {                                                                                       \
+		static const int32_t _v[] = {                                                      \
+			DT_FOREACH_PROP_ELEM_SEP(node, prop,                                       \
+				DT_PROP_BY_IDX, (,))};                                             \
+		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
+		for (int _i = 0; _i < (n); _i++) {                                                 \
+			(dst)[_i] = (int8_t)_v[_i];                                                \
+		}                                                                                  \
+	} while (0)
+
+#define DT_COPY_I16(node, prop, dst, n)                                                            \
+	do {                                                                                       \
+		static const int32_t _v[] = {                                                      \
+			DT_FOREACH_PROP_ELEM_SEP(node, prop,                                       \
+				DT_PROP_BY_IDX, (,))};                                             \
+		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
+		for (int _i = 0; _i < (n); _i++) {                                                 \
+			(dst)[_i] = (int16_t)_v[_i];                                               \
+		}                                                                                  \
+	} while (0)
+
+/* pwr-offset DTS encoding: 16 = 0 dBm, step 0.25 dBm */
+#define DT_COPY_PWR_OFFSET(node, prop, dst, n)                                                     \
+	do {                                                                                       \
+		static const int32_t _v[] = {                                                      \
+			DT_FOREACH_PROP_ELEM_SEP(node, prop,                                       \
+				DT_PROP_BY_IDX, (,))};                                             \
+		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
+		for (int _i = 0; _i < (n); _i++) {                                                 \
+			(dst)[_i] = (int8_t)(_v[_i] - 16);                                         \
+		}                                                                                  \
+	} while (0)
 
 struct efuse_trim_desc {
 	uint16_t en_addr;
@@ -39,42 +76,57 @@ struct efuse_trim_desc {
 	uint8_t value_len;
 };
 
-static const struct efuse_trim_desc trim_dcdc = {
-	.en_addr = 0x78 * 8 + 31,
-	.parity_addr = 0x78 * 8 + 30,
-	.value_addr = 0x78 * 8 + 26,
-	.value_len = 4,
+static const struct efuse_trim_desc rcal = {
+	.en_addr = 0x60 * 8 + 29,
+	.parity_addr = 0x60 * 8 + 28,
+	.value_addr = 0x60 * 8 + 17,
+	.value_len = 11,
 };
-static const struct efuse_trim_desc trim_icx = {
-	.en_addr = 0x74 * 8 + 29,
-	.parity_addr = 0x74 * 8 + 28,
-	.value_addr = 0x74 * 8 + 22,
-	.value_len = 6,
-};
-static const struct efuse_trim_desc trim_iptat = {
-	.en_addr = 0x74 * 8 + 31,
-	.parity_addr = 0x74 * 8 + 30,
-	.value_addr = 0x68 * 8 + 22,
-	.value_len = 5,
-};
+
 static const struct efuse_trim_desc trim_tmp_mp0 = {
-	.en_addr = 0xD8 * 8 + 9,
-	.parity_addr = 0xD8 * 8 + 8,
-	.value_addr = 0xD8 * 8 + 0,
+	.en_addr = 0x38 * 8 + 3,
+	.parity_addr = 0x38 * 8 + 2,
+	.value_addr = 0x3c * 8 + 16,
 	.value_len = 8,
 };
+
 static const struct efuse_trim_desc trim_tmp_mp1 = {
-	.en_addr = 0xD8 * 8 + 19,
-	.parity_addr = 0xD8 * 8 + 18,
-	.value_addr = 0xD8 * 8 + 10,
+	.en_addr = 0x38 * 8 + 1,
+	.parity_addr = 0x38 * 8 + 0,
+	.value_addr = 0x3c * 8 + 8,
 	.value_len = 8,
 };
+
 static const struct efuse_trim_desc trim_tmp_mp2 = {
-	.en_addr = 0xD8 * 8 + 29,
-	.parity_addr = 0xD8 * 8 + 28,
-	.value_addr = 0xD8 * 8 + 20,
+	.en_addr = 0x40 * 8 + 31,
+	.parity_addr = 0x40 * 8 + 30,
+	.value_addr = 0x3c * 8 + 0,
 	.value_len = 8,
 };
+
+static const struct efuse_trim_desc trim_tmp_mp3 = {
+	.en_addr = 0x58 * 8 + 28,
+	.parity_addr = 0x58 * 8 + 27,
+	.value_addr = 0x5C * 8 + 16,
+	.value_len = 8,
+};
+
+static const struct efuse_trim_desc trim_tmp_mp4 = {
+	.en_addr = 0x58 * 8 + 1,
+	.parity_addr = 0x58 * 8 + 0,
+	.value_addr = 0x5C * 8 + 24,
+	.value_len = 8,
+};
+
+static const struct efuse_trim_desc trim_tmp_mp5 = {
+	.en_addr = 0x5C * 8 + 15,
+	.parity_addr = 0x5C * 8 + 14,
+	.value_addr = 0x5C * 8 + 6,
+	.value_len = 8,
+};
+
+/* Retention memory for PHY/RF driver calibration data */
+static uint8_t wl_rmem_buf[CONFIG_BFLB_BL616CL_WL_RMEM_SIZE] __aligned(4);
 
 static int efuse_read_trim(const struct device *efuse, const struct efuse_trim_desc *td,
 			   uint32_t *value)
@@ -120,8 +172,6 @@ static int efuse_read_trim(const struct device *efuse, const struct efuse_trim_d
 	return 0;
 }
 
-static uint8_t wl_rmem_buf[CONFIG_BFLB_BL61X_WL_RMEM_SIZE] __aligned(4);
-
 static void capcode_get(uint8_t *capcode_in, uint8_t *capcode_out)
 {
 	uint32_t val = sys_read32(AON_XTAL_CFG_ADDR);
@@ -140,48 +190,12 @@ static void capcode_set(uint8_t capcode_in, uint8_t capcode_out)
 	sys_write32(val, AON_XTAL_CFG_ADDR);
 }
 
-#define WIFI_NODE DT_INST(0, bflb_wifi6)
-#define BT_NODE   DT_INST(0, bflb_bt_hci)
-
-#define DT_COPY_I8(node, prop, dst, n)                                                             \
-	do {                                                                                       \
-		static const int32_t _v[] = {                                                      \
-			DT_FOREACH_PROP_ELEM_SEP(node, prop,              \
-				DT_PROP_BY_IDX, (,))};                   \
-		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
-		for (int _i = 0; _i < (n); _i++) {                                                 \
-			(dst)[_i] = (int8_t)_v[_i];                                                \
-		}                                                                                  \
-	} while (0)
-
-#define DT_COPY_I16(node, prop, dst, n)                                                            \
-	do {                                                                                       \
-		static const int32_t _v[] = {                                                      \
-			DT_FOREACH_PROP_ELEM_SEP(node, prop,              \
-				DT_PROP_BY_IDX, (,))};                   \
-		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
-		for (int _i = 0; _i < (n); _i++) {                                                 \
-			(dst)[_i] = (int16_t)_v[_i];                                               \
-		}                                                                                  \
-	} while (0)
-
-/* pwr-offset DTS encoding: 16 = 0 dBm, step 0.25 dBm */
-#define DT_COPY_PWR_OFFSET(node, prop, dst, n)                                                     \
-	do {                                                                                       \
-		static const int32_t _v[] = {                                                      \
-			DT_FOREACH_PROP_ELEM_SEP(node, prop,              \
-				DT_PROP_BY_IDX, (,))};                   \
-		BUILD_ASSERT(ARRAY_SIZE(_v) == (n), #prop " must have " #n " entries");            \
-		for (int _i = 0; _i < (n); _i++) {                                                 \
-			(dst)[_i] = (int8_t)(_v[_i] - 16);                                         \
-		}                                                                                  \
-	} while (0)
-
-int8_t rfparam_load(struct wl_param_t *param)
+static int8_t rfparam_load(struct wl_param_t *param)
 {
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
-	static const struct efuse_trim_desc *const tmp_mp_descs[] = {&trim_tmp_mp2, &trim_tmp_mp1,
-								     &trim_tmp_mp0};
+	static const struct efuse_trim_desc *const tmp_mp_descs[] = {
+		&trim_tmp_mp5, &trim_tmp_mp4, &trim_tmp_mp3, &trim_tmp_mp2, &trim_tmp_mp1,
+		&trim_tmp_mp0};
 	uint32_t val;
 	int i;
 
@@ -276,7 +290,7 @@ int8_t rfparam_load(struct wl_param_t *param)
 	DT_COPY_PWR_OFFSET(BT_NODE, pwr_offset_bz, param->pwrcal.channel_pwrcomp_bz, 5);
 #endif
 
-	param->pwrcal.Temperature_MP = TEMPERATURE_MP_DEFAULT;
+	param->ef.Temperature_MP = TEMPERATURE_MP_DEFAULT;
 #ifdef CONFIG_WIFI_BFLB_WIFI6_DEFAULT_COUNTRY
 	param->country_code = CONFIG_WIFI_BFLB_WIFI6_DEFAULT_COUNTRY[0] |
 			      (CONFIG_WIFI_BFLB_WIFI6_DEFAULT_COUNTRY[1] << 8);
@@ -284,12 +298,12 @@ int8_t rfparam_load(struct wl_param_t *param)
 
 	for (i = 0; i < ARRAY_SIZE(tmp_mp_descs); i++) {
 		if (efuse_read_trim(efuse, tmp_mp_descs[i], &val) == 0) {
-			param->pwrcal.Temperature_MP = val;
+			param->ef.Temperature_MP = val;
 			break;
 		}
 	}
 
-	return RFPARAM_SUSS;
+	return 0;
 }
 
 static void efuse_load_trims(struct wl_cfg_t *cfg)
@@ -297,22 +311,22 @@ static void efuse_load_trims(struct wl_cfg_t *cfg)
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
 	uint32_t val;
 
-	cfg->param.ef.dcdc_vout_trim_aon = BFLB_EFUSE_DEFAULT_TRIM;
-	if (efuse_read_trim(efuse, &trim_dcdc, &val) == 0) {
-		cfg->param.ef.dcdc_vout_trim_aon = val;
-	}
-
 	cfg->param.ef.icx_code = BFLB_EFUSE_DEFAULT_TRIM;
-	if (efuse_read_trim(efuse, &trim_icx, &val) == 0) {
-		cfg->param.ef.icx_code = val;
-	}
-
-	cfg->param.ef.iptat_code = BFLB_EFUSE_DEFAULT_TRIM;
-	if (efuse_read_trim(efuse, &trim_iptat, &val) == 0) {
-		cfg->param.ef.iptat_code = val;
+	if (efuse_read_trim(efuse, &rcal, &val) == 0) {
+		cfg->param.ef.icx_code = (val >> 5U) & 0x3f;
+		cfg->param.ef.iptat_code = val & 0x1f;
 	}
 }
 
+/*
+ * bflb_rf_init — Initialize PHY/RF hardware via wl_init().
+ *
+ * Safe to call from both BLE and WiFi init paths: the static guard
+ * ensures wl_init() runs exactly once.
+ *
+ * Mode is WL_API_MODE_ALL when WiFi is enabled (covers both WLAN + BLE),
+ * otherwise WL_API_MODE_BZ for BLE-only.
+ */
 int bflb_rf_init(void)
 {
 	static atomic_t initialized;
@@ -341,15 +355,15 @@ int bflb_rf_init(void)
 		cfg->mode = WL_API_MODE_BZ;
 	}
 
-	cfg->param.xtalfreq_hz = XTAL_FREQ;
 	cfg->en_param_load = 1;
+	cfg->device_info = 0;
 	cfg->en_full_cal = 1;
-	cfg->en_capcode_set = 1;
 	cfg->capcode_get = capcode_get;
 	cfg->capcode_set = capcode_set;
 	cfg->param_load = rfparam_load;
 	cfg->log_level = WL_LOG_LEVEL_NONE;
 	cfg->log_printf = NULL;
+	cfg->param.xtalfreq_hz = XTAL_FREQ;
 
 	efuse_load_trims(cfg);
 
@@ -360,6 +374,7 @@ int bflb_rf_init(void)
 		return -EIO;
 	}
 
+	atomic_set(&initialized, 0);
 	cfg->en_param_load = 0;
 	cfg->en_full_cal = 0;
 
@@ -392,4 +407,14 @@ void arch_delay_ms(uint32_t ms)
 void arch_delay_us(uint32_t us)
 {
 	k_busy_wait(us);
+}
+
+__ramfunc uintptr_t bflb_irq_save(void)
+{
+	return irq_lock();
+}
+
+__ramfunc void bflb_irq_restore(uintptr_t flags)
+{
+	irq_unlock(flags);
 }

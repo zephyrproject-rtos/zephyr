@@ -42,3 +42,18 @@ else()
   zephyr_code_relocate_ifdef(CONFIG_CACHE_BFLB_L1C LIBRARY drivers__cache LOCATION ITCM NOKEEP)
   zephyr_code_relocate_ifdef(CONFIG_OTP_BFLB LIBRARY drivers__otp LOCATION ITCM NOKEEP)
 endif()
+
+# RF is harmonizable for the 'Wifi6' version of the IP and blob stack (BL61x, BL616CL, BL618DG)
+if(CONFIG_WIFI_BFLB AND (
+    CONFIG_SOC_SERIES_BL61X OR
+    CONFIG_SOC_SERIES_BL616CL)
+  )
+  add_subdirectory(rf/wifi6)
+endif()
+
+if(CONFIG_BT_BFLB AND (
+    CONFIG_SOC_SERIES_BL61X OR
+    CONFIG_SOC_SERIES_BL616CL)
+  )
+  add_subdirectory(rf/wifi6_ble)
+endif()
