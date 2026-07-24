@@ -7,3 +7,16 @@ config MBOX_ESP32
 	depends on DT_HAS_ESPRESSIF_MBOX_ESP32_ENABLED
 	help
 	  Driver for ESP32 mailbox based on its doorbell mechanism.
+
+if MBOX_ESP32
+
+config MBOX_ESP32_LP_READY_TIMEOUT_US
+	int "Time to wait for the LP core to be ready, in microseconds"
+	default 20000
+	depends on SOC_ESP32C5_HPCORE || SOC_ESP32C6_HPCORE || SOC_ESP32P4_HPCORE
+	help
+	  The application is held back this long for the LP core to be ready to
+	  service the mailbox, so a first send is not lost. On expiry it boots
+	  anyway and mbox_send() reports -EBUSY until the LP core shows up.
+
+endif # MBOX_ESP32
