@@ -25,6 +25,8 @@ extern "C" {
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
 /**
  * @brief Type used to represent a channel mutable data.
  *
@@ -75,6 +77,8 @@ struct zbus_channel_data {
 #endif /* CONFIG_ZBUS_CHANNEL_PUBLISH_STATS */
 };
 
+/** @endcond */
+
 /**
  * @brief Check validity of message before publishing
  *
@@ -93,6 +97,7 @@ typedef bool (*zbus_validator)(const void *msg, size_t msg_size);
  * access and usage.
  */
 struct zbus_channel {
+	/** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_ZBUS_CHANNEL_NAME) || defined(__DOXYGEN__)
 	/** Channel name. */
 	const char *name;
@@ -122,6 +127,7 @@ struct zbus_channel {
 
 	/** Mutable channel data struct. */
 	struct zbus_channel_data *data;
+	/** @endcond */
 };
 
 /**
@@ -146,6 +152,7 @@ enum __packed zbus_observer_type {
 	ZBUS_OBSERVER_ASYNC_LISTENER_TYPE,
 };
 
+/** @cond INTERNAL_HIDDEN */
 struct zbus_observer_data {
 	/** Enabled flag. Indicates if observer is receiving notification. */
 	bool enabled;
@@ -155,6 +162,7 @@ struct zbus_observer_data {
 	int priority;
 #endif /* CONFIG_ZBUS_PRIORITY_BOOST */
 };
+/** @endcond */
 
 /**
  * @brief Type used to represent an observer.
@@ -172,6 +180,7 @@ struct zbus_observer_data {
  *
  */
 struct zbus_observer {
+	/** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_ZBUS_OBSERVER_NAME) || defined(__DOXYGEN__)
 	/** Observer name. */
 	const char *name;
@@ -203,6 +212,7 @@ struct zbus_observer {
 		struct k_work *work;
 #endif /* CONFIG_ZBUS_ASYNC_LISTENER */
 	};
+	/** @endcond */
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -801,6 +811,8 @@ int zbus_chan_notify(const struct zbus_channel *chan, k_timeout_t timeout);
  *
  * This routine returns the channel's name reference.
  *
+ * @kconfig_dep{CONFIG_ZBUS_CHANNEL_NAME}
+ *
  * @param chan The channel's reference.
  *
  * @return Channel's name reference.
@@ -819,6 +831,8 @@ static inline const char *zbus_chan_name(const struct zbus_channel *chan)
 /**
  * @brief Retrieve a zbus channel from its numeric identifier
  *
+ * @kconfig_dep{CONFIG_ZBUS_CHANNEL_ID}
+ *
  * @param channel_id Unique channel ID from @ref ZBUS_CHAN_DEFINE_WITH_ID
  *
  * @retval NULL If channel with ID @a channel_id does not exist.
@@ -832,6 +846,8 @@ const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id);
 
 /**
  * @brief Retrieve a zbus channel from its name string
+ *
+ * @kconfig_dep{CONFIG_ZBUS_CHANNEL_NAME}
  *
  * @param name Name of the channel to retrieve.
  *
@@ -1002,6 +1018,8 @@ static inline void *zbus_chan_user_data(const struct zbus_channel *chan)
 /**
  * @brief Set the channel's msg subscriber `net_buf` pool.
  *
+ * @kconfig_dep{CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION}
+ *
  * @param chan The channel's reference.
  * @param pool The reference to the `net_buf` memory pool.
  */
@@ -1025,6 +1043,8 @@ static inline void zbus_chan_set_msg_sub_pool(const struct zbus_channel *chan,
  * @ref zbus_chan_finish workflow, which cannot automatically determine whether
  * new data has been published or not.
  *
+ * @kconfig_dep{CONFIG_ZBUS_CHANNEL_PUBLISH_STATS}
+ *
  * @warning This function must only be used directly for already locked channels.
  *
  * @param chan The channel's reference.
@@ -1039,6 +1059,8 @@ static inline void zbus_chan_pub_stats_update(const struct zbus_channel *chan)
 
 /**
  * @brief Get the time a channel was last published to.
+ *
+ * @kconfig_dep{CONFIG_ZBUS_CHANNEL_PUBLISH_STATS}
  *
  * @note Will return 0 if channel has not yet been published to.
  *
@@ -1056,6 +1078,8 @@ static inline k_ticks_t zbus_chan_pub_stats_last_time(const struct zbus_channel 
 /**
  * @brief Get the number of times a channel has been published to.
  *
+ * @kconfig_dep{CONFIG_ZBUS_CHANNEL_PUBLISH_STATS}
+ *
  * @note Will return 0 if channel has not yet been published to.
  *
  * @param chan The channel's reference.
@@ -1071,6 +1095,8 @@ static inline uint32_t zbus_chan_pub_stats_count(const struct zbus_channel *chan
 
 /**
  * @brief Get the average period between publishes to a channel.
+ *
+ * @kconfig_dep{CONFIG_ZBUS_CHANNEL_PUBLISH_STATS}
  *
  * @note Will return 0 if channel has not yet been published to.
  *
@@ -1092,6 +1118,8 @@ static inline uint32_t zbus_chan_pub_stats_avg_period(const struct zbus_channel 
 
 /**
  * @brief Get the age of a message in a channel
+ *
+ * @kconfig_dep{CONFIG_ZBUS_CHANNEL_PUBLISH_STATS}
  *
  * @param chan The channel's reference.
  *
@@ -1120,6 +1148,7 @@ static inline void zbus_chan_pub_stats_update(const struct zbus_channel *chan)
 /**
  * @brief Structure used to register runtime observers
  *
+ * @kconfig_dep{CONFIG_ZBUS_RUNTIME_OBSERVERS}
  */
 struct zbus_observer_node {
 	sys_snode_t node;
@@ -1204,6 +1233,8 @@ static inline int zbus_chan_add_obs(const struct zbus_channel *chan,
  * @brief Remove an observer from a channel.
  *
  * This routine removes an observer to the channel.
+ *
+ * @kconfig_dep{CONFIG_ZBUS_RUNTIME_OBSERVERS}
  *
  * @param chan The channel's reference.
  * @param obs The observer's reference to be removed.
@@ -1294,6 +1325,8 @@ int zbus_obs_is_chan_notification_masked(const struct zbus_observer *obs,
  *
  * This routine returns the observer's name reference.
  *
+ * @kconfig_dep{CONFIG_ZBUS_OBSERVER_NAME}
+ *
  * @param obs The observer's reference.
  *
  * @return The observer's name reference.
@@ -1312,6 +1345,8 @@ static inline const char *zbus_obs_name(const struct zbus_observer *obs)
 /**
  * @brief Set the observer thread priority by attaching it to a thread.
  *
+ * @kconfig_dep{CONFIG_ZBUS_PRIORITY_BOOST}
+ *
  * @param[in] obs The observer's reference.
  *
  * @retval 0 Observer detached from the thread.
@@ -1322,6 +1357,8 @@ int zbus_obs_attach_to_thread(const struct zbus_observer *obs);
 
 /**
  * @brief Clear the observer thread priority by detaching it from a thread.
+ *
+ * @kconfig_dep{CONFIG_ZBUS_PRIORITY_BOOST}
  *
  * @param[in] obs The observer's reference.
  *
@@ -1360,6 +1397,8 @@ int zbus_sub_wait(const struct zbus_observer *sub, const struct zbus_channel **c
  * @brief Wait for a channel message.
  *
  * This routine makes the subscriber wait for the new message in case of channel publication.
+ *
+ * @kconfig_dep{CONFIG_ZBUS_MSG_SUBSCRIBER}
  *
  * @param[in] sub The subscriber's reference.
  * @param[out] chan The notification channel's reference.
