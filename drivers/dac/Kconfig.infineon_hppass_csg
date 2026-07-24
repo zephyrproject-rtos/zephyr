@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_INFINEON_HPPASS_CSG
+	bool "Infineon HPPASS CSG DAC driver"
+	default y
+	depends on DT_HAS_INFINEON_HPPASS_CSG_DAC_ENABLED
+	select MFD
+	help
+	  Enable the DAC driver for the Infineon HPPASS CSG block. Each instance
+	  exposes one CSG slice's 10-bit DAC through the Zephyr DAC API in
+	  direct-write mode.  Advanced modes (buffered, hysteretic, slope, LUT)
+	  are not yet supported.
+
+config DAC_INFINEON_HPPASS_CSG_INIT_PRIORITY
+	int "Infineon HPPASS CSG DAC init priority"
+	default 50
+	depends on DAC_INFINEON_HPPASS_CSG
+	help
+	  Initialization priority for the per-slice DAC child driver.  Must be
+	  higher (later) than CONFIG_MFD_INFINEON_HPPASS_CSG_INIT_PRIORITY so
+	  the CSG MFD parent is ready before this driver runs.
