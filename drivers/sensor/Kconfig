@@ -87,6 +87,7 @@ source "drivers/sensor/Kconfig.sensor_clock"
 comment "Device Drivers"
 
 # zephyr-keep-sorted-start
+source "drivers/sensor/adc/Kconfig"
 source "drivers/sensor/adi/Kconfig"
 source "drivers/sensor/als31300/Kconfig"
 source "drivers/sensor/ams/Kconfig"
