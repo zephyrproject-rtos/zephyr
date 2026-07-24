@@ -1,0 +1,4 @@
+tests:
+  pm.device_system_managed.smp:
+    platform_allow: qemu_x86_64
+    tags: pm
