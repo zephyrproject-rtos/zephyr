@@ -44,6 +44,7 @@ struct ipc_data {
 	struct ipc_ept_cfg hci_ept_cfg;
 	struct k_sem bound_sem;
 	const struct device *ipc;
+	bool bound;
 #if defined(CONFIG_BT_EXT_ADV)
 	struct hci_ext_adv_discard_ctx ext_adv_discard;
 #endif
@@ -309,6 +310,15 @@ static void hci_ept_bound(void *priv)
 	struct ipc_data *ipc = dev->data;
 
 	k_sem_give(&ipc->bound_sem);
+	ipc->bound = true;
+}
+
+static void hci_ept_unbound(void *priv)
+{
+	const struct device *dev = priv;
+	struct ipc_data *ipc = dev->data;
+
+	ipc->bound = false;
 }
 
 static void hci_ept_recv(const void *data, size_t len, void *priv)
@@ -334,6 +344,10 @@ static int bt_ipc_open(const struct device *dev)
 {
 	struct ipc_data *ipc = dev->data;
 	int err;
+
+	if (IS_ENABLED(CONFIG_BT_HCI_IPC_KEEP_ALIVE) && ipc->bound) {
+		return 0;
+	}
 
 	err = bt_hci_transport_setup(NULL);
 	if (err) {
@@ -369,6 +383,10 @@ static int bt_ipc_close(const struct device *dev)
 	struct ipc_data *ipc = dev->data;
 	int err;
 
+	if (IS_ENABLED(CONFIG_BT_HCI_IPC_KEEP_ALIVE)) {
+		return 0;
+	}
+
 	err = ipc_service_deregister_endpoint(&ipc->hci_ept);
 	if (err) {
 		LOG_ERR("Deregistering HCI endpoint failed with: %d", err);
@@ -387,6 +405,8 @@ static int bt_ipc_close(const struct device *dev)
 		return err;
 	}
 
+	ipc->bound = false;
+
 	return 0;
 }
 
@@ -403,6 +423,7 @@ static DEVICE_API(bt_hci, drv) = {
 			.name = DT_INST_PROP(inst, bt_hci_ipc_name), \
 			.cb = { \
 				.bound    = hci_ept_bound, \
+				.unbound  = hci_ept_unbound, \
 				.received = hci_ept_recv, \
 			}, \
 			.priv = (void *)DEVICE_DT_INST_GET(inst), \

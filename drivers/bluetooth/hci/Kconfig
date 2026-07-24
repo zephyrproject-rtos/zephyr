@@ -66,6 +66,15 @@ config BT_HCI_IPC_ENDPOINT_BOUND_TIMEOUT_MS
 	  Timeout value that HCI will wait for an IPC endpoint to be bound,
 	  in milliseconds.
 
+config BT_HCI_IPC_KEEP_ALIVE
+	bool "Keep the IPC instance bound when HCI is closed"
+	depends on BT_HCI_IPC
+	help
+	  When enabled, the HCI driver will not tear down the IPC instance
+	  when it is closed. Subsequent opens reuse the same instance while
+	  attaching the new receive callback. After closing, incoming messages
+	  over IPC will be discarded until the callback is opened again.
+
 config BT_SPI
 	bool
 	select SPI
