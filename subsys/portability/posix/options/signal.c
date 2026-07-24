@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "posix/strsignal_table.h"
+#include <posix/strsignal_table.h>
 
 #include <errno.h>
 #include <signal.h>

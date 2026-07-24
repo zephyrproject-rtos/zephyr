@@ -6,7 +6,7 @@
 
 #include <zephyr/sys/sys_getopt.h>
 
-#include "getopt.h"
+#include <getopt.h>
 
 char *optarg;
 int opterr, optind, optopt;

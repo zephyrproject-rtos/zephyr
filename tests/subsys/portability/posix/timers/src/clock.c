@@ -6,7 +6,7 @@
  */
 
 /* for tp_ge(), tp_diff() */
-#include "posix_clock.h"
+#include <posix_clock.h>
 
 #include <sys/time.h>
 #include <time.h>
