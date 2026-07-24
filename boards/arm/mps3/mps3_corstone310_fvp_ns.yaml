@@ -19,3 +19,6 @@ testing:
   only_tags:
     - trusted-firmware-m
     - integration
+    - arm
+    - userspace
+    - fpu
