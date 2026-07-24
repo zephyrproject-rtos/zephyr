@@ -1135,7 +1135,7 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 	uint8_t bus_width;
 	int ret = 0;
 
-	LOG_INF("SDHC I/O: slot: %d, bus width %d, clock %dHz, card power %s, "
+	LOG_DBG("SDHC I/O: slot: %d, bus width %d, clock %dHz, card power %s, "
 		"timing %s, voltage %s",
 		cfg->slot, ios->bus_width, ios->clock,
 		ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
@@ -1168,7 +1168,7 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 			if (ret == 0) {
 				/* Purge stale CMD_DONE events from clock update commands */
 				k_msgq_purge(data->s_host_ctx.event_queue);
-				LOG_INF("Bus clock successfully set to %d kHz", ios->clock / 1000);
+				LOG_DBG("Bus clock successfully set to %d kHz", ios->clock / 1000);
 			} else {
 				LOG_ERR("Error configuring card clock");
 				k_mutex_unlock(&sdhc_esp32_ctrl.bus_mutex);
@@ -1200,7 +1200,7 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 			k_mutex_unlock(&sdhc_esp32_ctrl.bus_mutex);
 
 			if (ret == 0) {
-				LOG_INF("Bus width set successfully to %d bit", bus_width);
+				LOG_DBG("Bus width set successfully to %d bit", bus_width);
 			} else {
 				LOG_ERR("Error configuring bus width");
 				return err_esp2zep(ret);
@@ -1313,7 +1313,7 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 			case SDHC_TIMING_DDR52:
 				/* Enable DDR mode */
 				sdmmc_ll_enable_ddr_mode(sdio_hw, cfg->slot, true);
-				LOG_INF("DDR mode enabled");
+				LOG_DBG("DDR mode enabled");
 				break;
 			case SDHC_TIMING_SDR12:
 			case SDHC_TIMING_SDR25:
@@ -1329,7 +1329,7 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 				break;
 			}
 
-			LOG_INF("Bus timing successfully changed to %s", timingStr[ios->timing]);
+			LOG_DBG("Bus timing successfully changed to %s", timingStr[ios->timing]);
 			data->timing = ios->timing;
 		}
 	}
@@ -1497,7 +1497,7 @@ static int sdhc_esp32_request(const struct device *dev, struct sdhc_command *cmd
 		break;
 
 	default:
-		LOG_INF("SDHC driver: command %u not supported", cmd->opcode);
+		LOG_DBG("SDHC driver: command %u not supported", cmd->opcode);
 		return -ENOTSUP;
 	}
 
