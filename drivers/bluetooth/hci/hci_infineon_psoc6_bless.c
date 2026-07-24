@@ -26,8 +26,8 @@
 #define LOG_LEVEL      CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 LOG_MODULE_REGISTER(psoc6_bless);
 
-#include "cy_ble_stack_pvt.h"
-#include "cycfg_ble.h"
+#include <cy_ble_stack_pvt.h>
+#include <cycfg_ble.h>
 
 #define DT_DRV_COMPAT infineon_bless_hci
 
