@@ -150,5 +150,25 @@
 			interrupt-parent = <&plic0>;
 			status = "disabled";
 		};
+
+		otp: otp@f1000000 {
+			compatible = "egis,et171-otp";
+			reg = <0xf1000000 0x1000
+			       0xf1001000 0x200>;
+			reg-names = "control", "mem";
+			status = "disabled";
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				uid_otp: uid@00 {
+					reg = <0x00 0x0c>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+			};
+		};
 	};
 };
