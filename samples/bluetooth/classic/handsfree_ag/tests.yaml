@@ -11,3 +11,13 @@ tests:
       - qemu_cortex_m3
     extra_configs:
       - CONFIG_BT_HFP_AG_CALL_OUTGOING=y
+  sample.bluetooth.handsfree.ag.no_blobs:
+    platform_allow:
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    tags:
+      - bluetooth
+      - i2s
+      - codec
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    build_only: true
