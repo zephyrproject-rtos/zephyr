@@ -159,7 +159,7 @@ static int i2c_xec_prog_timing(mm_reg_t regbase, uint32_t freq_hz)
 	}
 
 	sys_write32(ptm->data_tm, regbase + XEC_I2C_DT_OFS);
-	sys_write32(ptm->idle_sc, regbase + XEC_I2C_IDS_OFS);
+	sys_write32(ptm->idle_sc, regbase + XEC_I2C_ISC_OFS);
 	sys_write32(ptm->timeout_sc, regbase + XEC_I2C_TMOUT_SC_OFS);
 	sys_write32(ptm->bus_clock, regbase + XEC_I2C_BCLK_OFS);
 	sys_write8(ptm->rpt_sta_htm, regbase + XEC_I2C_RSHT_OFS);
