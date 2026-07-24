@@ -6,6 +6,8 @@ EU Cyber Resilience Act (CRA)
 .. warning::
    This document is for informational purposes only and does not constitute legal advice.
    Consult with your legal counsel for compliance guidance specific to your situation.
+   You can consult European Union accredited laboratories (see `List of Notified Bodies for CRA`_) that can
+   help you.
 
 Overview
 ********
@@ -17,9 +19,10 @@ It entered into force on December 10, 2024.
 .. admonition:: Key Dates
    :class: important
 
-   * **June 11, 2026**: Assessment bodies operational
-   * **September 11, 2026**: Manufacturers must report vulnerabilities and incidents
-   * **December 11, 2027**: Full regulation applies
+   * **June 11, 2026**: Assessment bodies operational; market surveillance authorities defined
+   * **September 11, 2026**: Manufacturers must report exploited vulnerabilities and severe incidents
+   * **December 11, 2027**: Full regulation applies to products placed on the market from that date,
+     or placed on the market before that date and substantially modified afterwards.
 
 This page explains how the CRA relates both to manufacturers using Zephyr in commercial products,
 and to the Zephyr Project itself in its role as an open-source software steward.
@@ -38,6 +41,22 @@ Does the CRA apply to my product?
 
 The CRA applies if you place a product with digital elements (PDE) on the EU market for commercial
 purposes. This includes hardware devices with embedded software, and standalone software products.
+
+A product with a digital element is hardware and/or software that is connected to another device or
+network. The scope of the product includes the remote data processing solution (RDPS): software not
+part of the product but required for it to function (for example, a mobile phone app or a cloud
+service).
+
+
+The CRA applies to end products or components that are placed on the market in the European Union.
+"Placing on the market" means selling or providing a product free of charge for the first time in
+the EU. It applies to every individual unit of a product series; development or design dates are
+not relevant.
+
+
+Several market exceptions are defined in the law (medical, automotive, avionics, military, spare
+parts). These exceptions have strict conditions; refer to the CRA text (`Article 2`_).
+
 
 Which category does my product belong to?
 =========================================
@@ -61,24 +80,24 @@ with fewer documentation and assurance requirements.
      - - Wi-Fi smart bulb or switch (e.g., running Matter over Thread/Wi-Fi).
        - Wearable activity tracker or smartwatch for personal wellness.
        - Bluetooth LE audio accessory or wireless sensor tag.
+       - Temperature sensor connected to a CAN bus.
    * - Important (Class I)
      - Higher-risk products, often consumer-facing, performing security- or access-relevant
        functions.
      - - Smart door lock or access control reader for residential use.
-       - Smart home hub or router managing network traffic.
+       - Router managing network traffic.
        - Connected alarm system or security sensor.
+       - Micro-controllers with AVA_VAN.1 protection level.
    * - Important (Class II)
      - Higher-risk products used in enterprise/industrial/infra contexts or with privileged network
        roles.
-     - - Industrial Programmable Logic Controller (PLC) or robot controller.
-       - Micro-controllers with Secure Enclave/TEEs used for device identity.
-       - Industrial IoT gateway performing edge processing.
+     - - Micro-controllers with AVA_VAN.2 or AVA_VAN.3 protection level.
    * - Critical
      - Products whose compromise could severely impact critical infrastructure or essential
        services.
-     - - Smart electricity meter or water meter with remote shut-off.
+     - - Smart meter gateways.
        - Hardware Security Module (HSM) or smartcard firmware.
-       - Safety-critical sensors used in energy or transport grids.
+
 
 .. admonition:: Core Functionality vs. Integration
    :class: important
@@ -119,14 +138,16 @@ standards.
 
   * - Category
     - Conformity Assessment Procedure
-    - Third-Party Audit?
+    - Notified Body involvement?
   * - Default
-    - Module A (Internal Control). Self-assessment by the manufacturer.
-    - No
+    - Module A (Self-assessment by the manufacturer) or Module B + Module C, or Module H.
+    - Not Mandatory for Module A.
   * - Important Class I
-    - Module A **ONLY IF** harmonized standards are fully applied. Otherwise: Module B + Module C,
-      or Module H.
-    - Yes, if standards not fully used
+    - Module A **ONLY IF** harmonized standards cited in the Official Journal of the European Union
+      are fully applied. Otherwise: Module B + Module C, or Module H.
+    - Module A **ONLY IF** harmonized standards cited in the Official Journal of the European Union
+      are fully applied. Otherwise: Module B + Module C, or Module H.
+    - Not Mandatory for Module A.
   * - Important Class II
     - Module B + Module C, or Module H. (Self-assessment is **NOT** allowed).
     - Yes (Mandatory)
@@ -164,12 +185,15 @@ elements.
   like Zephyr).
 
 **Vulnerability handling**
-  Handle vulnerabilities for at least 5 years (support period), including receiving reports and
-  applying updates.
+  Handle vulnerabilities each time a product is placed on the EU market.
+  Monitor vulnerabilities during the support period (lifetime or 5 years minimum).
+  Vulnerability handling means identifying hardware and software vulnerabilities (for example, via
+  an SBOM), performing a risk assessment for your product, and providing a software update when the
+  risk cannot be accepted.
 
 **Incident reporting**
-  Report actively exploited vulnerabilities affecting Zephyr, as well as severe incidents affecting
-  the project's infrastructure.
+  Report actively exploited vulnerabilities affecting your product, as well as severe incidents affecting
+  the project's infrastructure. This obligation continues after the end of the support period.
 
 **Technical documentation**
   Create documentation per `Article 31`_ and `Annex VII`_.
@@ -379,11 +403,23 @@ Standards and Technical Specifications
 
 Relevant existing standards:
 
-* `ETSI EN 303 645 <https://www.etsi.org/deliver/etsi_en/303600_303699/303645/>`_ - Cyber Security
-  for Consumer Internet of Things: Baseline Requirements
+ETSI and CEN/CENELC are developing harmonized standards in response to the `CRA Standardisation Request (M/606)
+<https://ec.europa.eu/growth/tools-databases/enorm/mandate/606_en>`_.
 
-ETSI is developing harmonized standards in response to the `CRA Standardisation Request (M/606)
-<https://ec.europa.eu/growth/tools-databases/enorm/mandate/606_en>`_. Public draft standards
+CRA horizontal standards developed by CEN/CENELEC:
+
+* EN40000-1-1 : Vocabulary definition
+* EN40000-1-2 : Quality process for the development of Secure by Design product. It includes risk
+  assessment, sourcing due diligence, development, test, validation, manufacturing, de-commissioning...
+* EN40000-1-3 : Vulnerability handling process
+* EN40000-1-4 : Security controls : technical solutions to reduce cybersecurity risk. This is based on
+  the hEN18031-x standard developed for the CE RED Delegated Act.
+
+Presentation of early draft of EN40000-1-4 is available on CEN/CENELEC website: `Security Controls
+<https://www.cencenelec.eu/news-events/events/2026/2026-03-05-cra-standards-unlocked-deep-dive-session-security-controls-generic-security-requirements/>`_.
+
+
+ETSI Public draft standards
 include product-specific requirements for:
 
 * Operating Systems (prEN 304 626)
@@ -393,6 +429,9 @@ include product-specific requirements for:
 
 For the complete list of draft standards and participation in public consultations, see the
 `ETSI Cyber Resilience Act Portal <https://docbox.etsi.org/cyber/CYBER/Open>`_.
+
+* Once harmonized, these standards could be freely accessible to EU, EFTA, and UK citizens via
+  `Harmonized standards <https://harmonized.standards.eu/>`_.
 
 Educational resources
 =====================
@@ -424,6 +463,7 @@ Zephyr-specific resources
 
 .. _`Recital 18`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#rct_18
 
+.. _`Article 2`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_2
 .. _`Article 3`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_3
 .. _`Article 7`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_7
 .. _`Article 13`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_13
@@ -450,3 +490,6 @@ Zephyr-specific resources
 .. _`Implementing Regulation (EU) 2025/2392`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32025R2392
 
 .. _`Zephyr Vulnerability Alert Registry`: https://www.zephyrproject.org/vulnerability-registry/
+
+.. _`List of Notified Bodies for CRA`: https://webgate.ec.europa.eu/single-market-compliance-space/notified-bodies/free-search?filter=notificationStatus:1,legislation:167953
+
