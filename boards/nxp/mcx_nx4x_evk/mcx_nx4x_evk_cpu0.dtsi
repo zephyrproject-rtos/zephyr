@@ -299,3 +299,7 @@ zephyr_udc0: &usb1 {
 &erm0 {
 	status = "okay";
 };
+
+&tsi0 {
+	status = "okay";
+};
