@@ -68,6 +68,17 @@ config ZPERF_LOOPBACK_SELFTEST_PACKET_SIZE
 	  Near-MTU packets also better expose data-touching costs (checksums,
 	  buffer walking) than tiny packets.
 
+config ZPERF_LOOPBACK_SELFTEST_FRAG_PACKET_SIZE
+	int "Loopback selftest fragmented-run payload size (bytes)"
+	default 2000
+	range 1 16384
+	help
+	  Payload size for the extra UDP runs that intentionally exceed
+	  CONFIG_NET_LOOPBACK_MTU to exercise IP fragmentation and reassembly.
+	  These runs are only performed when CONFIG_NET_IPV4_FRAGMENT /
+	  CONFIG_NET_IPV6_FRAGMENT are enabled. Keep it above the MTU (so the
+	  datagram actually fragments) and below CONFIG_NET_ZPERF_MAX_PACKET_SIZE.
+
 config ZPERF_LOOPBACK_SELFTEST_RATE_KBPS
 	int "Loopback selftest target rate (kbps)"
 	default 0
