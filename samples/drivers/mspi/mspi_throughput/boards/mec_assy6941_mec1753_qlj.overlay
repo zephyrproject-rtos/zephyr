@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dev0 = &mspi_dummy;
+	};
+};
+
+&dmac {
+	status = "okay";
+};
+
+&qspi0 {
+	compatible = "microchip,xec-qmspi-mspi-controller";
+	status = "okay";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	duplex = "MSPI_HALF_DUPLEX";
+	software-multiperipheral; /* REQUIRED */
+	num-hw-ce = <2>; /* Shared SPI supports two HW chip enables */
+	clock-frequency = <DT_FREQ_M(96)>;
+
+	pinctrl-0 = <&qspi_shd_cs0_n_gpio055 &qspi_shd_cs1_n_gpio002
+		     &qspi_shd_clk_gpio056
+		     &qspi_shd_io0_gpio223 &qspi_shd_io1_gpio224
+		     &qspi_shd_io2_gpio227 &qspi_shd_io3_gpio016>;
+	pinctrl-1 = <&qspi_shd_io3_gpio016_lp &qspi_shd_io2_gpio227_lp
+		     &qspi_shd_io1_gpio224_lp &qspi_shd_io0_gpio223_lp
+		     &qspi_shd_clk_gpio056_lp &qspi_shd_cs0_n_gpio055_fp>;
+	pinctrl-names = "default", "sleep";
+
+	/* Real flash device so the controller has a defined target (dev_idx 0) */
+	mspi_dummy: mspi_dummy@0 {
+		compatible = "microchip,xec-qmspi-mspi-device";
+		reg = <0>;
+		mspi-max-frequency = <DT_FREQ_M(48)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-cpp-mode = "MSPI_CPP_MODE_0";
+		mspi-endian = "MSPI_BIG_ENDIAN";
+		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+		mspi-hardware-ce-num = <0>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_3_BYTE";
+		read-command = <0x6b>;
+		write-command = <0x32>;
+		rx-dummy = <8>;
+		tx-dummy = <0>;
+		microchip,timing-config-mask = <0>;
+		microchip,timing-config = <0 0 0 0 0 0 0 0>;
+	};
+};

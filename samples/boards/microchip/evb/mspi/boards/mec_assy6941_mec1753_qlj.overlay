@@ -1,0 +1,138 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * !!! WARNING !!!
+ * QSPI0 Controller has two HW CE's and three sets of mutually
+ * exclusive (clock, data) pin sets. Only one set of (clock, data)
+ * should be enabled at one time.
+ *
+ * J18 2x10 for SPI donlge Assembly 6971
+ * GPIO055/SHD_nCS0 -> J18.4  1SPI_nCS0
+ * GPIO002/SHD_nCS1 -> J18.10 1SPI_nCS1
+ * GPIO056/SHD_CLK  -> J18.2  1SPI_CLK
+ * GPIO223/SHD_IO0  -> J18.6  1SPI_MOSI
+ * GPIO224/SHD_IO1  -> J18.7  1SPI_MISO
+ * GPIO227/SHD_IO2  -> J18.8  1SPI_nWP
+ * GPIO016/SHD_IO3  -> J18.9  1SPI_nHOLD
+ *
+ * GPIO124/PVT_nCS -> J18.11 2SPI_nCS0
+ * GPIO125/PVT_CLK -> J18.1  2SPI_CLK
+ * GPIO121/PVT_IO0 -> J18.12 2SPI_MOSI
+ * GPIO122/PVT_IO1 -> J18.13 2SPI_MISO
+ * GPIO123/PVT_IO2 -> J18.14 2SPI_nWP
+ * GPIO126/PVT_IO3 -> J18.16 2SPI_nHOLD
+ *
+ * EVB jumpers
+ * -----------
+ *
+ * JP18 3x7 SHD_SPI pins
+ * ---------------------
+ *  2-3  select SHD_IO0
+ *  5-6  select SHD_IO1
+ *  8-9  select SHD_IO2
+ * 11-12 select SHD_IO3
+ * 14-15 select SHD_nCS0
+ * 17-18 select SHD_CLK
+ * 20-12 select SHD_nCS1
+ *
+ * JP16 3x6 PVT_SPI pins
+ * --------------------
+ *  2-3  select PVT_CLK
+ *  5-6  select PVT_nCS
+ *  8-9  select PVT_IO3
+ * 11-12 select PVT_IO2
+ * 14-15 select PVT_IO1
+ * 17-18 select PVT_IO0
+ */
+
+/* CONFIG_MSPI_DMA selects CONFIG_DMA, so the central DMA controller is
+ * enabled here even though the QMSPI MSPI driver uses the QMSPI
+ * controller's internal local-DMA channels, not the central DMA.
+ */
+&dmac {
+	status = "okay";
+};
+
+&qspi0 {
+	compatible = "microchip,xec-qmspi-mspi-controller";
+	status = "okay";
+
+	pinctrl-0 = <&qspi_shd_cs0_n_gpio055 &qspi_shd_cs1_n_gpio002
+		     &qspi_shd_clk_gpio056
+		     &qspi_shd_io0_gpio223 &qspi_shd_io1_gpio224
+		     &qspi_shd_io2_gpio227 &qspi_shd_io3_gpio016>;
+	pinctrl-1 = <&qspi_shd_io3_gpio016_lp &qspi_shd_io2_gpio227_lp
+		     &qspi_shd_io1_gpio224_lp &qspi_shd_io0_gpio223_lp
+		     &qspi_shd_clk_gpio056_lp &qspi_shd_cs0_n_gpio055_fp>;
+	pinctrl-names = "default", "sleep";
+	clock-frequency = <DT_FREQ_M(96)>; /* Maximum frequency the controller can support */
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	duplex = "MSPI_HALF_DUPLEX";
+	software-multiperipheral; /* REQUIRED */
+	num-hw-ce = <2>; /* Shared SPI supports two HW chip enables */
+
+	/* W25Q128JV 3.3V flash JEDEC-ID = 0xef, 0x40, 0x18
+	 * supports:
+	 *   1-1-1 Page program 0x02
+	 *   1-1-4 Page program 0x32
+	 *   1-1-1 Read 0x03 <= 20 MHz, no dummy clocks
+	 *   1-1-1 Fast Read  0x0B plus 8 dummy clocks
+	 *   1-1-2 Fast Read Dual Output 0x3B plus 8 dummy clocks
+	 *   1-1-4 Fast Read Quad Output 0x6B plus 8 dummy clocks
+	 *   1-2-2 Fast Read Dual 0xBB plus mode byte
+	 *   1-4-4 Fast Read Quad 0xEB, plus mode byte
+	 *
+	 * W25Q128FW 1.8V flash JEDEC-ID = 0xef, 0x60, 0x18
+	 * Same opcodes as above
+	 *
+	 * Requires mspi-endian = "MSPI_BIG_ENDIAN";
+	 * because QSPI operates most-significant-bit-first and the MSPI flash driver
+	 * defaults to MSPI_LITTLE_ENDIAN if mspi-endian property is not present!
+	 */
+
+	spiflash0: qspi-nor-flash@0 {
+		compatible = "jedec,nor";
+		reg = <0>;
+
+		mspi-hardware-ce-num = <0>;
+		mspi-max-frequency = <DT_FREQ_M(4)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_1_4";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-endian = "MSPI_BIG_ENDIAN";
+		read-command = <0x6b>;
+		write-command = <0x32>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_3_BYTE";
+		tx-dummy = <0>;
+		rx-dummy = <8>;
+		size = <DT_SIZE_M(128)>;
+		jedec-id = [ef 40 18];
+		sfdp-bfp = [00];
+		status = "okay";
+	};
+
+	spiflash1: qspi-nor-flash@1 {
+		compatible = "jedec,nor";
+		reg = <1>;
+
+		mspi-hardware-ce-num = <1>;
+		mspi-max-frequency = <DT_FREQ_M(4)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD_1_1_4";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-endian = "MSPI_BIG_ENDIAN";
+		read-command = <0x6b>;
+		write-command = <0x32>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_3_BYTE";
+		tx-dummy = <0>;
+		rx-dummy = <8>;
+		size = <DT_SIZE_M(128)>;
+		jedec-id = [ef 40 18];
+		sfdp-bfp = [00];
+		status = "okay";
+	};
+};

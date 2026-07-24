@@ -25,3 +25,12 @@ tests:
       - apollo510_evb
     extra_configs:
       - CONFIG_MSPI_AMBIQ_CONTROLLER=y
+  drivers.mspi.api.xec:
+    tags:
+      - drivers
+      - mspi
+      - api
+    filter: dt_compat_enabled("microchip,xec-qmspi-mspi-controller")
+    harness: ztest
+    platform_allow:
+      - mec_assy6941/mec1753_qlj

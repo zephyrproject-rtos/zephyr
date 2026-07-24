@@ -1,0 +1,64 @@
+# Copyright (c) 2026, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip MSPI device for QMSPI controller
+
+compatible: "microchip,xec-qmspi-mspi-device"
+
+include: [mspi-device.yaml, "jedec,jesd216.yaml"]
+
+properties:
+  mspi-io-mode:
+    required: true
+
+  mspi-data-rate:
+    required: true
+
+  mspi-hardware-ce-num:
+    type: int
+    required: true
+    default: 0
+    description: |
+      It can be only CE0 or CE1,
+      but there could be multiple of CE0 or CE1 for a controller
+
+  rx-dummy:
+    required: true
+
+  tx-dummy:
+    required: true
+
+  read-command:
+    required: true
+
+  write-command:
+    required: true
+
+  command-length:
+    required: true
+
+  address-length:
+    required: true
+
+  microchip,timing-config-mask:
+    type: int
+    default: 0x06060406
+    description: |
+      It must be defined in the board DTS based on Soc series.
+
+  microchip,timing-config:
+    type: array
+    default: [0, 0, 0, 0, 0, 0, 0, 0]
+    description: |
+      Array of tuples to configure the timing parameters
+      default =
+      <
+        .dly_cs_on_to_sck_start = 6,
+        .dly_sck_stop_to_cs_off = 4,
+        .dly_last_data_hold = 0,
+        .dly_cs_off_to_cs_on = 0,
+        .sck_tap     = 0,
+        .cr_tap      = 0,
+        .sck_tap_adj = 0,
+        .cr_tap_adj  = 0,
+      >
