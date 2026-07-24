@@ -1,0 +1,10 @@
+manifest:
+  projects:
+    - name: module
+      url: https://example.com/module
+      revision: master
+      path: module
+      userdata:
+        module-path: custom
+  self:
+    path: main_project

@@ -71,7 +71,8 @@ Module Repositories
   under the zephyrproject-rtos GitHub organization.
 
 * The module repository codebase shall include a *module.yml* file in a
-  :file:`zephyr/` folder at the root of the repository.
+  :file:`zephyr/` folder at the root of the repository or in the path
+  specified by the ``module-path`` attribute.
 
 * Module repository names should follow the convention of using lowercase
   letters and dashes instead of underscores. This rule will apply to all
@@ -1105,6 +1106,23 @@ build system finds all the modules in your :term:`west installation` and uses
 those. It does this by running :ref:`west list <west-built-in-misc>` to get
 the paths of all the projects in the installation, then filters the results to
 just those projects which have the necessary module metadata files.
+
+Usually, the directory containing the module files is the same as the project
+repository. However, the ``userdata.module-path`` key allows to place the module
+in a subdirectory of the project repository. This is especially used in external
+projects that provide a module for Zephyr but don't want to expose it in
+their root directory:
+
+.. code-block:: yaml
+
+   manifest:
+     projects:
+       - name: external-feature
+         url: https://github.com/acme/external-feature
+         revision: master
+         path: modules/external-feature
+         userdata:
+           module-path: thirdparty-integrations
 
 Each project in the ``west list`` output is tested like this:
 
