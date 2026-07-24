@@ -379,7 +379,7 @@ static void cb_handler_rx(struct modbus_context *ctx)
 		}
 
 		if (c == MODBUS_ASCII_END_FRAME_CHAR2) {
-			k_work_submit(&ctx->server_work);
+			modbus_work_submit(&ctx->server_work);
 		}
 
 	} else {
@@ -470,7 +470,7 @@ static void uart_cb_async_handler(const struct device *dev, struct uart_event *e
 		break;
 	case UART_RX_RDY:
 		cfg->uart_buf_ctr = evt->data.rx.len;
-		k_work_submit(&ctx->server_work);
+		modbus_work_submit(&ctx->server_work);
 		break;
 	case UART_TX_ABORTED:
 		__fallthrough;
@@ -500,7 +500,7 @@ static void rtu_tmr_handler(struct k_timer *t_id)
 		return;
 	}
 
-	k_work_submit(&ctx->server_work);
+	modbus_work_submit(&ctx->server_work);
 }
 
 static int configure_gpio(struct modbus_context *ctx)
