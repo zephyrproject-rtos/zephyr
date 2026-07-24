@@ -53,6 +53,9 @@ void z_sys_poweroff(void)
 #if defined(NRF_MEMORY_RAM2_SIZE)
 	ram_size += NRF_MEMORY_RAM2_SIZE;
 #endif
+#if defined(NRF_MEMORY_RAM3_SIZE)
+	ram_size += NRF_MEMORY_RAM3_SIZE;
+#endif
 
 	/* Disable retention for all memory blocks */
 	nrfx_ram_ctrl_retention_enable_set(ram_start, ram_size, false);
