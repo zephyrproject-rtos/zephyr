@@ -25,6 +25,7 @@
 #include <zephyr/sys/util_utf8.h>
 #include <zephyr/toolchain.h>
 
+#include <host/conn_internal.h>
 #include "has_internal.h"
 
 LOG_MODULE_REGISTER(bt_has_client, CONFIG_BT_HAS_CLIENT_LOG_LEVEL);
@@ -1003,10 +1004,15 @@ int bt_has_client_preset_prev(struct bt_has *has, bool sync)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_has_client *inst = inst_by_conn(conn);
+	struct bt_has_client *inst;
 
 	ARG_UNUSED(reason);
 
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
+	inst = inst_by_conn(conn);
 	if (!inst) {
 		return;
 	}

@@ -24,6 +24,8 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
+#include <host/conn_internal.h>
+
 LOG_MODULE_REGISTER(bt_ccp_call_control_client, CONFIG_BT_CCP_CALL_CONTROL_CLIENT_LOG_LEVEL);
 
 static sys_slist_t ccp_call_control_client_cbs =
@@ -91,7 +93,9 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
 	static bool cbs_registered;
 
-	ARG_UNUSED(conn);
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
 
 	/* We register the callbacks in the connected callback. That way we ensure that they are
 	 * registered before any procedures are completed or we receive any notifications, while
@@ -109,10 +113,15 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
+	struct bt_ccp_call_control_client *client;
 
 	ARG_UNUSED(reason);
 
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
+	client = get_client_by_conn(conn);
 	/* client->conn may be NULL */
 	if (client->conn == conn) {
 		bt_conn_drop(&client->conn);

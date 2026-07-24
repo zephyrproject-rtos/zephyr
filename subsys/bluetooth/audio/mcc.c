@@ -36,6 +36,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
+#include <host/conn_internal.h>
 #include "../services/ots/ots_client_internal.h"
 #include "common/bt_str.h"
 #include "mcc_internal.h"
@@ -1353,6 +1354,10 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	struct mcs_instance_t *mcs_inst;
 
 	ARG_UNUSED(reason);
+
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
 
 	mcs_inst = lookup_inst_by_conn(conn);
 	if (mcs_inst != NULL) {

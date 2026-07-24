@@ -508,6 +508,10 @@ static struct bt_le_per_adv_sync_cb pa_sync_cb = {
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 	ARRAY_FOR_EACH_PTR(scan_delegator_sync_states, sync_state) {
 		if (sync_state->conn == conn) {
 			bt_conn_drop(&sync_state->conn);

@@ -40,6 +40,7 @@
 
 #include "common/bt_str.h"
 
+#include <host/conn_internal.h>
 #include "audio_internal.h"
 #include "bap_unicast_server.h"
 #include "pacs_internal.h"
@@ -1260,6 +1261,10 @@ static void deferred_nfy_work_handler(struct k_work *work)
 
 static void pacs_auth_pairing_complete(struct bt_conn *conn, bool bonded)
 {
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
 	LOG_DBG("%s paired (%sbonded)", bt_conn_dst_str(conn),
 		bonded ? "" : "not ");
 
@@ -1312,6 +1317,10 @@ static void pacs_security_changed(struct bt_conn *conn, bt_security_t level,
 	struct bt_conn_info info;
 	int err;
 
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
 	LOG_DBG("%s changed security level to %d", bt_conn_dst_str(conn), level);
 
 	if (sec_err != BT_SECURITY_ERR_SUCCESS || level <= BT_SECURITY_L1) {
@@ -1348,6 +1357,10 @@ static void pacs_disconnected(struct bt_conn *conn, uint8_t reason)
 	struct pacs_client *client;
 
 	ARG_UNUSED(reason);
+
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
 
 	client = client_lookup_conn(conn);
 	if (client == NULL) {

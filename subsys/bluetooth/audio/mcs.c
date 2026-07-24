@@ -36,6 +36,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
+#include <host/conn_internal.h>
 #include "audio_internal.h"
 #include "common/bt_str.h"
 #include "media_proxy_internal.h"
@@ -100,6 +101,10 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	ARG_UNUSED(reason);
 
 	__maybe_unused int err;
+
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
 
 	err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
 	__ASSERT(err == 0, "Failed to lock mutex: %d", err);

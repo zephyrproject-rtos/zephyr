@@ -20,6 +20,7 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/toolchain.h>
 
+#include <host/conn_internal.h>
 #include "media_proxy_internal.h"
 #include "mcs_internal.h"
 
@@ -740,6 +741,10 @@ int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	ARG_UNUSED(reason);
+
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
 
 	if (mprx.remote_player.conn == conn) {
 		bt_conn_drop(&mprx.remote_player.conn);

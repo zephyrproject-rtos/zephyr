@@ -4707,6 +4707,10 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn, const struct
 
 static void unicast_client_disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
 	LOG_DBG("conn %p reason 0x%02x", conn, reason);
 
 	unicast_client_ep_reset(conn, reason);

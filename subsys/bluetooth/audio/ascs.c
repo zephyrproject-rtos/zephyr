@@ -43,6 +43,7 @@ LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 #include "common/assert.h"
 #include "common/bt_str.h"
 
+#include <host/conn_internal.h>
 #include "../host/att_internal.h"
 
 #include "ascs_internal.h"
@@ -1230,6 +1231,10 @@ int bt_ascs_disable_ase(struct bt_bap_ep *ep)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
 	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 

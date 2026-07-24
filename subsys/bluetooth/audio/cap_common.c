@@ -27,6 +27,7 @@
 #include <zephyr/syscalls/kernel.h>
 #include <zephyr/toolchain.h>
 
+#include <host/conn_internal.h>
 #include "cap_internal.h"
 #include "csip_internal.h"
 
@@ -266,9 +267,15 @@ bool bt_cap_common_stream_in_active_proc(const struct bt_cap_stream *cap_stream)
 
 void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_cap_common_client *client = bt_cap_common_get_client_by_acl(conn);
+	struct bt_cap_common_client *client;
 
 	ARG_UNUSED(reason);
+
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
+	client = bt_cap_common_get_client_by_acl(conn);
 
 	LOG_DBG("conn %p disconnected", conn);
 

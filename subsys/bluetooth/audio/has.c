@@ -37,6 +37,7 @@
 
 #include "../bluetooth/host/settings.h"
 
+#include <host/conn_internal.h>
 #include "audio_internal.h"
 #include "common/bt_str.h"
 #include "has_internal.h"
@@ -364,6 +365,10 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 	struct bt_conn_info info;
 	int ret;
 
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
 	LOG_DBG("conn %p level %d err %d", (void *)conn, level, err);
 
 	if (err != BT_SECURITY_ERR_SUCCESS) {
@@ -399,6 +404,10 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct has_client *client;
 
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
 	LOG_DBG("conn %p reason %d", (void *)conn, reason);
 
 	client = client_find_by_conn(conn);
@@ -411,6 +420,10 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 			      const bt_addr_le_t *identity)
 {
 	struct has_client *client;
+
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
 
 	LOG_DBG("conn %p %s -> %s", (void *)conn, bt_addr_le_str(rpa), bt_addr_le_str(identity));
 

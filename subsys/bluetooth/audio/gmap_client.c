@@ -22,6 +22,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/toolchain.h>
 
+#include <host/conn_internal.h>
 #include "audio_internal.h"
 
 LOG_MODULE_REGISTER(bt_gmap_client, CONFIG_BT_GMAP_LOG_LEVEL);
@@ -88,10 +89,15 @@ static struct bt_gmap_client *client_by_conn(struct bt_conn *conn)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_gmap_client *gmap_cli = client_by_conn(conn);
+	struct bt_gmap_client *gmap_cli;
 
 	ARG_UNUSED(reason);
 
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
+	gmap_cli = client_by_conn(conn);
 	if (gmap_cli != NULL) {
 		bt_conn_drop(&gmap_cli->conn);
 	}
