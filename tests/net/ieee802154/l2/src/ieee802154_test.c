@@ -320,7 +320,7 @@ static struct net_pkt *get_data_pkt_with_ar(void)
 
 	pkt = net_pkt_rx_alloc_with_buffer(net_iface, sizeof(data_pkt_with_ar), NET_AF_UNSPEC, 0,
 					   K_FOREVER);
-	if (!pkt) {
+	if (pkt == NULL) {
 		NET_ERR("*** No buffer to allocate");
 		return NULL;
 	}
@@ -493,7 +493,7 @@ static bool test_ns_sending(struct ieee802154_pkt_test *t, bool with_short_addr)
 	k_yield();
 	k_sem_take(&driver_lock, K_SECONDS(1));
 
-	if (!current_pkt->frags) {
+	if (current_pkt->frags == NULL) {
 		NET_ERR("*** Could not send IPv6 NS packet");
 		goto out;
 	}
@@ -551,7 +551,7 @@ static bool test_wait_for_ack(struct ieee802154_pkt_test *t)
 
 	one_ack_pkt = net_pkt_rx_alloc_with_buffer(net_iface, IEEE802154_ACK_PKT_LENGTH,
 						   NET_AF_UNSPEC, 0, K_FOREVER);
-	if (!one_ack_pkt) {
+	if (one_ack_pkt == NULL) {
 		NET_ERR("*** Could not allocate ack pkt.");
 		goto release_tx_pkt;
 	}
@@ -591,7 +591,7 @@ static bool test_packet_cloning_with_cb(void)
 	NET_INFO("- Cloning packet");
 
 	pkt = net_pkt_rx_alloc_with_buffer(net_iface, 64, NET_AF_UNSPEC, 0, K_NO_WAIT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		NET_ERR("*** No buffer to allocate");
 		return false;
 	}
@@ -625,7 +625,7 @@ static bool test_packet_rssi_conversion(void)
 	NET_INFO("- RSSI conversion between unsigned and signed representation");
 
 	pkt = net_pkt_rx_alloc_on_iface(net_iface, K_NO_WAIT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		NET_ERR("*** No pkt to allocate");
 		return false;
 	}
@@ -734,7 +734,7 @@ static bool test_dgram_packet_sending(void *dst_sll, uint8_t dst_sll_halen, uint
 	k_yield();
 	k_sem_take(&driver_lock, K_SECONDS(1));
 
-	if (!current_pkt->frags) {
+	if (current_pkt->frags == NULL) {
 		NET_ERR("*** Could not send DGRAM packet");
 		goto release_fd;
 	}
@@ -809,7 +809,7 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 	}
 
 	pkt = net_pkt_rx_alloc(K_FOREVER);
-	if (!pkt) {
+	if (pkt == NULL) {
 		NET_ERR("*** Failed to allocate net pkt.");
 		goto release_fd;
 	}
@@ -834,7 +834,7 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 	pkt->lladdr_src.type = NET_LINK_IEEE802154;
 
 	frame_buf = net_pkt_get_frag(pkt, IEEE802154_MTU, K_FOREVER);
-	if (!frame_buf) {
+	if (frame_buf == NULL) {
 		NET_ERR("*** Failed to allocate net pkt frag.");
 		goto release_pkt;
 	}
@@ -881,7 +881,7 @@ static bool test_dgram_packet_reception(void *src_ll_addr, uint8_t src_ll_addr_l
 		goto release_pkt;
 	}
 
-	if (current_pkt->frags) {
+	if (current_pkt->frags != NULL) {
 		NET_ERR("*** Generated unexpected (ACK?) packet when processing packet.");
 		net_pkt_frag_unref(current_pkt->frags);
 		current_pkt->frags = NULL;
@@ -966,7 +966,7 @@ static bool test_raw_packet_sending(void)
 	k_yield();
 	k_sem_take(&driver_lock, K_SECONDS(1));
 
-	if (!current_pkt->frags) {
+	if (current_pkt->frags == NULL) {
 		NET_ERR("*** Could not send RAW packet");
 		goto release_fd;
 	}
@@ -1015,13 +1015,13 @@ static bool test_raw_packet_reception(void)
 	}
 
 	pkt = net_pkt_rx_alloc(K_FOREVER);
-	if (!pkt) {
+	if (pkt == NULL) {
 		NET_ERR("*** Failed to allocate net pkt.");
 		goto release_fd;
 	}
 
 	frame_buf = net_pkt_get_frag(pkt, sizeof(raw_payload), K_FOREVER);
-	if (!frame_buf) {
+	if (frame_buf == NULL) {
 		NET_ERR("*** Failed to allocate net pkt frag.");
 		goto release_pkt;
 	}
@@ -1034,7 +1034,7 @@ static bool test_raw_packet_reception(void)
 		goto release_pkt;
 	}
 
-	if (current_pkt->frags) {
+	if (current_pkt->frags != NULL) {
 		NET_ERR("*** Generated unexpected packet when processing packet.");
 		net_pkt_frag_unref(current_pkt->frags);
 		current_pkt->frags = NULL;
@@ -1185,7 +1185,7 @@ static bool test_recv_and_send_ack_reply(struct ieee802154_pkt_test *t)
 	k_sem_take(&driver_lock, K_SECONDS(1));
 
 	/* an ACK packet should be in current_pkt */
-	if (!current_pkt->frags) {
+	if (current_pkt->frags == NULL) {
 		NET_ERR("*** No ACK reply sent");
 		goto release_rx_pkt;
 	}
@@ -1233,7 +1233,7 @@ static bool initialize_test_environment(void)
 	k_sem_reset(&driver_lock);
 
 	current_pkt = net_pkt_rx_alloc(K_FOREVER);
-	if (!current_pkt) {
+	if (current_pkt == NULL) {
 		NET_ERR("*** No buffer to allocate");
 		return false;
 	}
