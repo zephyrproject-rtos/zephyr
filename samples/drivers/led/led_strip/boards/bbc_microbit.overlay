@@ -17,6 +17,11 @@
 				 LED_COLOR_ID_BLUE>;
 		/* P0: */
 		gpios = <&gpio0 3 0>;
+		/* NOP delay counts calibrated for nRF51 at 16 MHz */
+		delay-t0h = <4>;
+		delay-t1h = <12>;
+		delay-t0l = <8>;
+		delay-t1l = <8>;
 	};
 
 	aliases {

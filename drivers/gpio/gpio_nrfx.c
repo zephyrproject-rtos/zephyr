@@ -17,6 +17,12 @@
 #include <soc.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#ifdef CONFIG_GPIO_FAST
+#include <zephyr/drivers/gpio/gpio_fast.h>
+#ifdef CONFIG_CLOCK_CONTROL_NRF
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#endif /* CONFIG_CLOCK_CONTROL_NRF */
+#endif /* CONFIG_GPIO_FAST */
 
 #define GPIOTE_PHANDLE(id) DT_INST_PHANDLE(id, gpiote_instance)
 #define GPIOTE_PROP(idx, prop)     DT_PROP(GPIOTE(idx), prop)
@@ -653,6 +659,82 @@ static int gpio_nrfx_init(const struct device *port)
 pm_init:
 	return pm_device_driver_init(port, gpio_nrfx_pm_hook);
 }
+
+#ifdef CONFIG_GPIO_FAST
+int gpio_fast_configure_nordic_nrf_gpio(struct gpio_fast_spec_nordic_nrf_gpio *fast,
+			const struct device *port, gpio_port_pins_t pin_mask, gpio_flags_t flags)
+{
+	const struct gpio_nrfx_cfg *cfg = port->config;
+	NRF_GPIO_Type *reg = cfg->port;
+	int ret;
+
+	/* Configure pins using the standard GPIO API */
+	for (uint8_t pin = 0; pin < 32; pin++) {
+		if (pin_mask & BIT(pin)) {
+			ret = gpio_pin_configure(port, pin, flags);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	fast->set_reg = (mem_addr_t)&reg->OUTSET;
+	fast->clr_reg = (mem_addr_t)&reg->OUTCLR;
+	fast->out_reg = (mem_addr_t)&reg->OUT;
+	fast->in_reg  = (mem_addr_t)&reg->IN;
+	fast->dir_reg = (mem_addr_t)&reg->DIR;
+	fast->pin_mask = pin_mask;
+
+	return 0;
+}
+
+#ifdef CONFIG_CLOCK_CONTROL_NRF
+int gpio_fast_pre_stream_nordic_nrf_gpio(const void *spec)
+{
+	struct onoff_manager *mgr =
+		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+	struct onoff_client cli;
+	int rc;
+
+	sys_notify_init_spinwait(&cli.notify);
+	rc = onoff_request(mgr, &cli);
+	if (rc < 0) {
+		return rc;
+	}
+
+	while (sys_notify_fetch_result(&cli.notify, &rc)) {
+		/* spin until HFCLK is running */
+	}
+
+	return rc;
+}
+
+int gpio_fast_post_stream_nordic_nrf_gpio(const void *spec)
+{
+	struct onoff_manager *mgr =
+		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+	int rc;
+
+	rc = onoff_release(mgr);
+	/* Returns non-negative value on success. Cap to 0 as API states. */
+	rc = MIN(rc, 0);
+
+	return rc;
+}
+#else
+int gpio_fast_pre_stream_nordic_nrf_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+
+int gpio_fast_post_stream_nordic_nrf_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+#endif /* CONFIG_CLOCK_CONTROL_NRF */
+#endif /* CONFIG_GPIO_FAST */
 
 static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {
 	.pin_configure = gpio_nrfx_pin_configure,

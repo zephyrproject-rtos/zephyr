@@ -306,6 +306,10 @@ New Drivers
 
 * GPIO
 
+  * Added Fast GPIO API extension (:kconfig:option:`CONFIG_GPIO_FAST`) for
+    sub-microsecond GPIO operations. Vendor implementations for ESP32, i.MX RT,
+    nRF, RP2040, SAM0, and STM32. See :ref:`gpio_fast_api`. (:github:`110787`)
+
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
     (:dtcompatible:`diodes,pi4ioe5v6408`).
 
@@ -410,6 +414,11 @@ Other notable changes
     :c:func:`k_thread_cpu_mask_disable` in PIN_ONLY mode triggers an assertion
     failure.  Use :c:func:`k_thread_cpu_pin` to reassign a thread to a
     different CPU.
+
+* LED Strip
+
+  * The WS2812 GPIO driver (``worldsemi,ws2812-gpio``) now uses the Fast GPIO
+    API and supports ESP32, i.MX RT, nRF, RP2040, SAM0, and STM32. (:github:`111218`)
 
 * Wi-Fi
 

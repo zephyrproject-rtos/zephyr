@@ -28,6 +28,9 @@
 #include "stm32_hsem.h"
 #include "gpio_stm32.h"
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#ifdef CONFIG_GPIO_FAST
+#include <zephyr/drivers/gpio/gpio_fast.h>
+#endif /* CONFIG_GPIO_FAST */
 
 #include <zephyr/logging/log.h>
 
@@ -491,6 +494,98 @@ static int gpio_stm32_manage_callback(const struct device *dev,
 
 	return gpio_manage_callback(&data->cb, callback, set);
 }
+
+#ifdef CONFIG_GPIO_FAST
+int gpio_fast_configure_st_stm32_gpio(struct gpio_fast_spec_st_stm32_gpio *fast,
+			const struct device *port, gpio_port_pins_t pin_mask, gpio_flags_t flags)
+{
+	const struct gpio_stm32_config *cfg = port->config;
+	GPIO_TypeDef *gpio = (GPIO_TypeDef *)cfg->base;
+	int ret;
+
+	/* Configure pins using the standard GPIO API */
+	for (uint8_t pin = 0; pin < 16; pin++) {
+		if (pin_mask & BIT(pin)) {
+			ret = gpio_pin_configure(port, pin, flags);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	fast->bsrr_reg  = (mem_addr_t)&gpio->BSRR;
+	fast->odr_reg   = (mem_addr_t)&gpio->ODR;
+	fast->idr_reg   = (mem_addr_t)&gpio->IDR;
+	fast->set_mask  = pin_mask;             /* Low 16 bits of BSRR set */
+	fast->clr_mask  = pin_mask << 16;       /* High 16 bits of BSRR clear */
+	fast->pin_mask  = pin_mask;
+
+	fast->moder_mask = 0;
+	fast->moder_out  = 0;
+	fast->moder_in   = 0;
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	/*
+	 * STM32F1: CRL controls pins 0-7, CRH controls pins 8-15.
+	 * Each pin uses 4 bits: MODE[1:0] + CNF[1:0].
+	 *   Input floating:         MODE=00, CNF=01 -> 0x4
+	 *   Output push-pull 50MHz: MODE=11, CNF=00 -> 0x3
+	 *
+	 * CRL and CRH are contiguous (offsets 0x00 and 0x04), so we
+	 * store CRL as moder_reg and access CRH at moder_reg + 4.
+	 */
+	fast->moder_reg = (mem_addr_t)&gpio->CRL;
+	fast->moder_out_hi  = 0;
+	fast->moder_in_hi   = 0;
+	fast->moder_mask_hi = 0;
+
+	for (uint8_t pin = 0; pin < 16; pin++) {
+		if (pin_mask & BIT(pin)) {
+			if (pin < 8) {
+				uint32_t pos = pin * 4;
+
+				fast->moder_mask |= (0xFU << pos);
+				fast->moder_out  |= (0x3U << pos);
+				fast->moder_in   |= (0x4U << pos);
+			} else {
+				uint32_t pos = (pin - 8) * 4;
+
+				fast->moder_mask_hi |= (0xFU << pos);
+				fast->moder_out_hi  |= (0x3U << pos);
+				fast->moder_in_hi   |= (0x4U << pos);
+			}
+		}
+	}
+#else
+	/*
+	 * All STM32 series except F1: MODER register, 2 bits per pin:
+	 *   00 = input, 01 = output, 10 = alternate, 11 = analog
+	 */
+	fast->moder_reg = (mem_addr_t)&gpio->MODER;
+	for (uint8_t pin = 0; pin < 16; pin++) {
+		if (pin_mask & BIT(pin)) {
+			fast->moder_mask |= (0x3U << (pin * 2));
+			fast->moder_out  |= (0x1U << (pin * 2));  /* output mode */
+			/* moder_in: leave as 0 (input mode) */
+		}
+	}
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
+
+	return 0;
+}
+
+int gpio_fast_pre_stream_st_stm32_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+
+int gpio_fast_post_stream_st_stm32_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+#endif /* CONFIG_GPIO_FAST */
 
 DEVICE_API(gpio, gpio_stm32_driver) = {
 	.pin_configure = gpio_stm32_config,
