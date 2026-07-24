@@ -1,0 +1,16 @@
+identifier: nrf54lv10dk/nrf54lv10a/cpuapp/ns
+name: nRF54LV10-DK-nRF54LV10A-Application-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+sysbuild: true
+ram: 72
+flash: 504
+supported:
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - spi
