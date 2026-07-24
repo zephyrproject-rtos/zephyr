@@ -9,3 +9,6 @@ toolchain:
   - zephyr
 vendor: xunlong
 ram: 1024
+supported:
+  - otp
+  - hwinfo
