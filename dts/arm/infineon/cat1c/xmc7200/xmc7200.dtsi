@@ -494,6 +494,7 @@
 			reg = <0x4026c000 0x80>;
 			system-interrupts = <16 6>;
 			status = "disabled";
+			infineon,wdt-lock;
 		};
 
 		mcwdt0: mcwdt@40268000 {
