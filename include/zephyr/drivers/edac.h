@@ -41,46 +41,145 @@ enum edac_error_type {
 };
 
 /**
- * @cond INTERNAL_HIDDEN
+ * @brief Notification callback function signature for memory error exceptions.
  *
- * For internal use only, skip these in public documentation.
+ * @param dev Pointer to the device structure
+ * @param data Pointer to the callback data
  */
-
 typedef void (*edac_notify_callback_f)(const struct device *dev, void *data);
 
 /**
- * @brief EDAC driver API
- *
- * This is the mandatory API any EDAC driver needs to expose.
+ * @def_driverbackendgroup{EDAC,edac_interface}
+ * @{
+ */
+
+/**
+ * @brief Callback API to set injection parameter param1.
+ * See edac_inject_set_param1() for argument description.
+ */
+typedef int (*edac_inject_set_param1_f)(const struct device *dev, uint64_t value);
+
+/**
+ * @brief Callback API to get injection parameter param1.
+ * See edac_inject_get_param1() for argument description.
+ */
+typedef int (*edac_inject_get_param1_f)(const struct device *dev, uint64_t *value);
+
+/**
+ * @brief Callback API to set injection parameter param2.
+ * See edac_inject_set_param2() for argument description.
+ */
+typedef int (*edac_inject_set_param2_f)(const struct device *dev, uint64_t value);
+
+/**
+ * @brief Callback API to get injection parameter param2.
+ * See edac_inject_get_param2() for argument description.
+ */
+typedef int (*edac_inject_get_param2_f)(const struct device *dev, uint64_t *value);
+
+/**
+ * @brief Callback API to set the error type to be injected.
+ * See edac_inject_set_error_type() for argument description.
+ */
+typedef int (*edac_inject_set_error_type_f)(const struct device *dev, uint32_t value);
+
+/**
+ * @brief Callback API to get the error type to be injected.
+ * See edac_inject_get_error_type() for argument description.
+ */
+typedef int (*edac_inject_get_error_type_f)(const struct device *dev, uint32_t *value);
+
+/**
+ * @brief Callback API to trigger error injection.
+ * See edac_inject_error_trigger() for argument description.
+ */
+typedef int (*edac_inject_error_trigger_f)(const struct device *dev);
+
+/**
+ * @brief Callback API to read the ECC Error Log.
+ * See edac_ecc_error_log_get() for argument description.
+ */
+typedef int (*edac_ecc_error_log_get_f)(const struct device *dev, uint64_t *value);
+
+/**
+ * @brief Callback API to clear the ECC Error Log.
+ * See edac_ecc_error_log_clear() for argument description.
+ */
+typedef int (*edac_ecc_error_log_clear_f)(const struct device *dev);
+
+/**
+ * @brief Callback API to read the Parity Error Log.
+ * See edac_parity_error_log_get() for argument description.
+ */
+typedef int (*edac_parity_error_log_get_f)(const struct device *dev, uint64_t *value);
+
+/**
+ * @brief Callback API to clear the Parity Error Log.
+ * See edac_parity_error_log_clear() for argument description.
+ */
+typedef int (*edac_parity_error_log_clear_f)(const struct device *dev);
+
+/**
+ * @brief Callback API to get the number of correctable errors.
+ * See edac_errors_cor_get() for argument description.
+ */
+typedef int (*edac_errors_cor_get_f)(const struct device *dev);
+
+/**
+ * @brief Callback API to get the number of uncorrectable errors.
+ * See edac_errors_uc_get() for argument description.
+ */
+typedef int (*edac_errors_uc_get_f)(const struct device *dev);
+
+/**
+ * @brief Callback API to register a notification callback for memory error exceptions.
+ * See edac_notify_callback_set() for argument description.
+ */
+typedef int (*edac_notify_cb_set_f)(const struct device *dev,
+				    edac_notify_callback_f cb);
+
+/**
+ * @driver_ops{EDAC}
  */
 __subsystem struct edac_driver_api {
 	/* Error Injection API is disabled by default */
-	int (*inject_set_param1)(const struct device *dev, uint64_t value);
-	int (*inject_get_param1)(const struct device *dev, uint64_t *value);
-	int (*inject_set_param2)(const struct device *dev, uint64_t value);
-	int (*inject_get_param2)(const struct device *dev, uint64_t *value);
-	int (*inject_set_error_type)(const struct device *dev, uint32_t value);
-	int (*inject_get_error_type)(const struct device *dev, uint32_t *value);
-	int (*inject_error_trigger)(const struct device *dev);
+	/** @driver_ops_optional @copybrief edac_inject_set_param1 */
+	edac_inject_set_param1_f inject_set_param1;
+	/** @driver_ops_optional @copybrief edac_inject_get_param1 */
+	edac_inject_get_param1_f inject_get_param1;
+	/** @driver_ops_optional @copybrief edac_inject_set_param2 */
+	edac_inject_set_param2_f inject_set_param2;
+	/** @driver_ops_optional @copybrief edac_inject_get_param2 */
+	edac_inject_get_param2_f inject_get_param2;
+	/** @driver_ops_optional @copybrief edac_inject_set_error_type */
+	edac_inject_set_error_type_f inject_set_error_type;
+	/** @driver_ops_optional @copybrief edac_inject_get_error_type */
+	edac_inject_get_error_type_f inject_get_error_type;
+	/** @driver_ops_optional @copybrief edac_inject_error_trigger */
+	edac_inject_error_trigger_f inject_error_trigger;
 
 	/* Error Logging  API */
-	int (*ecc_error_log_get)(const struct device *dev, uint64_t *value);
-	int (*ecc_error_log_clear)(const struct device *dev);
-	int (*parity_error_log_get)(const struct device *dev, uint64_t *value);
-	int (*parity_error_log_clear)(const struct device *dev);
+	/** @driver_ops_optional @copybrief edac_ecc_error_log_get */
+	edac_ecc_error_log_get_f ecc_error_log_get;
+	/** @driver_ops_optional @copybrief edac_ecc_error_log_clear */
+	edac_ecc_error_log_clear_f ecc_error_log_clear;
+	/** @driver_ops_optional @copybrief edac_parity_error_log_get */
+	edac_parity_error_log_get_f parity_error_log_get;
+	/** @driver_ops_optional @copybrief edac_parity_error_log_clear */
+	edac_parity_error_log_clear_f parity_error_log_clear;
 
 	/* Error stats API */
-	int (*errors_cor_get)(const struct device *dev);
-	int (*errors_uc_get)(const struct device *dev);
+	/** @driver_ops_optional @copybrief edac_errors_cor_get */
+	edac_errors_cor_get_f errors_cor_get;
+	/** @driver_ops_optional @copybrief edac_errors_uc_get */
+	edac_errors_uc_get_f errors_uc_get;
 
 	/* Notification callback API */
-	int (*notify_cb_set)(const struct device *dev,
-			     edac_notify_callback_f cb);
+	/** @driver_ops_optional @copybrief edac_notify_callback_set */
+	edac_notify_cb_set_f notify_cb_set;
 };
 
-/**
- * INTERNAL_HIDDEN @endcond
- */
+/** @} */
 
 /**
  * @name Optional interfaces
