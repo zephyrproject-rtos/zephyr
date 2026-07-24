@@ -1,4 +1,5 @@
 # Copyright (c) 2019, Linaro Limited
+# Copyright (c) 2026 HARDWARIO a.s.
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -11,10 +12,14 @@ include: [sensor-device.yaml, i2c-device.yaml]
 
 properties:
   conversion-rate:
-    description: Conversion rate in mHz (milli-Hertz)
+    description: |
+      Conversion rate in mHz (milli-Hertz). Set to 0 to keep the sensor in
+      shutdown mode and trigger a one-shot conversion on each sample_fetch
+      call (lowest idle current; ~10 ms conversion latency on fetch).
     type: int
     default: 4000
     enum:
+      - 0
       - 250
       - 1000
       - 4000
