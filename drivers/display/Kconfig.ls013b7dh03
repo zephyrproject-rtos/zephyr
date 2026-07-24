@@ -1,0 +1,10 @@
+# Copyright (c) 2024 PineTime Project
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_LS013B7DH03
+	bool "JDI LS013B7DH03 memory LCD display driver"
+	default y
+	depends on DT_HAS_JDI_LS013B7DH03_ENABLED
+	select JDI
+	help
+	  Enable driver for JDI LS013B7DH03 memory LCD display.

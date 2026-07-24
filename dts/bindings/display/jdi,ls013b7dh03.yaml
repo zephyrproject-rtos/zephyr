@@ -1,0 +1,133 @@
+# Copyright (c) 2026 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: JDI LS013B7DH03 Memory LCD display
+
+compatible: "jdi,ls013b7dh03"
+
+include: display-controller.yaml
+
+properties:
+  vcom-gpios:
+    type: phandle-array
+    required: false
+    description: GPIO for VCOM signal control (optional, for hardware VCOM toggling)
+
+  disp-en-gpios:
+    type: phandle-array
+    required: false
+    description: GPIO for display enable control (optional)
+
+  vlcd-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      GPIO for VLCD (LCD power rail) control.
+      Active level is determined by the GPIO flags in the phandle.
+      Power-on: VLCD enabled first; power-off: VLCD disabled last.
+
+  vddp-gpios:
+    type: phandle-array
+    required: false
+    description: |
+      GPIO for VDDP (logic power rail) control.
+      Active level is determined by the GPIO flags in the phandle.
+      Power-on: VDDP enabled after VLCD; power-off: VDDP disabled before VLCD.
+
+  power-seq-delay-ms:
+    type: int
+    required: false
+    default: 11
+    description: Delay in milliseconds between power sequencing steps (VLCD/VDDP).
+
+  serial-vcom-inversion:
+    type: boolean
+    required: false
+    description: Enable VCOM inversion for serial interface mode
+
+  bank-col-head:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Number of dummy columns at the start of each line.
+      Used for JDI display timing configuration.
+
+  valid-columns:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Number of valid/active columns in the display.
+
+  bank-col-tail:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Number of dummy columns at the end of each line.
+
+  bank-row-head:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Number of dummy rows at the start of the frame.
+
+  valid-rows:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Number of valid/active rows in the display.
+
+  bank-row-tail:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Number of dummy rows at the end of the frame.
+
+  enb-start-col:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Enable signal start column position.
+
+  enb-end-col:
+    type: int
+    required: false
+    default: 0
+    description: |
+      Enable signal end column position.
+
+  enb-pol-invert:
+    type: boolean
+    required: false
+    description: |
+      Invert the polarity of the ENB (enable) signal.
+
+  hck-pol-invert:
+    type: boolean
+    required: false
+    description: |
+      Invert the polarity of the HCK (horizontal clock) signal.
+
+  hst-pol-invert:
+    type: boolean
+    required: false
+    description: |
+      Invert the polarity of the HST (horizontal start) signal.
+
+  vck-pol-invert:
+    type: boolean
+    required: false
+    description: |
+      Invert the polarity of the VCK (vertical clock) signal.
+
+  vst-pol-invert:
+    type: boolean
+    required: false
+    description: |
+      Invert the polarity of the VST (vertical start) signal.

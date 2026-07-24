@@ -1,0 +1,42 @@
+# Copyright (c) 2024 PineTime Project
+# SPDX-License-Identifier: Apache-2.0
+
+include:
+  - jdi.yaml
+  - pinctrl-device.yaml
+
+description: Sifli sf32lb JDI LCD Bus Controller
+
+compatible: "sifli,sf32lb-jdi"
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clock-frequency:
+    type: int
+    default: 2000000
+    description:
+      JDI bus clock frequency in Hz. Used for parallel interface timing calculation.
+
+  interface-type:
+    type: int
+    default: 0
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+child-binding:
+  description: JDI VCOM PWM configuration
+
+  properties:
+    pwms:
+      required: true
+      type: phandle-array
+      description: PWM specifier for VCOM signal generation.

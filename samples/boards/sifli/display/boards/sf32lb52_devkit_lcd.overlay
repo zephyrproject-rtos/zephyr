@@ -1,0 +1,107 @@
+/*
+ * Copyright (c) 2026 Qingsong Gou <gouqs@hotmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Board overlay for sf32lb52_devkit_lcd to enable JDI display.
+ * Pin assignments are for the SF32LB52-DevKit-LCD board with a
+ * JDI LS013B7DH03 240x240 Memory LCD connected via parallel interface.
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pinctrl/sf32lb52x-pinctrl.h>
+
+/ {
+	chosen {
+		zephyr,display = &ls013b7dh03;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led_backlight: pwm_led_backlight {
+			pwms = <&pwm0 0 PWM_MSEC(10) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		pwm-led0 = &pwm_led_backlight;
+	};
+};
+
+&pinctrl {
+	jdi_default: jdi_default {
+		group1 {
+			pinmux = <PA02_LCDC1_JDI_B2>,
+				 <PA03_LCDC1_JDI_B1>,
+				 <PA04_LCDC1_JDI_G1>,
+				 <PA05_LCDC1_JDI_R1>,
+				 <PA06_LCDC1_JDI_HST>,
+				 <PA07_LCDC1_JDI_ENB>,
+				 <PA08_LCDC1_JDI_VST>,
+				 <PA39_LCDC1_JDI_VCK>,
+				 <PA40_LCDC1_JDI_XRST>,
+				 <PA41_LCDC1_JDI_HCK>,
+				 <PA42_LCDC1_JDI_R2>,
+				 <PA43_LCDC1_JDI_G2>,
+				 <PA24_LPTIM2_OUT>,
+				 <PA25_LPTIM2_OUT>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <PA01_GPTIM2_CH1>;
+		};
+	};
+};
+
+&gptim2 {
+	status = "okay";
+	sifli,prescaler = <23>;
+
+	pwm0: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm0_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&lcdc {
+	status = "okay";
+
+	jdi_bus: jdi {
+		compatible = "sifli,sf32lb-jdi";
+		pinctrl-0 = <&jdi_default>;
+		pinctrl-names = "default";
+		interface-type = <1>;  /* parallel mode */
+		clock-frequency = <746268>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+//		vcom: vcom@0 {
+//			reg = <0>;
+//			pwms = <&pwm 0 1000000 0>;  /* 1 kHz VCOM */
+//		};
+
+		ls013b7dh03: ls013b7dh03@0 {
+			compatible = "jdi,ls013b7dh03";
+			reg = <0>;
+			width = <260>;
+			height = <260>;
+
+			vlcd-gpios = <&gpioa_00_31 9 GPIO_ACTIVE_HIGH>;
+			vddp-gpios = <&gpioa_00_31 0 GPIO_ACTIVE_HIGH>;
+			power-seq-delay-ms = <11>;
+
+			valid-columns = <260>;
+			bank-col-tail = <8>;
+			valid-rows = <260>;
+			bank-row-tail = <4>;
+			enb-start-col = <6>;
+			enb-end-col = <128>;
+		};
+	};
+};
