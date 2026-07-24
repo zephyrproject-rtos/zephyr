@@ -91,6 +91,10 @@ The set of supported NXP-specific protocols is summarized below:
      - Name
      - Supported version
 
+   * - 0x81
+     - BBM (Battery-Backed Module)
+     - 1.0
+
    * - 0x82
      - CPU
      - 1.0
