@@ -949,7 +949,8 @@ static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
  * @param[in]  dev    Pointer to the device structure for the driver instance.
  *
  * @return Frequency of the counter in Hz, or zero if the counter does
- * not have a fixed frequency.
+ * not have a fixed frequency. When CONFIG_COUNTER_64BITS_FREQ is
+ * disabled, this falls back to counter_get_frequency().
  */
 __syscall uint64_t counter_get_frequency_64(const struct device *dev);
 
@@ -967,8 +968,7 @@ static inline uint64_t z_impl_counter_get_frequency_64(const struct device *dev)
 		return config->freq;
 	}
 #else
-	ARG_UNUSED(dev);
-	return -ENOTSUP;
+	return z_impl_counter_get_frequency(dev);
 #endif
 }
 
@@ -1464,7 +1464,8 @@ static inline uint32_t z_impl_counter_get_guard_period(const struct device *dev,
  *
  * @param[in]  dev    Pointer to the device structure for the driver instance.
  *
- * @return Max top value in 64 bits.
+ * @return Max top value in 64 bits. When CONFIG_COUNTER_64BITS_TICKS is
+ * disabled, this falls back to counter_get_max_top_value().
  */
 __syscall uint64_t counter_get_max_top_value_64(const struct device *dev);
 
@@ -1475,8 +1476,7 @@ static inline uint64_t z_impl_counter_get_max_top_value_64(const struct device *
 
 	return config->max_top_value_64;
 #else
-	ARG_UNUSED(dev);
-	return -ENOTSUP;
+	return z_impl_counter_get_max_top_value(dev);
 #endif
 }
 
@@ -1674,7 +1674,8 @@ static inline int z_impl_counter_set_guard_period_64(const struct device *dev, u
  * @param flags	See @ref COUNTER_GUARD_PERIOD_FLAGS.
  *
  * @return Guard period given in counter ticks or 0 if function or flags are
- *	   not supported.
+ *	   not supported. When CONFIG_COUNTER_64BITS_TICKS is disabled, this
+ *	   falls back to counter_get_guard_period().
  */
 __syscall uint64_t counter_get_guard_period_64(const struct device *dev, uint32_t flags);
 
@@ -1685,9 +1686,7 @@ static inline uint64_t z_impl_counter_get_guard_period_64(const struct device *d
 
 	return (api->get_guard_period_64) ? api->get_guard_period_64(dev, flags) : 0;
 #else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(flags);
-	return -ENOTSUP;
+	return z_impl_counter_get_guard_period(dev, flags);
 #endif
 }
 
