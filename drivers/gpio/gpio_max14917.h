@@ -21,6 +21,7 @@
 #define MAX14917_CRC_MASK       0x1F
 
 struct max14917_config {
+	struct gpio_driver_config common;
 	struct spi_dt_spec spi;
 	/* Input gpios */
 	struct gpio_dt_spec vddok_gpio;
@@ -36,6 +37,7 @@ struct max14917_config {
 };
 
 struct max14917_data {
+	struct gpio_driver_data common;
 	uint8_t gpios_ON; /* GPIO states */
 	uint8_t gpios_fault;
 	bool comm_err;

@@ -19,8 +19,9 @@
 LOG_MODULE_REGISTER(gpio_silabs, CONFIG_GPIO_LOG_LEVEL);
 
 #define SILABS_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_PORT_TypeDef)
-#define GET_SILABS_GPIO_INDEX(node_id)                                                             \
-	(DT_REG_ADDR(node_id) - DT_REG_ADDR(DT_NODELABEL(gpioa))) / SILABS_GPIO_PORT_ADDR_SPACE_SIZE
+#define GET_SILABS_GPIO_INDEX(inst)                                                                \
+	(DT_INST_REG_ADDR(inst) - DT_REG_ADDR(DT_NODELABEL(gpioa))) /                              \
+		SILABS_GPIO_PORT_ADDR_SPACE_SIZE
 
 #define NUMBER_OF_PORTS      (SIZEOF_FIELD(GPIO_TypeDef, P) / SIZEOF_FIELD(GPIO_TypeDef, P[0]))
 #define NUM_IRQ_LINES        16
@@ -469,19 +470,6 @@ static int gpio_silabs_common_init(const struct device *dev)
 		.pin = DT_PROP_BY_IDX(node, silabs_wakeup_pins, idx),                              \
 	},
 
-#define GPIO_PORT_INIT(n)                                                                          \
-	static const struct gpio_silabs_port_config gpio_silabs_port_config_##n = {                \
-		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(n),                                      \
-		.gpio_index = GET_SILABS_GPIO_INDEX(n),                                            \
-		.common_dev = DEVICE_DT_GET(DT_PARENT(n)),                                         \
-		.em4wu_pin_count = DT_PROP_LEN(n, silabs_wakeup_ints),                             \
-		.em4wu_pins = {DT_FOREACH_PROP_ELEM(n, silabs_wakeup_ints, EM4_WAKEUP_PIN)},       \
-	};                                                                                         \
-	static struct gpio_silabs_port_data gpio_silabs_port_data_##n;                             \
-	DEVICE_DT_DEFINE(n, gpio_silabs_port_init, NULL, &gpio_silabs_port_data_##n,               \
-			 &gpio_silabs_port_config_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,    \
-			 &gpio_driver_api);
-
 #define GPIO_CONTROLLER_INIT(idx)                                                                  \
 	static struct gpio_silabs_common_data gpio_silabs_common_data_##idx = {};                  \
 	static void gpio_silabs_irq_connect_##idx(const struct device *dev)                        \
@@ -502,7 +490,24 @@ static int gpio_silabs_common_init(const struct device *dev)
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, gpio_silabs_common_init, NULL, &gpio_silabs_common_data_##idx,  \
 			      &gpio_silabs_common_config_##idx, PRE_KERNEL_1,                      \
-			      CONFIG_GPIO_SILABS_COMMON_INIT_PRIORITY, NULL);                      \
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, GPIO_PORT_INIT)
+			      CONFIG_GPIO_SILABS_COMMON_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_CONTROLLER_INIT)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT silabs_gpio_port
+
+#define GPIO_PORT_INIT(n)                                                                          \
+	static const struct gpio_silabs_port_config gpio_silabs_port_config_##n = {                \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
+		.gpio_index = GET_SILABS_GPIO_INDEX(n),                                            \
+		.common_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                    \
+		.em4wu_pin_count = DT_INST_PROP_LEN(n, silabs_wakeup_ints),                        \
+		.em4wu_pins = {DT_INST_FOREACH_PROP_ELEM(n, silabs_wakeup_ints, EM4_WAKEUP_PIN)},  \
+	};                                                                                         \
+	static struct gpio_silabs_port_data gpio_silabs_port_data_##n;                             \
+	DEVICE_DT_INST_DEFINE(n, gpio_silabs_port_init, NULL, &gpio_silabs_port_data_##n,          \
+			      &gpio_silabs_port_config_##n, PRE_KERNEL_1,                          \
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(GPIO_PORT_INIT)

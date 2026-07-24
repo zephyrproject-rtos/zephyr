@@ -183,10 +183,7 @@ static int gpio_si32_init(const struct device *dev)
 
 #define GPIO_DEVICE_INIT(inst)                                                                     \
 	static const struct gpio_si32_config gpio_si32_cfg_##inst = {                              \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),              \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.base = (SI32_PBSTD_A_Type *)DT_INST_REG_ADDR(inst),                               \
 		.disable_pullups = DT_INST_PROP(inst, disable_pullups),                            \
 	};                                                                                         \
