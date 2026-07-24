@@ -20,9 +20,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(bt_bsim_privacy, LOG_LEVEL_INF);
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
-#include "bs_cmd_line.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
+#include <bs_cmd_line.h>
 
 DEFINE_FLAG_STATIC(paired_flag);
 DEFINE_FLAG_STATIC(connected_flag);

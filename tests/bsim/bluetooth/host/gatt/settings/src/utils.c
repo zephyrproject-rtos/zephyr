@@ -8,8 +8,8 @@
 #include "gatt_utils.h"
 #include <zephyr/sys/__assert.h>
 #include <zephyr/bluetooth/hci.h>
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 static struct bt_conn *default_conn;
 

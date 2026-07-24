@@ -9,10 +9,10 @@
 
 #include <zephyr/logging/log.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
-#include "bs_tracing.h"
-#include "bstests.h"
+#include <bs_tracing.h>
+#include <bstests.h>
 
 /**
  * @brief Encrypt and authenticate the given advertising data.

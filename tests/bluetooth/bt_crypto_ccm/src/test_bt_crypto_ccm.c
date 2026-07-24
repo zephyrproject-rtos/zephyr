@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/bluetooth/crypto.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #include "test_vectors.h"
 

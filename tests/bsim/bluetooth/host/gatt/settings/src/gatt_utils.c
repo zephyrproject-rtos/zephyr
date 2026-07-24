@@ -5,15 +5,15 @@
  */
 
 #include "utils.h"
-#include "argparse.h"
+#include <argparse.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/sys/__assert.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 /* Custom Service Variables */
 static const struct bt_uuid_128 test_svc_uuid = BT_UUID_INIT_128(

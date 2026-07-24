@@ -16,9 +16,9 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/l2cap.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
 
 #define LOG_MODULE_NAME main_l2cap_ecred
 #include <zephyr/logging/log.h>

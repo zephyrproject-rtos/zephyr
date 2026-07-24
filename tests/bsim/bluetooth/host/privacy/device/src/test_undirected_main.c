@@ -12,7 +12,7 @@
 
 #include <zephyr/sys/printk.h>
 
-#include "bstests.h"
+#include <bstests.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_bsim_privacy, LOG_LEVEL_INF);

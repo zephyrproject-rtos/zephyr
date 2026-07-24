@@ -10,11 +10,11 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/logging/log.h>
 
-#include "testlib/conn.h"
-#include "testlib/scan.h"
+#include <testlib/conn.h>
+#include <testlib/scan.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/testcase.h>
 
 LOG_MODULE_REGISTER(dut, CONFIG_APP_LOG_LEVEL);
 

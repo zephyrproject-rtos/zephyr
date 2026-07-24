@@ -6,9 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 #include "common.h"
-#include "argparse.h"
+#include <argparse.h>
 
 struct bt_conn *default_conn;
 

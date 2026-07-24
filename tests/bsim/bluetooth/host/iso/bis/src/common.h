@@ -10,7 +10,7 @@
 
 #include <zephyr/sys/clock.h>
 
-#include "bs_types.h"
+#include <bs_types.h>
 
 #define WAIT_TIME (30e6) /* 30 seconds*/
 

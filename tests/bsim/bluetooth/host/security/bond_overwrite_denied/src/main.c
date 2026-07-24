@@ -5,7 +5,7 @@
  */
 
 #include "bs_bt_utils.h"
-#include "bstests.h"
+#include <bstests.h>
 
 void central(void);
 void peripheral(void);

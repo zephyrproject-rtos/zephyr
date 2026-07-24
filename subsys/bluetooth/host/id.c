@@ -32,8 +32,8 @@
 #include <zephyr/toolchain.h>
 
 #include "adv.h"
-#include "common/bt_str.h"
-#include "common/rpa.h"
+#include <common/bt_str.h>
+#include <common/rpa.h>
 #include "conn_internal.h"
 #include "hci_core.h"
 #include "id.h"

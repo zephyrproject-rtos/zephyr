@@ -5,8 +5,8 @@
  */
 #include <zephyr/kernel.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 #include <zephyr/types.h>
 #include <zephyr/sys/printk.h>

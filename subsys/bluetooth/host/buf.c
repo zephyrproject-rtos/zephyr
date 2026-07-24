@@ -23,7 +23,7 @@
 #include <zephyr/sys_clock.h>
 
 #include "buf_view.h"
-#include "common/hci_common_internal.h"
+#include <common/hci_common_internal.h>
 #include "conn_internal.h"
 #include "hci_core.h"
 #include "iso_internal.h"

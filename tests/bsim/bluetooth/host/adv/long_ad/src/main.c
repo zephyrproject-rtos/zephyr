@@ -6,9 +6,9 @@
 
 #include <zephyr/kernel.h>
 
-#include "bs_tracing.h"
-#include "bstests.h"
-#include "babblekit/testcase.h"
+#include <bs_tracing.h>
+#include <bstests.h>
+#include <babblekit/testcase.h>
 
 extern void entrypoint_advertiser(void);
 extern void entrypoint_scanner(void);

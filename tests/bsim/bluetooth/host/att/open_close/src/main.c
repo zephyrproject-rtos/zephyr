@@ -10,15 +10,15 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
-#include "testlib/adv.h"
-#include "testlib/att_read.h"
-#include "testlib/att_write.h"
+#include <testlib/adv.h>
+#include <testlib/att_read.h>
+#include <testlib/att_write.h>
 #include "bs_macro.h"
 #include "bs_sync.h"
 #include <testlib/conn.h>
-#include "testlib/log_utils.h"
-#include "testlib/scan.h"
-#include "testlib/security.h"
+#include <testlib/log_utils.h>
+#include <testlib/scan.h>
+#include <testlib/security.h>
 
 /* This test uses system asserts to fail tests. */
 BUILD_ASSERT(__ASSERT_ON);

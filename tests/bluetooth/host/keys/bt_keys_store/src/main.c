@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/keys_help_utils.h"
-#include "mocks/settings.h"
-#include "mocks/settings_expects.h"
-#include "mocks/settings_store.h"
-#include "mocks/settings_store_expects.h"
-#include "mocks/util.h"
-#include "mocks/util_expects.h"
-#include "testing_common_defs.h"
+#include <mocks/keys_help_utils.h>
+#include <mocks/settings.h>
+#include <mocks/settings_expects.h>
+#include <mocks/settings_store.h>
+#include <mocks/settings_store_expects.h>
+#include <mocks/util.h>
+#include <mocks/util_expects.h>
+#include <testing_common_defs.h>
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/fff.h>

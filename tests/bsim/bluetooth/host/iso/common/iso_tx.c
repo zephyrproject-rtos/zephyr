@@ -24,7 +24,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 #include "iso_tx.h"
 

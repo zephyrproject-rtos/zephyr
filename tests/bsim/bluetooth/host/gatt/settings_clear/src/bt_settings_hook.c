@@ -11,7 +11,7 @@
 
 #include <zephyr/logging/log.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 LOG_MODULE_REGISTER(bt_settings_hook, LOG_LEVEL_DBG);
 

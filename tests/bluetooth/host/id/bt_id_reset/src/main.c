@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/addr.h"
-#include "mocks/addr_expects.h"
-#include "mocks/adv.h"
-#include "mocks/hci_core.h"
-#include "testing_common_defs.h"
+#include <mocks/addr.h>
+#include <mocks/addr_expects.h>
+#include <mocks/adv.h>
+#include <mocks/hci_core.h>
+#include <testing_common_defs.h>
 
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/fff.h>

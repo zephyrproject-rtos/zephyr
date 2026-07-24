@@ -48,14 +48,14 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "audio/shell/audio.h"
-#include "common/bt_shell_private.h"
+#include <audio/shell/audio.h>
+#include <common/bt_shell_private.h>
 #if defined(CONFIG_BT_LL_SW_SPLIT)
-#include "controller/ll_sw/shell/ll.h"
+#include <controller/ll_sw/shell/ll.h>
 #endif /* CONFIG_BT_LL_SW_SPLIT */
-#include "host/shell/bt.h"
+#include <host/shell/bt.h>
 #if defined(CONFIG_BT_CLASSIC)
-#include "host/classic/shell/bredr.h"
+#include <host/classic/shell/bredr.h>
 #endif
 
 static bool no_settings_load;

@@ -13,7 +13,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 
 #include "bs_bt_utils.h"
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 LOG_MODULE_REGISTER(test_peripheral, LOG_LEVEL_DBG);
 

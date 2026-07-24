@@ -17,12 +17,12 @@
 
 #include <zephyr/logging/log.h>
 
-#include "testlib/att.h"
-#include "testlib/att_read.h"
-#include "testlib/att_write.h"
-#include "testlib/conn.h"
+#include <testlib/att.h>
+#include <testlib/att_read.h>
+#include <testlib/att_write.h>
+#include <testlib/conn.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 LOG_MODULE_REGISTER(central, LOG_LEVEL_DBG);
 

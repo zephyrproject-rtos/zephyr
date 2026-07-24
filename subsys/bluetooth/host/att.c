@@ -37,7 +37,7 @@
 #include <sys/types.h>
 
 #include "att_internal.h"
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "conn_internal.h"
 #include "gatt_internal.h"
 #include "hci_core.h"

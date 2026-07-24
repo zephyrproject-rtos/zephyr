@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bstests.h"
+#include <bstests.h>
 
 extern struct bst_test_list *test_per_adv_sync(struct bst_test_list *tests);
 extern struct bst_test_list *test_per_adv_advertiser(struct bst_test_list *tests);

@@ -22,9 +22,9 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
-#include "common.h"
+#include <common.h>
 
 LOG_MODULE_REGISTER(ead_central_sample, CONFIG_BT_EAD_LOG_LEVEL);
 

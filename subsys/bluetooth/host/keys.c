@@ -25,8 +25,8 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "common/bt_str.h"
-#include "common/rpa.h"
+#include <common/bt_str.h>
+#include <common/rpa.h>
 #include "conn_internal.h"
 #include "gatt_internal.h"
 #include "hci_core.h"
@@ -34,7 +34,7 @@
 #include "keys.h"
 #include "settings.h"
 #include "smp.h"
-#include "sys/types.h"
+#include <sys/types.h>
 
 #define LOG_LEVEL CONFIG_BT_KEYS_LOG_LEVEL
 LOG_MODULE_REGISTER(bt_keys);

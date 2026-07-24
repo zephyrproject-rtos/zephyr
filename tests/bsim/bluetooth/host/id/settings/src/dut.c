@@ -11,7 +11,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/addr.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 LOG_MODULE_DECLARE(bt_bsim_id_settings, LOG_LEVEL_DBG);
 

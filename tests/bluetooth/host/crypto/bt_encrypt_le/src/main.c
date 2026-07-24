@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/aes.h"
-#include "mocks/aes_expects.h"
+#include <mocks/aes.h>
+#include <mocks/aes_expects.h>
 
 #include <zephyr/bluetooth/crypto.h>
 #include <zephyr/fff.h>

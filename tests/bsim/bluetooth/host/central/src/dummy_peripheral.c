@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bstests.h"
-#include "babblekit/testcase.h"
+#include <bstests.h>
+#include <babblekit/testcase.h>
 #include <zephyr/bluetooth/conn.h>
 
 static K_SEM_DEFINE(sem_connected, 0, 1);

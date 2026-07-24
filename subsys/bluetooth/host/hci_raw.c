@@ -29,7 +29,7 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
-#include "common/hci_common_internal.h"
+#include <common/hci_common_internal.h>
 #include "hci_raw_internal.h"
 #include "monitor.h"
 

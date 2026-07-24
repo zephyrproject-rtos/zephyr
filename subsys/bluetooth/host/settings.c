@@ -22,12 +22,12 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include "common/bt_settings_commit.h"
-#include "common/bt_str.h"
+#include <common/bt_settings_commit.h>
+#include <common/bt_str.h>
 #include "classic/br.h"
 #include "hci_core.h"
 #include "settings.h"
-#include "sys/types.h"
+#include <sys/types.h>
 
 #define LOG_LEVEL CONFIG_BT_SETTINGS_LOG_LEVEL
 #include <zephyr/logging/log.h>

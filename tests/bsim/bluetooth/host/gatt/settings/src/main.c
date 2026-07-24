@@ -7,13 +7,13 @@
 #include <stdlib.h>
 #include "utils.h"
 #include "main.h"
-#include "argparse.h"
-#include "bs_pc_backchannel.h"
-#include "bstests.h"
+#include <argparse.h>
+#include <bs_pc_backchannel.h>
+#include <bstests.h>
 
 #include <zephyr/sys/__assert.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 void server_procedure(void);
 void client_procedure(void);

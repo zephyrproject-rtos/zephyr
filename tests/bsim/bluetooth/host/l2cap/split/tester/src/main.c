@@ -16,16 +16,16 @@
 #include <zephyr/bluetooth/hci_raw.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "common/hci_common_internal.h"
-#include "common/bt_str.h"
+#include <common/hci_common_internal.h>
+#include <common/bt_str.h>
 
-#include "host/conn_internal.h"
-#include "host/l2cap_internal.h"
+#include <host/conn_internal.h>
+#include <host/l2cap_internal.h>
 
-#include "common.h"
+#include <common.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_tinyhost, 3);

@@ -21,12 +21,12 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
-#include "babblekit/testcase.h"
-#include "bstests.h"
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
+#include <babblekit/testcase.h>
+#include <bstests.h>
 #include "common.h"
-#include "iso_tx.h"
+#include <iso_tx.h>
 
 LOG_MODULE_REGISTER(bis_broadcaster, LOG_LEVEL_INF);
 

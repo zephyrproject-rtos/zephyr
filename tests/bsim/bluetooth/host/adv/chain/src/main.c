@@ -14,7 +14,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 #define NAME_LEN 30
 #define AD_DATA_NAME_SIZE     (sizeof(CONFIG_BT_DEVICE_NAME) - 1U + 2U)

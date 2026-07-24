@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include "mocks/settings.h"
+#include <mocks/settings.h>
 
 DEFINE_FAKE_VOID_FUNC(bt_settings_encode_key, char *, size_t, const char *,
 			    const bt_addr_le_t *, const char *);

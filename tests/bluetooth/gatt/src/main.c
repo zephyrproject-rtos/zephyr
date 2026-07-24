@@ -14,7 +14,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gatt.h>
 
-#include "gatt_internal.h"
+#include <gatt_internal.h>
 
 /* Custom Service Variables */
 static const struct bt_uuid_128 test_uuid = BT_UUID_INIT_128(

@@ -34,8 +34,8 @@
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util.h>
 
-#include "common/bt_shell_private.h"
-#include "host/shell/bt.h"
+#include <common/bt_shell_private.h>
+#include <host/shell/bt.h>
 
 #define CREDITS			10
 #define DATA_MTU		(23 * CREDITS)

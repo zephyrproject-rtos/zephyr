@@ -16,11 +16,11 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/conn.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
 
-#include "common.h"
+#include <common.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dut, LOG_LEVEL_INF);

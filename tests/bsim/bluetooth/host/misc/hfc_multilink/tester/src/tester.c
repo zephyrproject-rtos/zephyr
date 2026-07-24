@@ -17,18 +17,18 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/gap.h>
 
-#include "common/hci_common_internal.h"
-#include "common/bt_str.h"
+#include <common/hci_common_internal.h>
+#include <common/bt_str.h>
 
-#include "host/conn_internal.h"
-#include "host/l2cap_internal.h"
+#include <host/conn_internal.h>
+#include <host/l2cap_internal.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/device.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/device.h>
+#include <babblekit/testcase.h>
 
 /* local includes */
-#include "data.h"
+#include <data.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tester, CONFIG_APP_LOG_LEVEL);

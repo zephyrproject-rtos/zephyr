@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/kernel.h>
-#include "mocks/aes.h"
-#include "mocks/aes_expects.h"
+#include <mocks/aes.h>
+#include <mocks/aes_expects.h>
 
 void expect_single_call_psa_cipher_encrypt(uint8_t *out)
 {

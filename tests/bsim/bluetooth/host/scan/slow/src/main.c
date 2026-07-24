@@ -8,11 +8,11 @@
 
 #include <zephyr/kernel.h>
 
-#include "bs_cmd_line.h"
-#include "bs_tracing.h"
-#include "bstests.h"
-#include "babblekit/testcase.h"
-#include "testlib/log_utils.h"
+#include <bs_cmd_line.h>
+#include <bs_tracing.h>
+#include <bstests.h>
+#include <babblekit/testcase.h>
+#include <testlib/log_utils.h>
 
 extern void entrypoint_dut(void);
 extern void entrypoint_peer(void);

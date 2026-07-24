@@ -10,8 +10,8 @@
 #include <zephyr/bluetooth/cs.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/gatt.h>
-#include "distance_estimation.h"
-#include "common.h"
+#include <distance_estimation.h>
+#include <common.h>
 
 #define CS_CONFIG_ID     0
 #define NUM_MODE_0_STEPS 1

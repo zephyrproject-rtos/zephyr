@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/hci_core.h"
-#include "mocks/hci_core_expects.h"
-#include "mocks/prng.h"
-#include "mocks/prng_expects.h"
+#include <mocks/hci_core.h>
+#include <mocks/hci_core_expects.h>
+#include <mocks/prng.h>
+#include <mocks/prng_expects.h>
 
 #include <zephyr/bluetooth/crypto.h>
 #include <zephyr/fff.h>

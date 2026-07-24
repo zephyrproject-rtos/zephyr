@@ -6,8 +6,8 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/buf.h>
-#include "mocks/hci_core.h"
-#include "mocks/hci_core_expects.h"
+#include <mocks/hci_core.h>
+#include <mocks/hci_core_expects.h>
 
 void expect_single_call_bt_unpair(uint8_t id, const bt_addr_le_t *addr)
 {

@@ -15,13 +15,13 @@
 
 #include <zephyr/logging/log.h>
 
-#include "testlib/adv.h"
-#include "testlib/att_read.h"
-#include "testlib/conn.h"
+#include <testlib/adv.h>
+#include <testlib/att_read.h>
+#include <testlib/conn.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
+#include <babblekit/testcase.h>
 
 #include "common.h"
 

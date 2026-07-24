@@ -12,7 +12,7 @@
 #include <sys/types.h>
 
 #include "ad.h"
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 LOG_MODULE_REGISTER(advertiser, LOG_LEVEL_INF);
 

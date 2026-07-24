@@ -7,8 +7,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <host/keys.h>
-#include "host_mocks/assert.h"
-#include "mocks/keys_help_utils.h"
+#include <host_mocks/assert.h>
+#include <mocks/keys_help_utils.h>
 
 /* This LUT contains different combinations of ID, Address and key type.
  * It is defined in main.c.

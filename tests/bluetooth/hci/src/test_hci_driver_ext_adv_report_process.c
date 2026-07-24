@@ -7,7 +7,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest.h>
 
-#include "util_hci_evt.h"
+#include <util_hci_evt.h>
 
 #define DEFAULT_DATA_LEN 100U
 #define DEFAULT_SID      5U

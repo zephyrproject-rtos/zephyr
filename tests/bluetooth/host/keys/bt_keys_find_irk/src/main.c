@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mocks/keys_help_utils.h"
-#include "mocks/rpa.h"
-#include "testing_common_defs.h"
+#include <mocks/keys_help_utils.h>
+#include <mocks/rpa.h>
+#include <testing_common_defs.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/fff.h>

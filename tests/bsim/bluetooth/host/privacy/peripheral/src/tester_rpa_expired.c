@@ -18,8 +18,8 @@
 #include <zephyr/types.h>
 #include <zephyr/settings/settings.h>
 
-#include "babblekit/testcase.h"
-#include "testlib/addr.h"
+#include <babblekit/testcase.h>
+#include <testlib/addr.h>
 
 #define EXPECTED_NUM_ROTATIONS 5
 

@@ -10,8 +10,8 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/logging/log.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/testcase.h>
 
 /* local includes */
 #include "data.h"

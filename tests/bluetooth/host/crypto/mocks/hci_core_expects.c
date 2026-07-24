@@ -5,8 +5,8 @@
  */
 
 #include <zephyr/kernel.h>
-#include "mocks/hci_core.h"
-#include "mocks/hci_core_expects.h"
+#include <mocks/hci_core.h>
+#include <mocks/hci_core_expects.h>
 
 void expect_call_count_bt_hci_le_rand(int call_count, uint8_t args_history[])
 {

@@ -12,7 +12,7 @@
 
 #include <zephyr/sys/printk.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_bsim_mtu_update, LOG_LEVEL_DBG);

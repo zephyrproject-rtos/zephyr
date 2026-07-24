@@ -6,9 +6,9 @@
 
 #include <zephyr/kernel.h>
 
-#include "babblekit/testcase.h"
-#include "bs_tracing.h"
-#include "bstests.h"
+#include <babblekit/testcase.h>
+#include <bs_tracing.h>
+#include <bstests.h>
 
 extern void entrypoint_peer(void);
 extern enum bst_result_t bst_result;

@@ -15,9 +15,9 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/l2cap.h>
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
-#include "bsim_args_runner.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
+#include <bsim_args_runner.h>
 
 #define LOG_MODULE_NAME main
 #include <zephyr/logging/log.h>

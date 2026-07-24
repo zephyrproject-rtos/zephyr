@@ -6,8 +6,8 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/buf.h>
-#include "mocks/util.h"
-#include "mocks/util_expects.h"
+#include <mocks/util.h>
+#include <mocks/util_expects.h>
 
 void expect_single_call_u8_to_dec(uint8_t value)
 {

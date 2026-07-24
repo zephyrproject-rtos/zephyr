@@ -5,10 +5,10 @@
  */
 #include <zephyr/kernel.h>
 
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bstests.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <time_machine.h>
+#include <bstests.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -22,13 +22,13 @@
 #include <zephyr/bluetooth/services/bas.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "testlib/conn.h"
-#include "testlib/scan.h"
-#include "testlib/log_utils.h"
+#include <testlib/conn.h>
+#include <testlib/scan.h>
+#include <testlib/log_utils.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/sync.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/sync.h>
+#include <babblekit/testcase.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(bt_bsim_bas, CONFIG_BT_BAS_LOG_LEVEL);

@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "babblekit/testcase.h"
-#include "babblekit/sync.h"
+#include <babblekit/testcase.h>
+#include <babblekit/sync.h>
 #include "common.h"
 
 static void test_peripheral_main(void)

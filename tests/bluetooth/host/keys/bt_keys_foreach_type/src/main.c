@@ -9,8 +9,8 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <host/keys.h>
 #include <zephyr/fff.h>
-#include "mocks/keys_help_utils.h"
-#include "testing_common_defs.h"
+#include <mocks/keys_help_utils.h>
+#include <testing_common_defs.h>
 
 DEFINE_FFF_GLOBALS;
 

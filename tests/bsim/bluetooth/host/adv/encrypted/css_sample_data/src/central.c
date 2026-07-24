@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 #include "common.h"
 
 extern const struct test_sample_data *sample_data;

@@ -22,7 +22,7 @@
 #include <psa/crypto_types.h>
 #include <psa/crypto_values.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 #include "hci_core.h"
 
 #define LOG_LEVEL CONFIG_BT_HCI_CORE_LOG_LEVEL

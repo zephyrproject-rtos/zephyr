@@ -6,10 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bs_tracing.h"
-#include "bs_types.h"
-#include "bstests.h"
-#include "time_machine.h"
+#include <bs_tracing.h>
+#include <bs_types.h>
+#include <bstests.h>
+#include <time_machine.h>
 #include <zephyr/sys/__assert.h>
 
 #include <errno.h>
@@ -24,8 +24,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/flags.h"
+#include <babblekit/testcase.h>
+#include <babblekit/flags.h>
 
 DECLARE_FLAG(flag_pairing_complete);
 DECLARE_FLAG(flag_bonded);

@@ -17,11 +17,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
-#include "babblekit/testcase.h"
-#include "babblekit/sync.h"
-#include "testlib/addr.h"
+#include <babblekit/testcase.h>
+#include <babblekit/sync.h>
+#include <testlib/addr.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #define EXPECTED_NUM_ROTATIONS 5
 

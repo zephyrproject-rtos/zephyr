@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bs_bt_utils.h"
+#include <bs_bt_utils.h>
 #include "utils.h"
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(peripheral, LOG_LEVEL_INF);

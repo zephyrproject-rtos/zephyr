@@ -10,8 +10,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "babblekit/flags.h"
-#include "babblekit/testcase.h"
+#include <babblekit/flags.h>
+#include <babblekit/testcase.h>
 
 LOG_MODULE_REGISTER(broadcaster, LOG_LEVEL_INF);
 
