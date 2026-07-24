@@ -1,0 +1,22 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		/* I2S receiver the source element captures from. */
+		i2s-codec-rx = &i2s_rx0;
+	};
+
+	/*
+	 * Capture codec for the I2S source. It is a separate instance from the
+	 * board's audio_codec so that configuring the capture path cannot be
+	 * confused with the playback codec.
+	 */
+	audio_codec_capture: audio_codec_capture {
+		compatible = "zephyr,dummy-codec";
+		status = "okay";
+	};
+};
