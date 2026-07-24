@@ -24,7 +24,7 @@ import dictionary_parser.log_database
 import elftools
 from dictionary_parser.log_database import LogDatabase
 from dictionary_parser.utils import extract_one_string_in_section, find_string_in_mappings
-from elftools.dwarf.descriptions import describe_DWARF_expr
+from elftools.dwarf.dwarf_expr import DWARFExprParser
 from elftools.dwarf.locationlists import LocationExpr, LocationParser
 from elftools.elf.constants import SH_FLAGS
 from elftools.elf.descriptions import describe_ei_data
@@ -44,10 +44,6 @@ STATIC_STRING_SECTIONS = [
 
 # Sections that contains static strings but are not part of the binary (allocable).
 REMOVED_STRING_SECTIONS = ['log_strings']
-
-
-# Regulation expression to match DWARF location
-DT_LOCATION_REGEX = re.compile(r"\(DW_OP_addr: ([0-9a-f]+)")
 
 
 # Format string for pointers (default for 32-bit pointers)
@@ -329,6 +325,26 @@ def is_die_var_const_char(compile_unit, die):
     return bool(var_type is not None and var_type.endswith('char') and is_const)
 
 
+def _static_addr_from_locexpr(loc_expr, cu, dwarf_info, expr_parser):
+    """Return the static address a location expression points at, or None.
+
+    A ``const char`` log string lives at a fixed address, expressed either as
+    ``DW_OP_addr`` (the address inline, DWARF <=4 and GCC) or, since DWARF 5,
+    as ``DW_OP_addrx`` (an index into ``.debug_addr``, emitted by Clang). Parse
+    the opcode directly rather than rendering the expression to text: the text
+    form of ``DW_OP_addrx`` carries the index, not the address.
+    """
+    ops = expr_parser.parse_expr(loc_expr)
+    if not ops:
+        return None
+    op = ops[0]
+    if op.op_name == 'DW_OP_addr':
+        return op.args[0]
+    if op.op_name == 'DW_OP_addrx':
+        return dwarf_info.get_addr(cu, op.args[0])
+    return None
+
+
 def extract_string_variables(elf):
     """
     Find all string variables (char) in all Compilation Units and
@@ -339,6 +355,7 @@ def extract_string_variables(elf):
     loc_parser = LocationParser(loc_lists)
 
     strings = []
+    expr_parser = DWARFExprParser(dwarf_info.structs)
 
     # Loop through all Compilation Units and
     # Debug information Entry (DIE) to extract all string variables
@@ -358,19 +375,17 @@ def extract_string_variables(elf):
                     loc = loc_parser.parse_from_attribute(loc_attr, die.cu['version'], die)
                     if isinstance(loc, LocationExpr):
                         try:
-                            addr = describe_DWARF_expr(loc.loc_expr, dwarf_info.structs)
-
-                            matcher = DT_LOCATION_REGEX.match(addr)
-                            if matcher:
-                                addr = int(matcher.group(1), 16)
-                                if addr > 0:
-                                    strings.append(
-                                        {
-                                            'name': die.attributes['DW_AT_name'].value,
-                                            'addr': addr,
-                                            'die': die,
-                                        }
-                                    )
+                            addr = _static_addr_from_locexpr(
+                                loc.loc_expr, compile_unit, dwarf_info, expr_parser
+                            )
+                            if addr is not None and addr > 0:
+                                strings.append(
+                                    {
+                                        'name': die.attributes['DW_AT_name'].value,
+                                        'addr': addr,
+                                        'die': die,
+                                    }
+                                )
                         except KeyError:
                             pass
 
