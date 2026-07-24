@@ -63,4 +63,8 @@ Z_GENERIC_SECTION(.text._HandlerModeExit) void z_arm_exc_exit(void)
 #ifdef CONFIG_STACK_SENTINEL
 	z_check_stack_sentinel();
 #endif /* CONFIG_STACK_SENTINEL */
+
+#if defined(CONFIG_ARM_ERRATUM_838869) && defined(CONFIG_MPU)
+	__DSB();
+#endif /* CONFIG_ARM_ERRATUM_838869 and CONFIG_MPU */
 }
