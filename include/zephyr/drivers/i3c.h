@@ -1456,8 +1456,7 @@ struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
  * assigned already (that i3c_device_desc::dynamic_addr is not
  * zero). This is mainly used during the initial DAA.
  *
- * @param[in] addr_slots Pointer to address slots struct.
- * @param[in] dev_list Pointer to the device list struct.
+ * @param[in] dev Pointer to the controller device driver instance.
  * @param[in] pid Provisioned ID of device to be assigned address.
  * @param[in] must_match True if PID must match devices in
  *			 the device list. False otherwise.
@@ -1475,8 +1474,7 @@ struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
  *                 has an address assigned or invalid function
  *                 arguments.
  */
-int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
-				 const struct i3c_dev_list *dev_list,
+int i3c_dev_list_daa_addr_helper(const struct device *dev,
 				 uint64_t pid, bool must_match,
 				 bool assigned_okay,
 				 struct i3c_device_desc **target,
@@ -1663,8 +1661,8 @@ static inline int i3c_recover_bus(const struct device *dev)
  * @param target Pointer to the target device descriptor
  *
  * @retval 0 on success.
- * @retval -EINVAL Address is not available, or the device
- *     has already been attached before.
+ * @retval -EADDRNOTAVAIL Address is not available.
+ * @retval -EALREADY Device has already been attached before.
  */
 int i3c_attach_i3c_device(struct i3c_device_desc *target);
 
@@ -1711,7 +1709,7 @@ int i3c_reattach_i3c_device(struct i3c_device_desc *target, uint8_t old_dyn_addr
  * @param target Pointer to the target device descriptor
  *
  * @retval 0 on success.
- * @retval -EINVAL Device is already detached.
+ * @retval -EALREADY Device is already detached.
  */
 int i3c_detach_i3c_device(struct i3c_device_desc *target);
 
@@ -1753,8 +1751,8 @@ static inline bool i3c_is_i3c_device_attached(struct i3c_device_desc *target)
  * @param target Pointer to the target device descriptor
  *
  * @retval 0 on success.
- * @retval -EINVAL Address is not available, or the device
- *     has already been attached before.
+ * @retval -EADDRNOTAVAIL Address is not available.
+ * @retval -EALREADY Device has already been attached before.
  */
 int i3c_attach_i2c_device(struct i3c_i2c_device_desc *target);
 
@@ -1773,7 +1771,7 @@ int i3c_attach_i2c_device(struct i3c_i2c_device_desc *target);
  * @param target Pointer to the target device descriptor
  *
  * @retval 0 on success.
- * @retval -EINVAL Device is already detached.
+ * @retval -EALREADY Device is already detached.
  */
 int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target);
 

@@ -1224,9 +1224,7 @@ static int it51xxx_daa_next_xfer(const struct device *dev)
 	pid = (uint64_t)vendor_id << 32U | (uint64_t)part_no;
 
 	/* find the device in the device list */
-	ret = i3c_dev_list_daa_addr_helper(&data->common.attached_dev.addr_slots,
-					   &cfg->common.dev_list, pid, false, false, &target,
-					   &dyn_addr);
+	ret = i3c_dev_list_daa_addr_helper(dev, pid, false, false, &target, &dyn_addr);
 	if (ret != 0) {
 		LOG_INST_ERR(cfg->log, "no dynamic address could be assigned to target");
 		return -EINVAL;
@@ -1238,6 +1236,12 @@ static int it51xxx_daa_next_xfer(const struct device *dev)
 		target->dynamic_addr = dyn_addr;
 		target->bcr = data->dlm_data.rx_data[6];
 		target->dcr = data->dlm_data.rx_data[7];
+
+		int aret = i3c_attach_i3c_device(target);
+
+		if (aret != 0 && aret != -EALREADY) {
+			LOG_INST_ERR(cfg->log, "failed to attach target");
+		}
 	} else {
 		LOG_INST_INF(
 			cfg->log,
