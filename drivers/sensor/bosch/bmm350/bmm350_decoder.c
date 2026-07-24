@@ -17,10 +17,17 @@ void bmm350_decoder_compensate_raw_data(const struct bmm350_raw_mag_data *raw_da
 					const struct mag_compensate *comp,
 					struct bmm350_mag_temp_data *out)
 {
-	int32_t out_data[4];
+	/*
+	 * Use 64-bit intermediates: the cross-axis stage scales by
+	 * BMM350_MAG_COMP_COEFF_SCALING twice, which overflows int32 for strong
+	 * fields (e.g. during self-test or saturation).
+	 */
+	int64_t out_data[4];
+	int64_t t_delta;
+	const int64_t scale100 = (int64_t)BMM350_MAG_COMP_COEFF_SCALING * 100;
 	int32_t dut_offset_coef[3], dut_sensit_coef[3], dut_tco[3], dut_tcs[3];
 
-	/* Convert mag lsb to uT and temp lsb to degC */
+	/* Convert mag lsb to uT and temp lsb to centi-degC (0.01 degC) */
 	out_data[0] = ((sign_extend(raw_data->magn_x, BMM350_SIGNED_24_BIT) *
 			BMM350_LSB_TO_UT_XY_COEFF) /
 		       BMM350_LSB_TO_UT_COEFF_DIV);
@@ -30,20 +37,21 @@ void bmm350_decoder_compensate_raw_data(const struct bmm350_raw_mag_data *raw_da
 	out_data[2] = ((sign_extend(raw_data->magn_z, BMM350_SIGNED_24_BIT) *
 			BMM350_LSB_TO_UT_Z_COEFF) /
 		       BMM350_LSB_TO_UT_COEFF_DIV);
-	out_data[3] = ((sign_extend(raw_data->temp, BMM350_SIGNED_24_BIT) *
-			BMM350_LSB_TO_UT_TEMP_COEFF) /
-		       BMM350_LSB_TO_UT_COEFF_DIV);
+	out_data[3] = ((int64_t)sign_extend(raw_data->temp, BMM350_SIGNED_24_BIT) *
+		       BMM350_LSB_TO_UT_TEMP_COEFF * 100) /
+		      BMM350_LSB_TO_UT_COEFF_DIV;
 
+	/* Subtract the 25.49 degC offset (expressed in centi-degC). */
 	if (out_data[3] > 0) {
-		out_data[3] = (out_data[3] - (2549 / 100));
+		out_data[3] = (out_data[3] - 2549);
 	} else if (out_data[3] < 0) {
-		out_data[3] = (out_data[3] + (2549 / 100));
+		out_data[3] = (out_data[3] + 2549);
 	}
 
 	/* Apply compensation to temperature reading */
 	out_data[3] = (((BMM350_MAG_COMP_COEFF_SCALING + comp->dut_sensit_coef.t_sens) *
 			out_data[3]) +
-		       comp->dut_offset_coef.t_offs) /
+		       ((int64_t)comp->dut_offset_coef.t_offs * 100)) /
 		      BMM350_MAG_COMP_COEFF_SCALING;
 
 	/* Store magnetic compensation structure to an array */
@@ -63,33 +71,38 @@ void bmm350_decoder_compensate_raw_data(const struct bmm350_raw_mag_data *raw_da
 	dut_tcs[1] = comp->dut_tcs.tcs_y;
 	dut_tcs[2] = comp->dut_tcs.tcs_z;
 
+	/*
+	 * Temperature delta from the calibration reference, in centi-degC. The
+	 * TCO/TCS stages below fold in the extra factor of 100 via scale100 so the
+	 * temperature correction uses the full 0.01 degC resolution.
+	 */
+	t_delta = out_data[3] - ((int64_t)comp->dut_t0 * 100);
+
 	/* Compensate raw magnetic data */
 	for (size_t indx = 0; indx < 3; indx++) {
 		out_data[indx] = (out_data[indx] *
 				  (BMM350_MAG_COMP_COEFF_SCALING + dut_sensit_coef[indx])) /
 				 BMM350_MAG_COMP_COEFF_SCALING;
 		out_data[indx] = (out_data[indx] + dut_offset_coef[indx]);
-		out_data[indx] = ((out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) +
-				  (dut_tco[indx] * (out_data[3] - comp->dut_t0))) /
-				 BMM350_MAG_COMP_COEFF_SCALING;
-		out_data[indx] = (out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) /
-				 (BMM350_MAG_COMP_COEFF_SCALING +
-				  (dut_tcs[indx] * (out_data[3] - comp->dut_t0)));
+		out_data[indx] = ((out_data[indx] * scale100) + (dut_tco[indx] * t_delta)) /
+				 scale100;
+		out_data[indx] = (out_data[indx] * scale100) /
+				 (scale100 + (dut_tcs[indx] * t_delta));
 	}
 
-	out->mag[0] = ((((out_data[0] * BMM350_MAG_COMP_COEFF_SCALING) -
+	out->mag[0] = (int32_t)((((out_data[0] * BMM350_MAG_COMP_COEFF_SCALING) -
 		    (comp->cross_axis.cross_x_y * out_data[1])) *
 		   BMM350_MAG_COMP_COEFF_SCALING) /
 		  ((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
 		   (comp->cross_axis.cross_y_x * comp->cross_axis.cross_x_y)));
 
-	out->mag[1] = ((((out_data[1] * BMM350_MAG_COMP_COEFF_SCALING) -
+	out->mag[1] = (int32_t)((((out_data[1] * BMM350_MAG_COMP_COEFF_SCALING) -
 		    (comp->cross_axis.cross_y_x * out_data[0])) *
 		   BMM350_MAG_COMP_COEFF_SCALING) /
 		  ((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
 		   (comp->cross_axis.cross_y_x * comp->cross_axis.cross_x_y)));
 
-	out->mag[2] = (out_data[2] +
+	out->mag[2] = (int32_t)(out_data[2] +
 		  (((out_data[0] *
 		     ((comp->cross_axis.cross_y_x * comp->cross_axis.cross_z_y) -
 		      (comp->cross_axis.cross_z_x * BMM350_MAG_COMP_COEFF_SCALING))) -
@@ -99,9 +112,10 @@ void bmm350_decoder_compensate_raw_data(const struct bmm350_raw_mag_data *raw_da
 		  (((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
 		    comp->cross_axis.cross_y_x * comp->cross_axis.cross_x_y)));
 
-	LOG_DBG("mag data %d %d %d", out_data[0], out_data[1], out_data[2]);
+	LOG_DBG("mag data %d %d %d", (int32_t)out_data[0], (int32_t)out_data[1],
+		(int32_t)out_data[2]);
 
-	out->temperature = out_data[3];
+	out->temperature = (int32_t)out_data[3];
 }
 
 #ifdef CONFIG_SENSOR_ASYNC_API
@@ -125,6 +139,9 @@ static uint8_t bmm350_encode_channel(enum sensor_channel chan)
 		encode_bmask |= BIT(1);
 		encode_bmask |= BIT(2);
 		break;
+	case SENSOR_CHAN_DIE_TEMP:
+		encode_bmask |= BIT(3);
+		break;
 	default:
 		break;
 	}
@@ -146,6 +163,7 @@ int bmm350_encode(const struct device *dev,
 
 	if (is_trigger) {
 		edata->header.channels |= bmm350_encode_channel(SENSOR_CHAN_MAGN_XYZ);
+		edata->header.channels |= bmm350_encode_channel(SENSOR_CHAN_DIE_TEMP);
 	} else {
 		const struct sensor_chan_spec *const channels = read_config->channels;
 		size_t num_channels = read_config->count;
@@ -202,6 +220,7 @@ static int bmm350_decoder_get_size_info(struct sensor_chan_spec chan_spec,
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:
+	case SENSOR_CHAN_DIE_TEMP:
 		*base_size = sizeof(struct sensor_q31_data);
 		*frame_size = sizeof(struct sensor_q31_sample_data);
 		return 0;
@@ -283,6 +302,33 @@ static int bmm350_decoder_decode(const uint8_t *buffer,
 		out->readings[0].values[0] = (result.mag[0] << 8) / 100;
 		out->readings[0].values[1] = (result.mag[1] << 8) / 100;
 		out->readings[0].values[2] = (result.mag[2] << 8) / 100;
+
+		*fit = 1;
+		return 1;
+	}
+	case SENSOR_CHAN_DIE_TEMP: {
+
+		channel_request = bmm350_encode_channel(chan_spec.chan_type);
+		if ((channel_request & edata->header.channels) != channel_request) {
+			return -ENODATA;
+		}
+
+		struct sensor_q31_data *out = data_out;
+
+		out->header.base_timestamp_ns = edata->header.timestamp;
+		out->header.reading_count = 1;
+
+		struct bmm350_mag_temp_data result;
+
+		bmm350_decoder_compensate_raw_data(&edata->payload,
+						   &edata->comp,
+						   &result);
+
+		/** Temperature is in centi-degC (0.01 degC),
+		 * so we're reserving 8 fractional bits.
+		 */
+		out->shift = (31 - 8);
+		out->readings[0].value = (result.temperature << 8) / 100;
 
 		*fit = 1;
 		return 1;
