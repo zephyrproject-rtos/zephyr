@@ -8,6 +8,9 @@ config USART_GD32
 	select PINCTRL
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_SUPPORT_ASYNC if DT_HAS_GD_GD32_DMA_ENABLED || \
+				       DT_HAS_GD_GD32_DMA_V1_ENABLED
+	select DMA if UART_ASYNC_API
 	select USE_GD32_USART
 	help
 	  This option enables the USART driver for GD32 SoC family.
