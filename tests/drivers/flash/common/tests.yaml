@@ -68,6 +68,12 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk/mimxrt1062/qspi
@@ -204,6 +210,12 @@ tests:
       - beagleconnect_freedom@C7/cc1352p7
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
     extra_args:
       - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
   drivers.flash.common.test_storage_partition.nrf54lm20:
@@ -301,6 +313,8 @@ tests:
       - CONF_FILE="./prj.conf ./boards/${BOARD}_andestech_qspi_nor_xip.conf"
   drivers.flash.common.infineon_rram:
     filter: CONFIG_FLASH_INFINEON_RRAM
+    extra_configs:
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=524288
     platform_allow:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
     integration_platforms:
@@ -312,7 +326,11 @@ tests:
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
       - kit_pse84_eval/pse846gps2dbzc4a/m55
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
     extra_configs:
       - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=-1
     integration_platforms:
       - kit_pse84_eval/pse846gps2dbzc4a/m33
