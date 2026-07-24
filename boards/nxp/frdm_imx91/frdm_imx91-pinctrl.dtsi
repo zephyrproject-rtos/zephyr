@@ -303,4 +303,129 @@
 			drive-strength = "x5";
 		};
 	};
+
+	/*
+	 * lpuart5 pinctrl for BT UART (IW612 MAYA-W476)
+	 *
+	 * Pads: gpio_io00(TX) / gpio_io01(RX) / gpio_io02(CTS) / gpio_io03(RTS)
+	 *
+	 * Signal path (schematic SPF-94610_A1, page 18):
+	 *   i.MX91 gpio_io00 -> 74AVC4T3144 -> M.2 UART_TXD -> IW612 UART_RX
+	 *   i.MX91 gpio_io01 -> 74AVC4T3144 -> M.2 UART_RXD -> IW612 UART_TX
+	 *   i.MX91 gpio_io02 -> 74AVC4T3144 -> M.2 UART_CTS -> IW612 UART_RTS
+	 *   i.MX91 gpio_io03 -> 74AVC4T3144 -> M.2 UART_RTS -> IW612 UART_CTS
+	 */
+	lpuart5_default: lpuart5_default {
+		group0 {
+			pinmux = <&iomuxc1_gpio_io00_lpuart_tx_lpuart5_tx>,
+				 <&iomuxc1_gpio_io01_lpuart_rx_lpuart5_rx>,
+				 <&iomuxc1_gpio_io02_lpuart_cts_b_lpuart5_cts_b>,
+				 <&iomuxc1_gpio_io03_lpuart_rts_b_lpuart5_rts_b>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+	};
+
+	lpuart5_sleep: lpuart5_sleep {
+		group0 {
+			/* Keep TX driven during sleep */
+			pinmux = <&iomuxc1_gpio_io00_lpuart_tx_lpuart5_tx>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+
+		group1 {
+			/* RX/CTS/RTS as GPIO input during sleep */
+			pinmux = <&iomuxc1_gpio_io01_gpio_io_gpio2_io1>,
+				 <&iomuxc1_gpio_io02_gpio_io_gpio2_io2>,
+				 <&iomuxc1_gpio_io03_gpio_io_gpio2_io3>;
+			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x5";
+		};
+	};
+
+	/*
+	 * usdhc3 pinctrl for Wi-Fi SDIO (IW612 MAYA-W476)
+	 *
+	 * Pads: sd3_clk/cmd/data0-3 (gpio3.IO20-25)
+	 *
+	 * Signal path (schematic SPF-94610_A1, page 18-19):
+	 *   i.MX91 sd3_clk   -> W2_SD_CLK   -> IW612 SD_CLK
+	 *   i.MX91 sd3_cmd   -> W2_SD_CMD   -> IW612 SD_CMD
+	 *   i.MX91 sd3_data0 -> W2_SD_DATA0 -> IW612 SD_DAT0
+	 *   i.MX91 sd3_data1 -> W2_SD_DATA1 -> IW612 SD_DAT1
+	 *   i.MX91 sd3_data2 -> W2_SD_DATA2 -> IW612 SD_DAT2
+	 *   i.MX91 sd3_data3 -> W2_SD_DATA3 -> IW612 SD_DAT3
+	 */
+	pinmux_usdhc3: pinmux_usdhc3 {
+		group0 {
+			pinmux = <&iomuxc1_sd3_clk_usdhc_clk_usdhc3_clk>;
+			drive-strength = "x1";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-schmitt-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc1_sd3_cmd_usdhc_cmd_usdhc3_cmd>,
+				 <&iomuxc1_sd3_data0_usdhc_data_usdhc3_data0>,
+				 <&iomuxc1_sd3_data1_usdhc_data_usdhc3_data1>,
+				 <&iomuxc1_sd3_data2_usdhc_data_usdhc3_data2>,
+				 <&iomuxc1_sd3_data3_usdhc_data_usdhc3_data3>;
+			drive-strength = "x1";
+			slew-rate = "fast";
+			input-schmitt-enable;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	pinmux_usdhc3_100mhz: pinmux_usdhc3_100mhz {
+		group0 {
+			pinmux = <&iomuxc1_sd3_clk_usdhc_clk_usdhc3_clk>;
+			drive-strength = "x3";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-schmitt-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc1_sd3_cmd_usdhc_cmd_usdhc3_cmd>,
+				 <&iomuxc1_sd3_data0_usdhc_data_usdhc3_data0>,
+				 <&iomuxc1_sd3_data1_usdhc_data_usdhc3_data1>,
+				 <&iomuxc1_sd3_data2_usdhc_data_usdhc3_data2>,
+				 <&iomuxc1_sd3_data3_usdhc_data_usdhc3_data3>;
+			drive-strength = "x3";
+			slew-rate = "fast";
+			input-schmitt-enable;
+			bias-pull-up;
+			input-enable;
+		};
+	};
+
+	pinmux_usdhc3_200mhz: pinmux_usdhc3_200mhz {
+		group0 {
+			pinmux = <&iomuxc1_sd3_clk_usdhc_clk_usdhc3_clk>;
+			drive-strength = "x6";
+			bias-pull-down;
+			slew-rate = "fast";
+			input-schmitt-enable;
+		};
+
+		group1 {
+			pinmux = <&iomuxc1_sd3_cmd_usdhc_cmd_usdhc3_cmd>,
+				 <&iomuxc1_sd3_data0_usdhc_data_usdhc3_data0>,
+				 <&iomuxc1_sd3_data1_usdhc_data_usdhc3_data1>,
+				 <&iomuxc1_sd3_data2_usdhc_data_usdhc3_data2>,
+				 <&iomuxc1_sd3_data3_usdhc_data_usdhc3_data3>;
+			drive-strength = "x6";
+			slew-rate = "fast";
+			input-schmitt-enable;
+			bias-pull-up;
+			input-enable;
+		};
+	};
 };
