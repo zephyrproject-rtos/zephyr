@@ -181,3 +181,15 @@
 &rtc {
 	status = "okay";
 };
+
+&xdmac0 {
+	status = "okay";
+};
+
+&xdmac1 {
+	status = "okay";
+};
+
+&xdmac2 {
+	status = "okay";
+};
