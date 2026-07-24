@@ -20,7 +20,9 @@
 
 #define TEST_FLASH_CONTROLLER_NODE DT_MTD_FROM_PARTITION(TEST_FLASH_PART_NODE)
 
-#define PATTERN_SIZE 256
+#define TEST_FLASH_WRITE_BLOCK_SIZE DT_PROP_OR(TEST_FLASH_CONTROLLER_NODE, write_block_size, 1)
+#define PATTERN_SIZE                MAX(256, TEST_FLASH_WRITE_BLOCK_SIZE)
+BUILD_ASSERT(IS_POWER_OF_TWO(PATTERN_SIZE), "PATTERN_SIZE must be a power of two");
 
 static const struct device *flash_controller = DEVICE_DT_GET(TEST_FLASH_CONTROLLER_NODE);
 
@@ -33,7 +35,19 @@ static const size_t number_of_slots = test_area_size / PATTERN_SIZE;
 
 static int verify_block(off_t pos, uint8_t *expected_data, size_t size)
 {
-	uint8_t buffer[size];
+#if DT_NODE_HAS_COMPAT(TEST_FLASH_CONTROLLER_NODE, jedec_spi_nand)
+	enum flash_block_status status;
+	if (spi_nand_is_bad_block(flash_controller, pos, &status) != 0) {
+		return -EINVAL;
+	}
+
+	if (status == FLASH_BLOCK_BAD) {
+		printk("Encountered a bad block! Skipping.\n");
+		return 0;
+	}
+#endif
+
+	static uint8_t buffer[PATTERN_SIZE];
 
 	if (flash_read(flash_controller, pos, buffer, size) != 0) {
 		return -EIO;
