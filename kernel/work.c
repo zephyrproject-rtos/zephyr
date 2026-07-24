@@ -856,7 +856,7 @@ void k_work_queue_start(struct k_work_q *queue,
 	/* In future, this whole function will be deprecated, but for now, we
 	 * have to use the `thread` field to create a new thread in it.
 	 */
-	TOOLCHAIN_DISABLE_WARNING("-Wdeprecated-declarations");
+	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 
 	uint32_t flags = K_WORK_QUEUE_STARTED;
 
@@ -901,7 +901,7 @@ void k_work_queue_start(struct k_work_q *queue,
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, start, queue);
 
-	TOOLCHAIN_ENABLE_WARNING("-Wdeprecated-declarations");
+	TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS);
 }
 
 int k_work_queue_drain(struct k_work_q *queue,
