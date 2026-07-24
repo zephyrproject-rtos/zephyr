@@ -124,9 +124,6 @@ config ETH_DWMAC_RX_REFILL_THREAD_PRIORITY
 	  Priority level of the internal thread which is used to refill
 	  the receive buffer pool.
 
-# Currently only for the 1000 core
-if ETH_DWC_ETHER_1000_CORE
-
 config ETH_DWC_ETHER_TX_HW_CHECKSUM
 	bool "Use TX hardware checksum"
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
@@ -154,8 +151,6 @@ config ETH_DWC_ETHER_RX_HW_CHECKSUM_EN
 	depends on ETH_DWC_ETHER_RX_HW_CHECKSUM
 	depends on NET_CHECKSUM_OFFLOAD
 	default y
-
-endif # ETH_DWC_ETHER_1000_CORE
 
 endif # ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 
