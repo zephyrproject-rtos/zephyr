@@ -1,0 +1,9 @@
+# Copyright (c) 2026 RISE Lab, IIT Madras
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_SHAKTI
+	bool "Shakti PWM driver"
+	default y
+	depends on DT_HAS_SHAKTI_PWM_ENABLED
+	help
+	  Enable the Shakti PWM driver.

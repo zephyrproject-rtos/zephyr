@@ -1,0 +1,22 @@
+# Copyright (c) 2026 RISE Lab, IIT Madras
+# SPDX-License-Identifier: Apache-2.0
+
+description: Shakti PWM
+
+compatible: "shakti,pwm"
+
+include: [pwm-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Clock frequency feeding the PWM block, in Hz.
+
+pwm-cells:
+  - channel
+  - period
+  - flags
