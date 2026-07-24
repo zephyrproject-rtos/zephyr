@@ -1,0 +1,121 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      The INT signal connection for interrupt-driven operation.
+      The signal is active-high by default.
+
+  accel-div:
+    type: int
+    default: 22
+    description: |
+      Specify the accelerometer sample rate divider. The output data rate is
+      calculated as 1125 / (1 + divider) Hz, where divider is 0-4095.
+      This corresponds to a range of approximately 0.27 Hz to 1125 Hz.
+      The default of 22 yields ~48.9 Hz, which is a commonly used rate that
+      balances responsiveness and power consumption for general-purpose motion
+      sensing without overloading the host interface.
+
+  accel-fs:
+    type: int
+    default: 0
+    description: |
+      Specify the accelerometer full-scale range in g.
+      The default of 2g is the most sensitive range and covers typical
+      human-motion and tilt-sensing applications without clipping.
+
+      - 0 # ICM20948_DT_ACCEL_FS_2 (2g)
+      - 1 # ICM20948_DT_ACCEL_FS_4 (4g)
+      - 2 # ICM20948_DT_ACCEL_FS_8 (8g)
+      - 3 # ICM20948_DT_ACCEL_FS_16 (16g)
+
+    enum: [0, 1, 2, 3]
+
+  gyro-div:
+    type: int
+    default: 8
+    description: |
+      Specify the gyroscope sample rate divider. The output data rate is
+      calculated as 1100 / (1 + divider) Hz, where divider is 0-255.
+      This corresponds to a range of approximately 4.3 Hz to 1100 Hz.
+      The default of 8 yields ~122.2 Hz, which provides sufficient responsiveness
+      for most gesture and motion detection use cases while keeping host interface
+      load reasonable.
+
+  gyro-fs:
+    type: int
+    default: 0
+    description: |
+      Specify the gyro full-scale range in degrees per second.
+      The default of 250 DPS is the most sensitive range and is sufficient
+      for most orientation and gesture sensing applications.
+
+      - 0 # ICM20948_DT_GYRO_FS_250 (250 dps)
+      - 1 # ICM20948_DT_GYRO_FS_500 (500 dps)
+      - 2 # ICM20948_DT_GYRO_FS_1000 (1000 dps)
+      - 3 # ICM20948_DT_GYRO_FS_2000 (2000 dps)
+
+    enum: [0, 1, 2, 3]
+
+  accel-dlpf:
+    type: int
+    default: 0
+    description: |
+      Accelerometer digital low-pass filter (DLPF) configuration.
+      The default of 246Hz is the widest-bandwidth filter setting, minimizing
+      added latency and preserving signal fidelity. Applications sensitive to
+      high-frequency noise should select a narrower filter.
+
+      - 0 # ICM20948_DT_ACCEL_FILTER_246HZ
+      - 1 # ICM20948_DT_ACCEL_FILTER_246HZ_DUP (duplicate of 246Hz)
+      - 2 # ICM20948_DT_ACCEL_FILTER_111HZ
+      - 3 # ICM20948_DT_ACCEL_FILTER_50HZ
+      - 4 # ICM20948_DT_ACCEL_FILTER_24HZ
+      - 5 # ICM20948_DT_ACCEL_FILTER_12HZ
+      - 6 # ICM20948_DT_ACCEL_FILTER_6HZ
+      - 7 # ICM20948_DT_ACCEL_FILTER_473HZ
+      - 8 # ICM20948_DT_ACCEL_FILTER_1209HZ_NOLPF (no low-pass filter)
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+  gyro-dlpf:
+    type: int
+    default: 0
+    description: |
+      Gyroscope digital low-pass filter (DLPF) configuration.
+      The default of 197Hz is the widest-bandwidth filter setting, minimizing
+      added latency and preserving signal fidelity. Applications sensitive to
+      high-frequency noise should select a narrower filter.
+
+      - 0 # ICM20948_DT_GYRO_FILTER_197HZ
+      - 1 # ICM20948_DT_GYRO_FILTER_152HZ
+      - 2 # ICM20948_DT_GYRO_FILTER_120HZ
+      - 3 # ICM20948_DT_GYRO_FILTER_51HZ
+      - 4 # ICM20948_DT_GYRO_FILTER_24HZ
+      - 5 # ICM20948_DT_GYRO_FILTER_12HZ
+      - 6 # ICM20948_DT_GYRO_FILTER_6HZ
+      - 7 # ICM20948_DT_GYRO_FILTER_361HZ
+      - 8 # ICM20948_DT_GYRO_FILTER_12106HZ_NOLPF (no low-pass filter)
+
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+
+  mag-mode:
+    type: int
+    default: 0
+    description: |
+      Magnetometer operating mode (disabled or output data rate selection).
+      The default disables the magnetometer since not all applications require
+      it, and enabling it requires additional I2C master configuration.
+
+      - 0 # ICM20948_DT_MAG_MODE_DISABLED
+      - 2 # ICM20948_DT_MAG_MODE_10HZ
+      - 4 # ICM20948_DT_MAG_MODE_20HZ
+      - 6 # ICM20948_DT_MAG_MODE_50HZ
+      - 8 # ICM20948_DT_MAG_MODE_100HZ
+
+    enum: [0, 2, 4, 6, 8]

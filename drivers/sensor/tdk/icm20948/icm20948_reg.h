@@ -1,0 +1,180 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_SENSOR_ICM20948_ICM20948_REG_H_
+#define ZEPHYR_DRIVERS_SENSOR_ICM20948_ICM20948_REG_H_
+
+/* Device timing constants */
+#define ICM20948_STARTUP_TIME_MS     30
+#define ICM20948_RESET_POLL_DELAY_US 10
+#define ICM20948_RESET_TIMEOUT_LOOPS 1000
+#define ICM20948_OSC_STABILIZE_MS    100
+
+/* AK09916 timing constants */
+#define AK09916_I2C_POLL_DELAY_US    10
+#define AK09916_I2C_TIMEOUT_LOOPS    100
+#define AK09916_MODE_CHANGE_DELAY_US 100
+#define AK09916_RESET_TIMEOUT_LOOPS  1000
+#define AK09916_I2C_MST_STABILIZE_MS 100
+
+/* Scaling factor for sensor value conversions */
+#define SENSOR_VALUE_SCALE 1000000
+
+/* Bank selection register - common to all banks */
+#define REG_BANK_SEL 0x7F
+
+/********* ICM20948 Bank 0 Registers *********/
+#define ICM20948_REG_WHO_AM_I 0x0000
+#define ICM20948_WHO_AM_I_VAL 0xEA
+
+#define ICM20948_REG_USER_CTRL             0x0003
+#define ICM20948_USER_CTRL_I2C_IF_DIS_MASK BIT(4)
+#define ICM20948_USER_CTRL_I2C_MST_EN_MASK BIT(5)
+
+#define ICM20948_REG_PWR_MGMT_1         0x0006
+#define ICM20948_PWR_MGMT_1_CLKSEL_MASK GENMASK(2, 0)
+#define ICM20948_PWR_MGMT_1_CLKSEL_AUTO 0x01
+#define ICM20948_PWR_MGMT_1_LP_EN_MASK  BIT(5)
+#define ICM20948_PWR_MGMT_1_SLEEP_MASK  BIT(6)
+#define ICM20948_PWR_MGMT_1_RESET_MASK  BIT(7)
+
+#define ICM20948_REG_PWR_MGMT_2    0x0007
+#define ICM20948_PWR_MGMT_2_ALL_ON 0x00 /* Enable accel and gyro */
+
+#define ICM20948_REG_INT_PIN_CFG            0x000F
+#define ICM20948_INT_PIN_CFG_BYPASS_EN_MASK BIT(1) /* Must be 0 for I2C master */
+
+#define ICM20948_REG_INT_ENABLE             0x0010
+#define ICM20948_INT_ENABLE_I2C_MST_EN      BIT(0) /* Enable I2C master interrupt */
+#define ICM20948_INT_ENABLE_DMP_EN_MASK     BIT(1) /* Enable DMP interrupt */
+#define ICM20948_INT_ENABLE_PLL_RDY_EN_MASK BIT(2) /* Enable PLL ready interrupt */
+#define ICM20948_INT_ENABLE_WOM_EN_MASK     BIT(3) /* Enable wake on motion interrupt */
+#define ICM20948_INT_ENABLE_WOF_EN_MASK     BIT(7) /* Enable wake on FSYNC interrupt */
+
+#define ICM20948_REG_INT_ENABLE_1 0x0011
+#define ICM20948_DRDY_EN_MASK     BIT(0) /* Enable data ready interrupt from any sensor */
+
+#define ICM20948_REG_INT_ENABLE_2         0x0012
+#define ICM20948_INT_ENABLE_2_FIFO_OVF_EN GENMASK(4, 0) /* Enable interrupt for FIFO overflow */
+
+#define ICM20948_REG_INT_ENABLE_3 0x0013
+#define ICM20948_INT_ENABLE_3_FIFO_WM_EN_MASK                                                      \
+	GENMASK(4, 0) /* Enable interrupt for FIFO watermark */
+
+#define ICM20948_REG_I2C_MST_STATUS            0x0017
+#define ICM20948_I2C_MST_STATSU_SLV4_NACK_MASK BIT(4)
+#define ICM20948_I2C_MST_STATUS_SLV4_DONE_MASK BIT(6)
+
+#define ICM20948_REG_INT_STATUS     0x0019
+#define ICM20948_INT_STATUS_I2C_MST BIT(0)
+#define ICM20948_INT_STATUS_DMP     BIT(1)
+#define ICM20948_INT_STATUS_PLL_RDY BIT(2)
+#define ICM20948_INT_STATUS_WOM     BIT(3)
+
+#define ICM20948_REG_INT_STATUS_1  0x001A
+#define ICM20948_INT_STATUS_1_DRDY BIT(0)
+
+#define ICM20948_REG_INT_STATUS_2      0x001B
+#define ICM20948_INT_STATUS_2_FIFO_OVF GENMASK(4, 0)
+
+#define ICM20948_REG_INT_STATUS_3     0x001C
+#define ICM20948_INT_STATUS_3_FIFO_WM GENMASK(4, 0)
+
+#define ICM20948_REG_ACCEL_XOUT_H 0x002D
+#define ICM20948_REG_GYRO_XOUT_H  0x0033
+#define ICM20948_REG_TEMP_OUT_H   0x0039
+
+#define ICM20948_REG_DATA_START ICM20948_REG_ACCEL_XOUT_H
+
+#define ICM20948_REG_ACCEL_START ICM20948_REG_ACCEL_XOUT_H
+#define ICM20948_ACCEL_BYTES     6
+
+#define ICM20948_REG_GYRO_START ICM20948_REG_GYRO_XOUT_H
+#define ICM20948_GYRO_BYTES     6
+
+#define ICM20948_REG_TEMP_START ICM20948_REG_TEMP_OUT_H
+#define ICM20948_TEMP_BYTES     2
+
+/********* ICM20948 Bank 2 Register - Gyro and Accel config *********/
+#define ICM20948_REG_GYRO_SMPLRT_DIV 0x0200
+
+#define ICM20948_REG_GYRO_CONFIG_1                 0x0201
+#define ICM20948_GYRO_CONFIG_1_FCHOICE_MASK        BIT(0)
+#define ICM20948_GYRO_CONFIG_1_FCHOICE_BYPASS_DLPF 0x00 /* Bypass digital low-pass filter */
+#define ICM20948_GYRO_CONFIG_1_FCHOICE_ENABLE_DLPF 0x01 /* Enable digital low-pass filter */
+#define ICM20948_GYRO_CONFIG_1_FS_SEL_MASK         GENMASK(2, 1)
+/* Low-pass filter config as shown in datasheet Table 16 */
+#define ICM20948_GYRO_CONFIG_1_DLPFCFG_MASK        (BIT(3) | BIT(4) | BIT(5))
+
+#define ICM20948_REG_ACCEL_SMPLRT_DIV_1 0x0210
+#define ICM20948_REG_ACCEL_SMPLRT_DIV_2 0x0211
+
+#define ICM20948_REG_ACCEL_INTEL_CTRL           0x0212
+#define ICM20948_ACCEL_INTEL_CTRL_MODE_MASK     BIT(0) /* Selects the wake on motion algorithm */
+#define ICM20948_ACCEL_INTEL_CTRL_MODE_INITIAL  0      /* Compare sample to initial stored sample */
+#define ICM20948_ACCEL_INTEL_CTRL_MODE_PREVIOUS 1      /* Compare sample to previous sample */
+#define ICM20948_ACCEL_INTEL_CTRL_EN_MASK       BIT(1) /* Enable the wake on motion logic */
+
+/*
+ * This register holds the threshold value for the Wake on Motion Interrupt for ACCEL
+ * x/y/z axes. LSB = 4 mg. Range is 0 mg to 1020 mg.
+ */
+#define ICM20948_REG_ACCEL_WOM_THR 0x0213
+
+#define ICM20948_REG_ACCEL_CONFIG                 0x0214
+#define ICM20948_ACCEL_CONFIG_FCHOICE_MASK        BIT(0)
+#define ICM20948_ACCEL_CONFIG_FCHOICE_BYPASS_DLPF 0x00 /* Bypass the digital low-pass filter */
+#define ICM20948_ACCEL_CONFIG_FCHOICE_ENABLE_DLPF 0x01 /* Enable the digital low-pass filter */
+#define ICM20948_ACCEL_CONFIG_FS_SEL_MASK         GENMASK(2, 1)
+/* Low-pass filter config as shown in datasheet Table 18 */
+#define ICM20948_ACCEL_CONFIG_DLPFCFG_MASK        (BIT(3) | BIT(4) | BIT(5))
+
+/********* ICM20948 Bank 3 Registers - I2C Master *********/
+#define ICM20948_REG_I2C_MST_ODR_CONFIG  0x0300
+#define ICM20948_I2C_MST_ODR_CONFIG_MASK GENMASK(3, 0)
+
+#define ICM20948_REG_I2C_MST_CTRL        0x0301
+#define ICM20948_I2C_MST_CTRL_CLK_MASK   GENMASK(3, 0)
+#define ICM20948_I2C_MST_CTRL_CLK_400KHZ 0x07 /* I2C master clock 400kHz */
+
+#define ICM20948_REG_I2C_MST_DELAY_CTRL          0x0302
+#define ICM20948_I2C_MST_DELAY_CTRL_SLV0_EN_MASK BIT(0)
+#define ICM20948_I2C_MST_DELAY_CTRL_SLV1_EN_MASK BIT(1)
+#define ICM20948_I2C_MST_DELAY_CTRL_SLV2_EN_MASK BIT(2)
+#define ICM20948_I2C_MST_DELAY_CTRL_SLV3_EN_MASK BIT(3)
+#define ICM20948_I2C_MST_DELAY_CTRL_SLV4_EN_MASK BIT(4)
+
+#define ICM20948_REG_I2C_SLV0_ADDR 0x0303
+#define ICM20948_REG_I2C_SLV0_REG  0x0304
+#define ICM20948_REG_I2C_SLV0_CTRL 0x0305
+#define ICM20948_REG_I2C_SLV0_DO   0x0306
+
+#define ICM20948_REG_I2C_SLV1_ADDR 0x0307
+#define ICM20948_REG_I2C_SLV1_REG  0x0308
+#define ICM20948_REG_I2C_SLV1_CTRL 0x0309
+#define ICM20948_REG_I2C_SLV1_DO   0x030A
+
+#define ICM20948_REG_I2C_SLV2_ADDR 0x030B
+#define ICM20948_REG_I2C_SLV2_REG  0x030C
+#define ICM20948_REG_I2C_SLV2_CTRL 0x030D
+#define ICM20948_REG_I2C_SLV2_DO   0x030E
+
+#define ICM20948_REG_I2C_SLV3_ADDR 0x030F
+#define ICM20948_REG_I2C_SLV3_REG  0x0310
+#define ICM20948_REG_I2C_SLV3_CTRL 0x0311
+#define ICM20948_REG_I2C_SLV3_DO   0x0312
+
+#define ICM20948_REG_I2C_SLV4_ADDR 0x0313
+#define ICM20948_REG_I2C_SLV4_REG  0x0314
+#define ICM20948_REG_I2C_SLV4_CTRL 0x0315
+#define ICM20948_REG_I2C_SLV4_DO   0x0316
+#define ICM20948_REG_I2C_SLV4_DI   0x0317
+
+#define ICM20948_REG_BANK_SEL        0x037F
+#define ICM20948_BANK_USER_BANK_MASK GENMASK(5, 4)
+
+#define ICM20948_I2C_SLVX_CTRL_EN_MASK BIT(7)
+
+#endif /* ZEPHYR_DRIVERS_SENSOR_ICM20948_ICM20948_REG_H_ */
