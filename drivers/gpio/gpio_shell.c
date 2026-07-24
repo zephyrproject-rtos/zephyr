@@ -95,8 +95,14 @@ static void port_pin_get(gpio_port_pins_t reserved_mask, const char **line_names
 
 #define GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL(node_id)                                              \
 	COND_CODE_1(DT_NODE_HAS_PROP(node_id, ngpios),                                             \
-		    (GPIO_DT_RESERVED_RANGES_NGPIOS(node_id, DT_PROP(node_id, ngpios))),           \
-		    (GPIO_MAX_PINS_PER_PORT))
+		    (GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL_HAS),                                    \
+		    (GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL_NO))(node_id)
+
+#define GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL_HAS(node_id)                                          \
+	GPIO_DT_RESERVED_RANGES_NGPIOS(node_id, DT_PROP(node_id, ngpios))
+
+#define GPIO_DT_RESERVED_RANGES_NGPIOS_SHELL_NO(node_id)                                           \
+	GPIO_MAX_PINS_PER_PORT
 
 #define GPIO_CTRL_PIN_GET_FN(node_id)                                                              \
 	static const char *node_id##line_names[] = DT_PROP_OR(node_id, gpio_line_names, {NULL});   \
