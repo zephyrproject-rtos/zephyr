@@ -26,9 +26,9 @@ elseif(CONFIG_BOARD_MPS3_CORSTONE300_AN547)
   set(SUPPORTED_EMU_PLATFORMS qemu)
 
   # QEMU settings
-  set(QEMU_CPU_TYPE_${ARCH} cortex-m55)
-  set(QEMU_FLAGS_${ARCH}
-    -cpu ${QEMU_CPU_TYPE_${ARCH}}
+  set(QEMU_CPU_TYPE cortex-m55)
+  set(QEMU_BOARD_FLAGS
+    -cpu ${QEMU_CPU_TYPE}
     -machine mps3-an547
     -vga none
     )
