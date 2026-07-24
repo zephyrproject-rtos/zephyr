@@ -1,0 +1,6 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: udc-dwc2-usbotgfs-stm32f7
+append:
+  EXTRA_DTC_OVERLAY_FILE: udc-dwc2-usbotgfs-stm32f7.overlay

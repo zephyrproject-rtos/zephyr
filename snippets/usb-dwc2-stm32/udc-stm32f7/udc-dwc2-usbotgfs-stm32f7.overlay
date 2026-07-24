@@ -1,0 +1,34 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Reconfigure the STM32 OTG_FS controller (usbotg_fs) to use the native DWC2
+ * device driver (udc_dwc2) instead of the STM32 UDC shim driver.
+ *
+ * Supported variants:
+ *
+ * - All STM32F7 SoCs (STM32F72x, F73x, F74x, F75x, F76x, F77x). Their OTG_FS
+ *   core is identical (6 IN and 6 OUT endpoints), so a  single set of ghwcfg*
+ *   values applies to the whole family.
+ *
+ * - STM32F4 SoCs whose OTG_FS core has 6 IN and 6 OUT
+ *   endpoints, e.g. STM32F413xG/H.
+ */
+
+zephyr_udc0: &usbotg_fs {
+	compatible = "st,stm32f4-fsotg", "snps,dwc2";
+	/delete-property/ num-bidir-endpoints;
+	/delete-property/ ram-size;
+	/delete-property/ maximum-speed;
+	/delete-property/ phys;
+	num-in-eps = <6>;
+	num-out-eps = <6>;
+	ghwcfg1 = <0x00000000>;
+	ghwcfg2 = <0x229ed520>;
+	ghwcfg4 = <0x17f08030>;
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	dr-mode = "peripheral";
+	status = "okay";
+};
