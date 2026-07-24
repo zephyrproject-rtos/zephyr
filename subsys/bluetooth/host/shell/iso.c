@@ -30,8 +30,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 #if defined(CONFIG_BT_ISO_TX)
 #define DEFAULT_IO_QOS                                                                             \
