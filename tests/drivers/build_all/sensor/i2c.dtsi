@@ -1652,3 +1652,9 @@ test_i2c_icm40627: icm40627@d6 {
 	accel-fs = <16>;
 	gyro-fs = <2000>;
 };
+
+test_i2c_stc31: stc31@d7 {
+	compatible = "sensirion,stc31";
+	reg = <0xd7>;
+	binary-gas = <0x0001>;
+};
