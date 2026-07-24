@@ -1,0 +1,13 @@
+/* Copyright (c) 2026 Junseo Pyun
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+
+	tmp11x: temp@48 {
+		compatible = "ti,tmp11x";
+		reg = <0x48>;
+		status = "okay";
+	};
+};

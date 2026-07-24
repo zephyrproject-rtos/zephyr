@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Junseo Pyun
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.tmp11x:
+    tags:
+      - drivers
+      - sensor
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

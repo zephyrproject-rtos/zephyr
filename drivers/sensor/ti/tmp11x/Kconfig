@@ -11,6 +11,14 @@ config TMP11X
 	help
 	  Enable driver for TMP116, TMP117 and TMP119 temperature sensors.
 
+config EMUL_TMP11X
+	bool "Emulator for TMP11X"
+	default y
+	depends on TMP11X
+	depends on EMUL
+	help
+	  Enable the hardware emulator for TMP11X Temperature Sensor.
+
 if TMP11X
 
 module = TMP11X
