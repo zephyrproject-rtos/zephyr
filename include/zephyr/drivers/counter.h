@@ -949,7 +949,8 @@ static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
  * @param[in]  dev    Pointer to the device structure for the driver instance.
  *
  * @return Frequency of the counter in Hz, or zero if the counter does
- * not have a fixed frequency.
+ * not have a fixed frequency. When CONFIG_COUNTER_64BITS_FREQ is
+ * disabled, this falls back to counter_get_frequency().
  */
 __syscall uint64_t counter_get_frequency_64(const struct device *dev);
 
@@ -967,8 +968,7 @@ static inline uint64_t z_impl_counter_get_frequency_64(const struct device *dev)
 		return config->freq;
 	}
 #else
-	ARG_UNUSED(dev);
-	return -ENOTSUP;
+	return z_impl_counter_get_frequency(dev);
 #endif
 }
 
@@ -990,7 +990,16 @@ __syscall uint32_t counter_us_to_ticks(const struct device *dev, uint64_t us);
 
 static inline uint32_t z_impl_counter_us_to_ticks(const struct device *dev, uint64_t us)
 {
-	uint64_t ticks = (us * z_counter_get_frequency(dev)) / USEC_PER_SEC;
+	uint64_t freq = z_counter_get_frequency(dev);
+	uint64_t whole = us / USEC_PER_SEC;
+	uint64_t ticks;
+
+	/* Saturate early: whole * freq alone can wrap the uint64_t math below. */
+	if ((freq != 0U) && (whole > (uint64_t)UINT32_MAX / freq)) {
+		return UINT32_MAX;
+	}
+
+	ticks = whole * freq + ((us % USEC_PER_SEC) * freq) / USEC_PER_SEC;
 
 	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : ticks;
 }
@@ -1056,7 +1065,16 @@ __syscall uint32_t counter_ns_to_ticks(const struct device *dev, uint64_t ns);
 
 static inline uint32_t z_impl_counter_ns_to_ticks(const struct device *dev, uint64_t ns)
 {
-	uint64_t ticks = (ns * z_counter_get_frequency(dev)) / NSEC_PER_SEC;
+	uint64_t freq = z_counter_get_frequency(dev);
+	uint64_t whole = ns / NSEC_PER_SEC;
+	uint64_t ticks;
+
+	/* Saturate early: whole * freq alone can wrap the uint64_t math below. */
+	if ((freq != 0U) && (whole > (uint64_t)UINT32_MAX / freq)) {
+		return UINT32_MAX;
+	}
+
+	ticks = whole * freq + ((ns % NSEC_PER_SEC) * freq) / NSEC_PER_SEC;
 
 	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : ticks;
 }
@@ -1446,7 +1464,8 @@ static inline uint32_t z_impl_counter_get_guard_period(const struct device *dev,
  *
  * @param[in]  dev    Pointer to the device structure for the driver instance.
  *
- * @return Max top value in 64 bits.
+ * @return Max top value in 64 bits. When CONFIG_COUNTER_64BITS_TICKS is
+ * disabled, this falls back to counter_get_max_top_value().
  */
 __syscall uint64_t counter_get_max_top_value_64(const struct device *dev);
 
@@ -1457,8 +1476,7 @@ static inline uint64_t z_impl_counter_get_max_top_value_64(const struct device *
 
 	return config->max_top_value_64;
 #else
-	ARG_UNUSED(dev);
-	return -ENOTSUP;
+	return z_impl_counter_get_max_top_value(dev);
 #endif
 }
 
@@ -1656,7 +1674,8 @@ static inline int z_impl_counter_set_guard_period_64(const struct device *dev, u
  * @param flags	See @ref COUNTER_GUARD_PERIOD_FLAGS.
  *
  * @return Guard period given in counter ticks or 0 if function or flags are
- *	   not supported.
+ *	   not supported. When CONFIG_COUNTER_64BITS_TICKS is disabled, this
+ *	   falls back to counter_get_guard_period().
  */
 __syscall uint64_t counter_get_guard_period_64(const struct device *dev, uint32_t flags);
 
@@ -1667,9 +1686,7 @@ static inline uint64_t z_impl_counter_get_guard_period_64(const struct device *d
 
 	return (api->get_guard_period_64) ? api->get_guard_period_64(dev, flags) : 0;
 #else
-	ARG_UNUSED(dev);
-	ARG_UNUSED(flags);
-	return -ENOTSUP;
+	return z_impl_counter_get_guard_period(dev, flags);
 #endif
 }
 

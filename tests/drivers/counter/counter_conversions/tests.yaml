@@ -1,0 +1,12 @@
+tests:
+  drivers.counter.conversions:
+    tags:
+      - drivers
+      - counter
+
+  drivers.counter.conversions.64bits_freq:
+    tags:
+      - drivers
+      - counter
+    extra_configs:
+      - CONFIG_TEST_COUNTER_64BITS_FREQ=y
