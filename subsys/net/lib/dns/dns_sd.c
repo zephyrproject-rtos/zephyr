@@ -827,10 +827,9 @@ static inline bool port_in_use(uint16_t proto, uint16_t port, const struct net_i
 }
 #endif /* CONFIG_NET_TEST */
 
-
 int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 			    const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
-			    uint8_t *buf, uint16_t buf_size)
+			    uint8_t *buf, uint16_t buf_size, bool announce)
 {
 	/*
 	 * RFC 6763 Section 12.1
@@ -844,6 +843,14 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 	 * o  All address records (type "A" and "AAAA") named in the SRV rdata.
 	 *	contain the SRV record(s), the TXT record(s), and the address
 	 *      records (A or AAAA)
+	 *
+	 * RFC 6762 Section 8.3
+	 *
+	 * Unlike a response to an explicit query, an unsolicited announcement
+	 * MUST place every record being announced in the Answer Section, not
+	 * the Additional Record Section. When @p announce is true, the SRV,
+	 * TXT and address records below are counted towards ancount instead
+	 * of arcount to reflect this.
 	 */
 
 	uint16_t instance_offset;
@@ -853,6 +860,12 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 	uint16_t proto;
 	uint16_t offset = sizeof(struct dns_header);
 	struct dns_header *rsp = (struct dns_header *)buf;
+	/* Additional records for a direct query response; part of the Answer
+	 * section instead when this packet is an unsolicited announcement.
+	 * Accumulated locally since &rsp->ancount/&rsp->arcount can't be taken
+	 * (rsp is packed).
+	 */
+	uint16_t extra_count = 0;
 	uint32_t tmp;
 	int r;
 
@@ -893,13 +906,12 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 	rsp->ancount++;
 	offset += r;
 
-	/* then add the additional records */
 	r = add_txt_record(inst, DNS_SD_TXT_TTL, instance_offset, buf, offset, buf_size);
 	if (r < 0) {
 		return r; /* LCOV_EXCL_LINE */
 	}
 
-	rsp->arcount++;
+	extra_count++;
 	offset += r;
 
 	r = add_srv_record(inst, DNS_SD_SRV_TTL, instance_offset, domain_offset, buf, offset,
@@ -908,7 +920,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 		return r; /* LCOV_EXCL_LINE */
 	}
 
-	rsp->arcount++;
+	extra_count++;
 	offset += r;
 
 	if (addr6 != NULL && !net_ipv6_is_addr_unspecified(addr6)) {
@@ -918,7 +930,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 			return r; /* LCOV_EXCL_LINE */
 		}
 
-		rsp->arcount++;
+		extra_count++;
 		offset += r;
 	}
 
@@ -930,7 +942,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 			return r; /* LCOV_EXCL_LINE */
 		}
 
-		rsp->arcount++;
+		extra_count++;
 		offset += r;
 	}
 
@@ -941,7 +953,7 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 		r = add_remaining_aaaa_records(iface, inst, host_offset, addr6,
 					       buf, &offset, buf_size);
 		/* offset was updated inside the function */
-		rsp->arcount += r;
+		extra_count += r;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
@@ -951,7 +963,13 @@ int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
 		r = add_remaining_a_records(iface, inst, host_offset, addr4,
 					    buf, &offset, buf_size);
 		/* offset was updated inside the function */
-		rsp->arcount += r;
+		extra_count += r;
+	}
+
+	if (announce) {
+		rsp->ancount += extra_count;
+	} else {
+		rsp->arcount = extra_count;
 	}
 
 	/* Set the Response and AA bits */

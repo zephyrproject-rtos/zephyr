@@ -133,13 +133,16 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
  * @param addr6 pointer to the IPv6 address
  * @param buf output buffer
  * @param buf_size size of the output buffer
+ * @param announce if true, place the SRV/TXT/A/AAAA records in the Answer
+ *        section instead of the Additional Records section, as required by
+ *        RFC 6762 Section 8.3 for unsolicited announcements
  *
  * @return on success, number of bytes written to @p buf
  * @return on failure, a negative errno value
  */
 int dns_sd_handle_ptr_query(struct net_if *iface, const struct dns_sd_rec *inst,
-	const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
-	uint8_t *buf, uint16_t buf_size);
+			    const struct net_in_addr *addr4, const struct net_in6_addr *addr6,
+			    uint8_t *buf, uint16_t buf_size, bool announce);
 
 /**
  * @brief Handle a Service Type Enumeration with DNS Service Discovery
