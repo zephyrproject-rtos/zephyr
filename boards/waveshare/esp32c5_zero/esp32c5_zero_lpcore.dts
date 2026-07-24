@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 Tom Owen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32c5/esp32c5_lpcore.dtsi>
+#include "esp32c5_zero-partitions.dtsi"
+
+/ {
+	model = "Espressif ESP32C5-Zero LP Core";
+	compatible = "espressif,esp32c5";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &sramlp;
+		zephyr,code-partition = &slot0_lpcore_partition;
+		zephyr,console = &lp_uart;
+		zephyr,shell-uart = &lp_uart;
+	};
+};
+
+&lp_uart {
+	status = "okay";
+	current-speed = <115200>;
+};
+

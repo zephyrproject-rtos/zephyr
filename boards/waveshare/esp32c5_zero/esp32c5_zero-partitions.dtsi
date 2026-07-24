@@ -1,0 +1,69 @@
+/* SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 Tom Owen
+ */
+
+/* 4MB flash */
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@2000 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x2000 DT_SIZE_K(56)>;
+		};
+
+		sys_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "sys";
+			reg = <0x10000 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x20000 DT_SIZE_K(1024)>;
+		};
+
+		slot1_partition: partition@120000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x120000 DT_SIZE_K(1024)>;
+		};
+
+		slot0_lpcore_partition: partition@220000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0-lpcore";
+			reg = <0x220000 DT_SIZE_K(128)>;
+		};
+
+		slot1_lpcore_partition: partition@240040 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1-lpcore";
+			reg = <0x240040 DT_SIZE_K(128)>;
+		};
+
+		storage_partition: partition@268080 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <268080 DT_SIZE_K(1024)>;
+		};
+
+		scratch_partition: partition@350080 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-scratch";
+			reg = <0x350080 DT_SIZE_K(512)>;
+		};
+
+		coredump_partition: partition@3d8080 {
+			compatible = "zephyr,mapped-partition";
+			label = "coredump";
+			reg = <0x3e0880 DT_SIZE_K(32)>;
+		};
+	};
+};
+/* used: 4034 kB of 4096 kB */
