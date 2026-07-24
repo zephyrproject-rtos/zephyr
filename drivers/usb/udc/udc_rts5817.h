@@ -1,0 +1,279 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_USB_UDC_RTS5817_H
+#define ZEPHYR_DRIVERS_USB_UDC_RTS5817_H
+
+/* Extra registers */
+#define R_AL_SIE_STATE 0x401E205CUL
+
+#define R_AL_PG_CNT0        0x401e2054UL
+#define PG_POW1_ON_T_OFFSET 16UL
+#define PG_POW1_ON_T_MASK   GENMASK(23, 16)
+
+/* Dlink registers */
+#define R_USB2_ANA_CFG0   0x00UL
+#define REG_ADJR_OFFSET   24UL
+#define REG_ADJR_MASK     GENMASK(27, 24)
+#define REG_AUTO_K_OFFSET 16UL
+#define REG_AUTO_K        BIT(REG_AUTO_K_OFFSET)
+
+#define R_USB2_ANA_CFG1 0x04UL
+#define R_USB2_ANA_CFG2 0x08UL
+#define R_USB2_ANA_CFG3 0x0CUL
+#define R_USB2_ANA_CFG4 0x10UL
+#define R_USB2_ANA_CFG5 0x14UL
+
+#define R_USB2_ANA_CFG6 0x18UL
+#define REG_SH_0_OFFSET 8UL
+#define REG_SH_0_MASK   GENMASK(11, 8)
+
+#define R_USB2_ANA_CFG7  0x1CUL
+#define REG_SRC_0_OFFSET 26UL
+#define REG_SRC_0_MASK   GENMASK(28, 26)
+
+#define R_USB2_CTL_CFG0 0x20UL
+#define R_USB2_CTL_CFG1 0x24UL
+
+#define R_USB2_CTL_CFG2     0x28UL
+#define REG_SEN_NORM_OFFSET 0UL
+#define REG_SEN_NORM_MASK   GENMASK(3, 0)
+
+#define R_USB2_PHY_CFG0   0x2CUL
+#define R_USB2_PHY_CFG1   0x30UL
+#define R_USB2_PHY_CFG2   0x34UL
+#define R_USB2_PHY_STATUS 0x38UL
+#define R_USB2_PHY_DUMMY0 0x3CUL
+#define R_USB2_PHY_DUMMY1 0x40UL
+
+/* SIE EP0 registers */
+#define R_U2SIE_EP0_IRQ_EN            0x00UL
+#define R_U2SIE_EP0_IRQ_STATUS        0x08UL
+#define USB_EP0_CTRL_STATUS_INT       BIT(7)
+#define USB_EP0_SETUP_PACKET_INT      BIT(6)
+#define USB_EP0_CTRL_STATUS_END_INT   BIT(5)
+#define USB_EP0_OUT_SHORTPKT_RECV_INT BIT(4)
+#define USB_EP0_DATAPKT_RECV_INT      BIT(3)
+#define USB_EP0_DATAPKT_TRANS_INT     BIT(2)
+#define USB_EP0_OUTTOKEN_INT          BIT(1)
+#define USB_EP0_INTOKEN_INT           BIT(0)
+#define USB_EP0_INT_MASK              GENMASK(7, 0)
+
+#define R_U2SIE_EP0_CFG        0x0CUL
+#define EP0_NAKOUT_MODE_OFFSET 0
+#define EP0_NAKOUT_MODE        BIT(EP0_NAKOUT_MODE_OFFSET)
+
+#define R_U2SIE_EP0_CTL0 0x10UL
+#define EP0_RESET_OFFSET 2UL
+#define EP0_RESET        BIT(EP0_RESET_OFFSET)
+#define EP0_STALL_OFFSET 1UL
+#define EP0_STALL        BIT(EP0_STALL_OFFSET)
+
+#define R_U2SIE_EP0_CTL1 0x14UL
+#define EP0_CSH_OFFSET   0UL
+#define EP0_CSH          BIT(EP0_CSH_OFFSET)
+
+#define R_U2SIE_EP0_MAXPKT 0x18UL
+#define EP0_MAXPKT_OFFSET  0UL
+#define EP0_MAXPKT_MASK    GENMASK(6, 0)
+
+#define R_U2SIE_EP0_SETUP_DATA0 0x1CUL
+#define R_U2SIE_EP0_SETUP_DATA1 0x20UL
+
+/* MC EP0 registers */
+#define R_U2MC_EP0_CTL          0x0000UL
+#define U_BUF0_EP0_RX_EN_OFFSET 16UL
+#define U_BUF0_EP0_RX_EN        BIT(U_BUF0_EP0_RX_EN_OFFSET)
+#define U_BUF0_EP0_TX_EN_OFFSET 0UL
+#define U_BUF0_EP0_TX_EN        BIT(U_BUF0_EP0_TX_EN_OFFSET)
+
+#define R_U2MC_EP0_BC       0x0004UL
+#define R_U2MC_EP0_DUMMY    0x0008UL
+#define R_U2MC_EP0_BUF_BASE 0x0400UL
+#define R_U2MC_EP0_BUF_TOP  0x043FUL
+
+/* SIE SYS registers */
+#define R_U2SIE_SYS_CTRL                   0x00UL
+#define CFG_FORCE_FW_REMOTE_WAKEUP_OFFSET  6UL
+#define CFG_FORCE_FW_REMOTE_WAKEUP         BIT(CFG_FORCE_FW_REMOTE_WAKEUP_OFFSET)
+#define MODE_HS_OFFSET                     4UL
+#define MODE_HS                            BIT(MODE_HS_OFFSET)
+#define CFG_FORCE_FS_JMP_SPD_NEG_FS_OFFSET 3UL
+#define CFG_FORCE_FS_JMP_SPD_NEG_FS        BIT(CFG_FORCE_FS_JMP_SPD_NEG_FS_OFFSET)
+#define SUSPEND_EN_OFFSET                  2UL
+#define SUSPEND_EN                         BIT(SUSPEND_EN_OFFSET)
+#define WAKEUP_EN_OFFSET                   1UL
+#define WAKEUP_EN                          BIT(WAKEUP_EN_OFFSET)
+#define CONNECT_EN_OFFSET                  0UL
+#define CONNECT_EN                         BIT(CONNECT_EN_OFFSET)
+
+#define R_U2SIE_SYS_ADDR 0x04UL
+
+#define R_U2SIE_SYS_IRQ_EN      0x08UL
+#define R_U2SIE_SYS_IRQ_STATUS  0x10UL
+#define USB_LS_SOF_INTERVAL_INT BIT(7)
+#define USB_LS_L1_RESUME_INT    BIT(6)
+#define USB_LS_L1_SLEEP_INT     BIT(5)
+#define USB_LS_PORT_RST_INT     BIT(4)
+#define USB_LS_RESUME_INT       BIT(3)
+#define USB_LS_SUSPEND_INT      BIT(2)
+#define USB_LS_SOF_INT          BIT(1)
+#define USB_LS_LINE_STATE_INT   BIT(0)
+#define USB_LS_INT_MASK         GENMASK(7, 0)
+
+#define R_U2SIE_SYS_FORCE_CMD 0x14UL
+
+#define R_U2SIE_SYS_UTMI_CTRL 0x18UL
+#define FORCE_FS_OFFSET       6UL
+#define FORCE_FS              BIT(FORCE_FS_OFFSET)
+
+#define R_U2SIE_SYS_UTMI_CFG   0x1CUL
+#define R_U2SIE_SYS_UTMI_STAT  0x20UL
+#define R_U2SIE_SYS_PHY_CTRL   0x24UL
+#define R_U2SIE_SYS_PHY_N_F    0x28UL
+#define R_U2SIE_SYS_SLBTEST    0x2CUL
+#define R_U2SIE_SYS_PKERR_CNT  0x30UL
+#define R_U2SIE_SYS_RXERR_CNT  0x34UL
+#define R_U2SIE_SYS_LPM_CFG0   0x38UL
+#define R_U2SIE_SYS_LPM_DUMMY  0x3CUL
+#define R_U2SIE_SYS_SIE_DUMMY0 0x40UL
+#define R_U2SIE_SYS_SIE_DUMMY1 0x44UL
+#define R_U2SIE_SYS_DPHY_CFG   0x54UL
+#define R_U2SIE_SYS_ERROR_IN   0x58UL
+
+/* Endpoint registers */
+#define U2SIE_EP_REG_INTERVAL 0x100UL
+
+#define U2SIE_EP0_REG_OFFSET 0x000UL
+#define U2SIE_EPA_REG_OFFSET 0x100UL
+#define U2SIE_EPB_REG_OFFSET 0x200UL
+#define U2SIE_EPC_REG_OFFSET 0x300UL
+#define U2SIE_EPD_REG_OFFSET 0x400UL
+#define U2SIE_EPE_REG_OFFSET 0x500UL
+#define U2SIE_EPF_REG_OFFSET 0x600UL
+#define U2SIE_EPG_REG_OFFSET 0x700UL
+
+#define U2MC_EP0_REG_OFFSET 0x0000UL
+#define U2MC_EPA_REG_OFFSET 0x0800UL
+#define U2MC_EPB_REG_OFFSET 0x1000UL
+#define U2MC_EPC_REG_OFFSET 0x1800UL
+#define U2MC_EPD_REG_OFFSET 0x1C00UL
+#define U2MC_EPE_REG_OFFSET 0x2000UL
+#define U2MC_EPF_REG_OFFSET 0x2800UL
+
+#define R_EP_U2SIE_CTL         0x00UL
+#define EP_MAXPKT_OFFSET       16
+#define EP_MAXPKT_MASK         GENMASK(25, 16)
+#define EP_EPNUM_OFFSET        8
+#define EP_EPNUM_MASK          GENMASK(11, 8)
+#define EP_NAKOUT_MODE_OFFSET  4
+#define EP_NAKOUT_MODE         BIT(EP_NAKOUT_MODE_OFFSET)
+#define EP_FORCE_TOGGLE_OFFSET 3
+#define EP_FORCE_TOGGLE        BIT(EP_FORCE_TOGGLE_OFFSET)
+#define USB_EP_DATA_ID_DATA0   0
+#define USB_EP_DATA_ID_DATA1   1
+#define EP_RESET_OFFSET        2
+#define EP_RESET               BIT(EP_RESET_OFFSET)
+#define EP_STALL_OFFSET        1
+#define EP_STALL               BIT(EP_STALL_OFFSET)
+#define EP_EN_OFFSET           0
+#define EP_EN                  BIT(EP_EN_OFFSET)
+
+#define R_EP_U2SIE_IRQ_EN             0x04UL
+#define R_EP_U2SIE_IRQ_STATUS         0x0CUL
+/* Note: some regs of EPG are different */
+#define R_EPG_U2SIE_IRQ_STATUS        0x08UL
+#define USB_EPA_INT_MASK              (BIT(0) | BIT(1) | BIT(2))
+#define USB_EPB_INT_MASK              (BIT(0) | BIT(1))
+#define USB_EPC_INT_MASK              (BIT(0) | BIT(1))
+#define USB_EPD_INT_MASK              (BIT(0) | BIT(1))
+#define USB_EPE_INT_MASK              (BIT(0) | BIT(1) | BIT(2))
+#define USB_EPF_INT_MASK              (BIT(0) | BIT(1))
+#define USB_EPG_INT_MASK              (BIT(0) | BIT(1))
+#define USB_BULKOUT_DATAPKT_RECV_INT  BIT(1)
+#define USB_BULKOUT_SHORTPKT_RECV_INT BIT(2)
+#define USB_BULKIN_TRANS_END_INT      BIT(1)
+#define USB_INTOUT_DATAPKT_RECV_INT   BIT(1)
+#define USB_INTIN_DATAPKT_TRANS_INT   BIT(1)
+
+#define R_EPG_U2SIE_INTOUT_MC          0x0CUL
+#define EPG_EP_EP_OUT_DATA_DONE_OFFSET 0UL
+#define EPG_EP_EP_OUT_DATA_DONE        BIT(EPG_EP_EP_OUT_DATA_DONE_OFFSET)
+
+#define R_EPG_U2SIE_INTOUT_BUF0 0x10UL
+#define R_EPG_U2SIE_INTOUT_LEN  0x90UL
+
+#define R_EP_U2MC_BULK_IRQ  0x00UL
+#define R_EP_U2MC_BULK_EN   0x04UL
+#define EP_MC_INT_DMA_DONE  BIT(0)
+#define EP_MC_INT_SIE_DONE  BIT(5)
+#define USB_EPA_MC_INT_MASK (BIT(0))
+#define USB_EPB_MC_INT_MASK (BIT(0) | BIT(5))
+#define USB_EPE_MC_INT_MASK (BIT(0))
+#define USB_EPF_MC_INT_MASK (BIT(0) | BIT(5))
+
+#define R_EP_U2MC_BULK_FIFO_CTL       0x08UL
+#define EP_CFG_AUTO_FIFO_VALID_OFFSET 8UL
+#define EP_CFG_AUTO_FIFO_VALID        BIT(EP_CFG_AUTO_FIFO_VALID_OFFSET)
+#define EP_FIFO_VALID_OFFSET          1UL
+#define EP_FIFO_VALID                 BIT(EP_FIFO_VALID_OFFSET)
+#define EP_FIFO_FLUSH_OFFSET          0UL
+#define EP_FIFO_FLUSH                 BIT(EP_FIFO_FLUSH_OFFSET)
+
+/* Usb endpoint FIFO depth, only EPA/EPB/EPE/EPF have FIFO */
+#define R_EP_U2MC_BULK_FIFO_BC 0x0CUL
+#define USB_EPA_FIFO_DEPTH     1024
+#define USB_EPB_FIFO_DEPTH     1024
+#define USB_EPE_FIFO_DEPTH     1024
+#define USB_EPF_FIFO_DEPTH     1024
+
+#define R_EP_U2MC_BULK_FIFO_MODE 0x14UL
+#define EP_FIFO_EN_OFFSET        0UL
+#define EP_FIFO_EN               BIT(EP_FIFO_EN_OFFSET)
+
+#define R_EP_U2MC_BULK_DMA_CTRL  0x20UL
+#define EP_U_PE_TRANS_DIR_OFFSET 1UL
+#define EP_U_PE_TRANS_DIR        BIT(EP_U_PE_TRANS_DIR_OFFSET)
+#define EP_DMA_DIR_BULK_OUT      0
+#define EP_DMA_DIR_BULK_IN       1
+#define EP_U_PE_TRANS_EN_OFFSET  0UL
+#define EP_U_PE_TRANS_EN         BIT(EP_U_PE_TRANS_EN_OFFSET)
+
+#define R_EP_U2MC_BULK_DMA_LENGTH 0x24UL
+#define EP_U_PE_TRANS_LEN_OFFSET  0UL
+#define EP_U_PE_TRANS_LEN_MASK    GENMASK(15, 0)
+
+#define R_EP_U2MC_BULK_DMA_ADDR 0x28UL
+
+#define R_EP_U2MC_INIIN_CTL    0x00UL
+#define EP_U_INT_BUF_EN_OFFSET 0UL
+#define EP_U_INT_BUF_EN        BIT(EP_U_INT_BUF_EN_OFFSET)
+
+#define R_EP_U2MC_INTIN_BC_OFFSET 0x04UL
+#define EP_U_INT_BUF_TX_BC_OFFSET 0UL
+#define EP_U_INT_BUF_TX_BC_MASK   GENMASK(7, 0)
+
+#define R_EP_U2MC_INTIN_BUF0_OFFSET 0x08UL
+
+/* Usb endpoint logic number config */
+#define USB_EPA_DIR USB_EP_DIR_OUT
+#define USB_EPB_DIR USB_EP_DIR_IN
+#define USB_EPC_DIR USB_EP_DIR_IN
+#define USB_EPD_DIR USB_EP_DIR_IN
+#define USB_EPE_DIR USB_EP_DIR_OUT
+#define USB_EPF_DIR USB_EP_DIR_IN
+#define USB_EPG_DIR USB_EP_DIR_OUT
+
+/* Define endpoint maximum packet size*/
+#define USB_EP0_MPS        0x40UL
+#define USB_BULK_MPS_HS    0x0200UL
+#define USB_BULK_MPS_FS    0x0040UL
+#define USB_INT_EPG_MPS    0x80UL
+#define USB_INT_EPC_MPS_HS 0x80UL
+#define USB_INT_EPC_MPS_FS 0x40UL
+#define USB_INT_EPD_MPS    0x40UL
+
+#endif /* ZEPHYR_DRIVERS_USB_UDC_RTS5817_H */
