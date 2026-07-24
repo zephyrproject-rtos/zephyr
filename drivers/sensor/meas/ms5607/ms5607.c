@@ -147,12 +147,14 @@ static int ms5607_channel_get(const struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_AMBIENT_TEMP:
+		/* Internal temperature is in 100ths of deg C */
 		val->val1 = data->temperature / 100;
 		val->val2 = data->temperature % 100 * 10000;
 		break;
 	case SENSOR_CHAN_PRESS:
-		val->val1 = data->pressure / 100;
-		val->val2 = data->pressure % 100 * 10000;
+		/* Internal value is (mbar * 100), so factor to kPa is 1000 */
+		val->val1 = data->pressure / 1000;
+		val->val2 = data->pressure % 1000 * 1000;
 		break;
 	default:
 		return -ENOTSUP;
@@ -225,6 +227,40 @@ static int ms5607_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
+static bool ms5607_calibration_data_check(const uint16_t *data)
+{
+	uint16_t crc_read = (data[7] & 0x0F);
+	uint16_t crc = 0;
+
+	for (unsigned int i = 0; i < 16; i++) {
+		/* Process MSB first and substitute 0
+		 * instead of LSB of the last word.
+		 * This is where CRC4 is located.
+		 */
+		if (i < 15) {
+			if (i % 2 == 1) {
+				crc ^= (uint8_t)((data[i >> 1]) & 0x00FF);
+			} else {
+				crc ^= (uint8_t)(data[i >> 1] >> 8);
+			}
+		}
+		for (unsigned int j = 8; j > 0; j--) {
+			if (crc & (0x8000)) {
+				crc = (crc << 1) ^ 0x3000;
+			} else {
+				crc = (crc << 1);
+			}
+		}
+	}
+
+	/* The resulting CRC is in the highest nibble of the word. */
+	crc = ((crc >> 12) & 0x000F);
+
+	LOG_DBG("CRC: %x vs. %x", crc_read, crc);
+
+	return crc == crc_read;
+}
+
 static int ms5607_init(const struct device *dev)
 {
 	const struct ms5607_config *const config = dev->config;
@@ -262,50 +298,26 @@ static int ms5607_init(const struct device *dev)
 
 	k_sleep(K_MSEC(2));
 
-	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_OFF_T1,
-			       &data->off_t1);
-	if (err < 0) {
-		return err;
+	for (unsigned int i = 0; i < ARRAY_SIZE(data->prom); i++) {
+		err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_PROM_WORD(i),
+			       &(data->prom[i]));
+		if (err < 0) {
+			LOG_ERR("Failed to read PROM (%d)", err);
+			return err;
+		}
 	}
 
-	LOG_DBG("OFF_T1: %d", data->off_t1);
-
-	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_SENSE_T1,
-			       &data->sens_t1);
-	if (err < 0) {
-		return err;
-	}
-
+	LOG_HEXDUMP_DBG(data->prom, 16, "PROM");
 	LOG_DBG("SENSE_T1: %d", data->sens_t1);
-
-	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_T_REF, &data->t_ref);
-	if (err < 0) {
-		return err;
-	}
-
-	LOG_DBG("T_REF: %d", data->t_ref);
-
-	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_TCO, &data->tco);
-	if (err < 0) {
-		return err;
-	}
-
-	LOG_DBG("TCO: %d", data->tco);
-
-	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_TCS, &data->tcs);
-	if (err < 0) {
-		return err;
-	}
-
+	LOG_DBG("OFF_T1: %d", data->off_t1);
 	LOG_DBG("TCS: %d", data->tcs);
-
-	err = ms5607_read_prom(config, MS5607_CMD_CONV_READ_TEMPSENS,
-			       &data->tempsens);
-	if (err < 0) {
-		return err;
-	}
-
+	LOG_DBG("TCO: %d", data->tco);
+	LOG_DBG("T_REF: %d", data->t_ref);
 	LOG_DBG("TEMPSENS: %d", data->tempsens);
+
+	if (!ms5607_calibration_data_check(data->prom)) {
+		LOG_WRN("Calibration data verification failed");
+	}
 
 	return 0;
 }
