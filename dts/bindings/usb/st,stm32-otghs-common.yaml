@@ -19,6 +19,10 @@ properties:
       Size of USB dedicated RAM. STM32 SOC's reference
       manual defines a shared FIFO size.
 
+  num-host-channels:
+    type: int
+    description: Number of host channels supported by this controller.
+
   phys:
     type: phandle
     description: PHY provider specifier
