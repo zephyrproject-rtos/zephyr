@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect PC0 to PC8 (SDA), and PC1 to PC9 (SCL) */
+
+&pinctrl {
+	sercom2_i2c_default: sercom2_i2c_default {
+		group1 {
+			pinmux = <PC8D_SERCOM2_PAD0>,
+				 <PC9D_SERCOM2_PAD1>;
+		};
+	};
+};
+
+&sercom0 {
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&sercom2 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom2_i2c_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom1: eeprom@58 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x58>;
+		size = <256>;
+	};
+};

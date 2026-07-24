@@ -8,3 +8,5 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cz_ca80_cult
+      - pic32cz_ca90_cult

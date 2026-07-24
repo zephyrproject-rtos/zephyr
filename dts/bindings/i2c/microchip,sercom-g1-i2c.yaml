@@ -7,7 +7,9 @@ description: |
   Microchip SERCOM I2C driver bindings.
 
   Group g1 SERCOM I2C driver supports following hardware peripherals:
-    - module name="SERCOM" id="U2201" version="3.1.1","5.0.0"
+    - module name="SERCOM"
+          id="U2201" version="3.1.1","5.0.0"
+          id="03715" name2="com_sercom_u2201_v6" version="6b0"
 
 compatible: "microchip,sercom-g1-i2c"
 
