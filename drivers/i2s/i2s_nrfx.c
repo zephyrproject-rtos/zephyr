@@ -774,7 +774,7 @@ static int i2s_nrfx_trigger(const struct device *dev,
 		return 0;
 
 	case I2S_TRIGGER_DROP:
-		if (drv_data->state != I2S_STATE_READY) {
+		if (drv_data->state != I2S_STATE_READY && drv_data->state != I2S_STATE_ERROR) {
 			drv_data->discard_rx = true;
 			nrfx_i2s_stop(&drv_data->i2s);
 		}
