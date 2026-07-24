@@ -89,7 +89,7 @@ typedef struct pthread_key_obj {
 	/* List of pthread_key_data objects that contain thread
 	 * specific data for the key
 	 */
-	sys_slist_t key_data_l;
+	sys_dlist_t key_data_l;
 
 	/* Optional destructor that is passed to pthread_key_create() */
 	void (*destructor)(void *value);
@@ -104,7 +104,7 @@ typedef struct pthread_thread_data {
 } pthread_thread_data;
 
 struct pthread_key_data {
-	sys_snode_t node;
+	sys_dnode_t node;
 	pthread_thread_data thread_data;
 };
 
