@@ -124,8 +124,13 @@ static int i2c_emul_send_to_target(const struct device *dev, struct i2c_msg *msg
 		return 0;
 	}
 #endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
+	bool write_requested_invoked = false;
 
 	for (uint8_t i = 0; i < num_msgs; ++i) {
+		if (i2c_is_read_op(&msgs[i]) && write_requested_invoked) {
+			write_requested_invoked = false;
+		}
+
 		LOG_DBG("    msgs[%u].flags? 0x%02x", i, msgs[i].flags);
 		if (i2c_is_read_op(&msgs[i])) {
 			for (uint32_t j = 0; j < msgs[i].len; ++j) {
@@ -150,9 +155,10 @@ static int i2c_emul_send_to_target(const struct device *dev, struct i2c_msg *msg
 			for (uint32_t j = 0; j < msgs[i].len; ++j) {
 				int rc = 0;
 
-				if (j == 0) {
+				if (!write_requested_invoked) {
 					LOG_DBG("    Calling write_requested");
 					rc = callbacks->write_requested(data->target_cfg);
+					write_requested_invoked = true;
 				}
 				if (rc != 0) {
 					return rc;
@@ -166,6 +172,7 @@ static int i2c_emul_send_to_target(const struct device *dev, struct i2c_msg *msg
 			}
 		}
 		if (i2c_is_stop_op(&msgs[i])) {
+			write_requested_invoked = false;
 			int rc = callbacks->stop(data->target_cfg);
 
 			if (rc != 0) {
