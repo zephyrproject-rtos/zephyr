@@ -7,7 +7,7 @@ tests:
     tags:
       - drivers
       - espi
-    filter: dt_compat_enabled("microchip,mec15xx-board-power")
+    filter: dt_compat_enabled("intel-rvp,board-power")
     depends_on: espi
     harness: console
     harness_config:

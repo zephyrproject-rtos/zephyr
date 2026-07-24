@@ -7,9 +7,12 @@
 #ifndef __ESPI_TAF_SAMPLE_H__
 #define __ESPI_TAF_SAMPLE_H__
 
-
 /* SAF Base Address */
+#ifdef CONFIG_ESPI_TAF_XEC_V2
+#define SAF_BASE_ADDR DT_REG_ADDR(DT_NODELABEL(espi_taf0))
+#else
 #define SAF_BASE_ADDR DT_REG_ADDR(DT_NODELABEL(espi_saf0))
+#endif
 
 /* SAF Test Configuration */
 #define SAF_TEST_FREQ_HZ  24000000U
@@ -32,8 +35,10 @@
 #define SPI_STATUS1_BUSY 0x80U
 #define SPI_STATUS2_QE   0x02U
 
-/* W25Q128 JEDEC ID */
+/* W25Q128 3.3V part JEDEC ID */
 #define W25Q128_JEDEC_ID 0x001840efU
+/* W25Q128 1.8V part JEDEC ID */
+#define W25Q128_FW_JEDEC_ID 0x001860efU
 
 /* SAF Erase Sizes */
 enum saf_erase_size {

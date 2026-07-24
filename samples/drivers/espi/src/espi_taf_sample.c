@@ -12,15 +12,36 @@
 #include <zephyr/drivers/espi_saf.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/random/random.h>
 
 #include "espi_taf_sample.h"
 
-
 LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 
+#ifdef CONFIG_SOC_SERIES_MEC15XX
+/* Not updating old HAL just for these */
+#define MCHP_SAF_PR_REGS_SIZE 0x10u
+
+#define MCHP_SAF_PR_START_OFS(n)                                                                   \
+	(MCHP_SAF_PROT_RG0_START_OFS + ((uint32_t)(n) * MCHP_SAF_PR_REGS_SIZE))
+#define MCHP_SAF_PR_LIMIT_OFS(n)                                                                   \
+	(MCHP_SAF_PROT_RG0_LIMIT_OFS + ((uint32_t)(n) * MCHP_SAF_PR_REGS_SIZE))
+
+#define MCHP_SAF_PR_WBM_OFS(n) (MCHP_SAF_PROT_RG0_WBM_OFS + ((uint32_t)(n) * MCHP_SAF_PR_REGS_SIZE))
+#define MCHP_SAF_PR_RBM_OFS(n) (MCHP_SAF_PROT_RG0_RBM_OFS + ((uint32_t)(n) * MCHP_SAF_PR_REGS_SIZE))
+#endif
+
 /* Device bindings */
-static const struct device *const qspi_dev = DEVICE_DT_GET(DT_NODELABEL(qspi0));
-static const struct device *const espi_saf_dev = DEVICE_DT_GET(DT_NODELABEL(espi_saf0));
+#ifdef CONFIG_ESPI_TAF_XEC_V2
+#define ESPI_TAF_FLASH_CTRL_NODE DT_NODELABEL(qspi0)
+#define ESPI_TAF_NODE            DT_NODELABEL(espi_taf0)
+#else
+#define ESPI_TAF_FLASH_CTRL_NODE DT_NODELABEL(spi0)
+#define ESPI_TAF_NODE            DT_NODELABEL(espi_saf0)
+#endif
+
+static const struct device *const qspi_dev = DEVICE_DT_GET(ESPI_TAF_FLASH_CTRL_NODE);
+static const struct device *const espi_saf_dev = DEVICE_DT_GET(ESPI_TAF_NODE);
 
 /* Test buffers */
 static uint8_t safbuf[SAF_TEST_BUF_SIZE] __aligned(4);
@@ -101,85 +122,109 @@ static const struct espi_saf_pr w25q128_protect_regions[2] = {
 static const struct espi_saf_protection saf_pr_w25q128 = {.nregions = 2U,
 							  .pregions = w25q128_protect_regions};
 
+/* Transmit command opcode plus optional params and optionally read a response
+ * Helper for sending short commands to the SPI flash device.
+ * Uses Zephyr SPI driver which should ONLY implement Full-Duplex per Zephyr documentation.
+ * Zephyr's definition of full-duplex is to transmit and receive on every clock.
+ * If no TX buffer is given the driver transmits DT based dummy data.
+ * If no RX buffer is given the driver discards the data clocked in.
+ */
+int spi_cmd_response(const struct device *spi_dev, const struct spi_config *spi_cfg, uint8_t opcode,
+		     uint8_t *params, uint8_t paramlen, uint8_t *response, uint8_t resplen)
+{
+	struct spi_buf_set tx_bufs = {0};
+	struct spi_buf_set rx_bufs = {0};
+	struct spi_buf txb[3] = {0};
+	struct spi_buf rxb[3] = {0};
+	uint8_t buf[4] = {0};
+	uint8_t buf_idx = 0;
+	int rc = 0;
+
+	if ((spi_dev == NULL) || (spi_cfg == NULL)) {
+		return -EINVAL;
+	}
+
+	buf[buf_idx] = opcode;
+	txb[buf_idx].buf = buf;
+	txb[buf_idx].len = 1U;
+	rxb[buf_idx].buf = NULL;
+	rxb[buf_idx].len = 1U;
+	buf_idx++;
+
+	if ((params != NULL) && (paramlen != 0)) {
+		txb[buf_idx].buf = (uint8_t *)params;
+		txb[buf_idx].len = paramlen;
+		rxb[buf_idx].buf = NULL;
+		rxb[buf_idx].len = paramlen;
+		buf_idx++;
+	}
+
+	if ((response != NULL) && (resplen != 0)) {
+		txb[buf_idx].buf = NULL;
+		txb[buf_idx].len = resplen;
+		rxb[buf_idx].buf = response;
+		rxb[buf_idx].len = resplen;
+		buf_idx++;
+	}
+
+	tx_bufs.buffers = &txb[0];
+	tx_bufs.count = buf_idx;
+
+	rx_bufs.buffers = &rxb[0];
+	rx_bufs.count = buf_idx;
+
+	rc = spi_transceive(spi_dev, spi_cfg, (const struct spi_buf_set *)&tx_bufs,
+			    (const struct spi_buf_set *)&rx_bufs);
+	if (rc != 0) {
+		LOG_ERR("SPI cmd response error %d", rc);
+		return rc;
+	}
+
+	return 0;
+}
+
 int spi_saf_init(void)
 {
-	struct spi_config spi_cfg;
-	struct spi_buf_set tx_bufs;
-	struct spi_buf_set rx_bufs;
-	struct spi_buf txb;
-	struct spi_buf rxb;
-	uint8_t spi_status1, spi_status2;
-	uint32_t jedec_id;
-	int ret;
-
-	/* Read JEDEC ID command and fill read buffer */
-	safbuf[0] = SPI_READ_JEDEC_ID;
-	memset(safbuf2, 0x55, 4U);
-
-	spi_cfg.frequency = SAF_TEST_FREQ_HZ;
-	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8);
+	struct spi_config spi_cfg = {0};
+	uint32_t jedec_id = 0, temp = 0;
+	uint8_t spi_status1 = 0, spi_status2 = 0;
+	int ret = 0;
 
 	/*
 	 * Use SPI master mode and inform driver the SPI controller hardware
 	 * controls chip select.
 	 */
-	jedec_id = 0U;
+	spi_cfg.frequency = SAF_TEST_FREQ_HZ;
+	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8);
 	spi_cfg.slave = 0;
 	spi_cfg.cs.delay = 0;
 	spi_cfg.cs.gpio.pin = 0;
 	spi_cfg.cs.gpio.dt_flags = 0;
 	spi_cfg.cs.gpio.port = NULL;
 
-	txb.buf = &safbuf;
-	txb.len = 1U;
-
-	tx_bufs.buffers = (const struct spi_buf *)&txb;
-	tx_bufs.count = 1U;
-
-	rxb.buf = &jedec_id;
-	rxb.len = 3U;
-
-	rx_bufs.buffers = (const struct spi_buf *)&rxb;
-	rx_bufs.count = 1U;
-
-	ret = spi_transceive(qspi_dev, (const struct spi_config *)&spi_cfg,
-			     (const struct spi_buf_set *)&tx_bufs,
-			     (const struct spi_buf_set *)&rx_bufs);
+	/* Read JEDEC ID command and fill read buffer */
+	ret = spi_cmd_response(qspi_dev, (const struct spi_config *)&spi_cfg, SPI_READ_JEDEC_ID,
+			       NULL, 0, (uint8_t *)&jedec_id, 3U);
 	if (ret) {
 		LOG_ERR("Read JEDEC ID spi_transceive failure: error %d", ret);
 		return ret;
 	}
 
-	if (jedec_id != W25Q128_JEDEC_ID) {
-		LOG_ERR("JEDIC ID does not match W25Q128 %0x", safbuf2[0]);
+	if ((jedec_id != W25Q128_JEDEC_ID) && (jedec_id != W25Q128_FW_JEDEC_ID)) {
+		LOG_ERR("JEDIC ID 0x%08x does not match W25Q128(0x%08x) or W25Q128_FW(0x%08x)",
+			jedec_id, W25Q128_JEDEC_ID, W25Q128_FW_JEDEC_ID);
 		return -1;
 	}
 
 	/* Read STATUS2 to get quad enable bit */
-	safbuf[0] = SPI_READ_STATUS2;
-	memset(safbuf2, 0, 4U);
-
-	txb.buf = &safbuf;
-	txb.len = 1U;
-
-	tx_bufs.buffers = (const struct spi_buf *)&txb;
-	tx_bufs.count = 1U;
-
-	rxb.buf = &safbuf2;
-	rxb.len = 1U;
-
-	rx_bufs.buffers = (const struct spi_buf *)&rxb;
-	rx_bufs.count = 1U;
-
-	ret = spi_transceive(qspi_dev, (const struct spi_config *)&spi_cfg,
-			     (const struct spi_buf_set *)&tx_bufs,
-			     (const struct spi_buf_set *)&rx_bufs);
-	if (ret) {
-		LOG_ERR("Read STATUS2 spi_transceive failure: error %d", ret);
+	ret = spi_cmd_response(qspi_dev, (const struct spi_config *)&spi_cfg, SPI_READ_STATUS2,
+			       NULL, 0, (uint8_t *)&spi_status2, 1U);
+	if (ret != 0) {
+		LOG_ERR("Read SPI STATUS2 error (%d)", ret);
 		return ret;
 	}
 
-	spi_status2 = safbuf2[0];
+	LOG_INF("SPI flash STATUS2 = 0x%02x", spi_status2);
 
 	/*
 	 * If QE not set then write the volatile QE bit.
@@ -188,42 +233,16 @@ int spi_saf_init(void)
 	 * wear of the STATUS2 register
 	 */
 	if ((spi_status2 & SPI_STATUS2_QE) == 0U) {
-		safbuf[0] = SPI_WRITE_ENABLE_VS;
-
-		txb.buf = &safbuf;
-		txb.len = 1U;
-
-		tx_bufs.buffers = (const struct spi_buf *)&txb;
-		tx_bufs.count = 1U;
-
-		rx_bufs.buffers = NULL;
-		rx_bufs.count = 0U;
-
-		ret = spi_transceive(qspi_dev, (const struct spi_config *)&spi_cfg,
-				     (const struct spi_buf_set *)&tx_bufs,
-				     (const struct spi_buf_set *)&rx_bufs);
+		ret = spi_cmd_response(qspi_dev, (const struct spi_config *)&spi_cfg,
+				       SPI_WRITE_ENABLE_VS, NULL, 0, NULL, 0);
 		if (ret) {
-			LOG_ERR("Send write enable volatile spi_transceive"
-				" failure: error %d",
-				ret);
+			LOG_ERR("Send write enable volatile spi_transceive failure: error %d", ret);
 			return ret;
 		}
 
-		safbuf[0] = SPI_WRITE_STATUS2;
-		safbuf[1] = spi_status2 | SPI_STATUS2_QE;
-
-		txb.buf = &safbuf;
-		txb.len = 2U;
-
-		tx_bufs.buffers = (const struct spi_buf *)&txb;
-		tx_bufs.count = 1U;
-
-		rx_bufs.buffers = NULL;
-		rx_bufs.count = 0U;
-
-		ret = spi_transceive(qspi_dev, (const struct spi_config *)&spi_cfg,
-				     (const struct spi_buf_set *)&tx_bufs,
-				     (const struct spi_buf_set *)&rx_bufs);
+		temp = spi_status2 | SPI_STATUS2_QE;
+		ret = spi_cmd_response(qspi_dev, (const struct spi_config *)&spi_cfg,
+				       SPI_WRITE_STATUS2, (uint8_t *)&temp, 1U, NULL, 0);
 		if (ret) {
 			LOG_ERR("Write SPI STATUS2 QE=1 spi_transceive"
 				" failure: error %d",
@@ -232,69 +251,28 @@ int spi_saf_init(void)
 		}
 
 		/* Write to volatile status is fast, expect BUSY to be clear */
-		safbuf[0] = SPI_READ_STATUS1;
-		memset(safbuf2, 0, 4U);
-
-		txb.buf = &safbuf;
-		txb.len = 1U;
-
-		tx_bufs.buffers = (const struct spi_buf *)&txb;
-		tx_bufs.count = 1U;
-
-		rxb.buf = &safbuf2;
-		/* read 2 bytes both will be STATUS1 */
-		rxb.len = 2U;
-
-		rx_bufs.buffers = (const struct spi_buf *)&rxb;
-		rx_bufs.count = 1U;
-
-		ret = spi_transceive(qspi_dev, (const struct spi_config *)&spi_cfg,
-				     (const struct spi_buf_set *)&tx_bufs,
-				     (const struct spi_buf_set *)&rx_bufs);
+		ret = spi_cmd_response(qspi_dev, (const struct spi_config *)&spi_cfg,
+				       SPI_READ_STATUS1, NULL, 0, (uint8_t *)&spi_status1, 1U);
 		if (ret) {
-			LOG_ERR("Read SPI STATUS1 spi_transceive"
-				" failure: error %d",
-				ret);
+			LOG_ERR("Read SPI STATUS1 spi_transceive failure: error %d", ret);
 			return ret;
 		}
 
-		spi_status1 = safbuf2[0];
-		if (spi_status1 & SPI_STATUS1_BUSY) {
-			LOG_ERR("SPI BUSY set after write to volatile STATUS2:"
-				" STATUS1=0x%02X",
+		if ((spi_status1 & SPI_STATUS1_BUSY) != 0) {
+			LOG_ERR("SPI BUSY set after write to volatile STATUS2: STATUS1=0x%02X",
 				spi_status1);
 			return ret;
 		}
 
-		/* Read STATUS2 to make sure QE is set */
-		safbuf[0] = SPI_READ_STATUS2;
-		memset(safbuf2, 0, 4U);
-
-		txb.buf = &safbuf;
-		txb.len = 1U;
-
-		tx_bufs.buffers = (const struct spi_buf *)&txb;
-		tx_bufs.count = 1U;
-
-		rxb.buf = &safbuf2;
-		/* read 2 bytes both will be STATUS2 */
-		rxb.len = 2U;
-
-		rx_bufs.buffers = (const struct spi_buf *)&rxb;
-		rx_bufs.count = 1U;
-
-		ret = spi_transceive(qspi_dev, (const struct spi_config *)&spi_cfg,
-				     (const struct spi_buf_set *)&tx_bufs,
-				     (const struct spi_buf_set *)&rx_bufs);
+		/* Read STATUS2 and check if QE bit was set */
+		ret = spi_cmd_response(qspi_dev, (const struct spi_config *)&spi_cfg,
+				       SPI_READ_STATUS2, NULL, 0, (uint8_t *)&spi_status2, 1U);
 		if (ret) {
-			LOG_ERR("Read 2 of SPI STATUS2  spi_transceive"
-				" failure: error %d",
-				ret);
+			LOG_ERR("Read 2 of SPI STATUS2 spi_transceive failure: error %d", ret);
 			return ret;
 		}
 
-		spi_status2 = safbuf2[0];
-		if (!(spi_status2 & SPI_STATUS2_QE)) {
+		if ((spi_status2 & SPI_STATUS2_QE) == 0) {
 			LOG_ERR("Read back of SPI STATUS2 after setting "
 				"volatile QE bit shows QE not set: 0x%02X",
 				spi_status2);
@@ -326,32 +304,39 @@ int espi_saf_init(void)
 	return ret;
 }
 
-static int pr_check_range(struct mchp_espi_saf *regs, const struct espi_saf_pr *pr)
+static int pr_check_range(mm_reg_t taf_base, const struct espi_saf_pr *pr)
 {
-	uint32_t limit;
-
-	limit = pr->start + pr->size - 1U;
+	uint32_t expected_limit = pr->start + pr->size - 1U;
+	uint32_t start = (sys_read32(taf_base + MCHP_SAF_PR_START_OFS(pr->pr_num)) &
+			  MCHP_SAF_PROT_RG_START_MASK);
+	uint32_t limit = (sys_read32(taf_base + MCHP_SAF_PR_LIMIT_OFS(pr->pr_num)) &
+			  MCHP_SAF_PROT_RG_LIMIT_MASK);
 
 	/* registers b[19:0] = bits[31:12] (align on 4KB) */
-	if (regs->SAF_PROT_RG[pr->pr_num].START != (pr->start >> 12)) {
+	if (start != (pr->start >> 12)) {
 		return -1;
 	}
 
-	if (regs->SAF_PROT_RG[pr->pr_num].LIMIT != (limit >> 12)) {
+	if (limit != (expected_limit >> 12)) {
 		return -1;
 	}
 
 	return 0;
 }
 
-static int pr_check_enable(struct mchp_espi_saf *regs, const struct espi_saf_pr *pr)
+static int pr_check_enable(mm_reg_t taf_base, const struct espi_saf_pr *pr)
 {
+	uint32_t start = (sys_read32(taf_base + MCHP_SAF_PR_START_OFS(pr->pr_num)) &
+			  MCHP_SAF_PROT_RG_START_MASK);
+	uint32_t limit = (sys_read32(taf_base + MCHP_SAF_PR_LIMIT_OFS(pr->pr_num)) &
+			  MCHP_SAF_PROT_RG_LIMIT_MASK);
+
 	if (pr->flags & MCHP_SAF_PR_FLAG_ENABLE) {
-		if (regs->SAF_PROT_RG[pr->pr_num].LIMIT > regs->SAF_PROT_RG[pr->pr_num].START) {
+		if (limit > start) {
 			return 0;
 		}
 	} else {
-		if (regs->SAF_PROT_RG[pr->pr_num].START > regs->SAF_PROT_RG[pr->pr_num].LIMIT) {
+		if (start > limit) {
 			return 0;
 		}
 	}
@@ -359,14 +344,16 @@ static int pr_check_enable(struct mchp_espi_saf *regs, const struct espi_saf_pr 
 	return -2;
 }
 
-static int pr_check_lock(struct mchp_espi_saf *regs, const struct espi_saf_pr *pr)
+static int pr_check_lock(mm_reg_t taf_base, const struct espi_saf_pr *pr)
 {
+	uint32_t lockbm = sys_read32(taf_base + MCHP_SAF_PROT_LOCK_OFS);
+
 	if (pr->flags & MCHP_SAF_PR_FLAG_LOCK) {
-		if (regs->SAF_PROT_LOCK & BIT(pr->pr_num)) {
+		if ((lockbm & BIT(pr->pr_num)) != 0) {
 			return 0;
 		}
 	} else {
-		if (!(regs->SAF_PROT_LOCK & BIT(pr->pr_num))) {
+		if ((lockbm & BIT(pr->pr_num)) == 0) {
 			return 0;
 		}
 	}
@@ -374,16 +361,15 @@ static int pr_check_lock(struct mchp_espi_saf *regs, const struct espi_saf_pr *p
 	return -3;
 }
 
-/*
- * NOTE: bit[0] of bit map registers is read-only = 1
- */
-static int pr_check_master_bm(struct mchp_espi_saf *regs, const struct espi_saf_pr *pr)
+/* NOTE: bit[0] of bit map registers is read-only = 1 */
+static int pr_check_master_bm(mm_reg_t taf_base, const struct espi_saf_pr *pr)
 {
-	if (regs->SAF_PROT_RG[pr->pr_num].WEBM != (pr->master_bm_we | BIT(0))) {
-		return -4;
-	}
+	uint32_t webm = (sys_read32(taf_base + MCHP_SAF_PR_WBM_OFS(pr->pr_num)) &
+			 MCHP_SAF_PROT_RG_WBM_MASK);
+	uint32_t rdbm = (sys_read32(taf_base + MCHP_SAF_PR_RBM_OFS(pr->pr_num)) &
+			 MCHP_SAF_PROT_RG_RBM_MASK);
 
-	if (regs->SAF_PROT_RG[pr->pr_num].RDBM != (pr->master_bm_rd | BIT(0))) {
+	if ((webm != (pr->master_bm_we | BIT(0))) || (rdbm != (pr->master_bm_rd | BIT(0)))) {
 		return -4;
 	}
 
@@ -392,7 +378,7 @@ static int pr_check_master_bm(struct mchp_espi_saf *regs, const struct espi_saf_
 
 static int espi_saf_test_pr1(const struct espi_saf_protection *spr)
 {
-	struct mchp_espi_saf *saf_regs;
+	mm_reg_t taf_base = (mm_reg_t)(SAF_BASE_ADDR);
 	const struct espi_saf_pr *pr;
 	int rc;
 
@@ -402,31 +388,30 @@ static int espi_saf_test_pr1(const struct espi_saf_protection *spr)
 		return 0;
 	}
 
-	saf_regs = (struct mchp_espi_saf *)(SAF_BASE_ADDR);
 	pr = spr->pregions;
 
 	for (size_t n = 0U; n < spr->nregions; n++) {
-		rc = pr_check_range(saf_regs, pr);
+		rc = pr_check_range(taf_base, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u range fail", pr->pr_num);
+			LOG_INF("TAF Protection region %u range fail", pr->pr_num);
 			return rc;
 		}
 
-		rc = pr_check_enable(saf_regs, pr);
+		rc = pr_check_enable(taf_base, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u enable fail", pr->pr_num);
+			LOG_INF("TAF Protection region %u enable fail", pr->pr_num);
 			return rc;
 		}
 
-		rc = pr_check_lock(saf_regs, pr);
+		rc = pr_check_lock(taf_base, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u lock check fail", pr->pr_num);
+			LOG_INF("TAF Protection region %u lock check fail", pr->pr_num);
 			return rc;
 		}
 
-		rc = pr_check_master_bm(saf_regs, pr);
+		rc = pr_check_master_bm(taf_base, pr);
 		if (rc) {
-			LOG_INF("SAF Protection region %u Master select fail", pr->pr_num);
+			LOG_INF("TAF Protection region %u Master select fail", pr->pr_num);
 			return rc;
 		}
 
@@ -439,22 +424,27 @@ static int espi_saf_test_pr1(const struct espi_saf_protection *spr)
 /*
  * SAF hardware limited to 1 to 64 byte read requests.
  */
-static int saf_read(uint32_t spi_addr, uint8_t *dest, int len)
+static int saf_read(uint32_t spi_addr, uint8_t *dest, uint32_t reqlen, uint32_t *actual_read_len)
 {
-	int rc, chunk_len, n;
+	int rc = 0;
+	uint32_t chunk_len = 0, n = 0, nr = 0;
 	struct espi_saf_packet saf_pkt = {0};
 
-	if ((dest == NULL) || (len < 0)) {
+	if (dest == NULL) {
 		return -EINVAL;
+	}
+
+	if (reqlen == 0) {
+		return 0; /* nothing to do */
 	}
 
 	saf_pkt.flash_addr = spi_addr;
 	saf_pkt.buf = dest;
 
-	n = len;
-	while (n) {
-		chunk_len = 64;
-		if (n < 64) {
+	n = reqlen;
+	while (n != 0) {
+		chunk_len = 64U;
+		if (n < 64U) {
 			chunk_len = n;
 		}
 
@@ -462,18 +452,23 @@ static int saf_read(uint32_t spi_addr, uint8_t *dest, int len)
 
 		rc = espi_saf_flash_read(espi_saf_dev, &saf_pkt);
 		if (rc != 0) {
-			LOG_INF("%s: error = %d: chunk_len = %d "
+			LOG_INF("%s: error = %d: chunk_len = %u "
 				"spi_addr = %x",
 				__func__, rc, chunk_len, spi_addr);
-			return rc;
+			break;
 		}
 
 		saf_pkt.flash_addr += chunk_len;
 		saf_pkt.buf += chunk_len;
+		nr += chunk_len;
 		n -= chunk_len;
 	}
 
-	return len;
+	if (actual_read_len != NULL) {
+		*actual_read_len = nr;
+	}
+
+	return rc;
 }
 
 /*
@@ -559,9 +554,10 @@ static int saf_page_prog(uint32_t spi_addr, const uint8_t *src, int progsz)
 
 int espi_saf_test1(uint32_t spi_addr)
 {
-	int rc, retries;
-	bool erased;
-	uint32_t n, saddr, progsz, chunksz;
+	int rc = 0, retries = 0;
+	bool erased = false;
+	uint32_t n = 0, num_bytes_to_read = 0, num_bytes_read = 0;
+	uint32_t saddr = 0, progsz = 0, chunksz = 0;
 
 	rc = espi_saf_activate(espi_saf_dev);
 	LOG_INF("%s: activate = %d", __func__, rc);
@@ -575,19 +571,26 @@ int espi_saf_test1(uint32_t spi_addr)
 	memset(safbuf, 0x55, sizeof(safbuf));
 	memset(safbuf2, 0, sizeof(safbuf2));
 
-	erased = false;
+	num_bytes_to_read = KB(4);
 	retries = 3;
 	while (!erased && (retries-- > 0)) {
 		/* read 4KB sector at 0 */
-		rc = saf_read(spi_addr, safbuf, 4096);
-		if (rc != 4096) {
+		num_bytes_read = 0;
+		rc = saf_read(spi_addr, safbuf, num_bytes_to_read, &num_bytes_read);
+		if (rc != 0) {
 			LOG_INF("%s: error=%d Read 4K sector at 0x%X failed", __func__, rc,
 				spi_addr);
 			return rc;
 		}
 
+		if (num_bytes_read != num_bytes_to_read) {
+			LOG_ERR("%s: Requested read of %u bytes, actually read %u bytes", __func__,
+				num_bytes_to_read, num_bytes_read);
+			return -EIO;
+		}
+
 		rc = 0;
-		for (n = 0; n < 4096U; n++) {
+		for (n = 0; n < num_bytes_to_read; n++) {
 			if (safbuf[n] != 0xffUL) {
 				rc = -1;
 				break;
@@ -595,19 +598,13 @@ int espi_saf_test1(uint32_t spi_addr)
 		}
 
 		if (rc == 0) {
-			LOG_INF("4KB sector at 0x%x is in erased state. "
-				"Continue tests",
-				spi_addr);
+			LOG_INF("4KB sector at 0x%x is in erased state. Continue tests", spi_addr);
 			erased = true;
 		} else {
-			LOG_INF("4KB sector at 0x%x not in erased state. "
-				"Send 4K erase.",
-				spi_addr);
+			LOG_INF("4KB sector at 0x%x not in erased state. Send 4K erase.", spi_addr);
 			rc = saf_erase_block(spi_addr, SAF_ERASE_4K);
 			if (rc != 0) {
-				LOG_INF("SAF erase block at 0x%x returned "
-					"error %d",
-					spi_addr, rc);
+				LOG_INF("SAF erase block at 0x%x returned error %d", spi_addr, rc);
 				return rc;
 			}
 		}
@@ -618,15 +615,14 @@ int espi_saf_test1(uint32_t spi_addr)
 		return -1;
 	}
 
-	/*
-	 * Page program test pattern every 256 bytes = 0,1,...,255
+	/* Use a random test pattern in case driver reports erase or write successful
+	 * but it actually is not.
+	 * !!! WARNING we are not using a cryptographically secure RNG !!!
 	 */
-	for (n = 0; n < 4096U; n++) {
-		safbuf[n] = n % 256U;
-	}
+	sys_rand_get(safbuf, KB(4));
 
 	/* SPI flash sector erase size is 4KB, page program is 256 bytes */
-	progsz = 4096U;
+	progsz = KB(4);
 	chunksz = 256U;
 	saddr = spi_addr;
 	n = 0;
@@ -648,8 +644,9 @@ int espi_saf_test1(uint32_t spi_addr)
 	/* read back and check */
 	LOG_INF("%s: Read back 4K sector at 0x%X", __func__, spi_addr);
 
-	rc = saf_read(spi_addr, safbuf2, progsz);
-	if (rc == progsz) {
+	num_bytes_read = 0;
+	rc = saf_read(spi_addr, safbuf2, progsz, &num_bytes_read);
+	if (rc != 0) {
 		rc = memcmp(safbuf, safbuf2, progsz);
 		if (rc == 0) {
 			LOG_INF("%s: Read back match: PASS", __func__);
