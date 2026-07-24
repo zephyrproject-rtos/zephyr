@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "rock_5b_plus.dts"
+
+&{/cpus} {
+	cpu@400 {
+		device_type = "cpu";
+		compatible = "arm,cortex-a76";
+		enable-method = "psci";
+		reg = <0x400>;
+	};
+
+	cpu@500 {
+		device_type = "cpu";
+		compatible = "arm,cortex-a76";
+		enable-method = "psci";
+		reg = <0x500>;
+	};
+
+	cpu@600 {
+		device_type = "cpu";
+		compatible = "arm,cortex-a76";
+		enable-method = "psci";
+		reg = <0x600>;
+	};
+
+	cpu@700 {
+		device_type = "cpu";
+		compatible = "arm,cortex-a76";
+		enable-method = "psci";
+		reg = <0x700>;
+	};
+};

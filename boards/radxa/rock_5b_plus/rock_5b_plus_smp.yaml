@@ -1,0 +1,10 @@
+identifier: rock_5b_plus/rk3588/smp
+name: Radxa ROCK 5B+ SMP
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 131072
+supported:
+  - smp
