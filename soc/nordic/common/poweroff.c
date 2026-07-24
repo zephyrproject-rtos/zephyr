@@ -6,6 +6,10 @@
 #include <zephyr/sys/poweroff.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/drivers/retained_mem/nrf_retained_mem.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+
+LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_NRF51) || defined(CONFIG_SOC_SERIES_NRF52)
 #include <hal/nrf_power.h>
@@ -31,37 +35,25 @@
 void z_sys_poweroff(void)
 {
 #if defined(CONFIG_HAS_NORDIC_RAM_CTRL)
-	uint8_t *ram_start;
-	size_t ram_size;
 
-#if defined(NRF_MEMORY_RAM_BASE)
-	ram_start = (uint8_t *)NRF_MEMORY_RAM_BASE;
-#else
-	ram_start = (uint8_t *)NRF_MEMORY_RAM0_BASE;
-#endif
-
-	ram_size = 0;
-#if defined(NRF_MEMORY_RAM_SIZE)
-	ram_size += NRF_MEMORY_RAM_SIZE;
-#endif
-#if defined(NRF_MEMORY_RAM0_SIZE)
-	ram_size += NRF_MEMORY_RAM0_SIZE;
-#endif
-#if defined(NRF_MEMORY_RAM1_SIZE)
-	ram_size += NRF_MEMORY_RAM1_SIZE;
-#endif
-#if defined(NRF_MEMORY_RAM2_SIZE)
-	ram_size += NRF_MEMORY_RAM2_SIZE;
-#endif
-
+#if !defined(CONFIG_SOC_SERIES_NRF71)
 	/* Disable retention for all memory blocks */
-	nrfx_ram_ctrl_retention_enable_set(ram_start, ram_size, false);
+	nrfx_ram_ctrl_retention_enable_all_set(false);
+#endif
 
 #endif /* defined(CONFIG_HAS_NORDIC_RAM_CTRL) */
 
 #if defined(CONFIG_RETAINED_MEM_NRF_RAM_CTRL)
-	/* Restore retention for retained_mem driver regions defined in devicetree */
-	(void)z_nrf_retained_mem_retention_apply();
+	/* Restore retention for retained_mem driver regions defined in devicetree. */
+	int err = z_nrf_retained_mem_retention_apply();
+
+	if (err != 0) {
+		/* Retention is best-effort. Continue powering off even though
+		 * configured retained data may not survive.
+		 */
+		LOG_ERR("Failed to apply RAM retention configuration (%d)", err);
+		log_flush();
+	}
 #endif
 
 #if defined(CONFIG_SOC_SERIES_NRF54L)

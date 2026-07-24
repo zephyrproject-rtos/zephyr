@@ -14,5 +14,6 @@ config RETAINED_MEM_NRF_RAM_CTRL
 	default y
 	depends on DT_HAS_ZEPHYR_RETAINED_RAM_ENABLED && RETAINED_MEM_ZEPHYR_RAM && POWEROFF
 	depends on HAS_NORDIC_RAM_CTRL
+	depends on !BUILD_WITH_TFM || NRF_TFM_RAM_CTRL_SERVICE
 	help
 	  Enable driver for Nordic RAM retention.

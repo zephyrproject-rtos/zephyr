@@ -17,6 +17,17 @@ config NRF_FORCE_RAM_ON_REBOOT
 	  Force all RAM blocks to be powered on before triggering soft reset
 	  to prevent this from happening.
 
+config NRF_TFM_RAM_CTRL_SERVICE
+	bool "TF-M RAM-control service"
+	default y
+	depends on HAS_NORDIC_RAM_CTRL
+	depends on SOC_SERIES_NRF71
+	depends on BUILD_WITH_TFM
+	help
+	  Provide a TF-M secure service that lets the non-secure application
+	  drive MEMCONF (which is secure-only): power non-secure RAM up/down in
+	  System ON, and select RAM sections to retain across System OFF.
+
 config NRF_SYS_EVENT
 	bool "nRF system event support"
 	select NRFX_POWER if !SOC_SERIES_NRF54H && !SOC_SERIES_NRF92

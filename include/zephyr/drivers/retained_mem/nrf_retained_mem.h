@@ -20,6 +20,7 @@ extern "C" {
  *
  * @retval 0 if the retention settings were applied successfully.
  * @retval -ENOTSUP if retention configuration is not present in devicetree.
+ * @retval -EIO if a retention setting could not be applied.
  */
 int z_nrf_retained_mem_retention_apply(void);
 #else
