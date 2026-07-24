@@ -37,6 +37,7 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
 		zephyr,touch = &ft5406;
+		zephyr,entropy = &mxcrypto_trng;
 	};
 };
 
@@ -155,4 +156,12 @@ uart4: &scb4 {
 		disk-name = "SD";
 		status = "okay";
 	};
+};
+
+&mxcrypto_trng {
+	status = "okay";
+};
+
+&mxcrypto_crypto {
+	status = "okay";
 };

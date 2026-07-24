@@ -8,6 +8,7 @@
 #include <zephyr/crypto/crypto.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 
 #ifdef CONFIG_CRYPTO_MBEDTLS_SHIM
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
@@ -29,9 +30,21 @@
 #define CRYPTO_DEV_COMPAT bflb_sec_eng_sha
 #elif CONFIG_CRYPTO_INFINEON_MXCRYPTOLITE
 #define CRYPTO_DEV_COMPAT infineon_mxcryptolite_crypto
+#elif CONFIG_CRYPTO_INFINEON_MXCRYPTO
+#define CRYPTO_DEV_COMPAT infineon_mxcrypto_crypto
 #else
 #error "You need to enable one crypto device"
 #endif
+
+/*
+ * Some crypto drivers require IO buffers to be cache-line aligned and
+ * to occupy whole cache lines (the underlying allocation must be padded
+ * up to a multiple of the cache-line size).  The required alignment is
+ * configured per-board via CONFIG_TEST_CRYPTO_IO_ALIGNMENT_BYTES.
+ */
+#define IO_ALIGNMENT_BYTES CONFIG_TEST_CRYPTO_IO_ALIGNMENT_BYTES
+
+#define BUFFER_PAD(n) ROUND_UP((n), IO_ALIGNMENT_BYTES)
 
 /* Following tests are part of Mbed TLS */
 
@@ -263,11 +276,18 @@ static void run_vector_set(enum hash_algo algo, size_t out_len, const uint8_t *c
 	zassert_equal(rc, 0, "begin_session failed");
 
 	for (size_t i = 0; i < nvec; i++) {
-		uint8_t out[64] = {0}; /* big enough for SHA-512 */
+		uint8_t out[BUFFER_PAD(64)] __aligned(IO_ALIGNMENT_BYTES) = {0};
+		/* Stage caller input into a DMA-safe (aligned + padded) buffer. */
+		static uint8_t in_scratch[BUFFER_PAD(sizeof(test7))] __aligned(IO_ALIGNMENT_BYTES);
+
+		zassert_true(in_lens[i] <= sizeof(in_scratch), "input scratch too small");
+		memset(in_scratch, 0, sizeof(in_scratch));
+		if (in_lens[i] > 0) {
+			memcpy(in_scratch, inputs[i], in_lens[i]);
+		}
 
 		struct hash_pkt pkt = {
-			/* Safe: hash operations only read from in_buf, never modify it */
-			.in_buf = inputs[i],
+			.in_buf = in_scratch,
 			.in_len = in_lens[i],
 			.out_buf = out,
 		};

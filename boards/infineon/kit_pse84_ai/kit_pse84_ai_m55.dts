@@ -36,6 +36,7 @@
 		zephyr,bt-hci = &bt_hci_uart;
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
+		zephyr,entropy = &mxcrypto_trng;
 	};
 };
 
@@ -114,5 +115,13 @@ uart4: &scb4 {
 };
 
 &gpio_prt21 {
+	status = "okay";
+};
+
+&mxcrypto_trng {
+	status = "okay";
+};
+
+&mxcrypto_crypto {
 	status = "okay";
 };

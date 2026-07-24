@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon MXCRYPTO multi-function device.
+
+  The MXCRYPTO block is a shared hardware crypto engine that provides both a
+  True Random Number Generator (TRNG) and cryptographic acceleration.
+  This node is the parent that owns the register base address
+  and the shared access mutex.  The individual functions are exposed as child
+  nodes:
+
+    mxcrypto0: crypto@52440000 {
+            compatible = "infineon,mxcrypto";
+            reg = <0x52440000 0x10000>;
+
+            mxcrypto_trng {
+                    compatible = "infineon,mxcrypto-trng";
+            };
+
+            mxcrypto_crypto {
+                    compatible = "infineon,mxcrypto-crypto";
+            };
+    };
+
+compatible: "infineon,mxcrypto"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

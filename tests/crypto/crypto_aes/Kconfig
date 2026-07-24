@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_CRYPTO_IO_ALIGNMENT_BYTES
+	int "Alignment (bytes) for AES test IO buffers"
+	default 4
+	help
+	  Alignment (in bytes) applied to the AES test input, output and
+	  AAD buffers, and to which their sizes are rounded up.  Some
+	  crypto drivers require IO buffers handed to them to be cache-line
+	  aligned and to occupy whole cache lines so that the driver's
+	  cache-maintenance operations do not corrupt unrelated data
+	  sharing a partial cache line.  Boards whose crypto driver has
+	  this requirement should override this value (typically to the
+	  D-Cache line size) via a board overlay.
