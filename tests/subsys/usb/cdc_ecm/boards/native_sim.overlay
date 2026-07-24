@@ -1,0 +1,6 @@
+/*
+ * Copyright 2025 - 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &zephyr_udc0;
