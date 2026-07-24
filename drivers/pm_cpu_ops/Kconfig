@@ -41,6 +41,15 @@ config PM_CPU_OPS_FVP
 	  This driver directly controls the FVP power controller and
 	  V2M system registers for CPU power-on and system reset operations.
 
+config PM_CPU_OPS_SPIN_TABLE
+	bool "Support for the ARM spin-table boot protocol"
+	depends on ARM64 && !PM_CPU_OPS_PSCI && !PM_CPU_OPS_FVP
+	default y if SMP
+	select PM_CPU_OPS_HAS_DRIVER
+	help
+	  Say Y here if secondary CPUs are brought up via the ARM64
+	  spin-table boot protocol.
+
 config PSCI_SHELL
 	bool "Support for PSCI interface shell commands"
 	depends on SHELL && PM_CPU_OPS_PSCI
