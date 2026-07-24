@@ -13,6 +13,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_BMP581_BMP581_H_
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/spi.h>
@@ -99,9 +100,12 @@
 #define BMP5_SPI_RD_MASK 0x80
 
 /* Delay definition */
-#define BMP5_DELAY_US_SOFT_RESET      2000
-#define BMP5_DELAY_US_STANDBY         2500
-#define BMP5_DELAY_US_NVM_READY_READ  800
+#define BMP5_DELAY_US_POWER_UP_FIRST 2000 /* t_powup: first communication after VDD/VDDIO valid */
+#define BMP5_DELAY_US_SOFT_RESET     2000 /* tsoft_res: CMD soft reset until device ready */
+#define BMP5_DELAY_US_STANDBY        2500 /* t_standby: any mode to STANDBY (typ.) */
+#define BMP5_DELAY_US_STARTUP        3000 /* t_startup: STANDBY to start of measurement */
+#define BMP5_DELAY_US_STARTUP_DEEP   4000 /* t_startup_deep: DEEP_STANDBY to start of measurement */
+#define BMP5_DELAY_US_NVM_READY_READ 800
 #define BMP5_DELAY_US_NVM_READY_WRITE 10000
 
 /* Soft reset command */
@@ -121,10 +125,10 @@
 #define BMP5_FIFO_MAX_THRESHOLD_P_T_MODE 0x0F
 #define BMP5_FIFO_MAX_THRESHOLD_P_MODE   0x1F
 
-#define BMP5_FIFO_FRAME_SEL_OFF 0
-#define BMP5_FIFO_FRAME_SEL_TEMP 1
+#define BMP5_FIFO_FRAME_SEL_OFF   0
+#define BMP5_FIFO_FRAME_SEL_TEMP  1
 #define BMP5_FIFO_FRAME_SEL_PRESS 2
-#define BMP5_FIFO_FRAME_SEL_ALL 3
+#define BMP5_FIFO_FRAME_SEL_ALL   3
 
 /* Macro is used to bypass both iir_t and iir_p together */
 #define BMP5_IIR_BYPASS 0xC0
@@ -337,6 +341,26 @@ struct bmp581_stream {
 	struct rtio_iodev_sqe *iodev_sqe;
 	enum bmp581_event enabled_mask;
 	uint8_t fifo_thres;
+	/** BMP5_REG_INT_STATUS scratch (latched mode clear-on-read). */
+	uint8_t int_status_scratch;
+	/** I2C sub-address bytes for RTIO prep (must outlive the transfer). */
+	uint8_t i2c_reg_temp;
+	uint8_t i2c_reg_int_status;
+	uint8_t i2c_reg_fifo;
+	/** INT_* register writes (address + value; RTIO prep lifetime). */
+	uint8_t wr_int_source_reg;
+	uint8_t wr_int_source_data;
+	uint8_t wr_int_config_reg;
+	uint8_t wr_int_config_data;
+	/** FIFO watermark setup chain (address + value fields). */
+	uint8_t wr_wm_odr_reg;
+	uint8_t wr_wm_odr_data_a;
+	uint8_t wr_wm_fifo_cfg_reg;
+	uint8_t wr_wm_fifo_cfg_data;
+	uint8_t wr_wm_fifo_sel_reg;
+	uint8_t wr_wm_fifo_sel_data;
+	uint8_t wr_wm_odr_data_b;
+	struct k_work latched_int_recover_work;
 	atomic_t state;
 };
 
@@ -349,9 +373,12 @@ struct bmp581_data {
 
 struct bmp581_config {
 	struct bmp581_bus bus;
+	/** Parent I2C device (PM resume before soft reset); NULL on SPI/I3C. */
+	const struct device *i2c_controller;
 	struct gpio_dt_spec int_gpio;
 	bool int_polarity;
 	bool int_open_drain;
+	bool int_latched;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMP581_BMP581_H_ */
