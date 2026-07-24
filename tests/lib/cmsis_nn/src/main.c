@@ -405,6 +405,21 @@ ZTEST(cmsis_nn, test_fully_connected)
 
 	ctx.buf = malloc(buf_size);
 	ctx.size = buf_size;
+
+#if defined(ARM_MATH_MVEI)
+	/* On MVE targets the buffer must be pre-filled with per-row kernel sums
+	 * (bias + lhs_offset * sum-of-weights) before calling arm_fully_connected_s8.
+	 */
+	zassert_equal(ARM_CMSIS_NN_SUCCESS,
+		      arm_vector_sum_s8((int32_t *)ctx.buf,
+					filter_dims.n,
+					output_dims.c,
+					kernel_data,
+					fc_params.input_offset,
+					fc_params.filter_offset,
+					bias_data), "");
+#endif
+
 	arm_cmsis_nn_status result = arm_fully_connected_s8(&ctx,
 						   &fc_params,
 						   &quant_params,
