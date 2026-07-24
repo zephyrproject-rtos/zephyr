@@ -1906,26 +1906,22 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 {
 	/* We use such variable to avoid lengthy lines */
 	struct net_pkt_cursor *c_op = &pkt->cursor;
+	const bool ow = net_pkt_is_being_overwritten(pkt);
+	const bool append = write && !ow;
 
 	while ((c_op->buf != NULL) && (length > 0U)) {
-		size_t d_len, len;
+		size_t limit, d_len, len;
 
-		pkt_cursor_advance(pkt, net_pkt_is_being_overwritten(pkt) ?
-				   false : write);
-		if (c_op->buf == NULL) {
-			break;
-		}
-
-		if (write && !net_pkt_is_being_overwritten(pkt)) {
-			d_len = net_buf_max_len(c_op->buf);
-		} else {
-			d_len = c_op->buf->len;
-		}
-
-		d_len -= c_op->pos - c_op->buf->data;
+		/* Compute the fragment limit only once per fragment */
+		limit = append ? net_buf_max_len(c_op->buf) : c_op->buf->len;
+		d_len = limit - (c_op->pos - c_op->buf->data);
 
 		if (d_len == 0U) {
-			break;
+			/* End of this fragment reached, move to the next
+			 * non-empty one.
+			 */
+			pkt_cursor_jump(pkt, append);
+			continue;
 		}
 
 		len = MIN(length, d_len);
@@ -1940,11 +1936,21 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 			}
 		}
 
-		if (write && !net_pkt_is_being_overwritten(pkt)) {
+		if (append) {
 			net_buf_add(c_op->buf, len);
 		}
 
-		pkt_cursor_update(pkt, len, write);
+		/* Update the cursor: when the end of the fragment has been
+		 * reached, jump to the next non-empty one, except in
+		 * overwrite mode when the fragment still has room for
+		 * subsequent appends.
+		 */
+		if (len == d_len &&
+		    !(ow && c_op->buf->len < net_buf_max_len(c_op->buf))) {
+			pkt_cursor_jump(pkt, append);
+		} else {
+			c_op->pos += len;
+		}
 
 		if (copy && (data != NULL)) {
 			data = (uint8_t *) data + len;
