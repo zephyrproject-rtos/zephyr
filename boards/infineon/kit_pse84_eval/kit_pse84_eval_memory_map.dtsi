@@ -104,7 +104,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x08000000 DT_SIZE_M(16)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {
@@ -139,7 +139,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x18000000 DT_SIZE_M(16)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {
@@ -174,7 +174,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x60000000 DT_SIZE_M(16)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {
