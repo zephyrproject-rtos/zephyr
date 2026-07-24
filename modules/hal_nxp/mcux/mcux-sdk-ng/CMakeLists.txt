@@ -7,10 +7,10 @@ include(basic.cmake)
 # Use optimized memory functions, which have better performance,
 # also will avoid issues with unaligned access to peripheral RAM regions
 # caused by the memcpy implementation in newlib
-if(CONFIG_MCUX_OPTIMIZED_MEMCPY)
+if(CONFIG_MCUX_OPTIMIZED_MEMCPY AND NOT (CMAKE_ASM_COMPILER MATCHES "aarch64"))
   zephyr_library_sources(${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk-ng/components/misc_utilities/fsl_memcpy.S)
 endif()
-if(CONFIG_MCUX_OPTIMIZED_MEMSET)
+if(CONFIG_MCUX_OPTIMIZED_MEMSET AND NOT (CMAKE_ASM_COMPILER MATCHES "aarch64"))
   zephyr_library_sources(${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk-ng/components/misc_utilities/fsl_memset.S)
 endif()
 

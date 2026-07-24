@@ -60,6 +60,18 @@ static int sd_send_interface_condition(struct sd_card *card)
 	ret = sdhc_request(card->sdhc, &cmd, NULL);
 	if (ret) {
 		LOG_DBG("SD CMD8 failed with error %d", ret);
+		if (ret == -ETIMEDOUT && !IS_ENABLED(CONFIG_SDMMC_STACK)) {
+			/*
+			 * Without SDMMC support compiled in, a real SD memory card
+			 * can never be usable on this bus, so a CMD8 timeout can only
+			 * mean a legacy/SDIO-only device. Propagate the timeout so
+			 * the caller can switch to the legacy initialization path
+			 * immediately instead of spinning through retries. When
+			 * SDMMC support is present, fall through to the normal retry
+			 * path below so a real SD card gets its full retry budget.
+			 */
+			return ret;
+		}
 		/* Retry */
 		return SD_RETRY;
 	}
