@@ -121,4 +121,17 @@ static inline bool valid_metadata_type(uint8_t type, uint8_t len)
 bool bap_stream_is_streaming(const struct bt_bap_stream *bap_stream);
 bool cap_stream_is_streaming(const struct bt_cap_stream *cap_stream);
 bool audio_test_stream_is_streaming(const struct audio_test_stream *test_stream);
+
+int bap_common_broadcast_source_setup(struct bt_bap_broadcast_source **source, bool encryption);
+int bap_common_broadcast_source_setup_ext_adv(struct bt_bap_broadcast_source *source,
+					      struct bt_le_ext_adv **adv, uint32_t *broadcast_id);
+
+int bap_common_broadcast_source_stop_ext_adv(struct bt_le_ext_adv *adv);
+void bap_common_broadcast_source_start(struct bt_bap_broadcast_source *source,
+				       struct bt_le_ext_adv *adv);
+void bap_common_broadcast_source_stop(struct bt_bap_broadcast_source *source);
+void bap_common_broadcast_source_delete(struct bt_bap_broadcast_source *source);
+
+void bap_common_broadcast_source_started_cb(struct bt_bap_broadcast_source *source);
+void bap_common_broadcast_source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t reason);
 #endif /* ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_COMMON_ */

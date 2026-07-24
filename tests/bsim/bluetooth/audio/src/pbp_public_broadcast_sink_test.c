@@ -66,7 +66,7 @@ static const struct bt_audio_codec_cap codec = BT_AUDIO_CODEC_CAP_LC3(
  */
 static const uint32_t bis_index_mask = BIT_MASK(ARRAY_SIZE(test_streams) + 1U);
 static uint32_t bis_index_bitfield;
-static uint32_t broadcast_id;
+static uint32_t broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
 static struct bt_pacs_cap cap = {
 	.codec_cap = &codec,

@@ -232,7 +232,10 @@ static bool past_available(const struct bt_conn *conn,
 
 		return BT_FEAT_LE_PAST_RECV(remote_info.le.features) &&
 		       BT_FEAT_LE_PAST_SEND(local_features.features) &&
-		       bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL;
+		       ((IS_ENABLED(CONFIG_BT_PER_ADV_SYNC) &&
+			 bt_le_per_adv_sync_lookup_addr(adv_addr, sid) != NULL) ||
+			(IS_ENABLED(CONFIG_BT_PER_ADV) &&
+			 bt_le_per_adv_lookup_addr(adv_addr, sid) != NULL));
 	} else {
 		return false;
 	}
