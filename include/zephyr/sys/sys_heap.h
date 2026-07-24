@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Qualcomm Technologies, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -311,6 +312,43 @@ int sys_heap_array_save(struct sys_heap *heap);
  * @return -EINVAL if null pointer, otherwise number of saved pointers
  */
 int sys_heap_array_get(struct sys_heap ***heap);
+
+/** @brief Log per-thread heap allocation statistics
+ *
+ * Prints per-thread allocation statistics for the given heap using the
+ * kernel logging subsystem at INFO level.
+ *
+ * Available only when CONFIG_SYS_HEAP_THREAD_STATS is set.
+ *
+ * Concurrency: the caller must ensure no concurrent allocation or free
+ * on the same heap; the same serialisation contract as sys_heap itself.
+ *
+ * @param heap Heap whose per-thread statistics are to be logged
+ */
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+void sys_heap_stats_log(struct sys_heap *heap);
+#endif
+
+/** @brief Return the call-site address recorded for an allocation
+ *
+ * Returns the return address captured by __builtin_return_address() at
+ * the moment @a mem was allocated.  The depth at which the address is
+ * captured is controlled by CONFIG_SYS_HEAP_CALLER_LEVEL.  For blocks
+ * that have been resized in-place by sys_heap_realloc() or
+ * sys_heap_aligned_realloc(), the original allocation call site is
+ * returned, not the realloc site.
+ *
+ * @param heap Heap that owns the allocation
+ * @param mem  Pointer previously returned by sys_heap_alloc() or
+ *             sys_heap_aligned_alloc()
+ * @return     Captured return address, or NULL if:
+ *               - @a heap or @a mem is NULL,
+ *               - @a mem is outside the heap's address span,
+ *               - the chunk at @a mem is not currently allocated.
+ */
+#ifdef CONFIG_SYS_HEAP_CALLER_POINTER
+void *sys_heap_get_caller(struct sys_heap *heap, void *mem);
+#endif
 
 /**
  * @}

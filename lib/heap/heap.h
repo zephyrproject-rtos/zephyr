@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Qualcomm Technologies, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,7 @@
  * only when debugging the heap code.  They shouldn't be routine
  * assertions.
  */
+
 #ifdef CONFIG_SYS_HEAP_VALIDATE
 #define CHECK(x) __ASSERT(x, "")
 #else
@@ -72,10 +74,24 @@ typedef struct { char bytes[CHUNK_UNIT]; } chunk_unit_t;
 typedef uint32_t chunkid_t;
 typedef uint32_t chunksz_t;
 
-#ifdef CONFIG_SYS_HEAP_CANARIES
+#if defined(CONFIG_SYS_HEAP_CANARIES) || \
+    defined(CONFIG_SYS_HEAP_THREAD_STATS) || \
+    defined(CONFIG_SYS_HEAP_CALLER_POINTER)
+
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+struct k_thread;
+#endif
 
 struct z_heap_chunk_trailer {
+#ifdef CONFIG_SYS_HEAP_CANARIES
 	uint32_t canary;
+#endif
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+	struct k_thread *thread;
+#endif
+#ifdef CONFIG_SYS_HEAP_CALLER_POINTER
+	void *caller;
+#endif
 } __aligned(CHUNK_UNIT);
 
 #define CHUNK_TRAILER_SIZE (sizeof(struct z_heap_chunk_trailer) / CHUNK_UNIT)
@@ -84,7 +100,33 @@ struct z_heap_chunk_trailer {
 
 #define CHUNK_TRAILER_SIZE 0
 
-#endif /* CONFIG_SYS_HEAP_CANARIES */
+#endif
+
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+
+struct z_heap_thread_stat {
+	struct k_thread *thread;
+#if defined(CONFIG_THREAD_NAME)
+	char name[CONFIG_THREAD_MAX_NAME_LEN];
+#endif
+	size_t total_alloc;
+};
+
+struct z_heap_stats {
+	size_t isr_alloc_bytes;
+	size_t boot_alloc_bytes;
+	size_t overflow_alloc_bytes;
+	size_t num_threads;
+	struct z_heap_thread_stat threads[CONFIG_SYS_HEAP_STATS_MAX_TRACKED_THREADS];
+};
+
+/*
+ * Sentinel stored in the chunk trailer thread field for allocations made
+ * before the Zephyr scheduler has started (k_is_pre_kernel() == true).
+ */
+#define Z_HEAP_BOOT_SENTINEL ((struct k_thread *)(uintptr_t)1U)
+
+#endif /* CONFIG_SYS_HEAP_THREAD_STATS */
 
 struct z_heap_bucket {
 	chunkid_t next;
@@ -101,6 +143,9 @@ struct z_heap {
 #endif
 #ifdef CONFIG_SYS_HEAP_CANARIES_RANDOM
 	uint32_t canary_base;
+#endif
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+	struct z_heap_stats *stats;
 #endif
 	struct z_heap_bucket buckets[];
 };
@@ -328,7 +373,9 @@ static inline void get_alloc_info(struct z_heap *h, size_t *alloc_bytes,
 	}
 }
 
-#ifdef CONFIG_SYS_HEAP_CANARIES
+#if defined(CONFIG_SYS_HEAP_CANARIES) || \
+    defined(CONFIG_SYS_HEAP_THREAD_STATS) || \
+    defined(CONFIG_SYS_HEAP_CALLER_POINTER)
 
 /* Returns pointer to the chunk trailer (at the end of the chunk) */
 static inline struct z_heap_chunk_trailer *chunk_trailer(struct z_heap *h,
@@ -340,7 +387,21 @@ static inline struct z_heap_chunk_trailer *chunk_trailer(struct z_heap *h,
 						   - CHUNK_TRAILER_SIZE];
 }
 
-#endif /* CONFIG_SYS_HEAP_CANARIES */
+#endif
+
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+struct sys_heap;
+void z_heap_stats_on_init(struct sys_heap *heap);
+void z_heap_stats_on_alloc(struct sys_heap *heap, chunkid_t c, void *mem);
+void z_heap_stats_on_free(struct sys_heap *heap, chunkid_t c, void *mem);
+void z_heap_stats_on_realloc(struct sys_heap *heap, chunkid_t c, void *ptr,
+			     size_t old_usable, struct k_thread *old_owner);
+#else
+#define z_heap_stats_on_init(heap)                    do { } while (false)
+#define z_heap_stats_on_alloc(heap, c, mem)           do { } while (false)
+#define z_heap_stats_on_free(heap, c, mem)            do { } while (false)
+#define z_heap_stats_on_realloc(heap, c, ptr, ob, oo) do { } while (false)
+#endif
 
 #ifdef CONFIG_SYS_HEAP_VALIDATE
 bool z_heap_full_check(struct z_heap *h);

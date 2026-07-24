@@ -1,4 +1,5 @@
 # Copyright (c) 2021 Intel Corporation
+# Copyright (c) 2026 Qualcomm Technologies, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -309,7 +310,6 @@ config SYS_HEAP_KASAN_SYSTEM
 module = SYS_HEAP
 module-str = sys_heap
 source "subsys/logging/Kconfig.template.log_config"
-
 DT_CHOSEN_Z_SRAM = zephyr,sram
 DT_SRAM_SIZE = $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 
@@ -380,5 +380,95 @@ config SHARED_MULTI_HEAP
 	  multi-heap allocator to manage a set of reserved memory regions with
 	  different capabilities / attributes (cacheable, non-cacheable,
 	  etc...) defined in the DT.
+
+config SYS_HEAP_STATS_LOGGING
+	bool "Heap statistics logging framework"
+	help
+	  Enable the heap statistics logging framework. Provides infrastructure
+	  for per-thread allocation tracking and caller-pointer capture. Each
+	  sub-feature is controlled by its own option below.
+
+config SYS_HEAP_THREAD_STATS
+	bool "Per-thread heap allocation tracking"
+	depends on SYS_HEAP_STATS_LOGGING
+	help
+	  Track outstanding allocation bytes per thread for each heap. A
+	  fixed-size table of threads and their byte totals is maintained for
+	  every heap that has a statistics slot assigned.
+
+	  Allocations that cannot be attributed to a tracked thread are counted
+	  in one of three aggregate counters per heap:
+	    - isr_alloc_bytes:      allocated in ISR context (k_is_in_isr()).
+	    - boot_alloc_bytes:     allocated before the scheduler started
+	                            (k_is_pre_kernel()).
+	    - overflow_alloc_bytes: allocated by threads beyond the
+	                            SYS_HEAP_STATS_MAX_TRACKED_THREADS limit.
+
+	  Access to these counters is serialised by the same caller-side lock
+	  that protects sys_heap itself; concurrent access without external
+	  locking produces undefined results.
+
+	  Caveats:
+	    - When a k_thread TCB is recycled for a new thread the stats
+	      table cannot distinguish the two. Any live allocations from the
+	      original thread become attributed to the new one.
+	    - Thread names are captured on first allocation.  If the thread
+	      had not yet called k_thread_name_set() at that point, the name
+	      is refreshed on the next allocation once it becomes available.
+	    - Each unique sys_heap pointer consumes one slot from the pool of
+	      size SYS_HEAP_STATS_TRACKED_HEAPS; re-init of the same pointer
+	      reuses the existing slot automatically.
+
+config SYS_HEAP_STATS_TRACKED_HEAPS
+	int "Maximum number of heaps with per-thread statistics"
+	default 2
+	range 1 256
+	depends on SYS_HEAP_THREAD_STATS
+	help
+	  Size of the pre-allocated pool of per-heap statistics structures.
+	  Heaps initialised beyond this limit have their statistics pointer
+	  set to NULL and emit a LOG_WRN; they continue to function normally
+	  but without per-thread tracking.
+
+config SYS_HEAP_STATS_MAX_TRACKED_THREADS
+	int "Maximum threads tracked per heap"
+	default 8
+	range 1 256
+	depends on SYS_HEAP_THREAD_STATS
+	help
+	  Maximum number of distinct threads whose allocation bytes are tracked
+	  per heap. When this limit is reached, allocations from new threads
+	  are counted in the aggregate overflow_alloc_bytes counter instead of
+	  the per-thread table.
+
+config SYS_HEAP_CALLER_POINTER
+	bool "Capture allocation caller pointer"
+	depends on SYS_HEAP_STATS_LOGGING
+	help
+	  Store the return address of each allocation call in the chunk
+	  trailer, captured with __builtin_return_address().
+
+config SYS_HEAP_CALLER_LEVEL
+	int "Stack-frame depth for caller pointer capture"
+	default 0
+	range 0 0 if OMIT_FRAME_POINTER
+	range 0 4
+	depends on SYS_HEAP_CALLER_POINTER
+	help
+	  Number of frames to skip when capturing the allocation call site
+	  via __builtin_return_address(N).
+
+	  0 = direct caller of sys_heap_alloc() / sys_heap_aligned_alloc()
+	      (always safe, works on all architectures).
+	  N>0 = caller higher in the stack.  Useful when allocations go
+	      through wrappers where the direct caller is an
+	      allocator shim and the real call site
+	      is one or more frames up.  Requires frame pointers to be
+	      present for every frame in the call chain; it is therefore
+	      forced to 0 when CONFIG_OMIT_FRAME_POINTER is set.
+
+	  WARNING: N > 0 relies on __builtin_return_address(N) with N > 0,
+	  which GCC documents as unsafe.  Verify on your
+	  toolchain and architecture before enabling.
 
 endmenu

@@ -1,0 +1,34 @@
+common:
+  tags: heap heap_stats
+  timeout: 120
+  integration_platforms:
+    - native_sim
+    - qemu_x86
+tests:
+  libraries.heap_stats_log:
+    filter: CONFIG_SYS_HEAP_STATS_LOGGING
+
+  libraries.heap_stats_log.no_thread_name:
+    extra_configs:
+      - CONFIG_THREAD_NAME=n
+    filter: CONFIG_SYS_HEAP_STATS_LOGGING
+
+  libraries.heap_stats_log.no_caller:
+    extra_configs:
+      - CONFIG_SYS_HEAP_CALLER_POINTER=n
+    filter: CONFIG_SYS_HEAP_STATS_LOGGING
+
+  libraries.heap_stats_log.no_thread_stats:
+    extra_configs:
+      - CONFIG_SYS_HEAP_THREAD_STATS=n
+    filter: CONFIG_SYS_HEAP_STATS_LOGGING
+
+  libraries.heap_stats_log.random_canary:
+    extra_configs:
+      - CONFIG_SYS_HEAP_CANARIES_RANDOM=y
+    filter: CONFIG_SYS_HEAP_STATS_LOGGING
+
+  libraries.heap_stats_log.no_runtime_stats:
+    extra_configs:
+      - CONFIG_SYS_HEAP_RUNTIME_STATS=n
+    filter: CONFIG_SYS_HEAP_STATS_LOGGING
