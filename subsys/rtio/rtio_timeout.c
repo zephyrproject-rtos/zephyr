@@ -106,6 +106,36 @@ static struct rtio_iodev_sqe *rtio_tq_pop_expired(struct rtio_timeout_iodev_data
 	return batch;
 }
 
+/**
+ * @brief Remove a specific submission from the sorted list
+ *
+ * @retval true if @p target was pending and got unlinked
+ * @retval false if @p target was not in the list (already expired/completed)
+ */
+static bool rtio_tq_remove(struct rtio_timeout_iodev_data *data, struct rtio_iodev_sqe *target)
+{
+	struct rtio_iodev_sqe *prev = NULL;
+	struct rtio_iodev_sqe *curr = data->head;
+
+	while (curr != NULL) {
+		if (curr == target) {
+			struct rtio_iodev_sqe *next = rtio_tq_next(curr);
+
+			if (prev == NULL) {
+				data->head = next;
+			} else {
+				rtio_tq_set_next(prev, next);
+			}
+			rtio_tq_set_next(curr, NULL);
+			return true;
+		}
+		prev = curr;
+		curr = rtio_tq_next(curr);
+	}
+
+	return false;
+}
+
 static void rtio_tq_expired(struct _timeout *timeout);
 
 /**
@@ -187,8 +217,47 @@ static void rtio_timeout_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 	k_spin_unlock(&data->lock, key);
 }
 
+/**
+ * @brief Actively cancel a pending delay by removing it from the timeout queue
+ *
+ * If the delay is still pending it is unlinked and the submission completed with
+ * -ECANCELED. The shared timeout only needs re-arming when the removed entry was
+ * the head (nearest deadline); cancelling any later delay leaves the armed
+ * deadline unchanged. If the delay already expired (not in the list) this is a
+ * no-op: its completion is already in flight. Completion runs with the lock
+ * released, matching rtio_tq_expired().
+ */
+static void rtio_timeout_iodev_cancel(struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rtio_timeout_iodev_data *data = iodev_sqe->sqe.iodev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	bool was_head = (data->head == iodev_sqe);
+	bool was_pending = rtio_tq_remove(data, iodev_sqe);
+
+	if (was_head) {
+		/* We removed the nearest deadline, so the shared timeout must be
+		 * re-armed to the new head. z_try_abort_timeout() (inside
+		 * rtio_tq_try_arm) returns -EAGAIN if the expiry handler is running on
+		 * another CPU and would deadlock on data->lock; the kernel's contract
+		 * is to drop the lock so it can finish, then retry. On non-SMP this
+		 * loop always runs exactly once.
+		 */
+		while (!rtio_tq_try_arm(data)) {
+			k_spin_unlock(&data->lock, key);
+			key = k_spin_lock(&data->lock);
+		}
+	}
+
+	k_spin_unlock(&data->lock, key);
+
+	if (was_pending) {
+		rtio_iodev_sqe_err(iodev_sqe, -ECANCELED);
+	}
+}
+
 static const struct rtio_iodev_api rtio_timeout_iodev_api = {
 	.submit = rtio_timeout_iodev_submit,
+	.cancel = rtio_timeout_iodev_cancel,
 };
 
 static struct rtio_timeout_iodev_data rtio_timeout_iodev_data_inst;
