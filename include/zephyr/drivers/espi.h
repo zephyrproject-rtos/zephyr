@@ -622,77 +622,151 @@ struct espi_callback {
 /** @endcond */
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * eSPI driver API definition and system call entry points
- *
- * (Internal use only.)
+ * @def_driverbackendgroup{eSPI,espi_interface}
+ * @{
+ */
+
+/**
+ * @brief Configure operation of a eSPI hardware.
+ * See espi_config() for argument description.
  */
 typedef int (*espi_api_config)(const struct device *dev, struct espi_cfg *cfg);
+/**
+ * @brief Query whether a logical channel is ready.
+ * See espi_get_channel_status() for argument description.
+ */
 typedef bool (*espi_api_get_channel_status)(const struct device *dev,
 					    enum espi_channel ch);
 /* Logical Channel 0 APIs */
+/**
+ * @brief Send a memory, I/O or message read request over eSPI.
+ * See espi_read_request() for argument description.
+ */
 typedef int (*espi_api_read_request)(const struct device *dev,
 				     struct espi_request_packet *req);
+/**
+ * @brief Send a memory, I/O or message write request over eSPI.
+ * See espi_write_request() for argument description.
+ */
 typedef int (*espi_api_write_request)(const struct device *dev,
 				      struct espi_request_packet *req);
+/**
+ * @brief Read from a LPC peripheral registers.
+ * See espi_read_lpc_request() for argument description.
+ */
 typedef int (*espi_api_lpc_read_request)(const struct device *dev,
 					 enum lpc_peripheral_opcode op,
 					 uint32_t *data);
+/**
+ * @brief Write to a LPC peripheral registers.
+ * See espi_write_lpc_request() for argument description.
+ */
 typedef int (*espi_api_lpc_write_request)(const struct device *dev,
 					  enum lpc_peripheral_opcode op,
 					  uint32_t *data);
 /* Logical Channel 1 APIs */
+/**
+ * @brief Send a virtual wire packet over eSPI.
+ * See espi_send_vwire() for argument description.
+ */
 typedef int (*espi_api_send_vwire)(const struct device *dev,
 				   enum espi_vwire_signal vw,
 				   uint8_t level);
+/**
+ * @brief Retrieve the level of a virtual wire signal.
+ * See espi_receive_vwire() for argument description.
+ */
 typedef int (*espi_api_receive_vwire)(const struct device *dev,
 				      enum espi_vwire_signal vw,
 				      uint8_t *level);
 /* Logical Channel 2 APIs */
+/**
+ * @brief Send a SMBus transaction (out-of-band) packet over eSPI.
+ * See espi_send_oob() for argument description.
+ */
 typedef int (*espi_api_send_oob)(const struct device *dev,
 				 struct espi_oob_packet *pckt);
+/**
+ * @brief Receive a SMBus transaction (out-of-band) packet from eSPI.
+ * See espi_receive_oob() for argument description.
+ */
 typedef int (*espi_api_receive_oob)(const struct device *dev,
 				    struct espi_oob_packet *pckt);
 /* Logical Channel 3 APIs */
+/**
+ * @brief Send a read request for a flash region shared over eSPI.
+ * See espi_read_flash() for argument description.
+ */
 typedef int (*espi_api_flash_read)(const struct device *dev,
 				   struct espi_flash_packet *pckt);
+/**
+ * @brief Send a write request for a flash region shared over eSPI.
+ * See espi_write_flash() for argument description.
+ */
 typedef int (*espi_api_flash_write)(const struct device *dev,
 				    struct espi_flash_packet *pckt);
+/**
+ * @brief Send an erase request for a flash region shared over eSPI.
+ * See espi_flash_erase() for argument description.
+ */
 typedef int (*espi_api_flash_erase)(const struct device *dev,
 				    struct espi_flash_packet *pckt);
 
 /* Callbacks and traffic intercept */
+/**
+ * @brief Add or remove an application callback.
+ * See espi_add_callback() and espi_remove_callback() for argument description.
+ */
 typedef int (*espi_api_manage_callback)(const struct device *dev,
 					struct espi_callback *callback,
 					bool set);
 
 /* eSPI interrupt control */
+/**
+ * @brief Control eSPI interrupts.
+ * See espi_interrupt_config() for argument description.
+ */
 typedef int (*espi_api_interrupt_configure)(const struct device *dev,
 					    uint32_t espi_interrupt_flags,
 					    uint32_t espi_interrupt_vendor);
 
+/**
+ * @driver_ops{eSPI}
+ */
 __subsystem struct espi_driver_api {
+	/** @driver_ops_mandatory @copybrief espi_config */
 	espi_api_config config;
+	/** @driver_ops_mandatory @copybrief espi_get_channel_status */
 	espi_api_get_channel_status get_channel_status;
+	/** @driver_ops_optional @copybrief espi_read_request */
 	espi_api_read_request read_request;
+	/** @driver_ops_optional @copybrief espi_write_request */
 	espi_api_write_request write_request;
+	/** @driver_ops_optional @copybrief espi_read_lpc_request */
 	espi_api_lpc_read_request read_lpc_request;
+	/** @driver_ops_optional @copybrief espi_write_lpc_request */
 	espi_api_lpc_write_request write_lpc_request;
+	/** @driver_ops_mandatory @copybrief espi_send_vwire */
 	espi_api_send_vwire send_vwire;
+	/** @driver_ops_mandatory @copybrief espi_receive_vwire */
 	espi_api_receive_vwire receive_vwire;
+	/** @driver_ops_optional @copybrief espi_send_oob */
 	espi_api_send_oob send_oob;
+	/** @driver_ops_optional @copybrief espi_receive_oob */
 	espi_api_receive_oob receive_oob;
+	/** @driver_ops_optional @copybrief espi_read_flash */
 	espi_api_flash_read flash_read;
+	/** @driver_ops_optional @copybrief espi_write_flash */
 	espi_api_flash_write flash_write;
+	/** @driver_ops_optional @copybrief espi_flash_erase */
 	espi_api_flash_erase flash_erase;
+	/** @driver_ops_optional Add or remove an application callback. */
 	espi_api_manage_callback manage_callback;
+	/** @driver_ops_optional @copybrief espi_interrupt_config */
 	espi_api_interrupt_configure interrupt_config;
 };
 
-/**
- * @endcond
- */
+/** @} */
 
 /**
  * @brief Configure operation of a eSPI hardware.
