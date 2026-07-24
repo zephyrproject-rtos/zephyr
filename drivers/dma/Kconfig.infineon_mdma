@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon M-DMA configuration options
+
+config DMA_INFINEON_MDMA
+	bool "Infineon M-DMA driver"
+	default y
+	depends on DT_HAS_INFINEON_MDMA_ENABLED
+	help
+	  This option enables the M-DMA driver for Infineon family
+	  devices that provide the MXSAXIDMAC IP.
+
+config DMA_INFINEON_MDMA_DESCRIPTOR_COUNT
+	int "Number of available descriptors per DMA channel"
+	default 2
+	depends on DMA_INFINEON_MDMA
+	help
+	  This option determines the number of descriptors that are allocated
+	  for each DMA channel. Must be 1 or greater. This also caps the
+	  maximum block_count accepted by dma_config().

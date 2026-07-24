@@ -8,3 +8,16 @@ tests:
       - native_sim
       - native_sim/native/64
     filter: dt_nodelabel_enabled("tst_dma0")
+  drivers.dma.ifx_axidmac.loop_transfer:
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    filter: dt_nodelabel_enabled("tst_dma0") and CONFIG_DMA_INFINEON_MDMA
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/pse8x_axi.overlay"
+    platform_allow:
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
