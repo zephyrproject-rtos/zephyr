@@ -8,6 +8,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/disk.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/drivers/clock_control/renesas_cpg_mssr.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -73,6 +74,7 @@ struct mmc_rcar_cfg {
 	const struct pinctrl_dev_config *pcfg;
 	const struct device *regulator_vqmmc;
 	const struct device *regulator_vmmc;
+	struct gpio_dt_spec cd_gpio;
 
 	uint32_t max_frequency;
 
@@ -546,6 +548,10 @@ static int rcar_mmc_dma_rx_tx_data(const struct device *dev, struct sdhc_data *d
 #ifdef CONFIG_RCAR_MMC_DMA_IRQ_DRIVEN_SUPPORT
 	struct mmc_rcar_data *dev_data = dev->data;
 #endif
+#if defined(CONFIG_RCAR_MMC_SCC_SUPPORT) && defined(CONFIG_RCAR_MMC_DMA_IRQ_DRIVEN_SUPPORT)
+	const struct mmc_rcar_data *scc_data = dev->data;
+	const bool tuning_transfer = data->data == scc_data->tuning_buf;
+#endif
 
 	ret = sys_cache_data_flush_range(data->data, data->blocks * data->block_size);
 	if (ret < 0) {
@@ -584,7 +590,11 @@ static int rcar_mmc_dma_rx_tx_data(const struct device *dev, struct sdhc_data *d
 
 	ret = k_sem_take(&dev_data->irq_xref_fin, K_MSEC(data->timeout_ms));
 	if (ret < 0) {
-		LOG_ERR("%s: interrupt signal timeout error %d", dev->name, ret);
+		if (tuning_transfer) {
+			LOG_DBG("%s: tuning tap transfer timeout %d", dev->name, ret);
+		} else {
+			LOG_ERR("%s: interrupt signal timeout error %d", dev->name, ret);
+		}
 	}
 
 	reg = rcar_mmc_read_reg32(dev, RCAR_MMC_DMA_INFO2);
@@ -1512,6 +1522,10 @@ static int rcar_mmc_get_card_present(const struct device *dev)
 		return 1;
 	}
 
+	if (cfg->cd_gpio.port != NULL) {
+		return gpio_pin_get_dt(&cfg->cd_gpio);
+	}
+
 	return !!(rcar_mmc_read_reg32(dev, RCAR_MMC_INFO1) & RCAR_MMC_INFO1_CD);
 }
 
@@ -1606,7 +1620,9 @@ static int rcar_mmc_execute_tuning(const struct device *dev)
 
 	data.blocks = 1;
 	data.data = dev_data->tuning_buf;
-	data.timeout_ms = CONFIG_SD_DATA_TIMEOUT;
+	/* An invalid tap may not generate a DMA completion interrupt.  Do not
+	 * spend the full data-transfer timeout on each tuning trial. */
+	data.timeout_ms = MIN(CONFIG_SD_DATA_TIMEOUT, CONFIG_SD_CMD_TIMEOUT);
 	if (dev_data->host_io.bus_width == SDHC_BUS_WIDTH4BIT) {
 		data.block_size = sizeof(tun_block_4_bits_bus);
 		tun_block_ptr = tun_block_4_bits_bus;
@@ -2094,6 +2110,21 @@ static int rcar_mmc_init(const struct device *dev)
 		goto exit_unmap;
 	}
 
+	if (cfg->cd_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->cd_gpio)) {
+			LOG_ERR("%s: card-detect GPIO is not ready", dev->name);
+			ret = -ENODEV;
+			goto exit_unmap;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->cd_gpio, GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("%s: failed to configure card-detect GPIO: %d", dev->name,
+				ret);
+			goto exit_unmap;
+		}
+	}
+
 	if (!device_is_ready(cfg->cpg_dev)) {
 		LOG_ERR("%s: error cpg_dev isn't ready", dev->name);
 		ret = -ENODEV;
@@ -2158,6 +2189,7 @@ exit_unmap:
 		.bus_clk.module = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, module),                        \
 		.bus_clk.domain = DT_INST_CLOCKS_CELL_BY_IDX(n, 1, domain),                        \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
+		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),                              \
 		.regulator_vqmmc = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), vqmmc_supply)),        \
 		.regulator_vmmc = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n), vmmc_supply)),          \
 		.max_frequency = DT_INST_PROP(n, max_bus_freq),                                    \

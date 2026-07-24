@@ -43,8 +43,9 @@ typedef struct pinctrl_soc_pin {
 	uint8_t voltage;
 } pinctrl_soc_pin_t;
 
-#define RCAR_IPSR(node_id) DT_PROP_BY_IDX(node_id, pin, 1)
 #define RCAR_HAS_IPSR(node_id) DT_PROP_HAS_IDX(node_id, pin, 1)
+#define RCAR_IPSR(node_id) COND_CODE_1(RCAR_HAS_IPSR(node_id),                 \
+			               (DT_PROP_BY_IDX(node_id, pin, 1)), (0))
 
 /* Offsets are defined in dt-bindings pinctrl-rcar-common.h */
 #define RCAR_PIN_FUNC(node_id)			       \
@@ -70,7 +71,7 @@ typedef struct pinctrl_soc_pin {
 	{								       \
 		.pin = DT_PROP_BY_IDX(node_id, pin, 0),			       \
 		.func = COND_CODE_1(RCAR_HAS_IPSR(node_id),		       \
-				    (RCAR_PIN_FUNC(node_id)), {0}),	       \
+				    (RCAR_PIN_FUNC(node_id)), ({0})),	       \
 		.flags = RCAR_PIN_FLAGS(node_id),			       \
 		.drive_strength =					       \
 			COND_CODE_1(DT_NODE_HAS_PROP(node_id, drive_strength), \

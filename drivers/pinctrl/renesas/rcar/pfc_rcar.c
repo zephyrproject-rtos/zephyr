@@ -203,7 +203,7 @@ int pfc_rcar_set_bias(uintptr_t pfc_base, uint16_t pin, uint16_t flags)
 
 #ifdef CONFIG_PINCTRL_RCAR_VOLTAGE_CONTROL
 
-const struct pfc_pocctrl_reg pfc_r8a77951_r8a77961_volt_regs[] = {
+__maybe_unused const struct pfc_pocctrl_reg pfc_r8a77951_r8a77961_volt_regs[] = {
 	{
 		.offset = 0x0380,
 		.pins = {
@@ -244,9 +244,58 @@ const struct pfc_pocctrl_reg pfc_r8a77951_r8a77961_volt_regs[] = {
 	{ /* sentinel */ },
 };
 
+/*
+ * R-Car V4H has one POC register per GPIO group.  The SDHI pins are in
+ * GPIO group 3 and POC3 is at offset 0x0a0 in that group's PFC window.
+ */
+__maybe_unused const struct pfc_pocctrl_reg pfc_r8a779g0_volt_regs[] = {
+	{
+		.offset = 0x00a0,
+		.pins = {
+			[0] = RCAR_GP_PIN(3, 0),  /* MMC_SD_D1 */
+			[1] = RCAR_GP_PIN(3, 1),  /* MMC_SD_D0 */
+			[2] = RCAR_GP_PIN(3, 2),  /* MMC_SD_D2 */
+			[3] = RCAR_GP_PIN(3, 3),  /* MMC_SD_CLK */
+			[4] = RCAR_GP_PIN(3, 4),  /* MMC_DS */
+			[5] = RCAR_GP_PIN(3, 5),  /* MMC_SD_D3 */
+			[6] = RCAR_GP_PIN(3, 6),  /* MMC_D5 */
+			[7] = RCAR_GP_PIN(3, 7),  /* MMC_D4 */
+			[8] = RCAR_GP_PIN(3, 8),  /* MMC_D7 */
+			[9] = RCAR_GP_PIN(3, 9),  /* MMC_D6 */
+			[10] = RCAR_GP_PIN(3, 10), /* MMC_SD_CMD */
+			[11] = RCAR_GP_PIN(3, 11), /* SD_CD */
+			[12] = RCAR_GP_PIN(3, 12), /* SD_WP */
+			[13] = -1,
+			[14] = -1,
+			[15] = -1,
+			[16] = -1,
+			[17] = -1,
+			[18] = -1,
+			[19] = -1,
+			[20] = -1,
+			[21] = -1,
+			[22] = -1,
+			[23] = -1,
+			[24] = -1,
+			[25] = -1,
+			[26] = -1,
+			[27] = -1,
+			[28] = -1,
+			[29] = -1,
+			[30] = -1,
+			[31] = -1,
+		}
+	},
+	{ /* sentinel */ },
+};
+
 static const struct pfc_pocctrl_reg *pfc_rcar_get_io_voltage_regs(void)
 {
+#if defined(CONFIG_SOC_R8A779G0_R52) || defined(CONFIG_SOC_R8A779G0_A76)
+	return pfc_r8a779g0_volt_regs;
+#else
 	return pfc_r8a77951_r8a77961_volt_regs;
+#endif
 }
 
 static const struct pfc_pocctrl_reg *pfc_rcar_get_pocctrl_reg(uint16_t pin, uint8_t *bit)

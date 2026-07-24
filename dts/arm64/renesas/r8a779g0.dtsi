@@ -1,0 +1,236 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/renesas_cpg_mssr.h>
+#include <zephyr/dt-bindings/clock/r8a779g0_cpg_mssr.h>
+
+/ {
+	compatible = "renesas,r8a779g0";
+	#address-cells = <2>;
+	#size-cells = <2>;
+	interrupt-parent = <&gic>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		a76: cpu@0 {
+			compatible = "arm,armv8";
+			reg = <0>;
+			device_type = "cpu";
+			enable-method = "psci";
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-0.2";
+		method = "smc";
+	};
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	};
+
+	reg_3p3v: regulator_3p3v {
+		compatible = "regulator-fixed";
+		regulator-name = "reg_3p3v";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	reg_1p8v: regulator_1p8v {
+		compatible = "regulator-fixed";
+		regulator-name = "reg_1p8v";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+		regulator-boot-on;
+		status = "okay";
+	};
+
+	soc: soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&gic>;
+
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		gic: interrupt-controller@f1000000 {
+			compatible = "arm,gic-600", "arm,gic-v3", "arm,gic";
+			#interrupt-cells = <4>;
+			#address-cells = <0>;
+			interrupt-controller;
+			reg = <0 0xf1000000 0 0x20000>,
+			      <0 0xf1060000 0 0x110000>;
+			status = "okay";
+		};
+
+		cpg: clock-controller@e6150000 {
+			compatible = "renesas,r8a779g0-cpg-mssr";
+			reg = <0 0xe6150000 0 0x2e78>;
+			#clock-cells = <2>;
+			#power-domain-cells = <0>;
+			#reset-cells = <1>;
+		};
+
+		mmc0: mmc@ee140000 {
+			compatible = "renesas,rcar-mmc";
+			reg = <0 0xee140000 0 0x2000>;
+			vmmc-supply = <&reg_3p3v>;
+			vqmmc-supply = <&reg_1p8v>;
+			interrupts = <GIC_SPI 440 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 706>, <&cpg CPG_CORE R8A779G0_CLK_SD0H>;
+			max-bus-freq = <200000000>;
+			status = "disabled";
+		};
+
+		pfc: pin-controller@e6050000 {
+			compatible = "renesas,rcar-pfc";
+			reg = <0 0xe6050000 0 0x16c>, <0 0xe6050800 0 0x16c>,
+			      <0 0xe6058000 0 0x16c>, <0 0xe6058800 0 0x16c>,
+			      <0 0xe6060000 0 0x16c>, <0 0xe6060800 0 0x16c>,
+			      <0 0xe6061000 0 0x16c>, <0 0xe6061800 0 0x16c>,
+			      <0 0xe6068000 0 0x16c>;
+		};
+
+		gpio0: gpio@e6050180 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0 0xe6050180 0 0x54>;
+			interrupts = <GIC_SPI 619 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 915>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@e6050980 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0 0xe6050980 0 0x54>;
+			interrupts = <GIC_SPI 623 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 915>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@e6058180 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0 0xe6058180 0 0x54>;
+			interrupts = <GIC_SPI 627 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 916>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio3: gpio@e6058980 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0 0xe6058980 0 0x54>;
+			interrupts = <GIC_SPI 631 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 916>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio4: gpio@e6060180 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0 0xe6060180 0 0x54>;
+			interrupts = <GIC_SPI 635 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 917>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio5: gpio@e6060980 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0 0xe6060980 0 0x54>;
+			interrupts = <GIC_SPI 639 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 917>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio6: gpio@e6061180 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0 0xe6061180 0 0x54>;
+			interrupts = <GIC_SPI 643 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 917>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio7: gpio@e6061980 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0 0xe6061980 0 0x54>;
+			interrupts = <GIC_SPI 647 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 917>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio8: gpio@e6068180 {
+			compatible = "renesas,rcar-gpio";
+			reg = <0 0xe6068180 0 0x54>;
+			interrupts = <GIC_SPI 651 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 918>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		hscif0: serial@e6540000 {
+			compatible = "renesas,rcar-hscif";
+			reg = <0 0xe6540000 0 0x64>;
+			interrupts = <GIC_SPI 246 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 514>, <&cpg CPG_CORE R8A779G0_CLK_SASYNCPERD1>;
+			current-speed = <921600>;
+			status = "disabled";
+		};
+
+		hscif1: serial@e6550000 {
+			compatible = "renesas,rcar-hscif";
+			reg = <0 0xe6550000 0 0x64>;
+			interrupts = <GIC_SPI 247 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 515>, <&cpg CPG_CORE R8A779G0_CLK_SASYNCPERD1>;
+			current-speed = <921600>;
+			status = "disabled";
+		};
+
+		hscif3: serial@e66a0000 {
+			compatible = "renesas,rcar-hscif";
+			reg = <0 0xe66a0000 0 0x64>;
+			interrupts = <GIC_SPI 249 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&cpg CPG_MOD 517>, <&cpg CPG_CORE R8A779G0_CLK_SASYNCPERD1>;
+			current-speed = <921600>;
+			status = "disabled";
+		};
+	};
+
+	clocks {
+		clock-cl16m_rt {
+			compatible = "fixed-clock";
+			clock-frequency = <16660000>;
+			#clock-cells = <0>;
+		};
+	};
+};
