@@ -430,6 +430,12 @@ else()
   add_custom_target(qemu_nvme_disk)
 endif()
 
+if(CONFIG_UHC_OHCI_PCI)
+  list(APPEND QEMU_EXTRA_FLAGS
+    -device pci-ohci,${QEMU_PCI_OHCI_FLAGS}
+  )
+endif()
+
 # If we are using a suitable ethernet driver inside qemu, then these options
 # must be set, otherwise a zephyr instance cannot receive any network packets.
 # The Qemu supported ethernet driver should define CONFIG_ETH_NIC_MODEL

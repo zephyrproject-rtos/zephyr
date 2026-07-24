@@ -8,6 +8,7 @@ toolchain:
   - zephyr
 supported:
   - netif
+  - usbh
 ram: 262144
 flash: 32768
 testing:

@@ -50,4 +50,6 @@ else()
     )
 endif()
 
+set(QEMU_PCI_OHCI_FLAGS addr=2.0)
+
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)
