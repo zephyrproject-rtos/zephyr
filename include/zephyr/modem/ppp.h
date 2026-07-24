@@ -15,8 +15,8 @@
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/stats.h>
 
-#ifndef ZEPHYR_MODEM_PPP_
-#define ZEPHYR_MODEM_PPP_
+#ifndef ZEPHYR_INCLUDE_MODEM_PPP_H_
+#define ZEPHYR_INCLUDE_MODEM_PPP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -222,4 +222,4 @@ int modem_ppp_init_internal(const struct device *dev);
 }
 #endif
 
-#endif /* ZEPHYR_MODEM_PPP_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_PPP_H_ */

@@ -12,8 +12,8 @@
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/stats.h>
 
-#ifndef ZEPHYR_MODEM_CHAT_
-#define ZEPHYR_MODEM_CHAT_
+#ifndef ZEPHYR_INCLUDE_MODEM_CHAT_H_
+#define ZEPHYR_INCLUDE_MODEM_CHAT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -555,4 +555,4 @@ void modem_chat_script_set_timeout(struct modem_chat_script *script, uint32_t ti
 }
 #endif
 
-#endif /* ZEPHYR_MODEM_CHAT_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_CHAT_H_ */
