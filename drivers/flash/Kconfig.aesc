@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_AESC
+	bool "Aesc Silicon SPI XIP flash controller driver"
+	default y
+	depends on DT_HAS_AESC_SPI_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enable the Aesc Silicon SPI flash controller driver. It provides
+	  read-only access to the execute-in-place mapped SPI NOR flash;
+	  programming (write/erase) is not supported yet.

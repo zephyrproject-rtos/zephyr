@@ -75,6 +75,8 @@ Boards
     :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` or
     :kconfig:option:`CONFIG_SOC_SERIES_NRF71`.
 
+* Aesc Silicon ``elemrv`` board is renamed to ``elemrv_flask``.
+
 * The Nordic sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR``
   has been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
   Update sysbuild configurations to use the new name.

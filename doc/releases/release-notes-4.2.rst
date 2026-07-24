@@ -520,7 +520,7 @@ New Boards
 
 * Aesc Silicon
 
-   * :zephyr:board:`elemrv` (``elemrv``)
+   * :zephyr:board:`elemrv_flask` (``elemrv``)
 
 * Ai-Thinker Co., Ltd.
 

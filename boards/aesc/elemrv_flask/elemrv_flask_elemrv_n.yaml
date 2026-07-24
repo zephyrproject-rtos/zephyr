@@ -1,5 +1,5 @@
-identifier: elemrv/elemrv_n
-name: ElemRV-N
+identifier: elemrv_flask/elemrv_n
+name: ElemRV Flask (ElemRV-N)
 type: mcu
 arch: riscv
 toolchain:
