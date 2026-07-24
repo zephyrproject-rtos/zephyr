@@ -21,4 +21,5 @@ supported:
   - i3c
   - flash
   - memc
+  - crc
 vendor: nxp

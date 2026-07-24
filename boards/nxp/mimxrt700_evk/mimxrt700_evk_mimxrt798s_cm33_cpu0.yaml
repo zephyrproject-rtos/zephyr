@@ -27,4 +27,5 @@ supported:
   - hwinfo
   - flash
   - memc
+  - crc
 vendor: nxp
