@@ -311,6 +311,28 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	struct mcux_lpadc_data *data = dev->data;
 	lpadc_hardware_average_mode_t hardware_average_mode;
 	uint8_t channel, last_enabled;
+	size_t needed_buffer_size;
+
+	/*
+	 * Validate buffer is large enough to hold all requested channels
+	 * and extra samplings. The parameter sequence->buffer_size is in bytes,
+	 * but the LPADC always writes 16-bit samples, so we can compute the
+	 * needed buffer size as:
+	 *   needed_buffer_size = (number of channels) * sizeof(uint16_t)
+	 * One uint16_t sample is written to the output buffer for every
+	 * selected channel, repeated for each extra sampling.
+	 */
+	needed_buffer_size = POPCOUNT(sequence->channels) * sizeof(uint16_t);
+	if (sequence->options != NULL) {
+		needed_buffer_size *= (1U + sequence->options->extra_samplings);
+	}
+
+	if (sequence->buffer_size < needed_buffer_size) {
+		LOG_ERR("sequence buffer size too small %u < %zu",
+			sequence->buffer_size, needed_buffer_size);
+		return -ENOMEM;
+	}
+
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) && FSL_FEATURE_LPADC_HAS_CMDL_MODE
 	lpadc_conversion_resolution_mode_t resolution_mode;
 
