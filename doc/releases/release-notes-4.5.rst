@@ -461,6 +461,10 @@ New Drivers
   * ST Zio connector for STM32 Nucleo-144 boards
     (:dtcompatible:`st-zio-header`).
 
+* Sensors
+
+  * Sensirion STC31 CO2 sensor (:dtcompatible:`sensirion,stc31`).
+
 * Input
 
   * VIRTIO input device (:dtcompatible:`virtio,input`).
