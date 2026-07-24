@@ -34,6 +34,12 @@ static const uint64_t cpu_mpid_list[] = {
 BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_MAX_NUM_CPUS,
 		"The count of CPU Cores nodes in dts is less than CONFIG_MP_MAX_NUM_CPUS\n");
 
+#define GIC_CPU_MAX	8
+static uint8_t gic_cpu_bitmap[GIC_CPU_MAX];
+
+BUILD_ASSERT(GIC_CPU_MAX >= CONFIG_MP_MAX_NUM_CPUS,
+		"The count of CPU Cores supported by GICv2 is less than CONFIG_MP_MAX_NUM_CPUS\n");
+
 void arm_gic_irq_enable(unsigned int irq)
 {
 	int int_grp, int_off;
@@ -160,20 +166,43 @@ void arm_gic_eoi(unsigned int irq)
 	sys_write32(irq, GICC_EOIR);
 }
 
-void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
-		uint16_t target_list)
+void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, unsigned int cpu)
 {
 	uint32_t sgi_val;
 
 	ARG_UNUSED(target_aff);
 
 	sgi_val = GICD_SGIR_TGTFILT_CPULIST |
-		GICD_SGIR_CPULIST(target_list & GICD_SGIR_CPULIST_MASK) |
+		GICD_SGIR_CPULIST(gic_cpu_bitmap[cpu] & GICD_SGIR_CPULIST_MASK) |
 		sgi_id;
 
 	barrier_dsync_fence_full();
 	sys_write32(sgi_val, GICD_SGIR);
 	barrier_isync_fence_full();
+}
+
+static uint8_t gic_get_cpu_bitmap(void)
+{
+	uint32_t reg_val;
+	int i;
+
+	/* read GICD_ITARGETSR0..GICD_ITARGETSR7 */
+	for (i = 0; i < 8; i++) {
+		reg_val = sys_read32(GICD_ITARGETSRn + (i * 4));
+		if (!reg_val) {
+			break;
+		}
+	}
+
+	/* uniprocessor? */
+	if (reg_val == 0) {
+		return 1;
+	}
+
+	reg_val |= reg_val >> 16;
+	reg_val |= reg_val >> 8;
+
+	return reg_val;
 }
 
 static void gic_dist_init(void)
@@ -195,14 +224,9 @@ static void gic_dist_init(void)
 	sys_write32(0, GICD_CTLR);
 
 	/*
-	 * Enable all global interrupts distributing to CPUs listed
-	 * in dts with the count of arch_num_cpus().
+	 * Enable all global interrupts distributing to this CPU
 	 */
-	unsigned int num_cpus = arch_num_cpus();
-
-	for (i = 0; i < num_cpus; i++) {
-		cpu_mask |= BIT(cpu_mpid_list[i]);
-	}
+	cpu_mask = gic_get_cpu_bitmap();
 	reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16)
 		| (cpu_mask << 24);
 	for (i = GIC_SPI_INT_BASE; i < gic_irqs; i += 4) {
@@ -244,7 +268,7 @@ static void gic_dist_init(void)
 	sys_write32(1, GICD_CTLR);
 }
 
-static void gic_cpu_init(void)
+static void gic_cpu_init(int cpu_num)
 {
 	int i;
 	uint32_t val;
@@ -258,6 +282,8 @@ static void gic_cpu_init(void)
 #endif
 	sys_write32(0xffff0000, GICD_ICENABLERn);
 	sys_write32(0x0000ffff, GICD_ISENABLERn);
+
+	gic_cpu_bitmap[cpu_num] = gic_get_cpu_bitmap();
 
 	/*
 	 * Set priority on PPI and SGI interrupts
@@ -292,7 +318,7 @@ int arm_gic_init(const struct device *dev)
 	gic_dist_init();
 
 	/* Init CPU interface registers */
-	gic_cpu_init();
+	gic_cpu_init(0);
 
 	return 0;
 }
@@ -301,9 +327,9 @@ DEVICE_DT_INST_DEFINE(0, arm_gic_init, NULL, NULL, NULL,
 		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
 
 #ifdef CONFIG_SMP
-void arm_gic_secondary_init(void)
+void arm_gic_secondary_init(int cpu_num)
 {
 	/* Init CPU interface registers for each secondary core */
-	gic_cpu_init();
+	gic_cpu_init(cpu_num);
 }
 #endif
