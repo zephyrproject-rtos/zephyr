@@ -192,6 +192,20 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	lsm6dsv16x_accel_set_odr_raw(dev, lsm6dsv16x->accel_freq);
 	lsm6dsv16x_gyro_set_odr_raw(dev, lsm6dsv16x->gyro_freq);
 
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+	lsm6dsv16x_fifo_sh_batch_slave_set(ctx, 1, PROPERTY_ENABLE);
+	lsm6dsv16x_fifo_sh_batch_slave_set(ctx, 2, PROPERTY_ENABLE);
+
+	/* Configure Sensor Hub data rate */
+	lsm6dsv16x_sh_data_rate_set(ctx, LSM6DSV16X_SH_60Hz);
+
+	/* Configure Sensor Hub to read two slave. */
+	lsm6dsv16x_sh_slave_connected_set(ctx, LSM6DSV16X_SLV_0_1_2);
+
+	/* Enable I2C Master. */
+	lsm6dsv16x_sh_master_set(ctx, PROPERTY_ENABLE);
+#endif /* CONFIG_LSM6DSV16X_SENSORHUB */
+
 	/* Set pin interrupt (fifo_th could be on or off) */
 	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {
 		lsm6dsv16x_pin_int1_route_set(ctx, &pin_int);
