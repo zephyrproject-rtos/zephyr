@@ -13,6 +13,33 @@ LOG_MODULE_REGISTER(modbus, CONFIG_MODBUS_LOG_LEVEL);
 #include <zephyr/sys/byteorder.h>
 #include <modbus_internal.h>
 
+#if CONFIG_MODBUS_WORKQUEUE
+static struct k_work_q modbus_work_q;
+static K_KERNEL_STACK_DEFINE(modbus_stack, CONFIG_MODBUS_STACK_SIZE);
+
+static int modbus_init_wq(void)
+{
+	k_work_queue_init(&modbus_work_q);
+	k_work_queue_start(&modbus_work_q, modbus_stack, K_KERNEL_STACK_SIZEOF(modbus_stack),
+			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
+	k_thread_name_set(modbus_work_q.thread_id, "modbus_work_q");
+
+	return 0;
+}
+
+SYS_INIT(modbus_init_wq, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+int modbus_work_submit(struct k_work *work)
+{
+	return k_work_submit_to_queue(&modbus_work_q, work);
+}
+#else
+int modbus_work_submit(struct k_work *work)
+{
+	return k_work_submit(work);
+}
+#endif /* CONFIG_MODBUS_WORKQUEUE */
+
 #define DT_DRV_COMPAT zephyr_modbus_serial
 
 #define MB_RTU_DEFINE_GPIO_CFG(inst, prop)				\
