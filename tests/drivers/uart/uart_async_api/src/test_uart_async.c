@@ -6,6 +6,7 @@
  */
 
 #include "test_uart.h"
+#include <zephyr/cache.h>
 
 #if defined(CONFIG_DCACHE) && defined(CONFIG_DT_DEFINED_NOCACHE)
 #define __NOCACHE	__attribute__ ((__section__(CONFIG_DT_DEFINED_NOCACHE_NAME)))
@@ -220,7 +221,19 @@ static void tdata_check_recv_buffers(const uint8_t *tx_buf, uint32_t sent_bytes,
 static void single_read(enum uart_config_data_bits data_bits)
 {
 	struct uart_config uart_cfg;
+	/* Check also if sending from read only memory (e.g. flash) works.
+	 * On platforms with DMA that have CONFIG_DCACHE enabled, indicates
+	 * a system where DMA requires RAM buffers, a copy is used instead.
+	 */
+#if defined(CONFIG_DCACHE)
+	static const uint8_t tx_buf_temp[] = "0123456789";
+
+	__aligned(sizeof(void *)) uint8_t tx_buf[sizeof(tx_buf_temp)];
+
+	memcpy(tx_buf, tx_buf_temp, sizeof(tx_buf_temp));
+#else
 	static const uint8_t tx_buf[] = "0123456789";
+#endif
 	uint32_t sent_bytes = 0;
 	int rv;
 
@@ -312,12 +325,24 @@ static void *multiple_rx_enable_setup(void)
 
 ZTEST_USER(uart_async_multi_rx, test_multiple_rx_enable)
 {
-	/* Check also if sending from read only memory (e.g. flash) works. */
+	/* Check also if sending from read only memory (e.g. flash) works.
+	 * On platforms with DMA that have CONFIG_DCACHE enabled, indicates
+	 * a system where DMA requires RAM buffers, a copy is used instead.
+	 */
+#if defined(CONFIG_DCACHE)
+	static const uint8_t tx_buf_temp[] = "test";
+	const uint32_t rx_buf_size = sizeof(tx_buf_temp);
+
+	__aligned(sizeof(void *)) uint8_t tx_buf[sizeof(tx_buf_temp)];
+
+	memcpy(tx_buf, tx_buf_temp, sizeof(tx_buf_temp));
+#else
 	static const uint8_t tx_buf[] = "test";
 	const uint32_t rx_buf_size = sizeof(tx_buf);
+#endif
 	int ret;
 
-	BUILD_ASSERT(sizeof(tx_buf) <= sizeof(tdata.rx_first_buffer), "Invalid buf size");
+	zassert_true(rx_buf_size <= sizeof(tdata.rx_first_buffer), "Invalid buf size");
 
 	/* Enable RX without a timeout. */
 	ret = uart_rx_enable(uart_dev, tdata.rx_first_buffer, rx_buf_size, SYS_FOREVER_US);
@@ -423,6 +448,10 @@ static void test_chained_read_callback(const struct device *dev,
 		break;
 	case UART_RX_RDY:
 		zassert_true(rx_data_idx + evt->data.rx.len <= sizeof(chained_cpy_buf));
+#if defined(CONFIG_DCACHE) && !NOCACHE_MEM
+		sys_cache_data_invd_range(evt->data.rx.buf + evt->data.rx.offset,
+					  evt->data.rx.len);
+#endif
 		memcpy(&chained_cpy_buf[rx_data_idx],
 		       &evt->data.rx.buf[evt->data.rx.offset],
 		       evt->data.rx.len);
@@ -475,6 +504,9 @@ ZTEST_USER(uart_async_chain_read, test_chained_read)
 				  0,
 				  "RX_DISABLED occurred");
 		snprintf(tx_buf, sizeof(tx_buf), "Message %d", i);
+#if defined(CONFIG_DCACHE) && !NOCACHE_MEM
+		sys_cache_data_flush_range(tx_buf, sizeof(tx_buf));
+#endif
 		uart_tx(uart_dev, tx_buf, sizeof(tx_buf), 100 * USEC_PER_MSEC);
 		zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0,
 			      "TX_DONE timeout");
@@ -655,7 +687,7 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 	uint32_t t_us;
 	uint32_t tx_timeout_us;
 	uint32_t rx_timeout_us = 50 * USEC_PER_MSEC;
-	uint32_t tx_len;
+	uint32_t xfer_len;
 #if NOCACHE_MEM
 	static __aligned(sizeof(void *)) uint8_t rx_buf[100] __used __NOCACHE;
 	static __aligned(sizeof(void *)) uint8_t tx_buf[100] __used __NOCACHE;
@@ -688,22 +720,31 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 
 	/* Lets aim to abort after transmitting ~20 bytes (200 bauds) */
 	t_us = calc_uart_xfer_time(cfg.baudrate, 20);
-
-	err = uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), rx_timeout_us);
+	xfer_len = 5;
+	err = uart_rx_enable(uart_dev, rx_buf, xfer_len, rx_timeout_us);
 	zassert_equal(err, 0);
 	k_sem_give(&rx_buf_coherency);
 
-	tx_len = 5;
-	tx_timeout_us = calc_uart_xfer_time(cfg.baudrate, tx_len) + 1000;
-	err = uart_tx(uart_dev, tx_buf, tx_len, SYS_FOREVER_US);
+	tx_timeout_us = calc_uart_xfer_time(cfg.baudrate, xfer_len) + 1000;
+	err = uart_tx(uart_dev, tx_buf, xfer_len, SYS_FOREVER_US);
 	zassert_ok(err);
 	zassert_ok(k_sem_take(&tx_done, K_USEC(tx_timeout_us)), "TX_DONE timeout");
 	zassert_ok(k_sem_take(&rx_rdy, K_USEC(tx_timeout_us + rx_timeout_us)), "RX_RDY timeout");
-	zassert_equal(memcmp(tx_buf, rx_buf, tx_len), 0, "Buffers not equal");
+	zassert_equal(memcmp(tx_buf, rx_buf, xfer_len), 0, "Buffers not equal");
 
-	tx_len = 95;
-	tx_timeout_us = calc_uart_xfer_time(cfg.baudrate, tx_len) + 1000;
-	err = uart_tx(uart_dev, tx_buf, tx_len, SYS_FOREVER_US);
+	uart_rx_disable(uart_dev);
+	/* uart_rx_disable() is asynchronous: wait for RX_DISABLED (the final
+	 * event of the teardown) before re-enabling, otherwise uart_rx_enable()
+	 * can return -EBUSY while the previous receive is still being disabled.
+	 */
+	zassert_ok(k_sem_take(&rx_disabled, K_USEC(t_us + rx_timeout_us)), "RX_DISABLED timeout");
+	xfer_len = 95;
+	err = uart_rx_enable(uart_dev, rx_buf, xfer_len, rx_timeout_us);
+	zassert_equal(err, 0);
+	k_sem_give(&rx_buf_coherency);
+
+	tx_timeout_us = calc_uart_xfer_time(cfg.baudrate, xfer_len) + 10000;
+	err = uart_tx(uart_dev, tx_buf, xfer_len, SYS_FOREVER_US);
 	zassert_ok(err);
 
 	k_timer_start(&read_abort_timer, K_USEC(t_us), K_NO_WAIT);
@@ -713,7 +754,8 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 	zassert_ok(k_sem_take(&tx_done, K_USEC(tx_timeout_us)), "TX_DONE timeout");
 	zassert_ok(k_sem_take(&rx_disabled, K_USEC(t_us + rx_timeout_us)), "RX_DISABLED timeout");
 	zassert_false(failed_in_isr, "Unexpected order of uart events");
-	zassert_not_equal(memcmp(tx_buf, test_read_abort_read_buf, 100), 0, "Buffers equal");
+	zassert_not_equal(memcmp(tx_buf, test_read_abort_read_buf, sizeof(tx_buf)), 0,
+			  "Buffers equal");
 
 	/* Read out possible other RX bytes
 	 * that may affect following test on RX
@@ -867,28 +909,42 @@ ZTEST_USER(uart_async_timeout, test_forever_timeout)
 	 __aligned(sizeof(void *)) uint8_t rx_buf[100];
 	 __aligned(sizeof(void *)) uint8_t tx_buf[100];
 #endif /* NOCACHE_MEM */
+	uint32_t xfer_len;
 
 	memset(rx_buf, 0, sizeof(rx_buf));
 	memset(tx_buf, 1, sizeof(tx_buf));
 
 	uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), SYS_FOREVER_US);
 
-	uart_tx(uart_dev, tx_buf, 5, SYS_FOREVER_US);
+	xfer_len = 5;
+
+	uart_tx(uart_dev, tx_buf, xfer_len, SYS_FOREVER_US);
 	zassert_not_equal(k_sem_take(&tx_aborted, K_MSEC(1000)), 0,
 			  "TX_ABORTED timeout");
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
 	zassert_not_equal(k_sem_take(&rx_rdy, K_MSEC(1000)), 0,
 			  "RX_RDY timeout");
 
-	uart_tx(uart_dev, tx_buf, 95, SYS_FOREVER_US);
+	uart_rx_disable(uart_dev);
+	zassert_equal(k_sem_take(&rx_buf_released, K_MSEC(100)), 0,
+		      "RX_BUF_RELEASED timeout");
+	zassert_equal(k_sem_take(&rx_disabled, K_MSEC(100)), 0,
+		      "RX_DISABLED timeout");
+
+	xfer_len = 95;
+
+	uart_rx_enable(uart_dev, rx_buf, sizeof(rx_buf), SYS_FOREVER_US);
+	uart_tx(uart_dev, tx_buf, xfer_len, SYS_FOREVER_US);
 
 	zassert_not_equal(k_sem_take(&tx_aborted, K_MSEC(1000)), 0,
 			  "TX_ABORTED timeout");
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0, "RX_RDY timeout");
 
-
-	zassert_equal(memcmp(tx_buf, rx_buf, 100), 0, "Buffers not equal");
+#if defined(CONFIG_DCACHE)
+	sys_cache_data_invd_range(rx_buf, xfer_len);
+#endif
+	zassert_equal(memcmp(tx_buf, rx_buf, xfer_len), 0, "Buffers not equal");
 
 	uart_rx_disable(uart_dev);
 	zassert_equal(k_sem_take(&rx_buf_released, K_MSEC(100)),
@@ -974,6 +1030,9 @@ ZTEST_USER(uart_async_chain_write, test_chained_write)
 	zassert_equal(k_sem_take(&tx_done, K_MSEC(100)), 0, "TX_DONE timeout");
 	zassert_equal(chained_write_next_buf, false, "Sent no message");
 	zassert_equal(k_sem_take(&rx_rdy, K_MSEC(100)), 0, "RX_RDY timeout");
+#if defined(CONFIG_DCACHE)
+	sys_cache_data_invd_range(rx_buf, sizeof(rx_buf));
+#endif
 	zassert_equal(memcmp(chained_write_tx_bufs[0], rx_buf, 10),
 		      0,
 		      "Buffers not equal");
@@ -1123,6 +1182,10 @@ static void test_var_buf_length_callback(const struct device *dev, struct uart_e
 {
 	switch (evt->type) {
 	case UART_RX_RDY:
+#if defined(CONFIG_DCACHE)
+		sys_cache_data_invd_range(evt->data.rx.buf + evt->data.rx.offset,
+					  evt->data.rx.len);
+#endif
 		memcpy((void *)&var_length_rx_buf[var_length_buf_rx_idx],
 		       &evt->data.rx.buf[evt->data.rx.offset], evt->data.rx.len);
 		var_length_buf_rx_idx += evt->data.rx.len;
