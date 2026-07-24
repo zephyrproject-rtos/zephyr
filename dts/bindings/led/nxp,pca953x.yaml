@@ -1,8 +1,4 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-description: NXP PCA9533 4-bit LED dimmer
-
-compatible: "nxp,pca9533"
-
-include: nxp,pca953x.yaml
+include: ["i2c-device.yaml", "led-controller.yaml"]

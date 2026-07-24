@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCA9532 16-bit LED dimmer
+
+compatible: "nxp,pca9532"
+
+include: nxp,pca953x.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: "Reset GPIO. The pin should be configured active-low if connected directly."
