@@ -410,7 +410,7 @@ config PMP_NO_NAPOT
 	  Set this if NAPOT (Naturally Aligned Power Of Two) is not supported.
 
 config PMP_POWER_OF_TWO_ALIGNMENT
-	bool "Enforce power-of-two alignment on PMP memory areas" if !PMP_NO_TOR
+	bool "Enforce power-of-two alignment on PMP memory areas"
 	default y if TEST_USERSPACE
 	default y if (PMP_SLOTS = 8)
 	default y if PMP_NO_TOR
@@ -420,6 +420,27 @@ config PMP_POWER_OF_TWO_ALIGNMENT
 	  This option reduces the PMP slot usage but increases
 	  memory consumption. Useful when enabling userspace mode with
 	  many memory domains and/or few PMP slots available.
+
+config PMP_NAPOT_USE_MULTI_SLOTS
+	bool "Use multiple NAPOT entries to cover non-aligned memory regions"
+	depends on PMP_NO_TOR
+	depends on !PMP_POWER_OF_TWO_ALIGNMENT
+	default y if !PMP_POWER_OF_TWO_ALIGNMENT
+	help
+	  Enable splitting non-naturally-aligned memory regions into multiple
+	  NAPOT entries. This allows PMP to protect memory regions that are
+	  not power-of-2 aligned in both start address and size.
+
+	  When enabled, a region like [0x1800, 0x3800) will be split into
+	  multiple naturally-aligned blocks (e.g., 0x800+0x1000+0x800 bytes),
+	  each protected by a separate NAPOT entry.
+
+	  This option is useful when TOR mode is not supported and memory
+	  regions are not naturally aligned. It consumes more PMP slots
+	  but provides flexible memory protection coverage.
+
+	  Setting PMP_GRANULARITY to 64 is advised to reduce the number
+	  of split entries required for memory region coverage.
 
 config PMP_GRANULARITY
 	int "The granularity of PMP address matching"

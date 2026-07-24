@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 BayLibre, SAS
+ * Copyright (c) 2026 Picoheart Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -271,6 +272,107 @@ static void dump_pmp_regs(const char *banner)
 	print_pmp_entries(0, CONFIG_PMP_SLOTS, pmp_addr, pmp_cfg, banner);
 }
 
+#ifdef CONFIG_PMP_NAPOT_USE_MULTI_SLOTS
+/**
+ * @brief Try to cover a memory region with multiple NAPOT entries
+ *
+ * This function splits a non-naturally-aligned memory region into multiple
+ * naturally-aligned power-of-2 blocks, each covered by a NAPOT entry.
+ *
+ * Algorithm (similar to buddy allocator in reverse):
+ * 1. Find the largest power-of-2 block that:
+ *    - Starts at current address (naturally aligned)
+ *    - Does not exceed remaining size
+ * 2. Create a NAPOT entry for this block
+ * 3. Move to next block and repeat until entire region is covered
+ *
+ * Example: [0x1800, 0x3800) splits into:
+ *   - [0x1800, 0x2000) size=0x800  (max aligned block at 0x1800)
+ *   - [0x2000, 0x3000) size=0x1000 (max aligned block at 0x2000)
+ *   - [0x3000, 0x3800) size=0x800  (max aligned block at 0x3000)
+ *
+ * @param index_p Current PMP slot index, updated on success
+ * @param perm PMP permission flags
+ * @param start Start address of memory region
+ * @param size Size of memory region
+ * @param pmp_addr Array of pmpaddr values
+ * @param pmp_cfg Array of pmpcfg values
+ * @param index_limit Maximum available PMP slots
+ * @return true on success, false if not enough slots or unsupported
+ */
+
+static bool try_multi_entries_set(unsigned int *index_p, uint8_t perm, uintptr_t start, size_t size,
+			  unsigned long *pmp_addr, unsigned long *pmp_cfg,
+			  unsigned int index_limit)
+{
+	uint8_t *pmp_n_cfg = (uint8_t *)pmp_cfg;
+	unsigned int index = *index_p;
+	unsigned int start_index = index;
+	uintptr_t end = start + size;
+	uintptr_t current = start;
+
+	if (!PMP_NAPOT_SUPPORTED) {
+		return false;
+	}
+
+	while (current < end) {
+		if (index >= index_limit) {
+			LOG_ERR("out of PMP slots for NAPOT multi-entries");
+			*index_p = start_index;
+			return false;
+		}
+
+		size_t remaining = end - current;
+
+		/* Find the largest power-of-2 block that fits both:
+		 * - Naturally aligned at current address: the lowest set bit of
+		 *   current, i.e. current & -current (full width when current == 0).
+		 * - Within remaining space: round remaining down to a power of 2
+		 *   using count-leading-zeros, which is a single instruction on
+		 *   RISC-V (clz) instead of an iterative shift loop.
+		 *
+		 * Example: current=0x1800, remaining=0x2000
+		 *   span = 0x2000, aligned = 0x800 -> block_size = 0x800
+		 */
+		size_t span = (size_t)1 << ((sizeof(size_t) * 8 - 1) -
+					    __builtin_clzl((unsigned long)remaining));
+		size_t max_aligned = (current == 0) ? span : (size_t)(current & -current);
+		size_t block_size = (span < max_aligned) ? span : max_aligned;
+
+		/* Ensure block meets minimum PMP granularity requirement */
+		if (block_size < CONFIG_PMP_GRANULARITY) {
+			LOG_ERR("remaining size too small for granularity");
+			*index_p = start_index;
+			return false;
+		}
+
+		/* NA4 (4-byte) mode may not be supported */
+		if (block_size == 4 && !PMP_NA4_SUPPORTED) {
+			LOG_ERR("NA4 mode not supported, cannot map 4-byte block");
+			*index_p = start_index;
+			return false;
+		}
+		/* Set PMP entry: use NA4 for 4-byte blocks, NAPOT otherwise */
+		if (PMP_NA4_SUPPORTED && block_size == 4) {
+			pmp_addr[index] = PMP_ADDR(current);
+			pmp_n_cfg[index] = perm | PMP_NA4;
+		} else {
+			pmp_addr[index] = PMP_ADDR_NAPOT(current, block_size);
+			pmp_n_cfg[index] = perm | PMP_NAPOT;
+		}
+
+		LOG_DBG("NAPOT multi-entry[%d]: start=%#lx size=%#lx",
+			index, (unsigned long)current, (unsigned long)block_size);
+
+		index++;
+		current += block_size;
+	}
+
+	*index_p = index;
+	return true;
+}
+#endif /* CONFIG_PMP_NAPOT_USE_MULTI_SLOTS */
+
 /**
  * @brief Set PMP shadow register values in memory
  *
@@ -332,8 +434,17 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 		pmp_n_cfg[index] = perm | PMP_TOR;
 		index += 1;
 	} else {
+#ifdef CONFIG_PMP_NAPOT_USE_MULTI_SLOTS
+		ok = try_multi_entries_set(&index, perm, start, size, pmp_addr, pmp_cfg,
+						index_limit);
+		if (!ok) {
+			LOG_ERR("inappropriate PMP range (start=%#lx size=%#zx)", start, size);
+			ok = false;
+		}
+#else
 		LOG_ERR("inappropriate PMP range (start=%#lx size=%#zx)", start, size);
 		ok = false;
+#endif /* CONFIG_PMP_NAPOT_USE_MULTI_SLOTS */
 	}
 
 	*index_p = index;
