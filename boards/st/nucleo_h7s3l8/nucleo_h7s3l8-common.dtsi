@@ -248,3 +248,18 @@
 		};
 	};
 };
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pm5 &usb_otg_hs_dp_pm6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usbphyc {
+	/*
+	 * There is no need to change `clocks` because
+	 * we use the default configuration after reset:
+	 *  USBPHYC kernel clock = HSE @ 24 MHz
+	 */
+	status = "okay";
+};
