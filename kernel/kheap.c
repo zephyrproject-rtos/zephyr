@@ -8,9 +8,12 @@
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/zassert.h>
 /* private kernel APIs */
 #include <ksched.h>
 #include <wait_q.h>
+
+ZASSERT_GROUP(KERNEL);
 
 int k_heap_array_get(struct k_heap **heap)
 {
@@ -57,9 +60,10 @@ static void *z_heap_alloc_helper(struct k_heap *heap, size_t align, size_t bytes
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 	void *ret = NULL;
 
-	k_spinlock_key_t key = k_spin_lock(&heap->lock);
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
 
-	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
+	k_spinlock_key_t key = k_spin_lock(&heap->lock);
 
 	bool blocked_alloc = false;
 
@@ -105,11 +109,11 @@ void *k_heap_alloc(struct k_heap *heap, size_t bytes, k_timeout_t timeout)
 void *k_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t bytes,
 			k_timeout_t timeout)
 {
-	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, aligned_alloc, heap, timeout);
-
 	/* A power of 2 as well as 0 is OK */
-	__ASSERT((align & (align - 1)) == 0,
-		 "align must be a power of 2");
+	ZASSERT((align & (align - 1)) == 0,
+		"align must be a power of 2");
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, aligned_alloc, heap, timeout);
 
 	void *ret = z_heap_alloc_helper(heap, align, bytes, timeout,
 					sys_heap_aligned_alloc);
@@ -152,11 +156,12 @@ void *k_heap_realloc(struct k_heap *heap, void *ptr, size_t bytes, k_timeout_t t
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 	void *ret = NULL;
 
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
+
 	k_spinlock_key_t key = k_spin_lock(&heap->lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, realloc, heap, ptr, bytes, timeout);
-
-	__ASSERT(!arch_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT), "");
 
 	while (ret == NULL) {
 		ret = sys_heap_realloc(&heap->heap, ptr, bytes);

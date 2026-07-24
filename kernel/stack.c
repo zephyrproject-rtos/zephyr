@@ -19,6 +19,9 @@
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <kernel_internal.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_GROUP(KERNEL);
 
 #ifdef CONFIG_OBJ_CORE_STACK
 static struct k_obj_type obj_type_stack;
@@ -143,6 +146,9 @@ int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
 {
 	k_spinlock_key_t key;
 	int result;
+
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
 
 	key = k_spin_lock(&stack->lock);
 

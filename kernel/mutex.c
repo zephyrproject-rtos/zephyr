@@ -40,6 +40,9 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/llext/symbol.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_GROUP(KERNEL);
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* We use a global spinlock here because some of the synchronization
@@ -113,7 +116,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	int new_prio;
 #endif
 
-	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
+	ZASSERT(!k_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, lock, mutex, timeout);
 
@@ -232,7 +235,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	struct k_thread *new_owner = NULL;
 
-	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
+	ZASSERT(!k_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, unlock, mutex);
 

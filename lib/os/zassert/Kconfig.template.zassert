@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Måns Ansgariusson <mansgariusson@gmail.com>
+# Assertion group level configuration template.
+#
+# Sourced by a Kconfig file to generate the CONFIG_<group>_ZASSERT_LEVEL symbol
+# consumed by ZASSERT_GROUP(<group>) (see <zephyr/sys/zassert.h>).
+# The group name must be an UPPERCASE identifier: the C preprocessor pastes it
+# verbatim into CONFIG_<group>_ZASSERT_LEVEL, so it has to match this symbol
+# exactly.
+# Use it as:
+#	zassert-group = MYGROUP
+#	zassert-group-str = my group
+#	source "lib/os/zassert/Kconfig.template.zassert"
+#
+# This produces a user-facing choice (Off / On / Verbose) and the derived,
+# non-assignable CONFIG_$(zassert-group)_ZASSERT_LEVEL integer symbol. The choice
+# defaults to Off, unless the group opts into an On-by-default by giving
+# CONFIG_$(zassert-group)_ZASSERT_DEFAULTS_ON a "default y [if ...]" (e.g. from a
+# debug master switch). The level stays overridable from prj.conf.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+choice "$(zassert-group)_ZASSERT_LEVEL_CHOICE"
+	prompt "Assertion level for $(zassert-group-str)"
+	default $(zassert-group)_ZASSERT_LEVEL_ON if $(zassert-group)_ZASSERT_DEFAULTS_ON
+	default $(zassert-group)_ZASSERT_LEVEL_OFF
+	depends on ZASSERT
+
+config $(zassert-group)_ZASSERT_LEVEL_OFF
+	bool "Off"
+	help
+	  ZASSERT_OFF: assertions for this group are compiled out.
+
+config $(zassert-group)_ZASSERT_LEVEL_ON
+	bool "On (no message)"
+	help
+	  ZASSERT_ON: assertions are checked, but the message and its arguments
+	  are not compiled in.
+
+config $(zassert-group)_ZASSERT_LEVEL_VERBOSE
+	bool "Verbose (with message)"
+	help
+	  ZASSERT_VERBOSE: assertions are checked and the message and its
+	  arguments are compiled in.
+
+endchoice
+
+config $(zassert-group)_ZASSERT_DEFAULTS_ON
+	bool
+
+config $(zassert-group)_ZASSERT_LEVEL
+	int
+	default 0 if !ZASSERT
+	default 0 if $(zassert-group)_ZASSERT_LEVEL_OFF
+	default 1 if $(zassert-group)_ZASSERT_LEVEL_ON
+	default 2 if $(zassert-group)_ZASSERT_LEVEL_VERBOSE

@@ -19,6 +19,9 @@
 #include <kernel_internal.h>
 #include <scheduler.h>
 #include <wait_q.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_GROUP(KERNEL);
 
 #ifdef CONFIG_OBJ_CORE_MEM_SLAB
 static struct k_obj_type obj_type_mem_slab;
@@ -219,6 +222,9 @@ static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 {
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
+
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 	int result;
 

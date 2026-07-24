@@ -1,0 +1,17 @@
+sample:
+  name: Granular per-file assertions
+tests:
+  sample.debug.granular_assert:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags: debug assert
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "MYGROUP assert level        = 2"
+        - "Passed group ZASSERT\\(1 == 1\\)"
+        - "ASSERTION FAIL \\[x == 3\\]"

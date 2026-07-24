@@ -1,0 +1,35 @@
+common:
+  tags:
+    - zassert
+    - assert
+  integration_platforms:
+    - native_sim
+  platform_allow:
+    - native_sim
+
+tests:
+  # Both groups left at their Kconfig default (unset -> OFF).
+  os.zassert.all_off:
+    extra_configs: []
+  # Only MYGROUP raised; DEFAULT stays OFF.
+  os.zassert.mygroup_verbose:
+    extra_configs:
+      - CONFIG_MYGROUP_ZASSERT_LEVEL_VERBOSE=y
+  # Only DEFAULT raised; MYGROUP stays OFF.
+  os.zassert.default_verbose:
+    extra_configs:
+      - CONFIG_DEFAULT_ZASSERT_LEVEL_VERBOSE=y
+  # Both groups On (checked, no message).
+  os.zassert.both_on:
+    extra_configs:
+      - CONFIG_MYGROUP_ZASSERT_LEVEL_ON=y
+      - CONFIG_DEFAULT_ZASSERT_LEVEL_ON=y
+  # Different level per group.
+  os.zassert.mixed:
+    extra_configs:
+      - CONFIG_MYGROUP_ZASSERT_LEVEL_ON=y
+      - CONFIG_DEFAULT_ZASSERT_LEVEL_VERBOSE=y
+  # Master switch off: every group forced OFF regardless of its config.
+  os.zassert.disabled:
+    extra_configs:
+      - CONFIG_ZASSERT=n

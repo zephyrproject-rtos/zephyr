@@ -33,8 +33,11 @@
 #include <zephyr/llext/symbol.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/minmax.h>
+#include <zephyr/sys/zassert.h>
 
 #include <usage.h>
+
+ZASSERT_GROUP(KERNEL);
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -1744,6 +1747,9 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 {
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
+
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 	int ret;
 
@@ -1758,7 +1764,6 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 		   (thread->base.pended_on == &_current->join_queue)) {
 		ret = -EDEADLK;
 	} else {
-		__ASSERT(!arch_is_in_isr(), "cannot join in ISR");
 		z_sched_add_to_waitq_locked(_current, &thread->join_queue);
 		z_add_thread_timeout(_current, timeout);
 

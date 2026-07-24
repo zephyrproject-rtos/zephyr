@@ -11,6 +11,9 @@
 #include <wait_q.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/zassert.h>
+
+ZASSERT_GROUP(KERNEL);
 
 #ifdef CONFIG_OBJ_CORE_CONDVAR
 static struct k_obj_type obj_type_condvar;
@@ -107,6 +110,9 @@ int z_impl_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 {
 	k_spinlock_key_t key;
 	int ret = -EAGAIN;
+
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_condvar, wait, condvar, timeout);
 

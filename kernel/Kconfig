@@ -9,6 +9,14 @@ module = KERNEL
 module-str = kernel
 source "subsys/logging/Kconfig.template.log_config"
 
+zassert-group = KERNEL
+zassert-group-str = the kernel
+source "lib/os/zassert/Kconfig.template.zassert"
+
+# Kernel assertions default to On (no message) in debug builds.
+config KERNEL_ZASSERT_DEFAULTS_ON
+	default y if ZASSERT
+
 config MULTITHREADING
 	bool "Multi-threading" if ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y
