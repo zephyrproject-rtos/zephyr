@@ -689,8 +689,8 @@ int dwmac_probe(const struct device *dev)
 	memset(p->tx_descs, 0, NB_TX_DESCS * sizeof(struct dwmac_dma_desc));
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
-	/* set up DMA */
-	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0), 0);
+	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0),
+			FIELD_PREP(DMA_CHn_TX_CTRL_PBL, 32));
 	DWMAC_REG_WRITE(DMA_CHn_RX_CTRL(0),
 			FIELD_PREP(DMA_CHn_RX_CTRL_PBL, 32) |
 			FIELD_PREP(DMA_CHn_RX_CTRL_RBSZ, RX_FRAG_SIZE));
