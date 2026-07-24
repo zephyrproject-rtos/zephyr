@@ -1,0 +1,8 @@
+identifier: lp_am243/am2434/r5f0_0
+name: TI AM243x LaunchPad (R5FSS0 Core 0)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 32
+vendor: ti
