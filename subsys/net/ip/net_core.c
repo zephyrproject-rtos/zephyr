@@ -712,8 +712,6 @@ static int net_init(void)
 
 	net_pkt_init();
 
-	net_context_init();
-
 	l3_init();
 
 	net_mgmt_event_init();

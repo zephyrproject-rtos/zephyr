@@ -94,7 +94,6 @@ static inline void socket_service_init(void) { }
 #endif
 
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
-extern void net_context_init(void);
 extern const char *net_context_state(struct net_context *context);
 extern bool net_context_is_reuseaddr_set(struct net_context *context);
 extern bool net_context_is_reuseport_set(struct net_context *context);
@@ -107,7 +106,6 @@ int net_context_get_local_addr(struct net_context *context,
 			       struct net_sockaddr *addr,
 			       net_socklen_t *addrlen);
 #else
-static inline void net_context_init(void) { }
 static inline void net_pkt_init(void) { }
 static inline const char *net_context_state(struct net_context *context)
 {
