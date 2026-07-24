@@ -158,13 +158,25 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 					break;
 				}
 				k_sem_give(&p->free_tx_descs);
+#ifndef CONFIG_64BIT
+				/* we can put 2 fragments in one descriptor */
+				if (frag1->frags != NULL) {
+					frag1 = frag1->frags;
+				}
+#endif /* !CONFIG_64BIT */
 			}
 			return -ENOMEM;
 		}
+#ifndef CONFIG_64BIT
+		/* we can put 2 fragments in one descriptor */
+		if (frag->frags != NULL) {
+			frag = frag->frags;
+		}
+#endif /* !CONFIG_64BIT */
 	}
 
 	/* initial flag values */
-	des2_flags = 0;
+	des2_flags = TDES2_IOC;
 	des3_flags = TDES3_FD | TDES3_OWN;
 
 	/* map packet fragments */
@@ -177,34 +189,46 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 		sys_cache_data_flush_range(frag->data, frag->len);
 		LOG_DBG("d[%d]: frag %p len %d", d_idx, (void *)frag->data, frag->len);
 
-		/* if no more fragments after this one: */
-		if (!frag->frags) {
-			/* set those flags on the last descriptor */
-			des2_flags |= TDES2_IOC;
-			des3_flags |= TDES3_LD;
-		}
-
 		/* fill the descriptor */
 		d = &p->tx_descs[d_idx];
 		d->des0 = phys_lo32(frag->data);
-		d->des1 = phys_hi32(frag->data);
 		d->des2 = frag->len | des2_flags;
 		d->des3 = pkt_len | des3_flags;
+#ifdef CONFIG_64BIT
+		d->des1 = phys_hi32(frag->data);
+#else
+		if (frag->frags == NULL) {
+			d->des1 = 0U;
+		} else {
+			frag = frag->frags;
+			d->des2 |= FIELD_PREP(TDES2_B2L, frag->len);
+			d->des1 = phys_lo32(frag->data);
+			sys_cache_data_flush_range(frag->data, frag->len);
+			LOG_DBG("d[%d]: frag %p len %d", d_idx, (void *)frag->data, frag->len);
+		}
+#endif /* CONFIG_64BIT */
+
 
 		/* clear the FD flag on subsequent descriptors */
 		des3_flags &= ~TDES3_FD;
 
 		INC_WRAP(d_idx, NB_TX_DESCS);
+
+		/* if no more fragments after this one: */
+		if (frag->frags == NULL) {
+			/* set those flags on the last descriptor */
+			d->des3 |= TDES3_LD;
+		}
 	};
 
 	net_pkt_ref(pkt);
 	k_fifo_put(&p->tx_queue, pkt);
 
-	/* make sure all the above made it to memory */
-	barrier_dmem_fence_full();
-
 	/* update the descriptor index head */
 	p->tx_desc_head = d_idx;
+
+	/* make sure all the above made it to memory */
+	barrier_dmem_fence_full();
 
 	/* lastly notify the hardware */
 	DWMAC_REG_WRITE(DMA_CHn_TXDESC_TAIL_PTR(0), TXDESC_PHYS_L(d_idx));
@@ -212,8 +236,9 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static void dwmac_tx_release(struct dwmac_priv *p)
+static void dwmac_tx_release(const struct device *dev)
 {
+	struct dwmac_priv *p = dev->data;
 	unsigned int d_idx;
 	struct dwmac_dma_desc *d;
 	uint32_t des3_val;
@@ -256,17 +281,20 @@ static void dwmac_tx_release(struct dwmac_priv *p)
 	p->tx_desc_tail = d_idx;
 }
 
-static void dwmac_receive(struct dwmac_priv *p)
+static void dwmac_rx_refill(const struct device *dev);
+
+static void dwmac_receive(const struct device *dev)
 {
+	struct dwmac_priv *p = dev->data;
 	struct dwmac_dma_desc *d;
 	struct net_buf *frag;
 	unsigned int d_idx;
 	uint32_t des3_val;
 	uint16_t bytes_so_far;
+	unsigned int num_frags = 0U;
 
-	for (d_idx = p->rx_desc_tail;
-	     d_idx != p->rx_desc_head;
-	     INC_WRAP(d_idx, NB_RX_DESCS), k_sem_give(&p->free_rx_descs)) {
+	for (d_idx = p->rx_desc_tail; d_idx != p->rx_desc_head;
+	     INC_WRAP(d_idx, NB_RX_DESCS), num_frags++) {
 
 		LOG_DBG("desc sem/tail/head=%d/%d/%d",
 			k_sem_count_get(&p->free_rx_descs),
@@ -281,34 +309,36 @@ static void dwmac_receive(struct dwmac_priv *p)
 			break;
 		}
 
+		/* retrieve current fragment */
+		frag = p->rx_frags[d_idx];
+		p->rx_frags[d_idx] = NULL;
+
 		/* we ignore those for now */
 		if (des3_val & RDES3_CTXT) {
+			net_pkt_frag_unref(frag);
 			continue;
 		}
 
 		/* a packet's first descriptor: */
 		if (des3_val & RDES3_FD) {
 			p->rx_bytes = 0;
-			if (p->rx_pkt) {
-				LOG_ERR("d[%d] first desc but pkt exists", d_idx);
+			if (p->rx_pkt != NULL) {
 				eth_stats_update_errors_rx(p->iface);
 				net_pkt_unref(p->rx_pkt);
 			}
 			p->rx_pkt = net_pkt_rx_alloc_on_iface(p->iface, K_NO_WAIT);
-			if (!p->rx_pkt) {
-				LOG_ERR("net_pkt_rx_alloc_on_iface() failed");
+			if (p->rx_pkt == NULL) {
 				eth_stats_update_errors_rx(p->iface);
 			}
 		}
 
-		if (!p->rx_pkt) {
-			LOG_ERR("no rx_pkt: skipping desc %d", d_idx);
+		if (p->rx_pkt == NULL) {
+			net_pkt_frag_unref(frag);
 			continue;
 		}
 
-		/* retrieve current fragment */
-		frag = p->rx_frags[d_idx];
-		p->rx_frags[d_idx] = NULL;
+		sys_cache_data_invd_range(frag->data, frag->size);
+
 		bytes_so_far = FIELD_GET(RDES3_PL, des3_val);
 		frag->len = bytes_so_far - p->rx_bytes;
 		p->rx_bytes = bytes_so_far;
@@ -330,77 +360,83 @@ static void dwmac_receive(struct dwmac_priv *p)
 			p->rx_pkt = NULL;
 		}
 	}
+
 	p->rx_desc_tail = d_idx;
+
+	for (unsigned int i = 0; i < num_frags; i++) {
+		if (IS_ENABLED(CONFIG_ETH_DWMAC_RX_REFILL_IRQ)) {
+			dwmac_rx_refill(dev);
+		} else {
+			k_sem_give(&p->free_rx_descs);
+		}
+	}
+}
+
+
+static void dwmac_rx_refill_desc(const struct device *dev, struct net_buf *frag)
+{
+	struct dwmac_priv *p = dev->data;
+	struct dwmac_dma_desc *d;
+	unsigned int d_idx;
+
+	d_idx = p->rx_desc_head;
+	p->rx_frags[d_idx] = frag;
+
+	d = &p->rx_descs[d_idx];
+	__ASSERT(!(d->des3 & RDES3_OWN), "rx desc still owned");
+
+	/* all is good: initialize the descriptor */
+	d->des0 = phys_lo32(frag->data);
+	d->des1 = phys_hi32(frag->data);
+	d->des2 = 0;
+	d->des3 = RDES3_BUF1V | RDES3_IOC | RDES3_OWN;
+
+	/* commit the above to memory */
+	barrier_dmem_fence_full();
+
+	/* advance to the next descriptor */
+	p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
+
+	/* lastly notify the hardware */
+	DWMAC_REG_WRITE(DMA_CHn_RXDESC_TAIL_PTR(0), RXDESC_PHYS_L(d_idx));
+
+	LOG_DBG("desc sem/head/tail=%d/%d/%d %s", k_sem_count_get(&p->free_rx_descs),
+		p->rx_desc_head, p->rx_desc_tail, k_is_in_isr() ? "ISR" : "thread");
+}
+
+static void dwmac_rx_refill(const struct device *dev)
+{
+	struct dwmac_priv *p = dev->data;
+	struct net_buf *frag;
+
+	frag = net_pkt_get_reserve_rx_data(RX_FRAG_SIZE, K_FOREVER);
+	if (frag == NULL) {
+		k_sem_give(&p->free_rx_descs);
+		return;
+	}
+
+	K_SPINLOCK(&p->spinlock) {
+		dwmac_rx_refill_desc(dev, frag);
+	}
 }
 
 static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = arg1;
 	struct dwmac_priv *p = dev->data;
-	struct dwmac_dma_desc *d;
-	struct net_buf *frag;
-	unsigned int d_idx;
 
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 
-	d_idx = p->rx_desc_head;
-	for (;;) {
-		LOG_DBG("desc sem/head/tail=%d/%d/%d",
-			k_sem_count_get(&p->free_rx_descs),
-			p->rx_desc_head, p->rx_desc_tail);
-
-		/* wait for an empty descriptor */
-		if (k_sem_take(&p->free_rx_descs, K_FOREVER) != 0) {
-			LOG_ERR("can't get free RX desc to refill");
-			break;
+	while (true) {
+		if (k_sem_take(&p->free_rx_descs, K_FOREVER) == 0) {
+			dwmac_rx_refill(dev);
 		}
-
-		d = &p->rx_descs[d_idx];
-
-		__ASSERT(!(d->des3 & RDES3_OWN),
-			 "desc[%d]=0x%x: still hw owned! (sem/head/tail=%d/%d/%d)",
-			 d_idx, d->des3, k_sem_count_get(&p->free_rx_descs),
-			 p->rx_desc_head, p->rx_desc_tail);
-
-		frag = p->rx_frags[d_idx];
-
-		/* get a new fragment if the previous one was consumed */
-		if (!frag) {
-			frag = net_pkt_get_reserve_rx_data(RX_FRAG_SIZE, K_FOREVER);
-			if (!frag) {
-				LOG_ERR("net_pkt_get_reserve_rx_data() returned NULL");
-				k_sem_give(&p->free_rx_descs);
-				break;
-			}
-			LOG_DBG("new frag[%d] at %p", d_idx, (void *)frag->data);
-			__ASSERT(frag->size == RX_FRAG_SIZE, "");
-			sys_cache_data_invd_range(frag->data, frag->size);
-			p->rx_frags[d_idx] = frag;
-		} else {
-			LOG_DBG("reusing frag[%d] at %p", d_idx, (void *)frag->data);
-		}
-
-		/* all is good: initialize the descriptor */
-		d->des0 = phys_lo32(frag->data);
-		d->des1 = phys_hi32(frag->data);
-		d->des2 = 0;
-		d->des3 = RDES3_BUF1V | RDES3_IOC | RDES3_OWN;
-
-		/* commit the above to memory */
-		barrier_dmem_fence_full();
-
-		/* advance to the next descriptor */
-		p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
-
-		/* lastly notify the hardware */
-		DWMAC_REG_WRITE(DMA_CHn_RXDESC_TAIL_PTR(0), RXDESC_PHYS_L(d_idx));
 	}
 }
 
 static void dwmac_dma_irq(const struct device *dev, unsigned int ch)
 {
-	struct dwmac_priv *p = dev->data;
 	uint32_t status;
 
 	status = DWMAC_REG_READ(DMA_CHn_STATUS(ch));
@@ -414,11 +450,11 @@ static void dwmac_dma_irq(const struct device *dev, unsigned int ch)
 	}
 
 	if (status & DMA_CHn_STATUS_TI) {
-		dwmac_tx_release(p);
+		dwmac_tx_release(dev);
 	}
 
 	if (status & DMA_CHn_STATUS_RI) {
-		dwmac_receive(p);
+		dwmac_receive(dev);
 	}
 }
 
