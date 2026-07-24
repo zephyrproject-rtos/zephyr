@@ -1556,6 +1556,10 @@ void net_tcp_reply_rst(struct net_pkt *pkt)
 			ack++;
 		}
 
+		if (th_flags(th_pkt) & FIN) {
+			ack++;
+		}
+
 		UNALIGNED_PUT(RST | ACK, &th_rst->th_flags);
 		UNALIGNED_PUT(net_htonl(ack), UNALIGNED_MEMBER_ADDR(th_rst, th_ack));
 	}
