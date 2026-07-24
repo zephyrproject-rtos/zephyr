@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+name: DCO Check
+
+on: [pull_request]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dco-check:
+    name: Check DCO sign-off
+    runs-on: ubuntu-latest
+    # The sign-off check for dependabot should be skipped
+    if: github.actor != 'dependabot[bot]'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          # Full history and the PR head so the action can resolve the base
+          # branch and merge-base (see actions/checkout#552).
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Check commit sign-off
+        # TODO: repoint to a pinned zephyrproject-rtos/action-dco tag once published.
+        uses: pdgendt/action-dco@e3485a11e085fdc05fa4320e9cc3a86ccd665d89 # main
