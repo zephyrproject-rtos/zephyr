@@ -2,14 +2,17 @@
 
 zephyr_library()
 
+zephyr_library_sources_ifndef(CONFIG_ARMV5
+  fault.c
+  tcm.c
+  )
+
 zephyr_library_sources(
   exc.S
-  fault.c
   irq_init.c
   reboot.c
   reset.S
   stacks.c
-  tcm.c
   vector_table.S
   irq_manage.c
   prep_c.c

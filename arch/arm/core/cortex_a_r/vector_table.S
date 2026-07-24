@@ -21,7 +21,11 @@ _ASM_FILE_PROLOGUE
 SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 	ldr pc, =z_arm_reset             /*                   offset 0 */
 	ldr pc, =z_arm_undef_instruction /* undef instruction offset 4 */
+#ifdef CONFIG_ARMV5
+	ldr pc, =z_arm_swi               /* software interrupt offset 8 */
+#else
 	ldr pc, =z_arm_svc               /* svc               offset 8 */
+#endif
 	ldr pc, =z_arm_prefetch_abort    /* prefetch abort offset  0xc */
 	ldr pc, =z_arm_data_abort        /* data abort     offset 0x10 */
 	nop				 /*                offset 0x14 */

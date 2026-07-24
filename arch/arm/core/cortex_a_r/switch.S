@@ -20,7 +20,11 @@
 
 _ASM_FILE_PROLOGUE
 
+#ifdef CONFIG_ARMV5
+GTEXT(z_arm_swi)
+#else
 GTEXT(z_arm_svc)
+#endif
 GTEXT(z_arm_context_switch)
 GTEXT(z_do_kernel_oops)
 GTEXT(z_arm_do_syscall)
@@ -55,7 +59,13 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 	 * Note that this step must be done after all relevant state is
 	 * saved.
 	 */
+#ifdef CONFIG_CPU_ARM926EJ_S
+	/* Drain write buffer */
+	mov r2, #0
+	mcr p15, 0, r2, c7, c10, 4
+#else
 	dsb
+#endif
 	str r1, [r1, #___thread_t_switch_handle_OFFSET]
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
@@ -88,6 +98,11 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 
 	bx lr
 
+#ifdef CONFIG_ARMV5
+SECTION_FUNC(TEXT, z_arm_swi)
+    /* Software interrupt (SWI) not handled */
+    b .
+#else
 /**
  *
  * @brief Service call handler
@@ -165,3 +180,4 @@ inv:
 
     /* Return here only in case of recoverable error */
     b z_arm_cortex_ar_exit_exc
+#endif /* CONFIG_ARMV5 */

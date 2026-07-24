@@ -26,7 +26,11 @@ static inline void relocate_vector_table(void)
 	write_vbar(VECTOR_ADDRESS & VBAR_MASK);
 	barrier_isync_fence_full();
 }
-
+#elif defined(CONFIG_ARMV5)
+static inline void relocate_vector_table(void)
+{
+	/* use the default remap for the vector table */
+}
 #else
 
 /*

@@ -158,7 +158,12 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 
 	/* Wait secondary cores up, see arch_secondary_cpu_init */
 	while (arm_cpu_boot_params.fn) {
+#ifdef CONFIG_ARMV5
+		/* wait for interrupt */
+		__asm__ volatile("mcr p15, 0, %0, c7, c0, 4" :: "r"(0) : "memory");
+#else
 		wfe();
+#endif
 	}
 
 	cpu_map[cpu_num] = cpu_mpid;
@@ -213,7 +218,15 @@ void arch_secondary_cpu_init(void)
 	arm_cpu_boot_params.fn = NULL;
 	barrier_dsync_fence_full();
 
+#ifdef CONFIG_ARMV5
+	/*
+	 * ARMv5 has no SEV instruction and no event register.
+	 * This is only a compiler barrier / no-op.
+	 */
+	__asm__ volatile ("" ::: "memory");
+#else
 	sev();
+#endif
 
 	fn(arg);
 }
