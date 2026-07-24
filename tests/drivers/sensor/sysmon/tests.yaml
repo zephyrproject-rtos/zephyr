@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc. (AMD)
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.sysmon:
+    platform_allow:
+      versal_apu
+    tags: drivers sensor sysmon ztest
+    filter:
+      dt_compat_enabled("xlnx,versal-sysmon")

@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMD/Xilinx Versal System Monitor
+
+compatible: "xlnx,versal-sysmon"
+
+include: [base.yaml]
+
+properties:
+  xlnx,numchannels:
+    type: int
+    required: true
+    description: |
+      Number of supply channels enabled in the design.
+      Range: 0 - 62
+
+child-binding:
+  description: SysMon supply channel node
+
+  properties:
+    xlnx,register:
+      type: int
+      required: true
+      description: Internal SysMon channel index
+
+    xlnx,name:
+      type: string
+      required: true
+      description: Name of the supply channel
