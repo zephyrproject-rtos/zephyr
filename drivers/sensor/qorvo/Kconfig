@@ -1,0 +1,4 @@
+# Copyright (c) 2026 HawkEye 360
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "cmd170p4/Kconfig"
