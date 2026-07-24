@@ -338,6 +338,7 @@ colorama==0.4.6 \
     # via
     #   awscli
     #   click
+    #   colorlog
     #   halo
     #   log-symbols
     #   pylint
@@ -345,6 +346,10 @@ colorama==0.4.6 \
     #   tox
     #   tqdm
     #   west
+colorlog==6.10.1 \
+    --hash=sha256:2d7e8348291948af66122cff006c9f8da6255d224e7cf8e37d8de2df3bad8c9c \
+    --hash=sha256:eb4ae5cb65fe7fec7773c2306061a8e63e02efc2c72eba9d27b0fa23c94f1321
+    # via -r requirements-actions.in
 cryptography==49.0.0 \
     --hash=sha256:026ac7423e6fa66872d3bf889be5974507da3944f866f704fa200eadacd00001 \
     --hash=sha256:07cab27cc7b7e0fd28e5e26bb9eeedde5c135c868b46de4a27845abe94af6122 \
