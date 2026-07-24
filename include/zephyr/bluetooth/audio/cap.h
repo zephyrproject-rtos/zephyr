@@ -1068,7 +1068,7 @@ int bt_cap_handover_broadcast_to_unicast(
 /** Callback structure for CAP procedures */
 struct bt_cap_commander_cb {
 	/**
-	 * @brief Callback for bt_cap_initiator_unicast_discover().
+	 * @brief Callback for bt_cap_commander_discover().
 	 *
 	 * @param conn      The connection pointer supplied to
 	 *                  bt_cap_initiator_unicast_discover().

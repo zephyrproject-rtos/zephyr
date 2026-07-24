@@ -499,8 +499,6 @@ struct bt_bap_scan_delegator_cb {
 	 * @param conn       Pointer to the connection to a remote device if
 	 *                   the change was caused by it, otherwise NULL.
 	 * @param recv_state Pointer to the receive state that was updated.
-	 *
-	 * @return 0 in case of success or negative value in case of error.
 	 */
 	void (*recv_state_updated)(struct bt_conn *conn,
 				   const struct bt_bap_scan_delegator_recv_state *recv_state);
@@ -929,7 +927,7 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream, struct bt_bap_strea
  * @param ep Remote Audio Endpoint being configured
  * @param codec_cfg Codec configuration
  *
- * @return Allocated Audio Stream object or NULL in case of error.
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
 			 const struct bt_audio_codec_cfg *codec_cfg);

@@ -73,7 +73,7 @@ enum bt_tmap_role {
 	/**
 	 * @brief TMAP Broadcast Media Receiver role
 	 *
-	 * This role is defined send media audio to TMAP Broadcast Media Senders.
+	 * This role is defined receive media audio from TMAP Broadcast Media Senders.
 	 * Audio streams in this role are always uni-directional.
 	 */
 	BT_TMAP_ROLE_BMR = BIT(5U),
