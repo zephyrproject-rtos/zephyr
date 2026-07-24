@@ -4094,6 +4094,25 @@ const char *bt_hci_get_ver_str(uint8_t core_version)
 	return "unknown";
 }
 
+int bt_hci_get_local_info(struct bt_hci_local_info *info)
+{
+	if (!info) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	info->hci_version = bt_dev.hci_version;
+	info->lmp_version = bt_dev.lmp_version;
+	info->hci_revision = bt_dev.hci_revision;
+	info->lmp_subversion = bt_dev.lmp_subversion;
+	info->manufacturer = bt_dev.manufacturer;
+
+	return 0;
+}
+
 static void bt_dev_show_info(void)
 {
 	int i;
