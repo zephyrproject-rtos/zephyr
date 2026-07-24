@@ -89,6 +89,16 @@ config MEMC_MCUX_FLEXSPI
 	bool
 	select PINCTRL
 
+config MEMC_MCUX_FLEXSPI_IPED
+	bool "IPED encrypted region support"
+	default y
+	depends on MEMC_MCUX_FLEXSPI
+	depends on !BUILD_WITH_TFM
+	help
+	  Enable discovery and handling of IPED (Inline Prince
+	  Encryption/Decryption) regions on FlexSPI. When TF-M
+	  manages IPED, disable this to avoid conflicting access.
+
 # Avoid RWW hazards by defaulting logging to disabled
 choice MEMC_LOG_LEVEL_CHOICE
 	default MEMC_LOG_LEVEL_OFF if FLASH_MCUX_FLEXSPI_XIP
