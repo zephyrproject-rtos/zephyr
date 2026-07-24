@@ -669,8 +669,10 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	bool explicit_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN);
 	bool conn_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
 
-	LOG_DBG("%s event %u, len %u, rssi %d dBm", bt_addr_le_str(addr), info->adv_type, len,
-		info->rssi);
+	LOG_DBG("%s%s event %u, len %u, rssi %d dBm",
+		bt_addr_le_str(addr),
+		bt_addr_le_is_resolved(addr) ? " (resolved)" : "",
+		info->adv_type, len, info->rssi);
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
 	    explicit_scan && (info->adv_props & BT_HCI_LE_ADV_PROP_DIRECT)) {

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +8,9 @@
 #ifndef __BT_SHELL_PRIVATE_H
 #define __BT_SHELL_PRIVATE_H
 
+#include <stddef.h>
+
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/shell/shell.h>
 
 /**
@@ -86,5 +90,28 @@ void bt_shell_hexdump(const uint8_t *data, size_t len);
  */
 #define bt_shell_error(_ft, ...) \
 	bt_shell_fprintf_error(_ft "\n", ##__VA_ARGS__)
+
+/**
+ * @brief Parse a Bluetooth LE address from shell argv.
+ *
+ * Accepts both the prefix-based string format ("P:XX:XX:XX:XX:XX:XX" or
+ * "R:XX:XX:XX:XX:XX:XX") which consumes a single argv slot, and the legacy
+ * two-token format ("XX:XX:XX:XX:XX:XX" followed by a "public" / "random" /
+ * "public-id" / "random-id" type token) which consumes two slots.
+ *
+ * The new prefix format is attempted first. If it does not match, and at
+ * least one further argv slot is available beyond @p start, the legacy
+ * format is attempted with @p argv[start + 1] as the type token.
+ *
+ * @param[in]  argc  Total argument count provided to the shell handler.
+ * @param[in]  argv  Argument vector provided to the shell handler.
+ * @param[in]  start Index of the first argv slot to parse.
+ * @param[out] addr  Parsed address on success.
+ *
+ * @retval 1 The prefix-based address was parsed successfully.
+ * @retval 2 The legacy address and type were parsed successfully.
+ * @retval -EINVAL The address argument is missing or invalid.
+ */
+int bt_shell_strtoaddr_le(size_t argc, char *argv[], size_t start, bt_addr_le_t *addr);
 
 #endif /* __BT_SHELL_PRIVATE_H */

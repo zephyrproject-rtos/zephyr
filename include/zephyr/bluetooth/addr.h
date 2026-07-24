@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/sys/printk.h>
 
 #ifdef __cplusplus
@@ -220,9 +221,16 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
  *
  *  @details The recommended length guarantee the output of address
  *  conversion will not lose valuable information about address being
- *  processed.
+ *  processed. The default format is "P:XX:XX:XX:XX:XX:XX" or
+ *  "R:XX:XX:XX:XX:XX:XX". If @kconfig{CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT}
+ *  is enabled the legacy format "XX:XX:XX:XX:XX:XX (type)" is used and the
+ *  recommended buffer size grows accordingly.
  */
+#ifdef CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT
 #define BT_ADDR_LE_STR_LEN 30
+#else
+#define BT_ADDR_LE_STR_LEN 20
+#endif
 
 /** @brief Converts binary Bluetooth address to string.
  *
@@ -243,6 +251,19 @@ static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
 
 /** @brief Converts binary LE Bluetooth address to string.
  *
+ *  Converts the LE Bluetooth address to a string representation in the format:
+ *  - "P:XX:XX:XX:XX:XX:XX" for public addresses
+ *  - "R:XX:XX:XX:XX:XX:XX" for random addresses
+ *
+ *  For HCI-level address types with extended information (bits beyond 0x01),
+ *  the output uses the base address type (0x00 for public, 0x01 for random).
+ *  Any additional bits should be handled separately by the caller.
+ *
+ *  If @kconfig{CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT} is enabled the legacy
+ *  format "XX:XX:XX:XX:XX:XX (public|random|public-id|random-id|0xNN)" is
+ *  produced instead. That option is deprecated and provided only as a
+ *  temporary compatibility shim.
+ *
  *  @param addr Address of buffer containing binary LE Bluetooth address.
  *  @param str Address of user buffer with enough room to store
  *  formatted string containing binary LE address.
@@ -254,6 +275,7 @@ static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
 static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 				    size_t len)
 {
+#ifdef CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT
 	char type[10];
 
 	switch (addr->type) {
@@ -277,6 +299,15 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 	return snprintk(str, len, "%02X:%02X:%02X:%02X:%02X:%02X (%s)",
 			addr->a.val[5], addr->a.val[4], addr->a.val[3],
 			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
+#else
+	uint8_t base_type = addr->type & 0x01U;
+	char type_char = (base_type == BT_ADDR_LE_PUBLIC) ? 'P' : 'R';
+
+	return snprintk(str, len, "%c:%02X:%02X:%02X:%02X:%02X:%02X",
+			type_char,
+			addr->a.val[5], addr->a.val[4], addr->a.val[3],
+			addr->a.val[2], addr->a.val[1], addr->a.val[0]);
+#endif /* CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT */
 }
 
 /** @cond INTERNAL_HIDDEN */
@@ -329,12 +360,15 @@ int bt_addr_from_str(const char *str, bt_addr_t *addr);
 
 /** @brief Convert LE Bluetooth address from string to binary.
  *
- *  @param[in]  str   The string representation of an LE Bluetooth address.
- *  @param[in]  type  The string representation of the LE Bluetooth address
- *                   type.
+ *  @param[in]  str   The string representation of an LE Bluetooth address. This may use the
+ *                   prefix-based "P:XX:XX:XX:XX:XX:XX" / "R:XX:XX:XX:XX:XX:XX" format or the
+ *                   legacy "XX:XX:XX:XX:XX:XX" format.
+ *  @param[in]  type  The LE Bluetooth address type for the legacy format. This argument is ignored
+ *                   when @p str uses the prefix-based format.
  *  @param[out] addr  Address of buffer to store the LE Bluetooth address
  *
- *  @return Zero on success or (negative) error code otherwise.
+ *  @retval 0 Success.
+ *  @retval -EINVAL The address or legacy address type is invalid.
  */
 int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr);
 

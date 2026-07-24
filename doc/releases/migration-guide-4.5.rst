@@ -893,6 +893,39 @@ Bluetooth Classic
 
 * Renamed ``BT_DEVICE_VEDNOR_ID`` to :kconfig:option:`BT_DEVICE_VENDOR_ID` to fix a typo.
 
+Bluetooth Host
+==============
+
+* :c:func:`bt_addr_le_to_str` now emits the LE address with a single-character
+  prefix (``P:`` for public, ``R:`` for random) and no whitespace between the
+  type and the address bytes, e.g. ``R:11:22:33:44:55:66``. The previous
+  ``11:22:33:44:55:66 (random)`` form is no longer produced. Code that parses
+  Zephyr log or shell output to extract addresses must be updated accordingly.
+
+  :c:func:`bt_addr_le_from_str` accepts both the new prefix-based form (as a
+  single token, with the ``type`` argument ignored) and the legacy
+  ``XX:XX:XX:XX:XX:XX`` + ``"public"``/``"random"`` form, so existing shell
+  scripts and applications that feed the legacy form keep working.
+
+  :c:macro:`BT_ADDR_LE_STR_LEN` shrinks from ``30`` to ``20`` to match the new
+  output. Existing buffers sized with this macro continue to work; only code
+  that hard-coded a literal length to hold the old output is affected.
+
+  HCI events whose address-type field carries an extra bit (e.g. the
+  resolved-RPA indication in the LE Advertising Report and LE Enhanced
+  Connection Complete events) have that bit masked away by
+  :c:func:`bt_addr_le_to_str` so the string format does not leak the
+  HCI-specific extended type. Host log sites that handle such addresses
+  print a separate ``(resolved)`` annotation using the existing
+  ``bt_addr_le_is_resolved()`` helper so the information is not lost.
+
+  As a temporary compatibility shim, the legacy output format can be
+  restored by enabling :kconfig:option:`CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT`
+  (marked deprecated). Enabling it also restores the previous
+  :c:macro:`BT_ADDR_LE_STR_LEN` value of ``30``. The option is scheduled
+  for removal after two Zephyr releases; users that rely on the legacy
+  format are expected to use the option as a migration aid only.
+
 Bluetooth HCI
 =============
 
