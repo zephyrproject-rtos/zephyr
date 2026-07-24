@@ -86,12 +86,12 @@ void get_addresses(struct net_context *context,
 		   char addr_local[], int local_len,
 		   char addr_remote[], int remote_len)
 {
-	if (IS_ENABLED(CONFIG_NET_IPV6) && context->local.family == NET_AF_INET6) {
-		if (net_sin6_ptr(&context->local)->sin6_addr != NULL) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && context->local.sa_family == NET_AF_INET6) {
+		if (net_context_is_local_addr_set(context)) {
 			snprintk(addr_local, local_len, "[%s]:%u",
 				 net_sprint_ipv6_addr(
-					 net_sin6_ptr(&context->local)->sin6_addr),
-				 net_ntohs(net_sin6_ptr(&context->local)->sin6_port));
+					 &net_sin6(&context->local)->sin6_addr),
+				 net_ntohs(net_sin6(&context->local)->sin6_port));
 		} else {
 			snprintk(addr_local, local_len, "<not bound>");
 		}
@@ -101,12 +101,12 @@ void get_addresses(struct net_context *context,
 				 &net_sin6(&context->remote)->sin6_addr),
 			 net_ntohs(net_sin6(&context->remote)->sin6_port));
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && context->local.family == NET_AF_INET) {
-		if (net_sin_ptr(&context->local)->sin_addr != NULL) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && context->local.sa_family == NET_AF_INET) {
+		if (net_context_is_local_addr_set(context)) {
 			snprintk(addr_local, local_len, "%s:%d",
 				 net_sprint_ipv4_addr(
-					 net_sin_ptr(&context->local)->sin_addr),
-				 net_ntohs(net_sin_ptr(&context->local)->sin_port));
+					 &net_sin(&context->local)->sin_addr),
+				 net_ntohs(net_sin(&context->local)->sin_port));
 		} else {
 			snprintk(addr_local, local_len, "<not bound>");
 		}
@@ -126,15 +126,15 @@ void get_addresses(struct net_context *context,
 				 net_ntohs(net_sin(&context->remote)->sin_port));
 		}
 
-	} else if (context->local.family == NET_AF_UNSPEC) {
+	} else if (context->local.sa_family == NET_AF_UNSPEC) {
 		snprintk(addr_local, local_len, "AF_UNSPEC");
-	} else if (context->local.family == NET_AF_PACKET) {
+	} else if (context->local.sa_family == NET_AF_PACKET) {
 		snprintk(addr_local, local_len, "AF_PACKET");
-	} else if (context->local.family == NET_AF_CAN) {
+	} else if (context->local.sa_family == NET_AF_CAN) {
 		snprintk(addr_local, local_len, "AF_CAN");
 	} else {
 		snprintk(addr_local, local_len, "AF_UNK(%d)",
-			 context->local.family);
+			 context->local.sa_family);
 	}
 }
 #endif /* CONFIG_NET_OFFLOAD || CONFIG_NET_NATIVE */
