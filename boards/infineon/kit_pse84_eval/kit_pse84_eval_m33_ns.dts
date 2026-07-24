@@ -43,6 +43,11 @@
 	status = "disabled";
 };
 
+/* watchdog0 is a secure-owned resource; disable it in the non-secure build. */
+&watchdog0 {
+	status = "disabled";
+};
+
 &mcwdt0 {
 	status = "okay";
 };
