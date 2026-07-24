@@ -558,8 +558,8 @@ static inline void z_impl_rtio_sqe_signal(struct rtio_sqe *sqe)
 {
 	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
 
-	if (!atomic_cas(&iodev_sqe->sqe.await.ok, 0, 1)) {
-		iodev_sqe->sqe.await.callback(iodev_sqe, iodev_sqe->sqe.await.userdata);
+	if (!atomic_cas(&iodev_sqe->rt.await.ok, 0, 1)) {
+		iodev_sqe->rt.await.callback(iodev_sqe, iodev_sqe->rt.await.userdata);
 	}
 }
 
@@ -580,10 +580,10 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
 		unsigned int blk_index = 0;
 		unsigned int blk_count = 0;
 
-		if (iodev_sqe->sqe.rx.buf) {
-			blk_index = (iodev_sqe->sqe.rx.buf - mem_pool->buffer) >>
+		if (iodev_sqe->rt.rx_bind.buf) {
+			blk_index = (iodev_sqe->rt.rx_bind.buf - mem_pool->buffer) >>
 				    mem_pool->info.blk_sz_shift;
-			blk_count = iodev_sqe->sqe.rx.buf_len >> mem_pool->info.blk_sz_shift;
+			blk_count = iodev_sqe->rt.rx_bind.buf_len >> mem_pool->info.blk_sz_shift;
 		}
 		flags = RTIO_CQE_FLAG_PREP_MEMPOOL(blk_index, blk_count);
 	}
@@ -738,28 +738,32 @@ static inline void rtio_cqe_submit(struct rtio *r, int result, void *userdata, u
  * @return 0 if @p buf and @p buf_len were successfully filled
  * @return -ENOMEM Not enough memory for @p min_buf_len
  */
-static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32_t min_buf_len,
+static inline int rtio_sqe_rx_buf(struct rtio_iodev_sqe *iodev_sqe, uint32_t min_buf_len,
 				  uint32_t max_buf_len, uint8_t **buf, uint32_t *buf_len)
 {
-	struct rtio_sqe *sqe = (struct rtio_sqe *)&iodev_sqe->sqe;
+	const struct rtio_sqe *sqe = &iodev_sqe->sqe;
 
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
 	if (sqe->op == RTIO_OP_RX && sqe->flags & RTIO_SQE_MEMPOOL_BUFFER) {
 		struct rtio *r = iodev_sqe->r;
 
-		if (sqe->rx.buf != NULL) {
-			if (sqe->rx.buf_len < min_buf_len) {
+		/* The mempool buffer is bound at runtime and kept in the wrapper so
+		 * the submission description itself stays immutable.
+		 */
+		if (iodev_sqe->rt.rx_bind.buf != NULL) {
+			if (iodev_sqe->rt.rx_bind.buf_len < min_buf_len) {
 				return -ENOMEM;
 			}
-			*buf = sqe->rx.buf;
-			*buf_len = sqe->rx.buf_len;
+			*buf = iodev_sqe->rt.rx_bind.buf;
+			*buf_len = iodev_sqe->rt.rx_bind.buf_len;
 			return 0;
 		}
 
 		int rc = rtio_block_pool_alloc(r, min_buf_len, max_buf_len, buf, buf_len);
+
 		if (rc == 0) {
-			sqe->rx.buf = *buf;
-			sqe->rx.buf_len = *buf_len;
+			iodev_sqe->rt.rx_bind.buf = *buf;
+			iodev_sqe->rt.rx_bind.buf_len = *buf_len;
 			return 0;
 		}
 
