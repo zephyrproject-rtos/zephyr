@@ -1716,3 +1716,9 @@ test_i2c_vl53l5cx: vl53l5cx@de {
 	compatible = "st,vl53l5cx";
 	reg = <0xde>;
 };
+
+test_i2c_stc31: stc31@df {
+	compatible = "sensirion,stc31";
+	reg = <0xdf>;
+	binary-gas = <0x0001>;
+};
