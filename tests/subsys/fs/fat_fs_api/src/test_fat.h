@@ -47,6 +47,7 @@ void test_fat_file(void);
 void test_fat_dir(void);
 void test_fat_fs(void);
 void test_fat_rename(void);
+void test_fat_cve(void);
 #ifdef CONFIG_FS_FATFS_REENTRANT
 void test_fat_file_reentrant(void);
 #endif /* CONFIG_FS_FATFS_REENTRANT */

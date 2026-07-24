@@ -34,6 +34,7 @@ static void *fat_fs_basic_setup(void)
 	test_fat_dir();
 	test_fat_fs();
 	test_fat_rename();
+	test_fat_cve();
 	test_fs_open_flags();
 #ifdef CONFIG_FS_FATFS_REENTRANT
 	test_fat_file_reentrant();
