@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 			compatible = "arm,cortex-m55";
 			reg = <1>;
 			clock-frequency = <400000000>;
-			cpu-power-states = <&sleep &deepsleep>;
+			cpu-power-states = <&sleep &deepsleep &deepsleep_ram>;
 		};
 	};
 
@@ -33,6 +33,25 @@
 			power-state-name = "suspend-to-idle";
 			min-residency-us = <100>;
 			exit-latency-us = <20>;
+		};
+
+		/*
+		 * DeepSleep-RAM is disabled by default so a plain application only
+		 * sees runtime-idle and regular DeepSleep. Enabling this node
+		 * turns on CONFIG_PM_S2RAM.
+		 */
+		deepsleep_ram: deepsleep_ram {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			min-residency-us = <1000000>;
+			/*
+			 * Warm boot resumes through the MCUboot chainload and a full
+			 * Zephyr re-init, so the exit latency is dominated by that
+			 * cold-boot path (measured ~381 ms; rounded up for margin)
+			 * rather than the raw hardware wake time.
+			 */
+			exit-latency-us = <400000>;
+			status = "disabled";
 		};
 
 		deepsleep_off: deepsleep_off {
