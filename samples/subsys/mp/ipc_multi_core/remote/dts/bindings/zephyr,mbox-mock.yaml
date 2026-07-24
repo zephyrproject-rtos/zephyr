@@ -1,0 +1,10 @@
+description: Mock MBOX-to-IPM Shim
+
+compatible: "zephyr,mbox-mock"
+
+include: base.yaml
+
+properties:
+  "#mbox-cells":
+    type: int
+    const: 0
