@@ -1,0 +1,43 @@
+#
+# Copyright (c) 2026 Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# The Kconfig file is dedicated to the SPI transport of the MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# the transport.
+#
+# Options defined in this file should be prefixed with:
+#  MCUMGR_TRANSPORT_SPI_
+
+menuconfig MCUMGR_TRANSPORT_SPI
+	bool "SPI MCUmgr SMP transport"
+	depends on MULTITHREADING
+	depends on SPI_SLAVE && SPI && GPIO
+	select SPI_ASYNC
+	depends on DT_HAS_ZEPHYR_SMP_SPI_ENABLED
+	select MCUMGR_TRANSPORT_REASSEMBLY
+	help
+	  Enables handling of SMP commands received over SPI. The device operates
+	  as an SPI peripheral and exchanges raw SMP packets with the SPI
+	  controller. A data-ready GPIO signals when a response is available for
+	  the controller to read.
+
+if MCUMGR_TRANSPORT_SPI
+
+config MCUMGR_TRANSPORT_SPI_MTU
+	int "SPI SMP MTU"
+	range 8 MCUMGR_TRANSPORT_NETBUF_SIZE
+	default 256
+	help
+	  Maximum size of a raw SMP chunk sent and received in one SPI
+	  transaction, in bytes.
+	  This value must satisfy the following relation:
+	  MCUMGR_TRANSPORT_SPI_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE
+
+module = MCUMGR_TRANSPORT_SPI
+module-str = SPI MCUmgr SMP transport
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MCUMGR_TRANSPORT_SPI

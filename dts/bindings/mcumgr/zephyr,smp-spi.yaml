@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: MCUmgr SMP transport over SPI
+
+description: |
+  The device operates as an SPI peripheral and receives raw SMP packets from an
+  SPI controller. The peripheral asserts data-ready-gpios when an SMP response
+  is available for the controller to read.
+
+compatible: "zephyr,smp-spi"
+
+include: spi-device.yaml
+
+properties:
+  data-ready-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO driven by the SPI peripheral to signal the controller.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio/gpio.h>
+
+    &spi1 {
+        status = "okay";
+
+        smp_spi: smp-spi@0 {
+            compatible = "zephyr,smp-spi";
+            reg = <0>;
+            spi-max-frequency = <1000000>;
+            data-ready-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+        };
+    };
