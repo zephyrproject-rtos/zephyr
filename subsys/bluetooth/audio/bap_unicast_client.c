@@ -4041,6 +4041,12 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn,
 
 static void unicast_client_disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
 	LOG_DBG("conn %p reason 0x%02x", conn, reason);
 
 	unicast_client_ep_reset(conn, reason);

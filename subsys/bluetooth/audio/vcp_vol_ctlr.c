@@ -864,8 +864,14 @@ static void vcp_vol_ctlr_reset(struct bt_vcp_vol_ctlr *vol_ctlr)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
+	struct bt_vcp_vol_ctlr *vol_ctlr;
+	struct bt_conn_info info;
 
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
+	vol_ctlr = vol_ctlr_get_by_conn(conn);
 	if (vol_ctlr->conn == conn) {
 		vcp_vol_ctlr_reset(vol_ctlr);
 	}

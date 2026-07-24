@@ -258,6 +258,11 @@ static void scan_delegator_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	int i;
 	struct broadcast_assistant *assistant = NULL;
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(scan_delegator.assistant_configs); i++) {
 		if (scan_delegator.assistant_configs[i].conn == conn) {
@@ -277,6 +282,11 @@ static void scan_delegator_security_changed(struct bt_conn *conn,
 					    bt_security_t level,
 					    enum bt_security_err err)
 {
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
 
 	if (err != 0 || level < BT_SECURITY_L2 || !bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		return;

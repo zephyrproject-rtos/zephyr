@@ -55,6 +55,11 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
 	char addr[BT_ADDR_LE_STR_LEN];
 	uint8_t conn_index;
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
@@ -76,7 +81,14 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	uint8_t conn_index = bt_conn_index(conn);
+	uint8_t conn_index;
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
+	conn_index = bt_conn_index(conn);
 
 	bt_conn_unref(conns[conn_index]);
 	conns[conn_index] = NULL;

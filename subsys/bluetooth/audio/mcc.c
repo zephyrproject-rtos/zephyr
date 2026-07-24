@@ -1353,6 +1353,11 @@ static int reset_mcs_inst(struct mcs_instance_t *mcs_inst)
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
 	struct mcs_instance_t *mcs_inst;
+	struct bt_conn_info info;
+
+	if (bt_conn_get_info(conn, &info) != 0 || info.type != BT_CONN_TYPE_LE) {
+		return;
+	}
 
 	mcs_inst = lookup_inst_by_conn(conn);
 	if (mcs_inst != NULL) {
