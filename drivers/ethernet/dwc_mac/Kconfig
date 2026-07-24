@@ -124,6 +124,8 @@ config ETH_DWMAC_RX_REFILL_THREAD_PRIORITY
 	  Priority level of the internal thread which is used to refill
 	  the receive buffer pool.
 
+rsource "Kconfig.ptp"
+
 # Currently only for the 1000 core
 if ETH_DWC_ETHER_1000_CORE
 

@@ -719,6 +719,9 @@ const struct ethernet_api dwmac_api = {
 	.set_config		= dwmac_set_config,
 	.get_phy		= dwmac_get_phy,
 	.send			= dwmac_send,
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+	.get_ptp_clock		= dwmac_get_ptp_clock,
+#endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats		= dwmac_stats,
 #endif
