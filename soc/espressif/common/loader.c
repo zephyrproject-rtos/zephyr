@@ -56,10 +56,10 @@
 #include <soc/system_reg.h>
 #endif
 
-#include "memory.h"
-#include "hw_init.h"
-#include "soc_init.h"
-#include "soc_random.h"
+#include <memory.h>
+#include <hw_init.h>
+#include <soc_init.h>
+#include <soc_random.h>
 
 #if defined(CONFIG_SOC_ESP32S3_APPCPU) || defined(CONFIG_SOC_ESP32_APPCPU)
 #error "APPCPU does not need this file!"

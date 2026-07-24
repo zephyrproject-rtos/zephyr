@@ -5,11 +5,11 @@
  */
 
 #include <zephyr/toolchain.h>
-#include "soc/soc_caps.h"
-#include "ulp_lp_core_utils.h"
-#include "ulp_lp_core_interrupts.h"
-#include "ulp_lp_core_lp_timer_shared.h"
-#include "ulp_lp_core_memory_shared.h"
+#include <soc/soc_caps.h>
+#include <ulp_lp_core_utils.h>
+#include <ulp_lp_core_interrupts.h>
+#include <ulp_lp_core_lp_timer_shared.h>
+#include <ulp_lp_core_memory_shared.h>
 #include <soc.h>
 
 extern FUNC_NORETURN void z_cstart(void);
