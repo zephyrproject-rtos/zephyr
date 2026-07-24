@@ -28,6 +28,7 @@ extern "C" {
 #define	CTR_EL0_DMINLINE_MASK		BIT_MASK(4)
 #define	CTR_EL0_CWG_SHIFT		24
 #define	CTR_EL0_CWG_MASK		BIT_MASK(4)
+#define	CTR_EL0_IMINLINE_MASK		BIT_MASK(4)
 
 /* clidr_el1 */
 #define CLIDR_EL1_LOC_SHIFT		24
@@ -277,11 +278,35 @@ static ALWAYS_INLINE void arch_dcache_disable(void)
 
 #if defined(CONFIG_ICACHE)
 
+#define ic_va_ops(op, val)						\
+({									\
+	__asm__ volatile ("ic " op ", %0" :: "r" (val) : "memory");	\
+})
+
+static size_t icache_line_size;
+
 static ALWAYS_INLINE size_t arch_icache_line_size_get(void)
 {
-	return -ENOTSUP;
+	uint64_t ctr_el0;
+	uint32_t iminline;
+
+	if (icache_line_size) {
+		return icache_line_size;
+	}
+
+	ctr_el0 = read_sysreg(CTR_EL0);
+
+	iminline = ctr_el0 & CTR_EL0_IMINLINE_MASK;
+
+	icache_line_size = 4 << iminline;
+
+	return icache_line_size;
 }
 
+/* An I-cache holds no dirty data: "flush" is meaningless, so only the
+ * invalidate operations exist. Callers modifying code must clean the
+ * D-side to the point of unification before invalidating here.
+ */
 static ALWAYS_INLINE int arch_icache_flush_all(void)
 {
 	return -ENOTSUP;
@@ -289,12 +314,16 @@ static ALWAYS_INLINE int arch_icache_flush_all(void)
 
 static ALWAYS_INLINE int arch_icache_invd_all(void)
 {
-	return -ENOTSUP;
+	__asm__ volatile ("ic ialluis" ::: "memory");
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+
+	return 0;
 }
 
 static ALWAYS_INLINE int arch_icache_flush_and_invd_all(void)
 {
-	return -ENOTSUP;
+	return arch_icache_invd_all();
 }
 
 static ALWAYS_INLINE int arch_icache_flush_range(void *addr, size_t size)
@@ -306,16 +335,28 @@ static ALWAYS_INLINE int arch_icache_flush_range(void *addr, size_t size)
 
 static ALWAYS_INLINE int arch_icache_invd_range(void *addr, size_t size)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(size);
-	return -ENOTSUP;
+	size_t line_size;
+	uintptr_t start_addr = (uintptr_t)addr;
+	uintptr_t end_addr = start_addr + size;
+
+	line_size = arch_icache_line_size_get();
+
+	start_addr &= ~(line_size - 1);
+
+	while (start_addr < end_addr) {
+		ic_va_ops("ivau", start_addr);
+		start_addr += line_size;
+	}
+
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+
+	return 0;
 }
 
 static ALWAYS_INLINE int arch_icache_flush_and_invd_range(void *addr, size_t size)
 {
-	ARG_UNUSED(addr);
-	ARG_UNUSED(size);
-	return -ENOTSUP;
+	return arch_icache_invd_range(addr, size);
 }
 
 static ALWAYS_INLINE void arch_icache_enable(void)
