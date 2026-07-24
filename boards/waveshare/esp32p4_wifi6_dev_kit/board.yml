@@ -1,0 +1,6 @@
+board:
+  name: esp32p4_wifi6_dev_kit
+  full_name: ESP32-P4-WIFI6-Dev-Kit
+  vendor: waveshare
+  socs:
+  - name: esp32p4
