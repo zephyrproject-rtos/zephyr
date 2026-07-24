@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include "nsi_cpu_es_if.h"
+#include <nsi_cpu_es_if.h>
 
 /*
  * This file provides the interfaces the POSIX architecture and soc_inf

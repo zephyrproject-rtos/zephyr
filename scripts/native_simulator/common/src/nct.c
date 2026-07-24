@@ -70,8 +70,8 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <errno.h>
-#include "nsi_utils.h"
-#include "nct_if.h"
+#include <nsi_utils.h>
+#include <nct_if.h>
 #include "nsi_internal.h"
 #include "nsi_safe_call.h"
 

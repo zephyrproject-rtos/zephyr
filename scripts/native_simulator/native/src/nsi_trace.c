@@ -9,10 +9,10 @@
 #include <stdio.h>  /* for printfs */
 #include <stdarg.h> /* for va args */
 #include <unistd.h>
-#include "nsi_tasks.h"
-#include "nsi_cmdline.h"
-#include "nsi_tracing.h"
-#include "nsi_main.h"
+#include <nsi_tasks.h>
+#include <nsi_cmdline.h>
+#include <nsi_tracing.h>
+#include <nsi_main.h>
 
 /**
  * Are stdout and stderr connected to a tty

@@ -7,7 +7,7 @@
 #include <stdbool.h>
 #include "nsi_config.h"
 #include "nsi_cpun_if.h"
-#include "nsi_tracing.h"
+#include <nsi_tracing.h>
 
 static bool cpu_auto_start[NSI_N_CPUS] = {true}; /* Only the first core starts on its own */
 static bool cpu_booted[NSI_N_CPUS];

@@ -19,8 +19,8 @@
 #include <stdbool.h>
 #include <fcntl.h>
 
-#include "nsi_errno.h"
-#include "nsi_fcntl.h"
+#include <nsi_errno.h>
+#include <nsi_fcntl.h>
 
 static int nsi_fcntl_to_mid_(int flags, bool strict)
 {

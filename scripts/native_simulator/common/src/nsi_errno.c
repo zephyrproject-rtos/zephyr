@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nsi_errno.h"
-#include "nsi_utils.h"
+#include <nsi_errno.h>
+#include <nsi_utils.h>
 
 struct nsi_errno_mid_map {
 	/** Embedded/host error code */

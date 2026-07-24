@@ -20,7 +20,7 @@
 #ifndef BOARDS_POSIX_NATIVE_SIM_BOARD_SOC_H
 #define BOARDS_POSIX_NATIVE_SIM_BOARD_SOC_H
 
-#include "nsi_cpu0_interrupts.h"
+#include <nsi_cpu0_interrupts.h>
 
 #define NSOS_IRQ 3
 

@@ -19,7 +19,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include "nsi_cmdline_main_if.h"
+#include <nsi_cmdline_main_if.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -9,7 +9,7 @@
 
 #include <stdbool.h>
 #include <zephyr/toolchain.h>
-#include "board_soc.h"
+#include <board_soc.h>
 #include "posix_soc.h"
 #include "posix_native_task.h"
 
