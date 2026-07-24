@@ -189,13 +189,29 @@
 			};
 		};
 
-		/* Wi-Fi ROM regions */
+		/* Wi-Fi ROM regions (mask-programmed, not field-flashable) */
 		wifi_lmac_rom: memory@28080000 {
+			compatible = "mmio-sram";
 			reg = <0x28080000 DT_SIZE_K(320)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/* Default entry point when no ROM patch is applied. */
+			wifi_lmac_rom_entry: entry@28080172 {
+				reg = <0x28080172>;
+			};
 		};
 
 		wifi_umac_rom: memory@28180000 {
+			compatible = "mmio-sram";
 			reg = <0x28180000 DT_SIZE_K(512)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			/* Default entry point when no ROM patch is applied. */
+			wifi_umac_rom_entry: entry@2818011c {
+				reg = <0x2818011c>;
+			};
 		};
 
 		/* Memory-mapped aperture for MSPI. */

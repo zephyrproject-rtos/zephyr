@@ -28,6 +28,15 @@ config SOC_NRF7120_ENGA_CPUFLPR
 
 if SOC_SERIES_NRF71
 
+config SOC_NRF71_WICR
+	bool
+	default y if DT_HAS_NORDIC_NRF_WICR_ENABLED
+	select NRFX_MRAMC if !TRUSTED_EXECUTION_NONSECURE
+	help
+	  Program the Wi-Fi Information Configuration Registers (WICR) at boot.
+	  WICR is an NVM region for configuring Wi-Fi related settings and
+	  values.
+
 config SOC_NRF71_WIFI_DAP
 	bool "nRF71 Wi-Fi Debug access port for debugging"
 	help
