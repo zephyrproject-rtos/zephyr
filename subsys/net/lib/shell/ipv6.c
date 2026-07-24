@@ -133,7 +133,7 @@ static void address_info_cb(struct net_if *iface, void *user_data)
 	snprintk(remaining_str, sizeof(remaining_str) - 1, "infinite");
 #endif /* CONFIG_NET_NATIVE_IPV6 */
 
-		PR("%s  \t%s\t%14s\t%ld\t%s/%d%s\n",
+		PR("%-8s  \t%s\t%14s\t%ld\t%s/%d%s\n",
 		   addrtype2str(ipv6->unicast[i].addr_type),
 		   addrstate2str(ipv6->unicast[i].addr_state),
 		   remaining_str, atomic_get(&ipv6->unicast[i].atomic_ref),
@@ -217,6 +217,33 @@ static int cmd_net_ipv6(const struct shell *sh, size_t argc, char *argv[])
 	PR("Path MTU Discovery (PMTU)                 : %s\n",
 	   IS_ENABLED(CONFIG_NET_IPV6_PMTU) ? "enabled" : "disabled");
 
+	PR("IPv6 forwarding                           : %s\n",
+	   IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) ? "enabled" : "disabled");
+	PR("IPv6 routing                              : %s\n",
+	   IS_ENABLED(CONFIG_NET_IPV6_ROUTE) ? "enabled" : "disabled");
+	PR("Transmit IPv6 RA messages                 : %s\n",
+	   IS_ENABLED(CONFIG_NET_IPV6_RA) ? "enabled" : "disabled");
+#if defined(CONFIG_NET_IPV6_RA)
+	PR("IPv6 RA transmit interval                 : %d sec\n",
+	   CONFIG_NET_IPV6_RA_INTERVAL);
+	PR("IPv6 RA router lifetime                   : %d sec\n",
+	   CONFIG_NET_IPV6_RA_ROUTER_LIFETIME);
+#endif
+	PR("DHCPv6 client                             : %s\n",
+	   IS_ENABLED(CONFIG_NET_DHCPV6) ? "enabled" : "disabled");
+	PR("DHCPv6 requesting router (downstream RA)  : %s\n",
+	   (IS_ENABLED(CONFIG_NET_DHCPV6) && IS_ENABLED(CONFIG_NET_IPV6_RA)) ?
+	   "enabled" : "disabled");
+#if defined(CONFIG_NET_DHCPV6_MAX_DOWNSTREAM)
+	PR("DHCPv6 max downstream links               : %d\n",
+	   CONFIG_NET_DHCPV6_MAX_DOWNSTREAM);
+#endif
+	PR("DHCPv6 server                             : %s\n",
+	   IS_ENABLED(CONFIG_NET_DHCPV6_SERVER) ? "enabled" : "disabled");
+#if defined(CONFIG_NET_DHCPV6_SERVER)
+	PR("DHCPv6 server max leases                  : %d\n",
+	   CONFIG_NET_DHCPV6_SERVER_MAX_LEASES);
+#endif
 #endif /* CONFIG_NET_NATIVE_IPV6 */
 
 #if defined(CONFIG_NET_IPV6)

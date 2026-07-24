@@ -395,6 +395,40 @@ config NET_IPV6_RA_RDNSS
 	  Support Router Advertisement Recursive DNS Server option.
 	  See RFC 6106 for details. The value depends on your network needs.
 
+config NET_IPV6_RA
+	bool "Transmit IPv6 Router Advertisements (router role)"
+	depends on NET_IPV6_ND
+	help
+	  Enable the ability for an interface to act as an IPv6 router:
+	  respond to received Router Solicitations and periodically transmit
+	  unsolicited Router Advertisements. The advertisements include a
+	  Prefix Information Option for each prefix that has been marked for
+	  advertisement on the interface (for example a prefix obtained via
+	  DHCPv6 prefix delegation, RFC 8415). This is required in order to
+	  delegate a prefix onto a downstream link so that hosts on that link
+	  can configure addresses via SLAAC.
+
+if NET_IPV6_RA
+
+config NET_IPV6_RA_INTERVAL
+	int "Interval between unsolicited Router Advertisements (seconds)"
+	range 4 1800
+	default 600
+	help
+	  Maximum time in seconds between successive unsolicited Router
+	  Advertisement transmissions on a router interface.
+
+config NET_IPV6_RA_ROUTER_LIFETIME
+	int "Router lifetime advertised in Router Advertisements (seconds)"
+	range 0 9000
+	default 1800
+	help
+	  Lifetime in seconds advertised in the Router Advertisement header.
+	  A value of 0 indicates that the node is not to be used as a default
+	  router.
+
+endif # NET_IPV6_RA
+
 choice NET_IPV6_IID_GENERATION
 	prompt "IPv6 Interface Identifier (IID) generation"
 	default NET_IPV6_IID_EUI_64

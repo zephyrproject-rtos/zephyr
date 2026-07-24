@@ -214,7 +214,10 @@ struct net_if_ipv6_prefix {
 	/** Is this prefix used or not */
 	uint8_t is_used : 1;
 
-	uint8_t _unused : 6;
+	/** Is this prefix advertised in Router Advertisements */
+	uint8_t is_advertised : 1;
+
+	uint8_t _unused : 5;
 };
 
 /**
@@ -387,6 +390,13 @@ struct net_if_ipv6 {
 
 	/** IPv6 multicast hop limit */
 	uint8_t mcast_hop_limit;
+
+#if defined(CONFIG_NET_IPV6_RA) && defined(CONFIG_NET_NATIVE_IPV6)
+	/** Is this interface acting as an IPv6 router, i.e. transmitting
+	 * Router Advertisements.
+	 */
+	uint8_t is_router : 1;
+#endif
 };
 
 #if defined(CONFIG_NET_DHCPV6) && defined(CONFIG_NET_NATIVE_IPV6)
@@ -1949,6 +1959,47 @@ void net_if_ipv6_prefix_set_timer(struct net_if_ipv6_prefix *prefix,
  * @param prefix IPv6 address
  */
 void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix);
+
+/**
+ * @brief Mark (or unmark) an IPv6 prefix for advertisement in Router
+ * Advertisements sent on the interface.
+ *
+ * The interface must have been made a router with
+ * net_if_ipv6_router_start() for advertisements to be transmitted.
+ *
+ * @param iface Network interface
+ * @param prefix IPv6 prefix address
+ * @param len Prefix length
+ * @param advertise True to advertise the prefix, false to stop advertising it
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int net_if_ipv6_prefix_set_advertise(struct net_if *iface,
+				     const struct net_in6_addr *prefix,
+				     uint8_t len, bool advertise);
+
+/**
+ * @brief Enable the IPv6 router role on the interface.
+ *
+ * When enabled the interface responds to received Router Solicitations and
+ * periodically transmits unsolicited Router Advertisements, including a Prefix
+ * Information Option for each prefix marked for advertisement (see
+ * net_if_ipv6_prefix_set_advertise()).
+ *
+ * @param iface Network interface
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int net_if_ipv6_router_start(struct net_if *iface);
+
+/**
+ * @brief Disable the IPv6 router role on the interface.
+ *
+ * @param iface Network interface
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int net_if_ipv6_router_stop(struct net_if *iface);
 
 /**
  * @brief Check if this IPv6 address is part of the subnet of our
