@@ -237,14 +237,14 @@ arch_user_string_nlen:
 
 	/* This code might page fault */
 strlen_loop:
+	cmp	%rsi, %rax		/* Max length reached? */
+	je	strlen_done
 .global z_x86_user_string_nlen_fault_start
 z_x86_user_string_nlen_fault_start:
 	cmpb	$0x0, (%rdi, %rax, 1)	/* *(RDI + RAX) == 0? Could fault. */
 
 .global z_x86_user_string_nlen_fault_end
 z_x86_user_string_nlen_fault_end:
-	je	strlen_done
-	cmp	%rsi, %rax		/* Max length reached? */
 	je	strlen_done
 	inc	%rax			/* EAX++ and loop again */
 	jmp	strlen_loop

@@ -91,6 +91,27 @@ void xtensa_exc_itlb_multihit_handle(void *vaddr);
  */
 bool xtensa_exc_load_store_ring_error_check(void *bsa_p);
 
+#ifdef CONFIG_USERSPACE
+/**
+ * @brief Check if a memory region is readable in privileged (kernel) mode.
+ *
+ * Given a memory region, return whether the current memory management
+ * hardware configuration would allow the kernel to read that region.
+ * Unlike arch_buffer_validate(), this does not require the region to be
+ * accessible from user mode. It is used by arch_user_string_nlen() to
+ * make sure the string can be examined without causing memory access
+ * faults, as user mode accessibility is verified separately by the
+ * syscall marshalling layer.
+ *
+ * @param addr start address of the buffer
+ * @param size the size of the buffer
+ *
+ * @retval true if the region is readable in kernel mode
+ * @retval false otherwise
+ */
+bool xtensa_buffer_is_kernel_readable(const void *addr, size_t size);
+#endif /* CONFIG_USERSPACE */
+
 /**
  * @}
  */

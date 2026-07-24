@@ -251,19 +251,22 @@ SECTION_FUNC(TEXT, arch_user_string_nlen)
 	/* Loop setup.
 	 * r12 (position locator) = s - 1
 	 * r0 (length counter return value)) = 0
-	 * lp_count = maxsize + 1
+	 * lp_count = maxsize
 	 * */
 	sub r12, r0, 0x1
 	mov_s r0, 0
-	add_s r1, r1, 1
 	mov lp_count, r1
 
 strlen_loop:
+	/* max length reached? then stop without reading any further */
+	breq lp_count, 0, strlen_done
+
 z_arc_user_string_nlen_fault_start:
 	/* is the byte at ++r12 a NULL? if so, we're done. Might fault! */
 	ldb.aw r1, [r12, 1]
 
 z_arc_user_string_nlen_fault_end:
+	sub lp_count, lp_count, 0x1
 	brne_s r1, 0, not_null
 
 strlen_done:
@@ -279,12 +282,6 @@ z_arc_user_string_nlen_fixup:
 	st_s r1, [r2, 0]
 
 not_null:
-	/* check if we've hit the maximum, if so we're done. */
-	brne.d.nt lp_count, 0x1, inc_len
-	sub lp_count, lp_count, 0x1
-	b_s strlen_done
-
-inc_len:
 	/* increment length measurement, loop again */
 	add_s r0, r0, 1
 	b_s strlen_loop

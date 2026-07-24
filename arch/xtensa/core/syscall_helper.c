@@ -160,27 +160,25 @@ bool xtensa_is_user_context(void)
 
 size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)
 {
-	/* Check if we can actually read the whole length.
+	if (maxsize == 0) {
+		*err_arg = 0;
+
+		return 0;
+	}
+
+	/* Xtensa cannot safely recover from a fault while examining a string.
+	 * For MMU systems, an unmapped address can trigger an infinite DTLB
+	 * miss storm if its L2 page table does not exist. For MPU systems,
+	 * an access fault terminates the thread. Validate that the requested
+	 * range is readable in kernel mode before calling strnlen().
 	 *
-	 * arch_user_string_nlen() is supposed to naively go through
-	 * the string passed from user thread, and relies on page faults
-	 * to catch inaccessible strings, such that user thread can pass
-	 * a string that is shorter than the max length this function
-	 * caller expects. So at least we want to make sure kernel has
-	 * access to the whole length, aka. memory being mapped.
-	 * Note that arch_user_string_nlen() should never result in
-	 * thread termination due to page faults, and must always
-	 * return to the caller with err_arg set or cleared.
-	 * For MMU systems, unmapped memory will result in a DTLB miss
-	 * and that might trigger an infinite DTLB miss storm if
-	 * the corresponding L2 page table never exists in the first
-	 * place (which would result in DTLB misses through L1 page
-	 * table), until some other exceptions occur to break
-	 * the cycle.
-	 * For MPU systems, this would simply results in access errors
-	 * and the exception handler will terminate the thread.
+	 * Only kernel mode readability is checked here: per
+	 * the k_usermode_string_nlen() contract, user mode accessibility
+	 * is verified separately by the syscall marshalling layer (e.g.
+	 * via K_SYSCALL_MEMORY_READ()) once the length is known, so
+	 * kernel mode callers must be able to measure kernel strings.
 	 */
-	if (arch_buffer_validate(s, maxsize, 0)) {
+	if (!xtensa_buffer_is_kernel_readable(s, maxsize)) {
 		/*
 		 * API says we need to set err_arg to -1 if there are
 		 * any errors.
