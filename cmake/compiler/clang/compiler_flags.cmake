@@ -40,6 +40,7 @@ check_set_compiler_property(PROPERTY warning_base
                             -Wno-unused-but-set-variable
                             -Wno-typedef-redefinition
                             -Wno-deprecated-non-prototype
+                            -Wno-parentheses-equality
 )
 
 # C implicit promotion rules will want to make floats into doubles very easily
