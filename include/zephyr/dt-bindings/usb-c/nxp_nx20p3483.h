@@ -8,8 +8,8 @@
  * @brief Values used to define the sink overvoltage and source overcurrent protections thresholds.
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_USBC_NXP_NX20P3483_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_USBC_NXP_NX20P3483_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_USB_C_NXP_NX20P3483_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_USB_C_NXP_NX20P3483_H_
 
 /** Voltage limit of 6.0V */
 #define NX20P3483_U_THRESHOLD_6_0 0
@@ -59,4 +59,4 @@
 /** Current limit of 3400mA */
 #define NX20P3483_I_THRESHOLD_3_400 15
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_USBC_NXP_NX20P3483_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_USB_C_NXP_NX20P3483_H_ */

@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PPC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PPC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_PPC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_PPC_H_
 
 /**
  * @brief USB Type-C Power Path Controller
@@ -305,4 +305,4 @@ static inline int ppc_dump_regs(const struct device *dev)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_PPC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_PPC_H_ */
