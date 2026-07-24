@@ -12,8 +12,24 @@
 
 / {
 	soc {
-		flash0: flash@0 {
-			reg = <0x0 DT_SIZE_K(512)>;
+		nvmctrl: flash-controller@41004000 {
+			flash0: flash@0 {
+				/* Reg size computation:
+				 * Main Flash: 512kB (0x0 to 0x0007-ffff),
+				 * Unsupported Region: 3584kB (0x0008-0000 to 0x003f-ffff),
+				 * Data Flash: 8kB (0x0040-0000 to 0x0040-1fff),
+				 * Unsupported Region: 4104kB (0x0040-2000 to 0x0080-3fff),
+				 * User-row: 256B (0x0080-4000 to 0x0080-4100)
+				 */
+				reg = <0x0
+				       (DT_SIZE_K(512) + DT_SIZE_K(3584) +
+					DT_SIZE_K(8) + DT_SIZE_K(4104) + 256)>;
+				ranges = <0x0 0x0
+					  (DT_SIZE_K(512) + DT_SIZE_K(3584) +
+					   DT_SIZE_K(8) + DT_SIZE_K(4104) + 256)>;
+				unsupported-region = <0x00080000 0x003fffff>,
+						     <0x00402000 0x00803fff>;
+			};
 		};
 
 		sram0: memory@20000000 {

@@ -10,6 +10,10 @@ common:
     - flash
     - memc
 tests:
+  drivers.flash.interface_test.default:
+    timeout: 600
+    platform_allow:
+      - pic32cm_jh01_cpro
   drivers.flash.interface_test.build_only:
     harness: ztest
     build_only: true

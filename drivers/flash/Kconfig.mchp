@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config FLASH_MCHP_NVMCTRL_G1
@@ -13,6 +13,19 @@ config FLASH_MCHP_NVMCTRL_G1
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enable Flash driver for Microchip Non Volatile Memory Controller.
+
+config FLASH_MCHP_NVMCTRL_G2
+	bool "Microchip G2 Flash Driver for NVMCTRL"
+	default y
+	depends on DT_HAS_MICROCHIP_NVMCTRL_G2_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EX_OP
+	select FLASH_EX_OP_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	help
+	  Enable Microchip G2 Non-Volatile Memory Controller for Flash.
 
 config FLASH_HAS_UNALIGNED_WRITE
 	bool "Provide unaligned write support"
