@@ -50,6 +50,17 @@ extern unsigned int z_clock_hw_cycles_per_sec;
 #define MIN_DELAY DT_PROP_OR(DT_NODELABEL(systick), zephyr_min_timeout_cycles, \
 			MAX(1024U, ((uint32_t)CYC_PER_TICK/16U)))
 
+/* Validate the configured SysTick timer priority:
+ * _CHECK_PRIO already compares against IRQ_PRIO_LOWEST, which encodes the
+ * kernel reserved level offset (_IRQ_PRIO_OFFSET), so pass the user defined
+ * value here
+ */
+_CHECK_PRIO(CONFIG_CORTEX_M_SYSTICK_INTERRUPT_PRIORITY, 0);
+
+/* Apply the kernel reserved level offset to deduce the NVIC priority. */
+#define SYSTICK_IRQ_PRIO \
+	(CONFIG_CORTEX_M_SYSTICK_INTERRUPT_PRIORITY + _IRQ_PRIO_OFFSET)
+
 static uint32_t last_load;
 
 #ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
@@ -583,7 +594,7 @@ void sys_clock_idle_exit(void)
 		if (!IS_ENABLED(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)) {
 			SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
 		} else {
-			NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+			NVIC_SetPriority(SysTick_IRQn, SYSTICK_IRQ_PRIO);
 			SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
 					  SysTick_CTRL_TICKINT_Msk |
 					  SYSTICK_CTRL_CLKSOURCE_MSK_GET());
@@ -601,7 +612,7 @@ void sys_clock_disable(void)
 static int sys_clock_driver_init(void)
 {
 
-	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+	NVIC_SetPriority(SysTick_IRQn, SYSTICK_IRQ_PRIO);
 	last_load = CYC_PER_TICK;
 	overflow_cyc = 0U;
 	SysTick->LOAD = last_load - 1;
