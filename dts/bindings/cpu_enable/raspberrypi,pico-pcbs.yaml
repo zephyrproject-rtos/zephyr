@@ -1,0 +1,39 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Raspberry Pi Pico Processor Controlled Boot Sequence
+
+description: |
+  The Raspberry Pi Pico family of SoCs uses a series of SIO inter-processor
+  FIFO reads/writes to bring CPU1 out of its quiescent state. The launch
+  sequence points CPU1 to its stack pointer and program counter.
+
+  CPU0 is responsible for relocating CPU1's image if necessary (e.g. if
+  CPU1 is built to execute from SRAM but is loaded into flash).
+
+  Example:
+    / {
+        cpu1-launcher {
+            compatible = "raspberrypi,pico-pcbs";
+            execution-memory = <&sram0_cpu1>;
+            source-memory = <&cpu1_slot0_partition>;
+            status = "okay";
+        };
+    };
+
+compatible: "raspberrypi,pico-pcbs"
+
+include: base.yaml
+
+properties:
+  execution-memory:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the memory region or partition from which the secondary CPU executes.
+
+  source-memory:
+    type: phandle
+    description: |
+      Phandle to the memory region or partition from which the secondary CPU's image is
+      copied into execution-memory.
