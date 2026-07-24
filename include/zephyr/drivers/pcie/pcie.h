@@ -578,6 +578,10 @@ extern bool pcie_connect_dynamic_irq(pcie_bdf_t bdf,
 	ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
 			      isr_p, isr_param_p, flags_p)
 
+/* MSI-X Redirection Table Definition Layouts */
+#define PCI_MSIX_TABLE_OFFSET_MASK 0xFFFFFFF8U
+#define PCI_MSIX_TABLE_BIR_MASK    0x00000007U
+
 #ifdef __cplusplus
 }
 #endif
