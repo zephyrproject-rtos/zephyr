@@ -8,6 +8,7 @@
 #include <inttypes.h>
 #include <xtensa/config/specreg.h>
 #include <xtensa_backtrace.h>
+#include <zephyr/arch/xtensa/xtensa_ptr.h>
 #include <zephyr/arch/common/exc_handle.h>
 
 #include <xtensa_exc.h>

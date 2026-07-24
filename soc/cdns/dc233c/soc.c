@@ -2,15 +2,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
-#ifndef ZEPHYR_SOC_XTENSA_DC233C_BACKTRACE_HELPERS_H_
-#define ZEPHYR_SOC_XTENSA_DC233C_BACKTRACE_HELPERS_H_
-
 #include <zephyr/linker/linker-defs.h>
-
 #include <xtensa/config/core-isa.h>
+#include <zephyr/arch/xtensa/xtensa_ptr.h>
 
-static inline bool xtensa_dc233c_ptr_executable(const void *p)
+bool xtensa_soc_ptr_executable(const void *p)
 {
 	bool in_text = ((p >= (void *)__text_region_start) &&
 			(p <= (void *)__text_region_end));
@@ -19,5 +15,3 @@ static inline bool xtensa_dc233c_ptr_executable(const void *p)
 
 	return (in_text || in_vecbase);
 }
-
-#endif /* ZEPHYR_SOC_XTENSA_DC233C_BACKTRACE_HELPERS_H_ */
