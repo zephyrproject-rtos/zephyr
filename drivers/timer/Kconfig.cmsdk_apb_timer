@@ -3,12 +3,11 @@
 
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
-DT_COMPAT_CMSDK_TIMER := arm,cmsdk-timer
 
 config CMSDK_APB_TIMER
 	bool "CMSDK APB Timer as system clock"
 	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
-	depends on $(dt_node_has_compat,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),$(DT_COMPAT_CMSDK_TIMER))
+	depends on $(dt_node_has_compat,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),$(DT_COMPAT_ARM_CMSDK_TIMER))
 	select TICKLESS_CAPABLE
 	default y if SYS_CLOCK_EXISTS
 	help

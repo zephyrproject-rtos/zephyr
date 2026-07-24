@@ -3,7 +3,6 @@
 
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
-DT_COMPAT_NXP_RTC_JDP := nxp,rtc-jdp
 
 config MCUX_RTC_JDP_TIMER
 	bool "MCUX RTC JDP system timer"
