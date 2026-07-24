@@ -8,7 +8,6 @@
 #include <stddef.h>
 #include <sys/types.h>
 
-#include <kernel_arch_interface.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/mm.h>
 #include <zephyr/sys/fdtable.h>
