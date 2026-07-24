@@ -29,6 +29,11 @@ config HAPTICS_CS40L26_INTERRUPT
 		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),int-gpios)
 	select GPIO
 
+config HAPTICS_CS40L26_TRIGGER
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L26),trigger-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),trigger-gpios)
+	select GPIO
+
 config HAPTICS_CS40L26_FLASH
 	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L26),flash-storage) || \
 		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),flash-storage)

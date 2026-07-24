@@ -43,6 +43,7 @@ LOG_MODULE_REGISTER(CS40L26, CONFIG_HAPTICS_LOG_LEVEL);
 /* Masks */
 #define CS40L26_MASK_F0_ENABLE   BIT(0)
 #define CS40L26_MASK_REDC_ENABLE BIT(1)
+#define CS40L26_MASK_ATTENUATION GENMASK(11, 9)
 
 /* Unmasked interrupts */
 #define CS40L26_DSP_VIRTUAL2_MBOX_WR_MASK1 BIT(31)
@@ -112,6 +113,20 @@ LOG_MODULE_REGISTER(CS40L26, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L26_NUM_ROM_EFFECTS     39
 #define CS40L26_NUM_BUZ_EFFECTS     1
 #define CS40L26_FLASH_MEMORY_ERASED 0xFFFFFFFF
+
+enum cs40l26_gpios {
+	CS40L26_GPIO1,
+	CS40L26_GPIO2,
+	CS40L26_GPIO3,
+	CS40L26_GPIO4,
+};
+
+static const uint8_t cs40l26_trigger_offsets[] = {
+	[CS40L26_GPIO1] = 0x00,
+	[CS40L26_GPIO2] = 0x08,
+	[CS40L26_GPIO3] = 0x10,
+	[CS40L26_GPIO4] = 0x18,
+};
 
 static const struct cs40lxx_multi_write cs40l26_irq_clear[] = {
 	{.addr = CS40L26_REG_IRQ1_EINT_1,
@@ -246,6 +261,42 @@ static int cs40l26_reset_mailbox(const struct device *const dev)
 	}
 
 	return cs40l26_firmware_write(dev, CS40L26_REG_MAILBOX_QUEUE_RD, mbox_ptr);
+}
+
+static int cs40l26_get_trigger_gpio(const struct device *const dev,
+				    const struct gpio_dt_spec *const gpio, uint8_t *const index)
+{
+	const struct cs40l26_config *const config = dev->config;
+	uint8_t i;
+
+	if (gpio == NULL) {
+		return -EINVAL;
+	}
+
+	for (i = 0; i < config->num_triggers; i++) {
+		if (gpio->port == config->trigger_gpios[i].port &&
+		    gpio->pin == config->trigger_gpios[i].pin) {
+			*index = config->trigger_mapping[i];
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
+static int cs40l26_trigger_config(const struct device *const dev)
+{
+	const struct cs40l26_config *const config = dev->config;
+	int ret;
+
+	for (int i = 0; i < config->num_triggers; i++) {
+		ret = gpio_pin_configure_dt(&config->trigger_gpios[i], GPIO_OUTPUT);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return 0;
 }
 
 static void cs40l26_error_callback(const struct device *const dev, const uint32_t error_bitmask)
@@ -899,6 +950,14 @@ static int cs40l26_bringup(const struct device *const dev)
 		}
 	}
 
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_TRIGGER) && config->trigger_gpios != NULL) {
+		ret = cs40l26_trigger_config(dev);
+		if (ret < 0) {
+			LOG_INST_DBG(config->log, "failed trigger configuration (%d)", ret);
+			return ret;
+		}
+	}
+
 	return cs40l26_dsp_config(dev);
 }
 
@@ -1038,6 +1097,68 @@ int cs40l26_configure_buzz(const struct device *const dev, const uint32_t freque
 	ret = cs40l26_firmware_write(dev, CS40L26_REG_BUZZ_DURATION, duration);
 
 error_mutex:
+	(void)k_mutex_unlock(&data->lock);
+
+error_pm:
+	(void)pm_device_runtime_put(dev);
+
+	return ret;
+}
+
+int cs40l26_configure_trigger(const struct device *const dev, const struct gpio_dt_spec *const gpio,
+			      const enum haptics_source src, const union haptics_config *const cfg,
+			      const int8_t attenuation, const enum cs40l26_trigger_edge edge)
+{
+	const struct cs40l26_config *const config = dev->config;
+	struct cs40l26_data *const data = dev->data;
+	uint8_t i, offset;
+	uint32_t playback;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_HAPTICS_CS40L26_TRIGGER) || config->trigger_gpios == NULL) {
+		LOG_INST_DBG(config->log, "no trigger GPIOs provided (%d)", -EINVAL);
+		return -EINVAL;
+	}
+
+	if (!cs40l26_valid_wavetable_source(dev, src, cfg)) {
+		LOG_INST_ERR(config->log, "invalid wavetable selection (%d)", -EINVAL);
+		return -EINVAL;
+	}
+
+	ret = cs40l26_get_trigger_gpio(dev, gpio, &i);
+	if (ret < 0) {
+		LOG_INST_ERR(config->log, "failed to retrieve trigger GPIO (%d)", ret);
+		return ret;
+	}
+
+	offset = cs40l26_trigger_offsets[i] + ((edge == CS40L26_FALLING_EDGE) ? 4 : 0);
+
+	playback = FIELD_PREP(CS40L26_MASK_ATTENUATION, abs(attenuation)) | cfg->idx;
+
+	switch ((int)src) {
+	case HAPTICS_SOURCE_ROM:
+		break;
+	case CS40L26_SOURCE_BUZ:
+		playback |= CS40L5X_MASK_BUZ_BANK;
+		break;
+	default:
+		LOG_INST_DBG(config->log, "invalid source for trigger effects (%d)", -EINVAL);
+		return -EINVAL;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = k_mutex_lock(&data->lock, CS40L26_T_WAIT);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for lock (%d)", ret);
+		goto error_pm;
+	}
+
+	ret = cs40l26_firmware_write_offset(dev, CS40L26_REG_GPIO_EVENT_BASE, playback, offset);
+
 	(void)k_mutex_unlock(&data->lock);
 
 error_pm:
@@ -1375,6 +1496,18 @@ __maybe_unused static int cs40l26_deinit(const struct device *dev)
 							 .error_callback = NULL,                   \
 							 .output = CS40L26_ROM_BANK_CMD}
 
+#define HAPTICS_CS40L26_GET_GPIO(inst, prop, idx) GPIO_DT_SPEC_GET_BY_IDX(inst, prop, idx),
+
+#define HAPTICS_CS40L26_TRIGGER_GPIOS(inst)                                                        \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trigger_gpios),					   \
+		((struct gpio_dt_spec[]){DT_INST_FOREACH_PROP_ELEM(inst, trigger_gpios,		   \
+								       HAPTICS_CS40L26_GET_GPIO)}),\
+		    (NULL))
+
+#define HAPTICS_CS40L26_TRIGGER_MAPPING(inst)                                                      \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trigger_mapping),				   \
+		    ((int[])DT_INST_PROP(inst, trigger_mapping)), (NULL))
+
 #define HAPTICS_CS40L26_BUS(inst)                                                                  \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
 		(.io_bus.bus.i2c = I2C_DT_SPEC_INST_GET(inst), .io_bus.io = &cs40lxx_io_i2c,),	   \
@@ -1403,6 +1536,9 @@ __maybe_unused static int cs40l26_deinit(const struct device *dev)
 		.dev_id = id,                                                                      \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
 		.interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                  \
+		.trigger_gpios = HAPTICS_CS40L26_TRIGGER_GPIOS(inst),                              \
+		.trigger_mapping = HAPTICS_CS40L26_TRIGGER_MAPPING(inst),                          \
+		.num_triggers = DT_INST_PROP_LEN_OR(inst, trigger_gpios, 0),                       \
 		LOG_INSTANCE_PTR_INIT(log, DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(inst)), inst)       \
 			HAPTICS_CS40L26_BUS(inst) HAPTICS_CS40L26_FLASH(inst)}
 

@@ -214,6 +214,23 @@ enum cs40l5x_irq {
 	CS40L5X_INT22,
 };
 
+enum cs40l5x_gpios {
+	CS40L5X_GPIO3 = 3,
+	CS40L5X_GPIO4,
+	CS40L5X_GPIO5,
+	CS40L5X_GPIO6,
+	CS40L5X_GPIO10 = 10,
+	CS40L5X_GPIO11,
+	CS40L5X_GPIO12,
+	CS40L5X_GPIO13,
+};
+
+static const uint8_t cs40l5x_trigger_offsets[] = {
+	[CS40L5X_GPIO3] = 0x00,  [CS40L5X_GPIO4] = 0x08,  [CS40L5X_GPIO5] = 0x10,
+	[CS40L5X_GPIO6] = 0x18,  [CS40L5X_GPIO10] = 0x20, [CS40L5X_GPIO11] = 0x28,
+	[CS40L5X_GPIO12] = 0x30, [CS40L5X_GPIO13] = 0x38,
+};
+
 static const struct cs40lxx_multi_write cs40l5x_b0_internal_boost[] = {
 	{.addr = 0x00002018U, CS40LXX_MULTI_WRITE_BE32(0x00003321U, 0x04000010U)},
 };
@@ -429,41 +446,33 @@ static int cs40l5x_get_trigger_gpio(const struct device *const dev,
 				    const struct gpio_dt_spec *const gpio, uint8_t *const index)
 {
 	const struct cs40l5x_config *const config = dev->config;
-	const struct cs40l5x_trigger_gpios *const gpios = &config->trigger_gpios;
+	uint8_t i;
 
 	if (gpio == NULL) {
 		return -EINVAL;
 	}
 
-	for (*index = 0; *index < gpios->num_gpio; (*index)++) {
-		if ((gpio->pin == gpios->gpio[*index].pin) &&
-		    (strcmp(gpio->port->name, gpios->gpio[*index].port->name) == 0)) {
-			break;
+	for (i = 0; i < config->num_triggers; i++) {
+		if (gpio->port == config->trigger_gpios[i].port &&
+		    gpio->pin == config->trigger_gpios[i].pin) {
+			*index = config->trigger_mapping[i];
+			return 0;
 		}
 	}
 
-	if (*index == gpios->num_gpio) {
-		return -EINVAL;
-	}
-
-	return 0;
+	return -EINVAL;
 }
 
 static int cs40l5x_trigger_config(const struct device *const dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
-	const struct cs40l5x_trigger_gpios *const gpios = &config->trigger_gpios;
 	int ret;
 
-	for (int i = 0; i < gpios->num_gpio; i++) {
-		ret = gpio_pin_configure_dt(&gpios->gpio[i], GPIO_OUTPUT);
+	for (int i = 0; i < config->num_triggers; i++) {
+		ret = gpio_pin_configure_dt(&config->trigger_gpios[i], GPIO_OUTPUT);
 		if (ret < 0) {
-			LOG_INST_DBG(config->log, "skipped %s (%d)", gpios->gpio[i].port->name,
-				     ret);
-			continue;
+			return ret;
 		}
-
-		gpios->ready[i] = true;
 	}
 
 	return 0;
@@ -1152,7 +1161,7 @@ static int cs40l5x_bringup(const struct device *const dev)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER) && config->trigger_gpios.num_gpio > 0) {
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER) && config->trigger_gpios != NULL) {
 		ret = cs40l5x_trigger_config(dev);
 		if (ret < 0) {
 			LOG_INST_DBG(config->log, "failed trigger configuration (%d)", ret);
@@ -1395,23 +1404,21 @@ error_pm:
 }
 
 int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_dt_spec *const gpio,
-			      const enum cs40l5x_bank bank, const uint8_t index,
-			      const enum cs40l5x_attenuation attenuation,
-			      const enum cs40l5x_trigger_edge edge)
+			      const enum haptics_source src, const union haptics_config *const cfg,
+			      const int8_t attenuation, const enum cs40l5x_trigger_edge edge)
 {
 	const struct cs40l5x_config *const config = dev->config;
-	const struct cs40l5x_trigger_gpios *const gpios = &config->trigger_gpios;
 	struct cs40l5x_data *const data = dev->data;
-	uint8_t *address, i;
+	uint8_t i, offset;
 	uint32_t playback;
 	int ret;
 
-	if (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER) || gpios->num_gpio == 0) {
+	if (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER) || config->trigger_gpios == NULL) {
 		LOG_INST_DBG(config->log, "no trigger GPIOs provided (%d)", -EINVAL);
 		return -EINVAL;
 	}
 
-	if (!cs40l5x_valid_wavetable_source(dev, bank, index)) {
+	if (!cs40l5x_valid_wavetable_source(dev, src, cfg)) {
 		LOG_INST_ERR(config->log, "invalid wavetable selection (%d)", -EINVAL);
 		return -EINVAL;
 	}
@@ -1422,13 +1429,18 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 		return ret;
 	}
 
-	playback = FIELD_PREP(CS40L5X_MASK_ATTENUATION, abs(attenuation)) | index;
+	offset = cs40l5x_trigger_offsets[i] + ((edge == CS40L5X_FALLING_EDGE) ? 4 : 0);
 
-	switch (bank) {
-	case CS40L5X_ROM_BANK:
+	playback = FIELD_PREP(CS40L5X_MASK_ATTENUATION, abs(attenuation)) | cfg->idx;
+
+	switch ((int)src) {
+	case HAPTICS_SOURCE_ROM:
 		break;
-	case CS40L5X_CUSTOM_BANK:
-		playback |= CS40L5X_MASK_CUSTOM_PLAYBACK;
+	case CS40L5X_SOURCE_BUZ:
+		playback |= CS40L5X_MASK_BUZ_BANK;
+		break;
+	case CS40L5X_SOURCE_RTH:
+		playback |= CS40L5X_MASK_RTH_PLAYBACK;
 		break;
 	default:
 		LOG_INST_ERR(config->log, "invalid source for trigger effects (%d)", -EINVAL);
@@ -1446,10 +1458,7 @@ int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_
 		goto error_pm;
 	}
 
-	address = (edge == CS40L5X_RISING_EDGE) ? gpios->rising_edge : gpios->falling_edge;
-
-	ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_GPIO_EVENT_BASE | (uint32_t)address[i],
-			    playback);
+	ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_GPIO_EVENT_BASE + offset, playback);
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -2088,10 +2097,10 @@ static int cs40l5x_init(const struct device *dev)
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER)) {
-		for (int i = 0; i < config->trigger_gpios.num_gpio; i++) {
-			if (!gpio_is_ready_dt(&config->trigger_gpios.gpio[i])) {
+		for (int i = 0; i < config->num_triggers; i++) {
+			if (!gpio_is_ready_dt(&config->trigger_gpios[i])) {
 				LOG_INST_DBG(config->log, "trigger GPIO is not ready (%s)",
-					     config->trigger_gpios.gpio[i].port->name);
+					     config->trigger_gpios[i].port->name);
 			}
 		}
 	}
@@ -2130,68 +2139,23 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 	.dev = DEVICE_DT_INST_GET(inst), .error_callback = NULL, .output = CS40L5X_ROM_BANK_CMD,   \
 	.custom_effects = {false, false}, .calibration = {.f0 = 0, .redc = 0},
 
-#define HAPTICS_CS40L5X_FALLING_DEFAULT(inst, prop, idx)                                           \
-	COND_CODE_1(IS_EQ(3, DT_PROP_BY_IDX(inst, prop, idx)), (0x38,),	(EMPTY))		   \
-	COND_CODE_1(IS_EQ(4, DT_PROP_BY_IDX(inst, prop, idx)), (0x40,),	(EMPTY))		   \
-	COND_CODE_1(IS_EQ(5, DT_PROP_BY_IDX(inst, prop, idx)), (0x48,),	(EMPTY))		   \
-	COND_CODE_1(IS_EQ(6, DT_PROP_BY_IDX(inst, prop, idx)), (0x50,),	(EMPTY))		   \
-	COND_CODE_1(IS_EQ(10, DT_PROP_BY_IDX(inst, prop, idx)),	(0x58,), (EMPTY))		   \
-	COND_CODE_1(IS_EQ(11, DT_PROP_BY_IDX(inst, prop, idx)),	(0x60,), (EMPTY))		   \
-	COND_CODE_1(IS_EQ(12, DT_PROP_BY_IDX(inst, prop, idx)),	(0x68,), (EMPTY))		   \
-	COND_CODE_1(IS_EQ(13, DT_PROP_BY_IDX(inst, prop, idx)), (0x70,), (EMPTY))
-
-#define HAPTICS_CS40L5X_RISING_DEFAULT(inst, prop, idx)                                            \
-	COND_CODE_1(IS_EQ(3, DT_PROP_BY_IDX(inst, prop, idx)), (0x3C,), (EMPTY))		   \
-	COND_CODE_1(IS_EQ(4, DT_PROP_BY_IDX(inst, prop, idx)), (0x44,),	(EMPTY))		   \
-	COND_CODE_1(IS_EQ(5, DT_PROP_BY_IDX(inst, prop, idx)), (0x4C,),	(EMPTY))		   \
-	COND_CODE_1(IS_EQ(6, DT_PROP_BY_IDX(inst, prop, idx)), (0x54,),	(EMPTY))		   \
-	COND_CODE_1(IS_EQ(10, DT_PROP_BY_IDX(inst, prop, idx)),	(0x5C,), (EMPTY))		   \
-	COND_CODE_1(IS_EQ(11, DT_PROP_BY_IDX(inst, prop, idx)),	(0x64,), (EMPTY))		   \
-	COND_CODE_1(IS_EQ(12, DT_PROP_BY_IDX(inst, prop, idx)),	(0x6C,), (EMPTY))		   \
-	COND_CODE_1(IS_EQ(13, DT_PROP_BY_IDX(inst, prop, idx)),	(0x74,), (EMPTY))
-
-#define HAPTICS_CS40L5X_FALLING_DEFAULTS(inst)                                                     \
-	(uint8_t[DT_INST_PROP_LEN(inst, trigger_mapping)])                                         \
-	{                                                                                          \
-		DT_INST_FOREACH_PROP_ELEM(inst, trigger_mapping, HAPTICS_CS40L5X_FALLING_DEFAULT)  \
-	}
-
-#define HAPTICS_CS40L5X_RISING_DEFAULTS(inst)                                                      \
-	(uint8_t[DT_INST_PROP_LEN(inst, trigger_mapping)])                                         \
-	{                                                                                          \
-		DT_INST_FOREACH_PROP_ELEM(inst, trigger_mapping, HAPTICS_CS40L5X_RISING_DEFAULT)   \
-	}
-
-#define HAPTICS_CS40L5X_TRIGGER_GPIO_(inst, prop, idx)                                             \
-	GPIO_DT_SPEC_GET_BY_IDX(inst, trigger_gpios, idx),
-
-#define HAPTICS_CS40L5X_TRIGGER_GPIO(inst)                                                         \
-	(struct gpio_dt_spec[])                                                                    \
-	{                                                                                          \
-		DT_INST_FOREACH_PROP_ELEM(inst, trigger_gpios, HAPTICS_CS40L5X_TRIGGER_GPIO_)      \
-	}
+#define HAPTICS_CS40L5X_GET_GPIO(inst, prop, idx) GPIO_DT_SPEC_GET_BY_IDX(inst, prop, idx),
 
 #define HAPTICS_CS40L5X_TRIGGER_GPIOS(inst)                                                        \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trigger_gpios),					   \
-		(.trigger_gpios = {								   \
-			.gpio = HAPTICS_CS40L5X_TRIGGER_GPIO(inst),				   \
-			.num_gpio = DT_INST_PROP_LEN(inst, trigger_gpios),			   \
-			.rising_edge = HAPTICS_CS40L5X_RISING_DEFAULTS(inst),			   \
-			.falling_edge = HAPTICS_CS40L5X_FALLING_DEFAULTS(inst),			   \
-			.ready = (bool[DT_INST_PROP_LEN(inst, trigger_gpios)]) {0}},),		   \
-		(.trigger_gpios = {								   \
-			.gpio = NULL,								   \
-			.num_gpio = 0,								   \
-			.rising_edge = NULL,							   \
-			.falling_edge = NULL,							   \
-			.ready = NULL},)							   \
-	)
+		((struct gpio_dt_spec[]){DT_INST_FOREACH_PROP_ELEM(inst, trigger_gpios,		   \
+								       HAPTICS_CS40L5X_GET_GPIO)}),\
+		    (NULL))
+
+#define HAPTICS_CS40L5X_TRIGGER_MAPPING(inst)                                                      \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trigger_mapping),				   \
+		    ((int[])DT_INST_PROP(inst, trigger_mapping)), (NULL))
 
 #define HAPTICS_CS40L5X_FLASH_DEVICE(inst)                                                         \
 	DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_PARTITION(DT_INST_PHANDLE(inst, flash_storage)))
 
 #define HAPTICS_CS40L5X_FLASH_OFFSET(inst)                                                         \
-	PARTITION_NODE_OFFSET(DT_INST_PHANDLE(inst, flash_storage)) +                        \
+	PARTITION_NODE_OFFSET(DT_INST_PHANDLE(inst, flash_storage)) +                              \
 		DT_INST_PROP_OR(inst, flash_offset, 0)
 
 #define HAPTICS_CS40L5X_FLASH(inst)                                                                \
@@ -2213,10 +2177,12 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 	.dev = DEVICE_DT_INST_GET(inst), .dev_id = id,                                             \
 	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                            \
 	.interrupt_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                          \
+	.trigger_gpios = HAPTICS_CS40L5X_TRIGGER_GPIOS(inst),                                      \
+	.trigger_mapping = HAPTICS_CS40L5X_TRIGGER_MAPPING(inst),                                  \
+	.num_triggers = DT_INST_PROP_LEN_OR(inst, trigger_gpios, 0),                               \
 	.external_boost = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(inst, external_boost)),            \
 	LOG_INSTANCE_PTR_INIT(log, DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(inst)), inst)               \
-		HAPTICS_CS40L5X_BUS(inst) HAPTICS_CS40L5X_TRIGGER_GPIOS(inst)                      \
-			HAPTICS_CS40L5X_FLASH(inst)
+		HAPTICS_CS40L5X_BUS(inst) HAPTICS_CS40L5X_FLASH(inst)
 
 #define HAPTICS_CS40L5X_INIT(inst, name)                                                           \
 	PM_DEVICE_DT_INST_DEFINE(inst, cs40l5x_pm_action);                                         \
