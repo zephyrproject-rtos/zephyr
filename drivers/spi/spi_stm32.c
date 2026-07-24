@@ -1333,6 +1333,14 @@ static int spi_stm32_configure(const struct device *dev,
 	}
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
+	if (cfg->gpio_control) {
+		LL_SPI_EnableGPIOControl(cfg->spi);
+	} else {
+		LL_SPI_DisableGPIOControl(cfg->spi);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) {
 		LL_SPI_SetClockPolarity(spi, STM32_SPI_CLOCK_POLARITY_HIGH);
 	} else {
@@ -2263,6 +2271,11 @@ static int spi_stm32_init(const struct device *dev)
 		(BUILD_ASSERT(DT_INST_PROP(id, st_fifo_threshold) <= DT_INST_PROP(id, fifo_size),\
 		     "FIFO threshold should be less than or equal to FIFO size.")))
 
+/* clang-format off */
+/* TODO This macro seems to be hand aligned. I have not found any way to modify
+ * it and then use 'git clang-format' without breaking the 100-character
+ * line length rule
+ */
 #define STM32_SPI_INIT(id)							\
 	SPI_STM32_CHECK_FIFO(id);						\
 										\
@@ -2286,6 +2299,7 @@ static int spi_stm32_init(const struct device *dev)
 			   (.use_subghzspi_nss =				\
 				DT_INST_PROP_OR(id, use_subghzspi_nss, false),))\
 		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi), (		\
+			.gpio_control =	DT_INST_PROP(id, st_gpio_control),	\
 			.midi_clocks = DT_INST_PROP(id, midi_clock),		\
 			.mssi_clocks = DT_INST_PROP(id, mssi_clock),		\
 			.fifo_size = DT_INST_PROP(id, fifo_size),		\
@@ -2320,5 +2334,6 @@ static int spi_stm32_init(const struct device *dev)
 				  &api_funcs);					\
 										\
 	STM32_SPI_IRQ_HANDLER(id)
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_SPI_INIT)

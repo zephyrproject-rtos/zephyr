@@ -48,3 +48,11 @@ properties:
       Threshold level for the Tx and Rx FIFOs (in bytes).
       This value defines the maximum number of bytes in a single packet. It is
       recommended that the size of a packet does not exceed half of the FIFO size.
+
+  st,gpio-control:
+    type: boolean
+    description: |
+      When set, the SPI driver will control the SPI GPIOs (e.g. SCK, MOSI, MISO)
+      even when the SPI peripheral is disabled. This can be used to ensure a known
+      state on the SPI lines at all times, which may be required for certain
+      peripherals (e.g. LED strips) that are sensitive to line states during idle.
