@@ -466,21 +466,45 @@ static int cmd_adc_print(const struct shell *sh, size_t argc, char **argv)
 {
 	/* -1 index of ADC label name */
 	struct adc_hdl *adc = get_adc(argv[-1]);
+	uint16_t acq_time = adc->channel_config.acquisition_time;
+	char acq_str[24];
+
+	if (acq_time == ADC_ACQ_TIME_DEFAULT) {
+		strcpy(acq_str, "0 (default)");
+	} else {
+		switch (ADC_ACQ_TIME_UNIT(acq_time)) {
+		case ADC_ACQ_TIME_MICROSECONDS:
+			acq_str = "us";
+			break;
+		case ADC_ACQ_TIME_NANOSECONDS:
+			acq_str = "ns";
+			break;
+		case ADC_ACQ_TIME_TICKS:
+			acq_str = "ticks";
+			break;
+		default:
+			unit_str = "unknown";
+			break;
+		}
+		snprintf(acq_str, sizeof(acq_str), "%u %s",
+			 (unsigned int)ADC_ACQ_TIME_VALUE(acq_time), unit_str);
+	}
 
 	shell_print(sh, "%s:\n"
 			   "Gain: %s\n"
 			   "Reference: %s\n"
-			   "Acquisition Time: %u\n"
+			   "Acquisition Time: %s\n"
 			   "Channel ID: %u\n"
 			   "Differential: %u\n"
 			   "Resolution: %u",
 			   adc->dev->name,
 			   chosen_gain,
 			   chosen_reference,
-			   adc->channel_config.acquisition_time,
+			   acq_str,
 			   adc->channel_config.channel_id,
 			   adc->channel_config.differential,
 			   adc->resolution);
+
 #if CONFIG_ADC_CONFIGURABLE_INPUTS
 	shell_print(sh, "Input positive: %u",
 		    adc->channel_config.input_positive);
