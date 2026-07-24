@@ -11,6 +11,12 @@
  * CS:   P1.03 - P1.04
  */
 
+/ {
+	zephyr,user {
+		sck-gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+	};
+};
+
 &pinctrl {
 	spi22_default_alt: spi22_default_alt {
 		group1 {
