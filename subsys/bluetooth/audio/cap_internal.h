@@ -309,7 +309,10 @@ void bt_cap_common_clear_proc(struct bt_cap_common_proc *proc);
 void bt_cap_common_set_proc(enum bt_cap_common_proc_type proc_type, size_t proc_cnt);
 void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type);
 void bt_cap_common_set_handover_active(void);
-bool bt_cap_common_handover_is_active(void);
+
+bool bt_cap_common_active_proc_is_handover(void);
+bool bt_cap_common_active_proc_is_initiator(void);
+bool bt_cap_common_active_proc_is_commander(void);
 bool bt_cap_common_proc_is_type(enum bt_cap_common_proc_type proc_type);
 bool bt_cap_common_subproc_is_type(enum bt_cap_common_subproc_type subproc_type);
 struct bt_conn *bt_cap_common_get_member_conn(enum bt_cap_set_type type,
