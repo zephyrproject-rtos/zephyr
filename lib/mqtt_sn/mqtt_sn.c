@@ -13,7 +13,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>
-#include <zephyr/net/mqtt_sn.h>
+#include <zephyr/mqtt_sn.h>
 #include <zephyr/sys/byteorder.h>
 LOG_MODULE_REGISTER(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);
 
