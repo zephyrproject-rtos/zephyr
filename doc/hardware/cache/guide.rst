@@ -175,9 +175,26 @@ Alignment
 ---------
 
 As mentioned in :c:func:`sys_cache_data_invd_range()` and associated functions,
-buffers should be aligned to the cache line size. This can be accomplished by
-using ``__aligned``:
+buffers should be aligned to the data cache line size. This can be accomplished by
+using ``__dcacheline_aligned``:
 
 .. code-block:: c
 
-  uint8_t buffer[BUF_SIZE] __aligned(CONFIG_DCACHE_LINE_SIZE);
+  uint8_t buffer[BUF_SIZE] __dcacheline_aligned;
+
+Data Cache Line Exclusivity
+---------------------------
+
+Variables declared with ``__dcacheline_exclusive_...`` attributes are aligned to the data cache
+line size, as defined by ``CONFIG_DCACHE_LINE_SIZE``, and placed in dedicated linker subsections,
+which ensures each one has exclusive data cache line(s).
+
+Use these attributes with variables that are modified by entities outside the current CPU (such as
+another CPU, DMA or hardware peripherals), and which may require cache invalidation.
+
+.. note::
+
+  ``__dcacheline_exclusive_...`` attributes do NOT pad the variable's size to the cache line size;
+  meaning ``sizeof()`` value is unchanged. They only change alignment and placement.
+  These attributes are useful in code that's expected to run on platforms with varying DCache line
+  sizes.

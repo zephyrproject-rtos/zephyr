@@ -15,7 +15,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/debug/sparse.h>
+#include <zephyr/linker/sections.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +39,81 @@ extern "C" {
  * @ingroup os_services
  * @{
  */
+
+/** @brief Ensures a variable is aligned to the data cache line size.
+ *
+ * Use this attribute to align a variable's address to the system's data cache line size,
+ * as defined by CONFIG_DCACHE_LINE_SIZE (shall be a positive power of 2).
+ * This is important for variables that are accessed by hardware peripherals
+ * or DMA engines, where cache line alignment helps ensure correct cache
+ * maintenance (e.g., flush or invalidate).
+ *
+ * @note This macro changes the alignment of the variable but does NOT change
+ * the variable's size. Also it does not guarantee that the variable occupies
+ * full cache line(s); multiple variables may share a single cache line unless
+ * their sizes are explicitly a multiple of the cache line size.
+ *
+ * Usage example:
+ *     static uint8_t buffer[6] __dcacheline_aligned;
+ */
+#if defined(CONFIG_DCACHE_LINE_SIZE) && CONFIG_DCACHE_LINE_SIZE > 0
+#define __dcacheline_aligned __aligned(CONFIG_DCACHE_LINE_SIZE)
+#else
+#define __dcacheline_aligned
+#endif
+
+/** @brief '__dcacheline_exclusive_...' attributes ensure a variable is aligned to and
+ * has exclusive data cache line(s).
+ *
+ * Use these attributes with variables that are modified by entities outside the current CPU
+ * (such as another CPU, DMA or hardware peripherals), and which may require cache invalidation.
+ *
+ * Variables declared with these attributes are aligned to the data cache line size, as defined
+ * by CONFIG_DCACHE_LINE_SIZE, and placed in dedicated linker subsections, which ensures each
+ * variable has exclusive data cache line(s).
+ *
+ * @note '__dcacheline_exclusive_...' attributes do NOT pad the variable's size to the DCache line
+ * size; meaning 'sizeof()' value is unchanged. They only change alignment and placement.
+ * These attributes are useful in code that's expected to run on platforms with varying DCache
+ * line sizes.
+ *
+ * @see __dcacheline_exclusive_noinit
+ * @see __dcacheline_exclusive_data
+ */
+#if defined(CONFIG_DCACHE_LINE_SIZE) && CONFIG_DCACHE_LINE_SIZE > 0
+
+/** @brief Guarantee exclusive cache-line placement in NOINIT section in main RAM.
+ *
+ * Variables live in RAM. Loader does not zero NOINIT; runtime must clear
+ * if zero-initialization is required.
+ *
+ * @note Use for scratch buffers or buffers that must survive some resets, or when the
+ * runtime needs to explicitly initialize the buffer.
+ *
+ * Usage example:
+ *     static __dcacheline_exclusive_noinit uint8_t var;
+ */
+#define __dcacheline_exclusive_noinit \
+	__in_section_unique(__DCACHELINE_EXCLUSIVE_NOINIT_SECTION_NAME)
+
+/** @brief Guarantee exclusive cache-line placement in DATA section in main RAM
+ *
+ * The object and its initializer (if any) will be emitted in flash and copied to RAM at boot.
+ * Even zero-initialized objects will be emitted in image if given this attribute.
+ *
+ * @note Avoid for large zero-initialized buffers and instead zero them at runtime, unless flash
+ * cost is acceptable.
+ *
+ * Usage example:
+ *     static __dcacheline_exclusive_data uint8_t var = 2;
+ */
+#define __dcacheline_exclusive_data \
+	__in_section_unique(__DCACHELINE_EXCLUSIVE_DATA_SECTION_NAME)
+
+#else
+#define __dcacheline_exclusive_noinit
+#define __dcacheline_exclusive_data
+#endif
 
 /**
  * @brief Enable the d-cache
