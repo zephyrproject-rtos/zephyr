@@ -1094,7 +1094,7 @@ static int timeout_to_ms(k_timeout_t *timeout)
 	} else if (K_TIMEOUT_EQ(*timeout, K_FOREVER)) {
 		return SYS_FOREVER_MS;
 	} else {
-		return k_ticks_to_ms_floor32(timeout->ticks);
+		return k_ticks_to_ms_ceil32(timeout->ticks);
 	}
 }
 
