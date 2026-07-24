@@ -25,6 +25,17 @@ config ETH_DWC_ETHER_1000_CORE
 	  also referred to as "dwc_ether_mac10_100_1000_universal".
 	  IP version v3.x is supported.
 
+config ETH_ESP32_DWC_ETHER_1000
+	bool "Driver for DWC Ethernet MAC-based ESP32"
+	depends on !ETH_ESP32
+	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32P4
+	depends on DT_HAS_ESPRESSIF_ESP32_ETH_ENABLED
+	select ETH_DWC_ETHER_1000_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver for ESP32 SoCs.
+
 config ETH_STM32_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based STM32"
 	depends on !ETH_STM32_HAL
@@ -130,10 +141,13 @@ if ETH_DWC_ETHER_1000_CORE
 config ETH_DWC_ETHER_TX_HW_CHECKSUM
 	bool "Use TX hardware checksum"
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	depends on !SOC_SERIES_ESP32P4
 	default y
 	help
 	  Enable transmit checksum offload to enhance throughput
-	  performances.
+	  performances. Only supported when store and forward mode
+	  is used for tx, which can't be used if the tx fifo is smaller
+	  than the maximum frame size.
 
 config ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
 	bool

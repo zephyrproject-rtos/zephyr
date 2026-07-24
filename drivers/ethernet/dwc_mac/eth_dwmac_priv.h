@@ -1280,22 +1280,30 @@ extern const struct ethernet_api dwmac_api;
 
 #elif defined(CONFIG_ETH_DWC_ETHER_1000_CORE)
 
-/* GMAC register map */
-#define DWMAC_MACCR      0x0000
-#define DWMAC_MACFFR     0x0004
-#define DWMAC_MACVERR    0x0020
-#define DWMAC_MACA0HR    0x0040
-#define DWMAC_MACA0LR    0x0044
+#ifdef CONFIG_SOC_SERIES_ESP32
+#define DWMAC_MAC_OFFSET		0x1000
+#define DWMAC_DMA_OFFSET		0x0000
+#else
+#define DWMAC_MAC_OFFSET		0x0000
+#define DWMAC_DMA_OFFSET		0x1000
+#endif
 
-#define DWMAC_DMABMR       0x1000
-#define DWMAC_DMATPDR      0x1004
-#define DWMAC_DMARPDR      0x1008
-#define DWMAC_DMARDLAR     0x100C
-#define DWMAC_DMATDLAR     0x1010
-#define DWMAC_DMASR        0x1014
-#define DWMAC_DMAOMR       0x1018
-#define DWMAC_DMAIER       0x101C
-#define DWMAC_HWFR         0x1058
+/* GMAC register map */
+#define DWMAC_MACCR      (DWMAC_MAC_OFFSET + 0x0000)
+#define DWMAC_MACFFR     (DWMAC_MAC_OFFSET + 0x0004)
+#define DWMAC_MACVERR    (DWMAC_MAC_OFFSET + 0x0020)
+#define DWMAC_MACA0HR    (DWMAC_MAC_OFFSET + 0x0040)
+#define DWMAC_MACA0LR    (DWMAC_MAC_OFFSET + 0x0044)
+
+#define DWMAC_DMABMR       (DWMAC_DMA_OFFSET + 0x0000)
+#define DWMAC_DMATPDR      (DWMAC_DMA_OFFSET + 0x0004)
+#define DWMAC_DMARPDR      (DWMAC_DMA_OFFSET + 0x0008)
+#define DWMAC_DMARDLAR     (DWMAC_DMA_OFFSET + 0x000C)
+#define DWMAC_DMATDLAR     (DWMAC_DMA_OFFSET + 0x0010)
+#define DWMAC_DMASR        (DWMAC_DMA_OFFSET + 0x0014)
+#define DWMAC_DMAOMR       (DWMAC_DMA_OFFSET + 0x0018)
+#define DWMAC_DMAIER       (DWMAC_DMA_OFFSET + 0x001C)
+#define DWMAC_HWFR         (DWMAC_DMA_OFFSET + 0x0058)
 
 /* MAC control bits */
 #define DWMAC_MACCR_RE     BIT(2)
@@ -1319,9 +1327,12 @@ extern const struct ethernet_api dwmac_api;
 
 /* DMA operation mode bits */
 #define DWMAC_DMAOMR_SR    BIT(1)
+#define DWMAC_DMAOMR_OSF   BIT(2)
 #define DWMAC_DMAOMR_ST    BIT(13)
 #define DWMAC_DMAOMR_TSF   BIT(21)
 #define DWMAC_DMAOMR_RSF   BIT(25)
+#define DWMAC_DMAOMR_TTC   GENMASK(16, 14)
+#define DWMAC_DMAOMR_RTC   GENMASK(4, 3)
 
 /* DMA bus mode bits */
 #define DWMAC_DMABMR_SR    BIT(0)
@@ -1355,8 +1366,8 @@ extern const struct ethernet_api dwmac_api;
 #define DWMAC_HWFR_ALTDESC BIT(24)
 
 /* DWMAC v3.x MDIO registers (GMAC core) */
-#define MAC_MDIO_ADDRESS 0x0010
-#define MAC_MDIO_DATA    0x0014
+#define MAC_MDIO_ADDRESS (DWMAC_MAC_OFFSET + 0x0010)
+#define MAC_MDIO_DATA    (DWMAC_MAC_OFFSET + 0x0014)
 
 #define MAC_MDIO_ADDRESS_PA     GENMASK(15, 11)
 #define MAC_MDIO_ADDRESS_RDA    GENMASK(10, 6)

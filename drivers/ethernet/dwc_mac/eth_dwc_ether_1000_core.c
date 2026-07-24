@@ -203,7 +203,7 @@ static void dwmac_tx_release(const struct device *dev)
 			net_pkt_unref(pkt);
 
 			if ((des0 & TDES0_ES) != 0U) {
-				LOG_ERR("tx error (DES0 = 0x%08x)", des0);
+				LOG_DBG("tx error (DES0 = 0x%08x)", des0);
 				eth_stats_update_errors_tx(p->iface);
 			}
 		}
@@ -271,9 +271,11 @@ static void dwmac_receive(const struct device *dev)
 
 		if ((des0 & RDES0_LS) != 0U) {
 			if ((des0 & RDES0_ES) == 0U) {
-				net_recv_data(p->iface, p->rx_pkt);
+				if (net_recv_data(p->iface, p->rx_pkt) < 0) {
+					net_pkt_unref(p->rx_pkt);
+				}
 			} else {
-				LOG_ERR("rx error (DES0 = 0x%08x)", des0);
+				LOG_DBG("rx error (DES0 = 0x%08x)", des0);
 				eth_stats_update_errors_rx(p->iface);
 				net_pkt_unref(p->rx_pkt);
 			}
@@ -523,6 +525,40 @@ int dwmac_probe(const struct device *dev)
 	/* get configured hardware features */
 	p->feature0 = DWMAC_REG_READ(DWMAC_HWFR);
 	LOG_DBG("hw_feature: 0x%08x", p->feature0);
+	/* early IP versions don't support this register */
+	if (p->feature0 != 0) {
+		LOG_DBG("10/100 Mbps support: %s",
+			(p->feature0 & DWMAC_HWFR_10_100) ? "yes" : "no");
+		LOG_DBG("1000 Mbps support: %s", (p->feature0 & DWMAC_HWFR_1000) ? "yes" : "no");
+		LOG_DBG("Half-duplex support: %s", (p->feature0 & DWMAC_HWFR_HD) ? "yes" : "no");
+		LOG_DBG("Expanded DA Hash Filter: %s",
+			(p->feature0 & DWMAC_HWFR_HASHF) ? "yes" : "no");
+		LOG_DBG("Multiple MAC Addr Reg: %s",
+			(p->feature0 & DWMAC_HWFR_ADDMAC) ? "yes" : "no");
+		LOG_DBG("PCS register support: %s", (p->feature0 & DWMAC_HWFR_PCS) ? "yes" : "no");
+		LOG_DBG("SMA(MDIO) support: %s",
+			(p->feature0 & DWMAC_HWFR_SMA) ? "yes" : "no");
+		LOG_DBG("PMT Remote Wakeup support: %s",
+			(p->feature0 & DWMAC_HWFR_PMTW) ? "yes" : "no");
+		LOG_DBG("PMT Magic Packet support: %s",
+			(p->feature0 & DWMAC_HWFR_PMTM) ? "yes" : "no");
+		LOG_DBG("RMON support: %s", (p->feature0 & DWMAC_HWFR_RMON) ? "yes" : "no");
+		LOG_DBG("IEEE 1588-2002 support: %s",
+			(p->feature0 & DWMAC_HWFR_TS2002) ? "yes" : "no");
+		LOG_DBG("IEEE 1588-2008 support: %s",
+			(p->feature0 & DWMAC_HWFR_TS2008) ? "yes" : "no");
+		LOG_DBG("TX Checksum Offload support: %s",
+			(p->feature0 & DWMAC_HWFR_TX_CHK) ? "yes" : "no");
+		LOG_DBG("RX Checksum Offload support: %s",
+			(p->feature0 & DWMAC_HWFR_RXCHKV1) ? "yes" : "no");
+		LOG_DBG("RX Checksum Offload v2 support: %s",
+			(p->feature0 & DWMAC_HWFR_RXCHKV2) ? "yes" : "no");
+		LOG_DBG(">2K FIFO support: %s", (p->feature0 & DWMAC_HWFR_FIFO2K) ? "yes" : "no");
+		LOG_DBG("Alternate Descriptor support: %s",
+			(p->feature0 & DWMAC_HWFR_ALTDESC) ? "yes" : "no");
+	}
+
+	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
 
 	ret = dwmac_platform_init(dev);
 	if (ret < 0) {
@@ -538,7 +574,6 @@ int dwmac_probe(const struct device *dev)
 
 	DWMAC_REG_WRITE(DWMAC_DMATDLAR, TXDESC_PHYS_L(0));
 	DWMAC_REG_WRITE(DWMAC_DMARDLAR, RXDESC_PHYS_L(0));
-	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
 
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN)) {
 		DWMAC_REG_WRITE(DWMAC_MACCR, DWMAC_REG_READ(DWMAC_MACCR) | DWMAC_MACCR_IPCO);
