@@ -1,0 +1,14 @@
+sample:
+  description: Dali Zephyr driver logger application
+  name: dali-logger
+tests:
+  sample.drivers.dali.logger:
+    tags: dali
+    integration_platforms:
+      - nrf52840dk/nrf52840
+    filter: dt_nodelabel_enabled("dali0") and dt_alias_exists("led0")
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "\\[(.*)\\] <inf> D: \\{(.*):(.*) (.*)\\}"
