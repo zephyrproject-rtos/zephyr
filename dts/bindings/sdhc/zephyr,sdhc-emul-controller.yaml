@@ -1,0 +1,19 @@
+# Copyright 2026 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Zephyr SDHC emulation controller.
+
+  A virtual SD host controller bus that hosts emulated card peripherals.
+  Child nodes with compatible "zephyr,sdhc-emul-card" are registered as
+  card emulators on this bus.
+
+compatible: "zephyr,sdhc-emul-controller"
+
+include: [sdhc.yaml]
+
+properties:
+  "#address-cells":
+    const: 1
+  "#size-cells":
+    const: 0
