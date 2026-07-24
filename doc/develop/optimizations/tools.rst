@@ -336,3 +336,26 @@ This will generate the following output file and open it in the default browser:
 .. image:: dashboard.webp
    :align: center
    :alt: Dashboard
+
+Partition map
+*************
+
+An HTML partition map can be generated from the build devicetree data. The
+report shows RAM and non-volatile memory devices, including external flash and
+RAM, with NVM partitions and linker memory regions drawn as visual ranges.
+
+Use the ``partition_map`` target with your board, as in the following example:
+
+.. zephyr-app-commands::
+    :tool: all
+    :zephyr-app: samples/hello_world
+    :board: reel_board
+    :goals: partition_map
+
+This will generate the following files::
+
+    build/partition_map/index.html
+    build/partition_map/partition_map.json
+
+When used from a :ref:`sysbuild` build directory, the same target generates one
+site containing the partition maps for all sysbuild images.
