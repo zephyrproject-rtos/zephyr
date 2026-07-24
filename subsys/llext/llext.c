@@ -341,7 +341,7 @@ static int call_fn_table(struct llext *ext, bool is_init)
 {
 	ssize_t ret;
 
-	ret = llext_get_fn_table(ext, is_init, NULL, 0);
+	ret = llext_get_fn_table_entry(ext, is_init, NULL, 0);
 	if (ret < 0) {
 		LOG_ERR("Failed to get table size: %d", (int)ret);
 		return ret;
@@ -351,27 +351,18 @@ static int call_fn_table(struct llext *ext, bool is_init)
 
 	int fn_count = ret / sizeof(elf_void_fn_t);
 
-	if (fn_count == 0) {
-		return 0;
-	} else if (fn_count > CONFIG_LLEXT_MAX_INIT_FINI_FUNCTION_TABLE_ENTRIES) {
-		LOG_ERR("%s function table too large: %d entries (max %d)",
-			is_init ? "Bringup" : "Teardown", fn_count,
-			CONFIG_LLEXT_MAX_INIT_FINI_FUNCTION_TABLE_ENTRIES);
-		return -ENOEXEC;
-	}
-
-	elf_void_fn_t fn_table[CONFIG_LLEXT_MAX_INIT_FINI_FUNCTION_TABLE_ENTRIES];
-
-	ret = llext_get_fn_table(ext, is_init, &fn_table, sizeof(fn_table));
-	if (ret < 0) {
-		LOG_ERR("Failed to get function table: %d", (int)ret);
-		return ret;
-	}
-
 	for (int i = 0; i < fn_count; i++) {
+		elf_void_fn_t fn;
+
+		ret = llext_get_fn_table_entry(ext, is_init, (void **)&fn, i);
+		if (ret < 0) {
+			LOG_ERR("Failed to get function table: %d", (int)ret);
+			return ret;
+		}
+
 		LOG_DBG("calling %s function %p()",
-			is_init ? "bringup" : "teardown", (void *)fn_table[i]);
-		fn_table[i]();
+			is_init ? "bringup" : "teardown", (void *)fn);
+		fn();
 	}
 
 	return 0;

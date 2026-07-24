@@ -327,9 +327,9 @@ int llext_teardown(struct llext *ext);
 void llext_bootstrap(struct llext *ext, llext_entry_fn_t entry_fn, void *user_data);
 
 /**
- * @brief Get pointers to setup or cleanup functions for an extension.
+ * @brief Get a pointer to a setup or cleanup function for an extension.
  *
- * This syscall can be used to get the addresses of all the functions that
+ * This syscall can be used to get the addresses of the functions that
  * have to be called for full extension setup or cleanup.
  *
  * @see llext_bootstrap
@@ -337,14 +337,14 @@ void llext_bootstrap(struct llext *ext, llext_entry_fn_t entry_fn, void *user_da
  * @param[in]    ext Extension to initialize.
  * @param[in]    is_init `true` to get functions to be called at setup time,
  *                       `false` to get the cleanup ones.
- * @param[inout] buf Buffer to store the function pointers in. Can be `NULL`
- *                   to only get the minimum required size.
- * @param[in]    size Allocated size of the buffer in bytes.
- * @returns the size used by the array in bytes, or a negative error code.
+ * @param[inout] ptr Address of pointer to store the function pointer in.
+ *                   Can be `NULL` to retrieve the number of defined functions.
+ * @param[in]    idx Index of the function to retrieve. Ignored if @a ptr is `NULL`.
+ * @returns the number of functions if ptr is NULL, 0 or a negative error code otherwise.
  * @retval -EFAULT A relocation issue was detected
  * @retval -ENOMEM Array does not fit in the allocated buffer
  */
-__syscall ssize_t llext_get_fn_table(struct llext *ext, bool is_init, void *buf, size_t size);
+__syscall ssize_t llext_get_fn_table_entry(struct llext *ext, bool is_init, void **ptr, size_t idx);
 
 /**
  * @brief Find the address for an arbitrary symbol.
