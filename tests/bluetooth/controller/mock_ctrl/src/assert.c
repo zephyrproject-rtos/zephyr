@@ -6,7 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include "assert.h"
+#include <assert.h>
 
 void assert_print(const char *fmt, ...)
 {

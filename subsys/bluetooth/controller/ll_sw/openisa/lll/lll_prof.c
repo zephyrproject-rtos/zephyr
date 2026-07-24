@@ -7,15 +7,15 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "hal/ccm.h"
-#include "hal/radio.h"
+#include <hal/ccm.h>
+#include <hal/radio.h>
 
-#include "util/memq.h"
+#include <util/memq.h>
 
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
+#include <lll.h>
 
 static uint8_t latency_min = (uint8_t) -1;
 static uint8_t latency_max;

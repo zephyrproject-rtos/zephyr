@@ -5,7 +5,7 @@
  */
 
 #if defined(CONFIG_BT_CTLR_RX_PDU_META)
-#include "lll_meta.h"
+#include <lll_meta.h>
 #endif /* CONFIG_BT_CTLR_RX_PDU_META */
 
 #define TICKER_INSTANCE_ID_CTLR 0

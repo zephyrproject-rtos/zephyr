@@ -21,78 +21,78 @@
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/buf.h>
 
-#include "common/hci_common_internal.h"
+#include <common/hci_common_internal.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/mem.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/mem.h>
+#include <util/dbuf.h>
 
-#include "hal/ecb.h"
-#include "hal/ccm.h"
-#include "hal/ticker.h"
+#include <hal/ecb.h>
+#include <hal/ccm.h>
+#include <hal/ticker.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
-#include "ll_sw/pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "ll_sw/pdu.h"
+#include <ll_sw/pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <ll_sw/pdu.h>
 
-#include "ll_sw/lll.h"
-#include "lll/lll_vendor.h"
-#include "lll/lll_adv_types.h"
-#include "ll_sw/lll_adv.h"
-#include "lll/lll_adv_pdu.h"
-#include "ll_sw/lll_scan.h"
-#include "lll/lll_df_types.h"
-#include "ll_sw/lll_sync.h"
-#include "ll_sw/lll_sync_iso.h"
-#include "ll_sw/lll_conn.h"
-#include "ll_sw/lll_conn_iso.h"
-#include "ll_sw/lll_iso_tx.h"
+#include <ll_sw/lll.h>
+#include <lll/lll_vendor.h>
+#include <lll/lll_adv_types.h>
+#include <ll_sw/lll_adv.h>
+#include <lll/lll_adv_pdu.h>
+#include <ll_sw/lll_scan.h>
+#include <lll/lll_df_types.h>
+#include <ll_sw/lll_sync.h>
+#include <ll_sw/lll_sync_iso.h>
+#include <ll_sw/lll_conn.h>
+#include <ll_sw/lll_conn_iso.h>
+#include <ll_sw/lll_iso_tx.h>
 
-#include "ll_sw/isoal.h"
+#include <ll_sw/isoal.h>
 
-#include "ll_sw/ull_tx_queue.h"
+#include <ll_sw/ull_tx_queue.h>
 
-#include "ll_sw/ull_adv_types.h"
-#include "ll_sw/ull_scan_types.h"
-#include "ll_sw/ull_sync_types.h"
-#include "ll_sw/ull_conn_types.h"
-#include "ll_sw/ull_iso_types.h"
-#include "ll_sw/ull_conn_iso_types.h"
-#include "ll_sw/ull_conn_iso_internal.h"
-#include "ll_sw/ull_df_types.h"
-#include "ll_sw/ull_internal.h"
+#include <ll_sw/ull_adv_types.h>
+#include <ll_sw/ull_scan_types.h>
+#include <ll_sw/ull_sync_types.h>
+#include <ll_sw/ull_conn_types.h>
+#include <ll_sw/ull_iso_types.h>
+#include <ll_sw/ull_conn_iso_types.h>
+#include <ll_sw/ull_conn_iso_internal.h>
+#include <ll_sw/ull_df_types.h>
+#include <ll_sw/ull_internal.h>
 
-#include "ll_sw/ull_adv_internal.h"
-#include "ll_sw/ull_sync_internal.h"
-#include "ll_sw/ull_conn_internal.h"
-#include "ll_sw/ull_sync_iso_internal.h"
-#include "ll_sw/ull_iso_internal.h"
-#include "ll_sw/ull_df_internal.h"
+#include <ll_sw/ull_adv_internal.h>
+#include <ll_sw/ull_sync_internal.h>
+#include <ll_sw/ull_conn_internal.h>
+#include <ll_sw/ull_sync_iso_internal.h>
+#include <ll_sw/ull_iso_internal.h>
+#include <ll_sw/ull_df_internal.h>
 
-#include "ll.h"
-#include "ll_feat.h"
-#include "ll_settings.h"
+#include <ll.h>
+#include <ll_feat.h>
+#include <ll_settings.h>
 
 #include "hci_internal.h"
-#include "hci_vendor.h"
+#include <hci_vendor.h>
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-#include "ll_sw/ll_mesh.h"
+#include <ll_sw/ll_mesh.h>
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_CTLR_DTM_HCI)
-#include "ll_sw/ll_test.h"
+#include <ll_sw/ll_test.h>
 #endif /* CONFIG_BT_CTLR_DTM_HCI */
 
 #if defined(CONFIG_BT_CTLR_USER_EXT)
 #include "hci_user_ext.h"
 #endif /* CONFIG_BT_CTLR_USER_EXT */
 
-#include "common/bt_str.h"
-#include "hal/debug.h"
+#include <common/bt_str.h>
+#include <hal/debug.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>

@@ -11,40 +11,40 @@
 
 #include <soc.h>
 
-#include "hal/cpu.h"
-#include "hal/cntr.h"
-#include "hal/ccm.h"
-#include "hal/ticker.h"
-#include "hal/radio.h"
-#include "hal/radio_df.h"
+#include <hal/cpu.h>
+#include <hal/cntr.h>
+#include <hal/ccm.h>
+#include <hal/ticker.h>
+#include <hal/radio.h>
+#include <hal/radio_df.h>
 
-#include "util/memq.h"
-#include "util/util.h"
-#include "util/dbuf.h"
+#include <util/memq.h>
+#include <util/util.h>
+#include <util/dbuf.h>
 
-#include "pdu_df.h"
+#include <pdu_df.h>
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
-#include "lll_clock.h"
+#include <lll.h>
+#include <lll_clock.h>
 #include "lll_internal.h"
 
 #if defined(CONFIG_BT_CTLR_DF)
 #include "lll_df_types.h"
-#include "lll_df.h"
+#include <lll_df.h>
 #endif /* CONFIG_BT_CTLR_DF */
 
-#include "ll_test.h"
+#include <ll_test.h>
 
 #if defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)
-#include "ull_df_types.h"
-#include "ull_df_internal.h"
+#include <ull_df_types.h>
+#include <ull_df_internal.h>
 #endif /* CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT */
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /* Define to setup radio start offset by a maximum ISR latency value that is less than inter-frame
  * switching, plus minimum counter compare offset that can be set, plus minimum CPU latency to set

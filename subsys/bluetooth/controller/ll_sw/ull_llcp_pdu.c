@@ -12,24 +12,24 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/ccm.h"
+#include <hal/ccm.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
-#include "ll.h"
-#include "ll_settings.h"
+#include <ll.h>
+#include <ll_settings.h>
 
 #include "lll.h"
 #include "lll_clock.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -40,7 +40,7 @@
 #include "ull_conn_iso_types.h"
 #include "ull_conn_iso_internal.h"
 
-#include "lll/lll_adv_types.h"
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
 #include "ull_adv_types.h"
 #include "lll_sync.h"
@@ -50,10 +50,10 @@
 #include "ull_llcp.h"
 #include "ull_llcp_internal.h"
 
-#include "ll_feat.h"
+#include <ll_feat.h>
 
 #include <soc.h>
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /*
  * we need to filter on octet 0; the following mask has 7 octets

@@ -9,13 +9,13 @@
 #include <zephyr/types.h>
 #include <soc.h>
 
-#include "hal/cntr.h"
-#include "hal/ticker.h"
-#include "hal/cpu.h"
+#include <hal/cntr.h>
+#include <hal/ticker.h>
+#include <hal/cpu.h>
 
 #include "ticker.h"
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /*****************************************************************************
  * Defines

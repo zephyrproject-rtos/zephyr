@@ -10,7 +10,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /* LF (XO, RC) clock setup timeout.
  * LF settling time can vary on the type of the source.

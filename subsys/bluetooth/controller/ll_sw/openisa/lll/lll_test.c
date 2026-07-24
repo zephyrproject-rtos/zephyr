@@ -12,19 +12,19 @@
 #include <soc.h>
 #include <zephyr/drivers/clock_control.h>
 
-#include "hal/cpu.h"
-#include "hal/cntr.h"
-#include "hal/ccm.h"
-#include "hal/radio.h"
+#include <hal/cpu.h>
+#include <hal/cntr.h>
+#include <hal/ccm.h>
+#include <hal/radio.h>
 
-#include "util/memq.h"
+#include <util/memq.h>
 
-#include "lll.h"
+#include <lll.h>
 #include "lll_internal.h"
 
-#include "ll_test.h"
+#include <ll_test.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #define CNTR_MIN_DELTA 3
 

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bstests.h"
+#include <bstests.h>
 
 #ifdef CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER
 extern struct bst_test_list *test_past_install(struct bst_test_list *tests);

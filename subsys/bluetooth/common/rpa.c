@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #include <zephyr/bluetooth/crypto.h>
 

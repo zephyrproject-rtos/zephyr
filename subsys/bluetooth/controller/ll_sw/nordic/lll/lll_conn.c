@@ -13,26 +13,26 @@
 
 #include <zephyr/sys/util.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/radio_df.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/radio_df.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mfifo.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mfifo.h>
+#include <util/dbuf.h>
 
-#include "pdu_df.h"
+#include <pdu_df.h>
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
-#include "lll_clock.h"
+#include <lll.h>
+#include <lll_clock.h>
 #include "lll_df_types.h"
-#include "lll_df.h"
-#include "lll_conn.h"
+#include <lll_df.h>
+#include <lll_conn.h>
 
 #include "lll_internal.h"
 #include "lll_df_internal.h"
@@ -41,7 +41,7 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static int init_reset(void);
 static void isr_done(void *param);

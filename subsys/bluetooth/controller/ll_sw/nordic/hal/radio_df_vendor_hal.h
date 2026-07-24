@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hal/nrf5/radio/radio_df.h"
+#include <hal/nrf5/radio/radio_df.h>

@@ -9,32 +9,32 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
-#include "hal/ccm.h"
-#include "hal/ticker.h"
+#include <hal/ccm.h>
+#include <hal/ticker.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_vendor.h"
+#include <lll/lll_vendor.h>
 #include "lll_clock.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_central_iso.h"
 #include "lll_peripheral_iso.h"
 #include "lll_iso_tx.h"
 
-#include "ll_sw/ull_tx_queue.h"
+#include <ll_sw/ull_tx_queue.h>
 
 #include "isoal.h"
 
@@ -50,9 +50,9 @@
 #include "ull_conn_iso_internal.h"
 #include "ull_peripheral_iso_internal.h"
 
-#include "ll.h"
+#include <ll.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /* Used by LISTIFY */
 #define _INIT_MAYFLY_ARRAY(_i, _l, _fp) \

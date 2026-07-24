@@ -11,32 +11,32 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
-#include "hal/radio_df.h"
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
+#include <hal/radio_df.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/dbuf.h"
-#include "util/mayfly.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/dbuf.h>
+#include <util/mayfly.h>
 
-#include "pdu_df.h"
+#include <pdu_df.h>
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
+#include <lll.h>
 #include "lll_vendor.h"
-#include "lll_clock.h"
-#include "lll_filter.h"
-#include "lll_scan.h"
-#include "lll_scan_aux.h"
+#include <lll_clock.h>
+#include <lll_filter.h>
+#include <lll_scan.h>
+#include <lll_scan_aux.h>
 #include "lll_df_types.h"
 #include "lll_df_internal.h"
-#include "lll_sync.h"
-#include "lll_sync_iso.h"
-#include "lll_conn.h"
-#include "lll_sched.h"
+#include <lll_sync.h>
+#include <lll_sync_iso.h>
+#include <lll_conn.h>
+#include <lll_sched.h>
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
@@ -44,11 +44,11 @@
 #include "lll_scan_internal.h"
 #include "lll_sync_internal.h"
 
-#include "ll_feat.h"
+#include <ll_feat.h>
 
 #include <soc.h>
 #include <ull_scan_types.h>
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *p);

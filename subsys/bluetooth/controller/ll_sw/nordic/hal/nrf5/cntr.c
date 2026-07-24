@@ -7,9 +7,9 @@
 
 #include <stdint.h>
 
-#include "hal/cntr.h"
+#include <hal/cntr.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #if !defined(CONFIG_BT_CTLR_NRF_GRTC)
 #include <hal/nrf_rtc.h>

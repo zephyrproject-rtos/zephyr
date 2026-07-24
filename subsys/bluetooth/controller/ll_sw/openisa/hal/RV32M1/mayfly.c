@@ -9,15 +9,15 @@
 #include <zephyr/types.h>
 #include <soc.h>
 
-#include "hal/RV32M1/swi.h"
+#include <hal/RV32M1/swi.h>
 
-#include "util/memq.h"
-#include "util/mayfly.h"
+#include <util/memq.h>
+#include <util/mayfly.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)
-#include "ll_sw/lll.h"
+#include <ll_sw/lll.h>
 #define MAYFLY_CALL_ID_LLL    TICKER_USER_ID_LLL
 #define MAYFLY_CALL_ID_WORKER TICKER_USER_ID_ULL_HIGH
 #define MAYFLY_CALL_ID_JOB    TICKER_USER_ID_ULL_LOW

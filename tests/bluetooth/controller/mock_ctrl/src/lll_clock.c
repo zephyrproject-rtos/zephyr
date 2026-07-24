@@ -8,7 +8,7 @@
 #include <zephyr/ztest.h>
 #include <soc.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /* Clock setup timeouts are unlikely, below values are experimental */
 #define LFCLOCK_TIMEOUT_MS 500

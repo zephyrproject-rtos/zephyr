@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
-#include "util/memq.h"
+#include <util/memq.h>
 
-#include "hal/ecb.h"
-#include "ll_sw/lll.h"
+#include <hal/ecb.h>
+#include <ll_sw/lll.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>

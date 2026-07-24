@@ -16,25 +16,25 @@
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/irq.h>
 
-#include "hal/swi.h"
-#include "hal/ccm.h"
-#include "hal/cntr.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
+#include <hal/swi.h>
+#include <hal/ccm.h>
+#include <hal/cntr.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
 
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
-#include "lll.h"
+#include <lll.h>
 #include "lll_vendor.h"
-#include "lll_clock.h"
+#include <lll_clock.h>
 #include "lll_internal.h"
 #include "lll_prof_internal.h"
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #if defined(CONFIG_BT_CTLR_ZLI)
 #define IRQ_CONNECT_FLAGS IRQ_ZERO_LATENCY

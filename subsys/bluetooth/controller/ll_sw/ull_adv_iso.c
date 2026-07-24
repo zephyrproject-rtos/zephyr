@@ -9,27 +9,27 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/ticker.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mfifo.h"
-#include "util/mayfly.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mfifo.h>
+#include <util/mayfly.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_vendor.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_vendor.h>
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include <lll/lll_adv_pdu.h>
 #include "lll_adv_iso.h"
 #include "lll_iso_tx.h"
 
@@ -44,12 +44,12 @@
 #include "ull_sched_internal.h"
 #include "ull_iso_internal.h"
 
-#include "ll.h"
-#include "ll_feat.h"
+#include <ll.h>
+#include <ll_feat.h>
 
-#include "bt_crypto.h"
+#include <bt_crypto.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /* Controller implementation dependent minimum Pre-Transmission Offset and
  * Pre-Transmission Group Count to use when there is available time space in the

@@ -12,37 +12,37 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/util_macro.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/ticker.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mfifo.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mfifo.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include <lll/lll_adv_pdu.h>
 #include "lll_adv_iso.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_iso_tx.h"
-#include "lll/lll_vendor.h"
+#include <lll/lll_vendor.h>
 
-#include "ll_sw/ull_tx_queue.h"
+#include <ll_sw/ull_tx_queue.h>
 
 #include "isoal.h"
 
@@ -60,10 +60,10 @@
 #include "ull_sync_iso_internal.h"
 #include "ull_conn_iso_internal.h"
 
-#include "ll.h"
-#include "ll_feat.h"
+#include <ll.h>
+#include <ll_feat.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>

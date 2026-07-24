@@ -11,39 +11,39 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/dbuf.h"
-#include "util/mayfly.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/dbuf.h>
+#include <util/mayfly.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
-#include "pdu_df.h"
+#include <pdu_df.h>
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
+#include <lll.h>
 #include "lll_vendor.h"
-#include "lll_clock.h"
+#include <lll_clock.h>
 #include "lll_df_types.h"
-#include "lll_scan.h"
-#include "lll_sync.h"
-#include "lll_conn.h"
-#include "lll_chan.h"
-#include "lll_filter.h"
-#include "lll_sched.h"
+#include <lll_scan.h>
+#include <lll_sync.h>
+#include <lll_conn.h>
+#include <lll_chan.h>
+#include <lll_filter.h>
+#include <lll_sched.h>
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 #include "lll_scan_internal.h"
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 /* Maximum primary Advertising Radio Channels to scan */
 #define ADV_CHAN_MAX 3U

@@ -22,9 +22,9 @@
 
 #include <gatt/services.h>
 
-#include "edtt_driver.h"
-#include "bs_tracing.h"
-#include "commands.h"
+#include <edtt_driver.h>
+#include <bs_tracing.h>
+#include <commands.h>
 
 #define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)

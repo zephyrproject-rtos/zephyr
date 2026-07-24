@@ -19,10 +19,10 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "controller/util/memq.h"
-#include "controller/include/ll.h"
+#include <controller/util/memq.h>
+#include <controller/include/ll.h>
 
-#include "host/shell/bt.h"
+#include <host/shell/bt.h>
 
 int cmd_ll_addr_read(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -51,7 +51,7 @@ int cmd_ll_addr_read(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_CTLR_DTM)
-#include "controller/ll_sw/ll_test.h"
+#include <controller/ll_sw/ll_test.h>
 
 int cmd_test_tx(const struct shell *sh, size_t  argc, char *argv[])
 {
@@ -121,7 +121,7 @@ int cmd_test_end(const struct shell *sh, size_t  argc, char *argv[])
 #endif /* CONFIG_BT_CTLR_DTM */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#include "controller/ll_sw/lll.h"
+#include <controller/ll_sw/lll.h>
 
 #if defined(CONFIG_BT_BROADCASTER)
 #define OWN_ADDR_TYPE 1

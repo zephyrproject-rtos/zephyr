@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hal/RV32M1/radio/radio.h"
+#include <hal/RV32M1/radio/radio.h>
 
 /* The openisa vendor HAL does not have the GPIO support functions
  * required for handling radio front-end modules with PA/LNAs.

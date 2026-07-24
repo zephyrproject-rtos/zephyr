@@ -6,8 +6,8 @@
 
 #include <zephyr/types.h>
 #include <zephyr/ztest.h>
-#include "util/memq.h"
-#include "util/mayfly.h"
+#include <util/memq.h>
+#include <util/mayfly.h>
 
 void mayfly_init(void)
 {

@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "common/assert.h"
+#include <common/assert.h>
 
 #if defined(CONFIG_BT_CTLR_ASSERT_HANDLER)
 void bt_ctlr_assert_handle(char *file, uint32_t line);
@@ -101,4 +101,4 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_CPU_CORTEX_M));
 #define LL_ASSERT_OVERHEAD(overhead) ARG_UNUSED(overhead)
 #endif /* !CONFIG_BT_CTLR_ASSERT_OVERHEAD_START */
 
-#include "hal/debug_vendor_hal.h"
+#include <hal/debug_vendor_hal.h>

@@ -15,19 +15,19 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 
-#include "subsys/bluetooth/host/hci_core.h"
-#include "subsys/bluetooth/controller/include/ll.h"
-#include "subsys/bluetooth/controller/util/memq.h"
-#include "subsys/bluetooth/controller/ll_sw/lll.h"
+#include <subsys/bluetooth/host/hci_core.h>
+#include <subsys/bluetooth/controller/include/ll.h>
+#include <subsys/bluetooth/controller/util/memq.h>
+#include <subsys/bluetooth/controller/ll_sw/lll.h>
 
 /* For VS data path */
-#include "subsys/bluetooth/controller/ll_sw/isoal.h"
-#include "subsys/bluetooth/controller/ll_sw/ull_iso_types.h"
+#include <subsys/bluetooth/controller/ll_sw/isoal.h>
+#include <subsys/bluetooth/controller/ll_sw/ull_iso_types.h>
 
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bstests.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <time_machine.h>
+#include <bstests.h>
 
 #define FAIL(...)					\
 	do {						\

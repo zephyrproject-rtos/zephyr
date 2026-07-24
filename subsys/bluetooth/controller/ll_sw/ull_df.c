@@ -10,31 +10,31 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mfifo.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mfifo.h>
+#include <util/dbuf.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include <lll/lll_adv_pdu.h>
 #include "lll_scan.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_sync.h"
 #include "lll_sync_iso.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_df.h"
-#include "lll/lll_df_internal.h"
+#include <lll/lll_df_internal.h>
 
 #include "isoal.h"
 #include "ull_scan_types.h"
@@ -53,9 +53,9 @@
 #include "ull_conn_internal.h"
 #include "ull_df_internal.h"
 
-#include "ll.h"
+#include <ll.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #if defined(CONFIG_BT_CTLR_DF_SCAN_CTE_RX) || defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX) || \
 	defined(CONFIG_BT_CTLR_DTM_HCI_DF_IQ_REPORT)

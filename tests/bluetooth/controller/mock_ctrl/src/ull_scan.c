@@ -11,17 +11,17 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "util/mem.h"
-#include "util/memq.h"
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
+#include <util/mem.h>
+#include <util/memq.h>
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
 
-#include "lll.h"
-#include "lll_scan.h"
+#include <lll.h>
+#include <lll_scan.h>
 
-#include "ull_scan_types.h"
-#include "ull_scan_internal.h"
+#include <ull_scan_types.h>
+#include <ull_scan_internal.h>
 
 #define BT_CTLR_SCAN_MAX 1
 static struct ll_scan_set ll_scan[BT_CTLR_SCAN_MAX];

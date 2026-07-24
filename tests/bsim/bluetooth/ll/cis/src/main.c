@@ -19,10 +19,10 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys_clock.h>
 
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bstests.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <time_machine.h>
+#include <bstests.h>
 
 #define FAIL(...)					\
 	do {						\

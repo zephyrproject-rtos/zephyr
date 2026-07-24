@@ -13,34 +13,34 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
 #include "pdu_vendor.h"
-#include "pdu.h"
+#include <pdu.h>
 
-#include "lll.h"
+#include <lll.h>
 #include "lll_vendor.h"
-#include "lll_clock.h"
-#include "lll_scan.h"
+#include <lll_clock.h>
+#include <lll_scan.h>
 #include "lll_df_types.h"
-#include "lll_conn.h"
-#include "lll_chan.h"
-#include "lll_filter.h"
+#include <lll_conn.h>
+#include <lll_chan.h>
+#include <lll_filter.h>
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
 
 #include <soc.h>
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *prepare_param);

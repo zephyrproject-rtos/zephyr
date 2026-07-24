@@ -12,20 +12,20 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/controller.h>
 
-#include "hal/ccm.h"
+#include <hal/ccm.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/mem.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/mem.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include <lll/lll_adv_pdu.h>
 #include "lll_scan.h"
 
 #include "ull_adv_types.h"
@@ -33,7 +33,7 @@
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
 
-#include "ll.h"
+#include <ll.h>
 
 static uint8_t pub_addr[BDADDR_SIZE];
 static uint8_t rnd_addr[BDADDR_SIZE];

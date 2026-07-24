@@ -16,12 +16,12 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "ll.h"
+#include <ll.h>
 
-#include "bs_types.h"
-#include "bs_tracing.h"
-#include "time_machine.h"
-#include "bstests.h"
+#include <bs_types.h>
+#include <bs_tracing.h>
+#include <time_machine.h>
+#include <bstests.h>
 
 #define HANDLE          0x0000
 #define EVT_PROP_SCAN   BIT(1)

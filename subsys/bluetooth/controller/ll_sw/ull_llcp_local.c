@@ -12,23 +12,23 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/ccm.h"
+#include <hal/ccm.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
-#include "ll.h"
-#include "ll_settings.h"
+#include <ll.h>
+#include <ll_settings.h>
 
 #include "lll.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 
@@ -46,7 +46,7 @@
 #include "ull_conn_internal.h"
 
 #include <soc.h>
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static struct proc_ctx *lr_dequeue(struct ll_conn *conn);
 

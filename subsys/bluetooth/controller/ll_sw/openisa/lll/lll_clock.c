@@ -9,7 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static uint16_t const sca_ppm_lut[] = {500, 250, 150, 100, 75, 50, 30, 20};
 

@@ -8,17 +8,17 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "hal/cntr.h"
+#include <hal/cntr.h>
 
-#include "util/memq.h"
-#include "util/mayfly.h"
+#include <util/memq.h>
+#include <util/mayfly.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)
-#include "ll_sw/lll.h"
+#include <ll_sw/lll.h>
 #define TICKER_MAYFLY_CALL_ID_ISR     TICKER_USER_ID_LLL
 #define TICKER_MAYFLY_CALL_ID_TRIGGER TICKER_USER_ID_ULL_HIGH
 #define TICKER_MAYFLY_CALL_ID_WORKER  TICKER_USER_ID_ULL_HIGH

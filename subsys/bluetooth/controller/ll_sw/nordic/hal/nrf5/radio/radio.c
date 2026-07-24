@@ -14,18 +14,18 @@
 #include <nrfx_gpiote.h>
 #include <gpiote_nrfx.h>
 
-#include "util/mem.h"
+#include <util/mem.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/cntr.h"
-#include "hal/radio.h"
-#include "hal/radio_df.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/cntr.h>
+#include <hal/radio.h>
+#include <hal/radio_df.h>
+#include <hal/ticker.h>
 
-#include "ll_sw/pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "ll_sw/pdu.h"
+#include <ll_sw/pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <ll_sw/pdu.h>
 
 #include "radio_internal.h"
 

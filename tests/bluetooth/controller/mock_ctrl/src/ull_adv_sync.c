@@ -10,13 +10,13 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "util/mem.h"
-#include "util/memq.h"
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
+#include <util/mem.h>
+#include <util/memq.h>
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
 
-#include "lll.h"
+#include <lll.h>
 
 struct ll_adv_sync_set *ull_adv_sync_get(uint8_t handle)
 {

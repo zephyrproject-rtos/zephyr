@@ -11,38 +11,38 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/dbuf.h"
-#include "util/mayfly.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/dbuf.h>
+#include <util/mayfly.h>
 
-#include "hal/ccm.h"
-#include "hal/ticker.h"
+#include <hal/ccm.h>
+#include <hal/ticker.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
 
-#include "lll.h"
-#include "lll/lll_vendor.h"
-#include "lll/lll_df_types.h"
-#include "lll_conn.h"
-#include "lll_conn_iso.h"
+#include <lll.h>
+#include <lll/lll_vendor.h>
+#include <lll/lll_df_types.h>
+#include <lll_conn.h>
+#include <lll_conn_iso.h>
 
-#include "ull_tx_queue.h"
+#include <ull_tx_queue.h>
 
-#include "isoal.h"
-#include "ull_iso_types.h"
+#include <isoal.h>
+#include <ull_iso_types.h>
 
-#include "ull_conn_types.h"
-#include "ull_conn_iso_types.h"
-#include "ull_internal.h"
+#include <ull_conn_types.h>
+#include <ull_conn_iso_types.h>
+#include <ull_internal.h>
 
-#include "ull_conn_internal.h"
-#include "ull_conn_iso_internal.h"
-#include "lll_peripheral_iso.h"
+#include <ull_conn_internal.h>
+#include <ull_conn_iso_internal.h>
+#include <lll_peripheral_iso.h>
 
 void ull_peripheral_iso_release(uint16_t cis_handle)
 {

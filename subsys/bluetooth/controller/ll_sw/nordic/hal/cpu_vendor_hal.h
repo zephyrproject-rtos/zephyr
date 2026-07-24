@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hal/nrf5/cpu.h"
+#include <hal/nrf5/cpu.h>

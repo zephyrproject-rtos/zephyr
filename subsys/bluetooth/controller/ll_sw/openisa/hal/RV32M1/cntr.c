@@ -10,8 +10,8 @@
 
 #include <zephyr/dt-bindings/interrupt-controller/openisa-intmux.h>
 
-#include "hal/cntr.h"
-#include "hal/debug.h"
+#include <hal/cntr.h>
+#include <hal/debug.h>
 
 #include "ll_irqs.h"
 

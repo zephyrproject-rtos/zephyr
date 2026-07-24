@@ -10,24 +10,24 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/iso.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
-#include "hal/ccm.h"
-#include "hal/ticker.h"
+#include <hal/ccm.h>
+#include <hal/ticker.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_vendor.h"
+#include <lll/lll_vendor.h>
 #include "lll_clock.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
 #include "lll_central_iso.h"
@@ -47,12 +47,12 @@
 #include "ull_conn_internal.h"
 #include "ull_conn_iso_internal.h"
 
-#include "ll.h"
-#include "ll_feat.h"
+#include <ll.h>
+#include <ll_feat.h>
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #define SDU_MAX_DRIFT_PPM 100
 #define SUB_INTERVAL_MIN  400

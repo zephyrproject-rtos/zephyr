@@ -7,28 +7,28 @@
 
 #include <zephyr/kernel.h>
 
-#include "util/util.h"
-#include "util/memq.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/memq.h>
+#include <util/dbuf.h>
 
-#include "hal/ccm.h"
+#include <hal/ccm.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 
 #include "ull_conn_internal.h"
 
-#include "ll_feat.h"
-#include "ll_settings.h"
+#include <ll_feat.h>
+#include <ll_settings.h>
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #if defined(CONFIG_BT_CTLR_SET_HOST_FEATURE)
 static uint64_t host_features;

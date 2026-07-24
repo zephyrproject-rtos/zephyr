@@ -9,34 +9,34 @@
 #include <soc.h>
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/cpu.h"
-#include "hal/ccm.h"
-#include "hal/radio.h"
-#include "hal/ticker.h"
+#include <hal/cpu.h>
+#include <hal/ccm.h>
+#include <hal/radio.h>
+#include <hal/ticker.h>
 
-#include "util/util.h"
-#include "util/mem.h"
-#include "util/memq.h"
-#include "util/mayfly.h"
-#include "util/dbuf.h"
+#include <util/util.h>
+#include <util/mem.h>
+#include <util/memq.h>
+#include <util/mayfly.h>
+#include <util/dbuf.h>
 
-#include "ticker/ticker.h"
+#include <ticker/ticker.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
 #include "lll.h"
-#include "lll/lll_vendor.h"
-#include "lll/lll_adv_types.h"
+#include <lll/lll_vendor.h>
+#include <lll/lll_adv_types.h>
 #include "lll_adv.h"
-#include "lll/lll_adv_pdu.h"
+#include <lll/lll_adv_pdu.h>
 #include "lll_scan.h"
-#include "lll/lll_df_types.h"
+#include <lll/lll_df_types.h>
 #include "lll_conn.h"
 #include "lll_filter.h"
 
-#include "ll_sw/ull_tx_queue.h"
+#include <ll_sw/ull_tx_queue.h>
 
 #include "ull_adv_types.h"
 #include "ull_filter.h"
@@ -48,9 +48,9 @@
 #include "ull_scan_internal.h"
 #include "ull_sched_internal.h"
 
-#include "ll.h"
+#include <ll.h>
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 static int init_reset(void);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,

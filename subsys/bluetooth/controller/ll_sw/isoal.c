@@ -18,16 +18,16 @@
 
 #include <zephyr/sys/byteorder.h>
 
-#include "util/memq.h"
+#include <util/memq.h>
 
-#include "hal/ccm.h"
-#include "hal/ticker.h"
+#include <hal/ccm.h>
+#include <hal/ticker.h>
 
 #include "pdu_df.h"
-#include "lll/pdu_vendor.h"
+#include <lll/pdu_vendor.h>
 #include "pdu.h"
 
-#include "ll.h"
+#include <ll.h>
 #include "lll.h"
 #include "lll_conn_iso.h"
 #include "lll_iso_tx.h"
@@ -47,7 +47,7 @@ LOG_MODULE_REGISTER(bt_ctlr_isoal, CONFIG_BT_CTLR_ISOAL_LOG_LEVEL);
 #define ISOAL_LOG_DBGV(...)    (void) 0
 #endif /* CONFIG_BT_CTLR_ISOAL_LOG_DBG_VERBOSE */
 
-#include "hal/debug.h"
+#include <hal/debug.h>
 
 #define FSM_TO_STR(s) (s == ISOAL_START ? "START" : \
 	(s == ISOAL_CONTINUE ? "CONTINUE" : \

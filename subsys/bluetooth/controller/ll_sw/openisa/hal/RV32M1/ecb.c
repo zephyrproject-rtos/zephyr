@@ -12,12 +12,12 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "hal/ecb.h"
+#include <hal/ecb.h>
 
 #include <zephyr/logging/log.h>
 
-#include "hal/debug.h"
-#include "fsl_cau3_ble.h"
+#include <hal/debug.h>
+#include <fsl_cau3_ble.h>
 
 LOG_MODULE_REGISTER(bt_ctlr_rv32m1_ecb, LOG_LEVEL_DBG);
 

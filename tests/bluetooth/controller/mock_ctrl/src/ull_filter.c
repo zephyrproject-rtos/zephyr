@@ -11,14 +11,14 @@
 
 #include <zephyr/bluetooth/hci_types.h>
 
-#include "util/mem.h"
-#include "util/memq.h"
-#include "pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "pdu.h"
+#include <util/mem.h>
+#include <util/memq.h>
+#include <pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <pdu.h>
 
-#include "lll.h"
-#include "lll_filter.h"
+#include <lll.h>
+#include <lll_filter.h>
 
 static uint8_t bt_addr[BDADDR_SIZE] = { 0, 0, 0, 0, 0, 0};
 

@@ -10,13 +10,13 @@
 #include <zephyr/types.h>
 #include <zephyr/net_buf.h>
 
-#include "util/memq.h"
+#include <util/memq.h>
 
-#include "ll_sw/pdu_df.h"
-#include "lll/pdu_vendor.h"
-#include "ll_sw/pdu.h"
-#include "ll_sw/lll.h"
-#include "hci/hci_user_ext.h"
+#include <ll_sw/pdu_df.h>
+#include <lll/pdu_vendor.h>
+#include <ll_sw/pdu.h>
+#include <ll_sw/lll.h>
+#include <hci/hci_user_ext.h>
 
 /* The test is made to show that hci.c and other code can compile when
  * certain Kconfig options are set. This includes functions that are
