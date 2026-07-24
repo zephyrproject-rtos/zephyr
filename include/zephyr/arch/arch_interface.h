@@ -724,18 +724,20 @@ static inline unsigned int arch_num_cpus(void);
  */
 
 /**
- * Get the mapped physical memory address from virtual address.
+ * Get the physical address mapped at a virtual address.
  *
- * The function only needs to query the current set of page tables as
- * the information it reports must be common to all of them if multiple
- * page tables are in use. If multiple page tables are active it is unnecessary
- * to iterate over all of them.
+ * The query is answered from the caller's currently active page tables.
+ * Only mappings that are active in the caller's context are reliably
+ * reported: a virtual address whose mapping is not part of that context
+ * (for example memory belonging to a memory domain that is not currently
+ * active, or per-context data pages such as the scratch page) may be
+ * reported as unmapped or resolve differently. Calling this function on
+ * such addresses is undefined behavior.
  *
- * Unless otherwise specified, virtual pages have the same mappings
- * across all page tables. Calling this function on data pages that are
- * exceptions to this rule (such as the scratch page) is undefined behavior.
- * Just check the currently installed page tables and return the information
- * in that.
+ * From an implementation standpoint, only the currently installed page
+ * tables need to be consulted, without iterating over other page tables
+ * in the system: anything legitimately queried through this API maps
+ * identically in all of them.
  *
  * @param virt Page-aligned virtual address
  * @param[out] phys Mapped physical address (can be NULL if only checking
