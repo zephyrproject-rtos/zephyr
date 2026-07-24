@@ -256,6 +256,12 @@ New APIs and options
   * Add :c:func:`net_dhcpv4_set_reboot_hint` to seed the DHCPv4 client with a
     previously leased address for INIT-REBOOT.
 
+* Power management
+
+  * :c:func:`pm_light_sleep`
+  * :c:func:`pm_deep_sleep`
+  * :c:func:`pm_soft_off`
+
 * Ring buffer
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
