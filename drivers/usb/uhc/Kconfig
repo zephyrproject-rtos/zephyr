@@ -11,6 +11,9 @@ menuconfig UHC_DRIVER
 
 if UHC_DRIVER
 
+config UHC_DRIVER_HAS_HIGH_SPEED_SUPPORT
+	bool
+
 config UHC_XFER_COUNT
 	int "Number of transfers in the pool"
 	range 2 256
