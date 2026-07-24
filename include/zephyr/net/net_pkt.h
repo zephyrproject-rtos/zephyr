@@ -524,6 +524,8 @@ static inline void net_pkt_set_udp_opt_surplus_len(struct net_pkt *pkt,
 #else
 static inline uint16_t net_pkt_udp_opt_surplus_len(struct net_pkt *pkt)
 {
+	ARG_UNUSED(pkt);
+
 	return 0;
 }
 
