@@ -21,8 +21,8 @@
 				compatible = "wch,ethernet";
 				interrupt-parent = <&pfic>;
 				interrupts = <77>, <78>;
-				internal-phy-pllmul = "15";
-				internal-phy-prediv = "2";
+				internal-phy-pllmul = "12.5";
+				internal-phy-prediv = "1";
 				status = "disabled";
 			};
 
