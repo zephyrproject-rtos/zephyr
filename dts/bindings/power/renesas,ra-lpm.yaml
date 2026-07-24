@@ -1,0 +1,183 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA Low Power Mode Controller
+
+compatible: "renesas,ra-lpm"
+
+include: base.yaml
+
+properties:
+  capabilities:
+    type: string-array
+    enum:
+      - "has-deep-sleep"
+      - "has-deep-sleep-irq-wakeup"
+      - "has-deep-software-standby"
+      - "has-extended-wakeup"
+      - "has-output-port-retain"
+      - "has-ram-retain"
+      - "has-ldo-retain"
+      - "has-standby-sosc-select"
+      - "has-hoco-startup-speed"
+      - "has-flash-mode-select"
+      - "has-dpsbycr-dcssmode"
+    description: |
+      List of low-power hardware features present on the silicon.
+      Set once in the SoC dtsi; boards must not add or remove entries.
+
+      "has-deep-sleep"
+        SoC supports Deep Sleep mode. CPU halts but peripherals keep running.
+
+      "has-deep-sleep-irq-wakeup"
+        SoC has DSLPWUPIRQEN[0..2] registers to individually enable any of
+        the 96 IRQ lines as a Deep Sleep wakeup source.
+
+      "has-deep-software-standby"
+        SoC supports Deep Software Standby mode.
+        CPU halts and almost all peripherals are powered down.
+
+      "has-extended-wakeup"
+        SoC has WUPEN2 register for extended Software Standby wakeup sources.
+
+      "has-output-port-retain"
+        SoC has SBYCR.OPE bit to retain I/O port output levels in Software Standby.
+
+      "has-ram-retain"
+        SoC has PDRAMSCR register to power-gate SRAM/TCM banks in Deep Sleep
+        and Software Standby.
+
+      "has-ldo-retain"
+        SoC can keep PLL1, PLL2, and HOCO LDOs powered during Software Standby.
+
+      "has-standby-sosc-select"
+        SoC can keep or stop the Sub-Clock Oscillator during Software Standby.
+
+      "has-hoco-startup-speed"
+        SoC has SBYCR.FWKUP to select HOCO startup speed on Software Standby exit.
+
+      "has-flash-mode-select"
+        SoC has SBYCR.FLSTP to select flash state during Sleep.
+
+      "has-dpsbycr-dcssmode"
+        SoC has DPSBYCR.DCSSMODE to enable a gradual soft-start of the
+        power supply on Deep Software Standby exit.
+
+  standby-options:
+    type: string-array
+    enum:
+      - "output-port-retain"
+      - "sram-retain"
+      - "tcm-retain"
+      - "sosc-retain"
+      - "pll1-ldo-retain"
+      - "pll2-ldo-retain"
+      - "hoco-ldo-retain"
+      - "hoco-high-speed-startup"
+    description: |
+      Optional features to enable when entering Software Standby.
+      Omitting an entry leaves the hardware at its reset default.
+
+      "output-port-retain"
+        Retain I/O port output levels.
+        Requires "has-output-port-retain" in capabilities.
+
+      "sram-retain"
+        Retain SRAM during Software Standby.
+        Requires "has-ram-retain" in capabilities.
+
+      "tcm-retain"
+        Retain TCM during Software Standby.
+        Requires "has-ram-retain" in capabilities.
+
+      "sosc-retain"
+        Keep SOSC running during Software Standby.
+        Requires "has-standby-sosc-select" in capabilities.
+
+      "pll1-ldo-retain"
+        Keep PLL1 LDO powered during Software Standby.
+        Requires "has-ldo-retain" in capabilities.
+
+      "pll2-ldo-retain"
+        Keep PLL2 LDO powered during Software Standby.
+        Requires "has-ldo-retain" in capabilities.
+
+      "hoco-ldo-retain"
+        Keep HOCO LDO powered during Software Standby.
+        Requires "has-ldo-retain" in capabilities.
+
+      "hoco-high-speed-startup"
+        Use HOCO high-speed startup on Software Standby exit.
+        Requires "has-hoco-startup-speed" in capabilities.
+
+  deep-standby-options:
+    type: string-array
+    enum:
+      - "io-port-keep"
+    description: |
+      Optional features for Deep Software Standby (PM_STATE_SOFT_OFF).
+
+      "io-port-keep"
+        When the Deep Software Standby mode is canceled, the I/O ports are
+        in the same state as in the Deep Software Standby mode
+        Requires "has-deep-software-standby" in capabilities.
+
+  standby-wakeup-sources:
+    type: array
+    description: |
+      List of wakeup interrupt source bit positions for Deep Sleep/Standby,
+      mapped to the WUPEN1:WUPEN0 register pair as a 64-bit bitmask.
+      When this property is omitted, all sources are enabled by default.
+      When present, only the listed bit positions are enabled.
+
+      Note:
+      If /chosen/zephyr,system-timer-companion is configured, the wakeup
+      source associated with that timer should also be included in this
+      property. Otherwise, timer-based kernel wakeups may not work while
+      the system is in Deep Sleep/Standby.
+
+      Example:
+        / {
+            chosen {
+                zephyr,system-timer-companion = &idle_counter;
+            };
+        };
+
+        &lpm {
+            /* Add the companion timer's wakeup source to this list */
+            standby-wakeup-sources = <RA_LPM_STANDBY_WAKE_SOURCE_ULP0A ... >;
+        };
+
+        &ulpt0 {
+            idle_counter: counter {
+                status = "okay";
+            };
+        };
+
+
+  standby-wakeup-sources-extended:
+    type: array
+    description: |
+      List of extended wakeup source bit positions for Software Standby,
+      mapped to the WUPEN2 register as a 64-bit bitmask.
+      Requires "has-extended-wakeup" in capabilities.
+
+  deep-sleep-wakeup-irq-mask:
+    type: array
+    default: [0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF]
+    description: |
+      Three 32-bit enable masks for DSLPWUPIRQEN[0], [1], [2].
+      Only meaningful when "has-deep-sleep-irq-wakeup" is present in capabilities.
+      Each bit enables the corresponding IRQ line as a Deep Sleep wakeup source.
+      Example — disable IRQ0 only:
+        deep-sleep-wakeup-irq-mask = <0xFFFFFFFE 0xFFFFFFFF 0xFFFFFFFF>;
+
+  deep-standby-soft-start-mode:
+    type: int
+    default: 0
+    description: |
+      Soft-start mode on Deep Software Standby exit.
+      Controls the tradeoff between wakeup time and inrush current.
+      Valid values: 0 (default, fastest wakeup) to 3 (slowest, lowest
+      inrush current).
+      Requires "has-dpsbycr-dcssmode" in capabilities.
