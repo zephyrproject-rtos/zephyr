@@ -124,6 +124,14 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if 
 	caps |= ETHERNET_HW_VLAN;
 #endif
 
+#ifdef CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN
+	caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
+#endif
+
+#ifdef CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
+	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD;
+#endif
+
 	return caps;
 }
 
@@ -166,6 +174,10 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	/* initial flag values */
 	des2_flags = 0;
 	des3_flags = TDES3_FD | TDES3_OWN;
+
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN)) {
+		des3_flags |= TDES3_CIC;
+	}
 
 	/* map packet fragments */
 	d_idx = p->tx_desc_head;
@@ -650,6 +662,8 @@ int dwmac_probe(const struct device *dev)
 	int ret;
 	uint32_t reg_val;
 	k_timepoint_t timeout;
+	uint32_t rx_fifo_size;
+	uint32_t tx_fifo_size;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
@@ -686,11 +700,27 @@ int dwmac_probe(const struct device *dev)
 		return ret;
 	}
 
+	/* setup queues */
+	/* currently only a single queue is supported, assign full FIFO to it */
+	rx_fifo_size = BIT(7 + FIELD_GET(MAC_HW_FEATURE1_RXFIFOSIZE, p->feature1));
+	tx_fifo_size = BIT(7 + FIELD_GET(MAC_HW_FEATURE1_TXFIFOSIZE, p->feature1));
+	LOG_DBG("RX/TX fifo size: %u/%u bytes", rx_fifo_size, tx_fifo_size);
+
+	DWMAC_REG_WRITE(MTL_RXQn_OPERATION_MODE(0),
+			MTL_RXQn_OPERATION_MODE_RSF |
+			FIELD_PREP(MTL_RXQn_OPERATION_MODE_RQS, (rx_fifo_size/256) - 1));
+	DWMAC_REG_WRITE(MAC_RXQ_CTRL0, FIELD_PREP(MAC_RXQ_CTRL0_RXQ0EN, 1));
+	DWMAC_REG_WRITE(MTL_TXQn_OPERATION_MODE(0),
+			MTL_TXQn_OPERATION_MODE_TSF |
+			FIELD_PREP(MTL_TXQn_OPERATION_MODE_TQS, (tx_fifo_size/256) - 1) |
+			FIELD_PREP(MTL_TXQn_OPERATION_MODE_TXQEN, 1));
+
+	/* set up DMA */
 	memset(p->tx_descs, 0, NB_TX_DESCS * sizeof(struct dwmac_dma_desc));
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
-	/* set up DMA */
-	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0), 0);
+	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0),
+			FIELD_PREP(DMA_CHn_TX_CTRL_PBL, 32));
 	DWMAC_REG_WRITE(DMA_CHn_RX_CTRL(0),
 			FIELD_PREP(DMA_CHn_RX_CTRL_PBL, 32) |
 			FIELD_PREP(DMA_CHn_RX_CTRL_RBSZ, RX_FRAG_SIZE));
@@ -700,6 +730,11 @@ int dwmac_probe(const struct device *dev)
 	DWMAC_REG_WRITE(DMA_CHn_RXDESC_LIST_ADDR(0), RXDESC_PHYS_L(0));
 	DWMAC_REG_WRITE(DMA_CHn_TXDESC_RING_LENGTH(0), NB_TX_DESCS - 1);
 	DWMAC_REG_WRITE(DMA_CHn_RXDESC_RING_LENGTH(0), NB_RX_DESCS - 1);
+
+	/* setup RX checksum offloading */
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN)) {
+		DWMAC_REG_WRITE(MAC_CONF, DWMAC_REG_READ(MAC_CONF) | MAC_CONF_IPC);
+	}
 
 	return 0;
 }
