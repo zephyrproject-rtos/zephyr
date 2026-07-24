@@ -165,6 +165,8 @@ config ETH_DWC_ETHER_RX_HW_CHECKSUM_EN
 	depends on NET_CHECKSUM_OFFLOAD
 	default y
 
+rsource "Kconfig.ptp"
+
 endif # ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 
 endmenu
