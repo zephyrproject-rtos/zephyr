@@ -57,7 +57,7 @@ const struct shell_alias shell_aliases[] = {
 	{ "?", "help" },
 
 #if defined(CONFIG_SHELL_ALIASES_HAS_FILE)
-#include "generated-shell-aliases.inc"
+#include <generated-shell-aliases.inc>
 #endif
 	/* NULL is used to mark the end of the array */
 	{ NULL, NULL }
