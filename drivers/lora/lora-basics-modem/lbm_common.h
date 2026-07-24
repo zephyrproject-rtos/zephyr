@@ -64,6 +64,13 @@ struct lbm_lora_data_common {
 			void *user_data;
 		} async;
 	} rx_state;
+	/* CAD configuration (saved from lora_config) */
+	struct lora_cad_config cad_config;
+	/* CAD async state */
+	struct {
+		lora_cad_cb cb;
+		void *user_data;
+	} cad_state;
 	/* User signal */
 	struct k_poll_signal *operation_done;
 	/* Current modem state */

@@ -38,21 +38,21 @@ extern "C" {
  * higher data rates but typically reduce sensitivity and range.
  */
 enum lora_signal_bandwidth {
-	BW_7_KHZ = 7,		/**< 7.81 kHz */
-	BW_10_KHZ = 10,		/**< 10.42 kHz */
-	BW_15_KHZ = 15,		/**< 15.63 kHz */
-	BW_20_KHZ = 20,		/**< 20.83 kHz */
-	BW_31_KHZ = 31,		/**< 31.25 kHz */
-	BW_41_KHZ = 41,		/**< 41.67 kHz */
-	BW_62_KHZ = 62,		/**< 62.5 kHz */
-	BW_125_KHZ = 125,	/**< 125 kHz */
-	BW_200_KHZ = 200,	/**< 203 kHz */
-	BW_250_KHZ = 250,	/**< 250 kHz */
-	BW_400_KHZ = 400,	/**< 406 kHz */
-	BW_500_KHZ = 500,	/**< 500 kHz */
-	BW_800_KHZ = 800,	/**< 812 kHz */
-	BW_1000_KHZ = 1000,	/**< 1000 kHz */
-	BW_1600_KHZ = 1600,	/**< 1625 kHz */
+	BW_7_KHZ = 7,       /**< 7.81 kHz */
+	BW_10_KHZ = 10,     /**< 10.42 kHz */
+	BW_15_KHZ = 15,     /**< 15.63 kHz */
+	BW_20_KHZ = 20,     /**< 20.83 kHz */
+	BW_31_KHZ = 31,     /**< 31.25 kHz */
+	BW_41_KHZ = 41,     /**< 41.67 kHz */
+	BW_62_KHZ = 62,     /**< 62.5 kHz */
+	BW_125_KHZ = 125,   /**< 125 kHz */
+	BW_200_KHZ = 200,   /**< 203 kHz */
+	BW_250_KHZ = 250,   /**< 250 kHz */
+	BW_400_KHZ = 400,   /**< 406 kHz */
+	BW_500_KHZ = 500,   /**< 500 kHz */
+	BW_800_KHZ = 800,   /**< 812 kHz */
+	BW_1000_KHZ = 1000, /**< 1000 kHz */
+	BW_1600_KHZ = 1600, /**< 1625 kHz */
 };
 
 /**
@@ -64,14 +64,14 @@ enum lora_signal_bandwidth {
  * symbol). Higher values result in lower data rates but increased range and robustness.
  */
 enum lora_datarate {
-	SF_5 = 5,	/**< Spreading factor 5 (fastest, shortest range) */
-	SF_6 = 6,	/**< Spreading factor 6 */
-	SF_7 = 7,	/**< Spreading factor 7 */
-	SF_8 = 8,	/**< Spreading factor 8 */
-	SF_9 = 9,	/**< Spreading factor 9 */
-	SF_10 = 10,	/**< Spreading factor 10 */
-	SF_11 = 11,	/**< Spreading factor 11 */
-	SF_12 = 12,	/**< Spreading factor 12 (slowest, longest range) */
+	SF_5 = 5,   /**< Spreading factor 5 (fastest, shortest range) */
+	SF_6 = 6,   /**< Spreading factor 6 */
+	SF_7 = 7,   /**< Spreading factor 7 */
+	SF_8 = 8,   /**< Spreading factor 8 */
+	SF_9 = 9,   /**< Spreading factor 9 */
+	SF_10 = 10, /**< Spreading factor 10 */
+	SF_11 = 11, /**< Spreading factor 11 */
+	SF_12 = 12, /**< Spreading factor 12 (slowest, longest range) */
 };
 
 /**
@@ -84,10 +84,10 @@ enum lora_datarate {
  * error tolerance at the cost of data rate.
  */
 enum lora_coding_rate {
-	CR_4_5 = 1,  /**< Coding rate 4/5 (4 information bits, 1 error correction bit) */
-	CR_4_6 = 2,  /**< Coding rate 4/6 (4 information bits, 2 error correction bits) */
-	CR_4_7 = 3,  /**< Coding rate 4/7 (4 information bits, 3 error correction bits) */
-	CR_4_8 = 4,  /**< Coding rate 4/8 (4 information bits, 4 error correction bits) */
+	CR_4_5 = 1, /**< Coding rate 4/5 (4 information bits, 1 error correction bit) */
+	CR_4_6 = 2, /**< Coding rate 4/6 (4 information bits, 2 error correction bits) */
+	CR_4_7 = 3, /**< Coding rate 4/7 (4 information bits, 3 error correction bits) */
+	CR_4_8 = 4, /**< Coding rate 4/8 (4 information bits, 4 error correction bits) */
 };
 
 /**
@@ -97,11 +97,11 @@ enum lora_coding_rate {
  * consumption.
  */
 enum lora_cad_symbol_num {
-	LORA_CAD_SYMB_1 = 1,	/**< 1 symbol */
-	LORA_CAD_SYMB_2 = 2,	/**< 2 symbols */
-	LORA_CAD_SYMB_4 = 4,	/**< 4 symbols */
-	LORA_CAD_SYMB_8 = 8,	/**< 8 symbols */
-	LORA_CAD_SYMB_16 = 16,	/**< 16 symbols */
+	LORA_CAD_SYMB_1 = 1,   /**< 1 symbol */
+	LORA_CAD_SYMB_2 = 2,   /**< 2 symbols */
+	LORA_CAD_SYMB_4 = 4,   /**< 4 symbols */
+	LORA_CAD_SYMB_8 = 8,   /**< 8 symbols */
+	LORA_CAD_SYMB_16 = 16, /**< 16 symbols */
 };
 
 /**
@@ -127,6 +127,36 @@ enum lora_cad_mode {
 	 * transmitting and returns -EBUSY if the channel is busy.
 	 */
 	LORA_CAD_MODE_LBT,
+};
+
+/**
+ * @struct lora_cad_config
+ * Structure containing the configuration of a LoRa modem's Channel Activity detection (CAD)
+ */
+struct lora_cad_config {
+	/** CAD mode. See @ref lora_cad_mode for details. */
+	enum lora_cad_mode mode;
+
+	/** Number of symbols for CAD detection. 0 = driver default. */
+	enum lora_cad_symbol_num symbol_num;
+
+	/**
+	 * Detection peak threshold (hardware-specific, dimensionless).
+	 * Passed directly to the radio. 0 = auto-derive from SF/BW.
+	 */
+	uint8_t detection_peak;
+
+	/**
+	 * Minimum detection threshold (hardware-specific, dimensionless).
+	 * Passed directly to the radio. 0 = auto-derive from SF/BW.
+	 */
+	uint8_t detection_minimum;
+
+	/**
+	 * Timeout in ms to prevent the radio staying in Rx mode indefinitely
+	 * if LORA_CAD_MODE_RX has been selected.
+	 */
+	uint32_t timeout;
 };
 
 /**
@@ -186,25 +216,7 @@ struct lora_modem_config {
 	bool packet_crc_disable;
 
 	/** Channel Activity Detection parameters. */
-	struct {
-		/** CAD mode. See @ref lora_cad_mode for details. */
-		enum lora_cad_mode mode;
-
-		/** Number of symbols for CAD detection. 0 = driver default. */
-		enum lora_cad_symbol_num symbol_num;
-
-		/**
-		 * Detection peak threshold (hardware-specific, dimensionless).
-		 * Passed directly to the radio. 0 = auto-derive from SF/BW.
-		 */
-		uint8_t detection_peak;
-
-		/**
-		 * Minimum detection threshold (hardware-specific, dimensionless).
-		 * Passed directly to the radio. 0 = auto-derive from SF/BW.
-		 */
-		uint8_t detection_minimum;
-	} cad;
+	struct lora_cad_config cad;
 };
 
 /**
@@ -218,8 +230,8 @@ struct lora_modem_config {
  *
  * @see lora_recv() for argument descriptions.
  */
-typedef void (*lora_recv_cb)(const struct device *dev, uint8_t *data, uint16_t size,
-			     int16_t rssi, int8_t snr, void *user_data);
+typedef void (*lora_recv_cb)(const struct device *dev, uint8_t *data, uint16_t size, int16_t rssi,
+			     int8_t snr, void *user_data);
 
 /**
  * @brief Callback API for channel activity detection asynchronously
@@ -228,16 +240,14 @@ typedef void (*lora_recv_cb)(const struct device *dev, uint8_t *data, uint16_t s
  * @param activity_detected true if LoRa activity was detected on the channel
  * @param user_data         User data passed to @ref lora_cad_async
  */
-typedef void (*lora_cad_cb)(const struct device *dev, bool activity_detected,
-			    void *user_data);
+typedef void (*lora_cad_cb)(const struct device *dev, bool activity_detected, void *user_data);
 
 /**
  * @brief Callback API for configuring the LoRa module
  *
  * @see lora_config() for argument descriptions.
  */
-typedef int (*lora_api_config)(const struct device *dev,
-			       const struct lora_modem_config *config);
+typedef int (*lora_api_config)(const struct device *dev, const struct lora_modem_config *config);
 
 /**
  * @brief Callback API for querying packet airtime
@@ -251,16 +261,14 @@ typedef uint32_t (*lora_api_airtime)(const struct device *dev, uint32_t data_len
  *
  * @see lora_send() for argument descriptions.
  */
-typedef int (*lora_api_send)(const struct device *dev,
-			     uint8_t *data, uint32_t data_len);
+typedef int (*lora_api_send)(const struct device *dev, uint8_t *data, uint32_t data_len);
 
 /**
  * @brief Callback API for sending data asynchronously over LoRa
  *
  * @see lora_send_async() for argument descriptions.
  */
-typedef int (*lora_api_send_async)(const struct device *dev,
-				   uint8_t *data, uint32_t data_len,
+typedef int (*lora_api_send_async)(const struct device *dev, uint8_t *data, uint32_t data_len,
 				   struct k_poll_signal *async);
 
 /**
@@ -268,8 +276,7 @@ typedef int (*lora_api_send_async)(const struct device *dev,
  *
  * @see lora_recv() for argument descriptions.
  */
-typedef int (*lora_api_recv)(const struct device *dev, uint8_t *data,
-			     uint8_t size,
+typedef int (*lora_api_recv)(const struct device *dev, uint8_t *data, uint8_t size,
 			     k_timeout_t timeout, int16_t *rssi, int8_t *snr);
 
 /**
@@ -279,8 +286,7 @@ typedef int (*lora_api_recv)(const struct device *dev, uint8_t *data,
  * @param cb Callback to run on receiving data.
  * @param user_data User data passed to callback
  */
-typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb,
-			     void *user_data);
+typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb, void *user_data);
 
 /**
  * @brief Callback API for channel activity detection
@@ -294,8 +300,7 @@ typedef int (*lora_api_cad)(const struct device *dev, k_timeout_t timeout);
  *
  * @see lora_cad_async() for argument descriptions.
  */
-typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
-				  void *user_data);
+typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb, void *user_data);
 
 /**
  * @typedef lora_api_recv_duty_cycle()
@@ -303,12 +308,9 @@ typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
  *
  * @see lora_recv_duty_cycle() for argument descriptions.
  */
-typedef int (*lora_api_recv_duty_cycle)(const struct device *dev,
-					k_timeout_t rx_period,
-					k_timeout_t sleep_period,
-					uint8_t *data, uint8_t size,
-					k_timeout_t timeout,
-					int16_t *rssi, int8_t *snr);
+typedef int (*lora_api_recv_duty_cycle)(const struct device *dev, k_timeout_t rx_period,
+					k_timeout_t sleep_period, uint8_t *data, uint8_t size,
+					k_timeout_t timeout, int16_t *rssi, int8_t *snr);
 
 /**
  * @typedef lora_api_recv_duty_cycle_async()
@@ -316,18 +318,17 @@ typedef int (*lora_api_recv_duty_cycle)(const struct device *dev,
  *
  * @see lora_recv_duty_cycle_async() for argument descriptions.
  */
-typedef int (*lora_api_recv_duty_cycle_async)(const struct device *dev,
-					      k_timeout_t rx_period,
-					      k_timeout_t sleep_period,
-					      lora_recv_cb cb, void *user_data);
+typedef int (*lora_api_recv_duty_cycle_async)(const struct device *dev, k_timeout_t rx_period,
+					      k_timeout_t sleep_period, lora_recv_cb cb,
+					      void *user_data);
 
 /**
  * @brief Callback API for transmitting a continuous wave
  *
  * @see lora_test_cw() for argument descriptions.
  */
-typedef int (*lora_api_test_cw)(const struct device *dev, uint32_t frequency,
-				int8_t tx_power, uint16_t duration);
+typedef int (*lora_api_test_cw)(const struct device *dev, uint32_t frequency, int8_t tx_power,
+				uint16_t duration);
 
 /**
  * @driver_ops{LoRa}
@@ -367,8 +368,7 @@ __subsystem struct lora_driver_api {
 		  modem
  * @return 0 on success, negative on error
  */
-static inline int lora_config(const struct device *dev,
-			      const struct lora_modem_config *config)
+static inline int lora_config(const struct device *dev, const struct lora_modem_config *config)
 {
 	return DEVICE_API_GET(lora, dev)->config(dev, config);
 }
@@ -399,8 +399,7 @@ static inline uint32_t lora_airtime(const struct device *dev, uint32_t data_len)
  * @param data_len  Length of the data to be sent
  * @return 0 on success, negative on error
  */
-static inline int lora_send(const struct device *dev,
-			    uint8_t *data, uint32_t data_len)
+static inline int lora_send(const struct device *dev, uint8_t *data, uint32_t data_len)
 {
 	return DEVICE_API_GET(lora, dev)->send(dev, data, data_len);
 }
@@ -421,8 +420,7 @@ static inline int lora_send(const struct device *dev,
  *        notify the end of the transmission).
  * @return 0 on success, negative on error
  */
-static inline int lora_send_async(const struct device *dev,
-				  uint8_t *data, uint32_t data_len,
+static inline int lora_send_async(const struct device *dev, uint8_t *data, uint32_t data_len,
 				  struct k_poll_signal *async)
 {
 	return DEVICE_API_GET(lora, dev)->send_async(dev, data, data_len, async);
@@ -444,8 +442,7 @@ static inline int lora_send_async(const struct device *dev,
  * @param snr       SNR of received data
  * @return Length of the data received on success, negative on error
  */
-static inline int lora_recv(const struct device *dev, uint8_t *data,
-			    uint8_t size,
+static inline int lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 			    k_timeout_t timeout, int16_t *rssi, int8_t *snr)
 {
 	return DEVICE_API_GET(lora, dev)->recv(dev, data, size, timeout, rssi, snr);
@@ -466,8 +463,7 @@ static inline int lora_recv(const struct device *dev, uint8_t *data,
  * @param user_data User data passed to callback
  * @return 0 when reception successfully setup, negative on error
  */
-static inline int lora_recv_async(const struct device *dev, lora_recv_cb cb,
-			       void *user_data)
+static inline int lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user_data)
 {
 	return DEVICE_API_GET(lora, dev)->recv_async(dev, cb, user_data);
 }
@@ -513,8 +509,7 @@ static inline int lora_cad(const struct device *dev, k_timeout_t timeout)
  * @param user_data  User data passed to callback
  * @return 0 on success, negative on error
  */
-static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
-				 void *user_data)
+static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb, void *user_data)
 {
 	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
 
@@ -547,12 +542,9 @@ static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
  * @param snr           SNR of received data
  * @return Length of the data received on success, negative on error
  */
-static inline int lora_recv_duty_cycle(const struct device *dev,
-				       k_timeout_t rx_period,
-				       k_timeout_t sleep_period,
-				       uint8_t *data, uint8_t size,
-				       k_timeout_t timeout,
-				       int16_t *rssi, int8_t *snr)
+static inline int lora_recv_duty_cycle(const struct device *dev, k_timeout_t rx_period,
+				       k_timeout_t sleep_period, uint8_t *data, uint8_t size,
+				       k_timeout_t timeout, int16_t *rssi, int8_t *snr)
 {
 	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
 
@@ -560,8 +552,7 @@ static inline int lora_recv_duty_cycle(const struct device *dev,
 		return -ENOSYS;
 	}
 
-	return api->recv_duty_cycle(dev, rx_period, sleep_period,
-				    data, size, timeout, rssi, snr);
+	return api->recv_duty_cycle(dev, rx_period, sleep_period, data, size, timeout, rssi, snr);
 }
 
 /**
@@ -582,10 +573,9 @@ static inline int lora_recv_duty_cycle(const struct device *dev,
  * @param user_data     User data passed to callback
  * @return 0 on success, negative on error
  */
-static inline int lora_recv_duty_cycle_async(const struct device *dev,
-					     k_timeout_t rx_period,
-					     k_timeout_t sleep_period,
-					     lora_recv_cb cb, void *user_data)
+static inline int lora_recv_duty_cycle_async(const struct device *dev, k_timeout_t rx_period,
+					     k_timeout_t sleep_period, lora_recv_cb cb,
+					     void *user_data)
 {
 	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
 
@@ -608,8 +598,8 @@ static inline int lora_recv_duty_cycle_async(const struct device *dev,
  * @param duration  Transmission duration in seconds.
  * @return 0 on success, negative on error
  */
-static inline int lora_test_cw(const struct device *dev, uint32_t frequency,
-			       int8_t tx_power, uint16_t duration)
+static inline int lora_test_cw(const struct device *dev, uint32_t frequency, int8_t tx_power,
+			       uint16_t duration)
 {
 	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
 
@@ -628,4 +618,4 @@ static inline int lora_test_cw(const struct device *dev, uint32_t frequency,
  * @}
  */
 
-#endif	/* ZEPHYR_INCLUDE_DRIVERS_LORA_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_LORA_H_ */

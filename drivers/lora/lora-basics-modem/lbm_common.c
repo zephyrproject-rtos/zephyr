@@ -22,8 +22,9 @@ LOG_MODULE_REGISTER(lbm_driver, CONFIG_LORA_LOG_LEVEL);
  * Additionally, enable LDRO in additional situations described in Lora Basic Modem lr1mac
  * where t < 16 from ral_compute_lora_ldro: Bandwidth less than 41 Khz, and SF9 with BW 41 KHz
  */
-#define LORA_LDRO(sf, bw) ((((1 << sf) / bw) >= 16 ? 1 : 0) \
-	| (bw < BW_41_KHZ || (bw == BW_41_KHZ && sf == SF_9) ? 1 : 0))
+#define LORA_LDRO(sf, bw)                                                                          \
+	((((1 << sf) / bw) >= 16 ? 1 : 0) |                                                        \
+	 (bw < BW_41_KHZ || (bw == BW_41_KHZ && sf == SF_9) ? 1 : 0))
 
 /**
  * @brief Attempt to acquire the modem for operations
@@ -80,24 +81,50 @@ static bool modem_release(const struct device *dev)
 	return true;
 }
 
+/**
+ * @brief Convert zephyr's lora_cad_symbol_num to ral_lora_cad_symbs_t
+ *
+ * @param sym variable containing Zephyr's symbol
+ *
+ * @retval converted symbol value to ral_lora_cad_symbs_t
+ */
+static ral_lora_cad_symbs_t lora_cad_symb_to_ral(enum lora_cad_symbol_num sym)
+{
+	switch (sym) {
+	case LORA_CAD_SYMB_2:
+		return RAL_LORA_CAD_02_SYMB;
+	case LORA_CAD_SYMB_4:
+		return RAL_LORA_CAD_04_SYMB;
+	case LORA_CAD_SYMB_8:
+		return RAL_LORA_CAD_08_SYMB;
+	case LORA_CAD_SYMB_16:
+		return RAL_LORA_CAD_16_SYMB;
+	default:
+		return RAL_LORA_CAD_01_SYMB;
+	}
+}
+
 int lbm_lora_config(const struct device *dev, const struct lora_modem_config *lora_config)
 {
 	const struct lbm_lora_config_common *config = dev->config;
 	struct lbm_lora_data_common *data = dev->data;
+	ral_lora_mod_params_t mod_params = {
+		.sf = lora_config->datarate,
+		.cr = lora_config->coding_rate,
+		.ldro = config->force_ldro
+				? 1
+				: LORA_LDRO(lora_config->datarate, lora_config->bandwidth),
+	};
+	ral_lora_pkt_params_t pkt_params = {
+		.preamble_len_in_symb = lora_config->preamble_len,
+		.header_type = RAL_LORA_PKT_EXPLICIT,
+		.pld_len_in_bytes = UINT8_MAX,
+		.crc_is_on = !lora_config->packet_crc_disable,
+		.invert_iq_is_on = lora_config->iq_inverted,
+	};
 	ralf_params_lora_t params = {
-		.mod_params = {
-			.sf = lora_config->datarate,
-			.cr = lora_config->coding_rate,
-			.ldro = config->force_ldro ? 1 : LORA_LDRO(lora_config->datarate,
-								   lora_config->bandwidth),
-		},
-		.pkt_params = {
-			.preamble_len_in_symb = lora_config->preamble_len,
-			.header_type = RAL_LORA_PKT_EXPLICIT,
-			.pld_len_in_bytes = UINT8_MAX,
-			.crc_is_on = !lora_config->packet_crc_disable,
-			.invert_iq_is_on = lora_config->iq_inverted,
-		},
+		.mod_params = mod_params,
+		.pkt_params = pkt_params,
 		.rf_freq_in_hz = lora_config->frequency,
 		.output_pwr_in_dbm = lora_config->tx_power,
 		.sync_word = 0,
@@ -180,6 +207,7 @@ int lbm_lora_config(const struct device *dev, const struct lora_modem_config *lo
 	/* Store TX parameters for use in the TX functions */
 	data->mod_params = params.mod_params;
 	data->pkt_params = params.pkt_params;
+	data->cad_config = lora_config->cad;
 
 	status = ralf_setup_lora(&config->ralf, &params);
 	ret = status == RAL_STATUS_OK ? 0 : -EIO;
@@ -471,6 +499,85 @@ release:
 	return ret;
 }
 
+static int lbm_cad_setup_and_start(const struct device *dev)
+{
+	const struct lbm_lora_config_common *config = dev->config;
+	struct lbm_lora_data_common *data = dev->data;
+	ral_lora_cad_params_t cad_params = {
+		.cad_symb_nb = lora_cad_symb_to_ral(data->cad_config.symbol_num),
+		.cad_det_peak_in_symb = data->cad_config.detection_peak,
+		.cad_det_min_in_symb = data->cad_config.detection_minimum,
+		.cad_exit_mode = (ral_lora_cad_exit_modes_t)data->cad_config.mode,
+		.cad_timeout_in_ms = data->cad_config.timeout,
+	};
+	ral_status_t status;
+
+	lbm_driver_antenna_configure(dev, MODE_CAD);
+	data->modem_mode = MODE_CAD;
+
+	status = ral_set_lora_cad_params(&config->ralf.ral, &cad_params);
+	if (status != RAL_STATUS_OK) {
+		return -EIO;
+	}
+
+	status = ral_set_lora_cad(&config->ralf.ral);
+	return status == RAL_STATUS_OK ? 0 : -EIO;
+}
+
+int lbm_lora_cad_async(const struct device *dev, lora_cad_cb cb, void *user_data)
+{
+	struct lbm_lora_data_common *data = dev->data;
+	int ret;
+
+	if (!modem_acquire(dev)) {
+		return -EBUSY;
+	}
+
+	data->cad_state.cb = cb;
+	data->cad_state.user_data = user_data;
+	data->operation_done = NULL;
+
+	ret = lbm_cad_setup_and_start(dev);
+	if (ret < 0) {
+		modem_release(dev);
+	}
+	return ret;
+}
+
+int lbm_lora_cad(const struct device *dev, k_timeout_t timeout)
+{
+	struct k_poll_signal done = K_POLL_SIGNAL_INITIALIZER(done);
+	struct k_poll_event evt =
+		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &done);
+	struct lbm_lora_data_common *data = dev->data;
+	int ret;
+
+	if (!modem_acquire(dev)) {
+		return -EBUSY;
+	}
+
+	data->cad_state.cb = NULL;
+	data->operation_done = &done;
+
+	ret = lbm_cad_setup_and_start(dev);
+	if (ret < 0) {
+		modem_release(dev);
+		return ret;
+	}
+
+	ret = k_poll(&evt, 1, timeout);
+	if (ret < 0) {
+		if (modem_release(dev)) {
+			LOG_INF("CAD timeout");
+			return -EAGAIN;
+		}
+		/* IRQ handler is currently running, wait for it to finish */
+		k_poll(&evt, 1, K_FOREVER);
+	}
+
+	return done.result;
+}
+
 static int op_done_sync_rx(const struct device *dev)
 {
 	const struct lbm_lora_config_common *config = dev->config;
@@ -544,6 +651,9 @@ static void op_done_work_handler(struct k_work *work)
 	const struct device *dev = data->dev;
 	const struct lbm_lora_config_common *config = dev->config;
 	struct k_poll_signal *sig_done;
+	lora_cad_cb cad_cb = NULL;
+	void *cad_user_data = NULL;
+	bool channel_busy = false;
 	ral_irq_t irq_state;
 	ral_status_t status;
 	bool release = false;
@@ -584,7 +694,17 @@ static void op_done_work_handler(struct k_work *work)
 		/* Don't release the modem here, RX continues */
 		break;
 	case MODE_CAD:
-		LOG_DBG("CAD complete (TBC)");
+		ral_irq_t cad_irq;
+
+		(void)ral_get_and_clear_irq_status(&config->ralf.ral, &cad_irq);
+		channel_busy = (cad_irq & RAL_IRQ_CAD_OK) != 0;
+		ret = channel_busy ? 1 : 0;
+		LOG_DBG("CAD complete, channel_busy=%d", channel_busy);
+		cad_cb = data->cad_state.cb;
+		cad_user_data = data->cad_state.user_data;
+		data->cad_state.cb = NULL;
+		/* Don't release the modem if exit mode is RAL_LORA_CAD_RX, Rx continues */
+		release = (data->cad_config.mode != LORA_CAD_MODE_RX);
 		break;
 	}
 
@@ -617,6 +737,11 @@ static void op_done_work_handler(struct k_work *work)
 	/* Notify user that operation has completed */
 	if (sig_done) {
 		k_poll_signal_raise(sig_done, error_irq ? -EAGAIN : ret);
+	}
+
+	/* Notify user space through the callback */
+	if (cad_cb) {
+		cad_cb(dev, channel_busy, cad_user_data);
 	}
 }
 
@@ -661,4 +786,6 @@ DEVICE_API(lora, lbm_lora_api) = {
 	.recv = lbm_lora_recv,
 	.recv_async = lbm_lora_recv_async,
 	.test_cw = lbm_lora_test_cw,
+	.cad = lbm_lora_cad,
+	.cad_async = lbm_lora_cad_async,
 };
