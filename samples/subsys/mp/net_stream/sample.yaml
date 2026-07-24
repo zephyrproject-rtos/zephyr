@@ -1,0 +1,15 @@
+sample:
+  description: MediaPipe MJPEG-over-TCP network streaming sample
+  name: MediaPipe Network Streaming Sample
+tests:
+  sample.subsys.mp.net_stream:
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    tags:
+      - mp
+      - networking
+      - mjpeg
+    harness: net
+    timeout: 60

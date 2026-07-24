@@ -1,0 +1,47 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MP_PLUGIN_ZNET
+	bool "Network plugin support (TCP server sink and source)"
+	depends on NETWORKING && NET_TCP && NET_SOCKETS
+	select NET_IPV4_MAPPING_TO_IPV6 if NET_IPV6
+	help
+	  Enable the znet plugin which provides TCP server sink and source
+	  elements. Each element listens on a configurable port, accepts one
+	  client connection, and streams pipeline buffers as raw bytes over TCP.
+	  When IPv6 is enabled, a single socket accepts both IPv4 and IPv6
+	  clients via IPv4-mapped addresses.
+
+if MP_PLUGIN_ZNET
+
+config MP_PLUGIN_ZNET_DEFAULT_PORT
+	int "Default TCP port for the TCP sink element (mp_ztcpsink)"
+	default 5000
+	range 1 65535
+	help
+	  Default TCP port number the mp_ztcpsink element binds to when no
+	  PROP_ZTCPSINK_PORT property is set by the application.
+
+config MP_PLUGIN_ZNET_DEFAULT_SRC_PORT
+	int "Default TCP port for the TCP source element (mp_ztcpsrc)"
+	default 5001
+	range 1 65535
+	help
+	  Default TCP port number the mp_ztcpsrc element binds to when no
+	  PROP_ZTCPSRC_PORT property is set by the application.
+
+config MP_PLUGIN_ZNET_SRC_BUF_SIZE
+	int "Receive buffer size for the TCP source element (bytes)"
+	default 4096
+	range 64 65536
+	help
+	  Size in bytes of each receive buffer allocated by mp_ztcpsrc.
+
+config MP_PLUGIN_ZNET_SRC_NUM_BUFS
+	int "Number of receive buffers for the TCP source element"
+	default 4
+	range 1 32
+	help
+	  Number of net_buf entries in the mp_ztcpsrc receive pool.
+
+endif # MP_PLUGIN_ZNET
