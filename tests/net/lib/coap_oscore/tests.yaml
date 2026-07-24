@@ -1,0 +1,17 @@
+tests:
+  net.coap.oscore:
+    min_ram: 16
+    tags: net
+    depends_on: netif
+    extra_configs:
+      - CONFIG_COAP_OSCORE_MAX_CONTEXTS=2
+      - CONFIG_COAP_OSCORE_EXCHANGE_CACHE_SIZE=4
+      - CONFIG_COAP_OSCORE_EXCHANGE_LIFETIME_MS=60000
+
+  net.coap.oscore_no_oscore:
+    min_ram: 16
+    tags: net
+    depends_on: netif
+    extra_configs:
+      - CONFIG_COAP_OSCORE=n
+      - CONFIG_UOSCORE=n
