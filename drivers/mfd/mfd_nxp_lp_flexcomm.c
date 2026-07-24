@@ -12,6 +12,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
 
 LOG_MODULE_REGISTER(mfd_nxp_lp_flexcomm, CONFIG_MFD_LOG_LEVEL);
@@ -132,6 +133,30 @@ static int nxp_lp_flexcomm_select_periph(const struct device *dev)
 	return 0;
 }
 
+static int nxp_lp_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct nxp_lp_flexcomm_config *config = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+		if (config->reset.dev != NULL) {
+			ret = reset_line_deassert_dt(&config->reset);
+			if (ret != 0) {
+				return ret;
+			}
+		}
+		return nxp_lp_flexcomm_select_periph(dev);
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int nxp_lp_flexcomm_init(const struct device *dev)
 {
 	const struct nxp_lp_flexcomm_config *config = dev->config;
@@ -141,16 +166,11 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 		if (!device_is_ready(config->reset.dev)) {
 			return -ENODEV;
 		}
-
-		ret = reset_line_deassert_dt(&config->reset);
-		if (ret != 0) {
-			return ret;
-		}
 	}
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
-	ret = nxp_lp_flexcomm_select_periph(dev);
+	ret = pm_device_driver_init(dev, nxp_lp_flexcomm_pm_action);
 	if (ret != 0) {
 		return ret;
 	}
@@ -185,9 +205,11 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 		.num_children = ARRAY_SIZE(nxp_lp_flexcomm_children_##n),	\
 	};									\
 										\
+	PM_DEVICE_DT_INST_DEFINE(n, nxp_lp_flexcomm_pm_action);			\
+										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			    &nxp_lp_flexcomm_init,				\
-			    NULL,						\
+			    PM_DEVICE_DT_INST_GET(n),				\
 			    &nxp_lp_flexcomm_data_##n,				\
 			    &nxp_lp_flexcomm_config_##n,			\
 			    PRE_KERNEL_1,					\
