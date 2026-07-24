@@ -4,9 +4,14 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/math_extras.h>
 #include <kswap.h>
 #include <ksched.h>
 #include <ipi.h>
+
+#if defined(CONFIG_IPI_OPTIMIZE_IDLE) && defined(CONFIG_PM)
+#include <zephyr/pm/pm.h>
+#endif
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
 static struct k_spinlock ipi_lock;
@@ -14,6 +19,107 @@ static struct k_spinlock ipi_lock;
 
 #ifdef CONFIG_TRACE_SCHED_IPI
 extern void z_trace_sched_ipi(void);
+#endif
+
+#if defined(CONFIG_IPI_OPTIMIZE_IDLE)
+static bool sched_ipi_idle_cpu_active(uint32_t cpu)
+{
+#if defined(CONFIG_PM)
+	return pm_state_next_get((uint8_t)cpu)->state == PM_STATE_ACTIVE;
+#else
+	ARG_UNUSED(cpu);
+	return true;
+#endif
+}
+
+static inline int sched_ipi_thread_reservation(const struct k_thread *thread)
+{
+	uint32_t reservations = _kernel.sched_ipi_reserved;
+
+	while (reservations != 0U) {
+		unsigned int cpu = (unsigned int)u32_count_trailing_zeros(reservations);
+
+		reservations &= ~BIT(cpu);
+		if (_kernel.sched_ipi_target[cpu] == thread) {
+			return (int)cpu;
+		}
+	}
+
+	return -1;
+}
+
+static void sched_ipi_idle_reserve(uint32_t cpu, struct k_thread *thread)
+{
+	uint32_t bit = BIT(cpu);
+
+	__ASSERT_NO_MSG((_kernel.sched_ipi_reserved & bit) == 0U);
+	__ASSERT_NO_MSG(_kernel.sched_ipi_target[cpu] == NULL);
+
+	_kernel.sched_ipi_target[cpu] = thread;
+	_kernel.sched_ipi_reserved |= bit;
+}
+
+static void sched_ipi_idle_unreserve(uint32_t cpu)
+{
+	uint32_t bit = BIT(cpu);
+
+	_kernel.sched_ipi_target[cpu] = NULL;
+	_kernel.sched_ipi_reserved &= ~bit;
+}
+
+void ipi_idle_thread_unreserve(struct k_thread *thread)
+{
+	int cpu = sched_ipi_thread_reservation(thread);
+
+	/* Keep pending_ipi intact: its CPU bit may cover another request.
+	 * An already-dispatched scheduling IPI is harmless.
+	 */
+	if (cpu >= 0) {
+		sched_ipi_idle_unreserve((uint32_t)cpu);
+	}
+}
+
+bool ipi_idle_thread_rebind(struct k_thread *old_thread,
+			    struct k_thread *new_thread)
+{
+	int old_cpu;
+
+	__ASSERT_NO_MSG(old_thread != new_thread);
+
+	old_cpu = sched_ipi_thread_reservation(old_thread);
+	if (old_cpu < 0) {
+		return false;
+	}
+
+	uint32_t cpu = (uint32_t)old_cpu;
+	bool eligible = sched_ipi_idle_cpu_active(cpu);
+
+#if defined(CONFIG_SCHED_CPU_MASK)
+	eligible = eligible && ((new_thread->base.cpu_mask & BIT(cpu)) != 0U);
+#endif
+
+	if (!eligible) {
+		sched_ipi_idle_unreserve(cpu);
+		return false;
+	}
+
+	/* Reuse the outstanding IPI while transferring its coverage. */
+	_kernel.sched_ipi_target[cpu] = new_thread;
+	return true;
+}
+
+struct k_thread *ipi_idle_reserved_take(void)
+{
+	uint32_t cpu = _current_cpu->id;
+	struct k_thread *thread = _kernel.sched_ipi_target[cpu];
+
+	__ASSERT_NO_MSG((thread != NULL) ==
+			((_kernel.sched_ipi_reserved & BIT(cpu)) != 0U));
+
+	sched_ipi_idle_unreserve(cpu);
+
+	return thread;
+}
 #endif
 
 void flag_ipi(uint32_t ipi_mask)
@@ -36,7 +142,31 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 	uint32_t  num_cpus = (uint32_t)arch_num_cpus();
 	uint32_t  id = _current_cpu->id;
 	struct k_thread *cpu_thread;
-	bool   executable_on_cpu = true;
+
+#if defined(CONFIG_IPI_OPTIMIZE_IDLE)
+	/* An outstanding idle CPU IPI already covers this thread. */
+	if (sched_ipi_thread_reservation(thread) >= 0) {
+		return 0;
+	}
+
+	/* Fast path: the thread's previous CPU is idle and not already reserved.
+	 */
+	uint8_t last = thread->base.cpu;
+	struct k_thread *last_thread = _kernel.cpus[last].current;
+
+	if (last != id &&
+	    last_thread != NULL &&
+	    z_is_idle_thread_object(last_thread) &&
+	    sched_ipi_idle_cpu_active(last) &&
+#if defined(CONFIG_SCHED_CPU_MASK)
+	    (thread->base.cpu_mask & BIT(last)) != 0 &&
+#endif
+	    (_kernel.sched_ipi_reserved & BIT(last)) == 0U) {
+		sched_ipi_idle_reserve(last, thread);
+		return IPI_CPU_MASK(last);
+	}
+
+#endif
 
 	for (uint32_t i = 0; i < num_cpus; i++) {
 		if (id == i) {
@@ -54,14 +184,32 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 		 */
 
 #if defined(CONFIG_SCHED_CPU_MASK)
-		executable_on_cpu = ((thread->base.cpu_mask & BIT(i)) != 0);
+		if ((thread->base.cpu_mask & BIT(i)) == 0) {
+			continue;
+		}
 #endif
 
 		cpu_thread = _kernel.cpus[i].current;
-		if ((cpu_thread != NULL) &&
-		    (((z_sched_prio_cmp(cpu_thread, thread) < 0) &&
-		      (thread_is_preemptible(cpu_thread))) ||
-		     thread_is_metairq(thread)) && executable_on_cpu) {
+
+		if (cpu_thread == NULL) {
+			continue;
+		}
+
+#if defined(CONFIG_IPI_OPTIMIZE_IDLE)
+		if ((_kernel.sched_ipi_reserved & BIT(i)) != 0U) {
+			continue;
+		}
+		if (i != (uint32_t)thread->base.cpu &&
+		    z_is_idle_thread_object(cpu_thread) &&
+		    sched_ipi_idle_cpu_active(i)) {
+			sched_ipi_idle_reserve(i, thread);
+			return IPI_CPU_MASK(i);
+		}
+#endif
+
+		if ((z_sched_prio_cmp(cpu_thread, thread) < 0 &&
+		     thread_is_preemptible(cpu_thread)) ||
+		    thread_is_metairq(thread)) {
 			ipi_mask |= BIT(i);
 		}
 	}

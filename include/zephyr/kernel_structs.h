@@ -235,6 +235,16 @@ struct z_kernel {
 	/* Identify CPUs to send IPIs to at the next scheduling point */
 	atomic_t pending_ipi;
 #endif
+
+#if defined(CONFIG_IPI_OPTIMIZE_IDLE)
+	/* Idle CPU reservations. sched_ipi_reserved marks valid entries in
+	 * sched_ipi_target. Each entry represents logical coverage by an
+	 * outstanding IPI, not a binding between that CPU and thread.
+	 * Protected by _sched_spinlock.
+	 */
+	uint32_t sched_ipi_reserved;
+	struct k_thread *sched_ipi_target[CONFIG_MP_MAX_NUM_CPUS];
+#endif
 };
 
 typedef struct z_kernel _kernel_t;

@@ -142,6 +142,21 @@ config IPI_OPTIMIZE
 	  would be to not issue any IPIs if the newly readied thread is of
 	  lower priority than all the threads currently executing on other CPUs.
 
+config IPI_OPTIMIZE_IDLE
+	bool "Send scheduling IPIs to one idle CPU"
+	default y
+	depends on IPI_OPTIMIZE && ARCH_HAS_DIRECTED_IPIS && MP_MAX_NUM_CPUS > 2
+	help
+	  When a thread becomes ready and can execute on one or more idle CPUs,
+	  direct a scheduling IPI to just one of those CPUs. Prefer the CPU on
+	  which the thread last executed. If several threads become ready before
+	  the target CPUs schedule, reserve distinct idle CPUs for them.
+
+	  This optimization reduces thundering-herd contention when multiple
+	  idle CPUs race to pick up a newly ready thread. The benefit increases
+	  with CPU count; has no effect on 2-CPU systems where idle-CPU
+	  contention cannot occur.
+
 config KERNEL_COHERENCE
 	bool "Place all shared data into coherent memory"
 	depends on CACHE_CAN_SAY_MEM_COHERENCE
