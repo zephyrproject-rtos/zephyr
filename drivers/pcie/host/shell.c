@@ -391,12 +391,129 @@ static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 
 	return 0;
 }
+
+/* Subcommand: pcie irq status <bus:dev.func> */
+static int cmd_pcie_irq_status(const struct shell *sh, size_t argc, char **argv)
+{
+	uint32_t intr;
+	uint8_t int_pin;
+	uint8_t int_line;
+	uint32_t msi_offset;
+	uint32_t msix_offset;
+	pcie_bdf_t bdf;
+	uint32_t id;
+
+	if (argc < 2) {
+		shell_error(sh, "Usage: pcie irq status <bus:dev.func>");
+		return -EINVAL;
+	}
+
+	bdf = get_bdf(argv[1]);
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF layout format specification.");
+		return -EINVAL;
+	}
+
+	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	if (!PCIE_ID_IS_VALID(id)) {
+		shell_error(sh, "No responsive endpoint found at target BDF.");
+		return -ENODEV;
+	}
+
+	shell_print(sh, "====================================================================");
+	shell_print(sh, "   PCIe INTERRUPT LINE DIAGNOSTIC MATRIX: %u:%x.%u", PCIE_BDF_TO_BUS(bdf),
+		    PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf));
+	shell_print(sh, "====================================================================");
+
+	intr = pcie_conf_read(bdf, PCIE_CONF_INTR);
+	int_pin = (intr >> 8) & 0xFFU;
+	int_line = intr & 0xFFU;
+
+	shell_print(sh, "Legacy INTx Parameters:");
+	shell_print(sh, "   -> Interrupt Pin  : INT%c", int_pin ? ('A' + int_pin - 1) : '-');
+
+	if (int_line == PCIE_CONF_INTR_IRQ_NONE) {
+		shell_print(sh, "   -> Interrupt Line : NOT ROUTED");
+	} else {
+		shell_print(sh, "   -> Interrupt Line : IRQ %u", (unsigned int)int_line);
+	}
+
+	shell_print(sh, "----------------------------------------------------");
+
+	msi_offset = pcie_get_cap(bdf, PCI_CAP_ID_MSI);
+	if (msi_offset != 0) {
+		uint32_t msg_ctrl = pcie_conf_read(bdf, msi_offset);
+		bool msi_en = (msg_ctrl & (1U << 16)) != 0;
+		uint32_t multi_msg = (msg_ctrl >> 17) & 0x07U;
+		uint32_t multi_en = (msg_ctrl >> 20) & 0x07U;
+		bool is_64bit = (msg_ctrl & (1U << 23)) != 0;
+		uint32_t addr_lo = pcie_conf_read(bdf, msi_offset + 1);
+
+		shell_print(sh, "Message Signaled Interrupts (MSI) Capability [Offset 0x%02X]:",
+			    msi_offset * 4);
+		shell_print(sh, "   -> Active Status  : %s", msi_en ? "ENABLED" : "DISABLED");
+		shell_print(sh, "   -> Capabilities   : Multiple Message Capable: %u vectors",
+			    1U << multi_msg);
+		shell_print(sh, "   -> Allocated      : Multiple Message Enabled: %u vectors",
+			    1U << multi_en);
+
+		if (is_64bit) {
+			uint32_t addr_hi = pcie_conf_read(bdf, msi_offset + 2);
+			uint32_t msg_data = pcie_conf_read(bdf, msi_offset + 3) & 0xFFFFU;
+
+			shell_print(sh, "   -> Target Address : 0x%08X%08X", addr_hi, addr_lo);
+			shell_print(sh, "   -> Message Data   : 0x%04X", msg_data);
+		} else {
+			uint32_t msg_data = pcie_conf_read(bdf, msi_offset + 2) & 0xFFFFU;
+
+			shell_print(sh, "   -> Target Address : 0x%08X", addr_lo);
+			shell_print(sh, "   -> Message Data   : 0x%04X", msg_data);
+		}
+	} else {
+		shell_print(sh, "MSI Capability [ID 0x05]     : NOT SUPPORTED");
+	}
+	shell_print(sh, "----------------------------------------------------");
+
+	msix_offset = pcie_get_cap(bdf, PCI_CAP_ID_MSIX);
+	if (msix_offset != 0) {
+		uint32_t msg_ctrl = pcie_conf_read(bdf, msix_offset);
+		bool msix_en = (msg_ctrl & (1U << 31)) != 0;
+		bool msix_mask = (msg_ctrl & (1U << 30)) != 0;
+		uint32_t table_size = ((msg_ctrl >> 16) & 0x07FFU) + 1;
+		uint32_t table_bir = pcie_conf_read(bdf, msix_offset + 1);
+		uint8_t bir = table_bir & 0x07U;
+		uint32_t offset = table_bir & ~0x07U;
+
+		shell_print(sh,
+			    "Extended MSI (MSI-X) Capability [Offset 0x%02X]:", msix_offset * 4);
+		shell_print(sh, "   -> Active Status  : %s", msix_en ? "ENABLED" : "DISABLED");
+		shell_print(sh, "   -> Global Mask    : %s",
+			    msix_mask ? "TRUE (All Vectors Blocked)" : "FALSE");
+		shell_print(sh, "   -> Table Size     : %u distinct vectors", table_size);
+		shell_print(sh, "   -> Vector Table   : Located in BAR %u at base offset + 0x%08X",
+			    bir, offset);
+	} else {
+		shell_print(sh, "MSI-X Capability [ID 0x11]   : NOT SUPPORTED");
+	}
+	shell_print(sh, "====================================================================");
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_pcie_irq_cmds,
+	SHELL_CMD_ARG(status, NULL, "Trace legacy and MSI/MSI-X vector configuration statuses",
+		      cmd_pcie_irq_status, 2, 0),
+	SHELL_SUBCMD_SET_END);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pcie_cmds,
-	SHELL_CMD_ARG(ls, NULL,
-		      "List PCIE devices\n"
-		      "Usage: ls [bus:device:function] [dump]",
-		      cmd_pcie_ls, 1, 2),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
+			       SHELL_CMD_ARG(ls, NULL,
+					     "List PCIE devices\n"
+					     "Usage: ls [bus:device:function] [dump]",
+					     cmd_pcie_ls, 1, 2),
+			       SHELL_CMD(irq, &sub_pcie_irq_cmds,
+					 "Trace legacy and vector interrupt message allocations",
+					 NULL),
+			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(pcie, &sub_pcie_cmds, "PCI(e) device information", cmd_pcie_ls);
