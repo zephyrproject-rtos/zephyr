@@ -2,6 +2,8 @@
 
 zephyr_library()
 
+zephyr_cc_option_ifdef(CONFIG_FRAME_POINTER -mno-omit-leaf-frame-pointer)
+
 zephyr_library_sources(
   cpu_idle.c
   fatal.c
