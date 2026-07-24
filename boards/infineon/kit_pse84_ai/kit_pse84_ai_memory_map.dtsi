@@ -97,7 +97,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x08000000 DT_SIZE_M(64)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <DT_SIZE_K(256)>;
 
 			partitions {
@@ -111,10 +111,10 @@
 					reg = <0 DT_SIZE_M(1)>;
 				};
 
-				m33_xip: m33_xip@340400 {
+				m33_xip: m33_xip@340000 {
 					compatible = "zephyr,mapped-partition";
 					label = "m33-xip";
-					reg = <0x340400 DT_SIZE_M(2)>;
+					reg = <0x340000 DT_SIZE_M(2)>;
 				};
 			};
 		};
@@ -132,7 +132,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {
@@ -140,16 +140,10 @@
 				#size-cells = <1>;
 				ranges;
 
-				m33s_header: m33s_header@100000 {
-					compatible = "zephyr,mapped-partition";
-					label = "m33s-header";
-					reg = <0x100000 0x400>;
-				};
-
-				m33s_xip: m33s_xip@100400 {
+				m33s_xip: m33s_xip@100000 {
 					compatible = "zephyr,mapped-partition";
 					label = "m33s-xip";
-					reg = <0x100400 0x1ffc00>;
+					reg = <0x100000 0x200000>;
 				};
 			};
 		};
@@ -167,7 +161,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x70000000 DT_SIZE_M(64)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {

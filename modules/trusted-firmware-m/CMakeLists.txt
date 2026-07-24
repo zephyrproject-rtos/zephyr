@@ -602,22 +602,24 @@ if(CONFIG_BUILD_WITH_TFM)
     # Default: use unsigned TF-M secure image for merging
     set(TFM_S_MERGE_HEX_FILE $<TARGET_PROPERTY:tfm,TFM_S_HEX_FILE>)
 
-    if(CONFIG_SOC_SERIES_PSE84)
-      pse84_add_metadata_secure_hex(${TFM_S_HEX_FILE} ${S_SIGNED_HEX_FILE})
-      set(TFM_S_MERGE_HEX_FILE ${S_SIGNED_HEX_FILE})
+    # A platform (SoC/board) may need to post-process the secure and
+    # non-secure images (for example, extra signing) and produce the
+    # merged image itself. When it opts in by setting the global property
+    # TFM_PLATFORM_HANDLES_MERGE, skip the default merge below.
+    get_property(platform_handles_merge GLOBAL PROPERTY TFM_PLATFORM_HANDLES_MERGE)
+    if(NOT platform_handles_merge)
+      # Merge tfm_s and zephyr (NS) image to a single binary.
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+        COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
+          -o ${MERGED_HEX_FILE}
+          ${TFM_S_MERGE_HEX_FILE}
+          ${NS_HEX_APP_FILE}
+      )
+
+      set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
+        ${MERGED_HEX_FILE}
+      )
     endif()
-
-    # Merge tfm_s and zephyr (NS) image to a single binary.
-    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
-      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/mergehex.py
-        -o ${MERGED_HEX_FILE}
-        ${TFM_S_MERGE_HEX_FILE}
-        ${NS_HEX_APP_FILE}
-    )
-
-    set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-      ${MERGED_HEX_FILE}
-    )
 
   elseif(CONFIG_TFM_MCUBOOT_IMAGE_NUMBER STREQUAL "1")
     tfm_sign(sign_cmd_s_ns_confirm_hex SUFFIX "S_NS"
