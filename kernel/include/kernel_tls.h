@@ -26,6 +26,7 @@
  *
  * @return Total size of TLS data/bss areas
  */
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
 static inline FUNC_NO_STACK_PROTECTOR size_t z_tls_data_size(void)
 {
 	size_t size = (size_t)(uintptr_t)__tdata_size + (size_t)(uintptr_t)__tbss_size;
@@ -63,5 +64,6 @@ static inline FUNC_NO_STACK_PROTECTOR void z_tls_copy(char *dest)
 	/* Clear BSS data (tbss) */
 	memset(dest, 0, (size_t)(uintptr_t)__tbss_size);
 }
+#endif
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_TLS_H_ */
