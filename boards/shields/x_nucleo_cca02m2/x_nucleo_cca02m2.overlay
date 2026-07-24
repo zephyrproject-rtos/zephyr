@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+&arduino_i2c {
+	status = "okay";
+	
+	mp34dt06j_x_nucleo_cca02m2_mic1: mp34dt06j@0 {
+		//compatible = "st,mpxxdtyy";
+		reg = <0>;
+	};
+
+	mp34dt06j_x_nucleo_cca02m2_mic2: mp34dt06j@1 {
+		//compatible = "st,mpxxdtyy";
+		reg = <1>;
+	};
+};
