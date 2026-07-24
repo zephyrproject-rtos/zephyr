@@ -499,9 +499,10 @@ extra_conf_files: <list of configuration files>
     for configuration files.
 
 extra_overlay_confs: <list of overlay configuration files>
-    Extra Kconfig overlay fragments to merge into the build, as an alternative
-    to passing ``OVERLAY_CONFIG=`` through ``extra_args``. Entries from
-    ``common`` and the test scenario are concatenated.
+    Extra Kconfig overlay fragments to merge into the build. Entries from
+    ``common`` and the test scenario are concatenated and appended to the ones
+    listed in ``extra_conf_files``. Both fields are passed to the build system
+    through :makevar:`EXTRA_CONF_FILE`; use ``extra_conf_files`` for new tests.
 
 extra_dtc_overlay_files: <list of devicetree overlay files>
     Extra devicetree overlay files to apply to the build, as an alternative to
