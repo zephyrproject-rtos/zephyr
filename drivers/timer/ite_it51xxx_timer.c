@@ -210,10 +210,10 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	/* Disable event timer */
 	ext_timer_disable(EVENT_TIMER);
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == (uint32_t)K_TICKS_FOREVER) {
 		/*
 		 * The kernel has no pending timeout, which it signals with
-		 * ticks == SYS_CLOCK_MAX_WAIT. Under sloppy idle no future
+		 * ticks == (uint32_t)K_TICKS_FOREVER. Under sloppy idle no future
 		 * timer interrupt is required, so leave the event timer
 		 * disabled and stop waking up. Without sloppy idle we fall
 		 * through and still schedule the (capped) timeout so the

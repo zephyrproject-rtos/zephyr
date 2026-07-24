@@ -358,7 +358,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t reg;
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == (uint32_t)K_TICKS_FOREVER) {
 		reg = hpet_gconf_get();
 		reg &= ~GCONF_ENABLE;
 		hpet_gconf_set(reg);

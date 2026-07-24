@@ -163,6 +163,17 @@ Deprecated APIs and options
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
     Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
+* Timer
+
+  * The ``bool idle`` argument of :c:func:`sys_clock_set_timeout` is deprecated: the
+    low-power idle hint moved to the new weak :c:func:`sys_clock_idle_enter` hook and the
+    kernel now always passes ``false`` (the default :c:func:`sys_clock_idle_enter`
+    forwards ``true`` for drivers that have not migrated). The ``K_TICKS_FOREVER``
+    "no deadline" clock-stop signal under
+    :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE` is likewise deprecated in favour
+    of the new weak :c:func:`sys_clock_unused` hook, whose default still forwards it
+    for drivers that have not migrated.
+
 * Video
 
   * All functions in the video driver API (``<zephyr/drivers/video.h>``) have moved to the video
@@ -410,6 +421,17 @@ Other notable changes
     :c:func:`k_thread_cpu_mask_disable` in PIN_ONLY mode triggers an assertion
     failure.  Use :c:func:`k_thread_cpu_pin` to reassign a thread to a
     different CPU.
+
+* Timer
+
+  * Tickless system-timer drivers can now be built on a shared implementation
+    header, :file:`drivers/timer/system_timer_generic.h`, which owns the tick
+    accounting each driver previously open-coded (and occasionally got wrong):
+    the cycle-to-tick conversion, the announce baseline, the tick-aligned
+    deadline and the counter wrap and range handling. A driver reduces to a few
+    cycle-domain primitives, a cycle-counter read plus an absolute-compare or
+    relative-reload arm. In-tree drivers are being converted one at a time; see
+    the :ref:`migration guide <migration_4.5>` for how to use it.
 
 * Wi-Fi
 

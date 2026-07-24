@@ -138,35 +138,37 @@ static uint32_t next_timeout(uint32_t ticks_elapsed)
 	}
 
 	/*
-	 * With nothing pending under sloppy idle, report SYS_CLOCK_MAX_WAIT
-	 * verbatim (not the budget): it is the "no deadline" value a driver
-	 * looks for to stop the clock entirely, and a skewed uptime is
-	 * acceptable. Without sloppy idle the uptime must stay correct, so
-	 * respect the budget and keep waking up.
+	 * No deadline, or one further out than can be scheduled in a single
+	 * step: wait the capped budget and re-evaluate at the next announce.
+	 * Testing next (which may be 64-bit) against the cap keeps the
+	 * remaining arithmetic in 32 bits. The empty case still returns the
+	 * budget so a driver keeps waking to maintain uptime.
 	 */
-	if (next == K_TICKS_FOREVER) {
-		if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE)) {
-			return SYS_CLOCK_MAX_WAIT;
-		}
+	if (next == K_TICKS_FOREVER || next >= SYS_CLOCK_MAX_WAIT) {
 		return SYS_CLOCK_MAX_WAIT - ticks_elapsed;
-	}
-
-	/*
-	 * A timeout further out than can be scheduled in one step: wait nearly
-	 * the whole budget, but stop one short of SYS_CLOCK_MAX_WAIT so it is
-	 * never mistaken for the "no deadline" value above (which would drop
-	 * the timeout under sloppy idle); an intermediate announce re-evaluates.
-	 * Testing next (which may be 64-bit) against the cap also keeps the
-	 * remaining arithmetic in 32 bits.
-	 */
-	if (next >= SYS_CLOCK_MAX_WAIT) {
-		return SYS_CLOCK_MAX_WAIT - 1 - ticks_elapsed;
 	}
 
 	/* Otherwise wait until the timeout, relative to now (0 if due). */
 	dticks = (uint32_t)next;
 
 	return (dticks > ticks_elapsed) ? (dticks - ticks_elapsed) : 0;
+}
+
+/*
+ * Reprogram the timer for the next pending timeout, or, when nothing is
+ * pending and CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE tolerates a drifting uptime, tell
+ * the driver its clock is unused so it may stop. Only meaningful where the
+ * timeout queue may have just drained (abort, end of announce); the add path
+ * always has a pending timeout and calls sys_clock_set_timeout() directly.
+ */
+static void reprogram_next(uint32_t ticks_elapsed)
+{
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
+	    z_timeout_q_next_expiry() == K_TICKS_FOREVER) {
+		sys_clock_unused();
+	} else {
+		sys_clock_set_timeout(next_timeout(ticks_elapsed), false);
+	}
 }
 
 k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout)
@@ -242,7 +244,7 @@ int z_try_abort_timeout(struct _timeout *to)
 
 			ret = 0;
 			if (was_first) {
-				sys_clock_set_timeout(next_timeout(elapsed()), false);
+				reprogram_next(elapsed());
 			}
 		} else if (IS_ENABLED(CONFIG_SMP) && inflight_ptr() == to &&
 			   !this_cpu_announcing()) {
@@ -396,7 +398,7 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 
 	announcing_cpu = -1;
 
-	sys_clock_set_timeout(next_timeout(0), false);
+	reprogram_next(0);
 
 	k_spin_unlock(&timeout_lock, key);
 

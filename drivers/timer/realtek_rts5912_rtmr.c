@@ -107,7 +107,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	uint32_t full_cycles;
 	uint32_t partial_cycles;
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && (ticks == SYS_CLOCK_MAX_WAIT)) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && (ticks == (uint32_t)K_TICKS_FOREVER)) {
 		RTMR_REG->CTRL = 0U;
 		previous_cnt = RTMR_TIMER_STOPPED;
 		return;

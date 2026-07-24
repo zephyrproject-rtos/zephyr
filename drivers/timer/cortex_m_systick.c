@@ -325,7 +325,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	 * (sloppy idle), then shut off the counter.
 	 */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
-	    ticks == SYS_CLOCK_MAX_WAIT) {
+	    ticks == (uint32_t)K_TICKS_FOREVER) {
 		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 		last_load = TIMER_STOPPED;
 		return;

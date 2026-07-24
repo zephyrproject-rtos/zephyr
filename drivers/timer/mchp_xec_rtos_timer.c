@@ -191,7 +191,7 @@ void sys_clock_set_timeout(uint32_t n, bool idle)
 	uint32_t full_cycles;    /* full_ticks represented as cycles */
 	uint32_t partial_cycles; /* number of cycles to first tick boundary */
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && (n == SYS_CLOCK_MAX_WAIT)) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && (n == (uint32_t)K_TICKS_FOREVER)) {
 		/*
 		 * We are not in a locked section. Are writes to two
 		 * global objects safe from pre-emption?

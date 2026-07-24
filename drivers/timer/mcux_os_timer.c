@@ -263,7 +263,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	/* When using a counter for certain low power modes, set this flag when the requested
 	 * delay is forever. This is to keep track of wakeup sources in case of counter overflows.
 	 */
-	wait_forever = (ticks == SYS_CLOCK_MAX_WAIT);
+	wait_forever = (ticks == (uint32_t)K_TICKS_FOREVER);
 #else
 	ARG_UNUSED(idle);
 #endif
