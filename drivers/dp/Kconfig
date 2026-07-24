@@ -28,4 +28,12 @@ config SWDP_BITBANG_DRIVER
 	help
 	  Serial Wire Debug Port bit-bang driver.
 
+config SWDP_BITBANG_NO_DISCONNECT
+	bool "Use GPIO_INPUT instead of GPIO_DISCONNECTED"
+	depends on SWDP_BITBANG_DRIVER
+	help
+	  When deactivating the debug port, use GPIO_INPUT instead of
+	  GPIO_DISCONNECTED. Use if the underlying gpio driver does not support
+	  the GPIO_DISCONNECTED state.
+
 endif # DP_DRIVER
