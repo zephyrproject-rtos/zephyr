@@ -1,0 +1,94 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <wch/ch32v203/ch32v203g6u.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "adafruit_qt_py_ch32v203-pinctrl.dtsi"
+#include "seeed_xiao_connector.dtsi"
+
+/ {
+	model = "adafruit_qt_py_ch32v203";
+	compatible = "wch,ch32v203";
+
+	aliases {
+		i2c-0 = &i2c1;
+		uart-0 = &usart2;
+		watchdog0 = &iwdg;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+	};
+
+	stemma_connector: stemma_connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpiob 7 0>,
+			   <1 0 &gpiob 6 0>;
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+/* This board has no HSE crystal, so the PLL is clocked from HSI instead. */
+&pll {
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&usart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_i2c: &i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&exti {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
