@@ -86,9 +86,10 @@ tests:
       - CONF_FILE=prj_blk.conf
     extra_configs:
       - CONFIG_SDMMC_STM32_HWFC=y
-  sample.filesystem.littlefs.frdm_rw612_nand:
+  sample.filesystem.littlefs.nand:
     build_only: true
-    platform_allow: frdm_rw612
+    platform_allow:
+      - frdm_rw612
+      - frdm_mcxn947/mcxn947/cpu0
     extra_args:
-      - EXTRA_CONF_FILE=boards/frdm_rw612_nand.conf
-      - DTC_OVERLAY_FILE=boards/frdm_rw612_nand.overlay
+      - FILE_SUFFIX=nand
