@@ -22,3 +22,5 @@ string
 	default "esp32c5_devkitc/esp32c5/lpcore" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32c5_devkitc/esp32c5/hpcore"
 	default "esp32c6_devkitc/esp32c6/lpcore" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32c6_devkitc/esp32c6/hpcore"
 	default "esp32p4x_function_ev_board/esp32p4/lpcore" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32p4x_function_ev_board/esp32p4/hpcore"
+	default "versalnet_rpu" if $(BOARD) = "versalnet_rpu"
+	default "versal2_rpu" if $(BOARD) = "versal2_rpu"
