@@ -197,10 +197,10 @@ ZTEST(no_multithreading, test_no_multithreading_cpu_idle)
 				  "Unexpected time passed: %d ms", (int)diff);
 }
 
-/* TODO: Remove CONFIG_ARM check once TLS is supported on all architectures
+/* TODO: Remove CONFIG checks once TLS is supported on all architectures
  * See https://github.com/zephyrproject-rtos/zephyr/issues/114503
  */
-#if defined(CONFIG_ARM)
+#if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
 /**
  * @brief Verify that thread-local storage is initialized without
  *        multithreading.
