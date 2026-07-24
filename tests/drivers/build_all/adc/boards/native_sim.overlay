@@ -151,6 +151,18 @@
 					#io-channel-cells = <1>;
 				};
 			};
+
+			test_i2c_ads7828: ads7828@48 {
+				compatible = "ti,ads7828";
+				reg = <0x48>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads7830: ads7830@49 {
+				compatible = "ti,ads7830";
+				reg = <0x49>;
+				#io-channel-cells = <1>;
+			};
 		};
 
 		test_spi: spi@33334444 {
