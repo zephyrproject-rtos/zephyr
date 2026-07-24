@@ -119,6 +119,7 @@ if "ZEPHYR_BASE" not in os.environ:
 
 ZEPHYR_BASE = Path(os.environ["ZEPHYR_BASE"])
 sys.path.insert(0, str(ZEPHYR_BASE / "scripts"))
+sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "pylib" / "twister"))
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -720,10 +721,8 @@ class Orchestrator:
     @staticmethod
     def _count_errors(testsuites):
         errors = 0
-        try:
-            from pylib.twister.twisterlib.statuses import TwisterStatus  # noqa: PLC0415
-        except ImportError:
-            return 0
+        from twisterlib.statuses import TwisterStatus  # noqa: PLC0415
+
         for ts in testsuites:
             if TwisterStatus(ts.get("status")) == TwisterStatus.ERROR:
                 log.warning(
