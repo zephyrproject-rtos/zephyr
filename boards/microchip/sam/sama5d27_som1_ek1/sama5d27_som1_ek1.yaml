@@ -1,0 +1,16 @@
+# Copyright (C) 2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: sama5d27_som1_ek
+name: SAMA5D27-SOM1-EK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 128
+supported:
+  - shell
+  - uart
+vendor: microchip

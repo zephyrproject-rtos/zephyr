@@ -1,0 +1,122 @@
+# Copyright (C) 2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_SAMA5D2
+	bool
+	select SOC_FAMILY_MICROCHIP_SAMA5
+	help
+	  Enable support for Microchip SAMA5D2 Cortex-A Microprocessors.
+
+config SOC_SERIES_SAMA5D27SOM
+	bool
+	select SOC_SERIES_SAMA5D2
+	help
+	  Enable support for Microchip SAMA5D2 System-On-Module (SOM).
+
+config SOC_SERIES_SAMA5D29
+	bool
+	select SOC_SERIES_SAMA5D2
+	help
+	  Enable support for Microchip SAMA5D29 Cortex-A Microprocessors.
+
+config SOC_SERIES
+	default "sama5d2" if SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D21
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D22
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D225CD1M
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D23
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D24
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D26
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D27
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D27CD1G
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D27CD5M
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D27CLD1G
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D27CLD2G
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D28
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D28CD1G
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D28CLD1G
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D28CLD2G
+	bool
+	select SOC_SERIES_SAMA5D2
+
+config SOC_SAMA5D27SOM1
+	bool
+	select SOC_SERIES_SAMA5D27SOM
+
+config SOC_SAMA5D27WLSOM1
+	bool
+	select SOC_SERIES_SAMA5D27SOM
+
+config SOC_SAMA5D29
+	bool
+	select SOC_SERIES_SAMA5D29
+
+config SOC_SAMA5D29TA100
+	bool
+	select SOC_SERIES_SAMA5D29
+
+config SOC
+	default"sama5d21" if SOC_SAMA5D21
+	default"sama5d22" if SOC_SAMA5D22
+	default"sama5d225cd1m" if SOC_SAMA5D225CD1M
+	default"sama5d23" if SOC_SAMA5D23
+	default"sama5d24" if SOC_SAMA5D24
+	default"sama5d26" if SOC_SAMA5D26
+	default"sama5d27" if SOC_SAMA5D27
+	default"sama5d27cd1g" if SOC_SAMA5D27CD1G
+	default"sama5d27cd5m" if SOC_SAMA5D27CD5M
+	default"sama5d27cld1g" if SOC_SAMA5D27CLD1G
+	default"sama5d27cld2g" if SOC_SAMA5D27CLD2G
+	default"sama5d28" if SOC_SAMA5D28
+	default"sama5d28cd1g" if SOC_SAMA5D28CD1G
+	default"sama5d28cld1g" if SOC_SAMA5D28CLD1G
+	default"sama5d28cld2g" if SOC_SAMA5D28CLD2G
+	default"sama5d27som1" if SOC_SAMA5D27SOM1
+	default"sama5d27wlsom1" if SOC_SAMA5D27WLSOM1
+	default"sama5d29" if SOC_SAMA5D29
+	default"sama5d29ta100" if SOC_SAMA5D29TA100
