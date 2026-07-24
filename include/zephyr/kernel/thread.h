@@ -56,6 +56,11 @@ struct _thread_base {
 	 */
 	_wait_q_t *pended_on;
 
+#if defined(CONFIG_USERSPACE)
+	/* The futex this thread is waiting on */
+	void *futex_pointer;
+#endif /* CONFIG_USERSPACE */
+
 	/* user facing 'thread options'; values defined in include/zephyr/kernel.h */
 	uint16_t user_options;
 
@@ -273,20 +278,17 @@ struct k_thread {
 	struct z_poller poller;
 #endif /* CONFIG_POLL */
 
-#if defined(CONFIG_EVENTS)
-#if defined(CONFIG_WAITQ_SCALABLE)
-	/*
-	 * Used to build a list of threads that are
-	 * pending on a k_event and should be woken
-	 * up due to a k_event_post/set() call.
-	 *
-	 * Needed only when red-black tree is used for
-	 * wait queues because it is forbidden to mutate
-	 * an rbtree waitq while walking it.
+#if defined(CONFIG_WAITQ_SCALABLE) || defined(CONFIG_USERSPACE)
+	/**
+	 * Used to build a list of threads that should be woken up due
+	 * to a k_event_post/set() call with rbtree waitq, because it is
+	 * forbidden to mutate an rbtree waitq while walking it, or a
+	 * k_futex_wake call.
 	 */
-	struct k_thread *next_event_link;
-#endif /* CONFIG_WAITQ_SCALABLE */
+	struct k_thread *next_wake_link;
+#endif /* CONFIG_WAITQ_SCALABLE || CONFIG_USERSPACE */
 
+#if defined(CONFIG_EVENTS)
 	uint32_t   events; /* dual purpose - wait on and then received */
 	uint32_t   event_options;
 #endif /* CONFIG_EVENTS */
