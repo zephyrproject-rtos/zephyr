@@ -1692,3 +1692,9 @@ test_i2c_ltc4286: ltc4286@da {
 	power-good-gpios = <&test_gpio 0 0>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_stc31: stc31@db {
+	compatible = "sensirion,stc31";
+	reg = <0xdb>;
+	binary-gas = <0x0001>;
+};
