@@ -10,14 +10,17 @@
 #include <zephyr/drivers/display.h>
 #include <zephyr/ztest.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/display/cfb.h>
 
 LOG_MODULE_REGISTER(cfb_test_draw_text_and_print_utils, CONFIG_CFB_LOG_LEVEL);
 
-static const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
-static const uint32_t display_width = DT_PROP(DT_CHOSEN(zephyr_display), width);
-static const uint32_t display_height = DT_PROP(DT_CHOSEN(zephyr_display), height);
+const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+const uint32_t display_width = DT_PROP(DT_CHOSEN(zephyr_display), width);
+const uint32_t display_height = DT_PROP(DT_CHOSEN(zephyr_display), height);
 uint8_t read_buffer[DT_PROP(DT_CHOSEN(zephyr_display), width) *
 		    DT_PROP(DT_CHOSEN(zephyr_display), height) * 4];
+uint8_t transfer_buffer[DT_PROP(DT_CHOSEN(zephyr_display), width) *
+			DT_PROP(DT_CHOSEN(zephyr_display), height) * 4];
 
 inline uint32_t mono_pixel_order(uint32_t order)
 {
@@ -26,6 +29,41 @@ inline uint32_t mono_pixel_order(uint32_t order)
 	} else {
 		return BIT(order);
 	}
+}
+
+struct cfb_display *display_init(void)
+{
+	struct cfb_display *pdisp;
+
+	struct display_buffer_descriptor desc = {
+		.height = display_height,
+		.pitch = display_width,
+		.width = display_width,
+		.buf_size = display_buf_size(dev),
+	};
+
+	memset(read_buffer, 0, sizeof(read_buffer));
+	zassert_ok(display_write(dev, 0, 0, &desc, read_buffer));
+
+	zassert_ok(display_blanking_off(dev));
+
+	pdisp = cfb_display_alloc(dev);
+	zassert_not_null(pdisp);
+	return pdisp;
+}
+
+void display_deinit(struct cfb_display *disp)
+{
+	cfb_display_free(disp);
+}
+
+uint32_t display_buf_size(const struct device *dev)
+{
+	struct display_capabilities caps;
+
+	display_get_capabilities(dev, &caps);
+
+	return display_width * display_height / 8;
 }
 
 uint32_t display_pixel(int x, int y)
