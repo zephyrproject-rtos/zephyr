@@ -315,6 +315,14 @@ static inline void print_qos(const struct bt_bap_qos_cfg *qos)
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
 }
 
+static inline void print_qos_pref(const struct bt_bap_qos_cfg_pref *pref)
+{
+	bt_shell_print("QoS Preference: unframed %ssupported, PHY 0x%02x RTN %u latency %u (ms), "
+		       "pd_min %u (us), pd_max %u (us), pref_pd_min %u (us), pref_pd_max %u (us)",
+		       pref->unframed_supported ? "" : "not ", pref->phy, pref->rtn, pref->latency,
+		       pref->pd_min, pref->pd_max, pref->pref_pd_min, pref->pref_pd_max);
+}
+
 struct print_ltv_info {
 	size_t indent;
 	size_t cnt;

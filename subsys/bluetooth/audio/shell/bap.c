@@ -3145,9 +3145,9 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 static void stream_configured_cb(struct bt_bap_stream *stream,
 				 const struct bt_bap_qos_cfg_pref *pref)
 {
-	ARG_UNUSED(pref);
-
 	bt_shell_print("Stream %p configured", stream);
+
+	print_qos_pref(pref);
 }
 
 static void stream_released_cb(struct bt_bap_stream *stream)
