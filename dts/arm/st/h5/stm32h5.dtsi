@@ -701,7 +701,7 @@
 		ucpd1: ucpd@4000dc00 {
 			compatible = "st,stm32-ucpd";
 			reg = <0x4000dc00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 23)>;
 			interrupts = <76 0>;
 			status = "disabled";
 		};
