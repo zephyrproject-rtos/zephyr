@@ -56,3 +56,53 @@ tests:
     extra_configs:
       - CONFIG_FS_FATFS_REENTRANT=y
       - CONFIG_MULTITHREADING=y
+  filesystem.fat.api.virtio_blk:
+    extra_args:
+      - CONF_FILE="prj_virtio_blk.conf"
+      - DTC_OVERLAY_FILE="boards/qemu_x86_virtio_blk.overlay"
+    # On 32-bit qemu_x86 the HPET runs in 64-bit mode and QEMU's -icount makes
+    # the virtual clock race ahead, degenerating into a timer-interrupt storm
+    # that starves the app and hangs this long, I/O-heavy test. This is a known
+    # qemu_x86 + icount limitation (zephyrproject-rtos/zephyr#37672, #52623),
+    # unrelated to FATFS or virtio-blk. Disabling icount only affects qemu_x86
+    # here (qemu_x86_64 keeps its board-hardcoded -icount and is unaffected).
+    extra_configs:
+      - CONFIG_QEMU_ICOUNT=n
+    platform_allow:
+      - qemu_x86_64
+      - qemu_x86
+  filesystem.fat.api.virtio_blk.mmio:
+    extra_args:
+      - CONF_FILE="prj_virtio_blk.conf"
+      - DTC_OVERLAY_FILE="boards/qemu_cortex_a53_virtio_blk.overlay"
+    platform_allow:
+      - qemu_cortex_a53
+  filesystem.fat.api.virtio_blk.blk4096:
+    # Same as filesystem.fat.api.virtio_blk, but the QEMU virtio-blk device is
+    # given a 4096-byte logical block so the driver reports a 4096-byte sector;
+    # FS_FATFS_MAX_SS is raised so FATFS accepts that sector size.
+    extra_args:
+      - CONF_FILE="prj_virtio_blk.conf"
+      - DTC_OVERLAY_FILE="boards/qemu_x86_virtio_blk.overlay"
+    extra_configs:
+      - CONFIG_QEMU_ICOUNT=n
+      - CONFIG_QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE=4096
+      - CONFIG_FS_FATFS_MAX_SS=4096
+    platform_allow:
+      - qemu_x86_64
+      - qemu_x86
+  filesystem.fat.api.virtio_blk.mmio.blk4096:
+    extra_args:
+      - CONF_FILE="prj_virtio_blk.conf"
+      - DTC_OVERLAY_FILE="boards/qemu_cortex_a53_virtio_blk.overlay"
+    extra_configs:
+      - CONFIG_QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE=4096
+      - CONFIG_FS_FATFS_MAX_SS=4096
+      # A 4096-byte block makes FATFS's mount/mkfs path deeper, and under
+      # CONFIG_MMU the virtio-blk driver runs its scatter-gather path (on-stack
+      # segment arrays). Together they exceed the default main and ztest
+      # test-thread stacks, so give both more room.
+      - CONFIG_MAIN_STACK_SIZE=8192
+      - CONFIG_TEST_EXTRA_STACK_SIZE=8192
+    platform_allow:
+      - qemu_cortex_a53

@@ -28,6 +28,8 @@
 #define DISK_NAME_PHYS "NAND"
 #elif defined(CONFIG_NVME)
 #define DISK_NAME_PHYS "nvme0n0"
+#elif defined(CONFIG_DISK_DRIVER_VIRTIO_BLK)
+#define DISK_NAME_PHYS "VIRTIOBLK0"
 #elif defined(CONFIG_DISK_DRIVER_RAM)
 /* Since ramdisk is enabled by default on e.g. qemu boards, it needs to be checked last to not
  * override other backends.
@@ -39,9 +41,24 @@
 
 #define RAM_SIZE (DT_CHOSEN_SRAM_SIZE / 1024)
 
+/* QEMU can be told to advertise a larger logical block size (the
+ * virtio_blk.blk4096 scenario); use it to size the scratch buffers so
+ * sector_size * SECTOR_COUNT_MAX still fits in BUF_SIZE.
+ */
+#if defined(CONFIG_QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE)
+#define TEST_QEMU_LOGICAL_BLOCK_SIZE CONFIG_QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE
+#else
+#define TEST_QEMU_LOGICAL_BLOCK_SIZE 0
+#endif
+
 #if RAM_SIZE >= 512
+#if TEST_QEMU_LOGICAL_BLOCK_SIZE > 512
+/* A larger logical block needs a proportionally larger buffer. */
+#define MAX_TOTAL_BUF_SIZE 256
+#else
 /* Cap buffer size at 128 KiB */
 #define MAX_TOTAL_BUF_SIZE 128
+#endif
 #elif CONFIG_SOC_POSIX
 /* Posix does not define SRAM size */
 #define MAX_TOTAL_BUF_SIZE 128
