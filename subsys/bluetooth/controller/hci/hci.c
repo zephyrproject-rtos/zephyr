@@ -5623,7 +5623,7 @@ static void mesh_set_scan_filter(struct net_buf *buf, struct net_buf **evt)
 	uint8_t status = 0x00;
 	uint8_t i;
 
-	if (filter > ARRAY_SIZE(scan_filters) ||
+	if (filter >= ARRAY_SIZE(scan_filters) ||
 	    cmd->num_patterns > CONFIG_BT_CTLR_MESH_SF_PATTERNS) {
 		status = BT_HCI_ERR_INVALID_PARAM;
 		goto exit;
