@@ -256,7 +256,7 @@ static int rcar_mfis_send(const struct device *dev, uint32_t channel,
 
 	/* Data transfer mode */
 	if (msg->size > RCAR_MFIS_MBOX_SIZE) {
-		LOG_ERR("Invalid data size (val = %u, max = %u)",
+		LOG_ERR("Invalid data size (val = %zu, max = %zu)",
 			msg->size, RCAR_MFIS_MBOX_SIZE);
 		return -EMSGSIZE;
 	} else if (msg->size > 0 && msg->data == NULL) {
