@@ -141,6 +141,10 @@ static uint32_t mspi_stm32_qspi_hal_address_size(uint8_t address_length)
 static int mspi_stm32_qspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream *dma_stream)
 {
 	int ret;
+	struct dma_block_config dma_block = {
+		.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+		.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	};
 
 	/* Check if DMA device is ready */
 	if (!device_is_ready(dma_stream->dev)) {
@@ -150,6 +154,8 @@ static int mspi_stm32_qspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 
 	/* Configure Zephyr DMA driver */
 	dma_stream->cfg.user_data = hdma;
+	dma_stream->cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+	dma_stream->cfg.head_block = &dma_block;
 	/* This field is used to inform driver that it is overridden */
 	dma_stream->cfg.linked_channel = STM32_DMA_HAL_OVERRIDE;
 
@@ -159,21 +165,11 @@ static int mspi_stm32_qspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 		return ret;
 	}
 
-	/* Validate data size alignment */
-	if (dma_stream->cfg.source_data_size != dma_stream->cfg.dest_data_size) {
-		LOG_ERR("DMA Source and destination data sizes not aligned");
-		return -EINVAL;
+	ret = dma_stm32_zcfg_to_halcfg(&dma_stream->cfg, &hdma->Init);
+	if (ret < 0) {
+		return ret;
 	}
 
-	/* Configure HAL DMA driver for QSPI */
-	int index = find_lsb_set(dma_stream->cfg.source_data_size) - 1;
-
-	hdma->Init.PeriphDataAlignment = mspi_stm32_table_dest_size[index];
-	hdma->Init.MemDataAlignment = mspi_stm32_table_src_size[index];
-	hdma->Init.PeriphInc = DMA_PINC_DISABLE;
-	hdma->Init.MemInc = DMA_MINC_ENABLE;
-	hdma->Init.Mode = DMA_NORMAL;
-	hdma->Init.Priority = mspi_stm32_table_priority[dma_stream->cfg.channel_priority];
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */
 	hdma->Init.Channel = dma_stream->cfg.dma_slot;

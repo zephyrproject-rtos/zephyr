@@ -1994,6 +1994,13 @@ static int spi_nor_process_bfp(const struct device *dev,
 static int flash_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stream *dma_stream)
 {
 	int ret;
+	struct dma_config hal_dma_cfg;
+	struct dma_block_config dma_block = {
+		.source_addr_adj = dma_stream->src_addr_increment ?
+			DMA_ADDR_ADJ_INCREMENT : DMA_ADDR_ADJ_NO_CHANGE,
+		.dest_addr_adj = dma_stream->dst_addr_increment ?
+			DMA_ADDR_ADJ_INCREMENT : DMA_ADDR_ADJ_NO_CHANGE,
+	};
 	/*
 	 * DMA configuration
 	 * Due to use of XSPI HAL API in current driver,
@@ -2017,10 +2024,14 @@ static int flash_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stream *dma
 		return ret;
 	}
 
-	/* Proceed to the HAL DMA driver init */
-	if (dma_stream->cfg.source_data_size != dma_stream->cfg.dest_data_size) {
-		LOG_ERR("DMA Source and destination data sizes not aligned");
-		return -EINVAL;
+	hal_dma_cfg = dma_stream->cfg;
+	hal_dma_cfg.source_data_size = 4U;
+	hal_dma_cfg.dest_data_size = 4U;
+	hal_dma_cfg.head_block = &dma_block;
+
+	ret = dma_stm32_zcfg_to_halcfg(&hal_dma_cfg, &hdma->Init);
+	if (ret < 0) {
+		return ret;
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
@@ -2045,23 +2056,8 @@ static int flash_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stream *dma
 	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 |
 		DMA_DEST_ALLOCATED_PORT0;
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
-	hdma->Init.SrcDataWidth = DMA_SRC_DATAWIDTH_WORD; /* Fixed value */
-	hdma->Init.DestDataWidth = DMA_DEST_DATAWIDTH_WORD; /* Fixed value */
-
-	hdma->Init.SrcInc = (dma_stream->src_addr_increment)
-		? DMA_SINC_INCREMENTED
-		: DMA_SINC_FIXED;
-	hdma->Init.DestInc = (dma_stream->dst_addr_increment)
-		? DMA_DINC_INCREMENTED
-		: DMA_DINC_FIXED;
 	hdma->Init.SrcBurstLength = 4;
 	hdma->Init.DestBurstLength = 4;
-
-	hdma->Init.Priority = table_priority[dma_stream->cfg.channel_priority];
-	hdma->Init.Direction = table_direction[dma_stream->cfg.channel_direction];
-	hdma->Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
-	hdma->Init.Mode = DMA_NORMAL;
-	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
 	hdma->Init.Request = dma_stream->cfg.dma_slot;
 
 	/*
