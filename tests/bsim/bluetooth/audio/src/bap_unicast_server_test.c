@@ -503,9 +503,31 @@ static void update_contexts(void)
 	printk("Contexts successfully updated\n");
 }
 
+static void update_pac(enum bt_audio_dir dir)
+{
+	static struct bt_pacs_cap snk_cap = {
+		.codec_cap = &lc3_codec_cap,
+	};
+	static struct bt_pacs_cap src_cap = {
+		.codec_cap = &lc3_codec_cap,
+	};
+	int err;
+
+	err = bt_pacs_cap_register(dir, dir == BT_AUDIO_DIR_SINK ? &snk_cap : &src_cap);
+	if (err != 0) {
+		FAIL("Failed to register capabilities: %d", err);
+		return;
+	}
+
+	printk("PAC records for dir %d successfully updated\n", dir);
+}
+
 static void init(void)
 {
-	static struct bt_pacs_cap cap = {
+	static struct bt_pacs_cap snk_cap = {
+		.codec_cap = &lc3_codec_cap,
+	};
+	static struct bt_pacs_cap src_cap = {
 		.codec_cap = &lc3_codec_cap,
 	};
 	const struct bt_pacs_register_param pacs_param = {
@@ -553,13 +575,13 @@ static void init(void)
 		return;
 	}
 
-	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &snk_cap);
 	if (err != 0) {
 		FAIL("Failed to register capabilities: %d", err);
 		return;
 	}
 
-	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap);
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &src_cap);
 	if (err != 0) {
 		FAIL("Failed to register capabilities: %d", err);
 		return;
@@ -608,6 +630,8 @@ static void test_main(void)
 	/* Wait for signal to trigger context type changes */
 	backchannel_sync_wait_any();
 	update_contexts();
+	update_pac(BT_AUDIO_DIR_SINK);
+	update_pac(BT_AUDIO_DIR_SOURCE);
 
 	WAIT_FOR_FLAG(flag_stream_configured);
 

@@ -75,8 +75,10 @@ CREATE_FLAG(flag_stream_released);
 CREATE_FLAG(flag_operation_success);
 CREATE_FLAG(flag_sink_avail_ctx_changed);
 CREATE_FLAG(flag_sink_supp_ctx_changed);
+CREATE_FLAG(flag_sink_pac_changed);
 CREATE_FLAG(flag_source_avail_ctx_changed);
 CREATE_FLAG(flag_source_supp_ctx_changed);
+CREATE_FLAG(flag_source_pac_changed);
 
 static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
 {
@@ -401,6 +403,14 @@ static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 
 	print_remote_codec_cap(codec_cap, dir);
 	SET_FLAG(flag_codec_cap_found);
+
+	if (dir == BT_AUDIO_DIR_SINK) {
+		SET_FLAG(flag_sink_pac_changed);
+	} else if (dir == BT_AUDIO_DIR_SOURCE) {
+		SET_FLAG(flag_source_pac_changed);
+	} else {
+		FAIL("Invalid dir: %d", dir);
+	}
 }
 
 static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
@@ -620,6 +630,7 @@ static void discover_sinks(void)
 
 	UNSET_FLAG(flag_sink_avail_ctx_changed);
 	UNSET_FLAG(flag_sink_supp_ctx_changed);
+	UNSET_FLAG(flag_sink_pac_changed);
 	UNSET_FLAG(flag_codec_cap_found);
 	UNSET_FLAG(flag_sink_discovered);
 	UNSET_FLAG(flag_endpoint_found);
@@ -636,7 +647,7 @@ static void discover_sinks(void)
 
 	WAIT_FOR_FLAG(flag_codec_cap_found);
 	WAIT_FOR_FLAG(flag_endpoint_found);
-
+	WAIT_FOR_FLAG(flag_sink_pac_changed);
 	WAIT_FOR_FLAG(flag_sink_avail_ctx_changed);
 	WAIT_FOR_FLAG(flag_sink_supp_ctx_changed);
 	WAIT_FOR_FLAG(flag_sink_discovered);
@@ -648,6 +659,7 @@ static void discover_sources(void)
 
 	unicast_client_cbs.discover = discover_sources_cb;
 
+	UNSET_FLAG(flag_source_pac_changed);
 	UNSET_FLAG(flag_source_avail_ctx_changed);
 	UNSET_FLAG(flag_source_supp_ctx_changed);
 	UNSET_FLAG(flag_codec_cap_found);
@@ -663,6 +675,7 @@ static void discover_sources(void)
 		return;
 	}
 
+	WAIT_FOR_FLAG(flag_source_pac_changed);
 	WAIT_FOR_FLAG(flag_source_avail_ctx_changed);
 	WAIT_FOR_FLAG(flag_source_supp_ctx_changed);
 	WAIT_FOR_FLAG(flag_codec_cap_found);
@@ -1147,14 +1160,19 @@ static void test_main(void)
 	/* Send signal to trigger a change to context types on the unicast server */
 	UNSET_FLAG(flag_sink_avail_ctx_changed);
 	UNSET_FLAG(flag_sink_supp_ctx_changed);
+	UNSET_FLAG(flag_sink_pac_changed);
 	UNSET_FLAG(flag_source_avail_ctx_changed);
 	UNSET_FLAG(flag_source_supp_ctx_changed);
-	backchannel_sync_send_all();
+	UNSET_FLAG(flag_source_pac_changed);
 
+	/* Trigger context and PAC record changes */
+	backchannel_sync_send_all();
 	WAIT_FOR_FLAG(flag_sink_avail_ctx_changed);
 	WAIT_FOR_FLAG(flag_sink_supp_ctx_changed);
 	WAIT_FOR_FLAG(flag_source_avail_ctx_changed);
 	WAIT_FOR_FLAG(flag_source_supp_ctx_changed);
+	WAIT_FOR_FLAG(flag_sink_pac_changed);
+	WAIT_FOR_FLAG(flag_source_pac_changed);
 
 	/* Run the stream setup multiple time to ensure states are properly
 	 * set and reset
