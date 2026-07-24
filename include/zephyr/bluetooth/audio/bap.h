@@ -2002,8 +2002,8 @@ int bt_bap_base_get_subgroup_codec_data(const struct bt_bap_base_subgroup *subgr
  * @param[in]  subgroup The subgroup pointer
  * @param[out] meta     Pointer that will point to the resulting codec metadata
  *
+ * @return Length of the metadata on success
  * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
  */
 int bt_bap_base_get_subgroup_codec_meta(const struct bt_bap_base_subgroup *subgroup,
 					uint8_t **meta);
@@ -2619,12 +2619,7 @@ struct bt_bap_scan_delegator_mod_src_param {
 	/** Number of subgroups */
 	uint8_t num_subgroups;
 
-	/**
-	 * @brief Subgroup specific information
-	 *
-	 * If a subgroup's metadata_len is set to 0, the existing metadata
-	 * for the subgroup will remain unchanged
-	 */
+	/** Subgroup specific information */
 	struct bt_bap_bass_subgroup subgroups[BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
