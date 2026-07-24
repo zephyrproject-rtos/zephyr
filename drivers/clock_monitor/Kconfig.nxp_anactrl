@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_MONITOR_NXP_ANACTRL
+	bool "NXP ANACTRL frequency measure driver"
+	default y
+	depends on DT_HAS_NXP_ANACTRL_FREQME_ENABLED
+	select NXP_INPUTMUX
+	help
+	  Supports MEASURE (one-shot) mode only.

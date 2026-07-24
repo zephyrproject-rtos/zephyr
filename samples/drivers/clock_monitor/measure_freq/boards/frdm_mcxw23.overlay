@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	aliases {
+		clock-meter = &anactrl;
+	};
+};
+
+&inputmux {
+	status = "okay";
+};
+
+&anactrl {
+	status = "okay";
+};

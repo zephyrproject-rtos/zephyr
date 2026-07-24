@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP ANACTRL (Analog Control) frequency-measurement.
+
+  Support to measure a target clock against a reference clock and returns the result
+  in Hz. Only the clock_monitor MEASURE (one-shot) mode is supported.
+
+  Selectable clock sources are declared with two container child nodes,
+  "reference-sources" and "target-sources". Each container holds one child
+  node per selectable source, pairing an INPUTMUX route with a frequency
+  provider. The child marked "default-source" is the power-on selection.
+
+  A source's frequency provider is either "clock-frequency" (a fixed
+  constant in Hz, used verbatim) or "clocks" (queried through
+  clock_control_get_rate()). When both are present "clock-frequency" wins
+  and "clocks" is ignored. A reference source must resolve to a nonzero
+  frequency; a target source needs no provider (its rate is measured).
+
+  Place NXP_ANACTRL_<series>_REF_* cookies in "reference-sources" and
+  NXP_ANACTRL_<series>_TAR_* cookies in "target-sources"; the axis is not checked
+  at build time. See <zephyr/dt-bindings/clock-monitor/nxp-anactrl.h>.
+
+compatible: "nxp,anactrl-freqme"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      The ANACTRL peripheral gate clock, enabled by the driver via
+      clock_control_on().
+
+child-binding:
+  description: |
+    Container for a set of selectable clock sources. Instantiated twice per
+    node, as "reference-sources" and "target-sources".
+
+  child-binding:
+    description: |
+      One selectable clock source: an INPUTMUX route paired with a frequency
+      provider. The source's status property is not consulted; every child is
+      a candidate source.
+
+    properties:
+      inputmux-connection:
+        type: phandle-array
+        specifier-space: inputmux
+        required: true
+        description: |
+          INPUTMUX route for this source, given as
+          <&inputmuxN channel connection> where:
+            - &inputmuxN is the INPUTMUX node providing the route
+            - channel is the destination index (0 for freq-measure)
+            - connection is an inputmux_connection_t cookie from
+              fsl_inputmux_connections.h. Use the NXP_ANACTRL_<series>_REF_* /
+              NXP_ANACTRL_<series>_TAR_* macros in
+              <zephyr/dt-bindings/clock-monitor/nxp-anactrl.h>.
+          This cookie is also the runtime clock_monitor_set_source() selector
+          for this source.
+
+      clocks:
+        type: phandle-array
+        description: |
+          Frequency provider queried through clock_control_get_rate().
+          Ignored when clock-frequency is present.
+
+      clock-frequency:
+        type: int
+        description: |
+          Fixed frequency provider in Hz, used verbatim without querying
+          clock_control. Takes precedence over clocks. Use for sources whose
+          rate the clock_control driver cannot report (e.g. an internal FRO
+          or the 32 kHz oscillator).
+
+      default-source:
+        type: boolean
+        description: |
+          Marks this source as the power-on selection for its container.
+          Exactly one child of each container must set it.

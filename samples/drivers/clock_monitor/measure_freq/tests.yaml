@@ -10,6 +10,7 @@ tests:
   sample.drivers.clock_monitor.measure_freq:
     platform_allow:
       - frdm_mcxe31b
+      - frdm_mcxw23
     tags:
       - drivers
       - clock_monitor
