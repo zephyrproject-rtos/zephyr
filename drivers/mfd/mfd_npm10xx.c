@@ -12,6 +12,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
+#include "mfd_npm10xx.h"
+
 LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 
 /* Register Offsets */
@@ -29,9 +31,12 @@ LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 #define NPM10_RESET_VBUSSTATUS  0xEBU
 
 /* GPIO registers */
-#define NPM10_GPIO_CONFIG  0xA0U
-#define NPM10_GPIO_USAGE   0xA3U
-#define NPM10_GPIO_CTRL2   0xABU
+#define NPM10_GPIO_CONFIG 0xA0U
+#define NPM10_GPIO_USAGE  0xA3U
+#define NPM10_GPIO_CTRL0  0xA9U
+#define NPM10_GPIO_CTRL1  0xAAU
+#define NPM10_GPIO_CTRL2  0xABU
+
 #define GPIO_CONFIG_INPUT  BIT(0)
 #define GPIO_CONFIG_OUTPUT BIT(1)
 #define GPIO_CONFIG_OPENDR BIT(2)
@@ -39,10 +44,20 @@ LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 #define GPIO_CONFIG_PULLUP BIT(4)
 #define GPIO_CONFIG_DRIVE  BIT(5)
 #define GPIO_CONFIG_DEBNC  BIT(6)
-#define GPIO_USAGE_IRQ     0x01U
 #define GPIO_USAGE_INV     BIT(4)
-#define GPIO_CTRL2_LP_MASK (BIT_MASK(2) << 3)
-#define GPIO_CTRL2_LP_POL  BIT(5)
+
+#define GPIO_CTRL0_BUCK_EN_MASK   (BIT_MASK(2) << 0)
+#define GPIO_CTRL0_BUCK_EN_POL    BIT(2)
+#define GPIO_CTRL0_BUCK_MODE_MASK (BIT_MASK(2) << 3)
+#define GPIO_CTRL0_BUCK_MODE_POL  BIT(5)
+#define GPIO_CTRL1_BUCK_VOUT_MASK (BIT_MASK(2) << 0)
+#define GPIO_CTRL1_BUCK_VOUT_POL  BIT(2)
+#define GPIO_CTRL1_LDSW_EN_MASK   (BIT_MASK(2) << 3)
+#define GPIO_CTRL1_LDSW_EN_POL    BIT(5)
+#define GPIO_CTRL2_LDO_EN_MASK    (BIT_MASK(2) << 0)
+#define GPIO_CTRL2_LDO_EN_POL     BIT(2)
+#define GPIO_CTRL2_LP_MASK        (BIT_MASK(2) << 3)
+#define GPIO_CTRL2_LP_POL         BIT(5)
 
 /* EVENTS registers */
 #define NPM10_EVENTS_SET       0x00U
@@ -147,12 +162,21 @@ struct mfd_npm10xx_config {
 	bool wakeup_disable;
 };
 
+struct mfd_npm10xx_gpio_state {
+	struct k_mutex lock;
+	struct {
+		uint8_t usage;
+		uint8_t config;
+	} pins[NPM10_PIN_NUM];
+};
+
 struct mfd_npm10xx_data {
 	const struct device *mfd;
 	struct k_work work;
 	struct gpio_callback gpio_cb;
 	sys_slist_t user_callbacks;
 	struct k_mutex slist_mutex;
+	struct mfd_npm10xx_gpio_state gpio_state;
 };
 
 static void pmic_int_handler(const struct device *port, struct gpio_callback *cb, uint32_t pins)
@@ -325,11 +349,7 @@ int mfd_npm10xx_manage_callback(const struct device *dev,
 	uint8_t buf[EVENTS_REG_NUM];
 	uint64_t unhandled = UINT64_MAX;
 
-	ret = k_mutex_lock(&data->slist_mutex, K_FOREVER);
-	if (ret < 0) {
-		LOG_ERR("Failed to lock mutex");
-		return ret;
-	}
+	(void)k_mutex_lock(&data->slist_mutex, K_FOREVER);
 
 	if (add) {
 		if (sys_slist_find(&data->user_callbacks, &callback->node, NULL)) {
@@ -457,25 +477,149 @@ int mfd_npm10xx_timer_status_get(const struct device *dev, bool *busy)
 	return 0;
 }
 
-static int mfd_npm10xx_gpio_configure(const struct i2c_dt_spec *i2c, uint8_t pin,
-				      gpio_flags_t flags)
+static inline bool pin_config_allowed(uint8_t old_usage, uint8_t new_usage)
 {
-	uint8_t pin_config;
+	if (old_usage == NPM10_PIN_USAGE_UNUSED) {
+		return true;
+	}
+	if (old_usage == new_usage && old_usage == NPM10_PIN_GPIO) {
+		/* allow GPIO driver to re-configure pins */
+		return true;
+	}
+	if (old_usage >= NPM10_PIN_BUCK_EN && new_usage >= NPM10_PIN_BUCK_EN) {
+		/* may combine multiple regulator controls on a single pin */
+		return true;
+	}
+	return false;
+}
 
-	if (pin > 2U) {
-		LOG_ERR("Pin index out of range [0,2]");
+static inline int pin_write_ctrl_reg(const struct i2c_dt_spec *i2c, uint8_t pin, uint8_t usage,
+				     bool active_high)
+{
+	uint8_t ctrl_reg, ctrl_mask, ctrl_val;
+
+	switch (usage) {
+	case NPM10_PIN_LP_RESET:
+		ctrl_reg = NPM10_GPIO_CTRL2;
+		ctrl_mask = GPIO_CTRL2_LP_MASK | GPIO_CTRL2_LP_POL;
+		ctrl_val = FIELD_PREP(GPIO_CTRL2_LP_MASK, pin + 1U) |
+			   FIELD_PREP(GPIO_CTRL2_LP_POL, active_high);
+		break;
+	case NPM10_PIN_BUCK_EN:
+		ctrl_reg = NPM10_GPIO_CTRL0;
+		ctrl_mask = GPIO_CTRL0_BUCK_EN_MASK | GPIO_CTRL0_BUCK_EN_POL;
+		ctrl_val = FIELD_PREP(GPIO_CTRL0_BUCK_EN_MASK, pin + 1U) |
+			   FIELD_PREP(GPIO_CTRL0_BUCK_EN_POL, active_high);
+		break;
+	case NPM10_PIN_BUCK_MODE:
+		ctrl_reg = NPM10_GPIO_CTRL0;
+		ctrl_mask = GPIO_CTRL0_BUCK_MODE_MASK | GPIO_CTRL0_BUCK_MODE_POL;
+		ctrl_val = FIELD_PREP(GPIO_CTRL0_BUCK_MODE_MASK, pin + 1U) |
+			   FIELD_PREP(GPIO_CTRL0_BUCK_MODE_POL, active_high);
+		break;
+	case NPM10_PIN_BUCK_VOUT:
+		ctrl_reg = NPM10_GPIO_CTRL1;
+		ctrl_mask = GPIO_CTRL1_BUCK_VOUT_MASK | GPIO_CTRL1_BUCK_VOUT_POL;
+		ctrl_val = FIELD_PREP(GPIO_CTRL1_BUCK_VOUT_MASK, pin + 1U) |
+			   FIELD_PREP(GPIO_CTRL1_BUCK_VOUT_POL, active_high);
+		break;
+	case NPM10_PIN_LDSW_EN:
+		ctrl_reg = NPM10_GPIO_CTRL1;
+		ctrl_mask = GPIO_CTRL1_LDSW_EN_MASK | GPIO_CTRL1_LDSW_EN_POL;
+		ctrl_val = FIELD_PREP(GPIO_CTRL1_LDSW_EN_MASK, pin + 1U) |
+			   FIELD_PREP(GPIO_CTRL1_LDSW_EN_POL, active_high);
+		break;
+	case NPM10_PIN_LDO_EN:
+		ctrl_reg = NPM10_GPIO_CTRL2;
+		ctrl_mask = GPIO_CTRL2_LDO_EN_MASK | GPIO_CTRL2_LDO_EN_POL;
+		ctrl_val = FIELD_PREP(GPIO_CTRL2_LDO_EN_MASK, pin + 1U) |
+			   FIELD_PREP(GPIO_CTRL2_LDO_EN_POL, active_high);
+		break;
+	default:
+		__ASSERT_NO_MSG(false);
+		return 0;
+	}
+
+	return i2c_reg_update_byte_dt(i2c, ctrl_reg, ctrl_mask, ctrl_val);
+}
+
+/* pin configuration for internal arbitration only - not part of the public API */
+int mfd_npm10xx_pin_configure(const struct device *dev, uint8_t pin, uint8_t usage,
+			      gpio_flags_t flags)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+	struct mfd_npm10xx_data *data = dev->data;
+	bool active_high = !(flags & GPIO_ACTIVE_LOW);
+	uint8_t cfg, usg;
+	int ret;
+
+	if (pin >= NPM10_PIN_NUM) {
+		LOG_ERR("Pin index out of range [0,%u]", NPM10_PIN_NUM - 1);
 		return -EINVAL;
 	}
 
-	pin_config = FIELD_PREP(GPIO_CONFIG_INPUT, !!(flags & GPIO_INPUT)) |
-		     FIELD_PREP(GPIO_CONFIG_OUTPUT, !!(flags & GPIO_OUTPUT)) |
-		     FIELD_PREP(GPIO_CONFIG_OPENDR, !!(flags & GPIO_OPEN_DRAIN)) |
-		     FIELD_PREP(GPIO_CONFIG_PULLUP, !!(flags & GPIO_PULL_UP)) |
-		     FIELD_PREP(GPIO_CONFIG_PULLDN, !!(flags & GPIO_PULL_DOWN)) |
-		     FIELD_PREP(GPIO_CONFIG_DRIVE, !!(flags & NPM10XX_GPIO_DRIVE_HIGH)) |
-		     FIELD_PREP(GPIO_CONFIG_DEBNC, !!(flags & NPM10XX_GPIO_DEBOUNCE_ON));
+	if (usage == NPM10_PIN_USAGE_UNUSED || usage >= NPM10_PIN_USAGE_MAX) {
+		LOG_ERR("Invalid pin usage requested (%u)", usage);
+		return -EINVAL;
+	}
 
-	return i2c_reg_write_byte_dt(i2c, NPM10_GPIO_CONFIG + pin, pin_config);
+	(void)k_mutex_lock(&data->gpio_state.lock, K_FOREVER);
+
+	if (!pin_config_allowed(data->gpio_state.pins[pin].usage, usage)) {
+		LOG_ERR("Pin %u is already reserved for another usage (%u)", pin,
+			data->gpio_state.pins[pin].usage);
+		ret = -EBUSY;
+		goto pin_cfg_unlock;
+	}
+
+	cfg = FIELD_PREP(GPIO_CONFIG_INPUT, !!(flags & GPIO_INPUT)) |
+	      FIELD_PREP(GPIO_CONFIG_OUTPUT, !!(flags & GPIO_OUTPUT)) |
+	      FIELD_PREP(GPIO_CONFIG_OPENDR, !!(flags & GPIO_OPEN_DRAIN)) |
+	      FIELD_PREP(GPIO_CONFIG_PULLUP, !!(flags & GPIO_PULL_UP)) |
+	      FIELD_PREP(GPIO_CONFIG_PULLDN, !!(flags & GPIO_PULL_DOWN)) |
+	      FIELD_PREP(GPIO_CONFIG_DRIVE, !!(flags & NPM10XX_GPIO_DRIVE_HIGH)) |
+	      FIELD_PREP(GPIO_CONFIG_DEBNC, !!(flags & NPM10XX_GPIO_DEBOUNCE_ON));
+
+	if (usage <= NPM10_PIN_VBUS_PRESENT) {
+		usg = usage - 1;
+
+		if (usage == NPM10_PIN_IRQ || usage == NPM10_PIN_WD_RST) {
+			/* IRQ and WD reset usage options are active-low by default */
+			usg |= FIELD_PREP(GPIO_USAGE_INV, active_high);
+
+		} else if (usage == NPM10_PIN_GPIO) {
+			/* GPIO driver already takes care of active level, do not invert in HW */
+		} else {
+			usg |= FIELD_PREP(GPIO_USAGE_INV, !active_high);
+		}
+
+		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_GPIO_USAGE + pin, usg);
+		if (ret < 0) {
+			goto pin_cfg_unlock;
+		}
+
+	} else {
+		ret = pin_write_ctrl_reg(&config->i2c, pin, usage, active_high);
+		if (ret < 0) {
+			goto pin_cfg_unlock;
+		}
+	}
+
+	if (data->gpio_state.pins[pin].config != cfg) {
+		/* avoid re-writing unchanged config, e.g. when regulator uses one pin for multiple
+		 * controls
+		 */
+		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_GPIO_CONFIG + pin, cfg);
+	}
+
+pin_cfg_unlock:
+	if (ret == 0) {
+		data->gpio_state.pins[pin].usage = usage;
+		data->gpio_state.pins[pin].config = cfg;
+	}
+	(void)k_mutex_unlock(&data->gpio_state.lock);
+
+	return ret;
 }
 
 static inline int mfd_npm10xx_longpress_cfg(const struct device *dev)
@@ -489,18 +633,8 @@ static inline int mfd_npm10xx_longpress_cfg(const struct device *dev)
 	}
 
 	if (config->lp_reset_src != RESET_LONGPRESS_PINSEL_SHPHLD) {
-		ret = mfd_npm10xx_gpio_configure(&config->i2c, config->lp_reset_gpio.pin,
-						 config->lp_reset_gpio.flags | GPIO_INPUT);
-		if (ret < 0) {
-			return ret;
-		}
-
-		reg = FIELD_PREP(GPIO_CTRL2_LP_MASK, config->lp_reset_gpio.pin + 1U) |
-		      FIELD_PREP(GPIO_CTRL2_LP_POL,
-				 !(config->lp_reset_gpio.flags & GPIO_ACTIVE_LOW));
-
-		ret = i2c_reg_update_byte_dt(&config->i2c, NPM10_GPIO_CTRL2,
-					     GPIO_CTRL2_LP_MASK | GPIO_CTRL2_LP_POL, reg);
+		ret = mfd_npm10xx_pin_configure(dev, config->lp_reset_gpio.pin, NPM10_PIN_LP_RESET,
+						config->lp_reset_gpio.flags | GPIO_INPUT);
 		if (ret < 0) {
 			return ret;
 		}
@@ -535,7 +669,6 @@ static inline int mfd_npm10xx_interrupt_cfg(const struct device *dev)
 	const struct mfd_npm10xx_config *config = dev->config;
 	struct mfd_npm10xx_data *data = dev->data;
 	int ret;
-	uint8_t pin_usage;
 	uint8_t disable_all_buf[EVENTS_REG_NUM] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
 
 	if (config->host_int_gpio.port == NULL) {
@@ -556,18 +689,8 @@ static inline int mfd_npm10xx_interrupt_cfg(const struct device *dev)
 		return ret;
 	}
 
-	ret = mfd_npm10xx_gpio_configure(&config->i2c, config->pmic_int_gpio.pin,
-					 config->pmic_int_gpio.flags | GPIO_OUTPUT);
-	if (ret < 0) {
-		return ret;
-	}
-
-	/* interrupt output is active low by default, set "invert" bit otherwise */
-	pin_usage = GPIO_USAGE_IRQ |
-		    FIELD_PREP(GPIO_USAGE_INV, !(config->pmic_int_gpio.flags & GPIO_ACTIVE_LOW));
-
-	ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_GPIO_USAGE + config->pmic_int_gpio.pin,
-				    pin_usage);
+	ret = mfd_npm10xx_pin_configure(dev, config->pmic_int_gpio.pin, NPM10_PIN_IRQ,
+					config->pmic_int_gpio.flags | GPIO_OUTPUT);
 	if (ret < 0) {
 		return ret;
 	}
@@ -608,11 +731,14 @@ static int mfd_npm10xx_init(const struct device *dev)
 	}
 
 	data->mfd = dev;
-
-	ret = k_mutex_init(&data->slist_mutex);
-	if (ret < 0) {
-		LOG_ERR("Failed to initialize mutex");
+	ARRAY_FOR_EACH(data->gpio_state.pins, idx) {
+		/* "unknown" config */
+		data->gpio_state.pins[idx].config = UINT8_MAX;
 	}
+
+	(void)k_mutex_init(&data->slist_mutex);
+
+	(void)k_mutex_init(&data->gpio_state.lock);
 
 	ret = mfd_npm10xx_longpress_cfg(dev);
 	if (ret < 0) {
@@ -636,6 +762,7 @@ static int mfd_npm10xx_init(const struct device *dev)
 	return mfd_npm10xx_interrupt_cfg(dev);
 }
 
+/* clang-format off */
 #define MFD_NPM10XX_DEFINE(n)                                                                      \
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(n, pmic_int_gpio_config) ==                             \
 			     DT_INST_NODE_HAS_PROP(n, host_int_gpios),                             \
@@ -672,5 +799,6 @@ static int mfd_npm10xx_init(const struct device *dev)
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, mfd_npm10xx_init, NULL, &mfd_data##n, &mfd_config##n,             \
 			      POST_KERNEL, CONFIG_MFD_NPM10XX_INIT_PRIORITY, NULL);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_NPM10XX_DEFINE)
