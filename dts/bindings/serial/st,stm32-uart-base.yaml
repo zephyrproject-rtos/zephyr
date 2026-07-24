@@ -13,6 +13,9 @@ include:
   - name: uart-controller-pin-inversion.yaml
 
 properties:
+  framing-error-reporting:
+    default: "FIFO_HEAD"
+
   reg:
     required: true
 
