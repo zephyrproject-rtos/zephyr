@@ -1,0 +1,8 @@
+set(BOARD_REVISIONS "p4" "p7" "p8")
+if(NOT DEFINED BOARD_REVISION)
+  set(BOARD_REVISION "p8")
+else()
+  if(NOT BOARD_REVISION IN_LIST BOARD_REVISIONS)
+    message(FATAL_ERROR "${BOARD_REVISION} is not a valid revision for um_feathers3. Accepted revisions: ${BOARD_REVISIONS}")
+  endif()
+endif()
