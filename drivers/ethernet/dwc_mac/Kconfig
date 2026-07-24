@@ -85,6 +85,8 @@ config ETH_DWMAC_MMU
 config ETH_DWC_ETHER_1000_CORE_EDFE
 	bool
 	depends on ETH_DWC_ETHER_1000_CORE
+	depends on !SOC_SERIES_STM32F1X
+	default y if PTP_CLOCK_DWC_MAC
 	help
 	  Increases the descriptor size to 32 bytes.
 
