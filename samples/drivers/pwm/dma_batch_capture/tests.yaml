@@ -1,0 +1,18 @@
+sample:
+  name: PWM DMA batch capture
+  description: Demonstrates batch capture API with DMA streaming and internal PWM generator
+               providing triangular frequency waves
+common:
+  tags:
+    - drivers
+    - pwm
+    - dma
+tests:
+  sample.drivers.pwm.dma.capture:
+    depends_on:
+      - pwm
+      - dma
+    platform_allow:
+      - nucleo_c5a3zg
+    harness_config:
+      fixture: pwm_capture
