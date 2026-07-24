@@ -159,16 +159,16 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 	 * re-submitting, rebooting or anything else.
 	 */
 	if (is_canceled || !is_ok) {
-		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->sqe.rx.buf,
-			iodev_sqe->sqe.rx.buf_len);
-		rtio_release_buffer(r, iodev_sqe->sqe.rx.buf, iodev_sqe->sqe.rx.buf_len);
+		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->rt.rx_bind.buf,
+			iodev_sqe->rt.rx_bind.buf_len);
+		rtio_release_buffer(r, iodev_sqe->rt.rx_bind.buf, iodev_sqe->rt.rx_bind.buf_len);
 		rtio_sqe_pool_free(r->sqe_pool, iodev_sqe);
 	} else {
 		/* Request was not canceled, put the SQE back in the queue */
 		if (iodev_sqe->sqe.op == RTIO_OP_RX && uses_mempool) {
 			/* Reset the buffer info so the next request can get a new one */
-			iodev_sqe->sqe.rx.buf = NULL;
-			iodev_sqe->sqe.rx.buf_len = 0;
+			iodev_sqe->rt.rx_bind.buf = NULL;
+			iodev_sqe->rt.rx_bind.buf_len = 0;
 		}
 
 		mpsc_push(&r->sq, &iodev_sqe->q);
