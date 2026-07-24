@@ -1748,3 +1748,9 @@ test_i2c_tsl2522: tsl2522@e2 {
 	number-of-samples = <256>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_stc31: stc31@e3 {
+	compatible = "sensirion,stc31";
+	reg = <0xe3>;
+	binary-gas = <0x0001>;
+};
