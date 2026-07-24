@@ -75,13 +75,40 @@ static int memc_smc_init(const struct device *dev)
 	SMC_CYCLE_NWE_CYCLE(DT_PROP_BY_IDX(node_id, atmel_smc_cycle_timing, 0))		\
 	| SMC_CYCLE_NRD_CYCLE(DT_PROP_BY_IDX(node_id, atmel_smc_cycle_timing, 1))
 
+#define SMC_DATA_BUS_WIDTH(node_id)                                                                \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, atmel_smc_data_bus_width),                           \
+		((DT_PROP(node_id, atmel_smc_data_bus_width) == 16) ? SMC_MODE_DBW_16_BIT	   \
+		 : 0), (0))
+
+#define SMC_BYTE_ACCESS_TYPE(node_id)                                                              \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, atmel_smc_byte_access_type),                         \
+		(DT_ENUM_IDX(node_id, atmel_smc_byte_access_type) ? SMC_MODE_BAT_BYTE_WRITE	   \
+		 : SMC_MODE_BAT_BYTE_SELECT), (0))
+
+#define SMC_PAGE_SIZE(node_id)                                                                     \
+	((DT_PROP_OR(node_id, atmel_smc_page_size, 4) == 32)                                       \
+		 ? SMC_MODE_PS_32_BYTE                                                             \
+		 : ((DT_PROP_OR(node_id, atmel_smc_page_size, 4) == 16)                            \
+			    ? SMC_MODE_PS_16_BYTE                                                  \
+			    : ((DT_PROP_OR(node_id, atmel_smc_page_size, 4) == 8)                  \
+				       ? SMC_MODE_PS_8_BYTE                                        \
+				       : SMC_MODE_PS_4_BYTE)))
+
+#define SMC_PAGE_MODE(node_id)                                                                     \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, atmel_smc_page_mode),                                \
+		    (DT_PROP_OR(node_id, atmel_smc_page_mode, 0)				   \
+			? (SMC_MODE_PMEN | SMC_PAGE_SIZE(node_id)) : 0), (0))
+
 #define BANK_CONFIG(node_id)								\
 	{										\
 		.cs = DT_REG_ADDR(node_id),						\
 		.mode = COND_CODE_1(DT_ENUM_IDX(node_id, atmel_smc_write_mode),		\
 				    (SMC_MODE_WRITE_MODE), (0))				\
 			| COND_CODE_1(DT_ENUM_IDX(node_id, atmel_smc_read_mode),	\
-				      (SMC_MODE_READ_MODE), (0)),			\
+				      (SMC_MODE_READ_MODE), (0))			\
+			| SMC_DATA_BUS_WIDTH(node_id)					\
+			| SMC_BYTE_ACCESS_TYPE(node_id)				\
+			| SMC_PAGE_MODE(node_id),					\
 		.setup_timing = SETUP_TIMING(node_id),					\
 		.pulse_timing = PULSE_TIMING(node_id),					\
 		.cycle_timing = CYCLE_TIMING(node_id),					\

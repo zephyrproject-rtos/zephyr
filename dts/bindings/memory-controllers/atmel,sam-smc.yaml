@@ -148,3 +148,34 @@ child-binding:
         is encoded in 9 bits where the two highest bits are multiplied
         with an offset of 256.
         Effective value for each element: 256 x cycle[8:7] + cycle[6:0]
+
+    atmel,smc-data-bus-width:
+      type: int
+      enum:
+        - 8
+        - 16
+      description: |
+        External data bus width used by the connected device.
+
+    atmel,smc-byte-access-type:
+      type: string
+      enum:
+        - "byte-select"
+        - "byte-write"
+      description: |
+        Selects how byte-access cycles are handled by the connected device.
+
+    atmel,smc-page-mode:
+      type: boolean
+      description: |
+        Enable page mode for the connected device when supported.
+
+    atmel,smc-page-size:
+      type: int
+      enum:
+        - 4
+        - 8
+        - 16
+        - 32
+      description: |
+        Page size, in bytes, used when page mode is enabled.
