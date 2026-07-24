@@ -12,3 +12,4 @@ Tools and IDEs
    stm32cubeide.rst
    vscode.rst
    workbench_for_zephyr.rst
+   ide_for_zephyr.rst
