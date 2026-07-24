@@ -327,6 +327,11 @@ New Drivers
   * :dtcompatible:`espressif,esp32-usb-otg-hs` - Espressif USB-OTG high-speed
     controller with internal UTMI PHY.
 
+* Sensors
+
+  * :dtcompatible:`st,lps33hw` - STMicroelectronics LPS33HW I2C
+    pressure and temperature sensor.
+
 New Samples
 ***********
 
