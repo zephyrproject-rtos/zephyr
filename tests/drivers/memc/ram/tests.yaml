@@ -15,13 +15,13 @@ tests:
     tags: mspi
     filter: dt_alias_exists("psram0")
     platform_allow:
-      - b_u585i_iot02a
-      - stm32h7s78_dk
+      - b_u585i_iot02a/stm32u585xx
+      - stm32h7s78_dk/stm32h7s7xx
     integration_platforms:
-      - b_u585i_iot02a
-      - stm32h7s78_dk
+      - b_u585i_iot02a/stm32u585xx
+      - stm32h7s78_dk/stm32h7s7xx
     extra_args:
-      - platform:b_u585i_iot02a:DTC_OVERLAY_FILE=boards/b_u585i_iot02a_mspi_aps6408l.overlay
-      - platform:b_u585i_iot02a:EXTRA_CONF_FILE=boards/b_u585i_iot02a_mspi_aps6408l.conf
-      - platform:stm32h7s78_dk:CONF_FILE=boards/stm32h7s78_dk_mspi_psram.conf
-      - platform:stm32h7s78_dk:DTC_OVERLAY_FILE=boards/stm32h7s78_dk_mspi_psram.overlay
+      - platform:b_u585i_iot02a/stm32u585xx:DTC_OVERLAY_FILE=boards/b_u585i_iot02a_mspi_aps6408l.overlay
+      - platform:b_u585i_iot02a/stm32u585xx:EXTRA_CONF_FILE=boards/b_u585i_iot02a_mspi_aps6408l.conf
+      - platform:stm32h7s78_dk/stm32h7s7xx:EXTRA_CONF_FILE=boards/stm32h7s78_dk_mspi_psram.conf
+      - platform:stm32h7s78_dk/stm32h7s7xx:DTC_OVERLAY_FILE=boards/stm32h7s78_dk_mspi_psram.overlay
