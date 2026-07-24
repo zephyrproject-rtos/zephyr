@@ -20,6 +20,7 @@ from west.configuration import Configuration
 from west.util import WestNotFound, escapes_directory, west_topdir
 
 import zcmake
+from zephyr_ext_common import ZEPHYR_BASE
 
 # Explicit, flat name: avoids colliding with scripts/pylib/build_helpers/
 # domains.py (which grabs `logging.getLogger('build_helpers')` at import
@@ -135,6 +136,64 @@ If the build directory is not given, the default is {DEFAULT_BUILD_DIR}/ unless 
 build.dir-fmt configuration variable is set. The current directory is
 checked after that. If either is a Zephyr build directory, it is used.
 '''
+
+# Path to the CMake helper script that lists the installed Zephyr SDKs.
+_LIST_SDK_CMAKE = Path(__file__).parent / 'sdk' / 'listsdk.cmake'
+
+
+def find_installed_sdks():
+    '''Discover the Zephyr SDKs installed on the system.
+
+    Returns a list of ``(version, path)`` tuples, one per installed Zephyr
+    SDK, discovered using the same CMake logic that a Zephyr build uses to
+    locate the SDK. The directory pointed to by ``ZEPHYR_SDK_INSTALL_DIR``,
+    if set in the environment, is included as well.
+
+    The version of each SDK is read from its ``sdk_version`` file; entries
+    without one are skipped. Raises on failure to run CMake.
+    '''
+    # listsdk.cmake reads ZEPHYR_BASE from the environment; make sure it is
+    # set so discovery works even when it is not exported by the user.
+    env = os.environ.copy()
+    env.setdefault('ZEPHYR_BASE', str(ZEPHYR_BASE))
+
+    output = zcmake.run_cmake(['-P', str(_LIST_SDK_CMAKE)], capture_output=True, env=env)
+
+    # Each match is printed by CMake as "-- Zephyr-sdk, version=<v>, dir=<d>".
+    leader = '-- Zephyr-sdk, '
+    lines = [line[len(leader) :] for line in (output or []) if line.startswith(leader)]
+
+    # An explicitly selected SDK is not necessarily on the default search
+    # paths, so make sure it is considered too.
+    sdk_install_dir = os.environ.get('ZEPHYR_SDK_INSTALL_DIR')
+    if sdk_install_dir:
+        lines.append(f'dir={sdk_install_dir}')
+
+    sdks = []
+    # Reverse so that, for duplicate versions, the entry found first by CMake
+    # (highest precedence search path) is the one that is kept.
+    for line in reversed(lines):
+        path = None
+        for entry in line.split(','):
+            key, _, value = entry.partition('=')
+            if key.strip() == 'dir':
+                path = Path(value.strip())
+
+        if path is None:
+            continue
+
+        version_file = path / 'sdk_version'
+        if not version_file.exists():
+            continue
+
+        version_lines = version_file.read_text().splitlines()
+        if not version_lines:
+            continue
+
+        sdks.append((version_lines[0].strip(), path))
+
+    return sdks
+
 
 def _resolve_build_dir(fmt, guess, cwd, **kwargs):
     # Remove any None values, we do not want 'None' as a string
