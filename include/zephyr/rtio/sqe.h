@@ -358,7 +358,6 @@ struct rtio_sqe {
 		/** OP_DELAY */
 		struct {
 			k_timeout_t timeout; /**< Delay timeout (input). */
-			k_timepoint_t expiry; /**< Absolute expiration. Used internally. */
 		} delay;
 #endif
 
@@ -375,13 +374,6 @@ struct rtio_sqe {
 		/** OP_I3C_CCC */
 		/* struct i3c_ccc_payload *ccc_payload; */
 		void *ccc_payload;
-
-		/** OP_AWAIT */
-		struct {
-			atomic_t ok;
-			rtio_signaled_t callback;
-			void *userdata;
-		} await;
 	};
 };
 
@@ -396,6 +388,32 @@ struct rtio_iodev_sqe {
 	struct mpsc_node q;
 	struct rtio_iodev_sqe *next;
 	struct rtio *r;
+
+	/**
+	 * Runtime scratch state that the subsystem/driver mutates while it owns
+	 * the submission. Kept out of @ref rtio_sqe so the submission description
+	 * stays immutable to drivers after submit. The members are mutually
+	 * exclusive per op and are zeroed when the entry is allocated from the pool.
+	 */
+	union {
+		/** OP_RX with @ref RTIO_SQE_MEMPOOL_BUFFER: buffer bound at runtime */
+		struct {
+			uint8_t *buf;
+			uint32_t buf_len;
+		} rx_bind;
+
+		/** OP_AWAIT signaling state */
+		struct {
+			atomic_t ok;
+			rtio_signaled_t callback;
+			void *userdata;
+		} await;
+
+#ifdef CONFIG_RTIO_OP_DELAY
+		/** OP_DELAY absolute expiration */
+		k_timepoint_t delay_expiry;
+#endif
+	} rt;
 };
 
 
@@ -788,10 +806,10 @@ static inline void rtio_iodev_sqe_await_signal(struct rtio_iodev_sqe *iodev_sqe,
 					       rtio_signaled_t callback,
 					       void *userdata)
 {
-	iodev_sqe->sqe.await.callback = callback;
-	iodev_sqe->sqe.await.userdata = userdata;
+	iodev_sqe->rt.await.callback = callback;
+	iodev_sqe->rt.await.userdata = userdata;
 
-	if (!atomic_cas(&iodev_sqe->sqe.await.ok, 0, 1)) {
+	if (!atomic_cas(&iodev_sqe->rt.await.ok, 0, 1)) {
 		callback(iodev_sqe, userdata);
 	}
 }
@@ -815,6 +833,11 @@ static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *p
 	}
 
 	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(node, struct rtio_iodev_sqe, q);
+
+	/* Reset the runtime scratch so per-op state (await ok, mempool binding)
+	 * starts clean for this allocation.
+	 */
+	memset(&iodev_sqe->rt, 0, sizeof(iodev_sqe->rt));
 
 	pool->pool_free--;
 

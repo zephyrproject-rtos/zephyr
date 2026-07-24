@@ -12,9 +12,10 @@
  * Delay submissions are handled like any other iodev operation rather than as
  * an executor special case. The "device" here is the system clock: pending
  * delays are kept in a per-instance list sorted by absolute expiration and
- * driven by a single kernel timeout re-armed to the nearest deadline. This
- * keeps the per-SQE footprint to a single k_timepoint_t (no embedded
- * struct _timeout) and reduces the kernel timeout queue to one node per
+ * driven by a single kernel timeout re-armed to the nearest deadline. The
+ * absolute expiration lives in the iodev_sqe wrapper's runtime scratch (a
+ * single k_timepoint_t, no embedded struct _timeout), keeping the submission
+ * description immutable, and reduces the kernel timeout queue to one node per
  * timeout iodev instance.
  */
 
@@ -64,7 +65,7 @@ static bool rtio_tq_insert(struct rtio_timeout_iodev_data *data, struct rtio_iod
 	struct rtio_iodev_sqe *curr = data->head;
 
 	while (curr != NULL &&
-	       sys_timepoint_cmp(curr->sqe.delay.expiry, iodev_sqe->sqe.delay.expiry) <= 0) {
+	       sys_timepoint_cmp(curr->rt.delay_expiry, iodev_sqe->rt.delay_expiry) <= 0) {
 		prev = curr;
 		curr = rtio_tq_next(curr);
 	}
@@ -88,7 +89,7 @@ static struct rtio_iodev_sqe *rtio_tq_pop_expired(struct rtio_timeout_iodev_data
 	struct rtio_iodev_sqe *batch = NULL;
 	struct rtio_iodev_sqe *last = NULL;
 
-	while (data->head != NULL && sys_timepoint_expired(data->head->sqe.delay.expiry)) {
+	while (data->head != NULL && sys_timepoint_expired(data->head->rt.delay_expiry)) {
 		struct rtio_iodev_sqe *iodev_sqe = data->head;
 
 		data->head = rtio_tq_next(iodev_sqe);
@@ -125,7 +126,7 @@ static bool rtio_tq_try_arm(struct rtio_timeout_iodev_data *data)
 
 	if (data->head != NULL) {
 		z_add_timeout(&data->timeout, rtio_tq_expired,
-			      sys_timepoint_timeout(data->head->sqe.delay.expiry));
+			      sys_timepoint_timeout(data->head->rt.delay_expiry));
 	}
 
 	return true;
@@ -150,7 +151,7 @@ static void rtio_tq_expired(struct _timeout *timeout)
 
 	if (data->head != NULL) {
 		z_add_timeout(&data->timeout, rtio_tq_expired,
-			      sys_timepoint_timeout(data->head->sqe.delay.expiry));
+			      sys_timepoint_timeout(data->head->rt.delay_expiry));
 	}
 
 	k_spin_unlock(&data->lock, key);
@@ -169,7 +170,7 @@ static void rtio_timeout_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 	struct rtio_timeout_iodev_data *data = iodev_sqe->sqe.iodev->data;
 	k_spinlock_key_t key;
 
-	iodev_sqe->sqe.delay.expiry = sys_timepoint_calc(iodev_sqe->sqe.delay.timeout);
+	iodev_sqe->rt.delay_expiry = sys_timepoint_calc(iodev_sqe->sqe.delay.timeout);
 
 	key = k_spin_lock(&data->lock);
 
