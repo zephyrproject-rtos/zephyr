@@ -121,7 +121,7 @@ ZTEST(no_multithreading, test_cpu_idle)
 /* TODO: Remove CONFIG checks once TLS is supported on all architectures
  * See https://github.com/zephyrproject-rtos/zephyr/issues/114503
  */
-#if defined(CONFIG_ARM) || defined(CONFIG_RISCV)
+#if defined(CONFIG_ARM) || defined(CONFIG_RISCV) || defined(CONFIG_OPENRISC)
 ZTEST(no_multithreading, test_tls)
 {
 	static volatile Z_THREAD_LOCAL int i = 42;
