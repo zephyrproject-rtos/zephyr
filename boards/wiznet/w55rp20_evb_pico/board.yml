@@ -1,0 +1,6 @@
+board:
+  name: w55rp20_evb_pico
+  full_name: W55RP20-EVB-Pico
+  vendor: wiznet
+  socs:
+  - name: rp2040
