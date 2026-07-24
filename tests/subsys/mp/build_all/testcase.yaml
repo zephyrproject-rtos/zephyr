@@ -20,3 +20,14 @@ tests:
       - CONFIG_MP_BASE_CAPSFILTER=y
       - CONFIG_MP_BASE_QUEUE=y
       - CONFIG_MP_BASE_TEE=y
+
+  mp.video.build:
+    tags:
+      - subsys
+      - mp
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_MP_VID=y
+      - CONFIG_MP_VID_CONVERT=y
