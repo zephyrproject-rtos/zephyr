@@ -519,7 +519,13 @@ void sys_clock_idle_exit(void)
 	if (timeout_idle) {
 		k_spinlock_key_t key = sys_clock_lock();
 		cycle_t systick_diff, missed_cycles;
-		uint32_t dcycles, dticks;
+		/* dcycles must be 64-bit: after a long low-power sleep the unannounced
+		 * cycle count (cycle_count + elapsed() - announced_cycles) exceeds 2^32
+		 * beyond ~134 s at 32 MHz. Truncating to uint32_t announces far too few
+		 * ticks, so k_sleep() never completes and the MCU appears to never wake.
+		 */
+		uint64_t dcycles;
+		uint32_t dticks;
 		uint64_t systick_us, idle_timer_us;
 
 #if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
@@ -564,7 +570,12 @@ void sys_clock_idle_exit(void)
 		/* Announce the passed ticks to the kernel */
 		dcycles = cycle_count + elapsed() - announced_cycles;
 		dticks = dcycles / CYC_PER_TICK;
-		announced_cycles += dticks * CYC_PER_TICK;
+		/* Cast to cycle_t: dticks * CYC_PER_TICK is otherwise evaluated in
+		 * 32-bit and truncates for a single sleep past ~134 s at 32 MHz
+		 * (dticks > 2^32 / CYC_PER_TICK). That under-counts announced_cycles,
+		 * so the next sleep's dcycles is too large and kernel time runs fast.
+		 */
+		announced_cycles += (cycle_t)dticks * CYC_PER_TICK;
 		last_elapsed = 0U;
 		timeout_idle = false;
 		sys_clock_announce_locked(dticks, key);
