@@ -176,3 +176,15 @@ config MEMC_MCUX_XSPI_PSRAM
 	  Enable the mcux xspi psram driver.
 
 endif # DT_HAS_NXP_XSPI_PSRAM_ENABLED
+
+if DT_HAS_NXP_LPC_EMC_ENABLED
+
+config MEMC_MCUX_EMC
+	bool "MCUX LPC EMC (external memory controller) driver"
+	default y
+	select PINCTRL
+	help
+	  Enable the NXP LPC External Memory Controller driver, which brings up
+	  external SDRAM attached to the EMC dynamic memory interface.
+
+endif # DT_HAS_NXP_LPC_EMC_ENABLED

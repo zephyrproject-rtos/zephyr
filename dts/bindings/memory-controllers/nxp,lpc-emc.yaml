@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP LPC External Memory Controller (EMC).
+
+  The EMC drives external static and dynamic (SDRAM) memories. Each attached
+  dynamic memory chip is described by a "nxp,lpc-emc-sdram" child node whose
+  unit address is the EMC dynamic chip-select index (0 -> DYCS0 at 0xA0000000,
+  1 -> DYCS1, ...). The SDRAM address window itself is declared separately as a
+  "zephyr,memory-region" node so the linker can place data in it.
+
+compatible: "nxp,lpc-emc"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  nxp,emc-clock-div:
+    type: int
+    required: true
+    max: 255
+    description: |
+      EMC clock divider (SYSCON EMCCLKDIV DIV field, 0-255). The EMC clock is
+      the CPU clock / (nxp,emc-clock-div + 1). The SoC data sheet limits the
+      EMC clock to 100 MHz.
+
+  nxp,emc-big-endian:
+    type: boolean
+    description: |
+      Configure the EMC data bus in big-endian mode. Omit for the default
+      little-endian mode.
+
+  nxp,emc-external-feedback-clock:
+    type: boolean
+    description: |
+      Use the external EMC_FBCLK input as the read feedback clock instead of the
+      internal loopback of the EMC_CLK output. Omit for internal loopback, which
+      is correct for the common case where EMC_FBCLK is not routed on the board.
+
+  nxp,emc-feedback-clock-delay:
+    type: int
+    max: 31
+    description: |
+      Feedback-clock delay (SYSCON EMCDLYCTRL FBCLK_DELAY field, 0-31) that
+      aligns read-data capture with the SDRAM round-trip delay at the
+      configured EMC clock. The delay is roughly (value + 1) * 250 ps. The
+      right value depends on the board and the EMC clock; a memory test over
+      the whole range finds the valid window. Without this property the field
+      keeps its reset value.
