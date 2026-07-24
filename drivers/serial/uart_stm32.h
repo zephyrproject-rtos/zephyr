@@ -48,6 +48,8 @@ struct uart_stm32_config {
 	bool de_invert;
 	/* enable fifo */
 	bool fifo_enable;
+	/* enable zero latency interrupt */
+	bool zli;
 	/* pin muxing */
 	const struct pinctrl_dev_config *pcfg;
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || \

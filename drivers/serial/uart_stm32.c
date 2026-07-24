@@ -1946,6 +1946,12 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 		return -ENODEV;
 	}
 
+	/* Prevent driver system calls in case of zero latency interrupt*/
+	if (config->zli) {
+		LOG_ERR("Async API cannot be used with ZLI enabled!");
+		return -EINVAL;
+	}
+
 	if (data->dma_rx.enabled) {
 		LOG_WRN("RX was already enabled");
 		return -EBUSY;
@@ -2596,11 +2602,31 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 #endif /* CONFIG_UART_ASYNC_API */
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API) || defined(CONFIG_PM)
+
+#define STM32_UART_ZLI_IRQ_HANDLER_DEFINE(index)				\
+COND_CODE_1(DT_INST_PROP(index, zephyr_zli), (					\
+	ISR_DIRECT_DECLARE(uart_stm32_isr_direct_##index) 			\
+	{									\
+		uart_stm32_isr(DEVICE_DT_INST_GET(index)); 			\
+		return 0;							\
+	}), ());
+
+#define STM32_UART_IRQ_CONNECT(idx)						\
+	COND_CODE_1(DT_INST_PROP(idx, zephyr_zli),				\
+		(IRQ_DIRECT_CONNECT(DT_INST_IRQN(idx),				\
+				    DT_INST_IRQ(idx, priority),			\
+				    uart_stm32_isr_direct_##idx,		\
+				    IRQ_ZERO_LATENCY)),				\
+		(IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority),	\
+			    uart_stm32_isr, DEVICE_DT_INST_GET(idx), 0))	\
+	)
+
 #define STM32_UART_IRQ_HANDLER_DEFINE(index)					\
+	STM32_UART_ZLI_IRQ_HANDLER_DEFINE(index)				\
 	static void uart_stm32_irq_config_func_##index(const struct device *dev)\
 	{									\
-		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority),	\
-			    uart_stm32_isr, DEVICE_DT_INST_GET(index), 0);	\
+		ARG_UNUSED(dev);						\
+		STM32_UART_IRQ_CONNECT(index);					\
 		irq_enable(DT_INST_IRQN(index));				\
 	}
 
@@ -2768,6 +2794,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 		.de_deassert_time = DT_INST_PROP(index, de_deassert_time),	\
 		.de_invert = DT_INST_PROP(index, de_invert),			\
 		.fifo_enable = DT_INST_PROP(index, fifo_enable),		\
+		.zli = DT_INST_PROP(index, zephyr_zli),				\
 		STM32_UART_IRQ_HANDLER_FUNC(index)				\
 		STM32_UART_PM_WAKEUP(index)					\
 	};									\
