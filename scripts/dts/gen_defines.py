@@ -1262,7 +1262,7 @@ def list2init(values: Iterable[str]) -> str:
 
 def out_dt_define(
     macro: str,
-    val: str,
+    val: str | int,
     width: int | None = None,
     deprecation_msg: str | None = None,
 ) -> str:
@@ -1284,7 +1284,7 @@ def out_dt_define(
 
 def out_define(
     macro: str,
-    val: str,
+    val: str | int,
     width: int | None = None,
     deprecation_msg: str | None = None,
 ) -> None:
