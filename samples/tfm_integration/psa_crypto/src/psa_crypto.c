@@ -11,9 +11,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/data/json.h>
 
-#include "mbedtls/pk.h"
-#include "mbedtls/x509.h"
-#include "mbedtls/x509_csr.h"
+#include <mbedtls/pk.h>
+#include <mbedtls/x509.h>
+#include <mbedtls/x509_csr.h>
 
 #include "psa_crypto.h"
 #include "util_app_log.h"

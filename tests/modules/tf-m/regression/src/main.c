@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include "non_secure_suites.h"
+#include <non_secure_suites.h>
 
 int main(void)
 {
