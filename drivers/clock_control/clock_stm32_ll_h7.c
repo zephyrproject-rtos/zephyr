@@ -366,9 +366,28 @@ static int get_vco_input_range(uint32_t m_div, uint32_t *range)
 	return 0;
 }
 
+/*
+ * Select the PLL VCO output range (PLLxVCOSEL). Per RM0433 the medium range
+ * spans 150-420 MHz and the wide range spans 192-960 MHz. The range must be
+ * chosen from the VCO *output* frequency, not the VCO input range: a 1-2 MHz
+ * input can legally drive the VCO above 420 MHz (e.g. M=4, N=480 for a 480 MHz
+ * SYSCLK), and selecting the medium range for such a VCO leaves the PLL unable
+ * to lock, hanging clock init in the PLL-ready wait loop below. Force the wide
+ * range above the medium ceiling and force the medium range below the wide
+ * floor; in the 192-420 MHz overlap keep the historical input-range-based
+ * choice so existing configurations are unchanged.
+ */
 __unused
-static uint32_t get_vco_output_range(uint32_t vco_input_range)
+static uint32_t get_vco_output_range(uint32_t vco_input_range, uint32_t vco_output_freq)
 {
+	if (vco_output_freq > MHZ(420)) {
+		return LL_RCC_PLLVCORANGE_WIDE;
+	}
+
+	if (vco_output_freq < MHZ(192)) {
+		return LL_RCC_PLLVCORANGE_MEDIUM;
+	}
+
 	if (vco_input_range == LL_RCC_PLLINPUTRANGE_1_2) {
 		return LL_RCC_PLLVCORANGE_MEDIUM;
 	}
@@ -980,7 +999,9 @@ static int set_up_plls(void)
 		return r;
 	}
 
-	vco_output_range = get_vco_output_range(vco_input_range);
+	vco_output_range = get_vco_output_range(vco_input_range,
+		(uint32_t)PLLX_VCO_FREQ(PLLSRC_FREQ, STM32_PLL_M_DIVISOR,
+			(uint64_t)STM32_PLL_N_MULTIPLIER, STM32_PLL_FRACN_VALUE));
 
 	LL_RCC_PLL1_SetM(STM32_PLL_M_DIVISOR);
 
@@ -1028,7 +1049,9 @@ static int set_up_plls(void)
 		return r;
 	}
 
-	vco_output_range = get_vco_output_range(vco_input_range);
+	vco_output_range = get_vco_output_range(vco_input_range,
+		(uint32_t)PLLX_VCO_FREQ(PLLSRC_FREQ, STM32_PLL2_M_DIVISOR,
+			(uint64_t)STM32_PLL2_N_MULTIPLIER, STM32_PLL2_FRACN_VALUE));
 
 	LL_RCC_PLL2_SetM(STM32_PLL2_M_DIVISOR);
 
@@ -1082,7 +1105,9 @@ static int set_up_plls(void)
 		return r;
 	}
 
-	vco_output_range = get_vco_output_range(vco_input_range);
+	vco_output_range = get_vco_output_range(vco_input_range,
+		(uint32_t)PLLX_VCO_FREQ(PLLSRC_FREQ, STM32_PLL3_M_DIVISOR,
+			(uint64_t)STM32_PLL3_N_MULTIPLIER, STM32_PLL3_FRACN_VALUE));
 
 	LL_RCC_PLL3_SetM(STM32_PLL3_M_DIVISOR);
 
