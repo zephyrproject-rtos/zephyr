@@ -208,9 +208,27 @@
 			status = "disabled";
 		};
 
-		edma2: dma@42000000 {
+		edma1: dma@44000000 {
 			compatible = "nxp,mcux-edma";
-			reg = <0x42000000 0x4000>;
+			reg = <0x44000000 0x4000>;
+			#dma-cells = <2>;
+			nxp,version = <4>;
+			dma-channels = <31>;
+			dma-requests = <31>;
+			interrupts = <96 0>, <97 0>, <98 0>, <99 0>,
+				     <100 0>, <101 0>, <102 0>, <103 0>,
+				     <104 0>, <105 0>, <106 0>, <107 0>,
+				     <108 0>, <109 0>, <110 0>, <111 0>,
+				     <112 0>, <113 0>, <114 0>, <115 0>,
+				     <116 0>, <117 0>, <118 0>, <119 0>,
+				     <120 0>, <121 0>, <122 0>, <123 0>,
+				     <124 0>, <125 0>, <126 0>;
+			status = "disabled";
+		};
+
+		edma2: dma@42800000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x42800000 0x4000>;
 			#dma-cells = <2>;
 			nxp,version = <5>;
 			dma-channels = <64>;
