@@ -91,6 +91,8 @@
 #include <zephyr/dt-bindings/clock/stm32u5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBAX)
 #include <zephyr/dt-bindings/clock/stm32wba_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32WL3X)
+#include <zephyr/dt-bindings/clock/stm32wl3_clock.h>
 #else
 #include <zephyr/dt-bindings/clock/stm32_clock.h>
 #endif

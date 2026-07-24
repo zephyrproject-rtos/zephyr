@@ -34,6 +34,8 @@ elseif(CONFIG_SOC_SERIES_STM32WB0X)
   zephyr_library_sources(clock_stm32_ll_wb0.c)
 elseif(CONFIG_SOC_SERIES_STM32WBAX)
   zephyr_library_sources(clock_stm32_ll_wba.c)
+elseif(CONFIG_SOC_SERIES_STM32WL3X)
+  zephyr_library_sources(clock_stm32_ll_wl3.c)
 else()
   # zephyr-keep-sorted-start
   zephyr_library_sources(clock_stm32_ll_common.c)
