@@ -52,3 +52,118 @@ properties:
   channel:
     type: int
     required: true
+
+  renesas,spck-delay:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+    description: |
+      Clock delay: Delay from the beginning of SSL signal assertion
+      to RSPCK oscillation (RSPCK delay).
+      - 0: Set RSPCK delay count to 1 RSPCK
+      - 1: Set RSPCK delay count to 2 RSPCK
+      - 2: Set RSPCK delay count to 3 RSPCK
+      - 3: Set RSPCK delay count to 4 RSPCK
+      - 4: Set RSPCK delay count to 5 RSPCK
+      - 5: Set RSPCK delay count to 6 RSPCK
+      - 6: Set RSPCK delay count to 7 RSPCK
+      - 7: Set RSPCK delay count to 8 RSPCK
+
+  renesas,ssln-delay:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+    description: |
+      Slave select negation delay: delay from the transmission of a final RSPCK edge
+      to the negation of the SSL signal.
+      - 0: Set RSPCK delay count to 1 RSPCK
+      - 1: Set RSPCK delay count to 2 RSPCK
+      - 2: Set RSPCK delay count to 3 RSPCK
+      - 3: Set RSPCK delay count to 4 RSPCK
+      - 4: Set RSPCK delay count to 5 RSPCK
+      - 5: Set RSPCK delay count to 6 RSPCK
+      - 6: Set RSPCK delay count to 7 RSPCK
+      - 7: Set RSPCK delay count to 8 RSPCK
+
+  renesas,spn-delay:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+    description: |
+      Next-access delay: delay after termination of a serial transfer.
+      - 0: Set RSPCK delay count to 1 RSPCK
+      - 1: Set RSPCK delay count to 2 RSPCK
+      - 2: Set RSPCK delay count to 3 RSPCK
+      - 3: Set RSPCK delay count to 4 RSPCK
+      - 4: Set RSPCK delay count to 5 RSPCK
+      - 5: Set RSPCK delay count to 6 RSPCK
+      - 6: Set RSPCK delay count to 7 RSPCK
+      - 7: Set RSPCK delay count to 8 RSPCK
+
+  renesas,rx-trigger:
+    type: int
+    default: 5
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+    description: |
+      Specifies the timing at which the receive buffer full state is determined, that is when
+      the SPRF flag in the status register is set. When the number of bytes of data in the
+      receive buffer (SPRX) is equal to or greater than the specified triggering number, the
+      SPRF flag is set to 1.
+      - 0: 1 byte
+      - 1: 2 bytes
+      - 2: 4 bytes
+      - 3: 8 bytes
+      - 4: 16 bytes
+      - 5: 24 bytes
+      - 6: 32 bytes
+      - 7: 5 bytes
+
+  renesas,tx-trigger:
+    type: int
+    default: 2
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      Specifies the timing at which the transmit buffer empty state is determined, that is
+      when the SPTEF flag in the status register is set. When the number of bytes of data in
+      the transmit buffer (SPTX) is equal to or less than the specified triggering number, the
+      SPTEF flag is set to 1.
+      - 7 bytes
+      - 6 bytes
+      - 4 bytes
+      - 0 byte

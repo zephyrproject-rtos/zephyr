@@ -39,4 +39,13 @@
 				 <RZG_PINMUX(PORT_42, 4, 1)>; /* SCL */
 		};
 	};
+
+	/omit-if-no-ref/ spi1_pins: spi1 {
+		spi1-pinmux {
+			pinmux = <RZG_PINMUX(PORT_44, 0, 1)>, /* CK */
+				 <RZG_PINMUX(PORT_44, 1, 1)>, /* MOSI */
+				 <RZG_PINMUX(PORT_44, 2, 1)>, /* MIS0 */
+				 <RZG_PINMUX(PORT_44, 3, 1)>; /* SSL */
+		};
+	};
 };
