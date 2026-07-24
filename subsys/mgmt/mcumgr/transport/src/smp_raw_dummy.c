@@ -240,12 +240,11 @@ static struct net_buf *mcumgr_dummy_process_frag(
 
 	if (rx_ctxt->nb == NULL) {
 		rx_ctxt->nb = smp_packet_alloc();
-		net_buf_reset(rx_ctxt->nb);
 		if (rx_ctxt->nb == NULL) {
 			return NULL;
 		}
+		net_buf_reset(rx_ctxt->nb);
 	}
-
 
 	net_buf_add_mem(rx_ctxt->nb, frag, frag_len);
 
