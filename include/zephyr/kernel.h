@@ -928,8 +928,9 @@ static inline k_tid_t k_current_get(void)
  * off all kernel queues it is part of (i.e. the ready queue, the timeout
  * queue, or a kernel object wait queue). However, any kernel resources the
  * thread might currently own (such as mutexes or memory blocks) are not
- * released. It is the responsibility of the caller of this routine to ensure
- * all necessary cleanup is performed.
+ * released. If priority inheritance is enabled, the thread's held mutex
+ * list will also be left in an inconsistent state. It is the responsibility
+ * of the caller of this routine to ensure all necessary cleanup is performed.
  *
  * After k_thread_abort() returns, the thread is guaranteed not to be
  * running or to become runnable anywhere on the system.  Normally
@@ -3584,6 +3585,11 @@ struct k_mutex {
 	/** Original thread priority */
 	int owner_orig_prio;
 
+#if (CONFIG_PRIORITY_CEILING < K_LOWEST_THREAD_PRIO)
+	/** Node for linking this mutex into the owner thread's held_mutexes list */
+	sys_snode_t held_node;
+#endif /* CONFIG_PRIORITY_CEILING < K_LOWEST_THREAD_PRIO */
+
 	SYS_PORT_TRACING_TRACKING_FIELD(k_mutex)
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
@@ -3597,12 +3603,19 @@ struct k_mutex {
 /**
  * @cond INTERNAL_HIDDEN
  */
+#if (CONFIG_PRIORITY_CEILING < K_LOWEST_THREAD_PRIO)
+#define Z_MUTEX_HELD_NODE_INIT	.held_node = {NULL},
+#else
+#define Z_MUTEX_HELD_NODE_INIT
+#endif
+
 #define Z_MUTEX_INITIALIZER(obj) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q), \
 	.owner = NULL, \
 	.lock_count = 0, \
 	.owner_orig_prio = K_LOWEST_APPLICATION_THREAD_PRIO, \
+	Z_MUTEX_HELD_NODE_INIT \
 	}
 /**
  * INTERNAL_HIDDEN @endcond
