@@ -1,0 +1,46 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP NETC Virtual Station Interface (VSI).
+
+  A VSI is a virtual function of an ENETC instance. Unlike the Physical Station
+  Interface (PSI) it does not own the physical MAC/PHY or the MDIO bus.
+  Control operations that touch those shared resources (primary MAC, filters,
+  link status) are performed by messaging the PSI over the VSI-to-PSI channel.
+
+compatible: "nxp,imx-netc-vsi"
+
+include: ethernet-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  mac-index:
+    required: true
+    type: int
+    description: |
+      ENETC (MAC) instance this VSI belongs to.
+
+  si-index:
+    required: true
+    type: int
+    description: |
+      Low byte of the HAL station-interface index: bits [7:4] = SI number within
+      the ENETC (0=PSI, 1=VSI0, 2=VSI1), bits [3:0] = index into the SI
+      base-address array.
+
+  msi-device-id:
+    type: int
+    description: The device ID passed to the MSI controller (GIC-ITS based MSI only).
+
+  clocks:
+    type: phandle-array
+    description: |
+      Optional readiness clock: Checks whether the PSI has enabled the clock,
+      so the driver can safely access the VSI. The clock is only observed and
+      not controlled by the driver.

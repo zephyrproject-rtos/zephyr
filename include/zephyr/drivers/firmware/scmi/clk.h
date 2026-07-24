@@ -127,6 +127,25 @@ struct scmi_clock_attributes {
  */
 int scmi_clock_config_set(struct scmi_protocol *proto,
 			  struct scmi_clock_config *cfg);
+
+/**
+ * @brief Send the CLOCK_CONFIG_GET command and get its reply
+ *
+ * Queries the current configuration of a clock, notably whether it is
+ * enabled. This is a read-only query serviced by the SCMI platform.
+ *
+ * @param proto pointer to SCMI clock protocol data
+ * @param clk_id ID of the clock for which the query is done
+ * @param flags command flags (0 for the base query; extended-config bits are
+ * not decoded here)
+ * @param config pointer set to the returned config word on success. Use
+ * SCMI_CLK_CONFIG_ENABLE_DISABLE() to test the enable state.
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_clock_config_get(struct scmi_protocol *proto, uint32_t clk_id,
+			  uint32_t flags, uint32_t *config);
 /**
  * @brief Query the rate of a clock
  *

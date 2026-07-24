@@ -239,3 +239,20 @@
 &tstmr2 {
 	status = "okay";
 };
+
+/*
+ * The NETC block controller (IERB/NETCMIX/PRB) and the ENETC PSIs are owned by
+ * Linux on the Cortex-A55. The M7 only drives ENETC0 VF1 as a VSI, talking to
+ * the Linux PSI over the VSI-to-PSI message channel.
+ */
+&netc_blk_ctrl {
+	status = "disabled";
+};
+
+&enetc0_vsi1 {
+	status = "okay";
+};
+
+&enetc2_vsi1 {
+	status = "okay";
+};
