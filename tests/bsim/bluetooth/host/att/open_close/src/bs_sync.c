@@ -3,7 +3,7 @@
  */
 
 #include <stdint.h>
-#include <argparse.h>
+#include <bsim_args_runner.h>
 #include <posix_native_task.h>
 #include <bs_pc_backchannel.h>
 

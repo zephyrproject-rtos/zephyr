@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include "utils.h"
 #include "main.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "bs_pc_backchannel.h"
 #include "bstests.h"
 

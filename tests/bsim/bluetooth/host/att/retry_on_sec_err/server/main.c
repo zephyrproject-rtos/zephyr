@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <argparse.h>
+#include <bsim_args_runner.h>
 
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>

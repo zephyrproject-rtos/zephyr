@@ -5,7 +5,7 @@
  */
 
 #include "utils.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/bluetooth.h>

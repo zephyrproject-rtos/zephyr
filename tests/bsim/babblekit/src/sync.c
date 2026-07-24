@@ -6,8 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
-#include "argparse.h"
-#include "bs_types.h"
+#include "bsim_args_runner.h"
 #include "bs_tracing.h"
 #include "time_machine.h"
 #include "bs_pc_backchannel.h"

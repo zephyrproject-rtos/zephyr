@@ -11,7 +11,7 @@
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
 #include "bsim_args_runner.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 
 extern enum bst_result_t bst_result;
 

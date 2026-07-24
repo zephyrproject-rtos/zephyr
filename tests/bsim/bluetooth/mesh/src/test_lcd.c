@@ -15,7 +15,7 @@
 
 #include <mesh/access.h>
 #include <mesh/net.h>
-#include "argparse.h"
+#include "bsim_args_runner.h"
 
 LOG_MODULE_REGISTER(test_lcd, LOG_LEVEL_INF);
 
