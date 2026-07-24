@@ -7,10 +7,17 @@
 #include <skeleton.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/reset/mchp_mss_reset.h>
+#include <zephyr/dt-bindings/clock/mchp_mss_clock.h>
 
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	msspll_refclk: msspll-refclk {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <125000000>;
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -165,6 +172,7 @@
 		mpfs_top_sysreg: syscon@20002000 {
 			compatible = "syscon";
 			reg = <0x20002000 0x1000>;
+			status = "okay";
 
 			reset: reset {
 				compatible = "microchip,mpfs-reset";
@@ -173,10 +181,86 @@
 			};
 		};
 
+		msspll: clock-controller@3e001000 {
+			compatible = "microchip,mpfs-pll";
+			reg = <0x3e001000 0x1000>;
+			clocks = <&msspll_refclk>;
+			#clock-cells = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			mssclk: pllout@0 {
+				reg = <0>;
+				clocks = <&msspll>;
+				#clock-cells = <0>;
+				frequency-max = <625000000>;
+				frequency-min = <0>;
+
+				cpu_clk: cpu_clk {
+					compatible = "microchip,mpfs-clk";
+					clk-type = <MPFS_CLK_CPU_CLK>;
+					clocks = <&mssclk>;
+					#clock-cells = <0>;
+					frequency-max = <625000000>;
+					frequency-min = <0>;
+					microchip,sysreg = <&mpfs_top_sysreg>;
+					status = "disabled";
+				};
+
+				axi_clk: axi_clk {
+					compatible = "microchip,mpfs-clk";
+					clk-type = <MPFS_CLK_AXI_CLK>;
+					clocks = <&mssclk>;
+					#clock-cells = <0>;
+					frequency-max = <312500000>;
+					frequency-min = <0>;
+					microchip,sysreg = <&mpfs_top_sysreg>;
+					status = "disabled";
+				};
+
+				ahb_clk: ahb_clk {
+					compatible = "microchip,mpfs-clk";
+					clk-type = <MPFS_CLK_AHB_APB_CLK>;
+					clocks = <&mssclk>;
+					#clock-cells = <1>;
+					frequency-max = <156250000>;
+					frequency-min = <0>;
+					microchip,sysreg = <&mpfs_top_sysreg>;
+					status = "disabled";
+				};
+			};
+
+			crypto_clk: pllout@1 {
+				reg = <1>;
+				clocks = <&msspll>;
+				#clock-cells = <0>;
+				frequency-max = <200000000>;
+				frequency-min = <1000000>;
+			};
+
+			emmc_clk: pllout@2 {
+				reg = <2>;
+				clocks = <&msspll>;
+				#clock-cells = <0>;
+				frequency-max = <200000000>;
+				frequency-min = <200000000>;
+			};
+
+			can_bus_clk: pllout@3 {
+				reg = <3>;
+				clocks = <&msspll>;
+				#clock-cells = <0>;
+				frequency-max = <80000000>;
+				frequency-min = <8000000>;
+				frequency-step = <8000000>;
+			};
+		};
+
 		uart0: uart@20000000 {
 			compatible = "ns16550";
 			reg = <0x20000000 0x1000>;
-			clock-frequency = <150000000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_MMUART0>;
 			current-speed = <115200>;
 			interrupt-parent = <&plic>;
 			interrupts = <90 1>;
@@ -187,7 +271,7 @@
 		uart1: uart@20100000 {
 			compatible = "ns16550";
 			reg = <0x20100000 0x1000>;
-			clock-frequency = <150000000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_MMUART1>;
 			current-speed = <115200>;
 			interrupt-parent = <&plic>;
 			interrupts = <91 1>;
@@ -198,7 +282,7 @@
 		uart2: uart@20102000 {
 			compatible = "ns16550";
 			reg = <0x20102000 0x1000>;
-			clock-frequency = <150000000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_MMUART2>;
 			current-speed = <115200>;
 			interrupt-parent = <&plic>;
 			interrupts = <92 1>;
@@ -209,7 +293,7 @@
 		uart3: uart@20104000 {
 			compatible = "ns16550";
 			reg = <0x20104000 0x1000>;
-			clock-frequency = <150000000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_MMUART3>;
 			current-speed = <115200>;
 			interrupt-parent = <&plic>;
 			interrupts = <93 1>;
@@ -220,7 +304,7 @@
 		uart4: uart@20106000 {
 			compatible = "ns16550";
 			reg = <0x20106000 0x1000>;
-			clock-frequency = <150000000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_MMUART4>;
 			current-speed = <115200>;
 			interrupt-parent = <&plic>;
 			interrupts = <94 1>;
@@ -233,6 +317,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x21000000 0x1000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_QSPI>;
 			interrupt-parent = <&plic>;
 			interrupts = <85 1>;
 			status = "disabled";
@@ -244,10 +329,10 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x20109000 0x1000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_SPI1>;
 			interrupt-parent = <&plic>;
 			interrupts = <55 1>;
 			status = "disabled";
-			clock-frequency = <150000000>;
 		};
 
 		syscontroller_qspi: spi@37020100 {
@@ -264,6 +349,7 @@
 		gpio0: gpio@20120000 {
 			compatible = "microchip,mpfs-gpio";
 			reg = <0x20120000 0x1000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_GPIO0>;
 			interrupt-parent = <&plic>;
 			interrupts = <51 1>;
 			interrupt-controller;
@@ -277,6 +363,7 @@
 		gpio1: gpio@20121000 {
 			compatible = "microchip,mpfs-gpio";
 			reg = <0x20121000 0x1000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_GPIO1>;
 			interrupt-parent = <&plic>;
 			interrupts = <52 1>;
 			interrupt-controller;
@@ -290,6 +377,7 @@
 		gpio2: gpio@20122000 {
 			compatible = "microchip,mpfs-gpio";
 			reg = <0x20122000 0x1000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_GPIO2>;
 			interrupt-parent = <&plic>;
 			interrupts = <53 1>;
 			interrupt-controller;
@@ -303,6 +391,7 @@
 		i2c0: i2c@2010a000 {
 			compatible = "microchip,mpfs-i2c";
 			reg = <0x2010a000 0x1000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_I2C0>;
 			interrupt-parent = <&plic>;
 			interrupts = <58 1>;
 			#address-cells = <1>;
@@ -314,6 +403,7 @@
 		i2c1: i2c@2010b000 {
 			compatible = "microchip,mpfs-i2c";
 			reg = <0x2010b000 0x1000>;
+			clocks = <&ahb_clk MPFS_MSS_CLK_I2C1>;
 			interrupt-parent = <&plic>;
 			interrupts = <61 1>;
 			#address-cells = <1>;
