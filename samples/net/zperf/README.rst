@@ -57,6 +57,14 @@ Usage
 See :ref:`zperf library documentation <zperf>` for more information about
 the library usage.
 
+Deterministic throughput regression testing
+============================================
+
+For a hardware-agnostic, host-speed-independent way to detect network
+throughput regressions (using ``qemu_x86`` with QEMU icount mode over the
+in-guest loopback interface), see :ref:`zperf-loopback-icount`
+(:zephyr_file:`samples/net/zperf/README-loopback-icount.rst`).
+
 Wi-Fi
 =====
 
