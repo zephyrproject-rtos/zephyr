@@ -123,6 +123,16 @@ config PHY_TI_DP83867
 	help
 	  Enable TI DP83867 Ethernet PHY Driver
 
+config PHY_TI_DP83TD510
+	bool "TI DP83TD510 PHY Driver"
+	default y
+	depends on DT_HAS_TI_DP83TD510_ENABLED
+	select MDIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83TD510),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_TI_DP83TD510),int-gpios))
+	help
+	  Enable TI DP83TD510 Ethernet PHY Driver
+
 config PHY_REALTEK_RTL8211F
 	bool "Realtek RTL8211F PHY Driver"
 	default y
