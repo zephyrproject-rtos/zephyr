@@ -1,6 +1,6 @@
 /* Bluetooth CCP - Call Control Profile Call Control Client
  *
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/bluetooth/conn.h>
@@ -28,9 +29,6 @@ LOG_MODULE_REGISTER(bt_ccp_call_control_client, CONFIG_BT_CCP_CALL_CONTROL_CLIEN
 
 static sys_slist_t ccp_call_control_client_cbs =
 	SYS_SLIST_STATIC_INIT(&ccp_call_control_client_cbs);
-static struct bt_tbs_client_cb tbs_client_cbs;
-
-static struct bt_tbs_client_cb tbs_client_cbs;
 
 /* A service instance can either be a GTBS or a TBS instance */
 struct bt_ccp_call_control_client_bearer {
@@ -86,45 +84,6 @@ static struct bt_ccp_call_control_client *get_client_by_conn(const struct bt_con
 
 	return &clients[bt_conn_index(conn)];
 }
-
-static void connected_cb(struct bt_conn *conn, uint8_t err)
-{
-	static bool cbs_registered;
-
-	ARG_UNUSED(conn);
-
-	/* We register the callbacks in the connected callback. That way we ensure that they are
-	 * registered before any procedures are completed or we receive any notifications, while
-	 * registering them as late as possible
-	 */
-	if (err == BT_HCI_ERR_SUCCESS && !cbs_registered) {
-		int cb_err;
-
-		cb_err = bt_tbs_client_register_cb(&tbs_client_cbs);
-		__ASSERT(cb_err == 0, "Failed to register TBS callbacks: %d", cb_err);
-
-		cbs_registered = true;
-	}
-}
-
-static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
-{
-	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
-
-	ARG_UNUSED(reason);
-
-	/* client->conn may be NULL */
-	if (client->conn == conn) {
-		bt_conn_drop(&client->conn);
-
-		memset(client->bearers, 0, sizeof(client->bearers));
-	}
-}
-
-BT_CONN_CB_DEFINE(conn_callbacks) = {
-	.connected = connected_cb,
-	.disconnected = disconnected_cb,
-};
 
 static void populate_bearers(struct bt_ccp_call_control_client *client,
 			     struct bt_ccp_call_control_client_bearers *bearers)
@@ -227,8 +186,6 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 		return -EBUSY;
 	}
 
-	tbs_client_cbs.discover = tbs_client_discover_cb;
-
 	ref = bt_conn_ref(conn);
 	if (ref == NULL) {
 		err = -ENOTCONN;
@@ -310,7 +267,6 @@ int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *cl
 	return 0;
 }
 
-#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI) || defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
 /**
  * @brief Validates a bearer and provides a client with ownership of the busy flag
  *
@@ -320,8 +276,9 @@ int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *cl
  *
  * @return 0 if the bearer is valid and the @p client has been populated, else an error.
  */
-static int validate_bearer_and_get_client(const struct bt_ccp_call_control_client_bearer *bearer,
-					  struct bt_ccp_call_control_client **client)
+__maybe_unused static int
+validate_bearer_and_get_client(const struct bt_ccp_call_control_client_bearer *bearer,
+			       struct bt_ccp_call_control_client **client)
 {
 	if (bearer == NULL) {
 		LOG_DBG("bearer is NULL");
@@ -350,7 +307,6 @@ static int validate_bearer_and_get_client(const struct bt_ccp_call_control_clien
 
 	return 0;
 }
-#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI || CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
 
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
 static void tbs_client_read_bearer_provider_name_cb(struct bt_conn *conn, int err,
@@ -391,8 +347,6 @@ int bt_ccp_call_control_client_read_bearer_provider_name(
 	if (err != 0) {
 		return err;
 	}
-
-	tbs_client_cbs.bearer_provider_name = tbs_client_read_bearer_provider_name_cb;
 
 	err = bt_tbs_client_read_bearer_provider_name(client->conn, bearer->tbs_index);
 	if (err != 0) {
@@ -456,8 +410,6 @@ int bt_ccp_call_control_client_read_bearer_uci(struct bt_ccp_call_control_client
 		return err;
 	}
 
-	tbs_client_cbs.bearer_uci = tbs_client_read_bearer_uci_cb;
-
 	err = bt_tbs_client_read_bearer_uci(client->conn, bearer->tbs_index);
 	if (err != 0) {
 		atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
@@ -480,3 +432,116 @@ int bt_ccp_call_control_client_read_bearer_uci(struct bt_ccp_call_control_client
 	return 0;
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
+static void tbs_client_read_bearer_tech_cb(struct bt_conn *conn, int err, uint8_t inst_index,
+					   enum bt_bearer_tech tech)
+{
+	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
+	struct bt_ccp_call_control_client_cb *listener, *next;
+	struct bt_ccp_call_control_client_bearer *bearer;
+
+	atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
+
+	bearer = get_bearer_by_tbs_index(client, inst_index);
+	if (bearer == NULL) {
+		LOG_DBG("Could not lookup bearer for client %p and index 0x%02X", client,
+			inst_index);
+
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ccp_call_control_client_cbs, listener, next, _node) {
+		if (listener->bearer_tech != NULL) {
+			void *user_data =
+				COND_CODE_1(CONFIG_BT_CCP_CALL_CONTROL_CLIENT_CB_USER_DATA,
+					    (listener->user_data), (NULL));
+
+			listener->bearer_tech(bearer, err, tech, user_data);
+		}
+	}
+}
+
+int bt_ccp_call_control_client_read_bearer_tech(struct bt_ccp_call_control_client_bearer *bearer)
+{
+	struct bt_ccp_call_control_client *client;
+	int err;
+
+	err = validate_bearer_and_get_client(bearer, &client);
+	if (err != 0) {
+		return err;
+	}
+
+	err = bt_tbs_client_read_technology(client->conn, bearer->tbs_index);
+	if (err != 0) {
+		atomic_clear_bit(client->flags, CCP_CALL_CONTROL_CLIENT_FLAG_BUSY);
+
+		/* Return expected return values directly */
+		if (err == -ENOTCONN || err == -EBUSY) {
+			LOG_DBG("bt_tbs_client_read_technology returned %d", err);
+
+			return err;
+		}
+
+		/* Assert if the return value is -EINVAL as that means we are missing a check */
+		__ASSERT(err != -EINVAL, "err shall not be -EINVAL");
+
+		LOG_DBG("Unexpected error from bt_tbs_client_read_technology: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+
+static void connected_cb(struct bt_conn *conn, uint8_t err)
+{
+	static bool cbs_registered;
+
+	ARG_UNUSED(conn);
+
+	/* We register the callbacks in the connected callback. That way we ensure that they are
+	 * registered before any procedures are completed or we receive any notifications, while
+	 * registering them as late as possible
+	 */
+	if (err == BT_HCI_ERR_SUCCESS && !cbs_registered) {
+		static struct bt_tbs_client_cb tbs_client_cbs = {
+			.discover = tbs_client_discover_cb,
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
+			.bearer_provider_name = tbs_client_read_bearer_provider_name_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
+			.bearer_uci = tbs_client_read_bearer_uci_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
+			.technology = tbs_client_read_bearer_tech_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+		};
+		__maybe_unused int cb_err;
+
+		cb_err = bt_tbs_client_register_cb(&tbs_client_cbs);
+		__ASSERT(cb_err == 0, "Failed to register TBS callbacks: %d", cb_err);
+
+		cbs_registered = true;
+	}
+}
+
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	struct bt_ccp_call_control_client *client = get_client_by_conn(conn);
+
+	ARG_UNUSED(reason);
+
+	/* client->conn may be NULL */
+	if (client->conn == conn) {
+		bt_conn_drop(&client->conn);
+
+		memset(client->bearers, 0, sizeof(client->bearers));
+	}
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.connected = connected_cb,
+	.disconnected = disconnected_cb,
+};
