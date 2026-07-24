@@ -210,6 +210,16 @@ struct i2c_dw_dev_config {
 
 	struct i2c_target_config *slave_cfg;
 
+#ifdef CONFIG_I2C_CALLBACK
+	/* Async transfer state */
+	i2c_callback_t cb;
+	void *userdata;
+	struct i2c_msg *msgs;
+	uint8_t num_msgs;
+	uint8_t msg_idx;
+	int async_result;
+#endif /* CONFIG_I2C_CALLBACK */
+
 	i2c_api_recover_bus_t recover_bus_cb;
 	struct device *recover_bus_dev;
 	i2c_api_check_bus_t check_bus_cb;

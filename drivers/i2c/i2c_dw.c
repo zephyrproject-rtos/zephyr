@@ -526,6 +526,11 @@ static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev,
 						union ic_interrupt_register intr_stat);
 #endif
 
+#ifdef CONFIG_I2C_CALLBACK
+static void i2c_dw_msg_start(const struct device *dev, struct i2c_msg *msg, uint8_t pflags);
+static void i2c_dw_async_complete(const struct device *dev, int result);
+#endif
+
 static void i2c_dw_isr(const struct device *port)
 {
 	struct i2c_dw_dev_config *const dw = port->data;
@@ -678,6 +683,32 @@ static void i2c_dw_isr(const struct device *port)
 	return;
 
 done:
+#ifdef CONFIG_I2C_CALLBACK
+	if (dw->cb != NULL) {
+		/* Error path */
+		if (dw->state & I2C_DW_ERR_MASK) {
+			int err = (dw->state & (I2C_DW_SDA_STUCK | I2C_DW_SCL_STUCK)) ?
+				  -ETIME : -EIO;
+
+			i2c_dw_async_complete(port, err);
+			return;
+		}
+		if (dw->xfr_len > 0U) {
+			i2c_dw_async_complete(port, -EIO);
+			return;
+		}
+		/* Advance to next message */
+		dw->msg_idx++;
+		if (dw->msg_idx < dw->num_msgs) {
+			uint8_t pflags = dw->xfr_flags;
+
+			i2c_dw_msg_start(port, &dw->msgs[dw->msg_idx], pflags);
+			return;
+		}
+		i2c_dw_async_complete(port, 0);
+		return;
+	}
+#endif /* CONFIG_I2C_CALLBACK */
 	i2c_dw_transfer_complete(port);
 }
 
@@ -842,6 +873,44 @@ bool i2c_dw_is_busy(const struct device *dev)
 	return false;
 }
 
+static void i2c_dw_msg_start(const struct device *dev, struct i2c_msg *msg, uint8_t pflags)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	uint32_t reg_base = get_regs(dev);
+
+	/* Workaround for I2C scanner: DW HW does not support 0-byte transfers */
+	if (msg->len == 0 && msg->buf != NULL) {
+		msg->len = 1;
+	}
+
+	dw->xfr_buf = msg->buf;
+	dw->xfr_len = msg->len;
+	dw->xfr_flags = msg->flags;
+	dw->rx_pending = 0U;
+
+	/* RESTART when direction changes between messages */
+	if ((pflags & I2C_MSG_RW_MASK) != (dw->xfr_flags & I2C_MSG_RW_MASK)) {
+		dw->xfr_flags |= I2C_MSG_RESTART;
+	}
+
+	dw->state &= ~(I2C_DW_CMD_SEND | I2C_DW_CMD_RECV);
+
+	if ((dw->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+		dw->state |= I2C_DW_CMD_SEND;
+		dw->request_bytes = 0U;
+	} else {
+		dw->state |= I2C_DW_CMD_RECV;
+		dw->request_bytes = dw->xfr_len;
+	}
+
+	if (test_bit_con_master_mode(reg_base)) {
+		write_intr_mask((DW_ENABLE_TX_INT_I2C_MASTER | DW_ENABLE_RX_INT_I2C_MASTER),
+				reg_base);
+	} else {
+		write_intr_mask(DW_ENABLE_TX_INT_I2C_SLAVE, reg_base);
+	}
+}
+
 static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t slave_address)
 {
@@ -926,42 +995,11 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 
 	/* Process all the messages */
 	while (msg_left > 0) {
-		/* Workaround for I2C scanner as DW HW does not support 0 byte transfers.*/
-		if ((cur_msg->len == 0) && (cur_msg->buf != NULL)) {
-			cur_msg->len = 1;
-		}
-
+		/* Save previous message flags for RESTART handling */
 		pflags = dw->xfr_flags;
 
-		dw->xfr_buf = cur_msg->buf;
-		dw->xfr_len = cur_msg->len;
-		dw->xfr_flags = cur_msg->flags;
-		dw->rx_pending = 0U;
-
-		/* Need to RESTART if changing transfer direction */
-		if ((pflags & I2C_MSG_RW_MASK) != (dw->xfr_flags & I2C_MSG_RW_MASK)) {
-			dw->xfr_flags |= I2C_MSG_RESTART;
-		}
-
-		dw->state &= ~(I2C_DW_CMD_SEND | I2C_DW_CMD_RECV);
-
-		if ((dw->xfr_flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			dw->state |= I2C_DW_CMD_SEND;
-			dw->request_bytes = 0U;
-		} else {
-			dw->state |= I2C_DW_CMD_RECV;
-			dw->request_bytes = dw->xfr_len;
-		}
-
-		/* Enable interrupts to trigger ISR */
-		if (test_bit_con_master_mode(reg_base)) {
-			/* Enable necessary interrupts */
-			write_intr_mask((DW_ENABLE_TX_INT_I2C_MASTER | DW_ENABLE_RX_INT_I2C_MASTER),
-					reg_base);
-		} else {
-			/* Enable necessary interrupts */
-			write_intr_mask(DW_ENABLE_TX_INT_I2C_SLAVE, reg_base);
-		}
+		/* Start the current message */
+		i2c_dw_msg_start(dev, cur_msg, pflags);
 
 		/* Wait for transfer to be done */
 		ret = k_sem_take(&dw->device_sync_sem, K_MSEC(CONFIG_I2C_DW_RW_TIMEOUT_MS));
@@ -1026,6 +1064,112 @@ error:
 
 	return ret;
 }
+
+#ifdef CONFIG_I2C_CALLBACK
+static void i2c_dw_async_complete(const struct device *dev, int result)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	uint32_t reg_base = get_regs(dev);
+	i2c_callback_t cb;
+	void *userdata;
+
+	/* Stop the HW the same way i2c_dw_transfer_complete() does */
+	write_intr_mask(DW_DISABLE_ALL_I2C_INT, reg_base);
+	(void)read_clr_intr(reg_base);
+#ifdef CONFIG_CPU_CORTEX_M
+	const struct i2c_dw_rom_config *const rom = dev->config;
+	/* clear pending interrupt */
+	NVIC_ClearPendingIRQ(rom->irqnumber);
+#endif
+
+	/* Latch cb/userdata locally and clear async state BEFORE releasing the
+	 * bus, otherwise another caller could race in on a stale cb pointer.
+	 */
+	cb = dw->cb;
+	userdata = dw->userdata;
+
+	dw->cb = NULL;
+	dw->userdata = NULL;
+	dw->msgs = NULL;
+	dw->num_msgs = 0U;
+	dw->msg_idx = 0U;
+	dw->async_result = result;
+
+	pm_device_busy_clear(dev);
+	if (IS_ENABLED(CONFIG_I2C_DW_PM_POLICY_STATE_LOCK)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+
+	/* keep error mask for bus recovery */
+	dw->state &= I2C_DW_STUCK_ERR_MASK;
+	k_sem_give(&dw->bus_sem);
+
+	/* Invoke user callback from ISR context, matching other Zephyr I2C
+	 * drivers. Heavy work should be offloaded by the user.
+	 */
+	cb(dev, result, userdata);
+}
+
+static int i2c_dw_transfer_cb(const struct device *dev, struct i2c_msg *msgs,
+			      uint8_t num_msgs, uint16_t slave_address,
+			      i2c_callback_t cb, void *userdata)
+{
+	struct i2c_dw_dev_config *const dw = dev->data;
+	uint32_t reg_base = get_regs(dev);
+	int ret;
+
+	__ASSERT_NO_MSG(msgs);
+
+	/* Non-blocking bus acquire: async callers must never sleep here */
+	ret = k_sem_take(&dw->bus_sem, K_NO_WAIT);
+	if (ret != 0) {
+		return -EWOULDBLOCK;
+	}
+
+	if (dw->state & I2C_DW_STUCK_ERR_MASK) {
+		if (i2c_recovery_bus(dev)) {
+			ret = -ETIME;
+			goto error;
+		}
+		dw->state = I2C_DW_STATE_READY;
+	}
+
+	if (i2c_dw_is_busy(dev)) {
+		ret = -EBUSY;
+		goto error;
+	}
+
+	dw->state |= I2C_DW_BUSY;
+
+	ret = i2c_dw_setup(dev, slave_address);
+	if (ret) {
+		goto error;
+	}
+
+	set_bit_enable_en(reg_base);
+
+	if (IS_ENABLED(CONFIG_I2C_DW_PM_POLICY_STATE_LOCK)) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+	pm_device_busy_set(dev);
+
+	dw->cb = cb;
+	dw->userdata = userdata;
+	dw->msgs = msgs;
+	dw->num_msgs = num_msgs;
+	dw->msg_idx = 0U;
+	dw->async_result = 0;
+
+	/* Seed pflags with current xfr_flags so first message does not force RESTART */
+	i2c_dw_msg_start(dev, &msgs[0], dw->xfr_flags);
+	return 0;
+
+error:
+	dw->state &= I2C_DW_STUCK_ERR_MASK;
+	k_sem_give(&dw->bus_sem);
+	return ret;
+}
+#endif /* CONFIG_I2C_CALLBACK */
 
 static int i2c_dw_configure(const struct device *dev, uint32_t config)
 {
@@ -1280,7 +1424,23 @@ static void i2c_dw_slave_read_clear_intr_bits(const struct device *dev,
 }
 #endif /* CONFIG_I2C_TARGET */
 
-static int i2c_dw_init_config(const struct device *dev)
+static DEVICE_API(i2c, funcs) = {
+	.configure = i2c_dw_runtime_configure,
+	.transfer = i2c_dw_transfer,
+#ifdef CONFIG_I2C_CALLBACK
+	.transfer_cb = i2c_dw_transfer_cb,
+#endif
+#ifdef CONFIG_I2C_TARGET
+	.target_register = i2c_dw_slave_register,
+	.target_unregister = i2c_dw_slave_unregister,
+#endif /* CONFIG_I2C_TARGET */
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
+	.recover_bus = i2c_dw_recovery_bus,
+};
+
+static int i2c_dw_initialize(const struct device *dev)
 {
 	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
