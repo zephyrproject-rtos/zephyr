@@ -54,7 +54,9 @@ if MBEDTLS_PSA_CRYPTO_C
 
 config PSA_CRYPTO_DRIVER_SGI_PKC
 	bool
-	default y
+	# Only enable the SGI PKC driver on MCXA parts that actually have the SGI
+	# IP and a matching SGI_PKC platform mapping below.
+	default y if SOC_MCXA266 || SOC_MCXA366 || SOC_MCXA577
 	select SGI_PKC
 	select SGI_PKC_PLATFORM_MCXA if SOC_MCXA266 || SOC_MCXA366
 	select SGI_PKC_PLATFORM_MCXA5 if SOC_MCXA577
