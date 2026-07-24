@@ -1,0 +1,15 @@
+# Copyright 2026 MediaTek
+# SPDX-License-Identifier: Apache-2.0
+
+description: MediaTek AFE MEMIF DMA controller
+
+compatible: "mediatek,afe-memif-dma"
+
+include: [base.yaml, dma-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  dma-channels:
+    required: true
