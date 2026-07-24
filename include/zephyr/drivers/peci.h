@@ -53,7 +53,7 @@ enum peci_command_code {
 	PECI_CMD_WR_PCI_CFG0         = 0x65,
 	PECI_CMD_WR_PCI_CFG1         = 0x66,
 	PECI_CMD_RD_PKG_CFG0         = 0xA1,
-	PECI_CMD_RD_PKG_CFG1         = 0xA,
+	PECI_CMD_RD_PKG_CFG1         = 0xA2,
 	PECI_CMD_WR_PKG_CFG0         = 0xA5,
 	PECI_CMD_WR_PKG_CFG1         = 0xA6,
 	PECI_CMD_RD_IAMSR0           = 0xB1,
