@@ -192,6 +192,60 @@
 				};
 			};
 		};
+
+		/*
+		 * Note: The interrupts in snps,designware-spi is actually invalid,
+		 * adding this attribute to the node is only to ensure compilation.
+		 */
+		spi_dw0: spi@40003000 {
+			compatible = "snps,designware-spi";
+			reg = <0x40003000 0x100>;
+			clocks = <&clks RTS_FP_CLK_SPI_SSOR>;
+			clock-frequency = <DT_FREQ_M(120)>;
+			interrupt-parent = <&nvic>;
+			interrupts = <30 0>;
+			fifo-depth = <16>;
+			max-xfer-size = <16>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi_dw1: spi@40004200 {
+			compatible = "snps,designware-spi";
+			reg = <0x40004200 0x100>;
+			clocks = <&clks RTS_FP_CLK_SPI_SSI_M>;
+			clock-frequency = <DT_FREQ_M(120)>;
+			interrupt-parent = <&nvic>;
+			interrupts = <31 0>;
+			fifo-depth = <16>;
+			max-xfer-size = <16>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi0: spi@40002000 {
+			compatible = "realtek,rts5817-spi";
+			reg = <0x40002000 0x100>;
+			dw-spi-dev = <&spi_dw0>;
+			interrupt-parent = <&nvic>;
+			interrupts = <IRQ_NUM_SENSOR_SPI 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40004000 {
+			compatible = "realtek,rts5817-spi";
+			reg = <0x40004000 0x100>;
+			dw-spi-dev = <&spi_dw1>;
+			interrupt-parent = <&nvic>;
+			interrupts = <IRQ_NUM_SPI_MASTER 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 
