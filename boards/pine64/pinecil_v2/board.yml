@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Canonical Limited
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: pinecil_v2
+  full_name: Pine64 Pinecil v2
+  vendor: pine64
+  socs:
+    - name: bl706c10q2i

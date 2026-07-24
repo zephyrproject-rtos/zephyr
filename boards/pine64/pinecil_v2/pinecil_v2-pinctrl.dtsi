@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Canonical Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	usb_default: usb_default {
+		group1 {
+			pinmux = <GPIO7_USB_DP>,
+				 <GPIO8_USB_DM>;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <GPIO22_UART0_TX>,
+				 <GPIO23_UART0_RX>;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <GPIO11_I2C_SDA>,
+				 <GPIO10_I2C_SCL>;
+			bias-pull-up;
+		};
+	};
+};
