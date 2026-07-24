@@ -114,6 +114,7 @@ int z_irq_do_offload(void);
 #ifdef CONFIG_FPU_SHARING
 void arch_flush_local_fpu(void);
 void arch_flush_fpu_ipi(unsigned int cpu);
+void z_riscv_fpu_flush_thread(struct k_thread *thread);
 #endif
 
 #ifndef CONFIG_MULTITHREADING

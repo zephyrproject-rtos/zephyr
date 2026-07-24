@@ -82,6 +82,7 @@ static void z_riscv_fpu_load(void)
 
 	/* become new owner */
 	atomic_ptr_set(&_current_cpu->arch.fpu_owner, _current);
+	_current->base.user_options |= K_FP_REGS;
 
 	/* restore our content */
 	z_riscv_status_set(MSTATUS_FS_INIT);
@@ -336,22 +337,40 @@ void z_riscv_fpu_irq_offload_exit(void)
 }
 #endif /* CONFIG_RISCV_S_MODE */
 
-int arch_float_disable(struct k_thread *thread)
+/*
+ * Flush the FPU context for a thread without altering its user_options or
+ * fpu_recently_used state. This is used internally by the lazy-FPU IPI path
+ * and by arch_float_disable().
+ */
+void z_riscv_fpu_flush_thread(struct k_thread *thread)
 {
-	if (thread != NULL) {
-		unsigned int key = arch_irq_lock();
+	if (thread == NULL) {
+		return;
+	}
+
+	unsigned int key = arch_irq_lock();
 
 #ifdef CONFIG_SMP
-		flush_owned_fpu(thread);
+	flush_owned_fpu(thread);
 #else
-		if (thread == _current_cpu->arch.fpu_owner) {
-			z_riscv_fpu_disable();
-			arch_flush_local_fpu();
-		}
+	if (thread == _current_cpu->arch.fpu_owner) {
+		z_riscv_fpu_disable();
+		arch_flush_local_fpu();
+	}
 #endif
 
-		arch_irq_unlock(key);
+	arch_irq_unlock(key);
+}
+
+int arch_float_disable(struct k_thread *thread)
+{
+	if (thread == NULL) {
+		return -EINVAL;
 	}
+
+	z_riscv_fpu_flush_thread(thread);
+	thread->base.user_options &= ~K_FP_REGS;
+	thread->arch.fpu_recently_used = false;
 
 	return 0;
 }
