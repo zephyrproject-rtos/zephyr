@@ -6,3 +6,49 @@ config AUXDISPLAY_GPIO_7SEG
 	default y
 	depends on DT_HAS_GPIO_7_SEGMENT_ENABLED
 	select GPIO
+
+config AUXDISPLAY_GPIO_7SEG_USE_16BIT_FONT
+	bool "Use 16bits per character"
+	default n
+	depends on AUXDISPLAY_GPIO_7SEG
+	help
+		This converts fonts and character buffers to be 16bit wide, allowing
+		the use of 15 segment displays with this driver.
+
+
+choice AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT
+	prompt "Internal font to use"
+	default AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_DIGITS15 if AUXDISPLAY_GPIO_7SEG_USE_16BIT_FONT
+	default AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_DIGITS7
+	help
+		Support alternative internal fonts, which may use more flash space
+
+config AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_DIGITS7
+	bool "Digits only, 7 seg"
+	help
+		Support only digits 0..9 and dot, using 7 segments
+
+config AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_DIGITS15
+	bool "Digits only, 15 seg"
+	depends on AUXDISPLAY_GPIO_7SEG_USE_16BIT_FONT
+	help
+		Support only digits 0..9 and dot, using 15 segments
+
+config AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_ALPHA7
+	bool "Alphanumeric, 7 seg"
+	help
+		Atttempts to support as much of the printable 7 bit ascii
+		space, using 7 segments
+
+		See also custom font support
+
+config AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_ALPHA15
+	bool "Alphanumeric, 15 seg"
+	depends on AUXDISPLAY_GPIO_7SEG_USE_16BIT_FONT
+	help
+		Atttempts to support as much of the printable 7 bit ascii
+		space, using 7 segments
+
+		See also custom font support
+
+endchoice
