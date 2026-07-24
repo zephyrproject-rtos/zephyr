@@ -360,6 +360,15 @@
 			};
 		};
 
+		can0: can@2000aa00 {
+			compatible = "bflb,bl61x-can";
+			reg = <0x2000aa00 0x100>;
+			status = "disabled";
+
+			interrupts = <46 1>;
+			interrupt-parent = <&clic>;
+		};
+
 		sf_ctrl: sf@2000b000 {
 			compatible = "bflb,sf-controller";
 			reg = <0x2000b000 0x1000>;
