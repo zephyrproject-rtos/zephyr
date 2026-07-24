@@ -25,6 +25,8 @@ extern "C" {
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
 /**
  * @brief Type used to represent a channel mutable data.
  *
@@ -75,6 +77,8 @@ struct zbus_channel_data {
 #endif /* CONFIG_ZBUS_CHANNEL_PUBLISH_STATS */
 };
 
+/** @endcond */
+
 /**
  * @brief Check validity of message before publishing
  *
@@ -93,6 +97,7 @@ typedef bool (*zbus_validator)(const void *msg, size_t msg_size);
  * access and usage.
  */
 struct zbus_channel {
+	/** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_ZBUS_CHANNEL_NAME) || defined(__DOXYGEN__)
 	/** Channel name. */
 	const char *name;
@@ -122,6 +127,7 @@ struct zbus_channel {
 
 	/** Mutable channel data struct. */
 	struct zbus_channel_data *data;
+	/** @endcond */
 };
 
 /**
@@ -146,6 +152,7 @@ enum __packed zbus_observer_type {
 	ZBUS_OBSERVER_ASYNC_LISTENER_TYPE,
 };
 
+/** @cond INTERNAL_HIDDEN */
 struct zbus_observer_data {
 	/** Enabled flag. Indicates if observer is receiving notification. */
 	bool enabled;
@@ -155,6 +162,7 @@ struct zbus_observer_data {
 	int priority;
 #endif /* CONFIG_ZBUS_PRIORITY_BOOST */
 };
+/** @endcond */
 
 /**
  * @brief Type used to represent an observer.
@@ -172,6 +180,7 @@ struct zbus_observer_data {
  *
  */
 struct zbus_observer {
+	/** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_ZBUS_OBSERVER_NAME) || defined(__DOXYGEN__)
 	/** Observer name. */
 	const char *name;
@@ -203,6 +212,7 @@ struct zbus_observer {
 		struct k_work *work;
 #endif /* CONFIG_ZBUS_ASYNC_LISTENER */
 	};
+	/** @endcond */
 };
 
 /** @cond INTERNAL_HIDDEN */
