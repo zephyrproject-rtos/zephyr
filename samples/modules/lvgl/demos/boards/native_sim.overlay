@@ -3,9 +3,25 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 
 &sdl_dc {
 	compatible = "zephyr,sdl-dc";
 	height = <272>;
 	width = <480>;
+};
+
+/*
+ * Drive an LVGL encoder input device from the SDL mouse so the
+ * keypad-and-encoder demo can be navigated on native_sim without extra
+ * hardware: the mouse wheel rotates the encoder and the middle button
+ * (wheel-click) acts as ENTER.
+ */
+/ {
+	lvgl_encoder: lvgl_encoder {
+		compatible = "zephyr,lvgl-encoder-input";
+		input = <&input_sdl_touch>;
+		rotation-input-code = <INPUT_REL_WHEEL>;
+		button-input-code = <INPUT_BTN_MIDDLE>;
+	};
 };
