@@ -436,13 +436,16 @@ static void nxp_enet_phy_cb(const struct device *phy,
 	enet_mii_duplex_t duplex;
 
 	if (state->is_up) {
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
 		if (PHY_LINK_IS_SPEED_1000M(state->speed)) {
 			speed = kENET_MiiSpeed1000M;
-		} else if (PHY_LINK_IS_SPEED_100M(state->speed)) {
-			speed = kENET_MiiSpeed100M;
-		} else {
-			speed = kENET_MiiSpeed10M;
-		}
+		} else
+#endif /* FSL_FEATURE_ENET_HAS_AVB */
+			if (PHY_LINK_IS_SPEED_100M(state->speed)) {
+				speed = kENET_MiiSpeed100M;
+			} else {
+				speed = kENET_MiiSpeed10M;
+			}
 
 		if (PHY_LINK_IS_FULL_DUPLEX(state->speed)) {
 			duplex = kENET_MiiFullDuplex;
@@ -696,8 +699,10 @@ static int eth_nxp_enet_init(const struct device *dev)
 		enet_config.miiMode = kENET_MiiMode;
 	} else if (config->phy_mode == NXP_ENET_RMII_MODE) {
 		enet_config.miiMode = kENET_RmiiMode;
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
 	} else if (config->phy_mode == NXP_ENET_RGMII_MODE) {
 		enet_config.miiMode = kENET_RgmiiMode;
+#endif /* FSL_FEATURE_ENET_HAS_AVB */
 	} else {
 		return -EINVAL;
 	}
