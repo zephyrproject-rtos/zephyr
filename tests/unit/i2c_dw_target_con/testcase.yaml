@@ -1,0 +1,6 @@
+tests:
+  drivers.i2c.dw.target_con:
+    tags:
+      - drivers
+      - i2c
+    type: unit
