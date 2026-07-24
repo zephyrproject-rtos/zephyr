@@ -3121,11 +3121,19 @@ Espressif Platforms:
     - tests/boards/espressif/
     - drivers/*/*esp32*/
     - drivers/wifi/esp_hosted/
+    - drivers/wifi/esp_hosted_mcu/
     - drivers/wifi/esp_at/
+    - drivers/misc/esp_hosted_mcu/
+    - drivers/bluetooth/hci/hci_esp_hosted_mcu.c
   file-groups:
     - name: Espressif hosted Wi-Fi driver
       files:
         - drivers/wifi/esp_hosted
+    - name: Espressif esp-hosted transport core
+      files:
+        - drivers/misc/esp_hosted_mcu
+        - drivers/wifi/esp_hosted_mcu
+        - drivers/bluetooth/hci/hci_esp_hosted_mcu.c
     - name: Espressif ESP-AT Wi-Fi driver
       files:
         - drivers/wifi/esp_at

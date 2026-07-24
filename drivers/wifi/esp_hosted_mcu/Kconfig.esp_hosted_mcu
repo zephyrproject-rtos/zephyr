@@ -1,0 +1,64 @@
+# ESP-Hosted-MCU Wi-Fi driver options
+
+# Copyright (c) 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_ESP_HOSTED_MCU
+	bool "ESP-Hosted-MCU driver support"
+	depends on DT_HAS_ESPRESSIF_ESP_HOSTED_MCU_ENABLED || \
+		DT_HAS_ESPRESSIF_ESP_HOSTED_MCU_SDIO_ENABLED
+	default y
+	select ESP_HOSTED_MCU
+	select WIFI_NM
+	select NET_L2_ETHERNET
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	help
+	  Host driver for an Espressif SoC (for example ESP32-C6) running
+	  esp-hosted-mcu coprocessor firmware as a Wi-Fi co-processor. Communicates
+	  over SPI or SDIO using the esp-hosted-mcu transport core.
+
+if WIFI_ESP_HOSTED_MCU
+
+# The RPC decode and connection-result dispatch run on the net
+# management event thread; size it for that path.
+config NET_MGMT_EVENT_STACK_SIZE
+	default 2048
+
+# Received frames are reassembled on the traffic class receive thread
+# before they reach the network stack; size it for sustained traffic.
+config NET_RX_STACK_SIZE
+	default 2560
+
+config WIFI_ESP_HOSTED_MCU_INIT_PRIORITY
+	int "esp-hosted-mcu Wi-Fi init priority"
+	default 87
+	help
+	  POST_KERNEL init priority of the Wi-Fi netif. It must be numerically
+	  greater than ESP_HOSTED_MCU_INIT_PRIORITY: this driver issues RPCs
+	  from its init function, so the transport core has to have brought the
+	  link up and started the receive thread first. Initialising earlier
+	  leaves the RPC with no transport and no thread to complete it, which
+	  blocks the boot.
+
+config WIFI_ESP_HOSTED_MCU_AP_STA_MODE
+	bool "Soft-AP interface support"
+	default y if WIFI_USAGE_MODE_STA_AP || WIFI_USAGE_MODE_AP
+	help
+	  Register the soft-AP (sap_if) network interface and the access
+	  point management operations. Without this only the station
+	  interface exists. The coprocessor still runs in combined AP-STA
+	  mode when the soft-AP is brought up.
+
+if WIFI_ESP_HOSTED_MCU_AP_STA_MODE
+
+config WIFI_ESP_HOSTED_MCU_AP_CHANNEL_DEF
+	int "Default AP channel"
+	default 9
+	help
+	  Channel the soft-AP starts on when a connect request does not
+	  specify one.
+
+endif # WIFI_ESP_HOSTED_MCU_AP_STA_MODE
+
+endif # WIFI_ESP_HOSTED_MCU

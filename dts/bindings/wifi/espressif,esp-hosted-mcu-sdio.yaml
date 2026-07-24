@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif ESP-Hosted-MCU Wi-Fi co-processor over SDIO.
+
+  An Espressif SoC running esp-hosted-mcu coprocessor firmware, attached to the
+  host over the SDIO bus. The node is a child of an SDHC slot and drives
+  the coprocessor reset line over a host GPIO. Data-ready is signalled by the
+  coprocessor through an SDIO interrupt register, so no data-ready GPIO is used.
+
+  The coprocessor firmware version the host expects is a Kconfig option, not a
+  devicetree property: the firmware is flashed to a separate chip and the driver
+  queries it at init.
+
+compatible: "espressif,esp-hosted-mcu-sdio"
+
+include: [sd-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Coprocessor reset line, driven by the host.
+
+examples:
+  - |
+    &sdhc1 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+
+            esp_hosted_mcu: esp-hosted-mcu@0 {
+                    compatible = "espressif,esp-hosted-mcu-sdio";
+                    reg = <0>;
+                    reset-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+                    status = "okay";
+            };
+    };

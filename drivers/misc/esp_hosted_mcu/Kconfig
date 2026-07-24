@@ -1,0 +1,120 @@
+# esp-hosted-mcu transport core options
+
+# Copyright (c) 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ESP_HOSTED_MCU
+	bool "esp-hosted-mcu transport core"
+	depends on DT_HAS_ESPRESSIF_ESP_HOSTED_MCU_ENABLED || \
+		DT_HAS_ESPRESSIF_ESP_HOSTED_MCU_SDIO_ENABLED
+	select GPIO
+	select NANOPB
+	select NANOPB_ENABLE_MALLOC
+	help
+	  Generic host-side transport for an external Espressif coprocessor
+	  running esp-hosted-mcu coprocessor firmware. Owns the SPI or SDIO link,
+	  frame demultiplexing and the RPC round-trip machinery. Protocol
+	  consumers such as the Wi-Fi netif driver or a Bluetooth HCI driver
+	  build on top of it. Not selected directly; a consumer selects it.
+
+if ESP_HOSTED_MCU
+
+choice ESP_HOSTED_MCU_TRANSPORT
+	prompt "esp-hosted-mcu transport"
+	default ESP_HOSTED_MCU_SPI if DT_HAS_ESPRESSIF_ESP_HOSTED_MCU_ENABLED
+	default ESP_HOSTED_MCU_SDIO
+
+config ESP_HOSTED_MCU_SPI
+	bool "SPI transport"
+	depends on DT_HAS_ESPRESSIF_ESP_HOSTED_MCU_ENABLED
+	select SPI
+	help
+	  Communicate with the coprocessor over SPI with reset, handshake and
+	  data-ready GPIOs.
+
+config ESP_HOSTED_MCU_SDIO
+	bool "SDIO transport"
+	depends on DT_HAS_ESPRESSIF_ESP_HOSTED_MCU_SDIO_ENABLED
+	select SDHC
+	select SDIO_STACK
+	help
+	  Communicate with the coprocessor over the SDIO bus, using the SLC
+	  register window and a reset GPIO.
+
+endchoice
+
+config ESP_HOSTED_MCU_INIT_PRIORITY
+	int "esp-hosted-mcu core init priority"
+	default 86 if ESP_HOSTED_MCU_SDIO
+	default 80
+	help
+	  POST_KERNEL init priority of the core device. Over SDIO the core is a
+	  devicetree child of the SDHC controller, so it must init after it
+	  (CONFIG_SDHC_INIT_PRIORITY) and before the consumer drivers (for
+	  example CONFIG_WIFI_ESP_HOSTED_MCU_INIT_PRIORITY) so the link and the
+	  receive thread exist before a consumer registers its handlers and
+	  drives the coprocessor.
+
+config ESP_HOSTED_MCU_EVENT_TASK_PRIORITY
+	int "Event task priority"
+	default 4
+	help
+	  Cooperative priority of the receive/event thread. It must stay
+	  higher priority (numerically lower) than the consumer threads it
+	  feeds, so a busy consumer cannot stall frame reception.
+
+config ESP_HOSTED_MCU_EVENT_TASK_STACK_SIZE
+	int "Event task stack size"
+	default 4096
+	help
+	  Stack for the receive/event thread. RPC frames are decoded into a
+	  stack-resident Rpc message, so this must accommodate the largest
+	  response the driver handles.
+
+config ESP_HOSTED_MCU_FW_VERSION_MAJOR
+	int "Expected coprocessor firmware major version"
+	default 3
+	help
+	  Major version of the esp-hosted-mcu coprocessor firmware this host is
+	  built for. The firmware runs on a separate chip and is flashed
+	  independently, so this cannot be enforced at build time: the driver
+	  queries the running firmware and warns when the major version differs.
+	  Nothing here changes the protocol the host speaks.
+
+config ESP_HOSTED_MCU_FW_VERSION_MINOR
+	int "Expected coprocessor firmware minor version"
+	default 0
+	help
+	  Minor version of the expected coprocessor firmware. Reported in the
+	  version log line; a difference is not warned about.
+
+config ESP_HOSTED_MCU_FW_VERSION_PATCH
+	int "Expected coprocessor firmware patch version"
+	default 0
+	help
+	  Patch version of the expected coprocessor firmware. Reported in the
+	  version log line; a difference is not warned about.
+
+config ESP_HOSTED_MCU_EVENT_TASK_POLL_MS
+	int "Event task poll rate in ms"
+	default 20
+	help
+	  Bound on how long the receive thread waits for the coprocessor's
+	  data-ready signal before checking anyway.
+
+	  Over SPI the data-ready GPIO is the normal wake source and this
+	  only bounds the wait, so sampling the line costs nothing on the
+	  bus.
+
+	  Over SDIO the coprocessor flags a pending frame in its status
+	  register without driving DAT1, so the card interrupt does not
+	  fire and this poll is what actually observes incoming data. Each
+	  check is a single four-byte register read, so the interval sets
+	  the worst-case receive latency: every request and response pays
+	  up to one poll period.
+
+module = ESP_HOSTED_MCU
+module-str = esp-hosted-mcu
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ESP_HOSTED_MCU
