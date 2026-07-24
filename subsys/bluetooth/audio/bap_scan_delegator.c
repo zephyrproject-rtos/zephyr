@@ -1390,6 +1390,22 @@ static int bass_unregister(void)
 	return 0;
 }
 
+static int scan_delegator_init(void)
+{
+	ARRAY_FOR_EACH_PTR(scan_delegator.recv_states, internal_state) {
+		__maybe_unused int err;
+
+		err = k_mutex_init(&internal_state->mutex);
+		__ASSERT(err == 0, "Failed to initialize mutex: %d", err);
+
+		k_work_init_delayable(&internal_state->notify_work, notify_work_handler);
+	}
+
+	return 0;
+}
+
+SYS_INIT(scan_delegator_init, APPLICATION, 0);
+
 /****************************** PUBLIC API ******************************/
 int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb)
 {
@@ -1419,15 +1435,6 @@ int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb)
 	scan_delegator.recv_states[2].index = 2U;
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 2 */
 #endif /* CONFIG_BT_BAP_SCAN_DELEGATOR_RECV_STATE_COUNT > 1 */
-
-	for (size_t i = 0U; i < ARRAY_SIZE(scan_delegator.recv_states); i++) {
-		struct bass_recv_state_internal *internal_state = &scan_delegator.recv_states[i];
-
-		err = k_mutex_init(&internal_state->mutex);
-		__ASSERT(err == 0, "Failed to initialize mutex");
-
-		k_work_init_delayable(&internal_state->notify_work, notify_work_handler);
-	}
 
 	scan_delegator_cbs = cb;
 

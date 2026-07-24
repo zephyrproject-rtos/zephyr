@@ -1797,10 +1797,21 @@ int bt_mcs_init(struct bt_ots_cb *ots_cbs)
 #endif /* CONFIG_BT_OTS */
 
 	k_work_init_delayable(&mcs_inst.notify_work, deferred_nfy_work_handler);
-	k_mutex_init(&mcs_inst.mutex);
 
 	media_proxy_sctrl_register(&cbs);
 
 	initialized = true;
 	return 0;
 }
+
+static int mcs_init(void)
+{
+	__maybe_unused int err;
+
+	err = k_mutex_init(&mcs_inst.mutex);
+	__ASSERT(err == 0, "Failed to init mutex: %d", err);
+
+	return 0;
+}
+
+SYS_INIT(mcs_init, APPLICATION, 0);
