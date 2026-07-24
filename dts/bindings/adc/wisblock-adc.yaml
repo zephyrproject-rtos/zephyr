@@ -1,0 +1,48 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADC channels exposed on the WisBlock IO connector.
+
+  The WisBlock specification defines AIN0, AIN1, and IO1 through IO7 as
+  possible ADC-capable connector signals. Individual Core boards may expose
+  only a subset of these signals to the SoC ADC. This binding provides a
+  nexus mapping from the common WISBLOCK_ADC_* indices defined in
+  <zephyr/dt-bindings/adc/wisblock-adc.h> to the board's actual ADC channels.
+
+  Example usage in a WisBlock Core board file:
+
+    wisblock_adc: wisblock-adc {
+      compatible = "wisblock-adc";
+      io-channel-map =
+        <WISBLOCK_ADC_AIN0 &adc 3>,
+        <WISBLOCK_ADC_AIN1 &adc 7>,
+        <WISBLOCK_ADC_IO4  &adc 2>,
+        <WISBLOCK_ADC_IO7  &adc 4>;
+      #io-channel-cells = <1>;
+    };
+
+compatible: "wisblock-adc"
+
+include: base.yaml
+
+properties:
+  io-channel-map:
+    type: compound
+    required: true
+    description: |
+      Nexus mapping from WisBlock ADC pin indices to SoC ADC channels.
+      Each entry is a tuple of (wisblock-pin, adc-phandle, adc-channel).
+
+  io-channel-map-mask:
+    type: array
+    description: Mask applied to the child specifier before nexus lookup.
+
+  io-channel-map-pass-thru:
+    type: array
+    description: Bits passed through unchanged from child to parent specifier.
+
+  "#io-channel-cells":
+    type: int
+    required: true
+    description: Number of cells in an ADC specifier. Must be 1.

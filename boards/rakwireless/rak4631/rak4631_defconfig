@@ -9,12 +9,8 @@ CONFIG_HW_STACK_PROTECTION=y
 # Enable RTT
 CONFIG_USE_SEGGER_RTT=y
 
-# enable GPIO
-CONFIG_GPIO=y
+# Reassign pinctrl for WisBlock modules
+CONFIG_PINCTRL_DYNAMIC=y
 
-# enable uart driver
-CONFIG_SERIAL=y
-
-# enable console
-CONFIG_CONSOLE=y
-CONFIG_UART_CONSOLE=y
+# Disable runtime PM by default
+CONFIG_PM_DEVICE_RUNTIME_DEFAULT_ENABLE=n

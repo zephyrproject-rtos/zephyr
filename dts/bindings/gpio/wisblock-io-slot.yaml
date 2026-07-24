@@ -1,0 +1,42 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO pins exposed on a WisBlock I/O Slot interface.
+
+  An I/O Slot uses a WC40 40-pin connector (WC40F on the Base Board side)
+  and accepts an I/O Module. All I/O Slots share a single pin assignment.
+
+  This binding provides a gpio-nexus mapping for the 25 logical signal pins,
+  where parent pin indices correspond to the WISBLOCK_IO_* constants defined in
+  <zephyr/dt-bindings/gpio/wisblock-io-slot.h>:
+
+    0   SW1       User button
+    1   TXD0      UART0 TX
+    2   RXD0      UART0 RX
+    3   LED1      User LED 1
+    4   LED2      User LED 2
+    5   LED3      User LED 3
+    6   I2C1_SDA  I2C bus 1 SDA
+    7   I2C1_SCL  I2C bus 1 SCL
+    8   AIN0      Analog input 0
+    9   AIN1      Analog input 1
+    10  IO7       General-purpose IO7
+    11  SPI_CS    SPI chip select
+    12  SPI_CLK   SPI clock
+    13  SPI_MISO  SPI MISO
+    14  SPI_MOSI  SPI MOSI
+    15  IO1       General-purpose IO1
+    16  IO2       General-purpose IO2
+    17  IO3       General-purpose IO3
+    18  IO4       General-purpose IO4
+    19  TXD1      UART1 TX
+    20  RXD1      UART1 RX
+    21  I2C2_SDA  I2C bus 2 SDA
+    22  I2C2_SCL  I2C bus 2 SCL
+    23  IO5       General-purpose IO5
+    24  IO6       General-purpose IO6
+
+compatible: "wisblock-io-slot"
+
+include: [gpio-nexus.yaml, base.yaml]
