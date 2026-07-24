@@ -157,7 +157,7 @@ jobs:
     if: needs.twister-build-prep.outputs.size != 0
     container:
       image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
-      options: '--entrypoint /bin/bash'
+      options: '--entrypoint /bin/bash -v /dev/net/tun:/dev/net/tun'
     strategy:
       fail-fast: false
       matrix:

@@ -1,0 +1,46 @@
+common:
+  depends_on: netif
+  tags:
+    - mqtt_sn
+    - net
+
+tests:
+  net.mqtt_sn.udp.v4:
+    min_ram: 16
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: function
+    extra_configs:
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+    extra_overlay_confs:
+      - ipv4.conf
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+
+  net.mqtt_sn.udp.v6:
+    min_ram: 16
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: function
+    extra_configs:
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+    extra_overlay_confs:
+      - ipv6.conf
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+
+  net.mqtt_sn.udp.v4v6:
+    min_ram: 16
+    harness: pytest
+    harness_config:
+      pytest_dut_scope: function
+    extra_configs:
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
+    extra_overlay_confs:
+      - ipv4.conf
+      - ipv6.conf
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
