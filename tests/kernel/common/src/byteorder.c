@@ -100,6 +100,204 @@ ZTEST(byteorder, test_byteorder_mem_swap)
 }
 
 /**
+ * @brief Verify BSWAP_16() reverses the byte order of a 16-bit value.
+ *
+ * @ingroup kernel_byteorder_tests
+ *
+ * @details
+ * Confirms that the BSWAP_16() internal helper macro, used by
+ * sys_be16_to_cpu()/sys_cpu_to_be16()/sys_le16_to_cpu()/sys_cpu_to_le16(),
+ * reverses the byte order of a 16-bit value.
+ *
+ * Test steps:
+ * - Byte-swap a known 16-bit value with BSWAP_16().
+ *
+ * Expected result:
+ * - The result equals the expected byte-reversed value.
+ *
+ * @see BSWAP_16()
+ */
+ZTEST(byteorder, test_bswap_16)
+{
+	uint16_t val = 0xf0e1;
+	uint16_t expected = 0xe1f0;
+	uint16_t result = BSWAP_16(val);
+
+	zassert_equal(result, expected, "BSWAP_16() failed");
+}
+
+/**
+ * @brief Verify BSWAP_24() reverses the byte order of a 24-bit value and
+ *        ignores garbage in its unused MSB padding byte.
+ *
+ * @ingroup kernel_byteorder_tests
+ *
+ * @details
+ * Confirms that the BSWAP_24() internal helper macro, used by
+ * sys_be24_to_cpu()/sys_cpu_to_be24()/sys_le24_to_cpu()/sys_cpu_to_le24(),
+ * reverses the byte order of a 24-bit value held in the low 3 bytes of a
+ * 32-bit container. Also confirms that the top byte
+ * (bits 31:24), which is not part of the logical value, does not leak into
+ * the result when it holds non-zero garbage instead of the usual zero
+ * padding.
+ *
+ * Test steps:
+ * - Byte-swap a known, cleanly zero-padded 24-bit value with BSWAP_24().
+ * - Byte-swap the same 24-bit value again, this time with non-zero garbage
+ *   in the unused top byte.
+ *
+ * Expected result:
+ * - Both calls return the same expected byte-reversed value.
+ *
+ * @see BSWAP_24()
+ */
+ZTEST(byteorder, test_bswap_24)
+{
+	uint32_t expected = 0xd2e1f0;
+	uint32_t clean_val = 0xf0e1d2;
+	uint32_t dirty_val = 0xaaf0e1d2;
+	uint32_t result;
+
+	result = BSWAP_24(clean_val);
+	zexpect_equal(result, expected, "BSWAP_24() failed");
+
+	result = BSWAP_24(dirty_val);
+	zexpect_equal(result, expected, "BSWAP_24() leaked MSB padding into the result");
+}
+
+/**
+ * @brief Verify BSWAP_32() reverses the byte order of a 32-bit value.
+ *
+ * @ingroup kernel_byteorder_tests
+ *
+ * @details
+ * Confirms that the BSWAP_32() internal helper macro, used by
+ * sys_be32_to_cpu()/sys_cpu_to_be32()/sys_le32_to_cpu()/sys_cpu_to_le32(),
+ * reverses the byte order of a 32-bit value.
+ *
+ * Test steps:
+ * - Byte-swap a known 32-bit value with BSWAP_32().
+ *
+ * Expected result:
+ * - The result equals the expected byte-reversed value.
+ *
+ * @see BSWAP_32()
+ */
+ZTEST(byteorder, test_bswap_32)
+{
+	uint32_t val = 0xf0e1d2c3;
+	uint32_t expected = 0xc3d2e1f0;
+	uint32_t result = BSWAP_32(val);
+
+	zassert_equal(result, expected, "BSWAP_32() failed");
+}
+
+/**
+ * @brief Verify BSWAP_40() reverses the byte order of a 40-bit value and
+ *        ignores garbage in its unused MSB padding bytes.
+ *
+ * @ingroup kernel_byteorder_tests
+ *
+ * @details
+ * Confirms that the BSWAP_40() internal helper macro, used by
+ * sys_be40_to_cpu()/sys_cpu_to_be40()/sys_le40_to_cpu()/sys_cpu_to_le40(),
+ * reverses the byte order of a 40-bit value held in the low 5 bytes of a
+ * 64-bit container. Also confirms that the top 3
+ * bytes (bits 63:40), which are not part of the logical value, do not leak
+ * into the result when they hold non-zero garbage instead of the usual
+ * zero padding.
+ *
+ * Test steps:
+ * - Byte-swap a known, cleanly zero-padded 40-bit value with BSWAP_40().
+ * - Byte-swap the same 40-bit value again, this time with non-zero garbage
+ *   in the unused top 3 bytes.
+ *
+ * Expected result:
+ * - Both calls return the same expected byte-reversed value.
+ *
+ * @see BSWAP_40()
+ */
+ZTEST(byteorder, test_bswap_40)
+{
+	uint64_t expected = 0xb4c3d2e1f0;
+	uint64_t clean_val = 0xf0e1d2c3b4;
+	uint64_t dirty_val = 0xaabbccf0e1d2c3b4;
+	uint64_t result;
+
+	result = BSWAP_40(clean_val);
+	zexpect_equal(result, expected, "BSWAP_40() failed");
+
+	result = BSWAP_40(dirty_val);
+	zexpect_equal(result, expected, "BSWAP_40() leaked MSB padding into the result");
+}
+
+/**
+ * @brief Verify BSWAP_48() reverses the byte order of a 48-bit value and
+ *        ignores garbage in its unused MSB padding bytes.
+ *
+ * @ingroup kernel_byteorder_tests
+ *
+ * @details
+ * Confirms that the BSWAP_48() internal helper macro, used by
+ * sys_be48_to_cpu()/sys_cpu_to_be48()/sys_le48_to_cpu()/sys_cpu_to_le48(),
+ * reverses the byte order of a 48-bit value held in the low 6 bytes of a
+ * 64-bit container. Also confirms that the top 2
+ * bytes (bits 63:48), which are not part of the logical value, do not leak
+ * into the result when they hold non-zero garbage instead of the usual
+ * zero padding.
+ *
+ * Test steps:
+ * - Byte-swap a known, cleanly zero-padded 48-bit value with BSWAP_48().
+ * - Byte-swap the same 48-bit value again, this time with non-zero garbage
+ *   in the unused top 2 bytes.
+ *
+ * Expected result:
+ * - Both calls return the same expected byte-reversed value.
+ *
+ * @see BSWAP_48()
+ */
+ZTEST(byteorder, test_bswap_48)
+{
+	uint64_t expected = 0xa5b4c3d2e1f0;
+	uint64_t clean_val = 0xf0e1d2c3b4a5;
+	uint64_t dirty_val = 0xaabbf0e1d2c3b4a5;
+	uint64_t result;
+
+	result = BSWAP_48(clean_val);
+	zexpect_equal(result, expected, "BSWAP_48() failed");
+
+	result = BSWAP_48(dirty_val);
+	zexpect_equal(result, expected, "BSWAP_48() leaked MSB padding into the result");
+}
+
+/**
+ * @brief Verify BSWAP_64() reverses the byte order of a 64-bit value.
+ *
+ * @ingroup kernel_byteorder_tests
+ *
+ * @details
+ * Confirms that the BSWAP_64() internal helper macro, used by
+ * sys_be64_to_cpu()/sys_cpu_to_be64()/sys_le64_to_cpu()/sys_cpu_to_le64(),
+ * reverses the byte order of a 64-bit value.
+ *
+ * Test steps:
+ * - Byte-swap a known 64-bit value with BSWAP_64().
+ *
+ * Expected result:
+ * - The result equals the expected byte-reversed value.
+ *
+ * @see BSWAP_64()
+ */
+ZTEST(byteorder, test_bswap_64)
+{
+	uint64_t val = 0xf0e1d2c3b4a59687;
+	uint64_t expected = 0x8796a5b4c3d2e1f0;
+	uint64_t result = BSWAP_64(val);
+
+	zassert_equal(result, expected, "BSWAP_64() failed");
+}
+
+/**
  * @brief Verify sys_get_be64() decodes a big-endian 64-bit value.
  *
  * @ingroup kernel_byteorder_tests
@@ -926,7 +1124,7 @@ ZTEST(byteorder, test_sys_uint64_to_array)
 ZTEST(byteorder, test_sys_le_to_cpu)
 {
 	uint8_t val[9] = { 0x87, 0x95, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0x87, 0x95, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab),
 		(0xab, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x95, 0x87))
@@ -934,7 +1132,7 @@ ZTEST(byteorder, test_sys_le_to_cpu)
 
 	sys_le_to_cpu(val, sizeof(val));
 
-	zassert_mem_equal(val, exp, sizeof(exp), "sys_le_to_cpu() failed");
+	zassert_mem_equal(val, expected, sizeof(expected), "sys_le_to_cpu() failed");
 }
 
 /**
@@ -959,7 +1157,7 @@ ZTEST(byteorder, test_sys_le_to_cpu)
 ZTEST(byteorder, test_sys_cpu_to_le)
 {
 	uint8_t val[9] = { 0x87, 0x96, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0x87, 0x96, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab),
 		(0xab, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x96, 0x87))
@@ -967,7 +1165,7 @@ ZTEST(byteorder, test_sys_cpu_to_le)
 
 	sys_cpu_to_le(val, sizeof(val));
 
-	zassert_mem_equal(val, exp, sizeof(exp), "sys_cpu_to_le() failed");
+	zassert_mem_equal(val, expected, sizeof(expected), "sys_cpu_to_le() failed");
 }
 
 /**
@@ -993,7 +1191,7 @@ ZTEST(byteorder, test_sys_cpu_to_le)
 ZTEST(byteorder, test_sys_be_to_cpu)
 {
 	uint8_t val[9] = { 0x87, 0x97, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0xab, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x97, 0x87),
 		(0x87, 0x97, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab))
@@ -1001,7 +1199,7 @@ ZTEST(byteorder, test_sys_be_to_cpu)
 
 	sys_be_to_cpu(val, sizeof(val));
 
-	zassert_mem_equal(val, exp, sizeof(exp), "sys_be_to_cpu() failed");
+	zassert_mem_equal(val, expected, sizeof(expected), "sys_be_to_cpu() failed");
 }
 
 /**
@@ -1027,7 +1225,7 @@ ZTEST(byteorder, test_sys_be_to_cpu)
 ZTEST(byteorder, test_sys_cpu_to_be)
 {
 	uint8_t val[9] = { 0x87, 0x98, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0xab, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x98, 0x87),
 		(0x87, 0x98, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xab))
@@ -1035,7 +1233,7 @@ ZTEST(byteorder, test_sys_cpu_to_be)
 
 	sys_cpu_to_be(val, sizeof(val));
 
-	zassert_mem_equal(val, exp, sizeof(exp), "sys_cpu_to_be() failed");
+	zassert_mem_equal(val, expected, sizeof(expected), "sys_cpu_to_be() failed");
 }
 
 /**
@@ -1062,7 +1260,7 @@ ZTEST(byteorder, test_sys_put_le)
 {
 	uint8_t host[9] = { 0x87, 0x12, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba };
 	uint8_t prot[9] = { 0 };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0x87, 0x12, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba),
 		(0xba, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x12, 0x87))
@@ -1070,7 +1268,7 @@ ZTEST(byteorder, test_sys_put_le)
 
 	sys_put_le(prot, host, sizeof(prot));
 
-	zassert_mem_equal(prot, exp, sizeof(exp), "sys_put_le() failed");
+	zassert_mem_equal(prot, expected, sizeof(expected), "sys_put_le() failed");
 }
 
 /**
@@ -1097,7 +1295,7 @@ ZTEST(byteorder, test_sys_put_be)
 {
 	uint8_t host[9] = { 0x87, 0x13, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba };
 	uint8_t prot[9] = { 0 };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0xba, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x13, 0x87),
 		(0x87, 0x13, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba))
@@ -1105,7 +1303,7 @@ ZTEST(byteorder, test_sys_put_be)
 
 	sys_put_be(prot, host, sizeof(prot));
 
-	zassert_mem_equal(prot, exp, sizeof(exp), "sys_put_be() failed");
+	zassert_mem_equal(prot, expected, sizeof(expected), "sys_put_be() failed");
 }
 
 /**
@@ -1132,7 +1330,7 @@ ZTEST(byteorder, test_sys_get_le)
 {
 	uint8_t prot[9] = { 0x87, 0x14, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba };
 	uint8_t host[9] = { 0 };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0x87, 0x14, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba),
 		(0xba, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x14, 0x87))
@@ -1140,7 +1338,7 @@ ZTEST(byteorder, test_sys_get_le)
 
 	sys_get_le(host, prot, sizeof(host));
 
-	zassert_mem_equal(host, exp, sizeof(exp), "sys_get_le() failed");
+	zassert_mem_equal(host, expected, sizeof(expected), "sys_get_le() failed");
 }
 
 /**
@@ -1167,7 +1365,7 @@ ZTEST(byteorder, test_sys_get_be)
 {
 	uint8_t prot[9] = { 0x87, 0x15, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba };
 	uint8_t host[9] = { 0 };
-	uint8_t exp[9] = {
+	uint8_t expected[9] = {
 		COND_CODE_1(CONFIG_LITTLE_ENDIAN,
 		(0xba, 0xf0, 0xe1, 0xd2, 0xc3, 0xb4, 0xa5, 0x15, 0x87),
 		(0x87, 0x15, 0xa5, 0xb4, 0xc3, 0xd2, 0xe1, 0xf0, 0xba))
@@ -1175,7 +1373,7 @@ ZTEST(byteorder, test_sys_get_be)
 
 	sys_get_be(host, prot, sizeof(host));
 
-	zassert_mem_equal(host, exp, sizeof(exp), "sys_get_be() failed");
+	zassert_mem_equal(host, expected, sizeof(expected), "sys_get_be() failed");
 }
 
 /**
