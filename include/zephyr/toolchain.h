@@ -144,7 +144,7 @@
  *
  * @param x Pragma directive body.
  */
-#ifdef TOOLCHAIN_HAS_PRAGMA_DIAG
+#if TOOLCHAIN_HAS_PRAGMA_DIAG
 #define TOOLCHAIN_PRAGMA(x) _Pragma(#x)
 #else
 #define TOOLCHAIN_PRAGMA(x)
