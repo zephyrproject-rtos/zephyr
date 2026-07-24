@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,13 @@
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/pm.h>
+
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+#include <power.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dmic_infineon, CONFIG_AUDIO_DMIC_LOG_LEVEL);
@@ -54,6 +61,10 @@ struct ifx_dmic_data {
 	/* pdm_pcm_ch_cfg[] indexed by PDM channel number */
 	cy_stc_pdm_pcm_channel_config_t pdm_pcm_ch_cfg[PDM_PCM_MAX_CHANNELS];
 	struct ifx_cat1_clock clock;
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	/* Warm-boot generation this instance was last rebuilt at (retained). */
+	uint32_t warm_boot_gen;
+#endif
 	struct dma_channel dma_rx;
 	enum dmic_state state;
 	struct k_mem_slab *mem_slab;
@@ -62,6 +73,8 @@ struct ifx_dmic_data {
 	void *active_buf;
 	uint8_t num_pdm_channels;
 	uint8_t configured_pdm_channels; /* bitmask */
+	/* True while a device runtime PM reference is held for the capture window. */
+	bool pm_runtime_active;
 };
 
 static int dmic_stop_capture(const struct device *dev);
@@ -262,6 +275,15 @@ static int ifx_dmic_configure(const struct device *dev, struct dmic_cfg *cfg)
 	uint8_t pdm_ctl_idx_1;
 	enum pdm_lr lr_1;
 
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	/*
+	 * If a DeepSleep-RAM warm boot happened since this instance was last used,
+	 * rebuild the base PDM hardware here, in the caller's thread context,
+	 * before (re)configuring the stream.  A no-op on every other call.
+	 */
+	(void)ifx_pm_warm_boot_reinit(dev, &data->warm_boot_gen);
+#endif
+
 	if (data->state == DMIC_STATE_ACTIVE) {
 		LOG_ERR("Cannot configure DMIC in active state");
 		return -EBUSY;
@@ -459,11 +481,20 @@ static int ifx_dmic_trigger(const struct device *dev, enum dmic_trigger cmd)
 			return -EIO;
 		}
 
+		/*
+		 * Reference the device for the capture window. With device runtime
+		 * PM this resumes the PDM block; the matching release happens on
+		 * PAUSE/STOP/RESET. Inert under system-managed PM.
+		 */
+		(void)pm_device_runtime_get(dev);
+
 		ret = dmic_start_capture(dev);
 		if (ret != 0) {
 			LOG_ERR("Failed to start capture: %d", ret);
+			(void)pm_device_runtime_put(dev);
 			return ret;
 		}
+		data->pm_runtime_active = true;
 
 		break;
 
@@ -472,11 +503,15 @@ static int ifx_dmic_trigger(const struct device *dev, enum dmic_trigger cmd)
 			return -EIO;
 		}
 
+		(void)pm_device_runtime_get(dev);
+
 		ret = dmic_start_capture(dev);
 		if (ret != 0) {
 			LOG_ERR("Failed to start capture: %d", ret);
+			(void)pm_device_runtime_put(dev);
 			return ret;
 		}
+		data->pm_runtime_active = true;
 
 		break;
 
@@ -491,6 +526,12 @@ static int ifx_dmic_trigger(const struct device *dev, enum dmic_trigger cmd)
 			      : (cmd == DMIC_TRIGGER_PAUSE) ? DMIC_STATE_PAUSED
 							    : DMIC_STATE_CONFIGURED;
 		dmic_stop_capture(dev);
+
+		/* Drop the capture-window reference taken at START/RELEASE. */
+		if (data->pm_runtime_active) {
+			data->pm_runtime_active = false;
+			(void)pm_device_runtime_put(dev);
+		}
 
 		break;
 
@@ -576,6 +617,81 @@ static int dmic_init(const struct device *dev)
 
 	return 0;
 }
+
+/*
+ * Cold-boot init wrapper. dmic_init() doubles as the PM TURN_ON handler and
+ * runs on every warm boot, so device runtime PM must be enabled here (once)
+ * rather than inside dmic_init().
+ */
+static int ifx_dmic_init(const struct device *dev)
+{
+	int ret = dmic_init(dev);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* Enable device runtime PM; system-managed PM still applies when unused. */
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		return ret;
+	}
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
+
+	return 0;
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int ifx_dmic_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct ifx_dmic_data *const data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * Refuse to suspend while a capture is running: DeepSleep gates
+		 * the PDM clock and halts the DMA, so the audio stream would be
+		 * corrupted (dropped/garbled samples).  Returning -EBUSY aborts
+		 * the low-power transition; the PM subsystem retries once the
+		 * application stops or pauses the stream.  In every non-active
+		 * state the PDM block is idle and safe to suspend.
+		 */
+		if (data->state == DMIC_STATE_ACTIVE) {
+			return -EBUSY;
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * A regular DeepSleep gates the clocks but retains the PDM
+		 * configuration, and capture is never active across the gate
+		 * (suspend is vetoed while active), so nothing needs restoring.
+		 * The DeepSleep-RAM warm-boot case, where the peripheral domain is
+		 * power-cycled and all PDM state is lost, is a power-loss
+		 * transition handled by PM_DEVICE_ACTION_TURN_ON.
+		 */
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power-loss recovery.  A DeepSleep-RAM warm boot power-cycles the
+		 * peripheral domain and loses all PDM state, so re-initialize the
+		 * base hardware (pinctrl, peripheral clock divider, PDM de-init,
+		 * trigger mux, interrupts).  The application must call
+		 * dmic_configure() again before the next capture, mirroring the
+		 * post-init contract.  This action is emitted only on a genuine
+		 * DS-RAM warm boot, by the SoC's deferred re-init worker running in
+		 * thread context.
+		 */
+		return dmic_init(dev);
+#endif /* CONFIG_PM_S2RAM */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static void dmic_isr(const struct device *dev, uint8_t channel)
 {
@@ -741,7 +857,10 @@ static DEVICE_API(dmic, dmic_ops) = {
 		.rx_queue = &dmic_msgq##index,                                                     \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &dmic_init, NULL, &dmic_data_##index, &dmic_config_##index,   \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dmic_ops);
+	PM_DEVICE_DT_INST_DEFINE(index, ifx_dmic_pm_action);                                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &ifx_dmic_init, PM_DEVICE_DT_INST_GET(index),                 \
+			      &dmic_data_##index, &dmic_config_##index, POST_KERNEL,               \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dmic_ops);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_DMIC_INIT)

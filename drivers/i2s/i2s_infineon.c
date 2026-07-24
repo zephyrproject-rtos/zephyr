@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,13 @@
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/pm.h>
+
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+#include <power.h>
+#endif
 
 #include <infineon_kconfig.h>
 #include <cy_tdm.h>
@@ -56,6 +63,8 @@ struct i2s_stream {
 	uint32_t max_transfer_size; /* bytes */
 	bool last_block;
 	bool drain;
+	/* True while a device runtime PM reference is held for this stream. */
+	bool pm_ref_held;
 };
 
 struct dma_channel {
@@ -75,9 +84,55 @@ struct ifx_i2s_data {
 	struct queue_item rx_queue_buffer[RX_QUEUE_SIZE];
 	struct queue_item tx_queue_buffer[TX_QUEUE_SIZE];
 	struct ifx_cat1_clock clock;
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	/* Warm-boot generation this instance was last rebuilt at (retained). */
+	uint32_t warm_boot_gen;
+#endif
 	uint8_t clock_peri_group;
 	bool tx_waiting_to_start;
 };
+
+/*
+ * Per-stream device runtime PM references.  A reference is taken when a stream
+ * starts and dropped once it returns to I2S_STATE_READY.  The get() may sleep,
+ * so it is only ever called from thread context outside the trigger's IRQ lock;
+ * releases can originate from an ISR, so they use the async put.  The flag makes
+ * the get/put idempotent per stream so no path can imbalance the count.  All
+ * calls are inert no-ops under system-managed PM.
+ */
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+static bool i2s_stream_pm_acquire(const struct device *dev, struct i2s_stream *stream)
+{
+	if (stream->pm_ref_held) {
+		return false;
+	}
+	stream->pm_ref_held = true;
+	(void)pm_device_runtime_get(dev);
+	return true;
+}
+
+static void i2s_stream_pm_release(const struct device *dev, struct i2s_stream *stream)
+{
+	if (!stream->pm_ref_held) {
+		return;
+	}
+	stream->pm_ref_held = false;
+	(void)pm_device_runtime_put_async(dev, K_NO_WAIT);
+}
+#else
+static inline bool i2s_stream_pm_acquire(const struct device *dev, struct i2s_stream *stream)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(stream);
+	return false;
+}
+
+static inline void i2s_stream_pm_release(const struct device *dev, struct i2s_stream *stream)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(stream);
+}
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 /* This function is executed in the interrupt context */
 static void dma_tx_callback(const struct device *dma_dev, void *arg, uint32_t channel, int status)
@@ -132,6 +187,7 @@ static void dma_rx_callback(const struct device *dma_dev, void *arg, uint32_t ch
 		if (data->rx.last_block) {
 			i2s_rx_stream_disable(dev, false);
 			data->rx.state = I2S_STATE_READY;
+			i2s_stream_pm_release(dev, &data->rx);
 			return;
 		}
 	}
@@ -479,6 +535,15 @@ static int ifx_i2s_configure(const struct device *dev, enum i2s_dir dir,
 	bool frame_clk_target = (0 != (I2S_OPT_FRAME_CLK_TARGET & i2s_cfg->options));
 	cy_en_tdm_device_cfg_t master_mode;
 
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	/*
+	 * If a DeepSleep-RAM warm boot happened since this instance was last used,
+	 * rebuild the base TDM hardware here, in the caller's thread context,
+	 * before (re)configuring the stream.  A no-op on every other call.
+	 */
+	(void)ifx_pm_warm_boot_reinit(dev, &data->warm_boot_gen);
+#endif
+
 	switch (dir) {
 	case I2S_DIR_RX:
 		stream = &data->rx;
@@ -761,6 +826,8 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 	struct i2s_stream *stream;
 	unsigned int key;
 	int ret = 0;
+	bool acquired_here = false;
+	bool release_ref = false;
 
 	switch (dir) {
 	case I2S_DIR_RX:
@@ -774,6 +841,14 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		return -ENOSYS;
 	default:
 		return -EINVAL;
+	}
+
+	if (cmd == I2S_TRIGGER_START) {
+		/*
+		 * Resume the device before touching hardware. The get() may sleep,
+		 * so it must run outside the IRQ-locked state transition below.
+		 */
+		acquired_here = i2s_stream_pm_acquire(dev, stream);
 	}
 
 	key = irq_lock();
@@ -843,6 +918,7 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		}
 
 		stream->state = I2S_STATE_READY;
+		release_ref = true;
 		break;
 
 	case I2S_TRIGGER_PREPARE:
@@ -859,6 +935,7 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 		}
 
 		stream->state = I2S_STATE_READY;
+		release_ref = true;
 		break;
 
 	default:
@@ -867,6 +944,15 @@ static int ifx_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_
 	}
 
 	irq_unlock(key);
+
+	if (release_ref || (acquired_here && ret < 0)) {
+		/*
+		 * Drop the reference on the paths that return the stream to
+		 * I2S_STATE_READY (DROP/PREPARE) or when START failed after taking
+		 * one. Normal stream completion releases from the ISR instead.
+		 */
+		i2s_stream_pm_release(dev, stream);
+	}
 
 	return ret;
 }
@@ -938,6 +1024,86 @@ static int i2s_init(const struct device *dev)
 	return 0;
 }
 
+/*
+ * Cold-boot init wrapper. i2s_init() doubles as the PM TURN_ON handler and runs
+ * on every warm boot, so device runtime PM must be enabled here (once) rather
+ * than inside i2s_init().
+ */
+static int ifx_i2s_init(const struct device *dev)
+{
+	int ret = i2s_init(dev);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/* Enable device runtime PM; system-managed PM still applies when unused. */
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		return ret;
+	}
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
+
+	return 0;
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int ifx_i2s_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct ifx_i2s_data *const data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * Refuse to suspend while either direction is streaming:
+		 * DeepSleep gates the TDM clock and halts the DMA, so an
+		 * in-flight transfer would be corrupted (dropped/garbled
+		 * samples).  RUNNING is an active transfer and STOPPING is
+		 * still draining the FIFO, so both are unsafe.  Returning
+		 * -EBUSY aborts the low-power transition; the PM subsystem
+		 * retries once the application stops the stream.  In every
+		 * other state the TDM block is idle and safe to suspend.
+		 */
+		if ((data->tx.state == I2S_STATE_RUNNING) ||
+		    (data->tx.state == I2S_STATE_STOPPING) ||
+		    (data->rx.state == I2S_STATE_RUNNING) ||
+		    (data->rx.state == I2S_STATE_STOPPING)) {
+			return -EBUSY;
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * A regular DeepSleep gates the TDM clock but retains the block
+		 * configuration, so nothing needs restoring on that path.  The
+		 * DeepSleep-RAM warm-boot case, where the peripheral domain is
+		 * power-cycled and all TDM state is lost, is a power-loss
+		 * transition handled by PM_DEVICE_ACTION_TURN_ON.
+		 */
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power-loss recovery.  A DeepSleep-RAM warm boot power-cycles the
+		 * peripheral domain and loses all TDM state, so re-initialize the
+		 * base hardware (pinctrl, peripheral clock divider, interrupts,
+		 * interrupt masks, FIFO flush).  The application must call
+		 * i2s_configure() again before the next transfer, mirroring the
+		 * post-init contract (i2s_init() leaves both streams in
+		 * I2S_STATE_NOT_READY).  This action is emitted only on a genuine
+		 * DS-RAM warm boot, by the SoC's deferred re-init worker running in
+		 * thread context.
+		 */
+		return i2s_init(dev);
+#endif /* CONFIG_PM_S2RAM */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 /* This function is executed in the interrupt context */
 static void i2s_tx_isr(const struct device *dev)
 {
@@ -957,6 +1123,7 @@ static void i2s_tx_isr(const struct device *dev)
 		i2s_tx_stream_disable(dev, false);
 		if (stream->last_block && stream->drain) {
 			data->tx.state = I2S_STATE_READY;
+			i2s_stream_pm_release(dev, &data->tx);
 		} else {
 			LOG_DBG("I2S TX FIFO underflow");
 			stream->state = I2S_STATE_ERROR;
@@ -1114,7 +1281,10 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 		.tx_irq_num = DT_INST_IRQN_BY_IDX(index, 1),                                       \
 		.irq_config_func = ifx_i2s_irq_config_func_##index};                               \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, &i2s_init, NULL, &i2s_data_##index, &i2s_config_##index,      \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_i2s_api);
+	PM_DEVICE_DT_INST_DEFINE(index, ifx_i2s_pm_action);                                        \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &ifx_i2s_init, PM_DEVICE_DT_INST_GET(index),                  \
+			      &i2s_data_##index, &i2s_config_##index, POST_KERNEL,                 \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &ifx_i2s_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IFX_I2S_INIT)

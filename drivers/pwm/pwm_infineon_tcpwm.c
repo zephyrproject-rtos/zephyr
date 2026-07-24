@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,12 @@
 
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/pm.h>
+
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+#include <power.h>
+#endif
 
 #include <infineon_kconfig.h>
 #include <zephyr/drivers/timer/ifx_tcpwm.h>
@@ -48,6 +54,22 @@ struct ifx_tcpwm_pwm_config {
 
 struct ifx_tcpwm_pwm_data {
 	struct ifx_cat1_clock clock;
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	/* Warm-boot generation this instance was last rebuilt at (retained). */
+	uint32_t warm_boot_gen;
+#endif
+#ifdef CONFIG_PM_DEVICE
+	/* Last values programmed via set_cycles, replayed on resume to
+	 * restore the PWM after DS-RAM (all peripheral state lost).
+	 */
+	uint32_t last_period_cycles;
+	uint32_t last_pulse_cycles;
+	pwm_flags_t last_flags;
+	/* Whether the counter was running when suspend was entered, so
+	 * resume only restarts a PWM that was previously active.
+	 */
+	bool was_running;
+#endif /* CONFIG_PM_DEVICE */
 #ifdef CONFIG_PWM_EVENT
 	sys_slist_t event_callbacks;
 	struct k_spinlock lock;
@@ -101,8 +123,26 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 	ARG_UNUSED(channel);
 
 	const struct ifx_tcpwm_pwm_config *config = dev->config;
+#ifdef CONFIG_PM_DEVICE
+	struct ifx_tcpwm_pwm_data *const data = dev->data;
+#endif /* CONFIG_PM_DEVICE */
 	uint32_t pwm_status;
 	uint32_t ctrl_temp;
+
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	/*
+	 * If a DeepSleep-RAM warm boot happened since this PWM was last used,
+	 * rebuild it here, in the caller's thread context, before touching the
+	 * TCPWM registers.  A no-op on every other call.  The TURN_ON handler
+	 * restores state via this same entry; ifx_pm_warm_boot_reinit() records the
+	 * generation before invoking TURN_ON so that nested call does not recurse.
+	 */
+	{
+		struct ifx_tcpwm_pwm_data *const pm_data = dev->data;
+
+		(void)ifx_pm_warm_boot_reinit(dev, &pm_data->warm_boot_gen);
+	}
+#endif
 
 	if (!config->resolution_32_bits &&
 	    ((period_cycles > UINT16_MAX) || (pulse_cycles > UINT16_MAX))) {
@@ -163,6 +203,14 @@ static int ifx_tcpwm_pwm_set_cycles(const struct device *dev, uint32_t channel,
 
 	/* Start the TCPWM block */
 	IFX_TCPWM_TriggerStart_Single(config->reg_base);
+
+#ifdef CONFIG_PM_DEVICE
+	/* Cache the request so it can be replayed on resume after DS-RAM. */
+	data->last_period_cycles = period_cycles;
+	data->last_pulse_cycles = pulse_cycles;
+	data->last_flags = flags;
+	data->was_running = true;
+#endif /* CONFIG_PM_DEVICE */
 
 	return 0;
 }
@@ -241,6 +289,83 @@ static int ifx_tcpwm_pwm_manage_event_callback(const struct device *dev,
 }
 #endif /* CONFIG_PWM_EVENT */
 
+#ifdef CONFIG_PM_DEVICE
+static int ifx_tcpwm_pwm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct ifx_tcpwm_pwm_config *config = dev->config;
+	struct ifx_tcpwm_pwm_data *const data = dev->data;
+#if defined(CONFIG_PM_S2RAM)
+	int ret;
+#endif /* CONFIG_PM_S2RAM */
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Nothing to do. Returning success ensures DeepSleep entry is never blocked. */
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * Resume from a retained low-power state (regular DeepSleep): the
+		 * clocks were gated but the peripheral domain and its configuration
+		 * survived.  Regular DeepSleep does clear the block's ENABLED bit,
+		 * so re-enable it before re-triggering start - the same sequence
+		 * ifx_tcpwm_pwm_set_cycles() uses (and the counter driver mirrors in
+		 * ifx_tcpwm_counter_start()).  Without the re-enable the trigger has
+		 * no effect and the PWM output stays dead after wake.  Only restart
+		 * if the PWM was running before the transition.
+		 */
+#if defined(CONFIG_PM_S2RAM)
+		/*
+		 * RESUME is invoked for BOTH SUSPEND_TO_IDLE (regular, retained
+		 * DeepSleep) and SUSPEND_TO_RAM (DS-RAM warm boot), so the two must
+		 * be distinguished here.  A DS-RAM warm boot power-cycles the domain
+		 * and loses all PWM state; the block is rebuilt by
+		 * PM_DEVICE_ACTION_TURN_ON (the SoC's deferred re-init worker).  Do
+		 * NOT enable/trigger on that path: starting the power-cycled block
+		 * (PERIOD0 == 0) latches STATUS.RUNNING, which makes the subsequent
+		 * set_cycles() take its "already running" buffered-update path and
+		 * never load the real period, leaving the LED output dead.
+		 */
+		if (pm_state_next_get(_current_cpu->id)->state == PM_STATE_SUSPEND_TO_RAM) {
+			break;
+		}
+#endif /* CONFIG_PM_S2RAM */
+		if (data->was_running) {
+			IFX_TCPWM_PWM_Enable(config->reg_base);
+			IFX_TCPWM_TriggerStart_Single(config->reg_base);
+		}
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power-loss recovery.  A DeepSleep-RAM warm boot power-cycles the
+		 * peripheral domain and loses all PWM state, so re-initialize the
+		 * block and replay the cached configuration from RAM.  This action is
+		 * emitted only on a genuine DS-RAM warm boot (by the SoC's deferred
+		 * re-init worker running in thread context), so its invocation is the
+		 * "power was lost" signal - no separate warm-boot flag query is
+		 * needed.  ifx_tcpwm_pwm_set_cycles() restores the running state, so
+		 * no explicit trigger-start is issued here.
+		 */
+		ret = ifx_tcpwm_pwm_init(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = ifx_tcpwm_pwm_set_cycles(dev, 0, data->last_period_cycles,
+					       data->last_pulse_cycles, data->last_flags);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
+#endif /* CONFIG_PM_S2RAM */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 	.set_cycles = ifx_tcpwm_pwm_set_cycles,
 	.get_cycles_per_sec = ifx_tcpwm_pwm_get_cycles_per_sec,
@@ -314,6 +439,8 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 	IF_ENABLED(CONFIG_PWM_EVENT, (INFINEON_TCPWM_PWM_IRQ_INIT(n)))                             \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_pwm_pm_action);                                      \
+                                                                                                   \
 	static struct ifx_tcpwm_pwm_data ifx_tcpwm_pwm##n##_data = {PWM_PERI_CLOCK_INIT(n)};       \
                                                                                                    \
 	static const struct ifx_tcpwm_pwm_config pwm_tcpwm_config_##n = {                          \
@@ -332,8 +459,8 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(                                                                     \
 		n, COND_CODE_1(CONFIG_PWM_EVENT, (ifx_tcpwm_pwm_init_##n), (ifx_tcpwm_pwm_init)),  \
-		NULL, &ifx_tcpwm_pwm##n##_data, &pwm_tcpwm_config_##n, POST_KERNEL,                \
-		CONFIG_PWM_INIT_PRIORITY, &ifx_tcpwm_pwm_api);
+		PM_DEVICE_DT_INST_GET(n), &ifx_tcpwm_pwm##n##_data, &pwm_tcpwm_config_##n,         \
+		POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &ifx_tcpwm_pwm_api);
 /* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_TCPWM_PWM_INIT)

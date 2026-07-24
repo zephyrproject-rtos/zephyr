@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,9 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/pm.h>
 #include <zephyr/kernel.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -30,6 +33,10 @@
 
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
+
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+#include <power.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uart_ifx, CONFIG_UART_LOG_LEVEL);
@@ -121,9 +128,25 @@ struct ifx_cat1_uart_data {
 	cy_stc_scb_uart_context_t context;
 	cy_stc_scb_uart_config_t scb_config;
 	uint32_t baud_rate;
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	/* Warm-boot generation this instance was last rebuilt at (retained). */
+	uint32_t warm_boot_gen;
+#endif
 #ifdef CONFIG_UART_ASYNC_API
 	struct ifx_cat1_uart_async async;
 #endif
+	/*
+	 * Restricted-scope device runtime PM reference flags. A flag is set
+	 * while an interrupt-driven or async transfer session holds a runtime
+	 * reference and cleared when it is dropped, keeping every get/put
+	 * idempotent. They are only touched when the instance is runtime
+	 * managed, but are always present so the helper call sites compile
+	 * regardless of the selected PM configuration.
+	 */
+	bool pm_irq_tx_ref;
+	bool pm_irq_rx_ref;
+	bool pm_async_tx_ref;
+	bool pm_async_rx_ref;
 };
 
 /* Device config structure */
@@ -153,6 +176,73 @@ const uint8_t parity_lut[] = {
 	[UART_CFG_PARITY_ODD] = CY_SCB_UART_PARITY_ODD,
 	[UART_CFG_PARITY_EVEN] = CY_SCB_UART_PARITY_EVEN,
 };
+
+#if defined(CONFIG_PM_DEVICE_RUNTIME)
+/*
+ * Restricted-scope device runtime PM helpers. A runtime reference is held while
+ * an interrupt-driven or async transfer session is open and dropped when it
+ * ends, so an idle UART can be runtime suspended. poll_in()/poll_out() are
+ * deliberately not instrumented: they must never sleep and the console relies
+ * on them, so the console UART is left runtime unmanaged (opt-in per instance
+ * through the zephyr,pm-device-runtime-auto devicetree property). The get() may
+ * sleep and is only called from thread context at session start; releases may
+ * originate from an ISR or DMA callback, so they use the async put. The
+ * per-reference flag keeps every get/put idempotent so no path can imbalance
+ * the usage count. All calls are inert when the instance is not runtime
+ * managed.
+ */
+static void ifx_cat1_uart_pm_ref_get(const struct device *dev, bool *held)
+{
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	struct ifx_cat1_uart_data *const data = dev->data;
+
+	/*
+	 * Single choke point for every runtime-managed hardware acquire (interrupt
+	 * and async TX/RX all pass through here).  Rebuild the SCB state lost across
+	 * a DeepSleep-RAM warm boot once, before the device is resumed, so no managed
+	 * API entry can miss it.  A no-op on every other call.  The console poll path
+	 * is unmanaged and rebuilds itself in poll_in()/poll_out().
+	 */
+	(void)ifx_pm_warm_boot_reinit(dev, &data->warm_boot_gen);
+#endif
+
+	if (!*held) {
+		*held = true;
+		(void)pm_device_runtime_get(dev);
+	}
+}
+
+static void ifx_cat1_uart_pm_ref_put(const struct device *dev, bool *held)
+{
+	if (*held) {
+		*held = false;
+		(void)pm_device_runtime_put_async(dev, K_NO_WAIT);
+	}
+}
+#else
+static inline void ifx_cat1_uart_pm_ref_get(const struct device *dev, bool *held)
+{
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	struct ifx_cat1_uart_data *const data = dev->data;
+
+	/*
+	 * Same warm-boot rebuild choke point as the runtime-managed variant above.
+	 * The device is system managed when runtime PM is not configured, but a
+	 * DeepSleep-RAM warm boot still power-cycles it, so rebuild it on first use.
+	 */
+	(void)ifx_pm_warm_boot_reinit(dev, &data->warm_boot_gen);
+#else
+	ARG_UNUSED(dev);
+#endif
+	ARG_UNUSED(held);
+}
+
+static inline void ifx_cat1_uart_pm_ref_put(const struct device *dev, bool *held)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(held);
+}
+#endif /* CONFIG_PM_DEVICE_RUNTIME */
 
 static inline uint32_t convert_uart_parity_z_to_cy(uint32_t parity)
 {
@@ -274,6 +364,17 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 		return -EINVAL;
 	}
 
+	/*
+	 * A programmable divider must be disabled before its value is changed
+	 * (see Cy_SysClk_PeriPclkSetDivider): writing the divider while it is
+	 * still enabled does not latch the new value cleanly.  This also matters
+	 * after a DeepSleep-RAM warm boot, where the peripheral domain is
+	 * power-cycled and the divider comes back disabled: set alone would leave
+	 * the SCB without a clock and the UART would time out.  Disable, set, then
+	 * re-enable so the new rate takes effect immediately.
+	 */
+	(void)ifx_cat1_utils_peri_pclk_disable_divider(config->clk_dst, &(data->clock));
+
 	/* Set baud rate */
 	if ((data->clock.block & 0x02) == 0) {
 		status = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &(data->clock),
@@ -282,6 +383,8 @@ cy_rslt_t ifx_cat1_uart_set_baud(const struct device *dev, uint32_t baudrate)
 		status = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst, &(data->clock),
 								   divider - 1, 0);
 	}
+
+	(void)ifx_cat1_utils_peri_pclk_enable_divider(config->clk_dst, &(data->clock));
 
 	if (status < 0) {
 		return status;
@@ -324,6 +427,15 @@ bool ifx_cat1_uart_get_tx_active(const struct device *dev)
 static int ifx_cat1_uart_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct ifx_cat1_uart_config *const config = dev->config;
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	struct ifx_cat1_uart_data *const data = dev->data;
+
+	/*
+	 * The console input path is unmanaged (no runtime PM); rebuild the SCB state
+	 * lost across a DeepSleep-RAM warm boot before reading.  A no-op otherwise.
+	 */
+	(void)ifx_pm_warm_boot_reinit(dev, &data->warm_boot_gen);
+#endif
 
 	uint32_t read_value = Cy_SCB_UART_Get(config->reg_addr);
 
@@ -338,6 +450,16 @@ static int ifx_cat1_uart_poll_in(const struct device *dev, unsigned char *c)
 static void ifx_cat1_uart_poll_out(const struct device *dev, unsigned char c)
 {
 	const struct ifx_cat1_uart_config *const config = dev->config;
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	struct ifx_cat1_uart_data *const data = dev->data;
+
+	/*
+	 * On the first character after a DeepSleep-RAM warm boot the SCB has lost
+	 * its state; rebuild it here, in the caller's thread context, before
+	 * writing so the console comes back cleanly.  A no-op on every other call.
+	 */
+	(void)ifx_pm_warm_boot_reinit(dev, &data->warm_boot_gen);
+#endif
 
 	while (Cy_SCB_UART_Put(config->reg_addr, c) == 0) {
 		/* Wait until the character is placed in the FIFO */
@@ -500,12 +622,24 @@ void ifx_cat1_uart_enable_event(const struct device *dev, uint32_t event, bool e
 
 static void ifx_cat1_uart_irq_tx_enable(const struct device *dev)
 {
+	struct ifx_cat1_uart_data *const data = dev->data;
+
+	/*
+	 * Expected to be called from thread context; get() may sleep.  The warm-boot
+	 * rebuild (after a DeepSleep-RAM wake) is performed inside pm_ref_get(), the
+	 * shared acquire choke point, so it cannot be missed here.
+	 */
+	ifx_cat1_uart_pm_ref_get(dev, &data->pm_irq_tx_ref);
 	ifx_cat1_uart_enable_event(dev, (uint32_t)CY_SCB_UART_TRANSMIT_EMTPY, 1);
 }
 
 static void ifx_cat1_uart_irq_tx_disable(const struct device *dev)
 {
+	struct ifx_cat1_uart_data *const data = dev->data;
+
 	ifx_cat1_uart_enable_event(dev, (uint32_t)CY_SCB_UART_TRANSMIT_EMTPY, 0);
+	/* Safe from an ISR callback: async put is used. */
+	ifx_cat1_uart_pm_ref_put(dev, &data->pm_irq_tx_ref);
 }
 
 /* Check if UART TX buffer can accept a new char */
@@ -529,12 +663,23 @@ static int ifx_cat1_uart_irq_tx_complete(const struct device *dev)
 
 static void ifx_cat1_uart_irq_rx_enable(const struct device *dev)
 {
+	struct ifx_cat1_uart_data *const data = dev->data;
+
+	/*
+	 * Expected to be called from thread context; get() may sleep.  The warm-boot
+	 * rebuild is performed inside pm_ref_get() (see ifx_cat1_uart_irq_tx_enable).
+	 */
+	ifx_cat1_uart_pm_ref_get(dev, &data->pm_irq_rx_ref);
 	ifx_cat1_uart_enable_event(dev, (uint32_t)CY_SCB_UART_RECEIVE_NOT_EMTPY, 1);
 }
 
 static void ifx_cat1_uart_irq_rx_disable(const struct device *dev)
 {
+	struct ifx_cat1_uart_data *const data = dev->data;
+
 	ifx_cat1_uart_enable_event(dev, (uint32_t)CY_SCB_UART_RECEIVE_NOT_EMTPY, 0);
+	/* Safe from an ISR callback: async put is used. */
+	ifx_cat1_uart_pm_ref_put(dev, &data->pm_irq_rx_ref);
 }
 
 /* Check if UART RX buffer has a received char */
@@ -572,24 +717,9 @@ static void ifx_cat1_uart_irq_err_disable(const struct device *dev)
 static int ifx_cat1_uart_irq_is_pending(const struct device *dev)
 {
 	const struct ifx_cat1_uart_config *const config = dev->config;
-	int rx_pending = 0;
-	int tx_pending = 0;
+	uint32_t intcause = Cy_SCB_GetInterruptCause(config->reg_addr);
 
-	/*
-	 * Report pending state from live hardware state, not the latched
-	 * cause register which the ISR clears before the callback runs.
-	 * Gate on the interrupt mask: rx_ready() reflects raw FIFO occupancy,
-	 * so an ungated check would spin the ISR loop when RX is disabled.
-	 */
-	if ((Cy_SCB_GetRxInterruptMask(config->reg_addr) & CY_SCB_UART_RX_NOT_EMPTY) != 0u) {
-		rx_pending = ifx_cat1_uart_irq_rx_ready(dev);
-	}
-
-	if ((Cy_SCB_GetTxInterruptMask(config->reg_addr) & CY_SCB_UART_TX_EMPTY) != 0u) {
-		tx_pending = ifx_cat1_uart_irq_tx_ready(dev);
-	}
-
-	return ((rx_pending != 0) || (tx_pending != 0)) ? 1 : 0;
+	return (int)(intcause & (CY_SCB_TX_INTR | CY_SCB_RX_INTR));
 }
 
 /* Start processing interrupts in ISR.
@@ -601,6 +731,12 @@ static void ifx_cat1_uart_irq_update(const struct device *dev)
 {
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
+	/*
+	 * Read interrupt cause and RX FIFO count have a side effect
+	 * to clear stale interrupt flags, so that FIFO is flushed
+	 * properly and the current hardware state is reflected.
+	 * This is required for proper UART operation.
+	 */
 	(void) (ifx_cat1_uart_irq_is_pending(dev));
 	(void) (Cy_SCB_UART_GetNumInRxFifo(config->reg_addr));
 }
@@ -744,6 +880,12 @@ static int ifx_cat1_uart_async_tx(const struct device *dev, const uint8_t *tx_da
 		return -EINVAL;
 	}
 
+	/*
+	 * Hold a runtime reference for the whole TX session. get() may sleep,
+	 * so it is taken before the irq_lock below.
+	 */
+	ifx_cat1_uart_pm_ref_get(dev, &data->pm_async_tx_ref);
+
 	unsigned int key = irq_lock();
 
 	/* Store information about data buffer need to send */
@@ -766,6 +908,10 @@ static int ifx_cat1_uart_async_tx(const struct device *dev, const uint8_t *tx_da
 
 exit:
 	irq_unlock(key);
+	if (err) {
+		/* No completion callback will run; drop the reference. */
+		ifx_cat1_uart_pm_ref_put(dev, &data->pm_async_tx_ref);
+	}
 	return err;
 }
 
@@ -802,6 +948,8 @@ static int ifx_cat1_uart_async_tx_abort(const struct device *dev)
 
 unlock:
 	irq_unlock(key);
+	/* TX ended; release outside the irq_lock (thread context). */
+	ifx_cat1_uart_pm_ref_put(dev, &data->pm_async_tx_ref);
 	return err;
 }
 
@@ -834,6 +982,9 @@ static void dma_callback_tx_done(const struct device *dma_dev, void *arg, uint32
 		/* DMA error */
 		dma_stop(data->async.dma_tx.dma_dev, data->async.dma_tx.dma_channel);
 	}
+
+	/* TX finished (done or error); release from ISR via async put. */
+	ifx_cat1_uart_pm_ref_put(uart_dev, &data->pm_async_tx_ref);
 
 	irq_unlock(key);
 }
@@ -958,6 +1109,12 @@ static int ifx_cat1_uart_async_rx_enable(const struct device *dev, uint8_t *rx_d
 		return -EBUSY;
 	}
 
+	/*
+	 * Hold a runtime reference for the whole RX session. get() may sleep,
+	 * so it is taken before the irq_lock below.
+	 */
+	ifx_cat1_uart_pm_ref_get(dev, &data->pm_async_rx_ref);
+
 	unsigned int key = irq_lock();
 
 	if (data->async.dma_rx.buf_len != 0) {
@@ -989,6 +1146,10 @@ static int ifx_cat1_uart_async_rx_enable(const struct device *dev, uint8_t *rx_d
 
 unlock:
 	irq_unlock(key);
+	if (err) {
+		/* RX never started; drop the reference. */
+		ifx_cat1_uart_pm_ref_put(dev, &data->pm_async_rx_ref);
+	}
 	return err;
 }
 
@@ -1017,6 +1178,8 @@ static void dma_callback_rx_rdy(const struct device *dma_dev, void *arg, uint32_
 		if (!data->async.rx_next_buf) {
 			dma_stop(data->async.dma_rx.dma_dev, data->async.dma_rx.dma_channel);
 			async_evt_rx_disabled(data);
+			/* RX ended; release from ISR via async put. */
+			ifx_cat1_uart_pm_ref_put(uart_dev, &data->pm_async_rx_ref);
 			goto unlock;
 		}
 
@@ -1045,6 +1208,8 @@ static void dma_callback_rx_rdy(const struct device *dma_dev, void *arg, uint32_
 		async_evt_rx_release_buffer(data, CURRENT_BUFFER);
 		async_evt_rx_release_buffer(data, NEXT_BUFFER);
 		async_evt_rx_disabled(data);
+		/* RX ended; release from ISR via async put. */
+		ifx_cat1_uart_pm_ref_put(uart_dev, &data->pm_async_rx_ref);
 		goto unlock;
 	}
 
@@ -1120,6 +1285,9 @@ static int ifx_cat1_uart_async_rx_disable(const struct device *dev)
 	async_evt_rx_disabled(data);
 
 	irq_unlock(key);
+
+	/* RX ended; release outside the irq_lock (thread context). */
+	ifx_cat1_uart_pm_ref_put(dev, &data->pm_async_rx_ref);
 
 	return 0;
 }
@@ -1393,8 +1561,89 @@ static int ifx_cat1_uart_init(const struct device *dev)
 	k_work_init_delayable(&data->async.dma_rx.timeout_work, ifx_cat1_uart_async_rx_timeout);
 #endif /* CONFIG_UART_ASYNC_API */
 
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	/*
+	 * Opt-in: only instances tagged zephyr,pm-device-runtime-auto in
+	 * devicetree become runtime managed. The console UART is intentionally
+	 * left system managed because poll_out() never takes a runtime
+	 * reference and must always stay resumed. This is not the pm_action
+	 * TURN_ON handler (which re-initializes inline), so enabling here runs
+	 * only on cold boot.
+	 */
+	if (ret == 0) {
+		ret = pm_device_runtime_auto_enable(dev);
+	}
+#endif
+
 	return ret;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int ifx_cat1_uart_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct ifx_cat1_uart_config *const config = dev->config;
+#if defined(CONFIG_PM_S2RAM)
+	struct ifx_cat1_uart_data *const data = dev->data;
+	cy_rslt_t result;
+	int ret;
+#endif /* CONFIG_PM_S2RAM */
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * Refuse to suspend while a transmission is still in flight:
+		 * entering DeepSleep gates the SCB clock and would truncate the
+		 * frame on the wire.  Returning -EBUSY aborts the low-power
+		 * transition; the PM subsystem retries once TX has drained.
+		 */
+		if (!Cy_SCB_UART_IsTxComplete(config->reg_addr)) {
+			return -EBUSY;
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * Resume from a retained low-power state (regular DeepSleep): the
+		 * clocks were gated but the SCB configuration survived, so there is
+		 * nothing to restore here.  The DeepSleep-RAM warm-boot case, where
+		 * the peripheral domain is power-cycled and all SCB state is lost, is
+		 * a power-loss transition handled by PM_DEVICE_ACTION_TURN_ON instead.
+		 */
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power-loss recovery.  A DeepSleep-RAM warm boot power-cycles the
+		 * peripheral domain and loses all SCB state, so re-initialize the
+		 * UART: re-apply pinctrl, re-assign the peripheral clock divider, and
+		 * replay the cached runtime configuration.  This action is emitted
+		 * only on a genuine DS-RAM warm boot (by the SoC's deferred re-init
+		 * worker running in thread context).
+		 */
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+
+		result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
+		if (result != CY_RSLT_SUCCESS) {
+			return -EIO;
+		}
+
+		ret = ifx_cat1_uart_configure(dev, &data->cfg);
+		if (ret < 0) {
+			return ret;
+		}
+
+		irq_enable(config->irq_num);
+		break;
+#endif /* CONFIG_PM_S2RAM */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 	.poll_in = ifx_cat1_uart_poll_in,
@@ -1531,6 +1780,8 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		return ifx_cat1_uart_init(dev);                                                    \
 	}                                                                                          \
                                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_cat1_uart_pm_action);                                      \
+                                                                                                   \
 	static struct ifx_cat1_uart_config ifx_cat1_uart##n##_cfg = {                              \
 		.dt_cfg.baudrate = DT_INST_PROP(n, current_speed),                                 \
 		.dt_cfg.parity = DT_INST_ENUM_IDX_OR(n, parity, UART_CFG_PARITY_NONE),             \
@@ -1542,8 +1793,8 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 		.clk_dst = DT_INST_PROP(n, clk_dst),                                               \
 		IRQ_INFO(n)};                                                                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_uart_init##n, NULL, &ifx_cat1_uart##n##_data,           \
-			      &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
-			      &ifx_cat1_uart_driver_api);
+	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_uart_init##n, PM_DEVICE_DT_INST_GET(n),                 \
+			      &ifx_cat1_uart##n##_data, &ifx_cat1_uart##n##_cfg, PRE_KERNEL_1,     \
+			      CONFIG_SERIAL_INIT_PRIORITY, &ifx_cat1_uart_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_UART_INIT)
