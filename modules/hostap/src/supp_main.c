@@ -30,6 +30,10 @@ static struct k_thread tid;
 
 static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE);
 
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_OFFLOAD_OPS)
+static K_THREAD_STACK_DEFINE(cmd_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_CMD_WQ_STACK_SIZE);
+#endif
+
 #define IFACE_NOTIFY_TIMEOUT_MS 1000
 #define IFACE_NOTIFY_RETRY_MS 10
 
@@ -125,6 +129,9 @@ struct supplicant_context {
 	int sock;
 	struct k_work iface_work;
 	struct k_work_q iface_wq;
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_OFFLOAD_OPS)
+	struct k_work_q cmd_wq;
+#endif
 	int (*iface_handler)(struct supplicant_context *ctx, struct net_if *iface);
 };
 
@@ -151,6 +158,13 @@ struct k_work_q *get_workq(void)
 {
 	return &get_default_context()->iface_wq;
 }
+
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_OFFLOAD_OPS)
+struct k_work_q *get_cmd_wq(void)
+{
+	return &get_default_context()->cmd_wq;
+}
+#endif
 
 /* found in hostap/wpa_supplicant/ctrl_iface_zephyr.c */
 extern int send_data(struct k_fifo *fifo, int sock, const char *buf, size_t len, int flags);
@@ -753,6 +767,20 @@ static void handler(void)
 			   K_THREAD_STACK_SIZEOF(iface_wq_stack),
 			   CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_PRIO,
 			   &iface_wq_cfg);
+
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_OFFLOAD_OPS)
+	{
+		static const struct k_work_queue_config cmd_wq_cfg = {
+			.name = "hostap_cmd_wq",
+		};
+
+		k_work_queue_init(&ctx->cmd_wq);
+		k_work_queue_start(&ctx->cmd_wq, cmd_wq_stack,
+				   K_THREAD_STACK_SIZEOF(cmd_wq_stack),
+				   CONFIG_WIFI_NM_WPA_SUPPLICANT_CMD_WQ_PRIO,
+				   &cmd_wq_cfg);
+	}
+#endif
 
 	k_work_init(&ctx->iface_work, iface_work_handler);
 
