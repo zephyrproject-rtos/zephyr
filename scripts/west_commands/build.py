@@ -453,14 +453,14 @@ class Build(Forceable):
 
         if found_test_metadata:
             args = []
-            if extra_conf_files:
-                args.append(f"EXTRA_CONF_FILE=\"{';'.join(extra_conf_files)}\"")
+            # Both fields end up as extra Kconfig fragments, applied in the same
+            # order as twister applies them.
+            extra_conf = extra_conf_files + extra_overlay_confs
+            if extra_conf:
+                args.append(f"EXTRA_CONF_FILE=\"{';'.join(extra_conf)}\"")
 
             if extra_dtc_overlay_files:
                 args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
-
-            if extra_overlay_confs:
-                args.append(f"OVERLAY_CONFIG=\"{';'.join(extra_overlay_confs)}\"")
 
             if required_snippets:
                 args.append(f"SNIPPET=\"{';'.join(required_snippets)}\"")
