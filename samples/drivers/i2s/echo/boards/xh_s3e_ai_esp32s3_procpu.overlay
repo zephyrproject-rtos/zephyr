@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Anuj Deshpande
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * XH-S3E-AI: mic (i2s1, RX) -> speaker (i2s0, TX). Pin mux and DMA come from
+ * the board / SoC dtsi; just expose the i2s_rx / i2s_tx node labels.
+ */
+
+i2s_rx: &i2s1 {
+	status = "okay";
+};
+
+i2s_tx: &i2s0 {
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};

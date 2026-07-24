@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Anuj Deshpande
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: xh_s3e_ai
+  full_name: XH-S3E-AI
+  vendor: others
+  socs:
+  - name: esp32s3

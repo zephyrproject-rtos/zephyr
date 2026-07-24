@@ -7436,6 +7436,13 @@ Wurth Elektronik Platforms:
   description: >-
     Wurth Elektronik radio modules, development boards, and SoCs.
 
+XH-S3E-AI board:
+  status: maintained
+  maintainers:
+    - anujdeshpande
+  files:
+    - boards/others/xh_s3e_ai/
+
 Xen Platform:
   status: maintained
   maintainers:
