@@ -103,12 +103,12 @@ def extract_metrics(twister_json: str, suite_name: str) -> dict[str, float]:
 def compare(baseline: dict[str, float], current: dict[str, float], tolerance_pct: float) -> bool:
     """Print a comparison table and return True if no metric regressed."""
     ok = True
-    print(f"{'metric':<12}{'baseline':>12}{'current':>12}{'change':>10}  status")
+    print(f"{'metric':<20}{'baseline':>12}{'current':>12}{'change':>10}  status")
     for metric in sorted(set(baseline) | set(current)):
         base = baseline.get(metric)
         cur = current.get(metric)
         if base is None or cur is None:
-            print(f"{metric:<12}{str(base):>12}{str(cur):>12}{'':>10}  MISSING")
+            print(f"{metric:<20}{str(base):>12}{str(cur):>12}{'':>10}  MISSING")
             ok = False
             continue
 
@@ -117,7 +117,7 @@ def compare(baseline: dict[str, float], current: dict[str, float], tolerance_pct
         status = "OK" if cur >= min_allowed else "REGRESSION"
         if status != "OK":
             ok = False
-        print(f"{metric:<12}{base:>12.3f}{cur:>12.3f}{change_pct:>+9.1f}%  {status}")
+        print(f"{metric:<20}{base:>12.3f}{cur:>12.3f}{change_pct:>+9.1f}%  {status}")
 
     return ok
 

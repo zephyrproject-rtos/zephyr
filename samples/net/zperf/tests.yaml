@@ -36,9 +36,13 @@ tests:
       record:
         regex:
           - "ZPERF-RESULT udp4_mbps=(?P<udp4_mbps>[0-9.]+)"
+          - "ZPERF-RESULT udp4_frag_mbps=(?P<udp4_frag_mbps>[0-9.]+)"
           - "ZPERF-RESULT tcp4_mbps=(?P<tcp4_mbps>[0-9.]+)"
+          - "ZPERF-RESULT tcp4_nodelay_mbps=(?P<tcp4_nodelay_mbps>[0-9.]+)"
           - "ZPERF-RESULT udp6_mbps=(?P<udp6_mbps>[0-9.]+)"
+          - "ZPERF-RESULT udp6_frag_mbps=(?P<udp6_frag_mbps>[0-9.]+)"
           - "ZPERF-RESULT tcp6_mbps=(?P<tcp6_mbps>[0-9.]+)"
+          - "ZPERF-RESULT tcp6_nodelay_mbps=(?P<tcp6_nodelay_mbps>[0-9.]+)"
   sample.net.zperf.async_tx.stm32:
     filter: dt_compat_enabled("st,stm32-ethernet") and CONFIG_ETH_STM32_HAL_API_V2
     harness: console

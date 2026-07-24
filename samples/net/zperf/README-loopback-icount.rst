@@ -62,11 +62,27 @@ The runner lives in :file:`src/main.c`, guarded by
 
 #. Brings the network up itself (automatic init is disabled so the transfer does
    not race the bring-up).
-#. Starts a UDP receiver, runs a blocking UDP upload, stops the receiver, and
-   prints ``ZPERF-RESULT udp4_mbps=<value>``.
-#. Repeats the same for TCP and prints ``ZPERF-RESULT tcp4_mbps=<value>``.
-#. Repeats both over IPv6, printing ``ZPERF-RESULT udp6_mbps=<value>`` and
-   ``ZPERF-RESULT tcp6_mbps=<value>``.
+#. For each IP family, runs a sequence of transfers, each bracketed by starting
+   the matching receiver, running a blocking upload, and stopping the receiver,
+   and prints one ``ZPERF-RESULT <marker>_mbps=<value>`` line per transfer:
+
+   .. list-table::
+      :header-rows: 1
+
+      * - Marker
+        - Transfer
+      * - ``udp4`` / ``udp6``
+        - Baseline UDP, near-MTU payload (single, unfragmented datagram).
+      * - ``udp4_frag`` / ``udp6_frag``
+        - UDP with an oversized payload that forces **IP fragmentation** on TX
+          and reassembly on RX. Only run when the matching
+          :kconfig:option:`CONFIG_NET_IPV4_FRAGMENT` /
+          :kconfig:option:`CONFIG_NET_IPV6_FRAGMENT` is enabled.
+      * - ``tcp4`` / ``tcp6``
+        - Baseline TCP (Nagle on).
+      * - ``tcp4_nodelay`` / ``tcp6_nodelay``
+        - TCP with ``TCP_NODELAY`` (Nagle off) to cover the alternate send path.
+
 #. Prints a final ``ZPERF-DONE`` marker.
 
 Both IP families are exercised so a regression in either code path is caught.
@@ -75,6 +91,12 @@ loopback driver assigns both addresses to the loopback interface. For each
 family the receiver is bound to that loopback address (not just the interface's
 default address) so the client can connect to it. The IPv6 runs are skipped
 when :kconfig:option:`CONFIG_NET_IPV6` is disabled (and likewise for IPv4).
+
+Every upload is sent with a non-default socket priority
+(:c:enumerator:`NET_PRIORITY_VI`). Combined with more than one configured
+traffic class (see below) this routes the traffic through the per-traffic-class
+threads in ``net_tc.c`` instead of the caller's context, so that scheduling path
+is exercised on every run.
 
 The whole thing is configured by :file:`overlay-loopback-icount.conf`, which is
 layered on top of the existing :file:`overlay-loopback.conf`.
@@ -98,6 +120,11 @@ Configuration knobs
      - ``1220``
      - Payload size (bytes). The default is the IPv6 TCP MSS at a 1280 byte
        MTU so every write is one full-sized segment (see below).
+   * - ``CONFIG_ZPERF_LOOPBACK_SELFTEST_FRAG_PACKET_SIZE``
+     - ``2000``
+     - Payload size (bytes) for the extra fragmenting UDP runs. Must exceed the
+       MTU (so the datagram fragments) and stay below
+       :kconfig:option:`CONFIG_NET_ZPERF_MAX_PACKET_SIZE`.
    * - ``CONFIG_ZPERF_LOOPBACK_SELFTEST_RATE_KBPS``
      - ``0``
      - Target rate; ``0`` means send as fast as the (virtual) CPU allows.
@@ -133,11 +160,27 @@ A few non-obvious points are baked into :file:`overlay-loopback-icount.conf`:
   IPv4 MSS in one segment but exceeds the IPv6 MSS, so every IPv6 write is split
   into a full 1220 byte segment plus a 12 byte runt - roughly doubling the IPv6
   segment/ACK count and nearly halving IPv6 TCP throughput. Using 1220 keeps
-  every write to a single full-sized segment for both families. The payload also
-  stays under the MTU for UDP in both families, so no IP fragmentation is needed
-  (IP fragmentation is disabled in this config). Because the net_buf data size
-  (1100) is below the MTU, each frame still spans two buffer fragments, which
-  deliberately exercises the fragment-chain walk.
+  every write to a single full-sized segment for both families. The baseline UDP
+  payload also stays under the MTU for both families, so those datagrams are not
+  IP-fragmented. Because the net_buf data size (1100) is below the MTU, each
+  frame still spans two buffer fragments, which deliberately exercises the
+  fragment-chain walk.
+- **IP fragmentation coverage.** :kconfig:option:`CONFIG_NET_IPV4_FRAGMENT` and
+  :kconfig:option:`CONFIG_NET_IPV6_FRAGMENT` are enabled and the runner adds an
+  extra UDP run per family whose payload
+  (``CONFIG_ZPERF_LOOPBACK_SELFTEST_FRAG_PACKET_SIZE``, 2000 by default) exceeds
+  the MTU. This drives the fragmentation path in ``ipv4.c`` / ``ipv6.c`` on TX
+  and the reassembly path on RX (the ``*_frag`` markers).
+  :kconfig:option:`CONFIG_NET_ZPERF_MAX_PACKET_SIZE` is raised above this payload.
+- **Traffic classes and priority.** The overlay configures more than one TX/RX
+  traffic class (:kconfig:option:`CONFIG_NET_TC_TX_COUNT` /
+  :kconfig:option:`CONFIG_NET_TC_RX_COUNT` = 2) and enables
+  :kconfig:option:`CONFIG_NET_CONTEXT_PRIORITY` (plus
+  :kconfig:option:`CONFIG_NET_ALLOW_ANY_PRIORITY`). Every upload sets a
+  non-default ``SO_PRIORITY``, so traffic is dispatched through the dedicated
+  per-traffic-class threads rather than the caller's context. This exercises the
+  ``net_tc.c`` scheduling path but adds context switches, which lowers the
+  absolute numbers compared with a single-traffic-class configuration.
 - **Unlimited-rate math.** In unlimited-rate (``rate = 0``) mode the runner
   picks a rate high enough that the per-packet pacing delay rounds down to zero.
   That synthetic rate is computed in 64-bit to avoid an intermediate overflow,
@@ -161,14 +204,21 @@ Expected output (values are deterministic and repeat exactly across runs on a
 given build; the exact numbers depend on the toolchain, packet size, icount
 shift and tick rate, so treat them as an example)::
 
-   ZPERF-RESULT udp4_mbps=13.251
-   ZPERF-RESULT tcp4_mbps=6.003
-   ZPERF-RESULT udp6_mbps=13.463
-   ZPERF-RESULT tcp6_mbps=6.050
+   ZPERF-RESULT udp4_mbps=13.099
+   ZPERF-RESULT udp4_frag_mbps=20.249
+   ZPERF-RESULT tcp4_mbps=5.970
+   ZPERF-RESULT tcp4_nodelay_mbps=5.876
+   ZPERF-RESULT udp6_mbps=13.310
+   ZPERF-RESULT udp6_frag_mbps=20.059
+   ZPERF-RESULT tcp6_mbps=5.979
+   ZPERF-RESULT tcp6_nodelay_mbps=5.910
    ZPERF-DONE
 
 The IPv4 and IPv6 TCP numbers are close because the default payload is the IPv6
-TCP MSS; see the MSS caveat under `Implementation notes / gotchas`_.
+TCP MSS; see the MSS caveat under `Implementation notes / gotchas`_. The
+``*_frag`` (fragmented) UDP runs report a *higher* number than the baseline UDP
+runs because the larger datagram amortizes the fixed per-datagram overhead over
+more payload, even after accounting for the fragmentation work.
 
 Run through twister
 ===================
