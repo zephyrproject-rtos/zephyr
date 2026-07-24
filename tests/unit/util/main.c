@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <zephyr/ztest.h>
+#include <zephyr/sys/bit_rev.h>
 #include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_utf8.h>
@@ -1001,6 +1002,72 @@ ZTEST(util, test_sys_count_bits)
 
 	zassert_equal(sys_count_bits(u8_arr, sizeof(u8_arr)), 128);
 	zassert_equal(sys_count_bits(&u8_arr[1], sizeof(u8_arr) - sizeof(u8_arr[0])), 124);
+}
+
+ZTEST(util, test_sys_bit_rev32)
+{
+	static const struct {
+		uint32_t input;
+		uint32_t expected;
+	} cases[] = {
+		{ 0x00000000U, 0x00000000U },
+		{ 0x00000001U, 0x80000000U },
+		{ 0x80000000U, 0x00000001U },
+		{ 0xAAAAAAAAU, 0x55555555U },
+		{ 0x12345678U, 0x1E6A2C48U },
+		{ 0x0F0F00FFU, 0xFF00F0F0U },
+	};
+
+	for (size_t i = 0U; i < ARRAY_SIZE(cases); i++) {
+		zassert_equal(sys_bit_rev32(cases[i].input), cases[i].expected,
+			      "Unexpected 32-bit reversal at index %zu", i);
+		zassert_equal(sys_bit_rev32(cases[i].expected), cases[i].input,
+			      "32-bit reversal should be symmetric at index %zu", i);
+	}
+}
+
+ZTEST(util, test_sys_bit_rev16)
+{
+	static const struct {
+		uint16_t input;
+		uint16_t expected;
+	} cases[] = {
+		{ 0x0000U, 0x0000U },
+		{ 0x0001U, 0x8000U },
+		{ 0x8000U, 0x0001U },
+		{ 0x55AAU, 0x55AAU },
+		{ 0x1234U, 0x2C48U },
+		{ 0x00F1U, 0x8F00U },
+	};
+
+	for (size_t i = 0U; i < ARRAY_SIZE(cases); i++) {
+		zassert_equal(sys_bit_rev16(cases[i].input), cases[i].expected,
+			      "Unexpected 16-bit reversal at index %zu", i);
+		zassert_equal(sys_bit_rev16(cases[i].expected), cases[i].input,
+			      "16-bit reversal should be symmetric at index %zu", i);
+	}
+}
+
+ZTEST(util, test_sys_bit_rev8)
+{
+	static const struct {
+		uint8_t input;
+		uint8_t expected;
+	} cases[] = {
+		{ 0x00U, 0x00U },
+		{ 0x01U, 0x80U },
+		{ 0x80U, 0x01U },
+		{ 0x55U, 0xAAU },
+		{ 0x3CU, 0x3CU },
+		{ 0x96U, 0x69U },
+	};
+
+	for (size_t i = 0U; i < ARRAY_SIZE(cases); i++) {
+		zassert_equal(sys_bit_rev8(cases[i].input), cases[i].expected,
+			      "Unexpected 8-bit reversal at index %zu", i);
+		zassert_equal(sys_bit_rev8(cases[i].expected), cases[i].input,
+			      "8-bit reversal should be symmetric at index %zu", i);
+	}
 }
 
 ZTEST(util, test_CONCAT)

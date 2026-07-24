@@ -15,6 +15,7 @@
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_DWMAC_PRIV_H_
 
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/sys/device_mmio.h>
 
 /*
@@ -135,6 +136,10 @@ struct dwmac_priv {
 
 	struct k_fifo tx_queue;
 
+#ifdef CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_HASH
+	uint8_t hash_index_cnt[64];
+#endif
+
 	K_KERNEL_STACK_MEMBER(rx_refill_thread_stack, RX_REFILL_STACK_SIZE);
 	struct k_thread rx_refill_thread;
 
@@ -155,6 +160,7 @@ struct dwmac_priv {
 int dwmac_probe(const struct device *dev);
 int dwmac_bus_init(const struct device *dev);
 int dwmac_platform_init(const struct device *dev);
+void dwmac_setup_multicast_filter(const struct device *dev, const struct ethernet_filter *filter);
 void dwmac_isr(const struct device *ddev);
 extern const struct ethernet_api dwmac_api;
 
@@ -1283,6 +1289,8 @@ extern const struct ethernet_api dwmac_api;
 /* GMAC register map */
 #define DWMAC_MACCR      0x0000
 #define DWMAC_MACFFR     0x0004
+#define DWMAC_MACHTHR    0x0008
+#define DWMAC_MACHTLR    0x000C
 #define DWMAC_MACVERR    0x0020
 #define DWMAC_MACA0HR    0x0040
 #define DWMAC_MACA0LR    0x0044
@@ -1308,6 +1316,7 @@ extern const struct ethernet_api dwmac_api;
 
 /* MAC frame filter bits */
 #define DWMAC_MACFFR_PM    BIT(0)
+#define DWMAC_MACFFR_HM    BIT(2)
 #define DWMAC_MACFFR_PAM   BIT(4)
 
 /* DMA status bits */

@@ -6,6 +6,11 @@ zephyr_library_sources_ifdef(CONFIG_ETH_DWC_ETHER_1000_CORE eth_dwc_ether_1000_c
 zephyr_library_sources_ifdef(CONFIG_ETH_DWC_ETHER_QOS_CORE eth_dwc_ether_qos_core.c)
 # zephyr-keep-sorted-stop
 
+# Common parts shared between cores
+# zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_HASH eth_dwc_ether_multicast_filter_hash.c)
+# zephyr-keep-sorted-stop
+
 # Platform specific drivers
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ETH_DWMAC_MMU eth_dwmac_mmu.c)
