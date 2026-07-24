@@ -6,15 +6,41 @@
 /dts-v1/;
 
 #include <ti/mspm33c/mspm33c321a.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	model = "TI LP_MSPM33C321A/MSPM33C321A";
 	compatible = "ti,lp-mspm33c321a";
 
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+	};
+
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flash_controller;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpioc 26 GPIO_ACTIVE_HIGH>;
+			label = "Red LED";
+		};
+
+		led1: led_1 {
+			gpios = <&gpioc 27 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+
+		led2: led_2 {
+			gpios = <&gpioa 2 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
 	};
 };
 
@@ -23,5 +49,9 @@
 };
 
 &sram0 {
+	status = "okay";
+};
+
+&pinctrl {
 	status = "okay";
 };
