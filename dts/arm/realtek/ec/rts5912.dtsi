@@ -453,6 +453,33 @@
 			status = "disabled";
 		};
 
+		tach1: tach@4000fd40 {
+			compatible = "realtek,rts5912-tach";
+			reg = <0x4000fd40 0x40>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH1_CLKPWR>;
+			clock-names = "tacho";
+			interrupts = <193 0>;
+			status = "disabled";
+		};
+
+		tach2: tach@4000fd80 {
+			compatible = "realtek,rts5912-tach";
+			reg = <0x4000fd80 0x40>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH2_CLKPWR>;
+			clock-names = "tacho";
+			interrupts = <194 0>;
+			status = "disabled";
+		};
+
+		tach3: tach@4000fdc0 {
+			compatible = "realtek,rts5912-tach";
+			reg = <0x4000fdc0 0x40>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH3_CLKPWR>;
+			clock-names = "tacho";
+			interrupts = <195 0>;
+			status = "disabled";
+		};
+
 		pwm0: pwm@4000f000 {
 			compatible = "realtek,rts5912-pwm";
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM0_CLKPWR>;
