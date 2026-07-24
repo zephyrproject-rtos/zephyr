@@ -56,8 +56,8 @@
 };
 
 &sdhc0 {
-	interrupts = <14 1>, <15 1>, <16 1>;
-	interrupt-names = "accs", "card", "dma-req";
+	interrupts = <14 1>, <15 1>, <16 1>, <19 1>;
+	interrupt-names = "accs", "card", "dma-req", "sdio-int";
 };
 
 &usbfs {

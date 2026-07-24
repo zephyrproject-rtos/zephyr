@@ -122,4 +122,41 @@
 			drive-strength = "high";
 		};
 	};
+
+	sdhc0_default: sdhc0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 6)>, /* SDCD */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 7)>, /* SDCMD */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 4)>, /* SDDATA0 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 2)>, /* SDDATA1 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 1)>, /* SDDATA2 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 0)>, /* SDDATA3 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 5)>; /* SDWP */
+			drive-strength = "high";
+		};
+
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 3, 8)>; /* SDCLK */
+			drive-strength = "highspeed-high";
+		};
+	};
+
+	sdhc1_default: sdhc1_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 2, 5)>, /* SDCD */
+				<RA_PSEL(RA_PSEL_SDHI, 2, 2)>, /* SDCMD */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 13)>, /* SDDATA0 */
+				<RA_PSEL(RA_PSEL_SDHI, 3, 14)>, /* SDDATA1 */
+				<RA_PSEL(RA_PSEL_SDHI, 4, 4)>, /* SDDATA2 */
+				<RA_PSEL(RA_PSEL_SDHI, 8, 11)>, /* SDDATA3 */
+				<RA_PSEL(RA_PSEL_SDHI, 2, 4)>; /* SDWP */
+			drive-strength = "high";
+		};
+
+		group2 {
+			psels = <RA_PSEL(RA_PSEL_SDHI, 2, 3)>; /* SDCLK */
+			drive-strength = "highspeed-high";
+		};
+	};
+
 };

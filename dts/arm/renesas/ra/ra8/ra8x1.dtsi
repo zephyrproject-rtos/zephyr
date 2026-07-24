@@ -958,8 +958,8 @@
 			max-bus-freq = <DT_FREQ_M(52)>;
 			clocks = <&pclkb MSTPC 12>;
 			reg = <0x40252000 0x0400>;
-			interrupt-names = "accs", "card", "dma-req";
-			interrupts = <57 12>, <58 12>, <59 12>;
+			interrupt-names = "accs", "card", "dma-req", "sdio-int";
+			interrupts = <57 12>, <58 12>, <59 12>, <60 12>;
 			status = "disabled";
 		};
 
