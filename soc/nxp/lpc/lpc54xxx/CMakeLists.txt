@@ -6,7 +6,9 @@
 zephyr_library()
 
 zephyr_library_sources(soc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_RESET_HOOK gcc/startup_LPC54114_cm4.S)
+if(CONFIG_SOC_RESET_HOOK AND CONFIG_SOC_LPC54114)
+  zephyr_library_sources(gcc/startup_LPC54114_cm4.S)
+endif()
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
