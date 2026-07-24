@@ -17,8 +17,6 @@ tests:
     integration_platforms:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpuapp
-    extra_args:
-      - CONFIG_IPC_TEST_SKIP_CORE_RESET=y
   ipc.ipc_sessions.nrf5340bsim_cpuapp_no_unbound_cpunet:
     platform_allow:
       - nrf5340bsim/nrf5340/cpuapp
@@ -50,8 +48,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - FILE_SUFFIX=cpuppr
-      - ipc_sessions_SNIPPET=nordic-ppr
-      - CONFIG_IPC_TEST_SKIP_CORE_RESET=y
+      - ipc_sessions_SNIPPET=nordic-ppr-xip
   ipc.ipc_sessions.nrf54h20dk_cpuapp_no_unbound_cpuppr:
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
@@ -59,7 +56,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - FILE_SUFFIX=cpuppr
-      - ipc_sessions_SNIPPET=nordic-ppr
+      - ipc_sessions_SNIPPET=nordic-ppr-xip
       - CONFIG_IPC_TEST_SKIP_UNBOUND=y
       - CONFIG_IPC_SERVICE_BACKEND_ICMSG_V1=y
   ipc.ipc_sessions.nrf54h20dk_cpuapp_cpuppr_no_unbound:
@@ -69,7 +66,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - FILE_SUFFIX=cpuppr
-      - ipc_sessions_SNIPPET=nordic-ppr
+      - ipc_sessions_SNIPPET=nordic-ppr-xip
       - CONFIG_IPC_TEST_SKIP_UNBOUND=y
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICMSG_V1=y
   ipc.ipc_sessions.max32:
