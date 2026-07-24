@@ -990,7 +990,16 @@ __syscall uint32_t counter_us_to_ticks(const struct device *dev, uint64_t us);
 
 static inline uint32_t z_impl_counter_us_to_ticks(const struct device *dev, uint64_t us)
 {
-	uint64_t ticks = (us * z_counter_get_frequency(dev)) / USEC_PER_SEC;
+	uint64_t freq = z_counter_get_frequency(dev);
+	uint64_t whole = us / USEC_PER_SEC;
+	uint64_t ticks;
+
+	/* Saturate early: whole * freq alone can wrap the uint64_t math below. */
+	if ((freq != 0U) && (whole > (uint64_t)UINT32_MAX / freq)) {
+		return UINT32_MAX;
+	}
+
+	ticks = whole * freq + ((us % USEC_PER_SEC) * freq) / USEC_PER_SEC;
 
 	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : ticks;
 }
@@ -1056,7 +1065,16 @@ __syscall uint32_t counter_ns_to_ticks(const struct device *dev, uint64_t ns);
 
 static inline uint32_t z_impl_counter_ns_to_ticks(const struct device *dev, uint64_t ns)
 {
-	uint64_t ticks = (ns * z_counter_get_frequency(dev)) / NSEC_PER_SEC;
+	uint64_t freq = z_counter_get_frequency(dev);
+	uint64_t whole = ns / NSEC_PER_SEC;
+	uint64_t ticks;
+
+	/* Saturate early: whole * freq alone can wrap the uint64_t math below. */
+	if ((freq != 0U) && (whole > (uint64_t)UINT32_MAX / freq)) {
+		return UINT32_MAX;
+	}
+
+	ticks = whole * freq + ((ns % NSEC_PER_SEC) * freq) / NSEC_PER_SEC;
 
 	return (ticks > (uint64_t)UINT32_MAX) ? UINT32_MAX : ticks;
 }
