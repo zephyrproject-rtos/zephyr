@@ -127,7 +127,7 @@ enum crc_type {
  * and polynomial used in addition to the initial value. This is O(n*8) where n
  * is the length of the buffer provided. No reflection is performed.
  *
- * @note If you are planning to use a CRC based on poly 0x1012 the functions
+ * @note If you are planning to use a CRC based on poly 0x1021 the functions
  * crc16_itu_t() is faster and thus recommended over this one.
  *
  * @param poly The polynomial to use omitting the leading x^16
@@ -148,7 +148,7 @@ uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len);
  * and polynomial used in addition to the initial value. This is O(n*8) where n
  * is the length of the buffer provided. Both input and output are reflected.
  *
- * @note If you are planning to use a CRC based on poly 0x1012 the function
+ * @note If you are planning to use a CRC based on poly 0x1021 the function
  * crc16_ccitt() is faster and thus recommended over this one.
  *
  * The following checksums can, among others, be calculated by this function,

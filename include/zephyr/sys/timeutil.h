@@ -329,7 +329,7 @@ int timeutil_sync_ref_from_local(const struct timeutil_sync_state *tsp,
  * @retval 1 if successful with a skew not equal to 1
  * @retval -EINVAL
  *   * the time synchronization state is not adequately initialized
- *   * @p refp is null
+ *   * @p localp is null
  */
 int timeutil_sync_local_from_ref(const struct timeutil_sync_state *tsp,
 				 uint64_t ref, int64_t *localp);

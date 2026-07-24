@@ -66,7 +66,7 @@ extern "C" {
  * will return '_<SECNAME>_list_end'.
  *
  * @param[in]  secname type name of iterable section.  For 'struct foobar' this
- * would be TYPE_SECTION_START(foobar)
+ * would be TYPE_SECTION_END(foobar)
  */
 #define TYPE_SECTION_END(secname) _CONCAT(_##secname, _list_end)
 

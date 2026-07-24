@@ -261,7 +261,7 @@ static inline bool sys_heap_validate(struct sys_heap *heap)
  * @param alloc_fn Callback to perform an allocation.  Passes back the @a
  *              arg parameter as a context handle.
  * @param free_fn Callback to perform a free of a pointer returned from
- *             @a alloc.  Passes back the @a arg parameter as a
+ *             @a alloc_fn.  Passes back the @a arg parameter as a
  *             context handle.
  * @param arg Context handle to pass back to the callbacks
  * @param total_bytes Size of the byte array the heap was initialized in
