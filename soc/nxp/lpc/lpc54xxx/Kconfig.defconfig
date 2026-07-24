@@ -10,6 +10,7 @@ config GPIO
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
+	default 57 if SOC_LPC54628
 	default 40
 
 endif # SOC_SERIES_LPC54XXX

@@ -22,8 +22,15 @@ config SOC_LPC54114_M0
 	select CPU_CORTEX_M_HAS_VTOR
 	select CLOCK_CONTROL
 
+config SOC_LPC54628
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select CLOCK_CONTROL
+
 config MCUX_CORE_SUFFIX
-	default "_cm4" if SOC_LPC54114_M4
+	default "_cm4" if SOC_LPC54114_M4 || SOC_LPC54628
 	default "_cm0plus" if SOC_LPC54114_M0
 
 if SOC_SERIES_LPC54XXX

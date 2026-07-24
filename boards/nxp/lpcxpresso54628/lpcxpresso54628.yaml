@@ -1,0 +1,19 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: lpcxpresso54628
+name: NXP LPCXpresso54628
+type: mcu
+arch: arm
+ram: 160
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+vendor: nxp
