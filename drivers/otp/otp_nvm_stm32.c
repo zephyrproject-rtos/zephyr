@@ -128,7 +128,7 @@ static DEVICE_API(otp, otp_stm32_nvm_api) = {
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &_cfg,					\
-			      PRE_KERNEL_1, CONFIG_OTP_INIT_PRIORITY, &otp_stm32_nvm_api);
+			      POST_KERNEL, CONFIG_OTP_INIT_PRIORITY, &otp_stm32_nvm_api);
 
 #define OTP_STM32_NVM_INIT(inst)								\
 	OTP_STM32_NVM_INIT_INNER(inst, CONCAT(otp_stm32_nvm_cfg, inst))
