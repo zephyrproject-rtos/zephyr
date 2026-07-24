@@ -275,19 +275,24 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 		case PDU_METER_VALUES:
 		{
 			union ocpp_io_value io;
-			sys_snode_t *node;
+			sys_snode_t *node, *next;
 			struct ocpp_session *lsh;
 
-			/* list of all active session */
+			/* The send drops ilock and can block, so the session is
+			 * pinned with is_busy to stop ocpp_session_close() from
+			 * freeing it mid-walk. Concurrent close of any other session
+			 * cannot leave the walk on a freed node.
+			 */
 			k_mutex_lock(&ctx->ilock, K_FOREVER);
-			SYS_SLIST_FOR_EACH_NODE(&ctx->slist, node) {
+			node = sys_slist_peek_head(&ctx->slist);
+			while (node != NULL) {
 				lsh = to_session(node);
-				if (lsh == sh ||
-				    !lsh->is_active) {
+				if (lsh == sh || !lsh->is_active) {
+					node = sys_slist_peek_next(node);
 					continue;
 				}
 
-				k_mutex_lock(&lsh->slock, K_FOREVER);
+				lsh->is_busy = true;
 				k_mutex_unlock(&ctx->ilock);
 				io.meter_val.id_con = lsh->idcon;
 				for (i = 0; i < OCPP_OMM_END; i++) {
@@ -301,7 +306,13 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 							  io.meter_val.val);
 				}
 				k_mutex_lock(&ctx->ilock, K_FOREVER);
-				k_mutex_unlock(&lsh->slock);
+				next = sys_slist_peek_next(node);
+				lsh->is_busy = false;
+				if (lsh->is_closing) {
+					sys_slist_find_and_remove(&ctx->slist, node);
+					k_free(lsh);
+				}
+				node = next;
 			}
 			k_mutex_unlock(&ctx->ilock);
 			break;
@@ -703,7 +714,6 @@ int ocpp_session_open(ocpp_session_handle_t *hndl)
 	sh->idcon = INVALID_CONN_ID;
 	sh->idtxn = INVALID_TXN_ID;
 	sh->ctx = gctx;
-	k_mutex_init(&sh->slock);
 
 	k_mutex_lock(&gctx->ilock, K_FOREVER);
 	sys_slist_append(&gctx->slist, &sh->node);
@@ -724,11 +734,15 @@ void ocpp_session_close(ocpp_session_handle_t hndl)
 	}
 
 	k_mutex_lock(&gctx->ilock, K_FOREVER);
+	if (sh->is_busy) {
+		sh->is_closing = true;
+		k_mutex_unlock(&gctx->ilock);
+		return;
+	}
 	is_removed = sys_slist_find_and_remove(&gctx->slist, &sh->node);
 	k_mutex_unlock(&gctx->ilock);
 
 	if (is_removed) {
-		k_mutex_lock(&sh->slock, K_FOREVER);
 		k_free(sh);
 	}
 }
@@ -778,16 +792,17 @@ int ocpp_init(struct ocpp_cp_info *cpi,
 	val.ival = cpi->num_of_con;
 	ocpp_set_cfg_val(CFG_NO_OF_CONNECTORS, &val);
 
-	ret = ocpp_upstream_init(ctx, csi);
-	if (ret < 0) {
-		LOG_ERR("ocpp upstream init fail %d", ret);
-		goto out;
-	}
-
 	/* free after success of bootnotification to CS */
 	cp = (struct ocpp_cp_info *)k_calloc(1, sizeof(struct ocpp_cp_info));
 	if (cp == NULL) {
 		ret = -ENOMEM;
+		goto out;
+	}
+
+	ret = ocpp_upstream_init(ctx, csi);
+	if (ret < 0) {
+		LOG_ERR("ocpp upstream init fail %d", ret);
+		k_free(cp);
 		goto out;
 	}
 
@@ -803,6 +818,7 @@ int ocpp_init(struct ocpp_cp_info *cpi,
 	return 0;
 
 out:
+	gctx = NULL;
 	k_free(ctx);
 	return ret;
 }
