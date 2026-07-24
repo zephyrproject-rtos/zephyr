@@ -41,6 +41,7 @@
 #define IRQ_NUM_SP_GPIO    12 /**< Special-purpose GPIO interrupt */
 #define IRQ_NUM_UART0      15 /**< UART0 interrupt */
 #define IRQ_NUM_UART1      16 /**< UART1 interrupt */
+#define IRQ_NUM_WATCHDOG   18 /**< WATCHDOG interrupt */
 #define IRQ_NUM_SPI_SLAVE  23 /**< SPI slave interrupt */
 
 /** @} */
