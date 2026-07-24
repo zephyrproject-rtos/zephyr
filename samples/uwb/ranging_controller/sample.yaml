@@ -1,0 +1,17 @@
+sample:
+  name: UWB Ranging Controller
+  description: Demonstrates UWB DS-TWR Controller ranging
+tests:
+  sample.uwb.demo_ranging_controlee.nxp_sr250_shield:
+    build_only: true
+    platform_allow:
+      - frdm_rw612
+      - frdm_mcxw72
+    tags: uwb
+    depends_on:
+      - arduino_i2c
+      - arduino_spi
+    extra_args: SHIELD=nxp_sr250
+    integration_platforms:
+      - frdm_rw612
+      - frdm_mcxw72

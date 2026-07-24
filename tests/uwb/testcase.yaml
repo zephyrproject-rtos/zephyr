@@ -1,0 +1,18 @@
+tests:
+	uwb.api.native_sim:
+		platform_allow:
+			- native_sim
+			- native_sim/native/64
+		tags:
+			- uwb
+			- native_sim
+		timeout: 60
+		harness: ztest
+		harness_config:
+			type: one_line
+			regex:
+				- "PASS - test_device_reset"
+				- "PASS - test_get_device_capabilities"
+				- "PASS - test_get_device_info"
+				- "PASS - test_get_device_state"
+				- "PASS - test_session_state"

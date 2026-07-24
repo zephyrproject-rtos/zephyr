@@ -1,0 +1,18 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if UWB
+
+module = UWB
+module-str = uwb
+source "subsys/logging/Kconfig.template.log_config"
+
+config UWB_TRANSPORT_NATIVE_SIM
+	bool "Native simulator UWB transport backend"
+	default y if BOARD_NATIVE_SIM
+	help
+	  Selects the pipe-based native_sim UWB transport backend.
+	  A POSIX thread simulates the UWB device and responds to
+	  standard UCI commands.
+
+endif # UWB
