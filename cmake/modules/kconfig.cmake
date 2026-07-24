@@ -345,9 +345,10 @@ if(KCONFIG_VARIANT_SOURCE)
 endif()
 
 # Calculate a checksum of merge_config_files to determine if we need
-# to re-generate .config
+# to re-generate .config. DTS is also checksummed since it can affect
+# configurations via $(dt...) functions.
 set(merge_config_files_checksum "")
-foreach(f ${merge_config_files})
+foreach(f ${merge_config_files};${ZEPHYR_DTS})
   file(MD5 ${f} checksum)
   set(merge_config_files_checksum "${merge_config_files_checksum}${checksum}")
 endforeach()
