@@ -200,4 +200,12 @@
 			bias-pull-up;
 		};
 	};
+
+	pinmux_flexio_pwm: pinmux_flexio_pwm {
+		group0 {
+			pinmux = <FLEXIO0_D14_P2_6>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
 };

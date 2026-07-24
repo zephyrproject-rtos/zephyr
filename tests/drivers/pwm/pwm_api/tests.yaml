@@ -20,6 +20,7 @@ tests:
       - platform:mimxrt1180_evk/mimxrt1189/cm7:DTC_OVERLAY_FILE="boards/mimxrt1180_evk_flexio_pwm.overlay"
       - platform:frdm_mcxa366/mcxa366:DTC_OVERLAY_FILE="boards/frdm_mcxa366_flexio_pwm.overlay"
       - platform:frdm_mcxa266/mcxa266:DTC_OVERLAY_FILE="boards/frdm_mcxa266_flexio_pwm.overlay"
+      - platform:frdm_mcxa577:DTC_OVERLAY_FILE="boards/frdm_mcxa577_flexio_pwm.overlay"
       - platform:frdm_mcxe247/mcxe247:DTC_OVERLAY_FILE="boards/frdm_mcxe247_flexio_pwm.overlay"
       - platform:frdm_imxrt1186/mimxrt1186/cm33:DTC_OVERLAY_FILE="boards/frdm_imxrt1186_flexio_pwm.overlay"
       - platform:frdm_imxrt1186/mimxrt1186/cm7:DTC_OVERLAY_FILE="boards/frdm_imxrt1186_flexio_pwm.overlay"
@@ -31,6 +32,7 @@ tests:
       - mimxrt1180_evk/mimxrt1189/cm7
       - frdm_mcxa366/mcxa366
       - frdm_mcxa266/mcxa266
+      - frdm_mcxa577
       - frdm_mcxe247
       - frdm_imxrt1186/mimxrt1186/cm33
       - frdm_imxrt1186/mimxrt1186/cm7
