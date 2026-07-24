@@ -1,0 +1,63 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT
+	int "L2CAP server TX data pool count"
+	default BT_L2CAP_MAX_WINDOW_SIZE if BT_L2CAP_RET_FC
+	default 1
+	range BT_L2CAP_MAX_WINDOW_SIZE 255 if BT_L2CAP_RET_FC
+	range 1 255
+	help
+	  The number of buffers in the L2CAP server TX data pool.
+
+config TEST_L2CAP_SERVER_RX_DATA_POOL_COUNT
+	int "L2CAP server RX data pool count"
+	depends on BT_CLASSIC
+	default BT_L2CAP_MAX_WINDOW_SIZE if BT_L2CAP_RET_FC
+	default 1
+	range BT_L2CAP_MAX_WINDOW_SIZE 255 if BT_L2CAP_RET_FC
+	range 1 255
+	help
+	  The number of buffers in the L2CAP server RX data pool.
+
+config TEST_L2CAP_SERVER_MTU
+	int "L2CAP server MTU"
+	depends on BT_CLASSIC
+	default 672
+	range 23 65535
+	help
+	  The maximum transmission unit (MTU) size for the L2CAP server.
+
+config TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT
+	int "L2CAP client TX data pool count"
+	default BT_L2CAP_MAX_WINDOW_SIZE if BT_L2CAP_RET_FC
+	default 1
+	range BT_L2CAP_MAX_WINDOW_SIZE 255 if BT_L2CAP_RET_FC
+	range 1 255
+	help
+	  The number of buffers in the L2CAP client TX data pool.
+
+config TEST_L2CAP_CLIENT_RX_DATA_POOL_COUNT
+	int "L2CAP client RX data pool count"
+	depends on BT_CLASSIC
+	default BT_L2CAP_MAX_WINDOW_SIZE if BT_L2CAP_RET_FC
+	default 1
+	range BT_L2CAP_MAX_WINDOW_SIZE 255 if BT_L2CAP_RET_FC
+	range 1 255
+	help
+	  The number of buffers in the L2CAP client RX data pool.
+
+config TEST_L2CAP_CLIENT_MTU
+	int "L2CAP client MTU"
+	depends on BT_CLASSIC
+	default 672
+	range 23 65535
+	help
+	  The maximum transmission unit (MTU) size for the L2CAP client.
+
+module = TEST_CLASSIC_L2CAP_SIM
+module-str = test_classic_l2cap_sim
+source "subsys/logging/Kconfig.template.log_config"
