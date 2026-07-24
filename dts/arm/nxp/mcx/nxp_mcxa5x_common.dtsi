@@ -635,6 +635,12 @@
 			compatible = "nxp,mipi-dbi-flexio-lcdif";
 			status = "disabled";
 		};
+
+		flexio0_pwm: flexio0-pwm {
+			compatible = "nxp,flexio-pwm";
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 
 	rtc: rtc@ee000 {
