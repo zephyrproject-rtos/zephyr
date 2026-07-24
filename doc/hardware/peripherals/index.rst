@@ -55,6 +55,7 @@ Peripherals
    peci.rst
    ps2.rst
    psi5.rst
+   pulse_io.rst
    pwm.rst
    rtc.rst
    regulators.rst

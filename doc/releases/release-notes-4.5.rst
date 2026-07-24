@@ -256,6 +256,12 @@ New APIs and options
   * Add :c:func:`net_dhcpv4_set_reboot_hint` to seed the DHCPv4 client with a
     previously leased address for INIT-REBOOT.
 
+* Pulse IO
+
+  * Added the :ref:`Pulse IO <pulse_io_api>` subsystem, a vendor-neutral
+    API for hardware that generates and captures timed digital edges on a
+    GPIO line.
+
 * Ring buffer
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
