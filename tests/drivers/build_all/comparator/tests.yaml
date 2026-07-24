@@ -142,3 +142,10 @@ tests:
       - kit_pse84_eval/pse846gps2dbzc4a/m55
       - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_pse84_ai/pse846gps2dbzc4a/m55
+  drivers.comparator.build.infineon_hppass_csg.standalone:
+    extra_args:
+      - DTC_OVERLAY_FILE="infineon_hppass_csg/standalone.overlay"
+    extra_configs:
+      - CONFIG_MFD=y
+    platform_allow:
+      - kit_psc3m5_evk
