@@ -243,16 +243,23 @@ static struct k_spinlock xtensa_counter_lock;
 #ifdef CONFIG_USERSPACE
 
 /**
- * @brief Number of ASIDs has been allocated.
+ * @brief ASID allocation and recycling.
  *
- * Each domain has its own ASID. ASID can go through 1 (kernel) to 255.
- * When a TLB entry matches, the hw will check the ASID in the entry and finds
- * the correspondent position in the RASID register. This position will then be
- * compared with the current ring (CRING) to check the permission.
+ * Each domain has its own ASID. The PTEVADDR self-reference for ASID 'a'
+ * occupies L1 position (CONFIG_XTENSA_MMU_PTEVADDR >> 22) + a, which maps
+ * a 4MB virtual address range.  ASIDs whose PTEVADDR range overlaps with
+ * actual memory-mapped regions (uncached memory at L1 position 256 =
+ * VA 0x40000000) must not be used.  This limits the maximum usable ASID.
  *
- * This keeps track of how many ASIDs have been allocated for memory domains.
+ * Freed ASIDs are returned to a pool for reuse.  TLB invalidation is
+ * performed when recycling to avoid stale autorefill entries.
  */
+#define XTENSA_MMU_MAX_USER_ASID \
+	(256u - (CONFIG_XTENSA_MMU_PTEVADDR >> 22) - 1u)
+
 static uint8_t asid_count = 3;
+static uint8_t asid_free_pool[XTENSA_MMU_MAX_USER_ASID];
+static uint8_t asid_free_count;
 
 /** Linked list with all active and initialized memory domains. */
 static sys_slist_t xtensa_domain_list;
@@ -1289,12 +1296,6 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	k_spinlock_key_t key;
 	int ret;
 
-	/*
-	 * For now, lets just assert if we have reached the maximum number
-	 * of asid we assert.
-	 */
-	__ASSERT(asid_count < (XTENSA_MMU_SHARED_ASID), "Reached maximum of ASID available");
-
 	key = k_spin_lock(&xtensa_mmu_lock);
 	/* If this is the default domain, we don't need
 	 * to create a new set of page tables. We can just
@@ -1316,7 +1317,45 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	}
 
 	domain->arch.ptables = ptables;
-	domain->arch.asid = ++asid_count;
+
+	/*
+	 * Allocate an ASID: reuse a previously freed one if available,
+	 * otherwise allocate a fresh one.  Recycled ASIDs require TLB
+	 * invalidation to prevent stale autorefill entries from the
+	 * previous domain that used this ASID.
+	 */
+	if (asid_free_count > 0) {
+		domain->arch.asid = asid_free_pool[--asid_free_count];
+		xtensa_tlb_autorefill_invalidate();
+		xtensa_mmu_tlb_ipi();
+	} else {
+		__ASSERT(asid_count < XTENSA_MMU_MAX_USER_ASID,
+			 "No ASIDs available (max %u)",
+			 XTENSA_MMU_MAX_USER_ASID);
+		domain->arch.asid = ++asid_count;
+	}
+
+	/*
+	 * compute_domain_regs will place the PTEVADDR self-reference at
+	 * L1[128 + asid]. If dup_l1_table copied a valid L2 table entry
+	 * at that position (from the kernel's mappings), we must release
+	 * it before the self-ref overwrites it, otherwise the L2 table's
+	 * reference counter leaks.
+	 */
+	{
+		uint32_t ptevaddr = CONFIG_XTENSA_MMU_PTEVADDR +
+				    domain->arch.asid * 0x400000;
+		uint32_t pte_l1_pos = XTENSA_MMU_L1_POS(ptevaddr);
+
+		if (!is_pte_illegal(ptables[pte_l1_pos])) {
+			uint32_t *l2 = (uint32_t *)PTE_PPN_GET(ptables[pte_l1_pos]);
+
+			K_SPINLOCK(&xtensa_counter_lock) {
+				l2_page_tables_counter_dec(l2);
+			}
+			ptables[pte_l1_pos] = PTE_L1_ILLEGAL;
+		}
+	}
 
 	sys_slist_append(&xtensa_domain_list, &domain->arch.node);
 
@@ -1378,6 +1417,15 @@ int arch_mem_domain_deinit(struct k_mem_domain *domain)
 	atomic_clear_bit(l1_page_tables_track, l1_table_to_track_pos(l1_table));
 
 	domain->arch.ptables = NULL;
+
+	/* Return ASID to the free pool for recycling.
+	 * ASID 3 belongs to the default domain and is never freed.
+	 */
+	if (domain->arch.asid > 3) {
+		__ASSERT(asid_free_count < ARRAY_SIZE(asid_free_pool),
+			 "ASID free pool overflow");
+		asid_free_pool[asid_free_count++] = domain->arch.asid;
+	}
 
 	sys_slist_find_and_remove(&xtensa_domain_list, &domain->arch.node);
 
