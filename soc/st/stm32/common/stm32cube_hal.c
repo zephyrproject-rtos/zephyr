@@ -14,6 +14,45 @@
 
 #include <zephyr/kernel.h>
 #include <soc.h>
+
+#if defined(CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE)
+static uint32_t stm32cube_hal_get_tick_dwt(void)
+{
+	static uint32_t base_tick_ms;
+	static uint32_t base_cyccnt;
+	static bool initialized;
+	const uint32_t cycles_per_ms = SystemCoreClock / 1000U;
+	uint32_t now;
+
+	if (cycles_per_ms == 0U) {
+		return k_uptime_get_32();
+	}
+
+	/* Enable the trace block so the DWT cycle counter can run. */
+	if ((CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk) == 0U) {
+		CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	}
+
+	/* Enable the cycle counter. */
+	if ((DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk) == 0U) {
+		DWT->CYCCNT = 0U;
+		DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+	}
+
+	now = DWT->CYCCNT;
+
+	/* Capture the uptime/cycle baseline once. */
+	if (!initialized) {
+		base_tick_ms = k_uptime_get_32();
+		base_cyccnt = now;
+		initialized = true;
+	}
+
+	/* Convert elapsed cycles back to milliseconds. */
+	return base_tick_ms + ((now - base_cyccnt) / cycles_per_ms);
+}
+#endif /* CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE */
+
 /**
  * @brief This function configures the source of stm32cube time base.
  *        Cube HAL expects a 1ms tick which matches with k_uptime_get_32.
@@ -22,7 +61,11 @@
  */
 uint32_t HAL_GetTick(void)
 {
+#if defined(CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE)
+	return stm32cube_hal_get_tick_dwt();
+#else
 	return k_uptime_get_32();
+#endif /* CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE */
 }
 
 /**
