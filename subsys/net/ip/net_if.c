@@ -5979,6 +5979,11 @@ static bool need_calc_checksum(struct net_if *iface, enum ethernet_hw_caps caps,
 	struct ethernet_config config;
 	enum ethernet_config_type config_type;
 
+	if (IS_ENABLED(CONFIG_NET_LOOPBACK_SKIP_CHECKSUM) &&
+	    net_if_flag_is_set(iface, NET_IF_LOOPBACK)) {
+		return false;
+	}
+
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		/* For VLANs, figure out the main Ethernet interface and
 		 * get the offloading capabilities from it.
