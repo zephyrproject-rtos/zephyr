@@ -10,6 +10,9 @@
 #include <zephyr/sys/util.h>
 
 #ifdef __CCAC__
+BUILD_ASSERT(IS_ENABLED(CONFIG_MULTITHREADING),
+	     "Thread local storage requires multithreading with ARC MWDT.");
+
 extern char _arcmwdt_tls_start[];
 extern char _arcmwdt_tls_size[];
 
@@ -51,6 +54,7 @@ size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 	stack_ptr -= z_tls_data_size();
 	z_tls_copy(stack_ptr);
 
+#if defined(CONFIG_MULTITHREADING)
 	/* Skip two pointers due to toolchain */
 	stack_ptr -= sizeof(uintptr_t) * 2;
 
@@ -59,6 +63,9 @@ size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 	 * context switch to point to TLS area.
 	 */
 	new_thread->tls = POINTER_TO_UINT(stack_ptr);
+#else
+	ARG_UNUSED(new_thread);
+#endif /* CONFIG_MULTITHREADING */
 
 	return (z_tls_data_size() + (sizeof(uintptr_t) * 2));
 }
