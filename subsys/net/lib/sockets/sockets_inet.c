@@ -1069,7 +1069,7 @@ static int add_pktinfo(struct net_context *ctx,
 
 		net_ipv4_addr_copy_raw((uint8_t *)&info.ipi_addr, ipv4_hdr->dst);
 		net_ipv4_addr_copy_raw((uint8_t *)&info.ipi_spec_dst,
-				       (uint8_t *)net_sin_ptr(&ctx->local)->sin_addr);
+				       (uint8_t *)&net_sin(&ctx->local)->sin_addr);
 		info.ipi_ifindex = ctx->iface;
 
 		ret = insert_pktinfo(msg, NET_IPPROTO_IP, ZSOCK_IP_PKTINFO,
@@ -3351,7 +3351,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct net_sockaddr *addr,
 	net_socklen_t newlen = 0;
 	int ret;
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == NET_AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.sa_family == NET_AF_INET) {
 		struct net_sockaddr_in addr4 = { 0 };
 
 		if (!net_context_is_local_addr_set(ctx)) {
@@ -3371,7 +3371,7 @@ int zsock_getsockname_ctx(struct net_context *ctx, struct net_sockaddr *addr,
 
 		memcpy(addr, &addr4, MIN(*addrlen, newlen));
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->local.family == NET_AF_INET6) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && ctx->local.sa_family == NET_AF_INET6) {
 		struct net_sockaddr_in6 addr6 = { 0 };
 
 		if (!net_context_is_local_addr_set(ctx)) {
