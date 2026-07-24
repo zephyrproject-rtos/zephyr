@@ -1,0 +1,66 @@
+/*
+ * SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+#include <mem.h>
+#include <wch/qingke-v3c.dtsi>
+
+/ {
+	soc {
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(12)>;
+		};
+
+		flash: flash-controller@40001800 {
+			compatible = "wch,ch5xx-flash-controller";
+			reg = <0x40001800 0x8>;
+			ranges;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				ranges = <0x0 0x00000000 DT_SIZE_K(256)>;
+				reg = <0x00000000 DT_SIZE_K(256)>;
+
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
+		uart0: uart@40003400 {
+			compatible = "wch,ch5xx-uart";
+			reg = <0x40003400 0xf>;
+			interrupt-parent = <&pfic>;
+			interrupts = <27>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@40001018 {
+			compatible = "wch,ch570-pinctrl";
+			reg = <0x40001018 4>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpioa: gpio@40001090 {
+				compatible = "wch,ch5xx-gpio";
+				reg = <0x40001090 0x2c>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <12>;
+				interrupt-parent = <&pfic>;
+				interrupts = <17>;
+				port = "port-a";
+			};
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_K(6400)>;
+};

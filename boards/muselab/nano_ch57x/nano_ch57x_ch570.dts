@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <wch/ch57/ch570d.dtsi>
+#include "nano_ch57x_common.dtsi"
+
+/ {
+	model = "nano_ch57x,ch570";
+	compatible = "muselab,nano_ch57x";
+};

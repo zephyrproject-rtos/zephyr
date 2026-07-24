@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch57/ch570.dtsi>
+
+&gpioa {
+	gpio-reserved-ranges = <4 3>, <8 4>;
+};
