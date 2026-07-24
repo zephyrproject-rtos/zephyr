@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+
+# Enable hardware stack protection
+CONFIG_HW_STACK_PROTECTION=y
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Board Kconfig.defconfig enables USB CDC ACM and should disable USB remote
+# wakeup by default. It needs to be disabled here, because the USB nrfx
+# driver always overwrites option from Kconfig mentioned above with the
+# imply from CONFIG_USB_NRFX.
+CONFIG_USB_DEVICE_REMOTE_WAKEUP=n
+
+# Build UF2 by default, supported by the Adafruit nRF52 Bootloader
+CONFIG_BUILD_OUTPUT_UF2=y
+
+# UF2 Bootloader can use DT offset
+CONFIG_BOARD_HAS_NRF5_BOOTLOADER=n
+CONFIG_USE_DT_CODE_PARTITION=y

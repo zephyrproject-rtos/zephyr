@@ -1,0 +1,127 @@
+/*
+ * Copyright (c) 2026 Icy Electronics
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <vendor/nordic/nrf52820_qdaa.dtsi>
+#include "nrf54l15_discovery_nrf52820-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Icy Electronics nRF54L15 Discovery nRF52820";
+	compatible = "ie,nrf54l15-discovery-nrf52820";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+		zephyr,shell-uart = &cdc_acm_uart1;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button switch 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	dp0 {
+		compatible = "zephyr,swdp-gpio";
+		status = "okay";
+		clk-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		dio-gpios = <&gpio0 1 GPIO_PULL_UP>;
+		reset-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		port-write-cycles = <2>;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		die-temp = &temp;
+		sw0 = &button0;
+		mcuboot-button0 = &button0;
+		watchdog0 = &wdt0;
+	};
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&uicr {
+	gpio-as-nreset;
+};
+
+&gpiote {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&i2c0 {
+	compatible = "nordic,nrf-twi";
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-1 = <&i2c0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uarte";
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Application placed after Nordic MBR.
+		 */
+		mbr_partition: partition@0 {
+			label = "mbr";
+			reg = <0x000000000 DT_SIZE_K(4)>;
+		};
+		code_partition: partition@1000 {
+			label = "app";
+			reg = <0x00001000 DT_SIZE_K(180)>;
+		};
+		storage_partition: partition@2E000 {
+			label = "storage";
+			reg = <0x0002E000 DT_SIZE_K(24)>;
+		};
+		/* UF2 bootloader <0x34000 DT_SIZE_K(40)>
+		 * MBR params page <0x3E000 DT_SIZE_K(4)>
+		 * Bootloader settings page <0x3F000 DT_SIZE_K(4)>
+		 */
+		uf2boot_partition: partition@34000 {
+			label = "uf2boot";
+			read-only;
+			reg = <0x00034000 DT_SIZE_K(48)>;
+		};
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+
+	cdc_acm_uart1: cdc_acm_uart1 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};

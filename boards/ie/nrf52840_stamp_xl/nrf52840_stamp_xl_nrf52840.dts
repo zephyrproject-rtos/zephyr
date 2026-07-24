@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 Icy Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "nrf52840_stamp_xl_nrf52840_common.dts"
+#include <nordic/nrf52840_partition.dtsi>

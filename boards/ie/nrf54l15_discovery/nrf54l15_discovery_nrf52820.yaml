@@ -1,0 +1,17 @@
+identifier: nrf54l15_discovery/nrf52820
+name: nRF54L15-Discovery-nRF52820
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 32
+flash: 256
+supported:
+  - usb_device
+  - usbd
+  - ble
+  - gpio
+  - watchdog
+  - counter
+vendor: ie

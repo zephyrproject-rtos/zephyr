@@ -1,0 +1,21 @@
+identifier: nrf54l15_discovery/nrf54l15/cpuapp
+name: nRF54l15-Discovery-nRF54l15-Application
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+sysbuild: true
+ram: 188
+flash: 324
+supported:
+  - adc
+  - counter
+  - dmic
+  - gpio
+  - i2c
+  - pwm
+  - retained_mem
+  - spi
+  - watchdog
+  - i2s
