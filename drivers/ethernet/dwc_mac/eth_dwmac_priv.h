@@ -313,6 +313,15 @@ extern const struct ethernet_api dwmac_api;
 
 #define MAC_RXQ_CTRL0				0x00a0
 
+#define MAC_RXQ_CTRL7_RXQ0EN			GENMASK(15, 14)
+#define MAC_RXQ_CTRL6_RXQ0EN			GENMASK(13, 12)
+#define MAC_RXQ_CTRL5_RXQ0EN			GENMASK(11, 10)
+#define MAC_RXQ_CTRL4_RXQ0EN			GENMASK(9, 8)
+#define MAC_RXQ_CTRL3_RXQ0EN			GENMASK(7, 6)
+#define MAC_RXQ_CTRL2_RXQ0EN			GENMASK(5, 4)
+#define MAC_RXQ_CTRL1_RXQ0EN			GENMASK(3, 2)
+#define MAC_RXQ_CTRL0_RXQ0EN			GENMASK(1, 0)
+
 /* 17.1.28 */
 
 #define MAC_RXQ_CTRL1				0x00a4
@@ -864,6 +873,12 @@ extern const struct ethernet_api dwmac_api;
 
 #define MTL_TXQn_OPERATION_MODE(n)		(0x0d00 + 0x40 * (n))
 
+#define MTL_TXQn_OPERATION_MODE_TQS		GENMASK(24, 16)
+#define MTL_TXQn_OPERATION_MODE_TTC		GENMASK(6, 4)
+#define MTL_TXQn_OPERATION_MODE_TXQEN		GENMASK(3, 2)
+#define MTL_TXQn_OPERATION_MODE_TSF		BIT(1)
+#define MTL_TXQn_OPERATION_MODE_FTQ		BIT(0)
+
 /* 17.3.2, 17.4.2 */
 
 #define MTL_TXQn_UNDERFLOW(n)			(0x0d04 + 0x40 * (n))
@@ -903,6 +918,16 @@ extern const struct ethernet_api dwmac_api;
 /* 17.3.7, 17.4.11 */
 
 #define MTL_RXQn_OPERATION_MODE(n)		(0x0d30 + 0x40 * (n))
+
+#define MTL_RXQn_OPERATION_MODE_RQS		GENMASK(28, 20)
+#define MTL_RXQn_OPERATION_MODE_RFD		GENMASK(19, 14)
+#define MTL_RXQn_OPERATION_MODE_RFA		GENMASK(13, 8)
+#define MTL_RXQn_OPERATION_MODE_EHFC		BIT(7)
+#define MTL_RXQn_OPERATION_MODE_DIS_TCP_EF	BIT(6)
+#define MTL_RXQn_OPERATION_MODE_RSF		BIT(5)
+#define MTL_RXQn_OPERATION_MODE_FEP		BIT(4)
+#define MTL_RXQn_OPERATION_MODE_FUP		BIT(3)
+#define MTL_RXQn_OPERATION_MODE_RTC		GENMASK(1, 0)
 
 /* 17.3.8, 17.4.12 */
 
