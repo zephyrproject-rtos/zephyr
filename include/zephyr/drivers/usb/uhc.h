@@ -130,12 +130,25 @@ struct uhc_transfer {
 	uint8_t type;
 	/** Maximum packet size */
 	uint16_t mps;
-	/** Interval, used for periodic transfers only */
-	uint16_t interval;
+	/**
+	 * Tick interval converted from the bInterval, used for periodic transfers only.
+	 * For Low Speed and Full Speed interrupt endpoints its equal to bInterval * 8
+	 * For Full Speed isochronous endpoints its equal to 2^(bInterval - 1) * 8
+	 * For High Speed and Super Speed endpoints its equal to 2^(bInterval - 1)
+	 * 1 tick = 125 microseconds
+	 */
+	uint32_t interval;
+	/** Unconverted bInterval, used for periodic transfers only */
+	uint16_t bInterval;
 	/** Start frame, used for periodic transfers only */
-	uint16_t start_frame;
+	uint32_t start_frame;
 	/** Flag marks request buffer is queued */
 	unsigned int queued : 1;
+	/**
+	 * Flag marks if the transfer is currently in the active xfer dlist,
+	 *  which means that it is processed by the UHC driver
+	 */
+	unsigned int active : 1;
 	/** Control stage status, up to the driver to use it or not */
 	unsigned int stage : 2;
 	/**
@@ -143,6 +156,10 @@ struct uhc_transfer {
 	 * This flag is optional and is mainly used for testing.
 	 */
 	unsigned int no_status : 1;
+	/** Expected length of the data that wil be recived (device to host xfers only)*/
+	size_t expected_data_len;
+	/** Length of the data that was already received (device to host xfers only)*/
+	size_t recived_data_len;
 	/** Pointer to USB device */
 	struct usb_device *udev;
 	/** Pointer to transfer completion callback (opaque for the UHC) */
@@ -252,6 +269,10 @@ struct uhc_data {
 	sys_dlist_t ctrl_xfers;
 	/** dlist for bulk transfers */
 	sys_dlist_t bulk_xfers;
+	/** dlist for periodic transfers, sorted in descending order by start_frame */
+	sys_dlist_t periodic_xfers;
+	/** dlist for transfers being scheduled in hardware */
+	sys_dlist_t active_xfers;
 	/** Callback to submit an UHC event to upper layer */
 	uhc_event_cb_t event_cb;
 	/** Opaque pointer to store higher layer context */
@@ -414,17 +435,20 @@ static inline int uhc_bus_resume(const struct device *dev)
  * Transfer has no buffer after allocation, but can be allocated
  * and added from different pools.
  *
- * @param[in] dev     Pointer to device struct of the driver instance
- * @param[in] ep      Endpoint address
- * @param[in] udev    Pointer to USB device
- * @param[in] cb      Transfer completion callback
- * @param[in] cb_priv Completion callback callback private data
+ * @param[in] dev       Pointer to device struct of the driver instance
+ * @param[in] ep        Endpoint address
+ * @param[in] udev      Pointer to USB device
+ * @param[in] rec_len   Desired length of the response from the device in bytes.
+ *                      Set to 0 if receiving one packet or if sending data.
+ * @param[in] cb	Transfer completion callback
+ * @param[in] cb_priv   Completion callback callback private data
  *
  * @return pointer to allocated transfer or NULL on error.
  */
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
+				    const size_t rec_len,
 				    void *const cb,
 				    void *const cb_priv);
 
