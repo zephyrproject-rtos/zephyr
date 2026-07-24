@@ -12,3 +12,4 @@ pools.
 
    mem_mgmt/mem_attrs.rst
    net_buf/index.rst
+   mem_mgmt/virt_mem.rst

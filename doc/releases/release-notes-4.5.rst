@@ -250,6 +250,18 @@ New APIs and options
   * :c:func:`lora_recv_duty_cycle`
   * :c:func:`lora_recv_duty_cycle_async`
 
+* Memory Management
+
+  * :c:func:`sys_mm_vm_backend_mem_map`
+  * :c:func:`sys_mm_vm_backend_mem_unmap`
+  * :c:func:`sys_mm_vm_backend_page_phys_get`
+  * :c:func:`sys_mm_vm_backend_reserved_pages_update`
+  * :c:func:`sys_mm_vm_backend_mem_page_out`
+  * :c:func:`sys_mm_vm_backend_mem_page_in`
+  * :c:func:`sys_mm_vm_backend_mem_scratch`
+  * :c:func:`sys_mm_vm_backend_page_location_get`
+  * :c:func:`sys_mm_vm_backend_mem_page_info_get`
+
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
