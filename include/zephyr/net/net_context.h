@@ -224,7 +224,12 @@ __net_socket struct net_context {
 	/** Local endpoint address. Note that the values are in network byte
 	 * order.
 	 */
-	struct net_sockaddr_ptr local;
+	union {
+		/** Local endpoint address. */
+		struct net_sockaddr local;
+		/** Storage-typed alias of the local endpoint address. */
+		struct net_sockaddr_storage local_storage;
+	};
 
 	/** Remote endpoint address. Note that the values are in network byte
 	 * order.

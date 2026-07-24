@@ -281,7 +281,7 @@ int net_tcp_endpoint_copy(struct net_context *ctx,
 			  net_socklen_t *addrlen)
 {
 	const struct tcp *conn = ctx->tcp;
-	net_socklen_t newlen = ctx->local.family == NET_AF_INET ?
+	net_socklen_t newlen = ctx->local.sa_family == NET_AF_INET ?
 		sizeof(struct net_sockaddr_in) :
 		sizeof(struct net_sockaddr_in6);
 
@@ -291,21 +291,22 @@ int net_tcp_endpoint_copy(struct net_context *ctx,
 		 * be different if we are bound to any address.
 		 */
 		if (conn->state < TCP_ESTABLISHED) {
-			if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == NET_AF_INET) {
+			if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.sa_family == NET_AF_INET) {
 				memcpy(&net_sin(local)->sin_addr,
-				       net_sin_ptr(&ctx->local)->sin_addr,
+				       &net_sin(&ctx->local)->sin_addr,
 				       sizeof(struct net_in_addr));
-				net_sin(local)->sin_port = net_sin_ptr(&ctx->local)->sin_port;
+				net_sin(local)->sin_port = net_sin(&ctx->local)->sin_port;
 				net_sin(local)->sin_family = NET_AF_INET;
 			} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-				   ctx->local.family == NET_AF_INET6) {
+				   ctx->local.sa_family == NET_AF_INET6) {
 				memcpy(&net_sin6(local)->sin6_addr,
-				       net_sin6_ptr(&ctx->local)->sin6_addr,
+				       &net_sin6(&ctx->local)->sin6_addr,
 				       sizeof(struct net_in6_addr));
-				net_sin6(local)->sin6_port = net_sin6_ptr(&ctx->local)->sin6_port;
+				net_sin6(local)->sin6_port =
+					net_sin6(&ctx->local)->sin6_port;
 				net_sin6(local)->sin6_family = NET_AF_INET6;
 				net_sin6(local)->sin6_scope_id =
-					net_sin6_ptr(&ctx->local)->sin6_scope_id;
+					net_sin6(&ctx->local)->sin6_scope_id;
 			} else {
 				return -EINVAL;
 			}
@@ -2554,7 +2555,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	memcpy(&context->remote, &conn->dst, sizeof(context->remote));
 	context->flags |= NET_CONTEXT_REMOTE_ADDR_SET;
 
-	net_sin_ptr(&context->local)->sin_family = af;
+	net_sin(&context->local)->sin_family = af;
 
 	local_addr.sa_family = net_context_get_family(context);
 
@@ -2590,10 +2591,10 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	 */
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == NET_AF_INET6) {
-		net_sin6_ptr(&context->local)->sin6_port = conn->src.sin6.sin6_port;
+		net_sin6(&context->local)->sin6_port = conn->src.sin6.sin6_port;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_context_get_family(context) == NET_AF_INET) {
-		net_sin_ptr(&context->local)->sin_port = conn->src.sin.sin_port;
+		net_sin(&context->local)->sin_port = conn->src.sin.sin_port;
 	}
 
 	if (!(IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
@@ -4229,11 +4230,11 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 
 		if (net_context_is_local_addr_set(context)) {
 			net_ipaddr_copy(&in->sin_addr,
-					net_sin_ptr(&context->local)->sin_addr);
+					&net_sin(&context->local)->sin_addr);
 		}
 
 		in->sin_port =
-			net_sin((struct net_sockaddr *)&context->local)->sin_port;
+			net_sin(&context->local)->sin_port;
 		local_port = net_ntohs(in->sin_port);
 		remote_port = net_ntohs(net_sin(&context->remote)->sin_port);
 
@@ -4248,11 +4249,11 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 
 		if (net_context_is_local_addr_set(context)) {
 			net_ipaddr_copy(&in6->sin6_addr,
-				net_sin6_ptr(&context->local)->sin6_addr);
+				&net_sin6(&context->local)->sin6_addr);
 		}
 
 		in6->sin6_port =
-			net_sin6((struct net_sockaddr *)&context->local)->sin6_port;
+			net_sin6(&context->local)->sin6_port;
 		local_port = net_ntohs(in6->sin6_port);
 		remote_port = net_ntohs(net_sin6(&context->remote)->sin6_port);
 
