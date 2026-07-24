@@ -192,7 +192,7 @@ static void uart_tx_handle(const struct device *dev, struct shell_uart_int_drive
 		ARG_UNUSED(err);
 	} else {
 		uart_irq_tx_disable(dev);
-		sh_uart->tx_busy = 0;
+		atomic_set(&sh_uart->tx_busy, 0);
 	}
 
 	sh_uart->common.handler(SHELL_TRANSPORT_EVT_TX_RDY, sh_uart->common.context);
