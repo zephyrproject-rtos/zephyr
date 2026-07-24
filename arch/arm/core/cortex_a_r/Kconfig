@@ -91,7 +91,7 @@ config AARCH32_ARMV8_A_MONITOR_INIT
 
 config ARMV7_A_NS
 	bool "ARMv7-A Non-Secure state (Non-secure world of TrustZone)"
-	depends on ARMV7_A
+	depends on ARMV7_A || AARCH32_ARMV8_A
 	help
 	  Zephyr is running in ARM TrustZone Non-Secure state on an ARMv7-A core.
 
