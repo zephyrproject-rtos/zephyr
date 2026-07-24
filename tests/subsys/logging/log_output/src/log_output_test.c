@@ -47,7 +47,7 @@ LOG_OUTPUT_DEFINE(log_output, mock_output_func,
 
 ZTEST(test_log_output, test_no_flags)
 {
-	char package[256];
+	char __aligned(sizeof(void *)) package[256];
 	static const char *exp_str = SNAME ": " TEST_STR "\r\n";
 	int err;
 
@@ -63,7 +63,7 @@ ZTEST(test_log_output, test_no_flags)
 
 ZTEST(test_log_output, test_raw)
 {
-	char package[256];
+	char __aligned(sizeof(void *)) package[256];
 	static const char *exp_str = TEST_STR;
 	int err;
 
@@ -79,7 +79,7 @@ ZTEST(test_log_output, test_raw)
 
 ZTEST(test_log_output, test_no_flags_dname)
 {
-	char package[256];
+	char __aligned(sizeof(void *)) package[256];
 	static const char *exp_str = DNAME "/" SNAME ": " TEST_STR "\r\n";
 	int err;
 
@@ -95,7 +95,7 @@ ZTEST(test_log_output, test_no_flags_dname)
 
 ZTEST(test_log_output, test_level_flag)
 {
-	char package[256];
+	char __aligned(sizeof(void *)) package[256];
 	static const char *exp_str = "<inf> " DNAME "/" SNAME ": " TEST_STR "\r\n";
 	uint32_t flags = LOG_OUTPUT_FLAG_LEVEL;
 	int err;
@@ -112,7 +112,7 @@ ZTEST(test_log_output, test_level_flag)
 
 ZTEST(test_log_output, test_ts_flag)
 {
-	char package[256];
+	char __aligned(sizeof(void *)) package[256];
 	static const char *exp_str = IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ?
 		"[00000000000000000000] " DNAME "/" SNAME ": " TEST_STR "\r\n" :
 		"[0000000000] " DNAME "/" SNAME ": " TEST_STR "\r\n";
@@ -138,7 +138,7 @@ ZTEST(test_log_output, test_format_ts)
 #else
 #define TIMESTAMP_STR "[00:00:01.000,000] "
 #endif
-	char package[256];
+	char __aligned(sizeof(void *)) package[256];
 	static const char *exp_str = TIMESTAMP_STR DNAME "/" SNAME ": " TEST_STR "\r\n";
 	uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	int err;
@@ -185,7 +185,7 @@ static bool use_func_prefix(uint8_t level)
 
 ZTEST(test_log_output, test_levels)
 {
-	char package[256];
+	char __aligned(sizeof(void *)) package[256];
 	static const char *const level_strs[] = {
 		"<err>",
 		"<wrn>",
@@ -242,7 +242,7 @@ ZTEST(test_log_output, test_colors)
 #define LOG_COLOR_DBG          LOG_COLOR_CODE_DEFAULT
 #endif /* CONFIG_LOG_BACKEND_SHOW_COLOR */
 
-	char package[256];
+	char __aligned(sizeof(void *)) package[256];
 	static const char *const color_strs[] = {
 		LOG_COLOR_ERR,
 		LOG_COLOR_WRN,
@@ -295,7 +295,7 @@ ZTEST(test_log_output, test_thread_id)
 	}
 
 	char exp_str[256];
-	char package[256];
+	char __aligned(sizeof(void *)) package[256];
 
 	k_tid_t tid = k_current_get();
 	const char *name = k_thread_name_get(tid);
@@ -323,7 +323,7 @@ ZTEST(test_log_output, test_thread_id)
 
 ZTEST(test_log_output, test_skip_src)
 {
-	char package[256];
+	char __aligned(sizeof(void *)) package[256];
 	const char exp_str[] = TEST_STR "\r\n";
 	uint32_t flags = LOG_OUTPUT_FLAG_SKIP_SOURCE;
 	int err;
