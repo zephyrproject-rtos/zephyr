@@ -37,8 +37,8 @@ BUILD_ASSERT(
 
 static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status);
 
-static bool i2c_nrfx_twi_rtio_msg_start(const struct device *dev, uint8_t flags,
-					uint8_t *buf, size_t buf_len, uint16_t i2c_addr)
+static int i2c_nrfx_twi_rtio_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf,
+				       size_t buf_len, uint16_t i2c_addr)
 {
 	struct i2c_nrfx_twi_common_data *data = dev->data;
 	struct i2c_nrfx_twi_rtio_data *const dev_data = dev->data;
@@ -57,11 +57,9 @@ static bool i2c_nrfx_twi_rtio_msg_start(const struct device *dev, uint8_t flags,
 	if (ret != 0) {
 		nrfx_twi_disable(&data->twi);
 		dev_data->twi_enabled = false;
-
-		return i2c_rtio_complete(ctx, ret);
 	}
 
-	return false;
+	return ret;
 }
 
 static void i2c_nrfx_twi_rtio_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, void *userdata)
@@ -71,45 +69,54 @@ static void i2c_nrfx_twi_rtio_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, voi
 	i2c_nrfx_twi_rtio_complete(dev, 0);
 }
 
-static bool i2c_nrfx_twi_rtio_start(const struct device *dev)
+static bool i2c_nrfx_twi_rtio_start(const struct device *dev, int *status)
 {
 	struct i2c_nrfx_twi_rtio_data *const dev_data = dev->data;
 	struct i2c_rtio *ctx = dev_data->ctx;
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
 	struct rtio_iodev_sqe *iodev_sqe;
+	int error;
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
-						   sqe->rx.buf, sqe->rx.buf_len, dt_spec->addr);
+		error = i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
+						    sqe->rx.buf, sqe->rx.buf_len, dt_spec->addr);
+		break;
 	case RTIO_OP_TINY_TX:
-		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-						   (uint8_t *)sqe->tiny_tx.buf,
-						   sqe->tiny_tx.buf_len, dt_spec->addr);
+		error = i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
+						    (uint8_t *)sqe->tiny_tx.buf,
+						    sqe->tiny_tx.buf_len, dt_spec->addr);
+		break;
 	case RTIO_OP_TX:
-		return i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-						   (uint8_t *)sqe->tx.buf,
-						   sqe->tx.buf_len, dt_spec->addr);
+		error = i2c_nrfx_twi_rtio_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
+						    (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
+						    dt_spec->addr);
+		break;
 	case RTIO_OP_I2C_CONFIGURE:
-		(void)i2c_nrfx_twi_configure(dev, sqe->i2c_config);
-		/** This request will not generate an event therefore, this
-		 * code immediately submits a CQE in order to unblock
-		 * i2c_rtio_configure.
-		 */
-		return i2c_rtio_complete(ctx, 0);
+		*status = i2c_nrfx_twi_configure(dev, sqe->i2c_config);
+		return false;
 	case RTIO_OP_I2C_RECOVER:
-		(void)i2c_nrfx_twi_recover_bus(dev);
+		*status = i2c_nrfx_twi_recover_bus(dev);
 		return false;
 	case RTIO_OP_AWAIT:
 		iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
 		rtio_iodev_sqe_await_signal(iodev_sqe, i2c_nrfx_twi_rtio_sqe_signaled,
 					    (void *)dev);
+		*status = 0;
 		return false;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
-		return i2c_rtio_complete(ctx, -EINVAL);
+		*status = -EINVAL;
+		return false;
 	}
+
+	if (error != 0) {
+		*status = error;
+		return false;
+	}
+
+	return true;
 }
 
 static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status)
@@ -119,7 +126,7 @@ static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status)
 	struct i2c_rtio *const ctx = data->ctx;
 
 	if (i2c_rtio_complete(ctx, status)) {
-		(void)i2c_nrfx_twi_rtio_start(dev);
+		(void)i2c_rtio_run_sync_start_async(dev, ctx, i2c_nrfx_twi_rtio_start);
 	} else {
 		nrfx_twi_disable(&data->twi);
 		data->twi_enabled = false;
@@ -169,7 +176,7 @@ static void i2c_nrfx_twi_rtio_submit(const struct device *dev, struct rtio_iodev
 	struct i2c_rtio *const ctx = data->ctx;
 
 	if (i2c_rtio_submit(ctx, iodev_seq)) {
-		(void)i2c_nrfx_twi_rtio_start(dev);
+		(void)i2c_rtio_run_sync_start_async(dev, data->ctx, i2c_nrfx_twi_rtio_start);
 	}
 }
 
