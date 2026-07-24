@@ -1715,9 +1715,13 @@ static int i3c_stm32_init(const struct device *dev)
 	i3c_stm32_configure(dev, I3C_CONFIG_CONTROLLER, &data->drv_data.ctrl_config);
 	i3c_stm32_controller_init(dev);
 
-	/* Perform bus initialization only if there are devices that already exist on the bus */
-	if (config->drv_cfg.dev_list.num_i3c > 0 &&
-	    !(config->drv_cfg.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
+	/* Perform bus initialization.
+	 * Run i3c_bus_init() even when there are no DTS child nodes, so that
+	 * ENTDAA can discover devices dynamically via mem slab descriptors
+	 * (CONFIG_I3C_NUM_OF_DESC_MEM_SLABS). The DISABLE_BUS_INIT flag is
+	 * still honoured, matching the other I3C controller drivers.
+	 */
+	if (!(config->drv_cfg.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 		ret = i3c_bus_init(dev, &config->drv_cfg.dev_list);
 		if (ret != 0) {
 			LOG_ERR("Failed to do i3c bus init, err=%d", ret);
