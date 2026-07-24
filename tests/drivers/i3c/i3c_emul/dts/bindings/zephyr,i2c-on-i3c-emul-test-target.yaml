@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Synthetic legacy-I2C peripheral that hangs off a
+  zephyr,i3c-emul bus, used to verify the I3C emulator's
+  i2c_api.transfer routes to a standard struct i2c_emul peripheral
+  the same way an in-tree i2c sensor emul (BMI160, AKM09918C, ...)
+  would when reparented under an I3C bus.
+
+  reg follows the i3c subsystem's i2c-device convention:
+  reg = <addr 0 lvr>. The middle zero is what
+  I3C_I2C_DEVICE_DESC_DT_FILTERED looks at to flag this as a legacy
+  I2C device.
+
+compatible: "zephyr,i2c-on-i3c-emul-test-target"
+
+include: i2c-device.yaml

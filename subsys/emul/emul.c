@@ -29,6 +29,11 @@ int emul_init_for_bus(const struct device *dev)
 {
 	const struct emul_list_for_bus *cfg = dev->config;
 
+	return emul_init_for_bus_from_list(dev, cfg);
+}
+
+int emul_init_for_bus_from_list(const struct device *dev, const struct emul_list_for_bus *cfg)
+{
 	/*
 	 * Walk the list of children, find the corresponding emulator and
 	 * initialise it.
@@ -48,6 +53,9 @@ int emul_init_for_bus(const struct device *dev)
 		switch (emul->bus_type) {
 		case EMUL_BUS_TYPE_I2C:
 			emul->bus.i2c->target = emul;
+			break;
+		case EMUL_BUS_TYPE_I3C:
+			emul->bus.i3c->target = emul;
 			break;
 		case EMUL_BUS_TYPE_ESPI:
 			emul->bus.espi->target = emul;
@@ -74,9 +82,30 @@ int emul_init_for_bus(const struct device *dev)
 		switch (emul->bus_type) {
 #ifdef CONFIG_I2C_EMUL
 		case EMUL_BUS_TYPE_I2C:
+#ifdef CONFIG_I3C_EMUL
+			/*
+			 * An i2c-emul-typed peripheral parented by an
+			 * i3c-emul is the legacy-i2c-on-i3c case
+			 * (DT reg = <addr 0 lvr>). Route to the i3c bus
+			 * emulator instead of the i2c controller's own
+			 * register, which would write into a different
+			 * dev->data type.
+			 */
+			if (i3c_emul_is_bus(dev)) {
+				rc = i3c_emul_register_i2c(dev, emul->bus.i2c);
+			} else {
+				rc = i2c_emul_register(dev, emul->bus.i2c);
+			}
+#else
 			rc = i2c_emul_register(dev, emul->bus.i2c);
+#endif
 			break;
 #endif /* CONFIG_I2C_EMUL */
+#ifdef CONFIG_I3C_EMUL
+		case EMUL_BUS_TYPE_I3C:
+			rc = i3c_emul_register(dev, emul->bus.i3c);
+			break;
+#endif /* CONFIG_I3C_EMUL */
 #ifdef CONFIG_ESPI_EMUL
 		case EMUL_BUS_TYPE_ESPI:
 			rc = espi_emul_register(dev, emul->bus.espi);

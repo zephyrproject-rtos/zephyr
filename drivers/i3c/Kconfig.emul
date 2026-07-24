@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+config I3C_EMUL
+	bool "I3C emulator"
+	default y
+	depends on DT_HAS_ZEPHYR_I3C_EMUL_ENABLED
+	depends on EMUL
+	help
+	  Fake I3C bus controller that dispatches to peripheral emulators
+	  registered via EMUL_DT_DEFINE. Used for testing I3C drivers and
+	  higher-level subsystems on native_sim without real hardware.
+
+if I3C_EMUL
+
+config I3C_EMUL_TARGET_TX_FIFO_SIZE
+	int "Target-mode TX FIFO size (bytes)"
+	default 64
+	depends on I3C_TARGET
+	help
+	  Size of the per-controller target-mode TX FIFO. Bytes pushed via
+	  i3c_target_tx_write() are consumed by subsequent controller-side
+	  read transfers. Set to 0 to fall back to the read_requested /
+	  read_processed callback path.
+
+endif # I3C_EMUL
