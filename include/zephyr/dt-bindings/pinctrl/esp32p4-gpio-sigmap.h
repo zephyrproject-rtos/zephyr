@@ -187,4 +187,22 @@
 #define ESP_EMAC_MDC_O 108 /**< EMAC MDIO clock output */
 #define ESP_EMAC_MDO_O 109 /**< EMAC MDIO data output */
 
+/* PCNT */
+#define ESP_PCNT_SIG_CH0_IN0  141 /**< PCNT unit 0 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH0_IN1  142 /**< PCNT unit 1 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH0_IN2  143 /**< PCNT unit 2 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH0_IN3  144 /**< PCNT unit 3 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH1_IN0  145 /**< PCNT unit 0 channel 1 pulse input */
+#define ESP_PCNT_SIG_CH1_IN1  146 /**< PCNT unit 1 channel 1 pulse input */
+#define ESP_PCNT_SIG_CH1_IN2  147 /**< PCNT unit 2 channel 1 pulse input */
+#define ESP_PCNT_SIG_CH1_IN3  148 /**< PCNT unit 3 channel 1 pulse input */
+#define ESP_PCNT_CTRL_CH0_IN0 149 /**< PCNT unit 0 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN1 150 /**< PCNT unit 1 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN2 151 /**< PCNT unit 2 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN3 152 /**< PCNT unit 3 channel 0 control input */
+#define ESP_PCNT_CTRL_CH1_IN0 153 /**< PCNT unit 0 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN1 154 /**< PCNT unit 1 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN2 155 /**< PCNT unit 2 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN3 156 /**< PCNT unit 3 channel 1 control input */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32P4_GPIO_SIGMAP_H_ */
