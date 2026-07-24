@@ -32,6 +32,10 @@
 	status = "okay";
 };
 
+&i2c1 {
+	status = "okay";
+};
+
 &rcc {
 	clock-frequency = <DT_FREQ_M(240)>;
 };
