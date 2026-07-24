@@ -4705,11 +4705,11 @@ Networking:
     - rlubos
   files:
     - subsys/net/lib/mqtt/
-    - tests/net/lib/mqtt_*/
+    - tests/net/lib/mqtt*/
     - samples/net/cloud/mqtt_azure/
     - samples/net/mqtt_publisher/
   files-exclude:
-    - tests/net/lib/mqtt_sn*/
+    - tests/lib/mqtt_sn*/
   labels:
     - "area: Networking"
   tests:
@@ -4726,13 +4726,14 @@ Networking:
     - BeckmaR
     - M1cha
   files:
+    - lib/mqtt_sn/
     - subsys/net/lib/mqtt_sn/
-    - tests/net/lib/mqtt_sn*/
+    - tests/lib/mqtt_sn*/
     - samples/net/mqtt_sn_publisher/
   labels:
     - "area: Networking"
   tests:
-    - net.mqtt_sn
+    - libraries.mqtt_sn
     - sample.net.mqtt_publisher.sn
 
 "Networking: Native IEEE 802.15.4":

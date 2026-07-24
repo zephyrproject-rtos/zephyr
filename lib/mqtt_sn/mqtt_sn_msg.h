@@ -12,7 +12,7 @@
 #ifndef MQTT_SN_MSG_H_
 #define MQTT_SN_MSG_H_
 
-#include <zephyr/net/mqtt_sn.h>
+#include <zephyr/mqtt_sn.h>
 #include <zephyr/net_buf.h>
 
 #ifdef __cplusplus
