@@ -6,8 +6,10 @@
 
 #include <nxp/mcx/MCXN947VDF-pinctrl.h>
 
-&arduino_serial {
-	status = "disabled";
+/ {
+	chosen {
+		zephyr,uart-pipe = &flexcomm4_lpuart4;
+	};
 };
 
 &m2_hci_bt_uart {
