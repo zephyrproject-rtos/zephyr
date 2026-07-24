@@ -103,7 +103,6 @@ static int hostapd_enable_iface_cb(struct hostapd_iface *hapd_iface)
 	wpa_printf(MSG_DEBUG, "Enable interface %s", hapd_iface->conf->bss[0]->iface);
 
 	bss = hapd_iface->bss[0];
-
 	bss->conf->start_disabled = 0;
 
 	if (hostapd_config_check(hapd_iface->conf, 1) < 0) {
@@ -111,7 +110,6 @@ static int hostapd_enable_iface_cb(struct hostapd_iface *hapd_iface)
 		return -1;
 	}
 
-	l2_packet_deinit(bss->l2);
 	bss->l2 = l2_packet_init(bss->conf->iface, bss->conf->bssid, ETH_P_EAPOL,
 				 &hostapd_event_eapol_rx_cb, bss, 0);
 	if (bss->l2 == NULL) {
@@ -131,6 +129,7 @@ static int hostapd_disable_iface_cb(struct hostapd_iface *hapd_iface)
 {
 	size_t j;
 	struct hostapd_data *hapd = NULL;
+	struct hostapd_data *bss = hapd_iface->bss[0];
 
 	wpa_msg(hapd_iface->bss[0]->msg_ctx, MSG_INFO, AP_EVENT_DISABLED);
 
@@ -156,19 +155,15 @@ static int hostapd_disable_iface_cb(struct hostapd_iface *hapd_iface)
 
 	hostapd_cleanup_iface_partial(hapd_iface);
 
-	wpa_printf(MSG_DEBUG, "Interface %s disabled", hapd_iface->bss[0]->conf->iface);
 	hostapd_set_state(hapd_iface, HAPD_IFACE_DISABLED);
 	hostapd_send_wifi_mgmt_ap_status(hapd_iface,
 					 NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT,
 					 WIFI_STATUS_AP_SUCCESS);
-	hostapd_config_free(hapd_iface->conf);
-	hapd_iface->conf = hapd_iface->interfaces->config_read_cb(hapd_iface->config_fname);
-	for (j = 0; j < hapd_iface->num_bss; j++) {
-		hapd = hapd_iface->bss[j];
-		hapd->iconf = hapd_iface->conf;
-		hapd->conf = hapd_iface->conf->bss[j];
-		hapd->driver = hapd_iface->conf->driver;
-	}
+
+	l2_packet_deinit(bss->l2);
+	bss->l2 = 0;
+
+	wpa_printf(MSG_DEBUG, "Interface %s disabled", hapd_iface->bss[0]->conf->iface);
 
 	return 0;
 }
@@ -453,15 +448,133 @@ static struct hostapd_iface *hostapd_interface_init(struct hapd_interfaces *inte
 	return iface;
 }
 
-void zephyr_hostapd_init(struct hapd_interfaces *interfaces)
+/**
+ * zephyr_hostapd_add_iface - Add and initialize a new hostapd interface
+ *
+ * Called during wlan-reset to rebuild the interface after
+ * zephyr_hostapd_del_iface() has removed it.
+ *
+ * Corresponds to the interface init portion of zephyr_hostapd_init(),
+ * but reuses the already-initialized global context (eloop, EAP methods).
+ */
+int zephyr_hostapd_add_iface(struct hapd_interfaces *interfaces)
+{
+	int ret;
+	int debug = 0;
+	struct net_if *iface;
+	char ifname[IFNAMSIZ + 1] = {0};
+
+	if (!interfaces) {
+		return -1;
+	}
+
+	/* Allocate iface pointer array (count was reset by del_iface) */
+	interfaces->count = 1;
+	interfaces->iface = os_calloc(interfaces->count, sizeof(struct hostapd_iface *));
+	if (!interfaces->iface) {
+		wpa_printf(MSG_ERROR, "hostapd: add_iface malloc failed");
+		return -1;
+	}
+
+	/* Get SAP netif name */
+	iface = net_if_get_wifi_sap();
+	ret = net_if_get_name(iface, ifname, sizeof(ifname) - 1);
+	if (ret < 0) {
+		wpa_printf(MSG_ERROR, "hostapd: Cannot get interface %d (%p) name",
+			   net_if_get_by_iface(iface), iface);
+		goto err;
+	}
+
+	/* Initialize hostapd_iface: alloc + read config */
+	interfaces->iface[0] = hostapd_interface_init(interfaces, ifname, "hostapd.conf", debug);
+	if (!interfaces->iface[0]) {
+		wpa_printf(MSG_ERROR, "hostapd: Failed to initialize interface");
+		goto err;
+	}
+
+	/* Initialize driver */
+	if (hostapd_driver_init(interfaces->iface[0])) {
+		wpa_printf(MSG_ERROR, "hostapd: Failed to init driver");
+		goto err_iface;
+	}
+
+	/* Register enable/disable callbacks */
+	interfaces->iface[0]->enable_iface_cb = hostapd_enable_iface_cb;
+	interfaces->iface[0]->disable_iface_cb = hostapd_disable_iface_cb;
+
+	/* Initialize ctrl_iface for this BSS */
+	zephyr_hostapd_ctrl_init((void *)interfaces->iface[0]->bss[0]);
+
+	/* Re-register periodic cleanup timer (was cancelled by del_iface) */
+	eloop_register_timeout(HOSTAPD_CLEANUP_INTERVAL, 0, hostapd_periodic, interfaces, NULL);
+
+	wpa_printf(MSG_INFO, "hostapd: add_iface %s done", ifname);
+	return 0;
+
+err_iface:
+	hostapd_interface_deinit_free(interfaces->iface[0]);
+	interfaces->iface[0] = NULL;
+err:
+	os_free(interfaces->iface);
+	interfaces->iface = NULL;
+	interfaces->count = 0;
+	return -1;
+}
+
+/**
+ * zephyr_hostapd_del_iface - Remove and free the hostapd interface
+ *
+ * Called during wlan-reset AFTER hostapd disable command has been sent.
+ * At this point:
+ *   - bss->started == 0  (disable_iface_cb already ran)
+ *   - drv_priv is a dangling pointer (freed by hostapd_free_hapd_data)
+ *     but NOT cleared, so we must clear it before calling deinit_free.
+ *
+ * Does NOT tear down global context (eloop, EAP methods) since
+ * zephyr_hostapd_init() is only called once.
+ */
+void zephyr_hostapd_del_iface(struct hapd_interfaces *interfaces)
 {
 	size_t i;
-	int ret, debug = 0;
-	struct net_if *iface;
-	char ifname[IFNAMSIZ + 1] = { 0 };
+
+	if (!interfaces) {
+		return;
+	}
+
+	wpa_printf(MSG_INFO, "hostapd: del_iface");
+
+	/* Cancel periodic timer - will be re-registered by add_iface */
+	eloop_cancel_timeout(hostapd_periodic, interfaces, NULL);
+
+	for (i = 0; i < interfaces->count; i++) {
+		if (!interfaces->iface[i]) {
+			continue;
+		}
+
+		if (interfaces->iface[i]->bss && interfaces->iface[i]->bss[0]) {
+			struct hostapd_data *bss = interfaces->iface[i]->bss[0];
+
+			wpa_printf(MSG_INFO, "hostapd: del iface %s (started=%d)", bss->conf->iface,
+				   bss->started);
+
+			/* Deinit ctrl_iface */
+			zephyr_hostapd_ctrl_deinit((void *)bss);
+		}
+
+		interfaces->iface[i]->driver_ap_teardown =
+			!!(interfaces->iface[i]->drv_flags & WPA_DRIVER_FLAGS_AP_TEARDOWN_SUPPORT);
+		hostapd_interface_deinit_free(interfaces->iface[i]);
+		interfaces->iface[i] = NULL;
+	}
+
+	os_free(interfaces->iface);
+	interfaces->iface = NULL;
+	interfaces->count = 0;
+}
+
+void zephyr_hostapd_init(struct hapd_interfaces *interfaces)
+{
 	const char *entropy_file = NULL;
-	size_t num_bss_configs = 0;
-	int start_ifaces_in_sync = 0;
 #ifdef CONFIG_DPP
 	struct dpp_global_config dpp_conf;
 #endif /* CONFIG_DPP */
@@ -482,63 +595,11 @@ void zephyr_hostapd_init(struct hapd_interfaces *interfaces)
 	}
 #endif /* CONFIG_DPP */
 
-	interfaces->count = 1;
-	if (interfaces->count || num_bss_configs) {
-		interfaces->iface = os_calloc(interfaces->count + num_bss_configs,
-					      sizeof(struct hostapd_iface *));
-		if (interfaces->iface == NULL) {
-			wpa_printf(MSG_ERROR, "malloc failed");
-			return;
-		}
-	}
-
 	if (hostapd_global_init(interfaces, entropy_file)) {
 		wpa_printf(MSG_ERROR, "Failed to initialize global context");
 		return;
 	}
 
-	eloop_register_timeout(HOSTAPD_CLEANUP_INTERVAL, 0,
-			       hostapd_periodic, interfaces, NULL);
-
-	iface = net_if_get_wifi_sap();
-	ret = net_if_get_name(iface, ifname, sizeof(ifname) - 1);
-	if (ret < 0) {
-		wpa_printf(MSG_ERROR, "Cannot get interface %d (%p) name",
-			   net_if_get_by_iface(iface), iface);
-		goto out;
-	}
-
-	for (i = 0; i < interfaces->count; i++) {
-		interfaces->iface[i] = hostapd_interface_init(interfaces, ifname,
-							      "hostapd.conf", debug);
-		if (!interfaces->iface[i]) {
-			wpa_printf(MSG_ERROR, "Failed to initialize interface");
-			goto out;
-		}
-		if (start_ifaces_in_sync) {
-			interfaces->iface[i]->need_to_start_in_sync = 0;
-		}
-	}
-
-	/*
-	 * Enable configured interfaces. Depending on channel configuration,
-	 * this may complete full initialization before returning or use a
-	 * callback mechanism to complete setup in case of operations like HT
-	 * co-ex scans, ACS, or DFS are needed to determine channel parameters.
-	 * In such case, the interface will be enabled from eloop context within
-	 * hostapd_global_run().
-	 */
-	interfaces->terminate_on_error = 0;
-	for (i = 0; i < interfaces->count; i++) {
-		if (hostapd_driver_init(interfaces->iface[i])) {
-			goto out;
-		}
-		interfaces->iface[i]->enable_iface_cb  = hostapd_enable_iface_cb;
-		interfaces->iface[i]->disable_iface_cb = hostapd_disable_iface_cb;
-		zephyr_hostapd_ctrl_init((void *)interfaces->iface[i]->bss[0]);
-	}
-
-out:
 	return;
 }
 
