@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "MCTP I3C bus discovery sample"
+
+module = APP
+module-str = app
+source "subsys/logging/Kconfig.template.log_config"
+
+source "Kconfig.zephyr"

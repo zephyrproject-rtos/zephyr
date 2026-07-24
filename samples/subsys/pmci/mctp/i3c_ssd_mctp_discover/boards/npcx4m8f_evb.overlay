@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		ssd-i3c-bus = &i3c2;
+		ssd-i3c-dev = &mctp_endpoint0;
+	};
+
+	zephyr,user {
+		/* SSD power-enable GPIO (generic phandle, no LED binding needed) */
+		ssd-pwr-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+	};
+
+	mctp_i3c_ctrl: mctp_i3c_ctrl {
+		compatible = "zephyr,mctp-i3c-controller";
+		endpoints = <&mctp_endpoint0>;
+		endpoint-ids = <11>; /* NVME_DEV_ENDPOINT_ID */
+	};
+};
+
+&pcc {
+	clock-frequency = <DT_FREQ_M(90)>; /* OFMCLK runs at 90MHz */
+	core-prescaler = <3>; /* CORE_CLK runs at 30MHz */
+	apb1-prescaler = <6>; /* APB1_CLK runs at 15MHz */
+	apb2-prescaler = <6>; /* APB2_CLK runs at 15MHz */
+	apb3-prescaler = <6>; /* APB3_CLK runs at 15MHz */
+	apb4-prescaler = <3>; /* APB4_CLK runs at 30MHz */
+};
+
+&rctl {
+	status = "okay";
+};
+
+&i3c2 {
+	zephyr,deferred-init;
+	status = "okay";
+	i3c-scl-hz = <4000000>;
+	i3c-od-scl-hz = <1330000>;
+	pinctrl-0 = <&i3c3_sda_scl_gpf4_f5>;
+	pinctrl-names = "default";
+
+	bcr = <0x67>;
+
+	mctp_endpoint0: mctp_endpoint0@d0fefff1fd10 {
+		zephyr,deferred-init;
+		compatible = "zephyr,mctp-i3c-endpoint";
+		reg = <0x0 0x0000d0fe 0xfff1fd10>;
+		status = "okay";
+	};
+};
