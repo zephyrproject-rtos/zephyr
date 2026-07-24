@@ -295,5 +295,24 @@ config ICACHE_LINE_SIZE
 
 endif # CPU_AARCH32_CORTEX_R
 
+config ARM_PL310
+	bool "ARM L2C-310 (PL310) outer-cache controller"
+	default y
+	depends on DT_HAS_ARM_PL310_CACHE_ENABLED
+	depends on DCACHE && CACHE_MANAGEMENT
+	select OUTER_CACHE
+	help
+	  Enable the driver for the ARM L2C-310 (PL310) outer (L2) cache
+	  controller on a Cortex-A/R core.
+
+	  The driver provides the arch outer-cache hooks so that every L1
+	  data-cache maintenance operation is paired with the matching
+	  outer-cache operation, keeping DMA buffers coherent across both cache
+	  levels.
+
+	  This is the outer cache level only: it selects OUTER_CACHE but
+	  deliberately does not select CACHE_HAS_DRIVER, because the
+	  CPU-integrated L1 cache keeps owning the cache_data_* API.
+
 config TEST_EXTRA_STACK_SIZE
 	default 1024 if SMP
