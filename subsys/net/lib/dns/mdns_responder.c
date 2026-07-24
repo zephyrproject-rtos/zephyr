@@ -980,7 +980,7 @@ static int send_probe(struct mdns_responder_context *ctx)
 	 * not use cache.
 	 */
 	ret = dns_resolve_name_internal(&ctx->probe_ctx, ctx->probe_data.query,
-					DNS_RR_TYPE_ANY,
+					DNS_QUERY_TYPE_ANY,
 					&ctx->probe_data.dns_id, probe_cb,
 					&ctx->probe_data, PROBE_TIMEOUT,
 					false);
@@ -1065,6 +1065,16 @@ static void probing(struct k_work *work)
 static void start_announce(struct net_if *iface)
 {
 	int ret;
+
+	/* Don't preempt the probe -> init_listener sequence on the very first
+	 * address (e.g. DHCP binding races the RFC 6762 probe timer). Once
+	 * init_listener() succeeds it already announces via its own call to
+	 * announce_start() below, so this is only needed for re-announces
+	 * after the listener is already up (lease renewal, etc).
+	 */
+	if (!init_listener_done) {
+		return;
+	}
 
 	do_announce = true;
 	announce_count = 0;
@@ -1758,7 +1768,7 @@ static struct net_buf *create_unsolicited_mdns_answer(struct net_if *iface,
 		     left < (1 + 1 + 2 + 2 + 4 + 4 +
 			     (type == DNS_RR_TYPE_A ? sizeof(struct net_in_addr) :
 			      sizeof(struct net_in6_addr))))) {
-			NET_DBG("No more space (%u left)", left);
+			NET_DBG("No more space (%zu left)", left);
 			net_buf_unref(answer);
 			return NULL;
 		}
