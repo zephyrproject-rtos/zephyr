@@ -391,7 +391,7 @@ static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_range(void *addr, size_t
  * The cache line size is calculated (in order of priority):
  *
  * - At run-time when @kconfig{CONFIG_DCACHE_LINE_SIZE_DETECT} is set.
- * - At compile time using the value set in @kconfig{CONFIG_DCACHE_LINE_SIZE}.
+ * - At compile time when @kconfig{CONFIG_DCACHE_LINE_SIZE} value is non-zero.
  * - 0 otherwise
  *
  * @retval size Size of the d-cache line.
@@ -401,8 +401,11 @@ static ALWAYS_INLINE size_t sys_cache_data_line_size_get(void)
 {
 #ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
 	return cache_data_line_size_get();
-#elif defined(CONFIG_DCACHE_LINE_SIZE)
+#elif defined(CONFIG_DCACHE_LINE_SIZE) && CONFIG_DCACHE_LINE_SIZE > 0
 	return CONFIG_DCACHE_LINE_SIZE;
+#elif defined(CONFIG_DCACHE)
+#error "CONFIG_DCACHE_LINE_SIZE_DETECT shall be supported, or CONFIG_DCACHE_LINE_SIZE must be\
+defined and non-zero"
 #else
 	return 0;
 #endif
@@ -417,7 +420,7 @@ static ALWAYS_INLINE size_t sys_cache_data_line_size_get(void)
  * The cache line size is calculated (in order of priority):
  *
  * - At run-time when @kconfig{CONFIG_ICACHE_LINE_SIZE_DETECT} is set.
- * - At compile time using the value set in @kconfig{CONFIG_ICACHE_LINE_SIZE}.
+ * - At compile time when @kconfig{CONFIG_ICACHE_LINE_SIZE} value is non-zero.
  * - 0 otherwise
  *
  * @retval size Size of the d-cache line.
@@ -427,8 +430,11 @@ static ALWAYS_INLINE size_t sys_cache_instr_line_size_get(void)
 {
 #ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
 	return cache_instr_line_size_get();
-#elif defined(CONFIG_ICACHE_LINE_SIZE)
+#elif defined(CONFIG_ICACHE_LINE_SIZE) && CONFIG_ICACHE_LINE_SIZE > 0
 	return CONFIG_ICACHE_LINE_SIZE;
+#elif defined(CONFIG_ICACHE)
+#error "CONFIG_ICACHE_LINE_SIZE_DETECT shall be supported, or CONFIG_ICACHE_LINE_SIZE must be\
+defined and non-zero"
 #else
 	return 0;
 #endif

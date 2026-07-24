@@ -72,6 +72,8 @@ config CPU_AARCH32_CORTEX_A
 	select ARCH_HAS_GDBSTUB
 	# GDB on ARM needs the extra registers
 	select EXTRA_EXCEPTION_INFO if GDBSTUB
+	imply DCACHE_LINE_SIZE_DETECT
+	imply ICACHE_LINE_SIZE_DETECT
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
 
