@@ -83,13 +83,22 @@ static int mfd_it8801_init(const struct device *dev)
 	const struct mfd_it8801_config *config = dev->config;
 	struct mfd_it8801_data *data = dev->data;
 	int ret;
+	uint8_t val;
 
 	if (!i2c_is_ready_dt(&config->i2c_dev)) {
 		LOG_ERR("I2C bus %s is not ready", config->i2c_dev.bus->name);
 		return -ENODEV;
 	}
 
-	/*  Verify Vendor ID registers. */
+	/* Ensure IT8801 is awake with a read of the SMBCR register */
+	ret = i2c_reg_read_byte_dt(&config->i2c_dev, IT8801_REG_SMBCR, &val);
+
+	/* If the read fails, it8801 might have been asleep, this will wake it up */
+	if (ret != 0) {
+		LOG_WRN("IT8801 wake-up read returned error (ret %d), device may be asleep", ret);
+	}
+
+	/* Verify vendor ID registers */
 	ret = it8801_check_vendor_id(dev);
 	if (ret) {
 		LOG_ERR("Failed to read IT8801 vendor id %x", ret);
