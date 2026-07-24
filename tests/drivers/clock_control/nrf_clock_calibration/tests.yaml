@@ -4,10 +4,16 @@ tests:
     tags:
       - drivers
       - clock_control
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
+      - CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_MAX_SKIP=1
+      - CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_TEMP_DIFF=2
+      - CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_PERIOD=150
+      - CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_DEBUG=y
+      - CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_LF_ALWAYS_ON=n
+      - CONFIG_CLOCK_CONTROL_NRFX_USES_TEMP_SENSOR=n
     platform_allow:
       - nrf51dk/nrf51822
-      - nrf52dk/nrf52832
-      - nrf52840dk/nrf52840
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp/ns
       - nrf54lm20dk/nrf54lm20a/cpuapp
@@ -17,3 +23,74 @@ tests:
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - nrf51dk/nrf51822
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf5_series.overlay"
+  drivers.clock.nrf52_clock_calibration:
+    timeout: 30
+    tags:
+      - drivers
+      - clock_control
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
+      - CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_MAX_SKIP=1
+      - CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_TEMP_DIFF=2
+      - CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_PERIOD=150
+      - CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_DEBUG=y
+      - CONFIG_CLOCK_CONTROL_NRFX_CALIBRATION_LF_ALWAYS_ON=n
+      - CONFIG_CLOCK_CONTROL_NRFX_USES_TEMP_SENSOR=n
+    platform_allow:
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52dk/nrf52832
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf52_series.overlay"
+  drivers.clock.nrf5_clock_calibration.legacy:
+    timeout: 30
+    tags:
+      - drivers
+      - clock_control
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
+      - CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP=1
+      - CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF=2
+      - CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD=150
+      - CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG=y
+      - CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON=n
+      - CONFIG_CLOCK_CONTROL_NRF_USES_TEMP_SENSOR=n
+    platform_allow:
+      - nrf51dk/nrf51822
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp/ns
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
+      - ophelia4ev/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf51dk/nrf51822
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf5_series.overlay"
+  drivers.clock.nrf52_clock_calibration.legacy:
+    timeout: 30
+    tags:
+      - drivers
+      - clock_control
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
+      - CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP=1
+      - CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF=2
+      - CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD=150
+      - CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG=y
+      - CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_LF_ALWAYS_ON=n
+      - CONFIG_CLOCK_CONTROL_NRF_USES_TEMP_SENSOR=n
+    platform_allow:
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52dk/nrf52832
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf52_series.overlay"
