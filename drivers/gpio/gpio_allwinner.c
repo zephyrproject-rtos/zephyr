@@ -13,25 +13,29 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <pinctrl_soc.h>
 
 /* Allwinner PIO register definition macros */
+#define SUNXI_INT_TRIG_EDGE_RISING  0x00
+#define SUNXI_INT_TRIG_EDGE_FALLING 0x01
+#define SUNXI_INT_TRIG_LEVEL_HIGH   0x02
+#define SUNXI_INT_TRIG_LEVEL_LOW    0x03
+#define SUNXI_INT_TRIG_EDGE_BOTH    0x04
+
 #define SUNXI_INT_CFG_OFFSET 0x200
 #define SUNXI_INT_CTL_OFFSET 0x210
 #define SUNXI_INT_STA_OFFSET 0x214
-#define SUNXI_PULL_OFFSET    0x1C
 #define SUNXI_DAT_OFFSET     0x10
 
-#define SUNXI_CFG_PIN_MASK(pin) (0xFUL << (((pin) & 0x7) << 2))
-#define SUNXI_CFG_PIN_FUNC(pin, func) FIELD_PREP(SUNXI_CFG_PIN_MASK(pin), func)
-
-#define SUNXI_PULL_PIN_MASK(pin) (0x3UL << (((pin) & 0xF) << 1))
-#define SUNXI_PULL_PIN_VAL(pin, val) FIELD_PREP(SUNXI_PULL_PIN_MASK(pin), val)
+#define SUNXI_INT_CFG_SHIFT(pin) (((pin) & 0x7) << 2)
+#define SUNXI_INT_CFG_MASK(pin)  (0xF << SUNXI_INT_CFG_SHIFT(pin))
+#define SUNXI_INT_CFG_FUNC(pin, func) (((func) & 0xF) << SUNXI_INT_CFG_SHIFT(pin))
 
 #define SUNXI_INT_REG_ADDR(base, offset, bank) ((base) + (offset) + ((bank) * 0x20))
 
-/* Helper macros for pin configuration and pull register offsets */
-#define SUNXI_CFG_OFFSET(pin)            (FIELD_GET(GENMASK(4, 3), (pin)) * 4)
-#define SUNXI_PULL_OFFSET_BY_PIN(pin)    (SUNXI_PULL_OFFSET + FIELD_GET(BIT(4), (pin)) * 4)
+/* Helper macro for interrupt configuration register offset */
+#define SUNXI_INT_CFG_REG_OFFSET(pin)            (FIELD_GET(GENMASK(4, 3), (pin)) * 4)
 
 struct gpio_allwinner_config {
 	struct gpio_driver_config common;
@@ -58,54 +62,40 @@ struct gpio_allwinner_data {
 static int gpio_allwinner_pin_configure(const struct device *port, gpio_pin_t pin,
 					gpio_flags_t flags)
 {
+	const struct gpio_allwinner_config *config = port->config;
 	struct gpio_allwinner_data *data = port->data;
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(port, reg_base);
+	k_spinlock_key_t key;
+	uint8_t pull_val = SUNXI_PULL_NONE;
+	uint8_t mux_val = SUNXI_PINCTRL_MUX_IN;
+	pinctrl_soc_pin_t pin_cfg;
+
+	if ((flags & GPIO_PULL_UP) != 0U) {
+		pull_val = SUNXI_PULL_UP;
+	} else if ((flags & GPIO_PULL_DOWN) != 0U) {
+		pull_val = SUNXI_PULL_DOWN;
+	}
 
 	if ((flags & GPIO_OUTPUT) != 0U) {
-		k_spinlock_key_t key;
-		uint32_t val;
+		mux_val = SUNXI_PINCTRL_MUX_OUT;
+	}
 
-		key = k_spin_lock(&data->lock);
-		val = sys_read32(reg_base + SUNXI_CFG_OFFSET(pin));
+	pin_cfg = SUNXI_PIN_WITH_PULL(config->hw_bank, pin, mux_val, pull_val);
 
-		val &= ~SUNXI_CFG_PIN_MASK(pin);
-		val |= SUNXI_CFG_PIN_FUNC(pin, 1);
-		sys_write32(val, reg_base + SUNXI_CFG_OFFSET(pin));
+	key = k_spin_lock(&data->lock);
 
+	if ((flags & GPIO_OUTPUT) != 0U) {
 		if ((flags & (GPIO_OUTPUT_INIT_HIGH | GPIO_OUTPUT_INIT_LOW)) != 0U) {
 			uint32_t dat_val = sys_read32(reg_base + SUNXI_DAT_OFFSET);
 
 			WRITE_BIT(dat_val, pin, (flags & GPIO_OUTPUT_INIT_HIGH) != 0U);
 			sys_write32(dat_val, reg_base + SUNXI_DAT_OFFSET);
 		}
-		k_spin_unlock(&data->lock, key);
-
-	} else if ((flags & GPIO_INPUT) != 0U) {
-		k_spinlock_key_t key;
-		uint32_t pull_val = 0;
-		uint32_t val;
-		uint32_t pull_reg;
-
-		if ((flags & GPIO_PULL_UP) != 0U) {
-			pull_val = 1;
-		} else if ((flags & GPIO_PULL_DOWN) != 0U) {
-			pull_val = 2;
-		}
-
-		key = k_spin_lock(&data->lock);
-		val = sys_read32(reg_base + SUNXI_CFG_OFFSET(pin));
-
-		val &= ~SUNXI_CFG_PIN_MASK(pin);
-		val |= SUNXI_CFG_PIN_FUNC(pin, 0);
-		sys_write32(val, reg_base + SUNXI_CFG_OFFSET(pin));
-
-		pull_reg = sys_read32(reg_base + SUNXI_PULL_OFFSET_BY_PIN(pin));
-
-		pull_reg &= ~SUNXI_PULL_PIN_MASK(pin);
-		pull_reg |= SUNXI_PULL_PIN_VAL(pin, pull_val);
-		sys_write32(pull_reg, reg_base + SUNXI_PULL_OFFSET_BY_PIN(pin));
-		k_spin_unlock(&data->lock, key);
 	}
+
+	pinctrl_configure_pins(&pin_cfg, 1, PINCTRL_REG_NONE);
+
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 }
@@ -142,13 +132,9 @@ static int gpio_allwinner_port_set_bits_raw(const struct device *port, gpio_port
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(port, reg_base);
 	uintptr_t reg_addr = reg_base + SUNXI_DAT_OFFSET;
 	k_spinlock_key_t key;
-	uint32_t val;
 
 	key = k_spin_lock(&data->lock);
-	val = sys_read32(reg_addr);
-
-	val |= pins;
-	sys_write32(val, reg_addr);
+	sys_set_bits(reg_addr, pins);
 	k_spin_unlock(&data->lock, key);
 	return 0;
 }
@@ -159,13 +145,9 @@ static int gpio_allwinner_port_clear_bits_raw(const struct device *port, gpio_po
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(port, reg_base);
 	uintptr_t reg_addr = reg_base + SUNXI_DAT_OFFSET;
 	k_spinlock_key_t key;
-	uint32_t val;
 
 	key = k_spin_lock(&data->lock);
-	val = sys_read32(reg_addr);
-
-	val &= ~pins;
-	sys_write32(val, reg_addr);
+	sys_clear_bits(reg_addr, pins);
 	k_spin_unlock(&data->lock, key);
 	return 0;
 }
@@ -192,7 +174,7 @@ static int gpio_allwinner_pin_interrupt_configure(const struct device *port, gpi
 {
 	const struct gpio_allwinner_config *config = port->config;
 	struct gpio_allwinner_data *data = port->data;
-	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(port, reg_base);
+
 	uint32_t hw_bank = config->hw_bank;
 	uintptr_t pio_base = DEVICE_MMIO_NAMED_GET(port, pio_base);
 
@@ -201,10 +183,13 @@ static int gpio_allwinner_pin_interrupt_configure(const struct device *port, gpi
 	uintptr_t irq_status_reg = SUNXI_INT_REG_ADDR(pio_base, SUNXI_INT_STA_OFFSET, hw_bank);
 
 	k_spinlock_key_t key;
+	uint32_t trig_val = 0;
+	uint32_t val;
+	uint32_t ctl_val;
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
-		uint32_t ctl_val;
-		uint32_t p_val;
+		pinctrl_soc_pin_t pin_cfg = SUNXI_PIN_WITH_PULL(config->hw_bank, pin,
+						SUNXI_PINCTRL_MUX_IN, SUNXI_PULL_KEEP);
 
 		key = k_spin_lock(&data->lock);
 		ctl_val = sys_read32(irq_ctl_reg);
@@ -212,36 +197,27 @@ static int gpio_allwinner_pin_interrupt_configure(const struct device *port, gpi
 		ctl_val &= ~BIT(pin);
 		sys_write32(ctl_val, irq_ctl_reg);
 
-		p_val = sys_read32(reg_base + SUNXI_CFG_OFFSET(pin));
-
-		p_val &= ~SUNXI_CFG_PIN_MASK(pin);
-		p_val |= SUNXI_CFG_PIN_FUNC(pin, 0);
-		sys_write32(p_val, reg_base + SUNXI_CFG_OFFSET(pin));
+		pinctrl_configure_pins(&pin_cfg, 1, PINCTRL_REG_NONE);
 		k_spin_unlock(&data->lock, key);
 
 		return 0;
 	}
 
-	uint32_t trig_val = 0;
-	uint32_t val;
-	uint32_t p_val;
-	uint32_t ctl_val;
-
 	if (mode == GPIO_INT_MODE_EDGE) {
 		if (trig == GPIO_INT_TRIG_HIGH) {
-			trig_val = 0x00;
+			trig_val = SUNXI_INT_TRIG_EDGE_RISING;
 		} else if (trig == GPIO_INT_TRIG_LOW) {
-			trig_val = 0x01;
+			trig_val = SUNXI_INT_TRIG_EDGE_FALLING;
 		} else if (trig == GPIO_INT_TRIG_BOTH) {
-			trig_val = 0x04;
+			trig_val = SUNXI_INT_TRIG_EDGE_BOTH;
 		} else {
 			return -ENOTSUP;
 		}
 	} else if (mode == GPIO_INT_MODE_LEVEL) {
 		if (trig == GPIO_INT_TRIG_HIGH) {
-			trig_val = 0x02;
+			trig_val = SUNXI_INT_TRIG_LEVEL_HIGH;
 		} else if (trig == GPIO_INT_TRIG_LOW) {
-			trig_val = 0x03;
+			trig_val = SUNXI_INT_TRIG_LEVEL_LOW;
 		} else {
 			return -ENOTSUP;
 		}
@@ -252,17 +228,15 @@ static int gpio_allwinner_pin_interrupt_configure(const struct device *port, gpi
 	key = k_spin_lock(&data->lock);
 	sys_write32(BIT(pin), irq_status_reg);
 
-	val = sys_read32(irq_cfg_reg + SUNXI_CFG_OFFSET(pin));
+	val = sys_read32(irq_cfg_reg + SUNXI_INT_CFG_REG_OFFSET(pin));
 
-	val &= ~SUNXI_CFG_PIN_MASK(pin);
-	val |= SUNXI_CFG_PIN_FUNC(pin, trig_val);
-	sys_write32(val, irq_cfg_reg + SUNXI_CFG_OFFSET(pin));
+	val &= ~SUNXI_INT_CFG_MASK(pin);
+	val |= SUNXI_INT_CFG_FUNC(pin, trig_val);
+	sys_write32(val, irq_cfg_reg + SUNXI_INT_CFG_REG_OFFSET(pin));
 
-	p_val = sys_read32(reg_base + SUNXI_CFG_OFFSET(pin));
-
-	p_val &= ~SUNXI_CFG_PIN_MASK(pin);
-	p_val |= SUNXI_CFG_PIN_FUNC(pin, 6);
-	sys_write32(p_val, reg_base + SUNXI_CFG_OFFSET(pin));
+	pinctrl_soc_pin_t pin_cfg = SUNXI_PIN_WITH_PULL(config->hw_bank, pin,
+					SUNXI_PINCTRL_MUX_EINT, SUNXI_PULL_KEEP);
+	pinctrl_configure_pins(&pin_cfg, 1, PINCTRL_REG_NONE);
 
 	ctl_val = sys_read32(irq_ctl_reg);
 
