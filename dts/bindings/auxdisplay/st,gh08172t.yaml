@@ -1,0 +1,40 @@
+#
+# Copyright (c) 2026 Renato Mauro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description:
+  GH08172T 14 Segment LCD Controller (Glass Display Interface).
+  This binding describes the internal liquid crystal display controller peripheral
+  present on STM32 microcontrollers, mapped to a 14-segment auxiliary text interface.
+
+compatible: "st,gh08172t"
+
+include: [auxdisplay-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Base address and length of the LCD peripheral register block.
+
+  clocks:
+    required: true
+    description: Phandle to the clock controller and clock gating information.
+
+  pinctrl-0:
+    required: true
+    description: |
+      Array of phandles to pin configuration nodes (COM/SEG lines via AF11).
+
+  pinctrl-names:
+    required: true
+    const:
+      - default
+
+  lcd-timeout-ms:
+    type: int
+    default: 100
+    description: |
+      Timeout in ms to wait after issuing LCD operations such as Update Request
+      or waiting for Readyness.

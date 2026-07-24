@@ -1,0 +1,168 @@
+/*
+ * Copyright (c) 2026 Renato Mauro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&rcc {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+};
+
+&clk_lse {
+	status = "okay";  /* Enable the on-board external quartz at 32.768 kHz */
+	driving-capability = <3>;
+};
+
+/ {
+	/* We target the core SoC bus to declare the missing peripheral hardware block */
+	soc {
+		glass_lcd: gh08172t@40002400 {
+			compatible = "st,gh08172t";
+			status = "okay";
+
+			reg = <0x40002400 0x400>;
+
+			clocks = <&rcc STM32_CLOCK(APB1, 24)>,
+				 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+			clock-names = "bus", "device";
+
+			pinctrl-0 = <&lcd_seg23_pa6 &lcd_seg0_pa7 &lcd_com0_pa8
+				     &lcd_com1_pa9 &lcd_com2_pa10 &lcd_seg10_pa15
+				     &lcd_seg21_pb0 &lcd_seg2_pb1 &lcd_seg11_pb4
+				     &lcd_seg12_pb5 &lcd_com3_pb9 &lcd_seg20_pb12
+				     &lcd_seg3_pb13 &lcd_seg19_pb14 &lcd_seg4_pb15
+				     &lcd_vlcd_pc3 &lcd_seg22_pc4 &lcd_seg1_pc5
+				     &lcd_seg14_pc6 &lcd_seg9_pc7 &lcd_seg13_pc8
+				     &lcd_seg18_pd8 &lcd_seg5_pd9 &lcd_seg17_pd10 &lcd_seg6_pd11
+				     &lcd_seg16_pd12 &lcd_seg7_pd13 &lcd_seg15_pd14 &lcd_seg8_pd15>;
+			pinctrl-names = "default";
+
+			lcd-timeout-ms = <1000>;
+			columns = <6>;
+			rows = <1>;
+		};
+	};
+};
+
+&pinctrl {
+	/omit-if-no-ref/ lcd_seg23_pa6: lcd_seg23_pa6 {
+		pinmux = <STM32_PINMUX('A', 6, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg0_pa7: lcd_seg0_pa7 {
+		pinmux = <STM32_PINMUX('A', 7, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_com0_pa8: lcd_com0_pa8 {
+		pinmux = <STM32_PINMUX('A', 8, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_com1_pa9: lcd_com1_pa9 {
+		pinmux = <STM32_PINMUX('A', 9, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_com2_pa10: lcd_com2_pa10 {
+		pinmux = <STM32_PINMUX('A', 10, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg10_pa15: lcd_seg10_pa15 {
+		pinmux = <STM32_PINMUX('A', 15, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg21_pb0: lcd_seg21_pb0 {
+		pinmux = <STM32_PINMUX('B', 0, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg2_pb1: lcd_seg2_pb1 {
+		pinmux = <STM32_PINMUX('B', 1, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg11_pb4: lcd_seg11_pb4 {
+		pinmux = <STM32_PINMUX('B', 4, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg12_pb5: lcd_seg12_pb5 {
+		pinmux = <STM32_PINMUX('B', 5, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_com3_pb9: lcd_com3_pb9 {
+		pinmux = <STM32_PINMUX('B', 9, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg20_pb12: lcd_seg20_pb12 {
+		pinmux = <STM32_PINMUX('B', 12, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg3_pb13: lcd_seg3_pb13 {
+		pinmux = <STM32_PINMUX('B', 13, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg19_pb14: lcd_seg19_pb14 {
+		pinmux = <STM32_PINMUX('B', 14, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg4_pb15: lcd_seg4_pb15 {
+		pinmux = <STM32_PINMUX('B', 15, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_vlcd_pc3: lcd_vlcd_pc3 {
+		pinmux = <STM32_PINMUX('C', 3, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg22_pc4: lcd_seg22_pc4 {
+		pinmux = <STM32_PINMUX('C', 4, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg1_pc5: lcd_seg1_pc5 {
+		pinmux = <STM32_PINMUX('C', 5, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg14_pc6: lcd_seg14_pc6 {
+		pinmux = <STM32_PINMUX('C', 6, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg9_pc7: lcd_seg9_pc7 {
+		pinmux = <STM32_PINMUX('C', 7, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg13_pc8: lcd_seg13_pc8 {
+		pinmux = <STM32_PINMUX('C', 8, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg18_pd8: lcd_seg18_pd8 {
+		pinmux = <STM32_PINMUX('D', 8, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg5_pd9: lcd_seg5_pd9 {
+		pinmux = <STM32_PINMUX('D', 9, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg17_pd10: lcd_seg17_pd10 {
+		pinmux = <STM32_PINMUX('D', 10, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg6_pd11: lcd_seg6_pd11 {
+		pinmux = <STM32_PINMUX('D', 11, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg16_pd12: lcd_seg16_pd12 {
+		pinmux = <STM32_PINMUX('D', 12, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg7_pd13: lcd_seg7_pd13 {
+		pinmux = <STM32_PINMUX('D', 13, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg15_pd14: lcd_seg15_pd14 {
+		pinmux = <STM32_PINMUX('D', 14, AF11)>;
+	};
+
+	/omit-if-no-ref/ lcd_seg8_pd15: lcd_seg8_pd15 {
+		pinmux = <STM32_PINMUX('D', 15, AF11)>;
+	};
+};

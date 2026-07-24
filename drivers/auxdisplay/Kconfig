@@ -21,6 +21,7 @@ module-str = auxdisplay
 source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
+source "drivers/auxdisplay/Kconfig.gh08172t"
 source "drivers/auxdisplay/Kconfig.gpio"
 source "drivers/auxdisplay/Kconfig.hd44780"
 source "drivers/auxdisplay/Kconfig.itron"
