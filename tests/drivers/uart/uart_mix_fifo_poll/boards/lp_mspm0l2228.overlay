@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/uart/mspm0_uart.h>
+
+/* TX (PB4) and RX (PB5) must be connected together for loopback */
+
+/ {
+	soc {
+		dut: uart1: uart@4010a000 {
+			compatible = "ti,mspm0-uart";
+			reg = <0x4010a000 0x2000>;
+			interrupts = <16 0>;
+			current-speed = <9600>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			clk-div = <1>;
+			rx-fifo-threshold = <MSPM0_UART_RX_FIFO_LEVEL_ONE_ENTRY>;
+			pinctrl-0 = <&uart1_tx_pb04 &uart1_rx_pb05>;
+			pinctrl-names = "default";
+			status = "okay";
+		};
+
+		timg8: timg8@40090000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40090000 0x2000>;
+			interrupts = <20 0>;
+			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "okay";
+
+			counter_dev: counterg8: counterg8 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "okay";
+			};
+		};
+	};
+};
