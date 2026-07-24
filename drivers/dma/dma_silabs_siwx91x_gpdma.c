@@ -575,7 +575,7 @@ static int gpdma_siwx91x_pm_action(const struct device *dev, enum pm_device_acti
 		RSI_GPDMA_HANDLE_T gpdma_handle;
 
 		ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
-		if (ret < 0 && ret != -EALREADY) {
+		if (ret != 0 && ret != -EALREADY) {
 			return ret;
 		}
 
@@ -686,7 +686,7 @@ static DEVICE_API(dma, siwx91x_gpdma_api) = {
 		.reg = (GPDMA_G_Type *)DT_INST_REG_ADDR(inst),                                     \
 		.channel_reg = (GPDMA_C_Type *)DT_INST_PROP(inst, silabs_channel_reg_base),        \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, clkid),                                      \
 		.irq_configure = siwx91x_gpdma_irq_configure_##inst,                               \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(inst, gpdma_siwx91x_pm_action);                                   \

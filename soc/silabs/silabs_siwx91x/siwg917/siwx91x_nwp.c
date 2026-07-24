@@ -503,7 +503,7 @@ static int siwx91x_nwp_init(const struct device *dev)
 	if (ret < 0 && ret != -ENOENT) {
 		return ret;
 	}
-	if (config->antenna_selection == 2 && ret == -ENOENT) {
+	if (config->antenna_selection == 1 && ret == -ENOENT) {
 		LOG_WRN("'ext-gpios' expects some pinctrl configuration");
 	}
 

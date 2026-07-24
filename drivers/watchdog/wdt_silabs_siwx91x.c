@@ -221,7 +221,7 @@ static int siwx91x_wdt_init(const struct device *dev)
 	int ret;
 
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
-	if (ret) {
+	if (ret && ret != -EALREADY) {
 		return ret;
 	}
 	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys,
@@ -256,7 +256,7 @@ static DEVICE_API(wdt, siwx91x_wdt_driver_api) = {
 	static const struct siwx91x_wdt_config siwx91x_wdt_config_##inst = {                       \
 		.reg = (MCU_WDT_Type *)DT_INST_REG_ADDR(inst),                                     \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, clkid),                                    \
 		.irq_config = siwx91x_wdt_irq_configure_##inst,                                    \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &siwx91x_wdt_init, NULL, &siwx91x_wdt_data_##inst,             \

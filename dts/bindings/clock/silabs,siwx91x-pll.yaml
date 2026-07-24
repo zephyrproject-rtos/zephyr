@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiWx91x PLL output description.
+
+  Models the three HP-domain PLL outputs: SoC PLL, INTF PLL, and I2S PLL.
+  These nodes provide devicetree defaults consumed by the SiWx91x HP clock
+  driver.
+
+compatible: "silabs,siwx91x-pll"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: |
+      Must reference the shared HP PLL reference route
+      (silabs,siwx91x-clock-route child, e.g. ref_pll_mux). All PLLs share
+      the same hardware reference mux; do not point each PLL at xtal/rc directly.
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Target PLL output frequency in Hz.
+
+  "#clock-cells":
+    const: 0
