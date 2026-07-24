@@ -319,6 +319,8 @@ struct bt_dev_br {
 	uint16_t         mtu;
 	struct k_sem  pkts;
 	uint16_t         esco_pkt_type;
+	/* Max controller's acceptable SCO packet length */
+	uint8_t          sco_mtu;
 };
 
 /* The theoretical max for these is 8 and 64, but there's no point

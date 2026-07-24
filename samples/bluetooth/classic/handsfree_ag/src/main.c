@@ -23,8 +23,12 @@
 #include <zephyr/bluetooth/classic/hfp_ag.h>
 #include <zephyr/settings/settings.h>
 
+#if defined(CONFIG_HFP_AUDIO_PATH_SCO_HCI)
+#include "sco_hci.h"
+#else
 #include "pcm.h"
 #include "codec.h"
+#endif
 
 static struct bt_conn *default_conn;
 static struct bt_hfp_ag *hfp_ag;
@@ -62,6 +66,7 @@ static void ag_disconnected(struct bt_hfp_ag *ag)
 	printk("HFP AG disconnected!\n");
 }
 
+#if !defined(CONFIG_HFP_AUDIO_PATH_SCO_HCI)
 static void pcm_rx_cb(const uint8_t *data, uint32_t len)
 {
 	int err;
@@ -89,6 +94,7 @@ static void codec_rx_cb(const uint8_t *data, uint32_t len)
 		printk("Failed to transmit Codec data: %d\n", err);
 	}
 }
+#endif /* !CONFIG_HFP_AUDIO_PATH_SCO_HCI */
 
 static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
 {
@@ -106,6 +112,19 @@ static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
 
 	printk("SCO air mode %u\n", info.sco.air_mode);
 
+#if defined(CONFIG_HFP_AUDIO_PATH_SCO_HCI)
+	err = sco_hci_init(info.sco.air_mode);
+	if (err != 0) {
+		printk("Failed to initialize SCO over HCI for air mode %u\n", info.sco.air_mode);
+		return;
+	}
+
+	err = sco_hci_start(sco_conn);
+	if (err != 0) {
+		printk("Failed to start SCO over HCI\n");
+		return;
+	}
+#else
 	err = pcm_init(info.sco.air_mode);
 	if (err != 0) {
 		printk("Failed to initialize PCM for air mode %u\n", info.sco.air_mode);
@@ -129,6 +148,7 @@ static void ag_sco_connected(struct bt_hfp_ag *ag, struct bt_conn *sco_conn)
 		printk("Failed to start CODEC\n");
 		return;
 	}
+#endif
 }
 
 static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
@@ -141,6 +161,12 @@ static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 
 	bt_conn_drop(&active_sco_conn);
 
+#if defined(CONFIG_HFP_AUDIO_PATH_SCO_HCI)
+	err = sco_hci_stop();
+	if (err != 0) {
+		printk("Failed to stop SCO over HCI\n");
+	}
+#else
 	err = pcm_rx_stop();
 	if (err != 0) {
 		printk("Failed to stop PCM\n");
@@ -150,6 +176,7 @@ static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 	if (err != 0) {
 		printk("Failed to stop CODEC\n");
 	}
+#endif
 
 	printk("HFP AG SCO disconnected %u!\n", reason);
 }

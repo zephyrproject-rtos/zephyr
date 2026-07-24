@@ -6,8 +6,9 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
+      - sf32lb52_devkit_lcd
     tags: bluetooth
     integration_platforms:
-      - qemu_cortex_m3
+      - sf32lb52_devkit_lcd
     extra_configs:
       - CONFIG_BT_HFP_AG_CALL_OUTGOING=y

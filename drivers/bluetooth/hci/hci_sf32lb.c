@@ -303,8 +303,8 @@ static struct net_buf *get_rx(struct bt_sf32lb_data *hci)
 	case BT_HCI_H4_ACL:
 		return bt_buf_get_rx(BT_BUF_ACL_IN, K_NO_WAIT);
 	case BT_HCI_H4_SCO:
-		if (IS_ENABLED(CONFIG_BT_CLASSIC)) {
-			LOG_ERR("SCO not supported by host stack.");
+		if (IS_ENABLED(CONFIG_BT_SCO_OVER_HCI)) {
+			return bt_buf_get_rx(BT_BUF_SCO_IN, K_NO_WAIT);
 		}
 		break;
 	case BT_HCI_H4_ISO:

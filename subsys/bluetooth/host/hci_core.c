@@ -60,6 +60,7 @@
 #include "hci_core.h"
 #include "id.h"
 #include "iso_internal.h"
+#include "classic/sco_internal.h"
 #include "keys.h"
 #include "l2cap_internal.h"
 #include "monitor.h"
@@ -2112,19 +2113,32 @@ static void le_conn_update_complete(struct net_buf *buf)
 	bt_conn_unref(conn);
 }
 
-#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) || defined(CONFIG_BT_SCO_OVER_HCI)
 static int set_flow_control(void)
 {
 	struct bt_hci_cp_host_buffer_size *hbs;
 	struct net_buf *buf;
+	bool acl_fc = false;
 	int err;
 
-	/* Check if host flow control is actually supported */
-	if (!BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
-		LOG_WRN("Controller to host flow control not supported");
+	if (IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CONTROL)) {
+		/* Check if controller to host flow control is actually supported */
+		if (BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
+			acl_fc = true;
+		} else {
+			LOG_WRN("Controller to host flow control not supported");
+		}
+	}
+
+	/* Nothing to configure if ACL flow control is unavailable*/
+	if (!acl_fc) {
 		return 0;
 	}
 
+	/* A single HCI_Host_Buffer_Size command carries both the ACL and SCO
+	 * buffer parameters. Sending it more than once can confuse some
+	 * controllers, so populate whatever applies here.
+	 */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
@@ -2132,23 +2146,40 @@ static int set_flow_control(void)
 
 	hbs = net_buf_add(buf, sizeof(*hbs));
 	(void)memset(hbs, 0, sizeof(*hbs));
-	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_RX_SIZE);
-	hbs->acl_pkts = sys_cpu_to_le16(BT_BUF_HCI_ACL_RX_COUNT);
+
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+	if (acl_fc) {
+		hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_RX_SIZE);
+		hbs->acl_pkts = sys_cpu_to_le16(BT_BUF_HCI_ACL_RX_COUNT);
+	}
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+#if defined(CONFIG_BT_SCO_OVER_HCI)
+	hbs->sco_mtu = CONFIG_BT_BUF_SCO_RX_SIZE;
+	hbs->sco_pkts = sys_cpu_to_le16(CONFIG_BT_BUF_SCO_RX_COUNT);
+#endif /* CONFIG_BT_SCO_OVER_HCI */
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);
 	if (err) {
 		return err;
 	}
 
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		return -ENOBUFS;
+	if (acl_fc) {
+		buf = bt_hci_cmd_alloc(K_FOREVER);
+		if (!buf) {
+			return -ENOBUFS;
+		}
+
+		net_buf_add_u8(buf, BT_HCI_CTL_TO_HOST_FLOW_ENABLE);
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
+		if (err) {
+			return err;
+		}
 	}
 
-	net_buf_add_u8(buf, BT_HCI_CTL_TO_HOST_FLOW_ENABLE);
-	return bt_hci_cmd_send_sync(BT_HCI_OP_SET_CTL_TO_HOST_FLOW, buf, NULL);
+	return 0;
 }
-#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL || CONFIG_BT_SCO_OVER_HCI */
 
 static void unpair(uint8_t id, const bt_addr_le_t *addr)
 {
@@ -3573,12 +3604,12 @@ static int common_init(void)
 		}
 	}
 
-#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) || defined(CONFIG_BT_SCO_OVER_HCI)
 	err = set_flow_control();
 	if (err) {
 		return err;
 	}
-#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL || CONFIG_BT_SCO_OVER_HCI */
 
 	return 0;
 }
@@ -4524,9 +4555,17 @@ static int bt_recv_unsafe(struct net_buf *buf)
 	switch (type) {
 #if defined(CONFIG_BT_CONN)
 	case BT_HCI_H4_ACL:
+#endif /* CONFIG_BT_CONN */
+#if defined(CONFIG_BT_ISO)
+	case BT_HCI_H4_ISO:
+#endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_SCO_OVER_HCI)
+	case BT_HCI_H4_SCO:
+#endif /* CONFIG_BT_SCO_OVER_HCI */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_ISO) || defined(CONFIG_BT_SCO_OVER_HCI)
 		rx_queue_put(buf);
 		return 0;
-#endif /* BT_CONN */
+#endif /* CONFIG_BT_CONN || CONFIG_BT_ISO || CONFIG_BT_SCO_OVER_HCI */
 	case BT_HCI_H4_EVT:
 	{
 		struct bt_hci_evt_hdr *hdr;
@@ -4566,11 +4605,6 @@ static int bt_recv_unsafe(struct net_buf *buf)
 
 		return 0;
 	}
-#if defined(CONFIG_BT_ISO)
-	case BT_HCI_H4_ISO:
-		rx_queue_put(buf);
-		return 0;
-#endif /* CONFIG_BT_ISO */
 	default:
 		LOG_ERR("Invalid buf type %u", type);
 		return -EINVAL;
@@ -4674,6 +4708,11 @@ static void rx_work_handler(struct k_work *work)
 		hci_iso(buf);
 		break;
 #endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_SCO_OVER_HCI)
+	case BT_HCI_H4_SCO:
+		hci_sco(buf);
+		break;
+#endif /* CONFIG_BT_SCO_OVER_HCI */
 	case BT_HCI_H4_EVT:
 		hci_event(buf);
 		break;

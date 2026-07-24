@@ -27,6 +27,7 @@
 #include "conn_internal.h"
 #include "hci_core.h"
 #include "iso_internal.h"
+#include "classic/sco_internal.h"
 
 LOG_MODULE_REGISTER(bt_buf, CONFIG_BT_LOG_LEVEL);
 
@@ -120,7 +121,12 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, k_timeout_t timeout)
 	struct net_buf *buf;
 
 	__ASSERT(type == BT_BUF_EVT || type == BT_BUF_ACL_IN ||
-		 type == BT_BUF_ISO_IN, "Invalid buffer type requested");
+		 type == BT_BUF_ISO_IN || type == BT_BUF_SCO_IN,
+		 "Invalid buffer type requested");
+
+	if (IS_ENABLED(CONFIG_BT_SCO_OVER_HCI) && type == BT_BUF_SCO_IN) {
+		return bt_sco_get_rx(timeout);
+	}
 
 	if (IS_ENABLED(CONFIG_BT_ISO_RX) && type == BT_BUF_ISO_IN) {
 		return bt_iso_get_rx(timeout);
