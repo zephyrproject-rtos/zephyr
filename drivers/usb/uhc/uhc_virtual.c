@@ -49,7 +49,8 @@ struct uhc_vrt_data {
 	struct uhc_transfer *last_xfer;
 	struct uhc_vrt_frame frame;
 	struct k_timer sof_timer;
-	uint16_t frame_number;
+	uint32_t frame_number;
+	uint8_t frame_increment;
 	uint8_t req;
 };
 
@@ -198,51 +199,53 @@ static inline uint8_t get_xfer_ep_idx(const uint8_t ep)
 	return USB_EP_GET_IDX(ep & BIT_MASK(4)) + 16U;
 }
 
+bool vrt_filter_xfers(const struct uhc_transfer *xfer, void *priv)
+{
+	uint32_t *bm = priv;
+
+	uint8_t idx = get_xfer_ep_idx(xfer->ep);
+
+	/* There could be multiple transfers queued for the same
+	 * endpoint, for now we only allow one to be scheduled per frame.
+	 */
+	if (*bm & BIT(idx)) {
+		return false;
+	}
+
+	*bm |= BIT(idx);
+
+	return true;
+}
+
 static void vrt_assemble_frame(const struct device *dev)
 {
 	struct uhc_vrt_data *const priv = uhc_get_private(dev);
 	struct uhc_vrt_frame *const frame = &priv->frame;
-	struct uhc_data *const data = dev->data;
 	struct uhc_transfer *tmp;
 	unsigned int n = 0;
 	unsigned int key;
 	uint32_t bm = 0;
 
+	key = irq_lock();
+
+	uhc_xfer_defer_all_active(dev);
+
 	sys_dlist_init(&frame->list);
 	frame->ptr = NULL;
 	frame->count = 0;
-	key = irq_lock();
 
 	/* TODO: add periodic transfers up to 90% */
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		uint8_t idx = get_xfer_ep_idx(tmp->ep);
-
-		/* There could be multiple transfers queued for the same
-		 * endpoint, for now we only allow one to be scheduled per frame.
-		 */
-		if (bm & BIT(idx)) {
-			continue;
+	while (n < FRAME_MAX_TRANSFERS) {
+		tmp = uhc_xfer_get_next(dev, priv->frame_number, UHC_XFER_MASK_ALL,
+					vrt_filter_xfers, &bm);
+		if (tmp == NULL) {
+			/* No pending transfers */
+			break;
 		}
 
-		if (tmp->interval) {
-			if (tmp->start_frame != priv->frame_number) {
-				continue;
-			}
-
-			tmp->start_frame = priv->frame_number + tmp->interval;
-			LOG_DBG("Interrupt transfer s.f. %u f.n. %u interval %u",
-				tmp->start_frame, priv->frame_number, tmp->interval);
-		}
-
-		bm |= BIT(idx);
 		frame->slots[n].xfer = tmp;
 		sys_dlist_append(&frame->list, &frame->slots[n].node);
 		n++;
-
-		if (n >= FRAME_MAX_TRANSFERS) {
-			/* No more free slots */
-			break;
-		}
 	}
 
 	irq_unlock(key);
@@ -398,18 +401,12 @@ handle_reply_err:
 static void vrt_xfer_cleanup_cancelled(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
-	struct uhc_data *data = dev->data;
-	struct uhc_transfer *tmp;
 
 	if (priv->last_xfer != NULL && priv->last_xfer->err == -ECONNRESET) {
 		vrt_xfer_drop_active(dev, -ECONNRESET);
 	}
 
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		if (tmp->err == -ECONNRESET) {
-			uhc_xfer_return(dev, tmp, -ECONNRESET);
-		}
-	}
+	uhc_xfer_cleanup_cancelled(dev);
 }
 
 static void xfer_work_handler(struct k_work *work)
@@ -424,7 +421,7 @@ static void xfer_work_handler(struct k_work *work)
 
 		switch (ev->type) {
 		case UHC_VRT_EVT_SOF:
-			priv->frame_number++;
+			priv->frame_number += priv->frame_increment;
 			vrt_xfer_cleanup_cancelled(dev);
 			vrt_assemble_frame(dev);
 			schedule = true;
@@ -472,10 +469,12 @@ static void vrt_device_act(const struct device *dev,
 		break;
 	case UVB_DEVICE_ACT_FS:
 		type = UHC_EVT_DEV_CONNECTED_FS;
+		priv->frame_increment = 8;
 		k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
 		break;
 	case UVB_DEVICE_ACT_HS:
 		type = UHC_EVT_DEV_CONNECTED_HS;
+		priv->frame_increment = 1;
 		k_timer_start(&priv->sof_timer, K_MSEC(1), K_USEC(125));
 		break;
 	case UVB_DEVICE_ACT_REMOVED:
@@ -506,8 +505,9 @@ static void uhc_vrt_uvb_cb(const void *const vrt_priv,
 static int uhc_vrt_sof_enable(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	k_timeout_t period = priv->frame_increment == 8 ? K_MSEC(1) : K_USEC(125);
 
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+	k_timer_start(&priv->sof_timer, K_MSEC(1), period);
 
 	return 0;
 }
@@ -525,13 +525,14 @@ static int uhc_vrt_bus_suspend(const struct device *dev)
 static int uhc_vrt_bus_reset(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	k_timeout_t period = priv->frame_increment == 8 ? K_MSEC(1) :  K_USEC(125);
 	int ret;
 
 	k_timer_stop(&priv->sof_timer);
 	ret = uvb_advert(priv->host_node, UVB_EVT_RESET, NULL);
 	/* TDRSTR */
 	k_msleep(50);
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+	k_timer_start(&priv->sof_timer, K_MSEC(1), period);
 
 	return ret;
 }
@@ -539,8 +540,9 @@ static int uhc_vrt_bus_reset(const struct device *dev)
 static int uhc_vrt_bus_resume(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	k_timeout_t period = priv->frame_increment == 8 ? K_MSEC(1) :  K_USEC(125);
 
-	k_timer_start(&priv->sof_timer, K_MSEC(1), K_MSEC(1));
+	k_timer_start(&priv->sof_timer, K_MSEC(1), period);
 
 	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL);
 }
@@ -550,13 +552,7 @@ static int uhc_vrt_enqueue(const struct device *dev,
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
-	if (xfer->interval) {
-		xfer->start_frame = priv->frame_number + xfer->interval;
-		LOG_DBG("New interrupt transfer s.f. %u f.n. %u interval %u",
-			xfer->start_frame, priv->frame_number, xfer->interval);
-	}
-
-	uhc_xfer_append(dev, xfer);
+	uhc_xfer_append(dev, xfer, priv->frame_number);
 
 	return 0;
 }
@@ -564,18 +560,10 @@ static int uhc_vrt_enqueue(const struct device *dev,
 static int uhc_vrt_dequeue(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
-	struct uhc_data *data = dev->data;
-	struct uhc_transfer *tmp;
 	unsigned int key;
 
 	key = irq_lock();
-
-	SYS_DLIST_FOR_EACH_CONTAINER(&data->ctrl_xfers, tmp, node) {
-		if (xfer == tmp) {
-			tmp->err = -ECONNRESET;
-		}
-	}
-
+	uhc_xfer_dequeue(dev, xfer);
 	irq_unlock(key);
 
 	return 0;
@@ -619,12 +607,13 @@ static int uhc_vrt_unlock(const struct device *dev)
 static int uhc_vrt_driver_preinit(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
-	struct uhc_data *data = dev->data;
 
 	priv->dev = dev;
-	k_mutex_init(&data->mutex);
+	uhc_common_init(dev);
 
 	priv->host_node->priv = dev;
+	/* Default to SOF every 1 millisecond */
+	priv->frame_increment = 8;
 	k_fifo_init(&priv->fifo);
 	k_work_init(&priv->work, xfer_work_handler);
 	k_timer_init(&priv->sof_timer, sof_timer_handler, NULL);

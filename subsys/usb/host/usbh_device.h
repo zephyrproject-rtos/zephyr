@@ -57,12 +57,14 @@ void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev);
 /* Wrappers around to avoid glue UHC calls. */
 static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
 						   const uint8_t ep,
+						   const size_t rec_len,
 						   usbh_udev_cb_t cb,
-						   void *const cb_priv)
+						   void *const cb_priv,
+						   const k_timeout_t timeout)
 {
 	struct usbh_context *const ctx = udev->ctx;
 
-	return uhc_xfer_alloc(ctx->dev, ep, udev, cb, cb_priv);
+	return uhc_xfer_alloc(ctx->dev, ep, udev, rec_len, cb, cb_priv, timeout);
 }
 
 static inline int usbh_xfer_buf_add(const struct usb_device *udev,
@@ -75,11 +77,54 @@ static inline int usbh_xfer_buf_add(const struct usb_device *udev,
 }
 
 static inline struct net_buf *usbh_xfer_buf_alloc(struct usb_device *udev,
-						  const size_t size)
+						  const uint8_t ep,
+						  const size_t size,
+						  k_timeout_t timeout)
 {
 	struct usbh_context *const ctx = udev->ctx;
+	size_t alloc_size;
+	uint16_t mps = 0;
+	int ret;
 
-	return uhc_xfer_buf_alloc(ctx->dev, size);
+	ret = uhc_get_ep_properties(udev, ep, &mps, NULL, NULL);
+	if (ret != 0) {
+		return NULL;
+	}
+
+	if (USB_EP_DIR_IS_IN(ep)) {
+		alloc_size = ROUND_UP(size, mps);
+	} else {
+		alloc_size = size;
+	}
+
+	return uhc_xfer_buf_alloc(ctx->dev, alloc_size, timeout);
+}
+
+static inline struct uhc_transfer *usbh_xfer_alloc_with_buf(struct usb_device *const udev,
+							    const uint8_t ep,
+							    size_t size,
+							    size_t rec_len,
+							    void *const cb,
+							    void *const cb_priv,
+							    const k_timeout_t timeout)
+{
+	struct uhc_transfer *xfer;
+	struct net_buf *buf;
+
+	buf = usbh_xfer_buf_alloc(udev, ep, size, timeout);
+	if (buf == NULL) {
+		return NULL;
+	}
+
+	xfer = usbh_xfer_alloc(udev, ep, rec_len, cb, cb_priv, timeout);
+	if (xfer == NULL) {
+		net_buf_unref(buf);
+		return NULL;
+	}
+
+	(void)usbh_xfer_buf_add(udev, xfer, buf);
+
+	return xfer;
 }
 
 static inline int usbh_xfer_free(const struct usb_device *udev,

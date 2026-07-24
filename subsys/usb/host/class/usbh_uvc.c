@@ -91,12 +91,17 @@ struct uvc_format_info {
 	const struct uvc_frame_common_descriptor *frame_ptr;
 };
 
+struct uvc_host_config {
+	k_thread_stack_t *thread_stack;
+};
+
 struct uvc_host_data {
 	struct usb_device *udev;
 	struct k_mutex lock;
 	struct k_fifo fifo_in;
 	struct k_fifo fifo_out;
 	struct k_poll_signal *sig;
+	struct k_thread thread_data;
 
 	atomic_t device_flags;
 
@@ -111,8 +116,8 @@ struct uvc_host_data {
 	uint32_t discard_frame_cnt;
 	uint32_t current_frame_timestamp;
 
-	struct video_buffer *current_vbuf;
 	struct uhc_transfer *video_transfer[CONFIG_USBH_VIDEO_CONCURRENT_TRANSFERS];
+	struct k_fifo completed;
 
 	const struct usb_if_descriptor *current_ctrl_iface;
 	const struct usb_if_descriptor
@@ -131,8 +136,6 @@ struct uvc_host_data {
 	struct uvc_probe probe;
 	struct uvc_ctrls ctrls;
 };
-
-static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *const xfer);
 
 /* Configure UVC device interfaces */
 static int configure_device(struct usbh_class_data *const c_data)
@@ -1002,7 +1005,7 @@ static int vs_get(struct uvc_host_data *const host_data, const uint8_t request,
 		return -EINVAL;
 	}
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
+	buf = usbh_xfer_buf_alloc(host_data->udev, USB_CONTROL_EP_IN, data_len, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;
@@ -1071,7 +1074,7 @@ static int vs_set(struct uvc_host_data *const host_data, const uint8_t request,
 		return -EINVAL;
 	}
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
+	buf = usbh_xfer_buf_alloc(host_data->udev, USB_CONTROL_EP_OUT, data_len, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;
@@ -1507,26 +1510,38 @@ unlock:
 	return ret;
 }
 
+/* ISO transfer completion callback */
+static int stream_iso_req_cb(struct usb_device *const udev, struct uhc_transfer *const xfer)
+{
+	struct uvc_host_data *const host_data = (void *)xfer->priv;
+
+	k_fifo_put(&host_data->completed, xfer);
+
+	return 0;
+}
+
 /* Initiate new video transfer */
-static int initiate_transfer(struct uvc_host_data *const host_data,
-			     struct video_buffer *const vbuf)
+static int initiate_transfer(struct uvc_host_data *const host_data)
 {
 	struct uvc_stream_iface_info *const stream_info = &host_data->current_stream_iface_info;
 	const struct usb_ep_descriptor *const stream_ep = stream_info->ep;
 	struct net_buf *buf;
 	struct uhc_transfer *xfer;
+	size_t rec_len =
+		USB_EP_DIR_IS_IN(stream_ep->bEndpointAddress) ? stream_info->ep_mps_mult : 0;
 	int ret;
 
-	LOG_DBG("Initiating transfer: ep=0x%02x, vbuf=%p", stream_ep->bEndpointAddress, vbuf);
+	LOG_DBG("Initiating transfer: ep=0x%02x", stream_ep->bEndpointAddress);
 
-	xfer = usbh_xfer_alloc(host_data->udev, stream_ep->bEndpointAddress,
-			       stream_iso_req_cb, host_data);
+	xfer = usbh_xfer_alloc(host_data->udev, stream_ep->bEndpointAddress, rec_len,
+			       stream_iso_req_cb, host_data, K_NO_WAIT);
 	if (xfer == NULL) {
 		LOG_ERR("Failed to allocate transfer");
 		return -ENOMEM;
 	}
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult);
+	buf = usbh_xfer_buf_alloc(host_data->udev, xfer->ep, stream_info->ep_mps_mult,
+				  K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
 		usbh_xfer_free(host_data->udev, xfer);
@@ -1552,13 +1567,13 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 
 /* Continue existing video transfer */
 static int continue_transfer(struct uvc_host_data *const host_data,
-			     struct uhc_transfer *const xfer, struct video_buffer *vbuf)
+			     struct uhc_transfer *const xfer)
 {
 	struct uvc_stream_iface_info *const stream_info = &host_data->current_stream_iface_info;
 	struct net_buf *buf;
 	int ret;
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, stream_info->ep_mps_mult);
+	buf = usbh_xfer_buf_alloc(host_data->udev, xfer->ep, stream_info->ep_mps_mult, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
 		return -ENOMEM;
@@ -1571,29 +1586,25 @@ static int continue_transfer(struct uvc_host_data *const host_data,
 	if (ret != 0) {
 		LOG_ERR("Enqueue failed: ret=%d", ret);
 		net_buf_unref(buf);
+		usbh_xfer_free(host_data->udev, xfer);
 		return ret;
 	}
 
 	return 0;
 }
 
-/* ISO transfer completion callback */
-static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *const xfer)
+static bool complete_transfer(struct uhc_transfer *const xfer,
+			      struct video_buffer *const vbuf)
 {
 	struct uvc_host_data *const host_data = (void *)xfer->priv;
 	struct uvc_payload_header *payload_header = NULL;
-	struct video_buffer *vbuf = host_data->current_vbuf;
 	struct net_buf *buf = xfer->buf;
 	uint32_t presentation_time = 0;
 	uint32_t header_length = 0;
 	uint32_t data_size = 0;
 	uint8_t frame_id = 0;
 	uint8_t end_frame = 0;
-
-	if (vbuf == NULL) {
-		LOG_DBG("No current buffer available, ignoring callback");
-		goto cleanup;
-	}
+	bool frame_complete = false;
 
 	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) {
 		LOG_DBG("Device not streaming, ignoring callback");
@@ -1633,7 +1644,7 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 			/* Normal frame continuation */
 		}
 
-		if (host_data->save_picture && vbuf != NULL) {
+		if (host_data->save_picture) {
 			if (data_size > (vbuf->size - vbuf->bytesused)) {
 				LOG_WRN("Buffer overflow: used=%u, payload=%u, capacity=%u",
 					vbuf->bytesused, data_size, vbuf->size);
@@ -1657,6 +1668,7 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 	}
 
 	if (end_frame == 0) {
+		LOG_DBG("Not end of frame, continuing to next transfer");
 		goto cleanup;
 	}
 
@@ -1665,20 +1677,17 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 			host_data->discard_first_frame = 0;
 		}
 
-		if (vbuf != NULL) {
-			if (vbuf->bytesused != 0) {
-				host_data->discard_frame_cnt++;
-			}
-			vbuf->bytesused = 0U;
-			host_data->vbuf_offset = 0;
+		if (vbuf->bytesused != 0) {
+			host_data->discard_frame_cnt++;
 		}
-
+		vbuf->bytesused = 0U;
+		host_data->vbuf_offset = 0;
 		host_data->expect_frame_id = frame_id ^ 1;
 		host_data->save_picture = true;
 		goto cleanup;
 	}
 
-	if (vbuf == NULL || vbuf->bytesused == 0) {
+	if (vbuf->bytesused == 0) {
 		goto cleanup;
 	}
 
@@ -1690,18 +1699,8 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 
 	k_mutex_lock(&host_data->lock, K_FOREVER);
 
-	if (host_data->current_vbuf != vbuf) {
-		LOG_DBG("Buffer %p already processed by another callback", vbuf);
-		k_mutex_unlock(&host_data->lock);
-		goto cleanup;
-	}
-
-	(void)k_fifo_get(&host_data->fifo_in, K_NO_WAIT);
-	k_fifo_put(&host_data->fifo_out, vbuf);
-
 	host_data->expect_frame_id = host_data->expect_frame_id ^ 1;
 	host_data->save_picture = true;
-
 	host_data->vbuf_offset = 0;
 	host_data->transfer_count = 0;
 
@@ -1710,23 +1709,40 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 		k_poll_signal_raise(host_data->sig, VIDEO_BUF_DONE);
 	}
 
-	vbuf = k_fifo_peek_head(&host_data->fifo_in);
-	if (vbuf != NULL) {
-		vbuf->bytesused = 0;
-		memset(vbuf->buffer, 0, vbuf->size);
-		host_data->current_vbuf = vbuf;
-	}
-
-	k_mutex_unlock(&host_data->lock);
+	frame_complete = true;
 
 cleanup:
 	net_buf_unref(buf);
-	if ((atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) &&
-	    (vbuf != NULL)) {
-		continue_transfer(host_data, xfer, vbuf);
+	xfer->buf = NULL;
+	if (atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) {
+		continue_transfer(host_data, xfer);
 	}
 
-	return 0;
+	return frame_complete;
+}
+
+static void uvc_thread(void *p1, void *p2, void *p3)
+{
+	struct uvc_host_data *const host_data = p1;
+	struct video_buffer *vbuf;
+	struct uhc_transfer *xfer;
+
+	while (true) {
+		/* Wait that we have a new buffer */
+		vbuf = k_fifo_get(&host_data->fifo_in, K_FOREVER);
+		vbuf->bytesused = 0;
+		memset(vbuf->buffer, 0, vbuf->size);
+
+		for (bool done = false; !done;) {
+			xfer = k_fifo_get(&host_data->completed, K_FOREVER);
+
+			k_mutex_lock(&host_data->lock, K_FOREVER);
+			done = complete_transfer(xfer, vbuf);
+			k_mutex_unlock(&host_data->lock);
+		}
+
+		k_fifo_put(&host_data->fifo_out, vbuf);
+	}
 }
 
 /* Enumerate frame intervals for a given frame */
@@ -1848,7 +1864,7 @@ static int vc_get(struct uvc_host_data *const host_data, const uint8_t request,
 		return -EINVAL;
 	}
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
+	buf = usbh_xfer_buf_alloc(host_data->udev, USB_CONTROL_EP_IN, data_len, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;
@@ -1917,7 +1933,7 @@ static int vc_set(struct uvc_host_data *const host_data, const uint8_t request,
 		return -EINVAL;
 	}
 
-	buf = usbh_xfer_buf_alloc(host_data->udev, data_len);
+	buf = usbh_xfer_buf_alloc(host_data->udev, USB_CONTROL_EP_OUT, data_len, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate transfer buffer of size %u", data_len);
 		return -ENOMEM;
@@ -2334,7 +2350,8 @@ static int camera_init_controls(const struct device *dev)
 static int usbh_uvc_init(struct usbh_class_data *const c_data)
 {
 	const struct device *dev = c_data->priv;
-	struct uvc_host_data *host_data = (void *)dev->data;
+	const struct uvc_host_config *host_config = dev->config;
+	struct uvc_host_data *host_data = dev->data;
 
 	LOG_INF("Initializing UVC host data");
 
@@ -2342,13 +2359,20 @@ static int usbh_uvc_init(struct usbh_class_data *const c_data)
 
 	k_fifo_init(&host_data->fifo_in);
 	k_fifo_init(&host_data->fifo_out);
+	k_fifo_init(&host_data->completed);
 	k_mutex_init(&host_data->lock);
+	k_thread_create(&host_data->thread_data,
+			host_config->thread_stack, CONFIG_USBH_VIDEO_STACK_SIZE,
+			&uvc_thread, (void *)host_data, NULL, NULL,
+			K_PRIO_COOP(CONFIG_USBH_VIDEO_THREAD_PRIORITY), K_ESSENTIAL, K_NO_WAIT);
+	k_thread_name_set(&host_data->thread_data, "usbh_uvc");
 
 	host_data->expect_frame_id = UVC_FRAME_ID_INVALID;
 	host_data->discard_first_frame = 1;
 	host_data->multi_prime_cnt = CONFIG_USBH_VIDEO_CONCURRENT_TRANSFERS;
 
 	LOG_INF("UVC host data initialized successfully");
+
 	return 0;
 }
 
@@ -2459,7 +2483,6 @@ static int usbh_uvc_removed(struct usbh_class_data *const c_data)
 
 	k_mutex_unlock(&host_data->lock);
 
-	host_data->current_vbuf = NULL;
 	host_data->vbuf_offset = 0;
 	host_data->transfer_count = 0;
 
@@ -2989,7 +3012,6 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 	struct uvc_host_data *const host_data = dev->data;
 	struct uvc_stream_iface_info *const stream_info = &host_data->current_stream_iface_info;
 	const struct usb_if_descriptor *const stream_iface = stream_info->iface;
-	struct video_buffer *vbuf;
 	uint8_t interface_num;
 	uint8_t alt;
 	int ret;
@@ -3048,22 +3070,16 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 
 		k_mutex_lock(&host_data->lock, K_FOREVER);
 
-		vbuf = k_fifo_peek_head(&host_data->fifo_in);
-		if (vbuf != NULL) {
-			vbuf->bytesused = 0;
-			memset(vbuf->buffer, 0, vbuf->size);
-			host_data->current_vbuf = vbuf;
-			host_data->multi_prime_cnt = CONFIG_USBH_VIDEO_CONCURRENT_TRANSFERS;
-			while (host_data->multi_prime_cnt > 0) {
-				ret = initiate_transfer(host_data, vbuf);
-				if (ret != 0) {
-					LOG_ERR("Failed to initiate transfer: %d", ret);
-					k_mutex_unlock(&host_data->lock);
-					goto err_stream;
-				}
-
-				host_data->multi_prime_cnt--;
+		host_data->multi_prime_cnt = CONFIG_USBH_VIDEO_CONCURRENT_TRANSFERS;
+		while (host_data->multi_prime_cnt > 0) {
+			ret = initiate_transfer(host_data);
+			if (ret != 0) {
+				LOG_ERR("Failed to initiate transfer: %d", ret);
+				k_mutex_unlock(&host_data->lock);
+				goto err_stream;
 			}
+
+			host_data->multi_prime_cnt--;
 		}
 
 		k_mutex_unlock(&host_data->lock);
@@ -3151,10 +3167,16 @@ static DEVICE_API(video, uvc_host_video_api) = {
 };
 
 #define USBH_VIDEO_DEVICE_DEFINE(n, _)						\
+	K_THREAD_STACK_DEFINE(usbh_uvc_stack_##n, CONFIG_USBH_VIDEO_STACK_SIZE);\
+										\
 	static struct uvc_host_data uvc_host_data##n;				\
 										\
+	static struct uvc_host_config uvc_host_config##n = {			\
+		.thread_stack = usbh_uvc_stack_##n,				\
+	};									\
+										\
 	DEVICE_DEFINE(usbh_uvc_##n, "usbh_uvc_" #n, NULL, NULL,			\
-		      &uvc_host_data##n, NULL, POST_KERNEL,			\
+		      &uvc_host_data##n, &uvc_host_config##n, POST_KERNEL,	\
 		      CONFIG_VIDEO_INIT_PRIORITY, &uvc_host_video_api);		\
 										\
 	USBH_DEFINE_CLASS(uvc_host_c_data_##n, &usbh_uvc_class_api,		\
