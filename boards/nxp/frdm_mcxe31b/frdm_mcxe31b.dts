@@ -185,6 +185,20 @@
 	status = "okay";
 };
 
+/*
+ * SAI0 on header J1: D0 = PTB2, BCLK = PTC12, SYNC = PTC13. The
+ * transmitter drives all three pads and each pad's input buffer feeds
+ * the receiver back (see pinmux_sai_0), so the receiver runs fully
+ * asynchronous from the looped-back clocks and TX->RX loopback needs
+ * no external wiring.
+ */
+&sai_0 {
+	pinctrl-0 = <&pinmux_sai_0>;
+	pinctrl-names = "default";
+	nxp,tx-channel = <1>;
+	status = "okay";
+};
+
 &gpioc_l {
 	status = "okay";
 };

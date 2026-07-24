@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2023-2025 NXP
+ * Copyright 2021,2023-2026 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -114,6 +114,7 @@ struct i2s_mcux_config {
 	void (*irq_connect)(const struct device *dev);
 	sai_sync_mode_t rx_sync_mode;
 	sai_sync_mode_t tx_sync_mode;
+	sai_bclk_source_t bclk_source;
 };
 
 /* Device run time data */
@@ -512,8 +513,14 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	}
 
 	if (i2s_cfg->frame_clk_freq == 0U) {
-		LOG_ERR("Invalid frame_clk_freq %u", i2s_cfg->frame_clk_freq);
-		goto invalid_config;
+		/* deconfigure the stream: release any queued buffers and
+		 * return the interface to the NOT_READY state
+		 */
+		struct stream *strm = (dir == I2S_DIR_TX) ? &dev_data->tx : &dev_data->rx;
+
+		i2s_purge_stream_buffers(strm, strm->cfg.mem_slab, true, true);
+		strm->state = I2S_STATE_NOT_READY;
+		return 0;
 	}
 
 	if (word_size_bits < SAI_WORD_SIZE_BITS_MIN || word_size_bits > SAI_WORD_SIZE_BITS_MAX) {
@@ -541,8 +548,6 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	get_mclk_rate(dev, &mclk);
 	LOG_DBG("mclk is %d", mclk);
 
-	/* bit clock source is MCLK */
-	config.bitClock.bclkSource = kSAI_BclkSourceMclkDiv;
 	/*
 	 * additional settings for bclk
 	 * read the SDK header file for more details
@@ -592,6 +597,11 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		ret = -EINVAL;
 		goto invalid_config;
 	}
+
+	/* The SAI_Get*Config() helpers above reset the bit clock source to
+	 * the master clock divider; honor the devicetree selection instead.
+	 */
+	config.bitClock.bclkSource = dev_cfg->bclk_source;
 
 	/* sync mode configurations */
 	if (dir == I2S_DIR_TX) {
@@ -790,6 +800,11 @@ static int i2s_tx_stream_start(const struct device *dev)
 		return ret;
 	}
 
+	/* reset the FIFO pointers, which may hold stale words from a
+	 * previous run of the stream
+	 */
+	base->TCSR |= I2S_TCSR_FR_MASK;
+
 	/* Enable DMA enable bit */
 	SAI_TxEnableDMA(base, kSAI_FIFORequestDMAEnable, true);
 
@@ -889,6 +904,11 @@ static int i2s_rx_stream_start(const struct device *dev)
 		LOG_ERR("Failed to start DMA Ch%d (%d)", strm->dma_channel, ret);
 		return ret;
 	}
+
+	/* reset the FIFO pointers, which may hold stale words from a
+	 * previous run of the stream
+	 */
+	base->RCSR |= I2S_RCSR_FR_MASK;
 
 	/* Enable DMA enable bit */
 	SAI_RxEnableDMA(base, kSAI_FIFORequestDMAEnable, true);
@@ -1282,6 +1302,7 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 		.rx_sync_mode =                                                                    \
 			DT_INST_PROP(i2s_id, nxp_rx_sync_mode) ? kSAI_ModeSync : kSAI_ModeAsync,   \
 		.tx_channel = DT_INST_PROP(i2s_id, nxp_tx_channel),                                \
+		.bclk_source = DT_INST_PROP(i2s_id, nxp_bclk_source),                              \
 	};                                                                                         \
                                                                                                    \
 	static struct i2s_dev_data i2s_##i2s_id##_data = {                                         \

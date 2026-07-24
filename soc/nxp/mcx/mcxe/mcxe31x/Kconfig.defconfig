@@ -20,4 +20,9 @@ config CORTEX_M_SYSTICK
 config ROM_START_OFFSET
 	default 0x1000
 
+# The MC_CGM clock driver cannot program an audio PLL; the SAI driver
+# derives the bit clock from the SAI module clock instead.
+config I2S_HAS_PLL_SETTING
+	default n
+
 endif # SOC_SERIES_MCXE31X
