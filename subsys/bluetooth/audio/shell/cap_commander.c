@@ -561,8 +561,8 @@ struct bt_cap_commander_broadcast_reception_stop_member_param
 static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, size_t argc,
 						       char *argv[])
 {
-	struct bt_cap_commander_broadcast_reception_start_member_param
-		member_params[CONFIG_BT_MAX_CONN] = {0};
+	static struct bt_cap_commander_broadcast_reception_start_member_param
+		member_params[CONFIG_BT_MAX_CONN];
 
 	struct bt_cap_commander_broadcast_reception_start_param param = {
 		.type = BT_CAP_SET_TYPE_AD_HOC,
@@ -584,6 +584,8 @@ static int cmd_cap_commander_broadcast_reception_start(const struct shell *sh, s
 		shell_error(sh, "Not connected");
 		return -ENOEXEC;
 	}
+
+	(void)memset(&member_params, 0, sizeof(member_params));
 
 	/* TODO: Add support for coordinated sets */
 
