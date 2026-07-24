@@ -5,3 +5,7 @@ if(CONFIG_USBD_VIDEO_CLASS OR CONFIG_USBH_VIDEO_CLASS)
   zephyr_include_directories(.)
   zephyr_sources(uvc.c)
 endif()
+
+if(CONFIG_USBD_AUDIO2_CLASS OR CONFIG_USBH_UAC2_CLASS)
+  zephyr_include_directories(.)
+endif()
