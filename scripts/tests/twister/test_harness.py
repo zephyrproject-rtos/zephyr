@@ -562,16 +562,15 @@ def test_pytest__generate_parameters_for_hardware(tmp_path):
     assert pytest_test.pytest_params.flash_command == "flash_command"
 
 
-def test_pytest__update_command_with_env_dependencies():
-    cmd = ["cmd"]
+def test_pytest_get_run_env():
     pytest_test = Pytest()
-    mock.patch.object(Pytest, "PYTEST_PLUGIN_INSTALLED", False)
 
     # Act
-    result_cmd, _ = pytest_test._update_command_with_env_dependencies(cmd)
+    with mock.patch("twisterlib.harness.PYTEST_PLUGIN_INSTALLED", False):
+        env = pytest_test._get_run_env()
 
     # Assert
-    assert result_cmd == ["cmd", "-p", "twister_harness.plugin"]
+    assert "pytest-twister-harness" in env["PYTHONPATH"]
 
 
 def test_pytest_run(tmp_path, caplog):
