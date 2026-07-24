@@ -320,6 +320,13 @@ New Drivers
   * :dtcompatible:`nxp,cmu-fm` — NXP Clock Monitoring Unit (Frequency Meter)
     back-end for the new :ref:`clock_monitor_api` subsystem.
 
+* Stepper
+
+  * Analog Devices Trinamic TMC5240 and TMC5241 integrated stepper motor
+    controller and driver over SPI and single-wire UART
+    (:dtcompatible:`adi,tmc524x`, :dtcompatible:`adi,tmc524x-stepper-ctrl`,
+    :dtcompatible:`adi,tmc524x-stepper-driver`).
+
 * USB
 
   * :dtcompatible:`espressif,esp32-usb-otg-fs` - Espressif USB-OTG full-speed
