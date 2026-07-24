@@ -41,6 +41,24 @@ static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe, int last_result)
 	case RTIO_OP_AWAIT:
 		rtio_iodev_sqe_await_signal(iodev_sqe, rtio_executor_sqe_signaled, NULL);
 		break;
+	case RTIO_OP_CANCEL: {
+		struct rtio_iodev_sqe *submission =
+			rtio_iodev_sqe_from_handle(iodev_sqe->r, sqe->cancel.submission);
+
+		/* A stale/invalid handle means the submission already completed and was
+		 * recycled: nothing to cancel. A live submission is flagged canceled
+		 * and, if its iodev supports it, actively aborted.
+		 */
+		if (submission != NULL) {
+			rtio_iodev_sqe_cancel(submission);
+		}
+
+		/* The cancel op never blocks and never depends on the submission it
+		 * cancels, so it always completes successfully.
+		 */
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+		break;
+	}
 	default:
 		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
 	}
