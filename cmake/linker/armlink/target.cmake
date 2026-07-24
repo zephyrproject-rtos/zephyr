@@ -78,7 +78,7 @@ function(toolchain_ld_link_elf)
     ${ZEPHYR_LIBS_OBJECTS}
     kernel
     $<TARGET_OBJECTS:${OFFSETS_LIB}>
-    --library_type=microlib
+    $<$<NOT:$<BOOL:${CONFIG_ARMCLANG_STD_LIBC}>>:--library_type=microlib>
     --entry=$<TARGET_PROPERTY:linker,ENTRY>
     "--keep=\"*.o(.init_*)\""
     "--keep=\"*.o(.device_*)\""
@@ -123,7 +123,12 @@ macro(toolchain_linker_finalize)
     set(zephyr_std_libs "${zephyr_std_libs} ${link_flag}")
   endforeach()
 
-  set(common_link "<LINK_FLAGS> <LINK_LIBRARIES> <OBJECTS> ${zephyr_std_libs} -o <TARGET>")
+  set(linker_cpp_base)
+  if(CONFIG_CPP)
+    get_property(linker_cpp_base TARGET linker PROPERTY cpp_base)
+  endif()
+
+  set(common_link "<LINK_FLAGS> <LINK_LIBRARIES> <OBJECTS> ${linker_cpp_base} ${zephyr_std_libs} -o <TARGET>")
   set(CMAKE_C_LINK_EXECUTABLE "<CMAKE_LINKER> <CMAKE_C_LINK_FLAGS> ${common_link}")
   set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_LINKER> <CMAKE_CXX_LINK_FLAGS> ${common_link}")
   set(CMAKE_ASM_LINK_EXECUTABLE "<CMAKE_LINKER> <CMAKE_ASM_LINK_FLAGS> ${common_link}")
