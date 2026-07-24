@@ -1,0 +1,32 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT51XXX USB in device mode
+
+compatible: "ite,it51xxx-usb"
+
+include: [pinctrl-device.yaml, usb-ep.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts-extended:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  wucctrl:
+    type: phandles
+    description: |
+      UDC node WUC interrupt.
+
+  extend-ctrl:
+    type: array
+    description: |
+      Extend control configuration for UDC pin mapping on some
+      it51xxx SoCs. It is defined as: <reg_address enable_bit disable_bit>

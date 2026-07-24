@@ -28,3 +28,10 @@ tests:
       - native_sim/native/64
     integration_platforms:
       - native_sim/native/64
+  drivers.usb.udc.it51526aw:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="udc_it51xxx_evb_it51526aw.overlay"
+    platform_allow:
+      - it51xxx_evb/it51526aw
+    integration_platforms:
+      - it51xxx_evb/it51526aw
