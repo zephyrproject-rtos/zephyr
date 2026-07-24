@@ -16,14 +16,20 @@ static void test_fcb_append(struct fcb *_fcb)
 	int j;
 	int var_cnt;
 
+	uint8_t align;
+	size_t write_len;
+	align = fcb_get_align(_fcb);
+
 	for (i = 0; i < sizeof(test_data); i++) {
 		for (j = 0; j < i; j++) {
 			test_data[j] = fcb_test_append_data(i, j);
 		}
+		write_len = ROUND_UP(i, align);
+		memset(test_data + i, 0, write_len - i);
 		rc = fcb_append(_fcb, i, &loc);
 		zassert_true(rc == 0, "fcb_append call failure");
 		rc = flash_area_write(_fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc),
-				      test_data, i);
+				      test_data, write_len);
 		zassert_true(rc == 0, "flash_area_write call failure");
 		rc = fcb_append_finish(_fcb, &loc);
 		zassert_true(rc == 0, "fcb_append_finish call failure");
