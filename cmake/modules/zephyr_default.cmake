@@ -15,7 +15,7 @@ include_guard(GLOBAL)
 # Unfortunately CMake requires the toplevel CMakeLists.txt file to define the
 # required version, not even invoking it from a CMake module is sufficient.
 # It is however permitted to have multiple invocations of cmake_minimum_required.
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 message(STATUS "Application: ${APPLICATION_SOURCE_DIR}")
 
@@ -49,19 +49,6 @@ find_package(ZephyrAppConfiguration
   NO_CMAKE_SYSTEM_PATH
   NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
 )
-
-# Test and error-out if we are affected by the PyPI CMake 3.22.1 / 3.22.2 bug
-if(${CMAKE_VERSION} VERSION_EQUAL 3.22.1 OR ${CMAKE_VERSION} VERSION_EQUAL 3.22.2)
-  # It seems only pip-installed builds are affected so we test to see if we are affected
-  cmake_path(GET ZEPHYR_BASE PARENT_PATH test_cmake_path)
-  if(ZEPHYR_BASE STREQUAL test_cmake_path)
-    message(FATAL_ERROR "The CMake version ${CMAKE_VERSION} installed suffers the \n"
-      " 'cmake_path(... PARENT_PATH)' bug, see:\n"
-      "https://gitlab.kitware.com/cmake/cmake/-/issues/23187\n"
-      "https://github.com/scikit-build/cmake-python-distributions/issues/221\n"
-      "Please install another CMake version or use a build of CMake that does not come from PyPI.")
-  endif()
-endif()
 
 # Prepare user cache
 list(APPEND zephyr_cmake_modules python)

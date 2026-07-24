@@ -4,7 +4,7 @@
 # and creates a flashable zephyr.hex file containing UICR data (no C code compiled)
 #
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 # Instead of adding all of Zephyr we add just the subset that is
 # required to generate uicr.hex.

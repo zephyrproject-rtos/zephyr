@@ -174,14 +174,14 @@ function(sysbuild_cache)
                     RESULT_VARIABLE compare_res
     )
     if(NOT compare_res EQUAL 0)
-      zephyr_file_copy(${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp
+      file(COPY_FILE ${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp
                        ${${SB_CACHE_APPLICATION}_CACHE_FILE}
       )
       ExternalProject_Get_Property(${SB_CACHE_APPLICATION} BINARY_DIR)
       file(TOUCH_NOCREATE ${BINARY_DIR}/CMakeCache.txt)
     endif()
   else()
-    zephyr_file_copy(${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp
+    file(COPY_FILE ${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp
                      ${${SB_CACHE_APPLICATION}_CACHE_FILE} ONLY_IF_DIFFERENT
     )
   endif()
