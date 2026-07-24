@@ -1,0 +1,17 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+name: nxp-ot
+description: |
+  NXP OpenThread platform configuration including radio driver,
+  RCP host interface, and PSA crypto support.
+append:
+  FORCED_CONF_FILE: nxp-ot.conf
+
+boards:
+  /.*rw612.*/:
+    append:
+      FORCED_CONF_FILE: boards/rw612.conf
+  /.*mcxw72.*/:
+    append:
+      FORCED_CONF_FILE: boards/mcxw72.conf
