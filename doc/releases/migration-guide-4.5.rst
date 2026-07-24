@@ -391,6 +391,60 @@ GPIO
 
 * On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
 
+* The standalone Raspberry Pi RP1 GPIO driver (``CONFIG_GPIO_RP1`` / ``gpio_rp1.c``) has been
+  removed. :dtcompatible:`raspberrypi,rp1-gpio` nodes are now driven by the Raspberry Pi Pico
+  GPIO driver ( :kconfig:option:`CONFIG_GPIO_RPI_PICO` ), which is selected automatically when
+  such a node is enabled. Out-of-tree configurations that set ``CONFIG_GPIO_RP1`` should drop it;
+  the symbol no longer exists.
+
+* The devicetree representation of :dtcompatible:`raspberrypi,rp1-gpio` nodes has changed. The
+  ``reg`` property no longer packs the ``gpio``, ``rio`` and ``pads`` offsets into three address
+  cells; instead each bank node carries a single ``reg`` bank index, and the register regions are
+  provided by the parent :dtcompatible:`raspberrypi,rp1-pinctrl` node as ``gpioN``, ``rioN`` and
+  ``padsN`` named regions. Out-of-tree devicetrees with such nodes must be updated, for example:
+
+  .. code-block:: devicetree
+
+     /* before */
+     gpio0: gpio@1f000d0000 {
+             compatible = "simple-bus";
+             reg = <0x1f 0xd0000 0x30000>;
+
+             gpio0_0: gpio@0 {
+                     compatible = "raspberrypi,rp1-gpio";
+                     reg = <0x0 0x10000 0x20000>;
+                     /* ... */
+             };
+     };
+
+     /* after */
+     rp1_pinctrl: pinctrl@1f000d0000 {
+             compatible = "raspberrypi,rp1-pinctrl";
+             reg = <0x1f 0xd0000 0x3124>, <0x1f 0xf0004 0x3070>,
+                   <0x1f 0xe0000 0x300c>;
+             reg-names = "gpio0", "pads0", "rio0";
+
+             gpio0_0: gpio@0 {
+                     compatible = "raspberrypi,rp1-gpio";
+                     reg = <0>;
+                     /* ... */
+             };
+     };
+
+* The devicetree representation of :dtcompatible:`raspberrypi,pico-gpio` nodes has changed. Now that
+  these nodes are handled by the reworked :kconfig:option:`CONFIG_GPIO_RPI_PICO` driver, the ``reg``
+  property must provide the ``gpio``, ``pads`` and ``sio`` register regions as named regions
+  ``gpio0``, ``pads0`` and ``sio0`` instead of a single entry. The in-tree RP2040/RP2350 SoC
+  devicetrees have been updated; out-of-tree devicetrees with such nodes must add the extra
+  regions, for example:
+
+  .. code-block:: devicetree
+
+     reg = <0x40014000 DT_SIZE_K(4)>,    /* was: reg = <0x40014000 DT_SIZE_K(4)>; */
+           <0x4001c000 DT_SIZE_K(4)>,
+           <0xd0000000 0x180>;
+     reg-names = "gpio0", "pads0", "sio0";
+
 Haptics
 =======
 
