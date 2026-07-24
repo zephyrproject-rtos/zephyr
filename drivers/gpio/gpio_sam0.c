@@ -15,6 +15,9 @@
 #include <zephyr/drivers/interrupt_controller/sam0_eic.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#ifdef CONFIG_GPIO_FAST
+#include <zephyr/drivers/gpio/gpio_fast.h>
+#endif /* CONFIG_GPIO_FAST */
 
 #ifndef PORT_PMUX_PMUXE_A_Val
 #define PORT_PMUX_PMUXE_A_Val (0)
@@ -268,6 +271,67 @@ static uint32_t gpio_sam0_get_pending_int(const struct device *dev)
 }
 
 #endif
+
+#ifdef CONFIG_GPIO_FAST
+/*
+ * SAM0 has two paths to the PORT registers:
+ *   - APB PORT at 0x41004400 (multi-cycle, used by the standard driver)
+ *   - PORT_IOBUS at 0x60000000 (single-cycle via IOBUS)
+ *
+ * The DT and standard driver use the APB address. For fast GPIO we remap
+ * to the PORT_IOBUS address so every register access is single-cycle.
+ */
+#define SAM0_PORT_APB_BASE  0x41004400UL
+#define SAM0_PORT_IOBUS_BASE 0x60000000UL
+
+static inline PortGroup *sam0_port_iobus_group(PortGroup *apb_regs)
+{
+	mem_addr_t apb_addr = (mem_addr_t)apb_regs;
+	mem_addr_t offset = apb_addr - SAM0_PORT_APB_BASE;
+
+	return (PortGroup *)(SAM0_PORT_IOBUS_BASE + offset);
+}
+
+int gpio_fast_configure_atmel_sam0_gpio(struct gpio_fast_spec_atmel_sam0_gpio *fast,
+			const struct device *port, gpio_port_pins_t pin_mask, gpio_flags_t flags)
+{
+	const struct gpio_sam0_config *cfg = port->config;
+	PortGroup *regs = sam0_port_iobus_group(cfg->regs);
+	int ret;
+
+	/* Configure pins using the standard GPIO API (via APB — fine for init) */
+	for (uint8_t pin = 0; pin < 32; pin++) {
+		if (pin_mask & BIT(pin)) {
+			ret = gpio_pin_configure(port, pin, flags);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	fast->set_reg = (mem_addr_t)&regs->OUTSET.reg;
+	fast->clr_reg = (mem_addr_t)&regs->OUTCLR.reg;
+	fast->tgl_reg = (mem_addr_t)&regs->OUTTGL.reg;
+	fast->in_reg  = (mem_addr_t)&regs->IN.reg;
+	fast->dir_set = (mem_addr_t)&regs->DIRSET.reg;
+	fast->dir_clr = (mem_addr_t)&regs->DIRCLR.reg;
+	fast->pin_mask = pin_mask;
+
+	return 0;
+}
+
+int gpio_fast_pre_stream_atmel_sam0_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+
+int gpio_fast_post_stream_atmel_sam0_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+#endif /* CONFIG_GPIO_FAST */
 
 static DEVICE_API(gpio, gpio_sam0_api) = {
 	.pin_configure = gpio_sam0_config,

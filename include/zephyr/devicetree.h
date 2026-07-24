@@ -4048,6 +4048,24 @@
 	IS_ENABLED(DT_CAT3(node_id, _COMPAT_MATCHES_, compat))
 
 /**
+ * @brief Get a node's binding compatible as a token.
+ *
+ * Expands to the compatible string (in lowercase-and-underscores
+ * form) that matched this node's binding. Useful for token-pasting
+ * to dispatch to compat-namespaced symbols at compile time.
+ *
+ * Example, assuming the GPIO controller node matched "nordic,nrf-gpio":
+ *
+ * @code{.c}
+ *     DT_BINDING_COMPAT(DT_NODELABEL(gpio0))  // expands to: nordic_nrf_gpio
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return The binding compatible as a C token (lowercase, underscores).
+ */
+#define DT_BINDING_COMPAT(node_id) DT_CAT(node_id, _BINDING_COMPAT)
+
+/**
  * @brief Does a devicetree node have a compatible and status?
  *
  * This is equivalent to:

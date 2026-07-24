@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test node for the fast GPIO API.
+
+compatible: "test-gpio-fast-api"
+
+include: gpio-fast.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin used for fast GPIO testing.
