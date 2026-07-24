@@ -141,10 +141,21 @@ static int sdio_io_rw_extended(struct sd_card *card,
 	cmd.response_type = (SD_RSP_TYPE_R5 | SD_SPI_RSP_TYPE_R5);
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 	if (blocks == 0) {
-		/* Byte mode */
+		/* Byte mode: 9-bit byte count, 0 = 512 per spec. */
 		cmd.arg |= (block_size == 512) ? 0 : block_size;
 	} else {
-		/* Block mode */
+		/* Block mode: 9-bit block count, valid range 1..511. Per the
+		 * SDIO spec, count = 0 in block mode means "transfer until
+		 * I/O-abort", not 512 blocks; 512 itself has no valid
+		 * encoding. Reject blocks > 511 so the caller gets a clear
+		 * error rather than either silent register-address corruption
+		 * (bit 9 leaking from blocks=0x200) or a silent unbounded
+		 * transfer (a naive 9-bit mask of 512 yielding 0). Callers
+		 * needing more than 511 blocks must issue multiple CMD53s.
+		 */
+		if (blocks > 511) {
+			return -EINVAL;
+		}
 		cmd.arg |= BIT(SDIO_EXTEND_CMD_ARG_BLK_SHIFT) | blocks;
 	}
 
