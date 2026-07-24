@@ -891,6 +891,30 @@ __syscall bool device_is_ready(const struct device *dev);
 	LOG_ERR("%s device not ready", (dev) ? (dev)->name : "(null)")
 
 /**
+ * @brief Writes a "device not ready" warning message to the log for the logging instance.
+ *
+ * @details Writes a "device not ready" warning message to the log using the
+ * device name as reference, meant to be used in device_is_ready checks.
+ *
+ * @param _log_inst pointer to the log structure associated with the instance.
+ * @param dev pointer to a struct device.
+ */
+#define LOG_INST_WRN_DEVICE_NOT_READY(_log_inst, dev) \
+	LOG_INST_WRN(_log_inst, "%s device not ready", (dev) ? (dev)->name : "(null)")
+
+/**
+ * @brief Writes a "device not ready" error message to the log for the logging instance.
+ *
+ * @details Writes a "device not ready" error message to the log using the
+ * device name as reference, meant to be used in device_is_ready checks.
+ *
+ * @param _log_inst pointer to the log structure associated with the instance.
+ * @param dev pointer to a struct device.
+ */
+#define LOG_INST_ERR_DEVICE_NOT_READY(_log_inst, dev) \
+	LOG_INST_ERR(_log_inst, "%s device not ready", (dev) ? (dev)->name : "(null)")
+
+/**
  * @brief Initialize a device.
  *
  * A device whose initialization was deferred (by marking it as
