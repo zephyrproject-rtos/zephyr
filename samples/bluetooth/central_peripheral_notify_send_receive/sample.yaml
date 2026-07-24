@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth Central Peripheral Notify Send Receive
+tests:
+  sample.bluetooth.central_peripheral_notify_send_receive:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52_bsim
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3
