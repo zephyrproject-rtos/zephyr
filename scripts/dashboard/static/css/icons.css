@@ -49,6 +49,7 @@
   /* text-shadow: 1px 1px 1px rgba(127, 127, 127, 0.3); */
 }
 
+
 .bi-caret-right-fill:before { content: '\e800'; } /* '' */
 .bi-caret-down-fill:before { content: '\e801'; } /* '' */
 .bi-file-code:before { content: '\e802'; } /* '' */
@@ -58,3 +59,5 @@
 .bi-info-circle:before { content: '\e806'; } /* '' */
 .bi-eye-slash:before { content: '\e807'; } /* '' */
 .bi-exclamation-circle:before { content: '\e808'; } /* '' */
+.bi-copy:before { content: '\e809'; } /* '' */
+.bi-check2:before { content: '\e80a'; } /* '' */
