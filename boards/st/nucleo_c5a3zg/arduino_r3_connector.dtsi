@@ -39,6 +39,8 @@
 
 arduino_i2c: &i2c1 {};
 
+arduino_i3c: &i3c1 {};
+
 arduino_serial: &usart2 {};
 
 arduino_spi: &spi1 {};
