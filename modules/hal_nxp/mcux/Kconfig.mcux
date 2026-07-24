@@ -259,6 +259,9 @@ config TFLM_NXP_NEUTRON
 	  This allows TFLM models to use the NEUTRON accelerator
 	  for inference operations.
 
+config TRDC_MCUX_TRDC
+	bool "Use TRDC MCUX Driver"
+
 endif # HAS_MCUX
 
 config BT_NXP_PCM_PINS_DIR_REVERSE

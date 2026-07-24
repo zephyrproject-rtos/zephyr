@@ -40,6 +40,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config MCUX_FLASH_K4_API
 	default y
 
+config TRDC_MCUX_TRDC
+	default y if SOC_MCXW727C
+
 if BT
 
 config MAIN_STACK_SIZE
