@@ -28,3 +28,29 @@ family:
     - name: pic32ck2051gc00064
     - name: pic32ck2051gc00100
     - name: pic32ck2051gc00144
+  - name: pic32ck_sg01
+    socs:
+    - name: pic32ck0512sg01064
+    - name: pic32ck0512sg01100
+    - name: pic32ck1012sg01048
+    - name: pic32ck1012sg01064
+    - name: pic32ck1012sg01100
+    - name: pic32ck1025sg01064
+    - name: pic32ck1025sg01100
+    - name: pic32ck1025sg01144
+    - name: pic32ck2051sg01064
+    - name: pic32ck2051sg01100
+    - name: pic32ck2051sg01144
+  - name: pic32ck_sg00
+    socs:
+    - name: pic32ck0512sg00064
+    - name: pic32ck0512sg00100
+    - name: pic32ck1012sg00048
+    - name: pic32ck1012sg00064
+    - name: pic32ck1012sg00100
+    - name: pic32ck1025sg00064
+    - name: pic32ck1025sg00100
+    - name: pic32ck1025sg00144
+    - name: pic32ck2051sg00064
+    - name: pic32ck2051sg00100
+    - name: pic32ck2051sg00144

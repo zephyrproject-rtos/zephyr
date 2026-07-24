@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	porta_secure: gpio@44801000 {
+		compatible = "microchip,port-g1-gpio";
+		reg = <0x44801000 0x80>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		#microchip,pin-cells = <2>;
+		status = "disabled";
+	};
+
+	portb_secure: gpio@44801080 {
+		compatible = "microchip,port-g1-gpio";
+		reg = <0x44801080 0x80>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		#microchip,pin-cells = <2>;
+		status = "disabled";
+	};
+
+	portc_secure: gpio@44801100 {
+		compatible = "microchip,port-g1-gpio";
+		reg = <0x44801100 0x80>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		#microchip,pin-cells = <2>;
+		status = "disabled";
+	};
+
+	portd_secure: gpio@44801180 {
+		compatible = "microchip,port-g1-gpio";
+		reg = <0x44801180 0x80>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		#microchip,pin-cells = <2>;
+		status = "disabled";
+	};
+};
