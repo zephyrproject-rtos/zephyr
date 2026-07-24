@@ -1,0 +1,58 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+
+/ {
+	chosen {
+		/* Use AP1302 as capture device for this sample */
+		zephyr,camera = &ap1302;
+	};
+};
+
+/* Enable LPI2C3 and its IO expanders for camera use */
+&lpi2c3 {
+	status = "okay";
+
+	mfd_adp5585: adp5585@34 {
+		status = "okay";
+
+		adp5585_gpio: adp5585_gpio {
+			status = "okay";
+		};
+	};
+
+	pcal6408: gpio@20 {
+		status = "okay";
+	};
+};
+
+&reg_cam_dvdd {
+	status = "okay";
+};
+
+&reg_cam_vddio {
+	status = "okay";
+};
+
+&reg_cam_avdd {
+	status = "okay";
+};
+
+&reg_cam_vddio_hmisc {
+	status = "okay";
+};
+
+/* Board-specific wiring: clock, pinctrl, power supplies for AP1302 */
+&ap1302 {
+	power-supplies = <&reg_cam_dvdd>,
+			 <&reg_cam_vddio>,
+			 <&reg_cam_avdd>,
+			 <&reg_cam_vddio_hmisc>;
+	clock-names = "mclk";
+	clocks = <&scmi_clk IMX95_CLK_CCMCKO1>;
+	pinctrl-0 = <&cmmclk1_default>;
+	pinctrl-names = "default";
+};

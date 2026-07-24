@@ -9,6 +9,7 @@
 #include <nxp/imx/nxp_imx95_m7.dtsi>
 #include "imx95_evk-pinctrl.dtsi"
 #include <dt-bindings/mipi_dsi/mipi_dsi.h>
+#include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 
 / {
 	model = "NXP i.MX95 EVK board";
@@ -18,6 +19,16 @@
 		watchdog0 = &wdog5;
 		i2s-codec-tx = &sai3_2;
 		i2s-tx = &sai3_2;
+	};
+
+	/* Camera connector abstraction (for camera shields) */
+	csi_connector: cam_connector {
+		compatible = "raspberrypi,csi-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <CSI_IO0 0 &pcal6408 2 0>,
+			   <CSI_IO1 0 &adp5585_gpio 2 0>;
 	};
 
 	chosen {
@@ -178,6 +189,38 @@
 	};
 };
 
+&lpi2c3 {
+	status = "disabled";
+	pinctrl-0 = <&lpi2c3_default>;
+	pinctrl-names = "default";
+
+	/* ADP5585 MFD device for camera power control */
+	mfd_adp5585: adp5585@34 {
+		compatible = "adi,adp5585";
+		reg = <0x34>;
+		status = "disabled";
+
+		/* GPIO child node */
+		adp5585_gpio: adp5585_gpio {
+			compatible = "adi,adp5585-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <13>;
+			gpio-reserved-ranges = <5 3>;
+			status = "disabled";
+		};
+	};
+
+	pcal6408: gpio@20 {
+		compatible = "nxp,pcal6408a";
+		reg = <0x20>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		status = "disabled";
+	};
+};
+
 &lpi2c5 {
 	pinctrl-0 = <&lpi2c5_default>;
 	pinctrl-names = "default";
@@ -295,4 +338,37 @@ display_i2c: &lpi2c2 {};
 
 &wdog5 {
 	status = "okay";
+};
+
+csi_i2c: &lpi2c3 {};
+
+/ {
+	/* Camera power regulators (ADP5585 is on-board, not on the shield) */
+	reg_cam_dvdd: regulator-cam-dvdd {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_DVDD_1V2";
+		enable-gpios = <&adp5585_gpio 9 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+
+	reg_cam_vddio: regulator-cam-vddio {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_VDDIO_1V8";
+		enable-gpios = <&adp5585_gpio 8 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+
+	reg_cam_avdd: regulator-cam-avdd {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_AVDD_2V8";
+		enable-gpios = <&adp5585_gpio 10 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+
+	reg_cam_vddio_hmisc: regulator-cam-vddio-hmisc {
+		compatible = "regulator-fixed";
+		regulator-name = "CAM_VDDIO_HMISC_1V8";
+		enable-gpios = <&adp5585_gpio 12 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
 };

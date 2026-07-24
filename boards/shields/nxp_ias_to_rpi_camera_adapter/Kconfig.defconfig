@@ -1,0 +1,12 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_NXP_IAS_TO_RPI_CAMERA_ADAPTER
+
+config REGULATOR
+	default y
+
+config REGULATOR_FIXED
+	default y
+
+endif # SHIELD_NXP_IAS_TO_RPI_CAMERA_ADAPTER
