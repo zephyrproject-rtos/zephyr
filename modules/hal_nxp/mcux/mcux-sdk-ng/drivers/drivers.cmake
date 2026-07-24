@@ -182,6 +182,7 @@ set_variable_ifdef(CONFIG_CLOCK_MONITOR_NXP_CMU_FC CONFIG_MCUX_COMPONENT_driver.
 set_variable_ifdef(CONFIG_CLOCK_MONITOR_NXP_CMU_FM CONFIG_MCUX_COMPONENT_driver.cmu_fm)
 set_variable_ifdef(CONFIG_PHY_NXP_T1S           CONFIG_MCUX_COMPONENT_driver.tenbaset_phy)
 set_variable_ifdef(CONFIG_AUXDISPLAY_NXP_SLCD CONFIG_MCUX_COMPONENT_driver.slcd)
+set_variable_ifdef(CONFIG_VIDEO_MCUX_ISI	CONFIG_MCUX_COMPONENT_driver.isi)
 
 if(NOT CONFIG_SOC_MIMX9596)
   set_variable_ifdef(CONFIG_ETH_NXP_IMX_NETC          CONFIG_MCUX_COMPONENT_driver.netc_switch)
