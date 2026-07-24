@@ -37,6 +37,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
+#include <host/conn_internal.h>
 #include "audio_internal.h"
 #include "tbs_internal.h"
 #include "common/bt_str.h"
@@ -369,10 +370,16 @@ static struct tbs_inst *lookup_inst_by_uri_scheme(const uint8_t *uri, uint8_t ur
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	const uint8_t conn_index = bt_conn_index(conn);
+	uint8_t conn_index;
 	int err;
 
 	ARG_UNUSED(reason);
+
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
+	conn_index = bt_conn_index(conn);
 
 	err = k_mutex_lock(&tbs_mutex, MUTEX_TIMEOUT);
 	if (err != 0) {

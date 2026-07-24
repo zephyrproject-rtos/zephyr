@@ -48,6 +48,7 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTAN
 
 #include "common/bt_str.h"
 
+#include <host/conn_internal.h>
 #include "audio_internal.h"
 #include "bap_internal.h"
 
@@ -976,10 +977,15 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	struct bap_broadcast_assistant_instance *inst = inst_by_conn(conn);
+	struct bap_broadcast_assistant_instance *inst;
 
 	ARG_UNUSED(reason);
 
+	if (!bt_conn_is_le(conn)) {
+		return;
+	}
+
+	inst = inst_by_conn(conn);
 	if (inst) {
 		(void)broadcast_assistant_reset(inst);
 	}
