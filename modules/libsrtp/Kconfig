@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright 2026 Sayed Naser Moravej
+# SPDX-License-Identifier: Apache-2.0
+
+config LIBSRTP
+	bool "libsrtp support"
+	select MBEDTLS
+	select PSA_CRYPTO
+	select MBEDTLS_PSA_CRYPTO_C
+	select MBEDTLS_ENABLE_HEAP
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_CTR
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_SHA_1
+
+	help
+	  Enable libsrtp library integration as a Zephyr module.
+
+if LIBSRTP
+
+config MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
+	bool "Assume exclusive buffers for PSA Crypto operations"
+	default n
+
+config MBEDTLS_HEAP_SIZE
+	default 16384 if LIBSRTP
+
+endif #LIBSRTP
