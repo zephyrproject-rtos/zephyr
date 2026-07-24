@@ -148,7 +148,8 @@ static int gt911_process(const struct device *dev)
 	points = status & GT911_TOUCH_POINTS_MSK;
 
 	/* need to clear the status */
-	uint8_t clear_buffer[3] = {(uint8_t)GT911_REG_STATUS, (uint8_t)(GT911_REG_STATUS >> 8), 0};
+	static const uint8_t clear_buffer[3] = {(uint8_t)GT911_REG_STATUS,
+						(uint8_t)(GT911_REG_STATUS >> 8), 0};
 
 	r = gt911_i2c_write(dev, clear_buffer, sizeof(clear_buffer));
 	if (r < 0) {
