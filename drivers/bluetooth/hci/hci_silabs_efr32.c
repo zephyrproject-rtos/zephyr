@@ -10,8 +10,21 @@
 
 #include <sl_btctrl_linklayer.h>
 #include <sl_hci_common_transport.h>
+
+#ifdef CONFIG_HAS_SILABS_SISDK
 #include <sl_rail_util_compatible_pa.h>
 #include <sl_rail.h>
+#endif
+
+#ifdef CONFIG_HAS_SILABS_GECKO
+#include <sl_bluetooth_controller.h>
+#include <sl_btctrl_hci.h>
+#include <pa_conversions_efr32.h>
+#include <rail.h>
+
+void *BTLE_LL_GetRadioHandle(void);
+#endif
+
 #include <soc_radio.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
@@ -266,7 +279,11 @@ static int slz_bt_open(const struct device *dev)
 	sl_rail_util_pa_init();
 
 	/* Initialize Controller features based on Kconfig values */
+#ifdef CONFIG_HAS_SILABS_GECKO
+	sl_status = sl_btctrl_init_zephyr();
+#else
 	sl_status = sl_btctrl_init();
+#endif
 	if (sl_status != SL_STATUS_OK) {
 		LOG_ERR("sl_bt_controller_init failed, status=%d", sl_status);
 		ret = -EIO;
@@ -276,6 +293,26 @@ static int slz_bt_open(const struct device *dev)
 	slz_set_tx_power(CONFIG_BT_CTLR_TX_PWR_ANTENNA);
 
 	if (IS_ENABLED(CONFIG_PM)) {
+#ifdef CONFIG_HAS_SILABS_GECKO
+		RAIL_Status_t status;
+
+		status = RAIL_InitPowerManager();
+		if (status != RAIL_STATUS_NO_ERROR) {
+			LOG_ERR("RAIL: failed to initialize power management, status=%d", status);
+			ret = -EIO;
+			goto deinit;
+		}
+
+		status = RAIL_ConfigSleep(BTLE_LL_GetRadioHandle(),
+					  RAIL_SLEEP_CONFIG_TIMERSYNC_ENABLED);
+		if (status != RAIL_STATUS_NO_ERROR) {
+			LOG_ERR("RAIL: failed to configure sleep, status=%d", status);
+			ret = -EIO;
+			goto deinit;
+		}
+#endif
+
+#ifdef CONFIG_HAS_SILABS_SISDK
 		sl_rail_timer_sync_config_t timer_sync_config = SL_RAIL_TIMER_SYNC_DEFAULT;
 		sl_rail_status_t status;
 
@@ -294,6 +331,7 @@ static int slz_bt_open(const struct device *dev)
 			ret = -EIO;
 			goto deinit;
 		}
+#endif
 	}
 
 	/* Set up interrupts after Controller init, because it will overwrite them. */

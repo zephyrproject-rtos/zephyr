@@ -1,0 +1,53 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs Series 1 Radio Interface
+
+description: |
+  Controls the radio transceiver on Silicon Labs Series 1 SoCs.
+
+compatible: "silabs,series1-radio"
+
+include: [base.yaml, ble-radio.yaml, radio.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pa-initial-power-dbm:
+    type: int
+    required: true
+    description: |
+      Initial Power Amplifier power in dBm.
+
+  pa-ramp-time-us:
+    type: int
+    required: true
+    description: |
+      Power Amplifier ramp time in microseconds.
+
+  pa-voltage-mv:
+    type: int
+    required: true
+    description: |
+      Voltage on PAVDD supply pin in millivolts.
+
+  pa-2p4ghz:
+    type: string
+    description: |
+      Power Amplifier selection for 2.4 GHz.
+      If this property is not set, no 2.4 GHz PA is enabled.
+    enum:
+      - hp
+      - lp
+
+  pa-subghz:
+    type: string
+    description: |
+      Power Amplifier selection for sub-GHz.
+      If this property is not set, no sub-GHz PA is enabled.
+    enum:
+      - hp
