@@ -426,6 +426,16 @@ Other notable changes
     key. The first entry is the key the application is signed with and the rest are
     verification-only public keys. See :ref:`build-signing`.
 
+* Arm
+
+  * The non-secure variant of
+      :zephyr:board:`Arm Musca-S1 <v2m_musca_s1>` (``v2m_musca_s1/musca_s1/ns``)
+      has been removed due to TF-M removing platform support for this board.
+
+  * As a consequence of the above, the secure variant of
+    :zephyr:board:`Arm Musca-S1 <v2m_musca_s1>` (``v2m_musca_s1``) has been deprecated.
+    This is to avoid a confusing state of partial support
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
