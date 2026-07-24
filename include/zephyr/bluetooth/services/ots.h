@@ -148,7 +148,7 @@ enum {
 #define BT_OTS_OBJ_SET_PROP_PATCH(prop) \
 	WRITE_BIT(prop, BT_OTS_OBJ_PROP_PATCH, 1)
 
-/** @brief Set @ref BT_OTS_OBJ_SET_PROP_MARKED property.
+/** @brief Set @ref BT_OTS_OBJ_PROP_MARKED property.
  *
  *  @param prop Object properties.
  */
@@ -262,7 +262,7 @@ enum bt_ots_oacp_write_op_mode {
 	BT_OTS_OACP_WRITE_OP_MODE_TRUNCATE = BIT(1),
 };
 
-/** @brief Set @ref BT_OTS_OACP_SET_FEAT_CREATE feature.
+/** @brief Set @ref BT_OTS_OACP_FEAT_CREATE feature.
  *
  *  @param feat OTS features.
  */
