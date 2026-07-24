@@ -305,6 +305,20 @@ typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, int 
 typedef void (*rtio_signaled_t)(struct rtio_iodev_sqe *iodev_sqe, void *userdata);
 
 /**
+ * @brief Opaque identity for a submission queue entry
+ *
+ * Encodes the entry's pool block index and generation as
+ * @c (block_index << 16) | generation. Unlike a raw @ref rtio_sqe pointer a
+ * handle can be validated (bounds + generation) before the target is touched,
+ * so a stale handle to a completed-and-recycled entry is safely rejected rather
+ * than dereferenced. Used as the identity primitive for cancellation.
+ *
+ * @see rtio_sqe_handle()
+ * @see rtio_iodev_sqe_from_handle()
+ */
+typedef uint32_t rtio_sqe_handle_t;
+
+/**
  * @brief A submission queue event
  */
 struct rtio_sqe {
@@ -386,6 +400,43 @@ struct rtio_sqe {
 
 
 /**
+ * @name rtio_iodev_sqe status word bits
+ *
+ * The status word carries the entry's identity and lifetime independently of
+ * the immutable @ref rtio_sqe. The generation is bumped every time the entry is
+ * returned to the pool so any handle captured against a prior occupant no longer
+ * matches.
+ * @{
+ */
+/** Generation counter; bumped on free, compared against a handle's generation */
+#define RTIO_SQE_GEN_MASK GENMASK(15, 0)
+/** Set while the entry is allocated from the pool (i.e. a live submission) */
+#define RTIO_SQE_ALLOCD   BIT(16)
+/** @} */
+
+/**
+ * @brief Pool block index encoded in a handle
+ *
+ * @param handle Handle previously returned by rtio_sqe_handle()
+ * @return The entry's pool block index
+ */
+static inline uint16_t rtio_sqe_handle_index(rtio_sqe_handle_t handle)
+{
+	return (uint16_t)(handle >> 16);
+}
+
+/**
+ * @brief Generation counter encoded in a handle
+ *
+ * @param handle Handle previously returned by rtio_sqe_handle()
+ * @return The entry's generation at the time the handle was captured
+ */
+static inline uint16_t rtio_sqe_handle_generation(rtio_sqe_handle_t handle)
+{
+	return (uint16_t)(handle & RTIO_SQE_GEN_MASK);
+}
+
+/**
  * @brief IO device submission queue entry
  *
  * May be cast safely to and from a rtio_sqe as they occupy the same memory provided by the pool
@@ -399,6 +450,9 @@ struct rtio_iodev_sqe {
 	struct rtio_iodev_sqe *next;
 	/** RTIO context that owns this entry */
 	struct rtio *r;
+
+	/** Identity + lifetime word (generation | ALLOCD), see RTIO_SQE_* bits above */
+	atomic_t status;
 
 	/**
 	 * Runtime scratch state that the subsystem/driver mutates while it owns
@@ -857,6 +911,11 @@ static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *p
 	 */
 	memset(&iodev_sqe->rt, 0, sizeof(iodev_sqe->rt));
 
+	/* Mark the slot live. The generation persists from the previous free so a
+	 * handle captured against the prior occupant no longer matches.
+	 */
+	atomic_or(&iodev_sqe->status, RTIO_SQE_ALLOCD);
+
 	pool->pool_free--;
 
 	return iodev_sqe;
@@ -864,6 +923,13 @@ static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *p
 
 static inline void rtio_sqe_pool_free(struct rtio_sqe_pool *pool, struct rtio_iodev_sqe *iodev_sqe)
 {
+	/* Bump the generation and clear ALLOCD so any outstanding handle to this
+	 * slot is rejected by rtio_iodev_sqe_from_handle() once it is recycled.
+	 */
+	atomic_val_t gen = (atomic_get(&iodev_sqe->status) + 1) & RTIO_SQE_GEN_MASK;
+
+	atomic_set(&iodev_sqe->status, gen);
+
 	mpsc_push(&pool->free_q, &iodev_sqe->q);
 
 	pool->pool_free++;
