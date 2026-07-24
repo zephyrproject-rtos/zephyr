@@ -4,18 +4,23 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+/ {
+	aliases {
+		dmic-dev = &dmic_dev;
+	};
+};
 
-&arduino_i2c {
+st_morpho_dfsdm: &dfsdm {
+	dmic_dev: filter@0 {
+		pinctrl-0 = <&dfsdm1_ckout_pe9
+			     &dfsdm1_datin2_pe7>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		channel@2 {
+			reg = <2>;
+		};
+	};
+
 	status = "okay";
-	
-	mp34dt06j_x_nucleo_cca02m2_mic1: mp34dt06j@0 {
-		//compatible = "st,mpxxdtyy";
-		reg = <0>;
-	};
-
-	mp34dt06j_x_nucleo_cca02m2_mic2: mp34dt06j@1 {
-		//compatible = "st,mpxxdtyy";
-		reg = <1>;
-	};
 };
