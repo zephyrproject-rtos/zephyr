@@ -12,34 +12,52 @@
 #include <zephyr/shell/shell_uart.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size);
 
-struct perf_data_t {
-	struct k_timer timer;
-#ifdef CONFIG_SMP
-	struct k_spinlock lock;
-	struct k_ipi_work ipi_work;
+/*
+ * The sampling timer only fires on one CPU. The remaining CPUs are sampled by
+ * broadcasting an IPI to them, which needs architecture support. Without it
+ * (uniprocessor builds, or SMP without IPI support) only the CPU the timer
+ * fires on is sampled.
+ */
+#if defined(CONFIG_SMP) && defined(CONFIG_SCHED_IPI_SUPPORTED)
+#define PERF_IPI_SAMPLING 1
+#else
+#define PERF_IPI_SAMPLING 0
 #endif
 
-	const struct shell *sh;
+/** Statistics gathered during a single recording. */
+struct perf_stats {
+	/** Sampling attempts, including the ones filtered out by thread */
+	atomic_t attempts[CONFIG_MP_MAX_NUM_CPUS];
+	/** Samples that made it into the buffer */
+	atomic_t samples[CONFIG_MP_MAX_NUM_CPUS];
+	atomic_t timer_fires;
+	atomic_t ipi_calls;
+	atomic_t ipi_handler_calls;
+};
 
+struct perf_data_t {
+	struct k_timer timer;
 	struct k_work_delayable dwork;
+
+	/* Protects the sample buffer against concurrent samplers */
+	struct k_spinlock lock;
+
+	const struct shell *sh;
 
 	size_t idx;
 	uintptr_t buf[CONFIG_PROFILING_PERF_BUFFER_SIZE];
 	bool buf_full;
 	k_tid_t target_thread;
-#ifdef CONFIG_SMP
+
+	struct perf_stats stats;
+
+#if PERF_IPI_SAMPLING
+	struct k_ipi_work ipi_work;
 	bool sampling_active;
-	/* Statistics: per-CPU counters */
-	atomic_t sample_count[CONFIG_MP_MAX_NUM_CPUS];
-	/* Track total attempts including filtered samples */
-	atomic_t sample_attempts[CONFIG_MP_MAX_NUM_CPUS];
-	/* Track timer fires and IPI calls */
-	atomic_t timer_fires;
-	atomic_t ipi_calls;
-	atomic_t ipi_handler_calls;
 #endif
 };
 
@@ -50,39 +68,27 @@ static struct perf_data_t perf_data = {
 	.dwork = Z_WORK_DELAYABLE_INITIALIZER(perf_dwork_handler),
 };
 
-/* Common sampling function called from timer on each CPU */
+/* Sample the CPU this runs on. Called from the timer ISR and from the IPI. */
 static void perf_do_sample(void)
 {
+	k_tid_t current_thread = k_current_get();
+	unsigned int cpu_id = CPU_ID;
 	size_t trace_length = 0;
-	k_tid_t current_thread;
-#ifdef CONFIG_SMP
-	unsigned int cpu_id = arch_curr_cpu()->id;
 	k_spinlock_key_t key;
-#endif
 
-	current_thread = k_current_get();
-
-#ifdef CONFIG_SMP
-	/* Track every attempt to sample */
-	atomic_inc(&perf_data.sample_attempts[cpu_id]);
-#endif
+	atomic_inc(&perf_data.stats.attempts[cpu_id]);
 
 	/* If target_thread is set, only trace that specific thread */
 	if (perf_data.target_thread != NULL && perf_data.target_thread != current_thread) {
 		return;
 	}
 
-#ifdef CONFIG_SMP
-	/* Count actual sample taken */
-	atomic_inc(&perf_data.sample_count[cpu_id]);
-	/* Lock to protect shared buffer access across cores */
+	atomic_inc(&perf_data.stats.samples[cpu_id]);
+
 	key = k_spin_lock(&perf_data.lock);
-#endif
 
 	if (perf_data.buf_full) {
-#ifdef CONFIG_SMP
 		k_spin_unlock(&perf_data.lock, key);
-#endif
 		return;
 	}
 
@@ -101,41 +107,102 @@ static void perf_do_sample(void)
 		k_work_reschedule(&perf_data.dwork, K_NO_WAIT);
 	}
 
-#ifdef CONFIG_SMP
 	k_spin_unlock(&perf_data.lock, key);
-#endif
 }
-#ifdef CONFIG_SMP
-/* IPI handler - called on all CPUs when IPI is sent */
-void perf_sched_ipi_handler(struct k_ipi_work *item)
+
+#if PERF_IPI_SAMPLING
+
+/* IPI handler - called on every CPU targeted by perf_sample_other_cpus() */
+static void perf_ipi_handler(struct k_ipi_work *work)
 {
-	atomic_inc(&perf_data.ipi_handler_calls);
+	ARG_UNUSED(work);
+
+	atomic_inc(&perf_data.stats.ipi_handler_calls);
+
 	/* Only sample if we're actively profiling */
 	if (perf_data.sampling_active) {
 		perf_do_sample();
 	}
 }
-#endif
+
+static void perf_sampling_start(void)
+{
+	k_ipi_work_init(&perf_data.ipi_work);
+	perf_data.sampling_active = true;
+}
+
+static void perf_sampling_stop(void)
+{
+	/* Stop the IPI handler from sampling before the timer is stopped */
+	perf_data.sampling_active = false;
+}
+
+static void perf_sample_other_cpus(void)
+{
+	if (!perf_data.sampling_active || arch_num_cpus() <= 1) {
+		return;
+	}
+
+	/* The current CPU is filtered out by k_ipi_work_add() */
+	if (k_ipi_work_add(&perf_data.ipi_work, BIT_MASK(arch_num_cpus()),
+			   perf_ipi_handler) != 0) {
+		/* Previous broadcast is still in flight, skip this period */
+		return;
+	}
+
+	atomic_inc(&perf_data.stats.ipi_calls);
+	k_ipi_work_signal();
+}
+
+#else /* !PERF_IPI_SAMPLING */
+
+static inline void perf_sampling_start(void)
+{
+}
+
+static inline void perf_sampling_stop(void)
+{
+}
+
+static inline void perf_sample_other_cpus(void)
+{
+}
+
+#endif /* PERF_IPI_SAMPLING */
+
+static void perf_stats_reset(struct perf_stats *stats)
+{
+	memset(stats, 0, sizeof(*stats));
+}
+
+static void perf_stats_print(const struct shell *sh, struct perf_stats *stats)
+{
+	shell_print(sh, "\n=== Perf Statistics ===");
+	shell_print(sh, "Timer fires: %ld", (long)atomic_get(&stats->timer_fires));
+
+	if (PERF_IPI_SAMPLING) {
+		shell_print(sh, "IPI calls: %ld", (long)atomic_get(&stats->ipi_calls));
+		shell_print(sh, "IPI handler calls: %ld",
+			    (long)atomic_get(&stats->ipi_handler_calls));
+	}
+
+	shell_print(sh, "");
+	for (unsigned int i = 0; i < arch_num_cpus(); i++) {
+		shell_print(sh, "CPU %u: Attempts=%ld, Samples=%ld", i,
+			    (long)atomic_get(&stats->attempts[i]),
+			    (long)atomic_get(&stats->samples[i]));
+	}
+	shell_print(sh, "======================\n");
+}
 
 static void perf_tracer(struct k_timer *timer)
 {
 	ARG_UNUSED(timer);
 
-#ifdef CONFIG_SMP
-	atomic_inc(&perf_data.timer_fires);
-#endif
+	atomic_inc(&perf_data.stats.timer_fires);
 
-	/* Sample on current CPU */
 	perf_do_sample();
-
-#ifdef CONFIG_SMP
-	/* Send IPI to all other CPUs to trigger sampling there */
-	if (perf_data.sampling_active && arch_num_cpus() > 1) {
-		atomic_inc(&perf_data.ipi_calls);
-		k_ipi_work_add(&perf_data.ipi_work, 0x00ff, perf_sched_ipi_handler);
-		k_ipi_work_signal();
-	}
-#endif
+	perf_sample_other_cpus();
 }
 
 static void perf_dwork_handler(struct k_work *work)
@@ -143,30 +210,10 @@ static void perf_dwork_handler(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct perf_data_t *perf_data_ptr = CONTAINER_OF(dwork, struct perf_data_t, dwork);
 
-#ifdef CONFIG_SMP
-	/* Disable sampling first to prevent IPI handler from sampling */
-	perf_data_ptr->sampling_active = false;
-#endif
-
-	/* Stop the timer */
+	perf_sampling_stop();
 	k_timer_stop(&perf_data_ptr->timer);
-#ifdef CONFIG_SMP
-	/* Print statistics */
-	shell_print(perf_data_ptr->sh, "\n=== Perf Statistics ===");
-	shell_print(perf_data_ptr->sh, "Timer fires: %ld",
-		    (long)atomic_get(&perf_data_ptr->timer_fires));
-	shell_print(perf_data_ptr->sh, "IPI calls: %ld",
-		    (long)atomic_get(&perf_data_ptr->ipi_calls));
-	shell_print(perf_data_ptr->sh, "IPI handler calls: %ld",
-		    (long)atomic_get(&perf_data_ptr->ipi_handler_calls));
-	shell_print(perf_data_ptr->sh, "");
-	for (unsigned int i = 0; i < arch_num_cpus(); i++) {
-		shell_print(perf_data_ptr->sh, "CPU %u: Attempts=%ld, Samples=%ld", i,
-			    (long)atomic_get(&perf_data_ptr->sample_attempts[i]),
-			    (long)atomic_get(&perf_data_ptr->sample_count[i]));
-	}
-	shell_print(perf_data_ptr->sh, "======================\n");
-#endif
+
+	perf_stats_print(perf_data_ptr->sh, &perf_data_ptr->stats);
 
 	if (perf_data_ptr->buf_full) {
 		shell_error(perf_data_ptr->sh, "Perf buf overflow!");
@@ -198,29 +245,14 @@ static int cmd_perf_record(const struct shell *sh, size_t argc, char **argv)
 
 	perf_data.sh = sh;
 	perf_data.target_thread = target_thread;
+	perf_stats_reset(&perf_data.stats);
 
-#ifdef CONFIG_SMP
-	/* Clear statistics and enable sampling */
-	unsigned int num_cpus = arch_num_cpus();
+	shell_print(sh, "Number of CPUs: %u", arch_num_cpus());
 
-	for (unsigned int i = 0; i < num_cpus; i++) {
-		atomic_set(&perf_data.sample_count[i], 0);
-		atomic_set(&perf_data.sample_attempts[i], 0);
-	}
-	atomic_set(&perf_data.timer_fires, 0);
-	atomic_set(&perf_data.ipi_calls, 0);
-	atomic_set(&perf_data.ipi_handler_calls, 0);
+	/* Enable sampling before the timer may fire */
+	perf_sampling_start();
 
-	/* Print CPU info */
-	shell_print(sh, "Number of CPUs: %u", num_cpus);
-	shell_print(sh, "Starting SMP profiling with IPI...");
-
-	/* Enable sampling flag before starting timer */
-	perf_data.sampling_active = true;
-	k_ipi_work_init(&perf_data.ipi_work);
-#endif
-
-	/* Start single timer that will trigger IPI to other CPUs */
+	/* Start the timer that samples this CPU and IPIs the other ones */
 	k_timer_user_data_set(&perf_data.timer, &perf_data);
 	k_timer_start(&perf_data.timer, K_NO_WAIT, period);
 
