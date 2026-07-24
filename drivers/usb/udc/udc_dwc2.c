@@ -3043,6 +3043,39 @@ static void dwc2_handle_hibernation_exit(const struct device *dev,
 		priv->pending_tx_flush &= ~BIT(fifo);
 		dwc2_flush_tx_fifo(dev, fifo);
 	}
+
+	if (dwc2_in_buffer_dma_mode(dev) && bus_reset &&
+	    !(priv->backup.doepctl[0] & USB_DWC2_DEPCTL_EPENA)) {
+		struct udc_ep_config *ep_cfg;
+		struct net_buf *buf;
+
+		/* Controller will not issue any interrupt when SETUP is
+		 * received, because EPEna was not set and we are not in
+		 * Completer mode. Process the enqueued buffer so we end up
+		 * in a state where SETUP will result in interrupt.
+		 */
+		ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
+
+		while ((buf = udc_buf_peek(ep_cfg))) {
+			struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+			if (bi->setup) {
+				/* Arm endpoint to get SETUP interrupt */
+				dwc2_handle_xfer_next(dev, ep_cfg);
+				break;
+			}
+
+			/* We do not want to set CNAK, so just cancel request.
+			 * If cancelled request is Data stage, then stack will
+			 * provide us with new buffer later. If it is Status
+			 * stage, then on next iteration we will find SETUP
+			 * buffer and enqueue it.
+			 */
+			buf = udc_buf_get(ep_cfg);
+			sys_cache_data_invd_range(buf->data, buf->len);
+			udc_submit_ep_event(dev, buf, -ECONNRESET);
+		}
+	}
 }
 
 static uint8_t pull_next_ep_from_bitmap(uint32_t *bitmap)
