@@ -20,6 +20,7 @@ LOG_MODULE_REGISTER(wifi_test, LOG_LEVEL_INF);
 #include "net_private.h"
 
 K_SEM_DEFINE(wifi_event, 0, 1);
+K_SEM_DEFINE(icmp_event_sem, 0, 1);
 
 #define WIFI_MGMT_EVENTS                                                                           \
 	(NET_EVENT_WIFI_SCAN_DONE | NET_EVENT_WIFI_SCAN_RESULT | NET_EVENT_WIFI_CONNECT_RESULT |   \
@@ -27,10 +28,19 @@ K_SEM_DEFINE(wifi_event, 0, 1);
 
 #define TEST_DATA "ICMP dummy data"
 
+#define WIFI_PING_ERR_LEN 64
+#define SET_ERR(fmt, ...)                                                                          \
+	do {                                                                                       \
+		if (err) {                                                                         \
+			snprintk(err, WIFI_PING_ERR_LEN, fmt, ##__VA_ARGS__);                      \
+		}                                                                                  \
+	} while (0)
+
 static struct wifi_context {
 	struct net_if *iface;
 	uint32_t scan_result;
 	bool connecting;
+	bool connected;
 	int result;
 	struct net_mgmt_event_callback wifi_mgmt_cb;
 } wifi_ctx;
@@ -71,6 +81,7 @@ static void wifi_connect_result(struct net_mgmt_event_callback *cb)
 	if (wifi_ctx.result) {
 		LOG_INF("Connection request failed (%d)", wifi_ctx.result);
 	} else {
+		wifi_ctx.connected = true;
 		LOG_INF("Connected");
 	}
 }
@@ -90,6 +101,7 @@ static void wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 		if (wifi_ctx.result) {
 			LOG_INF("Disconnect failed (%d)", wifi_ctx.result);
 		} else {
+			wifi_ctx.connected = false;
 			LOG_INF("Disconnected");
 		}
 	} else {
@@ -151,7 +163,7 @@ static enum net_verdict icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt
 	wifi_ctx.result = strcmp(buf, TEST_DATA);
 
 sem_give:
-	k_sem_give(&wifi_event);
+	k_sem_give(&icmp_event_sem);
 
 	return wifi_ctx.result == 0 ? NET_OK : NET_DROP;
 }
@@ -165,7 +177,7 @@ static int wifi_scan(void)
 		return ret;
 	}
 
-	LOG_INF("Wifi scan requested...");
+	LOG_INF("Wi-Fi scan requested...");
 
 	return 0;
 }
@@ -232,6 +244,92 @@ static int wifi_state(void)
 	return status.state;
 }
 
+static int wifi_ping_gw(char *err)
+{
+	struct net_icmp_ping_params params;
+	struct net_icmp_ctx icmp_ctx;
+	struct net_in_addr gw_addr_4;
+	struct net_sockaddr_in dst4 = {0};
+	int retry = CONFIG_WIFI_PING_ATTEMPTS;
+	int ret;
+	int status = 0;
+
+	gw_addr_4 = net_if_ipv4_get_gw(wifi_ctx.iface);
+
+	if (gw_addr_4.s_addr == 0) {
+		SET_ERR("Gateway address is not set");
+		status = -ENOENT;
+		goto exit;
+	}
+
+	ret = net_icmp_init_ctx(&icmp_ctx, NET_AF_INET, NET_ICMPV4_ECHO_REPLY, 0, icmp_event);
+
+	if (ret) {
+		SET_ERR("Cannot init ICMP (%d)", ret);
+		status = ret;
+		goto exit;
+	}
+
+	dst4.sin_family = NET_AF_INET;
+	memcpy(&dst4.sin_addr, &gw_addr_4, sizeof(gw_addr_4));
+
+	params.identifier = 1234;
+	params.sequence = 5678;
+	params.tc_tos = 1;
+	params.priority = 2;
+	params.data = TEST_DATA;
+	params.data_size = sizeof(TEST_DATA);
+
+	k_sem_reset(&icmp_event_sem);
+	wifi_ctx.result = -ETIMEDOUT;
+
+	LOG_INF("Pinging the gateway...");
+
+	do {
+		if (!wifi_ctx.connected) {
+			status = -EIO;
+			SET_ERR("Wi-Fi not connected or dropped");
+			goto cleanup;
+		}
+
+		ret = net_icmp_send_echo_request(&icmp_ctx, wifi_ctx.iface,
+						 (struct net_sockaddr *)&dst4, &params, NULL);
+
+		if (ret) {
+			SET_ERR("Cannot send ICMP echo request (%d)", ret);
+			status = ret;
+			goto cleanup;
+		}
+
+		if (k_sem_take(&icmp_event_sem, K_SECONDS(CONFIG_WIFI_PING_TIMEOUT)) == 0) {
+			break;
+		}
+
+		retry--;
+
+		if (wifi_ctx.connected) {
+			LOG_INF("No reply, retry %d", CONFIG_WIFI_PING_ATTEMPTS - retry);
+		}
+
+	} while (retry);
+
+	if (retry <= 0) {
+		SET_ERR("Gateway ping (ICMP) timed out");
+		status = -ETIMEDOUT;
+		goto cleanup;
+	}
+
+	if (wifi_ctx.result != 0) {
+		SET_ERR("ICMP data error (%d)", wifi_ctx.result);
+		status = wifi_ctx.result;
+	}
+
+cleanup:
+	net_icmp_cleanup_ctx(&icmp_ctx);
+exit:
+	return status;
+}
+
 ZTEST(wifi, test_0_scan)
 {
 	int ret;
@@ -240,7 +338,7 @@ ZTEST(wifi, test_0_scan)
 	zassert_equal(ret, 0, "Scan request failed");
 
 	zassert_equal(k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_SCAN_TIMEOUT)), 0,
-		      "Wifi scan failed or timed out");
+		      "Wi-Fi scan failed or timed out");
 
 	LOG_INF("Scan done");
 }
@@ -258,7 +356,7 @@ ZTEST(wifi, test_1_connect)
 		zassert_equal(ret, 0, "Connect request failed");
 
 		zassert_equal(k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_CONNECT_TIMEOUT)), 0,
-			      "Wifi connect timed out");
+			      "Wi-Fi connect timed out");
 
 		if (wifi_ctx.result) {
 			zassert(--retry, "Connect failed");
@@ -281,61 +379,44 @@ ZTEST(wifi, test_1_connect)
 
 ZTEST(wifi, test_2_icmp)
 {
-	struct net_icmp_ping_params params;
-	struct net_icmp_ctx icmp_ctx;
-	struct net_in_addr gw_addr_4;
-	struct net_sockaddr_in dst4 = {0};
-	int retry = CONFIG_WIFI_PING_ATTEMPTS;
+	char err[WIFI_PING_ERR_LEN] = "";
 	int ret;
 
-	gw_addr_4 = net_if_ipv4_get_gw(wifi_ctx.iface);
-	zassert_not_equal(gw_addr_4.s_addr, 0, "Gateway address is not set");
+	ret = wifi_ping_gw(err);
 
-	ret = net_icmp_init_ctx(&icmp_ctx, NET_AF_INET, NET_ICMPV4_ECHO_REPLY, 0, icmp_event);
-	zassert_equal(ret, 0, "Cannot init ICMP (%d)", ret);
-
-	dst4.sin_family = NET_AF_INET;
-	memcpy(&dst4.sin_addr, &gw_addr_4, sizeof(gw_addr_4));
-
-	params.identifier = 1234;
-	params.sequence = 5678;
-	params.tc_tos = 1;
-	params.priority = 2;
-	params.data = TEST_DATA;
-	params.data_size = sizeof(TEST_DATA);
-
-	LOG_INF("Pinging the gateway...");
-
-	do {
-		ret = net_icmp_send_echo_request(&icmp_ctx, wifi_ctx.iface,
-						 (struct net_sockaddr *)&dst4, &params, NULL);
-		zassert_equal(ret, 0, "Cannot send ICMP echo request (%d)", ret);
-
-		int timeout = k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_PING_TIMEOUT));
-
-		if (timeout) {
-			zassert(--retry, "Gateway ping (ICMP) timed out on all attempts");
-			LOG_INF("No reply, retry %d", CONFIG_WIFI_PING_ATTEMPTS - retry);
-		} else {
-			break;
-		}
-	} while (retry);
-
-	/* check result */
-	zassert_equal(wifi_ctx.result, 0, "ICMP data error");
-
-	net_icmp_cleanup_ctx(&icmp_ctx);
+	zassert_equal(ret, 0, "%s", err);
 }
 
+#if CONFIG_PM
+ZTEST(wifi, test_3_icmp_pm)
+{
+	char err[WIFI_PING_ERR_LEN] = "";
+	int ret;
+
+	LOG_INF("Enter sleep then ping gateway again...");
+	k_sleep(K_SECONDS(2));
+
+	ret = wifi_ping_gw(err);
+
+	zassert_equal(ret, 0, "%s", err);
+}
+#endif
+
+#if CONFIG_PM
+ZTEST(wifi, test_4_disconnect)
+#else
 ZTEST(wifi, test_3_disconnect)
+#endif
 {
 	int ret;
+
+	zassert(wifi_ctx.connected, "Wi-Fi already disconnected");
 
 	ret = wifi_disconnect();
 	zassert_equal(ret, 0, "Disconnect request failed");
 
 	zassert_equal(k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_DISCONNECT_TIMEOUT)), 0,
-		      "Wifi disconnect timed out");
+		      "Wi-Fi disconnect timed out");
 
 	zassert_equal(wifi_ctx.result, 0, "Disconnect failed");
 }

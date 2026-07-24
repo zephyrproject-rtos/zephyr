@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2020-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,9 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/wifi_nm.h>
 #endif
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
+#include "esp_private/sleep_modem.h"
 #include "esp_private/wifi.h"
 #include "esp_event.h"
 #include "esp_rom_sys.h"
@@ -38,7 +40,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <esp_private/adc_share_hw_ctrl.h>
 #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
-#define DHCPV4_MASK (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)
+#define DHCPV4_MASK  (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)
 
 /* use global iface pointer to support any ethernet driver */
 /* necessary for wifi callback functions */
@@ -96,6 +98,13 @@ static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt
 {
 	switch (mgmt_event) {
 	case NET_EVENT_IPV4_DHCP_BOUND:
+		/* Inform the Wi-Fi firmware of the station IP once DHCP is bound. The
+		 * modem needs this to handle ARP and buffered-frame delivery while the
+		 * CPU sleeps in Wi-Fi power-save / modem light sleep. Without it, data
+		 * (e.g. ICMP replies) is not delivered after a modem sleep cycle.
+		 * Mirrors the IDF STA_GOT_IP -> esp_wifi_internal_set_sta_ip() path.
+		 */
+		esp_wifi_internal_set_sta_ip();
 		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
 		break;
 	default:
@@ -1543,6 +1552,48 @@ static int esp32_wifi_reset_stats(const struct device *dev __unused,
 }
 #endif
 
+static int esp32_wifi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+#if SOC_WIFI_HW_TSF
+		if (esp_wifi_internal_is_tsf_active()) {
+			/* Reject sleep while TSF is active (timing critical) */
+			return -EBUSY;
+		}
+#endif
+#if CONFIG_ESP32_WIFI_ENHANCED_LIGHT_SLEEP
+		if (sleep_modem_wifi_modem_state_skip_light_sleep()) {
+			/* Block the system from entering sleep before modem link done */
+			return -EBUSY;
+		}
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+		/* Enables the Advanced DTIM sleep function in the WiFi modem
+		 * (CONFIG_ESP32_WIFI_ENHANCED_LIGHT_SLEEP) and sets CPU-frequency-aware
+		 * wake/sleep timing parameters (CONFIG_ESP32_WIFI_SLP_IRAM_OPT).
+		 */
+#if CONFIG_PM
+		sleep_modem_configure(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+				    CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, true);
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int esp32_wifi_dev_init(const struct device *dev)
 {
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
@@ -1588,7 +1639,7 @@ static int esp32_wifi_dev_init(const struct device *dev)
 		net_mgmt_add_event_callback(&esp32_dhcp_cb);
 	}
 
-	return 0;
+	return pm_device_driver_init(dev, esp32_wifi_pm_action);
 }
 
 static int esp32_wifi_set_config(const struct device *dev __unused,
@@ -1651,8 +1702,10 @@ static const struct net_wifi_mgmt_offload esp32_api = {
 	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
 
+PM_DEVICE_DT_INST_DEFINE(0, esp32_wifi_pm_action);
+
 NET_DEVICE_DT_INST_DEFINE(0,
-		esp32_wifi_dev_init, NULL,
+		esp32_wifi_dev_init, PM_DEVICE_DT_INST_GET(0),
 		&esp32_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
 		&esp32_api, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
