@@ -713,9 +713,9 @@ static DEVICE_API(rtc, rtc_counter_driver_api) = {
 #endif /* CONFIG_RTC_CALIBRATION */
 };
 
-/* Ensure RTC init priority is bigger than counter */
-BUILD_ASSERT(CONFIG_RTC_INIT_PRIORITY > CONFIG_COUNTER_INIT_PRIORITY,
-	     "RTC init priority must be bigger than counter");
+/* Ensure rtc_counter init priority is bigger than the backing counter */
+BUILD_ASSERT(CONFIG_RTC_COUNTER_INIT_PRIORITY > CONFIG_COUNTER_INIT_PRIORITY,
+	     "rtc_counter init priority must be bigger than counter");
 
 #define RTC_COUNTER_ALARMS_COUNT(n) DT_PROP_OR(DT_DRV_INST(n), alarms_count, 0)
 #define RTC_COUNTER_ALARMS_SZ(n)    MAX(RTC_COUNTER_ALARMS_COUNT(n), 1)
@@ -752,7 +752,8 @@ DT_INST_FOREACH_STATUS_OKAY(RTC_COUNTER_DECLARE_ALARM_STORAGE)
 		))                                                                      \
 	};                                                                          \
 	DEVICE_DT_INST_DEFINE(n, rtc_counter_init, NULL, &rtc_counter_data_##n,     \
-				&rtc_counter_config_##n, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY, \
+				&rtc_counter_config_##n, POST_KERNEL,               \
+				CONFIG_RTC_COUNTER_INIT_PRIORITY,                   \
 				&rtc_counter_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_COUNTER_DEVICE_INIT)
