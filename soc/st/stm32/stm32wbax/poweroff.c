@@ -15,10 +15,6 @@
 
 void z_sys_poweroff(void)
 {
-#ifdef CONFIG_STM32_WKUP_PINS
-	stm32_pwr_wkup_pin_cfg_pupd();
-#endif /* CONFIG_STM32_WKUP_PINS */
-
 	LL_PWR_ClearFlag_WU();
 
 	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);

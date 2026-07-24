@@ -42,9 +42,9 @@ config SWJ_ANALOG_PRIORITY
 
 config STM32_WKUP_PINS
 	bool "STM32 PWR Wake-up Pins"
-	depends on DT_HAS_ST_STM32_PWR_ENABLED
+	depends on DT_HAS_ST_STM32_PWR_WKUPCTRL_ENABLED
 	help
-	  Enable support for STM32 PWR wake-up pins.
+	  Enable support for STM32 wake-up pins controller (located in PWR).
 
 config STM32_BACKUP_PROTECTION
 	bool "SoC has backup domain protection access"

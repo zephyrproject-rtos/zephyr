@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32F7 wake-up pins controller
+
+description: |
+  Specific control logic for wake-up pins found in STM32F7 series.
+
+  On STM32F7 series, the polarity of wake-up pins can be configured
+  by software. However, it is not possible to enable the internal
+  pull-up or pull-down while in Standby mode (unlike in other series).
+
+  Note that the term "wake-up pin" is used instead of "wake-up line" in
+  this binding because each wake-up line in STM32F7 series is hardwired
+  to a specific GPIO pin (no source selection is possible).
+
+compatible: "st,stm32f7-pwr-wkupctrl"
+
+include:
+  - name: "st,stm32-pwr-wkupctrl.yaml"
+    property-blocklist:
+      - st,has-multi-source-lines

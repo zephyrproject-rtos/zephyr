@@ -663,6 +663,64 @@ STM32
   and will trigger a build error. Use the :ref:`generic chosen <devicetree-zephyr-chosen-nodes>`
   ``zephyr,system-timer`` instead. (:github:`112999`)
 
+* Properties and nodes related to wake-up pins have been moved from :dtcompatible:`st,stm32-pwr` to new
+  compatible :dtcompatible:`st,stm32-pwr-wkupctrl`. A node with this compatible named ``wakeup-controller``
+  (no nodelabel) has been added as a child of all existing Power Controller nodes (with nodelabel ``&pwr``).
+
+  The following properties have been removed from :dtcompatible:`st,stm32-pwr`:
+
+  * ``wkup-pins-nb``
+
+    * Replaced by ``st,max-wkup-line-idx`` in :dtcompatible:`st,stm32-pwr-wkupctrl`.
+
+  * ``wkup-pins-srcs`` (int)
+
+    * Replaced by boolean ``st,has-multi-source-lines`` in :dtcompatible:`st,stm32-pwr-wkupctrl`.
+
+    * For migration, add ``st,has-multi-source-lines`` wherever ``wkup-pins-srcs`` was present.
+
+  * ``wkup-pins-pol``
+
+    * Replaced by series-specific compatibles - see below.
+
+  * ``wkup-pins-pupd``
+
+    * Replaced by ``st,has-pwr-full-pupd``  in :dtcompatible:`st,stm32-pwr-wkupctrl`.
+
+  Two additional compatibles have been introduced (see bindings description for details):
+
+  * :dtcompatible:`st,stm32f1-pwr-wkupctrl` for series which would previously lack ``wkup-pins-pol``
+
+  * :dtcompatible:`st,stm32f7-pwr-wkupctrl` for STM32F7 series only
+
+  Out-of-tree users should migrate by moving all properties and nodes related to wake-up pins (see list above)
+  from the ``&pwr`` node to its child node named ``wakeup-controller``, which can be achieved by adding the
+  two lines highlighted below to DTS files (then adjusting indentation accordingly):
+
+  .. code-block:: devicetree
+     :emphasize-lines: 4, 12
+
+      &pwr {
+        /* PWRC properties here (e.g., `power-supply = "ldo"`) */
+
+        wakeup-controller {
+          /* Wake-up controller properties (usually none in DTS) */
+
+          wkup-pin@1 {
+            /* ... */
+          };
+
+          status = "okay";
+        };
+      };
+
+  Note that wake-up pin nodes are now simply called :samp:`wkup@{N}` instead of :samp:`wkup-pin@{N}`
+  at SoC DTSI level. This change is cosmetic and has no functional impact. (:github:`114092`)
+
+* :dtcompatible:`st,stm32-pwr` nodes are now enabled by default by SoC DTSI as the ``status = "disabled";``
+  property has been removed. This should have no impact since the property was not used except for the
+  wake-up pins feature, which is now handled by :dtcompatible:`st,stm32-pwr-wkupctrl`. (:github:`114092`)
+
 Syscon
 ======
 

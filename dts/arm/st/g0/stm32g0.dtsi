@@ -530,41 +530,46 @@
 		pwr: power@40007000 {
 			compatible = "st,stm32-pwr";
 			reg = <0x40007000 0x400>; /* PWR register bank */
-			status = "disabled";
 
-			wkup-pins-nb = <6>; /* 6 system wake-up pins */
-			wkup-pins-pol;
-			wkup-pins-pupd;
+			wakeup-controller {
+				compatible = "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
 
-			#address-cells = <1>;
-			#size-cells = <0>;
+				st,max-wkup-line-idx = <6>;
+				st,has-pwr-full-pupd;
 
-			wkup-pin@1 {
-				reg = <0x1>;
-				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@1 {
+					reg = <0x1>;
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			wkup-pin@2 {
-				reg = <0x2>;
-				wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_PIN_NOT_MUXED>,
-					     <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@2 {
+					reg = <0x2>;
+					wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_PIN_NOT_MUXED>,
+						     <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			/* wkup-pin@3 only available for g0b0/1 and g0c1 variants */
+				wkup@3 {
+					reg = <0x3>;
+					/* Available only on STM32G0B0/G0B1/G0C1 */
+				};
 
-			wkup-pin@4 {
-				reg = <0x4>;
-				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@4 {
+					reg = <0x4>;
+					wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			wkup-pin@5 {
-				reg = <0x5>;
-				wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@5 {
+					reg = <0x5>;
+					wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			wkup-pin@6 {
-				reg = <0x6>;
-				wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				wkup@6 {
+					reg = <0x6>;
+					wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 			};
 		};
 
