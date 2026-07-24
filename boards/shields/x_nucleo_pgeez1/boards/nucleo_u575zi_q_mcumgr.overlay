@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 EXALT Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+/ {
+	chosen {
+		zephyr,uart-mcumgr = &usart1;
+	};
+};
+
+/delete-node/ &slot1_partition;
+
+&m95p32_x_nucleo_pgeez1 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot1_partition: partition@0 {
+			label = "image-1";
+			/* 116 image sectors plus one 8-KiB offset-swap sector. */
+			reg = <0x00000000 DT_SIZE_K(936)>;
+		};
+	};
+};
