@@ -373,3 +373,6 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev __unused, void *user_data 
 	I2C_STM32_IRQ_HANDLER(index)
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_STM32_INIT)
+
+BUILD_ASSERT(!IS_ENABLED(CONFIG_I2C_STM32_V2_DMA) || DT_ANY_INST_HAS_PROP_STATUS_OKAY(dmas),
+	     "CONFIG_I2C_STM32_V2_DMA=y but no I2C controller has a `dmas` property");
