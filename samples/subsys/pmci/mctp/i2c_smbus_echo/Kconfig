@@ -1,0 +1,51 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+menu "MCTP SMBus/I2C echo sample"
+
+choice MCTP_I2C_SMBUS_ECHO_ROLE
+	prompt "Sample role"
+	default MCTP_I2C_SMBUS_ECHO_ROLE_REQUESTER
+
+config MCTP_I2C_SMBUS_ECHO_ROLE_REQUESTER
+	bool "Requester role"
+
+config MCTP_I2C_SMBUS_ECHO_ROLE_RESPONDER
+	bool "Responder role"
+
+endchoice
+
+config MCTP_I2C_SMBUS_ECHO_REMOTE_EID
+	int "Remote MCTP endpoint ID"
+	default 8 if MCTP_I2C_SMBUS_ECHO_ROLE_REQUESTER
+	default 20 if MCTP_I2C_SMBUS_ECHO_ROLE_RESPONDER
+	range 0 255
+	help
+	  Remote MCTP endpoint ID used by the requester when sending test
+	  messages. The responder replies to the source EID from received
+	  messages, so its default is informational.
+
+config MCTP_I2C_SMBUS_ECHO_COUNT
+	int "Number of echo transactions"
+	default 100
+	range 1 100000
+	help
+	  Number of MCTP echo transactions to run before printing final status.
+
+config MCTP_I2C_SMBUS_ECHO_INTERVAL_MS
+	int "Requester interval in milliseconds"
+	default 500
+	range 1 60000
+	help
+	  Delay between requester transmissions.
+
+config MCTP_I2C_SMBUS_ECHO_PAYLOAD_SIZE
+	int "Payload size in bytes"
+	default 8
+	range 1 32
+	help
+	  Number of payload bytes used in each echo transaction.
+
+endmenu
