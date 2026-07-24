@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+ * Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include <dt-bindings/sam/sama7d6/sama7d65/sama7d65-pinctrl.h>
 #include <microchip/sam/sama7/sama7d6/sama7d65.dtsi>
 
@@ -20,6 +21,9 @@
 	aliases {
 		eeprom-0 = &eeprom0;
 		led0 = &led_blue;
+		pwm-0 = &pwm;
+		pwm-led0 = &green_pwm_led;
+		pwm-test = &pwm;
 		sw0 = &button_user;
 	};
 
@@ -73,6 +77,22 @@
 			label = "PB_USER";
 			gpios = <&pioc 10 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 		};
 	};
 };
@@ -165,6 +185,18 @@
 		};
 	};
 
+	pinctrl_pwm_default: pinctrl_pwm_default {
+		mikrobus1_pwm0 {
+			pinmux = <PIN_PB15__PWML0>;
+			bias-disable;
+		};
+
+		mikrobus2_pwm1 {
+			pinmux = <PIN_PB17__PWML1>;
+			bias-disable;
+		};
+	};
+
 	pinctrl_uart6_default: uart6-default {
 		group1 {
 			pinmux = <PIN_PD18__FLEXCOM6_IO0>,
@@ -176,6 +208,14 @@
 
 &pit64b0 {
 	clock-frequency = <DT_FREQ_M(10)>;
+};
+
+&pwm {
+	clka-prescaler = <1024>;
+	clka-divide-factor = <1>;
+	pinctrl-0 = <&pinctrl_pwm_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rtc {

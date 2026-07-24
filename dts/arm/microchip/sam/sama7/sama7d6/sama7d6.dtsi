@@ -230,6 +230,16 @@
 			interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		};
 
+		pwm: pwm@e1818000 {
+			compatible = "microchip,pwm-g1";
+			reg = <0xe1818000 0x4000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 72>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
 		flx0: flexcom@e1820000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe1820000 0x200>;
