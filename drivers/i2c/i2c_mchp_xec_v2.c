@@ -206,7 +206,7 @@ uint8_t i2c_xec_get_lines(mm_reg_t regbase, const struct gpio_dt_spec *scl_gpio,
 		lines |= BIT(I2C_LINES_SCL_HI_POS);
 	}
 
-	if ((scl & BIT(sda_gpio->pin)) != 0) {
+	if ((sda & BIT(sda_gpio->pin)) != 0) {
 		lines |= BIT(I2C_LINES_SDA_HI_POS);
 	}
 
