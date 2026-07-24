@@ -105,7 +105,7 @@ static int bip_rfcomm_accept(struct bt_conn *conn, struct bt_goep_transport_rfco
 			     struct bt_goep **goep)
 {
 	struct bt_bip_rfcomm_server *bip_server = BIP_RFDCOMM_SERVER(server);
-	struct bt_bip *bip;
+	struct bt_bip *bip = NULL;
 	int err;
 
 	if (bip_server->accept == NULL) {
@@ -118,10 +118,7 @@ static int bip_rfcomm_accept(struct bt_conn *conn, struct bt_goep_transport_rfco
 		return err;
 	}
 
-	if (bip == NULL || bip->ops == NULL) {
-		LOG_ERR("Invalid bip instance");
-		return -EINVAL;
-	}
+	__ASSERT(bip != NULL && bip->ops != NULL, "Invalid bip instance");
 
 	bip->role = BT_BIP_ROLE_RESPONDER;
 	bip->goep.transport_ops = &bip_rfcomm_ops;
@@ -247,7 +244,7 @@ static int bip_l2cap_accept(struct bt_conn *conn, struct bt_goep_transport_l2cap
 			    struct bt_goep **goep)
 {
 	struct bt_bip_l2cap_server *bip_server = BIP_L2CAP_SERVER(server);
-	struct bt_bip *bip;
+	struct bt_bip *bip = NULL;
 	int err;
 
 	if (bip_server->accept == NULL) {
@@ -260,10 +257,7 @@ static int bip_l2cap_accept(struct bt_conn *conn, struct bt_goep_transport_l2cap
 		return err;
 	}
 
-	if (bip == NULL || bip->ops == NULL) {
-		LOG_WRN("Invalid parameter");
-		return -EINVAL;
-	}
+	__ASSERT(bip != NULL && bip->ops != NULL, "Invalid bip instance");
 
 	bip->role = BT_BIP_ROLE_RESPONDER;
 	bip->goep.transport_ops = &bip_l2cap_ops;

@@ -1693,15 +1693,11 @@ int bt_obex_transport_disconnected(struct bt_obex *obex)
 	return 0;
 }
 
-int bt_obex_reg_transport(struct bt_obex *obex, const struct bt_obex_transport_ops *ops)
+void bt_obex_reg_transport(struct bt_obex *obex, const struct bt_obex_transport_ops *ops)
 {
-	if (obex == NULL || ops == NULL) {
-		LOG_WRN("Invalid parameter");
-		return -EINVAL;
-	}
+	__ASSERT(obex != NULL && ops != NULL, "Invalid obex instance or transport ops");
 
 	obex->_transport_ops = ops;
-	return 0;
 }
 
 int bt_obex_recv(struct bt_obex *obex, struct net_buf *buf)
