@@ -1,0 +1,67 @@
+# BMI260 6 Axis IMU configuration
+
+# Copyright (c) 2021 Bosch Sensortec GmbH
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMI260
+	bool "BMI260 Inertial measurement unit"
+	default y
+	depends on DT_HAS_BOSCH_BMI260_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),spi)
+	help
+	  Enable driver for BMI260 I2C-based imu sensor
+
+if BMI260
+
+config BMI260_BUS_I2C
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),i2c)
+
+config BMI260_BUS_SPI
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI260),spi)
+
+choice BMI260_TRIGGER_MODE
+	prompt "Trigger mode"
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config BMI260_TRIGGER_NONE
+	bool "No trigger"
+
+config BMI260_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMI260),irq-gpios)
+	select BMI260_TRIGGER
+
+config BMI260_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMI260),irq-gpios)
+	select BMI260_TRIGGER
+
+endchoice
+
+config BMI260_TRIGGER
+	bool
+
+config BMI260_THREAD_PRIORITY
+	int "Thread priority"
+	depends on BMI260_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config BMI260_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on BMI260_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # BMI260
