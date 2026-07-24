@@ -12,6 +12,7 @@ tests:
   sample.bluetooth.a2dp.sink.no_blobs:
     platform_allow:
       - mimxrt1170_evk@B/mimxrt1176/cm7
+      - sf32lb52_devkit_lcd
     tags:
       - bluetooth
       - gap
