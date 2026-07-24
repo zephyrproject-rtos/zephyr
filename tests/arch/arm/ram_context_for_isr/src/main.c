@@ -59,6 +59,7 @@ ZTEST(ram_context_for_isr, test_fake_driver_in_ram)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(fakedriver));
 	const struct fake_driver_api *api = DEVICE_API_GET(fake, dev);
+	struct fake_driver_data *data = dev->data;
 	uintptr_t dev_addr = (uintptr_t)dev;
 
 	zassert_true(dev_addr >= DT_CHOSEN_SRAM_ADDR &&
@@ -66,13 +67,14 @@ ZTEST(ram_context_for_isr, test_fake_driver_in_ram)
 		     "fake driver device is not in RAM! Address: 0x%lx", dev_addr);
 
 	TC_PRINT("Fake driver device address: 0x%lx\n", dev_addr);
+	TC_PRINT("Fake driver device interrupt: %u\n", data->irq_num);
 
 	zassert_not_null(api, "Failed to get fake driver API");
 
 	api->register_irq_callback(dev, test_irq_callback, NULL);
 	test_flag = false;
 
-	NVIC_SetPendingIRQ(TEST_IRQ_NUM);
+	NVIC_SetPendingIRQ(data->irq_num);
 
 	k_busy_wait(1000);
 
