@@ -608,3 +608,7 @@ zephyr_jpegenc: &jpeg {
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
+
+&dma2d {
+	status = "okay";
+};
