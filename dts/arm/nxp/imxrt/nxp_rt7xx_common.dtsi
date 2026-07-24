@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,14 @@
 
 		xspi2: spi@50411000 {
 			reg = <0x50411000 0x1000>, <0x70000000 DT_SIZE_M(128)>;
+		};
+
+		gpu2d: gpu2d@40486000 {
+			compatible = "nxp,gpu2d";
+			reg = <0x40486000 0x4000>;
+			interrupts = <57 0>;
+			clocks = <&clkctl2 2>;
+			status = "okay";
 		};
 	};
 

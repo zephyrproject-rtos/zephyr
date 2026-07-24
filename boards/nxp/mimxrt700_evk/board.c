@@ -8,6 +8,10 @@
 #include <fsl_clock.h>
 #include <soc.h>
 #include <fsl_glikey.h>
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pmc_tmpsns))
+#include "fsl_romapi_otp.h"
+#endif
+#include <zephyr/cache.h>
 
 /*!< System oscillator settling time in us */
 #define SYSOSC_SETTLING_US 220U
@@ -642,3 +646,39 @@ static int second_core_boot(void)
 
 SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
+
+#if defined(CONFIG_LV_USE_DRAW_VG_LITE)
+static int gpu2d_init_imxrt7xx(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	POWER_DisablePD(kPDRUNCFG_APD_GPU);
+	POWER_DisablePD(kPDRUNCFG_PPD_GPU);
+	POWER_ApplyPD();
+
+	/* VGPU clock enablement and divider selection */
+	CLOCK_EnableClock(kCLOCK_MediaAccessRamArbiter0);
+	CLOCK_EnableClock(kCLOCK_MediaAccessRamArbiter1);
+	CLOCK_EnableClock(kCLOCK_Gpu);
+
+	CLOCK_AttachClk(kFRO0_DIV1_to_VGPU);
+	CLOCK_SetClkDiv(kCLOCK_DivVgpuClk, 1U);
+
+	/* Enable GPU interrupt */
+	RESET_ClearPeripheralReset(kVGPU_RST_SHIFT_RSTn);
+	NVIC_SetPriority(VGPU_IRQn, CONFIG_VG_LITE_INTERRUPT_PRIORITY);
+	EnableIRQ((IRQn_Type)VGPU_IRQn);
+
+	return 0;
+}
+
+DEVICE_DT_DEFINE(DT_INST(0, nxp_gpu2d), gpu2d_init_imxrt7xx, NULL,
+		NULL, NULL, POST_KERNEL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+#endif /* CONFIG_LV_USE_DRAW_VG_LITE */
+
+void clear_cache_op(void)
+{
+	sys_cache_data_flush_all();
+}

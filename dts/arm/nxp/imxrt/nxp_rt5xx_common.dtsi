@@ -738,6 +738,14 @@
 			status = "disabled";
 		};
 	};
+
+	gpu2d: gpu2d@40240000 {
+		compatible = "nxp,gpu2d";
+		reg = <0x40240000 0x4000>;
+		interrupts = <70 0>;
+		clocks = <&clkctl0 26>;
+		status = "okay";
+	};
 };
 
 &flexspi {
