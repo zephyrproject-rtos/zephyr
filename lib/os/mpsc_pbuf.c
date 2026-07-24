@@ -71,7 +71,6 @@ static inline bool free_space(struct mpsc_pbuf_buffer *buffer, uint32_t *res)
 		return false;
 	}
 	*res = buffer->size - buffer->tmp_wr_idx;
-
 	return true;
 }
 
@@ -101,10 +100,10 @@ static inline uint32_t get_usage(struct mpsc_pbuf_buffer *buffer)
 	uint32_t f;
 
 	if (free_space(buffer, &f)) {
-		f += (buffer->rd_idx - 1);
+		f += buffer->rd_idx;
 	}
 
-	return buffer->size - 1 - f;
+	return buffer->size - f;
 }
 
 static inline void max_utilization_update(struct mpsc_pbuf_buffer *buffer)
@@ -483,9 +482,10 @@ void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
 	} while (cont);
 }
 
-void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
-			size_t wlen)
+int mpsc_pbuf_write_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
+			 size_t wlen, k_timeout_t timeout)
 {
+	int ret = 0;
 	bool cont;
 	union mpsc_pbuf_generic *dropped_item = NULL;
 	uint32_t tmp_wr_idx_shift = 0;
@@ -506,8 +506,12 @@ void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
 		wrap = free_space(buffer, &free_wlen);
 
 		if (free_wlen >= wlen) {
-			memcpy(&buffer->buf[buffer->tmp_wr_idx], data,
-				wlen * sizeof(uint32_t));
+			/* Use manual 32 bit copy instead of memcpy which might be slow,
+			 * byte-by-byte implementation.
+			 */
+			for (size_t i = 0; i < wlen; i++) {
+				buffer->buf[buffer->tmp_wr_idx + i] = data[i];
+			}
 			buffer->wr_idx = idx_inc(buffer, buffer->wr_idx, wlen);
 			tmp_wr_idx_inc(buffer, wlen);
 			cont = false;
@@ -515,10 +519,19 @@ void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
 		} else if (wrap) {
 			add_skip_item(buffer, free_wlen);
 			cont = true;
+		} else if (IS_ENABLED(CONFIG_MULTITHREADING) && !K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
+			   !k_is_in_isr() && arch_irq_unlocked(key.key)) {
+			k_spin_unlock(&buffer->lock, key);
+			ret = k_sem_take(&buffer->sem, timeout);
+			key = k_spin_lock(&buffer->lock);
+			cont = (ret == 0) ? true : false;
 		} else {
 			tmp_wr_idx_val = buffer->tmp_wr_idx;
 			cont = drop_item_locked(buffer, free_wlen,
 						 &dropped_item, &tmp_wr_idx_shift);
+			if (!cont) {
+				ret = -ENOMEM;
+			}
 		}
 
 		k_spin_unlock(&buffer->lock, key);
@@ -532,6 +545,8 @@ void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
 			dropped_item = NULL;
 		}
 	} while (cont);
+
+	return ret;
 }
 
 const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
@@ -636,8 +651,7 @@ void mpsc_pbuf_get_utilization(struct mpsc_pbuf_buffer *buffer,
 {
 	k_spinlock_key_t key = k_spin_lock(&buffer->lock);
 
-	/* One byte is left for full/empty distinction. */
-	*size = (buffer->size - 1) * sizeof(int);
+	*size = buffer->size * sizeof(int);
 	*now = get_usage(buffer) * sizeof(int);
 
 	k_spin_unlock(&buffer->lock, key);
