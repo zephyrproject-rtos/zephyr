@@ -84,7 +84,7 @@ CBOR data of successful response:
 .. code-block:: none
 
     {
-        (str)"val"          : (bstr)
+        (str)"val"          : (byte str)
         (str,opt)"max_size" : (uint)
     }
 
@@ -155,7 +155,7 @@ CBOR data of request:
 
     {
         (str)"name"    : (str)
-        (str)"val"     : (bstr)
+        (str)"val"     : (byte str)
     }
 
 where:
