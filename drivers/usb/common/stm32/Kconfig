@@ -9,6 +9,8 @@ config STM32_USB_COMMON
 	  Enable compilation of STM32 USB common code.
 	  This option is selected by the USB drivers when appropriate.
 
+if STM32_USB_COMMON
+
 config STM32_HAS_EMBEDDED_FS_ULPI_OFF_QUIRK
 	def_bool y
 	# Hand-maintained list of series affected by the quirk.
@@ -46,4 +48,5 @@ module = STM32_USB_COMMON
 module-str = STM32 USB common code
 source "subsys/logging/Kconfig.template.log_config"
 
-endif  # SOC_FAMILY_STM32
+endif # STM32_USB_COMMON
+endif # SOC_FAMILY_STM32
