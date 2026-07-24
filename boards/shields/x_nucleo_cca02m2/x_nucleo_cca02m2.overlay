@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dmic-dev = &dmic_dev;
+	};
+};
+
+st_morpho_dfsdm: &dfsdm {
+	dmic_dev: filter@0 {
+		pinctrl-0 = <&dfsdm1_ckout_pe9
+			     &dfsdm1_datin2_pe7>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		channel@2 {
+			reg = <2>;
+		};
+	};
+
+	status = "okay";
+};
