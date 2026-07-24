@@ -102,10 +102,11 @@ int tmc50xx_read(const struct device *dev, const uint8_t reg_addr, uint32_t *reg
 
 static void log_stallguard(const struct device *dev, const uint32_t drv_status)
 {
+	struct tmc50xx_data *data = dev->data;
 	int32_t position;
 	int err;
 
-	err = tmc50xx_read_actual_position(dev, &position);
+	err = tmc50xx_read_actual_position(dev, data->work_index, &position);
 	if (err != 0) {
 		LOG_ERR("%s: Failed to read XACTUAL register", dev->name);
 		return;
@@ -216,7 +217,7 @@ static void rampstat_work_handler(struct k_work *work)
 	const struct device *dev = data->dev;
 	const struct tmc50xx_config *config = dev->config;
 
-	for (uint8_t i = 0; i < config->num_stepper_drivers; i++) {
+	for (uint8_t i = 0; i < config->num_motion_controllers; i++) {
 		data->work_index = tmc50xx_stepper_ctrl_index(config->motion_controllers[i]);
 		rampstat_work(dev);
 	}
