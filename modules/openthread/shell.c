@@ -15,7 +15,7 @@
 #include <openthread/cli.h>
 #include <openthread/instance.h>
 
-#include "platform-zephyr.h"
+#include <platform-zephyr.h>
 
 #define OT_SHELL_BUFFER_SIZE CONFIG_SHELL_CMD_BUFF_SIZE
 

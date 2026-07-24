@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "openthread/instance.h"
-#include "openthread/ip6.h"
-#include "openthread/trel.h"
-#include "openthread_border_router.h"
+#include <openthread/instance.h>
+#include <openthread/ip6.h>
+#include <openthread/trel.h>
+#include <openthread_border_router.h>
 #include <common/code_utils.hpp>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
-#include "sockets_internal.h"
+#include <sockets_internal.h>
 #include <platform-zephyr.h>
 
 #define MAX_SERVICES CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER_TREL_SERVICES

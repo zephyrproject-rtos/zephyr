@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "openthread/platform/infra_if.h"
-#include "icmpv6.h"
-#include "ipv6.h"
-#include "route_ipv6.h"
-#include "openthread_border_router.h"
+#include <openthread/platform/infra_if.h>
+#include <icmpv6.h>
+#include <ipv6.h>
+#include <route_ipv6.h>
+#include <openthread_border_router.h>
 #include <common/code_utils.hpp>
 #include <platform-zephyr.h>
 #include <zephyr/kernel.h>

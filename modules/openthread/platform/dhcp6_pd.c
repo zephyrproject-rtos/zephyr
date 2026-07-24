@@ -4,16 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "openthread/instance.h"
-#include "openthread/ip6.h"
-#include "openthread_border_router.h"
+#include <openthread/instance.h>
+#include <openthread/ip6.h>
+#include <openthread_border_router.h>
 #include <common/code_utils.hpp>
 #include <openthread/platform/infra_if.h>
 #include <zephyr/posix/sys/socket.h>
 #include <zephyr/net/socket_service.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
-#include "sockets_internal.h"
+#include <sockets_internal.h>
 
 #define DHCPV6_SERVER_PORT 547
 #define DHCPV6_CLIENT_PORT 546
