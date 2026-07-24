@@ -1,0 +1,78 @@
+# Copyright (c) 2026 Eve Redero
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Atmel SAM QSPI Flash controller
+
+  Drives a QSPI Flash memory through the Atmel QSPI SAM controller peripheral,
+  atmel,sam-flash.
+
+compatible: "atmel,sam-flash-qspi"
+
+include:
+  - name: "flash-controller.yaml"
+  - name: "jedec,jesd216.yaml"
+
+on-bus: qspi
+
+properties:
+  reg:
+    required: true
+    description: Flash Memory base address and size in bytes
+
+  qspi-max-frequency:
+    type: int
+    required: true
+    description: Max frequency input on QSPI
+
+  nb-dummy:
+    type: int
+    description: Number of dummy cycles before starting flash transfer. Default is 0.
+
+  writeoc:
+    type: string
+    enum:
+      - "1_1_1"      # Single data line SPI, 1-1-1 (Command 0x02, IFR config 0x0)
+      - "1_1_2"      # Dual data line SPI, 1-1-2 (Command 0xA2, IFR config 0x1)
+      - "1_1_4"      # Quad data line SPI, 1-1-4 (Command 0x32, IFR config 0x2)
+      - "1_4_4"      # Quad data line SPI, 1-4-4 (Command 0x38, IFR config 0x4)
+    description: |
+      The value encodes number of I/O lines used for the write opcode,
+      address, and data.
+
+      If absent, then 1-1-1 program page is used, in single data mode.
+
+  readoc:
+    type: string
+    enum:
+      - "1_1_1"      # Single data line SPI, 1-1-1 (opcode 0x03)
+      - "1_1_2"      # Dual data line SPI, 1-1-2 (opcode 0x3B)
+      - "1_1_4"      # Quad data line SPI, 1-1-4 (opcode 0x6B)
+      - "1_4_4"      # Quad data line SPI, 1-4-4 (opcode 0xEB)
+    description: |
+      The value encodes number of I/O lines used for the read opcode,
+      address, and data.
+
+      If absent, then 1-1-1 is used, in single mode.
+
+  compat-cypress:
+    type: boolean
+    description: Compatibility option for Cypress flash memories.
+      In those, status register 3 is 0x33, and not 0x15 as specified by JEDEC standards.
+
+examples:
+  - |
+    &qspi {
+        s25fl116k: qspi-nor-flash@0 {
+            compatible = "atmel,sam-flash-qspi";
+            reg = <0x0>;
+            size = <DT_SIZE_M(16)>;
+            qspi-max-frequency = <DT_FREQ_M(1)>;
+            status = "okay";
+            writeoc = "1_1_1";
+            readoc = "1_4_4";
+            jedec-id = [01 40 15];
+            nb-dummy = <8>;
+            compat-cypress;
+        };
+    };
