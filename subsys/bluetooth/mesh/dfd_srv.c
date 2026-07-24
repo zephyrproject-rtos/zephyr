@@ -13,6 +13,7 @@
 #include "dfd_srv_internal.h"
 #include "net.h"
 #include "transport.h"
+#include "access.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_DFU_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -51,10 +52,80 @@ struct slot_search_ctx {
 	bool failed;
 };
 
+struct dfd_srv_persistent_target {
+	uint16_t addr;
+	uint8_t img_idx;
+	uint8_t phase;
+	uint8_t status;
+	uint8_t effect;
+} __packed;
+
+struct dfd_srv_persistent_state {
+	uint16_t target_cnt;
+	uint16_t slot_idx;
+	uint16_t app_idx;
+	uint16_t group;
+	uint16_t timeout_base;
+	uint8_t phase;
+	uint8_t apply;
+	uint8_t ttl;
+	uint8_t xfer_mode;
+	struct dfd_srv_persistent_target targets[CONFIG_BT_MESH_DFD_SRV_TARGETS_MAX];
+} __packed;
+
+static void store_state(struct bt_mesh_dfd_srv *srv)
+{
+	struct dfd_srv_persistent_state state = {
+		.phase = srv->phase,
+		.apply = srv->apply,
+		.target_cnt = srv->target_cnt,
+		.slot_idx = srv->slot_idx,
+		.app_idx = srv->inputs.app_idx,
+		.group = srv->inputs.group,
+		.ttl = srv->inputs.ttl,
+		.timeout_base = srv->inputs.timeout_base,
+		.xfer_mode = srv->dfu.xfer.blob.mode,
+	};
+	uint16_t cnt = MIN(srv->target_cnt, ARRAY_SIZE(state.targets));
+
+	for (int i = 0; i < cnt; i++) {
+		state.targets[i].addr = srv->targets[i].blob.addr;
+		state.targets[i].img_idx = srv->targets[i].img_idx;
+		state.targets[i].phase = srv->targets[i].phase;
+		state.targets[i].status = srv->targets[i].status;
+		state.targets[i].effect = srv->targets[i].effect;
+	}
+
+	bt_mesh_model_data_store(srv->mod, false, NULL, &state,
+				 offsetof(struct dfd_srv_persistent_state, targets) +
+				 cnt * sizeof(struct dfd_srv_persistent_target));
+}
+
+static void erase_state(struct bt_mesh_dfd_srv *srv)
+{
+	bt_mesh_model_data_store(srv->mod, false, NULL, NULL, 0);
+}
+
 static void dfd_phase_set(struct bt_mesh_dfd_srv *srv,
 			  enum bt_mesh_dfd_phase new_phase)
 {
 	srv->phase = new_phase;
+
+	/* Store at Applying Update for self-update resume, erase at
+	 * terminal states to prevent re-triggering after reboot.
+	 */
+	switch (new_phase) {
+	case BT_MESH_DFD_PHASE_IDLE:
+	case BT_MESH_DFD_PHASE_COMPLETED:
+	case BT_MESH_DFD_PHASE_FAILED:
+		erase_state(srv);
+		break;
+	case BT_MESH_DFD_PHASE_APPLYING_UPDATE:
+		store_state(srv);
+		break;
+	default:
+		break;
+	}
 
 	if (srv->cb && srv->cb->phase) {
 		srv->cb->phase(srv, srv->phase);
@@ -800,6 +871,42 @@ static void dfu_suspended(struct bt_mesh_dfu_cli *cli)
 	dfd_phase_set(srv, BT_MESH_DFD_PHASE_TRANSFER_SUSPENDED);
 }
 
+static struct bt_mesh_dfu_srv *self_target_dfu_srv(struct bt_mesh_dfd_srv *srv)
+{
+	/* The spec requires the DFU Server (Target role element Y) to be on
+	 * a different element from the DFD Server (Distributor role element
+	 * X). Find the local DFU Server by looking up the element that owns
+	 * the self-target unicast address stored in the receivers list.
+	 */
+	uint16_t cnt = MIN(srv->target_cnt, ARRAY_SIZE(srv->targets));
+
+	for (int i = 0; i < cnt; i++) {
+		if (bt_mesh_has_addr(srv->targets[i].blob.addr)) {
+			const struct bt_mesh_elem *elem =
+				bt_mesh_elem_find(srv->targets[i].blob.addr);
+			const struct bt_mesh_model *mod =
+				bt_mesh_model_find(elem, BT_MESH_MODEL_ID_DFU_SRV);
+
+			return mod ? mod->rt->user_data : NULL;
+		}
+	}
+
+	return NULL;
+}
+
+static void trigger_self_apply(struct bt_mesh_dfd_srv *srv)
+{
+	struct bt_mesh_dfu_srv *dfu_srv = self_target_dfu_srv(srv);
+
+	/* Trigger self-target apply after distribution completes or fails.
+	 * The DFU Server deferred its apply callback to let the
+	 * Distributor finish the confirm step first.
+	 */
+	if (dfu_srv) {
+		bt_mesh_dfu_srv_apply_deferred(dfu_srv);
+	}
+}
+
 static void dfu_ended(struct bt_mesh_dfu_cli *cli,
 		      enum bt_mesh_dfu_status reason)
 {
@@ -820,6 +927,11 @@ static void dfu_ended(struct bt_mesh_dfu_cli *cli,
 
 	if (reason != BT_MESH_DFU_SUCCESS) {
 		dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
+		/* Remote targets failed to confirm (e.g. no target
+		 * reported new FWID). Distribution is over, safe to
+		 * apply deferred self-update.
+		 */
+		trigger_self_apply(srv);
 		return;
 	}
 
@@ -863,9 +975,28 @@ static void dfu_confirmed(struct bt_mesh_dfu_cli *cli)
 {
 	struct bt_mesh_dfd_srv *srv =
 		CONTAINER_OF(cli, struct bt_mesh_dfd_srv, dfu);
+	struct bt_mesh_dfu_srv *dfu_srv;
 
 	if (srv->phase != BT_MESH_DFD_PHASE_APPLYING_UPDATE &&
 	    srv->phase != BT_MESH_DFD_PHASE_CANCELING_UPDATE) {
+		return;
+	}
+
+	/* MshDFUv1.0 Section 6.2.2.4 Confirm step requires the DFD Server to
+	 * wait until the Target nodes have applied the new firmware before
+	 * setting Distribution Phase to Completed. In a self-update, the
+	 * distributor is one of those Target nodes, so trigger the deferred
+	 * self-apply first. If the apply callback reboots the device (real
+	 * firmware), execution does not return: the DFD phase stays in
+	 * APPLYING_UPDATE with state persisted, and dfd_srv_start() finishes
+	 * the Confirm step on the next boot. If the self-target is still in
+	 * APPLYING after the callback (async apply or pending reboot), keep
+	 * DFD in APPLYING_UPDATE so state remains persisted for resume.
+	 */
+	trigger_self_apply(srv);
+
+	dfu_srv = self_target_dfu_srv(srv);
+	if (dfu_srv && dfu_srv->update.phase == BT_MESH_DFU_PHASE_APPLYING) {
 		return;
 	}
 
@@ -968,8 +1099,115 @@ static void dfd_srv_reset(const struct bt_mesh_model *mod)
 	bt_mesh_dfu_slot_del_all();
 }
 
+static int dfd_srv_start(const struct bt_mesh_model *mod)
+{
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
+
+	if (srv->phase != BT_MESH_DFD_PHASE_APPLYING_UPDATE) {
+		return 0;
+	}
+
+	/* Resolve the slot pointer deferred from settings_set(). All
+	 * settings are loaded by the time .start fires.
+	 */
+	srv->dfu.xfer.slot = bt_mesh_dfu_slot_at(srv->slot_idx);
+	if (!srv->dfu.xfer.slot) {
+		LOG_WRN("Slot %u lost, failing distribution", srv->slot_idx);
+		dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
+		return 0;
+	}
+
+	/* Self-update resume: if the local DFU Server is still in APPLYING,
+	 * the reboot means apply succeeded. Transition it to IDLE so it
+	 * responds to Firmware Update Information Get with the new FWID.
+	 */
+	struct bt_mesh_dfu_srv *dfu_srv = self_target_dfu_srv(srv);
+
+	if (dfu_srv && dfu_srv->update.phase == BT_MESH_DFU_PHASE_APPLYING) {
+		bt_mesh_dfu_srv_applied(dfu_srv);
+	}
+
+	/* Resume confirm step to verify targets report new FWID. */
+	(void)bt_mesh_dfu_cli_confirm(&srv->dfu);
+
+	return 0;
+}
+
+static int dfd_srv_settings_set(const struct bt_mesh_model *mod, const char *name,
+				size_t len_rd, settings_read_cb read_cb,
+				void *cb_arg)
+{
+	struct bt_mesh_dfd_srv *srv = mod->rt->user_data;
+	struct dfd_srv_persistent_state state;
+	ssize_t len;
+
+	if (len_rd < offsetof(struct dfd_srv_persistent_state, targets)) {
+		return -EINVAL;
+	}
+
+	len = read_cb(cb_arg, &state, sizeof(state));
+	if (len < 0 || len < offsetof(struct dfd_srv_persistent_state, targets)) {
+		return -EINVAL;
+	}
+
+	if (state.target_cnt > ARRAY_SIZE(srv->targets)) {
+		LOG_WRN("Stored target count %u exceeds max %u",
+			state.target_cnt, (uint8_t)ARRAY_SIZE(srv->targets));
+		return -EINVAL;
+	}
+
+	if (len < offsetof(struct dfd_srv_persistent_state, targets) +
+	    state.target_cnt * sizeof(struct dfd_srv_persistent_target)) {
+		LOG_WRN("Stored data too short for %u targets", state.target_cnt);
+		return -EINVAL;
+	}
+
+	if (state.phase != BT_MESH_DFD_PHASE_APPLYING_UPDATE) {
+		LOG_ERR("Unexpected persisted phase %u", state.phase);
+		return -EINVAL;
+	}
+
+	srv->phase = state.phase;
+
+	srv->apply = state.apply;
+	srv->slot_idx = state.slot_idx;
+	srv->inputs.app_idx = state.app_idx;
+	srv->inputs.group = state.group;
+	srv->inputs.ttl = state.ttl;
+	srv->inputs.timeout_base = state.timeout_base;
+	srv->dfu.xfer.blob.mode = state.xfer_mode;
+
+	srv->target_cnt = state.target_cnt;
+	sys_slist_init(&srv->inputs.targets);
+	for (int i = 0; i < srv->target_cnt; i++) {
+		memset(&srv->targets[i], 0, sizeof(struct bt_mesh_dfu_target));
+		memset(&srv->pull_ctxs[i], 0, sizeof(struct bt_mesh_blob_target_pull));
+		srv->targets[i].blob.addr = state.targets[i].addr;
+		srv->targets[i].blob.pull = &srv->pull_ctxs[i];
+		srv->targets[i].img_idx = state.targets[i].img_idx;
+		srv->targets[i].phase = state.targets[i].phase;
+		srv->targets[i].status = state.targets[i].status;
+		srv->targets[i].effect = state.targets[i].effect;
+		sys_slist_append(&srv->inputs.targets,
+				 &srv->targets[i].blob.n);
+	}
+
+	bt_mesh_dfu_cli_restore(&srv->dfu, &srv->inputs);
+
+	/* Slot pointer is resolved in dfd_srv_start() since the slot
+	 * settings subtree may not be loaded yet at this point.
+	 */
+
+	LOG_DBG("Recovered distribution (phase: %u, targets: %u, slot: %u)",
+		srv->phase, srv->target_cnt, srv->slot_idx);
+
+	return 0;
+}
+
 const struct bt_mesh_model_cb _bt_mesh_dfd_srv_cb = {
 	.init = dfd_srv_init,
+	.start = dfd_srv_start,
+	.settings_set = dfd_srv_settings_set,
 	.reset = dfd_srv_reset,
 };
 
