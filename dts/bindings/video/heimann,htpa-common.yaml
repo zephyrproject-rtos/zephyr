@@ -1,0 +1,15 @@
+# Copyright (c) 2026 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Heimann HTPA IR Camera
+
+include:
+  - name: spi-device.yaml
+  - name: video-interfaces.yaml
+  - name: nvmem-consumer.yaml
+
+properties:
+  calibration-flash:
+    type: phandle
+    required: true
+    description: Flash device containing sensor calibration data
