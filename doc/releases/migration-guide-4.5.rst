@@ -121,6 +121,14 @@ Boards
   device tree now. The Kconfigs ``CONFIG_SOC_GECKO_HAS_HFRCO_FREQRANGE`` and ``CONFIG_CMU_*`` have
   been removed. See :github:`111754` for examples of how to adapt your board.
 
+* The Adafruit ESP32 Feather board target ``adafruit_feather_esp32`` has been renamed to
+  :zephyr:board:`adafruit_feather_esp32_v2` (``adafruit_feather_esp32_v2``) to match the
+  manufacturer's naming: Adafruit ESP32 Feather V2. The old ``adafruit_feather_esp32``
+  board target is deprecated and now automatically redirects to the new target with a warning.
+  Update board targets from ``adafruit_feather_esp32/esp32/procpu`` and
+  ``adafruit_feather_esp32/esp32/appcpu`` to ``adafruit_feather_esp32_v2/esp32/procpu`` and
+  ``adafruit_feather_esp32_v2/esp32/appcpu`` respectively.
+
 * On the nRF54LM20 DK, the ``nrf7002eb2`` shield (and its ``nrf7002eb2_nrf7001`` and
   ``nrf7002eb2_nrf7000`` variants) no longer redirects the application console. Previously it
   disabled UART20 and rerouted the console (shell, mcumgr, and Bluetooth monitor) to UART30 to
