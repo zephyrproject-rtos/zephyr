@@ -17,6 +17,14 @@ config GPIO
 config USB_DEVICE_REMOTE_WAKEUP
 	default n
 
+if DISPLAY
+
+# Required to power the TFT panel and its backlight
+configdefault REGULATOR
+	default y
+
+endif # DISPLAY
+
 source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
 
 # Timing in nanoseconds / cycles at 64MHz for led strip
