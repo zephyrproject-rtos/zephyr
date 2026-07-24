@@ -1725,7 +1725,11 @@ void z_thread_abort(struct k_thread *thread)
 
 	if (essential) {
 		__ASSERT(!essential, "aborted essential thread %p", thread);
-		k_panic();
+		/* Attribute the panic to the essential thread that was aborted,
+		 * not to the context doing the aborting: the two differ when an
+		 * essential thread is aborted from an ISR or another thread.
+		 */
+		z_fatal_error_thread(K_ERR_KERNEL_PANIC, NULL, thread);
 	}
 }
 

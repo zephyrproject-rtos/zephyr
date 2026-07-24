@@ -88,15 +88,22 @@ FUNC_NORETURN void k_fatal_halt(unsigned int reason)
 }
 /* LCOV_EXCL_STOP */
 
-void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
+void z_fatal_error_thread(unsigned int reason, const struct arch_esf *esf,
+			  struct k_thread *thread)
 {
 	/* We can't allow this code to be preempted, but don't need to
 	 * synchronize between CPUs, so an arch-layer lock is
 	 * appropriate.
 	 */
 	unsigned int key = arch_irq_lock();
-	struct k_thread *thread = IS_ENABLED(CONFIG_MULTITHREADING) ?
-			_current : NULL;
+
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		thread = NULL;
+	} else if (thread == NULL) {
+		thread = _current;
+	} else {
+		/* Error attributed to a thread other than the running one. */
+	}
 
 	/* twister looks for the "ZEPHYR FATAL ERROR" string, don't
 	 * change it without also updating twister
@@ -117,7 +124,12 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 #endif /* CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		LOG_ERR("Current thread: %p (%s)", thread, thread_name_get(thread));
+		LOG_ERR("Current thread: %p (%s)", _current, thread_name_get(_current));
+
+		if (thread != _current) {
+			LOG_ERR("Faulting thread: %p (%s)", thread,
+				thread_name_get(thread));
+		}
 	}
 
 	/*
@@ -139,7 +151,10 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	k_sys_fatal_error_handler(reason, esf);
 
 	/* If the system fatal error handler returns, then kill the faulting
-	 * thread; a policy decision was made not to hang the system.
+	 * thread; a policy decision was made not to hang the system. Note that
+	 * the faulting thread is not necessarily the running one, and that it
+	 * may already be dead (e.g. an essential thread that was aborted), in
+	 * which case the abort below is a no-op.
 	 *
 	 * Policy for fatal errors in ISRs: unconditionally panic.
 	 *
@@ -196,4 +211,9 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		k_thread_abort(thread);
 	}
+}
+
+void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
+{
+	z_fatal_error_thread(reason, esf, NULL);
 }
