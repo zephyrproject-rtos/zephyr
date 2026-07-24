@@ -65,6 +65,15 @@ config MODEM_CELLULAR_PERIODIC_SCRIPT_MS
 	default 30000 if DT_HAS_NORDIC_NRF93M1_ENABLED
 	default 2000
 
+config MODEM_CELLULAR_MAX_NEIGHBOR_CELLS
+	int "Maximum number of neighbour cells cached"
+	range 1 255
+	default 6
+	help
+	  Upper bound on the number of neighbour cells retained from a
+	  measurement and returned by cellular_get_neighbor_cells(). Neighbour
+	  cells reported beyond this count are dropped.
+
 config MODEM_CELLULAR_UART_BUFFER_SIZES
 	int "The UART receive and transmit buffer sizes in bytes."
 	default 512

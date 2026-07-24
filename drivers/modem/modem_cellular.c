@@ -239,11 +239,45 @@ void modem_cellular_emit_network_status(struct modem_cellular_data *data,
 	}
 }
 
-static void modem_cellular_invalidate_network_status(struct modem_cellular_data *data)
+static void modem_cellular_invalidate_cell_cache(struct modem_cellular_data *data)
 {
 	k_mutex_lock(&data->api_lock, K_FOREVER);
 	data->network_status_valid = false;
+	data->neighbor_cells_valid = false;
 	k_mutex_unlock(&data->api_lock);
+}
+
+void modem_cellular_add_neighbor_cell(struct modem_cellular_data *data,
+				      const struct cellular_neighbor_cell *cell)
+{
+	/* Stage into a private buffer, never the published cache, so a reader is
+	 * never exposed to a half-parsed measurement. Runs on the modem work queue.
+	 */
+	if (data->neighbor_staging_count >= ARRAY_SIZE(data->neighbor_staging)) {
+		LOG_WRN("neighbour cell staging full (%zu), dropping entry",
+			ARRAY_SIZE(data->neighbor_staging));
+		return;
+	}
+
+	data->neighbor_staging[data->neighbor_staging_count] = *cell;
+	data->neighbor_staging_count++;
+}
+
+void modem_cellular_commit_neighbor_cells(struct modem_cellular_data *data)
+{
+	/* Publish the staged measurement in one locked step, then clear the staging
+	 * buffer so the next measurement starts empty. A measurement that staged no
+	 * cells publishes an empty list, distinct from the -ENODATA no-measurement
+	 * state.
+	 */
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	memcpy(data->neighbor_cells, data->neighbor_staging,
+	       data->neighbor_staging_count * sizeof(data->neighbor_cells[0]));
+	data->neighbor_cell_count = data->neighbor_staging_count;
+	data->neighbor_cells_valid = true;
+	k_mutex_unlock(&data->api_lock);
+
+	data->neighbor_staging_count = 0;
 }
 
 static void modem_cellular_emit_modem_info(struct modem_cellular_data *data,
@@ -608,15 +642,17 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 		   (modem_cellular_stats_on_reg_transition(data, was_registered,
 							   modem_cellular_is_registered(data))));
 
-	if (modem_cellular_is_registered(data)) {
-		/* Drop any cached serving cell on a registration change; it is stale
-		 * until the next periodic poll, so get_network_status() reports no
-		 * data rather than the previous (deregistered) snapshot.
-		 */
-		if (registration_prev != registration_status) {
-			modem_cellular_invalidate_network_status(data);
-		}
+	/* Drop the cached serving and neighbour cells on any registration change,
+	 * including deregistration; they are stale until the next periodic poll.
+	 * The deregistration branch below re-reports the serving status, while the
+	 * neighbour list stays invalid (get_neighbor_cells() returns -ENODATA) until
+	 * the next scan refreshes it.
+	 */
+	if (registration_prev != registration_status) {
+		modem_cellular_invalidate_cell_cache(data);
+	}
 
+	if (modem_cellular_is_registered(data)) {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	} else {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
@@ -2561,6 +2597,33 @@ static int modem_cellular_get_network_status(const struct device *dev,
 	return ret;
 }
 
+static int modem_cellular_get_neighbor_cells(const struct device *dev,
+					     struct cellular_neighbor_cell *cells, uint8_t *count)
+{
+	struct modem_cellular_data *data = dev->data;
+	int ret = 0;
+
+	if (cells == NULL || count == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+
+	if (!data->neighbor_cells_valid) {
+		ret = -ENODATA;
+	} else if (*count < data->neighbor_cell_count) {
+		*count = data->neighbor_cell_count;
+		ret = -ENOMEM;
+	} else {
+		memcpy(cells, data->neighbor_cells, data->neighbor_cell_count * sizeof(*cells));
+		*count = data->neighbor_cell_count;
+	}
+
+	k_mutex_unlock(&data->api_lock);
+
+	return ret;
+}
+
 static int modem_cellular_set_apn(const struct device *dev, const char *apn)
 {
 	struct modem_cellular_data *data = dev->data;
@@ -2666,6 +2729,7 @@ DEVICE_API(cellular, modem_cellular_api) = {
 	.get_modem_info = modem_cellular_get_modem_info,
 	.get_registration_status = modem_cellular_get_registration_status,
 	.get_network_status = modem_cellular_get_network_status,
+	.get_neighbor_cells = modem_cellular_get_neighbor_cells,
 	.set_apn = modem_cellular_set_apn,
 	.set_callback = modem_cellular_set_callback,
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS, (.get_stats = modem_cellular_get_stats,))

@@ -158,6 +158,11 @@ struct modem_cellular_data {
 	uint8_t rsrq;
 	struct cellular_evt_network_status network_status;
 	bool network_status_valid;
+	struct cellular_neighbor_cell neighbor_cells[CONFIG_MODEM_CELLULAR_MAX_NEIGHBOR_CELLS];
+	uint8_t neighbor_cell_count;
+	bool neighbor_cells_valid;
+	struct cellular_neighbor_cell neighbor_staging[CONFIG_MODEM_CELLULAR_MAX_NEIGHBOR_CELLS];
+	uint8_t neighbor_staging_count;
 	uint8_t imei[MODEM_CELLULAR_DATA_IMEI_LEN];
 	uint8_t model_id[MODEM_CELLULAR_DATA_MODEL_ID_LEN];
 	uint8_t imsi[MODEM_CELLULAR_DATA_IMSI_LEN];
@@ -342,6 +347,17 @@ void modem_cellular_emit_event(struct modem_cellular_data *data, enum cellular_e
  */
 void modem_cellular_emit_network_status(struct modem_cellular_data *data,
 					const struct cellular_evt_network_status *status);
+
+/*
+ * Accumulate a neighbour cell measurement across the per-line parse of one poll:
+ * add stages a cell (dropping the excess when the staging buffer is full), commit
+ * publishes the staged list to get_neighbor_cells() readers and clears the buffer
+ * for the next measurement. A measurement that stages nothing publishes an empty
+ * list, so the pair needs no external "scan start" signal.
+ */
+void modem_cellular_add_neighbor_cell(struct modem_cellular_data *data,
+				      const struct cellular_neighbor_cell *cell);
+void modem_cellular_commit_neighbor_cells(struct modem_cellular_data *data);
 
 void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t argc,
 				 void *user_data);
