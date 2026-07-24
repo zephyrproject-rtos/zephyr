@@ -5,7 +5,7 @@
 
 #define DT_DRV_COMPAT nordic_nrfs_audiopll
 
-#include "clock_control_nrf2_common.h"
+#include "clock_control_nrf_common.h"
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/clock/nrfs-audiopll.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>

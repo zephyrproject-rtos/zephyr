@@ -108,6 +108,13 @@ tests:
     platform_allow:
       - beagleconnect_freedom@C5/cc1352p
       - beagleconnect_freedom@C7/cc1352p7
+  sample.net.zperf.nrf7002dk.legacy_nrf_clock:
+    extra_args: SNIPPET=wifi-ipv4
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow: nrf7002dk/nrf5340/cpuapp
   sample.net.zperf.nrf7002dk:
     extra_args: SNIPPET=wifi-ipv4
     extra_configs:
@@ -119,6 +126,15 @@ tests:
     extra_configs:
       - CONFIG_NET_SOCKETS_PACKET=y
       - CONFIG_NET_ZPERF_RAW_TX=y
+  sample.net.zperf.raw_tx.nrf7002dk.legacy_nrf_clock:
+    extra_args: SNIPPET=wifi-ipv4
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - CONFIG_NET_SOCKETS_PACKET=y
+      - CONFIG_NET_ZPERF_RAW_TX=y
+    platform_allow: nrf7002dk/nrf5340/cpuapp
   sample.net.zperf.raw_tx.nrf7002dk:
     extra_args: SNIPPET=wifi-ipv4
     extra_configs:

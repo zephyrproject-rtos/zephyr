@@ -3,6 +3,25 @@ tests:
     tags:
       - drivers
       - clock_control
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
+    platform_allow:
+      - nrf51dk/nrf51822
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
+
+  drivers.clock.nrf_onoff_and_bt.legacy:
+    tags:
+      - drivers
+      - clock_control
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
     platform_allow:
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832
