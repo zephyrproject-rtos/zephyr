@@ -1737,6 +1737,9 @@ static int espi_rts5912_send_oob(const struct device *dev, struct espi_oob_packe
 	const struct espi_rts5912_config *const espi_config = dev->config;
 	struct espi_rts5912_data *espi_data = dev->data;
 	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+	volatile struct acpi_reg *const acpi_reg = espi_config->acpi_reg;
+	volatile struct acpi_reg *const promt0_reg = espi_config->promt0_reg;
+	volatile struct kbc_reg *const kbc_reg = espi_config->kbc_reg;
 	int ret;
 
 	if (!(espi_reg->EOCFG & ESPI_EOCFG_CHRDY)) {
@@ -1754,12 +1757,25 @@ static int espi_rts5912_send_oob(const struct device *dev, struct espi_oob_packe
 		return -EINVAL;
 	}
 
+	__disable_irq();
+
 	for (int i = 0; i < pckt->len; i++) {
 		espi_data->oob_tx_ptr[i] = pckt->buf[i];
 	}
 
 	espi_reg->EOTXLEN = pckt->len - 1;
+
+	/* Check if any data in port fifo */
+	if ((acpi_reg->STS & ACPI_STS_IBF) || (kbc_reg->STS & KBC_STS_IBF) ||
+		(promt0_reg->STS & ACPI_STS_IBF) || (acpi_reg->STS & ACPI_STS_OBF) ||
+		(kbc_reg->STS & KBC_STS_OBF) || (promt0_reg->STS & ACPI_STS_OBF)) {
+		LOG_ERR("%s: OOB channel need wait for io", __func__);
+		return -EIO;
+	}
+
 	espi_reg->EOTXCTRL = ESPI_EOTXCTRL_TXSTR;
+
+	__enable_irq();
 
 	espi_data->oob_tx_busy = true;
 
