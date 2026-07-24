@@ -34,12 +34,56 @@ static const uint64_t cpu_mpid_list[] = {
 BUILD_ASSERT(ARRAY_SIZE(cpu_mpid_list) >= CONFIG_MP_MAX_NUM_CPUS,
 		"The count of CPU Cores nodes in dts is less than CONFIG_MP_MAX_NUM_CPUS\n");
 
+/*
+ * Read the current CPU's target mask from hardware.
+ * GICD_ITARGETSR bytes 0-3 (SGIs, IRQs 0-3) are banked per-CPU
+ * and read-only, returning this CPU's own interface target bit.
+ * This is reliable regardless of what the device tree defines.
+ */
+static uint8_t gic_get_cpu_mask(void)
+{
+	return sys_read8(GICD_ITARGETSRn);
+}
+
 void arm_gic_irq_enable(unsigned int irq)
 {
 	int int_grp, int_off;
 
 	int_grp = irq / 32;
 	int_off = irq % 32;
+
+#ifdef CONFIG_GIC_SAFE_CONFIG
+	/*
+	 * Ensure the calling CPU is included in the SPI's target list.
+	 * We OR the local CPU mask into the existing value so that if
+	 * another core has already registered itself, it is not removed.
+	 * This allows shared SPIs (e.g., for testing 1-of-N delivery)
+	 * while still routing private SPIs to the calling core.
+	 *
+	 * This per-IRQ affinity update is required in two cases:
+	 *  - AMP (non-SMP) mode, where gic_dist_init() leaves all SPI
+	 *    targets cleared and each core adds its own mask on demand.
+	 *  - CONFIG_GIC_SAFE_CONFIG, where a later Zephyr instance may
+	 *    have skipped gic_dist_init() (another OS already brought up
+	 *    the distributor) and therefore still needs to route its own
+	 *    SPIs to itself.
+	 *
+	 * SGIs (irq 0-15) and PPIs (irq 16-31) are banked per-CPU and do
+	 * not have a shareable ITARGETSR, so skip them.
+	 *
+	 * Limitation: this is a read-modify-write of a distributor register
+	 * that is shared across all OSes/cores. There is no inter-OS
+	 * serialization here, so two independent Zephyr instances enabling
+	 * the *same* shared SPI concurrently may race and lose an update.
+	 * Concurrent enable of the same shared SPI from multiple OSes is
+	 * considered out of scope for CONFIG_GIC_SAFE_CONFIG.
+	 */
+	if (irq >= GIC_SPI_INT_BASE) {
+		uint8_t cur = sys_read8(GICD_ITARGETSRn + irq);
+
+		sys_write8(cur | gic_get_cpu_mask(), GICD_ITARGETSRn + irq);
+	}
+#endif
 
 	sys_write32((1 << int_off), (GICD_ISENABLERn + int_grp * 4));
 }
@@ -179,8 +223,21 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff,
 static void gic_dist_init(void)
 {
 	unsigned int gic_irqs, i;
-	uint8_t cpu_mask = 0;
 	uint32_t reg_val;
+
+#ifdef CONFIG_GIC_SAFE_CONFIG
+	/*
+	 * In AMP configurations multiple independent OSes share the same
+	 * GIC distributor.  If another core has already set up the
+	 * distributor (forwarding enabled), skip re-initialization to
+	 * avoid clobbering its SPI enables, targets and priorities.
+	 * Per-SPI affinity for this core is handled later by
+	 * arm_gic_irq_enable() when each driver enables its IRQ.
+	 */
+	if (sys_read32(GICD_CTLR) & BIT(0)) {
+		return;
+	}
+#endif
 
 	gic_irqs = sys_read32(GICD_TYPER) & 0x1f;
 	gic_irqs = (gic_irqs + 1) * 32;
@@ -194,17 +251,33 @@ static void gic_dist_init(void)
 	 */
 	sys_write32(0, GICD_CTLR);
 
+#ifdef CONFIG_GIC_SAFE_CONFIG
 	/*
-	 * Enable all global interrupts distributing to CPUs listed
-	 * in dts with the count of arch_num_cpus().
+	 * In non-SMP (AMP) mode, clear all SPI targets during init.
+	 * Each driver's arm_gic_irq_enable() will OR in its own CPU
+	 * mask, so only the cores that actually register a handler
+	 * are included in the target list.  This avoids pre-routing
+	 * SPIs to cores that have no handler for them.
 	 */
-	unsigned int num_cpus = arch_num_cpus();
+	reg_val = 0;
+#else
+	/*
+	 * In SMP mode, target SPIs to all CPUs.
+	 * Get the current CPU's hardware target mask from the GIC
+	 * and combine it with all CPUs from the device tree.
+	 */
+	{
+		uint8_t cpu_mask = gic_get_cpu_mask();
+		unsigned int num_cpus = arch_num_cpus();
 
-	for (i = 0; i < num_cpus; i++) {
-		cpu_mask |= BIT(cpu_mpid_list[i]);
+		for (i = 0; i < num_cpus; i++) {
+			cpu_mask |= BIT(cpu_mpid_list[i]);
+		}
+
+		reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16) | (cpu_mask << 24);
 	}
-	reg_val = cpu_mask | (cpu_mask << 8) | (cpu_mask << 16)
-		| (cpu_mask << 24);
+#endif
+
 	for (i = GIC_SPI_INT_BASE; i < gic_irqs; i += 4) {
 		sys_write32(reg_val, GICD_ITARGETSRn + i);
 	}
