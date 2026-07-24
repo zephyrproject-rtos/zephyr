@@ -274,10 +274,10 @@ static int movw_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t lo
 		opcode &= ~(AARCH64_MASK_MOV_OPCODE << AARCH64_SHIFT_MOV_OPCODE);
 
 		if (x >= 0) {
-			opcode |= (AARCH64_OPCODE_MOVN << AARCH64_SHIFT_MOV_OPCODE);
-		} else {
 			opcode |= (AARCH64_OPCODE_MOVZ << AARCH64_SHIFT_MOV_OPCODE);
-			/* Need to invert immediate value for MOVZ. */
+		} else {
+			opcode |= (AARCH64_OPCODE_MOVN << AARCH64_SHIFT_MOV_OPCODE);
+			/* Need to invert immediate value for MOVN. */
 			imm = ~imm;
 		}
 	}
