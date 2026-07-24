@@ -286,3 +286,16 @@ tolerance, which makes it suitable as a CI regression check.
    rejected. The examples pass ``--base-dir ..`` because they read the twister
    report from the sibling ``../build`` tree while writing outputs into the
    repository.
+
+Visualize the results
+=====================
+
+Pass ``--plot`` to write a bar chart of the metrics as a self-contained SVG
+(no extra Python dependencies). Without a baseline it plots the current values;
+combined with ``--baseline`` it draws grouped baseline-vs-current bars:
+
+.. code-block:: console
+
+   samples/net/zperf/scripts/zperf_regression.py --base-dir .. \
+       --twister-json ../build/zperf_cur/twister.json \
+       --baseline baseline.json --plot throughput.svg

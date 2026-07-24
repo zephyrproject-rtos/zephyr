@@ -27,10 +27,17 @@ Typical usage::
     samples/net/zperf/scripts/zperf_regression.py --base-dir .. \\
         --twister-json ../build/zperf_cur/twister.json \\
         --baseline baseline.json --tolerance 5
+
+    # Visualize the results as an SVG bar chart (optionally baseline vs
+    # current when --baseline is also given).
+    samples/net/zperf/scripts/zperf_regression.py --base-dir .. \\
+        --twister-json ../build/zperf_cur/twister.json \\
+        --baseline baseline.json --plot throughput.svg
 """
 
 import argparse
 import json
+import math
 import os
 import sys
 
@@ -122,6 +129,124 @@ def compare(baseline: dict[str, float], current: dict[str, float], tolerance_pct
     return ok
 
 
+def _nice_ceil(value: float) -> float:
+    """Round a positive value up to a 1/2/2.5/5/10 * 10^n axis maximum."""
+    if value <= 0:
+        return 1.0
+    exp = math.floor(math.log10(value))
+    base = 10.0**exp
+    for mult in (1.0, 2.0, 2.5, 5.0, 10.0):
+        if value <= mult * base:
+            return mult * base
+    return 10.0 * base
+
+
+def write_plot(
+    path: str, current: dict[str, float], baseline: dict[str, float] | None = None
+) -> None:
+    """Render a bar chart of the metrics as a self-contained SVG file.
+
+    Without a baseline a single bar per metric is drawn; with a baseline the
+    baseline and current values are drawn as grouped bars per metric.
+    """
+    metrics = sorted(set(current) | (set(baseline) if baseline else set()))
+
+    margin_left, margin_right, margin_top, margin_bottom = 70, 30, 60, 110
+    group_w = 70
+    plot_w = group_w * max(len(metrics), 1)
+    height = 460
+    plot_h = height - margin_top - margin_bottom
+    width = margin_left + plot_w + margin_right
+    plot_bottom = margin_top + plot_h
+
+    values = [current.get(m, 0.0) for m in metrics]
+    if baseline:
+        values += [baseline.get(m, 0.0) for m in metrics]
+    axis_max = _nice_ceil(max(values) if values else 1.0)
+
+    def y_of(val: float) -> float:
+        return plot_bottom - (val / axis_max) * plot_h
+
+    color_cur = "#1f77b4"
+    color_base = "#999999"
+    svg: list[str] = []
+    svg.append(
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
+        f'height="{height}" font-family="sans-serif" font-size="12">'
+    )
+    svg.append(f'<rect width="{width}" height="{height}" fill="white"/>')
+    svg.append(
+        f'<text x="{width / 2:.1f}" y="24" text-anchor="middle" '
+        f'font-size="16" font-weight="bold">'
+        f'zperf loopback throughput (Mbps)</text>'
+    )
+
+    ticks = 5
+    for i in range(ticks + 1):
+        val = axis_max * i / ticks
+        y = y_of(val)
+        svg.append(
+            f'<line x1="{margin_left}" y1="{y:.1f}" '
+            f'x2="{margin_left + plot_w}" y2="{y:.1f}" stroke="#e0e0e0"/>'
+        )
+        svg.append(
+            f'<text x="{margin_left - 8}" y="{y + 4:.1f}" '
+            f'text-anchor="end" fill="#555">{val:.1f}</text>'
+        )
+
+    svg.append(
+        f'<line x1="{margin_left}" y1="{margin_top}" x2="{margin_left}" '
+        f'y2="{plot_bottom}" stroke="#333"/>'
+    )
+    svg.append(
+        f'<line x1="{margin_left}" y1="{plot_bottom}" '
+        f'x2="{margin_left + plot_w}" y2="{plot_bottom}" stroke="#333"/>'
+    )
+
+    def bar(x: float, val: float, bar_w: float, color: str) -> None:
+        y = y_of(val)
+        svg.append(
+            f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" '
+            f'height="{plot_bottom - y:.1f}" fill="{color}"/>'
+        )
+        svg.append(
+            f'<text x="{x + bar_w / 2:.1f}" y="{y - 4:.1f}" '
+            f'text-anchor="middle" font-size="9" fill="{color}">'
+            f'{val:.1f}</text>'
+        )
+
+    for idx, metric in enumerate(metrics):
+        center = margin_left + idx * group_w + group_w / 2
+        if baseline:
+            bar_w = group_w * 0.30
+            if metric in baseline:
+                bar(center - bar_w - 2, baseline[metric], bar_w, color_base)
+            if metric in current:
+                bar(center + 2, current[metric], bar_w, color_cur)
+        else:
+            bar_w = group_w * 0.5
+            bar(center - bar_w / 2, current.get(metric, 0.0), bar_w, color_cur)
+
+        label_y = plot_bottom + 14
+        svg.append(
+            f'<text x="{center:.1f}" y="{label_y:.1f}" '
+            f'transform="rotate(-45 {center:.1f} {label_y:.1f})" '
+            f'text-anchor="end" fill="#333">{metric}</text>'
+        )
+
+    if baseline:
+        lx, ly = margin_left + 10, margin_top + 6
+        svg.append(f'<rect x="{lx}" y="{ly}" width="12" height="12" fill="{color_base}"/>')
+        svg.append(f'<text x="{lx + 18}" y="{ly + 11}">baseline</text>')
+        svg.append(f'<rect x="{lx + 90}" y="{ly}" width="12" height="12" fill="{color_cur}"/>')
+        svg.append(f'<text x="{lx + 108}" y="{ly + 11}">current</text>')
+
+    svg.append("</svg>")
+    with open(path, "w") as fp:
+        fp.write("\n".join(svg) + "\n")
+    print(f"Wrote plot to {path}")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -147,6 +272,13 @@ def main() -> int:
         help="Allowed throughput drop in percent (default: 5.0)",
     )
     parser.add_argument(
+        "--plot",
+        metavar="PATH",
+        help="Write an SVG bar chart of the metrics to PATH "
+        "(grouped baseline vs current when --baseline is "
+        "given)",
+    )
+    parser.add_argument(
         "--base-dir",
         metavar="DIR",
         default=".",
@@ -169,10 +301,17 @@ def main() -> int:
             fp.write("\n")
         print(f"Saved baseline to {save_path}")
 
+    baseline = None
     if args.baseline:
         baseline_path = validate_path(args.baseline, args.base_dir, for_write=False)
         with open(baseline_path) as fp:
             baseline = {k: float(v) for k, v in json.load(fp).items()}
+
+    if args.plot:
+        plot_path = validate_path(args.plot, args.base_dir, for_write=True)
+        write_plot(plot_path, current, baseline)
+
+    if baseline is not None:
         print()
         if not compare(baseline, current, args.tolerance):
             print("\nThroughput regression detected.", file=sys.stderr)
