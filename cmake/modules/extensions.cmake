@@ -1456,7 +1456,7 @@ function(zephyr_linker_sources location)
     file(RELATIVE_PATH relpath ${ZEPHYR_BASE}/include ${path})
 
     # Create strings to be written into the file
-    set (include_str "/* Sort key: \"${SORT_KEY}\" */#include \"${relpath}\"")
+    set (include_str "/* Sort key: \"${SORT_KEY}\" */#include <${relpath}>")
 
     # Remove line from other snippet file, if already used
     get_property(old_path GLOBAL PROPERTY "snippet_files_used_${relpath}")
