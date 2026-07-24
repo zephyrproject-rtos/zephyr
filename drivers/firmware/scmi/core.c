@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/firmware/scmi/base.h>
 #include <zephyr/drivers/firmware/scmi/protocol.h>
 #include <zephyr/drivers/firmware/scmi/transport.h>
 #include <zephyr/logging/log.h>
@@ -263,6 +264,7 @@ static int scmi_core_protocol_negotiate(struct scmi_protocol *proto)
 
 static int scmi_core_protocol_setup(const struct device *transport)
 {
+	struct scmi_revision_info rev;
 	int ret;
 
 	STRUCT_SECTION_FOREACH(scmi_protocol, it) {
@@ -291,12 +293,28 @@ static int scmi_core_protocol_setup(const struct device *transport)
 			}
 		}
 
+		/* Get a list of supported protocols */
+		if (it->id == SCMI_PROTOCOL_BASE) {
+			ret = scmi_base_get_revision_info(&rev);
+			if (ret < 0) {
+				LOG_ERR("Protocol: Failed to get protocol list: %d", ret);
+				return ret;
+			}
+		}
+
+		/* Protocol not supported, continue */
+		if (!(rev.list_protocols[it->id / 32] & BIT(it->id % 32))) {
+			continue;
+		}
+
 		ret = scmi_core_protocol_negotiate(it);
 		if (ret < 0) {
 			return ret;
 		}
 
-		LOG_INF("initialized protocol 0x%x version 0x%x", it->id, it->version);
+		LOG_ERR("initialized protocol 0x%x version 0x%x", it->id, it->version);
+		printf("initialized protocol 0x%x version 0x%x\n\n", it->id, it->version);
+		printk("initialized protocol 0x%x version 0x%x\n\n", it->id, it->version);
 	}
 
 	return 0;

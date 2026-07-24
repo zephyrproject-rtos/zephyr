@@ -11,14 +11,13 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/firmware/scmi/pinctrl.h>
+#include <zephyr/drivers/firmware/scmi/util.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rcar-common.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
-
-#ifndef CONFIG_PINCTRL_RCAR_SCMI
 
 /* Swap both arguments */
 #define PFC_REG_ADDRESS(idx, inst) DT_INST_REG_ADDR_BY_IDX(inst, idx)
@@ -229,7 +228,7 @@ static int pfc_rcar_set_bias(uintptr_t pfc_base, uint16_t pin, uint16_t flags)
 	return 0;
 }
 
-static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
+static int pinctrl_configure_pin_raw(const pinctrl_soc_pin_t *pin)
 {
 	k_spinlock_key_t key;
 	uintptr_t pfc_base;
@@ -307,9 +306,7 @@ __boot_func static int pfc_rcar_driver_init(void)
 SYS_INIT(pfc_rcar_driver_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
 
-#else
-
-static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
+static int pinctrl_configure_pin_scmi(const pinctrl_soc_pin_t *pin)
 {
 	struct scmi_pinctrl_settings settings;
 	uint8_t config_cnt = 0;
@@ -356,16 +353,26 @@ static int pinctrl_configure_pin(const pinctrl_soc_pin_t *pin)
 	return scmi_pinctrl_settings_configure(&settings);
 }
 
-#endif /* CONFIG_PINCTRL_RCAR_SCMI */
+#include <zephyr/drivers/firmware/scmi/base.h>
 
 int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintptr_t reg)
 {
+	struct scmi_revision_info rev;
 	int ret;
 
 	ARG_UNUSED(reg);
 
+	ret = scmi_base_get_revision_info(&rev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	for (uint8_t i = 0; i < pin_cnt; i++) {
-		ret = pinctrl_configure_pin(&pins[i]);
+		if (rev.list_protocols[0] & BIT(SCMI_PROTOCOL_PINCTRL)) {
+			ret = pinctrl_configure_pin_scmi(&pins[i]);
+		} else {
+			ret = pinctrl_configure_pin_raw(&pins[i]);
+		}
 		if (ret < 0) {
 			return ret;
 		}
