@@ -98,6 +98,11 @@ rsource "Kconfig.adv"
 
 config BT_CONN
 	bool
+	help
+	  Indicates that support for Bluetooth LE connections (ACL) is enabled.
+	  This internal option is selected automatically by the roles that need
+	  connections, such as BT_PERIPHERAL and BT_CENTRAL, and is not meant to
+	  be set directly.
 
 config BT_MAX_CONN
 	int "Maximum number of simultaneous connections"
