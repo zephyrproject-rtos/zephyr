@@ -541,6 +541,10 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
 	struct bt_conn_info conn_info;
 	__maybe_unused int err;
 
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 	/* If there doesn't exist a bond, then this function is a no-op: We either add the bonded
 	 * address or trigger notification work for bonded devices
 	 */
@@ -593,6 +597,10 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	struct bt_conn_info conn_info;
 	__maybe_unused int err;
 
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 	if (!atomic_test_bit(scan_delegator_flags, SCAN_DELEGATOR_FLAG_REGISTERED)) {
 		/* Not yet registered, ignore callback */
 		return;
@@ -619,6 +627,10 @@ static void pairing_complete_cb(struct bt_conn *conn, bool bonded)
 {
 	struct bass_recv_state_internal *internal_state = &scan_delegator.recv_states[0];
 	__maybe_unused int err;
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
 
 	LOG_DBG("%s paired (%sbonded)", bt_conn_dst_str(conn), bonded ? "" : "not ");
 
