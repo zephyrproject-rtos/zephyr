@@ -7,21 +7,24 @@ DT_CHOSEN_STDBY_TIMER := st,lptim-stdby-timer
 
 config SOC_SERIES_STM32U5X
 	select ARM
-	select CPU_CORTEX_M33
 	select ARM_TRUSTZONE_M
-	select CPU_HAS_ARM_SAU
-	select CPU_HAS_ARM_MPU
-	select CPU_HAS_FPU
-	select CPU_HAS_DCACHE
-	select CPU_HAS_ICACHE
 	select ARMV8_M_DSP
+	select CPU_CORTEX_M33
+
 	select CPU_CORTEX_M_HAS_DWT
-	select HAS_STM32CUBE
-	select HAS_PM
-	select PM_STATE_SET_IRQ_UNLOCKED
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_DCACHE
+	select CPU_HAS_FPU
+	select CPU_HAS_ICACHE
 	select HAS_SWO
+
+	select HAS_PM
 	select HAS_POWEROFF
+	select PM_STATE_SET_IRQ_UNLOCKED
 	select SOC_EARLY_INIT_HOOK
+
+	select HAS_STM32CUBE
 
 config STM32_STOP3_LP_MODE
 	bool
