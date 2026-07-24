@@ -1485,9 +1485,11 @@ if NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
 configdefault NET_BUF_DATA_SIZE
 	default 2048
 
-# For SDHC zero copy, net buf should be aligned by cache line size
+# For SDHC zero copy, net buf should be aligned by cache line size.
+# On platforms without DCACHE, align to SDHC DMA transfer requirement.
 configdefault NET_BUF_ALIGNMENT
-	default DCACHE_LINE_SIZE
+	default DCACHE_LINE_SIZE if DCACHE
+	default SDHC_BUFFER_ALIGNMENT
 
 endif # NXP_WIFI_TX_RX_ZERO_COPY && !NXP_RW610
 
