@@ -24,8 +24,8 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include "../../subsys/bluetooth/audio/tbs_internal.h"
-#include "btp/btp.h"
+#include <audio/tbs_internal.h>
+#include <btp/btp.h>
 
 #define LOG_MODULE_NAME bttester_ccp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);

@@ -36,8 +36,8 @@
 #include <zephyr/types.h>
 
 #include "btp_bap_audio_stream.h"
-#include "bap_endpoint.h"
-#include "btp/btp.h"
+#include <audio/bap_endpoint.h>
+#include <btp/btp.h>
 #include "btp_bap_broadcast.h"
 
 #define LOG_MODULE_NAME bttester_bap_broadcast

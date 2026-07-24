@@ -35,16 +35,18 @@
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/hci_types.h>
-#include <hci_core.h>
-
-#include "ascs_internal.h"
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
-#define LOG_MODULE_NAME bttester_bap_unicast
-LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
-#include "btp/btp.h"
+
+#include <audio/hci_core.h>
+#include <audio/ascs_internal.h>
+
+#include <btp/btp.h>
 #include "btp_bap_audio_stream.h"
 #include "btp_bap_unicast.h"
+
+#define LOG_MODULE_NAME bttester_bap_unicast
+LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
 static struct bt_bap_qos_cfg_pref qos_pref =
 	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 10000U, 40000U, 10000U, 40000U);

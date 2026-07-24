@@ -21,8 +21,9 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
+#include <host/hci_core.h>
+
 #include "btp/btp.h"
-#include "hci_core.h"
 
 #define LOG_MODULE_NAME bttester_core
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);

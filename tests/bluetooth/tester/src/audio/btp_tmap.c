@@ -12,7 +12,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/audio/tmap.h>
-#include "btp/btp.h"
+#include <btp/btp.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>

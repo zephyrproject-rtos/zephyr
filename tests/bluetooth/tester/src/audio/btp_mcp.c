@@ -27,10 +27,11 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "bap_endpoint.h"
-#include "btp/btp.h"
-#include "../../subsys/bluetooth/audio/mpl_internal.h"
-#include "../../subsys/bluetooth/audio/mcc_internal.h"
+#include <audio/bap_endpoint.h>
+#include <audio/mpl_internal.h>
+#include <audio/mcc_internal.h>
+
+#include <btp/btp.h>
 
 #define LOG_MODULE_NAME bttester_mcp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);

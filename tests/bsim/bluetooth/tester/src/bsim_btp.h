@@ -16,9 +16,9 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "babblekit/testcase.h"
+#include <babblekit/testcase.h>
 
-#include "btp/btp.h"
+#include <btp/btp.h>
 
 void bsim_btp_uart_init(void);
 void bsim_btp_send_to_tester(const uint8_t *data, size_t len);

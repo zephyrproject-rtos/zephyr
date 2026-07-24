@@ -28,8 +28,8 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
-#include "../bluetooth/audio/has_internal.h"
-#include "btp/btp.h"
+#include <audio/has_internal.h>
+#include <btp/btp.h>
 
 LOG_MODULE_REGISTER(bttester_hap, CONFIG_BTTESTER_LOG_LEVEL);
 

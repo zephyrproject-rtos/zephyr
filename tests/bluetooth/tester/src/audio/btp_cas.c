@@ -17,7 +17,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
-#include "btp/btp.h"
+#include <btp/btp.h>
 
 #define LOG_MODULE_NAME bttester_cas
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);

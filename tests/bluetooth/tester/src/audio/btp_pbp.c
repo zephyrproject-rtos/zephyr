@@ -28,7 +28,7 @@
 #include <zephyr/toolchain.h>
 
 #include "btp_bap_broadcast.h"
-#include "btp/btp.h"
+#include <btp/btp.h>
 
 #define LOG_MODULE_NAME bttester_pbp
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);

@@ -31,8 +31,8 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/net_buf.h>
 
-#include <hci_core.h>
-#include <iso_internal.h>
+#include <host/hci_core.h>
+#include <host/iso_internal.h>
 
 #include "btp/btp.h"
 
