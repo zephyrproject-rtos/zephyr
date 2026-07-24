@@ -303,7 +303,7 @@ static int espi_peci_send(const struct device *dev, struct peci_msg *msg)
 	oob_hdr->byte_cnt = OOB_PACKET_HEADER_SIZE + oob_peci_req.wr_len;
 
 	oob_peci_req.cmd_code = msg->cmd_code;
-	oob_peci_req.addr = msg->oob_addr;
+	oob_peci_req.addr = msg->addr;
 	/* Tx length includes peci cmd code. So copy len-1 byte as data */
 	if (msg->tx_buffer.len > 1) {
 		memcpy(oob_peci_req.data, msg->tx_buffer.buf, msg->tx_buffer.len);
