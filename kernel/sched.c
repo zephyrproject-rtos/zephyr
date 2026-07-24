@@ -802,6 +802,10 @@ static inline void unpend_all(_wait_q_t *wait_q)
 	}
 }
 
+#if defined(CONFIG_POSIX_THREADS)
+extern void posix_thread_kthread_exit(struct k_thread *thread);
+#endif /* CONFIG_POSIX_THREADS */
+
 #ifdef CONFIG_THREAD_ABORT_HOOK
 extern void thread_abort_hook(struct k_thread *thread);
 #endif /* CONFIG_THREAD_ABORT_HOOK */
@@ -882,6 +886,9 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 
 		SYS_PORT_TRACING_FUNC(k_thread, sched_abort, thread);
 
+#ifdef CONFIG_POSIX_THREADS
+		posix_thread_kthread_exit(thread);
+#endif /* CONFIG_POSIX_THREADS */
 		z_thread_monitor_exit(thread);
 #ifdef CONFIG_THREAD_ABORT_HOOK
 		thread_abort_hook(thread);
