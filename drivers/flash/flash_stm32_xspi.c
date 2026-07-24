@@ -870,7 +870,7 @@ static int stm32_xspi_mem_reset(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE)
 /* Function to configure the octoflash in MemoryMapped mode */
 static int stm32_xspi_set_memorymap(const struct device *dev)
 {
@@ -987,7 +987,7 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 	LOG_DBG("MemoryMap mode enabled");
 	return 0;
 }
-#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP */
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE */
 
 static int stm32_xspi_abort(const struct device *dev)
 {
@@ -1045,7 +1045,7 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 
 	xspi_lock_thread(dev);
 
-#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE)
 	if (stm32_xspi_is_memorymap(dev)) {
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		ret = stm32_xspi_abort(dev);
@@ -1054,7 +1054,7 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 			goto erase_end;
 		}
 	}
-#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP */
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE */
 
 	XSPI_RegularCmdTypeDef cmd_erase = {
 		.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG,
@@ -1206,12 +1206,12 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 	}
 
 #if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || (defined(CONFIG_STM32_APP_IN_EXT_FLASH) \
-	&& defined(CONFIG_XIP))
+	&& defined(CONFIG_XIP)) || defined(FLASH_STM32_XSPI_XIP_RELOCATE)
 	/*
 	 * When the call is made by an app executing in external flash,
 	 * skip the memory-mapped mode check
 	 */
-#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(FLASH_STM32_XSPI_XIP_RELOCATE)
 
 	/* Do reads through memory-mapping instead of indirect */
 	if (!stm32_xspi_is_memorymap(dev)) {
@@ -1327,7 +1327,7 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 
 	xspi_lock_thread(dev);
 
-#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE)
 	if (stm32_xspi_is_memorymap(dev)) {
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		ret = stm32_xspi_abort(dev);
@@ -1336,7 +1336,7 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 			goto write_end;
 		}
 	}
-#endif
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_XIP_RELOCATE */
 	/* page program for STR or DTR mode */
 	XSPI_RegularCmdTypeDef cmd_pp = xspi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 
