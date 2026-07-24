@@ -20,19 +20,55 @@
 #define WCH_RCC_CLOCK_ID_BIT(id)    ((id) & 0x1F)
 #define WCH_RCC_PLLMUL_VAL(mul)     (((mul) << 0x12) & RCC_PLLMULL)
 #define WCH_RCC_SYSCLK              DT_PROP(DT_NODELABEL(cpu0), clock_frequency)
+#define WCH_RCC_CH32V00X_PLL_MUL    2 /* CH32V00x has a fixed 2x PLL multiplier */
+#define WCH_RCC_PLL_MUL_DEFAULT     1
+#define WCH_RCC_HSI_PREDIV_DEFAULT  2
 
 #if DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_pll_clock) ||                          \
 	DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v20x_30x_pll_clock)
 #define WCH_RCC_SRC_IS_PLL 1
-#if DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(DT_INST_CLOCKS_CTLR(0)), wch_ch32v00x_hse_clock)
+#define WCH_RCC_PLL_NODE   DT_INST_CLOCKS_CTLR(0)
+
+/* HSE/HSI compatibles are shared across all WCH SoC families. */
+#if DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(WCH_RCC_PLL_NODE), wch_ch32v00x_hse_clock)
 #define WCH_RCC_PLL_SRC_IS_HSE 1
-#elif DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(DT_INST_CLOCKS_CTLR(0)), wch_ch32v00x_hsi_clock)
+#define WCH_RCC_PLL_SRC_FREQ   DT_PROP(DT_CLOCKS_CTLR(WCH_RCC_PLL_NODE), clock_frequency)
+#elif DT_NODE_HAS_COMPAT(DT_CLOCKS_CTLR(WCH_RCC_PLL_NODE), wch_ch32v00x_hsi_clock)
 #define WCH_RCC_PLL_SRC_IS_HSI 1
+#define WCH_RCC_PLL_SRC_FREQ   DT_PROP(DT_CLOCKS_CTLR(WCH_RCC_PLL_NODE), clock_frequency)
+#else
+#error Unsupported PLL clock source
 #endif
+
+/* CH32V20x/30x has configurable mul and HSI predivider; CH32V00x is a fixed 2x PLL. */
+#if DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v20x_30x_pll_clock)
+#define WCH_RCC_PLL_MUL    DT_PROP(WCH_RCC_PLL_NODE, mul)
+#define WCH_RCC_HSI_PREDIV DT_PROP(WCH_RCC_PLL_NODE, hsi_prediv)
+#elif DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_pll_clock)
+#define WCH_RCC_PLL_MUL    WCH_RCC_CH32V00X_PLL_MUL
+#endif
+
 #elif DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_hse_clock)
 #define WCH_RCC_SRC_IS_HSE 1
 #elif DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_hsi_clock)
 #define WCH_RCC_SRC_IS_HSI 1
+#else
+#error Unsupported clock source compatible
+#endif
+
+/*
+ * Verify that cpu0 clock-frequency matches the actual PLL configuration so that
+ * peripheral baud rate divisors (USART, SPI, etc.) are computed correctly.
+ */
+#if defined(WCH_RCC_PLL_SRC_IS_HSI) && defined(WCH_RCC_HSI_PREDIV)
+BUILD_ASSERT(WCH_RCC_SYSCLK == (WCH_RCC_PLL_SRC_FREQ / WCH_RCC_HSI_PREDIV) * WCH_RCC_PLL_MUL,
+	     "cpu0 clock-frequency does not match HSI / hsi-prediv * mul");
+#elif defined(WCH_RCC_PLL_SRC_IS_HSI)
+BUILD_ASSERT(WCH_RCC_SYSCLK == WCH_RCC_PLL_SRC_FREQ * WCH_RCC_PLL_MUL,
+	     "cpu0 clock-frequency does not match HSI * mul");
+#elif defined(WCH_RCC_PLL_SRC_IS_HSE)
+BUILD_ASSERT(WCH_RCC_SYSCLK == WCH_RCC_PLL_SRC_FREQ * WCH_RCC_PLL_MUL,
+	     "cpu0 clock-frequency does not match HSE * mul");
 #endif
 
 #if defined(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)
@@ -49,6 +85,7 @@ static const uint8_t pllmul_lut[] = {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
 struct clock_control_wch_rcc_config {
 	RCC_TypeDef *regs;
 	uint8_t mul;
+	uint8_t hsi_prediv;
 };
 
 static int clock_control_wch_rcc_on(const struct device *dev, clock_control_subsys_t sys)
@@ -177,6 +214,18 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 		const struct clock_control_wch_rcc_config *config = dev->config;
 		uint8_t pllmul = 0x0; /* Default Reset Value */
 
+#if defined(EXTEN_PLL_HSI_PRE)
+		if (IS_ENABLED(WCH_RCC_PLL_SRC_IS_HSI)) {
+			/* DTS binding ensures hsi_prediv value is only either 1 or 2. */
+			if (config->hsi_prediv == 1) {
+				/* Feed HSI directly to PLL without /2 division. */
+				EXTEN->EXTEN_CTR |= EXTEN_PLL_HSI_PRE;
+			} else {
+				/* HSI divided by 2 before PLL (hardware default). */
+				EXTEN->EXTEN_CTR &= ~EXTEN_PLL_HSI_PRE;
+			}
+		}
+#endif
 		for (size_t i = 0; i < ARRAY_SIZE(pllmul_lut); i++) {
 			if (pllmul_lut[i] == config->mul) {
 				pllmul = i;
@@ -210,7 +259,10 @@ static int clock_control_wch_rcc_init(const struct device *dev)
 #define CLOCK_CONTROL_WCH_RCC_INIT(idx)                                                            \
 	static const struct clock_control_wch_rcc_config clock_control_wch_rcc_##idx##_config = {  \
 		.regs = (RCC_TypeDef *)DT_INST_REG_ADDR(idx),                                      \
-		.mul = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), mul, 1),                               \
+		.mul = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), mul,                              \
+					       WCH_RCC_PLL_MUL_DEFAULT),             \
+		.hsi_prediv = DT_PROP_OR(DT_INST_CLOCKS_CTLR(idx), hsi_prediv,                \
+					       WCH_RCC_HSI_PREDIV_DEFAULT),           \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(idx, clock_control_wch_rcc_init, NULL, NULL,                         \
 			      &clock_control_wch_rcc_##idx##_config, PRE_KERNEL_1,                 \
