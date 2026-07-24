@@ -1,6 +1,7 @@
 /*
  * Copyright 2019-24, NXP
  * Copyright (c) 2022, Basalte bv
+ * Copyright (c) 2026, Psicontrol N.V
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,8 +43,17 @@ struct mcux_elcdif_config {
 	const struct device *pxp;
 };
 
+struct mcux_elcdif_cb_data {
+	const struct device *dev;
+	display_event_cb_t cb_fn;
+	void *user_data;
+	uint32_t event_mask;
+	bool in_isr;
+	uint32_t out_reg_handle;
+};
+
 struct mcux_elcdif_data {
-	/* Pointer to active framebuffer */
+	/* Pointer to active framebuffer (could belong to the app) */
 	const uint8_t *active_fb;
 	/* Pointers to driver allocated framebuffers */
 	uint8_t *fb[CONFIG_MCUX_ELCDIF_FB_NUM];
@@ -52,6 +62,8 @@ struct mcux_elcdif_data {
 	size_t fb_bytes;
 	elcdif_rgb_mode_config_t rgb_mode;
 	struct k_sem sem;
+	struct k_sem cb_sem;
+	struct mcux_elcdif_cb_data cb;
 	/* Tracks index of next active driver framebuffer */
 	uint8_t next_idx;
 #ifndef CONFIG_MCUX_ELCDIF_START_ON_INIT
@@ -226,11 +238,24 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 	}
 #endif
 
-	/* Enable frame buffer completion interrupt */
-	ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
+	/* Enable frame buffer completion interrupt, as well as VSync edge and Tx FIFO underflow */
+	ELCDIF_EnableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable |
+						      kELCDIF_VsyncEdgeInterruptEnable |
+						      kELCDIF_TxFifoUnderflowInterruptEnable);
 	/* Wait for frame send to complete */
 	k_sem_take(&dev_data->sem, K_FOREVER);
 	return ret;
+}
+
+static void *mcux_elcdif_get_framebuffer(const struct device *dev)
+{
+	const struct mcux_elcdif_data *dev_data = dev->data;
+
+	/* Double cast to get around the const qualifier
+	 * In the case that active_fb has been assigned from the app's buffer
+	 * in mcux_elcdif_write, the pointer already belongs to the app.
+	 */
+	return ((void *)((uint32_t)dev_data->active_fb));
 }
 
 static int mcux_elcdif_display_blanking_off(const struct device *dev)
@@ -321,6 +346,67 @@ static void mcux_elcdif_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
+static int mcux_elcdif_register_event_cb(const struct device *dev, display_event_cb_t cb,
+					 void *user_data, uint32_t event_mask, bool in_isr,
+					 uint32_t *out_reg_handle)
+{
+	struct mcux_elcdif_data *dev_data = dev->data;
+	const uint32_t supported_events =
+		DISPLAY_EVENT_FRAME_DONE | DISPLAY_EVENT_VSYNC | DISPLAY_EVENT_FIFO_UNDERFLOW;
+
+	if (out_reg_handle == NULL) {
+		LOG_ERR("Registration failed: output handle pointer is NULL");
+		return -EINVAL;
+	}
+	if (dev_data->cb.dev != NULL) {
+		LOG_ERR("Registration failed: a callback is already registered");
+		return -EBUSY;
+	}
+	if (!in_isr) {
+		LOG_ERR("Registration failed: only ISR context is supported for this driver");
+		return -ENOTSUP;
+	}
+	if (event_mask & ~supported_events) {
+		LOG_ERR("Registration failed: unsupported event supplied");
+		return -ENOTSUP;
+	}
+
+	*out_reg_handle = 1U;
+
+	dev_data->cb.dev = dev;
+	dev_data->cb.cb_fn = cb;
+	dev_data->cb.user_data = user_data;
+	dev_data->cb.event_mask = event_mask;
+	dev_data->cb.in_isr = in_isr;
+	dev_data->cb.out_reg_handle = *out_reg_handle;
+
+	return 0;
+}
+
+static int mcux_elcdif_unregister_event_cb(const struct device *dev, uint32_t reg_handle)
+{
+	struct mcux_elcdif_data *dev_data = dev->data;
+
+	k_sem_take(&dev_data->cb_sem, K_FOREVER);
+
+	if (dev_data->cb.dev != dev) {
+		LOG_ERR("Unregistration failed: device does not match");
+		k_sem_give(&dev_data->cb_sem);
+		return -EINVAL;
+	}
+	if (reg_handle != 1U) {
+		LOG_ERR("Unregistration failed: invalid registration handle");
+		k_sem_give(&dev_data->cb_sem);
+		return -EPERM;
+	}
+
+	memset(&dev_data->cb, 0, sizeof(dev_data->cb));
+
+	k_sem_give(&dev_data->cb_sem);
+
+	return 0;
+}
+
 static void mcux_elcdif_isr(const struct device *dev)
 {
 	const struct mcux_elcdif_config *config = dev->config;
@@ -329,13 +415,44 @@ static void mcux_elcdif_isr(const struct device *dev)
 
 	status = ELCDIF_GetInterruptStatus(config->base);
 	ELCDIF_ClearInterruptStatus(config->base, status);
-	if (config->base->CUR_BUF == ((uint32_t)dev_data->active_fb)) {
+	if ((status & kELCDIF_CurFrameDone) &&
+	    (config->base->CUR_BUF == ((uint32_t)dev_data->active_fb))) {
 		/* Disable frame completion interrupt, post to
 		 * sem to notify that frame send is complete.
 		 */
 		ELCDIF_DisableInterrupts(config->base, kELCDIF_CurFrameDoneInterruptEnable);
 		k_sem_give(&dev_data->sem);
 	}
+	if (status & kELCDIF_TxFifoUnderflow) {
+		ELCDIF_DisableInterrupts(config->base, kELCDIF_TxFifoUnderflowInterruptEnable);
+	}
+	if (status & kELCDIF_VsyncEdge) {
+		ELCDIF_DisableInterrupts(config->base, kELCDIF_VsyncEdgeInterruptEnable);
+	}
+
+	k_sem_take(&dev_data->cb_sem, K_NO_WAIT);
+
+	if (dev_data->cb.dev != NULL) {
+		if ((dev_data->cb.event_mask & DISPLAY_EVENT_FRAME_DONE) &&
+		    (status & kELCDIF_CurFrameDone)) {
+			dev_data->cb.cb_fn(dev_data->cb.dev, DISPLAY_EVENT_FRAME_DONE, NULL,
+					   dev_data->cb.user_data);
+		}
+
+		if ((dev_data->cb.event_mask & DISPLAY_EVENT_VSYNC) &&
+		    (status & kELCDIF_VsyncEdge)) {
+			dev_data->cb.cb_fn(dev_data->cb.dev, DISPLAY_EVENT_VSYNC, NULL,
+					   dev_data->cb.user_data);
+		}
+
+		if ((dev_data->cb.event_mask & DISPLAY_EVENT_FIFO_UNDERFLOW) &&
+		    (status & kELCDIF_TxFifoUnderflow)) {
+			dev_data->cb.cb_fn(dev_data->cb.dev, DISPLAY_EVENT_FIFO_UNDERFLOW, NULL,
+					   dev_data->cb.user_data);
+		}
+	}
+
+	k_sem_give(&dev_data->cb_sem);
 }
 
 static int mcux_elcdif_init(const struct device *dev)
@@ -359,6 +476,7 @@ static int mcux_elcdif_init(const struct device *dev)
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(backlight_gpios) */
 
 	k_sem_init(&dev_data->sem, 0, 1);
+	k_sem_init(&dev_data->cb_sem, 1, 1);
 #ifdef CONFIG_MCUX_ELCDIF_PXP
 	k_sem_init(&dev_data->pxp_done, 0, 1);
 	if (!device_is_ready(config->pxp)) {
@@ -389,9 +507,12 @@ static DEVICE_API(display, mcux_elcdif_api) = {
 	.blanking_on = mcux_elcdif_display_blanking_on,
 	.blanking_off = mcux_elcdif_display_blanking_off,
 	.write = mcux_elcdif_write,
+	.get_framebuffer = mcux_elcdif_get_framebuffer,
 	.get_capabilities = mcux_elcdif_get_capabilities,
 	.set_pixel_format = mcux_elcdif_set_pixel_format,
 	.set_orientation = mcux_elcdif_set_orientation,
+	.register_event_cb = mcux_elcdif_register_event_cb,
+	.unregister_event_cb = mcux_elcdif_unregister_event_cb,
 };
 
 #define MCUX_ELCDIF_DEVICE_INIT(id)                                                                \
