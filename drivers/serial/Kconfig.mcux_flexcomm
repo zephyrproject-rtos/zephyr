@@ -22,3 +22,11 @@ config UART_MCUX_FLEXCOMM_ISR_SUPPORT
 	default y if UART_INTERRUPT_DRIVEN || UART_ASYNC_API
 	help
 	  Enable UART interrupt service routine.
+
+config UART_MCUX_FLEXCOMM_MODE32K_WAKE
+	bool
+	depends on UART_MCUX_FLEXCOMM
+	help
+	  Selected by SoCs whose Flexcomm USART stays wake-capable in a
+	  clock-gating low-power state by reclocking from the 32 kHz
+	  oscillator (MODE32K), instead of switching to a divided main clock.

@@ -1,0 +1,18 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * flexcomm0 wakes the SoC from deep sleep. On RT5xx the USART is reclocked
+ * from the 32 kHz oscillator (MODE32K) for the deep-sleep window, so it runs
+ * at nxp,low-power-speed there; current-speed is used in active mode and is
+ * restored on wake. The remote must send the wake byte at nxp,low-power-speed.
+ */
+&flexcomm0 {
+	wakeup-source;
+	low-power-states = <&suspend>;
+	current-speed = <115200>;
+	nxp,low-power-speed = <9600>;
+};
