@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&cordic {
+	/*
+	* DMA channels for usage with cordic.
+	*
+	* DMAMUX request IDs (RM0440 Table 91):
+	*   cordic_write (memory/peripheral -> WDATA): slot 0x71 = 113
+	*   cordic_read  (RDATA -> memory/peripheral): slot 0x70 = 112
+	*
+	* Cell format for st,stm32-dma-v2: <&dmamux1 channel slot config>
+	*/
+	dmas = <&dmamux1 0 113 (STM32_DMA_PERIPH_TX | STM32_DMA_32BITS | STM32_DMA_PRIORITY_HIGH)>,
+		   <&dmamux1 1 112 (STM32_DMA_PERIPH_RX | STM32_DMA_32BITS | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "cordic_write", "cordic_read";
+	status = "okay";
+};

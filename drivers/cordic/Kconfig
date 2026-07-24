@@ -1,0 +1,26 @@
+# CORDIC configuration options
+#
+# Copyright (c) 2024 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig CORDIC
+	bool "CORDIC (Coordinate Rotation Digital Computer) drivers"
+	help
+	  Enable CORDIC driver support. CORDIC is a hardware accelerator for
+	  trigonometric, hyperbolic, linear, and logarithmic functions.
+
+if CORDIC
+
+module = CORDIC
+module-str = cordic
+source "subsys/logging/Kconfig.template.log_config"
+
+config CORDIC_INIT_PRIORITY
+	int "CORDIC driver initialization priority"
+	default 60
+	help
+	  CORDIC driver initialization priority.
+
+source "drivers/cordic/Kconfig.stm32"
+
+endif # CORDIC
