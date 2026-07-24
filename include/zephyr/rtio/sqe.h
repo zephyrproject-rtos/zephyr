@@ -357,8 +357,8 @@ struct rtio_sqe {
 #ifdef CONFIG_RTIO_OP_DELAY
 		/** OP_DELAY */
 		struct {
-			k_timeout_t timeout; /**< Delay timeout. */
-			struct _timeout to; /**< Timeout struct. Used internally. */
+			k_timeout_t timeout; /**< Delay timeout (input). */
+			k_timepoint_t expiry; /**< Absolute expiration. Used internally. */
 		} delay;
 #endif
 
@@ -408,7 +408,7 @@ struct rtio_iodev_sqe {
 #define RTIO_CACHE_LINE_SIZE 64
 #endif
 BUILD_ASSERT(sizeof(struct rtio_iodev_sqe) <= RTIO_CACHE_LINE_SIZE,
-	"RTIO performs best when the submissions queue entries are less than a cache line")
+	"RTIO performs best when the submissions queue entries are less than a cache line");
 #endif
 /** @endcond */
 
@@ -668,6 +668,14 @@ static inline void rtio_sqe_prep_await_executor(struct rtio_sqe *sqe, int8_t pri
  * @param userdata User supplied pointer to associated data
  */
 #ifdef CONFIG_RTIO_OP_DELAY
+/**
+ * @brief Default timeout iodev backing RTIO_OP_DELAY submissions
+ *
+ * Delay operations are handled by a subsystem-provided timeout iodev rather
+ * than as an executor special case. See subsys/rtio/rtio_timeout.c.
+ */
+extern struct rtio_iodev rtio_timeout_iodev;
+
 static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
 				       k_timeout_t timeout,
 				       void *userdata)
@@ -675,7 +683,7 @@ static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_DELAY;
 	sqe->prio = 0;
-	sqe->iodev = NULL;
+	sqe->iodev = &rtio_timeout_iodev;
 	sqe->delay.timeout = timeout;
 	sqe->userdata = userdata;
 }

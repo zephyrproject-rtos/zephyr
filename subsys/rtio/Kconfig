@@ -44,8 +44,8 @@ config RTIO_OP_DELAY
 	default y
 	help
 	  Enable OP_DELAY which allows for, in chains of operations, delaying using a
-	  kernel timer. Note this makes the size of the submission queue entries
-	  typically larger than a dcache line and may have performance implications.
+	  kernel timeout. Delays are handled by a shared timeout iodev, so enabling
+	  this does not embed a timeout in each submission queue entry.
 
 config RTIO_SQE_CACHELINE_CHECK
 	bool "SQE Cacheline size check"
