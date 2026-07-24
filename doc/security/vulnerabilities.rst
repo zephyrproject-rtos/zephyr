@@ -898,25 +898,26 @@ This has been fixed in main for v4.5.0
 
 Out-of-bounds read in Zephyr ext2 directory entry traversal from a crafted filesystem image
 
-The Zephyr ext2 filesystem driver (subsys/fs/ext2) trusted the on-disk directory entry
-fields de_rec_len and de_name_len when walking a directory block. ext2_fetch_direntry()
-guarded only with ``de_name_len > EXT2_MAX_FILE_NAME``, but de_name_len is a uint8_t and
-EXT2_MAX_FILE_NAME is 255, so the check is always false; the function then memcpy'd up
-to 255 name bytes and the lookup/readdir paths advanced traversal by an unvalidated
-de_rec_len. Each directory block is read into a block_size-sized slab buffer, and
-block_off can be driven near the block end by preceding entries' rec_len, so the 8-byte
-header read and the subsequent name memcpy can read up to ~263 bytes past the end of the
-block buffer into adjacent heap/slab memory. On the readdir path those bytes are
-returned to the caller in fs_dirent.name, leaking adjacent kernel heap memory; a
-de_rec_len of 0 also causes a zero-progress infinite loop (denial of service), and the
-unlink path's memmove(de, next, next_reclen) over unvalidated records is an additional
-OOB read/write source. The defect is reached by any path-based operation (open, stat,
+The Zephyr ext2 filesystem driver (``subsys/fs/ext2``) trusted the on-disk directory
+entry fields ``de_rec_len`` and ``de_name_len`` when walking a directory block.
+``ext2_fetch_direntry()`` guarded only with ``de_name_len > EXT2_MAX_FILE_NAME``, but
+``de_name_len`` is a ``uint8_t`` and ``EXT2_MAX_FILE_NAME`` is 255, so the check is
+always false; the function then ``memcpy``'d up to 255 name bytes and the lookup/readdir
+paths advanced traversal by an unvalidated ``de_rec_len``. Each directory block is read
+into a ``block_size``-sized slab buffer, and ``block_off`` can be driven near the block
+end by preceding entries' ``rec_len``, so the 8-byte header read and the subsequent name
+``memcpy`` can read up to ~263 bytes past the end of the block buffer into adjacent
+heap/slab memory. On the readdir path those bytes are returned to the caller in
+``fs_dirent.name``, leaking adjacent kernel heap memory; a ``de_rec_len`` of 0 also
+causes a zero-progress infinite loop (denial of service), and the unlink path's
+``memmove(de, next, next_reclen)`` over unvalidated records is an additional OOB
+read/write source. The defect is reached by any path-based operation (open, stat,
 unlink, rename, mkdir) or directory listing on a mounted ext2 volume, so a crafted or
 corrupted ext2 image on attacker-supplied storage (SD card, USB mass storage, or
 otherwise mounted image) triggers it. Affected: Zephyr ext2 from its introduction in
-v3.5.0 through v4.4.0. The fix validates rec_len and name_len in the parser and rejects
-entries whose header does not fit the remaining block or whose rec_len crosses the block
-boundary in every traversal caller.
+v3.5.0 through v4.4.0. The fix validates ``rec_len`` and ``name_len`` in the parser and
+rejects entries whose header does not fit the remaining block or whose ``rec_len``
+crosses the block boundary in every traversal caller.
 
 - `Zephyr project bug tracker GHSA-hwrh-9h3x-vccm
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hwrh-9h3x-vccm>`_
@@ -1332,26 +1333,27 @@ This has been fixed in main for v4.5.0
 
 Out-of-bounds read in Zephyr DNS resolver mDNS suffix check (memcmp past string NUL)
 
-Zephyr's DNS resolver detects mDNS (.local) queries in dns_resolve_name_internal()
-(subsys/net/lib/dns/resolve.c) with ``memcmp(strrchr(query, '.'), ".local", 7)``, which
-always reads a fixed 7 bytes from the suffix pointer. When the resolved hostname's final
-label is shorter than 7 bytes (e.g. names ending in .org, .com, .net, .io, or a trailing
-dot), the comparison reads 1-2 bytes past the string's NUL terminator.
+Zephyr's DNS resolver detects mDNS (.local) queries in ``dns_resolve_name_internal()``
+(``subsys/net/lib/dns/resolve.c``) with ``memcmp(strrchr(query, '.'), ".local", 7)``,
+which always reads a fixed 7 bytes from the suffix pointer. When the resolved hostname's
+final label is shorter than 7 bytes (e.g. names ending in .org, .com, .net, .io, or a
+trailing dot), the comparison reads 1-2 bytes past the string's NUL terminator.
 
 The hostname (``query``) is the caller-supplied name passed through the standard
-getaddrinfo()/dns_get_addr_info()/dns_resolve_name() path and is influenceable by
-operators or remote inputs (server names from configuration, parsed URLs, or app-facing
-interfaces).
+``getaddrinfo()``/``dns_get_addr_info()``/``dns_resolve_name()`` path and is
+influenceable by operators or remote inputs (server names from configuration, parsed
+URLs, or app-facing interfaces).
 
-On a tightly-sized buffer with no slack (for example a userspace getaddrinfo call where
-the hostname is copied with k_usermode_string_alloc_copy to exactly strlen+1 bytes), the
-over-read crosses the allocation boundary; if that boundary is unmapped (guard page,
-memory-domain boundary under MPU, or an address sanitizer) the over-read faults, causing
-a denial of service. The over-read bytes are never returned, so there is no information
-disclosure.
+On a tightly-sized buffer with no slack (for example a userspace ``getaddrinfo`` call
+where the hostname is copied with ``k_usermode_string_alloc_copy`` to exactly
+``strlen+1`` bytes), the over-read crosses the allocation boundary; if that boundary is
+unmapped (guard page, memory-domain boundary under MPU, or an address sanitizer) the
+over-read faults, causing a denial of service. The over-read bytes are never returned,
+so there is no information disclosure.
 
-The flaw is compiled only when CONFIG_MDNS_RESOLVER is enabled, exists since v1.10.0,
-and is fixed by replacing the fixed-length memcmp with a NUL-safe strcmp(ptr, ".local").
+The flaw is compiled only when ``CONFIG_MDNS_RESOLVER`` is enabled, exists since
+v1.10.0, and is fixed by replacing the fixed-length ``memcmp`` with a NUL-safe
+``strcmp(ptr, ".local")``.
 
 - `Zephyr project bug tracker GHSA-76jh-3j5f-9vq4
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-76jh-3j5f-9vq4>`_
@@ -2047,24 +2049,25 @@ This has been fixed in main for v4.5.0
 
 Divide-by-zero in DesignWare SPI driver reachable from spi_transceive syscall (local DoS)
 
-The DesignWare SPI driver (drivers/spi/spi_dw.c) computed the SPI BAUDR clock divider as
-``info->clock_frequency / config->frequency`` without validating ``config->frequency``.
+The DesignWare SPI driver (``drivers/spi/spi_dw.c``) computed the SPI BAUDR clock
+divider as ``info->clock_frequency / config->frequency`` without validating
+``config->frequency``.
 
-``spi_transceive`` is a Zephyr __syscall and its verify handler
-(drivers/spi/spi_handlers.c) copies the caller-supplied ``spi_config`` from userspace
-without checking the frequency field, so a userspace thread that has been granted access
-to a DesignWare SPI device kernel object can pass ``frequency = 0`` and trigger an
-unsigned integer divide-by-zero in ``spi_dw_configure()``.
+``spi_transceive`` is a Zephyr ``__syscall`` and its verify handler
+(``drivers/spi/spi_handlers.c``) copies the caller-supplied ``spi_config`` from
+userspace without checking the frequency field, so a userspace thread that has been
+granted access to a DesignWare SPI device kernel object can pass ``frequency = 0`` and
+trigger an unsigned integer divide-by-zero in ``spi_dw_configure()``.
 
 On Cortex-M Mainline (``SCB->CCR.DIV_0_TRP`` is set in ``z_arm_fault_init()``) and on
 ARC (a dedicated ``__ev_div_zero`` vector) this raises a CPU exception, resulting in a
 kernel fault and local denial of service.
 
 The fix rejects zero frequency and frequencies above ``clock_frequency / 2`` (the
-DesignWare SSI databook minimum SCKDIV of 2) with -EINVAL. The defect affects all Zephyr
-releases up to and including v4.4.0; exploitation requires ``CONFIG_USERSPACE=y`` and an
-unprivileged thread already granted SPI driver permission. There is no memory-corruption
-or information-disclosure impact.
+DesignWare SSI databook minimum SCKDIV of 2) with ``-EINVAL``. The defect affects all
+Zephyr releases up to and including v4.4.0; exploitation requires ``CONFIG_USERSPACE=y``
+and an unprivileged thread already granted SPI driver permission. There is no
+memory-corruption or information-disclosure impact.
 
 - `Zephyr project bug tracker GHSA-3qcm-qwh2-v4hq
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3qcm-qwh2-v4hq>`_
@@ -2273,7 +2276,7 @@ Under embargo until 2026-08-13
 Division by zero in Zephyr ext2 superblock parsing allows DoS via crafted filesystem image
 
 The Zephyr ext2 file system validates the on-disk superblock in
-``ext2_verify_disk_superblock()`` (subsys/fs/ext2/ext2_impl.c) before completing a
+``ext2_verify_disk_superblock()`` (``subsys/fs/ext2/ext2_impl.c``) before completing a
 mount. The validator checked the magic number, block size, revision and feature flags,
 but did not verify that the on-disk fields ``s_blocks_per_group`` and
 ``s_inodes_per_group`` are non-zero. Both fields are read directly from the image and
@@ -2283,7 +2286,7 @@ During mount, ``get_ngroups()`` divides and modulos ``s_blocks_count`` by
 ``s_blocks_per_group`` (reached via ``ext2_fetch_block_group()`` from
 ``ext2_init_fs()``), and ``get_itable_entry()`` divides ``(ino - 1)`` by
 ``s_inodes_per_group`` when fetching the root inode (both in
-subsys/fs/ext2/ext2_diskops.c). A superblock with either field set to zero therefore
+``subsys/fs/ext2/ext2_diskops.c``). A superblock with either field set to zero therefore
 causes an integer division by zero during the mount sequence.
 
 An attacker who can present a crafted ext2 image to a device that mounts ext2 —
@@ -2324,21 +2327,21 @@ type (``HTTP_RESOURCE_TYPE_STATIC_FS``, available when ``CONFIG_FILE_SYSTEM`` is
 enabled) that serves files from a configured root directory. Before this fix, both the
 HTTP/1 and HTTP/2 front-ends placed the raw, attacker-controlled request path into
 ``client->url_buffer`` (assembled in ``on_url()`` for HTTP/1 and copied verbatim from
-the :path pseudo-header for HTTP/2) without resolving ``.``/``..`` segments. The
+the ``:path`` pseudo-header for HTTP/2) without resolving ``.``/``..`` segments. The
 static-FS handler then built the on-disk filename by directly concatenating the
 configured root with that raw URL (``snprintk(fname, ..., "%s%s",
 static_fs_detail->fs_path, client->url_buffer)`` at ``http_server_http1.c:603`` and
 ``http_server_http2.c:490``) and opened it with ``fs_open(fname, FS_O_READ)``. Because
 the handler is reached via wildcard/leading-dir (``fnmatch`` ``FNM_LEADING_DIR``) or
-fallback resource matching, a request such as GET /<prefix>/../../<file> is dispatched
-to the handler and, after the underlying filesystem (e.g. LittleFS/FAT) resolves the
-``..`` segments, escapes the configured web root, letting an unauthenticated remote
-client read arbitrary readable files on the mounted volume (information disclosure). The
-HTTP server requires no TLS or authentication to reach this path. The fix adds
-``http_server_remove_dot_segments()``, which canonicalizes the path portion of the URL
-before resource lookup in both protocol handlers, neutralizing the traversal. Affects
-releases v4.0.0 through v4.4.0 for deployments that register a static-filesystem
-resource.
+fallback resource matching, a request such as ``GET /<prefix>/../../<file>`` is
+dispatched to the handler and, after the underlying filesystem (e.g. LittleFS/FAT)
+resolves the ``..`` segments, escapes the configured web root, letting an
+unauthenticated remote client read arbitrary readable files on the mounted volume
+(information disclosure). The HTTP server requires no TLS or authentication to reach
+this path. The fix adds ``http_server_remove_dot_segments()``, which canonicalizes the
+path portion of the URL before resource lookup in both protocol handlers, neutralizing
+the traversal. Affects releases v4.0.0 through v4.4.0 for deployments that register a
+static-filesystem resource.
 
 - `Zephyr project bug tracker GHSA-hch3-53g6-jj3h
   <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hch3-53g6-jj3h>`_
@@ -2412,24 +2415,24 @@ Broken IPv6 Neighbor Discovery input validation allows spoofed RA/NS/NA acceptan
 The IPv6 Neighbor Discovery handlers in ``subsys/net/ip/ipv6_nbr.c``
 (``handle_ra_input``, ``handle_ns_input``, ``handle_na_input``) used an incorrect
 boolean expression that combined the RFC 4861 validity checks with the ICMPv6 code check
-using the wrong operator precedence: the form was '((length/hop/source/target checks) &&
-(icmp_hdr->code != 0))'. Because every legitimate ND message carries ICMPv6 code 0, an
-attacker setting code == 0 (the normal value) caused the entire predicate to evaluate
-false, so the packet was never dropped and all of the other checks were silently
-skipped. The bypassed checks include the mandatory Hop Limit == 255 verification (which
-proves an ND packet originated on-link and was not forwarded) and, for Router
-Advertisements, the requirement that the source be a link-local address, as well as
-multicast-target sanity checks. As a result, an adjacent on-link attacker — and, because
-the Hop-Limit-255 guard is bypassed, potentially a remote/off-link attacker whose
-packets would otherwise be rejected — can have forged Router Advertisement, Neighbor
-Solicitation, and Neighbor Advertisement messages accepted. A forged RA lets the
-attacker reconfigure the victim's default router, on-link prefixes (SLAAC), MTU,
+using the wrong operator precedence: the form was ``((length/hop/source/target checks)
+&& (icmp_hdr->code != 0))``. Because every legitimate ND message carries ICMPv6 code 0,
+an attacker setting ``code == 0`` (the normal value) caused the entire predicate to
+evaluate false, so the packet was never dropped and all of the other checks were
+silently skipped. The bypassed checks include the mandatory Hop Limit == 255
+verification (which proves an ND packet originated on-link and was not forwarded) and,
+for Router Advertisements, the requirement that the source be a link-local address, as
+well as multicast-target sanity checks. As a result, an adjacent on-link attacker — and,
+because the Hop-Limit-255 guard is bypassed, potentially a remote/off-link attacker
+whose packets would otherwise be rejected — can have forged Router Advertisement,
+Neighbor Solicitation, and Neighbor Advertisement messages accepted. A forged RA lets
+the attacker reconfigure the victim's default router, on-link prefixes (SLAAC), MTU,
 reachable/retransmit timers, and (with ``CONFIG_NET_IPV6_RA_RDNSS``) DNS servers, while
 forged NS/NA enable neighbor-cache poisoning, enabling man-in-the-middle, traffic
 redirection, and denial of service. The flaw is an input-validation/authentication
 weakness rather than a memory-safety issue: the underlying packet-parsing primitives
 (``net_pkt_get_data``, ``net_pkt_read``, ``net_pkt_skip``) are independently bounds-safe
-and the validated 'length' is the true buffer length, so skipping the length check
+and the validated ``length`` is the true buffer length, so skipping the length check
 causes no out-of-bounds access. The defect has existed since the logic was introduced in
 2018 and shipped in all releases through v4.4.0; it is fixed by splitting the condition
 so any failing check drops the packet.
@@ -2710,8 +2713,9 @@ Integer overflow in FatFs FAT32 volume mount (mount_volume) yields an attacker-c
 
 Zephyr bundles ChaN's FatFs (via the ``zephyrproject-rtos/fatfs`` west module) as the
 FAT/exFAT filesystem backing ``subsys/fs/fat_fs.c``. In ``mount_volume()``
-(modules/fs/fatfs/ff.c), the FAT area size is computed as ``fasize = ld_32(BPB_FATSz32);
-... fasize *= fs->n_fats;`` — a 32-bit multiply with no overflow check.
+(``modules/fs/fatfs/ff.c``), the FAT area size is computed as ``fasize =
+ld_32(BPB_FATSz32); ... fasize *= fs->n_fats;`` — a 32-bit multiply with no overflow
+check.
 
 A crafted FAT32 volume that sets ``BPB_FATSz32 = 0x80000001`` with two FATs makes the
 product wrap (to ``0x00000002``), so the computed data region overlaps the FAT region.
@@ -2740,7 +2744,7 @@ This has been fixed in main for v4.5.0
 Divide-by-zero in FatFs exFAT sync (sync_fs) crashes Zephyr on a crafted exFAT volume
 
 Zephyr's bundled FatFs (``zephyrproject-rtos/fatfs``) supports exFAT when
-``CONFIG_FS_FATFS_EXFAT`` is enabled. In ``sync_fs()`` (modules/fs/fatfs/ff.c) the
+``CONFIG_FS_FATFS_EXFAT`` is enabled. In ``sync_fs()`` (``modules/fs/fatfs/ff.c``) the
 free-cluster bookkeeping divides by ``(fs->n_fatent - 2)``.
 
 The cluster count is read from the exFAT boot region as ``ncl = ld_32(BPB_NumClusEx)``
@@ -2766,7 +2770,7 @@ This has been fixed in main for v4.5.0
 
 Integer underflow in FatFs dirty-sector cache (f_read/f_write) causes wrong-sector I/O on crafted fragmented media in Zephyr
 
-In FatFs's read/write path (``f_read``/``f_write`` in modules/fs/fatfs/ff.c), the
+In FatFs's read/write path (``f_read``/``f_write`` in ``modules/fs/fatfs/ff.c``), the
 dirty-sector cache-refill decision compares ``fp->sect - sect`` against the run length
 ``cc`` using unsigned arithmetic. On a fragmented FAT layout where a later cluster maps
 to a lower absolute sector than the currently cached one, the subtraction underflows
@@ -2793,9 +2797,9 @@ This has been fixed in main for v4.5.0
 
 FatFs f_lseek past end-of-file exposes uninitialized/stale cluster contents (deleted file data) in Zephyr
 
-In FatFs (``f_lseek`` in modules/fs/fatfs/ff.c), seeking a file opened for write to an
-offset beyond its current end extends the cluster chain via ``create_chain()`` but does
-not zero the newly allocated clusters.
+In FatFs (``f_lseek`` in ``modules/fs/fatfs/ff.c``), seeking a file opened for write to
+an offset beyond its current end extends the cluster chain via ``create_chain()`` but
+does not zero the newly allocated clusters.
 
 FatFs marks the file as larger without initializing the backing sectors, so a subsequent
 read of the grown region returns whatever was previously on the medium in those clusters
@@ -2818,9 +2822,9 @@ This has been fixed in main for v4.5.0
 
 Stack buffer overflow in FatFs exFAT volume-label read (f_getlabel) via an unvalidated on-disk length in Zephyr
 
-In FatFs's ``f_getlabel()`` (modules/fs/fatfs/ff.c), the exFAT volume-label copy loop is
-bounded by the raw on-disk byte ``dj.dir[XDIR_NumLabel]`` (0–255) rather than the spec
-maximum of 11 characters.
+In FatFs's ``f_getlabel()`` (``modules/fs/fatfs/ff.c``), the exFAT volume-label copy
+loop is bounded by the raw on-disk byte ``dj.dir[XDIR_NumLabel]`` (0–255) rather than
+the spec maximum of 11 characters.
 
 A crafted exFAT volume that sets ``XDIR_NumLabel`` to a large value (e.g. 128) makes the
 loop read label characters past the 32-byte directory entry and write up to that many
