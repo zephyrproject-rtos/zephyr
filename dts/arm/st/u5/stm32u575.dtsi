@@ -27,5 +27,32 @@
 			health-test-config = <0xa2b0>;
 			noise-source-control = <0x17cbb>;
 		};
+
+		sai2: sai2@40015800 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40015800 0x400>;
+			ranges = <0x0 0x40015800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLL2_P SAI2_SEL(0)>;
+			status = "disabled";
+
+			sai2_a: sai2a@4 {
+				reg = <0x4 0x20>;
+				dmas = <&gpdma1 1 38 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai2_b: sai2b@24 {
+				reg = <0x24 0x20>;
+				dmas = <&gpdma1 0 39 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
 	};
 };
