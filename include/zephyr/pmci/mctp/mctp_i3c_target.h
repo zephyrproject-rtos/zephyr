@@ -24,6 +24,7 @@ struct mctp_binding_i3c_target {
 	const struct device *i3c;
 	struct i3c_target_config i3c_target_cfg;
 	uint8_t endpoint_id;
+	uint8_t dynamic_addr;
 	struct mctp_pktbuf *tx_pkt;
 	struct k_sem *tx_lock;
 	struct k_sem *tx_complete;
