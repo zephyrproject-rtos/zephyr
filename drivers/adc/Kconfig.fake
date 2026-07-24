@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_FAKE
+	bool "Fake ADC driver"
+	default y
+	depends on DT_HAS_ZEPHYR_ADC_FAKE_ENABLED
+	depends on ZTEST
+
+if ADC_FAKE
+
+config ADC_FAKE_REF_INTERNAL
+	int "Fake ADC internal reference voltage in millivolts"
+	default 900
+
+endif # ADC_FAKE

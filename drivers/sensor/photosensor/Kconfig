@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SENSOR_PHOTOSENSOR
+	bool "Photosensor sensor driver support"
+	default y
+	depends on DT_HAS_PHOTOSENSOR_ENABLED
+	select GPIO
+	select ADC
+	select ADC_ASYNC
+	select SENSOR_ASYNC_API
+
+if SENSOR_PHOTOSENSOR
+
+config SENSOR_PHOTOSENSOR_ADC_READ_CALIBRATE
+	bool "Perform calibration before ADC read"
+	default y
+
+endif # SENSOR_PHOTOSENSOR
