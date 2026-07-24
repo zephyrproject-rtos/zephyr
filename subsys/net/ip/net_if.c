@@ -6710,6 +6710,26 @@ struct net_if *net_if_get_wifi_sap(void)
 	return net_if_get_first_wifi();
 }
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+struct net_if *net_if_get_wifi_p2p(void)
+{
+	STRUCT_SECTION_FOREACH(net_if, iface) {
+		if (net_if_is_wifi(iface)
+#ifdef CONFIG_WIFI_NM
+		    && wifi_nm_iface_is_p2p(iface)
+#endif
+		) {
+			return iface;
+		}
+	}
+
+	/* No dedicated P2P iface registered.
+	 * Return the first WiFi interface.
+	 */
+	return net_if_get_first_wifi();
+}
+#endif
+
 int net_if_get_name(struct net_if *iface, char *buf, int len)
 {
 #if defined(CONFIG_NET_INTERFACE_NAME)

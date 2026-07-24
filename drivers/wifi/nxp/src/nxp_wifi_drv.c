@@ -72,6 +72,31 @@ extern struct interface g_mlan;
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 extern struct interface g_uap;
 #endif
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+extern struct interface g_wfd;
+#endif
+
+/*
+ * NXP_WIFI_NETIF_COUNT: total number of net_if instances
+ * Must match exactly the number of NET_DEVICE_INIT_INSTANCE()
+ * registrations that are compiled in.
+ *
+ * Combinations:
+ *   STA only                          -> 1
+ *   STA + SoftAP                      -> 2
+ *   STA + P2P (no SoftAP)             -> 2
+ *   STA + SoftAP + P2P                -> 3
+ */
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P) && defined(CONFIG_NXP_WIFI_SOFTAP_SUPPORT)
+#define NXP_WIFI_NETIF_COUNT 3
+#elif defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P) || defined(CONFIG_NXP_WIFI_SOFTAP_SUPPORT)
+#define NXP_WIFI_NETIF_COUNT 2
+#else
+#define NXP_WIFI_NETIF_COUNT 1
+#endif
+
+atomic_t s_netif_init_count = ATOMIC_INIT(0);
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
 extern const rtos_wpa_supp_dev_ops wpa_supp_ops;
 #endif
@@ -107,12 +132,15 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 	static int auth_fail;
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 	wlan_uap_client_disassoc_t *disassoc_resp = data;
+	wlan_uap_client_event_t *client_event;
 	struct net_in_addr dhcps_addr4;
 	struct net_in_addr base_addr;
 	struct net_in_addr netmask_addr;
 	struct wifi_ap_sta_info ap_sta_info = { 0 };
 	sta_node *con_sta_info;
 #endif
+	enum wlan_bss_type bss_type;
+	struct net_if *iface = NULL;
 
 	LOG_DBG("WLAN: received event %d", reason);
 
@@ -138,6 +166,13 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 			return 0;
 		}
 #endif
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+		ret = net_if_set_name(g_wfd.netif, "wf");
+		if (ret < 0) {
+			LOG_ERR("Failed to set WFD nxp_wlan_network interface name");
+			return 0;
+		}
+#endif
 #endif
 
 #ifdef CONFIG_NXP_WIFI_STA_AUTO_CONN
@@ -155,7 +190,13 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		break;
 	case WLAN_REASON_ASSOC_SUCCESS:
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
-		net_if_dormant_off(g_mlan.netif);
+		bss_type = (enum wlan_bss_type)(uintptr_t)data;
+		iface = net_get_if_by_bss_type(bss_type);
+		if (iface == NULL) {
+			LOG_ERR("Invalid bss type");
+			break;
+		}
+		net_if_dormant_off(iface);
 #endif
 		LOG_DBG("WLAN: associated to nxp_wlan_network");
 #ifdef CONFIG_NET_STATISTICS_WIFI
@@ -243,7 +284,13 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		LOG_WRN("WLAN: link lost");
 		break;
 	case WLAN_REASON_DISCONNECTED:
-		net_if_dormant_on(g_mlan.netif);
+		bss_type = (enum wlan_bss_type)(uintptr_t)data;
+		iface = net_get_if_by_bss_type(bss_type);
+		if (iface == NULL) {
+			LOG_ERR("Invalid bss type");
+			break;
+		}
+		net_if_dormant_on(iface);
 		LOG_DBG("WLAN: deauth leaving");
 		break;
 	case WLAN_REASON_CHAN_SWITCH:
@@ -251,7 +298,17 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		break;
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
 	case WLAN_REASON_UAP_SUCCESS:
+		bss_type = (enum wlan_bss_type)(uintptr_t)data;
+		iface = net_get_if_by_bss_type(bss_type);
+		if (iface == NULL) {
+			LOG_ERR("Invalid bss type");
+			break;
+		}
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+		LOG_DBG("WLAN: %s Started", bss_type == WLAN_BSS_TYPE_WIFIDIRECT ? "GO" : "UAP");
+#else
 		LOG_DBG("WLAN: UAP Started");
+#endif
 #ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 		ret = wlan_get_current_uap_network_ssid(uap_ssid);
 		if (ret != WM_SUCCESS) {
@@ -266,16 +323,16 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 			LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS");
 			return 0;
 		}
-		net_if_ipv4_addr_add(g_uap.netif, &dhcps_addr4, NET_ADDR_MANUAL, 0);
-		net_if_ipv4_set_gw(g_uap.netif, &dhcps_addr4);
+		net_if_ipv4_addr_add(iface, &dhcps_addr4, NET_ADDR_MANUAL, 0);
+		net_if_ipv4_set_gw(iface, &dhcps_addr4);
 
 		if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_MASK,
 				  &netmask_addr) < 0) {
 			LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_MASK");
 			return 0;
 		}
-		net_if_ipv4_set_netmask_by_addr(g_uap.netif, &dhcps_addr4, &netmask_addr);
-		net_if_dormant_off(g_uap.netif);
+		net_if_ipv4_set_netmask_by_addr(iface, &dhcps_addr4, &netmask_addr);
+		net_if_dormant_off(iface);
 
 		if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_BASE, &base_addr) < 0) {
 			LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_BASE");
@@ -283,7 +340,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		}
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_DHCP_SERVER
-		if (net_dhcpv4_server_start(g_uap.netif, &base_addr) < 0) {
+		if (net_dhcpv4_server_start(iface, &base_addr) < 0) {
 			LOG_ERR("DHCP Server start failed");
 			return 0;
 		}
@@ -292,7 +349,7 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 #endif
 		s_nxp_wifi_UapActivated = true;
 #ifndef CONFIG_WIFI_NM_HOSTAPD_AP
-		wifi_mgmt_raise_ap_enable_result_event(g_uap.netif, WIFI_STATUS_AP_SUCCESS);
+		wifi_mgmt_raise_ap_enable_result_event(iface, WIFI_STATUS_AP_SUCCESS);
 #endif
 		break;
 	case WLAN_REASON_UAP_CLIENT_ASSOC:
@@ -342,10 +399,22 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		LOG_DBG("Associated with Soft AP");
 		break;
 	case WLAN_REASON_UAP_CLIENT_CONN:
-		LOG_DBG("WLAN: UAP a Client Connected");
-		LOG_DBG("Client => ");
-		print_mac((const char *)data);
-		LOG_DBG("Connected with Soft AP");
+		client_event = (wlan_uap_client_event_t *)data;
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+		if (client_event->bss_type == WLAN_BSS_TYPE_WIFIDIRECT) {
+			LOG_DBG("WLAN: P2P GO a Client Connected");
+			LOG_DBG("Client => ");
+			print_mac((const char *)client_event->mac);
+			LOG_DBG("Connected with P2P GO");
+		} else {
+#endif
+			LOG_DBG("WLAN: UAP a Client Connected");
+			LOG_DBG("Client => ");
+			print_mac((const char *)client_event->mac);
+			LOG_DBG("Connected with Soft AP");
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+		}
+#endif
 		break;
 	case WLAN_REASON_UAP_CLIENT_DISSOC:
 		memcpy(ap_sta_info.mac, disassoc_resp->sta_addr, WIFI_MAC_ADDR_LEN);
@@ -358,23 +427,33 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 		LOG_DBG("%d", disassoc_resp->reason_code);
 		break;
 	case WLAN_REASON_UAP_STOPPED:
-		net_if_dormant_on(g_uap.netif);
+		bss_type = (enum wlan_bss_type)(uintptr_t)data;
+		iface = net_get_if_by_bss_type(bss_type);
+		if (iface == NULL) {
+			LOG_ERR("Invalid bss type");
+			break;
+		}
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+		LOG_DBG("WLAN: %s Stopped", bss_type == WLAN_BSS_TYPE_WIFIDIRECT ? "GO" : "UAP");
+#else
 		LOG_DBG("WLAN: UAP Stopped");
+#endif
+		net_if_dormant_on(iface);
 
 		if (net_addr_pton(NET_AF_INET, CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS,
 				  &dhcps_addr4) < 0) {
 			LOG_ERR("Invalid CONFIG_NXP_WIFI_SOFTAP_IP_ADDRESS");
 		} else {
-			net_if_ipv4_addr_rm(g_uap.netif, &dhcps_addr4);
+			net_if_ipv4_addr_rm(iface, &dhcps_addr4);
 		}
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_DHCP_SERVER
-		net_dhcpv4_server_stop(g_uap.netif);
+		net_dhcpv4_server_stop(iface);
 		LOG_DBG("DHCP Server stopped successfully");
 #endif
 		s_nxp_wifi_UapActivated = false;
 #ifndef CONFIG_WIFI_NM_HOSTAPD_AP
-		wifi_mgmt_raise_ap_disable_result_event(g_uap.netif, WIFI_STATUS_AP_SUCCESS);
+		wifi_mgmt_raise_ap_disable_result_event(iface, WIFI_STATUS_AP_SUCCESS);
 #endif
 		wlan_uap_bandcfg_recfg();
 		break;
@@ -565,7 +644,41 @@ static int nxp_wifi_wlan_start(void)
 	net_eth_carrier_on(g_uap.netif);
 #endif
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	/* Initialize device as dormant */
+	net_if_dormant_on(g_wfd.netif);
+
+	/* L1 network layer (physical layer) is up */
+	net_eth_carrier_on(g_wfd.netif);
+#endif
+
 	return 0;
+}
+
+/**
+ * Called from each of the three iface_api.init callbacks.
+ * Defers nxp_wifi_wlan_start() until all NXP_WIFI_NETIF_COUNT callbacks
+ * have run and every .netif pointer is set.
+ */
+static void nxp_wifi_start_if_all_ready(void)
+{
+	if (atomic_inc(&s_netif_init_count) + 1 < NXP_WIFI_NETIF_COUNT) {
+		return; /* still waiting for remaining _init() callbacks */
+	}
+
+	/* All .netif pointers are now valid — safe to start wlan. */
+	if (s_nxp_wifi_State == NXP_WIFI_NOT_INITIALIZED) {
+		int ret = nxp_wifi_wlan_init();
+
+		if (ret) {
+			LOG_ERR("wlan initialization failed");
+			return;
+		}
+		ret = nxp_wifi_wlan_start();
+		if (ret) {
+			LOG_ERR("wlan start failed");
+		}
+	}
 }
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
@@ -2085,23 +2198,7 @@ static void nxp_wifi_sta_init(struct net_if *iface)
 #endif
 	g_mlan.state.interface = WLAN_BSS_TYPE_STA;
 
-#ifndef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
-	int ret;
-
-	if (s_nxp_wifi_State == NXP_WIFI_NOT_INITIALIZED) {
-		/* Initialize the wifi subsystem */
-		ret = nxp_wifi_wlan_init();
-		if (ret) {
-			LOG_ERR("wlan initialization failed");
-			return;
-		}
-		ret = nxp_wifi_wlan_start();
-		if (ret) {
-			LOG_ERR("wlan start failed");
-			return;
-		}
-	}
-#endif
+	nxp_wifi_start_if_all_ready();
 }
 
 #ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
@@ -2110,7 +2207,6 @@ static void nxp_wifi_uap_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct interface *intf = dev->data;
-	int ret;
 
 	net_eth_set_if_type_wifi(iface);
 	intf->netif = iface;
@@ -2126,22 +2222,30 @@ static void nxp_wifi_uap_init(struct net_if *iface)
 #endif
 	g_uap.state.interface = WLAN_BSS_TYPE_UAP;
 
-	if (s_nxp_wifi_State == NXP_WIFI_NOT_INITIALIZED) {
-		/* Initialize the wifi subsystem */
-		ret = nxp_wifi_wlan_init();
-		if (ret) {
-			LOG_ERR("wlan initialization failed");
-			return;
-		}
-		ret = nxp_wifi_wlan_start();
-		if (ret) {
-			LOG_ERR("wlan start failed");
-			return;
-		}
-	}
+	nxp_wifi_start_if_all_ready();
 }
 
 #endif
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+static void nxp_wifi_p2p_init(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+	struct interface *intf = dev->data;
+
+	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	intf->netif = iface;
+
+#ifdef CONFIG_WIFI_NM
+	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
+			WIFI_TYPE_P2P, iface);
+#endif
+	g_wfd.state.interface = WLAN_BSS_TYPE_WIFIDIRECT;
+
+	nxp_wifi_start_if_all_ready();
+}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 static NXP_WIFI_SET_FUNC_ATTR int nxp_wifi_send(const struct device *dev, struct net_pkt *pkt)
 {
@@ -2552,6 +2656,11 @@ static const struct zep_wpa_supp_dev_ops nxp_wifi_drv_ops = {
 	.send_action_cancel_wait  = wifi_nxp_wpa_supp_cancel_action_wait,
 	.sched_scan               = wifi_nxp_wpa_supp_sched_scan,
 	.stop_sched_scan          = wifi_nxp_wpa_supp_stop_sched_scan,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	.register_frame           = wifi_nxp_wpa_supp_register_frame,
+	.deinit_ap                = wifi_nxp_wpa_supp_deinit_ap,
+	.set_p2p_powersave        = wifi_nxp_wpa_supp_set_p2p_powersave,
+#endif
 };
 #endif
 
@@ -2621,3 +2730,35 @@ NET_DEVICE_INIT_INSTANCE(wifi_nxp_uap, "ua", 1, NULL, NULL, &g_uap,
 			 CONFIG_WIFI_INIT_PRIORITY, &nxp_wifi_uap_apis, ETHERNET_L2,
 			 NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 #endif
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+static const struct wifi_mgmt_ops nxp_wifi_p2p_mgmt = {
+	.iface_status = nxp_wifi_status,
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+	.get_stats    = nxp_wifi_stats,
+	.reset_stats  = nxp_wifi_reset_stats,
+#endif
+};
+
+static const struct net_wifi_mgmt_offload nxp_wifi_p2p_apis = {
+	.wifi_iface.iface_api.init   = nxp_wifi_p2p_init,
+	.wifi_iface.set_config       = nxp_wifi_set_config,
+	.wifi_iface.get_config       = nxp_wifi_get_config,
+	.wifi_iface.send             = nxp_wifi_send,
+	.wifi_iface.get_capabilities = nxp_wifi_get_capa,
+	.wifi_mgmt_api               = &nxp_wifi_p2p_mgmt,
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
+	.wifi_drv_ops                = &nxp_wifi_drv_ops,
+#endif
+};
+
+NET_DEVICE_INIT_INSTANCE(wifi_nxp_wfd, "wf", 2, NULL, NULL, &g_wfd,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
+			 &wpa_supp_ops,
+#else
+			 NULL,
+#endif
+			 CONFIG_WIFI_INIT_PRIORITY, &nxp_wifi_p2p_apis,
+			 ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),
+			 NET_ETH_MTU);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */

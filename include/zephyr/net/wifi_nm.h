@@ -38,6 +38,10 @@ enum wifi_nm_iface_type {
 	WIFI_TYPE_STA = 0,
 	/** IEEE 802.11 Wi-Fi Soft AP */
 	WIFI_TYPE_SAP,
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+	/** IEEE 802.11 Wi-Fi P2P (Wi-Fi Direct) */
+	WIFI_TYPE_P2P,
+#endif
 };
 
 /**
@@ -118,6 +122,18 @@ bool wifi_nm_iface_is_sta(struct net_if *iface);
  *
  */
 bool wifi_nm_iface_is_sap(struct net_if *iface);
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+/**
+ * @brief Check if the interface is a Wi-Fi P2P (Wi-Fi Direct) interface
+ *
+ * @param iface Interface
+ *
+ * @retval true If the interface is a Wi-Fi P2P interface.
+ *
+ */
+bool wifi_nm_iface_is_p2p(struct net_if *iface);
+#endif
 
 /**
  * @brief Register a managed interface
