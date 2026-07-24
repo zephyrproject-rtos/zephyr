@@ -1,0 +1,24 @@
+# Copyright 2026 Hiyajomaho Num9
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_RK3506
+
+config NUM_IRQS
+	default 192
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 24000000
+
+config FLASH_BASE_ADDRESS
+	default 0
+
+config FLASH_SIZE
+	default 0
+
+configdefault UART_NS16550_DW8250_DW_APB
+	default y
+
+configdefault UART_NS16550_ACCESS_WORD_ONLY
+	default y
+
+endif # SOC_RK3506

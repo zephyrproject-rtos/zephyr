@@ -1,0 +1,13 @@
+# Copyright 2026 Hiyajomaho Num9
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RK3506
+	select ARM
+	select CPU_CORTEX_A7
+	select ARM_ARCH_TIMER
+	select SYS_CLOCK_EXISTS
+	select ARM_AARCH32_MMU
+	select SOC_RESET_HOOK
+
+config SOC_PART_NUMBER
+	default "RK3506" if SOC_RK3506

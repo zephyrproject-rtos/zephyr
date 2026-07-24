@@ -1,0 +1,35 @@
+/*
+ * Copyright 2026 Hiyajomaho Num9
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/rockchip/rk3506.dtsi>
+#include <common/mem.h>
+
+/ {
+	model = "Forlinx OK3506B-S12";
+	compatible = "forlinx,ok3506b-s12", "rockchip,rk3506";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+	};
+
+	aliases {
+		serial0 = &uart0;
+	};
+
+	sram0: memory@3e00000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x03e00000 DT_SIZE_M(1)>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
