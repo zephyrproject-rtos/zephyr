@@ -83,6 +83,10 @@ static struct client_state {
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 	/* Clear data on disconnect */
 	memset(&clients[bt_conn_index(conn)], 0, sizeof(struct client_state));
 }
