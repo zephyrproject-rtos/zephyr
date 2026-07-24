@@ -48,7 +48,7 @@ class TC(typing.NamedTuple):    # 'TestCase'
     family: str
 
     # 'APP', 'NET', 'APP+NET', or None.
-    coprocessor: typing.Optional[str]
+    coprocessor: str | None
 
     # Run a recover command first if True
     recover: bool
