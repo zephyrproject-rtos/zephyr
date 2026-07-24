@@ -1,0 +1,9 @@
+description: |
+  Infineon CAT1C (TRAVEO T2G) FLASHC flash controller.
+
+  This controller manages multiple NVM regions (main code flash and
+  work flash). Each region is described as a soc-nv-flash child node.
+
+compatible: "infineon,cat1-flash-controller"
+
+include: flash-controller.yaml

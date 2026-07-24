@@ -43,6 +43,18 @@ config FLASH_INFINEON_PSOC4
 	help
 	  Enable the Flash driver for Infineon PSoC4 family.
 
+config FLASH_INFINEON_CAT1_PDL
+	bool "Infineon CAT1 FLASH PDL driver"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_FLASH_CONTROLLER_ENABLED
+	depends on !USE_INFINEON_LEGACY_HAL
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select USE_INFINEON_FLASH
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable the Flash driver for Infineon CAT1 family.
+
 config INFINEON_CAT1_QSPI_FLASH
 	bool "Infineon CAT1 QSPI FLASH driver"
 	default y
