@@ -520,20 +520,6 @@ class DeviceHandler(Handler):
                     ser.close()
                     break
 
-    @staticmethod
-    def run_custom_script(script, timeout):
-        with subprocess.Popen(script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
-            try:
-                stdout, stderr = proc.communicate(timeout=timeout)
-                logger.debug(stdout.decode())
-                if proc.returncode != 0:
-                    logger.error(f"Custom script failure: {stderr.decode(errors='ignore')}")
-
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.communicate()
-                logger.error(f"{script} timed out")
-
     def _create_flash_command(self, hardware):
         flash_command = next(csv.reader([self.options.flash_command]))
 
@@ -678,7 +664,7 @@ class DeviceHandler(Handler):
         return ser_pty_process
 
     def _handle_robot_test(self, harness, hardware, command, serial_device, serial_pty,
-                            post_flash_script, post_script, script_param, flash_timeout):
+                            flash_timeout):
         """Flash device and run Robot Framework test directly without serial monitoring."""
         start_time = time.time()
         d_log = f"{self.instance.build_dir}/device.log"
@@ -715,11 +701,7 @@ class DeviceHandler(Handler):
             with open(d_log, "w") as dlog_fp:
                 dlog_fp.write(stderr.decode())
 
-        if post_flash_script:
-            timeout = 30
-            if script_param:
-                timeout = script_param.get("post_flash_timeout", timeout)
-            self.run_custom_script(post_flash_script, timeout)
+        hardware.run_hook("post_flash")
 
         self.execution_time = time.time() - start_time
 
@@ -730,25 +712,14 @@ class DeviceHandler(Handler):
                              "--variable", f"BUILD_DIR:{self.build_dir}"]
             harness.run_robot_test(robot_command, self)
 
-        if post_script:
-            timeout = 30
-            if script_param:
-                timeout = script_param.get("post_script_timeout", timeout)
-            self.run_custom_script(post_script, timeout)
+        hardware.run_hook("post")
 
     def handle(self, harness):
         robot_test = getattr(harness, "is_robot_test", False) is True
         hardware: CompoundHardwareData = self.instance.reserved_duts[0]
 
         # Run pre-script BEFORE starting serial PTY to avoid conflicts
-        pre_script = hardware.pre_script
-        script_param = hardware.script_param
-
-        if pre_script:
-            timeout = 30
-            if script_param:
-                timeout = script_param.get("pre_script_timeout", timeout)
-            self.run_custom_script(pre_script, timeout)
+        hardware.run_hook("pre")
 
         runner = hardware.runner or self.options.west_runner
         serial_pty = hardware.serial_pty
@@ -763,9 +734,6 @@ class DeviceHandler(Handler):
 
         command = self._create_command(runner, hardware)
 
-        post_flash_script = hardware.post_flash_script
-        post_script = hardware.post_script
-
         flash_timeout = hardware.flash_timeout
         if hardware.flash_with_test:
             flash_timeout += self.get_test_timeout()
@@ -775,7 +743,7 @@ class DeviceHandler(Handler):
             # directly. Robot Framework will open the serial port itself.
             self._handle_robot_test(
                 harness, hardware, command, serial_device, serial_pty,
-                post_flash_script, post_script, script_param, flash_timeout
+                flash_timeout
             )
             return
 
@@ -805,6 +773,7 @@ class DeviceHandler(Handler):
         t.start()
 
         d_log = f"{self.instance.build_dir}/device.log"
+        hardware.run_hook("pre_flash")
         logger.debug(f'Flash command: {command}', )
         failure_type = Handler.FailureType.NONE
         try:
@@ -839,11 +808,7 @@ class DeviceHandler(Handler):
             self.instance.reason = "Device issue (Flash error)"
             failure_type = Handler.FailureType.FLASH
 
-        if post_flash_script:
-            timeout = 30
-            if script_param:
-                timeout = script_param.get("post_flash_timeout", timeout)
-            self.run_custom_script(post_flash_script, timeout)
+        hardware.run_hook("post_flash")
 
         # Connect to device after flashing it
         if hardware.flash_before:
@@ -916,11 +881,7 @@ class DeviceHandler(Handler):
 
         self._final_handle_actions(harness)
 
-        if post_script:
-            timeout = 30
-            if script_param:
-                timeout = script_param.get("post_script_timeout", timeout)
-            self.run_custom_script(post_script, timeout)
+        hardware.run_hook("post")
 
 
 class QEMUHandler(Handler):
