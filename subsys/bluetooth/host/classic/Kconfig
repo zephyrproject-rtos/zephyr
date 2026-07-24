@@ -712,6 +712,23 @@ config BT_OEBX_RSP_CODE_TO_STR
 	  codes represented as strings.
 	  See bt_obex_rsp_code_to_str() for more details.
 
+config BT_OBEX_AUTH
+	bool "Bluetooth OBEX Authentication support"
+	select PSA_WANT_ALG_MD5
+	select MBEDTLS
+	help
+	  This option enables OBEX authentication feature.
+	  OBEX authentication uses MD5, which is cryptographically weak.
+	  It provides only limited security.
+
+config BT_OBEX_AUTH_PWD_LEN
+	int "Maximum OBEX Authentication Password Length"
+	depends on BT_OBEX_AUTH
+	default 16
+	range 1 255
+	help
+	  This option sets the maximum length of OBEX authentication password.
+
 endif # BT_GOEP
 
 config BT_BIP
@@ -724,8 +741,7 @@ config BT_BIP
 config BT_PBAP
 	bool
 	select BT_GOEP
-	select PSA_WANT_ALG_MD5
-	select MBEDTLS
+	select BT_OBEX_AUTH
 	help
 	  This option enables the PBAP profile
 

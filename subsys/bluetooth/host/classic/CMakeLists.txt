@@ -55,8 +55,8 @@ zephyr_library_sources_ifdef(
   pbap.c
   )
 
-if(CONFIG_BT_PBAP)
-  message(WARNING "CONFIG_BT_PBAP: PBAP v1.x uses MD5 for authentication, which is "
+if(CONFIG_BT_OBEX_AUTH)
+  message(WARNING "CONFIG_BT_OBEX_AUTH: OBEX uses MD5 for authentication, which is "
                   "cryptographically weak.")
 endif()
 
