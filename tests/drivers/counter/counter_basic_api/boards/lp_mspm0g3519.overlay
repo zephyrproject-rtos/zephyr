@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timg8 {
+	status = "okay";
+
+	counterg8: counterg8 {
+		status = "okay";
+	};
+};
+
+&timg9 {
+	status = "okay";
+
+	counterg9: counterg9 {
+		status = "okay";
+	};
+};
