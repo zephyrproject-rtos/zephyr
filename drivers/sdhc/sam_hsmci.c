@@ -304,10 +304,10 @@ static int sam_hsmci_send_cmd(Hsmci *hsmci, struct sdhc_command *cmd, uint32_t c
 	}
 
 	/* RSPR is just a FIFO, index is of no consequence */
-	cmd->response[3] = hsmci->HSMCI_RSPR[0];
-	cmd->response[2] = hsmci->HSMCI_RSPR[0];
-	cmd->response[1] = hsmci->HSMCI_RSPR[0];
 	cmd->response[0] = hsmci->HSMCI_RSPR[0];
+	cmd->response[1] = hsmci->HSMCI_RSPR[0];
+	cmd->response[2] = hsmci->HSMCI_RSPR[0];
+	cmd->response[3] = hsmci->HSMCI_RSPR[0];
 	return 0;
 }
 
