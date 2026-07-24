@@ -571,6 +571,24 @@ struct bt_sdp_record {
  */
 int bt_sdp_register_service(struct bt_sdp_record *service);
 
+/** @brief Unregister a Service Record.
+ *
+ *  Remove a previously registered Service Record from the SDP database.
+ *  The function checks for active SDP L2CAP channels and returns -EBUSY
+ *  if any exist. A residual race window remains between the check and
+ *  the actual removal; the caller is responsible for ensuring no new SDP
+ *  connections are established during this call (e.g., by disconnecting
+ *  BR/EDR links or disabling connectable mode beforehand).
+ *
+ *  @param service Service record to unregister.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ *  @retval -EINVAL if @p service is NULL.
+ *  @retval -EBUSY if an SDP L2CAP channel is currently active.
+ *  @retval -ENOENT if @p service is not currently registered.
+ */
+int bt_sdp_unregister_service(struct bt_sdp_record *service);
+
 /* Client API */
 
 /** @brief Generic SDP Client Query Result data holder */
