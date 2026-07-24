@@ -239,14 +239,14 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 
 	pkt = net_pkt_alloc_on_iface(
 		net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY)), K_FOREVER);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return NULL;
 	}
 
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 
 	buf = net_pkt_get_frag(pkt, NET_IPV6UDPH_LEN, K_FOREVER);
-	if (!buf) {
+	if (buf == NULL) {
 		net_pkt_unref(pkt);
 		return NULL;
 	}
@@ -476,7 +476,7 @@ static bool test_fragment(struct net_fragment_data *data)
 	int hdr_diff;
 
 	pkt = create_pkt(data);
-	if (!pkt) {
+	if (pkt == NULL) {
 		TC_PRINT("%s: failed to create buffer\n", __func__);
 		goto end;
 	}
@@ -500,7 +500,7 @@ static bool test_fragment(struct net_fragment_data *data)
 	}
 
 	f_pkt = net_pkt_alloc(K_FOREVER);
-	if (!f_pkt) {
+	if (f_pkt == NULL) {
 		goto end;
 	}
 
@@ -512,7 +512,7 @@ static bool test_fragment(struct net_fragment_data *data)
 		buf = ieee802154_6lo_fragment(&ctx, &frame_buf, data->iphc);
 
 		dfrag = net_pkt_get_frag(f_pkt, frame_buf.len, K_FOREVER);
-		if (!dfrag) {
+		if (dfrag == NULL) {
 			goto end;
 		}
 
@@ -538,12 +538,12 @@ reassemble:
 	buf = f_pkt->buffer;
 	while (buf) {
 		rxpkt = net_pkt_rx_alloc(K_FOREVER);
-		if (!rxpkt) {
+		if (rxpkt == NULL) {
 			goto end;
 		}
 
 		dfrag = net_pkt_get_frag(rxpkt, buf->len, K_FOREVER);
-		if (!dfrag) {
+		if (dfrag == NULL) {
 			goto end;
 		}
 
@@ -578,15 +578,15 @@ compare:
 	}
 
 end:
-	if (pkt) {
+	if (pkt != NULL) {
 		net_pkt_unref(pkt);
 	}
 
-	if (f_pkt) {
+	if (f_pkt != NULL) {
 		net_pkt_unref(f_pkt);
 	}
 
-	if (rxpkt) {
+	if (rxpkt != NULL) {
 		net_pkt_unref(rxpkt);
 	}
 
