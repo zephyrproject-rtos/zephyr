@@ -129,3 +129,6 @@ ZephyrModuleFile.txt
 
 # Node dependecies
 node_modules
+
+# other
+samples/subsys/mp/jpeg_enc/tools/jpeg_enc_tool
