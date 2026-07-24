@@ -279,8 +279,10 @@ uint32_t z_vrfy_k_event_clear(struct k_event *event, uint32_t events)
 #include <zephyr/syscalls/k_event_clear_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-static uint32_t k_event_wait_internal(struct k_event *event, uint32_t events,
-				      unsigned int options, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS static uint32_t k_event_wait_internal(struct k_event *event,
+								    uint32_t events,
+								    unsigned int options,
+								    k_timeout_t timeout)
 {
 	uint32_t  rv = 0;
 	unsigned int  wait_condition;

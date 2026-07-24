@@ -72,7 +72,7 @@ static inline bool item_lessthan(struct k_p4wq_work *a, struct k_p4wq_work *b)
 	return false;
 }
 
-static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
+Z_NO_THREAD_SAFETY_ANALYSIS static FUNC_NORETURN void p4wq_loop(void *p0, void *p1, void *p2)
 {
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
@@ -224,7 +224,7 @@ SYS_INIT(static_init, POST_KERNEL, 1);
 SYS_INIT(static_init, APPLICATION, 99);
 #endif
 
-void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
+Z_NO_THREAD_SAFETY_ANALYSIS void k_p4wq_submit(struct k_p4wq *queue, struct k_p4wq_work *item)
 {
 	k_spinlock_key_t k = k_spin_lock(&queue->lock);
 

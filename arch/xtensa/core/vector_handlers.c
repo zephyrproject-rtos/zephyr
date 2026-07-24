@@ -560,7 +560,7 @@ static inline DEF_INT_C_HANDLER(1)
  * different because exceptions and interrupts land at the same
  * vector; other interrupt levels have their own vectors.
  */
-void *xtensa_excint1_c(void *esf)
+Z_NO_THREAD_SAFETY_ANALYSIS void *xtensa_excint1_c(void *esf)
 {
 	int cause, reason;
 	int *interrupted_stack = &((struct arch_esf *)esf)->dummy;

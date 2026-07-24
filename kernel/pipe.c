@@ -42,9 +42,9 @@ struct pipe_buf_spec {
 	size_t used;
 };
 
-static int wait_for(_wait_q_t *waitq, struct k_pipe *pipe, k_spinlock_key_t *key,
-		    k_timepoint_t time_limit, bool *need_resched,
-		    struct pipe_buf_spec *buf_spec)
+Z_NO_THREAD_SAFETY_ANALYSIS static int wait_for(_wait_q_t *waitq, struct k_pipe *pipe,
+						k_spinlock_key_t *key, k_timepoint_t time_limit,
+						bool *need_resched, struct pipe_buf_spec *buf_spec)
 {
 	k_timeout_t timeout = sys_timepoint_timeout(time_limit);
 	int rc;
@@ -149,7 +149,8 @@ static size_t copy_to_pending_readers(struct k_pipe *pipe, bool *need_resched,
 	return written;
 }
 
-int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data,
+						    size_t len, k_timeout_t timeout)
 {
 	int rc;
 	size_t written = 0;
@@ -222,7 +223,8 @@ exit:
 	return rc;
 }
 
-int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len,
+						   k_timeout_t timeout)
 {
 	struct pipe_buf_spec buf = { data, len, 0 };
 	int rc;
@@ -272,7 +274,7 @@ exit:
 	return rc;
 }
 
-void z_impl_k_pipe_reset(struct k_pipe *pipe)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_pipe_reset(struct k_pipe *pipe)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, reset, pipe);
 	K_SPINLOCK(&pipe->lock) {
@@ -286,7 +288,7 @@ void z_impl_k_pipe_reset(struct k_pipe *pipe)
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, reset, pipe);
 }
 
-void z_impl_k_pipe_close(struct k_pipe *pipe)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_pipe_close(struct k_pipe *pipe)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_pipe, close, pipe);
 	K_SPINLOCK(&pipe->lock) {

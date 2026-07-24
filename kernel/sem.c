@@ -92,7 +92,7 @@ static inline bool sem_handle_poll_events(struct k_sem *sem)
 #endif /* CONFIG_POLL */
 }
 
-void z_impl_k_sem_give(struct k_sem *sem)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_sem_give(struct k_sem *sem)
 {
 	k_spinlock_key_t key = k_spin_lock(&sem_lock);
 	bool resched;
@@ -124,7 +124,7 @@ static inline void z_vrfy_k_sem_give(struct k_sem *sem)
 #include <zephyr/syscalls/k_sem_give_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
+Z_NO_THREAD_SAFETY_ANALYSIS int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 {
 	int ret;
 
@@ -158,7 +158,7 @@ out:
 	return ret;
 }
 
-void z_impl_k_sem_reset(struct k_sem *sem)
+Z_NO_THREAD_SAFETY_ANALYSIS void z_impl_k_sem_reset(struct k_sem *sem)
 {
 	k_spinlock_key_t key = k_spin_lock(&sem_lock);
 	bool resched = false;

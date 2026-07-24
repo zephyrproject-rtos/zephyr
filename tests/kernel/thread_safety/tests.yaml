@@ -1,0 +1,11 @@
+tests:
+  kernel.thread_safety:
+    tags:
+      - kernel
+    build_only: true
+    platform_allow:
+      - mps2/an385
+      - qemu_riscv32e
+    integration_toolchains:
+      - zephyr/llvm
+      - zephyr/gnu
