@@ -937,8 +937,13 @@ struct can_mcan_rx_fifo_hdr {
 struct can_mcan_rx_fifo {
 	struct can_mcan_rx_fifo_hdr hdr;
 	union {
+#ifdef CONFIG_CAN_FD_MODE
 		uint8_t data[64];
 		uint32_t data_32[16];
+#else
+		uint8_t data[8];
+		uint32_t data_32[2];
+#endif
 	};
 } __packed __aligned(4);
 
@@ -978,8 +983,13 @@ struct can_mcan_tx_buffer_hdr {
 struct can_mcan_tx_buffer {
 	struct can_mcan_tx_buffer_hdr hdr;
 	union {
+#ifdef CONFIG_CAN_FD_MODE
 		uint8_t data[64];
 		uint32_t data_32[16];
+#else
+		uint8_t data[8];
+		uint32_t data_32[2];
+#endif
 	};
 } __packed __aligned(4);
 
