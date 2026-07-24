@@ -32,6 +32,46 @@
 #endif
 
 #define MSPI_STM32_WRITE_REG_MAX_TIME          40U
+/*
+ * Memory device geometry, taken at compile time from the controller's
+ * first status "okay" child node. The STM32 MSPI drivers currently
+ * support a single device per controller (MSPI_MAX_DEVICE == 1).
+ *
+ * MSPI_STM32_INST_MEM_ADDR_BITS() expands to the number of address bits
+ * of the memory device (log2 of its size in bytes), derived from the
+ * child's "size" property (in bits). If the
+ * controller has no enabled child, it expands to @p fallback_bits.
+ *
+ * Note that the HAL encodings differ for each IP:
+ *   XSPI  Init.MemorySize = address bits - 1 (raw DCR1 DEVSIZE)
+ *   OSPI  Init.DeviceSize = address bits     (HAL subtracts 1)
+ *   QSPI  Init.FlashSize  = address bits - 1 (raw DCR FSIZE)
+ */
+#define MSPI_STM32_MEM_SIZE_BITS(child)                                        \
+	DT_PROP_OR(child, size, 0)
+
+#define MSPI_STM32_MEM_ADDR_BITS_ENTRY(child)                                  \
+	(LOG2(MSPI_STM32_MEM_SIZE_BITS(child)) - 3),
+
+#define MSPI_STM32_INST_MEM_ADDR_BITS(index, fallback_bits)                    \
+	COND_CODE_0(DT_INST_CHILD_NUM_STATUS_OKAY(index),                      \
+		    (fallback_bits),                                           \
+		    (GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(index,     \
+					MSPI_STM32_MEM_ADDR_BITS_ENTRY))))
+
+/*
+ * Memory type token ("st,mem-type" on the child node), upper-cased for
+ * pasting onto the HAL memory type macro prefix. Defaults to MICRON,
+ * the hardware reset value of DCR1 MTYP, when the property is absent.
+ */
+#define MSPI_STM32_MEMTYPE_TOKEN_ENTRY(child)                                  \
+	DT_STRING_UPPER_TOKEN_OR(child, st_mem_type, MICRON),
+
+#define MSPI_STM32_INST_MEMTYPE_TOKEN(index)                                   \
+	COND_CODE_0(DT_INST_CHILD_NUM_STATUS_OKAY(index),                      \
+		    (MICRON),                                                  \
+		    (GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(index,     \
+					MSPI_STM32_MEMTYPE_TOKEN_ENTRY))))
 
 typedef void (*irq_config_func_t)(void);
 
