@@ -1,0 +1,9 @@
+identifier: lp_am13e230
+name: TI AM13E230X Launchpad
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 96
+flash: 512
+vendor: ti
