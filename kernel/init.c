@@ -116,7 +116,7 @@ static void z_init_static_threads(void)
 
 extern const struct init_entry __init_start[];
 extern const struct init_entry __init_EARLY_start[];
-extern const struct init_entry __init_PRE_KERNEL_1_start[];
+extern const struct init_entry __init_PRE_KERNEL_start[];
 extern const struct init_entry __init_PRE_KERNEL_2_start[];
 extern const struct init_entry __init_POST_KERNEL_start[];
 extern const struct init_entry __init_APPLICATION_start[];
@@ -124,7 +124,11 @@ extern const struct init_entry __init_end[];
 
 enum init_level {
 	INIT_LEVEL_EARLY = 0,
-	INIT_LEVEL_PRE_KERNEL_1,
+	INIT_LEVEL_PRE_KERNEL,
+	/* Deprecated compatibility band, run right after all PRE_KERNEL
+	 * entries (the deprecated PRE_KERNEL_1 level aliases into the
+	 * PRE_KERNEL band).
+	 */
 	INIT_LEVEL_PRE_KERNEL_2,
 	INIT_LEVEL_POST_KERNEL,
 	INIT_LEVEL_APPLICATION,
@@ -216,7 +220,7 @@ static void z_sys_init_run_level(enum init_level level)
 {
 	static const struct init_entry *levels[] = {
 		__init_EARLY_start,
-		__init_PRE_KERNEL_1_start,
+		__init_PRE_KERNEL_start,
 		__init_PRE_KERNEL_2_start,
 		__init_POST_KERNEL_start,
 		__init_APPLICATION_start,
@@ -327,6 +331,18 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	if (!IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
 		z_smp_init();
 	}
+
+	/* Run post-SMP init hooks now that all CPUs are up. Entries are present
+	 * only for subsystems that are linked in (pay-per-use); the walk
+	 * references only the section bounds.
+	 */
+	STRUCT_SECTION_FOREACH(smp_init_hook, hook) {
+		hook->init_fn();
+	}
+
+	/* Deprecated: SYS_INIT() at the SMP level. Use SMP_INIT_HOOK() instead.
+	 * Kept functional while the SMP init level is phased out.
+	 */
 	z_sys_init_run_level(INIT_LEVEL_SMP);
 #endif /* CONFIG_SMP */
 
@@ -571,10 +587,14 @@ FUNC_NORETURN void z_cstart(void)
 	}
 
 	/* perform basic hardware initialization */
-	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
+	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL);
 #if defined(CONFIG_SMP)
 	arch_smp_init();
 #endif
+	/* Deprecated PRE_KERNEL_2 compatibility band, kept while the level is
+	 * phased out. Migrate entries to PRE_KERNEL with a priority ordering
+	 * them after their dependencies.
+	 */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_2);
 
 #ifdef CONFIG_REQUIRES_STACK_CANARIES

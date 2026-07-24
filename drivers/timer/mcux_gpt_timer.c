@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT nxp_gpt_hw_timer
 
 #include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <fsl_gpt.h>
 #include <zephyr/sys_clock.h>
@@ -245,5 +246,4 @@ int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT_DEPENDS(sys_clock_driver_init, PRE_KERNEL, DT_DRV_INST(0));

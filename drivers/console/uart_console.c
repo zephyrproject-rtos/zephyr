@@ -610,9 +610,12 @@ static int uart_console_init(void)
 	return 0;
 }
 
-/* UART console initializes after the UART device itself */
+/* UART console initializes right after the UART device it is attached
+ * to, whether that device uses a manual init priority or automatic
+ * (devicetree-ordinal) ordering.
+ */
 #if defined(CONFIG_EARLY_CONSOLE)
-SYS_INIT(uart_console_init, PRE_KERNEL_1, CONFIG_CONSOLE_INIT_PRIORITY);
+SYS_INIT_DEPENDS(uart_console_init, PRE_KERNEL, DT_CHOSEN(zephyr_console));
 #else
-SYS_INIT(uart_console_init, POST_KERNEL, CONFIG_CONSOLE_INIT_PRIORITY);
+SYS_INIT_DEPENDS(uart_console_init, POST_KERNEL, DT_CHOSEN(zephyr_console));
 #endif /* CONFIG_EARLY_CONSOLE */

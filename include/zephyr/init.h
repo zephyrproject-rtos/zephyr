@@ -11,6 +11,7 @@
 #include <stddef.h>
 
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
@@ -32,14 +33,21 @@ extern "C" {
  *   extend or implement architecture code and use drivers or system services
  *   that have to be initialized before the Kernel calls any architecture
  *   specific initialization code.
- * - `PRE_KERNEL_1`: Executed in Kernel's initialization context, which uses
+ * - `PRE_KERNEL`: Executed in Kernel's initialization context, which uses
  *   the interrupt stack. At this point Kernel services are not yet available.
- * - `PRE_KERNEL_2`: Same as `PRE_KERNEL_1`.
+ * - `PRE_KERNEL_1`: @deprecated Alias of `PRE_KERNEL`. Entries registered at
+ *   this level share the `PRE_KERNEL` level and are ordered together with its
+ *   entries, by priority. Use `PRE_KERNEL` instead.
+ * - `PRE_KERNEL_2`: @deprecated Same execution context as `PRE_KERNEL`; all
+ *   its entries run after every `PRE_KERNEL` (and `PRE_KERNEL_1`) entry.
+ *   Migrate to `PRE_KERNEL` with a priority that orders the entry after its
+ *   dependencies.
  * - `POST_KERNEL`: Executed after Kernel is alive. From this point on, Kernel
  *   primitives can be used.
  * - `APPLICATION`: Executed just before application code (`main`).
  * - `SMP`: Only available if @kconfig{CONFIG_SMP} is enabled, specific for
- *   SMP.
+ *   SMP. @deprecated Registering a SYS_INIT() at the `SMP` level is deprecated;
+ *   use SMP_INIT_HOOK() instead. The `SMP` level is scheduled for removal.
  *
  * Initialization priority can take a value in the range of 0 to 999.
  *
@@ -80,19 +88,38 @@ struct init_entry {
 
 /* Helper definitions to evaluate level equality */
 #define Z_INIT_EARLY_EARLY		 1
+#define Z_INIT_PRE_KERNEL_PRE_KERNEL	 1
 #define Z_INIT_PRE_KERNEL_1_PRE_KERNEL_1 1
 #define Z_INIT_PRE_KERNEL_2_PRE_KERNEL_2 1
 #define Z_INIT_POST_KERNEL_POST_KERNEL	 1
 #define Z_INIT_APPLICATION_APPLICATION	 1
 #define Z_INIT_SMP_SMP			 1
 
-/* Init level ordinals */
+/* Init level ordinals. PRE_KERNEL_1 is a deprecated alias of PRE_KERNEL, so
+ * both map to the same ordinal.
+ */
 #define Z_INIT_ORD_EARLY	0
+#define Z_INIT_ORD_PRE_KERNEL	1
 #define Z_INIT_ORD_PRE_KERNEL_1 1
 #define Z_INIT_ORD_PRE_KERNEL_2 2
 #define Z_INIT_ORD_POST_KERNEL	3
 #define Z_INIT_ORD_APPLICATION	4
 #define Z_INIT_ORD_SMP		5
+
+/* Map an init level token to the linker section band its entries are placed
+ * in. PRE_KERNEL_1 is a deprecated alias of PRE_KERNEL: both share the same
+ * band and their entries are ordered together, by priority. PRE_KERNEL_2
+ * keeps its own band, which the linker places right after the PRE_KERNEL
+ * band, preserving the legacy "all PRE_KERNEL_1 entries run before any
+ * PRE_KERNEL_2 entry" guarantee while PRE_KERNEL_2 is being phased out.
+ */
+#define Z_INIT_SECTION_LEVEL_EARLY	  EARLY
+#define Z_INIT_SECTION_LEVEL_PRE_KERNEL	  PRE_KERNEL
+#define Z_INIT_SECTION_LEVEL_PRE_KERNEL_1 PRE_KERNEL
+#define Z_INIT_SECTION_LEVEL_PRE_KERNEL_2 PRE_KERNEL_2
+#define Z_INIT_SECTION_LEVEL_POST_KERNEL  POST_KERNEL
+#define Z_INIT_SECTION_LEVEL_APPLICATION  APPLICATION
+#define Z_INIT_SECTION_LEVEL_SMP	  SMP
 
 /**
  * @brief Obtain init entry name.
@@ -110,20 +137,22 @@ struct init_entry {
  */
 #define Z_INIT_ENTRY_SECTION(level, prio, sub_prio)                                                \
 	__attribute__((__section__(                                                                \
-		".z_init_" #level "_P_" STRINGIFY(prio) "_SUB_" STRINGIFY(sub_prio)"_")))
+		".z_init_" STRINGIFY(_CONCAT(Z_INIT_SECTION_LEVEL_, level))                        \
+		"_P_" STRINGIFY(prio) "_SUB_" STRINGIFY(sub_prio)"_")))
 
 /** @endcond */
 
 /**
  * @brief Obtain the ordinal for an init level.
  *
- * @param level Init level (EARLY, PRE_KERNEL_1, PRE_KERNEL_2, POST_KERNEL,
- * APPLICATION, SMP).
+ * @param level Init level (EARLY, PRE_KERNEL, POST_KERNEL, APPLICATION, SMP,
+ * and the deprecated PRE_KERNEL_1 and PRE_KERNEL_2).
  *
  * @return Init level ordinal.
  */
 #define INIT_LEVEL_ORD(level)                                                  \
 	COND_CASE_1(Z_INIT_EARLY_##level, (Z_INIT_ORD_EARLY),                  \
+		    Z_INIT_PRE_KERNEL_##level, (Z_INIT_ORD_PRE_KERNEL),        \
 		    Z_INIT_PRE_KERNEL_1_##level, (Z_INIT_ORD_PRE_KERNEL_1),    \
 		    Z_INIT_PRE_KERNEL_2_##level, (Z_INIT_ORD_PRE_KERNEL_2),    \
 		    Z_INIT_POST_KERNEL_##level, (Z_INIT_ORD_POST_KERNEL),      \
@@ -140,9 +169,11 @@ struct init_entry {
  * @note The return value of the initialization function is ignored.
  *
  * @param init_fn Initialization function.
- * @param level Initialization level. Allowed tokens: `EARLY`, `PRE_KERNEL_1`,
- * `PRE_KERNEL_2`, `POST_KERNEL`, `APPLICATION` and `SMP` if
- * @kconfig{CONFIG_SMP} is enabled.
+ * @param level Initialization level. Allowed tokens: `EARLY`, `PRE_KERNEL`,
+ * `POST_KERNEL`, `APPLICATION` and `SMP` if @kconfig{CONFIG_SMP} is enabled.
+ * The tokens `PRE_KERNEL_1` (alias of `PRE_KERNEL`) and `PRE_KERNEL_2` are
+ * deprecated but still accepted for compatibility. @deprecated The `SMP`
+ * level is also deprecated; use SMP_INIT_HOOK() instead.
  * @param prio Initialization priority within @p _level. Note that it must be a
  * decimal integer literal without leading zeroes or sign (e.g. `32`), or an
  * equivalent symbolic name (e.g. `#define MY_INIT_PRIO 32`); symbolic
@@ -171,6 +202,44 @@ struct init_entry {
 	static const Z_DECL_ALIGN(struct init_entry)                                      \
 		Z_INIT_ENTRY_SECTION(level, prio, 0) __used __noasan                      \
 		Z_INIT_ENTRY_NAME(name) = {.init_fn = (init_fn_), .dev = NULL}            \
+
+#ifdef CONFIG_SMP
+
+/**
+ * @brief Structure to store an SMP initialization hook.
+ *
+ * @internal
+ * Hooks are collected into an iterable section and walked by the kernel from
+ * the boot thread once SMP has been brought up. See SMP_INIT_HOOK().
+ * @endinternal
+ */
+struct smp_init_hook {
+	/** Hook function invoked after all secondary CPUs have started. */
+	void (*init_fn)(void);
+};
+
+/**
+ * @brief Register a function to run once SMP has been brought up.
+ *
+ * The registered function is invoked once, on the primary CPU, from the boot
+ * thread right after all secondary CPUs have been started (see z_smp_init())
+ * and before the application `main()` runs. It takes no argument and its return
+ * value, if any, is ignored.
+ *
+ * This is the replacement for registering a SYS_INIT() at the (deprecated)
+ * `SMP` initialization level. Unlike an init level, hooks carry no priority
+ * ordering; if a specific order is required between multiple hooks, encode it
+ * within a single hook. Only available when @kconfig{CONFIG_SMP} is enabled.
+ *
+ * @param _fn Function to run after SMP bring-up.
+ */
+#define SMP_INIT_HOOK(_fn)                                                     \
+	static const STRUCT_SECTION_ITERABLE(smp_init_hook,                   \
+					     _smp_init_hook_##_fn) = {        \
+		.init_fn = (_fn),                                             \
+	}
+
+#endif /* CONFIG_SMP */
 
 /** @} */
 

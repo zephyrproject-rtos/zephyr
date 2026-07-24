@@ -131,5 +131,4 @@ static int wch_exti_init(const struct device *dev)
 
 static struct wch_exti_data wch_exti_data_0;
 
-DEVICE_DT_INST_DEFINE(0, wch_exti_init, NULL, &wch_exti_data_0, NULL, PRE_KERNEL_2,
-		      CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE_AUTO(0, wch_exti_init, NULL, &wch_exti_data_0, NULL, PRE_KERNEL, NULL);

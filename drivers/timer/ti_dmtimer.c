@@ -215,9 +215,9 @@ static int sys_clock_driver_init(void)
 	static const struct ti_dm_timer_config ti_dm_timer_config_##n = {                          \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),                              \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &ti_dm_timer_data_##n, &ti_dm_timer_config_##n,       \
-			      PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY, NULL);
+	DEVICE_DT_INST_DEFINE_AUTO(n, NULL, NULL, &ti_dm_timer_data_##n,                             \
+				   &ti_dm_timer_config_##n, PRE_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(TI_DM_TIMER);
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT_DEPENDS(sys_clock_driver_init, PRE_KERNEL, DT_DRV_INST(0));

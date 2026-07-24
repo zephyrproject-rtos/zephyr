@@ -6,6 +6,7 @@
 #include <cpuid.h> /* Header provided by the toolchain. */
 
 #include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <zephyr/arch/x86/cpuid.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys_clock.h>
@@ -296,5 +297,7 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+/* Anchored to the local APIC node: TSC deadline uses the local APIC LVT
+ * and must init after it.
+ */
+SYS_INIT_DEPENDS(sys_clock_driver_init, PRE_KERNEL, DT_NODELABEL(intc_loapic));

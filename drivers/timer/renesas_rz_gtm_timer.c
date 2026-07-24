@@ -214,9 +214,9 @@ static int sys_clock_driver_init(void)
 		.fsp_api = &g_timer_on_gtm,                                                        \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(0, NULL, NULL, &g_rz_os_timer_data, &g_rz_os_timer_config,           \
-			      PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY, NULL);              \
+	DEVICE_DT_INST_DEFINE_AUTO(0, NULL, NULL, &g_rz_os_timer_data,                              \
+				   &g_rz_os_timer_config, PRE_KERNEL, NULL);                             \
                                                                                                    \
-	SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+	SYS_INIT_DEPENDS(sys_clock_driver_init, PRE_KERNEL, DT_DRV_INST(0));
 
 OS_TIMER_RZG_GTM_INIT();

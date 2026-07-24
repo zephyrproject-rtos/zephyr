@@ -256,8 +256,8 @@ int intc_rz_tint_set_callback(const struct device *dev, intc_rz_tint_callback_t 
 		return intc_rz_tint_init(dev);                                                     \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(index, intc_rz_tint_init##index, NULL, &intc_rz_tint_data##index,    \
-			      &intc_rz_tint_config##index, PRE_KERNEL_2,                           \
-			      CONFIG_INTC_INIT_PRIORITY, NULL);
+	DEVICE_DT_INST_DEFINE_AUTO(index, intc_rz_tint_init##index, NULL,                           \
+				   &intc_rz_tint_data##index, &intc_rz_tint_config##index,         \
+				   PRE_KERNEL, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(INTC_RZ_TINT_INIT)

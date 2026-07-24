@@ -203,4 +203,4 @@ static int sys_clock_driver_init(void)
 	irq_enable(OSTM_IRQ_NUM);
 	return 0;
 }
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+SYS_INIT_DEPENDS(sys_clock_driver_init, PRE_KERNEL, DT_DRV_INST(0));

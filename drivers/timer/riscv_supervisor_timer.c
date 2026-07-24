@@ -162,4 +162,5 @@ void smp_timer_init(void)
 }
 #endif
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+/* CPU-core timer with no devicetree dependencies. */
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

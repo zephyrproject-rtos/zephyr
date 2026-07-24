@@ -167,8 +167,8 @@ typedef int16_t device_handle_t;
  * stored in @ref device.data.
  * @param config Pointer to the device's private constant data, which will be
  * stored in @ref device.config.
- * @param level The device's initialization level (PRE_KERNEL_1, PRE_KERNEL_2 or
- * POST_KERNEL).
+ * @param level The device's initialization level (PRE_KERNEL or POST_KERNEL;
+ * the deprecated PRE_KERNEL_1 and PRE_KERNEL_2 levels are still accepted).
  * @param prio The device's priority within its initialization level. See
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
@@ -234,8 +234,8 @@ typedef int16_t device_handle_t;
  * stored in @ref device.data.
  * @param config Pointer to the device's private constant data, which will be
  * stored in @ref device.config field.
- * @param level The device's initialization level (PRE_KERNEL_1, PRE_KERNEL_2 or
- * POST_KERNEL).
+ * @param level The device's initialization level (PRE_KERNEL or POST_KERNEL;
+ * the deprecated PRE_KERNEL_1 and PRE_KERNEL_2 levels are still accepted).
  * @param prio The device's priority within its initialization level. See
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
@@ -282,6 +282,107 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DT_INST_DEFINE(inst, ...)                                       \
 	DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_DT_DEFINE(), but with automatic initialization ordering
+ * instead of a manual priority.
+ *
+ * The device's position within its initialization level is derived from the
+ * devicetree dependency ordinal of @p node_id : the device is initialized
+ * after every devicetree dependency it has (parent bus, clocks, pinctrl, any
+ * phandle reference) that is registered in the same way, without a manually
+ * assigned priority. All such devices are placed in a dedicated slot that
+ * runs after the whole manual 0-999 priority range of @p level, so they may
+ * also depend on any manually-prioritized device of the same (or an earlier)
+ * level. The reverse — a manually-prioritized device of the same level
+ * depending on this one — is not supported; this ordering violation is
+ * reported at build time when @kconfig{CONFIG_CHECK_INIT_PRIORITIES} is
+ * enabled.
+ *
+ * Only use this macro when every initialization-order dependency of the
+ * device is visible in the devicetree. Dependencies that the devicetree
+ * cannot express (e.g. an init function relying on the system timer for
+ * busy-waiting) require a manual priority via DEVICE_DT_DEFINE().
+ *
+ * @param node_id The devicetree node identifier. Must exist in the
+ * devicetree; software devices without a node cannot use automatic ordering.
+ * @param init_fn Pointer to the device's initialization function. See
+ * DEVICE_DT_DEFINE().
+ * @param pm Pointer to the device's power management resources. See
+ * DEVICE_DT_DEFINE().
+ * @param data Pointer to the device's private mutable data. See
+ * DEVICE_DT_DEFINE().
+ * @param config Pointer to the device's private constant data. See
+ * DEVICE_DT_DEFINE().
+ * @param level The device's initialization level (PRE_KERNEL or POST_KERNEL).
+ * @param api Pointer to the device's API structure. Can be `NULL`.
+ */
+#define DEVICE_DT_DEFINE_AUTO(node_id, init_fn, pm, data, config, level, api,  \
+			      ...)                                             \
+	BUILD_ASSERT(DT_NODE_EXISTS(node_id),                                  \
+		     "DEVICE_DT_DEFINE_AUTO requires a devicetree node");      \
+	DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, AUTO, api, \
+			 __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_DT_DEFINE_AUTO(), but uses an instance of a
+ * `DT_DRV_COMPAT` compatible instead of a node identifier.
+ *
+ * @param inst Instance number. The `node_id` argument to
+ * DEVICE_DT_DEFINE_AUTO() is set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by DEVICE_DT_DEFINE_AUTO().
+ */
+#define DEVICE_DT_INST_DEFINE_AUTO(inst, ...)                                  \
+	DEVICE_DT_DEFINE_AUTO(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Register an initialization function ordered after a device's
+ * initialization.
+ *
+ * Like SYS_INIT(), but instead of a manual priority the function is anchored
+ * to the initialization position of @p node_id : it runs at @p level,
+ * immediately after the device defined for @p node_id (if any) and, in any
+ * case, after the devices of every devicetree dependency of @p node_id
+ * (parent bus, clocks, pinctrl, interrupt controller, any phandle
+ * reference). The entry is placed in the same automatic-ordering slot used
+ * by DEVICE_DT_DEFINE_AUTO(), using the devicetree dependency ordinal of
+ * @p node_id as its sort key, so it works whether the devices it depends on
+ * are registered with a manual priority or with automatic ordering.
+ *
+ * Two anchoring patterns:
+ *
+ * - Anchor to a consumed device's node, for initialization functions that
+ *   use a device but have no devicetree node of their own (e.g. a console
+ *   attached to the ``zephyr,console`` chosen UART).
+ * - Anchor to the function's own node, for drivers that initialize via
+ *   SYS_INIT() rather than defining a device (e.g. a system timer): the
+ *   node's ordinal orders the entry after everything the node's devicetree
+ *   fragment depends on, with no manually curated priority.
+ *
+ * In both cases a plain SYS_INIT() priority could not be checked against
+ * the device positions, and build-time dependency validation cannot see the
+ * relationship.
+ *
+ * @note The anchor expresses the dependencies of a single devicetree node.
+ * If the function depends on devices not related to @p node_id (or not
+ * visible in the devicetree at all), anchor it to the node initialized
+ * last, or keep a manual priority.
+ *
+ * @param init_fn_ Initialization function.
+ * @param level Initialization level, see SYS_INIT().
+ * @param node_id Devicetree node identifier of the device this function
+ * must run after.
+ */
+#define SYS_INIT_DEPENDS(init_fn_, level, node_id)                             \
+	BUILD_ASSERT(DT_NODE_EXISTS(node_id),                                  \
+		     "SYS_INIT_DEPENDS requires a devicetree node");           \
+	static const Z_DECL_ALIGN(struct init_entry)                           \
+		Z_INIT_ENTRY_SECTION(level, AUTO,                              \
+			_CONCAT(DT_DEP_ORD_STR_SORTABLE(node_id), _0))         \
+		__used __noasan Z_INIT_ENTRY_NAME(init_fn_) = {                \
+			.init_fn = (init_fn_),                                 \
+			.dev = NULL,                                           \
+		}
 
 /**
  * @brief The name of the global device object for @p node_id
@@ -1268,7 +1369,8 @@ device_get_dt_nodelabels(const struct device *dev)
  * @param level Init level
  */
 #define Z_DEVICE_CHECK_INIT_LEVEL(level)                                       \
-	COND_CASE_1(Z_INIT_PRE_KERNEL_1_##level, (),                           \
+	COND_CASE_1(Z_INIT_PRE_KERNEL_##level, (),                             \
+		    Z_INIT_PRE_KERNEL_1_##level, (),                           \
 		    Z_INIT_PRE_KERNEL_2_##level, (),                           \
 		    Z_INIT_POST_KERNEL_##level, (),                            \
 		    (ZERO_OR_COMPILE_ERROR(0)))

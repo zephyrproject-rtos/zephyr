@@ -435,8 +435,7 @@ static DEVICE_API(i2c, max32_driver_api) = {
 	static struct max32_i2c_data max32_i2c_data_##_num = {                                     \
 		.ctx = &CONCAT(_i2c, _num, _max32_rtio),		\
 	};								\
-	I2C_DEVICE_DT_INST_DEFINE(_num, i2c_max32_init, NULL, &max32_i2c_data_##_num,              \
-				  &max32_i2c_dev_cfg_##_num, PRE_KERNEL_2,                         \
-				  CONFIG_I2C_INIT_PRIORITY, &max32_driver_api);
+	I2C_DEVICE_DT_INST_DEFINE_AUTO(_num, i2c_max32_init, NULL, &max32_i2c_data_##_num,         \
+				       &max32_i2c_dev_cfg_##_num, PRE_KERNEL, &max32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_I2C_MAX32)

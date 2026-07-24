@@ -858,6 +858,46 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 	SPI_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
+ * @brief Like SPI_DEVICE_DT_DEFINE() but with automatic initialization ordering
+ * instead of a manual priority.
+ *
+ * The device's position within @p level is derived from the devicetree
+ * dependency ordinal of @p node_id, exactly like DEVICE_DT_DEFINE_AUTO(): the
+ * device initializes after every devicetree dependency it has (parent bus,
+ * clocks, pinctrl, any phandle reference), with no manually assigned priority.
+ * See DEVICE_DT_DEFINE_AUTO() for the ordering guarantees and the opt-in
+ * contract (all initialization-order dependencies must be visible in the
+ * devicetree).
+ *
+ * @param node_id The devicetree node identifier. Must exist in the devicetree.
+ * @param init_fn Name of the init function of the driver. Can be `NULL`.
+ * @param pm PM device resources reference (NULL if device does not use PM).
+ * @param data Pointer to the device's private data.
+ * @param config The address to the structure containing the configuration
+ * information for this instance of the driver.
+ * @param level The initialization level (PRE_KERNEL or POST_KERNEL).
+ * @param api Provides an initial pointer to the API function struct used by the
+ * driver. Can be NULL.
+ */
+#define SPI_DEVICE_DT_DEFINE_AUTO(node_id, init_fn, pm, data, config, level,	\
+				  api, ...)					\
+	BUILD_ASSERT(DT_NODE_EXISTS(node_id),					\
+		     "SPI_DEVICE_DT_DEFINE_AUTO requires a devicetree node");	\
+	SPI_DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, AUTO,	\
+			     api, __VA_ARGS__)
+
+/**
+ * @brief Like SPI_DEVICE_DT_DEFINE_AUTO(), but uses an instance of a
+ * `DT_DRV_COMPAT` compatible instead of a node identifier.
+ *
+ * @param inst Instance number. The `node_id` argument to
+ * SPI_DEVICE_DT_DEFINE_AUTO() is set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by SPI_DEVICE_DT_DEFINE_AUTO().
+ */
+#define SPI_DEVICE_DT_INST_DEFINE_AUTO(inst, ...)                                  \
+	SPI_DEVICE_DT_DEFINE_AUTO(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
  * @def_driverbackendgroup{SPI,spi_interface}
  * @{
  */

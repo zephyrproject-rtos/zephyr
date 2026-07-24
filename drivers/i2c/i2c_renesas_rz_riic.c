@@ -679,10 +679,9 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 		return i2c_rz_riic_init(dev);                                                      \
 	};                                                                                         \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(index, i2c_rz_riic_init_##index, NULL,                           \
-				  &i2c_rz_riic_data_##index, &i2c_rz_riic_config_##index,          \
-				  PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY,                          \
-				  &i2c_rz_riic_driver_api);
+	I2C_DEVICE_DT_INST_DEFINE_AUTO(index, i2c_rz_riic_init_##index, NULL,                      \
+				       &i2c_rz_riic_data_##index, &i2c_rz_riic_config_##index,     \
+				       PRE_KERNEL, &i2c_rz_riic_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_RZ_RIIC_INIT)
 

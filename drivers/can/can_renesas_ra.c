@@ -1083,9 +1083,9 @@ static DEVICE_API(can, can_renesas_ra_driver_api) = {
 		.irq_configure = can_renesas_ra_global_irq_configure##id,                          \
 	};                                                                                         \
 	                                                                                           \
-	DEVICE_DT_DEFINE(id, can_renesas_ra_global_init, NULL, &can_renesas_ra_global_data##id,    \
-			 &can_renesas_ra_global_cfg##id, PRE_KERNEL_2, CONFIG_CAN_INIT_PRIORITY,   \
-			 NULL)
+	DEVICE_DT_DEFINE_AUTO(id, can_renesas_ra_global_init, NULL,                                \
+			      &can_renesas_ra_global_data##id, &can_renesas_ra_global_cfg##id,     \
+			      PRE_KERNEL, NULL)
 
 DT_FOREACH_STATUS_OKAY(renesas_ra_canfd_global, CAN_RENESAS_RA_GLOBAL_DEFINE)
 
