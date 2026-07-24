@@ -68,4 +68,13 @@ config STM32_INT_FLASH_SECURE_BASE_ADDRESS
 	  Secure internal flash based address when TZEN is enabled on
 	  applicable STM32 SoCs.
 
+config SOC_FAMILY_STM32_HEX_FILE_NS_APPLI_IN_SECURE_RANGE
+	bool "Board HEX file loads non-secure image through flash secure address range"
+	depends on TRUSTED_EXECUTION_NONSECURE
+	help
+	  Enable this option if the target board Option Bytes are configured for
+	  internal flash as secure (e.g. with <build>/tfm/api_ns/regression.sh)
+	  before flash is programmed. In this cases, the generated HEX file shall
+	  locate the non-secure image in the flash secure memory address range.
+
 endif # SOC_FAMILY_STM32

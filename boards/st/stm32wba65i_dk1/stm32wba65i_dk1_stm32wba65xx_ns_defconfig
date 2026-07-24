@@ -23,3 +23,6 @@ CONFIG_ROM_START_OFFSET=0x400
 # Enable TZ non-secure configuration
 CONFIG_TRUSTED_EXECUTION_NONSECURE=y
 CONFIG_RUNTIME_NMI=y
+
+# Set HEX file to program non-secure image through flash secure address range
+CONFIG_SOC_FAMILY_STM32_HEX_FILE_NS_APPLI_IN_SECURE_RANGE=y
