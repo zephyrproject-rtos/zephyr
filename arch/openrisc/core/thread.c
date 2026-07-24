@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <kernel_arch_interface.h>
 
 static const uint32_t sr_init = SPR_SR_SM | SPR_SR_IEE | SPR_SR_TEE
 #ifdef CONFIG_DCACHE
@@ -60,7 +61,7 @@ K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 FUNC_NORETURN void z_openrisc_switch_to_main_no_multithreading(k_thread_entry_t main_entry,
 							       void *p1, void *p2, void *p3)
 {
-	void *main_stack;
+	char *main_stack;
 
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
@@ -72,6 +73,20 @@ FUNC_NORETURN void z_openrisc_switch_to_main_no_multithreading(k_thread_entry_t 
 
 	main_stack = (K_THREAD_STACK_BUFFER(z_main_stack) +
 		      K_THREAD_STACK_SIZEOF(z_main_stack));
+
+#if defined(CONFIG_THREAD_LOCAL_STORAGE)
+	/* Update the thread pointer register. With multithreading disabled
+	 * there is no context switch to set it, so it must be
+	 * initialized here, carving the TLS area out of the top of
+	 * the main stack.
+	 */
+	size_t tls_size;
+
+	tls_size = arch_tls_stack_setup(NULL, main_stack);
+	main_stack -= tls_size;
+	__asm__ volatile("l.ori r10, %0, 0" : : "r"(main_stack));
+	main_stack = (char *)ROUND_DOWN(main_stack, ARCH_STACK_PTR_ALIGN);
+#endif
 
 	openrisc_write_spr(SPR_SR, sr_init);
 
