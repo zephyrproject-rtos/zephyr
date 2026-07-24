@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(i3cm_it51xxx);
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/sys/minmax.h>
 
 #include <soc_common.h>
 
@@ -96,6 +97,29 @@ LOG_MODULE_REGISTER(i3cm_it51xxx);
 #define I3CM52_DLM_BASE_ADDRESS_LB 0x52 /* dlm base address[15:8] */
 #define I3CM53_DLM_BASE_ADDRESS_HB 0x53 /* dlm base address[17:16] */
 
+#define I3CM54_IBI_AUTO_RESP_DLM_BASE_ADDR_0 0x54
+#define I3CM55_IBI_AUTO_RESP_DLM_BASE_ADDR_1 0x55
+#define I3CM56_IBI_AUTO_RESP_DLM_BASE_ADDR_2 0x56
+
+#define IT51XXX_AUTO_IBI_MAX_PAYLOAD_SIZE 16
+
+#if CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS
+static const uint8_t auto_ibi_base[] = {0x60, 0x64, 0x68};
+BUILD_ASSERT(ARRAY_SIZE(auto_ibi_base) >= CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS,
+	     "CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS does not match auto_ibi_base[] size");
+#define I3CM60_IBI_AUTO_RESP_0_CTRL_0 0x0
+#define AUTO_IBI_RESP_ADDR_MASK       GENMASK(7, 1)
+#define AUTO_IBI_RESP_ADDR_PREP(n)    FIELD_PREP(AUTO_IBI_RESP_ADDR_MASK, n)
+#define AUTO_IBI_RESP_ADDR_GET(n)     FIELD_GET(AUTO_IBI_RESP_ADDR_MASK, n)
+
+#define I3CM61_IBI_AUTO_RESP_0_CTRL_1 0x1
+#define AUTO_IBI_RESP_PAYLOAD_SIZE(x) FIELD_PREP(GENMASK(4, 0), x)
+
+#define I3CM62_IBI_AUTO_RESP_0_CTRL_2 0x2
+#define IBI_ONE_SHOT_AUTO_RESP_EN     BIT(7)
+#define IBI_AUTO_RESP_COMPLETION      BIT(0)
+#endif /* CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS */
+
 #define I3C_IBI_HJ_ADDR 0x02
 
 #define I3C_BUS_TLOW_PP_MIN_NS  24  /* T_LOW period in push-pull mode */
@@ -156,6 +180,12 @@ struct it51xxx_i3cm_data {
 		uint8_t addr[4];
 		uint8_t num_addr;
 	} ibi;
+
+#if CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS
+	struct {
+		uint8_t data[IT51XXX_AUTO_IBI_MAX_PAYLOAD_SIZE];
+	} auto_ibi_payload[CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS] __aligned(64);
+#endif /* CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS */
 #endif /* CONFIG_I3C_USE_IBI */
 
 	struct k_sem msg_sem;
@@ -190,6 +220,8 @@ struct it51xxx_i3cm_config {
 		uint32_t i3c_scl_tcbsr;
 		uint32_t i2c_scl_hddat;
 	} clocks;
+
+	bool pull_up_4k_ohm;
 
 	void (*irq_config_func)(const struct device *dev);
 
@@ -1033,6 +1065,29 @@ static int it51xxx_i3cm_ibi_enable(const struct device *dev, struct i3c_device_d
 		idx = 0;
 	}
 
+#if CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS
+	/* auto ibi supports only 16-byte payloads, including mdb */
+	if (CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE <= IT51XXX_AUTO_IBI_MAX_PAYLOAD_SIZE) {
+		for (uint8_t i = 0; i < CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS; i++) {
+			mem_addr_t auto_ibi_addr = cfg->base + auto_ibi_base[i];
+
+			if (AUTO_IBI_RESP_ADDR_GET(sys_read8(auto_ibi_addr +
+							     I3CM60_IBI_AUTO_RESP_0_CTRL_0)) != 0) {
+				continue;
+			}
+
+			sys_write8(AUTO_IBI_RESP_ADDR_PREP(target->dynamic_addr),
+				   auto_ibi_addr + I3CM60_IBI_AUTO_RESP_0_CTRL_0);
+			sys_write8(AUTO_IBI_RESP_PAYLOAD_SIZE(IT51XXX_AUTO_IBI_MAX_PAYLOAD_SIZE),
+				   auto_ibi_addr + I3CM61_IBI_AUTO_RESP_0_CTRL_1);
+			/* enable auto ibi one-shot mode */
+			sys_write8(IBI_ONE_SHOT_AUTO_RESP_EN,
+				   auto_ibi_addr + I3CM62_IBI_AUTO_RESP_0_CTRL_2);
+			break;
+		}
+	}
+#endif /* CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS */
+
 	LOG_INST_DBG(cfg->log, "ibi enabling for 0x%x (bcr 0x%x)", target->dynamic_addr,
 		     target->bcr);
 
@@ -1084,6 +1139,23 @@ static int it51xxx_i3cm_ibi_disable(const struct device *dev, struct i3c_device_
 	if (data->ibi.num_addr == 0U) {
 		it51xxx_enable_standby_state(dev, true);
 	}
+
+#if CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS
+	if (CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE <= IT51XXX_AUTO_IBI_MAX_PAYLOAD_SIZE) {
+		for (uint8_t i = 0; i < CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS; i++) {
+			mem_addr_t auto_ibi_addr = cfg->base + auto_ibi_base[i];
+
+			if (AUTO_IBI_RESP_ADDR_GET(
+				    sys_read8(auto_ibi_addr + I3CM60_IBI_AUTO_RESP_0_CTRL_0)) !=
+			    target->dynamic_addr) {
+				continue;
+			}
+			sys_write8(AUTO_IBI_RESP_ADDR_PREP(0),
+				   auto_ibi_addr + I3CM60_IBI_AUTO_RESP_0_CTRL_0);
+			sys_write8(0, auto_ibi_addr + I3CM62_IBI_AUTO_RESP_0_CTRL_2);
+		}
+	}
+#endif /* CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS */
 
 	LOG_INST_DBG(cfg->log, "ibi disabling for 0x%x (bcr 0x%x)", target->dynamic_addr,
 		     target->bcr);
@@ -1161,14 +1233,28 @@ static int it51xxx_i3cm_init(const struct device *dev)
 	LOG_INST_DBG(cfg->log, "channel %d is selected", cfg->io_channel);
 	reg_val |= FIELD_PREP(I3CM_CHANNEL_SELECT_MASK, cfg->io_channel);
 
-	/* select 4k pull-up resistor and enable i3c engine*/
-	reg_val |= (I3CM_PULL_UP_RESISTOR | I3CM_ENABLE);
+	/* select 4k pull-up resistor and enable i3c engine */
+	if (cfg->pull_up_4k_ohm) {
+		reg_val |= I3CM_PULL_UP_RESISTOR;
+	}
+	reg_val |= I3CM_ENABLE;
 	sys_write8(reg_val, cfg->base + I3CM50_CONTROL_3);
 
 	LOG_INST_DBG(cfg->log, "dlm base address 0x%x", (uint32_t)&data->dlm_data);
 	sys_write8(FIELD_GET(GENMASK(17, 16), (uint32_t)&data->dlm_data),
 		   cfg->base + I3CM53_DLM_BASE_ADDRESS_HB);
 	sys_write8(BYTE_1((uint32_t)&data->dlm_data), cfg->base + I3CM52_DLM_BASE_ADDRESS_LB);
+
+#if CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS
+	LOG_INST_DBG(cfg->log, "auto ibi: dlm base address 0x%x",
+		     (uint32_t)&data->auto_ibi_payload);
+	sys_write8(BYTE_0((uint32_t)&data->auto_ibi_payload),
+		   cfg->base + I3CM54_IBI_AUTO_RESP_DLM_BASE_ADDR_0);
+	sys_write8(BYTE_1((uint32_t)&data->auto_ibi_payload),
+		   cfg->base + I3CM55_IBI_AUTO_RESP_DLM_BASE_ADDR_1);
+	sys_write8(FIELD_GET(GENMASK(17, 16), (uint32_t)&data->auto_ibi_payload),
+		   cfg->base + I3CM56_IBI_AUTO_RESP_DLM_BASE_ADDR_2);
+#endif /* CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS */
 
 	ret = it51xxx_set_frequency(dev);
 	if (ret) {
@@ -1406,34 +1492,72 @@ static void it51xxx_private_xfer_end(const struct device *dev)
 }
 
 #ifdef CONFIG_I3C_USE_IBI
+static int it51xxx_ibi_payload_size(const struct device *dev, struct i3c_device_desc *target,
+				    size_t *payload_sz)
+{
+	const struct it51xxx_i3cm_config *cfg = dev->config;
+
+	*payload_sz = 0;
+
+	if (i3c_ibi_has_payload(target)) {
+		*payload_sz = it51xxx_get_received_data_count(dev);
+		if (*payload_sz == 0) {
+			/* wrong ibi transaction due to missing payload.
+			 * a 100us timeout on the target side may cause this
+			 * situation.
+			 */
+			return -EINVAL;
+		}
+
+		if (*payload_sz > CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE) {
+			LOG_INST_WRN(cfg->log, "ibi payloads(%d) is too much", *payload_sz);
+			*payload_sz = min(*payload_sz, CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE);
+		}
+	}
+
+	return 0;
+}
+
 static void it51xxx_process_ibi_payload(const struct device *dev)
 {
 	const struct it51xxx_i3cm_config *cfg = dev->config;
 	struct it51xxx_i3cm_data *data = dev->data;
-	size_t payload_sz = 0;
+	size_t payload_sz;
 	struct i3c_device_desc *target = i3c_dev_list_i3c_addr_find(dev, data->ibi_target_addr);
 
-	if (i3c_ibi_has_payload(target)) {
-		payload_sz = it51xxx_get_received_data_count(dev);
-		if (payload_sz == 0) {
-			/* wrong ibi transaction due to missing payload.
-			 * a 100us timeout on the targe side may cause this
-			 * situation.
-			 */
-			return;
-		}
-
-		if (payload_sz > CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE) {
-			LOG_INST_WRN(cfg->log, "ibi payloads(%d) is too much", payload_sz);
-		}
+	if (it51xxx_ibi_payload_size(dev, target, &payload_sz)) {
+		return;
 	}
 
-	if (i3c_ibi_work_enqueue_target_irq(target, data->dlm_data.rx_data,
-					    MIN(payload_sz, CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE)) !=
-	    0) {
+	LOG_HEXDUMP_DBG(data->dlm_data.rx_data, payload_sz, "isr: ibi:");
+	if (i3c_ibi_work_enqueue_target_irq(target, data->dlm_data.rx_data, payload_sz) != 0) {
 		LOG_INST_ERR(cfg->log, "failed to enqueue tir work");
 	}
 }
+
+#if CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS
+static void it51xxx_process_auto_ibi_payload(const struct device *dev, const uint8_t index)
+{
+	const struct it51xxx_i3cm_config *cfg = dev->config;
+	struct it51xxx_i3cm_data *data = dev->data;
+	size_t payload_sz;
+	uint8_t address = AUTO_IBI_RESP_ADDR_GET(
+		sys_read8(cfg->base + auto_ibi_base[index] + I3CM60_IBI_AUTO_RESP_0_CTRL_0));
+	struct i3c_device_desc *target = i3c_dev_list_i3c_addr_find(dev, address);
+
+	LOG_INST_DBG(cfg->log, "isr: auto ibi %d: device %#x xfer done", index, address);
+	if (it51xxx_ibi_payload_size(dev, target, &payload_sz)) {
+		return;
+	}
+
+	LOG_HEXDUMP_DBG(data->auto_ibi_payload[index].data, payload_sz, "isr: auto ibi:");
+	if (i3c_ibi_work_enqueue_target_irq(target, data->auto_ibi_payload[index].data,
+					    payload_sz) != 0) {
+		LOG_INST_ERR(cfg->log, "auto_ibi: failed to enqueue tir work");
+		return;
+	}
+}
+#endif /* CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS */
 #endif /* CONFIG_I3C_USE_IBI */
 
 static inline void it51xxx_check_error(const struct device *dev, const uint8_t int_status)
@@ -1565,6 +1689,24 @@ static void it51xxx_i3cm_isr(const struct device *dev)
 			LOG_INST_DBG(cfg->log, "isr: daa finished");
 			break;
 		case IT51XXX_I3CM_MSG_IDLE:
+#if CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS
+			for (uint8_t i = 0; i < ARRAY_SIZE(auto_ibi_base); i++) {
+				uint8_t ctrl2 = sys_read8(cfg->base + auto_ibi_base[i] +
+							  I3CM62_IBI_AUTO_RESP_0_CTRL_2);
+
+				if (!(ctrl2 & IBI_AUTO_RESP_COMPLETION)) {
+					continue;
+				}
+
+				it51xxx_process_auto_ibi_payload(dev, i);
+				/* w1c completion bit and enable one-shot for the next ibi */
+				sys_write8(ctrl2 | IBI_ONE_SHOT_AUTO_RESP_EN |
+						   IBI_AUTO_RESP_COMPLETION,
+					   cfg->base + auto_ibi_base[i] +
+						   I3CM62_IBI_AUTO_RESP_0_CTRL_2);
+				goto out;
+			}
+#endif /* CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS */
 			LOG_INST_WRN(cfg->log, "isr: end transfer occurs but bus is in idle");
 			break;
 		default:
@@ -1576,6 +1718,9 @@ static void it51xxx_i3cm_isr(const struct device *dev)
 			k_sem_give(&data->msg_sem);
 		}
 
+#if CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS
+out:
+#endif /* CONFIG_IT51XXX_AUTO_IBI_MAX_TARGETS */
 		data->msg_state = IT51XXX_I3CM_MSG_IDLE;
 		sys_write8(TARGET_NACK | TRANSFER_END, cfg->base + I3CM01_STATUS);
 	}
@@ -1666,6 +1811,7 @@ static DEVICE_API(i3c, it51xxx_i3cm_api) = {
 		.clocks.i3c_scl_tcasr = DT_INST_PROP_OR(n, i3c_scl_tcasr, 1),                      \
 		.clocks.i3c_scl_tcbsr = DT_INST_PROP_OR(n, i3c_scl_tcbsr, 0),                      \
 		.clocks.i2c_scl_hddat = DT_INST_PROP_OR(n, i2c_scl_hddat, 0),                      \
+		.pull_up_4k_ohm = DT_INST_PROP(n, pull_up_4k_ohm),                                 \
 		LOG_INSTANCE_PTR_INIT(log, DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(n)), n)};           \
 	static struct it51xxx_i3cm_data i3c_data_##n = {                                           \
 		.common.ctrl_config.scl.i3c = DT_INST_PROP_OR(n, i3c_scl_hz, 0),                   \
