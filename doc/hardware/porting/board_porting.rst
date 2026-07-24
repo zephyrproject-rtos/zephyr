@@ -776,6 +776,10 @@ Board revisions are described in the ``revision`` entry of the
        - name: <revA>
        - name: <revB>
 
+.. note::
+
+   All supported board revisions must be listed in the ``revisions`` field.
+
 Zephyr natively supports the following revision formats:
 
 - ``major.minor.patch``: match a three digit revision, such as ``1.2.3``.
@@ -879,13 +883,21 @@ of doing regex matches internally, then string revisions must be done using
 ``custom`` revision type.
 
 To indicate to the build system that ``custom`` revisions are used, the format
-field in the ``revision`` section of the :file:`board.yml` must be written as:
+field in the ``revision`` section of the :file:`board.yml` must be used.
+
+As an example, following :file:`board.yml` defines a two custom board revisions
+``rev1`` and ``rev2``:
 
 .. code-block:: yaml
 
    board:
      revision:
        format: custom
+       default: "rev2"
+       exact: true
+       revisions:
+       -name: "rev1"
+       -name: "rev2"
 
 When using custom revisions then a :file:`revision.cmake` must be created in the
 board directory.
@@ -893,6 +905,20 @@ board directory.
 The :file:`revision.cmake` will be included by the build system when building
 for the board and it is the responsibility of the file to validate the revision
 specified by the user.
+
+For instance, the custom revision ``rev1`` and ``rev2`` above might be validated
+in :file:`revision.cmake` as follows:
+
+.. code-block:: cmake
+
+   set(BOARD_REVISIONS "rev1" "rev2")
+   if(NOT DEFINED BOARD_REVISION)
+     set(BOARD_REVISION "rev2")
+   else()
+     if(NOT BOARD_REVISION IN_LIST BOARD_REVISIONS)
+       message(FATAL_ERROR "${BOARD_REVISION} is not a valid revision for plank board. Accepted revisions: ${BOARD_REVISIONS}")
+     endif()
+   endif()
 
 The :makevar:`BOARD_REVISION` variable holds the revision value specified by the
 user.
