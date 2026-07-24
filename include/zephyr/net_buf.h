@@ -36,6 +36,12 @@ extern "C" {
 #define __net_buf_align __aligned(CONFIG_NET_BUF_ALIGNMENT)
 #endif
 
+#if CONFIG_NET_BUF_DATA_ALIGNMENT == 0
+#define __net_buf_data_align __aligned(sizeof(void *))
+#else
+#define __net_buf_data_align __aligned(CONFIG_NET_BUF_DATA_ALIGNMENT)
+#endif
+
 /**
  *  @brief Define a net_buf_simple stack variable.
  *
@@ -1297,7 +1303,7 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
  */
 #define NET_BUF_POOL_FIXED_DEFINE(_name, _count, _data_size, _ud_size, _destroy) \
 	_NET_BUF_ARRAY_DEFINE(_name, _count, _ud_size);                        \
-	static uint8_t __noinit net_buf_data_##_name[_count][_data_size] __net_buf_align; \
+	static uint8_t __noinit net_buf_data_##_name[_count][_data_size] __net_buf_data_align; \
 	static const struct net_buf_pool_fixed net_buf_fixed_##_name = {       \
 		.data_pool = (uint8_t *)net_buf_data_##_name,                  \
 	};                                                                     \
