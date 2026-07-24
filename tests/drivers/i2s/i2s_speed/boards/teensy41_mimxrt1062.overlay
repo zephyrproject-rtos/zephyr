@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Koen Van Herck
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &sai1;
+	};
+};
+
+&sai1 {
+	status = "okay";
+};
