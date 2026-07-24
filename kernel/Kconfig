@@ -528,6 +528,17 @@ config SYSTEM_WORKQUEUE_WORK_TIMEOUT_MS
 	  Set to 0 to disable work timeout for system workqueue. Option
 	  has no effect if WORKQUEUE_WORK_TIMEOUT is not enabled.
 
+config SYSTEM_WORKQUEUE_ON_MAIN
+	bool "Run system workqueue on the main thread"
+	help
+	  If enabled, the system workqueue runs on the main thread instead of a
+	  dedicated thread, saving the dedicated system workqueue thread's stack.
+
+	  This is intended for applications whose main() returns after boot-time
+	  initialization and do not otherwise rely on the system workqueue from
+	  main(): once main() returns, the main thread enters the system
+	  workqueue's run loop and does not return.
+
 endmenu
 
 menu "Barrier Operations"

@@ -206,4 +206,86 @@ ZTEST(workqueue_api, test_k_work_delayable_remaining)
 		      "cancelled delayable should report no remaining time");
 }
 
+static K_THREAD_STACK_DEFINE(prepare_stack, STACK_SIZE);
+static atomic_t prepare_work_ran;
+
+static void prepare_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+	atomic_inc(&prepare_work_ran);
+}
+
+static void prepare_q_main(void *workq_ptr, void *sync_ptr, void *submit_ptr)
+{
+	struct k_work_q *queue = (struct k_work_q *)workq_ptr;
+	struct k_sem *prepared = (struct k_sem *)sync_ptr;
+	struct k_sem *submitted = (struct k_sem *)submit_ptr;
+	struct k_work_queue_config cfg = {
+		.name = "wq.prepare_q",
+	};
+
+	/* Prepare without entering the run loop yet, and let the main test thread
+	 * know it can now submit work.
+	 */
+	k_work_queue_prepare(queue, &cfg);
+	k_sem_give(prepared);
+
+	k_sem_take(submitted, K_FOREVER);
+
+	/* Enter the run loop; must process the already-queued work. */
+	k_work_queue_run(queue, &cfg);
+}
+
+/**
+ * @brief Verify a work queue can be prepared before its run loop is entered
+ *
+ * @details prepare a work queue on a helper thread without entering the run loop,
+ * then from another thread verify that (a) k_work_queue_thread_get() already
+ * reports the prepared thread, and (b) work submitted before the run loop is
+ * entered is accepted (not -ENODEV) and later executed once the run loop runs.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_queue_prepare(), k_work_queue_run(), k_work_queue_thread_get()
+ */
+ZTEST(workqueue_api, test_k_work_queue_prepare)
+{
+	static struct k_thread thread;
+	static struct k_work_q work_q;
+	struct k_work work;
+	struct k_sem prepared;
+	struct k_sem submitted;
+	k_tid_t tid;
+
+	work_q = (struct k_work_q){};
+	atomic_clear(&prepare_work_ran);
+	k_sem_init(&prepared, 0, 1);
+	k_sem_init(&submitted, 0, 1);
+
+	tid = k_thread_create(&thread, prepare_stack, STACK_SIZE, prepare_q_main, &work_q,
+			      &prepared, &submitted, K_PRIO_COOP(3), 0, K_NO_WAIT);
+
+	/* Wait until the helper thread has prepared the queue. */
+	zassert_ok(k_sem_take(&prepared, K_FOREVER), "queue was never prepared");
+
+	/* Identity is valid after prepare, before the run loop is entered. */
+	zassert_equal(k_work_queue_thread_get(&work_q), tid,
+		      "k_work_queue_thread_get() invalid before run loop");
+
+	/* Submitting before the run loop is entered must be accepted. */
+	k_work_init(&work, prepare_work_handler);
+	zassert_equal(k_work_submit_to_queue(&work_q, &work), 1,
+		      "Failed to submit work to a prepared (not yet running) queue");
+	k_sem_give(&submitted);
+
+	/* The helper thread enters the run loop after CHECK_WAIT and must then
+	 * process the work that was queued while only prepared.
+	 */
+	k_sleep(K_MSEC(CHECK_WAIT));
+	zassert_equal(atomic_get(&prepare_work_ran), 1,
+		      "work queued before the run loop was not processed");
+
+	zassert_true(k_work_queue_drain(&work_q, true) >= 0, "Failed to drain & plug");
+	zassert_ok(k_work_queue_stop(&work_q, K_FOREVER), "Failed to stop work queue");
+}
+
 ZTEST_SUITE(workqueue_api, NULL, NULL, NULL, NULL, NULL);

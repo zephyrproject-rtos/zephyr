@@ -813,18 +813,15 @@ void k_work_queue_init(struct k_work_q *queue)
 	SYS_PORT_TRACING_OBJ_INIT(k_work_queue, queue);
 }
 
-void k_work_queue_run(struct k_work_q *queue, const struct k_work_queue_config *cfg)
+void k_work_queue_prepare(struct k_work_q *queue, const struct k_work_queue_config *cfg)
 {
+	__ASSERT_NO_MSG(queue != NULL);
 	__ASSERT_NO_MSG(!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT));
 
 	uint32_t flags = K_WORK_QUEUE_STARTED;
 
 	if ((cfg != NULL) && cfg->no_yield) {
 		flags |= K_WORK_QUEUE_NO_YIELD;
-	}
-
-	if ((cfg != NULL) && (cfg->name != NULL)) {
-		k_thread_name_set(_current, cfg->name);
 	}
 
 #if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
@@ -838,8 +835,38 @@ void k_work_queue_run(struct k_work_q *queue, const struct k_work_queue_config *
 	sys_slist_init(&queue->pending);
 	z_waitq_init(&queue->notifyq);
 	z_waitq_init(&queue->drainq);
+
+	/* Record the thread that will run the queue up front, so submissions
+	 * and k_work_queue_thread_get() are valid before k_work_queue_run() is
+	 * entered. This is the same "state is in place, ready to roll" contract
+	 * that k_work_queue_start() provides before its thread gets control.
+	 *
+	 * Note: this is the thread that calls k_work_queue_prepare(). It must be
+	 * the same thread that later calls k_work_queue_run().
+	 */
 	queue->thread_id = _current;
 	flags_set(&queue->flags, flags);
+}
+
+void k_work_queue_run(struct k_work_q *queue, const struct k_work_queue_config *cfg)
+{
+	__ASSERT_NO_MSG(queue != NULL);
+
+	/* Allow the queue to have been prepared ahead of time (so that work could
+	 * be submitted before this run loop is entered). If it has not been
+	 * prepared yet, prepare it now; either way k_work_queue_prepare() has recorded
+	 * the running thread's identity.
+	 */
+	if (!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT)) {
+		k_work_queue_prepare(queue, cfg);
+	}
+
+	__ASSERT_NO_MSG(queue->thread_id == _current);
+
+	if ((cfg != NULL) && (cfg->name != NULL)) {
+		k_thread_name_set(_current, cfg->name);
+	}
+
 	work_queue_main(queue, NULL, NULL);
 }
 
