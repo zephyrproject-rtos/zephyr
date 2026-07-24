@@ -13,6 +13,10 @@
 # https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated,
 # so these aliases are eventually removed
 
+set(lp_em_cc35x1/_DEPRECATED
+    lp_em_cc35x1/cc3551e
+)
+
 set(arduino_uno_r4_minima_DEPRECATED
     arduino_uno_r4@minima
 )
