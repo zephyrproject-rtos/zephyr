@@ -10,5 +10,5 @@ pools.
 .. toctree::
    :maxdepth: 1
 
-   mem_mgmt/index.rst
+   mem_mgmt/mem_attrs.rst
    net_buf/index.rst

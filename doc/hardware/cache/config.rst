@@ -42,7 +42,7 @@ implemented and controlled.
   driver.
 
 * :kconfig:option:`CONFIG_MEM_ATTR`: this option allows the user to
-  specify (using :ref:`memory region attributes<mem_mgmt_api>`) a fixed region
+  specify (using :ref:`memory region attributes<mem_attrs_api>`) a fixed region
   in memory that will have caching disabled once the kernel has initialized.
 
 * :kconfig:option:`CONFIG_NOCACHE_MEMORY`: this option allows the user to

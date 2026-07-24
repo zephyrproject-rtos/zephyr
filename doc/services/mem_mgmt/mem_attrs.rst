@@ -1,4 +1,4 @@
-.. _mem_mgmt_api:
+.. _mem_attrs_api:
 
 Memory Attributes
 #################

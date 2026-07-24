@@ -28,7 +28,7 @@ contain the following:
   have an MPU region configuring it. It is strongly recommended to use this
   to maximize the number of available MPU regions for the end user. On
   ARMv7-M/ARMv8-M this is called the System Address Map, other CPUs may
-  have similar capabilities. See :ref:`mem_mgmt_api` for information on
+  have similar capabilities. See :ref:`mem_attrs_api` for information on
   how to annotate the system map in the device tree.
 
 - A read-only, executable region or regions for program text and ro-data, that

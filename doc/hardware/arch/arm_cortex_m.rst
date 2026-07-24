@@ -526,7 +526,7 @@ For example, to define a new non-cacheable memory region in devicetree:
 
 This will automatically create a new MPU entry in with the correct name, base,
 size and attributes gathered directly from the devicetree. See :ref:`cache_guide`
-and :ref:`mem_mgmt_api` for more details.
+and :ref:`mem_attrs_api` for more details.
 
 Static MPU regions
 ------------------

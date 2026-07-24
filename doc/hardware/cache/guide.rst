@@ -70,7 +70,7 @@ Requirements:
 * :kconfig:option:`CONFIG_MEM_ATTR`: enable the ``mem-attr`` library for
   handling memory attributes in the device tree.
 
-* Annotate your device tree according to :ref:`mem_mgmt_api`.
+* Annotate your device tree according to :ref:`mem_attrs_api`.
 
 Assuming the MPU driver is enabled, it will configure the specified regions
 according to the memory attributes specified during kernel initialization. When
