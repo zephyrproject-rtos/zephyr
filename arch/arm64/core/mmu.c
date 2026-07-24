@@ -1076,6 +1076,22 @@ static void enable_mmu_el1(struct arm_mmu_ptables *ptables, unsigned int flags)
 	MMU_DEBUG("MMU enabled with dcache\n");
 }
 
+/*
+ * Before the MMU is enabled (i.e. during setup_page_tables(), which per
+ * z_arm64_mm_init() only ever runs single-threaded on the primary core
+ * before any other CPU is released from reset), LSE atomic instructions
+ * such as the one used by printk's CONFIG_PRINTK_SYNC spinlock cannot
+ * execute correctly: they require the MMU to already be active with
+ * proper (shareable) memory attributes, and will instead take a
+ * Synchronous External Abort. No other CPU can be printing at the same
+ * time in that window either, so it is safe for printk() to skip
+ * locking entirely until the MMU comes up.
+ */
+bool arch_printk_sync_safe(void)
+{
+	return (read_sctlr_el1() & SCTLR_M_BIT) != 0U;
+}
+
 /* ARM MMU Driver Initial Setup */
 
 static struct arm_mmu_ptables kernel_ptables;
