@@ -1,0 +1,14 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments ADC121C027: single-channel 12-bit I2C ADC of the ADCxx1C
+  family. The ALERT output of the 021 variants is replaced by an address
+  selection input, so this part cannot signal an alert to the host.
+
+  The conversion result is left aligned in D11:D0 of the conversion result
+  register.
+
+compatible: "ti,adc121c027"
+
+include: ti,adcxx1c-base.yaml

@@ -151,6 +151,42 @@
 					#io-channel-cells = <1>;
 				};
 			};
+
+			test_i2c_adc081c021: adc081c021@50 {
+				compatible = "ti,adc081c021";
+				reg = <0x50>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_adc081c027: adc081c027@51 {
+				compatible = "ti,adc081c027";
+				reg = <0x51>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_adc101c021: adc101c021@52 {
+				compatible = "ti,adc101c021";
+				reg = <0x52>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_adc101c027: adc101c027@53 {
+				compatible = "ti,adc101c027";
+				reg = <0x53>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_adc121c021: adc121c021@54 {
+				compatible = "ti,adc121c021";
+				reg = <0x54>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_adc121c027: adc121c027@55 {
+				compatible = "ti,adc121c027";
+				reg = <0x55>;
+				#io-channel-cells = <1>;
+			};
 		};
 
 		test_spi: spi@33334444 {
