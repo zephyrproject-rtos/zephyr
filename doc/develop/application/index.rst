@@ -631,6 +631,17 @@ highest priority listed first.
 
 2. The application's source directory.
 
+Extra Configuration Directories
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Additional configuration directories can be specified by the user with
+``-DEXTRA_APPLICATION_CONFIG_DIRS=<path0>;<path1>`` or in a CMake file before
+``find_package(Zephyr)``. These directories will be searched after the
+application configuration directory for configuration files. Files may
+be placed in a ``boards`` or ``socs`` subdirectory of these
+directories to provide board or SoC specific overrides, following the same
+naming conventions as the application configuration directory.
+
 .. _application-kconfig:
 
 Kconfig Configuration
