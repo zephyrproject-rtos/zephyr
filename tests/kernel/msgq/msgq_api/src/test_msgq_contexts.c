@@ -401,7 +401,7 @@ ZTEST(msgq_api, test_msgq_init)
  * @see k_msgq_put_front()
  * @see k_msgq_get()
  * @verifies ZEP-SRS-31-5
- * @verifies ZEP-SRS-31-18
+ * @verifies ZEP-SRS-31-9
  */
 ZTEST_USER(msgq_api, test_msgq_put_front_order)
 {
