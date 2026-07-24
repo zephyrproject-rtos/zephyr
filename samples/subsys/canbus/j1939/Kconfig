@@ -1,0 +1,9 @@
+# Private config options to the J1939 sample
+
+# Copyright (c) 2026 Deere & Company
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "J1939 sample"
+
+
+source "Kconfig.zephyr"

@@ -1,0 +1,442 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig J1939
+	bool "CAN J1939 stack"
+	depends on CAN
+	help
+	  Enable the J1939 stack imported under drivers/j1939.
+	  This stack uses a compatibility shim layer and is separate from
+	  Zephyr's native J1939 support.
+
+if J1939
+
+config J1939_NODES_COUNT
+	int "Number of CAN nodes used on this device"
+	range 1 253
+	default 1
+	help
+	  This is the number of CAN nodes that the user wants to have on this device,
+	  across all CAN buses.  i.e. 1 CAN node on bus 1, 2 CAN nodes on bus 2
+	  means this value should be 3.  This is used to allocate memory for the J1939 stack.
+
+config J1939_MAX_NODES_IN_SYSTEM
+	int "Max number of CAN nodes possible on a single bus"
+	range 1 253
+	default 1
+	help
+	  Maximum number of CAN nodes that are expected to be on a single CAN bus.
+	  Used to store tracking of CAN name of other nodes.
+	  253 is max since the source address is only a byte and 0xFE is NULL and 0xFF is global.
+
+menuconfig J1939_TRANSPORT_PROTOCOL
+	bool "J1939 Transport Protocol"
+	default y
+	help
+	  Capable of sending more than 8 bytes under a single PGN in standard CAN.
+
+if J1939_TRANSPORT_PROTOCOL
+
+config J1939TP_PRIORITY
+	int "J1939 Transport Protocol Message Priority"
+	range 1 7
+	default 7
+
+config J1939TP_RECEIVE_DISABLED
+	bool "Disable J1939 Transport Protocol receive support"
+	default n
+
+config J1939TP_NUMBER_OF_TP_RX_SESSIONS
+	int "Number of buffers allowed to be used for receiving transport sessions simultaneously"
+	default 3
+
+config J1939TP_MAX_PACKETS
+	int "Number of packets to allow before flow control between sender and receiver is required"
+	default 16
+
+config J1939TP_BUFFER_SMALL_SIZE
+	int "Small buffer size for J1939 Transport Protocol"
+	default 128
+
+config J1939TP_BUFFER_MEDIUM_SIZE
+	int "Medium buffer size for J1939 Transport Protocol"
+	default 512
+
+config J1939TP_BUFFER_LARGE_SIZE
+	int "Large buffer size for J1939 Transport Protocol"
+	default 576
+
+config J1939TP_BUFFER_MAX_SIZE
+	int "Max buffer size for J1939 Transport Protocol"
+	default 1785
+
+config J1939TP_NUM_SMALL_BUFFERS
+	int "Number of small buffers for J1939 Transport Protocol"
+	default 2
+
+config J1939TP_NUM_MEDIUM_BUFFERS
+	int "Number of medium buffers for J1939 Transport Protocol"
+	default 1
+
+config J1939TP_NUM_LARGE_BUFFERS
+	int "Number of large buffers for J1939 Transport Protocol"
+	default 0
+
+config J1939TP_NUM_MAX_BUFFERS
+	int "Number of max buffers for J1939 Transport Protocol"
+	default 0
+
+config J1939TP_NUM_ALL_BUFFERS
+	int "Total number of buffers for J1939 Transport Protocol"
+	default 3
+	help
+	  Sum of J1939TP_NUM_SMALL_BUFFERS, J1939TP_NUM_MEDIUM_BUFFERS, J1939TP_NUM_LARGE_BUFFERS,
+	  and J1939TP_NUM_MAX_BUFFERS
+
+config J1939TP_NUM_TRANSMIT_SESSIONS
+	int "Number of transport protocol transmit sessions"
+	default J1939TP_NUM_ALL_BUFFERS
+	help
+	  Total number of transport protocol transmit sessions we'll allow at any one time.
+	  This number should always be less than or equal to J1939TP_NUM_ALL_BUFFERS
+	  If you want to gaurentee that there will always be a transport buffer available for
+	  a receive session it should be less than J1939TP_NUM_ALL_BUFFERS
+
+config J1939TP_MILLISECONDS_BETWEEN_PACKET_GROUPS
+	int "Milliseconds between packet groups for J1939 Transport Protocol"
+	default 0
+	help
+	  This allows the user to define the minimum delay between groups of packets.  This time is
+	  also influenced by the call rate of J1939_Task().  It is allowable to set this
+	  time to zero for the fastest possible transmit rate.
+
+
+config J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION
+	int "Max messages queued per transport session"
+	default 5
+	help
+	  If you set J1939TP_MILLISECONDS_BETWEEN_PACKET_GROUPS to zero, you can control how many back
+	  to back messages are queued back-to-back for non-BAM transport transmit sessions using the 
+	  following defines.  Be careful how you use these.  
+	  J1939TP_MAX_TOTAL_MESSAGES_QUEUED_FOR_ALL_SESSIONS must be greater than or equal to 
+	  J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION.  It is possible to "starve" one transport session 
+	  until a previous one is completed if you configure these settings in certain ways.  If you 
+	  must force a minimum time between individual messages in a transport session, set the define
+	  above to this time and set J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION to 1
+
+config J1939TP_MAX_TOTAL_MESSAGES_QUEUED_FOR_ALL_SESSIONS
+	int "Max total messages queued for all transport sessions"
+	default 20
+	help
+	  If you set J1939TP_MILLISECONDS_BETWEEN_PACKET_GROUPS to zero, you can control how many back
+	  to back messages are queued back-to-back for non-BAM transport transmit sessions using the 
+	  following defines.  Be careful how you use these.  
+	  J1939TP_MAX_TOTAL_MESSAGES_QUEUED_FOR_ALL_SESSIONS must be greater than or equal to 
+	  J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION.  It is possible to "starve" one transport session 
+	  until a previous one is completed if you configure these settings in certain ways.  If you 
+	  must force a minimum time between individual messages in a transport session, set the define
+	  above to this time and set J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION to 1
+
+endif # J1939_TRANSPORT_PROTOCOL
+
+config J1939TP_NUM_ALLOWED_RECEIVE_PGN
+	int "Max number of unique TP PGNs that can be registered for receive"
+	range 1 20
+	default 5
+	help
+	  Maximum number of unique PGNs that can be registered for receive across all nodes.
+	  This is a shared buffer and is not per node. The default is 5 since this is the
+	  number of PGNs that are used by the J1939 stack itself.
+
+config J1939_MAX_PGN_REQUEST_MESSAGES
+	int "Max number of request messages this node supports"
+	range 3 255
+	default 10
+	help
+	  How many requests for PGN's this module supports on each address node
+	  ECU ID, Software ID, Protocol ID
+
+config J1939_LEGACY_TIME_APP_SOURCE
+	bool "Use legacy J1939Timer_App.c time source"
+	default n
+	help
+	  Enable this only if you provide a target-specific implementation in
+	  Application/J1939Timer_App.c. By default the Zephyr glue drives
+	  time via J1939Timer_Update().
+
+config J1939_LEGACY_AUTO_INIT
+	bool "Auto initialize and schedule J1939 task"
+	default y
+	help
+	  Initialize J1939 at boot and run J1939_Task periodically.
+
+config J1939_LEGACY_TASK_PERIOD_MS
+	int "J1939 periodic task interval (ms)"
+	range 1 1000
+	default 10
+	depends on J1939_LEGACY_AUTO_INIT
+	help
+	  Period used by the Zephyr delayed work loop that calls J1939_Task.
+
+menuconfig J1939_NAME_MANAGEMENT
+	bool "Enable J1939 Name Management"
+	default n
+	help
+	  Allow the stack to manage the J1939 NAME of this node and other nodes on the bus
+
+if J1939_NAME_MANAGEMENT
+
+config J1939_NM_MFG_CODE_CHANGEABLE
+	bool "Allow manufacturer code to be changed with Name Management"
+	default n
+	help
+	  Allow the manufacturer code to be changed via Name Management.
+
+config J1939_NM_ECU_INSTANCE_CHANGEABLE
+	bool "Allow ECU instance to be changed with Name Management"
+	default n
+	help
+	  Allow the ECU instance to be changed via Name Management.
+
+config J1939_NM_FUNCTION_INSTANCE_CHANGEABLE
+	bool "Allow function instance to be changed with Name Management"
+	default n
+	help
+	  Allow the function instance to be changed via Name Management.
+
+config J1939_NM_FUNCTION_CHANGEABLE
+	bool "Allow function to be changed with Name Management"
+	default n
+	help
+	  Allow the function to be changed via Name Management.
+
+config J1939_NM_VEHICLE_SYSTEM_CHANGEABLE
+	bool "Allow vehicle system to be changed with Name Management"
+	default n
+	help
+	  Allow the vehicle system to be changed via Name Management.
+
+config J1939_NM_VEHICLE_SYSTEM_INSTANCE_CHANGEABLE
+	bool "Allow vehicle system instance to be changed with Name Management"
+	default n
+	help
+	  Allow the vehicle system instance to be changed via Name Management.
+
+config J1939_NM_INDUSTRY_GROUP_CHANGEABLE
+	bool "Allow industry group to be changed with Name Management"
+	default n
+	help
+	  Allow the industry group to be changed via Name Management.
+
+config J1939_NM_ARBITRARY_ADDRESS_CAPABLE_CHANGEABLE
+	bool "Allow arbitrary address capable flag to be changed with Name Management"
+	default n
+	help
+	  Allow the arbitrary address capable flag to be changed via Name Management.
+
+endif # J1939_NAME_MANAGEMENT
+
+config J1939_NEVER_EATS_MESSAGES
+	bool "Allows multiple protocols to read the same message"
+	default y
+	help
+	  Some projects may not want the J1939 layer to "eat" messages by returning
+	  true from it's receive service callback.  This helps eliminate bugs in projects
+	  that also register other receive callbacks in addition to the J1939
+	  catch-all-messages callback.  If you are only using the J1939 layer, and are
+	  not registering any other callbacks, you should comment out this define.
+	  @note Required to run J1939 and UDS at the same time
+
+#  TODO - moving all of this below to remove j1939_cfg.h
+# // If you want to enable a buffer for testing purposes when using J1939
+# // memory access, enable these defines.  Most projects should not need it.
+# // #define J1939MA_TESTING_BUFFER
+# // #define J1939MA_TESTING_BUFFER_SIZE  (0x40000)
+# 
+# /***************************************************************************************************
+#  *  Queue Handling
+#  **************************************************************************************************/
+# 
+# // Enable this define to have the J1939 layer handle the Can_Transmit_SendQueues() call in
+# // J1939_Task() If you do not enable this define, you must call Can_Transmit_SendQueues()
+# // periodically elsewhere
+# #define J1939_TRANSMIT_QUEUE_HANDLING
+# 
+# /// There is a routine in the low level drivers called CANPeriodicRoutine().  This function does
+# /// things like handle the CAN statistics, reset us from bus off, etc. Enable this define if you
+# /// want the J1939 layer to take care of calling this function.  You can also adjust the rate at
+# /// which it gets called by changing the J1939_PERIODIC_ROUTINE_MILLISECONDS define.
+# // #define J1939_PERIODIC_ROUTINE
+# 
+# #ifdef J1939_PERIODIC_ROUTINE
+# #define J1939_PERIODIC_ROUTINE_MS ((j1939_millisecond_t)10)
+# #endif
+# 
+# /***************************************************************************************************
+#  * System Management
+#  **************************************************************************************************
+# 
+# /// There is a default handler for messages with a PF of 254 messages: J1939_App_Pf254Process(). It
+# /// will "eat" messages for DM1, DM2 and DM4s if these options are enabled.  If you would like these
+# /// messages to also pass through to the app specific 254 handler called
+# /// J1939_App_Pf254Process(), then enable this option
+# // #define J1939_PASSTHROUGH_FOR_254_MESSAGES
+# 
+# // Run nodes through an internal loopback
+# // #define J1939_LOOPBACK_ENABLE
+
+# Address Claim Configs
+
+config J1939_IGNORE_REQUESTS_FROM_UNCLAIMED_ADDRESSES
+	bool "Control if our unit will respond to units that have not claimed their address"
+	default n
+
+config J1939_RECORD_ADDRESS_CLAIMED_NAMES
+	bool "Record the names of the controller which have address claimed on the bus"
+	default n
+
+config J1939AC_SELF_CONFIGURABLE
+	bool "Arbitrary address capabilities"
+	default n
+	help 
+	  You will need to implement handling in CANJ1939AcApplication.c to configure this for your application
+
+if J1939AC_SELF_CONFIGURABLE
+
+# /// Starting source address when performing arbitrary address claim.
+# #define J1939AC_ARBITRARY_MIN_SOURCE_ADDRESS ((j1939_source_address_t)(0x87))
+# 
+# /// Last source address to attempt when performing arbitrary address claim.
+# #define J1939AC_ARBITRARY_MAX_SOURCE_ADDRESS ((j1939_source_address_t)(0xF8))
+# 
+# // Configure how many alternate address you wish to use when you lose arbitration
+# // We subtract one because we don't put the default address in the arbitrary list
+# #define J1939AC_ALT_ADDRESS_LIST_LENGTH                                                            \
+#    ((J1939AC_ARBITRARY_MAX_SOURCE_ADDRESS - J1939AC_ARBITRARY_MIN_SOURCE_ADDRESS) + 1)
+
+endif  #J1939AC_SELF_CONFIGURABLE
+
+menuconfig J1939_ENABLE_RECEIVED_PGN_SUPPORT
+	bool "Receive PGN requests"
+	default n
+
+if J1939_ENABLE_RECEIVED_PGN_SUPPORT
+
+config J1939_RECEIVED_PGN_LIST_MAX
+	int
+	default 10
+	help 
+	  Number of PGN's requests to support per address node
+
+endif  # J1939_ENABLE_RECEIVED_PGN_SUPPORT
+
+menuconfig J1939_DIAGNOSTICS
+	bool "J1939 Diagnostics"
+	default n
+
+if J1939_DIAGNOSTICS
+
+# /// J1939 Receive DM1 messages from other modules
+# // #define J1939DM1_RECEIVE
+# 
+# #ifdef J1939DM1_RECEIVE
+# /// Maximum number of total DTC's that can be on the CAN bus for all units
+# /// @warning Must be <= 250
+# #define J1939DM1_MAX_DTCS (40)
+# 
+# /// How often to traverse the received DTC table looking for DTCs that have timed out
+# #define J1939DM1_DTC_UPDATE_MS ((j1939_millisecond_t)100)
+# #endif
+# 
+# /// J1939 Receive DM2 messages from other modules
+# // #define J1939DM2_RECEIVE
+# 
+# #ifdef J1939DM2_RECEIVE
+# /// This defines how long we will wait after sending a DM2 request to the global address before
+# /// we consider the unit to have timed out
+# #define J1939DM2_REQUEST_TIMEOUT_MS ((j1939_millisecond_t)(1000))
+# /// Maximum number of total DTC's that can be on the CAN bus for all units
+# /// @warning Must be <= 250
+# #define J1939DM2_MAX_DTCS (40)
+# #endif
+# 
+# /// J1939 Transmit DM1 messages due to internal faults
+# // #define J1939DM1_TRANSMIT
+# 
+# /// If your system does not want to send DM1 with transport, enable this define.  This is only
+# /// useful for projects that have only one DM1 active at a time(i.e. mostly boot blocks)
+# // #define J1939DM1_NO_TRANSMIT_TRANSPORT
+# 
+# /// J1939 Transmit DM2 messages when requested
+# // #define J1939DM2_TRANSMIT
+# 
+# /// J1939 DM3 request support
+# // #define J1939DM3_ENABLE
+# 
+# /// J1939 DM4 transmit message support
+# // #define J1939DM4_TRANSMIT
+# 
+# /// J1939 DM4 transmit message support
+# // #define J1939DM4_RECEIVE
+# 
+# #ifdef J1939DM4_RECEIVE
+# /// # of DM4 Freeze Frame DTCs that will be stored.
+# #define J1939DM4_MAX_RECEIVE_DTCS (20)
+# #endif
+# 
+# /// J1939 DM5 request support
+# // #define J1939DM5_ENABLE
+# 
+# #ifdef J1939DM5_ENABLE
+# // Look in the -73 spec for appropriate values.  The defaults indicate non supported
+# #define J1939DM5_OBD_COMPLIANCE_LEVEL (0x05)
+# #define J1939DM5_CONTINOUSLY_MONITORED_SYSTEMS_SUPPORT_STATUS (0x00)
+# #define J1939DM5_NON_CONTINOUSLY_MONITORED_SYSTEMS_SUPPORT (0x0000)
+# #define J1939DM5_NON_CONTINOUSLY_MONITORED_SYSTEMS_STATUS (0x0000)
+# #endif
+# 
+# /// J1939 DM11 request support
+# // #define J1939DM11_ENABLE
+# 
+# /// J1939 DM13 message support
+# // #define J1939DM13_ENABLE
+
+endif # J1939_DIAGNOSTICS
+
+menuconfig J1939_MEMORY_ACCESS
+	bool "J1939 Memory Access"
+	default n
+
+if J1939_MEMORY_ACCESS
+
+# /// Define the timeout periods for various situations.  These are not well defined by
+# /// the standard but the default values are typically sufficent.
+# #define J1939MA_SECURITY_TIMEOUT_MS ((j1939_millisecond_t)100)
+# #define J1939MA_BIN_DATA_RECEIVE_TIMEOUT_MS ((j1939_millisecond_t)3000)
+# 
+# /// Enable this define if you want to support directed spatial memory accesses.  By default we
+# /// only support direct memory access
+# // #define J1939MA_SUPPORT_DIRECTED_SPATIAL_REQUESTS
+# 
+# /// If you would rather return OPERATION FAILED when a request too large to handle is received
+# /// rather than negotiating down, enable this define
+# // #define J1939MA_FAIL_IF_REQUESTS_TOO_LARGE
+# 
+# /// Enable to allow Reads and Writes to be requested by us
+# #define J1939MA_TRANSMIT_READ_WRITE_REQUEST
+# 
+# #ifdef J1939MA_TRANSMIT_READ_WRITE_REQUEST
+# #define J1939MA_SEED_KEY_SECURITY_FOR_READ_WRITE_REQUEST
+# #endif
+# 
+# // Most projects should not need to change the priority of these messages
+# #define J1939MA_REQUEST_PRIORITY (J1939_Priority_6)
+# #define J1939MA_RESPONSE_PRIORITY (J1939_Priority_6)
+# #define J1939MA_BIN_DATA_TRANSFER_PRIORITY (J1939_Priority_6)
+
+endif # J1939_MEMORY_ACCESS
+
+config J1939_DEBUG
+	bool "Timing analysis debugging features for the transport layer"
+	default n
+
+endif # J1939
