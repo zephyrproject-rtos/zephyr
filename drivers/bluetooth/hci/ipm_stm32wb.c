@@ -10,6 +10,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/bluetooth/addr.h>
@@ -64,10 +65,15 @@ struct aci_set_ble_addr {
 	uint8_t value[6];
 } __packed;
 
+struct aci_reset {
+	uint8_t mode;
+	uint32_t options;
+} __packed;
+
 #ifdef CONFIG_BT_HCI_HOST
 #define ACI_WRITE_SET_TX_POWER_LEVEL       BT_OP(BT_OGF_VS, 0xFC0F)
-#define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
-#define ACI_HAL_STACK_RESET		   BT_OP(BT_OGF_VS, 0xFC3B)
+#define ACI_HAL_WRITE_CONFIG_DATA	       BT_OP(BT_OGF_VS, 0xFC0C)
+#define ACI_RESET		                   BT_OP(BT_OGF_VS, 0xFF00)
 
 #define HCI_CONFIG_DATA_PUBADDR_OFFSET		0
 static bt_addr_t bd_addr_udn;
@@ -660,9 +666,20 @@ static int bt_ipm_setup(const struct device *dev, const struct bt_hci_setup_para
 #ifdef CONFIG_BT_HCI_HOST
 static int bt_ipm_close(const struct device *dev)
 {
+	struct net_buf *buf;
+	struct aci_reset *param;
 	int err;
 
-	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, NULL);
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	param = net_buf_add(buf, sizeof(*param));
+	param->mode = 0x00;  /* 0x00: Reset without BLE stack options change */
+	param->options = sys_cpu_to_le32(0x00);
+
+	err = bt_hci_cmd_send_sync(ACI_RESET, buf, NULL);
 	if (err) {
 		LOG_ERR("IPM Channel Close Issue");
 		return err;
