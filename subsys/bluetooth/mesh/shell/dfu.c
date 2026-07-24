@@ -16,7 +16,7 @@
 #include <zephyr/dfu/mcuboot.h>
 #include <zephyr/storage/flash_map.h>
 
-#include "common/bt_shell_private.h"
+#include <common/bt_shell_private.h>
 #include "utils.h"
 #include "blob.h"
 #include "../dfu_slot.h"

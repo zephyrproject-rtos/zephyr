@@ -11,7 +11,7 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/mesh/shell.h>
 
-#include "common/bt_shell_private.h"
+#include <common/bt_shell_private.h>
 #include "utils.h"
 
 /***************************************************************************************************

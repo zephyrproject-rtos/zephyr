@@ -9,7 +9,7 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/mesh/shell.h>
 
-#include "mesh/foundation.h"
+#include <mesh/foundation.h>
 #include "utils.h"
 
 static int cmd_subnet_bridge_get(const struct shell *sh, size_t argc, char *argv[])

@@ -4,19 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
-#include "mesh/net.h"
-#include "mesh/transport.h"
-#include "mesh/va.h"
+#include <mesh/net.h>
+#include <mesh/transport.h>
+#include <mesh/va.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "mesh/crypto.h"
+#include <mesh/crypto.h>
 
 #define LOG_MODULE_NAME test_transport
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 /*
  * Transport layer tests:

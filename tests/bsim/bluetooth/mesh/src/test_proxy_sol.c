@@ -7,11 +7,11 @@
  */
 
 #include "mesh_test.h"
-#include "mesh/access.h"
-#include "mesh/settings.h"
-#include "mesh/net.h"
-#include "mesh/crypto.h"
-#include "mesh/proxy.h"
+#include <mesh/access.h>
+#include <mesh/settings.h>
+#include <mesh/net.h>
+#include <mesh/crypto.h>
+#include <mesh/proxy.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>

@@ -5,9 +5,9 @@
  */
 #include <zephyr/kernel.h>
 #include "mesh_test.h"
-#include "mesh/net.h"
-#include "mesh/mesh.h"
-#include "mesh/foundation.h"
+#include <mesh/net.h>
+#include <mesh/mesh.h>
+#include <mesh/foundation.h>
 
 #define LOG_MODULE_NAME test_scanner
 

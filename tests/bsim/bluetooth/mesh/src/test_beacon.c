@@ -6,14 +6,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/hci.h>
 #include "mesh_test.h"
-#include "mesh/net.h"
-#include "mesh/beacon.h"
-#include "mesh/mesh.h"
-#include "mesh/foundation.h"
-#include "mesh/crypto.h"
-#include "argparse.h"
-#include "mesh/proxy_cli.h"
-#include "mesh/proxy.h"
+#include <mesh/net.h>
+#include <mesh/beacon.h>
+#include <mesh/mesh.h>
+#include <mesh/foundation.h>
+#include <mesh/crypto.h>
+#include <argparse.h>
+#include <mesh/proxy_cli.h>
+#include <mesh/proxy.h>
 
 #define LOG_MODULE_NAME test_beacon
 

@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
-#include "mesh/net.h"
-#include "mesh/lpn.h"
-#include "mesh/transport.h"
-#include "mesh/va.h"
+#include <mesh/net.h>
+#include <mesh/lpn.h>
+#include <mesh/transport.h>
+#include <mesh/va.h>
 #include <zephyr/sys/byteorder.h>
-#include "argparse.h"
+#include <argparse.h>
 
 #include "friendship_common.h"
 

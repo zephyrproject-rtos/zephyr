@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "bstests.h"
+#include <bstests.h>
 #include "mesh_test.h"
 
 #if defined(CONFIG_SETTINGS)

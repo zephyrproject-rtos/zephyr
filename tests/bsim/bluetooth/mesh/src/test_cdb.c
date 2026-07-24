@@ -5,11 +5,11 @@
  */
 
 #include "mesh_test.h"
-#include "mesh/cdb.h"
-#include "mesh/net.h"
-#include "mesh/app_keys.h"
-#include "mesh/settings.h"
-#include "mesh/foundation.h"
+#include <mesh/cdb.h>
+#include <mesh/net.h>
+#include <mesh/app_keys.h>
+#include <mesh/settings.h>
+#include <mesh/foundation.h>
 
 #define LOG_MODULE_NAME test_cdb
 #include <zephyr/logging/log.h>

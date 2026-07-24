@@ -18,15 +18,15 @@
 #include <zephyr/bluetooth/mesh/shell.h>
 
 /* Private includes for raw Network & Transport layer access */
-#include "mesh/mesh.h"
-#include "mesh/net.h"
-#include "mesh/rpl.h"
-#include "mesh/transport.h"
-#include "mesh/foundation.h"
-#include "mesh/settings.h"
-#include "mesh/access.h"
-#include "mesh/prov.h"
-#include "common/bt_shell_private.h"
+#include <mesh/mesh.h>
+#include <mesh/net.h>
+#include <mesh/rpl.h>
+#include <mesh/transport.h>
+#include <mesh/foundation.h>
+#include <mesh/settings.h>
+#include <mesh/access.h>
+#include <mesh/prov.h>
+#include <common/bt_shell_private.h>
 #include "utils.h"
 #include "dfu.h"
 #include "blob.h"

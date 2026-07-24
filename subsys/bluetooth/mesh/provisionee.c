@@ -17,8 +17,8 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/bluetooth/uuid.h>
 
-#include "common/bt_str.h"
-#include "common/long_wq.h"
+#include <common/bt_str.h>
+#include <common/long_wq.h>
 
 #include "crypto.h"
 #include "mesh.h"
