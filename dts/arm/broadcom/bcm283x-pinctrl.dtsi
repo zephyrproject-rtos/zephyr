@@ -43,7 +43,7 @@
 		};
 
 		group2 {
-			pinmux = <UART0_RTS_GPIO31>,
+			pinmux = <UART0_CTS_GPIO30>,
 				 <UART0_RX_GPIO33>;
 			bias-pull-up;
 		};
