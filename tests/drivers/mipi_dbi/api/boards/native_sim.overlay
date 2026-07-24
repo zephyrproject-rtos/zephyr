@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2025 Hsiu-Chi Tsai
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Devicetree overlay that exercises MIPI_DBI_CONFIG_DT() reading the
+ * optional "color-coding" property of a mipi-dbi-device child node.
+ *
+ * testdev sets a non-default value (RGB888_1) so the test proves the property
+ * is really read; testdev_default omits it to exercise the RGB565 default.
+ *
+ * Uses vendor stub controllers so the overlay can be built and run on
+ * native_sim without real hardware.
+ */
+
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_mipi_dbi: test_mipi_dbi {
+			compatible = "zephyr,mipi-dbi-spi";
+			status = "okay";
+			dc-gpios = <&test_gpio 0 0>;
+			spi-dev = <&test_spi>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			testdev: testdev@0 {
+				compatible = "sitronix,st7796s";
+				reg = <0x0>;
+				mipi-max-frequency = <25000000>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				color-coding = "MIPI_DBI_MODE_RGB888_1";
+				height = <320>;
+				width = <480>;
+				/* Dummy values, this won't drive a real panel */
+				pgc = [f0 06 0b 07 06 05 2e 33 47 3a 17 16 2e 31];
+				ngc = [f0 09 0d 09 08 23 2e 33 46 38 13 13 2c 32];
+			};
+
+			/* Omits color-coding to exercise the RGB565 default. */
+			testdev_default: testdev@1 {
+				compatible = "sitronix,st7796s";
+				reg = <0x1>;
+				mipi-max-frequency = <25000000>;
+				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				height = <320>;
+				width = <480>;
+				/* Dummy values, this won't drive a real panel */
+				pgc = [f0 06 0b 07 06 05 2e 33 47 3a 17 16 2e 31];
+				ngc = [f0 09 0d 09 08 23 2e 33 46 38 13 13 2c 32];
+			};
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+			cs-gpios = <&test_gpio 0 0>;
+		};
+	};
+};

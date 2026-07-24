@@ -1,11 +1,18 @@
 /*
  * Copyright (c) 2025 Christoph Schnetzler
+ * Copyright (c) 2025 Hsiu-Chi Tsai
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/ztest.h>
+
+/*
+ * The API tests below drive a real MIPI DBI controller, so they are only built
+ * where the "mipi_dbi" node exists (see the filter in testcase.yaml).
+ */
+#if DT_NODE_EXISTS(DT_NODELABEL(mipi_dbi))
 
 static const uint8_t modes[] = {
 	MIPI_DBI_MODE_8080_BUS_8_BIT,
@@ -96,3 +103,35 @@ static void *mipi_dbi_setup(void)
 }
 
 ZTEST_SUITE(mipi_dbi_api, NULL, mipi_dbi_setup, NULL, NULL, NULL);
+
+#endif /* DT_NODE_EXISTS(DT_NODELABEL(mipi_dbi)) */
+
+#if DT_NODE_EXISTS(DT_NODELABEL(testdev))
+
+/*
+ * MIPI_DBI_CONFIG_DT() must populate struct mipi_dbi_config.color_coding from
+ * the optional "color-coding" devicetree property, and fall back to RGB565
+ * when the property is omitted. Uses stub controllers, so it runs on native_sim.
+ */
+ZTEST(mipi_dbi_config, test_color_coding_from_dt)
+{
+	struct mipi_dbi_config config = MIPI_DBI_CONFIG_DT(DT_NODELABEL(testdev), 0, 0);
+
+	zassert_equal(config.color_coding, MIPI_DBI_MODE_RGB888_1,
+		      "Expected RGB888_1 (0x%x) but was 0x%x", MIPI_DBI_MODE_RGB888_1,
+		      config.color_coding);
+}
+
+ZTEST(mipi_dbi_config, test_color_coding_default)
+{
+	struct mipi_dbi_config config =
+		MIPI_DBI_CONFIG_DT(DT_NODELABEL(testdev_default), 0, 0);
+
+	zassert_equal(config.color_coding, MIPI_DBI_MODE_RGB565,
+		      "Expected default RGB565 (0x%x) but was 0x%x", MIPI_DBI_MODE_RGB565,
+		      config.color_coding);
+}
+
+ZTEST_SUITE(mipi_dbi_config, NULL, NULL, NULL, NULL, NULL);
+
+#endif /* DT_NODE_EXISTS(DT_NODELABEL(testdev)) */
