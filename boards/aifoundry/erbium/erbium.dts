@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 AIFoundry
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <aifoundry/erbium.dtsi>
+
+/ {
+	model = "AIFoundry Erbium";
+	compatible = "aifoundry,erbium";
+
+	chosen {
+		zephyr,sram = &mram;
+	};
+};

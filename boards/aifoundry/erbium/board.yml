@@ -1,0 +1,6 @@
+board:
+  name: erbium
+  full_name: Erbium
+  vendor: aifoundry
+  socs:
+  - name: erbium

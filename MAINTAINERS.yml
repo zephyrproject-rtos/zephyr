@@ -228,6 +228,17 @@ ADI Platforms:
   labels:
     - "platform: ADI"
 
+AIFoundry Platforms:
+  status: maintained
+  maintainers:
+    - AFOliveira
+  files:
+    - boards/aifoundry/
+    - dts/riscv/aifoundry/
+    - soc/aifoundry/
+  labels:
+    - "platform: AIFoundry"
+
 ARC arch:
   status: maintained
   maintainers:
