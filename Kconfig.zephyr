@@ -922,7 +922,7 @@ config BUILD_OUTPUT_ADJUST_LMA
 	  DT_CHOSEN_IMAGE_<name> := <name>,<name>-partition
 	  DT_CHOSEN_Z_FLASH := zephyr,flash
 	  config BUILD_OUTPUT_ADJUST_LMA
-	    default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4))-\
+	    default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_<name>))-\
 	             $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))"
 
 config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
