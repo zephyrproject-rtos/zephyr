@@ -1,0 +1,22 @@
+# LIN transceiver configuration options
+
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "LIN transceiver drivers"
+
+config LIN_TRANSCEIVER_INIT_PRIORITY
+	int "LIN transceiver driver init priority"
+	default 45
+	help
+	  LIN transceiver device driver initialization priority.
+
+config LIN_TRANSCEIVER_GPIO
+	bool "GPIO controlled LIN transceiver"
+	default y
+	depends on DT_HAS_LIN_TRANSCEIVER_GPIO_ENABLED
+	select GPIO
+	help
+	  Enable support for GPIO controlled LIN transceivers.
+
+endmenu

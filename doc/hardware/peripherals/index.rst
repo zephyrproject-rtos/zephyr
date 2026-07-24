@@ -45,6 +45,7 @@ Peripherals
    i2c.rst
    ipm.rst
    led.rst
+   lin.rst
    mdio.rst
    memc.rst
    mspi.rst
