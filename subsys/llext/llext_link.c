@@ -46,6 +46,27 @@ __weak int arch_elf_relocate_global(struct llext_loader *ldr, struct llext *ext,
 	return -ENOTSUP;
 }
 
+uint8_t *llext_get_rel_addr_from_offset(struct llext_loader *ldr, struct llext *ext, ssize_t offset)
+{
+	for (int i = 0; i < ext->sect_cnt; ++i) {
+		elf_shdr_t *shdr = ext->sect_hdrs + i;
+
+		if (shdr->sh_type == SHT_NULL || shdr->sh_size == 0) {
+			continue;
+		}
+
+		if (offset >= (ssize_t)shdr->sh_offset &&
+		    offset < (ssize_t)(shdr->sh_offset + shdr->sh_size)) {
+			ssize_t intra = offset - shdr->sh_offset;
+
+			return (uint8_t *)ext->mem[ldr->sect_map[i].mem_idx] +
+			       ldr->sect_map[i].offset + intra;
+		}
+	}
+
+	return NULL;
+}
+
 /*
  * Find the memory region containing the supplied offset and return the
  * corresponding file offset
@@ -326,35 +347,7 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 			continue;
 		}
 
-		/*
-		 * Both r_offset and sh_addr are addresses for which the extension
-		 * has been built.
-		 *
-		 * NOTE: The calculations below assumes offsets from the
-		 * beginning of the .text section in the ELF file can be
-		 * applied to the memory location of mem[LLEXT_MEM_TEXT].
-		 *
-		 * This is valid only for LLEXT_STORAGE_WRITABLE loaders
-		 * since the buffer will be directly modified.
-		 */
-		if (ldr->storage != LLEXT_STORAGE_WRITABLE) {
-			LOG_WRN("PLT: cannot link read-only ELF file");
-			continue;
-		}
-
 		uint8_t *rel_addr = NULL;
-
-		/*
-		 * The only time text will be on the heap with a writable ELF buffer
-		 * is if the ELF is not in instruction memory
-		 */
-		if (ext->mem_on_heap[LLEXT_MEM_TEXT]) {
-			rel_addr =
-				(uint8_t *)ext->text_in_elf - ldr->sects[LLEXT_MEM_TEXT].sh_offset;
-		} else {
-			rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
-				   ldr->sects[LLEXT_MEM_TEXT].sh_offset;
-		}
 
 		if (tgt) {
 			/* Relocatable / partially linked ELF. */
@@ -364,13 +357,8 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 					(size_t)rela.r_offset, (size_t)tgt->sh_size);
 				continue;
 			}
-			/* Relocation lands in text on heap */
-			if (ext->mem_on_heap[LLEXT_MEM_TEXT] &&
-			    ldr->sect_map[shdr->sh_info].mem_idx == LLEXT_MEM_TEXT) {
-				rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
-					   ldr->sects[LLEXT_MEM_TEXT].sh_offset;
-			}
-			rel_addr += rela.r_offset + tgt->sh_offset;
+			rel_addr = llext_get_rel_addr_from_offset(ldr, ext,
+								  rela.r_offset + tgt->sh_offset);
 		} else {
 			/* Shared / dynamically linked ELF */
 			ssize_t offset = llext_file_offset(ldr, rela.r_offset);
@@ -381,17 +369,7 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 				continue;
 			}
 
-			ssize_t text_offset =
-				(ssize_t)ext->text_in_elf - (ssize_t)llext_peek(ldr, 0);
-			/* Relocation lands in text on heap */
-			if (ext->mem_on_heap[LLEXT_MEM_TEXT] &&
-			    (offset >= text_offset &&
-			     offset < text_offset + ext->mem_size[LLEXT_MEM_TEXT])) {
-				rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
-					   ldr->sects[LLEXT_MEM_TEXT].sh_offset;
-			}
-
-			rel_addr += offset;
+			rel_addr = llext_get_rel_addr_from_offset(ldr, ext, offset);
 		}
 
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
