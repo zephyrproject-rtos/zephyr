@@ -1,5 +1,5 @@
 /*
- * Copyright 2017, 2024-2025 NXP
+ * Copyright 2017, 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -191,6 +191,16 @@ static int mcux_ccm_on(const struct device *dev,
 		CLOCK_EnableClock(ENET_CLOCK);
 		return 0;
 #endif
+
+#if defined(CONFIG_SOC_MIMX8ML8)
+	case IMX_CCM_MEDIA_AXI_CLK:
+	case IMX_CCM_MEDIA_APB_CLK:
+	case IMX_CCM_DISP1_PIX_CLK:
+	case IMX_CCM_MIPI_PHY1_REF_CLK:
+		CLOCK_EnableClock(kCLOCK_Media);
+		return 0;
+#endif
+
 	default:
 		(void)instance;
 		return 0;
@@ -584,6 +594,23 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 
 	} break;
 #endif
+
+#if defined(CONFIG_SOC_MIMX8ML8)
+	case IMX_CCM_MEDIA_AXI_CLK:
+		*rate = CLOCK_GetClockRootFreq(kCLOCK_MediaAxiClkRoot);
+		break;
+	case IMX_CCM_MEDIA_APB_CLK:
+		*rate = CLOCK_GetClockRootFreq(kCLOCK_MediaApbClkRoot);
+		break;
+	case IMX_CCM_DISP1_PIX_CLK:
+		*rate = CLOCK_GetClockRootFreq(kCLOCK_MediaDisp1PixClkRoot);
+		break;
+	case IMX_CCM_MIPI_PHY1_REF_CLK:
+		*rate = CLOCK_GetClockRootFreq(kCLOCK_MediaMipiPhy1RefClkRoot);
+		break;
+#endif
+	default:
+		return -ENOTSUP;
 	}
 
 	return 0;
