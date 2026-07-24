@@ -169,6 +169,13 @@ static uint32_t dump_fault(uint32_t status, uint32_t addr)
 	}
 	return reason;
 }
+#else
+static uint32_t dump_fault(uint32_t status, uint32_t addr)
+{
+	ARG_UNUSED(status);
+	ARG_UNUSED(addr);
+	return K_ERR_CPU_EXCEPTION;
+}
 #endif
 
 #if defined(CONFIG_FPU_SHARING)
