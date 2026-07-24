@@ -1,0 +1,40 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+DT_COMPAT_UHC_RENESAS_RA := renesas,ra-uhc
+
+config UHC_RENESAS_RA
+	bool "Renesas RA family UHC driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_UHC_ENABLED
+	select USE_RA_FSP_USB_HOST
+	help
+	  Enable Renesas RA family UHC driver.
+
+if UHC_RENESAS_RA
+
+config UHC_RENESAS_RA_STACK_SIZE
+	int "UHC controller driver internal thread stack size"
+	default 512
+	help
+	  Renesas RA device controller driver internal thread stack size.
+
+config UHC_RENESAS_RA_THREAD_PRIORITY
+	int "Renesas RA family UHC driver thread priority"
+	default 8
+	help
+	  Renesas RA device controller driver thread priority.
+
+config UHC_RENESAS_RA_MAX_MSGQ
+	int "Renesas RA family internal UHC driver msgq size"
+	default 10
+	help
+	  Renesas RA device controller driver internal msgq size.
+
+config UHC_RENESAS_RA_OSC_WAIT_RETRIES
+	int "Maximum retries for oscillator ready event"
+	default 3
+	help
+	  Specify the number of retries for oscillator ready event.
+
+endif	# UHC_RENESAS_RA
