@@ -5659,6 +5659,15 @@ function(zephyr_linker_section_obj_level)
     INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}_P_???_*"
     KEEP SORT NAME
   )
+  # Auto-priority bucket: entries registered with no manual priority
+  # (e.g. DEVICE_DT_DEFINE_AUTO()), placed after the whole manual 0-999
+  # priority range and ordered purely by the devicetree dependency
+  # ordinal in the section name's SUB_ component.
+  zephyr_linker_section_configure(
+    SECTION ${OBJ_SECTION}
+    INPUT ".z_${OBJ_SECTION}_${OBJ_LEVEL}_P_AUTO_*"
+    KEEP SORT NAME
+  )
 endfunction()
 
 # Usage:

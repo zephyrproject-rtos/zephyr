@@ -129,6 +129,17 @@ Deprecated APIs and options
   * Deprecated various fuel gauge property enums and union fields in favor of
     new versions with explicit unit suffixes.
 
+* Kernel
+
+  * The ``PRE_KERNEL_1`` and ``PRE_KERNEL_2`` initialization levels have been deprecated in favor
+    of a single ``PRE_KERNEL`` level. ``PRE_KERNEL_1`` is an alias of ``PRE_KERNEL``;
+    ``PRE_KERNEL_2`` keeps running after all ``PRE_KERNEL`` entries while it is phased out. See
+    the :ref:`migration guide <migration_4.5>` for details.
+
+  * Registering a :c:macro:`SYS_INIT` at the ``SMP`` initialization level has
+    been deprecated. Use the new :c:macro:`SMP_INIT_HOOK` macro instead. The
+    ``SMP`` init level is scheduled for removal.
+
 * LoRa
 
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
@@ -217,6 +228,12 @@ New APIs and options
   * :c:enumerator:`CRYPTO_CIPHER_MODE_OFB`
   * :c:func:`cipher_cfb_op`
   * :c:func:`cipher_ofb_op`
+
+* Device
+
+  * :c:macro:`DEVICE_DT_DEFINE_AUTO`
+  * :c:macro:`DEVICE_DT_INST_DEFINE_AUTO`
+  * :c:macro:`SYS_INIT_DEPENDS`
 
 * Devicetree
 

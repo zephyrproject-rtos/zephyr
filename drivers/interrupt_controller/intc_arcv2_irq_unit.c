@@ -58,8 +58,9 @@ static void arc_shared_intc_init(void)
 
 }
 
+#ifdef CONFIG_SMP
 /* Allow to schedule IRQ to all cores after we bring up all secondary cores */
-static int arc_shared_intc_update_post_smp(void)
+static void arc_shared_intc_update_post_smp(void)
 {
 	__ASSERT(z_arc_v2_core_id() == ARC_MP_PRIMARY_CPU_ID,
 		 "idu interrupts must be updated from primary core");
@@ -72,11 +73,13 @@ static int arc_shared_intc_update_post_smp(void)
 	}
 
 	z_arc_connect_idu_enable();
-
-	return 0;
 }
 
-SYS_INIT(arc_shared_intc_update_post_smp, SMP, 0);
+/* SMP_INIT_HOOK() is only available under CONFIG_SMP; without SMP there are no
+ * secondary cores to redistribute interrupts to, so this hook is not needed.
+ */
+SMP_INIT_HOOK(arc_shared_intc_update_post_smp);
+#endif /* CONFIG_SMP */
 #endif /* CONFIG_ARC_CONNECT */
 
 

@@ -12,7 +12,11 @@
 		 */
 		PLACE_SYMBOL_HERE(__init_start);
 		CREATE_OBJ_LEVEL(init, EARLY)
-		CREATE_OBJ_LEVEL(init, PRE_KERNEL_1)
+		CREATE_OBJ_LEVEL(init, PRE_KERNEL)
+		/* Deprecated compatibility band: runs right after all
+		 * PRE_KERNEL entries (PRE_KERNEL_1 aliases into the
+		 * PRE_KERNEL band).
+		 */
 		CREATE_OBJ_LEVEL(init, PRE_KERNEL_2)
 		CREATE_OBJ_LEVEL(init, POST_KERNEL)
 		CREATE_OBJ_LEVEL(init, APPLICATION)
@@ -94,6 +98,10 @@
 	ITERABLE_SECTION_ROM(k_kernel_init_pre_entry, Z_LINK_ITERABLE_SUBALIGN)
 
 	ITERABLE_SECTION_ROM(k_kernel_init_post_entry, Z_LINK_ITERABLE_SUBALIGN)
+
+#if defined(CONFIG_SMP)
+	ITERABLE_SECTION_ROM(smp_init_hook, Z_LINK_ITERABLE_SUBALIGN)
+#endif
 
 	ITERABLE_SECTION_ROM(_static_thread_data, Z_LINK_ITERABLE_SUBALIGN)
 
