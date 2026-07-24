@@ -22,6 +22,8 @@ items:
       type: array
       items:
         type: string
+    rtt_runner:
+      type: str
     serial_pty:
       type: string
     serial:
