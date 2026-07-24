@@ -48,8 +48,6 @@ static struct btp_buf cmd_buf[CMD_QUEUED];
 static K_FIFO_DEFINE(cmds_queue);
 static K_FIFO_DEFINE(avail_queue);
 
-static struct btp_buf *delayed_cmd;
-
 static struct {
 	const struct btp_handler *handlers;
 	size_t num;
@@ -129,14 +127,9 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 		} else {
 			status = BTP_STATUS_UNKNOWN_CMD;
 		}
-		/* Allow to delay only 1 command. This is for convenience only
-		 * of using cmd data without need of copying those in async
-		 * functions. Should be not needed eventually.
-		 */
+
 		if (status == BTP_STATUS_DELAY_REPLY) {
-			__ASSERT_NO_MSG(delayed_cmd == NULL);
-			delayed_cmd = cmd;
-			continue;
+			goto done;
 		}
 
 		if ((status == BTP_STATUS_SUCCESS) && rsp_len > 0) {
@@ -146,7 +139,7 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 			tester_rsp_with_index(hdr->service, hdr->opcode,
 					      hdr->index, status);
 		}
-
+done:
 		(void)memset(cmd, 0, sizeof(*cmd));
 		k_fifo_put(&avail_queue, cmd);
 	}
@@ -335,38 +328,20 @@ void tester_event(uint8_t service, uint8_t opcode, const void *data, size_t len)
 
 void tester_rsp_full(uint8_t service, uint8_t opcode, const void *rsp, size_t len)
 {
-	struct btp_buf *cmd;
-
 	__ASSERT_NO_MSG(opcode < 0x80);
-	__ASSERT_NO_MSG(delayed_cmd != NULL);
 
 	LOG_DBG("service 0x%02x opcode 0x%02x", service, opcode);
 
 	tester_send_with_index(service, opcode, BTP_INDEX, rsp, len);
-
-	cmd = delayed_cmd;
-	delayed_cmd = NULL;
-
-	(void)memset(cmd, 0, sizeof(*cmd));
-	k_fifo_put(&avail_queue, cmd);
 }
 
 void tester_rsp(uint8_t service, uint8_t opcode, uint8_t status)
 {
-	struct btp_buf *cmd;
-
 	__ASSERT_NO_MSG(opcode < 0x80);
-	__ASSERT_NO_MSG(delayed_cmd != NULL);
 
 	LOG_DBG("service 0x%02x opcode 0x%02x status 0x%02x", service, opcode, status);
 
 	tester_rsp_with_index(service, opcode, BTP_INDEX, status);
-
-	cmd = delayed_cmd;
-	delayed_cmd = NULL;
-
-	(void)memset(cmd, 0, sizeof(*cmd));
-	k_fifo_put(&avail_queue, cmd);
 }
 
 uint16_t tester_supported_commands(uint8_t service, uint8_t *cmds)
