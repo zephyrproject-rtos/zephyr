@@ -46,6 +46,7 @@ static void test_zdsp_add_f32(const DSP_DATA uint32_t *input1, const DSP_DATA ui
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_add_f32, 3, in_com1, in_com2, ref_add, 3);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_add_f32, 8, in_com1, in_com2, ref_add, 8);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_add_f32, 11, in_com1, in_com2, ref_add, 11);
+DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_add_f32, 100, in_com1, in_com2, ref_add, 100);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_add_f32, long, in_com1, in_com2, ref_add,
 		     ARRAY_SIZE(in_com1));
 
@@ -111,6 +112,7 @@ static void test_zdsp_sub_f32(const DSP_DATA uint32_t *input1, const DSP_DATA ui
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_sub_f32, 3, in_com1, in_com2, ref_sub, 3);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_sub_f32, 8, in_com1, in_com2, ref_sub, 8);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_sub_f32, 11, in_com1, in_com2, ref_sub, 11);
+DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_sub_f32, 100, in_com1, in_com2, ref_sub, 100);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_sub_f32, long, in_com1, in_com2, ref_sub,
 		     ARRAY_SIZE(in_com1));
 
@@ -176,6 +178,7 @@ static void test_zdsp_mult_f32(const DSP_DATA uint32_t *input1, const DSP_DATA u
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_mult_f32, 3, in_com1, in_com2, ref_mult, 3);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_mult_f32, 8, in_com1, in_com2, ref_mult, 8);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_mult_f32, 11, in_com1, in_com2, ref_mult, 11);
+DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_mult_f32, 100, in_com1, in_com2, ref_mult, 100);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_mult_f32, long, in_com1, in_com2, ref_mult,
 		     ARRAY_SIZE(in_com1));
 
@@ -241,6 +244,7 @@ static void test_zdsp_negate_f32(const DSP_DATA uint32_t *input1, const uint32_t
 DEFINE_TEST_VARIANT3(basic_math_f32, zdsp_negate_f32, 3, in_com1, ref_negate, 3);
 DEFINE_TEST_VARIANT3(basic_math_f32, zdsp_negate_f32, 8, in_com1, ref_negate, 8);
 DEFINE_TEST_VARIANT3(basic_math_f32, zdsp_negate_f32, 11, in_com1, ref_negate, 11);
+DEFINE_TEST_VARIANT3(basic_math_f32, zdsp_negate_f32, 100, in_com1, ref_negate, 100);
 DEFINE_TEST_VARIANT3(basic_math_f32, zdsp_negate_f32, long, in_com1, ref_negate,
 		     ARRAY_SIZE(in_com1));
 
@@ -306,6 +310,7 @@ static void test_zdsp_offset_f32(const DSP_DATA uint32_t *input1, float32_t scal
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_offset_f32, 0p5_3, in_com1, 0.5f, ref_offset, 3);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_offset_f32, 0p5_8, in_com1, 0.5f, ref_offset, 8);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_offset_f32, 0p5_11, in_com1, 0.5f, ref_offset, 11);
+DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_offset_f32, 0p5_100, in_com1, 0.5f, ref_offset, 100);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_offset_f32, long, in_com1, 0.5f, ref_offset,
 		     ARRAY_SIZE(in_com1));
 
@@ -372,6 +377,7 @@ static void test_zdsp_scale_f32(const DSP_DATA uint32_t *input1, float32_t scala
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_scale_f32, 0p5_3, in_com1, 0.5f, ref_scale, 3);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_scale_f32, 0p5_8, in_com1, 0.5f, ref_scale, 8);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_scale_f32, 0p5_11, in_com1, 0.5f, ref_scale, 11);
+DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_scale_f32, 0p5_100, in_com1, 0.5f, ref_scale, 100);
 DEFINE_TEST_VARIANT4(basic_math_f32, zdsp_scale_f32, long, in_com1, 0.5f, ref_scale,
 		     ARRAY_SIZE(in_com1));
 

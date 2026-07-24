@@ -314,3 +314,7 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 &crc {
 	status = "okay";
 };
+
+&powerquad {
+	status = "okay";
+};

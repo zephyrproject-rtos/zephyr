@@ -95,6 +95,7 @@
 		reg = <0x20030000 DT_SIZE_K(64)>;
 	};
 
+	/* SRAM4 is used by PowerQuad as private working memory when enabled */
 	sram4: memory@20040000 {
 		compatible = "mmio-sram";
 		reg = <0x20040000 DT_SIZE_K(16)>;
@@ -312,6 +313,13 @@
 		resets = <&reset NXP_SYSCON_RESET(1, 16)>;
 		dmas = <&dma0 14>, <&dma0 15>;
 		dma-names = "rx", "tx";
+		status = "disabled";
+	};
+
+	powerquad: powerquad@a6000 {
+		compatible = "nxp,powerquad";
+		reg = <0xa6000 0x1000>;
+		clocks = <&syscon MCUX_POWERQUAD_CLK>;
 		status = "disabled";
 	};
 
