@@ -19,6 +19,17 @@
 #define SKIP_EXECUTE_TESTS
 #endif
 
+/*
+ * QEMU's ARMv6 (ARM1176) MMU model does not implement the execute-never
+ * (XN) bit: get_S1prot() forces XN to 0 for non-ARMv7 cores. Execution
+ * protection faults are therefore not observable under emulation even
+ * though the page tables set XN correctly and real ARM1176 silicon
+ * enforces it. Skip the exec tests for ARMv6 until validated on hardware.
+ */
+#if defined(CONFIG_CPU_AARCH32_ARMV6)
+#define SKIP_EXECUTE_TESTS
+#endif
+
 #define BASE_FLAGS	(K_MEM_CACHE_WB)
 volatile bool expect_fault;
 
@@ -160,7 +171,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_exec)
 
 	/* Now map with execution enabled and try to run the copied fn */
 	k_mem_map_phys_bare(&mapped_exec, k_mem_phys_addr(__test_mem_map_start),
-			    (uintptr_t)(__test_mem_map_end - __test_mem_map_start),
+			    (uintptr_t)__test_mem_map_end - (uintptr_t)__test_mem_map_start,
 			    BASE_FLAGS | K_MEM_PERM_EXEC);
 
 	func = (void (*)(bool *executed))mapped_exec;
@@ -169,7 +180,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_exec)
 
 	/* Now map without execution and execution should now fail */
 	k_mem_map_phys_bare(&mapped_ro, k_mem_phys_addr(__test_mem_map_start),
-			    (uintptr_t)(__test_mem_map_end - __test_mem_map_start),
+			    (uintptr_t)__test_mem_map_end - (uintptr_t)__test_mem_map_start,
 			    BASE_FLAGS);
 
 	func = (void (*)(bool *executed))mapped_ro;
