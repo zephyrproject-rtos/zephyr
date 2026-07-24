@@ -385,6 +385,7 @@ if(EXISTS ${DOTCONFIG} AND EXISTS ${merge_config_files_checksum_file})
   endif()
 endif()
 
+zephyr_get(FORCED_CONF_FILE MERGE)
 if(CREATE_NEW_DOTCONFIG)
   if(NOT KCONFIG_VARIANT_SOURCE)
     set(input_configs_flags --handwritten-input-configs)
