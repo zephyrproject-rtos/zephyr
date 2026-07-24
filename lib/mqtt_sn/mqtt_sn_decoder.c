@@ -11,7 +11,7 @@
 
 #include "mqtt_sn_msg.h"
 
-#include <zephyr/net/mqtt_sn.h>
+#include <zephyr/mqtt_sn.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_mqtt_sn, CONFIG_MQTT_SN_LOG_LEVEL);

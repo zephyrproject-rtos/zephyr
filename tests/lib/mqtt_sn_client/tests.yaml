@@ -1,6 +1,5 @@
 tests:
-  net.mqtt_sn.packet:
+  libraries.mqtt_sn.client:
     min_ram: 16
     tags:
       - mqtt_sn
-      - net

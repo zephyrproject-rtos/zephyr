@@ -6,7 +6,7 @@
 
 #include <zephyr/tc_util.h>
 #include <mqtt_sn_msg.h>
-#include <zephyr/net/mqtt_sn.h>
+#include <zephyr/mqtt_sn.h>
 #include <zephyr/sys/util.h> /* for ARRAY_SIZE */
 #include <zephyr/ztest.h>
 

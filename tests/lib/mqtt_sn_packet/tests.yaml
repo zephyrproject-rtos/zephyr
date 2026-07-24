@@ -1,0 +1,5 @@
+tests:
+  libraries.mqtt_sn.packet:
+    min_ram: 16
+    tags:
+      - mqtt_sn

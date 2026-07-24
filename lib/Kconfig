@@ -17,6 +17,8 @@ source "lib/mem_blocks/Kconfig"
 
 source "lib/midi2/Kconfig"
 
+source "lib/mqtt_sn/Kconfig"
+
 source "lib/net_buf/Kconfig"
 
 source "lib/os/Kconfig"

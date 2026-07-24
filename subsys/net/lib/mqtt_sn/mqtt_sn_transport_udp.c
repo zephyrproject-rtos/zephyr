@@ -11,7 +11,7 @@
 
 #include <errno.h>
 
-#include <zephyr/net/mqtt_sn.h>
+#include <zephyr/net/mqtt_sn/udp.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/igmp.h>
