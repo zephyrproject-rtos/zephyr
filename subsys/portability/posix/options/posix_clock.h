@@ -24,12 +24,16 @@ extern "C" {
 
 static inline int64_t ts_to_ns(const struct timespec *ts)
 {
-	return ts->tv_sec * NSEC_PER_SEC + ts->tv_nsec;
+	/* Widen tv_sec to 64-bit before scaling: on targets where time_t is a
+	 * 32-bit type the multiplication would otherwise overflow (e.g. tv_sec
+	 * as small as 5 already exceeds UINT32_MAX once scaled to nanoseconds).
+	 */
+	return (int64_t)ts->tv_sec * NSEC_PER_SEC + ts->tv_nsec;
 }
 
 static inline int64_t ts_to_ms(const struct timespec *ts)
 {
-	return ts->tv_sec * MSEC_PER_SEC + ts->tv_nsec / NSEC_PER_MSEC;
+	return (int64_t)ts->tv_sec * MSEC_PER_SEC + ts->tv_nsec / NSEC_PER_MSEC;
 }
 
 static inline void tv_to_ts(const struct timeval *tv, struct timespec *ts)
