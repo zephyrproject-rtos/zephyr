@@ -1037,6 +1037,7 @@ int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
 void ethernet_init(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
+	enum ethernet_hw_caps caps;
 
 	NET_DBG("Initializing Ethernet L2 %p for iface %d (%p)", ctx,
 		net_if_get_by_iface(iface), iface);
@@ -1055,15 +1056,21 @@ void ethernet_init(struct net_if *iface)
 	ctx->iface = iface;
 	k_work_init(&ctx->carrier_work, carrier_on_off);
 
-	if (net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE) {
+	caps = net_eth_get_hw_capabilities(iface);
+
+	if ((caps & ETHERNET_PROMISC_MODE) != 0) {
 		ctx->ethernet_l2_flags |= NET_L2_PROMISC_MODE;
 	}
 
 #if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
-	if (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING) {
+	if ((caps & ETHERNET_HW_FILTERING) != 0) {
 		net_if_mcast_mon_register(&mcast_monitor, NULL, ethernet_mcast_monitor_cb);
 	}
 #endif
+
+	if ((caps & ETHERNET_LLDP) != 0) {
+		net_lldp_set_lldpdu(iface);
+	}
 
 	ctx->is_init = true;
 }
