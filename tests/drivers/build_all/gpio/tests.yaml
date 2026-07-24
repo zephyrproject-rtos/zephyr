@@ -76,3 +76,12 @@ tests:
       - nrf54l15dk/nrf54l15/cpuflpr/xip
     depends_on: gpio
     extra_args: DTC_OVERLAY_FILE="nrf54l15dk_nrf54l15_cpuflpr.overlay"
+
+  drivers.gpio.build.virtio:
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_riscv64
+    integration_platforms:
+      - qemu_cortex_a53
+    depends_on: gpio
+    extra_args: DTC_OVERLAY_FILE="virtio.overlay"

@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  VIRTIO GPIO device (ID:41)
+
+  The node is a child of the virtio bus node the device sits on:
+
+    virtio_mmio0: virtio_mmio@a000000 {
+            compatible = "virtio,mmio";
+            reg = <0xa000000 0x200>;
+            interrupts = <0 16 4>;
+            status = "okay";
+
+            virtio_gpio0: virtio-gpio {
+                    compatible = "virtio,gpio";
+                    gpio-controller;
+                    #gpio-cells = <2>;
+                    status = "okay";
+            };
+    };
+
+  The number of lines is read from the device at init. Since a Zephyr GPIO port
+  is at most 32 lines wide, any line beyond the first 32 is ignored.
+
+compatible: "virtio,gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  ngpios:
+    description: |
+      Upper bound on the number of lines the driver makes room for, used to
+      size the per line interrupt state. The default covers the widest port
+      Zephyr supports, lower it to save RAM on a device known to be narrower.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
