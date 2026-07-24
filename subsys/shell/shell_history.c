@@ -81,13 +81,13 @@ void z_shell_history_put(struct shell_history *history, uint8_t *line,
 	}
 
 	node = sys_dlist_peek_head(&history->list);
-	h_prev_item = CONTAINER_OF(node, struct shell_history_item, dnode);
 
-	if (node &&
-	   (h_prev_item->len == len) &&
-	   (memcmp(h_prev_item->data, line, len) == 0)) {
-		/* Same command as before, do not store */
-		return;
+	if (node) {
+		h_prev_item = CONTAINER_OF(node, struct shell_history_item, dnode);
+		if ((h_prev_item->len == len) && (memcmp(h_prev_item->data, line, len) == 0)) {
+			/* Same command as before, do not store */
+			return;
+		}
 	}
 
 	for (;;) {
