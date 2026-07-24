@@ -5239,7 +5239,8 @@ void k_work_poll_init(struct k_work_poll *work,
  *
  *
  * @retval 0 Work item started watching for events.
- * @retval -EINVAL Work item is being processed or has completed its work.
+ * @retval -EINVAL Bad parameters, or work item is being processed or has
+ *		   completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  */
 int k_work_poll_submit_to_queue(struct k_work_q *work_q,
@@ -6343,7 +6344,8 @@ void k_heap_init(struct k_heap *h, void *mem,
  * @param bytes Number of bytes requested
  * @param timeout How long to wait, or K_NO_WAIT
  * @return Pointer to memory the caller can now use, or NULL if the allocation
- *         could not be satisfied within the timeout
+ *         could not be satisfied within the timeout or @a align is not a
+ *         power of two
  */
 void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 			k_timeout_t timeout) __attribute_nonnull(1);
@@ -6980,7 +6982,7 @@ void k_poll_event_init(struct k_poll_event *event, uint32_t type,
  *         words, -EINTR status means that at least one of output events is
  *         K_POLL_STATE_CANCELLED.
  * @retval -ENOMEM Thread resource pool insufficient memory (user mode only)
- * @retval -EINVAL Bad parameters (user mode only)
+ * @retval -EINVAL Bad parameters
  */
 
 __syscall int k_poll(struct k_poll_event *events, int num_events,
@@ -7265,7 +7267,7 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
  *
  * @param cpu The cpu number
  * @param stats Pointer to struct to copy statistics into.
- * @return -EINVAL if null pointers, otherwise 0
+ * @return -EINVAL if null pointers or invalid cpu, otherwise 0
  */
 int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats);
 

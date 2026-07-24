@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
 /* private kernel APIs */
 #include <ksched.h>
@@ -105,14 +106,17 @@ void *k_heap_alloc(struct k_heap *heap, size_t bytes, k_timeout_t timeout)
 void *k_heap_aligned_alloc(struct k_heap *heap, size_t align, size_t bytes,
 			k_timeout_t timeout)
 {
+	void *ret;
+
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap, aligned_alloc, heap, timeout);
 
 	/* A power of 2 as well as 0 is OK */
-	__ASSERT((align & (align - 1)) == 0,
-		 "align must be a power of 2");
-
-	void *ret = z_heap_alloc_helper(heap, align, bytes, timeout,
-					sys_heap_aligned_alloc);
+	CHECKIF((align & (align - 1)) != 0U) {
+		ret = NULL;
+	} else {
+		ret = z_heap_alloc_helper(heap, align, bytes, timeout,
+					  sys_heap_aligned_alloc);
+	}
 
 	/*
 	 * modules/debug/percepio/TraceRecorder/kernelports/Zephyr/include/tracing_tracerecorder.h
