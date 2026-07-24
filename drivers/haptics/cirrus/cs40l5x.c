@@ -1163,52 +1163,6 @@ static int cs40l5x_bringup(const struct device *const dev)
 	return cs40lxx_write(&config->io_bus, CS40L5X_REG_BUZZ_RES, CS40L5X_BUZ_1MS_RES);
 }
 
-#if CONFIG_PM_DEVICE
-static int cs40l5x_disable_irq(const struct device *const dev)
-{
-	const struct cs40l5x_config *const config = dev->config;
-	struct cs40l5x_data *const data = dev->data;
-	int ret;
-
-	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_DISABLE);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return gpio_remove_callback_dt(&config->interrupt_gpio, &data->interrupt_callback);
-}
-
-static int cs40l5x_teardown(const struct device *const dev)
-{
-	const struct cs40l5x_config *const config = dev->config;
-	int ret;
-
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
-		ret = cs40l5x_disable_irq(dev);
-		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed to disable IRQ (%d)", ret);
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
-		ret = gpio_pin_set_dt(&config->reset_gpio, CS40L5X_GPIO_ACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
-
-		if (gpio_pin_configure_dt(&config->reset_gpio, GPIO_DISCONNECTED) < 0) {
-			/*
-			 * If unable to disconnect the reset GPIO, configure as input to prevent the
-			 * device from being erroneously powered on.
-			 */
-			(void)gpio_pin_configure_dt(&config->reset_gpio, GPIO_INPUT);
-		}
-	}
-
-	return 0;
-}
-#endif /* CONFIG_PM_DEVICE */
-
 static int cs40l5x_calibrate_redc(const struct device *const dev, uint32_t *const redc)
 {
 	const struct cs40l5x_config *const config = dev->config;
@@ -1914,32 +1868,35 @@ static int cs40l5x_pm_resume(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
-		ret = regulator_enable(config->external_boost);
-		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed to enable regulator (%d)", ret);
-			return ret;
-		}
-	}
-
 	ret = pm_device_runtime_get(cs40lxx_get_control_port(&config->io_bus));
 	if (ret < 0) {
+		LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(config->log,
+						   cs40lxx_get_control_port(&config->io_bus), ret);
 		return ret;
 	}
 
 	ret = cs40l5x_write_mailbox(dev, CS40L5X_MBOX_PREVENT_HIBERNATION);
 	if (ret < 0) {
-		return ret;
+		goto cleanup_control_port;
 	}
 
-	LOG_INST_DBG(config->log, "disabling hibernation");
+	ret = cs40l5x_poll(dev, CS40L5X_REG_HALO_STATE, CS40L5X_EXP_DSP_STANDBY,
+			   CS40L5X_T_DSP_READY);
+	if (ret >= 0) {
+		LOG_INST_DBG(config->log, "disabling hibernation");
+	}
 
-	return cs40l5x_poll(dev, CS40L5X_REG_HALO_STATE, CS40L5X_EXP_DSP_STANDBY,
-			    CS40L5X_T_DSP_READY);
+cleanup_control_port:
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "failed to disable hibernation (%d)", ret);
+
+		(void)pm_device_runtime_put(cs40lxx_get_control_port(&config->io_bus));
+	}
+
+	return ret;
 }
 
-#ifdef CONFIG_PM_DEVICE
-static int cs40l5x_pm_suspend(const struct device *const dev)
+__maybe_unused static int cs40l5x_pm_suspend(const struct device *const dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
@@ -1953,82 +1910,154 @@ static int cs40l5x_pm_suspend(const struct device *const dev)
 
 	(void)pm_device_runtime_put(cs40lxx_get_control_port(&config->io_bus));
 
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
-		ret = regulator_disable(config->external_boost);
-		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed to disable regulator (%d)", ret);
-			return ret;
-		}
-	}
-
 	return 0;
 }
 
-static int cs40l5x_pm_turn_off(const struct device *const dev)
+__maybe_unused static int cs40l5x_pm_turn_off(const struct device *const dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
-	int ret;
+	struct cs40l5x_data *const data = dev->data;
+	int err = 0, ret;
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
 		ret = pm_device_runtime_get(config->reset_gpio.port);
 		if (ret < 0) {
-			return ret;
+			LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(config->log, config->reset_gpio.port,
+							   ret);
+			err = ret;
+			goto skip_reset;
 		}
-	}
 
-	ret = cs40l5x_teardown(dev);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed device teardown (%d)", ret);
-		return ret;
-	}
+		ret = gpio_pin_set_dt(&config->reset_gpio, CS40L5X_GPIO_ACTIVE);
+		if (ret < 0) {
+			err = ret;
+		} else {
+			if (gpio_pin_configure_dt(&config->reset_gpio, GPIO_DISCONNECTED) < 0) {
+				ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_INPUT);
+				if (ret < 0) {
+					err = ret;
+				}
+			}
+		}
 
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
 		(void)pm_device_runtime_put(config->reset_gpio.port);
 	}
 
+skip_reset:
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
+		ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_DISABLE);
+		if (ret < 0) {
+			err = ret;
+		}
+
+		ret = gpio_remove_callback_dt(&config->interrupt_gpio, &data->interrupt_callback);
+		if (ret < 0) {
+			err = ret;
+		}
+
 		(void)pm_device_runtime_put(config->interrupt_gpio.port);
 	}
 
-	return 0;
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER)) {
+		for (int i = 0; i < config->trigger_gpios.num_gpio; i++) {
+			(void)pm_device_runtime_put(config->trigger_gpios.gpio[i].port);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
+		ret = regulator_disable(config->external_boost);
+		if (ret < 0) {
+			LOG_INST_DBG(config->log, "failed to disable %s (%d)",
+				     config->external_boost->name, ret);
+			err = ret;
+		}
+	}
+
+	return err;
 }
-#endif /* CONFIG_PM_DEVICE */
 
 static int cs40l5x_pm_turn_on(const struct device *const dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
-	int ret;
+	int i, ret, wrn;
 
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
-		ret = pm_device_runtime_get(config->reset_gpio.port);
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
+		ret = regulator_enable(config->external_boost);
 		if (ret < 0) {
+			LOG_INST_DBG(config->log, "failed to enable %s (%d)",
+				     config->external_boost->name, ret);
 			return ret;
 		}
 	}
 
-	ret = pm_device_runtime_get(cs40lxx_get_control_port(&config->io_bus));
-	if (ret < 0) {
-		goto error_pm_reset;
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
+		ret = pm_device_runtime_get(config->reset_gpio.port);
+		if (ret < 0) {
+			LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(config->log, config->reset_gpio.port,
+							   ret);
+			goto cleanup_regulator;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		ret = pm_device_runtime_get(config->interrupt_gpio.port);
 		if (ret < 0) {
-			goto error_pm_io;
+			LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(config->log, config->interrupt_gpio.port,
+							   ret);
+			goto cleanup_reset;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER)) {
+		for (i = 0; i < config->trigger_gpios.num_gpio; i++) {
+			ret = pm_device_runtime_get(config->trigger_gpios.gpio[i].port);
+			if (ret < 0) {
+				LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(
+					config->log, config->trigger_gpios.gpio[i].port, ret);
+				goto cleanup_triggers;
+			}
+		}
+	}
+
+	ret = pm_device_runtime_get(cs40lxx_get_control_port(&config->io_bus));
+	if (ret < 0) {
+		LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(config->log,
+						   cs40lxx_get_control_port(&config->io_bus), ret);
+		goto cleanup_triggers;
 	}
 
 	ret = cs40l5x_bringup(dev);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed device bringup (%d)", ret);
+		LOG_INST_ERR(config->log, "failed bringup (%d)", ret);
 	}
 
-error_pm_io:
 	(void)pm_device_runtime_put(cs40lxx_get_control_port(&config->io_bus));
 
-error_pm_reset:
+cleanup_triggers:
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_TRIGGER) && ret < 0) {
+		for (i--; i >= 0; i--) {
+			(void)pm_device_runtime_put(config->trigger_gpios.gpio[i].port);
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERRUPT) && config->interrupt_gpio.port != NULL &&
+	    ret < 0) {
+		(void)pm_device_runtime_put(config->interrupt_gpio.port);
+	}
+
+cleanup_reset:
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_RESET) && config->reset_gpio.port != NULL) {
 		(void)pm_device_runtime_put(config->reset_gpio.port);
+	}
+
+cleanup_regulator:
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL &&
+	    ret < 0) {
+		wrn = regulator_disable(config->external_boost);
+		if (wrn < 0) {
+			LOG_INST_DBG(config->log, "failed to disable %s (%d)",
+				     config->external_boost->name, wrn);
+		}
 	}
 
 	return ret;
@@ -2104,12 +2133,10 @@ static int cs40l5x_init(const struct device *dev)
 	return pm_device_driver_init(dev, cs40l5x_pm_action);
 }
 
-#if CONFIG_PM_DEVICE
 __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 {
 	return pm_device_driver_deinit(dev, cs40l5x_pm_action);
 }
-#endif /* CONFIG_PM_DEVICE */
 
 #define HAPTICS_CS40L5X_VALID_TRIGGER(inst)                                                        \
 	IS_EQ(DT_INST_NODE_HAS_PROP(inst, trigger_gpios),                                          \
