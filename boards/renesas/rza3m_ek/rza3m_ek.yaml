@@ -1,0 +1,13 @@
+identifier: rza3m_ek
+name: Renesas RZ/A3M Evaluation Kit
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+supported:
+  - uart
+  - gpio
+testing:
+  ignore_tags:
+    - bluetooth

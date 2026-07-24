@@ -15,7 +15,48 @@
 
 LOG_MODULE_REGISTER(rz_intc, CONFIG_INTC_LOG_LEVEL);
 
+#define TSCR_OFFSET   DT_REG_ADDR_BY_NAME(DT_NODELABEL(intc), tscr)
+#define TITSR0_OFFSET DT_REG_ADDR_BY_NAME(DT_NODELABEL(intc), titsr0)
+#define TSSR0_OFFSET  DT_REG_ADDR_BY_NAME(DT_NODELABEL(intc), tssr0)
+#define INTSEL_OFFSET DT_REG_ADDR_BY_NAME(DT_NODELABEL(intc), intsel)
+
+#define TSCR(base)   (base + TSCR_OFFSET)
+#define TITSR0(base) (base + TITSR0_OFFSET)
+#define TSSR0(base)  (base + TSSR0_OFFSET)
+#define INTSEL(base) (base + INTSEL_OFFSET)
+
+#define REG_TITSR_READ(base, tint)     sys_read32(TITSR0(base) + ((tint) / 16) * 4)
+#define REG_TITSR_WRITE(base, tint, v) sys_write32((v), TITSR0(base) + ((tint) / 16) * 4)
+#define REG_TITSR_TITSEL_MASK(tint)    (BIT_MASK(2) << ((tint % 16) * 2))
+
+#ifdef CONFIG_SOC_SERIES_RZG3E
+#define REG_TSSR_READ(base, tint)     sys_read32(TSSR0(base) + ((tint) / 2) * 4)
+#define REG_TSSR_WRITE(base, tint, v) sys_write32((v), TSSR0(base) + ((tint) / 2) * 4)
+#define REG_TSSR_TSSEL_MASK(tint)     (BIT_MASK(8) << ((tint % 2) * 16))
+#define REG_TSSR_TIEN_MASK(tint)      (BIT(15) << ((tint % 2) * 16))
+#else
+#define REG_TSSR_READ(base, tint)     sys_read32(TSSR0(base) + ((tint) / 4) * 4)
+#define REG_TSSR_WRITE(base, tint, v) sys_write32((v), TSSR0(base) + ((tint) / 4) * 4)
+#define REG_TSSR_TSSEL_MASK(tint)     (BIT_MASK(7) << ((tint % 4) * 8))
+#define REG_TSSR_TIEN_MASK(tint)      (BIT(7) << ((tint % 4) * 8))
+#endif
+
+#if defined(CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG)
+/* V2H, V2N */
+#define REG_TSCTR_READ(base, tint)     sys_read32(TSCR(base))
+#define REG_TSCLR_WRITE(base, tint, v) sys_write32((v), TSCR(base) + 4)
+#else
+#define REG_TSCR_READ(base, tint)     sys_read32(TSCR(base))
+#define REG_TSCR_WRITE(base, tint, v) sys_write32((v), TSCR(base))
+#endif
+
+#define OFFSET(irq)                    ((irq) - 353 - COND_CODE_1(CONFIG_GIC, (32), (0)))
+#define REG_INTSEL_READ(base, irq)     sys_read32(INTSEL(base) + (OFFSET(irq) / 3) * 4)
+#define REG_INTSEL_WRITE(base, irq, v) sys_write32((v), INTSEL(base) + (OFFSET(irq) / 3) * 4)
+#define REG_INTSEL_SPIk_SEL_MASK(irq)  (BIT_MASK(10) << ((OFFSET(irq) % 3) * 10))
+
 struct intc_rz_tint_config {
+	DEVICE_MMIO_ROM;
 	uint8_t tint;
 	uint8_t max_gpioint;
 	uint32_t irq;
@@ -23,6 +64,7 @@ struct intc_rz_tint_config {
 };
 
 struct intc_rz_tint_data {
+	DEVICE_MMIO_RAM;
 	uint8_t port;
 	uint8_t pin;
 	uint8_t gpioint;
@@ -31,60 +73,47 @@ struct intc_rz_tint_data {
 	void *callback_data;
 };
 
-#define RZ_INTC_BASE   DT_REG_ADDR(DT_NODELABEL(intc))
-#define RZ_INTC_TSCR   (RZ_INTC_BASE + DT_REG_ADDR_BY_NAME(DT_NODELABEL(intc), tscr))
-#define RZ_INTC_TITSR0 (RZ_INTC_BASE + DT_REG_ADDR_BY_NAME(DT_NODELABEL(intc), titsr0))
-#define RZ_INTC_TSSR0  (RZ_INTC_BASE + DT_REG_ADDR_BY_NAME(DT_NODELABEL(intc), tssr0))
-#define RZ_INTC_INTSEL (RZ_INTC_BASE + DT_REG_ADDR_BY_NAME(DT_NODELABEL(intc), intsel))
-
-#define REG_TITSR_READ(tint)        sys_read32(RZ_INTC_TITSR0 + ((tint) / 16) * 4)
-#define REG_TITSR_WRITE(tint, v)    sys_write32((v), RZ_INTC_TITSR0 + ((tint) / 16) * 4)
-#define REG_TITSR_TITSEL_MASK(tint) (BIT_MASK(2) << ((tint % 16) * 2))
-
-#ifdef CONFIG_SOC_SERIES_RZG3E
-#define REG_TSSR_READ(tint)       sys_read32(RZ_INTC_TSSR0 + ((tint) / 2) * 4)
-#define REG_TSSR_WRITE(tint, v)   sys_write32((v), RZ_INTC_TSSR0 + ((tint) / 2) * 4)
-#define REG_TSSR_TSSEL_MASK(tint) (BIT_MASK(8) << ((tint % 2) * 16))
-#define REG_TSSR_TIEN_MASK(tint)  (BIT(15) << ((tint % 2) * 16))
-#else
-#define REG_TSSR_READ(tint)       sys_read32(RZ_INTC_TSSR0 + ((tint) / 4) * 4)
-#define REG_TSSR_WRITE(tint, v)   sys_write32((v), RZ_INTC_TSSR0 + ((tint) / 4) * 4)
-#define REG_TSSR_TSSEL_MASK(tint) (BIT_MASK(7) << ((tint % 4) * 8))
-#define REG_TSSR_TIEN_MASK(tint)  (BIT(7) << ((tint % 4) * 8))
-#endif
-
-#if defined(CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG)
-/* V2H, V2N */
-#define REG_TSCTR_READ(tint)     sys_read32(RZ_INTC_TSCR)
-#define REG_TSCLR_WRITE(tint, v) sys_write32((v), RZ_INTC_TSCR + 4)
-#define TINT_STATUS_READ(tint)   REG_TSCTR_READ(tint)
-#define TINT_STATUS_CLEAR(tint)  REG_TSCLR_WRITE(tint, TINT_STATUS_READ(tint) | BIT(tint))
-#else
-#define REG_TSCR_READ(tint)     sys_read32(RZ_INTC_TSCR)
-#define REG_TSCR_WRITE(tint, v) sys_write32((v), RZ_INTC_TSCR)
-#define TINT_STATUS_READ(tint)  REG_TSCR_READ(tint)
-#define TINT_STATUS_CLEAR(tint) REG_TSCR_WRITE(tint, TINT_STATUS_READ(tint) & ~BIT(tint))
-#endif
-
-#define OFFSET(irq)                   ((irq) - 353 - COND_CODE_1(CONFIG_GIC, (32), (0)))
-#define REG_INTSEL_READ(irq)          sys_read32(RZ_INTC_INTSEL + (OFFSET(irq) / 3) * 4)
-#define REG_INTSEL_WRITE(irq, v)      sys_write32((v), RZ_INTC_INTSEL + (OFFSET(irq) / 3) * 4)
-#define REG_INTSEL_SPIk_SEL_MASK(irq) (BIT_MASK(10) << ((OFFSET(irq) % 3) * 10))
-
 static const uint8_t gpioint_table[] = DT_PROP(DT_NODELABEL(intc), gpioint_table);
+
+static inline bool intc_rz_tint_status_read(mem_addr_t base, uint8_t tint)
+{
+#ifdef CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG
+	/* V2H, V2N */
+	return IS_BIT_SET(REG_TSCTR_READ(base, tint), tint);
+#else
+	return IS_BIT_SET(REG_TSCR_READ(base, tint), tint);
+#endif /* CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG */
+}
+
+static inline void intc_rz_tint_status_clear(mem_addr_t base, uint8_t tint)
+{
+#ifdef CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG
+	/* V2H, V2N */
+	uint32_t reg_val = REG_TSCTR_READ(base, tint);
+
+	WRITE_BIT(reg_val, tint, 1);
+	REG_TSCLR_WRITE(base, tint, reg_val);
+#else
+	uint32_t reg_val = REG_TSCR_READ(base, tint);
+
+	WRITE_BIT(reg_val, tint, 0);
+	REG_TSCR_WRITE(base, tint, reg_val);
+#endif /* CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG */
+}
 
 static inline void intc_rz_tint_clear_irq_status(const struct device *dev)
 {
 	const struct intc_rz_tint_config *config = dev->config;
+	mem_addr_t base = DEVICE_MMIO_GET(dev);
 	uint8_t tint = config->tint;
 
-	TINT_STATUS_CLEAR(tint);
+	intc_rz_tint_status_clear(base, tint);
 
 	/*
 	 * User's manual: Clear Timing of Interrupt Cause
 	 * Dummy read is required after write
 	 */
-	TINT_STATUS_READ(tint);
+	(void)intc_rz_tint_status_read(base, tint);
 }
 
 int intc_rz_tint_enable(const struct device *dev)
@@ -110,9 +139,10 @@ int intc_rz_tint_set_type(const struct device *dev, enum intc_rz_tint_trigger tr
 	const struct intc_rz_tint_config *config = dev->config;
 	struct intc_rz_tint_data *data = dev->data;
 	uint8_t tint = config->tint;
-	uint32_t reg_val = REG_TITSR_READ(tint);
 	uint32_t flags = IRQ_TYPE_LEVEL;
 	uint32_t set = 0;
+	mem_addr_t base = DEVICE_MMIO_GET(dev);
+	uint32_t reg_val = REG_TITSR_READ(base, tint);
 
 	switch (trig) {
 	case RZ_TINT_FAILING_EDGE:
@@ -135,7 +165,7 @@ int intc_rz_tint_set_type(const struct device *dev, enum intc_rz_tint_trigger tr
 	/* Select interrupt type */
 	reg_val = (reg_val & ~REG_TITSR_TITSEL_MASK(tint)) |
 		  FIELD_PREP(REG_TITSR_TITSEL_MASK(tint), set);
-	REG_TITSR_WRITE(tint, reg_val);
+	REG_TITSR_WRITE(base, tint, reg_val);
 
 	/*
 	 * User's manual: Precaution when Changing Interrupt Settings
@@ -183,16 +213,19 @@ static int intc_rz_tint_init(const struct device *dev)
 {
 	struct intc_rz_tint_data *data = dev->data;
 
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 #if defined(CONFIG_RENESAS_RZ_INTC_SELECT_INTERRUPT)
 	const struct intc_rz_tint_config *config = dev->config;
 	uint8_t tint = config->tint;
 	uint32_t irq = config->irq;
-	uint32_t reg_val = REG_INTSEL_READ(irq);
+	mem_addr_t base = DEVICE_MMIO_GET(dev);
+	uint32_t reg_val = REG_INTSEL_READ(base, irq);
 
 	reg_val &= ~REG_INTSEL_SPIk_SEL_MASK(irq);
 	reg_val |= FIELD_PREP(REG_INTSEL_SPIk_SEL_MASK(irq), tint);
 
-	REG_INTSEL_WRITE(irq, reg_val);
+	REG_INTSEL_WRITE(base, irq, reg_val);
 #endif
 	return intc_rz_tint_set_type(dev, data->trigger_type);
 };
@@ -201,8 +234,8 @@ int intc_rz_tint_connect(const struct device *dev, uint8_t port, uint8_t pin)
 {
 	const struct intc_rz_tint_config *config = dev->config;
 	struct intc_rz_tint_data *data = dev->data;
-
 	uint8_t tint = config->tint;
+	mem_addr_t base = DEVICE_MMIO_GET(dev);
 
 	/* Map to GPIOINT */
 	uint8_t gpioint = gpioint_table[port] + pin;
@@ -211,12 +244,12 @@ int intc_rz_tint_connect(const struct device *dev, uint8_t port, uint8_t pin)
 		return -EINVAL;
 	}
 
-	uint32_t reg_val = REG_TSSR_READ(tint);
+	uint32_t reg_val = REG_TSSR_READ(base, tint);
 
 	reg_val &= ~(REG_TSSR_TSSEL_MASK(tint) | REG_TSSR_TIEN_MASK(tint));
 	reg_val |= FIELD_PREP(REG_TSSR_TSSEL_MASK(tint), gpioint);
 	reg_val |= FIELD_PREP(REG_TSSR_TIEN_MASK(tint), 1U);
-	REG_TSSR_WRITE(tint, reg_val);
+	REG_TSSR_WRITE(base, tint, reg_val);
 
 	data->gpioint = gpioint;
 	data->port = port;
@@ -242,6 +275,7 @@ int intc_rz_tint_set_callback(const struct device *dev, intc_rz_tint_callback_t 
 
 #define INTC_RZ_TINT_INIT(index)                                                                   \
 	static const struct intc_rz_tint_config intc_rz_tint_config##index = {                     \
+		DEVICE_MMIO_ROM_INIT(DT_INST_PARENT(index)),                                       \
 		.tint = DT_INST_REG_ADDR(index),                                                   \
 		.irq = DT_INST_IRQ_BY_IDX(index, 0, irq),                                          \
 		.prio = DT_INST_IRQ_BY_IDX(index, 0, priority),                                    \
