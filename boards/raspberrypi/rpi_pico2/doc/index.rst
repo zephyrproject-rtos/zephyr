@@ -9,7 +9,9 @@ Pico family. From the `Raspberry Pi website <https://www.raspberrypi.com/documen
 The Pico 2 supports running code on either a single Cortex-M33 or a Hazard3
 (RISC-V) core.
 
-As with the Pico 1, there's no support for running any code on the second core.
+The Pico 2 also supports multi-core Cortex-M33 running in an AMP configuration
+from SRAM or XIP Flash with the :ref:`rp2xxx-cpu1<rp2xxx-cpu1>` and :ref:`rp2xxx-cpu1-xip<rp2xxx-cpu1-xip>`
+snippets. Multi-core is not yet supported on the Hazard3 (RISC-V) core.
 
 Hardware
 ********
@@ -56,6 +58,34 @@ Below is an example of building and flashing the :zephyr:code-sample:`blinky` ap
     :flash-args: --openocd /usr/local/bin/openocd
 
 The blinky sample is not yet supported on Pico 2W, so try the :zephyr:code-sample:`wifi-shell` application to connect to the network.
+
+Multi-Core AMP (Cortex-M33)
+===========================
+
+The Pico 2 supports running a Zephyr image on both Cortex-M33 cores
+simultaneously using the :ref:`rp2xxx-cpu1<rp2xxx-cpu1>` or
+:ref:`rp2xxx-cpu1-xip<rp2xxx-cpu1-xip>` snippets. The CPU0 image boots normally
+and is responsible for launching the CPU1 image.
+
+The :zephyr:code-sample:`mbox` sample demonstrates simple inter-processor
+communication between the two cores. Build it with:
+
+.. zephyr-app-commands::
+    :zephyr-app: samples/drivers/mbox
+    :board: rpi_pico2/rp2350a/m33
+    :goals: build flash
+    :west-args: --sysbuild
+    :snippets: rp2xxx-cpu1
+    :flash-args: --openocd /usr/local/bin/openocd
+
+Use the :ref:`rp2xxx-cpu1-xip<rp2xxx-cpu1-xip>` snippet instead to execute the
+CPU1 image from Flash instead of SRAM.
+
+.. note::
+
+   The ``rpi_pico2/rp2350a/m33/cpu1`` board target cannot be built standalone.
+   It must be built as part of a sysbuild configuration launched by the main
+   board target best done with the ``rp2xxx-cpu*`` snippets.
 
 Wi-Fi Firmware Setup
 =====================
