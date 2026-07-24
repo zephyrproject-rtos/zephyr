@@ -1,0 +1,80 @@
+#
+# Copyright 2025-2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MP_THREADS_NUM
+	int "Number of mp_thread wrappers used by the whole application"
+	range 0 255
+	default 1
+
+config MP_THREAD_STACK_SIZE
+	int "Stack size of a thread"
+	default 1024
+
+config MP_THREAD_DEFAULT_PRIORITY
+	int "Priority of a thread"
+	default 5
+
+config MP_WORKQUEUE
+	bool "Element-level work offload (P4WQ)"
+	select SCHED_DEADLINE
+	help
+	  Enable element-level work offloading via a shared P4WQ
+	  (Pooled Parallel Preemptible Priority-based Work Queue)
+	  thread pool. Elements can submit finite work items (e.g.,
+	  decode, inference) to be processed on pool threads with
+	  configurable priority.
+
+config MP_WORKQUEUE_THREADS_NUM
+	int "Number of threads in MP workqueue pool"
+	default 1
+	depends on MP_WORKQUEUE
+	help
+	  Number of threads in the shared P4WQ pool used for
+	  element-level work offload.
+
+config MP_WORKQUEUE_STACK_SIZE
+	int "Stack size for MP workqueue pool threads"
+	default 4096
+	depends on MP_WORKQUEUE
+	help
+	  Stack size in bytes for each thread in the MP workqueue pool.
+
+config MP_NET_BUF_POOL_COUNT
+	int "Number of buffers in the MP shared net_buf pool"
+	default 1
+	help
+	  Number of buffers needed in the shared MP net_buf pool across pipelines.
+	  This is sum of the maximum number of in-flight net_buf buffers of each
+	  pipeline at any given time
+
+config MP_BIN_MAX_CHILDREN
+	int "Maximum number of elements in a bin/pipeline"
+	range 2 64
+	default 10
+	help
+	  Maximum number of child elements that can be added to a single
+	  bin or pipeline. This is used to size the bin's internal arrays for
+	  topological sort during state changes.
+
+config MP_FAKE_SRC
+	bool "Fake source element"
+	help
+	  Emulated source element for pipeline testing.
+
+config MP_FAKE_SRC_BUF_SZ
+	int "Buffer size of the fake source element (in bytes)"
+	range 1 1024
+	default 1
+	depends on MP_FAKE_SRC
+
+config MP_BUS_QUEUE_DEPTH
+	int "Message bus queue depth"
+	default 2
+	help
+	  Bus queue depth
+
+config MP_RPC
+	bool "RPC support"
