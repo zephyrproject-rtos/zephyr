@@ -1,0 +1,102 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon HPPASS CSG comparator.
+
+  One instance represents the comparator inside a CSG slice.  This
+  node must be a child of an "infineon,hppass-csg" CSG MFD parent.
+
+  The comparator's negative input may select either the paired in-slice
+  DAC output or one of two external analog inputs (AIN_NA, AIN_NB):
+
+    - When negative-input = "dac", the paired DAC must also be configured
+      and enabled.
+    - When negative-input = "ain-na" or "ain-nb", the comparator operates
+      as a standalone analog-only comparator and the paired DAC is unused.
+
+  The CSG MFD parent owns the combined comparator interrupt and dispatches
+  callbacks.
+
+compatible: "infineon,hppass-csg-comp"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+    description: |
+      Register region for this slice's CMP_CFG within the CSG block.
+      Slice index is derived at compile time from the offset divided
+      by the CSG slice stride.
+
+  positive-input:
+    type: string
+    required: true
+    enum:
+      - "ain-pa"
+      - "ain-pb"
+    description: |
+      Selects the comparator's positive input source (CMP_CFG.CMP_POS_SEL):
+        - "ain-pa": external analog input AIN_PA
+        - "ain-pb": external analog input AIN_PB
+
+  negative-input:
+    type: string
+    required: true
+    enum:
+      - "dac"
+      - "ain-na"
+      - "ain-nb"
+    description: |
+      Selects the comparator's negative input source (CMP_CFG.CMP_NEG_SEL):
+        - "dac":    paired in-slice DAC output (default operating mode)
+        - "ain-na": external analog input AIN_NA (standalone comparator)
+        - "ain-nb": external analog input AIN_NB (standalone comparator)
+
+  invert-output:
+    type: boolean
+    description: |
+      Invert the digital comparator output before edge detection, blanking
+      and status visibility (CMP_CFG.CMP_POLARITY).
+
+  blank-mode:
+    type: string
+    default: "disabled"
+    enum:
+      - "disabled"
+      - "gate-on-one"
+      - "gate-on-zero"
+    description: |
+      Comparator output blanking mode (CMP_CFG.CMP_BLANK_MODE).
+
+      Blanking gates the comparator output to inactive while a selected
+      external trigger is asserted, preventing a trip on a transient condition.
+
+        - "disabled":     no blanking applied
+        - "gate-on-one":  comparator output is forced inactive while the
+                          selected blanking trigger is high
+        - "gate-on-zero": comparator output is forced inactive while the
+                          selected blanking trigger is low
+
+  blank-trigger-sel:
+    type: string
+    default: "disabled"
+    enum:
+      - "disabled"
+      - "tr0"
+      - "tr1"
+      - "tr2"
+      - "tr3"
+      - "tr4"
+      - "tr5"
+      - "tr6"
+      - "tr7"
+    description: |
+      Selects which HPPASS trigger input gates the comparator output when
+      blank-mode is enabled (CMP_CFG.CMP_BLANK_TR_SEL).  Trigger sources
+      "tr0".."tr7" correspond to the eight HPPASS trigger inputs
+      configured on the parent "infineon,hppass-analog" node.
