@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* To run the loopback test, connect SDO (J5-5) <--> SDI (J5-6). */
+
+&flexio {
+	flexio_spi: flexio_spi {
+		compatible = "nxp,flexio-spi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		cs-gpios = <&gpioe_l 12 GPIO_ACTIVE_LOW>;
+		sdo-pin = <10>;
+		sdi-pin = <11>;
+		sck-pin = <9>;
+		pinctrl-0 = <&pinmux_flexio_spi>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		slow@0 {
+			compatible = "test-spi-loopback-slow";
+			reg = <0>;
+			spi-max-frequency = <500000>;
+		};
+
+		fast@0 {
+			compatible = "test-spi-loopback-fast";
+			reg = <0>;
+			spi-max-frequency = <4000000>;
+		};
+	};
+};
+
+&gpioe_l {
+	status = "okay";
+};

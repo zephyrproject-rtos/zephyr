@@ -19,5 +19,6 @@ supported:
   - watchdog
   - adc
   - hwinfo
+  - pwm
   - spi
 vendor: nxp

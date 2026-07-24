@@ -73,6 +73,26 @@
 		};
 	};
 
+	pinmux_flexio_pwm: pinmux_flexio_pwm {
+		group1 {
+			pinmux = <PTE15_FXIO_D2_O>;
+			output-enable;
+		};
+	};
+
+	pinmux_flexio_spi: pinmux_flexio_spi {
+		group1 {
+			pinmux = <PTD17_FXIO_D9_O>,
+				 <PTD9_FXIO_D10_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTD8_FXIO_D11_I>;
+			input-enable;
+		};
+	};
+
 	pinmux_flexio_lcd: pinmux_flexio_lcd {
 		group1 {
 			pinmux = <PTC23_FXIO_D16_O>,
