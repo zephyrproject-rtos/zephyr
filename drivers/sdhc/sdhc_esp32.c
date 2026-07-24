@@ -113,11 +113,17 @@ struct sdhc_esp32_data {
 	uint8_t bus_width;  /* Bus width used by the slot (can change during execution) */
 	uint32_t bus_clock; /* Value in Hz; the low-level helpers use kHz */
 
+	/*
+	 * The host clock divider is a controller register but each slot may
+	 * need a different value, so the slot's own divider is kept here and
+	 * re-applied whenever the bus changes hands.
+	 */
+	int host_div;
+
 	enum sdhc_power power_mode;
 	enum sdhc_timing_mode timing;
 
 	struct host_ctx s_host_ctx;
-	struct k_mutex s_request_mutex;
 	bool s_is_app_cmd;
 	sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT] __aligned(SDMMC_DESC_ALIGN);
 	struct sdmmc_transfer_state s_cur_transfer;
@@ -127,6 +133,27 @@ struct sdhc_esp32_data {
 	int sdio_int_sources;
 #endif
 };
+
+/*
+ * Both slots are served by a single SDMMC controller: one register block, one
+ * command engine, one DMA channel and one interrupt line. The controller-wide
+ * bring-up (clock, reset, global registers, ISR and DMA) therefore runs once,
+ * on whichever slot initialises first, and the slots share the state below.
+ *
+ * The command engine can only carry one transaction at a time, so bus_mutex
+ * serialises transactions across slots. The slot that holds it is recorded in
+ * owner so the ISR can route completion events to the right event queue; the
+ * per-slot SDIO card interrupt is routed by its own slot bit instead.
+ */
+struct sdhc_esp32_ctrl_data {
+	struct k_mutex bus_mutex;
+	const struct device *owner;
+	const struct device *slot_dev[SOC_SDMMC_NUM_SLOTS];
+	intr_handle_t intr_handle;
+	bool initialized;
+};
+
+static struct sdhc_esp32_ctrl_data sdhc_esp32_ctrl;
 
 /**********************************************************************
  * ESP32 low level functions
@@ -156,6 +183,8 @@ struct sdhc_esp32_data {
  * Of the second stage dividers, div0 is used for card 0, and div1 is used
  * for card 1.
  */
+static int sdmmc_host_clock_update_command(sdmmc_dev_t *sdio_hw, int slot);
+
 static int sdmmc_host_set_clk_div(sdmmc_dev_t *sdio_hw, int div)
 {
 	if (!((div > 1) && (div <= 16))) {
@@ -197,8 +226,6 @@ static void sdmmc_host_dma_stop(sdmmc_dev_t *sdio_hw)
 
 static int sdmmc_host_transaction_handler_init(struct sdhc_esp32_data *data)
 {
-	k_mutex_init(&data->s_request_mutex);
-
 	data->s_is_app_cmd = false;
 
 	return 0;
@@ -656,8 +683,43 @@ static int sdmmc_host_do_transaction(const struct device *dev, int slot,
 	sdmmc_dev_t *sdio_hw = (sdmmc_dev_t *)cfg->sdio_hw;
 	int ret;
 
-	if (k_mutex_lock(&data->s_request_mutex, K_FOREVER) != 0) {
+	/*
+	 * The controller runs a single command engine, so a transaction on one
+	 * slot excludes the other. Claim the bus and record this slot as the
+	 * owner so the ISR routes completion events to its queue.
+	 */
+	if (k_mutex_lock(&sdhc_esp32_ctrl.bus_mutex, K_FOREVER) != 0) {
 		return ESP_ERR_NO_MEM;
+	}
+
+	/*
+	 * The host clock divider is a controller register shared by both slots,
+	 * so a slot taking the bus from the other one has to restore its own
+	 * divider before issuing a command. The per-slot card divider lives in
+	 * its own register field and survives the handover. A clock update
+	 * command is what pushes the new divider into the CIU, so it has to run
+	 * with the card clock stopped and the shared interrupt mask parked.
+	 */
+	if (sdhc_esp32_ctrl.owner != dev) {
+		if (sdhc_esp32_ctrl.owner != NULL && data->host_div != 0) {
+			uint32_t saved_intmask = sdio_hw->intmask.val;
+
+			sdio_hw->intmask.val = 0;
+
+			sdmmc_ll_enable_card_clock(sdio_hw, slot, false);
+			(void)sdmmc_host_clock_update_command(sdio_hw, slot);
+
+			(void)sdmmc_host_set_clk_div(sdio_hw, data->host_div);
+			(void)sdmmc_host_clock_update_command(sdio_hw, slot);
+
+			sdmmc_ll_enable_card_clock(sdio_hw, slot, true);
+			(void)sdmmc_host_clock_update_command(sdio_hw, slot);
+
+			sdio_hw->rintsts.val = 0xFFFF;
+			sdio_hw->intmask.val = saved_intmask;
+			k_msgq_purge(data->s_host_ctx.event_queue);
+		}
+		sdhc_esp32_ctrl.owner = dev;
 	}
 
 	/* dispose of any events which happened asynchronously */
@@ -749,7 +811,12 @@ static int sdmmc_host_do_transaction(const struct device *dev, int slot,
 
 out:
 
-	k_mutex_unlock(&data->s_request_mutex);
+	/*
+	 * Keep owner set: it records which slot's clock divider is currently
+	 * programmed, so the next transaction knows whether it has to restore
+	 * its own. The ISR uses it the same way while a transaction runs.
+	 */
+	k_mutex_unlock(&sdhc_esp32_ctrl.bus_mutex);
 
 	return ret;
 }
@@ -852,7 +919,7 @@ static int sdmmc_host_calc_freq(const int host_div, const int card_div)
 	return clk_src_freq_hz / host_div / ((card_div == 0) ? 1 : card_div * 2) / 1000;
 }
 
-int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz)
+int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz, int *out_host_div)
 {
 	if (!(slot == 0 || slot == 1)) {
 		return ESP_ERR_INVALID_ARG;
@@ -872,7 +939,7 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz)
 	if (err != 0) {
 		LOG_ERR("disabling clk failed");
 		LOG_ERR("%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
-		return err;
+		goto restore;
 	}
 
 	int host_div = 0; /* clock divider of the host (sdio_hw->clock) */
@@ -889,8 +956,12 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz)
 	sdmmc_ll_set_card_clock_div(sdio_hw, slot, card_div);
 	err = sdmmc_host_set_clk_div(sdio_hw, host_div);
 
+	if (out_host_div != NULL) {
+		*out_host_div = host_div;
+	}
+
 	if (err != 0) {
-		return err;
+		goto restore;
 	}
 
 	err = sdmmc_host_clock_update_command(sdio_hw, slot);
@@ -898,7 +969,7 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz)
 	if (err != 0) {
 		LOG_ERR("setting clk div failed");
 		LOG_ERR("%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
-		return err;
+		goto restore;
 	}
 
 	/* Re-enable clocks */
@@ -910,7 +981,7 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz)
 	if (err != 0) {
 		LOG_ERR("re-enabling clk failed");
 		LOG_ERR("%s: sdmmc_host_clock_update_command returned 0x%x", __func__, err);
-		return err;
+		goto restore;
 	}
 
 	/* set data timeout */
@@ -922,9 +993,16 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz)
 	sdmmc_ll_set_response_timeout(sdio_hw, 255);
 
 	sdio_hw->rintsts.val = 0xFFFFFFFFU;
+
+restore:
+	/*
+	 * Always put the interrupt mask back. Leaving it cleared on an error
+	 * path would silently disable the other slot's interrupts too, since
+	 * the register is shared by the whole controller.
+	 */
 	sdio_hw->intmask.val = saved_intmask;
 
-	return 0;
+	return err;
 }
 
 int sdmmc_host_set_bus_width(sdmmc_dev_t *sdio_hw, int slot, size_t width)
@@ -1072,8 +1150,20 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 		}
 
 		if (data->bus_clock != (uint32_t)ios->clock) {
+			/*
+			 * Setting the card clock masks the shared interrupt
+			 * register and issues clock-update commands on the single
+			 * command engine, so it must not run while the other slot
+			 * owns the bus.
+			 */
+			k_mutex_lock(&sdhc_esp32_ctrl.bus_mutex, K_FOREVER);
+
 			/* Try setting new clock */
-			ret = sdmmc_host_set_card_clk(sdio_hw, cfg->slot, (ios->clock / 1000));
+			ret = sdmmc_host_set_card_clk(sdio_hw, cfg->slot, (ios->clock / 1000),
+						      &data->host_div);
+
+			/* The host divider now holds this slot's value. */
+			sdhc_esp32_ctrl.owner = dev;
 
 			if (ret == 0) {
 				/* Purge stale CMD_DONE events from clock update commands */
@@ -1081,10 +1171,13 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 				LOG_INF("Bus clock successfully set to %d kHz", ios->clock / 1000);
 			} else {
 				LOG_ERR("Error configuring card clock");
+				k_mutex_unlock(&sdhc_esp32_ctrl.bus_mutex);
 				return err_esp2zep(ret);
 			}
 
 			data->bus_clock = (uint32_t)ios->clock;
+
+			k_mutex_unlock(&sdhc_esp32_ctrl.bus_mutex);
 		}
 	}
 
@@ -1102,7 +1195,9 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 		}
 
 		if (data->bus_width != bus_width) {
+			k_mutex_lock(&sdhc_esp32_ctrl.bus_mutex, K_FOREVER);
 			ret = sdmmc_host_set_bus_width(sdio_hw, cfg->slot, bus_width);
+			k_mutex_unlock(&sdhc_esp32_ctrl.bus_mutex);
 
 			if (ret == 0) {
 				LOG_INF("Bus width set successfully to %d bit", bus_width);
@@ -1127,15 +1222,53 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 			if (cfg->pwr_gpio.port) {
 				gpio_pin_set_dt(&cfg->pwr_gpio, 1);
 			}
+			/*
+			 * Claim the bus: the reset and the register writes below
+			 * are controller wide and must not land in the middle of
+			 * a transaction running on the other slot.
+			 */
+			k_mutex_lock(&sdhc_esp32_ctrl.bus_mutex, K_FOREVER);
+
 			sdhc_esp32_reset(dev);
 			sdio_hw->tmout.val = 0xFFFFFFFFU;
 			sdio_hw->rintsts.val = 0xFFFFFFFFU;
+
+			/*
+			 * Reset and the interrupt mask are controller wide. When
+			 * another slot is already running, keep its card-interrupt
+			 * bits so powering this slot on does not silently disable
+			 * the other slot's SDIO interrupt. The card interrupt is
+			 * armed under an interrupt lock rather than the bus mutex,
+			 * so take the same lock across the scan and the write to
+			 * keep the two from interleaving.
+			 */
+			uint32_t keep_io = 0;
+			unsigned int io_key = irq_lock();
+
+#ifdef CONFIG_SDHC_ESP32_SDIO
+			for (int s = 0; s < SOC_SDMMC_NUM_SLOTS; s++) {
+				const struct device *other = sdhc_esp32_ctrl.slot_dev[s];
+				struct sdhc_esp32_data *other_data;
+
+				if (other == NULL || other == dev) {
+					continue;
+				}
+
+				other_data = other->data;
+				if (other_data->sdio_int_sources != 0) {
+					keep_io |= (s == 0) ? SDMMC_LL_EVENT_IO_SLOT0
+							    : SDMMC_LL_EVENT_IO_SLOT1;
+				}
+			}
+#endif
+
 			sdio_hw->intmask.val = SDMMC_INTMASK_CD | SDMMC_INTMASK_CMD_DONE |
 					       SDMMC_INTMASK_DATA_OVER | SDMMC_INTMASK_RCRC |
 					       SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO |
 					       SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO |
 					       SDMMC_INTMASK_SBE | SDMMC_INTMASK_EBE |
-					       SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE;
+					       SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE | keep_io;
+			irq_unlock(io_key);
 			sdio_hw->ctrl.int_enable = 1;
 			sdio_hw->cardthrctl.busy_clr_int_en = 0;
 			sdmmc_host_dma_init(sdio_hw);
@@ -1146,13 +1279,24 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 			 */
 			if (data->bus_clock != 0) {
 				ret = sdmmc_host_set_card_clk(sdio_hw, cfg->slot,
-							      data->bus_clock / 1000);
+							      data->bus_clock / 1000,
+							      &data->host_div);
 				if (ret != 0) {
 					LOG_ERR("Failed to re-apply card clock after power-on");
+					k_mutex_unlock(&sdhc_esp32_ctrl.bus_mutex);
 					return err_esp2zep(ret);
 				}
 				k_msgq_purge(data->s_host_ctx.event_queue);
 			}
+
+			/*
+			 * The reset wiped the shared clock divider, so this slot
+			 * now owns it and the other one must reprogram before its
+			 * next command.
+			 */
+			sdhc_esp32_ctrl.owner = dev;
+
+			k_mutex_unlock(&sdhc_esp32_ctrl.bus_mutex);
 		}
 		data->power_mode = ios->power_mode;
 	}
@@ -1435,11 +1579,9 @@ static void IRAM_ATTR sdio_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	const struct sdhc_esp32_config *cfg = dev->config;
-	struct sdhc_esp32_data *data = dev->data;
 	sdmmc_dev_t *sdio_hw = (sdmmc_dev_t *)cfg->sdio_hw;
 
 	struct sdmmc_event event;
-	struct k_msgq *queue = data->s_host_ctx.event_queue;
 	/*
 	 * The card interrupt bits live at 16 and 17 and are dispatched
 	 * separately below, so the event queue only ever carries the low
@@ -1449,9 +1591,19 @@ static void IRAM_ATTR sdio_esp32_isr(void *arg)
 	uint32_t pending = raw & 0xFFFF;
 
 #ifdef CONFIG_SDHC_ESP32_SDIO
-	uint32_t io_bit = (cfg->slot == 0) ? SDMMC_LL_EVENT_IO_SLOT0 : SDMMC_LL_EVENT_IO_SLOT1;
+	/*
+	 * The card interrupt is the only per-slot source, so dispatch it to the
+	 * slot that owns the asserted bit rather than to the transaction owner.
+	 */
+	for (int slot = 0; slot < SOC_SDMMC_NUM_SLOTS; slot++) {
+		const struct device *slot_dev = sdhc_esp32_ctrl.slot_dev[slot];
+		uint32_t io_bit = (slot == 0) ? SDMMC_LL_EVENT_IO_SLOT0 : SDMMC_LL_EVENT_IO_SLOT1;
+		struct sdhc_esp32_data *slot_data;
 
-	if (raw & io_bit) {
+		if (slot_dev == NULL || !(raw & io_bit)) {
+			continue;
+		}
+
 		/*
 		 * Mask the source so it does not re-trigger before the consumer
 		 * has handled it, and clear the latched status: the bit is
@@ -1462,8 +1614,9 @@ static void IRAM_ATTR sdio_esp32_isr(void *arg)
 		sdio_hw->intmask.val &= ~io_bit;
 		sdio_hw->rintsts.val = io_bit;
 
-		if (data->sdio_cb) {
-			data->sdio_cb(dev, SDHC_INT_SDIO, data->sdio_cb_user_data);
+		slot_data = slot_dev->data;
+		if (slot_data->sdio_cb) {
+			slot_data->sdio_cb(slot_dev, SDHC_INT_SDIO, slot_data->sdio_cb_user_data);
 		}
 	}
 #endif
@@ -1477,7 +1630,16 @@ static void IRAM_ATTR sdio_esp32_isr(void *arg)
 	event.dma_status = dma_pending & 0x1f;
 
 	if ((pending != 0) || (dma_pending != 0)) {
-		k_msgq_put(queue, &event, K_NO_WAIT);
+		/*
+		 * Command and data events are not slot tagged; the controller
+		 * runs one transaction at a time, so they belong to the slot
+		 * currently holding the bus. Fall back to the slot the ISR was
+		 * registered with when no transaction is in flight.
+		 */
+		const struct device *owner = sdhc_esp32_ctrl.owner;
+		struct sdhc_esp32_data *owner_data = (owner != NULL) ? owner->data : dev->data;
+
+		k_msgq_put(owner_data->s_host_ctx.event_queue, &event, K_NO_WAIT);
 	}
 }
 
@@ -1549,66 +1711,95 @@ static int sdhc_esp32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
-
-	if (ret != 0) {
-		LOG_ERR("Error enabling SDHC clock");
-		return ret;
-	}
-
-	/* Enable clock to peripheral. Use smallest divider first */
-	ret = sdmmc_host_set_clk_div(sdio_hw, 2);
-
-	if (ret != 0) {
-		return err_esp2zep(ret);
-	}
-
-	/* Reset controller */
-	sdhc_esp32_reset(dev);
-
-	sdio_hw->tmout.val = 0xFFFFFFFFU;
-
-	/* Clear interrupt status and set interrupt mask to known state */
-	sdio_hw->rintsts.val = 0xffffffff;
-	sdio_hw->intmask.val = 0;
-	sdio_hw->ctrl.int_enable = 0;
-
-	/* Attach interrupt handler */
-	ret = esp_intr_alloc(cfg->irq_source,
-				ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM,
-				&sdio_esp32_isr, (void *)dev,
-				&data->s_host_ctx.intr_handle);
-
-	if (ret != 0) {
-		k_msgq_purge(data->s_host_ctx.event_queue);
-		return -EFAULT;
-	}
-
-	/* Enable interrupts */
-	sdio_hw->intmask.val = SDMMC_INTMASK_CD | SDMMC_INTMASK_CMD_DONE | SDMMC_INTMASK_DATA_OVER |
-			       SDMMC_INTMASK_RCRC | SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO |
-			       SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO | SDMMC_INTMASK_SBE |
-			       SDMMC_INTMASK_EBE | SDMMC_INTMASK_RESP_ERR |
-			       SDMMC_INTMASK_HLE; /* sdio is enabled only when use */
-
-	sdio_hw->ctrl.int_enable = 1;
-
-	/* Disable generation of Busy Clear Interrupt */
-	sdio_hw->cardthrctl.busy_clr_int_en = 0;
-
-	/* Enable DMA */
-	sdmmc_host_dma_init(sdio_hw);
-
 	/* Initialize transaction handler */
 	ret = sdmmc_host_transaction_handler_init(data);
 
 	if (ret != 0) {
-		k_msgq_purge(data->s_host_ctx.event_queue);
-		esp_intr_free(data->s_host_ctx.intr_handle);
-		data->s_host_ctx.intr_handle = NULL;
-
 		return ret;
+	}
+
+	if (cfg->slot >= SOC_SDMMC_NUM_SLOTS) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Initialise the bus mutex before publishing the slot, so it is valid
+	 * no matter which slot runs first and whether the controller bring-up
+	 * below is skipped.
+	 */
+	if (!sdhc_esp32_ctrl.initialized) {
+		k_mutex_init(&sdhc_esp32_ctrl.bus_mutex);
+	}
+
+	/*
+	 * Publish the slot before the controller is brought up so the shared
+	 * ISR can already route a card interrupt to it.
+	 */
+	sdhc_esp32_ctrl.slot_dev[cfg->slot] = dev;
+
+	/*
+	 * Everything below is controller wide and shared by both slots, so it
+	 * runs once. A second slot initialising later reuses the clock, the
+	 * interrupt and the DMA set up here; resetting or re-allocating them
+	 * would disturb a slot that is already running.
+	 */
+	if (!sdhc_esp32_ctrl.initialized) {
+		ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+
+		if (ret != 0) {
+			LOG_ERR("Error enabling SDHC clock");
+			sdhc_esp32_ctrl.slot_dev[cfg->slot] = NULL;
+			return ret;
+		}
+
+		/* Enable clock to peripheral. Use smallest divider first */
+		ret = sdmmc_host_set_clk_div(sdio_hw, 2);
+
+		if (ret != 0) {
+			sdhc_esp32_ctrl.slot_dev[cfg->slot] = NULL;
+			return err_esp2zep(ret);
+		}
+
+		/* Reset controller */
+		sdhc_esp32_reset(dev);
+
+		sdio_hw->tmout.val = 0xFFFFFFFFU;
+
+		/* Clear interrupt status and set interrupt mask to known state */
+		sdio_hw->rintsts.val = 0xffffffff;
+		sdio_hw->intmask.val = 0;
+		sdio_hw->ctrl.int_enable = 0;
+
+		/* Attach interrupt handler */
+		ret = esp_intr_alloc(cfg->irq_source,
+				     ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+					     ESP_INT_FLAGS_CHECK(cfg->irq_flags) |
+					     ESP_INTR_FLAG_IRAM,
+				     &sdio_esp32_isr, (void *)dev, &sdhc_esp32_ctrl.intr_handle);
+
+		if (ret != 0) {
+			k_msgq_purge(data->s_host_ctx.event_queue);
+			sdhc_esp32_ctrl.slot_dev[cfg->slot] = NULL;
+			return -EFAULT;
+		}
+
+		/* Enable interrupts */
+		sdio_hw->intmask.val = SDMMC_INTMASK_CD | SDMMC_INTMASK_CMD_DONE |
+				       SDMMC_INTMASK_DATA_OVER | SDMMC_INTMASK_RCRC |
+				       SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO | SDMMC_INTMASK_DTO |
+				       SDMMC_INTMASK_HTO | SDMMC_INTMASK_SBE | SDMMC_INTMASK_EBE |
+				       SDMMC_INTMASK_RESP_ERR |
+				       SDMMC_INTMASK_HLE; /* sdio is enabled only when use */
+
+		sdio_hw->ctrl.int_enable = 1;
+
+		/* Disable generation of Busy Clear Interrupt */
+		sdio_hw->cardthrctl.busy_clr_int_en = 0;
+
+		/* Enable DMA */
+		sdmmc_host_dma_init(sdio_hw);
+
+		sdhc_esp32_ctrl.initialized = true;
 	}
 
 	/* Clear slot data so card is initialized at set_io() */
@@ -1772,5 +1963,5 @@ static DEVICE_API(sdhc, sdhc_api) = {
 
 DT_INST_FOREACH_STATUS_OKAY(SDHC_ESP32_INIT)
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
-	     "Currently, only one espressif,esp32-sdhc-slot compatible node is supported");
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= SOC_SDMMC_NUM_SLOTS,
+	     "More espressif,esp32-sdhc-slot nodes enabled than the controller has slots");
