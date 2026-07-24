@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC84X PINT
+
+compatible: "nxp,lpc84x-pint"
+
+include: [base.yaml, interrupt-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  num-lines:
+    type: int
+    required: true
+    description: |
+      Number of interrupt lines supported by PINT interrupt controller.

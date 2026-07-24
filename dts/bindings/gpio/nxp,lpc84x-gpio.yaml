@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC84X GPIO
+
+compatible: "nxp,lpc84x-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupt-parent:
+    type: phandle
+    description:
+      The GPIO peripheral does not generate interrupts directly.
+      Instead, the PINT peripheral handles interrupt generation for the GPIO.
+
+  port-no:
+    type: int
+    required: true
+    description: GPIO port number.
+
+  ngpios:
+    type: int
+    required: true
+    description: Number of GPIOs supported by this port.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

@@ -52,6 +52,7 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_KSCAN_ITE_IT8XXX2 gpio_kscan_ite_it8xxx
 zephyr_library_sources_ifdef(CONFIG_GPIO_LITEX gpio_litex.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_LMP90XXX gpio_lmp90xxx.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_LPC11U6X gpio_lpc11u6x.c)
+zephyr_library_sources_ifdef(CONFIG_GPIO_LPC84X  gpio_lpc84x.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_M5PM1 gpio_m5pm1.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_MAX14906 gpio_max14906.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_MAX14916 gpio_max14916.c)
