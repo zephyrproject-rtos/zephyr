@@ -1680,3 +1680,9 @@ test_i2c_icm56686: icm56686@68 {
 	gyro-lpf = <1>;
 	gyro-pwr-mode = <2>;
 };
+
+test_i2c_stc31: stc31@d9 {
+	compatible = "sensirion,stc31";
+	reg = <0xd9>;
+	binary-gas = <0x0001>;
+};
