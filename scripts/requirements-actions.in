@@ -27,7 +27,8 @@ python-dotenv
 python-magic-bin; sys_platform == "win32"
 python-magic; sys_platform != "win32"
 pyyaml>=5.4
-reuse
+reuse @ https://codeberg.org/kartben/reuse-tool/archive/06fa85966215cc7e7ec5a6d98dadaa78e8bd961a.tar.gz \
+        --hash=sha256:b5ac81f230948d42add970d52a08ce643b5994e608237489dc3719dd3332069e
 ruff==0.14.2
 setuptools>=70.2.0
 spdx-tools

@@ -59,6 +59,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import list_boards
 import list_hardware
 from get_maintainer import Maintainers, MaintainersError
+from list_undocumented_licenses import undocumented
 
 sys.path.insert(
     0, str(Path(__file__).resolve().parents[2] / "scripts" / "dts" / "python-devicetree" / "src")
@@ -1961,6 +1962,39 @@ class LicenseAndCopyrightCheck(ComplianceTest):
                 (
                     f"License file for '{lic_id}' not found in /LICENSES. Please check "
                     "https://docs.zephyrproject.org/latest/contribute/guidelines.html#components-using-other-licenses."
+                ),
+            )
+
+        self._check_documented_exceptions(project, changed_files)
+
+    def _check_documented_exceptions(self, project: Project, changed_files: Iterable) -> None:
+        """Flag non-Apache-2.0 files that are not documented as an exception.
+
+        Zephyr is Apache-2.0 as a whole; per the project charter CC-BY-4.0 is
+        allowed for documentation only. Any other license, or CC-BY-4.0 on a
+        non-documentation file, must be listed on the
+        :ref:`licensing page <zephyr_licensing>`. That page is generated from
+        the ``[[annotations]]`` blocks in ``REUSE.toml`` that carry a
+        ``Zephyr-Description`` key, so such a file is considered documented if and
+        only if it is matched by one of those blocks. The detection itself lives
+        in ``scripts/list_undocumented_licenses.py`` and is shared with that
+        tool and the docs licensing page.
+        """
+        for file, licenses in undocumented(project, changed_files):
+            self.fmtd_failure(
+                "error",
+                "Undocumented license",
+                file,
+                line=1,
+                desc=(
+                    f"File is licensed as {', '.join(sorted(licenses))}, which is not "
+                    "Apache-2.0. Importing code under another license has prerequisites; make "
+                    "sure the steps in "
+                    "https://docs.zephyrproject.org/latest/contribute/guidelines.html"
+                    "#components-using-other-licenses have been followed. Then document the "
+                    "component as an [[annotations]] entry with a 'Zephyr-Description' key in "
+                    "REUSE.toml, so it is listed on the licensing page "
+                    "(https://docs.zephyrproject.org/latest/LICENSING.html)."
                 ),
             )
 
