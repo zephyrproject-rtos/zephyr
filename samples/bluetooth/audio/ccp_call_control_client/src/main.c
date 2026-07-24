@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -237,6 +237,24 @@ static void ccp_call_control_client_read_bearer_provider_name_cb(
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
+static void
+ccp_call_control_client_read_bearer_tech_cb(struct bt_ccp_call_control_client_bearer *bearer,
+					    int err, enum bt_bearer_tech tech, void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	if (err != 0) {
+		LOG_ERR("Failed to read bearer %p technology: %d\n", (void *)bearer, err);
+		return;
+	}
+
+	LOG_INF("Bearer %p technology: %d", (void *)bearer, tech);
+
+	k_sem_give(&sem_ccp_action_completed);
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
 static void
 ccp_call_control_client_read_bearer_uci_cb(struct bt_ccp_call_control_client_bearer *bearer,
@@ -252,6 +270,25 @@ ccp_call_control_client_read_bearer_uci_cb(struct bt_ccp_call_control_client_bea
 	k_sem_give(&sem_ccp_action_completed);
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
+static void
+ccp_call_control_client_read_bearer_uri_schemes_cb(struct bt_ccp_call_control_client_bearer *bearer,
+						   int err, const char *uri_schemes,
+						   void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	if (err != 0) {
+		LOG_ERR("Failed to read bearer %p URI schemes: %d\n", (void *)bearer, err);
+		return;
+	}
+
+	LOG_INF("Bearer %p URI schemes: %s", (void *)bearer, uri_schemes);
+
+	k_sem_give(&sem_ccp_action_completed);
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 
 static int reset_ccp_call_control_client(void)
 {
@@ -341,6 +378,42 @@ static int read_bearer_uci(struct bt_ccp_call_control_client_bearer *bearer)
 	return 0;
 }
 
+static int read_bearer_tech(struct bt_ccp_call_control_client_bearer *bearer)
+{
+	int err;
+
+	err = bt_ccp_call_control_client_read_bearer_tech(bearer);
+	if (err != 0) {
+		return err;
+	}
+
+	err = k_sem_take(&sem_ccp_action_completed, SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_ERR("Failed to take sem_ccp_action_completed: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int read_bearer_uri_schemes(struct bt_ccp_call_control_client_bearer *bearer)
+{
+	int err;
+
+	err = bt_ccp_call_control_client_read_bearer_uri_schemes(bearer);
+	if (err != 0) {
+		return err;
+	}
+
+	err = k_sem_take(&sem_ccp_action_completed, SEM_TIMEOUT);
+	if (err != 0) {
+		LOG_ERR("Failed to take sem_ccp_action_completed: %d", err);
+		return err;
+	}
+
+	return 0;
+}
+
 static int read_bearer_values(void)
 {
 	int err;
@@ -358,6 +431,22 @@ static int read_bearer_values(void)
 		err = read_bearer_uci(client_bearers.gtbs_bearer);
 		if (err != 0) {
 			LOG_ERR("Failed to read UCI for GTBS bearer: %d", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)) {
+		err = read_bearer_tech(client_bearers.gtbs_bearer);
+		if (err != 0) {
+			LOG_ERR("Failed to read technology for GTBS bearer: %d", err);
+			return err;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)) {
+		err = read_bearer_uri_schemes(client_bearers.gtbs_bearer);
+		if (err != 0) {
+			LOG_ERR("Failed to read techonology for GTBS bearer: %d", err);
 			return err;
 		}
 	}
@@ -380,6 +469,24 @@ static int read_bearer_values(void)
 				return err;
 			}
 		}
+
+		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)) {
+			err = read_bearer_tech(client_bearers.tbs_bearers[i]);
+			if (err != 0) {
+				LOG_ERR("Failed to read technology for TBS bearer[%zu]: %d", i,
+					err);
+				return err;
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)) {
+			err = read_bearer_uri_schemes(client_bearers.tbs_bearers[i]);
+			if (err != 0) {
+				LOG_ERR("Failed to read techonology for TBS bearer[%zu]: %d", i,
+					err);
+				return err;
+			}
+		}
 	}
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
 
@@ -396,6 +503,12 @@ static int init_ccp_call_control_client(void)
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
 		.bearer_uci = ccp_call_control_client_read_bearer_uci_cb,
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
+		.bearer_tech = ccp_call_control_client_read_bearer_tech_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
+		.bearer_uri_schemes = ccp_call_control_client_read_bearer_uri_schemes_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 	};
 	static struct bt_le_scan_cb scan_cbs = {
 		.recv = scan_recv_cb,
@@ -456,7 +569,7 @@ int main(void)
 			continue;
 		}
 
-		read_bearer_values();
+		err = read_bearer_values();
 		if (err != 0) {
 			continue;
 		}
