@@ -1028,7 +1028,7 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if ((flags & GPIO_PULL_UP) || (flags & GPIO_PULL_DOWN)) {
+	if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
 		if ((cfg->part_cfg->flags & PCA_HAS_PULL) == 0U) {
 			return -ENOTSUP;
 		}
@@ -1073,7 +1073,7 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 	}
 
 	if ((cfg->part_cfg->flags & PCA_HAS_PULL)) {
-		if ((flags & GPIO_PULL_UP) || (flags & GPIO_PULL_DOWN)) {
+		if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
 			/* configure PCA_REG_TYPE_1B_PULL_SELECT */
 			ret = gpio_pca_series_reg_cache_read(dev,
 				PCA_REG_TYPE_1B_PULL_SELECT, (uint8_t *)&reg_value);
@@ -1100,7 +1100,7 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 			goto out;
 		}
 		reg_value = sys_le32_to_cpu(reg_value);
-		if ((flags & GPIO_PULL_UP) || (flags & GPIO_PULL_DOWN)) {
+		if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
 			reg_value |= (BIT(pin)); /* set bit to enable pull */
 		} else {
 			reg_value &= (~BIT(pin)); /* clear bit to disable pull */
@@ -1129,7 +1129,7 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 	}
 
 	/* configure PCA_REG_TYPE_1B_OUTPUT */
-	if ((flags & GPIO_OUTPUT_INIT_HIGH) || (flags & GPIO_OUTPUT_INIT_LOW)) {
+	if (flags & (GPIO_OUTPUT_INIT_HIGH | GPIO_OUTPUT_INIT_LOW)) {
 		uint32_t out_old;
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 		/* get output register old value from reg cache */

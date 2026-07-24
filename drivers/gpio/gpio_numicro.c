@@ -92,7 +92,7 @@ static int gpio_numicro_configure(const struct device *dev,
 	}
 
 	/* Bias */
-	if ((flags & GPIO_OUTPUT) != 0 || (flags & GPIO_INPUT) != 0) {
+	if ((flags & (GPIO_OUTPUT | GPIO_INPUT)) != 0) {
 		if ((flags & GPIO_PULL_UP) != 0) {
 			bias = GPIO_PUSEL_PULL_UP;
 		} else if ((flags & GPIO_PULL_DOWN) != 0) {
