@@ -84,3 +84,25 @@ void operator delete[](void* ptr, size_t) NOEXCEPT
 	free(ptr);
 }
 #endif // __cplusplus > 201103L
+
+#if __cplusplus >= 201703L
+void operator delete(void* ptr, std::align_val_t) NOEXCEPT
+{
+	free(ptr);
+}
+
+void operator delete[](void* ptr, std::align_val_t) NOEXCEPT
+{
+	free(ptr);
+}
+
+void operator delete(void* ptr, std::size_t, std::align_val_t) NOEXCEPT
+{
+	free(ptr);
+}
+
+void operator delete[](void* ptr, std::size_t, std::align_val_t) NOEXCEPT
+{
+	free(ptr);
+}
+#endif /* __cplusplus >= 201703L */
