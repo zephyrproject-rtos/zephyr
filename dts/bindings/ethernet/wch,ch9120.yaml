@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  CH9120 offload ethernet driver
+
+compatible: "wch,ch9120"
+
+include: base.yaml
+
+bus: uart
+
+properties:
+  uart:
+    type: phandle
+    required: true
+    description: UART used for offload communication
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Reset, active low
+
+  config-gpios:
+    type: phandle-array
+    required: true
+    description: Network configuration enable switch, when the level is low,
+                enter serial port configuration mode.
+
+  tcpcs-gpios:
+    type: phandle-array
+    required: true
+    description: In TCP client mode, indicate the connection status;
+                a low level signifies a successful connection

@@ -93,6 +93,7 @@ source "drivers/ethernet/dwc_xgmac/Kconfig"
 source "drivers/ethernet/eth_nxp_enet_qos/Kconfig"
 source "drivers/ethernet/intel/Kconfig"
 source "drivers/ethernet/nxp_imx_netc/Kconfig"
+source "drivers/ethernet/offload/Kconfig"
 source "drivers/ethernet/phy/Kconfig"
 # zephyr-keep-sorted-stop
 
