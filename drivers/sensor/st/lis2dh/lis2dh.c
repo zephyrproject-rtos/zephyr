@@ -370,6 +370,7 @@ int lis2dh_init_chip(const struct device *dev)
 	/* AN5005: LIS2DH needs 5ms delay to boot */
 	k_sleep(K_MSEC(LIS2DH_POR_WAIT_MS));
 
+	LOG_DBG("WAI REG = %02x", LIS2DH_REG_WAI);
 	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
 	if (status < 0) {
 		LOG_ERR("Failed to read chip id.");
