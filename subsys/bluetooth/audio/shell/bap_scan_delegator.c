@@ -83,7 +83,7 @@ sync_state_get_or_new(const struct bt_bap_scan_delegator_recv_state *recv_state)
 			free_state = &scan_delegator_sync_states[i];
 		}
 
-		if (scan_delegator_sync_states[i].recv_state == recv_state) {
+		if (scan_delegator_sync_states[i].src_id == recv_state->src_id) {
 			scan_delegator_sync_states[i].active = true;
 
 			return &scan_delegator_sync_states[i];
