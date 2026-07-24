@@ -35,6 +35,7 @@
 			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
 			number-of-mb = <16>;
+			timing-registers = "ctrl1";
 			status = "disabled";
 		};
 	};

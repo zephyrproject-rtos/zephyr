@@ -479,6 +479,7 @@
 			interrupt-names = "ored", "ored_0_31_mb",
 					  "ored_32_63_mb", "ored_64_95_mb";
 			number-of-mb = <96>;
+			timing-registers = "encbt";
 			status = "disabled";
 		};
 
@@ -489,6 +490,7 @@
 			interrupts = <113 0>, <114 0>, <115 0>;
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb";
 			number-of-mb = <64>;
+			timing-registers = "encbt";
 			status = "disabled";
 		};
 
@@ -499,6 +501,7 @@
 			interrupts = <116 0>, <117 0>, <118 0>;
 			interrupt-names = "ored", "ored_0_31_mb", "ored_32_63_mb";
 			number-of-mb = <64>;
+			timing-registers = "encbt";
 			status = "disabled";
 		};
 
@@ -509,6 +512,7 @@
 			interrupts = <119 0>, <120 0>;
 			interrupt-names = "ored", "ored_0_31_mb";
 			number-of-mb = <32>;
+			timing-registers = "encbt";
 			status = "disabled";
 		};
 
@@ -519,6 +523,7 @@
 			interrupts = <121 0>, <122 0>;
 			interrupt-names = "ored", "ored_0_31_mb";
 			number-of-mb = <32>;
+			timing-registers = "encbt";
 			status = "disabled";
 		};
 
@@ -529,6 +534,7 @@
 			interrupts = <123 0>, <124 0>;
 			interrupt-names = "ored", "ored_0_31_mb";
 			number-of-mb = <32>;
+			timing-registers = "encbt";
 			status = "disabled";
 		};
 
