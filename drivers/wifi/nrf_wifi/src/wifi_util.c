@@ -261,6 +261,11 @@ static int nrf_wifi_util_show_cfg(const struct shell *sh,
 		      "rate_flag = %d,  rate_val = %d\n",
 		      ctx->conf_params.tx_pkt_tput_mode,
 		      ctx->conf_params.tx_pkt_rate);
+
+	shell_fprintf(sh,
+		      SHELL_INFO,
+		      "extended_sleep_sec = %u seconds\n",
+		      ctx->extended_sleep_sec);
 	return 0;
 }
 
@@ -1097,6 +1102,41 @@ unlock:
 	return ret;
 }
 
+static int nrf_wifi_util_req_extended_sleep(const struct shell *sh,
+					    size_t argc,
+					    const char *argv[])
+{
+	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
+	char *ptr = NULL;
+	unsigned long val = 0;
+
+	val = strtoul(argv[1], &ptr, 10);
+
+	if ((val < 0) || (val > UINT_MAX)) {
+		shell_fprintf(sh,
+			      SHELL_ERROR,
+			      "Invalid value(%lu).\n",
+			      val);
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	status = nrf_wifi_fmac_req_extended_sleep(ctx->rpu_ctx,
+						  0,
+						  (unsigned int)val);
+
+	if (status != NRF_WIFI_STATUS_SUCCESS) {
+		shell_fprintf(sh,
+			      SHELL_ERROR,
+			      "Programming extended_sleep failed\n");
+		return -ENOEXEC;
+	}
+
+	ctx->extended_sleep_sec = (unsigned int)val;
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	nrf70_util,
 	SHELL_CMD_ARG(he_ltf,
@@ -1207,6 +1247,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      nrf_wifi_util_dump_rpu_stats_mem,
 		      1,
 		      1),
+	SHELL_CMD_ARG(extended_sleep,
+		      NULL,
+		      "<duration_sec> - extended sleep interval in seconds.\n"
+		      "During this interval the nRF70 remains in deep sleep without\n"
+		      "waking for DTIM beacons. Inbound traffic will be lost.",
+		      nrf_wifi_util_req_extended_sleep,
+		      2,
+		      0),
 	SHELL_SUBCMD_SET_END);
 
 
