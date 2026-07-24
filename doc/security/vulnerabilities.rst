@@ -1872,32 +1872,255 @@ This has been fixed in main for v4.5.0
 :cve:`2026-10674`
 -----------------
 
-Under embargo until 2026-07-18
+DoS (hard fault) in NXP LPUART driver: unsupported runtime UART config leaves clocks disabled
+
+The NXP LPUART serial driver (``drivers/serial/uart_mcux_lpuart.c``), when
+``CONFIG_UART_USE_RUNTIME_CONFIGURE`` is enabled, called ``LPUART_Deinit()`` at the
+start of ``mcux_lpuart_configure()``, which disables the LPUART peripheral clocks. The
+requested configuration is validated only afterwards (in
+``mcux_lpuart_configure_basic``), and unsupported parity/data-bit/stop-bit/flow-control
+values return ``-ENOTSUP`` before the clock is re-enabled.
+
+As a result, a ``uart_configure()`` request with an unsupported configuration left the
+LPUART in a clock-disabled state; any subsequent access to LPUART registers
+(``poll_out``/``poll_in``, interrupt handling, or a later reconfigure) faults on the
+gated peripheral and escalates to a hard fault, crashing the system.
+
+``uart_configure()`` is a Zephyr syscall whose verifier (``z_vrfy_uart_configure``) only
+checks that ``cfg`` is readable user memory and forwards the caller-supplied
+configuration unchanged, so an unprivileged userspace thread with access to an LPUART
+device can deterministically trigger the fault, a persistent system-wide denial of
+service.
+
+Introduced in v2.5.0 and present in all subsequent releases until this fix, which
+removes the ``LPUART_Deinit()`` call and instead only disables the transmitter/receiver,
+leaving the clock running.
+
+- `Zephyr project bug tracker GHSA-mw68-r353-m3vf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-mw68-r353-m3vf>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 107186 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107186>`_
+
+- `PR 111106 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111106>`_
+
+- `PR 111105 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111105>`_
+
+- `PR 111104 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111104>`_
 
 :cve:`2026-10675`
 -----------------
 
-Under embargo until 2026-07-19
+Bluetooth Mesh PB-ADV: invalidated provisioning link kept alive indefinitely, blocking (re)provisioning (DoS)
+
+In Zephyr's Bluetooth Mesh PB-ADV provisioning bearer
+(``subsys/bluetooth/mesh/pb_adv.c``), ``prov_msg_recv()`` rescheduled the provisioning
+protocol watchdog timer unconditionally at the top of the function, before the FCS check
+and before the ``ADV_LINK_INVALID`` check. Once a provisioning attempt fails,
+``prov_failed()`` sets ``ADV_LINK_INVALID`` and the only recovery path is the protocol
+timer firing (``protocol_timeout`` -> ``prov_link_close`` -> ``close_link`` ->
+``reset_adv_link`` and re-enabling of scanning and the unprovisioned device beacon).
+
+A remote, unauthenticated attacker on the BLE advertising channel can first induce a
+provisioning failure (e.g. with a malformed generic-provisioning PDU) and then transmit
+any FCS-valid PB-ADV transaction PDU on the same link ID more often than once per
+protocol timeout (60 s, or 120 s for OOB input/output). Because each such packet reset
+the timer even on an invalidated link, ``protocol_timeout`` never fired, the dead link
+was never torn down, and the device remained pinned in an un-provisionable state with
+its unprovisioned beacon disabled and new Link Open requests rejected.
+
+PB-ADV PDUs are processed without authentication and the FCS is a keyless CRC, so no
+pairing or prior trust is required and the attacker chooses the link ID itself. The
+impact is a persistent denial of provisioning/re-provisioning service; there is no
+memory-safety, confidentiality, or integrity impact.
+
+The vulnerable code shipped in releases through v4.4.1. The fix moves the timer
+reschedule to after the ``ADV_LINK_INVALID`` check (and the FCS check before the reset)
+so an invalidated link can no longer be kept alive by incoming packets.
+
+- `Zephyr project bug tracker GHSA-4rwg-6mr4-55hc
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4rwg-6mr4-55hc>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 109324 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/109324>`_
+
+- `PR 110910 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110910>`_
+
+- `PR 110909 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110909>`_
+
+- `PR 110911 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110911>`_
 
 :cve:`2026-10677`
 -----------------
 
-Under embargo until 2026-07-19
+Kernel heap memory leak in ``z_vrfy_k_poll()`` lets an unprivileged user thread exhaust the kernel resource pool
+
+The ``CONFIG_USERSPACE`` syscall verifier ``z_vrfy_k_poll()`` in ``kernel/poll.c``
+allocates a kernel-side copy of the user-supplied ``k_poll_event[]`` via
+``z_thread_malloc()`` and then validates each event's object handle. Before this fix,
+validation used ``K_OOPS(K_SYSCALL_OBJ(...))`` inline inside the loop, which kills the
+calling thread without freeing ``events_copy``.
+
+A user thread can pass ``num_events >= 1`` with a forged object handle to leak the
+allocation; because newly spawned user threads inherit the parent's ``resource_pool``
+(``kernel/thread.c``), an attacker spawns sacrificial threads to repeat the leak until
+the shared kernel heap is exhausted. Once depleted, legitimate kernel allocations from
+that pool (``k_queue`` alloc nodes, ``k_msgq`` buffers, future ``k_poll`` calls, etc.)
+fail, causing a system-level denial of service.
+
+The fix replaces each inline ``K_OOPS`` with a conditional ``goto oops_free`` so the
+buffer is freed before the thread is killed. Affects Zephyr releases from v1.12.0 (when
+``k_poll`` was first exposed to user mode) through v4.4.1.
+
+- `Zephyr project bug tracker GHSA-r3cc-8wcr-xfj9
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-r3cc-8wcr-xfj9>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 109361 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/109361>`_
+
+- `PR 111111 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111111>`_
+
+- `PR 111112 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111112>`_
+
+- `PR 109535 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/109535>`_
 
 :cve:`2026-10678`
 -----------------
 
-Under embargo until 2026-07-20
+NULL-pointer / out-of-bounds write in Zephyr MCTP I2C+GPIO target binding driven by an unauthenticated I2C controller
+
+The MCTP-over-I2C+GPIO target binding in Zephyr
+(``subsys/pmci/mctp/mctp_i2c_gpio_target.c``) processes pseudo-register writes from an
+I2C bus master byte-by-byte in ``mctp_i2c_gpio_target_write_received()`` without
+validating the order or the receive buffer. In the affected versions the
+``MCTP_I2C_GPIO_RX_MSG_ADDR`` (data) handler dereferences and writes through
+``b->rx_pkt`` without checking that the receive buffer was allocated: a controller that
+selects the data register and writes a byte without first sending the length register
+(which is what allocates the buffer) causes a write of an attacker-chosen byte through a
+NULL/unallocated ``mctp_pktbuf`` pointer (i.e. into a small attacker-advanceable offset
+above address 0), producing memory corruption or a hard fault.
+
+The same handler also performs a write-then-check bounds test, allowing a one-byte heap
+overflow at ``data[255]`` when more than 255 data bytes are sent.
+
+Because the I2C target callback is invoked with raw bytes supplied by whatever device is
+the bus master and the binding performs no authentication, a malicious or malfunctioning
+controller on the bus can trigger these without any prior protocol state, leading to
+memory corruption and/or denial of service on the target device.
+
+The vulnerable code was introduced when the I2C+GPIO target binding was added and
+shipped in Zephyr v4.3.0 and v4.4.0. The fix defers allocation to the first data byte
+with a NULL check, treats a missing length as a zero-sized packet rejected by libmctp,
+and moves the bounds check before the store.
+
+- `Zephyr project bug tracker GHSA-pmwm-5rcm-39rr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-pmwm-5rcm-39rr>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 109428 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/109428>`_
+
+- `PR 111118 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111118>`_
+
+- `PR 111117 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111117>`_
 
 :cve:`2026-10679`
 -----------------
 
-Under embargo until 2026-07-21
+Divide-by-zero in DesignWare SPI driver reachable from spi_transceive syscall (local DoS)
+
+The DesignWare SPI driver (drivers/spi/spi_dw.c) computed the SPI BAUDR clock divider as
+``info->clock_frequency / config->frequency`` without validating ``config->frequency``.
+
+``spi_transceive`` is a Zephyr __syscall and its verify handler
+(drivers/spi/spi_handlers.c) copies the caller-supplied ``spi_config`` from userspace
+without checking the frequency field, so a userspace thread that has been granted access
+to a DesignWare SPI device kernel object can pass ``frequency = 0`` and trigger an
+unsigned integer divide-by-zero in ``spi_dw_configure()``.
+
+On Cortex-M Mainline (``SCB->CCR.DIV_0_TRP`` is set in ``z_arm_fault_init()``) and on
+ARC (a dedicated ``__ev_div_zero`` vector) this raises a CPU exception, resulting in a
+kernel fault and local denial of service.
+
+The fix rejects zero frequency and frequencies above ``clock_frequency / 2`` (the
+DesignWare SSI databook minimum SCKDIV of 2) with -EINVAL. The defect affects all Zephyr
+releases up to and including v4.4.0; exploitation requires ``CONFIG_USERSPACE=y`` and an
+unprivileged thread already granted SPI driver permission. There is no memory-corruption
+or information-disclosure impact.
+
+- `Zephyr project bug tracker GHSA-3qcm-qwh2-v4hq
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3qcm-qwh2-v4hq>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 105452 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/105452>`_
+
+- `PR 111121 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111121>`_
+
+- `PR 111120 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111120>`_
 
 :cve:`2026-10680`
 -----------------
 
-Under embargo until 2026-07-21
+Out-of-bounds access in Zephyr BR/EDR L2CAP configuration request handling via ``uint16_t`` length underflow
+
+The Classic (BR/EDR) L2CAP signaling handlers ``l2cap_br_conf_req()`` and
+``l2cap_br_conf_rsp()`` in ``subsys/bluetooth/host/classic/l2cap_br.c`` validated the
+minimum command size against ``buf->len`` (the bytes remaining in the whole received
+PDU) instead of ``len`` (the per-command data length from the L2CAP signaling header).
+Because multiple signaling commands can be packed into one PDU, ``buf->len`` may exceed
+a command's ``len``. An attacker can send a ``CONF_REQ`` command with a header length
+smaller than the configuration-request structure (e.g. 0), followed by another command
+so that ``buf->len`` still satisfies the check. The check then passes incorrectly and
+``opt_len = len - sizeof(*req)`` underflows the ``uint16_t`` to a near-0xFFFF value. The
+configuration-option loop, which lacks an ``opt_len``-versus-``buf->len`` guard, then
+walks far past the end of the pooled ACL receive buffer using ``net_buf`` pull
+primitives that perform no runtime bounds check, producing an out-of-bounds read of host
+memory and, when the out-of-bounds option bytes encode an MTU or flush-timeout option,
+an out-of-bounds write. The BR/EDR signaling channel is processed before
+pairing/encryption and an L2CAP channel to an L0 service such as SDP can be opened
+without pairing, so an unauthenticated peer within radio range that can establish an ACL
+connection can trigger the flaw, leading to memory corruption and denial of service
+(host/device crash). The defect is present in released versions including v4.4.0. The
+fix validates against ``len`` instead of ``buf->len`` in both handlers.
+
+- `Zephyr project bug tracker GHSA-vrwx-p97q-8854
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-vrwx-p97q-8854>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 109308 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/109308>`_
+
+- `PR 110661 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110661>`_
+
+- `PR 110662 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110662>`_
+
+- `PR 111405 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/111405>`_
 
 :cve:`2026-10681`
 -----------------
@@ -2047,7 +2270,49 @@ Under embargo until 2026-08-13
 :cve:`2026-7007`
 ----------------
 
-Under embargo until 2026-07-23
+Division by zero in Zephyr ext2 superblock parsing allows DoS via crafted filesystem image
+
+The Zephyr ext2 file system validates the on-disk superblock in
+``ext2_verify_disk_superblock()`` (subsys/fs/ext2/ext2_impl.c) before completing a
+mount. The validator checked the magic number, block size, revision and feature flags,
+but did not verify that the on-disk fields ``s_blocks_per_group`` and
+``s_inodes_per_group`` are non-zero. Both fields are read directly from the image and
+are later used as divisors during mount-time initialization.
+
+During mount, ``get_ngroups()`` divides and modulos ``s_blocks_count`` by
+``s_blocks_per_group`` (reached via ``ext2_fetch_block_group()`` from
+``ext2_init_fs()``), and ``get_itable_entry()`` divides ``(ino - 1)`` by
+``s_inodes_per_group`` when fetching the root inode (both in
+subsys/fs/ext2/ext2_diskops.c). A superblock with either field set to zero therefore
+causes an integer division by zero during the mount sequence.
+
+An attacker who can present a crafted ext2 image to a device that mounts ext2 —
+removable media such as an SD card or a USB mass-storage device — can trigger this. On
+ARMv7-M / ARMv8-M-mainline Cortex-M targets, divide-by-zero trapping is enabled
+(``SCB_CCR_DIV_0_TRP``), so the division raises a UsageFault that Zephyr treats as a
+fatal error, producing a denial of service. The impact is limited to availability; the
+malformed value is consumed only as a divisor.
+
+The fix rejects a zero ``s_blocks_per_group`` or ``s_inodes_per_group`` in the
+superblock validator, returning ``-EINVAL`` so the mount fails before any block-group or
+inode I/O occurs.
+
+- `Zephyr project bug tracker GHSA-wrf2-79mm-cvw5
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wrf2-79mm-cvw5>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 107929 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107929>`_
+
+- `PR 113331 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/113331>`_
+
+- `PR 110884 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110884>`_
+
+- `PR 110883 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110883>`_
 
 :cve:`2026-8023`
 ----------------
@@ -2229,7 +2494,43 @@ This has been fixed in main for v4.5.0
 :cve:`2026-10673`
 -----------------
 
-Under embargo until 2026-07-15
+Out-of-bounds write in ADIN2111/ADIN1110 OA SPI Ethernet RX frame reassembly
+
+The Zephyr ADIN2111/ADIN1110 10BASE-T1S/T1L Ethernet driver
+(``drivers/ethernet/eth_adin2111.c``) reassembles received Ethernet frames in OPEN
+Alliance (OA) SPI mode by copying device-supplied 64-byte data chunks into a fixed
+static buffer ``ctx->buf`` of size ``CONFIG_ETH_ADIN2111_BUFFER_SIZE`` (default 1524
+bytes). In ``eth_adin2111_oa_data_read()``, each valid chunk was ``memcpy``'d into
+``ctx->buf[ctx->scur]`` and the write cursor ``scur`` advanced, with no check that
+``scur`` + len stayed within the buffer. The number of chunks (up to 255, from the
+BUFSTS RCA field) and the per-chunk length are taken entirely from the frame data
+received off the wire; the cursor is only reset on a start-of-frame chunk. An attacker
+on the single-pair Ethernet segment can therefore send a frame whose reassembled size
+exceeds the configured buffer, causing the driver's RX offload thread to write
+attacker-controlled frame bytes past the end of the static buffer into adjacent
+driver/kernel memory (up to roughly 14.8 KB in the worst case). This is a
+remotely/adjacently reachable out-of-bounds write (CWE-787) that can corrupt memory and
+cause denial of service or potentially code execution. The defect was introduced when OA
+SPI support was added (commit 0ca8b0756b1) and shipped in releases v3.7.0 through
+v4.4.0. The fix adds a bounds check that drops the oversized frame and resets the cursor
+before the copy.
+
+- `Zephyr project bug tracker GHSA-hm6v-4jh4-3qc4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hm6v-4jh4-3qc4>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 108200 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108200>`_
+
+- `PR 108900 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108900>`_
+
+- `PR 108901 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108901>`_
+
+- `PR 108899 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108899>`_
 
 :cve:`2026-12629`
 -----------------
@@ -2401,3 +2702,235 @@ Under embargo until 2026-09-07
 -----------------
 
 Under embargo until 2026-09-08
+
+:cve:`2026-6682`
+----------------
+
+Integer overflow in FatFs FAT32 volume mount (mount_volume) yields an attacker-controlled file size and out-of-bounds access in Zephyr
+
+Zephyr bundles ChaN's FatFs (via the ``zephyrproject-rtos/fatfs`` west module) as the
+FAT/exFAT filesystem backing ``subsys/fs/fat_fs.c``. In ``mount_volume()``
+(modules/fs/fatfs/ff.c), the FAT area size is computed as ``fasize = ld_32(BPB_FATSz32);
+... fasize *= fs->n_fats;`` — a 32-bit multiply with no overflow check.
+
+A crafted FAT32 volume that sets ``BPB_FATSz32 = 0x80000001`` with two FATs makes the
+product wrap (to ``0x00000002``), so the computed data region overlaps the FAT region.
+Because the pre-multiply value is kept in ``fs->fsize``, the later plausibility check
+does not catch the wrap.
+
+An attacker who can get the device to mount such a volume (a malicious SD card or USB
+medium) can place forged directory entries in the overlapped region, causing
+``f_stat()``/directory reads to return attacker-controlled file sizes; application code
+that reads a file using that size as a length then overflows its buffers, giving
+heap- or stack-based memory corruption during ordinary file operations.
+
+This is a core FAT32 code path with no compile-time gate (FAT12/16/32 is always built),
+so a default Zephyr FatFs configuration is affected. Upstream FatFs is unmaintained for
+security purposes (the maintainer did not respond to runZero or JPCERT/CC), so Zephyr
+carries the fix in its vendored copy. Tracked upstream as CVE-2026-6682.
+
+- `Zephyr project bug tracker GHSA-m537-wqw2-2wrj
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m537-wqw2-2wrj>`_
+
+This has been fixed in main for v4.5.0
+
+:cve:`2026-6683`
+----------------
+
+Divide-by-zero in FatFs exFAT sync (sync_fs) crashes Zephyr on a crafted exFAT volume
+
+Zephyr's bundled FatFs (``zephyrproject-rtos/fatfs``) supports exFAT when
+``CONFIG_FS_FATFS_EXFAT`` is enabled. In ``sync_fs()`` (modules/fs/fatfs/ff.c) the
+free-cluster bookkeeping divides by ``(fs->n_fatent - 2)``.
+
+The cluster count is read from the exFAT boot region as ``ncl = ld_32(BPB_NumClusEx)``
+and is validated only against an upper bound (``> MAX_EXFAT``), never a lower bound, so
+a crafted exFAT volume with ``BPB_NumClusEx = 0`` yields ``n_fatent = 2`` and a divisor
+of zero.
+
+Mounting such a volume and performing any write/sync triggers a divide-by-zero (SIGFPE /
+CPU fault), a denial of service.
+
+The defect is present only when exFAT is compiled in, which is not the default Zephyr
+configuration; devices that enable exFAT and mount untrusted removable media are
+exposed. Upstream FatFs is unmaintained for security, so Zephyr carries the fix in its
+vendored copy. Tracked upstream as CVE-2026-6683.
+
+- `Zephyr project bug tracker GHSA-c5j5-mrhx-hjg4
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-c5j5-mrhx-hjg4>`_
+
+This has been fixed in main for v4.5.0
+
+:cve:`2026-6685`
+----------------
+
+Integer underflow in FatFs dirty-sector cache (f_read/f_write) causes wrong-sector I/O on crafted fragmented media in Zephyr
+
+In FatFs's read/write path (``f_read``/``f_write`` in modules/fs/fatfs/ff.c), the
+dirty-sector cache-refill decision compares ``fp->sect - sect`` against the run length
+``cc`` using unsigned arithmetic. On a fragmented FAT layout where a later cluster maps
+to a lower absolute sector than the currently cached one, the subtraction underflows
+(wraps to a large unsigned value), so the guard that decides whether the cached window
+overlaps the requested range is evaluated incorrectly.
+
+The result is that FatFs flushes or reuses the wrong cached sector, reading or writing
+file data to/from an incorrect on-disk location — cross-file data corruption and
+potential disclosure of unrelated file contents, and a path to out-of-bounds behaviour
+during ordinary file operations.
+
+A crafted volume with a deliberately fragmented cluster chain (attacker-controlled
+removable media) triggers the condition. This is on the default read/write path (no
+exFAT or LFN gating). Upstream FatFs is unmaintained for security, so Zephyr carries the
+fix in its vendored copy. Tracked upstream as CVE-2026-6685.
+
+- `Zephyr project bug tracker GHSA-rg3p-32gq-hqw3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-rg3p-32gq-hqw3>`_
+
+This has been fixed in main for v4.5.0
+
+:cve:`2026-6686`
+----------------
+
+FatFs f_lseek past end-of-file exposes uninitialized/stale cluster contents (deleted file data) in Zephyr
+
+In FatFs (``f_lseek`` in modules/fs/fatfs/ff.c), seeking a file opened for write to an
+offset beyond its current end extends the cluster chain via ``create_chain()`` but does
+not zero the newly allocated clusters.
+
+FatFs marks the file as larger without initializing the backing sectors, so a subsequent
+read of the grown region returns whatever was previously on the medium in those clusters
+— typically the residual contents of deleted files. On a device where a lower-privileged
+or later actor can read a file that was extended this way, previously deleted or
+unrelated file data is disclosed (CWE-908, use of uninitialized resource). No
+memory-safety corruption occurs; the impact is confidentiality of on-media data.
+
+The bug is on the default write path (no exFAT/LFN gating). Upstream FatFs is
+unmaintained for security, so Zephyr carries the fix in its vendored copy. Tracked
+upstream as CVE-2026-6686.
+
+- `Zephyr project bug tracker GHSA-rjhg-f2h7-rffm
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-rjhg-f2h7-rffm>`_
+
+This has been fixed in main for v4.5.0
+
+:cve:`2026-6687`
+----------------
+
+Stack buffer overflow in FatFs exFAT volume-label read (f_getlabel) via an unvalidated on-disk length in Zephyr
+
+In FatFs's ``f_getlabel()`` (modules/fs/fatfs/ff.c), the exFAT volume-label copy loop is
+bounded by the raw on-disk byte ``dj.dir[XDIR_NumLabel]`` (0–255) rather than the spec
+maximum of 11 characters.
+
+A crafted exFAT volume that sets ``XDIR_NumLabel`` to a large value (e.g. 128) makes the
+loop read label characters past the 32-byte directory entry and write up to that many
+UTF-decoded characters into the caller-supplied ``label[]`` buffer, overflowing a
+typical fixed-size label array (e.g. ``char label[12]``/``label[24]``) on the stack —
+memory corruption with potential control-flow impact.
+
+In Zephyr this is reachable only in downstream applications: ``f_getlabel`` is compiled
+solely with ``CONFIG_FS_FATFS_EXTRA_NATIVE_API=y``, exFAT must be enabled, and no
+in-tree Zephyr code calls it (application code supplies the buffer). It is nonetheless a
+genuine defect in the vendored library, and because upstream FatFs is unmaintained for
+security Zephyr carries the fix (clamp the label length) in its vendored copy so
+opted-in applications are protected. Tracked upstream as CVE-2026-6687.
+
+- `Zephyr project bug tracker GHSA-fxw6-w668-cgfh
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fxw6-w668-cgfh>`_
+
+This has been fixed in main for v4.5.0
+
+:cve:`2026-15890`
+-----------------
+
+Under embargo until 2026-09-11
+
+:cve:`2026-15891`
+-----------------
+
+Under embargo until 2026-09-11
+
+:cve:`2026-15892`
+-----------------
+
+Under embargo until 2026-09-12
+
+:cve:`2026-15893`
+-----------------
+
+Under embargo until 2026-09-13
+
+:cve:`2026-15894`
+-----------------
+
+Under embargo until 2026-09-13
+
+:cve:`2026-15923`
+-----------------
+
+Under embargo until 2026-09-13
+
+:cve:`2026-15924`
+-----------------
+
+Under embargo until 2026-09-13
+
+:cve:`2026-16147`
+-----------------
+
+Under embargo until 2026-09-14
+
+:cve:`2026-16148`
+-----------------
+
+Under embargo until 2026-09-14
+
+:cve:`2026-16511`
+-----------------
+
+Under embargo until 2026-09-18
+
+:cve:`2026-16512`
+-----------------
+
+Under embargo until 2026-09-18
+
+:cve:`2026-16513`
+-----------------
+
+Under embargo until 2026-09-18
+
+:cve:`2026-16514`
+-----------------
+
+Under embargo until 2026-09-18
+
+:cve:`2026-16515`
+-----------------
+
+Under embargo until 2026-09-18
+
+:cve:`2026-17050`
+-----------------
+
+Under embargo until 2026-09-19
+
+:cve:`2026-17051`
+-----------------
+
+Under embargo until 2026-09-20
+
+:cve:`2026-17052`
+-----------------
+
+Under embargo until 2026-09-20
+
+:cve:`2026-17053`
+-----------------
+
+Under embargo until 2026-09-20
+
+:cve:`2026-17054`
+-----------------
+
+Under embargo until 2026-09-21
