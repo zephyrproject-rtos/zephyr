@@ -12,10 +12,10 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_timer0: timer@deadbeef {
+		test_timer0: timer@5802f000 {
 			compatible = "arm,cmsdk-timer";
-			reg = <0x0 0xdeadbeef>;
-			interrupts = <1 1>;
+			reg = <0x5802f000 0x1000>;
+			interrupts = <2 0>;
 			interrupt-parent = <&nvic>;
 		};
 	};

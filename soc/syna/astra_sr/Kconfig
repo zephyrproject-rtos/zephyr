@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_SYNA_SR
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_SYNA_SR

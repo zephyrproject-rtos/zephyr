@@ -14,5 +14,10 @@ properties:
   "#clock-cells":
     const: 1
 
+  perif-rate:
+    type: int
+    description: |
+      Clock rate of peripherals
+
 clock-cells:
   - clkid
