@@ -8,7 +8,7 @@ identifier: imx95_evk/mimx9596/m7/ddr
 name: NXP i.MX95 EVK DDR variant
 type: mcu
 arch: arm
-ram: 256
+ram: 43008
 toolchain:
   - zephyr
   - gnuarmemb
