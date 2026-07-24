@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(adc_max32, CONFIG_ADC_LOG_LEVEL);
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
+#include "adc_common.h"
+
 /* reference voltage for the ADC */
 #define MAX32_ADC_VREF_MV DT_INST_PROP(0, vref_mv)
 
@@ -164,8 +166,6 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 static int start_read(const struct device *dev, const struct adc_sequence *seq)
 {
 	struct max32_adc_data *data = dev->data;
-	uint32_t num_of_sample_channels = POPCOUNT(seq->channels);
-	uint32_t num_of_sample = 1;
 	int ret = 0;
 
 	if (seq->resolution != data->resolution) {
@@ -179,16 +179,14 @@ static int start_read(const struct device *dev, const struct adc_sequence *seq)
 		return -EINVAL;
 	}
 
+	ret = adc_sequence_validate_buffer(seq, sizeof(uint16_t));
+	if (ret < 0) {
+		return ret;
+	}
+
 	ret = Wrap_MXC_ADC_AverageConfig(seq->oversampling);
 	if (ret != 0) {
 		return -EINVAL;
-	}
-
-	if (seq->options) {
-		num_of_sample += seq->options->extra_samplings;
-	}
-	if (seq->buffer_size < (num_of_sample * num_of_sample_channels)) { /* Buffer size control */
-		return -ENOMEM;
 	}
 
 	data->buffer = seq->buffer;

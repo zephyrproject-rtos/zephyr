@@ -28,6 +28,8 @@
 #endif
 #include <string.h>
 
+#include "adc_common.h"
+
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -311,6 +313,7 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	struct mcux_lpadc_data *data = dev->data;
 	lpadc_hardware_average_mode_t hardware_average_mode;
 	uint8_t channel, last_enabled;
+	int ret;
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) && FSL_FEATURE_LPADC_HAS_CMDL_MODE
 	lpadc_conversion_resolution_mode_t resolution_mode;
 
@@ -364,6 +367,11 @@ static int mcux_lpadc_start_read(const struct device *dev,
 		LOG_ERR("Unsupported oversampling value %d",
 			sequence->oversampling);
 		return -ENOTSUP;
+	}
+
+	ret = adc_sequence_validate_buffer(sequence, sizeof(uint16_t));
+	if (ret < 0) {
+		return ret;
 	}
 
 	/*
