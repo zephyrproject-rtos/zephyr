@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_CH32V
+	bool "WCH CH32V flash driver"
+	default y
+	depends on DT_HAS_WCH_CH32V_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable the WCH CH32V series on-chip flash driver.
