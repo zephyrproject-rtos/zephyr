@@ -72,7 +72,7 @@ be launched using Twister:
 
 .. code-block:: shell
 
-   west twister -v -p native_sim/native/64 -X can:zcan0 -T tests/drivers/can/host/
+   west twister -v -p native_sim/native/64 -X can --pytest-args=--can-context=zcan0 -T tests/drivers/can/host/
 
 After the test suite has completed, the virtual SocketCAN interface can be removed again:
 
