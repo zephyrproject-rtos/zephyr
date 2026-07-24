@@ -39,6 +39,7 @@
 			reg = <0x1>;
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+			riscv,privilege-modes = "m", "s";
 
 			hlic1: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -55,6 +56,7 @@
 			reg = <0x2>;
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+			riscv,privilege-modes = "m", "s";
 
 			hlic2: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -71,6 +73,7 @@
 			reg = <0x3>;
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+			riscv,privilege-modes = "m", "s";
 
 			hlic3: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -87,6 +90,7 @@
 			reg = <0x4>;
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+			riscv,privilege-modes = "m", "s";
 
 			hlic4: interrupt-controller {
 				compatible = "riscv,cpu-intc";
