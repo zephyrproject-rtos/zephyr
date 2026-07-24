@@ -92,6 +92,14 @@ int uhc_mcux_bus_reset(const struct device *dev)
 	return uhc_mcux_bus_control(dev, kUSB_HostBusReset);
 }
 
+/* Report the speed at which the port is operating */
+enum usb_port_speed uhc_mcux_get_speed(const struct device *dev)
+{
+	struct uhc_mcux_data *priv = uhc_get_private(dev);
+
+	return priv->speed;
+}
+
 /* Enable SOF generator */
 int uhc_mcux_sof_enable(const struct device *dev)
 {
@@ -131,19 +139,25 @@ usb_status_t USB_HostAttachDevice(usb_host_handle hostHandle, uint8_t speed, uin
 				  uint8_t portNumber, uint8_t level,
 				  usb_device_handle *deviceHandle)
 {
-	enum uhc_event_type type;
-	struct uhc_mcux_data *priv;
+	struct uhc_mcux_data *priv = (struct uhc_mcux_data *)(PRV_DATA_HANDLE(hostHandle));
 
-	if (speed == USB_SPEED_HIGH) {
-		type = UHC_EVT_DEV_CONNECTED_HS;
-	} else if (speed == USB_SPEED_FULL) {
-		type = UHC_EVT_DEV_CONNECTED_FS;
-	} else {
-		type = UHC_EVT_DEV_CONNECTED_LS;
+	/* Convert between NXP HAL and Zephyr variables */
+	switch (speed) {
+	case USB_SPEED_LOW:
+		priv->speed = USB_PORT_SPEED_LS;
+		break;
+	case USB_SPEED_FULL:
+		priv->speed = USB_PORT_SPEED_FS;
+		break;
+	case USB_SPEED_HIGH:
+		priv->speed = USB_PORT_SPEED_HS;
+		break;
+	default:
+		priv->speed = USB_PORT_SPEED_UNKNOWN;
+		break;
 	}
 
-	priv = (struct uhc_mcux_data *)(PRV_DATA_HANDLE(hostHandle));
-	uhc_submit_event(priv->dev, type, 0);
+	uhc_submit_event(priv->dev, UHC_EVT_DEV_CONNECTED, 0);
 
 	return kStatus_USB_Success;
 }
@@ -190,17 +204,17 @@ usb_status_t USB_HostHelperGetPeripheralInformation(usb_device_handle deviceHand
 
 	case kUSB_HostGetDeviceSpeed:
 		switch (udev->speed) {
-		case USB_SPEED_SPEED_LS:
+		case USB_PORT_SPEED_LS:
 			*infoValue = USB_SPEED_LOW;
 			break;
-		case USB_SPEED_SPEED_FS:
+		case USB_PORT_SPEED_FS:
 			*infoValue = USB_SPEED_FULL;
 			break;
-		case USB_SPEED_SPEED_HS:
+		case USB_PORT_SPEED_HS:
 			*infoValue = USB_SPEED_HIGH;
 			break;
-		case USB_SPEED_UNKNOWN:
-		case USB_SPEED_SPEED_SS:
+		case USB_PORT_SPEED_UNKNOWN:
+		case USB_PORT_SPEED_SS:
 		default:
 			*infoValue = USB_SPEED_HIGH;
 			/* TODO: report error */

@@ -44,8 +44,7 @@ static int usbh_event_carrier(const struct device *dev,
 	return err;
 }
 
-static void dev_connected_handler(struct usbh_context *const ctx,
-				  const struct uhc_event *const event)
+static void dev_connected_handler(struct usbh_context *const ctx)
 {
 	struct usb_device *udev;
 
@@ -54,12 +53,6 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 	if (udev == NULL) {
 		LOG_ERR("Failed allocate new device");
 		return;
-	}
-
-	if (event->type == UHC_EVT_DEV_CONNECTED_HS) {
-		udev->speed = USB_SPEED_SPEED_HS;
-	} else {
-		udev->speed = USB_SPEED_SPEED_FS;
 	}
 
 	usbh_device_connect(ctx, udev);
@@ -96,12 +89,8 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
 	int ret = 0;
 
 	switch (event->type) {
-	case UHC_EVT_DEV_CONNECTED_LS:
-		LOG_ERR("Low speed device not supported (connected event)");
-		break;
-	case UHC_EVT_DEV_CONNECTED_FS:
-	case UHC_EVT_DEV_CONNECTED_HS:
-		dev_connected_handler(ctx, event);
+	case UHC_EVT_DEV_CONNECTED:
+		dev_connected_handler(ctx);
 		break;
 	case UHC_EVT_DEV_REMOVED:
 		dev_removed_handler(ctx);

@@ -781,7 +781,7 @@ static int find_format(struct uvc_host_data *const host_data,
 /* Check if an endpoint has enough bandwidth for the given transfer parameters */
 static bool ep_has_enough_bandwidth(const struct usb_ep_descriptor *ep_desc,
 				    const struct usb_if_descriptor *const if_desc,
-				    const enum usb_device_speed device_speed,
+				    const enum usb_port_speed device_speed,
 				    const uint32_t required_bandwidth,
 				    const uint32_t max_tpl)
 {
@@ -809,7 +809,7 @@ static bool ep_has_enough_bandwidth(const struct usb_ep_descriptor *ep_desc,
 	interval = BIT(ep_desc->bInterval - 1);
 	ep_mps = USB_MPS_EP_SIZE(ep_desc->wMaxPacketSize);
 
-	if (device_speed == USB_SPEED_SPEED_HS) {
+	if (device_speed == USB_PORT_SPEED_HS) {
 		ep_tpl = USB_MPS_TO_TPL(ep_desc->wMaxPacketSize);
 		/* High-speed: interval in microframes (125µs), 8000 microframes per second. */
 		ep_bandwidth = (ep_tpl * 8000) / interval;
@@ -822,7 +822,7 @@ static bool ep_has_enough_bandwidth(const struct usb_ep_descriptor *ep_desc,
 	LOG_DBG("Iface %u Alt %u EP 0x%02x: mps=%u, payload=%u, interval=%u (%s), bw=%u B/s",
 		if_desc->bInterfaceNumber, if_desc->bAlternateSetting, ep_desc->bEndpointAddress,
 		ep_mps, ep_tpl, interval,
-		(device_speed == USB_SPEED_SPEED_HS) ? "uframes" : "frames", ep_bandwidth);
+		(device_speed == USB_PORT_SPEED_HS) ? "uframes" : "frames", ep_bandwidth);
 
 	/* Check if this endpoint meets requirements */
 	if (ep_bandwidth >= required_bandwidth && ep_tpl >= max_tpl) {
@@ -834,7 +834,7 @@ static bool ep_has_enough_bandwidth(const struct usb_ep_descriptor *ep_desc,
 
 /* Calculate endpoint bandwidth */
 static uint32_t get_endpoint_bandwidth(const struct usb_ep_descriptor *ep_desc,
-				       const enum usb_device_speed device_speed)
+				       const enum usb_port_speed device_speed)
 {
 	uint32_t ep_tpl;
 	uint16_t ep_mps;
@@ -843,7 +843,7 @@ static uint32_t get_endpoint_bandwidth(const struct usb_ep_descriptor *ep_desc,
 	interval = BIT(ep_desc->bInterval - 1);
 	ep_mps = USB_MPS_EP_SIZE(ep_desc->wMaxPacketSize);
 
-	if (device_speed == USB_SPEED_SPEED_HS) {
+	if (device_speed == USB_PORT_SPEED_HS) {
 		ep_tpl = USB_MPS_TO_TPL(ep_desc->wMaxPacketSize);
 		/* High-speed: interval in microframes (125µs), 8000 microframes per second. */
 		return (ep_tpl * 8000) / interval;
@@ -855,11 +855,11 @@ static uint32_t get_endpoint_bandwidth(const struct usb_ep_descriptor *ep_desc,
 
 /* Get endpoint payload size */
 static uint32_t get_endpoint_payload_size(const struct usb_ep_descriptor *ep_desc,
-					  const enum usb_device_speed device_speed)
+					  const enum usb_port_speed device_speed)
 {
 	uint16_t ep_mps = USB_MPS_EP_SIZE(ep_desc->wMaxPacketSize);
 
-	if (device_speed == USB_SPEED_SPEED_HS) {
+	if (device_speed == USB_PORT_SPEED_HS) {
 		return USB_MPS_TO_TPL(ep_desc->wMaxPacketSize);
 	}
 
@@ -869,7 +869,7 @@ static uint32_t get_endpoint_payload_size(const struct usb_ep_descriptor *ep_des
 /* Scan endpoints in an interface for suitable bandwidth */
 static const struct usb_ep_descriptor *
 scan_interface_endpoints(const struct usb_if_descriptor *const if_desc,
-			 const enum usb_device_speed device_speed,
+			 const enum usb_port_speed device_speed,
 			 uint32_t required_bandwidth, uint32_t max_tpl,
 			 uint32_t *found_bandwidth)
 {
@@ -925,7 +925,7 @@ static int select_streaming_alternate(struct uvc_host_data *const host_data,
 {
 	struct uvc_stream_iface_info *const stream_info = &host_data->current_stream_iface_info;
 	uint32_t max_tpl = sys_le32_to_cpu(host_data->probe.dwMaxPayloadTransferSize);
-	const enum usb_device_speed device_speed = host_data->udev->speed;
+	const enum usb_port_speed device_speed = host_data->udev->speed;
 	const struct usb_if_descriptor *selected_interface = NULL;
 	const struct usb_ep_descriptor *selected_endpoint = NULL;
 	const struct usb_if_descriptor *if_desc;
@@ -936,7 +936,7 @@ static int select_streaming_alternate(struct uvc_host_data *const host_data,
 
 	LOG_DBG("Required bandwidth: %u bytes/sec, Max payload: %u bytes (device speed: %s)",
 		required_bandwidth, max_tpl,
-		(device_speed == USB_SPEED_SPEED_HS) ? "High Speed" : "Full Speed");
+		(device_speed == USB_PORT_SPEED_HS) ? "High Speed" : "Full Speed");
 
 	/* Scan all streaming interfaces */
 	for (uint8_t i = 0;
