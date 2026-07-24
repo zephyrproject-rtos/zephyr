@@ -1760,20 +1760,24 @@ static void adc_stm32_isr(const struct device *dev)
 		}
 #else /* CONFIG_ADC_STREAM */
 		const struct adc_driver_api *api = DEVICE_API_GET(adc, dev);
+		const size_t read_size = sizeof(struct adc_stm32_rtio_data) +
+					 data->channel_count * sizeof(adc_data_size_t);
+		adc_data_size_t *read_buf;
+		uint8_t *buf;
+		uint32_t buf_len;
+
+		/* The ISR runs once per conversion and each one needs the buffer.
+		 * A mempool buffer is held by the iodev_sqe, not by the sqe, so it
+		 * cannot be read back from sqe.rx.buf later.
+		 */
+		if (rtio_sqe_rx_buf(data->sqe, read_size, read_size, &buf, &buf_len) != 0) {
+			rtio_iodev_sqe_err(data->sqe, -ENOMEM);
+			return;
+		}
 
 		if (data->samples_count == 0U) {
-			uint8_t *buf;
-			uint32_t buf_len;
-			const size_t read_size = sizeof(struct adc_stm32_rtio_data) +
-						 data->channel_count * sizeof(adc_data_size_t);
-			struct adc_stm32_rtio_data *hdr;
+			struct adc_stm32_rtio_data *hdr = (struct adc_stm32_rtio_data *)buf;
 
-			if (rtio_sqe_rx_buf(data->sqe, read_size, read_size, &buf, &buf_len) != 0) {
-				rtio_iodev_sqe_err(data->sqe, -ENOMEM);
-				return;
-			}
-
-			hdr = (struct adc_stm32_rtio_data *)buf;
 			hdr->timestamp = k_ticks_to_ns_floor64(k_uptime_ticks());
 #ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
 			/* ISR: do not take stm32_adc_vref_lock. */
@@ -1785,9 +1789,8 @@ static void adc_stm32_isr(const struct device *dev)
 			hdr->channel_count = data->channel_count;
 		}
 
-		adc_data_size_t *read_buf = (adc_data_size_t *)(data->sqe->sqe.rx.buf +
-					    sizeof(struct adc_stm32_rtio_data) +
-					    data->samples_count * sizeof(adc_data_size_t));
+		read_buf = (adc_data_size_t *)(buf + sizeof(struct adc_stm32_rtio_data) +
+					       data->samples_count * sizeof(adc_data_size_t));
 
 		*read_buf = LL_ADC_REG_ReadConversionData32(adc);
 
