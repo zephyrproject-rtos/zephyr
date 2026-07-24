@@ -25,7 +25,7 @@ if(CONFIG_FPU)
     set(FORCE_FP_HARDABI TRUE)
   endif()
 
-  if    (CONFIG_FP_HARDABI OR FORCE_FP_HARDABI)
+  if(CONFIG_FP_HARDABI OR FORCE_FP_HARDABI)
     list(APPEND ARM_C_FLAGS   -mfloat-abi=hard)
   elseif(CONFIG_FP_SOFTABI)
     list(APPEND ARM_C_FLAGS   -mfloat-abi=softfp)
@@ -33,7 +33,7 @@ if(CONFIG_FPU)
 endif()
 
 if(CONFIG_FP16)
-  if    (CONFIG_FP16_IEEE)
+  if(CONFIG_FP16_IEEE)
     list(APPEND ARM_C_FLAGS   -mfp16-format=ieee)
   elseif(CONFIG_FP16_ALT)
     list(APPEND ARM_C_FLAGS   -mfp16-format=alternative)
@@ -57,11 +57,21 @@ set(LLEXT_REMOVE_FLAGS
   -Os
 )
 
-# Flags to be added to llext code compilation
-set(LLEXT_APPEND_FLAGS
-  -mlong-calls
-  -mthumb
-)
+# Flags to be added to llext code compilation. -mthumb must not be forced
+# on ARMv6-A (ARM1176), where the kernel runs in ARM mode and Thumb
+# extensions break the interworking the linker emits. -mlong-calls stays
+# on all targets so extensions can call kernel functions outside their
+# code section's PC-relative branch range.
+if(CONFIG_CPU_AARCH32_ARMV6)
+  set(LLEXT_APPEND_FLAGS
+    -mlong-calls
+  )
+else()
+  set(LLEXT_APPEND_FLAGS
+    -mlong-calls
+    -mthumb
+  )
+endif()
 
 list(APPEND LLEXT_EDK_REMOVE_FLAGS
     --sysroot=.*
