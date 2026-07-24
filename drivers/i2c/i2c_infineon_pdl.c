@@ -621,6 +621,7 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 	struct i2c_msg *tx_msg;
 	struct i2c_msg *rx_msg;
 	struct ifx_cat1_i2c_data *data = dev->data;
+	const struct ifx_cat1_i2c_config *const config = dev->config;
 	int ret;
 
 	/* Acquire semaphore (block I2C transfer for another thread) */
@@ -672,11 +673,27 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 			return ret;
 		}
 
-		/* Acquire semaphore (block I2C async transfer for another thread) */
-		ret = k_sem_take(&data->transfer_sem, K_FOREVER);
-		if (ret < 0) {
+		/* Wait for the async transfer to complete, bounded by the
+		 * configured transfer timeout.
+		 */
+		ret = k_sem_take(&data->transfer_sem, I2C_TRANSFER_TIMEOUT);
+		if (ret != 0) {
+			/* The transfer did not complete in time, for example a
+			 * target holding the bus low. Abort the async operation,
+			 * then reset the shared async state with the SCB
+			 * interrupt masked so a late completion cannot race the
+			 * teardown or leak into the next transfer.
+			 */
+			(void)_i2c_abort_async(dev);
+
+			irq_disable(config->irq_num);
+			data->pending = CAT1_I2C_PENDING_NONE;
+			k_sem_reset(&data->transfer_sem);
+			data->irq_cause &= ~I2C_CAT1_EVENTS_MASK;
+			irq_enable(config->irq_num);
+
 			k_sem_give(&data->operation_sem);
-			return -EIO;
+			return -ETIMEDOUT;
 		}
 
 		/* Check for an error during the transfer */
