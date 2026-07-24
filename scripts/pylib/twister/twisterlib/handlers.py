@@ -204,7 +204,12 @@ class Handler:
             elif failure_type == self.FailureType.TIMEOUT:
                 self.instance.reason = "Timeout"
             elif failure_type == self.FailureType.FLASH:
-                self.instance.reason = "Timeout during flashing"
+                # The flash step already recorded a specific status and reason
+                # (e.g. "Device issue (Flash error?)" or "Device issue (Flash
+                # timeout)"); keep them instead of overwriting them with a
+                # misleading generic "Timeout during flashing".
+                self.instance.status = TwisterStatus.ERROR
+                self.instance.reason = self.instance.reason or "Flash failure"
 
             # In case none of the above applies, we set a generic error
             if not self.instance.reason and self.returncode != 0:
