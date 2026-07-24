@@ -216,12 +216,12 @@ out:
  *
  * @return Watchdog counter value
  */
-static uint32_t wdt_atcwdt200_convtime(uint32_t timeout, uint32_t *scaler)
+static uint64_t wdt_atcwdt200_convtime(uint32_t timeout, uint32_t *scaler)
 {
 	int i;
-	uint32_t rst_period, cnt;
+	uint64_t rst_period, cnt;
 
-	cnt = (uint32_t)(((uint64_t)timeout * EXT_CLOCK_FREQ) / 1000);
+	cnt = ((uint64_t)timeout * EXT_CLOCK_FREQ) / 1000;
 	rst_period = cnt;
 
 	for (i = 0; i < 14 && cnt > 0; i++) {
@@ -239,7 +239,8 @@ static int wdt_atcwdt200_install_timeout(const struct device *dev,
 	struct wdt_atcwdt200_dev_data *data = dev->data;
 	uint32_t wdt_addr = ((const struct wdt_atcwdt200_config *)(dev->config))->base;
 	k_spinlock_key_t key;
-	uint32_t rst_period, reg, counter_freq, scaler;
+	uint64_t rst_period;
+	uint32_t reg, counter_freq, scaler;
 
 	if (cfg->window.min != 0U || cfg->window.max == 0U) {
 		return -EINVAL;
@@ -248,7 +249,7 @@ static int wdt_atcwdt200_install_timeout(const struct device *dev,
 	counter_freq = counter_get_frequency(pit_counter_dev);
 	rst_period = wdt_atcwdt200_convtime(cfg->window.max, &scaler);
 
-	if (rst_period < 0 || WDOGCFG_PERIOD_MAX < rst_period) {
+	if (rst_period > WDOGCFG_PERIOD_MAX) {
 		LOG_ERR("Unsupported watchdog timeout\n");
 		return -EINVAL;
 	}
