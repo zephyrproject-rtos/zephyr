@@ -261,14 +261,21 @@ ARM Platforms:
     - boards/arm/mps*/
     - boards/arm/v2m_*/
     - boards/arm/fvp_base*/
+    - boards/qemu/cortex_a53/
+    - boards/qemu/kvm_arm64/
     - soc/arm/mps*/
     - soc/arm/musca/
     - soc/arm/beetle/
     - soc/arm/designstart/
     - soc/arm/fvp_aemv8*/
+    - soc/arm/qemu_cortex_a53/
+    - soc/arm/qemu_virt_arm64/
     - dts/arm/armv*.dtsi
+    - dts/arm64/fvp/
+    - dts/arm64/qemu/
     - dts/bindings/arm/arm*.yaml
     - drivers/interrupt_controller/intc_gic*
+    - tests/arch/arm64/arm64_gicv3_its/boards/fvp_*.conf
   labels:
     - "platform: ARM"
 
@@ -291,11 +298,11 @@ ARM SiP SVC:
 ARM arch:
   status: maintained
   maintainers:
-    - wearyzen
     - ithinuel
   collaborators:
     - MaureenHelm
     - stephanosio
+    - wearyzen
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -322,9 +329,9 @@ ARM64 arch:
     - arch/arm64/
     - include/zephyr/arch/arm64/
     - tests/arch/arm64/
-    - dts/arm64/
-    - boards/qemu/kvm_arm64/
-    - boards/qemu/cortex_a53/
+    - dts/arm64/armv*.dtsi
+  files-exclude:
+    - tests/arch/arm64/arm64_gicv3_its/boards/
   labels:
     - "area: ARM64"
   tests:
@@ -375,6 +382,15 @@ Alif Semiconductor Platforms:
     - "platform: Alif Semiconductor"
   description: >-
     Alif Semiconductor SoCs, device tree files, and related drivers.
+
+Allwinner Platforms:
+  status: odd fixes
+  files:
+    - dts/arm/allwinner/
+    - dts/arm64/allwinner/
+    - soc/allwinner/
+  labels:
+    - "platform: Allwinner"
 
 Ambiq Platforms:
   status: maintained
@@ -4364,6 +4380,7 @@ NXP Platforms (MPU):
     - soc/nxp/imx/
     - soc/nxp/layerscape/
     - boards/nxp/ls1046ardb/
+    - tests/arch/arm64/arm64_gicv3_its/boards/imx*.conf
   files-regex:
     - boards/nxp/.*m?imx[^(rt)].*/
   labels:
@@ -5455,6 +5472,15 @@ Retention:
   labels:
     - "area: Retention"
 
+Rockchip Platforms:
+  status: odd fixes
+  files:
+    - dts/arm/rockchip/
+    - dts/arm64/rockchip/
+    - soc/rockchip/
+  labels:
+    - "platform: Rockchip"
+
 SPARC arch:
   status: odd fixes
   collaborators:
@@ -5964,6 +5990,7 @@ TI K3 Platforms:
     - dts/arm/ti/j7*
     - dts/bindings/*/ti,k3*
     - dts/vendor/ti/
+    - dts/arm64/ti/
     - soc/ti/k3/
   labels:
     - "platform: TI K3"
