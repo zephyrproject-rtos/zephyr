@@ -47,3 +47,14 @@ properties:
     required: true
     description: |
       Refer to the description of sda-gpios.
+
+  wakeup-source:
+    type: boolean
+    description: |
+      Set this property if the I2C controller is used as a wake source for
+      the SoC. When set, the driver arms the SMB block's native START-bit
+      wake detector during PM suspend so an external master initiating a
+      transaction wakes the EC. The hardware auto clock-stretches SCL
+      until clocks are restored, so no data is lost. Only effective for
+      target-mode use (a controller-only master initiates STARTs and does
+      not need wake).

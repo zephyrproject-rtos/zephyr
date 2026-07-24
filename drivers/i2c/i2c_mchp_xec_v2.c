@@ -14,6 +14,9 @@
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
@@ -85,6 +88,15 @@ struct xec_i2c_timing {
 	uint8_t rpt_sta_htm; /* repeated start hold time */
 };
 
+/* PM policy state flags. A bit per source that should block the SoC from
+ * entering suspend-to-idle while the I2C block is busy.
+ */
+enum i2c_xec_pm_policy_state_flag {
+	I2C_XEC_PM_POLICY_STATE_XFER_FLAG,
+	I2C_XEC_PM_POLICY_STATE_TARGET_FLAG,
+	I2C_XEC_PM_POLICY_STATE_FLAG_COUNT,
+};
+
 struct i2c_xec_config {
 	uint32_t base_addr;
 	uint32_t clock_freq;
@@ -92,6 +104,8 @@ struct i2c_xec_config {
 	uint8_t girq_pos;
 	uint8_t enc_pcr;
 	uint8_t port_sel;
+	uint8_t wake_girq_pos;
+	bool wakeup_source;
 	struct gpio_dt_spec sda_gpio;
 	struct gpio_dt_spec scl_gpio;
 	const struct pinctrl_dev_config *pcfg;
@@ -115,7 +129,28 @@ struct i2c_xec_data {
 	bool target_attached;
 	bool target_read;
 #endif
+#ifdef CONFIG_PM_DEVICE
+	ATOMIC_DEFINE(pm_policy_state_flags, I2C_XEC_PM_POLICY_STATE_FLAG_COUNT);
+#endif
 };
+
+#ifdef CONFIG_PM_DEVICE
+static void i2c_xec_pm_policy_state_lock_get(struct i2c_xec_data *data,
+					     enum i2c_xec_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_set_bit(data->pm_policy_state_flags, flag) == 0) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+
+static void i2c_xec_pm_policy_state_lock_put(struct i2c_xec_data *data,
+					     enum i2c_xec_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flags, flag) == 1) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct xec_i2c_timing xec_i2c_nl_timing_tbl[] = {
 	{KHZ(100), XEC_I2C_SMB_DATA_TM_100K, XEC_I2C_SMB_IDLE_SC_100K, XEC_I2C_SMB_TMO_SC_100K,
@@ -925,6 +960,10 @@ static int i2c_xec_v2_transfer(const struct device *dev, struct i2c_msg *msgs, u
 
 	k_mutex_lock(&data->mux, K_FOREVER);
 
+#ifdef CONFIG_PM_DEVICE
+	i2c_xec_pm_policy_state_lock_get(data, I2C_XEC_PM_POLICY_STATE_XFER_FLAG);
+#endif
+
 	data->i2c_error = I2C_XEC_OK;
 
 	for (uint8_t i = 0; i < num_msgs; i++) {
@@ -943,6 +982,10 @@ static int i2c_xec_v2_transfer(const struct device *dev, struct i2c_msg *msgs, u
 			break;
 		}
 	}
+
+#ifdef CONFIG_PM_DEVICE
+	i2c_xec_pm_policy_state_lock_put(data, I2C_XEC_PM_POLICY_STATE_XFER_FLAG);
+#endif
 
 	k_mutex_unlock(&data->mux);
 
@@ -1103,6 +1146,9 @@ static void i2c_xec_v2_isr(const struct device *dev)
 				tcbs->stop(tcfg);
 			}
 			restart_target(dev);
+#ifdef CONFIG_PM_DEVICE
+			i2c_xec_pm_policy_state_lock_put(data, I2C_XEC_PM_POLICY_STATE_TARGET_FLAG);
+#endif
 			goto clear_iag;
 		}
 	}
@@ -1121,6 +1167,9 @@ static void i2c_xec_v2_isr(const struct device *dev)
 		}
 
 		restart_target(dev);
+#ifdef CONFIG_PM_DEVICE
+		i2c_xec_pm_policy_state_lock_put(data, I2C_XEC_PM_POLICY_STATE_TARGET_FLAG);
+#endif
 		goto clear_iag;
 	}
 
@@ -1130,6 +1179,9 @@ static void i2c_xec_v2_isr(const struct device *dev)
 	 */
 	if ((status & (BIT(XEC_I2C_SR_AAT_POS) | BIT(XEC_I2C_SR_PIN_POS))) ==
 	    BIT(XEC_I2C_SR_AAT_POS)) {
+#ifdef CONFIG_PM_DEVICE
+		i2c_xec_pm_policy_state_lock_get(data, I2C_XEC_PM_POLICY_STATE_TARGET_FLAG);
+#endif
 		target_addr_handler(dev);
 		goto clear_iag;
 	}
@@ -1243,9 +1295,75 @@ static int i2c_xec_v2_target_unregister(const struct device *dev, struct i2c_tar
 	}
 	irq_unlock(key);
 
+#ifdef CONFIG_PM_DEVICE
+	/* Release any pending lock if a target transaction was in flight when
+	 * unregister was called. atomic_test_and_clear makes this a no-op when
+	 * the bus was already idle.
+	 */
+	i2c_xec_pm_policy_state_lock_put(data, I2C_XEC_PM_POLICY_STATE_TARGET_FLAG);
+#endif
+
 	return 0;
 }
 #endif
+
+#ifdef CONFIG_PM_DEVICE
+static int i2c_xec_v2_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct i2c_xec_config *cfg = dev->config;
+	mm_reg_t rb = cfg->base_addr;
+	bool arm_wake = false;
+	int ret = 0;
+
+#ifdef CONFIG_I2C_TARGET
+	struct i2c_xec_data *const data = dev->data;
+
+	arm_wake = cfg->wakeup_source && data->target_attached;
+#endif
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (IS_ENABLED(CONFIG_I2C_TARGET) && arm_wake) {
+			/* Enable I2C START-bit wake. CFG.ENAB and pinctrl
+			 * must stay in their active state - the block samples
+			 * SCL/SDA asynchronously and generate awake event if a
+			 * START bit is detected on the bus.
+			 */
+			sys_write8(BIT(XEC_I2C_WKSR_SB_POS), rb + XEC_I2C_WKSR_OFS);
+			sys_write8(BIT(XEC_I2C_WKCR_SBEN_POS), rb + XEC_I2C_WKCR_OFS);
+			soc_ecia_girq_status_clear(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos);
+			soc_ecia_girq_ctrl(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos, 1U);
+		} else {
+			/* Disable I2C block */
+			sys_clear_bit(rb + XEC_I2C_CFG_OFS, XEC_I2C_CFG_ENAB_POS);
+		}
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		if (IS_ENABLED(CONFIG_I2C_TARGET) && arm_wake) {
+			/* CFG.ENAB and pinctrl were left untouched on suspend.
+			 * Turn on the clock so the block can complete the in-flight
+			 * AAT (auto-stretching SCL since the wake-up START), then
+			 * disarm the wake hardware. The regular GIRQ13 ISR will
+			 * service the AAT match once the master proceeds.
+			 */
+			soc_ecia_girq_ctrl(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos, 0);
+			sys_write8(0, rb + XEC_I2C_WKCR_OFS);
+			sys_write8(BIT(XEC_I2C_WKSR_SB_POS), rb + XEC_I2C_WKSR_OFS);
+			soc_ecia_girq_status_clear(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos);
+		} else {
+			/* Enable I2C block */
+			sys_set_bit(rb + XEC_I2C_CFG_OFS, XEC_I2C_CFG_ENAB_POS);
+		}
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(i2c, i2c_xec_v2_driver_api) = {
 	.configure = i2c_xec_v2_configure,
@@ -1310,6 +1428,13 @@ static int i2c_xec_v2_init(const struct device *dev)
 #define XEC_I2C_GIRQ_POS_DT(inst, idx)                                                             \
 	(uint8_t)MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, idx))
 
+/* GIRQ22 source bit: bit 0 = SPI_ASYNC_WAKE, bits 1..5 = SMB controllers 0..4.
+ * Derive the SMB instance from the controller's MMIO offset within its bank
+ * (one 0x400-byte block per controller).
+ */
+#define XEC_I2C_WAKE_GIRQ_POS_DT(inst)                                                             \
+	(uint8_t)((((DT_INST_REG_ADDR(inst)) / XEC_I2C_SMB_INST_SIZE) & 0x7U) + 1U)
+
 #define I2C_XEC_DEVICE(n)                                                                          \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static void i2c_xec_irq_config_func_##n(void);                                             \
@@ -1321,14 +1446,17 @@ static int i2c_xec_v2_init(const struct device *dev)
 		.girq = XEC_I2C_GIRQ_DT(n, 0),                                                     \
 		.girq_pos = XEC_I2C_GIRQ_POS_DT(n, 0),                                             \
 		.enc_pcr = DT_INST_PROP(n, pcr_scr),                                               \
+		.wake_girq_pos = XEC_I2C_WAKE_GIRQ_POS_DT(n),                                      \
+		.wakeup_source = DT_INST_PROP(n, wakeup_source),                                   \
 		.irq_config_func = i2c_xec_irq_config_func_##n,                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.sda_gpio = GPIO_DT_SPEC_INST_GET(n, sda_gpios),                                   \
 		.scl_gpio = GPIO_DT_SPEC_INST_GET(n, scl_gpios),                                   \
 	};                                                                                         \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_v2_init, NULL, &i2c_xec_data_##n,                     \
-				  &i2c_xec_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,      \
-				  &i2c_xec_v2_driver_api);                                         \
+	PM_DEVICE_DT_INST_DEFINE(n, i2c_xec_v2_pm_action);                                         \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_v2_init, PM_DEVICE_DT_INST_GET(n),                    \
+				  &i2c_xec_data_##n, &i2c_xec_config_##n, POST_KERNEL,             \
+				  CONFIG_I2C_INIT_PRIORITY, &i2c_xec_v2_driver_api);               \
                                                                                                    \
 	static void i2c_xec_irq_config_func_##n(void)                                              \
 	{                                                                                          \
