@@ -891,17 +891,17 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 	/* Initialize the read command */
 	s_command.OperationType = HAL_XSPI_OPTYPE_READ_CFG;
 	s_command.InstructionMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
-					? HAL_XSPI_INSTRUCTION_1_LINE
-					: HAL_XSPI_INSTRUCTION_8_LINES)
+				? ((dev_cfg->data_mode == XSPI_OCTO_MODE)
+					? HAL_XSPI_INSTRUCTION_8_LINES
+					: HAL_XSPI_INSTRUCTION_1_LINE) /* SPI and QUAD */
 				: HAL_XSPI_INSTRUCTION_8_LINES;
 	s_command.InstructionDTRMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
 				? HAL_XSPI_INSTRUCTION_DTR_DISABLE
 				: HAL_XSPI_INSTRUCTION_DTR_ENABLE;
 	s_command.InstructionWidth = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
-					? HAL_XSPI_INSTRUCTION_8_BITS
-					: HAL_XSPI_INSTRUCTION_16_BITS)
+				? ((dev_cfg->data_mode == XSPI_OCTO_MODE)
+					? HAL_XSPI_INSTRUCTION_16_BITS
+					: HAL_XSPI_INSTRUCTION_8_BITS) /* SPI and QUAD */
 				: HAL_XSPI_INSTRUCTION_16_BITS;
 	s_command.Instruction = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
 				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
@@ -911,11 +911,14 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 						: SPI_NOR_CMD_READ_FAST_4B)
 					: dev_data->read_opcode)
 				: SPI_NOR_OCMD_DTR_RD;
+
 	s_command.AddressMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
-					? HAL_XSPI_ADDRESS_1_LINE
-					: HAL_XSPI_ADDRESS_8_LINES)
-				: HAL_XSPI_ADDRESS_8_LINES;
+				? ((dev_cfg->data_mode == XSPI_OCTO_MODE)
+					? HAL_XSPI_ADDRESS_8_LINES
+					: ((dev_cfg->data_mode == XSPI_QUAD_MODE &&
+					    dev_data->read_mode == JESD216_MODE_144)
+						? HAL_XSPI_ADDRESS_4_LINES  /* 1-4-4 */
+						: HAL_XSPI_ADDRESS_1_LINE)) /* SPI, DUAL, 1-1-4 */
 	s_command.AddressDTRMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
 				? HAL_XSPI_ADDRESS_DTR_DISABLE
 				: HAL_XSPI_ADDRESS_DTR_ENABLE;
@@ -923,17 +926,21 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 				? stm32_xspi_hal_address_size(dev)
 				: HAL_XSPI_ADDRESS_32_BITS;
 	s_command.DataMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
-					? HAL_XSPI_DATA_1_LINE
-					: HAL_XSPI_DATA_8_LINES)
+				? ((dev_cfg->data_mode == XSPI_OCTO_MODE)
+					? HAL_XSPI_DATA_8_LINES
+					: (dev_cfg->data_mode == XSPI_QUAD_MODE)
+						? HAL_XSPI_DATA_4_LINES
+						: HAL_XSPI_DATA_1_LINE) /* SPI */
 				: HAL_XSPI_DATA_8_LINES;
 	s_command.DataDTRMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
 				? HAL_XSPI_DATA_DTR_DISABLE
 				: HAL_XSPI_DATA_DTR_ENABLE;
 	s_command.DummyCycles = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
-				? ((dev_cfg->data_mode == XSPI_SPI_MODE)
-					? SPI_NOR_DUMMY_RD
-					: SPI_NOR_DUMMY_RD_OCTAL)
+				? ((dev_cfg->data_mode == XSPI_OCTO_MODE)
+					? SPI_NOR_DUMMY_RD_OCTAL
+					: (dev_cfg->data_mode == XSPI_QUAD_MODE)
+						? dev_data->read_dummy /* from SFDP */
+						: SPI_NOR_DUMMY_RD)    /* SPI */
 				: SPI_NOR_DUMMY_RD_OCTAL_DTR;
 	s_command.DQSMode = (dev_cfg->data_rate == XSPI_STR_TRANSFER)
 				? HAL_XSPI_DQS_DISABLE
@@ -951,12 +958,11 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 	/* Initialize the program command */
 	s_command.OperationType = HAL_XSPI_OPTYPE_WRITE_CFG;
 	if (dev_cfg->data_rate == XSPI_STR_TRANSFER) {
-		s_command.Instruction = (dev_cfg->data_mode == XSPI_SPI_MODE)
-					? ((stm32_xspi_hal_address_size(dev) ==
-					HAL_XSPI_ADDRESS_24_BITS)
-						? SPI_NOR_CMD_PP
-						: SPI_NOR_CMD_PP_4B)
-					: SPI_NOR_OCMD_PAGE_PRG;
+		/* For SPI: write_opcode = PP/PP_4B; QUAD: PP_1_1_4/PP_1_4_4 variants;
+		 * both are set at init from the DTS writeoc property. */
+		s_command.Instruction = (dev_cfg->data_mode == XSPI_OCTO_MODE)
+					? SPI_NOR_OCMD_PAGE_PRG
+					: dev_data->write_opcode;
 	} else {
 		s_command.Instruction = SPI_NOR_OCMD_PAGE_PRG;
 	}
