@@ -6,3 +6,6 @@ tests:
     extra_args: DTC_OVERELAY_FILE="stm32n6_axisram.overlay"
     platform_allow:
       - stm32n6570_dk/stm32n657xx/sb
+  drivers.misc.nxp_igf.build:
+    platform_allow:
+      - imx943_evk/mimx94398/m33
