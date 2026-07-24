@@ -1,0 +1,36 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WATCHPOINT
+	bool "Memory watchpoints [EXPERIMENTAL]"
+	depends on MULTITHREADING
+	depends on ARCH_HAS_WATCHPOINT
+	depends on !SMP || SCHED_IPI_SUPPORTED
+	depends on !SMP_BOOT_DELAY
+	select DEBUGPOINT
+	select EXPERIMENTAL
+	help
+	  Enable callbacks for monitored memory reads and writes. Events report
+	  the triggering PC and, when available, the accessed address.
+
+	  Watchpoints use on-chip debug resources and are limited by the
+	  capabilities and number of comparators provided by each CPU.
+
+if WATCHPOINT
+
+config WATCHPOINT_CALLSTACK
+	bool "Capture call stack on watchpoint hit"
+	depends on ARCH_STACKWALK
+	help
+	  Capture a bounded call stack when a watchpoint fires and expose it
+	  through the watchpoint callback event.
+
+config WATCHPOINT_CALLSTACK_DEPTH
+	int "Maximum watchpoint call stack depth"
+	default 8
+	range 1 32
+	depends on WATCHPOINT_CALLSTACK
+	help
+	  Maximum number of return addresses captured for each watchpoint hit.
+
+endif # WATCHPOINT

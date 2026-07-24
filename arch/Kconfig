@@ -973,6 +973,17 @@ config ARCH_HAS_CODE_DATA_RELOCATION
 	  When selected, the architecture/SoC implements support for
 	  CODE_DATA_RELOCATION in its linker scripts.
 
+config ARCH_HAS_DEBUGPOINT
+	bool
+	help
+	  The architecture implements the hardware debugpoint interface.
+
+config ARCH_HAS_WATCHPOINT
+	bool
+	select ARCH_HAS_DEBUGPOINT
+	help
+	  The architecture debugpoint backend supports memory watchpoints.
+
 config ARCH_HAS_PMU
 	bool
 	help
