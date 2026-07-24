@@ -4,4 +4,4 @@
 add_subdirectory(common)
 add_subdirectory(${SOC_SERIES})
 
-set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld CACHE INTERNAL "")
+set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_LIST_DIR}/common/linker.ld CACHE INTERNAL "")
