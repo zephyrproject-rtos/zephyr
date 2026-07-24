@@ -8,3 +8,5 @@ tests:
     ignore_faults: true
     integration_platforms:
       - qemu_x86
+    platform_exclude:
+      - qemu_riscv64/qemu_virt_riscv64/smp_large

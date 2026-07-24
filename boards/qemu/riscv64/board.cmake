@@ -1,4 +1,5 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 # SPDX-License-Identifier: Apache-2.0
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
@@ -42,5 +43,14 @@ set(QEMU_FLAGS_${ARCH}
   -cpu ${qemu_riscv_cpu}
   ${QEMU_VIRTIO_INPUT_FLAGS}
   )
+
+# smp_large places the Zephyr image at 0x1_00000000 (above 4 GB).  QEMU virt
+# maps all RAM as one contiguous region from 0x80000000; -m 2064 extends it
+# to 0x80000000+0x81000000 = 0x101000000, covering the 16 MB at 0x100000000.
+if("${BOARD_QUALIFIERS}" MATCHES "smp_large")
+  list(REMOVE_ITEM QEMU_FLAGS_${ARCH} -m 256)
+  list(APPEND QEMU_FLAGS_${ARCH} -m 2064)
+endif()
+
 
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

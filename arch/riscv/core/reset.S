@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
  * Contributors: 2018 Antmicro <www.antmicro.com>
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,7 +104,7 @@ boot_first_core:
 
 #ifdef CONFIG_INIT_STACKS
 	/* Pre-populate all bytes in z_interrupt_stacks with 0xAA */
-	la t0, z_interrupt_stacks
+	la_abs t0, z_interrupt_stacks
 	/* Total size of all cores' IRQ stack */
 	li t1, __z_interrupt_all_stacks_SIZEOF
 	add t1, t1, t0
@@ -120,7 +121,7 @@ aa_loop:
 	 * Initially, setup stack pointer to
 	 * z_interrupt_stacks + __z_interrupt_stack_SIZEOF
 	 */
-	la sp, z_interrupt_stacks
+	la_abs sp, z_interrupt_stacks
 	li t0, __z_interrupt_stack_SIZEOF
 	add sp, sp, t0
 
@@ -200,19 +201,19 @@ s_mode_entry:
 
 boot_secondary_core:
 #if CONFIG_MP_MAX_NUM_CPUS > 1
-	la t0, riscv_cpu_wake_flag
+	la_abs t0, riscv_cpu_wake_flag
 	li t1, -1
 	sr t1, 0(t0)
-	la t0, riscv_cpu_boot_flag
+	la_abs t0, riscv_cpu_boot_flag
 	sr zero, 0(t0)
 
 wait_secondary_wake_flag:
-	la t0, riscv_cpu_wake_flag
+	la_abs t0, riscv_cpu_wake_flag
 	lr t0, 0(t0)
 	bne a0, t0, wait_secondary_wake_flag
 
 	/* Set up stack */
-	la t0, riscv_cpu_sp
+	la_abs t0, riscv_cpu_sp
 	lr sp, 0(t0)
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
@@ -222,7 +223,7 @@ wait_secondary_wake_flag:
 	mv a0, s2		/* restore hartid */
 #endif
 
-	la t0, riscv_cpu_boot_flag
+	la_abs t0, riscv_cpu_boot_flag
 	li t1, 1
 	sr t1, 0(t0)
 	j arch_secondary_cpu_init

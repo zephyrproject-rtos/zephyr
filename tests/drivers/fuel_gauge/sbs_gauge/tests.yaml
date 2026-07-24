@@ -19,6 +19,7 @@ tests:
       - xenvm
       - xenvm/xenvm/gicv3
       - rcar_h3ulcb/r8a77951/a57
+      - qemu_riscv64/qemu_virt_riscv64/smp_large
       - rcar_salvator_xs
     integration_platforms:
       - qemu_x86

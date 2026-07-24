@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2024 Meta Platforms
  *
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -20,9 +22,9 @@ const struct symtab_info *symtab_get(void)
 const char *symtab_find_symbol_name(uintptr_t addr, uint32_t *offset)
 {
 	const struct symtab_info *const symtab = symtab_get();
-	const uint32_t symbol_offset = addr - symtab->first_addr;
+	const uintptr_t symbol_offset = addr - symtab->first_addr;
 	uint32_t left = 0, right = symtab->length;
-	uint32_t ret_offset = 0;
+	uintptr_t ret_offset = 0;
 	const char *ret_name = "?";
 
 	/* No need to search if the address is out-of-bound */

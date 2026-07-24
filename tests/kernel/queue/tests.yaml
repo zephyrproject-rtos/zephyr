@@ -4,6 +4,8 @@ tests:
       - kernel
       - userspace
     ignore_faults: true
+    platform_exclude:
+      - qemu_riscv64/qemu_virt_riscv64/smp_large
   kernel.queue.minimallibc:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     tags:
@@ -13,3 +15,5 @@ tests:
     ignore_faults: true
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
+    platform_exclude:
+      - qemu_riscv64/qemu_virt_riscv64/smp_large

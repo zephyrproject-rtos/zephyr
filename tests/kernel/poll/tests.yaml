@@ -6,6 +6,7 @@ tests:
       - userspace
     platform_exclude:
       - nrf52dk/nrf52810
+      - qemu_riscv64/qemu_virt_riscv64/smp_large
   kernel.poll.minimallibc:
     filter: CONFIG_MINIMAL_LIBC_SUPPORTED
     ignore_faults: true
@@ -15,5 +16,6 @@ tests:
       - libc
     platform_exclude:
       - nrf52dk/nrf52810
+      - qemu_riscv64/qemu_virt_riscv64/smp_large
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y

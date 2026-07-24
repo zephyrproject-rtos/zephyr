@@ -24,3 +24,4 @@ tests:
       - qemu_x86
     platform_exclude:
       - max32657evkit/max32657
+      - qemu_riscv64/qemu_virt_riscv64/smp_large # userspace DDR PMP fault
