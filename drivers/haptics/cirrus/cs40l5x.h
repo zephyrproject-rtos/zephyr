@@ -20,6 +20,13 @@ struct cs40l5x_calibration {
 	uint32_t f0;
 };
 
+struct cs40l5x_sensor {
+	bool is_signed;
+	uint8_t n;
+	uint8_t m;
+	int32_t full_scale: 8;
+};
+
 struct cs40l5x_trigger_gpios {
 	struct gpio_dt_spec *gpio;
 	const uint8_t num_gpio;
@@ -54,7 +61,6 @@ struct cs40l5x_data {
 	struct k_sem calibration_semaphore;
 	struct cs40l5x_calibration calibration;
 	uint32_t output;
-	bool custom_effects[CS40L5X_NUM_CUSTOM_EFFECTS];
 };
 
 #ifdef __cplusplus
