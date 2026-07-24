@@ -2883,6 +2883,173 @@ ZTEST(net_socket_tls, test_v6_dtls_server_session_timeout_recvfrom)
 	test_dtls_server_session_timeout_recvfrom(NET_AF_INET6);
 }
 
+ZTEST(net_socket_tls, test_mfl_sockopt)
+{
+	int sock;
+	int mfl;
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH)) {
+		ztest_test_skip();
+	}
+
+	sock = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TLS_1_2);
+	zassert_not_equal(sock, -1, "socket() failed (%d)", errno);
+
+	/* Valid values */
+	mfl = ZSOCK_TLS_MFL_DEFAULT;
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_MAX_FRAGMENT_LENGTH,
+			      &mfl, sizeof(mfl));
+	zassert_equal(ret, 0, "setsockopt(MFL_DEFAULT) failed (%d)", errno);
+
+	mfl = ZSOCK_TLS_MFL_DISABLED;
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_MAX_FRAGMENT_LENGTH,
+			      &mfl, sizeof(mfl));
+	zassert_equal(ret, 0, "setsockopt(MFL_DISABLED) failed (%d)", errno);
+
+	mfl = ZSOCK_TLS_MFL_512;
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_MAX_FRAGMENT_LENGTH,
+			      &mfl, sizeof(mfl));
+	zassert_equal(ret, 0, "setsockopt(MFL_512) failed (%d)", errno);
+
+	mfl = ZSOCK_TLS_MFL_4096;
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_MAX_FRAGMENT_LENGTH,
+			      &mfl, sizeof(mfl));
+	zassert_equal(ret, 0, "setsockopt(MFL_4096) failed (%d)", errno);
+
+	/* Out-of-range code */
+	mfl = ZSOCK_TLS_MFL_4096 + 1;
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_MAX_FRAGMENT_LENGTH,
+			      &mfl, sizeof(mfl));
+	zassert_equal(ret, -1, "setsockopt(invalid) should have failed");
+	zassert_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	mfl = ZSOCK_TLS_MFL_DEFAULT - 1;
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_MAX_FRAGMENT_LENGTH,
+			      &mfl, sizeof(mfl));
+	zassert_equal(ret, -1, "setsockopt(below MFL_DEFAULT) should have failed");
+	zassert_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	/* Wrong optlen */
+	mfl = ZSOCK_TLS_MFL_512;
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_MAX_FRAGMENT_LENGTH,
+			      &mfl, sizeof(uint8_t));
+	zassert_equal(ret, -1, "setsockopt(wrong len) should have failed");
+	zassert_equal(errno, EINVAL, "expected EINVAL, got %d", errno);
+
+	test_close(sock);
+}
+
+static void prepare_tls_client_with_sockopt_mfl(int *client_sock,
+						struct net_sockaddr *s_saddr, int mfl_value)
+{
+	struct net_sockaddr c_saddr, addr;
+	net_socklen_t addrlen = sizeof(addr);
+	struct connect_data test_data;
+	int accepted;
+	int mfl = mfl_value;
+
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, client_sock,
+			    (struct net_sockaddr_in *)&c_saddr, NET_IPPROTO_TLS_1_2);
+	test_config_psk(-1, *client_sock);
+	zassert_ok(zsock_setsockopt(*client_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_MAX_FRAGMENT_LENGTH,
+				    &mfl, sizeof(mfl)), "setsockopt(MFL) failed (%d)", errno);
+
+	test_data.sock = *client_sock;
+	test_data.peer_sock = &s_sock;
+	test_data.addr = s_saddr;
+	k_work_init_delayable(&test_data.work, client_connect_work_handler);
+	test_work_reschedule(&test_data.work, K_NO_WAIT);
+
+	test_accept(s_sock, &accepted, &addr, &addrlen);
+	test_work_wait(&test_data.work);
+	test_close(accepted);
+}
+
+ZTEST(net_socket_tls, test_mfl_handshake)
+{
+	struct net_sockaddr s_saddr;
+	mbedtls_ssl_context *ssl;
+
+	if (!IS_ENABLED(CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH)) {
+		ztest_test_skip();
+	}
+
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &s_sock,
+			    (struct net_sockaddr_in *)&s_saddr, NET_IPPROTO_TLS_1_2);
+	test_config_psk(s_sock, -1);
+	test_bind(s_sock, &s_saddr, sizeof(struct net_sockaddr_in));
+	test_listen(s_sock);
+
+	prepare_tls_client_with_sockopt_mfl(&c_sock, &s_saddr, ZSOCK_TLS_MFL_512);
+	prepare_tls_client_with_sockopt_mfl(&c_sock_2, &s_saddr, ZSOCK_TLS_MFL_1024);
+
+	ssl = ztls_get_mbedtls_ssl_context(c_sock);
+	zassert_not_null(ssl, "Failed to get mbedTLS context for client 1");
+	zassert_equal(mbedtls_ssl_get_max_out_record_payload(ssl), 512,
+		      "MFL not negotiated to 512");
+
+	ssl = ztls_get_mbedtls_ssl_context(c_sock_2);
+	zassert_not_null(ssl, "Failed to get mbedTLS context for client 2");
+	zassert_equal(mbedtls_ssl_get_max_out_record_payload(ssl), 1024,
+		      "MFL not negotiated to 1024");
+}
+
+ZTEST(net_socket_tls, test_mfl_reset_to_default)
+{
+	struct net_sockaddr s_saddr, c_saddr, addr;
+	net_socklen_t addrlen = sizeof(addr);
+	struct connect_data test_data;
+	mbedtls_ssl_context *ssl;
+	int accepted;
+	int mfl;
+
+	if (!IS_ENABLED(CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH)) {
+		ztest_test_skip();
+	}
+
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &s_sock,
+			    (struct net_sockaddr_in *)&s_saddr, NET_IPPROTO_TLS_1_2);
+	test_config_psk(s_sock, -1);
+	test_bind(s_sock, &s_saddr, sizeof(struct net_sockaddr_in));
+	test_listen(s_sock);
+
+	prepare_sock_tls_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock,
+			    (struct net_sockaddr_in *)&c_saddr, NET_IPPROTO_TLS_1_2);
+	test_config_psk(-1, c_sock);
+
+	/* Override to MFL_512, then reset back to the global default before
+	 * connecting, the handshake should reflect the reset, not the
+	 * earlier override.
+	 */
+	mfl = ZSOCK_TLS_MFL_512;
+	zassert_ok(zsock_setsockopt(c_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_MAX_FRAGMENT_LENGTH,
+				    &mfl, sizeof(mfl)), "setsockopt(MFL_512) failed (%d)", errno);
+
+	mfl = ZSOCK_TLS_MFL_DEFAULT;
+	zassert_ok(zsock_setsockopt(c_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_MAX_FRAGMENT_LENGTH,
+				    &mfl, sizeof(mfl)),
+		   "setsockopt(MFL_DEFAULT) failed (%d)", errno);
+
+	test_data.sock = c_sock;
+	test_data.peer_sock = &s_sock;
+	test_data.addr = &s_saddr;
+	k_work_init_delayable(&test_data.work, client_connect_work_handler);
+	test_work_reschedule(&test_data.work, K_NO_WAIT);
+
+	test_accept(s_sock, &accepted, &addr, &addrlen);
+	test_work_wait(&test_data.work);
+	test_close(accepted);
+
+	/* CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN and CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN
+	 * default to 1500, which auto-derives to MFL_1024.
+	 */
+	ssl = ztls_get_mbedtls_ssl_context(c_sock);
+	zassert_not_null(ssl, "Failed to get mbedTLS context");
+	zassert_equal(mbedtls_ssl_get_max_out_record_payload(ssl), 1024,
+		      "MFL not reset to global default (1024)");
+}
+
 static void *tls_tests_setup(void)
 {
 	k_work_queue_init(&tls_test_work_queue);

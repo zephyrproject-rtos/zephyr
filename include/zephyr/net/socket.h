@@ -267,6 +267,27 @@ extern "C" {
  *  Kconfig option is enabled.
  */
 #define ZSOCK_TLS_CERT_VERIFY_CALLBACK 20
+/** Write-only socket option to configure per-socket Max Fragment Length (MFL)
+ *  for TLS 1.2. When set, overrides the global MFL derived from compile-time
+ *  buffer sizes for this socket only. Accepts a pointer to an int holding one
+ *  of the ZSOCK_TLS_MFL_* values.
+ *
+ *  By default (option not set) the socket advertises an MFL derived from
+ *  CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN / CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN.
+ *  Pass ZSOCK_TLS_MFL_DEFAULT to revert a socket back to this default after
+ *  a previous call has overridden it.
+ *
+ *  Requires CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH.
+ */
+#define ZSOCK_TLS_MAX_FRAGMENT_LENGTH 21
+
+/* Valid values for @ref ZSOCK_TLS_MAX_FRAGMENT_LENGTH option */
+#define ZSOCK_TLS_MFL_DEFAULT -1 /**< Use the global Kconfig-derived MFL. */
+#define ZSOCK_TLS_MFL_DISABLED 0 /**< Do not send the MFL extension. */
+#define ZSOCK_TLS_MFL_512 1      /**< Advertise 512-byte max fragment. */
+#define ZSOCK_TLS_MFL_1024 2     /**< Advertise 1024-byte max fragment. */
+#define ZSOCK_TLS_MFL_2048 3     /**< Advertise 2048-byte max fragment. */
+#define ZSOCK_TLS_MFL_4096 4     /**< Advertise 4096-byte max fragment. */
 
 /* Valid values for @ref TLS_PEER_VERIFY option */
 #define ZSOCK_TLS_PEER_VERIFY_NONE 0     /**< Peer verification disabled. */
