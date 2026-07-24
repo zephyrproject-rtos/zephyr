@@ -1,0 +1,97 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Mario Paja
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-tx = &sai2_a;
+	};
+};
+
+&pll2 {
+	/* 44.1KHz (0.03% Error) - PLL2_P SAI2A_SEL(1)  */
+	div-m = <8>;
+	mul-n = <192>;
+	div-q = <2>;
+	div-r = <2>;
+	div-p = <17>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+/*
+ * SAI2 clock configuration examples
+ *
+ * Alternative: SAI2B using PLL3_P
+ *
+ * PLL3 configuration:
+ *
+ *   &pll3 {
+ *           div-m = <8>;
+ *           mul-n = <184>;
+ *           div-q = <2>;
+ *           div-r = <2>;
+ *           div-p = <17>;
+ *           clocks = <&clk_hse>;
+ *           status = "okay";
+ *   };
+ *
+ * SAI2B only:
+ *
+ *   &sai2 {
+ *           status = "okay";
+ *           clocks = <&rcc STM32_CLOCK(APB2, 23)>,
+ *                    <&rcc STM32_SRC_PLL3_P SAI2B_SEL(2)>;
+ *           clock-names = "sai_ck", "sai_b_ker_ck";
+ *   };
+ *
+ * SAI2A + SAI2B:
+ *
+ *   &sai2 {
+ *           status = "okay";
+ *           clocks = <&rcc STM32_CLOCK(APB2, 23)>,
+ *                    <&rcc STM32_SRC_PLL2_P SAI2A_SEL(1)>,
+ *                    <&rcc STM32_SRC_PLL3_P SAI2B_SEL(2)>;
+ *   };
+ */
+&sai2 {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB2, 23)>,
+		 <&rcc STM32_SRC_PLL2_P SAI2A_SEL(1)>;
+	clock-names = "sai_ck", "sai_ker_ck";
+};
+
+/*
+ * Optional SAI2B configuration.
+ *
+ * Enable this node when using the SAI2B sub-block. The example below
+ * configures:
+ *   - MCLK output enabled
+ *   - MCLK divider set to 256
+ *   - TX DMA channel
+ *   - Pin multiplexing for MCLK, SD, FS, and SCK
+ *
+ * &sai2_b {
+ *         pinctrl-0 = <&sai2_mclk_b_pe6 &sai2_sd_b_pa0
+ *                      &sai2_fs_b_pc0 &sai2_sck_b_pa2>;
+ *         pinctrl-names = "default";
+ *         mclk-enable;
+ *         mclk-divider = "div-256";
+ *         dma-names = "tx";
+ *         status = "okay";
+ * };
+ */
+&sai2_a {
+	pinctrl-0 = <&sai2_mclk_a_pe0 &sai2_sd_a_pd11
+		     &sai2_fs_a_pd12 &sai2_sck_a_pd13>;
+	pinctrl-names = "default";
+	status = "okay";
+	mclk-enable;
+	mclk-divider = "div-256";
+	dma-names = "tx";
+};
+
+&dma1 {
+	status = "okay";
+};
