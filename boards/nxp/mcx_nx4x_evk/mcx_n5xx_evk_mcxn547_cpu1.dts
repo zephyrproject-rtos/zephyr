@@ -1,0 +1,82 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "mcx_n5xx_evk.dtsi"
+
+/ {
+	model = "NXP MCX-N5XX-EVK board (CPU1)";
+
+	cpus {
+		/delete-node/ cpu@0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot1_partition;
+		zephyr,console = &flexcomm2_lpuart2;
+		zephyr,shell-uart = &flexcomm2_lpuart2;
+	};
+};
+
+/*
+ * Reserve a RAM window for CPU1. CPU0 uses the lower 320KB by default.
+ * The SoC SRAM0 default is 416KB, so start CPU1 at +320KB and give it 64KB.
+ */
+/*
+ * NOTE: sram0 is the node label for the main SRAM region whose unit-address
+ * is memory@20000000 in nxp_mcxnx4x_common.dtsi. Keep the base address aligned
+ * with the unit-address, otherwise dtc warns.
+ */
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(64)>;
+};
+
+&flexcomm2 {
+	status = "okay";
+};
+
+&flexcomm2_lpuart2 {
+	status = "okay";
+};
+
+&mbox {
+	status = "okay";
+};
+
+/*
+ * CPU1 build-only support for generic samples/tests.
+ *
+ * The shared board DTSI (mcx_nx4x_evk.dtsi) defines sw0/led0 aliases, but keeps
+ * the actual button/LED nodes disabled by default (they are enabled in the
+ * CPU0 variant DTS). Some samples (e.g. samples/basic/button) require sw0 to be
+ * enabled at build time and will also try to use led0 if present.
+ *
+ * Enable the required GPIO controllers and the referenced nodes so these
+ * samples/tests build for the CPU1 qualifier.
+ */
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&user_button_2 {
+	status = "okay";
+};
+
+&red_led {
+	status = "okay";
+};
