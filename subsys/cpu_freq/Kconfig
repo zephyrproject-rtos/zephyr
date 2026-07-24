@@ -98,6 +98,13 @@ config CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO
 
 endif
 
+config CPU_FREQ_POLICY_SIDE_CHANNEL_DEFENSE
+	bool "Side channel defense"
+	select ENTROPY_GENERATOR if ENTROPY_NODE_ENABLED
+	help
+	  Side channel defense policy. This policy calls sys_rand32_get() from the
+	  CPU frequency timer handler to select a random performance state.
+
 endchoice # CPU_FREQ_POLICY
 
 choice CPU_FREQ_PSTATE_SET
