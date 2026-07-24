@@ -31,7 +31,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
@@ -42,6 +42,8 @@
 #include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
+
+LOG_MODULE_REGISTER(cap_initiator_unicast_test);
 
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
@@ -143,7 +145,7 @@ static void unicast_stream_configured(struct bt_bap_stream *stream,
 
 	ARG_UNUSED(pref);
 
-	printk("Configured stream %p\n", stream);
+	LOG_INF("Configured stream %p", stream);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(non_idle_streams); i++) {
 		if (non_idle_streams[i] == NULL) {
@@ -162,12 +164,12 @@ static void unicast_stream_configured(struct bt_bap_stream *stream,
 
 static void unicast_stream_qos_set(struct bt_bap_stream *stream)
 {
-	printk("QoS set stream %p\n", stream);
+	LOG_INF("QoS set stream %p", stream);
 }
 
 static void unicast_stream_enabled(struct bt_bap_stream *stream)
 {
-	printk("Enabled stream %p\n", stream);
+	LOG_INF("Enabled stream %p", stream);
 }
 
 static void unicast_stream_started(struct bt_bap_stream *stream)
@@ -181,7 +183,7 @@ static void unicast_stream_started(struct bt_bap_stream *stream)
 	test_stream->tx_cnt = 0U;
 	UNSET_FLAG(test_stream->flag_audio_received);
 
-	printk("Started stream %p\n", stream);
+	LOG_INF("Started stream %p", stream);
 
 	if (bap_stream_tx_can_send(stream)) {
 		int err;
@@ -196,17 +198,17 @@ static void unicast_stream_started(struct bt_bap_stream *stream)
 
 static void unicast_stream_metadata_updated(struct bt_bap_stream *stream)
 {
-	printk("Metadata updated stream %p\n", stream);
+	LOG_INF("Metadata updated stream %p", stream);
 }
 
 static void unicast_stream_disabled(struct bt_bap_stream *stream)
 {
-	printk("Disabled stream %p\n", stream);
+	LOG_INF("Disabled stream %p", stream);
 }
 
 static void unicast_stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
-	printk("Stopped stream %p with reason 0x%02X\n", stream, reason);
+	LOG_INF("Stopped stream %p with reason 0x%02X", stream, reason);
 
 	if (bap_stream_tx_can_send(stream)) {
 		int err;
@@ -223,7 +225,7 @@ static void unicast_stream_released(struct bt_bap_stream *stream)
 {
 	struct bt_cap_stream *cap_stream = cap_stream_from_bap_stream(stream);
 
-	printk("Released stream %p\n", stream);
+	LOG_INF("Released stream %p", stream);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(non_idle_streams); i++) {
 		if (non_idle_streams[i] == cap_stream) {
@@ -269,9 +271,9 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 			return;
 		}
 
-		printk("Found CAS with CSIS %p\n", csis_inst);
+		LOG_INF("Found CAS with CSIS %p", csis_inst);
 	} else {
-		printk("Found CAS\n");
+		LOG_INF("Found CAS");
 	}
 
 	SET_FLAG(flag_discovered);
@@ -282,7 +284,7 @@ static void unicast_start_complete_cb(int err, struct bt_conn *conn)
 	if (err == -ECANCELED) {
 		SET_FLAG(flag_start_timeout);
 	} else if (err != 0) {
-		printk("Failed to start (failing conn %p): %d\n", conn, err);
+		LOG_ERR("Failed to start (failing conn %p): %d", conn, err);
 		SET_FLAG(flag_start_failed);
 	} else {
 		SET_FLAG(flag_started);
@@ -324,7 +326,7 @@ static void add_remote_sink(const struct bt_conn *conn, struct bt_bap_ep *ep)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_sink_eps[conn_index]); i++) {
 		if (unicast_sink_eps[conn_index][i] == NULL) {
-			printk("Conn[%u] %p: Sink #%zu: ep %p\n", conn_index, conn, i, ep);
+			LOG_DBG("Conn[%u] %p: Sink #%zu: ep %p", conn_index, conn, i, ep);
 			unicast_sink_eps[conn_index][i] = ep;
 			return;
 		}
@@ -339,7 +341,7 @@ static void add_remote_source(const struct bt_conn *conn, struct bt_bap_ep *ep)
 
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_source_eps[conn_index]); i++) {
 		if (unicast_source_eps[conn_index][i] == NULL) {
-			printk("Conn[%u] %p: Source #%zu: ep %p\n", conn_index, conn, i, ep);
+			LOG_DBG("Conn[%u] %p: Source #%zu: ep %p", conn_index, conn, i, ep);
 			unicast_source_eps[conn_index][i] = ep;
 			return;
 		}
@@ -350,7 +352,7 @@ static void add_remote_source(const struct bt_conn *conn, struct bt_bap_ep *ep)
 
 static void print_remote_codec(const struct bt_audio_codec_cap *codec_cap, enum bt_audio_dir dir)
 {
-	printk("codec_cap %p dir 0x%02x\n", codec_cap, dir);
+	LOG_DBG("codec_cap %p dir 0x%02x", codec_cap, dir);
 
 	print_codec_cap(codec_cap);
 }
@@ -374,11 +376,11 @@ static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 	}
 
 	if (dir == BT_AUDIO_DIR_SINK) {
-		printk("Sink discover complete\n");
+		LOG_INF("Sink discover complete");
 
 		SET_FLAG(flag_sink_discovered);
 	} else if (dir == BT_AUDIO_DIR_SOURCE) {
-		printk("Source discover complete\n");
+		LOG_INF("Source discover complete");
 
 		SET_FLAG(flag_source_discovered);
 	} else {
@@ -411,7 +413,7 @@ static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 	ARG_UNUSED(tx);
 	ARG_UNUSED(rx);
 
-	printk("MTU exchanged\n");
+	LOG_INF("MTU exchanged");
 	SET_FLAG(flag_mtu_exchanged);
 }
 
@@ -426,7 +428,7 @@ static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_
 	uint16_t uuid_val;
 	int err;
 
-	printk("data->type %u\n", data->type);
+	LOG_DBG("data->type %u", data->type);
 
 	if (data->type != BT_DATA_SVC_DATA16) {
 		return true; /* Continue parsing to next AD data type */
@@ -443,9 +445,9 @@ static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_
 		return true; /* Continue parsing to next AD data type */
 	}
 
-	printk("Device found: %s\n", bt_addr_le_str(addr));
+	LOG_INF("Device found: %s", bt_addr_le_str(addr));
 
-	printk("Stopping scan\n");
+	LOG_INF("Stopping scan");
 	if (bt_le_scan_stop()) {
 		FAIL("Could not stop scan");
 		return false;
@@ -492,7 +494,7 @@ static void init(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 	bap_stream_tx_init();
 
 	bt_gatt_cb_register(&gatt_callbacks);
@@ -545,7 +547,7 @@ static void scan_and_connect(void)
 		return;
 	}
 
-	printk("Scanning successfully started\n");
+	LOG_INF("Scanning successfully started");
 	WAIT_FOR_FLAG(flag_connected);
 	connected_conn_cnt++;
 }
@@ -561,7 +563,7 @@ static void discover_sink(struct bt_conn *conn)
 
 	err = bt_bap_unicast_client_discover(conn, BT_AUDIO_DIR_SINK);
 	if (err != 0) {
-		printk("Failed to discover sink: %d\n", err);
+		LOG_ERR("Failed to discover sink: %d", err);
 		return;
 	}
 
@@ -583,7 +585,7 @@ static void discover_source(struct bt_conn *conn)
 
 	err = bt_bap_unicast_client_discover(conn, BT_AUDIO_DIR_SOURCE);
 	if (err != 0) {
-		printk("Failed to discover sink: %d\n", err);
+		LOG_ERR("Failed to discover sink: %d", err);
 		return;
 	}
 
@@ -603,7 +605,7 @@ static void discover_cas_inval(struct bt_conn *conn)
 
 	err = bt_cap_initiator_unicast_discover(conn);
 	if (err != 0) {
-		printk("Failed to discover CAS: %d\n", err);
+		LOG_ERR("Failed to discover CAS: %d", err);
 		return;
 	}
 
@@ -625,7 +627,7 @@ static void discover_cas(struct bt_conn *conn)
 
 	err = bt_cap_initiator_unicast_discover(conn);
 	if (err != 0) {
-		printk("Failed to discover CAS: %d\n", err);
+		LOG_ERR("Failed to discover CAS: %d", err);
 		return;
 	}
 
@@ -842,7 +844,7 @@ static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicas
 
 	/* Stop without release first to verify that we enter the QoS Configured state */
 	UNSET_FLAG(flag_stopped);
-	printk("Stopping without releasing\n");
+	LOG_INF("Stopping without releasing");
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
@@ -863,7 +865,7 @@ static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicas
 	/* Stop with release first to verify that we enter the idle state */
 	UNSET_FLAG(flag_stopped);
 	param.release = true;
-	printk("Releasing\n");
+	LOG_INF("Releasing");
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
@@ -925,13 +927,13 @@ static void unicast_group_delete(struct bt_cap_unicast_group *unicast_group)
 
 static void wait_for_data(void)
 {
-	printk("Waiting for data\n");
+	LOG_INF("Waiting for data");
 	ARRAY_FOR_EACH_PTR(unicast_client_source_streams, test_stream) {
 		if (audio_test_stream_is_streaming(test_stream)) {
 			WAIT_FOR_FLAG(test_stream->flag_audio_received);
 		}
 	}
-	printk("Data received\n");
+	LOG_INF("Data received");
 }
 
 static void test_main_cap_initiator_unicast(void)
@@ -954,12 +956,12 @@ static void test_main_cap_initiator_unicast(void)
 	discover_source(default_conn);
 
 	for (size_t i = 0U; i < iterations; i++) {
-		printk("\nRunning iteration i=%zu\n\n", i);
+		LOG_INF("Running iteration i=%zu", i);
 
 		unicast_group_create(&unicast_group);
 
 		for (size_t j = 0U; j < iterations; j++) {
-			printk("\nRunning iteration j=%zu\n\n", i);
+			LOG_INF("Running iteration j=%zu", j);
 
 			ARRAY_FOR_EACH_PTR(unicast_client_sink_streams, test_stream) {
 				UNSET_FLAG(test_stream->flag_audio_received);
@@ -1051,7 +1053,7 @@ static void test_cap_initiator_unicast_timeout(void)
 	unicast_group_create(&unicast_group);
 
 	for (size_t j = 0U; j < iterations; j++) {
-		printk("\nRunning iteration #%zu\n\n", j);
+		LOG_INF("Running iteration #%zu", j);
 		unicast_audio_start(unicast_group, false);
 
 		k_sleep(timeout);
@@ -1450,7 +1452,7 @@ static int cap_initiator_ac_unicast(const struct cap_initiator_ac_param *param,
 
 	UNSET_FLAG(flag_started);
 
-	printk("Starting %zu streams for %s\n", snk_cnt + src_cnt, param->name);
+	LOG_INF("Starting %zu streams for %s", snk_cnt + src_cnt, param->name);
 	err = cap_initiator_ac_cap_unicast_start(param, snk_uni_streams, snk_cnt, src_uni_streams,
 						 src_cnt, *unicast_group);
 	if (err != 0) {
@@ -1471,7 +1473,7 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	bool expect_tx = false;
 	bool expect_rx = false;
 
-	printk("Running test for %s with Sink Preset %s and Source Preset %s\n", param->name,
+	LOG_INF("Running test for %s with Sink Preset %s and Source Preset %s", param->name,
 	       param->snk_named_preset != NULL ? param->snk_named_preset->name : "None",
 	       param->src_named_preset != NULL ? param->src_named_preset->name : "None");
 
@@ -1494,7 +1496,7 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 
 		WAIT_FOR_FLAG(flag_mtu_exchanged);
 
-		printk("Connected %zu/%zu\n", i + 1, param->conn_cnt);
+		LOG_INF("Connected %zu/%zu", i + 1, param->conn_cnt);
 	}
 
 	if (connected_conn_cnt < param->conn_cnt) {
@@ -1528,7 +1530,7 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	}
 
 	if (expect_rx) {
-		printk("Waiting for data\n");
+		LOG_INF("Waiting for data");
 		wait_for_data();
 	}
 

@@ -33,7 +33,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
@@ -43,6 +43,8 @@
 #include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
+
+LOG_MODULE_REGISTER(gmap_ugg_test);
 
 #if defined(CONFIG_BT_GMAP)
 
@@ -166,7 +168,7 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 {
 	ARG_UNUSED(pref);
 
-	printk("Configured stream %p\n", stream);
+	LOG_INF("Configured stream %p", stream);
 
 	/* TODO: The preference should be used/taken into account when
 	 * setting the QoS
@@ -175,12 +177,12 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 
 static void stream_qos_set_cb(struct bt_bap_stream *stream)
 {
-	printk("QoS set stream %p\n", stream);
+	LOG_INF("QoS set stream %p", stream);
 }
 
 static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
-	printk("Enabled stream %p\n", stream);
+	LOG_INF("Enabled stream %p", stream);
 }
 
 static void stream_started_cb(struct bt_bap_stream *stream)
@@ -194,7 +196,7 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	test_stream->tx_cnt = 0U;
 	UNSET_FLAG(test_stream->flag_audio_received);
 
-	printk("Started stream %p\n", stream);
+	LOG_INF("Started stream %p", stream);
 
 	if (bap_stream_tx_can_send(stream)) {
 		int err;
@@ -211,17 +213,17 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 
 static void stream_metadata_updated_cb(struct bt_bap_stream *stream)
 {
-	printk("Metadata updated stream %p\n", stream);
+	LOG_INF("Metadata updated stream %p", stream);
 }
 
 static void stream_disabled_cb(struct bt_bap_stream *stream)
 {
-	printk("Disabled stream %p\n", stream);
+	LOG_INF("Disabled stream %p", stream);
 }
 
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
-	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+	LOG_INF("Stream %p stopped with reason 0x%02X", stream, reason);
 
 	if (bap_stream_tx_can_send(stream)) {
 		int err;
@@ -238,7 +240,7 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 
 static void stream_released_cb(struct bt_bap_stream *stream)
 {
-	printk("Released stream %p\n", stream);
+	LOG_INF("Released stream %p", stream);
 }
 
 static struct bt_bap_stream_ops stream_ops = {
@@ -274,9 +276,9 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 			return;
 		}
 
-		printk("Found CAS with CSIS %p\n", csis_inst);
+		LOG_INF("Found CAS with CSIS %p", csis_inst);
 	} else {
-		printk("Found CAS\n");
+		LOG_INF("Found CAS");
 	}
 
 	SET_FLAG(flag_cas_discovered);
@@ -326,7 +328,7 @@ static void add_remote_sink_ep(struct bt_conn *conn, struct bt_bap_ep *ep)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(sink_eps[bt_conn_index(conn)]); i++) {
 		if (sink_eps[bt_conn_index(conn)][i] == NULL) {
-			printk("Conn %p: Sink #%zu: ep %p\n", conn, i, ep);
+			LOG_DBG("Conn %p: Sink #%zu: ep %p", conn, i, ep);
 			sink_eps[bt_conn_index(conn)][i] = ep;
 			break;
 		}
@@ -337,7 +339,7 @@ static void add_remote_source_ep(struct bt_conn *conn, struct bt_bap_ep *ep)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(source_eps[bt_conn_index(conn)]); i++) {
 		if (source_eps[bt_conn_index(conn)][i] == NULL) {
-			printk("Conn %p: Source #%zu: ep %p\n", conn, i, ep);
+			LOG_DBG("Conn %p: Source #%zu: ep %p", conn, i, ep);
 			source_eps[bt_conn_index(conn)][i] = ep;
 			break;
 		}
@@ -347,7 +349,7 @@ static void add_remote_source_ep(struct bt_conn *conn, struct bt_bap_ep *ep)
 static void bap_pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 			      const struct bt_audio_codec_cap *codec_cap)
 {
-	printk("conn %p codec_cap %p dir 0x%02x\n", conn, codec_cap, dir);
+	LOG_DBG("conn %p codec_cap %p dir 0x%02x", conn, codec_cap, dir);
 
 	print_codec_cap(codec_cap);
 }
@@ -371,10 +373,10 @@ static void bap_discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir
 	}
 
 	if (dir == BT_AUDIO_DIR_SINK) {
-		printk("Sink discover complete\n");
+		LOG_INF("Sink discover complete");
 		SET_FLAG(flag_sink_discovered);
 	} else if (dir == BT_AUDIO_DIR_SOURCE) {
-		printk("Source discover complete\n");
+		LOG_INF("Source discover complete");
 		SET_FLAG(flag_source_discovered);
 	}
 }
@@ -391,7 +393,7 @@ static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 	ARG_UNUSED(tx);
 	ARG_UNUSED(rx);
 
-	printk("MTU exchanged\n");
+	LOG_INF("MTU exchanged");
 	SET_FLAG(flag_mtu_exchanged);
 }
 
@@ -409,8 +411,8 @@ static void gmap_discover_cb(struct bt_conn *conn, int err, enum bt_gmap_role ro
 		return;
 	}
 
-	printk("GMAP discovered for conn %p:\n\trole 0x%02x\n\tugg_feat 0x%02x\n\tugt_feat "
-	       "0x%02x\n\tbgs_feat 0x%02x\n\tbgr_feat 0x%02x\n",
+	LOG_INF("GMAP discovered for conn %p:\trole 0x%02x\tugg_feat 0x%02x\tugt_feat "
+	       "0x%02x\tbgs_feat 0x%02x\tbgr_feat 0x%02x",
 	       conn, role, features.ugg_feat, features.ugt_feat, features.bgs_feat,
 	       features.bgr_feat);
 
@@ -458,7 +460,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf
 		return;
 	}
 
-	printk("Device found: %s (RSSI %d)\n", bt_addr_le_str(info->addr), info->rssi);
+	LOG_INF("Device found: %s (RSSI %d)", bt_addr_le_str(info->addr), info->rssi);
 
 	/* connect only to devices in close proximity */
 	if (info->rssi < -70) {
@@ -466,7 +468,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf
 		return;
 	}
 
-	printk("Stopping scan\n");
+	LOG_INF("Stopping scan");
 	if (bt_le_scan_stop()) {
 		FAIL("Could not stop scan");
 		return;
@@ -499,7 +501,7 @@ static void init(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 	bap_stream_tx_init();
 
 	bt_gatt_cb_register(&gatt_callbacks);
@@ -581,7 +583,7 @@ static void scan_and_connect(void)
 		return;
 	}
 
-	printk("Scanning successfully started\n");
+	LOG_INF("Scanning successfully started");
 	WAIT_FOR_FLAG(flag_connected);
 	connected_conn_cnt++;
 }
@@ -594,7 +596,7 @@ static void discover_sink(struct bt_conn *conn)
 
 	err = bt_bap_unicast_client_discover(conn, BT_AUDIO_DIR_SINK);
 	if (err != 0) {
-		printk("Failed to discover sink: %d\n", err);
+		LOG_ERR("Failed to discover sink: %d", err);
 		return;
 	}
 
@@ -609,7 +611,7 @@ static void discover_source(struct bt_conn *conn)
 
 	err = bt_bap_unicast_client_discover(conn, BT_AUDIO_DIR_SOURCE);
 	if (err != 0) {
-		printk("Failed to discover source: %d\n", err);
+		LOG_ERR("Failed to discover source: %d", err);
 		return;
 	}
 
@@ -624,7 +626,7 @@ static void discover_gmas(struct bt_conn *conn)
 
 	err = bt_gmap_discover(conn);
 	if (err != 0) {
-		printk("Failed to discover GMAS: %d\n", err);
+		LOG_ERR("Failed to discover GMAS: %d", err);
 		return;
 	}
 
@@ -639,7 +641,7 @@ static void discover_cas(struct bt_conn *conn)
 
 	err = bt_cap_initiator_unicast_discover(conn);
 	if (err != 0) {
-		printk("Failed to discover CAS: %d\n", err);
+		LOG_ERR("Failed to discover CAS: %d", err);
 		return;
 	}
 
@@ -927,7 +929,7 @@ static int gmap_ac_unicast(const struct gmap_unicast_ac_param *param,
 
 	UNSET_FLAG(flag_started);
 
-	printk("Starting %zu streams for %s\n", snk_cnt + src_cnt, param->name);
+	LOG_INF("Starting %zu streams for %s", snk_cnt + src_cnt, param->name);
 	err = gmap_ac_cap_unicast_start(param, snk_uni_streams, snk_cnt, src_uni_streams, src_cnt,
 					*unicast_group);
 	if (err != 0) {
@@ -983,7 +985,7 @@ static void unicast_group_delete(struct bt_cap_unicast_group *unicast_group)
 
 static void wait_for_data(void)
 {
-	printk("Waiting for data\n");
+	LOG_INF("Waiting for data");
 
 	ARRAY_FOR_EACH_PTR(unicast_streams, unicast_stream) {
 		if (bap_stream_rx_can_recv(&unicast_stream->stream.stream.bap_stream) &&
@@ -992,7 +994,7 @@ static void wait_for_data(void)
 		}
 	}
 
-	printk("Data received\n");
+	LOG_INF("Data received");
 }
 
 static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
@@ -1001,7 +1003,7 @@ static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 	bool expect_tx = false;
 	bool expect_rx = false;
 
-	printk("Running test for %s with Sink Preset %s and Source Preset %s\n", param->name,
+	LOG_INF("Running test for %s with Sink Preset %s and Source Preset %s", param->name,
 	       param->snk_named_preset != NULL ? param->snk_named_preset->name : "None",
 	       param->src_named_preset != NULL ? param->src_named_preset->name : "None");
 
@@ -1019,7 +1021,7 @@ static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 
 		WAIT_FOR_FLAG(flag_mtu_exchanged);
 
-		printk("Connected %zu/%zu\n", i + 1, param->conn_cnt);
+		LOG_INF("Connected %zu/%zu", i + 1, param->conn_cnt);
 	}
 
 	if (connected_conn_cnt < param->conn_cnt) {
@@ -1163,7 +1165,7 @@ static void broadcast_audio_start(struct bt_cap_broadcast_source *broadcast_sour
 		return;
 	}
 
-	printk("Broadcast source created\n");
+	LOG_INF("Broadcast source created");
 }
 
 static void broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source,
@@ -1171,7 +1173,7 @@ static void broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_sourc
 {
 	int err;
 
-	printk("Stopping broadcast source\n");
+	LOG_INF("Stopping broadcast source");
 
 	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 	if (err != 0) {
@@ -1180,20 +1182,20 @@ static void broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_sourc
 	}
 
 	/* Wait for all to be stopped */
-	printk("Waiting for broadcast_streams to be stopped\n");
+	LOG_INF("Waiting for broadcast_streams to be stopped");
 	for (size_t i = 0U; i < stream_count; i++) {
 		err = k_sem_take(&sem_stream_stopped, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
 	}
 
-	printk("Broadcast source stopped\n");
+	LOG_INF("Broadcast source stopped");
 }
 
 static void broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source)
 {
 	int err;
 
-	printk("Deleting broadcast source\n");
+	LOG_INF("Deleting broadcast source");
 
 	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
 	if (err != 0) {
@@ -1201,7 +1203,7 @@ static void broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_sou
 		return;
 	}
 
-	printk("Broadcast source deleted\n");
+	LOG_INF("Broadcast source deleted");
 }
 
 static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *param)
@@ -1269,7 +1271,7 @@ static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *para
 	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
-	printk("Waiting for broadcast_streams to be started\n");
+	LOG_INF("Waiting for broadcast_streams to be started");
 	for (size_t i = 0U; i < param->stream_cnt; i++) {
 		err = k_sem_take(&sem_stream_started, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);

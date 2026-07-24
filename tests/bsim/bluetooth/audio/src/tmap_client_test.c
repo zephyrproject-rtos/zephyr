@@ -20,13 +20,15 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(tmap_client_test);
 
 #ifdef CONFIG_BT_TMAP
 extern enum bst_result_t bst_result;
@@ -43,7 +45,7 @@ void tmap_discovery_complete_cb(enum bt_tmap_role role, struct bt_conn *conn, in
 		return;
 	}
 
-	printk("TMAS discovery done\n");
+	LOG_INF("TMAS discovery done");
 	SET_FLAG(flag_tmap_discovered);
 }
 
@@ -60,14 +62,14 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 	uint16_t peer_tmap_role = 0U;
 	int err;
 
-	printk("[AD]: %u data_len %u\n", data->type, data->data_len);
+	LOG_DBG("[AD]: %u data_len %u", data->type, data->data_len);
 
 	if (data->type != BT_DATA_SVC_DATA16) {
 		return true; /* Continue parsing to next AD data type */
 	}
 
 	if (data->data_len < sizeof(uuid_val)) {
-		printk("AD invalid size %u\n", data->data_len);
+		LOG_ERR("AD invalid size %u", data->data_len);
 		return true; /* Continue parsing to next AD data type */
 	}
 
@@ -79,22 +81,22 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 		return true; /* Continue parsing to next AD data type */
 	}
 
-	printk("Found TMAS in peer adv data!\n");
+	LOG_INF("Found TMAS in peer adv data!");
 	if (tmas_svc_data.len < sizeof(peer_tmap_role)) {
-		printk("AD invalid size %u\n", data->data_len);
+		LOG_ERR("AD invalid size %u", data->data_len);
 		return false; /* Stop parsing */
 	}
 
 	peer_tmap_role = net_buf_simple_pull_le16(&tmas_svc_data);
 	if (!(peer_tmap_role & BT_TMAP_ROLE_UMR)) {
-		printk("No TMAS UMR support!\n");
+		LOG_DBG("No TMAS UMR support!");
 		return false; /* Stop parsing */
 	}
 
-	printk("Attempt to connect!\n");
+	LOG_DBG("Attempt to connect!");
 	err = bt_le_scan_stop();
 	if (err != 0) {
-		printk("Failed to stop scan: %d\n", err);
+		LOG_ERR("Failed to stop scan: %d", err);
 		return false;
 	}
 
@@ -111,12 +113,12 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
-	printk("SCAN RCV CB\n");
+	LOG_DBG("");
 
 	/* Check for connectable, extended advertising */
 	if (((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0) ||
 		((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE)) != 0) {
-		printk("[DEVICE]: %s, ", bt_addr_le_str(info->addr));
+		LOG_DBG("[DEVICE]: %s", bt_addr_le_str(info->addr));
 		/* Check for TMAS support in advertising data */
 		bt_data_parse(buf, check_audio_support_and_connect, (void *)info->addr);
 	}
@@ -139,7 +141,7 @@ static void discover_tmas(void)
 		return;
 	}
 
-	printk("TMAP Central Starting Service Discovery...\n");
+	LOG_INF("TMAP Central Starting Service Discovery...");
 	WAIT_FOR_FLAG(flag_tmap_discovered);
 }
 
@@ -153,7 +155,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 	/* Initialize TMAP */
 	err = bt_tmap_register(BT_TMAP_ROLE_CG | BT_TMAP_ROLE_UMS);
 	if (err != 0) {
@@ -161,7 +163,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("TMAP initialized. Start scanning...\n");
+	LOG_INF("TMAP initialized. Start scanning...");
 	/* Scan for peer */
 	bt_le_scan_cb_register(&scan_callbacks);
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
@@ -170,7 +172,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Scanning successfully started\n");
+	LOG_INF("Scanning successfully started");
 	WAIT_FOR_FLAG(flag_connected);
 
 	discover_tmas();

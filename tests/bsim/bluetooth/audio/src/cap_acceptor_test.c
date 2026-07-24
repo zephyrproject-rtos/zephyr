@@ -32,7 +32,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
@@ -42,6 +42,8 @@
 #include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
+
+LOG_MODULE_REGISTER(cap_acceptor_test);
 
 #if defined(CONFIG_BT_CAP_ACCEPTOR)
 extern enum bst_result_t bst_result;
@@ -128,7 +130,7 @@ static void sync_sink(void)
 		return;
 	}
 
-	printk("Syncing the sink to 0x%08x\n", bis_sync_bitfield);
+	LOG_INF("Syncing the sink to 0x%08x", bis_sync_bitfield);
 
 	err = bt_bap_broadcast_sink_sync(g_broadcast_sink, bis_sync_bitfield, bap_streams, NULL);
 	if (err != 0) {
@@ -180,7 +182,7 @@ static void update_sink_state(void)
 	if (TEST_FLAG(flag_bis_sync_requested)) {
 		if (g_broadcast_sink == NULL && TEST_FLAG(flag_pa_synced) &&
 		    broadcaster_broadcast_id != BT_BAP_INVALID_BROADCAST_ID) {
-			printk("Creating sink\n");
+			LOG_INF("Creating sink");
 			create_sink();
 		}
 
@@ -188,13 +190,13 @@ static void update_sink_state(void)
 		if (g_broadcast_sink != NULL && TEST_FLAG(flag_base_received) &&
 		    TEST_FLAG(flag_syncable) && !TEST_FLAG(flag_broadcaster_synced) &&
 		    bis_sync_bitfield == 0U) {
-			printk("Syncing sink %p\n", g_broadcast_sink);
+			LOG_INF("Syncing sink %p", g_broadcast_sink);
 			sync_sink();
 		}
 	} else {
 		if (g_broadcast_sink != NULL && bis_sync_bitfield != 0U &&
 		    g_total_bis_sync_req == 0U) {
-			printk("Stopping sink %p\n", g_broadcast_sink);
+			LOG_INF("Stopping sink %p", g_broadcast_sink);
 			stop_sink(); /* calls this recursively */
 		}
 
@@ -202,7 +204,7 @@ static void update_sink_state(void)
 		 */
 		if (g_broadcast_sink != NULL && bis_sync_bitfield == 0U &&
 		    g_total_bis_sync_req == 0U && !TEST_FLAG(flag_broadcaster_synced)) {
-			printk("Deleting sink %p\n", g_broadcast_sink);
+			LOG_INF("Deleting sink %p", g_broadcast_sink);
 			delete_sink();
 		}
 	}
@@ -212,7 +214,7 @@ static bool subgroup_data_func_cb(struct bt_data *data, void *user_data)
 {
 	bool *stream_context_found = (bool *)user_data;
 
-	printk("type %u len %u\n", data->type, data->data_len);
+	LOG_DBG("type %u len %u", data->type, data->data_len);
 
 	if (!valid_metadata_type(data->type, data->data_len)) {
 		return false;
@@ -248,7 +250,7 @@ static bool valid_subgroup_metadata_cb(const struct bt_bap_base_subgroup *subgro
 
 	if (TEST_FLAG(flag_base_received) &&
 	    ((size_t)ret != metadata_size || memcmp(meta, metadata, metadata_size) != 0)) {
-		printk("Metadata updated\n");
+		LOG_INF("Metadata updated");
 		SET_FLAG(flag_base_metadata_updated);
 	}
 
@@ -260,7 +262,7 @@ static bool valid_subgroup_metadata_cb(const struct bt_bap_base_subgroup *subgro
 	}
 
 	if (!stream_context_found) {
-		printk("Subgroup did not have streaming context\n");
+		LOG_INF("Subgroup did not have streaming context");
 	}
 
 	/* if this is false, the iterator will return early with an error */
@@ -280,7 +282,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 		return;
 	}
 
-	printk("Received BASE with %d subgroups from broadcast sink %p\n", ret, sink);
+	LOG_INF("Received BASE with %d subgroups from broadcast sink %p", ret, sink);
 
 	if (ret == 0) {
 		FAIL("subgroup_count was 0");
@@ -306,7 +308,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 
 static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
-	printk("Broadcast sink %p syncable with%s encryption\n",
+	LOG_INF("Broadcast sink %p syncable with%s encryption",
 	       sink, biginfo->encryption ? "" : "out");
 	SET_FLAG(flag_syncable);
 
@@ -320,7 +322,7 @@ static void broadcast_started_cb(struct bt_bap_broadcast_sink *sink)
 		return;
 	}
 
-	printk("Broadcast sink %p started\n", sink);
+	LOG_INF("Broadcast sink %p started", sink);
 
 	SET_FLAG(flag_broadcaster_synced);
 
@@ -336,7 +338,7 @@ static void broadcast_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_t rea
 		return;
 	}
 
-	printk("Broadcast sink %p stopped\n", sink);
+	LOG_INF("Broadcast sink %p stopped", sink);
 
 	UNSET_FLAG(flag_broadcaster_synced);
 
@@ -379,7 +381,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
-	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
+	LOG_INF("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X", broadcast_id,
 	       bt_addr_le_str(info->addr), info->sid);
 
 	/* Store info for PA sync parameters */
@@ -410,7 +412,7 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 	ARG_UNUSED(info);
 
 	if (sync == pa_sync) {
-		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X\n", sync,
+		LOG_INF("PA sync %p synced for broadcast sink with broadcast ID 0x%06X", sync,
 		       broadcaster_broadcast_id);
 
 		SET_FLAG(flag_pa_synced);
@@ -428,7 +430,7 @@ static void bap_pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 				      const struct bt_le_per_adv_sync_term_info *info)
 {
 	if (sync == pa_sync) {
-		printk("PA sync %p lost with reason 0x%02X\n", sync, info->reason);
+		LOG_INF("PA sync %p lost with reason 0x%02X", sync, info->reason);
 		pa_sync = NULL;
 
 		UNSET_FLAG(flag_pa_synced);
@@ -459,12 +461,12 @@ static void started_cb(struct bt_bap_stream *stream)
 	test_stream->tx_cnt = 0U;
 	UNSET_FLAG(test_stream->flag_audio_received);
 
-	printk("Stream %p started\n", stream);
+	LOG_INF("Stream %p started", stream);
 }
 
 static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
-	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+	LOG_INF("Stream %p stopped with reason 0x%02X", stream, reason);
 }
 
 static struct bt_bap_stream_ops broadcast_stream_ops = {
@@ -478,7 +480,7 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 	struct bt_bap_ep_info ep_info;
 	int err;
 
-	printk("Enabled: stream %p (auto_start_sink_streams %d)\n", stream,
+	LOG_INF("Enabled: stream %p (auto_start_sink_streams %d)", stream,
 	       auto_start_sink_streams);
 
 	err = bt_bap_ep_get_info(stream->ep, &ep_info);
@@ -509,7 +511,7 @@ static void unicast_stream_started(struct bt_bap_stream *stream)
 	test_stream->tx_cnt = 0U;
 	UNSET_FLAG(test_stream->flag_audio_received);
 
-	printk("Started stream %p\n", stream);
+	LOG_INF("Started stream %p", stream);
 
 	if (bap_stream_tx_can_send(stream)) {
 		int err;
@@ -526,7 +528,7 @@ static void unicast_stream_started(struct bt_bap_stream *stream)
 
 static void unicast_stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
-	printk("Stopped stream %p with reason 0x%02X\n", stream, reason);
+	LOG_INF("Stopped stream %p with reason 0x%02X", stream, reason);
 
 	if (bap_stream_tx_can_send(stream)) {
 		int err;
@@ -598,7 +600,7 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 		return -EALREADY;
 	}
 
-	printk("PA sync request\n");
+	LOG_INF("PA sync request");
 
 	bt_addr_le_copy(&broadcaster_addr, &recv_state->addr);
 	broadcaster_info.sid = recv_state->adv_sid;
@@ -618,7 +620,7 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 
 	ARG_UNUSED(conn);
 
-	printk("PA sync term request\n");
+	LOG_INF("PA sync term request");
 
 	if (recv_state != g_recv_state) {
 		FAIL("Unexpected receive state: %p != %p", recv_state, g_recv_state);
@@ -658,7 +660,7 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 		g_total_bis_sync_req |= bis_sync_req[i];
 	}
 
-	printk("BIS sync request: 0x%08x\n", g_total_bis_sync_req);
+	LOG_INF("BIS sync request: 0x%08x", g_total_bis_sync_req);
 
 	if (g_total_bis_sync_req != 0U) {
 		SET_FLAG(flag_bis_sync_requested);
@@ -682,7 +684,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 		return;
 	}
 
-	printk("Broadcast code received for %p\n", recv_state);
+	LOG_INF("Broadcast code received for %p", recv_state);
 
 	if (memcmp(broadcast_code, BROADCAST_CODE, sizeof(BROADCAST_CODE)) != 0) {
 		FAIL("Failed to receive correct broadcast code\n");
@@ -744,19 +746,19 @@ static int unicast_server_config(struct bt_conn *conn, const struct bt_bap_ep *e
 				 struct bt_bap_qos_cfg_pref *const pref,
 				 struct bt_bap_ascs_rsp *rsp)
 {
-	printk("ASE Codec Config: conn %p ep %p dir %u\n", conn, ep, dir);
+	LOG_INF("ASE Codec Config: conn %p ep %p dir %u", conn, ep, dir);
 
 	print_codec_cfg(codec_cfg);
 
 	*stream = unicast_stream_alloc();
 	if (*stream == NULL) {
-		printk("No streams available\n");
+		LOG_INF("No streams available");
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM, BT_BAP_ASCS_REASON_NONE);
 
 		return -ENOMEM;
 	}
 
-	printk("ASE Codec Config stream %p\n", *stream);
+	LOG_INF("ASE Codec Config stream %p", *stream);
 
 	SET_FLAG(flag_unicast_stream_configured);
 
@@ -772,7 +774,7 @@ static int unicast_server_reconfig(struct bt_bap_stream *stream, enum bt_audio_d
 {
 	ARG_UNUSED(dir);
 
-	printk("ASE Codec Reconfig: stream %p\n", stream);
+	LOG_INF("ASE Codec Reconfig: stream %p", stream);
 
 	print_codec_cfg(codec_cfg);
 
@@ -789,7 +791,7 @@ static int unicast_server_qos(struct bt_bap_stream *stream, const struct bt_bap_
 {
 	ARG_UNUSED(rsp);
 
-	printk("QoS: stream %p qos %p\n", stream, qos);
+	LOG_INF("QoS: stream %p qos %p", stream, qos);
 
 	print_qos(qos);
 
@@ -801,7 +803,7 @@ static bool ascs_data_func_cb(struct bt_data *data, void *user_data)
 	struct bt_bap_ascs_rsp *rsp = (struct bt_bap_ascs_rsp *)user_data;
 
 	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->type)) {
-		printk("Invalid metadata type %u or length %u\n", data->type, data->data_len);
+		LOG_ERR("Invalid metadata type %u or length %u", data->type, data->data_len);
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED, data->type);
 		return false;
 	}
@@ -812,7 +814,7 @@ static bool ascs_data_func_cb(struct bt_data *data, void *user_data)
 static int unicast_server_enable(struct bt_bap_stream *stream, const uint8_t meta[],
 				 size_t meta_len, struct bt_bap_ascs_rsp *rsp)
 {
-	printk("Enable: stream %p meta_len %zu\n", stream, meta_len);
+	LOG_INF("Enable: stream %p meta_len %zu", stream, meta_len);
 
 	return bt_audio_data_parse(meta, meta_len, ascs_data_func_cb, rsp);
 }
@@ -821,7 +823,7 @@ static int unicast_server_start(struct bt_bap_stream *stream, struct bt_bap_ascs
 {
 	ARG_UNUSED(rsp);
 
-	printk("Start: stream %p\n", stream);
+	LOG_INF("Start: stream %p", stream);
 
 	return 0;
 }
@@ -829,7 +831,7 @@ static int unicast_server_start(struct bt_bap_stream *stream, struct bt_bap_ascs
 static int unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t meta[],
 				   size_t meta_len, struct bt_bap_ascs_rsp *rsp)
 {
-	printk("Metadata: stream %p meta_len %zu\n", stream, meta_len);
+	LOG_INF("Metadata: stream %p meta_len %zu", stream, meta_len);
 
 	return bt_audio_data_parse(meta, meta_len, ascs_data_func_cb, rsp);
 }
@@ -838,7 +840,7 @@ static int unicast_server_disable(struct bt_bap_stream *stream, struct bt_bap_as
 {
 	ARG_UNUSED(rsp);
 
-	printk("Disable: stream %p\n", stream);
+	LOG_INF("Disable: stream %p", stream);
 
 	return 0;
 }
@@ -847,7 +849,7 @@ static int unicast_server_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_
 {
 	ARG_UNUSED(rsp);
 
-	printk("Stop: stream %p\n", stream);
+	LOG_INF("Stop: stream %p", stream);
 
 	return 0;
 }
@@ -856,7 +858,7 @@ static int unicast_server_release(struct bt_bap_stream *stream, struct bt_bap_as
 {
 	ARG_UNUSED(rsp);
 
-	printk("Release: stream %p\n", stream);
+	LOG_INF("Release: stream %p", stream);
 
 	return 0;
 }
@@ -901,7 +903,7 @@ static void set_location(void)
 		}
 	}
 
-	printk("Location successfully set\n");
+	LOG_INF("Location successfully set");
 }
 
 static int set_supported_contexts(void)
@@ -911,7 +913,7 @@ static int set_supported_contexts(void)
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
 		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK, SINK_CONTEXT);
 		if (err != 0) {
-			printk("Failed to set sink supported contexts (err %d)\n",
+			LOG_ERR("Failed to set sink supported contexts (err %d)",
 			       err);
 
 			return err;
@@ -921,14 +923,14 @@ static int set_supported_contexts(void)
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
 		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE, SOURCE_CONTEXT);
 		if (err != 0) {
-			printk("Failed to set source supported contexts (err %d)\n",
+			LOG_ERR("Failed to set source supported contexts (err %d)",
 			       err);
 
 			return err;
 		}
 	}
 
-	printk("Supported contexts successfully set\n");
+	LOG_INF("Supported contexts successfully set");
 
 	return 0;
 }
@@ -956,7 +958,7 @@ static void set_available_contexts(void)
 		return;
 	}
 
-	printk("Available contexts successfully set\n");
+	LOG_INF("Available contexts successfully set");
 }
 
 static void init(void)
@@ -994,7 +996,7 @@ static void init(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 	bap_stream_tx_init();
 
 	err = bt_pacs_register(&pacs_param);
@@ -1166,13 +1168,13 @@ static void init(void)
 
 static void wait_for_data(void)
 {
-	printk("Waiting for data\n");
+	LOG_INF("Waiting for data");
 	ARRAY_FOR_EACH_PTR(broadcast_sink_streams, test_stream) {
 		if (audio_test_stream_is_streaming(test_stream)) {
 			WAIT_FOR_FLAG(test_stream->flag_audio_received);
 		}
 	}
-	printk("Data received\n");
+	LOG_INF("Data received");
 }
 
 static void test_cap_acceptor_unicast(void)
@@ -1214,7 +1216,7 @@ static void pa_sync_to_broadcaster(void)
 {
 	int err;
 
-	printk("Scanning for broadcast sources\n");
+	LOG_INF("Scanning for broadcast sources");
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err != 0) {
 		FAIL("Unable to start scan for broadcast sources: %d", err);
@@ -1223,14 +1225,14 @@ static void pa_sync_to_broadcaster(void)
 
 	WAIT_FOR_FLAG(flag_broadcaster_found);
 
-	printk("Broadcast source found, stopping scan\n");
+	LOG_INF("Broadcast source found, stopping scan");
 	err = bt_le_scan_stop();
 	if (err != 0) {
 		FAIL("bt_le_scan_stop failed with %d\n", err);
 		return;
 	}
 
-	printk("Scan stopped, attempting to PA sync to the broadcaster with id 0x%06X\n",
+	LOG_INF("Scan stopped, attempting to PA sync to the broadcaster with id 0x%06X",
 	       broadcaster_broadcast_id);
 
 	pa_sync_create();
@@ -1243,16 +1245,16 @@ static void test_cap_acceptor_broadcast(void)
 	pa_sync_to_broadcaster();
 	create_sink();
 
-	printk("Broadcast source PA synced, waiting for BASE\n");
+	LOG_INF("Broadcast source PA synced, waiting for BASE");
 	WAIT_FOR_FLAG(flag_base_received);
-	printk("BASE received\n");
+	LOG_INF("BASE received");
 
-	printk("Waiting for BIG syncable\n");
+	LOG_INF("Waiting for BIG syncable");
 	WAIT_FOR_FLAG(flag_syncable);
 
 	sync_sink();
 
-	printk("Waiting for sink synced\n");
+	LOG_INF("Waiting for sink synced");
 	WAIT_FOR_FLAG(flag_broadcaster_synced);
 
 	wait_for_data();
@@ -1271,21 +1273,21 @@ static void test_cap_acceptor_broadcast_update(void)
 	pa_sync_to_broadcaster();
 	create_sink();
 
-	printk("Broadcast source PA synced, waiting for BASE\n");
+	LOG_INF("Broadcast source PA synced, waiting for BASE");
 	WAIT_FOR_FLAG(flag_base_received);
-	printk("BASE received\n");
+	LOG_INF("BASE received");
 
-	printk("Waiting for BIG syncable\n");
+	LOG_INF("Waiting for BIG syncable");
 	WAIT_FOR_FLAG(flag_syncable);
 
 	sync_sink();
 
-	printk("Waiting for sink synced\n");
+	LOG_INF("Waiting for sink synced");
 	WAIT_FOR_FLAG(flag_broadcaster_synced);
 
 	wait_for_data();
 
-	printk("Waiting for metadata update");
+	LOG_INF("Waiting for metadata update");
 	WAIT_FOR_FLAG(flag_base_metadata_updated);
 	backchannel_sync_send_all(); /* let other devices know we have received metadata */
 	/* let other devices know we have received what we wanted */
@@ -1302,26 +1304,26 @@ static void test_cap_acceptor_broadcast_reception(void)
 
 	test_start_adv();
 
-	printk("Waiting for PA sync request\n");
+	LOG_INF("Waiting for PA sync request");
 	WAIT_FOR_FLAG(flag_pa_request);
 
-	printk("Waiting for BIS sync request\n");
+	LOG_INF("Waiting for BIS sync request");
 	WAIT_FOR_FLAG(flag_bis_sync_requested);
 
-	printk("Waiting for PA synced\n");
+	LOG_INF("Waiting for PA synced");
 	WAIT_FOR_FLAG(flag_pa_synced);
 
-	printk("Broadcast source PA synced, waiting for BASE\n");
+	LOG_INF("Broadcast source PA synced, waiting for BASE");
 	WAIT_FOR_FLAG(flag_base_received);
-	printk("BASE received\n");
+	LOG_INF("BASE received");
 
-	printk("Waiting for BIG syncable\n");
+	LOG_INF("Waiting for BIG syncable");
 	WAIT_FOR_FLAG(flag_syncable);
 
-	printk("Waiting for broadcast code\n");
+	LOG_INF("Waiting for broadcast code");
 	WAIT_FOR_FLAG(flag_broadcast_code);
 
-	printk("Waiting for sink synced\n");
+	LOG_INF("Waiting for sink synced");
 	WAIT_FOR_FLAG(flag_broadcaster_synced);
 
 	wait_for_data();

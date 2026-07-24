@@ -25,7 +25,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
@@ -34,6 +34,8 @@
 #include "bap_stream_tx.h"
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(cap_initiator_broadcast_test);
 
 #if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 CREATE_FLAG(flag_source_started);
@@ -105,7 +107,7 @@ static void broadcast_stream_started_cb(struct bt_bap_stream *stream)
 	test_stream->seq_num = 0U;
 	test_stream->tx_cnt = 0U;
 
-	printk("Stream %p started\n", stream);
+	LOG_INF("Stream %p started", stream);
 
 	err = bap_stream_tx_register(stream);
 	if (err != 0) {
@@ -120,7 +122,7 @@ static void broadcast_stream_stopped_cb(struct bt_bap_stream *stream, uint8_t re
 {
 	int err;
 
-	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+	LOG_INF("Stream %p stopped with reason 0x%02X", stream, reason);
 
 	err = bap_stream_tx_unregister(stream);
 	if (err != 0) {
@@ -139,14 +141,14 @@ static struct bt_bap_stream_ops broadcast_stream_ops = {
 
 static void broadcast_source_started_cb(struct bt_cap_broadcast_source *broadcast_source)
 {
-	printk("Broadcast source %p started\n", broadcast_source);
+	LOG_INF("Broadcast source %p started", broadcast_source);
 	SET_FLAG(flag_source_started);
 }
 
 static void broadcast_source_stopped_cb(struct bt_cap_broadcast_source *broadcast_source,
 					uint8_t reason)
 {
-	printk("Broadcast source %p stopped with reason 0x%02X\n", broadcast_source, reason);
+	LOG_INF("Broadcast source %p stopped with reason 0x%02X", broadcast_source, reason);
 	UNSET_FLAG(flag_source_started);
 }
 
@@ -164,7 +166,7 @@ static void init(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 	bap_stream_tx_init();
 
 	(void)memset(broadcast_source_streams, 0, sizeof(broadcast_source_streams));
@@ -194,7 +196,7 @@ static void init(void)
 			return;
 		}
 
-		printk("Registered GTBS\n");
+		LOG_INF("Registered GTBS");
 	}
 
 	err = bt_cap_initiator_register_cb(&broadcast_cbs);
@@ -393,7 +395,7 @@ static void test_broadcast_audio_create(struct bt_cap_broadcast_source **broadca
 	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 	create_param.encryption = false;
 
-	printk("Creating broadcast source with %zu broadcast_streams\n",
+	LOG_INF("Creating broadcast source with %zu broadcast_streams",
 	       ARRAY_SIZE(broadcast_streams));
 
 	err = bt_cap_initiator_broadcast_audio_create(&create_param, broadcast_source);
@@ -408,7 +410,7 @@ static void test_broadcast_audio_create(struct bt_cap_broadcast_source **broadca
 		test_stream->tx_sdu_size = create_param.qos->sdu;
 	}
 
-	printk("Broadcast source created with %zu broadcast_streams\n",
+	LOG_INF("Broadcast source created with %zu broadcast_streams",
 	       ARRAY_SIZE(broadcast_streams));
 
 	stream_count = ARRAY_SIZE(broadcast_streams);
@@ -445,7 +447,7 @@ static void test_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast
 		return;
 	}
 
-	printk("Broadcast source created with %zu broadcast_streams\n",
+	LOG_INF("Broadcast source created with %zu broadcast_streams",
 	       ARRAY_SIZE(broadcast_streams));
 }
 
@@ -494,7 +496,7 @@ static void test_broadcast_audio_update_inval(struct bt_cap_broadcast_source *br
 		return;
 	}
 
-	printk("Broadcast metadata updated\n");
+	LOG_INF("Broadcast metadata updated");
 }
 
 static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source)
@@ -514,7 +516,7 @@ static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcas
 	};
 	int err;
 
-	printk("Updating broadcast metadata\n");
+	LOG_INF("Updating broadcast metadata");
 
 	err = bt_cap_initiator_broadcast_audio_update(broadcast_source, new_metadata,
 						      ARRAY_SIZE(new_metadata));
@@ -523,7 +525,7 @@ static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcas
 		return;
 	}
 
-	printk("Broadcast metadata updated\n");
+	LOG_INF("Broadcast metadata updated");
 }
 
 static void test_broadcast_audio_stop_inval(void)
@@ -553,7 +555,7 @@ static void test_broadcast_audio_tx_sync(void)
 		}
 
 		if (info.seq_num != 0) {
-			printk("stream[%zu]: %p seq_num: %u\n", i, cap_stream, info.seq_num);
+			LOG_DBG("stream[%zu]: %p seq_num: %u", i, cap_stream, info.seq_num);
 		} else {
 			FAIL("stream[%zu]: %p seq_num was 0\n", i, cap_stream);
 			return;
@@ -565,7 +567,7 @@ static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_
 {
 	int err;
 
-	printk("Stopping broadcast source\n");
+	LOG_INF("Stopping broadcast source");
 
 	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 	if (err != 0) {
@@ -574,7 +576,7 @@ static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_
 	}
 
 	/* Wait for all to be stopped */
-	printk("Waiting for broadcast_streams to be stopped\n");
+	LOG_INF("Waiting for broadcast_streams to be stopped");
 	for (size_t i = 0U; i < stream_count; i++) {
 		err = k_sem_take(&sem_broadcast_stream_stopped, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
@@ -582,7 +584,7 @@ static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_
 
 	WAIT_FOR_UNSET_FLAG(flag_source_started);
 
-	printk("Broadcast source stopped\n");
+	LOG_INF("Broadcast source stopped");
 
 	/* Verify that it cannot be stopped twice */
 	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
@@ -610,7 +612,7 @@ static void test_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcas
 {
 	int err;
 
-	printk("Deleting broadcast source\n");
+	LOG_INF("Deleting broadcast source");
 
 	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
 	if (err != 0) {
@@ -618,7 +620,7 @@ static void test_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcas
 		return;
 	}
 
-	printk("Broadcast source deleted\n");
+	LOG_INF("Broadcast source deleted");
 
 	/* Verify that it cannot be deleted twice */
 	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
@@ -649,7 +651,7 @@ static void test_main_cap_initiator_broadcast(void)
 	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
-	printk("Waiting for broadcast_streams to be started\n");
+	LOG_INF("Waiting for broadcast_streams to be started");
 	for (size_t i = 0U; i < stream_count; i++) {
 		__maybe_unused int err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
 
@@ -659,7 +661,7 @@ static void test_main_cap_initiator_broadcast(void)
 	WAIT_FOR_FLAG(flag_source_started);
 
 	/* Wait for other devices to have received the data they wanted */
-	printk("Waiting for broadcast stop signal");
+	LOG_INF("Waiting for broadcast stop signal");
 	backchannel_sync_wait_all();
 
 	test_broadcast_audio_tx_sync();
@@ -697,7 +699,7 @@ static void test_main_cap_initiator_broadcast_inval(void)
 	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
-	printk("Waiting for broadcast_streams to be started\n");
+	LOG_INF("Waiting for broadcast_streams to be started");
 	for (size_t i = 0U; i < stream_count; i++) {
 		__maybe_unused int err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
 
@@ -745,7 +747,7 @@ static void test_main_cap_initiator_broadcast_update(void)
 	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
-	printk("Waiting for broadcast_streams to be started\n");
+	LOG_INF("Waiting for broadcast_streams to be started");
 	for (size_t i = 0U; i < stream_count; i++) {
 		__maybe_unused int err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
 
@@ -841,7 +843,7 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
-	printk("Waiting for broadcast_streams to be started\n");
+	LOG_INF("Waiting for broadcast_streams to be started");
 	for (size_t i = 0U; i < stream_count; i++) {
 		err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
