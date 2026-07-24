@@ -18,8 +18,8 @@
  * - USB Device Class Definition for Terminal Types (termt10.pdf)
  */
 
-#ifndef ZEPHYR_INCLUDE_USB_CLASS_AUDIO_H_
-#define ZEPHYR_INCLUDE_USB_CLASS_AUDIO_H_
+#ifndef ZEPHYR_INCLUDE_USB_CLASS_USB_AUDIO_H_
+#define ZEPHYR_INCLUDE_USB_CLASS_USB_AUDIO_H_
 
 #include <zephyr/usb/usb_ch9.h>
 #include <zephyr/device.h>
@@ -336,4 +336,4 @@ __deprecated void usb_audio_register(const struct device *dev,
 __deprecated int usb_audio_send(const struct device *dev, struct net_buf *buffer,
 		   size_t len);
 
-#endif /* ZEPHYR_INCLUDE_USB_CLASS_AUDIO_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_CLASS_USB_AUDIO_H_ */

@@ -11,8 +11,8 @@
  * This file contains the USB device stack APIs and structures.
  */
 
-#ifndef ZEPHYR_INCLUDE_USBH_H_
-#define ZEPHYR_INCLUDE_USBH_H_
+#ifndef ZEPHYR_INCLUDE_USB_USBH_H_
+#define ZEPHYR_INCLUDE_USB_USBH_H_
 
 #include <stdint.h>
 #include <zephyr/device.h>
@@ -235,4 +235,4 @@ int usbh_shutdown(struct usbh_context *const uhs_ctx);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_USBH_H_ */
+#endif /* ZEPHYR_INCLUDE_USB_USBH_H_ */

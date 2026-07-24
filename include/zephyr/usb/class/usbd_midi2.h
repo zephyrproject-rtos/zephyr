@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_USB_CLASS_USBD_MIDI_H_
-#define ZEPHYR_INCLUDE_USB_CLASS_USBD_MIDI_H_
+#ifndef ZEPHYR_INCLUDE_USB_CLASS_USBD_MIDI2_H_
+#define ZEPHYR_INCLUDE_USB_CLASS_USBD_MIDI2_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,4 +69,4 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 }
 #endif
 
-#endif
+#endif /* ZEPHYR_INCLUDE_USB_CLASS_USBD_MIDI2_H_ */

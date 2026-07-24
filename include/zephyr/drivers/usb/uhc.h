@@ -9,8 +9,8 @@
  * @brief USB host controller (UHC) driver API
  */
 
-#ifndef ZEPHYR_INCLUDE_UHC_H
-#define ZEPHYR_INCLUDE_UHC_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USB_UHC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USB_UHC_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -620,4 +620,4 @@ static inline const void *uhc_get_event_ctx(const struct device *dev)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_UHC_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USB_UHC_H_ */
