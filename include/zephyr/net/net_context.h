@@ -234,7 +234,12 @@ __net_socket struct net_context {
 	/** Remote endpoint address. Note that the values are in network byte
 	 * order.
 	 */
-	struct net_sockaddr remote;
+	union {
+		/** Remote endpoint address. */
+		struct net_sockaddr remote;
+		/** Storage-typed alias of the remote endpoint address. */
+		struct net_sockaddr_storage remote_storage;
+	};
 
 	/** Connection handle */
 	struct net_conn_handle *conn_handler;
