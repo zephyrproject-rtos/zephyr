@@ -13,6 +13,9 @@
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/toolchain/gcc.h>
 #include <zephyr/platform/hooks.h>
+#ifdef CONFIG_PM_CPU_OPS
+#include <zephyr/drivers/pm_cpu_ops.h>
+#endif
 
 #define INV_MPID	UINT32_MAX
 
@@ -68,7 +71,7 @@ BUILD_ASSERT(offsetof(struct boot_params, svc_sp) == BOOT_PARAM_SVC_SP_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, sys_sp) == BOOT_PARAM_SYS_SP_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, voting) == BOOT_PARAM_VOTING_OFFSET);
 
-volatile struct boot_params arm_cpu_boot_params = {
+volatile struct boot_params __aligned(CONFIG_DCACHE_LINE_SIZE) arm_cpu_boot_params = {
 	.mpid = -1,
 	.irq_sp = (char *)(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE),
 	.fiq_sp = (char *)(z_arm_fiq_stack + CONFIG_ARMV7_FIQ_STACK_SIZE),
@@ -148,13 +151,17 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	/* store mpid last as this is our synchronization point */
 	arm_cpu_boot_params.mpid = cpu_mpid;
 
-	sys_cache_data_invd_range(
+	sys_cache_data_flush_range(
 			(void *)&arm_cpu_boot_params,
 			sizeof(arm_cpu_boot_params));
 
-	/*! TODO: Support PSCI
-	 *  \todo Support PSCI
-	 */
+#ifdef CONFIG_PM_CPU_OPS
+	if (pm_cpu_on(cpu_mpid, (unsigned long)&__start)) {
+		printk("Failed to boot secondary CPU core %d (MPID:%#x)\n",
+		       cpu_num, cpu_mpid);
+		k_panic();
+	}
+#endif
 
 	/* Wait secondary cores up, see arch_secondary_cpu_init */
 	while (arm_cpu_boot_params.fn) {
@@ -237,7 +244,7 @@ static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 		uint32_t target_mpidr = cpu_map[i];
 		uint8_t aff0;
 
-		if (mpidr == target_mpidr || mpidr == INV_MPID) {
+		if (mpidr == target_mpidr || target_mpidr == INV_MPID) {
 			continue;
 		}
 

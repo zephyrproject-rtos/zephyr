@@ -550,6 +550,12 @@ static void arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
 	invalidate_tlb_all();
 	__set_SCTLR(reg_val);
 
+	/*
+	 * An ISB is required after changing SCTLR.M so subsequent execution uses
+	 * the restored translation regime.
+	 */
+	barrier_isync_fence_full();
+
 	arch_irq_unlock(lock_key);
 }
 
@@ -869,6 +875,12 @@ int z_arm_mmu_init(void)
 	reg_val |= ARM_MMU_SCTLR_DCACHE_ENABLE_BIT;
 	reg_val |= ARM_MMU_SCTLR_MMU_ENABLE_BIT;
 	__set_SCTLR(reg_val);
+
+	/*
+	 * An ISB is required after changing SCTLR.M/C so subsequent execution uses
+	 * the new translation regime and cache state.
+	 */
+	barrier_isync_fence_full();
 
 	return 0;
 }
