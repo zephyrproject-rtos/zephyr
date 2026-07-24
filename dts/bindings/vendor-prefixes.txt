@@ -401,6 +401,7 @@ leez	Leez
 lego	LEGO Systems A/S
 lemaker	Shenzhen LeMaker Technology Co., Ltd.
 lenovo	Lenovo Group Ltd.
+levetop	LeveTop Semiconductor
 lg	LG Corporation
 lgphilips	LG Display
 libretech	Shenzhen Libre Technology Co., Ltd
