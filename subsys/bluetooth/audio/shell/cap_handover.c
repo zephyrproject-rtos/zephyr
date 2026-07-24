@@ -246,6 +246,22 @@ static int validate_and_parse_cmd_cap_handover_unicast_to_broadcast_args(
 	return 0;
 }
 
+static int cmd_cap_handover_cancel(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	err = bt_cap_handover_cancel();
+	if (err != 0) {
+		shell_print(sh, "Failed to cancel CAP handover procedure: %d", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 static int cmd_cap_handover_unicast_to_broadcast(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct named_lc3_preset *named_preset = &default_broadcast_source_preset;
@@ -796,6 +812,8 @@ static int cmd_cap_handover(const struct shell *sh, size_t argc, char **argv)
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	cap_handover_cmds,
+	SHELL_CMD_ARG(cancel, NULL, "CAP Handover cancel current procedure",
+		      cmd_cap_handover_cancel, 1, 0),
 	SHELL_CMD_ARG(unicast_to_broadcast, NULL,
 		      "Handover current unicast group to broadcast (unicast group will be deleted) "
 		      "[enc <broadcast_code>] [preset <preset_name>]",

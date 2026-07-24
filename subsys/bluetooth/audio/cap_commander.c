@@ -1512,7 +1512,7 @@ static void cap_commander_proc_complete(struct bt_cap_common_proc *active_proc)
 	err = active_proc->err;
 	proc_type = active_proc->proc_type;
 
-	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_handover_is_active()) {
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_active_proc_is_handover()) {
 		bt_cap_handover_commander_proc_complete(active_proc);
 		return;
 	}
@@ -1590,6 +1590,15 @@ int bt_cap_commander_cancel(void)
 		LOG_DBG("No CAP procedure is in progress");
 
 		return -EALREADY;
+	}
+
+	if ((IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_active_proc_is_handover()) ||
+	    !bt_cap_common_active_proc_is_commander()) {
+		bt_cap_common_unlock_proc();
+
+		LOG_DBG("No CAP commander procedure is in progress");
+
+		return -EOPNOTSUPP;
 	}
 
 	bt_cap_common_abort_proc(NULL, -ECANCELED);
