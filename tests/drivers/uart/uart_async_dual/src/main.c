@@ -476,7 +476,7 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 		zassert_true(dev == rx_dev);
 		on_rx_dis(dev, evt, &rx_data);
 		break;
-	case UART_RX_STOPPED:
+	case UART_RX_ERROR:
 		zassert_true(false);
 		break;
 	default:
@@ -732,7 +732,7 @@ static void hci_like_callback(const struct device *dev, struct uart_event *evt, 
 		zassert_true(dev == rx_dev);
 		k_sem_give(&rx_data.sem);
 		break;
-	case UART_RX_STOPPED:
+	case UART_RX_ERROR:
 		zassert_true(false);
 		break;
 	default:

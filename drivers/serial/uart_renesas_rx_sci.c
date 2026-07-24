@@ -200,13 +200,12 @@ void uart_rx_sci_eri_isr(bsp_int_cb_args_t *p_args)
 	sci->SSR.BYTE &=
 		~(BIT(R_SCI_SSR_ORER_Pos) | BIT(R_SCI_SSR_PER_Pos) | BIT(R_SCI_SSR_FER_Pos));
 
-	k_work_cancel_delayable(&data->rx_timeout_work);
 	struct uart_event event = {
-		.type = UART_RX_STOPPED,
-		.data.rx_stop.reason = reason,
-		.data.rx_stop.data.buf = (uint8_t *)data->rx_buffer,
-		.data.rx_stop.data.offset = 0,
-		.data.rx_stop.data.len = data->rx_buf_cap - data->rx_buf_len - data->rx_buf_offset,
+		.type = UART_RX_ERROR,
+		.data.rx_error.reason = reason,
+		.data.rx_error.data.buf = (uint8_t *)data->rx_buffer,
+		.data.rx_error.data.offset = 0,
+		.data.rx_error.data.len = data->rx_buf_cap - data->rx_buf_len - data->rx_buf_offset,
 	};
 	async_user_callback(sci_dev, &event);
 #endif /* CONFIG_UART_ASYNC_API */
@@ -1236,13 +1235,12 @@ static void uart_rx_sci_eri_isr(const struct device *dev)
 	sci->SSR.BYTE &=
 		~(BIT(R_SCI_SSR_ORER_Pos) | BIT(R_SCI_SSR_PER_Pos) | BIT(R_SCI_SSR_FER_Pos));
 
-	k_work_cancel_delayable(&data->rx_timeout_work);
 	struct uart_event event = {
-		.type = UART_RX_STOPPED,
-		.data.rx_stop.reason = reason,
-		.data.rx_stop.data.buf = (uint8_t *)data->rx_buffer,
-		.data.rx_stop.data.offset = 0,
-		.data.rx_stop.data.len = data->rx_buf_cap - data->rx_buf_len - data->rx_buf_offset,
+		.type = UART_RX_ERROR,
+		.data.rx_error.reason = reason,
+		.data.rx_error.data.buf = (uint8_t *)data->rx_buffer,
+		.data.rx_error.data.offset = 0,
+		.data.rx_error.data.len = data->rx_buf_cap - data->rx_buf_len - data->rx_buf_offset,
 	};
 	async_user_callback(dev, &event);
 #endif

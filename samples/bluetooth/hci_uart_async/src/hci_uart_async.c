@@ -115,7 +115,7 @@ static uint8_t hci_hdr_size(uint8_t h4_type)
  * @retval -EBUSY Another transmission is in progress. This a
  * thread-safety violation.
  * @retval -errno @ref uart_rx_enable error.
- * @retval +stop_reason Special condition @ref uart_rx_stop_reason.
+ * @retval +stop_reason Special condition @ref uart_rx_error_reason.
  */
 static int uart_h2c_rx(uint8_t *dst, size_t size)
 {
@@ -321,8 +321,8 @@ void callback(const struct device *dev, struct uart_event *evt, void *user_data)
 
 	if (evt->type == UART_RX_DISABLED) {
 		(void)k_poll_signal_raise(&uart_h2c_rx_sig, 0);
-	} else if (evt->type == UART_RX_STOPPED) {
-		(void)k_poll_signal_raise(&uart_h2c_rx_sig, evt->data.rx_stop.reason);
+	} else if (evt->type == UART_RX_ERROR) {
+		(void)k_poll_signal_raise(&uart_h2c_rx_sig, evt->data.rx_error.reason);
 	} else if (evt->type == UART_TX_DONE) {
 		(void)k_poll_signal_raise(&uart_c2h_tx_sig, 0);
 	}

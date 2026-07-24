@@ -152,7 +152,7 @@ static void uart_async_to_irq_callback(const struct device *dev,
 	case UART_RX_BUF_RELEASED:
 		uart_async_rx_on_buf_rel(&data->rx.async_rx, evt->data.rx_buf.buf);
 		break;
-	case UART_RX_STOPPED:
+	case UART_RX_ERROR:
 		atomic_or(&data->flags, A2I_ERR_PENDING);
 		call_handler = data->flags & A2I_ERR_IRQ_ENABLED;
 		break;

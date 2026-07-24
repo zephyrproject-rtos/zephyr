@@ -138,8 +138,8 @@ static void modem_backend_uart_async_event_handler(const struct device *dev,
 				 MODEM_BACKEND_UART_ASYNC_STATE_RECEIVING_BIT);
 		break;
 
-	case UART_RX_STOPPED:
-		LOG_WRN("Receive stopped for reasons: %u", (uint8_t)evt->data.rx_stop.reason);
+	case UART_RX_ERROR:
+		LOG_WRN("Receive error: %u", (uint8_t)evt->data.rx_error.reason);
 		break;
 
 	default:

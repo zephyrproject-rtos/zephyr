@@ -683,28 +683,15 @@ static void tx_isr(const struct device *dev)
 
 static void error_isr(const struct device *dev)
 {
-	if (uart0_cb.rx_timeout != SYS_FOREVER_US) {
-		k_timer_stop(&uart0_cb.rx_timeout_timer);
-	}
 	nrf_uart_event_clear(uart0_addr, NRF_UART_EVENT_ERROR);
-
-	if (!uart0_cb.rx_enabled) {
-		nrf_uart_task_trigger(uart0_addr, NRF_UART_TASK_STOPRX);
-	}
 	struct uart_event event = {
-		.type = UART_RX_STOPPED,
-		.data.rx_stop.reason =
+		.type = UART_RX_ERROR,
+		.data.rx_error.reason =
 			UART_ERROR_FROM_MASK(
 				nrf_uart_errorsrc_get_and_clear(uart0_addr)),
-		.data.rx_stop.data.len = uart0_cb.rx_counter
-					 - uart0_cb.rx_offset,
-		.data.rx_stop.data.offset = uart0_cb.rx_offset,
-		.data.rx_stop.data.buf = uart0_cb.rx_buffer
 	};
 
 	user_callback(dev, &event);
-	/* Abort transfer. */
-	uart_nrfx_rx_disable(dev);
 }
 
 /*

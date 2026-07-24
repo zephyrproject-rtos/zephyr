@@ -538,15 +538,15 @@ static inline void async_user_callback(const struct device *dev, struct uart_eve
 	}
 }
 
-static inline void async_rx_error(const struct device *dev, enum uart_rx_stop_reason reason)
+static inline void async_rx_error(const struct device *dev, enum uart_rx_error_reason reason)
 {
 	struct uart_ra_sci_b_data *data = dev->data;
 	struct uart_event event = {
-		.type = UART_RX_STOPPED,
-		.data.rx_stop.reason = reason,
-		.data.rx_stop.data.buf = (uint8_t *)data->rx_buffer,
-		.data.rx_stop.data.offset = data->rx_buffer_offset,
-		.data.rx_stop.data.len = data->rx_buffer_len,
+		.type = UART_RX_ERROR,
+		.data.rx_error.reason = reason,
+		.data.rx_error.data.buf = (uint8_t *)data->rx_buffer,
+		.data.rx_error.data.offset = data->rx_buffer_offset,
+		.data.rx_error.data.len = data->rx_buffer_len,
 	};
 	async_user_callback(dev, &event);
 }
