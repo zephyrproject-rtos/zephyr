@@ -1,8 +1,20 @@
 # Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+title: Microchip EIC G1 driver
+
 description: |
-  Microchip External Interrupt Controller for g1 peripherals
+  The Microchip G1 External Interrupt Controller (EIC) driver provides interrupt
+  support for GPIO pins on Microchip G1 group of devices. As the mapping between
+  GPIO pins and EIC interrupt lines differs across devices, the devicetree
+  properties describes device-specific interrupt capabilities instead of hardcoding
+  them.
+
+  The devicetree binding provides the hardware-specific information required by the
+  driver, including:
+   - GPIO pins that support external interrupts.
+   - GPIO pins that do not support external interrupts.
+   - GPIO pins whose EIC line mapping differs from the default mapping.
 
   Group g1 EIC supports following hardware peripherals:
     - module name="EIC" id="U2254" version="3.0.0"
@@ -49,12 +61,33 @@ properties:
       Each bit in the property denotes a pin number. This shows the pins which
       do not support interrupt for portc.
 
+  portc-supported-pins:
+    type: int
+    default: 0
+    description: |
+      Each bit in the property denotes a pin number. This shows the pins which
+      support interrupt in portc
+
   portd-supported-pins:
     type: int
     default: 0
     description: |
       Each bit in the property denotes a pin number. This shows the pins which
       support interrupt in portd
+
+  porta-special-pins-1:
+    type: array
+    default: [0, 0]
+    description: |
+      Each bit in this number denotes a pin number. These pins are derived from datasheet
+      by listing down the eic line and port-pin mapping.
+      The eic line mapping to the pin number requires a manipulation with an offset.
+
+  "#porta-special-pins-1-cells":
+    type: int
+    default: 2
+    description: |
+      Number of cells in portb-special-pins-1 property
 
   portb-special-pins-1:
     type: array
@@ -78,6 +111,19 @@ properties:
       The eic line mapping to the pin number requires a manipulation with an offset.
 
   "#portc-special-pins-1-cells":
+    type: int
+    default: 2
+    description: |
+      Number of cells in portc-special-pins-1 property
+
+  portc-special-pins-2:
+    type: array
+    default: [0, 0]
+    description: |
+      Each bit in this number denotes a pin number. These pins are derived from datasheet
+      The eic line mapping to the pin number requires a manipulation with an offset.
+
+  "#portc-special-pins-2-cells":
     type: int
     default: 2
     description: |
@@ -124,3 +170,32 @@ portd-special-pins-1-cells:
 portd-special-pins-2-cells:
   - pins_val
   - offset
+
+examples:
+  - |
+    The following example shows an EIC node in the SoC devicetree. The
+    `*-supported-pins` and `*-unsupported-pins` properties describe the
+    interrupt capabilities of GPIO pins for each port.
+
+    The `*-special-pins-*` properties are used for GPIO pins whose EIC line
+    cannot be derived directly from the pin number (for example, using
+    `pin_number % 16`). Each entry consists of a pin bitmask and an offset,
+    which the driver uses to compute the correct EIC line for the affected
+    pins.
+
+    Application developers do not need to modify this binding
+    or the EIC node to configure GPIO interrupts. GPIO pins can be configured
+    for interrupt operation using the standard Zephyr GPIO APIs in the same
+    way as any other GPIO pin.
+
+    eic: interrupt-controller@40001800 {
+      compatible = "microchip,eic-g1-intc";
+      reg = <0x40001800 0x400>;
+      interrupts = <20>;
+      interrupt-controller;
+      #interrupt-cells = <2>;
+
+      porta-unsupported-pins = <0x00000030>;
+      portc-supported-pins = <0x00FF0000>;
+      portc-special-pins-1 = <0x03000000 16>;
+    };
