@@ -1,0 +1,31 @@
+# emSBC-NEON-CM7 board configuration
+
+# Copyright (c) 2025 Ruediger Fichter, emtrion GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EMSBC_NEON_CM7
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+configdefault NET_L2_ETHERNET
+	default y
+
+#if NET_L2_ETHERNET
+
+configdefault EEPROM
+	default y
+
+configdefault EEPROM_AT2X_INIT_PRIORITY
+	default 55
+
+configdefault NVMEM
+	default y
+
+configdefault NVMEM_EEPROM
+	default y
+
+#endif
+
+endif # BOARD_EMSBC_NEON_CM7
