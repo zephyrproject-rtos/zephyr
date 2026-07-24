@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Grow DRAM beyond the qemu_x86_tiny default so the demand_paging arena
+ * computed from k_mem_free_get() still exceeds the backing store after the
+ * kernel image consumes its share. See test_k_mem_page_out() for the
+ * precondition; the tight default left no headroom for kernel growth (e.g.
+ * unity builds retain additional symbols).
+ */
+&dram0 {
+	reg = <0x100000 0x50000>;
+};
