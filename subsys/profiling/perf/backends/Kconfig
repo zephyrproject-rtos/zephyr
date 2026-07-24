@@ -1,4 +1,5 @@
 # Copyright (c) 2024 Meta Platforms
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -13,6 +14,17 @@ config PROFILING_PERF_BACKEND_RISCV
 	default y
 	depends on RISCV
 	depends on ARCH_STACKWALK
+	select PROFILING_PERF_HAS_BACKEND
+
+config PROFILING_PERF_BACKEND_ARM_CORTEX_M
+	bool
+	default y
+	depends on CPU_CORTEX_M
+	depends on CORTEX_M_SYSTICK
+	depends on THREAD_STACK_INFO
+	depends on FRAME_POINTER
+	depends on ARCH_STACKWALK
+	depends on !TRUSTED_EXECUTION_NONSECURE
 	select PROFILING_PERF_HAS_BACKEND
 
 config PROFILING_PERF_BACKEND_X86
