@@ -489,6 +489,32 @@ static int gpio_mcux_port_get_direction(const struct device *dev, gpio_port_pins
 
 	map &= config->common.port_pin_mask;
 
+#if !defined(CONFIG_PINCTRL_NXP_IOCON)
+	/*
+	 * When PORT is used, check whether GPIO is disconnected, if
+	 * 1. PORT PCR MUX is 0, and
+	 * 2. both IBE cleared (no input buffer), and
+	 * 3. PDDR cleared (no output drive)
+	 * Then the pin is disconnected, and should not be reported as input or output.
+	 */
+	PORT_Type * port_base = config->port_base;
+	gpio_port_pins_t connected = 0;
+
+	for (int i = 0; i < 32; i++) {
+		if (!(map & BIT(i))) {
+			continue;
+		}
+		if (!(((port_base->PCR[i] & PORT_PCR_MUX_MASK) == 0U) &&
+#if defined(FSL_FEATURE_PORT_HAS_INPUT_BUFFER) && FSL_FEATURE_PORT_HAS_INPUT_BUFFER
+		      ((port_base->PCR[i] & PORT_PCR_IBE_MASK) == 0U) &&
+#endif
+		      ((gpio_base->PDDR & BIT(i)) == 0U))) {
+			connected |= BIT(i);
+		}
+	}
+	map = connected;
+#endif /* !CONFIG_PINCTRL_NXP_IOCON */
+
 	if (inputs != NULL) {
 		*inputs = map & (~gpio_base->PDDR);
 	}
