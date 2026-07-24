@@ -69,6 +69,9 @@ struct uhc_dwc2_config {
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs_nrf54l)
 #include "uhc_dwc2_nrf_usbhs_nrf54l.h"
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32u5_hsotg)
+#include "uhc_dwc2_stm32u5_hsotg.h"
+#endif
 
 #define UHC_DWC2_VENDOR_QUIRK_GET(n)						\
 	COND_CODE_1(DT_NODE_VENDOR_HAS_IDX(DT_DRV_INST(n), 1),			\
