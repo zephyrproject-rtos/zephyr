@@ -95,6 +95,32 @@ config MODEM_CELLULAR_PERIODIC_SCRIPT_MS
 	default 30000 if DT_HAS_NORDIC_NRF93M1_ENABLED
 	default 2000
 
+config MODEM_CELLULAR_NEIGHBOR_CELLS
+	bool "Measure neighbour cells"
+	help
+	  Query the modem for neighbour cells and cache the result for
+	  cellular_get_neighbor_cells().
+
+config MODEM_CELLULAR_NEIGHBOR_SCAN_PERIODS
+	int "Periodic script runs between neighbour cell measurements"
+	depends on MODEM_CELLULAR_NEIGHBOR_CELLS
+	range 1 255
+	default 15
+	help
+	  A neighbour cell measurement takes the modem far longer to answer than
+	  the registration and signal queries, so it runs as its own script in
+	  place of every Nth periodic run rather than joining every one of them.
+
+config MODEM_CELLULAR_MAX_NEIGHBOR_CELLS
+	int "Maximum number of neighbour cells cached"
+	depends on MODEM_CELLULAR_NEIGHBOR_CELLS
+	range 1 255
+	default 6
+	help
+	  Upper bound on the number of neighbour cells retained from a
+	  measurement and returned by cellular_get_neighbor_cells(). Neighbour
+	  cells reported beyond this count are dropped.
+
 config MODEM_CELLULAR_UART_BUFFER_SIZES
 	int "The UART receive and transmit buffer sizes in bytes."
 	default 512

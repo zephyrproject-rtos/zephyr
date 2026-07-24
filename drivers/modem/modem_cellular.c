@@ -248,12 +248,48 @@ void modem_cellular_emit_network_status(struct modem_cellular_data *data,
 	}
 }
 
-static void modem_cellular_invalidate_network_status(struct modem_cellular_data *data)
+static void modem_cellular_invalidate_cell_cache(struct modem_cellular_data *data)
 {
 	k_mutex_lock(&data->api_lock, K_FOREVER);
 	data->network_status_valid = false;
+	IF_ENABLED(CONFIG_MODEM_CELLULAR_NEIGHBOR_CELLS, (data->neighbor_cells_valid = false));
 	k_mutex_unlock(&data->api_lock);
 }
+
+#if defined(CONFIG_MODEM_CELLULAR_NEIGHBOR_CELLS)
+void modem_cellular_add_neighbor_cell(struct modem_cellular_data *data,
+				      const struct cellular_neighbor_cell *cell)
+{
+	/* Stage into a private buffer, never the published cache, so a reader is
+	 * never exposed to a half-parsed measurement. Runs on the modem work queue.
+	 */
+	if (data->neighbor_staging_count >= ARRAY_SIZE(data->neighbor_staging)) {
+		LOG_WRN("neighbour cell staging full (%zu), dropping entry",
+			ARRAY_SIZE(data->neighbor_staging));
+		return;
+	}
+
+	data->neighbor_staging[data->neighbor_staging_count] = *cell;
+	data->neighbor_staging_count++;
+}
+
+void modem_cellular_commit_neighbor_cells(struct modem_cellular_data *data)
+{
+	/* Publish the staged measurement in one locked step, then clear the staging
+	 * buffer so the next measurement starts empty. A measurement that staged no
+	 * cells publishes an empty list, distinct from the -ENODATA no-measurement
+	 * state.
+	 */
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	memcpy(data->neighbor_cells, data->neighbor_staging,
+	       data->neighbor_staging_count * sizeof(data->neighbor_cells[0]));
+	data->neighbor_cell_count = data->neighbor_staging_count;
+	data->neighbor_cells_valid = true;
+	k_mutex_unlock(&data->api_lock);
+
+	data->neighbor_staging_count = 0;
+}
+#endif /* CONFIG_MODEM_CELLULAR_NEIGHBOR_CELLS */
 
 static void modem_cellular_emit_modem_info(struct modem_cellular_data *data,
 					   enum cellular_modem_info_type field)
@@ -619,15 +655,17 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 		   (modem_cellular_stats_on_reg_transition(data, was_registered,
 							   modem_cellular_is_registered(data))));
 
-	if (modem_cellular_is_registered(data)) {
-		/* Drop any cached serving cell on a registration change; it is stale
-		 * until the next periodic poll, so get_network_status() reports no
-		 * data rather than the previous (deregistered) snapshot.
-		 */
-		if (registration_prev != registration_status) {
-			modem_cellular_invalidate_network_status(data);
-		}
+	/* Drop the cached serving and neighbour cells on any registration change,
+	 * including deregistration; they are stale until the next periodic poll.
+	 * The deregistration branch below re-reports the serving status, while the
+	 * neighbour list stays invalid (get_neighbor_cells() returns -ENODATA) until
+	 * the next scan refreshes it.
+	 */
+	if (registration_prev != registration_status) {
+		modem_cellular_invalidate_cell_cache(data);
+	}
 
+	if (modem_cellular_is_registered(data)) {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	} else {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
@@ -1513,6 +1551,11 @@ static void modem_cellular_script_failed(struct modem_cellular_data *data)
 {
 	data->script_failure_counter++;
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS, (data->stats.command_failures += 1));
+
+	/* A scan that never reached its commit leaves rows staged. Drop them, so the
+	 * next scan does not append to a partial measurement and publish both.
+	 */
+	IF_ENABLED(CONFIG_MODEM_CELLULAR_NEIGHBOR_CELLS, (data->neighbor_staging_count = 0));
 }
 
 static void modem_cellular_script_success(struct modem_cellular_data *data)
@@ -1651,6 +1694,36 @@ static void modem_cellular_run_network_script_event_handler(struct modem_cellula
 	}
 }
 
+/*
+ * Pick the script the periodic timer runs. A neighbour cell measurement takes the
+ * modem far longer to answer than the registration and signal queries, so it takes
+ * the place of every Nth periodic run instead of joining every one of them.
+ */
+static const struct modem_chat_script *
+modem_cellular_periodic_script(struct modem_cellular_data *data,
+			       const struct modem_cellular_config *config)
+{
+#if defined(CONFIG_MODEM_CELLULAR_NEIGHBOR_CELLS)
+	if (config->vendor->scripts.neighbor_scan == NULL) {
+		return config->vendor->scripts.periodic;
+	}
+
+	data->neighbor_scan_counter++;
+
+	if (data->neighbor_scan_counter < CONFIG_MODEM_CELLULAR_NEIGHBOR_SCAN_PERIODS) {
+		return config->vendor->scripts.periodic;
+	}
+
+	data->neighbor_scan_counter = 0;
+
+	return config->vendor->scripts.neighbor_scan;
+#else
+	ARG_UNUSED(data);
+
+	return config->vendor->scripts.periodic;
+#endif
+}
+
 static int modem_cellular_on_await_dial_state_enter(struct modem_cellular_data *data)
 {
 	const struct modem_cellular_config *config = data->dev->config;
@@ -1703,7 +1776,8 @@ static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *
 			data->periodic_timeout_skipped = true;
 			break;
 		}
-		modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
+		modem_chat_run_script_async(&data->chat,
+					    modem_cellular_periodic_script(data, config));
 		break;
 
 	case MODEM_CELLULAR_EVENT_PERIODIC_KICK:
@@ -1715,8 +1789,8 @@ static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *
 			break;
 		}
 		data->periodic_timeout_skipped = false;
-		if (modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic) <
-		    0) {
+		if (modem_chat_run_script_async(&data->chat,
+						modem_cellular_periodic_script(data, config)) < 0) {
 			LOG_WRN("periodic kick busy, rearming timer");
 			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		}
@@ -1851,7 +1925,8 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 			data->periodic_timeout_skipped = true;
 			break;
 		}
-		modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
+		modem_chat_run_script_async(&data->chat,
+					    modem_cellular_periodic_script(data, config));
 		break;
 
 	case MODEM_CELLULAR_EVENT_PERIODIC_KICK:
@@ -1863,8 +1938,8 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 			break;
 		}
 		data->periodic_timeout_skipped = false;
-		if (modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic) <
-		    0) {
+		if (modem_chat_run_script_async(&data->chat,
+						modem_cellular_periodic_script(data, config)) < 0) {
 			LOG_WRN("periodic kick busy, rearming timer");
 			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		}
@@ -1945,7 +2020,8 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 			data->periodic_timeout_skipped = true;
 			break;
 		}
-		ret = modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
+		ret = modem_chat_run_script_async(&data->chat,
+						  modem_cellular_periodic_script(data, config));
 		if (ret < 0) {
 			LOG_WRN("periodic %s %s, rearming timer", "timer",
 				ret == -EBUSY ? "busy" : "failed");
@@ -1962,7 +2038,8 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 			break;
 		}
 		data->periodic_timeout_skipped = false;
-		ret = modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
+		ret = modem_chat_run_script_async(&data->chat,
+						  modem_cellular_periodic_script(data, config));
 		if (ret < 0) {
 			LOG_WRN("periodic %s %s, rearming timer", "kick",
 				ret == -EBUSY ? "busy" : "failed");
@@ -2738,6 +2815,44 @@ static int modem_cellular_get_network_status(const struct device *dev,
 	return ret;
 }
 
+#if defined(CONFIG_MODEM_CELLULAR_NEIGHBOR_CELLS)
+static int modem_cellular_get_neighbor_cells(const struct device *dev,
+					     struct cellular_neighbor_cell *cells, uint8_t *count)
+{
+	const struct modem_cellular_config *config = dev->config;
+	struct modem_cellular_data *data = dev->data;
+	uint8_t copied;
+	int ret = 0;
+
+	if (!config->vendor->reports_neighbor_cells) {
+		return -ENOSYS;
+	}
+
+	if (cells == NULL || count == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+
+	if (!data->neighbor_cells_valid) {
+		ret = -ENODATA;
+	} else {
+		copied = MIN(*count, data->neighbor_cell_count);
+
+		if (copied < data->neighbor_cell_count) {
+			ret = -ENOMEM;
+		}
+
+		memcpy(cells, data->neighbor_cells, copied * sizeof(*cells));
+		*count = copied;
+	}
+
+	k_mutex_unlock(&data->api_lock);
+
+	return ret;
+}
+#endif /* CONFIG_MODEM_CELLULAR_NEIGHBOR_CELLS */
+
 static int modem_cellular_set_apn(const struct device *dev, const char *apn)
 {
 	struct modem_cellular_data *data = dev->data;
@@ -2843,6 +2958,9 @@ DEVICE_API(cellular, modem_cellular_api) = {
 	.get_modem_info = modem_cellular_get_modem_info,
 	.get_registration_status = modem_cellular_get_registration_status,
 	.get_network_status = modem_cellular_get_network_status,
+#if defined(CONFIG_MODEM_CELLULAR_NEIGHBOR_CELLS)
+	.get_neighbor_cells = modem_cellular_get_neighbor_cells,
+#endif
 	.set_apn = modem_cellular_set_apn,
 	.set_callback = modem_cellular_set_callback,
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS, (.get_stats = modem_cellular_get_stats,))
