@@ -17,6 +17,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/pinctrl.h>
 #if LPUART_ASYNC_ENABLE
 #include <zephyr/drivers/dma.h>
@@ -136,6 +137,10 @@ struct mcux_lpuart_data {
 	bool tx_poll_stream_on;
 	bool tx_int_stream_on;
 #endif /* CONFIG_PM */
+	/* Interrupts enabled before suspend, restored on resume (the peripheral
+	 * may lose all state if its power domain is collapsed in low power).
+	 */
+	uint32_t pm_saved_int;
 #if LPUART_ASYNC_ENABLE
 	struct mcux_lpuart_async_data async;
 #endif
@@ -1123,6 +1128,7 @@ static inline void mcux_lpuart_async_isr(const struct device *dev,
 static void mcux_lpuart_isr(const struct device *dev)
 {
 	struct mcux_lpuart_data *data = dev->data;
+
 	const uint32_t status = LPUART_GetStatusFlags(get_base(dev));
 
 #if LPUART_ASYNC_ENABLE || defined(CONFIG_UART_INTERRUPT_DRIVEN)
@@ -1540,6 +1546,36 @@ static int mcux_lpuart_line_ctrl_get(const struct device *dev,
 #endif /* LPUART_HAS_MCR */
 #endif /* CONFIG_UART_LINE_CTRL */
 
+static int mcux_lpuart_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct mcux_lpuart_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Some low-power states collapse the LPUART power domain (e.g. the
+		 * i.MX RT700 deep-sleep-retention state), losing all peripheral
+		 * state. Save the enabled interrupts, then quiesce the peripheral:
+		 * disabling its interrupts prevents a pending (e.g. TX) interrupt
+		 * from firing its ISR against the dead register bank after wakeup.
+		 */
+		data->pm_saved_int = LPUART_GetEnabledInterrupts(get_base(dev));
+		LPUART_DisableInterrupts(get_base(dev), data->pm_saved_int);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Re-initialize the peripheral (clock + LPUART) in case its power
+		 * domain was collapsed, then restore the previously enabled
+		 * interrupts (e.g. the interrupt-driven RX the console relies on).
+		 */
+		mcux_lpuart_configure_init(dev, &data->uart_config);
+		LPUART_EnableInterrupts(get_base(dev), data->pm_saved_int);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int mcux_lpuart_init(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config;
@@ -1576,7 +1612,7 @@ static int mcux_lpuart_init(const struct device *dev)
 	data->tx_int_stream_on = false;
 #endif
 
-	return 0;
+	return pm_device_driver_init(dev, mcux_lpuart_pm_action);
 }
 
 static DEVICE_API(uart, mcux_lpuart_driver_api) = {
@@ -1767,9 +1803,11 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 									\
 	LPUART_MCUX_DECLARE_CFG(n)					\
 									\
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_lpuart_pm_action);		\
+									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    mcux_lpuart_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(n),			\
 			    &mcux_lpuart_##n##_data,			\
 			    &mcux_lpuart_##n##_config,			\
 			    PRE_KERNEL_1,				\
