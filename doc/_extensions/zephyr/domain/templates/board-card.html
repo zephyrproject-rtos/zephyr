@@ -38,6 +38,17 @@
     {%- endfor -%}
     {{- all_compatibles|join(' ') -}}
   "
+  data-compatibles-enabled="
+    {%- set enabled_compatibles = [] -%}
+    {%- for target_compatibles in board.compatibles_enabled.values() -%}
+      {%- for compatible in target_compatibles -%}
+        {%- if compatible not in enabled_compatibles -%}
+          {%- set _ = enabled_compatibles.append(compatible) -%}
+        {%- endif -%}
+      {%- endfor -%}
+    {%- endfor -%}
+    {{- enabled_compatibles|join(' ') -}}
+  "
   data-maintained="{{ board.maintained | tojson }}"
   tabindex="0">
   <div class="vendor">{{ vendors[board.vendor] }}</div>
