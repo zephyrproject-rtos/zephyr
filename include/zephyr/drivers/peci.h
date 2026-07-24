@@ -244,27 +244,49 @@ struct peci_msg {
 };
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * PECI driver API definition and system call entry points
- *
- * (Internal use only.)
+ * @def_driverbackendgroup{PECI,peci_interface}
+ * @{
+ */
+
+/**
+ * @brief Callback API to configure the PECI interface.
+ * See peci_config() for argument description.
  */
 typedef int (*peci_config_t)(const struct device *dev, uint32_t bitrate);
+
+/**
+ * @brief Callback API to perform a PECI transaction.
+ * See peci_transfer() for argument description.
+ */
 typedef int (*peci_transfer_t)(const struct device *dev, struct peci_msg *msg);
+
+/**
+ * @brief Callback API to disable the PECI interface.
+ * See peci_disable() for argument description.
+ */
 typedef int (*peci_disable_t)(const struct device *dev);
+
+/**
+ * @brief Callback API to enable the PECI interface.
+ * See peci_enable() for argument description.
+ */
 typedef int (*peci_enable_t)(const struct device *dev);
 
+/**
+ * @driver_ops{PECI}
+ */
 __subsystem struct peci_driver_api {
+	/** @driver_ops_mandatory @copybrief peci_config */
 	peci_config_t config;
+	/** @driver_ops_mandatory @copybrief peci_disable */
 	peci_disable_t disable;
+	/** @driver_ops_mandatory @copybrief peci_enable */
 	peci_enable_t enable;
+	/** @driver_ops_mandatory @copybrief peci_transfer */
 	peci_transfer_t transfer;
 };
 
-/**
- * @endcond
- */
+/** @} */
 
 /**
  * @brief Configures the PECI interface.
