@@ -74,6 +74,11 @@
 			polling-mode;
 		};
 
+		vs1838b {
+			compatible = "vishay,vs1838b";
+			data-gpios = <&test_gpio 0 0>;
+		};
+
 		evdev {
 			compatible = "zephyr,native-linux-evdev";
 		};
