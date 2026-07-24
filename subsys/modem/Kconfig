@@ -28,6 +28,13 @@ config MODEM_CHAT
 
 if MODEM_CHAT
 
+config MODEM_CHAT_CONDITIONAL_COMMANDS
+	bool
+	help
+	  Modem chat usage requires conditional command support. This option
+	  should be selected by any modem chat user that defines a conditional
+	  command, for example `MODEM_CHAT_SCRIPT_CMD_RESP_COND`.
+
 config MODEM_CHAT_WORK_BUFFER_SIZE
 	int "Modem chat work buffer size in bytes"
 	default 32
