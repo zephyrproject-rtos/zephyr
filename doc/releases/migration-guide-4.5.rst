@@ -461,6 +461,22 @@ Interrupt Controllers
 * Deprecate ``GIC_NUM_CPU_IF`` from GIC header file :file:`gic.h`. One shall use
   instead.:kconfig:option:`CONFIG_MP_MAX_NUM_CPUS` instead.
 
+MFD
+===
+
+* The nPM13xx (nPM1300/nPM1304) MFD event callback API no longer reuses ``struct gpio_callback``,
+  which was misused to dispatch non-GPIO PMIC events. Applications registering for PMIC events via
+  :c:func:`mfd_npm13xx_add_callback` / :c:func:`mfd_npm13xx_remove_callback` must now use the
+  dedicated :c:struct:`mfd_npm13xx_event_callback` instead of :c:struct:`gpio_callback`. Set its
+  ``event_mask`` field (a bitwise-OR of ``BIT(NPM13XX_EVENT_*)`` values) and ``handler`` field
+  directly instead of calling ``gpio_init_callback()``. The handler signature changed from
+  ``void handler(const struct device *dev, struct gpio_callback *cb, uint32_t events)`` to
+  ``void handler(const struct device *dev, struct mfd_npm13xx_event_callback *cb,
+  npm13xx_event_t events)``. Event callbacks are now invoked once per dispatch with a
+  combined event mask (the handler receives ``cb->event_mask & fired_events``), rather than
+  once per individual event bit as in the previous ``gpio_fire_callbacks`` based
+  implementation. (:github:`101800`)
+
 MSPI
 ====
 
