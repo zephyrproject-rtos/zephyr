@@ -9,7 +9,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <stdlib.h>
-#include "common/test_common.h"
+#include <common/test_common.h>
 
 #include "q7.pat"
 
