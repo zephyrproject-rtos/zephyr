@@ -1,0 +1,7 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host.hci_cmd_cb.test_default:
+    type: unit

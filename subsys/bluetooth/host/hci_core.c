@@ -152,6 +152,12 @@ struct cmd_data {
 
 	/** Used by bt_hci_cmd_send_sync. */
 	struct k_sem *sync;
+
+	/** Completion callback used by bt_hci_cmd_send_cb. */
+	bt_hci_cmd_cb_t cb;
+
+	/** Opaque context passed back to the completion callback. */
+	void *user_data;
 };
 
 static struct cmd_data cmd_data[BT_BUF_CMD_TX_COUNT];
@@ -357,6 +363,8 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 	cmd(buf)->opcode = 0;
 	cmd(buf)->sync = NULL;
 	cmd(buf)->state = NULL;
+	cmd(buf)->cb = NULL;
+	cmd(buf)->user_data = NULL;
 
 	return buf;
 }
@@ -409,6 +417,27 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	bt_tx_irq_raise();
 
 	return 0;
+}
+
+int bt_hci_cmd_send_cb(uint16_t opcode, struct net_buf *buf,
+		       bt_hci_cmd_cb_t cb, void *user_data)
+{
+	if (buf == NULL) {
+		buf = bt_hci_cmd_alloc(K_FOREVER);
+		if (!buf) {
+			return -ENOBUFS;
+		}
+	}
+
+	/* The callback is stored in the command's cmd_data slot (indexed by
+	 * net_buf_id) and fired from hci_cmd_done() once the controller returns
+	 * a Command Complete/Status. Set it before queuing so it is in place by
+	 * the time the command can complete.
+	 */
+	cmd(buf)->cb = cb;
+	cmd(buf)->user_data = user_data;
+
+	return bt_hci_cmd_send(opcode, buf);
 }
 
 static bool process_pending_cmd(k_timeout_t timeout);
@@ -2594,6 +2623,16 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 		LOG_DBG("sync cmd released");
 		cmd(buf)->status = status;
 		k_sem_give(cmd(buf)->sync);
+	}
+
+	/* If the command was sent with bt_hci_cmd_send_cb() notify the caller.
+	 * At this point `buf` already holds the response (return parameters)
+	 * copied in above, except on a send failure where evt_buf == buf and
+	 * only the status is meaningful. The callback runs in this (RX/syswq)
+	 * context and must use `buf` synchronously; it is unref'd below.
+	 */
+	if (cmd(buf)->cb) {
+		cmd(buf)->cb(status, buf, cmd(buf)->user_data);
 	}
 
 exit:
