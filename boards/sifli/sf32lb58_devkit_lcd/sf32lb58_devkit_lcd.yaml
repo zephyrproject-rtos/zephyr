@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: sf32lb58_devkit_lcd
+name: SF32LB58-DevKit-LCD
+type: mcu
+arch: arm
+ram: 2048
+flash: 160
+toolchain:
+  - zephyr
+supported:
+  - gpio
+vendor: sifli

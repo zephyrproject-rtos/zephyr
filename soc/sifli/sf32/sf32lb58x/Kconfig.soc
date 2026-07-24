@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SF32LB58X
+	bool
+	select SOC_FAMILY_SF32
+
+config SOC_SERIES
+	default "sf32lb58x" if SOC_SERIES_SF32LB58X
+
+config SOC_SF32LB580VNN36
+	bool
+	select SOC_SERIES_SF32LB58X
+
+config SOC_SF32LB581VCN36
+	bool
+	select SOC_SERIES_SF32LB58X
+
+config SOC_SF32LB583VCC36
+	bool
+	select SOC_SERIES_SF32LB58X
+
+config SOC_SF32LB585V5E56
+	bool
+	select SOC_SERIES_SF32LB58X
+
+config SOC_SF32LB586VDD36
+	bool
+	select SOC_SERIES_SF32LB58X
+
+config SOC_SF32LB587VEE36
+	bool
+	select SOC_SERIES_SF32LB58X
+
+config SOC
+	default "sf32lb580vnn36" if SOC_SF32LB580VNN36
+	default "sf32lb581vcn36" if SOC_SF32LB581VCN36
+	default "sf32lb583vcc36" if SOC_SF32LB583VCC36
+	default "sf32lb585v5e56" if SOC_SF32LB585V5E56
+	default "sf32lb586vdd36" if SOC_SF32LB586VDD36
+	default "sf32lb587vee36" if SOC_SF32LB587VEE36

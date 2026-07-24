@@ -17,6 +17,7 @@ if(CONFIG_HAS_SIFLI_HAL)
     CONFIG_BT_SF32LB
     zephyr_include_directories(${ZEPHYR_HAL_SIFLI_MODULE_DIR}/zephyr/blobs)
   )
+  zephyr_include_directories_ifdef(CONFIG_SOC_SERIES_SF32LB58X ${ZEPHYR_HAL_SIFLI_MODULE_DIR}/cmsis/sf32lb58x)
 
   if(CONFIG_USE_SIFLI_HAL)
     zephyr_library_named(hal_sifli)
