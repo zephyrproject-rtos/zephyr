@@ -864,13 +864,98 @@ static inline void rtio_access_revoke(struct rtio *r, struct k_thread *t)
 }
 
 /**
+ * @brief Capture an opaque, validatable handle for a live submission
+ *
+ * The handle encodes the entry's pool block index and current generation. It can
+ * later be resolved with rtio_iodev_sqe_from_handle(), which rejects the handle if
+ * the entry has since completed and been recycled. This is the identity primitive
+ * used for cancellation instead of a raw, un-validatable @ref rtio_sqe pointer.
+ *
+ * @param[in] r   RTIO context that owns @p sqe
+ * @param[in] sqe A submission acquired from @p r
+ * @return An opaque handle for @p sqe
+ */
+static inline rtio_sqe_handle_t rtio_sqe_handle(const struct rtio *r, const struct rtio_sqe *sqe)
+{
+	const struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
+	uint32_t blk_index = (uint32_t)(iodev_sqe - r->sqe_pool->pool);
+	uint32_t gen = (uint32_t)(atomic_get(&iodev_sqe->status) & RTIO_SQE_GEN_MASK);
+
+	return (blk_index << 16) | gen;
+}
+
+/**
+ * @brief Resolve a handle to a live submission, validating identity
+ *
+ * Bounds-checks the block index against the context's pool, then verifies the
+ * slot is still allocated and its generation matches the handle. A garbage,
+ * out-of-range, or stale (completed/recycled) handle resolves to NULL without
+ * dereferencing any freed memory.
+ *
+ * @param[in] r      RTIO context that produced the handle
+ * @param[in] handle Handle previously returned by rtio_sqe_handle()
+ * @retval iodev_sqe The live submission the handle refers to
+ * @retval NULL      The handle is out of range, unallocated, or stale
+ */
+static inline struct rtio_iodev_sqe *rtio_iodev_sqe_from_handle(struct rtio *r,
+								rtio_sqe_handle_t handle)
+{
+	uint32_t blk_index = handle >> 16;
+	uint32_t gen = handle & RTIO_SQE_GEN_MASK;
+
+	if (blk_index >= r->sqe_pool->pool_size) {
+		return NULL;
+	}
+
+	struct rtio_iodev_sqe *iodev_sqe = &r->sqe_pool->pool[blk_index];
+	atomic_val_t status = atomic_get(&iodev_sqe->status);
+
+	if ((status & RTIO_SQE_ALLOCD) == 0 || (uint32_t)(status & RTIO_SQE_GEN_MASK) != gen) {
+		return NULL;
+	}
+
+	return iodev_sqe;
+}
+
+/**
+ * @brief Cancel a live submission and its chain (internal core)
+ *
+ * Flags @p iodev_sqe and its linked chain canceled, then lets the head's iodev
+ * actively abort if it implements the .cancel hook. The caller must have
+ * validated that @p iodev_sqe is live (allocated). Only the head is ever
+ * dispatched to an iodev at a time, so cascading the rest is left to the
+ * executor, which requires the flag to already be set on each member. The hook
+ * may complete and free @p iodev_sqe, so it must not be touched afterwards.
+ */
+static inline void rtio_iodev_sqe_cancel(struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rtio_iodev_sqe *curr = iodev_sqe;
+
+	do {
+		curr->sqe.flags |= RTIO_SQE_CANCELED;
+		curr = rtio_iodev_sqe_next(curr);
+	} while (curr != NULL);
+
+	const struct rtio_iodev *iodev = iodev_sqe->sqe.iodev;
+
+	if (iodev != NULL && iodev->api->cancel != NULL) {
+		iodev->api->cancel(iodev_sqe);
+	}
+}
+
+/**
  * @brief Attempt to cancel an SQE
  *
  * If possible (not currently executing), cancel an SQE and generate a failure with -ECANCELED
  * result.
  *
+ * If the submission has already completed and its pool slot been recycled, the
+ * cancel is a satisfied no-op: the outstanding request is already gone. This is
+ * checked before any chain is dereferenced so a stale handle cannot cause a
+ * dangling access.
+ *
  * @param[in] sqe The SQE to cancel
- * @return 0 if the SQE was flagged for cancellation
+ * @return 0 if the SQE was flagged for cancellation (or had already completed)
  * @return <0 on error
  */
 __syscall int rtio_sqe_cancel(struct rtio_sqe *sqe);
@@ -880,10 +965,14 @@ static inline int z_impl_rtio_sqe_cancel(struct rtio_sqe *sqe)
 	SYS_PORT_TRACING_FUNC(rtio, sqe_cancel, sqe);
 	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
 
-	do {
-		iodev_sqe->sqe.flags |= RTIO_SQE_CANCELED;
-		iodev_sqe = rtio_iodev_sqe_next(iodev_sqe);
-	} while (iodev_sqe != NULL);
+	/* If the slot is no longer allocated the target already completed and was
+	 * recycled; treat cancel as satisfied rather than walking a stale chain.
+	 */
+	if ((atomic_get(&iodev_sqe->status) & RTIO_SQE_ALLOCD) == 0) {
+		return 0;
+	}
+
+	rtio_iodev_sqe_cancel(iodev_sqe);
 
 	return 0;
 }

@@ -176,6 +176,9 @@ extern "C" {
 /** An operation to await a signal while blocking the iodev (if one is provided) */
 #define RTIO_OP_AWAIT (RTIO_OP_I3C_CCC+1)
 
+/** An operation that cancels another submission identified by its handle */
+#define RTIO_OP_CANCEL (RTIO_OP_AWAIT+1)
+
 /**
  * @}
  */
@@ -299,6 +302,20 @@ typedef void (*rtio_callback_t)(struct rtio *r, const struct rtio_sqe *sqe, int 
 typedef void (*rtio_signaled_t)(struct rtio_iodev_sqe *iodev_sqe, void *userdata);
 
 /**
+ * @brief Opaque identity for a submission queue entry
+ *
+ * Encodes the entry's pool block index and generation as
+ * @c (block_index << 16) | generation. Unlike a raw @ref rtio_sqe pointer a
+ * handle can be validated (bounds + generation) before the target is touched,
+ * so a stale handle to a completed-and-recycled entry is safely rejected rather
+ * than dereferenced. Used as the identity primitive for cancellation.
+ *
+ * @see rtio_sqe_handle()
+ * @see rtio_iodev_sqe_from_handle()
+ */
+typedef uint32_t rtio_sqe_handle_t;
+
+/**
  * @brief A submission queue event
  */
 struct rtio_sqe {
@@ -374,9 +391,29 @@ struct rtio_sqe {
 		/** OP_I3C_CCC */
 		/* struct i3c_ccc_payload *ccc_payload; */
 		void *ccc_payload;
+
+		/** OP_CANCEL */
+		struct {
+			rtio_sqe_handle_t submission; /**< Handle of the submission to cancel */
+		} cancel;
 	};
 };
 
+
+/**
+ * @name rtio_iodev_sqe status word bits
+ *
+ * The status word carries the entry's identity and lifetime independently of
+ * the immutable @ref rtio_sqe. The generation is bumped every time the entry is
+ * returned to the pool so any handle captured against a prior occupant no longer
+ * matches.
+ * @{
+ */
+/** Generation counter; bumped on free, compared against a handle's generation */
+#define RTIO_SQE_GEN_MASK GENMASK(15, 0)
+/** Set while the entry is allocated from the pool (i.e. a live submission) */
+#define RTIO_SQE_ALLOCD   BIT(16)
+/** @} */
 
 /**
  * @brief IO device submission queue entry
@@ -388,6 +425,9 @@ struct rtio_iodev_sqe {
 	struct mpsc_node q;
 	struct rtio_iodev_sqe *next;
 	struct rtio *r;
+
+	/** Identity + lifetime word (generation | ALLOCD), see RTIO_SQE_* bits above */
+	atomic_t status;
 
 	/**
 	 * Runtime scratch state that the subsystem/driver mutates while it owns
@@ -675,6 +715,34 @@ static inline void rtio_sqe_prep_await_executor(struct rtio_sqe *sqe, int8_t pri
 }
 
 /**
+ * @brief Prepare a cancel op to cancel another submission by handle
+ *
+ * The cancel op attempts to cancel the submission identified by @p submission
+ * (see rtio_sqe_handle()). It is handled by the executor and always completes
+ * successfully and without blocking: if @p submission is stale (already completed
+ * and recycled) the cancel is a no-op, otherwise that submission is flagged
+ * canceled and, if its iodev supports it, actively aborted.
+ *
+ * @note A cancel enqueued after the submission it cancels in the same batch will
+ * find that submission already dispatched; catching a submission still queued in
+ * the same context requires submitting the cancel in a separate batch.
+ *
+ * @param sqe Submission queue entry to prepare
+ * @param submission Handle of the submission to cancel
+ * @param userdata User supplied pointer to associated data
+ */
+static inline void rtio_sqe_prep_cancel(struct rtio_sqe *sqe,
+					rtio_sqe_handle_t submission,
+					void *userdata)
+{
+	memset(sqe, 0, sizeof(struct rtio_sqe));
+	sqe->op = RTIO_OP_CANCEL;
+	sqe->iodev = NULL;
+	sqe->cancel.submission = submission;
+	sqe->userdata = userdata;
+}
+
+/**
  * @brief Prepare a delay operation submission which completes after the given timeout
  *
  * This operation will setup a kernel timer with the given timeout.
@@ -839,6 +907,11 @@ static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *p
 	 */
 	memset(&iodev_sqe->rt, 0, sizeof(iodev_sqe->rt));
 
+	/* Mark the slot live. The generation persists from the previous free so a
+	 * handle captured against the prior occupant no longer matches.
+	 */
+	atomic_or(&iodev_sqe->status, RTIO_SQE_ALLOCD);
+
 	pool->pool_free--;
 
 	return iodev_sqe;
@@ -846,6 +919,13 @@ static inline struct rtio_iodev_sqe *rtio_sqe_pool_alloc(struct rtio_sqe_pool *p
 
 static inline void rtio_sqe_pool_free(struct rtio_sqe_pool *pool, struct rtio_iodev_sqe *iodev_sqe)
 {
+	/* Bump the generation and clear ALLOCD so any outstanding handle to this
+	 * slot is rejected by rtio_iodev_sqe_from_handle() once it is recycled.
+	 */
+	atomic_val_t gen = (atomic_get(&iodev_sqe->status) + 1) & RTIO_SQE_GEN_MASK;
+
+	atomic_set(&iodev_sqe->status, gen);
+
 	mpsc_push(&pool->free_q, &iodev_sqe->q);
 
 	pool->pool_free++;
