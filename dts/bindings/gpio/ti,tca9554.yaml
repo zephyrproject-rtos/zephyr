@@ -1,0 +1,20 @@
+# Copyright (c) 2026, Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments 8-bit I2C IO-Expander
+
+compatible: "ti,tca9554"
+
+include: [gpio-controller.yaml, i2c-device.yaml]
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    required: true
+    const: 8
+
+gpio-cells:
+  - pin
+  - flags
