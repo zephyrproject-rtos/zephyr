@@ -1,0 +1,183 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32c6/esp32c6_common.dtsi>
+#include "m5stack_unitc6l_hpcore-pinctrl.dtsi"
+#include "m5stack_unitc6l-grove.dtsi"
+#include <espressif/partitions_0x0_default.dtsi>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	model = "M5Stack Unit C6L HP Core";
+	compatible = "m5stack,unitc6l";
+
+	chosen {
+		zephyr,sram = &sramhp;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,ot-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,display = &ssd1306;
+		zephyr,led-strip = &ws2812;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	aliases {
+		sw0 = &user_button;
+		buzzer0 = &buzzer;
+		watchdog0 = &wdt0;
+		led-strip = &ws2812;
+		lora0 = &lora;
+		i2c-1 = &grove_i2c;
+	};
+
+	buzzer: buzzer {
+		compatible = "pwm-buzzer";
+		pwms = <&ledc0 0 PWM_HZ(2700) PWM_POLARITY_NORMAL>;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button_0 {
+			label = "User button";
+			gpios = <&gpio_exp 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&dma {
+	status = "okay";
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&ledc0 {
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel0@0 {
+		reg = <0>;
+		timer = <0>;
+	};
+};
+
+&i2s {
+	pinctrl-0 = <&i2s_ws2812_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	dmas = <&dma 3>;
+	dma-names = "tx";
+
+	ws2812: ws2812@0 {
+		compatible = "worldsemi,ws2812-i2s";
+		reg = <0>;
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+		reset-delay = <500>;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	gpio_exp: pi4ioe5v6408@43 {
+		compatible = "diodes,pi4ioe5v6408";
+		reg = <0x43>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		/* TODO: interrupt gpio doesnt work, defaulting to polling in 50ms interval */
+		/* int-gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>; */
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>,
+		   <&gpio0 6 GPIO_ACTIVE_LOW>;
+
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		reset-gpios = <&gpio_exp 7 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		antenna-enable-gpios = <&gpio_exp 5 GPIO_ACTIVE_HIGH>;
+		tx-enable-gpios = <&gpio_exp 6 GPIO_ACTIVE_HIGH>;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+	};
+
+	ssd1306: ssd1306@1 {
+		compatible = "solomon,ssd1306";
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+		width = <64>;
+		height = <48>;
+		segment-offset = <32>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <47>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+		data-cmd-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&wifi {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};

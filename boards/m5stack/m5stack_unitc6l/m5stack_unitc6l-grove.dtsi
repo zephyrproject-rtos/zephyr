@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		grove = &grove_header;
+	};
+
+	grove_header: grove-header {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 4 0>, /* SCL: Grove Port A white */
+			   <1 0 &gpio0 5 0>; /* SDA: Grove Port A yellow */
+	};
+
+	grove_i2c: grove-i2c {
+		compatible = "gpio-i2c";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		scl-gpios = <&gpio0 4 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		sda-gpios = <&gpio0 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+	};
+};
+
+zephyr_i2c: &grove_i2c {};
