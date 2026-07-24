@@ -1,0 +1,6 @@
+board:
+  name: reterminal_e1004
+  full_name: reTerminal E1004
+  vendor: seeed
+  socs:
+  - name: esp32s3
