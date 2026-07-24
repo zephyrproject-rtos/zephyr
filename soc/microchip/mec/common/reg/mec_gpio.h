@@ -14,6 +14,15 @@
 #define MEC_GPIO_MAX_PORTS     6
 #define MEC_GPIO_PINS_PER_PORT 32
 
+#define MCHP_XEC_PINCTRL_REG_IDX(pin) ((pin >> 5) * 32 + (pin & 0x1f))
+
+#define MCHP_XEC_GPIO_CR1_OFS_BP(bank, pos) (((uint32_t)(bank) * 0x80u) + ((pos) * 4u))
+
+#define MCHP_XEC_GPIO_CR1_OFS(pin)     ((uint32_t)(pin) * 4u)
+#define MCHP_XEC_GPIO_CR2_OFS(pin)     (MCHP_XEC_GPIO_CR1_OFS(pin) + 0x500u)
+#define MCHP_XEC_GPIO_PAR_IN_OFS(pin)  ((((uint32_t)pin & 0xffe0u) / 8u) + 0x300u)
+#define MCHP_XEC_GPIO_PAR_OUT_OFS(pin) ((((uint32_t)pin & 0xffe0u) / 8u) + 0x380u)
+
 /* GPIO Control register 1 */
 #define MEC_GPIO_CR1_PUD_POS      0
 #define MEC_GPIO_CR1_PUD_MSK      GENMASK(1, 0)
@@ -136,10 +145,10 @@
 
 #define MCHP_XEC_PINCTRL_REG_IDX(pin) ((pin >> 5) * 32 + (pin & 0x1f))
 
-#define MEC_GPIO_PP_IN_ADDR(gpio_base, pin) \
+#define MEC_GPIO_PP_IN_ADDR(gpio_base, pin)                                                        \
 	((uint32_t)(gpio_base) + MEC_GPIO_PP_IN_OFS + ((((uint32_t)(pin) >> 5) & 0xFU) * 4U))
 
-#define MEC_GPIO_PP_OUT_ADDR(gpio_base, pin) \
+#define MEC_GPIO_PP_OUT_ADDR(gpio_base, pin)                                                       \
 	((uint32_t)(gpio_base) + MEC_GPIO_PP_OUT_OFS + ((((uint32_t)(pin) >> 5) & 0xFU) * 4U))
 
 /** @brief All GPIO register as arrays of registers */
