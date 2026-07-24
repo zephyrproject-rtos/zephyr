@@ -1,14 +1,18 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * To test this sample, connect
+ * PTA15 (Arduino D10) ---> PTE2 (Arduino D11)
+ */
+
 &pinctrl {
-	ftm0_default: ftm0_default {
+	ftm1_default: ftm1_default {
 		group0 {
-			pinmux = <FTM0_CH6_PTA17>,
-				 <FTM0_CH2_PTB14>;
+			pinmux = <FTM1_CH2_PTA15>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
@@ -16,32 +20,28 @@
 
 	pwt_default: pwt_default {
 		group0 {
-			pinmux = <PWT_IN1_PTE11>;
+			pinmux = <PWT_IN3_PTE2>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};
 	};
 };
 
-/* To test this sample, connect
- * PTB14(J3-11) ---> PTE11(J2-11)
- */
-
 / {
 	pwm_loopback_0 {
 		compatible = "test-pwm-loopback";
-		pwms = <&ftm0 2 0 PWM_POLARITY_NORMAL>, /* PTB14 J3 pin 11 */
-		       <&pwt 1 0 PWM_POLARITY_NORMAL>; /* PTE11 J2 pin 11 */
+		pwms = <&ftm1 2 0 PWM_POLARITY_NORMAL>, /* PTA15 Arduino D10 */
+		       <&pwt 3 0 PWM_POLARITY_NORMAL>;  /* PTE2  Arduino D11 */
 	};
 };
 
-&ftm0 {
+&ftm1 {
 	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	clocks = <&scg KINETIS_SCG_SOSC_CLK>;
 	prescaler = <128>;
 	#pwm-cells = <3>;
-	pinctrl-0 = <&ftm0_default>;
+	pinctrl-0 = <&ftm1_default>;
 	pinctrl-names = "default";
 	clock-source = "fixed";
 };
