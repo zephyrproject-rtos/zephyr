@@ -826,32 +826,16 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static uint8_t stream_dir(const struct bt_bap_stream *stream)
 {
-	if (stream->conn) {
-		uint8_t conn_index = bt_conn_index(stream->conn);
+	struct bt_bap_ep_info ep_info;
+	__maybe_unused int err;
 
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-		for (size_t i = 0U; i < ARRAY_SIZE(snks[conn_index]); i++) {
-			const struct bt_bap_ep *snk_ep = snks[conn_index][i];
+	__ASSERT(stream != NULL, "Invalid stream");
+	__ASSERT(stream->ep != NULL, "Invalid stream ep");
 
-			if (snk_ep != NULL && stream->ep == snk_ep) {
-				return BT_AUDIO_DIR_SINK;
-			}
-		}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+	err = bt_bap_ep_get_info(stream->ep, &ep_info);
+	__ASSERT(err == 0, "Failed to get EP info: %d", err);
 
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-		for (size_t i = 0U; i < ARRAY_SIZE(srcs[conn_index]); i++) {
-			const struct bt_bap_ep *src_ep = srcs[conn_index][i];
-
-			if (src_ep != NULL && stream->ep == src_ep) {
-				return BT_AUDIO_DIR_SOURCE;
-			}
-		}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
-	}
-
-	__ASSERT(false, "Invalid stream");
-	return 0;
+	return ep_info.dir;
 }
 
 static void print_remote_codec_cap(const struct bt_conn *conn,
