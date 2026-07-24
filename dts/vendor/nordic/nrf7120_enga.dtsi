@@ -85,6 +85,16 @@
 		#size-cells = <1>;
 		ranges;
 
+		vtf_region_default: memory@200fdfe0 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x200fdfe0 0x0020>;
+			ranges = <0x0 0x200fdfe0 0x0020>;
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "NRF_VTF_REGION";
+			status = "disabled";
+		};
+
 		nordic_reserved: memory@200fe000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
