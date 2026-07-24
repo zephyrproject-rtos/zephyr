@@ -57,6 +57,7 @@ config ARM64
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select BARRIER_OPERATIONS_ARCH
+	select ARCH_HAS_BIT_REV
 	select ARCH_HAS_DIRECTED_IPIS
 	select ARCH_HAS_DEMAND_PAGING
 	select ARCH_HAS_DEMAND_MAPPING
@@ -804,6 +805,9 @@ config ARCH_MEM_DOMAIN_SUPPORTS_DEINIT
 	help
 	  This hidden option is selected by the target architecture if
 	  the architecture supports de-initializing a memory domain.
+
+config ARCH_HAS_BIT_REV
+	bool
 
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	bool
