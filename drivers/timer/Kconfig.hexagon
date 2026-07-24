@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+config HEXAGON_TIMER
+	bool "Hexagon VM timer driver"
+	depends on HEXAGON
+	default y
+	help
+	  This option enables the Hexagon VM timer driver for
+	  system clock and timing services. The driver operates in
+	  periodic mode using the H2 vmtimerop interface.
+
+if HEXAGON_TIMER
+
+config HEXAGON_TIMER_IRQ
+	int "Timer interrupt number"
+	default 12
+	help
+	  The interrupt number for the Hexagon system timer.
+	  Under H2, the timer posts virtual interrupt 12
+	  (H2K_TIME_GUESTINT) to the guest.
+
+config HEXAGON_TIMER_PRIORITY
+	int "Timer interrupt priority"
+	default 0
+	help
+	  The interrupt priority for the Hexagon system timer.
+	  Lower values indicate higher priority.
+
+endif # HEXAGON_TIMER

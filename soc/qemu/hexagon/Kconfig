@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+config SOC_QEMU_HEXAGON_VIRT
+	select HEXAGON
+	select GEN_ISR_TABLES

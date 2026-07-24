@@ -1,0 +1,21 @@
+identifier: qemu_hexagon
+name: QEMU Hexagon Virtual Machine
+type: qemu
+simulation:
+  - name: qemu
+arch: hexagon
+toolchain:
+  - host
+env:
+  - LLVM_TOOLCHAIN_PATH
+ram: 16384
+testing:
+  default: true
+  timeout_multiplier: 2
+  ignore_tags:
+    - net
+    - bluetooth
+    - cpp
+supported:
+  - uart
+vendor: qemu
