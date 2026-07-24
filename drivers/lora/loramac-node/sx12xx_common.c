@@ -434,6 +434,30 @@ int sx12xx_lora_test_cw(const struct device *dev, uint32_t frequency,
 	return 0;
 }
 
+int sx12xx_lora_energy_detect(const struct device *dev, uint32_t bandwidth, int16_t rssi_threshold,
+			      k_timeout_t duration)
+{
+	uint32_t duration_ms =
+		K_TIMEOUT_EQ(duration, K_FOREVER) ? 0 : k_ticks_to_ms_ceil32(duration.ticks);
+	bool channel_free;
+
+	/* Validate that we have a TX configuration */
+	if (!dev_data.tx_cfg.frequency) {
+		return -EINVAL;
+	}
+
+	if (!modem_acquire(&dev_data)) {
+		return -EBUSY;
+	}
+
+	channel_free = Radio.IsChannelFree(dev_data.tx_cfg.frequency, bandwidth, rssi_threshold,
+					   duration_ms);
+
+	modem_release(&dev_data);
+
+	return channel_free ? 0 : 1;
+}
+
 int sx12xx_init(const struct device *dev)
 {
 	atomic_set(&dev_data.modem_usage, 0);

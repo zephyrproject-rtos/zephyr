@@ -312,6 +312,35 @@ static int cmd_lora_test_cw(const struct shell *sh,
 	return 0;
 }
 
+static int cmd_lora_energy_detect(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	int ret;
+	long bandwidth, threshold, duration;
+
+	dev = get_modem(sh);
+	if (!dev) {
+		return -ENODEV;
+	}
+
+	if (parse_long_range(&bandwidth, sh, argv[1], "bandwidth", 0, INT32_MAX) < 0 ||
+	    parse_long_range(&threshold, sh, argv[2], "threshold", INT16_MIN, INT16_MAX) < 0 ||
+	    parse_long_range(&duration, sh, argv[3], "duration", 0, INT32_MAX) < 0) {
+		return -EINVAL;
+	}
+
+	ret = lora_energy_detect(dev, (uint32_t)bandwidth, (int16_t)threshold,
+				 K_MSEC((uint32_t)duration));
+	if (ret < 0) {
+		shell_error(sh, "LoRa energy detect failed: %i", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Channel %s", ret == 1 ? "busy" : "clear");
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
 	SHELL_CMD(config, NULL,
 		  SHELL_HELP("Configure the LoRa radio",
@@ -328,6 +357,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
 		      SHELL_HELP("Send a continuous wave",
 				 "<freq (Hz)> <power (dBm)> <duration (s)>"),
 		      cmd_lora_test_cw, 4, 0),
+	SHELL_CMD_ARG(energy_detect, NULL,
+		      SHELL_HELP("Energy-detection carrier sense",
+				 "<bandwidth (Hz)> <threshold (dBm)> <duration (ms)>"),
+		      cmd_lora_energy_detect, 4, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
