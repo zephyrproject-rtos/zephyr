@@ -703,6 +703,79 @@ ZTEST(test_mdns_responder, test_basic_dns_sd_query)
 	check_basic_dns_sd_query_resp(response_pkts[0]);
 }
 
+/* Verify a PTR answer's name is exactly service.proto.domain (three labels,
+ * uncompressed) -- used to confirm which service a response packet answers.
+ */
+static void check_ptr_answer_name(struct net_pkt *pkt, const char *service, const char *proto,
+				  const char *domain)
+{
+	struct dns_header resp_header;
+	struct dns_rr resp_record;
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	zassert_ok(net_pkt_skip(pkt, NET_IPV6UDPH_LEN), "net_pkt skip failed");
+	zassert_ok(net_pkt_read(pkt, &resp_header, sizeof(resp_header)), "net_pkt read failed");
+	zassert_true(net_ntohs(resp_header.ancount) >= 1, "Invalid record count");
+
+	validate_label(pkt, service, false);
+	validate_label(pkt, proto, false);
+	validate_label(pkt, domain, true);
+
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_PTR, "Invalid record type");
+}
+
+/* Regression test: avahi and other real-world clients batch several PTR
+ * questions into one mDNS packet, and every question after the first uses DNS
+ * name compression (RFC 1035 4.1.4) to reference an earlier question's labels
+ * instead of spelling them out again. send_sd_response() used to always parse
+ * from the start of the whole message (dns_sd_query_extract()), so it only
+ * ever matched Question #1 and had no compression-pointer support at all --
+ * anything after the first question was silently never answered. This sends a
+ * 2-question packet where Question #2 ("_zephyr._tcp.local") points its
+ * trailing "local" label back at Question #1's ("_foo._udp.local"), and
+ * expects a distinct, correct answer for *both* questions.
+ */
+ZTEST(test_mdns_responder, test_multi_question_compressed_dns_sd_query)
+{
+	static uint8_t multi_question_query[] = {
+		/* Header, QDCOUNT = 2 */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* Question 1: _foo._udp.local, PTR */
+		0x04, 0x5f, 0x66, 0x6f, 0x6f, 0x04, 0x5f, 0x75, 0x64, 0x70, 0x05, 0x6c, 0x6f, 0x63,
+		0x61, 0x6c, 0x00, 0x00, 0x0c, 0x00, 0x01,
+		/* Question 2: _zephyr._tcp, then a compression pointer (0xC0 0x16) back
+		 * to the "local" label inside Question 1 (byte offset 22 from the start
+		 * of the message, i.e. right after the DNS header), PTR
+		 */
+		0x07, 0x5f, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x04, 0x5f, 0x74, 0x63, 0x70, 0xc0,
+		0x16, 0x00, 0x0c, 0x00, 0x01};
+	int res;
+
+	/* Question 2 targets a second service, registered as an external record
+	 * here (rather than a compile-time DNS_SD_REGISTER_*_SERVICE) so it's
+	 * scoped to this test and doesn't shift the statically-registered service
+	 * count that test_external_records' service-type-enumeration checks rely on.
+	 */
+	zassert_not_null(alloc_ext_record("zephyr", "_zephyr", "_tcp", "local", NULL, 0, 5353),
+			 "Failed to alloc the record");
+
+	send_msg(multi_question_query, sizeof(multi_question_query));
+
+	/* Expect two separate response packets, one per question. */
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response to Question 1");
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response to Question 2 (the compressed one)");
+
+	zassert_equal(responses_count, 2, "Expected exactly 2 responses, got %zu", responses_count);
+
+	check_ptr_answer_name(response_pkts[0], "_foo", "_udp", "local");
+	check_ptr_answer_name(response_pkts[1], "_zephyr", "_tcp", "local");
+}
+
 /* Basic mDNS query for zephyr.local (AAAA), used to probe whether the
  * responder is currently reachable.
  */
