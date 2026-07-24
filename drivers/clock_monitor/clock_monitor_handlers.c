@@ -42,3 +42,11 @@ static inline int z_vrfy_clock_monitor_get_rate(const struct device *dev,
 	return z_impl_clock_monitor_get_rate(dev, rate_hz);
 }
 #include <zephyr/syscalls/clock_monitor_get_rate_mrsh.c>
+
+static inline int z_vrfy_clock_monitor_set_source(const struct device *dev, uint32_t reference,
+						  uint32_t target)
+{
+	K_OOPS(K_SYSCALL_DRIVER_CLOCK_MONITOR(dev, set_source));
+	return z_impl_clock_monitor_set_source(dev, reference, target);
+}
+#include <zephyr/syscalls/clock_monitor_set_source_mrsh.c>
