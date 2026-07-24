@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Embracecactus
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_BK7258
+	bool "BK7258 UART driver"
+	default y
+	depends on DT_HAS_BEKEN_BK7258_UART_ENABLED
+	select SERIAL_HAS_DRIVER
