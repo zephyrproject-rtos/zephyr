@@ -8,7 +8,7 @@
 config HWINFO_INFINEON
 	bool "Infineon unique device ID"
 	default y
-	depends on SOC_FAMILY_INFINEON_EDGE
+	depends on SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_INFINEON_TRAVEO
 	select HWINFO_HAS_DRIVER
 	help
 	  Enable Infineon hwinfo driver.
