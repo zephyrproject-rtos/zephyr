@@ -1,0 +1,7 @@
+tests:
+  mp.core.pipeline:
+    tags:
+      - subsys
+      - mp
+    platform_allow:
+      - native_sim/native/64
