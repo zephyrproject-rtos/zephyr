@@ -104,5 +104,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		aes: crypto@41100000 {
+			compatible = "lowrisc,opentitan-aes";
+			reg = <0x41100000 0x1000>;
+			status = "okay";
+		};
 	};
 };
