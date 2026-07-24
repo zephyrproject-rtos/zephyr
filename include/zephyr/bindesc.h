@@ -77,6 +77,9 @@ extern "C" {
 /** The app git reference such as "v3.3.0-18-g2c85d9224fca" */
 #define BINDESC_ID_APP_BUILD_VERSION 0x805
 
+/** The app manifest version such as "v1.2.3-4-g5678abcd" */
+#define BINDESC_ID_APP_MANIFEST_GIT_DESC 0x806
+
 /** The kernel version string such as "3.4.0" */
 #define BINDESC_ID_KERNEL_VERSION_STRING 0x900
 

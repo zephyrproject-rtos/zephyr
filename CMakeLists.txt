@@ -702,6 +702,7 @@ add_custom_command(
     -DVERSION_TYPE=KERNEL
     -DVERSION_FILE=${ZEPHYR_BASE}/VERSION
     -DKERNEL_VERSION_CUSTOMIZATION="$<TARGET_PROPERTY:version_h,KERNEL_VERSION_CUSTOMIZATION>"
+    -DWEST_PYTHON=${WEST_PYTHON}
     ${build_version_argument}
     -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
   DEPENDS ${ZEPHYR_BASE}/VERSION ${git_dependency}
@@ -723,6 +724,7 @@ if(EXISTS ${APPLICATION_SOURCE_DIR}/VERSION)
       -DVERSION_TYPE=APP
       -DVERSION_FILE=${APPLICATION_SOURCE_DIR}/VERSION
       -DAPP_VERSION_CUSTOMIZATION="$<TARGET_PROPERTY:app_version_h,APP_VERSION_CUSTOMIZATION>"
+      -DWEST_PYTHON=${WEST_PYTHON}
       ${build_version_argument}
       -P ${ZEPHYR_BASE}/cmake/gen_version_h.cmake
     DEPENDS ${APPLICATION_SOURCE_DIR}/VERSION ${git_dependency}
