@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <zephyr/dt-bindings/reset/stm32u3_reset.h>
 #include <freq.h>
 #include <mem.h>
@@ -31,6 +32,49 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			cpu-power-states = <&stop0 &stop1 &stop2>;
+			i-cache-line-size = <16>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			stop0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <100>;
+				exit-latency-us = <23>;
+			};
+
+			stop1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+				min-residency-us = <500>;
+				exit-latency-us = <37>;
+			};
+
+			stop2: state2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <3>;
+				min-residency-us = <900>;
+				exit-latency-us = <58>;
+			};
+
+			/omit-if-no-ref/ stop3: state3 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <4>;
+				min-residency-us = <200000>;
+				exit-latency-us = <130>;
+			};
 		};
 	};
 
@@ -733,6 +777,130 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+			};
+		};
+
+		lptim1: timers@40044400 {
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40044400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 11)>;
+			resets = <&rctl STM32_RESET(APB3, 11)>;
+			interrupts = <67 0>;
+			interrupt-names = "global";
+			status = "disabled";
+		};
+
+		lptim2: timers@40009400 {
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40009400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 5)>;
+			resets = <&rctl STM32_RESET(APB1H, 5)>;
+			interrupts = <68 0>;
+			interrupt-names = "global";
+			status = "disabled";
+		};
+
+		lptim3: timers@40044800 {
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40044800 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 12)>;
+			resets = <&rctl STM32_RESET(APB3, 12)>;
+			interrupts = <98 0>;
+			interrupt-names = "global";
+			status = "disabled";
+		};
+
+		lptim4: timers@40044c00 {
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40044c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 13)>;
+			resets = <&rctl STM32_RESET(APB3, 13)>;
+			interrupts = <110 0>;
+			interrupt-names = "global";
+			status = "disabled";
+		};
+
+		pwr: power@40030800 {
+			compatible = "st,stm32-dualreg-pwr", "st,stm32-pwr";
+			reg = <0x40030800 0x400>; /* PWR register bank */
+			status = "disabled";
+
+			/*
+			 * After reset, the LDO regulator is selected as
+			 * it works in all hardware configurations; set
+			 * default in SoC DTSI to reduce churn in boards.
+			 */
+			power-supply = "ldo";
+
+			wkup-pins-nb = <8>; /* 8 system wake-up pins */
+			wkup-pin-srcs = <3>; /* 3 gpio sources associated with each wkup pin */
+			wkup-pins-pol;
+			wkup-pins-pupd;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			wkup-pin@1 {
+				reg = <0x1>;
+				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpiob 2 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpioe 4 STM32_PWR_WKUP_EVT_SRC_2>;
+			};
+
+			wkup-pin@2 {
+				reg = <0x2>;
+				wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioc 13 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpioe 5 STM32_PWR_WKUP_EVT_SRC_2>;
+			};
+
+			wkup-pin@3 {
+				reg = <0x3>;
+				wkup-gpios = <&gpioe 6 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 1 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 6 STM32_PWR_WKUP_EVT_SRC_2>;
+			};
+
+			wkup-pin@4 {
+				reg = <0x4>;
+				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpiob 1 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 7 STM32_PWR_WKUP_EVT_SRC_2>;
+			};
+
+			wkup-pin@5 {
+				reg = <0x5>;
+				wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 3 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 8 STM32_PWR_WKUP_EVT_SRC_2>;
+			};
+
+			wkup-pin@6 {
+				reg = <0x6>;
+				wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 5 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpioe 7 STM32_PWR_WKUP_EVT_SRC_2>;
+			};
+
+			wkup-pin@7 {
+				reg = <0x7>;
+				wkup-gpios = <&gpiob 15 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 6 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpioe 8 STM32_PWR_WKUP_EVT_SRC_2>;
+			};
+
+			wkup-pin@8 {
+				reg = <0x8>;
+				wkup-gpios = <&gpioa 7 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
 			};
 		};
 
