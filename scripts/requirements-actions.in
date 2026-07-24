@@ -29,7 +29,7 @@ python-magic; sys_platform != "win32"
 pyyaml>=5.4
 reuse
 ruff==0.14.2
-setuptools>=70.2.0
+setuptools>=83.0.0
 spdx-tools
 spdx3-validate
 sphinx-lint
