@@ -496,6 +496,18 @@ config BT_A2DP_SINK
 	help
 	  This option enables the A2DP profile sink function
 
+config BT_A2DP_CODEC_MAX_IE_LEN
+	int "Maximum size of A2DP codec IE"
+	default 8
+	# The minimum length is 4 bytes, because the codec specific IE for the mandatory Codec SBC
+	# is 4 bytes.
+	# The maximum length is 253 bytes, because the length field of Length Of Service Capability
+	# (LOSC) is one byte and the header of Media Codec Capabilities is 2 bytes. Thus, the
+	# maximum is 255 - 2.
+	range 4 253
+	help
+	  This option sets the maximum size of A2DP codec IE.
+
 endif # BT_A2DP
 
 config BT_AVCTP
