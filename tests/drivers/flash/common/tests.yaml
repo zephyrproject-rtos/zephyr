@@ -282,6 +282,15 @@ tests:
       - SHIELD=mikroe_flash_5_click
       - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
       - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
+  drivers.flash.common.spi_nand.mikroe_flash_5_click_nrf54l15dk:
+    harness_config:
+      fixture: mikroe_flash_5_click
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/nrf54l15dk_nrf54l15_cpuapp_nand.overlay"
+      - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
+      - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
   drivers.flash.common.versalnet:
     build_only: true
     platform_allow:
@@ -316,3 +325,12 @@ tests:
       - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
     integration_platforms:
       - kit_pse84_eval/pse846gps2dbzc4a/m33
+  drivers.flash.common.mikroe_flash_5_click.nrf54l15dk:
+    harness_config:
+      fixture: mikroe_flash_5_click
+    extra_args:
+      - FILE_SUFFIX="mikroe_flash_5_click"
+      - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    timeout: 900
