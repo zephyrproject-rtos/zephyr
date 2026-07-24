@@ -1,0 +1,17 @@
+sample:
+  description: ESP32 PCNT per-unit threshold trigger sample
+  name: ESP32 qdec per-unit trigger
+tests:
+  sample.esp32.qdec_trigger:
+    build_only: true
+    tags:
+      - samples
+      - sensor
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_saola
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm/esp32h2
+    depends_on: pinctrl
