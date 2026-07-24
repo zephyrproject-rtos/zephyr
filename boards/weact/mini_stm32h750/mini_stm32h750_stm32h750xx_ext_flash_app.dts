@@ -1,0 +1,76 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "mini_stm32h750-common.dtsi"
+
+/ {
+	model = "WeAct Studio MiniSTM32H750 Core Board";
+	compatible = "weact,mini-stm32h750";
+
+	chosen {
+		zephyr,flash = &ext_flash;
+		zephyr,flash-controller = &ext_flash_ctrl;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+		};
+	};
+};
+
+&ext_flash {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x0 DT_SIZE_M(8)>;
+
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x0 DT_SIZE_M(6)>;
+		};
+	};
+};
+
+&w25q64_spi {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * The secondary slot is placed on the SPI NOR flash because the
+		 * application runs in place (XIP) from the QSPI flash. While the
+		 * QSPI is in memory-mapped mode it cannot be written to, so the
+		 * update image cannot be staged on the same QSPI device.
+		 */
+		slot1_partition: partition@0 {
+			label = "image-1";
+			reg = <0x00000000 DT_SIZE_M(6)>;
+		};
+
+		storage_partition: partition@600000 {
+			label = "storage";
+			reg = <0x00600000 DT_SIZE_M(2)>;
+		};
+	};
+};
