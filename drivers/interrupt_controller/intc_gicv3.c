@@ -632,8 +632,12 @@ static void gicv3_dist_init(void)
 	}
 
 #if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_ARMV7_A_NS)
-	/* Enable distributor with ARE */
-	sys_write32(BIT(GICD_CTRL_ARE_NS) | BIT(GICD_CTLR_ENABLE_G1NS), GICD_CTLR);
+	/*
+	 * Enable Affinity Routing in the distributor.
+	 * Since we are already in NS state, we need to use the S bit position,
+	 * becase ARE_S in Secure view has the same position as ARE_NS in Non-Secure view.
+	 */
+	sys_write32(BIT(GICD_CTRL_ARE_S) | BIT(GICD_CTLR_ENABLE_G1NS), GICD_CTLR);
 #elif defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 	/*
 	 * For GIC single security state, the config GIC_SINGLE_SECURITY_STATE
