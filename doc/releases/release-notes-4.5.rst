@@ -205,6 +205,10 @@ New APIs and options
       to request a specific TX power level per extended advertising set.
     * :c:member:`bt_conn_cb.le_param_update_rejected`
 
+  * Host
+
+    * :c:func:`bt_le_generate_and_get_rpa`
+
   * Mesh
 
     * :c:struct:`bt_mesh_lpn_timing`
