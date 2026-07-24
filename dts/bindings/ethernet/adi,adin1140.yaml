@@ -1,0 +1,61 @@
+# Copyright (c) 2024-2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADIN1140 10BASE-T1S Ethernet MAC-PHY with SPI Interface
+
+compatible: "adi,adin1140"
+
+include: [spi-device.yaml, ethernet-controller.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The interrupt (IRQn) pin of ADIN1140 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+  wake-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      WAKE pin of ADIN1140 is used to trigger a wake-up of the
+      local PHY and to optionally send a WUP over the network.
+      By default, it is active high.
+  tx-cut-through-en:
+    type: boolean
+    description: Transmit Cut-Through Enable.
+  rx-cut-through-en:
+    type: boolean
+    description: Receive Cut-Through Enable.
+
+examples:
+  - |
+    adin1140: adin1140@0 {
+            compatible = "adi,adin1140";
+            reg = <0x0>;
+            spi-max-frequency = <DT_FREQ_M(25)>;
+            int-gpios = <&gpioc 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            wake-gpios = <&gpioc 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+            local-mac-address = [ 00 E0 22 FE DA D0 ];
+            phy-handle = <&adin1140_phy>;
+            status = "okay";
+
+            mdio {
+                    compatible = "adi,adin1140-mdio";
+                    #address-cells = <1>;
+                    #size-cells = <0>;
+
+                    adin1140_phy: ethernet-phy@0 {
+                            reg = <0x0>;
+                            compatible = "adi,adin1140-phy";
+                            plca-enable;
+                            plca-node-id = <0>;
+                            plca-node-count = <5>;
+                            plca-burst-count = <0>;
+                            plca-burst-timer = <0x60>;
+                            plca-to-timer = <0x20>;
+                    };
+            };
+    };
