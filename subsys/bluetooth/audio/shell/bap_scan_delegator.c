@@ -30,6 +30,7 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
@@ -358,6 +359,16 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 		state->past_avail = false;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
+		const int err = bap_broadcast_sink_pa_sync_req(
+			conn, recv_state->broadcast_id, recv_state->adv_sid, state->past_avail,
+			state->pa_interval);
+
+		if (err != 0) {
+			return err;
+		}
+	}
+
 	return 0;
 }
 
@@ -385,6 +396,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	struct scan_delegator_sync_state *state;
+	int err;
 
 	ARG_UNUSED(conn);
 
@@ -399,6 +411,14 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	}
 
 	(void)memcpy(state->broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
+
+	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) && state->bis_sync_req_bitfield != 0U) {
+		err = bap_broadcast_sink_bis_sync_req(state->bis_sync_req_bitfield,
+						      state->broadcast_code);
+		if (err != 0) {
+			bt_shell_error("Broadcast sink rejected sync from broadcast code: %d", err);
+		}
+	}
 }
 
 static int bis_sync_req_cb(struct bt_conn *conn,
@@ -426,6 +446,17 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 	}
 
 	state->bis_sync_req_bitfield = bis_sync_req_bitfield;
+
+	if (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK)) {
+		int err;
+
+		err = bap_broadcast_sink_bis_sync_req(bis_sync_req_bitfield, state->broadcast_code);
+		if (err != 0) {
+			bt_shell_error("Broadcast sink rejected sync: %d", err);
+
+			return err;
+		}
+	}
 
 	return 0;
 }

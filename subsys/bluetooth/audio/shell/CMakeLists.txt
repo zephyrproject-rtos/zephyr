@@ -105,6 +105,10 @@ zephyr_library_sources_ifdef(
   bap_broadcast_assistant.c
   )
 zephyr_library_sources_ifdef(
+  CONFIG_BT_BAP_BROADCAST_SINK
+  bap_broadcast_sink.c
+  )
+zephyr_library_sources_ifdef(
   CONFIG_BT_PBP
   pbp.c
   )
