@@ -228,6 +228,16 @@ static int bmi270_anymo_config(const struct device *dev, bool enable)
 	uint16_t anymo_2;
 	int ret;
 
+	/* Any-motion registers only exist in feature sets that define them
+	 * (e.g. the base config). The default max_fifo feature set leaves these
+	 * pointers NULL; without this guard the writes below would dereference
+	 * NULL and silently program an unintended feature-page address.
+	 */
+	if (cfg->feature->anymo_1 == NULL || cfg->feature->anymo_2 == NULL) {
+		LOG_ERR("any-motion not supported by the configured feature set");
+		return -ENOTSUP;
+	}
+
 	if (enable) {
 		ret = bmi270_feature_reg_write(dev, cfg->feature->anymo_1,
 					       data->anymo_1);
