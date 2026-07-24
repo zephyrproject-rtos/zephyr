@@ -15,6 +15,30 @@
 
 #include "memc_mcux_flexspi.h"
 
+/*
+ * IPED (Inline Prince Encryption/Decryption) is a FlexSPI feature on some chips
+ * (e.g. RW612).  FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT is undefined or 0 when the
+ * FlexSPI has no IPED.  When present, this driver discovers BootROM-provisioned
+ * IPED regions at init and exposes them via memc_flexspi_offset_in_iped_region().
+ *
+ * Only the peripheral register definitions from the device header are needed;
+ * the SDK fsl_iped driver component is not required.
+ */
+#if defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) && (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0)
+#define MEMC_FLEXSPI_IPED            1
+/* IPEDCTXnEND granularity: region end address is 256-byte block aligned */
+#define MEMC_FLEXSPI_IPED_BLOCK_SIZE 0x100U
+/* Stride between IPEDCTXn register groups (IV0, IV1, START, END, AAD0, AAD1, rsvd, rsvd) */
+#define MEMC_FLEXSPI_IPED_CTX_STRIDE 0x20U
+/* SDK headers use inconsistent casing for IPED address masks across SoC families */
+#if !defined(FLEXSPI_IPEDCTX0START_START_ADDRESS_MASK) &&                                          \
+	defined(FLEXSPI_IPEDCTX0START_start_address_MASK)
+#define FLEXSPI_IPEDCTX0START_START_ADDRESS_MASK FLEXSPI_IPEDCTX0START_start_address_MASK
+#endif
+#if !defined(FLEXSPI_IPEDCTX0END_END_ADDRESS_MASK) && defined(FLEXSPI_IPEDCTX0END_end_address_MASK)
+#define FLEXSPI_IPEDCTX0END_END_ADDRESS_MASK FLEXSPI_IPEDCTX0END_end_address_MASK
+#endif
+#endif
 
 /*
  * NOTE: If CONFIG_FLASH_MCUX_FLEXSPI_XIP is selected, Any external functions
@@ -76,6 +100,20 @@ FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 	uint8_t buf_cfg_cnt;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+#ifdef MEMC_FLEXSPI_IPED
+	/* IPED regions discovered from registers at init (no IPED register writes) */
+	bool iped_enabled; /* IPEDCTRL.IPED_EN */
+	bool iped_ipwr_en; /* IPEDCTRL.IPWR_EN — IP writes encrypt */
+	size_t iped_region_count;
+	struct {
+		uint32_t ahb_start; /* absolute AHB start (IPEDCTXnSTART) */
+		uint32_t ahb_end;   /* absolute AHB end, EXCLUSIVE (one past
+				     * last byte): IPEDCTXnEND inclusive-block
+				     * base + 256-byte block size
+				     */
+		bool gcm;           /* per-region GCM-mode bit */
+	} iped_regions[FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT];
+#endif
 };
 
 static inline FLEXSPI_Type *get_base(const struct device *dev)
@@ -354,6 +392,61 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
 	return ahb_base + offset;
 }
 
+bool memc_flexspi_offset_in_iped_region(const struct device *dev, flexspi_port_t port, off_t offset,
+					size_t len, bool *gcm, size_t *region_idx)
+{
+#ifdef MEMC_FLEXSPI_IPED
+	struct memc_flexspi_data *data = dev->data;
+	uintptr_t addr;
+	size_t i;
+
+	if (!data->iped_enabled || len == 0U || offset < 0) {
+		return false;
+	}
+
+	addr = (uintptr_t)memc_flexspi_get_ahb_address(dev, port, offset);
+	if (addr == 0U) {
+		return false;
+	}
+	for (i = 0U; i < data->iped_region_count; i++) {
+		uint32_t start = data->iped_regions[i].ahb_start;
+		uint32_t end = data->iped_regions[i].ahb_end;
+
+		if (addr >= start && addr < end && len <= (size_t)(end - addr)) {
+			if (gcm != NULL) {
+				*gcm = data->iped_regions[i].gcm;
+			}
+			if (region_idx != NULL) {
+				*region_idx = i;
+			}
+			return true;
+		}
+	}
+
+	return false;
+#else
+	ARG_UNUSED(dev);
+	ARG_UNUSED(port);
+	ARG_UNUSED(offset);
+	ARG_UNUSED(len);
+	ARG_UNUSED(gcm);
+	ARG_UNUSED(region_idx);
+	return false;
+#endif /* MEMC_FLEXSPI_IPED */
+}
+
+bool memc_flexspi_iped_ipwr_enabled(const struct device *dev)
+{
+#ifdef MEMC_FLEXSPI_IPED
+	struct memc_flexspi_data *data = dev->data;
+
+	return data->iped_enabled && data->iped_ipwr_en;
+#else
+	ARG_UNUSED(dev);
+	return false;
+#endif
+}
+
 int memc_flexspi_update_lut(const struct device *dev, flexspi_port_t port, uint32_t seq_idx,
 			    const uint32_t *lut_ptr, uint8_t lut_count)
 {
@@ -405,6 +498,66 @@ static int memc_flexspi_init(const struct device *dev)
 	DEVICE_MMIO_NAMED_MAP(dev, ahb, data->ahb_cacheable ? K_MEM_DIRECT_MAP
 				: (K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP));
 	base = get_base(dev);
+
+#ifdef MEMC_FLEXSPI_IPED
+	/*
+	 * IPED region discovery — reads IPEDCTRL.IPED_EN and the per-region
+	 * IPEDCTXnSTART/END registers loaded by BootROM during provisioning and
+	 * records them in driver data.  Zephyr never writes IPED registers.
+	 * The FlexSPI NOR flash driver later queries this table via
+	 * memc_flexspi_offset_in_iped_region() to route reads of an IPED region
+	 * through the AHB path, where IPED decrypts inline.
+	 *
+	 * This must run before the XIP early-return below, because IPED register
+	 * reads are safe during XIP and the rest of init is skipped in XIP mode.
+	 */
+	uint32_t ipedctrl = base->IPEDCTRL;
+
+	data->iped_enabled = (ipedctrl & FLEXSPI_IPEDCTRL_IPED_EN_MASK) != 0U;
+	data->iped_ipwr_en = (ipedctrl & FLEXSPI_IPEDCTRL_IPWR_EN_MASK) != 0U;
+	data->iped_region_count = 0U;
+
+	if (data->iped_enabled) {
+		uint32_t iped_i;
+		uintptr_t ahb_base = (uintptr_t)get_ahb(dev);
+
+		for (iped_i = 0U; iped_i < (uint32_t)FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT;
+		     iped_i++) {
+			volatile uint32_t *ctx_start_reg =
+				(volatile uint32_t *)((uintptr_t)&base->IPEDCTX0START +
+						      MEMC_FLEXSPI_IPED_CTX_STRIDE * iped_i);
+			volatile uint32_t *ctx_end_reg =
+				(volatile uint32_t *)((uintptr_t)&base->IPEDCTX0END +
+						      MEMC_FLEXSPI_IPED_CTX_STRIDE * iped_i);
+			uint32_t raw_start = *ctx_start_reg;
+			uint32_t raw_end = *ctx_end_reg;
+			uint32_t reg_start = raw_start & FLEXSPI_IPEDCTX0START_START_ADDRESS_MASK;
+			uint32_t reg_end = raw_end & FLEXSPI_IPEDCTX0END_END_ADDRESS_MASK;
+			uint32_t iped_start, iped_end;
+
+			if (reg_start == 0U) {
+				continue;
+			}
+			iped_start = ahb_base + (reg_start & 0x07FFFFFFU);
+			iped_end =
+				ahb_base + (reg_end & 0x07FFFFFFU) + MEMC_FLEXSPI_IPED_BLOCK_SIZE;
+			data->iped_regions[data->iped_region_count].ahb_start = iped_start;
+			data->iped_regions[data->iped_region_count].ahb_end = iped_end;
+			data->iped_regions[data->iped_region_count].gcm =
+				(raw_start & FLEXSPI_IPEDCTX0START_GCM_MASK) != 0U;
+			if (!memc_flexspi_is_running_xip(dev)) {
+				LOG_INF("IPED region %u: AHB 0x%08x..0x%08x (excl) GCM=%u", iped_i,
+					iped_start, iped_end,
+					data->iped_regions[data->iped_region_count].gcm ? 1U : 0U);
+			}
+			data->iped_region_count++;
+		}
+	} else {
+		if (!memc_flexspi_is_running_xip(dev)) {
+			LOG_DBG("IPED capable chip but IPEDCTRL.IPED_EN=0");
+		}
+	}
+#endif /* MEMC_FLEXSPI_IPED */
 
 	/* we should not configure the device we are running on */
 	if (memc_flexspi_is_running_xip(dev)) {

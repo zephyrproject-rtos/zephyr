@@ -100,6 +100,12 @@ struct flash_flexspi_nor_data {
 #if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
 	struct k_mutex lock;
 #endif
+#if defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) && (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0)
+	struct {
+		off_t offset;
+		size_t len;
+	} iped_erased[FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT];
+#endif
 };
 
 static inline void flash_flexspi_nor_lock(const struct device *dev)
@@ -344,14 +350,14 @@ static int flash_flexspi_nor_page_program(struct flash_flexspi_nor_data *data,
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
 
-static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
+static int flash_flexspi_nor_wait_bus_busy_retries(struct flash_flexspi_nor_data *data,
+						    int retries)
 {
 	uint32_t status = 0;
 	int ret;
 
-	while (1) {
+	do {
 		ret = flash_flexspi_nor_read_status(data, &status);
-		LOG_DBG("status: 0x%x", status);
 		if (ret) {
 			LOG_ERR("Could not read status");
 			return ret;
@@ -359,24 +365,28 @@ static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
 
 		if (data->legacy_poll) {
 			if ((status & BIT(0)) == 0) {
-				break;
+				return 0;
 			}
 		} else {
 			if (status & BIT(7)) {
-				break;
+				return 0;
 			}
 		}
-	}
+	} while (--retries > 0);
 
-	return 0;
+	LOG_ERR("Timed out waiting for flash ready (status=0x%x)", status);
+	return -ETIMEDOUT;
+}
+
+static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
+{
+	return flash_flexspi_nor_wait_bus_busy_retries(data,
+		CONFIG_FLASH_MCUX_FLEXSPI_NOR_TIMEOUT_RETRIES);
 }
 
 static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
-	int ret;
-	unsigned int key = 0U;
-	bool xip;
 
 	if (len == 0) {
 		return 0;
@@ -393,63 +403,86 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *
 		return -EINVAL;
 	}
 
-	xip = memc_flexspi_is_running_xip(&data->controller);
+#if defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) && (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0)
+	/*
+	 * If this read falls entirely within an IPED-protected region, it must go
+	 * through the AHB memory-mapped path so IPED decrypts inline.  The default
+	 * IP-command read path below bypasses IPED and would return ciphertext.
+	 */
+	{
+		bool iped_gcm = false;
+		size_t iped_idx = 0U;
 
-	if (xip) {
-		key = irq_lock();
-		memc_flexspi_wait_bus_idle(&data->controller);
-	}
+		if (memc_flexspi_offset_in_iped_region(&data->controller, data->port, offset, len,
+						       &iped_gcm, &iped_idx)) {
+			uint8_t *src;
+			unsigned int ahb_key = 0U;
+			bool ahb_xip;
 
-	uint8_t *dst = (uint8_t *)buffer;
-	size_t remaining = len;
-	off_t current_offset = offset;
-	uint8_t ip_read_buf[SPI_NOR_PAGE_SIZE];
-
-	while (remaining > 0U) {
-		off_t aligned_offset = ROUND_DOWN(current_offset, sizeof(uint32_t));
-		size_t byte_offset = current_offset - aligned_offset;
-		size_t required = MIN(remaining + byte_offset, sizeof(ip_read_buf));
-		size_t read_size = MAX(ROUND_UP(required, sizeof(uint32_t)), sizeof(uint32_t));
-		size_t copy_size = MIN(remaining, read_size - byte_offset);
-		flexspi_transfer_t transfer = {
-			.deviceAddress = aligned_offset,
-			.port = data->port,
-			.cmdType = kFLEXSPI_Read,
-			.SeqNumber = 1,
-			.seqIndex = READ,
-			.data = (uint32_t *)ip_read_buf,
-			.dataSize = read_size,
-		};
-
-		ret = memc_flexspi_transfer(&data->controller, &transfer);
-		if (ret < 0) {
-			if (xip) {
-				irq_unlock(key);
+			if (data->iped_erased[iped_idx].len > 0U &&
+			    offset >= data->iped_erased[iped_idx].offset &&
+			    (offset + (off_t)len) <= (data->iped_erased[iped_idx].offset +
+						      (off_t)data->iped_erased[iped_idx].len)) {
+				memset(buffer, 0xFF, len);
+				flash_flexspi_nor_unlock(dev);
+				return 0;
 			}
+
+			if (iped_gcm) {
+				LOG_DBG("IPED GCM region read off 0x%lx len %zu (best-effort)",
+					(long)offset, len);
+			}
+
+			src = memc_flexspi_get_ahb_address(&data->controller, data->port, offset);
+			if (!src) {
+				flash_flexspi_nor_unlock(dev);
+				return -EINVAL;
+			}
+
+#ifdef CONFIG_HAS_MCUX_CACHE
+			DCACHE_InvalidateByRange((uintptr_t)src, len);
+#endif
+
+			ahb_xip = memc_flexspi_is_running_xip(&data->controller);
+			if (ahb_xip) {
+				ahb_key = irq_lock();
+				memc_flexspi_wait_bus_idle(&data->controller);
+			}
+
+			memcpy(buffer, src, len);
+
+			if (ahb_xip) {
+				irq_unlock(ahb_key);
+			}
+
 			flash_flexspi_nor_unlock(dev);
-			return ret;
+			return 0;
 		}
-
-		memcpy(dst, &ip_read_buf[byte_offset], copy_size);
-		dst += copy_size;
-		current_offset += copy_size;
-		remaining -= copy_size;
 	}
+#endif /* FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT */
 
-	if (xip) {
-		irq_unlock(key);
+	uint8_t *src = memc_flexspi_get_ahb_address(&data->controller,
+						     data->port, offset);
+
+	if (!src) {
+		LOG_ERR("No AHB address for port %u offset 0x%lx", data->port, offset);
+		flash_flexspi_nor_unlock(dev);
+		return -EINVAL;
 	}
-
+	memcpy(buffer, src, len);
 	flash_flexspi_nor_unlock(dev);
-
 	return 0;
 }
 static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		const void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
-#ifdef CONFIG_HAS_MCUX_CACHE
-	size_t size = len;
+#if defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) && (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0)
+	off_t write_offset = offset;
+#endif
+#if defined(CONFIG_HAS_MCUX_CACHE) || (defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) &&           \
+				       (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0))
+	size_t write_len = len;
 #endif
 	if (!buffer) {
 		return -EINVAL;
@@ -485,6 +518,8 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		memc_flexspi_wait_bus_idle(&data->controller);
 	}
 
+	int ret = 0;
+
 	while (len) {
 		/* If the offset isn't a multiple of the NOR page size, we first need
 		 * to write the remaining part that fits, otherwise the write could
@@ -501,17 +536,30 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 			memc_flexspi_wait_bus_idle(&data->controller);
 		}
 #endif
-		flash_flexspi_nor_write_enable(data);
+		ret = flash_flexspi_nor_write_enable(data);
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
-		flash_flexspi_nor_page_program(data, offset, nor_write_buf, i);
+		if (ret == 0) {
+			ret = flash_flexspi_nor_page_program(data, offset, nor_write_buf, i);
+		}
 #else
-		flash_flexspi_nor_page_program(data, offset, src, i);
+		if (ret == 0) {
+			ret = flash_flexspi_nor_page_program(data, offset, src, i);
+		}
 #endif
-		flash_flexspi_nor_wait_bus_busy(data);
+		if (ret == 0) {
+			ret = flash_flexspi_nor_wait_bus_busy(data);
+		}
 		memc_flexspi_reset(&data->controller);
 		src += i;
 		offset += i;
 		len -= i;
+		if (ret != 0) {
+			break;
+		}
+	}
+
+	if (ret != 0) {
+		memc_flexspi_reset(&data->controller);
 	}
 
 	if (memc_flexspi_is_running_xip(&data->controller)) {
@@ -520,12 +568,23 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uintptr_t)dst, size);
+	DCACHE_InvalidateByRange((uintptr_t)dst, write_len);
+#endif
+
+#if defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) && (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0)
+	{
+		size_t wr_iped_idx = 0U;
+
+		if (memc_flexspi_offset_in_iped_region(&data->controller, data->port, write_offset,
+						       write_len, NULL, &wr_iped_idx)) {
+			data->iped_erased[wr_iped_idx].len = 0U;
+		}
+	}
 #endif
 
 	flash_flexspi_nor_unlock(dev);
 
-	return 0;
+	return ret;
 }
 
 static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
@@ -573,42 +632,60 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 		memc_flexspi_wait_bus_idle(&data->controller);
 	}
 
+	int ret = 0;
+
 	if ((offset == 0) && (size == data->config.flashSize * KB(1))) {
-		flash_flexspi_nor_write_enable(data);
-		flash_flexspi_nor_erase_chip(data);
-		flash_flexspi_nor_wait_bus_busy(data);
+		if (memc_flexspi_is_running_xip(&data->controller)) {
+			LOG_WRN("Chip erase under XIP: interrupts disabled for up to 200s");
+		}
+		ret = flash_flexspi_nor_write_enable(data);
+		if (ret == 0) {
+			ret = flash_flexspi_nor_erase_chip(data);
+		}
+		if (ret == 0) {
+			ret = flash_flexspi_nor_wait_bus_busy_retries(data,
+				CONFIG_FLASH_MCUX_FLEXSPI_NOR_CHIP_ERASE_TIMEOUT_RETRIES);
+		}
 		memc_flexspi_reset(&data->controller);
 	} else {
-		/* Increase erase efficiency: use block erase when possible,
-		 * sector erase for remainder.
-		 */
 		size_t remaining_size = size;
 		off_t current_offset = offset;
-		/* Step 1: Handle unaligned start - erase sectors until block aligned */
-		while (remaining_size > 0 && (current_offset % SPI_NOR_BLOCK_SIZE) != 0) {
-			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_sector(data, current_offset);
-			flash_flexspi_nor_wait_bus_busy(data);
+
+		while (remaining_size > 0 && (current_offset % SPI_NOR_BLOCK_SIZE) != 0
+		       && ret == 0) {
+			ret = flash_flexspi_nor_write_enable(data);
+			if (ret == 0) {
+				ret = flash_flexspi_nor_erase_sector(data, current_offset);
+			}
+			if (ret == 0) {
+				ret = flash_flexspi_nor_wait_bus_busy(data);
+			}
 			memc_flexspi_reset(&data->controller);
 			current_offset += SPI_NOR_SECTOR_SIZE;
 			remaining_size -= SPI_NOR_SECTOR_SIZE;
 		}
 
-		/* Step 2: Erase whole blocks */
-		while (remaining_size >= SPI_NOR_BLOCK_SIZE) {
-			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_block(data, current_offset);
-			flash_flexspi_nor_wait_bus_busy(data);
+		while (remaining_size >= SPI_NOR_BLOCK_SIZE && ret == 0) {
+			ret = flash_flexspi_nor_write_enable(data);
+			if (ret == 0) {
+				ret = flash_flexspi_nor_erase_block(data, current_offset);
+			}
+			if (ret == 0) {
+				ret = flash_flexspi_nor_wait_bus_busy(data);
+			}
 			memc_flexspi_reset(&data->controller);
 			current_offset += SPI_NOR_BLOCK_SIZE;
 			remaining_size -= SPI_NOR_BLOCK_SIZE;
 		}
 
-		/* Step 3: Erase remaining sectors */
-		while (remaining_size > 0) {
-			flash_flexspi_nor_write_enable(data);
-			flash_flexspi_nor_erase_sector(data, current_offset);
-			flash_flexspi_nor_wait_bus_busy(data);
+		while (remaining_size > 0 && ret == 0) {
+			ret = flash_flexspi_nor_write_enable(data);
+			if (ret == 0) {
+				ret = flash_flexspi_nor_erase_sector(data, current_offset);
+			}
+			if (ret == 0) {
+				ret = flash_flexspi_nor_wait_bus_busy(data);
+			}
 			memc_flexspi_reset(&data->controller);
 			current_offset += SPI_NOR_SECTOR_SIZE;
 			remaining_size -= SPI_NOR_SECTOR_SIZE;
@@ -624,9 +701,21 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 	DCACHE_InvalidateByRange((uintptr_t)dst, size);
 #endif
 
+#if defined(FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT) && (FSL_FEATURE_FLEXSPI_IPED_REGION_COUNT > 0)
+	{
+		size_t er_iped_idx = 0U;
+
+		if (memc_flexspi_offset_in_iped_region(&data->controller, data->port, offset, size,
+						       NULL, &er_iped_idx)) {
+			data->iped_erased[er_iped_idx].offset = offset;
+			data->iped_erased[er_iped_idx].len = size;
+		}
+	}
+#endif
+
 	flash_flexspi_nor_unlock(dev);
 
-	return 0;
+	return ret;
 }
 
 static const struct flash_parameters *flash_flexspi_nor_get_parameters(
@@ -807,7 +896,41 @@ static int flash_flexspi_nor_quad_enable(struct flash_flexspi_nor_data *data,
 	}
 
 	/* Wait for QE bit to complete programming */
-	return flash_flexspi_nor_wait_bus_busy(data);
+	ret = flash_flexspi_nor_wait_bus_busy(data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/*
+	 * Readback verify: re-read status register and confirm QE is set.
+	 * SCRATCH_CMD was programmed above to read SR1 (1-byte QER) or SR2
+	 * (2-byte QER), so re-using it here returns the correct register.
+	 */
+	buffer = 0;
+	transfer.dataSize = 1;
+	transfer.seqIndex = SCRATCH_CMD;
+	transfer.cmdType = kFLEXSPI_Read;
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (rd_size == 2) {
+		/* 2-byte QER: bit is in SR2, SCRATCH_CMD reads SR2 as 1 byte */
+		if (!(buffer & (bit >> 8))) {
+			LOG_ERR("QE readback failed: SR2=0x%02x, expected bit 0x%02x",
+				(uint8_t)(buffer & 0xFF), (uint8_t)(bit >> 8));
+			return -EIO;
+		}
+	} else {
+		if (!(buffer & bit)) {
+			LOG_ERR("QE readback failed: SR=0x%02x, expected bit 0x%02x",
+				(uint8_t)(buffer & 0xFF), (uint8_t)bit);
+			return -EIO;
+		}
+	}
+
+	return 0;
 }
 
 /*
@@ -1107,9 +1230,14 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 	/* Check to see if we can enable 4 byte addressing */
 	ret = jesd216_bfp_decode_dw16(&header->phdr[0], bfp, &dw16);
 	if (ret == 0) {
-		/* Attempt to enable 4 byte addressing */
-		ret = flash_flexspi_nor_4byte_enable(data, flexspi_lut,
-						     dw16.enter_4ba);
+		bool xip_cfg = memc_flexspi_is_running_xip(&data->controller);
+
+		if (!xip_cfg || data->size > MB(16)) {
+			ret = flash_flexspi_nor_4byte_enable(data, flexspi_lut, dw16.enter_4ba);
+		} else {
+			/* ≤16MB under XIP: 24-bit addressing covers full range, skip */
+			ret = 0;
+		}
 		if (ret == 0) {
 			/* Use 4 byte address width */
 			addr_width = 32;
@@ -1225,6 +1353,31 @@ static int flash_flexspi_nor_config_flash(struct flash_flexspi_nor_data *data,
 						0x4, kFLEXSPI_Command_STOP,
 						kFLEXSPI_1PAD, 0x0);
 			}
+		}
+
+		if (ret == -EIO || ret == -ENOTSUP) {
+			/* QE not supported or verify failed — revert to 1-1-1 */
+			LOG_WRN("Quad enable failed (%d), falling back to 1-1-1", ret);
+			flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
+					SPI_NOR_CMD_READ, kFLEXSPI_Command_RADDR_SDR,
+					kFLEXSPI_1PAD, addr_width);
+			flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD,
+					0x1, kFLEXSPI_Command_STOP,
+					kFLEXSPI_1PAD, 0x0);
+			flexspi_lut[READ][2] = 0;
+			flexspi_lut[READ][3] = 0;
+			flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_SDR, kFLEXSPI_1PAD,
+					SPI_NOR_CMD_PP, kFLEXSPI_Command_RADDR_SDR,
+					kFLEXSPI_1PAD, addr_width);
+			flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+					kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD,
+					0x04, kFLEXSPI_Command_STOP,
+					kFLEXSPI_1PAD, 0x0);
+		} else if (ret != 0) {
+			return ret;
 		}
 
 	} else if (jesd216_bfp_read_support(&header->phdr[0], bfp,
@@ -1348,6 +1501,9 @@ flash_flexspi_nor_is25_clear_dummy_cycles(struct flash_flexspi_nor_data *data,
 	}
 
 	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/*
 	 * IS25LPXXX -> 0xff
