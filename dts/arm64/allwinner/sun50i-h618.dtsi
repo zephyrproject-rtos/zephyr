@@ -9,9 +9,29 @@
 
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/sun50i-h618-ccu.h>
+#include <zephyr/dt-bindings/reset/sun50i-h618-ccu.h>
 
 / {
 	interrupt-parent = <&gic>;
+
+	clocks {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		osc24M: osc24M_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <24000000>;
+			#clock-cells = <0>;
+		};
+
+		osc32k: osc32k_clk {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+		};
+	};
 
 	cpus {
 		#address-cells = <1>;
@@ -62,12 +82,22 @@
 			status = "okay";
 		};
 
+		ccu: clock-controller@3001000 {
+			compatible = "allwinner,sun50i-h618-ccu";
+			reg = <0x03001000 0x1000>;
+			clocks = <&osc24M>, <&osc32k>;
+			clock-names = "hosc", "losc";
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+			status = "okay";
+		};
+
 		uart0: uart@5000000 {
 			compatible = "snps,dw-apb-uart", "ns16550";
 			reg = <0x05000000 0x400>;
 			reg-shift = <2>;
 			interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clock-frequency = <24000000>;
+			clocks = <&ccu CLK_BUS_UART0>;
 			status = "disabled";
 		};
 
