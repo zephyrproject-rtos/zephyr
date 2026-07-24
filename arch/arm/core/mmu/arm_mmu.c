@@ -740,23 +740,42 @@ static void arm_mmu_l2_unmap_page(uint32_t va)
 }
 
 /**
- * @brief MMU boot-time initialization function
- * Initializes the MMU at boot time. Sets up the page tables and
- * applies any specified memory mappings for either the different
- * sections of the Zephyr binary image, or for device memory as
- * specified at the SoC level.
+ * @brief Get the memory attributes of the shared L1 page table's region
+ * Looks up which mmu_zephyr_ranges[] entry contains the shared L1 page table
+ * and returns that region's attribute flags. These are required in order to
+ * program the cacheability and shareability bits of the TTBR0 register.
  *
- * @retval Always 0, errors are handled by assertions.
+ * @retval Attribute flags (MT_.../MATTR_...) of the region containing the
+ *         L1 page table, or 0 if no containing region is found.
  */
-int z_arm_mmu_init(void)
+static uint32_t arm_mmu_get_pt_attrs(void)
+{
+	for (uint32_t mem_range = 0; mem_range < ARRAY_SIZE(mmu_zephyr_ranges); mem_range++) {
+		uint32_t pa  = mmu_zephyr_ranges[mem_range].start;
+		uint32_t end = mmu_zephyr_ranges[mem_range].end;
+
+		if (((uint32_t)&l1_page_table >= pa) && ((uint32_t)&l1_page_table < end)) {
+			return mmu_zephyr_ranges[mem_range].attrs;
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Build the shared MMU page tables
+ * Populates the globally shared L1/L2 page tables with the memory regions
+ * pre-defined by the Zephyr image (mmu_zephyr_ranges[]) and the regions
+ * defined at the SoC level (mmu_config). It is called exactly once, by the
+ * primary core; all secondary cores reuse the tables it builds.
+ */
+static void arm_mmu_setup_ptables(void)
 {
 	uint32_t mem_range;
 	uint32_t pa;
 	uint32_t va;
 	uint32_t attrs;
-	uint32_t pt_attrs = 0;
 	uint32_t rem_size;
-	uint32_t reg_val = 0;
 	struct arm_mmu_perms_attrs perms_attrs;
 
 	__ASSERT(KB(4) == CONFIG_MMU_PAGE_SIZE,
@@ -769,17 +788,6 @@ int z_arm_mmu_init(void)
 		rem_size    = mmu_zephyr_ranges[mem_range].end - pa;
 		attrs       = mmu_zephyr_ranges[mem_range].attrs;
 		perms_attrs = arm_mmu_convert_attr_flags(attrs);
-
-		/*
-		 * Check if the L1 page table is within the region currently
-		 * being mapped. If so, store the permissions and attributes
-		 * of the current section. This information is required when
-		 * writing to the TTBR0 register.
-		 */
-		if (((uint32_t)&l1_page_table >= pa) &&
-				((uint32_t)&l1_page_table < (pa + rem_size))) {
-			pt_attrs = attrs;
-		}
 
 		while (rem_size > 0) {
 			if (rem_size >= MB(1) && (pa & 0xFFFFF) == 0 &&
@@ -814,6 +822,35 @@ int z_arm_mmu_init(void)
 			va += KB(4);
 			pa += KB(4);
 		}
+	}
+}
+
+/**
+ * @brief MMU boot-time initialization function
+ * Initializes the MMU at boot time. Sets up the page tables (primary core
+ * only) and applies the memory mappings for the different sections of the
+ * Zephyr binary image and for the regions defined at the SoC level, then
+ * enables the MMU on the calling core.
+ *
+ * @param is_primary_core Whether the calling core is the primary core; only
+ *                        the primary core builds the shared page tables.
+ * @retval Always 0, errors are handled by assertions.
+ */
+int z_arm_mmu_init(bool is_primary_core)
+{
+	uint32_t reg_val = 0;
+	uint32_t pt_attrs = arm_mmu_get_pt_attrs();
+
+	/*
+	 * Only the primary core builds the shared page tables. Secondary cores
+	 * must not re-run the table build over the live shared tables, as that
+	 * temporarily invalidates entries that the primary and already-online
+	 * cores are executing against, causing spurious aborts.
+	 * Secondary cores only program the MMU registers below and enable
+	 * translation.
+	 */
+	if (is_primary_core) {
+		arm_mmu_setup_ptables();
 	}
 
 	/* Clear TTBR1 */
