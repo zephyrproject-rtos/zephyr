@@ -112,6 +112,20 @@ LOG_MODULE_REGISTER(CS40L26, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L26_NUM_ROM_EFFECTS     39
 #define CS40L26_NUM_BUZ_EFFECTS     1
 #define CS40L26_FLASH_MEMORY_ERASED 0xFFFFFFFF
+#define CS40L26_LOGGER_SOURCE_STEP  12
+#define CS40L26_LOGGER_TYPE_STEP    4
+
+enum cs40l26_monitor {
+	CS40L26_MONITOR_BEMF,
+	CS40L26_MONITOR_VBST,
+	CS40L26_MONITOR_VOUT,
+};
+
+static const struct cs40l26_sensor cs40l26_sensors[] = {
+	[HAPTICS_MONITOR_BEMF] = {.is_signed = true, .n = 23, .m = 0, .full_scale = 24},
+	[HAPTICS_MONITOR_VBST] = {.is_signed = false, .n = 24, .m = 0, .full_scale = 14},
+	[HAPTICS_MONITOR_VOUT] = {.is_signed = true, .n = 23, .m = 0, .full_scale = 24},
+};
 
 static const struct cs40lxx_multi_write cs40l26_irq_clear[] = {
 	{.addr = CS40L26_REG_IRQ1_EINT_1,
@@ -129,19 +143,6 @@ static const struct cs40lxx_multi_write cs40l26_pseq[] = {
 	 CS40LXX_MULTI_WRITE_BE32(0x00000001U, 0x00011073U, 0x000FFFFFU, 0x000304FFU, 0x00FFFFFFU,
 				  0x000304FFU, 0x00FFFFFFU, 0x000304FFU, 0x00FFFFFFU, 0x000304FFU,
 				  0x00FFFFFFU)},
-};
-
-/* Source attenuation in decibels (dB) stored in signed Q21.2 format */
-static const uint8_t cs40l26_attenuation[] = {
-	0xFF, /* mute */
-	0xA0, 0x88, 0x7A, 0x70, 0x68, 0x62, 0x5C, 0x58, 0x54, 0x50, 0x4D, 0x4A, 0x47,
-	0x44, 0x42, 0x40, 0x3E, 0x3C, 0x3A, 0x38, 0x36, 0x35, 0x33, 0x32, 0x30, /* 25% */
-	0x2F, 0x2D, 0x2C, 0x2B, 0x2A, 0x29, 0x28, 0x27, 0x25, 0x24, 0x23, 0x23, 0x22,
-	0x21, 0x20, 0x1F, 0x1E, 0x1D, 0x1D, 0x1C, 0x1B, 0x1A, 0x1A, 0x19, 0x18, /* 50% */
-	0x17, 0x17, 0x16, 0x15, 0x15, 0x14, 0x14, 0x13, 0x12, 0x12, 0x11, 0x11, 0x10,
-	0x10, 0x0F, 0x0E, 0x0E, 0x0D, 0x0D, 0x0C, 0x0C, 0x0B, 0x0B, 0x0A, 0x0A, /* 75% */
-	0x0A, 0x09, 0x09, 0x08, 0x08, 0x07, 0x07, 0x06, 0x06, 0x06, 0x05, 0x05, 0x04,
-	0x04, 0x04, 0x03, 0x03, 0x03, 0x02, 0x02, 0x01, 0x01, 0x01, 0x00, 0x00 /* 100% */
 };
 
 static int cs40l26_poll(const struct device *const dev, const uint32_t addr, const uint32_t val,
@@ -172,14 +173,14 @@ static int cs40l26_poll(const struct device *const dev, const uint32_t addr, con
 }
 
 static inline bool cs40l26_valid_wavetable_source(const struct device *const dev,
-						  const enum cs40l26_bank bank,
-						  const uint16_t index)
+						  const enum haptics_source src,
+						  const union haptics_config *const cfg)
 {
-	switch (bank) {
-	case CS40L26_ROM_BANK:
-		return index < CS40L26_NUM_ROM_EFFECTS;
-	case CS40L26_BUZ_BANK:
-		return index < CS40L26_NUM_BUZ_EFFECTS;
+	switch ((int)src) {
+	case HAPTICS_SOURCE_ROM:
+		return cfg->idx < CS40L26_NUM_ROM_EFFECTS;
+	case CS40L26_SOURCE_BUZ:
+		return cfg->idx < CS40L26_NUM_BUZ_EFFECTS;
 	default:
 		return false;
 	}
@@ -948,7 +949,7 @@ static int cs40l26_teardown(const struct device *const dev)
 }
 #endif /* CONFIG_PM_DEVICE */
 
-int cs40l26_calibrate(const struct device *const dev)
+static int cs40l26_calibrate(const struct device *dev, const uint32_t routine)
 {
 	const struct cs40l26_config *const config = dev->config;
 	struct cs40l26_data *const data = dev->data;
@@ -1046,6 +1047,100 @@ error_pm:
 	return ret;
 }
 
+static int cs40l26_monitor_get(const struct device *dev, const enum haptics_monitor monitor,
+			       const enum haptics_monitor_type type, struct sensor_value *const val)
+{
+	__maybe_unused const struct cs40l26_config *const config = dev->config;
+	int offset = type * CS40L26_LOGGER_TYPE_STEP, ret;
+	struct cs40l26_data *const data = dev->data;
+	uint32_t reading;
+
+	if (type >= HAPTICS_MONITOR_TYPE_SINGLE) {
+		LOG_INST_DBG(config->log, "invalid haptics monitor type %d", type);
+		return -EINVAL;
+	}
+
+	switch (monitor) {
+	case HAPTICS_MONITOR_BEMF:
+		offset += (CS40L26_MONITOR_BEMF * CS40L26_LOGGER_SOURCE_STEP);
+		break;
+	case HAPTICS_MONITOR_VBST:
+		offset += (CS40L26_MONITOR_VBST * CS40L26_LOGGER_SOURCE_STEP);
+		break;
+	case HAPTICS_MONITOR_VOUT:
+		offset += (CS40L26_MONITOR_VOUT * CS40L26_LOGGER_SOURCE_STEP);
+		break;
+	default:
+		LOG_INST_DBG(config->log, "invalid haptics monitor %d", monitor);
+		return -EINVAL;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = k_mutex_lock(&data->lock, CS40L26_T_WAIT);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for lock (%d)", ret);
+		goto error_pm;
+	}
+
+	ret = cs40l26_firmware_read_offset(dev, CS40L26_REG_LOGGER_DATA, &reading, offset);
+
+	(void)k_mutex_unlock(&data->lock);
+
+error_pm:
+	(void)pm_device_runtime_put(dev);
+
+	if (ret >= 0) {
+		ret = sensor_value_from_fixed_point(val, reading, cs40l26_sensors[monitor].m,
+						    cs40l26_sensors[monitor].n,
+						    cs40l26_sensors[monitor].is_signed);
+		if (ret < 0) {
+			LOG_INST_DBG(config->log, "failed fixed-point conversion (%d)", ret);
+			return ret;
+		}
+
+		ret = sensor_value_scale(val, cs40l26_sensors[monitor].full_scale, val);
+	}
+
+	return ret;
+}
+
+static int cs40l26_monitor_set(const struct device *dev, const enum haptics_monitor monitor,
+			       const bool enable)
+{
+	__maybe_unused const struct cs40l26_config *const config = dev->config;
+	struct cs40l26_data *const data = dev->data;
+	int ret;
+
+	if (monitor != HAPTICS_MONITOR_ALL) {
+		LOG_INST_DBG(config->log, "invalid haptics monitor %d", monitor);
+		return -EINVAL;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = k_mutex_lock(&data->lock, CS40L26_T_WAIT);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for lock (%d)", ret);
+		goto error_pm;
+	}
+
+	ret = cs40l26_firmware_write(dev, CS40L26_REG_LOGGER_ENABLE, (uint32_t)enable);
+
+	(void)k_mutex_unlock(&data->lock);
+
+error_pm:
+	(void)pm_device_runtime_put(dev);
+
+	return ret;
+}
+
 static int cs40l26_register_error_callback(const struct device *dev, haptics_error_callback_t cb,
 					   void *const user_data)
 {
@@ -1057,25 +1152,25 @@ static int cs40l26_register_error_callback(const struct device *dev, haptics_err
 	return 0;
 }
 
-int cs40l26_select_output(const struct device *const dev, const enum cs40l26_bank bank,
-			  const uint16_t index)
+static int cs40l26_select_source(const struct device *dev, const enum haptics_source src,
+				 const union haptics_config *const cfg)
 {
 	__maybe_unused const struct cs40l26_config *const config = dev->config;
 	struct cs40l26_data *const data = dev->data;
-	uint32_t output;
+	uint32_t output = cfg->idx;
 	int ret;
 
-	if (!cs40l26_valid_wavetable_source(dev, bank, index)) {
+	if (!cs40l26_valid_wavetable_source(dev, src, cfg)) {
 		LOG_INST_ERR(config->log, "invalid wavetable selection (%d)", -EINVAL);
 		return -EINVAL;
 	}
 
-	switch (bank) {
-	case CS40L26_ROM_BANK:
-		output = index | CS40L26_ROM_BANK_CMD;
+	switch ((int)src) {
+	case HAPTICS_SOURCE_ROM:
+		output |= CS40L26_ROM_BANK_CMD;
 		break;
-	case CS40L26_BUZ_BANK:
-		output = CS40L26_BUZ_BANK_CMD;
+	case CS40L26_SOURCE_BUZ:
+		output |= CS40L26_BUZ_BANK_CMD;
 		break;
 	default:
 		return -EINVAL;
@@ -1094,15 +1189,15 @@ int cs40l26_select_output(const struct device *const dev, const enum cs40l26_ban
 	return ret;
 }
 
-int cs40l26_set_gain(const struct device *const dev, const uint8_t gain)
+static int cs40l26_set_level(const struct device *dev, const enum haptics_source src,
+			     const union haptics_config *const cfg, const uint32_t level)
 {
 	__maybe_unused const struct cs40l26_config *const config = dev->config;
 	struct cs40l26_data *const data = dev->data;
-	uint32_t attenuation;
 	int ret;
 
-	if (gain > CS40L26_MAX_GAIN) {
-		LOG_INST_ERR(config->log, "invalid gain, %u >= %u", gain, CS40L26_MAX_GAIN);
+	if (src != HAPTICS_SOURCE_ALL) {
+		LOG_INST_ERR(config->log, "invalid haptics source %d", src);
 		return -EINVAL;
 	}
 
@@ -1117,13 +1212,7 @@ int cs40l26_set_gain(const struct device *const dev, const uint8_t gain)
 		goto error_pm;
 	}
 
-	if (gain == 0) {
-		attenuation = CS40L26_MAX_ATTENUATION;
-	} else {
-		attenuation = (uint32_t)cs40l26_attenuation[gain];
-	}
-
-	ret = cs40l26_firmware_write(data->dev, CS40L26_REG_SOURCE_ATTENUATION, attenuation);
+	ret = cs40l26_firmware_write(dev, CS40L26_REG_SOURCE_ATTENUATION, level);
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -1177,17 +1266,15 @@ static int cs40l26_stop_output(const struct device *const dev)
 	return ret;
 }
 
-static int cs40l26_select_source(const struct device *dev, const enum haptics_source src,
-				 const union haptics_config *const cfg)
-{
-	return -ENOTSUP;
-}
-
 static DEVICE_API(haptics, cs40l26_driver_api) = {
+	.calibrate = &cs40l26_calibrate,
+	.monitor_get = &cs40l26_monitor_get,
+	.monitor_set = &cs40l26_monitor_set,
+	.register_error_callback = &cs40l26_register_error_callback,
 	.select_source = &cs40l26_select_source,
+	.set_level = &cs40l26_set_level,
 	.start_output = &cs40l26_start_output,
 	.stop_output = &cs40l26_stop_output,
-	.register_error_callback = &cs40l26_register_error_callback,
 };
 
 static int cs40l26_pm_resume(const struct device *const dev)
