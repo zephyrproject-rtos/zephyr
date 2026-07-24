@@ -1,0 +1,69 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/lpc/nxp_lpc546xx.dtsi>
+#include "lpcxpresso54628-pinctrl.dtsi"
+
+/ {
+	model = "NXP LPCXpresso54628 board";
+	compatible = "nxp,lpc546xx", "nxp,lpc";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &flexcomm0;
+		zephyr,shell-uart = &flexcomm0;
+	};
+
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+		usart-0 = &flexcomm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&gpio3 14 GPIO_ACTIVE_LOW>;
+			label = "User LED1";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio3 3 GPIO_ACTIVE_LOW>;
+			label = "User LED2";
+		};
+
+		led3: led_3 {
+			gpios = <&gpio2 2 GPIO_ACTIVE_LOW>;
+			label = "User LED3";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(220)>;
+};
+
+/*
+ * Default for this board is to use the full 160 KB of contiguous main SRAM
+ * (SRAM0-2) as a single region; an application can provide its own devicetree
+ * to allocate the SRAM banks differently.
+ */
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(160)>;
+};
+
+&flexcomm0 {
+	status = "okay";
+	compatible = "nxp,lpc-usart";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm0_usart>;
+	pinctrl-names = "default";
+};
