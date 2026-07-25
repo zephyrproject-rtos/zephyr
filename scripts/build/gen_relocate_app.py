@@ -293,14 +293,13 @@ def assign_to_correct_mem_region(
     """
     use_section_kinds, memory_region = section_kinds_from_memory_region(memory_region)
 
-    # Split |COPY/|NOKEEP flags before the numeric align suffix, else a region
-    # like "SRAM_4|COPY" makes int("4|COPY") throw.
-    memory_region, sep, flags = memory_region.partition('|')
-    flags = sep + flags
-    memory_region, _, align_size = memory_region.partition('_')
+    memory_region, *flags = memory_region.split('|')
+    memory_region, align_size = split_alignment_suffix(memory_region)
     if align_size:
         mpu_align[memory_region] = int(align_size)
-    memory_region = memory_region + flags
+
+    if flags:
+        memory_region = '|'.join((memory_region, *flags))
 
     keep_sections = '|NOKEEP' not in memory_region
     memory_region = memory_region.replace('|NOKEEP', '')
@@ -313,6 +312,24 @@ def assign_to_correct_mem_region(
         ]
 
     return {MemoryRegion(memory_region): output_sections}
+
+
+def split_alignment_suffix(memory_region: str) -> 'tuple[str, str]':
+    """
+    Split a final numeric alignment suffix from a memory region name.
+
+    >>> split_alignment_suffix('SRAM_FAST')
+    ('SRAM_FAST', '')
+    >>> split_alignment_suffix('SRAM_FAST_32')
+    ('SRAM_FAST', '32')
+    >>> split_alignment_suffix('SRAM_FAST_TEXT')
+    ('SRAM_FAST_TEXT', '')
+    """
+    memory_region_base, sep, align_size = memory_region.rpartition('_')
+    if sep and align_size.isdecimal():
+        return memory_region_base, align_size
+
+    return memory_region, ''
 
 
 def section_kinds_from_memory_region(memory_region: str) -> 'tuple[set[SectionKind], str]':
