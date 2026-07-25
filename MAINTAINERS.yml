@@ -7492,6 +7492,7 @@ Xen Platform:
   collaborators:
     - lorc
     - luca-fancellu
+    - soburi
   files:
     - include/zephyr/xen/
     - drivers/xen/
