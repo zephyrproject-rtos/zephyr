@@ -631,3 +631,85 @@ class TestDeferredFileGroups:
         sut.process_pr(gh, args, mf, 99)
 
         assert "net_m" in _assignees_set(pr)
+
+
+# ---------------------------------------------------------------------------
+# _build_reviewer_candidates
+# ---------------------------------------------------------------------------
+
+
+class TestBuildReviewerCandidates:
+    """Reviewer candidates must list every area's maintainers before any
+    collaborator, so that truncation to the reviewer cap never drops a
+    maintainer in favour of a higher-weight area's collaborator."""
+
+    @staticmethod
+    def _mf(*areas):
+        mf = SimpleNamespace(areas={area.name: area for area in areas})
+        return mf
+
+    def test_all_maintainers_precede_all_collaborators(self):
+        net = _make_area("Networking", maintainers=["net_m"], collaborators=["net_c"])
+        usb = _make_area("USB", maintainers=["usb_m"], collaborators=["usb_c"])
+        mf = self._mf(net, usb)
+
+        result = sut._build_reviewer_candidates(mf, {net: 5, usb: 2}, set(), set(), set())
+
+        assert result == ["net_m", "usb_m", "net_c", "usb_c"]
+
+    def test_maintainer_order_follows_area_weight(self):
+        net = _make_area("Networking", maintainers=["net_m"])
+        usb = _make_area("USB", maintainers=["usb_m"])
+        mf = self._mf(net, usb)
+
+        # area_counter is pre-sorted by descending weight by the caller.
+        result = sut._build_reviewer_candidates(mf, {usb: 9, net: 1}, set(), set(), set())
+
+        assert result == ["usb_m", "net_m"]
+
+    def test_extra_and_deferred_reviewers_join_maintainer_tier(self):
+        net = _make_area("Networking", maintainers=["net_m"], collaborators=["net_c"])
+        mf = self._mf(net)
+
+        result = sut._build_reviewer_candidates(
+            mf, {net: 1}, {"path_c"}, {"extra_m"}, {"deferred_m"}
+        )
+
+        assert result == ["net_m", "extra_m", "deferred_m", "net_c", "path_c"]
+
+    def test_duplicates_are_removed_keeping_first_occurrence(self):
+        net = _make_area("Networking", maintainers=["alice"], collaborators=["bob"])
+        usb = _make_area("USB", maintainers=["bob"], collaborators=["alice"])
+        mf = self._mf(net, usb)
+
+        result = sut._build_reviewer_candidates(mf, {net: 3, usb: 1}, set(), set(), set())
+
+        # 'bob' is a maintainer of USB, so he keeps his maintainer-tier slot
+        # rather than the collaborator slot he also holds in Networking.
+        assert result == ["alice", "bob"]
+
+    def test_no_areas_returns_only_extra_reviewers(self):
+        mf = self._mf()
+
+        result = sut._build_reviewer_candidates(mf, {}, set(), {"extra_m"}, set())
+
+        assert result == ["extra_m"]
+
+    def test_broad_pr_keeps_every_maintainer_within_the_cap(self):
+        """A PR touching more areas than the reviewer cap allows must still
+        request every area's maintainer before any collaborator."""
+        areas_per_file = {}
+        for i in range(8):
+            area = _make_area(
+                f"Area{i}",
+                maintainers=[f"m{i}"],
+                collaborators=[f"c{i}a", f"c{i}b", f"c{i}c", f"c{i}d"],
+            )
+            areas_per_file[f"subsys/area{i}/foo.c"] = [area]
+
+        gh, args, mf, pr = _make_process_pr_harness(areas_per_file)
+        sut.process_pr(gh, args, mf, 99)
+
+        requested = _reviewers_requested(pr)
+        assert len(requested) == sut.MAX_REVIEWERS
+        assert requested[:8] == [f"m{i}" for i in range(8)]
