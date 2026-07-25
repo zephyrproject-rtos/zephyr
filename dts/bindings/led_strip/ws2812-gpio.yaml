@@ -1,7 +1,7 @@
 # Copyright (c) 2024, TOKITA Hiroshi
 # SPDX-License-Identifier: Apache-2.0
 
-include: ws2812.yaml
+include: [ws2812.yaml, gpio-fast.yaml]
 
 description: |
   Common definition GPIO based WS2812 node

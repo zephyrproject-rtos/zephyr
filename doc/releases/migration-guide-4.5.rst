@@ -391,6 +391,14 @@ GPIO
 
 * On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
 
+* The WS2812 GPIO driver (``worldsemi,ws2812-gpio``) now uses the Fast GPIO API. The
+  Kconfig options ``CONFIG_DELAY_T0H``, ``CONFIG_DELAY_T0L``, ``CONFIG_DELAY_T1H``, and
+  ``CONFIG_DELAY_T1L`` have been removed. Boards that previously set these in Kconfig
+  defconfig or ``.conf`` files must migrate the values to devicetree properties
+  ``delay-t0h``, ``delay-t0l``, ``delay-t1h``, and ``delay-t1l`` on the ``ws2812`` node.
+  For most boards, the auto-computed defaults from ``clock-frequency`` are sufficient and
+  no devicetree properties are needed. (:github:`111218`)
+
 Haptics
 =======
 

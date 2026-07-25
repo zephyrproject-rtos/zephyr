@@ -37,6 +37,7 @@ Peripherals
    fuel_gauge.rst
    gnss.rst
    gpio.rst
+   gpio_fast.rst
    haptics.rst
    hwinfo.rst
    hwspinlock.rst

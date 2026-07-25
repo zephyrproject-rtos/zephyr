@@ -33,6 +33,9 @@
 #include <zephyr/sys/util.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#ifdef CONFIG_GPIO_FAST
+#include <zephyr/drivers/gpio/gpio_fast.h>
+#endif /* CONFIG_GPIO_FAST */
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
@@ -632,6 +635,60 @@ static int gpio_esp32_init(const struct device *dev)
 
 	return pm_device_driver_init(dev, gpio_esp32_pm_action);
 }
+
+#ifdef CONFIG_GPIO_FAST
+int gpio_fast_configure_espressif_esp32_gpio(struct gpio_fast_spec_espressif_esp32_gpio *fast,
+			const struct device *port, gpio_port_pins_t pin_mask, gpio_flags_t flags)
+{
+	const struct gpio_esp32_config *cfg = port->config;
+	gpio_dev_t *dev = cfg->gpio_dev;
+	int ret;
+
+	/* Configure each pin through the standard GPIO API */
+	for (gpio_pin_t pin = 0; pin < 32; pin++) {
+		if (pin_mask & BIT(pin)) {
+			ret = gpio_pin_configure(port, pin, flags);
+			if (ret != 0) {
+				return ret;
+			}
+		}
+	}
+
+	if (cfg->gpio_port == 0) {
+		fast->set_reg = (mem_addr_t)&dev->out_w1ts;
+		fast->clr_reg = (mem_addr_t)&dev->out_w1tc;
+		fast->out_reg = (mem_addr_t)&dev->out;
+		fast->in_reg  = (mem_addr_t)&dev->in;
+		fast->dir_set = (mem_addr_t)&dev->enable_w1ts;
+		fast->dir_clr = (mem_addr_t)&dev->enable_w1tc;
+	} else {
+		/* Use parent struct address — .data is a bit-field */
+		fast->set_reg = (mem_addr_t)&dev->out1_w1ts;
+		fast->clr_reg = (mem_addr_t)&dev->out1_w1tc;
+		fast->out_reg = (mem_addr_t)&dev->out1;
+		fast->in_reg  = (mem_addr_t)&dev->in1;
+		fast->dir_set = (mem_addr_t)&dev->enable1_w1ts;
+		fast->dir_clr = (mem_addr_t)&dev->enable1_w1tc;
+	}
+
+	fast->pin_mask = pin_mask;
+
+
+	return 0;
+}
+
+int gpio_fast_pre_stream_espressif_esp32_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+
+int gpio_fast_post_stream_espressif_esp32_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+#endif /* CONFIG_GPIO_FAST */
 
 static DEVICE_API(gpio, gpio_esp32_driver_api) = {
 	.pin_configure = gpio_esp32_config,

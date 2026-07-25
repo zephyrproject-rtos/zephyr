@@ -20,6 +20,9 @@
 #include <zephyr/dt-bindings/gpio/nxp-imx-igpio.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#ifdef CONFIG_GPIO_FAST
+#include <zephyr/drivers/gpio/gpio_fast.h>
+#endif /* CONFIG_GPIO_FAST */
 
 #define DEV_CFG(_dev) ((const struct mcux_igpio_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct mcux_igpio_data *)(_dev)->data)
@@ -357,6 +360,45 @@ static void mcux_igpio_port_isr(const struct device *dev)
 
 	gpio_fire_callbacks(&data->callbacks, dev, int_flags);
 }
+
+#ifdef CONFIG_GPIO_FAST
+int gpio_fast_configure_nxp_imx_gpio(struct gpio_fast_spec_nxp_imx_gpio *fast,
+			const struct device *port, gpio_port_pins_t pin_mask, gpio_flags_t flags)
+{
+	GPIO_Type *base = get_base(port);
+	int ret;
+
+	for (gpio_pin_t pin = 0; pin < 32; pin++) {
+		if (pin_mask & BIT(pin)) {
+			ret = gpio_pin_configure(port, pin, flags);
+			if (ret != 0) {
+				return ret;
+			}
+		}
+	}
+
+	fast->set_reg = (mem_addr_t)&base->DR_SET;
+	fast->clr_reg = (mem_addr_t)&base->DR_CLEAR;
+	fast->tgl_reg = (mem_addr_t)&base->DR_TOGGLE;
+	fast->in_reg  = (mem_addr_t)&base->PSR;
+	fast->dir_reg = (mem_addr_t)&base->GDIR;
+	fast->pin_mask = pin_mask;
+
+	return 0;
+}
+
+int gpio_fast_pre_stream_nxp_imx_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+
+int gpio_fast_post_stream_nxp_imx_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+#endif /* CONFIG_GPIO_FAST */
 
 static DEVICE_API(gpio, mcux_igpio_driver_api) = {
 	.pin_configure = mcux_igpio_configure,

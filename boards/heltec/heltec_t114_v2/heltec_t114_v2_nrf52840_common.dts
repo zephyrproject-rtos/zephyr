@@ -92,6 +92,11 @@
 		color-mapping = <LED_COLOR_ID_GREEN
 				 LED_COLOR_ID_RED
 				 LED_COLOR_ID_BLUE>;
+		/* NOP delay counts calibrated for nRF52840 at 64 MHz */
+		delay-t0h = <19>;
+		delay-t1h = <38>;
+		delay-t0l = <58>;
+		delay-t1l = <38>;
 		status = "okay";
 	};
 

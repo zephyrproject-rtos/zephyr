@@ -139,10 +139,40 @@ zephyr_library_sources_ifdef(CONFIG_LPGPIO_ESP32 gpio_esp32_lp.c)
 # zephyr-keep-sorted-stop
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_GPIO_FAST gpio_fast.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_HOGS gpio_hogs.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_SHELL gpio_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE gpio_handlers.c)
 # zephyr-keep-sorted-stop
+
+# Fast GPIO vendor backend selection.
+# Each vendor directory contains a uniquely-named backend header
+# (e.g. zephyr_gpio_fast_nordic_nrf_gpio.h). The build system adds
+# all active vendor directories to the include path. gpio_fast.h
+# includes each active backend and provides dispatch macros.
+# Out-of-tree modules provide their own zephyr_gpio_fast_impl_oot.h
+# on the include path and enable CONFIG_GPIO_FAST_OUT_OF_TREE_BACKEND.
+if(CONFIG_GPIO_FAST)
+  if(CONFIG_GPIO_ESP32)
+    zephyr_include_directories(fast/espressif)
+  endif()
+  if(CONFIG_GPIO_MCUX_IGPIO)
+    zephyr_include_directories(fast/nxp)
+  endif()
+  if(CONFIG_GPIO_NRFX)
+    zephyr_include_directories(fast/nordic)
+  endif()
+  if(CONFIG_GPIO_RPI_PICO)
+    zephyr_include_directories(fast/raspberrypi)
+  endif()
+  if(CONFIG_GPIO_SAM0)
+    zephyr_include_directories(fast/atmel)
+  endif()
+  if(CONFIG_GPIO_STM32)
+    zephyr_include_directories(fast/st)
+  endif()
+  zephyr_include_directories(fast/generic)
+endif()
 
 if(CONFIG_GPIO_EMUL_SDL)
   zephyr_library_sources(gpio_emul_sdl.c)

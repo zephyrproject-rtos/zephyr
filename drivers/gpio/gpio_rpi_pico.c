@@ -15,6 +15,9 @@
 #include <hardware/structs/iobank0.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#ifdef CONFIG_GPIO_FAST
+#include <zephyr/drivers/gpio/gpio_fast.h>
+#endif /* CONFIG_GPIO_FAST */
 
 #define DT_DRV_COMPAT raspberrypi_pico_gpio_port
 
@@ -365,6 +368,61 @@ static int gpio_rpi_port_get_direction(const struct device *port, gpio_port_pins
 	return 0;
 }
 #endif
+
+#ifdef CONFIG_GPIO_FAST
+int gpio_fast_configure_raspberrypi_pico_gpio(struct gpio_fast_spec_raspberrypi_pico_gpio *fast,
+			const struct device *port, gpio_port_pins_t pin_mask, gpio_flags_t flags)
+{
+	int port_no = PORT_NO(port);
+	int ret;
+
+	/* Configure each pin through the standard GPIO API */
+	for (gpio_pin_t pin = 0; pin < 32; pin++) {
+		if (pin_mask & BIT(pin)) {
+			ret = gpio_pin_configure(port, pin, flags);
+			if (ret != 0) {
+				return ret;
+			}
+		}
+	}
+
+	if (port_no == 0) {
+		fast->set_reg = (mem_addr_t)&sio_hw->gpio_set;
+		fast->clr_reg = (mem_addr_t)&sio_hw->gpio_clr;
+		fast->tgl_reg = (mem_addr_t)&sio_hw->gpio_togl;
+		fast->in_reg  = (mem_addr_t)&sio_hw->gpio_in;
+		fast->oe_set  = (mem_addr_t)&sio_hw->gpio_oe_set;
+		fast->oe_clr  = (mem_addr_t)&sio_hw->gpio_oe_clr;
+	} else {
+#if GPIO_RPI_HI_AVAILABLE
+		fast->set_reg = (mem_addr_t)&sio_hw->gpio_hi_set;
+		fast->clr_reg = (mem_addr_t)&sio_hw->gpio_hi_clr;
+		fast->tgl_reg = (mem_addr_t)&sio_hw->gpio_hi_togl;
+		fast->in_reg  = (mem_addr_t)&sio_hw->gpio_hi_in;
+		fast->oe_set  = (mem_addr_t)&sio_hw->gpio_hi_oe_set;
+		fast->oe_clr  = (mem_addr_t)&sio_hw->gpio_hi_oe_clr;
+#else
+		return -ENOTSUP;
+#endif
+	}
+
+	fast->pin_mask = pin_mask;
+
+	return 0;
+}
+
+int gpio_fast_pre_stream_raspberrypi_pico_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+
+int gpio_fast_post_stream_raspberrypi_pico_gpio(const void *spec)
+{
+	ARG_UNUSED(spec);
+	return 0;
+}
+#endif /* CONFIG_GPIO_FAST */
 
 static DEVICE_API(gpio, gpio_rpi_driver_api) = {
 	.pin_configure = gpio_rpi_configure,

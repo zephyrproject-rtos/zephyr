@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Gerson Fernando Budke
+# SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_FAST
+	bool "Fast GPIO API for timing-critical operations"
+	depends on GPIO
+	help
+	  Enable the fast GPIO API extension. This provides sub-microsecond
+	  GPIO operations via vendor-specific ALWAYS_INLINE functions that
+	  bypass the standard GPIO driver indirection.
+
+	  Required for bit-bang protocols with tight timing constraints
+	  such as WS2812 LED strips. Vendor-specific implementations are
+	  automatically selected based on the GPIO driver in use.
+
+if GPIO_FAST
+
+config GPIO_FAST_OUT_OF_TREE_BACKEND
+	bool "Include out-of-tree fast GPIO backend"
+	help
+	  Enable inclusion of an out-of-tree fast GPIO backend header.
+	  The OOT module must provide zephyr_gpio_fast_impl_oot.h on
+	  the include path (via zephyr_include_directories in its
+	  CMakeLists.txt). The dispatch macros resolve to the OOT
+	  backend automatically via token-paste on the DT compatible.
+
+endif # GPIO_FAST
