@@ -313,6 +313,22 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		goto out;
 	}
 
+	/* If port 0 was requested, bind() selected an ephemeral local port.
+	 * Store the actual socket name so later dispatcher registrations do
+	 * not treat distinct resolver sockets as duplicate port-0 sockets.
+	 */
+	if (net_sin(&ctx->local_addr)->sin_port == 0) {
+		net_socklen_t socklen = addrlen;
+
+		ret = zsock_getsockname(ctx->sock, &ctx->local_addr, &socklen);
+		if (ret < 0) {
+			ret = -errno;
+			NET_DBG("Cannot get DNS socket %d name (%d)", ctx->sock,
+				ret);
+			goto out;
+		}
+	}
+
 	ctx->pair = NULL;
 
 	for (int i = 0; i < ctx->fds_len; i++) {
