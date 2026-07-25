@@ -8,7 +8,7 @@
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 
-	adt7420@48 {
+	adt7420: adt7420@48 {
 		compatible = "adi,adt7420";
 		reg = <0x48>;
 		op-mode = "1sps";
@@ -16,5 +16,11 @@
 		int-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
 		ct-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
 		set-comparator-mode;
+	};
+};
+
+/ {
+	aliases {
+		temp-sensor = &adt7420;
 	};
 };
