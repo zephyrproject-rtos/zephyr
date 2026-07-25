@@ -11,14 +11,14 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_XIP
+#if defined(CONFIG_XIP) || defined(CONFIG_ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT)
 void arch_data_copy(void);
 #else
 static inline void arch_data_copy(void)
 {
 	/* Do nothing */
 }
-#endif /* CONFIG_XIP */
+#endif /* CONFIG_XIP || CONFIG_ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT */
 #ifdef __cplusplus
 }
 #endif
