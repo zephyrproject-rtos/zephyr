@@ -18,8 +18,55 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/linker/linker-tool.h>
 
+/* MCUboot RAM-load images must be linked at the address encoded by imgtool. */
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
+#if DT_HAS_CHOSEN(mcuboot_image_ram)
+#define RAM_LOAD_IMAGE_NODE DT_CHOSEN(mcuboot_image_ram)
+#else
+#define RAM_LOAD_IMAGE_NODE DT_CHOSEN(zephyr_sram)
+#endif
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD)
+#if DT_HAS_CHOSEN(mcuboot_ram_load_dev)
+#define RAM_LOAD_IMAGE_NODE DT_CHOSEN(mcuboot_ram_load_dev)
+#else
+#define RAM_LOAD_IMAGE_NODE DT_CHOSEN(zephyr_sram)
+#endif
+#endif
+
+#if defined(RAM_LOAD_IMAGE_NODE)
+#if !DT_NODE_HAS_STATUS(RAM_LOAD_IMAGE_NODE, okay)
+#error "MCUboot RAM-load memory region must be enabled"
+#elif !DT_NODE_HAS_PROP(RAM_LOAD_IMAGE_NODE, reg)
+#error "MCUboot RAM-load memory region must define reg"
+#endif
+
+#if DT_REG_ADDR(RAM_LOAD_IMAGE_NODE) == DT_CHOSEN_SRAM_ADDR
+#if DT_REG_SIZE(RAM_LOAD_IMAGE_NODE) < DT_CHOSEN_SRAM_SIZE
+#define RAM_LOAD_RUNTIME_SIZE DT_REG_SIZE(RAM_LOAD_IMAGE_NODE)
+#else
+#define RAM_LOAD_RUNTIME_SIZE DT_CHOSEN_SRAM_SIZE
+#endif
+#define RAM_LOAD_USES_RUNTIME_RAM
+#elif (DT_REG_ADDR(RAM_LOAD_IMAGE_NODE) < DT_CHOSEN_SRAM_ADDR) && \
+	((DT_REG_ADDR(RAM_LOAD_IMAGE_NODE) + DT_REG_SIZE(RAM_LOAD_IMAGE_NODE)) > \
+	 DT_CHOSEN_SRAM_ADDR)
+#define RAM_LOAD_ROM_NODE RAM_LOAD_IMAGE_NODE
+#define RAM_LOAD_ROM_SIZE (DT_CHOSEN_SRAM_ADDR - DT_REG_ADDR(RAM_LOAD_IMAGE_NODE))
+#elif (DT_REG_ADDR(RAM_LOAD_IMAGE_NODE) < (DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE)) && \
+	(DT_CHOSEN_SRAM_ADDR < (DT_REG_ADDR(RAM_LOAD_IMAGE_NODE) + \
+				    DT_REG_SIZE(RAM_LOAD_IMAGE_NODE)))
+#error "MCUboot RAM-load and runtime RAM regions must not overlap"
+#else
+#define RAM_LOAD_ROM_NODE RAM_LOAD_IMAGE_NODE
+#define RAM_LOAD_ROM_SIZE DT_REG_SIZE(RAM_LOAD_IMAGE_NODE)
+#endif
+#endif
+
 /* physical address of RAM */
-#ifdef CONFIG_XIP
+#if defined(RAM_LOAD_USES_RUNTIME_RAM)
+#define ROMABLE_REGION RAM
+#elif defined(CONFIG_XIP) || defined(RAM_LOAD_ROM_NODE)
 #define ROMABLE_REGION FLASH
 #else
 #define ROMABLE_REGION RAM
@@ -41,20 +88,30 @@
 #endif
 
 #if defined(CONFIG_FLASH_USES_MAPPED_PARTITION)
-#if defined(CONFIG_XIP)
+#if defined(RAM_LOAD_ROM_NODE)
+#define ROM_ADDR DT_REG_ADDR(RAM_LOAD_ROM_NODE)
+#elif defined(CONFIG_XIP)
 #define ROM_ADDR (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
 #else
 #define ROM_ADDR RAM_ADDR
 #endif
-#define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - ROM_END_OFFSET)
+#if defined(RAM_LOAD_ROM_NODE)
+#define ROM_SIZE (RAM_LOAD_ROM_SIZE - ROM_END_OFFSET)
 #else
-#if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
+#define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - ROM_END_OFFSET)
+#endif
+#else
+#if defined(RAM_LOAD_ROM_NODE)
+#define ROM_ADDR DT_REG_ADDR(RAM_LOAD_ROM_NODE)
+#elif !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
 #define ROM_ADDR RAM_ADDR
 #else
 #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
-#endif /* !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0) */
+#endif /* defined(RAM_LOAD_ROM_NODE) */
 
-#if CONFIG_FLASH_LOAD_SIZE > 0
+#if defined(RAM_LOAD_ROM_NODE)
+#define ROM_SIZE (RAM_LOAD_ROM_SIZE - ROM_END_OFFSET)
+#elif CONFIG_FLASH_LOAD_SIZE > 0
 #define ROM_SIZE (CONFIG_FLASH_LOAD_SIZE - ROM_END_OFFSET)
 #else
 #define ROM_SIZE (CONFIG_FLASH_SIZE * 1024 - CONFIG_FLASH_LOAD_OFFSET - ROM_END_OFFSET)
@@ -62,7 +119,11 @@
 #endif /* defined(CONFIG_FLASH_USES_MAPPED_PARTITION) */
 
 #define RAM_ADDR DT_CHOSEN_SRAM_ADDR
+#if defined(RAM_LOAD_RUNTIME_SIZE)
+#define RAM_SIZE RAM_LOAD_RUNTIME_SIZE
+#else
 #define RAM_SIZE DT_CHOSEN_SRAM_SIZE
+#endif
 
 #if defined(CONFIG_CUSTOM_SECTION_ALIGN)
 _region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;

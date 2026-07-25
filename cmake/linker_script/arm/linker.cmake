@@ -72,6 +72,58 @@ else()
   dt_reg_size(RAM_SIZE PATH "${chosen_sram_path}")
 endif()
 
+if(CONFIG_CPU_CORTEX_M AND
+   (CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD OR CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT))
+  dt_has_chosen(has_ram_load_rom_region PROPERTY "mcuboot,image-ram")
+  if(has_ram_load_rom_region)
+    dt_chosen(ram_load_rom_region_path PROPERTY "mcuboot,image-ram")
+  else()
+    set(ram_load_uses_runtime_ram TRUE)
+  endif()
+elseif(CONFIG_CPU_CORTEX_M AND CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD)
+  dt_has_chosen(has_ram_load_rom_region PROPERTY "mcuboot,ram-load-dev")
+  if(has_ram_load_rom_region)
+    dt_chosen(ram_load_rom_region_path PROPERTY "mcuboot,ram-load-dev")
+  else()
+    set(ram_load_uses_runtime_ram TRUE)
+  endif()
+endif()
+
+dt_comp_path(memory_region_paths COMPATIBLE "zephyr,memory-region")
+
+if(DEFINED ram_load_rom_region_path)
+  dt_node_has_status(ram_load_rom_region_okay PATH ${ram_load_rom_region_path} STATUS okay)
+  if(NOT ram_load_rom_region_okay)
+    message(FATAL_ERROR "MCUboot RAM-load memory region must be enabled")
+  endif()
+
+  dt_reg_addr(ram_load_rom_region_addr PATH ${ram_load_rom_region_path})
+  dt_reg_size(ram_load_rom_region_size PATH ${ram_load_rom_region_path})
+
+  if(ram_load_rom_region_addr EQUAL RAM_ADDR)
+    if(ram_load_rom_region_size LESS RAM_SIZE)
+      set(RAM_SIZE ${ram_load_rom_region_size})
+    endif()
+    set(ram_load_uses_runtime_ram TRUE)
+  else()
+    math(EXPR ram_load_rom_region_end
+      "(${ram_load_rom_region_addr} + 0) + (${ram_load_rom_region_size} + 0)"
+    )
+    math(EXPR runtime_ram_end "(${RAM_ADDR} + 0) + (${RAM_SIZE} + 0)")
+    if(ram_load_rom_region_addr LESS RAM_ADDR AND ram_load_rom_region_end GREATER RAM_ADDR)
+      math(EXPR ram_load_rom_region_size "(${RAM_ADDR} + 0) - (${ram_load_rom_region_addr} + 0)")
+    elseif(ram_load_rom_region_addr LESS runtime_ram_end AND RAM_ADDR LESS ram_load_rom_region_end)
+      message(FATAL_ERROR "MCUboot RAM-load and runtime RAM regions must not overlap")
+    endif()
+
+    set(FLASH_ADDR ${ram_load_rom_region_addr})
+    math(EXPR FLASH_SIZE
+      "(${ram_load_rom_region_size} + 0) - (${CONFIG_ROM_END_OFFSET} + 0)"
+      OUTPUT_FORMAT HEXADECIMAL
+    )
+  endif()
+endif()
+
 # ToDo: decide on the optimal location for this.
 # linker/ld/target.cmake based on arch, or directly in arch and scatter_script.cmake can ignore
 zephyr_linker(FORMAT "elf32-littlearm")
@@ -89,12 +141,21 @@ if(CONFIG_ROMSTART_RELOCATION_ROM)
   zephyr_linker_memory(NAME ROMSTART FLAGS rx START ${CONFIG_ROMSTART_REGION_ADDRESS} SIZE ${_romstart_size_bytes})
 endif()
 
-dt_comp_path(paths COMPATIBLE "zephyr,memory-region")
-foreach(path IN LISTS paths)
+foreach(path IN LISTS memory_region_paths)
   zephyr_linker_dts_memory(PATH ${path})
 endforeach()
 
-if(CONFIG_XIP)
+if(ram_load_uses_runtime_ram)
+  zephyr_linker_group(NAME ROM_REGION LMA RAM)
+  set(rom_start ${RAM_ADDR})
+  if(CONFIG_XIP)
+    set(XIP_ALIGN_WITH_INPUT ALIGN_WITH_INPUT)
+  endif()
+elseif(DEFINED ram_load_rom_region_path)
+  zephyr_linker_group(NAME ROM_REGION VMA FLASH LMA FLASH)
+  set(rom_start ${FLASH_ADDR})
+  set(XIP_ALIGN_WITH_INPUT ALIGN_WITH_INPUT)
+elseif(CONFIG_XIP)
   zephyr_linker_group(NAME ROM_REGION LMA FLASH)
   set(rom_start ${FLASH_ADDR})
   set(XIP_ALIGN_WITH_INPUT ALIGN_WITH_INPUT)
