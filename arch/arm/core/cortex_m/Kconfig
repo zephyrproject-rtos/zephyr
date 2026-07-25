@@ -106,6 +106,17 @@ config CPU_CORTEX_M7
 
 if CPU_CORTEX_M
 
+DT_CHOSEN_MCUBOOT_IMAGE_RAM := mcuboot,image-ram
+DT_CHOSEN_MCUBOOT_RAM_LOAD_DEV := mcuboot,ram-load-dev
+
+config ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT
+	default y if !XIP && \
+		(MCUBOOT_BOOTLOADER_MODE_RAM_LOAD || \
+		MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) && \
+		$(dt_chosen_enabled,$(DT_CHOSEN_MCUBOOT_IMAGE_RAM))
+	default y if !XIP && MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD && \
+		$(dt_chosen_enabled,$(DT_CHOSEN_MCUBOOT_RAM_LOAD_DEV))
+
 config CPU_CORTEX_M_HAS_SYSTICK
 	bool
 	help
