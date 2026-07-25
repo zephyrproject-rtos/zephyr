@@ -275,7 +275,6 @@ config BT_AIROC
 	bool "AIROC BT connectivity"
 	default y
 	select GPIO                          if BT_H4
-	select UART                          if BT_H4
 	select UART_USE_RUNTIME_CONFIGURE    if BT_H4
 	select BT_HCI_SETUP
 	select BT_HCI_SET_PUBLIC_ADDR
