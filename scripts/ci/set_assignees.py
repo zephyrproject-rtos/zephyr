@@ -86,22 +86,28 @@ the maintainers of every other touched area:
      b. Any path-specific collaborators returned by
         get_collaborators_for_path() for each matched file.
   3. Deduplicate while preserving insertion order.
-  4. Heuristic tier (only for under-covered areas): an area that names no
-     maintainers, or at most THIN_AREA_COLLABORATORS (2) collaborators, cannot
-     supply enough reviewers on its own.  For such areas two heuristics are
-     tried in order, and the result is appended after the tiers above (the
-     author and anyone already listed are excluded).  These are
-     lower-confidence picks, so they fill only leftover review slots.
+  4. Heuristic tier, used for changed files MAINTAINERS.yml cannot staff:
+
+       - files in an under-covered area, i.e. one that names no maintainers or
+         at most THIN_AREA_COLLABORATORS (2) collaborators, and so cannot
+         supply enough reviewers on its own, and
+       - orphaned files, which match no area at all.  A PR consisting only of
+         these would otherwise get no reviewer whatsoever, since every tier
+         above is derived from matched areas.
+
+     Two heuristics are tried in order, and the result is appended after the
+     tiers above (the author and anyone already listed are excluded).  These
+     are lower-confidence picks, so they fill only leftover review slots.
 
      a. GitHub's own ``suggestedReviewers`` for the PR, which GitHub derives
         from commit history *and* past review comments.  This is the better
         signal and costs one query, but it is only available over GraphQL and
         is empty for most PRs, so it cannot be relied on alone.
-     b. When GitHub suggests nobody, the recent contributors to the changed
-        files the under-covered areas own, read from the commit history.
-        Unlike (a) this is scoped to the files that are actually short of
-        reviewers, rather than to the PR as a whole.  Bounded by
-        HISTORY_COMMITS_PER_FILE, MAX_HISTORY_FILES, and MAX_HISTORY_REVIEWERS.
+     b. When GitHub suggests nobody, the recent contributors to the unstaffed
+        files, read from the commit history.  Unlike (a) this is scoped to the
+        files that are actually short of reviewers, rather than to the PR as a
+        whole.  Bounded by HISTORY_COMMITS_PER_FILE, MAX_HISTORY_FILES, and
+        MAX_HISTORY_REVIEWERS.
 
 Candidates are then filtered:
   - The PR author is skipped.
@@ -691,7 +697,6 @@ def _build_reviewer_candidates(
     additional_reviews: set,
     deferred_reviewers: set,
 ) -> list:
-
     """Build the ordered reviewer candidate list for a PR.
 
     Maintainers of every touched area come first (in descending area-weight
@@ -940,6 +945,9 @@ def process_pr(gh, args, maintainer_file, number: int):
     # Files that mapped to each area, used to sample Git history for areas that
     # MAINTAINERS.yml under-covers (see _thin_areas / _history_reviewers).
     area_files = defaultdict(set)
+    # Changed files that mapped to no area at all.  MAINTAINERS.yml offers no
+    # reviewer for these, so they feed the same heuristics as thin areas.
+    orphan_files = set()
 
     changed_files = list(pr.get_files())
     num_files = len(changed_files)
@@ -1006,6 +1014,10 @@ def process_pr(gh, args, maintainer_file, number: int):
         logger.debug("  areas for %s: %s", filename, [a.name for a in areas])
 
         if not areas:
+            # Orphaned: no area claims this file, so MAINTAINERS.yml yields no
+            # reviewer for it.  Remember it for the heuristic pass below.
+            logger.debug("  '%s' matches no area", filename)
+            orphan_files.add(filename)
             continue
 
         # Handle deferred file-groups: when a file is matched by both a
@@ -1070,35 +1082,47 @@ def process_pr(gh, args, maintainer_file, number: int):
         maintainer_file, area_counter, collab_per_path, additional_reviews, deferred_reviewers
     )
 
-    # Supplement under-covered areas (no maintainers, or few collaborators)
-    # with heuristic reviewers.  Exclude the author and everyone already listed
+    # Supplement files MAINTAINERS.yml cannot staff with heuristic reviewers:
+    # those in under-covered areas (no maintainers, or few collaborators) and
+    # those in no area at all.  Exclude the author and everyone already listed
     # so these last-resort slots are not wasted on reviewers we already have.
     thin = _thin_areas(maintainer_file, area_counter)
-    if thin:
+    uncovered_files = set(orphan_files)
+    for name in thin:
+        uncovered_files.update(area_files.get(name, ()))
+
+    if uncovered_files:
+        if orphan_files:
+            logger.info(
+                "%d changed file(s) match no area: %s",
+                len(orphan_files),
+                sorted(orphan_files),
+            )
+
         exclude = set(collab) | {pr.user.login}
 
         # Prefer GitHub's own suggestions: they draw on both commit history and
         # past review comments, and cost a single query.  They are often empty,
-        # in which case fall back to walking the history of the files the
-        # under-covered areas actually own.
+        # in which case fall back to walking the history of the files that
+        # MAINTAINERS.yml left unstaffed.
         heuristic = _suggested_reviewers(gh, args, pr, exclude)[:MAX_HISTORY_REVIEWERS]
         source = "GitHub-suggested"
 
         if not heuristic:
-            thin_files = set()
-            for name in thin:
-                thin_files.update(area_files.get(name, ()))
-            heuristic = _history_reviewers(gh_repo, thin_files, exclude)
+            heuristic = _history_reviewers(gh_repo, uncovered_files, exclude)
             source = "Git-history"
 
         if heuristic:
             logger.info(
-                "Under-covered areas %s; adding %s reviewers: %s",
+                "Under-covered areas %s / %d orphaned file(s); adding %s reviewers: %s",
                 sorted(thin),
+                len(orphan_files),
                 source,
                 heuristic,
             )
             collab += heuristic
+        else:
+            logger.info("No heuristic reviewers found for under-covered files")
 
     logger.debug("Reviewer candidates: %s", collab)
 

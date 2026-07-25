@@ -887,17 +887,13 @@ class TestSuggestedReviewers:
         assert result == ["alice", "bob"]
 
     def test_authors_rank_ahead_of_commenters(self):
-        gh = _gh_with_suggestions(
-            _suggested_payload([("commenter", False), ("author", True)])
-        )
+        gh = _gh_with_suggestions(_suggested_payload([("commenter", False), ("author", True)]))
         result = sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), exclude=set())
         assert result == ["author", "commenter"]
 
     def test_excluded_logins_are_dropped(self):
         gh = _gh_with_suggestions(_suggested_payload([("alice", True), ("known", True)]))
-        result = sut._suggested_reviewers(
-            gh, _suggest_args(), _suggest_pr(), exclude={"known"}
-        )
+        result = sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), exclude={"known"})
         assert result == ["alice"]
 
     def test_empty_suggestion_list(self):
@@ -962,9 +958,7 @@ class TestHistoryReviewersIntegration:
 
     def test_well_covered_area_skips_history_lookup(self):
         """A fully-staffed area must not trigger any commit-history query."""
-        area = _make_area(
-            "Full", maintainers=["m"], collaborators=["c1", "c2", "c3"]
-        )
+        area = _make_area("Full", maintainers=["m"], collaborators=["c1", "c2", "c3"])
         areas = {"subsys/full/foo.c": [area]}
 
         gh, args, mf, _ = _make_process_pr_harness(areas)
@@ -1042,3 +1036,78 @@ class TestHistoryReviewersIntegration:
         sut.process_pr(gh, args, mf, 99)
 
         assert "self" not in _reviewers_requested(pr)
+
+
+class TestUnmatchedFiles:
+    """A file matching no area at all yields no reviewer from MAINTAINERS.yml,
+    so it must still reach the heuristics (see PR #112563, a lone doc change
+    to an orphaned path)."""
+
+    def test_pr_with_no_matching_area_uses_github_suggestion(self):
+        gh, args, mf, pr = _make_process_pr_harness({"doc/orphaned.rst": []})
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("foouser", False)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "foouser" in _reviewers_requested(pr)
+
+    def test_pr_with_no_matching_area_falls_back_to_history(self):
+        gh, args, mf, pr = _make_process_pr_harness({"doc/orphaned.rst": []})
+        gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="baruser"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "baruser" in _reviewers_requested(pr)
+
+    def test_history_is_scoped_to_the_orphaned_files(self):
+        """Only the unmatched file is walked, not the well-covered one."""
+        covered = _make_area("Full", maintainers=["m"], collaborators=["c1", "c2", "c3"])
+        areas = {"doc/orphaned.rst": [], "subsys/full/foo.c": [covered]}
+
+        gh, args, mf, _ = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="doc_author"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        walked = [
+            call.kwargs.get("path") for call in gh.get_repo.return_value.get_commits.call_args_list
+        ]
+        assert walked == ["doc/orphaned.rst"]
+
+    def test_maintainers_still_rank_ahead_of_heuristics(self):
+        """A mixed PR keeps real maintainers first; heuristics only top up."""
+        covered = _make_area("Full", maintainers=["real_m"], collaborators=["c1", "c2", "c3"])
+        areas = {"doc/orphaned.rst": [], "subsys/full/foo.c": [covered]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("heuristic_r", True)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        requested = _reviewers_requested(pr)
+        assert requested.index("real_m") < requested.index("heuristic_r")
+
+    def test_fully_matched_pr_triggers_no_heuristic(self):
+        covered = _make_area("Full", maintainers=["m"], collaborators=["c1", "c2", "c3"])
+        gh, args, mf, _ = _make_process_pr_harness({"subsys/full/foo.c": [covered]})
+        sut.process_pr(gh, args, mf, 99)
+
+        gh.requester.graphql_query.assert_not_called()
+        gh.get_repo.return_value.get_commits.assert_not_called()
+
+    def test_no_reviewer_found_at_all_does_not_crash(self):
+        """Orphaned file with no suggestions and no history: nothing requested."""
+        gh, args, mf, pr = _make_process_pr_harness({"doc/orphaned.rst": []})
+        gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: []
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _reviewers_requested(pr) == []
