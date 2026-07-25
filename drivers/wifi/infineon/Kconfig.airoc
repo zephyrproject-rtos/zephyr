@@ -260,6 +260,11 @@ config CYW55513_MURATA_2FY_SM
 	help
 	  Infineon CYW55513 in Murata LBEE5HY2FY (Type 2FY) module (SM)
 
+config CYW55513_MOD_PSE84_SOM
+	bool "CYW55513_MOD_PSE84_SOM"
+	help
+	  Infineon CYW55513_MOD_PSE84_SOM (SM) module
+
 endchoice
 
 choice CYW55572_MODULE
