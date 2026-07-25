@@ -34,3 +34,20 @@ def test_numeric_alignment_suffix_follows_region_name():
 
 def test_non_numeric_suffix_remains_part_of_region_name():
     assert gen_relocate_app.split_alignment_suffix("SRAM_FAST") == ("SRAM_FAST", "")
+
+
+def test_relocation_metadata_is_not_classified_as_code():
+    for name in (".rel.text.function", ".rela.text.function"):
+        assert gen_relocate_app.SectionKind.for_section_named(name) is None
+
+
+def test_arm_unwind_metadata_is_not_classified_as_code():
+    for name in (".ARM.exidx.text.function", ".ARM.extab.text.function"):
+        assert gen_relocate_app.SectionKind.for_section_named(name) is None
+
+
+def test_regular_code_section_is_still_classified():
+    assert (
+        gen_relocate_app.SectionKind.for_section_named(".text.function")
+        is gen_relocate_app.SectionKind.TEXT
+    )

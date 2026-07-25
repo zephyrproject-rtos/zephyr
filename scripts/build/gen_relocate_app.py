@@ -81,11 +81,19 @@ class SectionKind(Enum):
         """
         Return the kind of section that includes a section with the given name.
 
-        >>> SectionKind.for_section_with_name(".rodata.str1.4")
+        >>> SectionKind.for_section_named(".rodata.str1.4")
         <SectionKind.RODATA: 'rodata'>
-        >>> SectionKind.for_section_with_name(".device_deps")
-        None
+        >>> SectionKind.for_section_named(".device_deps") is None
+        True
+        >>> SectionKind.for_section_named(".rel.text.foo") is None
+        True
+        >>> SectionKind.for_section_named(".ARM.exidx.text.foo") is None
+        True
         """
+        if name in (".rel", ".rela") or name.startswith((".rel.", ".rela.")):
+            return None
+        if name.startswith((".ARM.exidx", ".ARM.extab")):
+            return None
         if ".text." in name:
             return cls.TEXT
         elif ".rodata." in name:
