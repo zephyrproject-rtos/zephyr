@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_AIROC_WIFI6)
-    set(whd_wifi_ver COMPONENT_WIFI6)
+  set(whd_wifi_ver COMPONENT_WIFI6)
 else()
-    set(whd_wifi_ver COMPONENT_WIFI5)
+  set(whd_wifi_ver COMPONENT_WIFI5)
 endif()
 
 set(hal_dir                  ${ZEPHYR_HAL_INFINEON_MODULE_DIR})
@@ -300,6 +300,18 @@ if(CONFIG_CYW55513_MURATA_2FY_SM AND NOT CONFIG_AIROC_WIFI_CUSTOM)
   endif()
   # nvram
   set(NVRAM_IMAGE_NAME ${hal_wifi_dir_resources}/nvram/COMPONENT_55500/COMPONENT_MURATA-2FY/cyw55500-sdio-mur-2FY.txt)
+endif()
+
+# CYW55513_MOD_PSE84_SOM clm, nvram
+if(CONFIG_CYW55513_MOD_PSE84_SOM AND NOT CONFIG_AIROC_WIFI_CUSTOM)
+  # clm
+  if(CONFIG_AIROC_WLAN_MFG_FIRMWARE)
+    set(CLM_IMAGE_NAME ${hal_blobs_dir}/clm/COMPONENT_55500/COMPONENT_CYW55513_MOD_PSE84_SOM/55500A1-mfgtest.clm_blob)
+  else()
+    set(CLM_IMAGE_NAME ${hal_blobs_dir}/clm/COMPONENT_55500/COMPONENT_CYW55513_MOD_PSE84_SOM/55500A1.clm_blob)
+  endif()
+  # nvram
+  set(NVRAM_IMAGE_NAME ${hal_wifi_dir_resources}/nvram/COMPONENT_55500/COMPONENT_CYW55513_MOD_PSE84_SOM/cyw55513modpse84som_rev3.txt)
 endif()
 
 # CYW955573M2IPA1_SM
