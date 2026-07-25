@@ -293,6 +293,12 @@ config XIP
 	  supply a linker command file when building your image. Enabling this
 	  option increases both the code and data footprint of the image.
 
+config ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT
+	bool
+	help
+	  Enable architecture startup copying for non-XIP RAM-load images whose
+	  initialized data has distinct load and runtime addresses.
+
 
 if ARC || ARM || ARM64 || X86 || RISCV || RX || OPENRISC || ARCH_POSIX
 
