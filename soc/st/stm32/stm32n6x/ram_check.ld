@@ -7,9 +7,36 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/linker/linker-defs.h>
 
-#define MCUBOOT_START_ADDR DT_REG_ADDR(DT_NODELABEL(axisram2))
+#if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD)
 
-ASSERT((__kernel_ram_start < (MCUBOOT_START_ADDR - CONFIG_ROM_START_OFFSET)),
+#if (defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
+	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)) && \
+	DT_HAS_CHOSEN(mcuboot_image_ram)
+#define APPLICATION_LOAD_NODE DT_CHOSEN(mcuboot_image_ram)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD) && \
+	DT_HAS_CHOSEN(mcuboot_ram_load_dev)
+#define APPLICATION_LOAD_NODE DT_CHOSEN(mcuboot_ram_load_dev)
+#else
+#define APPLICATION_LOAD_NODE DT_CHOSEN(zephyr_sram)
+#endif
+
+#define APPLICATION_LOAD_START DT_REG_ADDR(APPLICATION_LOAD_NODE)
+#define APPLICATION_LOAD_END (APPLICATION_LOAD_START + DT_REG_SIZE(APPLICATION_LOAD_NODE))
+#define MCUBOOT_START DT_REG_ADDR(DT_NODELABEL(axisram2))
+#define MCUBOOT_END (MCUBOOT_START + DT_REG_SIZE(DT_NODELABEL(axisram2)))
+
+#if (APPLICATION_LOAD_START < MCUBOOT_START) && (APPLICATION_LOAD_END > MCUBOOT_START)
+ASSERT((__rom_region_start + _flash_used) <= MCUBOOT_START,
        "
-       Image is too large to fit RAMLOAD configuration. Consider using XIP.
+       Image load range overlaps the MCUboot region in AXISRAM2.
        ")
+#elif (APPLICATION_LOAD_START < MCUBOOT_END) && (APPLICATION_LOAD_END > MCUBOOT_START)
+ASSERT(0,
+       "
+       Application load region overlaps the MCUboot region in AXISRAM2.
+       ")
+#endif
+
+#endif /* MCUboot RAM-load modes */

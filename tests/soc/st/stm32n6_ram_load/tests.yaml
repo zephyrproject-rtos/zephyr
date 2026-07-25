@@ -1,0 +1,14 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  soc.stm32n6.ram_load_range:
+    build_only: true
+    tags:
+      - linker
+      - mcuboot
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb
+    integration_platforms:
+      - stm32n6570_dk/stm32n657xx/sb
