@@ -11,6 +11,7 @@
  */
 
 #include <zephyr/toolchain.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <soc/soc_caps.h>
 #include "memory.h"
