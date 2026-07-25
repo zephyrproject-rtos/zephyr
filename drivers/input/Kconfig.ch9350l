@@ -6,7 +6,6 @@ config INPUT_CH9350L
 	default y
 	depends on DT_HAS_WCH_CH9350L_ENABLED
 	depends on SERIAL_SUPPORT_INTERRUPT
-	select UART
 	select UART_INTERRUPT_DRIVEN
 	help
 	  This option enables the driver for WinChipHead CH9350L USB HID to UART control chips.
