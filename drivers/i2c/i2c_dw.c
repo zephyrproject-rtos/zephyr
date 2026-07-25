@@ -691,7 +691,11 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 	if (!dw->need_setup) {
-		return 0;
+		/* If slave address changed setup is still needed */
+		ic_tar.raw = read_tar(reg_base);
+		if (ic_tar.bits.ic_tar == slave_address) {
+			return 0;
+		}
 	}
 #endif
 
@@ -1023,6 +1027,10 @@ error:
 	k_sem_give(&dw->bus_sem);
 
 	pm_device_runtime_put(dev);
+	if (ret != 0) {
+		/* Failed/aborted transaction is no longer active, require setup */
+		dw->need_setup = true;
+	}
 
 	return ret;
 }
