@@ -26,15 +26,6 @@ configdefault NET_L2_ETHERNET
 
 endif # WIFI
 
-if BT
-
-# Select HCI components
-config UART
-	bool
-	default y
-
-endif # BT
-
 # Heap Pool Size
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int
