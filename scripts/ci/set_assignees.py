@@ -71,15 +71,21 @@ weight) and assignee selection.
 
 Reviewer selection
 ------------------
-The ordered reviewer candidate list is built as follows:
+The ordered reviewer candidate list is built in two tiers, maintainers before
+collaborators, so that a PR touching many areas does not spend its limited
+review slots on the collaborators of the highest-weight areas while dropping
+the maintainers of every other touched area:
 
-  1. For each area in descending weight order: add the area's maintainers,
-     then its collaborators.
-  2. Append any path-specific collaborators returned by
-     get_collaborators_for_path() for each matched file.
-  3. Append any extra reviewers identified from MAINTAINERS.yml diff (see
-     Manifest / MAINTAINERS.yml change handling below).
-  4. Deduplicate while preserving insertion order.
+  1. Maintainer tier:
+     a. For each area in descending weight order: the area's maintainers.
+     b. Any extra reviewers identified from the manifest or MAINTAINERS.yml
+        diff (see Manifest / MAINTAINERS.yml change handling below).
+     c. Maintainers of deferred file-group areas (see Deferred file-groups).
+  2. Collaborator tier:
+     a. For each area in descending weight order: the area's collaborators.
+     b. Any path-specific collaborators returned by
+        get_collaborators_for_path() for each matched file.
+  3. Deduplicate while preserving insertion order.
 
 Candidates are then filtered:
   - The PR author is skipped.
@@ -514,6 +520,31 @@ def _pick_assignees(pr, area_counter: dict, all_maintainers: dict, num_files: in
     return assignees
 
 
+def _build_reviewer_candidates(
+    maintainer_file,
+    area_counter: dict,
+    collab_per_path: set,
+    additional_reviews: set,
+    deferred_reviewers: set,
+) -> list:
+    maintainers = []
+    collaborators = []
+    for area in area_counter:
+        maintainers += maintainer_file.areas[area.name].maintainers
+        collaborators += maintainer_file.areas[area.name].collaborators
+
+    candidates = (
+        maintainers
+        + sorted(additional_reviews)
+        + sorted(deferred_reviewers)
+        + collaborators
+        + sorted(collab_per_path)
+    )
+
+    # Deduplicate while preserving insertion order.
+    return list(dict.fromkeys(candidates))
+
+
 def _add_reviewers(
     gh,
     gh_repo,
@@ -855,16 +886,11 @@ def process_pr(gh, args, maintainer_file, number: int):
     logger.info("Area weights: %s", {a.name: c for a, c in area_counter.items()})
     logger.debug("Collected labels: %s", labels)
 
-    # Build the ordered collaborator/reviewer list by area priority.
-    collab = []
-    for area in area_counter:
-        collab += maintainer_file.areas[area.name].maintainers
-        collab += maintainer_file.areas[area.name].collaborators
-    collab += list(collab_per_path)
-    collab += list(additional_reviews)
-    collab += sorted(deferred_reviewers)
-    # Deduplicate while preserving insertion order.
-    collab = list(dict.fromkeys(collab))
+    # Build the ordered collaborator/reviewer list: maintainers of all touched
+    # areas by area priority first, then collaborators.
+    collab = _build_reviewer_candidates(
+        maintainer_file, area_counter, collab_per_path, additional_reviews, deferred_reviewers
+    )
     logger.debug("Reviewer candidates: %s", collab)
 
     all_maintainers = dict(
