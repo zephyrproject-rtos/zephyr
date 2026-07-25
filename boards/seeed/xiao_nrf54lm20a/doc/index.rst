@@ -115,9 +115,9 @@ means Pin number 0 on PORT1, as used in the board's datasheets and manuals.
 +-------+-------------+--------------------------+
 | P1_12 | GPIO        | Power Enable             |
 +-------+-------------+--------------------------+
-| P1_15 | GPIO        | PMIC I2C SDA             |
+| P1_18 | GPIO        | PMIC I2C SDA             |
 +-------+-------------+--------------------------+
-| P1_16 | GPIO        | PMIC I2C SCL             |
+| P1_17 | GPIO        | PMIC I2C SCL             |
 +-------+-------------+--------------------------+
 | P1_13 | PDM20_CLK   | DMIC Clock               |
 +-------+-------------+--------------------------+
