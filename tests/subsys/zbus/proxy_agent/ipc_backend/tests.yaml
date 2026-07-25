@@ -11,3 +11,4 @@ tests:
       ordered: false
       regex:
         - ".* IPC error: Test error message on endpoint test_ept"
+        - ".* Proxy agent receive callback failed for channel 'A{32}': -22"
