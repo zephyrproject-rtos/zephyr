@@ -367,8 +367,8 @@ static void put_and_validate_wrapped_frame(void)
 	/* Put wrapped frame */
 	modem_backend_mock_put(&mock, ppp_frame_wrapped, sizeof(ppp_frame_wrapped));
 
-	/* Give modem ppp time to process received frame */
-	k_msleep(1000);
+	/* Wait for the frame to be processed and delivered */
+	zassert_ok(k_sem_take(&rx_pkt_sem, K_SECONDS(1)), "Timeout waiting for received frame");
 
 	/* Validate frame received on mock network interface */
 	zassert_true(received_packets_len == 1, "Expected to receive one network packet");
@@ -443,8 +443,8 @@ ZTEST(modem_ppp, test_corrupt_start_end_ppp_frame_receive)
 	modem_backend_mock_put(&mock, corrupt_start_end_ppp_frame_wrapped,
 			       sizeof(corrupt_start_end_ppp_frame_wrapped));
 
-	/* Give modem ppp time to process received frame */
-	k_msleep(1000);
+	/* Wait for the frame to be processed and delivered */
+	zassert_ok(k_sem_take(&rx_pkt_sem, K_SECONDS(1)), "Timeout waiting for received frame");
 
 	/* Validate frame received on mock network interface */
 	zassert_true(received_packets_len == 1, "Expected to receive one network packet");
@@ -645,8 +645,8 @@ ZTEST(modem_ppp, test_ip_frame_receive)
 	/* Put wrapped frame */
 	modem_backend_mock_put(&mock, ip_frame_wrapped, sizeof(ip_frame_wrapped));
 
-	/* Give modem ppp time to process received frame */
-	k_msleep(1000);
+	/* Wait for the frame to be processed and delivered */
+	zassert_ok(k_sem_take(&rx_pkt_sem, K_SECONDS(1)), "Timeout waiting for received frame");
 
 	/* Validate frame received on mock network interface */
 	zassert_true(received_packets_len == 1, "Expected to receive one network packet");
@@ -763,7 +763,9 @@ ZTEST(modem_ppp, test_ip_frame_receive_large)
 	zassert_true(size > TEST_MODEM_PPP_IP_FRAME_RECEIVE_LARGE_N, "Failed to wrap data");
 	modem_backend_mock_put(&mock, wrapped_buffer, size);
 
-	k_msleep(TEST_MODEM_PPP_IP_FRAME_RECEIVE_LARGE_N * 2);
+	/* Wait for the frame to be processed and delivered */
+	zassert_ok(k_sem_take(&rx_pkt_sem, K_MSEC(TEST_MODEM_PPP_IP_FRAME_RECEIVE_LARGE_N * 2)),
+		   "Timeout waiting for received frame");
 
 	zassert_true(received_packets_len == 1, "Expected to receive one network packet");
 	pkt = received_packets[0];
