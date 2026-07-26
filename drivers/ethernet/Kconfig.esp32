@@ -5,7 +5,7 @@
 
 menuconfig ETH_ESP32
 	bool "ESP32 Ethernet driver"
-	default y
+	default y if !PTP_CLOCK
 	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32P4
 	depends on DT_HAS_ESPRESSIF_ESP32_ETH_ENABLED
 	help
