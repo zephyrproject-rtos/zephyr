@@ -55,3 +55,7 @@ properties:
   constant-charge-voltage-max-microvolt:
     type: int
     description: maximum constant input voltage
+
+  factory-internal-resistance-micro-ohms:
+    type: int
+    description: battery factory internal resistance
