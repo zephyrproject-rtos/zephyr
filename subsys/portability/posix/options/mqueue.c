@@ -168,7 +168,15 @@ mqd_t mq_open(const char *name, int oflags, ...)
 		k_sem_give(&mq_sem);
 
 	} else {
+		k_sem_take(&mq_sem, K_FOREVER);
+		if (find_in_list(name) != msg_queue) {
+			k_sem_give(&mq_sem);
+			errno = ENOENT;
+			goto free_mq_desc;
+		}
+
 		atomic_inc(&msg_queue->ref_count);
+		k_sem_give(&mq_sem);
 	}
 
 	msg_queue_desc->mqueue = msg_queue;
