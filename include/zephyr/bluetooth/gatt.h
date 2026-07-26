@@ -16,6 +16,8 @@
  *          service registration and attribute declaration. For more
  *          information, see @ref bt_gatt_client and @ref bt_gatt_server.
  * @defgroup bt_gatt Generic Attribute Profile (GATT)
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup bluetooth
  * @{
  */
