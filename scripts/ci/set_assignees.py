@@ -113,10 +113,13 @@ Candidates are then filtered:
   - The PR author is skipped.
   - Users who already submitted a review or are already on the review-request
     list are skipped.
-  - Users who are not repository collaborators are skipped (GitHub requires
-    collaborator status to receive a review request).
+  - Users whose login no longer resolves (deleted accounts) are skipped.
   - Users who previously self-removed themselves from the review request list
-    are skipped.
+    are skipped.  This is checked before the collaborator test below, so that
+    someone who opted out is never routed to the mention fallback instead.
+  - Users who are not repository collaborators are set aside: GitHub requires
+    collaborator status to receive a review request, so they are mentioned in a
+    comment instead (see below) rather than dropped.
 
 Every candidate that survives those filters is then requested: no cap is
 applied.  GitHub documents no limit on how many reviewers a pull request may
@@ -131,6 +134,19 @@ candidate who lost collaborator status between the check and the request), the
 call is retried once with the first REVIEWER_RETRY_BATCH (15) candidates.
 Because the list is ordered highest-signal first, that retry keeps the area
 maintainers and drops only the tail.
+
+Mention fallback
+----------------
+A formal review request is not always possible: non-collaborators cannot
+receive one at all, and a request may be refused outright.  Rather than let
+those people fall off the PR silently, they are @mentioned in a comment asking
+for their review, which notifies them regardless of their permissions.
+
+The comment carries a hidden MENTION_MARKER so that repeated runs over the same
+PR find their own previous comment and edit it in place, instead of posting a
+duplicate every time the PR is updated.  Users who removed themselves from the
+review request are never mentioned, since a mention would route around an
+explicit opt-out.
 
 Assignee selection
 ------------------
@@ -250,6 +266,11 @@ MAX_FILES = 500
 # set anyway, the request is retried with this many of the highest-ranked
 # candidates so that a rejection cannot cost the review request entirely.
 REVIEWER_RETRY_BATCH = 15
+
+# Hidden marker identifying the comment used to mention reviewers who could not
+# be added to the review request.  It lets a re-run find and update its own
+# previous comment instead of posting a duplicate.
+MENTION_MARKER = "<!-- set_assignees: reviewer-mention -->"
 
 # Maximum number of labels to apply; more than this is likely noise from over-broad matches.
 MAX_LABELS = 10
@@ -760,10 +781,12 @@ def _add_reviewers(gh, gh_repo, pr, args, collab: list):
             self_removed.add(event.actor)
 
     reviewers = []
+    non_collaborators = []
     for collaborator in collab:
         try:
             gh_user = gh.get_user(collaborator)
         except UnknownObjectException:
+            # The login does not resolve, so there is nobody to mention either.
             logger.warning("User '%s' not found; account may have been deleted", collaborator)
             continue
 
@@ -773,37 +796,103 @@ def _add_reviewers(gh, gh_repo, pr, args, collab: list):
         if gh_user in existing_reviewers:
             logger.debug("Skipping existing reviewer '%s'", collaborator)
             continue
-        if not gh_repo.has_in_collaborators(gh_user):
-            logger.info("Skipping '%s': not a repository collaborator", collaborator)
-            continue
         if gh_user in self_removed:
             logger.info("Skipping '%s': previously self-removed from reviewers", collaborator)
+            continue
+        if not gh_repo.has_in_collaborators(gh_user):
+            # GitHub refuses a review request for non-collaborators, so ask
+            # them by mention instead of dropping them.
+            logger.info("'%s' is not a repository collaborator; will mention", collaborator)
+            non_collaborators.append(collaborator)
             continue
 
         reviewers.append(collaborator)
 
-    if not reviewers:
+    if reviewers:
+        logger.info("Requesting reviews from %d user(s): %s", len(reviewers), reviewers)
+        unrequested = _request_reviews(pr, args, reviewers)
+    else:
+        unrequested = []
+
+    # Anyone the review request could not accommodate still gets asked, by
+    # name, in a comment.  Users who removed themselves are deliberately not
+    # mentioned: they opted out, and a mention would route around that.
+    _mention_reviewers(pr, args, non_collaborators + unrequested)
+
+
+def _request_reviews(pr, args, reviewers: list) -> list:
+    """Request reviews from *reviewers*; return those that could not be added.
+
+    A rejected bulk request is retried once with the highest-ranked
+    REVIEWER_RETRY_BATCH candidates, so that hitting an undocumented per-PR
+    reviewer limit cannot leave the PR with no reviewers at all.  Whoever is
+    left out is returned for the caller to mention instead.
+    """
+    if args.dry_run:
+        return []
+
+    try:
+        pr.create_review_request(reviewers=reviewers)
+        return []
+    except GithubException as exc:
+        logger.error("Failed to add reviewers %s: %s", reviewers, exc)
+
+    if len(reviewers) > REVIEWER_RETRY_BATCH:
+        retry = reviewers[:REVIEWER_RETRY_BATCH]
+        logger.info("Retrying with the first %d: %s", len(retry), retry)
+        try:
+            pr.create_review_request(reviewers=retry)
+            return reviewers[REVIEWER_RETRY_BATCH:]
+        except GithubException as retry_exc:
+            logger.error("Retry failed for reviewers %s: %s", retry, retry_exc)
+
+    return list(reviewers)
+
+
+def _mention_reviewers(pr, args, logins: list):
+    """Ask *logins* for a review in a PR comment.
+
+    Used for people who cannot receive a formal review request: those who are
+    not repository collaborators (GitHub rejects a review request for them),
+    and those the request itself could not accommodate.  An @mention notifies
+    them regardless of their permissions, so the change still reaches the
+    people responsible for it.
+
+    The comment is maintained in place: one is created the first time and
+    edited afterwards, keyed on MENTION_MARKER, so that re-running over the
+    same PR does not spam it with duplicates.
+    """
+    logins = list(dict.fromkeys(logins))
+    if not logins:
         return
 
-    logger.info("Requesting reviews from %d user(s): %s", len(reviewers), reviewers)
+    mentions = " ".join(f"@{login}" for login in logins)
+    body = (
+        f"{MENTION_MARKER}\n"
+        f"{mentions}\n\n"
+        "You have been identified as a likely reviewer for the code this pull "
+        "request changes, but could not be added to its review request "
+        "automatically. Please review it if you are able to."
+    )
+
+    logger.info("Mentioning %d user(s) unable to be requested: %s", len(logins), logins)
     if args.dry_run:
         return
 
     try:
-        pr.create_review_request(reviewers=reviewers)
-    except GithubException as exc:
-        logger.error("Failed to add reviewers %s: %s", reviewers, exc)
+        for comment in pr.get_issue_comments():
+            if MENTION_MARKER in comment.body:
+                # Already asked; refresh only when the set of people changed.
+                if comment.body.strip() != body.strip():
+                    comment.edit(body)
+                    logger.info("Updated existing reviewer-mention comment")
+                else:
+                    logger.debug("Reviewer-mention comment already up to date")
+                return
 
-        # The full set may have been refused for exceeding an undocumented
-        # per-PR reviewer limit.  Retry with the highest-ranked candidates so
-        # that a rejection does not leave the PR with no reviewers at all.
-        if len(reviewers) > REVIEWER_RETRY_BATCH:
-            retry = reviewers[:REVIEWER_RETRY_BATCH]
-            logger.info("Retrying with the first %d: %s", len(retry), retry)
-            try:
-                pr.create_review_request(reviewers=retry)
-            except GithubException as retry_exc:
-                logger.error("Retry failed for reviewers %s: %s", retry, retry_exc)
+        pr.create_issue_comment(body)
+    except GithubException as exc:
+        logger.error("Failed to mention reviewers %s: %s", logins, exc)
 
 
 def _assign_maintainers(gh, pr, args, assignees: list):
