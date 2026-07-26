@@ -23,6 +23,8 @@ extern "C" {
 /**
  * @brief Iterable Sections APIs
  * @defgroup iterable_section_apis Iterable Sections APIs
+ * @since 2.7
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  */
