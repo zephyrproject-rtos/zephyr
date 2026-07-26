@@ -80,6 +80,8 @@ extern "C" {
 
 /**
  * @defgroup timeutil_apis Time Utility APIs
+ * @since 2.0
+ * @version 1.0.0
  * @ingroup utilities
  * @defgroup timeutil_repr_apis Time Representation APIs
  * @ingroup timeutil_apis
