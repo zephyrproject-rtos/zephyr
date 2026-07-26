@@ -19,7 +19,7 @@ double q31_to_double(int32_t q31_value, int8_t shift)
 	return ((double)q31_value) / (double)(1 << (31 - shift));
 }
 
-static struct rtio_sqe *streaming_handle;
+static rtio_sqe_handle_t streaming_handle;
 
 static struct sensor_stream_trigger stream_trigger = {
 	.opt = SENSOR_STREAM_DATA_INCLUDE,
@@ -107,7 +107,7 @@ ZTEST(icm42688_stream, test_icm42688_stream)
 	zassert_ok(sensor_stream(&iodev_stream, &rtio, NULL,
 		&streaming_handle));
 	sensor_processing_with_callback(&rtio, callback);
-	zassert_ok(rtio_sqe_cancel(streaming_handle));
+	zassert_ok(rtio_sqe_cancel(&rtio, streaming_handle));
 }
 
 static void *icm42688_stream_setup(void)
