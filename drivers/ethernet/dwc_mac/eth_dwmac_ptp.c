@@ -179,9 +179,21 @@ static int dwmac_ptp_init(const struct device *dev)
 		    base + DWMAC_PTP_CTRL_REG);
 	dwmac_ptp_wait_for_clear(base, DWMAC_PTP_CTRL_REG, DWMAC_PTP_CTRL_TIME_INIT);
 
+	uint32_t ctrl = sys_read32(base + DWMAC_PTP_CTRL_REG);
+
+#ifdef CONFIG_PTP
+	/* Use PTPv2 */
+	ctrl |= BIT(10);
+#ifdef CONFIG_PTP_IEEE_802_3_PROTOCOL
+	/* filter for L2 PTP packets instead of UDP IPv4/IPv6 */
+	ctrl |= BIT(11);
+#endif
+#else
 	/* Enable timestamping for all received packets */
-	sys_write32(sys_read32(base + DWMAC_PTP_CTRL_REG) | DWMAC_PTP_CTRL_ALL_RX,
-		    base + DWMAC_PTP_CTRL_REG);
+	ctrl |= DWMAC_PTP_CTRL_ALL_RX;
+#endif
+	
+	sys_write32(ctrl,base + DWMAC_PTP_CTRL_REG);
 
 	return 0;
 }
