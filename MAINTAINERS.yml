@@ -1465,12 +1465,12 @@ Documentation Infrastructure:
     - nashif
   files:
     - doc/404.rst
+    - doc/CMakeLists.txt
+    - doc/Makefile
+    - doc/_*/
+    - doc/conf.py
     - doc/requirements.in
     - doc/requirements.txt
-    - doc/_*/
-    - doc/CMakeLists.txt
-    - doc/conf.py
-    - doc/Makefile
     - doc/zephyr.doxyfile.in
   labels:
     - "area: Documentation Infrastructure"
