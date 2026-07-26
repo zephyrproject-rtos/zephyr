@@ -439,7 +439,9 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 			 */
 			len = drv_data->rx_data[i][0];
 			if (len < 4U) {
-				goto next_entry;
+				LOG_WRN("Frame too short");
+				drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
+				continue;
 			}
 			sdu = drv_data->rx_data[i] + 1;
 			seq = drv_data->rx_data[i][3];
@@ -469,7 +471,6 @@ static void ieee802154_cc13xx_cc26xx_rx_done(
 				continue;
 			}
 
-next_entry:
 			drv_data->rx_entry[i].status = DATA_ENTRY_PENDING;
 
 			net_pkt_set_ieee802154_lqi(pkt, lqi);
