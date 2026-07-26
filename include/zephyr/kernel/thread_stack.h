@@ -14,6 +14,8 @@
  * @brief Thread Stack APIs
  * @ingroup kernel_apis
  * @defgroup thread_stack_api Thread Stack APIs
+ * @since 1.8
+ * @version 1.0.0
  * @{
  * @}
  */
