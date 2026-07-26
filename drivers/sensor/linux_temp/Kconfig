@@ -1,0 +1,13 @@
+# Copyright 2026 Bayrem Gharsellaoui
+# SPDX-License-Identifier: Apache-2.0
+
+config NATIVE_LINUX_TEMP
+	bool "Native Linux host temperature sensor"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_LINUX_TEMP_ENABLED
+	depends on ARCH_POSIX
+	help
+	  Enable a native_sim temperature sensor backed by a Linux sysfs
+	  temperature file. The devicetree node provides the file location
+	  through the `path` property, such as
+	  /sys/class/thermal/thermal_zone0/temp.
