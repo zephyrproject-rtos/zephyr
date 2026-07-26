@@ -16,6 +16,8 @@
 /**
  * @brief Interfaces for hardware spinlocks.
  * @defgroup hwspinlock_interface Hardware Spinlock
+ * @since 3.5
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
