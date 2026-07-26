@@ -16,6 +16,8 @@
 /**
  * @brief Interfaces for Precision Time Protocol (PTP) clocks.
  * @defgroup ptp_clock_interface PTP Clock
+ * @since 1.13
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
