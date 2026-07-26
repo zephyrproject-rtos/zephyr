@@ -316,6 +316,16 @@ typedef void (*rtio_signaled_t)(struct rtio_iodev_sqe *iodev_sqe, void *userdata
 typedef uint32_t rtio_sqe_handle_t;
 
 /**
+ * @brief A handle value that never refers to a live submission
+ *
+ * Resolving this value with rtio_iodev_sqe_from_handle() always yields NULL, so
+ * it is safe to use as a sentinel for "no submission" and to pass to
+ * rtio_sqe_cancel() (where it is a satisfied no-op). Its block index is out of
+ * range for any pool.
+ */
+#define RTIO_SQE_HANDLE_INVALID ((rtio_sqe_handle_t)UINT32_MAX)
+
+/**
  * @brief A submission queue event
  */
 struct rtio_sqe {

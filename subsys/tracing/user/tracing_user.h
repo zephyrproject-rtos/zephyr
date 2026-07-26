@@ -128,7 +128,7 @@ void sys_trace_rtio_submit_enter(const struct rtio *r, uint32_t wait_count);
 void sys_trace_rtio_submit_exit(const struct rtio *r);
 void sys_trace_rtio_sqe_acquire_enter(const struct rtio *r);
 void sys_trace_rtio_sqe_acquire_exit(const struct rtio *r, const struct rtio_sqe *sqe);
-void sys_trace_rtio_sqe_cancel(const struct rtio_sqe *sqe);
+void sys_trace_rtio_sqe_cancel(rtio_sqe_handle_t handle);
 void sys_trace_rtio_cqe_submit_enter(const struct rtio *r, int result, uint32_t flags);
 void sys_trace_rtio_cqe_submit_exit(const struct rtio *r);
 void sys_trace_rtio_cqe_acquire_enter(const struct rtio *r);
@@ -250,7 +250,7 @@ void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iode
 
 #define sys_port_trace_rtio_sqe_acquire_exit(rtio, sqe) sys_trace_rtio_sqe_acquire_exit(rtio, sqe)
 
-#define sys_port_trace_rtio_sqe_cancel(sqe) sys_trace_rtio_sqe_cancel(sqe)
+#define sys_port_trace_rtio_sqe_cancel(handle) sys_trace_rtio_sqe_cancel(handle)
 
 #define sys_port_trace_rtio_cqe_submit_enter(rtio, result, flags)                                  \
 	sys_trace_rtio_cqe_submit_enter(rtio, result, flags)
