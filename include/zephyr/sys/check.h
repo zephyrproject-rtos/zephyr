@@ -17,6 +17,8 @@
 
 /**
  * @defgroup sys_check_apis Error checking
+ * @since 2.2
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  */
