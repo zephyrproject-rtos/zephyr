@@ -23,6 +23,8 @@ extern "C" {
 /**
  * @brief Interfaces for coredump pseudo-device.
  * @defgroup coredump_device_interface Coredump pseudo-device
+ * @since 3.2
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */
