@@ -18,6 +18,8 @@
 /**
  * @brief Interfaces for external cache controllers.
  * @defgroup cache_external_interface External Cache Controller
+ * @since 2.6
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
