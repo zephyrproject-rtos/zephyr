@@ -1,0 +1,21 @@
+/*
+ * Copyright 2026 Renato Mauro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&slcd_panel {
+	rotated;
+};
+
+&clk_lse {
+	status = "okay";  /* Enable the on-board external quartz at 32.768 kHz */
+	driving-capability = <3>;
+};
+
+&slcd {
+	status = "okay";
+	lcd-duty = <0x0000000c>;
+	lcd-bias = <0x00000040>;
+	lcd-mux-segment = <0>;
+};
