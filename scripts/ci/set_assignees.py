@@ -118,18 +118,19 @@ Candidates are then filtered:
   - Users who previously self-removed themselves from the review request list
     are skipped.
 
-If the PR already has MAX_REVIEWERS (15) or more reviewers, the normal
-candidate list is discarded.  Only the maintainers of the *primary*
-(highest-weight) area are used as fallback candidates, plus any
-``additional_reviews`` users identified from manifest or MAINTAINERS.yml
-diff.  This keeps the fallback small and high-signal, and avoids the
-original behaviour of requesting reviews from all area maintainers across
-all touched files (which could push a broad PR even further above the
-reviewer cap).  The same author / existing-reviewer / self-removed /
-collaborator-status filters are applied to the fallback candidates.
+Every candidate that survives those filters is then requested: no cap is
+applied.  GitHub documents no limit on how many reviewers a pull request may
+carry, and PRs holding more than 15 are observable in the wild, so imposing one
+here only meant dropping people who were legitimately responsible for the
+change.  What keeps the request meaningful is the tier ordering above, not a
+count: if a PR is broad enough to need thirty reviewers, all thirty own part of
+it.
 
-Otherwise the candidate list is capped at the remaining vacancy
-(MAX_REVIEWERS - existing reviewer count) before the review request is created.
+Should GitHub refuse the full set anyway (some undocumented limit, or a
+candidate who lost collaborator status between the check and the request), the
+call is retried once with the first REVIEWER_RETRY_BATCH (15) candidates.
+Because the list is ordered highest-signal first, that retry keeps the area
+maintainers and drops only the tail.
 
 Assignee selection
 ------------------
@@ -243,8 +244,12 @@ logger = logging.getLogger(__name__)
 # Maximum number of changed files to process; larger PRs are skipped.
 MAX_FILES = 500
 
-# Maximum number of reviewers on a PR before switching to maintainer-only strategy.
-MAX_REVIEWERS = 15
+# GitHub does not document a cap on how many reviewers a pull request may have,
+# and PRs carrying more than 15 are observable in the wild, so no cap is imposed
+# here: every eligible candidate is requested.  Should GitHub reject the full
+# set anyway, the request is retried with this many of the highest-ranked
+# candidates so that a rejection cannot cost the review request entirely.
+REVIEWER_RETRY_BATCH = 15
 
 # Maximum number of labels to apply; more than this is likely noise from over-broad matches.
 MAX_LABELS = 10
@@ -724,27 +729,17 @@ def _build_reviewer_candidates(
     return list(dict.fromkeys(candidates))
 
 
-def _add_reviewers(
-    gh,
-    gh_repo,
-    pr,
-    args,
-    collab: list,
-    primary_maintainers: list,
-    extra_reviewers: frozenset = frozenset(),
-):
+def _add_reviewers(gh, gh_repo, pr, args, collab: list):
     """Request reviews from eligible collaborators on *pr*.
 
     Skips the PR author, existing reviewers, non-collaborators, and users
     who previously removed themselves from the review request.
 
-    When the PR already has MAX_REVIEWERS or more reviewers, only
-    *primary_maintainers* (the maintainers of the highest-weight area) plus
-    *extra_reviewers* (e.g. maintainers of MAINTAINERS.yml-changed areas) are
-    used as fallback candidates.  This keeps the fallback small and
-    high-signal while ensuring that people specifically responsible for
-    changed areas are never silently dropped.
-    The same filters apply in both the normal and overflow paths.
+    Every remaining candidate is requested; no cap is applied.  *collab* is
+    ordered highest-signal first (area maintainers, then collaborators, then
+    heuristic picks -- see _build_reviewer_candidates), so the ordering, rather
+    than an arbitrary limit, is what protects the review request from being
+    dominated by low-signal reviewers.
     """
     existing_reviewers = set()
     for review in pr.get_reviews():
@@ -764,24 +759,8 @@ def _add_reviewers(
         if event.event == 'review_request_removed' and event.actor == event.requested_reviewer:
             self_removed.add(event.actor)
 
-    if len(existing_reviewers) >= MAX_REVIEWERS:
-        logger.info(
-            "PR #%d already has %d reviewer(s) (limit %d); "
-            "restricting candidates to primary area maintainers",
-            pr.number,
-            len(existing_reviewers),
-            MAX_REVIEWERS,
-        )
-        # Preserve extra_reviewers (e.g. MAINTAINERS.yml-change reviewers)
-        # even in the overflow path so they are never silently dropped.
-        candidates = list(dict.fromkeys(primary_maintainers + sorted(extra_reviewers)))
-        vacancy = None
-    else:
-        candidates = collab  # extra_reviewers already included via process_pr
-        vacancy = MAX_REVIEWERS - len(existing_reviewers)
-
     reviewers = []
-    for collaborator in candidates:
+    for collaborator in collab:
         try:
             gh_user = gh.get_user(collaborator)
         except UnknownObjectException:
@@ -803,16 +782,28 @@ def _add_reviewers(
 
         reviewers.append(collaborator)
 
-    if vacancy is not None:
-        reviewers = reviewers[:vacancy]
+    if not reviewers:
+        return
 
-    if reviewers:
-        logger.info("Requesting reviews from: %s", reviewers)
-        if not args.dry_run:
+    logger.info("Requesting reviews from %d user(s): %s", len(reviewers), reviewers)
+    if args.dry_run:
+        return
+
+    try:
+        pr.create_review_request(reviewers=reviewers)
+    except GithubException as exc:
+        logger.error("Failed to add reviewers %s: %s", reviewers, exc)
+
+        # The full set may have been refused for exceeding an undocumented
+        # per-PR reviewer limit.  Retry with the highest-ranked candidates so
+        # that a rejection does not leave the PR with no reviewers at all.
+        if len(reviewers) > REVIEWER_RETRY_BATCH:
+            retry = reviewers[:REVIEWER_RETRY_BATCH]
+            logger.info("Retrying with the first %d: %s", len(retry), retry)
             try:
-                pr.create_review_request(reviewers=reviewers)
-            except GithubException as exc:
-                logger.error("Failed to add reviewers %s: %s", reviewers, exc)
+                pr.create_review_request(reviewers=retry)
+            except GithubException as retry_exc:
+                logger.error("Retry failed for reviewers %s: %s", retry, retry_exc)
 
 
 def _assign_maintainers(gh, pr, args, assignees: list):
@@ -1154,20 +1145,10 @@ def process_pr(gh, args, maintainer_file, number: int):
             )
 
     # Request reviews.
-    if collab or additional_reviews:
-        primary_area = next(iter(area_counter), None)
-        primary_maintainers = (
-            maintainer_file.areas[primary_area.name].maintainers if primary_area else []
-        )
-        _add_reviewers(
-            gh,
-            gh_repo,
-            pr,
-            args,
-            collab,
-            primary_maintainers,
-            frozenset(additional_reviews),
-        )
+    # additional_reviews is already folded into collab by
+    # _build_reviewer_candidates, so collab alone decides whether to ask.
+    if collab:
+        _add_reviewers(gh, gh_repo, pr, args, collab)
 
     # Set assignees (only when none are set yet, unless doing a dry run).
     if assignees and (not pr.assignee or args.dry_run):

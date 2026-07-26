@@ -723,9 +723,9 @@ class TestBuildReviewerCandidates:
 
         assert result == ["extra_m"]
 
-    def test_broad_pr_keeps_every_maintainer_within_the_cap(self):
-        """A PR touching more areas than the reviewer cap allows must still
-        request every area's maintainer before any collaborator."""
+    def test_broad_pr_requests_every_maintainer_then_collaborators(self):
+        """A broad PR requests everyone eligible -- no cap -- with all area
+        maintainers ranked ahead of any collaborator."""
         areas_per_file = {}
         for i in range(8):
             area = _make_area(
@@ -739,7 +739,8 @@ class TestBuildReviewerCandidates:
         sut.process_pr(gh, args, mf, 99)
 
         requested = _reviewers_requested(pr)
-        assert len(requested) == sut.MAX_REVIEWERS
+        # 8 maintainers + 8*4 collaborators, none dropped.
+        assert len(requested) == 40
         assert requested[:8] == [f"m{i}" for i in range(8)]
 
 
@@ -1111,3 +1112,115 @@ class TestUnmatchedFiles:
         sut.process_pr(gh, args, mf, 99)
 
         assert _reviewers_requested(pr) == []
+
+
+# ---------------------------------------------------------------------------
+# Reviewer cap removal  (_add_reviewers)
+# ---------------------------------------------------------------------------
+
+
+def _make_add_reviewers_stubs(author="author"):
+    """Return (gh, gh_repo, pr, args) for a direct _add_reviewers() call."""
+    pr = MagicMock()
+    pr.number = 7
+    pr.get_reviews.return_value = []
+    pr.get_review_requests.return_value = ([], [])
+    pr.get_issue_events.return_value = []
+
+    cache = {}
+
+    def _get_user(login):
+        if login not in cache:
+            user = MagicMock()
+            user.login = login
+            cache[login] = user
+        return cache[login]
+
+    gh = MagicMock()
+    gh.get_user.side_effect = _get_user
+    pr.user = _get_user(author)
+
+    gh_repo = MagicMock()
+    gh_repo.has_in_collaborators.return_value = True
+
+    return gh, gh_repo, pr, SimpleNamespace(dry_run=False)
+
+
+class TestNoReviewerCap:
+    """The old MAX_REVIEWERS cap is gone: every eligible candidate is
+    requested, and GitHub decides what it will accept."""
+
+    def test_all_candidates_are_requested(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        candidates = [f"u{i}" for i in range(40)]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, candidates)
+
+        assert _reviewers_requested(pr) == candidates
+
+    def test_many_existing_reviewers_no_longer_restricts_candidates(self):
+        """Previously, a PR at or over the cap discarded the candidate list and
+        fell back to primary-area maintainers only."""
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        pr.get_reviews.return_value = [
+            SimpleNamespace(user=gh.get_user(f"old{i}")) for i in range(20)
+        ]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["m1", "m2", "c1"])
+
+        assert _reviewers_requested(pr) == ["m1", "m2", "c1"]
+
+    def test_existing_reviewers_are_still_skipped(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        pr.get_review_requests.return_value = ([gh.get_user("already")], [])
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["already", "fresh"])
+
+        assert _reviewers_requested(pr) == ["fresh"]
+
+    def test_author_is_still_skipped(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs(author="me")
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["me", "someone"])
+
+        assert _reviewers_requested(pr) == ["someone"]
+
+    def test_dry_run_requests_nobody(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        args.dry_run = True
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["a", "b"])
+
+        pr.create_review_request.assert_not_called()
+
+
+class TestReviewRequestRetry:
+    """A rejected bulk request must not cost the PR all of its reviewers."""
+
+    def test_rejection_retries_with_highest_ranked_candidates(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        candidates = [f"u{i}" for i in range(25)]
+        pr.create_review_request.side_effect = [sut.GithubException("too many"), None]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, candidates)
+
+        assert pr.create_review_request.call_count == 2
+        retried = pr.create_review_request.call_args_list[1].kwargs["reviewers"]
+        assert retried == candidates[: sut.REVIEWER_RETRY_BATCH]
+
+    def test_small_request_is_not_retried(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        pr.create_review_request.side_effect = sut.GithubException("nope")
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["a", "b"])
+
+        # Nothing to trim, so a retry would just repeat the failing call.
+        assert pr.create_review_request.call_count == 1
+
+    def test_failing_retry_does_not_raise(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        pr.create_review_request.side_effect = sut.GithubException("nope")
+
+        sut._add_reviewers(gh, gh_repo, pr, args, [f"u{i}" for i in range(25)])
+
+        assert pr.create_review_request.call_count == 2
