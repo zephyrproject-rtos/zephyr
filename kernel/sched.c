@@ -222,10 +222,7 @@ void z_ready_thread(struct k_thread *thread)
 	}
 }
 
-void z_sched_ready_locked(struct k_thread *thread)
-{
-	ready_thread(thread);
-}
+void z_sched_ready_locked(struct k_thread *thread) ALIAS_OF(ready_thread);
 
 static void unready_thread(struct k_thread *thread)
 {
@@ -246,10 +243,7 @@ void z_unready_thread(struct k_thread *thread)
 }
 
 
-void z_sched_unready_locked(struct k_thread *thread)
-{
-	unready_thread(thread);
-}
+void z_sched_unready_locked(struct k_thread *thread) ALIAS_OF(unready_thread);
 
 /* This routine only used for testing purposes */
 void z_yield_testing_only(void)
@@ -423,9 +417,7 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 }
 
 void z_sched_add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
-{
-	add_to_waitq_locked(thread, wait_q);
-}
+	ALIAS_OF(add_to_waitq_locked);
 
 static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
 			k_timeout_t timeout)
@@ -603,10 +595,7 @@ bool z_thread_prio_set(struct k_thread *thread, int prio)
 	return need_sched;
 }
 
-void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
-{
-	reschedule(lock, key);
-}
+void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key) ALIAS_OF(reschedule);
 
 void z_reschedule_irqlock(uint32_t key)
 {
