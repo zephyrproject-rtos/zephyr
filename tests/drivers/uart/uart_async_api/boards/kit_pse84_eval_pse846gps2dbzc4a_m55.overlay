@@ -14,7 +14,7 @@ dut: &scb5 {
 	status = "okay";
 	current-speed = <115200>;
 
-	clocks = <&peri0_group1_16bit_1>;
+	clocks = <&peri0_group1_16bit_2>;
 
 	pinctrl-0 = <&p17_1_scb5_uart_tx &p17_0_scb5_uart_rx>;
 	pinctrl-names = "default";
@@ -31,7 +31,7 @@ dut: &scb5 {
 	input-enable;
 };
 
-&peri0_group1_16bit_1 {
+&peri0_group1_16bit_2 {
 	status = "okay";
 	clock-div = <109>;
 };

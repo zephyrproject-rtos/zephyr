@@ -76,9 +76,8 @@ static void event_handler_ep_request(struct usbd_context *const uds_ctx)
 		}
 
 		if (ret) {
-			LOG_ERR("Unrecoverable error %d, ep 0x%02x, buf %p",
+			LOG_DBG("Transfer result %d, ep 0x%02x, buf %p",
 				ret, bi->ep, (void *)buf);
-			usbd_msg_pub_simple(uds_ctx, USBD_MSG_STACK_ERROR, ret);
 		}
 	}
 }

@@ -147,7 +147,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: 35d874ccfb8fb062ca8bdf096764b8d34c6d608e
+      revision: a554a31806bc308d954fdb43143d260902da9b1e
       path: modules/hal/adi
       groups:
         - hal
@@ -168,11 +168,11 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: aa6d2207eb479b78c55ed6123d7e2b96617faf9e
+      revision: 5d80bd5e43936dc0a8530dbfff94abe3a8e10e0d
       groups:
         - hal
     - name: hal_espressif
-      revision: 9687c46182a5308e60efcc65d18b1cf651a5bfc5
+      revision: d6a25c8f2a019f7e4d21cf664075f6b94c28eae8
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 60a4220d896a67319e9e4e29420d4ea4bb3114f3
+      revision: c73313ab49840fee98cb347034526aaab62122a6
       path: modules/hal/infineon
       groups:
         - hal
@@ -213,7 +213,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 9f81602140d779d5142bfd2ba41ebe7ba0f38d58
+      revision: 6c77523dfdfc5a1ecefbafb31feee6499a5de8ec
       path: modules/hal/nxp
       groups:
         - hal
@@ -229,7 +229,7 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: a00cf493fa200df303f617d609538d33088c2654
+      revision: 9a4caf9846d6f0ceb6b38f971a771b1325c1e4b9
       groups:
         - hal
     - name: hal_renesas
@@ -248,7 +248,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: d91d60465ca99b0a8e44a429769ee759843267f7
+      revision: 759584f0b08f3cc99443a293a59b4a492687c67e
       path: modules/hal/silabs
       groups:
         - hal
@@ -258,7 +258,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 40b720b80ab8f399263998dfc9a0e8a2bfc7a729
+      revision: 9b6fb9e0ee432d12a31b6327a3690d243b74d178
       path: modules/hal/stm32
       groups:
         - hal
@@ -273,7 +273,7 @@ manifest:
       groups:
         - hal
     - name: hal_ti
-      revision: 063b2a62d6e9c5db2978eacaf574155747b59f76
+      revision: d9d5b1c9a72b21f9fc30f5815be2232b081e650c
       path: modules/hal/ti
       groups:
         - hal
@@ -294,12 +294,12 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: e97765d250aad14e0d2495a3fd5d4d9354a408df
+      revision: 568e4423c76ec70b2ea9a5ed43085af9a29999ec
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
     - name: libmctp
-      revision: 782a9da666b6e7703b28dee65499a8f1f456f2b5
+      revision: b6be45dfc5c67c43c3a5e12589ae3845ea00ab5e
       path: modules/lib/libmctp
     - name: libmetal
       revision: c41f476ba425663cadf7e456b6432e4b21591278
@@ -313,7 +313,7 @@ manifest:
       path: modules/fs/littlefs
       groups:
         - fs
-      revision: 8f5ca347843363882619d8f96c00d8dbd88a8e79
+      revision: 7b969efe9ecf2942e811aeaaa3f2782623642ccf
     - name: lora-basics-modem
       revision: a8ddc544043e72807cf7db532478e1dda734ae7c
       path: modules/lib/lora-basics-modem
@@ -324,12 +324,12 @@ manifest:
       revision: bbedf2656086a93a8468a1c98168a6b36631ce9a
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 554163f6f7b2ec71fed9b423e81f2217a8615d29
+      revision: 098e120afb51877ed814bdc04443890ae12e0642
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
-      revision: 0fae8920c4e5acb792b3fe766c89c668f42be6ee
+      revision: c38f7a10c14ae8b95c0296cd10320907c28e02c7
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -365,7 +365,7 @@ manifest:
       path: modules/lib/openthread
     - name: percepio
       path: modules/debug/percepio
-      revision: 57358a359d95fa7239d0dccd768f587ffc8f71bb
+      revision: 022c06f76d3e141aad98252fa9211665bf8ca027
       groups:
         - debug
     - name: picolibc
@@ -389,7 +389,7 @@ manifest:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: 2d881593696aec687ca2246c53de207c2b9bf782
+      revision: fa92349590a54959ee2efc21b668e5afdb144726
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
@@ -399,7 +399,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 47b9f07b9ec2c879acc38709e9e7ba3202143a38
+      revision: 52c7593c1f361a9d7cebc0fa83e5bcfb1e415032
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

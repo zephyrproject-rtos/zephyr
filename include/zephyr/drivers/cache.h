@@ -273,8 +273,8 @@ int cache_instr_flush_and_invd_range(void *addr, size_t size);
  * The function must be implemented only when CONFIG_ICACHE_LINE_SIZE_DETECT is
  * defined.
  *
- * @retval size Size of the d-cache line.
- * @retval 0 The d-cache is not enabled.
+ * @retval size Size of the i-cache line.
+ * @retval 0 The i-cache is not enabled.
  */
 size_t cache_instr_line_size_get(void);
 

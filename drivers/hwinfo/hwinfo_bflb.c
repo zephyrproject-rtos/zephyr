@@ -9,13 +9,19 @@
 #include <zephyr/sys/byteorder.h>
 
 /*
- * All BFLB SoCs (BL602, BL702, BL702L, BL616) store a factory-programmed
+ * Most BFLB SoCs (BL602, BL702, BL702L, BL616) store a factory-programmed
  * MAC address in efuse at offset 0x14 (low 32 bits) and 0x18. The MAC is stored
  * in little-endian order and must be byte-swapped to network (big-endian)
  * order so the OUI occupies the first three bytes.
  */
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+#define EFUSE_WIFI_MAC_LOW_OFFSET	0x04
+#define EFUSE_WIFI_MAC_HIGH_OFFSET	0x08
+#else
 #define EFUSE_WIFI_MAC_LOW_OFFSET	0x14
 #define EFUSE_WIFI_MAC_HIGH_OFFSET	0x18
+#endif
+
 /* BL70x/L parity slot */
 #define EFUSE_DATA_0_EF_KEY_SLOT_5_W2	0x74
 

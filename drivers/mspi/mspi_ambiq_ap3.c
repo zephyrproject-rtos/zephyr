@@ -79,7 +79,7 @@ struct mspi_ambiq_data {
 	struct k_mutex                   lock;
 
 	struct mspi_dev_cfg              dev_cfg;
-	struct mspi_xip_cfg              xip_cfg;
+	struct mspi_memmap_cfg           memmap_cfg;
 	struct mspi_scramble_cfg         scramble_cfg;
 
 	mspi_callback_handler_t          cbs[MSPI_BUS_EVENT_MAX];
@@ -894,9 +894,9 @@ e_return:
 	return ret;
 }
 
-static int mspi_ambiq_xip_config(const struct device       *controller,
-				 const struct mspi_dev_id  *dev_id,
-				 const struct mspi_xip_cfg *xip_cfg)
+static int mspi_ambiq_memmap_config(const struct device          *controller,
+				    const struct mspi_dev_id     *dev_id,
+				    const struct mspi_memmap_cfg *memmap_cfg)
 {
 	struct mspi_ambiq_data         *data = controller->data;
 	am_hal_mspi_request_e           eRequest;
@@ -909,7 +909,7 @@ static int mspi_ambiq_xip_config(const struct device       *controller,
 		return -ESTALE;
 	}
 
-	if (xip_cfg->enable) {
+	if (memmap_cfg->enable) {
 		eRequest = AM_HAL_MSPI_REQ_XIP_EN;
 	} else {
 		eRequest = AM_HAL_MSPI_REQ_XIP_DIS;
@@ -918,11 +918,11 @@ static int mspi_ambiq_xip_config(const struct device       *controller,
 	ret = am_hal_mspi_control(data->mspiHandle, eRequest, NULL);
 	if (ret) {
 		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to set XIP enable:%d.",
-			     __LINE__, xip_cfg->enable);
+			     __LINE__, memmap_cfg->enable);
 		return -EHOSTDOWN;
 	}
 
-	data->xip_cfg = *xip_cfg;
+	data->memmap_cfg = *memmap_cfg;
 	return ret;
 }
 
@@ -1454,7 +1454,7 @@ static int mspi_ambiq_init(const struct device *controller)
 static DEVICE_API(mspi, mspi_ambiq_driver_api) = {
 	.config             = mspi_ambiq_config,
 	.dev_config         = mspi_ambiq_dev_config,
-	.xip_config         = mspi_ambiq_xip_config,
+	.memmap_config      = mspi_ambiq_memmap_config,
 	.scramble_config    = mspi_ambiq_scramble_config,
 	.timing_config      = mspi_ambiq_timing_config,
 	.get_channel_status = mspi_ambiq_get_channel_status,

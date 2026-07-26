@@ -5,8 +5,7 @@
 
 if BOARD_CRD40L50
 
-config SPI_STM32_INTERRUPT
+configdefault SPI_STM32_INTERRUPT
 	default y
-	depends on SPI
 
 endif # BOARD_CRD40L50

@@ -16,6 +16,12 @@ else()
 endif()
 
 board_runner_args(openocd --no-load --no-targets --no-halt)
+# 'west flash --erase' invokes the vendor 'erase_all' OpenOCD proc, which
+# erases the on-die CM33 main_ns RRAM bank (which includes the non-reserved
+# memory portion) and every external SMIF/QSPI bank attached to the device. The
+# 'main_s' bank is a virtual alias of 'main_ns' so a single sector erase
+# covers both secure and non-secure views.
+board_runner_args(openocd "--cmd-erase=erase_all")
 board_runner_args(openocd "--gdb-init=maint flush register-cache")
 board_runner_args(openocd "--gdb-init=tb main")
 board_runner_args(openocd "--gdb-init=continue")

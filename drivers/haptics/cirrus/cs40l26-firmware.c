@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2026, Cirrus Logic, Inc.
+ * Copyright (c) 2026 Cirrus Logic, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief Firmware for Cirrus Logic CS40L26/27 Haptic Devices
+ * @brief Firmware functions for Cirrus Logic CS40L26/27 haptic drivers
  */
 
 #include "cs40l26.h"

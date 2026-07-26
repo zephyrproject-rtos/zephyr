@@ -78,6 +78,15 @@ if(CONFIG_ARM)
   set(CONFIG_MCUX_COMPONENT_driver.dsp ON)
 endif()
 
+# i.MX943 device headers unconditionally include "fsl_elec_spec.h", which lives
+# in the device drivers/ folder. That folder is only added to the include path
+# when a drivers/ component is selected; Cortex-A cores do not pull in
+# driver.reset (see above), so enable elec_spec for the whole device to keep
+# the include path valid on every core.
+if(CONFIG_SOC_MIMX94398)
+  set(CONFIG_MCUX_COMPONENT_driver.elec_spec ON)
+endif()
+
 # load device variables
 include(${mcux_device_folder}/variable.cmake)
 
@@ -131,6 +140,16 @@ endif()
 
 # Load device files
 mcux_add_cmakelists(${mcux_device_folder})
+
+# i.MX943 Cortex-A ships ca55/exception.c, a weak putc/puts helper that pulls in
+# the SDK debug console (fsl_debug_console.h). That header is not part of
+# hal_nxp and Zephyr provides its own console, so drop the file from the build.
+if(CONFIG_SOC_MIMX94398 AND CONFIG_CPU_CORTEX_A)
+  mcux_project_remove_source(
+    BASE_PATH ${SdkRootDirPath}
+    SOURCES devices/i.MX/i.MX943/MIMX94398/ca55/exception.c
+  )
+endif()
 
 # Workaround for fsl_flexspi_nor_boot link error, remove the one in SDK, use the Zephyr file.
 if(CONFIG_MCUX_COMPONENT_device.boot_header)

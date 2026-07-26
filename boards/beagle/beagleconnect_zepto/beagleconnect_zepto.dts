@@ -20,6 +20,7 @@
 		led0 = &led0;
 		sw0 = &button0;
 		watchdog0 = &wdt0;
+		counter = &counterg0;
 	};
 
 	chosen {
@@ -82,5 +83,13 @@
 };
 
 &trng {
+	status = "okay";
+};
+
+&timg0 {
+	status = "okay";
+};
+
+&counterg0 {
 	status = "okay";
 };

@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2026 Liu Changjie
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Drive the on-board PA0 LED (active-low, tied to TIM2_CH1 with no remap)
+ * as a breathing LED using the fade_led sample.
+ */
+
+/ {
+	leds {
+		/* Disable the gpio-led so PA0 is owned by PWM, not GPIO. */
+		status = "disabled";
+	};
+};
+
+&pwmleds {
+	status = "okay";
+};
+
+&tim2 {
+	status = "okay";
+	/* Timer clock is 144 MHz (RCC HPRE_DIV1; WCH clock driver returns
+	 * AHB == APB1 == APB2). fade_led uses a 20 ms period = 50 Hz.
+	 * 144 MHz / 65536 / 50 Hz ~ 44, so pick prescaler 43 for a counter
+	 * clock of 3.27 MHz and a 20 ms period of ~65536 cycles.
+	 */
+	prescaler = <43>;
+};
+
+&pwm2 {
+	status = "okay";
+	pinctrl-0 = <&pwm2_default>;
+	pinctrl-names = "default";
+};

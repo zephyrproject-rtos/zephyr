@@ -54,25 +54,46 @@ struct dac_stm32_cfg {
 	struct stm32_pclken pclken;
 	/* pinctrl configurations. */
 	const struct pinctrl_dev_config *pcfg;
+	/* number of channels supported */
+	uint8_t channel_count;
 };
 
 /* Runtime driver data */
 struct dac_stm32_data {
-	uint8_t channel_count;
 	uint8_t resolution;
 };
+
+static int channel_id_to_index(uint8_t channel_id, uint8_t channel_count)
+{
+	/*
+	 * Note how this operation underflows for channel_id = 0
+	 * and wraps back to UINT8_MAX which is higher than the
+	 * maximum number of channels.
+	 */
+	const uint8_t channel_idx = channel_id - STM32_FIRST_CHANNEL;
+
+	if (channel_idx >= channel_count) {
+		LOG_ERR("Channel %d is not valid", channel_id);
+		return -EINVAL;
+	}
+
+	return (int)channel_idx;
+}
 
 static int dac_stm32_write_value(const struct device *dev,
 					uint8_t channel, uint32_t value)
 {
 	struct dac_stm32_data *data = dev->data;
 	const struct dac_stm32_cfg *cfg = dev->config;
+	unsigned int ll_channel;
+	int channel_idx;
 
-	if (channel - STM32_FIRST_CHANNEL >= data->channel_count ||
-					channel < STM32_FIRST_CHANNEL) {
-		LOG_ERR("Channel %d is not valid", channel);
-		return -EINVAL;
+	channel_idx = channel_id_to_index(channel, cfg->channel_count);
+	if (channel_idx < 0) {
+		return channel_idx;
 	}
+
+	ll_channel = table_channels[channel_idx];
 
 	if (value >= BIT(data->resolution)) {
 		LOG_ERR("Value %d is out of range", value);
@@ -80,11 +101,9 @@ static int dac_stm32_write_value(const struct device *dev,
 	}
 
 	if (data->resolution == 8) {
-		LL_DAC_ConvertData8RightAligned(cfg->base,
-			table_channels[channel - STM32_FIRST_CHANNEL], value);
+		LL_DAC_ConvertData8RightAligned(cfg->base, ll_channel, value);
 	} else if (data->resolution == 12) {
-		LL_DAC_ConvertData12RightAligned(cfg->base,
-			table_channels[channel - STM32_FIRST_CHANNEL], value);
+		LL_DAC_ConvertData12RightAligned(cfg->base, ll_channel, value);
 	}
 
 	return 0;
@@ -96,13 +115,7 @@ static int dac_stm32_channel_setup(const struct device *dev,
 	struct dac_stm32_data *data = dev->data;
 	const struct dac_stm32_cfg *cfg = dev->config;
 	uint32_t cfg_setting, channel;
-
-	if ((channel_cfg->channel_id - STM32_FIRST_CHANNEL >=
-			data->channel_count) ||
-			(channel_cfg->channel_id < STM32_FIRST_CHANNEL)) {
-		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
-		return -EINVAL;
-	}
+	int channel_idx;
 
 	if ((channel_cfg->resolution == 8) ||
 			(channel_cfg->resolution == 12)) {
@@ -112,7 +125,12 @@ static int dac_stm32_channel_setup(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	channel = table_channels[channel_cfg->channel_id - STM32_FIRST_CHANNEL];
+	channel_idx = channel_id_to_index(channel_cfg->channel_id, cfg->channel_count);
+	if (channel_idx < 0) {
+		return channel_idx;
+	}
+
+	channel = table_channels[channel_idx];
 
 	if (channel_cfg->buffered) {
 		cfg_setting = LL_DAC_OUTPUT_BUFFER_ENABLE;
@@ -182,11 +200,10 @@ static DEVICE_API(dac, api_stm32_driver_api) = {
 		.base = (DAC_TypeDef *)DT_INST_REG_ADDR(index),		\
 		.pclken = STM32_DT_INST_CLOCK_INFO(index),		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),		\
+		.channel_count = STM32_CHANNEL_COUNT,			\
 	};								\
 									\
-	static struct dac_stm32_data dac_stm32_data_##index = {		\
-		.channel_count = STM32_CHANNEL_COUNT			\
-	};								\
+	static struct dac_stm32_data dac_stm32_data_##index;		\
 									\
 	DEVICE_DT_INST_DEFINE(index, &dac_stm32_init, NULL,		\
 			      &dac_stm32_data_##index,			\

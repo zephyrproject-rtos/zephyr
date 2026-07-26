@@ -23,22 +23,19 @@ config MODEM_HL78XX
 
 if MODEM_HL78XX
 
-choice MODEM_HL78XX_VARIANT
-	bool "Sierra Wireless hl78xx variant selection"
-	default MODEM_HL78XX_12 if DT_HAS_SWIR_HL7812_ENABLED
-	default MODEM_HL78XX_00 if DT_HAS_SWIR_HL7800_ENABLED
-
 config MODEM_HL78XX_12
-	bool "Sierra Wireless hl7812"
+	bool
+	default y if DT_HAS_SWIR_HL7812_ENABLED
 	help
-	  Support for hl7812 modem
+	  Enable support for Sierra Wireless HL7812 modems when a matching
+	  devicetree node is present.
 
 config MODEM_HL78XX_00
-	bool "Sierra Wireless hl7800"
+	bool
+	default y if DT_HAS_SWIR_HL7800_ENABLED
 	help
-	  Support for hl7800 modem
-
-endchoice
+	  Enable support for Sierra Wireless HL7800 modems when a matching
+	  devicetree node is present.
 
 config MODEM_HL78XX_HAS_KSTATEV_URC
 	bool

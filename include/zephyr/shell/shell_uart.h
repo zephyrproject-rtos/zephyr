@@ -10,8 +10,8 @@
  * @ingroup shell_uart
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_UART_H_
-#define ZEPHYR_INCLUDE_SHELL_UART_H_
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_UART_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_UART_H_
 
 #include <zephyr/drivers/serial/uart_async_rx.h>
 #include <zephyr/mgmt/mcumgr/transport/smp_shell.h>
@@ -132,4 +132,4 @@ struct smp_shell_data *shell_uart_smp_shell_data_get_ptr(void);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_UART_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_UART_H_ */

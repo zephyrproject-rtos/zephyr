@@ -18,7 +18,7 @@ static inline int z_vrfy_dac_channel_setup(const struct device *dev,
 				(struct dac_channel_cfg *)user_channel_cfg,
 				sizeof(struct dac_channel_cfg)));
 
-	return z_impl_dac_channel_setup((const struct device *)dev,
+	return z_impl_dac_channel_setup(dev,
 					&channel_cfg);
 }
 #include <zephyr/syscalls/dac_channel_setup_mrsh.c>
@@ -28,7 +28,7 @@ static inline int z_vrfy_dac_write_value(const struct device *dev,
 {
 	K_OOPS(K_SYSCALL_DRIVER_DAC(dev, write_value));
 
-	return z_impl_dac_write_value((const struct device *)dev, channel,
+	return z_impl_dac_write_value(dev, channel,
 				      value);
 }
 #include <zephyr/syscalls/dac_write_value_mrsh.c>

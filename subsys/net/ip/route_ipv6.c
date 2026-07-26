@@ -91,7 +91,7 @@ struct net_route_entry *net_route_ipv6_lookup(struct net_if *iface,
 struct net_route_entry *net_route_ipv6_add(struct net_if *iface,
 					   struct net_in6_addr *addr,
 					   uint8_t prefix_len,
-					   struct net_in6_addr *nexthop,
+					   const struct net_in6_addr *nexthop,
 					   uint32_t lifetime,
 					   uint8_t preference)
 {
@@ -121,7 +121,7 @@ int net_route_ipv6_del(struct net_route_entry *route)
 }
 
 int net_route_ipv6_del_by_nexthop(struct net_if *iface,
-				  struct net_in6_addr *nexthop)
+				  const struct net_in6_addr *nexthop)
 {
 	struct net_addr addr = route_ipv6_addr(nexthop);
 

@@ -642,8 +642,8 @@ steps:
     interface.  The GitHub release interface does not generate annotated tags (it
     generates 'lightweight' tags regardless of release or pre-release). You should
     also upload your gpg public key to your GitHub account, since the instructions
-    below involve creating signed tags. However, if you do not have a gpg public
-    key you can opt to remove the ``-s`` option from the commands below.
+    below involve creating signed tags. Alternatively, if you don't have a gpg key,
+    you can also use your ssh key for signing.
 
 .. tabs::
 

@@ -13,6 +13,7 @@ jobs:
   bsim-test-results:
     name: "Publish BabbleSim Test Results"
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     if: github.event.workflow_run.conclusion != 'skipped'
     permissions:
       checks: write # to create the check run entry with test results

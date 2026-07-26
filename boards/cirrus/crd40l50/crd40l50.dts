@@ -38,6 +38,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &rtt0;
 		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flash_1;
 		zephyr,sram = &sram0;
 	};
 

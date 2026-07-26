@@ -66,7 +66,7 @@ int main(void)
 {
 	const struct device *const i2s_dev_codec = DEVICE_DT_GET(I2S_CODEC_TX);
 #if CONFIG_USE_DMIC
-	const struct device *const dmic_dev = DEVICE_DT_GET(DT_NODELABEL(dmic_dev));
+	const struct device *const dmic_dev = DEVICE_DT_GET(DT_ALIAS(dmic0));
 #endif
 	const struct device *const codec_dev = DEVICE_DT_GET(DT_NODELABEL(audio_codec));
 	struct i2s_config config;
@@ -126,8 +126,10 @@ int main(void)
 	audio_cfg.dai_cfg.i2s.frame_clk_freq = SAMPLE_FREQUENCY;
 	audio_cfg.dai_cfg.i2s.mem_slab = &mem_slab;
 	audio_cfg.dai_cfg.i2s.block_size = BLOCK_SIZE;
+	audio_cfg.mclk_freq = CONFIG_I2S_MCLK_FREQUENCY;
 	audio_codec_configure(codec_dev, &audio_cfg);
 	k_msleep(1000);
+	audio_codec_start_output(codec_dev);
 
 #if CONFIG_USE_DMIC
 	cfg.channel.req_num_chan = 2;

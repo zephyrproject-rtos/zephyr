@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP SLEEPCON (Sleep Controller) acting as a Wakeup Controller (WUC).
+
+  The SLEEPCON WAKEUPEN registers gate which peripheral interrupts are
+  allowed to wake a CPU from low-power modes. A wakeup source is identified
+  by its NVIC interrupt number: enabling source N sets bit (N % 32) of
+  the WAKEUPEN(N / 32) register. This maps 1:1 onto the "id" cell consumed
+  through "wakeup-ctrls" properties, so the id of a source equals the
+  interrupt number of the module that owns it (e.g. the RTC alarm interrupt,
+  a GPIO port interrupt, an MU interrupt).
+
+compatible: "nxp,sleepcon-wuc"
+
+include: [base.yaml, wuc-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  '#wakeup-ctrl-cells':
+    type: int
+    const: 1
+    description: |
+      Number of cells in wakeup-ctrls property.
+
+wakeup-ctrl-cells:
+  - id

@@ -18,10 +18,19 @@ LOG_MODULE_DECLARE(ext2, LOG_LEVEL_DBG);
 
 FS_EXT2_DECLARE_DEFAULT_CONFIG(ext2_default);
 
-static void validate_config(struct ext2_cfg *cfg)
+static int validate_config(struct ext2_cfg *cfg)
 {
 	if (cfg->block_size == 0) {
 		cfg->block_size = ext2_default.block_size;
+	} else if (cfg->block_size < 1024 ||
+		   (cfg->block_size & (cfg->block_size - 1)) != 0) {
+		/* block_size must be a power of two of at least 1024, otherwise the
+		 * 's_log_block_size' calculation below (log2(block_size) - 11) would
+		 * underflow the unsigned 'block_log_size' and corrupt the superblock.
+		 */
+		LOG_ERR("Unsupported block_size %u (must be 0 or a power of two >= 1024)",
+			cfg->block_size);
+		return -EINVAL;
 	}
 
 	if (cfg->bytes_per_inode == 0) {
@@ -40,6 +49,8 @@ static void validate_config(struct ext2_cfg *cfg)
 		cfg->uuid[6] = (cfg->uuid[6] & 0x0f) | 0x40;
 		cfg->uuid[8] = (cfg->uuid[8] & 0x3f) | 0x80;
 	}
+
+	return 0;
 }
 
 static void set_bitmap_padding(uint8_t *bitmap, uint32_t nelems, struct ext2_cfg *cfg)
@@ -97,7 +108,11 @@ int ext2_format(struct ext2_data *fs, struct ext2_cfg *cfg)
 {
 	int rc, ret = 0;
 
-	validate_config(cfg);
+	ret = validate_config(cfg);
+	if (ret < 0) {
+		return ret;
+	}
+
 	LOG_INF("[Config] blk_sz:%d fs_sz:%d ino_bytes:%d uuid:'%s' vol:'%s'",
 			cfg->block_size, cfg->fs_size, cfg->bytes_per_inode, cfg->uuid,
 			cfg->volume_name);

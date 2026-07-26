@@ -21,18 +21,29 @@ config DNS_RESOLVER_AUTO_INIT
 
 config MDNS_RESOLVER
 	bool "MDNS support"
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	help
 	  This option enables multicast DNS client side support.
 	  See RFC 6762 for details.
 
+	  When the mDNS responder is not enabled, the resolver joins the mDNS
+	  multicast groups itself and needs the network management events to
+	  rejoin them if an interface goes down and comes back up.
+
 config LLMNR_RESOLVER
-	bool "LLMNR support"
+	bool "LLMNR support [DEPRECATED]"
+	select DEPRECATED
 	help
 	  This option enables link local multicast name resolution client side
 	  support. See RFC 4795 for details. LLMNR is typically used by Windows
 	  hosts. If you enable this option, then the DNS requests are ONLY sent
 	  to LLMNR well known multicast address 224.0.0.252:5355 or
 	  [ff02::1:3]:5355 and other DNS server addresses are ignored.
+
+	  LLMNR is being phased out (Microsoft is retiring it) and this option
+	  is deprecated and will be removed in a future release. Use mDNS
+	  (CONFIG_MDNS_RESOLVER) or unicast DNS instead.
 
 config DNS_RESOLVER_ADDITIONAL_QUERIES
 	int "Additional DNS queries"
@@ -337,7 +348,8 @@ config MDNS_RESOLVER_ADDITIONAL_BUF_CTR
 endif # MDNS_RESPONDER
 
 config LLMNR_RESPONDER
-	bool "LLMNR responder"
+	bool "LLMNR responder [DEPRECATED]"
+	select DEPRECATED
 	select NET_IPV4_IGMP if NET_IPV4
 	select NET_IPV6_MLD if NET_IPV6
 	select NET_MGMT
@@ -355,6 +367,10 @@ config LLMNR_RESPONDER
 	  so there should be NO dot (".") in the name (RFC 4795 ch 3).
 	  Current implementation does not support TCP.
 	  See RFC 4795 for more details about LLMNR.
+
+	  LLMNR is being phased out (Microsoft is retiring it) and this option
+	  is deprecated and will be removed in a future release. Use the mDNS
+	  responder (CONFIG_MDNS_RESPONDER) instead.
 
 if LLMNR_RESPONDER
 

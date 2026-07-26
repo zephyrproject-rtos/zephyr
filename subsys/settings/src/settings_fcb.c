@@ -11,7 +11,7 @@
 #include <string.h>
 
 #include <zephyr/settings/settings.h>
-#include "settings/settings_fcb.h"
+#include <settings/settings_fcb.h>
 #include "settings_priv.h"
 
 #include <zephyr/logging/log.h>

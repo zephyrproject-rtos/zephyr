@@ -16,6 +16,7 @@
 #include <string.h>
 /* private kernel APIs */
 #include <ksched.h>
+#include <kernel_internal.h>
 #include <scheduler.h>
 #include <wait_q.h>
 
@@ -150,27 +151,21 @@ static int create_free_list(struct k_mem_slab *slab)
  * into the object core registration (see K_OBJ_TYPE_DEFINE_STATS above, which
  * handles this slab type's object core duties).
  *
- * @retval 0 Success.
- * @retval -EINVAL Slab contains invalid configuration and/or values.
+ * Initialization stops at the first slab with an invalid configuration
+ * (create_free_list() fails), matching the previous SYS_INIT behavior whose
+ * return value was discarded by the init runner.
  */
-static int init_mem_slab_module(void)
+static void init_mem_slab_module(void)
 {
-	int rc = 0;
-
 	STRUCT_SECTION_FOREACH(k_mem_slab, slab) {
-		rc = create_free_list(slab);
-		if (rc < 0) {
-			goto out;
+		if (create_free_list(slab) < 0) {
+			return;
 		}
 		k_object_init(slab);
 	}
-
-out:
-	return rc;
 }
 
-SYS_INIT(init_mem_slab_module, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_KERNEL_INIT_PRE(init_mem_slab_module);
 
 int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 		    size_t block_size, uint32_t num_blocks)

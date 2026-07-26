@@ -24,7 +24,7 @@ static char serial_number[OPTA_SERIAL_NUMBER_SIZE + 1];
 
 const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(qspi_flash));
 
-static int board_info(void)
+void board_late_init_hook(void)
 {
 	QSPI_CommandTypeDef cmd = {
 		.Instruction = AT25SF128_READ_SECURITY_REGISTERS,
@@ -39,19 +39,11 @@ static int board_info(void)
 	};
 
 	if (!device_is_ready(dev)) {
-		return -ENODEV;
+		return;
 	}
 
-	int ret = flash_ex_op(dev, FLASH_STM32_QSPI_EX_OP_GENERIC_READ, (uintptr_t)&cmd, &info);
-
-	if (ret != 0) {
-		return -EIO;
-	}
-
-	return 0;
+	(void)flash_ex_op(dev, FLASH_STM32_QSPI_EX_OP_GENERIC_READ, (uintptr_t)&cmd, &info);
 }
-
-SYS_INIT(board_info, APPLICATION, 0);
 
 #endif /* CONFIG_FLASH_STM32_QSPI_GENERIC_READ */
 

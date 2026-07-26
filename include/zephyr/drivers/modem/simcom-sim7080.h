@@ -1,5 +1,6 @@
 /** @file
  * @brief Simcom SIM7080 modem public API header file.
+ * @ingroup simcom_sim7080_interface
  *
  * Copyright (C) 2021 metraTec GmbH
  *
@@ -18,6 +19,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup simcom_sim7080_interface SIMCom SIM7080
+ * @brief SIMCom SIM7080 cellular modems.
+ * @ingroup cellular_interface_ext
+ * @{
+ */
 
 /** Maximum Length of GNSS UTC data */
 #define SIM7080_GNSS_DATA_UTC_LEN 20
@@ -636,5 +644,7 @@ int mdm_sim7080_set_lte_bands(uint32_t nb1, uint32_t m1);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MODEM_SIMCOM_SIM7080_H */

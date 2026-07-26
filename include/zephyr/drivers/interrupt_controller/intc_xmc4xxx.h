@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_XMC4XXX_INTC_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_XMC4XXX_INTC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_XMC4XXX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_XMC4XXX_H_
 
 /**
  * @brief Enable interrupt for specific port_id and pin combination
@@ -40,4 +40,4 @@ int intc_xmc4xxx_gpio_enable_interrupt(int port_id, int pin, enum gpio_int_mode 
 
 int intc_xmc4xxx_gpio_disable_interrupt(int port_id, int pin);
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_XMC4XXX_INTC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_XMC4XXX_H_ */

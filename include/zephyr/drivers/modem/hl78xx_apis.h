@@ -20,7 +20,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <time.h>
-#include <zephyr/modem/chat.h>
 #include <zephyr/drivers/cellular.h>
 #include <zephyr/sys/util_macro.h>
 #ifdef __cplusplus
@@ -876,7 +875,6 @@ struct hl78xx_evt {
 	} content;
 };
 
-#if defined(CONFIG_HL78XX_GNSS_AUX_DATA_PARSER) || defined(__DOXYGEN__)
 /**
  * @brief Parsed GSA sentence data (GNSS DOP and Active Satellites)
  *
@@ -969,6 +967,20 @@ struct hl78xx_gnss_nmea_aux_data {
 };
 
 /**
+ * @brief Forward declaration for modem chat response match descriptors.
+ *
+ * This declaration is intentionally used instead of including
+ * <zephyr/modem/chat.h> from this public API header. The API only needs to
+ * expose pointers to struct modem_chat_match, so the full structure definition
+ * is not required here.
+ *
+ * Source files that dereference struct modem_chat_match members, allocate
+ * instances, or otherwise need the complete type definition must include
+ * <zephyr/modem/chat.h> directly.
+ */
+struct modem_chat_match;
+
+/**
  * @brief GNSS auxiliary data callback function type
  *
  * @param dev Pointer to the GNSS device
@@ -1016,22 +1028,7 @@ struct hl78xx_gnss_aux_data_callback {
 		.dev = DEVICE_DT_GET(_node_id),                                                    \
 		.callback = _callback,                                                             \
 	}
-#else
-/**
- * @brief Register a callback structure for GNSS auxiliary data published
- *
- * @param _dev Device pointer
- * @param _callback The callback function
- */
-#define GNSS_AUX_DATA_CALLBACK_DEFINE(_dev, _callback)
-/**
- * @brief Register a callback structure for GNSS auxiliary data published
- *
- * @param _node_id Device tree node identifier
- * @param _callback The callback function
- */
-#define GNSS_DT_AUX_DATA_CALLBACK_DEFINE(_node_id, _callback)
-#endif
+
 /**
  * @brief API function pointer for configuring networks
  *
@@ -2110,9 +2107,13 @@ int hl78xx_gnss_set_nmea_output(const struct device *dev, enum nmea_output_port 
 /**
  * @brief Set GNSS search timeout
  *
+ * If a GNSS search is already active, the remaining timeout is replaced from
+ * the moment this function is called. Setting @p timeout_ms to 0 disables the
+ * active search timeout.
+ *
  * @param dev Pointer to the GNSS device
  * @param timeout_ms Timeout in milliseconds (0 = no timeout)
- * @return 0 on success, -EBUSY if GNSS search is active, negative errno on failure
+ * @return 0 on success, negative errno on failure
  */
 int hl78xx_gnss_set_search_timeout(const struct device *dev, uint32_t timeout_ms);
 

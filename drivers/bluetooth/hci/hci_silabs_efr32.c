@@ -6,6 +6,7 @@
 
 #include <zephyr/drivers/bluetooth.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
 
 #include <sl_btctrl_linklayer.h>
 #include <sl_hci_common_transport.h>
@@ -79,11 +80,13 @@ static bool slz_is_evt_discardable(const struct bt_hci_evt_hdr *hdr, const uint8
 				return false;
 			}
 
+			uint16_t adv_evt_type = sys_le16_to_cpu(evt->adv_info[0].evt_type);
+
 			/* Never discard if the event could be part of a multi-part report event,
 			 * because the missing part could confuse the BT host.
 			 */
 			return (evt->num_reports == 1) &&
-			       ((evt->adv_info[0].evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) != 0);
+			       ((adv_evt_type & BT_HCI_LE_ADV_EVT_TYPE_LEGACY) != 0);
 		}
 		default:
 			return false;

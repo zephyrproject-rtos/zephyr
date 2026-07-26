@@ -9,7 +9,7 @@
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/kernel.h>
 #if defined(CONFIG_CPU_LOAD)
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 #endif
 
 /* Test Configuration */

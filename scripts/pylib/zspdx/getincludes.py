@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
+import os
 from subprocess import run
 
 _logger = logging.getLogger(__name__)
@@ -61,7 +62,7 @@ def extract_includes(resp):
             sline = rline.split(" ", maxsplit=1)
             if len(sline) != 2:
                 continue
-            includes.add(sline[1])
+            includes.add(os.path.normpath(sline[1]))
 
     includes_list = list(includes)
     includes_list.sort()

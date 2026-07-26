@@ -20,7 +20,7 @@
  * could not allocate its libc/malloc partitions).
  *
  * Gating each window on its owning core keeps the CM33 static set down to
- * {FLASH, SRAM, SHARED_MEMORY_33, M33S_CODE}, recovering partition slots, while
+ * {FLASH, SRAM, M33SHARED, M33SCODE}, recovering partition slots, while
  * the CM55 keeps only the windows it actually uses.
  *
  * We are expected to give *CONFIG_SIZE* in KB, but REGION_ATTR
@@ -43,7 +43,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 #if DT_NODE_EXISTS(DT_NODELABEL(m33_allocatable_shared))
 	MPU_REGION_ENTRY(
-		"SHARED_MEMORY_33",
+		"M33SHARED",
 		DT_REG_ADDR(DT_NODELABEL(m33_allocatable_shared)),
 		REGION_RAM_NOCACHE_ATTR(
 			DT_REG_ADDR(DT_NODELABEL(m33_allocatable_shared)),
@@ -55,7 +55,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 	 */
 #if DT_NODE_EXISTS(DT_NODELABEL(m55_allocatable_shared)) && defined(CONFIG_CPU_CORTEX_M55)
 	MPU_REGION_ENTRY(
-		"SHARED_MEMORY 55",
+		"M55SHARED",
 		DT_REG_ADDR(DT_NODELABEL(m55_allocatable_shared)),
 		REGION_RAM_NOCACHE_ATTR(
 			DT_REG_ADDR(DT_NODELABEL(m55_allocatable_shared)),
@@ -70,7 +70,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 #if DT_NODE_EXISTS(DT_NODELABEL(m33s_code)) && \
 	defined(CONFIG_CPU_CORTEX_M33) && defined(CONFIG_TRUSTED_EXECUTION_SECURE)
 	MPU_REGION_ENTRY(
-		"M33S_CODE",
+		"M33SCODE",
 		DT_REG_ADDR(DT_NODELABEL(m33s_code)),
 		REGION_RAM_ATTR_WITH_EXEC(
 			DT_REG_ADDR(DT_NODELABEL(m33s_code)),
@@ -84,7 +84,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 #if DT_NODE_EXISTS(DT_NODELABEL(m33_code)) && \
 	defined(CONFIG_CPU_CORTEX_M33) && !defined(CONFIG_TRUSTED_EXECUTION_SECURE)
 	MPU_REGION_ENTRY(
-		"M33_CODE",
+		"M33CODE",
 		DT_REG_ADDR(DT_NODELABEL(m33_code)),
 		REGION_RAM_ATTR_WITH_EXEC(
 			DT_REG_ADDR(DT_NODELABEL(m33_code)),

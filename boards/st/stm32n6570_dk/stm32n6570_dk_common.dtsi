@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include "arduino_r3_connector.dtsi"
+#include "stmod_connector.dtsi"
 
 / {
 	chosen {
@@ -331,7 +332,8 @@ csi_i2c: &i2c1 {
 &usart2 {
 	clocks = <&rcc STM32_CLOCK(APB1, 17)>,
 		 <&rcc STM32_SRC_CKPER USART2_SEL(1)>;
-	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pf6>;
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pf6
+		     &usart2_cts_pg5 &usart2_rts_pg14>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";

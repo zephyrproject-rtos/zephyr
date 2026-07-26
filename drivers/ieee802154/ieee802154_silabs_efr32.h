@@ -94,6 +94,8 @@ struct sl_802154_ack_ie_data {
 	 * for the enclosing struct ends up after this field, not before.
 	 */
 	struct ieee802154_header_ie link_metrics_header_ie;
+
+	struct ieee802154_header_ie csl_header_ie;
 };
 
 /* RAIL buffers: use SDK builtin for RX; provide our own TX FIFO (no builtin).
@@ -111,6 +113,11 @@ struct sl_802154_radio_data {
 
 	const sl_rail_ieee802154_config_t rail_ieee802154_config;
 
+	/* TX configs stored in driver-owned memory for RAIL's async use. */
+	sl_rail_csma_config_t csma_config;
+	sl_rail_csma_config_t single_cca_config;
+	sl_rail_scheduled_tx_config_t scheduled_tx_config;
+
 	/* Timer for energy scan operations */
 	sl_rail_multi_timer_t rail_timer;
 
@@ -122,6 +129,7 @@ struct sl_802154_radio_data {
 	uint8_t csma_ca_backoffs;
 
 	bool rail_initialized;
+	bool rx_on_when_idle;
 };
 
 /* Short and extended addresses used for software frame-pending (FPB).
@@ -204,6 +212,10 @@ struct sl_802154_data {
 	 * packets which need to wait for an ack.
 	 */
 	int ack_errno;
+
+	/* CSL anchor time at start-of-MHR in microseconds and period in 10-symbol units. */
+	uint32_t csl_sample_time_us;
+	uint32_t csl_period;
 
 	/* Current channel (11-26 for 2.4 GHz O-QPSK). Set by set_channel(). */
 	uint16_t current_channel;

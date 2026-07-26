@@ -36,15 +36,21 @@ Notes on the above commands:
 
 For more information on these and other related configuration options, see:
 
-- ``SB_CONFIG_BOOTLOADER_MCUBOOT``: build the application for loading by MCUboot
-- ``SB_CONFIG_BOOT_SIGNATURE_KEY_FILE``: the key file to use when signing images. If you have
-  your own key, change this appropriately
+- :kconfig:option:`SB_CONFIG_BOOTLOADER_MCUBOOT`: build the application for loading by MCUboot
+- :kconfig:option:`SB_CONFIG_BOOT_SIGNATURE_KEY_FILE`: the key file, or a comma-separated list of
+  key files, to use when signing images. If you have your own key, change this appropriately.
+  When a list is given, MCUboot embeds the public half of every key and accepts an image
+  signed with any of them; the first entry also signs the application, and every entry
+  past the first must be a public-only PEM of the same signature type
 - :kconfig:option:`CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS`: optional additional command line arguments
   for ``imgtool``
 - :kconfig:option:`CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE`: also generate a confirmed image,
   which may be more useful for flashing in production environments than the OTA-able default image
 - On Windows, if you get "Access denied" issues, the recommended fix is to run
   ``pip3 install imgtool``, then retry with a pristine build directory.
+
+For a worked example of a multi-key bootloader exercised end-to-end under QEMU, see the
+:zephyr_file:`tests/boot/mcuboot_multiple_keys` test.
 
 If your ``west flash`` :ref:`runner <west-runner>` uses an image format supported by imgtool, you
 should see something like this on your device's serial console when you run

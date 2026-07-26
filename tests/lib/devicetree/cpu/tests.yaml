@@ -1,0 +1,9 @@
+tests:
+  libraries.devicetree.cpu:
+    tags: devicetree
+    # We only need this to run on one platform so use native_sim as it
+    # will mostly likely be the fastest.
+    integration_platforms:
+      - native_sim
+    platform_allow:
+      - native_sim

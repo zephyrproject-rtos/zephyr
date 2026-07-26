@@ -247,8 +247,15 @@ void z_riscv_fault(struct arch_esf *esf)
 		reason = K_ERR_STACK_CHK_FAIL;
 	}
 
+	/*
+	 * z_riscv_fatal_error() may return: when the fatal error is handled
+	 * (e.g. an expected fault in test mode aborting the current thread),
+	 * z_fatal_error() returns and the exception exit path in isr.S takes
+	 * care of rescheduling. Do not mark this as unreachable: the compiler
+	 * would place a trapping instruction (or arbitrary code) on the
+	 * return path, causing a fatal error loop.
+	 */
 	z_riscv_fatal_error(reason, esf);
-	CODE_UNREACHABLE;
 }
 
 #ifdef CONFIG_USERSPACE

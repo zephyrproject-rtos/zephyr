@@ -96,6 +96,7 @@
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+		volt-sensor2 = &vddcore;
 		spi-flash0 = &mx66uw1g45;
 		rtc = &rtc;
 	};
@@ -375,6 +376,10 @@ st_cam_i2c: &i2c1 {
 };
 
 &vbat {
+	status = "okay";
+};
+
+&vddcore {
 	status = "okay";
 };
 

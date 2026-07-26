@@ -70,7 +70,7 @@ drivers from installation directory
 Setup Zephyr project for Windows
 =================================
 
-Perform Windows setup from `Getting Started Guide <https://docs.zephyrproject.org/latest/getting_started/index.html>`_.
+Perform Windows setup from :ref:`Getting Started Guide <getting_started>`.
 
 Install nrftools
 =================

@@ -53,6 +53,13 @@
 			sampling-times = <3 7 13 25 48 93 248 641>;
 			st,adc-oversampler = "minimal";
 			st,adc-internal-regulator = "startup-sw-delay";
+
+			/*
+			 * Channel preselection is not available on STM32H72x and STM32H73x
+			 * for ADC3. Since this property is defined in st/h7/stm32h7.dtsi,
+			 * we delete it here.
+			 */
+			/delete-property/ st,adc-has-channel-preselection;
 		};
 
 		dmamux1: dmamux@40020800 {

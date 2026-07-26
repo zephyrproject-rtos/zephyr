@@ -866,8 +866,8 @@ else()
     file(WRITE ${syscalls_subdirs_txt} "")
   endif()
 
-  # On other OS'es, using git checkout is reflected on the folder timestamp and hence detected
-  # when using depend on directory level.
+  # On other OS'es, using git checkout (or switch, restore, etc.) is reflected on the folder
+  # timestamp and hence detected when using depend on directory level.
   # Thus CMake only needs to re-run when sub-directories are added / removed, which is indicated
   # by syscalls_subdirs_txt being updated.
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${syscalls_subdirs_txt})

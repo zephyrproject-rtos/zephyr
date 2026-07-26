@@ -75,5 +75,5 @@ References
 
 .. target-notes::
 
-.. _`WisDuo RAK3112 Website`: https://docs.rakwireless.com/Product-Categories/WisDuo/RAK3112-Module/Overview/
+.. _`WisDuo RAK3112 Website`: https://docs.rakwireless.com/product-categories/wisduo/rak3112-module/overview/
 .. _`Espressif ESP32-S3 Website`: https://www.espressif.com/en/products/socs/esp32-s3

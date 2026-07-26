@@ -26,6 +26,10 @@
 		zephyr,touch = &ft6202;
 	};
 
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+
 	sdram1: sdram@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		device_type = "memory";
@@ -293,7 +297,7 @@ qsh_030_i2c: &i2c4 {
 	status = "okay";
 };
 
-&pdm0 {
+dmic_dev: &pdm0 {
 	pinctrl-0 = <&dfsdm1_ckout_pd3
 		     &dfsdm1_datin1_pc3>;
 	pinctrl-names = "default";

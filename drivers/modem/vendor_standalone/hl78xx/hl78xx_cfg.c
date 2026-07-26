@@ -1440,7 +1440,7 @@ static bool hl78xx_parse_quoted_hex_field(const char *src, uint32_t *value)
 	return true;
 }
 
-static void hl78xx_ctzeu_normalize_value(char *str)
+static void hl78xx_ctzeu_trim_whitespace(char *str)
 {
 	char *start;
 	char *end;
@@ -1453,16 +1453,7 @@ static void hl78xx_ctzeu_normalize_value(char *str)
 	while (isspace((unsigned char)*start)) {
 		start++;
 	}
-	if (start != str) {
-		memmove(str, start, strlen(start) + 1U);
-	}
 
-	hl78xx_trim_surrounding_quotes(str);
-
-	start = str;
-	while (isspace((unsigned char)*start)) {
-		start++;
-	}
 	if (start != str) {
 		memmove(str, start, strlen(start) + 1U);
 	}
@@ -1471,7 +1462,44 @@ static void hl78xx_ctzeu_normalize_value(char *str)
 	while ((end > str) && isspace((unsigned char)end[-1])) {
 		end--;
 	}
+
 	*end = '\0';
+}
+
+static void hl78xx_ctzeu_normalize_value(char *str)
+{
+	if (str == NULL) {
+		return;
+	}
+
+	/*
+	 * First trim whitespace so values such as:
+	 *
+	 *   " \"8\" "
+	 *
+	 * become:
+	 *
+	 *   "\"8\""
+	 *
+	 * before quote removal is attempted.
+	 */
+	hl78xx_ctzeu_trim_whitespace(str);
+
+	/*
+	 * Remove one pair of surrounding quotes, if present.
+	 */
+	hl78xx_trim_surrounding_quotes(str);
+
+	/*
+	 * Trim again so quoted values with internal padding such as:
+	 *
+	 *   "\" 8 \""
+	 *
+	 * normalize to:
+	 *
+	 *   "8"
+	 */
+	hl78xx_ctzeu_trim_whitespace(str);
 }
 
 static int hl78xx_ctzeu_parse_numeric_arg(const char *src, int min_value, int max_value, int *value)
@@ -1629,19 +1657,28 @@ int hl78xx_ctzeu_parse_urc(char **argv, uint16_t argc, struct hl78xx_ctzeu_updat
 
 static bool hl78xx_copy_cereg_timer_field(const char *src, char *dst, size_t dst_size)
 {
+	char timer[11];
+
 	if ((src == NULL) || (dst == NULL) || (dst_size == 0U)) {
 		return false;
 	}
 
-	if (strlen(src) >= dst_size) {
+	safe_strncpy(timer, src, sizeof(timer));
+	hl78xx_trim_surrounding_quotes(timer);
+
+	if (strlen(timer) != 8U) {
 		return false;
 	}
 
-	safe_strncpy(dst, src, dst_size);
+	if (binary_str_to_byte(timer) < 0) {
+		return false;
+	}
+
+	safe_strncpy(dst, timer, dst_size);
 	return true;
 }
 
-void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t argc, bool is_urc)
+void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t argc, bool has_n_param)
 {
 	struct hl78xx_cxreg_status *cxreg;
 	int status_idx;
@@ -1669,7 +1706,7 @@ void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t arg
 	cxreg->has_tau = false;
 	cxreg->tau[0] = '\0';
 
-	status_idx = is_urc ? 2 : 1;
+	status_idx = has_n_param ? 2 : 1;
 	tac_idx = status_idx + 1;
 	cell_idx = status_idx + 2;
 	act_idx = status_idx + 3;
@@ -1734,8 +1771,11 @@ bool hl78xx_parse_plmn(const char *operator, uint16_t *mcc, uint16_t *mnc)
 		return false;
 	}
 
-	while ((*operator != '\0') && (len < (sizeof(digits) - 1U))) {
+	while (*operator != '\0') {
 		if ((*operator >= '0') && (*operator <= '9')) {
+			if (len >= (sizeof(digits) - 1U)) {
+				return false;
+			}
 			digits[len++] = *operator;
 		}
 		operator++;
@@ -1944,8 +1984,7 @@ int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 }
 #endif /* CONFIG_MODEM_HL78XX_AUTO_BAUDRATE */
 
-#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
-/* Convert 8-character binary string to byte (0–255) */
+/* Convert 8-character binary string to byte (0-255) */
 int binary_str_to_byte(const char *bin_str)
 {
 	if (strlen(bin_str) != 8) {
@@ -1979,4 +2018,3 @@ void byte_to_binary_str(uint8_t byte, char *output)
 	}
 	output[8] = '\0';
 }
-#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */

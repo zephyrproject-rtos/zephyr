@@ -10,7 +10,7 @@
 #define FLEXSPI_NOR_CONFIG_
 
 #include <zephyr/types.h>
-#include "fsl_common.h"
+#include <fsl_common.h>
 
 #define FLEXSPI_CFG_BLK_TAG     (0x42464346UL)
 #define FLEXSPI_CFG_BLK_VERSION (0x56010400UL)

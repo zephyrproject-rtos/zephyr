@@ -142,6 +142,13 @@ static void net_test_iface_init(struct net_if *iface)
 	uint8_t *mac = net_test_get_mac(net_if_get_device(iface));
 
 	net_if_set_link_addr(iface, mac, 6, NET_LINK_ETHERNET);
+
+	/* These tests exercise the IP address helpers with a precisely
+	 * controlled set of addresses, so disable neighbor discovery to keep
+	 * the interface from autoconfiguring its own link-local address on
+	 * bring-up.
+	 */
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
 }
 
 static int tester_send(const struct device *dev, struct net_pkt *pkt)

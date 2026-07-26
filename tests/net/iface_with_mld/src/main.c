@@ -278,4 +278,28 @@ ZTEST(net_iface_with_mld, test_addr_add_joins_solicited_node)
 	zassert_true(ret, "Cannot remove IPv6 address from dad_iface");
 }
 
+/*
+ * Bringing an interface up must autoconfigure its IPv6 link-local address
+ * regardless of whether DAD is enabled. The address generation used to be a
+ * side effect of starting DAD, so it was skipped entirely when
+ * CONFIG_NET_IPV6_DAD was disabled, leaving the interface with no link-local
+ * address. The no_dad test variant exercises that case.
+ */
+ZTEST(net_iface_with_mld, test_bringup_adds_link_local)
+{
+	const struct net_in6_addr *ll;
+
+	/* Another test in this suite may have brought the interface up
+	 * already; net_if_up() returns -EALREADY in that case.
+	 */
+	if (!net_if_is_up(dad_iface)) {
+		int ret = net_if_up(dad_iface);
+
+		zassert_ok(ret, "Cannot bring dad_iface up");
+	}
+
+	ll = net_if_ipv6_get_ll(dad_iface, NET_ADDR_ANY_STATE);
+	zassert_not_null(ll, "No link-local address configured on interface bring-up");
+}
+
 ZTEST_SUITE(net_iface_with_mld, NULL, iface_with_mld_setup, NULL, NULL, NULL);

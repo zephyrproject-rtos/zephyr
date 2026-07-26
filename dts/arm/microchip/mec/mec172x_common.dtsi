@@ -494,7 +494,7 @@ dmac: dmac@40002400 {
 		 MCHP_XEC_ECIA(14, 13, 6, 37)
 		 MCHP_XEC_ECIA(14, 14, 6, 38)
 		 MCHP_XEC_ECIA(14, 15, 6, 39)>;
-	pcrs = <1 6>;
+	pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 6)>;
 	#dma-cells = <2>;
 	dma-channels = <16>;
 	dma-requests = <16>;

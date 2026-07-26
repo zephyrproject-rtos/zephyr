@@ -1310,7 +1310,7 @@ DT_INST_FOREACH_STATUS_OKAY(I2C_IT8XXX2_CHECK_SUPPORTED_CLOCK)
 		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),            \
 		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),            \
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
-		.transfer_timeout_ms = DT_INST_PROP(inst, transfer_timeout_ms), \
+		.transfer_timeout_ms = I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst),   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.fifo_enable = DT_INST_PROP(inst, fifo_enable),                 \
 		.push_pull_recovery = DT_INST_PROP(inst, push_pull_recovery),   \

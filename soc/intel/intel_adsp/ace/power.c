@@ -443,7 +443,7 @@ void arch_cpu_idle(void)
 {
 	uint32_t cpu = arch_proc_id();
 
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 

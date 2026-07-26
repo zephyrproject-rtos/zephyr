@@ -393,6 +393,8 @@
 		reg = <0x46c0000 0x4000>;
 		interrupts = <209 0>;
 		gptfreq = <DT_FREQ_M(240)>;
+		low-freq = <DT_FREQ_K(32)>;
+		osc-freq = <DT_FREQ_M(24)>;
 		clocks = <&ccm IMX_CCM_GPT1_CLK 0x41 0>;
 		status = "disabled";
 	};
@@ -402,6 +404,8 @@
 		reg = <0x2ec0000 0x4000>;
 		interrupts = <210 0>;
 		gptfreq = <DT_FREQ_M(240)>;
+		low-freq = <DT_FREQ_K(32)>;
+		osc-freq = <DT_FREQ_M(24)>;
 		clocks = <&ccm IMX_CCM_GPT2_CLK 0x41 0>;
 	};
 
@@ -470,6 +474,19 @@
 		voltage-reference = <2>;
 		status = "disabled";
 		#io-channel-cells = <1>;
+	};
+
+	vref: vref@42e30000 {
+		compatible = "nxp,vref";
+		regulator-name = "mimxrt118x-vref";
+		reg = <0x42e30000 0x30>;
+		status = "disabled";
+		#nxp,reference-cells = <1>;
+		nxp,buffer-startup-delay-us = <400>;
+		nxp,bandgap-startup-time-us = <400>;
+		nxp,current-compensation-en;
+		nxp,internal-voltage-regulator-en;
+		nxp,chop-oscillator-en;
 	};
 
 	qtmr1: timer@2690000 {

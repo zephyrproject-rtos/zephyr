@@ -333,6 +333,8 @@ int ftp_login(struct ftp_client *client, const char *username,
 
 /**@brief Close FTP connection.
  *
+ * @param client FTP client context
+ *
  * @return 0 on success.
  *         A negative errno code in case of a failure.
  *         A positive FTP status code in case of an unexpected server response.
@@ -458,7 +460,7 @@ int ftp_get(struct ftp_client *client, const char *file);
  * @param file Target file name
  * @param data Data to be stored
  * @param length Length of data to be stored
- * @param type specify FTP put types, see enum ftp_reply_code
+ * @param type specify FTP put types, see enum ftp_put_type
  *
  * @return 0 on success.
  *         A negative errno code in case of a failure.

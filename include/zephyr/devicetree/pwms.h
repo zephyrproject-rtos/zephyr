@@ -321,9 +321,9 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the PWM controller from a
- *        DT_DRV_COMPAT instance's pwms property at an index
+ *        @c DT_DRV_COMPAT instance's pwms property at an index
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
  * @return the node identifier for the PWM controller referenced at
  *         index "idx"
@@ -334,8 +334,8 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the PWM controller from a
- *        DT_DRV_COMPAT instance's pwms property by name
- * @param inst DT_DRV_COMPAT instance number
+ *        @c DT_DRV_COMPAT instance's pwms property by name
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a pwms element
  *             as defined by the node's pwm-names property
  * @return the node identifier for the PWM controller in the named element
@@ -346,7 +346,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_PWMS_CTLR_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the node identifier for the PWM controller at index 0
  *         in the instance's "pwms" property
  * @see DT_PWMS_CTLR_BY_IDX()
@@ -354,9 +354,9 @@ extern "C" {
 #define DT_INST_PWMS_CTLR(inst) DT_INST_PWMS_CTLR_BY_IDX(inst, 0)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's PWM specifier's cell value
+ * @brief Get a @c DT_DRV_COMPAT instance's PWM specifier's cell value
  *        at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
  * @param cell lowercase-and-underscores cell name
  * @return the cell value at index "idx"
@@ -365,8 +365,8 @@ extern "C" {
 	DT_PWMS_CELL_BY_IDX(DT_DRV_INST(inst), idx, cell)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's PWM specifier's cell value by name
- * @param inst DT_DRV_COMPAT instance number
+ * @brief Get a @c DT_DRV_COMPAT instance's PWM specifier's cell value by name
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a pwms element
  *             as defined by the node's pwm-names property
  * @param cell lowercase-and-underscores cell name
@@ -378,7 +378,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, 0, cell)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param cell lowercase-and-underscores cell name
  * @return the cell value at index 0
  */
@@ -387,7 +387,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, channel)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
  * @return the channel cell value at index "idx"
  * @see DT_INST_PWMS_CELL_BY_IDX()
@@ -397,7 +397,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_NAME(inst, name, channel)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a pwms element
  *             as defined by the node's pwm-names property
  * @return the channel cell value in the specifier at the named element
@@ -408,7 +408,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_PWMS_CHANNEL_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the channel cell value at index 0
  * @see DT_INST_PWMS_CHANNEL_BY_IDX()
  */
@@ -416,7 +416,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, period)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
  * @return the period cell value at index "idx"
  * @see DT_INST_PWMS_CELL_BY_IDX()
@@ -426,7 +426,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_NAME(inst, name, period)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a pwms element
  *             as defined by the node's pwm-names property
  * @return the period cell value in the specifier at the named element
@@ -437,7 +437,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_PWMS_PERIOD_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the period cell value at index 0
  * @see DT_INST_PWMS_PERIOD_BY_IDX()
  */
@@ -445,7 +445,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, flags)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
  * @return the flags cell value at index "idx", or zero if there is none
  * @see DT_INST_PWMS_CELL_BY_IDX()
@@ -455,7 +455,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_NAME(inst, name, flags)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a pwms element
  *             as defined by the node's pwm-names property
  * @return the flags cell value in the specifier at the named element,
@@ -467,7 +467,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_PWMS_FLAGS_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the flags cell value at index 0, or zero if there is none
  * @see DT_INST_PWMS_FLAGS_BY_IDX()
  */

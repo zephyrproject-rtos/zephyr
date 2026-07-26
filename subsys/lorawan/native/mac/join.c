@@ -86,27 +86,61 @@ struct pkt_join_accept {
 #define JA_MIN_SIZE		(sizeof(struct pkt_join_accept) + LWAN_MIC_SIZE)
 #define JA_MAX_SIZE		(sizeof(struct pkt_join_accept) + JA_CFLIST_SIZE + LWAN_MIC_SIZE)
 
+struct join_rx_ctx {
+	psa_key_id_t nwk_cmac;
+	psa_key_id_t nwk_ecb;
+	uint16_t dev_nonce;
+};
+
+struct join_state {
+	const struct lwan_join_req *req;
+	struct join_rx_ctx rx_ctx;
+	uint8_t frame[sizeof(struct pkt_join_request)];
+	size_t frame_len;
+	uint32_t tx_freq;
+	uint8_t tx_dr_idx;
+};
+
+static void mac_write_join_request_fields(struct pkt_join_request *pkt,
+					  const struct lwan_join_req *req)
+{
+	pkt->mhdr = MHDR_JOIN_REQUEST;
+	sys_memcpy_swap(pkt->join_eui, req->join_eui, EUI_SIZE);
+	sys_memcpy_swap(pkt->dev_eui, req->dev_eui, EUI_SIZE);
+	sys_put_le16(req->dev_nonce, pkt->dev_nonce);
+}
+
+static int mac_write_join_request_mic(psa_key_id_t nwk_cmac,
+				      uint8_t *frame)
+{
+	struct pkt_join_request *pkt = (struct pkt_join_request *)frame;
+	size_t mic_off = offsetof(struct pkt_join_request, mic);
+	int ret;
+
+	/* MIC = cmac(NwkKey, MHDR | JoinEUI | DevEUI | DevNonce) */
+	ret = lwan_crypto_compute_mic(nwk_cmac, frame, mic_off, pkt->mic);
+	if (ret != 0) {
+		LOG_ERR("Failed to compute join request MIC: %d", ret);
+	}
+
+	return ret;
+}
+
 static int mac_build_join_request(const struct lwan_join_req *req,
 				  psa_key_id_t nwk_cmac,
 				  uint8_t *frame, size_t *frame_len)
 {
 	struct pkt_join_request *pkt = (struct pkt_join_request *)frame;
-	size_t mic_off = offsetof(struct pkt_join_request, mic);
 	int ret;
 
 	if (*frame_len < sizeof(*pkt)) {
 		return -ENOMEM;
 	}
 
-	pkt->mhdr = MHDR_JOIN_REQUEST;
-	sys_memcpy_swap(pkt->join_eui, req->join_eui, EUI_SIZE);
-	sys_memcpy_swap(pkt->dev_eui, req->dev_eui, EUI_SIZE);
-	sys_put_le16(req->dev_nonce, pkt->dev_nonce);
+	mac_write_join_request_fields(pkt, req);
 
-	/* MIC = cmac(NwkKey, MHDR | JoinEUI | DevEUI | DevNonce) */
-	ret = lwan_crypto_compute_mic(nwk_cmac, frame, mic_off, pkt->mic);
+	ret = mac_write_join_request_mic(nwk_cmac, frame);
 	if (ret != 0) {
-		LOG_ERR("Failed to compute join request MIC: %d", ret);
 		return ret;
 	}
 
@@ -149,31 +183,34 @@ static void mac_reset_channel_plan(struct lwan_ctx *ctx,
 	}
 }
 
-static int mac_apply_join_accept(struct lwan_ctx *ctx,
-				  const uint8_t *frame, size_t frame_len,
-				  psa_key_id_t nwk_ecb, uint16_t dev_nonce)
+static void mac_read_join_accept_session(struct lwan_session *sess,
+					 const struct pkt_join_accept *ja)
 {
-	const struct pkt_join_accept *ja =
-		(const struct pkt_join_accept *)&frame[MHDR_SIZE];
-	struct lwan_session *sess = &ctx->session;
-	int ret;
-
 	sess->dev_addr = sys_get_le32(ja->dev_addr);
 	sess->rx_delay = ja->rx_delay;
+}
 
-	ret = mac_apply_dl_settings(ctx, ja->dl_settings);
-	if (ret != 0) {
-		return ret;
-	}
-
+static void mac_log_join_accept(const struct lwan_session *sess)
+{
 	LOG_INF("Join accept: DevAddr=0x%08X RX1DRoff=%u RX2DR=%u RxDelay=%u",
 		sess->dev_addr, sess->rx1_dr_offset,
 		sess->rx2_datarate, sess->rx_delay);
+}
 
+static void mac_destroy_session_keys(struct lwan_session *sess)
+{
 	/* Destroy previous session keys if re-joining */
 	psa_destroy_key(sess->app_s_key);
 	psa_destroy_key(sess->fnwk_s_int_cmac);
 	psa_destroy_key(sess->fnwk_s_int_ecb);
+}
+
+static int mac_derive_join_session_keys(struct lwan_session *sess,
+					const struct pkt_join_accept *ja,
+					psa_key_id_t nwk_ecb,
+					uint16_t dev_nonce)
+{
+	int ret;
 
 	ret = lwan_crypto_derive_session_keys(nwk_ecb,
 					      ja->join_nonce,
@@ -184,8 +221,15 @@ static int mac_apply_join_accept(struct lwan_ctx *ctx,
 					      &sess->fnwk_s_int_ecb);
 	if (ret != 0) {
 		LOG_ERR("Session key derivation failed: %d", ret);
-		return ret;
 	}
+
+	return ret;
+}
+
+static void mac_finish_join_accept(struct lwan_ctx *ctx,
+				   const uint8_t *frame, size_t frame_len)
+{
+	struct lwan_session *sess = &ctx->session;
 
 	sess->fcnt_up = 0;
 	sess->fcnt_down = LWAN_FCNT_NONE;
@@ -193,6 +237,33 @@ static int mac_apply_join_accept(struct lwan_ctx *ctx,
 	mac_reset_channel_plan(ctx, &frame[MHDR_SIZE], frame_len - MHDR_SIZE);
 
 	atomic_set_bit(ctx->flags, LWAN_FLAG_JOINED);
+}
+
+static int mac_apply_join_accept(struct lwan_ctx *ctx,
+				  const uint8_t *frame, size_t frame_len,
+				  psa_key_id_t nwk_ecb, uint16_t dev_nonce)
+{
+	const struct pkt_join_accept *ja =
+		(const struct pkt_join_accept *)&frame[MHDR_SIZE];
+	struct lwan_session *sess = &ctx->session;
+	int ret;
+
+	mac_read_join_accept_session(sess, ja);
+
+	ret = mac_apply_dl_settings(ctx, ja->dl_settings);
+	if (ret != 0) {
+		return ret;
+	}
+
+	mac_log_join_accept(sess);
+	mac_destroy_session_keys(sess);
+
+	ret = mac_derive_join_session_keys(sess, ja, nwk_ecb, dev_nonce);
+	if (ret != 0) {
+		return ret;
+	}
+
+	mac_finish_join_accept(ctx, frame, frame_len);
 
 	return 0;
 }
@@ -218,6 +289,32 @@ static int mac_verify_join_accept_mic(psa_key_id_t nwk_cmac,
 	return 0;
 }
 
+static int mac_validate_join_accept_size(size_t rx_len, size_t *payload_len)
+{
+	*payload_len = rx_len - MHDR_SIZE;
+	if (*payload_len != JA_MIN_SIZE &&
+	    *payload_len != JA_MAX_SIZE) {
+		LOG_ERR("Invalid join accept size: %zu", rx_len);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int mac_decrypt_join_accept_frame(psa_key_id_t nwk_ecb,
+					 uint8_t *frame, size_t payload_len)
+{
+	int ret;
+
+	ret = lwan_crypto_decrypt_join_accept(nwk_ecb, &frame[MHDR_SIZE],
+					      payload_len);
+	if (ret != 0) {
+		LOG_ERR("Join accept decrypt failed: %d", ret);
+	}
+
+	return ret;
+}
+
 static int mac_parse_join_accept(struct lwan_ctx *ctx,
 				 const uint8_t *rx_buf, size_t rx_len,
 				 psa_key_id_t nwk_cmac, psa_key_id_t nwk_ecb,
@@ -227,19 +324,15 @@ static int mac_parse_join_accept(struct lwan_ctx *ctx,
 	size_t payload_len;
 	int ret;
 
-	payload_len = rx_len - MHDR_SIZE;
-	if (payload_len != JA_MIN_SIZE &&
-	    payload_len != JA_MAX_SIZE) {
-		LOG_ERR("Invalid join accept size: %zu", rx_len);
-		return -EINVAL;
+	ret = mac_validate_join_accept_size(rx_len, &payload_len);
+	if (ret != 0) {
+		return ret;
 	}
 
 	memcpy(frame, rx_buf, rx_len);
 
-	ret = lwan_crypto_decrypt_join_accept(nwk_ecb, &frame[MHDR_SIZE],
-					      payload_len);
+	ret = mac_decrypt_join_accept_frame(nwk_ecb, frame, payload_len);
 	if (ret != 0) {
-		LOG_ERR("Join accept decrypt failed: %d", ret);
 		return ret;
 	}
 
@@ -250,12 +343,6 @@ static int mac_parse_join_accept(struct lwan_ctx *ctx,
 
 	return mac_apply_join_accept(ctx, frame, rx_len, nwk_ecb, dev_nonce);
 }
-
-struct join_rx_ctx {
-	psa_key_id_t nwk_cmac;
-	psa_key_id_t nwk_ecb;
-	uint16_t dev_nonce;
-};
 
 static enum mac_rx_result join_rx_handler(struct lwan_ctx *ctx,
 					   const uint8_t *rx_buf, size_t rx_len,
@@ -304,52 +391,73 @@ static int select_join_channel_wait(struct lwan_ctx *ctx, uint32_t *freq,
 	return ret;
 }
 
-void mac_do_join(struct lwan_ctx *ctx, const struct lwan_req *req)
+static void join_state_init(struct join_state *state,
+			    const struct lwan_join_req *req)
 {
-	const struct lwan_join_req *join_req = req->data;
-	struct mac_tx_params tx_params;
-	struct join_rx_ctx jctx;
-	uint8_t tx_frame[sizeof(struct pkt_join_request)];
-	size_t tx_frame_len = sizeof(tx_frame);
-	uint32_t tx_freq;
-	uint8_t tx_dr_idx;
+	state->req = req;
+	state->rx_ctx = (struct join_rx_ctx){
+		.dev_nonce = req->dev_nonce,
+	};
+	state->frame_len = sizeof(state->frame);
+}
+
+static int join_import_nwk_key(struct join_state *state)
+{
+	state->rx_ctx.nwk_cmac =
+		lwan_crypto_import_cmac_key(state->req->nwk_key);
+	state->rx_ctx.nwk_ecb =
+		lwan_crypto_import_ecb_key(state->req->nwk_key);
+
+	if (state->rx_ctx.nwk_cmac == 0 || state->rx_ctx.nwk_ecb == 0) {
+		LOG_ERR("Failed to import NwkKey");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int join_prepare_frame(struct join_state *state)
+{
+	return mac_build_join_request(state->req, state->rx_ctx.nwk_cmac,
+				      state->frame, &state->frame_len);
+}
+
+static int join_select_channel(struct lwan_ctx *ctx, struct join_state *state)
+{
 	int ret;
 
-	/* Import NwkKey into PSA — plaintext is not stored */
-	jctx.nwk_cmac = lwan_crypto_import_cmac_key(join_req->nwk_key);
-	jctx.nwk_ecb = lwan_crypto_import_ecb_key(join_req->nwk_key);
-	jctx.dev_nonce = join_req->dev_nonce;
-
-	if (jctx.nwk_cmac == 0 || jctx.nwk_ecb == 0) {
-		LOG_ERR("Failed to import NwkKey");
-		ret = -EIO;
-		goto done;
-	}
-
-	ret = mac_build_join_request(join_req, jctx.nwk_cmac,
-				     tx_frame, &tx_frame_len);
-	if (ret != 0) {
-		goto done;
-	}
-
-	ret = select_join_channel_wait(ctx, &tx_freq, &tx_dr_idx);
+	ret = select_join_channel_wait(ctx, &state->tx_freq,
+				       &state->tx_dr_idx);
 	if (ret != 0) {
 		LOG_ERR("No join channel available: %d", ret);
-		goto done;
 	}
 
-	tx_params = (struct mac_tx_params){
-		.frame = tx_frame,
-		.frame_len = tx_frame_len,
-		.tx_freq = tx_freq,
-		.tx_dr_idx = tx_dr_idx,
+	return ret;
+}
+
+static struct mac_tx_params join_tx_params(struct join_state *state)
+{
+	return (struct mac_tx_params){
+		.frame = state->frame,
+		.frame_len = state->frame_len,
+		.tx_freq = state->tx_freq,
+		.tx_dr_idx = state->tx_dr_idx,
 		.rx1_delay_ms = JOIN_ACCEPT_DELAY1_MS,
 		.post_tx = NULL,
 		.rx_handler = join_rx_handler,
-		.user_data = &jctx,
+		.user_data = &state->rx_ctx,
 	};
+}
 
-	ret = mac_do_tx_rx(ctx, &tx_params);
+static int join_tx_rx(struct lwan_ctx *ctx, struct join_state *state)
+{
+	struct mac_tx_params tx_params = join_tx_params(state);
+
+	return mac_do_tx_rx(ctx, &tx_params);
+}
+
+static void join_log_result(int ret)
+{
 	if (ret == 0) {
 		LOG_INF("Joined successfully");
 	} else if (ret == -ETIMEDOUT) {
@@ -357,9 +465,42 @@ void mac_do_join(struct lwan_ctx *ctx, const struct lwan_req *req)
 	} else {
 		LOG_ERR("Join failed: %d", ret);
 	}
+}
+
+static void join_destroy_keys(struct join_state *state)
+{
+	psa_destroy_key(state->rx_ctx.nwk_cmac);
+	psa_destroy_key(state->rx_ctx.nwk_ecb);
+}
+
+void mac_do_join(struct lwan_ctx *ctx, const struct lwan_req *req)
+{
+	const struct lwan_join_req *join_req = req->data;
+	struct join_state state;
+	int ret;
+
+	join_state_init(&state, join_req);
+
+	/* Import NwkKey into PSA — plaintext is not stored */
+	ret = join_import_nwk_key(&state);
+	if (ret != 0) {
+		goto done;
+	}
+
+	ret = join_prepare_frame(&state);
+	if (ret != 0) {
+		goto done;
+	}
+
+	ret = join_select_channel(ctx, &state);
+	if (ret != 0) {
+		goto done;
+	}
+
+	ret = join_tx_rx(ctx, &state);
+	join_log_result(ret);
 
 done:
-	psa_destroy_key(jctx.nwk_cmac);
-	psa_destroy_key(jctx.nwk_ecb);
+	join_destroy_keys(&state);
 	engine_signal_result(req, ret);
 }

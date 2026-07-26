@@ -4,16 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/pcie/endpoint/pcie_ep.h>
 #include <zephyr/logging/log.h>
+
+#define DT_DRV_COMPAT brcm_iproc_pcie_ep
 
 #include "pcie_ep_iproc.h"
 
 LOG_MODULE_DECLARE(iproc_pcie, CONFIG_PCIE_EP_LOG_LEVEL);
 
 /* Helper macro to read 64-bit data using two 32-bit data read */
-#define sys_read64(addr)    (((uint64_t)(sys_read32(addr + 4)) << 32) | \
-			     sys_read32(addr))
+#define sys_read64(addr) (((uint64_t)(sys_read32(addr + 4)) << 32) | sys_read32(addr))
 
 #ifdef PCIE_EP_IPROC_INIT_CFG
 void iproc_pcie_msix_config(const struct device *dev)
@@ -42,7 +44,7 @@ void iproc_pcie_msi_config(const struct device *dev)
 int iproc_pcie_generate_msi(const struct device *dev, const uint32_t msi_num)
 {
 	int ret = 0;
-#ifdef CONFIG_PCIE_EP_IPROC_V2
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_iproc_pcie_ep_v2)
 	uint64_t addr;
 	uint32_t data;
 
@@ -64,9 +66,8 @@ int iproc_pcie_generate_msi(const struct device *dev, const uint32_t msi_num)
 	pcie_ep_conf_read(dev, MSI_DATA, &data);
 	data |= msi_num;
 
-	ret = pcie_ep_xfer_data_memcpy(dev, addr,
-				       (uintptr_t *)&data, sizeof(data),
-				       PCIE_OB_LOWMEM, DEVICE_TO_HOST);
+	ret = pcie_ep_xfer_data_memcpy(dev, addr, (uintptr_t *)&data, sizeof(data), PCIE_OB_LOWMEM,
+				       DEVICE_TO_HOST);
 
 #else
 	const struct iproc_pcie_ep_config *cfg = dev->config;
@@ -97,9 +98,8 @@ static int generate_msix(const struct device *dev, const uint32_t msix_num)
 
 	data = sys_read32(MSIX_VECTOR_OFF(msix_num) + MSIX_TBL_DATA_OFF);
 
-	ret = pcie_ep_xfer_data_memcpy(dev, addr,
-				       (uintptr_t *)&data, sizeof(data),
-				       PCIE_OB_LOWMEM, DEVICE_TO_HOST);
+	ret = pcie_ep_xfer_data_memcpy(dev, addr, (uintptr_t *)&data, sizeof(data), PCIE_OB_LOWMEM,
+				       DEVICE_TO_HOST);
 
 	if (ret < 0) {
 		goto out;
@@ -110,7 +110,7 @@ out:
 	return ret;
 }
 
-#ifdef CONFIG_PCIE_EP_IPROC_V2
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_iproc_pcie_ep_v2)
 static bool is_pcie_function_mask(const struct device *dev)
 {
 	uint32_t data;
@@ -144,8 +144,7 @@ static int generate_pending_msix(const struct device *dev, const int msix_num)
 
 	key = k_spin_lock(&ctx->pba_lock);
 
-	is_msix_pending = sys_test_bit(PBA_OFFSET(msix_num),
-				       PENDING_BIT(msix_num));
+	is_msix_pending = sys_test_bit(PBA_OFFSET(msix_num), PENDING_BIT(msix_num));
 
 	/* check if vector mask bit is cleared for pending msix */
 	if (is_msix_pending && !(is_msix_vector_mask(msix_num))) {
@@ -182,8 +181,7 @@ void iproc_pcie_func_mask_isr(void *arg)
 	LOG_DBG("%s: %x\n", __func__, data);
 
 	if (data & SNOOP_VALID_INTR) {
-		pcie_write32(SNOOP_VALID_INTR,
-			     &cfg->base->paxb_pcie_cfg_intr_clear);
+		pcie_write32(SNOOP_VALID_INTR, &cfg->base->paxb_pcie_cfg_intr_clear);
 		if (!is_pcie_function_mask(dev)) {
 			generate_all_pending_msix(dev);
 		}
@@ -193,15 +191,12 @@ void iproc_pcie_func_mask_isr(void *arg)
 void iproc_pcie_vector_mask_isr(void *arg)
 {
 	const struct device *dev = arg;
-	int msix_table_update = sys_test_bit(PMON_LITE_PCIE_INTERRUPT_STATUS,
-					     WR_ADDR_CHK_INTR_EN);
+	int msix_table_update = sys_test_bit(PMON_LITE_PCIE_INTERRUPT_STATUS, WR_ADDR_CHK_INTR_EN);
 
-	LOG_DBG("%s: %x\n", __func__,
-		sys_read32(PMON_LITE_PCIE_INTERRUPT_STATUS));
+	LOG_DBG("%s: %x\n", __func__, sys_read32(PMON_LITE_PCIE_INTERRUPT_STATUS));
 
 	if (msix_table_update) {
-		sys_write32(BIT(WR_ADDR_CHK_INTR_EN),
-			    PMON_LITE_PCIE_INTERRUPT_CLEAR);
+		sys_write32(BIT(WR_ADDR_CHK_INTR_EN), PMON_LITE_PCIE_INTERRUPT_CLEAR);
 		generate_all_pending_msix(dev);
 	}
 }
@@ -214,7 +209,7 @@ int iproc_pcie_generate_msix(const struct device *dev, const uint32_t msix_num)
 		return -ENOTSUP;
 	}
 
-#ifdef CONFIG_PCIE_EP_IPROC_V2
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_iproc_pcie_ep_v2)
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	k_spinlock_key_t key;
 

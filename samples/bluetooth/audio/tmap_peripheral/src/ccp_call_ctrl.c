@@ -25,7 +25,7 @@
 #define CALLER_ID "friend"
 
 static uint8_t new_call_index;
-static char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
+static char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
 
 static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
 
@@ -93,7 +93,10 @@ static void terminate_call_cb(struct bt_conn *conn, int err,
 static void read_uri_schemes_string_cb(struct bt_conn *conn, int err,
 				       uint8_t inst_index, const char *value)
 {
-	size_t i;
+	const char *uri_scheme = value;
+	const char *uri_schemes_end = value + strlen(value);
+	const size_t suffix_len = strlen(URI_SEPARATOR) + strlen(CALLER_ID);
+	size_t uri_scheme_len;
 
 	ARG_UNUSED(conn);
 
@@ -109,22 +112,37 @@ static void read_uri_schemes_string_cb(struct bt_conn *conn, int err,
 
 	/* Save first remote URI
 	 *
-	 * First search for the first comma (separator), and use that to determine the end of the
-	 * first (or only) URI. Then use that length to copy the URI to `remote_uri` for later use.
+	 * First search for a URI scheme that can fit with the separator and caller ID.
+	 * Then compose the URI for later use.
 	 */
-	for (i = 0U; i < strlen(value); i++) {
-		if (value[i] == ',') {
+	while (uri_scheme < uri_schemes_end) {
+		uri_scheme_len = 0U;
+		while (uri_scheme[uri_scheme_len] != '\0' &&
+		       uri_scheme[uri_scheme_len] != ',') {
+			uri_scheme_len++;
+		}
+
+		if (uri_scheme_len == 0U) {
+			uri_scheme++;
+			continue;
+		}
+
+		if (uri_scheme_len + suffix_len <= CONFIG_BT_TBS_MAX_URI_LENGTH) {
 			break;
 		}
+
+		uri_scheme += uri_scheme_len + 1U;
 	}
 
-	if (i >= sizeof(remote_uri)) {
-		printk("Cannot store URI of length %zu: %s\n", i, value);
+	if (uri_scheme >= uri_schemes_end) {
+		printk("No URI scheme fits originate URI: %s\n", value);
 		return;
 	}
 
-	strncpy(remote_uri, value, i);
-	remote_uri[i] = '\0';
+	(void)memcpy(remote_uri, uri_scheme, uri_scheme_len);
+	remote_uri[uri_scheme_len] = '\0';
+	(void)strcat(remote_uri, URI_SEPARATOR);
+	(void)strcat(remote_uri, CALLER_ID);
 
 	printk("CCP: Discovered remote URI: %s\n", remote_uri);
 	k_sem_give(&sem_discovery_done);
@@ -160,13 +178,8 @@ int ccp_call_ctrl_init(struct bt_conn *conn)
 int ccp_originate_call(void)
 {
 	int err;
-	char uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
 
-	strcpy(uri, remote_uri);
-	strcat(uri, URI_SEPARATOR);
-	strcat(uri, CALLER_ID);
-
-	err = bt_tbs_client_originate_call(default_conn, BT_TBS_GTBS_INDEX, uri);
+	err = bt_tbs_client_originate_call(default_conn, BT_TBS_GTBS_INDEX, remote_uri);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		printk("TBS originate call failed: %d\n", err);
 	}

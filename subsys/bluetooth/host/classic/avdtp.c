@@ -300,7 +300,7 @@ void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	}
 
 	LOG_DBG("chan %p", chan);
-	chan->conn = NULL;
+
 	avdtp_cancel_media_disconnect_work(sep);
 
 	avdtp_sep_lock(sep);
@@ -1820,7 +1820,7 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	struct bt_avdtp *session = AVDTP_CHAN(chan);
 
 	LOG_DBG("chan %p session %p", chan, session);
-	session->br_chan.chan.conn = NULL;
+
 	/* Clear the Pending req if set*/
 	if (session->req) {
 		struct bt_avdtp_req *req = session->req;

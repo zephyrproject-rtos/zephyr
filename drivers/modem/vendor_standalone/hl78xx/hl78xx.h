@@ -1266,6 +1266,13 @@ int check_if_any_socket_connected(const struct device *dev);
 void hl78xx_start_timer(struct hl78xx_data *data, k_timeout_t timeout);
 
 /**
+ * @brief Reschedule a pending timeout work item.
+ * @param data pointer to hl78xx_data.
+ * @param timeout the time to wait before submitting the work item.
+ */
+void hl78xx_reschedule_timer(struct hl78xx_data *data, k_timeout_t timeout);
+
+/**
  * @brief Stop the timer.
  * @param data pointer to hl78xx_data.
  */

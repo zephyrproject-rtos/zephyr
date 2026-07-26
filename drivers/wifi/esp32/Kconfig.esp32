@@ -191,6 +191,15 @@ config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
 	  than WiFi layer can transmit. In these cases, we may run out of TX
 	  buffers.
 
+config ESP32_WIFI_TX_RETRY_TIMEOUT_MS
+	int "Wi-Fi TX retry timeout (ms)"
+	default 50
+	range 0 1000
+	help
+	  How long a transmit waits for one of the TX buffers above to free up
+	  before the packet is dropped. This blocks the calling thread, so the
+	  timeout also bounds the added latency. Set to 0 to drop immediately.
+
 choice ESP32_WIFI_MGMT_RX_BUFFER
 	prompt "Type of WiFi RX MGMT buffers"
 	default ESP32_WIFI_STATIC_RX_MGMT_BUFFER

@@ -13,6 +13,10 @@ if(CONFIG_ETH_NXP_S32_NETC)
 endif()
 
 if(CONFIG_ETH_STM32_HAL)
+  if(CONFIG_ETH_STM32_HAL_RX_DESC_COUNT)
+    zephyr_compile_definitions(ETH_RX_DESC_CNT=${CONFIG_ETH_STM32_HAL_RX_DESC_COUNT})
+  endif()
+
   if(CONFIG_STM32_HAL2)
     zephyr_library_sources_ifdef(CONFIG_ETH_STM32_HAL2_API eth_stm32_hal2.c)
   else()

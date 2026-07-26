@@ -9,8 +9,8 @@
  * @brief Public API for boot mode interface
  */
 
-#ifndef ZEPHYR_INCLUDE_RETENTION_BOOTMODE_
-#define ZEPHYR_INCLUDE_RETENTION_BOOTMODE_
+#ifndef ZEPHYR_INCLUDE_RETENTION_BOOTMODE_H_
+#define ZEPHYR_INCLUDE_RETENTION_BOOTMODE_H_
 
 #include <stdint.h>
 #include <stddef.h>
@@ -75,4 +75,4 @@ int bootmode_clear(void);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_RETENTION_BOOTMODE_ */
+#endif /* ZEPHYR_INCLUDE_RETENTION_BOOTMODE_H_ */

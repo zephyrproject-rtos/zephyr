@@ -336,7 +336,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 
 static int dma_stm32_get_priority(uint8_t priority, uint32_t *ll_priority)
 {
-	if (priority > ARRAY_SIZE(table_priority)) {
+	if (priority >= ARRAY_SIZE(table_priority)) {
 		LOG_ERR("Priority error. %d", priority);
 		return -EINVAL;
 	}

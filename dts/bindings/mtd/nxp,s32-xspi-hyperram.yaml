@@ -32,7 +32,6 @@ properties:
     type: int
     required: true
     enum: [19, 22, 27, 34, 46, 67, 115]
-    default: 34
     description: |
       Specifies the output drive strength in ohm, which based on the operating device VCC.
       The supported typical impedance settings:

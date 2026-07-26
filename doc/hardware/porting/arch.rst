@@ -303,7 +303,7 @@ to happen--the context switch must happen.
 
 .. note::
 
-  On x86 and Nios2, :code:`arch_swap` is generic enough and the architecture
+  On 32-bit x86, :code:`arch_swap` is generic enough and the architecture
   flexible enough that it can be called when exiting an interrupt to provoke
   the context switch. This should not be taken as a rule, since
   neither the ARM Cortex-M nor ARCv2 port do this.
@@ -388,7 +388,7 @@ To enable thread local storage on a new architecture:
    ``struct k_thread`` and put it into an appropriate register (or some
    other variable) for access to the TLS storage area. Refer to toolchain
    and architecture documentation on which registers to use.
-#. In kconfig, add ``select CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE`` to
+#. In kconfig, add ``select ARCH_HAS_THREAD_LOCAL_STORAGE`` to
    kconfig related to the new architecture.
 #. Run the ``tests/kernel/threads/tls`` to make sure the new code works.
 

@@ -11,8 +11,8 @@
  * This is used for Renesas RZ Interrupt Controller Unit supporting selectable interrupts
  */
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_ICU_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_ICU_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_ICU_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_ICU_H_
 
 #include <bsp_api.h>
 
@@ -25,4 +25,4 @@
  */
 int icu_connect_irq_event(int irq, elc_event_t event);
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_ICU_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_ICU_H_ */

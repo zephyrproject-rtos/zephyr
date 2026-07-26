@@ -29,6 +29,7 @@ config MSPI_STM32_OSPI
 	bool "STM32 OSPI Controller driver"
 	depends on DT_HAS_ST_STM32_OSPI_CONTROLLER_ENABLED
 	default y
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_OSPI_CONTROLLER),ce-gpios)
 	select USE_STM32_HAL_OSPI if !SOC_SERIES_STM32H5X
 	select USE_STM32_LL_DLYB if (SOC_SERIES_STM32H5X || SOC_SERIES_STM32U5X)
 	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
@@ -41,6 +42,7 @@ config MSPI_STM32_QSPI
 	bool "STM32 QSPI Controller driver"
 	depends on DT_HAS_ST_STM32_QSPI_CONTROLLER_ENABLED
 	default y
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_QSPI_CONTROLLER),ce-gpios)
 	select USE_STM32_HAL_QSPI
 	select USE_STM32_HAL_MDMA if SOC_SERIES_STM32H7X
 	select USE_STM32_HAL_DMA
@@ -52,6 +54,7 @@ config MSPI_STM32_XSPI
 	bool "STM32 XSPI Controller driver"
 	depends on DT_HAS_ST_STM32_XSPI_CONTROLLER_ENABLED
 	default y
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_XSPI_CONTROLLER),ce-gpios)
 	select USE_STM32_HAL_XSPI
 	select USE_STM32_LL_DLYB
 	select USE_STM32_HAL_DMA

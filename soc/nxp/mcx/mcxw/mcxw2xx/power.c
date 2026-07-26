@@ -13,7 +13,7 @@
 #include <fsl_power.h>
 #include <zephyr/logging/log.h>
 #if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
-#include "fsl_ostimer.h"
+#include <fsl_ostimer.h>
 #endif
 
 #if CONFIG_PM_POLICY_CUSTOM

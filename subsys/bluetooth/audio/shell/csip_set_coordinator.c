@@ -299,7 +299,7 @@ static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 			return -ENOEXEC;
 		}
 
-		if (member_index > ARRAY_SIZE(conns)) {
+		if (member_index >= ARRAY_SIZE(conns)) {
 			shell_error(sh, "Invalid member_index: %lu",
 				    member_index);
 
@@ -484,7 +484,7 @@ static int cmd_csip_set_coordinator_lock(const struct shell *sh, size_t argc,
 			return -ENOEXEC;
 		}
 
-		if (member_index > ARRAY_SIZE(set_members)) {
+		if (member_index >= ARRAY_SIZE(set_members)) {
 			shell_error(sh, "Invalid member_index: %lu",
 				    member_index);
 
@@ -523,7 +523,7 @@ static int cmd_csip_set_coordinator_release(const struct shell *sh, size_t argc,
 			return -ENOEXEC;
 		}
 
-		if (member_index > ARRAY_SIZE(set_members)) {
+		if (member_index >= ARRAY_SIZE(set_members)) {
 			shell_error(sh, "Invalid member_index: %lu",
 				    member_index);
 

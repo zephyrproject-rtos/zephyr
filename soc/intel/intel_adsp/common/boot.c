@@ -15,7 +15,7 @@
 #include <adsp_shim.h>
 #include <adsp_memory.h>
 #include <cpu_init.h>
-#include "manifest.h"
+#include <manifest.h>
 
 #ifdef CONFIG_SOC_SERIES_INTEL_ADSP_ACE
 #include <adsp_boot.h>

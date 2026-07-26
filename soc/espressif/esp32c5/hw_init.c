@@ -21,6 +21,7 @@
 #include <bootloader_flash.h>
 #include <esp_flash_internal.h>
 #include <esp_log.h>
+#include <esp_private/esp_clk_tree_common.h>
 
 #include <console_init.h>
 #include <flash_init.h>

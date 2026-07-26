@@ -6,7 +6,7 @@
 #define SIWX91X_NWP_H
 
 #include <zephyr/device.h>
-#include "sl_wifi.h"
+#include <sl_wifi.h>
 
 #define SIWX91X_INTERFACE_MASK (0x03)
 #define DEFAULT_COUNTRY_CODE   "00"

@@ -396,10 +396,7 @@ void Cy_SystemInit(void)
 #endif
 }
 
-static int init_cycfg_platform_wraper(void)
+void soc_early_init_hook(void)
 {
 	SystemInit();
-	return 0;
 }
-
-SYS_INIT(init_cycfg_platform_wraper, PRE_KERNEL_1, 0);

@@ -1436,7 +1436,8 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 		}
 
 		if (cmux->frame.data_len > CONFIG_MODEM_CMUX_MTU) {
-			LOG_ERR("Too large frame");
+			LOG_ERR("Too large frame (%u > %u)", cmux->frame.data_len,
+				CONFIG_MODEM_CMUX_MTU);
 			modem_cmux_drop_frame(cmux);
 			break;
 		}
@@ -1459,7 +1460,8 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 		cmux->frame.data_len |= ((uint16_t)byte) << 7;
 
 		if (cmux->frame.data_len > CONFIG_MODEM_CMUX_MTU) {
-			LOG_ERR("Too large frame");
+			LOG_ERR("Too large frame (%u > %u)", cmux->frame.data_len,
+				CONFIG_MODEM_CMUX_MTU);
 			modem_cmux_drop_frame(cmux);
 			break;
 		}

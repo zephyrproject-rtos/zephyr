@@ -1642,3 +1642,13 @@ test_i2c_tmp451: tmp451@d5 {
 	reg = <0xd5>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_icm40627: icm40627@d6 {
+	compatible = "invensense,icm40627";
+	reg = <0xd6>;
+	int-gpios = <&test_gpio 0 0>;
+	accel-hz = <100>;
+	gyro-hz = <100>;
+	accel-fs = <16>;
+	gyro-fs = <2000>;
+};

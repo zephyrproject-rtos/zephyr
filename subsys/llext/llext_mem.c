@@ -9,6 +9,7 @@
 #include <zephyr/sys/minmax.h>
 #include <zephyr/llext/loader.h>
 #include <zephyr/llext/llext.h>
+#include <zephyr/arch/common/instr_mem.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 
@@ -22,6 +23,13 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 
 #ifdef CONFIG_LLEXT_HEAP_DYNAMIC
 bool llext_heap_inited;
+#endif
+
+/* PMP granularity is only defined when RISC-V PMP is built in. */
+#ifdef CONFIG_PMP_GRANULARITY
+#define LLEXT_PMP_GRANULARITY CONFIG_PMP_GRANULARITY
+#else
+#define LLEXT_PMP_GRANULARITY 1
 #endif
 
 /*
@@ -98,6 +106,18 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 				/* ARMv8-M and newer ARC MPUs use 32-byte alignment. */
 				region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
 				region_align = MAX(region_align, LLEXT_PAGE_SIZE);
+			} else if (IS_ENABLED(CONFIG_RISCV_PMP)) {
+				/*
+				 * RISC-V PMP regions only need to be sized and
+				 * aligned to the PMP granularity; TOR matching
+				 * removes any power-of-two requirement.
+				 */
+				region_alloc = ROUND_UP(region_alloc, LLEXT_PMP_GRANULARITY);
+				region_align = MAX(region_align, LLEXT_PMP_GRANULARITY);
+			} else {
+				LOG_ERR("region %d: no memory protection alignment "
+					"rule for this architecture", mem_idx);
+				return -ENOTSUP;
 			}
 		}
 	}
@@ -115,10 +135,14 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 			/* Region has data in the file, check if peek() is supported */
 			ext->mem[mem_idx] = llext_peek(ldr, region->sh_offset);
 			if (ext->mem[mem_idx]) {
+				if (mem_idx == LLEXT_MEM_TEXT) {
+					ext->text_in_elf = ext->mem[mem_idx];
+				}
+
 				if ((IS_ALIGNED(ext->mem[mem_idx], region_align) ||
 				     ldr_parm->pre_located) &&
 				    ((mem_idx != LLEXT_MEM_TEXT) ||
-				     INSTR_FETCHABLE(ext->mem[mem_idx], region_alloc))) {
+				     arch_is_instr_mem(ext->mem[mem_idx], region_alloc))) {
 					/* Map this region directly to the ELF buffer */
 					llext_init_mem_part(ext, mem_idx,
 							    (uintptr_t)ext->mem[mem_idx],
@@ -128,7 +152,7 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 				}
 
 				if ((mem_idx == LLEXT_MEM_TEXT) &&
-				    !INSTR_FETCHABLE(ext->mem[mem_idx], region_alloc)) {
+				    !arch_is_instr_mem(ext->mem[mem_idx], region_alloc)) {
 					LOG_WRN("Cannot reuse ELF buffer for region %d, not "
 						"instruction memory: %p-%p",
 						mem_idx, ext->mem[mem_idx],

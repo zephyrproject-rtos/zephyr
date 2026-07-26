@@ -12,8 +12,8 @@
  * This file contains the Crypto Abstraction layer APIs.
  */
 
-#ifndef ZEPHYR_INCLUDE_CRYPTO_H_
-#define ZEPHYR_INCLUDE_CRYPTO_H_
+#ifndef ZEPHYR_INCLUDE_CRYPTO_CRYPTO_H_
+#define ZEPHYR_INCLUDE_CRYPTO_CRYPTO_H_
 
 #include <zephyr/device.h>
 #include <errno.h>
@@ -581,4 +581,4 @@ static inline int hash_update(struct hash_ctx *ctx, struct hash_pkt *pkt)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_CRYPTO_H_ */
+#endif /* ZEPHYR_INCLUDE_CRYPTO_CRYPTO_H_ */

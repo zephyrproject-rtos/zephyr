@@ -858,5 +858,6 @@ static int shared_memory_prepare(void)
 	return 0;
 }
 
-SYS_INIT(shared_memory_prepare, PRE_KERNEL_1, 1);
+SYS_INIT(shared_memory_prepare, PRE_KERNEL_1,
+	 CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_INIT_PRIORITY);
 #endif /* CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET */

@@ -125,6 +125,9 @@ struct llext {
 	/** Lookup table of memory regions */
 	void *mem[LLEXT_MEM_COUNT];
 
+	/** Address of text region in ELF buffer */
+	void *text_in_elf;
+
 	/** Is the memory for this region allocated on heap? */
 	bool mem_on_heap[LLEXT_MEM_COUNT];
 

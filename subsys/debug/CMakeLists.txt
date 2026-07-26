@@ -39,8 +39,3 @@ zephyr_sources_ifdef(
   CONFIG_CS_TRACE_DEFMT
   coresight/cs_trace_defmt.c
 )
-
-zephyr_sources_ifdef(
-  CONFIG_CPU_LOAD
-  cpu_load.c
-  )

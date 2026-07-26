@@ -25,7 +25,7 @@
 #elif defined(CONFIG_SPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_spi_nor)
 #elif defined(CONFIG_FLASH_MSPI_NOR)
-#define TEST_AREA_DEV_NODE	DT_INST(0, jedec_mspi_nor)
+#define TEST_AREA_DEV_NODE	DT_INST(0, jedec_nor)
 #define TEST_IS_DTR		DT_ENUM_HAS_VALUE(TEST_AREA_DEV_NODE, mspi_data_rate,              \
 						  mspi_data_rate_dual)
 #elif defined(CONFIG_FLASH_RENESAS_RA_QSPI)

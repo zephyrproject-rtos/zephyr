@@ -3,7 +3,8 @@
 Bsim
 ####
 
-The ``bsim`` harness extends the ``script`` harness to support BabbleSim tests.
+The ``bsim`` harness extends the :ref:`script harness <twister_script_harness>` to support
+BabbleSim tests.
 During the build phase it copies the final executable (``zephyr.exe``) from
 the build directory to BabbleSim's ``bin`` directory
 (``${BSIM_OUT_PATH}/bin``). During the run phase it executes the test scripts
@@ -14,13 +15,15 @@ replaced by underscores): ``bs_<platform_name>_<test_path>_<test_scenario_name>`
 This name can be overridden with the ``bsim_exe_name`` option in
 ``harness_config`` section.
 
+Additional ``bsim`` harness keys extending the :ref:`script harness <twister_script_harness>`:
+
 bsim_exe_name: <string>
     If provided, the executable filename when copying to BabbleSim's bin
     directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
     default based on the test path and scenario name.
 
 Example configuration with a multi-images BabbleSim test where the advertiser
-is build-only and the scanner references it via ``required_applications``:
+is build-only and the scanner references it via :ref:`required_applications <required_applications>`:
 
 .. code-block:: yaml
 

@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 /**
- * @defgroup arch-timing Architecture timing APIs
+ * @addtogroup arch-timing
  * @{
  */
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
@@ -249,7 +249,7 @@ int arch_coprocessors_disable(struct k_thread *thread);
  * @return 0 on success
  * @return -EBADF Bad thread object
  * @return -EPERM No permissions on thread object
- * #return -ENOTSUP Forbidden by hardware policy
+ * @return -ENOTSUP Forbidden by hardware policy
  * @return -EINVAL Thread is uninitialized or exited or not a user thread
  * @return -EFAULT Bad memory address for unused_ptr
  */

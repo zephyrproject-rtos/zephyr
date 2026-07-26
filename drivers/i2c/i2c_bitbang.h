@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_DRIVERS_I2C_I2C_BITBANG_H
+#define ZEPHYR_DRIVERS_I2C_I2C_BITBANG_H
+
+#include <zephyr/drivers/i2c.h>
+
 /**
  * @brief Functions for setting and getting the state of the I2C lines.
  *
@@ -72,3 +77,5 @@ int i2c_bitbang_recover_bus(struct i2c_bitbang *bitbang);
 int i2c_bitbang_transfer(struct i2c_bitbang *bitbang,
 			   struct i2c_msg *msgs, uint8_t num_msgs,
 			   uint16_t slave_address);
+
+#endif /* ZEPHYR_DRIVERS_I2C_I2C_BITBANG_H */

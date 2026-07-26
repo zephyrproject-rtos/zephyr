@@ -10,44 +10,7 @@
 
 / {
 	cpus {
-		cpu@0 {
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
-		};
-
-		cpu@1 {
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
-		};
-
-		cpu@2 {
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
-		};
-
-		cpu@3 {
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
-		};
-
-		cpu@4 {
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
-		};
-
-		cpu@5 {
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
-		};
-
-		cpu@6 {
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
-		};
-
-		cpu@7 {
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
-		};
+		riscv,isa-base = "rv32i";
+		riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 	};
 };

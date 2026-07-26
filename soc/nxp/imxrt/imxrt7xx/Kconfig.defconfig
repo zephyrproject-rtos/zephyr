@@ -5,3 +5,7 @@ rsource "*/Kconfig.defconfig"
 
 config MFD
 	default y if DT_HAS_NXP_LP_FLEXCOMM_ENABLED
+
+# Default offset 0x200 is not enough with higher ISR count
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT

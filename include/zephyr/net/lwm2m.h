@@ -774,7 +774,7 @@ int lwm2m_swmgmt_set_write_package_cb(uint16_t obj_inst_id, lwm2m_engine_set_dat
  * @param[in] error_code The result code of the operation. Zero on success
  * otherwise it should be a negative integer.
  *
- * return 0 on success, otherwise a negative integer.
+ * @return 0 on success, otherwise a negative integer.
  */
 int lwm2m_swmgmt_install_completed(uint16_t obj_inst_id, int error_code);
 

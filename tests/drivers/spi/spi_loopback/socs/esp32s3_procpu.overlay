@@ -7,18 +7,18 @@
 &pinctrl {
 	spim3_loopback: spim3_loopback {
 		group1 {
-			pinmux = <SPIM3_MISO_GPIO37>;
+			pinmux = <SPIM3_MISO_GPIO4>;
 			output-enable; /* Enable internal loopback */
 		};
 
 		group2 {
-			pinmux = <SPIM3_MOSI_GPIO37>;
+			pinmux = <SPIM3_MOSI_GPIO4>;
 			input-enable; /* Enable internal loopback */
 		};
 
 		group3 {
-			pinmux = <SPIM3_SCLK_GPIO36>,
-				 <SPIM3_CSEL_GPIO38>;
+			pinmux = <SPIM3_SCLK_GPIO5>,
+				 <SPIM3_CSEL_GPIO6>;
 		};
 	};
 };

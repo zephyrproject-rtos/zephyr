@@ -142,12 +142,15 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #endif /* !CONFIG_NET_TEST */
 
 /* if GMAC_UR_MIM_RGMII (new for sama7g5) is defined, the media interface mode
- * supported are: mii, rmii and gmii. Otherwise mii and rmii are supported.
+ * supported are: mii, rmii and rgmii. Otherwise mii and rmii are supported.
+ * The enum indexes for mii, rmii, gmii, rgmii are 0 ~ 3. As the enum index for
+ * rgmii is 3, here defines SAM_GMAC_PHY_CONNECTION_TYPE_MAX to 3 when RGMII is
+ * supported.
  */
 #ifndef GMAC_UR_MIM_RGMII
 #define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 1
 #else
-#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 2
+#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 3
 #endif
 
 /* RX descriptors list */
@@ -592,6 +595,7 @@ static inline void timestamp_rx_pkt(Gmac *gmac, struct gptp_hdr *hdr,
 	}
 
 	net_pkt_set_timestamp(pkt, &timestamp);
+	net_pkt_set_rx_timestamping(pkt, true);
 }
 
 #endif
@@ -995,7 +999,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct eth_sam_d
 		gmac->GMAC_UR = 0x0;
 		break;
 #ifdef GMAC_UR_MIM_RGMII
-	case 2: /* rgmii */
+	case 3: /* rgmii */
 		gmac->GMAC_UR = GMAC_UR_MIM_RGMII;
 		break;
 #endif
@@ -1808,9 +1812,6 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *
 	return ETHERNET_LINK_10BASE |
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
-#endif
-#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-		ETHERNET_PTP |
 #endif
 		ETHERNET_PRIORITY_QUEUES |
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1

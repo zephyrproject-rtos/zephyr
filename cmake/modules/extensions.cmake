@@ -6166,8 +6166,20 @@ function(add_llext_target target_name)
     # output a relocatable file. The output file suffix is changed so
     # the result looks like the object file it actually is.
     add_executable(${llext_lib_target} EXCLUDE_FROM_ALL ${source_files})
-    target_link_options(${llext_lib_target} PRIVATE
-      $<TARGET_PROPERTY:linker,partial_linking>)
+    if("${LINKER}" STREQUAL "lld")
+      # lld does not group sections by type in -r mode; an explicit grouping
+      # script is required to prevent section interleaving that would cause
+      # the LLEXT loader to see overlapping file-offset regions.
+      target_link_options(${llext_lib_target} PRIVATE
+        $<TARGET_PROPERTY:linker,partial_linking>
+        -T ${ZEPHYR_BASE}/cmake/linker/llext_relocatable.ld)
+    else()
+      # GNU ld naturally groups sections by type; no grouping script is needed.
+      # Applying the script would cause xt-ld and similar linkers to assign
+      # non-zero VMAs to sections, breaking the LLEXT Xtensa relocation handler.
+      target_link_options(${llext_lib_target} PRIVATE
+        $<TARGET_PROPERTY:linker,partial_linking>)
+    endif()
     set_target_properties(${llext_lib_target} PROPERTIES
       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
       SUFFIX ${CMAKE_C_OUTPUT_EXTENSION})

@@ -10,8 +10,8 @@
  * @ingroup tmag5273_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_TMAG5273_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_TMAG5273_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_TMAG5273_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_TMAG5273_H_
 
 #include <zephyr/dt-bindings/dt-util.h>
 
@@ -170,4 +170,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_TMAG5273_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_TMAG5273_H_ */

@@ -80,10 +80,10 @@ the following message:
    Hello World! rak11720/apollo3_blue
 
 .. _WisDuo RAK11720 Website:
-   https://docs.rakwireless.com/Product-Categories/WisDuo/RAK11720-Module/Overview/#product-description
+   https://docs.rakwireless.com/product-categories/wisduo/rak11720-module/overview/
 
 .. _WisBlock RAK11722 Website:
-   https://docs.rakwireless.com/Product-Categories/WisBlock/RAK11722/Overview/#product-description
+   https://docs.rakwireless.com/product-categories/wisblock/rak11722/overview/
 
 .. _SEGGER J-Link software:
    https://www.segger.com/downloads/jlink

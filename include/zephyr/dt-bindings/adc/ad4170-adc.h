@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_AD4170_ADC_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_AD4170_ADC_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ADC_AD4170_ADC_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_ADC_AD4170_ADC_H_
 
 #include <zephyr/dt-bindings/dt-util.h>
 
@@ -50,4 +50,4 @@
 #define AD4170_SINC5     1
 #define AD4170_SINC3     2
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_AD4170_ADC_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_AD4170_ADC_H_ */

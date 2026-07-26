@@ -53,9 +53,17 @@ properties:
 
 examples:
   - |
-    stm32_lp_tick_source: &lptim1 {
+    /*
+     * Usage of LPTIM as system timer:
+     * (1) enable and configure selected LPTIM instance
+     */
+    &lptim1 {
       status = "okay";
     }
 
-    The lptim node to be used for counting ticks during lowpower modes
-    must be named stm32_lp_tick_source in the DTS.
+    /* (2) select instance as system timer */
+    / {
+      chosen {
+        zephyr,system-timer = &lptim1;
+      };
+    };

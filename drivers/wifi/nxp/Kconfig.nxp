@@ -829,7 +829,7 @@ config NXP_WIFI_TX_RX_ZERO_COPY
 	bool "Zero memory copy TX/RX data packets"
 	depends on (NXP_RW610 || SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER) && NXP_WIFI_WMM
 	select SDHC_SCATTER_GATHER_TRANSFER if !NXP_RW610
-	select NET_L2_ETHERNET_RESERVE_HEADER if !NXP_RW610
+	select NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM if !NXP_RW610
 	imply NET_IPV4_FRAGMENT
 	help
 	  This option enables the Zero memory copy of data packets in Wi-Fi driver data path.
@@ -1022,6 +1022,13 @@ config NXP_WIFI_ANT_DETECT
 	help
 	  This option is used to auto detect which two antennas are present and
 	  then configure corresponding evaluate Mode-X to firmware and enable antenna diversity.
+
+config NXP_WIFI_EXT_ANT_GAIN
+	bool "External antenna gain configuration"
+	default y
+	help
+	  This option enables runtime configuration of net antenna gain
+	  per sub-band via host command.
 
 config NXP_WIFI_WLAN_CALDATA_1ANT
 	bool "One antenna"
@@ -1255,7 +1262,7 @@ endif # NXP_WIFI_SMOKE_TESTS
 
 config NXP_WIFI_EXTRA_TX_HEADROOM
 	int "Extra headroom reserved before 802.3 eth header"
-	default 26 if NET_L2_ETHERNET_RESERVE_HEADER
+	default 26 if NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM
 	default 0
 	help
 	  Reserve extra payload before 802.3 eth header.

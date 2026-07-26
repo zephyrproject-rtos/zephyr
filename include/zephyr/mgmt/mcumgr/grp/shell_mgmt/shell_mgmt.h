@@ -11,8 +11,8 @@
  * @ingroup mcumgr_shell_mgmt
  */
 
-#ifndef H_SHELL_MGMT_
-#define H_SHELL_MGMT_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_SHELL_MGMT_SHELL_MGMT_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_SHELL_MGMT_SHELL_MGMT_H_
 
 /**
  * @brief MCUmgr Shell Management API
@@ -57,4 +57,4 @@ enum shell_mgmt_err_code_t {
  * @}
  */
 
-#endif /* H_SHELL_MGMT_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_SHELL_MGMT_SHELL_MGMT_H_ */

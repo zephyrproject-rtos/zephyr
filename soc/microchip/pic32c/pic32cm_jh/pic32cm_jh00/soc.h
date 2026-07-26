@@ -31,7 +31,7 @@
 #error "Library does not support the specified device."
 #endif
 
-#include "pic32cm_jh.h"
+#include <pic32cm_jh.h>
 
 #endif /* _ASMLANGUAGE */
 

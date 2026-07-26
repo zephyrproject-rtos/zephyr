@@ -673,15 +673,16 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 	if (req->off == 0) {
 		/* First upload chunk. */
 		const struct flash_area *fa;
-#if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD) &&			\
-	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||	\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET) ||		\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE) ||		\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||		\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||		\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) ||			\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) ||			\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)) &&	\
+#if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD) &&                                           \
+	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||                           \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET) ||                              \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE) ||                                \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||                                   \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||                                 \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) ||                                       \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) ||                           \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) ||                                     \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)) &&                        \
 	CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE > 0
 		const struct flash_area *fa_current;
 		int current_img_area;
@@ -758,15 +759,16 @@ int img_mgmt_upload_inspect(const struct img_mgmt_upload_req *req,
 			return IMG_MGMT_ERR_INVALID_IMAGE_TOO_LARGE;
 		}
 
-#if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD) &&			\
-	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||	\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET) ||		\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE) ||		\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||		\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||		\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) ||			\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) ||			\
-	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)) &&	\
+#if defined(CONFIG_MCUMGR_GRP_IMG_TOO_LARGE_SYSBUILD) &&                                           \
+	(defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH) ||                           \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET) ||                              \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE) ||                                \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH) ||                                   \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY) ||                                 \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) ||                                       \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT) ||                           \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP) ||                                     \
+	 defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT)) &&                        \
 	CONFIG_MCUBOOT_UPDATE_FOOTER_SIZE > 0
 		/* Check if slot1 is larger than slot0 by the update size, if so then the size
 		 * check can be skipped because the devicetree partitions are okay

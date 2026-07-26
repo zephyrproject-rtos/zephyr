@@ -152,16 +152,12 @@ static int max3421e_write(const struct device *dev,
 
 static int max3421e_lock(const struct device *dev)
 {
-	struct uhc_data *data = dev->data;
-
-	return k_mutex_lock(&data->mutex, K_FOREVER);
+	return uhc_lock_internal(dev, K_FOREVER);
 }
 
 static int max3421e_unlock(const struct device *dev)
 {
-	struct uhc_data *data = dev->data;
-
-	return k_mutex_unlock(&data->mutex);
+	return uhc_unlock_internal(dev);
 }
 
 /* Disable Host Interrupt */
@@ -1100,7 +1096,7 @@ static int max3421e_driver_init(const struct device *dev)
 	return 0;
 }
 
-static const struct uhc_api max3421e_uhc_api = {
+static DEVICE_API(uhc, max3421e_uhc_api) = {
 	.lock = max3421e_lock,
 	.unlock = max3421e_unlock,
 	.init = uhc_max3421e_init,

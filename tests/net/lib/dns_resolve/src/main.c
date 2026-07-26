@@ -854,6 +854,73 @@ ZTEST(dns_resolve, test_mdns_ipv6_mld_group)
 	zassert_true(st, "IPv6 mDNS group not joined");
 }
 
+/* Regression test for the resolver-only case: after the interface goes fully
+ * down and comes back up (as the connection manager does when e.g. an
+ * Ethernet cable is removed and reattached), the resolver must still be a
+ * member of the mDNS multicast groups, otherwise multicast responses are
+ * dropped at the IP input and name resolution stops working.
+ */
+ZTEST(dns_resolve, test_mdns_group_recovery_after_iface_down_up)
+{
+	struct net_if_mcast_addr *maddr;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER);
+
+	/* Baseline: the resolver has joined the mDNS group(s). */
+	if (IS_ENABLED(CONFIG_NET_IPV4) && IS_ENABLED(CONFIG_NET_IPV4_IGMP)) {
+		struct net_sockaddr_in addr4;
+
+		zassert_true(net_ipaddr_parse(MDNS_IPV4_ADDR, sizeof(MDNS_IPV4_ADDR) - 1,
+					      (struct net_sockaddr *)&addr4),
+			     "Cannot parse IPv4 address");
+
+		maddr = net_if_ipv4_maddr_lookup(&addr4.sin_addr, NULL);
+		zassert_true(maddr != NULL && net_if_ipv4_maddr_is_joined(maddr),
+			     "IPv4 mDNS group not joined before the link went down");
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && IS_ENABLED(CONFIG_NET_IPV6_MLD)) {
+		struct net_sockaddr_in6 addr6;
+
+		zassert_true(net_ipaddr_parse(MDNS_IPV6_ADDR, sizeof(MDNS_IPV6_ADDR) - 1,
+					      (struct net_sockaddr *)&addr6),
+			     "Cannot parse IPv6 address");
+
+		maddr = net_if_ipv6_maddr_lookup(&addr6.sin6_addr, NULL);
+		zassert_true(maddr != NULL && net_if_ipv6_maddr_is_joined(maddr),
+			     "IPv6 mDNS group not joined before the link went down");
+	}
+
+	/* Simulate the Ethernet cable being removed and reattached. */
+	(void)net_if_down(iface1);
+	(void)net_if_up(iface1);
+
+	k_sleep(K_MSEC(100));
+
+	/* After recovery the resolver must still be a member of the groups. */
+	if (IS_ENABLED(CONFIG_NET_IPV4) && IS_ENABLED(CONFIG_NET_IPV4_IGMP)) {
+		struct net_sockaddr_in addr4;
+
+		(void)net_ipaddr_parse(MDNS_IPV4_ADDR, sizeof(MDNS_IPV4_ADDR) - 1,
+				       (struct net_sockaddr *)&addr4);
+
+		maddr = net_if_ipv4_maddr_lookup(&addr4.sin_addr, NULL);
+		zassert_true(maddr != NULL && net_if_ipv4_maddr_is_joined(maddr),
+			     "IPv4 mDNS group not rejoined after the interface came back up");
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && IS_ENABLED(CONFIG_NET_IPV6_MLD)) {
+		struct net_sockaddr_in6 addr6;
+
+		(void)net_ipaddr_parse(MDNS_IPV6_ADDR, sizeof(MDNS_IPV6_ADDR) - 1,
+				       (struct net_sockaddr *)&addr6);
+
+		maddr = net_if_ipv6_maddr_lookup(&addr6.sin6_addr, NULL);
+		zassert_true(maddr != NULL && net_if_ipv6_maddr_is_joined(maddr),
+			     "IPv6 mDNS group not rejoined after the interface came back up");
+	}
+}
+
 #define MAX_HOSTNAME_LEN 64
 
 ZTEST(dns_resolve, test_dns_hostname_resolve_ipv4)

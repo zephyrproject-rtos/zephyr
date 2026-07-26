@@ -84,7 +84,7 @@ References
 .. target-notes::
 
 .. _WisDuo RAK3172 Website:
-   https://docs.rakwireless.com/Product-Categories/WisDuo/RAK3172-Module/Overview/#product-description
+   https://docs.rakwireless.com/product-categories/wisduo/rak3172-module/overview/
 
 .. _STM32WLE5CC on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32wle5cc.html

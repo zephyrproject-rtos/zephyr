@@ -233,3 +233,22 @@ int ssh_client_stop(struct ssh_client *sshc)
 
 	return ret;
 }
+
+int ssh_client_register_transport_callback(struct ssh_transport_conf *conf)
+{
+	return ssh_transport_register_callback(conf, false);
+}
+
+int ssh_client_unregister_transport_callback(struct ssh_transport_conf *conf)
+{
+	return ssh_transport_unregister_callback(conf, false);
+}
+
+struct ssh_client *ssh_transport_get_client(struct ssh_transport *transport)
+{
+	if (transport == NULL) {
+		return NULL;
+	}
+
+	return transport->sshc;
+}

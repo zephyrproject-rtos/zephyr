@@ -90,7 +90,7 @@ def test_if_get_command_returns_proper_string_5(patched_which, device: HardwareA
     assert isinstance(device.command, list)
     assert device.command == [
         'west', 'flash', '--no-rebuild', '--build-dir', 'build', '--runner', 'openocd',
-        '--', '--cmd-pre-init', 'cmsis_dap_serial p_id'
+        '--', '--cmd-pre-init', 'adapter serial p_id'
     ]
 
 

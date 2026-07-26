@@ -513,11 +513,11 @@ static inline unsigned int regulator_count_voltages(const struct device *dev)
  *
  * @param dev Regulator device instance.
  * @param idx Voltage index.
- * @param[out] volt_uv Where voltage for the given @p index will be stored, in
+ * @param[out] volt_uv Where voltage for the given @p idx will be stored, in
  * microvolts.
  *
- * @retval 0 @p index corresponds to a supported voltage.
- * @retval -EINVAL @p index does not correspond to a supported voltage.
+ * @retval 0 @p idx corresponds to a supported voltage.
+ * @retval -EINVAL @p idx does not correspond to a supported voltage.
  */
 static inline int regulator_list_voltage(const struct device *dev,
 					 unsigned int idx, int32_t *volt_uv)
@@ -616,11 +616,11 @@ static inline unsigned int regulator_count_current_limits(const struct device *d
  *
  * @param dev Regulator device instance.
  * @param idx Current index.
- * @param[out] current_ua Where current for the given @p index will be stored, in
+ * @param[out] current_ua Where current for the given @p idx will be stored, in
  * microamps.
  *
- * @retval 0 @p index corresponds to a supported current limit.
- * @retval -EINVAL @p index does not correspond to a supported current limit.
+ * @retval 0 @p idx corresponds to a supported current limit.
+ * @retval -EINVAL @p idx does not correspond to a supported current limit.
  */
 static inline int regulator_list_current_limit(const struct device *dev,
 					       unsigned int idx, int32_t *current_ua)

@@ -168,6 +168,7 @@ struct acp_tdm_context {
 	uint32_t pin_dir;
 	uint32_t dma_channel;
 	uint32_t index;
+	uint32_t frame_fmt;
 };
 
 static ALWAYS_INLINE void io_reg_write(uint32_t reg, uint32_t val)

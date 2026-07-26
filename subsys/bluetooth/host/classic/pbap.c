@@ -25,6 +25,8 @@
 #include <zephyr/bluetooth/classic/goep.h>
 #include <zephyr/bluetooth/classic/pbap.h>
 
+#include <mbedtls/constant_time.h>
+
 #include "host/conn_internal.h"
 #include "l2cap_br_internal.h"
 #include "rfcomm_internal.h"
@@ -841,6 +843,8 @@ int bt_pbap_calculate_nonce(const uint8_t *pwd, uint8_t nonce[BT_OBEX_CHALLENGE_
 		return -EINVAL;
 	}
 
+	LOG_WRN("PBAP authentication relies on legacy MD5-based OBEX authentication");
+
 	memcpy(hash_input, &timestamp, sizeof(timestamp));
 	hash_input[sizeof(timestamp)] = ':';
 	memcpy(hash_input + sizeof(timestamp) + 1U, pwd, pwd_len);
@@ -884,6 +888,8 @@ int bt_pbap_calculate_rsp_digest(const uint8_t *pwd,
 		return -EINVAL;
 	}
 
+	LOG_WRN("PBAP authentication relies on legacy MD5-based OBEX authentication");
+
 	memcpy(hash_input, nonce, BT_OBEX_CHALLENGE_TAG_NONCE_LEN);
 	hash_input[BT_OBEX_CHALLENGE_TAG_NONCE_LEN] = ':';
 	memcpy(hash_input + BT_OBEX_CHALLENGE_TAG_NONCE_LEN + 1U, pwd, pwd_len);
@@ -906,15 +912,18 @@ int bt_pbap_verify_authentication(uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN]
 	int err;
 
 	err = bt_pbap_calculate_rsp_digest(pwd, nonce, result);
-	if (err == 0) {
-		err = memcmp(result, rsp_digest, BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN);
-		if (err != 0) {
-			LOG_ERR("rsp_digest is invalid");
-			return -EINVAL;
-		}
+	if (err != 0) {
+		LOG_ERR("Failed to calculate response digest %d", err);
+		return err;
 	}
 
-	return err;
+	err = mbedtls_ct_memcmp(result, rsp_digest, BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN);
+	if (err != 0) {
+		LOG_ERR("rsp_digest is invalid");
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 #if defined(CONFIG_BT_PBAP_PSE)

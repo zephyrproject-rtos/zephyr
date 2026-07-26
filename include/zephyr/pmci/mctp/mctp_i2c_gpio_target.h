@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef ZEPHYR_MCTP_I2C_GPIO_TARGET_H_
-#define ZEPHYR_MCTP_I2C_GPIO_TARGET_H_
+#ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_TARGET_H_
+#define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_TARGET_H_
 
 #include <stdint.h>
 #include <zephyr/kernel.h>
@@ -92,4 +92,4 @@ int mctp_i2c_gpio_target_unregister(struct mctp_binding_i2c_gpio_target *b);
 		.tx_complete = &_name##_tx_complete,                                               \
 	};
 
-#endif /* ZEPHYR_MCTP_I2C_GPIO_TARGET_H_ */
+#endif /* ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_TARGET_H_ */

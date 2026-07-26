@@ -673,7 +673,7 @@ static const struct net_wifi_mgmt_offload rtk_api = {
 	.wifi_mgmt_api = &ameba_wifi_mgmt,
 };
 
-/* inst replace by DT_DRV_COMPAT(inst) */
+/* inst replace by DT_DRV_INST(inst) */
 NET_DEVICE_DT_INST_DEFINE(0, ameba_wifi_dev_init, NULL, &ameba_data[STA_WLAN_INDEX], NULL,
 			  CONFIG_WIFI_INIT_PRIORITY, &rtk_api, ETHERNET_L2,
 			  NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);

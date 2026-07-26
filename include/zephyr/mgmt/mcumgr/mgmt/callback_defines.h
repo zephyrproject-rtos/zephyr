@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_MCUMGR_CALLBACK_DEFINES_
-#define H_MCUMGR_CALLBACK_DEFINES_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_CALLBACK_DEFINES_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_CALLBACK_DEFINES_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,4 +83,4 @@ enum smp_all_events {
 }
 #endif
 
-#endif /* H_MCUMGR_CALLBACK_DEFINES_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_CALLBACK_DEFINES_H_ */

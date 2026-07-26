@@ -243,7 +243,7 @@ static int uhc_mcux_driver_preinit(const struct device *dev)
 	return 0;
 }
 
-static const struct uhc_api mcux_uhc_api = {
+static DEVICE_API(uhc, mcux_uhc_api) = {
 	.lock = uhc_mcux_lock,
 	.unlock = uhc_mcux_unlock,
 	.init = uhc_mcux_init,

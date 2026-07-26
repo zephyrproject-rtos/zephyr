@@ -19,7 +19,7 @@
 #ifdef CONFIG_ESP_SIMPLE_BOOT
 user_iram_end = (DRAM_SHARED_BUFFERS_END + IRAM_DRAM_OFFSET);
 #else
-user_iram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
+user_iram_end = (BOOTLOADER_DRAM_LOADER_SEG_START + IRAM_DRAM_OFFSET);
 #endif
 
 /* User available SRAM memory segments */
@@ -566,6 +566,9 @@ SECTIONS
   .iram0.data :
   {
     . = ALIGN(16);
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+    *(.llext_instr_heap)
+#endif
     *(.iram.data)
     *(.iram.data*)
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
@@ -873,9 +876,8 @@ SECTIONS
     *(.noinit)
     *(.noinit.*)
 #if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
-    *(.llext_heap)
-    *(.llext_ext_heap)
     *(.llext_metadata_heap)
+    *(.llext_data_heap)
 #endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     . = ALIGN(16);
   } GROUP_LINK_IN(RAMABLE_REGION)

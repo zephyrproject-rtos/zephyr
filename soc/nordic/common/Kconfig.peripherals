@@ -106,6 +106,9 @@ config HAS_HW_NRF_LPCOMP
 config HAS_HW_NRF_MPU
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_MPU))
 
+config HAS_HW_NRF_MRAMC
+	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_MRAMC))
+
 config HAS_HW_NRF_MUTEX
 	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF_MUTEX))
 

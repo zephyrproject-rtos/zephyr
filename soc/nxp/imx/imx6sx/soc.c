@@ -8,7 +8,7 @@
 #include <zephyr/sys/barrier.h>
 #include <soc.h>
 #include <zephyr/dt-bindings/rdc/imx_rdc.h>
-#include "wdog_imx.h"
+#include <wdog_imx.h>
 
 #include <cmsis_core.h>
 

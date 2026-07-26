@@ -47,4 +47,4 @@ References
 
 .. target-notes::
 
-.. _`ESP32-C3-SUPERMINI`: https://www.nologo.tech/product/esp32/esp32c3SuperMini/esp32C3SuperMini.html
+.. _`ESP32-C3-SUPERMINI`: https://www.nologo.tech/en/product/esp32/esp32c3SuperMini/esp32C3SuperMini.html

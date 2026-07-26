@@ -14,7 +14,6 @@
 #include <zephyr/syscall.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/device.h>
-#include <zephyr/init.h>
 #include <stdbool.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/libc-hooks.h>
@@ -23,6 +22,7 @@
 #include <inttypes.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/cache.h>
+#include <kernel_internal.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
@@ -1076,7 +1076,7 @@ out:
 extern char __app_shmem_regions_start[];
 extern char __app_shmem_regions_end[];
 
-static int app_shmem_bss_zero(void)
+static void app_shmem_bss_zero(void)
 {
 	struct z_app_region *region, *end;
 
@@ -1087,12 +1087,9 @@ static int app_shmem_bss_zero(void)
 	for ( ; region < end; region++) {
 		(void)memset(region->bss_start, 0, region->bss_size);
 	}
-
-	return 0;
 }
 
-SYS_INIT_NAMED(app_shmem_bss_zero_pre, app_shmem_bss_zero,
-	       PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+K_KERNEL_INIT_PRE(app_shmem_bss_zero);
 
 /*
  * Default handlers if otherwise unimplemented

@@ -45,18 +45,33 @@ static uint32_t last_elapsed;
 static void sbi_set_timer(uint64_t deadline)
 {
 	register unsigned long a0 __asm__("a0") = (unsigned long)deadline;
+#ifndef CONFIG_64BIT
+	register unsigned long a1 __asm__("a1") = (unsigned long)(deadline >> 32);
+#endif
 	register unsigned long a6 __asm__("a6") = SBI_FUNC_SET_TIMER;
 	register unsigned long a7 __asm__("a7") = SBI_EXT_TIME;
 
-	__asm__ volatile("ecall"
-					: "+r"(a0)
-					: "r"(a6), "r"(a7)
-					: "a1", "memory");
+#ifdef CONFIG_64BIT
+	__asm__ volatile("ecall" : "+r"(a0) : "r"(a6), "r"(a7) : "a1", "memory");
+#else
+	__asm__ volatile("ecall" : "+r"(a0), "+r"(a1) : "r"(a6), "r"(a7) : "memory");
+#endif
 }
 
 static uint64_t stime(void)
 {
+#ifdef CONFIG_64BIT
 	return csr_read(time);
+#else
+	/* guard against lower half rollover */
+	uint32_t hi, lo;
+
+	do {
+		hi = csr_read(timeh);
+		lo = csr_read(time);
+	} while (csr_read(timeh) != hi);
+	return ((uint64_t)hi << 32) | lo;
+#endif
 }
 
 static void timer_isr(const void *arg)

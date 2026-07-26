@@ -77,4 +77,4 @@ References
 
 .. _OpenTitan GitHub: https://github.com/lowRISC/opentitan
 
-.. _OpenTitan Verilator Setup: https://opentitan.org/guides/getting_started/setup_verilator.html
+.. _OpenTitan Verilator Setup: https://opentitan.org/book/doc/getting_started/setup_verilator.html

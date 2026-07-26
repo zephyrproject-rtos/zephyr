@@ -186,6 +186,7 @@ static void gspi_siwx91x_dma_callback(const struct device *dev, void *user_data,
 				      int status)
 {
 	const struct device *spi_dev = (const struct device *)user_data;
+	const struct gspi_siwx91x_config *cfg = spi_dev->config;
 	struct gspi_siwx91x_data *data = spi_dev->data;
 	struct spi_context *instance_ctx = &data->ctx;
 
@@ -200,6 +201,9 @@ static void gspi_siwx91x_dma_callback(const struct device *dev, void *user_data,
 		dma_stop(data->dma_rx.dma_dev, data->dma_rx.chan_nb);
 	}
 
+	while (cfg->reg->GSPI_STATUS_b.GSPI_BUSY) {
+		/* empty */
+	}
 	spi_context_cs_control(instance_ctx, false);
 	spi_context_complete(instance_ctx, spi_dev, status);
 	pm_device_runtime_put_async(spi_dev, K_NO_WAIT);
@@ -393,13 +397,16 @@ static int gspi_siwx91x_burst_size(struct spi_context *ctx)
 
 static void gspi_siwx91x_gspi_fifo_reset_sync(uint32_t frequency)
 {
-	int loops = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / frequency;
+	int loops = DT_PROP(DT_NODELABEL(cpu0), clock_frequency) / frequency;
 
-	/* GSPI FIFO reset requires the RESET bits to be held high
-	 * for at least one GSPI bus clock cycle.
-	 * Since there is no explicit hardware status indicating
-	 * completion of the FIFO reset, insert a short, frequency-
-	 * dependent delay to guarantee the minimum reset pulse width.
+	/* GSPI FIFO reset requires the RESET bits to be held high for at least
+	 * one GSPI bus clock cycle.
+	 * Since there is no explicit hardware status indicating completion of
+	 * the FIFO reset, insert a short, frequency-dependent delay to
+	 * guarantee the minimum reset pulse width.
+	 */
+	/* FIXME: The granularity of k_busy_wait() is only 32µs when
+	 * CONFIG_PM=y.
 	 */
 	while (loops-- > 0) {
 		arch_nop();

@@ -201,6 +201,24 @@ static uint32_t dhcpv6_next_retransmit_time(int prev_retransmit_time,
 	return retransmit_time;
 }
 
+static uint32_t dhcpv6_sol_max_rt(struct net_if *iface)
+{
+	if (iface->config.dhcpv6.sol_max_rt != 0U) {
+		return iface->config.dhcpv6.sol_max_rt;
+	}
+
+	return DHCPV6_SOL_MAX_RT;
+}
+
+static uint32_t dhcpv6_inf_max_rt(struct net_if *iface)
+{
+	if (iface->config.dhcpv6.inf_max_rt != 0U) {
+		return iface->config.dhcpv6.inf_max_rt;
+	}
+
+	return DHCPV6_INF_MAX_RT;
+}
+
 /* DHCPv6 packet encoding functions */
 
 static int dhcpv6_add_header(struct net_pkt *pkt, enum dhcpv6_msg_type type,
@@ -603,8 +621,6 @@ static struct net_pkt *dhcpv6_create_message(struct net_if *iface,
 		goto fail;
 	}
 
-	dhcpv6_generate_tid(iface);
-
 	if (dhcpv6_add_header(pkt, msg_type, iface->config.dhcpv6.tid) < 0) {
 		goto fail;
 	}
@@ -642,6 +658,35 @@ static int dhcpv6_send_solicit(struct net_if *iface)
 	};
 
 	pkt = dhcpv6_create_message(iface, DHCPV6_MSG_TYPE_SOLICIT, &options);
+	if (pkt == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = net_send_data(pkt);
+	if (ret < 0) {
+		net_pkt_unref(pkt);
+	}
+
+	return ret;
+}
+
+static int dhcpv6_send_info_request(struct net_if *iface)
+{
+	int ret;
+	struct net_pkt *pkt;
+	struct dhcpv6_options_include options = {
+		.clientid = true,
+		.elapsed_time = true,
+		.oro = {
+			DHCPV6_OPTION_CODE_INF_MAX_RT,
+#if defined(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)
+			DHCPV6_OPTION_CODE_OPTION_DNS_SERVERS,
+#endif
+		},
+	};
+
+	pkt = dhcpv6_create_message(iface, DHCPV6_MSG_TYPE_INFORMATION_REQUEST,
+				    &options);
 	if (pkt == NULL) {
 		return -ENOMEM;
 	}
@@ -1244,6 +1289,31 @@ static int dhcpv6_parse_option_dns_servers(struct net_pkt *pkt, uint16_t length,
 	return 0;
 }
 
+static int dhcpv6_parse_option_max_rt(struct net_pkt *pkt, uint16_t length,
+				      uint32_t *max_rt)
+{
+	uint32_t max_rt_s;
+	int ret;
+
+	if (length != sizeof(max_rt_s)) {
+		return -EMSGSIZE;
+	}
+
+	ret = net_pkt_read_be32(pkt, &max_rt_s);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (max_rt_s < DHCPV6_MAX_RT_MIN / MSEC_PER_SEC ||
+	    max_rt_s > DHCPV6_MAX_RT_MAX / MSEC_PER_SEC) {
+		return -ERANGE;
+	}
+
+	*max_rt = max_rt_s * MSEC_PER_SEC;
+
+	return 0;
+}
+
 static int dhcpv6_find_option(struct net_pkt *pkt, enum dhcpv6_option_code opt_code,
 			      uint16_t *opt_len)
 {
@@ -1393,6 +1463,97 @@ static int dhcpv6_find_status_code(struct net_pkt *pkt, uint16_t *status)
 	return ret;
 }
 
+static int dhcpv6_find_max_rt(struct net_pkt *pkt, enum dhcpv6_option_code opt_code,
+			      uint32_t *max_rt)
+{
+	struct net_pkt_cursor backup;
+	uint16_t length;
+	int ret;
+
+	net_pkt_cursor_backup(pkt, &backup);
+
+	ret = dhcpv6_find_option(pkt, opt_code, &length);
+	if (ret == 0) {
+		ret = dhcpv6_parse_option_max_rt(pkt, length, max_rt);
+	}
+
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return ret;
+}
+
+static void dhcpv6_update_max_rt_options(struct net_if *iface, struct net_pkt *pkt)
+{
+	uint32_t max_rt;
+
+	/* RFC 8415, ch. 21.24 and 21.25: a client MUST process a valid
+	 * SOL_MAX_RT/INF_MAX_RT option even if the message carries a Status
+	 * Code option indicating a failure. A missing, malformed or
+	 * out-of-range option is simply ignored and MUST NOT cause the message
+	 * to be discarded.
+	 */
+	if (dhcpv6_find_max_rt(pkt, DHCPV6_OPTION_CODE_SOL_MAX_RT, &max_rt) == 0) {
+		iface->config.dhcpv6.sol_max_rt = max_rt;
+	}
+
+	if (dhcpv6_find_max_rt(pkt, DHCPV6_OPTION_CODE_INF_MAX_RT, &max_rt) == 0) {
+		iface->config.dhcpv6.inf_max_rt = max_rt;
+	}
+}
+
+static int dhcpv6_find_information_refresh_time(struct net_pkt *pkt, uint32_t *irt_s)
+{
+	struct net_pkt_cursor backup;
+	uint16_t length;
+	int ret;
+
+	net_pkt_cursor_backup(pkt, &backup);
+
+	ret = dhcpv6_find_option(pkt, DHCPV6_OPTION_CODE_INFORMATION_REFRESH_TIME,
+				 &length);
+	if (ret == 0) {
+		if (length != sizeof(*irt_s)) {
+			ret = -EMSGSIZE;
+		} else {
+			ret = net_pkt_read_be32(pkt, irt_s);
+		}
+	}
+
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return ret;
+}
+
+/* RFC 8415, ch. 21.23: derive the interval after which the client refreshes
+ * information obtained via an Information-request exchange. Use the server
+ * provided Information Refresh Time (clamped to IRT_MINIMUM) if present and
+ * valid, IRT_DEFAULT otherwise, and treat the infinity value as no refresh.
+ */
+static void dhcpv6_store_info_refresh_time(struct net_if *iface, struct net_pkt *pkt)
+{
+	uint32_t irt_s = DHCPV6_IRT_DEFAULT;
+	uint64_t irt_ms;
+
+	if (dhcpv6_find_information_refresh_time(pkt, &irt_s) == 0) {
+		if (irt_s == DHCPV6_IRT_INFINITY) {
+			iface->config.dhcpv6.info_refresh_time = 0U;
+			return;
+		}
+
+		if (irt_s < DHCPV6_IRT_MINIMUM) {
+			irt_s = DHCPV6_IRT_MINIMUM;
+		}
+	}
+
+	irt_ms = (uint64_t)irt_s * MSEC_PER_SEC;
+	if (irt_ms > UINT32_MAX) {
+		/* Too far in the future to represent; treat as no refresh. */
+		iface->config.dhcpv6.info_refresh_time = 0U;
+	} else {
+		iface->config.dhcpv6.info_refresh_time = (uint32_t)irt_ms;
+	}
+}
+
 static int dhcpv6_handle_dns_server_option(struct net_pkt *pkt)
 {
 	const struct net_sockaddr *dns_servers[MAX_DNS_SERVERS + 1] = { 0 };
@@ -1479,7 +1640,20 @@ static void dhcpv6_enter_soliciting(struct net_if *iface)
 	iface->config.dhcpv6.server_preference = -1;
 	iface->config.dhcpv6.exchange_start = k_uptime_get();
 
+	dhcpv6_generate_tid(iface);
 	(void)dhcpv6_send_solicit(iface);
+	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
+}
+
+static void dhcpv6_enter_info_requesting(struct net_if *iface)
+{
+	iface->config.dhcpv6.retransmit_timeout =
+		dhcpv6_initial_retransmit_time(DHCPV6_INF_TIMEOUT);
+	iface->config.dhcpv6.retransmissions = 0;
+	iface->config.dhcpv6.exchange_start = k_uptime_get();
+
+	dhcpv6_generate_tid(iface);
+	(void)dhcpv6_send_info_request(iface);
 	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
 }
 
@@ -1490,6 +1664,7 @@ static void dhcpv6_enter_requesting(struct net_if *iface)
 	iface->config.dhcpv6.retransmissions = 0;
 	iface->config.dhcpv6.exchange_start = k_uptime_get();
 
+	dhcpv6_generate_tid(iface);
 	(void)dhcpv6_send_request(iface);
 	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
 }
@@ -1501,6 +1676,7 @@ static void dhcpv6_enter_renewing(struct net_if *iface)
 	iface->config.dhcpv6.retransmissions = 0;
 	iface->config.dhcpv6.exchange_start = k_uptime_get();
 
+	dhcpv6_generate_tid(iface);
 	(void)dhcpv6_send_renew(iface);
 	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
 }
@@ -1512,6 +1688,7 @@ static void dhcpv6_enter_rebinding(struct net_if *iface)
 	iface->config.dhcpv6.retransmissions = 0;
 	iface->config.dhcpv6.exchange_start = k_uptime_get();
 
+	dhcpv6_generate_tid(iface);
 	(void)dhcpv6_send_rebind(iface);
 	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
 }
@@ -1523,13 +1700,28 @@ static void dhcpv6_enter_confirming(struct net_if *iface)
 	iface->config.dhcpv6.retransmissions = 0;
 	iface->config.dhcpv6.exchange_start = k_uptime_get();
 
+	dhcpv6_generate_tid(iface);
 	(void)dhcpv6_send_confirm(iface);
 	dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
 }
 
 static void dhcpv6_enter_bound(struct net_if *iface)
 {
-	iface->config.dhcpv6.timeout = iface->config.dhcpv6.t1;
+	if (!iface->config.dhcpv6.params.request_addr &&
+	    !iface->config.dhcpv6.params.request_prefix) {
+		/* Information-request exchange: schedule a refresh of the
+		 * received configuration (RFC 8415, ch. 18.2.6). A zero
+		 * interval means the server requested no refresh (infinity).
+		 */
+		if (iface->config.dhcpv6.info_refresh_time == 0U) {
+			iface->config.dhcpv6.timeout = UINT64_MAX;
+		} else {
+			dhcpv6_set_timeout(iface,
+					   iface->config.dhcpv6.info_refresh_time);
+		}
+	} else {
+		iface->config.dhcpv6.timeout = iface->config.dhcpv6.t1;
+	}
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DHCP_BOUND, iface,
 					&iface->config.dhcpv6,
@@ -1565,6 +1757,7 @@ static void dhcpv6_enter_state(struct net_if *iface, enum net_dhcpv6_state state
 		dhcpv6_enter_rebinding(iface);
 		break;
 	case NET_DHCPV6_INFO_REQUESTING:
+		dhcpv6_enter_info_requesting(iface);
 		break;
 	case NET_DHCPV6_BOUND:
 		dhcpv6_enter_bound(iface);
@@ -1617,6 +1810,12 @@ static int dhcpv6_handle_advertise(struct net_if *iface, struct net_pkt *pkt,
 		return -EBADMSG;
 	}
 
+	/* RFC 8415, ch. 21.24/21.25: process SOL_MAX_RT/INF_MAX_RT before any
+	 * status-based decision, as they MUST be honored even when the message
+	 * indicates a failure (e.g. an Advertise with NoAddrsAvail).
+	 */
+	dhcpv6_update_max_rt_options(iface, pkt);
+
 	/* Verify status code. */
 	ret = dhcpv6_find_status_code(pkt, &status);
 	if (ret < 0) {
@@ -1627,8 +1826,6 @@ static int dhcpv6_handle_advertise(struct net_if *iface, struct net_pkt *pkt,
 		/* Ignore. */
 		return 0;
 	}
-
-	/* TODO Process SOL_MAX_RT/INF_MAX_RT options. */
 
 	/* Verify server preference. */
 	ret = dhcpv6_find_server_preference(pkt, &server_preference);
@@ -1705,7 +1902,8 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 	if (iface->config.dhcpv6.state != NET_DHCPV6_REQUESTING &&
 	    iface->config.dhcpv6.state != NET_DHCPV6_CONFIRMING &&
 	    iface->config.dhcpv6.state != NET_DHCPV6_RENEWING &&
-	    iface->config.dhcpv6.state != NET_DHCPV6_REBINDING) {
+	    iface->config.dhcpv6.state != NET_DHCPV6_REBINDING &&
+	    iface->config.dhcpv6.state != NET_DHCPV6_INFO_REQUESTING) {
 		return -EINVAL;
 	}
 
@@ -1731,6 +1929,15 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 		return ret;
 	}
 
+	if ((iface->config.dhcpv6.state == NET_DHCPV6_REQUESTING ||
+	     iface->config.dhcpv6.state == NET_DHCPV6_RENEWING) &&
+	    (iface->config.dhcpv6.serverid.length != duid.length ||
+	     memcmp(&iface->config.dhcpv6.serverid.duid, &duid.duid,
+		    iface->config.dhcpv6.serverid.length) != 0)) {
+		NET_ERR("Server ID mismatch");
+		return -EBADMSG;
+	}
+
 	/* Verify TID. */
 	if (memcmp(iface->config.dhcpv6.tid, tid,
 		   sizeof(iface->config.dhcpv6.tid)) != 0) {
@@ -1738,7 +1945,11 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 		return -EBADMSG;
 	}
 
-	/* TODO Process SOL_MAX_RT/INF_MAX_RT options. */
+	/* RFC 8415, ch. 21.24/21.25: process SOL_MAX_RT/INF_MAX_RT before any
+	 * status-based decision, as they MUST be honored even when the Reply
+	 * carries a failure Status Code.
+	 */
+	dhcpv6_update_max_rt_options(iface, pkt);
 
 	/* Verify status code. */
 	ret = dhcpv6_find_status_code(pkt, &status);
@@ -1749,6 +1960,24 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 	if (status == DHCPV6_STATUS_UNSPEC_FAIL) {
 		/* Ignore and try again later. */
 		return 0;
+	}
+
+	if (iface->config.dhcpv6.state == NET_DHCPV6_INFO_REQUESTING) {
+		if (status != DHCPV6_STATUS_SUCCESS) {
+			return 0;
+		}
+
+		dhcpv6_store_info_refresh_time(iface, pkt);
+
+		if (IS_ENABLED(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)) {
+			ret = dhcpv6_handle_dns_server_option(pkt);
+			if (ret < 0) {
+				NET_ERR("DNS server option handling failed");
+				return ret;
+			}
+		}
+
+		goto out;
 	}
 
 	/* DHCPv6 RFC8415, ch. 18.2.10.1.  If the client receives a NotOnLink
@@ -2046,6 +2275,12 @@ static uint64_t dhcpv6_manage_timers(struct net_if *iface, int64_t now)
 		bool have_addr = false;
 		bool have_prefix = false;
 
+		if (!iface->config.dhcpv6.params.request_addr &&
+		    !iface->config.dhcpv6.params.request_prefix) {
+			dhcpv6_enter_state(iface, NET_DHCPV6_INFO_REQUESTING);
+			return iface->config.dhcpv6.timeout;
+		}
+
 		if (iface->config.dhcpv6.params.request_addr &&
 			!net_ipv6_addr_cmp(&iface->config.dhcpv6.addr,
 					net_ipv6_unspecified_address())) {
@@ -2086,7 +2321,7 @@ static uint64_t dhcpv6_manage_timers(struct net_if *iface, int64_t now)
 		iface->config.dhcpv6.retransmit_timeout =
 			dhcpv6_next_retransmit_time(
 				iface->config.dhcpv6.retransmit_timeout,
-				DHCPV6_SOL_MAX_RT);
+				dhcpv6_sol_max_rt(iface));
 
 		(void)dhcpv6_send_solicit(iface);
 		dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
@@ -2170,9 +2405,28 @@ static uint64_t dhcpv6_manage_timers(struct net_if *iface, int64_t now)
 
 		return iface->config.dhcpv6.timeout;
 	case NET_DHCPV6_INFO_REQUESTING:
-		break;
+		iface->config.dhcpv6.retransmissions++;
+		iface->config.dhcpv6.retransmit_timeout =
+			dhcpv6_next_retransmit_time(
+				iface->config.dhcpv6.retransmit_timeout,
+				dhcpv6_inf_max_rt(iface));
+
+		(void)dhcpv6_send_info_request(iface);
+		dhcpv6_set_timeout(iface, iface->config.dhcpv6.retransmit_timeout);
+
+		return iface->config.dhcpv6.timeout;
 	case NET_DHCPV6_BOUND:
-		dhcpv6_enter_state(iface, NET_DHCPV6_RENEWING);
+		if (!iface->config.dhcpv6.params.request_addr &&
+		    !iface->config.dhcpv6.params.request_prefix) {
+			/* Information-request exchange has no lease to renew;
+			 * refresh the configuration instead (RFC 8415,
+			 * ch. 18.2.6).
+			 */
+			dhcpv6_enter_state(iface, NET_DHCPV6_INFO_REQUESTING);
+		} else {
+			dhcpv6_enter_state(iface, NET_DHCPV6_RENEWING);
+		}
+
 		return iface->config.dhcpv6.timeout;
 	}
 
@@ -2257,12 +2511,18 @@ out:
 	k_mutex_unlock(&lock);
 }
 
-static void dhcpv6_generate_client_duid(struct net_if *iface)
+static int dhcpv6_generate_client_duid(struct net_if *iface)
 {
 	struct net_linkaddr *lladdr = net_if_get_link_addr(iface);
 	struct net_dhcpv6_duid_storage *clientid = &iface->config.dhcpv6.clientid;
 	struct dhcpv6_duid_ll *duid_ll =
 				(struct dhcpv6_duid_ll *)&clientid->duid.buf;
+
+	if (lladdr == NULL ||
+	    lladdr->len > sizeof(clientid->duid.buf) - DHCPV6_DUID_LL_HEADER_SIZE) {
+		NET_ERR("Link address too large for DHCPv6 DUID");
+		return -EMSGSIZE;
+	}
 
 	memset(clientid, 0, sizeof(*clientid));
 
@@ -2273,6 +2533,8 @@ static void dhcpv6_generate_client_duid(struct net_if *iface)
 	memcpy(duid_ll->ll_addr, lladdr->addr, lladdr->len);
 
 	clientid->length = DHCPV6_DUID_LL_HEADER_SIZE + lladdr->len;
+
+	return 0;
 }
 
 /* DHCPv6 public API */
@@ -2287,8 +2549,11 @@ void net_dhcpv6_start(struct net_if *iface, struct net_dhcpv6_params *params)
 		goto out;
 	}
 
-	if (!params->request_addr && !params->request_prefix) {
-		NET_ERR("Information Request not supported yet");
+	/* Generate the client DUID before any observable side effects so that a
+	 * failure leaves the interface untouched (not registered, no START
+	 * event emitted).
+	 */
+	if (dhcpv6_generate_client_duid(iface) < 0) {
 		goto out;
 	}
 
@@ -2297,6 +2562,8 @@ void net_dhcpv6_start(struct net_if *iface, struct net_dhcpv6_params *params)
 	NET_DBG("Starting DHCPv6 on iface %p", iface);
 
 	iface->config.dhcpv6.params = *params;
+	iface->config.dhcpv6.sol_max_rt = DHCPV6_SOL_MAX_RT;
+	iface->config.dhcpv6.inf_max_rt = DHCPV6_INF_MAX_RT;
 
 	if (sys_slist_is_empty(&dhcpv6_ifaces)) {
 		net_mgmt_add_event_callback(&dhcpv6_mgmt_cb);
@@ -2312,7 +2579,6 @@ void net_dhcpv6_start(struct net_if *iface, struct net_dhcpv6_params *params)
 		iface->config.dhcpv6.prefix_iaid = net_if_get_by_iface(iface);
 	}
 
-	dhcpv6_generate_client_duid(iface);
 	dhcpv6_enter_state(iface, NET_DHCPV6_INIT);
 	dhcpv6_reschedule();
 

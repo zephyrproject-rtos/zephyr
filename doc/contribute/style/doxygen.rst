@@ -126,6 +126,15 @@ Example:
    For example, device driver emulators typically appear both in "Emulator Interfaces" and "Device
    drivers" groups. See :c:group:`i2c_emul_interface` for an example.
 
+.. important::
+
+   A group with no parent becomes a top-level entry of the :ref:`api_overview`, whose categories
+   are deliberately few. Always give a new group a parent with ``@ingroup``.
+
+   The top-level entries are allowlisted in :zephyr_file:`doc/_doxygen/toplevel_groups.txt` and
+   enforced by :zephyr_file:`scripts/ci/doxygen_toplevel_groups.py`. Adding a new one requires
+   documentation maintainer approval.
+
 .. _doxygen_api_versioning:
 
 API Versioning

@@ -148,6 +148,3 @@ References
 
 .. _eLinux H3 Salvator-X page:
 	https://elinux.org/R-Car/Boards/Salvator-X
-
-.. _Install a toolchain:
-	https://docs.zephyrproject.org/latest/getting_started/index.html#install-a-toolchain

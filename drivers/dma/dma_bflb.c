@@ -19,7 +19,8 @@ LOG_MODULE_REGISTER(dma_bflb, CONFIG_DMA_LOG_LEVEL);
 #include <common_defines.h>
 #include <bouffalolab/common/dma_reg.h>
 
-#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
+	|| defined(CONFIG_SOC_SERIES_BL616CL)
 #define BFLB_DMA_CLOCK_ADDR (GLB_BASE + GLB_DMA_CFG0_OFFSET)
 #else
 #define BFLB_DMA_CLOCK_ADDR (GLB_BASE + GLB_CLK_CFG2_OFFSET)
@@ -264,7 +265,8 @@ static int dma_bflb_start(const struct device *dev, uint32_t channel)
 	const struct dma_bflb_config *cfg = dev->config;
 	uint32_t config;
 
-#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
+	|| defined(CONFIG_SOC_SERIES_BL616CL)
 	/* on BL61x, we must invalidate the output address to update the memory data */
 	uint32_t control = sys_read32(
 		cfg->base_reg + DMA_CxCONTROL_OFFSET + BFLB_DMA_CH_OFFSET(channel));

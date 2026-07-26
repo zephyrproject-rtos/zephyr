@@ -31,6 +31,8 @@ struct tracing_backend_api {
 	void (*init)(void);
 	void (*output)(const struct tracing_backend *backend,
 		       uint8_t *data, uint32_t length);
+	/* Optional: push any buffered data out of the backend. May be NULL. */
+	int (*flush)(const struct tracing_backend *backend);
 };
 
 /**
@@ -77,9 +79,27 @@ static inline void tracing_backend_output(
 		const struct tracing_backend *backend,
 		uint8_t *data, uint32_t length)
 {
-	if (backend && backend->api) {
+	if (backend && backend->api && backend->api->output) {
 		backend->api->output(backend, data, length);
 	}
+}
+
+/**
+ * @brief Flush any data buffered inside a tracing backend.
+ *
+ * @param backend Pointer to tracing_backend instance.
+ *
+ * @retval 0 on success or if the backend does not implement flush.
+ * @retval -errno on a backend-reported failure.
+ */
+static inline int tracing_backend_flush(
+		const struct tracing_backend *backend)
+{
+	if (backend && backend->api && backend->api->flush) {
+		return backend->api->flush(backend);
+	}
+
+	return 0;
 }
 
 /**

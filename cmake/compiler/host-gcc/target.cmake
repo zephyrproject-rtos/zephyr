@@ -17,6 +17,7 @@ else()
   endif()
 endif()
 find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
+find_program(CMAKE_GCOV gcov)
 
 set(NOSTDINC "")
 

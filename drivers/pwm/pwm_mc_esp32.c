@@ -29,7 +29,7 @@
 #endif
 
 #if MCPWM_SLEEP_RETENTION_ENABLED
-#include <hal/mcpwm_periph.h>
+#include "mcpwm_private.h"
 #include <esp_private/sleep_retention.h>
 #endif
 
@@ -401,9 +401,9 @@ static esp_err_t mcpwm_esp32_create_sleep_retention_cb(void *arg)
 {
 	const struct device *dev = arg;
 	const struct mcpwm_esp32_config *cfg = dev->config;
-	const mcpwm_reg_retention_info_t *info;
+	const mcpwm_retention_desc_t *info;
 
-	info = &mcpwm_reg_retention_info[cfg->index];
+	info = &mcpwm_retention_infos[cfg->index];
 
 	return sleep_retention_entries_create(info->regdma_entry_array, info->array_size,
 					      REGDMA_LINK_PRI_MCPWM, info->retention_module);
@@ -418,17 +418,21 @@ static void mcpwm_esp32_sleep_retention_init(const struct device *dev)
 		return;
 	}
 
-	module = mcpwm_reg_retention_info[cfg->index].retention_module;
+	module = mcpwm_retention_infos[cfg->index].retention_module;
 
 	sleep_retention_module_init_param_t init_param = {
 		.cbs = {.create = {.handle = mcpwm_esp32_create_sleep_retention_cb,
 				   .arg = (void *)dev}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
 		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
 
 	esp_err_t err = sleep_retention_module_init(module, &init_param);
 
 	if (err == ESP_OK) {
 		err = sleep_retention_module_allocate(module);
+	}
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(module);
 	}
 	if (err != ESP_OK) {
 		LOG_WRN("MCPWM sleep retention init failed (%d)", err);

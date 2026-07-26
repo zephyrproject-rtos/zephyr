@@ -16,11 +16,41 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <soc.h>
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+#include <fsl_spc.h>
+#include <fsl_cmc.h>
+#endif
+
+#ifdef CONFIG_SOC_EARLY_RESET_HOOK
+
+void soc_early_reset_hook(void)
+{
+	/* SystemInit() disables RAM ECC, so the retained working set in RAMA
+	 * is written without valid ECC check bits. The transparent S2RAM resume
+	 * longjmps out of reset.S before soc_reset_hook / SystemInit() runs,
+	 * while Deep Power Down has reset ECC_ENABLE_CTRL back to its hardware
+	 * default (ECC on). So arch_pm_s2ram_resume() reads the retained marker
+	 * with ECC erroneously on, mis-"corrects" it against the absent check
+	 * bits and the marker check fails. Re-disable ECC here, before that read,
+	 * restoring the SystemInit() state.
+	 */
+	SYSCON0->ECC_ENABLE_CTRL = 0U;
+}
+
+#endif /* CONFIG_SOC_EARLY_RESET_HOOK */
 
 #ifdef CONFIG_SOC_RESET_HOOK
 
 void soc_reset_hook(void)
 {
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+	if ((CMC_GetSystemResetStatus(CMC0) & kCMC_WakeUpReset) != 0UL) {
+		SPC_ClearPeriphIOIsolationFlag(SPC0);
+		SPC_ClearPowerDomainLowPowerRequestFlag(SPC0, kSPC_PowerDomain0);
+		SPC_ClearPowerDomainLowPowerRequestFlag(SPC0, kSPC_PowerDomain1);
+		SPC_ClearLowPowerRequest(SPC0);
+	}
+#endif
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	SystemInit();
 #endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */

@@ -12,7 +12,7 @@
 #include <zephyr/net/socket_poll.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 
 static void _get_thread_name(struct k_thread *thread, ctf_bounded_string_t *name)
 {
@@ -314,6 +314,10 @@ void sys_trace_k_thread_sched_suspend(struct k_thread *thread)
 
 void sys_trace_isr_enter(void)
 {
+	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
+		cpu_load_on_exit_idle();
+	}
+
 	ctf_top_isr_enter();
 }
 
@@ -332,14 +336,14 @@ void sys_trace_idle(void)
 #ifdef CONFIG_TRACING_IDLE
 	ctf_top_idle();
 #endif
-	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
 		cpu_load_on_enter_idle();
 	}
 }
 
 void sys_trace_idle_exit(void)
 {
-	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
 		cpu_load_on_exit_idle();
 	}
 }
@@ -1356,6 +1360,33 @@ void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1)
 	ctf_name.buf[CTF_MAX_STRING_LEN - 1] = '\0';
 
 	ctf_named_event(ctf_name, arg0, arg1);
+}
+
+static void _get_init_name(const struct init_entry *entry, ctf_bounded_string_t *name)
+{
+	const struct device *dev = entry->dev;
+
+	if (dev != NULL && dev->name != NULL && dev->name[0] != '\0') {
+		strncpy(name->buf, dev->name, sizeof(name->buf));
+		name->buf[sizeof(name->buf) - 1] = '\0';
+	}
+}
+
+void sys_trace_sys_init_enter(const struct init_entry *entry, int level)
+{
+	ctf_bounded_string_t name = {""};
+
+	_get_init_name(entry, &name);
+	ctf_sys_init_enter(name, (uint32_t)(uintptr_t)entry->init_fn, (uint8_t)level);
+}
+
+void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result)
+{
+	ctf_bounded_string_t name = {""};
+
+	_get_init_name(entry, &name);
+	ctf_sys_init_exit(name, (uint32_t)(uintptr_t)entry->init_fn, (uint8_t)level,
+			  (int32_t)result);
 }
 
 /* GPIO */

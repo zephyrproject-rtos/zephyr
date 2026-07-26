@@ -1229,7 +1229,7 @@
 	};
 
 	wkpu: wkpu@2b4000 {
-		compatible = "nxp,wkpu";
+		compatible = "nxp,s32-wkpu";
 		reg = <0x2b4000 0x90>;
 		interrupts = <83 0>;
 		status = "disabled";

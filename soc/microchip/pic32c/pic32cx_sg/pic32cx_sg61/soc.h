@@ -19,7 +19,7 @@
 #error "Library does not support the specified device."
 #endif
 
-#include "pic32cx_sg.h"
+#include <pic32cx_sg.h>
 
 #endif /* _ASMLANGUAGE */
 

@@ -66,3 +66,28 @@ int fido2_storage_sign_count_increment(const uint8_t *cred_id, size_t cred_id_le
 {
 	return fido2_storage_backend.sign_count_increment(cred_id, cred_id_len, new_count);
 }
+
+int fido2_storage_pin_retries_get(uint8_t *retries)
+{
+	return fido2_storage_backend.pin_retries_get(retries);
+}
+
+int fido2_storage_pin_retries_decrement(void)
+{
+	return fido2_storage_backend.pin_retries_decrement();
+}
+
+int fido2_storage_pin_retries_reset(void)
+{
+	return fido2_storage_backend.pin_retries_reset();
+}
+
+int fido2_storage_pin_set(uint8_t pin_hash[FIDO2_PIN_HASH_SIZE])
+{
+	return fido2_storage_backend.pin_set(pin_hash);
+}
+
+int fido2_storage_pin_get(uint8_t pin_hash[FIDO2_PIN_HASH_SIZE])
+{
+	return fido2_storage_backend.pin_get(pin_hash);
+}

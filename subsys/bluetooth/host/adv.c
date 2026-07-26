@@ -1048,6 +1048,13 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	adv->options = param->options;
 
+	if ((param->options & BT_LE_ADV_OPT_TX_POWER) != 0U) {
+		if (!IN_RANGE(param->tx_power, BT_HCI_LE_ADV_TX_POWER_MIN,
+			      BT_HCI_LE_ADV_TX_POWER_MAX)) {
+			return -EINVAL;
+		}
+	}
+
 	err = bt_id_set_adv_own_addr(adv, param->options, dir_adv,
 				     &own_addr_type);
 	if (err) {
@@ -1083,7 +1090,8 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	cp->prim_channel_map = get_adv_channel_map(param->options);
 	cp->own_addr_type = own_addr_type;
 	cp->filter_policy = get_filter_policy(param->options);
-	cp->tx_power = BT_HCI_LE_ADV_TX_POWER_NO_PREF;
+	cp->tx_power = (param->options & BT_LE_ADV_OPT_TX_POWER) != 0U ?
+		       param->tx_power : BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	cp->prim_adv_phy = BT_HCI_LE_PHY_1M;
 
 	if ((param->options & BT_LE_ADV_OPT_EXT_ADV) &&

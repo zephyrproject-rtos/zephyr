@@ -19,10 +19,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_nxp_sco);
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
-#include "host/conn_internal.h"
-#include "host/classic/sco_internal.h"
+#include <host/conn_internal.h>
+#include <host/classic/sco_internal.h>
 
 #define NXP_VS_CMD(_opcode, _flags, _data...) \
 	{ \

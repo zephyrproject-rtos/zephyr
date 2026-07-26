@@ -1,0 +1,13 @@
+identifier: ch32v103evt
+name: WCH CH32V103 Evaluation Board
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 20
+flash: 64
+vendor: wch
+supported:
+  - gpio
+  - uart

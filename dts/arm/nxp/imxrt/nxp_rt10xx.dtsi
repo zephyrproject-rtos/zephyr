@@ -178,6 +178,8 @@
 			reg = <0x401f0000 0x4000>;
 			interrupts = <101 0>;
 			gptfreq = <DT_FREQ_M(25)>;
+			low-freq = <DT_FREQ_K(32)>;
+			osc-freq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x68 24>;
 		};
 

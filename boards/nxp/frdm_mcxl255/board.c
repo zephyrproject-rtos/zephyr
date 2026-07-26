@@ -127,6 +127,41 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateAonUART);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr0)) || \
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr1))
+	CLOCK_AttachClk(kFROdiv4_to_AON_TMR);
+
+	/*
+	 * AON QTMR0 and AON QTMR1 are controlled by a shared
+	 * AON QTMR reset line.
+	 */
+	RESET_ReleasePeripheralReset(kAonQTMR0_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr0))
+	CLOCK_EnableClock(kCLOCK_GateAonQTMR0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_qtmr1))
+	CLOCK_EnableClock(kCLOCK_GateAonQTMR1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi0))
+	/* Switch PERIPH_GROUP0 to FRO12M for LPSPI0 */
+	CLOCK_AttachClk(kFRO12M_to_PERIPH_GROUP0);
+	/* Set PERIPH_GROUP0 clock divider to value 1 */
+	CLOCK_SetClockDiv(kCLOCK_DivPeriphGroup0, 1u);
+	CLOCK_EnableClock(kCLOCK_GatePERIPH_GROUP0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi1))
+	/* Switch PERIPH_GROUP1 to FRO12M for LPSPI1 */
+	CLOCK_AttachClk(kFRO12M_to_PERIPH_GROUP1);
+	/* Set PERIPH_GROUP1 clock divider to value 1 */
+	CLOCK_SetClockDiv(kCLOCK_DivPeriphGroup1, 1u);
+	CLOCK_EnableClock(kCLOCK_GatePERIPH_GROUP1);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
 	if (!CLOCK_IsRoscInitialized()) {
 		rosc_init_config_t rosc_init_config;

@@ -26,7 +26,7 @@ The shield can be used in any application by setting ``SHIELD`` to
 Set ``--shield "st_stm32f4dis_cam"`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: stm32l4r9i_disco
    :shield: st_stm32f4dis_cam
    :goals: build

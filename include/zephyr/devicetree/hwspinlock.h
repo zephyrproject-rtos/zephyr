@@ -112,7 +112,7 @@ extern "C" {
  *             as defined by the node's hwlock-names property
  *
  * @return the channel value in the specifier at the named element or 0 if no
- *         channels are supported
+ *         named hardware spinlock is found
  *
  * @see DT_PHA_BY_NAME()
  */
@@ -141,8 +141,8 @@ extern "C" {
  * @param node_id node identifier for a node with a hwlocks property
  * @param idx index of a hwlocks element in the hwlocks
  *
- * @return the channel value in the specifier at the named element or 0 if no
- *         channels are supported
+ * @return the channel value in the specifier at the indexed element or 0 if no
+ *         hardware spinlock is found is @p idx index
  *
  * @see DT_PHA_BY_IDX()
  */

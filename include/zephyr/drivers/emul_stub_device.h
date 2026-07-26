@@ -24,7 +24,7 @@ struct emul_stub_dev_api {
 	/* Stub */
 };
 
-/* For every instance of a DT_DRV_COMPAT stub out a device for that instance */
+/* For every instance of a @c DT_DRV_COMPAT stub out a device for that instance */
 #define EMUL_STUB_DEVICE(n)                                                                        \
 	__maybe_unused static int emul_init_stub_##n(const struct device *dev)                     \
 	{                                                                                          \

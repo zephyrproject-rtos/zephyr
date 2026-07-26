@@ -40,7 +40,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 	struct pinctrl_aesc_data *data = DEV_DATA(dev);
 
 	for (uint8_t i = 0; i < pin_cnt; i++) {
-		if (pins[i].pin > AESC_PINCTRL_MAX_PINS) {
+		if (pins[i].pin >= AESC_PINCTRL_MAX_PINS) {
 			LOG_ERR("Pin index %u out of range", pins[i].pin);
 			return -EINVAL;
 		}

@@ -35,10 +35,11 @@
 			pinctrl-names = "default";
 			dmas = <&gpdma1 12 41 0x10480>; /* request 41 for OCTOSPI2 */
 			dma-names = "tx_rx";
+			st,dqs-port = <2>;
 			status = "okay";
 
 			mx25lm51245: ospi-nor-flash@0 {
-				compatible = "mxicy,mx25u", "jedec,mspi-nor";
+				compatible = "mxicy,mx25u", "jedec,nor";
 				reg = <0>;
 				size = <DT_SIZE_M(512)>; /* 512 Megabits */
 				mspi-max-frequency = <DT_FREQ_M(50)>;

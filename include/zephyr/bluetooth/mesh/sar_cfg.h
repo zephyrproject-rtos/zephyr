@@ -10,8 +10,8 @@
  * @ingroup bt_mesh_sar_cfg
  */
 
-#ifndef BT_MESH_SAR_CFG_H__
-#define BT_MESH_SAR_CFG_H__
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_SAR_CFG_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_SAR_CFG_H_
 
 #include <stdint.h>
 
@@ -73,4 +73,4 @@ struct bt_mesh_sar_rx {
 }
 #endif
 
-#endif /* BT_MESH_SAR_CFG_H__ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_SAR_CFG_H_ */

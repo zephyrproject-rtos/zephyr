@@ -27,7 +27,7 @@
 	cmdq-buffer-size = <256>;
 
 	atxp032: atxp032@0 {
-		compatible = "ambiq,mspi-device", "mspi-atxp032";
+		compatible = "ambiq,mspi-device", "atxp032";
 		size = <DT_SIZE_M(32)>;
 		reg = <0>;
 		status = "okay";
@@ -41,7 +41,7 @@
 		address-length = "ADDR_4_BYTE";
 		rx-dummy = <8>;
 		tx-dummy = <0>;
-		xip-config = <1 0 0 0>;
+		memmap-config = <1 0 0 0>;
 		ce-break-config = <0 0>;
 		ambiq,timing-config-mask = <3>;
 		ambiq,timing-config = <0 8 0 0 0 0 0 0>;

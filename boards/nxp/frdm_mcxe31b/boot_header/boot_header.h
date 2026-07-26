@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_BOOT_HEADER_H_
 #define ZEPHYR_INCLUDE_BOOT_HEADER_H_
 
-#include "fsl_common.h"
+#include <fsl_common.h>
 
 /******************************************************************************
  * Configuration structure definition                                         *

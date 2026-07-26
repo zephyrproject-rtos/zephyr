@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/misc/interconn/renesas_elc/renesas_elc.h>
-#include <zephyr/syscall_handler.h>
+#include <zephyr/internal/syscall_handler.h>
 
 int z_vrfy_renesas_elc_software_event_generate(const struct device *dev,
 					       elc_software_event_t sw_event)

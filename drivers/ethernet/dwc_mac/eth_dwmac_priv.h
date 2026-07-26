@@ -115,6 +115,10 @@ struct dwmac_priv {
 	uint32_t feature3;
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	struct net_stats_eth stats;
+#endif
+
 	struct dwmac_dma_desc *tx_descs, *rx_descs;
 	struct k_sem free_tx_descs, free_rx_descs;
 	unsigned int tx_desc_head, tx_desc_tail;
@@ -124,22 +128,25 @@ struct dwmac_priv {
 	uintptr_t tx_descs_phys, rx_descs_phys;
 #endif
 
-	struct net_buf *tx_frags[NB_TX_DESCS]; /* index shared with tx_descs */
 	struct net_buf *rx_frags[NB_RX_DESCS]; /* index shared with rx_descs */
 
 	struct net_pkt *rx_pkt;
 	uint16_t rx_bytes;
 
+	struct k_fifo tx_queue;
+
 	K_KERNEL_STACK_MEMBER(rx_refill_thread_stack, RX_REFILL_STACK_SIZE);
 	struct k_thread rx_refill_thread;
+
+	struct k_spinlock spinlock;
 };
 
 /*
  * Handy register accessors
  */
 
-#define REG_READ(r) sys_read32(DEVICE_MMIO_GET(dev) + (r))
-#define REG_WRITE(r, v) sys_write32((v), DEVICE_MMIO_GET(dev) + (r))
+#define DWMAC_REG_READ(r) sys_read32(DEVICE_MMIO_GET(dev) + (r))
+#define DWMAC_REG_WRITE(r, v) sys_write32((v), DEVICE_MMIO_GET(dev) + (r))
 
 /*
  * Shared declarations between core and platform glue code

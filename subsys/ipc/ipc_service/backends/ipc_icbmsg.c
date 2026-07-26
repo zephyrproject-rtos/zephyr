@@ -475,7 +475,7 @@ static int release_tx_blocks(struct backend_data *dev_data, size_t tx_block_inde
 				      release_index);
 		if (r < 0) {
 			LOG_ERR("Cannot free bits, err %d", r);
-			return r;
+			return -EALREADY;
 		}
 
 #ifdef CONFIG_MULTITHREADING
@@ -1255,7 +1255,9 @@ static int send_nocopy(const struct device *instance, void *token, const void *d
 		return r;
 	}
 
-	return send_block(dev_data, MSG_DATA, ept->addr, r, len);
+	r = send_block(dev_data, MSG_DATA, ept->addr, r, len);
+
+	return r < 0 ? r : len;
 }
 
 /**

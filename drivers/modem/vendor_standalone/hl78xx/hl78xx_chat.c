@@ -408,7 +408,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGEREP=2", hl78xx_ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSELACQ?", hl78xx_kselacq_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSRAT?", hl78xx_ksrat_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KBNDCFG?", hl78xx_ok_match),
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 #if (CONFIG_MODEM_HL78XX_WDSI_PROFILE_VALUE > 0)
@@ -545,7 +547,8 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_disable_pmc_chat_script, hl78xx_disable_pmc_chat
 			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
 			 HL78XX_CMD_TIMEOUT_MEDIUM);
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-#if defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT)
+#if defined(CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC) &&                                                \
+	(defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT))
 /* LTE registration status disable / GSM registration status enable script */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_lte_dis_gsm_en_reg_status_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=0", hl78xx_ok_match),
@@ -553,7 +556,8 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_lte_dis_gsm_en_reg_status_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_lte_dis_gsm_en_reg_status_script,
 			 hl78xx_lte_dis_gsm_en_reg_status_script_cmds, hl78xx_abort_matches, NULL,
 			 HL78XX_SCRIPT_TIMEOUT_PERIODIC);
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM || CONFIG_MODEM_HL78XX_AUTORAT */
+#endif
+
 #ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
 #ifdef CONFIG_NTN_POSITION_SOURCE_MANUAL
 

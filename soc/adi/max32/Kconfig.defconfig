@@ -1,6 +1,6 @@
 # Analog Devices MAX32xxx MCU family
 
-# Copyright (c) 2023-2024 Analog Devices, Inc.
+# Copyright (c) 2023-2026 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_FAMILY_MAX32
@@ -34,6 +34,14 @@ config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 	default n
 
 endif
+
+if SOC_FAMILY_MAX32_M4 || SOC_FAMILY_MAX32_M33
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+endif # SOC_FAMILY_MAX32_M4 || SOC_FAMILY_MAX32_M33
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 8192 if MAX32_WUT_TIMER

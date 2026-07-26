@@ -158,7 +158,7 @@ static int gpio_adp5585_config(const struct device *dev, gpio_pin_t pin, gpio_fl
 		reg_value = adp5585_pin_output << bank_pin;
 	} else if ((flags & GPIO_INPUT) != 0) {
 		/* reg_value for ADP5585_GPIO_DIRECTION */
-		reg_value = adp5585_pin_output << bank_pin;
+		reg_value = adp5585_pin_input << bank_pin;
 	}
 
 	ret = i2c_reg_update_byte_dt(&parent_cfg->i2c_bus,

@@ -13,6 +13,8 @@
 #include <zephyr/dt-bindings/pinctrl/bl60x-pinctrl.h>
 #elif defined(CONFIG_SOC_SERIES_BL61X)
 #include <zephyr/dt-bindings/pinctrl/bl61x-pinctrl.h>
+#elif defined(CONFIG_SOC_SERIES_BL616CL)
+#include <zephyr/dt-bindings/pinctrl/bl616cl-pinctrl.h>
 #elif defined(CONFIG_SOC_SERIES_BL808)
 #include <zephyr/dt-bindings/pinctrl/bl808-pinctrl.h>
 #elif defined(CONFIG_SOC_SERIES_BL70X)

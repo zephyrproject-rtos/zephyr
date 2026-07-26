@@ -27,7 +27,7 @@ With the following controlling how long the request is held:
 * :kconfig:option:`CONFIG_SAMPLE_PRE_REQUEST_TIMEOUT`
 * :kconfig:option:`CONFIG_SAMPLE_KEEP_REQUEST_TIMEOUT`
 
-Example configs and overlays are added for every clock, which can be found in :file:`sample.yaml`,
+Example configs and overlays are added for every clock, which can be found in :file:`tests.yaml`,
 and applied using the ``-T`` west argument. The following example builds the sample to test the
 FLL16M:
 

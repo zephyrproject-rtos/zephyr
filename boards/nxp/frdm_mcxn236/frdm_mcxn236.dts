@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 #include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
 
 / {
@@ -41,6 +42,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		wakeup-button = &user_button_2;
 		mcuboot-button0 = &user_button_2;
 	};
 
@@ -70,6 +72,8 @@
 			label = "User SW2";
 			gpios = <&gpio0 20 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_WAKEUP>;
+			/* SW2 wakes via WUU external pin 4. */
+			wakeup-ctrls = <&wuu NXP_WUU_PIN_4_FALLING_INT>;
 		};
 
 		user_button_3: button_1 {

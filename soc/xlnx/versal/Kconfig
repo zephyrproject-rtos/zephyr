@@ -14,6 +14,25 @@ config SOC_VERSAL_RPU
 	select SOC_RESET_HOOK
 	select ARM_MPU
 
+# Split TCM/OCM memory map: vectors and boot stub in rom_start @ 0x0, image
+# linked in on-chip memory (OCM). Requires a TCM boot stub before any OCM
+# access; selected when rom_start relocation is enabled and SRAM is in OCM.
+config SOC_VERSAL_RPU_OCM_BOOT
+	bool
+	default y if ROMSTART_RELOCATION_ROM && \
+		($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM)) >= 0xFF000000)
+	select ARM_MPU_SKIP_ARCH_INIT
+
+if SOC_VERSAL_RPU_OCM_BOOT
+
+config KERNEL_ENTRY
+	default "versal_rpu_ocm_boot"
+
+config ROM_START_OFFSET
+	default 0
+
+endif # SOC_VERSAL_RPU_OCM_BOOT
+
 config SOC_VERSAL_APU
 	select ARM64
 	select ARM_ARCH_TIMER

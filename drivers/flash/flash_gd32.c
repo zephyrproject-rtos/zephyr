@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT gd_gd32_flash_controller
-
 #include "flash_gd32.h"
 
 #include <zephyr/kernel.h>

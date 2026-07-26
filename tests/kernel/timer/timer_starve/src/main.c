@@ -50,6 +50,23 @@ ZTEST(starve_fn, test_timer_starve)
 
 	k_timer_init(&tmr, handler, NULL);
 	while (true) {
+		/*
+		 * Restart the alarm and run the interrupt-masked busy-wait
+		 * before sampling: every sample below, including the very
+		 * first, then follows a full masked window, so the
+		 * zero-initialized baselines are valid by construction and
+		 * both monotonicity checks can require strictly increasing
+		 * readings.
+		 */
+		k_timer_start(&tmr, K_MSEC(TIMER_DELAY_ms), K_NO_WAIT);
+
+		/* Wait with interrupts disabled to increase chance
+		 * that overflow is detected.
+		 */
+		key = k_spin_lock(&lock);
+		k_busy_wait(BUSY_WAIT_ms * USEC_PER_MSEC);
+		k_spin_unlock(&lock, key);
+
 		now = k_uptime_get_32();
 		if ((now / MSEC_PER_SEC) > CONFIG_APP_STOP_S) {
 			break;
@@ -85,16 +102,8 @@ ZTEST(starve_fn, test_timer_starve)
 		zassert_equal(na_capture, 0,
 			      "%sTimer alarm fired: %u\n",
 			      tag(), na_capture);
-
-		k_timer_start(&tmr, K_MSEC(TIMER_DELAY_ms), K_NO_WAIT);
-
-		/* Wait with interrupts disabled to increase chance
-		 * that overflow is detected.
-		 */
-		key = k_spin_lock(&lock);
-		k_busy_wait(BUSY_WAIT_ms * USEC_PER_MSEC);
-		k_spin_unlock(&lock, key);
 	}
+	k_timer_stop(&tmr);
 	TC_PRINT("%sCompleted %u iters without failure\n",
 		 tag(), iters);
 }

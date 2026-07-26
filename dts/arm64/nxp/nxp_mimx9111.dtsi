@@ -24,6 +24,8 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0>;
+			i-cache-line-size = <64>;
+			d-cache-line-size = <64>;
 		};
 	};
 

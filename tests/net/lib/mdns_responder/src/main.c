@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(mdns_resp_test);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/mdns_responder.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/net_event.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/ztest.h>
 
@@ -112,6 +114,13 @@ static bool test_started;
 static struct k_sem wait_data;
 static struct net_pkt *response_pkts[MAX_RESP_PKTS];
 static size_t responses_count;
+
+/* Count of IGMP membership reports for 224.0.0.251 seen leaving the interface.
+ * This lets us verify that a fresh report is actually put on the wire on
+ * recovery (an IGMP-snooping switch needs it), not just that the local maddr
+ * is flagged as joined.
+ */
+static int igmp_report_count;
 static struct service_info services[EXT_RECORDS_NUM];
 static struct dns_sd_rec records[EXT_RECORDS_NUM];
 
@@ -152,6 +161,19 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
+	if (test_started && net_pkt_family(pkt) == NET_AF_INET) {
+		struct net_ipv4_hdr *ip4 = NET_IPV4_HDR(pkt);
+
+		/* Count outgoing IGMP membership reports (the mDNS responder
+		 * only joins 224.0.0.251 here, so any IGMP report is for it).
+		 */
+		if (ip4->proto == NET_IPPROTO_IGMP) {
+			igmp_report_count++;
+		}
+
+		return 0;
+	}
+
 	if (test_started) {
 		hdr = NET_IPV6_HDR(pkt);
 
@@ -184,6 +206,48 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 NULL,
 			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			 &net_iface_api,
+			 _ETH_L2_LAYER,
+			 _ETH_L2_CTX_TYPE,
+			 127);
+
+/* A second interface is used to check that the responder recovers its mDNS
+ * multicast groups on interfaces other than the first one. This exercises the
+ * interface handling that used to index a per-interface array with a value
+ * derived from the interface index.
+ */
+static struct net_if_test net_iface2_data;
+
+static void net_iface_init2(struct net_if *iface)
+{
+	struct net_if_test *data = net_if_get_device(iface)->data;
+
+	/* Give the second interface a distinct link address. */
+	data->mac_addr[0] = 0x00;
+	data->mac_addr[1] = 0x00;
+	data->mac_addr[2] = 0x5E;
+	data->mac_addr[3] = 0x00;
+	data->mac_addr[4] = 0x53;
+	data->mac_addr[5] = 0x02;
+
+	net_if_set_link_addr(iface, data->mac_addr, sizeof(struct net_eth_addr),
+			     NET_LINK_ETHERNET);
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
+}
+
+static struct dummy_api net_iface_api2 = {
+	.iface_api.init = net_iface_init2,
+	.send = sender_iface,
+};
+
+NET_DEVICE_INIT_INSTANCE(net_iface2_test,
+			 "iface2",
+			 iface2,
+			 NULL,
+			 NULL,
+			 &net_iface2_data,
+			 NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &net_iface_api2,
 			 _ETH_L2_LAYER,
 			 _ETH_L2_CTX_TYPE,
 			 127);
@@ -637,6 +701,317 @@ ZTEST(test_mdns_responder, test_basic_dns_sd_query)
 	zassert_ok(res, "Did not receive a response");
 
 	check_basic_dns_sd_query_resp(response_pkts[0]);
+}
+
+/* Basic mDNS query for zephyr.local (AAAA), used to probe whether the
+ * responder is currently reachable.
+ */
+static const uint8_t recovery_probe_query[] = {
+	/* Header */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	/* zephyr.local */
+	0x06, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00,
+	/* AAAA record */
+	0x00, 0x1c, 0x00, 0x01
+};
+
+/* Send a zephyr.local query and tell whether the responder answered. The
+ * query is sent to the ff02::fb multicast address, so it is only delivered to
+ * the responder's socket if the interface is still a member of that group.
+ */
+static bool responder_answers_query(void)
+{
+	/* Start from a clean slate so we only observe the response to the
+	 * query we are about to send.
+	 */
+	responses_count = 0;
+	while (k_sem_take(&wait_data, K_NO_WAIT) == 0) {
+		/* drain stale responses */
+	}
+
+	send_msg(recovery_probe_query, sizeof(recovery_probe_query));
+
+	return k_sem_take(&wait_data, RESPONSE_TIMEOUT) == 0;
+}
+
+/* Regression test for GitHub issue #112266: the mDNS responder must keep
+ * answering queries after the network interface goes down and comes back up
+ * (e.g. Ethernet cable removed and reattached). Bringing the interface down
+ * makes the stack leave the ff02::fb multicast group; if the responder does
+ * not rejoin it when the interface comes back up, subsequent queries are
+ * dropped at the IPv6 input as "packet for unjoined multicast address".
+ */
+ZTEST(test_mdns_responder, test_recovery_after_iface_down_up)
+{
+	zassert_true(responder_answers_query(),
+		     "Responder did not answer before the link went down");
+
+	/* Simulate the Ethernet cable being removed and reattached. */
+	zassert_ok(net_if_down(iface1), "Cannot bring the interface down");
+	zassert_ok(net_if_up(iface1), "Cannot bring the interface back up");
+
+	/* Let the NET_EVENT_IF_UP handler run so it can rejoin the mDNS
+	 * multicast groups.
+	 */
+	k_sleep(K_MSEC(100));
+
+	zassert_true(responder_answers_query(),
+		     "Responder did not recover after the interface came back up");
+}
+
+/* Whether the interface is currently a member of the mDNS multicast groups.
+ * A query is only delivered to the responder's socket while the group is
+ * joined, so these mirror what the responder needs to keep working.
+ */
+static bool ipv4_group_joined(struct net_if *iface)
+{
+	const struct net_in_addr mcast = { { { 224, 0, 0, 251 } } };
+	struct net_if_mcast_addr *maddr;
+
+	maddr = net_if_ipv4_maddr_lookup(&mcast, &iface);
+
+	return maddr != NULL && net_if_ipv4_maddr_is_joined(maddr);
+}
+
+static bool ipv6_group_joined(struct net_if *iface)
+{
+	struct net_in6_addr mcast;
+	struct net_if_mcast_addr *maddr;
+
+	net_ipv6_addr_create(&mcast, 0xff02, 0, 0, 0, 0, 0, 0, 0x00fb);
+	maddr = net_if_ipv6_maddr_lookup(&mcast, &iface);
+
+	return maddr != NULL && net_if_ipv6_maddr_is_joined(maddr);
+}
+
+/* Same scenario as test_recovery_after_iface_down_up, but checking the IPv4
+ * IGMP group. Bringing the interface fully down leaves the group; the
+ * responder must rejoin it (224.0.0.251) when the interface comes back up.
+ */
+ZTEST(test_mdns_responder, test_ipv4_group_recovery_after_iface_down_up)
+{
+	zassert_true(ipv4_group_joined(iface1),
+		     "IPv4 mDNS group not joined before the link went down");
+
+	zassert_ok(net_if_down(iface1), "Cannot bring the interface down");
+	zassert_ok(net_if_up(iface1), "Cannot bring the interface back up");
+
+	k_sleep(K_MSEC(100));
+
+	zassert_true(ipv4_group_joined(iface1),
+		     "IPv4 mDNS group not rejoined after the interface came back up");
+}
+
+/* Recovery must put a fresh IGMP membership report on the wire, not just flip
+ * the local is_joined flag. An IGMP-snooping switch that dropped its state
+ * during the outage needs that report to resume forwarding the mDNS multicast.
+ * This is the case that the connection-manager AUTO_IF_DOWN reporter hit:
+ * net_if_down() followed by net_if_up().
+ */
+ZTEST(test_mdns_responder, test_ipv4_igmp_report_reemitted_on_iface_down_up)
+{
+	zassert_true(ipv4_group_joined(iface1),
+		     "IPv4 mDNS group not joined before the link went down");
+
+	zassert_ok(net_if_down(iface1), "Cannot bring the interface down");
+	k_sleep(K_MSEC(50));
+
+	/* Count only what is emitted from here on (i.e. on the way back up). */
+	igmp_report_count = 0;
+
+	zassert_ok(net_if_up(iface1), "Cannot bring the interface back up");
+	k_sleep(K_MSEC(200));
+
+	zassert_true(ipv4_group_joined(iface1),
+		     "IPv4 mDNS group not rejoined after the interface came back up");
+	zassert_true(igmp_report_count > 0,
+		     "No IGMP report was re-emitted for 224.0.0.251 on recovery");
+}
+
+/* Multicast addresses are reference counted. Recovery on NET_EVENT_IF_UP must
+ * not take a new reference on every cycle, otherwise repeated link bounces
+ * would leak references and the group could never actually be left. Cycle the
+ * interface many times and verify the reference count stays bounded.
+ */
+static long ipv4_group_refcount(struct net_if *iface)
+{
+	const struct net_in_addr mcast = { { { 224, 0, 0, 251 } } };
+	struct net_if_mcast_addr *maddr;
+
+	maddr = net_if_ipv4_maddr_lookup(&mcast, &iface);
+	if (maddr == NULL) {
+		return -1;
+	}
+
+	return atomic_get(&maddr->atomic_ref);
+}
+
+ZTEST(test_mdns_responder, test_ipv4_group_ref_not_leaked_on_cycles)
+{
+	long ref_before, ref_after;
+
+	ref_before = ipv4_group_refcount(iface1);
+	zassert_true(ref_before > 0, "IPv4 mDNS group not joined at start");
+
+	for (int i = 0; i < 5; i++) {
+		zassert_ok(net_if_down(iface1), "Cannot bring the interface down");
+		zassert_ok(net_if_up(iface1), "Cannot bring the interface back up");
+		k_sleep(K_MSEC(50));
+	}
+
+	for (int i = 0; i < 5; i++) {
+		net_if_carrier_off(iface1);
+		net_if_carrier_on(iface1);
+		k_sleep(K_MSEC(50));
+	}
+
+	ref_after = ipv4_group_refcount(iface1);
+	zassert_true(ref_after > 0, "IPv4 mDNS group not joined after cycling");
+	zassert_equal(ref_after, ref_before,
+		      "IPv4 mDNS group reference count leaked across cycles "
+		      "(%ld -> %ld)", ref_before, ref_after);
+}
+
+static long ipv6_group_refcount(struct net_if *iface)
+{
+	struct net_in6_addr mcast;
+	struct net_if_mcast_addr *maddr;
+
+	net_ipv6_addr_create(&mcast, 0xff02, 0, 0, 0, 0, 0, 0, 0x00fb);
+
+	maddr = net_if_ipv6_maddr_lookup(&mcast, &iface);
+	if (maddr == NULL) {
+		return -1;
+	}
+
+	return atomic_get(&maddr->atomic_ref);
+}
+
+ZTEST(test_mdns_responder, test_ipv6_group_ref_not_leaked_on_cycles)
+{
+	long ref_before, ref_after;
+
+	ref_before = ipv6_group_refcount(iface1);
+	zassert_true(ref_before > 0, "IPv6 mDNS group not joined at start");
+
+	for (int i = 0; i < 5; i++) {
+		zassert_ok(net_if_down(iface1), "Cannot bring the interface down");
+		zassert_ok(net_if_up(iface1), "Cannot bring the interface back up");
+		k_sleep(K_MSEC(50));
+	}
+
+	for (int i = 0; i < 5; i++) {
+		net_if_carrier_off(iface1);
+		net_if_carrier_on(iface1);
+		k_sleep(K_MSEC(50));
+	}
+
+	ref_after = ipv6_group_refcount(iface1);
+	zassert_true(ref_after > 0, "IPv6 mDNS group not joined after cycling");
+	zassert_equal(ref_after, ref_before,
+		      "IPv6 mDNS group reference count leaked across cycles "
+		      "(%ld -> %ld)", ref_before, ref_after);
+}
+
+/* Reproduces the state the connection-manager reporter observed: the mDNS
+ * IPv4 group is still marked "joined" when NET_EVENT_IF_UP is delivered (the
+ * link bounce did not clear it). A plain net_ipv4_igmp_join() is then a no-op
+ * (igmp.c returns early when the address is already joined), so no membership
+ * report reaches an IGMP-snooping switch and the responder stops receiving
+ * queries even though the local state looks fine. Recovery must force a fresh
+ * report in this case.
+ */
+ZTEST(test_mdns_responder, test_ipv4_igmp_report_when_already_joined_on_if_up)
+{
+	zassert_true(ipv4_group_joined(iface1),
+		     "IPv4 mDNS group should be joined at start");
+
+	/* Group stays joined; only an IF_UP event is delivered (no down). */
+	igmp_report_count = 0;
+
+	net_mgmt_event_notify(NET_EVENT_IF_UP, iface1);
+	k_sleep(K_MSEC(200));
+
+	zassert_true(igmp_report_count > 0,
+		     "No IGMP report was re-emitted when the group was already joined "
+		     "on interface up");
+}
+
+/* Same, but for a carrier loss (Ethernet cable unplugged/replugged) without an
+ * administrative down.
+ */
+ZTEST(test_mdns_responder, test_ipv4_igmp_report_reemitted_on_carrier_off_on)
+{
+	zassert_true(ipv4_group_joined(iface1),
+		     "IPv4 mDNS group not joined before carrier off");
+
+	net_if_carrier_off(iface1);
+	k_sleep(K_MSEC(50));
+
+	igmp_report_count = 0;
+
+	net_if_carrier_on(iface1);
+	k_sleep(K_MSEC(200));
+
+	zassert_true(ipv4_group_joined(iface1),
+		     "IPv4 mDNS group not rejoined after carrier came back");
+	zassert_true(igmp_report_count > 0,
+		     "No IGMP report was re-emitted for 224.0.0.251 after carrier came back");
+}
+
+/* A carrier loss (Ethernet cable unplugged) without an administrative down
+ * only marks the multicast groups as not joined; the responder must still be
+ * a member of both the IPv4 and IPv6 mDNS groups once the carrier returns.
+ */
+ZTEST(test_mdns_responder, test_group_recovery_after_carrier_off_on)
+{
+	zassert_true(ipv4_group_joined(iface1),
+		     "IPv4 mDNS group not joined before carrier off");
+	zassert_true(ipv6_group_joined(iface1),
+		     "IPv6 mDNS group not joined before carrier off");
+
+	net_if_carrier_off(iface1);
+	net_if_carrier_on(iface1);
+
+	k_sleep(K_MSEC(100));
+
+	zassert_true(ipv4_group_joined(iface1),
+		     "IPv4 mDNS group not rejoined after carrier came back");
+	zassert_true(ipv6_group_joined(iface1),
+		     "IPv6 mDNS group not rejoined after carrier came back");
+
+	/* The responder must still answer queries after a carrier cycle. */
+	zassert_true(responder_answers_query(),
+		     "Responder did not recover after carrier came back");
+}
+
+/* Recovery must also work on interfaces other than the first one. The old
+ * NET_EVENT_IF_UP handler never rejoined the IPv6 MLD group (ff02::fb) for
+ * any interface, so a second interface lost mDNS after a down/up cycle. (Its
+ * IPv4 handling worked for in-bounds interface indices, so the IPv4 checks
+ * here mainly guard against regressions in the reworked handler.) Verify both
+ * groups are restored on the second interface after a down/up cycle.
+ */
+ZTEST(test_mdns_responder, test_second_iface_group_recovery_after_down_up)
+{
+	struct net_if *iface2 = net_if_get_by_index(2);
+
+	zassert_not_null(iface2, "Second interface is NULL");
+
+	zassert_true(ipv4_group_joined(iface2),
+		     "iface2 IPv4 mDNS group not joined before the link went down");
+	zassert_true(ipv6_group_joined(iface2),
+		     "iface2 IPv6 mDNS group not joined before the link went down");
+
+	zassert_ok(net_if_down(iface2), "Cannot bring the second interface down");
+	zassert_ok(net_if_up(iface2), "Cannot bring the second interface back up");
+
+	k_sleep(K_MSEC(100));
+
+	zassert_true(ipv4_group_joined(iface2),
+		     "iface2 IPv4 mDNS group not rejoined after the interface came back up");
+	zassert_true(ipv6_group_joined(iface2),
+		     "iface2 IPv6 mDNS group not rejoined after the interface came back up");
 }
 
 ZTEST_SUITE(test_mdns_responder, NULL, test_setup, before, cleanup, NULL);

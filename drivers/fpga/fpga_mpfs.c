@@ -374,7 +374,8 @@ static const char *mpfs_fpga_get_info(const struct device *dev)
 	}
 
 	design_version = scb_read(cfg->mailbox, 32);
-	sprintf(data->FPGA_design_ver, (uint8_t *)"Design Version : 0x%x", design_version);
+	snprintf(data->FPGA_design_ver, sizeof(data->FPGA_design_ver),
+		 "Design Version : 0x%x", design_version);
 
 	return data->FPGA_design_ver;
 }

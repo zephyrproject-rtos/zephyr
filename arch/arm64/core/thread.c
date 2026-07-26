@@ -177,13 +177,21 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 	/* Top of the privileged non-user-accessible part of the stack */
 	stack_el1 = (uintptr_t)(_current->stack_obj + ARCH_THREAD_STACK_RESERVED);
 
+	/* We don't want to be disturbed when playing with SPSR and ELR.
+	 *
+	 * Lock interrupts before pinning the entry point and arguments into
+	 * x0-x3 below. arch_irq_lock() is normally inlined, but when the build
+	 * disables inlining (e.g. code coverage adds -fno-inline) it is emitted
+	 * as a real call. Such a call between the register assignments and the
+	 * eret would clobber those caller-saved registers, so keep it ahead of
+	 * them: no function call must sit between the assignments and the eret.
+	 */
+	arch_irq_lock();
+
 	register void *x0 __asm__("x0") = user_entry;
 	register void *x1 __asm__("x1") = p1;
 	register void *x2 __asm__("x2") = p2;
 	register void *x3 __asm__("x3") = p3;
-
-	/* we don't want to be disturbed when playing with SPSR and ELR */
-	arch_irq_lock();
 
 	/* set up and drop into EL0 */
 	__asm__ volatile (

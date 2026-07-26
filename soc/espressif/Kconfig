@@ -45,6 +45,17 @@ config RESERVE_RTC_MEM
 	help
 	  This option reserves an area in RTC FAST memory.
 
+config SOC_ESP32_ENABLE_PVT
+	bool "Auto adjust hp & lp voltage using pvt function"
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32P4
+	default n if SOC_SERIES_ESP32C6
+	default y
+	help
+	  If enabled, hp & lp voltage can be auto adjusted by the PVT
+	  characteristic. Otherwise, internal voltage is set to a fixed
+	  dbias. This is required for stable mass production; disable for
+	  debugging only.
+
 rsource "Kconfig.ulp"
 
 endif # SOC_FAMILY_ESPRESSIF_ESP32

@@ -204,11 +204,10 @@
 	clk_ctrl: clock-controller {
 		compatible = "nxp,mcxw7x-clock";
 		osc32k-mode = <MCXW_CLK_OSC32K_ENABLE>;
-		osc32k-xtal-cap = <4>;
-		osc32k-extal-cap = <4>;
+		osc32k-xtal-cap = <MCXW_CLK_OSC32K_CAP_16PF>;
+		osc32k-extal-cap = <MCXW_CLK_OSC32K_CAP_16PF>;
 		firc-mode = <MCXW_CLK_FIRC_ENABLE>;
 		firc-range = <MCXW_CLK_FIRC_RANGE_96MHZ>;
-		enable-sirc-in-lp-mode;
 		sys-clk-src = <MCXW_CLK_SYSTEM_CLK_SRC_FIRC>;
 		sys-clk-div-bus = <1>;
 		sys-clk-div-slow = <4>;

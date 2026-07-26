@@ -24,3 +24,7 @@ config ESP32_SOC_FLASH_SUPPORTED
 config ESP32_SOC_PM_SUPPORT_VDDSDIO_PD
 	bool
 	default y
+
+config ESP32_SOC_ETM_SUPPORTED
+	bool
+	default y

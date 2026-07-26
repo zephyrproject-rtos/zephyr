@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ZEPHYR_INCLUDE_DRIVERS_FLASH_NRF_QSPI_NOR_H__
-#define __ZEPHYR_INCLUDE_DRIVERS_FLASH_NRF_QSPI_NOR_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_NRF_QSPI_NOR_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FLASH_NRF_QSPI_NOR_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,4 +37,4 @@ __syscall void nrf_qspi_nor_xip_enable(const struct device *dev, bool enable);
 
 #include <zephyr/syscalls/nrf_qspi_nor.h>
 
-#endif /* __ZEPHYR_INCLUDE_DRIVERS_FLASH_NRF_QSPI_NOR_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_NRF_QSPI_NOR_H_ */

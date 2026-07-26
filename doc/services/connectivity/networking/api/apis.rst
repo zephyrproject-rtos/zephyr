@@ -10,6 +10,7 @@ Network APIs
    socket_service.rst
    ip_4_6.rst
    dns_resolve.rst
+   dplpmtud.rst
    net_mgmt.rst
    net_stats.rst
    net_timeout.rst

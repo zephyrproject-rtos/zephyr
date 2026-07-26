@@ -1,0 +1,74 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADIS1647x 6-DoF MEMS IMU with SPI connection
+
+compatible: "adi,adis1647x"
+
+include: spi-device.yaml
+
+properties:
+  drdy-gpios:
+    type: phandle-array
+    description: |
+      Data ready interrupt pin. Active high by default as produced by the sensor.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Hardware reset pin. Active low — assert (drive low) to reset, deassert
+      (drive high) for normal operation.
+
+  model:
+    type: string
+    required: true
+    enum:
+      - "adis16470"
+      - "adis16475-1"
+      - "adis16475-2"
+      - "adis16475-3"
+      - "adis16477-1"
+      - "adis16477-2"
+      - "adis16477-3"
+    description: |
+      IMU model variant. Selects accelerometer sensitivity and gyroscope
+      full-scale range at compile time without runtime register reads.
+
+  dec-rate:
+    type: int
+    default: 19
+    min: 0
+    max: 1999
+    description: |
+      Decimation rate applied to the 2000 Hz internal sample rate.
+      Output data = 2000 / (dec_rate + 1) Hz
+      0 # 2000 Hz
+      1 # 1000 Hz
+      ...
+      19 # 100 Hz (default)
+      199 # 10 Hz
+
+      Default is 19 (100 Hz output rate). This is a common output rate for
+      general motion-sensing applications (AHRS, robotics, vibration
+      monitoring) — high enough to capture typical platform dynamics while
+      keeping SPI/CPU load on the host modest.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio/gpio.h>
+
+    &spi1 {
+      /* ... */
+
+      adis1647x: adis1647x@0 {
+        compatible = "adi,adis1647x";
+        reg = <0>;
+        spi-max-frequency = <421875>;
+        spi-cpol;
+        spi-cpha;
+        drdy-gpios = <&gpiof 12 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&gpiod 15 GPIO_ACTIVE_LOW>;
+        model = "adis16477-1";
+        dec-rate = <99>;
+      };
+    };

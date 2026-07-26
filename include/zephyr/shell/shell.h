@@ -10,8 +10,8 @@
  * @ingroup shell_api
  */
 
-#ifndef SHELL_H__
-#define SHELL_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell_types.h>
@@ -186,9 +186,9 @@ const struct device *shell_device_lookup_non_ready(size_t idx,
 						   const char *prefix);
 
 /**
- * @brief Filter callback type, for use with shell_device_lookup_filter
+ * @brief Filter callback type, for use with shell_device_filter
  *
- * This is used as an argument of shell_device_lookup_filter to only return
+ * This is used as an argument of shell_device_filter to only return
  * devices that match a specific condition, implemented by the filter.
  *
  * @param dev pointer to a struct device.
@@ -848,6 +848,7 @@ typedef void (*shell_uninit_cb_t)(const struct shell *sh, int res);
  * @param sh Shell instance.
  * @param data  Raw data from transport.
  * @param len   Data length.
+ * @param user_data User data passed to the callback.
  */
 typedef void (*shell_bypass_cb_t)(const struct shell *sh,
 				  uint8_t *data,
@@ -1475,6 +1476,7 @@ void shell_help(const struct shell *sh);
 #else
 static inline void shell_help(const struct shell *sh)
 {
+	ARG_UNUSED(sh);
 }
 #endif /* CONFIG_SHELL_HELP */
 
@@ -1670,4 +1672,4 @@ int shell_readline(const struct shell *sh, uint8_t *buf, size_t len, k_timeout_t
 #include <zephyr_custom_shell.h>
 #endif
 
-#endif /* SHELL_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_H_ */

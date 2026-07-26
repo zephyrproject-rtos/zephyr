@@ -50,19 +50,19 @@
 
 		m33s_allocatable_shared: memory@340fd000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "SHARED_MEMORY_SEC";
+			zephyr,memory-region = "SECSHARED";
 			reg = <0x340fd000 DT_SIZE_K(4)>;
 		};
 
 		m33_allocatable_shared: memory@240fe000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "SHARED_MEMORY_M33";
+			zephyr,memory-region = "M33SHARED";
 			reg = <0x240fe000 DT_SIZE_K(4)>;
 		};
 
 		m55_allocatable_shared: memory@240ff000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "SHARED_MEMORY_M55";
+			zephyr,memory-region = "M55SHARED";
 			reg = <0x240ff000 DT_SIZE_K(4)>;
 		};
 

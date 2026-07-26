@@ -85,6 +85,15 @@ config ARM_MPU_SRAM_WRITE_THROUGH
 	  When enabled, SRAM regions will use Write-Through cache policy
 	  instead of the default Write-Back policy.
 
+config ARM_MPU_SKIP_ARCH_INIT
+	bool "Skip MPU initialization"
+	help
+	  Select when early boot code (for example a TCM-resident stub) has
+	  already enabled and configured the MPU before the kernel runs.
+	  z_arm_mpu_init() skips reprogramming because disabling the MPU
+	  while executing from a region that is only reachable with the MPU
+	  enabled causes a fault.
+
 endif # ARM_MPU
 
 endif # CPU_HAS_MPU

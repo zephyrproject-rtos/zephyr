@@ -315,9 +315,9 @@ extern "C" {
 		    (DT_CAT4(node_id, _GPIO_HOGS_IDX_, idx, _VAL_flags)), (0))
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's GPIO specifier's pin cell value
+ * @brief Get a @c DT_DRV_COMPAT instance's GPIO specifier's pin cell value
  *        at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
  * @param idx logical index into "gpio_pha"
@@ -329,7 +329,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_GPIO_PIN_BY_IDX(inst, gpio_pha, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
  * @return the pin cell value at index 0
@@ -339,9 +339,9 @@ extern "C" {
 	DT_INST_GPIO_PIN_BY_IDX(inst, gpio_pha, 0)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's GPIO specifier's flags cell
+ * @brief Get a @c DT_DRV_COMPAT instance's GPIO specifier's flags cell
  *        at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
  * @param idx logical index into "gpio_pha"
@@ -353,7 +353,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_GPIO_FLAGS_BY_IDX(inst, gpio_pha, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
  * @return the flags cell value at index 0, or zero if there is none

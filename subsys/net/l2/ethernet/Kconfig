@@ -24,6 +24,13 @@ config NET_L2_ETHERNET_RESERVE_HEADER
 	  header in a separate net_buf. In RX side the Ethernet header
 	  is always part of the first net_buf.
 
+config NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM
+	bool "Reserve extra space in first net_buf in TX"
+	select NET_L2_ETHERNET_RESERVE_HEADER
+	help
+	  If enabled, this allows the Ethernet driver to reserve extra
+	  space in the first net_buf before the Ethernet header.
+
 config NET_L2_ETHERNET_MGMT
 	bool "Ethernet network management interface"
 	select NET_MGMT

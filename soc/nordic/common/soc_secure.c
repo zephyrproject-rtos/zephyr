@@ -7,6 +7,8 @@
 #include <soc_secure.h>
 #include <errno.h>
 
+#if !defined(CONFIG_TFM_USE_NS_APP)
+
 #include "tfm_platform_api.h"
 #include "tfm_ioctl_api.h"
 
@@ -43,3 +45,19 @@ int soc_secure_mem_read(void *dst, void *src, size_t len)
 		return -EPERM;
 	}
 }
+
+#else
+
+#if NRF_GPIO_HAS_SEL
+void soc_secure_gpio_pin_mcu_select(uint32_t pin_number, nrf_gpio_pin_sel_t mcu)
+{
+	__ASSERT(FALSE, "This function can only be called from Zephyr NS app.");
+}
+#endif /* NRF_GPIO_HAS_SEL */
+
+int soc_secure_mem_read(void *dst, void *src, size_t len)
+{
+	return -EINVAL;
+}
+
+#endif /* !CONFIG_TFM_USE_NS_APP */

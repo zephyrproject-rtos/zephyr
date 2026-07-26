@@ -552,11 +552,6 @@ SECTIONS
     . = ALIGN(8);
     *(.noinit)
     *(.noinit.*)
-#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
-    *(.llext_heap)
-    *(.llext_ext_heap)
-    *(.llext_metadata_heap)
-#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     . = ALIGN(8) ;
   } GROUP_LINK_IN(RAMABLE_REGION)
 

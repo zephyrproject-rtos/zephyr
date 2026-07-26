@@ -10,8 +10,8 @@
  * @ingroup lis2dh_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ST_LIS2DH_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_ST_LIS2DH_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_LIS2DH_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_LIS2DH_H_
 
 /**
  * @addtogroup lis2dh_interface
@@ -45,4 +45,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ST_LIS2DH_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_LIS2DH_H_ */

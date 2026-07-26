@@ -184,6 +184,11 @@ static int pwm_bflb_init(const struct device *dev)
 	tmp |= 1U << PWM_REG_CLK_SEL_SHIFT;
 	/* Dont wait for period end */
 	tmp &= ~PWM_STOP_MODE;
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+	tmp &= ~PWM_CENTER_ALIGNED_EN;
+	tmp &= ~PWM_UPDATE_DISABLE;
+	tmp &= ~PWM_UPDATE_GENERATE;
+#endif
 	sys_write32(tmp, cfg->base + PWM_MC0_CONFIG0_OFFSET);
 
 	return 0;

@@ -19,4 +19,4 @@ config HELLO_WORLD_MODE
 
 	  Note that additional architecture-specific configuration may be
 	  required if you select 'm'. Please review this sample's documentation
-	  and sample.yaml for more information.
+	  and tests.yaml for more information.

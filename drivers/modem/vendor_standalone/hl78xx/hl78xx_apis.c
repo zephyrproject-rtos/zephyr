@@ -17,6 +17,7 @@
 #include "hl78xx_gnss.h"
 #endif /* CONFIG_HL78XX_GNSS */
 #include "hl78xx_cfg.h"
+#include <zephyr/modem/chat.h>
 #include <zephyr/drivers/modem/hl78xx_apis.h>
 
 LOG_MODULE_REGISTER(hl78xx_apis, CONFIG_MODEM_LOG_LEVEL);
@@ -1586,19 +1587,35 @@ int hl78xx_gnss_set_search_timeout(const struct device *dev, uint32_t timeout_ms
 {
 	struct hl78xx_gnss_data *data_gnss = NULL;
 	struct hl78xx_data *data_modem = NULL;
+	enum hl78xx_gnss_search_state search_state;
 
 	if (hl78xx_get_gnss_context(dev, &data_gnss, &data_modem) < 0) {
 		return -EINVAL;
 	}
-	ARG_UNUSED(data_modem);
 
-	/* Don't allow changes while GNSS is active */
-	if (hl78xx_gnss_is_active(data_gnss)) {
-		LOG_WRN("Cannot change search timeout while GNSS is active");
-		return -EBUSY;
+	if (data_modem == NULL) {
+		return -EINVAL;
 	}
 
+	search_state = hl78xx_gnss_get_search_state(data_gnss);
 	data_gnss->search_timeout_ms = timeout_ms;
+	data_gnss->search_config.timeout_ms = timeout_ms;
+
+	if ((search_state != HL78XX_GNSS_SEARCH_STATE_SEARCHING) &&
+	    (search_state != HL78XX_GNSS_SEARCH_STATE_STARTING)) {
+		/* Not searching, no need to reschedule timer */
+		return 0;
+	}
+
+	if (timeout_ms == 0U) {
+		LOG_DBG("GNSS search timeout disabled while active");
+		hl78xx_stop_timer(data_modem);
+		return 0;
+	}
+
+	LOG_DBG("GNSS search timeout updated to %u ms while active", timeout_ms);
+	hl78xx_reschedule_timer(data_modem, K_MSEC(timeout_ms));
+
 	return 0;
 }
 

@@ -111,7 +111,7 @@ config LWM2M_QUEUE_MODE_UPTIME
 	  values though.
 
 config LWM2M_QUEUE_MODE_NO_MSG_BUFFERING
-	bool "Disable buffering notifications and messages on queue mode"
+	bool "Disable buffering notifications and messages on queue mode [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Messages are sent right away instead of waiting for next registration update.

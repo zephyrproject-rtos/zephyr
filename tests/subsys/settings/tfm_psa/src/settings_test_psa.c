@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "settings_test.h"
-#include "settings_priv.h"
+#include <settings_priv.h>
 
 uint8_t val8;
 uint8_t val8_un;

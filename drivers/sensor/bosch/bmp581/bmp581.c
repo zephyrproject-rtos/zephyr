@@ -44,6 +44,7 @@ static int set_iir_config(const struct sensor_value *iir, const struct device *d
 static int get_power_mode(enum bmp5_powermode *powermode, const struct device *dev);
 static int set_power_mode(enum bmp5_powermode powermode, const struct device *dev);
 
+#ifdef CONFIG_SENSOR_ASYNC_API
 #ifdef CONFIG_PM_DEVICE
 static int bmp581_pm_busy_check(const struct device *dev)
 {
@@ -55,13 +56,14 @@ static int bmp581_pm_busy_check(const struct device *dev)
 	}
 	return 0;
 }
-#else
+#else /* CONFIG_PM_DEVICE */
 static inline int bmp581_pm_busy_check(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 	return 0;
 }
-#endif
+#endif /* CONFIG_PM_DEVICE */
+#endif /* CONFIG_SENSOR_ASYNC_API */
 
 static int set_power_mode(enum bmp5_powermode powermode, const struct device *dev)
 {
@@ -514,7 +516,7 @@ static int set_iir_config(const struct sensor_value *iir, const struct device *d
 	dsp_config[0] = BMP5_SET_BITSLICE(dsp_config[0], BMP5_SHDW_SET_IIR_PRESS, BMP5_ENABLE);
 
 	/* Configure IIR filter */
-	dsp_config[1] = iir->val1;
+	dsp_config[1] = BMP5_SET_BITSLICE(dsp_config[1], BMP5_SET_IIR_TEMP, iir->val1);
 	dsp_config[1] = BMP5_SET_BITSLICE(dsp_config[1], BMP5_SET_IIR_PRESS, iir->val2);
 
 	/* Set IIR configuration */

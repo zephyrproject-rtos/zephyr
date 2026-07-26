@@ -16,7 +16,7 @@
 
 #include <openamp/open_amp.h>
 
-#include "common.h"
+#include <common.h>
 
 #define APP_TASK_STACK_SIZE (1024)
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);

@@ -10,8 +10,8 @@
  * @ingroup ina237_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INA237_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_INA237_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_INA237_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_INA237_H_
 
 #include <zephyr/dt-bindings/dt-util.h>
 
@@ -145,4 +145,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_INA237_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_INA237_H_ */

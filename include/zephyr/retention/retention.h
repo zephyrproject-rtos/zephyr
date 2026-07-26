@@ -9,8 +9,8 @@
  * @brief Public API for retention API
  */
 
-#ifndef ZEPHYR_INCLUDE_RETENTION_
-#define ZEPHYR_INCLUDE_RETENTION_
+#ifndef ZEPHYR_INCLUDE_RETENTION_RETENTION_H_
+#define ZEPHYR_INCLUDE_RETENTION_RETENTION_H_
 
 #include <stdint.h>
 #include <stddef.h>
@@ -98,4 +98,4 @@ int retention_clear(const struct device *dev);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_RETENTION_ */
+#endif /* ZEPHYR_INCLUDE_RETENTION_RETENTION_H_ */

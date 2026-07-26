@@ -87,8 +87,13 @@ static void slice_expired(struct k_thread *thread, void *data)
 {
 	zassert_equal(thread, data, "wrong callback data pointer");
 
+	/* Convert with the driver's real cycles per tick, floor(HW/ticks), not
+	 * the fractional ratio k_cyc_to_ticks_near32() uses (which skews where a
+	 * tick isn't a whole number of cycles). Round, don't truncate, to absorb
+	 * the sub-tick offset between the reference and this reading.
+	 */
 	uint32_t now = k_cycle_get_32();
-	uint32_t dt = k_cyc_to_ticks_near32(now - last_cyc);
+	uint32_t dt = DIV_ROUND_CLOSEST(now - last_cyc, k_ticks_to_cyc_floor32(1));
 
 	zassert_true(perthread_running, "thread didn't start");
 	/* Slice fire lands on either the configured tick boundary or

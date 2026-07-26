@@ -32,6 +32,7 @@ extern char __extram_data_load_start[];
 extern char __extram_bss_start[];
 extern char __extram_bss_end[];
 
+extern void z_arm_nmi(void);
 extern void _isr_wrapper(void);
 extern void Peripheral_Handler(void);
 
@@ -127,6 +128,8 @@ static void rtl87x2g_isr_register(void)
 		}
 	}
 
+	RamVectorTableUpdate(NMI_VECTORn, (IRQ_Fun)z_arm_nmi);
+
 	irq_unlock(key);
 }
 void soc_early_init_hook(void)
@@ -197,6 +200,14 @@ void soc_early_init_hook(void)
 	power_manager_slave_init();
 	platform_pm_init();
 
+#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
+	/* Route interrupts to Non-Secure state. */
+	setup_non_secure_nvic();
+#endif
+}
+
+void soc_late_init_hook(void)
+{
 	/* Initialize OSC32 SDM software timer. */
 	init_osc_sdm_timer();
 
@@ -210,14 +221,6 @@ void soc_early_init_hook(void)
 	/* Initialize thermal compensation tracking. */
 	thermal_tracking_timer_init();
 
-#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
-	/* Route interrupts to Non-Secure state. */
-	setup_non_secure_nvic();
-#endif
-}
-
-void soc_late_init_hook(void)
-{
 	/* Initialize HW AES mutex. */
 	hw_aes_mutex_init();
 

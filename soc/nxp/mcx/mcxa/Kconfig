@@ -15,12 +15,16 @@ config SOC_FAMILY_MCXA
 config SOC_SERIES_MCXA1X3
 	select CPU_CORTEX_M33
 	select HAS_PM
+	select WUC if PM
+	select HAS_POWEROFF
 
 config SOC_SERIES_MCXA1X6
 	select CPU_CORTEX_M33
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_PM
+	select WUC if PM
+	select HAS_POWEROFF
 
 config SOC_SERIES_MCXAXX6
 	select CPU_CORTEX_M33
@@ -28,12 +32,17 @@ config SOC_SERIES_MCXAXX6
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_PM
+	select WUC if PM
+	select HAS_POWEROFF
 
 config SOC_SERIES_MCXAXX4
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
+	select HAS_PM
+	select WUC if PM
+	select HAS_POWEROFF
 
 config SOC_SERIES_MCXAXX7
 	select CPU_CORTEX_M33
@@ -42,3 +51,6 @@ config SOC_SERIES_MCXAXX7
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select ARM_TRUSTZONE_M
+	select HAS_PM
+	select WUC if PM
+	select HAS_POWEROFF

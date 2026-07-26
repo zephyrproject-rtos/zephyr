@@ -32,15 +32,12 @@
 #define sys_port_trace_k_thread_msleep_exit(ms, ret) sys_trace_k_thread_msleep_exit(ms, ret)
 #define sys_port_trace_k_thread_usleep_enter(us) sys_trace_k_thread_usleep_enter(us)
 #define sys_port_trace_k_thread_usleep_exit(us, ret) sys_trace_k_thread_usleep_exit(us, ret)
-#define sys_port_trace_k_thread_busy_wait_enter(usec_to_wait)
-#define sys_port_trace_k_thread_busy_wait_exit(usec_to_wait)
 #define sys_port_trace_k_thread_yield() sys_trace_k_thread_yield()
 #define sys_port_trace_k_thread_wakeup(thread) sys_trace_k_thread_wakeup(thread)
 #define sys_port_trace_k_thread_start(thread) sys_trace_k_thread_start(thread)
 #define sys_port_trace_k_thread_abort(thread) sys_trace_k_thread_abort(thread)
 #define sys_port_trace_k_thread_priority_set(thread) sys_trace_k_thread_priority_set(thread)
 #define sys_port_trace_k_thread_suspend_enter(thread) sys_trace_k_thread_suspend(thread)
-#define sys_port_trace_k_thread_suspend_exit(thread)
 #define sys_port_trace_k_thread_resume_enter(thread) sys_trace_k_thread_resume(thread)
 
 #define sys_port_trace_k_thread_sched_lock(...) sys_trace_k_thread_sched_lock()
@@ -64,68 +61,8 @@
 #define sys_port_trace_k_thread_sched_resume(thread) sys_trace_k_thread_sched_resume(thread)
 #define sys_port_trace_k_thread_sched_suspend(thread) sys_trace_k_thread_sched_suspend(thread)
 
-#define sys_port_trace_k_work_init(work)
-#define sys_port_trace_k_work_submit_to_queue_enter(queue, work)
-#define sys_port_trace_k_work_submit_to_queue_exit(queue, work, ret)
-#define sys_port_trace_k_work_submit_enter(work)
-#define sys_port_trace_k_work_submit_exit(work, ret)
-#define sys_port_trace_k_work_flush_enter(work)
-#define sys_port_trace_k_work_flush_blocking(work, timeout)
-#define sys_port_trace_k_work_flush_exit(work, ret)
-#define sys_port_trace_k_work_cancel_enter(work)
-#define sys_port_trace_k_work_cancel_exit(work, ret)
-#define sys_port_trace_k_work_cancel_sync_enter(work, sync)
-#define sys_port_trace_k_work_cancel_sync_blocking(work, sync)
-#define sys_port_trace_k_work_cancel_sync_exit(work, sync, ret)
-
-#define sys_port_trace_k_work_queue_init(queue)
-#define sys_port_trace_k_work_queue_start_enter(queue)
-#define sys_port_trace_k_work_queue_start_exit(queue)
-#define sys_port_trace_k_work_queue_stop_enter(queue, timeout)
-#define sys_port_trace_k_work_queue_stop_blocking(queue, timeout)
-#define sys_port_trace_k_work_queue_stop_exit(queue, timeout, ret)
-#define sys_port_trace_k_work_queue_drain_enter(queue)
-#define sys_port_trace_k_work_queue_drain_exit(queue, ret)
-#define sys_port_trace_k_work_queue_unplug_enter(queue)
-#define sys_port_trace_k_work_queue_unplug_exit(queue, ret)
-
-#define sys_port_trace_k_work_delayable_init(dwork)
-#define sys_port_trace_k_work_schedule_for_queue_enter(queue, dwork, delay)
-#define sys_port_trace_k_work_schedule_for_queue_exit(queue, dwork, delay, ret)
-#define sys_port_trace_k_work_schedule_enter(dwork, delay)
-#define sys_port_trace_k_work_schedule_exit(dwork, delay, ret)
-#define sys_port_trace_k_work_reschedule_for_queue_enter(queue, dwork, delay)
-#define sys_port_trace_k_work_reschedule_for_queue_exit(queue, dwork, delay, ret)
-#define sys_port_trace_k_work_reschedule_enter(dwork, delay)
-#define sys_port_trace_k_work_reschedule_exit(dwork, delay, ret)
-#define sys_port_trace_k_work_flush_delayable_enter(dwork, sync)
-#define sys_port_trace_k_work_flush_delayable_exit(dwork, sync, ret)
-#define sys_port_trace_k_work_cancel_delayable_enter(dwork)
-#define sys_port_trace_k_work_cancel_delayable_exit(dwork, ret)
-#define sys_port_trace_k_work_cancel_delayable_sync_enter(dwork, sync)
-#define sys_port_trace_k_work_cancel_delayable_sync_exit(dwork, sync, ret)
-
-#define sys_port_trace_k_work_poll_init_enter(work)
-#define sys_port_trace_k_work_poll_init_exit(work)
-#define sys_port_trace_k_work_poll_submit_to_queue_enter(work_q, work, timeout)
-#define sys_port_trace_k_work_poll_submit_to_queue_blocking(work_q, work, timeout)
-#define sys_port_trace_k_work_poll_submit_to_queue_exit(work_q, work, timeout, ret)
-#define sys_port_trace_k_work_poll_submit_enter(work, timeout)
-#define sys_port_trace_k_work_poll_submit_exit(work, timeout, ret)
-#define sys_port_trace_k_work_poll_cancel_enter(work)
-#define sys_port_trace_k_work_poll_cancel_exit(work, ret)
-
-#define sys_port_trace_k_poll_api_event_init(event)
-#define sys_port_trace_k_poll_api_poll_enter(events)
-#define sys_port_trace_k_poll_api_poll_exit(events, ret)
-#define sys_port_trace_k_poll_api_signal_init(signal)
-#define sys_port_trace_k_poll_api_signal_reset(signal)
-#define sys_port_trace_k_poll_api_signal_check(signal)
-#define sys_port_trace_k_poll_api_signal_raise(signal, ret)
-
 #define sys_port_trace_k_sem_init(sem, ret) sys_trace_k_sem_init(sem, ret)
 #define sys_port_trace_k_sem_give_enter(sem) sys_trace_k_sem_give_enter(sem)
-#define sys_port_trace_k_sem_give_exit(sem)
 #define sys_port_trace_k_sem_take_enter(sem, timeout) sys_trace_k_sem_take_enter(sem, timeout)
 #define sys_port_trace_k_sem_take_blocking(sem, timeout) sys_trace_k_sem_take_blocking(sem, timeout)
 #define sys_port_trace_k_sem_take_exit(sem, timeout, ret)                                          \
@@ -181,14 +118,12 @@
 #define sys_port_trace_k_queue_insert_blocking(queue, timeout)                                     \
 	sys_trace_k_queue_insert_blocking(queue, prev, data)
 #define sys_port_trace_k_queue_insert_exit(queue) sys_trace_k_queue_insert_exit(queue, prev, data)
-#define sys_port_trace_k_queue_append_list_enter(queue)
 #define sys_port_trace_k_queue_append_list_exit(queue, ret)                                        \
 	sys_trace_k_queue_append_list_exit(queue, head, tail, ret)
 #define sys_port_trace_k_queue_merge_slist_enter(queue)                                            \
 	sys_trace_k_queue_merge_slist_enter(queue, list)
 #define sys_port_trace_k_queue_merge_slist_exit(queue, ret)                                        \
 	sys_trace_k_queue_merge_slist_exit(queue, list, ret)
-#define sys_port_trace_k_queue_get_enter(queue, timeout)
 #define sys_port_trace_k_queue_get_blocking(queue, timeout)                                        \
 	sys_trace_k_queue_get_blocking(queue, timeout)
 #define sys_port_trace_k_queue_get_exit(queue, timeout, ret)                                       \
@@ -283,8 +218,6 @@
 #define sys_port_trace_k_stack_push_enter(stack) sys_trace_k_stack_push_enter(stack, data)
 
 #define sys_port_trace_k_stack_push_exit(stack, ret) sys_trace_k_stack_push_exit(stack, data, ret)
-
-#define sys_port_trace_k_stack_pop_enter(stack, timeout)
 
 #define sys_port_trace_k_stack_pop_blocking(stack, timeout)                                        \
 	sys_trace_k_stack_pop_blocking(stack, data, timeout)
@@ -417,14 +350,12 @@
 	sys_trace_k_mem_slab_alloc_blocking(slab, mem, timeout)
 #define sys_port_trace_k_mem_slab_alloc_exit(slab, timeout, ret)                                   \
 	sys_trace_k_mem_slab_alloc_exit(slab, mem, timeout, ret)
-#define sys_port_trace_k_mem_slab_free_enter(slab)
 #define sys_port_trace_k_mem_slab_free_exit(slab) sys_trace_k_mem_slab_free_exit(slab, mem)
 
 #define sys_port_trace_k_timer_init(timer) sys_trace_k_timer_init(timer, expiry_fn, stop_fn)
 #define sys_port_trace_k_timer_start(timer, duration, period)					   \
 	sys_trace_k_timer_start(timer, duration, period)
 #define sys_port_trace_k_timer_stop(timer) sys_trace_k_timer_stop(timer)
-#define sys_port_trace_k_timer_status_sync_enter(timer)
 #define sys_port_trace_k_timer_status_sync_blocking(timer, timeout)                                \
 	sys_trace_k_timer_status_sync_blocking(timer)
 #define sys_port_trace_k_timer_status_sync_exit(timer, result)                                     \
@@ -437,8 +368,6 @@
 	sys_trace_k_timer_stop_fn_expiry_enter(timer)
 #define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)					   \
 	sys_trace_k_timer_stop_fn_expiry_exit(timer)
-#define sys_port_trace_k_timer_cleanup_enter(timer)
-#define sys_port_trace_k_timer_cleanup_exit(timer, ret)
 
 #define sys_port_trace_k_event_init(event) sys_trace_k_event_init(event)
 #define sys_port_trace_k_event_post_enter(event, events, events_mask)   \
@@ -457,20 +386,6 @@
 #define sys_port_trace_k_thread_abort_enter(thread) sys_trace_k_thread_abort_enter(thread)
 
 #define sys_port_trace_k_thread_resume_exit(thread) sys_trace_k_thread_resume_exit(thread)
-
-#define sys_port_trace_pm_system_suspend_enter(ticks)
-#define sys_port_trace_pm_system_suspend_exit(ticks, state)
-
-#define sys_port_trace_pm_device_runtime_get_enter(dev)
-#define sys_port_trace_pm_device_runtime_get_exit(dev, ret)
-#define sys_port_trace_pm_device_runtime_put_enter(dev)
-#define sys_port_trace_pm_device_runtime_put_exit(dev, ret)
-#define sys_port_trace_pm_device_runtime_put_async_enter(dev, delay)
-#define sys_port_trace_pm_device_runtime_put_async_exit(dev, delay, ret)
-#define sys_port_trace_pm_device_runtime_enable_enter(dev)
-#define sys_port_trace_pm_device_runtime_enable_exit(dev, ret)
-#define sys_port_trace_pm_device_runtime_disable_enter(dev)
-#define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)
 
 void sys_trace_idle(void);
 void sys_trace_idle_exit(void);
@@ -718,99 +633,16 @@ void sys_trace_k_event_wait_blocking(struct k_event *event, uint32_t events, uns
 				     k_timeout_t timeout);
 void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, uint32_t ret);
 
-#define sys_port_trace_socket_init(sock, family, type, proto)
-#define sys_port_trace_socket_close_enter(sock)
-#define sys_port_trace_socket_close_exit(sock, ret)
-#define sys_port_trace_socket_shutdown_enter(sock, how)
-#define sys_port_trace_socket_shutdown_exit(sock, ret)
-#define sys_port_trace_socket_bind_enter(sock, addr, addrlen)
-#define sys_port_trace_socket_bind_exit(sock, ret)
-#define sys_port_trace_socket_connect_enter(sock, addr, addrlen)
-#define sys_port_trace_socket_connect_exit(sock, ret)
-#define sys_port_trace_socket_listen_enter(sock, backlog)
-#define sys_port_trace_socket_listen_exit(sock, ret)
-#define sys_port_trace_socket_accept_enter(sock)
-#define sys_port_trace_socket_accept_exit(sock, addr, addrlen, ret)
-#define sys_port_trace_socket_sendto_enter(sock, len, flags, dest_addr, addrlen)
-#define sys_port_trace_socket_sendto_exit(sock, ret)
-#define sys_port_trace_socket_sendmsg_enter(sock, msg, flags)
-#define sys_port_trace_socket_sendmsg_exit(sock, ret)
-#define sys_port_trace_socket_recvfrom_enter(sock, max_len, flags, addr, addrlen)
-#define sys_port_trace_socket_recvfrom_exit(sock, src_addr, addrlen, ret)
-#define sys_port_trace_socket_recvmsg_enter(sock, msg, flags)
-#define sys_port_trace_socket_recvmsg_exit(sock, msg, ret)
-#define sys_port_trace_socket_fcntl_enter(sock, cmd, flags)
-#define sys_port_trace_socket_fcntl_exit(sock, ret)
-#define sys_port_trace_socket_ioctl_enter(sock, req)
-#define sys_port_trace_socket_ioctl_exit(sock, ret)
-#define sys_port_trace_socket_poll_enter(fds, nfds, timeout)
-#define sys_port_trace_socket_poll_exit(fds, nfds, ret)
-#define sys_port_trace_socket_getsockopt_enter(sock, level, optname)
-#define sys_port_trace_socket_getsockopt_exit(sock, level, optname, optval, optlen, ret)
-#define sys_port_trace_socket_setsockopt_enter(sock, level, optname, optval, optlen)
-#define sys_port_trace_socket_setsockopt_exit(sock, ret)
-#define sys_port_trace_socket_getpeername_enter(sock)
-#define sys_port_trace_socket_getpeername_exit(sock, addr, addrlen, ret)
-#define sys_port_trace_socket_getsockname_enter(sock)
-#define sys_port_trace_socket_getsockname_exit(sock, addr, addrlen, ret)
-#define sys_port_trace_socket_socketpair_enter(family, type, proto, sv)
-#define sys_port_trace_socket_socketpair_exit(sockA, sockB, ret)
-
-#define sys_port_trace_net_recv_data_enter(iface, pkt)
-#define sys_port_trace_net_recv_data_exit(iface, pkt, ret)
-#define sys_port_trace_net_send_data_enter(pkt)
-#define sys_port_trace_net_send_data_exit(pkt, ret)
-#define sys_port_trace_net_rx_time(pkt, end_time)
-#define sys_port_trace_net_tx_time(pkt, end_time)
-
 #define sys_trace_sys_init_enter(...)
 #define sys_trace_sys_init_exit(...)
 
 #define sys_trace_named_event(name, arg0, arg1)
-#define sys_port_trace_gpio_pin_interrupt_configure_enter(port, pin, flags)
-#define sys_port_trace_gpio_pin_interrupt_configure_exit(port, pin, ret)
-#define sys_port_trace_gpio_pin_configure_enter(port, pin, flags)
-#define sys_port_trace_gpio_pin_configure_exit(port, pin, ret)
-#define sys_port_trace_gpio_port_get_direction_enter(port, map, inputs, outputs)
-#define sys_port_trace_gpio_port_get_direction_exit(port, map, ret)
-#define sys_port_trace_gpio_pin_get_config_enter(port, pin, flags)
-#define sys_port_trace_gpio_pin_get_config_exit(port, pin, ret)
-#define sys_port_trace_gpio_port_get_raw_enter(port, value)
-#define sys_port_trace_gpio_port_get_raw_exit(port, ret)
-#define sys_port_trace_gpio_port_set_masked_raw_enter(port, mask, value)
-#define sys_port_trace_gpio_port_set_masked_raw_exit(port, ret)
-#define sys_port_trace_gpio_port_set_bits_raw_enter(port, pins)
-#define sys_port_trace_gpio_port_set_bits_raw_exit(port, ret)
-#define sys_port_trace_gpio_port_clear_bits_raw_enter(port, pins)
-#define sys_port_trace_gpio_port_clear_bits_raw_exit(port, ret)
-#define sys_port_trace_gpio_port_toggle_bits_enter(port, pins)
-#define sys_port_trace_gpio_port_toggle_bits_exit(port, ret)
-#define sys_port_trace_gpio_init_callback_enter(callback, handler, pin_mask)
-#define sys_port_trace_gpio_init_callback_exit(callback)
-#define sys_port_trace_gpio_add_callback_enter(port, callback)
-#define sys_port_trace_gpio_add_callback_exit(port, ret)
-#define sys_port_trace_gpio_remove_callback_enter(port, callback)
-#define sys_port_trace_gpio_remove_callback_exit(port, ret)
-#define sys_port_trace_gpio_get_pending_int_enter(dev)
-#define sys_port_trace_gpio_get_pending_int_exit(dev, ret)
-#define sys_port_trace_gpio_fire_callbacks_enter(list, port, pins)
-#define sys_port_trace_gpio_fire_callback(port, cb)
 
-#define sys_port_trace_rtio_submit_enter(rtio, wait_count)
-#define sys_port_trace_rtio_submit_exit(rtio)
-#define sys_port_trace_rtio_sqe_acquire_enter(rtio)
-#define sys_port_trace_rtio_sqe_acquire_exit(rtio, sqe)
-#define sys_port_trace_rtio_sqe_cancel(sqe)
-#define sys_port_trace_rtio_cqe_submit_enter(rtio, result, flags)
-#define sys_port_trace_rtio_cqe_submit_exit(rtio)
-#define sys_port_trace_rtio_cqe_acquire_enter(rtio)
-#define sys_port_trace_rtio_cqe_acquire_exit(rtio, cqe)
-#define sys_port_trace_rtio_cqe_release(rtio, cqe)
-#define sys_port_trace_rtio_cqe_consume_enter(rtio)
-#define sys_port_trace_rtio_cqe_consume_exit(rtio, cqe)
-#define sys_port_trace_rtio_txn_next_enter(rtio, iodev_sqe)
-#define sys_port_trace_rtio_txn_next_exit(rtio, iodev_sqe)
-#define sys_port_trace_rtio_chain_next_enter(rtio, iodev_sqe)
-#define sys_port_trace_rtio_chain_next_exit(rtio, iodev_sqe)
+/*
+ * Fill any sys_port_trace_* hook not defined above with a canonical no-op. The
+ * per-macro #ifndef guards keep the real definitions above; only gaps are filled,
+ * so this header never has to drift from the canonical hook list.
+ */
+#include <zephyr/tracing/tracing_hooks.h>
 
 #endif /* ZEPHYR_TRACE_TEST_H */

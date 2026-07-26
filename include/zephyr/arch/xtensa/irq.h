@@ -172,12 +172,6 @@ int z_soc_irq_is_enabled(unsigned int irq);
 
 #define arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
 
-#ifdef CONFIG_DYNAMIC_INTERRUPTS
-extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-				     void (*routine)(const void *parameter),
-				     const void *parameter, uint32_t flags);
-#endif
-
 #else
 
 #define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS

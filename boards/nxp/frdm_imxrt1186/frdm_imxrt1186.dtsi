@@ -303,6 +303,10 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 	status = "okay";
 };
 
+&dac {
+	status = "okay";
+};
+
 &tmpsns {
 	status = "okay";
 };

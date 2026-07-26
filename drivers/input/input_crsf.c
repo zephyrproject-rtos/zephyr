@@ -197,11 +197,12 @@ static void input_crsf_report(const struct device *dev, unsigned int crsf_channe
 	const struct input_crsf_config *const config = dev->config;
 	struct input_crsf_data *const data = dev->data;
 	int channel = data->channel_mapping[crsf_channel];
-	const struct crsf_input_channel *channel_info = &config->channel_info[channel];
 
 	if (channel == -1) {
 		return;
 	}
+
+	const struct crsf_input_channel *channel_info = &config->channel_info[channel];
 
 	if (value == data->last_reported_value[channel]) {
 		return;

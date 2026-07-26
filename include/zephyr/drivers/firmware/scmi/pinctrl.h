@@ -10,8 +10,8 @@
  * @brief Header file for the SCMI Pin Control Protocol.
  */
 
-#ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PINCTRL_H_
-#define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PINCTRL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_PINCTRL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_PINCTRL_H_
 
 #include <zephyr/drivers/firmware/scmi/protocol.h>
 
@@ -143,4 +143,4 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings);
  * @}
  */
 
-#endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PINCTRL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_PINCTRL_H_ */

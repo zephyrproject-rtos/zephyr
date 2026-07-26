@@ -9,8 +9,8 @@
  * @brief Microchip AIC G1 Driver Interface Functions
  */
 
-#ifndef ZEPHYR_DRIVERS_INTC_MCHP_AIC_G1_H_
-#define ZEPHYR_DRIVERS_INTC_MCHP_AIC_G1_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_AIC_G1_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_AIC_G1_H_
 
 /**
  * @brief Get active interrupt ID.
@@ -64,4 +64,4 @@ void z_aic_irq_disable(unsigned int irq);
  */
 int z_aic_irq_is_enabled(unsigned int irq);
 
-#endif /* ZEPHYR_DRIVERS_INTC_MCHP_AIC_G1_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_AIC_G1_H_ */

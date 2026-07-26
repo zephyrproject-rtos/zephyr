@@ -12,13 +12,15 @@
 #include "memory.h"
 
 /* The "user_sram_end" represents the 2nd stage bootloader
- * "iram_loader_seg" start address (that should not be overlapped).
+ * reserved region start (dram_loader_seg); the app must not overlap it.
  * If no bootloader is used, we can extend it to gain more user ram.
+ * On pre-v3 silicon the bootloader lives in low SRAM, so the app
+ * may use the full sram_high region up to DRAM_USER_END.
  */
-#ifdef CONFIG_ESP_SIMPLE_BOOT
+#if defined(CONFIG_ESP_SIMPLE_BOOT) || defined(CONFIG_SOC_ESP32P4_REV_1_3)
 user_sram_end = DRAM_USER_END;
 #else
-user_sram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
+user_sram_end = BOOTLOADER_DRAM_LOADER_SEG_START;
 #endif
 
 /* User available memory segments */
@@ -47,7 +49,15 @@ user_sram_size = (user_sram_end - user_sram_org);
 	#endif
 #else
 	#define MPU_MIN_SIZE_ALIGN
+	/* Align the nocache region to the L2 cache line so its start and end
+	 * never share a cache line with cacheable data. The line size is 64
+	 * bytes on the 128KB/256KB caches and 128 bytes on the 512KB cache.
+	 */
+#if defined(CONFIG_NOCACHE_MEMORY)
+	#define MPU_ALIGN(region_size) . = ALIGN(CONFIG_ESP32_CACHE_L2_LINE_SIZE)
+#else
 	#define MPU_ALIGN(region_size) . = ALIGN(4)
+#endif
 #endif
 
 #undef GROUP_DATA_LINK_IN
@@ -82,6 +92,15 @@ MEMORY
 #endif
 
   sram0_0_seg(RW): org = user_sram_org, len = user_sram_size
+
+#if defined(CONFIG_NOCACHE_MEMORY)
+  /* Reserved power-of-two window at the top of HP SRAM. The bytes stay at
+   * their normal cached (DMA-reachable) address; a PMA NAPOT entry marks them
+   * non-cacheable at boot. Excluded from sram0_0_seg because user_sram_size
+   * stops at DRAM_USER_END = NOCACHE_START.
+   */
+  nocache_seg(RW): org = NOCACHE_START, len = NOCACHE_SIZE
+#endif
 
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
   drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
@@ -730,7 +749,21 @@ SECTIONS
 
   #include <zephyr/linker/common-ram.ld>
   #include <snippets-data-sections.ld>
+  /* snippets-ram-sections.ld pulls in the generic arch/common/nocache.ld,
+   * which links the .nocache section into RAMABLE_REGION. Point RAMABLE_REGION
+   * at the reserved nocache window for the duration of that include. The bytes
+   * keep their normal cached (DMA-reachable) address; a PMA entry configured
+   * in soc.c marks the region non-cacheable.
+   */
+#if defined(CONFIG_NOCACHE_MEMORY)
+  #pragma push_macro("RAMABLE_REGION")
+  #undef RAMABLE_REGION
+  #define RAMABLE_REGION nocache_seg
   #include <snippets-ram-sections.ld>
+  #pragma pop_macro("RAMABLE_REGION")
+#else
+  #include <snippets-ram-sections.ld>
+#endif
   #include <zephyr/linker/cplusplus-ram.ld>
 
   /* logging sections should be placed in RAM area to avoid flash cache disabled issues */

@@ -1,9 +1,4 @@
 <style>
-  :root {
-    --shadow-color: rgb(from var(--body-color) r g b / calc(alpha * 0.2));
-    --shadow-style: 0 12px 6px -6px var(--shadow-color);
-  }
-
   h1 {
     display: none;
   }
@@ -135,14 +130,10 @@
     &:hover {
       transform: translateY(-4px);
       box-shadow: var(--shadow-style);
-      border-color: rgba(255, 255, 255, 0.05);
       .watermark {
         transform: rotate(-10deg) scale(1.1);
         opacity: 0.15;
       }
-    }
-    .persona-link:hover {
-      font-weight: 500;
     }
     .card-content {
       position: relative;
@@ -253,21 +244,8 @@
       }
     }
   }
-  .persona-link {
-    display: flex;
-    align-items: center;
-    color: var(--body-color) !important;
-    font-size: 0.9rem;
-    text-decoration: none;
-    transition: color 0.2s;
-    i {
-      font-size: 0.75rem;
-      margin-right: 0.6rem;
-    }
-    &:hover {
-      text-decoration: none;
-    }
-  }
+  /* Base .persona-link styling (colors, chevron, hover) is shared with the
+     categorized index cards and lives in custom.css. */
 
   /* === CONTRIBUTE CARD === */
   .contribute-card {

@@ -213,7 +213,7 @@
  * @{
  */
 /** @brief Lower 8 bits of TOPI/CLAIMI represent interrupt priority */
-#define APLIC_IPRIO_MASK               0xFF
+#define APLIC_IPRIO_MASK               BIT_MASK(8)
 /** @brief Base offset into register's interrupt identity field */
 #define APLIC_INTERRUPT_IDENTITY_SHIFT 16
 /** @brief Bits 25:16 of TOPI/CLAIMI represent interrupt source number */

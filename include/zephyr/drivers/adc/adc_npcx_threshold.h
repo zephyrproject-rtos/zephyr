@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ADC_NPCX_THRESHOLD_H_
-#define _ADC_NPCX_THRESHOLD_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_THRESHOLD_H_
+#define ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_THRESHOLD_H_
 
 #include <zephyr/device.h>
 
@@ -87,4 +87,4 @@ int adc_npcx_threshold_ctrl_set_param(const struct device *dev,
 int adc_npcx_threshold_ctrl_enable(const struct device *dev, uint8_t th_sel,
 				   const bool enable);
 
-#endif /*_ADC_NPCX_THRESHOLD_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_THRESHOLD_H_ */

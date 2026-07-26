@@ -40,6 +40,12 @@ static int statics_init(void)
 	return 0;
 }
 
+/*
+ * Static heap init must stay a PRE_KERNEL_1 SYS_INIT: the heap KASAN shadow is
+ * registered at (PRE_KERNEL_1, 0) via K_HEAP_KASAN_ENABLE() and must run before
+ * sys_heap_init(). A K_KERNEL_INIT_PRE() hook would run ahead of that, leaving
+ * the shadow unregistered and KASAN tracking disabled.
+ */
 SYS_INIT_NAMED(statics_init_pre, statics_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);

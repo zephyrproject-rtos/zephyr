@@ -238,12 +238,12 @@ struct modem_chat {
 	uint16_t work_buf_len;
 
 	/* Chat delimiter */
-	uint8_t *delimiter;
+	const uint8_t *delimiter;
 	uint16_t delimiter_size;
 	uint16_t delimiter_match_len;
 
 	/* Array of bytes which are discarded out by parser */
-	uint8_t *filter;
+	const uint8_t *filter;
 	uint16_t filter_size;
 
 	/* Parsed arguments */
@@ -308,11 +308,11 @@ struct modem_chat_config {
 	/** Size of receive buffer should be longest line + longest match */
 	uint16_t receive_buf_size;
 	/** Delimiter */
-	uint8_t *delimiter;
+	const uint8_t *delimiter;
 	/** Size of delimiter */
 	uint8_t delimiter_size;
 	/** Bytes which are discarded by parser */
-	uint8_t *filter;
+	const uint8_t *filter;
 	/** Size of filter */
 	uint8_t filter_size;
 	/** Array of pointers used to point to parsed arguments */

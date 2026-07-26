@@ -10,8 +10,8 @@
  * @ingroup iis3dwb_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_IIS3DWB_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_IIS3DWB_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_IIS3DWB_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_IIS3DWB_H_
 
 #include <zephyr/dt-bindings/dt-util.h>
 
@@ -108,4 +108,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_IIS3DWB_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_IIS3DWB_H_ */

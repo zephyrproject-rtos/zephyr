@@ -65,6 +65,17 @@ static void lis2duxs12_acc_trig_handler(const struct device *dev,
 }
 #endif
 
+#ifdef CONFIG_STTS22H_TRIGGER
+static int stts22h_trig_cnt;
+
+static void stts22h_trigger_handler(const struct device *dev,
+				    const struct sensor_trigger *trig)
+{
+	sensor_sample_fetch_chan(dev, SENSOR_CHAN_ALL);
+	stts22h_trig_cnt++;
+}
+#endif
+
 static void lis2mdl_config(const struct device *lis2mdl)
 {
 	struct sensor_value odr_attr;
@@ -256,9 +267,33 @@ static void lis2duxs12_config(const struct device *lis2duxs12)
 #endif
 }
 
+static void stts22h_config(const struct device *stts22h)
+{
+	struct sensor_value odr_attr;
+
+	/* set STTS22H accel sampling frequency to 10 Hz */
+	odr_attr.val1 = 10;
+	odr_attr.val2 = 0;
+
+	if (sensor_attr_set(stts22h, SENSOR_CHAN_ALL,
+			    SENSOR_ATTR_SAMPLING_FREQUENCY, &odr_attr) < 0) {
+		printk("Cannot set sampling frequency for STTS22H accel\n");
+		return;
+	}
+
+#ifdef CONFIG_STTS22H_TRIGGER
+	struct sensor_trigger trig;
+
+	trig.type = SENSOR_TRIG_DATA_READY;
+	trig.chan = SENSOR_CHAN_ALL;
+	sensor_trigger_set(stts22h, &trig, stts22h_trigger_handler);
+#endif
+}
+
 int main(void)
 {
 	struct sensor_value lis2mdl_magn[3], lis2mdl_temp, lps22df_press, lps22df_temp;
+	struct sensor_value stts22h_temp;
 	struct sensor_value lsm6dso16is_xl[3], lsm6dso16is_gy[3];
 #ifdef CONFIG_LSM6DSO16IS_ENABLE_TEMP
 	struct sensor_value lsm6dso16is_temp;
@@ -273,6 +308,7 @@ int main(void)
 	const struct device *const lsm6dsv16x = DEVICE_DT_GET_ONE(st_lsm6dsv16x);
 	const struct device *const lps22df = DEVICE_DT_GET_ONE(st_lps22df);
 	const struct device *const lis2duxs12 = DEVICE_DT_GET_ONE(st_lis2duxs12);
+	const struct device *const stts22h = DEVICE_DT_GET_ONE(st_stts22h);
 	int cnt = 1;
 
 	if (!device_is_ready(lsm6dso16is)) {
@@ -295,12 +331,17 @@ int main(void)
 		printk("%s: device not ready.\n", lis2duxs12->name);
 		return 0;
 	}
+	if (!device_is_ready(stts22h)) {
+		printk("%s: device not ready.\n", stts22h->name);
+		return 0;
+	}
 
 	lis2mdl_config(lis2mdl);
 	lsm6dso16is_config(lsm6dso16is);
 	lsm6dsv16x_config(lsm6dsv16x);
 	lps22df_config(lps22df);
 	lis2duxs12_config(lis2duxs12);
+	stts22h_config(stts22h);
 
 	while (1) {
 		/* Get sensor samples */
@@ -329,6 +370,12 @@ int main(void)
 			return 0;
 		}
 #endif
+#ifndef CONFIG_STTS22H_TRIGGER
+		if (sensor_sample_fetch(stts22h) < 0) {
+			printf("STS22H temp sample update error\n");
+			return 0;
+		}
+#endif
 #ifndef CONFIG_LIS2DUX12_TRIGGER
 		if (sensor_sample_fetch(lis2duxs12) < 0) {
 			printf("LIS2DUXS12 XL Sensor sample update error\n");
@@ -352,6 +399,8 @@ int main(void)
 
 		sensor_channel_get(lps22df, SENSOR_CHAN_PRESS, &lps22df_press);
 		sensor_channel_get(lps22df, SENSOR_CHAN_AMBIENT_TEMP, &lps22df_temp);
+
+		sensor_channel_get(stts22h, SENSOR_CHAN_AMBIENT_TEMP, &stts22h_temp);
 
 		sensor_channel_get(lis2duxs12, SENSOR_CHAN_ACCEL_XYZ, lis2duxs12_xl);
 		sensor_channel_get(lis2duxs12, SENSOR_CHAN_DIE_TEMP, &lis2duxs12_temp);
@@ -405,6 +454,8 @@ int main(void)
 
 		printf("LPS22DF: Temperature: %.1f C\n", sensor_value_to_double(&lps22df_temp));
 		printf("LPS22DF: Pressure:%.3f kPa\n", sensor_value_to_double(&lps22df_press));
+
+		printf("STTS22H: Temperature: %.1f C\n", sensor_value_to_double(&stts22h_temp));
 
 		printf("LIS2DUXS12: Accel (m/s^2): x: %.3f, y: %.3f, z: %.3f\n",
 			sensor_value_to_double(&lis2duxs12_xl[0]),

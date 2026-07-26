@@ -400,6 +400,20 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP)) {
+		/* In SoftAP-via-supplicant mode the same interface can also act
+		 * as an AP, so register it as SAP capable too.
+		 */
+		ret = wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
+						      WIFI_TYPE_SAP,
+						      iface);
+		if (ret) {
+			LOG_ERR("Failed to register mgd SAP iface with native stack %s (%d)",
+				ifname, ret);
+			goto out;
+		}
+	}
+
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_ADDED, 0);
 
 	if (get_iface_count(ctx) == 1) {

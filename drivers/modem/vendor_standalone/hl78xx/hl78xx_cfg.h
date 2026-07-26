@@ -79,9 +79,10 @@ int hl78xx_ctzeu_parse_urc(char **argv, uint16_t argc, struct hl78xx_ctzeu_updat
  * @param data HL78XX data structure.
  * @param argv Tokenized URC arguments from modem chat.
  * @param argc Number of tokens in argv.
- * @param is_urc Indicates if the message is a URC.
+ * @param has_n_param Indicates if argv includes the query response <n> field.
  */
-void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t argc, bool is_urc);
+void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t argc,
+			     bool has_n_param);
 
 /**
  * @brief Set network operator format.
@@ -192,9 +193,9 @@ uint32_t hl78xx_edrx_idle_get_remaining_timetosleep(struct hl78xx_data *data);
 void hl78xx_psmev_init(struct hl78xx_data *data);
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 
-int binary_str_to_byte(const char *bin_str);
-void byte_to_binary_str(uint8_t byte, char *output);
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+void byte_to_binary_str(uint8_t byte, char *output);
+int binary_str_to_byte(const char *bin_str);
 
 bool hl78xx_is_rsrp_value_valid(int16_t rsrp);
 bool hl78xx_is_rsrq_value_valid(int16_t rsrq);

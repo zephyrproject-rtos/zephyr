@@ -8,6 +8,8 @@ Overview
 ********
 
 A simple application to demonstrate the :ref:`LoRaWAN subsystem <lorawan_api>` of Zephyr.
+Every fifth uplink requests a link check, logging the demodulation margin and
+gateway count reported by the network.
 
 Building and Running
 ********************

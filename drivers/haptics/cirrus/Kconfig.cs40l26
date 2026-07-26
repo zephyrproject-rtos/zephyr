@@ -22,14 +22,17 @@ config HAPTICS_CS40L27_B2
 config HAPTICS_CS40L26_RESET
 	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L26),reset-gpios) || \
 		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),reset-gpios)
+	select GPIO
 
 config HAPTICS_CS40L26_INTERRUPT
 	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L26),int-gpios) || \
 		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),int-gpios)
+	select GPIO
 
 config HAPTICS_CS40L26_FLASH
 	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L26),flash-storage) || \
 		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L27),flash-storage)
+	select FLASH
 
 config HAPTICS_CS40L26_CALIBRATION
 	bool "Calibration"

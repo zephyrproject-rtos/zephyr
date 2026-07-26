@@ -44,6 +44,15 @@ if SPI_STM32_ERRATA_BUSY
 config SPI_STM32_BUSY_FLAG_TIMEOUT
 	int "timeout in us for the STM32 busy flag workaround"
 	default 10000
+	help
+	  Maximum time in microseconds to wait for the SPI BSY (busy) flag
+	  to clear after a DMA transfer, as a workaround for the errata on
+	  STM32F7 and STM32L4 devices where BSY may remain set after the
+	  last byte is transmitted in slave mode.
+	  The driver polls the BSY and TXE flags using k_yield() between
+	  iterations. If the flag does not clear within this time the
+	  driver continues regardless; increase this value on heavily
+	  loaded systems or when operating at low SPI clock rates.
 
 endif # SPI_STM32_ERRATA_BUSY
 

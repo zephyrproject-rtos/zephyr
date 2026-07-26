@@ -10,8 +10,8 @@
  * @ingroup shell_adsp_memory_window
  */
 
-#ifndef SHELL_ADSP_MEMORY_WINDOW_H__
-#define SHELL_ADSP_MEMORY_WINDOW_H__
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_ADSP_MEMORY_WINDOW_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_ADSP_MEMORY_WINDOW_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -81,4 +81,4 @@ const struct shell *shell_backend_adsp_memory_window_get_ptr(void);
 }
 #endif
 
-#endif /* SHELL_ADSP_MEMORY_WINDOW_H__ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_ADSP_MEMORY_WINDOW_H_ */

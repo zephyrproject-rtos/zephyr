@@ -41,7 +41,7 @@
 
 #if defined(CONFIG_BT_CAP_COMMANDER)
 
-#define SEM_TIMEOUT K_SECONDS(5)
+#define SEM_TIMEOUT K_SECONDS(10)
 
 extern enum bst_result_t bst_result;
 

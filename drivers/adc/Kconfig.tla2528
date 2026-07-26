@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_TLA2528
+	bool "Texas Instruments TLA2528 I2C"
+	default y
+	depends on DT_HAS_TI_TLA2528_ADC_ENABLED
+	select MFD
+	help
+	  Enable the adc driver implementation for the TLA2528
+
+config ADC_TLA2528_INIT_PRIO
+	int "Init priority"
+	default 70
+	depends on ADC_TLA2528
+	help
+	  Device driver initialization priority.
+	  Priority has to be lower (=higher value) than the TLA2528 mfd driver prio.

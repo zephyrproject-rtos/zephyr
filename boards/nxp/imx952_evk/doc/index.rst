@@ -88,6 +88,118 @@ Serial Port
 This board configuration uses a single serial communication channel with the
 CPU's UART1 for Cortex-A55, UART3 for Cortex-M7.
 
+Programming and Debugging (A55)
+*******************************
+
+There are multiple methods to program and debug Zephyr on the A55 core:
+
+Option 1. Boot Zephyr by Using JLink Runner
+===========================================
+
+The default runner for the board is JLink, connect the EVK board's JTAG connector to
+the host computer using a J-Link debugger, set SW9[2]=On (set JTAG_UART5_SEL to high),
+and  FTA_SEL to high level with bcu tool(e.g: "sudo bcu set_gpio ft_fta_sel 1
+-board=imx952evk19 -id=1-1.4.1", change id by using "bcu lsftdi" to check the real id),
+power up the board and stop the board at U-Boot command line.
+
+Then use "west flash" or "west debug" command to load the zephyr.bin
+image from the host computer and start the Zephyr application on A55 core0.
+
+Flash and Run
+-------------
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: imx952_evk/mimx9529/a55
+   :goals: flash
+
+Then the following log could be found on UART1 console:
+
+.. code-block:: console
+
+    *** Booting Zephyr OS build v4.4.0-4173-g6d6cc2de7574 ***
+    Hello World! imx952_evk/mimx9529/a55
+
+Debug
+-----
+
+Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :host-os: unix
+   :board: imx952_evk/mimx9529/a55
+   :goals: debug
+
+Option 2. Boot Zephyr by Using U-Boot Command
+=============================================
+
+U-Boot "go" command can be used to start Zephyr on A55 core0 and U-Boot "cpu" command
+is used to load and kick Zephyr to the other A55 secondary Cores. Currently "cpu" command
+is supported in : `Real-Time Edge U-Boot`_ (use the branch "uboot_vxxxx.xx-y.y.y,
+xxxx.xx is uboot version and y.y.y is Real-Time Edge Software version, for example
+"uboot_v2023.04-2.9.0" branch is U-Boot v2023.04 used in Real-Time Edge Software release
+v2.9.0), and pre-build images and user guide can be found at `Real-Time Edge Software`_.
+
+.. _Real-Time Edge U-Boot:
+   https://github.com/nxp-real-time-edge-sw/real-time-edge-uboot
+.. _Real-Time Edge Software:
+   https://www.nxp.com/rtedge
+
+Step 1: Download Zephyr Image into DDR Memory
+---------------------------------------------
+
+Firstly need to download Zephyr binary image into DDR memory, it can use tftp:
+
+.. code-block:: console
+
+    tftp 0xd0000000 zephyr.bin
+
+Or copy the Zephyr image ``zephyr.bin`` SD card and plug the card into the board, for example
+if copy to the FAT partition of the SD card, use the following U-Boot command to load the image
+into DDR memory (assuming the SD card is dev 1, fat partition ID is 1, they could be changed
+based on actual setup):
+
+.. code-block:: console
+
+    fatload mmc 1:1 0xd0000000 zephyr.bin;
+
+Step 2: Boot Zephyr
+-------------------
+
+Use this configuration to run basic Zephyr applications and kernel tests,
+for example, with the :zephyr:code-sample:`synchronization` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world/
+   :host-os: unix
+   :board: imx952_evk/mimx9529/a55
+   :goals: build
+
+This will build an image (zephyr.bin) with the synchronization sample app.
+
+Then use the following command to boot Zephyr on the core0:
+
+.. code-block:: console
+
+    dcache off; icache flush; go 0xd0000000;
+
+Or use "cpu" command to boot from secondary Core, for example Core1:
+
+.. code-block:: console
+
+    dcache flush; icache flush; cpu 1 release 0xd0000000
+
+It will display the following console output:
+
+.. code-block:: console
+
+    *** Booting Zephyr OS build v4.4.0-4173-g6d6cc2de7574 ***
+    Hello World! imx952_evk/mimx9529/a55
+
 Programming and Debugging (M7)
 ******************************
 

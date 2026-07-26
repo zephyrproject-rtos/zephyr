@@ -10,15 +10,15 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#if !defined(__mem_word_t_defined)
-#define __mem_word_t_defined
+#if !defined(__sys_mem_word_t_defined)
+#define __sys_mem_word_t_defined
 
 /*
- * The mem_word_t should match the optimal memory access word width
+ * The sys_mem_word_t should match the optimal memory access word width
  * on the target platform. Here we default it to uintptr_t.
  */
 
-typedef uintptr_t mem_word_t;
+typedef uintptr_t sys_mem_word_t;
 
 #define Z_MEM_WORD_T_WIDTH __INTPTR_WIDTH__
 
@@ -298,7 +298,7 @@ void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
 	const unsigned char *s_byte = (const unsigned char *)s;
 
 #if !defined(CONFIG_MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE)
-	const uintptr_t mask = sizeof(mem_word_t) - 1;
+	const uintptr_t mask = sizeof(sys_mem_word_t) - 1;
 
 	if ((((uintptr_t)d ^ (uintptr_t)s_byte) & mask) == 0) {
 
@@ -314,12 +314,12 @@ void *memcpy(void *ZRESTRICT d, const void *ZRESTRICT s, size_t n)
 
 		/* do word-sized copying as long as possible */
 
-		mem_word_t *d_word = (mem_word_t *)d_byte;
-		const mem_word_t *s_word = (const mem_word_t *)s_byte;
+		sys_mem_word_t *d_word = (sys_mem_word_t *)d_byte;
+		const sys_mem_word_t *s_word = (const sys_mem_word_t *)s_byte;
 
-		while (n >= sizeof(mem_word_t)) {
+		while (n >= sizeof(sys_mem_word_t)) {
 			*(d_word++) = *(s_word++);
-			n -= sizeof(mem_word_t);
+			n -= sizeof(sys_mem_word_t);
 		}
 
 		d_byte = (unsigned char *)d_word;
@@ -352,7 +352,7 @@ void *memset(void *buf, int c, size_t n)
 	unsigned char c_byte = (unsigned char)c;
 
 #if !defined(CONFIG_MINIMAL_LIBC_OPTIMIZE_STRING_FOR_SIZE)
-	while (((uintptr_t)d_byte) & (sizeof(mem_word_t) - 1)) {
+	while (((uintptr_t)d_byte) & (sizeof(sys_mem_word_t) - 1)) {
 		if (n == 0) {
 			return buf;
 		}
@@ -362,8 +362,8 @@ void *memset(void *buf, int c, size_t n)
 
 	/* do word-sized initialization as long as possible */
 
-	mem_word_t *d_word = (mem_word_t *)d_byte;
-	mem_word_t c_word = (mem_word_t)c_byte;
+	sys_mem_word_t *d_word = (sys_mem_word_t *)d_byte;
+	sys_mem_word_t c_word = (sys_mem_word_t)c_byte;
 
 	c_word |= c_word << 8;
 	c_word |= c_word << 16;
@@ -371,9 +371,9 @@ void *memset(void *buf, int c, size_t n)
 	c_word |= c_word << 32;
 #endif
 
-	while (n >= sizeof(mem_word_t)) {
+	while (n >= sizeof(sys_mem_word_t)) {
 		*(d_word++) = c_word;
-		n -= sizeof(mem_word_t);
+		n -= sizeof(sys_mem_word_t);
 	}
 
 	/* do byte-sized initialization until finished */

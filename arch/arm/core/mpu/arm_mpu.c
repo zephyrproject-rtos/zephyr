@@ -521,6 +521,18 @@ int z_arm_mpu_init(void)
 
 	LOG_DBG("total region count: %d", get_num_regions());
 
+#if defined(CONFIG_ARM_MPU_SKIP_ARCH_INIT)
+	/*
+	 * Early boot has already enabled the MPU. Re-programming requires
+	 * disabling it while executing from a region only reachable with
+	 * the MPU enabled.
+	 */
+	if ((__get_SCTLR() & SCTLR_M_Msk) != 0U) {
+		static_regions_num = mpu_config.num_regions;
+		return 0;
+	}
+#endif
+
 	arm_core_mpu_disable();
 
 #if defined(CONFIG_NOCACHE_MEMORY)

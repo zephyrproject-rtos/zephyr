@@ -345,12 +345,4 @@ config BFLB_BL61X_BLE_EM_64K
 	  default 32 KB. Required for the BR/EDR variant. The board DTS
 	  must include bl61x_em_64kb.dtsi instead of bl61x_em_32kb.dtsi.
 
-config BFLB_BL61X_WL_RMEM_SIZE
-	int "PHY/RF retention memory size (bytes)"
-	default 8192
-	help
-	  Size in bytes of the static buffer passed to wl_cfg_get() for
-	  PHY/RF calibration data. The buffer persists for the lifetime
-	  of the application. 8192 matches the Bouffalo SDK default.
-
 endif # BT_BFLB_BL61X

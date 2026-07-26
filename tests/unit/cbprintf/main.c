@@ -93,6 +93,8 @@
 #define PKG_ALIGN_OFFSET (size_t)0
 #endif
 
+static const char *utf8_str = "\xF0\x9F\xAA\x81";
+
 /* We can't determine at build-time whether int is 64-bit, so assume
  * it is.  If not the values are truncated at build time, and the str
  * pointers will be updated during test initialization.
@@ -1131,6 +1133,12 @@ ZTEST(prf, test_libc_substs)
 	zassert_equal(rc, 20, "rc %d", rc);
 	zassert_equal(lbuf[7], full_flag);
 	zassert_equal(strncmp("000000", lbuf, rc), 0);
+
+	memset(lbuf, full_flag, sizeof(lbuf));
+	rc = snprintfcb(lbuf, len, "%s", utf8_str);
+	zassert_equal(rc, strlen(utf8_str));
+	zassert_equal(lbuf[rc + 1], full_flag);
+	zassert_equal(strncmp(utf8_str, lbuf, rc), 0);
 
 	rc = cbprintf(out_counter, &count, "%020d", 1);
 	zassert_equal(rc, 20, "rc %d", rc);

@@ -19,7 +19,7 @@
 		zephyr,console = &mcu_uart0;
 		zephyr,shell-uart = &mcu_uart0;
 		zephyr,ipc = &ipc0;
-		zephyr,ipc-shm = &ipc_shm0;
+		zephyr,ipc_shm = &ipc_shm0;
 	};
 
 	aliases {

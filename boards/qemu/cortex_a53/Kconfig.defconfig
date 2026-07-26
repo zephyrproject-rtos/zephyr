@@ -9,6 +9,11 @@ config BUILD_OUTPUT_BIN
 config MAX_THREAD_BYTES
 	default 3
 
+# The board has plenty of RAM to buffer the gcov coverage data, so coverage
+# reports can be gathered via the custom gcov library (COVERAGE_GCOV).
+config HAS_COVERAGE_SUPPORT
+	default y
+
 if NETWORKING
 
 choice NET_QEMU_NETWORKING

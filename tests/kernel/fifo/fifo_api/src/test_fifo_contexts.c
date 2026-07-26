@@ -166,6 +166,120 @@ ZTEST(fifo_api_1cpu, test_fifo_thread2thread)
 }
 
 /**
+ * @brief Verify a FIFO defined at compile time is ready for use.
+ *
+ * @details
+ * A FIFO created with K_FIFO_DEFINE() must be fully initialized at boot:
+ * empty and immediately usable for data passing without any run-time
+ * initialization call.
+ *
+ * Test steps:
+ * - Check the statically defined FIFO is empty.
+ * - Put an item and get it back, verifying the same item is returned.
+ *
+ * Expected result:
+ * - The statically defined FIFO accepts and delivers items as-is.
+ *
+ * @see K_FIFO_DEFINE
+ */
+ZTEST(fifo_api, test_fifo_define)
+{
+	/* usable at boot without any run-time initialization */
+	zassert_true(k_fifo_is_empty(&kfifo));
+
+	k_fifo_put(&kfifo, (void *)&data[0]);
+	zassert_equal(k_fifo_get(&kfifo, K_NO_WAIT), (void *)&data[0]);
+	zassert_true(k_fifo_is_empty(&kfifo));
+}
+
+/**
+ * @brief Verify appending a singly-linked item list to the back of a FIFO.
+ *
+ * @details
+ * k_fifo_put_list() must transfer a caller-built singly-linked list to the
+ * back of the FIFO with its order preserved.
+ *
+ * Test steps:
+ * - Put one item so the FIFO is non-empty.
+ * - Link the items of an array into a list.
+ * - Put the list and confirm it lands behind the pre-existing item.
+ * - Get all items and verify list order is preserved.
+ *
+ * Expected result:
+ * - The pre-existing item is delivered first, then every list item in its
+ *   original order.
+ *
+ * @see k_fifo_put_list()
+ * @see k_fifo_get()
+ */
+ZTEST(fifo_api, test_fifo_put_list_order)
+{
+	static fdata_t *head = &data_l[0], *tail = &data_l[LIST_LEN - 1];
+
+	k_fifo_init(&fifo);
+
+	/* a pre-existing item so the list is demonstrably put behind it */
+	k_fifo_put(&fifo, (void *)&data[0]);
+
+	head->snode.next = (sys_snode_t *)tail;
+	tail->snode.next = NULL;
+	k_fifo_put_list(&fifo, (uint32_t *)head, (uint32_t *)tail);
+
+	zassert_equal(k_fifo_get(&fifo, K_NO_WAIT), (void *)&data[0]);
+	for (int i = 0; i < LIST_LEN; i++) {
+		zassert_equal(k_fifo_get(&fifo, K_NO_WAIT),
+			      (void *)&data_l[i]);
+	}
+	zassert_true(k_fifo_is_empty(&fifo));
+}
+
+/**
+ * @brief Verify putting a sys_slist empties the list into the FIFO.
+ *
+ * @details
+ * k_fifo_put_slist() must move every node of a sys_slist to the back of the
+ * FIFO in list order and leave the source list empty.
+ *
+ * Test steps:
+ * - Put one item so the FIFO is non-empty.
+ * - Build a sys_slist with two nodes and put it on the FIFO.
+ * - Verify the source list is empty afterwards.
+ * - Get all items and confirm the nodes land behind the pre-existing item,
+ *   in list order.
+ *
+ * Expected result:
+ * - The pre-existing item is delivered first, then every node in order, and
+ *   the source list is emptied.
+ *
+ * @see k_fifo_put_slist()
+ * @see k_fifo_get()
+ */
+ZTEST(fifo_api, test_fifo_put_slist_order)
+{
+	sys_slist_t slist;
+
+	k_fifo_init(&fifo);
+
+	/* a pre-existing item so the nodes land behind it */
+	k_fifo_put(&fifo, (void *)&data[0]);
+
+	sys_slist_init(&slist);
+	sys_slist_append(&slist, (sys_snode_t *)&(data_sl[0].snode));
+	sys_slist_append(&slist, (sys_snode_t *)&(data_sl[1].snode));
+	k_fifo_put_slist(&fifo, &slist);
+
+	/* the source list is emptied by the put */
+	zassert_true(sys_slist_is_empty(&slist));
+
+	zassert_equal(k_fifo_get(&fifo, K_NO_WAIT), (void *)&data[0]);
+	for (int i = 0; i < LIST_LEN; i++) {
+		zassert_equal(k_fifo_get(&fifo, K_NO_WAIT),
+			      (void *)&data_sl[i]);
+	}
+	zassert_true(k_fifo_is_empty(&fifo));
+}
+
+/**
  * @brief Verify FIFO data passing from an ISR to a thread.
  *
  * @details

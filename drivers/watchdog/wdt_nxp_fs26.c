@@ -436,7 +436,7 @@ static int wdt_nxp_fs26_setup(const struct device *dev, uint8_t options)
 		return -EINVAL;
 	}
 
-	if ((options & WDT_OPT_PAUSE_IN_SLEEP) || (options & WDT_OPT_PAUSE_HALTED_BY_DBG)) {
+	if (options & (WDT_OPT_PAUSE_IN_SLEEP | WDT_OPT_PAUSE_HALTED_BY_DBG)) {
 		return -ENOTSUP;
 	}
 

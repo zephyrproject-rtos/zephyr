@@ -5,6 +5,7 @@ config UART_RPMSG
 	bool "Use RPMSG uart"
 	depends on RPMSG_SERVICE
 	depends on DT_HAS_RPMSG_UART_ENABLED
+	select SERIAL_HAS_POST_KERNEL_INIT
 	help
 	  Enable uart using RPMSG.
 

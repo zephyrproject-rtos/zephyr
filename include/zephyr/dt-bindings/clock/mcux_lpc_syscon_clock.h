@@ -238,4 +238,7 @@
 /** EQDC1 peripheral clock identifier. */
 #define MCUX_EQDC1_CLK MCUX_LPC_CLK_ID(0x38, 0x01)
 
+/** PowerQuad DSP coprocessor clock identifier. */
+#define MCUX_POWERQUAD_CLK MCUX_LPC_CLK_ID(0x39, 0x00)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

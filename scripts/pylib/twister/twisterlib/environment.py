@@ -517,6 +517,14 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                         active (`--coverage-per-instance`) to have at least one of these reporting
                         modes. Default: %(default)s""")
 
+    coverage_group.add_argument("--coverage-per-test", action="store_true", default=False,
+                help="""Collect a separate coverage artifact for every individual Ztest
+                        test case, enabling a per-test to source-code coverage matrix.
+                        Requires the 'lcov' coverage tool. Implies --coverage. On platforms
+                        that support semihosting (e.g. mps2/*) the per-test data is written
+                        straight to the host filesystem, avoiding console traffic.
+                        Default: %(default)s""")
+
     parser.add_argument(
         "--test-config",
         action="store",
@@ -707,6 +715,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     parser.add_argument(
         "-O", "--outdir",
         default=os.path.join(os.getcwd(), "twister-out"),
+        type=os.path.normpath,
         help="Output directory for logs and binaries. "
              "Default is 'twister-out' in the current directory. "
              "This directory will be cleaned unless '--no-clean' is set. "
@@ -922,6 +931,12 @@ def parse_arguments(
 
     if options.aggressive_no_clean:
         options.no_clean = True
+
+    if options.coverage_per_test:
+        options.coverage = True
+        if options.coverage_tool != "lcov":
+            logger.error("--coverage-per-test requires the 'lcov' coverage tool.")
+            sys.exit(1)
 
     if options.coverage:
         options.enable_coverage = True

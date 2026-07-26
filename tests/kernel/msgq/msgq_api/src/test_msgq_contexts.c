@@ -308,6 +308,156 @@ ZTEST(msgq_api_1cpu, test_msgq_thread)
 }
 
 /**
+ * @brief Verify a message queue defined at compile time is ready for use.
+ *
+ * @details
+ * A queue created with K_MSGQ_DEFINE() must be fully initialized at boot for
+ * the size and depth given to the macro: empty, with all slots free, and
+ * immediately usable for message passing without any run-time initialization
+ * call.
+ *
+ * Test steps:
+ * - Check the statically defined queue is empty with MSGQ_LEN free slots and
+ *   that a peek reports no message.
+ * - Put a message and get it back, verifying the data round-trips.
+ *
+ * Expected result:
+ * - The statically defined queue accepts and delivers messages as-is.
+ *
+ * @see K_MSGQ_DEFINE
+ */
+ZTEST_USER(msgq_api, test_msgq_define)
+{
+	uint32_t rx_data;
+
+	k_msgq_purge(&kmsgq);
+
+	/* usable without any run-time initialization */
+	zassert_equal(k_msgq_num_used_get(&kmsgq), 0);
+	zassert_equal(k_msgq_num_free_get(&kmsgq), MSGQ_LEN);
+	zassert_equal(k_msgq_peek(&kmsgq, &rx_data), -ENOMSG);
+
+	zassert_equal(k_msgq_put(&kmsgq, &data[0], K_NO_WAIT), 0);
+	zassert_equal(k_msgq_get(&kmsgq, &rx_data, K_NO_WAIT), 0);
+	zassert_equal(rx_data, data[0]);
+}
+
+/**
+ * @brief Verify run-time initialization of a message queue.
+ *
+ * @details
+ * k_msgq_init() must set up a message queue over a caller-provided buffer for
+ * the given message size and depth: the queue starts empty, with all slots
+ * free, and is immediately usable for message passing.
+ *
+ * Test steps:
+ * - Initialize a queue at run time with a caller-provided buffer.
+ * - Check it is empty (no used slots, all slots free, peek reports no
+ *   message).
+ * - Put a message and get it back, verifying the data round-trips.
+ *
+ * Expected result:
+ * - The initialized queue is empty and accepts and delivers messages.
+ *
+ * @see k_msgq_init()
+ */
+ZTEST(msgq_api, test_msgq_init)
+{
+	uint32_t read_data;
+	uint32_t rx_data;
+
+	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
+
+	zassert_equal(k_msgq_num_used_get(&msgq), 0);
+	zassert_equal(k_msgq_num_free_get(&msgq), MSGQ_LEN);
+	zassert_equal(k_msgq_peek(&msgq, &read_data), -ENOMSG);
+
+	zassert_equal(k_msgq_put(&msgq, &data[0], K_NO_WAIT), 0);
+	zassert_equal(k_msgq_get(&msgq, &rx_data, K_NO_WAIT), 0);
+	zassert_equal(rx_data, data[0]);
+}
+
+/**
+ * @brief Verify a front-inserted message is received before queued ones.
+ *
+ * @details
+ * k_msgq_put_front() inserts a message at the front of the queue, so a
+ * receiver must get it before messages that were already queued, while the
+ * messages sent to the end keep their relative order.
+ *
+ * Test steps:
+ * - Put a message at the end of the queue.
+ * - Put a second message at the front with k_msgq_put_front().
+ * - Get both messages and verify the front-inserted one arrives first.
+ *
+ * Expected result:
+ * - The front-inserted message is received first, the end-queued one second.
+ *
+ * @see k_msgq_put_front()
+ * @see k_msgq_get()
+ */
+ZTEST_USER(msgq_api, test_msgq_put_front_order)
+{
+	uint32_t rx_data;
+
+	k_msgq_purge(&kmsgq);
+
+	zassert_equal(k_msgq_put(&kmsgq, &data[0], K_NO_WAIT), 0);
+	zassert_equal(k_msgq_put_front(&kmsgq, &data[1]), 0);
+
+	/* the front-inserted message is received first */
+	zassert_equal(k_msgq_get(&kmsgq, &rx_data, K_NO_WAIT), 0);
+	zassert_equal(rx_data, data[1]);
+	zassert_equal(k_msgq_get(&kmsgq, &rx_data, K_NO_WAIT), 0);
+	zassert_equal(rx_data, data[0]);
+}
+
+/**
+ * @brief Verify peeking reads the front message without removing it.
+ *
+ * @details
+ * k_msgq_peek() must report -ENOMSG on an empty queue, return the message at
+ * the front of a non-empty queue without consuming it, and a subsequent get
+ * must return the same message that was peeked.
+ *
+ * Test steps:
+ * - Peek at an empty queue and expect -ENOMSG.
+ * - Put two messages, peek, and verify the front message is returned and the
+ *   used count is unchanged.
+ * - Get a message and verify it matches the peeked one.
+ *
+ * Expected result:
+ * - Peek returns the front message without removing it and fails with
+ *   -ENOMSG on an empty queue.
+ *
+ * @see k_msgq_peek()
+ */
+ZTEST_USER(msgq_api, test_msgq_peek)
+{
+	uint32_t read_data;
+	uint32_t rx_data;
+
+	k_msgq_purge(&kmsgq);
+
+	/* peeking at an empty queue reports no message */
+	zassert_equal(k_msgq_peek(&kmsgq, &read_data), -ENOMSG);
+
+	zassert_equal(k_msgq_put(&kmsgq, &data[0], K_NO_WAIT), 0);
+	zassert_equal(k_msgq_put(&kmsgq, &data[1], K_NO_WAIT), 0);
+
+	/* peek reads the message at the front without removing it */
+	zassert_equal(k_msgq_peek(&kmsgq, &read_data), 0);
+	zassert_equal(read_data, data[0]);
+	zassert_equal(k_msgq_num_used_get(&kmsgq), MSGQ_LEN);
+
+	/* the peeked message is the one a get returns */
+	zassert_equal(k_msgq_get(&kmsgq, &rx_data, K_NO_WAIT), 0);
+	zassert_equal(rx_data, read_data);
+
+	k_msgq_purge(&kmsgq);
+}
+
+/**
  * @brief Verify the ring buffer wraps correctly across put/get cycles.
  *
  * @details

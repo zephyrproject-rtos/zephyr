@@ -22,7 +22,7 @@
 
 
 #include "soc_pinmap.h"
-#include "../common/soc_gpio.h"
+#include <../common/soc_gpio.h>
 
 #endif /* !_ASMLANGUAGE */
 
