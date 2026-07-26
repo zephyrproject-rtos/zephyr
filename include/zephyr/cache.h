@@ -34,6 +34,8 @@ extern "C" {
 
 /**
  * @defgroup cache_interface Cache Interface
+ * @since 3.3
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  */
