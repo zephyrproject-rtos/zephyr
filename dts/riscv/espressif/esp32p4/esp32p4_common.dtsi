@@ -688,6 +688,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+			};
 		};
 	};
 

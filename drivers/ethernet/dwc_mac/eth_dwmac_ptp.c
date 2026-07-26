@@ -148,6 +148,10 @@ static int dwmac_ptp_init(const struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_SOC_SERIES_ESP32P4
+	ptp_clk_rate = MHZ(40); /* FIXME: get the actual clock rate from the clock driver */
+#endif
+
 	ss_incr_ns = 2000000000ULL / ptp_clk_rate;
 
 	sys_write32(ss_incr_ns << DWMAC_PTP_SSINC_SHIFT, base + DWMAC_PTP_SSINC_REG);
