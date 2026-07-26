@@ -86,6 +86,22 @@ the maintainers of every other touched area:
      b. Any path-specific collaborators returned by
         get_collaborators_for_path() for each matched file.
   3. Deduplicate while preserving insertion order.
+  4. Heuristic tier (only for under-covered areas): an area that names no
+     maintainers, or at most THIN_AREA_COLLABORATORS (2) collaborators, cannot
+     supply enough reviewers on its own.  For such areas two heuristics are
+     tried in order, and the result is appended after the tiers above (the
+     author and anyone already listed are excluded).  These are
+     lower-confidence picks, so they fill only leftover review slots.
+
+     a. GitHub's own ``suggestedReviewers`` for the PR, which GitHub derives
+        from commit history *and* past review comments.  This is the better
+        signal and costs one query, but it is only available over GraphQL and
+        is empty for most PRs, so it cannot be relied on alone.
+     b. When GitHub suggests nobody, the recent contributors to the changed
+        files the under-covered areas own, read from the commit history.
+        Unlike (a) this is scoped to the files that are actually short of
+        reviewers, rather than to the PR as a whole.  Bounded by
+        HISTORY_COMMITS_PER_FILE, MAX_HISTORY_FILES, and MAX_HISTORY_REVIEWERS.
 
 Candidates are then filtered:
   - The PR author is skipped.
@@ -226,6 +242,39 @@ MAX_REVIEWERS = 15
 
 # Maximum number of labels to apply; more than this is likely noise from over-broad matches.
 MAX_LABELS = 10
+
+# An area is considered under-covered when it names no maintainers, or names at
+# most this many collaborators.  Such areas do not supply enough reviewers on
+# their own, so recent Git contributors to the changed files are added as
+# heuristic reviewer candidates (see _history_reviewers).
+THIN_AREA_COLLABORATORS = 2
+
+# Bounds on the Git-history heuristic, to keep its GitHub API cost predictable:
+#   - sample at most this many recent commits per changed file,
+#   - inspect at most this many under-covered files in total,
+#   - add at most this many heuristic reviewers to the candidate list.
+HISTORY_COMMITS_PER_FILE = 20
+MAX_HISTORY_FILES = 40
+MAX_HISTORY_REVIEWERS = 3
+
+# GitHub's own reviewer suggestions ("based on commit history and past review
+# comments") are exposed only through the GraphQL API, as a plain unpaginated
+# list on the PullRequest object.
+SUGGESTED_REVIEWERS_QUERY = """
+query($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $number) {
+      suggestedReviewers {
+        isAuthor
+        isCommenter
+        reviewer {
+          login
+        }
+      }
+    }
+  }
+}
+"""
 
 # Courtesy sleep between consecutive GitHub API calls to avoid secondary rate limits.
 API_SLEEP_SECONDS = 1
@@ -520,6 +569,121 @@ def _pick_assignees(pr, area_counter: dict, all_maintainers: dict, num_files: in
     return assignees
 
 
+def _thin_areas(maintainer_file, area_counter: dict) -> set:
+    """Return the names of areas in *area_counter* that are under-covered.
+
+    An area is under-covered when MAINTAINERS.yml names no maintainers for it,
+    or names at most THIN_AREA_COLLABORATORS collaborators.  These areas cannot
+    supply enough reviewers on their own, so the caller supplements them with
+    recent Git contributors (see _history_reviewers).
+    """
+    thin = set()
+    for area in area_counter:
+        entry = maintainer_file.areas[area.name]
+        if not entry.maintainers or len(entry.collaborators) <= THIN_AREA_COLLABORATORS:
+            thin.add(area.name)
+    return thin
+
+
+def _suggested_reviewers(gh, args, pr, exclude: set) -> list:
+    """Return GitHub's own reviewer suggestions for *pr* as ordered logins.
+
+    GitHub computes these from commit history and past review comments, so
+    they are a strictly better-informed version of the _history_reviewers
+    heuristic when available.  They are only exposed through GraphQL, hence
+    the raw query; PyGithub's requester reuses the same token and session, so
+    this adds no dependency.
+
+    Suggestions where GitHub flagged the person as an author of the changed
+    code rank ahead of comment-only suggestions, and ties break by login for
+    determinism.  Logins in *exclude* are dropped.
+
+    The list is frequently empty (GitHub's heuristic is sparse, and it is not
+    documented when it declines to suggest), and the field is best-effort, so
+    every failure path degrades to an empty list and lets the caller fall back
+    to _history_reviewers.
+    """
+    variables = {"owner": args.org, "name": args.repo, "number": pr.number}
+    try:
+        _headers, response = gh.requester.graphql_query(SUGGESTED_REVIEWERS_QUERY, variables)
+    except GithubException as exc:
+        logger.debug("suggestedReviewers query failed for PR #%d: %s", pr.number, exc)
+        return []
+
+    if response.get("errors"):
+        logger.debug(
+            "suggestedReviewers query returned errors for PR #%d: %s",
+            pr.number,
+            response["errors"],
+        )
+
+    try:
+        suggestions = response["data"]["repository"]["pullRequest"]["suggestedReviewers"]
+    except (KeyError, TypeError):
+        logger.debug("Unexpected suggestedReviewers response for PR #%d", pr.number)
+        return []
+
+    ranked = []
+    for suggestion in suggestions or []:
+        login = (suggestion.get("reviewer") or {}).get("login")
+        if not login or login in exclude:
+            continue
+        # Authorship of the changed code is a stronger signal than having
+        # commented on it, so sort authors first.
+        ranked.append((0 if suggestion.get("isAuthor") else 1, login))
+
+    return [login for _rank, login in sorted(ranked)]
+
+
+def _history_reviewers(gh_repo, filenames, exclude: set) -> list:
+    """Return recent contributors to *filenames* as ordered GitHub logins.
+
+    Walks each file's commit history (newest first) and tallies the commit
+    authors GitHub resolved to a real account, ranking them by how many of the
+    sampled commits they authored (ties broken by login for determinism).
+
+    Commit history is read through the GitHub API rather than a local
+    ``git log``/``git blame`` because the API yields actual GitHub logins
+    (commit-author emails cannot be mapped to logins reliably) and does not
+    depend on the CI checkout having the full history.
+
+    *exclude* holds logins already covered (PR author, existing candidates) so
+    they are not re-proposed.  Sampling is bounded by HISTORY_COMMITS_PER_FILE,
+    MAX_HISTORY_FILES, and MAX_HISTORY_REVIEWERS.
+    """
+    sampled_files = sorted(filenames)
+    if len(sampled_files) > MAX_HISTORY_FILES:
+        logger.info(
+            "Sampling Git history for %d of %d under-covered files (limit %d)",
+            MAX_HISTORY_FILES,
+            len(sampled_files),
+            MAX_HISTORY_FILES,
+        )
+        sampled_files = sampled_files[:MAX_HISTORY_FILES]
+
+    counts = defaultdict(int)
+    for filename in sampled_files:
+        try:
+            commits = gh_repo.get_commits(path=filename)
+        except GithubException as exc:
+            logger.debug("No commit history for '%s': %s", filename, exc)
+            continue
+
+        sampled = 0
+        for commit in commits:
+            if sampled >= HISTORY_COMMITS_PER_FILE:
+                break
+            sampled += 1
+            author = commit.author
+            login = getattr(author, "login", None) if author else None
+            if not login or login in exclude:
+                continue
+            counts[login] += 1
+
+    ranked = sorted(counts, key=lambda login: (-counts[login], login))
+    return ranked[:MAX_HISTORY_REVIEWERS]
+
+
 def _build_reviewer_candidates(
     maintainer_file,
     area_counter: dict,
@@ -527,6 +691,16 @@ def _build_reviewer_candidates(
     additional_reviews: set,
     deferred_reviewers: set,
 ) -> list:
+
+    """Build the ordered reviewer candidate list for a PR.
+
+    Maintainers of every touched area come first (in descending area-weight
+    order), then collaborators.  The caller truncates the filtered result to
+    the reviewer cap, so ordering maintainers ahead of collaborators ensures
+    the highest-signal reviewers are never dropped in favour of lower-signal
+    ones.  Lower-confidence Git-history reviewers (for under-covered areas) are
+    appended after this list by the caller so they fill only leftover slots.
+    """
     maintainers = []
     collaborators = []
     for area in area_counter:
@@ -763,6 +937,9 @@ def process_pr(gh, args, maintainer_file, number: int):
     collab_per_path = set()
     additional_reviews = set()
     deferred_reviewers = set()
+    # Files that mapped to each area, used to sample Git history for areas that
+    # MAINTAINERS.yml under-covers (see _thin_areas / _history_reviewers).
+    area_files = defaultdict(set)
 
     changed_files = list(pr.get_files())
     num_files = len(changed_files)
@@ -867,6 +1044,7 @@ def process_pr(gh, args, maintainer_file, number: int):
                 count = 1 if not is_instance else 0
 
             area_counter[area] += count
+            area_files[area.name].add(filename)
             logger.debug("  area weight update: %s += %d", area.name, count)
             labels.update(area.labels)
 
@@ -891,6 +1069,37 @@ def process_pr(gh, args, maintainer_file, number: int):
     collab = _build_reviewer_candidates(
         maintainer_file, area_counter, collab_per_path, additional_reviews, deferred_reviewers
     )
+
+    # Supplement under-covered areas (no maintainers, or few collaborators)
+    # with heuristic reviewers.  Exclude the author and everyone already listed
+    # so these last-resort slots are not wasted on reviewers we already have.
+    thin = _thin_areas(maintainer_file, area_counter)
+    if thin:
+        exclude = set(collab) | {pr.user.login}
+
+        # Prefer GitHub's own suggestions: they draw on both commit history and
+        # past review comments, and cost a single query.  They are often empty,
+        # in which case fall back to walking the history of the files the
+        # under-covered areas actually own.
+        heuristic = _suggested_reviewers(gh, args, pr, exclude)[:MAX_HISTORY_REVIEWERS]
+        source = "GitHub-suggested"
+
+        if not heuristic:
+            thin_files = set()
+            for name in thin:
+                thin_files.update(area_files.get(name, ()))
+            heuristic = _history_reviewers(gh_repo, thin_files, exclude)
+            source = "Git-history"
+
+        if heuristic:
+            logger.info(
+                "Under-covered areas %s; adding %s reviewers: %s",
+                sorted(thin),
+                source,
+                heuristic,
+            )
+            collab += heuristic
+
     logger.debug("Reviewer candidates: %s", collab)
 
     all_maintainers = dict(

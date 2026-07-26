@@ -496,6 +496,30 @@ class TestSetupLogging:
 # ---------------------------------------------------------------------------
 
 
+def _suggested_payload(suggestions):
+    """Wrap *suggestions* in the GraphQL envelope suggestedReviewers returns.
+
+    Each entry is (login, is_author); the reviewer sub-object mirrors the real
+    schema so the SUT's unwrapping is exercised for real.
+    """
+    return {
+        "data": {
+            "repository": {
+                "pullRequest": {
+                    "suggestedReviewers": [
+                        {
+                            "isAuthor": is_author,
+                            "isCommenter": not is_author,
+                            "reviewer": {"login": login},
+                        }
+                        for login, is_author in suggestions
+                    ]
+                }
+            }
+        }
+    }
+
+
 def _make_process_pr_harness(areas_per_file, pr_user="someone"):
     """Return (gh, args, maintainer_file, pr) ready for sut.process_pr().
 
@@ -541,8 +565,12 @@ def _make_process_pr_harness(areas_per_file, pr_user="someone"):
     gh_repo = MagicMock()
     gh.get_repo.return_value = gh_repo
     gh.get_user.side_effect = _get_user
+    # No GitHub-suggested reviewers by default; tests override as needed.
+    gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
     gh_repo.get_pull.return_value = pr
     gh_repo.has_in_collaborators.return_value = True
+    # No Git history by default; individual tests override per path as needed.
+    gh_repo.get_commits.return_value = []
 
     args = SimpleNamespace(
         org="testorg",
@@ -713,3 +741,304 @@ class TestBuildReviewerCandidates:
         requested = _reviewers_requested(pr)
         assert len(requested) == sut.MAX_REVIEWERS
         assert requested[:8] == [f"m{i}" for i in range(8)]
+
+
+# ---------------------------------------------------------------------------
+# _thin_areas
+# ---------------------------------------------------------------------------
+
+
+class TestThinAreas:
+    @staticmethod
+    def _mf(*areas):
+        return SimpleNamespace(areas={area.name: area for area in areas})
+
+    def test_area_without_maintainers_is_thin(self):
+        area = _make_area("Orphan", maintainers=[], collaborators=["a", "b", "c", "d"])
+        mf = self._mf(area)
+        assert sut._thin_areas(mf, {area: 1}) == {"Orphan"}
+
+    def test_area_with_few_collaborators_is_thin(self):
+        area = _make_area("Small", maintainers=["m"], collaborators=["a", "b"])
+        mf = self._mf(area)
+        assert sut._thin_areas(mf, {area: 1}) == {"Small"}
+
+    def test_well_covered_area_is_not_thin(self):
+        area = _make_area("Big", maintainers=["m"], collaborators=["a", "b", "c"])
+        mf = self._mf(area)
+        assert sut._thin_areas(mf, {area: 1}) == set()
+
+    def test_threshold_is_inclusive(self):
+        area = _make_area(
+            "AtLimit",
+            maintainers=["m"],
+            collaborators=["a"] * sut.THIN_AREA_COLLABORATORS,
+        )
+        mf = self._mf(area)
+        assert sut._thin_areas(mf, {area: 1}) == {"AtLimit"}
+
+    def test_mixed_areas_reports_only_thin_ones(self):
+        thin = _make_area("Thin", maintainers=[], collaborators=[])
+        full = _make_area("Full", maintainers=["m"], collaborators=["a", "b", "c"])
+        mf = self._mf(thin, full)
+        assert sut._thin_areas(mf, {thin: 2, full: 1}) == {"Thin"}
+
+
+# ---------------------------------------------------------------------------
+# _history_reviewers
+# ---------------------------------------------------------------------------
+
+
+def _commit(login):
+    """A stub commit whose GitHub-resolved author has *login* (None => unmatched)."""
+    author = SimpleNamespace(login=login) if login is not None else None
+    return SimpleNamespace(author=author)
+
+
+def _repo_with_history(history):
+    """gh_repo stub whose get_commits(path=...) returns history[path] (or [])."""
+    repo = MagicMock()
+    repo.get_commits.side_effect = lambda path: list(history.get(path, []))
+    return repo
+
+
+class TestHistoryReviewers:
+    def test_ranks_contributors_by_commit_count(self):
+        history = {
+            "f.c": [_commit("alice"), _commit("bob"), _commit("alice")],
+        }
+        repo = _repo_with_history(history)
+        result = sut._history_reviewers(repo, {"f.c"}, exclude=set())
+        assert result == ["alice", "bob"]
+
+    def test_excluded_logins_are_dropped(self):
+        history = {"f.c": [_commit("author"), _commit("alice")]}
+        repo = _repo_with_history(history)
+        result = sut._history_reviewers(repo, {"f.c"}, exclude={"author"})
+        assert result == ["alice"]
+
+    def test_unmatched_authors_are_ignored(self):
+        history = {"f.c": [_commit(None), _commit("alice"), _commit(None)]}
+        repo = _repo_with_history(history)
+        result = sut._history_reviewers(repo, {"f.c"}, exclude=set())
+        assert result == ["alice"]
+
+    def test_result_is_capped(self):
+        history = {
+            "f.c": [_commit(name) for name in ["a", "a", "b", "b", "c", "c", "d", "d"]],
+        }
+        repo = _repo_with_history(history)
+        result = sut._history_reviewers(repo, {"f.c"}, exclude=set())
+        assert len(result) == sut.MAX_HISTORY_REVIEWERS
+
+    def test_commits_sampled_per_file_are_bounded(self):
+        # More commits than the per-file sample budget; only the first
+        # HISTORY_COMMITS_PER_FILE are counted.
+        commits = [_commit("early")] * sut.HISTORY_COMMITS_PER_FILE + [_commit("late")]
+        repo = _repo_with_history({"f.c": commits})
+        result = sut._history_reviewers(repo, {"f.c"}, exclude=set())
+        assert result == ["early"]
+
+    def test_github_exception_on_a_file_is_skipped(self):
+        def _raise_or_return(path):
+            if path == "bad.c":
+                raise sut.GithubException("no history")
+            return [_commit("alice")]
+
+        repo = MagicMock()
+        repo.get_commits.side_effect = _raise_or_return
+        result = sut._history_reviewers(repo, {"bad.c", "good.c"}, exclude=set())
+        assert result == ["alice"]
+
+    def test_contributions_aggregate_across_files(self):
+        history = {
+            "a.c": [_commit("alice")],
+            "b.c": [_commit("alice"), _commit("bob")],
+        }
+        repo = _repo_with_history(history)
+        result = sut._history_reviewers(repo, {"a.c", "b.c"}, exclude=set())
+        assert result == ["alice", "bob"]
+
+
+# ---------------------------------------------------------------------------
+# _suggested_reviewers
+# ---------------------------------------------------------------------------
+
+
+def _gh_with_suggestions(payload):
+    """Github stub whose requester.graphql_query returns *payload*."""
+    gh = MagicMock()
+    gh.requester.graphql_query.return_value = ({}, payload)
+    return gh
+
+
+def _suggest_args():
+    return SimpleNamespace(org="zephyrproject-rtos", repo="zephyr")
+
+
+def _suggest_pr(number=99):
+    return SimpleNamespace(number=number)
+
+
+class TestSuggestedReviewers:
+    def test_returns_suggested_logins(self):
+        gh = _gh_with_suggestions(_suggested_payload([("alice", True), ("bob", True)]))
+        result = sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), exclude=set())
+        assert result == ["alice", "bob"]
+
+    def test_authors_rank_ahead_of_commenters(self):
+        gh = _gh_with_suggestions(
+            _suggested_payload([("commenter", False), ("author", True)])
+        )
+        result = sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), exclude=set())
+        assert result == ["author", "commenter"]
+
+    def test_excluded_logins_are_dropped(self):
+        gh = _gh_with_suggestions(_suggested_payload([("alice", True), ("known", True)]))
+        result = sut._suggested_reviewers(
+            gh, _suggest_args(), _suggest_pr(), exclude={"known"}
+        )
+        assert result == ["alice"]
+
+    def test_empty_suggestion_list(self):
+        gh = _gh_with_suggestions(_suggested_payload([]))
+        assert sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), set()) == []
+
+    def test_null_suggestion_list_is_tolerated(self):
+        payload = {"data": {"repository": {"pullRequest": {"suggestedReviewers": None}}}}
+        gh = _gh_with_suggestions(payload)
+        assert sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), set()) == []
+
+    def test_malformed_response_returns_empty(self):
+        gh = _gh_with_suggestions({"data": {"repository": None}})
+        assert sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), set()) == []
+
+    def test_graphql_exception_returns_empty(self):
+        gh = MagicMock()
+        gh.requester.graphql_query.side_effect = sut.GithubException("boom")
+        assert sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(), set()) == []
+
+    def test_query_is_parameterised_with_pr_coordinates(self):
+        gh = _gh_with_suggestions(_suggested_payload([]))
+        sut._suggested_reviewers(gh, _suggest_args(), _suggest_pr(1234), set())
+        _query, variables = gh.requester.graphql_query.call_args.args
+        assert variables == {
+            "owner": "zephyrproject-rtos",
+            "name": "zephyr",
+            "number": 1234,
+        }
+
+
+# ---------------------------------------------------------------------------
+# Heuristic reviewers  (process_pr integration)
+# ---------------------------------------------------------------------------
+
+
+class TestHistoryReviewersIntegration:
+    def test_orphan_area_gets_history_reviewer(self):
+        """An area with no maintainers pulls a recent contributor as reviewer."""
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="frequent_contributor"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "frequent_contributor" in _reviewers_requested(pr)
+
+    def test_history_reviewer_excludes_pr_author(self):
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas, pr_user="self")
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="self"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "self" not in _reviewers_requested(pr)
+
+    def test_well_covered_area_skips_history_lookup(self):
+        """A fully-staffed area must not trigger any commit-history query."""
+        area = _make_area(
+            "Full", maintainers=["m"], collaborators=["c1", "c2", "c3"]
+        )
+        areas = {"subsys/full/foo.c": [area]}
+
+        gh, args, mf, _ = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        gh.get_repo.return_value.get_commits.assert_not_called()
+
+    def test_well_covered_area_skips_suggestion_query(self):
+        """A fully-staffed area must not trigger the GraphQL query either."""
+        area = _make_area("Full", maintainers=["m"], collaborators=["c1", "c2", "c3"])
+        areas = {"subsys/full/foo.c": [area]}
+
+        gh, args, mf, _ = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        gh.requester.graphql_query.assert_not_called()
+
+    def test_github_suggestion_is_preferred_over_history(self):
+        """When GitHub suggests reviewers, the commit walk is skipped."""
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("suggested_by_github", True)]),
+        )
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="from_history"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        requested = _reviewers_requested(pr)
+        assert "suggested_by_github" in requested
+        assert "from_history" not in requested
+        gh.get_repo.return_value.get_commits.assert_not_called()
+
+    def test_falls_back_to_history_when_github_suggests_nobody(self):
+        """GitHub's suggestions are empty for most PRs; the walk must cover that."""
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+            SimpleNamespace(author=SimpleNamespace(login="from_history"))
+        ]
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "from_history" in _reviewers_requested(pr)
+
+    def test_github_suggestions_are_capped(self):
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([(f"s{i}", True) for i in range(10)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        requested = _reviewers_requested(pr)
+        assert len([r for r in requested if r.startswith("s")]) == sut.MAX_HISTORY_REVIEWERS
+
+    def test_github_suggestion_excludes_pr_author(self):
+        area = _make_area("Orphan", maintainers=[], collaborators=[])
+        areas = {"subsys/orphan/foo.c": [area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas, pr_user="self")
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("self", True)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "self" not in _reviewers_requested(pr)
