@@ -1469,6 +1469,7 @@ Documentation Infrastructure:
     - doc/Makefile
     - doc/_*/
     - doc/conf.py
+    - doc/package*.json
     - doc/requirements.in
     - doc/requirements.txt
     - doc/zephyr.doxyfile.in
