@@ -220,19 +220,40 @@ static void rtio_timeout_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 /**
  * @brief Actively cancel a pending delay by removing it from the timeout queue
  *
+ * The submission arrives as a handle because the canceling context does not own
+ * it, so it is resolved under @p data->lock, which every path that completes a
+ * pending delay also holds. A handle that no longer resolves belongs to an entry
+ * that already completed and was recycled, and is a no-op.
+ *
  * If the delay is still pending it is unlinked and the submission completed with
  * -ECANCELED. The shared timeout only needs re-arming when the removed entry was
  * the head (nearest deadline); cancelling any later delay leaves the armed
  * deadline unchanged. If the delay already expired (not in the list) this is a
- * no-op: its completion is already in flight. Completion runs with the lock
- * released, matching rtio_tq_expired().
+ * no-op: its completion is already in flight. Once unlinked no other path can
+ * complete the entry, so completion runs with the lock released, matching
+ * rtio_tq_expired().
  */
-static void rtio_timeout_iodev_cancel(struct rtio_iodev_sqe *iodev_sqe)
+static void rtio_timeout_iodev_cancel(const struct rtio_iodev *iodev, struct rtio *r,
+				      rtio_sqe_handle_t handle)
 {
-	struct rtio_timeout_iodev_data *data = iodev_sqe->sqe.iodev->data;
+	struct rtio_timeout_iodev_data *data = iodev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
-	bool was_head = (data->head == iodev_sqe);
-	bool was_pending = rtio_tq_remove(data, iodev_sqe);
+	/* Resolve under the lock: every path that completes a pending delay (the
+	 * expiry handler and this hook) holds it, so a handle that still resolves
+	 * here names an entry that cannot be completed and recycled underneath us.
+	 */
+	struct rtio_iodev_sqe *iodev_sqe = rtio_iodev_sqe_from_handle(r, handle);
+	bool was_head;
+	bool was_pending;
+
+	if (iodev_sqe == NULL) {
+		/* Already completed and recycled; nothing of ours left to abort. */
+		k_spin_unlock(&data->lock, key);
+		return;
+	}
+
+	was_head = (data->head == iodev_sqe);
+	was_pending = rtio_tq_remove(data, iodev_sqe);
 
 	if (was_head) {
 		/* We removed the nearest deadline, so the shared timeout must be

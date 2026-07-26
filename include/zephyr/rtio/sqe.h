@@ -108,10 +108,13 @@ extern "C" {
 /**
  * @brief The SQE should not execute if possible
  *
- * If possible (not yet executed), the SQE should be canceled by flagging it as failed and returning
- * -ECANCELED as the result.
+ * @deprecated Cancellation state moved into the atomic status word of the
+ * owning rtio_iodev_sqe. Request cancellation with rtio_sqe_cancel() and
+ * check it with rtio_iodev_sqe_is_canceled(). Setting this flag before
+ * submit still cancels the submission, but reading it no longer reflects
+ * cancellation requested at runtime.
  */
-#define RTIO_SQE_CANCELED BIT(3)
+#define RTIO_SQE_CANCELED BIT(3) __DEPRECATED_MACRO
 
 /**
  * @brief The SQE should continue producing CQEs until canceled
@@ -319,6 +322,16 @@ typedef void (*rtio_signaled_t)(struct rtio_iodev_sqe *iodev_sqe, void *userdata
 typedef uint32_t rtio_sqe_handle_t;
 
 /**
+ * @brief A handle value that never refers to a live submission
+ *
+ * Resolving this value with rtio_iodev_sqe_from_handle() always yields NULL, so
+ * it is safe to use as a sentinel for "no submission" and to pass to
+ * rtio_sqe_cancel() (where it is a satisfied no-op). Its block index is out of
+ * range for any pool.
+ */
+#define RTIO_SQE_HANDLE_INVALID ((rtio_sqe_handle_t)UINT32_MAX)
+
+/**
  * @brief A submission queue event
  */
 struct rtio_sqe {
@@ -412,6 +425,8 @@ struct rtio_sqe {
 #define RTIO_SQE_GEN_MASK GENMASK(15, 0)
 /** Set while the entry is allocated from the pool (i.e. a live submission) */
 #define RTIO_SQE_ALLOCD   BIT(16)
+/** Set when cancellation of the submission has been requested */
+#define RTIO_SQE_STATUS_CANCELED BIT(17)
 /** @} */
 
 /**
@@ -862,6 +877,37 @@ static inline struct rtio_iodev_sqe *rtio_chain_next(const struct rtio_iodev_sqe
 static inline struct rtio_iodev_sqe *rtio_iodev_sqe_next(const struct rtio_iodev_sqe *iodev_sqe)
 {
 	return iodev_sqe->next;
+}
+
+/**
+ * @brief Check whether cancellation of a submission has been requested
+ *
+ * Cancellation state lives in the entry's atomic status word rather than in
+ * the immutable @ref rtio_sqe, so it can be requested from any context while
+ * the submission is in flight. Drivers servicing long-running submissions
+ * (e.g. streams) should check this between steps and stop early when it
+ * returns true.
+ *
+ * @param iodev_sqe Submission queue entry
+ * @retval true Cancellation has been requested
+ * @retval false The submission has not been canceled
+ */
+static inline bool rtio_iodev_sqe_is_canceled(const struct rtio_iodev_sqe *iodev_sqe)
+{
+	return (atomic_get(&iodev_sqe->status) & RTIO_SQE_STATUS_CANCELED) != 0;
+}
+
+/**
+ * @brief Mark a submission canceled
+ *
+ * Sets the canceled bit in the entry's atomic status word. Internal helper for
+ * the cancellation paths; users request cancellation with rtio_sqe_cancel().
+ *
+ * @param iodev_sqe Submission queue entry
+ */
+static inline void rtio_iodev_sqe_set_canceled(struct rtio_iodev_sqe *iodev_sqe)
+{
+	atomic_or(&iodev_sqe->status, RTIO_SQE_STATUS_CANCELED);
 }
 
 /**

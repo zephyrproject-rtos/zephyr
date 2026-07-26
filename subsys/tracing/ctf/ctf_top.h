@@ -2321,9 +2321,9 @@ static inline void ctf_top_rtio_sqe_acquire_exit(uint32_t rtio_id, uint32_t sqe)
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_SQE_ACQUIRE_EXIT), rtio_id, sqe);
 }
 
-static inline void ctf_top_rtio_sqe_cancel(uint32_t rtio_id)
+static inline void ctf_top_rtio_sqe_cancel(uint16_t index, uint16_t generation)
 {
-	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_SQE_CANCEL), rtio_id);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_SQE_CANCEL), index, generation);
 }
 
 static inline void ctf_top_rtio_cqe_submit_enter(uint32_t rtio_id, int32_t result, uint32_t flags)

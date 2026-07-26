@@ -228,7 +228,7 @@ static void icm45686_event_handler(const struct device *dev)
 		return;
 	}
 
-	if (FIELD_GET(RTIO_SQE_CANCELED, data->stream.iodev_sqe->sqe.flags)) {
+	if (rtio_iodev_sqe_is_canceled(data->stream.iodev_sqe)) {
 		LOG_WRN("Callback triggered with no streaming submission - Disabling interrupts");
 		(void)atomic_set(&data->stream.state, ICM45686_STREAM_OFF);
 		(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
