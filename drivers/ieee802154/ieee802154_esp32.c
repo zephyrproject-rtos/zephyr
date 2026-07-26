@@ -79,6 +79,14 @@ static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx
 	 * the end of a valid frame is replaced with RSSI and LQI values.
 	 * Zephyr L2 expects only valid frames, so checksum is not needed for a re-check.
 	 */
+	/* raw[0] is the PHR; reject a length that cannot hold the FCS before
+	 * subtracting it.
+	 */
+	if (raw[0] < IEEE802154_FCS_LENGTH) {
+		LOG_ERR("Invalid frame length %u", raw[0]);
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 		len = raw[0];
 	} else {
@@ -86,7 +94,10 @@ static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx
 	}
 
 #ifdef CONFIG_NET_BUF_DATA_SIZE
-	__ASSERT_NO_MSG(len <= CONFIG_NET_BUF_DATA_SIZE);
+	if (len > CONFIG_NET_BUF_DATA_SIZE) {
+		LOG_ERR("Frame too long: %u", len);
+		return;
+	}
 #endif
 
 	payload = raw + 1;
