@@ -33,8 +33,6 @@ static const struct flash_area *fa;
 int frag_flash_init(uint32_t fragment_size)
 {
 	int err;
-	struct flash_sector first_sector;
-	uint32_t sector_count = 1;
 
 	if (fragment_size > FRAG_MAX_SIZE) {
 		return -ENOSPC;
@@ -58,6 +56,10 @@ int frag_flash_init(uint32_t fragment_size)
 
 #if IS_ENABLED(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET) &&                                \
 	defined(SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN)
+
+	struct flash_sector first_sector;
+	uint32_t sector_count = 1;
+
 	err = flash_area_sectors(fa, &sector_count, &first_sector);
 	if (err && err != -ENOMEM) {
 		return err;
