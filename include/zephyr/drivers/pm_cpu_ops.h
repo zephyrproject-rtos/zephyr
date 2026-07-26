@@ -25,6 +25,8 @@ extern "C" {
 #define SYS_COLD_RESET 1
 /**
  * @defgroup power_management_cpu_api CPU Power Management
+ * @since 2.6
+ * @version 0.8.0
  * @ingroup subsys_pm
  * @{
  */
