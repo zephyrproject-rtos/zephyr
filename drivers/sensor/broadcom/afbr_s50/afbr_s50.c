@@ -298,7 +298,7 @@ static status_t data_ready_callback(status_t status, argus_hnd_t *hnd)
 	if (status != STATUS_OK) {
 		LOG_ERR("Measurement failed: %d", status);
 		err = -EIO;
-	} else if (iodev_sqe == NULL || FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags)) {
+	} else if (iodev_sqe == NULL || rtio_iodev_sqe_is_canceled(iodev_sqe)) {
 		LOG_WRN("SQE canceled. Discarding result");
 		err = -ECANCELED;
 	} else {
@@ -354,7 +354,7 @@ static void afbr_s50_submit_streaming(const struct device *dev,
 		return;
 	}
 	if (data->rtio.iodev_sqe != NULL &&
-	    !FIELD_GET(RTIO_SQE_CANCELED, data->rtio.iodev_sqe->sqe.flags)) {
+	    !rtio_iodev_sqe_is_canceled(data->rtio.iodev_sqe)) {
 		LOG_WRN("On-going SQE. Attempting recovery sequence...");
 		handle_error_on_result(data, -ECANCELED);
 		return;

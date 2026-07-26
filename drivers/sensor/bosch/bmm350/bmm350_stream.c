@@ -98,7 +98,7 @@ static void bmm350_event_handler(const struct device *dev)
 	int err;
 
 	CHECKIF(!data->stream.iodev_sqe ||
-		FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags)) {
+		rtio_iodev_sqe_is_canceled(iodev_sqe)) {
 
 		LOG_WRN("Callback triggered with no streaming submission - Disabling interrupts");
 

@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/cpu_load.h>
 #include <zephyr/init.h>
+#include <zephyr/rtio/sqe.h>
 
 void __weak sys_trace_thread_create_user(struct k_thread *thread) {}
 void __weak sys_trace_thread_abort_user(struct k_thread *thread) {}
@@ -107,9 +108,9 @@ void __weak sys_trace_rtio_sqe_acquire_exit_user(const struct rtio *r, const str
 {
 	printk("sqe_acquire_exit: rtio: %p\t sqe: %p\n", r, sqe);
 }
-void __weak sys_trace_rtio_sqe_cancel_user(const struct rtio_sqe *sqe)
+void __weak sys_trace_rtio_sqe_cancel_user(uint16_t index, uint16_t generation)
 {
-	printk("sqe_cancel_user: sqe: %p", sqe);
+	printk("sqe_cancel_user: index: %u\t generation: %u\n", index, generation);
 }
 void __weak sys_trace_rtio_cqe_submit_enter_user(const struct rtio *r, int result, uint32_t flags)
 {
@@ -433,9 +434,10 @@ void sys_trace_rtio_sqe_acquire_exit(const struct rtio *r, const struct rtio_sqe
 	sys_trace_rtio_sqe_acquire_exit_user(r, sqe);
 }
 
-void sys_trace_rtio_sqe_cancel(const struct rtio_sqe *sqe)
+void sys_trace_rtio_sqe_cancel(uint32_t handle)
 {
-	sys_trace_rtio_sqe_cancel_user(sqe);
+	sys_trace_rtio_sqe_cancel_user(rtio_sqe_handle_index(handle),
+				       rtio_sqe_handle_generation(handle));
 }
 
 void sys_trace_rtio_cqe_submit_enter(const struct rtio *r, int result, uint32_t flags)
