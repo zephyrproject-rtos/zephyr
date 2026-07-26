@@ -1,0 +1,6 @@
+shields:
+  - name: st_gh08172t
+    full_name: GH08172T GLASS LCD 24 segments, 4 commons in DIP 28 package
+    vendor: STMicroelectronics
+    supported_features:
+      - auxdisplay
