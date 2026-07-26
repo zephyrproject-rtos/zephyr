@@ -118,7 +118,7 @@ struct sensing_sensor {
 	enum sensing_sensor_state state;  /**< State of the sensor instance. */
 	struct rtio_iodev *iodev;         /**< Pointer to RTIO device of the sensor instance. */
 	struct k_timer timer;             /**< Timer for non streaming mode */
-	struct rtio_sqe *stream_sqe;      /**< Sqe for streaming mode. */
+	rtio_sqe_handle_t stream_sqe;     /**< Handle of the streaming submission. */
 	atomic_t flag;                    /**< Sensor flag of the sensor instance. */
 	struct sensing_connection *conns; /**< Pointer to sensor connections. */
 };

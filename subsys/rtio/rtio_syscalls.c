@@ -84,37 +84,22 @@ static inline int z_vrfy_rtio_cqe_get_mempool_buffer(const struct rtio *r, struc
 }
 #include <zephyr/syscalls/rtio_cqe_get_mempool_buffer_mrsh.c>
 
-static inline int z_vrfy_rtio_sqe_cancel(struct rtio_sqe *sqe)
+static inline int z_vrfy_rtio_sqe_cancel(struct rtio *r, rtio_sqe_handle_t handle)
 {
 	/*
-	 * sqe is an opaque handle returned by rtio_sqe_copy_in_get_handles();
-	 * it points into a kernel-resident SQE pool, not into user memory, so a
-	 * K_SYSCALL_MEMORY_READ check is wrong here. A malicious user could
-	 * still pass an arbitrary pointer, which the impl's CONTAINER_OF would
-	 * turn into an arbitrary kernel write of RTIO_SQE_CANCELED. Bound the
-	 * handle against the actual SQE pools before forwarding.
+	 * handle is an opaque integer identity (block index + generation), not a
+	 * pointer, so there is no user memory to validate. The impl resolves it
+	 * against r->sqe_pool with a bounds + generation check, turning any
+	 * garbage or stale value into a satisfied no-op. Only the context needs
+	 * verifying as a real RTIO k_object.
 	 */
-	bool valid = false;
-	uintptr_t addr = (uintptr_t)CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
-
-	STRUCT_SECTION_FOREACH(rtio_sqe_pool, p) {
-		uintptr_t base = (uintptr_t)p->pool;
-		uintptr_t end = base + (uintptr_t)p->pool_size * sizeof(struct rtio_iodev_sqe);
-
-		if (addr >= base && addr < end &&
-		    (addr - base) % sizeof(struct rtio_iodev_sqe) == 0) {
-			valid = true;
-			break;
-		}
-	}
-
-	K_OOPS(K_SYSCALL_VERIFY_MSG(valid, "invalid sqe handle"));
-	return z_impl_rtio_sqe_cancel(sqe);
+	K_OOPS(K_SYSCALL_OBJ(r, K_OBJ_RTIO));
+	return z_impl_rtio_sqe_cancel(r, handle);
 }
 #include <zephyr/syscalls/rtio_sqe_cancel_mrsh.c>
 
 static inline int z_vrfy_rtio_sqe_copy_in_get_handles(struct rtio *r, const struct rtio_sqe *sqes,
-						      struct rtio_sqe **handle, size_t sqe_count)
+						      rtio_sqe_handle_t *handle, size_t sqe_count)
 {
 	K_OOPS(K_SYSCALL_OBJ(r, K_OBJ_RTIO));
 
@@ -134,7 +119,7 @@ static inline int z_vrfy_rtio_sqe_copy_in_get_handles(struct rtio *r, const stru
 		sqe = rtio_sqe_acquire(r);
 		__ASSERT_NO_MSG(sqe != NULL);
 		if (handle != NULL && i == 0) {
-			*handle = sqe;
+			*handle = rtio_sqe_handle(r, sqe);
 		}
 		*sqe = sqes[i];
 
