@@ -362,6 +362,13 @@ Deprecated APIs and options
   * The Nordic SoC headers :file:`<haltium_power.h>` and :file:`<haltium_pm_s2ram.h>`
     have been renamed to :file:`<soc_power.h>` and :file:`<soc_pm_s2ram.h>` respectively.
 
+* RTIO
+
+  * The ``RTIO_SQE_CANCELED`` flag has been deprecated. Cancellation state moved into the
+    atomic status word of :c:struct:`rtio_iodev_sqe`; check it with
+    :c:func:`rtio_iodev_sqe_is_canceled`. See the :ref:`migration guide <migration_4.5>`
+    for details.
+
 * Ring buffer
 
   * The ring buffer item API (:c:func:`ring_buf_item_init`, :c:func:`ring_buf_item_put`,

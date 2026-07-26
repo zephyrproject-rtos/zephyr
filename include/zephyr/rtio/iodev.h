@@ -53,9 +53,10 @@ struct rtio_iodev_api {
 	 * rtio_iodev_sqe_err() with -ECANCELED). If the entry is not (or no longer)
 	 * owned by the iodev, this must be a no-op.
 	 *
-	 * A NULL hook means cancellation is best-effort: the RTIO_SQE_CANCELED flag
-	 * still stops chain continuation and re-queueing, but an entry already
-	 * queued or in flight runs to its natural completion.
+	 * A NULL hook means cancellation is best-effort: the canceled status
+	 * (see rtio_iodev_sqe_is_canceled()) still stops chain continuation and
+	 * re-queueing, but an entry already queued or in flight runs to its
+	 * natural completion.
 	 *
 	 * @param iodev_sqe Submission queue entry being canceled
 	 */

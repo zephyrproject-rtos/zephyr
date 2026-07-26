@@ -16,6 +16,9 @@
 
 #define ZTEST(suite, fn) static void _##suite##_##fn##_wrapper(void)
 
+/* CHECKIF(expr) { ... } parses like an iterator statement */
+#define CHECKIF(expr) YACFE_ITERATOR
+
 /* Attributes */
 
 /* Confirmed problematic */

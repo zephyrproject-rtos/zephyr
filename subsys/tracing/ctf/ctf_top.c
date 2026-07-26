@@ -14,6 +14,7 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/sys/cpu_load.h>
 #include <zephyr/pm/state.h>
+#include <zephyr/rtio/sqe.h>
 
 struct rtio;
 struct rtio_sqe;
@@ -2188,9 +2189,9 @@ void sys_trace_rtio_sqe_acquire_exit(const struct rtio *r, const struct rtio_sqe
 	ctf_top_rtio_sqe_acquire_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)sqe);
 }
 
-void sys_trace_rtio_sqe_cancel(const struct rtio_sqe *sqe)
+void sys_trace_rtio_sqe_cancel(uint32_t handle)
 {
-	ctf_top_rtio_sqe_cancel((uint32_t)(uintptr_t)sqe);
+	ctf_top_rtio_sqe_cancel(rtio_sqe_handle_index(handle), rtio_sqe_handle_generation(handle));
 }
 
 void sys_trace_rtio_cqe_submit_enter(const struct rtio *r, int result, uint32_t flags)
