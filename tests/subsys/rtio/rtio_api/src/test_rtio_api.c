@@ -328,11 +328,11 @@ static void test_rtio_simple_cancel_(struct rtio *r)
 {
 	struct rtio_sqe sqe[SQE_POOL_SIZE];
 	struct rtio_cqe cqe;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 
 	rtio_sqe_prep_nop(sqe, (struct rtio_iodev *)&iodev_test_simple, NULL);
 	rtio_sqe_copy_in_get_handles(r, sqe, &handle, 1);
-	rtio_sqe_cancel(handle);
+	rtio_sqe_cancel(r, handle);
 	TC_PRINT("Submitting 1 to RTIO\n");
 	rtio_submit(r, 0);
 
@@ -363,7 +363,7 @@ static void test_rtio_cancel_completed_(struct rtio *r)
 {
 	struct rtio_sqe sqe;
 	struct rtio_cqe cqe;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 
 	/* Submit a single nop and let it run to completion, recycling its slot. */
 	rtio_sqe_prep_nop(&sqe, (struct rtio_iodev *)&iodev_test_simple, NULL);
@@ -375,7 +375,8 @@ static void test_rtio_cancel_completed_(struct rtio *r)
 	/* Cancelling a stale handle to a completed/recycled slot must be a safe
 	 * no-op rather than dereferencing a dangling chain.
 	 */
-	zassert_ok(rtio_sqe_cancel(handle), "Cancel of a completed sqe should be a no-op");
+	zassert_ok(rtio_sqe_cancel(r, handle),
+		   "Cancel of a completed sqe should be a no-op");
 }
 
 ZTEST(rtio_api, test_rtio_cancel_completed)
@@ -478,7 +479,7 @@ static void test_rtio_chain_cancel_(struct rtio *r)
 {
 	struct rtio_sqe sqe[SQE_POOL_SIZE];
 	struct rtio_cqe cqe;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 
 	/* Prepare the chain */
 	rtio_sqe_prep_nop(&sqe[0], (struct rtio_iodev *)&iodev_test_simple, NULL);
@@ -487,7 +488,7 @@ static void test_rtio_chain_cancel_(struct rtio *r)
 
 	/* Copy the chain */
 	rtio_sqe_copy_in_get_handles(r, sqe, &handle, 2);
-	rtio_sqe_cancel(handle);
+	rtio_sqe_cancel(r, handle);
 	k_msleep(20);
 	rtio_submit(r, 0);
 
@@ -549,7 +550,7 @@ static void test_rtio_transaction_cancel_(struct rtio *r)
 {
 	struct rtio_sqe sqe[SQE_POOL_SIZE];
 	struct rtio_cqe cqe;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 
 	/* Prepare the chain */
 	rtio_sqe_prep_nop(&sqe[0], (struct rtio_iodev *)&iodev_test_simple, NULL);
@@ -558,7 +559,7 @@ static void test_rtio_transaction_cancel_(struct rtio *r)
 
 	/* Copy the chain */
 	rtio_sqe_copy_in_get_handles(r, sqe, &handle, 2);
-	rtio_sqe_cancel(handle);
+	rtio_sqe_cancel(r, handle);
 	TC_PRINT("Submitting 2 to RTIO\n");
 	rtio_submit(r, 0);
 
@@ -590,7 +591,7 @@ static inline void test_rtio_simple_multishot_(struct rtio *r, int idx)
 	int res;
 	struct rtio_sqe sqe;
 	struct rtio_cqe cqe;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 
 	for (int i = 0; i < MEM_BLK_SIZE; ++i) {
 		mempool_data[i] = i + idx;
@@ -631,8 +632,8 @@ static inline void test_rtio_simple_multishot_(struct rtio *r, int idx)
 	rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
 	rtio_release_buffer(r, buffer, buffer_len);
 
-	TC_PRINT("Canceling %p\n", handle);
-	rtio_sqe_cancel(handle);
+	TC_PRINT("Canceling 0x%08x\n", handle);
+	rtio_sqe_cancel(r, handle);
 	/* Flush any pending CQEs */
 	while (rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)) != 0) {
 		rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
@@ -652,7 +653,7 @@ ZTEST(rtio_api, test_rtio_multishot_are_not_resubmitted_when_failed)
 	int res;
 	struct rtio_sqe sqe;
 	struct rtio_cqe cqe;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 	struct rtio *r = &r_simple;
 	uint8_t *buffer = NULL;
 	uint32_t buffer_len = 0;
@@ -934,7 +935,7 @@ ZTEST(rtio_api, test_rtio_delay_cancel)
 {
 	struct rtio *r = &r_delay_cancel;
 	struct rtio_sqe *sqe;
-	struct rtio_sqe *handle[RTIO_DELAY_CANCEL_ELEMS];
+	rtio_sqe_handle_t handle[RTIO_DELAY_CANCEL_ELEMS];
 	struct rtio_cqe cqe;
 
 	const uint32_t delay_ms[RTIO_DELAY_CANCEL_ELEMS] = {20, 30, 40, 50};
@@ -946,7 +947,7 @@ ZTEST(rtio_api, test_rtio_delay_cancel)
 		sqe = rtio_sqe_acquire(r);
 		zassert_not_null(sqe, "Expected a valid sqe");
 		rtio_sqe_prep_delay(sqe, K_MSEC(delay_ms[i]), (void *)i);
-		handle[i] = sqe;
+		handle[i] = rtio_sqe_handle(r, sqe);
 		if (!canceled[i]) {
 			expected_completions++;
 		}
@@ -960,7 +961,7 @@ ZTEST(rtio_api, test_rtio_delay_cancel)
 	 */
 	for (size_t i = 0; i < RTIO_DELAY_CANCEL_ELEMS; i++) {
 		if (canceled[i]) {
-			zassert_ok(rtio_sqe_cancel(handle[i]), "Cancel should succeed");
+			zassert_ok(rtio_sqe_cancel(r, handle[i]), "Cancel should succeed");
 		}
 	}
 
@@ -1003,7 +1004,7 @@ ZTEST(rtio_api, test_rtio_chain_cancel_partial)
 {
 	struct rtio *r = &r_partial_chain;
 	struct rtio_sqe sqe[2];
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 	struct rtio_cqe cqe;
 
 	rtio_sqe_prep_nop(&sqe[0], (struct rtio_iodev *)&iodev_test_simple, (void *)0);
@@ -1018,7 +1019,7 @@ ZTEST(rtio_api, test_rtio_chain_cancel_partial)
 	zassert_equal_ptr((void *)0, cqe.userdata, "Head nop should complete first");
 
 	/* The head handle is stale: cancel is a no-op and leaves the tail alone. */
-	zassert_ok(rtio_sqe_cancel(handle), "Stale head cancel should be a no-op");
+	zassert_ok(rtio_sqe_cancel(r, handle), "Stale head cancel should be a no-op");
 
 	/* The still-pending tail delay runs to completion, unaffected. */
 	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(70)));

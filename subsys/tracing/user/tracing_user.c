@@ -111,9 +111,9 @@ void __weak sys_trace_rtio_sqe_acquire_exit_user(const struct rtio *r, const str
 {
 	printk("sqe_acquire_exit: rtio: %p\t sqe: %p\n", r, sqe);
 }
-void __weak sys_trace_rtio_sqe_cancel_user(const struct rtio_sqe *sqe)
+void __weak sys_trace_rtio_sqe_cancel_user(rtio_sqe_handle_t handle)
 {
-	printk("sqe_cancel_user: sqe: %p", sqe);
+	printk("sqe_cancel_user: handle: 0x%08x", handle);
 }
 void __weak sys_trace_rtio_cqe_submit_enter_user(const struct rtio *r, int result, uint32_t flags)
 {
@@ -457,9 +457,9 @@ void sys_trace_rtio_sqe_acquire_exit(const struct rtio *r, const struct rtio_sqe
 	sys_trace_rtio_sqe_acquire_exit_user(r, sqe);
 }
 
-void sys_trace_rtio_sqe_cancel(const struct rtio_sqe *sqe)
+void sys_trace_rtio_sqe_cancel(rtio_sqe_handle_t handle)
 {
-	sys_trace_rtio_sqe_cancel_user(sqe);
+	sys_trace_rtio_sqe_cancel_user(handle);
 }
 
 void sys_trace_rtio_cqe_submit_enter(const struct rtio *r, int result, uint32_t flags)
