@@ -17,6 +17,8 @@
 /**
  * @brief Interfaces for cellular modems.
  * @defgroup cellular_interface Cellular
+ * @since 3.6
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  *
