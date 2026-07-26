@@ -19,6 +19,8 @@ extern "C" {
 
 /**
  * @defgroup json JSON
+ * @since 1.10
+ * @version 1.0.0
  * @ingroup utilities
  * @{
  */
