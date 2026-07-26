@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library()
+
+if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
+  zephyr_library_sources(linux_temp.c)
+else()
+  message(FATAL_ERROR "CONFIG_NATIVE_LINUX_TEMP is only available on Linux")
+endif()
