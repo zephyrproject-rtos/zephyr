@@ -40,10 +40,25 @@
 	};
 };
 
+&msspll {
+	status = "okay";
+};
+
+&cpu_clk {
+	status = "okay";
+};
+
+&axi_clk {
+	status = "okay";
+};
+
+&ahb_clk {
+	status = "okay";
+};
+
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
-	clock-frequency = <150000000>;
 };
 
 &qspi0 {
