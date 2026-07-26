@@ -176,3 +176,68 @@
 &sai1 {
 	status = "okay";
 };
+
+/* SLCD configuration */
+&slcd {
+	status = "disabled";
+	lcd-voltage-source = <0>;
+	lcd-prescaler = <0>;
+	lcd-divider = <0x003c0000>;
+	lcd-contrast = <0x00001400>;
+	lcd-pulse-on-duration = <0x00000040>;
+	lcd-dead-time = <0>;
+	lcd-high-drive = <0>;
+	lcd-blink-mode = <0>;
+	lcd-blink-frequency = <0x00004000>;
+	pinctrl-0 = <&lcd_seg3_pa6 &lcd_seg4_pa7 &lcd_com0_pa8
+		     &lcd_com1_pa9 &lcd_com2_pa10 &lcd_seg17_pa15
+		     &lcd_seg5_pb0 &lcd_seg6_pb1 &lcd_seg8_pb4
+		     &lcd_seg9_pb5 &lcd_com3_pb9 &lcd_seg12_pb12
+		     &lcd_seg13_pb13 &lcd_seg14_pb14 &lcd_seg15_pb15
+		     &lcd_vlcd_pc3 &lcd_seg22_pc4 &lcd_seg23_pc5
+		     &lcd_seg24_pc6 &lcd_seg25_pc7 &lcd_seg26_pc8
+		     &lcd_seg28_pd8 &lcd_seg29_pd9 &lcd_seg30_pd10 &lcd_seg31_pd11
+		     &lcd_seg32_pd12 &lcd_seg33_pd13 &lcd_seg34_pd14 &lcd_seg35_pd15>;
+	pinctrl-names = "default";
+	pin-list = <4 23 6 13 15 29 31 33 35 25 17 8 9 26 24 34 32 30 28 14 12 5 22 3>;
+	com-list = <0 2 4 6 1 3 5 7>;
+	character-bit-list = <
+			      /* MCU AFP11 channel for segment 1A-1P */
+			      (1 << 22) (1 << 22) (1 << 23) (1 << 4) (1 << 4) (1 << 3) (1 << 3)
+			      (1 << 3) (1 << 22) (1 << 22) (1 << 23) (1 << 4) (1 << 4) (1 << 3)
+			      /* MCU AFP11 channel for segment 2A-2P */
+			      (1 << 12) (1 << 12) (1 << 13) (1 << 6) (1 << 6) (1 << 5) (1 << 5)
+			      (1 << 5) (1 << 12) (1 << 12) (1 << 13) (1 << 6) (1 << 6) (1 << 5)
+			      /* MCU AFP11 channel for segment 1A-1P */
+			      (1 << 28) (1 << 28) (1 << 29) (1 << 15) (1 << 15) (1 << 14) (1 << 14)
+			      (1 << 14) (1 << 28) (1 << 28) (1 << 29) (1 << 15) (1 << 15) (1 << 14)
+			      /* MCU AFP11 channel for segment 2A-2P */
+			      (1 << 0) (1 << 0) (1 << 1) (1 << 31) (1 << 31) (1 << 30) (1 << 30)
+			      (1 << 30) (1 << 0) (1 << 0) (1 << 1) (1 << 31) (1 << 31) (1 << 30)
+			      /* MCU AFP11 channel for segment 3A-3P */
+			      (1 << 24) (1 << 24) (1 << 25) (1 << 3) (1 << 3) (1 << 2) (1 << 2)
+			      (1 << 2)
+			      (1 << 24) (1 << 24) (1 << 25) (1 << 3) (1 << 3) (1 << 2)
+			      /* MCU AFP11 channel for segment 4A-4P */
+			      (1 << 9) (1 << 9) (1 << 8) (1 << 17) (1 << 17) (1 << 26) (1 << 26)
+			      (1 << 26)
+			      (1 << 9) (1 << 9) (1 << 8) (1 << 17) (1 << 17) (1 << 26)>;
+	character-com-list = <
+			      /* COM RAM register for segment 1A-1P */
+			      2 0 2 2 0 2 0 6 6 4 0 6 4 4
+			      /* COM RAM register for segment 2A-2P */
+			      2 0 2 2 0 2 0 6 6 4 0 6 4 4
+			      /* COM RAM register for segment 1A-1P */
+			      2 0 2 2 0 2 0 6 6 4 0 6 4 4
+			      /* COM RAM register for segment 2A-2P */
+			      3 1 3 2 0 2 0 6 7 5 1 6 4 4
+			      /* COM RAM register for segment 3A-3P */
+			      2 0 2 3 1 3 1 7 6 4 0 7 5 5
+			      /* COM RAM register for segment 4A-4P */
+			      2 0 2 2 0 2 0 6 6 4 0 6 4 4>;
+	indicator-bit-list = <(1 << 23) (1 << 23) (1 << 13) (1 << 13)
+			      (1 << 29) (1 << 29) (1 << 1) (1 << 1)
+			      (1 << 8) (1 << 8) (1 << 25) (1 << 25)>;
+	indicator-com-list = <6 4 6 4 6 4 7 5 6 4 6 4>;
+	custom-character-slot-count = <32>;
+};

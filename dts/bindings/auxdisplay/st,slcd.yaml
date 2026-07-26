@@ -1,0 +1,353 @@
+#
+# Copyright (c) 2026 Renato Mauro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description:
+  STMicroelectronics MCU Segment LCD (SLCD) controller used as segment-style
+  auxiliary display.
+
+compatible: "st,slcd"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Base address and length of the LCD peripheral register block.
+
+  lcd-duty:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00000004
+      - 0x00000008
+      - 0x0000000c
+      - 0x00000010
+    description: |
+      The LCD duty cycle is the hardware parameter defining the time-slicing
+      interval used by the microcontroller to drive the segment LCD's common
+      (COM) lines. It specifies the fraction of a full clock cycle during
+      which a single COM line is active and electrically energized.
+      Duty selection:
+      - 0x00000000 : LCD_DUTY_STATIC
+      - 0x00000004 : LCD_DUTY_1_2
+      - 0x00000008 : LCD_DUTY_1_3
+      - 0x0000000c : LCD_DUTY_1_4 (the only one valid for ST GH08172T)
+      - 0x00000010 : LCD_DUTY_1_8
+
+  lcd-bias:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00000020
+      - 0x00000040
+    description: |
+      The LCD bias is the hardware parameter defining the voltage division ratio
+      used by the microcontroller to generate intermediate voltage levels for the
+      segment LCD's lines. It specifies the fractional steps of the total driving
+      voltage used to prevent ghosting and optimize contrast on inactive segments.
+      Bias selection:
+      - 0x00000000 : LCD_BIAS_1_4
+      - 0x00000020 : LCD_BIAS_1_2
+      - 0x00000040 : LCD_BIAS_1_3 (the only one valid for ST GH08172T)
+
+  lcd-mux-segment:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00000080
+    description: |
+      The LCD mux segment is the hardware parameter defining the pin mapping and
+      multiplexing configuration for the segment LCD's output lines. It specifies
+      the internal routing layout of the microcontroller to correctly map logical
+      segments to their respective physical pins on the display.
+      Mux segment selection:
+      - 0x00000000 : LCD_MUXSEGMENT_DISABLE (the only one valid for ST GH08172T)
+      - 0x00000080 : LCD_MUXSEGMENT_ENABLE
+
+  lcd-voltage-source:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00000002
+    description: |
+      The LCD voltage source is the hardware parameter defining the power supply
+      origin used by the microcontroller to drive the segment LCD. It specifies whether
+      the required driving voltages are generated internally via the integrated step-up
+      converter or supplied externally through a dedicated power pin.
+      Voltage source selection:
+      - 0x00000000 : LCD_VOLTAGESOURCE_INTERNAL
+      - 0x00000002 : LCD_VOLTAGESOURCE_EXTERNAL
+
+  lcd-prescaler:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00400000
+      - 0x00800000
+      - 0x00c00000
+      - 0x01000000
+      - 0x01400000
+      - 0x01800000
+      - 0x01c00000
+      - 0x02000000
+      - 0x02400000
+      - 0x02800000
+      - 0x02c00000
+      - 0x03000000
+      - 0x03400000
+      - 0x03800000
+      - 0x03c00000
+    description: |
+      he LCD prescaler is the hardware parameter defining the clock division factor used
+      by the microcontroller to scale down the main clock source. It specifies the
+      division ratio applied to the input frequency to establish the base timebase
+      required for the LCD frame rate generation.
+      Prescaler selection:
+      - 0x00000000 : LCD_PRESCALER_1
+      - 0x00400000 : LCD_PRESCALER_2
+      - 0x00800000 : LCD_PRESCALER_4
+      - 0x00c00000 : LCD_PRESCALER_8
+      - 0x01000000 : LCD_PRESCALER_16
+      - 0x01400000 : LCD_PRESCALER_32
+      - 0x01800000 : LCD_PRESCALER_64
+      - 0x01c00000 : LCD_PRESCALER_128
+      - 0x02000000 : LCD_PRESCALER_256
+      - 0x02400000 : LCD_PRESCALER_512
+      - 0x02800000 : LCD_PRESCALER_1024
+      - 0x02c00000 : LCD_PRESCALER_2048
+      - 0x03000000 : LCD_PRESCALER_4096
+      - 0x03400000 : LCD_PRESCALER_8192
+      - 0x03800000 : LCD_PRESCALER_16384
+      - 0x03c00000 : LCD_PRESCALER_32768
+
+  lcd-divider:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00040000
+      - 0x00080000
+      - 0x000c0000
+      - 0x00100000
+      - 0x00140000
+      - 0x00180000
+      - 0x001c0000
+      - 0x00200000
+      - 0x00240000
+      - 0x00280000
+      - 0x002c0000
+      - 0x00300000
+      - 0x00340000
+      - 0x00380000
+      - 0x003c0000
+    description: |
+      The LCD divider is the hardware parameter defining the frequency division factor
+      used by the microcontroller to further reduce the pre-scaled clock frequency. It
+      specifies the final denominator applied to the clock tree to compute the precise
+      frame rate frequency required by the segment LCD.
+      Divider selection:
+      - 0x00000000 : LCD_DIVIDER_16
+      - 0x00040000 : LCD_DIVIDER_17
+      - 0x00080000 : LCD_DIVIDER_18
+      - 0x000c0000 : LCD_DIVIDER_19
+      - 0x00100000 : LCD_DIVIDER_20
+      - 0x00140000 : LCD_DIVIDER_21
+      - 0x00180000 : LCD_DIVIDER_22
+      - 0x001c0000 : LCD_DIVIDER_23
+      - 0x00200000 : LCD_DIVIDER_24
+      - 0x00240000 : LCD_DIVIDER_25
+      - 0x00280000 : LCD_DIVIDER_26
+      - 0x002c0000 : LCD_DIVIDER_27
+      - 0x00300000 : LCD_DIVIDER_28
+      - 0x00340000 : LCD_DIVIDER_29
+      - 0x00380000 : LCD_DIVIDER_30
+      - 0x003c0000 : LCD_DIVIDER_31
+
+  lcd-contrast:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00000400
+      - 0x00000800
+      - 0x00000c00
+      - 0x00001000
+      - 0x00001400
+      - 0x00001800
+      - 0x00001c00
+    description: |
+      The LCD contrast level is the hardware parameter defining the voltage amplitude
+      configuration used by the microcontroller to fine-tune the display grid's peak
+      voltages. It specifies the step adjustment applied to the driving waveforms to
+      balance segment visibility and maximize contrast for optimal readability.
+      Contrast selection:
+      - 0x00000000 : LCD_CONTRASTLEVEL_0
+      - 0x00000400 : LCD_CONTRASTLEVEL_1
+      - 0x00000800 : LCD_CONTRASTLEVEL_2
+      - 0x00000c00 : LCD_CONTRASTLEVEL_3
+      - 0x00001000 : LCD_CONTRASTLEVEL_4
+      - 0x00001400 : LCD_CONTRASTLEVEL_5
+      - 0x00001800 : LCD_CONTRASTLEVEL_6
+      - 0x00001c00 : LCD_CONTRASTLEVEL_7
+
+  lcd-pulse-on-duration:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00000010
+      - 0x00000020
+      - 0x00000030
+      - 0x00000040
+      - 0x00000050
+      - 0x00000060
+      - 0x00000070
+    description: |
+      The LCD pulse duration is the hardware parameter defining the time interval during
+      which the microcontroller activates the internal low-resistance voltage generator
+      for each frame change. It specifies the pulse width used to rapidly charge the
+      segment capacitance before switching to a high-resistance, low-power buffer to
+      minimize overall power consumption.
+      Pulse duration selection:
+      - 0x00000000 : LCD_PULSEONDURATION_0
+      - 0x00000010 : LCD_PULSEONDURATION_1
+      - 0x00000020 : LCD_PULSEONDURATION_2
+      - 0x00000030 : LCD_PULSEONDURATION_3
+      - 0x00000040 : LCD_PULSEONDURATION_4
+      - 0x00000050 : LCD_PULSEONDURATION_5
+      - 0x00000060 : LCD_PULSEONDURATION_6
+      - 0x00000070 : LCD_PULSEONDURATION_7
+
+  lcd-dead-time:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00000080
+      - 0x00000100
+      - 0x00000180
+      - 0x00000200
+      - 0x00000280
+      - 0x00000300
+      - 0x00000380
+    description: |
+      The LCD dead time is the hardware parameter defining the time-delay interval
+      inserted by the microcontroller between consecutive LCD frame phases. It specifies
+      the duration during which no voltage is applied to the segments to eliminate
+      residual charges, thereby reducing power consumption and preventing ghosting
+      artifacts.
+      Dead time selection:
+      - 0x00000000 : LCD_DEADTIME_0
+      - 0x00000080 : LCD_DEADTIME_1
+      - 0x00000100 : LCD_DEADTIME_2
+      - 0x00000180 : LCD_DEADTIME_3
+      - 0x00000200 : LCD_DEADTIME_4
+      - 0x00000280 : LCD_DEADTIME_5
+      - 0x00000300 : LCD_DEADTIME_6
+      - 0x00000380 : LCD_DEADTIME_7
+
+  lcd-high-drive:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00000001
+    description: |
+      The LCD high drive is the hardware parameter defining the operational status
+      of the internal low-resistance voltage buffer used by the microcontroller.
+      It specifies whether the high-drive current capability is enabled, disabled,
+      or dynamically pulsed to satisfy the charging requirements of larger segments.
+      High drive selection:
+      - 0x00000000 : LCD_HIGHDRIVE_DISABLE
+      - 0x00000001 : LCD_HIGHDRIVE_ENABLE
+
+  lcd-blink-mode:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00010000
+      - 0x00020000
+      - 0x00030000
+    description: |
+      The LCD blink mode is the hardware parameter defining the blinking status
+      and operational behavior of the display segments. It specifies whether the
+      blinking feature is disabled, applied to all display segments simultaneously,
+      or limited exclusively to the segments tied to the first common line.
+      Blink mode selection:
+      - 0x00000000 : LCD_BLINKMODE_OFF
+      - 0x00010000 : LCD_BLINKMODE_SEG0_COM0
+      - 0x00020000 : LCD_BLINKMODE_SEG0_ALLCOM
+      - 0x00030000 : LCD_BLINKMODE_ALLSEG_ALLCOM
+
+  lcd-blink-frequency:
+    required: true
+    type: int
+    enum:
+      - 0x00000000
+      - 0x00002000
+      - 0x00004000
+      - 0x00006000
+      - 0x00008000
+      - 0x0000a000
+      - 0x0000c000
+      - 0x0000e000
+    description: |
+      The LCD blink frequency is the hardware parameter defining the blinking rate
+      of the display segments. It specifies the clock division factor applied to
+      the main LCD frame clock to determine the precise timing interval and speed
+      at which the configured segments toggle between their active and inactive states.
+      Blink frequency selection:
+      - 0x00000000 : LCD_BLINKFREQUENCY_DIV8
+      - 0x00002000 : LCD_BLINKFREQUENCY_DIV16
+      - 0x00004000 : LCD_BLINKFREQUENCY_DIV32
+      - 0x00006000 : LCD_BLINKFREQUENCY_DIV64
+      - 0x00008000 : LCD_BLINKFREQUENCY_DIV128
+      - 0x0000a000 : LCD_BLINKFREQUENCY_DIV256
+      - 0x0000c000 : LCD_BLINKFREQUENCY_DIV512
+      - 0x0000e000 : LCD_BLINKFREQUENCY_DIV1024
+
+  pin-list:
+    type: array
+    description: |
+      The list of MCU AF11 channel names associated to the corresponding LCD segment pin.
+
+  com-list:
+    type: array
+    description: |
+      Used just to have the count of the COM registers, not used to directly evaluate the COM
+      register index.
+
+  character-bit-list:
+    type: array
+    description: |
+      The list of bits of the controller registers that are used to control the segments.
+
+  character-com-list:
+    type: array
+    description: |
+      The list of com registers of the controller that are used to control the segments.
+
+  indicator-bit-list:
+    type: array
+    description: |
+      The list of bits of the controller registers that are used to control the indicators.
+
+  indicator-com-list:
+    type: array
+    description: |
+      The list of com registers of the controller that are used to control the indicators.
+
+  custom-character-slot-count:
+    type: int
+    default: 32
+    description: |
+      Number of custom characters the application can store into the driver and then use.
