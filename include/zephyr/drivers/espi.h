@@ -28,6 +28,8 @@ extern "C" {
  * @brief Interfaces for Enhanced Serial Peripheral Interface (eSPI)
  *        target hardware.
  * @defgroup espi_interface ESPI
+ * @since 2.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
