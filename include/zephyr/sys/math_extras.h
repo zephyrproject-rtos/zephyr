@@ -13,6 +13,8 @@
 /**
  * @brief Extra arithmetic and bit manipulation functions.
  * @defgroup math_extras Math extras
+ * @since 2.0
+ * @version 1.0.0
  * @ingroup utilities
  *
  * Portable wrapper functions for a number of arithmetic and bit-counting functions that are often
