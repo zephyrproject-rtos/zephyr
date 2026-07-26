@@ -24,6 +24,8 @@ extern "C" {
  * @brief Interfaces for eSPI SAF (Serial Attached Flash)
  *        controllers.
  * @defgroup espi_saf_interface eSPI SAF
+ * @since 2.6
+ * @version 0.8.0
  * @ingroup espi_interface
  * @{
  */
