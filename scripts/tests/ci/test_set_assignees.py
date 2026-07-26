@@ -541,6 +541,7 @@ def _make_process_pr_harness(areas_per_file, pr_user="someone"):
     pr.get_reviews.return_value = []
     pr.get_review_requests.return_value = ([], [])
     pr.get_issue_events.return_value = []
+    pr.get_issue_comments.return_value = []
 
     mf = MagicMock()
     mf.path2areas.side_effect = lambda p: areas_per_file.get(p, [])
@@ -1126,6 +1127,7 @@ def _make_add_reviewers_stubs(author="author"):
     pr.get_reviews.return_value = []
     pr.get_review_requests.return_value = ([], [])
     pr.get_issue_events.return_value = []
+    pr.get_issue_comments.return_value = []
 
     cache = {}
 
@@ -1224,3 +1226,167 @@ class TestReviewRequestRetry:
         sut._add_reviewers(gh, gh_repo, pr, args, [f"u{i}" for i in range(25)])
 
         assert pr.create_review_request.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Mention fallback
+# ---------------------------------------------------------------------------
+
+
+def _posted_comments(pr):
+    """Bodies of every comment created on *pr*."""
+    return [call.args[0] for call in pr.create_issue_comment.call_args_list]
+
+
+def _mentioned(pr):
+    """Logins @mentioned in the single comment posted on *pr*."""
+    bodies = _posted_comments(pr)
+    assert len(bodies) == 1, f"expected exactly one comment, got {len(bodies)}"
+    return [word[1:] for word in bodies[0].split() if word.startswith("@")]
+
+
+def _existing_comment(body):
+    comment = MagicMock()
+    comment.body = body
+    return comment
+
+
+class TestMentionFallback:
+    """People who cannot receive a formal review request are asked by name in
+    a comment instead of being dropped."""
+
+    def test_non_collaborator_is_mentioned_not_requested(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        gh_repo.has_in_collaborators.side_effect = lambda user: user.login != "outsider"
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["insider", "outsider"])
+
+        assert _reviewers_requested(pr) == ["insider"]
+        assert _mentioned(pr) == ["outsider"]
+
+    def test_candidates_dropped_by_retry_are_mentioned(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        candidates = [f"u{i}" for i in range(25)]
+        pr.create_review_request.side_effect = [sut.GithubException("too many"), None]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, candidates)
+
+        assert _mentioned(pr) == candidates[sut.REVIEWER_RETRY_BATCH :]
+
+    def test_everyone_is_mentioned_when_the_request_fails_outright(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        pr.create_review_request.side_effect = sut.GithubException("nope")
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["a", "b"])
+
+        assert _mentioned(pr) == ["a", "b"]
+
+    def test_self_removed_user_is_never_mentioned(self):
+        """Opting out must not be routed around by a mention."""
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        quitter = gh.get_user("quitter")
+        pr.get_issue_events.return_value = [
+            SimpleNamespace(
+                event="review_request_removed", actor=quitter, requested_reviewer=quitter
+            )
+        ]
+        # Also a non-collaborator, so only the opt-out can keep them out.
+        gh_repo.has_in_collaborators.side_effect = lambda user: user.login != "quitter"
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["quitter", "keeper"])
+
+        assert _reviewers_requested(pr) == ["keeper"]
+        pr.create_issue_comment.assert_not_called()
+
+    def test_author_and_existing_reviewers_are_not_mentioned(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs(author="me")
+        pr.get_review_requests.return_value = ([gh.get_user("already")], [])
+        gh_repo.has_in_collaborators.return_value = False
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["me", "already", "outsider"])
+
+        assert _mentioned(pr) == ["outsider"]
+
+    def test_nobody_to_mention_posts_no_comment(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["a", "b"])
+
+        pr.create_issue_comment.assert_not_called()
+
+    def test_comment_carries_the_marker(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        gh_repo.has_in_collaborators.return_value = False
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["outsider"])
+
+        assert sut.MENTION_MARKER in _posted_comments(pr)[0]
+
+    def test_dry_run_posts_no_comment(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        args.dry_run = True
+        gh_repo.has_in_collaborators.return_value = False
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["outsider"])
+
+        pr.create_issue_comment.assert_not_called()
+
+    def test_comment_creation_failure_does_not_raise(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        gh_repo.has_in_collaborators.return_value = False
+        pr.create_issue_comment.side_effect = sut.GithubException("no write access")
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["outsider"])
+
+
+class TestMentionCommentIsIdempotent:
+    """Re-running over the same PR must update the existing comment rather
+    than posting another one."""
+
+    def _run(self, existing_body, candidates=("outsider",)):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        gh_repo.has_in_collaborators.return_value = False
+        existing = _existing_comment(existing_body)
+        pr.get_issue_comments.return_value = [existing]
+        sut._add_reviewers(gh, gh_repo, pr, args, list(candidates))
+        return pr, existing
+
+    def test_existing_comment_is_edited_when_the_set_changes(self):
+        stale = f"{sut.MENTION_MARKER}\n@someone_else\n\nold text"
+        pr, existing = self._run(stale)
+
+        pr.create_issue_comment.assert_not_called()
+        existing.edit.assert_called_once()
+        assert "@outsider" in existing.edit.call_args.args[0]
+
+    def test_unchanged_comment_is_left_alone(self):
+        """A second identical run must not edit, to avoid timeline noise."""
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        gh_repo.has_in_collaborators.return_value = False
+        sut._add_reviewers(gh, gh_repo, pr, args, ["outsider"])
+        first_body = _posted_comments(pr)[0]
+
+        pr2, existing = self._run(first_body)
+
+        pr2.create_issue_comment.assert_not_called()
+        existing.edit.assert_not_called()
+
+    def test_unrelated_comments_are_ignored(self):
+        pr, _ = self._run("just a normal review comment, no marker")
+
+        assert len(_posted_comments(pr)) == 1
+
+    def test_maintainer_outside_the_org_reaches_the_comment(self):
+        """End-to-end: an area maintainer without push access is still asked."""
+        area = _make_area("Net", maintainers=["outside_m"], collaborators=["inside_c"])
+        gh, args, mf, pr = _make_process_pr_harness({"subsys/net/foo.c": [area]})
+        gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
+        gh.get_repo.return_value.get_commits.side_effect = lambda path: []
+        gh.get_repo.return_value.has_in_collaborators.side_effect = (
+            lambda user: user.login != "outside_m"
+        )
+
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _reviewers_requested(pr) == ["inside_c"]
+        assert _mentioned(pr) == ["outside_m"]
