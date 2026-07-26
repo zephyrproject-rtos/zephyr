@@ -47,6 +47,8 @@ extern "C" {
 
 /**
  * @defgroup crc CRC
+ * @since 1.8
+ * @version 1.0.0
  * @ingroup checksum
  * @{
  */
