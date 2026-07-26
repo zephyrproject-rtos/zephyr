@@ -14,6 +14,8 @@
 /**
  * @brief Connection management
  * @defgroup bt_conn Connection management
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup bluetooth
  * @{
  */
