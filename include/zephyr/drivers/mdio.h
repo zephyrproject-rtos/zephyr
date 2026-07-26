@@ -17,6 +17,8 @@
 /**
  * @brief Interfaces for Management Data Input/Output (MDIO) controllers.
  * @defgroup mdio_interface MDIO
+ * @since 2.7
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
