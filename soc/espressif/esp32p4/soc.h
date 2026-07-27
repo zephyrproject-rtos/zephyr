@@ -33,7 +33,16 @@ void __esp_platform_app_start(void);
 
 static inline uint32_t esp_core_id(void)
 {
-	return 0;
+	uint32_t core_id;
+
+	/*
+	 * soc.h cannot include <zephyr/arch/arch_interface.h>; doing so
+	 * pulls in arch/riscv/irq.h before arch_curr_cpu() is declared.
+	 * On ESP32-P4 hart IDs match CPU indices, so mhartid is equivalent.
+	 */
+	__asm__ volatile ("csrr %0, mhartid" : "=r"(core_id));
+
+	return core_id;
 }
 
 extern int esp_rom_gpio_matrix_in(uint32_t gpio, uint32_t signal_index, bool inverted);
