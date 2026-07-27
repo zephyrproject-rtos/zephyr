@@ -1308,6 +1308,7 @@ extern const struct ethernet_api dwmac_api;
 /* MAC control bits */
 #define DWMAC_MACCR_RE     BIT(2)
 #define DWMAC_MACCR_TE     BIT(3)
+#define DWMAC_MACCR_APCS   BIT(7)
 #define DWMAC_MACCR_IPCO   BIT(10)
 #define DWMAC_MACCR_DM     BIT(11)
 #define DWMAC_MACCR_FES    BIT(14)
