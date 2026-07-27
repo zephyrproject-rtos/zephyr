@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -836,4 +837,122 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 	err = bt_ccp_call_control_server_get_bearer_uri_schemes(fixture->bearers[0],
 								res_uri_schemes, 0U);
 	zassert_equal(err, -ENOMEM, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_set_bearer_signal_strength)
+{
+	const uint8_t new_bearer_signal_strength = 1U;
+	uint8_t res_bearer_signal_strength;
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_set_bearer_signal_strength(fixture->bearers[0],
+								    new_bearer_signal_strength);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_ccp_call_control_server_get_bearer_signal_strength(fixture->bearers[0],
+								    &res_bearer_signal_strength);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	zassert_equal(new_bearer_signal_strength, res_bearer_signal_strength, "%d != %d",
+		      new_bearer_signal_strength, res_bearer_signal_strength);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_set_bearer_signal_strength_inval_not_registered)
+{
+	const uint8_t new_bearer_signal_strength = 1U;
+	int err;
+
+	/* Register and unregister bearer to get a valid pointer but where it is unregistered*/
+	register_default_bearer(fixture);
+	err = bt_ccp_call_control_server_unregister_bearer(fixture->bearers[0]);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_ccp_call_control_server_set_bearer_signal_strength(fixture->bearers[0],
+								    new_bearer_signal_strength);
+	zassert_equal(err, -EFAULT, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_set_bearer_signal_strength_inval_null_bearer)
+{
+	const uint8_t new_bearer_signal_strength = 1U;
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_set_bearer_signal_strength(NULL,
+								    new_bearer_signal_strength);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_set_bearer_signal_strength_inval_signal_strength)
+{
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_set_bearer_signal_strength(
+		fixture->bearers[0], BT_TBS_SIGNAL_STRENGTH_MAX + 1U);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_get_bearer_signal_strength)
+{
+	uint8_t res_bearer_signal_strength;
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_get_bearer_signal_strength(fixture->bearers[0],
+								    &res_bearer_signal_strength);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	zassert_equal(0U, res_bearer_signal_strength, "%d != %d", 0U, res_bearer_signal_strength);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_get_bearer_signal_strength_inval_not_registered)
+{
+	uint8_t res_bearer_signal_strength;
+	int err;
+
+	/* Register and unregister bearer to get a valid pointer but where it is unregistered*/
+	register_default_bearer(fixture);
+	err = bt_ccp_call_control_server_unregister_bearer(fixture->bearers[0]);
+	zassert_equal(err, 0, "Unexpected return value %d", err);
+
+	err = bt_ccp_call_control_server_get_bearer_signal_strength(fixture->bearers[0],
+								    &res_bearer_signal_strength);
+	zassert_equal(err, -EFAULT, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_get_bearer_signal_strength_inval_null_bearer)
+{
+	uint8_t res_bearer_signal_strength;
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_get_bearer_signal_strength(NULL,
+								    &res_bearer_signal_strength);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(
+	ccp_call_control_server_test_suite,
+	test_bt_ccp_call_control_server_get_bearer_signal_strength_inval_null_signal_strength)
+{
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_get_bearer_signal_strength(fixture->bearers[0], NULL);
+	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
 }
