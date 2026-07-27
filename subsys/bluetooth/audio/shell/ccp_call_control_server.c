@@ -9,6 +9,7 @@
  */
 #include <errno.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #include <zephyr/autoconf.h>
@@ -328,6 +329,75 @@ static int cmd_ccp_call_control_server_get_bearer_uri_schemes(const struct shell
 	return 0;
 }
 
+#if defined(CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH)
+static int cmd_ccp_call_control_server_set_bearer_signal_strength(const struct shell *sh,
+								  size_t argc, char *argv[])
+{
+	unsigned long signal_strength_arg;
+	int index = 0;
+	int err = 0;
+
+	if (argc > 2) {
+		index = validate_and_get_index(sh, argv[1]);
+		if (index < 0) {
+			return -ENOEXEC;
+		}
+	}
+
+	signal_strength_arg = shell_strtoul(argv[argc - 1], 0, &err);
+	if (err != 0) {
+		shell_error(sh, "Could not parse signal_strength: %d", err);
+
+		return -ENOEXEC;
+	}
+
+	if (!IN_RANGE(signal_strength_arg, 0U, UINT8_MAX)) {
+		shell_error(sh, "Invalid signal_strength: %lu", signal_strength_arg);
+
+		return -ENOEXEC;
+	}
+
+	err = bt_ccp_call_control_server_set_bearer_signal_strength(bearers[index],
+								    (uint8_t)signal_strength_arg);
+	if (err != 0) {
+		shell_error(sh, "Failed to set bearer[%d] signal_strength: %d", index, err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Bearer[%d] new signal_strength: %u", index, (uint8_t)signal_strength_arg);
+
+	return 0;
+}
+
+static int cmd_ccp_call_control_server_get_bearer_signal_strength(const struct shell *sh,
+								  size_t argc, char *argv[])
+{
+	uint8_t signal_strength;
+	int index = 0;
+	int err = 0;
+
+	if (argc > 1) {
+		index = validate_and_get_index(sh, argv[1]);
+		if (index < 0) {
+			return -ENOEXEC;
+		}
+	}
+
+	err = bt_ccp_call_control_server_get_bearer_signal_strength(bearers[index],
+								    &signal_strength);
+	if (err != 0) {
+		shell_error(sh, "Failed to get bearer[%d] signal_strength: %d", index, err);
+
+		return -ENOEXEC;
+	}
+
+	shell_print(sh, "Bearer[%d] signal_strength: %u", index, signal_strength);
+
+	return 0;
+}
+#endif /* CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH */
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	ccp_call_control_server_cmds,
 	SHELL_CMD_ARG(init, NULL, "Initialize CCP Call Control Server",
@@ -348,6 +418,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		cmd_ccp_call_control_server_set_bearer_uri_schemes, 2, 1),
 	SHELL_CMD_ARG(get_bearer_uri_schemes, NULL, "Get bearer URI schemes supported list [index]",
 		      cmd_ccp_call_control_server_get_bearer_uri_schemes, 1, 1),
+	SHELL_COND_CMD_ARG(CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH,
+			   set_bearer_signal_strength, NULL,
+			   "Set bearer signal strength [index] <signal_strength>",
+			   cmd_ccp_call_control_server_set_bearer_signal_strength, 2, 1),
+	SHELL_COND_CMD_ARG(CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH,
+			   get_bearer_signal_strength, NULL, "Get bearer signal strength [index]",
+			   cmd_ccp_call_control_server_get_bearer_signal_strength, 1, 1),
 	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_ARG_REGISTER(ccp_call_control_server, &ccp_call_control_server_cmds,
