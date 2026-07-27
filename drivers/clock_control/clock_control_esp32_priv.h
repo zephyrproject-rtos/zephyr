@@ -104,7 +104,7 @@
 #include <hal/uart_ll.h>
 #include <soc/periph_defs.h>
 #include <soc/rtc.h>
-#include "esp_clk_internal.h"
+#include <esp_clk_internal.h>
 
 /*
  * Per-family clock implementations. The RTC_CNTL variant covers the SoCs

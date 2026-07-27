@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #endif
 
 #if GDMA_SLEEP_RETENTION_ENABLED
-#include "gdma_priv.h"
+#include <gdma_priv.h>
 #include <esp_private/sleep_retention.h>
 
 static esp_err_t gdma_create_sleep_retention_cb(void *arg)

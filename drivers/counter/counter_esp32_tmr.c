@@ -35,7 +35,7 @@
 #endif
 
 #if COUNTER_SLEEP_RETENTION_ENABLED
-#include "gptimer_priv.h"
+#include <gptimer_priv.h>
 #include <esp_private/sleep_retention.h>
 #endif
 
