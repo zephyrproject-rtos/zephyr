@@ -50,3 +50,10 @@ config FLASH_MCHP_NVMCTRL_G3
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enable Microchip's G3 Non-Volatile Memory Controller for Flash operations.
+
+config FLASH_MCHP_PMECC_G1
+	bool "Microchip Programmable Multibit Error Correcting Code (PMECC) G1"
+	default y
+	depends on DT_HAS_MICROCHIP_PMECC_G1_FLASH_ENABLED
+	help
+	  Enable driver for Microchip Programmable Multibit Error Correcting Code G1.
