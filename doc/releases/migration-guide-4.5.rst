@@ -356,6 +356,9 @@ Ethernet
   Out-of-tree drivers must remove any references to these flags from their
   :c:struct:`ethernet_api` ``get_capabilities`` implementation. (:github:`112788`)
 
+* Ethernet drivers that support LLDP, no longer need to call :c:func:`net_lldp_set_lldpdu` in their
+  initialization. It is now done by :c:func:`ethernet_init`. (:github:`114087`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
