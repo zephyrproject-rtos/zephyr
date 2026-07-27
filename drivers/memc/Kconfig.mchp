@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_MCHP_SMC_G1
+	bool "Microchip Static Memory Controller (SMC) G1"
+	default y
+	depends on DT_HAS_MICROCHIP_SMC_G1_MEMC_ENABLED
+	help
+	  Enable driver for Microchip Static Memory Controller G1.
+
+config MEMC_MCHP_HSMC_G1
+	bool "Microchip HSMC G1"
+	default y
+	depends on MEMC_MCHP_SMC_G1
+	depends on SOC_FAMILY_MICROCHIP_SAMA7
+	help
+	  This is an HSMC memory controller G1.
