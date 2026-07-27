@@ -28,6 +28,9 @@
 #include <soc_flash_init.h>
 #include <soc_init.h>
 
+#include <zephyr/kernel.h>
+#include <zephyr/arch/riscv/csr.h>
+
 #define TAG "boot"
 
 /*
@@ -51,6 +54,20 @@ static void check_chip_revision(void)
 int hardware_init(void)
 {
 	int err = 0;
+
+#if defined(CONFIG_SMP)
+	static struct k_thread dummy_thread;
+
+	/*
+	 * On SMP, irq_lock() (z_smp_global_lock()) reads _current via
+	 * mscratch; both are unset before z_cstart(). Install cpu0 and a
+	 * dummy thread for early irq_lock() callers (regi2c, flash, ...).
+	 * Stays valid until z_cstart(): .bss is zeroed only once, in
+	 * start_riscv(), before hardware_init().
+	 */
+	csr_write(mscratch, &_kernel.cpus[0]);
+	_kernel.cpus[0].current = &dummy_thread;
+#endif
 
 	soc_hw_init();
 	ana_reset_config();
