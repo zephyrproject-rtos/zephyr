@@ -272,6 +272,15 @@
 			status = "disabled";
 		};
 
+		uart5: serial@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
+			resets = <&rctl STM32_RESET(APB1L, 20)>;
+			interrupts = <65 0>;
+			status = "disabled";
+		};
+
 		lpuart1: serial@40042400 {
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x40042400 0x400>;
