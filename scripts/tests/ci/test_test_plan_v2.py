@@ -422,6 +422,7 @@ class TestBoilerplateFilter:
     # ------------------------------------------------------------------
 
     def test_pure_spdx_change(self):
+        # REUSE-IgnoreStart
         diff = textwrap.dedent("""\
             --- a/drivers/foo/foo.c
             +++ b/drivers/foo/foo.c
@@ -429,6 +430,7 @@ class TestBoilerplateFilter:
             -// SPDX-License-Identifier: BSD-3-Clause
             +// SPDX-License-Identifier: Apache-2.0
         """)
+        # REUSE-IgnoreEnd
         s = tp.BoilerplateFilter()
         assert s._all_changes_boilerplate(diff) is True
 
@@ -516,6 +518,7 @@ class TestBoilerplateFilter:
         assert "drivers/foo/foo.c" in handled
 
     def test_boilerplate_file_consumed(self):
+        # REUSE-IgnoreStart
         spdx_diff = textwrap.dedent("""\
             --- a/drivers/foo/foo.c
             +++ b/drivers/foo/foo.c
@@ -523,6 +526,7 @@ class TestBoilerplateFilter:
             -// SPDX-License-Identifier: BSD-3-Clause
             +// SPDX-License-Identifier: Apache-2.0
         """)
+        # REUSE-IgnoreEnd
         # ws_only diff is non-empty (SPDX is not whitespace), full diff has only boilerplate
         s = self._strategy({"drivers/foo/foo.c": (spdx_diff, spdx_diff)})
         _, handled = s.analyze(["drivers/foo/foo.c"])
