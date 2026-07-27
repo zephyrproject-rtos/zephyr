@@ -348,7 +348,6 @@ static void setup_link_address(struct vlan_context *ctx)
 
 int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 {
-	struct ethernet_context *ctx = net_if_l2_data(iface);
 	const struct ethernet_api *eth = net_if_get_device(iface)->api;
 	struct vlan_context *vlan;
 	int ret;
@@ -365,10 +364,6 @@ int net_eth_vlan_enable(struct net_if *iface, uint16_t tag)
 		NET_DBG("Interface %d does not support VLAN",
 			net_if_get_by_iface(iface));
 		return -ENOTSUP;
-	}
-
-	if (!ctx->is_init) {
-		return -EPERM;
 	}
 
 	if (tag >= NET_VLAN_TAG_UNSPEC) {

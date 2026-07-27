@@ -1064,6 +1064,4 @@ void ethernet_init(struct net_if *iface)
 		net_if_mcast_mon_register(&mcast_monitor, NULL, ethernet_mcast_monitor_cb);
 	}
 #endif
-
-	ctx->is_init = true;
 }

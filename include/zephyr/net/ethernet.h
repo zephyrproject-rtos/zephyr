@@ -654,10 +654,7 @@ struct ethernet_context {
 #endif
 
 	/** Is network carrier up */
-	bool is_net_carrier_up : 1;
-
-	/** Is this context already initialized */
-	bool is_init : 1;
+	bool is_net_carrier_up;
 
 	/** Types of Ethernet network interfaces */
 	enum ethernet_if_types eth_if_type;
