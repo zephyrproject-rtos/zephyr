@@ -7,3 +7,14 @@ tests:
     build_only: true
     platform_allow:
       - native_sim/native/64
+
+  mp.video.build:
+    tags:
+      - subsys
+      - mp
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_MP_VID=y
+      - CONFIG_MP_VID_CONVERT=y
