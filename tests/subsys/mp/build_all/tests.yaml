@@ -7,3 +7,16 @@ tests:
     build_only: true
     platform_allow:
       - native_sim/native/64
+
+  mp.base.build:
+    tags:
+      - subsys
+      - mp
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_MP_BASE=y
+      - CONFIG_MP_BASE_CAPSFILTER=y
+      - CONFIG_MP_BASE_QUEUE=y
+      - CONFIG_MP_BASE_TEE=y
