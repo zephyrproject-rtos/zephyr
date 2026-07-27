@@ -32,6 +32,7 @@ config I2C_TARGET_BUFFER_MODE
 
 # zephyr-keep-sorted-start
 source "drivers/i2c/target/Kconfig.eeprom"
+source "drivers/i2c/target/Kconfig.tmp103"
 # zephyr-keep-sorted-stop
 
 endif # I2C_TARGET
