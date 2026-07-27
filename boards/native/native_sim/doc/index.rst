@@ -563,6 +563,24 @@ Here are more details on the peripherals that are currently provided with this b
         };
       };
 
+.. _native_linux_temp_sensor:
+
+**Temperature sensor**
+  A sensor driver is available for reading a temperature value from a file on
+  the Linux host through the Zephyr sensor API. It can be enabled with
+  :kconfig:option:`CONFIG_NATIVE_LINUX_TEMP` and configured with the devicetree
+  binding :dtcompatible:`zephyr,native-linux-temp`.
+
+  Linux hwmon temperature files typically expose values in millidegrees Celsius,
+  for example ``/sys/class/hwmon/hwmon0/temp1_input``.
+
+  .. code-block:: dts
+
+     temp_sensor: host_temp {
+       compatible = "zephyr,native-linux-temp";
+       path = "/sys/class/hwmon/hwmon0/temp1_input";
+     };
+
 .. _native_ptty_uart:
 
 PTY UART
