@@ -56,6 +56,15 @@
 			reg = <0x00100000 DT_SIZE_K(128)>;
 		};
 
+		nfc_sram: sram@600000 {
+			compatible = "mmio-sram";
+			reg = <0x00600000 0x2400>;
+		};
+
+		nfc_io: nfc-io@10000000 {
+			reg = <0x10000000 0x8000000>;
+		};
+
 		ebi: ebi@40000000 {
 			compatible = "microchip,ebi-g1-memc";
 			#address-cells = <2>;
@@ -166,6 +175,15 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "disabled";
+
+			nfc: nand-controller@e0808000 {
+				compatible = "microchip,nfc-g1-flash";
+				reg = <0xe0808000 0x1000>;
+				nfc-sram = <&nfc_sram>;
+				nfc-io = <&nfc_io>;
+				ecc-engine = <&pmecc>;
+				status = "disabled";
+			};
 
 			pmecc: ecc-engine@e0808070 {
 				compatible = "microchip,pmecc-g1-flash";
