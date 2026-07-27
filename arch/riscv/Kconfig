@@ -450,6 +450,15 @@ config PMP_UNLOCK_ROM_FOR_DEBUG
 
 endif #RISCV_PMP
 
+config RISCV_LANDING_PADS
+	bool "Landing Pad Enforcement (Zicfilp)"
+	depends on RISCV_ISA_EXT_ZICFILP
+	default y
+	help
+	  Enables forward-edge control-flow integrity by configuring
+	  environment registers to enforce landing pad (lpad) instructions at
+	  indirect branch targets.
+
 config PMP_STACK_GUARD
 	bool
 	depends on HW_STACK_PROTECTION
