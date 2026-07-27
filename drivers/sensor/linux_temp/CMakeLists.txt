@@ -4,6 +4,7 @@ zephyr_library()
 
 if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
   zephyr_library_sources(linux_temp.c)
+  target_sources(native_simulator INTERFACE linux_temp_bottom.c)
 else()
   message(FATAL_ERROR "CONFIG_NATIVE_LINUX_TEMP is only available on Linux")
 endif()
