@@ -36,6 +36,9 @@ struct bt_ccp_call_control_server_bearer {
 	enum bt_bearer_tech bearer_tech;
 	char uri_schemes[CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH + 1];
 	uint8_t tbs_index;
+#if defined(CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH)
+	uint8_t signal_strength;
+#endif /* CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH */
 	bool registered;
 };
 
@@ -565,3 +568,79 @@ int bt_ccp_call_control_server_get_bearer_uri_schemes(
 
 	return ret;
 }
+
+#if defined(CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH)
+int bt_ccp_call_control_server_set_bearer_signal_strength(
+	struct bt_ccp_call_control_server_bearer *bearer, uint8_t signal_strength)
+{
+	__maybe_unused int mutex_err;
+	int ret;
+
+	if (bearer == NULL) {
+		LOG_DBG("bearer is NULL");
+
+		return -EINVAL;
+	}
+
+	mutex_err = k_mutex_lock(&ccp_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
+	if (!bearer->registered) {
+		LOG_DBG("Bearer %p not registered", bearer);
+
+		ret = -EFAULT;
+	} else {
+		ret = bt_tbs_set_signal_strength(bearer->tbs_index, signal_strength);
+		if (ret == 0) {
+			bearer->signal_strength = signal_strength;
+		} else {
+			/* Return known errors or change to -ENOEXEC */
+			if (!(ret == -EINVAL || ret == -EBUSY)) {
+				LOG_DBG("Unexpected return value from "
+					"bt_tbs_set_signal_strength: %d",
+					ret);
+				ret = -ENOEXEC;
+			}
+		}
+	}
+
+	mutex_err = k_mutex_unlock(&ccp_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	return ret;
+}
+
+int bt_ccp_call_control_server_get_bearer_signal_strength(
+	const struct bt_ccp_call_control_server_bearer *bearer, uint8_t *signal_strength)
+{
+	__maybe_unused int mutex_err;
+	int ret;
+
+	if (bearer == NULL) {
+		LOG_DBG("bearer is NULL");
+
+		return -EINVAL;
+	}
+
+	mutex_err = k_mutex_lock(&ccp_mutex, MUTEX_TIMEOUT);
+	__ASSERT(mutex_err == 0, "Failed to lock mutex: %d", mutex_err);
+
+	if (signal_strength == NULL) {
+		LOG_DBG("signal_strength is NULL");
+
+		ret = -EINVAL;
+	} else if (!bearer->registered) {
+		LOG_DBG("Bearer %p not registered", bearer);
+
+		ret = -EFAULT;
+	} else {
+		*signal_strength = bearer->signal_strength;
+		ret = 0;
+	}
+
+	mutex_err = k_mutex_unlock(&ccp_mutex);
+	__ASSERT(mutex_err == 0, "Failed to unlock mutex: %d", mutex_err);
+
+	return ret;
+}
+#endif /* CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH */
