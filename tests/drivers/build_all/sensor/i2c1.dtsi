@@ -1,0 +1,770 @@
+/*
+ * Copyright (c) 2020, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for i2c devices
+ */
+
+#include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv32x.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv320x.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv80x.h>
+#include <zephyr/dt-bindings/sensor/ism6hg256x.h>
+#include <zephyr/dt-bindings/sensor/lsm6dso.h>
+#include <zephyr/dt-bindings/sensor/lsm6dso16is.h>
+#include <zephyr/dt-bindings/sensor/lps22hh.h>
+#include <zephyr/dt-bindings/sensor/lps2xdf.h>
+#include <zephyr/dt-bindings/sensor/lis2ds12.h>
+#include <zephyr/dt-bindings/sensor/lis2dw12.h>
+#include <zephyr/dt-bindings/sensor/ism330dhcx.h>
+#include <zephyr/dt-bindings/sensor/iis2dlpc.h>
+#include <zephyr/dt-bindings/sensor/lis2dh.h>
+#include <zephyr/dt-bindings/sensor/iis2iclx.h>
+#include <zephyr/dt-bindings/sensor/lis2du12.h>
+#include <zephyr/dt-bindings/sensor/lis2dux12.h>
+#include <zephyr/dt-bindings/sensor/lis2de12.h>
+#include <zephyr/dt-bindings/sensor/pac194x.h>
+#include <zephyr/dt-bindings/sensor/tmag5273.h>
+#include <zephyr/dt-bindings/sensor/stts22h.h>
+#include <zephyr/dt-bindings/sensor/ina226.h>
+#include <zephyr/dt-bindings/sensor/apds9253.h>
+#include <zephyr/dt-bindings/sensor/tmp11x.h>
+#include <zephyr/dt-bindings/sensor/tmp114.h>
+
+/****************************************
+ * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
+ **************************************
+ */
+
+test_i2c_lis2de12: lis2de12@0 {
+	compatible = "st,lis2de12";
+	reg = <0x00>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LIS2DE12_DT_FS_16G>;
+	accel-odr = <LIS2DE12_DT_ODR_AT_100Hz>;
+};
+
+test_i2c_vishay_vcnl36825t: vcnl36825t@1 {
+	compatible = "vishay,vcnl36825t";
+	reg = <0x01>;
+
+	proximity-it = "1";
+	multi-pulse = <8>;
+
+	low-power;
+
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tmag5273: tmag5273@2 {
+	compatible = "ti,tmag5273";
+	status = "okay";
+	reg = <0x02>;
+	int-gpios = <&test_gpio 15 1>;
+
+	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
+	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
+};
+
+test_i2c_ens160: ens160@3 {
+	compatible = "sciosense,ens160";
+	reg = <0x03>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_tsl2591: tsl2591@4 {
+	compatible = "ams,tsl2591";
+	reg = <0x04>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_max31790: max31790@5 {
+	compatible = "maxim,max31790";
+	status = "okay";
+	reg = <0x05>;
+
+	max31790_fan_fault: max31790_fan_fault {
+		compatible = "maxim,max31790-fan-fault";
+		status = "okay";
+	};
+
+	max31790_fan_speed_1: max31790_fan_speed_1 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <1>;
+	};
+
+	max31790_fan_speed_2: max31790_fan_speed_2 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <2>;
+	};
+
+	max31790_fan_speed_3: max31790_fan_speed_3 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <3>;
+	};
+
+	max31790_fan_speed_4: max31790_fan_speed_4 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <4>;
+	};
+
+	max31790_fan_speed_5: max31790_fan_speed_5 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <5>;
+	};
+
+	max31790_fan_speed_6: max31790_fan_speed_6 {
+		compatible = "maxim,max31790-fan-speed";
+		status = "okay";
+		channel = <6>;
+	};
+};
+
+test_i2c_stts22h: stts22h@6 {
+	compatible = "st,stts22h";
+	reg = <0x06>;
+	int-gpios = <&test_gpio 0 0>;
+	sampling-rate = <STTS22H_100Hz>;
+};
+
+test_i2c_dht20: dht20@7 {
+	compatible = "aosong,dht20";
+	reg = <0x07>;
+	status = "okay";
+};
+
+test_i2c_aht20: aht20@8 {
+	compatible = "aosong,aht20";
+	reg = <0x08>;
+	status = "okay";
+};
+
+test_i2c_am2301b: am2301b@9 {
+	compatible = "aosong,am2301b";
+	reg = <0x09>;
+};
+
+test_i2c_lis2dux12: lis2dux12@a {
+	compatible = "st,lis2dux12";
+	reg = <0x0a>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	range = <LIS2DUX12_DT_FS_16G>;
+	odr = <LIS2DUX12_DT_ODR_100Hz>;
+	power-mode = <LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE>;
+	status = "okay";
+};
+
+test_i2c_iis328dq: iis328dq@b {
+	compatible = "st,iis328dq";
+	status = "okay";
+	reg = <0x0b>;
+	int2-gpios = <&test_gpio 0 0>;
+	threshold-int-pad = <2>;
+};
+
+test_i2c_nct75: test_i2c_nct75@c {
+	compatible = "onnn,nct75";
+	reg = <0x0c>;
+	status = "okay";
+};
+
+test_i2c_tmp114: tmp114@d {
+	compatible = "ti,tmp114";
+	reg = <0x0d>;
+	odr = <TMP114_DT_ODR_250_MS>;
+};
+
+test_i2c_ina226: ina226@e {
+	compatible = "ti,ina226";
+	reg = <0x0e>;
+	current-lsb-microamps = <5000>;
+	rshunt-micro-ohms = <500>;
+};
+
+test_i2c_shtc1: shtc1@f {
+	compatible = "sensirion,shtc1", "sensirion,shtcx";
+	reg = <0x0f>;
+	measure-mode = "low-power";
+	clock-stretching;
+};
+
+test_i2c_lm95234: lm95234@10 {
+	compatible = "national,lm95234";
+	reg = <0x10>;
+	status = "okay";
+};
+
+test_i2c_sht21: sht21@11 {
+	compatible = "sensirion,sht21";
+	reg = <0x11>;
+};
+
+test_i2c_lsm9ds1: lsm9ds1@12 {
+	compatible = "st,lsm9ds1";
+	reg = <0x12>;
+};
+
+test_i2c_icm42670p: icm42670p@13 {
+	compatible = "invensense,icm42670p";
+	reg = <0x13>;
+	int-gpios = <&test_gpio 0 0>;
+	accel-hz = <800>;
+	accel-fs = <16>;
+	gyro-hz = <800>;
+	gyro-fs = <2000>;
+};
+
+test_i2c_fxls8974: fxls8974@14 {
+	compatible = "nxp,fxls8974";
+	reg = <0x14>;
+	reset-gpios = <&test_gpio 0 0>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_bmp180: bmp180@15 {
+	compatible = "bosch,bmp180";
+	reg = <0x15>;
+	osr-press = <0x01>;
+};
+
+test_i2c_apds9253: apds9253@16 {
+	compatible = "avago,apds9253";
+	reg = <0x16>;
+	int-gpios = <&test_gpio 0 0>;
+	gain = <APDS9253_GAIN_RANGE_1>;
+	rate = <APDS9253_MEASUREMENT_RATE_50MS>;
+	resolution = <APDS9253_RESOLUTION_16BIT_25MS>;
+};
+
+test_i2c_mmc56x3: mmc56x3@17 {
+	compatible = "memsic,mmc56x3";
+	reg = <0x17>;
+	magn-odr = <0>;
+	auto-self-reset;
+};
+
+test_i2c_tmp1075: tmp1075@18 {
+	compatible = "ti,tmp1075";
+	reg = <0x18>;
+	alert-gpios = <&test_gpio 0 0>;
+	conversion-rate = <220000>;
+	lower-threshold = <27>;
+	upper-threshold = <28>;
+	consecutive-fault-measurements = <4>;
+	interrupt-mode;
+};
+
+test_i2c_bmp390: bmp390@19 {
+	compatible = "bosch,bmp390";
+	reg = <0x19>;
+	int-gpios = <&test_gpio 0 0>;
+	odr = "12.5";
+	osr-press = <8>;
+	osr-temp = <1>;
+	iir-filter = <3>;
+};
+
+apds_9306: apds9306@1a {
+	compatible = "avago,apds9306";
+	reg = <0x1a>;
+	status = "okay";
+	gain = <1>;
+	resolution = <13>;
+	measurement-period = <2000>;
+};
+
+test_i2c_wsen_hids_2525020210002: wsen_hids_2525020210002@1b {
+	compatible = "we,wsen-hids-2525020210002";
+	reg = <0x1b>;
+	precision = "high";
+};
+
+test_i2c_ilps22qs: ilps22qs@1c {
+	compatible = "st,ilps22qs";
+	reg = <0x1c>;
+	status = "okay";
+	odr = <LPS2xDF_DT_ODR_10HZ>;
+	lpf = <LPS2xDF_DT_LP_FILTER_ODR_4>;
+	avg = <LPS2xDF_DT_AVG_128_SAMPLES>;
+	fs = <ILPS22QS_DT_FS_MODE_1_1260>;
+};
+
+test_i2c_sts4x: sts4x@1d {
+	compatible = "sensirion,sts4x";
+	reg = <0x1d>;
+	repeatability = <2>;
+};
+
+test_i2c_scd41: scd41@1e {
+	compatible = "sensirion,scd41";
+	reg = <0x1e>;
+	mode = <0>;
+};
+
+test_i2c_npm2100: npm2100@1f {
+	compatible = "nordic,npm2100";
+	reg = <0x1f>;
+
+	vbat {
+		compatible = "nordic,npm2100-vbat";
+	};
+};
+
+test_i2c_mlx90394: mlx90394@20 {
+	compatible = "melexis,mlx90394";
+	status = "okay";
+	reg = <0x20>;
+};
+
+test_i2c_scd40: scd40@21 {
+	compatible = "sensirion,scd40";
+	reg = <0x21>;
+};
+
+test_i2c_ina236: ina236@22 {
+	compatible = "ti,ina236";
+	reg = <0x22>;
+	current-lsb-microamps = <1000>;
+	rshunt-micro-ohms = <1000>;
+	mask = <0>;
+	alert-limit = <0>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_as6212: as6212@23 {
+	compatible = "ams,as6212";
+	reg = <0x23>;
+};
+
+test_i2c_p3t1755: p3t1755@24 {
+	compatible = "nxp,p3t1755";
+	reg = <0x24>;
+};
+
+test_i2c_lsm6dso32: lsm6dso32@25 {
+	compatible = "st,lsm6dso32";
+	reg = <0x25>;
+	irq-gpios = <&test_gpio 0 0>;
+	accel-pm = <LSM6DSO_DT_XL_ULP_MODE>;
+	accel-range = <LSM6DSO_DT_FS_8G>;
+	accel-odr = <LSM6DSO_DT_ODR_1Hz6>;
+	gyro-pm = <LSM6DSO_DT_GY_NORMAL_MODE>;
+	gyro-range = <LSM6DSO_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSO_DT_ODR_6667Hz>;
+};
+
+test_i2c_hs400x: hs400x@26 {
+	compatible = "renesas,hs400x";
+	reg = <0x26>;
+};
+
+test_i2c_lis2duxs12: lis2duxs12@27 {
+	compatible = "st,lis2duxs12";
+	reg = <0x27>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	range = <LIS2DUX12_DT_FS_16G>;
+	odr = <LIS2DUX12_DT_ODR_100Hz>;
+	power-mode = <LIS2DUX12_OPER_MODE_HIGH_PERFORMANCE>;
+	status = "okay";
+};
+
+test_i2c_tmag3001: tmag3001@28 {
+	compatible = "ti,tmag3001";
+	status = "okay";
+	reg = <0x28>;
+	int-gpios = <&test_gpio 15 1>;
+	operation-mode = <TMAG5273_DT_OPER_MODE_CONTINUOUS>;
+	angle-magnitude-axis = <TMAG5273_DT_ANGLE_MAG_XY>;
+};
+
+test_i2c_tmp435: tmp435@29 {
+	compatible = "ti,tmp435";
+	reg = <0x29>;
+	external-channel;
+	resistance-correction;
+	beta-compensation = <0x0f>;
+};
+
+test_i2c_xbr818: xbr818@2a {
+	compatible = "phosense,xbr818";
+	reg = <0x2a>;
+	int-gpios = <&test_gpio 0 0>;
+	i2c-en-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_veml6031: veml6031@2b {
+	compatible = "vishay,veml6031";
+	reg = <0x2b>;
+};
+
+test_i2c_bmm350: bmm350@2c {
+	compatible = "bosch,bmm350";
+	reg = <0x2c>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ltr329: ltr329@2d {
+	compatible = "liteon,ltr329";
+	reg = <0x2d>;
+};
+
+test_i2c_ms5837_30ba: ms5837@2e {
+	compatible = "meas,ms5837-30ba";
+	reg = <0x2e>;
+	status = "okay";
+};
+
+test_i2c_icp201xx: icp201xx@2f {
+	compatible = "invensense,icp201xx";
+	reg = <0x2f>;
+	int-gpios = <&test_gpio 0 0>;
+	op-mode = "mode0";
+	drive-strength = "current_12mA_1_8V";
+};
+
+test_i2c_paj7620: paj7620@30 {
+	compatible = "pixart,paj7620";
+	reg = <0x30>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_icm45686: icm45686@31 {
+	compatible = "invensense,icm45686";
+	reg = <0x31>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_rm3100: rm3100@32 {
+	compatible = "pni,rm3100";
+	reg = <0x32>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_bh1790: bh1790@33 {
+	compatible = "rohm,bh1790";
+	reg = <0x33>;
+};
+
+test_i2c_bh1730: bh1730@34 {
+	compatible = "rohm,bh1730";
+	reg = <0x34>;
+};
+
+test_i2c_npm1300: npm1300@35 {
+	compatible = "nordic,npm1300";
+	reg = <0x35>;
+
+	charger {
+		compatible = "nordic,npm1300-charger";
+		vbus-limit-microamp = <1000000>;
+		thermistor-ohms = <10000>;
+		thermistor-beta = <3380>;
+		term-microvolt = <4150000>;
+		current-microamp = <150000>;
+		dischg-limit-microamp = <1000000>;
+	};
+};
+
+test_i2c_npm1304: npm1304@36 {
+	compatible = "nordic,npm1304";
+	reg = <0x36>;
+
+	charger {
+		compatible = "nordic,npm1304-charger";
+		vbus-limit-microamp = <1000000>;
+		thermistor-ohms = <10000>;
+		thermistor-beta = <3380>;
+		term-microvolt = <4150000>;
+		current-microamp = <10000>;
+	};
+};
+
+test_i2c_ds3231: ds3231@37 {
+	compatible = "maxim,ds3231-mfd";
+	reg = <0x37>;
+
+	test_i2c_ds3231_sensor: ds3231_sensor {
+		compatible = "maxim,ds3231-sensor";
+	};
+};
+
+test_i2c_adxl366: adxl366@38 {
+	compatible = "adi,adxl366";
+	reg = <0x38>;
+	int1-gpios = <&test_gpio 0 0>;
+	odr = <4>;
+	fifo-mode = <0>;
+};
+
+test_i2c_lsm9ds1_mag: lsm9ds1_mag@39 {
+	compatible = "st,lsm9ds1_mag";
+	reg = <0x39>;
+};
+
+test_i2c_mb7040: mb7040@3a {
+	compatible = "maxbotix,mb7040";
+	reg = <0x3a>;
+	status-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_wsen_isds_2536030320001: wsen_isds_2536030320001@3b {
+	compatible = "we,wsen-isds-2536030320001";
+	reg = <0x3b>;
+	accel-odr = "416";
+	gyro-odr = "416";
+	tap-threshold = <9>;
+	tap-latency = <5>;
+	tap-shock = <2>;
+	tap-quiet = <1>;
+	tap-mode = <1>;
+	tap-axis-enable = <0 0 1>;
+	events-interrupt-gpios = <&test_gpio 0 0>;
+	drdy-interrupt-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_ina7xx: ina7xx@3c {
+	compatible = "ti,ina7xx";
+	reg = <0x3c>;
+	inatype = <2>;
+	convdly = <0x80>;
+	mode = <0xf>;
+	vbusct = <5>;
+	vsenct = <5>;
+	tct = <5>;
+	avg = <3>;
+};
+
+test_i2c_als31300: als31300@3d {
+	compatible = "allegro,als31300";
+	reg = <0x3d>;
+};
+
+test_i2c_hdc302x: hdc302x@3e {
+	compatible = "ti,hdc302x";
+	reg = <0x3e>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_veml6046: veml6046@3f {
+	compatible = "vishay,veml6046";
+	reg = <0x3f>;
+};
+
+test_i2c_wsen_pdms_25131308XXX05: wsen_pdms_25131308XXX05@40 {
+	compatible = "we,wsen-pdms-25131308XXX05";
+	reg = <0x40>;
+	sensor-type = <4>;
+};
+
+test_i2c_ina232: ina232@41 {
+	compatible = "ti,ina232";
+	reg = <0x41>;
+	current-lsb-microamps = <1000>;
+	rshunt-micro-ohms = <1000>;
+	mask = <0>;
+	alert-limit = <0>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_rv3032: rv3032c7@42 {
+	compatible = "microcrystal,rv3032-mfd";
+	reg = <0x42>;
+	int-gpios = <&test_gpio 0 0>;
+	evi-gpios = <&test_gpio 0 0>;
+	backup-switch-mode = "disabled";
+	always-on;
+	status = "okay";
+
+	test_rv3032_temp: rv3032_temp {
+		compatible = "microcrystal,rv3032-temp";
+		low-temp = <40>;
+		high-temp = <105>;
+		status = "okay";
+	};
+};
+
+test_i2c_as6221: as6221@43 {
+	compatible = "ams,as6221";
+	reg = <0x43>;
+};
+
+test_i2c_opt3004: opt3004@44 {
+	compatible = "ti,opt3004";
+	reg = <0x44>;
+};
+
+test_i2c_max30210: max30210@45 {
+	compatible = "adi,max30210";
+	reg = <0x45>;
+	interrupt-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_lsm6dsv320x: lsm6dsv320x@46 {
+	compatible = "st,lsm6dsv320x";
+	reg = <0x46>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSV320X_DT_FS_8G>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+	gyro-range = <LSM6DSV320X_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+};
+
+test_i2c_lsm6dsv80x: lsm6dsv80x@47 {
+	compatible = "st,lsm6dsv80x";
+	reg = <0x47>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSV80X_DT_FS_8G>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+	gyro-range = <LSM6DSV80X_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+};
+
+test_i2c_ism6hg256x: ism6hg256x@48 {
+	compatible = "st,ism6hg256x";
+	reg = <0x48>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+	accel-range = <LSM6DSV80X_DT_FS_8G>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+	gyro-range = <LSM6DSV80X_DT_FS_2000DPS>;
+	gyro-odr = <LSM6DSVXXX_DT_ODR_AT_60Hz>;
+};
+
+test_i2c_ltr553: ltr553@49 {
+	compatible = "liteon,ltr553";
+	reg = <0x49>;
+};
+
+test_i2c_stcc4: stcc4@4a {
+	compatible = "sensirion,stcc4";
+	reg = <0x4a>;
+	measurement-mode = <0>;
+};
+
+test_i2c_qmi8658a: qmi8658a@4b {
+	compatible = "qst,qmi8658a";
+	reg = <0x4b>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_npm10xx: npm10xx@4c {
+	reg = <0x4c>;
+	compatible = "nordic,npm10xx";
+
+	sensor {
+		compatible = "nordic,npm10xx-adc";
+	};
+};
+
+test_i2c_adxl355: adxl55@4d {
+	compatible = "adi,adxl355";
+	reg = <0x4d>;
+	int1-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_htu21d: htu21d@4e {
+	compatible = "meas,htu21d";
+	reg = <0x4e>;
+};
+
+test_i2c_cht8315: cht8315@4f {
+	compatible = "sensylink,cht8315";
+	reg = <0x4f>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_pac194x: pac194x@50 {
+	compatible = "microchip,pac194x";
+	reg = <0x50>;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	microchip,refresh-mode = <PAC_REFRESH_AUTO_NOWAIT>;
+
+	channel@1 {
+		reg = <0x1>;
+		friendly-name = "CPU";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VPOWER>;
+	};
+
+	channel@2 {
+		reg = <0x2>;
+		friendly-name = "MEM";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_BIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_BIPOLAR_HALF_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VPOWER>;
+	};
+
+	channel@3 {
+		reg = <0x3>;
+		friendly-name = "GPU";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VBUS>;
+	};
+
+	channel@4 {
+		reg = <0x4>;
+		friendly-name = "NET";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VBUS>;
+	};
+};
+
+test_i2c_fdc1004: fdc1004@51 {
+	compatible = "ti,fdc1004";
+	reg = <0x51>;
+	measure-rate = <100>;
+	ti,capdac = <0 0 0 0>;
+};
+
+test_i2c_htu31d: htu31d@52 {
+	compatible = "meas,htu31d";
+	reg = <0x52>;
+};
+
+test_i2c_ms5637: ms5637@53 {
+	compatible = "meas,ms5637";
+	reg = <0x53>;
+};
+
+test_i2c_max30102: max30102@54 {
+	compatible = "maxim,max30102";
+	reg = <0x54>;
+	acq-mode = "multi-led";
+};
+
+test_i2c_tmp451: tmp451@55 {
+	compatible = "ti,tmp451";
+	reg = <0x55>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_icm40627: icm40627@56 {
+	compatible = "invensense,icm40627";
+	reg = <0x56>;
+	int-gpios = <&test_gpio 0 0>;
+	accel-hz = <100>;
+	gyro-hz = <100>;
+	accel-fs = <16>;
+	gyro-fs = <2000>;
+};

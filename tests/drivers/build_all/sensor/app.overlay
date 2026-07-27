@@ -70,7 +70,7 @@
 #include "gpio.dtsi"
 		};
 
-		test_i2c: i2c@11112222 {
+		test_i2c0: i2c@11112222 {
 			#address-cells = <1>;
 			#size-cells = <0>;
 			compatible = "zephyr,i2c-emul-controller";
@@ -78,7 +78,18 @@
 			status = "okay";
 			clock-frequency = <100000>;
 
-#include "i2c.dtsi"
+#include "i2c0.dtsi"
+		};
+
+		test_i2c1: i2c@11113222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "zephyr,i2c-emul-controller";
+			reg = <0x11113222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+#include "i2c1.dtsi"
 		};
 
 		test_pwm: pwm@12341234 {
