@@ -1,0 +1,60 @@
+# Copyright 2026 Sacra Systems Private Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  BQ24295 family of charging ICs.
+
+  BQ24295 I2C controlled, 1-cell, switch-mode battery charger with
+  power-path management and USB OTG support.
+
+include: [battery.yaml, i2c-device.yaml]
+
+compatible: "ti,bq24295"
+
+properties:
+  constant-charge-current-max-microamp:
+    required: true
+    description: |
+      The charge current target for the constant current phase of the
+      charge profile. This value will be programmed during driver
+      initialization.
+
+  constant-charge-voltage-max-microvolt:
+    required: true
+    description: |
+      The voltage regulation target for the constant voltage phase of the
+      charge profile. This value will be programmed during driver
+      initialization.
+
+  watchdog-timeout-ms:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 40000
+      - 80000
+      - 160000
+    description: |
+      Watchdog timer timeout in milliseconds.
+
+      A value of 0 disables the watchdog timer.
+
+  ce-gpios:
+    type: phandle-array
+    description: |
+      Active-low charge enable pin.
+
+examples:
+  - |
+    charger: bq24295@6b {
+      compatible = "ti,bq24295";
+      reg = <0x6b>;
+      status = "okay";
+
+      constant-charge-current-max-microamp = <1000000>;
+      constant-charge-voltage-max-microvolt = <4208000>;
+
+      watchdog-timeout-ms = <40000>;
+
+      ce-gpios = <&test_gpio 0 0>;
+    };
