@@ -102,7 +102,70 @@
 };
 
 &ebi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_nand_default>;
 	status = "okay";
+
+	cs0: cs@40000000 {
+		reg = <0x0 0x0 0x800000>;
+		smc-tdf-mode;
+		smc-write-mode = "nwe";
+		smc-read-mode = "nrd";
+		smc-bus-width = "8-bit";
+		smc-setup-timing = <4 0 0 0>;
+		smc-pulse-timing = <10 20 10 20>;
+		smc-cycle-timing = <20 20>;
+		nfc-timings-nfsel;
+		nfc-timings-twb = <8>;
+		nfc-timings-trr = <8>;
+		nfc-timings-tar = <5>;
+		nfc-timings-tadl = <15>;
+		nfc-timings-tclr = <4>;
+		status = "okay";
+
+		nand0: nandflash {
+			compatible = "microchip,nand-g1-flash";
+			nand-controller = <&nfc>;
+			cs-gpios = <&pioa 13 GPIO_ACTIVE_LOW>;
+			status = "okay";
+
+			/* Micron MT29F4G08ABAEA 512MB */
+			nand_id0: mt29f4g08abaea {
+				nand-id = [2c dc];
+				nand-page-size = <4096>;
+				nand-oob-size = <224>;
+				nand-block-pages = <64>;
+				nand-block-count = <2048>;
+				nand-ecc-bits = <8>;
+				nand-ecc-sector = <512>;
+			};
+
+			/* Winbond W29N01HV 128MB */
+			nand_id1: w29n01hv {
+				nand-id = [ef f1];
+				nand-page-size = <2048>;
+				nand-oob-size = <64>;
+				nand-block-pages = <64>;
+				nand-block-count = <1024>;
+				nand-ecc-bits = <1>;
+				nand-ecc-sector = <512>;
+				nand-features = <0x1122>;
+				nand-optional-commands = <0x3344>;
+				nand-timing-mode = <0x5566>;
+			};
+
+			/* Macronix MX30LF4G28AD 512MB */
+			nand_id2: mx30lf4g28ad {
+				nand-id = [c2 dc];
+				nand-page-size = <4096>;
+				nand-oob-size = <256>;
+				nand-block-pages = <64>;
+				nand-block-count = <2048>;
+				nand-ecc-bits = <8>;
+				nand-ecc-sector = <512>;
+			};
+		};
+	};
 };
 
 &flx6 {
@@ -199,6 +262,10 @@
 	pinctrl-names = "default";
 };
 
+&nfc {
+	status = "okay";
+};
+
 &pinctrl {
 	pinctrl_can1_default: can1_default {
 		group1 {
@@ -273,6 +340,26 @@
 		};
 	};
 
+	pinctrl_nand_default: nand-default {
+		group1 {
+			pinmux = <PIN_PA0__NWER0>,
+				 <PIN_PA1__A21>,
+				 <PIN_PA2__A22>,
+				 <PIN_PA3__D0>,
+				 <PIN_PA4__D1>,
+				 <PIN_PA5__D4>,
+				 <PIN_PA6__D5>,
+				 <PIN_PA7__D6>,
+				 <PIN_PA8__D7>,
+				 <PIN_PA9__D2>,
+				 <PIN_PA10__D3>,
+				 <PIN_PA11__NANDRDY>,
+				 <PIN_PA12__NRD>,
+				 <PIN_PA13__GPIO>;
+			bias-disable;
+		};
+	};
+
 	pinctrl_uart6_default: uart6-default {
 		group1 {
 			pinmux = <PIN_PD18__FLEXCOM6_IO0>,
@@ -302,6 +389,10 @@
 &pit64b1 {
 	top-alarm;
 	prescaler-period = <15>;
+	status = "okay";
+};
+
+&pmecc {
 	status = "okay";
 };
 
