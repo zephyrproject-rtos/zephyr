@@ -53,3 +53,7 @@ zephyr_library_sources_ifdef(CONFIG_RTC_TI_MSPM0 rtc_ti_mspm0.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_XEC rtc_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_RTC_XMC4XXX rtc_xmc4xxx.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_RTC_EMUL_INIT_DATETIME)
+  target_sources(native_simulator INTERFACE rtc_emul_native.c)
+endif()
