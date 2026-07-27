@@ -27,7 +27,7 @@ NET_BUF_POOL_VAR_DEFINE(usbip_pool,
 			CONFIG_USBIP_BUF_COUNT, CONFIG_USBIP_BUF_POOL_SIZE,
 			0, NULL);
 
-#define USBIP_SUBMIT_REQ_RETRY_COUNT	10
+#define USBIP_SUBMIT_REQ_TIMEOUT	K_MSEC(10)
 
 K_THREAD_STACK_DEFINE(usbip_thread_stack, CONFIG_USBIP_THREAD_STACK_SIZE);
 K_THREAD_STACK_ARRAY_DEFINE(dev_thread_stacks, CONFIG_USBIP_DEVICES_COUNT,
@@ -214,22 +214,14 @@ static int usbip_submit_req(struct usbip_cmd_node *const cmd_nd, const uint8_t e
 	struct usbip_dev_ctx *const dev_ctx = cmd_nd->ctx;
 	struct usbip_command *const cmd = &cmd_nd->cmd;
 	struct usb_device *const udev = dev_ctx->udev;
-	uint32_t retry = USBIP_SUBMIT_REQ_RETRY_COUNT;
 	struct uhc_transfer *xfer;
+	size_t rec_len = USB_EP_DIR_IS_IN(ep) && buf != NULL ? cmd->submit.length : 0;
 	int ret;
 
-	/*
-	 * Depending on the server, functions, and client application, we may
-	 * get out of transfers very quickly. To throttle here may allow
-	 * submitted transfers to be finished. Perhaps usbh_xfer_alloc() should
-	 * be reworked to take a timeout argument.
-	 */
-	do {
-		xfer = usbh_xfer_alloc(udev, ep, usbip_req_cb, cmd_nd);
-		if (xfer == NULL) {
-			k_msleep(1);
-		}
-	} while (xfer == NULL && retry--);
+	xfer = usbh_xfer_alloc(udev, ep, rec_len, usbip_req_cb, cmd_nd, USBIP_SUBMIT_REQ_TIMEOUT);
+	if (xfer == NULL) {
+		return -ENOMEM;
+	}
 
 	if (setup != NULL) {
 		memcpy(xfer->setup_pkt, setup, sizeof(struct usb_setup_packet));
@@ -278,7 +270,7 @@ static int usbip_handle_submit(struct usbip_dev_ctx *const dev_ctx,
 	ep = cmd->hdr.ep;
 	if (cmd->submit.length != 0) {
 		if (USB_EP_GET_IDX(ep) == 0U) {
-			buf = usbh_xfer_buf_alloc(dev_ctx->udev, cmd->submit.length);
+			buf = usbh_xfer_buf_alloc(dev_ctx->udev, ep, cmd->submit.length, K_NO_WAIT);
 		} else {
 			buf = net_buf_alloc_len(&usbip_pool, cmd->submit.length, K_NO_WAIT);
 		}

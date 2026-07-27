@@ -24,4 +24,11 @@ config MAX3421E_OSC_WAIT_RETRIES
 	help
 	  Specify the number of retries for oscillator ready event.
 
+config MAX3421E_MAX_TIMEOUT_RETRIES
+	int "Maximum retries when receiving a TIMEOUT from the device"
+	default 3
+	range 0 255
+	help
+	  Specify the number of retries when the device returns TIMEOUT when trying to communicate.
+
 endif #UHC_MAX3421E
