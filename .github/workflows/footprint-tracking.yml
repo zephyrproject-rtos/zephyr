@@ -29,7 +29,7 @@ jobs:
     timeout-minutes: 120
     if: github.repository_owner == 'zephyrproject-rtos'
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.3.20260727
       options: '--entrypoint /bin/bash'
     defaults:
       run:
