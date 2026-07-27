@@ -105,6 +105,11 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	pmc: pmc@20000 {
+		compatible = "nxp,lpc-pmc-hwinfo";
+		reg = <0x20000 0x1000>;
+	};
+
 	usb_sram: memory@100000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x100000 DT_SIZE_K(16)>;
