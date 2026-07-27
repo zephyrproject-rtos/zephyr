@@ -1,0 +1,43 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MP_PLAYER
+	bool "MultimediaPipe player helper"
+	depends on MP
+	select POLL
+	imply SHELL
+	imply SERIAL
+	imply UART_CONSOLE
+	help
+	  Enable the mp_player control layer: a reusable, media-player-like
+	  helper that owns the run-time lifecycle of a pipeline (play, pause,
+	  stop, replay, quit). When SHELL is enabled it also registers
+	  interactive shell commands ("player play|pause|stop|replay|status"
+	  and the single-letter shortcuts p/s/r/q).
+
+if MP_PLAYER
+
+config MP_PLAYER_WORKER_STACK_SIZE
+	int "Player worker thread stack size"
+	default 2048
+	help
+	  Stack size (in bytes) for the player worker thread that serializes
+	  pipeline state changes.
+
+config MP_PLAYER_WORKER_PRIORITY
+	int "Player worker thread priority"
+	default 5
+	help
+	  Scheduling priority for the player worker thread.
+
+config MP_PLAYER_CMD_QUEUE_DEPTH
+	int "Player command queue depth"
+	default 8
+	help
+	  Number of pending commands the player can buffer before a caller
+	  blocks while enqueueing a new command.
+
+endif # MP_PLAYER
