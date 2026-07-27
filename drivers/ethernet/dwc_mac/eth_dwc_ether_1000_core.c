@@ -490,6 +490,7 @@ static void dwmac_iface_init(struct net_if *iface)
 
 	DWMAC_REG_WRITE(DWMAC_MACCR,
 			DWMAC_REG_READ(DWMAC_MACCR) |
+			DWMAC_MACCR_APCS |
 			DWMAC_MACCR_CSTF |
 			DWMAC_MACCR_TE |
 			DWMAC_MACCR_RE);
