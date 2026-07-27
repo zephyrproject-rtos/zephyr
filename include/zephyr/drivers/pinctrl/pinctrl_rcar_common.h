@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef ZEPHYR_SOC_ARM_RENESAS_RCAR_COMMON_PINCTRL_SOC_H_
-#define ZEPHYR_SOC_ARM_RENESAS_RCAR_COMMON_PINCTRL_SOC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_RCAR_COMMON_H_
+#define ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_RCAR_COMMON_H_
 
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rcar-common.h>
@@ -125,4 +125,4 @@ struct pfc_bias_reg {
  */
 #define RCAR_IS_GP_PIN(pin) (pin < PIN_NOGPSR_START)
 
-#endif /* ZEPHYR_SOC_ARM_RENESAS_RCAR_COMMON_PINCTRL_SOC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_PINCTRL_PINCTRL_RCAR_COMMON_H_ */
