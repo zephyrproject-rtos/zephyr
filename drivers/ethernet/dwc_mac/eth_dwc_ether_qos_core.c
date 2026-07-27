@@ -190,6 +190,11 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	des2_flags = TDES2_IOC;
 	des3_flags = TDES3_FD | TDES3_OWN;
 
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC) &&
+		net_pkt_is_tx_timestamping(pkt)) {
+		des2_flags |= TDES2_TTSE;
+	}
+
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN)) {
 		des3_flags |= TDES3_CIC;
 	}
@@ -279,6 +284,14 @@ static void dwmac_tx_release(const struct device *dev)
 			if (pkt != NULL) {
 				LOG_DBG("pkt len/frags=%zu/%u", net_pkt_get_len(pkt),
 					net_pkt_get_nbfrags(pkt));
+
+#ifdef CONFIG_PTP_CLOCK_DWC_MAC
+				if ((des3_val & TDES3_TTSS) != 0U) {
+					pkt->timestamp.second = d->des1;
+					pkt->timestamp.nanosecond = d->des0;
+					net_if_add_tx_timestamp(pkt);
+				}
+#endif /* CONFIG_PTP_CLOCK_DWC_MAC */
 			}
 
 			net_pkt_unref(pkt);
@@ -325,9 +338,23 @@ static void dwmac_receive(const struct device *dev)
 		frag = p->rx_frags[d_idx];
 		p->rx_frags[d_idx] = NULL;
 
-		/* we ignore those for now */
+		/* a context descriptor, it contains the packet's timestamp */
 		if (des3_val & RDES3_CTXT) {
 			net_pkt_frag_unref(frag);
+#ifdef CONFIG_PTP_CLOCK_DWC_MAC
+			if (p->rx_pkt != NULL) {
+				if (d->des0 != UINT32_MAX && d->des1 != UINT32_MAX) {
+					p->rx_pkt->timestamp.second = d->des1;
+					p->rx_pkt->timestamp.nanosecond = d->des0;
+					net_pkt_set_rx_timestamping(p->rx_pkt, true);
+				}
+
+				if (net_recv_data(p->iface, p->rx_pkt) < 0) {
+					net_pkt_unref(p->rx_pkt);
+				}
+				p->rx_pkt = NULL;
+			}
+#endif
 			continue;
 		}
 
@@ -363,6 +390,17 @@ static void dwmac_receive(const struct device *dev)
 				LOG_DBG("pkt len/frags=%zd/%d",
 					net_pkt_get_len(p->rx_pkt),
 					net_pkt_get_nbfrags(p->rx_pkt));
+#ifdef CONFIG_PTP_CLOCK_DWC_MAC
+				/*
+				 * The next descriptor is a context descriptor with a timestamp
+				 * for this packet, so skip here to the next descriptor, so we
+				 * can add the timestamp to this packet, before submitting it.
+				 */
+				if (((des3_val & RDES3_RS1V) != 0) &&
+				    ((d->des1 & RDES1_TSA) != 0)) {
+					continue;
+				}
+#endif
 				if (net_recv_data(p->iface, p->rx_pkt) < 0) {
 					net_pkt_unref(p->rx_pkt);
 				}
