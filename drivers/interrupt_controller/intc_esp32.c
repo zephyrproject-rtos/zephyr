@@ -227,10 +227,43 @@ static bool intr_has_handler(int intr, int cpu)
 {
 	bool r;
 
+#if defined(CONFIG_RISCV)
+	/*
+	 * On RISC-V the software ISR table is shared between cores and
+	 * indexed by the CPU interrupt number plus the architecture's
+	 * reserved offset.
+	 */
+	ARG_UNUSED(cpu);
+	r = _sw_isr_table[intr + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET].isr !=
+		z_irq_spurious;
+#else
 	r = _sw_isr_table[intr * CONFIG_MP_MAX_NUM_CPUS + cpu].isr != z_irq_spurious;
+#endif
 
 	return r;
 }
+
+#if defined(CONFIG_RISCV) && defined(CONFIG_SMP)
+/*
+ * On RISC-V the software ISR table is shared between cores, so a CPU
+ * interrupt number may only be owned by a single core at a time. Returns
+ * true if another core already uses this interrupt number.
+ */
+static bool intr_used_by_other_cpu(int intr, int cpu)
+{
+	struct vector_desc_t *vd = vector_desc_head;
+
+	while (vd != NULL) {
+		if (vd->intno == intr && vd->cpu != cpu &&
+		    (vd->flags & (VECDESC_FL_NONSHARED | VECDESC_FL_SHARED |
+				  VECDESC_FL_RESERVED)) != 0) {
+			return true;
+		}
+		vd = vd->next;
+	}
+	return false;
+}
+#endif /* CONFIG_RISCV && CONFIG_SMP */
 
 static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, int force)
 {
@@ -274,6 +307,14 @@ static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, in
 		INTC_LOG("....Unusable: reserved at runtime.");
 		return false;
 	}
+
+#if defined(CONFIG_RISCV) && defined(CONFIG_SMP)
+	/* The shared ISR table allows an interrupt number on one core only. */
+	if (intr_used_by_other_cpu(vd->intno, cpu)) {
+		INTC_LOG("....Unusable: already in use by another cpu.");
+		return false;
+	}
+#endif
 
 	/* Ints can't be both shared and non-shared. */
 	assert(!((vd->flags & VECDESC_FL_SHARED) && (vd->flags & VECDESC_FL_NONSHARED)));
