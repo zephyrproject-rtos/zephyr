@@ -309,7 +309,10 @@ void z_impl_z_test_1cpu_stop(void)
 
 	for (int i = 0; i <= MAX_NUM_CPUHOLD; i++) {
 		if (cpuhold_pool_items[i].used) {
-			k_thread_abort(&cpuhold_pool_items[i].thread);
+			/* Must join the cpuhold threads before z_test_1cpu_start()
+			 * reuses the thread objects.
+			 */
+			k_thread_join(&cpuhold_pool_items[i].thread, K_FOREVER);
 			cpuhold_pool_items[i].used = false;
 		}
 	}
