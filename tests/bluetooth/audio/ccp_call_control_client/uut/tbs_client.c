@@ -95,3 +95,25 @@ int bt_tbs_client_read_uri_list(struct bt_conn *conn, uint8_t inst_index)
 	return 0;
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
+int bt_tbs_client_read_signal_strength(struct bt_conn *conn, uint8_t inst_index)
+{
+	static uint8_t signal_strength = BT_TBS_SIGNAL_STRENGTH_MIN;
+
+	if (conn == NULL) {
+		return -ENOTCONN;
+	}
+
+	if (tbs_cbs != NULL && tbs_cbs->signal_strength != NULL) {
+		tbs_cbs->signal_strength(conn, 0, inst_index, signal_strength);
+	}
+
+	signal_strength++;
+	if (signal_strength == BT_TBS_SIGNAL_STRENGTH_MAX) {
+		signal_strength = BT_TBS_SIGNAL_STRENGTH_MIN;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH */

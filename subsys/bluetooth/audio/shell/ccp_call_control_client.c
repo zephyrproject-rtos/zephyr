@@ -118,6 +118,22 @@ ccp_call_control_client_bearer_uri_schemes_cb(struct bt_ccp_call_control_client_
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
+static void
+ccp_call_control_client_bearer_signal_strength_cb(struct bt_ccp_call_control_client_bearer *bearer,
+						  int err, uint8_t signal_strength, void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	if (err != 0) {
+		bt_shell_error("Failed to read bearer %p signal strength: %d", (void *)bearer, err);
+		return;
+	}
+
+	bt_shell_info("Bearer %p signal strength: %u", (void *)bearer, signal_strength);
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH */
+
 static struct bt_ccp_call_control_client_cb ccp_call_control_client_cbs = {
 	.discover = ccp_call_control_client_discover_cb,
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
@@ -132,6 +148,9 @@ static struct bt_ccp_call_control_client_cb ccp_call_control_client_cbs = {
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
 	.bearer_uri_schemes = ccp_call_control_client_bearer_uri_schemes_cb,
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
+	.bearer_signal_strength = ccp_call_control_client_bearer_signal_strength_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH */
 };
 
 static int cmd_ccp_call_control_client_discover(const struct shell *sh, size_t argc, char *argv[])
@@ -355,13 +374,9 @@ static int cmd_ccp_call_control_client_read_bearer_uri_schemes(const struct shel
 
 static int cmd_ccp_call_control_client(const struct shell *sh, size_t argc, char **argv)
 {
-	if (argc > 1) {
-		shell_error(sh, "%s unknown parameter: %s", argv[0], argv[1]);
-	} else {
-		shell_error(sh, "%s Missing subcommand", argv[0]);
-	}
+	shell_help(sh);
 
-	return -ENOEXEC;
+	return SHELL_CMD_HELP_PRINTED;
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
