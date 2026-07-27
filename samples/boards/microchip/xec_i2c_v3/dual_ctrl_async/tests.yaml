@@ -1,0 +1,12 @@
+sample:
+  description: Microchip XEC EVB I2C V3 dual-controller async transfer sample
+  name: mec_assy6941_xec_i2c_v3_dual_ctrl_async
+tests:
+  # Byte-mode driver build (qsz): no DMA.
+  sample.board.microchip.evb.i2c_v3.dual_ctrl_async.bm:
+    harness: i2c
+    platform_allow:
+      - mec_assy6941/mec1753_qsz
+    tags: i2c
+    depends_on:
+      - i2c
