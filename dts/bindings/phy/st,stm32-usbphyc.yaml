@@ -1,7 +1,12 @@
 # Copyright (c) 2018, Yannis Damigos
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 USB HS PHY controller
+title: STM32 USB HS PHY controller (USBPHYC)
+
+description: |
+  USB High-Speed PHY controller as found in various STM32 series.
+
+  Control registers are implemented directly in the RCC MMIO interface.
 
 compatible: "st,stm32-usbphyc"
 
@@ -29,12 +34,3 @@ properties:
 
   "#phy-cells":
     const: 0
-
-examples:
-  - |
-    /* In DTS for STM32N6-based board */
-    &usbphyc1 {
-      clocks = <&rcc STM32_CLOCK(AHB5, 27)>,
-               <&rcc STM32_SRC_HSE OTGPHY1_SEL(3)>;
-      clock-names = "gate", "mux";
-    };

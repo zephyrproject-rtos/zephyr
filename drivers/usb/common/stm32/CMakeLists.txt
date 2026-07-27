@@ -27,13 +27,11 @@ if(CONFIG_STM32_USB_COMMON)
 
   # Embedded HS PHY drivers
   if(CONFIG_STM32_PHY_USBPHYC)
-    if(CONFIG_SOC_SERIES_STM32F7X)
-      zephyr_library_sources(phy_usbphyc_f7.c)
-    elseif(CONFIG_SOC_SERIES_STM32N6X)
-      zephyr_library_sources(phy_usbphyc_n6.c)
-    else()
-      zephyr_library_sources(phy_usbphyc_rcc.c)
-    endif()
+    # Note: "st,stm32-usbphyc" is never alongside series-specific compatibles
+    # on USBPHYC nodes as each compatible indicates a different programming model.
+    zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32F7_USBPHYC_ENABLED phy_usbphyc_f7.c)
+    zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32N6_USBPHYC_ENABLED phy_usbphyc_n6.c)
+    zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32_USBPHYC_ENABLED phy_usbphyc_rcc.c)
   endif()
   zephyr_library_sources_ifdef(CONFIG_STM32_PHY_U5OTGHSPHY phy_u5otghs.c)
 endif()
