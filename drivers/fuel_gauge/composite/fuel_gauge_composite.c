@@ -12,12 +12,14 @@
 #include <zephyr/drivers/sensor/battery.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 struct composite_config {
 	const struct device *source_primary;
 	const struct device *source_secondary;
 	int32_t ocv_lookup_table[BATTERY_OCV_TABLE_LEN];
 	uint32_t charge_capacity_microamp_hours;
+	int32_t factory_internal_resistance_micro_ohms;
 	enum battery_chemistry chemistry;
 	bool fg_channels;
 };
@@ -25,6 +27,8 @@ struct composite_config {
 struct composite_data {
 	k_ticks_t next_reading;
 };
+
+LOG_MODULE_REGISTER(composite_fg);
 
 static int composite_fetch(const struct device *dev)
 {
@@ -56,6 +60,71 @@ static int composite_channel_get(const struct device *dev, enum sensor_channel c
 	return rc;
 }
 
+static int composite_get_prop_state_of_charge(const struct device *dev,
+					      union fuel_gauge_prop_val *val)
+{
+	const struct composite_config *config = dev->config;
+	enum sensor_channel sensor_chan;
+	struct sensor_value sensor_val;
+	int32_t voltage;
+	int rc;
+
+	/* Attempt to query the state of charge directly */
+	rc = composite_channel_get(dev, SENSOR_CHAN_GAUGE_STATE_OF_CHARGE, &sensor_val);
+	if (rc == 0) {
+		val->absolute_state_of_charge_pct = sensor_val.val1;
+		return 0;
+
+	} else if (rc != -ENOTSUP) {
+		/* Error other than an unsupported channel */
+		return rc;
+	}
+
+	if (config->ocv_lookup_table[0] == -1) {
+		/* No OCV table to support estimation */
+		return -ENOTSUP;
+	}
+
+	/* Unsupported channel, compute from OCV table */
+	sensor_chan = config->fg_channels ? SENSOR_CHAN_GAUGE_VOLTAGE : SENSOR_CHAN_VOLTAGE;
+	rc = composite_channel_get(dev, sensor_chan, &sensor_val);
+	if (rc != 0) {
+		/* Failed to retrieve voltage, no way to compute SoC */
+		return rc;
+	}
+	voltage = sensor_value_to_micro(&sensor_val);
+
+	/* If an internal resistance is set, attempt to correct voltage based on current */
+	if (config->factory_internal_resistance_micro_ohms > 0) {
+		sensor_chan =
+			config->fg_channels ? SENSOR_CHAN_GAUGE_AVG_CURRENT : SENSOR_CHAN_CURRENT;
+		rc = composite_channel_get(dev, sensor_chan, &sensor_val);
+		if (rc == 0) {
+			/* Only apply correction is current can be measured, failure to measure
+			 * current is not a failure to measure SoC.
+			 */
+			int32_t voltage_drop;
+			int64_t current;
+
+			current = sensor_value_to_micro(&sensor_val);
+			/* Drop across the internal resistance.
+			 * V,I,R in micro units, V=IR must be divided by 10^6.
+			 */
+			voltage_drop = (current * config->factory_internal_resistance_micro_ohms) /
+				       1000000;
+			LOG_DBG("Raw Voltage: %7d uV Current: %8lld uA Drop: %5d uV", voltage,
+				current, voltage_drop);
+			/* Adjust voltage according to drop */
+			voltage -= voltage_drop;
+		}
+	}
+
+	/* Convert voltage to state of charge */
+	val->relative_state_of_charge_pct =
+		battery_soc_lookup(config->ocv_lookup_table, voltage) / 1000;
+	return 0;
+}
+
 static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			      union fuel_gauge_prop_val *val)
 {
@@ -63,9 +132,8 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	struct composite_data *data = dev->data;
 	const k_ticks_t validity_ticks =
 		k_ms_to_ticks_near64(CONFIG_FUEL_GAUGE_COMPOSITE_DATA_VALIDITY_MS);
-	struct sensor_value sensor_val;
 	enum sensor_channel sensor_chan;
-	int64_t voltage;
+	struct sensor_value sensor_val;
 	int rc = 0;
 
 	/* Validate at build time that equivalent channel output fields still match */
@@ -119,25 +187,7 @@ static int composite_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		break;
 	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT:
 	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT:
-		rc = composite_channel_get(dev, SENSOR_CHAN_GAUGE_STATE_OF_CHARGE, &sensor_val);
-		if (rc == 0) {
-			val->absolute_state_of_charge_pct = sensor_val.val1;
-		} else if (rc == -ENOTSUP) {
-			if (config->ocv_lookup_table[0] == -1) {
-				return -ENOTSUP;
-			}
-			/* Fetch the voltage from the sensor */
-			sensor_chan = config->fg_channels ? SENSOR_CHAN_GAUGE_VOLTAGE
-							  : SENSOR_CHAN_VOLTAGE;
-			rc = composite_channel_get(dev, sensor_chan, &sensor_val);
-			voltage = sensor_value_to_micro(&sensor_val);
-			if (rc == 0) {
-				/* Convert voltage to state of charge */
-				val->relative_state_of_charge_pct =
-					battery_soc_lookup(config->ocv_lookup_table, voltage) /
-					1000;
-			}
-		}
+		rc = composite_get_prop_state_of_charge(dev, val);
 		break;
 	case FUEL_GAUGE_CURRENT_UA:
 	case FUEL_GAUGE_AVG_CURRENT_UA:
@@ -177,7 +227,10 @@ static DEVICE_API(fuel_gauge, composite_api) = {
 	.get_property = composite_get_prop,
 };
 
+#define BATTERY_RESISTANCE(inst) DT_INST_PROP_OR(inst, factory_internal_resistance_micro_ohms, 0)
+
 #define COMPOSITE_INIT(inst)                                                                       \
+	BUILD_ASSERT(BATTERY_RESISTANCE(inst) >= 0);                                               \
 	static const struct composite_config composite_##inst##_config = {                         \
 		.source_primary = DEVICE_DT_GET(DT_INST_PROP(inst, source_primary)),               \
 		.source_secondary = DEVICE_DT_GET_OR_NULL(DT_INST_PROP(inst, source_secondary)),   \
@@ -185,6 +238,7 @@ static DEVICE_API(fuel_gauge, composite_api) = {
 			BATTERY_OCV_TABLE_DT_GET(DT_DRV_INST(inst), ocv_capacity_table_0),         \
 		.charge_capacity_microamp_hours =                                                  \
 			DT_INST_PROP_OR(inst, charge_full_design_microamp_hours, 0),               \
+		.factory_internal_resistance_micro_ohms = BATTERY_RESISTANCE(inst),                \
 		.chemistry = BATTERY_CHEMISTRY_DT_GET(inst),                                       \
 		.fg_channels = DT_INST_PROP(inst, fuel_gauge_channels),                            \
 	};                                                                                         \
