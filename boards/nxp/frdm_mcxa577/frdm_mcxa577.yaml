@@ -30,4 +30,5 @@ supported:
   - can
   - dac
   - rtc
+  - crc
 vendor: nxp

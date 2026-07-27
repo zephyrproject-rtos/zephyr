@@ -32,4 +32,5 @@ supported:
   - edac
   - pwm
   - rtc
+  - crc
 vendor: nxp

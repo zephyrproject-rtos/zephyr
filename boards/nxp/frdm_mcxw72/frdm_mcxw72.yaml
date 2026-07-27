@@ -21,4 +21,5 @@ supported:
   - uart
   - watchdog
   - netif:openthread
+  - crc
 vendor: nxp
