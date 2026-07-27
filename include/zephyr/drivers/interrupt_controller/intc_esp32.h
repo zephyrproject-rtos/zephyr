@@ -42,6 +42,21 @@
 				 ESP_INTR_FLAG_NMI)
 
 /*
+ * Default CPU-line interrupt priority for IRQ_CONNECT(). Mirrors the
+ * IRQ_DEFAULT_PRIORITY used by the intmux devicetree nodes and is fixed per
+ * architecture: ignored on Xtensa (the priority is determined by the CPU
+ * interrupt line), and a valid controller priority on RISC-V, where 0 is not
+ * usable. Guarded so it yields to the dt-bindings definition if both are seen.
+ */
+#ifndef IRQ_DEFAULT_PRIORITY
+#if defined(CONFIG_RISCV)
+#define IRQ_DEFAULT_PRIORITY 1
+#else
+#define IRQ_DEFAULT_PRIORITY 0
+#endif
+#endif
+
+/*
  * Get the interrupt flags from the supplied priority.
  */
 #define ESP_PRIO_TO_FLAGS(priority) \
