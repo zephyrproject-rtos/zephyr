@@ -1,0 +1,182 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* mec_assy6941 EVB
+ *
+ * Set VTR2 to +3.3V
+ * J68 2x8 1-2
+ *
+ * I2C Port 0
+ * ----------
+ * JP15 3x6 Pin Mux
+ * ----------------
+ * JP15 7-8 GPIO004 as I2C00_SCL
+ * JP15 4-5 GPIO003 as I2C00_SDA
+ *
+ * JP27 3x12 Pin Mux
+ * -----------------
+ * JP27 31-32 GPIO004 as I2C00_SCL
+ * JP27 34-35 GPIO003 as I2C00_SDA
+ *
+ * JP70 2x17 Pull-Up Selects
+ * -------------------------
+ * JP70 19-20 ON enable 7.5K pull-up to VTR1
+ * JP70 21-22 ON enable 7.5K pull-up to VTR1
+ *
+ * J12 1x6
+ * ------------------------------
+ *	pin 1 = I2C00_SCL/GPIO004
+ *	pin 2 = GND
+ *	pin 3 = I2C00_SDA/GPIO003
+ *	pin 4 = GND
+ *	pin 5 = VTR1
+ *	pin 6 = GND
+ *
+ * ----------------
+ * I2C Port 7
+ * ----------------
+ * JP14 3x6
+ * --------
+ * 7-8, 16-17
+ *
+ * JP76 2x17
+ * ---------
+ * 21-22 7.5K pull-up to VTR2
+ * 23-24 7.5K pull-up to VTR2
+ *
+ * J22 1x6
+ * ------------------------------
+ *	pin 1 = I2C07_SCL/GPIO013
+ *	pin 2 = GND
+ *	pin 3 = I2C07_SDA/GPIO012
+ *	pin 4 = GND
+ *	pin 5 = VTR2
+ *	pin 6 = GND
+ *
+ */
+
+#include <zephyr/dt-bindings/gpio/microchip-xec-gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/i2c/mchp-xec-i2c.h>
+
+/* Use I2Cv3 byte mode driver */
+&i2c_smb_0 {
+	compatible = "microchip,xec-i2c-v3-bm";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	/* Port routed at boot, before the first transfer. */
+	default-port = <&i2c0_p0>;
+};
+
+&i2c_smb_4 {
+	compatible = "microchip,xec-i2c-v3-bm";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	/* Port routed at boot, before the first transfer. */
+	default-port = <&i2c4_p3>;
+};
+
+/* Port 0 pins */
+&i2c00_sda_gpio003 {
+	drive-open-drain;
+};
+
+&i2c00_scl_gpio004 {
+	drive-open-drain;
+};
+
+/* Port 3 pins */
+&i2c03_sda_gpio007 {
+	drive-open-drain;
+	drive-strength = <3>;
+};
+
+&i2c03_scl_gpio010 {
+	drive-open-drain;
+	drive-strength = <3>;
+};
+
+/* Port 7 pins */
+&i2c07_sda_gpio012 {
+	drive-open-drain;
+	drive-strength = <3>;
+};
+
+&i2c07_scl_gpio013 {
+	drive-open-drain;
+	drive-strength = <3>;
+};
+
+/ {
+	aliases {
+		i2c0 = &i2c_smb_0;
+		i2c1 = &i2c_smb_4;
+	};
+
+	zephyr,user {
+		i2c-p0-test-gpios = <MCHP_GPIO_DECODE_115 GPIO_ACTIVE_HIGH>;
+	};
+
+	/* Port 0 (default port) on I2C Controller 0 */
+	i2c0_p0: i2c-port0 {
+		compatible = "microchip,xec-i2c-v3-bm-port";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port = <0>;
+		controller = <&i2c_smb_0>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		pinctrl-0 = <&i2c00_sda_gpio003 &i2c00_scl_gpio004>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		pca9555_evb: pca9555@26 {
+			compatible = "nxp,pca9555";
+			reg = <0x26>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "okay";
+		};
+
+		ltc2489_evb: ltc2489@34 {
+			reg = <0x34>;
+			status = "okay";
+		};
+	};
+
+	/* Port 7 on I2C controller 0 */
+	i2c0_p7: i2c-port7 {
+		compatible = "microchip,xec-i2c-v3-bm-port";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port = <7>;
+		controller = <&i2c_smb_0>;
+		clock-frequency = <I2C_BITRATE_FAST>;
+		pinctrl-0 = <&i2c07_sda_gpio012 &i2c07_scl_gpio013>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		mb85rc256v_fram: mb85rc256v_fram@50 {
+			reg = <0x50>;
+			#io-channels-cells = <1>;
+		};
+	};
+
+	/* Port 3 on I2C controller 4 */
+	i2c4_p3: i2c-port3 {
+		compatible = "microchip,xec-i2c-v3-bm-port";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		port = <3>;
+		controller = <&i2c_smb_4>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		pinctrl-0 = <&i2c03_sda_gpio007 &i2c03_scl_gpio010>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
