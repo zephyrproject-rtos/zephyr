@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lpacmp {
+	status = "okay";
+	positive-input = "comp_in0";
+	negative-input = <7>;
+};
