@@ -407,6 +407,7 @@ There are several sub-commands available to manage patches for Zephyr or other m
 workspace:
 
 * ``apply``: apply patches listed in ``patches.yml``
+* ``reverse``: reverse patches listed in ``patches.yml`` that have been previously applied
 * ``clean``: remove all patches that have been applied, and reset to the manifest checkout state
 * ``list``: list all patches in ``patches.yml``
 * ``gh-fetch``: fetch patches from a GitHub pull request
@@ -481,6 +482,15 @@ the external application repository, and then the following commands can be run.
     west patch clean
     west update
     west patch apply --roll-back # roll-back all patches if one does not apply cleanly
+
+Optionally, patches can be reversed rather than cleaning all modules. This leaves non-conflicting,
+unrelated edits to modules in place, but removes only the changes made by patches. This is useful
+when developing patches and testing them in an application, but not wanting to clean all patches
+and lose any manual edits made to the module.
+
+.. code-block:: bash
+
+    west patch reverse
 
 If a patch needs to be reworked, remember to update the ``patches.yml`` file with the new SHA256
 checksum.
