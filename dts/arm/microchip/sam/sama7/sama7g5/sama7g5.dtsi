@@ -160,6 +160,17 @@
 			};
 		};
 
+		hsmc: hsmc@e0808000 {
+			compatible = "microchip,smc-g1-memc";
+			reg = <0xe0808000 0x1000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 21>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
 		mcan0: mcan@e0828000 {
 			compatible = "atmel,sam-can";
 			reg = <0xe0828000 0x100>, <0x100000 0x7800>, <0xe1626030 0x4>;
