@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_I2C_EMUL_H_
-#define ZEPHYR_INCLUDE_DRIVERS_I2C_I2C_EMUL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_EMUL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_I2C_EMUL_H_
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
@@ -92,4 +92,4 @@ struct i2c_emul_api {
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_I2C_EMUL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_EMUL_H_ */

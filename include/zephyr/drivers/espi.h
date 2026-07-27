@@ -10,8 +10,8 @@
  * @brief Main header file for eSPI (Enhanced Serial Peripheral Interface) driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_ESPI_H_
-#define ZEPHYR_INCLUDE_ESPI_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_ESPI_H_
+#define ZEPHYR_INCLUDE_DRIVERS_ESPI_H_
 
 #include <errno.h>
 
@@ -1286,4 +1286,4 @@ static inline int espi_interrupt_config(const struct device *dev, uint32_t espi_
  * @}
  */
 #include <zephyr/syscalls/espi.h>
-#endif /* ZEPHYR_INCLUDE_ESPI_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ESPI_H_ */

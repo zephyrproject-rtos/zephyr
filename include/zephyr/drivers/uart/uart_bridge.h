@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DRIVERS_UART_UART_BRIDGE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_UART_UART_BRIDGE_H_
+
 #include <zephyr/device.h>
 
 #ifdef __cplusplus
@@ -25,3 +28,5 @@ void uart_bridge_settings_update(const struct device *dev,
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_UART_UART_BRIDGE_H_ */

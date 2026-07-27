@@ -9,8 +9,8 @@
  * @brief Helper module for receiving using UART Asynchronous API.
  */
 
-#ifndef ZEPHYR_DRIVERS_SERIAL_UART_ASYNC_RX_H_
-#define ZEPHYR_DRIVERS_SERIAL_UART_ASYNC_RX_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_ASYNC_RX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_ASYNC_RX_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -173,4 +173,4 @@ bool uart_async_rx_data_consume(struct uart_async_rx *async_rx, size_t length);
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_SERIAL_UART_ASYNC_RX_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_ASYNC_RX_H_ */

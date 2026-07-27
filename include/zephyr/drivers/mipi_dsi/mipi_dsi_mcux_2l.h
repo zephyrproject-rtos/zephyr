@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DRIVERS_MIPI_DSI_MCUX_2L_
-#define ZEPHYR_INCLUDE_DRIVERS_MIPI_DSI_MCUX_2L_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MIPI_DSI_MIPI_DSI_MCUX_2L_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MIPI_DSI_MIPI_DSI_MCUX_2L_H_
 
 /*
  * HW specific flag- indicates to the MIPI DSI 2L peripheral that the
@@ -19,4 +19,4 @@
  */
 #define MCUX_DSI_2L_ULPS BIT(0x2)
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_MIPI_DSI_MCUX_2L_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MIPI_DSI_MIPI_DSI_MCUX_2L_H_ */

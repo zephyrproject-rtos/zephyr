@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_RTC_RTC_MAX31331_H
-#define ZEPHYR_INCLUDE_RTC_RTC_MAX31331_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_RTC_RTC_MAX31331_H_
+#define ZEPHYR_INCLUDE_DRIVERS_RTC_RTC_MAX31331_H_
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/rtc.h>
@@ -46,4 +46,4 @@ int rtc_max31331_get_timestamps(const struct device *dev, struct rtc_time *timep
 int rtc_max31331_set_timestamp_callback(const struct device *dev,
 					rtc_max31331_timestamp_callback cb, void *user_data);
 
-#endif /* ZEPHYR_DRIVERS_RTC_RTC_MAX31331_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_RTC_RTC_MAX31331_H_ */

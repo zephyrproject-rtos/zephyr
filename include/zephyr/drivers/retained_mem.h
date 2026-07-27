@@ -10,8 +10,8 @@
  * @brief Main header file for retained memory driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_RETAINED_MEM_
-#define ZEPHYR_INCLUDE_DRIVERS_RETAINED_MEM_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_RETAINED_MEM_H_
+#define ZEPHYR_INCLUDE_DRIVERS_RETAINED_MEM_H_
 
 #include <stdint.h>
 #include <stddef.h>
@@ -202,4 +202,4 @@ static inline int z_impl_retained_mem_clear(const struct device *dev)
 
 #include <zephyr/syscalls/retained_mem.h>
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_RETAINED_MEM_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_RETAINED_MEM_H_ */

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_ETH_ADIN2111_H__
-#define ZEPHYR_INCLUDE_DRIVERS_ETH_ADIN2111_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_ETHERNET_ETH_ADIN2111_H_
+#define ZEPHYR_INCLUDE_DRIVERS_ETHERNET_ETH_ADIN2111_H_
 
 #include <stdint.h>
 #include <zephyr/kernel.h>
@@ -94,4 +94,4 @@ struct net_if *eth_adin2111_get_iface(const struct device *dev, const uint16_t p
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_ETH_ADIN2111_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ETHERNET_ETH_ADIN2111_H_ */

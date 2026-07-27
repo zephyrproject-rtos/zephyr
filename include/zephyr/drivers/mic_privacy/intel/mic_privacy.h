@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ZEPHYR_INCLUDE_MIC_PRIVACY_H__
-#define __ZEPHYR_INCLUDE_MIC_PRIVACY_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MIC_PRIVACY_INTEL_MIC_PRIVACY_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MIC_PRIVACY_INTEL_MIC_PRIVACY_H_
 
 #include <stdint.h>
 #include <errno.h>
@@ -58,4 +58,4 @@ struct mic_privacy_api_funcs {
 	uint32_t (*get_fw_mic_disable_status)();
 };
 
-#endif
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MIC_PRIVACY_INTEL_MIC_PRIVACY_H_ */

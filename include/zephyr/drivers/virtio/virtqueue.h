@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_VIRTIO_VIRTQUEUE_H_
-#define ZEPHYR_VIRTIO_VIRTQUEUE_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_VIRTIO_VIRTQUEUE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_VIRTIO_VIRTQUEUE_H_
 #include <stdint.h>
 #include <stddef.h>
 #include <zephyr/kernel.h>
@@ -275,4 +275,4 @@ int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout
 }
 #endif
 
-#endif /* ZEPHYR_VIRTIO_VIRTQUEUE_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_VIRTIO_VIRTQUEUE_H_ */

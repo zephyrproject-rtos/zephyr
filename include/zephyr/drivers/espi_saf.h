@@ -9,8 +9,8 @@
  * @brief Public APIs for eSPI driver
  */
 
-#ifndef ZEPHYR_INCLUDE_ESPI_SAF_H_
-#define ZEPHYR_INCLUDE_ESPI_SAF_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_ESPI_SAF_H_
+#define ZEPHYR_INCLUDE_DRIVERS_ESPI_SAF_H_
 
 #include <zephyr/sys/__assert.h>
 #include <zephyr/types.h>
@@ -540,4 +540,4 @@ static inline int espi_saf_remove_callback(const struct device *dev,
  * @}
  */
 #include <zephyr/syscalls/espi_saf.h>
-#endif /* ZEPHYR_INCLUDE_ESPI_SAF_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ESPI_SAF_H_ */

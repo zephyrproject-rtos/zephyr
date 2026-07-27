@@ -8,8 +8,8 @@
  * Header file for the ALTERA UART
  */
 
-#ifndef ZEPHYR_DRIVERS_SERIAL_UART_ALTERA_H_
-#define ZEPHYR_DRIVERS_SERIAL_UART_ALTERA_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_ALTERA_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_ALTERA_H_
 
 /* End of packet feature.
  * Driver will trigger interrupt upon receiving end of package character.
@@ -23,4 +23,4 @@
 #define CMD_ENABLE_EOP	0x01
 #define CMD_DISABLE_EOP	0x02
 
-#endif /* ZEPHYR_DRIVERS_SERIAL_UART_ALTERA_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_ALTERA_H_ */
