@@ -33,6 +33,7 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
@@ -211,6 +212,43 @@ int bt_ccp_call_control_server_set_bearer_uri_schemes(
 int bt_ccp_call_control_server_get_bearer_uri_schemes(
 	struct bt_ccp_call_control_server_bearer *bearer, char *uri_schemes,
 	size_t uri_schemes_size);
+
+/**
+ * @brief Set a new bearer signal strength.
+ *
+ * @kconfig_dep{CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH}
+ *
+ * @param bearer The bearer to set the URI schemes supported list for.
+ * @param signal_strength The new signal strength. Values between @ref BT_TBS_SIGNAL_STRENGTH_MIN
+ *                        and @ref BT_TBS_SIGNAL_STRENGTH_MAX, or
+ *                        @ref BT_TBS_SIGNAL_STRENGTH_NO_SERVICE for no service or
+ *                        @ref BT_TBS_SIGNAL_STRENGTH_UNKNOWN for unknown signal strength.
+ *
+ * @retval 0 New signal strength list set, or if there were no change.
+ * @retval -EINVAL @p bearer  is NULL or @p signal_strength is invalid.
+ * @retval -ENOEXEC Unexpected error from TBS
+ * @retval -EFAULT @p bearer is not registered.
+ */
+int bt_ccp_call_control_server_set_bearer_signal_strength(
+	struct bt_ccp_call_control_server_bearer *bearer, uint8_t signal_strength);
+
+/**
+ * @brief Get the bearer signal strength.
+ *
+ * @kconfig_dep{CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_SIGNAL_STRENGTH}
+ *
+ * @param[in] bearer The bearer to get the signal strength for.
+ * @param[out] signal_strength Pointer that will be updated to be the bearer signal strength. Will
+ *                             be either @ref BT_TBS_SIGNAL_STRENGTH_NO_SERVICE,
+ *                             @ref BT_TBS_SIGNAL_STRENGTH_UNKNOWN or between
+ *                             @ref BT_TBS_SIGNAL_STRENGTH_MIN and @ref BT_TBS_SIGNAL_STRENGTH_MAX.
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p bearer or @p signal_strength is NULL.
+ * @retval -EFAULT @p bearer is not registered.
+ */
+int bt_ccp_call_control_server_get_bearer_signal_strength(
+	const struct bt_ccp_call_control_server_bearer *bearer, uint8_t *signal_strength);
 /** @} */ /* End of group bt_ccp_call_control_server */
 
 /**
