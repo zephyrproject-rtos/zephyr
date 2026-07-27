@@ -15,3 +15,12 @@ config MEMC_MCHP_HSMC_G1
 	depends on SOC_FAMILY_MICROCHIP_SAMA7
 	help
 	  This is an HSMC memory controller G1.
+
+config MEMC_MCHP_EBI_G1
+	bool "Microchip External Bus Interface (EBI) G1"
+	default y
+	depends on DT_HAS_MICROCHIP_EBI_G1_MEMC_ENABLED
+	depends on MEMC_MCHP_SMC_G1
+	select PINCTRL
+	help
+	  Enable driver for Microchip External Bus Interface driver G1.
