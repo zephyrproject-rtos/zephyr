@@ -25,7 +25,7 @@ static bool perf_trace_cb(void *cookie, unsigned long addr)
 	return true;
 }
 
-size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
+int arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 {
 	if (size < 2U) {
 		return 0;
@@ -51,5 +51,5 @@ size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 
 	arch_stack_walk(perf_trace_cb, &ctx, _current, esf);
 
-	return ctx.idx;
+	return (int)ctx.idx;
 }

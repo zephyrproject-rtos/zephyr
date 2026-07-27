@@ -24,7 +24,7 @@ static inline bool in_text_region(uintptr_t addr)
  * Return addresses are translated in corresponding function's names using .elf file.
  * So we get function call trace
  */
-size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
+int arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 {
 	if (size < 1U) {
 		return 0;
@@ -75,5 +75,5 @@ size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 		fp = new_fp;
 	}
 
-	return idx;
+	return (int)idx;
 }
