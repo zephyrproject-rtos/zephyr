@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC55xx PMC reset-cause hwinfo.
+
+compatible: "nxp,lpc-pmc-hwinfo"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
