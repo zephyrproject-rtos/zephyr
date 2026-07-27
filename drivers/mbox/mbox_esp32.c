@@ -22,7 +22,7 @@
 #endif
 
 #if !defined(MBOX_ESP32_HPCORE) && !defined(MBOX_ESP32_LPCORE)
-#include "soc/dport_reg.h"
+#include <soc/dport_reg.h>
 #else
 #include <ulp_lp_core.h>
 #include <soc/pmu_reg.h>
@@ -34,7 +34,7 @@
 #endif
 #endif
 
-#include "soc/gpio_periph.h"
+#include <soc/gpio_periph.h>
 
 #include <stdint.h>
 #include <string.h>

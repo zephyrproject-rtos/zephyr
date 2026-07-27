@@ -29,7 +29,7 @@
 #endif
 
 #if MCPWM_SLEEP_RETENTION_ENABLED
-#include "mcpwm_private.h"
+#include <mcpwm_private.h>
 #include <esp_private/sleep_retention.h>
 #endif
 

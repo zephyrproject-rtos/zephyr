@@ -15,8 +15,8 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "hal/aes_hal.h"
-#include "hal/aes_ll.h"
+#include <hal/aes_hal.h>
+#include <hal/aes_ll.h>
 
 LOG_MODULE_REGISTER(esp32_aes, CONFIG_CRYPTO_LOG_LEVEL);
 
