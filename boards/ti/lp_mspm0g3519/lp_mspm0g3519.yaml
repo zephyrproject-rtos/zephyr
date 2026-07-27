@@ -16,4 +16,5 @@ supported:
   - spi
   - vref
   - trng
+  - watchdog
 vendor: ti
