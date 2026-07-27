@@ -25,6 +25,22 @@ config FLASH_HAS_UNALIGNED_WRITE
 	  applications to write data starting at any offset within the flash memory
 	  space, not just at aligned addresses.
 
+config FLASH_MCHP_NFC_G1
+	bool "Microchip NAND Flash Controller (NFC) G1"
+	default y
+	depends on DT_HAS_MICROCHIP_NFC_G1_FLASH_ENABLED
+	help
+	  Enable driver for Microchip NAND Flash Controller G1.
+
+config FLASH_MCHP_NFC_G1_DMA
+	bool "NFC G1 driver DMA support"
+	default y
+	depends on FLASH_MCHP_NFC_G1
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_NFC_G1_FLASH),dmas)
+	select DMA
+	help
+	  NFC G1 driver DMA support.
+
 config FLASH_MCHP_PMECC_G1
 	bool "Microchip Programmable Multibit Error Correcting Code (PMECC) G1"
 	default y
