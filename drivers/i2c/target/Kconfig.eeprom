@@ -5,6 +5,7 @@
 
 config I2C_EEPROM_TARGET
 	bool "I2C Target EEPROM driver"
+	select I2C_TARGET_REGSET_LIB
 	help
 	  Enable virtual I2C Target EEPROM driver
 
