@@ -41,4 +41,5 @@ supported:
   - video
   - watchdog
   - edac
+  - crc
 vendor: nxp

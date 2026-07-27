@@ -30,4 +30,5 @@ supported:
   - usb_device
   - watchdog
   - edac
+  - crc
 vendor: nxp
