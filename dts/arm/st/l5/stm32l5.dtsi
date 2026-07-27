@@ -385,7 +385,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
-			interrupts = <29 0 30 0 31 0 32 0 33 0 34 0 35 0 36 0>;
+			interrupts = <29 0>, <30 0>, <31 0>, <32 0>, <33 0>, <34 0>, <35 0>, <36 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-requests = <8>;
 			dma-offset = <0>;
@@ -396,7 +396,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020400 0x400>;
-			interrupts = <80 0 81 0 82 0 83 0 84 0 85 0 86 0 87 0>;
+			interrupts = <80 0>, <81 0>, <82 0>, <83 0>, <84 0>, <85 0>, <86 0>, <87 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			dma-requests = <8>;
 			dma-offset = <8>;

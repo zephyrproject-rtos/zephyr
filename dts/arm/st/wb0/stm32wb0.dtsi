@@ -296,7 +296,7 @@
 			#dma-cells = <2>;
 			reg = <0x48700000 256>;
 			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
-			interrupts = <17 0 17 0 17 0 17 0 17 0 17 0 17 0 17 0>;
+			interrupts = <17 0>, <17 0>, <17 0>, <17 0>, <17 0>, <17 0>, <17 0>, <17 0>;
 			dma-requests = <8>;
 			dma-offset = <0>;
 			status = "disabled";

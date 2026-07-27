@@ -508,7 +508,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
-			interrupts = <9 0 10 0 10 0 11 0 11 0>;
+			interrupts = <9 0>, <10 0>, <10 0>, <11 0>, <11 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-requests = <5>;
 			dma-offset = <0>;
