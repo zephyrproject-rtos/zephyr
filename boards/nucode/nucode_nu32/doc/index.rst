@@ -70,10 +70,13 @@ NUCODE_JTAG Adapter.  The minimum SWD connection is:
    * - SWDIO
      - SWDIO
      - SWD data
+   * - nRESET (nRST)
+     - RESET (P0.21)
+     - Target reset
 
 The target must be powered and VTARGET must be connected before starting a
-debug session.  Keep the SWD leads short.  The RESET signal can optionally be
-connected to P0.21 if reset control from the debug probe is required.
+debug session.  Keep the SWD leads short.  Connect nRESET to P0.21 so the
+debug probe can reliably reset and recover the target.
 
 Programming and Debugging
 *************************
