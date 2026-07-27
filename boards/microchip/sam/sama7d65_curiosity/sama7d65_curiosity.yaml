@@ -18,6 +18,7 @@ supported:
   - hwinfo
   - i2c
   - led
+  - memc
   - pinctrl
   - pwm
   - rtc
