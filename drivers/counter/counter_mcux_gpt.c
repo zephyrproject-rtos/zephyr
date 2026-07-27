@@ -421,7 +421,8 @@ static int mcux_gpt_init(const struct device *dev)
 
 		if (ref_freq == 0 || config->info.freq == 0 ||
 		    (ref_freq % config->info.freq != 0)) {
-			LOG_ERR("Cannot adjust GPT freq to %u", config->info.freq);
+			LOG_ERR("Cannot adjust GPT freq to %llu",
+				(unsigned long long)config->info.freq);
 			return -EINVAL;
 		}
 
@@ -438,8 +439,8 @@ static int mcux_gpt_init(const struct device *dev)
 		osc_in = config->osc_freq / config->osc_divider;
 
 		if (config->info.freq == 0 || (osc_in % config->info.freq != 0)) {
-			LOG_ERR("Cannot adjust GPT freq to %u with OSC clock",
-				config->info.freq);
+			LOG_ERR("Cannot adjust GPT freq to %llu with OSC clock",
+				(unsigned long long)config->info.freq);
 			return -EINVAL;
 		}
 		gptConfig.divider = osc_in / config->info.freq;
@@ -456,7 +457,8 @@ static int mcux_gpt_init(const struct device *dev)
 			return -EINVAL;
 		}
 		if (config->info.freq == 0 || (clock_freq % config->info.freq != 0)) {
-			LOG_ERR("Cannot adjust GPT freq to %u", config->info.freq);
+			LOG_ERR("Cannot adjust GPT freq to %llu",
+				(unsigned long long)config->info.freq);
 			return -EINVAL;
 		}
 		gptConfig.divider = clock_freq / config->info.freq;
