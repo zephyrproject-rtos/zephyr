@@ -51,6 +51,14 @@ config FLASH_MCHP_NVMCTRL_G3
 	help
 	  Enable Microchip's G3 Non-Volatile Memory Controller for Flash operations.
 
+config FLASH_MCHP_NAND_G1
+	bool "Microchip NAND Flash driver G1"
+	default y
+	depends on DT_HAS_MICROCHIP_NAND_G1_FLASH_ENABLED
+	select GPIO
+	help
+	  Enable driver for Microchip NAND Flash G1.
+
 config FLASH_MCHP_NFC_G1
 	bool "Microchip NAND Flash Controller (NFC) G1"
 	default y
