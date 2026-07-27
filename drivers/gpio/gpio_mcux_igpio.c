@@ -107,7 +107,7 @@ static int mcux_igpio_configure(const struct device *dev,
 		reg &= ~IOMUXC_SW_PAD_CTL_PAD_PUE_MASK;
 	}
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
-	if (config->pin_muxes[pin].pue_mux) {
+	if (config->pin_muxes[cfg_idx].pue_mux) {
 		/* PUE type register layout (GPIO_AD pins) */
 		if ((flags & GPIO_SINGLE_ENDED) != 0) {
 			/* Set ODE bit */
