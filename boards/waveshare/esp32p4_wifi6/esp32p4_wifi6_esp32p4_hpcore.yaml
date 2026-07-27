@@ -18,4 +18,5 @@ supported:
   - sensor
   - uart
   - watchdog
+  - smp
 vendor: waveshare
