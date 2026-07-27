@@ -38,6 +38,8 @@ tmp108: Sensors.TMP108 @ i2c1 0x48
 
 lps25hb: Sensors.LPS25HB @ i2c1 0x5D
 
+lsm6dso: Sensors.LSM6DSO_IMU @ i2c1 0x6A
+
 usart2:
     frequency: 200000000
 
