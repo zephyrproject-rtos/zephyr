@@ -154,6 +154,8 @@ int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_
  * @retval 0 Success
  * @retval -EINVAL @p bearer or is NULL or @p tech is invalid.
  * @retval -EFAULT @p bearer is not registered.
+ * @retval -ENOEXEC The TBS instance of @p bearer returned unexpected error.
+ * @retval -EBUSY The operation could not be done right now. Try again.
  */
 int bt_ccp_call_control_server_set_bearer_tech(struct bt_ccp_call_control_server_bearer *bearer,
 					       enum bt_bearer_tech tech);
@@ -183,6 +185,8 @@ int bt_ccp_call_control_server_get_bearer_tech(
  * @retval -EFAULT @p bearer is not registered
  * @retval -ENOMEM @p uri_schemes is larger than
  *                 @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_URI_SCHEMES_MAX_LENGTH}
+ * @retval -ENOEXEC The TBS instance of @p bearer returned unexpected error.
+ * @retval -EBUSY The operation could not be done right now. Try again.
  */
 int bt_ccp_call_control_server_set_bearer_uri_schemes(
 	struct bt_ccp_call_control_server_bearer *bearer, const char *uri_schemes);
@@ -417,8 +421,7 @@ int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *cl
  * @retval -EINVAL @p bearer is NULL
  * @retval -EFAULT @p bearer has not been discovered
  * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer
- * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
- * instance of @p bearer is busy.
+ * @retval -EBUSY The operation could not be done right now. Try again.
  * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
  * @retval -ENOEXEC The underlying TBS client returned an unexpected error
  */
@@ -436,8 +439,7 @@ int bt_ccp_call_control_client_read_bearer_provider_name(
  * @retval -EINVAL @p bearer is NULL
  * @retval -EFAULT @p bearer has not been discovered
  * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer
- * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
- * instance of @p bearer is busy.
+ * @retval -EBUSY The operation could not be done right now. Try again.
  * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
  * @retval -ENOEXEC The underlying TBS client returned an unexpected error
  */
@@ -454,8 +456,7 @@ int bt_ccp_call_control_client_read_bearer_uci(struct bt_ccp_call_control_client
  * @retval -EINVAL @p bearer is NULL.
  * @retval -EFAULT @p bearer has not been discovered.
  * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer.
- * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
- * instance of @p bearer is busy.
+ * @retval -EBUSY The operation could not be done right now. Try again.
  * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected.
  * @retval -ENOEXEC The underlying TBS client returned an unexpected error.
  */
@@ -472,8 +473,7 @@ int bt_ccp_call_control_client_read_bearer_tech(struct bt_ccp_call_control_clien
  * @retval -EINVAL @p bearer is NULL.
  * @retval -EFAULT @p bearer has not been discovered.
  * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer.
- * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
- * instance of @p bearer is busy.
+ * @retval -EBUSY The operation could not be done right now. Try again.
  * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected.
  * @retval -ENOEXEC The underlying TBS client returned an unexpected error.
  */
