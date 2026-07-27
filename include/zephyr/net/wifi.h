@@ -293,6 +293,9 @@ enum wifi_frequency_bands {
 	/** 6 GHz band (Wi-Fi 6E, also extends to 7GHz). */
 	WIFI_FREQ_BAND_6_GHZ,
 
+	/** Sub-1GHz band (Wi-Fi HaLow, 802.11ah)*/
+	WIFI_FREQ_BAND_SUB_1_GHZ,
+
 	/** Number of frequency bands available. */
 	__WIFI_FREQ_BAND_AFTER_LAST,
 	/** Highest frequency band available. */
@@ -314,6 +317,15 @@ enum wifi_frequency_bandwidths {
 	WIFI_FREQ_BANDWIDTH_40MHZ,
 	/** 80 MHz. */
 	WIFI_FREQ_BANDWIDTH_80MHZ,
+
+	/** 1 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_1MHZ,
+	/** 2 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_2MHZ,
+	/** 4 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_4MHZ,
+	/** 8 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_8MHZ,
 
 	/** Number of frequency bandwidths available. */
 	__WIFI_FREQ_BANDWIDTH_AFTER_LAST,
