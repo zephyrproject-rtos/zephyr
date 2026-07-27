@@ -1213,6 +1213,7 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 		ret = esp_wifi_sta_enterprise_disable();
 		if (ret != ESP_OK) {
 			LOG_ERR("Failed to disable Enterprise authentication (%d)", ret);
+			data->state = ESP32_STA_STARTED;
 			return -EIO;
 		}
 	}
@@ -1278,6 +1279,7 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 #else
 		LOG_ERR("WPA3 not supported for STA mode. Enable "
 			"CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE");
+		data->state = ESP32_STA_STARTED;
 		return -EINVAL;
 #endif /* CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE */
 	case WIFI_SECURITY_TYPE_EAP_TLS:
@@ -1288,16 +1290,19 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 		ret = esp32_wifi_configure_enterprise(data, params, &wifi_config);
 		if (ret) {
+			data->state = ESP32_STA_STARTED;
 			return ret;
 		}
 		break;
 #else
 		LOG_ERR("WPA Enterprise not supported for STA mode. Enable "
 			"CONFIG_ESP32_WIFI_ENTERPRISE");
+		data->state = ESP32_STA_STARTED;
 		return -EINVAL;
 #endif /* CONFIG_ESP32_WIFI_ENTERPRISE */
 	default:
 		LOG_ERR("Authentication method not supported");
+		data->state = ESP32_STA_STARTED;
 		return -EIO;
 	}
 
@@ -1312,12 +1317,14 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 	ret = esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
 	if (ret) {
 		LOG_ERR("Failed to set Wi-Fi configuration (%d)", ret);
+		data->state = ESP32_STA_STARTED;
 		return -EINVAL;
 	}
 
 	ret = esp_wifi_connect();
 	if (ret) {
 		LOG_ERR("Failed to connect to Wi-Fi access point (%d)", ret);
+		data->state = ESP32_STA_STARTED;
 		return -EAGAIN;
 	}
 
