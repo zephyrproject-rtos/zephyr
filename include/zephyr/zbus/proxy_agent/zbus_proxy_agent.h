@@ -20,6 +20,9 @@ extern "C" {
  * @brief Zbus Multi-domain API
  * @defgroup zbus_proxy_agent Zbus Proxy Agent API
  * @ingroup zbus_apis
+ *
+ * @kconfig_dep{CONFIG_ZBUS_PROXY_AGENT}
+ *
  * @{
  */
 
