@@ -206,24 +206,6 @@ static int sdmmc_host_set_clk_div(sdmmc_dev_t *sdio_hw, int div)
 	return 0;
 }
 
-static void sdmmc_host_dma_init(sdmmc_dev_t *sdio_hw)
-{
-	sdio_hw->ctrl.dma_enable = 1;
-	sdio_hw->bmod.val = 0;
-	sdio_hw->bmod.sw_reset = 1;
-	sdio_hw->idinten.ni = 1;
-	sdio_hw->idinten.ri = 1;
-	sdio_hw->idinten.ti = 1;
-}
-
-static void sdmmc_host_dma_stop(sdmmc_dev_t *sdio_hw)
-{
-	sdio_hw->ctrl.use_internal_dma = 0;
-	sdio_hw->ctrl.dma_reset = 1;
-	sdio_hw->bmod.fb = 0;
-	sdio_hw->bmod.enable = 0;
-}
-
 static int sdmmc_host_transaction_handler_init(struct sdhc_esp32_data *data)
 {
 	data->s_is_app_cmd = false;
@@ -353,7 +335,7 @@ static int sdmmc_host_start_command(sdmmc_dev_t *sdio_hw, int slot, sdmmc_hw_cmd
 	int64_t t0 = esp_timer_get_time();
 	int64_t t1 = 0;
 
-	while (sdio_hw->cmd.start_command == 1) {
+	while (!sdmmc_ll_is_command_taken(sdio_hw)) {
 		t1 = esp_timer_get_time();
 
 		if (t1 - t0 > SDMMC_HOST_START_CMD_TIMEOUT_US) {
@@ -365,10 +347,10 @@ static int sdmmc_host_start_command(sdmmc_dev_t *sdio_hw, int slot, sdmmc_hw_cmd
 		}
 	}
 
-	sdio_hw->cmdarg = arg;
+	sdmmc_ll_set_command_arg(sdio_hw, arg);
 	cmd.card_num = slot;
 	cmd.start_command = 1;
-	sdio_hw->cmd = cmd;
+	sdmmc_ll_set_command(sdio_hw, cmd);
 
 	return ESP_OK;
 }
@@ -406,7 +388,7 @@ static void process_command_response(sdmmc_dev_t *sdio_hw, uint32_t status,
 	if (err != ESP_OK) {
 		cmd->error = err;
 		if (cmd->data) {
-			sdmmc_host_dma_stop(sdio_hw);
+			sdmmc_ll_stop_dma(sdio_hw);
 		}
 		LOG_DBG("%s: error 0x%x  (status=%08" PRIx32 ")", __func__, err, status);
 	}
@@ -424,12 +406,12 @@ static void process_data_status(sdmmc_dev_t *sdio_hw, uint32_t status, struct sd
 		} else {
 			cmd->error = ESP_FAIL;
 		}
-		sdio_hw->ctrl.fifo_reset = 1;
+		sdmmc_ll_reset_fifo(sdio_hw);
 	}
 
 	if (cmd->error != 0) {
 		if (cmd->data) {
-			sdmmc_host_dma_stop(sdio_hw);
+			sdmmc_ll_stop_dma(sdio_hw);
 		}
 		LOG_DBG("%s: error 0x%x (status=%08" PRIx32 ")", __func__, cmd->error, status);
 	}
@@ -526,7 +508,7 @@ static int process_events(const struct device *dev, struct sdmmc_event evt,
 		case SDMMC_SENDING_DATA:
 			if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_DATA_ERR_MASK)) {
 				process_data_status(sdio_hw, orig_evt.sdmmc_status, cmd);
-				sdmmc_host_dma_stop(sdio_hw);
+				sdmmc_ll_stop_dma(sdio_hw);
 			}
 			if (mask_check_and_clear(&evt.dma_status, SDMMC_DMA_DONE_MASK)) {
 
@@ -583,7 +565,7 @@ static int handle_event(const struct device *dev, struct sdmmc_command *cmd,
 			"ms",
 			err, cmd->timeout_ms);
 		if (err == -EAGAIN) {
-			sdmmc_host_dma_stop(sdio_hw);
+			sdmmc_ll_stop_dma(sdio_hw);
 		}
 		return err;
 	}
@@ -606,7 +588,7 @@ static int handle_event(const struct device *dev, struct sdmmc_command *cmd,
 static bool wait_for_busy_cleared(const sdmmc_dev_t *sdio_hw, uint32_t timeout_ms)
 {
 	if (timeout_ms == 0) {
-		return !(sdio_hw->status.data_busy == 1);
+		return !sdmmc_ll_is_card_data_busy((sdmmc_dev_t *)sdio_hw);
 	}
 
 	/* It would have been nice to do this without polling, however the peripheral
@@ -616,7 +598,7 @@ static bool wait_for_busy_cleared(const sdmmc_dev_t *sdio_hw, uint32_t timeout_m
 	uint32_t timeout_ticks = k_ms_to_ticks_ceil32(timeout_ms);
 
 	while (timeout_ticks-- > 0) {
-		if (!(sdio_hw->status.data_busy == 1)) {
+		if (!sdmmc_ll_is_card_data_busy((sdmmc_dev_t *)sdio_hw)) {
 			return true;
 		}
 		k_sleep(K_MSEC(1));
@@ -849,14 +831,14 @@ static int sdmmc_host_clock_update_command(sdmmc_dev_t *sdio_hw, int slot)
 			}
 			/* Sending clock update command to the CIU can generate HLE error */
 			/* According to the manual, this is okay and we must retry the command */
-			if (sdio_hw->rintsts.val & SDMMC_HLE_BIT) {
-				sdio_hw->rintsts.val = SDMMC_HLE_BIT;
+			if (sdmmc_ll_get_interrupt_raw(sdio_hw) & SDMMC_HLE_BIT) {
+				sdmmc_ll_clear_interrupt(sdio_hw, SDMMC_HLE_BIT);
 				repeat = true;
 				break;
 			}
 			/* When the command is accepted by CIU, start_command bit will be */
-			/* cleared in sdio_hw->cmd register */
-			if (sdio_hw->cmd.start_command == 0) {
+			/* cleared in the cmd register */
+			if (sdmmc_ll_is_command_taken(sdio_hw)) {
 				repeat = false;
 				break;
 			}
@@ -992,7 +974,7 @@ int sdmmc_host_set_card_clk(sdmmc_dev_t *sdio_hw, int slot, uint32_t freq_khz, i
 	/* always set response timeout to highest value, it's small enough anyway */
 	sdmmc_ll_set_response_timeout(sdio_hw, 255);
 
-	sdio_hw->rintsts.val = 0xFFFFFFFFU;
+	sdmmc_ll_clear_interrupt(sdio_hw, 0xFFFFFFFFU);
 
 restore:
 	/*
@@ -1011,17 +993,11 @@ int sdmmc_host_set_bus_width(sdmmc_dev_t *sdio_hw, int slot, size_t width)
 		return ESP_ERR_INVALID_ARG;
 	}
 
-	const uint16_t mask = BIT(slot);
-
-	if (width == 1) {
-		sdio_hw->ctype.card_width_8 &= ~mask;
-		sdio_hw->ctype.card_width &= ~mask;
-	} else if (width == 4) {
-		sdio_hw->ctype.card_width_8 &= ~mask;
-		sdio_hw->ctype.card_width |= mask;
-	} else {
+	if (width != 1 && width != 4) {
 		return ESP_ERR_INVALID_ARG;
 	}
+
+	sdmmc_ll_set_card_width(sdio_hw, slot, (sd_bus_width_t)width);
 
 	LOG_DBG("slot=%d width=%d", slot, width);
 	return ESP_OK;
@@ -1126,17 +1102,17 @@ static int sdhc_esp32_reset_ctrl(const struct device *dev)
 	sdmmc_dev_t *sdio_hw = (sdmmc_dev_t *)cfg->sdio_hw;
 
 	/* Set reset bits */
-	sdio_hw->ctrl.controller_reset = 1;
-	sdio_hw->ctrl.dma_reset = 1;
-	sdio_hw->ctrl.fifo_reset = 1;
+	sdmmc_ll_reset_controller(sdio_hw);
+	sdmmc_ll_reset_dma(sdio_hw);
+	sdmmc_ll_reset_fifo(sdio_hw);
 
 	/* Wait for the reset bits to be cleared by hardware */
 	int64_t yield_delay_us = 100 * 1000; /* initially 100ms */
 	int64_t t0 = esp_timer_get_time();
 	int64_t t1 = 0;
 
-	while (sdio_hw->ctrl.controller_reset || sdio_hw->ctrl.fifo_reset ||
-	       sdio_hw->ctrl.dma_reset) {
+	while (!sdmmc_ll_is_controller_reset_done(sdio_hw) ||
+	       !sdmmc_ll_is_fifo_reset_done(sdio_hw) || !sdmmc_ll_is_dma_reset_done(sdio_hw)) {
 		t1 = esp_timer_get_time();
 
 		if (t1 - t0 > SDMMC_HOST_RESET_TIMEOUT_US) {
@@ -1165,8 +1141,9 @@ static void sdhc_esp32_restore_after_reset(const struct device *dev)
 	uint32_t keep_io = 0;
 	unsigned int io_key;
 
-	sdio_hw->tmout.val = 0xFFFFFFFFU;
-	sdio_hw->rintsts.val = 0xFFFFFFFFU;
+	sdmmc_ll_set_data_timeout(sdio_hw, 0xFFFFFFU);
+	sdmmc_ll_set_response_timeout(sdio_hw, 0xFFU);
+	sdmmc_ll_clear_interrupt(sdio_hw, 0xFFFFFFFFU);
 
 	io_key = irq_lock();
 
@@ -1186,16 +1163,19 @@ static void sdhc_esp32_restore_after_reset(const struct device *dev)
 	}
 #endif
 
-	sdio_hw->intmask.val = SDMMC_INTMASK_CD | SDMMC_INTMASK_CMD_DONE |
-			       SDMMC_INTMASK_DATA_OVER | SDMMC_INTMASK_RCRC |
-			       SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO | SDMMC_INTMASK_DTO |
-			       SDMMC_INTMASK_HTO | SDMMC_INTMASK_SBE | SDMMC_INTMASK_EBE |
-			       SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE | keep_io;
+	sdmmc_ll_enable_interrupt(sdio_hw,
+				  SDMMC_INTMASK_CD | SDMMC_INTMASK_CMD_DONE |
+					  SDMMC_INTMASK_DATA_OVER | SDMMC_INTMASK_RCRC |
+					  SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO |
+					  SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO |
+					  SDMMC_INTMASK_SBE | SDMMC_INTMASK_EBE |
+					  SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE | keep_io,
+				  true);
 	irq_unlock(io_key);
 
-	sdio_hw->ctrl.int_enable = 1;
-	sdio_hw->cardthrctl.busy_clr_int_en = 0;
-	sdmmc_host_dma_init(sdio_hw);
+	sdmmc_ll_enable_global_interrupt(sdio_hw, true);
+	sdmmc_ll_enable_busy_clear_interrupt(sdio_hw, false);
+	sdmmc_ll_init_dma(sdio_hw);
 }
 
 /*
@@ -1255,8 +1235,7 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 	LOG_DBG("SDHC I/O: slot: %d, bus width %d, clock %dHz, card power %s, "
 		"timing %s, voltage %s",
 		cfg->slot, ios->bus_width, ios->clock,
-		ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
-		sdhc_timing_mode_str(ios->timing),
+		ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF", sdhc_timing_mode_str(ios->timing),
 		sd_voltage_str(ios->signal_voltage));
 
 	if (ios->clock) {
@@ -1427,7 +1406,7 @@ static int sdhc_esp32_card_busy(const struct device *dev)
 	const struct sdhc_esp32_config *cfg = dev->config;
 	const sdmmc_dev_t *sdio_hw = cfg->sdio_hw;
 
-	return (sdio_hw->status.data_busy == 1);
+	return sdmmc_ll_is_card_data_busy((sdmmc_dev_t *)sdio_hw);
 }
 
 /*
@@ -1703,12 +1682,12 @@ static void IRAM_ATTR sdio_esp32_isr(void *arg)
 	}
 #endif
 
-	sdio_hw->rintsts.val = pending;
+	sdmmc_ll_clear_interrupt(sdio_hw, pending);
 	event.sdmmc_status = pending;
 
-	uint32_t dma_pending = sdio_hw->idsts.val;
+	uint32_t dma_pending = sdmmc_ll_get_idsts_interrupt_raw(sdio_hw);
 
-	sdio_hw->idsts.val = dma_pending;
+	sdmmc_ll_clear_idsts_interrupt(sdio_hw, dma_pending);
 	event.dma_status = dma_pending & 0x1f;
 
 	if ((pending != 0) || (dma_pending != 0)) {
@@ -1761,12 +1740,13 @@ static int sdhc_esp32_controller_init(const struct device *dev)
 	/* Reset controller */
 	sdhc_esp32_reset_ctrl(dev);
 
-	sdio_hw->tmout.val = 0xFFFFFFFFU;
+	sdmmc_ll_set_data_timeout(sdio_hw, 0xFFFFFFU);
+	sdmmc_ll_set_response_timeout(sdio_hw, 0xFFU);
 
 	/* Clear interrupt status and set interrupt mask to known state */
-	sdio_hw->rintsts.val = 0xffffffff;
+	sdmmc_ll_clear_interrupt(sdio_hw, 0xffffffff);
 	sdio_hw->intmask.val = 0;
-	sdio_hw->ctrl.int_enable = 0;
+	sdmmc_ll_enable_global_interrupt(sdio_hw, false);
 
 	/* Attach interrupt handler */
 	ret = esp_intr_alloc(cfg->irq_source,
@@ -1789,13 +1769,13 @@ static int sdhc_esp32_controller_init(const struct device *dev)
 			SDMMC_INTMASK_EBE | SDMMC_INTMASK_RESP_ERR | SDMMC_INTMASK_HLE,
 		true);
 
-	sdio_hw->ctrl.int_enable = 1;
+	sdmmc_ll_enable_global_interrupt(sdio_hw, true);
 
 	/* Disable generation of Busy Clear Interrupt */
-	sdio_hw->cardthrctl.busy_clr_int_en = 0;
+	sdmmc_ll_enable_busy_clear_interrupt(sdio_hw, false);
 
 	/* Enable DMA */
-	sdmmc_host_dma_init(sdio_hw);
+	sdmmc_ll_init_dma(sdio_hw);
 
 	sdhc_esp32_ctrl.initialized = true;
 
