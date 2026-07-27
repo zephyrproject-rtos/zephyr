@@ -24,3 +24,10 @@ config FLASH_HAS_UNALIGNED_WRITE
 	  using read-modify-write operations to ensure data integrity. This allows
 	  applications to write data starting at any offset within the flash memory
 	  space, not just at aligned addresses.
+
+config FLASH_MCHP_PMECC_G1
+	bool "Microchip Programmable Multibit Error Correcting Code (PMECC) G1"
+	default y
+	depends on DT_HAS_MICROCHIP_PMECC_G1_FLASH_ENABLED
+	help
+	  Enable driver for Microchip Programmable Multibit Error Correcting Code G1.
