@@ -206,7 +206,10 @@
 			#interrupt-cells = <3>;
 			#address-cells = <0>;
 			interrupt-controller;
-			reg = <0x600c2000 0x1000>;
+			/* per-core INTMUX MAP base then pending-STATUS base (core0, core1) */
+			reg = <0x600c2000 0x1000>, <0x600c218c 0x10>,
+			      <0x600c2800 0x1000>, <0x600c298c 0x10>;
+			reg-names = "map0", "status0", "map1", "status1";
 			status = "okay";
 
 			systimer0_intmux: systimer0_intmux {
@@ -465,6 +468,26 @@
 				interrupt-parent = <&intc>;
 				interrupts = <ESP_CPU_IRQ_L4_EDG_28 IRQ_DEFAULT_PRIORITY 0>;
 			};
+
+			/*
+			 * Level-3 aggregators
+			 */
+
+			/* LCD_CAM: consumes the LCD_CAM INTMUX source (level 2) and
+			 * re-exposes the peripheral's four LC_DMA interrupt-status
+			 * flags as its own lines 0..3 (LCD_VSYNC=0, LCD_TRANS_DONE=1,
+			 * CAM_VSYNC=2, CAM_HS=3). status-reg is LCD_CAM_LC_DMA_INT_ST_REG;
+			 * the intc driver reads it to demux the flags.
+			 */
+			lcd_cam_intc: lcd_cam_intc {
+				compatible = "espressif,esp32-l3-intc";
+				interrupt-controller;
+				#interrupt-cells = <1>;
+				interrupt-parent = <&lcd_cam_intmux>;
+				interrupts = <LCD_CAM_INTR_SOURCE>;
+				status-reg = <0x6004106c>;
+			};
+
 		};
 
 		systimer0: systimer@60023000 {
@@ -757,8 +780,16 @@
 			compatible = "espressif,esp32-lcd-cam";
 			reg = <0x60041000 DT_SIZE_K(4)>;
 			clocks = <&clock ESP32_LCD_CAM_MODULE>;
-			interrupt-parent = <&lcd_cam_intmux>;
-			interrupts = <LCD_CAM_INTR_SOURCE>;
+			/*
+			 * Level-3 leaf: consume the LCD_CAM aggregator's four flag
+			 * lines. Order matches the status-register bit positions, so
+			 * irq_enable(DT_IRQN_BY_IDX(lcd_cam, n)) targets flag n.
+			 */
+			interrupt-parent = <&lcd_cam_intc>;
+			interrupts = <0>,	/* LCD_VSYNC      */
+				     <1>,	/* LCD_TRANS_DONE */
+				     <2>,	/* CAM_VSYNC      */
+				     <3>;	/* CAM_HS         */
 			dmas = <&dma 6>, <&dma 7>;
 			dma-names = "rx", "tx";
 
