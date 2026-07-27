@@ -1183,6 +1183,18 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 					  addr6, addr4);
 		if (ret < 0) {
 			if (ret == -EALREADY) {
+				/* The dispatcher deduplicates registrations by
+				 * local port. If two resolver sockets end up
+				 * sharing a port (e.g. the bound ephemeral port
+				 * was not resolved and both are seen as port 0),
+				 * the later socket is not dispatched and replies
+				 * from that server are silently dropped. Log it
+				 * so such a misconfiguration is diagnosable.
+				 */
+				NET_DBG("Dispatcher for %s server %d not "
+					"registered, sharing local port",
+					ctx->servers[i].is_mdns ? "mDNS" : "DNS",
+					i);
 				goto skip_event;
 			}
 
