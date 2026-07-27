@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SYS_MPSC_LOCKFREE_H_
-#define ZEPHYR_SYS_MPSC_LOCKFREE_H_
+#ifndef ZEPHYR_INCLUDE_SYS_MPSC_LOCKFREE_H_
+#define ZEPHYR_INCLUDE_SYS_MPSC_LOCKFREE_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -194,4 +194,4 @@ static inline struct mpsc_node *mpsc_pop(struct mpsc *q)
 }
 #endif
 
-#endif /* ZEPHYR_SYS_MPSC_LOCKFREE_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_MPSC_LOCKFREE_H_ */
