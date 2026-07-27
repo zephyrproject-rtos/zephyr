@@ -179,9 +179,11 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
 		if (ret < 0) {
 			LOG_DBG("Failed to register TBS bearer: %d", ret);
 
-			/* Return known errors */
+			/* Return known errors or change to -ENOEXEC */
 			if (!(ret == -EINVAL || ret == -EALREADY || ret == -EAGAIN ||
 			      ret == -ENOMEM)) {
+				LOG_DBG("Unexpected return value from bt_tbs_register_bearer: %d",
+					ret);
 				ret = -ENOEXEC;
 			}
 		} else {
@@ -231,8 +233,11 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
 		if (ret == 0) {
 			bearer->registered = false;
 		} else {
-			/* Return known errors */
+			/* Return known errors or change to -ENOEXEC */
 			if (!(ret == -EINVAL || ret == -EALREADY)) {
+				LOG_DBG("Unexpected return value from "
+					"bt_tbs_unregister_bearer: %d",
+					ret);
 				ret = -ENOEXEC;
 			}
 		}
@@ -284,8 +289,11 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
 				(void)utf8_lcpy(bearer->provider_name, name,
 						sizeof(bearer->provider_name));
 			} else {
-				/* Return known errors */
+				/* Return known errors or change to -ENOEXEC */
 				if (!(ret == -EINVAL || ret == -EBUSY)) {
+					LOG_DBG("Unexpected return value from "
+						"bt_tbs_set_bearer_provider_name: %d",
+						ret);
 					ret = -ENOEXEC;
 				}
 			}
@@ -410,10 +418,14 @@ int bt_ccp_call_control_server_set_bearer_tech(struct bt_ccp_call_control_server
 		ret = bt_tbs_set_bearer_technology(bearer->tbs_index, tech);
 		if (ret == 0) {
 			bearer->bearer_tech = tech;
-		} else if (ret != -EINVAL) {
-			LOG_DBG("Unexpected return value from bt_tbs_set_bearer_technology: %d",
-				ret);
-			ret = -ENOEXEC;
+		} else {
+			/* Return known errors or change to -ENOEXEC */
+			if (!(ret == -EINVAL || ret == -EBUSY)) {
+				LOG_DBG("Unexpected return value from "
+					"bt_tbs_set_bearer_provider_name: %d",
+					ret);
+				ret = -ENOEXEC;
+			}
 		}
 	}
 
@@ -449,7 +461,6 @@ int bt_ccp_call_control_server_get_bearer_tech(
 
 		ret = -EFAULT;
 	} else {
-
 		*tech = bearer->bearer_tech;
 		ret = 0;
 	}
@@ -499,6 +510,14 @@ int bt_ccp_call_control_server_set_bearer_uri_schemes(
 		if (ret == 0) {
 			(void)memcpy(bearer->uri_schemes, uri_schemes, uri_schemes_len);
 			bearer->uri_schemes[uri_schemes_len] = '\0';
+		} else {
+			/* Return known errors or change to -ENOEXEC */
+			if (!(ret == -EINVAL || ret == -EBUSY)) {
+				LOG_DBG("Unexpected return value from "
+					"bt_tbs_set_uri_scheme_list: %d",
+					ret);
+				ret = -ENOEXEC;
+			}
 		}
 	}
 
