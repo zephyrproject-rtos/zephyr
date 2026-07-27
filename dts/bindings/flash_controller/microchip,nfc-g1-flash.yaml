@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip NAND Flash Controller (NFC) G1.
+
+  SAM NFC is based on the following hardware peripheral:
+    - module name="SMC" id="11036" version="304"
+
+examples:
+  - |
+    Example devicetree configuration:
+
+      &nfc {
+        status = "okay";
+      };
+
+compatible: "microchip,nfc-g1-flash"
+
+include:
+  - name: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  nfc-sram:
+    type: phandle
+    required: true
+    description: |
+      Hold a phandle reference to the nfc-sram.
+
+  nfc-io:
+    type: phandle
+    required: true
+    description: |
+      Hold a phandle reference to the nfc-io.
+
+  ecc-engine:
+    type: phandle
+    required: true
+    description: |
+      Hold a phandle reference to the pmecc.
