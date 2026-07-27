@@ -303,4 +303,46 @@ ZTEST(dns_dispatcher, test_dispatcher_null_slot_dropped)
 	dns_dispatcher_svc_handler(&pev);
 }
 
+ZTEST(dns_dispatcher, test_dns_dispatcher_ephemeral_ports)
+{
+	static const char * const servers[] = { DNS_NAME_IPV4, DNS2_NAME_IPV4, NULL };
+	struct dns_resolve_context *ctx;
+	uint16_t port0, port1;
+	int ret;
+
+	ctx = dns_resolve_get_default();
+
+	dns_resolve_close(ctx);
+
+	/* Two DNS servers of the same address family, no explicit interface
+	 * and the default local port 0. Each resolver socket bind() picks a
+	 * distinct OS-assigned ephemeral port, but the dispatcher matches and
+	 * deduplicates registrations by the stored local port. Unless the
+	 * dispatcher reads back the bound port with getsockname(), both
+	 * sockets look like the same port-0 resolver socket, and the second
+	 * registration is rejected as a duplicate (swallowed by resolve.c as
+	 * -EALREADY), leaving its socket undispatched.
+	 */
+	ret = dns_resolve_init(ctx, (const char **)servers, NULL);
+	zassert_equal(ret, 0, "Cannot initialize DNS resolver (%d)", ret);
+
+	zassert_true(ctx->servers[0].sock >= 0, "First server socket not open");
+	zassert_true(ctx->servers[1].sock >= 0, "Second server socket not open");
+
+	port0 = net_sin(&ctx->servers[0].dispatcher.local_addr)->sin_port;
+	port1 = net_sin(&ctx->servers[1].dispatcher.local_addr)->sin_port;
+
+	/* Both registrations must have captured their real ephemeral port. */
+	zassert_not_equal(port0, 0, "First dispatcher port not resolved");
+	zassert_not_equal(port1, 0, "Second dispatcher port not resolved");
+
+	/* Distinct sockets must end up with distinct ports so that neither is
+	 * treated as a duplicate of the other.
+	 */
+	zassert_not_equal(port0, port1,
+			  "Both dispatchers share the same local port");
+
+	dns_resolve_close(ctx);
+}
+
 ZTEST_SUITE(dns_dispatcher, NULL, test_init, NULL, NULL, NULL);
