@@ -293,6 +293,12 @@ __net_socket struct net_context {
 	/** BSD socket private data */
 	void *socket_data;
 
+	/** Pending socket error (positive errno) reported asynchronously by
+	 *  the network stack. Valid only while the SOCK_ERROR flag is set;
+	 *  consumed via SO_ERROR or by the next blocking socket call.
+	 */
+	int sock_error;
+
 	/** Per-socket packet or connection queues */
 	union {
 		struct k_fifo recv_q;
