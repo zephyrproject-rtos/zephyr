@@ -556,7 +556,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xa0001000 0x400>, <0x90000000 DT_SIZE_M(256)>;
-			interrupts = <0x32 0x0>;
+			interrupts = <50 0>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 8)>;
 			status = "disabled";
 		};
