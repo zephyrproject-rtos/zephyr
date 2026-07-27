@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_NXP_LPACMP
+	bool "NXP LPACMP comparator driver"
+	default y
+	depends on DT_HAS_NXP_LPACMP_ENABLED
+	select CLOCK_CONTROL
+	help
+	  Enable the NXP Low-Power Analog Comparator (LPACMP) driver.
