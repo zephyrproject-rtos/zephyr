@@ -173,8 +173,7 @@ int zsock_close_ctx(struct net_context *ctx, int sock)
 		(void)net_context_recv(ctx, NULL, K_NO_WAIT, NULL);
 	}
 
-	ctx->user_data = INT_TO_POINTER(EINTR);
-	sock_set_error(ctx);
+	sock_set_error(ctx, EINTR);
 
 	zsock_flush_queue(ctx);
 
@@ -221,8 +220,7 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 
 		(void)k_condvar_signal(&parent->cond.recv);
 	} else if (status < 0) {
-		parent->user_data = INT_TO_POINTER(-status);
-		sock_set_error(parent);
+		sock_set_error(parent, -status);
 
 		k_fifo_cancel_wait(&parent->recv_q);
 		(void)k_condvar_signal(&parent->cond.recv);
@@ -254,8 +252,7 @@ static void zsock_received_cb(struct net_context *ctx,
 		user_data);
 
 	if (status < 0) {
-		ctx->user_data = INT_TO_POINTER(-status);
-		sock_set_error(ctx);
+		sock_set_error(ctx, -status);
 	}
 
 	/* if pkt is NULL, EOF */
@@ -360,8 +357,7 @@ int zsock_bind_ctx(struct net_context *ctx, const struct net_sockaddr *addr,
 static void zsock_connected_cb(struct net_context *ctx, int status, void *user_data)
 {
 	if (status < 0) {
-		ctx->user_data = INT_TO_POINTER(-status);
-		sock_set_error(ctx);
+		sock_set_error(ctx, -status);
 
 		/* Wake pending threads, if any. */
 		k_fifo_cancel_wait(&ctx->recv_q);
@@ -407,7 +403,7 @@ int zsock_connect_ctx(struct net_context *ctx, const struct net_sockaddr *addr,
 
 	if (net_context_get_state(ctx) == NET_CONTEXT_CONNECTING) {
 		if (sock_is_error(ctx)) {
-			errno = POINTER_TO_INT(ctx->user_data);
+			errno = sock_get_error(ctx);
 			return -1;
 		}
 
@@ -520,7 +516,7 @@ int zsock_accept_ctx(struct net_context *parent, struct net_sockaddr *addr,
 	}
 
 	if (sock_is_error(parent)) {
-		errno = POINTER_TO_INT(parent->user_data);
+		errno = sock_get_error(parent);
 		return -1;
 	}
 
@@ -984,7 +980,7 @@ int zsock_wait_data(struct net_context *ctx, k_timeout_t *timeout)
 		}
 
 		if (sock_is_error(ctx)) {
-			return -POINTER_TO_INT(ctx->user_data);
+			return -sock_get_error(ctx);
 		}
 	}
 
@@ -1585,7 +1581,7 @@ static ssize_t zsock_recv_stream_timed(struct net_context *ctx, struct net_msghd
 					break;
 				}
 
-				return -POINTER_TO_INT(ctx->user_data);
+				return -sock_get_error(ctx);
 			}
 
 			if (sock_is_eof(ctx)) {
@@ -2018,7 +2014,7 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 				return -1;
 			}
 
-			*(int *)optval = POINTER_TO_INT(ctx->user_data);
+			*(int *)optval = sock_get_error(ctx);
 
 			return 0;
 		}
