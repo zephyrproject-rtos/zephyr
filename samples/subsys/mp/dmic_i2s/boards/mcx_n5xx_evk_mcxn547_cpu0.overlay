@@ -1,0 +1,34 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-codec-tx = &sai1;
+		i2s-codec-rx = &sai0;
+	};
+};
+
+&sai1 {
+	mclk-output;
+};
+
+&sai0 {
+	mclk-output;
+};
+
+&i3c0 {
+	status = "okay";
+};
+
+dmic_dev: &micfil {
+	channel0: micfil-channel@0 {
+		status = "okay";
+	};
+
+	channel1: micfil-channel@1 {
+		status = "okay";
+	};
+};
