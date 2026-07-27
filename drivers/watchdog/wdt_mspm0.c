@@ -16,13 +16,13 @@
 
 LOG_MODULE_REGISTER(wdt_mspm0, CONFIG_WDT_LOG_LEVEL);
 
-struct wwdt_mspm0_config {
+struct wwdt_mspm_config {
 	WWDT_Regs *base;
 	uint8_t reset_action;
 	uint8_t closed_window;
 };
 
-struct wwdt_mspm0_data {
+struct wwdt_mspm_data {
 	uint8_t period_count;
 	uint8_t clock_divider;
 	uint16_t window_count;
@@ -34,10 +34,10 @@ struct wwdt_period_lut {
 	uint32_t interval;
 };
 
-static int wwdt_mspm0_calculate_timeout_periods(const struct device *dev,
+static int wwdt_mspm_calculate_timeout_periods(const struct device *dev,
 						const struct wdt_timeout_cfg *cfg)
 {
-	struct wwdt_mspm0_data *data = dev->data;
+	struct wwdt_mspm_data *data = dev->data;
 	struct wwdt_period_lut *lut_entry = NULL;
 	uint32_t max_ms = cfg->window.max;
 	uint32_t min_ms = cfg->window.min;
@@ -100,10 +100,10 @@ static int wwdt_mspm0_calculate_timeout_periods(const struct device *dev,
 	return 0;
 }
 
-static int wwdt_mspm0_setup(const struct device *dev, uint8_t options)
+static int wwdt_mspm_setup(const struct device *dev, uint8_t options)
 {
-	const struct wwdt_mspm0_config *config = dev->config;
-	struct wwdt_mspm0_data *data = dev->data;
+	const struct wwdt_mspm_config *config = dev->config;
+	struct wwdt_mspm_data *data = dev->data;
 	DL_WWDT_SLEEP_MODE sleep_mode = DL_WWDT_RUN_IN_SLEEP;
 
 	if ((options & WDT_OPT_PAUSE_IN_SLEEP) == WDT_OPT_PAUSE_IN_SLEEP) {
@@ -124,16 +124,16 @@ static int wwdt_mspm0_setup(const struct device *dev, uint8_t options)
 	return 0;
 }
 
-static int wwdt_mspm0_disable(const struct device *dev)
+static int wwdt_mspm_disable(const struct device *dev)
 {
 	/* Disabling a watchdog that is configured is not possible */
 	ARG_UNUSED(dev);
 	return -EPERM;
 }
 
-static int wwdt_mspm0_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
+static int wwdt_mspm_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
-	const struct wwdt_mspm0_config *config = dev->config;
+	const struct wwdt_mspm_config *config = dev->config;
 
 	/* Cannot install timeout if the WWDT is already running */
 	if (DL_WWDT_isRunning(config->base)) {
@@ -155,44 +155,44 @@ static int wwdt_mspm0_install_timeout(const struct device *dev, const struct wdt
 	 * To calculate the timeout period as per :
 	 * TIMEOUT = (CLKDIV + 1) * PER_count / 32768 (LFCLK Frequency)
 	 */
-	return wwdt_mspm0_calculate_timeout_periods(dev, cfg);
+	return wwdt_mspm_calculate_timeout_periods(dev, cfg);
 }
 
-static int wwdt_mspm0_feed(const struct device *dev, int channel_id)
+static int wwdt_mspm_feed(const struct device *dev, int channel_id)
 {
 	ARG_UNUSED(channel_id);
-	DL_WWDT_restart(((const struct wwdt_mspm0_config *)dev->config)->base);
+	DL_WWDT_restart(((const struct wwdt_mspm_config *)dev->config)->base);
 
 	return 0;
 }
 
-static int wwdt_mspm0_init(const struct device *dev)
+static int wwdt_mspm_init(const struct device *dev)
 {
-	DL_WWDT_enablePower(((const struct wwdt_mspm0_config *)dev->config)->base);
+	DL_WWDT_enablePower(((const struct wwdt_mspm_config *)dev->config)->base);
 
 	return 0;
 }
 
-static DEVICE_API(wdt, wwdt_mspm0_driver_api) = {
-	.setup = wwdt_mspm0_setup,
-	.disable = wwdt_mspm0_disable,
-	.install_timeout = wwdt_mspm0_install_timeout,
-	.feed = wwdt_mspm0_feed
+static DEVICE_API(wdt, wwdt_mspm_driver_api) = {
+	.setup = wwdt_mspm_setup,
+	.disable = wwdt_mspm_disable,
+	.install_timeout = wwdt_mspm_install_timeout,
+	.feed = wwdt_mspm_feed
 };
 
-#define MSP_WDT_INIT_FN(index)								\
-static const struct wwdt_mspm0_config wwdt_mspm0_cfg_##index = {			\
+#define WWDT_MSPM_INIT(index)								\
+static const struct wwdt_mspm_config wwdt_mspm_cfg_##index = {			\
 	.base =  (WWDT_Regs *)DT_INST_REG_ADDR(index),					\
 	.reset_action = COND_CODE_1(DT_INST_PROP(index, ti_watchdog_reset_action),	\
 				    (WDT_FLAG_RESET_SOC), (WDT_FLAG_RESET_CPU_CORE)),	\
 	.closed_window = DT_INST_PROP(index, closed_window),				\
 };											\
 											\
-static struct wwdt_mspm0_data wwdt_mspm0_data_##index;					\
+static struct wwdt_mspm_data wwdt_mspm_data_##index;					\
 											\
-DEVICE_DT_INST_DEFINE(index, wwdt_mspm0_init, NULL, &wwdt_mspm0_data_##index,		\
-		      &wwdt_mspm0_cfg_##index, POST_KERNEL,				\
+DEVICE_DT_INST_DEFINE(index, wwdt_mspm_init, NULL, &wwdt_mspm_data_##index,		\
+		      &wwdt_mspm_cfg_##index, POST_KERNEL,				\
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				\
-		      &wwdt_mspm0_driver_api);						\
+		      &wwdt_mspm_driver_api);						\
 
-DT_INST_FOREACH_STATUS_OKAY(MSP_WDT_INIT_FN)
+DT_INST_FOREACH_STATUS_OKAY(WWDT_MSPM_INIT)
