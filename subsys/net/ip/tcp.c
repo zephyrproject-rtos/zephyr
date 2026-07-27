@@ -4950,7 +4950,8 @@ static void close_tcp_conn(struct tcp *conn, void *user_data)
 		}
 
 		if (conn->accept_cb != NULL) {
-			conn->accept_cb(conn->context, NULL, 0, -ENETDOWN, context->user_data);
+			/* context->user_data may be a stashed errno, not a pointer */
+			conn->accept_cb(conn->context, NULL, 0, -ENETDOWN, context);
 			conn->accept_cb = NULL;
 		}
 
