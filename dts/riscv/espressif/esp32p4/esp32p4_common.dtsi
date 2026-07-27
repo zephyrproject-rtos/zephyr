@@ -205,7 +205,8 @@
 		systimer0: systimer@500e2000 {
 			compatible = "espressif,esp32-systimer";
 			reg = <0x500e2000 DT_SIZE_K(4)>;
-			interrupts = <SYSTIMER_TARGET0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupts = <SYSTIMER_TARGET0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+				     <SYSTIMER_TARGET1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			status = "okay";
 		};
