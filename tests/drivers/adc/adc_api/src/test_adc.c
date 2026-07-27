@@ -190,6 +190,39 @@ ZTEST_USER(adc_basic, test_adc_sample_one_channel)
 }
 
 /*
+ * test_adc_sample_invalid_buffer
+ */
+static int test_task_invalid_buffer(void)
+{
+	int ret;
+	uint8_t small_buffer[2];
+
+	struct adc_sequence sequence = {
+		.buffer = small_buffer,
+		.buffer_size = sizeof(small_buffer) - 1,
+#if CONFIG_TEST_ADC_CALIBRATE_REQUIRED
+		.calibrate = true,
+#endif
+	};
+
+	small_buffer[1] = UINT8_MAX;
+
+	init_adc();
+	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
+
+	ret = adc_read_dt(&adc_channels[0], &sequence);
+	zassert_equal(ret, -ENOMEM, "adc_read() incorrectly returned with code %d", ret);
+	zassert_equal(small_buffer[1], UINT8_MAX, "adc_read() overwrote beyond the buffer size");
+
+	return TC_PASS;
+}
+
+ZTEST_USER(adc_basic, test_adc_sample_invalid_buffer)
+{
+	zassert_true(test_task_invalid_buffer() == TC_PASS);
+}
+
+/*
  * test_adc_sample_multiple_channels
  */
 static int test_task_multiple_channels(void)
