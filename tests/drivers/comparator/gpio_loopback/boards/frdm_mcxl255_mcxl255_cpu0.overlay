@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/* To test this case, connect J4-2 (P2_17) to J3-3 (AON_LPACMP_IN_4/P0_10). */
+/ {
+	aliases {
+		test-comp = &lpacmp;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio2 17 GPIO_ACTIVE_HIGH>; /* FRDM-MCXL255 J4-2 */
+	};
+};
+
+&lpacmp {
+	status = "okay";
+	/* P0_10 (J3-3) is muxed to the analog function at reset. */
+	positive-input = "comp_in4";
+	/*
+	 * 5/15 x AVDD, about 1.1 V at AVDD = 3.3 V. The J3-3 input network
+	 * divides the driven-high level down to about 2 V at comp_in4, so a
+	 * low reference keeps margin on both sides.
+	 */
+	negative-input = <4>;
+	sample-delay = <80>; /* 8 us at the 10 MHz AON_CLK */
+};
