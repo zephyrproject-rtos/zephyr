@@ -93,6 +93,7 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
  *
  * @satisfies ZEP-SRS-2-8
  * @satisfies ZEP-SRS-2-9
+ * @satisfies ZEP-SRS-2-10
  */
 #define K_PRIO_PREEMPT(x) (x)
 
@@ -1254,6 +1255,7 @@ __syscall void k_thread_absolute_deadline_set(k_tid_t thread, int deadline);
  * Most applications will never use this routine.
  *
  * @satisfies ZEP-SRS-2-19
+ * @satisfies ZEP-SRS-2-27
  */
 __syscall void k_reschedule(void);
 
