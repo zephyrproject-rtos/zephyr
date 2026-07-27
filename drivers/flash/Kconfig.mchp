@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# Copyright (c) 2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config FLASH_MCHP_NVMCTRL_G1
@@ -24,6 +24,14 @@ config FLASH_HAS_UNALIGNED_WRITE
 	  using read-modify-write operations to ensure data integrity. This allows
 	  applications to write data starting at any offset within the flash memory
 	  space, not just at aligned addresses.
+
+config FLASH_MCHP_NAND_G1
+	bool "Microchip NAND Flash driver G1"
+	default y
+	depends on DT_HAS_MICROCHIP_NAND_G1_FLASH_ENABLED
+	select GPIO
+	help
+	  Enable driver for Microchip NAND Flash G1.
 
 config FLASH_MCHP_NFC_G1
 	bool "Microchip NAND Flash Controller (NFC) G1"
