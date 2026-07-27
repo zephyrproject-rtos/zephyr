@@ -3,6 +3,9 @@
 
 if SOC_ESP32P4_HPCORE
 
+config MP_MAX_NUM_CPUS
+	default 2
+
 config FPU
 	default y
 
