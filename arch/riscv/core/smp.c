@@ -31,8 +31,8 @@ extern void __start(void);
 void soc_interrupt_init(void);
 #endif
 
-void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
-		    arch_cpustart_t fn, void *arg)
+__weak void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
+			   arch_cpustart_t fn, void *arg)
 {
 	riscv_cpu_init[cpu_num].fn = fn;
 	riscv_cpu_init[cpu_num].arg = arg;
