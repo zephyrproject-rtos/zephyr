@@ -130,6 +130,11 @@ Boards
   must move their serial terminal from VCOM0 back to VCOM1. The nRF54L15 DK is unaffected: its
   expansion header genuinely conflicts with UART20, so it keeps rerouting the console to UART30.
 
+* The mimxrt1180_evk Kconfig option ``NXP_BOARD_SPECIFIC_MPU_SETTINGS`` has been renamed to
+  :kconfig:option:`CONFIG_BOARD_NXP_SPECIFIC_MPU_SETTINGS`, matching the ``BOARD_NXP_*`` naming
+  used by the other NXP board options and by frdm_imxrt1186. Configurations setting
+  ``CONFIG_NXP_BOARD_SPECIFIC_MPU_SETTINGS`` must be updated to the new name.
+
 Device Drivers and Devicetree
 *****************************
 
