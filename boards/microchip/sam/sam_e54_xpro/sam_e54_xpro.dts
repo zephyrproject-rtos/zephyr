@@ -217,10 +217,11 @@
 
 		fdpll0 {
 			subsystem = <CLOCK_MCHP_FDPLL_ID_FDPLL0>;
-			fdpll-divider-ratio-int = <19>;
+			fdpll-divider-ratio-int = <119>;
 			fdpll-lock-bypass-en = <1>;
 			fdpll-wakeup-fast-en = <1>;
 			fdpll-src = "xosc1";
+			fdpll-xosc-clock-divider = <5>;
 			fdpll-en = <1>;
 		};
 	};
