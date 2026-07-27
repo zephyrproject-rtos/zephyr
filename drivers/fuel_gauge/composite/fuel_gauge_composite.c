@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT zephyr_fuel_gauge_composite
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/charger.h>
 #include <zephyr/drivers/fuel_gauge.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/battery.h>
@@ -17,6 +18,7 @@
 struct composite_config {
 	const struct device *source_primary;
 	const struct device *source_secondary;
+	const struct device *charger;
 	int32_t ocv_lookup_table[BATTERY_OCV_TABLE_LEN];
 	uint32_t charge_capacity_microamp_hours;
 	int32_t factory_internal_resistance_micro_ohms;
@@ -66,7 +68,9 @@ static int composite_get_prop_state_of_charge(const struct device *dev,
 	const struct composite_config *config = dev->config;
 	enum sensor_channel sensor_chan;
 	struct sensor_value sensor_val;
+	union charger_propval propval;
 	int32_t voltage;
+	uint8_t soc;
 	int rc;
 
 	/* Attempt to query the state of charge directly */
@@ -120,8 +124,24 @@ static int composite_get_prop_state_of_charge(const struct device *dev,
 	}
 
 	/* Convert voltage to state of charge */
-	val->relative_state_of_charge_pct =
-		battery_soc_lookup(config->ocv_lookup_table, voltage) / 1000;
+	soc = battery_soc_lookup(config->ocv_lookup_table, voltage) / 1000;
+
+	/* Limit according to charging state */
+	if ((config->charger != NULL) && device_is_ready(config->charger) &&
+	    (charger_get_prop(config->charger, CHARGER_PROP_STATUS, &propval) == 0)) {
+		if ((soc >= 100) && (propval.status == CHARGER_STATUS_CHARGING)) {
+			/* OCV says at least 100%, but charger reports still charging */
+			LOG_DBG("Clamping SoC to 99%%");
+			soc = 99;
+		}
+		if ((soc < 100) && (propval.status == CHARGER_STATUS_FULL)) {
+			/* OCV reports less than 100%, but charger reports full */
+			LOG_DBG("Forcing SoC to 100%%");
+			soc = 100;
+		}
+	}
+
+	val->relative_state_of_charge_pct = soc;
 	return 0;
 }
 
@@ -234,6 +254,7 @@ static DEVICE_API(fuel_gauge, composite_api) = {
 	static const struct composite_config composite_##inst##_config = {                         \
 		.source_primary = DEVICE_DT_GET(DT_INST_PROP(inst, source_primary)),               \
 		.source_secondary = DEVICE_DT_GET_OR_NULL(DT_INST_PROP(inst, source_secondary)),   \
+		.charger = DEVICE_DT_GET_OR_NULL(DT_INST_PROP(inst, charger_status)),              \
 		.ocv_lookup_table =                                                                \
 			BATTERY_OCV_TABLE_DT_GET(DT_DRV_INST(inst), ocv_capacity_table_0),         \
 		.charge_capacity_microamp_hours =                                                  \
