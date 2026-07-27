@@ -11,6 +11,7 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include <time.h>
+#include "rtc_emul_native.h"
 #endif /* CONFIG_RTC_EMUL_INIT_DATETIME */
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -459,13 +460,14 @@ int rtc_emul_init(const struct device *dev)
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
 
 #ifdef CONFIG_RTC_EMUL_INIT_DATETIME
+	int64_t host_sec, host_nsec;
 	struct rtc_time *datetime = &data->datetime;
-	struct timespec host_time;
 	struct tm tm_time;
 
-	if (clock_gettime(CLOCK_REALTIME, &host_time) == 0) {
-		localtime_r(&host_time.tv_sec, &tm_time);
+	if (rtc_emul_native_gettime(&host_sec, &host_nsec) == 0) {
+		time_t sec = host_sec;
 
+		localtime_r(&sec, &tm_time);
 		datetime->tm_sec = tm_time.tm_sec;
 		datetime->tm_min = tm_time.tm_min;
 		datetime->tm_hour = tm_time.tm_hour;
@@ -474,7 +476,7 @@ int rtc_emul_init(const struct device *dev)
 		datetime->tm_year = tm_time.tm_year;
 		datetime->tm_wday = tm_time.tm_wday;
 		datetime->tm_yday = tm_time.tm_yday;
-		datetime->tm_nsec = (int)host_time.tv_nsec;
+		datetime->tm_nsec = (int)host_nsec;
 
 		data->datetime_set = true;
 	} else {
