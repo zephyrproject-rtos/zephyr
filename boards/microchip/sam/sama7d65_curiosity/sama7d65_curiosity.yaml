@@ -16,6 +16,7 @@ supported:
   - gpio
   - i2c
   - led
+  - memc
   - pinctrl
   - rtc
   - uart
