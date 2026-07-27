@@ -290,6 +290,24 @@ ccp_call_control_client_read_bearer_uri_schemes_cb(struct bt_ccp_call_control_cl
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
+static void ccp_call_control_client_read_bearer_signal_strength_cb(
+	struct bt_ccp_call_control_client_bearer *bearer, int err, uint8_t signal_strength,
+	void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	if (err != 0) {
+		LOG_ERR("Failed to read bearer %p signal strength: %d\n", (void *)bearer, err);
+		return;
+	}
+
+	LOG_INF("Bearer %p signal strength: %u", (void *)bearer, signal_strength);
+
+	k_sem_give(&sem_ccp_action_completed);
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH */
+
 static int reset_ccp_call_control_client(void)
 {
 	int err;
@@ -509,6 +527,9 @@ static int init_ccp_call_control_client(void)
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
 		.bearer_uri_schemes = ccp_call_control_client_read_bearer_uri_schemes_cb,
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
+		.bearer_signal_strength = ccp_call_control_client_read_bearer_signal_strength_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH */
 	};
 	static struct bt_le_scan_cb scan_cbs = {
 		.recv = scan_recv_cb,

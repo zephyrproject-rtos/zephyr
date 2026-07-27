@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <zephyr/autoconf.h>
@@ -29,6 +30,7 @@ CREATE_FLAG(flag_bearer_name_read);
 CREATE_FLAG(flag_bearer_uci);
 CREATE_FLAG(flag_bearer_tech);
 CREATE_FLAG(flag_bearer_uri_schemes);
+CREATE_FLAG(flag_bearer_signal_strength);
 
 static struct bt_ccp_call_control_client *call_control_client;
 static struct bt_ccp_call_control_client_bearers client_bearers;
@@ -128,6 +130,24 @@ ccp_call_control_client_read_bearer_uri_schemes_cb(struct bt_ccp_call_control_cl
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
+static void ccp_call_control_client_read_bearer_signal_strength_cb(
+	struct bt_ccp_call_control_client_bearer *bearer, int err, uint8_t signal_strength,
+	void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	if (err != 0) {
+		FAIL("Failed to read bearer %p signal strength: %d\n", (void *)bearer, err);
+		return;
+	}
+
+	LOG_INF("Bearer %p signal strength: %s", (void *)bearer, signal_strength);
+
+	SET_FLAG(flag_bearer_signal_strength);
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH */
+
 static void discover_tbs(void)
 {
 	int err;
@@ -203,6 +223,21 @@ static void read_bearer_uri_schemes(struct bt_ccp_call_control_client_bearer *be
 	WAIT_FOR_FLAG(flag_bearer_uri_schemes);
 }
 
+static void read_bearer_signal_strength(struct bt_ccp_call_control_client_bearer *bearer)
+{
+	int err;
+
+	UNSET_FLAG(flag_bearer_signal_strength);
+
+	err = bt_ccp_call_control_client_read_bearer_signal_strength(bearer);
+	if (err != 0) {
+		FAIL("Failed to read signal strength of bearer %p: %d", bearer, err);
+		return;
+	}
+
+	WAIT_FOR_FLAG(flag_bearer_signal_strength);
+}
+
 static void read_bearer_values(void)
 {
 #if defined(CONFIG_BT_TBS_CLIENT_GTBS)
@@ -240,6 +275,10 @@ static void read_bearer_values(void)
 		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)) {
 			read_bearer_uri_schemes(client_bearers.tbs_bearers[i]);
 		}
+
+		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)) {
+			read_bearer_signal_strength(client_bearers.tbs_bearers[i]);
+		}
 	}
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
 }
@@ -260,6 +299,9 @@ static void init(void)
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST)
 		.bearer_uri_schemes = ccp_call_control_client_read_bearer_uri_schemes_cb,
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH)
+		.bearer_signal_strength = ccp_call_control_client_read_bearer_signal_strength_cb,
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH */
 	};
 	int err;
 
