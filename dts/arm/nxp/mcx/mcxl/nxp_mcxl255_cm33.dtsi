@@ -144,3 +144,9 @@
 &aon_kpp0 {
 	interrupts = <148 0>;
 };
+
+&lpacmp {
+	interrupts = <139 0>;
+	/* AON_CLK for the sampling rate, plus the CGU gate via syscon. */
+	clocks = <&root_clock1>, <&syscon MCUX_LPACMP_CLK>;
+};
