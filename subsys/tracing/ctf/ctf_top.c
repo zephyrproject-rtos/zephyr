@@ -1991,3 +1991,74 @@ void sys_trace_k_stack_pop_exit(struct k_stack *stack, k_timeout_t timeout, int 
 	ctf_top_stack_pop_exit((uint32_t)(uintptr_t)stack,
 			       k_ticks_to_us_floor32((uint32_t)timeout.ticks), ret);
 }
+
+/* Heap */
+
+void sys_trace_k_heap_init(struct k_heap *h)
+{
+	ctf_top_heap_init((uint32_t)(uintptr_t)h);
+}
+
+void sys_trace_k_heap_aligned_alloc_enter(struct k_heap *h, k_timeout_t timeout)
+{
+	ctf_top_heap_aligned_alloc_enter((uint32_t)(uintptr_t)h,
+					 k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_heap_alloc_helper_blocking(struct k_heap *h, k_timeout_t timeout)
+{
+	ctf_top_heap_alloc_helper_blocking((uint32_t)(uintptr_t)h,
+					   k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_heap_aligned_alloc_exit(struct k_heap *h, k_timeout_t timeout, void *ret)
+{
+	ctf_top_heap_aligned_alloc_exit((uint32_t)(uintptr_t)h,
+					k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+					(uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_alloc_enter(struct k_heap *h, k_timeout_t timeout)
+{
+	ctf_top_heap_alloc_enter((uint32_t)(uintptr_t)h,
+				 k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_heap_alloc_exit(struct k_heap *h, k_timeout_t timeout, void *ret)
+{
+	ctf_top_heap_alloc_exit((uint32_t)(uintptr_t)h,
+				k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+				(uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_calloc_enter(struct k_heap *h, k_timeout_t timeout)
+{
+	ctf_top_heap_calloc_enter((uint32_t)(uintptr_t)h,
+				  k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_heap_calloc_exit(struct k_heap *h, k_timeout_t timeout, void *ret)
+{
+	ctf_top_heap_calloc_exit((uint32_t)(uintptr_t)h,
+				 k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+				 (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_free(struct k_heap *h)
+{
+	ctf_top_heap_free((uint32_t)(uintptr_t)h);
+}
+
+void sys_trace_k_heap_realloc_enter(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout)
+{
+	ctf_top_heap_realloc_enter((uint32_t)(uintptr_t)h, (uint32_t)(uintptr_t)ptr,
+				   (uint32_t)bytes, k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_heap_realloc_exit(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout,
+				   void *ret)
+{
+	ctf_top_heap_realloc_exit((uint32_t)(uintptr_t)h, (uint32_t)(uintptr_t)ptr, (uint32_t)bytes,
+				  k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+				  (uint32_t)(uintptr_t)ret);
+}
