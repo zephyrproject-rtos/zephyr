@@ -5374,7 +5374,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "-w --ieee-80211w=<MFP> (optional: needs security type to "
 				 "be specified)\n"
 				 "0:Disable, 1:Optional, 2:Required\n"
-				 "-b --band=<band> (2 -2.6GHz, 5 - 5Ghz, 6 - 6GHz)\n"
+				 "-b --band=<band> (2 - 2.4GHz, 5 - 5Ghz, 6 - 6GHz)\n"
 				 "-m --bssid=<BSSID>\n"
 				 "-g --ignore-broadcast-ssid=<type>. Hide SSID in AP mode.\n"
 				 "0: disabled (default)\n"
