@@ -8,6 +8,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mspm0_clock_control.h>
 
+#include <soc_sysctl.h>
+
 #include <ti/driverlib/driverlib.h>
 #include <string.h>
 
@@ -29,11 +31,13 @@
 			DT_PROP(DT_NODELABEL(mfpclk), clk_div))),	\
 		(0))
 
-#define DT_SYSOSC_FREQ	DT_PROP(DT_NODELABEL(sysosc), clock_frequency)
+#define DT_SYSOSC DT_NODELABEL(sysosc)
+
+#define DT_SYSOSC_FREQ DT_PROP(DT_SYSOSC, clock_frequency)
 #if DT_SYSOSC_FREQ == 32000000
-#define SYSOSC_FREQ	DL_SYSCTL_SYSOSC_FREQ_BASE
+#define MSPM0_SYSOSC_FREQ SYSCTL_SYSOSCCFG_FREQ_BASE
 #elif DT_SYSOSC_FREQ == 4000000
-#define SYSOSC_FREQ	DL_SYSCTL_SYSOSC_FREQ_4M
+#define MSPM0_SYSOSC_FREQ SYSCTL_SYSOSCCFG_FREQ_4M
 #else
 #error "Set SYSOSC clock frequency not supported"
 #endif
@@ -127,12 +131,112 @@ static DL_SYSCTL_SYSPLLConfig clock_mspm0_cfg_syspll = {
 
 static int clock_mspm0_on(const struct device *dev, clock_control_subsys_t sys)
 {
-	return 0;
+	struct mspm0_sys_clock *sys_clock = (struct mspm0_sys_clock *)sys;
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->soclock;
+
+	switch (sys_clock->clk) {
+	case MSPM0_CLOCK_SYSOSC:
+		soclock->sysosccfg &= ~SYSCTL_SYSOSCCFG_DISABLE;
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
 }
 
 static int clock_mspm0_off(const struct device *dev, clock_control_subsys_t sys)
 {
+	struct mspm0_sys_clock *sys_clock = (struct mspm0_sys_clock *)sys;
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->soclock;
+
+	switch (sys_clock->clk) {
+	case MSPM0_CLOCK_SYSOSC:
+		soclock->sysosccfg |= SYSCTL_SYSOSCCFG_DISABLE;
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static enum clock_control_status clock_mspm0_get_status(const struct device *dev,
+							clock_control_subsys_t sys)
+{
+	struct mspm0_sys_clock *sys_clock = (struct mspm0_sys_clock *)sys;
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->soclock;
+
+	switch (sys_clock->clk) {
+	case MSPM0_CLOCK_SYSOSC:
+		if (soclock->sysosccfg & SYSCTL_SYSOSCCFG_DISABLE) {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+		return CLOCK_CONTROL_STATUS_ON;
+
+	default:
+		return CLOCK_CONTROL_STATUS_UNKNOWN;
+	}
+}
+
+/* Only 32/4 MHz supported; 16/24 MHz needs board trim we can't source. */
+static int clock_mspm0_set_rate(const struct device *dev, clock_control_subsys_t sys,
+				clock_control_subsys_rate_t rate)
+{
+	struct mspm0_sys_clock *sys_clock = (struct mspm0_sys_clock *)sys;
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->soclock;
+	uint32_t freq = *(uint32_t *)rate;
+
+	if (sys_clock->clk != MSPM0_CLOCK_SYSOSC) {
+		return -ENOTSUP;
+	}
+
+	if (soclock->mclkcfg & (SYSCTL_MCLKCFG_USELFCLK | SYSCTL_MCLKCFG_USEHSCLK)) {
+		return -EBUSY;
+	}
+
+	switch (freq) {
+	case MHZ(32):
+		soclock->sysosccfg = (soclock->sysosccfg & ~SYSCTL_SYSOSCCFG_FREQ) |
+				     FIELD_PREP(SYSCTL_SYSOSCCFG_FREQ, SYSCTL_SYSOSCCFG_FREQ_BASE);
+		break;
+
+	case MHZ(4):
+		soclock->sysosccfg = (soclock->sysosccfg & ~SYSCTL_SYSOSCCFG_FREQ) |
+				     FIELD_PREP(SYSCTL_SYSOSCCFG_FREQ, SYSCTL_SYSOSCCFG_FREQ_4M);
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
 	return 0;
+}
+
+static uint32_t clock_mspm0_sysosc_rate(void)
+{
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->soclock;
+	uint32_t freq_field = FIELD_GET(SYSCTL_SYSOSCCFG_FREQ, soclock->sysosccfg);
+
+	if (freq_field == SYSCTL_SYSOSCCFG_FREQ_4M) {
+		return MHZ(4);
+	}
+
+#if defined(MSPM_SYSCTL_HAS_SYSOSC_USERTRIM)
+	if (freq_field == SYSCTL_SYSOSCCFG_FREQ_USERTRIM) {
+		if (FIELD_GET(SYSCTL_SYSOSCTRIMUSER_FREQ, soclock->sysosctrimuser) ==
+		    SYSCTL_SYSOSCTRIMUSER_FREQ_24M) {
+			return MHZ(24);
+		}
+
+		return MHZ(16);
+	}
+#endif /* MSPM_SYSCTL_HAS_SYSOSC_USERTRIM */
+
+	return MHZ(32);
 }
 
 static int clock_mspm0_get_rate(const struct device *dev,
@@ -142,6 +246,10 @@ static int clock_mspm0_get_rate(const struct device *dev,
 	struct mspm0_sys_clock *sys_clock = (struct mspm0_sys_clock *)sys;
 
 	switch (sys_clock->clk) {
+	case MSPM0_CLOCK_SYSOSC:
+		*rate = clock_mspm0_sysosc_rate();
+		break;
+
 	case MSPM0_CLOCK_LFCLK:
 		*rate = mspm0_lfclk_cfg.clk_freq;
 		break;
@@ -192,8 +300,12 @@ static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_
 
 static int clock_mspm0_init(const struct device *dev)
 {
-	/* setup clocks based on specific rates */
-	DL_SYSCTL_setSYSOSCFreq(SYSOSC_FREQ);
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->soclock;
+
+	/* set SYSOSCFG frequency */
+	soclock->sysosccfg = (soclock->sysosccfg & ~SYSCTL_SYSOSCCFG_FREQ) |
+			     FIELD_PREP(SYSCTL_SYSOSCCFG_FREQ, MSPM0_SYSOSC_FREQ);
 
 #if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(sysosc)) && (DT_SYSOSC_FREQ == 4000000)
 	DL_SYSCTL_setMCLKDivider(MSPM0_MCLK_DIV);
@@ -287,7 +399,9 @@ static int clock_mspm0_init(const struct device *dev)
 static DEVICE_API(clock_control, clock_mspm0_driver_api) = {
 	.on = clock_mspm0_on,
 	.off = clock_mspm0_off,
+	.get_status = clock_mspm0_get_status,
 	.get_rate = clock_mspm0_get_rate,
+	.set_rate = clock_mspm0_set_rate,
 	.configure = clock_mspm0_configure,
 };
 
