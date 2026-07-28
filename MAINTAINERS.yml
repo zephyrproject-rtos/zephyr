@@ -2455,21 +2455,6 @@ Documentation Infrastructure:
     - drivers.modem
     - sample.drivers.modem
 
-"Drivers: NFC":
-  status: odd fixes
-  files:
-    - doc/hardware/peripherals/nfc.rst
-    - drivers/nfc/
-    - dts/bindings/nfc/
-    - include/zephyr/drivers/nfc.h
-    - include/zephyr/drivers/nfc/
-    - tests/drivers/build_all/nfc/
-    - tests/drivers/nfc/
-  labels:
-    - "area: NFC"
-  tests:
-    - drivers.nfc
-
 "Drivers: Opamp":
   status: maintained
   maintainers:
@@ -4121,6 +4106,27 @@ NEORV32 platform:
     - "platform: NEORV32"
   tests:
     - boards.neorv32
+
+NFC:
+  status: odd fixes
+  files:
+    - doc/hardware/peripherals/nfc.rst
+    - doc/services/connectivity/nfc/
+    - drivers/nfc/
+    - dts/bindings/nfc/
+    - include/zephyr/drivers/nfc.h
+    - include/zephyr/drivers/nfc/
+    - include/zephyr/nfc/
+    - samples/subsys/nfc/
+    - subsys/nfc/
+    - tests/drivers/build_all/nfc/
+    - tests/drivers/nfc/
+    - tests/subsys/nfc/
+  labels:
+    - "area: NFC"
+  tests:
+    - drivers.nfc
+    - nfc
 
 NVMEM:
   status: maintained
