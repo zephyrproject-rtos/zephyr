@@ -403,6 +403,16 @@ typedef enum {
 	CTF_EVENT_FIFO_PEEK_HEAD_EXIT = 0x131,
 	CTF_EVENT_FIFO_PEEK_TAIL_ENTER = 0x132,
 	CTF_EVENT_FIFO_PEEK_TAIL_EXIT = 0x133,
+
+	/* LIFO */
+	CTF_EVENT_LIFO_INIT_ENTER = 0x134,
+	CTF_EVENT_LIFO_INIT_EXIT = 0x135,
+	CTF_EVENT_LIFO_PUT_ENTER = 0x136,
+	CTF_EVENT_LIFO_PUT_EXIT = 0x137,
+	CTF_EVENT_LIFO_ALLOC_PUT_ENTER = 0x138,
+	CTF_EVENT_LIFO_ALLOC_PUT_EXIT = 0x139,
+	CTF_EVENT_LIFO_GET_ENTER = 0x13A,
+	CTF_EVENT_LIFO_GET_EXIT = 0x13B,
 } ctf_event_t;
 
 typedef struct {
@@ -1957,5 +1967,47 @@ static inline void ctf_top_fifo_peek_tail_enter(uint32_t fifo_id)
 static inline void ctf_top_fifo_peek_tail_exit(uint32_t fifo_id, uint32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_PEEK_TAIL_EXIT), fifo_id, ret);
+}
+
+/* LIFO */
+
+static inline void ctf_top_lifo_init_enter(uint32_t lifo_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_LIFO_INIT_ENTER), lifo_id);
+}
+
+static inline void ctf_top_lifo_init_exit(uint32_t lifo_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_LIFO_INIT_EXIT), lifo_id);
+}
+
+static inline void ctf_top_lifo_put_enter(uint32_t lifo_id, uint32_t data)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_LIFO_PUT_ENTER), lifo_id, data);
+}
+
+static inline void ctf_top_lifo_put_exit(uint32_t lifo_id, uint32_t data)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_LIFO_PUT_EXIT), lifo_id, data);
+}
+
+static inline void ctf_top_lifo_alloc_put_enter(uint32_t lifo_id, uint32_t data)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_LIFO_ALLOC_PUT_ENTER), lifo_id, data);
+}
+
+static inline void ctf_top_lifo_alloc_put_exit(uint32_t lifo_id, uint32_t data, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_LIFO_ALLOC_PUT_EXIT), lifo_id, data, ret);
+}
+
+static inline void ctf_top_lifo_get_enter(uint32_t lifo_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_LIFO_GET_ENTER), lifo_id, timeout);
+}
+
+static inline void ctf_top_lifo_get_exit(uint32_t lifo_id, uint32_t timeout, uint32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_LIFO_GET_EXIT), lifo_id, timeout, ret);
 }
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
