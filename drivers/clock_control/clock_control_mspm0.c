@@ -44,12 +44,6 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 			DT_PROP(DT_NODELABEL(mclk), clk_div))),		\
 		(0))
 
-#define MSPM0_MFPCLK_DIV COND_CODE_1(					\
-		DT_NODE_HAS_PROP(DT_NODELABEL(mfpclk), clk_div),	\
-		(CONCAT(DL_SYSCTL_HFCLK_MFPCLK_DIVIDER_,		\
-			DT_PROP(DT_NODELABEL(mfpclk), clk_div))),	\
-		(0))
-
 #define DT_SYSOSC DT_NODELABEL(sysosc)
 
 #define DT_SYSOSC_FREQ DT_PROP(DT_SYSOSC, clock_frequency)
@@ -61,10 +55,6 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #error "Set SYSOSC clock frequency not supported"
 #endif
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(mfpclk), okay)
-#define MSPM0_MFPCLK_ENABLED 1
-#endif
-
 #define DT_HFCLK    DT_NODELABEL(hfclk)
 #define DT_HFCLK_IN DT_NODELABEL(hfclk_in)
 #define DT_HFXT     DT_NODELABEL(hfxt)
@@ -72,6 +62,7 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define DT_LFCLK_IN DT_NODELABEL(lfclk_in)
 #define DT_LFOSC    DT_NODELABEL(lfosc)
 #define DT_LFXT     DT_NODELABEL(lfxt)
+#define DT_MFPCLK   DT_NODELABEL(mfpclk)
 #define DT_SYSPLL   DT_NODELABEL(syspll)
 
 #define DT_HFCLK_IN_OKAY DT_NODE_HAS_STATUS_OKAY(DT_HFCLK_IN)
@@ -80,6 +71,7 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define DT_LFCLK_IN_OKAY DT_NODE_HAS_STATUS_OKAY(DT_LFCLK_IN)
 #define DT_LFOSC_OKAY    DT_NODE_HAS_STATUS_OKAY(DT_LFOSC)
 #define DT_LFXT_OKAY     DT_NODE_HAS_STATUS_OKAY(DT_LFXT)
+#define DT_MFPCLK_OKAY   DT_NODE_HAS_STATUS_OKAY(DT_MFPCLK)
 #define DT_SYSPLL_OKAY   DT_NODE_HAS_STATUS_OKAY(DT_SYSPLL)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(canclk), okay)
@@ -89,7 +81,7 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define DT_MCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mclk))
 #define DT_LFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_LFCLK)
 #define DT_HFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_HFCLK)
-#define DT_MFPCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mfpclk))
+#define DT_MFPCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_MFPCLK)
 #define DT_SYSPLL_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_SYSPLL)
 
 /* High Frequency Clock */
@@ -135,6 +127,15 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_LFCLK_CLOCKS_CTRL), "LFCLK source not en
 #if DT_LFXT_OKAY
 #define MSPM0_LFXT_STARTUP_US DT_PROP_OR(DT_LFXT, ti_xtal_startup_delay_us, 0)
 #endif /* DT_LFXT_OKAY */
+
+/* Mid-Frequency Precision Clock */
+#if DT_MFPCLK_OKAY
+#if !DT_SAME_NODE(DT_MFPCLK_CLOCKS_CTRL, DT_HFCLK) &&                                              \
+	!DT_SAME_NODE(DT_MFPCLK_CLOCKS_CTRL, DT_SYSOSC)
+#error "Invalid MFPCLK source"
+#endif
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_MFPCLK_CLOCKS_CTRL), "MFPCLK source not enabled");
+#endif /* DT_MFPCLK_OKAY */
 
 /* System PLL */
 #if DT_SYSPLL_OKAY
@@ -185,15 +186,6 @@ static struct mspm0_clk_cfg mspm0_ulpclk_cfg = {
 	.clk_div = MSPM0_ULPCLK_DIV,
 };
 
-#if MSPM0_MFPCLK_ENABLED
-static struct mspm0_clk_cfg mspm0_mfpclk_cfg = {
-	.clk_freq = DT_PROP(DT_NODELABEL(mfpclk), clock_frequency),
-	.clk_div = MSPM0_MFPCLK_DIV,
-};
-#endif
-
-
-
 /* Only 32/4 MHz supported; 16/24 MHz needs board trim we can't source. */
 static int clock_mspm0_set_rate(const struct device *dev, clock_control_subsys_t sys,
 				clock_control_subsys_rate_t rate)
@@ -240,6 +232,12 @@ static int clock_mspm0_on(const struct device *dev, clock_control_subsys_t sys)
 		soclock->sysosccfg &= ~SYSCTL_SYSOSCCFG_DISABLE;
 		return 0;
 
+#if DT_MFPCLK_OKAY
+	case MSPM0_CLOCK_MFPCLK:
+		soclock->genclken |= SYSCTL_GENCLKEN_MFPCLKEN;
+		return 0;
+#endif /* DT_MFPCLK_OKAY */
+
 #if DT_SYSPLL_OKAY
 	case MSPM0_CLOCK_SYSPLL: {
 		struct mspm0_sys_clock sysosc_subsys = {.clk = MSPM0_CLOCK_SYSOSC};
@@ -276,6 +274,12 @@ static int clock_mspm0_off(const struct device *dev, clock_control_subsys_t sys)
 		soclock->sysosccfg |= SYSCTL_SYSOSCCFG_DISABLE;
 		return 0;
 
+#if DT_MFPCLK_OKAY
+	case MSPM0_CLOCK_MFPCLK:
+		soclock->genclken &= ~SYSCTL_GENCLKEN_MFPCLKEN;
+		return 0;
+#endif /* DT_MFPCLK_OKAY */
+
 #if DT_SYSPLL_OKAY
 	case MSPM0_CLOCK_SYSPLL: {
 		soclock->hsclken &= ~SYSCTL_HSCLKEN_SYSPLLEN;
@@ -306,6 +310,14 @@ static enum clock_control_status clock_mspm0_get_status(const struct device *dev
 			return CLOCK_CONTROL_STATUS_OFF;
 		}
 		return CLOCK_CONTROL_STATUS_ON;
+
+#if DT_MFPCLK_OKAY
+	case MSPM0_CLOCK_MFPCLK:
+		if (soclock->genclken & SYSCTL_GENCLKEN_MFPCLKEN) {
+			return CLOCK_CONTROL_STATUS_ON;
+		}
+		return CLOCK_CONTROL_STATUS_OFF;
+#endif /* DT_MFPCLK_OKAY */
 
 #if DT_SYSPLL_OKAY
 	case MSPM0_CLOCK_SYSPLL:
@@ -432,11 +444,11 @@ static int clock_mspm0_get_rate(const struct device *dev,
 		*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 		break;
 
-#if MSPM0_MFPCLK_ENABLED
+#if DT_MFPCLK_OKAY
 	case MSPM0_CLOCK_MFPCLK:
-		*rate = mspm0_mfpclk_cfg.clk_freq;
+		*rate = MHZ(4);
 		break;
-#endif
+#endif /* DT_MFPCLK_OKAY */
 
 #if MSPM0_CANCLK_ENABLED
 	case MSPM0_CLOCK_CANCLK:
@@ -856,6 +868,72 @@ static int clock_mspm0_configure_lfclk(volatile struct mspm_sysctl_soclock_regs 
 	return 0;
 }
 
+#if DT_MFPCLK_OKAY
+
+#if DT_HFCLK_OKAY
+/* Compute HFCLK4MFPCLKDIV (1-16) so hfclk_rate/divider == 4 MHz. */
+static int clock_mspm0_mfpclk_hfclk_div(uint32_t hfclk_rate, uint32_t *divider)
+{
+	if (hfclk_rate == 0 || hfclk_rate % MHZ(4) != 0) {
+		return -EINVAL;
+	}
+
+	*divider = hfclk_rate / MHZ(4);
+
+	if (*divider < 1 || *divider > 16) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* DT_HFCLK_OKAY */
+
+static int clock_mspm0_configure_mfpclk(const struct device *dev,
+					volatile struct mspm_sysctl_soclock_regs *soclock,
+					enum mspm0_clock_source source)
+{
+	switch (source) {
+#if DT_HFCLK_OKAY
+	case MSPM0_CLOCK_SRC_HFCLK: {
+		struct mspm0_sys_clock hfclk_subsys = {.clk = MSPM0_CLOCK_HFCLK};
+		uint32_t hfclk_rate;
+		uint32_t divider;
+		int ret = clock_mspm0_get_rate(dev, (clock_control_subsys_t)&hfclk_subsys,
+					       &hfclk_rate);
+
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = clock_mspm0_mfpclk_hfclk_div(hfclk_rate, &divider);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* set MFPCLK divider so that HFCLK / divider == 4 MHz */
+		soclock->genclkcfg = (soclock->genclkcfg & ~SYSCTL_GENCLKCFG_HFCLK4MFPCLKDIV) |
+				     FIELD_PREP(SYSCTL_GENCLKCFG_HFCLK4MFPCLKDIV,
+						SYSCTL_GENCLKCFG_HFCLK4MFPCLKDIV_VAL(divider));
+
+		/* set HFCLK as MFPCLK source */
+		soclock->genclkcfg |= SYSCTL_GENCLKCFG_MFPCLKSRC;
+		break;
+	}
+#endif /* DT_HFCLK_OKAY */
+
+	case MSPM0_CLOCK_SRC_SYSOSC:
+		/* set SYSOSC as MFPCLK source */
+		soclock->genclkcfg &= ~SYSCTL_GENCLKCFG_MFPCLKSRC;
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* DT_MFPCLK_OKAY */
+
 static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_t sys, void *data)
 {
 	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
@@ -885,6 +963,12 @@ static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_
 		ret = clock_mspm0_configure_hfclk(soclock, *source);
 		break;
 #endif /* DT_HFCLK_OKAY */
+
+#if DT_MFPCLK_OKAY
+	case MSPM0_CLOCK_MFPCLK:
+		ret = clock_mspm0_configure_mfpclk(dev, soclock, *source);
+		break;
+#endif /* DT_MFPCLK_OKAY */
 
 	default:
 		ret = -ENOTSUP;
@@ -974,15 +1058,30 @@ static int clock_mspm0_init(const struct device *dev)
 
 #endif /* DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk)) */
 
-#if MSPM0_MFPCLK_ENABLED
-#if DT_SAME_NODE(DT_MFPCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk))
-	DL_SYSCTL_setHFCLKDividerForMFPCLK(mspm0_mfpclk_cfg.clk_div);
-	DL_SYSCTL_setMFPCLKSource(DL_SYSCTL_MFPCLK_SOURCE_HFCLK);
+#if DT_MFPCLK_OKAY
+	{
+		struct mspm0_sys_clock mfpclk_subsys = {.clk = MSPM0_CLOCK_MFPCLK};
+
+#if DT_SAME_NODE(DT_MFPCLK_CLOCKS_CTRL, DT_HFCLK)
+		LOG_DBG("MFPCLK booting from HFCLK");
+		ret = clock_mspm0_configure_mfpclk(dev, soclock, MSPM0_CLOCK_SRC_HFCLK);
 #else
-	DL_SYSCTL_setMFPCLKSource(DL_SYSCTL_MFPCLK_SOURCE_SYSOSC);
-#endif
-	DL_SYSCTL_enableMFPCLK();
-#endif /* MSPM0_MFPCLK_ENABLED */
+		/* validated at top of file: must be SYSOSC */
+		LOG_DBG("MFPCLK booting from SYSOSC");
+		ret = clock_mspm0_configure_mfpclk(dev, soclock, MSPM0_CLOCK_SRC_SYSOSC);
+#endif /* DT_SAME_NODE(DT_MFPCLK_CLOCKS_CTRL, DT_HFCLK) */
+		if (ret < 0) {
+			LOG_ERR("failed to configure MFPCLK: %d", ret);
+			return ret;
+		}
+
+		ret = clock_mspm0_on(dev, (clock_control_subsys_t)&mfpclk_subsys);
+		if (ret < 0) {
+			LOG_ERR("failed to enable MFPCLK: %d", ret);
+			return ret;
+		}
+	}
+#endif /* DT_MFPCLK_OKAY */
 
 	return 0;
 }
