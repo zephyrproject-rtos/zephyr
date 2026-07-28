@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <microchip/pic32c/pic32cm_sg_gc/pic32cm_sg00/pic32cm5112sg00100.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "pic32cm_sg00_cpro-pinctrl.dtsi"
 
 / {
 	model = "PIC32CM SG00 Curiosity Pro";
@@ -16,6 +17,8 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &program_flash;
 		zephyr,code-partition = &code_partition;
+		zephyr,console = &sercom4;
+		zephyr,shell-uart = &sercom4;
 	};
 
 	aliases {
@@ -182,5 +185,20 @@
 };
 
 &portb {
+	status = "okay";
+};
+
+&sercom4 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom4_uart_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
