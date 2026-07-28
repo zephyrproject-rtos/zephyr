@@ -20,6 +20,27 @@
 	};
 
 	soc {
+		sysctl: syscon@400af000 {
+			compatible = "syscon";
+			reg = <0x400af000 0x2000>;
+			status = "okay";
+		};
+
+		factoryregion: syscon@80111000 {
+			compatible = "syscon";
+			reg = <0x80111000 0x80>;
+		};
+
+		fri: syscon@40028000 {
+			compatible = "syscon";
+			reg = <0x40028000 0x2000>;
+		};
+
+		memcfg: syscon@4002a000 {
+			compatible = "syscon";
+			reg = <0x4002a000 0x2000>;
+		};
+
 		sram0: memory@30000000 {
 			compatible = "mmio-sram";
 		};
