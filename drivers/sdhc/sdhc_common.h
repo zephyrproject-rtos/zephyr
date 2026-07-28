@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SDHC_SDHC_HELPERS_H_
-#define ZEPHYR_DRIVERS_SDHC_SDHC_HELPERS_H_
+#ifndef ZEPHYR_DRIVERS_SDHC_SDHC_COMMON_H_
+#define ZEPHYR_DRIVERS_SDHC_SDHC_COMMON_H_
 
 /**
  * @brief Convert enum sd_voltage to a human-readable string
@@ -58,4 +58,4 @@ static inline const char *sdhc_timing_mode_str(enum sdhc_timing_mode timing)
 	}
 }
 
-#endif /* ZEPHYR_DRIVERS_SDHC_SDHC_HELPERS_H_ */
+#endif /* ZEPHYR_DRIVERS_SDHC_SDHC_COMMON_H_ */
