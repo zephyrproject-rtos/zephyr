@@ -3003,3 +3003,103 @@ event {
 		uint32_t ret;
 	};
 };
+
+event {
+	name = pipe_init;
+	id = 0x15B;
+	fields := struct {
+		uint32_t id;
+		uint32_t buffer;
+		uint32_t size;
+	};
+};
+
+event {
+	name = pipe_reset_enter;
+	id = 0x15C;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = pipe_reset_exit;
+	id = 0x15D;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = pipe_close_enter;
+	id = 0x15E;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = pipe_close_exit;
+	id = 0x15F;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = pipe_write_enter;
+	id = 0x160;
+	fields := struct {
+		uint32_t id;
+		uint32_t data;
+		uint32_t len;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = pipe_write_blocking;
+	id = 0x161;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = pipe_write_exit;
+	id = 0x162;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = pipe_read_enter;
+	id = 0x163;
+	fields := struct {
+		uint32_t id;
+		uint32_t data;
+		uint32_t len;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = pipe_read_blocking;
+	id = 0x164;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = pipe_read_exit;
+	id = 0x165;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
