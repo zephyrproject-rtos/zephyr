@@ -675,7 +675,7 @@
 		};
 
 		eth: eth@50098000 {
-			compatible = "espressif,esp32-eth";
+			compatible = "espressif,esp32-eth", "snps,dwmac";
 			reg = <0x50098000 0x4000>;
 			interrupts = <ETH_MAC_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
