@@ -89,6 +89,21 @@ __printf_like(1, 2) void printk_unlocked(const char *fmt, ...);
  */
 __printf_like(1, 0) void vprintk_unlocked(const char *fmt, va_list ap);
 
+/**
+ * @brief Stop printk() taking its lock, for crash reporting
+ *
+ * After this, printk() behaves as if every caller had used
+ * printk_unlocked(). Once a fatal error is being handled the lock cannot
+ * be trusted: the faulting context may have died holding it, or a CPU
+ * that will never run again may own it, and any later printk() would
+ * block for ever. Individual call sites cannot fix that, because code
+ * reached after the failure does not know it is in a crash.
+ *
+ * Called by the fatal error path. One way, for the rest of the system's
+ * life.
+ */
+void printk_panic(void);
+
 #else
 /** @cond INTERNAL_HIDDEN */
 /* Stubs for CONFIG_PRINTK=n. The API is documented above; these carry no
@@ -114,6 +129,10 @@ static inline __printf_like(1, 0) void vprintk_unlocked(const char *fmt, va_list
 {
 	ARG_UNUSED(fmt);
 	ARG_UNUSED(ap);
+}
+
+static inline void printk_panic(void)
+{
 }
 /** @endcond */
 #endif

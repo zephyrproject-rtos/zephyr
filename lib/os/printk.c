@@ -64,6 +64,21 @@ printk_hook_fn_t __printk_get_hook(void)
 	return _char_out;
 }
 
+#if defined(CONFIG_PRINTK_SYNC)
+/*
+ * Latched by printk_panic(). Plain bool, not an atomic: one way only, and
+ * a reader that misses the update just takes the lock as before.
+ */
+static bool panic_mode;
+#endif
+
+void printk_panic(void)
+{
+#if defined(CONFIG_PRINTK_SYNC)
+	panic_mode = true;
+#endif
+}
+
 struct buf_out_context {
 #ifdef CONFIG_PICOLIBC
 	FILE file;
@@ -159,31 +174,41 @@ void vprintk(const char *fmt, va_list ap)
 	} else {
 		compiler_barrier();
 #ifdef CONFIG_PRINTK_SYNC
-		k_spinlock_key_t key = k_spin_lock(&lock);
-#endif
+		if (!panic_mode) {
+			k_spinlock_key_t key = k_spin_lock(&lock);
 
+			vprintk_core(fmt, ap);
+			k_spin_unlock(&lock, key);
+		} else {
+			vprintk_core(fmt, ap);
+		}
+#else
 		vprintk_core(fmt, ap);
-
-#ifdef CONFIG_PRINTK_SYNC
-		k_spin_unlock(&lock, key);
 #endif
 	}
 }
 EXPORT_SYMBOL(vprintk);
 
-void z_impl_k_str_out(char *c, size_t n)
+static void str_out_chars(const char *c, size_t n)
 {
-	size_t i;
-#ifdef CONFIG_PRINTK_SYNC
-	k_spinlock_key_t key = k_spin_lock(&lock);
-#endif
-
-	for (i = 0; i < n; i++) {
+	for (size_t i = 0; i < n; i++) {
 		_char_out(c[i]);
 	}
+}
 
+void z_impl_k_str_out(char *c, size_t n)
+{
 #ifdef CONFIG_PRINTK_SYNC
-	k_spin_unlock(&lock, key);
+	if (!panic_mode) {
+		k_spinlock_key_t key = k_spin_lock(&lock);
+
+		str_out_chars(c, n);
+		k_spin_unlock(&lock, key);
+	} else {
+		str_out_chars(c, n);
+	}
+#else
+	str_out_chars(c, n);
 #endif
 }
 
