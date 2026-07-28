@@ -542,10 +542,16 @@ static int uhc_vrt_bus_reset(const struct device *dev)
 static int uhc_vrt_bus_resume(const struct device *dev)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
+	int ret;
 
-	k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
+	ret = uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL);
+	if (ret == 0) {
+		/* TDRSMDN */
+		k_msleep(20);
+		k_timer_start(&priv->sof_timer, priv->sof_period, priv->sof_period);
+	}
 
-	return uvb_advert(priv->host_node, UVB_EVT_RESUME, NULL);
+	return ret;
 }
 
 static int uhc_vrt_enqueue(const struct device *dev,
