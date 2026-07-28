@@ -20,4 +20,5 @@ Serial buses (I2C, SPI, UART, CAN) and other communication interfaces.
    smbus.rst
    ipm.rst
    mbox.rst
+   nfc.rst
    w1.rst
