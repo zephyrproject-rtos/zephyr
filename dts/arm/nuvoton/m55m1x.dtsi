@@ -368,7 +368,7 @@
 		};
 
 		emac: ethernet@40208000 {
-			compatible = "nuvoton,numaker-ethernet";
+			compatible = "nuvoton,numaker-ethernet", "snps,dwmac";
 			reg = <0x40208000 0x2000>;
 			interrupts = <63 0>;
 			resets = <&rst NUMAKER_SYS_EMAC0RST>;
