@@ -10,6 +10,7 @@ supported:
   - entropy
   - gpio
   - hwinfo
+  - i2s
   - netif:eth
   - netif:wifi
   - pulse_io
