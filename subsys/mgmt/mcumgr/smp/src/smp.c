@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
- * Copyright (c) 2022-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,10 @@
 #include <zcbor_encode.h>
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
+
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#include <zephyr/mgmt/mcumgr/grp/transport_mgmt/transport_mgmt.h>
+#endif
 
 #ifdef CONFIG_MCUMGR_MGMT_NOTIFICATION_HOOKS
 #include <zephyr/mgmt/mcumgr/mgmt/callbacks.h>
@@ -423,6 +427,36 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 		}
 
 		if (req_hdr.nh_op == MGMT_OP_READ || req_hdr.nh_op == MGMT_OP_WRITE) {
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+			if (req_hdr.nh_group != transport_mgmt_group_id() &&
+			    transport_mgmt_is_bridged(streamer->smpt, false) == true) {
+				const struct smp_transport_bridge *bridge =
+						transport_mgmt_get_bridge(streamer->smpt, false);
+
+				req->len += sizeof(struct smp_hdr);
+				req->data -= sizeof(struct smp_hdr);
+				rc = bridge->outgoing_transport->functions.bridge_output(bridge,
+							net_buf_ref(req), true);
+				req->len -= sizeof(struct smp_hdr) + req_hdr.nh_len;
+				req->data += sizeof(struct smp_hdr) + req_hdr.nh_len;
+
+				if (rc == 0) {
+					/* Server should not send an error response */
+					valid_hdr = false;
+					continue;
+				}
+
+				rsp = smp_alloc_rsp(req, streamer->smpt);
+				if (rsp == NULL) {
+					rc = MGMT_ERR_ENOMEM;
+					break;
+				}
+
+				cbor_nb_writer_init(streamer->writer, rsp);
+				break;
+			}
+#endif
+
 			rsp = smp_alloc_rsp(req, streamer->smpt);
 			if (rsp == NULL) {
 				rc = MGMT_ERR_ENOMEM;
@@ -442,8 +476,28 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 			/* Send the response. */
 			rc = streamer->smpt->functions.output(rsp);
 			rsp = NULL;
-		} else if (IS_ENABLED(CONFIG_SMP_CLIENT) && (req_hdr.nh_op == MGMT_OP_READ_RSP ||
-			   req_hdr.nh_op == MGMT_OP_WRITE_RSP)) {
+		} else if ((IS_ENABLED(CONFIG_MCUMGR_GRP_TRANSPORT) ||
+			    IS_ENABLED(CONFIG_SMP_CLIENT)) && (req_hdr.nh_op == MGMT_OP_READ_RSP ||
+			     req_hdr.nh_op == MGMT_OP_WRITE_RSP)) {
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+			if (transport_mgmt_is_bridged(streamer->smpt, true) == true) {
+				const struct smp_transport_bridge *bridge =
+						transport_mgmt_get_bridge(streamer->smpt, true);
+
+				req->len += sizeof(struct smp_hdr);
+				req->data -= sizeof(struct smp_hdr);
+				(void)bridge->incoming_transport->functions.bridge_output(bridge,
+							net_buf_ref(req), false);
+				req->len -= sizeof(struct smp_hdr) + req_hdr.nh_len;
+				req->data += sizeof(struct smp_hdr) + req_hdr.nh_len;
+
+				/* Server should not send error response for response */
+				valid_hdr = false;
+				continue;
+			}
+#endif
+
+#if defined(CONFIG_SMP_CLIENT)
 			rc = smp_client_single_response(req, &req_hdr);
 
 			if (rc == MGMT_ERR_EOK) {
@@ -452,7 +506,7 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 				/* Server should not send error response for response */
 				valid_hdr = false;
 			}
-
+#endif
 		} else {
 			rc = MGMT_ERR_ENOTSUP;
 		}
