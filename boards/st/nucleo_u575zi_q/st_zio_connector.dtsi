@@ -118,3 +118,12 @@
  * IO2=PE14 (D31), IO3=PE15 (D28).
  */
 st_zio_qspi: &octospi1 {};
+
+/*
+ * FMC (NOR/PSRAM bank 1) is routed to the Zio connector and can drive an
+ * Intel 8080 parallel bus (e.g. a display over MIPI DBI Mode B):
+ * D0=PD14 (D10), D1=PD15 (D9), D2=PD0 (D67), D3=PD1 (D66),
+ * D4=PE7 (D41), D5=PE8 (D42), D6=PE9 (D6), D7=PE10 (D40),
+ * NWE=PD5 (D53), NOE=PD4 (D54), NE1=PD7 (D51), A20=PE4 (D57).
+ */
+st_zio_fmc: &fmc {};
