@@ -99,6 +99,12 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	struct k_thread *thread = IS_ENABLED(CONFIG_MULTITHREADING) ?
 			_current : NULL;
 
+	/* The printk lock is not trustworthy from here on: this context may
+	 * have failed while holding it, or a CPU that is never coming back
+	 * may own it. Give up on serialized output rather than on output.
+	 */
+	printk_panic();
+
 	/* twister looks for the "ZEPHYR FATAL ERROR" string, don't
 	 * change it without also updating twister
 	 */
