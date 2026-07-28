@@ -2321,3 +2321,15 @@ void sys_trace_pm_device_runtime_disable_exit(const struct device *dev, int ret)
 {
 	ctf_top_pm_device_runtime_disable_exit((uint32_t)(uintptr_t)dev, ret);
 }
+
+/* PM system */
+
+void sys_trace_pm_system_suspend_enter(int32_t ticks)
+{
+	ctf_top_pm_system_suspend_enter(ticks);
+}
+
+void sys_trace_pm_system_suspend_exit(int32_t ticks, enum pm_state state)
+{
+	ctf_top_pm_system_suspend_exit(ticks, (uint8_t)state);
+}
