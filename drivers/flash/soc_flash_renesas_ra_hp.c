@@ -93,7 +93,7 @@ static int is_area_readable(const struct device *dev, off_t offset, size_t len)
 		}
 		if (dev_ctrl->flags & FLASH_FLAG_BLANK) {
 			LOG_DBG("read request on erased offset:0x%lx size:%d",
-				offset, len);
+				(long)offset, len);
 			result = FLASH_RESULT_BLANK;
 		}
 		atomic_and(&dev_ctrl->flags, ~(FLASH_FLAG_BLANK | FLASH_FLAG_NOT_BLANK));
@@ -132,7 +132,7 @@ static int flash_ra_read(const struct device *dev, off_t offset, void *data, siz
 #endif /* CONFIG_FLASH_RENESAS_RA_HP_CHECK_BEFORE_READING */
 
 	if (!rc) {
-		memcpy(data, (uint8_t *)(offset + flash_data->area_address), len);
+		memcpy(data, (uint8_t *)((uintptr_t)offset + flash_data->area_address), len);
 #if defined(CONFIG_FLASH_RENESAS_RA_HP_CHECK_BEFORE_READING)
 	} else if (rc == -ENODATA) {
 		/* Erased area, return dummy data as an erased page. */

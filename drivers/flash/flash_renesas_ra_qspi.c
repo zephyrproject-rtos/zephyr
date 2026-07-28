@@ -368,7 +368,8 @@ static int qspi_flash_ra_erase(const struct device *dev, off_t offset, size_t le
 			erase_size = BLOCK_SIZE_64K;
 		}
 		err = R_QSPI_Erase(&qspi_data->qspi_ctrl,
-				   (uint8_t *)(QSPI_DEVICE_START_ADDRESS + offset), erase_size);
+				   (uint8_t *)(QSPI_DEVICE_START_ADDRESS +
+					       (uintptr_t)offset), erase_size);
 		if (err) {
 			LOG_ERR("Erase failed");
 			err = -EIO;
@@ -402,7 +403,7 @@ static int qspi_flash_ra_read(const struct device *dev, off_t offset, void *data
 
 	acquire_device(dev);
 
-	memcpy(data, (uint8_t *)(QSPI_DEVICE_START_ADDRESS + offset), len);
+	memcpy(data, (uint8_t *)(QSPI_DEVICE_START_ADDRESS + (uintptr_t)offset), len);
 	release_device(dev);
 
 	return 0;
@@ -428,7 +429,8 @@ static int qspi_flash_ra_write(const struct device *dev, off_t offset, const voi
 	while (remaining_bytes > 0) {
 		size = remaining_bytes > PAGE_SIZE_BYTE ? PAGE_SIZE_BYTE : remaining_bytes;
 		err = R_QSPI_Write(&qspi_data->qspi_ctrl, p_data,
-				   (uint8_t *)(QSPI_DEVICE_START_ADDRESS + offset), size);
+				   (uint8_t *)(QSPI_DEVICE_START_ADDRESS +
+					       (uintptr_t)offset), size);
 		if (err) {
 			LOG_ERR("Direct write failed");
 			err = -EIO;

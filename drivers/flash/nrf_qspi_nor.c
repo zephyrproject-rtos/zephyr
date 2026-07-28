@@ -819,7 +819,7 @@ static inline int read_non_aligned(const struct device *dev,
 		flash_prefix = size;
 	}
 
-	off_t dest_prefix = (WORD_SIZE - (off_t)dptr % WORD_SIZE) % WORD_SIZE;
+	off_t dest_prefix = (WORD_SIZE - (off_t)(uintptr_t)dptr % WORD_SIZE) % WORD_SIZE;
 
 	if (dest_prefix > size) {
 		dest_prefix = size;

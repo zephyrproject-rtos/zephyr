@@ -56,7 +56,7 @@ static int flash_rpi_read(const struct device *dev, off_t offset, void *data, si
 		return -EINVAL;
 	}
 
-	memcpy(data, (uint8_t *)(PICO_FLASH_READ_BASE + offset), size);
+	memcpy(data, (uint8_t *)(PICO_FLASH_READ_BASE + (uintptr_t)offset), size);
 
 	return 0;
 }
@@ -74,8 +74,8 @@ static int flash_rpi_write(const struct device *dev, off_t offset, const void *d
 	}
 
 	if (!is_valid_range(offset, size)) {
-		LOG_ERR("Write range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset,
-			size);
+		LOG_ERR("Write range exceeds the flash boundaries. Offset=%#lx, Size=%u",
+			(unsigned long)offset, size);
 		return -EINVAL;
 	}
 
@@ -118,14 +118,14 @@ static int flash_rpi_erase(const struct device *dev, off_t offset, size_t size)
 	}
 
 	if (!is_valid_range(offset, size)) {
-		LOG_ERR("Erase range exceeds the flash boundaries. Offset=%#lx, Size=%u", offset,
-			size);
+		LOG_ERR("Erase range exceeds the flash boundaries. Offset=%#lx, Size=%u",
+			(unsigned long)offset, size);
 		return -EINVAL;
 	}
 
 	if ((offset % SECTOR_SIZE) || (size % SECTOR_SIZE)) {
 		LOG_ERR("Erase range is not a multiple of the sector size. Offset=%#lx, Size=%u",
-			offset, size);
+			(unsigned long)offset, size);
 		return -EINVAL;
 	}
 

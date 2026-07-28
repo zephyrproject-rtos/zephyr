@@ -593,7 +593,8 @@ static int flash_it51xxx_read(const struct device *dev, off_t offset, void *dst_
 	int ret;
 	uint8_t *dst = (uint8_t *)dst_data;
 
-	LOG_DBG("%s: offset=%lx, data addr=%p, len=%u", __func__, offset, (uint8_t *)dst_data, len);
+	LOG_DBG("%s: offset=%lx, data addr=%p, len=%u", __func__,
+		(long)offset, (uint8_t *)dst_data, len);
 
 	if (len == 0) {
 		return 0;
@@ -642,8 +643,8 @@ static int flash_it51xxx_write(const struct device *dev, off_t offset, const voi
 	int ret;
 	const uint8_t *src = (const uint8_t *)src_data;
 
-	LOG_DBG("%s: offset=%lx, data addr=%p, len=%u", __func__, offset, (const uint8_t *)src_data,
-		len);
+	LOG_DBG("%s: offset=%lx, data addr=%p, len=%u", __func__,
+		(long)offset, (const uint8_t *)src_data, len);
 
 	if (len == 0) {
 		return 0;
@@ -686,7 +687,7 @@ static int flash_it51xxx_erase(const struct device *dev, off_t offset, size_t le
 	struct flash_it51xxx_dev_data *data = dev->data;
 	int ret;
 
-	LOG_DBG("%s: offset=%lx, len=%u", __func__, offset, len);
+	LOG_DBG("%s: offset=%lx, len=%u", __func__, (long)offset, len);
 
 	if (len == 0) {
 		return 0;

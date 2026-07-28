@@ -164,7 +164,7 @@ static int flash_ambiq_read(const struct device *dev, off_t offset, void *data, 
 		return 0;
 	}
 
-	memcpy(data, (uint8_t *)(SOC_NV_FLASH_ADDR + offset), len);
+	memcpy(data, (uint8_t *)(SOC_NV_FLASH_ADDR + (uintptr_t)offset), len);
 
 	return 0;
 }
@@ -294,7 +294,7 @@ static int flash_ambiq_write(const struct device *dev, off_t offset, const void 
 
 static bool flash_ambiq_is_erased(off_t offset, size_t len)
 {
-	const uint8_t *flash_ptr = (const uint8_t *)(SOC_NV_FLASH_ADDR + offset);
+	const uint8_t *flash_ptr = (const uint8_t *)(SOC_NV_FLASH_ADDR + (uintptr_t)offset);
 
 	for (size_t i = 0; i < len; i++) {
 		if (flash_ptr[i] != FLASH_ERASE_BYTE) {
@@ -395,7 +395,7 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 
 	for (retry_count = 0; retry_count < FLASH_OPERATION_MAX_RETRIES; retry_count++) {
 		ret = am_hal_mram_main_fill(AM_HAL_MRAM_PROGRAM_KEY, FLASH_ERASE_WORD,
-					    (uint32_t *)(SOC_NV_FLASH_ADDR + offset),
+					    (uint32_t *)(SOC_NV_FLASH_ADDR + (uintptr_t)offset),
 					    (len / sizeof(uint32_t)));
 
 		/*
@@ -409,8 +409,10 @@ static int flash_ambiq_erase(const struct device *dev, off_t offset, size_t len)
 		}
 #else
 		if (ret == AM_HAL_STATUS_SUCCESS) {
-			sys_cache_data_invd_range((void *)(SOC_NV_FLASH_ADDR + offset), len);
-			sys_cache_instr_flush_range((void *)(SOC_NV_FLASH_ADDR + offset), len);
+			sys_cache_data_invd_range((void *)(SOC_NV_FLASH_ADDR +
+							   (uintptr_t)offset), len);
+			sys_cache_instr_flush_range((void *)(SOC_NV_FLASH_ADDR +
+							     (uintptr_t)offset), len);
 		}
 #endif
 

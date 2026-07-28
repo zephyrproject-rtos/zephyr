@@ -94,7 +94,7 @@ static bool validate_action(uint32_t addr, size_t len, bool must_align)
  */
 static int nrf_mramc_verify_data(off_t offset, const void *data, size_t size, bool is_erase)
 {
-	uint32_t *mram_start = (uint32_t *) MAP_TO_ADDR(offset);
+	uint32_t *mram_start = (uint32_t *) MAP_TO_ADDR((uintptr_t)offset);
 	uint32_t *mram_end = mram_start + size / sizeof(uint32_t);
 
 	if (is_erase) {
