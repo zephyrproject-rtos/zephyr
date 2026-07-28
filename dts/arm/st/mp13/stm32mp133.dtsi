@@ -12,7 +12,7 @@
 
 		eth1: mac1: ethernet@5800e000 {
 			compatible = "st,stm32mp13-ethernet", "st,stm32h7-ethernet",
-				     "st,stm32-ethernet";
+				     "st,stm32-ethernet", "snps,dwmac";
 			reg = <0x5800e000 0x2000>;
 			clock-names = "stm-eth", "mac-clk", "mac-clk-tx", "mac-clk-rx", "eth-ker";
 			clocks = <&rcc STM32_CLOCK(AHB6, 27)>,
