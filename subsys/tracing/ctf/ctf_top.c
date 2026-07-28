@@ -1936,3 +1936,58 @@ void sys_trace_k_lifo_get_exit(struct k_lifo *lifo, k_timeout_t timeout, void *r
 			      k_ticks_to_us_floor32((uint32_t)timeout.ticks),
 			      (uint32_t)(uintptr_t)ret);
 }
+
+/* Stack */
+
+void sys_trace_k_stack_init(struct k_stack *stack)
+{
+	ctf_top_stack_init((uint32_t)(uintptr_t)stack);
+}
+
+void sys_trace_k_stack_alloc_init_enter(struct k_stack *stack)
+{
+	ctf_top_stack_alloc_init_enter((uint32_t)(uintptr_t)stack);
+}
+
+void sys_trace_k_stack_alloc_init_exit(struct k_stack *stack, int32_t ret)
+{
+	ctf_top_stack_alloc_init_exit((uint32_t)(uintptr_t)stack, ret);
+}
+
+void sys_trace_k_stack_cleanup_enter(struct k_stack *stack)
+{
+	ctf_top_stack_cleanup_enter((uint32_t)(uintptr_t)stack);
+}
+
+void sys_trace_k_stack_cleanup_exit(struct k_stack *stack, int ret)
+{
+	ctf_top_stack_cleanup_exit((uint32_t)(uintptr_t)stack, ret);
+}
+
+void sys_trace_k_stack_push_enter(struct k_stack *stack)
+{
+	ctf_top_stack_push_enter((uint32_t)(uintptr_t)stack);
+}
+
+void sys_trace_k_stack_push_exit(struct k_stack *stack, int ret)
+{
+	ctf_top_stack_push_exit((uint32_t)(uintptr_t)stack, ret);
+}
+
+void sys_trace_k_stack_pop_enter(struct k_stack *stack, k_timeout_t timeout)
+{
+	ctf_top_stack_pop_enter((uint32_t)(uintptr_t)stack,
+				k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_stack_pop_blocking(struct k_stack *stack, k_timeout_t timeout)
+{
+	ctf_top_stack_pop_blocking((uint32_t)(uintptr_t)stack,
+				   k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_stack_pop_exit(struct k_stack *stack, k_timeout_t timeout, int ret)
+{
+	ctf_top_stack_pop_exit((uint32_t)(uintptr_t)stack,
+			       k_ticks_to_us_floor32((uint32_t)timeout.ticks), ret);
+}

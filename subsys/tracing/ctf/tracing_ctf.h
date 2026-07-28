@@ -885,6 +885,32 @@ void sys_trace_k_lifo_get_exit(struct k_lifo *lifo, k_timeout_t timeout, void *r
 #define sys_port_trace_k_lifo_get_exit(lifo, timeout, ret)                                         \
 	sys_trace_k_lifo_get_exit(lifo, timeout, ret)
 
+/* Stack */
+void sys_trace_k_stack_init(struct k_stack *stack);
+void sys_trace_k_stack_alloc_init_enter(struct k_stack *stack);
+void sys_trace_k_stack_alloc_init_exit(struct k_stack *stack, int32_t ret);
+void sys_trace_k_stack_cleanup_enter(struct k_stack *stack);
+void sys_trace_k_stack_cleanup_exit(struct k_stack *stack, int ret);
+void sys_trace_k_stack_push_enter(struct k_stack *stack);
+void sys_trace_k_stack_push_exit(struct k_stack *stack, int ret);
+void sys_trace_k_stack_pop_enter(struct k_stack *stack, k_timeout_t timeout);
+void sys_trace_k_stack_pop_blocking(struct k_stack *stack, k_timeout_t timeout);
+void sys_trace_k_stack_pop_exit(struct k_stack *stack, k_timeout_t timeout, int ret);
+
+#define sys_port_trace_k_stack_init(stack)             sys_trace_k_stack_init(stack)
+#define sys_port_trace_k_stack_alloc_init_enter(stack) sys_trace_k_stack_alloc_init_enter(stack)
+#define sys_port_trace_k_stack_alloc_init_exit(stack, ret)                                         \
+	sys_trace_k_stack_alloc_init_exit(stack, ret)
+#define sys_port_trace_k_stack_cleanup_enter(stack)      sys_trace_k_stack_cleanup_enter(stack)
+#define sys_port_trace_k_stack_cleanup_exit(stack, ret)  sys_trace_k_stack_cleanup_exit(stack, ret)
+#define sys_port_trace_k_stack_push_enter(stack)         sys_trace_k_stack_push_enter(stack)
+#define sys_port_trace_k_stack_push_exit(stack, ret)     sys_trace_k_stack_push_exit(stack, ret)
+#define sys_port_trace_k_stack_pop_enter(stack, timeout) sys_trace_k_stack_pop_enter(stack, timeout)
+#define sys_port_trace_k_stack_pop_blocking(stack, timeout)                                        \
+	sys_trace_k_stack_pop_blocking(stack, timeout)
+#define sys_port_trace_k_stack_pop_exit(stack, timeout, ret)                                       \
+	sys_trace_k_stack_pop_exit(stack, timeout, ret)
+
 /*
  * Fill any sys_port_trace_* hook not defined above with a canonical no-op. The
  * per-macro #ifndef guards keep the real definitions above; only gaps are filled,
