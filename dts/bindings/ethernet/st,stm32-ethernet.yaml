@@ -7,4 +7,22 @@ description: |
 
 compatible: "st,stm32-ethernet"
 
-include: st,stm32-ethernet-common.yaml
+include: [ethernet-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  clock-names:
+    required: true
+  interrupts:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  phy-connection-type:
+    required: true
+  phy-handle:
+    required: true
