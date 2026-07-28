@@ -15,7 +15,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
-#include "sdhc_helpers.h"
+#include "sdhc_common.h"
 
 #include <esp_clk_tree.h>
 #include <esp_private/esp_clk_tree_common.h>
