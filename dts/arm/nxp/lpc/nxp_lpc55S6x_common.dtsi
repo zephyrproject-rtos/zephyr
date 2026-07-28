@@ -62,11 +62,6 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
-	sramx: memory@4000000 {
-		compatible = "mmio-sram";
-		reg = <0x4000000 DT_SIZE_K(32)>;
-	};
-
 	/* lpc55S6x Memory configurations:
 	 *
 	 * RAM blocks SRAM0 through SRAM4 are contiguous address ranges
@@ -75,6 +70,12 @@
 	 * LPC55S69: 320KB RAM, RAMX: 32K, SRAM0: 64K, SRAM1: 64K,
 	 *                      SRAM2: 64K, SRAM3: 64K, SRAM4: 16K
 	 */
+	sramx: memory@4000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x4000000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "SRAMX";
+	};
+
 	sram0: memory@20000000 {
 		compatible = "mmio-sram";
 		reg = <0x20000000 DT_SIZE_K(64)>;
