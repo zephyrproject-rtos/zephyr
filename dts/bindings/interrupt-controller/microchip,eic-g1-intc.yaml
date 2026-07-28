@@ -172,17 +172,18 @@ portd-special-pins-2-cells:
 
 examples:
   - |
-    The following example shows an EIC node in the SoC devicetree. The
-    `*-supported-pins` and `*-unsupported-pins` properties describe the
-    interrupt capabilities of GPIO pins for each port.
-
-    The `*-special-pins-*` properties are used for GPIO pins whose EIC line
-    cannot be derived directly from the pin number (for example, using
-    `pin_number % 16`). Each entry consists of a pin bitmask and an offset.
-
-    GPIO pins can be configured for interrupt operation using the standard Zephyr
-    GPIO APIs in the same way as any other GPIO pin.
-
+    /*
+     * The following example shows an EIC node in the SoC devicetree. The
+     * *-supported-pins and *-unsupported-pins properties describe the
+     * interrupt capabilities of GPIO pins for each port.
+     *
+     * The *-special-pins-* properties are used for GPIO pins whose EIC line
+     * cannot be derived directly from the pin number (for example, using
+     * pin_number % 16). Each entry consists of a pin bitmask and an offset.
+     *
+     * GPIO pins can be configured for interrupt operation using the standard
+     * Zephyr GPIO APIs in the same way as any other GPIO pin.
+     */
     eic: interrupt-controller@40001800 {
       compatible = "microchip,eic-g1-intc";
       reg = <0x40001800 0x400>;
