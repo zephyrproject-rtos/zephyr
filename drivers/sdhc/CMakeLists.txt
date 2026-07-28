@@ -1,10 +1,11 @@
-# Copyright 2022 NXP
+# SPDX-FileCopyrightText: Copyright 2022, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
-if(CONFIG_SDHC)
 
 zephyr_library()
 
 # zephyr-keep-sorted-start
+zephyr_library_sources(sdhc.c)
+
 zephyr_library_sources_ifdef(CONFIG_CDNS_SDHC sdhc_cdns_ll.c sdhc_cdns.c)
 zephyr_library_sources_ifdef(CONFIG_IMX_USDHC imx_usdhc.c)
 zephyr_library_sources_ifdef(CONFIG_INTEL_EMMC_HOST intel_emmc_host.c)
@@ -27,5 +28,3 @@ zephyr_library_sources_ifdef(CONFIG_SDHC_TI_AM654 sdhc_ti_am654.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_SDHC sdhc_spi.c)
 zephyr_library_sources_ifdef(CONFIG_XLNX_SDHC xlnx_sdhc.c)
 # zephyr-keep-sorted-stop
-
-endif()
