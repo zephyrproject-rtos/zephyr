@@ -78,3 +78,5 @@ SECTION_DATA_PROLOGUE(.option_setting_bps_sel, DT_REG_ADDR(DT_NODELABEL(option_s
 	KEEP(*(.option_setting_bps_sel))
 } GROUP_LINK_IN(OFS_BPS_SEL_MEMORY)
 #endif
+
+#endif
