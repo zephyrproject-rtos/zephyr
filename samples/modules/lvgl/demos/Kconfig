@@ -72,4 +72,7 @@ config LV_Z_DEMO_RENDER_DYNAMIC_SCENE_TIMEOUT
 
 endif
 
+configdefault CPU_LOAD
+	default y if LV_USE_PERF_MONITOR
+
 source "Kconfig.zephyr"
