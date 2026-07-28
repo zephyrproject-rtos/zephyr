@@ -2491,3 +2491,163 @@ event {
 		uint32_t ret;
 	};
 };
+
+event {
+	name = fifo_init_enter;
+	id = 0x122;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = fifo_init_exit;
+	id = 0x123;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = fifo_cancel_wait_enter;
+	id = 0x124;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = fifo_cancel_wait_exit;
+	id = 0x125;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = fifo_put_enter;
+	id = 0x126;
+	fields := struct {
+		uint32_t id;
+		uint32_t data;
+	};
+};
+
+event {
+	name = fifo_put_exit;
+	id = 0x127;
+	fields := struct {
+		uint32_t id;
+		uint32_t data;
+	};
+};
+
+event {
+	name = fifo_alloc_put_enter;
+	id = 0x128;
+	fields := struct {
+		uint32_t id;
+		uint32_t data;
+	};
+};
+
+event {
+	name = fifo_alloc_put_exit;
+	id = 0x129;
+	fields := struct {
+		uint32_t id;
+		uint32_t data;
+		int32_t ret;
+	};
+};
+
+event {
+	name = fifo_put_list_enter;
+	id = 0x12A;
+	fields := struct {
+		uint32_t id;
+		uint32_t head;
+		uint32_t tail;
+	};
+};
+
+event {
+	name = fifo_put_list_exit;
+	id = 0x12B;
+	fields := struct {
+		uint32_t id;
+		uint32_t head;
+		uint32_t tail;
+	};
+};
+
+event {
+	name = fifo_put_slist_enter;
+	id = 0x12C;
+	fields := struct {
+		uint32_t id;
+		uint32_t list;
+	};
+};
+
+event {
+	name = fifo_put_slist_exit;
+	id = 0x12D;
+	fields := struct {
+		uint32_t id;
+		uint32_t list;
+	};
+};
+
+event {
+	name = fifo_get_enter;
+	id = 0x12E;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = fifo_get_exit;
+	id = 0x12F;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = fifo_peek_head_enter;
+	id = 0x130;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = fifo_peek_head_exit;
+	id = 0x131;
+	fields := struct {
+		uint32_t id;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = fifo_peek_tail_enter;
+	id = 0x132;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = fifo_peek_tail_exit;
+	id = 0x133;
+	fields := struct {
+		uint32_t id;
+		uint32_t ret;
+	};
+};
