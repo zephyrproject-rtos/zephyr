@@ -2062,16 +2062,14 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 			return;
 		}
 
-		if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
-			LOG_WRN("Incomplete response report received, discarding");
-			(void)net_buf_pull_mem(buf, response->data_length);
-		} else if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED) {
+		if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED) {
 			(void)net_buf_pull_mem(buf, response->data_length);
 
 			if (adv->cb && adv->cb->pawr_response) {
 				adv->cb->pawr_response(adv, &info, NULL);
 			}
-		} else if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+		} else if ((response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) ||
+			   (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL)) {
 			net_buf_simple_init_with_data(&data,
 						      net_buf_pull_mem(buf, response->data_length),
 						      response->data_length);
