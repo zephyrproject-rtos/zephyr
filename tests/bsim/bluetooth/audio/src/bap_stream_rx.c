@@ -100,7 +100,7 @@ void bap_stream_rx_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 	if (info->flags & BT_ISO_FLAGS_LOST) {
 		log_stream_err(test_stream, info, buf);
 
-		if (test_stream->valid_rx_cnt > 1U) {
+		if (!TEST_FLAG(test_stream->stopping) && test_stream->valid_rx_cnt > 1U) {
 			FAIL("ISO receive lost\n");
 		}
 	}

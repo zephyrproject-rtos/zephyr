@@ -212,9 +212,14 @@ static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
 	ARG_UNUSED(rsp);
 
 	LOG_INF("Disable: stream %p", stream);
+
+	/* Mark stream as stopping to not treat lost SDUs as a failure condition */
+	SET_FLAG(test_stream->stopping);
 
 	return 0;
 }
@@ -230,9 +235,14 @@ static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 
 static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
 	ARG_UNUSED(rsp);
 
 	LOG_INF("Release: stream %p", stream);
+
+	/* Mark stream as stopping to not treat lost SDUs as a failure condition */
+	SET_FLAG(test_stream->stopping);
 
 	return 0;
 }
@@ -336,6 +346,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.stopped = stream_stopped_cb,
 	.recv = bap_stream_rx_recv_cb,
 	.sent = bap_stream_tx_sent_cb,
+	.disconnected = bap_unicast_stream_disconnected_cb,
 };
 
 static void transceive_test_streams(void)
