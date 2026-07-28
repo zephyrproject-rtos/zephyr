@@ -169,8 +169,8 @@
 #define ESP_PWM0_CAP2_IN  97 /**< MCPWM0 capture 2 input */
 
 /* TWAI0 */
-#define ESP_TWAI0_RX 97 /**< TWAI0 RX input */
-#define ESP_TWAI0_TX 96 /**< TWAI0 TX output */
+#define ESP_TWAI0_RX 80 /**< TWAI0 RX input */
+#define ESP_TWAI0_TX 80 /**< TWAI0 TX output */
 
 /* LEDC */
 #define ESP_LEDC_LS_SIG_OUT0 126 /**< LEDC low-speed signal output 0 */
