@@ -1,0 +1,19 @@
+common:
+  tags: nfc
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "<inf> nfc_tag_reader: Present a tag to"
+sample:
+  description: Read the NDEF message from a tag presented to an NFC reader
+  name: NFC tag reader
+tests:
+  sample.nfc.tag_reader:
+    platform_allow:
+      - native_sim
+  sample.nfc.tag_reader.type_2_only:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_NFC_T4T=n
