@@ -818,6 +818,51 @@ void sys_trace_k_queue_peek_tail(struct k_queue *queue, void *ret);
 #define sys_port_trace_k_queue_peek_head(queue, ret) sys_trace_k_queue_peek_head(queue, ret)
 #define sys_port_trace_k_queue_peek_tail(queue, ret) sys_trace_k_queue_peek_tail(queue, ret)
 
+/* FIFO */
+void sys_trace_k_fifo_init_enter(struct k_fifo *fifo);
+void sys_trace_k_fifo_init_exit(struct k_fifo *fifo);
+void sys_trace_k_fifo_cancel_wait_enter(struct k_fifo *fifo);
+void sys_trace_k_fifo_cancel_wait_exit(struct k_fifo *fifo);
+void sys_trace_k_fifo_put_enter(struct k_fifo *fifo, void *data);
+void sys_trace_k_fifo_put_exit(struct k_fifo *fifo, void *data);
+void sys_trace_k_fifo_alloc_put_enter(struct k_fifo *fifo, void *data);
+void sys_trace_k_fifo_alloc_put_exit(struct k_fifo *fifo, void *data, int ret);
+void sys_trace_k_fifo_put_list_enter(struct k_fifo *fifo, void *head, void *tail);
+void sys_trace_k_fifo_put_list_exit(struct k_fifo *fifo, void *head, void *tail);
+void sys_trace_k_fifo_put_slist_enter(struct k_fifo *fifo, sys_slist_t *list);
+void sys_trace_k_fifo_put_slist_exit(struct k_fifo *fifo, sys_slist_t *list);
+void sys_trace_k_fifo_get_enter(struct k_fifo *fifo, k_timeout_t timeout);
+void sys_trace_k_fifo_get_exit(struct k_fifo *fifo, k_timeout_t timeout, void *ret);
+void sys_trace_k_fifo_peek_head_enter(struct k_fifo *fifo);
+void sys_trace_k_fifo_peek_head_exit(struct k_fifo *fifo, void *ret);
+void sys_trace_k_fifo_peek_tail_enter(struct k_fifo *fifo);
+void sys_trace_k_fifo_peek_tail_exit(struct k_fifo *fifo, void *ret);
+
+#define sys_port_trace_k_fifo_init_enter(fifo)        sys_trace_k_fifo_init_enter(fifo)
+#define sys_port_trace_k_fifo_init_exit(fifo)         sys_trace_k_fifo_init_exit(fifo)
+#define sys_port_trace_k_fifo_cancel_wait_enter(fifo) sys_trace_k_fifo_cancel_wait_enter(fifo)
+#define sys_port_trace_k_fifo_cancel_wait_exit(fifo)  sys_trace_k_fifo_cancel_wait_exit(fifo)
+#define sys_port_trace_k_fifo_put_enter(fifo, data)   sys_trace_k_fifo_put_enter(fifo, data)
+#define sys_port_trace_k_fifo_put_exit(fifo, data)    sys_trace_k_fifo_put_exit(fifo, data)
+#define sys_port_trace_k_fifo_alloc_put_enter(fifo, data)                                          \
+	sys_trace_k_fifo_alloc_put_enter(fifo, data)
+#define sys_port_trace_k_fifo_alloc_put_exit(fifo, data, ret)                                      \
+	sys_trace_k_fifo_alloc_put_exit(fifo, data, ret)
+#define sys_port_trace_k_fifo_put_list_enter(fifo, head, tail)                                     \
+	sys_trace_k_fifo_put_list_enter(fifo, head, tail)
+#define sys_port_trace_k_fifo_put_list_exit(fifo, head, tail)                                      \
+	sys_trace_k_fifo_put_list_exit(fifo, head, tail)
+#define sys_port_trace_k_fifo_put_slist_enter(fifo, list)                                          \
+	sys_trace_k_fifo_put_slist_enter(fifo, list)
+#define sys_port_trace_k_fifo_put_slist_exit(fifo, list) sys_trace_k_fifo_put_slist_exit(fifo, list)
+#define sys_port_trace_k_fifo_get_enter(fifo, timeout)   sys_trace_k_fifo_get_enter(fifo, timeout)
+#define sys_port_trace_k_fifo_get_exit(fifo, timeout, ret)                                         \
+	sys_trace_k_fifo_get_exit(fifo, timeout, ret)
+#define sys_port_trace_k_fifo_peek_head_enter(fifo)     sys_trace_k_fifo_peek_head_enter(fifo)
+#define sys_port_trace_k_fifo_peek_head_exit(fifo, ret) sys_trace_k_fifo_peek_head_exit(fifo, ret)
+#define sys_port_trace_k_fifo_peek_tail_enter(fifo)     sys_trace_k_fifo_peek_tail_enter(fifo)
+#define sys_port_trace_k_fifo_peek_tail_exit(fifo, ret) sys_trace_k_fifo_peek_tail_exit(fifo, ret)
+
 /*
  * Fill any sys_port_trace_* hook not defined above with a canonical no-op. The
  * per-macro #ifndef guards keep the real definitions above; only gaps are filled,

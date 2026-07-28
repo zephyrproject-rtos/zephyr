@@ -383,6 +383,26 @@ typedef enum {
 	CTF_EVENT_QUEUE_UNIQUE_APPEND_EXIT = 0x11F,
 	CTF_EVENT_QUEUE_PEEK_HEAD = 0x120,
 	CTF_EVENT_QUEUE_PEEK_TAIL = 0x121,
+
+	/* FIFO */
+	CTF_EVENT_FIFO_INIT_ENTER = 0x122,
+	CTF_EVENT_FIFO_INIT_EXIT = 0x123,
+	CTF_EVENT_FIFO_CANCEL_WAIT_ENTER = 0x124,
+	CTF_EVENT_FIFO_CANCEL_WAIT_EXIT = 0x125,
+	CTF_EVENT_FIFO_PUT_ENTER = 0x126,
+	CTF_EVENT_FIFO_PUT_EXIT = 0x127,
+	CTF_EVENT_FIFO_ALLOC_PUT_ENTER = 0x128,
+	CTF_EVENT_FIFO_ALLOC_PUT_EXIT = 0x129,
+	CTF_EVENT_FIFO_PUT_LIST_ENTER = 0x12A,
+	CTF_EVENT_FIFO_PUT_LIST_EXIT = 0x12B,
+	CTF_EVENT_FIFO_PUT_SLIST_ENTER = 0x12C,
+	CTF_EVENT_FIFO_PUT_SLIST_EXIT = 0x12D,
+	CTF_EVENT_FIFO_GET_ENTER = 0x12E,
+	CTF_EVENT_FIFO_GET_EXIT = 0x12F,
+	CTF_EVENT_FIFO_PEEK_HEAD_ENTER = 0x130,
+	CTF_EVENT_FIFO_PEEK_HEAD_EXIT = 0x131,
+	CTF_EVENT_FIFO_PEEK_TAIL_ENTER = 0x132,
+	CTF_EVENT_FIFO_PEEK_TAIL_EXIT = 0x133,
 } ctf_event_t;
 
 typedef struct {
@@ -1845,5 +1865,97 @@ static inline void ctf_top_queue_peek_head(uint32_t queue_id, uint32_t ret)
 static inline void ctf_top_queue_peek_tail(uint32_t queue_id, uint32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_PEEK_TAIL), queue_id, ret);
+}
+
+/* FIFO */
+
+static inline void ctf_top_fifo_init_enter(uint32_t fifo_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_INIT_ENTER), fifo_id);
+}
+
+static inline void ctf_top_fifo_init_exit(uint32_t fifo_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_INIT_EXIT), fifo_id);
+}
+
+static inline void ctf_top_fifo_cancel_wait_enter(uint32_t fifo_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_CANCEL_WAIT_ENTER), fifo_id);
+}
+
+static inline void ctf_top_fifo_cancel_wait_exit(uint32_t fifo_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_CANCEL_WAIT_EXIT), fifo_id);
+}
+
+static inline void ctf_top_fifo_put_enter(uint32_t fifo_id, uint32_t data)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_PUT_ENTER), fifo_id, data);
+}
+
+static inline void ctf_top_fifo_put_exit(uint32_t fifo_id, uint32_t data)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_PUT_EXIT), fifo_id, data);
+}
+
+static inline void ctf_top_fifo_alloc_put_enter(uint32_t fifo_id, uint32_t data)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_ALLOC_PUT_ENTER), fifo_id, data);
+}
+
+static inline void ctf_top_fifo_alloc_put_exit(uint32_t fifo_id, uint32_t data, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_ALLOC_PUT_EXIT), fifo_id, data, ret);
+}
+
+static inline void ctf_top_fifo_put_list_enter(uint32_t fifo_id, uint32_t head, uint32_t tail)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_PUT_LIST_ENTER), fifo_id, head, tail);
+}
+
+static inline void ctf_top_fifo_put_list_exit(uint32_t fifo_id, uint32_t head, uint32_t tail)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_PUT_LIST_EXIT), fifo_id, head, tail);
+}
+
+static inline void ctf_top_fifo_put_slist_enter(uint32_t fifo_id, uint32_t list)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_PUT_SLIST_ENTER), fifo_id, list);
+}
+
+static inline void ctf_top_fifo_put_slist_exit(uint32_t fifo_id, uint32_t list)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_PUT_SLIST_EXIT), fifo_id, list);
+}
+
+static inline void ctf_top_fifo_get_enter(uint32_t fifo_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_GET_ENTER), fifo_id, timeout);
+}
+
+static inline void ctf_top_fifo_get_exit(uint32_t fifo_id, uint32_t timeout, uint32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_GET_EXIT), fifo_id, timeout, ret);
+}
+
+static inline void ctf_top_fifo_peek_head_enter(uint32_t fifo_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_PEEK_HEAD_ENTER), fifo_id);
+}
+
+static inline void ctf_top_fifo_peek_head_exit(uint32_t fifo_id, uint32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_PEEK_HEAD_EXIT), fifo_id, ret);
+}
+
+static inline void ctf_top_fifo_peek_tail_enter(uint32_t fifo_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_PEEK_TAIL_ENTER), fifo_id);
+}
+
+static inline void ctf_top_fifo_peek_tail_exit(uint32_t fifo_id, uint32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_FIFO_PEEK_TAIL_EXIT), fifo_id, ret);
 }
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
