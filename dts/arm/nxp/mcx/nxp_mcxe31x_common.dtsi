@@ -292,7 +292,7 @@
 	};
 
 	emac: emac@480000 {
-		compatible = "nxp,emac";
+		compatible = "nxp,emac", "snps,dwmac";
 		reg = <0x480000 0x120c>;
 		interrupts = <105 0>;
 		status = "disabled";
