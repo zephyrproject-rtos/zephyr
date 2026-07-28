@@ -70,6 +70,25 @@
 			fifo-depth = <16>;
 		};
 
+		l2: cache-controller@f8f02000 {
+			compatible = "arm,pl310-cache";
+			reg = <0xf8f02000 0x1000>;
+			/* Zynq-7000: 8 ways x 64 KB = 512 KB */
+			arm,num-ways = <8>;
+			cache-unified;
+			cache-level = <2>;
+			/*
+			 * Xilinx defaults for Zynq-7000, in <rd wr setup> cycles.
+			 * Bit-identical to the previous raw register values
+			 * (tag 0x111, data 0x121) once packed by the driver.
+			 */
+			arm,tag-latency = <2 2 2>;
+			arm,data-latency = <3 2 2>;
+			/* required or the core hangs at MMU enable */
+			arm,shared-override;
+			status = "okay";
+		};
+
 		gem0: ethernet@e000b000 {
 			compatible = "xlnx,gem";
 			status = "disabled";
