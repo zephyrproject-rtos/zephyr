@@ -60,7 +60,11 @@ __weak void assert_print(const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	vprintk(fmt, ap);
+	/*
+	 * An assertion can fire from inside printk()'s own locked region,
+	 * which the lock does not survive, or while a dead CPU holds it.
+	 */
+	vprintk_unlocked(fmt, ap);
 
 	va_end(ap);
 }
