@@ -324,6 +324,18 @@ void bt_vocs_client_cb_register(struct bt_vocs *inst, struct bt_vocs_cb *cb);
 struct bt_vocs *bt_vocs_client_free_instance_get(void);
 
 /**
+ * @brief Free an instance received from bt_vocs_client_free_instance_get()
+ *
+ * @param inst The instance to free
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p inst is NULL or not a client instance.
+ * @retval -EALREADY @p inst is already free
+ * @retval -EBUSY @p inst is busy.
+ */
+int bt_vocs_client_free_instance(struct bt_vocs *inst);
+
+/**
  * @brief Discover a Volume Offset Control Service.
  *
  * Attempts to discover a Volume Offset Control Service on a server given the @p param.
