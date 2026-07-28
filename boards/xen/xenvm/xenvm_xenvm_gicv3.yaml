@@ -5,5 +5,7 @@ arch: arm64
 toolchain:
   - zephyr
   - cross-compile
+supported:
+  - watchdog
 ram: 16384
 vendor: xen
