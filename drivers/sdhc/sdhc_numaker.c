@@ -17,7 +17,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
 #include <soc.h>
-#include "sdhc_helpers.h"
+#include "sdhc_priv.h"
 
 #if defined(CONFIG_SOC_SERIES_M55M1X)
 #include <zephyr/dt-bindings/clock/numaker_m55m1x_clock.h>
