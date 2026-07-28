@@ -292,7 +292,7 @@ static int parse_named_int(const char *name, const char *const haystack[], size_
 
 	/* Channel name is not a number, look it up */
 	for (i = 0; i < count; i++) {
-		if (strcmp(name, haystack[i]) == 0) {
+		if (haystack[i] != NULL && strcmp(name, haystack[i]) == 0) {
 			return i;
 		}
 	}
