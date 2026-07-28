@@ -166,6 +166,8 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		return -ENOTSUP;
 	}
 
+	adc_lock_acquire(data->hal.unit);
+
 	adc_oneshot_hal_setup(&data->hal, channel_id);
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
@@ -173,6 +175,8 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 #endif /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
 
 	adc_oneshot_hal_convert(&data->hal, &acq_raw);
+
+	adc_lock_release(data->hal.unit);
 
 	if (data->cal_handle[channel_id]) {
 		if (data->meas_ref_internal > 0) {
