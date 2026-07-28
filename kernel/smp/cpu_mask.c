@@ -29,17 +29,18 @@ static int cpu_mask_mod(k_tid_t thread, uint32_t enable_mask, uint32_t disable_m
 		if (z_is_thread_prevented_from_running(thread)) {
 			thread->base.cpu_mask |= enable_mask;
 			thread->base.cpu_mask  &= ~disable_mask;
+
+#if defined(CONFIG_ASSERT) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+			uint32_t m = thread->base.cpu_mask;
+
+			__ASSERT(m != 0 && (m & (m - 1)) == 0,
+				 "PIN_ONLY requires exactly one CPU in mask");
+#endif /* defined(CONFIG_ASSERT) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY) */
+
 		} else {
 			ret = -EINVAL;
 		}
 	}
-
-#if defined(CONFIG_ASSERT) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
-		uint32_t m = thread->base.cpu_mask;
-
-		__ASSERT(m != 0 && (m & (m - 1)) == 0,
-			 "PIN_ONLY requires exactly one CPU in mask");
-#endif /* defined(CONFIG_ASSERT) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY) */
 
 	return ret;
 }
