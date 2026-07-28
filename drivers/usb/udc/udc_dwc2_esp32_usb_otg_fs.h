@@ -20,6 +20,10 @@
 #include <hal/gpio_ll.h>
 #include <soc/gpio_sig_map.h>
 
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+#include <hal/usb_serial_jtag_ll.h>
+#endif
+
 struct phy_context_t {
 	usb_phy_target_t target;
 	usb_phy_controller_t controller;
@@ -99,6 +103,12 @@ static inline int esp32_usb_otg_init(const struct device *dev,
 
 static inline int esp32_usb_otg_enable_clk(struct phy_context_t *phy_ctx)
 {
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	/* The FSLS phy pads default to usb-serial-jtag; hand them to the
+	 * otg-fs controller while the device stack is enabled.
+	 */
+	usb_serial_jtag_ll_phy_select(1);
+#endif
 	usb_wrap_hal_init(&phy_ctx->wrap_hal);
 
 #if USB_WRAP_LL_EXT_PHY_SUPPORTED
@@ -117,6 +127,10 @@ static inline int esp32_usb_otg_enable_phy(struct phy_context_t *phy_ctx, bool e
 		LOG_DBG("PHY enabled");
 	} else {
 		usb_wrap_ll_phy_enable_pad(phy_ctx->wrap_hal.dev, false);
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+		/* Return the FSLS phy pads to usb-serial-jtag */
+		usb_serial_jtag_ll_phy_select(0);
+#endif
 		LOG_DBG("PHY disabled");
 	}
 
@@ -127,6 +141,9 @@ static inline int esp32_usb_otg_shutdown(const struct esp32_usb_otg_fs_config *c
 					 struct esp32_usb_otg_fs_data *data)
 {
 	usb_wrap_hal_disable();
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	usb_serial_jtag_ll_phy_select(0);
+#endif
 	esp_intr_free(data->int_handle);
 
 	return clock_control_off(cfg->clock_dev, cfg->clock_subsys);
