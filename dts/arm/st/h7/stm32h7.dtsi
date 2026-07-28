@@ -1348,6 +1348,15 @@
 			resets = <&rctl STM32_RESET(AHB4, 19)>;
 			status = "disabled";
 		};
+
+		vrefbuf: vrefbuf@58003c00 {
+			compatible = "st,stm32-vrefbuf";
+			reg = <0x58003c00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB4, 15)>;
+			resets = <&rctl STM32_RESET(APB4, 15)>;
+			ref-voltages = <2500000>, <2048000>, <1800000>, <1500000>;
+			status = "disabled";
+		};
 	};
 
 	die_temp: dietemp {
