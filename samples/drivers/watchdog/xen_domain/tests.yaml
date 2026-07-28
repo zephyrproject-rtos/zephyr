@@ -1,0 +1,13 @@
+sample:
+  name: Xen Domain Watchdog Sample
+common:
+  tags:
+    - drivers
+    - watchdog
+    - xen
+  depends_on: watchdog
+tests:
+  sample.drivers.watchdog.xen_domain:
+    filter: dt_compat_enabled("xen,watchdog")
+    platform_allow:
+      - xenvm
