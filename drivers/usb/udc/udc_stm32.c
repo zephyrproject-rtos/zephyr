@@ -686,19 +686,29 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	const struct device *dev = priv->dev;
 	struct udc_ep_config *ep_cfg;
 	uint8_t ep = epnum | USB_EP_DIR_IN;
+	unsigned int lock_key;
 	struct net_buf *buf;
 	stm32_status_t status;
 
 	LOG_DBG("DataIn ep 0x%02x",  ep);
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
-	udc_ep_set_busy(ep_cfg, false);
 
 	buf = udc_buf_peek(ep_cfg);
 	if (unlikely(buf == NULL)) {
+		udc_ep_set_busy(ep_cfg, false);
 		return;
 	}
 
+	/*
+	 * When a control data stage continuation or a trailing ZLP still
+	 * has to go out, the transfer is not complete: the endpoint must
+	 * stay marked busy, otherwise a concurrent udc_stm32_ep_enqueue()
+	 * passes the busy check in udc_stm32_tx() and starts a second
+	 * transfer on an endpoint the hardware still owns, shearing the
+	 * HAL transfer state and leaving a partial packet stuck in the
+	 * TxFIFO (endpoint NAKs forever).
+	 */
 	if (ep == USB_CONTROL_EP_IN && buf->len > 0U) {
 		uint32_t len = MIN(UDC_STM32_EP0_MAX_PACKET_SIZE, buf->len);
 
@@ -730,11 +740,23 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	buf = udc_buf_get(ep_cfg);
 	udc_submit_ep_event(dev, buf, 0);
 
-	/* enqueue */
+	/*
+	 * The busy-flag hand-off and the start of the next queued
+	 * transfer must be atomic against udc_stm32_ep_enqueue() (which
+	 * runs under irq_lock in another context), otherwise both
+	 * contexts can pass the busy check in udc_stm32_tx() and
+	 * double-start the endpoint.
+	 */
+	lock_key = irq_lock();
+
+	udc_ep_set_busy(ep_cfg, false);
+
 	buf = udc_buf_peek(ep_cfg);
 	if (buf != NULL) {
 		udc_stm32_tx(dev, ep_cfg, buf);
 	}
+
+	irq_unlock(lock_key);
 }
 
 void HAL_PCD_SetupStageCallback(stm32_pcd_handle_t *hpcd)
