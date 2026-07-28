@@ -57,10 +57,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  * different from the normal RAM virt_to_phys mapping.
  */
 #ifdef CONFIG_MMU
-#define TXDESC_PHYS_H(idx) hi32(p->tx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
-#define TXDESC_PHYS_L(idx) lo32(p->tx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
-#define RXDESC_PHYS_H(idx) hi32(p->rx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
-#define RXDESC_PHYS_L(idx) lo32(p->rx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
+#define TXDESC_PHYS_H(idx) phys_hi32(&p->tx_descs_phys[idx])
+#define TXDESC_PHYS_L(idx) phys_lo32(&p->tx_descs_phys[idx])
+#define RXDESC_PHYS_H(idx) phys_hi32(&p->rx_descs_phys[idx])
+#define RXDESC_PHYS_L(idx) phys_lo32(&p->rx_descs_phys[idx])
 #else
 #define TXDESC_PHYS_H(idx) phys_hi32(&p->tx_descs[idx])
 #define TXDESC_PHYS_L(idx) phys_lo32(&p->tx_descs[idx])
@@ -76,33 +76,20 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  */
 #define RDES3_ERROR_MASK (RDES3_RE | RDES3_OE | RDES3_RWT | RDES3_GP | RDES3_CE)
 
-static inline uint32_t hi32(uintptr_t val)
+static inline uint32_t phys_hi32(void *addr)
 {
 	/* trickery to avoid compiler warnings on 32-bit build targets */
-	if (sizeof(uintptr_t) > 4) {
-		uint64_t hi = val;
+	if (sizeof(void *) > 4) {
+		uint64_t hi = POINTER_TO_UINT(addr);
 
 		return hi >> 32;
 	}
 	return 0;
 }
 
-static inline uint32_t lo32(uintptr_t val)
-{
-	/* just a typecast return to be symmetric with hi32() */
-	return val;
-}
-
-static inline uint32_t phys_hi32(void *addr)
-{
-	/* the default 1:1 mapping is assumed */
-	return hi32((uintptr_t)addr);
-}
-
 static inline uint32_t phys_lo32(void *addr)
 {
-	/* the default 1:1 mapping is assumed */
-	return lo32((uintptr_t)addr);
+	return (uint32_t)POINTER_TO_UINT(addr);
 }
 
 static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if *iface __unused)
