@@ -2115,3 +2115,66 @@ void sys_trace_k_heap_sys_k_realloc_exit(struct k_heap *heap, void *ptr, void *r
 	ctf_top_heap_sys_k_realloc_exit((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)ptr,
 					(uint32_t)(uintptr_t)ret);
 }
+
+/* Pipe */
+
+void sys_trace_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t size)
+{
+	ctf_top_pipe_init((uint32_t)(uintptr_t)pipe, (uint32_t)(uintptr_t)buffer, (uint32_t)size);
+}
+
+void sys_trace_k_pipe_reset_enter(struct k_pipe *pipe)
+{
+	ctf_top_pipe_reset_enter((uint32_t)(uintptr_t)pipe);
+}
+
+void sys_trace_k_pipe_reset_exit(struct k_pipe *pipe)
+{
+	ctf_top_pipe_reset_exit((uint32_t)(uintptr_t)pipe);
+}
+
+void sys_trace_k_pipe_close_enter(struct k_pipe *pipe)
+{
+	ctf_top_pipe_close_enter((uint32_t)(uintptr_t)pipe);
+}
+
+void sys_trace_k_pipe_close_exit(struct k_pipe *pipe)
+{
+	ctf_top_pipe_close_exit((uint32_t)(uintptr_t)pipe);
+}
+
+void sys_trace_k_pipe_write_enter(struct k_pipe *pipe, const uint8_t *data, size_t len,
+				  k_timeout_t timeout)
+{
+	ctf_top_pipe_write_enter((uint32_t)(uintptr_t)pipe, (uint32_t)(uintptr_t)data,
+				 (uint32_t)len, k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_pipe_write_blocking(struct k_pipe *pipe, k_timeout_t timeout)
+{
+	ctf_top_pipe_write_blocking((uint32_t)(uintptr_t)pipe,
+				    k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_pipe_write_exit(struct k_pipe *pipe, int ret)
+{
+	ctf_top_pipe_write_exit((uint32_t)(uintptr_t)pipe, ret);
+}
+
+void sys_trace_k_pipe_read_enter(struct k_pipe *pipe, uint8_t *data, size_t len,
+				 k_timeout_t timeout)
+{
+	ctf_top_pipe_read_enter((uint32_t)(uintptr_t)pipe, (uint32_t)(uintptr_t)data, (uint32_t)len,
+				k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_pipe_read_blocking(struct k_pipe *pipe, k_timeout_t timeout)
+{
+	ctf_top_pipe_read_blocking((uint32_t)(uintptr_t)pipe,
+				   k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_pipe_read_exit(struct k_pipe *pipe, int ret)
+{
+	ctf_top_pipe_read_exit((uint32_t)(uintptr_t)pipe, ret);
+}

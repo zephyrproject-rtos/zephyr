@@ -975,6 +975,37 @@ void sys_trace_k_heap_sys_k_realloc_exit(struct k_heap *heap, void *ptr, void *r
 #define sys_port_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)                                   \
 	sys_trace_k_heap_sys_k_realloc_exit(heap, ptr, ret)
 
+/* Pipe */
+void sys_trace_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t size);
+void sys_trace_k_pipe_reset_enter(struct k_pipe *pipe);
+void sys_trace_k_pipe_reset_exit(struct k_pipe *pipe);
+void sys_trace_k_pipe_close_enter(struct k_pipe *pipe);
+void sys_trace_k_pipe_close_exit(struct k_pipe *pipe);
+void sys_trace_k_pipe_write_enter(struct k_pipe *pipe, const uint8_t *data, size_t len,
+				  k_timeout_t timeout);
+void sys_trace_k_pipe_write_blocking(struct k_pipe *pipe, k_timeout_t timeout);
+void sys_trace_k_pipe_write_exit(struct k_pipe *pipe, int ret);
+void sys_trace_k_pipe_read_enter(struct k_pipe *pipe, uint8_t *data, size_t len,
+				 k_timeout_t timeout);
+void sys_trace_k_pipe_read_blocking(struct k_pipe *pipe, k_timeout_t timeout);
+void sys_trace_k_pipe_read_exit(struct k_pipe *pipe, int ret);
+
+#define sys_port_trace_k_pipe_init(pipe, buffer, size) sys_trace_k_pipe_init(pipe, buffer, size)
+#define sys_port_trace_k_pipe_reset_enter(pipe)        sys_trace_k_pipe_reset_enter(pipe)
+#define sys_port_trace_k_pipe_reset_exit(pipe)         sys_trace_k_pipe_reset_exit(pipe)
+#define sys_port_trace_k_pipe_close_enter(pipe)        sys_trace_k_pipe_close_enter(pipe)
+#define sys_port_trace_k_pipe_close_exit(pipe)         sys_trace_k_pipe_close_exit(pipe)
+#define sys_port_trace_k_pipe_write_enter(pipe, data, len, timeout)                                \
+	sys_trace_k_pipe_write_enter(pipe, data, len, timeout)
+#define sys_port_trace_k_pipe_write_blocking(pipe, timeout)                                        \
+	sys_trace_k_pipe_write_blocking(pipe, timeout)
+#define sys_port_trace_k_pipe_write_exit(pipe, ret) sys_trace_k_pipe_write_exit(pipe, ret)
+#define sys_port_trace_k_pipe_read_enter(pipe, data, len, timeout)                                 \
+	sys_trace_k_pipe_read_enter(pipe, data, len, timeout)
+#define sys_port_trace_k_pipe_read_blocking(pipe, timeout)                                         \
+	sys_trace_k_pipe_read_blocking(pipe, timeout)
+#define sys_port_trace_k_pipe_read_exit(pipe, ret) sys_trace_k_pipe_read_exit(pipe, ret)
+
 /*
  * Fill any sys_port_trace_* hook not defined above with a canonical no-op. The
  * per-macro #ifndef guards keep the real definitions above; only gaps are filled,

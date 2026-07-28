@@ -450,6 +450,19 @@ typedef enum {
 	CTF_EVENT_HEAP_SYS_K_FREE_EXIT = 0x158,
 	CTF_EVENT_HEAP_SYS_K_REALLOC_ENTER = 0x159,
 	CTF_EVENT_HEAP_SYS_K_REALLOC_EXIT = 0x15A,
+
+	/* Pipe */
+	CTF_EVENT_PIPE_INIT = 0x15B,
+	CTF_EVENT_PIPE_RESET_ENTER = 0x15C,
+	CTF_EVENT_PIPE_RESET_EXIT = 0x15D,
+	CTF_EVENT_PIPE_CLOSE_ENTER = 0x15E,
+	CTF_EVENT_PIPE_CLOSE_EXIT = 0x15F,
+	CTF_EVENT_PIPE_WRITE_ENTER = 0x160,
+	CTF_EVENT_PIPE_WRITE_BLOCKING = 0x161,
+	CTF_EVENT_PIPE_WRITE_EXIT = 0x162,
+	CTF_EVENT_PIPE_READ_ENTER = 0x163,
+	CTF_EVENT_PIPE_READ_BLOCKING = 0x164,
+	CTF_EVENT_PIPE_READ_EXIT = 0x165,
 } ctf_event_t;
 
 typedef struct {
@@ -2211,5 +2224,64 @@ static inline void ctf_top_heap_sys_k_realloc_enter(uint32_t heap_sys_id, uint32
 static inline void ctf_top_heap_sys_k_realloc_exit(uint32_t heap_sys_id, uint32_t ptr, uint32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_SYS_K_REALLOC_EXIT), heap_sys_id, ptr, ret);
+}
+
+/* Pipe */
+
+static inline void ctf_top_pipe_init(uint32_t pipe_id, uint32_t buffer, uint32_t size)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_INIT), pipe_id, buffer, size);
+}
+
+static inline void ctf_top_pipe_reset_enter(uint32_t pipe_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_RESET_ENTER), pipe_id);
+}
+
+static inline void ctf_top_pipe_reset_exit(uint32_t pipe_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_RESET_EXIT), pipe_id);
+}
+
+static inline void ctf_top_pipe_close_enter(uint32_t pipe_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_CLOSE_ENTER), pipe_id);
+}
+
+static inline void ctf_top_pipe_close_exit(uint32_t pipe_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_CLOSE_EXIT), pipe_id);
+}
+
+static inline void ctf_top_pipe_write_enter(uint32_t pipe_id, uint32_t data, uint32_t len,
+					    uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_WRITE_ENTER), pipe_id, data, len, timeout);
+}
+
+static inline void ctf_top_pipe_write_blocking(uint32_t pipe_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_WRITE_BLOCKING), pipe_id, timeout);
+}
+
+static inline void ctf_top_pipe_write_exit(uint32_t pipe_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_WRITE_EXIT), pipe_id, ret);
+}
+
+static inline void ctf_top_pipe_read_enter(uint32_t pipe_id, uint32_t data, uint32_t len,
+					   uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_READ_ENTER), pipe_id, data, len, timeout);
+}
+
+static inline void ctf_top_pipe_read_blocking(uint32_t pipe_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_READ_BLOCKING), pipe_id, timeout);
+}
+
+static inline void ctf_top_pipe_read_exit(uint32_t pipe_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_READ_EXIT), pipe_id, ret);
 }
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
