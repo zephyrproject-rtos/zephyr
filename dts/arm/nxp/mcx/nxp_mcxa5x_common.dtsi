@@ -782,7 +782,7 @@
 		clocks = <&syscon MCUX_ENET_QOS_CLK>;
 
 		enet_mac: ethernet {
-			compatible = "nxp,enet-qos-mac";
+			compatible = "nxp,enet-qos-mac", "snps,dwmac";
 			status = "disabled";
 			interrupts = <90 0>, <91 0>;
 			interrupt-names = "mac", "power";
