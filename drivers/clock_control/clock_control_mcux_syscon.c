@@ -390,6 +390,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpacmp))
+	if ((uint32_t)sub_system == MCUX_LPACMP_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateAonLPACMP);
+	}
+#endif
+
 #if defined(CONFIG_WDT_MCUX_WWDT)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt))
 	if ((uint32_t)sub_system == MCUX_WWDT0_CLK) {
