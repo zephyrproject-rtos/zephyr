@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xen domain watchdog
+
+compatible: "xen,watchdog"
+
+include: base.yaml
+
+properties:
+  num-channels:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+    description: Number of Xen watchdog timer slots exposed as watchdog channels.
