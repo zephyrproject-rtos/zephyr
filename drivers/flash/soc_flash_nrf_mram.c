@@ -210,7 +210,7 @@ static inline bool nrf_mram_ready(uint32_t addr, uint32_t ironside_se_ver)
 static uintptr_t validate_and_map_addr(off_t offset, size_t len, bool must_align)
 {
 	if (unlikely(offset < 0 || offset >= MRAM_SIZE || len > MRAM_SIZE - offset)) {
-		LOG_ERR("invalid offset: %ld:%zu", offset, len);
+		LOG_ERR("invalid offset: %ld:%zu", (long)offset, len);
 		return 0;
 	}
 

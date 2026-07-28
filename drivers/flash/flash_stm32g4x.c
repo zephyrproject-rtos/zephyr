@@ -82,7 +82,7 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 
 static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
-	volatile uint32_t *flash = (uint32_t *)(offset + FLASH_STM32_BASE_ADDRESS);
+	volatile uint32_t *flash = (uint32_t *)((uintptr_t)offset + FLASH_STM32_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	bool dcache_enabled = false;
 	uint32_t tmp;

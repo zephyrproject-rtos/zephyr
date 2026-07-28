@@ -143,10 +143,10 @@ static int flash_esp32_read_check_enc(off_t address, void *buffer, size_t length
 	int ret = 0;
 
 	if (esp_efuse_is_flash_encryption_enabled()) {
-		LOG_DBG("Flash read ENCRYPTED - address 0x%lx size 0x%x", address, length);
+		LOG_DBG("Flash read ENCRYPTED - address 0x%lx size 0x%x", (long)address, length);
 		ret = esp_flash_read_encrypted(NULL, address, buffer, length);
 	} else {
-		LOG_DBG("Flash read RAW - address 0x%lx size 0x%x", address, length);
+		LOG_DBG("Flash read RAW - address 0x%lx size 0x%x", (long)address, length);
 		ret = esp_flash_read(NULL, buffer, address, length);
 	}
 
@@ -163,10 +163,10 @@ static int flash_esp32_write_check_enc(off_t address, const void *buffer, size_t
 	int ret = 0;
 
 	if (esp_efuse_is_flash_encryption_enabled() && !ENCRYPTION_IS_VIRTUAL) {
-		LOG_DBG("Flash write ENCRYPTED - address 0x%lx size 0x%x", address, length);
+		LOG_DBG("Flash write ENCRYPTED - address 0x%lx size 0x%x", (long)address, length);
 		ret = esp_flash_write_encrypted(NULL, address, buffer, length);
 	} else {
-		LOG_DBG("Flash write RAW - address 0x%lx size 0x%x", address, length);
+		LOG_DBG("Flash write RAW - address 0x%lx size 0x%x", (long)address, length);
 		ret = esp_flash_write(NULL, buffer, address, length);
 	}
 
