@@ -18,7 +18,7 @@
 			clock-names = "mac", "tx", "rx";
 
 			mac: ethernet {
-				compatible = "wch,ethernet";
+				compatible = "wch,ethernet", "snps,dwmac";
 				interrupt-parent = <&pfic>;
 				interrupts = <77>, <78>;
 				internal-phy-pllmul = "15";
