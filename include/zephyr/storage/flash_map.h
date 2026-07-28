@@ -74,11 +74,15 @@ struct flash_area {
  * @brief Structure for transfer flash sector boundaries
  *
  * This template is used for presentation of flash memory structure. It
- * consumes much less RAM than @ref flash_area
+ * consumes much less RAM than @ref flash_area.
+ *
+ * This uses size_t for both offset and size, which limits flash devices
+ * to no larger than the address space of the target as a way to constrain
+ * the size of this struct.
  */
 struct flash_sector {
 	/** Sector offset from the beginning of the flash device */
-	off_t fs_off;
+	size_t fs_off;
 	/** Sector size in bytes */
 	size_t fs_size;
 };
