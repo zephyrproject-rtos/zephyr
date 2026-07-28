@@ -463,6 +463,24 @@ typedef enum {
 	CTF_EVENT_PIPE_READ_ENTER = 0x163,
 	CTF_EVENT_PIPE_READ_BLOCKING = 0x164,
 	CTF_EVENT_PIPE_READ_EXIT = 0x165,
+
+	/* RTIO */
+	CTF_EVENT_RTIO_SUBMIT_ENTER = 0x166,
+	CTF_EVENT_RTIO_SUBMIT_EXIT = 0x167,
+	CTF_EVENT_RTIO_SQE_ACQUIRE_ENTER = 0x168,
+	CTF_EVENT_RTIO_SQE_ACQUIRE_EXIT = 0x169,
+	CTF_EVENT_RTIO_SQE_CANCEL = 0x16A,
+	CTF_EVENT_RTIO_CQE_SUBMIT_ENTER = 0x16B,
+	CTF_EVENT_RTIO_CQE_SUBMIT_EXIT = 0x16C,
+	CTF_EVENT_RTIO_CQE_ACQUIRE_ENTER = 0x16D,
+	CTF_EVENT_RTIO_CQE_ACQUIRE_EXIT = 0x16E,
+	CTF_EVENT_RTIO_CQE_RELEASE = 0x16F,
+	CTF_EVENT_RTIO_CQE_CONSUME_ENTER = 0x170,
+	CTF_EVENT_RTIO_CQE_CONSUME_EXIT = 0x171,
+	CTF_EVENT_RTIO_TXN_NEXT_ENTER = 0x172,
+	CTF_EVENT_RTIO_TXN_NEXT_EXIT = 0x173,
+	CTF_EVENT_RTIO_CHAIN_NEXT_ENTER = 0x174,
+	CTF_EVENT_RTIO_CHAIN_NEXT_EXIT = 0x175,
 } ctf_event_t;
 
 typedef struct {
@@ -2283,5 +2301,87 @@ static inline void ctf_top_pipe_read_blocking(uint32_t pipe_id, uint32_t timeout
 static inline void ctf_top_pipe_read_exit(uint32_t pipe_id, int32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PIPE_READ_EXIT), pipe_id, ret);
+}
+
+/* RTIO */
+
+static inline void ctf_top_rtio_submit_enter(uint32_t rtio_id, uint32_t wait_count)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_SUBMIT_ENTER), rtio_id, wait_count);
+}
+
+static inline void ctf_top_rtio_submit_exit(uint32_t rtio_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_SUBMIT_EXIT), rtio_id);
+}
+
+static inline void ctf_top_rtio_sqe_acquire_enter(uint32_t rtio_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_SQE_ACQUIRE_ENTER), rtio_id);
+}
+
+static inline void ctf_top_rtio_sqe_acquire_exit(uint32_t rtio_id, uint32_t sqe)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_SQE_ACQUIRE_EXIT), rtio_id, sqe);
+}
+
+static inline void ctf_top_rtio_sqe_cancel(uint32_t rtio_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_SQE_CANCEL), rtio_id);
+}
+
+static inline void ctf_top_rtio_cqe_submit_enter(uint32_t rtio_id, int32_t result, uint32_t flags)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_CQE_SUBMIT_ENTER), rtio_id, result, flags);
+}
+
+static inline void ctf_top_rtio_cqe_submit_exit(uint32_t rtio_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_CQE_SUBMIT_EXIT), rtio_id);
+}
+
+static inline void ctf_top_rtio_cqe_acquire_enter(uint32_t rtio_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_CQE_ACQUIRE_ENTER), rtio_id);
+}
+
+static inline void ctf_top_rtio_cqe_acquire_exit(uint32_t rtio_id, uint32_t cqe)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_CQE_ACQUIRE_EXIT), rtio_id, cqe);
+}
+
+static inline void ctf_top_rtio_cqe_release(uint32_t rtio_id, uint32_t cqe)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_CQE_RELEASE), rtio_id, cqe);
+}
+
+static inline void ctf_top_rtio_cqe_consume_enter(uint32_t rtio_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_CQE_CONSUME_ENTER), rtio_id);
+}
+
+static inline void ctf_top_rtio_cqe_consume_exit(uint32_t rtio_id, uint32_t cqe)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_CQE_CONSUME_EXIT), rtio_id, cqe);
+}
+
+static inline void ctf_top_rtio_txn_next_enter(uint32_t rtio_id, uint32_t iodev_sqe)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_TXN_NEXT_ENTER), rtio_id, iodev_sqe);
+}
+
+static inline void ctf_top_rtio_txn_next_exit(uint32_t rtio_id, uint32_t iodev_sqe)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_TXN_NEXT_EXIT), rtio_id, iodev_sqe);
+}
+
+static inline void ctf_top_rtio_chain_next_enter(uint32_t rtio_id, uint32_t iodev_sqe)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_CHAIN_NEXT_ENTER), rtio_id, iodev_sqe);
+}
+
+static inline void ctf_top_rtio_chain_next_exit(uint32_t rtio_id, uint32_t iodev_sqe)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_CHAIN_NEXT_EXIT), rtio_id, iodev_sqe);
 }
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
