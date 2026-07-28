@@ -1,0 +1,13 @@
+common:
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags:
+    - nfc
+    - tag
+tests:
+  nfc.e2e: {}
+  nfc.e2e.type_2_only:
+    extra_configs:
+      - CONFIG_NFC_T4T=n

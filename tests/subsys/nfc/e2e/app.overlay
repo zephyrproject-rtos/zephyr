@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	emul_reader: nfc-reader {
+		compatible = "zephyr,nfc-emul";
+		backend = "initiator";
+		status = "okay";
+	};
+
+	emul_controller: nfc-controller {
+		compatible = "zephyr,nfc-emul";
+		backend = "offload";
+		status = "okay";
+	};
+};
