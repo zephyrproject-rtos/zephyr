@@ -147,7 +147,7 @@ static void stream_connected(struct bt_bap_stream *stream)
 
 static void stream_disconnected(struct bt_bap_stream *stream, uint8_t reason)
 {
-	LOG_INF("Disconnected stream %p with reason %u", stream, reason);
+	bap_unicast_stream_disconnected_cb(stream, reason);
 
 	SET_FLAG(flag_stream_disconnected);
 }
@@ -967,14 +967,17 @@ static void transceive_streams(void)
 static void disable_streams(size_t stream_cnt)
 {
 	for (size_t i = 0U; i < stream_cnt; i++) {
+		struct audio_test_stream *test_stream = &test_streams[i];
 		int err;
 
 		UNSET_FLAG(flag_operation_success);
 		UNSET_FLAG(flag_stream_disabled);
 
+		/* Mark stream as stopping to not treat lost SDUs as a failure condition */
+		SET_FLAG(test_stream->stopping);
+
 		do {
-			err = bt_bap_stream_disable(
-				bap_stream_from_audio_test_stream(&test_streams[i]));
+			err = bt_bap_stream_disable(bap_stream_from_audio_test_stream(test_stream));
 			if (err == -EBUSY) {
 				k_sleep(BAP_RETRY_WAIT);
 			} else if (err != 0) {
