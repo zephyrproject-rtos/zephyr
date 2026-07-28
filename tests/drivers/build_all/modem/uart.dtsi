@@ -68,6 +68,12 @@ test_sara_r4: sara_r4 {
 	mdm-reset-gpios = <&test_gpio 0 0>;
 };
 
+test_fibocom_le250: fibocom_le250 {
+	compatible = "fibocom,le250";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+};
+
 test_simcom_sim7080: sim7080 {
 	compatible = "simcom,sim7080";
 
