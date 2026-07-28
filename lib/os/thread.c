@@ -528,9 +528,10 @@ static int thread_pool_draw(struct k_thread **th)
 	return 0;
 }
 
-int z_impl_sys_thread_create(struct k_thread **th, k_thread_stack_t *stack, uint32_t stack_size,
-			     uint32_t guard_size, k_thread_entry_t entry, void *p1, void *p2,
-			     void *p3, int prio, uint32_t options)
+static int sys_thread_create_common(struct k_thread **th, k_thread_stack_t *stack,
+				    uint32_t stack_size, uint32_t guard_size,
+				    k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio,
+				    uint32_t options, k_timeout_t delay)
 {
 	int ret;
 
@@ -568,14 +569,31 @@ int z_impl_sys_thread_create(struct k_thread **th, k_thread_stack_t *stack, uint
 		k_object_access_grant(*th, _current);
 		k_object_uninit(*th);
 		z_vrfy_k_thread_create(*th, stack, stack_size, entry, p1, p2, p3, prio, options,
-				       K_NO_WAIT);
+				       delay);
 		return 0;
 	}
 #endif
 
-	k_thread_create(*th, stack, stack_size, entry, p1, p2, p3, prio, options, K_NO_WAIT);
+	k_thread_create(*th, stack, stack_size, entry, p1, p2, p3, prio, options, delay);
 
 	return 0;
+}
+
+int z_impl_sys_thread_create(struct k_thread **th, k_thread_stack_t *stack, uint32_t stack_size,
+			     uint32_t guard_size, k_thread_entry_t entry, void *p1, void *p2,
+			     void *p3, int prio, uint32_t options)
+{
+	return sys_thread_create_common(th, stack, stack_size, guard_size, entry, p1, p2, p3, prio,
+					options, K_NO_WAIT);
+}
+
+int sys_thread_create_paused(struct k_thread **th, k_thread_stack_t *stack, uint32_t stack_size,
+			     uint32_t guard_size, k_thread_entry_t entry, void *p1, void *p2,
+			     void *p3, int prio, uint32_t options)
+{
+	/* kernel-mode only: there is no system call for deferred-start creation */
+	return sys_thread_create_common(th, stack, stack_size, guard_size, entry, p1, p2, p3, prio,
+					options, K_FOREVER);
 }
 
 #ifdef CONFIG_USERSPACE

@@ -17,7 +17,6 @@
 #include <zephyr/sys/thread.h>
 #include <zephyr/sys/util.h>
 
-#define K_SI_QUEUE      (-1)
 #define UNMASKABLE_MASK (BIT64(K_SIG_KILL - 1) | BIT64(K_SIG_STOP - 1))
 
 LOG_MODULE_REGISTER(k_sig, CONFIG_SIGNAL_LOG_LEVEL);
@@ -59,6 +58,14 @@ static void z_sig_set_dump(const struct k_sig_set *set, const char *label);
 static void z_sig_slab_free_unlocked(uint8_t pos)
 {
 	void *mem = &k_sig_array[pos];
+
+#ifdef CONFIG_TIMER_SIGNAL
+	/* every caller of this function discards (rather than delivers) the signal */
+	if (k_sig_array[pos].info.timer != NULL) {
+		z_timer_sig_discarded(k_sig_array[pos].info.timer);
+		k_sig_array[pos].info.timer = NULL;
+	}
+#endif /* CONFIG_TIMER_SIGNAL */
 
 	*(char **)mem = k_sig_slab.free_list;
 	k_sig_slab.free_list = mem;
@@ -226,7 +233,8 @@ static bool z_sig_match(const struct k_sig_set *match, uint8_t *pos, k_tid_t tid
 	return found;
 }
 
-int z_impl_k_sig_queue(k_pid_t pid, int signo, union k_sig_val value)
+static int z_sig_queue_common(k_pid_t pid, int signo, union k_sig_val value, int code,
+			      struct k_timer *timer)
 {
 	if ((signo < 0) || (signo > SIGNAL_SET_SIZE)) {
 		LOG_DBG("invalid signo %d", signo);
@@ -245,8 +253,13 @@ int z_impl_k_sig_queue(k_pid_t pid, int signo, union k_sig_val value)
 	}
 
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_DYNAMIC_OBJECTS)
-	if (k_object_validate(k_object_find(pid), K_OBJ_THREAD, _OBJ_INIT_TRUE) < 0) {
-		/* Only allow signals from threads granted access */
+	if ((timer == NULL) &&
+	    (k_object_validate(k_object_find(pid), K_OBJ_THREAD, _OBJ_INIT_TRUE) < 0)) {
+		/*
+		 * Only allow signals from threads granted access. Timer-generated
+		 * signals are kernel-originated; their target was validated when the
+		 * notification was attached.
+		 */
 		LOG_ERR("tid %lx does not have permissions for tid %lx", POINTER_TO_UINT(_current),
 			POINTER_TO_UINT(pid));
 		return -EPERM;
@@ -293,8 +306,12 @@ int z_impl_k_sig_queue(k_pid_t pid, int signo, union k_sig_val value)
 		.info =
 			{
 				.signo = signo,
-				.code = K_SI_QUEUE,
+				.code = code,
 				.value = value,
+#ifdef CONFIG_TIMER_SIGNAL
+				/* the generating timer doubles as one-pending/overrun state */
+				.timer = timer,
+#endif /* CONFIG_TIMER_SIGNAL */
 			},
 	};
 	pos = entry - k_sig_array;
@@ -319,6 +336,44 @@ int z_impl_k_sig_queue(k_pid_t pid, int signo, union k_sig_val value)
 	return 0;
 }
 
+int z_impl_k_sig_queue(k_pid_t pid, int signo, union k_sig_val value)
+{
+	return z_sig_queue_common(pid, signo, value, K_SI_QUEUE, NULL);
+}
+
+#ifdef CONFIG_TIMER_SIGNAL
+int z_sig_queue_timer(struct k_timer *timer, k_pid_t pid, int signo, union k_sig_val value)
+{
+	return z_sig_queue_common(pid, signo, value, K_SI_TIMER, timer);
+}
+
+void z_sig_purge_timer(struct k_timer *timer)
+{
+	/*
+	 * Lock order: callers must not hold the timer lock (the sanctioned order is
+	 * timer lock -> k_sig_lock only on the expiry path, which never purges).
+	 */
+	K_SPINLOCK(k_sig_lock) {
+		for (size_t i = 0, N = ring_buf_size_get(&k_sig_fifo); i < N; ++i) {
+			uint8_t pos;
+			struct k_sig_fifo_element *entry;
+
+			ring_buf_get(&k_sig_fifo, &pos, 1);
+			entry = &k_sig_array[pos];
+
+			if (entry->info.timer == timer) {
+				atomic_dec(&entry->tid->base.sig.pending);
+				atomic_dec(&z_syscall_work_pending);
+				/* frees the element and reports the discard to the timer */
+				z_sig_slab_free_unlocked(pos);
+			} else {
+				ring_buf_put(&k_sig_fifo, &pos, 1);
+			}
+		}
+	}
+}
+#endif /* CONFIG_TIMER_SIGNAL */
+
 #ifdef CONFIG_USERSPACE
 int z_vrfy_k_sig_queue(k_pid_t pid, int signo, union k_sig_val value)
 {
@@ -339,7 +394,8 @@ int z_vrfy_k_sig_queue(k_pid_t pid, int signo, union k_sig_val value)
 int z_impl_k_sig_timedwait(const struct k_sig_set *ZRESTRICT set, struct k_sig_info *ZRESTRICT info,
 			   k_timeout_t timeout)
 {
-	if (!Z_IS_TIMEOUT_RELATIVE(timeout)) {
+	/* wait durations are relative; K_FOREVER (an unbounded wait) is also permitted */
+	if (!K_TIMEOUT_EQ(timeout, K_FOREVER) && !Z_IS_TIMEOUT_RELATIVE(timeout)) {
 		return -EINVAL;
 	}
 
@@ -388,11 +444,38 @@ int z_impl_k_sig_timedwait(const struct k_sig_set *ZRESTRICT set, struct k_sig_i
 					break;
 				}
 
+				/*
+				 * A stale or already-consumed raise: no matching signal is
+				 * queued (yet). Keep waiting until the deadline rather than
+				 * returning a spurious -EAGAIN.
+				 */
 				LOG_DBG("signaled, but failed to match! signalled: %d "
 					"result: %x ",
 					signalled, result);
-				ret = -EAGAIN;
-				break;
+				ret = 0;
+			} else {
+				/*
+				 * The raise belongs to another thread. A raise notifies only
+				 * the first registered poller, and that may have been us: hand
+				 * the wake-up onward by re-raising, which notifies the next
+				 * waiter in line (the owner, if it is blocked here too).
+				 * Without this, a perpetual waiter (e.g. the system timer
+				 * dispatcher) starves every lower-priority signal waiter.
+				 *
+				 * Do not reset the signal (that would lose the owner's
+				 * wake-up), and do not re-poll immediately - that would
+				 * busy-spin on the still-raised signal, fatally so on
+				 * native_sim, where a never-blocking thread stops simulated
+				 * time (and with it every timeout) entirely. Yield for a tick
+				 * so the owner can consume its raise.
+				 */
+				if (sys_timepoint_expired(end)) {
+					ret = -EAGAIN;
+					break;
+				}
+				(void)k_poll_signal_raise(&k_sig_fifo_ready, result);
+				k_sleep(K_TICKS(1));
+				ret = 0;
 			}
 		}
 
@@ -402,19 +485,44 @@ int z_impl_k_sig_timedwait(const struct k_sig_set *ZRESTRICT set, struct k_sig_i
 		return ret;
 	}
 
+	if (ret == 0) {
+		/*
+		 * The fifo-ready poll signal was raised for another thread (or a stale
+		 * raise was observed) and the deadline passed without a matching signal
+		 * for this thread: a timeout, not a delivery.
+		 */
+		return -EAGAIN;
+	}
+
 	__ASSERT_NO_MSG(ret != 0);
 	__ASSERT_NO_MSG(pos < SIGNAL_QUEUE_SIZE);
 
 	if (info != NULL) {
 		*info = (struct k_sig_info){
 			.signo = ret,
+			.code = k_sig_array[pos].info.code,
 			.value = k_sig_array[pos].info.value,
+#ifdef CONFIG_TIMER_SIGNAL
+			.timer = k_sig_array[pos].info.timer,
+#endif /* CONFIG_TIMER_SIGNAL */
 		};
 	}
+
+#ifdef CONFIG_TIMER_SIGNAL
+	/* accepting a signal via sigwait-style APIs is delivery */
+	struct k_timer *const gen_timer = k_sig_array[pos].info.timer;
+
+#endif /* CONFIG_TIMER_SIGNAL */
 
 	k_mem_slab_free(&k_sig_slab, &k_sig_array[pos]);
 	atomic_dec(&tid->base.sig.pending);
 	atomic_dec(&z_syscall_work_pending);
+
+#ifdef CONFIG_TIMER_SIGNAL
+	if (gen_timer != NULL) {
+		z_timer_sig_delivered(gen_timer);
+	}
+#endif /* CONFIG_TIMER_SIGNAL */
 
 	if (IS_ENABLED(CONFIG_SIGNAL_LOG_LEVEL_DBG)) {
 		struct k_sig_set pend;
@@ -771,6 +879,11 @@ int z_sig_claim(struct k_thread *tid)
 		 *
 		 * See also k_sig_queue().
 		 */
+#ifdef CONFIG_TIMER_SIGNAL
+		if (entry.info.timer != NULL) {
+			z_timer_sig_discarded(entry.info.timer);
+		}
+#endif /* CONFIG_TIMER_SIGNAL */
 		return 0;
 	}
 
@@ -787,6 +900,12 @@ int z_sig_claim(struct k_thread *tid)
 		ctx->info.code, ctx->info.value.sival_ptr, tid);
 
 	atomic_inc(&ctx->delivered);
+
+#ifdef CONFIG_TIMER_SIGNAL
+	if (entry.info.timer != NULL) {
+		z_timer_sig_delivered(entry.info.timer);
+	}
+#endif /* CONFIG_TIMER_SIGNAL */
 
 	ctx->restore = ctx->mask;
 

@@ -49,8 +49,24 @@ struct k_timer_notify {
 	k_pid_t target;
 	/** Kernel signal number to queue on expiry */
 	int signo;
-	/** Value accompanying the queued signal */
+	/** Value accompanying the queued signal (or passed to @ref k_timer_notify.fn) */
 	union k_sig_val value;
+
+	/**
+	 * Function notification: when non-NULL, each expiry invokes @p fn(value) in a fresh
+	 * thread spawned by the system timer dispatcher, and @ref k_timer_notify.target /
+	 * @ref k_timer_notify.signo are unused. Expiries occurring while a notification is
+	 * pending are accounted as overruns (see k_timer_overrun()), never queued twice.
+	 * When the creator is a user thread, notification threads run in user mode, in the
+	 * creator's memory domain, with the creator's object permissions at dispatch time.
+	 */
+	void (*fn)(union k_sig_val value);
+
+	/** Stack size for notification threads; 0 selects @kconfig{CONFIG_SYS_THREAD_STACK_SIZE} */
+	size_t fn_stack_size;
+
+	/** Thread priority for notification threads (used only when @ref k_timer_notify.fn is set) */
+	int fn_priority;
 };
 
 /**

@@ -1,0 +1,25 @@
+common:
+  ignore_faults: true
+  tags:
+    - kernel
+    - timer
+tests:
+  kernel.timer.timer_signal:
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+      - qemu_cortex_m3
+  kernel.timer.timer_signal.tickless:
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+    extra_configs:
+      - CONFIG_TICKLESS_KERNEL=y
+  kernel.timer.timer_signal.userspace:
+    filter: CONFIG_ARCH_SUPPORTS_USERSPACE_SIGNALS
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_ZTEST_FATAL_HOOK=y

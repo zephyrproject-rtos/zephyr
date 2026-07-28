@@ -445,6 +445,20 @@ bool z_sig_pending_any(struct k_thread *tid);
 void z_timer_realtime_settime(void);
 #endif /* CONFIG_TIMER_REALTIME */
 
+#ifdef CONFIG_TIMER_SIGNAL
+/* attach/detach signal-based expiry notification (internal; used by sys_timer) */
+void z_timer_sig_attach(struct k_timer *timer, k_pid_t target, int signo, union k_sig_val value);
+void z_timer_sig_detach(struct k_timer *timer);
+
+/* generation-side plumbing between kernel/timer.c and kernel/signal.c (internal) */
+int z_sig_queue_timer(struct k_timer *timer, k_pid_t pid, int signo, union k_sig_val value);
+void z_sig_purge_timer(struct k_timer *timer);
+
+/* delivery-side hooks: atomics only - must never take the timer lock (internal) */
+void z_timer_sig_delivered(struct k_timer *timer);
+void z_timer_sig_discarded(struct k_timer *timer);
+#endif /* CONFIG_TIMER_SIGNAL */
+
 #ifdef __cplusplus
 }
 #endif

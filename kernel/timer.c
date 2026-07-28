@@ -116,6 +116,56 @@ static void z_timer_rt_deregister(struct k_timer *timer)
 #define z_timer_rt_deregister(timer) (void)0
 #endif /* CONFIG_TIMER_REALTIME */
 
+#ifdef CONFIG_TIMER_SIGNAL
+LOG_MODULE_REGISTER(k_timer, CONFIG_KERNEL_LOG_LEVEL);
+
+/* called from the expiry path with the timer lock held (timer lock -> k_sig_lock order) */
+static void z_timer_signal_generate(struct k_timer *timer)
+{
+	if (timer->sig_target == NULL) {
+		return;
+	}
+
+	if (!atomic_cas(&timer->sig_pending, 0, 1)) {
+		/* the previous instance is still pending: counted as overrun at delivery */
+		return;
+	}
+
+	/* uptime in a timeout handler is pinned to the scheduled expiry: an exact grid stamp */
+	timer->sig_gen_ticks = (uint64_t)sys_clock_tick_get();
+	timer->sig_freeze_ticks = 0U;
+
+	if ((timer->flags & Z_TIMER_FLAG_EXACT) != 0U) {
+		timer->sig_gen_period = timer->period_ticks;
+	} else if (!K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
+		   !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
+		timer->sig_gen_period = timer->period.ticks;
+	} else {
+		timer->sig_gen_period = 0;
+	}
+
+	if (z_sig_queue_timer(timer, timer->sig_target, timer->sig_signo, timer->sig_value) != 0) {
+		/* best-effort: this period's signal is lost; retried on the next expiry */
+		atomic_clear(&timer->sig_pending);
+		timer->sig_missed++;
+		LOG_DBG_RATELIMIT("timer %p: %u expiry signal(s) dropped for thread %p "
+				  "(signal queue full; see SIGNAL_QUEUE_SIZE)",
+				  timer, timer->sig_missed, timer->sig_target);
+	}
+}
+
+/* stamp the disarm time so a pending signal's overrun stops accumulating */
+static void z_timer_sig_freeze(struct k_timer *timer)
+{
+	if ((atomic_get(&timer->sig_pending) != 0) && (timer->sig_freeze_ticks == 0U)) {
+		timer->sig_freeze_ticks = (uint64_t)sys_clock_tick_get();
+	}
+}
+#else
+#define z_timer_signal_generate(timer) (void)0
+#define z_timer_sig_freeze(timer) (void)0
+#endif /* CONFIG_TIMER_SIGNAL */
+
 /**
  * @brief Handle expiration of a kernel timer object.
  *
@@ -205,6 +255,9 @@ void z_timer_expiration_handler(struct _timeout *t)
 	timer->status += 1U;
 
 	z_timer_observer_on_expiry(timer);
+
+	/* generate the expiry signal (one-pending semantics), if one is attached */
+	z_timer_signal_generate(timer);
 
 	/* invoke timer expiry function */
 	if (timer->expiry_fn != NULL) {
@@ -324,6 +377,18 @@ void k_timer_init(struct k_timer *timer,
 	timer->period_ticks = 0;
 #endif /* CONFIG_TIMER_CLOCK */
 
+#ifdef CONFIG_TIMER_SIGNAL
+	timer->sig_target = NULL;
+	timer->sig_signo = 0;
+	timer->sig_value.sival_ptr = NULL;
+	atomic_clear(&timer->sig_pending);
+	atomic_clear(&timer->sig_overrun);
+	timer->sig_gen_ticks = 0U;
+	timer->sig_gen_period = 0;
+	timer->sig_freeze_ticks = 0U;
+	timer->sig_missed = 0U;
+#endif /* CONFIG_TIMER_SIGNAL */
+
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		z_waitq_init(&timer->wait_q);
 	}
@@ -342,6 +407,7 @@ void k_timer_init(struct k_timer *timer,
 
 	z_timer_observer_on_init(timer);
 }
+
 
 void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 			  k_timeout_t period)
@@ -398,6 +464,7 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 
 	/* a stopped timer must not be re-armed by a realtime clock change */
 	z_timer_rt_deregister(timer);
+	z_timer_sig_freeze(timer);
 
 	if (z_try_abort_timeout(&timer->timeout) != 0) {
 		/* Not removed from the queue: either the timer was not
@@ -617,6 +684,9 @@ int z_impl_k_timer_settime(struct k_timer *timer, uint32_t flags, const struct t
 
 	(void)z_try_abort_timeout(&timer->timeout);
 	z_timer_rt_deregister(timer);
+	if (disarm) {
+		z_timer_sig_freeze(timer);
+	}
 	timer->status = 0U;
 	/* the legacy re-arm path stays disabled while in exact mode */
 	timer->period = K_NO_WAIT;
@@ -747,6 +817,88 @@ static inline int z_vrfy_k_timer_gettime(const struct k_timer *timer, struct tim
 #endif /* CONFIG_USERSPACE */
 
 #endif /* CONFIG_TIMER_CLOCK */
+
+#ifdef CONFIG_TIMER_SIGNAL
+
+void z_timer_sig_attach(struct k_timer *timer, k_pid_t target, int signo, union k_sig_val value)
+{
+	k_spinlock_key_t key = k_spin_lock(&timer_lock);
+
+	timer->sig_target = target;
+	timer->sig_signo = signo;
+	timer->sig_value = value;
+	atomic_clear(&timer->sig_pending);
+	atomic_clear(&timer->sig_overrun);
+	timer->sig_gen_ticks = 0U;
+	timer->sig_gen_period = 0;
+	timer->sig_freeze_ticks = 0U;
+	timer->sig_missed = 0U;
+
+	k_spin_unlock(&timer_lock, key);
+}
+
+void z_timer_sig_detach(struct k_timer *timer)
+{
+	k_spinlock_key_t key = k_spin_lock(&timer_lock);
+
+	/* no further generation... */
+	timer->sig_target = NULL;
+
+	k_spin_unlock(&timer_lock, key);
+
+	/*
+	 * ...and no dangling references: purge queued-but-undelivered instances.
+	 * Called after releasing the timer lock (sanctioned order is timer lock ->
+	 * k_sig_lock only on the expiry path).
+	 */
+	z_sig_purge_timer(timer);
+}
+
+/*
+ * Delivery-side hooks, called from kernel/signal.c while it may hold k_sig_lock.
+ * These are atomics-only by design and MUST NOT take the timer lock: the expiry
+ * path holds timer lock -> k_sig_lock, and acquiring them in the reverse order
+ * here would deadlock under SMP.
+ */
+void z_timer_sig_delivered(struct k_timer *timer)
+{
+	uint64_t gen = timer->sig_gen_ticks;
+	uint64_t frozen = timer->sig_freeze_ticks;
+	k_ticks_t period = timer->sig_gen_period;
+	uint64_t now = (frozen != 0U) ? frozen : (uint64_t)sys_clock_tick_get();
+	uint32_t overrun = 0U;
+
+	if ((period > 0) && (now > gen)) {
+		overrun = (uint32_t)MIN((now - gen) / (uint64_t)period, (uint64_t)INT_MAX);
+	}
+
+	atomic_set(&timer->sig_overrun, (atomic_val_t)overrun);
+	atomic_clear(&timer->sig_pending);
+}
+
+void z_timer_sig_discarded(struct k_timer *timer)
+{
+	atomic_clear(&timer->sig_pending);
+}
+
+int z_impl_k_timer_overrun(const struct k_timer *timer)
+{
+	return (int)atomic_get(&timer->sig_overrun);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_timer_overrun(const struct k_timer *timer)
+{
+	/* a handle that is not a live timer of the caller's is an invalid id, not a fault */
+	if (k_object_validate(k_object_find(timer), K_OBJ_TIMER, _OBJ_INIT_TRUE) != 0) {
+		return -EINVAL;
+	}
+	return z_impl_k_timer_overrun(timer);
+}
+#include <zephyr/syscalls/k_timer_overrun_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+#endif /* CONFIG_TIMER_SIGNAL */
 
 #ifdef CONFIG_TIMER_REALTIME
 void z_timer_realtime_settime(void)

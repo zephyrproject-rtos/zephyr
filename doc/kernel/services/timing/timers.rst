@@ -305,6 +305,21 @@ The tick-domain API remains :c:func:`k_timer_start`, which speaks :c:type:`k_tim
 natively (including ``K_TIMEOUT_ABS_TICKS`` for uptime-absolute deadlines); use the
 clock-based API when deadlines are measured against a clock.
 
+Function Notification
+=====================
+
+A timer created with :c:func:`sys_timer_create` may request **function notification** by
+setting :c:member:`k_timer_notify.fn` (requires :kconfig:option:`CONFIG_SYS_THREAD` and
+:kconfig:option:`CONFIG_THREAD_DETACH`): each expiry invokes the function, with the
+notification value, in a fresh detached thread drawn from the system thread pool with the
+requested stack size and priority. A single kernel dispatcher thread (started on first use;
+see :kconfig:option:`CONFIG_SYS_TIMER_DISPATCH_STACK_SIZE` and
+:kconfig:option:`CONFIG_SYS_TIMER_DISPATCH_PRIO`) accepts the expiries through the reserved
+``K_SIG_SYS_TIMER`` signal, so one-pending/overrun semantics are identical to signal
+notification. When the creating thread is a user thread, notification threads run in user
+mode, in the creator's memory domain, inheriting the creator's object permissions at
+dispatch time. This is the substrate for POSIX ``SIGEV_THREAD``.
+
 Realtime Timers and Clock Changes
 =================================
 
@@ -321,6 +336,29 @@ change.
 
 :c:func:`sys_clock_settime` must not be called from a timer expiry handler.
 
+Signal Delivery and Overrun
+***************************
+
+With :kconfig:option:`CONFIG_TIMER_SIGNAL` enabled, a timer may generate a kernel signal on
+each expiry, targeted at a specific thread and carrying a user-supplied value with
+``si_code == K_SI_TIMER``. Notification is attached at pool-allocation time via
+:c:func:`sys_timer_create`. Unlike an expiry function - which runs in interrupt context -
+signal delivery happens in the target thread's own context (via a handler installed with
+:c:func:`k_sig_action`, or synchronously via :c:func:`k_sig_timedwait`), making it safe for
+user-mode consumers. An expiry function and signal generation may coexist on the same timer.
+
+Signal generation follows the POSIX one-pending model: at most one signal instance per timer is
+queued at any time. Expirations that occur while an instance is pending are not queued again;
+they are accounted as *overruns*, computed from the exact scheduled-expiry grid at the moment
+the pending signal is delivered, and readable non-destructively with :c:func:`k_timer_overrun`.
+Because the computation is grid-based, expirations coalesced by late or tickless wakeups are
+counted correctly, and disarming a timer freezes the count so idle time does not inflate it.
+
+Signal generation is best-effort with respect to signal queue capacity
+(:kconfig:option:`CONFIG_SIGNAL_QUEUE_SIZE`): if the queue is full at expiry, that period's
+signal is dropped (and retried on the next expiry). Drops are counted per timer and reported
+via a rate-limited debug log message, which is compiled out entirely at the default log level.
+
 Configuration Options
 *********************
 
@@ -328,6 +366,8 @@ Related configuration options:
 
 * :kconfig:option:`CONFIG_TIMER_CLOCK`
 * :kconfig:option:`CONFIG_TIMER_REALTIME`
+* :kconfig:option:`CONFIG_TIMER_SIGNAL`
+* :kconfig:option:`CONFIG_SYS_TIMER`
 
 API Reference
 *************

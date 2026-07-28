@@ -2026,6 +2026,55 @@ struct k_timer {
 	int64_t rt_sec;
 	long rt_nsec;
 #endif /* CONFIG_TIMER_REALTIME */
+
+#ifdef CONFIG_TIMER_SIGNAL
+	/* signal delivery target; NULL when no notification is attached */
+	k_tid_t sig_target;
+
+	/* signal number queued on expiry */
+	int32_t sig_signo;
+
+	/* value accompanying the queued signal */
+	union k_sig_val sig_value;
+
+	/* function notification: dispatcher spawns a thread running sig_fn(sig_value) */
+	void (*sig_fn)(union k_sig_val);
+
+	/* stack size for notification threads; 0 selects CONFIG_SYS_THREAD_STACK_SIZE */
+	size_t sig_fn_stack_size;
+
+	/* thread priority for notification threads */
+	int sig_fn_prio;
+
+#ifdef CONFIG_USERSPACE
+	/* user-mode notification: creator's memory domain, or NULL for kernel threads */
+	struct k_mem_domain *sig_fn_domain;
+
+	/*
+	 * Object permissions source for notification threads: the creating thread,
+	 * which should outlive the timer for notification threads to inherit permissions.
+	 */
+	k_tid_t sig_fn_perms_src;
+#endif /* CONFIG_USERSPACE */
+
+	/* one-pending-per-timer latch (POSIX): set at generation, cleared at delivery */
+	atomic_t sig_pending;
+
+	/* overrun count of the most recently delivered signal (latched at delivery) */
+	atomic_t sig_overrun;
+
+	/* scheduled-expiry stamp (uptime ticks) of the pending signal's generation */
+	uint64_t sig_gen_ticks;
+
+	/* period (ticks) at generation, for overrun computation */
+	k_ticks_t sig_gen_period;
+
+	/* uptime at disarm-while-pending; stops post-disarm time inflating the overrun */
+	uint64_t sig_freeze_ticks;
+
+	/* expiries whose signal could not be queued (queue full); diagnostics */
+	uint32_t sig_missed;
+#endif /* CONFIG_TIMER_SIGNAL */
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -2211,6 +2260,30 @@ __syscall int k_timer_gettime(const struct k_timer *timer, struct timespec *valu
 			      struct timespec *interval);
 
 #endif /* defined(CONFIG_TIMER_CLOCK) || defined(__DOXYGEN__) */
+
+#if defined(CONFIG_TIMER_SIGNAL) || defined(__DOXYGEN__)
+
+/**
+ * @brief Read a timer's expiration overrun count
+ *
+ * Returns the overrun count latched when the timer's most recent expiry signal was delivered
+ * (or accepted via `k_sig_timedwait()`): the number of additional expirations that occurred
+ * between that signal's generation and its delivery. The count is computed from the exact
+ * scheduled-expiry grid, so expirations coalesced by late or tickless wakeups are included.
+ *
+ * Reading the count does not modify it - repeated reads return the same value until the next
+ * delivery latches a new one.
+ *
+ * @param timer Address of timer.
+ *
+ * @return the overrun count of the most recently delivered expiry signal, saturated at
+ *         @c INT_MAX; 0 when no signal has been delivered
+ *
+ * @kconfig_dep{CONFIG_TIMER_SIGNAL}
+ */
+__syscall int k_timer_overrun(const struct k_timer *timer);
+
+#endif /* defined(CONFIG_TIMER_SIGNAL) || defined(__DOXYGEN__) */
 
 
 #ifdef CONFIG_TIMER_OBSERVER

@@ -85,6 +85,16 @@ __syscall int sys_thread_create(struct k_thread **th, k_thread_stack_t *stack, u
 				void *p3, int prio, uint32_t options);
 
 /**
+ * @brief As sys_thread_create(), but the thread is created paused
+ *
+ * The caller completes setup (memory domain membership, object permissions) and then starts
+ * the thread with k_thread_start(). Kernel-mode only (not a system call).
+ */
+int sys_thread_create_paused(struct k_thread **th, k_thread_stack_t *stack, uint32_t stack_size,
+			     uint32_t guard_size, k_thread_entry_t entry, void *p1, void *p2,
+			     void *p3, int prio, uint32_t options);
+
+/**
  * @brief Allocate and initialize a thread stack from the system pool.
  *
  * If @p stack_size is less than or equal to @kconfig{CONFIG_SYS_THREAD_STACK_SIZE}, a stack of size

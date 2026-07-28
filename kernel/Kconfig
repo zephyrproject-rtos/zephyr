@@ -743,6 +743,19 @@ config TIMER_REALTIME
 	  expire when the new realtime clock reaches their deadline, as POSIX
 	  requires for TIMER_ABSTIME CLOCK_REALTIME timers.
 
+config TIMER_SIGNAL
+	bool "Signal delivery on kernel timer expiry"
+	default y
+	depends on SIGNAL && TIMER_CLOCK
+	help
+	  Timers may generate a kernel signal (K_SI_TIMER) targeted at a thread
+	  on each expiry, with POSIX one-pending semantics: at most one signal
+	  instance per timer is queued at a time, and expiries occurring while
+	  an instance is pending are accounted as overruns, readable
+	  non-destructively with k_timer_overrun(). Overruns are computed from
+	  the exact scheduled-expiry grid, so expiries coalesced by late or
+	  tickless wakeups are counted correctly.
+
 endmenu
 
 menu "Other Kernel Object Options"

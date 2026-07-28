@@ -17,6 +17,26 @@ config SYS_TIMER
 
 if SYS_TIMER
 
+config SYS_TIMER_DISPATCH_PRIO
+	int "Priority of the function-notification dispatcher thread"
+	depends on TIMER_SIGNAL && SYS_THREAD && THREAD_DETACH
+	default 0
+	help
+	  Priority of the system timer dispatcher thread. Must be a preemptible
+	  priority: the dispatcher shares the kernel signal queue's readiness
+	  signal with every other signal waiter and must not starve them.
+
+config SYS_TIMER_DISPATCH_STACK_SIZE
+	int "Stack size of the function-notification dispatcher thread"
+	depends on TIMER_SIGNAL && SYS_THREAD && THREAD_DETACH
+	default 1024
+	help
+	  Stack size of the system timer dispatcher, the kernel service thread
+	  that accepts function-notification timer expiries and spawns one
+	  detached thread per notification. Started on first use; notification
+	  threads themselves draw from the system thread pool
+	  (CONFIG_SYS_THREAD_STACK_SIZE and friends).
+
 config SYS_TIMER_MAX
 	int "Maximum size of the system timer pool"
 	default 2147483647
