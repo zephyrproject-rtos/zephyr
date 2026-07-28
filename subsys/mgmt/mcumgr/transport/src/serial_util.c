@@ -42,6 +42,11 @@ static int mcumgr_serial_extract_len(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 	}
 
 	rx_ctxt->pkt_len = net_buf_pull_be16(rx_ctxt->nb);
+
+	if (rx_ctxt->pkt_len <= sizeof(uint16_t)) {
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
