@@ -1,0 +1,11 @@
+identifier: xenvm/xenvm/gicv3_smp
+name: ARMv8 Xen Virtual Machine GICv3 SMP
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 16384
+supported:
+  - smp
+vendor: xen
