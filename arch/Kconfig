@@ -1316,6 +1316,25 @@ config CACHE_CAN_SAY_MEM_COHERENCE
 	  safely used in multiprocessor code without explicit flush or invalidate
 	  operations.
 
+config OUTER_CACHE
+	bool
+	depends on DCACHE
+	help
+	  Enable support for an outer cache level below the CPU-integrated data
+	  cache, such as an L2 cache controller, that is not snooped by
+	  device-side DMA.
+
+	  Select this option from SoC Kconfig when the SoC has such a cache
+	  controller. The CPU-integrated L1 data cache is still managed by the
+	  architecture cache layer; this option adds the outer level on top.
+
+	  When set, the architecture cache layer pairs every L1 data-cache
+	  maintenance operation with the matching outer-cache operation so the
+	  standard cache API keeps both levels coherent for DMA.
+
+	  The SoC must provide strong definitions of the z_arm_outer_cache_*
+	  operations declared in include/zephyr/arch/cache.h.
+
 endif # CACHE_MANAGEMENT
 
 endmenu
