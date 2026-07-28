@@ -3242,3 +3242,90 @@ event {
 		uint32_t iodev_sqe;
 	};
 };
+
+event {
+	name = pm_device_runtime_get_enter;
+	id = 0x176;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = pm_device_runtime_get_exit;
+	id = 0x177;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = pm_device_runtime_put_enter;
+	id = 0x178;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = pm_device_runtime_put_exit;
+	id = 0x179;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = pm_device_runtime_put_async_enter;
+	id = 0x17A;
+	fields := struct {
+		uint32_t id;
+		uint32_t delay;
+	};
+};
+
+event {
+	name = pm_device_runtime_put_async_exit;
+	id = 0x17B;
+	fields := struct {
+		uint32_t id;
+		uint32_t delay;
+		int32_t ret;
+	};
+};
+
+event {
+	name = pm_device_runtime_enable_enter;
+	id = 0x17C;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = pm_device_runtime_enable_exit;
+	id = 0x17D;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = pm_device_runtime_disable_enter;
+	id = 0x17E;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = pm_device_runtime_disable_exit;
+	id = 0x17F;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};

@@ -1050,6 +1050,38 @@ void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iode
 #define sys_port_trace_rtio_chain_next_exit(r, iodev_sqe)                                          \
 	sys_trace_rtio_chain_next_exit(r, iodev_sqe)
 
+/* PM device runtime */
+void sys_trace_pm_device_runtime_get_enter(const struct device *dev);
+void sys_trace_pm_device_runtime_get_exit(const struct device *dev, int ret);
+void sys_trace_pm_device_runtime_put_enter(const struct device *dev);
+void sys_trace_pm_device_runtime_put_exit(const struct device *dev, int ret);
+void sys_trace_pm_device_runtime_put_async_enter(const struct device *dev, k_timeout_t delay);
+void sys_trace_pm_device_runtime_put_async_exit(const struct device *dev, k_timeout_t delay,
+						int ret);
+void sys_trace_pm_device_runtime_enable_enter(const struct device *dev);
+void sys_trace_pm_device_runtime_enable_exit(const struct device *dev, int ret);
+void sys_trace_pm_device_runtime_disable_enter(const struct device *dev);
+void sys_trace_pm_device_runtime_disable_exit(const struct device *dev, int ret);
+
+#define sys_port_trace_pm_device_runtime_get_enter(dev) sys_trace_pm_device_runtime_get_enter(dev)
+#define sys_port_trace_pm_device_runtime_get_exit(dev, ret)                                        \
+	sys_trace_pm_device_runtime_get_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_put_enter(dev) sys_trace_pm_device_runtime_put_enter(dev)
+#define sys_port_trace_pm_device_runtime_put_exit(dev, ret)                                        \
+	sys_trace_pm_device_runtime_put_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_put_async_enter(dev, delay)                               \
+	sys_trace_pm_device_runtime_put_async_enter(dev, delay)
+#define sys_port_trace_pm_device_runtime_put_async_exit(dev, delay, ret)                           \
+	sys_trace_pm_device_runtime_put_async_exit(dev, delay, ret)
+#define sys_port_trace_pm_device_runtime_enable_enter(dev)                                         \
+	sys_trace_pm_device_runtime_enable_enter(dev)
+#define sys_port_trace_pm_device_runtime_enable_exit(dev, ret)                                     \
+	sys_trace_pm_device_runtime_enable_exit(dev, ret)
+#define sys_port_trace_pm_device_runtime_disable_enter(dev)                                        \
+	sys_trace_pm_device_runtime_disable_enter(dev)
+#define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)                                    \
+	sys_trace_pm_device_runtime_disable_exit(dev, ret)
+
 /*
  * Fill any sys_port_trace_* hook not defined above with a canonical no-op. The
  * per-macro #ifndef guards keep the real definitions above; only gaps are filled,

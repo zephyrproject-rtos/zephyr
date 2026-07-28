@@ -2266,3 +2266,58 @@ void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iode
 {
 	ctf_top_rtio_chain_next_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)iodev_sqe);
 }
+
+/* PM device runtime */
+
+void sys_trace_pm_device_runtime_get_enter(const struct device *dev)
+{
+	ctf_top_pm_device_runtime_get_enter((uint32_t)(uintptr_t)dev);
+}
+
+void sys_trace_pm_device_runtime_get_exit(const struct device *dev, int ret)
+{
+	ctf_top_pm_device_runtime_get_exit((uint32_t)(uintptr_t)dev, ret);
+}
+
+void sys_trace_pm_device_runtime_put_enter(const struct device *dev)
+{
+	ctf_top_pm_device_runtime_put_enter((uint32_t)(uintptr_t)dev);
+}
+
+void sys_trace_pm_device_runtime_put_exit(const struct device *dev, int ret)
+{
+	ctf_top_pm_device_runtime_put_exit((uint32_t)(uintptr_t)dev, ret);
+}
+
+void sys_trace_pm_device_runtime_put_async_enter(const struct device *dev, k_timeout_t delay)
+{
+	ctf_top_pm_device_runtime_put_async_enter((uint32_t)(uintptr_t)dev,
+						  k_ticks_to_us_floor32((uint32_t)delay.ticks));
+}
+
+void sys_trace_pm_device_runtime_put_async_exit(const struct device *dev, k_timeout_t delay,
+						int ret)
+{
+	ctf_top_pm_device_runtime_put_async_exit((uint32_t)(uintptr_t)dev,
+						 k_ticks_to_us_floor32((uint32_t)delay.ticks), ret);
+}
+
+void sys_trace_pm_device_runtime_enable_enter(const struct device *dev)
+{
+	ctf_top_pm_device_runtime_enable_enter((uint32_t)(uintptr_t)dev);
+}
+
+void sys_trace_pm_device_runtime_enable_exit(const struct device *dev, int ret)
+{
+	ctf_top_pm_device_runtime_enable_exit((uint32_t)(uintptr_t)dev, ret);
+}
+
+void sys_trace_pm_device_runtime_disable_enter(const struct device *dev)
+{
+	ctf_top_pm_device_runtime_disable_enter((uint32_t)(uintptr_t)dev);
+}
+
+void sys_trace_pm_device_runtime_disable_exit(const struct device *dev, int ret)
+{
+	ctf_top_pm_device_runtime_disable_exit((uint32_t)(uintptr_t)dev, ret);
+}

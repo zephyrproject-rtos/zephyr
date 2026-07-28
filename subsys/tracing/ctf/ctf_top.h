@@ -481,6 +481,18 @@ typedef enum {
 	CTF_EVENT_RTIO_TXN_NEXT_EXIT = 0x173,
 	CTF_EVENT_RTIO_CHAIN_NEXT_ENTER = 0x174,
 	CTF_EVENT_RTIO_CHAIN_NEXT_EXIT = 0x175,
+
+	/* PM device runtime */
+	CTF_EVENT_PM_DEVICE_RUNTIME_GET_ENTER = 0x176,
+	CTF_EVENT_PM_DEVICE_RUNTIME_GET_EXIT = 0x177,
+	CTF_EVENT_PM_DEVICE_RUNTIME_PUT_ENTER = 0x178,
+	CTF_EVENT_PM_DEVICE_RUNTIME_PUT_EXIT = 0x179,
+	CTF_EVENT_PM_DEVICE_RUNTIME_PUT_ASYNC_ENTER = 0x17A,
+	CTF_EVENT_PM_DEVICE_RUNTIME_PUT_ASYNC_EXIT = 0x17B,
+	CTF_EVENT_PM_DEVICE_RUNTIME_ENABLE_ENTER = 0x17C,
+	CTF_EVENT_PM_DEVICE_RUNTIME_ENABLE_EXIT = 0x17D,
+	CTF_EVENT_PM_DEVICE_RUNTIME_DISABLE_ENTER = 0x17E,
+	CTF_EVENT_PM_DEVICE_RUNTIME_DISABLE_EXIT = 0x17F,
 } ctf_event_t;
 
 typedef struct {
@@ -2383,5 +2395,70 @@ static inline void ctf_top_rtio_chain_next_enter(uint32_t rtio_id, uint32_t iode
 static inline void ctf_top_rtio_chain_next_exit(uint32_t rtio_id, uint32_t iodev_sqe)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_RTIO_CHAIN_NEXT_EXIT), rtio_id, iodev_sqe);
+}
+
+/* PM device runtime */
+
+static inline void ctf_top_pm_device_runtime_get_enter(uint32_t pm_device_runtime_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_DEVICE_RUNTIME_GET_ENTER),
+		  pm_device_runtime_id);
+}
+
+static inline void ctf_top_pm_device_runtime_get_exit(uint32_t pm_device_runtime_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_DEVICE_RUNTIME_GET_EXIT), pm_device_runtime_id,
+		  ret);
+}
+
+static inline void ctf_top_pm_device_runtime_put_enter(uint32_t pm_device_runtime_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_DEVICE_RUNTIME_PUT_ENTER),
+		  pm_device_runtime_id);
+}
+
+static inline void ctf_top_pm_device_runtime_put_exit(uint32_t pm_device_runtime_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_DEVICE_RUNTIME_PUT_EXIT), pm_device_runtime_id,
+		  ret);
+}
+
+static inline void ctf_top_pm_device_runtime_put_async_enter(uint32_t pm_device_runtime_id,
+							     uint32_t delay)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_DEVICE_RUNTIME_PUT_ASYNC_ENTER),
+		  pm_device_runtime_id, delay);
+}
+
+static inline void ctf_top_pm_device_runtime_put_async_exit(uint32_t pm_device_runtime_id,
+							    uint32_t delay, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_DEVICE_RUNTIME_PUT_ASYNC_EXIT),
+		  pm_device_runtime_id, delay, ret);
+}
+
+static inline void ctf_top_pm_device_runtime_enable_enter(uint32_t pm_device_runtime_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_DEVICE_RUNTIME_ENABLE_ENTER),
+		  pm_device_runtime_id);
+}
+
+static inline void ctf_top_pm_device_runtime_enable_exit(uint32_t pm_device_runtime_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_DEVICE_RUNTIME_ENABLE_EXIT),
+		  pm_device_runtime_id, ret);
+}
+
+static inline void ctf_top_pm_device_runtime_disable_enter(uint32_t pm_device_runtime_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_DEVICE_RUNTIME_DISABLE_ENTER),
+		  pm_device_runtime_id);
+}
+
+static inline void ctf_top_pm_device_runtime_disable_exit(uint32_t pm_device_runtime_id,
+							  int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_DEVICE_RUNTIME_DISABLE_EXIT),
+		  pm_device_runtime_id, ret);
 }
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
