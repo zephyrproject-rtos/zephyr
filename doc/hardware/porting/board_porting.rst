@@ -625,26 +625,31 @@ also just flash :file:`build/zephyr/zephyr.elf`, :file:`zephyr.hex`, or
 :file:`zephyr.bin` with any other tools you prefer.
 
 Before submitting a board upstream, verify that every board target you add can
-build at least one simple application using only code from the mainline Zephyr
-repository and its modules. For example:
+pass the project's minimum open source test suite using only code from the
+mainline Zephyr repository and its modules. The suite currently consists of:
+
+- :file:`samples/philosophers`
+- :file:`tests/kernel`
+
+For example, build the suite for a board target with:
 
 .. code-block:: console
 
-   west build -p always -b plank samples/hello_world
+   west twister -p plank -T samples/philosophers -T tests/kernel
 
 For boards with multiple SoCs, CPU clusters, variants, or revisions, repeat the
-smoke build for each new board target, for example:
+test suite for each new board target. A :zephyr:code-sample:`hello_world` build
+is also recommended as a quick smoke check, for example:
 
 .. code-block:: console
 
    west build -p always -b plank/soc1/foo samples/hello_world
    west build -p always -b plank@1.0.0/soc1/foo samples/hello_world
 
-Use :ref:`sysbuild` if the board target requires it. If ``hello_world`` is not a
-reasonable smoke test for the hardware, use an equivalent simple sample and
-explain the choice in the pull request. When using board testing metadata,
-such as ``testing: only_tags`` in the board target YAML file, make sure the
-new target still has at least one smoke build in local testing or CI.
+Use :ref:`sysbuild` if the board target requires it. When using board testing
+metadata, such as ``testing: only_tags`` in the board target YAML file, make
+sure the target is still validated against the minimum test suite in local
+testing or CI.
 
 .. _porting-general-recommendations:
 
