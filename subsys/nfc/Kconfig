@@ -1,0 +1,146 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NFC
+	bool "Near Field Communication (NFC) subsystem [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Vendor- and technology-neutral NFC protocol subsystem above the NFC
+	  driver API. Poller (reader) side first.
+
+if NFC
+
+module = NFC
+module-str = NFC
+source "subsys/logging/Kconfig.template.log_config"
+
+# Shared ISO/IEC 14443 Type A framing (CRC/BCC/PCB). Not user-selectable; it is
+# pulled in by whichever layer above needs it (NFC-A activation, ISO-DEP).
+config NFC_ISO14443A
+	bool
+	select CRC
+	help
+	  ISO/IEC 14443 Type A framing primitives shared by NFC-A activation and
+	  ISO-DEP block transmission.
+
+config NFC_NFCA
+	bool "NFC-A discovery and activation"
+	default y
+	select NFC_ISO14443A
+	help
+	  NFC-A discovery and anticollision on top of the driver API.
+
+config NFC_NFCA_FIELD_OFF_MS
+	int "Time the RF field is removed at the start of an NFC-A poll cycle"
+	depends on NFC_NFCA
+	default 5
+	range 1 100
+	help
+	  How long discovery removes the field so that a target still on the
+	  antenna powers down and answers the next cycle. Too short and a halted
+	  target keeps ignoring discovery.
+
+config NFC_NFCA_POLL_INTERVAL_MS
+	int "Time the RF field is left on between NFC-A poll cycles"
+	depends on NFC_NFCA
+	default 50
+	range 1 1000
+	help
+	  How long discovery powers a target before the next poll on a
+	  host-driven frontend. A secure element takes far longer than the
+	  ISO/IEC 14443 guard time to start up, so raising this helps if such a
+	  card is never found. Ignored on a controller that polls in firmware.
+
+config NFC_ISO_DEP
+	bool "ISO-DEP (ISO/IEC 14443-4)"
+	default y if NFC_NFCA
+	select NFC_ISO14443A
+	help
+	  ISO-DEP block-transmission protocol above NFC-A/B activation.
+
+if NFC_ISO_DEP
+
+config NFC_ISO_DEP_DEFAULT_CID
+	hex "Default CID used during RATS"
+	default 0x00
+	help
+	  Card identifier requested when activating a target, 0x00 to 0x0E.
+	  Leave at 0x00 unless several targets must stay activated at once.
+
+choice NFC_ISO14443_FSD
+	prompt "Maximum frame size in poll mode (FSD)"
+	default NFC_ISO14443_FSD_24
+
+config NFC_ISO14443_FSD_16
+	bool "16"
+
+config NFC_ISO14443_FSD_24
+	bool "24"
+
+config NFC_ISO14443_FSD_32
+	bool "32"
+
+config NFC_ISO14443_FSD_64
+	bool "64"
+
+config NFC_ISO14443_FSD_128
+	bool "128"
+
+config NFC_ISO14443_FSD_256
+	bool "256"
+
+endchoice
+
+config NFC_ISO14443_FSD_MAX
+	int
+	default 16 if NFC_ISO14443_FSD_16
+	default 24 if NFC_ISO14443_FSD_24
+	default 32 if NFC_ISO14443_FSD_32
+	default 64 if NFC_ISO14443_FSD_64
+	default 128 if NFC_ISO14443_FSD_128
+	default 256 if NFC_ISO14443_FSD_256
+
+config NFC_ISO14443_FSDI
+	hex
+	default 0x00 if NFC_ISO14443_FSD_16
+	default 0x10 if NFC_ISO14443_FSD_24
+	default 0x20 if NFC_ISO14443_FSD_32
+	default 0x50 if NFC_ISO14443_FSD_64
+	default 0x70 if NFC_ISO14443_FSD_128
+	default 0x80 if NFC_ISO14443_FSD_256
+
+endif # NFC_ISO_DEP
+
+config NFC_NDEF
+	bool "NDEF message codec"
+	default y
+	help
+	  NDEF (NFC Data Exchange Format) message parser and encoder. A pure
+	  codec with no dependency on the driver API.
+
+config NFC_T2T
+	bool "Type 2 Tag operations"
+	depends on NFC_NFCA
+	default y if NFC_NFCA
+	help
+	  NFC Forum Type 2 Tag read/write over raw NFC-A.
+
+config NFC_T4T
+	bool "Type 4 Tag operations"
+	depends on NFC_ISO_DEP
+	default y if NFC_ISO_DEP
+	help
+	  NFC Forum Type 4 Tag read/write over ISO-DEP. Needs a frontend; a
+	  controller that runs ISO-DEP in firmware reports -ENOTSUP.
+
+config NFC_TAG
+	bool "Tag-type-neutral NDEF access"
+	depends on NFC_T2T || NFC_T4T
+	default y if NFC_T2T || NFC_T4T
+	help
+	  Detect the NDEF tag type and dispatch to the Type 2 or Type 4 backend
+	  (nfc_tag_connect, nfc_tag_read_ndef, nfc_tag_write_ndef). A product that
+	  meets only one of the two can leave the other backend out; a tag of the
+	  excluded type then reports -ENOTSUP at nfc_tag_connect().
+
+endif # NFC
