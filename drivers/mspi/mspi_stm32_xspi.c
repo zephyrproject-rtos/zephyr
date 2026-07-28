@@ -1476,8 +1476,7 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 				.ClockMode = HAL_XSPI_CLOCK_MODE_0,                               \
 				.ChipSelectBoundary = DT_INST_PROP(index, st_csbound),            \
 				.MemorySize = MSPI_STM32_INST_MEM_ADDR_BITS(index, 26) - 1,       \
-				.MemoryType = CONCAT(HAL_XSPI_MEMTYPE_,                           \
-						MSPI_STM32_INST_MEMTYPE_TOKEN(index)),            \
+				.MemoryType =  MSPI_STM32_HAL_MEMTYPE(index),                     \
 				.MemoryMode = HAL_XSPI_SINGLE_MEM,                                \
 				.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,                  \
 			},                                                                        \
