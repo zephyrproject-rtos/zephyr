@@ -11,7 +11,12 @@
 #if MMU_DEBUG_PRINTS
 /* To dump page table entries while filling them, set DUMP_PTE macro */
 #define DUMP_PTE		0
-#define MMU_DEBUG(fmt, ...)	printk(fmt, ##__VA_ARGS__)
+/*
+ * Unlocked: most of this output is produced while the page tables are
+ * being built, before the MMU is enabled, where a printk() spinlock is
+ * not usable on SMP.
+ */
+#define MMU_DEBUG(fmt, ...)	printk_unlocked(fmt, ##__VA_ARGS__)
 #else
 #define MMU_DEBUG(...)
 #endif
