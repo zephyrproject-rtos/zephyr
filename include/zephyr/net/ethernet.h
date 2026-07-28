@@ -1,7 +1,6 @@
-/** @file
- @brief Ethernet
-
- This is not to be included by the application.
+/**
+ * @file
+ * @brief Ethernet
  */
 
 /*
