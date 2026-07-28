@@ -261,3 +261,10 @@ zephyr_udc0: &usbfs {
 &ctimer4 {
 	status = "okay";
 };
+
+&i3c0 {
+	status = "okay";
+
+	pinctrl-0 = <&pinmux_i3c0_alt0>;
+	pinctrl-names = "default";
+};

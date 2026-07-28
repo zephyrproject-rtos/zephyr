@@ -453,6 +453,20 @@ DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
 	CLOCK_SetClkDiv(kCLOCK_DivArmTrClkDiv, 1U, true);
 #endif
 
+#if defined(CONFIG_I3C)
+
+#if defined(CONFIG_SOC_LPC55S36)
+	CLOCK_AttachClk(kMAIN_CLK_to_I3CFCLK);
+	CLOCK_SetClkDiv(kCLOCK_DivI3cFclk, 0U, true);
+	CLOCK_SetClkDiv(kCLOCK_DivI3cFclk, DT_PROP(DT_NODELABEL(i3c0), clk_divider), false);
+
+	/* Enable FCLKS for I3C slave event. */
+	CLOCK_SetClkDiv(kCLOCK_DivI3cFclkS, 0U, true);
+	CLOCK_SetClkDiv(kCLOCK_DivI3cFclkS, 1U, false);
+#endif
+
+#endif /* I3C */
+
 #if CONFIG_AUDIO_CODEC_WM8904
 	CLOCK_AttachClk(kPLL0_to_MCLK);
 	SYSCON->MCLKDIV = SYSCON_MCLKDIV_DIV(0U);
