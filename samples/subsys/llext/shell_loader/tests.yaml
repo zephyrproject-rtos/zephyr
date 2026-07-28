@@ -6,7 +6,7 @@ common:
     - arm
     - xtensa
   filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
-    and not CONFIG_SOC_SERIES_RZA2M
+    and not CONFIG_SOC_SERIES_RZA2M and not CONFIG_SOC_ESP32_APPCPU_TARGET
   platform_exclude:
     # platforms with active issues
     - apollo4p_evb            # See #73443
