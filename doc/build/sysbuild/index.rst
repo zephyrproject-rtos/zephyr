@@ -942,7 +942,7 @@ Running sysbuild with preset.
 
       .. code-block:: shell
 
-         APP_DIR=samples/hello_world cmake -Bbuild -GNinja -DBOARD=reel_board share/sysbuild
+         APP_DIR=samples/hello_world cmake -Bbuild -GNinja -DBOARD=reel_board --preset=release share/sysbuild
          ninja -Cbuild
 
       When using CMake presets with sysbuild then ``APP_DIR`` must be set in environment in order
