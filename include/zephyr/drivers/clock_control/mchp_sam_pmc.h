@@ -10,8 +10,8 @@
  * @ingroup clock_control_mchp_sam_pmc
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MICROCHIP_SAM_PMC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MICROCHIP_SAM_PMC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_SAM_PMC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_SAM_PMC_H_
 
 #include <soc.h>
 #include <zephyr/drivers/clock_control.h>
@@ -91,4 +91,4 @@ struct sam_pmc_data {
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MICROCHIP_SAM_PMC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_SAM_PMC_H_ */

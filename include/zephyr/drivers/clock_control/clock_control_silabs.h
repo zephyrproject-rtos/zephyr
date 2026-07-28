@@ -10,8 +10,8 @@
  * @ingroup clock_control_silabs
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_SILABS_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_SILABS_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_SILABS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_SILABS_H_
 
 #include <zephyr/drivers/clock_control.h>
 
@@ -69,4 +69,4 @@ struct silabs_clock_control_cmu_config {
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_SILABS_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_SILABS_H_ */
