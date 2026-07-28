@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SYS_TIMER_MIN_ADD_TEST
+	int "Guaranteed system timers contributed by this test"
+	default 2
+	help
+	  Contribution of this test to the accumulated minimum (guaranteed,
+	  statically allocated) size of the system timer pool.
+
+source "Kconfig.zephyr"

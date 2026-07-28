@@ -139,3 +139,16 @@ if(CONFIG_SYS_THREAD)
     zephyr_compile_definitions(SYS_THREAD_${_pool}_MIN=${_sys_thread_${_pool}_min})
   endforeach()
 endif()
+
+zephyr_sources_ifdef(CONFIG_SYS_TIMER sys_timer.c)
+zephyr_syscall_header_ifdef(CONFIG_SYS_TIMER ${ZEPHYR_BASE}/include/zephyr/sys/timer.h)
+
+if(CONFIG_SYS_TIMER)
+  # Sum CONFIG_SYS_TIMER_MIN with any CONFIG_SYS_TIMER_MIN_ADD_* additions
+  import_kconfig(CONFIG_SYS_TIMER_MIN_ADD_ ${DOTCONFIG} _sys_timer_min_add_keys)
+  set(_sys_timer_min ${CONFIG_SYS_TIMER_MIN})
+  foreach(_add ${_sys_timer_min_add_keys})
+    math(EXPR _sys_timer_min "${_sys_timer_min} + ${${_add}}")
+  endforeach()
+  zephyr_compile_definitions(SYS_TIMER_MIN=${_sys_timer_min})
+endif()

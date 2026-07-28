@@ -220,6 +220,8 @@ rsource "Kconfig.atomics"
 rsource "Kconfig.cbprintf"
 rsource "Kconfig.sys_thread"
 rsource "Kconfig.sys_mutex"
+
+rsource "Kconfig.sys_timer"
 rsource "zvfs/Kconfig"
 rsource "cpu_load/Kconfig"
 

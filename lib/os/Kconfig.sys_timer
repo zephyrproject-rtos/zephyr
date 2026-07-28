@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SYS_TIMER
+	bool "Support an OS-managed pool of kernel timers"
+	select DYNAMIC_OBJECTS if USERSPACE
+	select SYS_ELASTIPOOL
+	select TIMER_CLOCK
+	# to support heap-based allocation by default, can be disabled
+	imply SYS_HASH_MAP
+	imply SYS_HASH_FUNC32
+	help
+	  Select 'y' here to support an OS-managed pool of k_timer objects,
+	  allocated and released with the sys_timer_create() and
+	  sys_timer_delete() system calls. This is the substrate for POSIX
+	  timers (timer_create()/timer_delete()).
+
+if SYS_TIMER
+
+config SYS_TIMER_MAX
+	int "Maximum size of the system timer pool"
+	default 2147483647
+	help
+	  This value represents the maximum number of timers that may be
+	  allocated from the system timer pool. The first SYS_TIMER_MIN (the
+	  sum of CONFIG_SYS_TIMER_MIN and all CONFIG_SYS_TIMER_MIN_ADD_*
+	  contributions) are statically allocated and guaranteed; the remainder
+	  come from the heap, without guarantees.
+
+	  The default (INT_MAX) effectively does not limit dynamic allocation.
+	  Set this equal to the accumulated minimum to prohibit dynamic
+	  allocation entirely.
+
+	  CONFIG_SYS_TIMER_MAX must be >= the accumulated SYS_TIMER_MIN.
+
+config SYS_TIMER_MIN
+	int "Minimum size of the system timer pool"
+	default 0
+	help
+	  This value represents the minimum number of timers that are
+	  guaranteed to be available from the system timer pool. The minimum
+	  number is guaranteed via static allocation.
+
+	  Applications and libraries contribute additional guaranteed timers by
+	  defining int symbols named CONFIG_SYS_TIMER_MIN_ADD_<NAME>; the build
+	  system sums CONFIG_SYS_TIMER_MIN with all such contributions and, for
+	  technical reasons, provides the result to code as the un-prefixed
+	  SYS_TIMER_MIN compile definition.
+
+endif # SYS_TIMER
