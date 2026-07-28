@@ -1362,6 +1362,142 @@ Under embargo until 2026-09-13
 
 Under embargo until 2026-09-13
 
+Issues fixed
+************
+
+The following issues are addressed by this release:
+
+* :github:`103831` - Add mcxc242 lpuart dma support (async api)
+* :github:`104900` - Bluetooth LE host qualification for 4.4 release
+* :github:`104922` - drivers: nuvoton: hs usbd: control cmds stuck naking
+* :github:`106334` - Thread-safety race condition in net_buf_unref
+* :github:`107374` - ESP32 S3 doesn't boot if ``CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM`` is combined with ``CONFIG_SPI``
+* :github:`107633` - USB-Next: CDC-ACM: Incomplete transmission on MCUmgr
+* :github:`108120` - STM32WBAx : Flash process request is not handled
+* :github:`108637` - tests/drivers/bbram/generic/ fails at random due to drivers/bbram/bbram_microchip_mcp7940n_emul.c
+* :github:`108793` - kernel: init: main thread not tagged K_FP_REGS when CONFIG_FPU && CONFIG_FPU_SHARING
+* :github:`109128` - fs: backend file resource leak when fs_open with FS_O_TRUNC fails during truncate
+* :github:`109383` - stm32wbax: bluetooth: issue when extended Advertising Data Packet length exceeds 250 bytes
+* :github:`109403` - net: icmpv6: missing source address guard in net_icmpv6_send_error (RFC 4443 2.4(e.6))
+* :github:`109460` - entropy: psa: ``ENTROPY_PSA_CRYPTO_RNG`` deprecated without migration path
+* :github:`109602` - espressif: esp32c5/esp32s3: fix PSRAM + Wi-Fi heap mapping and linker segment sizing bugs
+* :github:`109641` - ``west spdx`` fails on Windows if project is on a different drive
+* :github:`109907` - tests: dma: chan_blen_transfer: test case is not synchronized with transfer callback
+* :github:`110018` - drivers: gpio: esp32: GPIO deep sleep wakeup requires CONFIG_PM
+* :github:`110077` - k_pipe_read in ISR causing fault
+* :github:`110303` - Bluetooth: Mesh: PrivateBeaconKey PSA key leak after subnet deletion
+* :github:`110643` - drivers: stepper: adi_tmc: tmc51xx configure_ramp appears to use child device for clock lookup
+* :github:`110645` - net: sockets: recvmsg() ancillary-data capacity check undercounts cmsg size
+* :github:`110651` - usb: device_next: cdc_ncm: TX thread deadlocks when usbd_ep_enqueue() fails
+* :github:`110654` - drivers: can: nxp: flexcan: bus errors when transmitting leads to log flooding
+* :github:`110749` - drivers: uart: sercom g1: async RX of a 1-byte buffer writes one byte past the buffer
+* :github:`110757` - xtensa: ptables: deinitialized memory domain is left on the global domain list
+* :github:`110762` - bluetooth: classic: hfp_hf: cind_handle_values() writes past ind_table on a long +CIND list
+* :github:`110766` - drivers: serial: pl011: TX enable spins forever when CTS flow control blocks transmission
+* :github:`110771` - net: sockets: getaddrinfo() retry after a DNS timeout leaves the previous query in flight and touches stale stack state
+* :github:`110775` - Bluetooth: BAP: unicast client dereferences NULL stream->qos when a QoS Configured notification arrives before the stream is added to a group
+* :github:`110849` - bluetooth: classic: sdp: bt_sdp_parse_attribute() reads one byte past the buffer end
+* :github:`110854` - bluetooth: classic: rfcomm: session stuck and L2CAP channel leaked when both sides disconnect simultaneously
+* :github:`110857` - net: sntp: close-while-polling use-after-free in ``sntp_close_async``
+* :github:`110866` - net: dns: ``.local`` suffix check reads past the end of the hostname string
+* :github:`110915` - pb-adv bearer resets the protocol timer unconditionally
+* :github:`110954` - drivers: disk: ftl: dhara callbacks write through NULL error pointer on flash error
+* :github:`110956` - Bluetooth: ISO: bt_iso_recv() pulls the SDU header without checking buf->len
+* :github:`110967` - Bluetooth: BAP: Broadcast Assistant shares one att_buf across all connections
+* :github:`111016` - kernel: userspace: dynamic kernel-object list freed under a different lock than it is traversed
+* :github:`111020` - usb: host: ctx->root left dangling after root device disconnect
+* :github:`111031` - tests/drivers/can/api/drivers.can.api fails on mutex
+* :github:`111032` - tests/net/lib/tls_credentials/net.tls_credentials.trusted_tfm fails on mutex
+* :github:`111056` - Wireguard replay issue
+* :github:`111082` - net: wireguard: incoming data packet can overflow the linearization buffer
+* :github:`111087` - kernel: k_thread_name_copy() syscall dereferences NULL for an unregistered thread pointer
+* :github:`111100` - kernel: pipe: a user thread can re-initialize a pipe that is already in use
+* :github:`111110` - kernel: poll: z_vrfy_k_poll() leaks events_copy when a k_poll_event carries an invalid object handle
+* :github:`111116` - pmci: mctp: I2C+GPIO target writes received bytes through an unchecked/unallocated packet buffer
+* :github:`111119` - drivers: spi: dw: spi_dw_configure() uses config->frequency as a divisor without validating it
+* :github:`111238` - net: http: server: spurious zsock_poll() return of 0 leaks sockets and corrupts the kernel timeout list
+* :github:`111277` - Neighbor solicitation header hop limit issue when CONFIG_NET_IPV6_ROUTE_MCAST is enabled
+* :github:`111345` - net: http_server: static filesystem handler serves files outside the web root for paths containing ".."
+* :github:`111407` - kernel: userspace: thread_idx_alloc() races on SMP and can hand out duplicate thread indices
+* :github:`111411` - ESP32-S3 + Octal PSRAM: runtime flash erase/write fails with   ESP_ERR_NOT_FOUND (261) — esp_flash driver chip initialized before PSRAM re-tunes MSPI
+* :github:`111412` - drivers: i2c: i2c_dw: target stays stuck in CMD_SEND, write_requested() stops firing
+* :github:`111416` - logging: z_vrfy_log_filter_set() accepts a negative src_id and indexes outside log_dynamic
+* :github:`111420` - debug: coredump/shell: out-of-bounds read printing a stored coredump's target
+* :github:`111427` - bluetooth: host: gatt_write_ccc_rsp() uses subscription params after releasing them
+* :github:`111431` - net: ip: forwarded packets keep their original TTL / hop-limit (no decrement on the routing path)
+* :github:`111447` - tests: arch: arm: Exclude custom IRQ controllers from IRQ test
+* :github:`111481` - drivers: display: display_ili9xxx.c: x/y resolution changes breaks sample
+* :github:`111534` - Bluetooth: GATT: notify/indicate checks the declaration's permissions, not the value's, when passed a characteristic declaration
+* :github:`111545` - hal_espressif Kconfig can cause build to crashes if ZEPHYR_HAL_ESPRESSIF_MODULE_DIR is undefined
+* :github:`111564` - bluetooth: host: classic: l2cap_br: Fix conf req/rsp length validation
+* :github:`111888` - drivers: pwm: mcux_sctimer: counter stranded when device resumes before first channel config
+* :github:`111929` - net: bridge: Memory leak on broadcast, multicast or matching MAC in eth_bridge_input_process.
+* :github:`111935` - flash: z_vrfy_flash_copy is missing proper set of K_SYSCALL_DRIVER_FLASH invocations
+* :github:`111936` - fs: ext2: Avoid using 0 value inode and block per group in calculations
+* :github:`112027` - Bluetooth: esp32c3: bonding with pairing keys on Zephyr 4.4.1 hangs
+* :github:`112204` - net: sockets: recvmsg() ancillary write checks total buffer, not room at the chosen slot
+* :github:`112211` - Bluetooth: BAP: UC: NULL stream->group dereference on QoS Configured notification
+* :github:`112235` - az3166_iotdevkit: Button B never gets released
+* :github:`112315` - fs: ext2: Lack of validation of s_block_count, read from superblock, permitted block bitmap to be larger than ext2 block size
+* :github:`112325` - Out-of-bounds read in PTP receive path: unchecked 4-bit message type indexes
+* :github:`112421` - net: dhcp: name-lookup bounds checks use sizeof() instead of ARRAY_SIZE()
+* :github:`112424` - net: ocpp: RPC-frame field parsing reads past fixed buffers on long/unterminated input
+* :github:`112427` - mgmt: hawkbit: 1-byte heap overrun when NUL-terminating the response buffer
+* :github:`112430` - Bluetooth: Host: bt_att_sent dereferences a freed channel after disconnect mid-transfer
+* :github:`112432` - drivers: flash: sf32lb_mpi_qspi_nor: read/write offset check wraps on a negative offset
+* :github:`112435` - kernel: k_queue_peek_head()/k_queue_peek_tail() dereference a node without holding the queue lock
+* :github:`112441` - mgmt: updatehub: socket leak, NULL deref, and concurrency bugs in the OTA client
+* :github:`112555` - drivers: bluetooth: hci_bflb / hci_bee: send() consumes the buffer on error paths
+* :github:`112559` - usb: device_next: dfu: handle_download() dereferences buf without a NULL check
+* :github:`112609` - drivers: usb: udc: MAX32 USB driver problem about nodata setup messages
+* :github:`112613` - usb: device_next: CDC NCM to-host control handler ignores wLength when building responses
+* :github:`112616` - net: sockets: userspace sendmsg/recvmsg verifiers re-read live user msghdr after copying it
+* :github:`112621` - llext: ELF loader indexes arrays and sizes a stack VLA from unvalidated module header fields
+* :github:`112782` - mgmt/settings: heap buffers leaked on access-hook and OOM paths in settings read/write/delete
+* :github:`112838` - Bluetooth: Host: GATT: parse_read_std_char_desc() loops forever when a Read By Type Response has len 0
+* :github:`112852` - logging: z_vrfy_z_log_msg_static_create() does not validate its arguments
+* :github:`112931` - serial: pl011: error interrupts are never acknowledged and stay latched
+* :github:`113039` - drivers: modem: hl7800 and wncm14a2a AT-response handlers write past fixed stack buffers
+* :github:`113043` - net: 6lo: get_ihpc_inlined_size() reads past da_inline_size_table for reserved destination modes
+* :github:`113048` - net: ipv6: handle_ra_6co() underflows memset length for context_len > 128
+* :github:`113159` - LVGL Dynamic allocation doesn't work
+* :github:`113265` - Bluetooth: Host: AoD 2US CTE type not validated in valid_conn_cte_tx_params()
+* :github:`113266` - kernel: thread: thread_obj_validate() fails to oops a denied k_thread_join/k_thread_abort
+* :github:`113299` - net: route: net_route_packet_if() forwards packets without decrementing the hop limit
+* :github:`113303` - wifi: airoc: TX net_buf is leaked when whd_network_send_ethernet_data() fails
+* :github:`113307` - mbox: userspace: z_vrfy_mbox_send validates msg->data then forwards the mutable userspace pointer
+* :github:`113324` - fs: ext2: mount does not validate superblock s_log_block_size
+* :github:`113328` - net: ocpp: server-message parsers mishandle malformed and oversized fields
+* :github:`113339` - midi2: UMP Stream notification replies transmit uninitialised stack bytes
+* :github:`113343` - drivers: virtio: device-supplied ring id and PCI cap_len used without bounds checking
+* :github:`113346` - bluetooth: audio: has: notification work runs with NULL attributes when a bonded peer reconnects before bt_has_register()
+* :github:`113352` - net: ptp: MGMT_TIME management TLV is parsed without a length check
+* :github:`113354` - lorawan: services parse downlink commands without checking remaining payload length
+* :github:`113435` - i3c: ibi: data race on the IBI work node free-list between ISR and workqueue thread
+* :github:`113443` - net: lwm2m: JSON get_string() writes the NUL terminator one byte past the buffer
+* :github:`113464` - Secure Storage nonce generation is not thread-safe
+* :github:`113521` - drivers: wifi: siwx91x: TX path unrefs a caller-owned net_pkt
+* :github:`113568` - driver: esp32_spi: esp p4 derrives wrong SPI clock
+* :github:`113653` - net: ipv6: NS packet is leaked when the neighbor already has a pending packet
+* :github:`113684` - net: ipv6: Zero reachable time from Router Advertisement assertion
+* :github:`113695` - drivers: i2c: it51xxx: target FIFO ISR writes past target_in_buffer on an oversized write transaction
+* :github:`113698` - bluetooth: classic: l2cap: BR/EDR receive path processes data on channels that are not yet established
+* :github:`113702` - drivers: modem: hl78xx: GNSS NMEA match data is not the first member of hl78xx_gnss_data
+* :github:`113712` - net: mqtt_sn: NULL dereference in process_ping() when a gateway stops responding
+* :github:`113729` - sd: sdio: byte-I/O loop spins forever when a card reports max_blk_size == 0
+* :github:`113735` - net: sockets: tls: concurrent client sockets race on the shared session cache
+* :github:`113755` - net: ocpp: atoi() is called on an unchecked strtok_r() result when a CALLRESULT uid has no second token
+* :github:`113845` - drivers: udc: it82xx2: OUT-transfer buffer reuse and suspend-work re-init corrupt kernel state
+* :github:`114085` - drivers: display: ls0xx: releases SPI bus too soon
+* :github:`114233` - net: bridge: RX net_pkt is leaked when a bridged frame is kept for local processing
+* :github:`114320` - rtio: syscall verifiers dereference unvalidated user pointers in sqe_cancel() and sqe_copy_in_get_handles()
+* :github:`114337` - net: gptp: receive path dereferences and iterates past the received packet data
+* :github:`114495` - drivers: can: stm32: bxcan: maximum filter ID should not take split-filter banks into consideration
+* :github:`114502` - usb: host: configuration descriptor is freed twice when enumeration fails
+* :github:`114506` - drivers: tgpio: tgpio_pin_read_ts_ec handler does not validate its output pointers
+* :github:`114522` - smbus: remove_cb syscalls forward an unvalidated user pointer into the driver
+* :github:`114526` - drivers: wifi: esp_hosted: RX path parses an unvalidated TLV length and can permanently stop the event thread
+
 .. _zephyr_4.4.1:
 
 Zephyr 4.4.1
