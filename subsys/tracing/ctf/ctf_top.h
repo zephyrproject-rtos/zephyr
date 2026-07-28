@@ -438,6 +438,18 @@ typedef enum {
 	CTF_EVENT_HEAP_FREE = 0x14E,
 	CTF_EVENT_HEAP_REALLOC_ENTER = 0x14F,
 	CTF_EVENT_HEAP_REALLOC_EXIT = 0x150,
+
+	/* System heap */
+	CTF_EVENT_HEAP_SYS_K_ALIGNED_ALLOC_ENTER = 0x151,
+	CTF_EVENT_HEAP_SYS_K_ALIGNED_ALLOC_EXIT = 0x152,
+	CTF_EVENT_HEAP_SYS_K_MALLOC_ENTER = 0x153,
+	CTF_EVENT_HEAP_SYS_K_MALLOC_EXIT = 0x154,
+	CTF_EVENT_HEAP_SYS_K_CALLOC_ENTER = 0x155,
+	CTF_EVENT_HEAP_SYS_K_CALLOC_EXIT = 0x156,
+	CTF_EVENT_HEAP_SYS_K_FREE_ENTER = 0x157,
+	CTF_EVENT_HEAP_SYS_K_FREE_EXIT = 0x158,
+	CTF_EVENT_HEAP_SYS_K_REALLOC_ENTER = 0x159,
+	CTF_EVENT_HEAP_SYS_K_REALLOC_EXIT = 0x15A,
 } ctf_event_t;
 
 typedef struct {
@@ -2147,5 +2159,57 @@ static inline void ctf_top_heap_realloc_exit(uint32_t heap_id, uint32_t ptr, uin
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_REALLOC_EXIT), heap_id, ptr, bytes, timeout,
 		  ret);
+}
+
+/* System heap */
+
+static inline void ctf_top_heap_sys_k_aligned_alloc_enter(uint32_t heap_sys_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_SYS_K_ALIGNED_ALLOC_ENTER), heap_sys_id);
+}
+
+static inline void ctf_top_heap_sys_k_aligned_alloc_exit(uint32_t heap_sys_id, uint32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_SYS_K_ALIGNED_ALLOC_EXIT), heap_sys_id, ret);
+}
+
+static inline void ctf_top_heap_sys_k_malloc_enter(uint32_t heap_sys_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_SYS_K_MALLOC_ENTER), heap_sys_id);
+}
+
+static inline void ctf_top_heap_sys_k_malloc_exit(uint32_t heap_sys_id, uint32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_SYS_K_MALLOC_EXIT), heap_sys_id, ret);
+}
+
+static inline void ctf_top_heap_sys_k_calloc_enter(uint32_t heap_sys_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_SYS_K_CALLOC_ENTER), heap_sys_id);
+}
+
+static inline void ctf_top_heap_sys_k_calloc_exit(uint32_t heap_sys_id, uint32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_SYS_K_CALLOC_EXIT), heap_sys_id, ret);
+}
+
+static inline void ctf_top_heap_sys_k_free_enter(uint32_t heap_sys_id, uint32_t heap_ref)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_SYS_K_FREE_ENTER), heap_sys_id, heap_ref);
+}
+
+static inline void ctf_top_heap_sys_k_free_exit(uint32_t heap_sys_id, uint32_t heap_ref)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_SYS_K_FREE_EXIT), heap_sys_id, heap_ref);
+}
+
+static inline void ctf_top_heap_sys_k_realloc_enter(uint32_t heap_sys_id, uint32_t ptr)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_SYS_K_REALLOC_ENTER), heap_sys_id, ptr);
+}
+
+static inline void ctf_top_heap_sys_k_realloc_exit(uint32_t heap_sys_id, uint32_t ptr, uint32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_HEAP_SYS_K_REALLOC_EXIT), heap_sys_id, ptr, ret);
 }
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */

@@ -2915,3 +2915,91 @@ event {
 		uint32_t ret;
 	};
 };
+
+event {
+	name = heap_sys_k_aligned_alloc_enter;
+	id = 0x151;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = heap_sys_k_aligned_alloc_exit;
+	id = 0x152;
+	fields := struct {
+		uint32_t id;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = heap_sys_k_malloc_enter;
+	id = 0x153;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = heap_sys_k_malloc_exit;
+	id = 0x154;
+	fields := struct {
+		uint32_t id;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = heap_sys_k_calloc_enter;
+	id = 0x155;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = heap_sys_k_calloc_exit;
+	id = 0x156;
+	fields := struct {
+		uint32_t id;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = heap_sys_k_free_enter;
+	id = 0x157;
+	fields := struct {
+		uint32_t id;
+		uint32_t heap_ref;
+	};
+};
+
+event {
+	name = heap_sys_k_free_exit;
+	id = 0x158;
+	fields := struct {
+		uint32_t id;
+		uint32_t heap_ref;
+	};
+};
+
+event {
+	name = heap_sys_k_realloc_enter;
+	id = 0x159;
+	fields := struct {
+		uint32_t id;
+		uint32_t ptr;
+	};
+};
+
+event {
+	name = heap_sys_k_realloc_exit;
+	id = 0x15A;
+	fields := struct {
+		uint32_t id;
+		uint32_t ptr;
+		uint32_t ret;
+	};
+};
