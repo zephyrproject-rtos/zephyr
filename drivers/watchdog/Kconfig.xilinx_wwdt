@@ -1,12 +1,12 @@
-# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# Copyright (c) 2025-2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config XILINX_WINDOW_WATCHDOG
-	bool "Xilinx window watchdog driver"
+config XILINX_VERSAL_WATCHDOG
+	bool "Xilinx Versal watchdog driver"
 	default y
 	depends on DT_HAS_XLNX_VERSAL_WWDT_ENABLED
 	help
-	  Enable Window watchdog driver for the versal_wwdt IP core.
+	  Enable Versal watchdog driver for the versal_wwdt IP core.
 	  Window watchdog timer(WWDT) contains closed(first) and
 	  open(second) window with 32 bit width. Write to the watchdog
 	  timer within predefined window periods of time. This means
@@ -14,3 +14,27 @@ config XILINX_WINDOW_WATCHDOG
 	  late. The WWDT has to be restarted within the open window time.
 	  If software tries to restart WWDT outside of the open window
 	  time period, it generates a SOC reset.
+	  The same IP also provides a generic watchdog (GWDT); select the
+	  active engine via the mode choice below.
+
+if XILINX_VERSAL_WATCHDOG
+
+choice
+	prompt "Watchdog mode"
+	default XILINX_VERSAL_WDT_WINDOW_MODE
+	help
+	  Select which watchdog engine of the IP the driver operates.
+
+config XILINX_VERSAL_WDT_WINDOW_MODE
+	bool "Window watchdog mode"
+	help
+	  Enable the window watchdog.
+
+config XILINX_VERSAL_WDT_GENERIC_MODE
+	bool "Generic watchdog (GWDT) mode"
+	help
+	  Enable the generic watchdog.
+
+endchoice
+
+endif # XILINX_VERSAL_WATCHDOG

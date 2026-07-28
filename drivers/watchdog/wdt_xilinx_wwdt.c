@@ -16,6 +16,13 @@
 
 LOG_MODULE_REGISTER(xilinx_wwdt, CONFIG_WDT_LOG_LEVEL);
 
+/* interrupt-names entry used by the active mode: "wdt" (window), "gwdt" (generic). */
+#if defined(CONFIG_XILINX_VERSAL_WDT_WINDOW_MODE)
+#define XWWDT_IRQ_NAME wdt
+#elif defined(CONFIG_XILINX_VERSAL_WDT_GENERIC_MODE)
+#define XWWDT_IRQ_NAME gwdt
+#endif
+
 /* Register offsets for the WWDT device */
 #define XWWDT_MWR_OFFSET	0x00
 #define XWWDT_ESR_OFFSET	0x04
@@ -47,6 +54,19 @@ LOG_MODULE_REGISTER(xilinx_wwdt, CONFIG_WDT_LOG_LEVEL);
 /* Maximum count value of closed and open window combined */
 #define XWWDT_MAX_COUNT_WINDOW_COMBINED	GENMASK64(32, 1)
 
+/* Generic Watchdog (GWDT) register offsets (absolute from MMIO base) */
+#define XGWDT_GWRR_OFFSET  0x1000 /* Refresh register */
+#define XGWDT_GWCSR_OFFSET 0x2000 /* Control and status register */
+#define XGWDT_GWOR_OFFSET  0x2008 /* Offset (first-window period) register */
+#define XGWDT_GW_WR_OFFSET 0x2fd0 /* Warm reset register */
+
+/* Generic Watchdog Control and Status Register masks */
+#define XGWDT_GWCSR_GWEN_MASK BIT(0) /* Generic watchdog enable */
+#define XGWDT_GWCSR_GWS1_MASK BIT(1) /* Stage-1 (interrupt) status */
+
+#define XGWDT_GWRR_MASK  BIT(0) /* Generic watchdog refresh */
+#define XGWDT_GW_WR_MASK BIT(0) /* Generic watchdog warm reset enable */
+
 struct xilinx_wwdt_config {
 	DEVICE_MMIO_ROM;
 	uint32_t wdt_clock_freq;
@@ -66,8 +86,6 @@ static int wdt_xilinx_wwdt_setup(const struct device *dev, uint8_t options)
 {
 	const struct xilinx_wwdt_config *config = dev->config;
 	struct xilinx_wwdt_data *data = dev->data;
-	mm_reg_t reg = DEVICE_MMIO_GET(dev);
-	uint32_t reg_value;
 	int ret = 0;
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
@@ -87,11 +105,23 @@ static int wdt_xilinx_wwdt_setup(const struct device *dev, uint8_t options)
 	 * or when halted by debugger. Hence there is no check for the options.
 	 */
 
-	/* Read enable status register and update WEN bit */
-	reg_value = sys_read32(reg + XWWDT_ESR_OFFSET) | XWWDT_ESR_WEN_MASK;
+	if (IS_ENABLED(CONFIG_XILINX_VERSAL_WDT_WINDOW_MODE)) {
+		mm_reg_t reg = DEVICE_MMIO_GET(dev);
+		uint32_t reg_value;
 
-	/* Write enable status register with updated WEN value */
-	sys_write32(reg_value, reg + XWWDT_ESR_OFFSET);
+		/* Read enable status register and update WEN bit */
+		reg_value = sys_read32(reg + XWWDT_ESR_OFFSET) | XWWDT_ESR_WEN_MASK;
+
+		/* Write enable status register with updated WEN value */
+		sys_write32(reg_value, reg + XWWDT_ESR_OFFSET);
+	} else if (IS_ENABLED(CONFIG_XILINX_VERSAL_WDT_GENERIC_MODE)) {
+		mm_reg_t reg = DEVICE_MMIO_GET(dev);
+
+		/* Set the GWEN bit to enable the generic watchdog. */
+		sys_write32(XGWDT_GWCSR_GWEN_MASK, reg + XGWDT_GWCSR_OFFSET);
+	} else {
+		/* Exactly one engine is selected at build time via the Kconfig choice. */
+	}
 	data->wdt_started = true;
 
 	/*
@@ -107,11 +137,10 @@ out:
 	return ret;
 }
 
-static int wdt_xilinx_wwdt_install_timeout(const struct device *dev,
-					   const struct wdt_timeout_cfg *cfg)
+static int wdt_xilinx_wwdt_install_window(const struct device *dev,
+					  const struct wdt_timeout_cfg *cfg)
 {
 	const struct xilinx_wwdt_config *config = dev->config;
-	struct xilinx_wwdt_data *data = dev->data;
 	mm_reg_t reg = DEVICE_MMIO_GET(dev);
 	uint64_t closed_window_ms_count;
 	uint64_t open_window_ms_count;
@@ -119,58 +148,27 @@ static int wdt_xilinx_wwdt_install_timeout(const struct device *dev,
 	uint64_t timeout_ms_count;
 	uint32_t timeout_ms;
 	uint64_t ms_count;
-	int ret = 0;
 
-	k_spinlock_key_t key = k_spin_lock(&data->lock);
-
-	if (data->wdt_started) {
-		ret = -EBUSY;
-		goto out;
-	}
-
-	/* Reset action is owned by platform firmware (PLM/CDO); cfg->flags is only a hint. */
-	if (cfg->flags != WDT_FLAG_RESET_NONE) {
-		LOG_WRN("WDT_FLAG_RESET_* not honored; "
-			"reset action is owned by firmware (PLM/CDO)");
-	}
-
-	/* A callback requires the WINT interrupt to be wired in DT. */
-	if (cfg->callback != NULL && config->irq_config == NULL) {
-		ret = -ENOTSUP;
-		goto out;
-	}
-
+	ms_count = config->wdt_clock_freq / 1000;
 	timeout_ms = cfg->window.max;
-
-	if (timeout_ms == 0) {
-		ret = -EINVAL;
-		goto out;
-	}
-
+	timeout_ms_count = timeout_ms * ms_count;
 	max_hw_timeout_ms = (XWWDT_MAX_COUNT_WINDOW_COMBINED * 1000) / config->wdt_clock_freq;
 
 	/* Timeout greater than the maximum hardware timeout is invalid. */
 	if (timeout_ms > max_hw_timeout_ms) {
-		ret = -EINVAL;
-		goto out;
+		return -EINVAL;
 	}
-
-	/* Calculate ticks for 1 milli-second */
-	ms_count = (config->wdt_clock_freq) / 1000;
-	timeout_ms_count = timeout_ms * ms_count;
 
 	closed_window_ms_count = cfg->window.min * ms_count;
 	if (closed_window_ms_count > XWWDT_MAX_COUNT_WINDOW) {
 		LOG_ERR("The closed window timeout is invalid.");
-		ret = -EINVAL;
-		goto out;
+		return -EINVAL;
 	}
 
 	open_window_ms_count = timeout_ms_count - closed_window_ms_count;
 	if (open_window_ms_count > XWWDT_MAX_COUNT_WINDOW) {
 		LOG_ERR("The open window timeout is invalid.");
-		ret = -EINVAL;
-		goto out;
+		return -EINVAL;
 	}
 
 	sys_write32(XWWDT_MWR_MASK, reg + XWWDT_MWR_OFFSET);
@@ -192,6 +190,84 @@ static int wdt_xilinx_wwdt_install_timeout(const struct device *dev,
 				FIELD_PREP(XWWDT_FCR_SBC_MASK, (open_window_ms_count >> 24) & 0xFF),
 			reg + XWWDT_FCR_OFFSET);
 	}
+
+	return 0;
+}
+
+static int wdt_xilinx_wwdt_install_generic(const struct device *dev,
+					   const struct wdt_timeout_cfg *cfg)
+{
+	const struct xilinx_wwdt_config *config = dev->config;
+	mm_reg_t reg = DEVICE_MMIO_GET(dev);
+	uint64_t max_hw_timeout_ms;
+	uint64_t timeout_ms_count;
+	uint32_t timeout_ms;
+	uint64_t ms_count;
+
+	ms_count = config->wdt_clock_freq / 1000;
+	timeout_ms = cfg->window.max;
+	timeout_ms_count = timeout_ms * ms_count;
+	max_hw_timeout_ms = ((uint64_t)XWWDT_MAX_COUNT_WINDOW * 1000) / config->wdt_clock_freq;
+
+	/* The generic watchdog has a single window; a closed window is invalid. */
+	if (cfg->window.min != 0) {
+		return -EINVAL;
+	}
+
+	if (timeout_ms > max_hw_timeout_ms) {
+		return -EINVAL;
+	}
+
+	/* Program the first-window period (registers warm-reset at init). */
+	sys_write32((uint32_t)timeout_ms_count, reg + XGWDT_GWOR_OFFSET);
+
+	return 0;
+}
+
+static int wdt_xilinx_wwdt_install_timeout(const struct device *dev,
+					   const struct wdt_timeout_cfg *cfg)
+{
+	const struct xilinx_wwdt_config *config = dev->config;
+	struct xilinx_wwdt_data *data = dev->data;
+	int ret = 0;
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	if (data->wdt_started) {
+		ret = -EBUSY;
+		goto out;
+	}
+
+	/* Reset action is owned by platform firmware (PLM/CDO); cfg->flags is only a hint. */
+	if (cfg->flags != WDT_FLAG_RESET_NONE) {
+		LOG_WRN("WDT_FLAG_RESET_* not honored; "
+			"reset action is owned by firmware (PLM/CDO)");
+	}
+
+	/* A callback requires the mode's interrupt to be wired in DT. */
+	if (cfg->callback != NULL && config->irq_config == NULL) {
+		ret = -ENOTSUP;
+		goto out;
+	}
+
+	/* A zero (open) window is invalid for both engines. */
+	if (cfg->window.max == 0) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (IS_ENABLED(CONFIG_XILINX_VERSAL_WDT_WINDOW_MODE)) {
+		ret = wdt_xilinx_wwdt_install_window(dev, cfg);
+	} else if (IS_ENABLED(CONFIG_XILINX_VERSAL_WDT_GENERIC_MODE)) {
+		ret = wdt_xilinx_wwdt_install_generic(dev, cfg);
+	} else {
+		/* Exactly one engine is selected at build time via the Kconfig choice. */
+	}
+
+	if (ret != 0) {
+		goto out;
+	}
+
 	data->callback = cfg->callback;
 	data->timeout_active = true;
 out:
@@ -202,9 +278,6 @@ out:
 static int wdt_xilinx_wwdt_feed(const struct device *dev, int channel_id)
 {
 	struct xilinx_wwdt_data *data = dev->data;
-	mm_reg_t reg = DEVICE_MMIO_GET(dev);
-	uint32_t control_status_reg;
-	uint32_t is_sec_window;
 	int ret = 0;
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
@@ -214,23 +287,49 @@ static int wdt_xilinx_wwdt_feed(const struct device *dev, int channel_id)
 		goto out;
 	}
 
-	/* Enable write access control bit for the WWDT. */
-	sys_write32(XWWDT_MWR_MASK, reg + XWWDT_MWR_OFFSET);
+	if (IS_ENABLED(CONFIG_XILINX_VERSAL_WDT_WINDOW_MODE)) {
+		mm_reg_t reg = DEVICE_MMIO_GET(dev);
+		uint32_t control_status_reg;
+		uint32_t is_sec_window;
 
-	/* Trigger restart kick to WWDT. */
-	control_status_reg = sys_read32(reg + XWWDT_ESR_OFFSET);
+		/* Enable write access control bit for the WWDT. */
+		sys_write32(XWWDT_MWR_MASK, reg + XWWDT_MWR_OFFSET);
 
-	/* Check if WWDT is in Second window. */
-	is_sec_window = (control_status_reg & (uint32_t)XWWDT_ESR_WSW_MASK) >> XWWDT_ESR_WSW_SHIFT;
+		/* Trigger restart kick to WWDT. */
+		control_status_reg = sys_read32(reg + XWWDT_ESR_OFFSET);
 
-	if (is_sec_window != 1) {
-		LOG_ERR("Feed in Closed window is not supported.");
-		ret = -ENOTSUP;
-		goto out;
+		/* Check if WWDT is in Second window. */
+		is_sec_window =
+			(control_status_reg & (uint32_t)XWWDT_ESR_WSW_MASK) >> XWWDT_ESR_WSW_SHIFT;
+
+		if (is_sec_window != 1) {
+			LOG_ERR("Feed in Closed window is not supported.");
+			ret = -ENOTSUP;
+			goto out;
+		}
+
+		control_status_reg |= (uint32_t)XWWDT_ESR_WSW_MASK;
+		sys_write32(control_status_reg, reg + XWWDT_ESR_OFFSET);
+	} else if (IS_ENABLED(CONFIG_XILINX_VERSAL_WDT_GENERIC_MODE)) {
+		const struct xilinx_wwdt_config *config = dev->config;
+		mm_reg_t reg = DEVICE_MMIO_GET(dev);
+
+		/* Refresh the generic watchdog to restart the first window. */
+		sys_write32(XGWDT_GWRR_MASK, reg + XGWDT_GWRR_OFFSET);
+
+		/*
+		 * The refresh clears GWS1, so re-arm the warning interrupt that the
+		 * ISR masked to acknowledge the previous stage-1 event. The source
+		 * is now deasserted, so unmasking the (level) line is race-free.
+		 * This is a no-op on a normal feed where the interrupt is already
+		 * enabled.
+		 */
+		if (data->callback != NULL) {
+			irq_enable(config->irq);
+		}
+	} else {
+		/* Exactly one engine is selected at build time via the Kconfig choice. */
 	}
-
-	control_status_reg |= (uint32_t)XWWDT_ESR_WSW_MASK;
-	sys_write32(control_status_reg, reg + XWWDT_ESR_OFFSET);
 out:
 	k_spin_unlock(&data->lock, key);
 	return ret;
@@ -240,36 +339,56 @@ static int wdt_xilinx_wwdt_disable(const struct device *dev)
 {
 	const struct xilinx_wwdt_config *config = dev->config;
 	struct xilinx_wwdt_data *data = dev->data;
-	mm_reg_t reg = DEVICE_MMIO_GET(dev);
-	uint32_t is_wwdt_enable;
-	uint32_t is_sec_window;
 	uint32_t reg_value;
 	int ret = 0;
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	is_wwdt_enable = sys_read32(reg + XWWDT_ESR_OFFSET) & XWWDT_ESR_WEN_MASK;
+	if (IS_ENABLED(CONFIG_XILINX_VERSAL_WDT_WINDOW_MODE)) {
+		mm_reg_t reg = DEVICE_MMIO_GET(dev);
+		uint32_t is_wwdt_enable;
+		uint32_t is_sec_window;
 
-	if (is_wwdt_enable == 0) {
-		ret = -EFAULT;
-		goto out;
+		is_wwdt_enable = sys_read32(reg + XWWDT_ESR_OFFSET) & XWWDT_ESR_WEN_MASK;
+
+		if (is_wwdt_enable == 0) {
+			ret = -EFAULT;
+			goto out;
+		}
+
+		/* Read enable status register and check if WWDT is in open window. */
+		is_sec_window = (sys_read32(reg + XWWDT_ESR_OFFSET) & XWWDT_ESR_WSW_MASK) >>
+				XWWDT_ESR_WSW_SHIFT;
+
+		if (is_sec_window != 1) {
+			LOG_ERR("Disabling WWDT in closed window is not allowed.");
+			ret = -EPERM;
+			goto out;
+		}
+
+		/* Read enable status register and update WEN bit. */
+		reg_value = sys_read32(reg + XWWDT_ESR_OFFSET) & (~XWWDT_ESR_WEN_MASK);
+
+		/* Write enable status register with updated WEN and WSW value. */
+		sys_write32(reg_value, reg + XWWDT_ESR_OFFSET);
+	} else if (IS_ENABLED(CONFIG_XILINX_VERSAL_WDT_GENERIC_MODE)) {
+		mm_reg_t reg = DEVICE_MMIO_GET(dev);
+
+		reg_value = sys_read32(reg + XGWDT_GWCSR_OFFSET);
+
+		if ((reg_value & XGWDT_GWCSR_GWEN_MASK) == 0) {
+			ret = -EFAULT;
+			goto out;
+		}
+
+		/* Clear the GWEN bit. */
+		reg_value &= ~XGWDT_GWCSR_GWEN_MASK;
+
+		/* Write control status register to disable the generic watchdog. */
+		sys_write32(reg_value, reg + XGWDT_GWCSR_OFFSET);
+	} else {
+		/* Exactly one engine is selected at build time via the Kconfig choice. */
 	}
-
-	/* Read enable status register and check if WWDT is in open window. */
-	is_sec_window =
-		(sys_read32(reg + XWWDT_ESR_OFFSET) & XWWDT_ESR_WSW_MASK) >> XWWDT_ESR_WSW_SHIFT;
-
-	if (is_sec_window != 1) {
-		LOG_ERR("Disabling WWDT in closed window is not allowed.");
-		ret = -EPERM;
-		goto out;
-	}
-
-	/* Read enable status register and update WEN bit. */
-	reg_value = sys_read32(reg + XWWDT_ESR_OFFSET) & (~XWWDT_ESR_WEN_MASK);
-
-	/* Write enable status register with updated WEN and WSW value. */
-	sys_write32(reg_value, reg + XWWDT_ESR_OFFSET);
 
 	data->wdt_started = false;
 
@@ -285,28 +404,56 @@ out:
 __maybe_unused static void wdt_xilinx_wwdt_isr(const struct device *dev)
 {
 	struct xilinx_wwdt_data *data = dev->data;
-	mm_reg_t reg = DEVICE_MMIO_GET(dev);
 	wdt_callback_t callback;
 	uint32_t reg_value;
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	reg_value = sys_read32(reg + XWWDT_ESR_OFFSET);
-	if ((reg_value & XWWDT_ESR_WINT_MASK) == 0U) {
-		k_spin_unlock(&data->lock, key);
-		return;
+	if (IS_ENABLED(CONFIG_XILINX_VERSAL_WDT_WINDOW_MODE)) {
+		mm_reg_t reg = DEVICE_MMIO_GET(dev);
+
+		reg_value = sys_read32(reg + XWWDT_ESR_OFFSET);
+		if ((reg_value & XWWDT_ESR_WINT_MASK) == 0U) {
+			k_spin_unlock(&data->lock, key);
+			return;
+		}
+
+		/*
+		 * Clear the interrupt (WINT is write-1-to-clear) with WSW masked
+		 * out of the written value so the clear does not issue a restart
+		 * kick.
+		 */
+		reg_value |= XWWDT_ESR_WINT_MASK;
+		reg_value &= ~XWWDT_ESR_WSW_MASK;
+		sys_write32(XWWDT_MWR_MASK, reg + XWWDT_MWR_OFFSET);
+		sys_write32(reg_value, reg + XWWDT_ESR_OFFSET);
+	} else if (IS_ENABLED(CONFIG_XILINX_VERSAL_WDT_GENERIC_MODE)) {
+		const struct xilinx_wwdt_config *config = dev->config;
+		mm_reg_t reg = DEVICE_MMIO_GET(dev);
+
+		reg_value = sys_read32(reg + XGWDT_GWCSR_OFFSET);
+		if ((reg_value & XGWDT_GWCSR_GWS1_MASK) == 0U) {
+			k_spin_unlock(&data->lock, key);
+			return;
+		}
+
+		/*
+		 * The stage-1 status (GWS1) is cleared only by a watchdog refresh,
+		 * which would also restart the timer and prevent the stage-2 reset.
+		 * To acknowledge the interrupt without restarting, mask it at the
+		 * interrupt controller; the callback decides whether to feed (via
+		 * wdt_feed(), which clears GWS1 and re-enables this interrupt) to
+		 * continue, or let the stage-2 reset proceed.
+		 */
+		irq_disable(config->irq);
+	} else {
+		/* Exactly one engine is selected at build time via the Kconfig choice. */
 	}
 
 	/*
-	 * Clear the interrupt (WINT is write-1-to-clear) with WSW masked out
-	 * of the written value so the clear does not issue a restart kick.
 	 * The lock is released before invoking the callback so a wdt_feed()
 	 * from the callback can take it (the spinlock is not recursive).
 	 */
-	reg_value |= XWWDT_ESR_WINT_MASK;
-	reg_value &= ~XWWDT_ESR_WSW_MASK;
-	sys_write32(XWWDT_MWR_MASK, reg + XWWDT_MWR_OFFSET);
-	sys_write32(reg_value, reg + XWWDT_ESR_OFFSET);
 	callback = data->callback;
 	k_spin_unlock(&data->lock, key);
 
@@ -327,6 +474,11 @@ static int wdt_xilinx_wwdt_init(const struct device *dev)
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
+	if (IS_ENABLED(CONFIG_XILINX_VERSAL_WDT_GENERIC_MODE)) {
+		/* Warm-reset the generic watchdog registers to a known state once. */
+		sys_write32(XGWDT_GW_WR_MASK, DEVICE_MMIO_GET(dev) + XGWDT_GW_WR_OFFSET);
+	}
+
 	if (config->irq_config != NULL) {
 		config->irq_config();
 	}
@@ -344,29 +496,33 @@ static DEVICE_API(wdt, wdt_xilinx_wwdt_api) = {
 #define WDT_XILINX_WWDT_IRQ_CONFIG_FUNC(inst)                                                      \
 	static void wdt_xilinx_wwdt_irq_config_##inst(void)                                        \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, wdt, irq),                                   \
-			    DT_INST_IRQ_BY_NAME(inst, wdt, priority), wdt_xilinx_wwdt_isr,         \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, XWWDT_IRQ_NAME, irq),                        \
+			    DT_INST_IRQ_BY_NAME(inst, XWWDT_IRQ_NAME, priority),                   \
+			    wdt_xilinx_wwdt_isr, DEVICE_DT_INST_GET(inst), 0);                     \
 	}
 
 /*
- * The interrupts block is optional, but when present the window interrupt
- * (WINT) must be named "wdt" so the driver can select it from the other
- * interrupt lines the node may expose.
+ * The interrupts block is optional, but when present the active mode's
+ * interrupt must be named so the driver can select it from the other
+ * interrupt lines the node may expose ("wdt" for the window engine's WINT,
+ * "gwdt" for the generic engine's stage-1 interrupt).
  */
 #define WDT_XILINX_WWDT_CHECK_IRQ_NAME(inst)                                                       \
-	BUILD_ASSERT(!DT_INST_IRQ_HAS_IDX(inst, 0) || DT_INST_IRQ_HAS_NAME(inst, wdt),             \
-		     "xlnx,versal-wwdt: 'interrupts' requires interrupt-names = \"wdt\"");
+	BUILD_ASSERT(                                                                              \
+		!DT_INST_IRQ_HAS_IDX(inst, 0) || DT_INST_IRQ_HAS_NAME(inst, XWWDT_IRQ_NAME),       \
+		"versal-wwdt: interrupt-names must include \"" STRINGIFY(XWWDT_IRQ_NAME) "\"");
 
 #define WDT_XILINX_WWDT_IRQ_CFG_GET(inst)                                                          \
-	COND_CODE_1(DT_INST_IRQ_HAS_NAME(inst, wdt),						\
+	COND_CODE_1(DT_INST_IRQ_HAS_NAME(inst, XWWDT_IRQ_NAME),					\
 		    (wdt_xilinx_wwdt_irq_config_##inst), (NULL))
 
 #define WDT_XILINX_WWDT_IRQ_GET(inst)                                                              \
-	COND_CODE_1(DT_INST_IRQ_HAS_NAME(inst, wdt), (DT_INST_IRQ_BY_NAME(inst, wdt, irq)), (0))
+	COND_CODE_1(DT_INST_IRQ_HAS_NAME(inst, XWWDT_IRQ_NAME),					\
+		    (DT_INST_IRQ_BY_NAME(inst, XWWDT_IRQ_NAME, irq)), (0))
 
 #define WDT_XILINX_WWDT_IRQ_CONFIG_DEFINE(inst)                                                    \
-	COND_CODE_1(DT_INST_IRQ_HAS_NAME(inst, wdt), (WDT_XILINX_WWDT_IRQ_CONFIG_FUNC(inst)), ())
+	COND_CODE_1(DT_INST_IRQ_HAS_NAME(inst, XWWDT_IRQ_NAME),					\
+		    (WDT_XILINX_WWDT_IRQ_CONFIG_FUNC(inst)), ())
 
 #define WDT_XILINX_WWDT_INIT(inst)                                                                 \
 	WDT_XILINX_WWDT_CHECK_IRQ_NAME(inst)                                                       \
