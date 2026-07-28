@@ -98,7 +98,7 @@ static int otp_bsec_stm32_program(const struct device *dev, off_t offset, const 
 	for (i = 0; i < nb_fuse; i++) {
 		uint32_t prog_data = 0;
 
-		LOG_DBG("Programming Fuse %lu", (offset / BSEC_WORD_SIZE) + i);
+		LOG_DBG("Programming Fuse %lu", ((unsigned long)offset / BSEC_WORD_SIZE) + i);
 
 		prog_data = UNALIGNED_GET((uint32_t *)((uint8_t *)buf + i * BSEC_WORD_SIZE));
 
@@ -142,7 +142,7 @@ static int otp_bsec_stm32_read(const struct device *dev, off_t offset, void *buf
 		size_t read_sz = MIN(BSEC_WORD_SIZE - first_offset, bytes_left);
 		uint32_t fuse_data = 0;
 
-		LOG_DBG("Reading Fuse %lu", (offset / BSEC_WORD_SIZE) + i);
+		LOG_DBG("Reading Fuse %lu", ((unsigned long)offset / BSEC_WORD_SIZE) + i);
 
 		hal_ret = HAL_BSEC_OTP_Read(&handle, (offset / BSEC_WORD_SIZE) + i, &fuse_data);
 		if (hal_ret != HAL_OK) {
