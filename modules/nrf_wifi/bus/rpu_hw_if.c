@@ -335,7 +335,10 @@ static int rpu_gpio_config(void)
 	}
 
 	if (IS_ENABLED(CONFIG_NRF70_SUPPLY_GPIO)) {
-		ret = gpio_pin_configure_dt(&supply_spec, GPIO_OUTPUT);
+		/* GPIO_INPUT keeps the input buffer connected so the pin state
+		 * can be read back.
+		 */
+		ret = gpio_pin_configure_dt(&supply_spec, (GPIO_OUTPUT | GPIO_INPUT));
 		if (ret) {
 			LOG_ERR("SUPPLY GPIO configuration failed...");
 			gpio_pin_configure_dt(&supply_spec, GPIO_DISCONNECTED);
@@ -343,14 +346,15 @@ static int rpu_gpio_config(void)
 		}
 	}
 
-	ret = gpio_pin_configure_dt(&bucken_spec, (GPIO_OUTPUT | NRF_GPIO_DRIVE_H0H1));
+	ret = gpio_pin_configure_dt(&bucken_spec,
+				     (GPIO_OUTPUT | GPIO_INPUT | NRF_GPIO_DRIVE_H0H1));
 	if (ret) {
 		LOG_ERR("BUCKEN GPIO configuration failed...");
 		return ret;
 	}
 
 #ifdef NRF70_IOVDD_GPIO
-	ret = gpio_pin_configure_dt(&iovdd_ctrl_spec, GPIO_OUTPUT);
+	ret = gpio_pin_configure_dt(&iovdd_ctrl_spec, (GPIO_OUTPUT | GPIO_INPUT));
 	if (ret) {
 		LOG_ERR("IOVDD GPIO configuration failed...");
 		gpio_pin_configure_dt(&bucken_spec, GPIO_DISCONNECTED);
