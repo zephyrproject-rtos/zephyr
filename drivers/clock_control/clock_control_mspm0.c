@@ -29,6 +29,9 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define MSPM0_CLK_WAIT_TIMEOUT_US 1000
 
+/* Crystal startup is not instant; wait up to 4x its rated startup delay. */
+#define MSPM0_XTAL_WAIT_TIMEOUT_US(startup_us) ((startup_us) * 4)
+
 #define MSPM0_ULPCLK_DIV COND_CODE_1(					\
 		DT_NODE_HAS_PROP(DT_NODELABEL(ulpclk), clk_div),	\
 		(CONCAT(DL_SYSCTL_ULPCLK_DIV_,				\
@@ -62,14 +65,15 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define MSPM0_MFPCLK_ENABLED 1
 #endif
 
-#define DT_HFCLK  DT_NODELABEL(hfclk)
-#define DT_SYSPLL DT_NODELABEL(syspll)
+#define DT_HFCLK    DT_NODELABEL(hfclk)
+#define DT_HFCLK_IN DT_NODELABEL(hfclk_in)
+#define DT_HFXT     DT_NODELABEL(hfxt)
+#define DT_SYSPLL   DT_NODELABEL(syspll)
 
-#define DT_SYSPLL_OKAY DT_NODE_HAS_STATUS_OKAY(DT_SYSPLL)
-
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(hfxt), okay)
-#define MSPM0_HFCLK_ENABLED 1
-#endif
+#define DT_HFCLK_IN_OKAY DT_NODE_HAS_STATUS_OKAY(DT_HFCLK_IN)
+#define DT_HFCLK_OKAY    DT_NODE_HAS_STATUS_OKAY(DT_HFCLK)
+#define DT_HFXT_OKAY     DT_NODE_HAS_STATUS_OKAY(DT_HFXT)
+#define DT_SYSPLL_OKAY   DT_NODE_HAS_STATUS_OKAY(DT_SYSPLL)
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(canclk), okay)
 #define MSPM0_CANCLK_ENABLED 1
@@ -77,9 +81,40 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #define DT_MCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mclk))
 #define DT_LFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(lfclk))
-#define DT_HFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(hfclk))
+#define DT_HFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_HFCLK)
 #define DT_MFPCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mfpclk))
 #define DT_SYSPLL_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_SYSPLL)
+
+/* High Frequency Clock */
+#if DT_HFCLK_OKAY
+
+#define MSPM0_HFCLK_FREQ DT_PROP(DT_HFCLK_CLOCKS_CTRL, clock_frequency)
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_HFCLK_CLOCKS_CTRL), "HFCLK source not enabled");
+
+#if DT_SAME_NODE(DT_HFCLK_CLOCKS_CTRL, DT_HFCLK_IN)
+/* High frequency digital input */
+#elif DT_SAME_NODE(DT_HFCLK_CLOCKS_CTRL, DT_HFXT)
+
+#define MSPM0_HFXT_STARTUP_US DT_PROP_OR(DT_HFXT, ti_xtal_startup_delay_us, 0)
+#define MSPM0_HFXT_FREQ_MHZ   (MSPM0_HFCLK_FREQ / MHZ(1))
+
+#if MSPM0_HFXT_FREQ_MHZ >= 4 && MSPM0_HFXT_FREQ_MHZ <= 8
+#define MSPM0_HFXT_RANGE SYSCTL_HFCLKCLKCFG_HFXTRSEL_4_8_MHZ
+#elif MSPM0_HFXT_FREQ_MHZ > 8 && MSPM0_HFXT_FREQ_MHZ <= 16
+#define MSPM0_HFXT_RANGE SYSCTL_HFCLKCLKCFG_HFXTRSEL_8_16_MHZ
+#elif MSPM0_HFXT_FREQ_MHZ > 16 && MSPM0_HFXT_FREQ_MHZ <= 32
+#define MSPM0_HFXT_RANGE SYSCTL_HFCLKCLKCFG_HFXTRSEL_16_32_MHZ
+#elif MSPM0_HFXT_FREQ_MHZ > 32 && MSPM0_HFXT_FREQ_MHZ <= 48
+#define MSPM0_HFXT_RANGE SYSCTL_HFCLKCLKCFG_HFXTRSEL_32_48_MHZ
+#else
+#error "HFXT frequency out of supported range (4-48 MHz)"
+#endif
+
+#else
+#error "Invalid HFCLK source"
+#endif
+
+#endif /* DT_HFCLK_OKAY */
 
 /* System PLL */
 #if DT_SYSPLL_OKAY
@@ -141,11 +176,6 @@ static struct mspm0_clk_cfg mspm0_mfpclk_cfg = {
 };
 #endif
 
-#if MSPM0_HFCLK_ENABLED
-static struct mspm0_clk_cfg mspm0_hfclk_cfg = {
-	.clk_freq = DT_PROP(DT_NODELABEL(hfclk), clock_frequency),
-};
-#endif
 
 
 /* Only 32/4 MHz supported; 16/24 MHz needs board trim we can't source. */
@@ -272,6 +302,17 @@ static enum clock_control_status clock_mspm0_get_status(const struct device *dev
 		return CLOCK_CONTROL_STATUS_STARTING;
 #endif /* DT_SYSPLL_OKAY */
 
+#if DT_HFCLK_OKAY
+	case MSPM0_CLOCK_HFCLK:
+		if (soclock->clkstatus & SYSCTL_CLKSTATUS_HFCLKOFF) {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+		if (soclock->clkstatus & SYSCTL_CLKSTATUS_HFCLKGOOD) {
+			return CLOCK_CONTROL_STATUS_ON;
+		}
+		return CLOCK_CONTROL_STATUS_STARTING;
+#endif /* DT_HFCLK_OKAY */
+
 	default:
 		return CLOCK_CONTROL_STATUS_UNKNOWN;
 	}
@@ -336,11 +377,23 @@ static int clock_mspm0_get_rate(const struct device *dev,
 		break;
 #endif
 
-#if MSPM0_HFCLK_ENABLED
-	case MSPM0_CLOCK_HFCLK:
-		*rate = mspm0_hfclk_cfg.clk_freq;
-		break;
+#if DT_HFCLK_OKAY
+	case MSPM0_CLOCK_HFCLK: {
+#if DT_HFXT_OKAY && DT_HFCLK_IN_OKAY
+		volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+		volatile struct mspm_sysctl_soclock_regs *soclock = &regs->soclock;
+
+		if (soclock->hsclken & SYSCTL_HSCLKEN_USEEXTHFCLK) {
+			*rate = DT_PROP(DT_HFCLK_IN, clock_frequency);
+		} else {
+			*rate = DT_PROP(DT_HFXT, clock_frequency);
+		}
+#else
+		*rate = MSPM0_HFCLK_FREQ;
 #endif
+		break;
+	}
+#endif /* DT_HFCLK_OKAY */
 
 #if DT_SYSPLL_OKAY
 	case MSPM0_CLOCK_SYSPLL_CLK0:
@@ -370,13 +423,13 @@ static int clock_mspm0_syspll_ref_rate(const struct device *dev, uint32_t *rate)
 	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->soclock;
 
 	if (soclock->syspllcfg0 & SYSCTL_SYSPLLCFG0_SYSPLLREF) {
-#if MSPM0_HFCLK_ENABLED
+#if DT_HFCLK_OKAY
 		struct mspm0_sys_clock hfclk_subsys = {.clk = MSPM0_CLOCK_HFCLK};
 
 		return clock_mspm0_get_rate(dev, (clock_control_subsys_t)&hfclk_subsys, rate);
 #else
 		return -ENOTSUP;
-#endif /* MSPM0_HFCLK_ENABLED */
+#endif /* DT_HFCLK_OKAY */
 	}
 
 	*rate = clock_mspm0_sysosc_rate();
@@ -502,7 +555,7 @@ static int clock_mspm0_configure_syspll(const struct device *dev,
 	uint32_t ref_rate;
 
 	switch (source) {
-#if MSPM0_HFCLK_ENABLED
+#if DT_HFCLK_OKAY
 	case MSPM0_CLOCK_SRC_HFCLK: {
 		struct mspm0_sys_clock hfclk_subsys = {.clk = MSPM0_CLOCK_HFCLK};
 		int ret = clock_mspm0_get_rate(dev, (clock_control_subsys_t)&hfclk_subsys,
@@ -515,7 +568,7 @@ static int clock_mspm0_configure_syspll(const struct device *dev,
 		soclock->syspllcfg0 |= SYSCTL_SYSPLLCFG0_SYSPLLREF;
 		break;
 	}
-#endif /* MSPM0_HFCLK_ENABLED */
+#endif /* DT_HFCLK_OKAY */
 
 	case MSPM0_CLOCK_SRC_SYSOSC:
 		ref_rate = clock_mspm0_sysosc_rate();
@@ -610,6 +663,60 @@ static int clock_mspm0_init_syspll(const struct device *dev)
 }
 #endif /* DT_SYSPLL_OKAY */
 
+#if DT_HFCLK_OKAY
+static int clock_mspm0_configure_hfclk(volatile struct mspm_sysctl_soclock_regs *soclock,
+				       enum mspm0_clock_source source)
+{
+	uint32_t timeout_us = MSPM0_CLK_WAIT_TIMEOUT_US;
+
+	switch (source) {
+#if DT_HFXT_OKAY
+	case MSPM0_CLOCK_SRC_HFXT:
+		/* disable HFXT */
+		soclock->hsclken &= ~SYSCTL_HSCLKEN_HFXTEN;
+
+		/* update HFXT frequency range */
+		soclock->hfclkclkcfg = (soclock->hfclkclkcfg & ~SYSCTL_HFCLKCLKCFG_HFXTRSEL) |
+				       FIELD_PREP(SYSCTL_HFCLKCLKCFG_HFXTRSEL, MSPM0_HFXT_RANGE);
+
+		/* set HFXT startup time */
+		soclock->hfclkclkcfg = (soclock->hfclkclkcfg & ~SYSCTL_HFCLKCLKCFG_HFXTTIME) |
+				       SYSCTL_HFCLKCLKCFG_HFXTTIME_VAL(MSPM0_HFXT_STARTUP_US);
+
+		/* set HFXT input as HFCLK source */
+		soclock->hsclken &= ~SYSCTL_HSCLKEN_USEEXTHFCLK;
+
+		/* enable HFXT */
+		soclock->hsclken |= SYSCTL_HSCLKEN_HFXTEN;
+
+		/* enable HFXT startup monitor */
+		soclock->hfclkclkcfg |= SYSCTL_HFCLKCLKCFG_HFCLKFLTCHK;
+
+		timeout_us = MSPM0_XTAL_WAIT_TIMEOUT_US(MSPM0_HFXT_STARTUP_US);
+		break;
+#endif /* DT_HFXT_OKAY */
+
+#if DT_HFCLK_IN_OKAY
+	case MSPM0_CLOCK_SRC_HFCLK_IN:
+		/* set external digital clock input as HFCLK source */
+		soclock->hsclken |= SYSCTL_HSCLKEN_USEEXTHFCLK;
+		break;
+#endif /* DT_HFCLK_IN_OKAY */
+
+	default:
+		return -ENOTSUP;
+	}
+
+	/* wait for HFCLK to stabilize */
+	if (!WAIT_FOR((soclock->clkstatus & SYSCTL_CLKSTATUS_HFCLKGOOD) != 0, timeout_us, NULL)) {
+		LOG_ERR("timed out waiting for HFCLK to stabilize");
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+#endif /* DT_HFCLK_OKAY */
+
 static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_t sys, void *data)
 {
 	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
@@ -629,6 +736,12 @@ static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_
 		ret = clock_mspm0_configure_syspll(dev, soclock, *source);
 		break;
 #endif /* DT_SYSPLL_OKAY */
+
+#if DT_HFCLK_OKAY
+	case MSPM0_CLOCK_HFCLK:
+		ret = clock_mspm0_configure_hfclk(soclock, *source);
+		break;
+#endif /* DT_HFCLK_OKAY */
 
 	default:
 		ret = -ENOTSUP;
@@ -666,6 +779,21 @@ static int clock_mspm0_init(const struct device *dev)
 	DL_SYSCTL_setULPCLKDivider(mspm0_ulpclk_cfg.clk_div);
 #endif
 
+#if DT_HFCLK_OKAY
+#if DT_SAME_NODE(DT_HFCLK_CLOCKS_CTRL, DT_HFXT)
+	LOG_DBG("HFCLK booting from HFXT");
+	ret = clock_mspm0_configure_hfclk(soclock, MSPM0_CLOCK_SRC_HFXT);
+#else
+	/* validated at top of file: must be HFCLK_IN */
+	LOG_DBG("HFCLK booting from HFCLK_IN");
+	ret = clock_mspm0_configure_hfclk(soclock, MSPM0_CLOCK_SRC_HFCLK_IN);
+#endif
+	if (ret < 0) {
+		LOG_ERR("failed to configure HFCLK: %d", ret);
+		return ret;
+	}
+#endif /* DT_HFCLK_OKAY */
+
 #if DT_SYSPLL_OKAY
 	ret = clock_mspm0_init_syspll(dev);
 	if (ret < 0) {
@@ -673,39 +801,6 @@ static int clock_mspm0_init(const struct device *dev)
 		return ret;
 	}
 #endif /* DT_SYSPLL_OKAY */
-
-#if MSPM0_HFCLK_ENABLED
-#if DT_SAME_NODE(DT_HFCLK_CLOCKS_CTRL, DT_NODELABEL(hfxt))
-	uint32_t hf_range;
-	uint32_t hfxt_freq = DT_PROP(DT_NODELABEL(hfxt),
-				     clock_frequency)  / MHZ(1);
-	uint32_t xtal_startup_delay = DT_PROP_OR(DT_NODELABEL(hfxt),
-						 ti_xtal_startup_delay_us, 0);
-
-	if (hfxt_freq >= 4 &&
-	    hfxt_freq <= 8) {
-		hf_range = DL_SYSCTL_HFXT_RANGE_4_8_MHZ;
-	} else if (hfxt_freq > 8 &&
-		   hfxt_freq <= 16) {
-		hf_range = DL_SYSCTL_HFXT_RANGE_8_16_MHZ;
-	} else if (hfxt_freq > 16 &&
-		   hfxt_freq <= 32) {
-		hf_range = DL_SYSCTL_HFXT_RANGE_16_32_MHZ;
-	} else if (hfxt_freq > 32 &&
-		   hfxt_freq <= 48) {
-		hf_range = DL_SYSCTL_HFXT_RANGE_32_48_MHZ;
-	} else {
-		return -EINVAL;
-	}
-
-	/* startup time in 64us resolution */
-	DL_SYSCTL_setHFCLKSourceHFXTParams(hf_range,
-					   xtal_startup_delay / 64,
-					   true);
-#else
-	DL_SYSCTL_setHFCLKSourceHFCLKIN();
-#endif
-#endif
 
 #if DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_NODELABEL(lfxt))
 	DL_SYSCTL_LFCLKConfig config = {0};
