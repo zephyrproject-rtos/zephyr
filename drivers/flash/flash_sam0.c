@@ -49,7 +49,7 @@ BUILD_ASSERT((FLASH_WRITE_BLK_SZ % sizeof(uint32_t)) == 0, "unsupported write-bl
 
 #define PAGES_PER_ROW (ROW_SIZE / FLASH_PAGE_SIZE)
 
-#define FLASH_MEM(_a) ((uint32_t *)((uint8_t *)((_a) + CONFIG_FLASH_BASE_ADDRESS)))
+#define FLASH_MEM(_a) ((uint32_t *)((uint8_t *)(CONFIG_FLASH_BASE_ADDRESS + (ptrdiff_t)(_a))))
 
 struct flash_sam0_data {
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
@@ -101,11 +101,11 @@ static inline void flash_sam0_sem_give(const struct device *dev)
 static int flash_sam0_valid_range(off_t offset, size_t len)
 {
 	if (offset < 0) {
-		LOG_WRN("0x%lx: before start of flash", (long)offset);
+		LOG_WRN("0x%tx: before start of flash", (ptrdiff_t)offset);
 		return -EINVAL;
 	}
 	if ((offset + len) > CONFIG_FLASH_SIZE * 1024) {
-		LOG_WRN("0x%lx: ends past the end of flash", (long)offset);
+		LOG_WRN("0x%tx: ends past the end of flash", (ptrdiff_t)offset);
 		return -EINVAL;
 	}
 
@@ -140,13 +140,13 @@ static int flash_sam0_check_status(off_t offset)
 #endif
 
 	if (status.bit.PROGE) {
-		LOG_ERR("programming error at 0x%lx", (long)offset);
+		LOG_ERR("programming error at 0x%tx", (ptrdiff_t)offset);
 		return -EIO;
 	} else if (status.bit.LOCKE) {
-		LOG_ERR("lock error at 0x%lx", (long)offset);
+		LOG_ERR("lock error at 0x%tx", (ptrdiff_t)offset);
 		return -EROFS;
 	} else if (status.bit.NVME) {
-		LOG_ERR("NVM error at 0x%lx", (long)offset);
+		LOG_ERR("NVM error at 0x%tx", (ptrdiff_t)offset);
 		return -EIO;
 	}
 
@@ -192,7 +192,7 @@ static int flash_sam0_write_page(const struct device *dev, off_t offset,
 	}
 
 	if (memcmp(data, FLASH_MEM(offset), len) != 0) {
-		LOG_ERR("verify error at offset 0x%lx", (long)offset);
+		LOG_ERR("verify error at offset 0x%tx", (ptrdiff_t)offset);
 		return -EIO;
 	}
 
@@ -242,7 +242,7 @@ static int flash_sam0_write(const struct device *dev, off_t offset,
 	const uint8_t *pdata = data;
 	int err;
 
-	LOG_DBG("0x%lx: len %zu", (long)offset, len);
+	LOG_DBG("0x%tx: len %zu", (ptrdiff_t)offset, len);
 
 	err = flash_sam0_valid_range(offset, len);
 	if (err != 0) {
@@ -300,7 +300,7 @@ static int flash_sam0_write(const struct device *dev, off_t offset,
 	}
 
 	if ((offset % FLASH_WRITE_BLK_SZ) != 0) {
-		LOG_WRN("0x%lx: not on a write block boundary", (long)offset);
+		LOG_WRN("0x%tx: not on a write block boundary", (ptrdiff_t)offset);
 		return -EINVAL;
 	}
 
@@ -369,7 +369,7 @@ static int flash_sam0_erase(const struct device *dev, off_t offset,
 	}
 
 	if ((offset % ROW_SIZE) != 0) {
-		LOG_WRN("0x%lx: not on a page boundary", (long)offset);
+		LOG_WRN("0x%tx: not on a page boundary", (ptrdiff_t)offset);
 		return -EINVAL;
 	}
 

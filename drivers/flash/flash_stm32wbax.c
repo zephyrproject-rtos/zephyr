@@ -67,8 +67,8 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 static int write_qword(const struct device *dev, off_t offset, const uint32_t *buff)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	volatile uint32_t *flash = (uint32_t *)(offset
-						+ FLASH_STM32_BASE_ADDRESS);
+	volatile uint32_t *flash = (uint32_t *)(FLASH_STM32_BASE_ADDRESS
+						+ (ptrdiff_t)offset);
 	uint32_t tmp;
 	int rc;
 
@@ -87,7 +87,7 @@ static int write_qword(const struct device *dev, off_t offset, const uint32_t *b
 	/* Check if this double word is erased */
 	if ((flash[0] != 0xFFFFFFFFUL) || (flash[1] != 0xFFFFFFFFUL) ||
 		(flash[2] != 0xFFFFFFFFUL) || (flash[3] != 0xFFFFFFFFUL)) {
-		LOG_ERR("Word at offs %ld not erased", (long)offset);
+		LOG_ERR("Word at offs %td not erased", (ptrdiff_t)offset);
 		return -EIO;
 	}
 

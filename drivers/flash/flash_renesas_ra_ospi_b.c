@@ -474,7 +474,7 @@ static int flash_renesas_ra_ospi_b_erase(const struct device *dev, off_t offset,
 	if (!len) {
 		return 0;
 	} else if (len % SPI_NOR_SECTOR_SIZE != 0) {
-		LOG_ERR("Wrong sector size 0x%x", len);
+		LOG_ERR("Wrong sector size 0x%zx", len);
 		return -EINVAL;
 	}
 
@@ -488,13 +488,14 @@ static int flash_renesas_ra_ospi_b_erase(const struct device *dev, off_t offset,
 	/* check offset and len that valid in sector layout */
 	ret = flash_get_page_info_by_offs(dev, offset, &page_info_start);
 	if ((ret != 0) || (offset != page_info_start.start_offset)) {
-		LOG_ERR("The offset 0x%lx is not aligned with the starting sector", (long)offset);
+		LOG_ERR("The offset 0x%tx is not aligned with the starting sector",
+			(ptrdiff_t)offset);
 		return -EINVAL;
 	}
 
 	ret = flash_get_page_info_by_offs(dev, (offset + len), &page_info_end);
 	if ((ret != 0) || ((offset + len) != page_info_end.start_offset)) {
-		LOG_ERR("The size %u is not aligned with the ending sector", len);
+		LOG_ERR("The size %zu is not aligned with the ending sector", len);
 		return -EINVAL;
 	}
 
@@ -518,10 +519,11 @@ static int flash_renesas_ra_ospi_b_erase(const struct device *dev, off_t offset,
 
 		err = R_OSPI_B_Erase(
 			&ospi_b_data->ospi_b_ctrl,
-			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS + offset),
+			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS + (uintptr_t)offset),
 			erase_size);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Erase at address 0x%lx, size %zu Failed", offset, erase_size);
+			LOG_ERR("Erase at address 0x%tx, size %zu Failed",
+				(ptrdiff_t)offset, erase_size);
 			ret = -EIO;
 			break;
 		}
@@ -598,9 +600,10 @@ static int flash_renesas_ra_ospi_b_write(const struct device *dev, off_t offset,
 
 		err = R_OSPI_B_Write(
 			&ospi_b_data->ospi_b_ctrl, p_src,
-			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS + offset), size);
+			(uint8_t *)(BSP_FEATURE_OSPI_B_DEVICE_1_START_ADDRESS +
+				    (uintptr_t)offset), size);
 		if (err != FSP_SUCCESS) {
-			LOG_ERR("Write at address 0x%lx, size %zu", offset, size);
+			LOG_ERR("Write at address 0x%tx, size %zu", (ptrdiff_t)offset, size);
 			ret = -EIO;
 			break;
 		}

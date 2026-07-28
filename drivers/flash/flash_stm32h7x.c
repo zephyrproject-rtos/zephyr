@@ -323,8 +323,8 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t le
 	if (write) {
 		if ((offset % (FLASH_NB_32BITWORD_IN_FLASHWORD * 4)) != 0) {
 			LOG_ERR("Write offset not aligned on flashword length. "
-				"Offset: 0x%lx, flashword length: %d",
-				(unsigned long)offset, FLASH_NB_32BITWORD_IN_FLASHWORD * 4);
+				"Offset: 0x%tx, flashword length: %d",
+				(ptrdiff_t)offset, FLASH_NB_32BITWORD_IN_FLASHWORD * 4);
 			return false;
 		}
 	}
@@ -509,7 +509,7 @@ static int erase_sector(const struct device *dev, int offset)
 
 	if (sector.bank == 0) {
 
-		LOG_ERR("Offset %ld does not exist", (long)offset);
+		LOG_ERR("Offset %d does not exist", offset);
 		return -EINVAL;
 	}
 
@@ -565,13 +565,13 @@ static int wait_write_queue(const struct flash_stm32_sector_t *sector)
 
 static int write_ndwords(const struct device *dev, off_t offset, const uint64_t *data, uint8_t n)
 {
-	volatile uint64_t *flash = (uint64_t *)(offset + FLASH_STM32_BASE_ADDRESS);
+	volatile uint64_t *flash = (uint64_t *)(FLASH_STM32_BASE_ADDRESS + (ptrdiff_t)offset);
 	int rc;
 	int i;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
 
 	if (sector.bank == 0) {
-		LOG_ERR("Offset %ld does not exist", (long)offset);
+		LOG_ERR("Offset %td does not exist", (ptrdiff_t)offset);
 		return -EINVAL;
 	}
 
@@ -704,7 +704,8 @@ static void flash_stm32h7_flush_caches(const struct device *dev, off_t offset, s
 		return; /* Cache not enabled */
 	}
 
-	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS + offset), len);
+	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS +
+						  (ptrdiff_t)offset), len);
 }
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
@@ -719,7 +720,7 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset, size_t le
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Erase range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERR("Erase range invalid. Offset: %td, len: %zu", (ptrdiff_t)offset, len);
 		return -EINVAL;
 	}
 
@@ -729,7 +730,7 @@ static int flash_stm32h7_erase(const struct device *dev, off_t offset, size_t le
 
 	flash_stm32_sem_take(dev);
 
-	LOG_DBG("Erase offset: %ld, len: %zu", (long)offset, len);
+	LOG_DBG("Erase offset: %td, len: %zu", (ptrdiff_t)offset, len);
 
 	rc = flash_stm32h7_cr_lock(dev, false);
 	if (rc) {
@@ -763,7 +764,7 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset, const voi
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Write range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERR("Write range invalid. Offset: %td, len: %zu", (ptrdiff_t)offset, len);
 		return -EINVAL;
 	}
 
@@ -773,7 +774,7 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset, const voi
 
 	flash_stm32_sem_take(dev);
 
-	LOG_DBG("Write offset: %ld, len: %zu", (long)offset, len);
+	LOG_DBG("Write offset: %td, len: %zu", (ptrdiff_t)offset, len);
 
 	rc = flash_stm32h7_cr_lock(dev, false);
 	if (!rc) {
@@ -797,7 +798,7 @@ static int flash_stm32h7_write(const struct device *dev, off_t offset, const voi
 static int flash_stm32h7_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	if (!flash_stm32_valid_range(dev, offset, len, false)) {
-		LOG_ERR("Read range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERR("Read range invalid. Offset: %td, len: %zu", (ptrdiff_t)offset, len);
 		return -EINVAL;
 	}
 
@@ -805,7 +806,7 @@ static int flash_stm32h7_read(const struct device *dev, off_t offset, void *data
 		return 0;
 	}
 
-	LOG_DBG("Read offset: %ld, len: %zu", (long)offset, len);
+	LOG_DBG("Read offset: %td, len: %zu", (ptrdiff_t)offset, len);
 
 	/* During the read we mask bus errors and only allow NMI.
 	 *

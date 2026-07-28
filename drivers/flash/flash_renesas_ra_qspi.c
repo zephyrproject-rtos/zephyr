@@ -336,24 +336,25 @@ static int qspi_flash_ra_erase(const struct device *dev, off_t offset, size_t le
 	}
 
 	if (!qspi_flash_ra_valid(QSPI_NOR_FLASH_SIZE, offset, len)) {
-		LOG_ERR("The offset 0x%lx is invalid", (long)offset);
+		LOG_ERR("The offset 0x%tx is invalid", (ptrdiff_t)offset);
 		return -EINVAL;
 	}
 
 	if (len % QSPI_ERASE_BLK_SZ != 0) {
-		LOG_ERR("The size %u is not align with block size (%u)", len, QSPI_ERASE_BLK_SZ);
+		LOG_ERR("The size %zu is not align with block size (%u)", len, QSPI_ERASE_BLK_SZ);
 		return -EINVAL;
 	}
 
 	rc = flash_get_page_info_by_offs(dev, offset, &page_info_start);
 	if ((rc != 0) || (offset != page_info_start.start_offset)) {
-		LOG_ERR("The offset 0x%lx is not aligned with the starting sector", (long)offset);
+		LOG_ERR("The offset 0x%tx is not aligned with the starting sector",
+			(ptrdiff_t)offset);
 		return -EINVAL;
 	}
 
 	rc = flash_get_page_info_by_offs(dev, (offset + len), &page_info_end);
 	if ((rc != 0) || ((offset + len) != page_info_end.start_offset)) {
-		LOG_ERR("The size %u is not aligned with the ending sector", len);
+		LOG_ERR("The size %zu is not aligned with the ending sector", len);
 		return -EINVAL;
 	}
 
@@ -368,7 +369,8 @@ static int qspi_flash_ra_erase(const struct device *dev, off_t offset, size_t le
 			erase_size = BLOCK_SIZE_64K;
 		}
 		err = R_QSPI_Erase(&qspi_data->qspi_ctrl,
-				   (uint8_t *)(QSPI_DEVICE_START_ADDRESS + offset), erase_size);
+				   (uint8_t *)(QSPI_DEVICE_START_ADDRESS +
+					       (ptrdiff_t)offset), erase_size);
 		if (err) {
 			LOG_ERR("Erase failed");
 			err = -EIO;
@@ -402,7 +404,7 @@ static int qspi_flash_ra_read(const struct device *dev, off_t offset, void *data
 
 	acquire_device(dev);
 
-	memcpy(data, (uint8_t *)(QSPI_DEVICE_START_ADDRESS + offset), len);
+	memcpy(data, (uint8_t *)(QSPI_DEVICE_START_ADDRESS + (ptrdiff_t)offset), len);
 	release_device(dev);
 
 	return 0;
@@ -428,7 +430,8 @@ static int qspi_flash_ra_write(const struct device *dev, off_t offset, const voi
 	while (remaining_bytes > 0) {
 		size = remaining_bytes > PAGE_SIZE_BYTE ? PAGE_SIZE_BYTE : remaining_bytes;
 		err = R_QSPI_Write(&qspi_data->qspi_ctrl, p_data,
-				   (uint8_t *)(QSPI_DEVICE_START_ADDRESS + offset), size);
+				   (uint8_t *)(QSPI_DEVICE_START_ADDRESS +
+					       (ptrdiff_t)offset), size);
 		if (err) {
 			LOG_ERR("Direct write failed");
 			err = -EIO;

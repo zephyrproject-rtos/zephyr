@@ -36,7 +36,7 @@ BUILD_ASSERT(MRAM_SIZE <= UINT32_MAX, "MRAM_SIZE is not in size of uint32_t");
 #define MRAMC_CONFIG_WEN_NORMAL	1
 #define MRAMC_CONFIG_WEN_DISABLE   0
 
-#define MAP_TO_ADDR(offset) (MRAM_BASE + offset)
+#define MAP_TO_ADDR(offset) (MRAM_BASE + (ptrdiff_t)(offset))
 
 BUILD_ASSERT((WRITE_BLOCK_SIZE % MRAM_WORD_SIZE) == 0,
 		 "write-block-size expected to be a multiple of MRAM_WORD_SIZE");

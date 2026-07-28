@@ -92,8 +92,8 @@ static int is_area_readable(const struct device *dev, off_t offset, size_t len)
 			k_sleep(K_USEC(10));
 		}
 		if (dev_ctrl->flags & FLASH_FLAG_BLANK) {
-			LOG_DBG("read request on erased offset:0x%lx size:%d",
-				offset, len);
+			LOG_DBG("read request on erased offset:0x%tx size:%d",
+				(ptrdiff_t)offset, len);
 			result = FLASH_RESULT_BLANK;
 		}
 		atomic_and(&dev_ctrl->flags, ~(FLASH_FLAG_BLANK | FLASH_FLAG_NOT_BLANK));
@@ -123,7 +123,7 @@ static int flash_ra_read(const struct device *dev, off_t offset, void *data, siz
 		return 0;
 	}
 
-	LOG_DBG("flash: read 0x%lx, len: %u", (long)(offset + flash_data->area_address), len);
+	LOG_DBG("flash: read 0x%tx, len: %u", (ptrdiff_t)(offset + flash_data->area_address), len);
 
 #if defined(CONFIG_FLASH_RENESAS_RA_HP_CHECK_BEFORE_READING)
 	if (flash_data->FlashRegion == DATA_FLASH) {
@@ -132,7 +132,7 @@ static int flash_ra_read(const struct device *dev, off_t offset, void *data, siz
 #endif /* CONFIG_FLASH_RENESAS_RA_HP_CHECK_BEFORE_READING */
 
 	if (!rc) {
-		memcpy(data, (uint8_t *)(offset + flash_data->area_address), len);
+		memcpy(data, (uint8_t *)((uintptr_t)offset + flash_data->area_address), len);
 #if defined(CONFIG_FLASH_RENESAS_RA_HP_CHECK_BEFORE_READING)
 	} else if (rc == -ENODATA) {
 		/* Erased area, return dummy data as an erased page. */
@@ -163,7 +163,7 @@ static int flash_ra_erase(const struct device *dev, off_t offset, size_t len)
 		return 0;
 	}
 
-	LOG_DBG("flash: erase 0x%lx, len: %u", (long)(offset + flash_data->area_address), len);
+	LOG_DBG("flash: erase 0x%tx, len: %u", (ptrdiff_t)(offset + flash_data->area_address), len);
 
 	rc = flash_get_page_info_by_offs(dev, offset, &page_info_off);
 
@@ -257,7 +257,7 @@ static int flash_ra_write(const struct device *dev, off_t offset, const void *da
 		return 0;
 	}
 
-	LOG_DBG("flash: write 0x%lx, len: %u", (long)(offset + flash_data->area_address), len);
+	LOG_DBG("flash: write 0x%tx, len: %u", (ptrdiff_t)(offset + flash_data->area_address), len);
 
 	if (flash_data->FlashRegion == CODE_FLASH) {
 		/* Disable interrupts during code flash operations */
