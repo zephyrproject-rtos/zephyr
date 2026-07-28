@@ -1,0 +1,29 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: Emulated NFC Controller
+
+description: |
+  Has no hardware behind it. It exists so the NFC driver-class API can be
+  exercised on a host build; see include/zephyr/drivers/nfc/nfc_emul.h.
+
+compatible: "zephyr,nfc-emul"
+
+include: nfc-controller.yaml
+
+properties:
+  backend:
+    type: string
+    required: true
+    enum:
+      - "offload"
+      - "initiator"
+      - "target"
+    description: |
+      Class of controller this instance impersonates. It selects the subset of
+      the driver API the instance implements, so that each class is represented
+      by a device that really does lack the other classes' operations.
+
+      offload:   resolves and activates targets in firmware
+      initiator: host-driven reader
+      target:    host-driven card emulation

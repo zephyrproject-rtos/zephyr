@@ -3,6 +3,7 @@
 
 menuconfig NFC_DRIVERS
 	bool "Near Field Communication (NFC) drivers [EXPERIMENTAL]"
+	default y if NFC
 	select EXPERIMENTAL
 	help
 	  Enable NFC controller driver configuration.
@@ -21,5 +22,6 @@ config NFC_INIT_PRIORITY
 
 source "drivers/nfc/pn53x/Kconfig"
 source "drivers/nfc/mfrc522/Kconfig"
+source "drivers/nfc/nfc_emul/Kconfig"
 
 endif # NFC_DRIVERS

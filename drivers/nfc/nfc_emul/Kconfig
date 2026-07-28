@@ -1,0 +1,12 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config NFC_EMUL
+	bool "Emulated NFC controller"
+	default y
+	depends on DT_HAS_ZEPHYR_NFC_EMUL_ENABLED
+	help
+	  Enable the emulated NFC controller. This is a fake driver in that it
+	  does not talk to real hardware; exchanges are driven by a script the
+	  application supplies. It is used to test the NFC driver API on a host
+	  build.
