@@ -29,6 +29,44 @@ LOG_MODULE_REGISTER(net_buf_simple, CONFIG_NET_BUF_LOG_LEVEL);
 #define NET_BUF_SIMPLE_INFO(fmt, ...)
 #endif /* CONFIG_NET_BUF_SIMPLE_LOG */
 
+#if defined(CONFIG_NET_BUF_HARDENING)
+/* Fail-closed check for the mutating primitives. If the buffer's metadata is
+ * out-of-bounds (net_buf_simple_is_valid()) or the requested operation would
+ * exceed the buffer, log and return false so the caller rejects the operation
+ * (returns NULL) instead of reading/writing out of bounds. is_valid() is
+ * checked first and short-circuits, so a corrupted len is caught before it is
+ * used in @p ok (e.g. in a tailroom calculation that would otherwise
+ * underflow).
+ */
+static bool net_buf_simple_ok_check(const struct net_buf_simple *buf, bool ok, const char *func)
+{
+	ARG_UNUSED(func);
+
+	if (!ok || !net_buf_simple_is_valid(buf)) {
+		NET_BUF_SIMPLE_ERR("%s: net_buf %p integrity check failed", func, (void *)buf);
+		return false;
+	}
+
+	return true;
+}
+
+/* Wrapped in a macro so the failure log names the net_buf operation that
+ * rejected the request rather than this helper.
+ */
+#define net_buf_simple_ok(_buf, _ok) net_buf_simple_ok_check((_buf), (_ok), __func__)
+#else
+/* A macro (rather than a helper function) so that the assert reports the
+ * file:line of the net_buf operation that failed, as it did before the
+ * hardening checks were added.
+ */
+#define net_buf_simple_ok(_buf, _ok)             \
+	({                                       \
+		ARG_UNUSED(_buf);                \
+		__ASSERT_NO_MSG(_ok);            \
+		true;                            \
+	})
+#endif /* CONFIG_NET_BUF_HARDENING */
+
 void net_buf_simple_init_with_data(struct net_buf_simple *buf,
 				   void *data, size_t size)
 {
@@ -55,12 +93,15 @@ void net_buf_simple_clone(const struct net_buf_simple *original,
 
 void *net_buf_simple_add(struct net_buf_simple *buf, size_t len)
 {
-	uint8_t *tail = net_buf_simple_tail(buf);
+	uint8_t *tail;
 
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
-	__ASSERT_NO_MSG(net_buf_simple_tailroom(buf) >= len);
+	if (!net_buf_simple_ok(buf, net_buf_simple_tailroom(buf) >= len)) {
+		return NULL;
+	}
 
+	tail = net_buf_simple_tail(buf);
 	buf->len += len;
 	return tail;
 }
@@ -68,9 +109,16 @@ void *net_buf_simple_add(struct net_buf_simple *buf, size_t len)
 void *net_buf_simple_add_mem(struct net_buf_simple *buf, const void *mem,
 			     size_t len)
 {
+	void *tail;
+
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
-	return memcpy(net_buf_simple_add(buf, len), mem, len);
+	tail = net_buf_simple_add(buf, len);
+	if (IS_ENABLED(CONFIG_NET_BUF_HARDENING) && tail == NULL) {
+		return NULL;
+	}
+
+	return memcpy(tail, mem, len);
 }
 
 uint8_t *net_buf_simple_add_u8(struct net_buf_simple *buf, uint8_t val)
@@ -173,7 +221,9 @@ void *net_buf_simple_remove_mem(struct net_buf_simple *buf, size_t len)
 {
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
-	__ASSERT_NO_MSG(buf->len >= len);
+	if (!net_buf_simple_ok(buf, buf->len >= len)) {
+		return NULL;
+	}
 
 	buf->len -= len;
 	return buf->data + buf->len;
@@ -338,7 +388,9 @@ void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
 {
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
-	__ASSERT_NO_MSG(net_buf_simple_headroom(buf) >= len);
+	if (!net_buf_simple_ok(buf, net_buf_simple_headroom(buf) >= len)) {
+		return NULL;
+	}
 
 	buf->data -= len;
 	buf->len += len;
@@ -348,9 +400,16 @@ void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
 void *net_buf_simple_push_mem(struct net_buf_simple *buf, const void *mem,
 			      size_t len)
 {
+	void *data;
+
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
-	return memcpy(net_buf_simple_push(buf, len), mem, len);
+	data = net_buf_simple_push(buf, len);
+	if (IS_ENABLED(CONFIG_NET_BUF_HARDENING) && data == NULL) {
+		return NULL;
+	}
+
+	return memcpy(data, mem, len);
 }
 
 void net_buf_simple_push_le16(struct net_buf_simple *buf, uint16_t val)
@@ -448,7 +507,9 @@ void *net_buf_simple_pull(struct net_buf_simple *buf, size_t len)
 {
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
-	__ASSERT_NO_MSG(buf->len >= len);
+	if (!net_buf_simple_ok(buf, buf->len >= len)) {
+		return NULL;
+	}
 
 	buf->len -= len;
 	return buf->data += len;
@@ -460,7 +521,9 @@ void *net_buf_simple_pull_mem(struct net_buf_simple *buf, size_t len)
 
 	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
 
-	__ASSERT_NO_MSG(buf->len >= len);
+	if (!net_buf_simple_ok(buf, buf->len >= len)) {
+		return NULL;
+	}
 
 	buf->len -= len;
 	buf->data += len;
