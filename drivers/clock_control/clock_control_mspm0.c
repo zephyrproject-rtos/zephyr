@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_MSPM33C)
 #define MSPM0_REQUIRES_SYSPLLPARAM2
+#define MSPM0_MCLK_CANNOT_USE_LFCLK 1
 #endif
 
 #if DT_NODE_EXISTS(MSPM_CPUSS_NODE)
@@ -31,18 +32,6 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 /* Crystal startup is not instant; wait up to 4x its rated startup delay. */
 #define MSPM0_XTAL_WAIT_TIMEOUT_US(startup_us) ((startup_us) * 4)
-
-#define MSPM0_ULPCLK_DIV COND_CODE_1(					\
-		DT_NODE_HAS_PROP(DT_NODELABEL(ulpclk), clk_div),	\
-		(CONCAT(DL_SYSCTL_ULPCLK_DIV_,				\
-			DT_PROP(DT_NODELABEL(ulpclk), clk_div))),	\
-		(0))
-
-#define MSPM0_MCLK_DIV COND_CODE_1(					\
-		DT_NODE_HAS_PROP(DT_NODELABEL(mclk), clk_div),		\
-		(CONCAT(DL_SYSCTL_MCLK_DIVIDER_,			\
-			DT_PROP(DT_NODELABEL(mclk), clk_div))),		\
-		(0))
 
 #define DT_SYSOSC DT_NODELABEL(sysosc)
 
@@ -58,16 +47,23 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define DT_HFCLK    DT_NODELABEL(hfclk)
 #define DT_HFCLK_IN DT_NODELABEL(hfclk_in)
 #define DT_HFXT     DT_NODELABEL(hfxt)
+#define DT_HSCLK    DT_NODELABEL(hsclk)
 #define DT_LFCLK    DT_NODELABEL(lfclk)
 #define DT_LFCLK_IN DT_NODELABEL(lfclk_in)
 #define DT_LFOSC    DT_NODELABEL(lfosc)
 #define DT_LFXT     DT_NODELABEL(lfxt)
+#define DT_MCLK     DT_NODELABEL(mclk)
 #define DT_MFPCLK   DT_NODELABEL(mfpclk)
 #define DT_SYSPLL   DT_NODELABEL(syspll)
+#define DT_ULPCLK   DT_NODELABEL(ulpclk)
+
+#define MSPM0_ULPCLK_DIV DT_PROP_OR(DT_ULPCLK, clk_div, 1)
+#define MSPM0_MCLK_DIV   DT_PROP_OR(DT_MCLK, clk_div, 1)
 
 #define DT_HFCLK_IN_OKAY DT_NODE_HAS_STATUS_OKAY(DT_HFCLK_IN)
 #define DT_HFCLK_OKAY    DT_NODE_HAS_STATUS_OKAY(DT_HFCLK)
 #define DT_HFXT_OKAY     DT_NODE_HAS_STATUS_OKAY(DT_HFXT)
+#define DT_HSCLK_OKAY    DT_NODE_HAS_STATUS_OKAY(DT_HSCLK)
 #define DT_LFCLK_IN_OKAY DT_NODE_HAS_STATUS_OKAY(DT_LFCLK_IN)
 #define DT_LFOSC_OKAY    DT_NODE_HAS_STATUS_OKAY(DT_LFOSC)
 #define DT_LFXT_OKAY     DT_NODE_HAS_STATUS_OKAY(DT_LFXT)
@@ -78,9 +74,10 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define MSPM0_CANCLK_ENABLED 1
 #endif
 
-#define DT_MCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mclk))
+#define DT_MCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_MCLK)
 #define DT_LFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_LFCLK)
 #define DT_HFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_HFCLK)
+#define DT_HSCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_HSCLK)
 #define DT_MFPCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_MFPCLK)
 #define DT_SYSPLL_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_SYSPLL)
 
@@ -137,6 +134,24 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_LFCLK_CLOCKS_CTRL), "LFCLK source not en
 BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_MFPCLK_CLOCKS_CTRL), "MFPCLK source not enabled");
 #endif /* DT_MFPCLK_OKAY */
 
+/* High-Speed Clock */
+#if DT_HSCLK_OKAY
+#if !DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_HFCLK) &&                                               \
+	!DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_SYSPLL) &&                                          \
+	!DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_SYSOSC)
+#error "Invalid HSCLK source"
+#endif
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_HSCLK_CLOCKS_CTRL), "HSCLK source not enabled");
+#endif /* DT_HSCLK_OKAY */
+
+/* Main Clock is always present */
+#if !DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_HSCLK) &&                                                \
+	!DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_SYSOSC) &&                                           \
+	(defined(MSPM0_MCLK_CANNOT_USE_LFCLK) || !DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_LFCLK))
+#error "Invalid MCLK source"
+#endif
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_MCLK_CLOCKS_CTRL), "MCLK source not enabled");
+
 /* System PLL */
 #if DT_SYSPLL_OKAY
 
@@ -180,11 +195,6 @@ static struct mspm0_clk_cfg mspm0_canclk_cfg = {
 	.clk_freq = DT_PROP(DT_NODELABEL(canclk), clock_frequency),
 };
 #endif
-
-static struct mspm0_clk_cfg mspm0_ulpclk_cfg = {
-	.clk_freq = DT_PROP(DT_NODELABEL(ulpclk), clock_frequency),
-	.clk_div = MSPM0_ULPCLK_DIV,
-};
 
 /* Only 32/4 MHz supported; 16/24 MHz needs board trim we can't source. */
 static int clock_mspm0_set_rate(const struct device *dev, clock_control_subsys_t sys,
@@ -341,6 +351,17 @@ static enum clock_control_status clock_mspm0_get_status(const struct device *dev
 		return CLOCK_CONTROL_STATUS_STARTING;
 #endif /* DT_HFCLK_OKAY */
 
+#if DT_HSCLK_OKAY
+	case MSPM0_CLOCK_HSCLK:
+		if (soclock->clkstatus & SYSCTL_CLKSTATUS_HSCLKDEAD) {
+			return CLOCK_CONTROL_STATUS_OFF;
+		}
+		if (soclock->clkstatus & SYSCTL_CLKSTATUS_HSCLKGOOD) {
+			return CLOCK_CONTROL_STATUS_ON;
+		}
+		return CLOCK_CONTROL_STATUS_STARTING;
+#endif /* DT_HSCLK_OKAY */
+
 	case MSPM0_CLOCK_LFCLK: {
 		uint32_t mux = FIELD_GET(SYSCTL_CLKSTATUS_LFCLKMUX, soclock->clkstatus);
 
@@ -425,6 +446,8 @@ static int clock_mspm0_get_rate(const struct device *dev,
 				clock_control_subsys_t sys,
 				uint32_t *rate)
 {
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->soclock;
 	struct mspm0_sys_clock *sys_clock = (struct mspm0_sys_clock *)sys;
 
 	switch (sys_clock->clk) {
@@ -436,13 +459,43 @@ static int clock_mspm0_get_rate(const struct device *dev,
 		*rate = clock_mspm0_lfclk_rate();
 		break;
 
-	case MSPM0_CLOCK_ULPCLK:
-		*rate = mspm0_ulpclk_cfg.clk_freq;
-		break;
+	case MSPM0_CLOCK_MCLK: {
+		if (soclock->clkstatus & SYSCTL_CLKSTATUS_CURMCLKSEL) {
+			/* MCLK switched to LFCLK (PM low-power state) */
+			*rate = clock_mspm0_lfclk_rate();
+#if DT_HSCLK_OKAY
+		} else if (soclock->clkstatus & SYSCTL_CLKSTATUS_HSCLKMUX) {
+			/* MCLK currently sourced from HSCLK */
+			struct mspm0_sys_clock hsclk_subsys = {.clk = MSPM0_CLOCK_HSCLK};
+			int ret = clock_mspm0_get_rate(dev, (clock_control_subsys_t)&hsclk_subsys,
+						       rate);
 
-	case MSPM0_CLOCK_MCLK:
-		*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+			if (ret < 0) {
+				return ret;
+			}
+#endif /* DT_HSCLK_OKAY */
+		} else {
+			/* MCLK switched to SYSOSC */
+			*rate = clock_mspm0_sysosc_rate();
+			if (*rate == MHZ(4)) {
+				*rate /= MSPM0_MCLK_DIV;
+			}
+		}
 		break;
+	}
+
+	case MSPM0_CLOCK_ULPCLK: {
+		uint32_t mclk_rate;
+		struct mspm0_sys_clock mclk_subsys = {.clk = MSPM0_CLOCK_MCLK};
+		int ret = clock_mspm0_get_rate(dev, (clock_control_subsys_t)&mclk_subsys,
+					       &mclk_rate);
+
+		if (ret < 0) {
+			return ret;
+		}
+		*rate = mclk_rate / MSPM0_ULPCLK_DIV;
+		break;
+	}
 
 #if DT_MFPCLK_OKAY
 	case MSPM0_CLOCK_MFPCLK:
@@ -459,9 +512,6 @@ static int clock_mspm0_get_rate(const struct device *dev,
 #if DT_HFCLK_OKAY
 	case MSPM0_CLOCK_HFCLK: {
 #if DT_HFXT_OKAY && DT_HFCLK_IN_OKAY
-		volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
-		volatile struct mspm_sysctl_soclock_regs *soclock = &regs->soclock;
-
 		if (soclock->hsclken & SYSCTL_HSCLKEN_USEEXTHFCLK) {
 			*rate = DT_PROP(DT_HFCLK_IN, clock_frequency);
 		} else {
@@ -473,6 +523,41 @@ static int clock_mspm0_get_rate(const struct device *dev,
 		break;
 	}
 #endif /* DT_HFCLK_OKAY */
+
+#if DT_HSCLK_OKAY
+	case MSPM0_CLOCK_HSCLK: {
+		if (soclock->clkstatus & SYSCTL_CLKSTATUS_CURHSCLKSEL) {
+#if DT_HFCLK_OKAY
+			/* HSCLK currently sourced from HFCLK */
+			struct mspm0_sys_clock hfclk_subsys = {.clk = MSPM0_CLOCK_HFCLK};
+			int ret = clock_mspm0_get_rate(dev, (clock_control_subsys_t)&hfclk_subsys,
+						       rate);
+
+			if (ret < 0) {
+				return ret;
+			}
+#else
+			return -ENOTSUP;
+#endif /* DT_HFCLK_OKAY */
+		} else {
+#if DT_SYSPLL_OKAY
+			/* HSCLK is fed by SYSPLL CLK2X (2x-VCO path) or CLK0 otherwise. */
+			uint32_t clk = (soclock->syspllcfg0 & SYSCTL_SYSPLLCFG0_MCLK2XVCO)
+					       ? MSPM0_CLOCK_SYSPLL_CLK2X
+					       : MSPM0_CLOCK_SYSPLL_CLK0;
+			int ret = clock_mspm0_syspll_output_rate(dev, clk, rate);
+
+			if (ret < 0) {
+				return ret;
+			}
+#else
+			/* SYSOSC feeds HSCLK when no SYSPLL is present */
+			*rate = clock_mspm0_sysosc_rate();
+#endif /* DT_SYSPLL_OKAY */
+		}
+		break;
+	}
+#endif /* DT_HSCLK_OKAY */
 
 #if DT_SYSPLL_OKAY
 	case MSPM0_CLOCK_SYSPLL_CLK0:
@@ -729,7 +814,8 @@ static int clock_mspm0_init_syspll(const struct device *dev)
 		soclock->syspllcfg0 &= ~SYSCTL_SYSPLLCFG0_ENABLECLK0;
 	}
 
-#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_SYSPLL)
+#if DT_HSCLK_OKAY && DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_HSCLK) &&                               \
+	DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_SYSPLL)
 	if (MSPM0_SYSPLL_HAS_CLK2X) {
 		soclock->syspllcfg0 |= SYSCTL_SYSPLLCFG0_MCLK2XVCO;
 	} else {
@@ -934,6 +1020,167 @@ static int clock_mspm0_configure_mfpclk(const struct device *dev,
 }
 #endif /* DT_MFPCLK_OKAY */
 
+static int clock_mspm0_configure_mclk(volatile struct mspm_sysctl_soclock_regs *soclock,
+				      enum mspm0_clock_source source)
+{
+	soclock->mclkcfg &= ~SYSCTL_MCLKCFG_USELFCLK;
+
+	/* verify that MCLK is not sourced from LFCLK */
+	if (!WAIT_FOR((soclock->clkstatus & SYSCTL_CLKSTATUS_CURMCLKSEL) == 0,
+		      MSPM0_CLK_WAIT_TIMEOUT_US, NULL)) {
+		LOG_ERR("timed out waiting for MCLK to leave LFCLK");
+		return -ETIMEDOUT;
+	}
+
+	soclock->mclkcfg &= ~SYSCTL_MCLKCFG_USEHSCLK;
+
+	/* verify that MCLK is not sourced from HSCLK */
+	if (!WAIT_FOR((soclock->clkstatus & SYSCTL_CLKSTATUS_HSCLKMUX) == 0,
+		      MSPM0_CLK_WAIT_TIMEOUT_US, NULL)) {
+		LOG_ERR("timed out waiting for MCLK to leave HSCLK");
+		return -ETIMEDOUT;
+	}
+
+	switch (source) {
+	case MSPM0_CLOCK_SRC_SYSOSC: {
+		/* nothing to do, we are already using system oscillator at this point */
+		break;
+	}
+
+#if !MSPM0_MCLK_CANNOT_USE_LFCLK
+	case MSPM0_CLOCK_SRC_LFCLK:
+		/* use LFCLK as MCLK source */
+		soclock->mclkcfg |= SYSCTL_MCLKCFG_USELFCLK;
+
+		/* verify that MCLK is sourced from LFCLK */
+		if (!WAIT_FOR((soclock->clkstatus & SYSCTL_CLKSTATUS_CURMCLKSEL) != 0,
+			      MSPM0_CLK_WAIT_TIMEOUT_US, NULL)) {
+			LOG_ERR("timed out waiting for MCLK to switch to LFCLK");
+			return -ETIMEDOUT;
+		}
+		break;
+#endif
+
+#if DT_HSCLK_OKAY
+	case MSPM0_CLOCK_SRC_HSCLK:
+		soclock->mclkcfg |= SYSCTL_MCLKCFG_USEHSCLK;
+
+		/* verify that MCLK is sourced from HSCLK */
+		if (!WAIT_FOR((soclock->clkstatus & SYSCTL_CLKSTATUS_HSCLKMUX) != 0,
+			      MSPM0_CLK_WAIT_TIMEOUT_US, NULL)) {
+			LOG_ERR("timed out waiting for MCLK to switch to HSCLK");
+			return -ETIMEDOUT;
+		}
+		break;
+#endif /* DT_HSCLK_OKAY */
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+#if DT_HSCLK_OKAY
+static int clock_mspm0_configure_hsclk(volatile struct mspm_sysctl_soclock_regs *soclock,
+				       enum mspm0_clock_source source)
+{
+	bool mclk_uses_hsclk = !!(soclock->clkstatus & SYSCTL_CLKSTATUS_HSCLKMUX);
+	int ret = 0;
+
+	if (mclk_uses_hsclk) {
+		ret = clock_mspm0_configure_mclk(soclock, MSPM0_CLOCK_SRC_SYSOSC);
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	switch (source) {
+#if DT_HFCLK_OKAY
+	case MSPM0_CLOCK_SRC_HFCLK:
+		/* set HFCLK as HSCLK source */
+		soclock->hsclkcfg |= SYSCTL_HSCLKCFG_HSCLKSEL;
+		break;
+#endif /* DT_HFCLK_OKAY */
+
+#if DT_SYSPLL_OKAY
+	case MSPM0_CLOCK_SRC_SYSPLL:
+		/* set SYSPLL as HSCLK source */
+		soclock->hsclkcfg &= ~SYSCTL_HSCLKCFG_HSCLKSEL;
+		break;
+#else
+	case MSPM0_CLOCK_SRC_SYSOSC:
+		/* set SYSOSC as HSCLK source (no SYSPLL present) */
+		soclock->hsclkcfg &= ~SYSCTL_HSCLKCFG_HSCLKSEL;
+		break;
+#endif /* DT_SYSPLL_OKAY */
+
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	/* verify that HSCLK started, unless the source itself was rejected above */
+	if (ret == 0 && !WAIT_FOR((soclock->clkstatus & SYSCTL_CLKSTATUS_HSCLKGOOD) != 0,
+				   MSPM0_CLK_WAIT_TIMEOUT_US, NULL)) {
+		LOG_ERR("timed out waiting for HSCLK to start");
+		ret = -ETIMEDOUT;
+	}
+
+	/* Restore MCLK to HSCLK regardless of whether the switch above
+	 * succeeded -- MCLK was moved off HSCLK to make that switch safe, and
+	 * must not be left stuck on SYSOSC just because the new source failed
+	 * to come up.
+	 */
+	if (mclk_uses_hsclk) {
+		int restore_ret = clock_mspm0_configure_mclk(soclock, MSPM0_CLOCK_SRC_HSCLK);
+
+		if (ret == 0) {
+			ret = restore_ret;
+		}
+	}
+
+	return ret;
+}
+#endif /* DT_HSCLK_OKAY */
+
+static int clock_mspm0_init_mclk(const struct device *dev)
+{
+	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
+	volatile struct mspm_sysctl_soclock_regs *soclock = &regs->soclock;
+	int ret = 0;
+
+	/* configure UDIV */
+	soclock->mclkcfg =
+		(soclock->mclkcfg & ~SYSCTL_MCLKCFG_UDIV) |
+		FIELD_PREP(SYSCTL_MCLKCFG_UDIV, SYSCTL_MCLKCFG_UDIV_VAL(MSPM0_ULPCLK_DIV));
+
+#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_SYSOSC) && (DT_SYSOSC_FREQ == 4000000)
+	/* configure MDIV */
+	soclock->mclkcfg = (soclock->mclkcfg & ~SYSCTL_MCLKCFG_MDIV) |
+			   FIELD_PREP(SYSCTL_MCLKCFG_MDIV, SYSCTL_MCLKCFG_MDIV_VAL(MSPM0_MCLK_DIV));
+#endif
+
+#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_HSCLK)
+	LOG_DBG("MCLK booting from HSCLK");
+	ret = clock_mspm0_configure_mclk(soclock, MSPM0_CLOCK_SRC_HSCLK);
+#elif DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_LFCLK) && !MSPM0_MCLK_CANNOT_USE_LFCLK
+	LOG_DBG("MCLK booting from LFCLK");
+	ret = clock_mspm0_configure_mclk(soclock, MSPM0_CLOCK_SRC_LFCLK);
+#else
+	/* validated at top of file: must be SYSOSC */
+	LOG_DBG("MCLK booting from SYSOSC");
+	ret = clock_mspm0_configure_mclk(soclock, MSPM0_CLOCK_SRC_SYSOSC);
+#endif /* DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_HSCLK) */
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
 static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_t sys, void *data)
 {
 	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
@@ -970,6 +1217,16 @@ static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_
 		break;
 #endif /* DT_MFPCLK_OKAY */
 
+#if DT_HSCLK_OKAY
+	case MSPM0_CLOCK_HSCLK:
+		ret = clock_mspm0_configure_hsclk(soclock, *source);
+		break;
+#endif /* DT_HSCLK_OKAY */
+
+	case MSPM0_CLOCK_MCLK:
+		ret = clock_mspm0_configure_mclk(soclock, *source);
+		break;
+
 	default:
 		ret = -ENOTSUP;
 	}
@@ -998,14 +1255,6 @@ static int clock_mspm0_init(const struct device *dev)
 	soclock->sysosccfg = (soclock->sysosccfg & ~SYSCTL_SYSOSCCFG_FREQ) |
 			     FIELD_PREP(SYSCTL_SYSOSCCFG_FREQ, MSPM0_SYSOSC_FREQ);
 
-#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(sysosc)) && (DT_SYSOSC_FREQ == 4000000)
-	DL_SYSCTL_setMCLKDivider(MSPM0_MCLK_DIV);
-#endif
-
-#if DT_NODE_HAS_PROP(DT_NODELABEL(ulpclk), clk_div)
-	DL_SYSCTL_setULPCLKDivider(mspm0_ulpclk_cfg.clk_div);
-#endif
-
 #if DT_HFCLK_OKAY
 #if DT_SAME_NODE(DT_HFCLK_CLOCKS_CTRL, DT_HFXT)
 	LOG_DBG("HFCLK booting from HFXT");
@@ -1029,6 +1278,24 @@ static int clock_mspm0_init(const struct device *dev)
 	}
 #endif /* DT_SYSPLL_OKAY */
 
+#if DT_HSCLK_OKAY
+#if DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_HFCLK)
+	LOG_DBG("HSCLK booting from HFCLK");
+	ret = clock_mspm0_configure_hsclk(soclock, MSPM0_CLOCK_SRC_HFCLK);
+#elif DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_SYSPLL)
+	LOG_DBG("HSCLK booting from SYSPLL");
+	ret = clock_mspm0_configure_hsclk(soclock, MSPM0_CLOCK_SRC_SYSPLL);
+#else
+	/* validated at top of file: must be SYSOSC */
+	LOG_DBG("HSCLK booting from SYSOSC");
+	ret = clock_mspm0_configure_hsclk(soclock, MSPM0_CLOCK_SRC_SYSOSC);
+#endif
+	if (ret < 0) {
+		LOG_ERR("failed to configure HSCLK: %d", ret);
+		return ret;
+	}
+#endif /* DT_HSCLK_OKAY */
+
 #if DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFXT)
 	LOG_DBG("LFCLK booting from LFXT");
 	ret = clock_mspm0_configure_lfclk(soclock, MSPM0_CLOCK_SRC_LFXT);
@@ -1045,18 +1312,11 @@ static int clock_mspm0_init(const struct device *dev)
 		return ret;
 	}
 
-#if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk))
-	DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK,
-				DL_SYSCTL_HSCLK_SOURCE_HFCLK);
-
-#elif DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(syspll))
-	DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK,
-				DL_SYSCTL_HSCLK_SOURCE_SYSPLL);
-
-#elif DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(lfclk))
-	DL_SYSCTL_setMCLKSource(SYSOSC, LFCLK, false);
-
-#endif /* DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk)) */
+	ret = clock_mspm0_init_mclk(dev);
+	if (ret < 0) {
+		LOG_ERR("failed to init MCLK: %d", ret);
+		return ret;
+	}
 
 #if DT_MFPCLK_OKAY
 	{
