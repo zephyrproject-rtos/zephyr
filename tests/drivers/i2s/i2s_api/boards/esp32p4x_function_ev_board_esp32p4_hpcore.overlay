@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* i2s-node0 is the transmitter/receiver */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s0;
+	};
+};
+
+&pinctrl {
+	i2s0_loopback: i2s0_loopback {
+		group1 {
+			pinmux = <I2S0_O_WS_GPIO2>,
+				 <I2S0_O_BCK_GPIO3>;
+		};
+
+		group2 {
+			pinmux = <I2S0_O_SD_GPIO4>;
+			input-enable;
+		};
+
+		group3 {
+			pinmux = <I2S0_I_SD_GPIO4>;
+			output-enable;
+		};
+	};
+};
+
+&i2s0 {
+	pinctrl-0 = <&i2s0_loopback>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	dmas = <&dma 2>, <&dma 3>;
+	dma-names = "rx", "tx";
+};
+
+&dma {
+	status = "okay";
+};
