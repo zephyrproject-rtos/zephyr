@@ -2,7 +2,7 @@ description: Renesas R-Car eMMC
 
 compatible: "renesas,rcar-mmc"
 
-include: [sdhc.yaml, mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
+include: [sdhc.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   clocks:

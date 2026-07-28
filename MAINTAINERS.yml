@@ -1378,7 +1378,6 @@ Disk:
     - tests/drivers/build_all/disk/
     - include/zephyr/sd/
     - dts/bindings/sd/
-    - dts/bindings/mmc/
     - dts/bindings/disk/
   file-groups:
     - name: eMMC
