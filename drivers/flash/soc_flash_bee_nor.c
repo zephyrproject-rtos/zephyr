@@ -71,7 +71,7 @@ static const struct flash_parameters flash_bee_nor_parameters = {
 static int flash_bee_nor_check_bounds(off_t offset, size_t len)
 {
 	if (offset < 0 || offset >= FLASH_SIZE || (FLASH_SIZE - offset) < len) {
-		LOG_DBG("offset(%ld) or len(%zu) out of bounds", offset, len);
+		LOG_DBG("offset(%ld) or len(%zu) out of bounds", (long)offset, len);
 		return -EINVAL;
 	}
 
@@ -142,7 +142,7 @@ static int flash_bee_nor_erase(const struct device *dev, off_t offset, size_t le
 	}
 
 	if ((offset % FLASH_ERASE_BLK_SZ) != 0) {
-		LOG_ERR("offset %ld: not aligned to erase block size %d", offset,
+		LOG_ERR("offset %ld: not aligned to erase block size %d", (long)offset,
 			FLASH_ERASE_BLK_SZ);
 		return -EINVAL;
 	}
