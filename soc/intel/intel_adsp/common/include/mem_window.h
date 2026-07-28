@@ -8,6 +8,8 @@
 #ifndef _ADSP_MEMORY_WINDOW_H_
 #define _ADSP_MEMORY_WINDOW_H_
 
+#include <adsp_memory.h>
+
 #define WIN_SIZE(N) (CONFIG_MEMORY_WIN_##N##_SIZE)
 
 #define MEM_WINDOW_NODE(n) DT_NODELABEL(mem_window##n)
