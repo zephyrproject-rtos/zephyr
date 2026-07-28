@@ -14,6 +14,7 @@
 
 #include <stdbool.h>
 #include <stdarg.h>
+#include <zephyr/sys/printk.h>
 
 /**
  * @typedef arch_exception_dump_hook_t
@@ -90,21 +91,26 @@ static inline void arch_exception_call_dump_hook(const char *format, ...)
 }
 
 #if defined(CONFIG_EXCEPTION_DUMP_HOOK_ONLY)
-#define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__)
+#define EXCEPTION_DUMP(format, ...) printk_panic(); \
+	arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__)
 #elif defined(CONFIG_LOG)
-#define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__); \
+#define EXCEPTION_DUMP(format, ...) printk_panic(); \
+	arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__); \
 	LOG_ERR(format, ##__VA_ARGS__)
 #else
-#define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__); \
+#define EXCEPTION_DUMP(format, ...) printk_panic(); \
+	arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__); \
 	printk(format "\n", ##__VA_ARGS__)
 #endif
 
 #else
 
 #if defined(CONFIG_LOG)
-#define EXCEPTION_DUMP(...) LOG_ERR(__VA_ARGS__)
+#define EXCEPTION_DUMP(...) printk_panic(); \
+	LOG_ERR(__VA_ARGS__)
 #else
-#define EXCEPTION_DUMP(format, ...) printk(format "\n", ##__VA_ARGS__)
+#define EXCEPTION_DUMP(format, ...) printk_panic(); \
+	printk(format "\n", ##__VA_ARGS__)
 #endif
 #endif
 

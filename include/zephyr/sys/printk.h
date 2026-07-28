@@ -102,6 +102,27 @@ __printf_like(1, 2) void printk_unlocked(const char *fmt, ...);
  */
 __printf_like(1, 0) void vprintk_unlocked(const char *fmt, va_list ap);
 
+/**
+ * @brief Switch printk() to its most robust output mode
+ *
+ * Tells printk() that the system is crashing, after which it stops taking
+ * its internal spinlock, exactly as if every caller had used
+ * printk_unlocked().
+ *
+ * Once a fatal error is being handled, that lock cannot be relied upon:
+ * the faulting context may have died while holding it, or a CPU that will
+ * never run again may own it. Any subsequent printk() would then block
+ * forever, which loses not only the crash report but everything after it.
+ * Converting individual callers is not enough, because code reached after
+ * the failure has no way of knowing it is now running in a crash.
+ *
+ * Called by the fatal error path. There is no way back: the switch stays
+ * in effect for the remaining life of the system, on the assumption that
+ * whatever comes after a fatal error matters less than being able to
+ * report it.
+ */
+void printk_panic(void);
+
 #else
 /** @cond INTERNAL_HIDDEN */
 /* Stubs for CONFIG_PRINTK=n. The API is documented above; these carry no
@@ -127,6 +148,10 @@ static inline __printf_like(1, 0) void vprintk_unlocked(const char *fmt, va_list
 {
 	ARG_UNUSED(fmt);
 	ARG_UNUSED(ap);
+}
+
+static inline void printk_panic(void)
+{
 }
 /** @endcond */
 #endif
