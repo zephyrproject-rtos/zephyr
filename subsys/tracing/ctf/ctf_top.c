@@ -2062,3 +2062,56 @@ void sys_trace_k_heap_realloc_exit(struct k_heap *h, void *ptr, size_t bytes, k_
 				  k_ticks_to_us_floor32((uint32_t)timeout.ticks),
 				  (uint32_t)(uintptr_t)ret);
 }
+
+/* System heap */
+
+void sys_trace_k_heap_sys_k_aligned_alloc_enter(struct k_heap *heap)
+{
+	ctf_top_heap_sys_k_aligned_alloc_enter((uint32_t)(uintptr_t)heap);
+}
+
+void sys_trace_k_heap_sys_k_aligned_alloc_exit(struct k_heap *heap, void *ret)
+{
+	ctf_top_heap_sys_k_aligned_alloc_exit((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_sys_k_malloc_enter(struct k_heap *heap)
+{
+	ctf_top_heap_sys_k_malloc_enter((uint32_t)(uintptr_t)heap);
+}
+
+void sys_trace_k_heap_sys_k_malloc_exit(struct k_heap *heap, void *ret)
+{
+	ctf_top_heap_sys_k_malloc_exit((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_sys_k_calloc_enter(struct k_heap *heap)
+{
+	ctf_top_heap_sys_k_calloc_enter((uint32_t)(uintptr_t)heap);
+}
+
+void sys_trace_k_heap_sys_k_calloc_exit(struct k_heap *heap, void *ret)
+{
+	ctf_top_heap_sys_k_calloc_exit((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_sys_k_free_enter(struct k_heap *heap, struct k_heap **heap_ref)
+{
+	ctf_top_heap_sys_k_free_enter((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)heap_ref);
+}
+
+void sys_trace_k_heap_sys_k_free_exit(struct k_heap *heap, void *heap_ref)
+{
+	ctf_top_heap_sys_k_free_exit((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)heap_ref);
+}
+
+void sys_trace_k_heap_sys_k_realloc_enter(struct k_heap *heap, void *ptr)
+{
+	ctf_top_heap_sys_k_realloc_enter((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)ptr);
+}
+
+void sys_trace_k_heap_sys_k_realloc_exit(struct k_heap *heap, void *ptr, void *ret)
+{
+	ctf_top_heap_sys_k_realloc_exit((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)ptr,
+					(uint32_t)(uintptr_t)ret);
+}
