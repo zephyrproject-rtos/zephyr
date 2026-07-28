@@ -723,6 +723,26 @@ config TIMER_OBSERVER
 	  Adds iterable‑section support for observing k_timer events.
 	  Supports extending timer behavior without kernel changes.
 
+config TIMER_CLOCK
+	bool "Clock-based kernel timer arming"
+	select TIMEOUT_64BIT
+	help
+	  Adds k_timer_settime() and k_timer_gettime(): tick-exact relative and
+	  absolute-deadline arming of kernel timers against a per-timer clock
+	  (SYS_CLOCK_MONOTONIC or SYS_CLOCK_REALTIME), with drift-free periodic
+	  re-arming derived from kernel-maintained absolute scheduled-expiry
+	  state. Timeouts are always armed as absolute values, so at most one
+	  clock conversion is performed per arming operation.
+
+config TIMER_REALTIME
+	bool "Re-target armed realtime timers on clock changes"
+	depends on TIMER_CLOCK
+	help
+	  When sys_clock_settime() changes the SYS_CLOCK_REALTIME clock, armed
+	  timers with absolute realtime deadlines are re-targeted so that they
+	  expire when the new realtime clock reaches their deadline, as POSIX
+	  requires for TIMER_ABSTIME CLOCK_REALTIME timers.
+
 endmenu
 
 menu "Other Kernel Object Options"

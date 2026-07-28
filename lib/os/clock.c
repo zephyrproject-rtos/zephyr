@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #include <zephyr/kernel.h>
+#include <kernel_internal.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/timeutil.h>
@@ -140,6 +141,11 @@ int z_impl_sys_clock_settime(int clock_id, const struct timespec *tp)
 	K_SPINLOCK(&rt_clock_offset_lock) {
 		rt_clock_offset = offset;
 	}
+
+#ifdef CONFIG_TIMER_REALTIME
+	/* called after rt_clock_offset_lock is released - see the lock-order rules in timer.c */
+	z_timer_realtime_settime();
+#endif /* CONFIG_TIMER_REALTIME */
 
 	return 0;
 }

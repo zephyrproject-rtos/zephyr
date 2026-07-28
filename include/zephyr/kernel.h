@@ -2003,6 +2003,29 @@ struct k_timer {
 #ifdef CONFIG_OBJ_CORE_TIMER
 	struct k_obj_core  obj_core;
 #endif
+
+#ifdef CONFIG_TIMER_CLOCK
+	/* clock the timer is bound to (SYS_CLOCK_MONOTONIC or SYS_CLOCK_REALTIME) */
+	uint8_t clock_id;
+
+	/* Z_TIMER_FLAG_* */
+	uint8_t flags;
+
+	/* absolute scheduled-expiry uptime (ticks); the periodic re-arm grid base */
+	uint64_t expiry_ticks;
+
+	/* period of an exact-mode timer, in ticks (0 for one-shot) */
+	k_ticks_t period_ticks;
+#endif /* CONFIG_TIMER_CLOCK */
+
+#ifdef CONFIG_TIMER_REALTIME
+	/* node in the registry of armed absolute-realtime timers */
+	sys_snode_t rt_node;
+
+	/* original absolute SYS_CLOCK_REALTIME deadline (timespec fields) */
+	int64_t rt_sec;
+	long rt_nsec;
+#endif /* CONFIG_TIMER_REALTIME */
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -2028,7 +2051,22 @@ struct k_timer_observer {
 /**
  * @cond INTERNAL_HIDDEN
  */
-#define Z_TIMER_INITIALIZER(obj, expiry, stop) \
+#ifdef CONFIG_TIMER_CLOCK
+/* exact-mode arming state, armed via k_timer_settime() */
+#define Z_TIMER_FLAG_EXACT    BIT(0)
+/* absolute SYS_CLOCK_REALTIME deadline, registered for re-targeting */
+#define Z_TIMER_FLAG_REALTIME BIT(1)
+
+#define Z_TIMER_CLOCK_INITIALIZER(clock) \
+	.clock_id = (clock), \
+	.flags = 0, \
+	.expiry_ticks = 0, \
+	.period_ticks = 0,
+#else
+#define Z_TIMER_CLOCK_INITIALIZER(clock)
+#endif /* CONFIG_TIMER_CLOCK */
+
+#define Z_TIMER_INITIALIZER_EXT(obj, expiry, stop, clock) \
 	{ \
 	.timeout = { \
 		.fn = z_timer_expiration_handler, \
@@ -2039,7 +2077,11 @@ struct k_timer_observer {
 	.period = {}, \
 	.status = 0, \
 	.user_data = 0, \
+	Z_TIMER_CLOCK_INITIALIZER(clock) \
 	}
+
+#define Z_TIMER_INITIALIZER(obj, expiry, stop) \
+	Z_TIMER_INITIALIZER_EXT(obj, expiry, stop, SYS_CLOCK_MONOTONIC)
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -2092,6 +2134,83 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
 #define K_TIMER_DEFINE(name, expiry_fn, stop_fn) \
 	STRUCT_SECTION_ITERABLE(k_timer, name) = \
 		Z_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
+
+/**
+ * @brief Statically define and initialize a timer with extended initialization data.
+ *
+ * Behaves like @ref K_TIMER_DEFINE, additionally binding the timer to a clock for use with
+ * @ref k_timer_settime and @ref k_timer_gettime.
+ *
+ * @param name Name of the timer variable.
+ * @param expiry_fn Function to invoke each time the timer expires.
+ * @param stop_fn   Function to invoke if the timer is stopped while running.
+ * @param clock     Clock the timer measures against (@c SYS_CLOCK_MONOTONIC or
+ *                  @c SYS_CLOCK_REALTIME).
+ *
+ * @kconfig_dep{CONFIG_TIMER_CLOCK}
+ */
+#define K_TIMER_DEFINE_EXT(name, expiry_fn, stop_fn, clock) \
+	STRUCT_SECTION_ITERABLE(k_timer, name) = \
+		Z_TIMER_INITIALIZER_EXT(name, expiry_fn, stop_fn, clock)
+
+#if defined(CONFIG_TIMER_CLOCK) || defined(__DOXYGEN__)
+
+/**
+ * @brief Arm or disarm a timer with tick-exact, clock-based semantics
+ *
+ * Arms @a timer to expire when the clock it is bound to (see @ref K_TIMER_DEFINE_EXT and
+ * sys_timer_create()) reaches @a value (when @a flags contains @c SYS_TIMER_ABSTIME), or after
+ * at least the duration @a value (otherwise). If @a interval is non-NULL and non-zero, the timer
+ * then expires periodically on the exact tick grid anchored at the initial expiry - the grid
+ * does not drift, even across late or coalesced (tickless) wakeups.
+ *
+ * A zero @a value disarms the timer. An absolute @a value already in the past expires
+ * immediately. Absolute @c SYS_CLOCK_REALTIME timers are re-targeted when sys_clock_settime()
+ * moves the realtime clock; the re-targeting applies to the initial expiry only - once a
+ * periodic timer has expired for the first time, its interval continues on the monotonic grid.
+ *
+ * Unlike k_timer_start(), this function performs a single coherent conversion and always arms
+ * with an absolute timeout; it is not subject to the historical one-tick-early behavior of
+ * k_timer_start() relative durations.
+ *
+ * @param timer     Address of timer.
+ * @param flags     0 or @c SYS_TIMER_ABSTIME.
+ * @param value     Initial expiration (absolute deadline or relative duration); zero disarms.
+ * @param interval  Optional period for subsequent expirations (NULL or zero for one-shot).
+ * @param ovalue    Optional output: time remaining before this call took effect.
+ * @param ointerval Optional output: previous period.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @a value or @a interval is not a valid timespec, or @a flags is invalid
+ * @retval -ENOTSUP if the timer is bound to @c SYS_CLOCK_REALTIME with @c SYS_TIMER_ABSTIME but
+ *         @kconfig{CONFIG_TIMER_REALTIME} is not enabled
+ *
+ * @kconfig_dep{CONFIG_TIMER_CLOCK}
+ */
+__syscall int k_timer_settime(struct k_timer *timer, uint32_t flags,
+			      const struct timespec *value, const struct timespec *interval,
+			      struct timespec *ovalue, struct timespec *ointerval);
+
+/**
+ * @brief Query a timer's remaining time and period
+ *
+ * Writes the time remaining until the next expiry to @a value and the current period to
+ * @a interval (zero for a one-shot or disarmed timer). A disarmed timer - including an expired
+ * one-shot - reports a zero @a value.
+ *
+ * @param timer    Address of timer.
+ * @param value    Optional output: time remaining until the next expiry.
+ * @param interval Optional output: current period.
+ *
+ * @retval 1 if the timer is armed
+ * @retval 0 if the timer is disarmed
+ *
+ * @kconfig_dep{CONFIG_TIMER_CLOCK}
+ */
+__syscall int k_timer_gettime(const struct k_timer *timer, struct timespec *value,
+			      struct timespec *interval);
+
+#endif /* defined(CONFIG_TIMER_CLOCK) || defined(__DOXYGEN__) */
 
 
 #ifdef CONFIG_TIMER_OBSERVER

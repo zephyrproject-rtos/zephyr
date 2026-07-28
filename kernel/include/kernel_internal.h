@@ -440,6 +440,11 @@ int z_sig_claim(struct k_thread *tid);
 bool z_sig_pending_any(struct k_thread *tid);
 #endif /* CONFIG_SIGNAL */
 
+#ifdef CONFIG_TIMER_REALTIME
+/* re-target armed absolute-realtime timers after a realtime clock change (internal) */
+void z_timer_realtime_settime(void);
+#endif /* CONFIG_TIMER_REALTIME */
+
 #ifdef __cplusplus
 }
 #endif

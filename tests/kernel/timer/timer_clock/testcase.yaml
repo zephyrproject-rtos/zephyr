@@ -1,0 +1,34 @@
+common:
+  ignore_faults: true
+  tags:
+    - kernel
+    - timer
+tests:
+  kernel.timer.timer_clock:
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+      - qemu_cortex_m3
+  kernel.timer.timer_clock.tickless:
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_TICKLESS_KERNEL=y
+  kernel.timer.timer_clock.smp:
+    platform_allow:
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86_64
+    extra_configs:
+      - CONFIG_MP_MAX_NUM_CPUS=2
+      - CONFIG_SPIN_VALIDATE=y
+  kernel.timer.timer_clock.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_m3
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_ZTEST_FATAL_HOOK=y

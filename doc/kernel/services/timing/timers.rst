@@ -256,12 +256,78 @@ involving time limits.
    it can read the :ref:`system clock or the hardware clock <kernel_timing>`
    directly, rather than using a timer.
 
+Clock-based Arming
+******************
+
+When :kconfig:option:`CONFIG_TIMER_CLOCK` is enabled, a timer may additionally be armed with
+:c:func:`k_timer_settime` and queried with :c:func:`k_timer_gettime`, using
+:c:struct:`timespec` values measured against a per-timer clock (``SYS_CLOCK_MONOTONIC`` or
+``SYS_CLOCK_REALTIME``, bound via :c:macro:`K_TIMER_DEFINE_EXT` or :c:func:`sys_timer_create`).
+
+Clock-based arming differs from :c:func:`k_timer_start` in several deliberate ways:
+
+* **Absolute deadlines are supported** by passing ``SYS_TIMER_ABSTIME``; a deadline already in
+  the past expires immediately.
+* **"At least" semantics**: a relative duration never expires early. (For historical reasons,
+  :c:func:`k_timer_start` fires its *initial* duration up to one tick earlier than an equivalent
+  :c:func:`k_sleep`; :c:func:`k_timer_settime` does not inherit that behavior.)
+* **Drift-free periodic expiry**: the period advances on an exact tick grid anchored at the
+  initial expiry, derived from kernel-maintained absolute scheduled-expiry state. Late or
+  coalesced (tickless) wakeups do not accumulate error; if more than one period elapses before
+  the timer can be serviced, the timer skips ahead on the same grid rather than replaying
+  missed expiries.
+
+.. note::
+   Every absolute/relative conversion samples the current time and therefore adds variance;
+   when several incoherent conversions stack (absolute to relative to milliseconds to ticks,
+   re-sampled every period), the error is amplified and unbounded drift results.
+   Clock-based arming performs **at most one conversion per arming operation**, under the timer
+   lock, from a single coherent clock snapshot, and always arms with an absolute timeout. This
+   is also why :kconfig:option:`CONFIG_TIMER_CLOCK` selects
+   :kconfig:option:`CONFIG_TIMEOUT_64BIT` (which gates absolute timeouts): the option is
+   dependency-free and fully supported on 32-bit platforms, so absolute timeouts can simply be
+   expected everywhere.
+
+Why ``struct timespec`` rather than ``k_timeout_t``
+====================================================
+
+:c:type:`k_timeout_t` (and ``k_timepoint_t``) express time in the uptime domain: even their
+absolute forms are monotonic tick counts. A ``SYS_CLOCK_REALTIME`` absolute deadline is a
+wall-clock time, which only becomes a tick value by sampling the realtime offset - and *where*
+that sampling happens is the contract. Converting in the caller would bake the offset in at
+conversion time, re-introducing the stacked-conversion variance described above and making
+re-targeting on :c:func:`sys_clock_settime` impossible: the kernel would never learn the
+wall-clock deadline it is required to preserve. :c:func:`k_timer_settime` therefore accepts
+deadlines in the clock's own terms and performs the single conversion kernel-side, under the
+timer lock, recording the wall-clock deadline for later re-targeting.
+
+The tick-domain API remains :c:func:`k_timer_start`, which speaks :c:type:`k_timeout_t`
+natively (including ``K_TIMEOUT_ABS_TICKS`` for uptime-absolute deadlines); use the
+clock-based API when deadlines are measured against a clock.
+
+Realtime Timers and Clock Changes
+=================================
+
+With :kconfig:option:`CONFIG_TIMER_REALTIME` enabled, a timer bound to ``SYS_CLOCK_REALTIME``
+and armed with an absolute deadline is re-targeted whenever :c:func:`sys_clock_settime` moves
+the realtime clock: the timer expires when the *new* wall clock reaches its deadline, as POSIX
+requires of ``TIMER_ABSTIME`` ``CLOCK_REALTIME`` timers. Moving the clock forward past a
+deadline fires the timer immediately; moving it backward defers the expiry.
+
+Re-targeting applies to the initial expiry only. Once a periodic realtime timer has expired for
+the first time, its interval continues on the monotonic tick grid and later clock changes no
+longer affect it (matching Linux behavior). A stopped timer is never re-armed by a clock
+change.
+
+:c:func:`sys_clock_settime` must not be called from a timer expiry handler.
+
 Configuration Options
 *********************
 
 Related configuration options:
 
-* None
+* :kconfig:option:`CONFIG_TIMER_CLOCK`
+* :kconfig:option:`CONFIG_TIMER_REALTIME`
 
 API Reference
 *************

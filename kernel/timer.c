@@ -6,11 +6,16 @@
 
 #include <zephyr/kernel.h>
 
+#include <limits.h>
+#include <stdbool.h>
+
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/check.h>
 #include <stdbool.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/timeutil.h>
 #include <ksched.h>
 #include <wait_q.h>
 
@@ -64,6 +69,53 @@ static inline void z_timer_observer_on_expiry(struct k_timer *timer)
 #define z_timer_observer_on_expiry(timer) (void)0
 #endif /* CONFIG_TIMER_OBSERVER */
 
+#ifdef CONFIG_TIMER_CLOCK
+/* convert a non-negative timespec to ticks (ceil), saturating at K_TICK_MAX */
+static uint64_t z_timer_ts_to_ticks(const struct timespec *ts)
+{
+	if (ts->tv_sec < 0) {
+		return 0;
+	}
+
+	if ((uint64_t)ts->tv_sec >= (uint64_t)K_TICK_MAX / CONFIG_SYS_CLOCK_TICKS_PER_SEC) {
+		return (uint64_t)K_TICK_MAX;
+	}
+
+	return k_sec_to_ticks_ceil64((uint64_t)ts->tv_sec) + k_ns_to_ticks_ceil64(ts->tv_nsec);
+}
+
+static inline bool z_timer_ts_is_zero(const struct timespec *ts)
+{
+	return (ts->tv_sec == 0) && (ts->tv_nsec == 0);
+}
+#endif /* CONFIG_TIMER_CLOCK */
+
+#ifdef CONFIG_TIMER_REALTIME
+/* armed absolute-realtime timers, re-targeted on sys_clock_settime(); guarded by 'lock' */
+static sys_slist_t rt_timer_list = SYS_SLIST_STATIC_INIT(&rt_timer_list);
+
+/* callers hold 'lock' */
+static void z_timer_rt_register(struct k_timer *timer)
+{
+	if ((timer->flags & Z_TIMER_FLAG_REALTIME) == 0U) {
+		timer->flags |= Z_TIMER_FLAG_REALTIME;
+		sys_slist_append(&rt_timer_list, &timer->rt_node);
+	}
+}
+
+/* callers hold 'lock' */
+static void z_timer_rt_deregister(struct k_timer *timer)
+{
+	if ((timer->flags & Z_TIMER_FLAG_REALTIME) != 0U) {
+		timer->flags &= (uint8_t)~Z_TIMER_FLAG_REALTIME;
+		(void)sys_slist_find_and_remove(&rt_timer_list, &timer->rt_node);
+	}
+}
+#else
+#define z_timer_rt_register(timer) (void)0
+#define z_timer_rt_deregister(timer) (void)0
+#endif /* CONFIG_TIMER_REALTIME */
+
 /**
  * @brief Handle expiration of a kernel timer object.
  *
@@ -89,11 +141,48 @@ void z_timer_expiration_handler(struct _timeout *t)
 		return;
 	}
 
+	bool exact = false;
+
+#ifdef CONFIG_TIMER_CLOCK
+	exact = (timer->flags & Z_TIMER_FLAG_EXACT) != 0U;
+	if (exact) {
+		/*
+		 * On first expiry an absolute-realtime timer leaves the re-target
+		 * registry: its interval continues on the monotonic grid, and
+		 * subsequent sys_clock_settime() calls no longer affect it.
+		 */
+		z_timer_rt_deregister(timer);
+
+		if (timer->period_ticks > 0) {
+			/*
+			 * Advance along the exact grid anchored at the initial expiry.
+			 * Uptime observed inside a timeout handler is pinned to the
+			 * scheduled expiry, so a late or coalesced (tickless) wakeup
+			 * still re-arms on-grid; if more than one period has already
+			 * elapsed, skip ahead instead of replaying missed expiries.
+			 */
+			uint64_t now = (uint64_t)k_uptime_ticks();
+			uint64_t next_tick = timer->expiry_ticks + (uint64_t)timer->period_ticks;
+
+			if (next_tick <= now) {
+				uint64_t missed = (now - timer->expiry_ticks) /
+						  (uint64_t)timer->period_ticks;
+
+				next_tick = timer->expiry_ticks +
+					    (missed + 1U) * (uint64_t)timer->period_ticks;
+			}
+			timer->expiry_ticks = next_tick;
+			z_add_timeout(&timer->timeout, z_timer_expiration_handler,
+				      K_TIMEOUT_ABS_TICKS(next_tick));
+		}
+	}
+#endif /* CONFIG_TIMER_CLOCK */
+
 	/*
 	 * if the timer is periodic, start it again; don't add _TICK_ALIGN
 	 * since we're already aligned to a tick boundary
 	 */
-	if (!K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
+	if (!exact && !K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
 	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
 		k_timeout_t next = timer->period;
 
@@ -220,7 +309,6 @@ int k_timer_cleanup(struct k_timer *timer)
 	return z_timer_cleanup(timer, false);
 }
 
-
 void k_timer_init(struct k_timer *timer,
 			 k_timer_expiry_t expiry_fn,
 			 k_timer_stop_t stop_fn)
@@ -228,6 +316,13 @@ void k_timer_init(struct k_timer *timer,
 	timer->expiry_fn = expiry_fn;
 	timer->stop_fn = stop_fn;
 	timer->status = 0U;
+
+#ifdef CONFIG_TIMER_CLOCK
+	timer->clock_id = SYS_CLOCK_MONOTONIC;
+	timer->flags = 0U;
+	timer->expiry_ticks = 0U;
+	timer->period_ticks = 0;
+#endif /* CONFIG_TIMER_CLOCK */
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		z_waitq_init(&timer->wait_q);
@@ -248,7 +343,6 @@ void k_timer_init(struct k_timer *timer,
 	z_timer_observer_on_init(timer);
 }
 
-
 void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 			  k_timeout_t period)
 {
@@ -266,6 +360,12 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	 * wait for it.
 	 */
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
+
+#ifdef CONFIG_TIMER_CLOCK
+	/* a legacy start resumes legacy timer semantics */
+	z_timer_rt_deregister(timer);
+	timer->flags &= (uint8_t)~Z_TIMER_FLAG_EXACT;
+#endif /* CONFIG_TIMER_CLOCK */
 
 	(void)z_try_abort_timeout(&timer->timeout);
 
@@ -295,6 +395,9 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
+
+	/* a stopped timer must not be re-armed by a realtime clock change */
+	z_timer_rt_deregister(timer);
 
 	if (z_try_abort_timeout(&timer->timeout) != 0) {
 		/* Not removed from the queue: either the timer was not
@@ -465,3 +568,237 @@ static inline void z_vrfy_k_timer_user_data_set(struct k_timer *timer,
 #include <zephyr/syscalls/k_timer_user_data_set_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_TIMER_CLOCK
+
+int z_impl_k_timer_settime(struct k_timer *timer, uint32_t flags, const struct timespec *value,
+			   const struct timespec *interval, struct timespec *ovalue,
+			   struct timespec *ointerval)
+{
+	uint64_t deadline = 0;
+	k_ticks_t per = 0;
+	k_ticks_t orem = 0;
+	k_ticks_t oper = 0;
+	bool disarm;
+
+	if ((value == NULL) || !timespec_is_valid(value) ||
+	    ((interval != NULL) && (!timespec_is_valid(interval) || (interval->tv_sec < 0))) ||
+	    ((flags & ~(uint32_t)SYS_TIMER_ABSTIME) != 0U)) {
+		return -EINVAL;
+	}
+
+	if (((flags & SYS_TIMER_ABSTIME) == 0U) && (value->tv_sec < 0)) {
+		return -EINVAL;
+	}
+
+	if (!IS_ENABLED(CONFIG_TIMER_REALTIME) && ((flags & SYS_TIMER_ABSTIME) != 0U) &&
+	    (timer->clock_id == SYS_CLOCK_REALTIME)) {
+		return -ENOTSUP;
+	}
+
+	if (interval != NULL) {
+		per = (k_ticks_t)z_timer_ts_to_ticks(interval);
+	}
+
+	disarm = z_timer_ts_is_zero(value);
+
+	k_spinlock_key_t key = k_spin_lock(&timer_lock);
+
+	/* previous state, reported as k_timer_gettime() would have */
+	if (!z_is_inactive_timeout(&timer->timeout)) {
+		orem = z_timeout_remaining(&timer->timeout);
+	}
+	if ((timer->flags & Z_TIMER_FLAG_EXACT) != 0U) {
+		oper = timer->period_ticks;
+	} else if (!K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
+		   !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
+		oper = timer->period.ticks;
+	}
+
+	(void)z_try_abort_timeout(&timer->timeout);
+	z_timer_rt_deregister(timer);
+	timer->status = 0U;
+	/* the legacy re-arm path stays disabled while in exact mode */
+	timer->period = K_NO_WAIT;
+	timer->flags |= Z_TIMER_FLAG_EXACT;
+	timer->period_ticks = per;
+
+	if (!disarm) {
+		if ((flags & SYS_TIMER_ABSTIME) != 0U) {
+#ifdef CONFIG_TIMER_REALTIME
+			if (timer->clock_id == SYS_CLOCK_REALTIME) {
+				struct timespec mono = *value;
+				struct timespec off;
+
+				/* lock order: timer lock, then rt offset lock - never reversed */
+				sys_clock_getrtoffset(&off);
+				(void)timespec_sub(&mono, &off);
+				deadline = z_timer_ts_to_ticks(&mono);
+				timer->rt_sec = (int64_t)value->tv_sec;
+				timer->rt_nsec = value->tv_nsec;
+				z_timer_rt_register(timer);
+			} else
+#endif /* CONFIG_TIMER_REALTIME */
+			{
+				deadline = z_timer_ts_to_ticks(value);
+			}
+		} else {
+			/*
+			 * "at least" semantics: arming happens mid-tick, so the +1
+			 * defeats the round-down to the current tick boundary.
+			 */
+			deadline = (uint64_t)k_uptime_ticks() + z_timer_ts_to_ticks(value) + 1U;
+			deadline = MIN(deadline, (uint64_t)K_TICK_MAX);
+		}
+
+		timer->expiry_ticks = deadline;
+		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
+			      K_TIMEOUT_ABS_TICKS(deadline));
+	}
+
+	k_spin_unlock(&timer_lock, key);
+
+	if (ovalue != NULL) {
+		timespec_from_timeout(K_TICKS(orem), ovalue);
+	}
+	if (ointerval != NULL) {
+		timespec_from_timeout(K_TICKS(oper), ointerval);
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_timer_settime(struct k_timer *timer, uint32_t flags,
+					 const struct timespec *value,
+					 const struct timespec *interval, struct timespec *ovalue,
+					 struct timespec *ointerval)
+{
+	/* a handle that is not a live timer of the caller's is an invalid id, not a fault */
+	if (k_object_validate(k_object_find(timer), K_OBJ_TIMER, _OBJ_INIT_TRUE) != 0) {
+		return -EINVAL;
+	}
+	if (value != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_READ(value, sizeof(*value)));
+	}
+	if (interval != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_READ(interval, sizeof(*interval)));
+	}
+	if (ovalue != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(ovalue, sizeof(*ovalue)));
+	}
+	if (ointerval != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(ointerval, sizeof(*ointerval)));
+	}
+	return z_impl_k_timer_settime(timer, flags, value, interval, ovalue, ointerval);
+}
+#include <zephyr/syscalls/k_timer_settime_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_k_timer_gettime(const struct k_timer *timer, struct timespec *value,
+			   struct timespec *interval)
+{
+	int armed;
+	k_ticks_t rem = 0;
+	k_ticks_t per = 0;
+
+	k_spinlock_key_t key = k_spin_lock(&timer_lock);
+
+	armed = z_is_inactive_timeout(&timer->timeout) ? 0 : 1;
+	if (armed != 0) {
+		rem = z_timeout_remaining(&timer->timeout);
+	}
+	if ((timer->flags & Z_TIMER_FLAG_EXACT) != 0U) {
+		per = timer->period_ticks;
+	} else if (!K_TIMEOUT_EQ(timer->period, K_NO_WAIT) &&
+		   !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
+		per = timer->period.ticks;
+	}
+
+	k_spin_unlock(&timer_lock, key);
+
+	if (value != NULL) {
+		timespec_from_timeout(K_TICKS(rem), value);
+	}
+	if (interval != NULL) {
+		timespec_from_timeout(K_TICKS(per), interval);
+	}
+
+	return armed;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_timer_gettime(const struct k_timer *timer, struct timespec *value,
+					 struct timespec *interval)
+{
+	/* a handle that is not a live timer of the caller's is an invalid id, not a fault */
+	if (k_object_validate(k_object_find(timer), K_OBJ_TIMER, _OBJ_INIT_TRUE) != 0) {
+		return -EINVAL;
+	}
+	if (value != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(value, sizeof(*value)));
+	}
+	if (interval != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(interval, sizeof(*interval)));
+	}
+	return z_impl_k_timer_gettime(timer, value, interval);
+}
+#include <zephyr/syscalls/k_timer_gettime_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+#endif /* CONFIG_TIMER_CLOCK */
+
+#ifdef CONFIG_TIMER_REALTIME
+void z_timer_realtime_settime(void)
+{
+	sys_snode_t *node;
+	struct timespec off;
+
+	__ASSERT(!arch_is_in_isr(), "realtime timers cannot be re-targeted from ISR context");
+
+	/* snapshot the new offset outside the timer lock: no nested locking here */
+	sys_clock_getrtoffset(&off);
+
+	k_spinlock_key_t key = k_spin_lock(&timer_lock);
+
+	SYS_SLIST_FOR_EACH_NODE(&rt_timer_list, node) {
+		struct k_timer *timer = CONTAINER_OF(node, struct k_timer, rt_node);
+		struct timespec mono = {
+			.tv_sec = (time_t)timer->rt_sec,
+			.tv_nsec = timer->rt_nsec,
+		};
+		uint64_t deadline;
+
+		(void)timespec_sub(&mono, &off);
+		deadline = z_timer_ts_to_ticks(&mono);
+
+		/* past deadlines (clock moved forward over them) expire immediately */
+		(void)z_try_abort_timeout(&timer->timeout);
+		timer->expiry_ticks = deadline;
+		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
+			      K_TIMEOUT_ABS_TICKS(deadline));
+	}
+
+	k_spin_unlock(&timer_lock, key);
+}
+#endif /* CONFIG_TIMER_REALTIME */
+
+#ifdef CONFIG_OBJ_CORE_TIMER
+static int init_timer_obj_core_list(void)
+{
+	/* Initialize timer object type */
+
+	z_obj_type_init(&obj_type_timer, K_OBJ_TYPE_TIMER_ID,
+			offsetof(struct k_timer, obj_core));
+
+	/* Initialize and link statically defined timers */
+
+	STRUCT_SECTION_FOREACH(k_timer, timer) {
+		k_obj_core_init_and_link(K_OBJ_CORE(timer), &obj_type_timer);
+	}
+
+	return 0;
+}
+SYS_INIT(init_timer_obj_core_list, PRE_KERNEL_1,
+	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+#endif /* CONFIG_OBJ_CORE_TIMER */
