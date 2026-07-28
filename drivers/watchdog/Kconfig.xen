@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_XEN
+	bool "Xen domain watchdog driver"
+	default y
+	depends on XEN
+	depends on DT_HAS_XEN_WATCHDOG_ENABLED
+	select HAS_WDT_NO_CALLBACKS
+	help
+	  Enable a watchdog driver backed by Xen SCHEDOP_watchdog.
+
+	  This driver exposes Xen domain watchdog timers through Zephyr's
+	  watchdog API for the current Xen domain. Xen provides two domain
+	  watchdog timer slots, exposed as configurable Zephyr watchdog
+	  channels.
+	  Expiration is handled by Xen according to the domain's on_watchdog
+	  policy, so pre-timeout callbacks are not supported.
+	  Xen accepts watchdog timeouts in whole seconds. Timeout windows shorter
+	  than one second are rejected, and longer millisecond values are rounded
+	  up to the next second.
