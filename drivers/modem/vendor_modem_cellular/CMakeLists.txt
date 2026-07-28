@@ -8,6 +8,7 @@ if((CONFIG_DT_HAS_TELIT_ME910G1_ENABLED) OR (CONFIG_DT_HAS_TELIT_ME310G1_ENABLED
 endif()
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_FIBOCOM_LE250_ENABLED cellular_fibocom_le250.c)
 zephyr_library_sources_ifdef(CONFIG_DT_HAS_NORDIC_NRF91_SLM_ENABLED cellular_nordic_nrf91_slm.c)
 zephyr_library_sources_ifdef(CONFIG_DT_HAS_NORDIC_NRF93M1_ENABLED cellular_nordic_nrf93m1.c)
 zephyr_library_sources_ifdef(CONFIG_DT_HAS_QUECTEL_EG25_G_ENABLED cellular_quectel_eg25_g.c)
