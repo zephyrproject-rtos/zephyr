@@ -9,6 +9,10 @@
 
 #include "clock_control_esp32_priv.h"
 
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+#include <esp_private/esp_clk_tree_common.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -165,6 +169,16 @@ static int clock_control_esp32_init(const struct device *dev)
 		LOG_ERR("Failed to configure RTC clock");
 		return ret;
 	}
+
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	/* Until this runs, esp_clk_tree_enable_src() is a no-op and the PLL
+	 * reference branches keep their cold-boot state. On esp32p4 the 80 MHz
+	 * branch comes up gated, leaving the timers without a functional clock.
+	 * Run it here rather than in early boot, where gating the branches
+	 * stalls the flash bus.
+	 */
+	esp_clk_tree_initialize();
+#endif
 
 	esp_perip_clk_init();
 

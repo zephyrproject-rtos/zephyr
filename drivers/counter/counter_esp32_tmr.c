@@ -159,6 +159,17 @@ static int counter_esp32_init(const struct device *dev)
 	data->top_data.ticks = cfg->counter_info.max_top_value;
 
 	timg_ll_enable_bus_clock(cfg->group, true);
+
+	/* Take a reference on the source so its PLL branch is ungated */
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	esp_clk_tree_enable_src(GPTIMER_CLK_SRC_DEFAULT, true);
+#endif
+
+	/* Switching the source with the clock gate open can freeze the
+	 * glitch-free mux output and the counter never ticks
+	 */
+	timer_ll_enable_clock(cfg->group, cfg->index, false);
+	timer_ll_set_clock_source(cfg->group, cfg->index, GPTIMER_CLK_SRC_DEFAULT);
 	timer_ll_enable_clock(cfg->group, cfg->index, true);
 
 	timer_hal_init(&data->hal_ctx, cfg->group, cfg->index);
@@ -166,10 +177,6 @@ static int counter_esp32_init(const struct device *dev)
 			     false);
 	timer_ll_clear_intr_status(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id));
 	timer_ll_enable_auto_reload(data->hal_ctx.dev, data->hal_ctx.timer_id, false);
-#if defined(CONFIG_SOC_SERIES_ESP32P4)
-	esp_clk_tree_enable_src(GPTIMER_CLK_SRC_DEFAULT, true);
-#endif
-	timer_ll_set_clock_source(cfg->group, data->hal_ctx.timer_id, GPTIMER_CLK_SRC_DEFAULT);
 	timer_ll_set_clock_prescale(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->prescaler);
 	timer_ll_set_count_direction(data->hal_ctx.dev, data->hal_ctx.timer_id, GPTIMER_COUNT_UP);
 	timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, false);
