@@ -9,6 +9,12 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
+#include <zephyr/pm/state.h>
+
+struct rtio;
+struct rtio_sqe;
+struct rtio_cqe;
+struct rtio_iodev_sqe;
 
 #ifdef __cplusplus
 extern "C" {
@@ -1005,6 +1011,44 @@ void sys_trace_k_pipe_read_exit(struct k_pipe *pipe, int ret);
 #define sys_port_trace_k_pipe_read_blocking(pipe, timeout)                                         \
 	sys_trace_k_pipe_read_blocking(pipe, timeout)
 #define sys_port_trace_k_pipe_read_exit(pipe, ret) sys_trace_k_pipe_read_exit(pipe, ret)
+
+/* RTIO */
+void sys_trace_rtio_submit_enter(const struct rtio *r, uint32_t wait_count);
+void sys_trace_rtio_submit_exit(const struct rtio *r);
+void sys_trace_rtio_sqe_acquire_enter(const struct rtio *r);
+void sys_trace_rtio_sqe_acquire_exit(const struct rtio *r, const struct rtio_sqe *sqe);
+void sys_trace_rtio_sqe_cancel(const struct rtio_sqe *sqe);
+void sys_trace_rtio_cqe_submit_enter(const struct rtio *r, int result, uint32_t flags);
+void sys_trace_rtio_cqe_submit_exit(const struct rtio *r);
+void sys_trace_rtio_cqe_acquire_enter(const struct rtio *r);
+void sys_trace_rtio_cqe_acquire_exit(const struct rtio *r, const struct rtio_cqe *cqe);
+void sys_trace_rtio_cqe_release(const struct rtio *r, const struct rtio_cqe *cqe);
+void sys_trace_rtio_cqe_consume_enter(const struct rtio *r);
+void sys_trace_rtio_cqe_consume_exit(const struct rtio *r, const struct rtio_cqe *cqe);
+void sys_trace_rtio_txn_next_enter(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe);
+void sys_trace_rtio_txn_next_exit(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe);
+void sys_trace_rtio_chain_next_enter(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe);
+void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe);
+
+#define sys_port_trace_rtio_submit_enter(r, wait_count) sys_trace_rtio_submit_enter(r, wait_count)
+#define sys_port_trace_rtio_submit_exit(r)              sys_trace_rtio_submit_exit(r)
+#define sys_port_trace_rtio_sqe_acquire_enter(r)        sys_trace_rtio_sqe_acquire_enter(r)
+#define sys_port_trace_rtio_sqe_acquire_exit(r, sqe)    sys_trace_rtio_sqe_acquire_exit(r, sqe)
+#define sys_port_trace_rtio_sqe_cancel(sqe)             sys_trace_rtio_sqe_cancel(sqe)
+#define sys_port_trace_rtio_cqe_submit_enter(r, result, flags)                                     \
+	sys_trace_rtio_cqe_submit_enter(r, result, flags)
+#define sys_port_trace_rtio_cqe_submit_exit(r)           sys_trace_rtio_cqe_submit_exit(r)
+#define sys_port_trace_rtio_cqe_acquire_enter(r)         sys_trace_rtio_cqe_acquire_enter(r)
+#define sys_port_trace_rtio_cqe_acquire_exit(r, cqe)     sys_trace_rtio_cqe_acquire_exit(r, cqe)
+#define sys_port_trace_rtio_cqe_release(r, cqe)          sys_trace_rtio_cqe_release(r, cqe)
+#define sys_port_trace_rtio_cqe_consume_enter(r)         sys_trace_rtio_cqe_consume_enter(r)
+#define sys_port_trace_rtio_cqe_consume_exit(r, cqe)     sys_trace_rtio_cqe_consume_exit(r, cqe)
+#define sys_port_trace_rtio_txn_next_enter(r, iodev_sqe) sys_trace_rtio_txn_next_enter(r, iodev_sqe)
+#define sys_port_trace_rtio_txn_next_exit(r, iodev_sqe)  sys_trace_rtio_txn_next_exit(r, iodev_sqe)
+#define sys_port_trace_rtio_chain_next_enter(r, iodev_sqe)                                         \
+	sys_trace_rtio_chain_next_enter(r, iodev_sqe)
+#define sys_port_trace_rtio_chain_next_exit(r, iodev_sqe)                                          \
+	sys_trace_rtio_chain_next_exit(r, iodev_sqe)
 
 /*
  * Fill any sys_port_trace_* hook not defined above with a canonical no-op. The

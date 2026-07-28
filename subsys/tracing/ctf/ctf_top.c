@@ -13,6 +13,12 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/sys/cpu_load.h>
+#include <zephyr/pm/state.h>
+
+struct rtio;
+struct rtio_sqe;
+struct rtio_cqe;
+struct rtio_iodev_sqe;
 
 static void _get_thread_name(struct k_thread *thread, ctf_bounded_string_t *name)
 {
@@ -2177,4 +2183,86 @@ void sys_trace_k_pipe_read_blocking(struct k_pipe *pipe, k_timeout_t timeout)
 void sys_trace_k_pipe_read_exit(struct k_pipe *pipe, int ret)
 {
 	ctf_top_pipe_read_exit((uint32_t)(uintptr_t)pipe, ret);
+}
+
+/* RTIO */
+
+void sys_trace_rtio_submit_enter(const struct rtio *r, uint32_t wait_count)
+{
+	ctf_top_rtio_submit_enter((uint32_t)(uintptr_t)r, (uint32_t)wait_count);
+}
+
+void sys_trace_rtio_submit_exit(const struct rtio *r)
+{
+	ctf_top_rtio_submit_exit((uint32_t)(uintptr_t)r);
+}
+
+void sys_trace_rtio_sqe_acquire_enter(const struct rtio *r)
+{
+	ctf_top_rtio_sqe_acquire_enter((uint32_t)(uintptr_t)r);
+}
+
+void sys_trace_rtio_sqe_acquire_exit(const struct rtio *r, const struct rtio_sqe *sqe)
+{
+	ctf_top_rtio_sqe_acquire_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)sqe);
+}
+
+void sys_trace_rtio_sqe_cancel(const struct rtio_sqe *sqe)
+{
+	ctf_top_rtio_sqe_cancel((uint32_t)(uintptr_t)sqe);
+}
+
+void sys_trace_rtio_cqe_submit_enter(const struct rtio *r, int result, uint32_t flags)
+{
+	ctf_top_rtio_cqe_submit_enter((uint32_t)(uintptr_t)r, result, (uint32_t)flags);
+}
+
+void sys_trace_rtio_cqe_submit_exit(const struct rtio *r)
+{
+	ctf_top_rtio_cqe_submit_exit((uint32_t)(uintptr_t)r);
+}
+
+void sys_trace_rtio_cqe_acquire_enter(const struct rtio *r)
+{
+	ctf_top_rtio_cqe_acquire_enter((uint32_t)(uintptr_t)r);
+}
+
+void sys_trace_rtio_cqe_acquire_exit(const struct rtio *r, const struct rtio_cqe *cqe)
+{
+	ctf_top_rtio_cqe_acquire_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)cqe);
+}
+
+void sys_trace_rtio_cqe_release(const struct rtio *r, const struct rtio_cqe *cqe)
+{
+	ctf_top_rtio_cqe_release((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)cqe);
+}
+
+void sys_trace_rtio_cqe_consume_enter(const struct rtio *r)
+{
+	ctf_top_rtio_cqe_consume_enter((uint32_t)(uintptr_t)r);
+}
+
+void sys_trace_rtio_cqe_consume_exit(const struct rtio *r, const struct rtio_cqe *cqe)
+{
+	ctf_top_rtio_cqe_consume_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)cqe);
+}
+
+void sys_trace_rtio_txn_next_enter(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe)
+{
+	ctf_top_rtio_txn_next_enter((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)iodev_sqe);
+}
+
+void sys_trace_rtio_txn_next_exit(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe)
+{
+	ctf_top_rtio_txn_next_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)iodev_sqe);
+}
+
+void sys_trace_rtio_chain_next_enter(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe)
+{
+	ctf_top_rtio_chain_next_enter((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)iodev_sqe);
+}
+
+void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe)
+{
+	ctf_top_rtio_chain_next_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)iodev_sqe);
 }

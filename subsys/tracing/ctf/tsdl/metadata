@@ -3103,3 +3103,142 @@ event {
 		int32_t ret;
 	};
 };
+
+event {
+	name = rtio_submit_enter;
+	id = 0x166;
+	fields := struct {
+		uint32_t id;
+		uint32_t wait_count;
+	};
+};
+
+event {
+	name = rtio_submit_exit;
+	id = 0x167;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = rtio_sqe_acquire_enter;
+	id = 0x168;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = rtio_sqe_acquire_exit;
+	id = 0x169;
+	fields := struct {
+		uint32_t id;
+		uint32_t sqe;
+	};
+};
+
+event {
+	name = rtio_sqe_cancel;
+	id = 0x16A;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = rtio_cqe_submit_enter;
+	id = 0x16B;
+	fields := struct {
+		uint32_t id;
+		int32_t result;
+		uint32_t flags;
+	};
+};
+
+event {
+	name = rtio_cqe_submit_exit;
+	id = 0x16C;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = rtio_cqe_acquire_enter;
+	id = 0x16D;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = rtio_cqe_acquire_exit;
+	id = 0x16E;
+	fields := struct {
+		uint32_t id;
+		uint32_t cqe;
+	};
+};
+
+event {
+	name = rtio_cqe_release;
+	id = 0x16F;
+	fields := struct {
+		uint32_t id;
+		uint32_t cqe;
+	};
+};
+
+event {
+	name = rtio_cqe_consume_enter;
+	id = 0x170;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = rtio_cqe_consume_exit;
+	id = 0x171;
+	fields := struct {
+		uint32_t id;
+		uint32_t cqe;
+	};
+};
+
+event {
+	name = rtio_txn_next_enter;
+	id = 0x172;
+	fields := struct {
+		uint32_t id;
+		uint32_t iodev_sqe;
+	};
+};
+
+event {
+	name = rtio_txn_next_exit;
+	id = 0x173;
+	fields := struct {
+		uint32_t id;
+		uint32_t iodev_sqe;
+	};
+};
+
+event {
+	name = rtio_chain_next_enter;
+	id = 0x174;
+	fields := struct {
+		uint32_t id;
+		uint32_t iodev_sqe;
+	};
+};
+
+event {
+	name = rtio_chain_next_exit;
+	id = 0x175;
+	fields := struct {
+		uint32_t id;
+		uint32_t iodev_sqe;
+	};
+};
