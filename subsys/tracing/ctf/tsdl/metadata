@@ -2723,3 +2723,90 @@ event {
 		uint32_t ret;
 	};
 };
+
+event {
+	name = stack_init;
+	id = 0x13C;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = stack_alloc_init_enter;
+	id = 0x13D;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = stack_alloc_init_exit;
+	id = 0x13E;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = stack_cleanup_enter;
+	id = 0x13F;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = stack_cleanup_exit;
+	id = 0x140;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = stack_push_enter;
+	id = 0x141;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = stack_push_exit;
+	id = 0x142;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = stack_pop_enter;
+	id = 0x143;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = stack_pop_blocking;
+	id = 0x144;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = stack_pop_exit;
+	id = 0x145;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		int32_t ret;
+	};
+};

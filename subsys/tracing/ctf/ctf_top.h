@@ -413,6 +413,18 @@ typedef enum {
 	CTF_EVENT_LIFO_ALLOC_PUT_EXIT = 0x139,
 	CTF_EVENT_LIFO_GET_ENTER = 0x13A,
 	CTF_EVENT_LIFO_GET_EXIT = 0x13B,
+
+	/* Stack */
+	CTF_EVENT_STACK_INIT = 0x13C,
+	CTF_EVENT_STACK_ALLOC_INIT_ENTER = 0x13D,
+	CTF_EVENT_STACK_ALLOC_INIT_EXIT = 0x13E,
+	CTF_EVENT_STACK_CLEANUP_ENTER = 0x13F,
+	CTF_EVENT_STACK_CLEANUP_EXIT = 0x140,
+	CTF_EVENT_STACK_PUSH_ENTER = 0x141,
+	CTF_EVENT_STACK_PUSH_EXIT = 0x142,
+	CTF_EVENT_STACK_POP_ENTER = 0x143,
+	CTF_EVENT_STACK_POP_BLOCKING = 0x144,
+	CTF_EVENT_STACK_POP_EXIT = 0x145,
 } ctf_event_t;
 
 typedef struct {
@@ -2009,5 +2021,57 @@ static inline void ctf_top_lifo_get_enter(uint32_t lifo_id, uint32_t timeout)
 static inline void ctf_top_lifo_get_exit(uint32_t lifo_id, uint32_t timeout, uint32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_LIFO_GET_EXIT), lifo_id, timeout, ret);
+}
+
+/* Stack */
+
+static inline void ctf_top_stack_init(uint32_t stack_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_STACK_INIT), stack_id);
+}
+
+static inline void ctf_top_stack_alloc_init_enter(uint32_t stack_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_STACK_ALLOC_INIT_ENTER), stack_id);
+}
+
+static inline void ctf_top_stack_alloc_init_exit(uint32_t stack_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_STACK_ALLOC_INIT_EXIT), stack_id, ret);
+}
+
+static inline void ctf_top_stack_cleanup_enter(uint32_t stack_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_STACK_CLEANUP_ENTER), stack_id);
+}
+
+static inline void ctf_top_stack_cleanup_exit(uint32_t stack_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_STACK_CLEANUP_EXIT), stack_id, ret);
+}
+
+static inline void ctf_top_stack_push_enter(uint32_t stack_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_STACK_PUSH_ENTER), stack_id);
+}
+
+static inline void ctf_top_stack_push_exit(uint32_t stack_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_STACK_PUSH_EXIT), stack_id, ret);
+}
+
+static inline void ctf_top_stack_pop_enter(uint32_t stack_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_STACK_POP_ENTER), stack_id, timeout);
+}
+
+static inline void ctf_top_stack_pop_blocking(uint32_t stack_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_STACK_POP_BLOCKING), stack_id, timeout);
+}
+
+static inline void ctf_top_stack_pop_exit(uint32_t stack_id, uint32_t timeout, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_STACK_POP_EXIT), stack_id, timeout, ret);
 }
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
