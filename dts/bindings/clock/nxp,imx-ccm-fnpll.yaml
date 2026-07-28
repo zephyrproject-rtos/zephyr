@@ -34,19 +34,16 @@ properties:
 
   ss-step:
     type: int
-    required: false
     description: |
       Step value to get frequency change step
 
   ss-stop:
     type: int
-    required: false
     description: |
-      Stop value to get frequency change 
+      Stop value to get frequency change
 
   ss-enable:
     type: int
-    required: false
     description: |
       Enable spread spectrum modulation
 
