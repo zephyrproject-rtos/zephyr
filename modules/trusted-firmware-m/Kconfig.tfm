@@ -53,8 +53,6 @@ menuconfig BUILD_WITH_TFM
 	select BUILD_OUTPUT_HEX
 	imply INIT_ARCH_HW_AT_BOOT
 	imply ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
-	imply MBEDTLS if !TFM_USE_NS_APP
-	imply PSA_CRYPTO if !TFM_USE_NS_APP
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionally generate a TF-M image for the Secure Execution
@@ -274,6 +272,15 @@ config TFM_USE_NS_APP
 	  This option is intended for testing purposes only, since this is the
 	  easiest way to integrate and run the TF-M regression tests in the
 	  zephyr build system.
+
+config TFM_INSTALL_TF_PSA_CRYPTO_HEADERS
+	bool
+	depends on TFM_PARTITION_CRYPTO && !MBEDTLS
+	default y
+	help
+	  Hidden symbol signaling that the TF-PSA-Crypto headers (psa/crypto.h and friends)
+	  used by the Zephyr image are the ones installed by TF-M, together with the matching
+	  TF-PSA-Crypto configuration header.
 
 config TFM_CONNECTION_BASED_SERVICE_API
 	bool "TF-M use connection based service APIs"
