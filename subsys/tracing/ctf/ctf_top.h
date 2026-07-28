@@ -493,6 +493,10 @@ typedef enum {
 	CTF_EVENT_PM_DEVICE_RUNTIME_ENABLE_EXIT = 0x17D,
 	CTF_EVENT_PM_DEVICE_RUNTIME_DISABLE_ENTER = 0x17E,
 	CTF_EVENT_PM_DEVICE_RUNTIME_DISABLE_EXIT = 0x17F,
+
+	/* PM system */
+	CTF_EVENT_PM_SYSTEM_SUSPEND_ENTER = 0x180,
+	CTF_EVENT_PM_SYSTEM_SUSPEND_EXIT = 0x181,
 } ctf_event_t;
 
 typedef struct {
@@ -2460,5 +2464,17 @@ static inline void ctf_top_pm_device_runtime_disable_exit(uint32_t pm_device_run
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_DEVICE_RUNTIME_DISABLE_EXIT),
 		  pm_device_runtime_id, ret);
+}
+
+/* PM system */
+
+static inline void ctf_top_pm_system_suspend_enter(int32_t ticks)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_SYSTEM_SUSPEND_ENTER), ticks);
+}
+
+static inline void ctf_top_pm_system_suspend_exit(int32_t ticks, uint8_t state)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_SYSTEM_SUSPEND_EXIT), ticks, state);
 }
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */

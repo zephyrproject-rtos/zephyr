@@ -1082,6 +1082,14 @@ void sys_trace_pm_device_runtime_disable_exit(const struct device *dev, int ret)
 #define sys_port_trace_pm_device_runtime_disable_exit(dev, ret)                                    \
 	sys_trace_pm_device_runtime_disable_exit(dev, ret)
 
+/* PM system */
+void sys_trace_pm_system_suspend_enter(int32_t ticks);
+void sys_trace_pm_system_suspend_exit(int32_t ticks, enum pm_state state);
+
+#define sys_port_trace_pm_system_suspend_enter(ticks) sys_trace_pm_system_suspend_enter(ticks)
+#define sys_port_trace_pm_system_suspend_exit(ticks, state)                                        \
+	sys_trace_pm_system_suspend_exit(ticks, state)
+
 /*
  * Fill any sys_port_trace_* hook not defined above with a canonical no-op. The
  * per-macro #ifndef guards keep the real definitions above; only gaps are filled,

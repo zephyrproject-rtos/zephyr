@@ -3329,3 +3329,20 @@ event {
 		int32_t ret;
 	};
 };
+
+event {
+	name = pm_system_suspend_enter;
+	id = 0x180;
+	fields := struct {
+		int32_t ticks;
+	};
+};
+
+event {
+	name = pm_system_suspend_exit;
+	id = 0x181;
+	fields := struct {
+		int32_t ticks;
+		uint8_t state;
+	};
+};
