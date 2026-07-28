@@ -60,7 +60,40 @@ __printf_like(1, 2) void printk(const char *fmt, ...);
 
 __printf_like(1, 0) void vprintk(const char *fmt, va_list ap);
 
+/**
+ * @brief Output a string without taking the printk lock
+ *
+ * Same output as printk(), but the spinlock is never taken and both the
+ * logging subsystem and the user mode buffer are bypassed: text goes
+ * straight to the platform's character output hook.
+ *
+ * For callers that cannot take the lock: a crash whose lock holder is
+ * dead, output re-entered from inside printk() itself, or early boot
+ * before the atomics a spinlock needs are usable. Output may interleave
+ * with a concurrent printk(), which beats hanging or losing it.
+ *
+ * @note Kernel context only, and only as lock free as the output hook.
+ *
+ * @param fmt Format string.
+ * @param ... Optional list of format arguments.
+ */
+__printf_like(1, 2) void printk_unlocked(const char *fmt, ...);
+
+/**
+ * @brief Output a string without any locking, va_list version
+ *
+ * See printk_unlocked() for when this is appropriate and what it gives up.
+ *
+ * @param fmt Format string.
+ * @param ap Format arguments.
+ */
+__printf_like(1, 0) void vprintk_unlocked(const char *fmt, va_list ap);
+
 #else
+/** @cond INTERNAL_HIDDEN */
+/* Stubs for CONFIG_PRINTK=n. The API is documented above; these carry no
+ * documentation of their own so that Doxygen describes each function once.
+ */
 static inline __printf_like(1, 2) void printk(const char *fmt, ...)
 {
 	ARG_UNUSED(fmt);
@@ -71,6 +104,18 @@ static inline __printf_like(1, 0) void vprintk(const char *fmt, va_list ap)
 	ARG_UNUSED(fmt);
 	ARG_UNUSED(ap);
 }
+
+static inline __printf_like(1, 2) void printk_unlocked(const char *fmt, ...)
+{
+	ARG_UNUSED(fmt);
+}
+
+static inline __printf_like(1, 0) void vprintk_unlocked(const char *fmt, va_list ap)
+{
+	ARG_UNUSED(fmt);
+	ARG_UNUSED(ap);
+}
+/** @endcond */
 #endif
 
 #ifdef CONFIG_PICOLIBC
