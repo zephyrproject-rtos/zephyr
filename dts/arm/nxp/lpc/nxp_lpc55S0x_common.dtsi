@@ -46,8 +46,9 @@
 	 * LPC55x06: RAMX: 16K, SRAM0: 32K, SRAM1: 16K, SRAM2: 16K, SRAM3: 16k
 	 */
 	sramx: memory@4000000 {
-		compatible = "mmio-sram";
+		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x04000000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "SRAMX";
 	};
 
 	sram0: memory@20000000 {
