@@ -32,6 +32,14 @@
 #endif
 
 #define MSPI_STM32_WRITE_REG_MAX_TIME          40U
+
+#define MSPI_STM32_IS_SUPPORTED_CHILD(child) \
+DT_NODE_HAS_COMPAT(child, st_nor) || \
+DT_NODE_HAS_COMPAT(child, st_psram_device)
+
+#define MSPI_STM32_HAS_SUPPORTED_CHILD(index) \
+DT_INST_FOREACH_CHILD_STATUS_OKAY(index, MSPI_STM32_IS_SUPPORTED_CHILD)
+
 /*
  * Memory device geometry, taken at compile time from the controller's
  * first status "okay" child node. The STM32 MSPI drivers currently
@@ -59,6 +67,27 @@
 		    (GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(index,     \
 					MSPI_STM32_MEM_ADDR_BITS_ENTRY))))
 
+
+#if defined(CONFIG_MSPI_STM32_OSPI)
+
+#define MSPI_STM32_HAL_PREFIX HAL_OSPI_MEMTYPE_
+#define APMEM        APMEMORY
+/* Supported memory types for OSPI */
+#define MSPI_STM32_IS_VALID_MEMTYPE_MICRON        1
+#define MSPI_STM32_IS_VALID_MEMTYPE_MACRONIX      1
+#define MSPI_STM32_IS_VALID_MEMTYPE_APMEMORY      1
+#define MSPI_STM32_IS_VALID_MEMTYPE_MACRONIX_RAM  1
+#define MSPI_STM32_IS_VALID_MEMTYPE_HYPERBUS      1
+/* Explicitly unsupported */
+#define MSPI_STM32_IS_VALID_MEMTYPE_APMEM_16BITS  0
+
+#elif defined(CONFIG_MSPI_STM32_XSPI)
+
+#define MSPI_STM32_HAL_PREFIX HAL_XSPI_MEMTYPE_
+
+#define APMEM        APMEM
+#endif
+
 /*
  * Memory type token ("st,mem-type" on the child node), upper-cased for
  * pasting onto the HAL memory type macro prefix. Defaults to MICRON,
@@ -72,6 +101,19 @@
 		    (MICRON),                                                  \
 		    (GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(index,     \
 					MSPI_STM32_MEMTYPE_TOKEN_ENTRY))))
+
+/* Validation helper */
+#define MSPI_STM32_VALIDATE_MEMTYPE(token)                                     \
+	BUILD_ASSERT(                                                          \
+		UTIL_CAT(MSPI_STM32_IS_VALID_MEMTYPE_, token),                 \
+		"Unsupported st,mem-type for selected MSPI driver"             \
+	)
+
+#define MSPI_STM32_MEMTYPE_TOKEN(index) \
+	MSPI_STM32_INST_MEMTYPE_TOKEN(index)
+
+#define MSPI_STM32_HAL_MEMTYPE(index) \
+	CONCAT(MSPI_STM32_HAL_PREFIX, MSPI_STM32_INST_MEMTYPE_TOKEN(index))
 
 typedef void (*irq_config_func_t)(void);
 
