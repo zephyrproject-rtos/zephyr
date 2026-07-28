@@ -1891,3 +1891,48 @@ void sys_trace_k_fifo_peek_tail_exit(struct k_fifo *fifo, void *ret)
 {
 	ctf_top_fifo_peek_tail_exit((uint32_t)(uintptr_t)fifo, (uint32_t)(uintptr_t)ret);
 }
+
+/* LIFO */
+
+void sys_trace_k_lifo_init_enter(struct k_lifo *lifo)
+{
+	ctf_top_lifo_init_enter((uint32_t)(uintptr_t)lifo);
+}
+
+void sys_trace_k_lifo_init_exit(struct k_lifo *lifo)
+{
+	ctf_top_lifo_init_exit((uint32_t)(uintptr_t)lifo);
+}
+
+void sys_trace_k_lifo_put_enter(struct k_lifo *lifo, void *data)
+{
+	ctf_top_lifo_put_enter((uint32_t)(uintptr_t)lifo, (uint32_t)(uintptr_t)data);
+}
+
+void sys_trace_k_lifo_put_exit(struct k_lifo *lifo, void *data)
+{
+	ctf_top_lifo_put_exit((uint32_t)(uintptr_t)lifo, (uint32_t)(uintptr_t)data);
+}
+
+void sys_trace_k_lifo_alloc_put_enter(struct k_lifo *lifo, void *data)
+{
+	ctf_top_lifo_alloc_put_enter((uint32_t)(uintptr_t)lifo, (uint32_t)(uintptr_t)data);
+}
+
+void sys_trace_k_lifo_alloc_put_exit(struct k_lifo *lifo, void *data, int ret)
+{
+	ctf_top_lifo_alloc_put_exit((uint32_t)(uintptr_t)lifo, (uint32_t)(uintptr_t)data, ret);
+}
+
+void sys_trace_k_lifo_get_enter(struct k_lifo *lifo, k_timeout_t timeout)
+{
+	ctf_top_lifo_get_enter((uint32_t)(uintptr_t)lifo,
+			       k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_lifo_get_exit(struct k_lifo *lifo, k_timeout_t timeout, void *ret)
+{
+	ctf_top_lifo_get_exit((uint32_t)(uintptr_t)lifo,
+			      k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+			      (uint32_t)(uintptr_t)ret);
+}

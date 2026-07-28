@@ -2651,3 +2651,75 @@ event {
 		uint32_t ret;
 	};
 };
+
+event {
+	name = lifo_init_enter;
+	id = 0x134;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = lifo_init_exit;
+	id = 0x135;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = lifo_put_enter;
+	id = 0x136;
+	fields := struct {
+		uint32_t id;
+		uint32_t data;
+	};
+};
+
+event {
+	name = lifo_put_exit;
+	id = 0x137;
+	fields := struct {
+		uint32_t id;
+		uint32_t data;
+	};
+};
+
+event {
+	name = lifo_alloc_put_enter;
+	id = 0x138;
+	fields := struct {
+		uint32_t id;
+		uint32_t data;
+	};
+};
+
+event {
+	name = lifo_alloc_put_exit;
+	id = 0x139;
+	fields := struct {
+		uint32_t id;
+		uint32_t data;
+		int32_t ret;
+	};
+};
+
+event {
+	name = lifo_get_enter;
+	id = 0x13A;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = lifo_get_exit;
+	id = 0x13B;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		uint32_t ret;
+	};
+};

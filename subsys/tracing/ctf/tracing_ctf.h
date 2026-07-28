@@ -863,6 +863,28 @@ void sys_trace_k_fifo_peek_tail_exit(struct k_fifo *fifo, void *ret);
 #define sys_port_trace_k_fifo_peek_tail_enter(fifo)     sys_trace_k_fifo_peek_tail_enter(fifo)
 #define sys_port_trace_k_fifo_peek_tail_exit(fifo, ret) sys_trace_k_fifo_peek_tail_exit(fifo, ret)
 
+/* LIFO */
+void sys_trace_k_lifo_init_enter(struct k_lifo *lifo);
+void sys_trace_k_lifo_init_exit(struct k_lifo *lifo);
+void sys_trace_k_lifo_put_enter(struct k_lifo *lifo, void *data);
+void sys_trace_k_lifo_put_exit(struct k_lifo *lifo, void *data);
+void sys_trace_k_lifo_alloc_put_enter(struct k_lifo *lifo, void *data);
+void sys_trace_k_lifo_alloc_put_exit(struct k_lifo *lifo, void *data, int ret);
+void sys_trace_k_lifo_get_enter(struct k_lifo *lifo, k_timeout_t timeout);
+void sys_trace_k_lifo_get_exit(struct k_lifo *lifo, k_timeout_t timeout, void *ret);
+
+#define sys_port_trace_k_lifo_init_enter(lifo)      sys_trace_k_lifo_init_enter(lifo)
+#define sys_port_trace_k_lifo_init_exit(lifo)       sys_trace_k_lifo_init_exit(lifo)
+#define sys_port_trace_k_lifo_put_enter(lifo, data) sys_trace_k_lifo_put_enter(lifo, data)
+#define sys_port_trace_k_lifo_put_exit(lifo, data)  sys_trace_k_lifo_put_exit(lifo, data)
+#define sys_port_trace_k_lifo_alloc_put_enter(lifo, data)                                          \
+	sys_trace_k_lifo_alloc_put_enter(lifo, data)
+#define sys_port_trace_k_lifo_alloc_put_exit(lifo, data, ret)                                      \
+	sys_trace_k_lifo_alloc_put_exit(lifo, data, ret)
+#define sys_port_trace_k_lifo_get_enter(lifo, timeout) sys_trace_k_lifo_get_enter(lifo, timeout)
+#define sys_port_trace_k_lifo_get_exit(lifo, timeout, ret)                                         \
+	sys_trace_k_lifo_get_exit(lifo, timeout, ret)
+
 /*
  * Fill any sys_port_trace_* hook not defined above with a canonical no-op. The
  * per-macro #ifndef guards keep the real definitions above; only gaps are filled,
