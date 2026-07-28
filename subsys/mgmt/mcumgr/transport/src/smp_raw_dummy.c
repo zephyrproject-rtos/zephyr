@@ -29,6 +29,10 @@
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
 
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#include <zephyr/mgmt/mcumgr/grp/transport_mgmt/transport_mgmt.h>
+#endif
+
 BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_RAW_DUMMY_RX_BUF_SIZE != 0,
 	     "CONFIG_MCUMGR_TRANSPORT_RAW_DUMMY_RX_BUF_SIZE must be > 0");
 
@@ -47,6 +51,16 @@ static uart_mcumgr_recv_fn *dummy_mgumgr_recv_cb;
 
 /** Contains the fragment currently being received. */
 static struct uart_mcumgr_rx_buf *dummy_mcumgr_cur_buf;
+
+#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
+static struct smp_client_transport_entry smp_client_transport = {
+	.smpt = &smp_raw_dummy_transport,
+	.smpt_type = SMP_RAW_SERIAL_TRANSPORT,
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS
+	.name = "Raw dummy",
+#endif
+};
+#endif
 
 static void smp_raw_dummy_mcumgr_free_rx_buf(struct uart_mcumgr_rx_buf *rx_buf);
 
@@ -129,6 +143,106 @@ static int smp_raw_dummy_tx_pkt_int(struct net_buf *nb)
 	return 0;
 }
 
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+static bool smp_raw_dummy_bridge_connect(struct smp_transport_bridge *bridge, bool outgoing,
+					 uint32_t mode, bool same_transport,
+					 zcbor_state_t *input_data, zcbor_state_t *output_data)
+{
+	ARG_UNUSED(bridge);
+	ARG_UNUSED(outgoing);
+	ARG_UNUSED(input_data);
+	ARG_UNUSED(output_data);
+
+	if (mode != 0) {
+		smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_INVALID_MODE);
+
+		return false;
+	}
+
+	if (same_transport == true) {
+		smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_SAME_BRIDGE_DEVICE_DISALLOWED);
+
+		return false;
+	}
+
+	return true;
+}
+
+static void smp_raw_dummy_bridge_disconnect(struct smp_transport_bridge *bridge, bool outgoing)
+{
+	ARG_UNUSED(bridge);
+	ARG_UNUSED(outgoing);
+}
+
+static int smp_raw_dummy_bridge_tx(const struct smp_transport_bridge *bridge, struct net_buf *nb,
+				   bool outgoing)
+{
+	ARG_UNUSED(bridge);
+	ARG_UNUSED(outgoing);
+
+	return smp_raw_dummy_tx_pkt_int(nb);
+}
+
+#if defined(CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS)
+static bool smp_raw_dummy_bridge_modes(zcbor_state_t *output_data, int *rc)
+{
+	bool ok;
+
+	 ok = zcbor_map_start_encode(output_data, 4) &&
+	      zcbor_tstr_put_lit(output_data, "id") &&
+	      zcbor_uint32_put(output_data, 0) &&
+	      zcbor_tstr_put_lit(output_data, "description") &&
+	      zcbor_tstr_put_lit(output_data, "Raw dummy") &&
+	      zcbor_tstr_put_lit(output_data, "incoming") &&
+	      zcbor_bool_put(output_data, true) &&
+	      zcbor_tstr_put_lit(output_data, "outgoing") &&
+	      zcbor_bool_put(output_data, true) &&
+	      zcbor_map_end_encode(output_data, 4);
+
+	*rc = MGMT_RETURN_CHECK(ok);
+	return ok;
+}
+
+static bool smp_raw_dummy_bridge_config_details(uint32_t mode, zcbor_state_t *output_data, int *rc)
+{
+	if (mode == 0) {
+#ifdef CONFIG_MCUMGR_TRANSPORT_RAW_DUMMY_BRIDGE_CONFIG_DETAILS
+		bool ok;
+
+		ok = zcbor_map_start_encode(output_data, 3) &&
+		     zcbor_tstr_put_lit(output_data, "name") &&
+		     zcbor_tstr_put_lit(output_data, "port") &&
+		     zcbor_tstr_put_lit(output_data, "type") &&
+		     zcbor_uint32_put(output_data, TRANSPORT_MGMT_CONFIG_TYPE_STRING) &&
+		     zcbor_tstr_put_lit(output_data, "required") &&
+		     zcbor_bool_put(output_data, true) &&
+		     zcbor_map_end_encode(output_data, 3) &&
+		     zcbor_map_start_encode(output_data, 3) &&
+		     zcbor_tstr_put_lit(output_data, "name") &&
+		     zcbor_tstr_put_lit(output_data, "speed") &&
+		     zcbor_tstr_put_lit(output_data, "type") &&
+		     zcbor_uint32_put(output_data, TRANSPORT_MGMT_CONFIG_TYPE_UINT) &&
+		     zcbor_tstr_put_lit(output_data, "required") &&
+		     zcbor_bool_put(output_data, true) &&
+		     zcbor_map_end_encode(output_data, 3);
+
+		return true;
+#else
+		return true;
+#endif
+	}
+
+	smp_mgmt_reset_zse_writer(output_data);
+	smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT, TRANSPORT_MGMT_ERR_INVALID_MODE);
+	*rc = 0;
+
+	return false;
+}
+#endif
+#endif
+
 static int smp_raw_dummy_init(void)
 {
 	int rc;
@@ -138,6 +252,17 @@ static int smp_raw_dummy_init(void)
 	smp_raw_dummy_transport.functions.output = smp_raw_dummy_tx_pkt_int;
 	smp_raw_dummy_transport.functions.get_mtu = smp_raw_dummy_get_mtu;
 
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+	smp_raw_dummy_transport.functions.bridge_connect = smp_raw_dummy_bridge_connect;
+	smp_raw_dummy_transport.functions.bridge_disconnect = smp_raw_dummy_bridge_disconnect;
+	smp_raw_dummy_transport.functions.bridge_output = smp_raw_dummy_bridge_tx;
+#if defined(CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS)
+	smp_raw_dummy_transport.functions.bridge_modes = smp_raw_dummy_bridge_modes;
+	smp_raw_dummy_transport.functions.bridge_config_details =
+							smp_raw_dummy_bridge_config_details;
+#endif
+#endif
+
 	rc = smp_transport_init(&smp_raw_dummy_transport);
 
 	if (rc != 0) {
@@ -145,6 +270,10 @@ static int smp_raw_dummy_init(void)
 	}
 
 	dummy_mgumgr_recv_cb = smp_raw_dummy_process_frag;
+
+#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
+	smp_client_transport_register(&smp_client_transport);
+#endif
 
 	return 0;
 }
