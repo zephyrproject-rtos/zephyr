@@ -911,6 +911,39 @@ void sys_trace_k_stack_pop_exit(struct k_stack *stack, k_timeout_t timeout, int 
 #define sys_port_trace_k_stack_pop_exit(stack, timeout, ret)                                       \
 	sys_trace_k_stack_pop_exit(stack, timeout, ret)
 
+/* Heap */
+void sys_trace_k_heap_init(struct k_heap *h);
+void sys_trace_k_heap_aligned_alloc_enter(struct k_heap *h, k_timeout_t timeout);
+void sys_trace_k_heap_alloc_helper_blocking(struct k_heap *h, k_timeout_t timeout);
+void sys_trace_k_heap_aligned_alloc_exit(struct k_heap *h, k_timeout_t timeout, void *ret);
+void sys_trace_k_heap_alloc_enter(struct k_heap *h, k_timeout_t timeout);
+void sys_trace_k_heap_alloc_exit(struct k_heap *h, k_timeout_t timeout, void *ret);
+void sys_trace_k_heap_calloc_enter(struct k_heap *h, k_timeout_t timeout);
+void sys_trace_k_heap_calloc_exit(struct k_heap *h, k_timeout_t timeout, void *ret);
+void sys_trace_k_heap_free(struct k_heap *h);
+void sys_trace_k_heap_realloc_enter(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout);
+void sys_trace_k_heap_realloc_exit(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout,
+				   void *ret);
+
+#define sys_port_trace_k_heap_init(h) sys_trace_k_heap_init(h)
+#define sys_port_trace_k_heap_aligned_alloc_enter(h, timeout)                                      \
+	sys_trace_k_heap_aligned_alloc_enter(h, timeout)
+#define sys_port_trace_k_heap_alloc_helper_blocking(h, timeout)                                    \
+	sys_trace_k_heap_alloc_helper_blocking(h, timeout)
+#define sys_port_trace_k_heap_aligned_alloc_exit(h, timeout, ret)                                  \
+	sys_trace_k_heap_aligned_alloc_exit(h, timeout, ret)
+#define sys_port_trace_k_heap_alloc_enter(h, timeout) sys_trace_k_heap_alloc_enter(h, timeout)
+#define sys_port_trace_k_heap_alloc_exit(h, timeout, ret)                                          \
+	sys_trace_k_heap_alloc_exit(h, timeout, ret)
+#define sys_port_trace_k_heap_calloc_enter(h, timeout) sys_trace_k_heap_calloc_enter(h, timeout)
+#define sys_port_trace_k_heap_calloc_exit(h, timeout, ret)                                         \
+	sys_trace_k_heap_calloc_exit(h, timeout, ret)
+#define sys_port_trace_k_heap_free(h) sys_trace_k_heap_free(h)
+#define sys_port_trace_k_heap_realloc_enter(h, ptr, bytes, timeout)                                \
+	sys_trace_k_heap_realloc_enter(h, ptr, bytes, timeout)
+#define sys_port_trace_k_heap_realloc_exit(h, ptr, bytes, timeout, ret)                            \
+	sys_trace_k_heap_realloc_exit(h, ptr, bytes, timeout, ret)
+
 /*
  * Fill any sys_port_trace_* hook not defined above with a canonical no-op. The
  * per-macro #ifndef guards keep the real definitions above; only gaps are filled,

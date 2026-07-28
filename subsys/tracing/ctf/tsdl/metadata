@@ -2810,3 +2810,108 @@ event {
 		int32_t ret;
 	};
 };
+
+event {
+	name = heap_init;
+	id = 0x146;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = heap_aligned_alloc_enter;
+	id = 0x147;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = heap_alloc_helper_blocking;
+	id = 0x148;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = heap_aligned_alloc_exit;
+	id = 0x149;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = heap_alloc_enter;
+	id = 0x14A;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = heap_alloc_exit;
+	id = 0x14B;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = heap_calloc_enter;
+	id = 0x14C;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = heap_calloc_exit;
+	id = 0x14D;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = heap_free;
+	id = 0x14E;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = heap_realloc_enter;
+	id = 0x14F;
+	fields := struct {
+		uint32_t id;
+		uint32_t ptr;
+		uint32_t bytes;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = heap_realloc_exit;
+	id = 0x150;
+	fields := struct {
+		uint32_t id;
+		uint32_t ptr;
+		uint32_t bytes;
+		uint32_t timeout;
+		uint32_t ret;
+	};
+};
