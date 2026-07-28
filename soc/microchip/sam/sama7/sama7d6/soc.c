@@ -56,6 +56,10 @@ static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("pmc", PMC_BASE_ADDRESS, 0x200,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 
+	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(microchip_pmecc_g1_flash),
+		   (MMU_REGION_FLAT_ENTRY("ecc-rom", ECC_ROM_ADDR, ECC_ROM_SIZE,
+					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
+
 	MMU_REGION_FLAT_ENTRY("sckc", SCKC_BASE_ADDRESS, 0x4,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 
