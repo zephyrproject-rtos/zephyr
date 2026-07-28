@@ -932,23 +932,24 @@ int coap_find_options(const struct coap_packet *cpkt, uint16_t code,
 {
 	uint16_t opt_len;
 	uint16_t offset;
+	uint16_t end;
 	uint16_t delta;
 	uint8_t num;
 	int r;
 
-	/* Check if there are options to parse */
-	if (cpkt->hdr_len == cpkt->max_len) {
+	if (cpkt->opt_len == 0U) {
 		return 0;
 	}
 
 	offset = cpkt->hdr_len;
+	end = cpkt->hdr_len + cpkt->opt_len;
 	opt_len = 0U;
 	delta = 0U;
 	num = 0U;
 
-	while (delta <= code && num < veclen) {
+	while (delta <= code && num < veclen && offset < end) {
 		r = parse_option(cpkt->data, offset, &offset,
-				 cpkt->max_len, &delta, &opt_len,
+				 end, &delta, &opt_len,
 				 &options[num]);
 		if (r < 0) {
 			return -EINVAL;
