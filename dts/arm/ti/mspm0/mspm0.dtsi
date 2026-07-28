@@ -202,6 +202,11 @@
 			status = "disabled";
 		};
 
+		sysctl: syscon@400af000 {
+			compatible = "syscon";
+			reg = <0x400af000 0x2000>;
+		};
+
 		flashctl: flash-controller@400cd000 {
 			compatible = "ti,mspm0-flash-controller";
 			reg = <0x400cd000 0x2000>;
@@ -228,6 +233,11 @@
 			status = "disabled";
 		};
 
+		cpuss: syscon@40400000 {
+			compatible = "syscon";
+			reg = <0x40400000 0x2000>;
+		};
+
 		pinctrl: pin-controller@40428000 {
 			compatible = "ti,mspm0-pinctrl";
 			reg = <0x40428000 0x400>;
@@ -246,6 +256,11 @@
 			compatible = "ti,mspm0-spi";
 			reg = <0x40468000 0x2000>;
 			status = "disabled";
+		};
+
+		factoryregion: syscon@41c40000 {
+			compatible = "syscon";
+			reg = <0x41c40000 0x400>;
 		};
 	};
 };

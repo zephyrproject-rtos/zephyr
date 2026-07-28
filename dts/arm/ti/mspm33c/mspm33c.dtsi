@@ -24,6 +24,16 @@
 			compatible = "mmio-sram";
 		};
 
+		fri: syscon@40028000 {
+			compatible = "syscon";
+			reg = <0x40028000 0x2000>;
+		};
+
+		memcfg: syscon@4002a000 {
+			compatible = "syscon";
+			reg = <0x4002a000 0x2000>;
+		};
+
 		flash_controller: flash-controller@40042000 {
 			reg = <0x40042000 DT_SIZE_K(8)>;
 			ranges;
@@ -38,6 +48,12 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
+		};
+
+		sysctl: syscon@400af000 {
+			compatible = "syscon";
+			reg = <0x400af000 0x2000>;
+			status = "okay";
 		};
 
 		pinctrl: pin-controller@400f0000 {
@@ -72,6 +88,11 @@
 				#gpio-cells = <2>;
 				status = "disabled";
 			};
+		};
+
+		factoryregion: syscon@80111000 {
+			compatible = "syscon";
+			reg = <0x80111000 0x80>;
 		};
 	};
 };
