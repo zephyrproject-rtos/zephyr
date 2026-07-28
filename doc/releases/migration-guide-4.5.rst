@@ -1558,6 +1558,15 @@ STM32
     SoCs of the STM32H5Ex/STM32H5Fx line are not affected by this change as they have always used
     the new names since their introduction in Zephyr.
 
+Storage
+=======
+
+* The ``fs_off`` element of :c:struct:`flash_sector` has been changed from type ``off_t`` to
+  ``size_t``. This should make all platforms and toolchains use the native machine register size and
+  not vary based on the POSIX ``off_t`` type inherited from the C library. Picolibc 1.8.12 always
+  defines ``off_t`` as a 64-bit integer, even on 32-bit platforms; this change effectively returns
+  the struct to the previous layout when using this C library.
+
 Syscon
 ======
 
