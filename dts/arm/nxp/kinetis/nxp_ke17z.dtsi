@@ -29,7 +29,7 @@
 
 	soc {
 		/* Remove ftfe, it doesn't exist on KE17Z */
-		/delete-node/ ftfe;
+		/delete-node/ flash-controller@40020000;
 
 		ftfa: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfa";

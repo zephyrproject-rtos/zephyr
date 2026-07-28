@@ -25,7 +25,7 @@
 
 	soc {
 		/* Fix flash, it has different size on KE17Z512 */
-		/delete-node/ ftfe;
+		/delete-node/ flash-controller@40020000;
 
 		ftfe: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfe";
