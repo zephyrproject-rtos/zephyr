@@ -3346,3 +3346,20 @@ event {
 		uint8_t state;
 	};
 };
+
+event {
+	name = syscall_enter;
+	id = 0x182;
+	fields := struct {
+		uint32_t id;
+		ctf_bounded_string_t name[20];
+	};
+};
+
+event {
+	name = syscall_exit;
+	id = 0x183;
+	fields := struct {
+		uint32_t id;
+	};
+};
