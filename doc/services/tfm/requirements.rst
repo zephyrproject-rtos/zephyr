@@ -42,14 +42,16 @@ is set to ``y`` in that board's default configuration.
 Software Requirements
 *********************
 
-The Python modules required when building TF-M binaries are listed in the
-TF-M repository under ``tools/requirements.txt``.
+The Python modules required when building TF-M binaries are listed within
+its ``pyproject.toml`` file. Additionally, this file installs the
+``trusted-firmware-m`` module, containing utilities shared between the TF-M
+build scripts.
 
 You can install them via:
 
    .. code-block:: bash
 
-      $ pip3 install -r "$(west list trusted-firmware-m -f '{abspath}')/tools/requirements.txt"
+      $ pip3 install "$(west list trusted-firmware-m -f '{abspath}')"
 
 They are used by TF-M's signing utility to prepare firmware images for
 validation by the bootloader.
