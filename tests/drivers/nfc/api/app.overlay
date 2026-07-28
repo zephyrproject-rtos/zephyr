@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * One emulated controller per backend class, so the tests can check that a
+ * device really does lack the operations its class does not have.
+ */
+
+/ {
+	emul_offload: nfc-offload {
+		compatible = "zephyr,nfc-emul";
+		backend = "offload";
+		status = "okay";
+	};
+
+	emul_initiator: nfc-initiator {
+		compatible = "zephyr,nfc-emul";
+		backend = "initiator";
+		status = "okay";
+	};
+
+	emul_target: nfc-target {
+		compatible = "zephyr,nfc-emul";
+		backend = "target";
+		status = "okay";
+	};
+};

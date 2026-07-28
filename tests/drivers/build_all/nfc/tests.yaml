@@ -1,0 +1,15 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.nfc.build:
+    build_only: true
+    tags:
+      - drivers
+      - nfc
+    depends_on:
+      - gpio
+      - i2c
+      - spi
+    integration_platforms:
+      - native_sim

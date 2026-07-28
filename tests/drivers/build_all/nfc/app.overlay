@@ -1,0 +1,68 @@
+/*
+ * Copyright (c) 2026 RAKwireless Technology Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_nfc_emul: test_nfc_emul {
+			compatible = "zephyr,nfc-emul";
+			backend = "initiator";
+			status = "okay";
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_i2c_pn532: pn532@24 {
+				compatible = "nxp,pn53x";
+				reg = <0x24>;
+				irq-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 1 0>;
+			};
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			/* one entry for every CS line */
+			cs-gpios = <&test_gpio 0 0>;
+
+			test_spi_mfrc522: mfrc522@0 {
+				compatible = "nxp,mfrc522";
+				reg = <0x0>;
+				spi-max-frequency = <1000000>;
+				irq-gpios = <&test_gpio 6 0>;
+				reset-gpios = <&test_gpio 7 0>;
+			};
+		};
+	};
+};

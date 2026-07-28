@@ -1,0 +1,10 @@
+common:
+  tags:
+    - drivers
+    - nfc
+tests:
+  drivers.nfc.api:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
