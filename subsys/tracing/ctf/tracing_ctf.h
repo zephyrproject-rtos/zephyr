@@ -746,6 +746,78 @@ void sys_trace_gpio_fire_callback(const struct device *port, struct gpio_callbac
 }
 #endif
 
+/* Queue */
+void sys_trace_k_queue_init(struct k_queue *queue);
+void sys_trace_k_queue_cancel_wait(struct k_queue *queue);
+void sys_trace_k_queue_queue_insert_enter(struct k_queue *queue, bool alloc);
+void sys_trace_k_queue_queue_insert_blocking(struct k_queue *queue, bool alloc,
+					     k_timeout_t timeout);
+void sys_trace_k_queue_queue_insert_exit(struct k_queue *queue, bool alloc, int32_t ret);
+void sys_trace_k_queue_append_enter(struct k_queue *queue);
+void sys_trace_k_queue_append_exit(struct k_queue *queue);
+void sys_trace_k_queue_alloc_append_enter(struct k_queue *queue);
+void sys_trace_k_queue_alloc_append_exit(struct k_queue *queue, int32_t ret);
+void sys_trace_k_queue_prepend_enter(struct k_queue *queue);
+void sys_trace_k_queue_prepend_exit(struct k_queue *queue);
+void sys_trace_k_queue_alloc_prepend_enter(struct k_queue *queue);
+void sys_trace_k_queue_alloc_prepend_exit(struct k_queue *queue, int32_t ret);
+void sys_trace_k_queue_insert_enter(struct k_queue *queue);
+void sys_trace_k_queue_insert_exit(struct k_queue *queue);
+void sys_trace_k_queue_append_list_enter(struct k_queue *queue);
+void sys_trace_k_queue_append_list_exit(struct k_queue *queue, int ret);
+void sys_trace_k_queue_merge_slist_enter(struct k_queue *queue);
+void sys_trace_k_queue_merge_slist_exit(struct k_queue *queue, int ret);
+void sys_trace_k_queue_get_enter(struct k_queue *queue, k_timeout_t timeout);
+void sys_trace_k_queue_get_blocking(struct k_queue *queue, k_timeout_t timeout);
+void sys_trace_k_queue_get_exit(struct k_queue *queue, k_timeout_t timeout, void *ret);
+void sys_trace_k_queue_remove_enter(struct k_queue *queue);
+void sys_trace_k_queue_remove_exit(struct k_queue *queue, bool ret);
+void sys_trace_k_queue_unique_append_enter(struct k_queue *queue);
+void sys_trace_k_queue_unique_append_exit(struct k_queue *queue, bool ret);
+void sys_trace_k_queue_peek_head(struct k_queue *queue, void *ret);
+void sys_trace_k_queue_peek_tail(struct k_queue *queue, void *ret);
+
+#define sys_port_trace_k_queue_init(queue)        sys_trace_k_queue_init(queue)
+#define sys_port_trace_k_queue_cancel_wait(queue) sys_trace_k_queue_cancel_wait(queue)
+#define sys_port_trace_k_queue_queue_insert_enter(queue, alloc)                                    \
+	sys_trace_k_queue_queue_insert_enter(queue, alloc)
+#define sys_port_trace_k_queue_queue_insert_blocking(queue, alloc, timeout)                        \
+	sys_trace_k_queue_queue_insert_blocking(queue, alloc, timeout)
+#define sys_port_trace_k_queue_queue_insert_exit(queue, alloc, ret)                                \
+	sys_trace_k_queue_queue_insert_exit(queue, alloc, ret)
+#define sys_port_trace_k_queue_append_enter(queue)       sys_trace_k_queue_append_enter(queue)
+#define sys_port_trace_k_queue_append_exit(queue)        sys_trace_k_queue_append_exit(queue)
+#define sys_port_trace_k_queue_alloc_append_enter(queue) sys_trace_k_queue_alloc_append_enter(queue)
+#define sys_port_trace_k_queue_alloc_append_exit(queue, ret)                                       \
+	sys_trace_k_queue_alloc_append_exit(queue, ret)
+#define sys_port_trace_k_queue_prepend_enter(queue) sys_trace_k_queue_prepend_enter(queue)
+#define sys_port_trace_k_queue_prepend_exit(queue)  sys_trace_k_queue_prepend_exit(queue)
+#define sys_port_trace_k_queue_alloc_prepend_enter(queue)                                          \
+	sys_trace_k_queue_alloc_prepend_enter(queue)
+#define sys_port_trace_k_queue_alloc_prepend_exit(queue, ret)                                      \
+	sys_trace_k_queue_alloc_prepend_exit(queue, ret)
+#define sys_port_trace_k_queue_insert_enter(queue)      sys_trace_k_queue_insert_enter(queue)
+#define sys_port_trace_k_queue_insert_exit(queue)       sys_trace_k_queue_insert_exit(queue)
+#define sys_port_trace_k_queue_append_list_enter(queue) sys_trace_k_queue_append_list_enter(queue)
+#define sys_port_trace_k_queue_append_list_exit(queue, ret)                                        \
+	sys_trace_k_queue_append_list_exit(queue, ret)
+#define sys_port_trace_k_queue_merge_slist_enter(queue) sys_trace_k_queue_merge_slist_enter(queue)
+#define sys_port_trace_k_queue_merge_slist_exit(queue, ret)                                        \
+	sys_trace_k_queue_merge_slist_exit(queue, ret)
+#define sys_port_trace_k_queue_get_enter(queue, timeout) sys_trace_k_queue_get_enter(queue, timeout)
+#define sys_port_trace_k_queue_get_blocking(queue, timeout)                                        \
+	sys_trace_k_queue_get_blocking(queue, timeout)
+#define sys_port_trace_k_queue_get_exit(queue, timeout, ret)                                       \
+	sys_trace_k_queue_get_exit(queue, timeout, ret)
+#define sys_port_trace_k_queue_remove_enter(queue)     sys_trace_k_queue_remove_enter(queue)
+#define sys_port_trace_k_queue_remove_exit(queue, ret) sys_trace_k_queue_remove_exit(queue, ret)
+#define sys_port_trace_k_queue_unique_append_enter(queue)                                          \
+	sys_trace_k_queue_unique_append_enter(queue)
+#define sys_port_trace_k_queue_unique_append_exit(queue, ret)                                      \
+	sys_trace_k_queue_unique_append_exit(queue, ret)
+#define sys_port_trace_k_queue_peek_head(queue, ret) sys_trace_k_queue_peek_head(queue, ret)
+#define sys_port_trace_k_queue_peek_tail(queue, ret) sys_trace_k_queue_peek_tail(queue, ret)
+
 /*
  * Fill any sys_port_trace_* hook not defined above with a canonical no-op. The
  * per-macro #ifndef guards keep the real definitions above; only gaps are filled,

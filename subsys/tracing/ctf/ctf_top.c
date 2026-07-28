@@ -1647,3 +1647,150 @@ void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, int ret
 {
 	ctf_top_event_wait_exit((uint32_t)(uintptr_t)event, events, (int32_t)ret);
 }
+
+/* Queue */
+
+void sys_trace_k_queue_init(struct k_queue *queue)
+{
+	ctf_top_queue_init((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_cancel_wait(struct k_queue *queue)
+{
+	ctf_top_queue_cancel_wait((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_queue_insert_enter(struct k_queue *queue, bool alloc)
+{
+	ctf_top_queue_queue_insert_enter((uint32_t)(uintptr_t)queue, (uint8_t)alloc);
+}
+
+void sys_trace_k_queue_queue_insert_blocking(struct k_queue *queue, bool alloc, k_timeout_t timeout)
+{
+	ctf_top_queue_queue_insert_blocking((uint32_t)(uintptr_t)queue, (uint8_t)alloc,
+					    k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_queue_queue_insert_exit(struct k_queue *queue, bool alloc, int32_t ret)
+{
+	ctf_top_queue_queue_insert_exit((uint32_t)(uintptr_t)queue, (uint8_t)alloc, ret);
+}
+
+void sys_trace_k_queue_append_enter(struct k_queue *queue)
+{
+	ctf_top_queue_append_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_append_exit(struct k_queue *queue)
+{
+	ctf_top_queue_append_exit((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_alloc_append_enter(struct k_queue *queue)
+{
+	ctf_top_queue_alloc_append_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_alloc_append_exit(struct k_queue *queue, int32_t ret)
+{
+	ctf_top_queue_alloc_append_exit((uint32_t)(uintptr_t)queue, ret);
+}
+
+void sys_trace_k_queue_prepend_enter(struct k_queue *queue)
+{
+	ctf_top_queue_prepend_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_prepend_exit(struct k_queue *queue)
+{
+	ctf_top_queue_prepend_exit((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_alloc_prepend_enter(struct k_queue *queue)
+{
+	ctf_top_queue_alloc_prepend_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_alloc_prepend_exit(struct k_queue *queue, int32_t ret)
+{
+	ctf_top_queue_alloc_prepend_exit((uint32_t)(uintptr_t)queue, ret);
+}
+
+void sys_trace_k_queue_insert_enter(struct k_queue *queue)
+{
+	ctf_top_queue_insert_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_insert_exit(struct k_queue *queue)
+{
+	ctf_top_queue_insert_exit((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_append_list_enter(struct k_queue *queue)
+{
+	ctf_top_queue_append_list_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_append_list_exit(struct k_queue *queue, int ret)
+{
+	ctf_top_queue_append_list_exit((uint32_t)(uintptr_t)queue, ret);
+}
+
+void sys_trace_k_queue_merge_slist_enter(struct k_queue *queue)
+{
+	ctf_top_queue_merge_slist_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_merge_slist_exit(struct k_queue *queue, int ret)
+{
+	ctf_top_queue_merge_slist_exit((uint32_t)(uintptr_t)queue, ret);
+}
+
+void sys_trace_k_queue_get_enter(struct k_queue *queue, k_timeout_t timeout)
+{
+	ctf_top_queue_get_enter((uint32_t)(uintptr_t)queue,
+				k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_queue_get_blocking(struct k_queue *queue, k_timeout_t timeout)
+{
+	ctf_top_queue_get_blocking((uint32_t)(uintptr_t)queue,
+				   k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_queue_get_exit(struct k_queue *queue, k_timeout_t timeout, void *ret)
+{
+	ctf_top_queue_get_exit((uint32_t)(uintptr_t)queue,
+			       k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+			       (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_queue_remove_enter(struct k_queue *queue)
+{
+	ctf_top_queue_remove_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_remove_exit(struct k_queue *queue, bool ret)
+{
+	ctf_top_queue_remove_exit((uint32_t)(uintptr_t)queue, (uint8_t)ret);
+}
+
+void sys_trace_k_queue_unique_append_enter(struct k_queue *queue)
+{
+	ctf_top_queue_unique_append_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_unique_append_exit(struct k_queue *queue, bool ret)
+{
+	ctf_top_queue_unique_append_exit((uint32_t)(uintptr_t)queue, (uint8_t)ret);
+}
+
+void sys_trace_k_queue_peek_head(struct k_queue *queue, void *ret)
+{
+	ctf_top_queue_peek_head((uint32_t)(uintptr_t)queue, (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_queue_peek_tail(struct k_queue *queue, void *ret)
+{
+	ctf_top_queue_peek_tail((uint32_t)(uintptr_t)queue, (uint32_t)(uintptr_t)ret);
+}

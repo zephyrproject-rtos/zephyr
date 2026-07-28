@@ -354,6 +354,35 @@ typedef enum {
 	CTF_EVENT_SYS_INIT_ENTER = 0x104,
 	CTF_EVENT_SYS_INIT_EXIT = 0x105,
 
+	/* Queue */
+	CTF_EVENT_QUEUE_INIT = 0x106,
+	CTF_EVENT_QUEUE_CANCEL_WAIT = 0x107,
+	CTF_EVENT_QUEUE_QUEUE_INSERT_ENTER = 0x108,
+	CTF_EVENT_QUEUE_QUEUE_INSERT_BLOCKING = 0x109,
+	CTF_EVENT_QUEUE_QUEUE_INSERT_EXIT = 0x10A,
+	CTF_EVENT_QUEUE_APPEND_ENTER = 0x10B,
+	CTF_EVENT_QUEUE_APPEND_EXIT = 0x10C,
+	CTF_EVENT_QUEUE_ALLOC_APPEND_ENTER = 0x10D,
+	CTF_EVENT_QUEUE_ALLOC_APPEND_EXIT = 0x10E,
+	CTF_EVENT_QUEUE_PREPEND_ENTER = 0x10F,
+	CTF_EVENT_QUEUE_PREPEND_EXIT = 0x110,
+	CTF_EVENT_QUEUE_ALLOC_PREPEND_ENTER = 0x111,
+	CTF_EVENT_QUEUE_ALLOC_PREPEND_EXIT = 0x112,
+	CTF_EVENT_QUEUE_INSERT_ENTER = 0x113,
+	CTF_EVENT_QUEUE_INSERT_EXIT = 0x114,
+	CTF_EVENT_QUEUE_APPEND_LIST_ENTER = 0x115,
+	CTF_EVENT_QUEUE_APPEND_LIST_EXIT = 0x116,
+	CTF_EVENT_QUEUE_MERGE_SLIST_ENTER = 0x117,
+	CTF_EVENT_QUEUE_MERGE_SLIST_EXIT = 0x118,
+	CTF_EVENT_QUEUE_GET_ENTER = 0x119,
+	CTF_EVENT_QUEUE_GET_BLOCKING = 0x11A,
+	CTF_EVENT_QUEUE_GET_EXIT = 0x11B,
+	CTF_EVENT_QUEUE_REMOVE_ENTER = 0x11C,
+	CTF_EVENT_QUEUE_REMOVE_EXIT = 0x11D,
+	CTF_EVENT_QUEUE_UNIQUE_APPEND_ENTER = 0x11E,
+	CTF_EVENT_QUEUE_UNIQUE_APPEND_EXIT = 0x11F,
+	CTF_EVENT_QUEUE_PEEK_HEAD = 0x120,
+	CTF_EVENT_QUEUE_PEEK_TAIL = 0x121,
 } ctf_event_t;
 
 typedef struct {
@@ -1674,4 +1703,147 @@ static inline void ctf_top_event_wait_exit(uint32_t event_id, uint32_t events, i
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_EVENT_WAIT_EXIT), event_id, events, ret);
 }
 
+/* Queue */
+
+static inline void ctf_top_queue_init(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_INIT), queue_id);
+}
+
+static inline void ctf_top_queue_cancel_wait(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_CANCEL_WAIT), queue_id);
+}
+
+static inline void ctf_top_queue_queue_insert_enter(uint32_t queue_id, uint8_t alloc)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_QUEUE_INSERT_ENTER), queue_id, alloc);
+}
+
+static inline void ctf_top_queue_queue_insert_blocking(uint32_t queue_id, uint8_t alloc,
+						       uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_QUEUE_INSERT_BLOCKING), queue_id, alloc,
+		  timeout);
+}
+
+static inline void ctf_top_queue_queue_insert_exit(uint32_t queue_id, uint8_t alloc, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_QUEUE_INSERT_EXIT), queue_id, alloc, ret);
+}
+
+static inline void ctf_top_queue_append_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_APPEND_ENTER), queue_id);
+}
+
+static inline void ctf_top_queue_append_exit(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_APPEND_EXIT), queue_id);
+}
+
+static inline void ctf_top_queue_alloc_append_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_ALLOC_APPEND_ENTER), queue_id);
+}
+
+static inline void ctf_top_queue_alloc_append_exit(uint32_t queue_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_ALLOC_APPEND_EXIT), queue_id, ret);
+}
+
+static inline void ctf_top_queue_prepend_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_PREPEND_ENTER), queue_id);
+}
+
+static inline void ctf_top_queue_prepend_exit(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_PREPEND_EXIT), queue_id);
+}
+
+static inline void ctf_top_queue_alloc_prepend_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_ALLOC_PREPEND_ENTER), queue_id);
+}
+
+static inline void ctf_top_queue_alloc_prepend_exit(uint32_t queue_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_ALLOC_PREPEND_EXIT), queue_id, ret);
+}
+
+static inline void ctf_top_queue_insert_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_INSERT_ENTER), queue_id);
+}
+
+static inline void ctf_top_queue_insert_exit(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_INSERT_EXIT), queue_id);
+}
+
+static inline void ctf_top_queue_append_list_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_APPEND_LIST_ENTER), queue_id);
+}
+
+static inline void ctf_top_queue_append_list_exit(uint32_t queue_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_APPEND_LIST_EXIT), queue_id, ret);
+}
+
+static inline void ctf_top_queue_merge_slist_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_MERGE_SLIST_ENTER), queue_id);
+}
+
+static inline void ctf_top_queue_merge_slist_exit(uint32_t queue_id, int32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_MERGE_SLIST_EXIT), queue_id, ret);
+}
+
+static inline void ctf_top_queue_get_enter(uint32_t queue_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_GET_ENTER), queue_id, timeout);
+}
+
+static inline void ctf_top_queue_get_blocking(uint32_t queue_id, uint32_t timeout)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_GET_BLOCKING), queue_id, timeout);
+}
+
+static inline void ctf_top_queue_get_exit(uint32_t queue_id, uint32_t timeout, uint32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_GET_EXIT), queue_id, timeout, ret);
+}
+
+static inline void ctf_top_queue_remove_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_REMOVE_ENTER), queue_id);
+}
+
+static inline void ctf_top_queue_remove_exit(uint32_t queue_id, uint8_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_REMOVE_EXIT), queue_id, ret);
+}
+
+static inline void ctf_top_queue_unique_append_enter(uint32_t queue_id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_UNIQUE_APPEND_ENTER), queue_id);
+}
+
+static inline void ctf_top_queue_unique_append_exit(uint32_t queue_id, uint8_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_UNIQUE_APPEND_EXIT), queue_id, ret);
+}
+
+static inline void ctf_top_queue_peek_head(uint32_t queue_id, uint32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_PEEK_HEAD), queue_id, ret);
+}
+
+static inline void ctf_top_queue_peek_tail(uint32_t queue_id, uint32_t ret)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_QUEUE_PEEK_TAIL), queue_id, ret);
+}
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
