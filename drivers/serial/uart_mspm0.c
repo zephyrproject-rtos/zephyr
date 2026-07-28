@@ -127,10 +127,8 @@ static const uint32_t uart_flow_control_to_mspm0[2] = {
 	DL_UART_MAIN_FLOW_CONTROL_RTS_CTS,
 };
 
-static int uart_mspm0_translate_in(const uint32_t value_array[],
-				   int value_array_length,
-				   uint8_t uart_cfg_value,
-				   uint32_t *mspm0_cfg_value)
+static int uart_mspm0_translate_in(const uint32_t value_array[], int value_array_length,
+				   uint8_t uart_cfg_value, uint32_t *mspm0_cfg_value)
 {
 	if (uart_cfg_value >= value_array_length) {
 		return -EINVAL;
@@ -145,10 +143,8 @@ static int uart_mspm0_translate_in(const uint32_t value_array[],
 	return 0;
 }
 
-static int uart_mspm0_translate_out(const uint32_t value_array[],
-				    int value_array_length,
-				    uint32_t mspm0_cfg_value,
-				    uint8_t *uart_cfg_value)
+static int uart_mspm0_translate_out(const uint32_t value_array[], int value_array_length,
+				    uint32_t mspm0_cfg_value, uint8_t *uart_cfg_value)
 {
 	int idx;
 
@@ -158,8 +154,7 @@ static int uart_mspm0_translate_out(const uint32_t value_array[],
 		}
 	}
 
-	if (idx == value_array_length ||
-	    value_array[idx] == UINT32_MAX) {
+	if (idx == value_array_length || value_array[idx] == UINT32_MAX) {
 		return -EINVAL;
 	}
 
@@ -168,8 +163,7 @@ static int uart_mspm0_translate_out(const uint32_t value_array[],
 	return 0;
 }
 
-static int uart_mspm0_configure(const struct device *dev,
-				const struct uart_config *cfg)
+static int uart_mspm0_configure(const struct device *dev, const struct uart_config *cfg)
 {
 	const struct uart_mspm0_config *config = dev->config;
 	struct uart_mspm0_data *data = dev->data;
@@ -180,30 +174,24 @@ static int uart_mspm0_configure(const struct device *dev,
 
 	data->current_speed = cfg->baudrate;
 
-	ret = uart_mspm0_translate_in(uart_parity_to_mspm0,
-				      ARRAY_SIZE(uart_parity_to_mspm0),
-				      cfg->parity,
-				      &value);
+	ret = uart_mspm0_translate_in(uart_parity_to_mspm0, ARRAY_SIZE(uart_parity_to_mspm0),
+				      cfg->parity, &value);
 	if (ret != 0) {
 		return ret;
 	}
 
 	data->uart_config.parity = value;
 
-	ret = uart_mspm0_translate_in(uart_stop_bits_to_mspm0,
-				      ARRAY_SIZE(uart_stop_bits_to_mspm0),
-				      cfg->stop_bits,
-				      &value);
+	ret = uart_mspm0_translate_in(uart_stop_bits_to_mspm0, ARRAY_SIZE(uart_stop_bits_to_mspm0),
+				      cfg->stop_bits, &value);
 	if (ret != 0) {
 		return ret;
 	}
 
 	data->uart_config.stopBits = value;
 
-	ret = uart_mspm0_translate_in(uart_data_bits_to_mspm0,
-				      ARRAY_SIZE(uart_data_bits_to_mspm0),
-				      cfg->data_bits,
-				      &value);
+	ret = uart_mspm0_translate_in(uart_data_bits_to_mspm0, ARRAY_SIZE(uart_data_bits_to_mspm0),
+				      cfg->data_bits, &value);
 	if (ret != 0) {
 		return ret;
 	}
@@ -211,8 +199,7 @@ static int uart_mspm0_configure(const struct device *dev,
 	data->uart_config.wordLength = value;
 
 	ret = uart_mspm0_translate_in(uart_flow_control_to_mspm0,
-				      ARRAY_SIZE(uart_flow_control_to_mspm0),
-				      cfg->flow_ctrl,
+				      ARRAY_SIZE(uart_flow_control_to_mspm0), cfg->flow_ctrl,
 				      &value);
 	if (ret != 0) {
 		return ret;
@@ -230,42 +217,34 @@ static int uart_mspm0_configure(const struct device *dev,
 	return 0;
 }
 
-static int uart_mspm0_config_get(const struct device *dev,
-				 struct uart_config *cfg)
+static int uart_mspm0_config_get(const struct device *dev, struct uart_config *cfg)
 {
 	struct uart_mspm0_data *data = dev->data;
 	int ret;
 
 	cfg->baudrate = data->current_speed;
 
-	ret = uart_mspm0_translate_out(uart_parity_to_mspm0,
-				       ARRAY_SIZE(uart_parity_to_mspm0),
-				       data->uart_config.parity,
-				       &cfg->parity);
+	ret = uart_mspm0_translate_out(uart_parity_to_mspm0, ARRAY_SIZE(uart_parity_to_mspm0),
+				       data->uart_config.parity, &cfg->parity);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = uart_mspm0_translate_out(uart_stop_bits_to_mspm0,
-				       ARRAY_SIZE(uart_stop_bits_to_mspm0),
-				       data->uart_config.stopBits,
-				       &cfg->stop_bits);
+	ret = uart_mspm0_translate_out(uart_stop_bits_to_mspm0, ARRAY_SIZE(uart_stop_bits_to_mspm0),
+				       data->uart_config.stopBits, &cfg->stop_bits);
 	if (ret != 0) {
 		return ret;
 	}
 
-	ret = uart_mspm0_translate_out(uart_data_bits_to_mspm0,
-				       ARRAY_SIZE(uart_data_bits_to_mspm0),
-				       data->uart_config.wordLength,
-				       &cfg->data_bits);
+	ret = uart_mspm0_translate_out(uart_data_bits_to_mspm0, ARRAY_SIZE(uart_data_bits_to_mspm0),
+				       data->uart_config.wordLength, &cfg->data_bits);
 	if (ret != 0) {
 		return ret;
 	}
 
 	ret = uart_mspm0_translate_out(uart_flow_control_to_mspm0,
 				       ARRAY_SIZE(uart_flow_control_to_mspm0),
-				       data->uart_config.flowControl,
-				       &cfg->flow_ctrl);
+				       data->uart_config.flowControl, &cfg->flow_ctrl);
 	if (ret != 0) {
 		return ret;
 	}
@@ -294,8 +273,7 @@ static int uart_mspm0_err_check(const struct device *dev)
 #define UART_MSPM0_RX_INTERRUPTS                                                                   \
 	(DL_UART_MAIN_INTERRUPT_RX | DL_UART_MAIN_INTERRUPT_RX_TIMEOUT_ERROR)
 
-static int uart_mspm0_fifo_fill(const struct device *dev,
-				const uint8_t *tx_data, int size)
+static int uart_mspm0_fifo_fill(const struct device *dev, const uint8_t *tx_data, int size)
 {
 	const struct uart_mspm0_config *config = dev->config;
 
@@ -303,8 +281,7 @@ static int uart_mspm0_fifo_fill(const struct device *dev,
 					    (uint8_t *)tx_data, size);
 }
 
-static int uart_mspm0_fifo_read(const struct device *dev,
-				uint8_t *rx_data, const int size)
+static int uart_mspm0_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
 	const struct uart_mspm0_config *config = dev->config;
 
@@ -382,8 +359,7 @@ static void uart_mspm0_irq_update(const struct device *dev)
 		DL_UART_Main_getPendingInterrupt(config->regs);
 }
 
-static void uart_mspm0_irq_callback_set(const struct device *dev,
-					uart_irq_callback_user_data_t cb,
+static void uart_mspm0_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 					void *cb_data)
 {
 	struct uart_mspm0_data *const dev_data = dev->data;
@@ -503,12 +479,12 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define MSP_UART_IRQ_DEFINE(inst)                                                               \
-	static void uart_mspm0_##inst##_irq_register(const struct device *dev)                  \
-	{                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), uart_mspm0_isr,    \
-			    DEVICE_DT_INST_GET(inst), 0);                                       \
-		irq_enable(DT_INST_IRQN(inst));                                                 \
+#define MSP_UART_IRQ_DEFINE(inst)                                                                  \
+	static void uart_mspm0_##inst##_irq_register(const struct device *dev)                     \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), uart_mspm0_isr,       \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}
 #else
 #define MSP_UART_IRQ_DEFINE(inst)
