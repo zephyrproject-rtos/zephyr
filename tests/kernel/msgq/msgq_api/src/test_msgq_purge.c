@@ -48,13 +48,29 @@ static void purge_when_put(struct k_msgq *q)
 }
 
 /**
- * @addtogroup kernel_message_queue_tests
+ * @addtogroup tests_kernel_msgq
  * @{
  */
 
 /**
- * @brief Test purge a message queue
- * @see k_msgq_init(), k_msgq_purge(), k_msgq_put()
+ * @brief Verify k_msgq_purge() drops messages and wakes a pending writer.
+ *
+ * @details
+ * Purging a full queue must discard all queued messages and unblock any thread
+ * waiting to put, returning -ENOMSG to that writer. After the purge the queue
+ * must be usable again for new puts.
+ *
+ * Test steps:
+ * - Fill the queue, then start a writer that blocks on a put with a timeout.
+ * - Purge the queue while the writer is pending.
+ * - Verify the writer's put returns -ENOMSG and the queue accepts new messages.
+ *
+ * Expected result:
+ * - Purge empties the queue, the pending writer gets -ENOMSG, and the queue is
+ *   usable afterwards.
+ *
+ * @see k_msgq_purge()
+ * @see k_msgq_put()
  */
 ZTEST(msgq_api_1cpu, test_msgq_purge_when_put)
 {
@@ -65,8 +81,22 @@ ZTEST(msgq_api_1cpu, test_msgq_purge_when_put)
 
 #ifdef CONFIG_USERSPACE
 /**
- * @brief Test purge a message queue
- * @see k_msgq_init(), k_msgq_purge(), k_msgq_put()
+ * @brief Verify k_msgq_purge() with a pending writer from user mode.
+ *
+ * @details
+ * User-mode counterpart of test_msgq_purge_when_put() on a queue created with
+ * k_msgq_alloc_init(): purging while a writer pends must discard messages, wake
+ * the writer with -ENOMSG, and leave the queue usable.
+ *
+ * Test steps:
+ * - Allocate and alloc-init a queue as a user thread and fill it.
+ * - Start a pending writer, purge, and verify recovery.
+ *
+ * Expected result:
+ * - Behavior matches the supervisor case from user mode.
+ *
+ * @see k_msgq_purge()
+ * @see k_msgq_alloc_init()
  */
 ZTEST_USER(msgq_api, test_msgq_user_purge_when_put)
 {

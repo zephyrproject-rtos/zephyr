@@ -107,7 +107,7 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM0_MCK_FREQ_HZ
 #elif CONFIG_SOC_FAMILY_ATMEL_SAM
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM_MCK_FREQ_HZ
-#elif defined(CONFIG_SOC_SAMA7G54)
+#elif defined(CONFIG_SOC_SERIES_SAMA7G5) || defined(CONFIG_SOC_SERIES_SAMA7D6)
 #define MCK_FREQ_HZ	MHZ(125)
 #else
 #error Unsupported SoC family
@@ -142,12 +142,15 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #endif /* !CONFIG_NET_TEST */
 
 /* if GMAC_UR_MIM_RGMII (new for sama7g5) is defined, the media interface mode
- * supported are: mii, rmii and gmii. Otherwise mii and rmii are supported.
+ * supported are: mii, rmii and rgmii. Otherwise mii and rmii are supported.
+ * The enum indexes for mii, rmii, gmii, rgmii are 0 ~ 3. As the enum index for
+ * rgmii is 3, here defines SAM_GMAC_PHY_CONNECTION_TYPE_MAX to 3 when RGMII is
+ * supported.
  */
 #ifndef GMAC_UR_MIM_RGMII
 #define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 1
 #else
-#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 2
+#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 3
 #endif
 
 /* RX descriptors list */
@@ -368,12 +371,19 @@ static void mac_addr_set(Gmac *gmac, uint8_t index,
 {
 	__ASSERT(index < 4, "index has to be in the range 0..3");
 
+#if defined(CONFIG_SOC_SERIES_SAMA7D6)
+	uint32_t offset = (GMAC_SAB2_REG_OFST - GMAC_SAB1_REG_OFST) * index;
+
+	sys_write32(sys_get_le32(mac_addr), (mm_reg_t)gmac + GMAC_SAB1_REG_OFST + offset);
+	sys_write32(sys_get_le16(&mac_addr[4]), (mm_reg_t)gmac + GMAC_SAT1_REG_OFST + offset);
+#else
 	gmac->GMAC_SA[index].GMAC_SAB =   (mac_addr[3] << 24)
 					| (mac_addr[2] << 16)
 					| (mac_addr[1] <<  8)
 					| (mac_addr[0]);
 	gmac->GMAC_SA[index].GMAC_SAT =   (mac_addr[5] <<  8)
 					| (mac_addr[4]);
+#endif
 }
 
 /*
@@ -592,6 +602,7 @@ static inline void timestamp_rx_pkt(Gmac *gmac, struct gptp_hdr *hdr,
 	}
 
 	net_pkt_set_timestamp(pkt, &timestamp);
+	net_pkt_set_rx_timestamping(pkt, true);
 }
 
 #endif
@@ -995,7 +1006,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct eth_sam_d
 		gmac->GMAC_UR = 0x0;
 		break;
 #ifdef GMAC_UR_MIM_RGMII
-	case 2: /* rgmii */
+	case 3: /* rgmii */
 		gmac->GMAC_UR = GMAC_UR_MIM_RGMII;
 		break;
 #endif
@@ -1645,7 +1656,7 @@ static int eth_initialize(const struct device *dev)
 	/* Enable GMAC module's clock */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
 			       (clock_control_subsys_t)&cfg->clock_cfg);
-#elif defined(CONFIG_SOC_SAMA7G54)
+#elif defined(CONFIG_SOC_SERIES_SAMA7G5) || defined(CONFIG_SOC_SERIES_SAMA7D6)
 #else
 	/* Enable MCLK clock on GMAC */
 	MCLK->AHBMASK.reg |= MCLK_AHBMASK_GMAC;
@@ -1711,7 +1722,7 @@ static void eth_iface_init(struct net_if *iface)
 		  GMAC_NCFGR_MTIHEN  /* Multicast Hash Enable */
 		| GMAC_NCFGR_LFERD   /* Length Field Error Frame Discard */
 		| GMAC_NCFGR_RFCS    /* Remove Frame Check Sequence */
-#ifdef CONFIG_SOC_SAMA7G54
+#if defined(CONFIG_SOC_SERIES_SAMA7G5) || defined(CONFIG_SOC_SERIES_SAMA7D6)
 		| GMAC_NCFGR_DBW(1)  /* Data Bus Width. Must always be written to ‘1’ */
 #endif
 #ifdef CONFIG_NET_VLAN
@@ -1808,9 +1819,6 @@ static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(const struct device *
 	return ETHERNET_LINK_10BASE |
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
-#endif
-#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
-		ETHERNET_PTP |
 #endif
 		ETHERNET_PRIORITY_QUEUES |
 #if GMAC_ACTIVE_PRIORITY_QUEUE_NUM >= 1

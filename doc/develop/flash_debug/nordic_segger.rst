@@ -238,7 +238,7 @@ References
 
 .. _nRF5x Command-Line Tools: https://www.nordicsemi.com/Software-and-Tools/Development-Tools/nRF-Command-Line-Tools
 
-.. _Segger SAM3U Wiki: https://wiki.segger.com/index.php?title=J-Link-OB_SAM3U
+.. _Segger SAM3U Wiki: https://wiki.segger.com/J-Link-OB_SAM3U
 .. _Real-Time Tracing (RTT): https://www.segger.com/jlink-rtt.html
 .. _pyrtt-viewer: https://github.com/thomasstenersen/pyrtt-viewer
 .. _Segger Ozone: https://www.segger.com/ozone.html

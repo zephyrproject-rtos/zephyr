@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SENSOR_CLOCK_H_
-#define ZEPHYR_DRIVERS_SENSOR_CLOCK_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_CLOCK_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_CLOCK_H_
 
 #include <stdint.h>
 
@@ -42,4 +42,4 @@ uint64_t sensor_clock_cycles_to_ns(uint64_t cycles);
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_SENSOR_CLOCK_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_CLOCK_H_ */

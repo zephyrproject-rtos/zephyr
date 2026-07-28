@@ -7,7 +7,7 @@
 / {
 	chosen {
 		zephyr,console = &devmux0;
-		zephyr,shell_uart = &devmux0;
+		zephyr,shell-uart = &devmux0;
 	};
 
 	euart0: uart_emul0 {

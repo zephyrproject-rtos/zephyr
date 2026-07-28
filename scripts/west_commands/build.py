@@ -563,7 +563,10 @@ class Build(Forceable):
             self.die(f'source and build directory {self.source_dir} cannot be the same; '
                     f'use --build-dir {self.build_dir} to specify a build directory')
 
-        srcrel = os.path.relpath(self.source_dir)
+        try:
+            srcrel = pathlib.Path(self.source_dir).relative_to(pathlib.Path.cwd(), walk_up=True)
+        except ValueError:
+            srcrel = self.source_dir
         self.check_force(
             not is_zephyr_build(self.source_dir),
             f'it looks like {srcrel} is a build directory: '

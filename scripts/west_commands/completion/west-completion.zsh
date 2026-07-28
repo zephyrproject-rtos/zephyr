@@ -116,7 +116,8 @@ _get_west_projs() {
 }
 
 _get_west_boards() {
-  _describe 'boards' $(__west_x boards --all-targets)
+  local -a boards=( $(__west_x boards --all-targets) )
+  _describe 'boards' boards
 }
 
 _get_west_shields() {
@@ -132,7 +133,8 @@ _get_west_shields() {
 }
 
 _get_west_snippets() {
-  _describe 'snippets' $(__west_x snippets --format='{name}')
+  local -a snippets=( $(__west_x snippets --format='{name}') )
+  _describe 'snippets' snippets
 }
 
 __west_tilde() {

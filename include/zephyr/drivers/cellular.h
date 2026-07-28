@@ -19,6 +19,10 @@
  * @defgroup cellular_interface Cellular
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup cellular_interface_ext Device-specific Cellular API extensions
+ * @{
+ * @}
  */
 
 #include <zephyr/types.h>
@@ -188,6 +192,28 @@ struct cellular_evt_network_status {
 };
 
 /**
+ * @brief Cellular link operational statistics.
+ *
+ * Counters are cumulative since boot.
+ */
+struct cellular_stats {
+	/** Cumulative time the modem was not registered, in milliseconds. */
+	uint32_t outage_ms;
+	/** Registered to not-registered transitions. */
+	uint32_t deregistrations;
+	/** Data-link carrier losses. */
+	uint32_t link_drops;
+	/** Control-channel command failures. */
+	uint32_t command_failures;
+	/** `+CME ERROR` responses. */
+	uint32_t command_errors_cme;
+	/** Recovery transitions entered. */
+	uint32_t recoveries;
+	/** CMUX desync/disconnect events. */
+	uint32_t cmux_disconnects;
+};
+
+/**
  * @brief Prototype for cellular event callbacks.
  *
  * @param dev       Cellular device that generated the event
@@ -201,6 +227,12 @@ struct cellular_evt_network_status {
  */
 typedef void (*cellular_event_cb_t)(const struct device *dev, enum cellular_event event,
 				    const void *payload, void *user_data);
+
+/**
+ * @def_driverbackendgroup{Cellular,cellular_interface}
+ * @ingroup cellular_interface
+ * @{
+ */
 
 /** API for configuring networks */
 typedef int (*cellular_api_configure_networks)(const struct device *dev,
@@ -226,6 +258,10 @@ typedef int (*cellular_api_get_registration_status)(const struct device *dev,
 						    enum cellular_access_technology tech,
 						    enum cellular_registration_status *status);
 
+/** API for getting the last reported network (serving cell) status */
+typedef int (*cellular_api_get_network_status)(const struct device *dev,
+					       struct cellular_evt_network_status *status);
+
 /** API for programming APN */
 typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
 
@@ -233,16 +269,34 @@ typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
 typedef int (*cellular_api_set_callback)(const struct device *dev, cellular_event_mask_t mask,
 					 cellular_event_cb_t cb, void *user_data);
 
-/** Cellular driver API */
+/** API for reading operational statistics */
+typedef const struct cellular_stats *(*cellular_api_get_stats)(const struct device *dev);
+
+/**
+ * @driver_ops{Cellular}
+ */
 __subsystem struct cellular_driver_api {
+	/** @driver_ops_optional @copybrief cellular_configure_networks */
 	cellular_api_configure_networks configure_networks;
+	/** @driver_ops_optional @copybrief cellular_get_supported_networks */
 	cellular_api_get_supported_networks get_supported_networks;
+	/** @driver_ops_optional @copybrief cellular_get_signal */
 	cellular_api_get_signal get_signal;
+	/** @driver_ops_optional @copybrief cellular_get_modem_info */
 	cellular_api_get_modem_info get_modem_info;
+	/** @driver_ops_optional @copybrief cellular_get_registration_status */
 	cellular_api_get_registration_status get_registration_status;
+	/** @driver_ops_optional @copybrief cellular_get_network_status */
+	cellular_api_get_network_status get_network_status;
+	/** @driver_ops_optional @copybrief cellular_set_apn */
 	cellular_api_set_apn set_apn;
+	/** @driver_ops_optional @copybrief cellular_set_callback */
 	cellular_api_set_callback set_callback;
+	/** @driver_ops_optional @copybrief cellular_get_stats */
+	cellular_api_get_stats get_stats;
 };
+
+/** @} */
 
 /**
  * @brief Configure cellular networks for the device
@@ -372,6 +426,33 @@ static inline int cellular_get_registration_status(const struct device *dev,
 }
 
 /**
+ * @brief Get the last reported network (serving cell) status
+ *
+ * @details Returns the most recent network status the driver has observed,
+ * as delivered by @ref CELLULAR_EVENT_NETWORK_STATUS_CHANGED. It does not
+ * trigger a fresh query.
+ *
+ * @param dev Cellular network device instance
+ * @param status Destination for the network status snapshot
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS API is not supported by cellular network device.
+ * @retval -ENODATA No current network status (before the first report, or after
+ * a registration change until the next poll refreshes it).
+ */
+static inline int cellular_get_network_status(const struct device *dev,
+					      struct cellular_evt_network_status *status)
+{
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
+
+	if (api->get_network_status == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_network_status(dev, status);
+}
+
+/**
  * @brief Set the APN used for PDP context
  *
  * @details Drivers are expected to copy the string immediately and return
@@ -420,6 +501,25 @@ static inline int cellular_set_callback(const struct device *dev, cellular_event
 	}
 
 	return api->set_callback(dev, mask, cb, user_data);
+}
+
+/**
+ * @brief Read operational statistics from the cellular device
+ *
+ * @param dev Cellular network device instance.
+ *
+ * @return Pointer to the device's live statistics, or `NULL` if the device does
+ *         not implement the API.
+ */
+static inline const struct cellular_stats *cellular_get_stats(const struct device *dev)
+{
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
+
+	if (api->get_stats == NULL) {
+		return NULL;
+	}
+
+	return api->get_stats(dev);
 }
 
 #ifdef __cplusplus

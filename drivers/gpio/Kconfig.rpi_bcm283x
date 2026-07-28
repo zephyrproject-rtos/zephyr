@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_RASPBERRYPI_BCM283X
+	bool "Raspberry Pi BCM283x GPIO Expander driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_BCM283X_GPIO_ENABLED
+	help
+	  Enable driver for Raspberry Pi BCM283x GPIO Expander
+
+
+if GPIO_RASPBERRYPI_BCM283X
+
+config GPIO_RASPBERRYPI_BCM283X_INIT_PRIORITY
+	int "Raspberry Pi BCM283x GPIO Expander driver init priority"
+	default 46
+	help
+	  Must be higher (later) than CONFIG_RASPBERRYPI_FIRMWARE_INIT_PRIORITY so the
+	  firmware interface is ready before this drivers initialization runs.
+
+endif

@@ -17,6 +17,17 @@ family:
     - name: bl618m05q2i
     - name: bl618m50q2i
     - name: bl618m65q2i
+  - name: bl616cl
+    socs:
+    - name: bl616cl3240
+    - name: bl616cl3250
+    - name: bl616cl3260
+    - name: bl616cl4845
+    - name: bl616cl4855
+    - name: bl616cl4865
+    - name: bl616cl4846
+    - name: bl616cl4856
+    - name: bl616cl4866
   - name: bl70x
     socs:
     - name: bl702sa0q2i

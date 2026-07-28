@@ -71,23 +71,14 @@ void np_timer_isr_test_hook(const void *arg)
  * @param idle Hint to the driver that the system is about to enter
  *        the idle state immediately after setting the timeout
  */
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint64_t silent_ticks;
 
-	/* Note that we treat INT_MAX literally as anyhow the maximum amount of
-	 * ticks we can report with sys_clock_announce() is INT_MAX
-	 */
-	if (ticks == K_TICKS_FOREVER) {
-		silent_ticks = INT64_MAX;
-	} else if (ticks > 0) {
-		silent_ticks = ticks - 1;
-	} else {
-		silent_ticks = 0;
-	}
+	silent_ticks = (ticks > 0) ? ticks - 1 : 0;
 	hwtimer_set_silent_ticks(silent_ticks);
 #endif
 }

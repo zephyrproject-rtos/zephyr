@@ -376,6 +376,10 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 		return;
 	}
 
+	if (!has.registered) {
+		return;
+	}
+
 	ret = bt_conn_get_info(client->conn, &info);
 	if (ret < 0) {
 		LOG_ERR("bt_conn_get_info err %d", ret);

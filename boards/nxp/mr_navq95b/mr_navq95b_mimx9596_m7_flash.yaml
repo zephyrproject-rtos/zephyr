@@ -1,0 +1,18 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mr_navq95b/mimx9596/m7/flash
+name: NXP MR-NavQ95B NOR flash variant
+type: mcu
+arch: arm
+ram: 256
+flash: 7168
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+vendor: nxp

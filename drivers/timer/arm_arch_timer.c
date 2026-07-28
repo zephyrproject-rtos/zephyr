@@ -29,37 +29,15 @@ static uint32_t cyc_per_tick;
 #define CYCLE_DIFF_MAX (~(cycle_diff_t)0)
 
 /*
- * We have two constraints on the maximum number of cycles we can wait for.
- *
- * 1) sys_clock_announce() accepts at most INT32_MAX ticks.
- *
- * 2) The number of cycles between two reports must fit in a cycle_diff_t
- *    variable before converting it to ticks.
- *
- * Then:
- *
- * 3) Pick the smallest between (1) and (2).
- *
- * 4) Take into account some room for the unavoidable IRQ servicing latency.
- *    Let's use 3/4 of the max range.
- *
- * Finally let's add the LSB value to the result so to clear out a bunch of
- * consecutive set bits coming from the original max values to produce a
- * nicer literal for assembly generation.
+ * Maximum number of cycles to wait between two sys_clock_announce() reports:
+ * the elapsed cycle count must fit in a cycle_diff_t before it is divided down
+ * to ticks. Reserve 1/4 of the range as headroom for the unavoidable IRQ
+ * servicing latency so a late report still fits, then add the LSB so the value
+ * clears a run of low set bits for a nicer literal in the generated assembly.
  */
-#define CYCLES_MAX_1	((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
-#define CYCLES_MAX_2	((uint64_t)CYCLE_DIFF_MAX)
-#define CYCLES_MAX_3	MIN(CYCLES_MAX_1, CYCLES_MAX_2)
-#define CYCLES_MAX_4	(CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
-#define CYCLES_MAX_5	(CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
-
-#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
-/* precompute CYCLES_MAX at driver init to avoid runtime double divisions */
-static uint64_t cycles_max;
-#define CYCLES_MAX cycles_max
-#else
-#define CYCLES_MAX CYCLES_MAX_5
-#endif
+#define CYCLES_MAX_1	((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_2	(CYCLES_MAX_1 / 2 + CYCLES_MAX_1 / 4)
+#define CYCLES_MAX	(CYCLES_MAX_2 + LSB_GET(CYCLES_MAX_2))
 
 static uint64_t last_cycle;
 static uint64_t last_tick;
@@ -134,7 +112,7 @@ static void arm_arch_timer_compare_isr(const void *arg)
 	sys_clock_announce_locked(delta_ticks, key);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
@@ -142,19 +120,10 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	if (idle && ticks == K_TICKS_FOREVER) {
-		return;
-	}
+	uint64_t next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
 
-	uint64_t next_cycle;
-
-	if (ticks == K_TICKS_FOREVER) {
+	if ((next_cycle - last_cycle) > CYCLES_MAX) {
 		next_cycle = last_cycle + CYCLES_MAX;
-	} else {
-		next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
-		if ((next_cycle - last_cycle) > CYCLES_MAX) {
-			next_cycle = last_cycle + CYCLES_MAX;
-		}
 	}
 
 	arm_arch_timer_set_compare(next_cycle);
@@ -240,7 +209,6 @@ static int sys_clock_driver_init(void)
 	arm_arch_timer_init();
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	cyc_per_tick = sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-	cycles_max = CYCLES_MAX_5;
 #endif
 	last_tick = arm_arch_timer_count() / CYC_PER_TICK;
 	last_cycle = last_tick * CYC_PER_TICK;

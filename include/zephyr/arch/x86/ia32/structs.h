@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_X86_STRUCTS_H_
-#define ZEPHYR_INCLUDE_X86_STRUCTS_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_STRUCTS_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_IA32_STRUCTS_H_
 
 #include <stdint.h>
 
@@ -37,4 +37,4 @@ struct _cpu_arch {
 #endif
 };
 
-#endif /* ZEPHYR_INCLUDE_X86_STRUCTS_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_IA32_STRUCTS_H_ */

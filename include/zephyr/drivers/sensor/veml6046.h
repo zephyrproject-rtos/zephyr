@@ -17,7 +17,7 @@
 
 /**
  * @defgroup veml6046_interface VEML6046
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_vishay
  * @brief Vishay VEML6046 RGBIR Sensor
  * @{
  */

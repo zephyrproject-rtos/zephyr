@@ -12,5 +12,11 @@
  */
 
 &sram0 {
-	reg = <0x42020000 DT_SIZE_K(168)>;
+	reg = <0xc000 DT_SIZE_K(168)>;
+	ranges = <0x0 0xc000 DT_SIZE_K(168)>;
+};
+
+&all_ram {
+	reg = <0x42014000 DT_SIZE_K(216)>;
+	ranges = <0x0 0x42014000 DT_SIZE_K(216)>;
 };

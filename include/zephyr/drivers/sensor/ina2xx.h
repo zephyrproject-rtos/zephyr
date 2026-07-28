@@ -16,7 +16,7 @@
 /**
  * @brief TI INA2xx current/power monitor family
  * @defgroup ina2xx_interface INA2XX
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_ti
  * @{
  */
 

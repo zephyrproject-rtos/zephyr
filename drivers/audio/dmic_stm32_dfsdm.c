@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/sys/util_macro.h"
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/arch/common/ffs.h>
 #include <zephyr/audio/dmic.h>
 #include <zephyr/device.h>

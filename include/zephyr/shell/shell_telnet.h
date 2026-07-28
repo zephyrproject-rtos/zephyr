@@ -6,12 +6,12 @@
 
 /**
  * @file
- * @brief Telnet shell backend
- * @ingroup shell_api
+ * @brief Header file for the Telnet shell backend.
+ * @ingroup shell_telnet
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_TELNET_H_
-#define ZEPHYR_INCLUDE_SHELL_TELNET_H_
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_TELNET_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_TELNET_H_
 
 #include <zephyr/net/socket.h>
 #include <zephyr/shell/shell.h>
@@ -20,6 +20,7 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 extern const struct shell_transport_api shell_telnet_transport_api;
 
 #define SHELL_TELNET_POLLFD_COUNT 3
@@ -69,7 +70,20 @@ struct shell_telnet {
 	/** If set, no output is sent to the TELNET client. */
 	bool output_lock;
 };
+/** @endcond */
 
+/**
+ * @defgroup shell_telnet Telnet shell backend
+ * @ingroup shell_backends
+ * @brief Shell access over a TELNET connection.
+ * @{
+ */
+
+/**
+ * @brief Define a Telnet shell transport instance.
+ *
+ * @param _name Name of the transport instance.
+ */
 #define SHELL_TELNET_DEFINE(_name)					\
 	static struct shell_telnet _name##_shell_telnet;		\
 	struct shell_transport _name = {				\
@@ -87,8 +101,10 @@ struct shell_telnet {
  */
 const struct shell *shell_backend_telnet_get_ptr(void);
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_TELNET_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_TELNET_H_ */

@@ -1,94 +1,215 @@
 #!/usr/bin/env python3
-# Copyright (c) 2024 Intel Corporation
-#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
-"""
-Blackbox tests for twister's command line functions related to test configuration files.
+
+"""Blackbox tests for twister configuration-file options.
+
+Covered options:
+  --alt-config-root       Override testcase.yaml with alternative configs
+  --test-config           Specify a platform / level configuration file
+  --level                 Select a named test level from test-config
+  --disable-suite-name-check    Skip verification of suite names at runtime
+  --disable-warnings-as-errors  Treat compiler warnings as non-fatal
 """
 
-import importlib
-from unittest import mock
 import os
+import re
+from unittest import mock
+
 import pytest
-import sys
-import json
-
-from conftest import ZEPHYR_BASE, TEST_DATA, test_filename_mock
+from conftest import TEST_DATA, TEST_FILENAME_MOCK, active_testcases, read_testplan
 from twisterlib.testplan import TestPlan
+from twisterlib.twister_main import main as twister_main
+
+DUMMY = os.path.join(TEST_DATA, 'tests', 'dummy')
+PLATFORMS = ['native_sim', 'intel_adl_crb']
+TEST_CONFIG = os.path.join(TEST_DATA, 'test_config.yaml')
 
 
-class TestConfig:
-    @classmethod
-    def setup_class(cls):
-        apath = os.path.join(ZEPHYR_BASE, 'scripts', 'twister')
-        cls.loader = importlib.machinery.SourceFileLoader('__main__', apath)
-        cls.spec = importlib.util.spec_from_loader(cls.loader.name, cls.loader)
-        cls.twister_module = importlib.util.module_from_spec(cls.spec)
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestAltConfigRoot:
+    """Tests for --alt-config-root option."""
 
-    @classmethod
-    def teardown_class(cls):
-        pass
+    @pytest.mark.fast
+    def test_alt_config_overrides_tag(self, out_path):
+        """--alt-config-root provides alternative testcase definitions.
 
-    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
-    def test_alt_config_root(self, out_path):
-        test_platforms = ['qemu_x86', 'intel_adl_crb']
-        path = os.path.join(TEST_DATA, 'tests', 'dummy')
-        alt_config_root = os.path.join(TEST_DATA, 'alt-test-configs', 'dummy')
-        args = ['-i', '--outdir', out_path, '-T', path, '-y'] + \
-               ['--alt-config-root', alt_config_root] + \
-               ['--tag', 'alternate-config-root'] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
+        The alt configs in test_data/alt-test-configs/dummy add the tag
+        'alternate-config-root'; filtering on that tag should produce results
+        only when the alt-config-root is active.
+        """
+        alt_root = os.path.join(TEST_DATA, 'alt-test-configs', 'dummy')
 
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-                pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
+        # Without alt-config-root, the tag is unknown -> no results
+        args_without = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            DUMMY,
+            '-y',
+            '--tag',
+            'alternate-config-root',
+        ] + [v for p in PLATFORMS for v in ('-p', p)]
+        assert twister_main(args_without) == 0
+        plan_without = read_testplan(out_path)
+        assert len(active_testcases(plan_without)) == 0
 
-        with open(os.path.join(out_path, 'testplan.json')) as f:
-            j = json.load(f)
-        filtered_j = [
-           (ts['platform'], ts['name'], tc['identifier']) \
-               for ts in j['testsuites'] \
-               for tc in ts['testcases'] if 'reason' not in tc
+        # With alt-config-root, the overridden YAML carries the tag
+        args_with = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            DUMMY,
+            '-y',
+            '--alt-config-root',
+            alt_root,
+            '--tag',
+            'alternate-config-root',
+        ] + [v for p in PLATFORMS for v in ('-p', p)]
+        assert twister_main(args_with) == 0
+        plan_with = read_testplan(out_path)
+        assert len(active_testcases(plan_with)) == 4
+
+    @pytest.mark.fast
+    def test_alt_config_does_not_affect_other_suites(self, out_path):
+        """--alt-config-root only overrides matching suites, not all suites."""
+        alt_root = os.path.join(TEST_DATA, 'alt-test-configs', 'dummy')
+        args = ['-i', '--outdir', out_path, '-T', DUMMY, '-y', '--alt-config-root', alt_root] + [
+            v for p in PLATFORMS for v in ('-p', p)
         ]
+        assert twister_main(args) == 0
 
-        assert str(sys_exit.value) == '0'
+        plan = read_testplan(out_path)
+        names = {ts['name'] for ts in plan['testsuites']}
+        # Standard suites that were NOT overridden should still be present
+        assert 'dummy.agnostic.group1.subgroup1' in names
 
-        assert len(filtered_j) == 4
 
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestLevel:
+    """Tests for --level and --test-config options."""
+
+    @pytest.mark.fast
     @pytest.mark.parametrize(
-        'level, expected_tests',
+        'level, expected_count',
         [
             ('smoke', 6),
             ('acceptance', 7),
         ],
-        ids=['smoke', 'acceptance']
+        ids=['smoke', 'acceptance'],
     )
-    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
-    def test_level(self, out_path, level, expected_tests):
-        test_platforms = ['qemu_x86', 'intel_adl_crb']
-        path = os.path.join(TEST_DATA, 'tests', 'dummy')
-        config_path = os.path.join(TEST_DATA, 'test_config.yaml')
-        args = ['-i','--outdir', out_path, '-T', path, '--level', level, '-y',
-                '--test-config', config_path] + \
-               [val for pair in zip(
-                   ['-p'] * len(test_platforms), test_platforms
-               ) for val in pair]
+    def test_level_selects_correct_suites(self, out_path, level, expected_count):
+        """--level combined with --test-config selects the correct test cases."""
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            DUMMY,
+            '-y',
+            '--level',
+            level,
+            '--test-config',
+            TEST_CONFIG,
+        ] + [v for p in PLATFORMS for v in ('-p', p)]
+        assert twister_main(args) == 0
 
-        with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
-                pytest.raises(SystemExit) as sys_exit:
-            self.loader.exec_module(self.twister_module)
-        import pprint
-        with open(os.path.join(out_path, 'testplan.json')) as f:
-            j = json.load(f)
-            pprint.pprint(j)
-        filtered_j = [
-            (ts['platform'], ts['name'], tc['identifier']) \
-                for ts in j['testsuites'] \
-                for tc in ts['testcases'] if 'reason' not in tc
+        plan = read_testplan(out_path)
+        cases = active_testcases(plan)
+        assert len(cases) == expected_count, (
+            f'Level {level!r} expected {expected_count} cases, got {len(cases)}'
+        )
+
+    @pytest.mark.fast
+    def test_smoke_subset_of_acceptance(self, out_path, tmp_path):
+        """The smoke level is a subset of the acceptance level."""
+
+        def _cases_for_level(level, path):
+            args = [
+                '-i',
+                '--outdir',
+                path,
+                '-T',
+                DUMMY,
+                '-y',
+                '--level',
+                level,
+                '--test-config',
+                TEST_CONFIG,
+            ] + [v for p in PLATFORMS for v in ('-p', p)]
+            twister_main(args)
+            plan = read_testplan(path)
+            return {tc for _, _, tc in active_testcases(plan)}
+
+        smoke_path = str(tmp_path / 'smoke')
+        accept_path = str(tmp_path / 'accept')
+        smoke_cases = _cases_for_level('smoke', smoke_path)
+        accept_cases = _cases_for_level('acceptance', accept_path)
+        assert smoke_cases.issubset(accept_cases)
+
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestDisableSuiteNameCheck:
+    """Tests for --disable-suite-name-check option."""
+
+    @pytest.mark.build
+    def test_disable_suite_name_check_suppresses_warning(self, capfd, out_path):
+        """--disable-suite-name-check suppresses suite-name mismatch output."""
+        path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
+        args = [
+            '-i',
+            '--outdir',
+            out_path,
+            '-T',
+            path,
+            '--disable-suite-name-check',
+            '-vv',
+            '-ll',
+            'DEBUG',
+        ] + ['-p', 'native_sim']
+        assert twister_main(args) == 0
+
+        _, err = capfd.readouterr()
+        # The warning about mismatched suite names should not appear
+        assert re.search(r'Expected suite names', err) is None
+        assert re.search(r'Detected suite names', err) is None
+
+    @pytest.mark.build
+    def test_suite_name_check_reports_mismatch(self, capfd, out_path):
+        """Without --disable-suite-name-check, suite-name mismatches are reported."""
+        path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
+        args = ['-i', '--outdir', out_path, '-T', path, '-vv', '-ll', 'DEBUG'] + [
+            '-p',
+            'native_sim',
         ]
+        assert twister_main(args) == 0
 
-        assert str(sys_exit.value) == '0'
+        _, err = capfd.readouterr()
+        # The expected/detected output should now be present
+        assert re.search(r'Expected suite names', err) is not None
 
-        assert expected_tests == len(filtered_j)
+
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', TEST_FILENAME_MOCK)
+class TestDisableWarningsAsErrors:
+    """Tests for --disable-warnings-as-errors option."""
+
+    @pytest.mark.build
+    @pytest.mark.parametrize(
+        'flag, expected_exit',
+        [
+            ('--disable-warnings-as-errors', 0),
+            ('-v', 1),
+        ],
+        ids=['disabled', 'default_warnings_as_errors'],
+    )
+    def test_disable_warnings_as_errors(self, capfd, out_path, flag, expected_exit):
+        """--disable-warnings-as-errors prevents a warning from causing failure."""
+        path = os.path.join(TEST_DATA, 'tests', 'always_warning')
+        args = ['-i', '--outdir', out_path, '-T', path, flag, '-vv', '--build-only'] + [
+            '-p',
+            'native_sim',
+        ]
+        result = twister_main(args)
+        assert result == expected_exit

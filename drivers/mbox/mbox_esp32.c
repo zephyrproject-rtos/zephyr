@@ -6,14 +6,29 @@
  */
 
 #define DT_DRV_COMPAT espressif_mbox_esp32
-#if !defined(CONFIG_SOC_SERIES_ESP32C5) && !defined(CONFIG_SOC_SERIES_ESP32C6)
+
+/*
+ * SoCs where the HP and LP cores communicate through the PMU software
+ * interrupt build either the HP or the LP image separately.
+ */
+#if defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE) ||                    \
+	defined(CONFIG_SOC_ESP32P4_LPCORE)
+#define MBOX_ESP32_LPCORE 1
+#endif
+
+#if defined(CONFIG_SOC_ESP32C5_HPCORE) || defined(CONFIG_SOC_ESP32C6_HPCORE) ||                    \
+	defined(CONFIG_SOC_ESP32P4_HPCORE)
+#define MBOX_ESP32_HPCORE 1
+#endif
+
+#if !defined(MBOX_ESP32_HPCORE) && !defined(MBOX_ESP32_LPCORE)
 #include "soc/dport_reg.h"
 #else
 #include <ulp_lp_core.h>
 #include <soc/pmu_reg.h>
 #include <ulp_lp_core_utils.h>
 #include <ulp_lp_core_interrupts.h>
-#if defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE)
+#if defined(MBOX_ESP32_LPCORE)
 #include <hal/pmu_ll.h>
 #include <soc/pmu_struct.h>
 #endif
@@ -63,12 +78,26 @@ struct esp32_mbox_data {
 
 static void esp32_mbox_isr(const struct device *dev);
 
-#if defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE)
+#if defined(MBOX_ESP32_LPCORE)
 static const struct device *s_mbox_dev;
 
-void ulp_lp_core_lp_pmu_intr_handler(void)
+/*
+ * LP_CORE_ISR_ATTR marks this as an interrupt handler where required. On SoCs
+ * with a multi-vectored LP-core interrupt controller (e.g. esp32p4) the
+ * hardware jumps here directly, so the handler must save/restore registers and
+ * return with mret; the attribute expands to __attribute__((interrupt)) there.
+ * On single-vector SoCs (c5/c6) an assembly trampoline does this and the
+ * attribute is empty.
+ */
+LP_CORE_ISR_ATTR void ulp_lp_core_lp_pmu_intr_handler(void)
 {
-	if (PMU.lp_ext.int_st.sw_trigger) {
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	bool triggered = PMU.lp_ext.int_st.hp_sw_trigger;
+#else
+	bool triggered = PMU.lp_ext.int_st.sw_trigger;
+#endif
+
+	if (triggered) {
 		pmu_ll_lp_clear_sw_intr_status(&PMU);
 		if (s_mbox_dev != NULL) {
 			esp32_mbox_isr(s_mbox_dev);
@@ -89,7 +118,7 @@ IRAM_ATTR static void esp32_mbox_isr(const struct device *dev)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, 0);
 #elif defined(CONFIG_SOC_SERIES_ESP32S3)
 		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, 0);
-#elif defined(CONFIG_SOC_ESP32C5_HPCORE) || defined(CONFIG_SOC_ESP32C6_HPCORE)
+#elif defined(MBOX_ESP32_HPCORE)
 		SET_PERI_REG_MASK(PMU_HP_INT_CLR_REG, PMU_SW_INT_CLR);
 #endif
 	} else {
@@ -97,7 +126,7 @@ IRAM_ATTR static void esp32_mbox_isr(const struct device *dev)
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, 0);
 #elif defined(CONFIG_SOC_SERIES_ESP32S3)
 		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, 0);
-#elif defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE)
+#elif defined(MBOX_ESP32_LPCORE)
 		ulp_lp_core_sw_intr_clear();
 #endif
 	}
@@ -154,7 +183,7 @@ static int esp32_mbox_send(const struct device *dev, mbox_channel_id_t channel,
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_1_REG, DPORT_CPU_INTR_FROM_CPU_1);
 #elif defined(CONFIG_SOC_SERIES_ESP32S3)
 		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_1_REG, SYSTEM_CPU_INTR_FROM_CPU_1);
-#elif defined(CONFIG_SOC_ESP32C5_HPCORE) || defined(CONFIG_SOC_ESP32C6_HPCORE)
+#elif defined(MBOX_ESP32_HPCORE)
 		ulp_lp_core_sw_intr_trigger();
 #endif
 	} else {
@@ -163,7 +192,7 @@ static int esp32_mbox_send(const struct device *dev, mbox_channel_id_t channel,
 		DPORT_WRITE_PERI_REG(DPORT_CPU_INTR_FROM_CPU_0_REG, DPORT_CPU_INTR_FROM_CPU_0);
 #elif defined(CONFIG_SOC_SERIES_ESP32S3)
 		WRITE_PERI_REG(SYSTEM_CPU_INTR_FROM_CPU_0_REG, SYSTEM_CPU_INTR_FROM_CPU_0);
-#elif defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE)
+#elif defined(MBOX_ESP32_LPCORE)
 		ulp_lp_core_wakeup_main_processor();
 #endif
 	}
@@ -225,12 +254,12 @@ static int esp32_mbox_set_enabled(const struct device *dev, mbox_channel_id_t ch
 static int esp32_mbox_init(const struct device *dev)
 {
 	struct esp32_mbox_data *data = (struct esp32_mbox_data *)dev->data;
-#if !defined(CONFIG_SOC_ESP32C5_LPCORE) && !defined(CONFIG_SOC_ESP32C6_LPCORE)
+#if !defined(MBOX_ESP32_LPCORE)
 	struct esp32_mbox_config *cfg = (struct esp32_mbox_config *)dev->config;
 	int ret;
 #endif
 
-#if defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE)
+#if defined(MBOX_ESP32_LPCORE)
 	data->this_core_id = 1;
 #else
 	data->this_core_id = esp_core_id();
@@ -241,18 +270,18 @@ static int esp32_mbox_init(const struct device *dev)
 		data->control->busy[0] = 0;
 		data->control->busy[1] = 0;
 		barrier_dsync_fence_full();
-#if !defined(CONFIG_SOC_ESP32C5_LPCORE) && !defined(CONFIG_SOC_ESP32C6_LPCORE)
+#if !defined(MBOX_ESP32_LPCORE)
 		ret = esp_intr_alloc(cfg->irq_source_pro_cpu,
 				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_pro_cpu) |
 					     ESP_INT_FLAGS_CHECK(cfg->irq_flags_pro_cpu) |
 					     ESP_INTR_FLAG_IRAM,
 				     (intr_handler_t)esp32_mbox_isr, (void *)dev, NULL);
 #endif
-#if defined(CONFIG_SOC_ESP32C5_HPCORE) || defined(CONFIG_SOC_ESP32C6_HPCORE)
+#if defined(MBOX_ESP32_HPCORE)
 		SET_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SW_INT_ENA);
 #endif
 	} else {
-#if defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE)
+#if defined(MBOX_ESP32_LPCORE)
 		s_mbox_dev = dev;
 		ulp_lp_core_intr_enable();
 		ulp_lp_core_sw_intr_enable(true);
@@ -265,7 +294,7 @@ static int esp32_mbox_init(const struct device *dev)
 #endif
 	}
 
-#if defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE)
+#if defined(MBOX_ESP32_LPCORE)
 	return 0;
 #else
 	return ret;

@@ -38,7 +38,6 @@
 &usdhc1 {
 	nxp_wifi {
 		pwr-gpios = <&gpio1 19 GPIO_ACTIVE_HIGH>;
-		sd-gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
 	};
 };
 

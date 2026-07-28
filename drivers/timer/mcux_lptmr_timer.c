@@ -66,12 +66,13 @@ static inline uint32_t counter_delta(uint32_t now, uint32_t then)
 	return (now - then) & COUNTER_MAX;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-	if (idle && (ticks == K_TICKS_FOREVER)) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
 		LPTMR_DisableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
+		return;
 	}
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
@@ -81,9 +82,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spinlock_key_t key;
 	uint32_t next, adj, now;
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	/* Clamp ticks. We subtract one since we round up to next tick */
-	ticks = CLAMP((ticks - 1), 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	key = k_spin_lock(&lock);
 
@@ -140,7 +140,7 @@ void sys_clock_idle_exit(void)
 
 void sys_clock_disable(void)
 {
-	const struct wuc_dt_spec wuc = WUC_DT_SPEC_INST_GET_OR(0, {0});
+	const struct wuc_dt_spec wuc = WUC_DT_SPEC_GET_OR(LPTMR_NODE, {0});
 
 	if (wuc.dev != NULL) {
 		(void)wuc_disable_wakeup_source_dt(&wuc);
@@ -199,7 +199,7 @@ static void mcux_lptmr_timer_isr(const void *arg)
 static int sys_clock_driver_init(void)
 {
 	lptmr_config_t config;
-	const struct wuc_dt_spec wuc = WUC_DT_SPEC_INST_GET_OR(0, {0});
+	const struct wuc_dt_spec wuc = WUC_DT_SPEC_GET_OR(LPTMR_NODE, {0});
 
 	if ((wuc.dev != NULL) && (wuc_enable_wakeup_source_dt(&wuc) != 0)) {
 		return -EIO;

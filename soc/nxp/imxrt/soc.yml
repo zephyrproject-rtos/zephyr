@@ -82,6 +82,9 @@ runners:
         - mimxrt595s/f1
       - qualifiers:
         - mimxrt685s/cm33
+      - qualifiers:
+        - mimxrt798s/cm33_cpu0
+        - mimxrt798s/cm33_cpu1
     '--reset':
     - run: last
       runners:
@@ -110,3 +113,6 @@ runners:
         - mimxrt595s/f1
       - qualifiers:
         - mimxrt685s/cm33
+      - qualifiers:
+        - mimxrt798s/cm33_cpu0
+        - mimxrt798s/cm33_cpu1

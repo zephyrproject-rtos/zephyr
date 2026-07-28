@@ -352,6 +352,12 @@ SECTIONS {
 
 #include <zephyr/linker/common-ram.ld>
 #include <zephyr/linker/kobject-data.ld>
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources(DATA_SECTIONS ...) CMake function.
+ */
+#include <snippets-data-sections.ld>
+
   __common_ram_region_end = .;
 
   .tm_clone_table : {

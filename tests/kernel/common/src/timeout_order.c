@@ -46,16 +46,38 @@ static struct k_thread threads[NUM_TIMEOUTS];
  */
 
 /**
- * @brief Test timeout ordering
+ * @brief Verify timers expiring on the same tick fire in the order they were started.
  *
- * @details Timeouts, when expiring on the same tick, should be handled
- * in the same order they were queued.
+ * @ingroup kernel_timeout_tests
+ *
+ * @details
+ * Confirms the timeout subsystem preserves FIFO ordering for timeouts that all
+ * become due on the same system tick. Passing proves that queueing order, not an
+ * arbitrary or reverse order, determines the sequence in which equal-deadline
+ * timer expirations are delivered.
+ *
+ * Test steps:
+ * - Create NUM_TIMEOUTS threads, each waiting on its own timer and semaphore.
+ * - Synchronize to a tick boundary, then start all timers with the same delay.
+ * - Each thread records its id into a shared results array on expiry and signals.
+ * - Wait on every semaphore so all results are recorded before checking.
+ *
+ * Expected result:
+ * - results[i] equals i for each index, i.e. timers fired in start order.
  *
  * @see k_timer_start()
  */
 ZTEST(common_1cpu, test_timeout_order)
 {
 	int ii, prio = k_thread_priority_get(k_current_get()) + 1;
+
+	if (IS_ENABLED(CONFIG_TIMEOUT_BACKEND_MINHEAP) ||
+	    IS_ENABLED(CONFIG_TIMEOUT_BACKEND_WHEEL)) {
+		/* The min-heap and timer-wheel backends make no same-tick
+		 * ordering guarantee.
+		 */
+		ztest_test_skip();
+	}
 
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
 		(void)k_thread_create(&threads[ii], stacks[ii], STACKSIZE,

@@ -138,7 +138,7 @@ The shield can be used in any application by setting ``SHIELD`` to
 Set ``--shield "st_b_cams_omv_mb1683"`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture_to_lvgl
+   :zephyr-app: samples/subsys/video/capture_to_lvgl
    :board: stm32h7b3i_dk
    :shield: st_b_cams_omv_mb1683
    :goals: build

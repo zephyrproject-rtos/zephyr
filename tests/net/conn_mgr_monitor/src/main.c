@@ -30,7 +30,7 @@
 
 
 /* Time to wait for IPv6 DAD-gated events to finish.
- * Equivalent to EVENT_WAIT_TIME if DAD is dissabled.
+ * Equivalent to EVENT_WAIT_TIME if DAD is disabled.
  */
 #if defined(CONFIG_NET_IPV6_DAD)
 #define DAD_WAIT_TIME K_MSEC(110)

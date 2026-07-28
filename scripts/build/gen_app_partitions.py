@@ -521,15 +521,6 @@ def parse_args():
         metavar=("LIBRARY", "PARTITION"),
         help="Include globals for a library or object filename into a designated partition",
     )
-    parser.add_argument("--pinoutput", required=False, help="Output ld file for pinned sections")
-    parser.add_argument(
-        "--pinpartitions",
-        action="store",
-        required=False,
-        default="",
-        help="Comma separated names of partitions to be pinned in physical memory",
-    )
-
     args, _ = parser.parse_known_args()
 
 
@@ -555,24 +546,10 @@ def main():
         else:
             partitions[ptn][LIB].append(lib)
 
-    if args.pinoutput:
-        pin_part_names = args.pinpartitions.split(',')
-
-        generic_partitions = {
-            key: value for key, value in partitions.items() if key not in pin_part_names
-        }
-        pinned_partitions = {
-            key: value for key, value in partitions.items() if key in pin_part_names
-        }
-    else:
-        generic_partitions = partitions
-
     # Sample partitions.items() list before sorting:
     #   [ ('part1', {'size': 64}), ('part3', {'size': 64}, ...
     #     ('part0', {'size': 334}) ]
-    decreasing_tuples = sorted(
-        generic_partitions.items(), key=lambda x: (x[1][SZ], x[0]), reverse=True
-    )
+    decreasing_tuples = sorted(partitions.items(), key=lambda x: (x[1][SZ], x[0]), reverse=True)
 
     partsorted = OrderedDict(decreasing_tuples)
 
@@ -582,19 +559,6 @@ def main():
         print("Partitions retrieved:")
         for key in partsorted:
             print(f"    {key}: size {partsorted[key][SZ]}: {partsorted[key][SRC]}")
-
-    if args.pinoutput:
-        decreasing_tuples = sorted(
-            pinned_partitions.items(), key=lambda x: (x[1][SZ], x[0]), reverse=True
-        )
-
-        partsorted = OrderedDict(decreasing_tuples)
-
-        generate_final(args.pinoutput, partsorted, lnkr_sect="_pinned")
-        if args.verbose:
-            print("Pinned partitions retrieved:")
-            for key in partsorted:
-                print(f"    {key}: size {partsorted[key][SZ]}: {partsorted[key][SRC]}")
 
 
 if __name__ == '__main__':

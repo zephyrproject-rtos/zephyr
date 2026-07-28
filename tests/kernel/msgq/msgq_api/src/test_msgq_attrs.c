@@ -37,14 +37,27 @@ static void attrs_get(struct k_msgq *q)
 }
 
 /**
- * @addtogroup kernel_message_queue_tests
+ * @addtogroup tests_kernel_msgq
  * @{
  */
 
 /**
- * @brief Test basic attributes of a message queue
+ * @brief Verify k_msgq_get_attrs() reports the used-message count.
  *
- * @see  k_msgq_get_attrs()
+ * @details
+ * k_msgq_get_attrs() must reflect the live occupancy of the queue. The test
+ * reads the attributes when empty, after filling the queue to capacity, and
+ * again after draining it, confirming used_msgs tracks each transition.
+ *
+ * Test steps:
+ * - Get attributes of an empty queue and verify used_msgs is 0.
+ * - Fill the queue and verify used_msgs equals the queue length.
+ * - Drain the queue and verify used_msgs is 0 again.
+ *
+ * Expected result:
+ * - used_msgs reports 0, full, then 0 as messages are added and removed.
+ *
+ * @see k_msgq_get_attrs()
  */
 ZTEST(msgq_api, test_msgq_attrs_get)
 {
@@ -55,9 +68,22 @@ ZTEST(msgq_api, test_msgq_attrs_get)
 #ifdef CONFIG_USERSPACE
 
 /**
- * @brief Test basic attributes of a message queue
+ * @brief Verify k_msgq_get_attrs() from user mode on an allocated queue.
  *
- * @see  k_msgq_get_attrs()
+ * @details
+ * Same used-message accounting as test_msgq_attrs_get(), but exercised from a
+ * user-mode thread on a queue created with k_msgq_alloc_init(), confirming the
+ * attribute query works under userspace with a dynamically allocated queue.
+ *
+ * Test steps:
+ * - Allocate and alloc-init a message queue as a user thread.
+ * - Verify used_msgs is 0, then full, then 0 across fill/drain.
+ *
+ * Expected result:
+ * - used_msgs is reported correctly from user mode.
+ *
+ * @see k_msgq_get_attrs()
+ * @see k_msgq_alloc_init()
  */
 ZTEST_USER(msgq_api, test_msgq_user_attrs_get)
 {

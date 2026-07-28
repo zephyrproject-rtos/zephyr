@@ -15,10 +15,12 @@ supported:
   - can
   - counter
   - dac
+  - display
   - dma
   - entropy
   - gpio
   - i2c
+  - netif:eth
   - octospi
   - pwm
   - rtc

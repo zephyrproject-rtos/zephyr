@@ -398,7 +398,7 @@
 	DT_MAP_ENTRY_PARENT_SPECIFIER_BY_IDX(node_id, prop, entry_idx, 0)
 
 /**
- * @brief Invokes @p fn for each map entry in the @p map.
+ * @brief Invokes @p fn for each map entry in the map defined by @p prop.
  *
  * @param node_id node identifier
  * @param prop The map property name. i.e. "gpio_map"
@@ -423,7 +423,7 @@
 	DT_CAT4(node_id, _P_, prop, _FOREACH_MAP_ENTRY_SEP)(fn, sep)
 
 /**
- * @brief Invokes @p fn for each map entry in the @p map with separator.
+ * @brief Invokes @p fn for each map entry in the map defined by @p prop, with separator.
  *
  * @param node_id node identifier
  * @param prop The map property name. i.e. "gpio_map"
@@ -436,7 +436,7 @@
 	DT_CAT4(node_id, _P_, prop, _FOREACH_MAP_ENTRY_VARGS)(fn, __VA_ARGS__)
 
 /**
- * @brief Invokes @p fn for each map entry in the @p map with separator.
+ * @brief Invokes @p fn for each map entry in the map defined by @p prop with separator.
  *
  * @param node_id node identifier
  * @param prop The map property name. i.e. "gpio_map"

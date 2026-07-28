@@ -31,7 +31,7 @@ int dsa_xmit(const struct device *dev, struct net_pkt *pkt)
 	struct net_pkt *clone;
 	int ret;
 
-#ifdef CONFIG_NET_L2_PTP
+#ifdef CONFIG_NET_L2_PTP_TIMESTAMPING
 	/* Handle TX timestamp if defines */
 	if (net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP &&
 	    dsa_switch_ctx->dapi->port_txtstamp != NULL) {

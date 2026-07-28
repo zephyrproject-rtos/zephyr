@@ -193,11 +193,28 @@ static int ram_console_out(int character)
  */
 
 /**
- * @brief Test printk() functionality
+ * @brief Verify printk() and snprintk() format a wide range of conversions correctly.
  *
- * @see printk(), __printk_get_hook(),
- * __printk_hook_install(), snprintk()
+ * @ingroup kernel_printk_tests
  *
+ * @details
+ * Validates that the kernel's formatted-output path produces byte-for-byte the
+ * expected text for integer width/sign/padding specifiers, hexadecimal, pointers
+ * and 64-bit values, both when streamed through the console hook (printk) and when
+ * rendered into a buffer (snprintk). Passing proves the formatting engine and the
+ * console output-hook mechanism behave identically and match the reference output.
+ *
+ * Test steps:
+ * - Install a RAM console output hook capturing every emitted character.
+ * - Emit a fixed series of printk() format strings covering size/char/short/int/long/
+ *   long-long, hex, width, zero/space padding, left-justify and pointer conversions.
+ * - Restore the original hook and compare the captured buffer to the expected string.
+ * - Render the same series with snprintk() into a buffer and compare to the expected string.
+ *
+ * Expected result:
+ * - Both the captured printk output and the snprintk buffer equal the expected string.
+ *
+ * @see printk()
  */
 ZTEST(printk, test_printk)
 {

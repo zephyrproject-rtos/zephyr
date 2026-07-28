@@ -15,7 +15,9 @@
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/device_mmio.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
 
@@ -35,8 +37,8 @@ LOG_MODULE_REGISTER(pinctrl_alif, CONFIG_PINCTRL_LOG_LEVEL);
 #define ALIF_GET_FUNC(cfg)              ((cfg) & ALIF_PIN_FUNC_MASK)
 #define ALIF_GET_PAD_CONFIG(cfg)        (((cfg) >> ALIF_PAD_CONFIG_SHIFT) & ALIF_PAD_CONFIG_MASK)
 
-#define ALIF_PINCTRL_BASE               DT_REG_ADDR_BY_NAME(DT_NODELABEL(pinctrl), pinctrl)
-#define ALIF_LPGPIO_PINCTRL_BASE        DT_REG_ADDR_BY_NAME(DT_NODELABEL(pinctrl), lpgpio_pinctrl)
+static mm_reg_t alif_pinctrl_base;
+static mm_reg_t alif_lpgpio_pinctrl_base;
 
 /* Register address calculation - each port has 32 bytes, each pin has 4 bytes */
 #define ALIF_PINMUX_REG_SIZE            4U
@@ -55,7 +57,7 @@ static inline mem_addr_t alif_pinctrl_get_reg_addr(uint32_t pin_config)
 	uint8_t pin = ALIF_GET_PIN(pin_config);
 	uint32_t offset = (port * ALIF_PORT_REG_SIZE) + (pin * ALIF_PINMUX_REG_SIZE);
 
-	return (mem_addr_t)(ALIF_PINCTRL_BASE + offset);
+	return (mem_addr_t)(alif_pinctrl_base + offset);
 }
 
 /**
@@ -68,7 +70,7 @@ static inline mem_addr_t alif_pinctrl_get_lpgpio_reg_addr(uint32_t pin_config)
 	uint8_t pin = ALIF_GET_PIN(pin_config);
 	uint32_t offset = pin * ALIF_PINMUX_REG_SIZE;
 
-	return (mem_addr_t)(ALIF_LPGPIO_PINCTRL_BASE + offset);
+	return (mem_addr_t)(alif_lpgpio_pinctrl_base + offset);
 }
 
 /**
@@ -125,3 +127,28 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 
 	return 0;
 }
+
+/**
+ * @brief Map pinctrl MMIO regions into the virtual address space
+ *
+ * Map the pinctrl and LPGPIO pinctrl register regions using device
+ * MMIO API during boot up.
+ * @return 0 on success
+ */
+static int alif_pinctrl_map_mmio(void)
+{
+	device_map(&alif_pinctrl_base,
+		   DT_REG_ADDR_BY_NAME(DT_NODELABEL(pinctrl), pinctrl),
+		   DT_REG_SIZE_BY_NAME(DT_NODELABEL(pinctrl), pinctrl),
+		   K_MEM_CACHE_NONE);
+	device_map(&alif_lpgpio_pinctrl_base,
+		   DT_REG_ADDR_BY_NAME(DT_NODELABEL(pinctrl), lpgpio_pinctrl),
+		   DT_REG_SIZE_BY_NAME(DT_NODELABEL(pinctrl), lpgpio_pinctrl),
+		   K_MEM_CACHE_NONE);
+	return 0;
+}
+/*
+ * Use the lowest init priority so that the pinctrl regions are mapped before
+ * any device that calls pinctrl_configure_pins() in its own PRE_KERNEL_1 init.
+ */
+SYS_INIT(alif_pinctrl_map_mmio, PRE_KERNEL_1, 0);

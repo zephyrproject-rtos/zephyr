@@ -338,6 +338,31 @@ int bt_addr_from_str(const char *str, bt_addr_t *addr);
  */
 int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr);
 
+/** @brief Resolve a Bluetooth LE Resolvable Private Address (RPA) to its identity address.
+ *
+ *  This function attempts to resolve a RPA to its corresponding identity
+ *  address (public or random static) using the host Identity Resolving Key
+ *  (IRK) database.
+ *
+ *  @kconfig_dep{CONFIG_BT_PRIVACY}
+ *
+ *  @param[in]  id            Local identity whose IRK database is used.
+ *                            Must be less than @kconfig{CONFIG_BT_ID_MAX}.
+ *  @param[in]  addr          The RPA to resolve.
+ *  @param[out] resolved_addr On success, contains the resolved identity address.
+ *                            This will be either a public address
+ *                            (@ref BT_ADDR_LE_PUBLIC) or random static address
+ *                            (@ref BT_ADDR_LE_RANDOM).
+ *
+ *  @retval 0 Success. The address has been resolved.
+ *            @p resolved_addr contains the identity address.
+ *  @retval -ENOENT @p addr is an RPA but no matching IRK was found in the database.
+ *                  The address could not be resolved.
+ *  @retval -EINVAL Invalid arguments: @p addr or @p resolved_addr is NULL,
+ *                  @p id is invalid, or @p addr is not an RPA.
+ */
+int bt_addr_le_rpa_resolve(uint8_t id, const bt_addr_le_t *addr, bt_addr_le_t *resolved_addr);
+
 /**
  * @}
  */

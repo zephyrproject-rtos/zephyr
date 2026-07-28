@@ -250,6 +250,20 @@ static void test_context_cleanup(void)
 		      "Not all TCP contexts properly cleaned up");
 }
 
+/* Control the packet drop ratio at the loopback adapter */
+static void set_packet_loss_ratio(void)
+{
+	/* drop one every 8 packets */
+	zassert_equal(loopback_set_packet_drop_ratio(0.125f), 0,
+		      "Error setting packet drop rate");
+}
+
+static void restore_packet_loss_ratio(void)
+{
+	/* no packet dropping any more */
+	zassert_equal(loopback_set_packet_drop_ratio(0.0f), 0,
+		      "Error setting packet drop rate");
+}
 
 ZTEST_USER(net_socket_tcp, test_v4_send_recv)
 {
@@ -321,7 +335,420 @@ ZTEST_USER(net_socket_tcp, test_v6_send_recv)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
-/* Test the stack behavior with a resonable sized block data, be sure to have multiple packets */
+static void test_recv_before_eof_common(int family)
+{
+	/* Data received before the peer gracefully closes the connection should
+	 * still be readable with recv() before EOF (0) is returned.
+	 */
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in c_saddr4;
+	struct net_sockaddr_in s_saddr4;
+	struct net_sockaddr_in6 c_saddr6;
+	struct net_sockaddr_in6 s_saddr6;
+	struct net_sockaddr *s_saddr;
+	net_socklen_t saddrlen;
+	struct net_sockaddr addr;
+	net_socklen_t addrlen = sizeof(addr);
+	char rx_buf[30] = {0};
+	ssize_t recved;
+
+	if (family == NET_AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr4);
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr4);
+		s_saddr = (struct net_sockaddr *)&s_saddr4;
+		saddrlen = sizeof(s_saddr4);
+	} else {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr6);
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr6);
+		s_saddr = (struct net_sockaddr *)&s_saddr6;
+		saddrlen = sizeof(s_saddr6);
+	}
+
+	test_bind(s_sock, s_saddr, saddrlen);
+	test_listen(s_sock);
+
+	test_connect(c_sock, s_saddr, saddrlen);
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+
+	/* Server sends some data and immediately closes the connection. */
+	test_send(new_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+	test_close(new_sock);
+
+	/* Let the data and FIN packets pass through. */
+	k_msleep(THREAD_SLEEP);
+
+	/* Client should be able to read the data first... */
+	recved = zsock_recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(recved, strlen(TEST_STR_SMALL),
+		      "unexpected received bytes (%zd)", recved);
+	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
+		      0, "unexpected data");
+
+	/* ...and only then get EOF (0). */
+	recved = zsock_recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(recved, 0, "expected EOF, got %zd", recved);
+
+	test_close(c_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST_USER(net_socket_tcp, test_v4_recv_before_eof)
+{
+	test_recv_before_eof_common(NET_AF_INET);
+}
+
+ZTEST_USER(net_socket_tcp, test_v6_recv_before_eof)
+{
+	test_recv_before_eof_common(NET_AF_INET6);
+}
+
+static void test_recv_before_rst_common(int family)
+{
+	/* Data received before the peer abruptly closes the connection (RST)
+	 * should still be readable with recv() before an error is returned.
+	 *
+	 * The peer is forced to send a RST instead of a graceful FIN by enabling
+	 * the SO_LINGER socket option with a zero linger timeout before close().
+	 */
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in c_saddr4;
+	struct net_sockaddr_in s_saddr4;
+	struct net_sockaddr_in6 c_saddr6;
+	struct net_sockaddr_in6 s_saddr6;
+	struct net_sockaddr *s_saddr;
+	net_socklen_t saddrlen;
+	struct net_sockaddr addr;
+	net_socklen_t addrlen = sizeof(addr);
+	struct net_linger linger_opt = {
+		.l_onoff = 1,
+		.l_linger = 0,
+	};
+	char rx_buf[30] = {0};
+	char rx_buf2[30] = {0};
+	ssize_t recved_data;
+	ssize_t recved_eof;
+	int recv_errno;
+	int ret;
+
+	if (family == NET_AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr4);
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr4);
+		s_saddr = (struct net_sockaddr *)&s_saddr4;
+		saddrlen = sizeof(s_saddr4);
+	} else {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr6);
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr6);
+		s_saddr = (struct net_sockaddr *)&s_saddr6;
+		saddrlen = sizeof(s_saddr6);
+	}
+
+	test_bind(s_sock, s_saddr, saddrlen);
+	test_listen(s_sock);
+
+	test_connect(c_sock, s_saddr, saddrlen);
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+
+	/* Server sends some data... */
+	test_send(new_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+
+	/* ...and forces an abrupt close (RST) by setting SO_LINGER with a zero
+	 * timeout before closing the socket.
+	 */
+	ret = zsock_setsockopt(new_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_LINGER,
+			       &linger_opt, sizeof(linger_opt));
+	zassert_equal(ret, 0, "setsockopt SO_LINGER failed (%d)", errno);
+
+	test_close(new_sock);
+
+	/* Let the data and RST packets pass through. */
+	k_msleep(THREAD_SLEEP);
+
+	/* Client should still be able to read the data first... */
+	recved_data = zsock_recv(c_sock, rx_buf, sizeof(rx_buf), 0);
+
+	/* ...and only then get an error indicating the connection was reset. */
+	recved_eof = zsock_recv(c_sock, rx_buf2, sizeof(rx_buf2), 0);
+	recv_errno = errno;
+
+	/* Clean up before evaluating the result, so that a failed assertion
+	 * does not leak the bound port and poison subsequent test cases.
+	 */
+	test_close(c_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+
+	zassert_equal(recved_data, strlen(TEST_STR_SMALL),
+		      "unexpected received bytes (%zd)", recved_data);
+	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
+		      0, "unexpected data");
+
+	zassert_equal(recved_eof, -1, "expected error, got %zd", recved_eof);
+	zassert_equal(recv_errno, ECONNRESET, "unexpected errno value: %d",
+		      recv_errno);
+}
+
+ZTEST_USER(net_socket_tcp, test_v4_recv_before_rst)
+{
+	test_recv_before_rst_common(NET_AF_INET);
+}
+
+ZTEST_USER(net_socket_tcp, test_v6_recv_before_rst)
+{
+	test_recv_before_rst_common(NET_AF_INET6);
+}
+
+static void test_so_linger_common(int family)
+{
+	/* SO_LINGER with a non-zero timeout makes close() block until the
+	 * connection is closed by the stack (or the timeout expires). A normal
+	 * graceful close on the loopback interface completes well before the
+	 * timeout, so the peer must observe a graceful EOF rather than a RST.
+	 */
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in c_saddr4;
+	struct net_sockaddr_in s_saddr4;
+	struct net_sockaddr_in6 c_saddr6;
+	struct net_sockaddr_in6 s_saddr6;
+	struct net_sockaddr *s_saddr;
+	net_socklen_t saddrlen;
+	struct net_sockaddr addr;
+	net_socklen_t addrlen = sizeof(addr);
+	struct net_linger linger_opt = {
+		.l_onoff = 1,
+		.l_linger = 3,
+	};
+	struct net_linger got_opt = { 0 };
+	net_socklen_t optlen = sizeof(got_opt);
+	char rx_buf[30] = {0};
+	char rx_buf2[30] = {0};
+	ssize_t recved;
+	int64_t close_start;
+	int64_t close_ms;
+	int ret;
+
+	if (family == NET_AF_INET) {
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr4);
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr4);
+		s_saddr = (struct net_sockaddr *)&s_saddr4;
+		saddrlen = sizeof(s_saddr4);
+	} else {
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr6);
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr6);
+		s_saddr = (struct net_sockaddr *)&s_saddr6;
+		saddrlen = sizeof(s_saddr6);
+	}
+
+	test_bind(s_sock, s_saddr, saddrlen);
+	test_listen(s_sock);
+
+	test_connect(c_sock, s_saddr, saddrlen);
+
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+
+	/* Enable SO_LINGER on the client and read it back. */
+	ret = zsock_setsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_LINGER,
+			       &linger_opt, sizeof(linger_opt));
+	zassert_equal(ret, 0, "setsockopt SO_LINGER failed (%d)", errno);
+
+	ret = zsock_getsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_LINGER,
+			       &got_opt, &optlen);
+	zassert_equal(ret, 0, "getsockopt SO_LINGER failed (%d)", errno);
+	zassert_equal(got_opt.l_onoff, linger_opt.l_onoff,
+		      "unexpected l_onoff (%d)", got_opt.l_onoff);
+	zassert_equal(got_opt.l_linger, linger_opt.l_linger,
+		      "unexpected l_linger (%d)", got_opt.l_linger);
+
+	/* Client sends some data and then closes with SO_LINGER set. */
+	test_send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+
+	close_start = k_uptime_get();
+	ret = zsock_close(c_sock);
+	close_ms = k_uptime_get() - close_start;
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+	zassert_true(close_ms < MSEC_PER_SEC * linger_opt.l_linger,
+		     "close blocked until the linger timeout (%lld ms)",
+		     close_ms);
+
+	/* Server reads the data the client sent before closing... */
+	recved = zsock_recv(new_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(recved, strlen(TEST_STR_SMALL),
+		      "unexpected received bytes (%zd)", recved);
+	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
+		      0, "unexpected data");
+
+	/* ...and then a graceful EOF (0), not a RST. */
+	recved = zsock_recv(new_sock, rx_buf2, sizeof(rx_buf2), 0);
+	zassert_equal(recved, 0, "expected graceful EOF, got %zd", recved);
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST_USER(net_socket_tcp, test_v4_so_linger)
+{
+	test_so_linger_common(NET_AF_INET);
+}
+
+ZTEST_USER(net_socket_tcp, test_v6_so_linger)
+{
+	test_so_linger_common(NET_AF_INET6);
+}
+
+#define TCP_CLOSE_FAILURE_TIMEOUT 90000
+
+ZTEST(net_socket_tcp, test_z_so_linger_timeout)
+{
+	/* When SO_LINGER is enabled with a non-zero timeout and the graceful
+	 * close cannot complete (communication is broken), close() must block
+	 * for about the linger period and then the connection must be aborted
+	 * with a RST instead of lingering on the FIN retransmissions.
+	 */
+	struct net_sockaddr_in c_saddr;
+	struct net_sockaddr_in s_saddr;
+	struct net_sockaddr addr;
+	net_socklen_t addrlen = sizeof(addr);
+	struct net_linger linger_opt = {
+		.l_onoff = 1,
+		.l_linger = 1,
+	};
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	int count_before = 0;
+	int count_after = 0;
+	int64_t close_start;
+	int64_t close_ms;
+	int ret;
+
+	restore_packet_loss_ratio();
+
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock, &c_saddr);
+	prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, sizeof(s_saddr));
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+
+	ret = zsock_setsockopt(c_sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_LINGER,
+			       &linger_opt, sizeof(linger_opt));
+	zassert_equal(ret, 0, "setsockopt SO_LINGER failed (%d)", errno);
+
+	net_context_foreach(calc_net_context, &count_before);
+
+	/* Break communication so the graceful close cannot complete. */
+	loopback_set_packet_drop_ratio(1.0f);
+
+	close_start = k_uptime_get();
+	ret = zsock_close(c_sock);
+	close_ms = k_uptime_get() - close_start;
+	zassert_equal(ret, 0, "close failed (%d)", errno);
+
+	/* close() must have blocked for roughly the linger timeout (1s) before
+	 * the connection was aborted, then returned.
+	 */
+	zassert_true(close_ms >= 500 && close_ms <= 3000,
+		     "unexpected close duration %lld ms", close_ms);
+
+	/* The aborted connection's context must be released. */
+	wait_for_n_tcp_contexts(count_before - 1,
+				K_MSEC(TCP_CLOSE_FAILURE_TIMEOUT));
+	net_context_foreach(calc_net_context, &count_after);
+	zassert_equal(count_before - 1, count_after,
+		      "net_context still in use (before %d vs after %d)",
+		      count_before - 1, count_after);
+
+	restore_packet_loss_ratio();
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	test_context_cleanup();
+}
+
+static void test_accept_after_client_close_common(int af)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in6 c_saddr;
+	struct net_sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 addr;
+	net_socklen_t addrlen;
+	char rx_buf[sizeof(TEST_STR_SMALL)];
+
+	switch (af) {
+	case NET_AF_INET:
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock,
+				    (struct net_sockaddr_in *)&c_saddr);
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock,
+				    (struct net_sockaddr_in *)&s_saddr);
+		addrlen = sizeof(struct net_sockaddr_in);
+		break;
+	case NET_AF_INET6:
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr);
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+		addrlen = sizeof(struct net_sockaddr_in6);
+		break;
+	default:
+		zassert_true(false, "unsupported address family %d", af);
+		return;
+	}
+
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, addrlen);
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, addrlen);
+	test_send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+	test_close(c_sock);
+
+	/* Give the stack time to process the close before accept(). */
+	k_msleep(THREAD_SLEEP);
+
+	test_accept(s_sock, &new_sock, (struct net_sockaddr *)&addr, &addrlen);
+	zassert_equal(addrlen, af == NET_AF_INET ? sizeof(struct net_sockaddr_in) :
+		      sizeof(struct net_sockaddr_in6), "wrong addrlen");
+
+	zassert_equal(zsock_recv(new_sock, rx_buf, sizeof(rx_buf), 0),
+		      strlen(TEST_STR_SMALL),
+		      "unexpected received bytes");
+	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
+		      0,
+		      "unexpected data");
+
+	test_eof(new_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST_USER(net_socket_tcp, test_v4_accept_after_client_close)
+{
+	test_accept_after_client_close_common(NET_AF_INET);
+}
+
+ZTEST_USER(net_socket_tcp, test_v6_accept_after_client_close)
+{
+	test_accept_after_client_close_common(NET_AF_INET6);
+}
+
+/* Test the stack behavior with a reasonable sized block data, be sure to have multiple packets */
 #define TEST_LARGE_TRANSFER_SIZE 60000
 #define TEST_PRIME 811
 
@@ -463,21 +890,6 @@ void test_send_recv_large_common(int tcp_nodelay, int family)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
-/* Control the packet drop ratio at the loopback adapter 8 */
-static void set_packet_loss_ratio(void)
-{
-	/* drop one every 8 packets */
-	zassert_equal(loopback_set_packet_drop_ratio(0.125f), 0,
-		"Error setting packet drop rate");
-}
-
-static void restore_packet_loss_ratio(void)
-{
-	/* no packet dropping any more */
-	zassert_equal(loopback_set_packet_drop_ratio(0.0f), 0,
-		"Error setting packet drop rate");
-}
-
 ZTEST(net_socket_tcp, test_v4_send_recv_large_normal)
 {
 	test_send_recv_large_common(0, NET_AF_INET);
@@ -591,7 +1003,7 @@ ZTEST(net_socket_tcp, test_v4_broken_link)
 
 	net_mgmt(NET_REQUEST_STATS_GET_ALL, NULL, &after, sizeof(after));
 
-	zassert_equal(before.ipv4.sent, after.ipv4.sent, "Data sent afer connection timeout");
+	zassert_equal(before.ipv4.sent, after.ipv4.sent, "Data sent after connection timeout");
 
 	test_close(c_sock);
 	test_close(new_sock);
@@ -1325,8 +1737,6 @@ ZTEST(net_socket_tcp, test_async_connect_socket_close)
 
 	test_context_cleanup();
 }
-
-#define TCP_CLOSE_FAILURE_TIMEOUT 90000
 
 ZTEST(net_socket_tcp, test_z_close_obstructed)
 {
@@ -3073,6 +3483,8 @@ ZTEST(net_socket_tcp, test_zsock_send_all_failure)
 static void after(void *arg)
 {
 	ARG_UNUSED(arg);
+
+	restore_packet_loss_ratio();
 
 	for (int i = 0; i < ZVFS_OPEN_SIZE; ++i) {
 		(void)zsock_close(i);

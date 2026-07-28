@@ -123,6 +123,85 @@ ZTEST(stack_contexts, test_stack_thread2thread)
 	tstack_thread_thread(&kstack);
 }
 
+/**
+ * @brief Verify a stack defined at compile time is ready for use.
+ *
+ * @details A stack created with K_STACK_DEFINE() must be fully initialized
+ * at boot: empty and immediately usable without any run-time
+ * initialization call. Push an item onto the statically defined stack and
+ * pop it back, verifying the value round-trips.
+ *
+ * @ingroup kernel_stack_tests
+ *
+ * @see #K_STACK_DEFINE(x), k_stack_push(), k_stack_pop()
+ */
+ZTEST(stack_contexts, test_stack_define)
+{
+	stack_data_t rx_data;
+
+	/* empty at boot: a non-blocking pop fails */
+	zassert_equal(k_stack_pop(&kstack, &rx_data, K_NO_WAIT), -EBUSY);
+
+	/* usable at boot without any run-time initialization */
+	zassert_ok(k_stack_push(&kstack, data[0]));
+	zassert_ok(k_stack_pop(&kstack, &rx_data, K_NO_WAIT));
+	zassert_equal(rx_data, data[0]);
+}
+
+/**
+ * @brief Verify run-time initialization of a stack over a caller buffer.
+ *
+ * @details k_stack_init() must set up a stack over a caller-provided memory
+ * area with the given capacity: the stack starts empty (a non-blocking pop
+ * fails) and accepts and returns items.
+ *
+ * @ingroup kernel_stack_tests
+ *
+ * @see k_stack_init(), k_stack_push(), k_stack_pop()
+ */
+ZTEST(stack_contexts, test_stack_init)
+{
+	static stack_data_t init_buf[STACK_LEN];
+	stack_data_t rx_data;
+
+	k_stack_init(&stack, init_buf, STACK_LEN);
+
+	/* starts out empty */
+	zassert_equal(k_stack_pop(&stack, &rx_data, K_NO_WAIT), -EBUSY);
+
+	zassert_ok(k_stack_push(&stack, data[0]));
+	zassert_ok(k_stack_pop(&stack, &rx_data, K_NO_WAIT));
+	zassert_equal(rx_data, data[0]);
+}
+
+/**
+ * @brief Verify items pop in reverse push order (LIFO).
+ *
+ * @details Popping a stack must return the most recently pushed item that
+ * has not yet been popped. Push two distinct items and verify they pop in
+ * reverse order.
+ *
+ * @ingroup kernel_stack_tests
+ *
+ * @see k_stack_push(), k_stack_pop()
+ */
+ZTEST(stack_contexts, test_stack_pop_order)
+{
+	static stack_data_t order_buf[STACK_LEN];
+	stack_data_t rx_data;
+
+	k_stack_init(&stack, order_buf, STACK_LEN);
+
+	zassert_ok(k_stack_push(&stack, data[0]));
+	zassert_ok(k_stack_push(&stack, data[1]));
+
+	/* the most recently pushed item comes out first */
+	zassert_ok(k_stack_pop(&stack, &rx_data, K_NO_WAIT));
+	zassert_equal(rx_data, data[1]);
+	zassert_ok(k_stack_pop(&stack, &rx_data, K_NO_WAIT));
+	zassert_equal(rx_data, data[0]);
+}
+
 #ifdef CONFIG_USERSPACE
 /**
  * @brief Verifies data passing between user threads via stack

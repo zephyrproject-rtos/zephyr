@@ -28,6 +28,7 @@ from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
 from twisterlib.error import ConfigurationError, StatusAttributeError
 from twisterlib.handlers import DeviceHandler, Handler, terminate_process
 from twisterlib.harnessconfig import TWISTER_PYTEST_CONFIG_FILE, HarnessPytestConfig
+from twisterlib.modulevars import expand_zephyr_vars
 from twisterlib.reports import ReportStatus
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
@@ -54,8 +55,8 @@ class Harness:
         self._status = TwisterStatus.NONE
         self.reason = None
         self.type = None
-        self.regex = []
-        self.matches = OrderedDict()
+        self.regex: list[re.Pattern] = []
+        self.matches: OrderedDict[re.Pattern, str] = OrderedDict()
         self.ordered = True
         self.id = None
         self.fail_on_fault = True
@@ -146,7 +147,7 @@ class Harness:
                     record[k] = { 'ERROR': { 'msg': str(parse_error), 'doc': record[k] } }
         return record
 
-    def parse_record(self, line) -> int:
+    def parse_record(self, line: str) -> int:
         match_cnt = 0
         for record_pattern in self.record_patterns:
             match = record_pattern.search(line)
@@ -168,7 +169,7 @@ class Harness:
                     self.recording.append(rec)
         return match_cnt
 
-    def process_test(self, line):
+    def process_test(self, line: str):
 
         self.parse_record(line)
 
@@ -203,7 +204,7 @@ class Robot(Harness):
 
     is_robot_test = True
 
-    def configure(self, instance):
+    def configure(self, instance: TestInstance):
         super().configure(instance)
         self.instance = instance
 
@@ -244,8 +245,18 @@ class Robot(Harness):
         else:
             command.append(os.path.join(handler.sourcedir, self.path))
 
-        with subprocess.Popen(command, stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env) as renode_test_proc:
+        try:
+            renode_test_proc = subprocess.Popen(command, stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env)
+        except FileNotFoundError as err:
+            reason = f"Robot test executable '{command[0]}' not found: {err.strerror}"
+            logger.warning(reason)
+            self.instance.status = TwisterStatus.SKIP
+            self.instance.reason = reason
+            self.instance.add_missing_case_status(TwisterStatus.SKIP)
+            return
+
+        with renode_test_proc:
             out, _ = renode_test_proc.communicate()
 
             self.instance.execution_time = time.time() - start_time
@@ -285,7 +296,7 @@ class Console(Harness):
             return self.instance.testcases[0].name
         return super().get_testcase_name()
 
-    def configure(self, instance):
+    def configure(self, instance: TestInstance):
         super().configure(instance)
         if self.regex is None or len(self.regex) == 0:
             self.status = TwisterStatus.FAIL
@@ -313,7 +324,7 @@ class Console(Harness):
             raise ConfigurationError(self.instance.name, tc.reason)
         #
 
-    def handle(self, line):
+    def handle(self, line: str) -> None:
         if self.type == "one_line":
             if self.pattern.search(line):
                 logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED:"
@@ -321,8 +332,10 @@ class Console(Harness):
                 self.next_pattern += 1
                 self.status = TwisterStatus.PASS
         elif self.type == "multi_line" and self.ordered:
-            if (self.next_pattern < len(self.patterns) and
-                self.patterns[self.next_pattern].search(line)):
+            if (
+                self.next_pattern < len(self.patterns) and
+                self.patterns[self.next_pattern].search(line)
+            ):
                 logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED("
                              f"{self.next_pattern + 1}/{self.patterns_expected}):"
                              f"'{self.patterns[self.next_pattern].pattern}'")
@@ -345,11 +358,6 @@ class Console(Harness):
         if self.fail_on_fault and self.FAULT in line:
             self.fault = True
 
-        if self.GCOV_START in line:
-            self.capture_coverage = True
-        elif self.GCOV_END in line:
-            self.capture_coverage = False
-
         self.process_test(line)
         # Reset the resulting test state to FAIL when not all of the patterns were
         # found in the output, but just ztest's 'PROJECT EXECUTION SUCCESSFUL'.
@@ -358,17 +366,21 @@ class Console(Harness):
         # test image was executed.
         # TODO: Introduce explicit match policy type to reject
         # unexpected console output, allow missing patterns, deny duplicates.
-        if self.status == TwisterStatus.PASS and \
-           self.ordered and \
-           self.next_pattern < self.patterns_expected:
+        if (
+            self.status == TwisterStatus.PASS and
+            self.ordered and
+            self.next_pattern < self.patterns_expected
+        ):
             logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
                          f" {self.next_pattern} of {self.patterns_expected}"
                          f" expected ordered patterns.")
             self.status = TwisterStatus.FAIL
             self.reason = "patterns did not match (ordered)"
-        if self.status == TwisterStatus.PASS and \
-           not self.ordered and \
-           len(self.matches) < self.patterns_expected:
+        if (
+            self.status == TwisterStatus.PASS and
+            not self.ordered and
+            len(self.matches) < self.patterns_expected
+        ):
             logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
                          f" {len(self.matches)} of {self.patterns_expected}"
                          f" expected unordered patterns.")
@@ -378,7 +390,18 @@ class Console(Harness):
         tc = self.instance.get_case_or_create(self.get_testcase_name())
         if self.status == TwisterStatus.PASS:
             tc.status = TwisterStatus.PASS
+        elif self.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
+            tc.status = self.status
+            tc.reason = self.reason or "Unknown Console harness failure"
         else:
+            # status is still NONE: not all patterns have matched *yet*.
+            # handle() runs once per console line, so while the test is still
+            # producing output this branch is hit on every line that does not
+            # complete the match - it is not a failure on its own. The final
+            # verdict for an incomplete match (test ended/timed out before all
+            # patterns were seen) is decided by the handler in
+            # _update_instance_info(), so do not log or set a reason here to
+            # avoid spurious errors and bogus reasons on tests that pass later.
             tc.status = TwisterStatus.FAIL
 
 
@@ -403,12 +426,10 @@ class Script(Harness):
     def run(self, timeout: float) -> bool:
         self.instance.testcases = []
         for script in self._get_test_scripts():
-            rc = -1
             if not os.path.exists(script):
-                reason = f"{script} not found!"
-                logger.error(reason)
-                self._add_testcase_from_script(script, rc, reason=reason)
+                self._handle_missing_script(script)
                 continue
+            rc = -1
             duration = 0.0
             cmd = self._build_script_command(script)
             logger.debug(f"Running command: {shlex.join(cmd)}")
@@ -423,6 +444,13 @@ class Script(Harness):
         self.instance.record(self.recording)
         self._update_test_status()
         return True
+
+    def _handle_missing_script(self, script: str) -> None:
+        reason = f"{script} not found!"
+        logger.error(reason)
+        self._add_testcase_from_script(script, rc=-1, reason=reason)
+        with open(self.log_file_path, 'a') as log_file:
+            log_file.write(reason + '\n\n')
 
     def _get_env(self) -> dict[str, str]:
         """Return environment variables with BOARD set to the platform name."""
@@ -578,7 +606,10 @@ class Pytest(Script):
         command.extend(
             [
                 os.path.normpath(
-                    os.path.join(self.source_dir, os.path.expanduser(os.path.expandvars(src)))
+                    os.path.join(
+                        self.source_dir,
+                        expand_zephyr_vars(os.path.expanduser(os.path.expandvars(src))),
+                    )
                 )
                 for src in config.pytest_root
             ]
@@ -859,6 +890,15 @@ class Gtest(Harness):
             tc = self.instance.get_case_or_create(self.id)
             if self.has_failures or self.tc is not None:
                 self.status = TwisterStatus.FAIL
+                if self.tc is not None and not self.has_failures:
+                    self.reason = f"Gtest failure - test {self.tc} did not finish"
+                else:
+                    failed = sum(
+                        1 for t in self.instance.testcases if t.status == TwisterStatus.FAIL
+                    )
+                    self.reason = "Gtest failure"
+                    if failed > 1:
+                        self.reason += f" - {failed} tests failed"
                 tc.status = TwisterStatus.FAIL
             else:
                 self.status = TwisterStatus.PASS
@@ -884,6 +924,7 @@ class Gtest(Harness):
         tc.status = state
         if tc.status == TwisterStatus.FAIL:
             self.has_failures = True
+            self.reason = f"Gtest failure - failed test {tc}"
             tc.output = self.testcase_output
         self.testcase_output = ""
         self._match = False

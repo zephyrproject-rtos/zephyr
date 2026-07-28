@@ -19,7 +19,7 @@
 
 /**
  * @defgroup sht4x_interface SHT4X
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_sensirion
  * @brief Sensirion SHT4X temperature and humidity sensor
  * @{
  */

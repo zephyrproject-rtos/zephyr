@@ -19,7 +19,6 @@ properties:
 
   prescaler:
     type: int
-    default: 0
     required: true
     description: |
       Selects the module clock divide value for the prescaler (1–256).

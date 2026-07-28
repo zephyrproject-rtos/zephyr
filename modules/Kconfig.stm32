@@ -17,6 +17,24 @@ config HAS_STM32CUBE
 	select HAS_CMSIS_CORE
 	depends on SOC_FAMILY_STM32
 
+config STM32CUBE_SOC_NAME_OVERRIDE
+	string
+	help
+	  Hidden option used to override the SoC name at STM32Cube HAL level.
+
+	  The STM32Cube HAL requires a global preprocessor definition which
+	  matches the target SoC's name to be defined, which can usually be
+	  derived from CONFIG_SOC. However, there are some exceptions where
+	  two different SoCs (with different CONFIG_SOC values) should use
+	  the same definition at STM32Cube HAL level.
+
+	  By default, this option has no value and is thus undefined. In this
+	  case, the STM32Cube HAL module shall derive the global preprocessor
+	  definition from CONFIG_SOC. If a value for this option is explicitly
+	  set at SoC level (using configdefault), the STM32Cube HAL module
+	  shall derive the global preprocessor definition from this option
+	  instead of CONFIG_SOC.
+
 if HAS_STM32CUBE
 
 config USE_STM32_HAL_ADC

@@ -2,8 +2,8 @@
  *
  * Copyright (c) 2019 Lexmark International, Inc.
  */
-#ifndef ARCH_ARM_CORTEX_R_MPU_H
-#define ARCH_ARM_CORTEX_R_MPU_H 1
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_MPU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_MPU_H_
 
 #define MPU_RBAR_ADDR_Msk               (~0x1f)
 #define MPU_RASR_ENABLE_Msk             (1)
@@ -64,4 +64,4 @@
 #define ARM_MPU_REGION_SIZE_2GB         ((uint8_t)0x1eU)
 #define ARM_MPU_REGION_SIZE_4GB         ((uint8_t)0x1fU)
 
-#endif
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_A_R_MPU_H_ */

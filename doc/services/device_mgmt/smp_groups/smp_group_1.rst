@@ -237,7 +237,7 @@ CBOR data of request:
 .. code-block:: none
 
     {
-        (str,opt)"hash"     : (str)
+        (str,opt)"hash"     : (byte str)
         (str)"confirm"      : (bool)
     }
 

@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(pthread_cond, CONFIG_PTHREAD_COND_LOG_LEVEL);
 
-static __pinned_bss struct posix_cond posix_cond_pool[CONFIG_MAX_PTHREAD_COND_COUNT];
+static struct posix_cond posix_cond_pool[CONFIG_MAX_PTHREAD_COND_COUNT];
 
 SYS_BITARRAY_DEFINE_STATIC(posix_cond_bitarray, CONFIG_MAX_PTHREAD_COND_COUNT);
 
@@ -151,7 +151,7 @@ int pthread_cond_broadcast(pthread_cond_t *cvar)
 	int ret;
 	struct posix_cond *cv;
 
-	cv = get_posix_cond(*cvar);
+	cv = to_posix_cond(cvar);
 	if (cv == NULL) {
 		return EINVAL;
 	}

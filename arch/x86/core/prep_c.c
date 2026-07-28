@@ -14,14 +14,14 @@
 #include <zephyr/cache.h>
 #include <zephyr/arch/common/init.h>
 
-K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks,
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks,
 		CONFIG_MP_MAX_NUM_CPUS,
 		CONFIG_ISR_STACK_SIZE);
 
 extern void x86_64_irq_init(void);
 
 #if !defined(CONFIG_X86_64)
-__pinned_data x86_boot_arg_t x86_cpu_boot_arg;
+x86_boot_arg_t x86_cpu_boot_arg;
 #endif
 
 

@@ -188,7 +188,7 @@ ZTEST(smp_reassembly, test_ud)
 
 	/* No packet started yet */
 	p = smp_reassembly_get_ud(&smpt);
-	zassert_equal(p, NULL, "Expect NULL ud poiner");
+	zassert_equal(p, NULL, "Expect NULL ud pointer");
 
 	/* After collecting first fragment */
 	mh->nh_len = sys_cpu_to_be16(TEST_FRAME_SIZE);
@@ -199,7 +199,7 @@ ZTEST(smp_reassembly, test_ud)
 		      "Expected is %d should be %d\n", ret, expected);
 
 	p = smp_reassembly_get_ud(&smpt);
-	zassert_not_equal(p, NULL, "Expect non-NULL ud poiner");
+	zassert_not_equal(p, NULL, "Expect non-NULL ud pointer");
 	smp_reassembly_drop(&smpt);
 }
 

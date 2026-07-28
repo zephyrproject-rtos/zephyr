@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdio.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>

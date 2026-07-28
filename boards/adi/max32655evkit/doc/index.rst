@@ -21,50 +21,54 @@ The Zephyr port is running on the MAX32655 MCU.
 Hardware
 ********
 
-- MAX32655 MCU:
+MAX32655 MCU:
 
-  - Ultra-Low-Power Wireless Microcontroller
-    - Internal 100MHz Oscillator
-    - Flexible Low-Power Modes with 7.3728MHz System Clock Option
-    - 512KB Flash and 128KB SRAM (Optional ECC on One 32KB SRAM Bank)
-    - 16KB Instruction Cache
-  - Bluetooth 5.2 LE Radio
-    - Dedicated, Ultra-Low-Power, 32-Bit RISC-V Coprocessor to Offload Timing-Critical Bluetooth Processing
-    - Fully Open-Source Bluetooth 5.2 Stack Available
-    - Supports AoA, AoD, LE Audio, and Mesh
-    - High-Throughput (2Mbps) Mode
-    - Long-Range (125kbps and 500kbps) Modes
-    - Rx Sensitivity: -97.5dBm; Tx Power: +4.5dBm
-    - Single-Ended Antenna Connection (50Ω)
-  - Power Management Maximizes Battery Life
-    - 2.0V to 3.6V Supply Voltage Range
-    - Integrated SIMO Power Regulator
-    - Dynamic Voltage Scaling (DVS)
-    - 23.8μA/MHz Active Current at 3.0V
-    - 4.4μA at 3.0V Retention Current for 32KB
-    - Selectable SRAM Retention + RTC in Low-Power Modes
-  - Multiple Peripherals for System Control
-    - Up to Two High-Speed SPI Master/Slave
-    - Up to Three High-Speed I2C Master/Slave (3.4Mbps)
-    - Up to Four UART, One I2S Master/Slave
-    - Up to 8-Input, 10-Bit Sigma-Delta ADC 7.8ksps
-    - Up to Four Micro-Power Comparators
-    - Timers: Up to Two Four 32-Bit, Two LP, TwoWatchdog Timers
-    - 1-Wire® Master
-    - Up to Four Pulse Train (PWM) Engines
-    - RTC with Wake-Up Timer
-    - Up to 52 GPIOs
-  - Security and Integrity​
-    - Available Secure Boot
-    - TRNG Seed Generator
-    - AES 128/192/256 Hardware Acceleration Engine
+Ultra-Low-Power Wireless Microcontroller
+  - Internal 100MHz Oscillator
+  - Flexible Low-Power Modes with 7.3728MHz System Clock Option
+  - 512KB Flash and 128KB SRAM (Optional ECC on One 32KB SRAM Bank)
+  - 16KB Instruction Cache
 
-- External devices connected to the MAX32655 EVKIT:
+Bluetooth 5.2 LE Radio
+  - Dedicated, Ultra-Low-Power, 32-Bit RISC-V Coprocessor to Offload Timing-Critical Bluetooth Processing
+  - Fully Open-Source Bluetooth 5.2 Stack Available
+  - Supports AoA, AoD, LE Audio, and Mesh
+  - High-Throughput (2Mbps) Mode
+  - Long-Range (125kbps and 500kbps) Modes
+  - Rx Sensitivity: -97.5dBm; Tx Power: +4.5dBm
+  - Single-Ended Antenna Connection (50Ω)
 
-  - Color TFT Display
-  - Audio Stereo Codec Interface
-  - Digital Microphone
-  - A 128Mb QSPI flash
+Power Management Maximizes Battery Life
+  - 2.0V to 3.6V Supply Voltage Range
+  - Integrated SIMO Power Regulator
+  - Dynamic Voltage Scaling (DVS)
+  - 23.8μA/MHz Active Current at 3.0V
+  - 4.4μA at 3.0V Retention Current for 32KB
+  - Selectable SRAM Retention + RTC in Low-Power Modes
+
+Multiple Peripherals for System Control
+  - Up to Two High-Speed SPI Master/Slave
+  - Up to Three High-Speed I2C Master/Slave (3.4Mbps)
+  - Up to Four UART, One I2S Master/Slave
+  - Up to 8-Input, 10-Bit Sigma-Delta ADC 7.8ksps
+  - Up to Four Micro-Power Comparators
+  - Timers: Up to Two Four 32-Bit, Two LP, TwoWatchdog Timers
+  - 1-Wire® Master
+  - Up to Four Pulse Train (PWM) Engines
+  - RTC with Wake-Up Timer
+  - Up to 52 GPIOs
+
+Security and Integrity​
+  - Available Secure Boot
+  - TRNG Seed Generator
+  - AES 128/192/256 Hardware Acceleration Engine
+
+External devices connected to the MAX32655 EVKIT:
+
+- Color TFT Display
+- Audio Stereo Codec Interface
+- Digital Microphone
+- A 128Mb QSPI flash
 
 Supported Features
 ==================

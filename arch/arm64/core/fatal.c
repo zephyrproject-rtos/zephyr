@@ -36,7 +36,7 @@
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
-K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_arm64_safe_exception_stacks,
+K_KERNEL_STACK_ARRAY_DEFINE(z_arm64_safe_exception_stacks,
 				   CONFIG_MP_MAX_NUM_CPUS,
 				   CONFIG_ARM64_SAFE_EXCEPTION_STACK_SIZE);
 
@@ -435,7 +435,7 @@ static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, u
 #ifdef CONFIG_USERSPACE
 	else if ((_current->base.user_options & K_USER) != 0 && GET_ESR_EC(esr) == 0x24) {
 		sp_limit = (uint64_t)_current->stack_info.start;
-		guard_start = sp_limit - Z_ARM64_STACK_GUARD_SIZE;
+		guard_start = sp_limit - CONFIG_PRIVILEGED_STACK_SIZE - Z_ARM64_STACK_GUARD_SIZE;
 		sp = esf->sp;
 		if (sp <= sp_limit || (guard_start <= far && far <= sp_limit)) {
 			EXCEPTION_DUMP("STACK OVERFLOW FROM USERSPACE,"

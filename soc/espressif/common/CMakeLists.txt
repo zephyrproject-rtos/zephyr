@@ -88,8 +88,6 @@ if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE
   endif()
 endif()
 
-set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
-
 if(CONFIG_ESP_SIMPLE_BOOT AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
   dt_nodelabel(image_part_path NODELABEL "boot_partition")
 else()
@@ -119,10 +117,11 @@ if(CONFIG_MCUBOOT)
       ARGS
         --rtl-dirs ${CMAKE_BINARY_DIR}/zephyr
         --elf-file ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
-        find-refs
-        --from-section='.iram0.loader_text'
-        --to-section='.iram0.text'
-        --exit-code)
+        find-reachable-from-loader-func
+        --map ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_MAP_NAME}
+        --roots='do_boot,start_cpu0_image'
+        --outplacers
+        --summary)
 endif()
 
 if(CONFIG_MCUBOOT)
@@ -136,3 +135,5 @@ else()
 endif()
 
 zephyr_sources_ifdef(CONFIG_ESP32_LCD_CAM esp_lcd_cam.c)
+zephyr_sources_ifdef(CONFIG_ESP32_ETM esp_etm_alloc.c)
+zephyr_sources(instr_mem.c)

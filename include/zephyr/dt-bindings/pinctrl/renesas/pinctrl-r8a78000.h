@@ -9,7 +9,8 @@
 
 /**
  * @file
- * @brief Renesas R-Car Gen5 R8A78000 pinctrl definitions.
+ * @brief Renesas R-Car Gen5 (R8A78000) pin and function definitions
+ * @ingroup pinctrl_rcar
  */
 
 #include "pinctrl-rcar-common.h"

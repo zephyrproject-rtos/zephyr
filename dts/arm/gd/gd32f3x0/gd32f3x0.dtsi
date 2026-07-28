@@ -10,6 +10,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/adc/gd32f3x0.h>
 #include <zephyr/dt-bindings/clock/gd32f3x0-clocks.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-sw.h>
 #include <zephyr/dt-bindings/reset/gd32f3x0.h>
 
 / {
@@ -26,7 +28,11 @@
 
 	soc {
 		sram0: memory@20000000 {
-			compatible = "mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
+			zephyr,memory-region = "SRAM";
+			zephyr,memory-attr = <(DT_MEM_DMA |
+					       DT_MEM_SW_ALLOC_NON_CACHE |
+					       DT_MEM_SW_ALLOC_DMA)>;
 		};
 
 		rcu: reset-clock-controller@40021000 {
@@ -50,6 +56,7 @@
 		fmc: flash-controller@40022000 {
 			compatible = "gd,gd32-flash-controller";
 			reg = <0x40022000 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -59,6 +66,8 @@
 				write-block-size = <2>;
 				max-erase-time-ms = <300>;
 				page-size = <DT_SIZE_K(1)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

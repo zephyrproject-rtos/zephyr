@@ -3,7 +3,7 @@
  * Written by: Nicolas Pitre
  * SPDX-License-Identifier: Apache-2.0
  *
- * The purpose of this test is to exercize and validate the on-demand and
+ * The purpose of this test is to exercise and validate the on-demand and
  * preemptive FPU access algorithms implemented in arch/riscv/core/fpu.c.
  */
 
@@ -79,7 +79,7 @@ static void new_thread_check(const char *name)
 	 * Registers are initialized with zeroes but single precision values
 	 * are expected to be "NaN-boxed" to be valid. So don't use the s
 	 * format here as it won't convert to zero. It's not a problem
-	 * otherwise as proper code is not supposed to rely on unitialized
+	 * otherwise as proper code is not supposed to rely on uninitialized
 	 * registers anyway.
 	 */
 	__asm__ volatile ("fcvt.w.d %0, fa0, rtz" : "=r" (val));

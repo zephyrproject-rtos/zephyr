@@ -182,17 +182,17 @@ static void connect_pair_check_subscribtion(struct bt_le_ext_adv *adv)
 	WAIT_FOR_FLAG(security_updated_flag);
 	UNSET_FLAG(security_updated_flag);
 
-	/* wait for confirmation of subscribtion from good client */
+	/* wait for confirmation of subscription from good client */
 	bk_sync_wait();
 
-	/* check that subscribtion request did not fail */
+	/* check that subscription request did not fail */
 	if (!is_peer_subscribed(default_conn)) {
 		TEST_FAIL("Client did not subscribed");
 	}
 
 	stop_adv(adv);
 
-	/* confirm to client that the subscribtion has been well registered */
+	/* confirm to client that the subscription has been well registered */
 	bk_sync_send();
 
 	send_value_notification();
@@ -210,14 +210,14 @@ static void connect_restore_sec_check_subscribtion(struct bt_le_ext_adv *adv)
 	/* wait for client end of security update */
 	bk_sync_wait();
 
-	/* check that subscribtion has been restored */
+	/* check that subscription has been restored */
 	if (!is_peer_subscribed(default_conn)) {
 		TEST_FAIL("Client is not subscribed");
 	} else {
 		LOG_DBG("Client is subscribed");
 	}
 
-	/* confirm to good client that the subscribtion has been well restored */
+	/* confirm to good client that the subscription has been well restored */
 	bk_sync_send();
 
 	send_value_notification();

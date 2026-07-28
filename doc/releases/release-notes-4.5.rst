@@ -33,6 +33,18 @@ We are pleased to announce the release of Zephyr version 4.5.0.
 
 Major enhancements with this release include:
 
+**New driver classes**
+
+  Zephyr 4.5 adds several new driver APIs, including:
+
+  - :ref:`Clock Monitor <clock_monitor_api>` for runtime observation of clock frequency
+
+**New subsystems**
+
+  Zephyr 4.5 adds several new subsystem APIs, including:
+
+  - :ref:`Video <video_api>` for controlling video drivers
+
 An overview of the changes required or recommended when migrating your application from Zephyr
 v4.4.0 to Zephyr v4.5.0 can be found in the separate :ref:`migration guide<migration_4.5>`.
 
@@ -56,10 +68,21 @@ API Changes
 Removed APIs and options
 ========================
 
+* Architectures
+
+   * Xtensa
+
+      * ``CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK``
+
+* Counter
+
+    * ``CONFIG_COUNTER_MAXIM_DS3231``
+
 * Networking
 
     * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
     * ``CONFIG_NET_SOCKETS_POLL_MAX``
+    * ``CONFIG_NET_GPTP_CLOCK_ACCURACY_*``
     * ``net_ipv6_set_hop_limit()``
     * ``net_if_ipv4_get_netmask()``
     * ``net_if_ipv4_set_netmask()``
@@ -72,6 +95,7 @@ Removed APIs and options
     * ``openthread_api_mutex_unlock()``
     * ``struct openthread_state_changed_cb``
     * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
+    * ``start_11r_roaming``
 
 * Random
 
@@ -87,6 +111,13 @@ Deprecated APIs and options
 
   * The :c:struct:`audio_codec_api` struct has been deprecated. Audio codec drivers are now
     expected to use the :c:macro:`DEVICE_API` macro to declare their driver API.
+
+* CPU Load
+
+  * :kconfig:option:`CONFIG_CPU_LOAD_METRIC` and :c:func:`cpu_load_metric_get` are deprecated. The
+    CPU load metric module has been merged into the unified :ref:`cpu_load` module; use
+    :kconfig:option:`CONFIG_CPU_LOAD` with the
+    :kconfig:option:`CONFIG_CPU_LOAD_BACKEND_RUNTIME_STATS` backend and :c:func:`cpu_load_get_cpu`.
 
 * :abbr:`DMIC (Digital Microphone Interface)`
 
@@ -120,6 +151,27 @@ Deprecated APIs and options
     :c:func:`ring_buf_item_get`, :c:func:`ring_buf_item_space_get`) has been deprecated in favor of
     :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`).
 
+* Networking
+
+  * Deprecated LLMNR support (:kconfig:option:`CONFIG_LLMNR_RESOLVER` and
+    :kconfig:option:`CONFIG_LLMNR_RESPONDER`). LLMNR is being phased out; use
+    mDNS (:kconfig:option:`CONFIG_MDNS_RESOLVER` /
+    :kconfig:option:`CONFIG_MDNS_RESPONDER`) instead.
+
+* Networking Link layer
+
+  * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
+    Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
+
+* Video
+
+  * All functions in the video driver API (``<zephyr/drivers/video.h>``) have moved to the video
+    subsystem (``<zephyr/video/video.h>``). Application only need to rename the ``#include``.
+
+* Work queue
+
+  * :c:member:`k_work_q.thread` has been deprecated. Use :c:member:`k_work_q.thread_id` instead.
+
 New APIs and options
 ====================
 ..
@@ -133,6 +185,7 @@ New APIs and options
 * Audio
 
   * :c:member:`pcm_stream_cfg.gain_db`
+  * :c:struct:`audio_codec_eq_cfg`
 
 * Bluetooth
 
@@ -140,17 +193,30 @@ New APIs and options
 
     * :c:func:`bt_ascs_register`
     * :c:func:`bt_ascs_unregister`
+    * :c:func:`bt_bap_unicast_client_qos_from_group`
+    * :c:func:`bt_bap_qos_cfg_eq`
 
   * Host
 
     * :c:func:`bt_conn_take`
     * :c:func:`bt_conn_drop`
+    * :c:func:`bt_le_per_adv_update_did`
+    * :c:member:`bt_le_adv_param.tx_power` and :c:enumerator:`BT_LE_ADV_OPT_TX_POWER`
+      to request a specific TX power level per extended advertising set.
+    * :c:member:`bt_conn_cb.le_param_update_rejected`
 
   * Mesh
 
     * :c:struct:`bt_mesh_lpn_timing`
     * :c:func:`bt_mesh_stat_lpn_timing_get`
     * :c:func:`bt_mesh_stat_lpn_timing_reset`
+
+* Crypto
+
+  * :c:enumerator:`CRYPTO_CIPHER_MODE_CFB`
+  * :c:enumerator:`CRYPTO_CIPHER_MODE_OFB`
+  * :c:func:`cipher_cfb_op`
+  * :c:func:`cipher_ofb_op`
 
 * Devicetree
 
@@ -170,20 +236,45 @@ New APIs and options
   * :c:func:`haptics_set_level`
   * :c:func:`haptics_stream_samples`
 
+* Kconfig
+
+  * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)
+
 * Kernel
 
   * :c:func:`k_thread_runtime_stats_is_enabled`
+  * :c:func:`atomic_test_and_set_bit_to`
 
 * LoRa
 
   * :c:func:`lora_recv_duty_cycle`
   * :c:func:`lora_recv_duty_cycle_async`
 
-* :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
-
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
+  * Add :c:func:`net_dhcpv4_set_reboot_hint` to seed the DHCPv4 client with a
+    previously leased address for INIT-REBOOT.
+  * Add an mDNS responder interface policy
+    (:kconfig:option:`CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALLOWLIST`,
+    :kconfig:option:`CONFIG_MDNS_RESPONDER_IFACE_POLICY_DENYLIST`) together with
+    :kconfig:option:`CONFIG_MDNS_RESPONDER_IFACE_LIST` to control on which
+    network interfaces the mDNS responder operates.
+  * Add :c:func:`mdns_responder_enable_iface` and
+    :c:func:`mdns_responder_disable_iface`
+    (:kconfig:option:`CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL`) to enable or
+    disable the mDNS responder on a network interface at runtime.
+
+* Ring buffer
+
+  * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
+
+* Zbus
+
+  * :kconfig:option:`CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION`
+  * :c:func:`zbus_runtime_channel_init`
+  * :c:func:`zbus_runtime_channel_register`
+  * :c:func:`zbus_runtime_channel_unregister`
 
 .. zephyr-keep-sorted-stop
 
@@ -203,6 +294,10 @@ New Boards
 * Seeed
 
   * :zephyr:board:`Seeed Wio Tracker L1 <wio_tracker_l1>` (``wio_tracker_l1``)
+
+* WCH
+
+  * :zephyr:board:`WCH CH32V103EVT <ch32v103evt>` (``ch32v103evt``)
 
 New Shields
 ***********
@@ -227,6 +322,20 @@ New Drivers
 
   * VIRTIO input device (:dtcompatible:`virtio,input`).
 
+* Clock Monitor
+
+  * :dtcompatible:`nxp,cmu-fc` — NXP Clock Monitoring Unit (Frequency Check)
+    back-end for the new :ref:`clock_monitor_api` subsystem.
+  * :dtcompatible:`nxp,cmu-fm` — NXP Clock Monitoring Unit (Frequency Meter)
+    back-end for the new :ref:`clock_monitor_api` subsystem.
+
+* USB
+
+  * :dtcompatible:`espressif,esp32-usb-otg-fs` - Espressif USB-OTG full-speed
+    controller with internal FS/LS PHY.
+  * :dtcompatible:`espressif,esp32-usb-otg-hs` - Espressif USB-OTG high-speed
+    controller with internal UTMI PHY.
+
 New Samples
 ***********
 
@@ -236,9 +345,23 @@ New Samples
 
 * :zephyr:code-sample:`mctp_i2c_bus_host` (renamed from ``mctp_i2c_bus_owner``)
 * :zephyr:code-sample:`mctp_i3c_bus_host` (renamed from ``mctp_i3c_bus_owner``)
+* ``samples/drivers/clock_monitor/check_freq`` — demonstrates WINDOW-mode
+  out-of-window frequency checking on the new :ref:`clock_monitor_api`.
+* ``samples/drivers/clock_monitor/measure_freq`` — demonstrates MEASURE-mode
+  one-shot frequency measurement on the new :ref:`clock_monitor_api`.
 
 Libraries / Subsystems
 **********************
+
+* Crypto
+
+  * Added AES CFB and OFB cipher mode support.
+
+  * Mbed TLS was updated to version 4.1.1. Release notes can be found
+    `here <https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-4.1.1>`_.
+
+  * TF-PSA-Crypto was updated to version 1.1.1. Release notes can be found
+    `here <https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.1>`_.
 
 * DFU
 
@@ -252,6 +375,17 @@ Libraries / Subsystems
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
+
+* Video
+
+  * Introducing a video subsystem that inherits all the function names previously in
+    video drivers.
+
+* Zbus
+
+  * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION` now works without requiring
+    a dedicated pool on every channel (channels fall back to the shared pool until
+    :c:func:`zbus_chan_set_msg_sub_pool` is called)
 
 Devicetree
 **********
@@ -290,6 +424,16 @@ Other notable changes
 
   * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
     certificates (DES-encrypted private keys). Use ``rsa2k_no_des`` instead.
+
+* MCUboot
+
+  * :kconfig:option:`SB_CONFIG_BOOT_SIGNATURE_KEY_FILE` now accepts a comma-separated list of
+    key files, embedding the public half of each in the MCUboot bootloader. When more
+    than one key is given, MCUboot accepts an image signed with any of them -- the
+    typical use is a development bootloader that boots both development- and
+    production-signed images, while production bootloaders embed only the production
+    key. The first entry is the key the application is signed with and the rest are
+    verification-only public keys. See :ref:`build-signing`.
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write

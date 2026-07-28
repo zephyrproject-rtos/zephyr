@@ -19,6 +19,7 @@
 
 	aliases {
 		led0 = &led_act;
+		led1 = &led_pwr;
 		i2c-1 = &i2c1;
 	};
 
@@ -36,6 +37,11 @@
 		led_act: led-act {
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>; /* GPIO 42 */
 			label = "ACT";
+		};
+
+		led_pwr: led-pwr {
+			gpios = <&exp_gpio 2 GPIO_ACTIVE_LOW>;
+			label = "PWR";
 		};
 	};
 
@@ -72,6 +78,13 @@
 			compatible = "raspberrypi,bcm2711-framebuffer";
 			width = <640>;
 			height = <480>;
+		};
+
+		exp_gpio: gpio {
+			compatible = "raspberrypi,bcm283x-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
 		};
 	};
 };

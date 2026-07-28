@@ -91,11 +91,6 @@
 		};
 	};
 
-	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash-controller = &flashctrl;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -148,12 +143,18 @@
 		itcm: itcm@22020000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x22020000 DT_SIZE_K(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x22020000 DT_SIZE_K(16)>;
 			zephyr,memory-region = "ITCM";
 		};
 
 		retram: memory@40010000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x40010000 DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40010000 DT_SIZE_K(4)>;
 			zephyr,memory-region = "RETRAM";
 		};
 
@@ -178,11 +179,17 @@
 			sram0_btle: sram@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(56)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(56)>;
 			};
 
-			sram0_btle_em16k: sram@c000 {
+			sram0_btle_em16k: sram_16k@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(48)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(48)>;
 			};
 		};
 
@@ -330,14 +337,37 @@
 			interrupt-parent = <&clic>;
 		};
 
-		flashctrl: flash-controller@4000b000 {
-			compatible = "bflb,flash-controller";
+		sf_ctrl: sf@4000b000 {
+			compatible = "bflb,sf-controller";
 			reg = <0x4000b000 0x1000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 
 			interrupts = <39 0>;
 			interrupt-parent = <&clic>;
+
+			sf_bank1: flash-controller@23000000 {
+				compatible = "bflb,sf-bank";
+				reg = <0x23000000 DT_SIZE_M(16)>;
+				ranges = <0x0 0x23000000 DT_SIZE_M(16)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			sf_bank2: memory-controller@24000000 {
+				/* Only have the memory-region compatible
+				 * when not using a pre-existing (ROM) memory region
+				 */
+				compatible = "bflb,sf-bank", "zephyr,memory-region";
+				zephyr,memory-region = "PSRAM";
+				reg = <0x24000000 DT_SIZE_M(16)>;
+				ranges = <0x0 0x24000000 DT_SIZE_M(16)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		dma0: dma@4000c000 {

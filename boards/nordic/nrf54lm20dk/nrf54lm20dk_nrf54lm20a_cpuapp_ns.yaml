@@ -17,6 +17,7 @@ supported:
   - pwm
   - spi
   - usbd
+  - usbh
   - watchdog
 vendor: nordic
 sysbuild: true

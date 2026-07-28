@@ -321,8 +321,8 @@ elseif(QEMU_NET_STACK)
   endif()
 endif(QEMU_PIPE_STACK)
 
-if(CONFIG_CAN AND NOT (CONFIG_SOC_LEON3))
-  # Add CAN bus 0
+if(CONFIG_CAN_KVASER_PCI)
+  # Add CAN bus 0 only when QEMU-emulated CAN hardware is actually needed
   list(APPEND QEMU_FLAGS -object can-bus,id=canbus0)
 
   if(NOT "${CONFIG_CAN_QEMU_IFACE_NAME}" STREQUAL "")
@@ -332,10 +332,8 @@ if(CONFIG_CAN AND NOT (CONFIG_SOC_LEON3))
     )
   endif()
 
-  if(CONFIG_CAN_KVASER_PCI)
-    # Emulate a single-channel Kvaser PCIcan card connected to CAN bus 0
-    list(APPEND QEMU_FLAGS -device kvaser_pci,canbus=canbus0)
-  endif()
+  # Emulate a single-channel Kvaser PCIcan card connected to CAN bus 0
+  list(APPEND QEMU_FLAGS -device kvaser_pci,canbus=canbus0)
 endif()
 
 if(CONFIG_X86_64 AND NOT CONFIG_QEMU_UEFI_BOOT)
@@ -463,6 +461,29 @@ if(CONFIG_QEMU_TARGET)
       -device ${CONFIG_ETH_NIC_MODEL},netdev=n1,${CONFIG_NET_QEMU_DEVICE_EXTRA_ARGS}
     )
   endif()
+endif()
+
+if(CONFIG_FLASH_INTEL_PFLASH_CFI01)
+  if(CONFIG_X86)
+    # X86 Needs an initial bios file in pflash0 slot
+    list(APPEND QEMU_EXTRA_FLAGS
+      -drive file=${HOST_TOOLS_HOME}/usr/share/qemu/bios-256k.bin,if=pflash,format=raw,unit=0
+    )
+  endif()
+
+  list(APPEND QEMU_EXTRA_FLAGS
+    -drive file=${ZEPHYR_BINARY_DIR}/pflash.img,if=pflash,format=raw,unit=1
+  )
+
+  if(CONFIG_RISCV)
+    set(PFLASH_SIZE 32768)
+  else()
+    set(PFLASH_SIZE 4096)
+  endif()
+  execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+    "open('${ZEPHYR_BINARY_DIR}/pflash.img', 'wb').write(bytes([0])*${PFLASH_SIZE}*1024)"
+    COMMAND_ERROR_IS_FATAL ANY
+  )
 endif()
 
 if(NOT QEMU_PIPE)

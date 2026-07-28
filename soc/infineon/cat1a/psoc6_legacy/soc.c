@@ -9,11 +9,11 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/irq.h>
 
-#include "cy_syslib.h"
-#include "cy_gpio.h"
-#include "cy_scb_uart.h"
-#include "cy_syspm.h"
-#include "cy_sysclk.h"
+#include <cy_syslib.h>
+#include <cy_gpio.h>
+#include <cy_scb_uart.h>
+#include <cy_syspm.h>
+#include <cy_sysclk.h>
 
 #define CY_CFG_SYSCLK_CLKFAST_ENABLED 1
 #define CY_CFG_SYSCLK_FLL_ENABLED 1
@@ -396,10 +396,7 @@ void Cy_SystemInit(void)
 #endif
 }
 
-static int init_cycfg_platform_wraper(void)
+void soc_early_init_hook(void)
 {
 	SystemInit();
-	return 0;
 }
-
-SYS_INIT(init_cycfg_platform_wraper, PRE_KERNEL_1, 0);

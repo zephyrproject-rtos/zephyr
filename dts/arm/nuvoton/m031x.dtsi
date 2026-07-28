@@ -255,6 +255,39 @@
 			clocks = <&pcc NUMAKER_RTC_MODULE 0 0>;
 			alarms-count = <1>;
 		};
+
+		spi0: spi@40061000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40061000 0x1000>;
+			interrupts = <14 0>;
+			resets = <&rst NUMAKER_SPI0_RST>;
+			clocks = <&pcc NUMAKER_SPI0_MODULE NUMAKER_CLK_CLKSEL2_SPI0SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uspi0: spi@400d0000 {
+			compatible = "nuvoton,numaker-usci-spi";
+			reg = <0x400d0000 0x1000>;
+			interrupts = <22 0>;
+			resets = <&rst NUMAKER_USCI0_RST>;
+			clocks = <&pcc NUMAKER_USCI0_MODULE 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uspi1: spi@400d1000 {
+			compatible = "nuvoton,numaker-usci-spi";
+			reg = <0x400d1000 0x1000>;
+			interrupts = <22 0>;
+			resets = <&rst NUMAKER_USCI1_RST>;
+			clocks = <&pcc NUMAKER_USCI1_MODULE 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 

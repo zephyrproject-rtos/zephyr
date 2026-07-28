@@ -39,7 +39,7 @@
 #error "Library does not support the specified device."
 #endif
 
-#include "pic32cz_ca.h"
+#include <pic32cz_ca.h>
 
 #endif /* _ASMLANGUAGE */
 

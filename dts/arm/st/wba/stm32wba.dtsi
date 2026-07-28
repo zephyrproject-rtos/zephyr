@@ -77,6 +77,7 @@
 			reg = <0>;
 			/* Do not add &standby here since CONFIG_PM_S2RAM is disabled by default */
 			cpu-power-states = <&stop0 &stop1>;
+			i-cache-line-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -325,6 +326,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x42020000 0x2000>;
+			ranges;
 
 			gpioa: gpio@42020000 {
 				compatible = "st,stm32-gpio";
@@ -516,7 +518,7 @@
 		};
 
 		lptim1: timers@46004400 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x46004400 0x400>;
@@ -528,7 +530,7 @@
 		};
 
 		lptim2: timers@40009400 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40009400 0x400>;
@@ -539,7 +541,7 @@
 			status = "disabled";
 		};
 
-		aes: aes@420c0000 {
+		aes: crypto@420c0000 {
 			compatible = "st,stm32-aes";
 			reg = <0x420c0000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
@@ -572,9 +574,6 @@
 			reg = <0x48020000 DT_SIZE_K(4)>;
 
 			interrupt-names = "radio";
-
-			#address-cells = <0>;
-			#size-cells = <0>;
 
 			bt_hci_wba: bluetooth {
 				compatible = "st,hci-stm32wba";

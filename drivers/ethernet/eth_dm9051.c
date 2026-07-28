@@ -446,8 +446,7 @@ static int eth_dm9051_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Read TX data from net_pkt */
 	if (net_pkt_read(pkt, data->tx_buf, len)) {
-		ret = -EIO;
-		goto out_update_errors_tx;
+		return -EIO;
 	}
 
 	k_mutex_lock(&data->spi_lock, K_FOREVER);
@@ -479,27 +478,13 @@ static int eth_dm9051_tx(const struct device *dev, struct net_pkt *pkt)
 	k_mutex_unlock(&data->spi_lock);
 
 	if (k_sem_take(&data->tx_done, K_MSEC(10))) {
-		ret = -EIO;
-		goto out_update_errors_tx;
-	}
-
-	/* Update ethernet statistics */
-	eth_stats_update_bytes_tx(data->iface, len);
-	eth_stats_update_pkts_tx(data->iface);
-	if (net_eth_is_addr_broadcast(&NET_ETH_HDR(pkt)->dst)) {
-		eth_stats_update_broadcast_tx(data->iface);
-	} else if (net_eth_is_addr_multicast(&NET_ETH_HDR(pkt)->dst)) {
-		eth_stats_update_multicast_tx(data->iface);
-	}  else {
-		/* Unicast frame */
+		return -EIO;
 	}
 
 	return 0;
 
 out_spi_unlock:
 	k_mutex_unlock(&data->spi_lock);
-out_update_errors_tx:
-	eth_stats_update_errors_tx(data->iface);
 	return ret;
 }
 

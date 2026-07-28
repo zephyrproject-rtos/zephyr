@@ -1,46 +1,48 @@
-Title: Preemptible Threads Pending on kernel Objects
+Title: Preemptible Threads Pending on Kernel Objects
 
 Description:
 
-This test verifies that preemptible threads can pend on the following
-kernel objects: FIFOs, LIFOs, semaphores and timers.
+This test verifies that preemptible threads can pend on kernel objects and
+are unblocked in the expected order. The pending suite runs three cases:
 
---------------------------------------------------------------------------------
+1. test_pending_fifo
+   - Preemptible threads block on a k_fifo, time out in the correct order
+     and receive the queued data correctly.
 
-Building and Running Project:
+2. test_pending_lifo
+   - Preemptible threads block on a k_lifo, time out in the correct order
+     and receive the queued data correctly.
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+3. test_pending_timer
+   - A preemptible thread waits on a k_timer and is released when the
+     timer expires.
 
-    make run
+---------------------------------------------------------------------------
 
---------------------------------------------------------------------------------
+Building and Running:
 
-Troubleshooting:
+Build and run with twister, for example on QEMU:
 
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
+    twister -p qemu_x86 -T tests/kernel/pending
 
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
+Or build and run a single platform directly with west:
 
---------------------------------------------------------------------------------
+    west build -b qemu_x86 tests/kernel/pending
+    west build -t run
+
+---------------------------------------------------------------------------
 
 Sample Output:
 
-***** BOOTING ZEPHYR OS vxxxx - BUILD: xxxxx *****
-tc_start() - Test Preemptible Threads Pending on Kernel Objects
-Testing preemptible threads block on fifos ...
-Testing fifos time-out in correct order ...
-Testing  fifos delivered data correctly ...
-Testing preemptible threads block on lifos ...
-Testing lifos time-out in correct order ...
-Testing lifos delivered data correctly ...
-Testing preemptible thread waiting on timer ...
+Running TESTSUITE pending
 ===================================================================
-PASS - task_monitor.
+START - test_pending_fifo
+ PASS - test_pending_fifo
 ===================================================================
-PROJECT EXECUTION SUCCESSFUL
+START - test_pending_lifo
+ PASS - test_pending_lifo
+===================================================================
+START - test_pending_timer
+ PASS - test_pending_timer
+===================================================================
+TESTSUITE pending succeeded

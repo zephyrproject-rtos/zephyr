@@ -15,8 +15,8 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/logging/log.h>
 
-#include "sl_wifi.h"
-#include "firmware_upgradation.h"
+#include <sl_wifi.h>
+#include <firmware_upgradation.h>
 
 LOG_MODULE_REGISTER(siwx91x_ota, LOG_LEVEL_INF);
 
@@ -35,9 +35,9 @@ struct fota_ctx {
 	int http_status;
 
 	/* http_client requires a temporary buffers for the http responces (headers + body) */
-	uint8_t http_buffer[512];
+	uint8_t http_buffer[1024];
 	/* Larger buffers require fewer HTTP requests, so downloading the payload is faster. */
-	uint8_t flash_buffer[16 * 1024];
+	uint8_t flash_buffer[8 * 1024];
 	int flash_buffer_len;
 };
 
@@ -66,6 +66,18 @@ static int fota_cook_url(struct fota_ctx *ctx, const char *url)
 	http_parser_url_init(&parser);
 	ret = http_parser_parse_url(url, strlen(url), 0, &parser);
 	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	ret = fota_get_url_field(url, &parser, UF_SCHEMA, schema, sizeof(schema));
+	if (ret < 0) {
+		return ret;
+	}
+	if (!strcmp(schema, "https") && IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)) {
+		ctx->use_tls = true;
+	} else if (!strcmp(schema, "http")) {
+		ctx->use_tls = false;
+	} else {
 		return -EINVAL;
 	}
 
@@ -99,18 +111,6 @@ static int fota_cook_url(struct fota_ctx *ctx, const char *url)
 		ctx->port = "443";
 	} else {
 		ctx->port = "80";
-	}
-
-	ret = fota_get_url_field(url, &parser, UF_SCHEMA, schema, sizeof(schema));
-	if (ret < 0) {
-		return ret;
-	}
-	if (!strcmp(schema, "https") && IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)) {
-		ctx->use_tls = true;
-	} else if (!strcmp(schema, "http")) {
-		ctx->use_tls = false;
-	} else {
-		return -EINVAL;
 	}
 
 	return 0;
@@ -282,51 +282,56 @@ static int fota_load_chunk(struct fota_ctx *ctx)
 
 static int cmd_fota(const struct shell *sh, size_t argc, char *argv[])
 {
-	/* This structure is large. Avoid to allocate it on the stack. */
-	static struct fota_ctx ctx;
+	struct fota_ctx *ctx;
 	int ret;
 
-	memset(&ctx, 0, sizeof(ctx));
-	ctx.sh = sh;
-	ctx.socket = -1;
+	ctx = calloc(1, sizeof(struct fota_ctx));
+	if (!ctx) {
+		return -ENOMEM;
+	}
+	ctx->sh = sh;
+	ctx->socket = -1;
 
-	if (strlen(argv[1]) >= sizeof(ctx.bufurl)) {
-		shell_error(sh, "URL too long (max %zu characters)", sizeof(ctx.bufurl));
-		return -EINVAL;
+	if (strlen(argv[1]) >= sizeof(ctx->bufurl)) {
+		shell_error(sh, "URL too long (max %zu characters)", sizeof(ctx->bufurl));
+		ret = -EINVAL;
+		goto out;
 	}
 
-	ret = fota_cook_url(&ctx, argv[1]);
+	ret = fota_cook_url(ctx, argv[1]);
 	if (ret) {
 		shell_error(sh, "Invalid URL: %s", argv[1]);
-		return ret;
+		goto out;
 	}
 	while (true) {
-		if (ctx.socket < 0) {
-			ctx.socket = fota_http_connect(sh, ctx.host, ctx.port, ctx.use_tls);
+		if (ctx->socket < 0) {
+			ctx->socket = fota_http_connect(sh, ctx->host, ctx->port, ctx->use_tls);
 		}
-		if (ctx.socket < 0) {
-			ret = ctx.socket;
+		if (ctx->socket < 0) {
+			ret = ctx->socket;
 			break;
 		}
 
-		ret = fota_recv_chunk(&ctx);
+		ret = fota_recv_chunk(ctx);
 		if (ret == -ECONNABORTED || ret == -ECONNRESET) {
 			shell_print(sh, "Connection lost, reconnecting...");
-			zsock_close(ctx.socket);
-			ctx.socket = -1;
+			zsock_close(ctx->socket);
+			ctx->socket = -1;
 			continue;
 		}
 		if (ret < 0) {
 			break;
 		}
 
-		ret = fota_load_chunk(&ctx);
+		ret = fota_load_chunk(ctx);
 		if (ret < 0) {
 			break;
 		}
-		ctx.range_start += ctx.flash_buffer_len;
+		ctx->range_start += ctx->flash_buffer_len;
 	}
-	zsock_close(ctx.socket);
+	zsock_close(ctx->socket);
+out:
+	free(ctx);
 	return ret;
 }
 

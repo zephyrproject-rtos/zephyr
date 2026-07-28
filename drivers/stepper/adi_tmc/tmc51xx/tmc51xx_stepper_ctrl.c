@@ -9,6 +9,7 @@
 
 #include <zephyr/drivers/stepper/stepper_ctrl.h>
 #include "tmc51xx.h"
+#include "tmc51xx_reg.h"
 #include <adi_tmc5xxx_common.h>
 
 #include <zephyr/logging/log.h>

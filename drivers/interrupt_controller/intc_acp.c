@@ -45,7 +45,7 @@ void acp_dsp_sw_intr_enable(void)
 	sw_intr_ctrl_reg.bits.dsp0_to_host_intr_mask = INTERRUPT_ENABLE;
 	/* Write the Software Interrupt controller register */
 	io_reg_write((PU_REGISTER_BASE + ACP_DSP_SW_INTR_CNTL), sw_intr_ctrl_reg.u32all);
-	/* Enabling software interuppts */
+	/* Enabling software interrupts */
 	irq_enable(IRQ_NUM_EXT_LEVEL3);
 }
 

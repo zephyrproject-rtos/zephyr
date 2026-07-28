@@ -29,8 +29,6 @@
 	};
 
 	uart0: uart@10000000 {
-		interrupts = <0x0a 1>;
-		interrupt-parent = <&plic>;
 		clock-frequency = <0x384000>;
 		reg = <0x10000000 0x100>;
 		compatible = "ns16550";
@@ -168,83 +166,49 @@
 		virtio_mmio0: virtio_mmio@10001000 {
 			compatible = "virtio,mmio";
 			reg = <0x10001000 0x1000>;
-			interrupts = <0x01 1>;
-			interrupt-parent = <&plic>;
 			status = "disabled";
 		};
 
 		virtio_mmio1: virtio_mmio@10002000 {
 			compatible = "virtio,mmio";
 			reg = <0x10002000 0x1000>;
-			interrupts = <0x02 1>;
-			interrupt-parent = <&plic>;
 			status = "disabled";
 		};
 
 		virtio_mmio2: virtio_mmio@10003000 {
 			compatible = "virtio,mmio";
 			reg = <0x10003000 0x1000>;
-			interrupts = <0x03 1>;
-			interrupt-parent = <&plic>;
 			status = "disabled";
 		};
 
 		virtio_mmio3: virtio_mmio@10004000 {
 			compatible = "virtio,mmio";
 			reg = <0x10004000 0x1000>;
-			interrupts = <0x04 1>;
-			interrupt-parent = <&plic>;
 			status = "disabled";
 		};
 
 		virtio_mmio4: virtio_mmio@10005000 {
 			compatible = "virtio,mmio";
 			reg = <0x10005000 0x1000>;
-			interrupts = <0x05 1>;
-			interrupt-parent = <&plic>;
 			status = "disabled";
 		};
 
 		virtio_mmio5: virtio_mmio@10006000 {
 			compatible = "virtio,mmio";
 			reg = <0x10006000 0x1000>;
-			interrupts = <0x06 1>;
-			interrupt-parent = <&plic>;
 			status = "disabled";
 		};
 
 		virtio_mmio6: virtio_mmio@10007000 {
 			compatible = "virtio,mmio";
 			reg = <0x10007000 0x1000>;
-			interrupts = <0x07 1>;
-			interrupt-parent = <&plic>;
 			status = "disabled";
 		};
 
 		virtio_mmio7: virtio_mmio@10008000 {
 			compatible = "virtio,mmio";
 			reg = <0x10008000 0x1000>;
-			interrupts = <0x08 1>;
-			interrupt-parent = <&plic>;
 			status = "disabled";
-		};
-
-		plic: interrupt-controller@c000000 {
-			riscv,max-priority = <7>;
-			riscv,ndev = <1024>;
-			reg = <0x0c000000 0x04000000>;
-			interrupts-extended = <&hlic0 0x0b &hlic0 0x09
-					       &hlic1 0x0b &hlic1 0x09
-					       &hlic2 0x0b &hlic2 0x09
-					       &hlic3 0x0b &hlic3 0x09
-					       &hlic4 0x0b &hlic4 0x09
-					       &hlic5 0x0b &hlic5 0x09
-					       &hlic6 0x0b &hlic6 0x09
-					       &hlic7 0x0b &hlic7 0x09>;
-			interrupt-controller;
-			compatible = "sifive,plic-1.0.0";
-			#address-cells = <0x00>;
-			#interrupt-cells = <0x02>;
 		};
 
 		clint: clint@2000000 {
@@ -283,23 +247,6 @@
 			ranges = <0x1000000 0x00 0x00 0x3000000 0x00 0x10000
 				  0x2000000 0x00 0x40000000 0x40000000 0x00 0x40000000>;
 			#interrupt-cells = <0x01>;
-			interrupt-map-mask = <0x1800 0x00 0x00 0x07>;
-			interrupt-map = <0x0000 0x00 0x00 1 &plic 32 1
-					 0x0000 0x00 0x00 2 &plic 33 1
-					 0x0000 0x00 0x00 3 &plic 34 1
-					 0x0000 0x00 0x00 4 &plic 35 1
-					 0x0800 0x00 0x00 1 &plic 33 1
-					 0x0800 0x00 0x00 2 &plic 34 1
-					 0x0800 0x00 0x00 3 &plic 35 1
-					 0x0800 0x00 0x00 4 &plic 32 1
-					 0x1000 0x00 0x00 1 &plic 34 1
-					 0x1000 0x00 0x00 2 &plic 35 1
-					 0x1000 0x00 0x00 3 &plic 32 1
-					 0x1000 0x00 0x00 4 &plic 33 1
-					 0x1800 0x00 0x00 1 &plic 35 1
-					 0x1800 0x00 0x00 2 &plic 32 1
-					 0x1800 0x00 0x00 3 &plic 33 1
-					 0x1800 0x00 0x00 4 &plic 34 1>;
 			bus-range = <0x00 0xff>;
 		};
 	};

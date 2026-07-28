@@ -13,11 +13,12 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/logging/log.h>
 #include "flash_priv.h"
+
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
 #include <NuMicro.h>
 
 LOG_MODULE_REGISTER(flash_numaker_rmc, CONFIG_FLASH_LOG_LEVEL);
 
-#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 #define SOC_NV_FLASH_WRITE_BLOCK_SIZE DT_PROP_OR(SOC_NV_FLASH_NODE, write_block_size, 0x04)
 
 struct flash_numaker_data {

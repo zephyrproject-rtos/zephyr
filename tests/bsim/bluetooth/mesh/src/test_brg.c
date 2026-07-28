@@ -692,7 +692,7 @@ static void test_tester_table_state_change(void)
 	 */
 	ASSERT_OK(send_data(DEVICE_ADDR_START, 0xAA, NULL));
 	/* Adding a reverse entry. This should be added to the bridge table as a separate entry as
-	 * the addresses and net keys indexs are provided in the opposite order.
+	 * the addresses and net keys indexes are provided in the opposite order.
 	 */
 	bridge_entry_add(DEVICE_ADDR_START, PROV_ADDR, 1, 0, BT_MESH_BRG_CFG_DIR_ONEWAY);
 	bridge_table_verify(0, 1, 0,
@@ -973,7 +973,7 @@ static void msg_cache_workaround(void)
 		for (int j = 0; j < CONFIG_BT_MESH_MSG_CACHE_SIZE; j++) {
 			ASSERT_OK(send_get(DEVICE_ADDR_START + i, NULL));
 			/* k_sem_take is needed to not overflow network buffer pool. The result
-			 * of the semaphor is not important as we just need to bump sequence number
+			 * of the semaphore is not important as we just need to bump sequence number
 			 * enough to bypass message cache.
 			 */
 			(void)k_sem_take(&status_msg_recvd_sem, K_SECONDS(1));
@@ -1148,7 +1148,7 @@ static void test_tester_key_refresh(void)
 	set_krp_phase(DEVICE_ADDR_START, 0x03);
 	send_and_receive();
 
-	LOG_INF("Step 3: Run KRP in parallell for both device and tester");
+	LOG_INF("Step 3: Run KRP in parallel for both device and tester");
 	start_krp(PROV_ADDR, new_net_keys[2]);
 	send_and_receive();
 	start_krp(DEVICE_ADDR_START, new_net_keys[3]);

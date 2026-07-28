@@ -9,6 +9,6 @@ config LEUART_GECKO
 	depends on DT_HAS_SILABS_GECKO_LEUART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select SOC_GECKO_LEUART
+	select SILABS_GECKO_LEUART
 	help
 	  Enable the Gecko leuart driver.

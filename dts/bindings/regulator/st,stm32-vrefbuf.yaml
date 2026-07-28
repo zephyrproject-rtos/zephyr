@@ -21,6 +21,12 @@ properties:
   reg:
     required: true
 
+  clocks:
+    description: Optional VREFBUF clock (present on some STM32 series).
+
+  resets:
+    description: Optional VREFBUF reset line (present on some STM32 series).
+
   ref-voltages:
     type: array
     required: true
@@ -49,10 +55,11 @@ properties:
       Enables the VREF+ output pin. VREF+ pin is in high-impedance state
       otherwise.
 
-  clocks:
-    type: phandle-array
-    description: Optional VREFBUF clock (present on some STM32 series).
+  st,has-active-scale-change:
+    type: boolean
+    description: |
+      If present, indicates the VREFBUF supports changing voltage scale while enabled.
 
-  resets:
-    type: phandle-array
-    description: Optional VREFBUF reset line (present on some STM32 series).
+      Refer to description of bit(s) VRS in the VREFBUF_CSR register in Reference Manual
+      to determine if this feature is supported: if not, the description will indicate
+      "The software can program this bitfield only when the VREFBUF is disabled (ENVR=0)".

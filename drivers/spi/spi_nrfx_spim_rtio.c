@@ -96,11 +96,11 @@ static void iodev_start_curr(const struct device *dev)
 
 		spi_nrfx_spim_common_cs_set(dev, spi_cfg);
 
-		ret = spi_nrfx_spim_common_transfer_start(dev,
-							  tx_buf,
-							  tx_buf_len,
-							  rx_buf,
-							  rx_buf_len);
+		spi_nrfx_spim_common_transfer_start(dev,
+						    tx_buf,
+						    tx_buf_len,
+						    rx_buf,
+						    rx_buf_len);
 		break;
 
 	case RTIO_OP_AWAIT:
@@ -152,9 +152,15 @@ static void iodev_end_curr(const struct device *dev)
 	iodev_start_curr(dev);
 }
 
-static void spim_evt_handler(const struct device *dev, nrfx_spim_event_t *evt)
+static void spim_evt_handler(const struct device *dev, int ret)
 {
-	spi_nrfx_spim_common_transfer_end(dev, &evt->xfer_desc);
+	ARG_UNUSED(ret);
+
+	if (ret < 0) {
+		iodev_end_txn(dev, ret);
+		return;
+	}
+
 	iodev_end_curr(dev);
 }
 
@@ -239,7 +245,7 @@ static int driver_deinit(const struct device *dev)
 		.common = SPI_NRFX_COMMON_DATA_INIT(inst),					\
 	};											\
 												\
-	SPI_NRFX_COMMON_DEFINE(inst, &CONCAT(data, inst));					\
+	SPI_NRFX_COMMON_DEFINE(inst, &CONCAT(data, inst).common.spim);				\
 												\
 	SPI_RTIO_DEFINE(									\
 		CONCAT(spi_rtio_ctx, inst),							\

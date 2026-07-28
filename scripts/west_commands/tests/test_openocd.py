@@ -2,12 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import argparse
 from unittest.mock import MagicMock, patch
 
 import pytest
 from conftest import RC_GDB, RC_OPENOCD
 
 from runners.openocd import OpenOcdBinaryRunner
+
+TEST_SERIAL = 'E7038EAD'
+SERIAL_CMD = '-c set _ZEPHYR_BOARD_SERIAL ' + TEST_SERIAL
 
 #
 # OpenOCD's '-rtos Zephyr' target awareness is only implemented for the
@@ -107,3 +111,42 @@ def test_debugserver_rtos_old_openocd(
 
     cmd = openocd_cmd(command, check_call, popen_ignore_int)
     assert RTOS_COMMAND not in cmd
+
+
+def create_from_args(runner_config, argv):
+    '''Build an OpenOcdBinaryRunner from command-line arguments.'''
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    OpenOcdBinaryRunner.add_parser(parser)
+    args = parser.parse_args(argv)
+    # The shared fixture leaves a non-None cfg.file (an artifact of its
+    # positional construction); force it to None so the runner, which builds
+    # a Path() from it, constructs cleanly.
+    return OpenOcdBinaryRunner.create(runner_config._replace(file=None), args)
+
+
+@pytest.mark.parametrize(
+    'argv',
+    [
+        ['-i', TEST_SERIAL],  # canonical selector
+        ['--dev-id', TEST_SERIAL],  # long form
+        ['--serial', TEST_SERIAL],  # deprecated alias
+    ],
+)
+def test_dev_id_selects_serial(argv, runner_config):
+    '''-i/--dev-id and the deprecated --serial alias all set the adapter
+    serial, which is passed to OpenOCD as _ZEPHYR_BOARD_SERIAL.'''
+    runner = create_from_args(runner_config, argv)
+    assert runner.serial == [SERIAL_CMD]
+
+
+def test_dev_id_overrides_serial(runner_config):
+    '''Both flags land in the same destination, so argparse precedence
+    applies and the last one given wins.'''
+    runner = create_from_args(runner_config, ['--serial', 'OLD', '-i', TEST_SERIAL])
+    assert runner.serial == [SERIAL_CMD]
+
+
+def test_no_dev_id_no_serial(runner_config):
+    '''Without a selector no _ZEPHYR_BOARD_SERIAL command is emitted.'''
+    runner = create_from_args(runner_config, [])
+    assert runner.serial == []

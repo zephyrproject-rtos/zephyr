@@ -18,3 +18,9 @@ test_w1_ds18s20: ds18s20 {
 	family-code = <0x10>;
 	status = "okay";
 };
+
+test_w1_max31826: max31826 {
+	compatible = "maxim,max31826";
+	family-code = <0x3b>;
+	status = "okay";
+};

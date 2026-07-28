@@ -384,7 +384,7 @@ int flash_stm32_get_wp_sectors(const struct device *dev,
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
 uint8_t flash_stm32_get_rdp_level(const struct device *dev);
 
-void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level);
+int flash_stm32_set_rdp_level(const struct device *dev, uint8_t level);
 #endif
 
 #if defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)

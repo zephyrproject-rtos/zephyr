@@ -1538,19 +1538,22 @@ uint8_t bt_conn_index(const struct bt_conn *conn)
 	switch (conn->type) {
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
-		__ASSERT(IS_ARRAY_ELEMENT(iso_conns, conn), "Invalid bt_conn pointer");
+		__ASSERT(IS_ARRAY_ELEMENT(iso_conns, conn), "Invalid bt_conn pointer %p not in %p",
+			 conn, iso_conns);
 		index = ARRAY_INDEX(iso_conns, conn);
 		break;
 #endif
 #if defined(CONFIG_BT_CLASSIC)
 	case BT_CONN_TYPE_SCO:
-		__ASSERT(IS_ARRAY_ELEMENT(sco_conns, conn), "Invalid bt_conn pointer");
+		__ASSERT(IS_ARRAY_ELEMENT(sco_conns, conn), "Invalid bt_conn pointer %p not in %p",
+			 conn, sco_conns);
 		index = ARRAY_INDEX(sco_conns, conn);
 		break;
 #endif
 	default:
 #if defined(CONFIG_BT_CONN)
-		__ASSERT(IS_ARRAY_ELEMENT(acl_conns, conn), "Invalid bt_conn pointer");
+		__ASSERT(IS_ARRAY_ELEMENT(acl_conns, conn), "Invalid bt_conn pointer %p not in %p",
+			 conn, acl_conns);
 		index = ARRAY_INDEX(acl_conns, conn);
 #else
 		__ASSERT(false, "Invalid connection type %u", conn->type);
@@ -2023,6 +2026,25 @@ void bt_conn_notify_remote_info(struct bt_conn *conn)
 	}
 }
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
+
+#if defined(CONFIG_BT_USER_CONN_PARAM_REJECTED)
+void bt_conn_notify_le_param_rejected(struct bt_conn *conn, uint8_t hci_err)
+{
+	if (IS_ENABLED(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)) {
+		BT_CONN_CB_DYNAMIC_FOREACH(callback) {
+			if (callback->le_param_update_rejected != NULL) {
+				callback->le_param_update_rejected(conn, hci_err);
+			}
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->le_param_update_rejected != NULL) {
+			cb->le_param_update_rejected(conn, hci_err);
+		}
+	}
+}
+#endif /* defined(CONFIG_BT_USER_CONN_PARAM_REJECTED) */
 
 void bt_conn_notify_le_param_updated(struct bt_conn *conn)
 {

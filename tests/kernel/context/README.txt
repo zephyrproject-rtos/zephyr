@@ -2,126 +2,94 @@ Title: Context and IRQ APIs
 
 Description:
 
-This test verifies that the kernel CPU and context APIs operate as expected.
+This test verifies that the kernel CPU, context and interrupt APIs operate
+as expected. It is split into three test suites:
 
+1. context
+   - test_interrupts exercises irq_lock()/irq_unlock() and irq_offload():
+     interrupts stay masked while locked and the offloaded ISR runs in
+     interrupt context.
+   - test_arch_cpu_irqs_are_enabled checks the arch helper reporting the
+     current interrupt-enable state.
+   - test_irq_lock_nested verifies that nested irq_lock()/irq_unlock() only
+     re-enable interrupts once fully unwound.
+   - test_k_can_yield reports whether the current context is allowed to
+     yield.
+   - test_ctx_thread checks k_current_get() and k_is_in_isr() from both
+     thread and ISR context.
 
-APIs tested in this test set
-============================
+2. context_one_cpu (single-CPU only)
+   - test_timer_interrupts confirms the tick timer keeps advancing ticks.
+   - test_busy_wait validates k_busy_wait() spins for the requested time.
+   - test_k_sleep checks that k_sleep() blocks for the requested duration.
+   - test_k_yield and test_ctx_coop_thread exercise k_yield() and
+     cooperative thread scheduling with k_thread_create().
 
-k_thread_create
-  - start a helper thread to help with k_yield() tests
-  - start a thread to test thread related functionality
-
-k_yield
-  - Called by a higher priority thread when there is another thread
-  - Called by an equal priority thread when there is another thread
-  - Called by a lower priority thread when there is another thread
-
-k_current_get
-  - Called from an ISR (interrupted a task)
-  - Called from an ISR (interrupted a thread)
-  - Called from a task
-  - Called from a thread
-
-k_is_in_isr
-  - Called from an ISR that interrupted a task
-  - Called from an ISR that interrupted a thread
-  - Called from a task
-  - Called from a thread
-
-k_cpu_idle
-  - Tickless Kernel: CPU to be woken up by a kernel timer (k_timer)
-  - Non-tickless kernel:
-    CPU to be woken up by tick timer.  Thus, after each call, the tick count
-    should have advanced by one tick.
-
-irq_lock
-  - 1. Count the number of calls to _tick_get_32() before a tick expires.
-  - 2. Once determined, call _tick_get_32() many more times than that
-       with interrupts locked.  Check that the tick count remains unchanged.
-
-irq_unlock
-  - Continuation irq_lock: unlock interrupts, loop and verify the tick
-    count changes.
-
-irq_offload
-  - Used when triggering an ISR to perform ISR context work.
-
-irq_enable
-irq_disable
-  - Use these routines to disable and enable timer interrupts so that they can
-    be tested in the same way as irq_lock() and irq_unlock().
+3. context_cpu_idle
+   - test_cpu_idle and test_cpu_idle_atomic verify that k_cpu_idle() and
+     k_cpu_atomic_idle() halt the CPU until the next interrupt wakes it.
 
 ---------------------------------------------------------------------------
 
-Building and Running Project:
+Building and Running:
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+Build and run with twister, for example on QEMU:
 
-    make run
+    twister -p qemu_x86 -T tests/kernel/context
 
----------------------------------------------------------------------------
+Or build and run a single platform directly with west:
 
-Troubleshooting:
-
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
-
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
+    west build -b qemu_x86 tests/kernel/context
+    west build -t run
 
 ---------------------------------------------------------------------------
 
 Sample Output:
 
-tc_start() - Test kernel CPU and thread routines
-Initializing kernel objects
-Testing k_cpu_idle()
-Testing interrupt locking and unlocking
-Testing irq_disable() and irq_enable()
-Testing some kernel context routines
-Testing k_current_get() from an ISR and task
-Testing k_is_in_isr() from an ISR
-Testing k_is_in_isr() from a preemptible thread
-Spawning a thread from a task
-Thread to test k_current_get() and k_is_in_isr()
-Thread to test k_yield()
-Testing k_busy_wait()
-Thread busy waiting for 20000 usecs
-Thread busy waiting completed
-Testing k_sleep()
- thread sleeping for 50 milliseconds
- thread back from sleep
-Testing k_thread_create() without cancellation
- thread (q order: 2, t/o: 500) is running
- got thread (q order: 2, t/o: 500) as expected
- thread (q order: 3, t/o: 750) is running
- got thread (q order: 3, t/o: 750) as expected
- thread (q order: 0, t/o: 1000) is running
- got thread (q order: 0, t/o: 1000) as expected
- thread (q order: 6, t/o: 1250) is running
- got thread (q order: 6, t/o: 1250) as expected
- thread (q order: 1, t/o: 1500) is running
- got thread (q order: 1, t/o: 1500) as expected
- thread (q order: 4, t/o: 1750) is running
- got thread (q order: 4, t/o: 1750) as expected
- thread (q order: 5, t/o: 2000) is running
- got thread (q order: 5, t/o: 2000) as expected
-Testing k_thread_create() with cancellations
- cancelling [q order: 0, t/o: 1000, t/o order: 0]
- thread (q order: 3, t/o: 750) is running
- got (q order: 3, t/o: 750, t/o order 1) as expected
- thread (q order: 0, t/o: 1000) is running
- got (q order: 0, t/o: 1000, t/o order 2) as expected
- cancelling [q order: 3, t/o: 750, t/o order: 3]
- cancelling [q order: 4, t/o: 1750, t/o order: 4]
- thread (q order: 4, t/o: 1750) is running
- got (q order: 4, t/o: 1750, t/o order 5) as expected
- cancelling [q order: 6, t/o: 1250, t/o order: 6]
-PASS - main.
+Running TESTSUITE context
 ===================================================================
-PROJECT EXECUTION SUCCESSFUL
+START - test_arch_cpu_irqs_are_enabled
+ PASS - test_arch_cpu_irqs_are_enabled
+===================================================================
+START - test_ctx_thread
+ PASS - test_ctx_thread
+===================================================================
+START - test_interrupts
+ PASS - test_interrupts
+===================================================================
+START - test_irq_lock_nested
+ PASS - test_irq_lock_nested
+===================================================================
+START - test_k_can_yield
+ PASS - test_k_can_yield
+===================================================================
+TESTSUITE context succeeded
+
+Running TESTSUITE context_cpu_idle
+===================================================================
+START - test_cpu_idle
+ PASS - test_cpu_idle
+===================================================================
+START - test_cpu_idle_atomic
+ PASS - test_cpu_idle_atomic
+===================================================================
+TESTSUITE context_cpu_idle succeeded
+
+Running TESTSUITE context_one_cpu
+===================================================================
+START - test_busy_wait
+ PASS - test_busy_wait
+===================================================================
+START - test_ctx_coop_thread
+ PASS - test_ctx_coop_thread
+===================================================================
+START - test_k_sleep
+ PASS - test_k_sleep
+===================================================================
+START - test_k_yield
+ PASS - test_k_yield
+===================================================================
+START - test_timer_interrupts
+ PASS - test_timer_interrupts
+===================================================================
+TESTSUITE context_one_cpu succeeded

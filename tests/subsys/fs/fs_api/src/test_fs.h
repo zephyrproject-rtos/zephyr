@@ -19,7 +19,7 @@
 #define TEST_DIR	TEST_FS_MNTP"/testdir"
 #define TEST_DIR_FILE	TEST_FS_MNTP"/testdir/testfile.txt"
 
-/* kenel only reserve two slots for specific file system.
+/* kernel only reserve two slots for specific file system.
  * By disable that two file systems, test cases can make
  * use of that slots to register a file systems for test
  */

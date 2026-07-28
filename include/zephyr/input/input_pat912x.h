@@ -10,8 +10,8 @@
  * @ingroup pat912x_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_INPUT_PAT912X_H_
-#define ZEPHYR_INCLUDE_INPUT_PAT912X_H_
+#ifndef ZEPHYR_INCLUDE_INPUT_INPUT_PAT912X_H_
+#define ZEPHYR_INCLUDE_INPUT_INPUT_PAT912X_H_
 
 /**
  * @defgroup pat912x_interface PAT912x
@@ -34,4 +34,4 @@ int pat912x_set_resolution(const struct device *dev,
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_INPUT_PAT912X_H_ */
+#endif /* ZEPHYR_INCLUDE_INPUT_INPUT_PAT912X_H_ */

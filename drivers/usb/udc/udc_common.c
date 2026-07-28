@@ -966,7 +966,7 @@ static int udc_work_q_init(void)
 			   udc_work_q_stack,
 			   K_KERNEL_STACK_SIZEOF(udc_work_q_stack),
 			   CONFIG_UDC_WORKQUEUE_PRIORITY, NULL);
-	k_thread_name_set(&udc_work_q.thread, "udc_work_q");
+	k_thread_name_set(udc_work_q.thread_id, "udc_work_q");
 
 	return 0;
 }

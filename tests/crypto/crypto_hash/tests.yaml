@@ -1,0 +1,29 @@
+tests:
+  crypto.hash.mbedtls_shim:
+    platform_allow:
+      - native_sim
+      - nucleo_u575zi_q
+      - rpi_pico2/rp2350a/m33
+    integration_platforms:
+      - native_sim
+      - nucleo_u575zi_q
+    extra_args: EXTRA_CONF_FILE=prj_mtls_shim.conf
+    tags: crypto
+  crypto.hash:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c3_devkitc
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - sama7d65_curiosity
+      - sama7g54_ek
+      - nucleo_c562re
+      - nucleo_h753zi
+      - sf32lb52_devkit_lcd
+      - kit_psc3m5_evk
+      - cyw920829m2evk_02/cyw20829b1340
+      - cyw920829m2evk_02/cyw20829b1010
+      - cyw920829m2evk_02/cyw20829b0lkml
+    tags: crypto

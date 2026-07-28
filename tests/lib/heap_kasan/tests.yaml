@@ -1,0 +1,13 @@
+tests:
+  libraries.heap_kasan:
+    tags: heap asan
+    # RX does not support -fsanitize=kernel-address.
+    filter: not CONFIG_RX
+    integration_platforms:
+      - qemu_riscv32
+      - qemu_cortex_m3
+      - qemu_cortex_a53
+      - qemu_x86_64
+      - native_sim
+    extra_configs:
+      - arch:posix:CONFIG_PICOLIBC=y

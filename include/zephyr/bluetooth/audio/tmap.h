@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_H_
 
 /**
  * @brief Telephone and Media Audio Profile (TMAP)
@@ -126,4 +126,4 @@ void bt_tmap_set_role(enum bt_tmap_role role);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_H_ */

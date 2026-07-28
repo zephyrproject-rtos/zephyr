@@ -474,6 +474,101 @@ class ClangFormatCheck(ComplianceTest):
                     self._process_patch_error(file, patch)
 
 
+class StyleCheckMixin:
+    """
+    Shared plumbing for compliance checks that delegate to a stand-alone style
+    checker script (scripts/.../*_style.py). Such a script prints issues as
+    '<file>:<line>:<col>: [<rule>] <message>' and exits 0 (clean) / 1 (issues
+    found) / anything else (the checker itself failed).
+
+    This is a mixin, not a ComplianceTest subclass, so it is not picked up by
+    inheritors(ComplianceTest) and never runs on its own. Concrete checks inherit
+    from both this and ComplianceTest, and call _check_files() from run().
+    """
+
+    # '<file>:<line>:<col>: [<rule>] <message>'
+    _ISSUE_RE = re.compile(r"^.+:(\d+):(\d+): \[([^\]]+)\] (.*)$")
+
+    def _changed_lines(self, file):
+        # Line numbers touched by the change in 'file' within COMMIT_RANGE.
+        diff = git("diff", "-U0", "--no-color", COMMIT_RANGE, "--", file)
+        changed = set()
+        if not diff.strip():
+            return changed
+        for patch in unidiff.PatchSet.from_string(diff):
+            for hunk in patch:
+                for line in hunk:
+                    if line.is_added and line.target_line_no is not None:
+                        changed.add(line.target_line_no)
+                # A pure deletion adds no lines but can still introduce a style
+                # issue on the lines now surrounding the gap (e.g. removing a
+                # blank line between declarations). With -U0 the deletion sits
+                # between target_start and target_start + 1, so flag both.
+                if hunk.removed:
+                    changed.update((hunk.target_start, hunk.target_start + 1))
+        return changed
+
+    def _check_files(self, tool, file_filter):
+        # Run 'tool' on each added/modified file matching 'file_filter' and
+        # report issues on changed lines only. 'tool' is a Path; file_filter is a
+        # predicate on the file path string.
+        for file in get_files(filter="d"):
+            if not file_filter(file):
+                continue
+
+            changed = self._changed_lines(file)
+            if not changed:
+                continue
+
+            result = subprocess.run(
+                [sys.executable, str(tool), file],
+                cwd=GIT_TOP,
+                capture_output=True,
+                text=True,
+            )
+
+            # The script returns 0 (clean) or 1 (issues found); anything else, or
+            # any stderr output, means the checker itself failed (e.g. crashed
+            # before it could set its own error exit code).
+            if result.returncode not in (0, 1) or result.stderr.strip():
+                self.error(
+                    f"{tool.name} failed on '{file}' (exit {result.returncode}):\n{result.stderr}"
+                )
+
+            for line in result.stdout.splitlines():
+                m = self._ISSUE_RE.match(line)
+                if not m:
+                    continue
+                lineno, col, rule, message = int(m[1]), int(m[2]), m[3], m[4]
+                if lineno not in changed:
+                    continue
+                self.fmtd_failure(
+                    "error",
+                    f"{self.name} ({rule})",
+                    file,
+                    lineno,
+                    col=col,
+                    desc=message,
+                )
+
+
+class KconfigFormatCheck(StyleCheckMixin, ComplianceTest):
+    """
+    Checks Kconfig files against the formatting style guidelines using
+    scripts/kconfig/kconfig_style.py. Only issues on lines touched by the change
+    are reported, so pre-existing formatting is not flagged.
+    """
+
+    name = "KconfigFormat"
+    doc = zephyr_doc_detail_builder("/contribute/style/kconfig.html")
+
+    def run(self):
+        self._check_files(
+            ZEPHYR_BASE / "scripts" / "kconfig" / "kconfig_style.py",
+            lambda file: "Kconfig" in Path(file).name,
+        )
+
+
 class DevicetreeBindingsCheck(ComplianceTest):
     """
     Checks for devicetree bindings.
@@ -1476,7 +1571,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         # Warning: Needs to work with both --perl-regexp and the 're' module
         regex = r"\b" + self.CONFIG_ + r"[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
 
-        # Skip doc/releases and doc/security/vulnerabilities.rst, which often
+        # Skip doc/releases and doc/security/vulnerabilities, which often
         # reference removed symbols
         grep_stdout = git(
             "grep",
@@ -1489,6 +1584,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             ":!/doc/releases",
             ":!/doc/develop/manifest/external",
             ":!/doc/security/vulnerabilities.rst",
+            ":!/doc/security/vulnerabilities",
             cwd=GIT_TOP,
         )
 
@@ -1987,43 +2083,29 @@ def filter_py(root, fnames):
     ]
 
 
-class CMakeStyle(ComplianceTest):
+class CMakeStyle(StyleCheckMixin, ComplianceTest):
     """
-    Checks cmake style added/modified files
+    Checks the CMake style of added/modified files against the Zephyr CMake style
+    guidelines, using scripts/cmake/cmake_style.py. Only issues on lines touched
+    by the change are reported, so pre-existing style is not flagged.
     """
 
     name = "CMakeStyle"
     doc = zephyr_doc_detail_builder("/contribute/style/cmake.html")
 
     def run(self):
-        # Loop through added/modified files
-        for fname in get_files(filter="d"):
-            if fname.endswith(".cmake") or fname.endswith("CMakeLists.txt"):
-                self.check_style(fname)
+        from importlib.util import find_spec
 
-    def check_style(self, fname):
-        SPACE_BEFORE_OPEN_BRACKETS_CHECK = re.compile(r"^\s*if\s+\(")
-        TAB_INDENTATION_CHECK = re.compile(r"^\t+")
+        if any(find_spec(m) is None for m in ("tree_sitter", "tree_sitter_cmake")):
+            self.skip(
+                "cmake_style requires tree-sitter; install it with "
+                "'pip install tree-sitter tree-sitter-cmake'"
+            )
 
-        with open(fname, encoding="utf-8") as f:
-            for line_num, line in enumerate(f.readlines(), start=1):
-                if TAB_INDENTATION_CHECK.match(line):
-                    self.fmtd_failure(
-                        "error",
-                        "CMakeStyle",
-                        fname,
-                        line_num,
-                        "Use spaces instead of tabs for indentation",
-                    )
-
-                if SPACE_BEFORE_OPEN_BRACKETS_CHECK.match(line):
-                    self.fmtd_failure(
-                        "error",
-                        "CMakeStyle",
-                        fname,
-                        line_num,
-                        "Remove space before '(' in if() statements",
-                    )
+        self._check_files(
+            ZEPHYR_BASE / "scripts" / "cmake" / "cmake_style.py",
+            lambda file: file.endswith(".cmake") or Path(file).name == "CMakeLists.txt",
+        )
 
 
 class Identity(ComplianceTest):
@@ -2105,6 +2187,29 @@ class BinaryFiles(ComplianceTest):
                 if fname.startswith(BINARY_ALLOW_PATHS) and fname.endswith(BINARY_ALLOW_EXT):
                     continue
                 self.failure(f"Binary file not allowed: {fname}")
+
+
+class TestMetadataFilename(ComplianceTest):
+    """
+    Check that no newly added sample or test metadata file uses the legacy
+    'sample.yaml' or 'testcase.yaml' name instead of 'tests.yaml'.
+    """
+
+    name = "TestMetadataFilename"
+    doc = "Sample and test metadata must be stored in a file named tests.yaml."
+
+    def run(self):
+        LEGACY_NAMES = ("sample.yaml", "testcase.yaml")
+
+        for file in get_files(filter="A"):
+            name = os.path.basename(file)
+            if name in LEGACY_NAMES:
+                self.failure(
+                    f"New file '{file}' uses the legacy metadata filename "
+                    f"'{name}'. Sample and test metadata must be stored in a "
+                    f"file named 'tests.yaml'. Rename it to "
+                    f"'{os.path.join(os.path.dirname(file), 'tests.yaml')}'."
+                )
 
 
 class ImageSize(ComplianceTest):

@@ -106,6 +106,7 @@ azoteq	Azoteq (Pty) Ltd
 azw	Shenzhen AZW Technology Co., Ltd.
 baikal	BAIKAL ELECTRONICS, JSC
 bananapi	BIPAI KEJI LIMITED
+barth	Barth Elektronik GmbH
 bbc	BBC
 bcdevices	Blue Clover Devices
 beacon	Compass Electronics Group, LLC
@@ -304,6 +305,7 @@ hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
 hazard3	Hazard3 by Luke Wren
+heimann	Heimann Sensor GmbH
 heltec	Chengdu Heltec Automation Technology Co., Ltd.
 hideep	HiDeep Inc.
 himax	Himax Technologies, Inc.
@@ -368,6 +370,7 @@ jesurun	Shenzhen Jesurun Electronics Business Dept.
 jhd	Shenzhen Jinghua Displays Electronics Co., Ltd.
 jianda	Jiandangjing Technology Co., Ltd.
 jlc	Shenzhen JLC Technology Group Co., Ltd.
+kaga-fei	KAGA FEI Co., Ltd.
 kam	Kamstrup A/S
 karo	Ka-Ro electronics GmbH
 keithkoep	Keith & Koep GmbH
@@ -479,6 +482,7 @@ mti	Imagination Technologies Ltd. (formerly MIPS Technologies Inc.)
 multi-inno	Multi-Inno Technology Co.,Ltd
 mundoreader	Mundo Reader S.L.
 murata	Murata Manufacturing Co., Ltd.
+muselab	MuseLab Electronics
 mxchip	Shanghai MXCHIP Information Technology Co., Ltd.
 mxicy	Macronix International Co., Ltd.
 myir	MYIR Tech Limited
@@ -646,6 +650,7 @@ sff	Small Form Factor Committee
 sgd	Solomon Goldentek Display Corporation
 sgmicro	SG Micro Corp
 sgx	SGX Sensortech
+shakti	SHAKTI Processor Program
 sharp	Sharp Corporation
 shimafuji	Shimafuji Electric, Inc.
 shiratech	Shiratech Solutions
@@ -755,6 +760,7 @@ ubnt	Ubiquiti Networks
 ucrobotics	uCRobotics
 udoo	Udoo
 ugoos	Ugoos Industrial Co., Ltd.
+uiap	Umeta & Ikki Automotive Parts
 ultrachip	UltraChip Inc.
 uniwest	United Western Technologies Corp (UniWest)
 up-bridge-the-gap	UP Bridge the Gap

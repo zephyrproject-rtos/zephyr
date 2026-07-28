@@ -5,7 +5,7 @@ description: NXP MCUX Standard Timer/Counter
 
 compatible: "nxp,lpc-ctimer"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 properties:
   reg:
@@ -33,3 +33,21 @@ properties:
     type: int
     required: true
     description: prescale value
+
+  inputmux-connections:
+    type: phandle-array
+    specifier-space: inputmux
+    description: |
+      INPUTMUX routing for CTIMER capture inputs. Each phandle-array entry
+      is <&inputmuxN channel connection> where:
+        - &inputmuxN is the INPUTMUX node providing the route
+        - channel is the CAPTSEL destination index (0..3)
+        - connection is an inputmux_connection_t value from
+          fsl_inputmux_connections.h
+
+      Example (route CT_INP15 to CTIMER2 CAPTSEL[0] via INPUTMUX0):
+        inputmux-connections = <&inputmux0 0 0x06000010>;
+
+counter-capture-cells:
+  - channel
+  - flags

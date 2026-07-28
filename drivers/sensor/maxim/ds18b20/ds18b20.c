@@ -19,7 +19,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/w1_sensor.h>
-#include "zephyr/drivers/w1.h"
+#include <zephyr/drivers/w1.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>

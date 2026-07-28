@@ -70,12 +70,19 @@ config NET_PMTU
 	default y
 	depends on NET_IPV6_PMTU || NET_IPV4_PMTU
 
+config NET_PMTU_DPLPMTUD
+	bool
+	default y
+	depends on NET_IPV6_PMTU_DPLPMTUD || NET_IPV4_PMTU_DPLPMTUD
+
 if NET_PMTU
+
 module = NET_PMTU
 module-dep = NET_LOG
 module-str = Log level for PMTU
 module-help = Enables PMTU to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_PMTU
 
 config NET_NATIVE_TCP
@@ -102,11 +109,13 @@ config NET_OFFLOADING_SUPPORT
 	  only one option instead of two.
 
 if NET_OFFLOAD
+
 module = NET_OFFLOAD
 module-dep = NET_LOG
 module-str = Log level for offload layer
 module-help = Enables offload layer to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_OFFLOAD
 
 config NET_RAW_MODE
@@ -467,12 +476,69 @@ config NET_UDP_MISSING_CHECKSUM
 	  for IPv4 and on reception only, since Zephyr will always compute the
 	  UDP checksum in transmission path.
 
+config NET_UDP_OPTIONS
+	bool "UDP transport options (RFC 9868) [EXPERIMENTAL]"
+	depends on NET_UDP
+	select EXPERIMENTAL
+	help
+	  Enable support for UDP transport options as defined in
+	  RFC 9868. This allows sending and receiving UDP options
+	  in the surplus area of IP datagrams.
+
+config NET_UDP_OPTIONS_DPLPMTUD
+	bool "DPLPMTUD over UDP options (RFC 9869) [EXPERIMENTAL]"
+	depends on NET_UDP_OPTIONS
+	depends on NET_PMTU_DPLPMTUD
+	select EXPERIMENTAL
+	help
+	  Enable Datagram Packetization Layer Path MTU Discovery
+	  (RFC 8899) for plain UDP sockets using UDP options (RFC 9869).
+	  When enabled on a socket, the stack probes the path for the
+	  largest usable datagram size using the Request (REQ) and
+	  Response (RES) UDP options and reports the result via
+	  getsockopt(IP_MTU/IPV6_MTU). It also answers incoming probes by
+	  echoing the REQ token back in a RES option.
+
+config NET_UDP_OPTIONS_DPLPMTUD_PROBE_TIMEOUT_MS
+	int "UDP options DPLPMTUD probe timeout (ms)"
+	depends on NET_UDP_OPTIONS_DPLPMTUD
+	default 1000
+	help
+	  Time to wait for a probe Response (RES) before a probe is
+	  declared lost and retransmitted (RFC 8899 PROBE_TIMER). UDP has
+	  no round-trip estimate, so a fixed value is used.
+
+config NET_UDP_OPTIONS_DPLPMTUD_RAISE_TIMEOUT_MS
+	int "UDP options DPLPMTUD raise timer (ms)"
+	depends on NET_UDP_OPTIONS_DPLPMTUD
+	default 600000
+	help
+	  Once the search completes, how long to wait before probing again
+	  to detect a possible increase in the path MTU (RFC 8899
+	  PMTU_RAISE_TIMER). Default is 10 minutes.
+
+config NET_UDP_OPTIONS_DPLPMTUD_ECHO_MIN_INTERVAL_MS
+	int "UDP options DPLPMTUD minimum RES echo interval (ms)"
+	depends on NET_UDP_OPTIONS_DPLPMTUD
+	default 50
+	help
+	  Minimum time between consecutive auto-generated Response (RES)
+	  echoes on a socket acting as a DPLPMTUD responder. The stack
+	  answers a Request (REQ) by sending a RES to the datagram source
+	  address, so an off-path attacker flooding spoofed-source REQs
+	  could otherwise use the socket to reflect traffic (the RES is
+	  never larger than the REQ, so there is no amplification). This
+	  rate limit caps that reflection. Set to 0 to disable the limit,
+	  e.g. on a server that must answer many distinct probers at once.
+
 if NET_UDP
+
 module = NET_UDP
 module-dep = NET_LOG
 module-str = Log level for UDP
 module-help = Enables UDP handler output debug messages
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_UDP
 
 config NET_MAX_CONN
@@ -571,6 +637,17 @@ config NET_CONTEXT_SNDBUF
 	  It is possible to define the maximum socket send buffer per socket.
 	  For TCP sockets, the sndbuf will determine the total size of queued
 	  data in the TCP layer.
+
+config NET_CONTEXT_LINGER
+	bool "Add SO_LINGER support to net_context"
+	depends on NET_TCP
+	help
+	  Allow setting the SO_LINGER option on a TCP socket. When linger is
+	  enabled with a zero timeout, closing the socket aborts the connection
+	  by sending a RST segment instead of performing a graceful FIN close.
+	  When linger is enabled with a non-zero timeout, close() blocks until
+	  the connection has been closed by the stack or the timeout (in
+	  seconds) expires, in which case the connection is aborted with a RST.
 
 config NET_CONTEXT_DSCP_ECN
 	bool "Add support for setting DSCP/ECN IP properties on net_context"
@@ -698,8 +775,7 @@ config NET_BUF_FIXED_DATA_SIZE
 	  as necessary to reach that request.
 
 config NET_BUF_VARIABLE_DATA_SIZE
-	bool "Variable data size buffer [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Variable data size buffer"
 	help
 	  The buffer is dynamically allocated from runtime requested size.
 
@@ -854,20 +930,15 @@ config NET_INTERFACE_NAME_LEN
 config NET_PKT_TIMESTAMP
 	bool "Network packet timestamp support"
 	help
-	  Enable network packet timestamp support. This is needed for
-	  example in gPTP which needs to know how long it takes to send
-	  a network packet or for timed radio protocols like IEEE 802.15.4
-	  CSL and TSCH.
+	  Enable network packet timestamp support. This enables the timestamp
+	  information storage in network packet.
 
 config NET_PKT_TIMESTAMP_THREAD
 	bool "Create TX timestamp thread"
 	depends on NET_PKT_TIMESTAMP
 	help
-	  Create a TX timestamp thread that will pass the timestamped network
-	  packets to some other module like gPTP for further processing.
-	  If you just want to timestamp network packets and get information
-	  how long the network packets flow in the system, you can disable
-	  the thread support.
+	  Create a TX timestamp thread that allows timestamped network packets
+	  enqueued and handled by registered callback.
 
 config NET_PKT_TIMESTAMP_STACK_SIZE
 	int "Timestamp thread stack size"
@@ -953,11 +1024,13 @@ config NET_PROMISCUOUS_MODE
 	  also needs to read the promiscuous mode data.
 
 if NET_PROMISCUOUS_MODE
+
 module = NET_PROMISC
 module-dep = NET_LOG
 module-str = Log level for promiscuous mode
 module-help = Enables promiscuous mode to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_PROMISCUOUS_MODE
 
 config NET_DISABLE_ICMP_DESTINATION_UNREACHABLE

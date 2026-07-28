@@ -68,7 +68,7 @@
 #define DT_SUPPORTS_DEP_ORDS(node_id) DT_CAT(node_id, _SUPPORTS_ORDS)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's dependency ordinal
+ * @brief Get a @c DT_DRV_COMPAT instance's dependency ordinal
  *
  * Equivalent to DT_DEP_ORD(DT_DRV_INST(inst)).
  *
@@ -78,7 +78,7 @@
 #define DT_INST_DEP_ORD(inst) DT_DEP_ORD(DT_DRV_INST(inst))
 
 /**
- * @brief Get a list of dependency ordinals of a DT_DRV_COMPAT instance's
+ * @brief Get a list of dependency ordinals of a @c DT_DRV_COMPAT instance's
  *        direct dependencies
  *
  * Equivalent to DT_REQUIRES_DEP_ORDS(DT_DRV_INST(inst)).
@@ -91,7 +91,7 @@
 
 /**
  * @brief Get a list of dependency ordinals of what depends directly on a
- *        DT_DRV_COMPAT instance
+ *        @c DT_DRV_COMPAT instance
  *
  * Equivalent to DT_SUPPORTS_DEP_ORDS(DT_DRV_INST(inst)).
  *

@@ -8,6 +8,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/led/led.h>
+#include <raspberrypi/partitions_0x0_default.dtsi>
 
 #include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2350a-pinctrl.h>
 #include "rp2350_zero-pinctrl.dtsi"
@@ -18,6 +19,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &code_partition;
 	};
 
 	aliases {
@@ -62,6 +64,7 @@
 
 &flash0 {
 	reg = <0x10000000 DT_SIZE_M(4)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(4)>;
 };
 
 &uart0 {

@@ -4,12 +4,44 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Peripheral reset identifiers for FocalTech FT9001
+ * @ingroup reset_controller_focaltech_ft9001
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_FOCALTECH_FT9001_RESET_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_FOCALTECH_FT9001_RESET_H_
 
 /**
+ * @defgroup reset_controller_focaltech_ft9001 FocalTech FT9001 reset controller helpers
+ * @brief FocalTech FT9001 reset controller helpers
+ * @ingroup reset_controller_interface
+ *
+ * Devicetree macros for encoding peripheral reset cells on FocalTech FT9001 devices, for use with
+ * the <tt>focaltech,ft9001-cpm-rctl</tt> compatible reset controller.
+ *
+ * Reset identifiers follow the pattern @c FOCALTECH_RESET_\<PERIPHERAL\>, where @c \<PERIPHERAL\>
+ * is the FT9001 peripheral name from the reference manual (for example, @c FOCALTECH_RESET_SCI2
+ * resets SCI2 and @c FOCALTECH_RESET_EPORT0 resets EPORT0). Pass these identifiers directly to a
+ * @c resets property.
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/reset/focaltech_ft9001_reset.h>
+ *
+ * &sci2 {
+ *         resets = <&rctl FOCALTECH_RESET_SCI2>;
+ * };
+ * @endcode
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
  * @defgroup focaltech_reset_macros FocalTech Reset Configuration Macros
  * @brief Macros for encoding reset register and bit information
+ * @ingroup reset_controller_focaltech_ft9001
  * @{
  */
 
@@ -21,9 +53,12 @@
 
 /** @} */
 
+/** @endcond */
+
 /**
  * @defgroup focaltech_reset_regs FocalTech Reset Control Module Registers
  * @brief Reset Control Module Register offsets
+ * @ingroup reset_controller_focaltech_ft9001
  * @{
  */
 
@@ -45,12 +80,14 @@
 /**
  * @defgroup focaltech_reset_enables FocalTech Reset Enable/Disable Definitions
  * @brief Reset enable/disable definitions for peripherals
+ * @ingroup reset_controller_focaltech_ft9001
  * @{
  */
 
 /**
  * @defgroup focaltech_eportrstr_resets EPORTRSTR Reset Control
  * @brief EPORT Reset Control Register peripherals
+ * @ingroup focaltech_reset_enables
  * @{
  */
 
@@ -80,6 +117,7 @@
 /**
  * @defgroup focaltech_multirstcr_resets MULTIRSTCR Reset Control
  * @brief Multi Reset Control Register peripherals
+ * @ingroup focaltech_reset_enables
  * @{
  */
 
@@ -121,6 +159,7 @@
 /**
  * @defgroup focaltech_sysrstcr_resets SYSRSTCR Reset Control
  * @brief System Reset Control Register peripherals
+ * @ingroup focaltech_reset_enables
  * @{
  */
 
@@ -158,6 +197,7 @@
 /**
  * @defgroup focaltech_ahb3rstcr_resets AHB3RSTCR Reset Control
  * @brief AHB3 Reset Control Register peripherals
+ * @ingroup focaltech_reset_enables
  * @{
  */
 
@@ -183,6 +223,7 @@
 /**
  * @defgroup focaltech_arithrstcr_resets ARITHRSTCR Reset Control
  * @brief Algorithm Reset Control Register peripherals
+ * @ingroup focaltech_reset_enables
  * @{
  */
 
@@ -214,6 +255,7 @@
 /**
  * @defgroup focaltech_ipsrstcr_resets IPSRSTCR Reset Control
  * @brief IPS Reset Control Register peripherals
+ * @ingroup focaltech_reset_enables
  * @{
  */
 
@@ -279,6 +321,8 @@
 #define FOCALTECH_RESET_AHB2IPS FOCALTECH_RESET_CONFIG(IPSRSTCR, 30U)
 /** PWMT3 reset */
 #define FOCALTECH_RESET_PWMT3   FOCALTECH_RESET_CONFIG(IPSRSTCR, 31U)
+
+/** @} */
 
 /** @} */
 

@@ -12,8 +12,6 @@
 #include "ulp_lp_core.h"
 #include "ulp_lp_core_memory_shared.h"
 #include <esp_sleep.h>
-#include <hal/lp_core_ll.h>
-#include <esp_private/esp_pmu.h>
 
 LOG_MODULE_REGISTER(lp_core_loader, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -59,18 +57,7 @@ void IRAM_ATTR lp_core_image_init(void)
 #endif
 	};
 
-	/*
-	 * pmu_init() is never called in Zephyr (skipped due to
-	 * CONFIG_BOOTLOADER_MCUBOOT). Call it here to configure
-	 * PMU power parameters needed for LP->HP wakeup.
-	 */
-	pmu_init();
-
 	ulp_lp_core_run(&cfg);
-
-	/* Disable stall/reset so LP core survives HP deep sleep */
-	lp_core_ll_stall_at_sleep_request(false);
-	lp_core_ll_rst_at_sleep_enable(false);
 }
 
 void soc_late_init_hook(void)

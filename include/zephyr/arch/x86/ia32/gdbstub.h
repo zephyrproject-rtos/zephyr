@@ -9,8 +9,8 @@
  * @brief IA-32 specific gdbstub interface header
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_X86_GDBSTUB_SYS_H_
-#define ZEPHYR_INCLUDE_ARCH_X86_GDBSTUB_SYS_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_IA32_GDBSTUB_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_IA32_GDBSTUB_H_
 
 #ifndef _ASMLANGUAGE
 
@@ -82,4 +82,4 @@ struct gdb_ctx {
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_X86_GDBSTUB_SYS_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_IA32_GDBSTUB_H_ */

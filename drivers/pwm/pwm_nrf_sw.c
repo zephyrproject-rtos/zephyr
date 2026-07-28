@@ -417,7 +417,7 @@ static int pwm_nrf_sw_init(const struct device *dev)
 	 ? BIT(_idx) : 0) |
 
 #define GPIOTE_AND_COMMA(_node_id, _prop, _idx) \
-	&GPIOTE_NRFX_INST_BY_NODE(NRF_DT_GPIOTE_NODE_BY_IDX(_node_id, _prop, _idx))
+	&GPIOTE_NRFX_INST_BY_NODE(NRF_DT_GPIOTE_NODE_BY_IDX(_node_id, _prop, _idx)),
 
 static const struct pwm_config pwm_nrf_sw_0_config = {
 	COND_CODE_1(USE_RTC, (.rtc), (.timer)) = GENERATOR_ADDR,

@@ -10,8 +10,8 @@
  * @ingroup pmw3610_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_INPUT_PMW3610_H_
-#define ZEPHYR_INCLUDE_INPUT_PMW3610_H_
+#ifndef ZEPHYR_INCLUDE_INPUT_INPUT_PMW3610_H_
+#define ZEPHYR_INCLUDE_INPUT_INPUT_PMW3610_H_
 
 /**
  * @defgroup pmw3610_interface PMW3610
@@ -44,4 +44,4 @@ int pmw3610_force_awake(const struct device *dev, bool enable);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_INPUT_PMW3610_H_ */
+#endif /* ZEPHYR_INCLUDE_INPUT_INPUT_PMW3610_H_ */

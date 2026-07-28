@@ -236,6 +236,19 @@ void board_early_init_hook(void)
 #endif
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(i3c0))
+	CLOCK_AttachClk(kFRO_LF_DIV_to_I3C0FCLK);
+	CLOCK_SetClockDiv(kCLOCK_DivI3C0_FCLK, 1U);
+	RESET_ReleasePeripheralReset(kI3C0_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpcmp0))
+	CLOCK_AttachClk(kFRO_LF_DIV_to_CMP0);
+	CLOCK_SetClockDiv(kCLOCK_DivCMP0_FUNC, 1U);
+	CLOCK_EnableClock(kCLOCK_GateCMP0);
+	SPC_EnableActiveModeAnalogModules(SPC0, (kSPC_controlCmp0 | kSPC_controlCmp0Dac));
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
 	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
 	CLOCK_AttachClk(kPll1ClkDiv_to_CTIMER0);
@@ -259,6 +272,10 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer4))
 	CLOCK_SetClockDiv(kCLOCK_DivCTIMER4, 1u);
 	CLOCK_AttachClk(kPll1ClkDiv_to_CTIMER4);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(os_timer))
+	CLOCK_AttachClk(kCLK_1M_to_OSTIMER);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lptmr0))
@@ -328,6 +345,24 @@ void board_early_init_hook(void)
 	/* FRO_HF (192 MHz) / 3 = 64 MHz: allows exact 75% SP at 8 Mbps (8 TQ) */
 	CLOCK_SetClockDiv(kCLOCK_DivFLEXCAN0, 3U);
 	CLOCK_AttachClk(kFRO_HF_to_FLEXCAN0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
+	RESET_ReleasePeripheralReset(kEWM0_RST_SHIFT_RSTn);
+	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN | kCLKE_16K_VBAT);
+	CLOCK_EnableClock(kCLOCK_GateEWM0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac0))
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac0);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_DAC0);
+	CLOCK_SetClockDiv(kCLOCK_DivDAC0, 1u);
+	CLOCK_EnableClock(kCLOCK_GateDAC0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
+	/* RTC uses the OSC32K (32.768 kHz) as its clock source */
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToAll);
 #endif
 
 	/* Set SystemCoreClock variable. */

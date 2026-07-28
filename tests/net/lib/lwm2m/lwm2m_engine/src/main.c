@@ -375,7 +375,7 @@ ZTEST(lwm2m_engine, test_retransmit_request)
 	k_sleep(K_MSEC(500));
 	ret = lwm2m_engine_stop(&ctx);
 	zassert_equal(ret, 0);
-	zassert_not_equal(lwm2m_reset_message_fake.call_count, 0, "Message was not reseted");
+	zassert_not_equal(lwm2m_reset_message_fake.call_count, 0, "Message was not reset");
 	zassert_not_equal(lwm2m_send_message_async_fake.call_count, 0, "Message was not sent");
 }
 
@@ -538,7 +538,7 @@ ZTEST(lwm2m_engine, test_socket_state)
 	k_sleep(K_MSEC(100));
 	zassert_equal(last_state, LWM2M_SOCKET_STATE_ONGOING);
 
-	/* Only one Ack transmiting, nothing expected back -> LAST */
+	/* Only one Ack transmitting, nothing expected back -> LAST */
 	coap_pendings_count_fake.return_val = 0;
 	sys_slist_append(&ctx.pending_sends, &ack.node);
 	set_socket_events(ZSOCK_POLLOUT);

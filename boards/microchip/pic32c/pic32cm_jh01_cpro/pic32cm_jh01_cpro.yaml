@@ -13,6 +13,7 @@ supported:
   - adc
   - clock_control
   - counter
+  - dac
   - dma
   - gpio
   - i2c

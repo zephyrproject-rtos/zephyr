@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Michael Hope <michaelh@juju.nz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+		in-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+	};
+};

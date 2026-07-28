@@ -95,9 +95,7 @@ static int entropy_gecko_trng_get_entropy(const struct device *dev,
 
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_CRYPTO_ACC_GECKO_TRNG
 	entropy_gecko_trng_init(dev);
-#endif
 
 	while (length) {
 #ifndef CONFIG_CRYPTO_ACC_GECKO_TRNG

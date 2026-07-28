@@ -18,7 +18,26 @@
  */
 
 /**
- * @brief This module verifies the delay specified during boot.
+ * @brief Verify that the configured boot delay elapses before the kernel runs.
+ *
+ * @ingroup kernel_init_tests
+ *
+ * @details
+ * Passing proves that the kernel honors CONFIG_BOOT_DELAY by busy-waiting the
+ * configured number of milliseconds during early boot, so that by the time the
+ * test runs at least that much time has elapsed on the hardware cycle counter.
+ *
+ * Test steps:
+ * - Skip the test on platforms with GHz-scale counters that can roll over a
+ *   32-bit cycle count during firmware startup.
+ * - Sample the current cycle count via k_cycle_get_32().
+ * - Convert the elapsed cycles to nanoseconds and compare against
+ *   CONFIG_BOOT_DELAY expressed in nanoseconds.
+ *
+ * Expected result:
+ * - The elapsed time is greater than or equal to the configured boot delay.
+ *
+ * @see k_cycle_get_32()
  */
 ZTEST(boot_delay, test_bootdelay)
 {

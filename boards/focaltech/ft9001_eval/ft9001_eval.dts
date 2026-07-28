@@ -27,17 +27,19 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		romcfg_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "romcfg";
 			reg = <0x00000000 0x00001000>;
 			read-only;
 		};
 
 		app_partition: partition@1000 {
+			compatible = "zephyr,mapped-partition";
 			label = "app";
 			reg = <0x00001000 0x001ff000>;
 		};

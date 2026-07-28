@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_MEM_ATTR_H_
-#define ZEPHYR_INCLUDE_MEM_ATTR_H_
+#ifndef ZEPHYR_INCLUDE_MEM_MGMT_MEM_ATTR_H_
+#define ZEPHYR_INCLUDE_MEM_MGMT_MEM_ATTR_H_
 
 /**
  * @brief Memory Attribute Interface
@@ -121,4 +121,4 @@ int mem_attr_get_region_index_by_name(const char *target_name);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_MEM_ATTR_H_ */
+#endif /* ZEPHYR_INCLUDE_MEM_MGMT_MEM_ATTR_H_ */

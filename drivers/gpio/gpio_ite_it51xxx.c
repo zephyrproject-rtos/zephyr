@@ -416,7 +416,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev, gpio_pin_t
 	struct gpio_ite_data *data = dev->data;
 
 	if (!gpio_irq) {
-		LOG_ERR("Unsupport interrupt pin");
+		LOG_ERR("Unsupported interrupt pin");
 		return -ENOTSUP;
 	}
 

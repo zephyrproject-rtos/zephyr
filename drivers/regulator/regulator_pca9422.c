@@ -13,7 +13,7 @@
 #include <zephyr/drivers/mfd/pca9422.h>
 #include <zephyr/sys/linear_range.h>
 #include <zephyr/sys/util.h>
-#include "zephyr/logging/log.h"
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(pca9422_regulator);
 

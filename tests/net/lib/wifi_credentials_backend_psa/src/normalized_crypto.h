@@ -7,7 +7,7 @@
 #ifndef PSA_CRYPTO_H
 #define PSA_CRYPTO_H
 
-#include "zephyr/types.h"
+#include <zephyr/types.h>
 #include "psa/crypto_types.h"
 #include "psa/crypto_values.h"
 

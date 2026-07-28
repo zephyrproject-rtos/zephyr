@@ -31,3 +31,28 @@ properties:
 
       For example
          dma-names = "rx", "tx", "tc", "rs";
+
+  target-mode:
+    type: boolean
+    description: |
+      Initialize this I3C instance in target mode instead of controller mode.
+
+  mipi-instance:
+    type: int
+    description: |
+      Initial MIPI instance bits of PID to expose when the instance is initialized in target mode.
+
+  dcr:
+    type: int
+    description: |
+      Initial Device Characteristics Register value advertised when initialized in target mode.
+
+  mrl:
+    type: int
+    description: |
+      Initial Maximum Read Length advertised when initialized in target mode.
+
+  mwl:
+    type: int
+    description: |
+      Initial Maximum Write Length advertised when initialized in target mode.

@@ -3,10 +3,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Renesas R-Car H3 (R8A77951) pin and function definitions
+ * @ingroup pinctrl_rcar
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_R8A77951_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_R8A77951_H_
 
 #include "pinctrl-rcar-common.h"
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Pins declaration */
 #define PIN_NONE                   -1
@@ -939,5 +948,7 @@
 #define FUNC_TPU0TO3                    IPSR(18, 4, 0xB)
 #define FUNC_FMIN_C                     IPSR(18, 4, 0xC)
 #define FUNC_FMIN_D                     IPSR(18, 4, 0xD)
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_R8A77951_H_ */

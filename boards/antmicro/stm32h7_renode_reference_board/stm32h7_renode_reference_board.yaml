@@ -1,0 +1,30 @@
+identifier: stm32h7_renode_reference_board
+name: STM32H7 Renode Reference Platform
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 2048
+supported:
+  - adc
+  - can
+  - crc
+  - crypto
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - input
+  - led
+  - netif:eth
+  - nvs
+  - pwm
+  - rtc
+  - uart
+  - uart
+  - watchdog
+vendor: antmicro

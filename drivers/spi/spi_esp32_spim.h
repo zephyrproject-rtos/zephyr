@@ -9,6 +9,9 @@
 
 #include <zephyr/drivers/pinctrl.h>
 #include <hal/spi_hal.h>
+#ifdef CONFIG_ESP32_SPI_TARGET
+#include <hal/spi_slave_hal.h>
+#endif
 #ifdef SOC_GDMA_SUPPORTED
 #include <hal/gdma_hal.h>
 #else
@@ -64,6 +67,23 @@ struct spi_esp32_data {
 	spi_hal_timing_conf_t timing_config;
 	spi_hal_dev_config_t dev_config;
 	spi_hal_trans_config_t trans_config;
+#ifdef CONFIG_ESP32_SPI_TARGET
+	spi_slave_hal_context_t target_hal;
+	bool target_mode;
+	/* Staging buffers used to coalesce the scattered spi_context buffers
+	 * into one contiguous FIFO transaction, since an external controller
+	 * drives the whole frame within a single chip-select assertion.
+	 */
+	uint8_t target_tx_buf[SOC_SPI_MAXIMUM_BUFFER_SIZE];
+	uint8_t target_rx_buf[SOC_SPI_MAXIMUM_BUFFER_SIZE];
+	size_t target_frames;
+	struct {
+		uint8_t *buf;
+		size_t off;
+		size_t len;
+	} target_rx_seg[CONFIG_SPI_ESP32_TARGET_MAX_BUFS];
+	size_t target_rx_seg_cnt;
+#endif
 	uint8_t dfs;
 	uint32_t clock_source_hz;
 #if CONFIG_PM

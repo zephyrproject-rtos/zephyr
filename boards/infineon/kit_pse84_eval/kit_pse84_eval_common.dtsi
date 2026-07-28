@@ -13,7 +13,7 @@
 		sw0 = &user_bt;
 		watchdog0 = &watchdog0;
 
-		/* Sensor Alisases */
+		/* Sensor Aliases */
 		accel0 = &bosch_bmi270;
 	};
 

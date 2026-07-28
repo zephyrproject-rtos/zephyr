@@ -6,7 +6,8 @@
 
 /**
  * @file
- * @brief DT bindings for STM32C5 reset system
+ * @brief STM32 reset controller devicetree helper macros for STM32C5
+ * @ingroup reset_controller_stm32
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_STM32C5_RESET_H_

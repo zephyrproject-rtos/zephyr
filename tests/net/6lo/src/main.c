@@ -160,7 +160,7 @@ static struct net_icmpv6_nd_opt_6co ctx2 = {
 #define udp_src_port_8bit_y 0xf011 /* compressible */
 #define udp_dst_port_8bit   0xf122
 
-/* uncompressible ports */
+/* incompressible ports */
 #define udp_src_port_16bit 0xff11
 #define udp_dst_port_16bit 0xff22
 

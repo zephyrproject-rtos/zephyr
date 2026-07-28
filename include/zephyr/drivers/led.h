@@ -380,6 +380,36 @@ struct led_dt_spec {
 };
 
 /**
+ * @brief Blink an LED from a led_dt_spec.
+ *
+ * @param spec LED device specification from devicetree.
+ * @param delay_on Time period (in milliseconds) an LED should be ON
+ * @param delay_off Time period (in milliseconds) an LED should be OFF
+ * @return 0 on success, negative on error
+ *
+ * @see led_blink()
+ */
+static inline int led_blink_dt(const struct led_dt_spec *spec, uint32_t delay_on,
+			       uint32_t delay_off)
+{
+	return led_blink(spec->dev, spec->index, delay_on, delay_off);
+}
+
+/**
+ * @brief Get LED information from a led_dt_spec.
+ *
+ * @param spec LED device specification from devicetree.
+ * @param info Pointer to a pointer filled with LED information
+ * @return 0 on success, negative on error
+ *
+ * @see led_get_info()
+ */
+static inline int led_get_info_dt(const struct led_dt_spec *spec, const struct led_info **info)
+{
+	return led_get_info(spec->dev, spec->index, info);
+}
+
+/**
  * @brief Set LED brightness from a led_dt_spec.
  *
  * @param spec LED device specification from devicetree.
@@ -392,6 +422,24 @@ static inline int led_set_brightness_dt(const struct led_dt_spec *spec,
 					uint8_t value)
 {
 	return led_set_brightness(spec->dev, spec->index, value);
+}
+
+/**
+ * @brief Set LED color from a struct led_dt_spec.
+ *
+ * @param spec LED device specification from devicetree.
+ * @param num_colors Number of colors in the array.
+ * @param color Array of colors. It must be ordered following the color
+ *        mapping of the LED controller. See the color_mapping member
+ *        in struct led_info.
+ * @return 0 on success, negative on error
+ *
+ * @see led_set_color()
+ */
+static inline int led_set_color_dt(const struct led_dt_spec *spec, uint8_t num_colors,
+				   const uint8_t *color)
+{
+	return led_set_color(spec->dev, spec->index, num_colors, color);
 }
 
 /**

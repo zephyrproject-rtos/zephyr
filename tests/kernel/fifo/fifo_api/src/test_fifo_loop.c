@@ -77,24 +77,29 @@ static void tfifo_read_write(struct k_fifo *pfifo)
 }
 
 /**
- * @addtogroup kernel_fifo_tests
+ * @addtogroup tests_kernel_fifo
  * @{
  */
 
 /**
- * @brief Verify zephyr fifo continuous read write in loop
+ * @brief Verify FIFO data integrity under repeated cross-context traffic.
  *
  * @details
- * - Test Steps
- *   -# fifo put from main thread
- *   -# fifo read from isr
- *   -# fifo put from isr
- *   -# fifo get from spawn thread
- *   -# loop above steps for LOOPs times
- * - Expected Results
- *   -# fifo data pass correctly and stably across contexts
+ * Stresses the FIFO by cycling data through main-thread, ISR and spawned-thread
+ * contexts many times. Across every iteration the items must be passed without
+ * loss, duplication or reordering, exercising put/get stability when producers
+ * and consumers alternate between thread and interrupt context.
  *
- * @see k_fifo_init(), k_fifo_put(), k_fifo_get()
+ * Test steps:
+ * - For LOOPS iterations: put from the main thread, get then put from an ISR,
+ *   and get from a spawned thread.
+ * - Verify each get returns the expected item.
+ *
+ * Expected result:
+ * - Data passes correctly and in order across all contexts on every iteration.
+ *
+ * @see k_fifo_put()
+ * @see k_fifo_get()
  */
 ZTEST(fifo_api_1cpu, test_fifo_loop)
 {

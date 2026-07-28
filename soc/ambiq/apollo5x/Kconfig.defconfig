@@ -9,7 +9,7 @@ rsource "Kconfig.defconfig.apollo5*"
 config CACHE_MANAGEMENT
 	default y
 
-config DCACHE_LINE_SIZE
+configdefault DCACHE_LINE_SIZE
 	default 32
 
 config DCACHE
@@ -22,5 +22,14 @@ config ICACHE
 # management operations are executed in the idle task
 config IDLE_STACK_SIZE
 	default 2048 if PM
+
+configdefault FLASH_MSPI_RANGE_HANDLE_CACHE_SIZE
+	default SOC_AMBIQ_DCACHE_SIZE
+
+configdefault MSPI_AMBIQ_BUFF_RAM_LOCATION
+	default SOC_AMBIQ_DMA_BUFF_LOCATION
+
+configdefault MSPI_AMBIQ_BUFF_ALIGNMENT
+	default SOC_AMBIQ_DMA_BUFF_ALIGNMENT
 
 endif # SOC_SERIES_APOLLO5X

@@ -348,7 +348,7 @@ class JsonReport:
                 continue
             suite = {}
             handler_log = os.path.join(instance.build_dir, "handler.log")
-            pytest_log = os.path.join(instance.build_dir, "twister_harness.log")
+            script_log = os.path.join(instance.build_dir, "twister_harness.log")
             build_log = os.path.join(instance.build_dir, "build.log")
             device_log = os.path.join(instance.build_dir, "device.log")
 
@@ -388,8 +388,8 @@ class JsonReport:
             if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
                 suite['status'] = instance.status
                 # FIXME
-                if os.path.exists(pytest_log):
-                    suite["log"] = self.process_log(pytest_log)
+                if os.path.exists(script_log):
+                    suite["log"] = self.process_log(script_log)
                 elif os.path.exists(handler_log):
                     suite["log"] = self.process_log(handler_log)
                 elif os.path.exists(device_log):
@@ -429,7 +429,7 @@ class JsonReport:
 
             for case in instance.testcases:
                 # freeform was set when no sub testcases were parsed, however,
-                # if we discover those at runtime, the fallback testcase wont be
+                # if we discover those at runtime, the fallback testcase won't be
                 # needed anymore and can be removed from the output, it does
                 # not have a status and would otherwise be reported as skipped.
                 if (
@@ -709,7 +709,7 @@ class Reporting:
                     status = Fore.RED + status.upper() + Fore.RESET
                 logger.info(
                     f"{cnt}) {instance.testsuite.name} on {instance.platform.name}"
-                    f" {status} ({instance.reason})"
+                    f" ({instance.toolchain}) {status} ({instance.reason})"
                 )
                 example_instance = instance
             if cnt == count:

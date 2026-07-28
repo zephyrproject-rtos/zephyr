@@ -743,6 +743,7 @@
 		crc: crc@40032000 {
 			compatible = "nxp,crc";
 			reg = <0x40032000 0x1000>;
+			clocks = <&pcc 0xc8 KINETIS_PCC_SRC_NONE_OR_EXT>;
 			status = "disabled";
 		};
 

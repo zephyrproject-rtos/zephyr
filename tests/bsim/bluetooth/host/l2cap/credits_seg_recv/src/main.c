@@ -218,7 +218,7 @@ static void disconnect_device(struct bt_conn *conn, void *data)
 	SET_FLAG(is_connected);
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	TEST_ASSERT(!err, "Failed to initate disconnect (err %d)", err);
+	TEST_ASSERT(!err, "Failed to initiate disconnect (err %d)", err);
 
 	LOG_DBG("Waiting for disconnection...");
 	WAIT_FOR_FLAG_UNSET(is_connected);

@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 
-#include <zephyr/drivers/video-controls.h>
+#include <zephyr/video/video.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/sys/byteorder.h>
 

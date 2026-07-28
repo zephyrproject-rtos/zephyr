@@ -20,6 +20,8 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/gmap.h>
 #include <zephyr/bluetooth/audio/gmap_lc3_preset.h>
+#include <zephyr/bluetooth/audio/lc3.h>
+#include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
@@ -127,8 +129,25 @@ static void set_gmap_features(struct bt_gmap_feat *features)
 
 static int cmd_gmap_init(const struct shell *sh, size_t argc, char **argv)
 {
+	static const struct bt_audio_codec_cap gmap_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+		BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_32KHZ |
+			BT_AUDIO_CODEC_CAP_FREQ_48KHZ,
+		BT_AUDIO_CODEC_CAP_DURATION_ANY, BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1U, 2U), 30U,
+		120U, MAX_CODEC_FRAMES_PER_SDU, BT_AUDIO_CONTEXT_TYPE_GAME);
 	struct bt_gmap_feat features;
+	static struct bt_pacs_cap gmap_cap_sink = {
+		.codec_cap = &gmap_codec_cap,
+	};
+	static struct bt_pacs_cap gmap_cap_source = {
+		.codec_cap = &gmap_codec_cap,
+	};
+	static bool initialized;
 	int err;
+
+	if (initialized) {
+		shell_print(sh, "Already initialized");
+		return -ENOEXEC;
+	}
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
@@ -153,6 +172,27 @@ static int cmd_gmap_init(const struct shell *sh, size_t argc, char **argv)
 
 		return -ENOEXEC;
 	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+		err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &gmap_cap_sink);
+		if (err != 0) {
+			shell_error(sh, "Failed to register GMAP sink capabilities (err %d)", err);
+
+			return -ENOEXEC;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &gmap_cap_source);
+		if (err != 0) {
+			shell_error(sh, "Failed to register GMAP source capabilities (err %d)",
+				    err);
+
+			return -ENOEXEC;
+		}
+	}
+
+	initialized = true;
 
 	return 0;
 }
@@ -217,28 +257,28 @@ static int cmd_gmap_discover(const struct shell *sh, size_t argc, char **argv)
 }
 
 static struct named_lc3_preset gmap_unicast_snk_presets[] = {
-	{"32_1_gr", BT_GMAP_LC3_PRESET_32_1_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"32_2_gr", BT_GMAP_LC3_PRESET_32_2_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"48_1_gr", BT_GMAP_LC3_PRESET_48_1_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"48_2_gr", BT_GMAP_LC3_PRESET_48_2_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"48_3_gr", BT_GMAP_LC3_PRESET_48_3_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"48_4_gr", BT_GMAP_LC3_PRESET_48_4_GR(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"32_1_gr", BT_GMAP_LC3_PRESET_32_1_GR(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"32_2_gr", BT_GMAP_LC3_PRESET_32_2_GR(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"48_1_gr", BT_GMAP_LC3_PRESET_48_1_GR(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"48_2_gr", BT_GMAP_LC3_PRESET_48_2_GR(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"48_3_gr", BT_GMAP_LC3_PRESET_48_3_GR(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"48_4_gr", BT_GMAP_LC3_PRESET_48_4_GR(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
 };
 
 static struct named_lc3_preset gmap_unicast_src_presets[] = {
-	{"16_1_gs", BT_GMAP_LC3_PRESET_16_1_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"16_2_gs", BT_GMAP_LC3_PRESET_16_2_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"32_1_gs", BT_GMAP_LC3_PRESET_32_1_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"32_2_gs", BT_GMAP_LC3_PRESET_32_2_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"48_1_gs", BT_GMAP_LC3_PRESET_48_1_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"48_2_gs", BT_GMAP_LC3_PRESET_48_2_GS(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"16_1_gs", BT_GMAP_LC3_PRESET_16_1_GS(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"16_2_gs", BT_GMAP_LC3_PRESET_16_2_GS(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"32_1_gs", BT_GMAP_LC3_PRESET_32_1_GS(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"32_2_gs", BT_GMAP_LC3_PRESET_32_2_GS(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"48_1_gs", BT_GMAP_LC3_PRESET_48_1_GS(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"48_2_gs", BT_GMAP_LC3_PRESET_48_2_GS(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
 };
 
 static struct named_lc3_preset gmap_broadcast_presets[] = {
-	{"48_1_g", BT_GMAP_LC3_PRESET_48_1_G(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"48_2_g", BT_GMAP_LC3_PRESET_48_2_G(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"48_3_g", BT_GMAP_LC3_PRESET_48_3_G(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
-	{"48_4_g", BT_GMAP_LC3_PRESET_48_4_G(DEFAULT_LOCATION, DEFAULT_CONTEXT)},
+	{"48_1_g", BT_GMAP_LC3_PRESET_48_1_G(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"48_2_g", BT_GMAP_LC3_PRESET_48_2_G(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"48_3_g", BT_GMAP_LC3_PRESET_48_3_G(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
+	{"48_4_g", BT_GMAP_LC3_PRESET_48_4_G(DEFAULT_LOCATION, BT_AUDIO_CONTEXT_TYPE_GAME)},
 };
 
 const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,

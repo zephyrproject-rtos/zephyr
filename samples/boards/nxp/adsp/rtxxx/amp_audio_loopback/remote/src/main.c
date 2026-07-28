@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 Nordic Semiconductor ASA
- * Copyright 2025 NXP
+ * Copyright 2025 - 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 #define I2S_RX_NODE  DT_ALIAS(i2s_rx)
 #define I2S_TX_NODE  DT_ALIAS(i2s_tx)
 
-#define SAMPLE_FREQUENCY    16000
+#define SAMPLE_FREQUENCY    48000
 #define SAMPLE_BIT_WIDTH    16
 #define BYTES_PER_SAMPLE    sizeof(int16_t)
 #define NUMBER_OF_CHANNELS  2
@@ -25,7 +25,8 @@
 
 #define BLOCK_SIZE  (BYTES_PER_SAMPLE * SAMPLES_PER_BLOCK)
 #define BLOCK_COUNT (INITIAL_BLOCKS + 4)
-K_MEM_SLAB_DEFINE_STATIC(mem_slab, BLOCK_SIZE, BLOCK_COUNT, 4);
+
+K_MEM_SLAB_DEFINE_IN_SECT_STATIC(mem_slab, __nocache, BLOCK_SIZE, BLOCK_COUNT, 4);
 
 static bool configure_streams(const struct device *i2s_dev_rx,
 				const struct device *i2s_dev_tx,

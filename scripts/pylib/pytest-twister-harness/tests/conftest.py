@@ -31,7 +31,7 @@ def zephyr_base() -> str:
 
 @pytest.fixture
 def twister_harness(zephyr_base) -> str:
-    """Retrun path to pytest-twister-harness src directory"""
+    """Return path to pytest-twister-harness src directory"""
     pytest_twister_harness_path = str(Path(zephyr_base) / 'scripts' / 'pylib' / 'pytest-twister-harness' / 'src')
     return pytest_twister_harness_path
 

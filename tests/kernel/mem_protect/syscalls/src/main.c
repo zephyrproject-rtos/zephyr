@@ -15,10 +15,12 @@
 
 #if defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEM)
 #define SLEEP_MS_LONG	30000
-#elif defined(CONFIG_BOARD_INTEL_ADSP_ACE30_PTL_SIM) ||                                            \
-	defined(CONFIG_BOARD_INTEL_ADSP_ACE40_NVL_SIM)
+#elif defined(CONFIG_WHISPER_TARGET) || defined(CONFIG_INTEL_ADSP_SIM)
 #define SLEEP_MS_LONG	300
-#elif defined(CONFIG_WHISPER_TARGET)
+#elif defined(CONFIG_QEMU_TARGET)
+/* Emulators are much slower than real hardware, especially in the kyield
+ * scenario where every syscall forces a userspace context switch.
+ */
 #define SLEEP_MS_LONG	300
 #else
 #define SLEEP_MS_LONG	15000

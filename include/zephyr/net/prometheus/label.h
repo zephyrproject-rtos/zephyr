@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_PROMETHEUS_LABEL_H_
-#define ZEPHYR_INCLUDE_PROMETHEUS_LABEL_H_
+#ifndef ZEPHYR_INCLUDE_NET_PROMETHEUS_LABEL_H_
+#define ZEPHYR_INCLUDE_NET_PROMETHEUS_LABEL_H_
 
 /**
  * @file
@@ -39,4 +39,4 @@ struct prometheus_label {
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_PROMETHEUS_LABEL_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_PROMETHEUS_LABEL_H_ */

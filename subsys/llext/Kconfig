@@ -266,18 +266,18 @@ choice LLEXT_CODEGEN_VLIW
 config LLEXT_CODEGEN_VLIW_INHERIT
 	bool "Inherit settings"
 	help
-	  Preserve global complier settings with regards to VLIW.
+	  Preserve global compiler settings with regards to VLIW.
 
 config LLEXT_CODEGEN_VLIW_ENABLED
 	bool "Generate VLIW"
 	help
-	  Customize global complier settings by instructing the compiler to generate
+	  Customize global compiler settings by instructing the compiler to generate
 	  VLIW instructions for LLEXT modules if possible.
 
 config LLEXT_CODEGEN_VLIW_DISABLED
 	bool "DO NOT generate VLIW"
 	help
-	  Customize global complier settings by instructing the compiler to NEVER
+	  Customize global compiler settings by instructing the compiler to NEVER
 	  generate VLIW instructions for LLEXT modules.
 
 endchoice # LLEXT_CODEGEN_VLIW

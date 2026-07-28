@@ -6,12 +6,11 @@
 
 /**
  * @file
- * @brief Shell backend
- * @ingroup shell_api
+ * @brief Header file for the shell log backend.
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_LOG_BACKEND_H_
-#define ZEPHYR_INCLUDE_SHELL_LOG_BACKEND_H_
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_LOG_BACKEND_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_LOG_BACKEND_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log_backend.h>
@@ -22,6 +21,7 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 extern const struct log_backend_api log_backend_shell_api;
 
 /** @brief Shell log backend states. */
@@ -53,6 +53,8 @@ struct shell_log_backend_msg {
 	struct log_msg *msg;
 	uint32_t timestamp;
 };
+
+/** @endcond */
 
 /** @brief Prototype of function outputting processed data. */
 int z_shell_log_backend_output_func(uint8_t *data, size_t length, void *ctx);
@@ -130,4 +132,4 @@ bool z_shell_log_backend_process(const struct shell_log_backend *backend);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_LOG_BACKEND_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_LOG_BACKEND_H_ */

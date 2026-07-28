@@ -118,7 +118,7 @@ initialization and releases it on scope exit:
 
 .. code-block:: c
 
-    // Example guard definition (already provided by kernel.h)
+    // Example guard definition (already provided by <zephyr/cleanup/kernel.h>)
     SCOPE_GUARD_DEFINE(k_mutex, struct k_mutex *,
                        (void)k_mutex_lock(_T, K_FOREVER),
                        (void)k_mutex_unlock(_T));
@@ -134,6 +134,66 @@ initialization and releases it on scope exit:
 
         // Lock is automatically released when guard goes out of scope
     }
+
+Block-Scoped Guards
+===================
+
+While :c:macro:`scope_guard` holds a guard until the end of the *enclosing* scope,
+:c:macro:`scoped_guard` binds the guard to the brace block that immediately follows,
+releasing it as soon as that block is exited. This makes short critical sections
+explicit and keeps the lock object next to the code it protects:
+
+.. code-block:: c
+
+    static K_MUTEX_DEFINE(lock);
+
+    void worker(void)
+    {
+        // ... work that does not need the lock ...
+
+        scoped_guard(k_mutex, &lock) {
+            // lock held only inside these braces
+        }
+        // lock released here
+
+        // ... more work without the lock held ...
+    }
+
+The block runs exactly once. The lock is released on any exit from the block,
+including ``break``, ``return`` and ``goto``. Note that ``continue`` leaves the block
+(it behaves like ``break``) rather than re-running it.
+
+Conditional Guards
+==================
+
+Guards defined with :c:macro:`SCOPE_GUARD_DEFINE` always acquire the lock (they block
+with ``K_FOREVER``). To express a guard whose acquisition may fail (for example a
+non-blocking ``K_NO_WAIT`` try-lock), use :c:macro:`SCOPE_COND_GUARD_DEFINE` together
+with :c:macro:`scoped_cond_guard`. The acquire expression is evaluated for success: on
+failure the guard stores ``NULL``, the supplied fail statement runs, and the block is
+skipped.
+
+.. code-block:: c
+
+    // Example guard definition (already provided by <zephyr/cleanup/kernel.h>)
+    SCOPE_COND_GUARD_DEFINE(k_mutex_try, struct k_mutex *,
+                            k_mutex_lock(_T, K_NO_WAIT) == 0,
+                            (void)k_mutex_unlock(_T));
+
+    static K_MUTEX_DEFINE(lock);
+
+    int try_critical_section(void)
+    {
+        scoped_cond_guard(k_mutex_try, return -EBUSY, &lock) {
+            // runs only if the lock was acquired
+            // released automatically when the block is exited
+        }
+
+        return 0;
+    }
+
+The fail statement can be any statement, such as ``break``, ``return -EBUSY``, or
+``{}`` to silently skip the block.
 
 Scoped Defers
 =============
@@ -163,7 +223,7 @@ For functions with parameters:
 
 .. code-block:: c
 
-    // Example deferred k_free (already provided by kernel.h)
+    // Example deferred k_free (already provided by <zephyr/cleanup/kernel.h>)
     SCOPE_DEFER_DEFINE(k_free, void *);
 
     void allocate_and_use(void)

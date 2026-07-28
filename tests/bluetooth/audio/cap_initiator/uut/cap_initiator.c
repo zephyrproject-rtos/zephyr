@@ -10,7 +10,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 
 #include "cap_initiator.h"
-#include "zephyr/fff.h"
+#include <zephyr/fff.h>
 
 /* List of fakes used by this unit tester */
 #define FFF_FAKES_LIST(FAKE)                                                                       \

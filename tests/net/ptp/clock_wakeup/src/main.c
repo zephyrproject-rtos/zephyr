@@ -33,6 +33,7 @@ static int fake_ptp_clock_get_calls;
 static int fake_ptp_clock_set_calls;
 static int fake_ptp_clock_rate_adjust_calls;
 static int fake_ptp_clock_get_ret;
+static int fake_ptp_clock_get_second_ret;
 static int fake_ptp_clock_set_ret;
 static int fake_ptp_clock_rate_adjust_ret;
 static double fake_ptp_clock_last_rate_ratio;
@@ -94,14 +95,18 @@ static const struct device *fake_net_eth_get_ptp_clock(struct net_if *iface)
 
 static int fake_ptp_clock_get(const struct device *dev, struct net_ptp_time *tm)
 {
+	int ret;
+
 	ARG_UNUSED(dev);
 
 	fake_ptp_clock_get_calls++;
-	if (tm) {
+	ret = fake_ptp_clock_get_calls == 2 ? fake_ptp_clock_get_second_ret
+					    : fake_ptp_clock_get_ret;
+	if (ret == 0 && tm != NULL) {
 		*tm = fake_ptp_clock_time;
 	}
 
-	return fake_ptp_clock_get_ret;
+	return ret;
 }
 
 static int fake_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
@@ -256,6 +261,7 @@ static void reset_clock_state(void)
 	fake_ptp_clock_set_calls = 0;
 	fake_ptp_clock_rate_adjust_calls = 0;
 	fake_ptp_clock_get_ret = 0;
+	fake_ptp_clock_get_second_ret = 0;
 	fake_ptp_clock_set_ret = 0;
 	fake_ptp_clock_rate_adjust_ret = 0;
 	fake_ptp_clock_last_rate_ratio = 0.0;
@@ -472,6 +478,40 @@ ZTEST(ptp_clock_wakeup, test_synchronize_uses_phc_time_when_ingress_timestamp_ou
 	zassert_equal(ptp_clk.timestamp.t2, phc_now, "out-of-range ingress should fall back");
 }
 
+ZTEST(ptp_clock_wakeup, test_synchronize_stops_when_phc_read_fails)
+{
+	ptp_clk.phc = &fake_phc;
+	ptp_clk.current_ds.mean_delay = (ptp_timeinterval)100 << 16;
+	ptp_clk.timestamp.t1 = 1234;
+	ptp_clk.timestamp.t2 = 5678;
+	fake_ptp_clock_get_ret = -EIO;
+
+	ptp_clock_synchronize(10000, 9800, true);
+
+	zassert_equal(fake_ptp_clock_get_calls, 1, "PHC time should be sampled once");
+	zassert_equal(ptp_clk.timestamp.t1, 1234, "egress timestamp should remain unchanged");
+	zassert_equal(ptp_clk.timestamp.t2, 5678, "ingress timestamp should remain unchanged");
+	zassert_equal(fake_ptp_clock_set_calls, 0, "failed PHC read should not set the clock");
+	zassert_equal(fake_ptp_clock_rate_adjust_calls, 0,
+		      "failed PHC read should not adjust the clock");
+}
+
+ZTEST(ptp_clock_wakeup, test_pi_servo_uses_configured_gains)
+{
+	const int64_t offset = 1000;
+	const double kp = (double)CONFIG_PTP_SERVO_KP / PTP_SERVO_GAIN_SCALE;
+	const double ki = (double)CONFIG_PTP_SERVO_KI / PTP_SERVO_GAIN_SCALE;
+	double correction;
+
+	correction = ptp_servo_pi(offset);
+	zassert_within(correction, (kp + ki) * offset, 0.000001,
+		       "first PI correction mismatch");
+
+	correction = ptp_servo_pi(offset);
+	zassert_within(correction, (kp + 2.0 * ki) * offset, 0.000001,
+		       "integral accumulation mismatch");
+}
+
 ZTEST(ptp_clock_wakeup, test_synchronize_applies_pi_rate_adjustment)
 {
 	ptp_clk.phc = &fake_phc;
@@ -594,6 +634,24 @@ ZTEST(ptp_clock_wakeup, test_synchronize_hard_steps_large_offset_and_resets_dela
 	zassert_equal(ptp_clk.timestamp.t1, 0, "hard step should clear timestamps");
 	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1, "hard step should reset servo rate");
 	zassert_equal(fake_ptp_clock_last_rate_ratio, 1.0, "servo reset should use nominal rate");
+}
+
+ZTEST(ptp_clock_wakeup, test_synchronize_stops_when_hard_step_phc_read_fails)
+{
+	ptp_clk.phc = &fake_phc;
+	ptp_clk.current_ds.mean_delay = (ptp_timeinterval)100 << 16;
+	fake_ptp_clock_time.second = 10;
+	fake_ptp_clock_time.nanosecond = 500;
+	fake_ptp_clock_get_second_ret = -EIO;
+
+	ptp_clock_synchronize(10ULL * NSEC_PER_SEC + 500, 8ULL * NSEC_PER_SEC, true);
+
+	zassert_equal(fake_ptp_clock_get_calls, 2, "hard step should resample PHC time");
+	zassert_equal(fake_ptp_clock_set_calls, 0, "failed PHC read should prevent hard step");
+	zassert_equal(fake_ptp_clock_rate_adjust_calls, 0,
+		      "failed hard step should not reset the servo");
+	zassert_equal(ptp_clk.current_ds.mean_delay, (ptp_timeinterval)100 << 16,
+		      "failed hard step should preserve mean delay");
 }
 
 ZTEST_SUITE(ptp_clock_wakeup, NULL, NULL, clock_wakeup_before, NULL, NULL);

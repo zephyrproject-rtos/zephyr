@@ -9,9 +9,6 @@
 #include <zephyr/arch/cpu.h>
 #include "asm_macros.inc"
 
-#define CSR_PMPCFG_BASE  0x3a0
-#define CSR_PMPADDR_BASE 0x3b0
-
 /*
  * Prototype:
  *

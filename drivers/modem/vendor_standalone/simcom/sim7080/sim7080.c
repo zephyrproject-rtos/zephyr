@@ -804,6 +804,21 @@ static int modem_init(const struct device *dev)
 	mdata.sms_buffer = NULL;
 	mdata.sms_buffer_pos = 0;
 
+	/* Load initial radio configuration */
+#if IS_ENABLED(CONFIG_MODEM_SIMCOM_SIM7080_RAT_NB1)
+	mdata.radio.rat = SIM7080_RAT_LTE_NB1;
+#elif IS_ENABLED(CONFIG_MODEM_SIMCOM_SIM7080_RAT_M1)
+	mdata.radio.rat = SIM7080_RAT_LTE_M1;
+#elif IS_ENABLED(CONFIG_MODEM_SIMCOM_SIM7080_RAT_LTE_AUTO)
+	mdata.radio.rat = SIM7080_RAT_LTE_AUTO;
+#elif IS_ENABLED(CONFIG_MODEM_SIMCOM_SIM7080_RAT_GSM)
+	mdata.radio.rat = SIM7080_RAT_GSM;
+#else
+#error "Invalid RAT choice"
+#endif
+	mdata.radio.lte_bands_nb1 = CONFIG_MODEM_SIMCOM_SIM7080_LTE_BANDS_NB1;
+	mdata.radio.lte_bands_m1 = CONFIG_MODEM_SIMCOM_SIM7080_LTE_BANDS_M1;
+
 	/* Socket config. */
 	ret = modem_socket_init(&mdata.socket_config, &mdata.sockets[0], ARRAY_SIZE(mdata.sockets),
 				MDM_BASE_SOCKET_NUM, true, &offload_socket_fd_op_vtable);

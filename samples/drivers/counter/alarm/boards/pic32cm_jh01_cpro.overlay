@@ -13,3 +13,8 @@
 &tc0 {
 	status = "okay";
 };
+
+&tcc1 {
+	prescaler = <64>;
+	status = "okay";
+};

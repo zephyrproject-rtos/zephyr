@@ -35,3 +35,7 @@ zephyr_udc0: &usbhs {
 	tx-cal-45-dp-ohms = <10>;
 	tx-cal-45-dm-ohms = <10>;
 };
+
+&wwdt0 {
+	status = "okay";
+};

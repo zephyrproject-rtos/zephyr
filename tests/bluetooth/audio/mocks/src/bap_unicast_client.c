@@ -136,6 +136,7 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 				 const struct bt_audio_codec_cfg *codec_cfg)
 {
 	struct bt_bap_unicast_client_cb *listener, *next;
+	struct bt_audio_codec_cfg *ep_codec_cfg;
 	int err;
 
 	if (stream == NULL || stream->ep == NULL || codec_cfg == NULL) {
@@ -156,7 +157,14 @@ int bt_bap_unicast_client_config(struct bt_bap_stream *stream,
 	if (err != 0) {
 		return err;
 	}
+
 	stream->codec_cfg = &stream->ep->codec_cfg;
+
+	ep_codec_cfg = &stream->ep->codec_cfg;
+	ep_codec_cfg->path_id = codec_cfg->path_id;
+	ep_codec_cfg->ctlr_transcode = codec_cfg->ctlr_transcode;
+	ep_codec_cfg->target_latency = codec_cfg->target_latency;
+	ep_codec_cfg->target_phy = codec_cfg->target_phy;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next, _node) {
 		if (listener->config != NULL) {
@@ -198,6 +206,12 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
+		__maybe_unused const int err =
+			bt_bap_unicast_client_qos_from_group(stream, &stream->ep->qos);
+
+		__ASSERT(err == 0, "%d", err);
+		stream->qos = &stream->ep->qos;
+
 		if (stream->conn == conn) {
 			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&unicast_client_cbs, listener, next,
 							  _node) {
@@ -598,6 +612,63 @@ static int unicast_group_add_iso(struct bt_bap_unicast_group *group, struct bt_b
 	return 0;
 }
 
+int bt_bap_unicast_client_qos_from_group(const struct bt_bap_stream *stream,
+					 struct bt_bap_qos_cfg *qos)
+{
+	if (stream == NULL) {
+		LOG_DBG("stream is NULL");
+		return -EINVAL;
+	}
+
+	if (stream->group == NULL) {
+		LOG_DBG("stream not in a group");
+		return -EINVAL;
+	}
+
+	if (stream->iso == NULL) {
+		LOG_DBG("stream not bound with an ISO chan");
+		return -EINVAL;
+	}
+
+	if (qos == NULL) {
+		LOG_DBG("qos is NULL");
+		return -EINVAL;
+	}
+
+	/* stream->ep does not need to be set. We should be able to get dir based on bap_iso */
+	const struct bt_bap_iso *bap_iso = CONTAINER_OF(stream->iso, struct bt_bap_iso, chan);
+	const enum bt_audio_dir dir =
+		bap_iso->tx.stream == stream ? BT_AUDIO_DIR_SINK : BT_AUDIO_DIR_SOURCE;
+	const struct bt_bap_unicast_group *unicast_group = stream->group;
+	const struct bt_iso_chan_io_qos *iso_qos;
+
+	/* memset the struct since it contains padding so that it can be used with memcmp */
+	(void)memset(qos, 0, sizeof(*qos));
+	if (dir == BT_AUDIO_DIR_SINK) {
+		qos->pd = unicast_group->sink_pd;
+		qos->latency = unicast_group->cig_param.c_to_p_latency;
+		qos->interval = unicast_group->cig_param.c_to_p_interval;
+		iso_qos = &bap_iso->tx.qos;
+	} else {
+		qos->pd = unicast_group->source_pd;
+		qos->latency = unicast_group->cig_param.p_to_c_latency;
+		qos->interval = unicast_group->cig_param.p_to_c_interval;
+		iso_qos = &bap_iso->rx.qos;
+	}
+
+	qos->framing = unicast_group->cig_param.framing;
+	qos->phy = iso_qos->phy;
+	qos->rtn = iso_qos->rtn;
+	qos->sdu = iso_qos->sdu;
+#if defined(CONFIG_BT_ISO_TEST_PARAMS)
+	qos->max_pdu = iso_qos->max_pdu;
+	qos->burst_number = iso_qos->burst_number;
+	qos->num_subevents = bap_iso->qos.num_subevents;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
+
+	return 0;
+}
+
 static void unicast_client_qos_cfg_to_iso_qos(struct bt_bap_iso *iso,
 					      const struct bt_bap_qos_cfg *qos,
 					      enum bt_audio_dir dir)
@@ -655,9 +726,11 @@ static void unicast_group_set_iso_stream_param(struct bt_bap_unicast_group *grou
 	if (dir == BT_AUDIO_DIR_SOURCE) {
 		group->cig_param.p_to_c_interval = qos->interval;
 		group->cig_param.p_to_c_latency = qos->latency;
+		group->source_pd = qos->pd;
 	} else {
 		group->cig_param.c_to_p_interval = qos->interval;
 		group->cig_param.c_to_p_latency = qos->latency;
+		group->sink_pd = qos->pd;
 	}
 }
 
@@ -670,7 +743,6 @@ static void unicast_group_add_stream(struct bt_bap_unicast_group *group,
 
 	__ASSERT_NO_MSG(stream->ep == NULL || (stream->ep != NULL && stream->ep->iso == NULL));
 
-	stream->qos = qos;
 	stream->group = group;
 
 	/* iso initialized already */
@@ -734,6 +806,8 @@ int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 		__maybe_unused int err;
 
 		stream_param = &param->params[i];
+
+		(*unicast_group)->cig_param.packing = param->packing;
 
 		err = unicast_group_add_stream_pair(*unicast_group, stream_param);
 		__ASSERT(err == 0, "%d", err);

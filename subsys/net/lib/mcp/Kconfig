@@ -11,6 +11,7 @@ menuconfig MCP_SERVER
 	  Support for MCP Server functionality.
 
 if MCP_SERVER
+
 config MCP_SERVER_COUNT
 	int "Number of MCP server instances"
 	default 1

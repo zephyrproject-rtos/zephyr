@@ -11,8 +11,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DRIVERS_PHY_H_
-#define ZEPHYR_INCLUDE_DRIVERS_PHY_H_
+#ifndef ZEPHYR_INCLUDE_NET_PHY_H_
+#define ZEPHYR_INCLUDE_NET_PHY_H_
 
 /**
  * @brief Ethernet PHY Interface
@@ -448,4 +448,4 @@ static inline int phy_get_plca_sts(__maybe_unused const struct device *dev,
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_PHY_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_PHY_H_ */

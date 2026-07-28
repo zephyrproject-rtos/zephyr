@@ -8,7 +8,7 @@
 
 #if defined(CONFIG_MULTIBOOT_INFO)
 
-__pinned_noinit char multiboot_cmdline[CONFIG_BOOTARGS_ARGS_BUFFER_SIZE];
+__noinit char multiboot_cmdline[CONFIG_BOOTARGS_ARGS_BUFFER_SIZE];
 
 const char *get_bootargs(void)
 {
@@ -17,7 +17,7 @@ const char *get_bootargs(void)
 
 #elif defined(CONFIG_X86_EFI)
 
-__pinned_noinit char efi_bootargs[CONFIG_BOOTARGS_ARGS_BUFFER_SIZE];
+__noinit char efi_bootargs[CONFIG_BOOTARGS_ARGS_BUFFER_SIZE];
 
 const char *get_bootargs(void)
 {

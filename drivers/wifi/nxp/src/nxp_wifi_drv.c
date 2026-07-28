@@ -816,8 +816,16 @@ static int nxp_wifi_ap_config_params(const struct device *dev,
 
 static int nxp_wifi_process_results(unsigned int count)
 {
+#ifndef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
 	struct wlan_scan_result scan_result = {0};
 	struct wifi_scan_result res = {0};
+#endif
+#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
+	struct wifi_raw_scan_result *raw_res = NULL;
+	size_t frame_len = 0;
+	uint32_t freq = 0;
+	int8_t rssi = 0;
+#endif
 
 	if (!count) {
 		LOG_DBG("No Wi-Fi AP found");
@@ -828,6 +836,36 @@ static int nxp_wifi_process_results(unsigned int count)
 		count = g_mlan.max_bss_cnt > count ? count : g_mlan.max_bss_cnt;
 	}
 
+#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
+	/* First pass: emit raw scan result events */
+	for (int i = 0; i < count; i++) {
+		raw_res = k_malloc(sizeof(*raw_res));
+		if (raw_res == NULL) {
+			LOG_ERR("Failed to alloc raw scan result");
+			break;
+		}
+		memset(raw_res, 0, sizeof(*raw_res));
+
+		if (wlan_get_scan_raw_frame(i, raw_res->data,
+					    sizeof(raw_res->data),
+					    &frame_len, &freq, &rssi) != 0) {
+			k_free(raw_res);
+			continue;
+		}
+
+		raw_res->frame_length = (int)frame_len;
+		raw_res->frequency = (unsigned short)freq;
+		raw_res->rssi = rssi;
+
+		wifi_mgmt_raise_raw_scan_result_event(g_mlan.netif, raw_res);
+
+		k_free(raw_res);
+		k_yield();
+	}
+#endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+
+#ifndef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
+	/* Second pass: emit normal scan result events */
 	for (int i = 0; i < count; i++) {
 		wlan_get_scan_result(i, &scan_result);
 
@@ -840,7 +878,8 @@ static int nxp_wifi_process_results(unsigned int count)
 
 		res.rssi = -scan_result.rssi;
 		res.channel = scan_result.channel;
-		res.band = scan_result.channel > 14 ? WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
+		res.band = scan_result.channel > 14 ?
+			   WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
 
 		res.security = WIFI_SECURITY_TYPE_NONE;
 
@@ -887,6 +926,7 @@ static int nxp_wifi_process_results(unsigned int count)
 			k_yield();
 		}
 	}
+#endif /* !CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY */
 
 out:
 	/* report end of scan event */
@@ -1900,7 +1940,7 @@ static int nxp_wifi_reg_domain(const struct device *dev, struct net_if *iface __
 			index += nxp_wifi_cfp_no;
 		}
 		reg_domain->num_channels = index;
-		wifi_get_country_code(reg_domain->country_code);
+		wlan_get_country_code(reg_domain->country_code);
 	} else {
 		if (is_uap_started()) {
 			LOG_ERR("region code can not be set after uAP start!");

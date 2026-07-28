@@ -887,11 +887,12 @@ static void counter_stm32_irq_handler_global(const struct device *dev)
 			(IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, up)))		  \
 		IF_ENABLED(DT_IRQ_HAS_NAME(TIMER(idx), brk_up_trg_com),		  \
 			(IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, brk_up_trg_com)))	  \
-		COND_CODE_1(DT_IRQ_HAS_NAME(TIMER(idx), cc),			  \
-			(IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, cc)),		  \
-		(COND_CODE_1(DT_IRQ_HAS_NAME(TIMER(idx), global),		  \
-			(IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, global)),		  \
-		(BUILD_ASSERT(0, "Timer has no 'cc' or 'global' interrupt!")))))  \
+		COND_CASE_1(							  \
+			DT_IRQ_HAS_NAME(TIMER(idx), cc),			  \
+				(IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, cc)),	  \
+			DT_IRQ_HAS_NAME(TIMER(idx), global),			  \
+				(IRQ_CONNECT_AND_ENABLE_BY_NAME(idx, global)),	  \
+		(BUILD_ASSERT(0, "Timer has no 'cc' or 'global' interrupt!")))	  \
 	}									  \
 										  \
 	static const struct stm32_pclken pclken_##idx[] =			  \

@@ -190,6 +190,12 @@ extern "C" {
 /** Socket option to control TLS session caching on a socket. Accepted values:
  *  - 0 - Disabled.
  *  - 1 - Enabled.
+ *
+ *  For TLS 1.3, sessions are cached when a NewSessionTicket message is
+ *  received, which happens after the handshake completes. The application
+ *  needs to receive from or poll the socket for the ticket to be processed
+ *  and cached. The latest received ticket replaces the cache entry for the
+ *  peer.
  */
 #define ZSOCK_TLS_SESSION_CACHE 12
 /** Write-only socket option to purge session cache immediately.
@@ -929,7 +935,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 #define ZSOCK_SO_OOBINLINE 10
 /** Socket priority */
 #define ZSOCK_SO_PRIORITY 12
-/** Socket lingers on close (ignored, for compatibility) */
+/** Socket lingers on close. Takes a struct net_linger as argument. */
 #define ZSOCK_SO_LINGER 13
 /** Allow multiple sockets to reuse a single port */
 #define ZSOCK_SO_REUSEPORT 15
@@ -1001,10 +1007,65 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 /** @} */
 
 /**
+ * @name UDP level options (NET_IPPROTO_UDP)
+ * @{
+ */
+/* Socket options for NET_IPPROTO_UDP level */
+
+/** Enable/disable all UDP options (int boolean), these are from RFC 9868 */
+#define ZSOCK_UDP_OPT      1
+/** Enable/disable UDP OCS (int boolean) */
+#define ZSOCK_UDP_OPT_OCS  2
+/** Enable/disable UDP APC option (int boolean) */
+#define ZSOCK_UDP_OPT_APC  3
+/** Enable/disable UDP fragmentation option (int boolean) */
+#define ZSOCK_UDP_OPT_FRAG 4
+/** Set/get UDP MDS option value (uint16_t) */
+#define ZSOCK_UDP_OPT_MDS  5
+/** Set/get UDP MRDS option value (struct net_udp_opt_mrds) */
+#define ZSOCK_UDP_OPT_MRDS 6
+/** Enable/disable UDP REQ option (int boolean) */
+#define ZSOCK_UDP_OPT_REQ  7
+/** Enable/disable UDP RES option (int boolean) */
+#define ZSOCK_UDP_OPT_RES  8
+/** Enable/disable UDP TIME option (int boolean) */
+#define ZSOCK_UDP_OPT_TIME 9
+/** Enable/disable UDP AUTH option (int boolean) */
+#define ZSOCK_UDP_OPT_AUTH 10
+/** Enable/disable UDP EXP option (int boolean) */
+#define ZSOCK_UDP_OPT_EXP  11
+/** Enable/disable UDP UCMP option (int boolean) */
+#define ZSOCK_UDP_OPT_UCMP 12
+/** Enable/disable UDP UENC option (int boolean) */
+#define ZSOCK_UDP_OPT_UENC 13
+/** Enable/disable UDP UEXP option (int boolean) */
+#define ZSOCK_UDP_OPT_UEXP 14
+/** Enable/disable DPLPMTUD over UDP options, RFC 9869 (int boolean) */
+#define ZSOCK_UDP_OPT_DPLPMTUD 15
+/** Let the application echo REQ->RES itself instead of the stack (int boolean) */
+#define ZSOCK_UDP_OPT_DPLPMTUD_APP_RESPOND 16
+
+/** cmsg types for IPPROTO_UDP level in ancillary data */
+#define ZSOCK_UDP_OPT_CMSG_APC    1  /**< uint32_t CRC32c */
+#define ZSOCK_UDP_OPT_CMSG_MDS    2  /**< uint16_t peer MDS */
+#define ZSOCK_UDP_OPT_CMSG_MRDS   3  /**< struct net_udp_opt_mrds */
+#define ZSOCK_UDP_OPT_CMSG_REQ    4  /**< uint32_t echo request token */
+#define ZSOCK_UDP_OPT_CMSG_RES    5  /**< uint32_t echo response token */
+#define ZSOCK_UDP_OPT_CMSG_TIME   6  /**< struct net_udp_opt_time */
+
+/** @} */
+
+/**
  * @defgroup ipv4_socket_options Socket options for IPv4
  * @ingroup bsd_sockets
  * @{
  */
+
+/**
+ * @name IPv4 level options (NET_IPPROTO_IP)
+ * @{
+ */
+
 /* Socket options for NET_IPPROTO_IP level */
 /** Set or receive the Type-Of-Service value for an outgoing packet. */
 #define ZSOCK_IP_TOS 1
@@ -1029,7 +1090,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  */
 #define ZSOCK_IP_MTU 14
 
-/** Disable local IPv4 fragmentation for packets sent on this socket.
+/** Disable local IPv4 fragmentation for this socket.
  *
  *  Takes an integer boolean (0 = allow fragmentation, non-zero = disable).
  *  When enabled, datagrams larger than the interface MTU are rejected locally
@@ -1038,6 +1099,9 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  *
  *  Valid for ``setsockopt()`` and ``getsockopt()`` at the ``NET_IPPROTO_IP``
  *  level.
+ *
+ *  This option may also be passed as ancillary data in sendmsg() to override
+ *  fragmentation handling for a single datagram.
  */
 #define ZSOCK_IP_DONTFRAG 15
 
@@ -1055,11 +1119,16 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 /** Clamp down the global port range for a given socket */
 #define ZSOCK_IP_LOCAL_PORT_RANGE 51
 
-/** @} */
+/** @} */ /* for @name */
+/** @} */ /* for @defgroup */
 
 /**
  * @defgroup ipv6_socket_options Socket options for IPv6
  * @ingroup bsd_sockets
+ * @{
+ */
+/**
+ * @name IPv6 level options (NET_IPPROTO_IPV6)
  * @{
  */
 /* Socket options for NET_IPPROTO_IPV6 level */
@@ -1094,7 +1163,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  */
 #define ZSOCK_IPV6_MTU 24
 
-/** Disable local IPv6 fragmentation for packets sent on this socket.
+/** Disable local IPv6 fragmentation for this socket.
  *
  *  Takes an integer boolean (0 = allow fragmentation, non-zero = disable).
  *  When enabled, datagrams larger than the interface MTU are rejected locally
@@ -1102,6 +1171,9 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  *
  *  Valid for ``setsockopt()`` and ``getsockopt()`` at the ``NET_IPPROTO_IPV6``
  *  level.
+ *
+ *  This option may also be passed as ancillary data in sendmsg() to override
+ *  fragmentation handling for a single datagram.
  */
 #define ZSOCK_IPV6_DONTFRAG 62
 
@@ -1148,7 +1220,8 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 
 /** Set or receive the traffic class value for an outgoing packet. */
 #define ZSOCK_IPV6_TCLASS 67
-/** @} */
+/** @} */ /* for @name */
+/** @} */ /* for @defgroup */
 
 /**
  * @name Backlog size for listen()

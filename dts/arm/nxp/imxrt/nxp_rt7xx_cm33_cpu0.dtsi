@@ -89,17 +89,39 @@
 	rtc0: rtc@68000 {
 		compatible = "nxp,irtc";
 		reg = <0x68000 0x1000>;
-		interrupts = <26 0>, <27 0>;
+		interrupts = <26 0>;
 		clock-frequency = <32768>;
 		prescaler = <1>;
 		alarms-count = <1>;
 		status = "disabled";
+
+		irtc_wake: wake-timer {
+			compatible = "nxp,irtc-wake-timer";
+			interrupts = <27 0>;
+			osc-div;
+			wakeup-source;
+			wakeup-ctrls = <&sleepcon0 27>;
+			status = "disabled";
+		};
 	};
 
 	clkctl0: clock-controller@1000 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x1000 0x1000>;
 		#clock-cells = <1>;
+	};
+
+	/*
+	 * SLEEPCON0 (VDD2_COMP) is the wakeup controller for CPU0. It is an
+	 * always-present on-chip controller, so it is enabled by default;
+	 * CONFIG_WUC gates whether the driver is actually built.
+	 */
+	sleepcon0: wakeup-controller@3000 {
+		compatible = "nxp,sleepcon-wuc";
+		reg = <0x3000 0x1000>;
+		interrupts = <136 0>;
+		#wakeup-ctrl-cells = <1>;
+		status = "okay";
 	};
 
 	ctimer0: timer@28000 {
@@ -961,6 +983,8 @@
 		reg = <0x418000 0x1000>;
 		interrupts = <40 0>;
 		interrupt-names = "usb_otg";
+		clocks = <&clkctl4 MCUX_USB0_CLK>, <&clkctl4 MCUX_USBPHY_REF_CLK>;
+		clock-rates = <DT_FREQ_M(24) DT_FREQ_M(24)>;
 		status = "disabled";
 	};
 
@@ -980,6 +1004,8 @@
 		reg = <0x419000 0x1000>;
 		interrupts = <41 0>;
 		interrupt-names = "usb_otg";
+		clocks = <&clkctl4 MCUX_USB1_CLK>;
+		clock-rates = <DT_FREQ_M(24)>;
 		status = "disabled";
 	};
 
@@ -1225,6 +1251,8 @@
 	crc: crc@151000 {
 		compatible = "nxp,crc";
 		reg = <0x151000 0x1000>;
+		clocks = <&clkctl0 MCUX_CRC_CLK>;
+		resets = <&rstctl0 NXP_SYSCON_RESET(3, 18)>;
 		status = "disabled";
 	};
 };

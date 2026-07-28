@@ -1,8 +1,6 @@
-#
-#  Copyright (c) 2025 Netfeasa Ltd.
-#
-#  SPDX-License-Identifier: Apache-2.0
-#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
 zephyr_library_sources(hl78xx_evt_monitor.c)

@@ -45,6 +45,7 @@
 
 	chosen {
 		zephyr,bt-hci = &hci_spi;
+		zephyr,system-timer = &lptim1;
 	};
 };
 
@@ -151,7 +152,7 @@
 	apb2-prescaler = <1>;
 };
 
-stm32_lp_tick_source: &lptim1 {
+&lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";

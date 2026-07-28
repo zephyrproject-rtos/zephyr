@@ -434,9 +434,7 @@ static int bt_hci_ctd(struct usbd_class_data *const c_data,
 
 	/* We expect host-to-device class request */
 	if (setup->RequestType.type != USB_REQTYPE_TYPE_CLASS) {
-		errno = -ENOTSUP;
-
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (setup->wLength && (buf == NULL)) {

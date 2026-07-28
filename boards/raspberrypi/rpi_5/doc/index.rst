@@ -143,13 +143,13 @@ XEN Dom0
 ========
 
 The Raspberry Pi 5 platform can be used to run as Xen Zephyr Dom0. For such
-purposes the ``xen_dom0`` snippet can be used.
+purposes the ``xen-dom0`` snippet can be used.
 
 Run below command as an example of RPI 5 Zephyr build as Dom0:
 
 .. code-block:: bash
 
-   west build -b rpi_5 -p always -S xen_dom0 samples/hello_world
+   west build -b rpi_5 -p always -S xen-dom0 samples/hello_world
 
 It is expected to be used with special application performing Xen Domain-0/Dom0 functions.
 
@@ -158,4 +158,4 @@ It is expected to be used with special application performing Xen Domain-0/Dom0 
    The "hypervisor@x" and "memory@x" DT nodes need to be specified in
    DT application overlay with values provided on the Xen boot, because
    normally Xen will update DT for the target Kernel, but this is not possible
-   in case of Zephyr. More details described in :ref:`xen_dom0`.
+   in case of Zephyr. More details described in :ref:`xen-dom0`.

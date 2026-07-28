@@ -670,7 +670,7 @@ static int cmd_net_cm_disconnect(const struct shell *sh, size_t argc, char *argv
 			return 0;
 		}
 
-		PR("Instructing iface %s to disonnect.\n", iface_info);
+		PR("Instructing iface %s to disconnect.\n", iface_info);
 		conn_mgr_if_disconnect(target.iface);
 		return 0;
 	}

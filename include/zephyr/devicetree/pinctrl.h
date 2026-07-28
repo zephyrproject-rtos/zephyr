@@ -300,7 +300,7 @@
 
 /**
  * @brief Get a node identifier for a phandle in a pinctrl property by index
- *        for a DT_DRV_COMPAT instance
+ *        for a @c DT_DRV_COMPAT instance
  *
  * This is equivalent to DT_PINCTRL_BY_IDX(DT_DRV_INST(inst), pc_idx, idx).
  *
@@ -314,7 +314,7 @@
 
 /**
  * @brief Get a node identifier from a pinctrl-0 property for a
- *        DT_DRV_COMPAT instance
+ *        @c DT_DRV_COMPAT instance
  *
  * This is equivalent to:
  *
@@ -332,7 +332,7 @@
 
 /**
  * @brief Get a node identifier for a phandle inside a pinctrl node
- *        for a DT_DRV_COMPAT instance
+ *        for a @c DT_DRV_COMPAT instance
  *
  * This is equivalent to DT_PINCTRL_BY_NAME(DT_DRV_INST(inst), name, idx).
  *
@@ -347,7 +347,7 @@
 
 /**
  * @brief Convert a pinctrl name to its corresponding index
- *        for a DT_DRV_COMPAT instance
+ *        for a @c DT_DRV_COMPAT instance
  *
  * This is equivalent to DT_PINCTRL_NAME_TO_IDX(DT_DRV_INST(inst),
  * name).
@@ -387,7 +387,7 @@
 
 /**
  * @brief Get the number of phandles in a pinctrl property
- *        for a DT_DRV_COMPAT instance
+ *        for a @c DT_DRV_COMPAT instance
  *
  * This is equivalent to DT_NUM_PINCTRLS_BY_IDX(DT_DRV_INST(inst),
  * pc_idx).
@@ -413,7 +413,7 @@
 	DT_NUM_PINCTRLS_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
- * @brief Get the number of pinctrl properties in a DT_DRV_COMPAT instance
+ * @brief Get the number of pinctrl properties in a @c DT_DRV_COMPAT instance
  *
  * This is equivalent to DT_NUM_PINCTRL_STATES(DT_DRV_INST(inst)).
  *
@@ -424,7 +424,7 @@
 	DT_NUM_PINCTRL_STATES(DT_DRV_INST(inst))
 
 /**
- * @brief Test if a DT_DRV_COMPAT instance has a pinctrl property
+ * @brief Test if a @c DT_DRV_COMPAT instance has a pinctrl property
  *        with an index
  *
  * This is equivalent to DT_PINCTRL_HAS_IDX(DT_DRV_INST(inst), pc_idx).
@@ -437,7 +437,7 @@
 	DT_PINCTRL_HAS_IDX(DT_DRV_INST(inst), pc_idx)
 
 /**
- * @brief Test if a DT_DRV_COMPAT instance has a pinctrl property with a name
+ * @brief Test if a @c DT_DRV_COMPAT instance has a pinctrl property with a name
  *
  * This is equivalent to DT_PINCTRL_HAS_NAME(DT_DRV_INST(inst), name).
  *

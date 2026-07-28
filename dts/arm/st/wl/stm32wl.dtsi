@@ -207,6 +207,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x48000000 0x2000>;
+			ranges;
 
 			gpioa: gpio@48000000 {
 				compatible = "st,stm32-gpio";
@@ -512,7 +513,7 @@
 			};
 		};
 
-		aes: aes@58001800 {
+		aes: crypto@58001800 {
 			compatible = "st,stm32-aes";
 			reg = <0x58001800 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 17)>;

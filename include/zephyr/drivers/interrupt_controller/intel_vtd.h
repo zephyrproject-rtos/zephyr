@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_INTEL_VTD_H_
-#define ZEPHYR_INCLUDE_DRIVERS_INTEL_VTD_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTEL_VTD_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTEL_VTD_H_
 
 #include <zephyr/drivers/pcie/msi.h>
 
@@ -198,4 +198,4 @@ static inline bool vtd_irte_is_msi(const struct device *dev,
 }
 
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_INTEL_VTD_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTEL_VTD_H_ */

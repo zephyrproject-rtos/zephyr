@@ -1,6 +1,7 @@
 # Espressif ESP32 TWAI configuration options
 
 # Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 config CAN_ESP32_TWAI
@@ -12,3 +13,25 @@ config CAN_ESP32_TWAI
 	help
 	  This enables support for the Espressif Two-Wire Automotive Interface
 	  (TWAI) CAN driver.
+
+config CAN_ESP32_TWAIFD
+	bool "Espressif TWAI-FD CAN driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_TWAIFD_ENABLED
+	select PINCTRL
+	help
+	  Enables the Espressif TWAI-FD (CAN FD capable Two-Wire Automotive
+	  Interface) controller driver.
+
+if CAN_ESP32_TWAIFD
+
+config CAN_ESP32_TWAIFD_MAX_FILTERS
+	int "Maximum number of RX filters per TWAI-FD controller"
+	default 16
+	help
+	  Maximum number of RX filters concurrently installable via
+	  can_add_rx_filter() on a TWAI-FD controller instance. Filters
+	  are matched in software; each slot is a few words of RAM, so
+	  reduce this to conserve RAM if fewer filters are needed.
+
+endif # CAN_ESP32_TWAIFD

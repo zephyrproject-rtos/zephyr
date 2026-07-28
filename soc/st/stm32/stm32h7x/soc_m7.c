@@ -19,7 +19,7 @@
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_system.h>
-#include "stm32_hsem.h"
+#include <stm32_hsem.h>
 
 #include <cmsis_core.h>
 

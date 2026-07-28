@@ -229,7 +229,7 @@ static int lorawan_services_init(void)
 
 	k_mutex_init(&session_mutex);
 
-	k_thread_name_set(&services_workq.thread, "lorawan_services");
+	k_thread_name_set(services_workq.thread_id, "lorawan_services");
 
 	return 0;
 }

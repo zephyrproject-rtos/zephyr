@@ -1308,3 +1308,8 @@ Bluetooth SIG informational papers, reports and guides
 The Bluetooth SIG occasionally release new informational papers, report and guides.
 These can be found at https://www.bluetooth.com/bluetooth-resources/?tags=le-audio&keyword.
 Here you will also find the aforementioned LE Audio book, among many other good resources.
+
+Samples
+*******
+
+All of the LE Audio samples are located in ``samples/bluetooth/audio``.

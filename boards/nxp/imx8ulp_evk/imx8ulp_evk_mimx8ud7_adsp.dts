@@ -27,6 +27,14 @@
 	pinctrl-names = "default";
 };
 
+&tstmr0 {
+	status = "okay";
+};
+
+&tstmr1 {
+	status = "okay";
+};
+
 &sai5 {
 	rx-dataline = <3>;
 };

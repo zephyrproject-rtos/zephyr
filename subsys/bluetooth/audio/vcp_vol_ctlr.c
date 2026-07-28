@@ -934,6 +934,7 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **out_
 {
 	static bool initialized;
 	struct bt_vcp_vol_ctlr *vol_ctlr;
+	struct bt_conn *ref;
 	int err;
 
 	/*
@@ -968,24 +969,37 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **out_
 		initialized = true;
 	}
 
+	ref = bt_conn_ref(conn);
+	if (ref == NULL) {
+		err = -ENOTCONN;
+		goto cleanup;
+	}
+
 	vcp_vol_ctlr_reset(vol_ctlr);
 
 	memcpy(&vol_ctlr->uuid, BT_UUID_VCS, sizeof(vol_ctlr->uuid));
 
-	vol_ctlr->conn = bt_conn_ref(conn);
 	vol_ctlr->discover_params.func = primary_discover_func;
 	vol_ctlr->discover_params.uuid = &vol_ctlr->uuid.uuid;
 	vol_ctlr->discover_params.type = BT_GATT_DISCOVER_PRIMARY;
 	vol_ctlr->discover_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	vol_ctlr->discover_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
 
+	vol_ctlr->conn = ref;
+
 	err = bt_gatt_discover(conn, &vol_ctlr->discover_params);
-	if (err == 0) {
-		*out_vol_ctlr = vol_ctlr;
-	} else {
-		atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
+	if (err != 0) {
+		bt_conn_unref(ref);
+		vol_ctlr->conn = NULL;
+		goto cleanup;
 	}
 
+	*out_vol_ctlr = vol_ctlr;
+
+	return 0;
+
+cleanup:
+	atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
 	return err;
 }
 

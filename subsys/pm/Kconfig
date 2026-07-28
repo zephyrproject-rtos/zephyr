@@ -48,21 +48,20 @@ config PM_CUSTOM_TICKS_HOOK
 
 	  If unsure, say N.
 
-config PM_STATE_SET_IRQ_LOCKED
+config PM_STATE_SET_IRQ_UNLOCKED
 	bool
 	help
-	  Select this option when the SoC PM state implementation keeps interrupts
-	  locked throughout pm_state_set() and pm_state_exit_post_ops().
+	  Select this option when the SoC PM state implementation still unlocks
+	  or otherwise unmasks interrupts from pm_state_set() or
+	  pm_state_exit_post_ops() during pm_system_suspend().
 
-	  This lets the architecture manage low-power entry interrupt state when
-	  needed, such as allowing wake events without dispatching ISRs before PM
-	  resume bookkeeping. Legacy implementations that still unmask interrupts
-	  from pm_state_set() or pm_state_exit_post_ops() should not select this
-	  option until they are migrated.
+	  This preserves the legacy PM hook behavior for platforms that have not
+	  yet migrated to idle-owned IRQ restore. Platforms that keep interrupts
+	  locked throughout pm_state_set() and pm_state_exit_post_ops() should not
+	  select this option.
 
 	  This option exists to support incremental migration. Once all in-tree SoC
-	  PM implementations are migrated, this option will become the default and
-	  be removed.
+	  PM implementations are migrated, this legacy option will be removed.
 
 	  This guarantee covers only interrupts that arch_irq_lock() can mask. See
 	  the zero-latency interrupt documentation for IRQ_ZERO_LATENCY behavior.

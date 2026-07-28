@@ -19,19 +19,30 @@ config DAC_MCHP_G1_DIFFERENTIAL
 config DAC_MCHP_G1_REFRESH
 	bool "Refresh Period"
 	depends on SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	default y
 	help
 	  Enable refresh period support for G1 DAC
 
 config DAC_MCHP_G1_EXTERNAL_FILTER
 	bool "External Filter"
 	depends on SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	default y
 	help
 	  Enable External Filter support for G1 DAC
 
 config DAC_MCHP_G1_OVERSAMPLING_RATIO
 	bool "Oversampling Ratio"
 	depends on SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	default y
 	help
 	  Enable Oversampling Ratio support for G1 DAC
 
 endif # DAC_MCHP_G1
+
+config DAC_MCHP_G2
+	bool "Microchip G2 DAC Driver"
+	depends on DT_HAS_MICROCHIP_DAC_G2_ENABLED
+	default y
+	select PINCTRL
+	help
+	  Enable support for the Microchip DAC driver on G2 DAC peripherals.

@@ -109,7 +109,7 @@ ZTEST(smp_client, test_msg_response_handler)
 
 static void *setup_custom_os(void)
 {
-	/* Registre tarnsport and init client */
+	/* Register transport and init client */
 	stub_smp_client_transport_register();
 	smp_client_object_init(&smp_client, SMP_SERIAL_TRANSPORT);
 	return NULL;

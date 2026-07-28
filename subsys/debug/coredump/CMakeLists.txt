@@ -19,6 +19,16 @@ zephyr_library_sources_ifdef(
   )
 
 zephyr_library_sources_ifdef(
+  CONFIG_DEBUG_COREDUMP_BACKEND_LOGGING_UDP
+  coredump_backend_logging_udp.c
+  )
+
+zephyr_library_sources_ifdef(
+  CONFIG_DEBUG_COREDUMP_FATAL_UNLOCK_IRQS
+  coredump_fatal_irq.c
+  )
+
+zephyr_library_sources_ifdef(
   CONFIG_DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
   coredump_backend_flash_partition.c
   )

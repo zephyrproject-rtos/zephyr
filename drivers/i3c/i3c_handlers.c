@@ -75,8 +75,6 @@ static inline int z_vrfy_i3c_transfer(struct i3c_device_desc *target,
 	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(msgs, num_msgs,
 					   sizeof(struct i3c_msg)));
 
-	return copy_i3c_msgs_and_transfer((struct i3c_device_desc *)target,
-					  (struct i3c_msg *)msgs,
-					  (uint8_t)num_msgs);
+	return copy_i3c_msgs_and_transfer(target, msgs, num_msgs);
 }
 #include <zephyr/syscalls/i3c_transfer_mrsh.c>

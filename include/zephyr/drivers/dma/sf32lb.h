@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_DMA_SF32LB_H_
-#define INCLUDE_ZEPHYR_DRIVERS_DMA_SF32LB_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_SF32LB_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DMA_SF32LB_H_
 
 #include <stdint.h>
 
@@ -198,4 +198,4 @@ static inline int sf32lb_dma_get_status_dt(const struct sf32lb_dma_dt_spec *spec
 
 /** @} */
 
-#endif /* INCLUDE_ZEPHYR_DRIVERS_DMA_SF32LB_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_SF32LB_H_ */

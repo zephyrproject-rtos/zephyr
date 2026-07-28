@@ -40,9 +40,10 @@
 			status = "okay";
 
 			memc: aps256xxn-obr@0 {
-				compatible = "st,psram-device", "mspi-aps-z8";
+				compatible = "st,psram-device", "aps-z8";
 				reg = <0>;
 				size = <DT_SIZE_M(128)>;
+				st,mem-type = "apmem";
 				mspi-max-frequency = <DT_FREQ_M(200)>;
 				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 				mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
@@ -54,7 +55,7 @@
 				address-length = "ADDR_4_BYTE";
 				rx-dummy = <7>;
 				tx-dummy = <7>;
-				xip-config = <1 0 0 0>;
+				memmap-config = <1 0 0 0>;
 				ce-break-config = <1024 3>;
 				aps-version = "APS256";
 			};

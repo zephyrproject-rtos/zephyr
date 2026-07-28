@@ -151,9 +151,23 @@ x86_ap_start:
 	 * so we can locate our x86_cpuboot[] bundle. Put it in EBP.
 	 */
 
+#ifdef CONFIG_X2APIC
+	/*
+	 * x2APIC: read the ID from the MSR (MMIO is inaccessible). An AP may
+	 * still be in xAPIC mode, where that MSR faults, so enable x2APIC
+	 * first -- faults can't be handled this early.
+	 */
+	movl $X86_APIC_BASE_MSR, %ecx
+	rdmsr
+	orl $X86_APIC_BASE_MSR_X2APIC, %eax
+	wrmsr
+	movl $(X86_X2APIC_BASE_MSR + (LOAPIC_ID >> 4)), %ecx
+	rdmsr
+#else
 	movl LOAPIC_BASE_ADDRESS+LOAPIC_ID, %eax
 	shrl $24, %eax
 	andl $0xFF, %eax		/* local APIC ID -> EAX */
+#endif
 
 	movl $x86_cpuboot, %ebp
 	xorl %ebx, %ebx

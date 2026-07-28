@@ -641,7 +641,7 @@ static void spi_smartbond_isr(void *args)
 		spi_smartbond_write(dev);
 		break;
 	case SPI_SMARTBOND_TRANSFER_TX_RX:
-		/* Exersice the type of the next sub-transfer */
+		/* Exercise the type of the next sub-transfer */
 		if (!data->rx_len && !data->tx_len) {
 			spi_smartbond_transfer_mode_check_and_update(dev);
 
@@ -676,7 +676,7 @@ static void spi_smartbond_isr(void *args)
 		spi_context_complete(ctx, dev, 0);
 
 		spi_context_cs_control(ctx, false);
-		spi_smartbond_pm_policy_state_lock_put(data);
+		spi_smartbond_pm_policy_state_lock_put(dev);
 	}
 #endif
 }

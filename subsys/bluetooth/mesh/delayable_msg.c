@@ -224,7 +224,7 @@ int bt_mesh_delayable_msg_manage(struct bt_mesh_msg_ctx *ctx, struct net_buf_sim
 	sys_snode_t *node;
 	struct delayable_msg_ctx *msg;
 	uint16_t random_delay;
-	int total_number = DIV_ROUND_UP(buf->size, CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_SIZE);
+	int total_number = DIV_ROUND_UP(buf->len, CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_SIZE);
 	int allocated_number = 0;
 	uint16_t len = buf->len;
 

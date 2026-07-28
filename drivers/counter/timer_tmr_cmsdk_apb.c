@@ -16,19 +16,29 @@
 
 #include "timer_cmsdk_apb.h"
 
-#define TIMER_NODE DT_INST(0, arm_cmsdk_timer)
-#define CLOCK_NODE DT_PHANDLE(TIMER_NODE, clocks)
+/*
+ * Skip the instance reserved as the system timer via zephyr,system-timer.
+ * When both drivers are enabled, they must operate on separate hardware.
+ */
+#define COUNTER_TMR_CMSDK_IS_SYSTEM_TIMER(n)                                                       \
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_system_timer),			\
+		(DT_SAME_NODE(DT_INST(n, DT_DRV_COMPAT),		\
+			      DT_CHOSEN(zephyr_system_timer))),		\
+		(0))
 
-#define HAS_TIMER_CLOCK DT_NODE_HAS_PROP(TIMER_NODE, clocks)
-#define HAS_CLOCK_FREQUENCY DT_NODE_HAS_PROP(CLOCK_NODE, clock_frequency)
+#define COUNTER_TMR_CMSDK_COUNT_USABLE(n) + (!COUNTER_TMR_CMSDK_IS_SYSTEM_TIMER(n))
 
-#if HAS_TIMER_CLOCK && HAS_CLOCK_FREQUENCY
-#define TIMER_CMSDK_FREQ(inst) \
-	DT_INST_PROP_BY_PHANDLE(inst, clocks, clock_frequency)
-#else
-#define TIMER_CMSDK_FREQ(inst) \
-	24000000U  /* fallback default */
-#endif /* HAS_TIMER_CLOCK && HAS_CLOCK_FREQUENCY */
+#define COUNTER_TMR_CMSDK_DEVICE_COUNT                                                             \
+	(0 DT_INST_FOREACH_STATUS_OKAY(COUNTER_TMR_CMSDK_COUNT_USABLE))
+
+#if COUNTER_TMR_CMSDK_DEVICE_COUNT > 0
+
+/*
+ * Check for 'clocks' phandle and get the clock_frequency.
+ * Use the fallback value if the 'clocks' phandle doesn't exist.
+ */
+#define TIMER_CMSDK_FREQ(inst)                                                                     \
+	DT_PROP_BY_PHANDLE_IDX_OR(DT_DRV_INST(inst), clocks, 0, clock_frequency, 24000000U)
 
 typedef void (*timer_config_func_t)(const struct device *dev);
 
@@ -42,6 +52,10 @@ struct tmr_cmsdk_apb_cfg {
 	const struct arm_clock_control_t timer_cc_ss;
 	/* Timer Clock control in Deep Sleep State */
 	const struct arm_clock_control_t timer_cc_dss;
+#ifdef CONFIG_CLOCK_CONTROL
+	/* clock control device handle */
+	const struct device *const clk;
+#endif
 };
 
 struct tmr_cmsdk_apb_dev_data {
@@ -162,7 +176,7 @@ static int tmr_cmsdk_apb_init(const struct device *dev)
 
 #ifdef CONFIG_CLOCK_CONTROL
 	/* Enable clock for subsystem */
-	const struct device *const clk = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
+	const struct device *const clk = cfg->clk;
 
 	if (!device_is_ready(clk)) {
 		return -ENODEV;
@@ -180,46 +194,63 @@ static int tmr_cmsdk_apb_init(const struct device *dev)
 	return 0;
 }
 
-#define TIMER_CMSDK_INIT(inst)						\
-	static void timer_cmsdk_apb_config_##inst(const struct device *dev); \
-									\
-	static const struct tmr_cmsdk_apb_cfg tmr_cmsdk_apb_cfg_##inst = { \
-		.info = {						\
-			.max_top_value = UINT32_MAX,			\
-			.freq = TIMER_CMSDK_FREQ(inst),			\
-			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		\
-			.channels = 0U,					\
-		},							\
-		.timer = ((volatile struct timer_cmsdk_apb *)DT_INST_REG_ADDR(inst)), \
-		.timer_config_func = timer_cmsdk_apb_config_##inst,	\
-		.timer_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,	\
-				.device = DT_INST_REG_ADDR(inst),},	\
-		.timer_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,	\
-				.device = DT_INST_REG_ADDR(inst),},	\
-		.timer_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP, \
-				 .device = DT_INST_REG_ADDR(inst),},	\
-	};								\
-									\
-	static struct tmr_cmsdk_apb_dev_data tmr_cmsdk_apb_dev_data_##inst = { \
-		.load = UINT32_MAX,					\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			    tmr_cmsdk_apb_init,				\
-			    NULL,			\
-			    &tmr_cmsdk_apb_dev_data_##inst,		\
-			    &tmr_cmsdk_apb_cfg_##inst, POST_KERNEL,	\
-			    CONFIG_COUNTER_INIT_PRIORITY,		\
-			    &tmr_cmsdk_apb_api);			\
-									\
-	static void timer_cmsdk_apb_config_##inst(const struct device *dev) \
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(inst),				\
-			    DT_INST_IRQ(inst, priority),		\
-			    tmr_cmsdk_apb_isr,				\
-			    DEVICE_DT_INST_GET(inst),			\
-			    0);						\
-		irq_enable(DT_INST_IRQN(inst));				\
+#ifdef CONFIG_CLOCK_CONTROL
+#define TMR_CMSDK_CLOCK_DEV_ASSIGN(inst) .clk = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),
+#else
+#define TMR_CMSDK_CLOCK_DEV_ASSIGN(inst)
+#endif
+
+#define TIMER_CMSDK_INIT(inst)                                                                     \
+	static void timer_cmsdk_apb_config_##inst(const struct device *dev);                       \
+                                                                                                   \
+	static const struct tmr_cmsdk_apb_cfg tmr_cmsdk_apb_cfg_##inst = {                         \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = UINT32_MAX,                                       \
+				.freq = TIMER_CMSDK_FREQ(inst),                                    \
+				.flags = COUNTER_CONFIG_INFO_COUNT_UP,                             \
+				.channels = 0U,                                                    \
+			},                                                                         \
+		.timer = ((volatile struct timer_cmsdk_apb *)DT_INST_REG_ADDR(inst)),              \
+		.timer_config_func = timer_cmsdk_apb_config_##inst,                                \
+		.timer_cc_as =                                                                     \
+			{                                                                          \
+				.bus = CMSDK_APB,                                                  \
+				.state = SOC_ACTIVE,                                               \
+				.device = DT_INST_REG_ADDR(inst),                                  \
+			},                                                                         \
+		.timer_cc_ss =                                                                     \
+			{                                                                          \
+				.bus = CMSDK_APB,                                                  \
+				.state = SOC_SLEEP,                                                \
+				.device = DT_INST_REG_ADDR(inst),                                  \
+			},                                                                         \
+		.timer_cc_dss =                                                                    \
+			{                                                                          \
+				.bus = CMSDK_APB,                                                  \
+				.state = SOC_DEEPSLEEP,                                            \
+				.device = DT_INST_REG_ADDR(inst),                                  \
+			},                                                                         \
+		TMR_CMSDK_CLOCK_DEV_ASSIGN(inst)};                                                 \
+                                                                                                   \
+	static struct tmr_cmsdk_apb_dev_data tmr_cmsdk_apb_dev_data_##inst = {                     \
+		.load = UINT32_MAX,                                                                \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, tmr_cmsdk_apb_init, NULL, &tmr_cmsdk_apb_dev_data_##inst,      \
+			      &tmr_cmsdk_apb_cfg_##inst, POST_KERNEL,                              \
+			      CONFIG_COUNTER_INIT_PRIORITY, &tmr_cmsdk_apb_api);                   \
+                                                                                                   \
+	static void timer_cmsdk_apb_config_##inst(const struct device *dev)                        \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), tmr_cmsdk_apb_isr,    \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}
 
-DT_INST_FOREACH_STATUS_OKAY(TIMER_CMSDK_INIT)
+#define COUNTER_TMR_CMSDK_DEVICE_INIT_COND(n)                                                      \
+	COND_CODE_0(COUNTER_TMR_CMSDK_IS_SYSTEM_TIMER(n),		\
+		(TIMER_CMSDK_INIT(n)), ())
+
+DT_INST_FOREACH_STATUS_OKAY(COUNTER_TMR_CMSDK_DEVICE_INIT_COND)
+#endif /* COUNTER_TMR_CMSDK_DEVICE_COUNT > 0 */

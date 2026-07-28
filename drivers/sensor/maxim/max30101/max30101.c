@@ -264,18 +264,6 @@ static int max30101_init(const struct device *dev)
 	return 0;
 }
 
-#define MAX30101_CHECK(n)                                                                          \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, led_pa) == 3,                                             \
-		     "MAX30101 led-pa property must have exactly 3 elements");                     \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, led_slot) == 4,                                           \
-		     "MAX30101 led-slot property must have exactly 4 elements")
-
-#define MAX30102_CHECK(n)                                                                          \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, led_pa) == 2,                                            \
-		     "MAX30102 led-pa property must have exactly 2 elements");                     \
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, led_slot) == 4,                                           \
-		     "MAX30102 led-slot property must have exactly 4 elements")
-
 #define MAX30101_SLOT_CFG(n)                                                                       \
 	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, acq_mode, heart_rate), \
 		(MAX30101_HR_SLOTS), \
@@ -323,7 +311,6 @@ static int max30101_init(const struct device *dev)
 				     CONFIG_SENSOR_INIT_PRIORITY, &max30101_driver_api);
 
 #define MAX30101_INIT(n)                                                                           \
-	MAX30101_CHECK(n);                                                                         \
 	MAX3010X_INIT(n, max30101, 0)
 
 DT_INST_FOREACH_STATUS_OKAY(MAX30101_INIT)
@@ -335,7 +322,6 @@ DT_INST_FOREACH_STATUS_OKAY(MAX30101_INIT)
 #define DT_DRV_COMPAT maxim_max30102
 
 #define MAX30102_INIT(n)                                                                           \
-	MAX30102_CHECK(n);                                                                         \
 	MAX3010X_INIT(n, max30102, 1)
 
 DT_INST_FOREACH_STATUS_OKAY(MAX30102_INIT)

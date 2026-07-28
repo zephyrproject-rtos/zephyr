@@ -12,6 +12,7 @@ set(COMMON_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/common)
 set(DEVICE_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/Device)
 set(RADIO_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/platform/radio)
 set(BLOBS_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/zephyr/blobs/gecko)
+set(SERVICE_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/platform/service)
 
 # Translate the SoC name and part number into the gecko device and cpu name
 # respectively.
@@ -82,6 +83,11 @@ zephyr_include_directories(
   ${DEVICE_DIR}/SiliconLabs/${SILABS_GECKO_DEVICE}/Include
   ${COMMON_DIR}/inc
   ${EMLIB_DIR}/inc
+  ${SERVICE_DIR}/power_manager/config
+  ${SERVICE_DIR}/power_manager/inc
+  ${SERVICE_DIR}/sleeptimer/config
+  ${SERVICE_DIR}/sleeptimer/inc
+  ${SERVICE_DIR}/sleeptimer/src
   ${BOARD_DIR}
 )
 
@@ -91,26 +97,50 @@ zephyr_compile_definitions(
   ${SILABS_GECKO_PART_NUMBER}
 )
 
-zephyr_library_sources(                                    ${EMLIB_DIR}/src/em_system.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_ADC          ${EMLIB_DIR}/src/em_adc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_BURTC        ${EMLIB_DIR}/src/em_burtc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CMU          ${EMLIB_DIR}/src/em_cmu.c)
+# Sleeptimer
+if(CONFIG_SILABS_GECKO_SLEEPTIMER)
+  zephyr_library_sources(
+    ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer_hal_rtcc.c
+    ${SERVICE_DIR}/sleeptimer/src/sl_sleeptimer.c
+  )
+  zephyr_compile_definitions(
+    SL_CATALOG_SLEEPTIMER_PRESENT
+  )
+endif()
 
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CORE         ${EMLIB_DIR}/src/em_core.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_CRYOTIMER    ${EMLIB_DIR}/src/em_cryotimer.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_EMU          ${EMLIB_DIR}/src/em_emu.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_GPIO         ${EMLIB_DIR}/src/em_gpio.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_I2C          ${EMLIB_DIR}/src/em_i2c.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LETIMER      ${EMLIB_DIR}/src/em_letimer.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_LEUART       ${EMLIB_DIR}/src/em_leuart.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_MSC          ${EMLIB_DIR}/src/em_msc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_PRS          ${EMLIB_DIR}/src/em_prs.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RMU          ${EMLIB_DIR}/src/em_rmu.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTC          ${EMLIB_DIR}/src/em_rtc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_RTCC         ${EMLIB_DIR}/src/em_rtcc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_TIMER        ${EMLIB_DIR}/src/em_timer.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_USART        ${EMLIB_DIR}/src/em_usart.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_GECKO_WDOG         ${EMLIB_DIR}/src/em_wdog.c)
+# Power Manager
+if(CONFIG_SILABS_GECKO_POWER_MANAGER)
+  zephyr_library_sources(
+    ${SERVICE_DIR}/power_manager/src/sl_power_manager.c
+    ${SERVICE_DIR}/power_manager/src/sl_power_manager_hal_s0_s1.c
+  )
+  zephyr_compile_definitions(
+    SL_CATALOG_POWER_MANAGER_PRESENT
+  )
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_SLIST ${COMMON_DIR}/src/sl_slist.c)
+
+zephyr_library_sources(                                    ${EMLIB_DIR}/src/em_system.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_ADC       ${EMLIB_DIR}/src/em_adc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_BURTC     ${EMLIB_DIR}/src/em_burtc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_CMU       ${EMLIB_DIR}/src/em_cmu.c)
+
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_CORE      ${EMLIB_DIR}/src/em_core.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_CRYOTIMER ${EMLIB_DIR}/src/em_cryotimer.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_EMU       ${EMLIB_DIR}/src/em_emu.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_GPIO      ${EMLIB_DIR}/src/em_gpio.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_I2C       ${EMLIB_DIR}/src/em_i2c.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_LETIMER   ${EMLIB_DIR}/src/em_letimer.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_LEUART    ${EMLIB_DIR}/src/em_leuart.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_MSC       ${EMLIB_DIR}/src/em_msc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_PRS       ${EMLIB_DIR}/src/em_prs.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_RMU       ${EMLIB_DIR}/src/em_rmu.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_RTC       ${EMLIB_DIR}/src/em_rtc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_RTCC      ${EMLIB_DIR}/src/em_rtcc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_TIMER     ${EMLIB_DIR}/src/em_timer.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_USART     ${EMLIB_DIR}/src/em_usart.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_WDOG      ${EMLIB_DIR}/src/em_wdog.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_EFM32TG     ${DEVICE_DIR}/SiliconLabs/EFM32TG/Source/system_efm32tg.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_EFM32WG     ${DEVICE_DIR}/SiliconLabs/EFM32WG/Source/system_efm32wg.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_EFR32BG13P  ${DEVICE_DIR}/SiliconLabs/EFR32BG13P/Source/system_efr32bg13p.c)

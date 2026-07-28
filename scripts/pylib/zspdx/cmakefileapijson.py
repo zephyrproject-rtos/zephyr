@@ -11,13 +11,13 @@ from . import cmakefileapi
 _logger = logging.getLogger(__name__)
 
 
-def parseReply(replyIndexPath):
-    replyDir, _ = os.path.split(replyIndexPath)
+def parse_reply(reply_index_path):
+    reply_dir, _ = os.path.split(reply_index_path)
 
     # first we need to find the codemodel reply file
     try:
-        with open(replyIndexPath) as indexFile:
-            js = json.load(indexFile)
+        with open(reply_index_path) as index_file:
+            js = json.load(index_file)
 
             # get reply object
             reply_dict = js.get("reply", {})
@@ -30,27 +30,122 @@ def parseReply(replyIndexPath):
                 _logger.error('no "codemodel-v2" field found in "reply" object in index file')
                 return None
             # and get codemodel filename
-            jsonFile = cm_dict.get("jsonFile", "")
-            if jsonFile == "":
+            json_file = cm_dict.get("jsonFile", "")
+            if json_file == "":
                 _logger.error('no "jsonFile" field found in "codemodel-v2" object in index file')
                 return None
 
-            return parseCodemodel(replyDir, jsonFile)
+            return parse_codemodel(reply_dir, json_file)
 
     except OSError:
-        _logger.exception("Error loading %s", replyIndexPath)
+        _logger.exception("Error loading %s", reply_index_path)
         return None
     except json.decoder.JSONDecodeError:
-        _logger.exception("Error parsing JSON in %s", replyIndexPath)
+        _logger.exception("Error parsing JSON in %s", reply_index_path)
         return None
 
 
-def parseCodemodel(replyDir, codemodelFile):
-    codemodelPath = os.path.join(replyDir, codemodelFile)
+def parse_toolchains_and_info(reply_index_path):
+    """Parse the CMake info and toolchains-v1 reply from the file-API index.
+
+    Returns a ``(CMakeInfo, Toolchains)`` tuple, each falling back to an empty object when its data
+    is missing or unparsable.
+    """
+    cmake_info = cmakefileapi.CMakeInfo()
+    toolchains = cmakefileapi.Toolchains()
+
+    reply_dir, _ = os.path.split(reply_index_path)
+    try:
+        with open(reply_index_path) as index_file:
+            js = json.load(index_file)
+    except OSError:
+        _logger.exception("Error loading %s", reply_index_path)
+        return cmake_info, toolchains
+    except json.decoder.JSONDecodeError:
+        _logger.exception("Error parsing JSON in %s", reply_index_path)
+        return cmake_info, toolchains
+
+    cmake_info = parse_cmake_info(js)
+
+    reply_dict = js.get("reply", {})
+    toolchains_dict = reply_dict.get("toolchains-v1", {})
+    toolchains_json_file = toolchains_dict.get("jsonFile", "")
+    if toolchains_json_file:
+        toolchains = parse_toolchains(reply_dir, toolchains_json_file)
+    else:
+        _logger.debug('no "toolchains-v1" reply found in CMake file API index')
+
+    return cmake_info, toolchains
+
+
+def parse_cmake_info(js):
+    """Parse the ``cmake`` object (generator and version) from the index file."""
+    cmake_info = cmakefileapi.CMakeInfo()
+
+    cmake_dict = js.get("cmake", {})
+    if cmake_dict:
+        generator_dict = cmake_dict.get("generator", {})
+        cmake_info.generator_name = generator_dict.get("name", "")
+        cmake_info.generator_multi_config = generator_dict.get("multiConfig", False)
+
+        paths_dict = cmake_dict.get("paths", {})
+        cmake_info.cmake_path = paths_dict.get("cmake", "")
+
+        version_dict = cmake_dict.get("version", {})
+        cmake_info.version_major = version_dict.get("major", 0)
+        cmake_info.version_minor = version_dict.get("minor", 0)
+        cmake_info.version_patch = version_dict.get("patch", 0)
+        cmake_info.version_string = version_dict.get("string", "")
+
+    return cmake_info
+
+
+def parse_toolchains(reply_dir, toolchains_file):
+    """Parse a toolchains-v1 reply file into a ``Toolchains`` object."""
+    toolchains_path = os.path.join(reply_dir, toolchains_file)
+    toolchains = cmakefileapi.Toolchains()
 
     try:
-        with open(codemodelPath) as cmFile:
-            js = json.load(cmFile)
+        with open(toolchains_path) as f:
+            js = json.load(f)
+    except OSError:
+        _logger.exception("Error loading %s", toolchains_path)
+        return toolchains
+    except json.decoder.JSONDecodeError:
+        _logger.exception("Error parsing JSON in %s", toolchains_path)
+        return toolchains
+
+    kind = js.get("kind", "")
+    if kind != "toolchains":
+        _logger.warning('Expected "kind":"toolchains" in %s, got %s', toolchains_path, kind)
+
+    for tc_dict in js.get("toolchains", []):
+        tc = cmakefileapi.Toolchain()
+        tc.language = tc_dict.get("language", "")
+        tc.source_file_extensions = tc_dict.get("sourceFileExtensions", [])
+
+        compiler_dict = tc_dict.get("compiler", {})
+        if compiler_dict:
+            compiler = cmakefileapi.ToolchainCompiler()
+            compiler.path = compiler_dict.get("path", "")
+            compiler.id = compiler_dict.get("id", "")
+            compiler.version = compiler_dict.get("version", "")
+            compiler.target = compiler_dict.get("target", "")
+            tc.compiler = compiler
+
+        if tc.language:
+            toolchains.by_language[tc.language] = tc
+
+    _logger.debug("parsed %d toolchains from CMake file API", len(toolchains.by_language))
+    return toolchains
+
+
+def parse_codemodel(reply_dir, codemodel_file):
+    codemodel_path = os.path.join(reply_dir, codemodel_file)
+
+    try:
+        with open(codemodel_path) as cm_file:
+            js = json.load(cm_file)
 
             cm = cmakefileapi.Codemodel()
 
@@ -59,24 +154,24 @@ def parseCodemodel(replyDir, codemodelFile):
             if kind != "codemodel":
                 _logger.error(
                     'Error loading CMake API reply: expected "kind":"codemodel" in %s, got %s',
-                    codemodelPath,
+                    codemodel_path,
                     kind,
                 )
                 return None
             version = js.get("version", {})
-            versionMajor = version.get("major", -1)
-            if versionMajor != 2:
-                if versionMajor == -1:
+            version_major = version.get("major", -1)
+            if version_major != 2:
+                if version_major == -1:
                     _logger.error(
                         "Error loading CMake API reply: expected major version 2 in %s, "
                         "no version found",
-                        codemodelPath,
+                        codemodel_path,
                     )
                     return None
                 _logger.error(
                     "Error loading CMake API reply: expected major version 2 in %s, got %d",
-                    codemodelPath,
-                    versionMajor,
+                    codemodel_path,
+                    version_major,
                 )
                 return None
 
@@ -88,24 +183,24 @@ def parseCodemodel(replyDir, codemodelFile):
             # get configurations
             configs_arr = js.get("configurations", [])
             for cfg_dict in configs_arr:
-                cfg = parseConfig(cfg_dict, replyDir)
+                cfg = parse_config(cfg_dict, reply_dir)
                 if cfg:
                     cm.configurations.append(cfg)
 
             # and after parsing is done, link all the indices
-            linkCodemodel(cm)
+            link_codemodel(cm)
 
             return cm
 
     except OSError:
-        _logger.exception("Error loading %s", codemodelPath)
+        _logger.exception("Error loading %s", codemodel_path)
         return None
     except json.decoder.JSONDecodeError:
-        _logger.exception("Error parsing JSON in %s", codemodelPath)
+        _logger.exception("Error parsing JSON in %s", codemodel_path)
         return None
 
 
-def parseConfig(cfg_dict, replyDir):
+def parse_config(cfg_dict, reply_dir):
     cfg = cmakefileapi.Config()
     cfg.name = cfg_dict.get("name", "")
 
@@ -116,13 +211,13 @@ def parseConfig(cfg_dict, replyDir):
             cfgdir = cmakefileapi.ConfigDir()
             cfgdir.source = dir_dict.get("source", "")
             cfgdir.build = dir_dict.get("build", "")
-            cfgdir.parentIndex = dir_dict.get("parentIndex", -1)
-            cfgdir.childIndexes = dir_dict.get("childIndexes", [])
-            cfgdir.projectIndex = dir_dict.get("projectIndex", -1)
-            cfgdir.targetIndexes = dir_dict.get("targetIndexes", [])
-            minCMakeVer_dict = dir_dict.get("minimumCMakeVersion", {})
-            cfgdir.minimumCMakeVersion = minCMakeVer_dict.get("string", "")
-            cfgdir.hasInstallRule = dir_dict.get("hasInstallRule", False)
+            cfgdir.parent_index = dir_dict.get("parentIndex", -1)
+            cfgdir.child_indexes = dir_dict.get("childIndexes", [])
+            cfgdir.project_index = dir_dict.get("projectIndex", -1)
+            cfgdir.target_indexes = dir_dict.get("targetIndexes", [])
+            min_cmake_ver_dict = dir_dict.get("minimumCMakeVersion", {})
+            cfgdir.minimum_cmake_version = min_cmake_ver_dict.get("string", "")
+            cfgdir.has_install_rule = dir_dict.get("hasInstallRule", False)
             cfg.directories.append(cfgdir)
 
     # parse and add each project
@@ -131,43 +226,43 @@ def parseConfig(cfg_dict, replyDir):
         if prj_dict != {}:
             prj = cmakefileapi.ConfigProject()
             prj.name = prj_dict.get("name", "")
-            prj.parentIndex = prj_dict.get("parentIndex", -1)
-            prj.childIndexes = prj_dict.get("childIndexes", [])
-            prj.directoryIndexes = prj_dict.get("directoryIndexes", [])
-            prj.targetIndexes = prj_dict.get("targetIndexes", [])
+            prj.parent_index = prj_dict.get("parentIndex", -1)
+            prj.child_indexes = prj_dict.get("childIndexes", [])
+            prj.directory_indexes = prj_dict.get("directoryIndexes", [])
+            prj.target_indexes = prj_dict.get("targetIndexes", [])
             cfg.projects.append(prj)
 
     # parse and add each target
-    cfgTargets_arr = cfg_dict.get("targets", [])
-    for cfgTarget_dict in cfgTargets_arr:
-        if cfgTarget_dict != {}:
-            cfgTarget = cmakefileapi.ConfigTarget()
-            cfgTarget.name = cfgTarget_dict.get("name", "")
-            cfgTarget.id = cfgTarget_dict.get("id", "")
-            cfgTarget.directoryIndex = cfgTarget_dict.get("directoryIndex", -1)
-            cfgTarget.projectIndex = cfgTarget_dict.get("projectIndex", -1)
-            cfgTarget.jsonFile = cfgTarget_dict.get("jsonFile", "")
+    cfg_targets_arr = cfg_dict.get("targets", [])
+    for cfg_target_dict in cfg_targets_arr:
+        if cfg_target_dict != {}:
+            cfg_target = cmakefileapi.ConfigTarget()
+            cfg_target.name = cfg_target_dict.get("name", "")
+            cfg_target.id = cfg_target_dict.get("id", "")
+            cfg_target.directory_index = cfg_target_dict.get("directoryIndex", -1)
+            cfg_target.project_index = cfg_target_dict.get("projectIndex", -1)
+            cfg_target.json_file = cfg_target_dict.get("jsonFile", "")
 
-            if cfgTarget.jsonFile != "":
-                cfgTarget.target = parseTarget(os.path.join(replyDir, cfgTarget.jsonFile))
+            if cfg_target.json_file != "":
+                cfg_target.target = parse_target(os.path.join(reply_dir, cfg_target.json_file))
             else:
-                cfgTarget.target = None
+                cfg_target.target = None
 
-            cfg.configTargets.append(cfgTarget)
+            cfg.config_targets.append(cfg_target)
 
     return cfg
 
 
-def parseTarget(targetPath):
+def parse_target(target_path):
     try:
-        with open(targetPath) as targetFile:
-            js = json.load(targetFile)
+        with open(target_path) as target_file:
+            js = json.load(target_file)
 
             target = cmakefileapi.Target()
 
             target.name = js.get("name", "")
             target.id = js.get("id", "")
-            target.type = parseTargetType(js.get("type", "UNKNOWN"))
+            target.type = parse_target_type(js.get("type", "UNKNOWN"))
             target.backtrace = js.get("backtrace", -1)
             target.folder = js.get("folder", "")
 
@@ -176,7 +271,7 @@ def parseTarget(targetPath):
             target.paths_source = paths_dict.get("source", "")
             target.paths_build = paths_dict.get("build", "")
 
-            target.nameOnDisk = js.get("nameOnDisk", "")
+            target.name_on_disk = js.get("nameOnDisk", "")
 
             # parse artifacts if present
             artifacts_arr = js.get("artifacts", [])
@@ -186,29 +281,29 @@ def parseTarget(targetPath):
                 if artifact_path != "":
                     target.artifacts.append(artifact_path)
 
-            target.isGeneratorProvided = js.get("isGeneratorProvided", False)
+            target.is_generator_provided = js.get("isGeneratorProvided", False)
 
             # call separate functions to parse subsections
-            parseTargetInstall(target, js)
-            parseTargetLink(target, js)
-            parseTargetArchive(target, js)
-            parseTargetDependencies(target, js)
-            parseTargetSources(target, js)
-            parseTargetSourceGroups(target, js)
-            parseTargetCompileGroups(target, js)
-            parseTargetBacktraceGraph(target, js)
+            parse_target_install(target, js)
+            parse_target_link(target, js)
+            parse_target_archive(target, js)
+            parse_target_dependencies(target, js)
+            parse_target_sources(target, js)
+            parse_target_source_groups(target, js)
+            parse_target_compile_groups(target, js)
+            parse_target_backtrace_graph(target, js)
 
             return target
 
     except OSError:
-        _logger.exception("Error loading %s", targetPath)
+        _logger.exception("Error loading %s", target_path)
         return None
     except json.decoder.JSONDecodeError:
-        _logger.exception("Error parsing JSON in %s", targetPath)
+        _logger.exception("Error parsing JSON in %s", target_path)
         return None
 
 
-def parseTargetType(targetType):
+def parse_target_type(target_type):
     return {
         "EXECUTABLE": cmakefileapi.TargetType.EXECUTABLE,
         "STATIC_LIBRARY": cmakefileapi.TargetType.STATIC_LIBRARY,
@@ -216,10 +311,10 @@ def parseTargetType(targetType):
         "MODULE_LIBRARY": cmakefileapi.TargetType.MODULE_LIBRARY,
         "OBJECT_LIBRARY": cmakefileapi.TargetType.OBJECT_LIBRARY,
         "UTILITY": cmakefileapi.TargetType.UTILITY,
-    }.get(targetType, cmakefileapi.TargetType.UNKNOWN)
+    }.get(target_type, cmakefileapi.TargetType.UNKNOWN)
 
 
-def parseTargetInstall(target, js):
+def parse_target_install(target, js):
     install_dict = js.get("install", {})
     if install_dict == {}:
         return
@@ -234,7 +329,7 @@ def parseTargetInstall(target, js):
         target.install_destinations.append(dest)
 
 
-def parseTargetLink(target, js):
+def parse_target_link(target, js):
     link_dict = js.get("link", {})
     if link_dict == {}:
         return
@@ -248,10 +343,10 @@ def parseTargetLink(target, js):
         fragment = cmakefileapi.TargetCommandFragment()
         fragment.fragment = fragment_dict.get("fragment", "")
         fragment.role = fragment_dict.get("role", "")
-        target.link_commandFragments.append(fragment)
+        target.link_command_fragments.append(fragment)
 
 
-def parseTargetArchive(target, js):
+def parse_target_archive(target, js):
     archive_dict = js.get("archive", {})
     if archive_dict == {}:
         return
@@ -262,10 +357,10 @@ def parseTargetArchive(target, js):
         fragment = cmakefileapi.TargetCommandFragment()
         fragment.fragment = fragment_dict.get("fragment", "")
         fragment.role = fragment_dict.get("role", "")
-        target.archive_commandFragments.append(fragment)
+        target.archive_command_fragments.append(fragment)
 
 
-def parseTargetDependencies(target, js):
+def parse_target_dependencies(target, js):
     dependencies_arr = js.get("dependencies", [])
     for dependency_dict in dependencies_arr:
         dep = cmakefileapi.TargetDependency()
@@ -274,191 +369,191 @@ def parseTargetDependencies(target, js):
         target.dependencies.append(dep)
 
 
-def parseTargetSources(target, js):
+def parse_target_sources(target, js):
     sources_arr = js.get("sources", [])
     for source_dict in sources_arr:
         src = cmakefileapi.TargetSource()
         src.path = source_dict.get("path", "")
-        src.compileGroupIndex = source_dict.get("compileGroupIndex", -1)
-        src.sourceGroupIndex = source_dict.get("sourceGroupIndex", -1)
-        src.isGenerated = source_dict.get("isGenerated", False)
+        src.compile_group_index = source_dict.get("compileGroupIndex", -1)
+        src.source_group_index = source_dict.get("sourceGroupIndex", -1)
+        src.is_generated = source_dict.get("isGenerated", False)
         src.backtrace = source_dict.get("backtrace", -1)
         target.sources.append(src)
 
 
-def parseTargetSourceGroups(target, js):
-    sourceGroups_arr = js.get("sourceGroups", [])
-    for sourceGroup_dict in sourceGroups_arr:
+def parse_target_source_groups(target, js):
+    source_groups_arr = js.get("sourceGroups", [])
+    for source_group_dict in source_groups_arr:
         srcgrp = cmakefileapi.TargetSourceGroup()
-        srcgrp.name = sourceGroup_dict.get("name", "")
-        srcgrp.sourceIndexes = sourceGroup_dict.get("sourceIndexes", [])
-        target.sourceGroups.append(srcgrp)
+        srcgrp.name = source_group_dict.get("name", "")
+        srcgrp.source_indexes = source_group_dict.get("sourceIndexes", [])
+        target.source_groups.append(srcgrp)
 
 
-def parseTargetCompileGroups(target, js):
-    compileGroups_arr = js.get("compileGroups", [])
-    for compileGroup_dict in compileGroups_arr:
+def parse_target_compile_groups(target, js):
+    compile_groups_arr = js.get("compileGroups", [])
+    for compile_group_dict in compile_groups_arr:
         cmpgrp = cmakefileapi.TargetCompileGroup()
-        cmpgrp.sourceIndexes = compileGroup_dict.get("sourceIndexes", [])
-        cmpgrp.language = compileGroup_dict.get("language", "")
-        cmpgrp.sysroot = compileGroup_dict.get("sysroot", "")
+        cmpgrp.source_indexes = compile_group_dict.get("sourceIndexes", [])
+        cmpgrp.language = compile_group_dict.get("language", "")
+        cmpgrp.sysroot = compile_group_dict.get("sysroot", "")
 
-        commandFragments_arr = compileGroup_dict.get("compileCommandFragments", [])
-        for commandFragment_dict in commandFragments_arr:
-            fragment = commandFragment_dict.get("fragment", "")
+        command_fragments_arr = compile_group_dict.get("compileCommandFragments", [])
+        for command_fragment_dict in command_fragments_arr:
+            fragment = command_fragment_dict.get("fragment", "")
             if fragment != "":
-                cmpgrp.compileCommandFragments.append(fragment)
+                cmpgrp.compile_command_fragments.append(fragment)
 
-        includes_arr = compileGroup_dict.get("includes", [])
+        includes_arr = compile_group_dict.get("includes", [])
         for include_dict in includes_arr:
-            grpInclude = cmakefileapi.TargetCompileGroupInclude()
-            grpInclude.path = include_dict.get("path", "")
-            grpInclude.isSystem = include_dict.get("isSystem", False)
-            grpInclude.backtrace = include_dict.get("backtrace", -1)
-            cmpgrp.includes.append(grpInclude)
+            grp_include = cmakefileapi.TargetCompileGroupInclude()
+            grp_include.path = include_dict.get("path", "")
+            grp_include.is_system = include_dict.get("isSystem", False)
+            grp_include.backtrace = include_dict.get("backtrace", -1)
+            cmpgrp.includes.append(grp_include)
 
-        precompileHeaders_arr = compileGroup_dict.get("precompileHeaders", [])
-        for precompileHeader_dict in precompileHeaders_arr:
-            grpHeader = cmakefileapi.TargetCompileGroupPrecompileHeader()
-            grpHeader.header = precompileHeader_dict.get("header", "")
-            grpHeader.backtrace = precompileHeader_dict.get("backtrace", -1)
-            cmpgrp.precompileHeaders.append(grpHeader)
+        precompile_headers_arr = compile_group_dict.get("precompileHeaders", [])
+        for precompile_header_dict in precompile_headers_arr:
+            grp_header = cmakefileapi.TargetCompileGroupPrecompileHeader()
+            grp_header.header = precompile_header_dict.get("header", "")
+            grp_header.backtrace = precompile_header_dict.get("backtrace", -1)
+            cmpgrp.precompile_headers.append(grp_header)
 
-        defines_arr = compileGroup_dict.get("defines", [])
+        defines_arr = compile_group_dict.get("defines", [])
         for define_dict in defines_arr:
-            grpDefine = cmakefileapi.TargetCompileGroupDefine()
-            grpDefine.define = define_dict.get("define", "")
-            grpDefine.backtrace = define_dict.get("backtrace", -1)
-            cmpgrp.defines.append(grpDefine)
+            grp_define = cmakefileapi.TargetCompileGroupDefine()
+            grp_define.define = define_dict.get("define", "")
+            grp_define.backtrace = define_dict.get("backtrace", -1)
+            cmpgrp.defines.append(grp_define)
 
-        target.compileGroups.append(cmpgrp)
+        target.compile_groups.append(cmpgrp)
 
 
-def parseTargetBacktraceGraph(target, js):
-    backtraceGraph_dict = js.get("backtraceGraph", {})
-    if backtraceGraph_dict == {}:
+def parse_target_backtrace_graph(target, js):
+    backtrace_graph_dict = js.get("backtraceGraph", {})
+    if backtrace_graph_dict == {}:
         return
-    target.backtraceGraph_commands = backtraceGraph_dict.get("commands", [])
-    target.backtraceGraph_files = backtraceGraph_dict.get("files", [])
+    target.backtrace_graph_commands = backtrace_graph_dict.get("commands", [])
+    target.backtrace_graph_files = backtrace_graph_dict.get("files", [])
 
-    nodes_arr = backtraceGraph_dict.get("nodes", [])
+    nodes_arr = backtrace_graph_dict.get("nodes", [])
     for node_dict in nodes_arr:
         node = cmakefileapi.TargetBacktraceGraphNode()
         node.file = node_dict.get("file", -1)
         node.line = node_dict.get("line", -1)
         node.command = node_dict.get("command", -1)
         node.parent = node_dict.get("parent", -1)
-        target.backtraceGraph_nodes.append(node)
+        target.backtrace_graph_nodes.append(node)
 
 
 # Create direct pointers for all Configs in Codemodel
 # takes: Codemodel
-def linkCodemodel(cm):
+def link_codemodel(cm):
     for cfg in cm.configurations:
-        linkConfig(cfg)
+        link_config(cfg)
 
 
 # Create direct pointers for all contents of Config
 # takes: Config
-def linkConfig(cfg):
-    for cfgDir in cfg.directories:
-        linkConfigDir(cfg, cfgDir)
-    for cfgPrj in cfg.projects:
-        linkConfigProject(cfg, cfgPrj)
-    for cfgTarget in cfg.configTargets:
-        linkConfigTarget(cfg, cfgTarget)
+def link_config(cfg):
+    for cfg_dir in cfg.directories:
+        link_config_dir(cfg, cfg_dir)
+    for cfg_prj in cfg.projects:
+        link_config_project(cfg, cfg_prj)
+    for cfg_target in cfg.config_targets:
+        link_config_target(cfg, cfg_target)
 
 
 # Create direct pointers for ConfigDir indices
 # takes: Config and ConfigDir
-def linkConfigDir(cfg, cfgDir):
-    if cfgDir.parentIndex == -1:
-        cfgDir.parent = None
+def link_config_dir(cfg, cfg_dir):
+    if cfg_dir.parent_index == -1:
+        cfg_dir.parent = None
     else:
-        cfgDir.parent = cfg.directories[cfgDir.parentIndex]
+        cfg_dir.parent = cfg.directories[cfg_dir.parent_index]
 
-    if cfgDir.projectIndex == -1:
-        cfgDir.project = None
+    if cfg_dir.project_index == -1:
+        cfg_dir.project = None
     else:
-        cfgDir.project = cfg.projects[cfgDir.projectIndex]
+        cfg_dir.project = cfg.projects[cfg_dir.project_index]
 
-    cfgDir.children = []
-    for childIndex in cfgDir.childIndexes:
-        cfgDir.children.append(cfg.directories[childIndex])
+    cfg_dir.children = []
+    for child_index in cfg_dir.child_indexes:
+        cfg_dir.children.append(cfg.directories[child_index])
 
-    cfgDir.targets = []
-    for targetIndex in cfgDir.targetIndexes:
-        cfgDir.targets.append(cfg.configTargets[targetIndex])
+    cfg_dir.targets = []
+    for target_index in cfg_dir.target_indexes:
+        cfg_dir.targets.append(cfg.config_targets[target_index])
 
 
 # Create direct pointers for ConfigProject indices
 # takes: Config and ConfigProject
-def linkConfigProject(cfg, cfgPrj):
-    if cfgPrj.parentIndex == -1:
-        cfgPrj.parent = None
+def link_config_project(cfg, cfg_prj):
+    if cfg_prj.parent_index == -1:
+        cfg_prj.parent = None
     else:
-        cfgPrj.parent = cfg.projects[cfgPrj.parentIndex]
+        cfg_prj.parent = cfg.projects[cfg_prj.parent_index]
 
-    cfgPrj.children = []
-    for childIndex in cfgPrj.childIndexes:
-        cfgPrj.children.append(cfg.projects[childIndex])
+    cfg_prj.children = []
+    for child_index in cfg_prj.child_indexes:
+        cfg_prj.children.append(cfg.projects[child_index])
 
-    cfgPrj.directories = []
-    for dirIndex in cfgPrj.directoryIndexes:
-        cfgPrj.directories.append(cfg.directories[dirIndex])
+    cfg_prj.directories = []
+    for dir_index in cfg_prj.directory_indexes:
+        cfg_prj.directories.append(cfg.directories[dir_index])
 
-    cfgPrj.targets = []
-    for targetIndex in cfgPrj.targetIndexes:
-        cfgPrj.targets.append(cfg.configTargets[targetIndex])
+    cfg_prj.targets = []
+    for target_index in cfg_prj.target_indexes:
+        cfg_prj.targets.append(cfg.config_targets[target_index])
 
 
 # Create direct pointers for ConfigTarget indices
 # takes: Config and ConfigTarget
-def linkConfigTarget(cfg, cfgTarget):
-    if cfgTarget.directoryIndex == -1:
-        cfgTarget.directory = None
+def link_config_target(cfg, cfg_target):
+    if cfg_target.directory_index == -1:
+        cfg_target.directory = None
     else:
-        cfgTarget.directory = cfg.directories[cfgTarget.directoryIndex]
+        cfg_target.directory = cfg.directories[cfg_target.directory_index]
 
-    if cfgTarget.projectIndex == -1:
-        cfgTarget.project = None
+    if cfg_target.project_index == -1:
+        cfg_target.project = None
     else:
-        cfgTarget.project = cfg.projects[cfgTarget.projectIndex]
+        cfg_target.project = cfg.projects[cfg_target.project_index]
 
     # and link target's sources and source groups
-    for ts in cfgTarget.target.sources:
-        linkTargetSource(cfgTarget.target, ts)
-    for tsg in cfgTarget.target.sourceGroups:
-        linkTargetSourceGroup(cfgTarget.target, tsg)
-    for tcg in cfgTarget.target.compileGroups:
-        linkTargetCompileGroup(cfgTarget.target, tcg)
+    for ts in cfg_target.target.sources:
+        link_target_source(cfg_target.target, ts)
+    for tsg in cfg_target.target.source_groups:
+        link_target_source_group(cfg_target.target, tsg)
+    for tcg in cfg_target.target.compile_groups:
+        link_target_compile_group(cfg_target.target, tcg)
 
 
 # Create direct pointers for TargetSource indices
 # takes: Target and TargetSource
-def linkTargetSource(target, targetSrc):
-    if targetSrc.compileGroupIndex == -1:
-        targetSrc.compileGroup = None
+def link_target_source(target, target_src):
+    if target_src.compile_group_index == -1:
+        target_src.compile_group = None
     else:
-        targetSrc.compileGroup = target.compileGroups[targetSrc.compileGroupIndex]
+        target_src.compile_group = target.compile_groups[target_src.compile_group_index]
 
-    if targetSrc.sourceGroupIndex == -1:
-        targetSrc.sourceGroup = None
+    if target_src.source_group_index == -1:
+        target_src.source_group = None
     else:
-        targetSrc.sourceGroup = target.sourceGroups[targetSrc.sourceGroupIndex]
+        target_src.source_group = target.source_groups[target_src.source_group_index]
 
 
 # Create direct pointers for TargetSourceGroup indices
 # takes: Target and TargetSourceGroup
-def linkTargetSourceGroup(target, targetSrcGrp):
-    targetSrcGrp.sources = []
-    for srcIndex in targetSrcGrp.sourceIndexes:
-        targetSrcGrp.sources.append(target.sources[srcIndex])
+def link_target_source_group(target, target_src_grp):
+    target_src_grp.sources = []
+    for src_index in target_src_grp.source_indexes:
+        target_src_grp.sources.append(target.sources[src_index])
 
 
 # Create direct pointers for TargetCompileGroup indices
 # takes: Target and TargetCompileGroup
-def linkTargetCompileGroup(target, targetCmpGrp):
-    targetCmpGrp.sources = []
-    for srcIndex in targetCmpGrp.sourceIndexes:
-        targetCmpGrp.sources.append(target.sources[srcIndex])
+def link_target_compile_group(target, target_cmp_grp):
+    target_cmp_grp.sources = []
+    for src_index in target_cmp_grp.source_indexes:
+        target_cmp_grp.sources.append(target.sources[src_index])

@@ -106,7 +106,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 		if (unhandled_chrc_handle == 0 ||
 		    unauthorized_chrc_handle == 0 ||
 		    authorized_chrc_handle == 0) {
-			TEST_FAIL("Did not discover required characterstics");
+			TEST_FAIL("Did not discover required characteristics");
 		}
 
 		(void)memset(params, 0, sizeof(*params));

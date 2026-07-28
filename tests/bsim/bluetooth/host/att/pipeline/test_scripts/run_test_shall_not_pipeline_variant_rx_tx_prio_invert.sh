@@ -18,7 +18,7 @@
 #
 #  Test procedure:
 #
-#  - DUT is excercised by calling `gatt_write` in a loop.
+#  - DUT is exercised by calling `gatt_write` in a loop.
 #  - Tester does not immediately respond but delays the response
 #    a bit to ensure the LL has time to transport any extra
 #    requests, exposing a bug.

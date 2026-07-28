@@ -102,7 +102,7 @@ static void smp_client_transport_work_fn(struct k_work *work)
 			time_stamp_cmp = entry->timestamp - time_stamp_ref;
 			if (time_stamp_cmp < CONFIG_SMP_CMD_RETRY_TIME &&
 			    time_stamp_cmp < backoff_ms) {
-				/* Update new shorter shedule */
+				/* Update new shorter schedule */
 				backoff_ms = time_stamp_cmp;
 			}
 			continue;

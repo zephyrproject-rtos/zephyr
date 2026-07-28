@@ -13,6 +13,8 @@
 #include <zephyr/dt-bindings/pinctrl/bl60x-pinctrl.h>
 #elif defined(CONFIG_SOC_SERIES_BL61X)
 #include <zephyr/dt-bindings/pinctrl/bl61x-pinctrl.h>
+#elif defined(CONFIG_SOC_SERIES_BL616CL)
+#include <zephyr/dt-bindings/pinctrl/bl616cl-pinctrl.h>
 #elif defined(CONFIG_SOC_SERIES_BL808)
 #include <zephyr/dt-bindings/pinctrl/bl808-pinctrl.h>
 #elif defined(CONFIG_SOC_SERIES_BL70X)
@@ -25,6 +27,7 @@
 
 void pinctrl_bflb_configure_uart(uint8_t pin, uint8_t func);
 void pinctrl_bflb_init_pin(pinctrl_soc_pin_t pin);
+void pinctrl_bflb_configure_sf_pads(pinctrl_soc_pin_t pin);
 
 #if !defined(CONFIG_SOC_SERIES_BL60X)
 void pinctrl_bflb_configure_clk_out(pinctrl_soc_pin_t pin);
@@ -49,6 +52,11 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			pinctrl_bflb_configure_clk_out(pins[i]);
 		}
 #endif
+
+		if ((BFLB_PINMUX_GET_FUN(pins[i]) & BFLB_PINMUX_FUN_MASK)
+			== (BFLB_PINMUX_FUN_INST_sf1 & BFLB_PINMUX_FUN_MASK)) {
+			pinctrl_bflb_configure_sf_pads(pins[i]);
+		}
 
 		/* gpio init*/
 		pinctrl_bflb_init_pin(pins[i]);

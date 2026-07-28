@@ -18,7 +18,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, target,
                  pyocd='pyocd',
-                 dev_id=None, flash_addr=0x0, erase=False, flash_opts=None,
+                 dev_id=None, flash_addr=0x0, erase=False, load=True,
+                 flash_opts=None,
                  gdb_port=DEFAULT_PYOCD_GDB_PORT,
                  telnet_port=DEFAULT_PYOCD_TELNET_PORT, tui=False,
                  pyocd_config=None,
@@ -36,6 +37,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.pyocd = pyocd
         self.flash_addr_args = ['-a', hex(flash_addr)] if flash_addr else []
         self.erase = erase
+        self.load = load
         self.gdb_cmd = [cfg.gdb] if cfg.gdb is not None else None
         self.gdb_port = gdb_port
         self.telnet_port = telnet_port
@@ -76,8 +78,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
-                          dev_id=True, flash_addr=True, erase=True,
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt', 'reset'},
+                          dev_id=True, flash_addr=True, erase=True, skip_load=True,
                           tool_opt=True, rtt=True)
 
     @classmethod
@@ -121,8 +123,9 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         ret = PyOcdBinaryRunner(
             cfg, args.target,
             pyocd=args.pyocd,
-            flash_addr=flash_addr, erase=args.erase, flash_opts=args.flash_opt,
-            gdb_port=args.gdb_port, telnet_port=args.telnet_port, tui=args.tui,
+            flash_addr=flash_addr, erase=args.erase, load=args.load,
+            flash_opts=args.flash_opt, gdb_port=args.gdb_port,
+            telnet_port=args.telnet_port, tui=args.tui,
             dev_id=args.dev_id, daparg=args.daparg,
             frequency=args.frequency,
             tool_opt=args.tool_opt)
@@ -142,10 +145,25 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.require(self.pyocd)
         if command == 'rtt':
             self.rtt(**kwargs)
+        elif command == 'reset':
+            self.reset(**kwargs)
         elif command == 'flash':
             self.flash(**kwargs)
         else:
             self.debug_debugserver(command, **kwargs)
+
+    def reset(self, **kwargs):
+        cmd = ([self.pyocd] +
+               ['reset'] +
+               self.pyocd_config_args +
+               self.daparg_args +
+               self.target_args +
+               self.board_args +
+               self.frequency_args +
+               self.tool_opt_args +
+               self.flash_extra)
+
+        self.check_call(cmd)
 
     def flash(self, **kwargs):
         # Use hex, bin or elf file provided by the buildsystem.
@@ -206,9 +224,12 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                           [self.elf_name] +
                           ['-ex', f'target remote :{self.gdb_port}'])
             if command == 'debug':
-                client_cmd += ['-ex', 'monitor halt',
-                               '-ex', 'monitor reset',
-                               '-ex', 'load']
+                if self.load:
+                    client_cmd += ['-ex', 'monitor halt',
+                                   '-ex', 'monitor reset',
+                                   '-ex', 'load']
+                else:
+                    client_cmd += ['-ex', 'monitor reset halt']
 
             self.require(client_cmd[0])
             self.log_gdbserver_message()

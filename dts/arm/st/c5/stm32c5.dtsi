@@ -29,12 +29,32 @@
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			i-cache-line-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&stop0 &stop1>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			stop0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <100>;
+				exit-latency-us = <10>;
+			};
+
+			stop1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+				min-residency-us = <500>;
+				exit-latency-us = <43>;
 			};
 		};
 	};
@@ -174,6 +194,10 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+			};
 		};
 
 		exti: interrupt-controller@44022000 {
@@ -307,6 +331,18 @@
 			status = "disabled";
 		};
 
+		lptim1: timers@44004400 {
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44004400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 11)>;
+			resets = <&rctl STM32_RESET(APB3, 11)>;
+			interrupts = <57 0>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
 		lpuart1: serial@44002400 {
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x44002400 0x400>;
@@ -321,6 +357,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x42020000 0x2000>;
+			ranges;
 
 			gpioa: gpio@42020000 {
 				compatible = "st,stm32-gpio";
@@ -381,6 +418,15 @@
 				compatible = "st,stm32-rcc-rctl";
 				#reset-cells = <1>;
 			};
+		};
+
+		hash: crypto@420c0400 {
+			compatible = "st,stm32-hash";
+			reg = <0x420c0400 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
+			resets = <&rctl STM32_RESET(AHB2, 17)>;
+			interrupts = <69 0>;
+			status = "disabled";
 		};
 
 		rng: rng@420c0800 {
@@ -670,9 +716,9 @@
 			status = "disabled";
 		};
 
-		uart5: serial@40004500 {
+		uart5: serial@40005000 {
 			compatible = "st,stm32-uart";
-			reg = <0x40004500 0x400>;
+			reg = <0x40005000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
 			resets = <&rctl STM32_RESET(APB1L, 20)>;
 			interrupts = <55 0>;

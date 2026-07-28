@@ -14,7 +14,7 @@
 
 /**
  * @defgroup hx711_interface HX711
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_avia
  * @brief Avia Semiconductor HX711 24-bit ADC Specialized for Load Cells / Strain Gauges
  * @{
  */

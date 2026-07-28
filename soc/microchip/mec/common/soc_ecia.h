@@ -58,6 +58,9 @@ enum mchp_mec_ecia_girq {
 
 int soc_ecia_init(uint32_t aggr_girq_bm, uint32_t direct_girq_bm, uint32_t flags);
 
+#define MCHP_MEC_ECIA_GIRQ_DIS 0
+#define MCHP_MEC_ECIA_GIRQ_EN  1U
+
 int soc_ecia_girq_ctrl_bm(uint8_t girq, uint32_t bitmap, uint8_t enable);
 int soc_ecia_girq_ctrl(uint8_t girq, uint8_t srcpos, uint8_t enable);
 

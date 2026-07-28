@@ -14,7 +14,7 @@
 #include <zephyr/init.h>
 #include <fsl_clock.h>
 #include <cmsis_core.h>
-#include "fsl_smc.h"
+#include <fsl_smc.h>
 
 #define ASSERT_WITHIN_RANGE(val, min, max, str) BUILD_ASSERT(val >= min && val <= max, str)
 

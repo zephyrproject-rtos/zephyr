@@ -18,18 +18,4 @@ macro(toolchain_ld_configure_files)
   configure_file(
        ${ZEPHYR_BASE}/include/zephyr/linker/app_smem_unaligned.ld
        ${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld)
-
-  if(CONFIG_LINKER_USE_PINNED_SECTION)
-    configure_file(
-         ${ZEPHYR_BASE}/include/zephyr/linker/app_smem_pinned.ld
-         ${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned.ld)
-
-    configure_file(
-         ${ZEPHYR_BASE}/include/zephyr/linker/app_smem_pinned_aligned.ld
-         ${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.ld)
-
-    configure_file(
-         ${ZEPHYR_BASE}/include/zephyr/linker/app_smem_pinned_unaligned.ld
-         ${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.ld)
-  endif()
 endmacro()

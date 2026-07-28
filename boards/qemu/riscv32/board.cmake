@@ -27,11 +27,27 @@ endif()
 
 set(QEMU_CPU_TYPE_${ARCH} "${qemu_riscv_cpu}")
 
-set(QEMU_FLAGS_${ARCH}
-  -machine virt
-  -bios none
-  -m 256
-  -cpu ${qemu_riscv_cpu}
-  )
+if(CONFIG_RISCV_APLIC_MSI)
+  set(QEMU_FLAGS_${ARCH}
+    -machine virt,aia=aplic-imsic
+    -bios none
+    -m 256
+    -cpu ${qemu_riscv_cpu}
+    )
+elseif(CONFIG_RISCV_APLIC_DIRECT)
+  set(QEMU_FLAGS_${ARCH}
+    -machine virt,aia=aplic
+    -bios none
+    -m 256
+    -cpu ${qemu_riscv_cpu}
+    )
+else()
+  set(QEMU_FLAGS_${ARCH}
+    -machine virt
+    -bios none
+    -m 256
+    -cpu ${qemu_riscv_cpu}
+    )
+endif()
 
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

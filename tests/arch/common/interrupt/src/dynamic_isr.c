@@ -92,7 +92,7 @@ ZTEST(interrupt_feature, test_isr_dynamic)
 				 (void *)ISR_DYN_ARG, 0);
 
 #if defined(CONFIG_X86_64)
-/* The isr table for x86_64 is visiable, so check it up here */
+/* The isr table for x86_64 is visible, so check it up here */
 extern void (*x86_irq_funcs[])(const void *);
 extern const void *x86_irq_args[];
 

@@ -35,7 +35,7 @@ subscribe to all notifications.
    scan_stop         : Stop scanning for BISs
    add_src           : Add a source <address: XX:XX:XX:XX:XX:XX> <type:
                         public/random> <adv_sid> <sync_pa> <broadcast_id>
-                        [<pa_interval>] [<sync_bis>] [<metadata>]
+                        [<sync_bis>] [<pa_interval>] [<metadata>]
    add_broadcast_id  : Add a source by broadcast ID <broadcast_id> <sync_pa>
                         [<sync_bis>] [<metadata>]
    add_broadcast_name: Add a source by broadcast name <broadcast_name> <sync_pa>

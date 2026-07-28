@@ -44,7 +44,30 @@ static void thread_read(void *arg1, void *arg2, void *arg3)
 		K_MSEC(partial_wait_time)) == sizeof(garbage), "Failed to read from pipe");
 }
 
-ZTEST(k_pipe_concurrency, test_close_on_read)
+/**
+ * @addtogroup tests_kernel_pipe
+ * @{
+ */
+
+/**
+ * @brief Verify closing a pipe releases a blocked reader with -EPIPE.
+ *
+ * @details
+ * A reader blocked on an empty pipe must be woken and returned -EPIPE when
+ * another thread closes the pipe, and the pipe must remain closed afterwards.
+ *
+ * Test steps:
+ * - Start a thread that closes the pipe after a short delay.
+ * - Block in k_pipe_read() on the empty pipe.
+ * - Verify the read returns -EPIPE and the open flag is cleared.
+ *
+ * Expected result:
+ * - The blocked read returns -EPIPE and the pipe stays closed.
+ *
+ * @see k_pipe_close()
+ * @see k_pipe_read()
+ */
+ZTEST(k_pipe_concurrency, test_pipe_close_on_read)
 {
 	k_tid_t tid;
 	uint8_t buffer[DUMMY_DATA_SIZE];
@@ -61,7 +84,25 @@ ZTEST(k_pipe_concurrency, test_close_on_read)
 		"Pipe should continue to be closed after all waiters have been released");
 }
 
-ZTEST(k_pipe_concurrency, test_close_on_write)
+/**
+ * @brief Verify closing a pipe releases a blocked writer with -EPIPE.
+ *
+ * @details
+ * A writer blocked on a full pipe must be woken and returned -EPIPE when another
+ * thread closes the pipe, and the pipe must remain closed afterwards.
+ *
+ * Test steps:
+ * - Fill the pipe, then start a thread that closes it after a short delay.
+ * - Block in k_pipe_write() on the full pipe.
+ * - Verify the write returns -EPIPE and the open flag is cleared.
+ *
+ * Expected result:
+ * - The blocked write returns -EPIPE and the pipe stays closed.
+ *
+ * @see k_pipe_close()
+ * @see k_pipe_write()
+ */
+ZTEST(k_pipe_concurrency, test_pipe_close_on_write)
 {
 	k_tid_t tid;
 	uint8_t buffer[DUMMY_DATA_SIZE];
@@ -81,7 +122,26 @@ ZTEST(k_pipe_concurrency, test_close_on_write)
 		"pipe should continue to be closed after all waiters have been released");
 }
 
-ZTEST(k_pipe_concurrency, test_reset_on_read)
+/**
+ * @brief Verify resetting a pipe releases a blocked reader with -ECANCELED.
+ *
+ * @details
+ * Unlike close, k_pipe_reset() cancels in-flight waiters but leaves the pipe
+ * open: a reader blocked on an empty pipe must return -ECANCELED, and afterwards
+ * the reset flag is cleared and the pipe is still open.
+ *
+ * Test steps:
+ * - Start a thread that resets the pipe after a short delay.
+ * - Block in k_pipe_read() on the empty pipe.
+ * - Verify the read returns -ECANCELED and the pipe is still open.
+ *
+ * Expected result:
+ * - The blocked read returns -ECANCELED; the pipe remains open.
+ *
+ * @see k_pipe_reset()
+ * @see k_pipe_read()
+ */
+ZTEST(k_pipe_concurrency, test_pipe_reset_on_read)
 {
 	k_tid_t tid;
 	uint8_t buffer[DUMMY_DATA_SIZE];
@@ -98,10 +158,28 @@ ZTEST(k_pipe_concurrency, test_reset_on_read)
 	zassert_true((pipe.flags & PIPE_FLAG_RESET) == 0,
 		"pipe should not have reset flag after all waiters are done");
 	zassert_true((pipe.flags & PIPE_FLAG_OPEN) != 0,
-		"pipe should continue to be open after pipe is reseted");
+		"pipe should continue to be open after pipe is reset");
 }
 
-ZTEST(k_pipe_concurrency, test_reset_on_write)
+/**
+ * @brief Verify resetting a pipe releases a blocked writer with -ECANCELED.
+ *
+ * @details
+ * k_pipe_reset() cancels a writer blocked on a full pipe with -ECANCELED while
+ * leaving the pipe open for reuse.
+ *
+ * Test steps:
+ * - Fill the pipe, then start a thread that resets it after a short delay.
+ * - Block in k_pipe_write() on the full pipe.
+ * - Verify the write returns -ECANCELED and the pipe is still open.
+ *
+ * Expected result:
+ * - The blocked write returns -ECANCELED; the pipe remains open.
+ *
+ * @see k_pipe_reset()
+ * @see k_pipe_write()
+ */
+ZTEST(k_pipe_concurrency, test_pipe_reset_on_write)
 {
 	k_tid_t tid;
 	uint8_t buffer[DUMMY_DATA_SIZE];
@@ -120,10 +198,29 @@ ZTEST(k_pipe_concurrency, test_reset_on_write)
 	zassert_true((pipe.flags & PIPE_FLAG_RESET) == 0,
 		"pipe should not have reset flag after all waiters are done");
 	zassert_true((pipe.flags & PIPE_FLAG_OPEN) != 0,
-		"pipe should continue to be open after pipe is reseted");
+		"pipe should continue to be open after pipe is reset");
 }
 
-ZTEST(k_pipe_concurrency, test_partial_read)
+/**
+ * @brief Verify a reader waiting for more data is satisfied by later writes.
+ *
+ * @details
+ * A reader requesting a full buffer blocks until enough bytes arrive. The test
+ * supplies the data in two partial writes and confirms the reader completes once
+ * the requested amount is available.
+ *
+ * Test steps:
+ * - Start a reader thread requesting DUMMY_DATA_SIZE bytes.
+ * - Write half the bytes, wait, then write the other half.
+ * - Join the reader and confirm it received the full amount.
+ *
+ * Expected result:
+ * - The reader completes after the data is provided across multiple writes.
+ *
+ * @see k_pipe_read()
+ * @see k_pipe_write()
+ */
+ZTEST(k_pipe_concurrency, test_pipe_partial_read)
 {
 	k_tid_t tid;
 	uint8_t buffer[DUMMY_DATA_SIZE];
@@ -142,7 +239,26 @@ ZTEST(k_pipe_concurrency, test_partial_read)
 	k_thread_join(tid, K_FOREVER);
 }
 
-ZTEST(k_pipe_concurrency, test_partial_write)
+/**
+ * @brief Verify a writer waiting for space is satisfied by later reads.
+ *
+ * @details
+ * A writer blocked because the pipe is full must complete once a reader drains
+ * enough space. The test fills the pipe, starts a writer, then frees space with
+ * partial reads and confirms the writer completes.
+ *
+ * Test steps:
+ * - Fill the pipe, then start a writer thread.
+ * - Read half the bytes, wait, then read more to free space.
+ * - Join the writer and confirm it completed.
+ *
+ * Expected result:
+ * - The writer completes once space becomes available.
+ *
+ * @see k_pipe_write()
+ * @see k_pipe_read()
+ */
+ZTEST(k_pipe_concurrency, test_pipe_partial_write)
 {
 	k_tid_t tid;
 	uint8_t buffer[DUMMY_DATA_SIZE];
@@ -182,7 +298,29 @@ static void zero_thread_read_write(void *arg1, void *arg2, void *arg3)
 	      "Failed to write to pipe");
 }
 
-ZTEST(k_pipe_concurrency, test_zero_size_pipe_read_write)
+/**
+ * @brief Verify an unbuffered (zero-size) pipe transfers data thread-to-thread.
+ *
+ * @details
+ * A pipe initialized with no backing buffer has no storage, so a write must
+ * block until a reader is present and copy data directly between threads. The
+ * test wires a worker that reads from one zero-size pipe and writes to another,
+ * and confirms data passes intact in both directions. Skipped when
+ * CONFIG_KERNEL_COHERENCE is set, where unbuffered pipes are unsupported.
+ *
+ * Test steps:
+ * - Initialize two zero-size pipes and start a worker that reads then writes.
+ * - Write into the input pipe and read from the output pipe (both K_FOREVER).
+ * - Verify the data round-trips unchanged and the worker ran both operations.
+ *
+ * Expected result:
+ * - Data is transferred directly between threads and matches end to end.
+ *
+ * @see k_pipe_init()
+ * @see k_pipe_read()
+ * @see k_pipe_write()
+ */
+ZTEST(k_pipe_concurrency, test_pipe_zero_size_read_write)
 {
 	k_tid_t tid;
 	struct k_pipe input_pipe;
@@ -219,3 +357,7 @@ ZTEST(k_pipe_concurrency, test_zero_size_pipe_read_write)
 
 	k_thread_join(tid, K_FOREVER);
 }
+
+/**
+ * @}
+ */

@@ -70,7 +70,7 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs)
 	count_callback1 = 0;
 	struct sensor_data_msg sd = {.a = 10, .b = 100};
 
-	/* Tyring to add same static observer as one dynamic */
+	/* Trying to add same static observer as one dynamic */
 	zassert_equal(-EEXIST, zbus_chan_add_obs(&chan2, &lis2, K_MSEC(200)));
 
 	zassert_equal(0, zbus_chan_pub(&chan1, &sd, K_MSEC(500)));

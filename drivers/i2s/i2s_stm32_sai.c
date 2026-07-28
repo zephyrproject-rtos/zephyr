@@ -866,7 +866,7 @@ static int stm32_sai_sub_trigger(const struct device *dev, enum i2s_dir dir,
 
 	if (dir == I2S_DIR_BOTH) {
 		LOG_ERR("Unsupported direction: %d", (int)dir);
-		return -ENOSYS;
+		return -ENOTSUP;
 	}
 
 	switch (cmd) {
@@ -969,11 +969,31 @@ static int sai_init(const struct device *dev)
 	return 0;
 }
 
+static const struct i2s_config *stm32_sai_sub_conf_get(const struct device *dev, enum i2s_dir dir)
+{
+	const struct stm32_sai_sub_cfg *const sub_cfg = dev->config;
+	struct stm32_sai_sub_data *sub_data = dev->data;
+	struct stream *stream = &sub_data->stream;
+
+	if (sub_cfg->dir != dir) {
+		LOG_WRN("Direction mismatch: requested %d, sub-block configured as %d", dir,
+			sub_cfg->dir);
+		return NULL;
+	}
+
+	if (stream != NULL && stream->state != I2S_STATE_NOT_READY) {
+		return &stream->i2s_cfg;
+	}
+
+	return NULL;
+}
+
 static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 	.configure = stm32_sai_sub_conf,
 	.trigger = stm32_sai_sub_trigger,
 	.write = stm32_sai_sub_write,
 	.read = stm32_sai_sub_read,
+	.config_get = stm32_sai_sub_conf_get,
 };
 
 #define SAI_FIFO_THRESHOLD(node) sai_fifo_threshold[DT_ENUM_IDX(node, fifo_threshold)]

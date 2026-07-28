@@ -221,7 +221,7 @@ static uint32_t wdt_atcwdt200_convtime(uint32_t timeout, uint32_t *scaler)
 	int i;
 	uint32_t rst_period, cnt;
 
-	cnt = (uint32_t)((timeout * EXT_CLOCK_FREQ) / 1000);
+	cnt = (uint32_t)(((uint64_t)timeout * EXT_CLOCK_FREQ) / 1000);
 	rst_period = cnt;
 
 	for (i = 0; i < 14 && cnt > 0; i++) {

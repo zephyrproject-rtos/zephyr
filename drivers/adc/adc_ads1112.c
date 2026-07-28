@@ -229,10 +229,10 @@ static int ads1112_channel_setup(const struct device *dev,
 	case ADC_GAIN_2:
 		config |= ADS1112_CONFIG_GAIN(ADS1112_CONFIG_GAIN_2);
 		break;
-	case ADC_GAIN_3:
+	case ADC_GAIN_4:
 		config |= ADS1112_CONFIG_GAIN(ADS1112_CONFIG_GAIN_4);
 		break;
-	case ADC_GAIN_4:
+	case ADC_GAIN_8:
 		config |= ADS1112_CONFIG_GAIN(ADS1112_CONFIG_GAIN_8);
 		break;
 	default:

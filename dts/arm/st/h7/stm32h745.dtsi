@@ -86,6 +86,15 @@
 				status = "disabled";
 			};
 		};
+
+		jpeg: codec@52003000 {
+			compatible = "st,stm32-jpeg";
+			reg = <0x52003000 0x1000>;
+			interrupts = <121 0>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 5)>;
+			resets = <&rctl STM32_RESET(AHB3, 5)>;
+			status = "disabled";
+		};
 	};
 
 	/*

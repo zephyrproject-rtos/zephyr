@@ -156,6 +156,7 @@ static int counter_max32_wut_set_alarm(const struct device *dev, uint8_t chan,
 
 	min_abs_ticks = (uint64_t)now_ticks + data->guard_period;
 	if ((!absolute && (abs_ticks < now_ticks)) || (abs_ticks > min_abs_ticks)) {
+		MXC_WUT_Disable(cfg->regs);
 		MXC_WUT_SetCompare(cfg->regs, abs_ticks & top_ticks);
 		MXC_WUT_Enable(cfg->regs);
 		return 0;

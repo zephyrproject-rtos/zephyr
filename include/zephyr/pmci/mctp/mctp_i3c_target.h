@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef ZEPHYR_MCTP_I3C_TARGET_H_
-#define ZEPHYR_MCTP_I3C_TARGET_H_
+#ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_TARGET_H_
+#define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_TARGET_H_
 
 #include <stdint.h>
 #include <zephyr/kernel.h>
@@ -64,4 +64,4 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 		.tx_complete = &_name##_tx_complete,                                               \
 	};
 
-#endif /* ZEPHYR_MCTP_I3C_TARGET_H_ */
+#endif /* ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_TARGET_H_ */

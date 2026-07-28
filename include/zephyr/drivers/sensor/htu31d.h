@@ -19,7 +19,7 @@
 
 /**
  * @defgroup htu31d_interface HTU31D
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_meas
  * @brief TE Connectivity HTU31D temperature and humidity sensor
  * @{
  */

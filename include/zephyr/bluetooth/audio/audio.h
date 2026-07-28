@@ -90,9 +90,9 @@ struct bt_audio_codec_octets_per_codec_frame {
  * @name Unicast Announcement Type
  * @{
  */
-/** Unicast Server is connectable and is requesting a connection. */
+/** Unicast Server is connectable and is not requesting a connection. */
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00U
-/** Unicast Server is connectable but is not requesting a connection. */
+/** Unicast Server is connectable but is requesting a connection. */
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED   0x01U
 /** @} */
 
@@ -238,7 +238,7 @@ struct bt_audio_codec_cfg {
 	 * BT_HCI_CODING_FORMAT_TRANSPARENT if false, else uses the @ref bt_audio_codec_cfg.id.
 	 */
 	bool ctlr_transcode;
-#if defined(CONFIG_BT_BAP_UNICAST)
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(__DOXYGEN__)
 	/** Target latency
 	 *
 	 * Unused for broadcast streams.

@@ -108,9 +108,9 @@ struct bt_hci_driver_config {
 
 /**
  * @brief Static initializer for @p bt_hci_driver_config struct from
- * DT_DRV_COMPAT instance.
+ * @c DT_DRV_COMPAT instance.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @see BT_DT_HCI_DRIVER_CONFIG_GET()
  */
 

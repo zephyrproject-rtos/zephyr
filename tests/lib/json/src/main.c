@@ -790,7 +790,7 @@ ZTEST(lib_json_test, test_json_float_format)
 			       obj_float_descr, ARRAY_SIZE(obj_float_descr), &ts);
 		zassert_equal(ret, 1, "Decoding failed: %s result: %d", str_encoded, ret);
 		zassert_equal(ts.some_float, encoded[i].num,
-			      "Decoding failed '%s' float: %g exepcted: %g",
+			      "Decoding failed '%s' float: %g expected: %g",
 			      str_encoded, (double)ts.some_float, (double)encoded[i].num);
 	}
 }
@@ -952,7 +952,7 @@ ZTEST(lib_json_test, test_json_double_format)
 					 obj_double_descr, ARRAY_SIZE(obj_double_descr), &ts);
 		zassert_equal(ret, 1, "Decoding failed: %s result: %d", str_encoded, ret);
 		zassert_equal(ts.some_double, encoded[i].num,
-			      "Decoding failed '%s' double: %g exepcted: %g",
+			      "Decoding failed '%s' double: %g expected: %g",
 			      str_encoded, ts.some_double, encoded[i].num);
 	}
 }

@@ -23,8 +23,8 @@
  * processing of the packet is aborted.
  */
 
-#ifndef H_SMP_
-#define H_SMP_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_SMP_SMP_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_SMP_SMP_H_
 
 #include <zephyr/net_buf.h>
 #include <zephyr/mgmt/mcumgr/transport/smp.h>
@@ -136,4 +136,4 @@ typedef int (*smp_translate_error_fn)(uint16_t err);
 }
 #endif
 
-#endif /* H_SMP_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_SMP_SMP_H_ */

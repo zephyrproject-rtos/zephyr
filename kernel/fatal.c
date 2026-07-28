@@ -13,6 +13,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/fatal.h>
 #include <zephyr/debug/coredump.h>
+#include <zephyr/sys/reboot.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -37,10 +38,16 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
 				      const struct arch_esf *esf)
 {
 	ARG_UNUSED(esf);
-
 	LOG_PANIC();
-	LOG_ERR("Halting system");
+
+#if CONFIG_RESET_ON_FATAL_ERROR
+	LOG_ERR("Resetting system\n");
+	sys_reboot(SYS_REBOOT_WARM);
+#else
+	LOG_ERR("Halting system\n");
 	arch_system_halt(reason);
+#endif /* CONFIG_RESET_ON_FATAL_ERROR */
+
 	CODE_UNREACHABLE;
 }
 /* LCOV_EXCL_STOP */
@@ -113,7 +120,21 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 		LOG_ERR("Current thread: %p (%s)", thread, thread_name_get(thread));
 	}
 
+	/*
+	 * Must use preprocessor guard, not if (IS_ENABLED(...)): the arch hook
+	 * prototypes exist only when CONFIG_DEBUG_COREDUMP_FATAL_UNLOCK_IRQS is
+	 * set (kernel_arch_interface.h). IS_ENABLED still parses both branches,
+	 * which breaks builds when the option is off (implicit declaration).
+	 */
+#ifdef CONFIG_DEBUG_COREDUMP_FATAL_UNLOCK_IRQS
+	unsigned int coredump_irq_cookie;
+
+	arch_coredump_fatal_irq_unlock(key, &coredump_irq_cookie);
 	coredump(reason, esf, thread);
+	key = arch_coredump_fatal_irq_lock(&coredump_irq_cookie);
+#else
+	coredump(reason, esf, thread);
+#endif
 
 	k_sys_fatal_error_handler(reason, esf);
 

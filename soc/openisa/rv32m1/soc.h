@@ -9,7 +9,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include "fsl_device_registers.h"
+#include <fsl_device_registers.h>
 #include <zephyr/types.h>
 
 /*

@@ -4,10 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Peripheral reset identifiers for GigaDevice GD32VF103
+ * @ingroup reset_controller_gd32vf103
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32VF103_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32VF103_H_
 
 #include "gd32-common.h"
+
+/**
+ * @defgroup reset_controller_gd32vf103 GigaDevice GD32VF103 reset controller helpers
+ * @brief GigaDevice GD32VF103 reset controller helpers
+ * @ingroup reset_controller_gigadevice
+ *
+ * Reset identifiers follow the pattern @c GD32_RESET_\<PERIPHERAL\>, where
+ * @c \<PERIPHERAL\> is the GD32VF103 peripheral name from the reference manual (for example, @c
+ * GD32_RESET_USART0 resets USART0 and @c GD32_RESET_GPIOA resets GPIO port A). Pass these
+ * identifiers directly to a @c resets property.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 /**
  * @name Register offsets
@@ -21,7 +41,7 @@
 /** @} */
 
 /**
- * @name Clock enable/disable definitions for peripherals
+ * @name Peripheral reset identifiers
  * @{
  */
 
@@ -63,6 +83,10 @@
 
 /* AHB peripherals */
 #define GD32_RESET_USBFS      GD32_RESET_CONFIG(AHBRST, 12U)
+
+/** @} */
+
+/** @endcond */
 
 /** @} */
 

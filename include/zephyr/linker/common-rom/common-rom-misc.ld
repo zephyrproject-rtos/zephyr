@@ -14,6 +14,10 @@
 	ITERABLE_SECTION_ROM(settings_handler_static, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
+#if defined(CONFIG_MODEM_CELLULAR)
+	ITERABLE_SECTION_ROM(modem_cellular_board_init, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
 #if defined(CONFIG_SENSING)
 	ITERABLE_SECTION_ROM(sensing_sensor_info, Z_LINK_ITERABLE_SUBALIGN)
 #endif

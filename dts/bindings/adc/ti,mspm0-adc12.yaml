@@ -56,12 +56,26 @@ properties:
       - 24
       - 32
       - 48
+    description: |
+      Divider applied to the ADC sample clock source. Together with
+      ti,clk-range it sets the ADC sample clock: the effective sampling
+      period scales with this divider. A value of 1 leaves the clock
+      undivided.
 
   auto-powerdown:
     type: boolean
+    description: |
+      Enable automatic power-down mode, in which the ADC powers down
+      between conversions to reduce power consumption. When omitted, the
+      ADC uses manual power-down mode and stays powered between conversions.
 
   vref:
     type: phandle
+    description: |
+      Phandle to the voltage reference regulator supplying the ADC
+      reference voltage. This may be the on-chip VREF module or an external
+      reference. The driver reads the referenced regulator's configured
+      output voltage to determine the reference voltage in millivolts.
 
   max-result-reg:
     type: int

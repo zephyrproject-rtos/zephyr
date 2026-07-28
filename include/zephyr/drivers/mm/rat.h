@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_RAT_H_
-#define ZEPHYR_INCLUDE_RAT_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MM_RAT_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MM_RAT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,4 +69,4 @@ void sys_mm_drv_ti_rat_init(struct address_trans_region_config *region_config,
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_RAT_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MM_RAT_H_ */

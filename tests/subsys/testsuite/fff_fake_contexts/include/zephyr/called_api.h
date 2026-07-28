@@ -22,7 +22,7 @@ struct called_api_info;
  * This API is defined for the code_under_test() example to call.
  * It represents a routine which provides call-unique data to the caller
  * as well as providing a return value.  This requires the _custom_fake
- * implementation to serve the data from a custom_fake context struture,
+ * implementation to serve the data from a custom_fake context structure,
  * where each call needs to return a unique, configured value.
  *
  * @param instance_out Session instance handle for caller to use.

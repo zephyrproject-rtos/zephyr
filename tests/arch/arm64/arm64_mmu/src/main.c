@@ -9,7 +9,7 @@
 #include <kernel_arch_interface.h>
 
 /*
- * Virtual and physical addresses used to exercize MMU page table recycling.
+ * Virtual and physical addresses used to exercise MMU page table recycling.
  * Those are completely arbitrary addresses away from any existing addresses
  * (no worry, the test will fail otherwise). Those addresses don't have
  * to be valid as we won't attempt any access to the mapped memory.
@@ -117,7 +117,7 @@ ZTEST(arm64_mmu, test_arm64_mmu_03_block_and_page)
 {
 	/*
 	 * Same thing as above, except that we expect a block mapping
-	 * followed by a page mapping to exercize range splitting.
+	 * followed by a page mapping to exercise range splitting.
 	 * To achieve that we simply increase the size by one page and keep
 	 * starting addresses aligned to a block.
 	 */
@@ -136,7 +136,7 @@ ZTEST(arm64_mmu, test_arm64_mmu_04_page_and_block)
 {
 	/*
 	 * Same thing as above, except that we expect a page mapping
-	 * followed by a block mapping to exercize range splitting.
+	 * followed by a block mapping to exercise range splitting.
 	 * To achieve that we increase the size by one page and decrease
 	 * starting addresses by one page below block alignment.
 	 */

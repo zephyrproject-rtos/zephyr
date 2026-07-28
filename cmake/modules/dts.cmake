@@ -113,6 +113,8 @@ set(EDT_PICKLE                  ${PROJECT_BINARY_DIR}/edt.pickle)
 set(ZEPHYR_DTS                  ${PROJECT_BINARY_DIR}/zephyr.dts)
 # The generated C header needed by <zephyr/devicetree.h>
 set(DEVICETREE_GENERATED_H      ${BINARY_DIR_INCLUDE_GENERATED}/devicetree_generated.h)
+# List of bindings used in a build
+set(DEVICETREE_BINDINGS_USED    ${PROJECT_BINARY_DIR}/dts_bindings_used.txt)
 # Generated build system internals.
 set(DTS_POST_CPP                ${PROJECT_BINARY_DIR}/zephyr.dts.pre)
 set(DTS_DEPS                    ${PROJECT_BINARY_DIR}/zephyr.dts.d)
@@ -340,7 +342,9 @@ function(dts_gen_defines)
 
   set(cmd_gen_defines ${PYTHON_EXECUTABLE} ${GEN_DEFINES_SCRIPT}
     --header-out ${DEVICETREE_GENERATED_H}.new
+    --deps-out ${DEVICETREE_BINDINGS_USED}
     --edt-pickle ${EDT_PICKLE}
+    --zephyr-base ${ZEPHYR_BASE}
     ${EXTRA_GEN_DEFINES_ARGS}
   )
 
@@ -352,6 +356,11 @@ function(dts_gen_defines)
   zephyr_file_copy(${DEVICETREE_GENERATED_H}.new ${DEVICETREE_GENERATED_H} ONLY_IF_DIFFERENT)
   file(REMOVE ${DEVICETREE_GENERATED_H}.new)
   message(STATUS "Generated devicetree_generated.h: ${DEVICETREE_GENERATED_H}")
+  file(STRINGS ${DEVICETREE_BINDINGS_USED} bindings)
+
+  if(bindings)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${bindings})
+  endif()
 endfunction()
 
 function(dts_gen_driver_kconfig)

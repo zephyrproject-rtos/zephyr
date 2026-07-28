@@ -27,8 +27,8 @@
 #include <fsl_pint.h>
 #endif
 #if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511 || CONFIG_UHC_NXP_IP3516HS
-#include "usb_phy.h"
-#include "usb.h"
+#include <usb_phy.h>
+#include <usb.h>
 #endif
 #if defined(CONFIG_SOC_LPC55S36) && (defined(CONFIG_ADC_MCUX_LPADC) \
 	|| defined(CONFIG_DAC_MCUX_LPDAC))
@@ -239,6 +239,8 @@ __weak void clock_init(void)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(wwdt0), nxp_lpc_wwdt, okay)
 	/* Enable 1 MHz FRO clock for WWDT */
 	SYSCON->CLOCK_CTRL |= SYSCON_CLOCK_CTRL_FRO1MHZ_CLK_ENA_MASK;
+	/* Set clock divider for WWDT clock source. */
+	CLOCK_SetClkDiv(kCLOCK_DivWdtClk, 1U, true);
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(mailbox0), nxp_lpc_mailbox, okay)

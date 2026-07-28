@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025 - 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -69,8 +69,20 @@
 			compatible = "mmio-sram";
 
 			reg = <0x00200000 DT_SIZE_K(512)>;
+
+			adsp_text: memory@400000 {
+				reg = <0x00400000 DT_SIZE_K(256)>;
+			};
+
+			adsp_data: memory@440000 {
+				reg = <0x440000 DT_SIZE_K(256)>;
+			};
 		};
 
+		/**
+		 * NOTE: This is a reflection (no-cache view) of ram0_cached.
+		 * Both of these nodes represent the (physically) same block of memory.
+		 */
 		ram0_noncached: memory@20400000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -79,11 +91,7 @@
 
 			reg = <0x20400000 DT_SIZE_K(512)>;
 
-			adsp_text: memory@20400000 {
-				reg = <0x20400000 DT_SIZE_K(256)>;
-			};
-
-			adsp_data: memory@20440000 {
+			adsp_data_nocache: memory@20440000 {
 				reg = <0x20440000 DT_SIZE_K(256)>;
 			};
 		};
@@ -218,6 +226,7 @@
 			crc: crc@120000 {
 				compatible = "nxp,lpc-crc";
 				reg = <0x120000 0x1000>;
+				clocks = <&clkctl1 MCUX_CRC_CLK>;
 				status = "disabled";
 			};
 		};

@@ -10,8 +10,8 @@
  * @brief Header file for the SCMI Transport Layer.
  */
 
-#ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_
-#define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -38,8 +38,9 @@ struct scmi_channel;
  *
  * @param chan pointer to SCMI channel on which the reply
  * arrived
+ * @param hdr is the share memory Message header
  */
-typedef void (*scmi_channel_cb)(struct scmi_channel *chan);
+typedef void (*scmi_channel_cb)(struct scmi_channel *chan, uint32_t hdr);
 
 /**
  * @struct scmi_channel
@@ -315,4 +316,4 @@ int scmi_core_transport_init(const struct device *transport);
  * @}
  */
 
-#endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_ */

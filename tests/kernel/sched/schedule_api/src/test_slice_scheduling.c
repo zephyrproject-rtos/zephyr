@@ -78,6 +78,56 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	}
 }
 
+static volatile int32_t perthread_count;
+static volatile uint32_t last_cyc;
+static volatile bool perthread_running;
+static K_SEM_DEFINE(perthread_sem, 0, 1);
+
+static void slice_expired(struct k_thread *thread, void *data)
+{
+	zassert_equal(thread, data, "wrong callback data pointer");
+
+	/* Convert with the driver's real cycles per tick, floor(HW/ticks), not
+	 * the fractional ratio k_cyc_to_ticks_near32() uses (which skews where a
+	 * tick isn't a whole number of cycles). Round, don't truncate, to absorb
+	 * the sub-tick offset between the reference and this reading.
+	 */
+	uint32_t now = k_cycle_get_32();
+	uint32_t dt = DIV_ROUND_CLOSEST(now - last_cyc, k_ticks_to_cyc_floor32(1));
+
+	zassert_true(perthread_running, "thread didn't start");
+	/* Slice fire lands on either the configured tick boundary or
+	 * the next one due to z_add_timeout()'s "+1" round-up.
+	 */
+	zassert_between_inclusive(dt, PERTHREAD_SLICE_TICKS,
+				  PERTHREAD_SLICE_TICKS + 1,
+				  "slice expired at dt=%u, expected ~%u",
+				  dt, PERTHREAD_SLICE_TICKS);
+
+	last_cyc = now;
+
+	/* First time through, just let the slice expire and keep
+	 * running.  Second time, abort the thread and wake up the
+	 * main test function.
+	 */
+	if (perthread_count++ != 0) {
+		k_thread_abort(thread);
+		perthread_running = false;
+		k_sem_give(&perthread_sem);
+	}
+}
+
+static void slice_perthread_fn(void *a, void *b, void *c)
+{
+	ARG_UNUSED(a); ARG_UNUSED(b); ARG_UNUSED(c);
+	while (true) {
+		perthread_running = true;
+		k_busy_wait(10);
+	}
+}
+
+#endif /* CONFIG_TIMESLICING */
+
 /* test cases */
 
 /**
@@ -88,10 +138,15 @@ static void thread_tslice(void *p1, void *p2, void *p3)
  * and few with same priorities and enable the time slice.
  * Ensure that each thread is given the time slice period to execute.
  *
- * @ingroup kernel_sched_tests
+ * Skipped when CONFIG_TIMESLICING is disabled.
+ *
+ * @ingroup tests_kernel_sched
+ *
+ * @see k_sched_time_slice_set()
  */
 ZTEST(threads_scheduling, test_slice_scheduling)
 {
+#ifdef CONFIG_TIMESLICING
 	k_tid_t tid[NUM_THREAD];
 	int old_prio = k_thread_priority_get(k_current_get());
 	int count = 0;
@@ -146,53 +201,36 @@ ZTEST(threads_scheduling, test_slice_scheduling)
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 
 	k_thread_priority_set(k_current_get(), old_prio);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_TIMESLICING */
 }
 
-static volatile int32_t perthread_count;
-static volatile uint32_t last_cyc;
-static volatile bool perthread_running;
-static K_SEM_DEFINE(perthread_sem, 0, 1);
-
-static void slice_expired(struct k_thread *thread, void *data)
-{
-	zassert_equal(thread, data, "wrong callback data pointer");
-
-	uint32_t now = k_cycle_get_32();
-	uint32_t dt = k_cyc_to_ticks_near32(now - last_cyc);
-
-	zassert_true(perthread_running, "thread didn't start");
-	/* Slice fire lands on either the configured tick boundary or
-	 * the next one due to z_add_timeout()'s "+1" round-up.
-	 */
-	zassert_between_inclusive(dt, PERTHREAD_SLICE_TICKS,
-				  PERTHREAD_SLICE_TICKS + 1,
-				  "slice expired at dt=%u, expected ~%u",
-				  dt, PERTHREAD_SLICE_TICKS);
-
-	last_cyc = now;
-
-	/* First time through, just let the slice expire and keep
-	 * running.  Second time, abort the thread and wake up the
-	 * main test function.
-	 */
-	if (perthread_count++ != 0) {
-		k_thread_abort(thread);
-		perthread_running = false;
-		k_sem_give(&perthread_sem);
-	}
-}
-
-static void slice_perthread_fn(void *a, void *b, void *c)
-{
-	ARG_UNUSED(a); ARG_UNUSED(b); ARG_UNUSED(c);
-	while (true) {
-		perthread_running = true;
-		k_busy_wait(10);
-	}
-}
-
+/**
+ * @brief Verify a per-thread time slice expires and invokes its callback.
+ *
+ * @details
+ * With CONFIG_TIMESLICE_PER_THREAD, a thread's individual time slice
+ * (k_thread_time_slice_set()) must expire after the configured number of ticks
+ * and invoke the registered expiry callback, which here suspends the thread.
+ * Requires CONFIG_TIMESLICING and CONFIG_TIMESLICE_PER_THREAD; otherwise the
+ * test skips.
+ *
+ * Test steps:
+ * - Create a busy-looping thread and set a per-thread slice with a callback.
+ * - Tick-align and start the thread.
+ * - Wait for the callback (which suspends the thread) and confirm it stopped.
+ *
+ * Expected result:
+ * - The per-thread slice expires, the callback runs, and the thread is suspended.
+ *
+ * @ingroup tests_kernel_sched
+ *
+ * @see k_thread_time_slice_set()
+ */
 ZTEST(threads_scheduling, test_slice_perthread)
 {
+#ifdef CONFIG_TIMESLICING
 	if (!IS_ENABLED(CONFIG_TIMESLICE_PER_THREAD)) {
 		ztest_test_skip();
 		return;
@@ -211,15 +249,7 @@ ZTEST(threads_scheduling, test_slice_perthread)
 
 	k_sem_take(&perthread_sem, K_FOREVER);
 	zassert_false(perthread_running, "thread failed to suspend");
-}
-
-#else /* CONFIG_TIMESLICING */
-ZTEST(threads_scheduling, test_slice_scheduling)
-{
+#else
 	ztest_test_skip();
-}
-ZTEST(threads_scheduling, test_slice_perthread)
-{
-	ztest_test_skip();
-}
 #endif /* CONFIG_TIMESLICING */
+}

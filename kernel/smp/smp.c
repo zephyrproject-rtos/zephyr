@@ -39,7 +39,7 @@ static struct cpu_start_cb {
 	 */
 	smp_init_fn fn;
 
-	/** Argument to @ref cpu_start_fn.fn. */
+	/** Argument to @ref cpu_start_cb.fn. */
 	void *arg;
 
 	/** Invoke scheduler after CPU has started if true. */

@@ -1756,6 +1756,11 @@ struct bt_hci_cp_le_set_adv_set_random_addr {
 #define BT_HCI_LE_ADV_SCAN_REQ_ENABLE  1
 #define BT_HCI_LE_ADV_SCAN_REQ_DISABLE 0
 
+/** Minimum advertising TX power in dBm (Core Spec Vol 4, Part E, 7.8.53). */
+#define BT_HCI_LE_ADV_TX_POWER_MIN     -127
+/** Maximum advertising TX power in dBm (Core Spec Vol 4, Part E, 7.8.53). */
+#define BT_HCI_LE_ADV_TX_POWER_MAX      20
+/** Advertising TX power: no preference, let the controller choose. */
 #define BT_HCI_LE_ADV_TX_POWER_NO_PREF 0x7F
 
 #define BT_HCI_LE_ADV_HANDLE_MAX       0xEF

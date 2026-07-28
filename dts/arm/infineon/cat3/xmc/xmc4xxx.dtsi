@@ -26,8 +26,11 @@
 		reg = <0x58001000 0x1400>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		flash0: flash@8000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			compatible = "infineon,xmc4xxx-nv-flash", "soc-nv-flash";
 			write-block-size = <256>;
 		};

@@ -144,4 +144,4 @@ References
 
 .. _ruuvitag website: https://ruuvi.com
 .. _ruuvitag datasheet: https://ruuvi.com/files/ruuvitag-tech-spec-2019-7.pdf
-.. _ruuvitag devkit: https://lab.ruuvi.com/devshield/
+.. _ruuvitag devkit: https://lab.ruuvi.com/devshield

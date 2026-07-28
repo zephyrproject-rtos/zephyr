@@ -23,12 +23,12 @@
  */
 static inline unsigned long micsr_read(unsigned int index)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	unsigned long val = csr_read(MIREG);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 	return val;
 }
 
@@ -39,12 +39,12 @@ static inline unsigned long micsr_read(unsigned int index)
  */
 static inline void micsr_write(unsigned int index, unsigned long value)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	csr_write(MIREG, value);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 }
 
 /**
@@ -54,12 +54,12 @@ static inline void micsr_write(unsigned int index, unsigned long value)
  */
 static inline void micsr_set(unsigned int index, unsigned long mask)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	csr_set(MIREG, mask);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 }
 
 /**
@@ -69,12 +69,12 @@ static inline void micsr_set(unsigned int index, unsigned long mask)
  */
 static inline void micsr_clear(unsigned int index, unsigned long mask)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	csr_clear(MIREG, mask);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 }
 
 /**
@@ -85,12 +85,12 @@ static inline void micsr_clear(unsigned int index, unsigned long mask)
  */
 static inline unsigned long micsr_read_set(unsigned int index, unsigned long mask)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	unsigned long val = csr_read_set(MIREG, mask);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 	return val;
 }
 
@@ -102,12 +102,12 @@ static inline unsigned long micsr_read_set(unsigned int index, unsigned long mas
  */
 static inline unsigned long micsr_read_clear(unsigned int index, unsigned long mask)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	unsigned long val = csr_read_clear(MIREG, mask);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 	return val;
 }
 
@@ -118,12 +118,12 @@ static inline unsigned long micsr_read_clear(unsigned int index, unsigned long m
  */
 static inline unsigned long micsr2_read(unsigned int index)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	unsigned long val = csr_read(MIREG2);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 	return val;
 }
 
@@ -134,12 +134,12 @@ static inline unsigned long micsr2_read(unsigned int index)
  */
 static inline void micsr2_write(unsigned int index, unsigned long value)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	csr_write(MIREG2, value);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 }
 
 /**
@@ -149,12 +149,12 @@ static inline void micsr2_write(unsigned int index, unsigned long value)
  */
 static inline void micsr2_set(unsigned int index, unsigned long mask)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	csr_set(MIREG2, mask);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 }
 
 /**
@@ -164,12 +164,12 @@ static inline void micsr2_set(unsigned int index, unsigned long mask)
  */
 static inline void micsr2_clear(unsigned int index, unsigned long mask)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	csr_clear(MIREG2, mask);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 }
 
 /**
@@ -180,12 +180,12 @@ static inline void micsr2_clear(unsigned int index, unsigned long mask)
  */
 static inline unsigned long micsr2_read_set(unsigned int index, unsigned long mask)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	unsigned long val = csr_read_set(MIREG2, mask);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 	return val;
 }
 
@@ -197,12 +197,12 @@ static inline unsigned long micsr2_read_set(unsigned int index, unsigned long ma
  */
 static inline unsigned long micsr2_read_clear(unsigned int index, unsigned long mask)
 {
-	unsigned int key = irq_lock();
+	unsigned int key = arch_irq_lock();
 
 	csr_write(MISELECT, index);
 	unsigned long val = csr_read_clear(MIREG2, mask);
 
-	irq_unlock(key);
+	arch_irq_unlock(key);
 	return val;
 }
 

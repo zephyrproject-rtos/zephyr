@@ -33,7 +33,7 @@ bool z_shell_has_wildcard(const char *str);
 
 /* Function expands wildcards in the shell temporary buffer
  *
- * @brief Function evaluates one command. If command contains wildcard patter,
+ * @brief Function evaluates one command. If command contains wildcard pattern,
  * function will expand this command with all commands matching wildcard
  * pattern.
  *

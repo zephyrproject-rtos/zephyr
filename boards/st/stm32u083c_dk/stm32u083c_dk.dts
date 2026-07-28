@@ -22,6 +22,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,system-timer = &lptim2;
 	};
 
 	leds: leds {
@@ -156,7 +157,7 @@
 	};
 };
 
-stm32_lp_tick_source: &lptim2 {
+&lptim2 {
 	clocks = <&rcc STM32_CLOCK(APB1, 30)>,
 		 <&rcc STM32_SRC_LSI LPTIM2_SEL(1)>;
 	status = "okay";

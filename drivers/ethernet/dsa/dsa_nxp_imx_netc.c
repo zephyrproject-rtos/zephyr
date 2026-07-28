@@ -45,7 +45,7 @@ struct dsa_netc_data {
 	swt_config_t swt_config;
 	swt_handle_t swt_handle;
 	netc_cmd_bd_t *cmd_bd;
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	uint8_t cpu_port_idx;
 	struct k_fifo tx_ts_queue;
 #ifndef NETC_SWITCH_TAG_SUPPORT
@@ -61,7 +61,7 @@ struct dsa_netc_data {
 
 static int dsa_netc_port_init(const struct device *dev)
 {
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	struct net_if *iface = net_if_lookup_by_dev(dev);
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 #endif
@@ -91,7 +91,7 @@ static int dsa_netc_port_init(const struct device *dev)
 	swt_config->bridgeCfg.dVFCfg.portMembership |= (1 << cfg->port_idx);
 	swt_config->ports[cfg->port_idx].bridgeCfg.enMacStationMove = true;
 
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	/* Enable ingress port filter on user ports */
 	if (eth_ctx->dsa_port == DSA_CPU_PORT) {
 		prv->cpu_port_idx = cfg->port_idx;
@@ -123,7 +123,7 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 {
 	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
 	swt_config_t *swt_config = &prv->swt_config;
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	uint32_t entry_id = 0;
 #endif
 	status_t result;
@@ -157,7 +157,7 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 		return -EIO;
 	}
 
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	/*
 	 * For gPTP, switch should work as time-aware bridge.
 	 * Trap gPTP frames to cpu port to perform gPTP protocol.
@@ -206,7 +206,7 @@ static void dsa_netc_port_phylink_change(const struct device *phy_dev __unused,
 	}
 }
 
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 #ifdef NETC_SWITCH_TAG_SUPPORT
 static int dsa_netc_port_txtstamp(const struct device *dev, struct net_pkt *pkt)
 {
@@ -339,13 +339,13 @@ void dsa_netc_port_twostep_timestamp(struct dsa_switch_context *dsa_switch_ctx, 
 	}
 }
 #endif /* NETC_SWITCH_TAG_SUPPORT */
-#endif /* NETC_PTP_TIMESTAMPING_SUPPORT */
+#endif /* CONFIG_PTP_CLOCK_NXP_NETC */
 
 #ifdef NETC_SWITCH_TAG_SUPPORT
 static struct dsa_tag_netc_data dsa_netc_tag_data = {
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	.twostep_timestamp_handler = dsa_netc_twostep_timestamp_handler,
-#endif /* NETC_PTP_TIMESTAMPING_SUPPORT */
+#endif /* CONFIG_PTP_CLOCK_NXP_NETC */
 };
 
 static int dsa_netc_connect_tag_protocol(struct dsa_switch_context *dsa_switch_ctx,
@@ -545,7 +545,7 @@ static struct dsa_api dsa_netc_api = {
 	.port_init = dsa_netc_port_init,
 	.switch_setup = dsa_netc_switch_setup,
 	.port_phylink_change = dsa_netc_port_phylink_change,
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	.port_txtstamp = dsa_netc_port_txtstamp,
 #endif
 #ifdef NETC_SWITCH_TAG_SUPPORT
@@ -571,7 +571,7 @@ static struct dsa_api dsa_netc_api = {
 		.phy_mode = DT_PROP_OR(port, phy_connection_type, ""),                      \
 		.tag_proto = DT_PROP_OR(port, dsa_tag_protocol, DSA_TAG_PROTO_NOTAG),       \
 		.ethernet_connection = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, ethernet)),   \
-		IF_ENABLED(NETC_PTP_TIMESTAMPING_SUPPORT,				    \
+		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_NETC,				    \
 			(.ptp_clock = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, ptp_clock)),)) \
 		.prv_config = &dsa_netc_##n##_##port##_config,                              \
 	};                                                                                  \

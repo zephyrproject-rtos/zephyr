@@ -18,9 +18,8 @@ class Flash(WestCommand):
     def __init__(self):
         super().__init__(
             'flash',
-            # Keep this in sync with the string in west-commands.yml.
-            'flash and run a binary on a board',
-            "Permanently reprogram a board's flash with a new binary.",
+            '',
+            description="Reprogram a board's flash with a new binary.",
             accepts_unknown_args=True)
         self.runner_key = 'flash-runner'  # in runners.yaml
 

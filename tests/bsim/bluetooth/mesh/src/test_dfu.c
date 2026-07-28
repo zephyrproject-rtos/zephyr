@@ -1642,7 +1642,7 @@ static const struct bst_test_instance test_dfu[] = {
 	TEST_CASE(dist, dfu_self_update, "Distributor performs DFU with self update"),
 	TEST_CASE(dist, dfu_slot_create, "Distributor creates image slots"),
 	TEST_CASE(dist, dfu_slot_create_recover,
-		      "Distributor recovers created image slots from persitent storage"),
+		      "Distributor recovers created image slots from persistent storage"),
 	TEST_CASE(dist, dfu_slot_delete_all, "Distributor deletes all image slots"),
 	TEST_CASE(dist, dfu_slot_check_delete_all,
 		      "Distributor checks if all slots are removed from persistent storage"),

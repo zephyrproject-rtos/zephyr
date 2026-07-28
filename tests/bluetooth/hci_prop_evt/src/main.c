@@ -345,7 +345,7 @@ static void *prop_evt(struct net_buf *buf, uint8_t pelen)
 	return net_buf_add(buf, pelen);
 }
 
-/* Send a prop event report wit the given data. */
+/* Send a prop event report with the given data. */
 static void send_prop_report(uint8_t *data, uint8_t data_len)
 {
 	struct net_buf *buf;

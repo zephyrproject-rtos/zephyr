@@ -45,10 +45,12 @@ static volatile bool test_exited;
 /* Semaphore for signaling end of test */
 static K_SEM_DEFINE(test_exit_sem, 0, 1);
 
-/**
- * @brief Entry point for the low priority compute task
+/*
+ * Low priority compute worker for test_calculation().
  *
- * @ingroup kernel_dspsharing_tests
+ * Continuously computes a complex vector dot product using the DSP unit and
+ * compares each result against the reference value, failing if a preemption
+ * corrupted its DSP state. Runs until test_exited is set.
  */
 static void calculate_low(void)
 {
@@ -61,7 +63,7 @@ static void calculate_low(void)
 		for (int i = 0; i < 3; i++) {
 			acc = fx_v2a32_cmac_cq15(acc, cq15_a[i], cq15_b[i]);
 		}
-		/* cast reult from v2accum32_ to short type */
+		/* cast result from v2accum32_ to short type */
 		res[0] = fx_q15_cast_asl_rnd_a32(fx_get_v2a32(acc, 0), 15);
 		res[1] = fx_q15_cast_asl_rnd_a32(fx_get_v2a32(acc, 1), 15);
 
@@ -76,10 +78,13 @@ static void calculate_low(void)
 	}
 }
 
-/**
- * @brief Entry point for the high priority compute task
+/*
+ * High priority compute worker for test_calculation().
  *
- * @ingroup kernel_dspsharing_tests
+ * Computes the same complex vector dot product, sleeping each iteration to
+ * force preemption of the low priority thread. Runs for MAX_TESTS iterations,
+ * checks each result against the reference value, then signals completion via
+ * test_exit_sem.
  */
 static void calculate_high(void)
 {
@@ -137,6 +142,31 @@ K_THREAD_DEFINE(cal_low, THREAD_STACK_SIZE, calculate_low, NULL, NULL, NULL,
 K_THREAD_DEFINE(cal_high, THREAD_STACK_SIZE, calculate_high, NULL, NULL, NULL,
 		THREAD_HIGH_PRIORITY, THREAD_DSP_FLAGS, K_TICKS_FOREVER);
 
+/**
+ * @brief Verify DSP state is preserved during concurrent DSP computation.
+ *
+ * @ingroup kernel_dspsharing_tests
+ *
+ * @details
+ * Two threads of different priority each repeatedly compute the same complex
+ * vector dot product on the ARC DSP unit, with the high-priority thread
+ * preempting the low-priority one. The first computed value becomes the
+ * reference; every later computation in either thread must match it. A
+ * mismatch would mean a context switch corrupted the DSP/AGU state, so passing
+ * proves that state is saved and restored correctly under contention.
+ *
+ * Test steps:
+ * - Reset the test state and the completion semaphore.
+ * - Start the low- and high-priority DSP compute threads.
+ * - Block on the completion semaphore until the high-priority thread has run
+ *   MAX_TESTS iterations and signals the test is done.
+ *
+ * Expected result:
+ * - Every computation matches the reference result; the test completes without
+ *   a failed assertion.
+ *
+ * @see fx_v2a32_cmac_cq15()
+ */
 ZTEST(dsp_sharing, test_calculation)
 {
 	/* Initialise test states */

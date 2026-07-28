@@ -58,8 +58,8 @@
 
 /** Init script timeout - contains CFUN, NVM commands */
 #define HL78XX_SCRIPT_TIMEOUT_INIT         100
-/** Post-restart script timeout - waiting for +KSUP */
-#define HL78XX_SCRIPT_TIMEOUT_POST_RESTART 12
+/** Post-restart script timeout - waiting for +KSUP after restart/power-cycle */
+#define HL78XX_SCRIPT_TIMEOUT_POST_RESTART HL78XX_CMD_TIMEOUT_LONG
 /** Periodic script timeout - basic queries */
 #define HL78XX_SCRIPT_TIMEOUT_PERIODIC     4
 /** Network registration script timeout */
@@ -70,6 +70,59 @@
 #define HL78XX_SCRIPT_TIMEOUT_GNSS         10
 /** Socket operations default timeout */
 #define HL78XX_SCRIPT_TIMEOUT_SOCKET       HL78XX_CMD_TIMEOUT_VERY_LONG
+
+#define HL78XX_KNWSCANCFG_CMD_PREFIX "AT+KNWSCANCFG="
+
+#define HL78XX_KNWSCANCFG_LINEAR_CMD(_mode, _scheme, _min, _max, _step) \
+	HL78XX_KNWSCANCFG_CMD_PREFIX STRINGIFY(_mode) "," \
+	STRINGIFY(_scheme) "," STRINGIFY(_min) "," STRINGIFY(_max) "," \
+	STRINGIFY(_step)
+
+#define HL78XX_KNWSCANCFG_EXP_CMD(_mode, _scheme, _min, _max) \
+	HL78XX_KNWSCANCFG_CMD_PREFIX STRINGIFY(_mode) "," \
+	STRINGIFY(_scheme) "," STRINGIFY(_min) "," STRINGIFY(_max)
+
+#if defined(CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC) &&                                                 \
+	(CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_MAX < CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_MIN)
+#error "CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_MAX must be >= CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_MIN"
+#endif
+
+#if defined(CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN) &&                                        \
+	(CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_MAX <                                         \
+	 CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_MIN)
+#error CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_MAX must be \
+	>= CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_MIN
+#endif
+
+#ifdef CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC
+#if defined(CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_SCHEME_LINEAR)
+#define HL78XX_KNWSCANCFG_OOC_CMD                                                                  \
+	HL78XX_KNWSCANCFG_LINEAR_CMD(0, CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_SCHEME_VALUE,           \
+				     CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_MIN,                       \
+				     CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_MAX,                       \
+				     CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_STEP)
+#else
+#define HL78XX_KNWSCANCFG_OOC_CMD                                                                  \
+	HL78XX_KNWSCANCFG_EXP_CMD(0, CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_SCHEME_VALUE,              \
+				  CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_MIN,                          \
+				  CONFIG_MODEM_HL78XX_KNWSCANCFG_OOC_MAX)
+#endif
+#endif
+
+#ifdef CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN
+#if defined(CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_SCHEME_LINEAR)
+#define HL78XX_KNWSCANCFG_INITIAL_SCAN_CMD                                                         \
+	HL78XX_KNWSCANCFG_LINEAR_CMD(1, CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_SCHEME_VALUE,  \
+				     CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_MIN,              \
+				     CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_MAX,              \
+				     CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_STEP)
+#else
+#define HL78XX_KNWSCANCFG_INITIAL_SCAN_CMD                                                         \
+	HL78XX_KNWSCANCFG_EXP_CMD(1, CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_SCHEME_VALUE,     \
+				  CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_MIN,                 \
+				  CONFIG_MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_MAX)
+#endif
+#endif
 
 /** @} */
 
@@ -142,8 +195,9 @@ const struct modem_chat_match *hl78xx_get_kudpind_match(void);
 size_t hl78xx_get_kudpind_allow_matches_size(void);
 const struct modem_chat_match *hl78xx_get_ktcpind_match(void);
 const struct modem_chat_match *hl78xx_get_ktcpcfg_match(void);
+const struct modem_chat_match *hl78xx_get_ktcp_state_matches(void);
+size_t hl78xx_get_ktcp_state_matches_size(void);
 const struct modem_chat_match *hl78xx_get_cgdcontrdp_match(void);
-const struct modem_chat_match *hl78xx_get_ktcp_state_match(void);
 #ifdef CONFIG_HL78XX_GNSS
 /* GNSS-related chat matches used by the GNSS TU */
 const struct modem_chat_match *hl78xx_get_gnssnmea_match(void);

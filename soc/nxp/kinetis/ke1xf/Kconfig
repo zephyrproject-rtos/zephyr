@@ -18,6 +18,7 @@ config SOC_SERIES_KE1XF
 	select SOC_RESET_HOOK
 	select SOC_EARLY_INIT_HOOK
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 
 config SOC_MKE16F16
 	select HAS_MCUX

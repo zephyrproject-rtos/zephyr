@@ -72,4 +72,26 @@
 			pinmux = <PIN_P3_5__UART5_TX_A>;
 		};
 	};
+
+	pinctrl_uart6: pinctrl_uart6 {
+		group0 {
+			pinmux = <PIN_P10_5__UART6_RX_A>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P10_6__UART6_TX_A>;
+		};
+	};
+
+	pinctrl_uart7: pinctrl_uart7 {
+		group0 {
+			pinmux = <PIN_P9_3__UART7_RX_B>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P9_4__UART7_TX_B>;
+		};
+	};
 };

@@ -145,7 +145,7 @@ board target ``ubx_evk_iris_w1//ethernet``.
    Pin conflicts between the Ethernet PHY and the external oscillator require hardware modifications on the board.
    Refer to the following documents for the required hardware changes:
 
-   - `EVK-IRIS-W1 User Guide <https://content.u-blox.com/sites/default/files/documents/EVK-IRIS-W1_UserGuide_UBX-23007837.pdf>`_
+   - `EVK-IRIS-W1 User Guide <https://www.u-blox.com/docs/UBX-23007837>`_
    - `IRIS-W10 SIM <https://content.u-blox.com/sites/default/files/documents/IRIS-W10_SIM_UBX-23003263.pdf>`_
 
 Resources
@@ -153,5 +153,5 @@ Resources
 
 - `EVK-IRIS-W1 Website <https://www.u-blox.com/en/product/evk-iris-w1>`_
 - `EVK-IRIS-W1 GitHub <https://github.com/u-blox/u-blox-sho-OpenCPU/tree/master/MCUXpresso/IRIS-W1>`_
-- `EVK-IRIS-W1 User Guide <https://content.u-blox.com/sites/default/files/documents/EVK-IRIS-W1_UserGuide_UBX-23007837.pdf>`_
+- `EVK-IRIS-W1 User Guide <https://www.u-blox.com/docs/UBX-23007837>`_
 - `IRIS-W10 SIM <https://content.u-blox.com/sites/default/files/documents/IRIS-W10_SIM_UBX-23003263.pdf>`_

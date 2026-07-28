@@ -64,7 +64,6 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.send_11k_neighbor_request = supplicant_11k_neighbor_request,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 	.candidate_scan = supplicant_candidate_scan,
-	.start_11r_roaming = supplicant_11r_roaming,
 #endif
 	.set_power_save = supplicant_set_power_save,
 	.set_twt = supplicant_set_twt,
@@ -155,6 +154,11 @@ struct k_work_q *get_workq(void)
 
 /* found in hostap/wpa_supplicant/ctrl_iface_zephyr.c */
 extern int send_data(struct k_fifo *fifo, int sock, const char *buf, size_t len, int flags);
+
+/* Serializes wpa_s->ctrl_conn lifecycle (open/close) against its users in
+ * supp_api.c, so that the NULL checks there cannot race with teardown.
+ */
+extern struct k_mutex wpa_supplicant_mutex;
 
 int zephyr_wifi_send_event(const struct wpa_supplicant_event_msg *msg)
 {
@@ -379,7 +383,9 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		net_if_get_name(iface, ctx->if_name, CONFIG_NET_INTERFACE_NAME_LEN);
 	}
 
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 	ret = zephyr_wpa_ctrl_init(wpa_s);
+	k_mutex_unlock(&wpa_supplicant_mutex);
 	if (ret) {
 		LOG_ERR("Failed to initialize supplicant control interface");
 		goto out;
@@ -392,6 +398,20 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		LOG_ERR("Failed to register mgd iface with native stack %s (%d)",
 			ifname, ret);
 		goto out;
+	}
+
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP)) {
+		/* In SoftAP-via-supplicant mode the same interface can also act
+		 * as an AP, so register it as SAP capable too.
+		 */
+		ret = wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
+						      WIFI_TYPE_SAP,
+						      iface);
+		if (ret) {
+			LOG_ERR("Failed to register mgd SAP iface with native stack %s (%d)",
+				ifname, ret);
+			goto out;
+		}
 	}
 
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_ADDED, 0);
@@ -473,7 +493,9 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 	zephyr_wpa_ctrl_deinit(wpa_s);
+	k_mutex_unlock(&wpa_supplicant_mutex);
 
 	ret = zephyr_wpa_cli_global_cmd_v("interface_remove %s", ifname);
 	if (ret) {
@@ -671,6 +693,10 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 			} else if (event_msg.event == EVENT_UNPROT_DISASSOC) {
 				os_free((char *)data->unprot_disassoc.sa);
 				os_free((char *)data->unprot_disassoc.da);
+			} else if (event_msg.event == EVENT_EXTERNAL_AUTH) {
+				os_free((char *)data->external_auth.bssid);
+				os_free((char *)data->external_auth.ssid);
+				os_free((char *)data->external_auth.mld_addr);
 			}
 
 			os_free(event_msg.data);

@@ -43,10 +43,12 @@
 		mipi-max-frequency = <15151515>;
 		duplex = <SPI_HALF_DUPLEX>;
 		reg = <0>;
-		width = <320>;
-		height = <240>;
-		pixel-format = <PANEL_PIXEL_FORMAT_RGB888>;
-		rotation = <90>;
+		width = <240>;
+		height = <320>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+		rotation = <270>;
+		v-mirror;
+		red-blue-swap;
 		frmctr1 = [00 18];
 		pwctrl1 = [23 00];
 		vmctrl1 = [3e 28];

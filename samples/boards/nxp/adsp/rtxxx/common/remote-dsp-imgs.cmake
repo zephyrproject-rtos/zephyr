@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025 - 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 add_custom_command(
@@ -38,6 +38,7 @@ add_custom_command(
     --only-section=log_*_area
     --only-section=k_*_area
     --only-section=*_api_area
+    --only-section=nocache_load
 )
 
 add_custom_target(

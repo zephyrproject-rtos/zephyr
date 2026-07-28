@@ -20,6 +20,8 @@
 
 /**
  * @defgroup audio_interface Audio
+ * @ingroup io_interfaces
+ * @brief Interfaces for audio devices.
  * @{
  * @}
  */

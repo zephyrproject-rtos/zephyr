@@ -36,6 +36,8 @@
 #define BL808_CLKID_CLK_CPUPLL  (BFLB_CLKID_CLK_PRIVATE + 2)
 /** 160MHz Clock */
 #define BL808_CLKID_CLK_160M    (BFLB_CLKID_CLK_PRIVATE + 3)
+/** UHS PLL Clock (dedicated PLL for UHS PSRAM PHY) */
+#define BL808_CLKID_CLK_UHSPLL  (BFLB_CLKID_CLK_PRIVATE + 4)
 
 /** CPU PLL output select: divide by 1 */
 #define BL808_CPUPLL_ID_DIV1    0
@@ -60,5 +62,8 @@
 
 /** CPU PLL top frequency (480 MHz) */
 #define BL808_CPUPLL_TOP_FREQ DT_FREQ_M(480)
+
+/** UHS PLL top frequency (2300 MHz) */
+#define BL808_UHSPLL_TOP_FREQ DT_FREQ_M(2300)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_BFLB_BL808_CLOCK_H_ */

@@ -132,12 +132,13 @@ zephyr_udc0: &usbhs {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		/* First half of sector 0 */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(64)>;
 			read-only;
@@ -145,18 +146,21 @@ zephyr_udc0: &usbhs {
 
 		/* From sector 1 to sector 3 (included) */
 		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(384)>;
 		};
 
 		/* From sector 4 to sector 6 (included) */
 		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00080000 DT_SIZE_K(384)>;
 		};
 
 		/* Sector 7 */
 		storage_partition: partition@e0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000e0000 DT_SIZE_K(128)>;
 		};

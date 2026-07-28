@@ -87,7 +87,7 @@ int arch_dcache_flush_and_invd_all(void)
  */
 int arch_dcache_flush_range(void *start_addr, size_t size)
 {
-	size_t line_size = sys_cache_data_line_size_get();
+	size_t line_size = CONFIG_DCACHE_LINE_SIZE;
 	uintptr_t start = (uintptr_t)start_addr;
 	uintptr_t end = start + size;
 

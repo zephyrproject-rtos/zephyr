@@ -111,7 +111,7 @@ config LWM2M_QUEUE_MODE_UPTIME
 	  values though.
 
 config LWM2M_QUEUE_MODE_NO_MSG_BUFFERING
-	bool "Disable buffering notifications and messages on queue mode"
+	bool "Disable buffering notifications and messages on queue mode [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  Messages are sent right away instead of waiting for next registration update.
@@ -172,6 +172,14 @@ config LWM2M_INTERVAL
 	bool "Interval based polling mode"
 
 endchoice
+
+config ZVFS_EVENTFD_ADD_SIZE_LWM2M
+	int "Number of eventfds needed by the LwM2M engine"
+	default 1
+	depends on LWM2M_TICKLESS
+	help
+	  In tickless operation mode the LwM2M engine allocates one zvfs eventfd
+	  to wake up its poll loop.
 
 config LWM2M_SERVER_DEFAULT_SSID
 	int "Default server ssid when using the lwm2m-client. (used for access control)"

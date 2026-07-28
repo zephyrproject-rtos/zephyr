@@ -9,4 +9,7 @@ if SOC_SERIES_SAMD21
 config NUM_IRQS
 	default 28
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x68ed2b88"
+
 endif # SOC_SERIES_SAMD21

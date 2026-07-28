@@ -5,7 +5,7 @@
 #ifndef SIWG917_SOC_H
 #define SIWG917_SOC_H
 
-#include "si91x_device.h"
+#include <si91x_device.h>
 
 #define SYSRTC_IRQHandler IRQ022_Handler
 

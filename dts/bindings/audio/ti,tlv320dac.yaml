@@ -18,3 +18,15 @@ properties:
       Control the volume of the codec using the VOL/MICDET pin. This pin is
       shared with the microphone detection function, so it will not work if
       the microphone detection function is enabled.
+
+  speaker-gain:
+    type: int
+    default: 6
+    enum:
+      - 6
+      - 12
+      - 18
+      - 24
+    description: |
+      Sets the gain (in dB) of the speaker driver output stage.
+      The reset value is 6dB.

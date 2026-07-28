@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef WIFI_CERTS_H__
-#define WIFI_CERTS_H__
+#ifndef ZEPHYR_INCLUDE_NET_WIFI_CERTS_H_
+#define ZEPHYR_INCLUDE_NET_WIFI_CERTS_H_
 
 #include <stdbool.h>
 #include <zephyr/kernel.h>
@@ -35,4 +35,4 @@ int wifi_set_enterprise_credentials(struct net_if *iface, bool is_ap);
  */
 void wifi_clear_enterprise_credentials(void);
 
-#endif /* WIFI_CERTS_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_WIFI_CERTS_H_ */

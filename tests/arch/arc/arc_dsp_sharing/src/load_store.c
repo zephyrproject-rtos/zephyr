@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
+/**
  * @file
  * @brief load/store portion of DSP sharing test
+ *
+ * @defgroup kernel_dspsharing_tests DSP Sharing Tests
  *
  * @ingroup all_tests
  *
@@ -44,13 +46,13 @@ static volatile bool test_exited;
 /* Semaphore for signaling end of test */
 static K_SEM_DEFINE(test_exit_sem, 0, 1);
 
-/**
- * @brief Low priority DSP load/store thread
+/*
+ * Low priority DSP load/store worker for test_load_store().
  *
- * @ingroup kernel_dspsharing_tests
- *
- * @see k_sched_time_slice_set(), memset(),
- * _load_all_dsp_registers(), _store_all_dsp_registers()
+ * Loads all DSP registers with a known byte pattern, busy-waits to let the
+ * high priority thread preempt and use the DSP registers, then stores and
+ * verifies the registers still hold this thread's pattern — i.e. the kernel
+ * restored its DSP context across the context switch.
  */
 static void load_store_low(void)
 {
@@ -124,12 +126,12 @@ static void load_store_low(void)
 	}
 }
 
-/**
- * @brief High priority DSP load/store thread
+/*
+ * High priority DSP load/store worker for test_load_store().
  *
- * @ingroup kernel_dspsharing_tests
- *
- * @see _load_then_store_all_dsp_registers()
+ * Repeatedly loads all DSP registers with its own distinct byte pattern and
+ * sleeps, forcing context switches to/from the low priority thread. Runs for
+ * MAX_TESTS iterations, then signals completion via test_exit_sem.
  */
 static void load_store_high(void)
 {
@@ -215,6 +217,31 @@ K_THREAD_DEFINE(load_low, THREAD_STACK_SIZE, load_store_low, NULL, NULL, NULL,
 K_THREAD_DEFINE(load_high, THREAD_STACK_SIZE, load_store_high, NULL, NULL, NULL,
 		THREAD_HIGH_PRIORITY, THREAD_DSP_FLAGS, K_TICKS_FOREVER);
 
+/**
+ * @brief Verify DSP register context is preserved across context switches.
+ *
+ * @ingroup kernel_dspsharing_tests
+ *
+ * @details
+ * Two threads of different priority each load all ARC DSP registers with their
+ * own distinct byte pattern and keep using them across preemptions. The
+ * low-priority thread re-reads its registers after being preempted and fails
+ * if they no longer hold its pattern. Passing proves the kernel's context
+ * switch correctly saves and restores per-thread DSP register state.
+ *
+ * Test steps:
+ * - Reset the test state and the completion semaphore.
+ * - Start the low- and high-priority DSP load/store threads.
+ * - Block on the completion semaphore until the high-priority thread has run
+ *   MAX_TESTS iterations and signals the test is done.
+ *
+ * Expected result:
+ * - Neither thread ever observes a corrupted DSP register set, so the test
+ *   completes without a failed assertion.
+ *
+ * @see _load_all_dsp_registers()
+ * @see _store_all_dsp_registers()
+ */
 ZTEST(dsp_sharing, test_load_store)
 {
 	/* Initialise test states */

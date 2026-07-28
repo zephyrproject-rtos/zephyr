@@ -16,6 +16,7 @@
 #include <sys/types.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -693,8 +694,12 @@ static void ascs_ep_get_status_enable(struct bt_bap_ep *ep, struct net_buf_simpl
 	enable->cig_id = ep->cig_id;
 	enable->cis_id = ep->cis_id;
 
+#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
 	enable->metadata_len = ep->codec_cfg.meta_len;
 	net_buf_simple_add_mem(buf, ep->codec_cfg.meta, ep->codec_cfg.meta_len);
+#else
+	enable->metadata_len = 0U;
+#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
 
 	LOG_DBG("dir %s cig 0x%02x cis 0x%02x",
 		bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id);
@@ -1697,7 +1702,6 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 	ep->qos_pref = *qos_pref;
 
 	bt_bap_stream_attach(conn, stream, ep);
-	stream->codec_cfg = &ep->codec_cfg;
 
 	err = ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 	if (err != 0) {

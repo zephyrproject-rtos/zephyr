@@ -80,4 +80,11 @@
 				 <PA16X_ADC_AD7>;
 		};
 	};
+
+	dacc_default: dacc_default {
+		group1 {
+			pinmux = <PB15X_DACC_DAC0>,
+				 <PB16X_DACC_DAC1>;
+		};
+	};
 };

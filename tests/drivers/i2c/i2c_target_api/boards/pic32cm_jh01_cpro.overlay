@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect PA16 to PA22 (SDA), and PA17 to PA23 (SCL) */
+
+&pinctrl {
+	sercom1_i2c_default: sercom1_i2c_default {
+		group1 {
+			pinmux = <PA16C_SERCOM1_PAD0>,
+				 <PA17C_SERCOM1_PAD1>;
+		};
+	};
+};
+
+&sercom1 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom1_i2c_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&sercom3 {
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

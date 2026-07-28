@@ -8,7 +8,6 @@
 import collections
 import copy
 import glob
-import itertools
 import json
 import logging
 import os
@@ -38,8 +37,10 @@ from twisterlib.config_parser import TwisterConfigParser
 from twisterlib.environment import TwisterEnv
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.hardwaremap import HardwareMap
+from twisterlib.modulevars import expand_zephyr_vars
 from twisterlib.platform import Platform, generate_platforms
 from twisterlib.quarantine import Quarantine
+from twisterlib.sidecars import sidecar_config_schema
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
@@ -89,6 +90,7 @@ class TestConfiguration:
         self.override_default_platforms = False
         self.increased_platform_scope = True
         self.default_platforms = []
+        self.build_toolchains = {}
         self.parse(config_file)
 
     def parse(self, config_file):
@@ -103,6 +105,7 @@ class TestConfiguration:
         self.override_default_platforms = platform_config.get('override_default_platforms', False)
         self.increased_platform_scope = platform_config.get('increased_platform_scope', True)
         self.default_platforms = platform_config.get('default_platforms', [])
+        self.build_toolchains = platform_config.get('build_toolchains', {})
 
         self.options = self.test_config.get('options', {})
 
@@ -152,6 +155,10 @@ class TestPlan:
     suite_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "testsuite-schema.yaml"))
+    # Fill in the per-sidecar `sidecar_config` schema from the registered
+    # sidecars, so adding a sidecar needs no change to the schema file. The file
+    # keeps a permissive placeholder for consumers that load it directly.
+    suite_schema['$defs']['scenario']['properties']['sidecar_config'] = sidecar_config_schema()
     quarantine_schema = scl.yaml_load(
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "quarantine-schema.yaml"))
@@ -312,20 +319,20 @@ class TestPlan:
 
             self.generate_subset(subset, int(sets))
 
+        elif self.options.shuffle_tests:
+            self._shuffle_instances()
+
     def generate_subset(self, subset, sets):
         self.instances = OrderedDict(sorted(self.instances.items(),
                                 key=lambda x: (x[1].testsuite.name, x[0])))
 
         if self.options.shuffle_tests:
-            seed_value = int.from_bytes(os.urandom(8), byteorder="big")
-            if self.options.shuffle_tests_seed is not None:
-                seed_value = self.options.shuffle_tests_seed
-
-            logger.info(f"Shuffle tests with seed: {seed_value}")
-            random.seed(seed_value)
-            temp_list = list(self.instances.items())
-            random.shuffle(temp_list)
-            self.instances = OrderedDict(temp_list)
+            if sets > 1 and self.options.shuffle_tests_seed is None:
+                logger.warning(
+                    "Shuffling with a random seed across multiple subsets might not cover all "
+                    "tests. Consider providing a fixed seed with --shuffle-tests-seed."
+                )
+            self._shuffle_instances()
 
         # Do calculation based on what is actually going to be run and evaluated
         # at runtime, ignore the cases we already know going to be skipped.
@@ -357,6 +364,18 @@ class TestPlan:
             self.instances.update(skipped)
             self.instances.update(errors)
 
+    def _shuffle_instances(self):
+        """Shuffle test execution order to get randomly distributed tests."""
+        if self.options.shuffle_tests_seed is not None:
+            seed_value = self.options.shuffle_tests_seed
+        else:
+            seed_value = int.from_bytes(os.urandom(8), byteorder="big")
+
+        logger.info(f"Shuffle tests with seed: {seed_value}")
+        random.seed(seed_value)
+        temp_list = list(self.instances.items())
+        random.shuffle(temp_list)
+        self.instances = OrderedDict(temp_list)
 
     def report(self):
         if self.options.test_tree:
@@ -455,9 +474,22 @@ class TestPlan:
         arch_roots = self.env.arch_roots
 
         for platform in generate_platforms(board_roots, soc_roots, arch_roots):
+            self.platforms.append(platform)
+
+            # Platforms with `twister: false` are kept in the platform list so
+            # that references to them in test definitions still resolve (and
+            # twister does not abort on unidentified platforms), but they are
+            # never assigned tests nor used as default platforms.
             if not platform.twister:
                 continue
-            self.platforms.append(platform)
+
+            # The test configuration may request extra toolchains for a platform,
+            # or disable the ones the board yaml asks for (empty list). This lets
+            # multi-toolchain coverage be enabled for CI only.
+            for pp, toolchains in self.test_config.build_toolchains.items():
+                if pp == platform.name or pp in platform.aliases:
+                    logger.debug(f"building {platform.name} with toolchains: {toolchains}")
+                    platform.build_toolchains = toolchains
 
             if not self.test_config.override_default_platforms:
                 if platform.default:
@@ -505,19 +537,19 @@ class TestPlan:
 
     def _register_testsuite(self, suite: TestSuite) -> None:
         """Add a suite to testsuites, raising on duplicate from a different file."""
-        if suite.name in self.testsuites:
+        if suite.id in self.testsuites:
             msg = (
                 f"test suite '{suite.name}' in '{suite.yamlfile}' is already added"
             )
-            if suite.yamlfile == self.testsuites[suite.name].yamlfile:
+            if suite.yamlfile == self.testsuites[suite.id].yamlfile:
                 logger.debug(f"Skip - {msg}")
             else:
                 msg = (
-                    f"Duplicate {msg} from '{self.testsuites[suite.name].yamlfile}'"
+                    f"Duplicate {msg} from '{self.testsuites[suite.id].yamlfile}'"
                 )
                 raise TwisterRuntimeError(msg)
         else:
-            self.testsuites[suite.name] = suite
+            self.testsuites[suite.id] = suite
 
     def _is_testsuite_selected(self, suite: TestSuite, testsuite_filter, testsuite_patterns_r):
         """Check if the testsuite is selected by the user."""
@@ -662,7 +694,7 @@ class TestPlan:
                 if req_app.application not in self.testsuites:
                     required_apps.add(req_app.application)
                     if req_app.path:
-                        req_app_path = os.path.expandvars(req_app.path)
+                        req_app_path = expand_zephyr_vars(os.path.expandvars(req_app.path))
                         if os.path.isabs(req_app_path):
                             testroots.add(req_app_path)
                         else:
@@ -727,10 +759,16 @@ class TestPlan:
                     toolchain = ts["toolchain"]
 
                     platform = self.get_platform(ts["platform"])
+                    if platform is None:
+                        raise TwisterRuntimeError(
+                            f"{file}: unknown platform {ts['platform']} "
+                            f"for test {ts['name']}"
+                        )
                     if filter_platform and platform.name not in filter_platform:
                         continue
+                    testsuite_id = testsuite.rsplit('/', 1)[-1]
                     instance = TestInstance(
-                        self.testsuites[testsuite], platform, toolchain, self.env.outdir
+                        self.testsuites[testsuite_id], platform, toolchain, self.env.outdir
                     )
                     if ts.get("run_id"):
                         instance.run_id = ts.get("run_id")
@@ -793,7 +831,8 @@ class TestPlan:
                                             self.options.enable_asan,
                                             self.options.enable_ubsan,
                                             self.options.enable_coverage,
-                                            self.options.coverage_platform
+                                            self.options.coverage_platform,
+                                            self.options.coverage_per_test
                                             )
                     instance_list.append(instance)
                 self.add_instances(instance_list)
@@ -804,6 +843,23 @@ class TestPlan:
 
     def check_platform(self, platform, platform_list):
         return any(p in platform.aliases for p in platform_list)
+
+    def get_toolchains(self, ts, plat):
+        """Return the toolchains a testsuite should be built with on a platform.
+
+        This is normally a single toolchain, but a testsuite (integration_toolchains)
+        or a platform (build_toolchains) may ask for the same test to be built with
+        several toolchains, which yields one test instance per toolchain.
+        """
+        if ts.integration_toolchains:
+            return ts.integration_toolchains
+        if plat.build_toolchains:
+            return plat.build_toolchains
+        if plat.arch in ['posix', 'unit']:
+            return ['host/llvm'] if self.env.toolchain in ['host/llvm'] else ['host/gnu']
+        if plat.preferred_toolchain:
+            return [plat.preferred_toolchain]
+        return [self.env.toolchain if self.env.toolchain else "zephyr"]
 
     def apply_filters(self, **kwargs):
 
@@ -947,24 +1003,21 @@ class TestPlan:
                         missing_required_snippet = this_snippet
                         break
 
+            # Platforms with `twister: false` are listed only so test
+            # references to them resolve; they are never assigned tests.
+            platform_scope = [plat for plat in platform_scope if plat.twister]
+
             # list of instances per testsuite, aka configurations.
             instance_list = []
-            for itoolchain, plat in itertools.product(
-                ts.integration_toolchains or [None], platform_scope
-            ):
+            # A platform may ask to build every test with more than one
+            # toolchain, yielding one instance per (platform, toolchain) pair.
+            platform_toolchains = [
+                (p, tc) for p in platform_scope for tc in self.get_toolchains(ts, p)
+            ]
+            for plat, toolchain in platform_toolchains:
                 if (plat.arch == "unit") != (ts.type == "unit"):
                     # Discard silently
                     continue
-
-                if itoolchain:
-                    toolchain = itoolchain
-                elif plat.arch in ['posix', 'unit']:
-                    if self.env.toolchain in ['host/llvm']:
-                        toolchain = 'host/llvm'
-                    else:
-                        toolchain = 'host/gnu'
-                else:
-                    toolchain = "zephyr" if not self.env.toolchain else self.env.toolchain
 
                 instance = TestInstance(ts, plat, toolchain, self.env.outdir)
                 instance.run = instance.check_runnable(
@@ -1180,6 +1233,10 @@ class TestPlan:
                     else:
                         test_keys = copy.deepcopy(keys)
                         test_keys.append(ts.name)
+                        # The key deduplicates platforms, not toolchains: when a
+                        # test is deliberately built with several toolchains, each
+                        # of them is covered separately.
+                        test_keys.append(toolchain)
                         test_keys = tuple(test_keys)
                         keyed_test = keyed_tests.get(test_keys)
                         if keyed_test is not None:
@@ -1276,7 +1333,8 @@ class TestPlan:
                                 self.options.enable_asan,
                                 self.options.enable_ubsan,
                                 self.options.enable_coverage,
-                                self.options.coverage_platform)
+                                self.options.coverage_platform,
+                                self.options.coverage_per_test)
 
         self.selected_platforms = set(p.platform.name for p in self.instances.values())
 

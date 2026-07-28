@@ -101,7 +101,7 @@ static void ttc_isr(const void *arg)
 	sys_clock_announce(ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	uint32_t cycles;
@@ -110,12 +110,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Read counter value */
 	cycles = read_count();
 
-	/* Calculate timeout counter value */
-	if (ticks == K_TICKS_FOREVER) {
-		next_cycles = cycles + CYCLES_NEXT_MAX;
-	} else {
-		next_cycles = cycles + ((uint32_t)ticks * CYCLES_PER_TICK);
-	}
+	/* Calculate timeout counter value, clamped to the hardware max */
+	next_cycles = cycles + MIN((uint32_t)ticks * CYCLES_PER_TICK, CYCLES_NEXT_MAX);
 
 	/* Set match value for the next interrupt */
 	update_match(cycles, next_cycles);

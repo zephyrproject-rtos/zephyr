@@ -147,7 +147,7 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_alloc)
 		}
 	}
 
-	/* spwan our threads */
+	/* spawn our threads */
 	for (size_t i = 0; i < N; ++i) {
 		tflag[i] = false;
 		tid[i] = k_thread_create(&th[i], stack[i],

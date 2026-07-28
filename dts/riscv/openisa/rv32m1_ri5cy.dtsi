@@ -18,7 +18,7 @@
 
 &m4_flash {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -28,10 +28,12 @@
 		 */
 
 		ri5cy_code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00000000 0x000fff00>;
 		};
 
 		ri5cy_vector_partition: partition@fff00 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x000fff00 0x100>;
 		};
 	};

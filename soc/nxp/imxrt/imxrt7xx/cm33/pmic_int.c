@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fsl_power.h"
+#include <fsl_power.h>
 
 /* Weak so board can override this function */
 void __weak imxrt_disable_pmic_interrupt(void)

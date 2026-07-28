@@ -21,7 +21,6 @@ properties:
 
   silabs,adc-sampling-rate:
     type: int
-    default: 100000
     description: |
         ADC sampling rate in Hz (1-2500000 Hz).
     required: true

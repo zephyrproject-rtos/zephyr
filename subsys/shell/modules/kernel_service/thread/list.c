@@ -76,11 +76,20 @@ static void shell_tdata_dump(const struct k_thread *cthread, void *user_data)
 		    (thread == k_current_get()) ? "*" : " ",
 		    thread,
 		    tname ? tname : "NA");
+	/* Raw backend scheduling field: delta-ticks for the dlist backend,
+	 * absolute expiry tick for the min-heap backend.
+	 */
+#if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP)
+	int64_t timeout_raw = (int64_t)thread->base.timeout.abs_ticks;
+#else
+	int64_t timeout_raw = (int64_t)thread->base.timeout.dticks;
+#endif
+
 	/* Cannot use lld as it's less portable. */
 	shell_print(sh, "\toptions: 0x%x, priority: %d timeout: %" PRId64,
 		    thread->base.user_options,
 		    thread->base.prio,
-		    (int64_t)thread->base.timeout.dticks);
+		    timeout_raw);
 	shell_print(sh, "\tstate: %s, entry: %p",
 		    k_thread_state_str(thread, state_str, sizeof(state_str)),
 		    thread->entry.pEntry);

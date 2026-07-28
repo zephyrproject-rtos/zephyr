@@ -169,7 +169,7 @@ static int start_scan(bool connect)
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, connect ? connect_device_found : device_found);
 	if (err) {
 		LOG_DBG("Scanning failed to start (err %d)", err);
-		return -1;
+		return err;
 	}
 
 	LOG_DBG("Scanning started.");
@@ -222,7 +222,7 @@ static int gatt_read(struct bt_conn *conn, const struct bt_uuid *uuid, size_t re
 	err = bt_gatt_read(conn, &params);
 	if (err) {
 		LOG_DBG("GATT read failed (err %d)", err);
-		return -1;
+		return err;
 	}
 
 	await_signal(&gatt_read_signal);
@@ -242,7 +242,7 @@ static int gatt_read(struct bt_conn *conn, const struct bt_uuid *uuid, size_t re
 		err = bt_gatt_read(conn, &params);
 		if (err) {
 			LOG_DBG("GATT read failed (err %d)", err);
-			return -1;
+			return err;
 		}
 
 		await_signal(&gatt_read_signal);
@@ -285,7 +285,7 @@ static int gatt_discover_primary_service(struct bt_conn *conn, const struct bt_u
 	err = bt_gatt_discover(conn, &params);
 	if (err) {
 		LOG_DBG("Primary service discover failed (err %d)", err);
-		return -1;
+		return err;
 	}
 
 	await_signal(&gatt_disc_signal);
@@ -383,7 +383,7 @@ static int init_bt(void)
 	err = bt_enable(NULL);
 	if (err) {
 		LOG_ERR("Bluetooth init failed (err %d)", err);
-		return -1;
+		return err;
 	}
 
 	LOG_DBG("Bluetooth initialized");
@@ -409,7 +409,7 @@ static int init_bt(void)
 
 	err = bt_conn_auth_cb_register(&central_auth_cb);
 	if (err) {
-		return -1;
+		return err;
 	}
 
 	return 0;
@@ -432,21 +432,21 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 	/* Initialize Bluetooth and callbacks */
 	err = init_bt();
 	if (err) {
-		return -1;
+		return err;
 	}
 
 	/* Start scan and connect to our peripheral */
 	connect = true;
 	err = start_scan(connect);
 	if (err) {
-		return -2;
+		return err;
 	}
 
 	/* Update connection security level */
 	err = bt_conn_set_security(default_conn, BT_SECURITY_L4);
 	if (err) {
 		LOG_ERR("Failed to set security (err %d)", err);
-		return -3;
+		return err;
 	}
 
 	await_signal(&passkey_enter_signal);
@@ -454,7 +454,7 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 	err = get_passkey_confirmation(default_conn);
 	if (err) {
 		LOG_ERR("Security update failed");
-		return -4;
+		return err;
 	}
 
 	/* Locate the primary service */
@@ -462,7 +462,7 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 					    &end_handle);
 	if (err) {
 		LOG_ERR("Service not found (err %d)", err);
-		return -5;
+		return err;
 	}
 
 	/* Read the Key Material characteristic */
@@ -470,7 +470,7 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 			(uint8_t *)&keymat);
 	if (err) {
 		LOG_ERR("GATT read failed (err %d)", err);
-		return -6;
+		return err;
 	}
 
 	LOG_HEXDUMP_DBG(keymat.session_key, BT_EAD_KEY_SIZE, "Session Key");
@@ -484,13 +484,13 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
 		LOG_ERR("Failed to disconnect.");
-		return -7;
+		return err;
 	}
 
 	connect = false;
 	err = start_scan(connect);
 	if (err) {
-		return -2;
+		return err;
 	}
 
 	return 0;

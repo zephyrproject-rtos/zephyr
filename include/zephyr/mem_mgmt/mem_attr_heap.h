@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_MEM_ATTR_HEAP_H_
-#define ZEPHYR_INCLUDE_MEM_ATTR_HEAP_H_
+#ifndef ZEPHYR_INCLUDE_MEM_MGMT_MEM_ATTR_HEAP_H_
+#define ZEPHYR_INCLUDE_MEM_MGMT_MEM_ATTR_HEAP_H_
 
 /**
  * @brief Memory heaps based on memory attributes
@@ -95,4 +95,4 @@ const struct mem_attr_region_t *mem_attr_heap_get_region(void *addr);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_MEM_ATTR_HEAP_H_ */
+#endif /* ZEPHYR_INCLUDE_MEM_MGMT_MEM_ATTR_HEAP_H_ */

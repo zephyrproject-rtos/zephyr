@@ -4,10 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief STM32 reset controller devicetree helper macros for STM32N6
+ * @ingroup reset_controller_stm32
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_STM32N6_RESET_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_STM32N6_RESET_H_
 
 #include "stm32-common.h"
+
+/** @cond INTERNAL_HIDDEN */
 
 /* RCC bus reset register offset */
 #define STM32_RESET_BUS_AHB1	0x210
@@ -21,5 +29,7 @@
 #define STM32_RESET_BUS_APB4L	0x234
 #define STM32_RESET_BUS_APB4H	0x238
 #define STM32_RESET_BUS_APB5	0x23C
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_RESET_STM32N6_RESET_H_ */

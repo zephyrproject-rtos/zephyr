@@ -2108,6 +2108,7 @@ int bt_mcc_init(struct bt_mcc_cb *cb)
 int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 {
 	struct mcs_instance_t *mcs_inst;
+	struct bt_conn *ref;
 	int err;
 
 	if (!conn) {
@@ -2124,14 +2125,18 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 		return -EBUSY;
 	}
 
+	ref = bt_conn_ref(conn);
+	if (ref == NULL) {
+		err = -ENOTCONN;
+		goto cleanup;
+	}
+
 	subscribe_all = subscribe;
 	err = reset_mcs_inst(mcs_inst);
 	if (err != 0) {
 		LOG_DBG("Failed to reset MCS instance %p: %d", mcs_inst, err);
-
-		atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
-
-		return err;
+		bt_conn_unref(ref);
+		goto cleanup;
 	}
 	(void)memcpy(&uuid, BT_UUID_GMCS, sizeof(uuid));
 
@@ -2144,13 +2149,17 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe)
 	LOG_DBG("start discovery of GMCS primary service");
 	err = bt_gatt_discover(conn, &mcs_inst->discover_params);
 	if (err != 0) {
-		atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
-		return err;
+		bt_conn_unref(ref);
+		goto cleanup;
 	}
 
-	mcs_inst->conn = bt_conn_ref(conn);
+	mcs_inst->conn = ref;
 
 	return 0;
+
+cleanup:
+	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
+	return err;
 }
 
 int bt_mcc_read_player_name(struct bt_conn *conn)

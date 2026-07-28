@@ -238,7 +238,6 @@ def wrapper_defs(func_name, func_type, args, fn, userspace_only):
         wrap += f"extern {func_type} z_impl_{func_name}({decl_arglist});\n"
         wrap += "\n"
 
-    wrap += "__pinned_func\n"
     wrap += f"static inline {func_type} {func_name}({decl_arglist})\n"
     wrap += "{\n"
     if not userspace_only:

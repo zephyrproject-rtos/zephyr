@@ -6,6 +6,8 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/shell/shell_remote_common.h>
+#include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(app, LOG_LEVEL_DBG);
 
@@ -26,5 +28,14 @@ SHELL_CMD_REGISTER(ping, NULL, "Demo command", cmd_ping);
 
 int main(void)
 {
+#ifndef CONFIG_MULTITHREADING
+	/* If multithreading is not enabled, we need to process the shell commands manually. */
+	while (1) {
+		shell_remote_cmd_process();
+		if (LOG_PROCESS() == false) {
+			k_cpu_idle();
+		}
+	}
+#endif
 	return 0;
 }

@@ -18,7 +18,7 @@
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
-#include "zephyr/drivers/gpio/gpio_rts5912.h"
+#include <zephyr/drivers/gpio/gpio_rts5912.h>
 
 LOG_MODULE_REGISTER(uart_rts5912, CONFIG_UART_LOG_LEVEL);
 

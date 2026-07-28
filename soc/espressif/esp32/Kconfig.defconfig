@@ -9,6 +9,9 @@ config BOOTLOADER_MCUBOOT
 config MAIN_STACK_SIZE
 	default 2048
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x1c5f21b0"
+
 if SMP
 
 config SCHED_CPU_MASK

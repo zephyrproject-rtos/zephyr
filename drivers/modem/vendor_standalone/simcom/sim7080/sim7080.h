@@ -50,7 +50,6 @@
 #define MDM_SSL_CERT_NAME_MAX_LEN 64
 #define MDM_SSL_SNI_MAX_LEN 253
 #define MDM_APN CONFIG_MODEM_SIMCOM_SIM7080_APN
-#define MDM_LTE_BANDS CONFIG_MODEM_SIMCOM_SIM7080_LTE_BANDS
 #define RSSI_TIMEOUT_SECS 30
 #define MDM_MAX_TLS_CTX 6
 
@@ -192,6 +191,15 @@ struct sim7080_data {
 		/* State of the ftp connection. */
 		enum sim7080_ftp_connection_state state;
 	} ftp;
+	/* Radio configuration */
+	struct {
+		/* Selected radio access technology */
+		enum sim7080_rat rat;
+		/* Configured LTE bands for NB-IoT */
+		uint32_t lte_bands_nb1;
+		/* Configured LTE bands for CAT-M1 */
+		uint32_t lte_bands_m1;
+	} radio;
 	/*
 	 * Semaphore(s).
 	 */

@@ -16,9 +16,9 @@
 #include "soc.h"
 #include <cy_sysint.h>
 #include <system_edge.h>
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 
-#include "pse84_boot.h"
+#include <pse84_boot.h>
 
 static void systeminit_enable_clocks(void)
 {

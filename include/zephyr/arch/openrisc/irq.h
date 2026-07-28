@@ -9,8 +9,8 @@
  * @brief OpenRISC public interrupt handling
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_OR1K_IRQ_H_
-#define ZEPHYR_INCLUDE_ARCH_OR1K_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_OPENRISC_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_OPENRISC_IRQ_H_
 
 #include <openrisc/openriscregs.h>
 
@@ -122,4 +122,4 @@ static ALWAYS_INLINE int arch_irq_is_enabled(unsigned int irq)
 	return (openrisc_read_spr(SPR_PICMR) & BIT(irq)) != 0;
 }
 
-#endif /* ZEPHYR_INCLUDE_ARCH_OR1K_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_OPENRISC_IRQ_H_ */

@@ -99,7 +99,7 @@ static uint32_t modem_ppp_wrap(struct modem_ppp *ppp, uint8_t *buffer, uint32_t 
 			buffer[offset++] = 0x23;
 			/* Initialise the FCS.
 			 * This value is always the same at this point, so use the constant value.
-			 * Equivelent to:
+			 * Equivalent to:
 			 *   ppp->tx_pkt_fcs = modem_ppp_fcs_init(0xFF);
 			 *   ppp->tx_pkt_fcs = modem_ppp_fcs_update(ppp->tx_pkt_fcs, 0x03);
 			 */

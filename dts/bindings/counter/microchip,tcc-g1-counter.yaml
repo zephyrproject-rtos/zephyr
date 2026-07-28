@@ -13,7 +13,17 @@ description: |
    - TCC id="U2213" version="3.1.0"
   The supported families are:
    - SAM_E5X_D5X
+   - PIC32CM_JH
 
 compatible: "microchip,tcc-g1-counter"
 
 include: microchip,tcc-g1.yaml
+
+examples:
+  - |
+    &tcc1 {
+      compatible = "microchip,tcc-g1-counter";
+      max-bit-width = <24>;
+      prescaler = <4>;
+      status = "okay";
+    };

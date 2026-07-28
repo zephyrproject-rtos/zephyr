@@ -18,16 +18,49 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_ite_it51xxx, CONFIG_FLASH_LOG_LEVEL);
 
-#define SOC_NV_FLASH_NODE  DT_INST(0, soc_nv_flash)
-#define FLASH_SIZE         DT_REG_SIZE(SOC_NV_FLASH_NODE)
+#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+
+/*
+ * Count the number of external flash child nodes at compile time.
+ * Maximum 2 children are supported (CS0 and CS1).
+ */
+#define COUNT_CHILD(child)    1 +
+#define EXT_FLASH_CHILD_COUNT (DT_FOREACH_CHILD(DT_DRV_INST(0), COUNT_CHILD) 0)
+BUILD_ASSERT(EXT_FLASH_CHILD_COUNT <= 2, "manual_flash_1k supports at most 2 flash children");
+
+struct flash_info {
+	size_t size;
+	size_t write_block_size;
+	size_t erase_block_size;
+};
+
+/* Internal flash info */
+static const struct flash_info int_flash_info = {
+	.size = DT_REG_SIZE(SOC_NV_FLASH_NODE),
+	.write_block_size = DT_PROP(SOC_NV_FLASH_NODE, write_block_size),
+	.erase_block_size = DT_PROP(SOC_NV_FLASH_NODE, erase_block_size),
+};
+
+#if EXT_FLASH_CHILD_COUNT > 0
+/* Expand external flash info */
+#define EXTRACT_CHILD_INFO(child)                                                                  \
+	[DT_REG_ADDR(child)] = {                                                                   \
+		.size = DT_REG_SIZE(child),                                                        \
+		.write_block_size = DT_PROP_OR(child, write_block_size, 1),                        \
+		.erase_block_size = DT_PROP_OR(child, erase_block_size, KB(4)),                    \
+	},
+
+static struct flash_info ext_flash_infos[2] = {
+	DT_FOREACH_CHILD(DT_DRV_INST(0), EXTRACT_CHILD_INFO)};
+#endif /* EXT_FLASH_CHILD_COUNT > 0 */
+
 #define FLASH_READ_MAX_SZ  KB(1)
 #define FLASH_WRITE_MAX_SZ KB(1)
-#define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
-#define FLASH_ERASE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 
 /* it51xxx SMFI registers definition */
-#define IT51XXX_M1K_REGS_BASE  DT_INST_REG_ADDR_BY_IDX(0, 0)
-#define IT51XXX_SMFI_REGS_BASE DT_INST_REG_ADDR_BY_IDX(0, 1)
+#define IT51XXX_M1K_REGS_BASE            DT_INST_REG_ADDR_BY_IDX(0, 0)
+#define IT51XXX_SMFI_REGS_BASE           DT_INST_REG_ADDR_BY_IDX(0, 1)
+#define IT51XXX_EFLASH_PROTECT_REGS_BASE DT_INST_REG_ADDR_BY_IDX(0, 2)
 
 /* 0x3b: EC-Indirect Memory Address Register 0 */
 #define SMFI_ECINDAR0    (IT51XXX_SMFI_REGS_BASE + 0x3b)
@@ -49,9 +82,12 @@ LOG_MODULE_REGISTER(flash_ite_it51xxx, CONFIG_FLASH_LOG_LEVEL);
 /* 0x64: Flash Control Register 4 */
 #define SMFI_FLHCTRL4R   (IT51XXX_SMFI_REGS_BASE + 0x64)
 #define EN2FLH           BIT(7)
+
 /* 0x81: Flash Control Register 6 */
-#define SMFI_FLHCTRL6R   (IT51XXX_SMFI_REGS_BASE + 0x81)
-#define FSPI28AMEN       BIT(4)
+#define SMFI_FLHCTRL6R        (IT51XXX_SMFI_REGS_BASE + 0x81)
+#define FSPI28AMEN            BIT(4)
+#define SECTOR_ERASE_4KB_UNIT BIT(3)
+
 /* 0xa6: Manual Flash 1K Command Control 1 */
 #define SMFI_M1KFLHCTRL1 (IT51XXX_M1K_REGS_BASE + 0x00)
 #define W1S_M1K_PE       BIT(1)
@@ -123,9 +159,20 @@ enum m1ksts2 {
 #define M1K_READ_BCNT_MASK GENMASK(9, 0)
 #define M1K_PROG_BCNT_MASK GENMASK(9, 0)
 
+#define EFLASH_PATH_OFFSET(path) ((path) * 0x100)
+#define EFLASH_WRITE_PROTECT_CTRL(path, n)                                                         \
+	(IT51XXX_EFLASH_PROTECT_REGS_BASE + EFLASH_PATH_OFFSET(path) + (n))
+#define EFLASH_READ_PROTECT_CTRL(path, n)                                                          \
+	(IT51XXX_EFLASH_PROTECT_REGS_BASE + EFLASH_PATH_OFFSET(path) + 0x80 + (n))
+
+#define SECTOR_BIT_MASK GENMASK(2, 0)
+
 struct flash_it51xxx_dev_data {
 	struct k_sem sem;
+	struct flash_parameters flash_params;
+	struct flash_pages_layout layout;
 	enum flash_it51xxx_ex_op flash;
+	size_t flash_size;
 };
 
 struct flash_it51xxx_config {
@@ -133,9 +180,39 @@ struct flash_it51xxx_config {
 	enum flash_it51xxx_ex_op target_flash;
 };
 
-static bool is_valid_range(off_t offset, uint32_t len)
+/* Build a bitmask of which CS indices are actually present */
+#define MARK_CS_PRESENT(child) | (1 << DT_REG_ADDR(child))
+#define EXT_FLASH_CS_MASK      (0 DT_FOREACH_CHILD(DT_DRV_INST(0), MARK_CS_PRESENT))
+BUILD_ASSERT(EXT_FLASH_CS_MASK <= 0x3, "flash child reg must be 0 or 1");
+
+static const struct flash_info *get_flash_info(enum flash_it51xxx_ex_op cs)
 {
-	return (offset >= 0) && ((offset + len) <= FLASH_SIZE);
+	switch (cs) {
+	case FLASH_IT51XXX_INTERNAL:
+		return &int_flash_info;
+#if EXT_FLASH_CHILD_COUNT > 0
+	case FLASH_IT51XXX_EXTERNAL_FSPI_CS0:
+		if (!(EXT_FLASH_CS_MASK & BIT(0))) {
+			LOG_ERR("No external flash child node for CS0");
+			return NULL;
+		}
+		return &ext_flash_infos[0];
+	case FLASH_IT51XXX_EXTERNAL_FSPI_CS1:
+		if (!(EXT_FLASH_CS_MASK & BIT(1))) {
+			LOG_ERR("No external flash child node for CS1");
+			return NULL;
+		}
+		return &ext_flash_infos[1];
+#endif /* EXT_FLASH_CHILD_COUNT > 0 */
+	default:
+		LOG_ERR("Invalid flash target: %d", cs);
+		return NULL;
+	}
+}
+
+static bool is_valid_range(off_t offset, uint32_t len, uint32_t flash_size)
+{
+	return (offset >= 0) && ((offset + len) <= flash_size);
 }
 
 static void flash_set_m1k_read_lba(const struct device *dev, uint32_t lb_addr)
@@ -276,6 +353,7 @@ static int m1k_flash_write(const struct device *dev, off_t offset, const void *s
 
 static int m1k_flash_erase(const struct device *dev, off_t offset, size_t len)
 {
+	struct flash_it51xxx_dev_data *data = dev->data;
 	int ret;
 	uint8_t m1kflhctrl7_cmd;
 
@@ -283,7 +361,8 @@ static int m1k_flash_erase(const struct device *dev, off_t offset, size_t len)
 	flash_set_m1k_pe_lba(dev, offset);
 
 	/* It's the upper bound address of M1K-ERASE */
-	flash_set_m1k_erase_uba(dev, offset + FLASH_ERASE_BLK_SZ);
+	/* UBA points to the last block of the erase region. */
+	flash_set_m1k_erase_uba(dev, offset + len - data->layout.pages_size);
 
 	m1kflhctrl7_cmd = sys_read8(SMFI_M1KFLHCTRL7) & ~GENMASK(7, 6);
 	/* Erase the flash within an address range */
@@ -299,14 +378,10 @@ static int m1k_flash_erase(const struct device *dev, off_t offset, size_t len)
 static int m1k_flash_sel_access(const struct device *dev, enum flash_it51xxx_ex_op target_flash)
 {
 	const struct flash_it51xxx_config *cfg = dev->config;
-	struct flash_it51xxx_dev_data *data = dev->data;
 	int ret;
 	uint8_t flhctrl3r_val;
 
 	LOG_DBG("%s: Runtime M1K select access flash=%d", __func__, target_flash);
-
-	/* Save the opcode to device data */
-	data->flash = target_flash;
 
 	/* Disable two-flash */
 	sys_write8(sys_read8(SMFI_FLHCTRL4R) & ~EN2FLH, SMFI_FLHCTRL4R);
@@ -378,6 +453,139 @@ static void m1k_flash_address_mode(const struct device *dev, enum flash_it51xxx_
 	ecinddr = sys_read8(SMFI_ECINDDR);
 }
 
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+static inline mem_addr_t eflash_protect_reg(uint8_t path, bool write, uint32_t addr,
+					    size_t block_size)
+{
+	uint32_t block = addr / block_size;
+
+	return write ? EFLASH_WRITE_PROTECT_CTRL(path, block)
+		     : EFLASH_READ_PROTECT_CTRL(path, block);
+}
+
+static int eflash_validate_region(const uint32_t addr, const size_t size, const size_t sector_size)
+{
+	if (!IS_ALIGNED(addr, sector_size)) {
+		LOG_ERR("address %#x is not %u KB aligned", addr,
+			(unsigned int)(sector_size / KB(1)));
+		return -EINVAL;
+	}
+
+	if (size == 0 || !IS_ALIGNED(size, sector_size)) {
+		LOG_ERR("size(%#zx) must be multiples of flash sector size(%u KB)", size,
+			(unsigned int)(sector_size / KB(1)));
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static void update_protection(const struct flash_it51xxx_ex_op_addr_protection *req,
+			      const bool write, const size_t sector_size, const size_t block_size)
+{
+	mem_addr_t reg;
+
+	for (uint8_t path = 0; path < IT51XXX_PROTECT_PATH_COUNT; path++) {
+		if (!IS_BIT_SET(req->path, path)) {
+			continue;
+		}
+
+		for (uint32_t offset = 0; offset < req->size; offset += sector_size) {
+			uint32_t cur = req->addr + offset;
+			uint8_t bit = (cur / sector_size) & SECTOR_BIT_MASK;
+			uint8_t reg_val;
+
+			reg = eflash_protect_reg(path, write, cur, block_size);
+			reg_val = sys_read8(reg);
+			WRITE_BIT(reg_val, bit, req->is_protected);
+			sys_write8(reg_val, reg);
+		}
+	}
+}
+
+static bool all_sectors_protected(struct flash_it51xxx_ex_op_addr_protection *req, const bool write,
+				  const size_t sector_size, const size_t block_size)
+{
+	mem_addr_t reg;
+
+	for (uint8_t path = 0; path < IT51XXX_PROTECT_PATH_COUNT; path++) {
+		if (!IS_BIT_SET(req->path, path)) {
+			continue;
+		}
+
+		for (uint32_t offset = 0; offset < req->size; offset += sector_size) {
+			uint32_t cur = req->addr + offset;
+			uint8_t bit = (cur / sector_size) & SECTOR_BIT_MASK;
+
+			reg = eflash_protect_reg(path, write, cur, block_size);
+			if (!(sys_read8(reg) & BIT(bit))) {
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+static int m1k_flash_read_write_protect(const struct device *dev, const bool write,
+					const uintptr_t in, void *out)
+{
+	const struct flash_it51xxx_ex_op_addr_protection *request =
+		(const struct flash_it51xxx_ex_op_addr_protection *)in;
+	struct flash_it51xxx_ex_op_addr_protection *result =
+		(struct flash_it51xxx_ex_op_addr_protection *)out;
+	struct flash_it51xxx_dev_data *data = dev->data;
+	const bool is_4kb = !!(sys_read8(SMFI_FLHCTRL6R) & SECTOR_ERASE_4KB_UNIT);
+	const size_t sector_size = is_4kb ? KB(4) : KB(1);
+	const size_t block_size = is_4kb ? KB(32) : KB(8);
+	int ret;
+
+	if (data->flash != FLASH_IT51XXX_INTERNAL) {
+		LOG_ERR("supported internal flash (e-flash) only");
+		return -ENOTSUP;
+	}
+
+	if (request != NULL) {
+		if (request->path == 0 || (request->path & ~PROTECT_PATH_ALL) != 0) {
+			LOG_ERR("invalid protect path %#x", request->path);
+			return -EINVAL;
+		}
+
+		ret = eflash_validate_region(request->addr, request->size, sector_size);
+		if (ret) {
+			return ret;
+		}
+
+		LOG_DBG("internal flash %s request: path %#x protect %d addr %#x size %#zx",
+			write ? "wp" : "rp", request->path, request->is_protected, request->addr,
+			request->size);
+
+		update_protection(request, write, sector_size, block_size);
+	}
+
+	if (result != NULL) {
+		if (result->path == 0 || (result->path & ~PROTECT_PATH_ALL) != 0) {
+			LOG_ERR("invalid protect path(%#x) to get state", result->path);
+			return -EINVAL;
+		}
+
+		ret = eflash_validate_region(result->addr, result->size, sector_size);
+		if (ret) {
+			return ret;
+		}
+
+		result->is_protected =
+			all_sectors_protected(result, write, sector_size, block_size);
+
+		LOG_DBG("internal flash %s status: path %#x protect %d addr %#x size %#zx",
+			write ? "wp" : "rp", result->path, result->is_protected, result->addr,
+			result->size);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
+
 /* Read data from flash */
 static int flash_it51xxx_read(const struct device *dev, off_t offset, void *dst_data, size_t len)
 {
@@ -391,8 +599,8 @@ static int flash_it51xxx_read(const struct device *dev, off_t offset, void *dst_
 		return 0;
 	}
 
-	if (!is_valid_range(offset, len)) {
-		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", FLASH_SIZE,
+	if (!is_valid_range(offset, len, data->flash_size)) {
+		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", data->flash_size,
 			offset, len);
 		return -EINVAL;
 	}
@@ -441,8 +649,8 @@ static int flash_it51xxx_write(const struct device *dev, off_t offset, const voi
 		return 0;
 	}
 
-	if (!is_valid_range(offset, len)) {
-		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", FLASH_SIZE,
+	if (!is_valid_range(offset, len, data->flash_size)) {
+		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", data->flash_size,
 			offset, len);
 		return -EINVAL;
 	}
@@ -484,14 +692,14 @@ static int flash_it51xxx_erase(const struct device *dev, off_t offset, size_t le
 		return 0;
 	}
 
-	if (!is_valid_range(offset, len)) {
-		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", FLASH_SIZE,
+	if (!is_valid_range(offset, len, data->flash_size)) {
+		LOG_ERR("Out of boundaries: FLASH_SIZE=%#x, offset=%#lx, len=%u", data->flash_size,
 			offset, len);
 		return -EINVAL;
 	}
 
 	/* Check that the offset and length are multiples of the erase block size */
-	if ((offset % FLASH_ERASE_BLK_SZ) || (len % FLASH_ERASE_BLK_SZ)) {
+	if ((offset % data->layout.pages_size) || (len % data->layout.pages_size)) {
 		LOG_ERR("Erase range is not a multiple of the block size. offset=%#lx, len=%u",
 			offset, len);
 		return -EINVAL;
@@ -499,15 +707,9 @@ static int flash_it51xxx_erase(const struct device *dev, off_t offset, size_t le
 
 	k_sem_take(&data->sem, K_FOREVER);
 
-	while (len > 0) {
-		ret = m1k_flash_erase(dev, offset, len);
-		if (ret != 0) {
-			LOG_ERR("%s: failed at offset=%#lx", __func__, offset);
-			break;
-		}
-
-		offset += FLASH_ERASE_BLK_SZ;
-		len -= FLASH_ERASE_BLK_SZ;
+	ret = m1k_flash_erase(dev, offset, len);
+	if (ret != 0) {
+		LOG_ERR("%s: failed at offset=%#lx", __func__, offset);
 	}
 
 	k_sem_give(&data->sem);
@@ -515,29 +717,50 @@ static int flash_it51xxx_erase(const struct device *dev, off_t offset, size_t le
 	return ret;
 }
 
-static const struct flash_parameters flash_it51xxx_parameters = {
-	.write_block_size = FLASH_WRITE_BLK_SZ,
-	.erase_value = 0xff,
-};
+static void update_flash_info(const struct device *dev, enum flash_it51xxx_ex_op target_flash)
+{
+	struct flash_it51xxx_dev_data *data = dev->data;
+	const struct flash_info *info;
+
+	info = get_flash_info(target_flash);
+	if (!info) {
+		return;
+	}
+
+	LOG_DBG("%s: flash size=%#x, write blk size=%#x, erase blk size=%#x", __func__, info->size,
+		info->write_block_size, info->erase_block_size);
+
+	/* Save the opcode to device data */
+	data->flash = target_flash;
+
+	/* Save the flash size data */
+	data->flash_size = info->size;
+
+	/* Update flash_parameters */
+	memcpy((void *)&data->flash_params.write_block_size, &info->write_block_size,
+	       sizeof(info->write_block_size));
+	data->flash_params.erase_value = 0xff;
+
+	/* Update pages_layout */
+	data->layout.pages_size = info->erase_block_size;
+	data->layout.pages_count = info->size / info->erase_block_size;
+}
 
 static const struct flash_parameters *flash_it51xxx_get_parameters(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct flash_it51xxx_dev_data *data = dev->data;
 
-	return &flash_it51xxx_parameters;
+	return &data->flash_params;
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-static const struct flash_pages_layout dev_layout = {
-	.pages_count = FLASH_SIZE / FLASH_ERASE_BLK_SZ,
-	.pages_size = FLASH_ERASE_BLK_SZ,
-};
-
 static void flash_it51xxx_pages_layout(const struct device *dev,
 				       const struct flash_pages_layout **layout,
 				       size_t *layout_size)
 {
-	*layout = &dev_layout;
+	struct flash_it51xxx_dev_data *data = dev->data;
+
+	*layout = &data->layout;
 	*layout_size = 1;
 }
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
@@ -558,10 +781,17 @@ static int flash_it51xxx_ex_op(const struct device *dev, uint16_t opcode, const 
 	case FLASH_IT51XXX_EXTERNAL_FSPI_CS0:
 	case FLASH_IT51XXX_EXTERNAL_FSPI_CS1:
 		ret = m1k_flash_sel_access(dev, opcode);
+		update_flash_info(dev, opcode);
 		break;
 	case FLASH_IT51XXX_ADDR_3B:
 	case FLASH_IT51XXX_ADDR_4B:
 		m1k_flash_address_mode(dev, opcode);
+		break;
+	case FLASH_IT51XXX_WRITE_PROTECT:
+		ret = m1k_flash_read_write_protect(dev, true, in, out);
+		break;
+	case FLASH_IT51XXX_READ_PROTECT:
+		ret = m1k_flash_read_write_protect(dev, false, in, out);
 		break;
 	default:
 		return -ENOTSUP;
@@ -596,6 +826,7 @@ static int flash_it51xxx_init(const struct device *dev)
 
 	/* Default to access flash */
 	ret = m1k_flash_sel_access(dev, cfg->target_flash);
+	update_flash_info(dev, cfg->target_flash);
 	/* Default addressing mode */
 	m1k_flash_address_mode(dev, FLASH_IT51XXX_ADDR_3B);
 

@@ -12,7 +12,7 @@
 };
 
 &iic0 {
-	interrupts = <95 1>, <94 1>, <93 1>, <92 1>;
+	interrupts = <88 1>, <87 1>, <86 1>, <85 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";
 	#address-cells = <1>;

@@ -40,14 +40,14 @@ static void netc_eth_phylink_callback(const struct device *pdev, struct phy_link
 		if (result != kStatus_Success) {
 			LOG_ERR("Failed to set MAC up");
 		}
-		net_eth_carrier_on(data->iface);
 	} else {
 		result = EP_Down(&data->handle);
 		if (result != kStatus_Success) {
 			LOG_ERR("Failed to set MAC down");
 		}
-		net_eth_carrier_off(data->iface);
 	}
+
+	net_eth_carrier_set(data->iface, state->is_up);
 }
 
 static void netc_eth_iface_init(struct net_if *iface)
@@ -125,7 +125,7 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 						 .get_capabilities = netc_eth_get_capabilities,
 						 .get_phy = netc_eth_get_phy,
 						 .set_config = netc_eth_set_config,
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 						 .get_ptp_clock = netc_eth_get_ptp_clock,
 #endif
 						 .send = netc_eth_tx};
@@ -207,7 +207,7 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		IF_DISABLED(CONFIG_ETH_NXP_IMX_NETC_MSI_GIC,                                       \
 			(.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                      \
 			.rx_intr_msg_data = NETC_RX_INTR_MSG_DATA_START + n,))                     \
-		IF_ENABLED(NETC_PTP_TIMESTAMPING_SUPPORT,                                          \
+		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_NETC,                                          \
 			(.ptp_clock = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, ptp_clock)),))      \
 	};                                                                                         \
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, netc_eth_init, NULL, &netc_eth##n##_data,                 \

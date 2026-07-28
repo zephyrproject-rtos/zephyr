@@ -23,22 +23,19 @@ config MODEM_HL78XX
 
 if MODEM_HL78XX
 
-choice MODEM_HL78XX_VARIANT
-	bool "Sierra Wireless hl78xx variant selection"
-	default MODEM_HL78XX_12 if DT_HAS_SWIR_HL7812_ENABLED
-	default MODEM_HL78XX_00 if DT_HAS_SWIR_HL7800_ENABLED
-
 config MODEM_HL78XX_12
-	bool "Sierra Wireless hl7812"
+	bool
+	default y if DT_HAS_SWIR_HL7812_ENABLED
 	help
-	  Support for hl7812 modem
+	  Enable support for Sierra Wireless HL7812 modems when a matching
+	  devicetree node is present.
 
 config MODEM_HL78XX_00
-	bool "Sierra Wireless hl7800"
+	bool
+	default y if DT_HAS_SWIR_HL7800_ENABLED
 	help
-	  Support for hl7800 modem
-
-endchoice
+	  Enable support for Sierra Wireless HL7800 modems when a matching
+	  devicetree node is present.
 
 config MODEM_HL78XX_HAS_KSTATEV_URC
 	bool
@@ -51,6 +48,12 @@ config MODEM_HL78XX_HAS_KPSMEV_URC
 	default y if MODEM_HL78XX_12
 	help
 	  Hidden capability symbol: selected variants support +KPSMEV URCs.
+
+config MODEM_HL78XX_HAS_CTZEU_URC
+	bool
+	default y if MODEM_HL78XX_12
+	help
+	  Hidden capability symbol: selected variants support +CTZEU URCs.
 
 config MODEM_HL78XX_WDSI_PROFILE_VALUE
 	int
@@ -74,6 +77,7 @@ endif # MODEM_HL78XX_12
 
 config MODEM_HL78XX_AT_SHELL
 	bool "AT command shell"
+	depends on SHELL
 	help
 	  Enable AT command shell for the modem.
 
@@ -569,6 +573,125 @@ config MODEM_HL78XX_STAY_IN_BOOT_MODE_FOR_ROAMING
 
 endif # MODEM_HL78XX_BOOT_IN_FULLY_FUNCTIONAL_MODE
 
+menuconfig MODEM_HL78XX_KNWSCANCFG
+	bool "Configure network scan timing"
+	default y
+	help
+	  Send AT+KNWSCANCFG during the modem init script.
+	  Disable this option to keep the modem's default network scan timing.
+
+if MODEM_HL78XX_KNWSCANCFG
+
+config MODEM_HL78XX_KNWSCANCFG_OOC
+	bool "Configure out of coverage scan"
+	default y
+	help
+	  Send AT+KNWSCANCFG=0,... during the modem init script.
+
+if MODEM_HL78XX_KNWSCANCFG_OOC
+
+choice MODEM_HL78XX_KNWSCANCFG_OOC_SCHEME
+	prompt "Out of coverage backoff scheme"
+	default MODEM_HL78XX_KNWSCANCFG_OOC_SCHEME_LINEAR
+	help
+	  Select the retry interval scheme used by AT+KNWSCANCFG=0.
+
+config MODEM_HL78XX_KNWSCANCFG_OOC_SCHEME_LINEAR
+	bool "Linear"
+
+config MODEM_HL78XX_KNWSCANCFG_OOC_SCHEME_EXPONENTIAL
+	bool "Exponential"
+
+endchoice
+
+config MODEM_HL78XX_KNWSCANCFG_OOC_SCHEME_VALUE
+	int
+	default 0 if MODEM_HL78XX_KNWSCANCFG_OOC_SCHEME_LINEAR
+	default 1 if MODEM_HL78XX_KNWSCANCFG_OOC_SCHEME_EXPONENTIAL
+	help
+	  Hidden helper value for the AT+KNWSCANCFG=0 <scheme> argument.
+
+config MODEM_HL78XX_KNWSCANCFG_OOC_MIN
+	int "Out of coverage minimum scan interval (seconds)"
+	range 2 65535
+	default 2
+	help
+	  Minimum interval in seconds between out of coverage scans.
+
+config MODEM_HL78XX_KNWSCANCFG_OOC_MAX
+	int "Out of coverage maximum scan interval (seconds)"
+	range 2 65535
+	default 2
+	help
+	  Maximum interval in seconds between out of coverage scans.
+	  Keep this greater than or equal to the minimum interval.
+
+config MODEM_HL78XX_KNWSCANCFG_OOC_STEP
+	int "Out of coverage linear scan interval step (seconds)"
+	depends on MODEM_HL78XX_KNWSCANCFG_OOC_SCHEME_LINEAR
+	range 2 32767
+	default 2
+	help
+	  Increment in seconds between scans when linear mode is selected.
+
+endif # MODEM_HL78XX_KNWSCANCFG_OOC
+
+config MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN
+	bool "Configure initial scan"
+	default y
+	help
+	  Send AT+KNWSCANCFG=1,... during the modem init script.
+
+if MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN
+
+choice MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_SCHEME
+	prompt "Initial scan backoff scheme"
+	default MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_SCHEME_LINEAR
+	help
+	  Select the retry interval scheme used by AT+KNWSCANCFG=1.
+
+config MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_SCHEME_LINEAR
+	bool "Linear"
+
+config MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_SCHEME_EXPONENTIAL
+	bool "Exponential"
+
+endchoice
+
+config MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_SCHEME_VALUE
+	int
+	default 0 if MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_SCHEME_LINEAR
+	default 1 if MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_SCHEME_EXPONENTIAL
+	help
+	  Hidden helper value for the AT+KNWSCANCFG=1 <scheme> argument.
+
+config MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_MIN
+	int "Initial scan minimum interval (seconds)"
+	range 2 65535
+	default 2
+	help
+	  Minimum interval in seconds between initial scans.
+
+config MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_MAX
+	int "Initial scan maximum interval (seconds)"
+	range 2 65535
+	default 2
+	help
+	  Maximum interval in seconds between initial scans.
+	  Keep this greater than or equal to the minimum interval.
+
+config MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_STEP
+	int "Initial scan linear interval step (seconds)"
+	depends on MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN_SCHEME_LINEAR
+	range 2 32767
+	default 2
+	help
+	  Increment in seconds between scans when linear mode is selected.
+
+endif # MODEM_HL78XX_KNWSCANCFG_INITIAL_SCAN
+
+endif # MODEM_HL78XX_KNWSCANCFG
+
 config MODEM_HL78XX_PERIODIC_SCRIPT_MS
 	int "Periodic script interval in milliseconds"
 	default 2000
@@ -658,7 +781,7 @@ config MODEM_HL78XX_AUTORAT_OVER_WRITE_PRL
 	bool "Overwrite PRL profiles always at boot"
 	help
 	  If you enable this option, the PRL profiles on the modem will be overwritten by the app
-	  with the PRL profile values at boot everytime.
+	  with the PRL profile values at boot every time.
 
 config MODEM_HL78XX_AUTORAT_PRL_PROFILES
 	string "Configure Preferred Radio Access Technology List"
@@ -1132,6 +1255,20 @@ config MODEM_HL78XX_POWER_DOWN_ACTIVE_TIME
 	  before powering it down.
 
 endif # MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN
+
+config MODEM_HL78XX_POWER_DOWN_CONFIRM_TIMEOUT_S
+	int "Graceful shutdown confirmation timeout in seconds"
+	default 15
+	range 5 60
+	help
+	  Time in seconds the driver waits for the application to call
+	  hl78xx_power_down_respond() after HL78XX_POWER_DOWN_UPDATE is
+	  dispatched with POWER_DOWN_EVENT_ENTER. Callers can use the
+	  immediate response to proceed with shutdown right away, or the
+	  reschedule response to extend this grace period from the current
+	  time. If the application does not respond within this window the
+	  driver proceeds with the modem shutdown unconditionally.
+
 endif # MODEM_HL78XX_POWER_DOWN
 
 if !MODEM_HL78XX_POWER_DOWN
@@ -1273,6 +1410,26 @@ config MODEM_MIN_ALLOWED_SIGNAL_STRENGTH
 	  bool ">= -140(dBm)"
 	    default -140
 	    range - 140 0
+
+config MODEM_MIN_ALLOWED_SIGNAL_QUALITY
+	int "Minimum allowed RSRQ signal quality (dB)"
+	default -20
+	range -20 0
+	help
+	  Minimum accepted Reference Signal Received Quality threshold used by
+	  HL78xx helper APIs. Lower values are worse. A permissive default of
+	  -20 dB keeps the current behavior unless the application opts in to a
+	  stricter gate.
+
+config MODEM_MIN_ALLOWED_SINR
+	int "Minimum allowed SINR (dB)"
+	default -20
+	range -20 40
+	help
+	  Minimum accepted Signal-to-Interference-plus-Noise Ratio threshold
+	  used by HL78xx helper APIs. Higher values are better. A permissive
+	  default of -20 dB keeps the current behavior unless the application
+	  opts in to a stricter gate.
 
 config MODEM_HL78XX_AIRVANTAGE
 	bool "AirVantage"
@@ -1476,5 +1633,6 @@ config MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG
 	  This setting is depends on global log level debug.
 
 rsource "hl78xx_evt_monitor/Kconfig.hl78xx_evt_monitor"
+rsource "hl78xx_at_monitor/Kconfig.hl78xx_at_monitor"
 
 endif # MODEM_HL78XX

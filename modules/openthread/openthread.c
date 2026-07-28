@@ -125,7 +125,12 @@ K_KERNEL_STACK_DEFINE(ot_stack_area, OT_STACK_SIZE);
 
 k_tid_t openthread_thread_id_get(void)
 {
-	return (k_tid_t)&openthread_work_q.thread;
+	return openthread_work_q.thread_id;
+}
+
+struct k_work_q *openthread_work_q_get(void)
+{
+	return &openthread_work_q;
 }
 
 static int ncp_hdlc_send(const uint8_t *buf, uint16_t len)

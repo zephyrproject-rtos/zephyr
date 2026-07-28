@@ -17,6 +17,7 @@
 #define LOW_PRIO 8
 #define HIGH_PRIO 2
 
+/** @cond INTERNAL_HIDDEN */
 static K_THREAD_STACK_ARRAY_DEFINE(multi_stack_give, STACK_NUMS, STACK_SIZE);
 static K_THREAD_STACK_ARRAY_DEFINE(multi_stack_take, STACK_NUMS, STACK_SIZE);
 
@@ -25,6 +26,7 @@ static struct k_thread multi_tid_take[STACK_NUMS];
 static struct k_sem usage_sem, sync_sem, limit_sem, uninit_sem;
 static ZTEST_DMEM int flag;
 static ZTEST_DMEM atomic_t atomic_count;
+/** @endcond */
 
 /**
  * @ingroup all_tests

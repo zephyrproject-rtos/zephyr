@@ -256,7 +256,7 @@ static void timer_int_handler(const void *unused)
 
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	/* If the kernel allows us to miss tick announcements in idle,
 	 * then shut off the counter. (Note: we can assume if idle==true
@@ -268,7 +268,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * However for single core using 32-bits arc timer, idle cannot
 	 * be ignored, as 32-bits timer will overflow in a not-long time.
 	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
+	    ticks == SYS_CLOCK_MAX_WAIT) {
 		timer0_control_register_set(0);
 		timer0_count_register_set(0);
 		timer0_limit_register_set(0);
@@ -298,7 +299,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	arch_irq_unlock(key);
 #endif
 #else
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && idle && ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
+	    ticks == SYS_CLOCK_MAX_WAIT) {
 		timer0_control_register_set(0);
 		timer0_count_register_set(0);
 		timer0_limit_register_set(0);
@@ -310,7 +312,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	uint32_t delay;
 	uint32_t unannounced;
 
-	ticks = MIN(MAX_TICKS, (uint32_t)(MAX((int32_t)(ticks - 1), 0)));
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 

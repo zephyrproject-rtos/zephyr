@@ -5,7 +5,7 @@
  */
 
 #include "settings_test.h"
-#include "settings/settings_fcb.h"
+#include <settings/settings_fcb.h>
 
 #define NAME_DELETABLE "4/deletable"
 

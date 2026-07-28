@@ -894,7 +894,7 @@ static int pd_receive_and_process_command(struct osdp_pd *pd)
 	}
 
 	/**
-	 * We received some data on the bus; update pd->tstamp. A rouge CP can
+	 * We received some data on the bus; update pd->tstamp. A rogue CP can
 	 * send one byte at a time to extend this command's window but that
 	 * shouldn't cause any issues related to secure channel as it has it's
 	 * own timestamp.

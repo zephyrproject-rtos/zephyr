@@ -191,6 +191,7 @@
 		compatible = "nxp,spc";
 		reg = <0x16000 0x1000>;
 		interrupts = <21 0>;
+		active-dcdc-output-microvolt = <2500000>;
 	};
 
 	wuu: system-modules@19000 {
@@ -203,11 +204,10 @@
 	clk_ctrl: clock-controller {
 		compatible = "nxp,mcxw7x-clock";
 		osc32k-mode = <MCXW_CLK_OSC32K_ENABLE>;
-		osc32k-xtal-cap = <4>;
-		osc32k-extal-cap = <4>;
+		osc32k-xtal-cap = <MCXW_CLK_OSC32K_CAP_16PF>;
+		osc32k-extal-cap = <MCXW_CLK_OSC32K_CAP_16PF>;
 		firc-mode = <MCXW_CLK_FIRC_ENABLE>;
 		firc-range = <MCXW_CLK_FIRC_RANGE_96MHZ>;
-		enable-sirc-in-lp-mode;
 		sys-clk-src = <MCXW_CLK_SYSTEM_CLK_SRC_FIRC>;
 		sys-clk-div-bus = <1>;
 		sys-clk-div-slow = <4>;
@@ -443,13 +443,20 @@
 		status = "disabled";
 	};
 
+	tstmr0: timer@30000 {
+		compatible = "nxp,tstmr";
+		reg = <0x30000 0x8>;
+		clock-frequency = <DT_FREQ_M(1)>;
+		status = "disabled";
+	};
+
 	nbu: nbu {
 		compatible = "nxp,nbu";
 		interrupts = <48 2>;
 		interrupt-names = "nbu_rx_int";
-		max-tx-power-support = <0 7>; /* TODO: Add 10dbm support */
+		max-tx-power-support = <0 7 10>;
 		/* Max TX power can be overridden by the board */
-		max-tx-power-dbm = <7>;
+		max-tx-power-dbm = <10>;
 		wakeup-source;
 		wakeup-ctrls = <&wuu NXP_WUU_MODULE_2_DMA>;
 	};

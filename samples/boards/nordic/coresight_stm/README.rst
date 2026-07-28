@@ -10,7 +10,7 @@ This sample presents how to enable STM logging on nRF54H20 platform.
 Also, it prints timing for different log messages.
 Thus, performance of different loggers can be compared.
 
-There are three sample configurations in the :file:`sample.yaml`.
+There are three sample configurations in the :file:`tests.yaml`.
 
 * **sample.boards.nrf.coresight_stm.local_uart**
 
@@ -42,7 +42,7 @@ to decode the traces.
 Building and running
 ********************
 
-To build the sample, use configuration setups from the :file:`sample.yaml` using the ``-T`` option.
+To build the sample, use configuration setups from the :file:`tests.yaml` using the ``-T`` option.
 See the example:
 
 nRF54H20 DK

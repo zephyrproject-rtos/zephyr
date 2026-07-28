@@ -267,17 +267,7 @@ __csSet:
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 	call	arch_bss_zero_boot
 #endif
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-	call	arch_bss_zero_pinned
-#endif
-#ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
-	/* Don't clear BSS if the section is not present
-	 * in memory at boot. Or else it would cause page
-	 * faults. Zeroing BSS will be done later once the
-	 * paging mechanism has been initialized.
-	 */
 	call	arch_bss_zero
-#endif
 
 #ifdef CONFIG_X86_CET
 	call z_x86_cet_enable
@@ -342,7 +332,7 @@ z_x86_idt:
 	 * and fails to set it.
 	 */
 
-SECTION_VAR(PINNED_RODATA, _gdt_rom)
+SECTION_VAR(RODATA, _gdt_rom)
 #ifndef CONFIG_GDT_DYNAMIC
 _gdt:
 #endif

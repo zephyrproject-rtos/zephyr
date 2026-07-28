@@ -10,9 +10,11 @@ config NET_TRICKLE
 	  so say 'n' if unsure.
 
 if NET_TRICKLE
+
 module = NET_TRICKLE
 module-dep = NET_LOG
 module-str = Log level for Trickle algorithm
 module-help = Enables Trickle library output debug messages
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_TRICKLE

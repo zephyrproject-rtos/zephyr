@@ -14,7 +14,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/linear_range.h>
 
-#include "zephyr/logging/log.h"
+#include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(max20335_charger, CONFIG_CHARGER_LOG_LEVEL);
 
 #define MAX20335_REG_STATUSA 0x02

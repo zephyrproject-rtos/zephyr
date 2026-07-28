@@ -60,7 +60,7 @@ DT_INST_FOREACH_STATUS_OKAY(TEST_DEVICE_INIT)
  * true as possible to the real main thread. {{{
  */
 static struct k_thread hci_uart_thread;
-static K_THREAD_PINNED_STACK_DEFINE(hci_uart_thread_stack, CONFIG_MAIN_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(hci_uart_thread_stack, CONFIG_MAIN_STACK_SIZE);
 static void hci_uart_thread_entry(void *p1, void *p2, void *p3)
 {
 	extern void hci_uart_main(void);

@@ -21,7 +21,7 @@
  * @{
  */
 
-#include "zephyr/shell/shell_remote_common.h"
+#include <zephyr/shell/shell_remote_common.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/ipc/ipc_service.h>
 #include <zephyr/sys/slist.h>

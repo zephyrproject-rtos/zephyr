@@ -7,6 +7,9 @@ config COUNTER_MCUX_CTIMER
 	bool "MCUX CTIMER driver"
 	default y
 	depends on DT_HAS_NXP_LPC_CTIMER_ENABLED
+	select COUNTER_SUPPORTS_CAPTURE
+	select NXP_INPUTMUX if COUNTER_CAPTURE
+	select PINCTRL if COUNTER_CAPTURE
 	help
 	  Enable support for MCUX CTIMER driver.
 

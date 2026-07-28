@@ -1,0 +1,22 @@
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  harness: bsim
+
+tests:
+  tests.bsim.bluetooth.hci_uart:
+    platform_allow:
+      - nrf52_bsim
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+    required_applications:
+      - application: sample.bluetooth.hci_uart.bsim
+        path: $ZEPHYR_BASE/samples/bluetooth/hci_uart
+      - application: sample.bluetooth.hci_uart_async.bsim
+        path: $ZEPHYR_BASE/samples/bluetooth/hci_uart_async
+      - application: tests.bsim.bluetooth.ll.conn.split_hci_uart
+        path: $ZEPHYR_BASE/tests/bsim/bluetooth/ll/conn/
+      - application: tests.bsim.bluetooth.ll.conn.split_hci_uart.psa
+        path: $ZEPHYR_BASE/tests/bsim/bluetooth/ll/conn/

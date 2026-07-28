@@ -240,7 +240,7 @@ ZTEST(nrf_rtc_timer, test_absolute_scheduling)
 	k_busy_wait(5678);
 
 	PRINT("RTC event scheduled at %dus for %dus,"
-	      "event occured at %dus (uptime)\n",
+	      "event occurred at %dus (uptime)\n",
 		(uint32_t)now_us, (uint32_t)target_us, (uint32_t)evt_uptime_us);
 
 	/* schedule event now. */
@@ -253,7 +253,7 @@ ZTEST(nrf_rtc_timer, test_absolute_scheduling)
 	k_busy_wait(200);
 
 	PRINT("RTC event scheduled now, at %dus,"
-	      "event occured at %dus (uptime)\n",
+	      "event occurred at %dus (uptime)\n",
 		(uint32_t)now_us, (uint32_t)evt_uptime_us);
 
 	z_nrf_rtc_timer_chan_free(chan);

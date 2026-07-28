@@ -4,7 +4,7 @@
  */
 
 #include <mem.h>
-#include <alif/ensemble/common/ensemble_common.dtsi>
+#include <alif/ensemble/common/ensemble_e4_e6_e8.dtsi>
 
 &soc {
 	sram0: sram@2000000 {

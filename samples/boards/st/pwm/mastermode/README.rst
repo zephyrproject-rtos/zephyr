@@ -2,20 +2,23 @@
    :name: STM32 pwm mastermode
    :relevant-api: pwm_interface
 
-   Devicetree configuration for generation of timer events.
+   Devicetree configuration for utilizing master/slave capabilities
+   to synchronize timer instances.
 
 Overview
 ********
 
 Devicetree configuration for event generation on the interconnect
 matrix by the timer module (master mode selection / trigger output
-TRGO) of an STM32 device.
+TRGO) and the usage of these triggers for timer synchronization (slave
+mode / trigger input) of an STM32 device.
 The :ref:`PWM API <pwm_api>` is used to configure the PWM signal.
 
 Requirements
 ************
 
-This sample requires the support of a Master Mode-compatible timer block.
+This sample requires the support of two master/slave mode-compatible timer
+blocks.
 
 Building and Running
 ********************

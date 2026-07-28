@@ -65,8 +65,6 @@ size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_a
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
-unsigned long bap_get_stats_interval(void);
-
 #if defined(CONFIG_LIBLC3)
 #include "lc3.h"
 
@@ -81,8 +79,7 @@ unsigned long bap_get_stats_interval(void);
 #define DEFAULT_LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
 #define DEFAULT_CONTEXT                                                                            \
 	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
-	 BT_AUDIO_CONTEXT_TYPE_MEDIA |                                                             \
-	 COND_CODE_1(IS_ENABLED(CONFIG_BT_GMAP), (BT_AUDIO_CONTEXT_TYPE_GAME), (0)))
+	 BT_AUDIO_CONTEXT_TYPE_MEDIA)
 
 const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
 						     const char *preset_arg);
@@ -221,6 +218,7 @@ struct scan_delegator_sync_state {
 	struct bt_le_per_adv_sync *pa_sync;
 	struct bt_conn *conn;
 	struct k_work_delayable pa_timer;
+	uint32_t bis_sync_req_bitfield;
 	uint32_t broadcast_id;
 	uint16_t pa_interval;
 	bool active;
@@ -736,7 +734,6 @@ static inline void print_codec_cfg(size_t indent, const struct bt_audio_codec_cf
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	bt_shell_print("%*sCodec specific configuration:", indent, "");
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
@@ -783,7 +780,6 @@ static inline void print_codec_cfg(size_t indent, const struct bt_audio_codec_cf
 
 	/* Reduce for metadata*/
 	indent -= SHELL_PRINT_INDENT_LEVEL_SIZE;
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
 	bt_shell_print("%*sCodec specific metadata:", indent, "");

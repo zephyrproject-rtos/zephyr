@@ -15,7 +15,7 @@
 
 /**
  * @defgroup grow_r502a_interface Grow R502A
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_hzgrow
  * @brief HZ-Grow GROW_R502A fingerprint sensor
  * @{
  */

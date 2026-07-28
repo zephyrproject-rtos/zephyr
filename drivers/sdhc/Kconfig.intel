@@ -5,6 +5,8 @@ config INTEL_EMMC_HOST
 	bool "EMMC driver"
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select EVENTS
+	select PCIE if $(dt_compat_on_bus,$(DT_COMPAT_INTEL_EMMC_HOST),pcie)
+	select DYNAMIC_INTERRUPTS if $(dt_compat_on_bus,$(DT_COMPAT_INTEL_EMMC_HOST),pcie)
 	default y
 	depends on DT_HAS_INTEL_EMMC_HOST_ENABLED
 	help

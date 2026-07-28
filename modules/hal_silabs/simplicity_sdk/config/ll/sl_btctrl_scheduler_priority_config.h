@@ -9,7 +9,7 @@
 
 #ifndef SL_BTCTRL_SCHEDULER_PRIORITY_CONFIG_H
 #define SL_BTCTRL_SCHEDULER_PRIORITY_CONFIG_H
-#include "sl_btctrl_linklayer_defs.h"
+#include <sl_btctrl_linklayer_defs.h>
 
 #define SL_BT_CONTROLLER_SCHEDULER_PRI_SCAN_MIN  191
 #define SL_BT_CONTROLLER_SCHEDULER_PRI_SCAN_MAX  143

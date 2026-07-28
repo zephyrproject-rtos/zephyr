@@ -9,7 +9,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # the network creentials.
 # Verify:
 # tx node is able to adapt observed beacon interval and able to send at least one
-# SNB in 600s. And veify tx node doesnn't send SNB faster than 10s.
+# SNB in 600s. And verify tx node doesnn't send SNB faster than 10s.
 # Procedure:
 # 1- rx node waits for the tx node to send the first SNB,
 #  rx node sends two SNBs with 20ms period, verifies that tx node only sends SNB 10s later,

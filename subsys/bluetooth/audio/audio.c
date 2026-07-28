@@ -35,6 +35,8 @@ LOG_MODULE_REGISTER(bt_audio, CONFIG_BT_AUDIO_LOG_LEVEL);
 int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 			bool (*func)(struct bt_data *data, void *user_data), void *user_data)
 {
+	size_t i = 0U;
+
 	if (ltv == NULL) {
 		LOG_DBG("ltv is NULL");
 
@@ -47,7 +49,7 @@ int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 		return -EINVAL;
 	}
 
-	for (size_t i = 0U; i < size;) {
+	while (i < size) {
 		const uint8_t len = ltv[i];
 		struct bt_data data;
 
@@ -73,9 +75,6 @@ int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 			return -ECANCELED;
 		}
 
-		/* Since we are incrementing i by the value_len, we don't need to increment it
-		 * further in the `for` statement
-		 */
 		i += data.data_len;
 	}
 

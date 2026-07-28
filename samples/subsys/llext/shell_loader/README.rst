@@ -13,9 +13,10 @@ ability to manage loadable code extensions in the shell.
 Requirements
 ************
 
-A board with a supported LLEXT architecture and shell capable console. The
-following example uses an ARMv7 CPU, but the same instructions can be adapted
-to any LLEXT-supported target.
+A board with a supported LLEXT architecture and a shell capable console. The
+example below uses an ARMv7 target for illustration; the workflow is the same
+on any LLEXT-supported architecture, only the toolchain prefix and the
+generated hex payload change.
 
 Building
 ********
@@ -31,7 +32,9 @@ The following command will build the main shell application:
 .. note::
 
    You may need to disable memory protection for the sample to work (e.g.
-   ``CONFIG_ARM_MPU=n``). See the full list of similar flags in
+   ``CONFIG_ARM_MPU=n`` on ARM, ``CONFIG_XTENSA_MMU=n`` /
+   ``CONFIG_XTENSA_MPU=n`` on Xtensa, ``CONFIG_RISCV_PMP=n`` on RISC-V). See
+   the full list of similar flags in
    :zephyr_file:`tests/subsys/llext/no_mem_protection.conf`.
 
 This sample also includes the source for a very basic extension,
@@ -45,12 +48,22 @@ system like this:
 
    $ ninja -C build -vvv hello_world_ext
 
-On a host machine with the Zephyr SDK and the ``arm-zephyr-eabi`` toolchain in
-``PATH``, you can also obtain the same result directly with ``gcc``:
+On a host machine with the Zephyr SDK and the matching toolchain in ``PATH``,
+the same object can also be produced directly. Pick the toolchain prefix that
+matches your target, for example ``arm-zephyr-eabi-`` for ARM,
+``xtensa-<soc>_zephyr-elf-`` for Xtensa or ``riscv64-zephyr-elf-`` for
+RISC-V:
 
 .. code-block:: console
 
-   $ arm-zephyr-eabi-gcc -mlong-calls -mthumb -c -o build/hello_world.llext samples/subsys/llext/shell/hello_world.c
+   $ <toolchain-prefix>gcc -mlong-calls -c -o build/hello_world.llext samples/subsys/llext/shell_loader/hello_world.c
+
+.. note::
+
+   The extension must be rebuilt for each target architecture: an extension
+   compiled for ARM cannot be loaded on Xtensa or RISC-V, and vice versa. The
+   loader will accept the hex string but the CPU will trap when calling into
+   the extension because the instruction stream is foreign to it.
 
 .. note::
 
@@ -66,11 +79,14 @@ On a host machine with the Zephyr SDK and the ``arm-zephyr-eabi`` toolchain in
 
 The compiled extension can be inspected with the usual binutils utilities to
 see symbols, sections, and relocations. Then, using additional tools, converted
-to a hex string usable by the ``llext load_hex`` shell command:
+to a hex string usable by the ``llext load_hex`` shell command. The example
+output below was produced with the ARM toolchain; relocation types and the
+instruction listing differ on other architectures, but the procedure is
+identical:
 
 .. code-block:: console
 
-  $ arm-zephyr-eabi-objdump -r -d -x build/hello_world.llext
+  $ <toolchain-prefix>objdump -r -d -x build/hello_world.llext
 
 	hello_world.elf:     file format elf32-littlearm
 	hello_world.elf
@@ -137,7 +153,7 @@ to a hex string usable by the ``llext load_hex`` shell command:
 	  34:	4718      	bx	r3
 	  36:	46c0      	nop			; (mov r8, r8)
 
-  $ xxd -p build/hello_world.llext | tr -d '\n'
+  $ xxd -p -c 99999 build/hello_world.llext
   7f454c4601010100000000000000000001002800010000000000000000000000680200000000000534000000000028000b000a0080b500af084b1800084b00f013f82a22074b11001800054b00f00cf8c046bd4680bc01bc0047c0460400000000000000140000001847c0462a00000068656c6c6f20776f726c640a0000000041206e756d62657220697320256c750a00004743433a20285a65706879722053444b20302e31362e31292031322e322e30004129000000616561626900011f000000053454000602080109011204140115011703180119011a011e06000000000000000000000000000000000100000000000000000000000400f1ff000000000000000000000000030001000000000000000000000000000300030000000000000000000000000003000400000000000000000000000000030005000f00000000000000000000000000050012000000000000000400000001000500190000000000000000000000000001000f0000002800000000000000000001001900000034000000000000000000010000000000000000000000000003000600000000000000000000000000030007001c000000010000003400000012000100280000000000000000000000100000000068656c6c6f5f776f726c642e63002464006e756d6265720024740068656c6c6f5f776f726c64007072696e746b000028000000020500002c000000020e00003000000002050000002e73796d746162002e737472746162002e7368737472746162002e72656c2e74657874002e64617461002e627373002e726f64617461002e636f6d6d656e74002e41524d2e6174747269627574657300000000000000000000000000000000000000000000000000000000000000000000000000000000000000001f0000000100000006000000000000003400000038000000000000000000000004000000000000001b000000090000004000000000000000fc0100001800000008000000010000000400000008000000250000000100000003000000000000006c00000000000000000000000000000001000000000000002b0000000800000003000000000000006c0000000000000000000000000000000100000000000000300000000100000002000000000000006c00000025000000000000000000000004000000000000003800000001000000300000000000000091000000210000000000000000000000010000000100000041000000030000700000000000000000b20000002a0000000000000000000000010000000000000001000000020000000000000000000000dc000000f0000000090000000d000000040000001000000009000000030000000000000000000000cc0100002f0000000000000000000000010000000000000011000000030000000000000000000000140200005100000000000000000000000100000000000000
 
 In this sample there are 3 absolute (``R_ARM_ABS32``) relocations, 2 of which
@@ -184,3 +200,26 @@ run (``call_fn``).
 
   uart:~$ llext call_fn hello_world hello_world
   hello world
+
+Loading multiple extensions
+***************************
+
+Each ``load_hex`` invocation allocates its own ELF buffer and tracks it under
+the extension name. The buffer is freed when ``unload`` is called for that
+name, so several extensions can stay loaded and be called independently:
+
+.. code-block:: console
+
+  uart:~$ llext load_hex hello_world <hex>
+  uart:~$ llext load_hex worker <hex>
+  uart:~$ llext list
+  | Name             | Size         |
+  |      hello_world |          ... |
+  |           worker |          ... |
+  uart:~$ llext call_fn hello_world hello_world
+  uart:~$ llext call_fn worker run
+  uart:~$ llext unload worker
+
+The number of simultaneously loaded extensions is limited by the
+``LLEXT_SHELL_MAX_LOADED`` slot count in :zephyr_file:`subsys/llext/shell.c`
+(four by default). Adjust it there if more concurrent extensions are needed.

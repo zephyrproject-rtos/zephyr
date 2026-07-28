@@ -4,3 +4,5 @@ board:
   vendor: renode
   socs:
   - name: riscv_virtual_renode
+    variants:
+    - name: smode

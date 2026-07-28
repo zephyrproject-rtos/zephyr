@@ -21,6 +21,10 @@ LOG_MODULE_REGISTER(os_heap, CONFIG_SYS_HEAP_LOG_LEVEL);
 #include <zephyr/random/random.h>
 #endif
 
+#ifdef CONFIG_SYS_HEAP_SANITIZER_HOOKS
+#include "heap_sanitizer.h"
+#endif
+
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
 {
@@ -345,6 +349,9 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 				  chunk_usable_bytes(h, c) - mem_align_gap(h, mem));
 #endif
 
+	IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+		   (heap_sanitizer_on_free(heap, mem,
+				      chunk_usable_bytes(h, c) - mem_align_gap(h, mem))));
 	free_chunk(h, c);
 }
 
@@ -457,6 +464,7 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 				   chunk_usable_bytes(h, c));
 #endif
 
+	IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS, (heap_sanitizer_on_alloc(heap, mem, bytes)));
 	IF_ENABLED(CONFIG_MSAN, (__msan_allocated_memory(mem, bytes)));
 	return mem;
 }
@@ -546,6 +554,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 #endif
 
 	IF_ENABLED(CONFIG_MSAN, (__msan_allocated_memory(mem, bytes)));
+	IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS, (heap_sanitizer_on_alloc(heap, mem, bytes)));
 	return mem;
 }
 
@@ -678,7 +687,15 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 		return NULL;
 	}
 
+#ifdef CONFIG_SYS_HEAP_SANITIZER_HOOKS
+	size_t old_usable = sys_heap_usable_size(heap, ptr);
+#endif
+
 	if (inplace_realloc(heap, ptr, bytes)) {
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_free(heap, ptr, old_usable)));
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_alloc(heap, ptr, bytes)));
 		return ptr;
 	}
 
@@ -688,6 +705,14 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
+		/*
+		 * The copy reads the source block's whole usable region, which
+		 * a sanitizer backend keeps poisoned past the user-requested
+		 * size. Re-grant access to the full region for the duration of
+		 * the copy; the free below re-poisons it.
+		 */
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_alloc(heap, ptr, prev_size)));
 		memcpy(ptr2, ptr, min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
@@ -708,8 +733,16 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 
 	__ASSERT((align & (align - 1)) == 0, "align must be a power of 2");
 
+#ifdef CONFIG_SYS_HEAP_SANITIZER_HOOKS
+	size_t old_usable = sys_heap_usable_size(heap, ptr);
+#endif
+
 	if ((align == 0 || ((uintptr_t)ptr & (align - 1)) == 0) &&
 	    inplace_realloc(heap, ptr, bytes)) {
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_free(heap, ptr, old_usable)));
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_alloc(heap, ptr, bytes)));
 		return ptr;
 	}
 
@@ -722,6 +755,14 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
+		/*
+		 * The copy reads the source block's whole usable region, which
+		 * a sanitizer backend keeps poisoned past the user-requested
+		 * size. Re-grant access to the full region for the duration of
+		 * the copy; the free below re-poisons it.
+		 */
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_alloc(heap, ptr, prev_size)));
 		memcpy(ptr2, ptr, min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
@@ -742,6 +783,9 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 
 	/* Reserve the end marker chunk's header */
 	__ASSERT(bytes > heap_footer_bytes(bytes), "heap size is too small");
+#ifdef CONFIG_SYS_HEAP_SANITIZER_HOOKS
+	const size_t orig_bytes = bytes; /* preserve for heap_sanitizer_on_init */
+#endif
 	bytes -= heap_footer_bytes(bytes);
 
 	/* Round the start up, the end down */
@@ -800,4 +844,8 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	set_chunk_used(h, heap_sz, true);
 
 	free_list_add(h, chunk0_size);
+
+#ifdef CONFIG_SYS_HEAP_SANITIZER_HOOKS
+	heap_sanitizer_on_init(heap, mem, orig_bytes);
+#endif
 }

@@ -35,6 +35,11 @@
 
 #define PLL_FRACN_DIVISOR 8192
 
+#if IS_ENABLED(STM32_PLL_P_ENABLED)
+BUILD_ASSERT((STM32_PLL_P_DIVISOR % 2) == 0,
+	     "STM32H5 PLL1P divisor factor must be even");
+#endif /* STM32_PLL_P_ENABLED */
+
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
 	return clock / prescaler;
@@ -517,6 +522,8 @@ static int set_up_plls(void)
 	}
 
 	LL_RCC_PLL1_Disable();
+	while (LL_RCC_PLL1_IsReady() != 0U) {
+	}
 
 	/* Configure PLL source : Can be HSE, HSI, MSIS */
 	if (IS_ENABLED(STM32_PLL_SRC_HSE)) {

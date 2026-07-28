@@ -53,4 +53,10 @@
 				 <PA5F_TC5_WO1>;
 		};
 	};
+
+	dac_default: dac_default {
+		group1 {
+			pinmux = <PA2B_DAC_VOUT>;
+		};
+	};
 };

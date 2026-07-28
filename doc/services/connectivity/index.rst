@@ -1,4 +1,5 @@
 .. _connectivity:
+.. _connectivity_services:
 
 Connectivity
 ############
@@ -6,9 +7,10 @@ Connectivity
 .. toctree::
    :maxdepth: 1
 
-   bluetooth/index.rst
-   canbus/index.rst
    networking/index.rst
-   lora_lorawan/index.rst
+   bluetooth/index.rst
    usb/index.rst
+   canbus/index.rst
+   lora_lorawan/index.rst
    modbus/index.rst
+   modem/index.rst

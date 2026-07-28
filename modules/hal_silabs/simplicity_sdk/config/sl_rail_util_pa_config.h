@@ -19,7 +19,7 @@
 
 /* Modules still use legacy PA configuration */
 #ifdef CONFIG_SILABS_DEVICE_IS_MODULE
-#include "rail_types.h"
+#include <rail_types.h>
 
 #if DT_NODE_HAS_PROP(DT_NODELABEL(radio), pa_2p4ghz)
 #define SL_RAIL_UTIL_PA_SELECTION_2P4GHZ                                                           \

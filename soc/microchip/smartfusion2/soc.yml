@@ -1,0 +1,9 @@
+## SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+## SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: microchip
+  series:
+  - name: smartfusion2
+    socs:
+    - name: m2s010

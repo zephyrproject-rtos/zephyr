@@ -58,7 +58,7 @@ static void print_conn_state_transition(const char *prefix, struct bt_conn *conn
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	print_conn_state_transition("Disonnected", conn);
+	print_conn_state_transition("Disconnected", conn);
 	SET_FLAG(flag_has_disconnected);
 }
 

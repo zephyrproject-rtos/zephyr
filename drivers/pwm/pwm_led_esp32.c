@@ -88,23 +88,31 @@ static struct pwm_ledc_esp32_channel_config *get_channel_config(const struct dev
 static void pwm_led_esp32_start(struct pwm_ledc_esp32_data *data,
 				struct pwm_ledc_esp32_channel_config *channel)
 {
+	unsigned int key = irq_lock();
+
 	ledc_hal_set_sig_out_en(&data->hal, channel->speed_mode, channel->channel_num, true);
 	ledc_hal_set_duty_start(&data->hal, channel->speed_mode, channel->channel_num);
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
 		ledc_hal_ls_channel_update(&data->hal, channel->speed_mode, channel->channel_num);
 	}
+
+	irq_unlock(key);
 }
 
 static void pwm_led_esp32_stop(struct pwm_ledc_esp32_data *data,
 			       struct pwm_ledc_esp32_channel_config *channel, bool idle_level)
 {
+	unsigned int key = irq_lock();
+
 	ledc_hal_set_idle_level(&data->hal, channel->speed_mode, channel->channel_num, idle_level);
 	ledc_hal_set_sig_out_en(&data->hal, channel->speed_mode, channel->channel_num, false);
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
 		ledc_hal_ls_channel_update(&data->hal, channel->speed_mode, channel->channel_num);
 	}
+
+	irq_unlock(key);
 }
 
 static void pwm_led_esp32_duty_set(const struct device *dev,
@@ -424,12 +432,16 @@ static void pwm_led_esp32_sleep_retention_init(void)
 	sleep_retention_module_t module = ledc_reg_retention_info[0].module_id;
 	sleep_retention_module_init_param_t init_param = {
 		.cbs = {.create = {.handle = pwm_led_esp32_create_sleep_retention_cb, .arg = NULL}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
 		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
 
 	esp_err_t err = sleep_retention_module_init(module, &init_param);
 
 	if (err == ESP_OK) {
 		err = sleep_retention_module_allocate(module);
+	}
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(module);
 	}
 	if (err != ESP_OK) {
 		LOG_WRN("LEDC sleep retention init failed (%d)", err);

@@ -28,38 +28,16 @@ if(ARMFVP AND (DEFINED ARMFVP_MIN_VERSION))
   endif()
 endif()
 
-if(CONFIG_BUILD_WITH_TFA)
+# Boards that don't assemble their own firmware args in ARMFVP_FLAGS fall back
+# to the generic "-a <elf>" application loading.  Boards that do assemble their
+# own firmware args (e.g. via CONFIG_BUILD_WITH_TFA or CONFIG_ARMV8_A_NS) must
+# populate ARMFVP_FLAGS before this file is processed.
+if(NOT "-a" IN_LIST ARMFVP_FLAGS
+   AND NOT CONFIG_BUILD_WITH_TFA
+   AND NOT CONFIG_ARMV8_A_NS)
   set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
-    -C bp.secureflashloader.fname=${APPLICATION_BINARY_DIR}/tfa${FVP_SECURE_FLASH_FILE}
-    -C bp.flashloader0.fname=${APPLICATION_BINARY_DIR}/tfa${FVP_FLASH_FILE}
+    -a ${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
     )
-elseif(CONFIG_ARMV8_A_NS)
-  foreach(filetype BL1 FIP)
-    if((NOT DEFINED ARMFVP_${filetype}_FILE) AND (EXISTS "$ENV{ARMFVP_${filetype}_FILE}"))
-      set(ARMFVP_${filetype}_FILE "$ENV{ARMFVP_${filetype}_FILE}" CACHE FILEPATH
-        "ARM FVP ${filetype} File specified in environment"
-        )
-    endif()
-
-    if(NOT EXISTS "${ARMFVP_${filetype}_FILE}")
-      string(TOLOWER ${filetype} filename)
-      message(FATAL_ERROR "Please specify ARMFVP_${filetype}_FILE in environment "
-        "or with -DARMFVP_${filetype}_FILE=</path/to/${filename}.bin>")
-    endif()
-  endforeach()
-
-  set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
-    -C bp.secureflashloader.fname=${ARMFVP_BL1_FILE}
-    -C bp.flashloader0.fname=${ARMFVP_FIP_FILE}
-    --data cluster0.cpu0="${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}"@0x88000000
-    )
-else()
-  string(FIND "${ARMFVP_FLAGS}" "-a;" ARMFVP_APPARG_POS)
-  if(${ARMFVP_APPARG_POS} EQUAL -1)
-    set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
-      -a ${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
-    )
-  endif()
 endif()
 
 if(CONFIG_ETH_SMSC91X)

@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# NXP enhanced Quadrature Decoder (eQDC) configuration options
+config EQDC_MCUX
+	bool "NXP eQDC driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_EQDC_ENABLED
+	select NXP_INPUTMUX
+	select PINCTRL
+	help
+	  Enable the NXP eQDC driver. The EQDC phase inputs are routed
+	  through the on-chip INPUTMUX.
+
+if EQDC_MCUX
+
+config EQDC_MCUX_TRIGGER
+	bool "EQDC trigger support"
+	help
+	  Enable trigger support for EQDC. This allows the driver to
+	  generate interrupts on events like position roll-over/under.
+
+endif # EQDC_MCUX

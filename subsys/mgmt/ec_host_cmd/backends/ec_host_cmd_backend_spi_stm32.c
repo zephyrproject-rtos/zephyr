@@ -423,7 +423,7 @@ static int reload_dma_tx(struct ec_host_cmd_spi_ctx *hc_spi, size_t len)
 	SPI_TypeDef *spi = cfg->spi;
 	int ret;
 
-	/* Set DMA at the beggining of the TX buffer and set the number of bytes to send */
+	/* Set DMA at the beginning of the TX buffer and set the number of bytes to send */
 	ret = dma_reload(hc_spi->dma_tx->dma_dev, hc_spi->dma_tx->channel, (uint32_t)hc_spi->tx_buf,
 			 dma_dest_addr(spi), len);
 	if (ret != 0) {
@@ -545,9 +545,9 @@ static int prepare_rx(struct ec_host_cmd_spi_ctx *hc_spi)
 	 * properly, SPI is strongly suggested to be disabled and re-enabled
 	 * before next transaction starts despite its setting is not changed.",
 	 * disable and re-enable the SPI module. Without that, the SPI module
-	 * receives the first byte on a next transaction incorrently - it is
+	 * receives the first byte on a next transaction incorrectly - it is
 	 * always 0x00.
-	 * It also clears RX FIFO, so there is no needed to read the remianing
+	 * It also clears RX FIFO, so there is no needed to read the remaining
 	 * bytes manually.
 	 */
 	LL_SPI_Disable(spi);
@@ -626,7 +626,7 @@ static int wait_for_rx_bytes(struct ec_host_cmd_spi_ctx *hc_spi, int needed)
 		current_time = k_ticks_to_us_floor64(k_uptime_ticks());
 
 		ret = dma_get_status(hc_spi->dma_rx->dma_dev, hc_spi->dma_rx->channel, &stat);
-		/* RX DMA is always programed to copy buffer size (max command size) */
+		/* RX DMA is always programmed to copy buffer size (max command size) */
 		if (ret) {
 			return ret;
 		}
@@ -745,7 +745,7 @@ static int ec_host_cmd_spi_init(const struct ec_host_cmd_backend *backend,
 	hc_spi->tx->buf = (uint8_t *)hc_spi->tx->buf + sizeof(out_preamble);
 	hc_spi->tx->len_max = hc_spi->tx->len_max - sizeof(out_preamble) - EC_SPI_PAST_END_LENGTH;
 
-	/* Limit the requset/response max sizes */
+	/* Limit the request/response max sizes */
 	if (hc_spi->rx_ctx->len_max > SPI_MAX_REQ_SIZE) {
 		hc_spi->rx_ctx->len_max = SPI_MAX_REQ_SIZE;
 	}
@@ -787,7 +787,7 @@ static int ec_host_cmd_spi_send(const struct ec_host_cmd_backend *backend)
 
 	dma_stop(hc_spi->dma_rx->dma_dev, hc_spi->dma_rx->channel);
 
-	/* Add state bytes at the beggining and the end of the buffer to transmit */
+	/* Add state bytes at the beginning and the end of the buffer to transmit */
 	memcpy(hc_spi->tx_buf, out_preamble, sizeof(out_preamble));
 	for (int i = 0; i < EC_SPI_PAST_END_LENGTH; i++) {
 		hc_spi->tx_buf[sizeof(out_preamble) + hc_spi->tx->len + i] = EC_SPI_PAST_END;

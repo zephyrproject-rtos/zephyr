@@ -264,7 +264,7 @@ static void test_clock_control_request(const struct test_clk_context *clk_contex
 								 &startup_time_us);
 			zassert(ret == 0 || ret == -ENOSYS, "failed to get startup time");
 			if (ret == 0) {
-				TC_PRINT("startup time for resloved spec: %uus\n", startup_time_us);
+				TC_PRINT("startup time for resolved spec: %uus\n", startup_time_us);
 			} else if (ret == -ENOSYS) {
 				TC_PRINT("get startup time not supported\n");
 			}
@@ -421,7 +421,7 @@ static void *setup(void)
 	/* Constantly make requests to DVFS until one is successful (what also
 	 * means that the service has finished its initialization). This loop
 	 * also verifies that the clock control driver is able to recover after
-	 * an unsuccesful attempt to start a clock (at least one initial request
+	 * an unsuccessful attempt to start a clock (at least one initial request
 	 * is expected to fail here due to DFVS not being initialized yet).
 	 */
 	TC_PRINT("Polling DVFS until it is ready\n");

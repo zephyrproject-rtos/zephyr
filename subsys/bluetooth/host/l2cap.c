@@ -1103,7 +1103,21 @@ static void le_conn_param_rsp(struct bt_l2cap *l2cap, struct net_buf *buf)
 		return;
 	}
 
-	LOG_DBG("LE conn param rsp result %u", sys_le16_to_cpu(rsp->result));
+	__maybe_unused uint16_t result = sys_le16_to_cpu(rsp->result);
+
+	LOG_DBG("L2CAP conn param rsp result %u", result);
+
+	if (IS_ENABLED(CONFIG_BT_USER_CONN_PARAM_REJECTED) &&
+	    result == BT_L2CAP_CONN_PARAM_REJECTED) {
+		struct bt_conn *conn = l2cap->chan.chan.conn;
+
+		/* Mirror le_conn_update_complete(): only notify for
+		 * application-initiated updates, not host-initiated (auto) ones.
+		 */
+		if (!atomic_test_bit(conn->flags, BT_CONN_PERIPHERAL_PARAM_AUTO_UPDATE)) {
+			bt_conn_notify_le_param_rejected(conn, BT_CONN_PARAM_REJECT_ERR_L2CAP_CPUP);
+		}
+	}
 }
 
 static void le_conn_param_update_req(struct bt_l2cap *l2cap, uint8_t ident,
@@ -1366,7 +1380,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	 */
 	struct k_work_q *rtx_work_queue = le_chan->rtx_work.queue;
 
-	if (rtx_work_queue == NULL || k_current_get() != &rtx_work_queue->thread) {
+	if (rtx_work_queue == NULL || k_current_get() != rtx_work_queue->thread_id) {
 		k_work_cancel_delayable_sync(&le_chan->rtx_work, &le_chan->rtx_sync);
 	} else {
 		k_work_cancel_delayable(&le_chan->rtx_work);

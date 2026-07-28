@@ -81,6 +81,9 @@ extern "C" {
 
 #define BOOT_IMG_VER_STRLEN_MAX 25  /* 255.255.65535.4294967295\0 */
 
+/** Value reserved to signalize invalid slot or failure to determine slot number */
+#define BOOT_INVALID_SLOT_ID 255
+
 /** Sector at which firmware update should be placed by application in swap using offset mode */
 #define SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN 1
 

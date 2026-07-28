@@ -9,8 +9,8 @@
  * @brief Connectivity implementation for drivers exposing the wifi_mgmt API
  */
 
-#ifndef ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_WIFI_MGMT_H_
-#define ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_WIFI_MGMT_H_
+#ifndef ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_WIFI_MGMT_H_
+#define ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_WIFI_MGMT_H_
 
 #include <zephyr/net/conn_mgr_connectivity_impl.h>
 
@@ -37,4 +37,4 @@ extern "C" {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_WIFI_MGMT_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_WIFI_MGMT_H_ */

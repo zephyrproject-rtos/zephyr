@@ -96,6 +96,10 @@
 	status = "okay";
 };
 
+&tstmr2 {
+	status = "okay";
+};
+
 &edma2 {
 	status = "okay";
 };

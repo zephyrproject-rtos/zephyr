@@ -1105,9 +1105,9 @@ uint8_t ull_cp_periodic_sync(struct ll_conn *conn, struct ll_sync_set *sync,
 		sid = adv->sid;
 
 		/* Pull AdvA from pdu */
-		adv_pdu = lll_adv_sync_data_curr_get(&adv_sync->lll);
+		/* Zephyr Controller by design always places BDADDR in the auxiliary channel PDU */
+		adv_pdu = lll_adv_aux_data_peek(adv->lll.aux);
 		addr_type = adv_pdu->tx_addr;
-		/* Note: AdvA is mandatory for AUX_SYNC_IND and at the start of the ext. header */
 		adva = adv_pdu->adv_ext_ind.ext_hdr.data;
 	}
 

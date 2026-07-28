@@ -76,3 +76,31 @@ properties:
           VBACKUP without requiring VDD to drop below VTH:LSM (2.0 V)
         - level: Level Switching Mode (LSM): when VDD < VTH:LSM (2.0 V) AND VBACKUP > VTH:LSM,
           switchover occurs from VDD to VBACKUP
+
+  trickle-resistor-ohms:
+    type: int
+    enum:
+      - 600
+      - 2000
+      - 7000
+      - 12000
+    description: |
+      Trickle charger series resistance (TCR).
+      Ignored if 'trickle-charger-mode' is not present (TCM=00).
+      Note: 600 ohms corresponds to TCR=00 (0.6kΩ) in RV3032.
+
+  trickle-charger-mode:
+    type: int
+    enum:
+      - 1750
+      - 3000
+      - 4500
+    description: |
+      Trickle Charger Mode (TCM).
+        - If this property is not present, the trickle charger is disabled (TCM=00).
+        - 1750: TCM=01. In DSM (backup-switch-mode="direct"), VDD is used as the source.
+                In LSM (backup-switch-mode="level"), an internal ~1.75 V is used.
+        - 3000: TCM=10. Internal charge-pump ~3.0 V, only valid in LSM.
+        - 4500: TCM=11. Internal charge-pump ~4.5 V, only valid in LSM.
+      Note: In LSM, the 1.75/3.0/4.5 V levels are only generated when VDD > VTH:LSM
+      (typ. 2.0 V, max 2.2 V).

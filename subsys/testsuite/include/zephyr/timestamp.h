@@ -5,9 +5,9 @@
  */
 
 /*
- * @file macroses for measuring time in benchmarking tests
+ * @file macros for measuring time in benchmarking tests
  *
- * This file contains the macroses for taking and converting time for
+ * This file contains the macros for taking and converting time for
  * benchmarking tests.
  */
 

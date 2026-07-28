@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file providing the API for the CS40L26/27 haptic driver
+ * @ingroup cs40l26_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_HAPTICS_CS40L26_H_
 #define ZEPHYR_INCLUDE_DRIVERS_HAPTICS_CS40L26_H_
 
@@ -13,9 +19,10 @@ extern "C" {
 #endif /* __cplusplus */
 
 /**
- * @file
- * @brief Public API for CS40L26 haptic driver
+ * @defgroup cs40l26_interface CS40L26/27
  * @ingroup haptics_interface_ext
+ * @brief CS40L26 Haptic Driver for LRA and VCM
+ * @{
  */
 
 /**
@@ -78,6 +85,8 @@ int cs40l26_select_output(const struct device *const dev, const enum cs40l26_ban
  * @retval <0 if failed
  */
 int cs40l26_set_gain(const struct device *const dev, const uint8_t gain);
+
+/** @} */
 
 #ifdef __cplusplus
 }

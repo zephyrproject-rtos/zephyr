@@ -163,7 +163,7 @@ pairs:
         filter = not ARCH in ["x86", "arc"]
 
     but unlike "filter", these cause platforms to be filtered already during the testplan
-    generation. While "filter" does not exclue platforms at the testplan generation, and instead
+    generation. While "filter" does not exclude platforms at the testplan generation, and instead
     relies on the result of running the build configuration stage. That is, to evaluate the filter
     expression, cmake is run for that target, and then the filter evaluated as a gate for the
     build and run steps.

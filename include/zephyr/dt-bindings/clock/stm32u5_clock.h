@@ -11,32 +11,54 @@
 
 /** Domain clocks */
 
-/* RM0456, Figure 36 Clock tree for STM32U5 Series */
+/* RM0456 Rev 6, Figure 38 Clock tree for STM32U5 Series */
 
 /** System clock */
 /* defined in stm32_common_clocks.h */
 /** Fixed clocks  */
+/** High Speed External (HSE) clock */
 #define STM32_SRC_HSE		(STM32_SRC_LSI + 1)
+/** 16 MHz High Speed Internal (HSI16) clock */
 #define STM32_SRC_HSI16		(STM32_SRC_HSE + 1)
+/** 48 MHz High Speed Internal (HSI48) clock */
 #define STM32_SRC_HSI48		(STM32_SRC_HSI16 + 1)
+/** Multi-Speed Internal RC oscillator System (MSIS) clock */
 #define STM32_SRC_MSIS		(STM32_SRC_HSI48 + 1)
+/** Multi-Speed Internal RC oscillator peripheral Kernel (MSIK) clock */
 #define STM32_SRC_MSIK		(STM32_SRC_MSIS + 1)
+/** 48 MHz Secure High Speed Internal (SHSI) clock */
+#define STM32_SRC_SHSI		(STM32_SRC_MSIK + 1)
 /** Bus clock */
-#define STM32_SRC_HCLK		(STM32_SRC_MSIK + 1)
+/** AHB (hclk) clock */
+#define STM32_SRC_HCLK		(STM32_SRC_SHSI + 1)
+/** APB1 (pclk1) clock */
 #define STM32_SRC_PCLK1		(STM32_SRC_HCLK + 1)
+/** APB2 (pclk2) clock */
 #define STM32_SRC_PCLK2		(STM32_SRC_PCLK1 + 1)
+/** APB3 (pclk3) clock */
 #define STM32_SRC_PCLK3		(STM32_SRC_PCLK2 + 1)
+/** APB1 timer clock */
 #define STM32_SRC_TIMPCLK1	(STM32_SRC_PCLK3 + 1)
+/** APB2 timer clock */
 #define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
 /** PLL outputs */
+/** pll1_p_ck clock */
 #define STM32_SRC_PLL1_P	(STM32_SRC_TIMPCLK2 + 1)
+/** pll1_q_ck clock */
 #define STM32_SRC_PLL1_Q	(STM32_SRC_PLL1_P + 1)
+/** pll1_r_ck clock */
 #define STM32_SRC_PLL1_R	(STM32_SRC_PLL1_Q + 1)
+/** pll2_p_ck clock */
 #define STM32_SRC_PLL2_P	(STM32_SRC_PLL1_R + 1)
+/** pll2_q_ck clock */
 #define STM32_SRC_PLL2_Q	(STM32_SRC_PLL2_P + 1)
+/** pll2_r_ck clock */
 #define STM32_SRC_PLL2_R	(STM32_SRC_PLL2_Q + 1)
+/** pll3_p_ck clock */
 #define STM32_SRC_PLL3_P	(STM32_SRC_PLL2_R + 1)
+/** pll3_q_ck clock */
 #define STM32_SRC_PLL3_Q	(STM32_SRC_PLL3_P + 1)
+/** pll3_r_ck clock */
 #define STM32_SRC_PLL3_R	(STM32_SRC_PLL3_Q + 1)
 /** DSI PHY clock */
 #define STM32_SRC_DSIPHY	(STM32_SRC_PLL3_R + 1)

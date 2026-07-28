@@ -15,8 +15,8 @@
 &pllsai {
 	div-m = <25>;
 	mul-n = <384>;
-	div-r = <5>;
-	post-div-r = <8>;
+	div-r = <7>;
+	post-div-r = <2>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };

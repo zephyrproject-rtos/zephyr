@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/sys/mem_blocks.h>
 
+/** @cond INTERNAL_HIDDEN */
 SYS_MEM_BLOCKS_DEFINE(mem_block, 32, 4, 16);  /* Four 32 byte blocks */
 
 K_MEM_SLAB_DEFINE(mem_slab, 32, 4, 16);       /* Four 32 byte blocks */
@@ -35,6 +36,7 @@ void busy_thread_entry(void *p1, void *p2, void *p3)
 }
 
 #endif
+/** @endcond */
 
 /***************** SYSTEM (CPUs and KERNEL) ******************/
 

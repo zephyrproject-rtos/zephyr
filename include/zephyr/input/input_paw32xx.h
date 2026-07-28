@@ -10,8 +10,8 @@
  * @ingroup paw32xx_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_INPUT_PAW32XX_H_
-#define ZEPHYR_INCLUDE_INPUT_PAW32XX_H_
+#ifndef ZEPHYR_INCLUDE_INPUT_INPUT_PAW32XX_H_
+#define ZEPHYR_INCLUDE_INPUT_INPUT_PAW32XX_H_
 
 /**
  * @defgroup paw32xx_interface PAW32xx
@@ -38,4 +38,4 @@ int paw32xx_force_awake(const struct device *dev, bool enable);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_INPUT_PAW32XX_H_ */
+#endif /* ZEPHYR_INCLUDE_INPUT_INPUT_PAW32XX_H_ */

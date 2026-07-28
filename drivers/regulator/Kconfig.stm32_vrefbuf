@@ -8,9 +8,12 @@ config REGULATOR_STM32_VREFBUF
 	help
 	  Enable the STM32 VREFBUF regulator driver.
 
+if REGULATOR_STM32_VREFBUF
+
 config REGULATOR_STM32_VREFBUF_INIT_PRIORITY
 	int "STM32 VREFBUF regulator driver init priority"
 	default 45
-	depends on DT_HAS_ST_STM32_VREFBUF_ENABLED
 	help
 	  Init priority for the STM32 VREFBUF regulator driver.
+
+endif # REGULATOR_STM32_VREFBUF

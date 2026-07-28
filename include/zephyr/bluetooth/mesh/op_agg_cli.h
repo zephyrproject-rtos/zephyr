@@ -4,8 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef BT_MESH_OP_AGG_CLI_H__
-#define BT_MESH_OP_AGG_CLI_H__
+/**
+ * @file
+ * @brief Header file for the Bluetooth Mesh Opcodes Aggregator Client model API.
+ * @ingroup bt_mesh_op_agg_cli
+ */
+
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_OP_AGG_CLI_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_OP_AGG_CLI_H_
 
 #include <zephyr/bluetooth/mesh.h>
 
@@ -89,4 +95,4 @@ extern const struct bt_mesh_model_cb _bt_mesh_op_agg_cli_cb;
 }
 #endif
 
-#endif /* BT_MESH_OP_AGG_CLI_H__ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_OP_AGG_CLI_H_ */

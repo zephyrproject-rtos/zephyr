@@ -9,3 +9,5 @@ board:
       cpucluster: m7
     - name: flash
       cpucluster: m7
+    - name: smp
+      cpucluster: a55

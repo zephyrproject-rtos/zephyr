@@ -15,8 +15,8 @@
  *       to protect the data when using these APIs.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_MM_DRV_BANK_H
-#define ZEPHYR_INCLUDE_DRIVERS_MM_DRV_BANK_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MM_MM_DRV_BANK_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MM_MM_DRV_BANK_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/mem_stats.h>
@@ -114,4 +114,4 @@ void sys_mm_drv_bank_stats_get(struct sys_mm_drv_bank *bank,
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_MM_DRV_BANK_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MM_MM_DRV_BANK_H_ */

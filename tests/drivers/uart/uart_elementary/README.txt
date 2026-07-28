@@ -4,7 +4,7 @@ UART interrupt mode is used for the tests purpose.
 
 Hardware setup required for these tests:
 For single uart configuration - UART0 TX connected to RX and CTS to RTS
-For dual uart configuratiom - UART0 and UART1 TXs and RXs cross-connected
+For dual uart configuration - UART0 and UART1 TXs and RXs cross-connected
 
 These test cases cover:
 - UART configuration,

@@ -29,7 +29,7 @@
 #error "Library does not support the specified device."
 #endif
 
-#include "samd5xe5x.h"
+#include <samd5xe5x.h>
 
 #endif /* _ASMLANGUAGE */
 

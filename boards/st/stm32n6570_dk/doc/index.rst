@@ -108,6 +108,17 @@ However, to allow running Zephyr net related samples without programming
 irreversibly your device, by default, the STM32 Ethernet driver creates a
 locally administered MAC address from the device unique ID.
 
+STM32 OEMuROT integration
+=========================
+
+STM32CubeN6 provides an external secure bootloader called STM32 OEMuROT
+that takes advantage of the secure features of the STM32N657X0H3Q
+microcontroller. Refer to the `OEMuRoT for STM32N6 wiki article`_ for details
+on this bootloader.
+
+Integration of this bootloader in the Zephyr build environment is available
+in the external `STM32 OEMxROT module`_.
+
 USB
 ===
 
@@ -470,6 +481,12 @@ To do so, it is advised to use Twister's hardware map feature with the following
 
 .. _STM32 ISP module:
    https://github.com/stm32-hotspot/zephyr-stm32-mw-isp
+
+.. _OEMuRoT for STM32N6 wiki article:
+   https://wiki.st.com/stm32mcu/wiki/Security:OEMuRoT_for_STM32N6
+
+.. _STM32 OEMxROT module:
+   https://github.com/stm32-hotspot/zephyr-stm32-oemxrot
 
 .. _Zephyr computer vision application:
    https://github.com/stm32-hotspot/zephyr-stm32n6-ai-people-detection

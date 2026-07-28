@@ -9,13 +9,15 @@ junitparser>=4.0.1
 lxml>=6.1.0
 pykwalify
 pylint>=3
-python-dotenv
+python-dotenv>=1.2.2
 python-magic-bin; sys_platform == "win32"
 python-magic; sys_platform != "win32"
 reuse
 ruff==0.14.2
 sphinx-lint
 tabulate
+tree-sitter-cmake
+tree-sitter>=0.23
 unidiff
 vermin
 west>=0.14.0

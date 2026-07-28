@@ -4,8 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_FPRINTF_H_
-#define ZEPHYR_INCLUDE_SHELL_FPRINTF_H_
+/**
+ * @file
+ * @brief Header file for the shell formatted output helpers.
+ */
+
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_FPRINTF_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_FPRINTF_H_
 
 #include <zephyr/kernel.h>
 #include <stdbool.h>
@@ -14,6 +19,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @cond INTERNAL_HIDDEN */
 
 typedef void (*shell_fprintf_fwrite)(const void *user_ctx,
 				     const char *data,
@@ -33,6 +40,8 @@ struct shell_fprintf {
 	const void *user_ctx;
 	struct shell_fprintf_control_block *ctrl_blk;
 };
+
+/** @endcond */
 
 /**
  * @brief Macro for defining shell_fprintf instance.
@@ -88,4 +97,4 @@ void z_shell_fprintf_buffer_flush(const struct shell_fprintf *sh_fprintf);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_FPRINTF_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_FPRINTF_H_ */

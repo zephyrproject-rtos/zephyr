@@ -543,6 +543,26 @@ Here are more details on the peripherals that are currently provided with this b
 
   SocketCAN support can be enabled by using the :ref:`snippet-socketcan-native-sim`.
 
+**LED device**
+  Implements a Zephyr LED device backed by a Linux LED. You configure which
+  Linux LED to use by setting the DT ``path`` property to the name of the LED
+  as it shows in ``/sys/class/leds``.
+
+  .. code-block:: dts
+
+      leds {
+        compatible = "zephyr,native-linux-leds";
+
+        led0: led_0 {
+          /* /sys/class/leds/tpacpi::lid_logo_dot/brightness */
+          path = "tpacpi::lid_logo_dot";
+        };
+        led1: led_1 {
+          /* /sys/class/leds/tpacpi::power/brightness */
+          path = "tpacpi::power";
+        };
+      };
+
 .. _native_ptty_uart:
 
 PTY UART

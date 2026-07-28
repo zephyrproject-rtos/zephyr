@@ -15,7 +15,7 @@
 
 /**
  * @defgroup lis2dh_interface LIS2DH
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_st
  * @brief ST Microelectronics LIS2DH 3-axis accelerometer
  * @{
  */

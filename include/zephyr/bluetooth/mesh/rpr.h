@@ -4,8 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BT_MESH_RPR_H__
-#define ZEPHYR_INCLUDE_BT_MESH_RPR_H__
+/**
+ * @file
+ * @brief Header file for Bluetooth Mesh Remote Provisioning common definitions.
+ * @ingroup bt_mesh_rpr
+ */
+
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_RPR_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_RPR_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/mesh/main.h>
@@ -113,4 +119,4 @@ struct bt_mesh_rpr_link {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BT_MESH_RPR_H__ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_RPR_H_ */

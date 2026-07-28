@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if SOC_ACP_6_0
-config DCACHE_LINE_SIZE
+configdefault DCACHE_LINE_SIZE
 	default 128
 
 config CACHE_MANAGEMENT

@@ -9,6 +9,7 @@
 #include <string.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/counter.h>
+#include <zephyr/drivers/counter/counter_capture_emul.h>
 #include <zephyr/irq.h>
 #include <soc.h>
 #include <hw_counter.h>
@@ -27,6 +28,41 @@ static bool is_alarm_pending[DRIVER_CONFIG_INFO_CHANNELS];
 static struct counter_top_cfg top;
 static bool is_top_set;
 static const struct device *dev_p;
+
+#ifdef CONFIG_COUNTER_CAPTURE
+/* Capture edges supported by the emulated counter */
+enum ctr_capture_emul_cap {
+	CTR_CAPTURE_EMUL_CAP_EDGE_RISING = BIT(0),
+	CTR_CAPTURE_EMUL_CAP_EDGE_FALLING = BIT(1),
+};
+
+#define CTR_CAPTURE_EMUL_CAPS(inst)                                                      \
+	((DT_INST_PROP(inst, rising_edge) ? CTR_CAPTURE_EMUL_CAP_EDGE_RISING : 0) |       \
+	 (DT_INST_PROP(inst, falling_edge) ? CTR_CAPTURE_EMUL_CAP_EDGE_FALLING : 0))
+
+/* Wraps counter_config_info so dev->config still resolves to it (info must stay first). */
+struct ctr_native_sim_config {
+	struct counter_config_info info;
+	uint32_t capture_caps;
+};
+
+struct ctr_capture_channel {
+	counter_capture_cb_t cb;
+	void *user_data;
+	counter_capture_flags_t flags;
+	bool enabled;
+	int level; /* last driven input level, for edge detection and input_get */
+};
+
+static struct ctr_capture_channel capture_chan[DRIVER_CONFIG_INFO_CHANNELS];
+
+static inline bool ctr_capture_has_caps(const struct device *dev, uint32_t caps)
+{
+	const struct ctr_native_sim_config *cfg = dev->config;
+
+	return (caps & cfg->capture_caps) == caps;
+}
+#endif /* CONFIG_COUNTER_CAPTURE */
 
 static void schedule_next_isr(void)
 {
@@ -78,6 +114,9 @@ static int ctr_init(const struct device *dev)
 {
 	dev_p = dev;
 	memset(is_alarm_pending, 0, sizeof(is_alarm_pending));
+#ifdef CONFIG_COUNTER_CAPTURE
+	memset(capture_chan, 0, sizeof(capture_chan));
+#endif
 	is_top_set = false;
 	top.ticks = TOP_VALUE;
 
@@ -233,6 +272,111 @@ static int ctr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	return 0;
 }
 
+#ifdef CONFIG_COUNTER_CAPTURE
+static int ctr_capture_configure(const struct device *dev, uint8_t chan_id,
+				 counter_capture_flags_t flags, counter_capture_cb_t cb,
+				 void *user_data)
+{
+	uint32_t edges = 0;
+
+	if (flags & COUNTER_CAPTURE_RISING_EDGE) {
+		edges |= CTR_CAPTURE_EMUL_CAP_EDGE_RISING;
+	}
+	if (flags & COUNTER_CAPTURE_FALLING_EDGE) {
+		edges |= CTR_CAPTURE_EMUL_CAP_EDGE_FALLING;
+	}
+
+	if (edges == 0) {
+		return -EINVAL;
+	}
+
+	if (!ctr_capture_has_caps(dev, edges)) {
+		return -ENOTSUP;
+	}
+
+	capture_chan[chan_id].flags = flags;
+	capture_chan[chan_id].cb = cb;
+	capture_chan[chan_id].user_data = user_data;
+	capture_chan[chan_id].enabled = false;
+
+	return 0;
+}
+
+static int ctr_enable_capture(const struct device *dev, uint8_t chan_id)
+{
+	ARG_UNUSED(dev);
+
+	if (capture_chan[chan_id].cb == NULL) {
+		return -EINVAL;
+	}
+
+	capture_chan[chan_id].enabled = true;
+
+	return 0;
+}
+
+static int ctr_disable_capture(const struct device *dev, uint8_t chan_id)
+{
+	ARG_UNUSED(dev);
+
+	capture_chan[chan_id].enabled = false;
+
+	return 0;
+}
+
+int counter_capture_emul_input_set(const struct device *dev, uint8_t chan_id, int level)
+{
+	struct ctr_capture_channel *ch;
+	counter_capture_flags_t edge_flag;
+	bool rising, falling;
+	int prev;
+
+	if (chan_id >= DRIVER_CONFIG_INFO_CHANNELS) {
+		return -EINVAL;
+	}
+
+	ch = &capture_chan[chan_id];
+	prev = ch->level;
+	ch->level = level ? 1 : 0;
+
+	rising = (prev == 0) && (ch->level == 1);
+	falling = (prev == 1) && (ch->level == 0);
+
+	if (!ch->enabled || ch->cb == NULL) {
+		return 0;
+	}
+
+	if (rising && (ch->flags & COUNTER_CAPTURE_RISING_EDGE)) {
+		edge_flag = COUNTER_CAPTURE_RISING_EDGE;
+	} else if (falling && (ch->flags & COUNTER_CAPTURE_FALLING_EDGE)) {
+		edge_flag = COUNTER_CAPTURE_FALLING_EDGE;
+	} else {
+		return 0;
+	}
+
+	uint32_t ticks = hw_counter_get_value();
+
+	if (ch->flags & COUNTER_CAPTURE_SINGLE_SHOT) {
+		ch->enabled = false;
+	}
+
+	ch->cb(dev, chan_id, edge_flag, ticks, ch->user_data);
+
+	return 0;
+}
+
+int counter_capture_emul_input_get(const struct device *dev, uint8_t chan_id)
+{
+	ARG_UNUSED(dev);
+
+	if (chan_id >= DRIVER_CONFIG_INFO_CHANNELS) {
+		return -EINVAL;
+	}
+
+	return capture_chan[chan_id].level;
+}
+#endif /* CONFIG_COUNTER_CAPTURE */
+
 static DEVICE_API(counter, ctr_api) = {
 	.start = ctr_start,
 	.stop = ctr_stop,
@@ -243,14 +387,31 @@ static DEVICE_API(counter, ctr_api) = {
 	.set_top_value = ctr_set_top_value,
 	.get_pending_int = ctr_get_pending_int,
 	.get_top_value = ctr_get_top_value,
+#ifdef CONFIG_COUNTER_CAPTURE
+	.capture_configure = ctr_capture_configure,
+	.enable_capture = ctr_enable_capture,
+	.disable_capture = ctr_disable_capture,
+#endif
 };
 
+#ifdef CONFIG_COUNTER_CAPTURE
+static const struct ctr_native_sim_config ctr_config = {
+	.info = {
+		.max_top_value = UINT_MAX,
+		.freq = CONFIG_COUNTER_NATIVE_SIM_FREQUENCY,
+		.channels = DRIVER_CONFIG_INFO_CHANNELS,
+		.flags = DRIVER_CONFIG_INFO_FLAGS,
+	},
+	.capture_caps = CTR_CAPTURE_EMUL_CAPS(0),
+};
+#else
 static const struct counter_config_info ctr_config = {
 	.max_top_value = UINT_MAX,
 	.freq = CONFIG_COUNTER_NATIVE_SIM_FREQUENCY,
 	.channels = DRIVER_CONFIG_INFO_CHANNELS,
 	.flags = DRIVER_CONFIG_INFO_FLAGS
 };
+#endif /* CONFIG_COUNTER_CAPTURE */
 
 DEVICE_DT_INST_DEFINE(0, ctr_init,
 		    NULL, NULL, &ctr_config, PRE_KERNEL_1,

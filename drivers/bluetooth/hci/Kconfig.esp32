@@ -604,6 +604,9 @@ config ESP32_BT_LE_COEX_PHY_CODED_TX_RX_TLIM_EFF
 
 config ESP32_BT_LE_SLEEP_ENABLE
 	bool "BLE sleep mode"
+	depends on PM && TICKLESS_KERNEL
+	default y
+	select MAC_BB_PD if SOC_SERIES_ESP32C6
 	help
 	  Allow controller to enter low-power sleep during idle periods.
 
@@ -811,5 +814,127 @@ config ESP32_BT_LE_CTLR_SLV_FAST_RX_CONN_DATA_EN
 	  current draw.
 
 endif # SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+
+if PM && TICKLESS_KERNEL
+
+if SOC_SERIES_ESP32
+
+menu "Modem sleep (ESP32)"
+
+config ESP32_BTDM_CTRL_MODEM_SLEEP
+	bool "Bluetooth modem sleep"
+	default y
+	help
+	  Enable Bluetooth controller low-power (modem sleep) mode.
+	  The controller turns off the PHY between BLE/BT events, allowing the
+	  system to lower its APB frequency or enter light sleep.
+
+config ESP32_BTDM_CTRL_MODEM_SLEEP_MODE_ORIG
+	bool "Bluetooth modem sleep mode ORIG"
+	depends on ESP32_BTDM_CTRL_MODEM_SLEEP
+	default y
+	help
+	  Original modem sleep mode: controller sleeps between BLE/BR-EDR events
+	  using a dedicated low-power clock (same as IDF BTDM_CTRL_MODEM_SLEEP_MODE_ORIG).
+
+choice ESP32_BTDM_CTRL_LOW_POWER_CLOCK
+	prompt "Bluetooth low power clock"
+	depends on ESP32_BTDM_CTRL_MODEM_SLEEP_MODE_ORIG
+	default ESP32_BTDM_CTRL_LPCLK_SEL_MAIN_XTAL
+	help
+	  Low-power clock source for Bluetooth modem sleep.
+
+config ESP32_BTDM_CTRL_LPCLK_SEL_MAIN_XTAL
+	bool "Main crystal"
+	help
+	  Use the main crystal as BT LP clock. Light sleep is blocked while BT
+	  is active (main XTAL must stay on), same as IDF BTDM_CTRL_LPCLK_SEL_MAIN_XTAL.
+
+config ESP32_BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL
+	bool "External 32kHz crystal/oscillator"
+	help
+	  Use an external 32.768 kHz reference as BT LP clock. When this is
+	  selected and the crystal is detected at run time, the system is allowed
+	  to enter light sleep while BT is active
+	  (same as IDF BTDM_CTRL_LPCLK_SEL_EXT_32K_XTAL).
+
+endchoice
+
+endmenu
+
+endif # SOC_SERIES_ESP32
+
+if SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32S3
+
+menu "Modem sleep (ESP32-C3/S3)"
+
+config ESP32_BT_CTRL_MODEM_SLEEP
+	bool "Bluetooth modem sleep"
+	default y
+	help
+	  Enable or disable Bluetooth controller low-power (modem sleep) mode.
+
+config ESP32_BT_CTRL_MODEM_SLEEP_MODE_1
+	bool "Bluetooth modem sleep mode 1"
+	depends on ESP32_BT_CTRL_MODEM_SLEEP
+	default y
+	help
+	  In this mode the controller sleeps between BLE events using a
+	  dedicated low-power clock.
+
+choice ESP32_BT_CTRL_LOW_POWER_CLOCK
+	prompt "Bluetooth low power clock"
+	depends on ESP32_BT_CTRL_MODEM_SLEEP_MODE_1
+	default ESP32_BT_CTRL_LPCLK_SEL_MAIN_XTAL
+	help
+	  Low-power clock source for Bluetooth modem sleep (same options as ESP-IDF).
+
+config ESP32_BT_CTRL_LPCLK_SEL_MAIN_XTAL
+	bool "Main crystal"
+	help
+	  Main crystal as low-power clock. Can be used with DFS and, when
+	  combined with "power up main XTAL during light sleep", with system
+	  light sleep.
+
+config ESP32_BT_CTRL_LPCLK_SEL_EXT_32K_XTAL
+	bool "External 32kHz crystal/oscillator"
+	help
+	  External 32.768 kHz reference; use only when the board provides this
+	  clock source (same role as ESP-IDF BT_CTRL_LPCLK_SEL_EXT_32K_XTAL).
+
+config ESP32_BT_CTRL_LPCLK_SEL_RTC_SLOW
+	bool "Internal 136kHz RC oscillator"
+	help
+	  Internal slow RC; poor accuracy for connected BLE (same caveats as ESP-IDF).
+
+endchoice
+
+config ESP32_BT_CTRL_MAIN_XTAL_PU_DURING_LIGHT_SLEEP
+	bool "Power up main XTAL during light sleep"
+	depends on ESP32_BT_CTRL_LPCLK_SEL_MAIN_XTAL || ESP32_BT_CTRL_LPCLK_SEL_EXT_32K_XTAL
+	default y
+	help
+	  If selected, the main crystal stays powered during light sleep when
+	  the low-power clock uses main XTAL or external 32kHz (ESP-IDF
+	  BT_CTRL_MAIN_XTAL_PU_DURING_LIGHT_SLEEP). Without this on main XTAL,
+	  the controller sets no_light_sleep and blocks system light sleep.
+
+config ESP32_BT_CTRL_SLEEP_MODE_EFF
+	int
+	default 1 if ESP32_BT_CTRL_MODEM_SLEEP_MODE_1
+	default 0
+
+config ESP32_BT_CTRL_SLEEP_CLOCK_EFF
+	int
+	default 1 if ESP32_BT_CTRL_LPCLK_SEL_MAIN_XTAL
+	default 2 if ESP32_BT_CTRL_LPCLK_SEL_EXT_32K_XTAL
+	default 3 if ESP32_BT_CTRL_LPCLK_SEL_RTC_SLOW
+	default 0
+
+endmenu
+
+endif # SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32S3
+
+endif # PM && TICKLESS_KERNEL
 
 endif # BT_ESP32

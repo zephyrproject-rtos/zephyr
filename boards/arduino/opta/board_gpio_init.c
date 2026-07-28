@@ -8,12 +8,11 @@
 #include <stm32_ll_bus.h>
 #include <stm32_ll_gpio.h>
 
-static int board_gpio_init(void)
+void board_early_init_hook(void)
 {
 	/* The external oscillator that drives the HSE clock should be enabled
-	 * by setting the GPIOI1 pin. This function is registered at priority
-	 * PRE_KERNEL_1 to be executed before the standard STM clock
-	 * setup code.
+	 * by setting the GPIOI1 pin. This board early init hook is executed
+	 * before the standard STM clock setup code.
 	 *
 	 * Note that the HSE should be turned on by the M7 only because M4
 	 * is not booted by default on Opta and cannot configure the clocks
@@ -45,8 +44,4 @@ static int board_gpio_init(void)
 	}
 	LL_GPIO_SetOutputPin(GPIOJ, LL_GPIO_PIN_15);
 #endif
-
-	return 0;
 }
-
-SYS_INIT(board_gpio_init, PRE_KERNEL_1, 0);

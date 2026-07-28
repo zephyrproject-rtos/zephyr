@@ -17,5 +17,14 @@
 		zephyr,console = &uart3;
 		zephyr,shell-uart = &uart3;
 		zephyr,canbus = &can1;
+		zephyr,entropy = &mxcryptolite_trng;
 	};
+};
+
+&mxcryptolite_crypto {
+	status = "okay";
+};
+
+&mxcryptolite_trng {
+	status = "okay";
 };

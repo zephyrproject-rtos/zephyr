@@ -24,6 +24,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -80,10 +81,13 @@ CREATE_FLAG(flag_stream_started);
 static bool print_ase_info(struct bt_bap_ep *ep, void *user_data)
 {
 	struct bt_bap_ep_info info;
+	__maybe_unused int err;
 
 	ARG_UNUSED(user_data);
 
-	bt_bap_ep_get_info(ep, &info);
+	err = bt_bap_ep_get_info(ep, &info);
+	__ASSERT_NO_MSG(err == 0);
+
 	printk("ASE info: id %u state %u dir %u\n", info.id, info.state, info.dir);
 
 	return true;
@@ -543,7 +547,11 @@ static void init(void)
 		return;
 	}
 
-	bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
+	if (err != 0) {
+		FAIL("Failed to register unicast server callbacks: %d\n", err);
+		return;
+	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
 	if (err != 0) {

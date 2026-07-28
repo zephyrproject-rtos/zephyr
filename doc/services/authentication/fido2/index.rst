@@ -22,6 +22,7 @@ The subsystem currently supports the following CTAP2 commands:
 - ``authenticatorMakeCredential``
 - ``authenticatorGetAssertion``
 - ``authenticatorGetInfo``
+- ``authenticatorClientPIN``
 - ``authenticatorGetNextAssertion``
 - ``authenticatorSelection``
 

@@ -62,11 +62,7 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 		return;
 	}
 
-	if (state->is_up) {
-		net_eth_carrier_on(data->iface);
-	} else {
-		net_eth_carrier_off(data->iface);
-	}
+	net_eth_carrier_set(data->iface, state->is_up);
 
 	/* handle link speed and duplex in MAC configuration register */
 	if (state->is_up) {
@@ -127,9 +123,6 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	struct net_buf *fragment = pkt->frags;
 	int frags_count = 0, total_bytes = 0, frags_idx = 0;
 	int ret;
-#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
-	bool pkt_is_ptp;
-#endif
 
 	/* Only allow send of the maximum normal packet size */
 	while (fragment != NULL) {
@@ -192,8 +185,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	last_desc_ptr->read.control1 |= TX_INTERRUPT_ON_COMPLETE_FLAG;
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
-	pkt_is_ptp = net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
-	if (net_pkt_is_tx_timestamping(pkt) || pkt_is_ptp) {
+	if (net_pkt_is_tx_timestamping(pkt)) {
 		LOG_DBG("SET TX TIMESTAMP %p control %x", pkt, base->MAC_TIMESTAMP_CONTROL);
 		last_desc_ptr->read.control1 |= TX_TIMESTAMP_ENABLE_FLAG;
 	}
@@ -273,9 +265,6 @@ static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct devi
 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	caps |= ETHERNET_PROMISC_MODE;
-#endif
-#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
-	caps |= ETHERNET_PTP;
 #endif
 	return caps;
 }

@@ -5,7 +5,7 @@
  */
 
 /*
- * Need to connect PC0 and PC1 of the Expension Pin header
+ * Need to connect PC0 and PC1 of the Expansion Pin header
  */
 / {
 	chosen {

@@ -277,7 +277,7 @@ xtensa_userspace_enter:
 #endif
 #endif
 #ifdef CONFIG_XTENSA_MPU
-	call4 xtensa_mpu_map_write
+	call4 xtensa_mpu_thread_map_write
 #endif
 
 #if XCHAL_HAVE_THREADPTR

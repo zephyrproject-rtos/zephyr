@@ -12,40 +12,48 @@ import logging
 import os
 from dataclasses import dataclass
 
-import pykwalify.core
+import jsonschema
 import yaml
+from jsonschema.exceptions import best_match
 
 DOMAINS_SCHEMA = '''
-## A pykwalify schema for basic validation of the structure of a
-## domains YAML file.
-##
+# JSON schema for basic validation of the structure of a domains YAML file.
+#
 # The domains.yaml file is a simple list of domains from a multi image build
 # along with the default domain to use.
-type: map
-mapping:
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://zephyrproject.org/schemas/zephyr/sysbuild/domains"
+title: Zephyr sysbuild domains Schema
+description: Schema for validating Zephyr sysbuild domains files
+type: object
+properties:
   default:
-    required: true
-    type: str
+    type: string
   build_dir:
-    required: true
-    type: str
+    type: string
   domains:
-    required: true
-    type: seq
-    sequence:
-      - type: map
-        mapping:
-          name:
-            required: true
-            type: str
-          build_dir:
-            required: true
-            type: str
+    type: array
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+        build_dir:
+          type: string
+      required:
+        - name
+        - build_dir
+      additionalProperties: false
   flash_order:
-    required: false
-    type: seq
-    sequence:
-      - type: str
+    type: array
+    items:
+      type: string
+required:
+  - default
+  - build_dir
+  - domains
+additionalProperties: false
 '''
 
 schema = yaml.safe_load(DOMAINS_SCHEMA)
@@ -60,11 +68,14 @@ logger.addHandler(handler)
 class Domains:
 
     def __init__(self, data: dict):
-        try:
-            pykwalify.core.Core(source_data=data,
-                                schema_data=schema).validate()
-        except pykwalify.errors.SchemaError as e:
-            logger.critical(f'malformed domains.yaml: {e}')
+        validator_class = jsonschema.validators.validator_for(schema)
+        validator_class.check_schema(schema)
+        domains_validator = validator_class(schema)
+
+        errors = list(domains_validator.iter_errors(data))
+        if errors:
+            logger.critical('ERROR: Malformed domains.yaml file: '
+                            f'{best_match(errors).message} in {best_match(errors).json_path}')
             exit(1)
 
         self._build_dir = data['build_dir']

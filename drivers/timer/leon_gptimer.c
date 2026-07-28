@@ -19,8 +19,6 @@
  * announces every elapsed tick rather than dropping it.
  */
 
-#include <limits.h>
-
 #define DT_DRV_COMPAT gaisler_gptimer
 
 #include <zephyr/init.h>
@@ -159,7 +157,7 @@ static void timer_isr(const void *unused)
 	sys_clock_announce(dticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 	volatile struct gptimer_regs *regs = get_regs();
@@ -170,16 +168,13 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	if (ticks == K_TICKS_FOREVER || ticks > MAX_TICKS) {
-		ticks = MAX_TICKS;
-	}
-
-	/* The ISR eventually announces last_elapsed + ticks (plus IRQ-servicing
-	 * latency) and sys_clock_announce() takes an int32_t. Keep the sum
-	 * within INT32_MAX, reserving half the range for the latency.
+	/* Cap to the cycle-count window: ticks * CYC_PER_TICK must stay below
+	 * 2^31 so the signed delay delta below cannot wrap. The kernel already
+	 * caps the requested tick count (SYS_CLOCK_MAX_WAIT), so this is the
+	 * only limit the driver still has to enforce.
 	 */
-	if (ticks > (INT32_MAX / 2 - last_elapsed)) {
-		ticks = INT32_MAX / 2 - last_elapsed;
+	if (ticks > MAX_TICKS) {
+		ticks = MAX_TICKS;
 	}
 
 	/* Absolute, tick-aligned deadline from the last announce, programmed as
@@ -187,7 +182,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * sys_clock_elapsed(), so the fire lands on the requested tick boundary
 	 * regardless of the sub-tick offset of the counter.
 	 */
-	target = announced_cyc + (last_elapsed + (uint32_t)ticks) * CYC_PER_TICK;
+	target = announced_cyc + (last_elapsed + ticks) * CYC_PER_TICK;
 	now = up_counter(regs);
 	delay = target - now;
 	if (delay < (int32_t)MIN_DELAY_CYC) {

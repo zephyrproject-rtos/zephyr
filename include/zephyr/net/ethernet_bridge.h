@@ -180,10 +180,12 @@ static inline struct net_if *net_eth_get_bridge(struct ethernet_context *ctx)
  *
  * @param iface Pointer to bridged iface
  * @param pkt Pointer to pkt
+ * @param dst_iface Pointer to pointer to destination iface
  *
  * @return net_verdict.
  */
-enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *pkt);
+enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *pkt,
+					  struct net_if **dst_iface);
 
 /**
  * @}

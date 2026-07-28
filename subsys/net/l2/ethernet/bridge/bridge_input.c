@@ -97,11 +97,9 @@ static int eth_bridge_forward(struct net_if *bridge, struct net_if *orig_iface, 
 	return 0;
 }
 
-static int eth_bridge_handle_locally(struct net_if *bridge, struct net_if *orig_iface,
-				     struct net_pkt *pkt)
+static enum net_verdict eth_bridge_handle_locally(struct net_if *bridge, struct net_if *orig_iface,
+						  struct net_pkt *pkt)
 {
-	enum net_verdict verdict;
-
 	net_pkt_set_iface(pkt, bridge);
 	net_pkt_set_orig_iface(pkt, orig_iface);
 
@@ -109,14 +107,9 @@ static int eth_bridge_handle_locally(struct net_if *bridge, struct net_if *orig_
 		pkt, net_if_get_by_iface(bridge),
 		net_if_get_by_iface(orig_iface));
 
-	if (net_if_l2(bridge)->recv != NULL) {
-		verdict = net_if_l2(bridge)->recv(bridge, pkt);
-		if (verdict == NET_DROP) {
-			return -EIO;
-		}
-	}
+	NET_ASSERT(net_if_l2(bridge)->recv != NULL);
 
-	return 0;
+	return net_if_l2(bridge)->recv(bridge, pkt);
 }
 
 static inline bool is_link_local_addr(struct net_eth_addr *addr)
@@ -133,18 +126,22 @@ static inline bool is_link_local_addr(struct net_eth_addr *addr)
 	return false;
 }
 
-enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *pkt)
+enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *pkt,
+					  struct net_if **dst_iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	struct net_if *bridge = net_eth_get_bridge(ctx);
 	struct net_eth_addr *dst_addr = (struct net_eth_addr *)(net_pkt_lladdr_dst(pkt)->addr);
 	struct net_eth_addr *bridge_addr =
 		(struct net_eth_addr *)(net_if_get_link_addr(bridge)->addr);
+	enum net_verdict verdict = NET_DROP;
 
 	/* Lookup FDB table to forward */
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
 	if (eth_bridge_fdb_forward(bridge, iface, pkt)) {
-		return NET_DROP;
+		LOG_DBG("FDB handled forwarding pkt %p from iface %p to bridge %p",
+			pkt, iface, bridge);
+			return NET_DROP;
 	}
 #endif
 
@@ -159,29 +156,46 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 		return NET_CONTINUE;
 	}
 
-	/* Handle broadcast and multicast */
 	if (net_eth_is_addr_broadcast(dst_addr) || net_eth_is_addr_multicast(dst_addr)) {
-		if (eth_bridge_forward(bridge, iface, pkt) != 0) {
-			return NET_DROP;
+		/* Handle broadcast and multicast */
+
+		/* Forward broadcast/multicast packets */
+		if (eth_bridge_forward(bridge, iface, pkt) < 0) {
+			LOG_ERR("Failed to forward broadcast/multicast pkt %p from iface %p to "
+				"bridge %p",
+				pkt, iface, bridge);
 		}
 
-		if (eth_bridge_handle_locally(bridge, iface, pkt) != 0) {
+		/* Check if the packet should also be handled locally */
+		verdict = eth_bridge_handle_locally(bridge, iface, pkt);
+		if (verdict == NET_DROP) {
+			NET_DBG("DROP: broadcast/multicast");
 			return NET_DROP;
 		}
-		return NET_OK;
+	} else if (memcmp(bridge_addr, dst_addr, NET_ETH_ADDR_LEN) == 0) {
+		/* Handle local address */
+
+		/* Check if the packet should be handled locally (ie bridge turned off) */
+		verdict = eth_bridge_handle_locally(bridge, iface, pkt);
+		if (verdict == NET_DROP) {
+			NET_DBG("DROP: unicast to bridge address");
+			return NET_DROP;
+		}
+	} else {
+		/* Packet not meant for us, but forward it to other interfaces */
+		eth_bridge_forward(bridge, iface, pkt);
+		/* Always drop forwarded pkt for original iface */
+		NET_DBG("DROP: unicast to other address");
+		return NET_DROP;
 	}
 
-	/* Handle local address */
-	if (memcmp(bridge_addr, dst_addr, NET_ETH_ADDR_LEN) == 0) {
-		if (eth_bridge_handle_locally(bridge, iface, pkt) != 0) {
-			return NET_DROP;
-		}
-		return NET_OK;
+	/* If the verdict is NET_CONTINUE, then the packet should be passed down the stack for
+	 * further processing and we must override the destination iface to be the bridge iface.
+	 */
+	if (verdict == NET_CONTINUE) {
+		LOG_DBG("Processing pkt %p locally on bridge %p from iface %p", pkt, bridge, iface);
+		*dst_iface = bridge;
 	}
 
-	/* Forward others */
-	(void)eth_bridge_forward(bridge, iface, pkt);
-
-	/* Drop forwarded pkt for original iface */
-	return NET_DROP;
+	return verdict;
 }

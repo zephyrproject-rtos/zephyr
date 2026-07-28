@@ -420,11 +420,6 @@ tx_end:
 #endif
 	}
 #endif
-
-	if (ret) {
-		eth_stats_update_errors_tx(data->iface);
-	}
-
 	return ret;
 }
 

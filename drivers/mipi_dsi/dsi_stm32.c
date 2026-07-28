@@ -476,7 +476,7 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 #define CHILD_GET_DATA_LANES(child) DT_PROP(child, data_lanes)
 
 #define STM32_MIPI_DSI_DEVICE(inst)								\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, host_timeouts),					\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, host_timeouts),					\
 		(static DSI_HOST_TimeoutTypeDef host_timeouts_##inst = {			\
 			.TimeoutCkdiv = DT_INST_PROP_BY_IDX(inst, host_timeouts, 0),		\
 			.HighSpeedTransmissionTimeout =						\
@@ -489,8 +489,8 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 			.HighSpeedWritePrespMode = DT_INST_PROP_BY_IDX(inst, host_timeouts, 6),	\
 			.LowPowerWriteTimeout = DT_INST_PROP_BY_IDX(inst, host_timeouts, 7),	\
 			.BTATimeout = DT_INST_PROP_BY_IDX(inst, host_timeouts, 8)		\
-		}), ());									\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, phy_timings),					\
+		};))										\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, phy_timings),					\
 		(static DSI_PHY_TimerTypeDef phy_timings_##inst = {				\
 			.ClockLaneHS2LPTime = DT_INST_PROP_BY_IDX(inst, phy_timings, 0),	\
 			.ClockLaneLP2HSTime = DT_INST_PROP_BY_IDX(inst, phy_timings, 1),	\
@@ -498,7 +498,7 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 			.DataLaneLP2HSTime = DT_INST_PROP_BY_IDX(inst, phy_timings, 3),		\
 			.DataLaneMaxReadTime = DT_INST_PROP_BY_IDX(inst, phy_timings, 4),	\
 			.StopWaitTime = DT_INST_PROP_BY_IDX(inst, phy_timings, 5)		\
-		}), ());									\
+		};))										\
 	/* Only child data-lanes property at index 0 is taken into account */			\
 	static const uint32_t data_lanes_##inst[] = {						\
 		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(inst, DT_PROP_BY_IDX, (,),		\
@@ -526,13 +526,12 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 					DT_INST_PROP(inst, non_continuous) ?			\
 						DSI_AUTO_CLK_LANE_CTRL_ENABLE :			\
 						DSI_AUTO_CLK_LANE_CTRL_DISABLE,			\
-				COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, phy_freq_range),	\
-					(.PHYFrequencyRange = DT_INST_PROP(inst, phy_freq_range),),\
-					())							\
-				COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, phy_low_power_offset),	\
+				IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, phy_freq_range),		\
+					(.PHYFrequencyRange =					\
+						DT_INST_PROP(inst, phy_freq_range),))		\
+				IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, phy_low_power_offset),	\
 					(.PHYLowPowerOffset =					\
-						DT_INST_PROP(inst, phy_low_power_offset),),	\
-					())							\
+						DT_INST_PROP(inst, phy_low_power_offset),))	\
 			},									\
 		},										\
 		.host_timeouts = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, host_timeouts),	\
@@ -557,16 +556,13 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 			.PLLNDIV = DT_INST_PROP(inst, pll_ndiv),				\
 			.PLLIDF = DT_INST_PROP(inst, pll_idf),					\
 			.PLLODF = DT_INST_PROP(inst, pll_odf),					\
-			COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pll_vco_range),			\
-					(.PLLVCORange = DT_INST_PROP(inst, pll_vco_range),),	\
-					())							\
-			COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pll_charge_pump),		\
+			IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, pll_vco_range),			\
+					(.PLLVCORange = DT_INST_PROP(inst, pll_vco_range),))	\
+			IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, pll_charge_pump),		\
 					(.PLLChargePump =					\
-						DT_INST_PROP(inst, pll_charge_pump),),		\
-					())							\
-			COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pll_tuning),			\
-					(.PLLTuning = DT_INST_PROP(inst, pll_tuning),),		\
-					())							\
+						DT_INST_PROP(inst, pll_charge_pump),))		\
+			IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, pll_tuning),			\
+					(.PLLTuning = DT_INST_PROP(inst, pll_tuning),))		\
 		},										\
 	};											\
 	DEVICE_DT_INST_DEFINE(inst, &mipi_dsi_stm32_init, NULL,					\

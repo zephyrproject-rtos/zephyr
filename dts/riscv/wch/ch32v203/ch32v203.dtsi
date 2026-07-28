@@ -7,10 +7,6 @@
 #include <wch/qingke-v4b.dtsi>
 #include <wch/common/ch32v20x_30x_common.dtsi>
 
-&clk_hse {
-	clock-frequency = <DT_FREQ_M(8)>;
-};
-
 &pll {
 	mul = <15>;
 };

@@ -50,7 +50,7 @@ __no_optimization void func_3(uint32_t *addr)
 	/* clang-format on */
 	ARG_UNUSED(addr);
 	/* Call k_panic() directly so Renode doesn't pause execution.
-	 * Needed on ADSP/RV32 as well, since null pointer derefence doesn't
+	 * Needed on ADSP/RV32 as well, since null pointer dereference doesn't
 	 * fault as the lowest memory region is writable. SOF uses k_panic
 	 * a lot, so it's good to check that it causes a coredump.
 	 */

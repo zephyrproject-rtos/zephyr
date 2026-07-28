@@ -54,8 +54,8 @@
 #define MCHP_KBC_PCOBF_EN	BIT(MCHP_KBC_PCOBF_EN_POS)
 
 /* KBC_PORT92_EN register bit definitions */
-#define MCHP_KBC_PORT92_EN_POS	0u
-#define MCHP_KBC_PORT92_EN	BIT(MCHP_KBC_PORT92_EN_POS)
+#define MCHP_KBC_ACTV_POS 0
+#define MCHP_KBC_ACTV_EN  BIT(MCHP_KBC_ACTV_POS)
 
 /* HOST Port 92h emulation registers */
 #define MCHP_PORT92_HOST_MASK			GENMASK(1, 0)
@@ -101,7 +101,7 @@ struct kbc_regs {
 	uint32_t RSVD2[1];
 	volatile uint32_t PCOBF;
 	uint8_t RSVD3[0x0330 - 0x0118];
-	volatile uint32_t KBC_PORT92_EN;
+	volatile uint32_t ACTV;
 };
 
 /** @brief Fast Port92h Registers (PORT92) */

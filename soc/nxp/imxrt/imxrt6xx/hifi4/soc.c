@@ -1,10 +1,13 @@
 /**
- * Copyright 2025 NXP
+ * Copyright 2025, 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/devicetree.h>
 #include <zephyr/platform/hooks.h>
+#include <zephyr/arch/common/init.h>
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/cache.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <fsl_inputmux.h>
@@ -85,8 +88,23 @@ __weak void mimxrt685s_hifi4_irq_init(void)
 	INPUTMUX_Deinit(INPUTMUX);
 }
 
+#ifdef CONFIG_NOCACHE_MEMORY
+void mimxrt685s_hifi4_copy_nocache_init(void)
+{
+	arch_early_memcpy(&_nocache_load_ram_start, &_nocache_load_rom_start,
+		(uintptr_t) &_nocache_load_ram_size);
+
+	arch_early_memset(&_nocache_noload_ram_start, 0,
+		(uintptr_t) _nocache_noload_ram_size);
+}
+#endif
+
 void soc_early_init_hook(void)
 {
+#ifdef CONFIG_NOCACHE_MEMORY
+	mimxrt685s_hifi4_copy_nocache_init();
+#endif
+
 	CLOCK_SetXtalFreq(BOARD_XTAL_SYS_CLK_HZ);
 	CLOCK_EnableClock(kCLOCK_Dmac1);
 

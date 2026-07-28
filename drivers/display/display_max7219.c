@@ -193,7 +193,7 @@ static int max7219_write(const struct device *dev, const uint16_t x, const uint1
 			return ret;
 		}
 
-		dev_data->digit_buf[y] = segment;
+		dev_data->digit_buf[py] = segment;
 	}
 
 	return 0;

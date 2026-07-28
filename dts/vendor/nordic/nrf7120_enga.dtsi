@@ -198,6 +198,11 @@
 			reg = <0x28180000 DT_SIZE_K(512)>;
 		};
 
+		/* Memory-mapped aperture for MSPI. */
+		memmap_aperture_uncached: memory@60000000 {
+			reg = <0x60000000 0x20000000>;
+		};
+
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 		global_peripherals: peripheral@40000000 {
 			reg = <0x40000000 0x10000000>;
@@ -442,6 +447,8 @@
 				compatible = "nordic,nrf-ipct-global";
 				reg = <0x8d000 0x1000>;
 				interrupts = <141 NRF_DEFAULT_IRQ_PRIORITY>;
+				channels = <4>;
+				global-domain-id = <1>;
 				status = "disabled";
 			};
 
@@ -495,6 +502,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -528,6 +536,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -561,6 +570,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -753,6 +763,7 @@
 				clocks = <&lfxo>, <&pclk>;
 				clock-names = "lfclock", "hfclock";
 				status = "disabled";
+				extended-channels = <0>;
 			};
 
 			tdm: tdm@e8000 {
@@ -787,6 +798,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -820,6 +832,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -868,6 +881,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -1010,7 +1024,7 @@
 				reg = <0 DT_SIZE_K(4076)>;
 				ranges = <0x0 0 DT_SIZE_K(4076)>;
 				erase-block-size = <4096>;
-				write-block-size = <4>;
+				write-block-size = <16>;
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};

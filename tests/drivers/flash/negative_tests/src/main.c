@@ -14,6 +14,8 @@
 #define TEST_AREA_DEV_NODE DT_INST(0, nordic_qspi_nor)
 #elif defined(CONFIG_SPI_NOR)
 #define TEST_AREA_DEV_NODE DT_INST(0, jedec_spi_nor)
+#elif defined(CONFIG_FLASH_INFINEON_RRAM)
+#define TEST_AREA storage_partition_rram
 #else
 #define TEST_AREA storage_partition
 #endif
@@ -43,6 +45,12 @@
 /* We need to go up two levels: storage_partition -> partitions -> flash0 */
 #define TEST_FLASH_START (DT_REG_ADDR(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
 #define TEST_FLASH_SIZE  (DT_REG_SIZE(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#define TEST_FLASH_START (DT_REG_ADDR(DT_MEM_FROM_PARTITION(DT_NODELABEL(TEST_AREA))))
+#define TEST_FLASH_SIZE  (DT_REG_SIZE(DT_MEM_FROM_PARTITION(DT_NODELABEL(TEST_AREA))))
+#elif defined(CONFIG_SOC_SERIES_LPC84X)
+#define TEST_FLASH_START (DT_REG_ADDR(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
+#define TEST_FLASH_SIZE  (DT_REG_SIZE(DT_PARENT(DT_PARENT(DT_NODELABEL(TEST_AREA)))))
 #elif defined(CONFIG_SOC_SERIES_IMXRT118X)
 /* For i.MX RT118x, storage_partition -> partitions -> external FlexSPI NOR.
  * Prefer /chosen zephyr,flash-controller for flash geometry.
@@ -50,6 +58,9 @@
  */
 #define TEST_FLASH_START 0
 #define TEST_FLASH_SIZE  DT_PROP(DT_CHOSEN(zephyr_flash_controller), size)
+#elif defined(CONFIG_SOC_FAMILY_REALTEK_BEE)
+#define TEST_FLASH_START (DT_REG_ADDR(DT_MEM_FROM_PARTITION(DT_NODELABEL(TEST_AREA))))
+#define TEST_FLASH_SIZE (DT_REG_SIZE(DT_MEM_FROM_PARTITION(DT_NODELABEL(TEST_AREA))))
 #else
 #error "Missing definition of TEST_FLASH_START and TEST_FLASH_SIZE for this target"
 #endif
@@ -167,11 +178,18 @@ ZTEST(flash_driver_negative, test_negative_flash_erase_unaligned)
 
 	/* Check error returned when erasing unaligned memory */
 	rc = flash_erase(flash_dev, (TEST_AREA_OFFSET + 1), page_info.size);
+#if defined(CONFIG_TEST_FLASH_SUPPORTS_UNALIGNED_OP)
+	zassert_true(rc == 0, "Invalid use of flash_erase (unaligned erase size) returned %d", rc);
+#else
 	zassert_true(rc < 0, "Invalid use of flash_erase (unaligned erase size) returned %d", rc);
-
+#endif
 	/* Check error returned when erasing unaligned size */
 	rc = flash_erase(flash_dev, TEST_AREA_OFFSET, page_info.size + 1);
+#if defined(CONFIG_TEST_FLASH_SUPPORTS_UNALIGNED_OP)
+	zassert_true(rc == 0, "Invalid use of flash_erase (unaligned size) returned %d", rc);
+#else
 	zassert_true(rc < 0, "Invalid use of flash_erase (unaligned size) returned %d", rc);
+#endif
 }
 
 /*  Erase page offset and size are constrains of paged, explicit erase devices,
@@ -306,11 +324,20 @@ ZTEST(flash_driver_negative, test_negative_flash_flatten_unaligned)
 
 	/* Check error returned when flatten unaligned memory */
 	rc = flash_flatten(flash_dev, (TEST_AREA_OFFSET + 1), page_info.size);
+#if defined(CONFIG_TEST_FLASH_SUPPORTS_UNALIGNED_OP)
+	zassert_true(rc == 0, "Invalid use of flash_flatten (unaligned flatten size) returned %d",
+		     rc);
+#else
 	zassert_true(rc < 0, "Invalid use of flash_flatten (unaligned flatten size) returned %d",
 		     rc);
+#endif
 
 	rc = flash_flatten(flash_dev, TEST_AREA_OFFSET, (page_info.size + 1));
+#if defined(CONFIG_TEST_FLASH_SUPPORTS_UNALIGNED_OP)
+	zassert_true(rc == 0, "Invalid use of flash_flatten (unaligned size) returned %d", rc);
+#else
 	zassert_true(rc < 0, "Invalid use of flash_flatten (unaligned size) returned %d", rc);
+#endif
 }
 
 /*  All flash drivers support reads without alignment restrictions on
@@ -464,11 +491,19 @@ ZTEST(flash_driver_negative, test_negative_flash_write_unaligned)
 	}
 	/* Check error returned when writing at unaligned memory */
 	rc = flash_write(flash_dev, (TEST_AREA_OFFSET + 1), expected, page_info.size);
+#if defined(CONFIG_TEST_FLASH_SUPPORTS_UNALIGNED_OP)
+	zassert_true(rc == 0, "Invalid use of flash_write (unaligned write size) returned %d", rc);
+#else
 	zassert_true(rc < 0, "Invalid use of flash_write (unaligned write size) returned %d", rc);
+#endif
 
 	/* Check error returned when writing unaligned size */
 	rc = flash_write(flash_dev, TEST_AREA_OFFSET, expected, page_info.size + 1);
+#if defined(CONFIG_TEST_FLASH_SUPPORTS_UNALIGNED_OP)
+	zassert_true(rc == 0, "Invalid use of flash_write (unaligned size) returned %d", rc);
+#else
 	zassert_true(rc < 0, "Invalid use of flash_write (unaligned size) returned %d", rc);
+#endif
 }
 
 ZTEST_SUITE(flash_driver_negative, NULL, flash_driver_setup, NULL, NULL, NULL);

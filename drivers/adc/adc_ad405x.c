@@ -1318,7 +1318,7 @@ static DEVICE_API(adc, ad405x_api_funcs) = {
 	.read = ad405x_read,
 	.ref_internal = 2500,
 #ifdef CONFIG_ADC_ASYNC
-	.read_async = ad405x_adc_read_async,
+	.read_async = adc_ad405x_read_async,
 #endif /* CONFIG_ADC_ASYNC */
 #ifdef CONFIG_AD405X_STREAM
 	.submit = ad405x_submit_stream,

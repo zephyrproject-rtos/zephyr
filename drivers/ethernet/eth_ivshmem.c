@@ -103,13 +103,11 @@ static int eth_ivshmem_send(const struct device *dev, struct net_pkt *pkt)
 
 	if (res != 0) {
 		LOG_ERR("Failed to allocate tx buffer");
-		eth_stats_update_errors_tx(dev_data->iface);
 		return res;
 	}
 
 	if (net_pkt_read(pkt, data, len)) {
 		LOG_ERR("Failed to read tx packet");
-		eth_stats_update_errors_tx(dev_data->iface);
 		return -EIO;
 	}
 

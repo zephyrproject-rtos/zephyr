@@ -54,7 +54,7 @@
 			interrupts = <44 0>;
 		};
 
-		aes: aes@420c0000 {
+		aes: crypto@420c0000 {
 			interrupts = <52 0>;
 		};
 

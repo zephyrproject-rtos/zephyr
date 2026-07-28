@@ -44,7 +44,7 @@ def collapse(buf, elf):
         func_trace = reversed(list(map(lambda a: addr_to_sym(a, elf), addrs)))
         prev_func = next(func_trace)
         line = prev_func
-        # merge dublicate functions
+        # merge duplicate functions
         for func in func_trace:
             if prev_func != func:
                 prev_func = func

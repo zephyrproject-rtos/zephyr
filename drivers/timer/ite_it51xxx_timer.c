@@ -193,7 +193,7 @@ static void free_run_timer_overflow_isr(const void *unused)
 	/* TODO: to increment 32-bit "top half" here for software 64-bit timer emulation. */
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -210,14 +210,14 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Disable event timer */
 	ext_timer_disable(EVENT_TIMER);
 
-	if (ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
 		/*
-		 * If kernel doesn't have a timeout:
-		 * 1.CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = y (no future timer interrupts are expected),
-		 *   kernel pass K_TICKS_FOREVER (0xFFFF FFFF FFFF FFFF), we handle this case in
-		 *   here.
-		 * 2.CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = n (schedule timeout as far into the future
-		 *   as possible), kernel pass INT_MAX (0x7FFF FFFF), we handle it in later else {}.
+		 * The kernel has no pending timeout, which it signals with
+		 * ticks == SYS_CLOCK_MAX_WAIT. Under sloppy idle no future
+		 * timer interrupt is required, so leave the event timer
+		 * disabled and stop waking up. Without sloppy idle we fall
+		 * through and still schedule the (capped) timeout so the
+		 * uptime tick count stays correct.
 		 */
 		k_spin_unlock(&lock, key);
 		return;
@@ -227,7 +227,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * ideally no more than one system tick in the future. So set event timer count
 	 * to 1 HW tick.
 	 */
-	ticks = CLAMP(ticks, 1, (int32_t)EVEN_TIMER_MAX_CNT_SYS_TICK);
+	ticks = CLAMP(ticks, 1, EVEN_TIMER_MAX_CNT_SYS_TICK);
 	next_cycs = (last_ticks + last_elapsed + ticks) * HW_CNT_PER_SYS_TICK;
 	now = ~read_timer_obser(FREE_RUN_TIMER);
 	if (unlikely(next_cycs <= now)) {

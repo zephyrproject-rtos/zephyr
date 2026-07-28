@@ -1,7 +1,7 @@
 /**
  * @file
  * @brief Clock branch macros for use on Silicon Labs Series 2 devices.
- * @ingroup clock_control_silabs
+ * @ingroup clock_control_dt_silabs
  */
 
  /*
@@ -14,7 +14,7 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SILABS_COMMON_CLOCK_H_
 
 /**
- * @defgroup clock_control_silabs Silicon Labs Series 2 Devicetree helpers
+ * @defgroup clock_control_dt_silabs Silicon Labs Series 2 Devicetree helpers
  * @ingroup clock_control_interface
  *
  * @details Devicetree macros for clock enables and clock branches on Silicon Labs Series 2 devices,

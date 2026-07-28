@@ -17,7 +17,7 @@
 # This CMake modules loads the sysbuild cache variables as target properties on
 # a sysbuild_cache target.
 #
-# This ensures that qoutes and lists are correctly preserved.
+# This ensures that quotes and lists are correctly preserved.
 
 include_guard(GLOBAL)
 

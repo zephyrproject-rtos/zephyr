@@ -214,7 +214,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	LOG_DBG("Sending Packet: %p of Length: %u", pkt, total_len);
 	if (total_len > (ETH_TXBUF_SIZE * ETH_TXBUF_NB)) {
-		eth_stats_update_errors_tx(data->iface);
 		LOG_ERR("Packet spans all available descriptors");
 		return -ENOBUFS;
 	}
@@ -224,7 +223,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	do {
 		if ((dma_tx_desc_current->Status & ETH_DMATxDesc_OWN) != 0U) {
-			eth_stats_update_errors_tx(data->iface);
 			LOG_ERR("No Descriptors Available");
 			res = -EBUSY;
 			goto error;
@@ -235,7 +233,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 			bytes_remaining > ETH_TXBUF_SIZE ? ETH_TXBUF_SIZE : bytes_remaining;
 		if (net_pkt_read(pkt, (void *)(dma_tx_desc_current->Buffer1Addr), chunk_size) !=
 		    0U) {
-			eth_stats_update_errors_tx(data->iface);
 			LOG_ERR("Could not read descriptor buffer!");
 			res = -ENOBUFS;
 			goto error;
@@ -267,7 +264,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Wait for end of TX buffer transmission */
 	if (k_sem_take(&data->tx_int_sem, K_MSEC(ETH_DMA_TX_TIMEOUT_MS)) != 0) {
-		eth_stats_update_errors_tx(data->iface);
 		LOG_DBG("TX ISR Timeout");
 		res = -EIO;
 		goto error;
@@ -287,17 +283,19 @@ static struct net_pkt *eth_rx(const struct device *dev)
 	ETH_TypeDef *eth = config->regs;
 	struct net_pkt *pkt = NULL;
 
-	if ((dma_rx_desc_current->Status & ETH_DMARxDesc_OWN) != 0U) {
+	uint32_t desc_status = dma_rx_desc_current->Status;
+
+	if ((desc_status & ETH_DMARxDesc_OWN) != 0U) {
 		return NULL; /* Not error, simply packet has not arrived yet */
 	}
 
-	if (((dma_rx_desc_current->Status & ETH_DMARxDesc_ES) != 0U) ||
-	    ((dma_rx_desc_current->Status & (ETH_DMARxDesc_FS | ETH_DMARxDesc_LS)) !=
+	if (((desc_status & ETH_DMARxDesc_ES) != 0U) ||
+	    ((desc_status & (ETH_DMARxDesc_FS | ETH_DMARxDesc_LS)) !=
 	     (ETH_DMARxDesc_FS | ETH_DMARxDesc_LS))) {
 		goto release_desc; /* Drop descriptor if it is corrupt, or not a full frame */
 	}
 
-	size_t total_len = ((dma_rx_desc_current->Status & ETH_DMARxDesc_FL) >>
+	size_t total_len = ((desc_status & ETH_DMARxDesc_FL) >>
 			    ETH_DMARXDESC_FRAME_LENGTHSHIFT) -
 			   sizeof(uint32_t); /* This discards CRC (checked by hardware) */
 
@@ -472,10 +470,9 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	if (state->is_up) {
 		set_mac_config(dev, state);
 		eth_wch_start(dev, data->iface);
-		net_eth_carrier_on(data->iface);
-	} else {
-		net_eth_carrier_off(data->iface);
 	}
+
+	net_eth_carrier_set(data->iface, state->is_up);
 }
 
 static int eth_mac_init(const struct device *dev)

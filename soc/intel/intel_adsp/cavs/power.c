@@ -207,7 +207,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 __no_optimization
 void arch_cpu_idle(void)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 

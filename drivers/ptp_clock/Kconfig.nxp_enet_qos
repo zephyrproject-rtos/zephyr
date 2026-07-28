@@ -4,7 +4,8 @@
 config PTP_CLOCK_NXP_ENET_QOS
 	bool "NXP ENET QoS PTP Clock driver"
 	default y
-	depends on DT_HAS_NXP_ENET_QOS_PTP_CLOCK_ENABLED && NET_L2_PTP
+	depends on DT_HAS_NXP_ENET_QOS_PTP_CLOCK_ENABLED
 	depends on ETH_NXP_ENET_QOS
+	select NET_L2_PTP_TIMESTAMPING
 	help
-	  Enable NXP ENET QoS PTP clock support
+	  Enable NXP ENET QoS PTP clock to support Ethernet timestamping.

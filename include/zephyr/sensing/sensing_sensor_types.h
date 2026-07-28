@@ -4,8 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_SENSING_SENSOR_TYPES_H_
-#define ZEPHYR_INCLUDE_SENSING_SENSOR_TYPES_H_
+/**
+ * @file
+ * @brief Header file for Sensing subsystem sensor type definitions.
+ * @ingroup sensing_sensor_types
+ */
+
+#ifndef ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_TYPES_H_
+#define ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_TYPES_H_
 
 /**
  * @defgroup sensing_sensor_types Sensor Types (Sensing)
@@ -72,4 +78,4 @@
  * @}
  */
 
-#endif /*ZEPHYR_INCLUDE_SENSING_SENSOR_TYPES_H_*/
+#endif /* ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_TYPES_H_ */

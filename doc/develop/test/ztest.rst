@@ -10,402 +10,10 @@ test structure.
 The framework can be used in two ways, either as a generic framework for
 integration testing, or for unit testing specific modules.
 
-Creating a test suite
-*********************
-
-Using Ztest to create a test suite is as easy as calling the :c:macro:`ZTEST_SUITE`. The macro
-accepts the following arguments:
-
-* ``suite_name`` - The name of the suite. This name must be unique within a single binary.
-* :c:type:`ztest_suite_predicate_t` - An optional predicate function to allow choosing when the
-  test will run. The predicate will get a pointer to the global state passed in through
-  :c:func:`ztest_run_all` and should return a boolean to decide if the suite should run.
-* :c:type:`ztest_suite_setup_t` - An optional setup function which returns a test fixture. This
-  will be called and run once per test suite run.
-* :c:type:`ztest_suite_before_t` - An optional before function which will run before every single
-  test in this suite.
-* :c:type:`ztest_suite_after_t` - An optional after function which will run after every single
-  test in this suite.
-* :c:type:`ztest_suite_teardown_t` - An optional teardown function which will run at the end of
-  all the tests in the suite.
-
-Below is an example of a test suite using a predicate:
-
-.. code-block:: C
-
-   #include <zephyr/ztest.h>
-   #include "test_state.h"
-
-   static bool predicate(const void *global_state)
-   {
-        return ((const struct test_state*)global_state)->x == 5;
-   }
-
-   ZTEST_SUITE(alternating_suite, predicate, NULL, NULL, NULL, NULL);
-
-Adding tests to a suite
-***********************
-
-There are 5 macros used to add a test to a suite, they are:
-
-* :c:macro:`ZTEST` ``(suite_name, test_name)`` - Which can be used to add a test by ``test_name`` to a
-  given suite by ``suite_name``.
-* :c:macro:`ZTEST_P` ``(suite_name, test_name)`` - Add a value-parameterized test to a given suite.
-  The test body is executed once per registered parameter value. Inside the body, call
-  :c:func:`ztest_get_current_param` or use the :c:macro:`ZTEST_GET_PARAM` typed helper to
-  retrieve the current value. The suite fixture (``data`` argument) is independent from the
-  parameter and is never overwritten. See `Value-parameterized tests`_ for the full API.
-* :c:macro:`ZTEST_USER` ``(suite_name, test_name)`` - Which behaves the same as :c:macro:`ZTEST`, only
-  that when :kconfig:option:`CONFIG_USERSPACE` is enabled, then the test will be run in a userspace
-  thread.
-* :c:macro:`ZTEST_F` ``(suite_name, test_name)`` - Which behaves the same as :c:macro:`ZTEST`, only
-  that the test function will already include a variable named ``fixture`` with the type
-  ``<suite_name>_fixture``.
-* :c:macro:`ZTEST_USER_F` ``(suite_name, test_name)`` - Which combines the fixture feature of
-  :c:macro:`ZTEST_F` with the userspace threading for the test.
-
-Test fixtures
-=============
-
-Test fixtures can be used to help simplify repeated test setup operations. In many cases, tests in
-the same suite will require some initial setup followed by some form of reset between each test.
-This is achieved via fixtures in the following way:
-
-.. code-block:: C
-
-   #include <zephyr/ztest.h>
-
-   struct my_suite_fixture {
-        size_t max_size;
-        size_t size;
-        uint8_t buff[1];
-   };
-
-   static void *my_suite_setup(void)
-   {
-	/* Allocate the fixture with 256 byte buffer */
-       struct my_suite_fixture *fixture = malloc(sizeof(struct my_suite_fixture) + 255);
-
-	zassume_not_null(fixture, NULL);
-	fixture->max_size = 256;
-
-	return fixture;
-   }
-
-   static void my_suite_before(void *f)
-   {
-	struct my_suite_fixture *fixture = (struct my_suite_fixture *)f;
-	memset(fixture->buff, 0, fixture->max_size);
-	fixture->size = 0;
-   }
-
-   static void my_suite_teardown(void *f)
-   {
-      free(f);
-   }
-
-   ZTEST_SUITE(my_suite, NULL, my_suite_setup, my_suite_before, NULL, my_suite_teardown);
-
-   ZTEST_F(my_suite, test_feature_x)
-   {
-        zassert_equal(0, fixture->size);
-        zassert_equal(256, fixture->max_size);
-   }
-
-Using memory allocated by a test fixture in a userspace thread, such as during execution of
-:c:macro:`ZTEST_USER` or :c:macro:`ZTEST_USER_F`, requires that memory to be declared userspace
-accessible. This is because the fixture memory is owned and initialized by kernel space. The Ztest
-framework provides the :c:macro:`ZTEST_DMEM` and :c:macro:`ZTEST_BMEM` macros for use of such
-user/kernel space shared memory.
-
-Advanced features
-*****************
-
-.. _value-parameterized-tests:
-
-Value-parameterized tests
-=========================
-
-Value-parameterized tests allow a single test body to be executed once for each
-value in a supplied list, similar to GoogleTest's ``TEST_P`` / ``INSTANTIATE_TEST_SUITE_P``
-pattern.  The fixture and the parameter are completely independent: the suite's
-``setup()`` return value is always passed as ``data`` and is never overwritten by
-a parameter value.
-
-Declaring a parameterized test body
-------------------------------------
-
-Use :c:macro:`ZTEST_P` in the same way as :c:macro:`ZTEST`.  Inside the body, the ``data``
-pointer carries the suite fixture (identical to :c:macro:`ZTEST_F`).  The current
-parameter value is retrieved through the run-time accessors:
-
-.. code-block:: C
-
-   #include <zephyr/ztest.h>
-
-   struct my_suite_fixture {
-        int initial_value;
-   };
-
-   static void *my_suite_setup(void) {
-        static struct my_suite_fixture f = { .initial_value = 42 };
-        return &f;
-   }
-
-   ZTEST_SUITE(my_suite, NULL, my_suite_setup, NULL, NULL, NULL);
-
-   ZTEST_P(my_suite, test_multiply)
-   {
-        struct my_suite_fixture *f = (struct my_suite_fixture *)data;
-        int factor = ZTEST_GET_PARAM(int);
-
-        /* fixture is always intact, regardless of parameter */
-        zassert_equal(f->initial_value, 42, "fixture corrupted");
-        zassert_true(f->initial_value * factor > 0, "product must be positive");
-   }
-
-Declaring parameter values
----------------------------
-
-Use :c:macro:`ZTEST_DEFINE_PARAM_VALUES` to create a static value set from
-literal values:
-
-.. code-block:: C
-
-   ZTEST_DEFINE_PARAM_VALUES(small_factors, int, 1, 2, 3);
-
-For values already stored in an array use :c:macro:`ZTEST_DEFINE_PARAM_VALUES_ARRAY`:
-
-.. code-block:: C
-
-   static const int big_factors[] = { 10, 100, 1000 };
-   ZTEST_DEFINE_PARAM_VALUES_ARRAY(big_factor_vals, big_factors);
-
-For a numeric range use :c:macro:`ZTEST_DEFINE_PARAM_RANGE`, which mirrors
-GoogleTest's ``testing::Range(begin, end [, step])`` semantics.  Values are
-``{begin, begin+step, ...}`` up to but **not** including ``end``.  No backing
-array is allocated, so large ranges have zero RAM overhead:
-
-.. code-block:: C
-
-   /* {0, 2, 4, 6, 8} — 5 values, step defaults is supplied explicitly */
-   ZTEST_DEFINE_PARAM_RANGE(even_vals, int, 0, 10, 2);
-
-   /* {1, 2, 3, 4, 5} — step=1 is the common case */
-   ZTEST_DEFINE_PARAM_RANGE(one_to_five, int, 1, 6, 1);
-
-.. note::
-
-   ``ZTEST_DEFINE_PARAM_RANGE`` requires ``end > begin`` and ``step > 0``,
-   both enforced at compile time via :c:macro:`BUILD_ASSERT`.
-
-For values that must be **computed at runtime** — for instance random numbers,
-hardware sensor readings, or values produced by a custom algorithm — use
-:c:macro:`ZTEST_DEFINE_PARAM_GENERATOR` or
-:c:macro:`ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP`.  Both accept a
-user-provided generator callback with the signature
-``void gen(size_t index, void *out)`` that writes one value per invocation.
-Like ranges, no backing array is allocated.
-
-The ``_WITH_SETUP`` variant additionally calls a ``void setup(void)`` hook
-**once** before the dispatch loop.  This is the right place to seed a PRNG,
-reset a stateful counter, or open any resource needed by the generator:
-
-.. code-block:: C
-
-   #include <zephyr/random/random.h>
-
-   /* Seed the RNG before the first iteration so failures are reproducible. */
-   static void seed_rng(void)
-   {
-        sys_rand_seed(MY_FUZZ_SEED);
-   }
-
-   static void rand_u32_gen(size_t idx, void *out)
-   {
-        ARG_UNUSED(idx);
-        *(uint32_t *)out = sys_rand32_get();
-   }
-
-   ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(fuzz_vals, uint32_t,
-                                        MY_FUZZ_ITERATIONS,
-					seed_rng, rand_u32_gen);
-   ZTEST_INSTANTIATE_TEST_SUITE_P(fuzz, my_suite, test_my_function, fuzz_vals);
-
-When no setup is needed, use the simpler form:
-
-.. code-block:: C
-
-   static void deterministic_gen(size_t idx, void *out)
-   {
-	/* Deterministic but computed at runtime (e.g. based on hardware ID). */
-        *(uint32_t *)out = get_device_seed() ^ (uint32_t)idx;
-   }
-
-   ZTEST_DEFINE_PARAM_GENERATOR(hw_vals, uint32_t, 16U, deterministic_gen);
-   ZTEST_INSTANTIATE_TEST_SUITE_P(hw, my_suite, test_my_function, hw_vals);
-
-.. note::
-
-   The ``count_`` argument to both generator macros must be a constant
-   expression (a numeric literal, a ``#define``, or a Kconfig symbol such as
-   ``MY_FUZZ_ITERATIONS``).  Truly dynamic counts are not supported.
-
-Struct-typed parameters work the same way:
-
-.. code-block:: C
-
-   struct point { int x; int y; };
-
-   static const struct point corners[] = { {0,0}, {1,0}, {0,1}, {1,1} };
-   ZTEST_DEFINE_PARAM_VALUES_ARRAY(corner_vals, corners);
-
-   ZTEST_P(my_suite, test_in_unit_square)
-   {
-	const struct point *p = ZTEST_GET_PARAM_PTR(struct point);
-        zassert_true(p->x >= 0 && p->x <= 1 && p->y >= 0 && p->y <= 1,
-		"point (%d, %d) outside unit square", p->x, p->y);
-   }
-
-Instantiating a parameterized test
-------------------------------------
-
-:c:macro:`ZTEST_INSTANTIATE_TEST_SUITE_P` binds a value set to a test body.  Each
-call creates a separate named instantiation; the same test body may be
-instantiated multiple times with different value sets:
-
-.. code-block:: C
-
-   ZTEST_INSTANTIATE_TEST_SUITE_P(small, my_suite, test_multiply, small_factors);
-   ZTEST_INSTANTIATE_TEST_SUITE_P(big,   my_suite, test_multiply, big_factor_vals);
-
-The first argument (``small`` / ``big``) is an arbitrary unique identifier within
-the compilation unit; it is recorded in the test metadata but does not affect test
-naming as reported by Twister.
-
-Retrieving the current parameter
-----------------------------------
-
-Inside a :c:macro:`ZTEST_P` body the following helpers are available:
-
-.. list-table::
-   :header-rows: 1
-   :widths: 40 60
-
-   * - Helper
-     - Description
-   * - ``ztest_has_current_param()``
-     - Returns ``true`` when called inside a parameterized invocation.
-   * - ``ztest_get_current_param()``
-     - Returns a ``const void *`` pointer to the current value.
-   * - ``ZTEST_GET_PARAM_PTR(type)``
-     - Returns a ``const type *`` pointer to the current value.
-   * - ``ZTEST_GET_PARAM(type)``
-     - Dereferences and returns the current value as ``type``.
-   * - ``ztest_get_current_param_index()``
-     - Returns the zero-based index of the current value within its set.
-   * - ``ztest_get_current_param_size()``
-     - Returns the size in bytes of one parameter element.
-
-Non-parameterized tests (:c:macro:`ZTEST`, :c:macro:`ZTEST_F`) always see
-``ztest_has_current_param()`` return ``false`` and ``ztest_get_current_param()``
-return ``NULL``.
-
-Test result expectations
-========================
-
-Some tests were made to be broken. In cases where the test is expected to fail or skip due to the
-nature of the code, it's possible to annotate the test as such. For example:
-
-  .. code-block:: C
-
-    #include <zephyr/ztest.h>
-
-    ZTEST_SUITE(my_suite, NULL, NULL, NULL, NULL, NULL);
-
-    ZTEST_EXPECT_FAIL(my_suite, test_fail);
-    ZTEST(my_suite, test_fail)
-    {
-      /** This will fail the test */
-      zassert_true(false, NULL);
-    }
-
-    ZTEST_EXPECT_SKIP(my_suite, test_skip);
-    ZTEST(my_suite, test_skip)
-    {
-      /** This will skip the test */
-      zassume_true(false, NULL);
-    }
-
-In this example, the above tests should be marked as failed and skipped respectively. Instead,
-Ztest will mark both as passed due to the expectation.
-
-Test rules
-==========
-
-Test rules are a way to run the same logic for every test and every suite. There are a lot of cases
-where you might want to reset some state for every test in the binary (regardless of which suite is
-currently running). As an example, this could be to reset mocks, reset emulators, flush the UART,
-etc.:
-
-.. code-block:: C
-
-   #include <zephyr/fff.h>
-   #include <zephyr/ztest.h>
-
-   #include "test_mocks.h"
-
-   DEFINE_FFF_GLOBALS;
-
-   DEFINE_FAKE_VOID_FUN(my_weak_func);
-
-   static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
-   {
-        ARG_UNUSED(test);
-        ARG_UNUSED(fixture);
-
-        RESET_FAKE(my_weak_func);
-   }
-
-   ZTEST_RULE(fff_reset_rule, fff_reset_rule_before, NULL);
-
-A custom ``test_main``
-======================
-
-While the Ztest framework provides a default :c:func:`test_main` function, it's possible that some
-applications will want to provide custom behavior. This is particularly true if there's some global
-state that the tests depend on and that state either cannot be replicated or is difficult to
-replicate without starting the process over. For example, one such state could be a power sequence.
-Assuming there's a board with several steps in the power-on sequence a test suite can be written
-using the ``predicate`` to control when it would run. In that case, the :c:func:`test_main`
-function can be written as follows:
-
-.. code-block:: C
-
-   #include <zephyr/ztest.h>
-
-   #include "my_test.h"
-
-   void test_main(void)
-   {
-        struct power_sequence_state state;
-
-        /* Only suites that use a predicate checking for phase == PWR_PHASE_0 will run. */
-        state.phase = PWR_PHASE_0;
-        ztest_run_all(&state, false, 1, 1);
-
-        /* Only suites that use a predicate checking for phase == PWR_PHASE_1 will run. */
-        state.phase = PWR_PHASE_1;
-        ztest_run_all(&state, false, 1, 1);
-
-        /* Only suites that use a predicate checking for phase == PWR_PHASE_2 will run. */
-        state.phase = PWR_PHASE_2;
-        ztest_run_all(&state, false, 1, 1);
-
-        /* Check that all the suites in this binary ran at least once. */
-        ztest_verify_all_test_suites_ran();
-   }
-
+.. contents::
+   :depth: 1
+   :local:
+   :backlinks: top
 
 Quick start - Integration testing
 *********************************
@@ -437,36 +45,25 @@ on how Twister deals with Ztest application.
 
 The sample contains the following files:
 
-CMakeLists.txt
-
 .. literalinclude:: ../../../samples/subsys/testsuite/integration/CMakeLists.txt
    :language: CMake
+   :caption: CMakeLists.txt
    :linenos:
 
-tests.yaml
-
-.. literalinclude:: ../../../samples/subsys/testsuite/integration/testcase.yaml
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/tests.yaml
    :language: yaml
+   :caption: tests.yaml
    :linenos:
-
-prj.conf
 
 .. literalinclude:: ../../../samples/subsys/testsuite/integration/prj.conf
    :language: text
+   :caption: prj.conf
    :linenos:
-
-src/main.c
 
 .. literalinclude:: ../../../samples/subsys/testsuite/integration/src/main.c
    :language: c
+   :caption: src/main.c
    :linenos:
-
-.. contents::
-   :depth: 1
-   :local:
-   :backlinks: top
-
-
 
 A test application may consist of multiple test suites that
 either can be testing functionality or APIs. Functions implementing a test case
@@ -568,6 +165,52 @@ are executed with a firmware build with BOARD=unit_testing.
    Follow the same instructions as for the
    :ref:`POSIX Arch dependencies<posix_arch_deps>`.
 
+.. _unit_testing_board:
+
+The ``unit_testing`` board
+==========================
+
+Unit tests are built for the special ``unit_testing`` board
+(:zephyr_file:`subsys/testsuite/boards/unit_testing`). It is not a real piece of
+hardware nor a simulated target: it is a pseudo-board with ``arch: unit`` that
+uses the host toolchain to produce a regular native executable. Selecting it
+with ``-DBOARD=unit_testing`` (which Twister does automatically for scenarios
+marked ``type: unit``) builds and links only the source files you add to the
+``testbinary`` target together with the Ztest unit-test harness.
+
+Crucially, **the Zephyr kernel and operating system are not built at all**.
+There is no boot sequence, no scheduler, no devicetree-driven device
+initialization, and no driver model. The functions under test are compiled into
+the test binary and called directly. Any kernel API or other dependency that the
+module under test relies on must be supplied by the test itself, usually as a
+stub or a :ref:`mock <mocking-fff>`.
+
+.. _unit_testing_vs_native_sim:
+
+Difference from ``native_sim`` and other boards
+-----------------------------------------------
+
+It is easy to confuse the ``unit_testing`` board with
+:zephyr:board:`native_sim`, since both run on the host. They are
+fundamentally different:
+
+* :zephyr:board:`native_sim` builds the
+  **complete Zephyr OS** -- kernel, devicetree, Kconfig, drivers and
+  subsystems -- into a host binary that boots and runs exactly like a Zephyr
+  image on real hardware, only compiled for the host instead of a target SoC.
+  Use it to run full applications and integration tests on the host. Tests for
+  these boards do **not** set ``type: unit``.
+
+* ``unit_testing`` builds **none** of that. It links only the code under test
+  plus Ztest, with everything else stubbed or mocked, and calls the tested
+  functions directly. This makes builds and runs fast and keeps the focus on a
+  single module, at the cost of having to provide stubs for every dependency.
+  These tests must set ``type: unit`` (see :ref:`below <tests_yaml_unit>`).
+
+In short, reach for ``native_sim`` to exercise code in the context of a running
+Zephyr system, and for ``unit_testing`` to test an isolated module without
+pulling in the kernel.
+
 CMakeLists.txt
 ==============
 
@@ -592,6 +235,8 @@ In a unit test, mock objects can simulate the behavior of complex real objects
 and are used to decide whether a test failed or passed by verifying whether an
 interaction with an object occurred, and if required, to assert the order of
 that interaction.
+
+.. _tests_yaml_unit:
 
 tests.yaml
 ==========
@@ -627,6 +272,414 @@ add them either via the CMakeLists.txt or in the tests.yaml:
             - EXTRA_LDFLAGS="-lm"
 
 Examples of unit tests can be found in the :zephyr_file:`tests/unit/` folder.
+
+
+Creating a test suite
+*********************
+
+Using Ztest to create a test suite is as easy as calling the :c:macro:`ZTEST_SUITE`. The macro
+accepts the following arguments:
+
+* ``suite_name`` - The name of the suite. This name must be unique within a single binary.
+* :c:type:`ztest_suite_predicate_t` - An optional predicate function to allow choosing when the
+  test will run. The predicate will get a pointer to the global state passed in through
+  :c:func:`ztest_run_all` and should return a boolean to decide if the suite should run.
+* :c:type:`ztest_suite_setup_t` - An optional setup function which returns a test fixture. This
+  will be called and run once per test suite run.
+* :c:type:`ztest_suite_before_t` - An optional before function which will run before every single
+  test in this suite.
+* :c:type:`ztest_suite_after_t` - An optional after function which will run after every single
+  test in this suite.
+* :c:type:`ztest_suite_teardown_t` - An optional teardown function which will run at the end of
+  all the tests in the suite.
+
+Below is an example of a test suite using a predicate:
+
+.. code-block:: C
+
+   #include <zephyr/ztest.h>
+   #include "test_state.h"
+
+   static bool predicate(const void *global_state)
+   {
+        return ((const struct test_state*)global_state)->x == 5;
+   }
+
+   ZTEST_SUITE(alternating_suite, predicate, NULL, NULL, NULL, NULL);
+
+Adding tests to a suite
+***********************
+
+There are 5 macros used to add a test to a suite, they are:
+
+* :c:macro:`ZTEST` ``(suite_name, test_name)`` - Which can be used to add a test by ``test_name`` to a
+  given suite by ``suite_name``.
+* :c:macro:`ZTEST_P` ``(suite_name, test_name)`` - Add a value-parameterized test to a given suite.
+  The test body is executed once per registered parameter value. Inside the body, call
+  :c:func:`ztest_get_current_param` or use the :c:macro:`ZTEST_GET_PARAM` typed helper to
+  retrieve the current value. The suite fixture (``data`` argument) is independent from the
+  parameter and is never overwritten. See `Value-parameterized tests`_ for the full API.
+* :c:macro:`ZTEST_USER` ``(suite_name, test_name)`` - Which behaves the same as :c:macro:`ZTEST`, only
+  that when :kconfig:option:`CONFIG_USERSPACE` is enabled, then the test will be run in a userspace
+  thread.
+* :c:macro:`ZTEST_F` ``(suite_name, test_name)`` - Which behaves the same as :c:macro:`ZTEST`, only
+  that the test function will already include a variable named ``fixture`` with the type
+  ``<suite_name>_fixture``.
+* :c:macro:`ZTEST_USER_F` ``(suite_name, test_name)`` - Which combines the fixture feature of
+  :c:macro:`ZTEST_F` with the userspace threading for the test.
+
+Test fixtures
+=============
+
+Test fixtures can be used to help simplify repeated test setup operations. In many cases, tests in
+the same suite will require some initial setup followed by some form of reset between each test.
+This is achieved via fixtures in the following way:
+
+.. code-block:: C
+
+   #include <zephyr/ztest.h>
+
+   struct my_suite_fixture {
+        size_t max_size;
+        size_t size;
+        uint8_t buff[1];
+   };
+
+   static void *my_suite_setup(void)
+   {
+        /* Allocate the fixture with 256 byte buffer */
+        struct my_suite_fixture *fixture = malloc(sizeof(struct my_suite_fixture) + 255);
+
+        zassume_not_null(fixture, NULL);
+        fixture->max_size = 256;
+
+        return fixture;
+   }
+
+   static void my_suite_before(void *f)
+   {
+        struct my_suite_fixture *fixture = (struct my_suite_fixture *)f;
+        memset(fixture->buff, 0, fixture->max_size);
+        fixture->size = 0;
+   }
+
+   static void my_suite_teardown(void *f)
+   {
+        free(f);
+   }
+
+   ZTEST_SUITE(my_suite, NULL, my_suite_setup, my_suite_before, NULL, my_suite_teardown);
+
+   ZTEST_F(my_suite, test_feature_x)
+   {
+        zassert_equal(0, fixture->size);
+        zassert_equal(256, fixture->max_size);
+   }
+
+Using memory allocated by a test fixture in a userspace thread, such as during execution of
+:c:macro:`ZTEST_USER` or :c:macro:`ZTEST_USER_F`, requires that memory to be declared userspace
+accessible. This is because the fixture memory is owned and initialized by kernel space. The Ztest
+framework provides the :c:macro:`ZTEST_DMEM` and :c:macro:`ZTEST_BMEM` macros for use of such
+user/kernel space shared memory.
+
+Advanced features
+*****************
+
+.. _value-parameterized-tests:
+
+Value-parameterized tests
+=========================
+
+Value-parameterized tests allow a single test body to be executed once for each
+value in a supplied list, similar to GoogleTest's ``TEST_P`` / ``INSTANTIATE_TEST_SUITE_P``
+pattern.  The fixture and the parameter are completely independent: the suite's
+``setup()`` return value is always passed as ``data`` and is never overwritten by
+a parameter value.
+
+Declaring a parameterized test body
+------------------------------------
+
+Use :c:macro:`ZTEST_P` in the same way as :c:macro:`ZTEST`.  Inside the body, the ``data``
+pointer carries the suite fixture (identical to :c:macro:`ZTEST_F`).  The current
+parameter value is retrieved through the run-time accessors:
+
+.. code-block:: C
+
+   #include <zephyr/ztest.h>
+
+   struct my_suite_fixture {
+        int initial_value;
+   };
+
+   static void *my_suite_setup(void) {
+        static struct my_suite_fixture f = { .initial_value = 42 };
+        return &f;
+   }
+
+   ZTEST_SUITE(my_suite, NULL, my_suite_setup, NULL, NULL, NULL);
+
+   ZTEST_P(my_suite, test_multiply)
+   {
+        struct my_suite_fixture *f = (struct my_suite_fixture *)data;
+        int factor = ZTEST_GET_PARAM(int);
+
+        /* fixture is always intact, regardless of parameter */
+        zassert_equal(f->initial_value, 42, "fixture corrupted");
+        zassert_true(f->initial_value * factor > 0, "product must be positive");
+   }
+
+Declaring parameter values
+---------------------------
+
+Use :c:macro:`ZTEST_DEFINE_PARAM_VALUES` to create a static value set from
+literal values:
+
+.. code-block:: C
+
+   ZTEST_DEFINE_PARAM_VALUES(small_factors, int, 1, 2, 3);
+
+For values already stored in an array use :c:macro:`ZTEST_DEFINE_PARAM_VALUES_ARRAY`:
+
+.. code-block:: C
+
+   static const int big_factors[] = { 10, 100, 1000 };
+   ZTEST_DEFINE_PARAM_VALUES_ARRAY(big_factor_vals, big_factors);
+
+For a numeric range use :c:macro:`ZTEST_DEFINE_PARAM_RANGE`, which mirrors
+GoogleTest's ``testing::Range(begin, end [, step])`` semantics.  Values are
+``{begin, begin+step, ...}`` up to but **not** including ``end``.  No backing
+array is allocated, so large ranges have zero RAM overhead:
+
+.. code-block:: C
+
+   /* {0, 2, 4, 6, 8} — 5 values, step is supplied explicitly */
+   ZTEST_DEFINE_PARAM_RANGE(even_vals, int, 0, 10, 2);
+
+   /* {1, 2, 3, 4, 5} — step=1 is the common case */
+   ZTEST_DEFINE_PARAM_RANGE(one_to_five, int, 1, 6, 1);
+
+.. note::
+
+   ``ZTEST_DEFINE_PARAM_RANGE`` requires ``end > begin`` and ``step > 0``,
+   both enforced at compile time via :c:macro:`BUILD_ASSERT`.
+
+For values that must be **computed at runtime** — for instance random numbers,
+hardware sensor readings, or values produced by a custom algorithm — use
+:c:macro:`ZTEST_DEFINE_PARAM_GENERATOR` or
+:c:macro:`ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP`.  Both accept a
+user-provided generator callback with the signature
+``void gen(size_t index, void *out)`` that writes one value per invocation.
+Like ranges, no backing array is allocated.
+
+The ``_WITH_SETUP`` variant additionally calls a ``void setup(void)`` hook
+**once** before the dispatch loop.  This is the right place to seed a PRNG,
+reset a stateful counter, or open any resource needed by the generator:
+
+.. code-block:: C
+
+   #include <zephyr/random/random.h>
+
+   /* Seed the RNG before the first iteration so failures are reproducible. */
+   static void seed_rng(void)
+   {
+        sys_rand_seed(MY_FUZZ_SEED);
+   }
+
+   static void rand_u32_gen(size_t idx, void *out)
+   {
+        ARG_UNUSED(idx);
+        *(uint32_t *)out = sys_rand32_get();
+   }
+
+   ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(fuzz_vals, uint32_t, MY_FUZZ_ITERATIONS,
+                                           seed_rng, rand_u32_gen);
+
+When no setup is needed, use the simpler form:
+
+.. code-block:: C
+
+   static void deterministic_gen(size_t idx, void *out)
+   {
+        /* Deterministic but computed at runtime (e.g. based on hardware ID). */
+        *(uint32_t *)out = get_device_seed() ^ (uint32_t)idx;
+   }
+
+   ZTEST_DEFINE_PARAM_GENERATOR(hw_vals, uint32_t, 16U, deterministic_gen);
+
+.. note::
+
+   The ``count_`` argument to both generator macros must be a constant
+   expression (a numeric literal, a ``#define``, or a Kconfig symbol such as
+   ``MY_FUZZ_ITERATIONS``).  Truly dynamic counts are not supported.
+
+Struct-typed parameters work the same way:
+
+.. code-block:: C
+
+   struct point { int x; int y; };
+
+   static const struct point corners[] = { {0,0}, {1,0}, {0,1}, {1,1} };
+   ZTEST_DEFINE_PARAM_VALUES_ARRAY(corner_vals, corners);
+
+   ZTEST_P(my_suite, test_in_unit_square)
+   {
+        const struct point *p = ZTEST_GET_PARAM_PTR(struct point);
+        zassert_true(p->x >= 0 && p->x <= 1 && p->y >= 0 && p->y <= 1,
+                    "point (%d, %d) outside unit square", p->x, p->y);
+   }
+
+Instantiating a parameterized test
+------------------------------------
+
+:c:macro:`ZTEST_INSTANTIATE_TEST_SUITE_P` binds a value set to a test body.  Each
+call creates a separate named instantiation; the same test body may be
+instantiated multiple times with different value sets:
+
+.. code-block:: C
+
+   ZTEST_INSTANTIATE_TEST_SUITE_P(small, my_suite, test_multiply, small_factors);
+   ZTEST_INSTANTIATE_TEST_SUITE_P(big,   my_suite, test_multiply, big_factor_vals);
+
+The first argument (``small`` / ``big``) is an arbitrary unique identifier within
+the compilation unit; it is recorded in the test metadata but does not affect test
+naming as reported by Twister.
+
+Retrieving the current parameter
+----------------------------------
+
+Inside a :c:macro:`ZTEST_P` body the following helpers are available:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Helper
+     - Description
+   * - ``ztest_has_current_param()``
+     - Returns ``true`` when called inside a parameterized invocation.
+   * - ``ztest_get_current_param()``
+     - Returns a ``const void *`` pointer to the current value.
+   * - ``ZTEST_GET_PARAM_PTR(type)``
+     - Returns a ``const type *`` pointer to the current value.
+   * - ``ZTEST_GET_PARAM(type)``
+     - Dereferences and returns the current value as ``type``.
+   * - ``ztest_get_current_param_index()``
+     - Returns the zero-based index of the current value within its set.
+   * - ``ztest_get_current_param_size()``
+     - Returns the size in bytes of one parameter element.
+
+Non-parameterized tests (:c:macro:`ZTEST`, :c:macro:`ZTEST_F`) always see
+``ztest_has_current_param()`` return ``false`` and ``ztest_get_current_param()``
+return ``NULL``.
+
+Test result expectations
+========================
+
+Some tests were made to be broken. In cases where the test is expected to fail or skip due to the
+nature of the code, it's possible to annotate the test as such. For example:
+
+.. code-block:: C
+
+   #include <zephyr/ztest.h>
+
+   ZTEST_SUITE(my_suite, NULL, NULL, NULL, NULL, NULL);
+
+   ZTEST_EXPECT_FAIL(my_suite, test_fail);
+   ZTEST(my_suite, test_fail)
+   {
+     /** This will fail the test */
+     zassert_true(false, NULL);
+   }
+
+   ZTEST_EXPECT_SKIP(my_suite, test_skip);
+   ZTEST(my_suite, test_skip)
+   {
+     /** This will skip the test */
+     zassume_true(false, NULL);
+   }
+
+In this example, the above tests should be marked as failed and skipped respectively. Instead,
+Ztest will mark both as passed due to the expectation.
+
+Test rules
+==========
+
+Test rules are a way to run the same logic for every test and every suite. There are a lot of cases
+where you might want to reset some state for every test in the binary (regardless of which suite is
+currently running). As an example, this could be to reset mocks, reset emulators, flush the UART,
+etc.:
+
+.. code-block:: C
+
+   #include <zephyr/fff.h>
+   #include <zephyr/ztest.h>
+
+   #include "test_mocks.h"
+
+   DEFINE_FFF_GLOBALS;
+
+   DEFINE_FAKE_VOID_FUN(my_weak_func);
+
+   static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
+   {
+        ARG_UNUSED(test);
+        ARG_UNUSED(fixture);
+
+        RESET_FAKE(my_weak_func);
+   }
+
+   ZTEST_RULE(fff_reset_rule, fff_reset_rule_before, NULL);
+
+A custom ``test_main``
+======================
+
+While the Ztest framework provides a default :c:func:`test_main` function, it's possible that some
+applications will want to provide custom behavior. This is particularly true if there's some global
+state that the tests depend on and that state either cannot be replicated or is difficult to
+replicate without starting the process over. For example, one such state could be a power sequence.
+Assuming there's a board with several steps in the power-on sequence a test suite can be written
+using the ``predicate`` to control when it would run. In that case, the :c:func:`test_main`
+function can be written as follows:
+
+.. code-block:: C
+
+   #include <zephyr/ztest.h>
+
+   #include "my_test.h"
+
+   void test_main(void)
+   {
+        struct power_sequence_state state;
+
+        /* Only suites that use a predicate checking for phase == PWR_PHASE_0 will run. */
+        state.phase = PWR_PHASE_0;
+        ztest_run_all(&state, false, 1, 1);
+
+        /* Only suites that use a predicate checking for phase == PWR_PHASE_1 will run. */
+        state.phase = PWR_PHASE_1;
+        ztest_run_all(&state, false, 1, 1);
+
+        /* Only suites that use a predicate checking for phase == PWR_PHASE_2 will run. */
+        state.phase = PWR_PHASE_2;
+        ztest_run_all(&state, false, 1, 1);
+
+        /* Check that all the suites in this binary ran at least once. */
+        ztest_verify_all_test_suites_ran();
+   }
+
+The signature of :c:func:`ztest_run_all` is
+``ztest_run_all(const void *state, bool shuffle, int suite_iter, int case_iter)``:
+
+* ``state`` - Pointer to the global state passed to each suite's ``predicate``.
+* ``shuffle`` - When ``true``, randomize the order in which suites and tests run
+  (requires :kconfig:option:`CONFIG_ZTEST_SHUFFLE`); ``false`` keeps the default
+  alphanumerical order.
+* ``suite_iter`` - Number of times to repeat each test suite.
+* ``case_iter`` - Number of times to repeat each test case.
+
+In the example above each call runs the matching suites once, in order, without
+shuffling.
+
 
 Best practices for declaring the test suite
 *******************************************
@@ -699,12 +752,12 @@ the timeout is configured to complete after 10 seconds if those conditions are n
 The last argument of each context is the initial sleep time which will be adjusted throughout
 the test to achieve the highest CPU load.
 
-  .. code-block:: C
+.. code-block:: C
 
-             ztress_set_timeout(K_MSEC(10000));
-             ZTRESS_EXECUTE(ZTRESS_TIMER(foo_0, user_data_0, 10000, Z_TIMEOUT_TICKS(20)),
-                            ZTRESS_THREAD(foo_1, user_data_1, 10000, 0, Z_TIMEOUT_TICKS(20)),
-                            ZTRESS_THREAD(foo_2, user_data_2, 10000, 1000, Z_TIMEOUT_TICKS(20)));
+   ztress_set_timeout(K_MSEC(10000));
+   ZTRESS_EXECUTE(ZTRESS_TIMER(foo_0, user_data_0, 10000, Z_TIMEOUT_TICKS(20)),
+                  ZTRESS_THREAD(foo_1, user_data_1, 10000, 0, Z_TIMEOUT_TICKS(20)),
+                  ZTRESS_THREAD(foo_2, user_data_2, 10000, 1000, Z_TIMEOUT_TICKS(20)));
 
 Configuration
 =============
@@ -782,7 +835,7 @@ file and line numbers, reducing the binary size of the test.
 Example output for a failed macro from
 ``zassume_equal(buf->ref, 2, "Invalid refcount")``:
 
-.. code-block::none
+.. code-block:: none
 
     START - test_get_single_buffer
         Assumption failed at main.c:62: test_get_single_buffer: Invalid refcount (buf->ref not equal to 2)

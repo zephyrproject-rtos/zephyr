@@ -11,7 +11,7 @@ to the same ElasticSearch data storage together with other Twister reports
 for analysis, visualization, etc.
 
 The memory footprint input data files (rom.json, ram.json) are expected in directories
-sturctured as 'ZEPHYR_VERSION/APPLICATION/FEATURE/BOARD' under the input path(s).
+structured as 'ZEPHYR_VERSION/APPLICATION/FEATURE/BOARD' under the input path(s).
 The BOARD name itself can be in HWMv2 format as 'BOARD/SOC' or 'BOARD/SOC/VARIANT'
 with the corresponding sub-directories.
 

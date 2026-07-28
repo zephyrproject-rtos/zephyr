@@ -514,7 +514,7 @@ static void test_cli_caps_cancelled(void)
 	}
 
 	if (k_sem_take(&lost_target_sem, K_NO_WAIT)) {
-		FAIL("Lost targets CB did not trigger for all expeted lost targets");
+		FAIL("Lost targets CB did not trigger for all expected lost targets");
 	}
 
 	ASSERT_TRUE(srv1->acked);

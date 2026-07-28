@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/devicetree.h"
+#include <zephyr/devicetree.h>
 #define DT_DRV_COMPAT zephyr_sensing_phy_3d_sensor
 
 #include <stdlib.h>

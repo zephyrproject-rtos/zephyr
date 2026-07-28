@@ -344,7 +344,7 @@ int lm75_init(const struct device *dev)
 		data->dev = dev;
 		k_work_queue_start(&data->workq, data->stack, K_THREAD_STACK_SIZEOF(data->stack),
 				CONFIG_LM75_TRIGGER_THREAD_PRIO, NULL);
-		k_thread_name_set(&data->workq.thread, "lm75_trigger");
+		k_thread_name_set(data->workq.thread_id, "lm75_trigger");
 		k_work_init(&data->work, lm75_trigger_work_handler);
 
 		if (!device_is_ready(cfg->int_gpio.port)) {

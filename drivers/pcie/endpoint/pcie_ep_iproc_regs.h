@@ -12,7 +12,7 @@ struct paxb_64 {
 	uint32_t upper;
 };
 
-#ifdef CONFIG_PCIE_EP_IPROC_V2
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_iproc_pcie_ep_v2)
 struct paxb_imap {
 	uint32_t lower;
 	uint32_t upper;

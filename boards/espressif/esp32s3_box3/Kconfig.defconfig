@@ -1,0 +1,18 @@
+# Copyright (c) 2026 NotioNext Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32S3_BOX3_ESP32S3_PROCPU
+
+if LVGL
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_16
+endchoice
+
+# RGB565 byte swap required for ILI9342C over SPI
+config LV_COLOR_16_SWAP
+	default y
+
+endif # LVGL
+
+endif # BOARD_ESP32S3_BOX3_ESP32S3_PROCPU

@@ -339,4 +339,15 @@ config WHISPER_CONSOLE
 	help
 	  Use the console provided by the RISC-V Whisper ISS.
 
+config WCH_SDI_CONSOLE
+	bool "WCH SDI console"
+	depends on DT_HAS_WCH_SDI_CONSOLE_ENABLED
+	select CONSOLE_HAS_DRIVER
+	help
+	  Emit console messages to the host via the SDI debug module. These
+	  can be displayed by a SDI compatible debugger such as `minichlink`.
+	  Note that the console is blocking and may slow down operation
+	  especially if the debugger is not attached. Consider disabling the
+	  console in release builds.
+
 endif # CONSOLE

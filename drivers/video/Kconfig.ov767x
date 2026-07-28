@@ -6,6 +6,10 @@
 config VIDEO_OV767X
 	bool "OV767X CMOS digital image sensor"
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV7670),pwdn-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV7670),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV7675),pwdn-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV7675),reset-gpios)
 	depends on DT_HAS_OVTI_OV7670_ENABLED || DT_HAS_OVTI_OV7675_ENABLED
 	default y
 	help

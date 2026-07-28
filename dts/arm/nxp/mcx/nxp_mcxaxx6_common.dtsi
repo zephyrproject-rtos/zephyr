@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
@@ -22,7 +23,7 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			cpu-power-states = <&sleep &deepsleep &powerdown>;
+			cpu-power-states = <&sleep &deepsleep &powerdown &deeppowerdown>;
 		};
 	};
 
@@ -53,6 +54,24 @@
 			power-state-name = "standby";
 			min-residency-us = <80000>;
 			exit-latency-us = <20>;
+		};
+
+		/*
+		 * Deep Power Down. The whole CORE domain (ARM core, NVIC, SysTick)
+		 * is power gated and LDO_CORE is turned off; the chip wakes through
+		 * the reset routine. All SRAM is retained by the SPC SRAM LDO, so the
+		 * full working set survives and S2RAM resume is transparent.
+		 */
+		deeppowerdown: deeppowerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			/* Suspend-to-RAM needs the application to place its working set
+			 * in retained RAM and arm a wakeup source, so it is opt-in:
+			 * enable this node from the application to use it.
+			 */
+			status = "disabled";
+			min-residency-us = <500000>;
+			exit-latency-us = <500>;
 		};
 	};
 
@@ -227,7 +246,26 @@
 			prescale-glitch-filter-bypass;
 			clk-source = <1>;
 			resolution = <32>;
+			wakeup-ctrls = <&wuu NXP_WUU_MODULE_6_INT>;
 			status = "disabled";
+		};
+
+		rtc: rtc@400ee000 {
+			compatible = "nxp,rtc";
+			reg = <0x400ee000 0x1000>;
+			interrupts = <119 0>, <120 0>;
+			interrupt-names = "alarm", "seconds";
+			clock-frequency = <32768>;
+			prescaler = <32768>;
+			/* OSC32k is not available on this device */
+			clock-source = "LPO";
+			status = "disabled";
+
+			counter_rtc: counter_rtc {
+				compatible = "zephyr,rtc-counter";
+				alarms-count = <1>;
+				status = "disabled";
+			};
 		};
 
 		ctimer0: ctimer@40004000 {
@@ -288,6 +326,15 @@
 			mode = <0>;
 			input = <0>;
 			prescale = <0>;
+		};
+
+		dac0: dac@400b4000 {
+			compatible = "nxp,lpdac";
+			reg = <0x400b4000 0x1000>;
+			interrupts = <67 0>;
+			status = "disabled";
+			voltage-reference = <0>;
+			#io-channel-cells = <1>;
 		};
 
 		fmu: flash-controller@40095000 {
@@ -587,9 +634,10 @@
 		};
 
 		wuu: system-modules@40092000 {
-			compatible = "nxp,wuu";
+			compatible = "nxp,wuc-wuu", "nxp,wuu";
 			reg = <0x40092000 0x1000>;
 			interrupts = <18 0>;
+			#wakeup-ctrl-cells = <1>;
 		};
 
 		cmc: system-modules@4008b000 {
@@ -661,7 +709,113 @@
 		crc: crc@4008a000 {
 			compatible = "nxp,crc";
 			reg = <0x4008a000 0x1000>;
+			clocks = <&syscon MCUX_CRC_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(0, 13)>;
 			status = "disabled";
+		};
+
+		inputmux0: inputmux@40001000 {
+			compatible = "nxp,inputmux";
+			reg = <0x40001000 0x1000>;
+			#inputmux-cells = <2>;
+		};
+
+		eqdc0: eqdc@400a7000 {
+			compatible = "nxp,mcux-eqdc";
+			reg = <0x400a7000 0x1000>;
+			interrupts = <50 0>, <51 0>, <52 0>, <53 0>;
+			interrupt-names = "compare", "home", "watchdog", "index";
+			clocks = <&syscon MCUX_EQDC0_CLK>;
+			status = "disabled";
+		};
+
+		eqdc1: eqdc@400a8000 {
+			compatible = "nxp,mcux-eqdc";
+			reg = <0x400a8000 0x1000>;
+			interrupts = <85 0>, <86 0>, <87 0>, <88 0>;
+			interrupt-names = "compare", "home", "watchdog", "index";
+			clocks = <&syscon MCUX_EQDC1_CLK>;
+			status = "disabled";
+		};
+
+		flexpwm0: flexpwm@400a9000 {
+			compatible = "nxp,flexpwm";
+			reg = <0x400a9000 0x1000>;
+			interrupt-names = "RELOAD-ERROR", "FAULT";
+			interrupts = <44 0>, <45 0>;
+
+			flexpwm0_pwm0: pwm0 {
+				compatible = "nxp,imx-pwm";
+				index = <0>;
+				interrupts = <46 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
+
+			flexpwm0_pwm1: pwm1 {
+				compatible = "nxp,imx-pwm";
+				index = <1>;
+				interrupts = <47 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
+
+			flexpwm0_pwm2: pwm2 {
+				compatible = "nxp,imx-pwm";
+				index = <2>;
+				interrupts = <48 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
+		};
+
+		flexpwm1: flexpwm@400aa000 {
+			compatible = "nxp,flexpwm";
+			reg = <0x400aa000 0x1000>;
+			interrupt-names = "RELOAD-ERROR", "FAULT";
+			interrupts = <79 0>, <80 0>;
+
+			flexpwm1_pwm0: pwm0 {
+				compatible = "nxp,imx-pwm";
+				index = <0>;
+				interrupts = <81 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
+
+			flexpwm1_pwm1: pwm1 {
+				compatible = "nxp,imx-pwm";
+				index = <1>;
+				interrupts = <82 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
+
+			flexpwm1_pwm2: pwm2 {
+				compatible = "nxp,imx-pwm";
+				index = <2>;
+				interrupts = <83 0>;
+				#pwm-cells = <3>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
+				nxp,prescaler = <128>;
+				status = "disabled";
+				run-in-wait;
+			};
 		};
 	};
 };

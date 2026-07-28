@@ -12,13 +12,15 @@
 #include "memory.h"
 
 /* The "user_sram_end" represents the 2nd stage bootloader
- * "iram_loader_seg" start address (that should not be overlapped).
+ * reserved region start (dram_loader_seg); the app must not overlap it.
  * If no bootloader is used, we can extend it to gain more user ram.
+ * On pre-v3 silicon the bootloader lives in low SRAM, so the app
+ * may use the full sram_high region up to DRAM_USER_END.
  */
-#ifdef CONFIG_ESP_SIMPLE_BOOT
+#if defined(CONFIG_ESP_SIMPLE_BOOT) || defined(CONFIG_SOC_ESP32P4_REV_1_3)
 user_sram_end = DRAM_USER_END;
 #else
-user_sram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
+user_sram_end = BOOTLOADER_DRAM_LOADER_SEG_START;
 #endif
 
 /* User available memory segments */
@@ -47,7 +49,15 @@ user_sram_size = (user_sram_end - user_sram_org);
 	#endif
 #else
 	#define MPU_MIN_SIZE_ALIGN
+	/* Align the nocache region to the L2 cache line so its start and end
+	 * never share a cache line with cacheable data. The line size is 64
+	 * bytes on the 128KB/256KB caches and 128 bytes on the 512KB cache.
+	 */
+#if defined(CONFIG_NOCACHE_MEMORY)
+	#define MPU_ALIGN(region_size) . = ALIGN(CONFIG_ESP32_CACHE_L2_LINE_SIZE)
+#else
 	#define MPU_ALIGN(region_size) . = ALIGN(4)
+#endif
 #endif
 
 #undef GROUP_DATA_LINK_IN
@@ -82,6 +92,15 @@ MEMORY
 #endif
 
   sram0_0_seg(RW): org = user_sram_org, len = user_sram_size
+
+#if defined(CONFIG_NOCACHE_MEMORY)
+  /* Reserved power-of-two window at the top of HP SRAM. The bytes stay at
+   * their normal cached (DMA-reachable) address; a PMA NAPOT entry marks them
+   * non-cacheable at boot. Excluded from sram0_0_seg because user_sram_size
+   * stops at DRAM_USER_END = NOCACHE_START.
+   */
+  nocache_seg(RW): org = NOCACHE_START, len = NOCACHE_SIZE
+#endif
 
   irom0_0_seg(RX): org = IROM_SEG_ORG, len = IROM_SEG_LEN
   drom0_0_seg(R):  org = DROM_SEG_ORG, len = DROM_SEG_LEN
@@ -380,12 +399,6 @@ SECTIONS
     *libzephyr.a:lldesc.*(.literal .literal.* .text .text.*)
 
     /* [mapping:log] */
-    *(.literal.esp_log_write .text.esp_log_write)
-    *(.literal.esp_log_timestamp .text.esp_log_timestamp)
-    *(.literal.esp_log_early_timestamp .text.esp_log_early_timestamp)
-    *(.literal.esp_log_impl_lock .text.esp_log_impl_lock)
-    *(.literal.esp_log_impl_lock_timeout .text.esp_log_impl_lock_timeout)
-    *(.literal.esp_log_impl_unlock .text.esp_log_impl_unlock)
 
     /* [mapping:spi_flash] */
     *libzephyr.a:spi_flash_chip_boya.*(.literal .literal.* .text .text.*)
@@ -418,11 +431,19 @@ SECTIONS
     *(.literal.esp_cpu_reset .text.esp_cpu_reset)
     *(.literal.esp_cpu_wait_for_intr .text.esp_cpu_wait_for_intr)
     *(.literal.esp_cpu_compare_and_set .text.esp_cpu_compare_and_set)
-    *(.literal.esp_gpio_reserve_pins .text.esp_gpio_reserve_pins)
-    *(.literal.esp_gpio_is_pin_reserved .text.esp_gpio_is_pin_reserved)
-    *(.literal.rtc_vddsdio_get_config .text.rtc_vddsdio_get_config)
-    *(.literal.rtc_vddsdio_set_config .text.rtc_vddsdio_set_config)
     *libzephyr.a:esp_memory_utils.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:temperature_sensor_hal.*(.literal.temperature_sensor_hal_get_raw_value .text.temperature_sensor_hal_get_raw_value)
+    *libzephyr.a:gpio_hal.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:interrupt.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:rv_utils.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:gpio.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:adc_oneshot_hal.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:adc_hal_common.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:adc_hal.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:uart_hal_iram.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_rom_print.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:clk_utils.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:sar_periph_ctrl_common.*(.literal .literal.* .text .text.*)
     *libzephyr.a:pmu_init.*(.literal .literal.* .text .text.*)
     *libzephyr.a:pmu_param.*(.literal .literal.* .text .text.*)
     *libzephyr.a:pmu_sleep.*(.literal .literal.* .text .text.*)
@@ -431,6 +452,17 @@ SECTIONS
     *libzephyr.a:sleep_mspi.*(.literal .literal.* .text .text.*)
     *libzephyr.a:sleep_console.*(.literal .literal.* .text .text.*)
     *libzephyr.a:sleep_usb.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:sleep_modes.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:sleep_modem.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:sleep_clock.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:peripheral_domain_pd.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_clk.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:sar_periph_ctrl.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:sar_tsens_ctrl.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:adc_share_hw_ctrl.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_timer_impl_common.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_timer_impl_systimer.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:pm_impl_zephyr.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_clk.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
@@ -440,7 +472,6 @@ SECTIONS
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
 
     /* [mapping:soc_pm] */
-    *(.literal.GPIO_HOLD_MASK .text.GPIO_HOLD_MASK)
 
     /* [mapping:esp_rom] */
     *libzephyr.a:esp_rom_crc.*(.literal .literal.* .text .text.*)
@@ -605,12 +636,6 @@ SECTIONS
     *libzephyr.a:lldesc.*(.rodata .rodata.* .srodata .srodata.*)
 
     /* [mapping:log] */
-    *(.rodata.esp_log_write)
-    *(.rodata.esp_log_timestamp)
-    *(.rodata.esp_log_early_timestamp)
-    *(.rodata.esp_log_impl_lock)
-    *(.rodata.esp_log_impl_lock_timeout)
-    *(.rodata.esp_log_impl_unlock)
 
     /* [mapping:spi_flash] */
     *libzephyr.a:spi_flash_chip_boya.*(.rodata .rodata.* .srodata .srodata.*)
@@ -650,15 +675,12 @@ SECTIONS
     *(.rodata.esp_cpu_reset)
     *(.rodata.esp_cpu_wait_for_intr)
     *(.rodata.esp_cpu_compare_and_set)
-    *(.rodata.esp_gpio_reserve_pins)
-    *(.rodata.esp_gpio_is_pin_reserved)
-    *(.rodata.rtc_vddsdio_get_config)
-    *(.rodata.rtc_vddsdio_set_config)
     *libzephyr.a:esp_memory_utils.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:rtc_clk.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:rtc_clk_init.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:systimer.*(.rodata .rodata.* .srodata .srodata.*)
     *(.rodata.sar_periph_ctrl_power_enable)
+    *(.rodata.GPIO_HOLD_MASK)
     *libzephyr.a:pmu_init.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:pmu_param.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:pmu_sleep.*(.rodata .rodata.* .srodata .srodata.*)
@@ -727,7 +749,21 @@ SECTIONS
 
   #include <zephyr/linker/common-ram.ld>
   #include <snippets-data-sections.ld>
+  /* snippets-ram-sections.ld pulls in the generic arch/common/nocache.ld,
+   * which links the .nocache section into RAMABLE_REGION. Point RAMABLE_REGION
+   * at the reserved nocache window for the duration of that include. The bytes
+   * keep their normal cached (DMA-reachable) address; a PMA entry configured
+   * in soc.c marks the region non-cacheable.
+   */
+#if defined(CONFIG_NOCACHE_MEMORY)
+  #pragma push_macro("RAMABLE_REGION")
+  #undef RAMABLE_REGION
+  #define RAMABLE_REGION nocache_seg
   #include <snippets-ram-sections.ld>
+  #pragma pop_macro("RAMABLE_REGION")
+#else
+  #include <snippets-ram-sections.ld>
+#endif
   #include <zephyr/linker/cplusplus-ram.ld>
 
   /* logging sections should be placed in RAM area to avoid flash cache disabled issues */

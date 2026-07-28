@@ -224,6 +224,21 @@ void board_early_init_hook(void)
 	CLOCK_SetClockDiv(kCLOCK_DivWWDT0, 1u);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp0))
+	RESET_ReleasePeripheralReset(kOPAMP0_RST_SHIFT_RSTn);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp1))
+	RESET_ReleasePeripheralReset(kOPAMP1_RST_SHIFT_RSTn);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp1);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(opamp2))
+	RESET_ReleasePeripheralReset(kOPAMP2_RST_SHIFT_RSTn);
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlOpamp2);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }

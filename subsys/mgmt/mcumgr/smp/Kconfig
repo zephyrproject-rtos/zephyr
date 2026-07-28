@@ -116,7 +116,7 @@ config MCUMGR_SMP_CBOR_MAX_ENCODING_LEVELS
 	default MCUMGR_SMP_CBOR_MIN_ENCODING_LEVELS
 	help
 	  This is a maximum number of levels of maps/lists that will be encoded within different
-	  commmand groups. This number translates to zcbor backup states, it increases size of
+	  command groups. This number translates to zcbor backup states, it increases size of
 	  cbor_nb_writer structure by zcbor_state_t size per one unit selected here.
 
 config MCUMGR_SMP_COMMAND_STATUS_HOOKS

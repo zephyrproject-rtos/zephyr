@@ -332,7 +332,7 @@ ZTEST(wifi, test_3_disconnect)
 	int ret;
 
 	ret = wifi_disconnect();
-	zassert_equal(ret, 0, "Disconect request failed");
+	zassert_equal(ret, 0, "Disconnect request failed");
 
 	zassert_equal(k_sem_take(&wifi_event, K_SECONDS(CONFIG_WIFI_DISCONNECT_TIMEOUT)), 0,
 		      "Wifi disconnect timed out");

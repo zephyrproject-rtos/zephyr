@@ -158,6 +158,8 @@
 			interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			gptfreq = <24000000>;
+			low-freq = <DT_FREQ_K(32)>;
+			osc-freq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_IPG_CLK 0x6c 20>;
 			status = "disabled";
 		};
@@ -169,6 +171,8 @@
 			interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			gptfreq = <24000000>;
+			low-freq = <DT_FREQ_K(32)>;
+			osc-freq = <DT_FREQ_M(24)>;
 			clocks = <&ccm IMX_CCM_GPT_IPG_CLK 0x68 24>;
 			status = "disabled";
 		};

@@ -156,16 +156,14 @@
 };
 
 &flash0 {
-	erase-block-size = <2048>;
-	write-block-size = <16>;
-
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		/* Set 16KB of storage at the end of the 1952KB of flash */
 		storage_partition: partition@1e4000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x001e4000 0x4000>;
 		};

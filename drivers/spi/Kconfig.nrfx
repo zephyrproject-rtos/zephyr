@@ -49,9 +49,9 @@ config SPI_NRFX_SPIS
 
 config SPI_NRFX_RAM_BUFFER_SIZE
 	int "Size of RAM buffers for SPIM peripherals"
-	default 0 if HAS_NORDIC_DMM
 	default 8
-	depends on SPI_NRFX_SPIM
+	depends on SPI_NRFX_SPIM || SPI_NRFX_SPIM_RTIO
+	depends on !HAS_NORDIC_DMM
 	help
 	  Because of using EasyDMA, SPIM peripherals cannot use transmit and
 	  receive buffers from all memory locations. They are restricted to
@@ -67,6 +67,16 @@ config SPI_NRFX_RAM_BUFFER_SIZE
 	  be disabled and the driver user must take care of not making transfer
 	  requests with buffers not accessible by EasyDMA since such transfers
 	  will fail.
+
+config SPI_NRFX_DMM_BUFFER_SIZE
+	int "Maximum transfer chunk size"
+	default 256
+	depends on SPI_NRFX_SPIM || SPI_NRFX_SPIM_RTIO
+	depends on HAS_NORDIC_DMM
+	help
+	  Limit the size of the transfer buffers allocated from DMM memory area. Transfers will
+	  be split into chunks of this size. For a TXRX transfer, the total memory allocated is
+	  twice the chunk size.
 
 config SPI_NRFX_WAKE_TIMEOUT_US
 	int "Maximum time to wait for SPI slave to wake up"

@@ -1,0 +1,54 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	/* The trigger is routed internally through INPUTMUX. The PWM driver still
+	 * requires a default pinctrl state, but this pin is not part of the loopback
+	 * path.
+	 */
+	pinmux_ctimer1_pwm_out: pinmux_ctimer1_pwm_out {
+		group0 {
+			pinmux = <CT1_MAT0_P2_4>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+};
+
+/ {
+	zephyr,user {
+		pwms = <&ctimer1 1 PWM_USEC(100) PWM_POLARITY_NORMAL>;
+	};
+
+	counter_loopback_0: counter_loopback {
+		compatible = "test-counter-capture";
+		test-counter-captures = <&ctimer2 0 0>;
+	};
+};
+
+&ctimer1 {
+	status = "okay";
+	compatible = "nxp,ctimer-pwm";
+	prescaler = <95>;
+	#pwm-cells = <3>;
+	pinctrl-0 = <&pinmux_ctimer1_pwm_out>;
+	pinctrl-names = "default";
+};
+
+&ctimer2 {
+	status = "okay";
+	#counter-capture-cells = <2>;
+	prescale = <95>;
+	/*
+	 * Route CTIMER1 match 1 to CTIMER2 CAPTSEL[0] via INPUTMUX0.
+	 * Cells: <&inputmux0 channel connection> where connection is
+	 * kINPUTMUX_Ctimer1M1ToTimer2Captsel = 36U | (TIMER2CAPTSEL0 << 20)
+	 * = 0x06000024.
+	 */
+	inputmux-connections = <&inputmux0 0 0x06000024>;
+};

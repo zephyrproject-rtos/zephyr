@@ -63,7 +63,7 @@ static bool http1_should_send_alt_svc(const struct http_client_ctx *client)
 	}
 
 	policy = svc->config == NULL ? HTTP_H3_ALT_SVC_DEFAULT :
-				       svc->config->h3_alt_svc_policy;
+				       svc->config->h3.alt_svc_policy;
 
 	switch (policy) {
 	case HTTP_H3_ALT_SVC_ENABLE:
@@ -1306,7 +1306,7 @@ error:
 	/* Best effort try to send HTTP 500 Internal Server Error response in
 	 * case of errors. This can only be done however if we haven't sent
 	 * response header elsewhere (i. e. can't send another reply if the
-	 * error ocurred amid resource processing).
+	 * error occurred amid resource processing).
 	 */
 	if (ret != -EAGAIN && !client->http1_headers_sent) {
 		send_http1_500(client, -ret);

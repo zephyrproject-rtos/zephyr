@@ -12,4 +12,15 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_nodelabel_int_prop,rtc1,clock-frequency)
 
+# Disable the dedicated Bluetooth long workqueue to save RAM (its thread stack
+# and control block). The long-running operations it would otherwise isolate
+# (ECDH and the GATT database hash) fall back to the system workqueue.
+configdefault BT_LONG_WQ
+	default n
+
+# With the long workqueue disabled, ECDH runs on the system workqueue instead.
+# Size the system workqueue stack so that it can accommodate it.
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 1280 if BT_ECC && !BT_LONG_WQ
+
 endif # SOC_SERIES_NRF51

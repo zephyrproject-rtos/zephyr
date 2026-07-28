@@ -263,7 +263,6 @@ static void eth_stellaris_isr(const struct device *dev)
 
 	if (isr_val & BIT_MACRIS_TXER) {
 		LOG_ERR("Transmit Frame Error");
-		eth_stats_update_errors_tx(dev_data->iface);
 		dev_data->tx_err = true;
 		k_sem_give(&dev_data->tx_sem);
 	}

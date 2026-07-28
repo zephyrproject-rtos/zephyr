@@ -42,10 +42,10 @@ enum adp5360_fuel_gauge_reg_address {
 	FUEL_GAUGE_ADP5360_REG_PGOOD_STATUS = 0x2Fu,
 };
 
-#define FUEL_GAUGE_ADP5360_SOC_SHIFT  4
-#define FUEL_GAUGE_ADP5360_VBAT_SHIFT 3
-#define FUEL_GAUGE_ADP5360_MV_TO_UV   1000
-#define FUEL_GAUGE_ADP5360_SOC_FULL   100
+#define FUEL_GAUGE_ADP5360_SOCACM_SHIFT 4
+#define FUEL_GAUGE_ADP5360_VBAT_SHIFT   3
+#define FUEL_GAUGE_ADP5360_MV_TO_UV     1000
+#define FUEL_GAUGE_ADP5360_SOC_FULL     100
 
 #define FUEL_GAUGE_ADP5360_V_SOC_MIN_VAL 2500
 #define FUEL_GAUGE_ADP5360_V_SOC_MAX_VAL 4540
@@ -133,18 +133,17 @@ static int fuel_gauge_adp5360_get_cycle_count(const struct device *dev,
 	const struct fuel_gauge_adp5360_config *config = dev->config;
 	const struct device *mfd_dev = config->mfd_adp5360;
 	int ret;
-	uint16_t buf;
+	uint16_t bat_socacm;
 
-	/* Read the cycle count value from the corresponding registers in the ADP5360 MFD */
+	/* Read the accumulated charge state from the corresponding registers in the ADP5360 MFD */
 	ret = mfd_adp5360_reg_burst_read(mfd_dev, FUEL_GAUGE_ADP5360_REG_BAT_SOC_ACM_H,
-					 (uint8_t *)&buf, 2);
+					 (uint8_t *)&bat_socacm, 2);
 	if (ret < 0) {
-		LOG_ERR("Failed to read cycle count from ADP5360 MFD: %d", ret);
+		LOG_ERR("Failed to read accumulated charge state from ADP5360 MFD: %d", ret);
 		return ret;
 	}
 
-	/* Register indicates 1/100ths of cycle count */
-	val->cycle_count = sys_be16_to_cpu(buf) >> FUEL_GAUGE_ADP5360_SOC_SHIFT;
+	val->cycle_count = (sys_be16_to_cpu(bat_socacm) >> FUEL_GAUGE_ADP5360_SOCACM_SHIFT) / 100;
 
 	return 0;
 }
@@ -563,7 +562,7 @@ static int fuel_gauge_adp5360_set_v_soc_probe(const struct device *dev)
 
 	/* Write the v_soc values to the corresponding registers in the ADP5360 MFD */
 	ret = mfd_adp5360_reg_burst_write(mfd_dev, FUEL_GAUGE_ADP5360_REG_V_SOC_0, buf,
-					  ARRAY_SIZE(buf)-1);
+					  ARRAY_SIZE(buf) - 1);
 	if (ret < 0) {
 		LOG_ERR("Failed to write v_soc values to ADP5360 MFD: %d", ret);
 		return ret;

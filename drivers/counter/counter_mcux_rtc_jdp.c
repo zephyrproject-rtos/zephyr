@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,25 @@
 #include <zephyr/sys_clock.h>
 #include <fsl_rtc.h>
 #include <zephyr/logging/log.h>
+
+/*
+ * Skip the instance reserved as the system timer via zephyr,system-timer.
+ * When both the counter and the system timer drivers are enabled, they must
+ * operate on separate hardware (the RTC is a single instance).
+ */
+#define COUNTER_MCUX_RTC_JDP_IS_SYSTEM_TIMER(n)				\
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_system_timer),			\
+		(DT_SAME_NODE(DT_INST(n, nxp_rtc_jdp),			\
+			      DT_CHOSEN(zephyr_system_timer))),		\
+		(0))
+
+#define COUNTER_MCUX_RTC_JDP_COUNT_USABLE(n) \
+	+ (!COUNTER_MCUX_RTC_JDP_IS_SYSTEM_TIMER(n))
+
+#define COUNTER_MCUX_RTC_JDP_DEVICE_COUNT \
+	(0 DT_INST_FOREACH_STATUS_OKAY(COUNTER_MCUX_RTC_JDP_COUNT_USABLE))
+
+#if COUNTER_MCUX_RTC_JDP_DEVICE_COUNT > 0
 
 LOG_MODULE_REGISTER(mcux_rtc_jdp, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -525,4 +544,10 @@ static DEVICE_API(counter, mcux_rtc_jdp_driver_api) = {
 		irq_enable(DT_INST_IRQN(n));                                       \
 	}
 
-DT_INST_FOREACH_STATUS_OKAY(MCUX_RTC_JDP_INIT)
+#define MCUX_RTC_JDP_INIT_COND(n)					\
+	COND_CODE_0(COUNTER_MCUX_RTC_JDP_IS_SYSTEM_TIMER(n),		\
+		(MCUX_RTC_JDP_INIT(n)), ())
+
+DT_INST_FOREACH_STATUS_OKAY(MCUX_RTC_JDP_INIT_COND)
+
+#endif /* COUNTER_MCUX_RTC_JDP_DEVICE_COUNT > 0 */

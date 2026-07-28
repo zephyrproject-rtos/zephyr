@@ -154,7 +154,7 @@ ZTEST(flash_stm32, test_stm32_write_protection)
 	TC_PRINT("Done\n");
 
 	rc = flash_write(flash_dev, TEST_AREA_OFFSET, expected, EXPECTED_SIZE);
-	zassert_not_equal(rc, 0, "Write suceeded");
+	zassert_not_equal(rc, 0, "Write succeeded");
 	TC_PRINT("Write failed as expected, error %d\n", rc);
 
 	rc = flash_read(flash_dev, TEST_AREA_OFFSET, buf, EXPECTED_SIZE);
@@ -177,7 +177,7 @@ ZTEST(flash_stm32, test_stm32_write_protection)
 
 	rc = flash_write(flash_dev, TEST_AREA_OFFSET, expected, EXPECTED_SIZE);
 	zassert_equal(rc, 0, "Write failed");
-	TC_PRINT("Write suceeded\n");
+	TC_PRINT("Write succeeded\n");
 
 	rc = flash_read(flash_dev, TEST_AREA_OFFSET, buf, EXPECTED_SIZE);
 	zassert_equal(rc, 0, "Cannot read flash");

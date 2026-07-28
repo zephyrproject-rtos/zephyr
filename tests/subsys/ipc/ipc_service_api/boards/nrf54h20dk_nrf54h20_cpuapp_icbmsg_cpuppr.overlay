@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54h20dk_nrf54h20_cpuapp_common.dtsi"
+
+&cpuapp_cpuppr_ipc {
+	compatible = "zephyr,ipc-icbmsg";
+	status = "okay";
+	tx-blocks = <15>;
+	rx-blocks = <15>;
+};
+
+/ {
+	aliases {
+		dut-ipc = &cpuapp_cpuppr_ipc;
+	};
+};
+
+&cpuppr_vevif {
+	status = "okay";
+};

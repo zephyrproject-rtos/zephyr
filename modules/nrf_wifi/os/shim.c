@@ -183,10 +183,15 @@ static void zep_shim_qspi_cpy_to(void *priv, unsigned long addr, const void *src
 	struct zep_shim_bus_qspi_priv *qspi_priv = priv;
 	struct qspi_dev *dev;
 	size_t count_aligned = ROUND_UP(count, 4);
+	int ret;
 
 	dev = qspi_priv->qspi_dev;
 
-	dev->write(addr, src, count_aligned);
+	ret = dev->write(addr, src, count_aligned);
+	if (ret) {
+		LOG_ERR("%s: write to 0x%lx (%zu bytes) failed: %d", __func__, addr,
+			count_aligned, ret);
+	}
 }
 
 static void *zep_shim_spinlock_alloc(void)

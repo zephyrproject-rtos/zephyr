@@ -17,7 +17,7 @@
 /**
  * @brief Pixart PAT9136 optical flow sensor
  * @defgroup pat9136_interface PAT9136
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_pixart
  * @{
  */
 

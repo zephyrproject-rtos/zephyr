@@ -677,11 +677,7 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	const struct device *dev = user_data;
 	struct eth_context *data = dev->data;
 
-	if (state->is_up) {
-		net_eth_carrier_on(data->iface);
-	} else {
-		net_eth_carrier_off(data->iface);
-	}
+	net_eth_carrier_set(data->iface, state->is_up);
 }
 
 static enum ethernet_hw_caps eth_smsc_get_caps(const struct device *dev __unused,

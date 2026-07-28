@@ -68,6 +68,8 @@ static struct net_in6_addr forward_nexthop = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0,
 						    0, 0, 0, 0, 0x0b, 0x0e, 0x0e, 0x5 } } };
 static struct net_in6_addr forward_dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 						     0, 0, 0, 0, 0xd, 0xe, 0x5, 0x9 } } };
+static struct net_in6_addr onlink_dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						    0, 0, 0, 0, 0, 0, 0, 0x77 } } };
 
 /* Extra address is assigned to ll_addr */
 static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
@@ -813,6 +815,103 @@ static void test_route_ipv6_forward_packet_between_ifaces(void)
 	zassert_ok(net_route_ipv6_del(route), "Forwarding route del failed");
 }
 
+static void test_route_ipv6_forward_onlink_packet_between_ifaces(void)
+{
+	struct net_nbr *nbr;
+	struct net_pkt *pkt;
+	struct net_ipv6_hdr *hdr;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_FORWARDING);
+
+	nbr = net_ipv6_nbr_add(peer_iface, &onlink_dest_addr,
+			       &net_route_data_peer.ll_addr, false,
+			       NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr, "On-link destination neighbor add failed");
+
+	reset_send_state();
+	drain_wait_data();
+	expected_ipv6_dst = &onlink_dest_addr;
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv6_hdr),
+					NET_AF_INET6, NET_IPV6_NEXTHDR_NONE,
+					K_NO_WAIT);
+	zassert_not_null(pkt, "On-link forwarding packet alloc failed");
+
+	hdr = (struct net_ipv6_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv6_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv6 header");
+
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->vtc = 0x60;
+	hdr->len = 0U;
+	hdr->nexthdr = NET_IPV6_NEXTHDR_NONE;
+	hdr->hop_limit = 2U;
+	net_ipv6_addr_copy_raw(hdr->src, forward_src_addr.s6_addr);
+	net_ipv6_addr_copy_raw(hdr->dst, onlink_dest_addr.s6_addr);
+
+	net_pkt_set_iface(pkt, my_iface);
+	net_pkt_set_family(pkt, NET_AF_INET6);
+
+	ret = net_route_packet_if(pkt, peer_iface);
+	zassert_ok(ret, "On-link IPv6 route packet failed");
+	zassert_ok(k_sem_take(&wait_data, WAIT_TIME), "On-link forwarded packet was not sent");
+
+	zassert_true(sent_pkt_seen, "On-link forwarded packet not observed");
+	zassert_equal_ptr(sent_iface, peer_iface,
+			  "On-link forwarded packet used wrong egress interface");
+	zassert_equal_ptr(sent_orig_iface, my_iface,
+			  "On-link forwarded packet missing ingress interface");
+	zassert_equal(sent_ipv6_hop_limit, 1U,
+		      "On-link forwarded IPv6 packet should decrement hop limit");
+	zassert_true(sent_forwarding, "On-link packet should be marked forwarded");
+
+	expected_ipv6_dst = NULL;
+	zassert_ok(net_nbr_unlink(nbr, &net_route_data_peer.ll_addr),
+		   "On-link destination neighbor remove failed");
+}
+
+static void test_route_ipv6_forward_onlink_hop_limit_expired_is_dropped(void)
+{
+	struct net_pkt *pkt;
+	struct net_ipv6_hdr *hdr;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_FORWARDING);
+
+	reset_send_state();
+	drain_wait_data();
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv6_hdr),
+					NET_AF_INET6, NET_IPV6_NEXTHDR_NONE,
+					K_NO_WAIT);
+	zassert_not_null(pkt, "On-link forwarding packet alloc failed");
+
+	hdr = (struct net_ipv6_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv6_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv6 header");
+
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->vtc = 0x60;
+	hdr->len = 0U;
+	hdr->nexthdr = NET_IPV6_NEXTHDR_NONE;
+	hdr->hop_limit = 1U;
+	net_ipv6_addr_copy_raw(hdr->src, forward_src_addr.s6_addr);
+	net_ipv6_addr_copy_raw(hdr->dst, onlink_dest_addr.s6_addr);
+
+	net_pkt_set_iface(pkt, my_iface);
+	net_pkt_set_family(pkt, NET_AF_INET6);
+
+	ret = net_route_packet_if(pkt, peer_iface);
+	zassert_equal(ret, -ETIMEDOUT,
+		      "Hop-limit-expired on-link packet must not be forwarded");
+	zassert_not_equal(k_sem_take(&wait_data, WAIT_TIME), 0,
+			  "Hop-limit-expired on-link packet unexpectedly sent");
+	zassert_false(sent_pkt_seen,
+		      "Hop-limit-expired on-link packet unexpectedly sent");
+
+	net_pkt_unref(pkt);
+}
 
 /*test case main entry*/
 ZTEST(route_test_suite, test_route)
@@ -840,6 +939,8 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv6_packet_without_iface();
 	test_route_ipv6_forward_hop_limit_expired_is_dropped();
 	test_route_ipv6_forward_packet_between_ifaces();
+	test_route_ipv6_forward_onlink_packet_between_ifaces();
+	test_route_ipv6_forward_onlink_hop_limit_expired_is_dropped();
 }
 
 ZTEST_SUITE(route_test_suite, NULL, NULL, NULL, NULL, NULL);

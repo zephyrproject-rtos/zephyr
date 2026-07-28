@@ -58,6 +58,7 @@ struct ifx_cat1_event_callback_data {
 
 struct ifx_cat1_i2c_data {
 	cy_stc_scb_i2c_context_t context;
+	cy_stc_scb_i2c_config_t scb_config;
 	uint16_t pending;
 	uint32_t irq_cause;
 	cy_stc_scb_i2c_master_xfer_config_t rx_config;
@@ -96,8 +97,11 @@ struct ifx_cat1_i2c_config {
 #endif /* CONFIG_I2C_INFINEON_BUS_RECOVERY */
 };
 
-/* Default SCB/I2C configuration structure */
-static cy_stc_scb_i2c_config_t _i2c_default_config = {
+/* Default SCB/I2C configuration template (read-only). Each device instance
+ * keeps its own mutable copy in struct ifx_cat1_i2c_data::scb_config so that
+ * concurrent I2C instances cannot corrupt each other's configuration.
+ */
+static const cy_stc_scb_i2c_config_t _i2c_default_config = {
 	.i2cMode = CY_SCB_I2C_MASTER,
 	.useRxFifo = false,
 	.useTxFifo = true,
@@ -459,14 +463,14 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 		}
 
 		if (dev_config & I2C_MODE_CONTROLLER) {
-			_i2c_default_config.i2cMode = CY_SCB_I2C_MASTER;
+			data->scb_config.i2cMode = CY_SCB_I2C_MASTER;
 			is_target_mode = false;
 		} else {
-			_i2c_default_config.i2cMode = CY_SCB_I2C_SLAVE;
+			data->scb_config.i2cMode = CY_SCB_I2C_SLAVE;
 			is_target_mode = true;
 		}
 	} else {
-		is_target_mode = (_i2c_default_config.i2cMode == CY_SCB_I2C_SLAVE);
+		is_target_mode = (data->scb_config.i2cMode == CY_SCB_I2C_SLAVE);
 	}
 
 	/* Acquire semaphore (block I2C operation for another thread) */
@@ -475,11 +479,19 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 		return -EIO;
 	}
 
-	_i2c_default_config.slaveAddress = data->slave_address;
+	data->scb_config.slaveAddress = data->slave_address;
 
 	if (is_target_mode) {
-		_i2c_default_config.slaveAddressMask = 0xFE;
-		_i2c_default_config.ackGeneralAddr = false;
+		data->scb_config.slaveAddressMask = 0xFE;
+		data->scb_config.ackGeneralAddr = false;
+	} else {
+		/* Controller mode: the PDL consults these slave-only fields only in
+		 * target mode, but scb_config is a persistent per-instance copy, so
+		 * reset them to their defaults to avoid carrying stale target state
+		 * across a target-to-controller reconfiguration.
+		 */
+		data->scb_config.slaveAddressMask = 0;
+		data->scb_config.ackGeneralAddr = false;
 	}
 
 	/* De-initialize SCB before re-configuring (required when switching modes) */
@@ -487,7 +499,7 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 	Cy_SCB_I2C_DeInit(config->base);
 
 	/* Configure the I2C resource */
-	rslt = Cy_SCB_I2C_Init(config->base, &_i2c_default_config, &data->context);
+	rslt = Cy_SCB_I2C_Init(config->base, &data->scb_config, &data->context);
 	if (rslt != CY_SCB_I2C_SUCCESS) {
 		LOG_ERR("I2C configure failed with err 0x%x", rslt);
 		k_sem_give(&data->operation_sem);
@@ -496,7 +508,7 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 
 #ifdef USE_I2C_SET_PERI_DIVIDER
 	_i2c_set_peri_divider(dev, CAT1_I2C_SPEED_STANDARD_HZ,
-			      (_i2c_default_config.i2cMode == CY_SCB_I2C_SLAVE));
+			      (data->scb_config.i2cMode == CY_SCB_I2C_SLAVE));
 #elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 	if (_i2c_set_peri_divider_psoc4(dev, data->frequencyhal_hz, is_target_mode) != 0) {
 		LOG_ERR("Failed to configure I2C peripheral clock divider");
@@ -715,6 +727,9 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 
 	/* Initial value for async operations */
 	data->pending = CAT1_I2C_PENDING_NONE;
+
+	/* Seed this instance's mutable SCB config from the read-only template */
+	data->scb_config = _i2c_default_config;
 
 	config->irq_config_func(dev);
 

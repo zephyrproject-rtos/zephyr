@@ -202,10 +202,19 @@ SECTIONS {
 		*(".data.*")
 		*(".data$*")
 		*(".kernel.*")
-#if defined(CONFIG_LLEXT) && defined(CONFIG_HARVARD) && \
-	!defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
-		*(.llext_data_heap)
-#endif /* CONFIG_LLEXT && CONFIG_HARVARD && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+		*(".llext_metadata_heap")
+		*(".llext_metadata_heap.*")
+#ifdef CONFIG_HARVARD
+		*(".llext_data_heap")
+		*(".llext_data_heap.*")
+#else
+		*(".llext_heap")
+		*(".llext_heap.*")
+		*(".llext_ext_heap")
+		*(".llext_ext_heap.*")
+#endif /* CONFIG_HARVARD */
+#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
 
 /* This is an MWDT-specific section, created when -Hccm option is enabled */
 		*(".rodata_in_data")

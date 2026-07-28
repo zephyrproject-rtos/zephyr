@@ -103,7 +103,7 @@ static void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 			LOG_DBG("  Channel allocation: 0x%x", chan_allocation);
 		}
 
-		LOG_DBG("  Octets per frame: %d (negative means value not pressent)",
+		LOG_DBG("  Octets per frame: %d (negative means value not present)",
 			bt_audio_codec_cfg_get_octets_per_frame(codec_cfg));
 		LOG_DBG("  Frames per SDU: %d",
 			bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true));

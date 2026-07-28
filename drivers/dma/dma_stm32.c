@@ -539,11 +539,14 @@ static int dma_stm32_configure(const struct device *dev,
 #if defined(CONFIG_DMA_STM32_V1)
 	if (DMA_InitStruct.FIFOMode == LL_DMA_FIFOMODE_ENABLE) {
 		LL_DMA_EnableFifoMode(dma, dma_stm32_id_to_stream(id));
-		LL_DMA_EnableIT_FE(dma, dma_stm32_id_to_stream(id));
 	} else {
 		LL_DMA_DisableFifoMode(dma, dma_stm32_id_to_stream(id));
-		LL_DMA_DisableIT_FE(dma, dma_stm32_id_to_stream(id));
 	}
+	/* FIFO error can be ignored, since it doesn't imply loss of data,
+	 * and errors caused by a wrong configuration are handled by
+	 * stm32_dma_check_fifo_mburst().
+	 */
+	LL_DMA_DisableIT_FE(dma, dma_stm32_id_to_stream(id));
 #endif
 	return ret;
 }

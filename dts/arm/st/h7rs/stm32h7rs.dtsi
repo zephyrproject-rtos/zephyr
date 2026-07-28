@@ -281,6 +281,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x58020000 0x2400>;
+			ranges;
 
 			gpioa: gpio@58020000 {
 				compatible = "st,stm32-gpio";
@@ -572,14 +573,14 @@
 			fifo-max-transfer-size = <65535>;
 		};
 
-		i2s1: i2s@40013000 {
+		i2s1: i2s@42003000 {
 			compatible = "st,stm32h7-i2s", "st,stm32-i2s";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40013000 0x400>;
+			reg = <0x42003000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>,
 				 <&rcc STM32_SRC_PLL1_Q SPI1_SEL(0)>;
-			interrupts = <35 0>;
+			interrupts = <58 0>;
 			status = "disabled";
 		};
 
@@ -606,6 +607,15 @@
 			interrupts = <154 0>, <155 0>;
 			interrupt-names = "int0", "int1";
 			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		xspim: xspim@5200b400 {
+			compatible = "st,stm32-xspim";
+			reg = <0x5200b400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 13)>;
+			io-port-1 = <&xspi1>;
+			io-port-2 = <&xspi2>;
 			status = "disabled";
 		};
 
@@ -933,7 +943,7 @@
 		};
 
 		lptim1: timers@40002400 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1, 9)>;
 			resets = <&rctl STM32_RESET(APB1L, 9)>;
 			#address-cells = <1>;
@@ -1007,6 +1017,10 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+			};
 		};
 
 		usbotg_fs: usb@40080000 {
@@ -1020,6 +1034,19 @@
 			phys = <&otgfs_phy>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 27)>,
 				 <&rcc STM32_SRC_HSI48 OTGFS_SEL(0)>;
+			status = "disabled";
+		};
+
+		usbotg_hs: usb@40040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <91 0>;
+			interrupt-names = "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "high-speed";
+			phys = <&usbphyc>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 25)>;
 			status = "disabled";
 		};
 
@@ -1053,22 +1080,22 @@
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			reg = <0x40015400 0x400>;
-			ranges = <0x0 0x40015400 0x400>;
+			reg = <0x42005800 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(0)>;
 			status = "disabled";
 
-			sai1_a: sai1a@4 {
-				reg = <0x4 0x20>;
+			sai1_a: sai1a@42005804 {
+				reg = <0x42005804 0x20>;
 				dmas = <&gpdma1 1 63 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
 			};
 
-			sai1_b: sai1b@24 {
-				reg = <0x24 0x20>;
+			sai1_b: sai1b@42005824 {
+				reg = <0x42005824 0x20>;
 				dmas = <&gpdma1 0 64 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -1115,6 +1142,15 @@
 			resets = <&rctl STM32_RESET(AHB4, 19)>;
 			status = "disabled";
 		};
+
+		jpeg: codec@52003000 {
+			compatible = "st,stm32-jpeg";
+			reg = <0x52003000 0x1000>;
+			interrupts = <99 0>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 3)>;
+			resets = <&rctl STM32_RESET(AHB5, 3)>;
+			status = "disabled";
+		};
 	};
 
 	iocell: iocell {
@@ -1137,6 +1173,16 @@
 	otgfs_phy: otgfs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	usbphyc: usbphyc {
+		compatible = "st,stm32-usbphyc";
+		#phy-cells = <0>;
+		clocks = <&rcc STM32_CLOCK(AHB1, 26)>,
+			 <&rcc STM32_SRC_HSE USBPHYC_SEL(0)>,
+			 <&rcc STM32_SRC_HSE USBREFCK_SEL(10)>;
+		clock-names = "gate", "mux", "fsel";
+		status = "disabled";
 	};
 
 	die_temp: dietemp {
@@ -1164,6 +1210,12 @@
 		vrefint-cal-mv = <3300>;
 		status = "disabled";
 		io-channels = <&adc1 17>;
+	};
+
+	vddcore: vddcore {
+		compatible = "st,stm32-vddcore";
+		io-channels = <&adc2 17>;
+		status = "disabled";
 	};
 };
 

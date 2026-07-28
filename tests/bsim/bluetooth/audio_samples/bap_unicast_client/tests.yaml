@@ -1,0 +1,22 @@
+tests:
+  tests.bsim.bluetooth.audio_samples.bap_unicast_client:
+    tags:
+      - bluetooth
+    depends_on: bsim
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
+    sysbuild: true
+    extra_args:
+      - CONF_FILE=${ZEPHYR_BASE}/samples/bluetooth/audio/bap_unicast_client/prj.conf
+      - EXTRA_CONF_FILE="${ZEPHYR_BASE}/samples/bluetooth/audio/bap_unicast_client/overlay-bt_ll_sw_split.conf"
+      - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE="${ZEPHYR_BASE}/samples/bluetooth/audio/bap_unicast_client/boards/nrf5340_audio_dk_nrf5340_cpuapp.conf"
+      # Note the last provided EXTRA_CONF_FILE definition will be used by cmake
+    harness: bsim
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_audio_samples_bap_unicast_client_prj_conf
+    required_applications:
+      - application: sample.bluetooth.audio.unicast_server.bsim
+        path: ${ZEPHYR_BASE}/samples/bluetooth/audio/bap_unicast_server/

@@ -73,4 +73,74 @@
 		alarms-count = <3>;
 		status = "disabled";
 	};
+
+	aon_qtmr_clock: aon-qtmr-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <2500000>;
+	};
+
+	aon_qtmr0: qtmr@8e000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x8e000 0x1000>;
+		interrupts = <24 0>;
+		clocks = <&aon_qtmr_clock>;
+		status = "disabled";
+
+		aon_qtmr0_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+
+		aon_qtmr0_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+
+		aon_qtmr0_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+
+		aon_qtmr0_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	aon_qtmr1: qtmr@8f000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x8f000 0x1000>;
+		interrupts = <25 0>;
+		clocks = <&aon_qtmr_clock>;
+		status = "disabled";
+
+		aon_qtmr1_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+
+		aon_qtmr1_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+
+		aon_qtmr1_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+
+		aon_qtmr1_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
 };

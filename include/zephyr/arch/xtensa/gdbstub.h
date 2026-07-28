@@ -6,8 +6,8 @@
 
 #include <inttypes.h>
 
-#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_GDBSTUB_SYS_H_
-#define ZEPHYR_INCLUDE_ARCH_XTENSA_GDBSTUB_SYS_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_GDBSTUB_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_GDBSTUB_H_
 
 #ifdef CONFIG_GDBSTUB
 
@@ -171,4 +171,4 @@ static inline bool gdb_xtensa_is_user_reg(struct xtensa_register *reg)
 
 #endif /* CONFIG_GDBSTUB */
 
-#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_GDBSTUB_SYS_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_GDBSTUB_H_ */

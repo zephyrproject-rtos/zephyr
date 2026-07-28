@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 
-#include "sl_interrupt_manager.h"
+#include <sl_interrupt_manager.h>
 
 #define LOCK_KEY_DEFAULT 0xFFFFFFFFU
 

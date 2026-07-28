@@ -15,3 +15,10 @@ config RTC_MCHP_G2
 	select SYSCON
 	help
 	  Microchip Real-Time Clock (RTC) G2 driver used on SAM SoC series.
+
+config RTC_MCHP_MSS
+	bool "Microchip RTC MSS driver"
+	default y
+	depends on DT_HAS_MICROCHIP_RTC_MSS_ENABLED
+	help
+	  Enable RTC driver for Microchip MSS.

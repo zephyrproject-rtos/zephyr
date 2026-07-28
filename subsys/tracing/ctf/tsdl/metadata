@@ -2229,3 +2229,24 @@ event {
 		uint32_t id;
 	};
 };
+
+event {
+	name = sys_init_enter;
+	id = 0x104;
+	fields := struct {
+		ctf_bounded_string_t name[20];
+		uint32_t fn;
+		uint8_t level;
+	};
+};
+
+event {
+	name = sys_init_exit;
+	id = 0x105;
+	fields := struct {
+		ctf_bounded_string_t name[20];
+		uint32_t fn;
+		uint8_t level;
+		int32_t result;
+	};
+};

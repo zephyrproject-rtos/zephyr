@@ -1,7 +1,24 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
-board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+if(CONFIG_BUILD_WITH_TFM)
+  # Flash merged TF-M + Zephyr binary
+  set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
+
+  # Flash is set all secure (<build>/tfm/api_ns/regression.sh) before flash programming
+  # hence locate non-secure image from the secure flash base address in HEX file.
+  dt_chosen(chosen_part_path PROPERTY "zephyr,code-partition")
+  dt_reg_addr(chosen_part_addr PATH "${chosen_part_path}")
+  math(EXPR ns_sec_flash_offset
+    "${CONFIG_STM32_INT_FLASH_SECURE_BASE_ADDRESS} - ${CONFIG_FLASH_BASE_ADDRESS}"
+  )
+  math(EXPR TFM_HEX_BASE_ADDRESS_NS "${chosen_part_addr} + ${ns_sec_flash_offset}")
+
+  board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw" "--erase")
+else()
+  board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+endif()
+
 board_runner_args(pyocd "--target=stm32u3c5zit6q")
 board_runner_args(jlink "--device=STM32U3C5ZI" "--reset-after-load")
 board_runner_args(stlink_gdbserver "--apid=0")

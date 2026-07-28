@@ -684,6 +684,12 @@ struct wifi_connect_req_params {
 	const uint8_t *psk;
 	/** Pre-shared key length */
 	uint8_t psk_length; /* Min 8 - Max 64 */
+	/**
+	 * Pre-shared key is the pre-computed PBKDF2 output.
+	 * `psk_length` MUST be 32 bytes.
+	 * Only applicable for PSK based security types.
+	 */
+	bool psk_is_pbkdf2;
 	/** SAE password (same as PSK but with no length restrictions), optional */
 	const uint8_t *sae_password;
 	/** SAE password length */
@@ -848,6 +854,15 @@ struct wifi_connect_req_params {
 	 * 1: Enable
 	 */
 	uint8_t ssid_protection;
+	/**
+	 * WPA3 Transition Disable bitmap (WPA3 Spec v3.0, Table 5).
+	 * Sent in EAPOL Message 3 as Transition Disable KDE.
+	 *   Bit 0: WPA3-Personal
+	 *   Bit 1: WPA3-Personal SAE-PK
+	 *   Bit 2: WPA3-Enterprise
+	 *   Bit 3: OWE
+	 */
+	uint8_t transition_disable;
 };
 
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
@@ -1055,11 +1070,15 @@ struct wifi_twt_params {
 
 /* Flow ID is only 3 bits */
 #define WIFI_MAX_TWT_FLOWS 8
-#define WIFI_MAX_TWT_INTERVAL_US (LONG_MAX - 1)
+/* The TWT interval is encoded per IEEE 802.11 as mantissa * 2^exponent
+ * micro-seconds, with a 16-bit mantissa and a 5-bit exponent. The maximum
+ * representable interval is therefore UINT16_MAX * 2^WIFI_MAX_TWT_EXPONENT us.
+ */
+#define WIFI_MAX_TWT_EXPONENT 31
+#define WIFI_MAX_TWT_INTERVAL_US ((uint64_t)UINT16_MAX << WIFI_MAX_TWT_EXPONENT)
 /* 256 (u8) * 1TU */
 #define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
 #define WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US (LONG_MAX - 1)
-#define WIFI_MAX_TWT_EXPONENT 31
 
 /** @endcond */
 
@@ -1725,6 +1744,10 @@ enum wifi_p2p_op {
 	WIFI_P2P_INVITE,
 	/** P2P power save */
 	WIFI_P2P_POWER_SAVE,
+	/** P2P list stored persistent networks */
+	WIFI_P2P_LIST_NETWORKS,
+	/** P2P remove persistent network(s) */
+	WIFI_P2P_PERSISTENT_REMOVE,
 };
 
 /** Wi-Fi P2P discovery type */
@@ -1749,6 +1772,7 @@ enum wifi_p2p_connection_method {
 
 /** Maximum number of P2P peers that can be returned in a single query */
 #define WIFI_P2P_MAX_PEERS CONFIG_WIFI_P2P_MAX_PEERS
+#define WIFI_P2P_LIST_NETWORKS_BUF_SIZE 2048
 
 /** Wi-Fi P2P parameters */
 struct wifi_p2p_params {
@@ -1783,6 +1807,8 @@ struct wifi_p2p_params {
 		unsigned int freq;
 		/** Join an existing group (as a client) instead of starting GO negotiation */
 		bool join;
+		/** Add persistent group */
+		bool persistent_set;
 	} connect;
 	/** Group add specific parameters */
 	struct {
@@ -1790,6 +1816,8 @@ struct wifi_p2p_params {
 		int freq;
 		/** Persistent group ID (-1 = not persistent) */
 		int persistent;
+		/** Add persistent group */
+		bool persistent_set;
 		/** Enable HT40 */
 		bool ht40;
 		/** Enable VHT */
@@ -1828,6 +1856,21 @@ struct wifi_p2p_params {
 		/** GO device address length */
 		uint8_t go_dev_addr_length;
 	} invite;
+	/** List networks specific parameters */
+	struct {
+		/** Buffer to hold the LIST_NETWORKS response. */
+		char *buf;
+		/** Size of the allocated buffer in bytes */
+		size_t buf_size;
+	} list_networks;
+	/** Persistent network remove specific parameters */
+	struct {
+		/** Network ID to remove.
+		 *  >= 0 : remove the specific network with this ID.
+		 *  -1   : remove ALL saved networks.
+		 */
+		int id;
+	} persistent_remove;
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
@@ -2080,7 +2123,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param iface Network interface to use for the filter operation
-	 * @param packet filter settings
+	 * @param filter Filter settings
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
@@ -2176,7 +2219,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param iface Network interface to use for the RTS threshold operation
-	 * @param RTS threshold value
+	 * @param rts_threshold RTS threshold value
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
@@ -2291,9 +2334,11 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance
 	 * @param iface Network interface to use for the roaming operation
 	 *
+	 * @deprecated Controlled by connection request params
+	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*start_11r_roaming)(const struct device *dev, struct net_if *iface);
+	__deprecated int (*start_11r_roaming)(const struct device *dev, struct net_if *iface);
 	/** Set BSS max idle period
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -2468,7 +2513,7 @@ void wifi_mgmt_raise_ap_sta_disconnected_event(struct net_if *iface,
  * @brief Raise P2P device found event
  *
  * @param iface Network interface
- * @param device_info P2P device information
+ * @param peer_info P2P device information
  */
 void wifi_mgmt_raise_p2p_device_found_event(struct net_if *iface,
 		struct wifi_p2p_device_info *peer_info);

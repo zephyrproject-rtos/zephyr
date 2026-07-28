@@ -266,7 +266,7 @@
 	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_gmac0_default>;
-	phy-connection-type = "gmii";
+	phy-connection-type = "rgmii";
 	phy-handle = <&gmac0_phy>;
 
 	nvmem-cells = <&eeprom0_eui48>;

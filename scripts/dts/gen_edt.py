@@ -26,8 +26,7 @@ import pickle
 import sys
 from typing import NoReturn
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree',
-                                'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'python-devicetree', 'src'))
 
 import edtlib_logger
 from devicetree import edtlib
@@ -43,16 +42,18 @@ def main():
         vendor_prefixes.update(edtlib.load_vendor_prefixes_txt(prefixes_file))
 
     try:
-        edt = edtlib.EDT(args.dts, args.bindings_dirs,
-                         workspace_dir=args.workspace_dir,
-                         # Suppress this warning if it's suppressed in dtc
-                         warn_reg_unit_address_mismatch=
-                             "-Wno-simple_bus_reg" not in args.dtc_flags,
-                         default_prop_types=True,
-                         infer_binding_for_paths=["/zephyr,user", "/cpus"],
-                         werror=args.edtlib_Werror,
-                         vendor_prefixes=vendor_prefixes,
-                         warn_bus_mismatch=args.warn_bus_mismatch)
+        edt = edtlib.EDT(
+            args.dts,
+            args.bindings_dirs,
+            workspace_dir=args.workspace_dir,
+            # Suppress this warning if it's suppressed in dtc
+            warn_reg_unit_address_mismatch="-Wno-simple_bus_reg" not in args.dtc_flags,
+            default_prop_types=True,
+            infer_binding_for_paths=["/zephyr,user", "/cpus"],
+            werror=args.edtlib_Werror,
+            vendor_prefixes=vendor_prefixes,
+            warn_bus_mismatch=args.warn_bus_mismatch,
+        )
     except edtlib.EDTError as e:
         sys.exit(f"devicetree error: {e}")
 
@@ -68,30 +69,47 @@ def parse_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--dts", required=True, help="DTS file")
-    parser.add_argument("--dtc-flags",
-                        help="'dtc' devicetree compiler flags, some of which "
-                             "might be respected here")
-    parser.add_argument("--bindings-dirs", nargs='+', required=True,
-                        help="directory with bindings in YAML format, "
-                        "we allow multiple")
-    parser.add_argument("--workspace-dir", default=os.getcwd(),
-                        help="directory to be used as reference for generated "
-                        "relative paths (e.g. WEST_TOPDIR)")
-    parser.add_argument("--dts-out", required=True,
-                        help="path to write merged DTS source code to (e.g. "
-                             "as a debugging aid)")
-    parser.add_argument("--edt-pickle-out",
-                        help="path to write pickled edtlib.EDT object to", required=True)
-    parser.add_argument("--vendor-prefixes", action='append', default=[],
-                        help="vendor-prefixes.txt path; used for validation; "
-                             "may be given multiple times")
-    parser.add_argument("--edtlib-Werror", action="store_true",
-                        help="if set, edtlib-specific warnings become errors. "
-                             "(this does not apply to warnings shared "
-                             "with dtc.)")
-    parser.add_argument("--warn-bus-mismatch", action="store_true",
-                        help="warn when devicetree nodes are on buses that "
-                             "don't match available binding expectations")
+    parser.add_argument(
+        "--dtc-flags", help="'dtc' devicetree compiler flags, some of which might be respected here"
+    )
+    parser.add_argument(
+        "--bindings-dirs",
+        nargs='+',
+        required=True,
+        help="directory with bindings in YAML format, we allow multiple",
+    )
+    parser.add_argument(
+        "--workspace-dir",
+        default=os.getcwd(),
+        help="directory to be used as reference for generated relative paths (e.g. WEST_TOPDIR)",
+    )
+    parser.add_argument(
+        "--dts-out",
+        required=True,
+        help="path to write merged DTS source code to (e.g. as a debugging aid)",
+    )
+    parser.add_argument(
+        "--edt-pickle-out", help="path to write pickled edtlib.EDT object to", required=True
+    )
+    parser.add_argument(
+        "--vendor-prefixes",
+        action='append',
+        default=[],
+        help="vendor-prefixes.txt path; used for validation; may be given multiple times",
+    )
+    parser.add_argument(
+        "--edtlib-Werror",
+        action="store_true",
+        help="if set, edtlib-specific warnings become errors. "
+        "(this does not apply to warnings shared "
+        "with dtc.)",
+    )
+    parser.add_argument(
+        "--warn-bus-mismatch",
+        action="store_true",
+        help="warn when devicetree nodes are on buses that "
+        "don't match available binding expectations",
+    )
 
     return parser.parse_args()
 

@@ -50,7 +50,7 @@ struct ti_dm_timer_data {
 	uint32_t last_cycle;
 };
 
-static const struct device *systick_timer_dev;
+static const struct device *systick_timer_dev = DEVICE_DT_GET(DT_DRV_INST(0));
 
 #define TI_DM_TIMER_MASK(reg)  TI_DM_TIMER_##reg##_MASK
 #define TI_DM_TIMER_SHIFT(reg) TI_DM_TIMER_##reg##_SHIFT
@@ -103,7 +103,7 @@ static void ti_dmtimer_isr(void *param)
 	sys_clock_announce(delta_ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -114,8 +114,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks, 1, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
@@ -164,8 +163,6 @@ unsigned int sys_clock_elapsed(void)
 static int sys_clock_driver_init(void)
 {
 	struct ti_dm_timer_data *data;
-
-	systick_timer_dev = DEVICE_DT_GET(DT_DRV_INST(0));
 
 #if DT_NODE_HAS_STATUS_OKAY(CLKSEL_SYSCON)
 	int rv;

@@ -46,6 +46,15 @@ properties:
       Asserted (logical high) when UART is active and
       deasserted (logical low) when UART is inactive, powered down or in low power mode.
 
+  mdm-status-gpios:
+    type: phandle-array
+    description: |
+      GPIO reporting modem power status, read as an input.
+
+      Asserted while the modem is powered on. When present, the driver reads it at
+      start-up and skips the power-on pulse if the modem is already running, so an
+      MCU-only reset does not toggle a live modem off. Omit if unwired.
+
   cmux-enable-runtime-power-save:
     type: boolean
     description: |

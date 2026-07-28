@@ -14,6 +14,8 @@
 #include <hal/mmu_hal.h>
 #include <hal/mmu_ll.h>
 #include <hal/psram_ctrlr_ll.h>
+#include <hal/efuse_hal.h>
+#include <soc/chip_revision.h>
 
 #include <bootloader_clock.h>
 #include <bootloader_flash.h>
@@ -26,6 +28,26 @@
 #include <soc_flash_init.h>
 #include <soc_init.h>
 
+#define TAG "boot"
+
+/*
+ * Validate that the silicon revision meets the minimum configured through
+ * CONFIG_SOC_ESP32P4_REV_MIN_FULL (selected by the board's SOC_ESP32P4_REV_*
+ * Kconfig). The value follows the major * 100 + minor convention returned by
+ * efuse_hal_chip_revision().
+ */
+static void check_chip_revision(void)
+{
+	unsigned int revision = efuse_hal_chip_revision();
+
+	if (!ESP_CHIP_REV_ABOVE(revision, CONFIG_SOC_ESP32P4_REV_MIN_FULL)) {
+		ESP_EARLY_LOGW(TAG, "chip revision v%d.%d is below the configured minimum v%d.%d",
+			       revision / 100, revision % 100,
+			       CONFIG_SOC_ESP32P4_REV_MIN_FULL / 100,
+			       CONFIG_SOC_ESP32P4_REV_MIN_FULL % 100);
+	}
+}
+
 int hardware_init(void)
 {
 	int err = 0;
@@ -33,7 +55,6 @@ int hardware_init(void)
 	soc_hw_init();
 	ana_reset_config();
 	super_wdt_auto_feed();
-	esp_clk_tree_initialize();
 	bootloader_clock_configure();
 
 	/* The ROM bootloader leaves PSRAM module clocks gated. Enable them
@@ -46,6 +67,8 @@ int hardware_init(void)
 	esp_console_init();
 	print_banner();
 #endif
+
+	check_chip_revision();
 
 	/*
 	 * Cache and MMU must be initialized before any flash access.

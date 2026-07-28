@@ -18,12 +18,18 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 
+	/*
+	 * PA10 (Arduino A2) is shared:
+	 * positive input for channel 11 and negative input for channel 10
+	 */
+
 	channel@a {
 		reg = <10>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_INTERNAL";
 		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
 		zephyr,resolution = <12>;
+		zephyr,differential;
 	};
 
 	channel@b {

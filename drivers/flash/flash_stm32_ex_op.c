@@ -224,7 +224,7 @@ int flash_stm32_ex_op_update_rdp(const struct device *dev, bool enable,
 		LOG_INF("RDP changed from 0x%02x to 0x%02x", current_level,
 			target_level);
 
-		flash_stm32_set_rdp_level(dev, target_level);
+		return flash_stm32_set_rdp_level(dev, target_level);
 	}
 	return 0;
 }
@@ -354,7 +354,7 @@ int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		int rv2;
 
 		rv = flash_stm32_option_bytes_lock(dev, false);
-		if (rv > 0) {
+		if (rv != 0) {
 			break;
 		}
 
@@ -362,7 +362,7 @@ int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		/* returned later, we always re-lock */
 
 		rv = flash_stm32_option_bytes_lock(dev, true);
-		if (rv > 0) {
+		if (rv != 0) {
 			break;
 		}
 

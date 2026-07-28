@@ -4,7 +4,7 @@
 if SOC_SERIES_IMXRT118X
 
 config CORTEX_M_SYSTICK
-	default n if MCUX_LPTMR_TIMER
+	default n if MCUX_LPTMR_TIMER || MCUX_SYSCTR_TIMER
 
 config NUM_IRQS
 	default 239
@@ -15,7 +15,7 @@ config GPIO
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CPU_CORTEX_M33 && CORTEX_M_SYSTICK
 	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if CPU_CORTEX_M7 && CORTEX_M_SYSTICK
-	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),clock-frequency) if MCUX_LPTMR_TIMER
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),clock-frequency) if MCUX_LPTMR_TIMER || MCUX_SYSCTR_TIMER
 
 config DCDC_VALUE
 	default 0x13

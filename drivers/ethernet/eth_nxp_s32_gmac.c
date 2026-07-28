@@ -313,30 +313,26 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 	status = Gmac_Ip_GetTxBuff(cfg->instance, cfg->tx_ring_idx, &buf, NULL);
 	if (status != GMAC_STATUS_SUCCESS) {
 		LOG_ERR("Failed to get tx buffer (%d)", status);
-		res = -ENOBUFS;
-		goto error;
+		return -ENOBUFS;
 	}
 
 	res = net_pkt_read(pkt, buf.Data, pkt_len);
 	if (res) {
 		LOG_ERR("Failed to copy packet to tx buffer (%d)", res);
-		res = -ENOBUFS;
-		goto error;
+		return -ENOBUFS;
 	}
 
 	buf.Length = (uint16_t)pkt_len;
 	status = Gmac_Ip_SendFrame(cfg->instance, cfg->tx_ring_idx, &buf, &tx_options);
 	if (status != GMAC_STATUS_SUCCESS) {
 		LOG_ERR("Failed to tx frame (%d)", status);
-		res = -EIO;
-		goto error;
+		return -EIO;
 	}
 
 	/* Wait for the transmission to complete */
 	if (k_sem_take(&ctx->tx_sem, ETH_NXP_S32_DMA_TX_TIMEOUT) != 0) {
 		LOG_ERR("Timeout transmitting frame");
-		res = -EIO;
-		goto error;
+		return -EIO;
 	}
 
 	/* Restore the buffer address pointer and clear the descriptor after the status is read */
@@ -344,16 +340,12 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 	if (status != GMAC_STATUS_SUCCESS) {
 		LOG_ERR("Failed to restore tx buffer: %s (%d) ",
 			(status == GMAC_STATUS_BUSY ? "busy" : "buf not found"), status);
-		res = -EIO;
+		return -EIO;
 	} else if (tx_info.ErrMask != 0U) {
 		LOG_ERR("Tx frame has errors (error mask 0x%X)", tx_info.ErrMask);
-		res = -EIO;
+		return -EIO;
 	}
 
-error:
-	if (res != 0) {
-		eth_stats_update_errors_tx(ctx->iface);
-	}
 	return res;
 }
 

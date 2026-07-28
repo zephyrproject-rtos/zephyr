@@ -28,6 +28,14 @@ config ZVFS_OPEN_ADD_SIZE_WIFI_NM_WPA_SUPPLICANT
 	int "Number of socket descriptors needed by hostap"
 	default 12
 
+config ZVFS_EVENTFD_ADD_SIZE_WIFI_NM_WPA_SUPPLICANT
+	int "Number of eventfds needed by hostap"
+	default 8
+	help
+	  The WPA supplicant and hostapd allocate several zvfs eventfds, e.g. for
+	  the supplicant event socket and the local/global control interface
+	  socket pairs.
+
 config WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
 	bool "Use Zephyr kernel heap for Wi-Fi driver"
 	default y
@@ -157,8 +165,57 @@ config WIFI_NM_WPA_SUPPLICANT_RRM
 	default y
 endif
 
+config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
+	bool "Legacy (non-FIPS) crypto for backward compatibility"
+	default y
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	imply WIFI_NM_WPA_SUPPLICANT_WEP
+	select DEPRECATED
+	select NOT_SECURE
+	help
+	  Drop CONFIG_FIPS from the supplicant build to re-enable the legacy
+	  and broken crypto call sites. CONFIG_FIPS is not real FIPS validation
+	  (MbedTLS is not FIPS validated); it is just a switch to strip these
+	  algorithms from the default build.
+
+	  Also links hostap rc4.c for group-key unwrap. When PSA_WANT_ALG_MD5
+	  is off, CMake links md5-internal.c and md5.c so EAPOL-Key v1
+	  HMAC-MD5 does not depend on PSA.
+
+	  Implies WIFI_NM_WPA_SUPPLICANT_WEP by default (merged legacy option,
+	  kept for prj.conf compatibility). Set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP=n
+	  to strip WEP while keeping WPA/TKIP interop.
+
+	  Enabled by default so WPA/TKIP and other legacy AP interop works
+	  out of the box. This is NOT a TKIP-only switch: it disables CONFIG_FIPS
+	  wholesale and brings back the whole legacy crypto surface, including:
+	    - WPA1/TKIP EAPOL-Key descriptor version 1 (HMAC-MD5 4-way MIC and
+	      RC4 group-key unwrap)
+	    - MD5/RC4/DES based paths (e.g. EAP-FAST key export, IKEv2 MD5 PRF,
+	      EAP-PWD MD5)
+
+	  The main reason to enable it is interoperability with legacy
+	  WPA-PSK/TKIP access points still seen in the field and legacy
+	  interop/QuickTrack test cases. TKIP is deprecated and not allowed in
+	  current Wi-Fi Alliance certification programs. Turn this off if you
+	  need a build with legacy algorithms stripped entirely.
+
+	  Enabled by default for now. The default will change to disabled in a
+	  future Zephyr release, which will also disable WEP and TKIP interop
+	  unless LEGACY_CRYPTO is set explicitly.
+
 config WIFI_NM_WPA_SUPPLICANT_WEP
-	bool "WEP (Legacy crypto) support"
+	bool "WEP support (deprecated)"
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	select DEPRECATED
+	select NOT_SECURE
+	help
+	  Deprecated: merged under WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO.
+	  Symbol retained for backward compatibility with existing prj.conf
+	  files that set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP. WEP is enabled by
+	  default via LEGACY_CRYPTO imply; set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP=n
+	  to strip WEP while keeping WPA/TKIP interop. Has no effect unless
+	  LEGACY_CRYPTO is enabled.
 
 choice WIFI_NM_WPA_SUPPLICANT_CRYPTO_BACKEND
 	prompt "WPA supplicant crypto implementation"
@@ -505,6 +562,16 @@ config WIFI_NM_WPA_SUPPLICANT_ROAMING
 	  STA will try to find an AP with better RSSI. If found, STA will reassociate
 	  to the new AP automatically without losing connection.
 
+config WIFI_NM_WPA_SUPPLICANT_ROAMING_RETRY
+	int "Retry count on every roaming method"
+	depends on WIFI_NM_WPA_SUPPLICANT_ROAMING
+	default 1
+	help
+	  Number of times each of 11K and 11V roaming is attempted.
+	  When reaches this count, fall back to next roaming method.
+	  If both reaches this count, fall back to legacy roaming,
+	  which scans full channel.
+
 config WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING
 	bool "Skip DHCP after roaming to new AP"
 	help
@@ -744,7 +811,7 @@ config FIPS
 
 choice WIFI_NM_WPA_SUPPLICANT_NW_SEL
 	prompt "WPA supplicant Network selection criterion"
-	default WIFI_NM_WPA_SUPPLICANT_NW_SEL_THROUGHPUT
+	default WIFI_NM_WPA_SUPPLICANT_NW_SEL_RELIABILITY
 	help
 	  Select the network selection method for the supplicant.
 

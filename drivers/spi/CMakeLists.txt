@@ -17,6 +17,7 @@ zephyr_library_sources_ifdef(CONFIG_NXP_S32_SPI spi_nxp_s32.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_AMBIQ_BLEIF spi_ambiq_bleif.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_AMBIQ_SPIC spi_ambiq_spic.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_AMBIQ_SPID spi_ambiq_spid.c)
+zephyr_library_sources_ifdef(CONFIG_SPI_AMEBA spi_ameba.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_ANDES_ATCSPI200 spi_andes_atcspi200.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_BEE spi_bee.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_BFLB spi_bflb.c)
@@ -91,6 +92,8 @@ zephyr_library_sources_ifdef(CONFIG_SPI_XMC4XXX spi_xmc4xxx.c)
 # zephyr-keep-sorted-stop
 
 add_subdirectory(spi_nxp_lpspi)
+
+zephyr_library_include_directories_ifdef(CONFIG_SPI_AMEBA ${ZEPHYR_BASE}/drivers/dma)
 
 if(CONFIG_SPI_SC18IS606)
   zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/mfd)

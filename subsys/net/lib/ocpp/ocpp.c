@@ -357,9 +357,16 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 	if (is_rsp) {
 		buf = strtok_r(uid, "-", &tmp);
+		/* strtok_r returns NULL when no '-' is present; atoi(NULL) is UB. */
+		if (buf == NULL) {
+			return -EINVAL;
+		}
 		sh = (struct ocpp_session *)(uintptr_t)atoi(buf);
 
 		buf = strtok_r(NULL, "-", &tmp);
+		if (buf == NULL) {
+			return -EINVAL;
+		}
 		pdu = atoi(buf);
 
 		if (!ocpp_session_is_valid(sh)) {

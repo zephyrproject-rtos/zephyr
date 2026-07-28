@@ -68,6 +68,8 @@ struct counter_alarm_cfg alarm_cfg;
 #endif
 #elif defined(CONFIG_COUNTER_TIMER_MAX32)
 #define SAMPLE_TIMER DT_NODELABEL(counter0)
+#elif defined(CONFIG_COUNTER_WUT_MAX32)
+#define SAMPLE_TIMER DT_NODELABEL(counter_wut1)
 #elif defined(CONFIG_COUNTER_RA_AGT)
 #define SAMPLE_TIMER DT_NODELABEL(counter0)
 #elif defined(CONFIG_COUNTER_RENESAS_RZ_GTM)

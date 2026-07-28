@@ -778,7 +778,7 @@ static int max32664c_attr_set(const struct device *dev, enum sensor_channel chan
 	case SENSOR_ATTR_MAX32664C_GENDER: {
 		tx[0] = 0x50;
 		tx[1] = 0x07;
-		tx[2] = 0x08;
+		tx[2] = 0x09;
 		tx[3] = val->val1 & 0x00FF;
 		if (max32664c_i2c_transmit(dev, tx, 4, &rx, 1, MAX32664C_DEFAULT_CMD_DELAY)) {
 			LOG_ERR("Can not set gender!");

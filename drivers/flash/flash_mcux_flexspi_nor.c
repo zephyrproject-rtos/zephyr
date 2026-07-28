@@ -23,12 +23,9 @@
 #include <zephyr/drivers/gpio.h>
 #endif
 
-#define NOR_ERASE_VALUE	0xff
+#include "flash_priv.h"
 
-#define FLEXSPI_NOR_SOC_NV_FLASH_COMPAT(node_id) \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
-#define FLEXSPI_NOR_SOC_NV_FLASH_NODE(node_id) \
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(node_id, FLEXSPI_NOR_SOC_NV_FLASH_COMPAT)
+#define NOR_ERASE_VALUE	0xff
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 static uint8_t nor_write_buf[SPI_NOR_PAGE_SIZE];
@@ -1460,6 +1457,35 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		/* Device uses bit 1 of status reg 2 for QE */
 		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
 						     JESD216_DW15_QER_VAL_S2B1v5);
+	case 0x20609d: /* IS25LP512M */
+		/*
+		 * Keep the runtime LUT in 4-byte Quad I/O read mode while XIP
+		 * is active.
+		 */
+		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_4READ_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 32);
+		flexspi_lut[READ][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 6,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04);
+		flexspi_lut[PAGE_PROGRAM][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_PP_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32);
+		flexspi_lut[PAGE_PROGRAM][1] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_WRITE_SDR, kFLEXSPI_1PAD, 0x04,
+				kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00);
+		flexspi_lut[ERASE_SECTOR][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_SE_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32);
+		flexspi_lut[ERASE_BLOCK][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_BE_4B,
+				kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_1PAD, 32);
+		data->legacy_poll = true;
+		flexspi_lut[READ_STATUS_REG][0] = FLEXSPI_LUT_SEQ(
+				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RDSR,
+				kFLEXSPI_Command_READ_SDR, kFLEXSPI_1PAD, 0x01);
+		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
+						     JESD216_DW15_QER_VAL_S1B6);
 	case 0x1940ef: /* W25Q256JV-IQ/IN flash, uses identical LUT than W25Q512JV*/
 	case 0x2040ef:
 		/* W25Q512JV-IQ/IN flash, use 4 byte read/write */
@@ -2077,7 +2103,7 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 		},))							\
 		.flash_parameters = {					\
 			.write_block_size = DT_PROP(			\
-				FLEXSPI_NOR_SOC_NV_FLASH_NODE(n),\
+				SOC_NV_FLASH_CHILD_NODE(n),\
 				write_block_size),		\
 			.erase_value = NOR_ERASE_VALUE,			\
 		},							\

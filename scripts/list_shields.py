@@ -10,15 +10,16 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-import pykwalify.core
+import jsonschema
 import yaml
+from jsonschema.exceptions import best_match
 
 try:
     from yaml import CSafeLoader as SafeLoader
 except ImportError:
     from yaml import SafeLoader
 
-SHIELD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'shield-schema.yml')
+SHIELD_SCHEMA_PATH = str(Path(__file__).parent / 'schemas' / 'shield-schema.yaml')
 with open(SHIELD_SCHEMA_PATH) as f:
     shield_schema = yaml.load(f.read(), Loader=SafeLoader)
 
@@ -70,6 +71,10 @@ def find_shields_in(root):
     if not shields.exists():
         return ret
 
+    validator_class = jsonschema.validators.validator_for(shield_schema)
+    validator_class.check_schema(shield_schema)
+    shield_validator = validator_class(shield_schema)
+
     for maybe_shield in (shields).iterdir():
         if not maybe_shield.is_dir():
             continue
@@ -80,10 +85,11 @@ def find_shields_in(root):
             with shield_yml.open('r', encoding='utf-8') as f:
                 shield_data = yaml.load(f.read(), Loader=SafeLoader)
 
-            try:
-                pykwalify.core.Core(source_data=shield_data, schema_data=shield_schema).validate()
-            except pykwalify.errors.SchemaError as e:
-                sys.exit(f'ERROR: Malformed shield.yml in file: {shield_yml.as_posix()}\n{e}')
+            errors = list(shield_validator.iter_errors(shield_data))
+            if errors:
+                sys.exit('ERROR: Malformed shield YAML file: '
+                         f'{shield_yml.as_posix()}\n'
+                         f'{best_match(errors).message} in {best_match(errors).json_path}')
 
             if 'shields' in shield_data:
                 # Multiple shields format

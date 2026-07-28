@@ -33,3 +33,11 @@ zephyr_library_sources_ifdef(CONFIG_PCA9533 pca9533.c)
 zephyr_library_sources_ifdef(CONFIG_PCA9633 pca9633.c)
 zephyr_library_sources_ifdef(CONFIG_TLC59108 tlc59108.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_NATIVE_LINUX_LEDS)
+  if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Linux)
+    zephyr_library_sources(linux_leds.c)
+  else()
+    message(FATAL_ERROR "CONFIG_NATIVE_LINUX_LEDS is only available on Linux")
+  endif()
+endif()

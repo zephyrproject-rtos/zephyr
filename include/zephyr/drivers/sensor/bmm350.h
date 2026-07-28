@@ -16,7 +16,7 @@
 /**
  * @brief Bosch BMM350 3-Axis Magnetometer
  * @defgroup bmm350_interface BMM350
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_bosch
  * @{
  */
 

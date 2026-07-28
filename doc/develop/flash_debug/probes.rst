@@ -577,4 +577,4 @@ See `Black Magic Debug supported hardware`_.
    https://black-magic.org/index.html
 
 .. _Black Magic Debug supported hardware:
-   https://black-magic.org/hardware.html
+   https://black-magic.org/index.html#other-hardware-supported-by-black-magic-debug

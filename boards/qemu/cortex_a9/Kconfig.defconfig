@@ -42,6 +42,9 @@ configdefault NET_MGMT_EVENT_STACK_SIZE
 configdefault TEST_RANDOM_GENERATOR
 	default y if NETWORKING
 
+configdefault ETH_PHY_DRIVER
+	default n if !NET_QEMU_ETHERNET
+
 if QEMU_ICOUNT
 
 config QEMU_ICOUNT_SHIFT

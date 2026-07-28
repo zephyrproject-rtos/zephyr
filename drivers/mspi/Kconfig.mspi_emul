@@ -6,7 +6,7 @@ config MSPI_EMUL
 	default y
 	depends on DT_HAS_ZEPHYR_MSPI_EMUL_CONTROLLER_ENABLED
 	depends on EMUL
-	select MSPI_XIP
+	select MSPI_MEMMAP
 	select MSPI_SCRAMBLE
 	select MSPI_TIMING
 	select GPIO

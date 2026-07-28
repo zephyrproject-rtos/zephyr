@@ -187,6 +187,9 @@ Here is an example. We'll assume the ``remotes`` given above.
        - name: proj3
          url: https://github.com/user/project-three
          revision: abcde413a111
+       - name: proj4
+         url: https://github.com/user/project-four
+         revision: pull/69/head # GitHub Pull Request
 
 In this manifest:
 
@@ -263,7 +266,7 @@ next.
        ``revision`` value from the ``defaults`` subsection will be used if
        present.
 
-       A project revision can be a branch, tag, or SHA.
+       A project revision can be any fetchable git reference: branch, tag, SHA, pull request,...
 
        The default ``revision`` is ``master`` if not otherwise specified.
 

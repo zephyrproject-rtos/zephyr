@@ -110,7 +110,9 @@ void riscv_aia_set_priority(uint32_t irq, uint32_t prio)
 			prio);
 	}
 #else
-	riscv_aplic_set_priority(src, prio);
+	const struct device *aplic = riscv_aplic_get_dev();
+
+	riscv_aplic_set_priority(aplic, src, prio);
 #endif
 }
 
@@ -144,6 +146,19 @@ void riscv_aia_inject_msi(uint32_t hart, uint32_t eiid)
 	riscv_aplic_msi_inject_genmsi(hart, eiid);
 }
 #endif /* CONFIG_RISCV_APLIC_MSI */
+#ifdef CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY
+void riscv_aia_route_to_hart(uint32_t irq, uint32_t hart)
+{
+	const struct device *aplic = riscv_aplic_get_dev();
+	uint32_t src = riscv_aia_irq_to_src(irq);
+
+	if (!riscv_aia_src_is_valid(aplic, src)) {
+		return;
+	}
+
+	riscv_aplic_irq_set_affinity(aplic, src, hart);
+}
+#endif /* CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY */
 
 void riscv_aia_enable_source(uint32_t irq)
 {
@@ -156,8 +171,8 @@ void riscv_aia_dispatch_eiid(uint32_t eiid)
 	const struct _isr_table_entry *ite;
 
 	if (!riscv_aia_src_is_valid(aplic, eiid)) {
+		/* A call to z_irq_spurious will not return. */
 		z_irq_spurious(NULL);
-		return;
 	}
 
 	ite = &_sw_isr_table[APLIC_ISR_TABLE_OFFSET + eiid];

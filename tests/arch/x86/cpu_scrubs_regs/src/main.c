@@ -57,15 +57,29 @@ static inline void z_vrfy_test_cpu_write_reg(void)
 #include <zephyr/syscalls/test_cpu_write_reg_mrsh.c>
 
 /**
- * @brief Test CPU scrubs registers after system call
- *
- * @details - Call from user mode a syscall test_x86_cpu_write_reg(),
- * the system call function writes into registers 0xDEADBEEF value
- * - Then in main test function below check registers values,
- * if no 0xDEADBEEF value detected, that means CPU scrubbed registers
- * before exit from the system call.
+ * @brief Verify the kernel scrubs CPU registers when returning from a syscall.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * On return from a system call, the kernel must not leak kernel-side register
+ * contents back to the calling user thread. This test has a syscall load a
+ * known sentinel (0xDEADBEEF) into the caller-clobbered general-purpose
+ * registers, then — back in user mode — reads those same registers and checks
+ * none still hold the sentinel, proving the kernel scrubbed them on the
+ * syscall return path. The exact register set is architecture dependent
+ * (IA-32 vs x86-64), so the test covers both via conditional compilation.
+ *
+ * Test steps:
+ * - From a user thread, invoke the test_cpu_write_reg() system call, which
+ *   writes 0xDEADBEEF into the GP registers while in kernel mode.
+ * - After the syscall returns, read each of those registers from user mode.
+ * - Compare every register value against 0xDEADBEEF.
+ *
+ * Expected result:
+ * - No register read back in user mode contains 0xDEADBEEF; all were scrubbed.
+ *
+ * @see test_cpu_write_reg()
  */
 ZTEST_USER(x86_cpu_scrubs_regs, test_syscall_cpu_scrubs_regs)
 {

@@ -120,6 +120,7 @@ properties:
   st,dqs-port:
     type: int
     enum:
+      - 0
       - 1
       - 2
     description: |
@@ -127,6 +128,8 @@ properties:
 
       If absent, then n is used where `n` is the OSPI
       instance number.
+
+      0 means DQS port is disabled
 
       Note: You might need to enable the OCTOSPI I/O manager clock to use the
             property. Please refer to Reference Manual.

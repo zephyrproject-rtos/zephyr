@@ -14,7 +14,7 @@
 
 /**
  * @defgroup tle9104_interface TLE9104
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_infineon
  * @brief TLE9104 4-channel powertrain switch
  * @{
  */

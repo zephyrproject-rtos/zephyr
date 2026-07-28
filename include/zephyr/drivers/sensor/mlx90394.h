@@ -15,7 +15,7 @@
 /**
  * @brief Melexis MLX90394 magnetometer
  * @defgroup mlx90394_interface MLX90394
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_melexis
  * @{
  */
 

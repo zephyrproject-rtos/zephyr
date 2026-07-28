@@ -1014,7 +1014,7 @@ static const char *check_ipaddr(const char *addresses)
 
 		zassert_mem_equal(addr_str, expecting,
 				  *addresses == '\0' ? strlen(orig) : addresses - orig - 1,
-				  "Address mismatch, expecing %s, got %s (len %td)\n",
+				  "Address mismatch, expecting %s, got %s (len %td)\n",
 				  expecting, addr_str, addresses - orig - 1);
 	} while (addresses != NULL && *addresses != '\0');
 
@@ -1578,7 +1578,7 @@ ZTEST(test_utils_fn, test_linkaddr_handling)
 
 ZTEST(test_utils_fn, test_parse_ipv4_overflow)
 {
-	struct net_sockaddr_storage saddr;
+	struct net_sockaddr_storage saddr = {};
 	struct net_sockaddr *addr = net_sad(&saddr);
 	bool ret;
 
@@ -1732,7 +1732,7 @@ ZTEST(test_utils_fn, test_parse_ipv4_overflow)
 
 ZTEST(test_utils_fn, test_parse_ipv6_overflow)
 {
-	struct net_sockaddr_storage saddr;
+	struct net_sockaddr_storage saddr = {};
 	struct net_sockaddr *addr = net_sad(&saddr);
 	bool ret;
 

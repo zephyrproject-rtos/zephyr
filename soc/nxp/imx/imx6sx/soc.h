@@ -9,10 +9,10 @@
 
 #ifndef _ASMLANGUAGE
 
-#include "rdc.h"
-#include "rdc_defs_imx6sx.h"
-#include "ccm_imx6sx.h"
-#include "clock_freq.h"
+#include <rdc.h>
+#include <rdc_defs_imx6sx.h>
+#include <ccm_imx6sx.h>
+#include <clock_freq.h>
 #include "soc_clk_freq.h"
 #include <soc_common.h>
 

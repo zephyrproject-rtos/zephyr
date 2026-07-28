@@ -3,8 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Renesas RZ/V2N pin and function definitions
+ * @ingroup pinctrl_rzv
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZV2N_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZV2N_H_
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Superset list of all possible IO ports. */
 #define PORT_00 0x0000 /* IO port 0 */
@@ -138,5 +146,7 @@
 #define RZV_FILCLKSEL_DIV_36000 3
 
 #define RZV_FILTER_SET(filnum, filclksel) (((filnum) & 0x3) << 0x2) | (filclksel & 0x3)
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZV2N_H_ */

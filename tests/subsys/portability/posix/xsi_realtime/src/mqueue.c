@@ -260,7 +260,7 @@ ZTEST(xsi_realtime, test_mqueue_notify_errors)
 	not.sigev_notify = SIGEV_NONE;
 
 	zassert_ok(mq_notify(mqd, &not),
-		   "Unexpected error while asigning notification to the queue.");
+		   "Unexpected error while assigning notification to the queue.");
 
 	zassert_not_ok(mq_notify(mqd, &not),
 		       "Can't assign notification when there is another assigned.");

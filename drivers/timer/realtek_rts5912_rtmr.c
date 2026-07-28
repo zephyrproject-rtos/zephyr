@@ -98,7 +98,7 @@ static void rtmr_isr(const void *arg)
 	sys_clock_announce(ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -107,7 +107,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	uint32_t full_cycles;
 	uint32_t partial_cycles;
 
-	if (idle && (ticks == K_TICKS_FOREVER)) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && (ticks == SYS_CLOCK_MAX_WAIT)) {
 		RTMR_REG->CTRL = 0U;
 		previous_cnt = RTMR_TIMER_STOPPED;
 		return;
@@ -115,7 +115,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	if (ticks < 1) {
 		full_ticks = 0;
-	} else if ((ticks == K_TICKS_FOREVER) || (ticks > MAX_TICKS)) {
+	} else if (ticks > MAX_TICKS) {
 		full_ticks = MAX_TICKS - 1;
 	} else {
 		full_ticks = ticks - 1;

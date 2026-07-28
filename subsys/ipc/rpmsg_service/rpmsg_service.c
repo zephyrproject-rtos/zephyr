@@ -61,7 +61,7 @@ static void ns_bind_cb(struct rpmsg_device *rdev,
 
 			if (err != 0) {
 				LOG_ERR("Creating remote endpoint %s"
-					" failed wirh error %d", name, err);
+					" failed with error %d", name, err);
 			} else {
 				endpoints[i].bound = true;
 			}

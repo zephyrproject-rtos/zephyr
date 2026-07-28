@@ -162,7 +162,6 @@ static void start_per_adv_set(struct bt_le_ext_adv *adv)
 	printk("done.\n");
 }
 
-#if defined(CONFIG_BT_PER_ADV)
 static void set_per_adv_data(struct bt_le_ext_adv *adv)
 {
 	int err;
@@ -179,7 +178,6 @@ static void set_per_adv_data(struct bt_le_ext_adv *adv)
 	}
 	printk("done.\n");
 }
-#endif
 
 static void stop_ext_adv_set(struct bt_le_ext_adv *adv)
 {
@@ -339,7 +337,6 @@ static void main_per_adv_conn_privacy_advertiser(void)
 
 static void main_per_adv_long_data_advertiser(void)
 {
-#if defined(CONFIG_BT_PER_ADV)
 	struct bt_le_ext_adv *per_adv;
 
 	common_init();
@@ -358,8 +355,51 @@ static void main_per_adv_long_data_advertiser(void)
 
 	delete_adv_set(per_adv);
 	per_adv = NULL;
-#endif
+
 	TEST_PASS("Periodic long data advertiser passed");
+}
+
+static void main_per_adv_update_did(void)
+{
+	struct bt_le_ext_adv *per_adv;
+	int err;
+
+	common_init();
+
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, &per_adv);
+	if (err != 0) {
+		TEST_FAIL("Failed to create advertising set: %d", err);
+		return;
+	}
+
+	err = bt_le_per_adv_set_param(per_adv,
+		BT_LE_PER_ADV_PARAM(BT_GAP_PER_ADV_SLOW_INT_MIN,
+				    BT_GAP_PER_ADV_SLOW_INT_MAX,
+				    BT_LE_PER_ADV_OPT_INCLUDE_ADI));
+	if (err != 0) {
+		TEST_FAIL("Failed to set periodic advertising parameters: %d", err);
+		return;
+	}
+
+	set_per_adv_data(per_adv);
+	start_per_adv_set(per_adv);
+	start_ext_adv_set(per_adv);
+
+	err = bt_le_per_adv_update_did(per_adv);
+	if (err != 0) {
+		TEST_FAIL("bt_le_per_adv_update_did failed: %d", err);
+		return;
+	}
+
+	k_sleep(K_SECONDS(2));
+
+	stop_per_adv_set(per_adv);
+	stop_ext_adv_set(per_adv);
+
+	delete_adv_set(per_adv);
+	per_adv = NULL;
+
+	TEST_PASS("Periodic advertising update DID passed");
 }
 
 static const struct bst_test_instance per_adv_advertiser[] = {
@@ -394,6 +434,12 @@ static const struct bst_test_instance per_adv_advertiser[] = {
 		.test_descr = "Periodic advertising test with a longer data length. "
 			      "To test the reassembly of large data packets",
 		.test_main_f = main_per_adv_long_data_advertiser
+	},
+	{
+		.test_id = "per_adv_update_did",
+		.test_descr = "Periodic advertising DID update test. "
+			      "Verifies bt_le_per_adv_update_did returns success.",
+		.test_main_f = main_per_adv_update_did
 	},
 	BSTEST_END_MARKER
 };

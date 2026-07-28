@@ -40,7 +40,7 @@ config NORDIC_VPR_DEEPSLEEP
 
 config NORDIC_VPR_HIBERNATE
 	bool "Hibernation"
-	depends on !SOC_NRF54H20
+	depends on !SOC_SERIES_NRF54H && !SOC_SERIES_NRF92
 	help
 	  It has the lowest power consumption and it must be used to reach less than 5 uA in
 	  the system-on-idle state on targets other than nRF54H20. It has slightly longer

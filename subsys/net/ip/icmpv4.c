@@ -159,6 +159,14 @@ static int icmpv4_update_record_route(uint8_t *opt_data,
 
 	len++;
 
+	/* The smallest legal pointer value is ptr_offset. A smaller value
+	 * would underflow `skip` (uint8_t) below and over-read the option data
+	 * into the reply.
+	 */
+	if (ptr < ptr_offset) {
+		goto drop;
+	}
+
 	skip = ptr - ptr_offset;
 	if (skip) {
 		/* Do not alter existed routes */
@@ -300,6 +308,14 @@ static int icmpv4_update_time_stamp(uint8_t *opt_data,
 	}
 
 	len++;
+
+	/* The smallest legal pointer value is ptr_offset. A smaller value
+	 * would underflow `skip` (uint8_t) below and over-read the option data
+	 * into the reply.
+	 */
+	if (ptr < ptr_offset) {
+		goto drop;
+	}
 
 	skip = ptr - ptr_offset;
 	if (skip) {
@@ -683,7 +699,7 @@ drop:
 	return NET_DROP;
 }
 
-#if defined(CONFIG_NET_IPV4_PMTU)
+#if defined(CONFIG_NET_IPV4_PMTU_PTB)
 /* The RFC 1191 chapter 3 says the minimum MTU size is 68 octets.
  * This is way too small in modern world, so make the minimum 576 octets.
  */
@@ -792,7 +808,7 @@ silent_drop:
 }
 
 static struct net_icmp_ctx dst_unreach_ctx;
-#endif /* CONFIG_NET_IPV4_PMTU */
+#endif /* CONFIG_NET_IPV4_PMTU_PTB */
 
 void net_icmpv4_init(void)
 {
@@ -806,7 +822,7 @@ void net_icmpv4_init(void)
 			ret);
 	}
 
-#if defined(CONFIG_NET_IPV4_PMTU)
+#if defined(CONFIG_NET_IPV4_PMTU_PTB)
 	ret = net_icmp_init_ctx(&dst_unreach_ctx, NET_AF_INET, NET_ICMPV4_DST_UNREACH, 0,
 				icmpv4_handle_dst_unreach);
 	if (ret < 0) {

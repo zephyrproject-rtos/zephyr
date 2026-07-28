@@ -119,10 +119,10 @@ struct reset_dt_spec {
 	RESET_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)
 
 /**
- * @brief Static initializer for a @p reset_dt_spec from a DT_DRV_COMPAT
+ * @brief Static initializer for a @p reset_dt_spec from a @c DT_DRV_COMPAT
  * instance's Reset Controller property at an index.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into "resets"
  * @return static initializer for a struct reset_dt_spec for the property
  * @see RESET_DT_SPEC_GET_BY_IDX()
@@ -131,10 +131,10 @@ struct reset_dt_spec {
 	RESET_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Static initializer for a @p reset_dt_spec from a DT_DRV_COMPAT
+ * @brief Static initializer for a @p reset_dt_spec from a @c DT_DRV_COMPAT
  *	  instance's 'resets' property at an index, with fallback
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into the 'resets' property
  * @param default_value fallback value to expand to
  * @return static initializer for a struct reset_dt_spec for the property,
@@ -148,7 +148,7 @@ struct reset_dt_spec {
 /**
  * @brief Equivalent to RESET_DT_SPEC_INST_GET_BY_IDX(inst, 0).
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return static initializer for a struct reset_dt_spec for the property
  * @see RESET_DT_SPEC_INST_GET_BY_IDX()
  */
@@ -159,7 +159,7 @@ struct reset_dt_spec {
  * @brief Equivalent to
  *	  RESET_DT_SPEC_INST_GET_BY_IDX_OR(node_id, 0, default_value).
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param default_value fallback value to expand to
  * @return static initializer for a struct reset_dt_spec for the property,
  *         or default_value if the node or property do not exist

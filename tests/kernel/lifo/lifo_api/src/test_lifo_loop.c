@@ -24,14 +24,14 @@ static void tlifo_put(struct k_lifo *plifo)
 	}
 }
 
-static void tlifo_get(struct k_lifo *plifo)
+static void tlifo_get(struct k_lifo *plifo, k_timeout_t timeout)
 {
 	void *rx_data;
 
 	/*get lifo data*/
 	for (int i = LIST_LEN-1; i >= 0; i--) {
 		/**TESTPOINT: lifo get*/
-		rx_data = k_lifo_get(plifo, K_FOREVER);
+		rx_data = k_lifo_get(plifo, timeout);
 		zassert_equal(rx_data, (void *)&data[i]);
 	}
 }
@@ -40,7 +40,7 @@ static void tlifo_get(struct k_lifo *plifo)
 static void tIsr_entry(const void *p)
 {
 	TC_PRINT("isr lifo get\n");
-	tlifo_get((struct k_lifo *)p);
+	tlifo_get((struct k_lifo *)p, K_NO_WAIT);
 	TC_PRINT("isr lifo put ---> ");
 	tlifo_put((struct k_lifo *)p);
 }
@@ -48,7 +48,7 @@ static void tIsr_entry(const void *p)
 static void tThread_entry(void *p1, void *p2, void *p3)
 {
 	TC_PRINT("thread lifo get\n");
-	tlifo_get((struct k_lifo *)p1);
+	tlifo_get((struct k_lifo *)p1, K_FOREVER);
 	k_sem_give(&end_sema);
 	TC_PRINT("thread lifo put ---> ");
 	tlifo_put((struct k_lifo *)p1);
@@ -71,30 +71,35 @@ static void tlifo_read_write(struct k_lifo *plifo)
 	k_sem_take(&end_sema, K_FOREVER);
 
 	TC_PRINT("main lifo get\n");
-	tlifo_get(plifo);
+	tlifo_get(plifo, K_FOREVER);
 	k_thread_abort(tid);
 	TC_PRINT("\n");
 }
 
 /**
- * @addtogroup kernel_lifo_tests
+ * @addtogroup tests_kernel_lifo
  * @{
  */
 
 /**
- * @brief Verify zephyr lifo continuous read write in loop
+ * @brief Verify LIFO data integrity under repeated cross-context traffic.
  *
  * @details
- * - Test Steps
- *   -# lifo put from main thread
- *   -# lifo read from isr
- *   -# lifo put from isr
- *   -# lifo get from spawn thread
- *   -# loop above steps for LOOPs times
- * - Expected Results
- *   -# lifo data pass correctly and stably across contexts
+ * Stresses the LIFO by cycling data through main-thread, ISR and spawned-thread
+ * contexts many times. Across every iteration the items must be passed without
+ * loss, duplication or reordering, exercising put/get stability when producers
+ * and consumers alternate between thread and interrupt context.
  *
- * @see k_lifo_init(), k_fifo_put(), k_fifo_get()
+ * Test steps:
+ * - For LOOPS iterations: put from the main thread, get then put from an ISR,
+ *   and get from a spawned thread.
+ * - Verify each get returns the expected item in LIFO order.
+ *
+ * Expected result:
+ * - Data passes correctly and in LIFO order across all contexts every iteration.
+ *
+ * @see k_lifo_put()
+ * @see k_lifo_get()
  */
 ZTEST(lifo_loop, test_lifo_loop)
 {

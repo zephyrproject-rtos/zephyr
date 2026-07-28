@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing the DT_FOREACH_CPU family of
+ * devicetree macros.
+ *
+ * Defines 8 CPUs and adds a "power-states" sibling node under
+ * "/cpus" to verify that non-cpu children are skipped when iterating.
+ */
+
+&{/cpus/cpu@0} {
+	device_type = "cpu";
+	status = "okay";
+};
+
+&{/cpus} {
+	power-states {
+		idle: idle {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <1000000>;
+		};
+	};
+};

@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <bflb/bl618.dtsi>
-#include <bflb/bl61x_em_32kb.dtsi>
+#include <bflb/bl61x_em_32kb_wifi.dtsi>
 #include "bl618g0-pinctrl.dtsi"
 
 / {
@@ -15,10 +15,10 @@
 	compatible = "bflb,bl618";
 
 	chosen {
-		zephyr,flash = &flash0;
+		zephyr,flash = &w25q64jv;
+		zephyr,flash-controller = &sf_bank1;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,itcm = &sram1;
-		zephyr,sram = &sram0;
+		zephyr,sram = &all_ram;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &sec_eng_trng;
@@ -56,45 +56,66 @@
 	clock-frequency = <DT_FREQ_M(320)>;
 };
 
-&flashctrl {
-	flash0: flash@a0000000 {
-		compatible = "soc-nv-flash", "winbond,w25q64";
-		/* Capacity - Header */
-		reg = <0xa0000000 (DT_SIZE_M(8) - DT_SIZE_K(8))>;
-		ranges = <0x0 0xa0000000 (DT_SIZE_M(8) - DT_SIZE_K(8))>;
+&clk_flash {
+	divider = <1>;
+};
+
+&sf_ctrl {
+	override-bank1;
+	no-header;
+};
+
+&sf_bank1 {
+	reg = <0xa0000000 DT_SIZE_M(8)>;
+	ranges = <0x0 0xa0000000 DT_SIZE_M(8)>;
+
+	pinctrl-0 = <&sf2_default>;
+	pinctrl-names = "default";
+
+	w25q64jv: flash@0 {
+		compatible = "bflb,sf-flash", "soc-nv-flash";
+		reg = <0 DT_SIZE_M(8)>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		write-block-size = <1>;
+		write-block-size = <4>;
 		erase-block-size = <DT_SIZE_K(4)>;
+
+		spi-bus-mode = <4>;
+		sf-pad = <2>;
+		jedec-id = [ef 40 17];
+
+		/* The flash equipped on BL618G0 board doesn't support useful SFDP,
+		 * and the flash header doesn't provide a working configuration.
+		 * Manually set configuration for best performance.
+		 */
+		read-command = <0xeb>;
+		read-dummy-cycles = <2>;
+		continuous-read-command = <0xa0>;
 
 		partitions {
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			boot_partition: partition@0 {
+			boot_header_partition: partition@0 {
 				compatible = "zephyr,mapped-partition";
-				label = "mcuboot";
-				reg = <0x0 DT_SIZE_K(64)>;
+				label = "boot_header";
+				reg = <0x00000000 0x2000>;
 				read-only;
 			};
 
-			slot0_partition: partition@10000 {
+			slot0_partition: partition@2000 {
 				compatible = "zephyr,mapped-partition";
 				label = "image-0";
-				reg = <DT_SIZE_K(64) (DT_SIZE_M(4) - DT_SIZE_K(64))>;
-			};
-
-			slot1_partition: partition@400000 {
-				compatible = "zephyr,mapped-partition";
-				label = "image-1";
-				reg = <DT_SIZE_M(4) (DT_SIZE_M(4) - DT_SIZE_K(64))>;
+				reg = <0x00002000 (DT_SIZE_M(8) - DT_SIZE_K(64) - 0x2000)>;
+				read-only;
 			};
 
 			storage_partition: partition@7f0000 {
 				compatible = "zephyr,mapped-partition";
 				label = "storage";
-				reg = <0x7f0000 (DT_SIZE_K(64) - DT_SIZE_K(8))>;
+				reg = <0x7f0000 DT_SIZE_K(64)>;
 			};
 		};
 	};
@@ -122,6 +143,14 @@
 };
 
 &bt_hci_bflb {
+	status = "okay";
+
+	pwr-table-ble = <13>;
+	pwr-table-bt = <10 8 8>;
+	pwr-offset-bz = <16 16 16 16 16>;
+};
+
+&wifi0 {
 	status = "okay";
 };
 

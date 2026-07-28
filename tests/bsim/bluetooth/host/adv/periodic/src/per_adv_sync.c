@@ -423,7 +423,7 @@ static const struct bst_test_instance per_adv_sync[] = {
 		.test_id = "per_adv_long_data_sync",
 		.test_descr = "Periodic advertising sync test with larger "
 			      "data length. Test is used to verify that "
-			      "reassembly of long data is handeled correctly.",
+			      "reassembly of long data is handled correctly.",
 		.test_main_f = main_per_adv_long_data_sync
 	},
 	{

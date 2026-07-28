@@ -174,13 +174,15 @@ verifying correct behavior). Zero-latency interrupts may not modify any data
 inspected by kernel APIs invoked from normal Zephyr contexts and shall not
 generate exceptions that need to be handled synchronously (e.g. kernel panic).
 
-When system power management keeps interrupts locked across PM resume (currently
-selected by :kconfig:option:`CONFIG_PM_STATE_SET_IRQ_LOCKED`), a zero-latency
-interrupt is outside the locked-resume ordering and may be dispatched during PM
-suspend/resume logic, before PM resume bookkeeping and SoC/device hardware
-restore have completed. Such an ISR must be PM-wake-safe, or the interrupt
-source must be masked or disabled while the system state does not allow the ISR
-to execute.
+When system power management keeps interrupts locked across PM resume, a
+zero-latency interrupt is outside the locked-resume ordering and may be
+dispatched during PM suspend/resume logic, before PM resume bookkeeping and
+SoC/device hardware restore have completed. Such an ISR must be PM-wake-safe, or
+the interrupt source must be masked or disabled while the system state does not
+allow the ISR to execute. See :ref:`device power policy constraints
+<pm-device-constraint>` for one way to keep unsafe states out of policy
+selection while a device path that can produce a zero-latency interrupt is
+active.
 
 .. important::
     Zero-latency interrupts are supported on an architecture-specific basis.

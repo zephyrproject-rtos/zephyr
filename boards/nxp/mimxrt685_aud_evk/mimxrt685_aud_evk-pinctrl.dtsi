@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx/rt/MIMXRT685SFVKB-pinctrl.h>
+
+&pinctrl {
+	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
+		group0 {
+			pinmux = <FC0_RXD_SDA_MOSI_DATA_PIO0_2>;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+
+		group1 {
+			pinmux = <FC0_TXD_SCL_MISO_WS_PIO0_1>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
+};

@@ -125,7 +125,7 @@ static void ZREWIND(struct test_state *ts, int line)
 #define ZMKEMPTY(ts)			\
 do {					\
 	ZUNLINK(ts);			\
-	ZOPEN(ts, FS_O_CREATE, 0);	\
+	ZOPEN(ts, FS_O_CREATE | FS_O_WRITE, 0);	\
 	ZCLOSE(ts);			\
 } while (0)
 
@@ -163,7 +163,8 @@ void test_fs_open_flags(void)
 	 * operations on it.
 	 */
 	ZBEGIN("Attempt create new with no R/W access");
-	#ifndef BYPASS_FS_OPEN_FLAGS_LFS_ASSERT_CRASH
+	#if !defined(BYPASS_FS_OPEN_FLAGS_LFS_ASSERT_CRASH) \
+		&& !defined(BYPASS_FS_OPEN_FLAGS__CREATE_WITHOUT_RW_IS_NOT_ALLOWED)
 	ZOPEN(&ts, FS_O_CREATE | 0, 0);
 	ZWRITE(&ts, -EACCES);
 	ZREAD(&ts, -EACCES);
@@ -213,7 +214,8 @@ void test_fs_open_flags(void)
 
 	ZBEGIN("Attempt open existing with no R/W access");
 	ZMKEMPTY(&ts);
-	#ifndef BYPASS_FS_OPEN_FLAGS_LFS_RW_IS_DEFAULT
+	#if !defined(BYPASS_FS_OPEN_FLAGS_LFS_RW_IS_DEFAULT) \
+		&& !defined(BYPASS_FS_OPEN_FLAGS__CREATE_WITHOUT_RW_IS_NOT_ALLOWED)
 	ZOPEN(&ts, 0,  0);
 	ZWRITE(&ts, -EACCES);
 	ZREAD(&ts, -EACCES);
@@ -268,7 +270,8 @@ void test_fs_open_flags(void)
 
 	ZBEGIN("Attempt append existing with no R/W access");
 	ZMKEMPTY(&ts);
-	#ifndef BYPASS_FS_OPEN_FLAGS_LFS_RW_IS_DEFAULT
+	#if !defined(BYPASS_FS_OPEN_FLAGS_LFS_RW_IS_DEFAULT) \
+		&& !defined(BYPASS_FS_OPEN_FLAGS__CREATE_WITHOUT_RW_IS_NOT_ALLOWED)
 	ZOPEN(&ts, FS_O_APPEND,  0);
 	ZCHKPOS(&ts, 0);
 	ZWRITE(&ts, -EACCES);
@@ -285,7 +288,8 @@ void test_fs_open_flags(void)
 	ZMKEMPTY(&ts);
 	ZOPEN(&ts, FS_O_APPEND | FS_O_READ,  0);
 	ZCHKPOS(&ts, 0);
-	#ifndef BYPASS_FS_OPEN_FLAGS_LFS_ASSERT_CRASH
+	#if !defined(BYPASS_FS_OPEN_FLAGS_LFS_ASSERT_CRASH) \
+		&& !defined(BYPASS_FS_OPEN_FLAGS__APPEND_HAS_RW_BY_DEFAULT)
 	ZWRITE(&ts, -EACCES);
 	#else
 	TC_PRINT("Write bypassed\n");

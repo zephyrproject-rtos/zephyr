@@ -12,8 +12,8 @@
  * of STM32 microcontrollers.
  */
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_GPIO_INTC_STM32_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_GPIO_INTC_STM32_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GPIO_INTC_STM32_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GPIO_INTC_STM32_H_
 
 #include <zephyr/types.h>
 #include <zephyr/drivers/gpio.h>
@@ -117,4 +117,4 @@ void stm32_exti_set_line_src_port(gpio_pin_t line, uint32_t port);
 uint32_t stm32_exti_get_line_src_port(gpio_pin_t line);
 #endif /* CONFIG_EXTI_STM32 */
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_GPIO_INTC_STM32_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GPIO_INTC_STM32_H_ */

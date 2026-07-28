@@ -40,6 +40,9 @@
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
 			write-block-size = <4>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 
 		nvm_sw_calib_area: nvm-sw-calib-area@806020 {

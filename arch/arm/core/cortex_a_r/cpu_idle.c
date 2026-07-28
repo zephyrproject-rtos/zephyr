@@ -47,7 +47,7 @@
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 void arch_cpu_idle(void)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 
@@ -66,7 +66,7 @@ void arch_cpu_idle(void)
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 void arch_cpu_atomic_idle(unsigned int key)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 

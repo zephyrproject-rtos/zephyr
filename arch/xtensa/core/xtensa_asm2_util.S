@@ -258,7 +258,7 @@ xtensa_switch:
 #endif
 #endif
 #ifdef CONFIG_XTENSA_MPU
-	call4 xtensa_mpu_map_write
+	call4 xtensa_mpu_thread_map_write
 #endif
 
 	l32i a7, a1, 12
@@ -318,7 +318,7 @@ xtensa_switch:
 	/* Now the high registers */
 	call0 xtensa_save_high_regs
 
-#if defined(CONFIG_KERNEL_COHERENCE) && !defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+#if defined(CONFIG_KERNEL_COHERENCE)
 	/* Flush the stack.  The top of stack was stored for us by
 	 * arch_cohere_stacks().  It can be NULL for a dummy thread.
 	 */

@@ -132,6 +132,14 @@
 	status = "okay";
 };
 
+&tstmr1 {
+	status = "okay";
+};
+
+&tstmr2 {
+	status = "okay";
+};
+
 &flexcan1 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan1>;
@@ -292,6 +300,10 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 /* Internal port connecting switch to CPU */
 &switch_port4 {
 	local-mac-address = [00 00 00 01 08 00];
+	status = "okay";
+};
+
+&dac {
 	status = "okay";
 };
 

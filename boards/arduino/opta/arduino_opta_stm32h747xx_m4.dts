@@ -24,16 +24,18 @@
 
 &flash1 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "unused";
 			reg = <0x00000000 DT_SIZE_K(512)>;
 		};
 
 		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00080000 DT_SIZE_K(512)>;
 		};

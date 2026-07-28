@@ -14,6 +14,13 @@ config SOC_AE822FA0E5597LS0
 	help
 	  Alif Ensemble E8 (AE822FA0E5597LS0)
 
+config SOC_AE822FA0E5597LS0_APSS
+	bool
+	select SOC_AE822FA0E5597LS0
+	help
+	  AE822FA0E5597LS0 Application Processor Subsystem (APSS).
+	  Cortex-A32 core with a maximum frequency of 800 MHz.
+
 config SOC_AE822FA0E5597LS0_RTSS_HE
 	bool
 	select SOC_AE822FA0E5597LS0

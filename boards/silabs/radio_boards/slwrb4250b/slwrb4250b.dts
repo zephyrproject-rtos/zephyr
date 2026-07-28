@@ -30,6 +30,25 @@
 	clock-frequency = <38400000>;
 };
 
+&clk_hfxo {
+	clock-frequency = <38400000>;
+	status = "okay";
+};
+
+&clk_hf {
+	clocks = <&clk_hfxo>;
+};
+
+&clk_lfxo {
+	status = "okay";
+};
+
+/* Used by rtcc. */
+&clk_lfe {
+	clocks = <&clk_lfxo>;
+	status = "okay";
+};
+
 &timer0 {
 	status = "okay";
 

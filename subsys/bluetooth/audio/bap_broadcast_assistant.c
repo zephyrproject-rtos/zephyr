@@ -991,8 +991,9 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
 {
-	int err;
 	struct bap_broadcast_assistant_instance *inst;
+	struct bt_conn *ref;
+	int err;
 
 	if (conn == NULL) {
 		LOG_DBG("conn is NULL");
@@ -1014,16 +1015,19 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
 		return -EBUSY;
 	}
 
-	err = broadcast_assistant_reset(inst);
-	if (err != 0) {
-		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
-
-		LOG_DBG("Failed to reset broadcast assistant: %d", err);
-
-		return -ENOEXEC;
+	ref = bt_conn_ref(conn);
+	if (ref == NULL) {
+		err = -ENOTCONN;
+		goto cleanup;
 	}
 
-	inst->conn = bt_conn_ref(conn);
+	err = broadcast_assistant_reset(inst);
+	if (err != 0) {
+		LOG_DBG("Failed to reset broadcast assistant: %d", err);
+		bt_conn_unref(ref);
+		err = -ENOEXEC;
+		goto cleanup;
+	}
 
 	/* Discover BASS on peer, setup handles and notify */
 	discover_init(inst);
@@ -1033,22 +1037,28 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn)
 	inst->disc_params.type = BT_GATT_DISCOVER_PRIMARY;
 	inst->disc_params.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 	inst->disc_params.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE;
+
+	inst->conn = ref;
+
 	err = bt_gatt_discover(conn, &inst->disc_params);
 	if (err != 0) {
-		atomic_clear_bit(inst->flags, BAP_BA_FLAG_DISCOVER_IN_PROGRESS);
-		atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
-
 		/* Report expected possible errors */
-		if (err == -ENOTCONN || err == -ENOMEM) {
-			return err;
+		if (err != -ENOTCONN && err != -ENOMEM) {
+			LOG_DBG("Unexpected err %d from bt_gatt_discover", err);
+			err = -ENOEXEC;
 		}
 
-		LOG_DBG("Unexpected err %d from bt_gatt_discover", err);
-
-		return -ENOEXEC;
+		bt_conn_unref(ref);
+		inst->conn = NULL;
+		goto cleanup;
 	}
 
 	return 0;
+
+cleanup:
+	atomic_clear_bit(inst->flags, BAP_BA_FLAG_DISCOVER_IN_PROGRESS);
+	atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
+	return err;
 }
 
 /* TODO: naming is different from e.g. bt_vcp_vol_ctrl_cb_register */

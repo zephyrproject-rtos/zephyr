@@ -78,7 +78,8 @@ config CPU_FREQ_POLICY_NONE
 
 config CPU_FREQ_POLICY_ON_DEMAND
 	bool "On-demand Policy"
-	select CPU_LOAD_METRIC
+	select CPU_LOAD
+	select CPU_LOAD_MULTICPU
 
 config CPU_FREQ_POLICY_PRESSURE
 	bool "Pressure based Policy"

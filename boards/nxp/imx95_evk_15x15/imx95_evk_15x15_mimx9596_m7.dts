@@ -95,3 +95,7 @@
 &lptmr1 {
 	status = "okay";
 };
+
+&tstmr2 {
+	status = "okay";
+};

@@ -225,4 +225,20 @@
 /** SLCD peripheral clock identifier. */
 #define MCUX_SLCD_CLK MCUX_LPC_CLK_ID(0x34, 0x00)
 
+/** CRC peripheral clock identifier. */
+#define MCUX_CRC_CLK MCUX_LPC_CLK_ID(0x35, 0x00)
+
+/** SYSTEM clock identifier. */
+#define MCUX_SYSTEM_CLK MCUX_LPC_CLK_ID(0x36, 0x00)
+
+/** EQDC peripheral clock identifier. */
+#define MCUX_EQDC_CLK MCUX_LPC_CLK_ID(0x37, 0x00)
+/** EQDC0 peripheral clock identifier. */
+#define MCUX_EQDC0_CLK MCUX_LPC_CLK_ID(0x38, 0x00)
+/** EQDC1 peripheral clock identifier. */
+#define MCUX_EQDC1_CLK MCUX_LPC_CLK_ID(0x38, 0x01)
+
+/** PowerQuad DSP coprocessor clock identifier. */
+#define MCUX_POWERQUAD_CLK MCUX_LPC_CLK_ID(0x39, 0x00)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

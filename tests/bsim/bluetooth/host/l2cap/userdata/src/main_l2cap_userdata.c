@@ -240,7 +240,7 @@ static void test_central_main(void)
 
 	buf = net_buf_alloc(&buf_pool, K_NO_WAIT);
 	if (!buf) {
-		TEST_FAIL("Buffer allcation failed");
+		TEST_FAIL("Buffer allocation failed");
 	}
 
 	net_buf_reserve(buf, BT_L2CAP_SDU_CHAN_SEND_RESERVE);

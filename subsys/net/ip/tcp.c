@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #define LAST_ACK_TIMEOUT_MS tcp_max_timeout_ms
 #define LAST_ACK_TIMEOUT K_MSEC(LAST_ACK_TIMEOUT_MS)
 #define FIN_TIMEOUT K_MSEC(tcp_max_timeout_ms)
-#define ACK_DELAY K_MSEC(100)
+#define ACK_DELAY K_MSEC(CONFIG_NET_TCP_ACK_DELAY)
 #define ZWP_MAX_DELAY_MS 120000
 #define DUPLICATE_ACK_RETRANSMIT_TRHESHOLD 3
 
@@ -901,6 +901,9 @@ static void tcp_conn_release(struct k_work *work)
 	(void)k_work_cancel_delayable(&conn->ack_timer);
 	(void)k_work_cancel_delayable(&conn->send_timer);
 	(void)k_work_cancel_delayable(&conn->recv_queue_timer);
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	(void)k_work_cancel_delayable(&conn->linger_timer);
+#endif /* CONFIG_NET_CONTEXT_LINGER */
 	keep_alive_timer_stop(conn);
 
 	k_mutex_unlock(&conn->lock);
@@ -982,6 +985,11 @@ static int tcp_conn_close(struct tcp *conn, int status)
 	}
 
 	k_sem_give(&conn->tx_sem);
+
+	/* Wake up any close() blocked on SO_LINGER for this connection. */
+	if (conn->context != NULL) {
+		net_context_signal_linger(conn->context);
+	}
 
 	return tcp_conn_unref(conn);
 }
@@ -1180,6 +1188,23 @@ static bool tcp_short_window(struct tcp *conn)
 	}
 
 	return true;
+}
+
+static bool tcp_should_ack_immediately(struct tcp *conn, bool psh)
+{
+	uint16_t mss = conn_mss(conn);
+
+	/* RFC 1122: ACK at least every second full-sized segment. */
+	if (conn->recv_since_ack >= (uint16_t)(2U * mss)) {
+		return true;
+	}
+
+	/* RFC 813: interactive/small-window heuristic. */
+	if (!tcp_short_window(conn) && psh) {
+		return true;
+	}
+
+	return false;
 }
 
 static bool tcp_need_window_update(struct tcp *conn)
@@ -1451,10 +1476,8 @@ static int net_tcp_set_mss_opt(struct tcp *conn, struct net_pkt *pkt)
 static bool is_destination_local(struct net_pkt *pkt)
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
-		if (net_ipv4_is_addr_loopback(
-				(struct net_in_addr *)NET_IPV4_HDR(pkt)->dst) ||
-		    net_ipv4_is_my_addr(
-				(struct net_in_addr *)NET_IPV4_HDR(pkt)->dst)) {
+		if (net_ipv4_is_addr_loopback_raw(NET_IPV4_HDR(pkt)->dst) ||
+		    net_ipv4_is_my_addr_raw(NET_IPV4_HDR(pkt)->dst)) {
 			return true;
 		}
 	}
@@ -1613,6 +1636,7 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 
 	if (flags & ACK) {
 		conn->recv_win_sent = conn->recv_win;
+		conn->recv_since_ack = 0;
 	}
 
 	if (is_destination_local(pkt)) {
@@ -2055,6 +2079,28 @@ static void tcp_fin_timeout(struct k_work *work)
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
 }
 
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+static void tcp_linger_timeout(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, linger_timer);
+
+	k_mutex_lock(&conn->lock, K_FOREVER);
+
+	/* The graceful close (SO_LINGER) may have completed already; only
+	 * abort with a RST if the connection is still open.
+	 */
+	if (conn->state != TCP_CLOSED && conn->state != TCP_UNUSED) {
+		NET_DBG("[%p] Linger timeout, aborting connection", conn);
+
+		tcp_out(conn, RST);
+		(void)tcp_conn_close(conn, -ECONNRESET);
+	}
+
+	k_mutex_unlock(&conn->lock);
+}
+#endif /* CONFIG_NET_CONTEXT_LINGER */
+
 static void tcp_last_ack_timeout(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
@@ -2227,6 +2273,9 @@ static struct tcp *tcp_conn_alloc(void)
 	k_work_init_delayable(&conn->recv_queue_timer, tcp_cleanup_recv_queue);
 	k_work_init_delayable(&conn->persist_timer, tcp_send_zwp);
 	k_work_init_delayable(&conn->ack_timer, tcp_send_ack);
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	k_work_init_delayable(&conn->linger_timer, tcp_linger_timeout);
+#endif /* CONFIG_NET_CONTEXT_LINGER */
 	k_work_init(&conn->conn_release, tcp_conn_release);
 	keep_alive_timer_init(conn);
 
@@ -2828,6 +2877,7 @@ static enum net_verdict tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
 
 	net_stats_update_tcp_seg_recv(conn->iface);
 	conn_ack(conn, *len);
+	conn->recv_since_ack += *len;
 
 	/* In case FIN was received, don't send ACK just yet, FIN,ACK will be
 	 * sent instead.
@@ -2836,15 +2886,12 @@ static enum net_verdict tcp_data_received(struct tcp *conn, struct net_pkt *pkt,
 		return ret;
 	}
 
-	/* Delay ACK response in case of small window or missing PSH,
-	 * as described in RFC 813.
-	 */
-	if (tcp_short_window(conn) || !psh) {
-		k_work_schedule_for_queue(&tcp_work_q, &conn->ack_timer,
-					  ACK_DELAY);
-	} else {
+	if (tcp_should_ack_immediately(conn, psh)) {
 		k_work_cancel_delayable(&conn->ack_timer);
 		tcp_out(conn, ACK);
+	} else {
+		k_work_schedule_for_queue(&tcp_work_q, &conn->ack_timer,
+					  ACK_DELAY);
 	}
 
 	return ret;
@@ -3039,7 +3086,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			return NET_DROP;
 		}
 
-		/* Accroding to RFC 793, the ACKnum is acceptable if in scope
+		/* According to RFC 793, the ACKnum is acceptable if in scope
 		 * SND.UNA =< SEG.ACK =< SND.NXT
 		 * Otherwise, drop the packet and send an ACK back.
 		 */
@@ -3697,6 +3744,7 @@ out:
 int net_tcp_put(struct net_context *context, bool force_close)
 {
 	struct tcp *conn = context->tcp;
+	bool linger_abort = false;
 
 	if (!conn) {
 		return -ENOENT;
@@ -3720,8 +3768,49 @@ int net_tcp_put(struct net_context *context, bool force_close)
 		return 0;
 	}
 
-	if (conn->state == TCP_ESTABLISHED ||
-	    conn->state == TCP_SYN_RECEIVED) {
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	/* SO_LINGER with a zero timeout requests an abortive close: send a RST
+	 * to the peer and tear down the connection immediately, instead of
+	 * performing a graceful FIN handshake.
+	 */
+	linger_abort = context->options.linger.l_onoff != 0 &&
+		       context->options.linger.l_linger == 0 &&
+		       (conn->state == TCP_ESTABLISHED ||
+			conn->state == TCP_SYN_RECEIVED ||
+			conn->state == TCP_CLOSE_WAIT);
+#endif /* CONFIG_NET_CONTEXT_LINGER */
+
+	if (linger_abort) {
+		NET_DBG("[%p] Aborting connection (SO_LINGER)", conn);
+
+		k_work_cancel_delayable(&conn->send_data_timer);
+		keep_alive_timer_stop(conn);
+
+		tcp_out(conn, RST);
+
+		/* An established connection holds two references. Like the
+		 * graceful close path below, this falls through to the common
+		 * tcp_conn_unref() at the end: tcp_conn_close() drops one
+		 * reference and the common epilogue drops the other, fully
+		 * releasing the (immediately closed) connection.
+		 */
+		tcp_conn_close(conn, -ECONNRESET);
+	} else if (conn->state == TCP_ESTABLISHED ||
+		   conn->state == TCP_SYN_RECEIVED) {
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+		/* SO_LINGER with a non-zero timeout: arm a timer that aborts
+		 * the connection with a RST if the graceful close does not
+		 * complete within the linger period. The timer is cancelled
+		 * once the connection is released (tcp_conn_release()).
+		 */
+		if (context->options.linger.l_onoff != 0 &&
+		    context->options.linger.l_linger > 0) {
+			k_work_reschedule_for_queue(
+				&tcp_work_q, &conn->linger_timer,
+				K_SECONDS(context->options.linger.l_linger));
+		}
+#endif /* CONFIG_NET_CONTEXT_LINGER */
+
 		/* Send all remaining data if possible. */
 		if (conn->send_data_total > 0) {
 			NET_DBG("[%p] pending %zu bytes", conn,
@@ -4635,7 +4724,7 @@ uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 
 #if defined(CONFIG_NET_TEST)
 struct testing_user_data {
-	struct net_sockaddr remote;
+	struct net_sockaddr_storage remote;
 	uint16_t mtu;
 };
 
@@ -4643,9 +4732,9 @@ static void testing_find_conn(struct tcp *conn, void *user_data)
 {
 	struct testing_user_data *data = user_data;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && data->remote.sa_family == NET_AF_INET6 &&
+	if (IS_ENABLED(CONFIG_NET_IPV6) && data->remote.ss_family == NET_AF_INET6 &&
 	    net_ipv6_addr_cmp(&conn->dst.sin6.sin6_addr,
-			      &net_sin6(&data->remote)->sin6_addr)) {
+			      &net_sin6(net_sad(&data->remote))->sin6_addr)) {
 		if (data->mtu > 0) {
 			/* Set it only once */
 			return;
@@ -4657,9 +4746,9 @@ static void testing_find_conn(struct tcp *conn, void *user_data)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && data->remote.sa_family == NET_AF_INET &&
+	if (IS_ENABLED(CONFIG_NET_IPV4) && data->remote.ss_family == NET_AF_INET &&
 	    net_ipv4_addr_cmp(&conn->dst.sin.sin_addr,
-			      &net_sin(&data->remote)->sin_addr)) {
+			      &net_sin(net_sad(&data->remote))->sin_addr)) {
 		if (data->mtu > 0) {
 			/* Set it only once */
 			return;
@@ -4675,9 +4764,21 @@ static void testing_find_conn(struct tcp *conn, void *user_data)
 uint16_t net_tcp_get_mtu(struct net_sockaddr *dst)
 {
 	struct testing_user_data data = {
-		.remote = *dst,
 		.mtu = 0,
 	};
+	size_t addrlen;
+
+	/* Copy only the family-specific portion of the address. The caller
+	 * may pass a pointer to a net_sockaddr_in / net_sockaddr_in6, which is
+	 * smaller than the generic struct net_sockaddr, so copying the whole
+	 * struct would read past the end of the caller's object.
+	 */
+	addrlen = net_family2size(dst->sa_family);
+	if (addrlen == 0) {
+		return 0;
+	}
+
+	memcpy(&data.remote, dst, addrlen);
 
 	net_tcp_foreach(testing_find_conn, &data);
 
@@ -4912,6 +5013,6 @@ void net_tcp_init(void)
 		tcp_max_timeout_ms += tcp_max_timeout_ms >> 1;
 	}
 
-	k_thread_name_set(&tcp_work_q.thread, "tcp_work");
-	NET_DBG("Workq started. Thread ID: %p", &tcp_work_q.thread);
+	k_thread_name_set(tcp_work_q.thread_id, "tcp_work");
+	NET_DBG("Workq started. Thread ID: %p", tcp_work_q.thread_id);
 }

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for Bluetooth Mesh Bridge Configuration common definitions.
+ * @ingroup bt_mesh_brg_cfg
+ */
+
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_BRG_CFG_H__
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_BRG_CFG_H__
 

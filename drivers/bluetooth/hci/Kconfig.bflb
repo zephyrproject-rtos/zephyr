@@ -118,10 +118,16 @@ config BFLB_BL70X_BLE_EM_16K
 	  Only needed for the m16s1 variant.
 
 # ACL packet count the selected variant reports in LE Read Buffer Size
-config BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_ACL_TX_COUNT
 	default 16 if BFLB_BL70X_BLE_M16S1
 	default 10 if BFLB_BL70X_BLE_M0S1T10
 	default 2
+
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_EVT_RX_COUNT
+	default 17 if BFLB_BL70X_BLE_M16S1
+	default 11 if BFLB_BL70X_BLE_M0S1T10
+	default 3
 
 endif # BT_BFLB_BL70X
 
@@ -145,9 +151,14 @@ config BFLB_BL60X_BLE_M8S1
 endchoice
 
 # ACL packet count the selected variant reports in LE Read Buffer Size
-config BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_ACL_TX_COUNT
 	default 8 if BFLB_BL60X_BLE_M8S1
 	default 2
+
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_EVT_RX_COUNT
+	default 9 if BFLB_BL60X_BLE_M8S1
+	default 3
 
 endif # BT_BFLB_BL60X
 
@@ -262,12 +273,20 @@ config BFLB_BL70XL_BLE_EM_16K
 	  Only needed for the m8s1p variant (8 connections).
 
 # ACL packet count the selected variant reports in LE Read Buffer Size
-config BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_ACL_TX_COUNT
 	default 8 if BFLB_BL70XL_BLE_M8S1P
 	default 6 if BFLB_BL70XL_BLE_M0S4P || BFLB_BL70XL_BLE_M4S1P
 	default 5 if BFLB_BL70XL_BLE_M0S1RP
 	default 4 if BFLB_BL70XL_BLE_M0S2P || BFLB_BL70XL_BLE_M2S1P
 	default 2
+
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_EVT_RX_COUNT
+	default 9 if BFLB_BL70XL_BLE_M8S1P
+	default 7 if BFLB_BL70XL_BLE_M0S4P || BFLB_BL70XL_BLE_M4S1P
+	default 6 if BFLB_BL70XL_BLE_M0S1RP
+	default 5 if BFLB_BL70XL_BLE_M0S2P || BFLB_BL70XL_BLE_M2S1P
+	default 3
 
 endif # BT_BFLB_BL70XL
 
@@ -309,9 +328,14 @@ config BFLB_BL61X_BLE_1M2S1BREDR1
 endchoice
 
 # ACL packet count the selected variant reports in LE Read Buffer Size
-config BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_ACL_TX_COUNT
 	default 10 if BFLB_BL61X_BLE_1M10S1
 	default 4
+
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+configdefault BT_BUF_EVT_RX_COUNT
+	default 11 if BFLB_BL61X_BLE_1M10S1
+	default 5
 
 config BFLB_BL61X_BLE_EM_64K
 	bool "Use 64 KB exchange memory (required for BR/EDR)"
@@ -320,13 +344,5 @@ config BFLB_BL61X_BLE_EM_64K
 	  Reserve 64 KB of WRAM for BLE exchange memory instead of the
 	  default 32 KB. Required for the BR/EDR variant. The board DTS
 	  must include bl61x_em_64kb.dtsi instead of bl61x_em_32kb.dtsi.
-
-config BFLB_BL61X_WL_RMEM_SIZE
-	int "PHY/RF retention memory size (bytes)"
-	default 8192
-	help
-	  Size in bytes of the static buffer passed to wl_cfg_get() for
-	  PHY/RF calibration data. The buffer persists for the lifetime
-	  of the application. 8192 matches the Bouffalo SDK default.
 
 endif # BT_BFLB_BL61X

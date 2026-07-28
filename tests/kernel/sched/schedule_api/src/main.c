@@ -38,7 +38,7 @@ static void *threads_scheduling_tests_setup(void)
 /**
  * @brief Test scheduling
  *
- * @defgroup kernel_sched_tests Scheduling Tests
+ * @defgroup tests_kernel_sched Scheduling tests
  *
  * @ingroup all_tests
  *

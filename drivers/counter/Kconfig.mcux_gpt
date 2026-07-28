@@ -8,5 +8,7 @@ config COUNTER_MCUX_GPT
 	default y
 	depends on DT_HAS_NXP_IMX_GPT_ENABLED
 	select KERNEL_DIRECT_MAP if MMU
+	select COUNTER_SUPPORTS_CAPTURE
+	select PINCTRL if COUNTER_CAPTURE
 	help
 	  Enable support for mcux General Purpose Timer (GPT) driver.

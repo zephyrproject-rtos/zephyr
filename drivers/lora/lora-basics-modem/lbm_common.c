@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Embeint Inc
+ * Copyright (c) 2026 Jakub Rzeszutko <jakub.rzeszutko@verkada.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +60,12 @@ static bool modem_release(const struct device *dev)
 	if (!atomic_cas(&data->modem_state, STATE_BUSY, STATE_CLEANUP)) {
 		return false;
 	}
+
+	/* Disable DIO1 interrupt immediately so no new work items are scheduled
+	 * while the chip is transitioning to sleep. Any work item already queued
+	 * will find MODE_SLEEP and return early without touching the hardware.
+	 */
+	lbm_optional_dio1_irq_configure_dt(&config->dio1, GPIO_INT_DISABLE);
 
 	/* Configure modem for sleep */
 	lbm_driver_antenna_configure(dev, MODE_SLEEP);
@@ -241,6 +248,12 @@ int lbm_lora_send_async(const struct device *dev, uint8_t *msg, uint32_t msg_len
 		goto release;
 	}
 
+	/* Clear any stale IRQ flags and re-arm DIO1 before starting TX so that
+	 * the TX-done interrupt is delivered.
+	 */
+	(void)ral_clear_irq_status(&config->ralf.ral, RAL_IRQ_ALL);
+	lbm_optional_dio1_irq_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
+
 	/* Start the transmission */
 	status = ral_set_tx(&config->ralf.ral);
 	if (status != RAL_STATUS_OK) {
@@ -316,6 +329,12 @@ int lbm_lora_recv(const struct device *dev, uint8_t *msg, uint8_t msg_len, k_tim
 	lbm_driver_antenna_configure(dev, MODE_RX);
 	data->modem_mode = MODE_RX;
 
+	/* Clear any stale IRQ flags from the previous operation, then re-arm
+	 * DIO1 so the RX-done interrupt is delivered.
+	 */
+	(void)ral_clear_irq_status(&config->ralf.ral, RAL_IRQ_ALL);
+	lbm_optional_dio1_irq_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
+
 	/* Start the reception in continuous mode.
 	 * Receive timeouts are handled by the k_poll timeout.
 	 * In theory we should be able to use the one-shot mode here and transition
@@ -387,6 +406,12 @@ int lbm_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user_da
 	/* Store user state */
 	data->rx_state.async.rx_cb = cb;
 	data->rx_state.async.user_data = user_data;
+
+	/* Clear any stale IRQ flags from the previous operation, then re-arm
+	 * DIO1 so packet-received interrupts are delivered.
+	 */
+	(void)ral_clear_irq_status(&config->ralf.ral, RAL_IRQ_ALL);
+	lbm_optional_dio1_irq_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
 
 	/* Start the reception in continuous mode */
 	status = ral_set_rx(&config->ralf.ral, RAL_RX_TIMEOUT_CONTINUOUS_MODE);
@@ -529,7 +554,10 @@ static void op_done_work_handler(struct k_work *work)
 
 	switch (data->modem_mode) {
 	case MODE_SLEEP:
-		LOG_WRN("Unexpected modem mode (%d)", data->modem_mode);
+		/* DIO1 was disabled by modem_release() before the chip went to
+		 * sleep. This work item was already queued when DIO1 fired. The
+		 * modem is now idle, just return without touching the hardware.
+		 */
 		return;
 	case MODE_TX:
 	case MODE_CW:
@@ -558,6 +586,15 @@ static void op_done_work_handler(struct k_work *work)
 	case MODE_CAD:
 		LOG_DBG("CAD complete (TBC)");
 		break;
+	}
+
+	/* The async RX callback above may have stopped reception by calling
+	 * lora_recv_async(dev, NULL, NULL). In that case modem_release() has
+	 * already disabled DIO1 and put the chip to sleep, so accessing the
+	 * hardware here would needlessly wake it again. Nothing left to do.
+	 */
+	if (data->modem_mode == MODE_SLEEP) {
+		return;
 	}
 
 	/* Get and reset the current IRQ state */

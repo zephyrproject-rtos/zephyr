@@ -17,3 +17,6 @@ CONFIG_UART_CONSOLE=y
 # Enable system clock controller driver
 CONFIG_CLOCK_CONTROL=y
 CONFIG_CLOCK_CONTROL_NUMICRO_M4_SCC=y
+
+# Enable hex output for openocd
+CONFIG_BUILD_OUTPUT_HEX=y

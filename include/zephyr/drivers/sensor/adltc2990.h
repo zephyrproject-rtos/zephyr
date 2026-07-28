@@ -15,7 +15,7 @@
 /**
  * @brief Analog Devices ADLTC2990 Quad I2C Voltage, Current and Temperature Monitor
  * @defgroup adltc2990_interface ADLTC2990
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_adi
  * @{
  */
 

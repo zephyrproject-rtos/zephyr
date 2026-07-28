@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm/armv7-m.dtsi>
 #include <adi/max32/max32xxx.dtsi>
 #include <zephyr/dt-bindings/dma/max78000_dma.h>
 
@@ -67,6 +66,12 @@
 /* MAX78000 extra peripherals. */
 / {
 	soc {
+		/* SRAM2 and SRAM3 accessible to either core */
+		sram2: memory@20010000 {
+			compatible = "mmio-sram";
+			reg = <0x20010000 DT_SIZE_K(48)>;
+		};
+
 		sram3: memory@2001c000 {
 			compatible = "mmio-sram";
 			reg = <0x2001c000 DT_SIZE_K(16)>;

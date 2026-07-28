@@ -207,6 +207,8 @@ static inline int net_capture_send(const struct device *dev, struct net_if *ifac
 #endif
 }
 
+/** @endcond */
+
 /**
  * @brief Check if the network packet needs to be captured or not.
  *        This is called for every network packet being sent.
@@ -258,7 +260,7 @@ enum net_capture_packet_type {
 	NET_CAPTURE_OUTGOING,  /**< Packet was sent by us */
 };
 
-#define NET_CAPTURE_LL_ADDRLEN 8 /** Maximum length of a link-layer address */
+#define NET_CAPTURE_LL_ADDRLEN 8 /**< Maximum length of a link-layer address */
 
 /** The context information for cooked mode capture */
 struct net_capture_cooked {
@@ -333,12 +335,19 @@ static inline void net_capture_data(struct net_capture_cooked *ctx,
 }
 #endif
 
+/** @brief Network packet capture device information */
 struct net_capture_info {
+	/** The capture device */
 	const struct device *capture_dev;
+	/** Network interface where the network packets are captured */
 	struct net_if *capture_iface;
+	/** IPIP tunnel network interface where the captured packets are sent */
 	struct net_if *tunnel_iface;
+	/** Peer (inner) tunnel IP address */
 	struct net_sockaddr *peer;
+	/** Local (inner) tunnel IP address */
 	struct net_sockaddr *local;
+	/** Is the capture currently enabled */
 	bool is_enabled;
 };
 
@@ -369,8 +378,6 @@ static inline void net_capture_foreach(net_capture_cb_t cb, void *user_data)
 	ARG_UNUSED(user_data);
 }
 #endif
-
-/** @endcond */
 
 /**
  * @}

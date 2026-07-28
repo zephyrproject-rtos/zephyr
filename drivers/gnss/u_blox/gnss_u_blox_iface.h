@@ -52,7 +52,7 @@ struct u_blox_iface_data {
 };
 
 /**
- * @brief Initialize the UBX interface, modem backend, and register unsollicited messages.
+ * @brief Initialize the UBX interface, modem backend, and register unsolicited messages.
  *
  * Must be called before any other APIs can be used.
  *
@@ -69,7 +69,7 @@ int u_blox_iface_init(const struct device *dev, const struct modem_ubx_match *un
 		      size_t unsol_size, bool valset_supported);
 
 /**
- * @brief Send a UBX formated request and retrieve the response.
+ * @brief Send a UBX formatted request and retrieve the response.
  *
  * @param[in] dev		GNSS device instance.
  * @param[in] req		UBX request frame.
@@ -83,7 +83,7 @@ int u_blox_iface_msg_get(const struct device *dev, const struct ubx_frame *req,
 			 size_t len, void *rsp, size_t min_rsp_size);
 
 /**
- * @brief Send a UBX formated message
+ * @brief Send a UBX formatted message
  *
  * @param[in] dev		GNSS device instance.
  * @param[in] req		UBX request frame.

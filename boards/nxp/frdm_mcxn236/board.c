@@ -8,9 +8,12 @@
 #include <fsl_clock.h>
 #include <fsl_spc.h>
 #include <soc.h>
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+#include <fsl_vbat.h>
+#endif
 #if CONFIG_USB_DC_NXP_EHCI
-#include "usb_phy.h"
-#include "usb.h"
+#include <usb_phy.h>
+#include <usb.h>
 
 /* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL     (0x04U)
@@ -291,6 +294,9 @@ void board_early_init_hook(void)
 	CLOCK_SetupClockCtrl(kCLOCK_FRO12MHZ_ENA);
 #elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x1
 	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVsys);
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+	VBAT_EnableFRO16k(VBAT0, true);
+#endif
 #elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x2
 	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToVsys);
 #elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x3
@@ -311,11 +317,11 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Smartdma);
 	RESET_PeripheralReset(kSMART_DMA_RST_SHIFT_RSTn);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(video_sdma))
-	/* Drive CLKOUT from FRO12M, divided by 2 to yield 6MHz clock
+	/* Drive CLKOUT from FROHF 48M, divided by 2 to yield 24MHz clock
 	 * The camera will use this clock signal to generate
 	 * PCLK, HSYNC, and VSYNC
 	 */
-	CLOCK_AttachClk(kFRO12M_to_CLKOUT);
+	CLOCK_AttachClk(kFRO_HF_to_CLKOUT);
 	CLOCK_SetClkDiv(kCLOCK_DivClkOut, 2U);
 #endif
 #endif

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "fsl_common.h"
+#include <fsl_common.h>
 
 /* Don't access system RAM when configuring PRAM FT_DIS.  */
 void enable_sram_extra_latency(bool en)

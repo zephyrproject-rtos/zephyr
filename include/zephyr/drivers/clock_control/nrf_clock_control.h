@@ -4,12 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Clock control definitions for Nordic nRF devices.
+ * @ingroup clock_control_nrf
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 
 #include <zephyr/device.h>
 #include <zephyr/sys/onoff.h>
 #include <zephyr/drivers/clock_control.h>
+
+/**
+ * @defgroup clock_control_nrf Nordic nRF
+ * @ingroup clock_control_interface_ext
+ * @{
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -21,43 +33,54 @@ extern "C" {
 
 /** @brief Clocks handled by the CLOCK peripheral.
  *
- * Enum shall be used as a sys argument in clock_control API.
+ * Used as the @c sys argument to the clock_control API.
  */
 enum clock_control_nrf_type {
-	CLOCK_CONTROL_NRF_TYPE_HFCLK,
-	CLOCK_CONTROL_NRF_TYPE_LFCLK,
+	CLOCK_CONTROL_NRF_TYPE_HFCLK, /**< High-frequency clock. */
+	CLOCK_CONTROL_NRF_TYPE_LFCLK, /**< Low-frequency clock. */
 #if NRF_CLOCK_HAS_HFCLK24M
-	CLOCK_CONTROL_NRF_TYPE_HFCLK24M,
+	CLOCK_CONTROL_NRF_TYPE_HFCLK24M, /**< 24 MHz high-frequency clock. */
 #endif
 #if NRF_CLOCK_HAS_HFCLK192M
-	CLOCK_CONTROL_NRF_TYPE_HFCLK192M,
+	CLOCK_CONTROL_NRF_TYPE_HFCLK192M, /**< 192 MHz high-frequency clock. */
 #endif
 #if NRF_CLOCK_HAS_HFCLKAUDIO
-	CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO,
+	CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO, /**< High-frequency audio clock. */
 #endif
-	CLOCK_CONTROL_NRF_TYPE_COUNT
+	CLOCK_CONTROL_NRF_TYPE_COUNT /**< Number of clock types. */
 };
 
-/* Define can be used with clock control API instead of enum directly to
- * increase code readability.
+/** @name Clock control subsystem identifiers
+ *
+ * These can be used with the clock control API instead of casting the
+ * @ref clock_control_nrf_type enumerators directly, to improve readability.
+ * @{
  */
+/** @brief High-frequency clock subsystem. */
 #define CLOCK_CONTROL_NRF_SUBSYS_HF \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK)
+/** @brief Low-frequency clock subsystem. */
 #define CLOCK_CONTROL_NRF_SUBSYS_LF \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK)
+/** @brief 24 MHz high-frequency clock subsystem. */
 #define CLOCK_CONTROL_NRF_SUBSYS_HF24M \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK24M)
+/** @brief 192 MHz high-frequency clock subsystem. */
 #define CLOCK_CONTROL_NRF_SUBSYS_HF192M \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK192M)
+/** @brief High-frequency audio clock subsystem. */
 #define CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO \
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO)
+/** @} */
 
 /** @brief LF clock start modes. */
 enum nrf_lfclk_start_mode {
-	CLOCK_CONTROL_NRF_LF_START_NOWAIT,
-	CLOCK_CONTROL_NRF_LF_START_AVAILABLE,
-	CLOCK_CONTROL_NRF_LF_START_STABLE,
+	CLOCK_CONTROL_NRF_LF_START_NOWAIT,    /**< Return without waiting for the clock. */
+	CLOCK_CONTROL_NRF_LF_START_AVAILABLE, /**< Wait until the clock is available. */
+	CLOCK_CONTROL_NRF_LF_START_STABLE,    /**< Wait until the clock is stable. */
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Define 32KHz clock source */
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC
@@ -173,26 +196,39 @@ void z_nrf_clock_bt_ctlr_hf_release(void);
  */
 uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
 
+/** @endcond */
+
 #endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
 
-/* Specifies to use the maximum available frequency for a given clock. */
+/** @brief Specifies to use the maximum available frequency for a given clock. */
 #define NRF_CLOCK_CONTROL_FREQUENCY_MAX UINT32_MAX
 
-/* Specifies to use the maximum available accuracy for a given clock. */
+/** @brief Specifies to use the maximum available accuracy for a given clock. */
 #define NRF_CLOCK_CONTROL_ACCURACY_MAX      1
-/* Specifies the required clock accuracy in parts-per-million. */
+/** @brief Specifies the required clock accuracy in parts-per-million. */
 #define NRF_CLOCK_CONTROL_ACCURACY_PPM(ppm) (ppm)
 
-/* Specifies that high precision of the clock is required. */
+/** @brief Specifies that high precision of the clock is required. */
 #define NRF_CLOCK_CONTROL_PRECISION_HIGH    1
-/* Specifies that default precision of the clock is sufficient. */
+/** @brief Specifies that default precision of the clock is sufficient. */
 #define NRF_CLOCK_CONTROL_PRECISION_DEFAULT 0
 
-/* AUXPLL devicetree takes in raw register values, these are the actual frequencies outputted */
+/** @name AUXPLL output frequencies
+ *
+ * The AUXPLL Devicetree takes in raw register values; these are the actual output frequencies.
+ * @{
+ */
+/** @brief Minimum AUXPLL output frequency, in Hz. */
 #define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_MIN_HZ        80000000
+/** @brief AUXPLL output frequency for 44.1 kHz audio, in Hz. */
 #define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_44K1_HZ 11289591
+/** @brief AUXPLL output frequency for 24 MHz USB, in Hz. */
 #define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_USB24M_HZ     24000000
+/** @brief AUXPLL output frequency for 48 kHz audio, in Hz. */
 #define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_48K_HZ  12287963
+/** @} */
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Internal helper macro to map DT property value to output frequency */
 #define _CLOCK_CONTROL_NRF_AUXPLL_MAP_FREQ(freq_val)			  \
@@ -205,7 +241,14 @@ uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
 	 (freq_val) == NRF_AUXPLL_FREQ_DIV_AUDIO_48K ?			  \
 		       CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_48K_HZ : 0)
 
-/* Public macro to get output frequency of AUXPLL */
+/** @endcond */
+
+/**
+ * @brief Get the output frequency of an AUXPLL Devicetree node.
+ *
+ * @param node Devicetree node identifier of the AUXPLL.
+ * @return Output frequency in Hz, or 0 if the node has no @c nordic,frequency property.
+ */
 #define CLOCK_CONTROL_NRF_AUXPLL_GET_FREQ(node) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node, nordic_frequency), \
 		(_CLOCK_CONTROL_NRF_AUXPLL_MAP_FREQ(DT_PROP(node, nordic_frequency))), \
@@ -428,5 +471,7 @@ void nrf_clock_control_hfxo_release(void);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_ */

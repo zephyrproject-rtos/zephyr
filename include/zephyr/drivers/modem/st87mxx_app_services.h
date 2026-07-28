@@ -5,15 +5,24 @@
  */
 
 /**
- * @file
- * @brief ST87Mxx application services public API.
+ * @file st87mxx_app_services.h
+ * @brief Header file for extended cellular API of ST87Mxx modems
+ * @ingroup st87mxx_interface
  */
 
 #ifndef STM87MXX_APP_SRV_H
 #define STM87MXX_APP_SRV_H
 
 /**
+ * @defgroup st87mxx_interface ST87Mxx
+ * @brief STMicroelectronics ST87Mxx cellular modems
+ * @ingroup cellular_interface_ext
+ * @{
+ */
+
+/**
  * @defgroup st87mxx_constants ST87Mxx Constants
+ * @ingroup st87mxx_interface
  * @{
  */
 
@@ -24,6 +33,7 @@
 
 /**
  * @defgroup st87mxx_gnss_configuration GNSS configuration
+ * @ingroup st87mxx_interface
  * @{
  */
 
@@ -73,6 +83,7 @@
 
 /**
  * @defgroup st87mxx_wscan_configuration WIFI scanning configuration
+ * @ingroup st87mxx_interface
  * @{
  */
 
@@ -238,5 +249,7 @@ int st87mxx_getrssi(st87mxx_get_rssi_callback_t *get_rssi_callback_func);
  * @retval State of the current sequence
  */
 sequence_state st87mxx_app_services_getstate(void);
+
+/** @} */
 
 #endif /* STM87MXX_APP_SRV_H */

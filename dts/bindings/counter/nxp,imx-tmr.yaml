@@ -59,7 +59,7 @@ properties:
   secondary-source:
     type: string
     description: Secondary source of the timer, see qtmr_input_source_t enumerator type
-      of the MCUXpresso SDK
+      of the MCUXpresso SDK. This source is also used as the counter capture input.
     enum:
       - "kQTMR_Counter0InputPin"
       - "kQTMR_Counter1InputPin"
@@ -77,3 +77,7 @@ properties:
   freq:
     type: int
     description: clock frequency (only used for external clock sources)
+
+counter-capture-cells:
+  - channel
+  - flags

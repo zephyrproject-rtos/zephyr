@@ -1263,7 +1263,7 @@ static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max)
 
 	} else if (lll_iso->bis_spacing >=
 		   (lll_iso->sub_interval * lll_iso->nse)) {
-		/* Time reservation omitting PTC subevents in sequetial
+		/* Time reservation omitting PTC subevents in sequential
 		 * packing.
 		 */
 		time_us = pdu_spacing * ((lll_iso->nse * lll_iso->num_bis) -

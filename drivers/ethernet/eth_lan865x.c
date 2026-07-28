@@ -454,7 +454,6 @@ static int lan865x_port_send(const struct device *dev, struct net_pkt *pkt)
 	k_sem_give(&ctx->tx_rx_sem);
 	if (ret < 0) {
 		LOG_ERR("TX transmission error, %d", ret);
-		eth_stats_update_errors_tx(net_pkt_iface(pkt));
 		return ret;
 	}
 

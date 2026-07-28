@@ -233,6 +233,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x48000000 0x2000>;
+			ranges;
 
 			gpioa: gpio@48000000 {
 				compatible = "st,stm32-gpio";
@@ -568,7 +569,7 @@
 			status = "disabled";
 		};
 
-		aes1: aes@50060000 {
+		aes1: crypto@50060000 {
 			compatible = "st,stm32-aes";
 			reg = <0x50060000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
@@ -581,6 +582,7 @@
 			compatible = "st,stm32-vrefbuf";
 			reg = <0x40010030 0xd0>;
 			ref-voltages = <2048000>, <2500000>;
+			st,has-active-scale-change;
 			status = "disabled";
 		};
 

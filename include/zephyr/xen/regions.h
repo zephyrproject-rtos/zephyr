@@ -6,58 +6,85 @@
 
 /**
  * @file
- * @brief Xen extended regions interface
- *
- * This file provides the interface for managing Xen extended regions,
- * including allocation, freeing pages, and mapping/unmapping extended
- * regions memory.
+ * @brief Xen extended region management.
+ * @ingroup xen_regions
  */
 
 #ifndef ZEPHYR_INCLUDE_XEN_REGIONS_H_
 #define ZEPHYR_INCLUDE_XEN_REGIONS_H_
 
+#include <stdbool.h>
+#include <stddef.h>
+
 /**
- * Checks if the provided address belongs to the Xen extended regions
+ * @defgroup xen_regions Xen extended regions
+ * @ingroup xen_support
+ * @brief Allocate, free, and map buffers from Xen extended memory regions.
+ * @{
+ */
+
+/**
+ * @brief Check whether an address belongs to a configured extended region.
  *
- * @param ptr the address/pointer to be checked
- * @return true if the address is located within an extended region
- * @return false if the address is outside all extended regions or if ptr is NULL
+ * @kconfig_dep{CONFIG_XEN_REGIONS}
+ *
+ * @param ptr Address to test.
+ *
+ * @retval true @p ptr is inside one of the configured extended regions.
+ * @retval false @p ptr is ``NULL`` or outside all configured extended regions.
  */
 bool xen_region_is_addr_extreg(void *ptr);
 
 /**
- * Allocate pages from the extended regions
+ * @brief Allocate one or more contiguous pages from an extended region.
  *
- * @param nr_pages number of pages to be allocated
- * @return pointer to the allocated pages
+ * @kconfig_dep{CONFIG_XEN_REGIONS}
+ *
+ * @param nr_pages Number of Xen pages to allocate.
+ *
+ * @return Base address of the allocated range, or ``NULL`` if no region can satisfy the request.
  */
 void *xen_region_get_pages(size_t nr_pages);
 
 /**
- * Free pages on extended regions
+ * @brief Release pages previously allocated from an extended region.
  *
- * @param ptr pointer to the pages, allocated by xen_region_get_pages call
- * @param nr_pages number of pages that were allocated
- * @return zero on success, non-zero on failure
+ * @kconfig_dep{CONFIG_XEN_REGIONS}
+ *
+ * @param ptr Base address returned by xen_region_get_pages().
+ * @param nr_pages Number of pages to release.
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EIO @p ptr does not belong to a known extended region.
  */
 int xen_region_put_pages(void *ptr, size_t nr_pages);
 
 /**
- * Map extended region memory
+ * @brief Map an extended-region buffer into the kernel address space.
  *
- * @param ptr pointer to the pages, allocated by xen_region_get_pages call
- * @param nr_pages number of pages that should be mapped
- * @return zero on success, non-zero on failure
+ * @kconfig_dep{CONFIG_XEN_REGIONS}
+ *
+ * @param ptr Base address of the extended-region buffer.
+ * @param nr_pages Number of pages to map.
+ *
+ * @retval 0 on success.
+ * @retval -EFAULT @p ptr does not belong to an extended region.
  */
 int xen_region_map(void *ptr, size_t nr_pages);
 
 /**
- * Unmap extended region memory
+ * @brief Unmap an extended-region buffer from the kernel address space.
  *
- * @param ptr pointer to the pages, allocated by xen_region_get_pages call
- * @param nr_pages number of pages that should be unmapped
- * @return zero on success, non-zero on failure
+ * @kconfig_dep{CONFIG_XEN_REGIONS}
+ *
+ * @param ptr Base address of the extended-region buffer.
+ * @param nr_pages Number of pages to unmap.
+ *
+ * @retval 0 on success.
+ * @retval -EFAULT @p ptr does not belong to an extended region.
  */
 int xen_region_unmap(void *ptr, size_t nr_pages);
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_XEN_REGIONS_H_ */

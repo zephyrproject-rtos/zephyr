@@ -63,6 +63,13 @@ config SSH_SERVER_MAX_CLIENTS
 	int "SSH Server max clients (per server)"
 	default 1
 
+config ZVFS_EVENTFD_ADD_SIZE_SSH_SERVER
+	int "Number of eventfds needed by the SSH server"
+	default SSH_SERVER_MAX_SERVERS
+	help
+	  Each SSH server instance allocates one zvfs eventfd to wake up its
+	  poll loop.
+
 endif
 
 if SSH_CLIENT
@@ -70,6 +77,13 @@ if SSH_CLIENT
 config SSH_CLIENT_MAX_CLIENTS
 	int "SSH Client max instances"
 	default 1
+
+config ZVFS_EVENTFD_ADD_SIZE_SSH_CLIENT
+	int "Number of eventfds needed by the SSH client"
+	default SSH_CLIENT_MAX_CLIENTS
+	help
+	  Each SSH client instance allocates one zvfs eventfd to wake up its
+	  poll loop.
 
 endif
 

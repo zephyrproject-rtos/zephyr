@@ -25,20 +25,6 @@ LOG_MODULE_REGISTER(rv3032, CONFIG_RTC_LOG_LEVEL);
 #define RV3032_EEPROM_CLKOUT2_FD_64HZ    0x2
 #define RV3032_EEPROM_CLKOUT2_FD_1HZ     0x3
 
-#define RV3032_BSM_DISABLED 0x0
-#define RV3032_BSM_DIRECT   0x1
-#define RV3032_BSM_LEVEL    0x2
-
-#define RV3032_TCM_DISABLED 0x0
-#define RV3032_TCM_1750MV   0x1
-#define RV3032_TCM_3000MV   0x2
-#define RV3032_TCM_4500MV   0x3
-
-#define RV3032_TCR_600_OHM   0x0
-#define RV3032_TCR_2000_OHM  0x1
-#define RV3032_TCR_7000_OHM  0x2
-#define RV3032_TCR_12000_OHM 0x3
-
 /* CLKOUT frequency constants */
 #define RV3032_CLKOUT_FREQ_1HZ     1U
 #define RV3032_CLKOUT_FREQ_64HZ    64U
@@ -47,20 +33,6 @@ LOG_MODULE_REGISTER(rv3032, CONFIG_RTC_LOG_LEVEL);
 #define RV3032_CLKOUT_FREQ_HF_MIN  8192U
 #define RV3032_CLKOUT_FREQ_HF_MAX  67108864U
 #define RV3032_CLKOUT_FREQ_HF_STEP 8192U
-
-#define RV3032_EEPROM_CMD_INIT    0x00
-#define RV3032_EEPROM_CMD_UPDATE  0x11
-#define RV3032_EEPROM_CMD_REFRESH 0x12
-#define RV3032_EEPROM_CMD_WRITE   0x21
-#define RV3032_EEPROM_CMD_READ    0x22
-
-/* RV3032 EEPROM timing from datasheet */
-#define RV3032_EEBUSY_READ_POLL_MS  2   /* tREAD = ~1.1ms, poll every 2ms */
-#define RV3032_EEBUSY_WRITE_POLL_MS 5   /* tWRITE = ~4.8ms, poll every 5ms */
-#define RV3032_EEBUSY_TIMEOUT_MS    100 /* Max wait for any EEPROM operation */
-
-/* Recommended pre-refresh time before reading the time registers */
-#define RV3032_POR_REFRESH_TIME_MS 66 /* tPREFR = ~66ms */
 
 /* Number of nanoseconds per 1/100th of a second */
 #define RV3032_NSEC_PER_100TH_SECOND 10000000L
@@ -77,7 +49,6 @@ LOG_MODULE_REGISTER(rv3032, CONFIG_RTC_LOG_LEVEL);
 
 struct rv3032_config {
 	const struct device *mfd;
-	uint8_t backup;
 	uint32_t clkout_freq;
 };
 
@@ -107,153 +78,6 @@ static void rv3032_unlock_sem(const struct device *dev)
 	struct rv3032_data *data = dev->data;
 
 	k_sem_give(&data->lock);
-}
-
-
-static int rv3032_eeprom_wait_busy(const struct device *dev, int poll_ms)
-{
-	const struct rv3032_config *config = dev->config;
-	uint8_t status = 0;
-	int err;
-	int64_t timeout_time = k_uptime_get() + RV3032_EEBUSY_TIMEOUT_MS;
-
-	/* Wait while the EEPROM is busy */
-	for (;;) {
-		err = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_TEMPERATURE_LSB, &status);
-		if (err) {
-			return err;
-		}
-
-		if (!(status & RV3032_TEMPERATURE_EEBUSY)) {
-			break;
-		}
-
-		if (k_uptime_get() > timeout_time) {
-			return -ETIME;
-		}
-
-		k_msleep(poll_ms);
-	}
-
-	return 0;
-}
-
-static int rv3032_exit_eerd(const struct device *dev)
-{
-	const struct rv3032_config *config = dev->config;
-
-	return mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL1, RV3032_CONTROL1_EERD, 0);
-}
-
-static int rv3032_enter_eerd(const struct device *dev)
-{
-	const struct rv3032_config *config = dev->config;
-	uint8_t ctrl1;
-	bool eerd;
-	int ret;
-
-	ret = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_CONTROL1, &ctrl1);
-	if (ret) {
-		return ret;
-	}
-
-	eerd = ctrl1 & RV3032_CONTROL1_EERD;
-	if (eerd) {
-		return 0;
-	}
-
-	ret = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL1, RV3032_CONTROL1_EERD,
-				 RV3032_CONTROL1_EERD);
-
-	if (ret) {
-		return ret;
-	}
-
-	ret = rv3032_eeprom_wait_busy(dev, RV3032_EEBUSY_WRITE_POLL_MS);
-	if (ret) {
-		rv3032_exit_eerd(dev);
-		return ret;
-	}
-
-	return ret;
-}
-
-static int rv3032_eeprom_command(const struct device *dev, uint8_t command)
-{
-	const struct rv3032_config *config = dev->config;
-	int err;
-
-	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_EEPROM_COMMAND, RV3032_EEPROM_CMD_INIT);
-	if (err) {
-		return err;
-	}
-
-	return mfd_rv3032_write_reg8(config->mfd, RV3032_REG_EEPROM_COMMAND, command);
-}
-
-static int rv3032_update(const struct device *dev)
-{
-	int err;
-
-	err = rv3032_eeprom_command(dev, RV3032_EEPROM_CMD_UPDATE);
-	if (err) {
-		goto exit_eerd;
-	}
-
-	err = rv3032_eeprom_wait_busy(dev, RV3032_EEBUSY_WRITE_POLL_MS);
-
-exit_eerd:
-	rv3032_exit_eerd(dev);
-
-	return err;
-}
-
-static int rv3032_refresh(const struct device *dev)
-{
-	int err;
-
-	err = rv3032_eeprom_command(dev, RV3032_EEPROM_CMD_REFRESH);
-	if (err) {
-		goto exit_eerd;
-	}
-
-	err = rv3032_eeprom_wait_busy(dev, RV3032_EEBUSY_READ_POLL_MS);
-
-exit_eerd:
-	rv3032_exit_eerd(dev);
-
-	return err;
-}
-
-static int rv3032_update_cfg(const struct device *dev, uint8_t addr, uint8_t mask, uint8_t val)
-{
-	const struct rv3032_config *config = dev->config;
-	uint8_t val_old;
-	uint8_t val_new;
-	int err;
-
-	err = mfd_rv3032_read_reg8(config->mfd, addr, &val_old);
-	if (err) {
-		return err;
-	}
-
-	val_new = (val_old & ~mask) | (val & mask);
-	if (val_new == val_old) {
-		return 0;
-	}
-
-	err = rv3032_enter_eerd(dev);
-	if (err) {
-		return err;
-	}
-
-	err = mfd_rv3032_write_reg8(config->mfd, addr, val_new);
-	if (err) {
-		rv3032_exit_eerd(dev);
-		return err;
-	}
-
-	return rv3032_update(dev);
 }
 
 static int rv3032_configure_clkout(const struct device *dev, uint32_t freq)
@@ -317,37 +141,28 @@ static int rv3032_configure_clkout(const struct device *dev, uint32_t freq)
 	}
 
 	/* Configure PMU register NCLKE bit */
-	err = rv3032_update_cfg(dev, RV3032_REG_EEPROM_PMU, RV3032_EEPROM_PMU_NCLKE, pmu_reg);
+	err = mfd_rv3032_update_cfg(config->mfd, RV3032_REG_EEPROM_PMU, RV3032_EEPROM_PMU_NCLKE,
+				    pmu_reg);
 	if (err) {
 		LOG_ERR("Failed to configure PMU NCLKE: %d", err);
 		return err;
 	}
 
-	/* Configure CLKOUT registers - write C2h and C3h separately */
-	err = rv3032_enter_eerd(dev);
-	if (err) {
-		return err;
-	}
-
 	/* Write EEPROM Clkout 1 (C2h) */
-	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_EEPROM_CLKOUT1, clkout1_reg);
+	err = mfd_rv3032_update_cfg(config->mfd, RV3032_REG_EEPROM_CLKOUT1,
+				    RV3032_EEPROM_CLKOUT1_HFD_LOW, clkout1_reg);
 	if (err) {
-		rv3032_exit_eerd(dev);
 		LOG_ERR("Failed to configure CLKOUT1 register: %d", err);
 		return err;
 	}
 
 	/* Write EEPROM Clkout 2 (C3h) */
-	err = mfd_rv3032_write_reg8(config->mfd, RV3032_REG_EEPROM_CLKOUT2, clkout2_reg);
+	err = mfd_rv3032_update_cfg(config->mfd, RV3032_REG_EEPROM_CLKOUT2,
+				    RV3032_EEPROM_CLKOUT2_OS | RV3032_EEPROM_CLKOUT2_FD |
+					    RV3032_EEPROM_CLKOUT2_HFD_HIGH,
+				    clkout2_reg);
 	if (err) {
-		rv3032_exit_eerd(dev);
 		LOG_ERR("Failed to configure CLKOUT2 register: %d", err);
-		return err;
-	}
-
-	err = rv3032_update(dev);
-	if (err) {
-		LOG_ERR("Failed to update CLKOUT configuration: %d", err);
 		return err;
 	}
 
@@ -690,15 +505,6 @@ static int rv3032_init(const struct device *dev)
 
 	k_sem_init(&data->lock, 1, 1);
 
-	/* Wait for RV3032 EEPROM refresh to complete after cold boot */
-	/* According to datasheet: tPREFR = ~66ms for automatic EEPROM refresh at POR */
-	/* During this time, all I2C communication will fail, so we must wait */
-	int64_t remaining_time_ms = RV3032_POR_REFRESH_TIME_MS - k_uptime_get();
-
-	if (remaining_time_ms > 0) {
-		k_sleep(K_MSEC(remaining_time_ms));
-	}
-
 	/* Now read status register */
 	err = mfd_rv3032_read_reg8(config->mfd, RV3032_REG_STATUS, &val);
 	if (err) {
@@ -711,25 +517,15 @@ static int rv3032_init(const struct device *dev)
 	}
 
 	/* Refresh the settings in the RAM with the settings from the EEPROM */
-	err = rv3032_enter_eerd(dev);
+	err = mfd_rv3032_enter_eerd(config->mfd);
 	if (err) {
 		LOG_ERR("Failed to enter EERD mode: %d", err);
 		return err;
 	}
 
-	err = rv3032_refresh(dev);
+	err = mfd_rv3032_eeprom_refresh(config->mfd);
 	if (err) {
 		LOG_ERR("Failed to refresh EEPROM settings: %d", err);
-		return err;
-	}
-
-	/* Configure the EEPROM PMU register */
-	err = rv3032_update_cfg(dev, RV3032_REG_EEPROM_PMU,
-				RV3032_EEPROM_PMU_TCR | RV3032_EEPROM_PMU_TCM |
-					RV3032_EEPROM_PMU_BSM,
-				config->backup);
-	if (err) {
-		LOG_ERR("Failed to configure PMU register: %d", err);
 		return err;
 	}
 
@@ -749,7 +545,7 @@ static int rv3032_init(const struct device *dev)
 	if (status & RV3032_STATUS_PORF) {
 		/* Disable the alarms */
 		err = mfd_rv3032_update_reg8(config->mfd, RV3032_REG_CONTROL2,
-					 RV3032_CONTROL2_AIE | RV3032_CONTROL2_UIE, 0);
+					     RV3032_CONTROL2_AIE | RV3032_CONTROL2_UIE, 0);
 		if (err) {
 			return -ENODEV;
 		}
@@ -784,36 +580,6 @@ static DEVICE_API(rtc, rv3032_driver_api) = {
 #endif /* CONFIG_RTC_UPDATE */
 };
 
-#define RV3032_BSM_FROM_DT_INST(inst)                                                              \
-	UTIL_CAT(RV3032_BSM_, DT_INST_STRING_UPPER_TOKEN(DT_PARENT(inst), backup_switch_mode))
-
-#define RV3032_TCM_FROM_DT_INST(inst)                                                              \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trickle_charger_mode),                             \
-		    (DT_INST_PROP(inst, trickle_charger_mode) == 1750 ?                            \
-		     RV3032_TCM_1750MV :                                                           \
-		     DT_INST_PROP(inst, trickle_charger_mode) == 3000 ?                            \
-		     RV3032_TCM_3000MV :                                                           \
-		     DT_INST_PROP(inst, trickle_charger_mode) == 4500 ?                            \
-		     RV3032_TCM_4500MV :                                                           \
-		     RV3032_TCM_DISABLED),                                                         \
-		    (RV3032_TCM_DISABLED))
-
-#define RV3032_TCR_FROM_DT_INST(inst)                                                              \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, trickle_resistor_ohms),                            \
-		    (DT_INST_PROP(inst, trickle_resistor_ohms) == 600 ?                            \
-		     RV3032_TCR_600_OHM :                                                          \
-		     DT_INST_PROP(inst, trickle_resistor_ohms) == 2000 ?                           \
-		     RV3032_TCR_2000_OHM :                                                         \
-		     DT_INST_PROP(inst, trickle_resistor_ohms) == 7000 ?                           \
-		     RV3032_TCR_7000_OHM :                                                         \
-		     RV3032_TCR_12000_OHM),                                                        \
-		    (RV3032_TCR_600_OHM))
-
-#define RV3032_BACKUP_FROM_DT_INST(inst)                                                           \
-	((FIELD_PREP(RV3032_EEPROM_PMU_BSM, 0)) |                                                  \
-	 (FIELD_PREP(RV3032_EEPROM_PMU_TCR, RV3032_TCR_FROM_DT_INST(inst))) |                      \
-	 (FIELD_PREP(RV3032_EEPROM_PMU_TCM, RV3032_TCM_FROM_DT_INST(inst))))
-
 #define RV3032_CLKOUT_FREQ_IS_VALID(freq)                                                          \
 	((freq) == 0 || (freq) == RV3032_CLKOUT_FREQ_1HZ || (freq) == RV3032_CLKOUT_FREQ_64HZ ||   \
 	 (freq) == RV3032_CLKOUT_FREQ_1024HZ || (freq) == RV3032_CLKOUT_FREQ_32768HZ ||            \
@@ -826,7 +592,6 @@ static DEVICE_API(rtc, rv3032_driver_api) = {
                                                                                                    \
 	static const struct rv3032_config rv3032_config_##inst = {                                 \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
-		.backup = RV3032_BACKUP_FROM_DT_INST(inst),                                        \
 		.clkout_freq = DT_INST_PROP_OR(inst, clkout_frequency, 0),                         \
 	};                                                                                         \
 	static struct rv3032_data rv3032_data_##inst;                                              \

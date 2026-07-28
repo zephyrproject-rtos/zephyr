@@ -33,7 +33,7 @@
 #define USB_BUF_FORCE_NOCACHE		0
 #endif
 
-#if defined(CONFIG_DCACHE) && !USB_BUF_FORCE_NOCACHE
+#if defined(CONFIG_DCACHE_LINE_SIZE) && !USB_BUF_FORCE_NOCACHE
 /*
  * Here we try to get DMA-safe buffers, but we lack a consistent source of
  * information about data cache properties, such as line cache size, and a

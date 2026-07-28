@@ -143,7 +143,21 @@ These describe connections to cameras and displays (strictly speaking not shield
 - :dtcompatible:`nxp,cam-44pins-connector`
 - :dtcompatible:`nxp,parallel-lcd-connector`
 - :dtcompatible:`raspberrypi,csi-connector`
+- :dtcompatible:`st,dsi-lcd-qsh-030-connector`
+- :dtcompatible:`st,dvp-cam-zif-30-connector`
 - :dtcompatible:`weact,dcmi-camera-connector`
+
+
+ESP-01
+------
+
+This is an 8-pin header for ESP-01 Wi-Fi modules.
+
+Relevant devicetree node labels:
+
+- ``esp_01_header`` See :dtcompatible:`esp-01-header` for details on GPIO pin
+  definitions and includes for use in devicetree files.
+- ``esp_01_serial``
 
 
 Feather
@@ -202,6 +216,7 @@ Relevant devicetree node labels:
   technical specifications.
 - ``mikrobus_adc``
 - ``mikrobus_i2c``
+- ``mikrobus_pwm``
 - ``mikrobus_spi``
 - ``mikrobus_serial``
 
@@ -253,6 +268,26 @@ Relevant devicetree node labels:
 - ``st_morpho_flash_spi``
 
 
+STMod+
+------
+
+This is a 20-pin expansion connector found on some STMicroelectronics Discovery
+and Evaluation boards.
+
+Relevant devicetree node labels:
+
+- ``stmod_plus_connector`` See :dtcompatible:`st,stmod-plus-connector` for
+  details on GPIO pin definitions and includes for use in devicetree files.
+- ``stmod_adc``
+- ``stmod_i2c``
+- ``stmod_pwm``
+- ``stmod_serial``
+- ``stmod_spi``
+
+Boards may expose additional interface labels when a peripheral is wired to the
+STMod+ connector and enabled in the board devicetree.
+
+
 Xiao
 ----
 
@@ -298,6 +333,26 @@ Relevant devicetree node labels:
 
 - ``zephyr_i2c``
 
+ST M.2 serial memory connector
+------------------------------
+
+Some STMicroelectronics Nucleo-144 development boards expose an ST-specific
+M.2 serial memory connector used to interface with external serial memories
+through XSPI, together with auxiliary signals such as I2C and connector GPIOs.
+
+.. figure:: ../../../boards/shields/st_b_m2mem_pack1/doc/b_m2mem_pack1.webp
+   :align: center
+   :width: 300px
+   :alt: B-M2MEM-PACK1
+
+   B-M2MEM-PACK1, an example of an ST M.2 memory shield.
+
+Relevant devicetree node labels:
+
+- ``m2mem_connector``  See :dtcompatible:`st,m2-memory-connector` for details on GPIO pin definitions
+  and includes for use in devicetree files.
+- ``m2mem_i2c``
+- ``m2mem_xspi``
 
 .. _shield_porting_guide:
 

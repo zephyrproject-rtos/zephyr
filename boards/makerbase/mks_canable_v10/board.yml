@@ -7,4 +7,4 @@ board:
   full_name: MKS CANable V1.0
   vendor: makerbase
   socs:
-    - name: stm32f072xb
+    - name: stm32f072x8

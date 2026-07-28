@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: OV7675 CMOS video sensor
@@ -16,6 +16,12 @@ properties:
     description: |
       The PWDN pin is asserted to power down the sensor. The sensor
       receives this as an active high signal
+  pclk-hb-disable:
+    type: boolean
+    description: |
+      If set, PCLK does not toggle during the horizontal blank period.
+      When not set, PCLK is free running and continues to toggle during
+      horizontal blanking (COM10[5] = 0, default).
 
 include: i2c-device.yaml
 

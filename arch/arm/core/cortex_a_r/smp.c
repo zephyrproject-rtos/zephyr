@@ -9,9 +9,9 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <ipi.h>
 #include "boot.h"
-#include "zephyr/cache.h"
-#include "zephyr/kernel/thread_stack.h"
-#include "zephyr/toolchain/gcc.h"
+#include <zephyr/cache.h>
+#include <zephyr/kernel/thread_stack.h>
+#include <zephyr/toolchain/gcc.h>
 #include <zephyr/platform/hooks.h>
 
 #define INV_MPID	UINT32_MAX
@@ -20,7 +20,7 @@
 #define SGI_MMCFG_IPI	1
 #define SGI_FPU_IPI	2
 
-K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks,
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks,
 				   CONFIG_MP_MAX_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
 
@@ -79,7 +79,7 @@ volatile struct boot_params arm_cpu_boot_params = {
 };
 
 const uint32_t cpu_node_list[] = {
-	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))};
+	DT_FOREACH_CPU_STATUS_OKAY_SEP(DT_REG_ADDR, (,))};
 
 /* cpu_map saves the mapping of core id and mpid */
 static uint32_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {

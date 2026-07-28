@@ -85,13 +85,12 @@ static void ccompare_isr(const void *arg)
 	sys_clock_announce_locked(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1, key);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 #if defined(CONFIG_TICKLESS_KERNEL)
-	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	uint32_t curr = ccount(), cyc, adj;
 
@@ -113,7 +112,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	set_ccompare(cyc - ccount_comp());
 
 	if (IS_ENABLED(CONFIG_XTENSA_TIMER_LPM_TIMER_HOOK)) {
-		if (idle && ticks != K_TICKS_FOREVER) {
+		if (idle) {
 			uint64_t timeout_us =
 				((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 

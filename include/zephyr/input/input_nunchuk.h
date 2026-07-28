@@ -9,8 +9,8 @@
  * @ingroup nunchuk_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_INPUT_INPUT_NUNCHUCK_H_
-#define ZEPHYR_INCLUDE_INPUT_INPUT_NUNCHUCK_H_
+#ifndef ZEPHYR_INCLUDE_INPUT_INPUT_NUNCHUK_H_
+#define ZEPHYR_INCLUDE_INPUT_INPUT_NUNCHUK_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,4 +68,4 @@ int nunchuk_read(const struct device *dev);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_INPUT_INPUT_NUNCHUCK_H_ */
+#endif /* ZEPHYR_INCLUDE_INPUT_INPUT_NUNCHUK_H_ */

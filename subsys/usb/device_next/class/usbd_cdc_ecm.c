@@ -430,8 +430,7 @@ static int usbd_cdc_ecm_ctd(struct usbd_class_data *const c_data,
 	if (setup->wLength) {
 		LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x wLength %u unsupported",
 			setup->bmRequestType, setup->bRequest, setup->wLength);
-		errno = -ENOTSUP;
-		return 0;
+		return -ENOTSUP;
 	}
 
 	if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE &&
@@ -444,9 +443,7 @@ static int usbd_cdc_ecm_ctd(struct usbd_class_data *const c_data,
 
 	LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x unsupported",
 		setup->bmRequestType, setup->bRequest);
-	errno = -ENOTSUP;
-
-	return 0;
+	return -ENOTSUP;
 }
 
 static int usbd_cdc_ecm_init(struct usbd_class_data *const c_data)

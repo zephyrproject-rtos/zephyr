@@ -31,4 +31,7 @@ config STM32_LPTIM_TIMER
 	default y
 endif # PM
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x4c71240a"
+
 endif # SOC_SERIES_STM32G4X

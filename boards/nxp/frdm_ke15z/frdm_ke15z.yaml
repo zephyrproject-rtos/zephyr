@@ -11,5 +11,7 @@ supported:
   - adc
   - flash
   - gpio
+  - hwinfo
   - uart
   - watchdog
+  - crc

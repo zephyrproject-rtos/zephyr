@@ -15,6 +15,16 @@ backend = ADSP_MTRACE
 backend-str = adsp_mtrace
 source "subsys/logging/Kconfig.template.log_format_config"
 
+config LOG_MULTI_SLOT
+	bool "Use separate debug window slot per core for mtrace logging"
+	depends on SMP
+	depends on INTEL_ADSP_DEBUG_SLOT_MANAGER
+	depends on LOG_CORE_ID_PREFIX
+	help
+	  When enabled, each CPU core gets its own debug window slot for
+	  mtrace logging. This allows the host to read per-core log data
+	  from separate memory window slots.
+
 endif # LOG_BACKEND_ADSP_MTRACE
 
 config MTRACE_LOG_CACHE_BUF_SIZE

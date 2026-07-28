@@ -22,4 +22,13 @@ config SPI_NAND_INIT_PRIORITY
 	  Device driver initialization priority. Device is connected to
 	  SPI bus, it has to be initialized after SPI driver.
 
+config SPI_NAND_BAD_BLOCK_CACHE
+	bool "Bad block cache"
+	depends on FLASH_EX_OP_ENABLED
+	default y
+	help
+	  Enable bad block cache by keeping a bad block table in memory.
+	  This will speed up bad block checking at the cost of slightly
+	  increased memory usage.
+
 endif # SPI_NAND

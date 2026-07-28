@@ -22,10 +22,23 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(BMI08X_GYRO_DECODER, CONFIG_SENSOR_LOG_LEVEL);
 
+/* Period in ns indexed by BMI08X_GYRO_BW_* register value (0x00..0x07) */
+static const uint32_t gyro_period_ns[] = {
+	[0x00] = UINT32_C(500000),    /* 2000 Hz */
+	[0x01] = UINT32_C(500000),    /* 2000 Hz */
+	[0x02] = UINT32_C(1000000),   /* 1000 Hz */
+	[0x03] = UINT32_C(2500000),   /* 400 Hz  */
+	[0x04] = UINT32_C(5000000),   /* 200 Hz  */
+	[0x05] = UINT32_C(10000000),  /* 100 Hz  */
+	[0x06] = UINT32_C(5000000),   /* 200 Hz  */
+	[0x07] = UINT32_C(10000000),  /* 100 Hz  */
+};
+
 void bmi08x_gyro_encode_header(const struct device *dev, struct bmi08x_gyro_encoded_data *edata,
 			       bool is_streaming)
 {
 	struct bmi08x_gyro_data *data = dev->data;
+	const struct bmi08x_gyro_config *config = dev->config;
 	uint64_t cycles;
 
 	if (sensor_clock_get_cycles(&cycles) == 0) {
@@ -37,6 +50,7 @@ void bmi08x_gyro_encode_header(const struct device *dev, struct bmi08x_gyro_enco
 	edata->header.range = data->range;
 	edata->header.is_streaming = is_streaming;
 	edata->header.sample_count = is_streaming ? data->stream.fifo_wm : 1;
+	edata->header.gyro_odr = config->gyro_hz;
 }
 
 static int bmi08x_decoder_get_frame_count(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
@@ -88,6 +102,8 @@ static int bmi08x_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec 
 		return -ENODATA;
 	}
 	uint32_t max_samples = MIN(edata->header.sample_count, edata->header.fifo_status & 0x7F);
+	uint32_t period_ns = (edata->header.gyro_odr < ARRAY_SIZE(gyro_period_ns))
+			     ? gyro_period_ns[edata->header.gyro_odr] : 0;
 
 	/** Bits we need to represent the integer part of FSR in rad/s:
 	 * - 2000 dps (34.91 rad/s) = 6 bits.
@@ -97,17 +113,22 @@ static int bmi08x_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec 
 	 * -  125 dps (2.18 rad/s) = 2 bits.
 	 */
 	data_output->shift = 6 - edata->header.range;
-	data_output->header.base_timestamp_ns = edata->header.timestamp;
+	data_output->header.base_timestamp_ns =
+		edata->header.timestamp -
+		(uint64_t)(max_samples > 0 ? max_samples - 1 : 0) * period_ns;
 
 	do {
+		uint32_t idx = *fit - fit0;
+
 		for (size_t i = 0 ; i < 3 ; i++) {
 			int64_t raw_value;
 
 			raw_value = sign_extend_64(edata->fifo[*fit].payload[i], 15);
 			raw_value = (raw_value * 2000 << (31 - 6 - 15)) * SENSOR_PI / 1000000 / 180;
 
-			data_output->readings[*fit - fit0].values[i] = raw_value;
+			data_output->readings[idx].values[i] = raw_value;
 		}
+		data_output->readings[idx].timestamp_delta = idx * period_ns;
 	} while (++(*fit) < MIN(max_samples, fit0 + max_count));
 
 	data_output->header.reading_count = *fit - fit0;

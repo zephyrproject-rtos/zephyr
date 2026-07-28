@@ -114,20 +114,32 @@
 		reg = <0x0>;
 		size = <DT_SIZE_M(128)>;
 		quad-enable-requirements = "S2B1v1";
+		#address-cells = <1>;
+		#size-cells = <1>;
 
-		partitions {
-			compatible = "fixed-partitions";
+		py25q128ha_memory: py25q128ha@12000000 {
+			compatible = "soc-nv-flash";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			reg = <0x12000000 DT_SIZE_M(16)>;
+			ranges = <0x0 0x12000000 DT_SIZE_M(16)>;
 
-			ptable: partition@0 {
-				label = "ptable";
-				reg = <0x0 DT_SIZE_K(64)>;
-			};
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
 
-			code: partition@10000 {
-				label = "code";
-				reg = <0x10000 DT_SIZE_K(16320)>;
+				ptable: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					label = "ptable";
+					reg = <0x0 DT_SIZE_K(64)>;
+				};
+
+				code: partition@10000 {
+					compatible = "zephyr,mapped-partition";
+					label = "code";
+					reg = <0x10000 DT_SIZE_K(16320)>;
+				};
 			};
 		};
 	};

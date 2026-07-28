@@ -81,6 +81,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_SYSCTR
 	DEVS_FOR_DT_COMPAT(nxp_sysctr)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_TSTMR
+	DEVS_FOR_DT_COMPAT(nxp_tstmr)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_CTIMER
 	DEVS_FOR_DT_COMPAT(nxp_lpc_ctimer)
 #endif
@@ -98,6 +101,9 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_MCUX_LPC_RTC_1HZ
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc)
+#endif
+#ifdef CONFIG_COUNTER_NXP_IRTC
+	DEVS_FOR_DT_COMPAT(nxp_irtc_wake_timer)
 #endif
 #ifdef CONFIG_TEST_DRIVER_COUNTER_MCUX_LPC_RTC_HIGHRES
 	DEVS_FOR_DT_COMPAT(nxp_lpc_rtc_highres)
@@ -128,6 +134,9 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_TMR_ESP32
 	DEVS_FOR_DT_COMPAT(espressif_esp32_counter)
+#endif
+#ifdef CONFIG_COUNTER_TMR_AMEBA
+	DEVS_FOR_DT_COMPAT(realtek_ameba_counter)
 #endif
 #ifdef CONFIG_COUNTER_RTC_ESP32
 	DEVS_FOR_DT_COMPAT(espressif_esp32_rtc_timer)
@@ -207,6 +216,15 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_BEE_RTC
 	DEVS_FOR_DT_COMPAT(realtek_bee_counter_rtc)
+#endif
+#ifdef CONFIG_COUNTER_WUT_MAX32
+	DEVS_FOR_DT_COMPAT(adi_max32_wut)
+#endif
+#ifdef CONFIG_COUNTER_XLNX_TTC
+	DEVS_FOR_DT_COMPAT(xlnx_ttc_counter)
+#endif
+#ifdef CONFIG_COUNTER_MSPM0_TIMER
+	DEVS_FOR_DT_COMPAT(ti_mspm0_timer_counter)
 #endif
 };
 
@@ -877,22 +895,21 @@ static void test_valid_function_without_alarm(const struct device *dev)
 
 	/* counter might not start from 0, use current value as offset */
 	counter_get_value(dev, &tick_current);
+	k_busy_wait(wait_for_us);
+	err = counter_get_value(dev, &ticks);
+
 	if (counter_is_counting_up(dev)) {
 		ticks_expected += tick_current;
 	} else {
 		ticks_expected = tick_current - ticks_expected;
 	}
 
-	k_busy_wait(wait_for_us);
-
-	err = counter_get_value(dev, &ticks);
-
 	zassert_equal(0, err, "%s: could not get counter value", dev->name);
 	zassert_between_inclusive(
 		ticks, ticks_expected > ticks_tol ? ticks_expected - ticks_tol : 0,
 		ticks_expected + ticks_tol, "%s: counter ticks not in tolerance", dev->name);
 
-	/* ticks count is always within ticks_tol for RTC, therefor
+	/* ticks count is always within ticks_tol for RTC, therefore
 	 * check, if ticks are greater than 0.
 	 */
 	zassert_true((ticks > 0), "%s: counter did not count", dev->name);
@@ -907,7 +924,7 @@ static bool ms_period_capable(const struct device *dev)
 	uint32_t freq_khz;
 	uint32_t max_time_ms;
 
-	/* Assume 2 ms counter periode can be set for frequency below 1 kHz*/
+	/* Assume 2 ms counter period can be set for frequency below 1 kHz*/
 	if (counter_get_frequency(dev) < 1000) {
 		return true;
 	}
@@ -1277,6 +1294,14 @@ static bool reliable_cancel_capable(const struct device *dev)
 		return true;
 	}
 #endif
+#ifdef CONFIG_COUNTER_XLNX_TTC
+	return true;
+#endif
+#ifdef CONFIG_COUNTER_MSPM0_TIMER
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
 	return false;
 }
 
@@ -1285,6 +1310,81 @@ ZTEST(counter_basic, test_cancelled_alarm_does_not_expire)
 	test_all_instances(test_cancelled_alarm_does_not_expire_instance,
 			reliable_cancel_capable);
 }
+
+#ifdef CONFIG_COUNTER_CALIBRATION
+#define COUNTER_TEST_CAL_RANGE_LIMIT (200000)
+#define COUNTER_TEST_CAL_RANGE_STEP  (10000)
+
+static int set_get_calibration(const struct device *dev, int32_t calibrate_set)
+{
+	int32_t calibrate_get;
+	int ret;
+
+	ret = counter_set_calibration(dev, calibrate_set);
+
+	/* Check if calibration is within limits of hardware */
+	if (ret == -EINVAL) {
+		/* skip */
+		return -EINVAL;
+	}
+
+	zassert_ok(ret, "%s: Failed to set calibration", dev->name);
+
+	ret = counter_get_calibration(dev, &calibrate_get);
+	zassert_ok(ret, "%s: Failed to get calibration", dev->name);
+
+	TC_PRINT("%s: Calibrate (set,get): %i, %i\n", dev->name, calibrate_set, calibrate_get);
+
+	return 0;
+}
+
+static void test_set_get_calibration_instance(const struct device *dev)
+{
+	int32_t calibrate_get;
+	int ret;
+
+	ret = counter_set_calibration(dev, 0);
+	if (ret == -ENOSYS || ret == -ENOTSUP) {
+		TC_PRINT("%s: Calibration not supported\n", dev->name);
+		return;
+	}
+
+	zassert_ok(ret, "%s: Failed to set calibration", dev->name);
+
+	ret = counter_get_calibration(dev, &calibrate_get);
+	zassert_ok(ret, "%s: Failed to get calibration", dev->name);
+
+	/* Validate edge values (0 already tested) */
+	set_get_calibration(dev, 1);
+	set_get_calibration(dev, -1);
+
+	/* Validate over negative range */
+	for (int32_t set = COUNTER_TEST_CAL_RANGE_STEP; set <= COUNTER_TEST_CAL_RANGE_LIMIT;
+	     set += COUNTER_TEST_CAL_RANGE_STEP) {
+		if (set_get_calibration(dev, -set) < 0) {
+			/* Limit of hardware capabilities reached */
+			break;
+		}
+	}
+
+	/* Validate over positive range */
+	for (int32_t set = COUNTER_TEST_CAL_RANGE_STEP; set <= COUNTER_TEST_CAL_RANGE_LIMIT;
+	     set += COUNTER_TEST_CAL_RANGE_STEP) {
+		if (set_get_calibration(dev, set) < 0) {
+			/* Limit of hardware capabilities reached */
+			break;
+		}
+	}
+
+	/* Leave the counter uncalibrated */
+	zassert_ok(counter_set_calibration(dev, 0), "%s: Failed to reset calibration", dev->name);
+}
+
+ZTEST(counter_basic, test_set_get_calibration)
+{
+	test_all_instances(test_set_get_calibration_instance, NULL);
+}
+#endif /* CONFIG_COUNTER_CALIBRATION */
 
 static void *counter_setup(void)
 {

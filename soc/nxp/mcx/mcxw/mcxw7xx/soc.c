@@ -112,6 +112,12 @@ void soc_early_init_hook(void)
 	vbat_init();
 #endif
 
+	/* Apply the active-mode DCDC output voltage from device tree. This is
+	 * required (independently of CONFIG_PM) to reach the configured BLE TX
+	 * power, and is a no-op when no voltage is configured.
+	 */
+	nxp_mcxw7x_dcdc_init();
+
 	if (IS_ENABLED(CONFIG_PM)) {
 		nxp_mcxw7x_power_init();
 	}

@@ -773,14 +773,13 @@ int z_unpend_all(_wait_q_t *wait_q)
 
 	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
 		unpend_thread_no_timeout(thread);
-		/* On -EAGAIN the handler is in flight on another CPU; it is
-		 * blocked on _sched_spinlock and will ready the thread itself
-		 * once we drop the lock. The thread is already unpended, so
-		 * the handler's wake path is harmless.
+		/* Abort the timeout and ready the thread unconditionally. If
+		 * the timeout handler is in flight on another CPU, the abort
+		 * flags it superseded and z_thread_timeout() bails when it
+		 * runs -- so it will NOT ready the thread, we must.
 		 */
-		if (z_try_abort_thread_timeout(thread) != -EAGAIN) {
-			ready_thread(thread);
-		}
+		(void)z_try_abort_thread_timeout(thread);
+		ready_thread(thread);
 		need_sched = 1;
 	}
 
@@ -795,13 +794,11 @@ static inline void unpend_all(_wait_q_t *wait_q)
 	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
 		unpend_thread_no_timeout(thread);
 		arch_thread_return_value_set(thread, 0);
-		/* See z_unpend_all() for the -EAGAIN rationale. The return
-		 * value is set above, so an in-flight handler that later
-		 * readies this thread does not overwrite it.
+		/* See z_unpend_all(): the in-flight handler bails on the
+		 * superseded mark, so we ready the thread unconditionally.
 		 */
-		if (z_try_abort_thread_timeout(thread) != -EAGAIN) {
-			ready_thread(thread);
-		}
+		(void)z_try_abort_thread_timeout(thread);
+		ready_thread(thread);
 	}
 }
 
@@ -816,6 +813,7 @@ extern void thread_abort_hook(struct k_thread *thread);
  *
  * @param thread Identify the thread to halt
  * @param new_state New thread state (_THREAD_DEAD or _THREAD_SUSPENDED)
+ * @param key Pointer to the scheduler spinlock key held by the caller
  */
 static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state,
 				      k_spinlock_key_t *key)

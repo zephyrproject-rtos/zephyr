@@ -26,6 +26,10 @@
 		zephyr,touch = &ft6202;
 	};
 
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+
 	sdram1: sdram@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		device_type = "memory";
@@ -69,7 +73,7 @@
 	};
 
 	dsi_lcd_qsh_030: connector_dsi_lcd {
-		compatible = "st,dsi-lcd-qsh-030";
+		compatible = "st,dsi-lcd-qsh-030-connector";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
@@ -293,7 +297,7 @@ qsh_030_i2c: &i2c4 {
 	status = "okay";
 };
 
-&pdm0 {
+dmic_dev: &pdm0 {
 	pinctrl-0 = <&dfsdm1_ckout_pd3
 		     &dfsdm1_datin1_pc3>;
 	pinctrl-names = "default";
@@ -327,3 +331,7 @@ zephyr_udc0: &usbotg_hs {
 zephyr_mipi_dsi: &mipi_dsi {};
 
 zephyr_lcd_controller: &ltdc {};
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
+};

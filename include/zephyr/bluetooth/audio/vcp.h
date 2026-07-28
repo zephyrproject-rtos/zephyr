@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCP_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_H_
 
 /**
  * @brief Volume Control Profile (VCP)
@@ -592,4 +592,4 @@ int bt_vcp_vol_ctlr_mute(struct bt_vcp_vol_ctlr *vol_ctlr);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_H_ */

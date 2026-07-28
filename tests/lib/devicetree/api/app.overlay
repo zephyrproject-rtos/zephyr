@@ -79,6 +79,8 @@
 			foo-names = "A", "b-c";
 			pwms = <&test_pwm1 8 200 3>, <&test_pwm2 5 100 1>;
 			pwm-names = "red", "green";
+			counter-captures = <&test_counter1 2 4>, <&test_counter2 7 9>;
+			counter-capture-names = "alpha", "beta";
 			bar = <&test_gpio_1 200>, <&test_gpio_2 210>;
 			baz-names = "john", "doe";
 		};
@@ -634,6 +636,20 @@
 			compatible = "vnd,pwm";
 			#pwm-cells = <3>;
 			reg = <0x55552222 0x1000>;
+			status = "okay";
+		};
+
+		test_counter1: counter@55553333 {
+			compatible = "vnd,counter";
+			#counter-capture-cells = <2>;
+			reg = <0x55553333 0x1000>;
+			status = "okay";
+		};
+
+		test_counter2: counter@55554444 {
+			compatible = "vnd,counter";
+			#counter-capture-cells = <2>;
+			reg = <0x55554444 0x1000>;
 			status = "okay";
 		};
 

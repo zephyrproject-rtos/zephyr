@@ -65,6 +65,7 @@ struct aci_reset {
 
 static uint8_t bt_hci_state = BT_HCI_STATE_DEINIT;
 extern uint8_t ll_state_busy;
+extern bool standby_entered;
 
 static bool is_hci_event_discardable(const uint8_t *evt_data)
 {
@@ -423,7 +424,7 @@ static int bt_hci_stm32wba_open(const struct device *dev)
 #endif
 	}
 
-	link_layer_register_isr(false);
+	link_layer_register_isr();
 
 	ret = bt_ble_ctlr_init();
 
@@ -575,9 +576,9 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 		LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
 #if defined(CONFIG_PM_S2RAM)
 		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_ENABLED) {
-			if (LL_PWR_IsActiveFlag_SB() == 1U) {
+			if (standby_entered) {
 				/* Restore NVIC configuration for radio */
-				link_layer_register_isr(true);
+				link_layer_register_isr();
 				ll_sys_dp_slp_exit();
 			}
 		}

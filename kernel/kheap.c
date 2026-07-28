@@ -35,44 +35,18 @@ void k_heap_init(struct k_heap *heap, void *mem, size_t bytes)
 static int statics_init(void)
 {
 	STRUCT_SECTION_FOREACH(k_heap, heap) {
-#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-		/* Some heaps may not present at boot, so we need to wait for
-		 * paging mechanism to be initialized before we can initialize
-		 * each heap.
-		 */
-		extern bool z_sys_post_kernel;
-		bool do_clear = z_sys_post_kernel;
-
-		/* During pre-kernel init, z_sys_post_kernel == false,
-		 * initialize if within pinned region. Otherwise skip.
-		 * In post-kernel init, z_sys_post_kernel == true, skip those in
-		 * pinned region as they have already been initialized and
-		 * possibly already in use. Otherwise initialize.
-		 */
-		if (lnkr_is_pinned((uint8_t *)heap) &&
-		    lnkr_is_pinned((uint8_t *)&heap->wait_q) &&
-		    lnkr_is_region_pinned((uint8_t *)heap->heap.init_mem,
-					  heap->heap.init_bytes)) {
-			do_clear = !do_clear;
-		}
-
-		if (do_clear)
-#endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
-		{
-			k_heap_init(heap, heap->heap.init_mem, heap->heap.init_bytes);
-		}
+		k_heap_init(heap, heap->heap.init_mem, heap->heap.init_bytes);
 	}
 	return 0;
 }
 
-SYS_INIT_NAMED(statics_init_pre, statics_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
-#if defined(CONFIG_DEMAND_PAGING) && !defined(CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-/* Need to wait for paging mechanism to be initialized before
- * heaps that are not in pinned sections can be initialized.
+/*
+ * Static heap init must stay a PRE_KERNEL_1 SYS_INIT: the heap KASAN shadow is
+ * registered at (PRE_KERNEL_1, 0) via K_HEAP_KASAN_ENABLE() and must run before
+ * sys_heap_init(). A K_KERNEL_INIT_PRE() hook would run ahead of that, leaving
+ * the shadow unregistered and KASAN tracking disabled.
  */
-SYS_INIT_NAMED(statics_init_post, statics_init, POST_KERNEL, 0);
-#endif /* CONFIG_DEMAND_PAGING && !CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
+SYS_INIT_NAMED(statics_init_pre, statics_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
 

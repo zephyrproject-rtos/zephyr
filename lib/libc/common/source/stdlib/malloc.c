@@ -116,6 +116,11 @@ extern char _heap_sentry[];
 
 Z_LIBC_DATA static struct sys_heap z_malloc_heap;
 
+#if defined(CONFIG_SYS_HEAP_KASAN_MALLOC) && defined(HEAP_STATIC)
+#include <zephyr/sys/heap_kasan.h>
+SYS_HEAP_KASAN_ENABLE(z_malloc_heap, HEAP_SIZE);
+#endif /* CONFIG_SYS_HEAP_KASAN_MALLOC && HEAP_STATIC */
+
 #ifdef CONFIG_MULTITHREADING
 Z_LIBC_DATA SYS_MUTEX_DEFINE(z_malloc_heap_mutex);
 

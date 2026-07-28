@@ -67,7 +67,7 @@ config HEAP_MEM_POOL_ADD_SIZE_GETADDRINFO
 	# a default configuration on 64-bit platform
 	int
 	default 280
-	depends on DNS_RESOLVER
+	depends on DNS_RESOLVER || NET_IP
 
 config NET_SOCKET_MAX_SEND_WAIT
 	int "Max time in milliseconds waiting for a send command"
@@ -95,6 +95,14 @@ config ZVFS_OPEN_ADD_SIZE_SOCKETS_SERVICE
 	help
 	  The socket service opens a permanent zvfs_eventfd, which consumes a file
 	  descriptor.
+
+config ZVFS_EVENTFD_ADD_SIZE_SOCKETS_SERVICE
+	int "Number of eventfds needed by the socket service"
+	default 1
+	depends on NET_SOCKETS_SERVICE
+	help
+	  The socket service dispatcher allocates one permanent zvfs_eventfd to
+	  trigger events during polling.
 
 config NET_SOCKETS_SERVICE_THREAD_PRIO
 	int "Priority of the socket service dispatcher thread"
@@ -378,10 +386,9 @@ config NET_SOCKETS_INET_RAW
 	  to receive raw IP datagrams before further processing takes place.
 
 config NET_SOCKETS_CAN
-	bool "Socket CAN support [EXPERIMENTAL]"
+	bool "Socket CAN support"
 	select NET_L2_CANBUS_RAW
 	select NET_CONNECTION_SOCKETS
-	select EXPERIMENTAL
 	help
 	  The value depends on your network needs.
 
@@ -467,10 +474,9 @@ module-help = Enables logging for sockets code.
 source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_SOCKETS_OBJ_CORE
-	bool "Object core socket support [EXPERIMENTAL]"
+	bool "Object core socket support"
 	depends on OBJ_CORE
 	select OBJ_CORE_STATS
-	select EXPERIMENTAL
 	help
 	  Select this if you want to use object core with socket API to get
 	  network socket information and statistics via object core.

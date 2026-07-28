@@ -10,5 +10,5 @@ supported:
   - spi
   - rtc
 ram: 96
-flash: 384
+flash: 64
 vendor: cirrus

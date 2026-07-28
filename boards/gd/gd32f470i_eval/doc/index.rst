@@ -111,10 +111,10 @@ allows flash programming and debugging over USB. There is also a JTAG header
 
 
 .. _GigaDevice Cortex-M4F Stretch Performance SoC Website:
-   https://www.gigadevice.com/products/microcontrollers/gd32/arm-cortex-m4/stretch-performance-line/gd32f470-series/
+   https://www.gigadevice.com/product/mcu/high-performance-mcus/gd32f4xx-series/gd32f470
 
 .. _GD32F470IKH6 Specifications:
-   https://www.gigadevice.com/microcontroller/gd32f470ikh6/
+   https://www.gigadevice.com/product/mcu/mcus-product-selector/gd32f470ikh6
 
 .. _GD32F470xx Datasheet:
    https://gd32mcu.com/data/documents/datasheet/GD32F470xx_Datasheet_Rev1.3.pdf

@@ -37,7 +37,6 @@ child-binding:
 
     wkup-pin-mode:
       type: string
-      default: vin
       required: true
       description: indicates a wakeup pin mode selection
       enum:

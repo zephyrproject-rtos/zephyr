@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_LLEXT_LOADER_H
-#define ZEPHYR_LLEXT_LOADER_H
+#ifndef ZEPHYR_INCLUDE_LLEXT_LOADER_H_
+#define ZEPHYR_INCLUDE_LLEXT_LOADER_H_
 
 #include <zephyr/llext/elf.h>
 #include <stddef.h>
@@ -190,4 +190,4 @@ static inline void llext_finalize(struct llext_loader *l)
 }
 #endif
 
-#endif /* ZEPHYR_LLEXT_LOADER_H */
+#endif /* ZEPHYR_INCLUDE_LLEXT_LOADER_H_ */

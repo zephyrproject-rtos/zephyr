@@ -2,53 +2,66 @@ Title: Stack Protection Support
 
 Description:
 
-This test verifies that stack canaries operate as expected.
+This test verifies that stack canaries and stack guard pages operate as
+expected. It runs two Ztest suites:
 
---------------------------------------------------------------------------------
+1. stackprot
+   - test_stackprot (a user-mode case) overflows a thread stack and
+     confirms the stack-canary check detects the corruption and aborts
+     the offending thread while the rest of the system keeps running.
+   - test_create_alt_thread and test_canary_value exercise creating the
+     alternate thread and inspecting the canary value.
 
-Building and Running Project:
+2. stackprot_mapped_stack
+   - test_guard_page_front and test_guard_page_rear (plus their _user
+     variants) confirm that the guard pages placed in front of and behind
+     a mapped stack fault on overflow.
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+Because the test deliberately triggers faults, it is run with
+ignore_faults enabled in twister.
 
-    make run
+The kernel.memory_protection.stackprot_tls variant additionally places the
+canary in thread-local storage (CONFIG_STACK_CANARIES_TLS=y) on
+architectures that support it.
 
---------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
-Troubleshooting:
+Building and Running:
 
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
+Build and run with twister, for example on QEMU:
 
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
+    twister -p qemu_x86 -T tests/kernel/mem_protect/stackprot
 
---------------------------------------------------------------------------------
+Or build and run a single platform directly with west:
+
+    west build -b qemu_x86 tests/kernel/mem_protect/stackprot
+    west build -t run
+
+---------------------------------------------------------------------------
 
 Sample Output:
-tc_start() - Test Stack Protection Canary
 
-Starts main
-Starts alternate_thread
+Running TESTSUITE stackprot
+===================================================================
+START - test_canary_value
+ PASS - test_canary_value
+===================================================================
+START - test_create_alt_thread
+ PASS - test_create_alt_thread
+===================================================================
+START - test_stackprot
 alternate_thread: Input string is too long and stack overflowed!
+*** Stack Check Fail! ***
+ PASS - test_stackprot
+===================================================================
+TESTSUITE stackprot succeeded
 
-***** Stack Check Fail! *****
-Current thread ID = 0x00103180
-Faulting segment:address = 0xdead:0xdeaddead
-eax: 0xdeaddead, ebx: 0xdeaddead, ecx: 0xdeaddead, edx: 0xdeaddead
-esi: 0xdeaddead, edi: 0xdeaddead, ebp: 0deaddead, esp: 0xdeaddead
-eflags: 0xdeaddead
-Fatal fault in thread 0x00103180! Aborting.
-main: Stack ok
-main: Stack ok
-main: Stack ok
-main: Stack ok
-main: Stack ok
-main: Stack ok
+Running TESTSUITE stackprot_mapped_stack
 ===================================================================
-PASS - main.
+START - test_guard_page_front
+ PASS - test_guard_page_front
 ===================================================================
-PROJECT EXECUTION SUCCESSFUL
+START - test_guard_page_rear
+ PASS - test_guard_page_rear
+===================================================================
+TESTSUITE stackprot_mapped_stack succeeded

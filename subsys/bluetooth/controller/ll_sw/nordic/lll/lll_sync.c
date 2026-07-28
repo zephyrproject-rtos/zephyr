@@ -937,7 +937,7 @@ static void isr_rx_adv_sync_estab(void *param)
 		}
 	} else {
 		crc_ok = phy_flags_rx = rssi_ready = cte_ready = 0U;
-		/* Initiated as allowed, crc_ok takes precended during handling of PDU
+		/* Initiated as allowed, crc_ok takes precedence during handling of PDU
 		 * reception in the situation.
 		 */
 		sync_ok = SYNC_STAT_ALLOWED;

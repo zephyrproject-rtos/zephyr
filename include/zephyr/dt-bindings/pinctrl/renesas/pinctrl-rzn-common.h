@@ -5,20 +5,57 @@
 
 /**
  * @file
- * @brief Renesas RZ/N pin control (pinctrl) definitions for Zephyr.
- *
- * This header provides macro constants for encoding pin function selections
- * and pin indices for Renesas RZ/N Series. These values are used by the DeviceTree
- * pinctrl subsystem to describe peripheral pin mappings.
+ * @brief Devicetree pin control helpers for Renesas RZ/N
+ * @ingroup pinctrl_rzn
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZN_COMMON_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZN_COMMON_H_
 
 /**
- * @name Renesas RZ/N I/O Ports.
+ * @addtogroup renesas_pinctrl Renesas pin control helpers
+ * @ingroup devicetree-pinctrl
+ */
+
+/**
+ * @defgroup pinctrl_rzn Renesas RZ/N pin control helpers
+ * @brief Macros for pin control configuration of Renesas RZ/N Series
+ * @ingroup renesas_pinctrl
+ *
+ * Each pin configuration is built with the RZN_PINMUX() macro, which takes three
+ * fields:
+ *
+ * - @c port — the port identifier, one of the @c PORT_* values.
+ * - @c pin — the pin number within that port.
+ * - @c func — the alternate-function number that selects which peripheral signal
+ *   is routed to the pin. There is no symbolic macro for it: @c func is the
+ *   function index for the pin taken from the SoC's Pin Function Controller
+ *   table (the multiplexing table in the hardware manual / pin-assignment
+ *   spreadsheet), passed as a plain integer.
+ *
+ * For example, @c RZN_PINMUX(PORT_16, 5, 1) routes function 1 of port 16 pin 5
+ * (UART0 TXD on the supported SoCs).
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzn-common.h>
+ *
+ * &pinctrl {
+ *         uart0_default: uart0_default {
+ *                 group1 {
+ *                         pinmux = <RZN_PINMUX(PORT_16, 5, 1)>;
+ *                 };
+ *                 group2 {
+ *                         pinmux = <RZN_PINMUX(PORT_16, 6, 2)>;
+ *                         input-enable;
+ *                 };
+ *         };
+ * };
+ * @endcode
+ *
  * @{
  */
+
+/** @cond INTERNAL_HIDDEN */
 
 #define PORT_00 0x0000 /**< IO port 0 */
 #define PORT_01 0x0100 /**< IO port 1 */
@@ -54,7 +91,7 @@
 #define PORT_33 0x2100 /**< IO port 33 */
 #define PORT_34 0x2200 /**< IO port 34 */
 
-/** @} */
+/** @endcond */
 
 /**
  * @brief Create an encoded value containing port/pin/function information.
@@ -66,5 +103,7 @@
  * @return Encoded pinmux value.
  */
 #define RZN_PINMUX(port, pin, func) (port | pin | (func << 16))
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RZN_COMMON_H_ */

@@ -7,6 +7,10 @@
 
 if SOC_SERIES_STM32F4X
 
+# STM32F401xD must be exposed as STM32F401xE at HAL level.
+configdefault STM32CUBE_SOC_NAME_OVERRIDE
+	default "stm32f401xe" if SOC_STM32F401XD
+
 configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers9)
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers10)
@@ -32,5 +36,10 @@ config IDLE_STACK_SIZE
 	default 512
 
 endif # PM
+
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x6d0922fa" if SOC_STM32F407XE
+	default "0x8fb060fe" if SOC_STM32F407XG
+	default "0x57755a57"
 
 endif # SOC_SERIES_STM32F4X

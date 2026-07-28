@@ -268,12 +268,6 @@ static int leuart_gecko_init(const struct device *dev)
 
 	leuartInit.baudrate = config->baud_rate;
 
-	/* Enable CORE LE clock in order to access LE modules */
-	CMU_ClockEnable(cmuClock_CORELE, true);
-
-	/* Select LFXO for LEUARTs (and wait for it to stabilize) */
-	CMU_ClockSelectSet(cmuClock_LFB, cmuSelect_LFXO);
-
 	/* Enable LEUART clock */
 	CMU_ClockEnable(config->clock, true);
 

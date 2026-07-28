@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_ARCH_INCLUDE_XIP_H_
-#define ZEPHYR_ARCH_INCLUDE_XIP_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_COMMON_XIP_H_
+#define ZEPHYR_INCLUDE_ARCH_COMMON_XIP_H_
 
 #ifndef _ASMLANGUAGE
 #ifdef __cplusplus
@@ -24,4 +24,4 @@ static inline void arch_data_copy(void)
 #endif
 
 #endif	/* _ASMLANGUAGE */
-#endif /* ZEPHYR_ARCH_INCLUDE_XIP_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_COMMON_XIP_H_ */

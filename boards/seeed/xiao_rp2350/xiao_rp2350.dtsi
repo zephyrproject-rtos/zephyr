@@ -13,7 +13,7 @@
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
-#include <raspberrypi/partitions_4M_default.dtsi>
+#include <raspberrypi/partitions_0x0_default_2M.dtsi>
 
 #include "xiao_rp2350-pinctrl.dtsi"
 #include "seeed_xiao_connector.dtsi"
@@ -99,14 +99,10 @@
 	};
 };
 
-/* overwrite for 2M; there is no default 2M partition DTS include for RP2350 */
 &flash0 {
 	status = "okay";
 	reg = <0x10000000 DT_SIZE_M(2)>;
-};
-
-&storage_partition {
-	reg = <0x100000 DT_SIZE_M(1)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
 };
 
 &timer0 {

@@ -100,26 +100,30 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 0xa000>;
 		};
 
 		slot0_partition: partition@a000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0000a000 0x33000>;
 		};
 
 		slot1_partition: partition@3d000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x0003d000 0x33000>;
 		};
 
 		scratch_partition: partition@70000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-scratch";
 			reg = <0x00070000 0xa000>;
 		};
@@ -131,6 +135,7 @@
 		 * will be created in this area.
 		 */
 		storage_partition: partition@7a000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0007a000 0x00006000>;
 		};

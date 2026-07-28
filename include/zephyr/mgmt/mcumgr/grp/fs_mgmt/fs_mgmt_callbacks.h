@@ -5,8 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_MCUMGR_FS_MGMT_CALLBACKS_
-#define H_MCUMGR_FS_MGMT_CALLBACKS_
+/**
+ * @file
+ * @brief Header file for MCUmgr file system management callback definitions.
+ * @ingroup mcumgr_callback_api_fs_mgmt
+ */
+
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_FS_MGMT_FS_MGMT_CALLBACKS_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_FS_MGMT_FS_MGMT_CALLBACKS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -75,4 +81,4 @@ struct fs_mgmt_file_access {
 }
 #endif
 
-#endif
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_FS_MGMT_FS_MGMT_CALLBACKS_H_ */

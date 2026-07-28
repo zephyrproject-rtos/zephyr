@@ -79,7 +79,7 @@ static void disconnect_device(struct bt_conn *conn, void *data)
 {
 	int err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
-	TEST_ASSERT(!err, "Failed to initate disconnect (err %d)", err);
+	TEST_ASSERT(!err, "Failed to initiate disconnect (err %d)", err);
 }
 
 static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *info,

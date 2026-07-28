@@ -236,6 +236,7 @@ static int setup_h3_socket(const struct http_service_desc *svc, int af,
 	}
 
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
+#if defined(CONFIG_HTTP_SERVER_VERSION_3)
 		if (zsock_setsockopt(quic_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
 				     h3_alpn_list, sizeof(h3_alpn_list)) < 0) {
 			ret = -errno;
@@ -243,8 +244,44 @@ static int setup_h3_socket(const struct http_service_desc *svc, int af,
 			zsock_close(quic_sock);
 			goto out;
 	}
+#endif /* defined(CONFIG_HTTP_SERVER_VERSION_3) */
 #endif /* defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN) */
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
+
+	if (svc->config != NULL) {
+		int enable_tickets =
+			svc->config->h3.enable_session_tickets ||
+			svc->config->h3.max_early_data_size > 0U;
+
+		if (enable_tickets != 0) {
+			if (zsock_setsockopt(quic_sock, ZSOCK_SOL_QUIC,
+					     ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE,
+					     &enable_tickets,
+					     sizeof(enable_tickets)) < 0) {
+				ret = -errno;
+				LOG_ERR("%s: setsockopt(%s): %d", "h3",
+					"QUIC_SO_SESSION_TICKET_ENABLE", ret);
+				zsock_close(quic_sock);
+				goto out;
+			}
+		}
+
+		if (svc->config->h3.max_early_data_size > 0U) {
+			uint32_t max_early_data_size =
+				svc->config->h3.max_early_data_size;
+
+			if (zsock_setsockopt(quic_sock, ZSOCK_SOL_QUIC,
+					     ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE,
+					     &max_early_data_size,
+					     sizeof(max_early_data_size)) < 0) {
+				ret = -errno;
+				LOG_ERR("%s: setsockopt(%s): %d", "h3",
+					"QUIC_SO_MAX_EARLY_DATA_SIZE", ret);
+				zsock_close(quic_sock);
+				goto out;
+			}
+		}
+	}
 
 	ret = quic_sock;
 out:
@@ -1426,7 +1463,15 @@ static int http_server_run(struct http_server_ctx *ctx)
 		}
 
 		if (ret == 0) {
-			break; /* timeout -1 should never produce 0, but be safe */
+			/* With an infinite timeout zsock_poll() can still return
+			 * 0 when a wake source fired but no fd reported an event.
+			 * Re-poll instead of breaking: the break path skips
+			 * close_all_sockets(), leaking the sockets and leaving
+			 * the client inactivity timers armed, which the caller's
+			 * re-init then memsets - corrupting the kernel timeout
+			 * list.
+			 */
+			continue;
 		}
 
 		/* Stop event on fds[0] */

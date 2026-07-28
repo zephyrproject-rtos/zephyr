@@ -116,6 +116,7 @@ enum crc_type {
 	CRC32_C,     /**< Use @ref crc32_c */
 	CRC32_IEEE,  /**< Use @ref crc32_ieee */
 	CRC32_K_4_2, /**< Use @ref crc32_k_4_2_update */
+	CRC32_MPEG2, /**< Use @ref crc32_mpeg2 */
 };
 
 /**
@@ -337,6 +338,36 @@ uint32_t crc32_c(uint32_t crc, const uint8_t *data,
 uint32_t crc32_k_4_2_update(uint32_t crc, const uint8_t *data, size_t len);
 
 /**
+ * @brief Generate CRC-32/MPEG-2 checksum.
+ *
+ * Uses polynomial 0x04C11DB7 with initial value 0xFFFFFFFF, no input or output
+ * reflection and no final XOR (CRC-32/MPEG-2). Equivalent to calling
+ * @ref crc32_mpeg2_update with @p crc set to 0xFFFFFFFF.
+ *
+ * @param  data         Pointer to data on which the CRC should be calculated.
+ * @param  len          Data length.
+ *
+ * @return CRC-32 value.
+ */
+uint32_t crc32_mpeg2(const uint8_t *data, size_t len);
+
+/**
+ * @brief Update a CRC-32/MPEG-2 checksum.
+ *
+ * Computes a CRC-32 using polynomial 0x04C11DB7 in MSB-first form, with no
+ * input or output reflection and no final XOR. With @p crc set to 0xFFFFFFFF
+ * on the first call this produces the standard CRC-32/MPEG-2 value.
+ *
+ * @param crc   CRC-32 checksum that needs to be updated (use 0xFFFFFFFF for
+ *              the first call to match CRC-32/MPEG-2).
+ * @param data  Pointer to data on which the CRC should be calculated.
+ * @param len   Data length.
+ *
+ * @return CRC-32 value.
+ */
+uint32_t crc32_mpeg2_update(uint32_t crc, const uint8_t *data, size_t len);
+
+/**
  * @brief Compute CCITT variant of CRC 8
  *
  * Normal CCITT variant of CRC 8 is using 0x07.
@@ -512,6 +543,8 @@ static inline uint32_t crc_by_type(enum crc_type type, const uint8_t *src, size_
 		return crc32_ieee_update(seed, src, len);
 	case CRC32_K_4_2:
 		return crc32_k_4_2_update(seed, src, len);
+	case CRC32_MPEG2:
+		return crc32_mpeg2_update(seed, src, len);
 	default:
 		break;
 	}

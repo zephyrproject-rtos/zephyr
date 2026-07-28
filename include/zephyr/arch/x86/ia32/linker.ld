@@ -177,120 +177,6 @@ SECTIONS
 
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-
-	SECTION_PROLOGUE(pinned.text,,)
-	{
-#ifndef CONFIG_LINKER_USE_BOOT_SECTION
-#include <snippets-rom-start.ld>
-#endif
-
-		MMU_PAGE_ALIGN
-
-		lnkr_pinned_start = .;
-
-#ifndef CONFIG_LINKER_USE_BOOT_SECTION
-		z_mapped_start = .;
-#endif
-
-		lnkr_pinned_text_start = .;
-
-		*(.pinned_text)
-		*(.pinned_text.*)
-
-		*(.gnu.linkonce.t.exc_*)
-
-#include <zephyr/linker/kobject-text.ld>
-
-		MMU_PAGE_ALIGN_PERM
-
-		lnkr_pinned_text_end = .;
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	MMU_PAGE_ALIGN_PERM
-
-	lnkr_pinned_rodata_start = .;
-
-#include <zephyr/linker/common-rom.ld>
-/* Located in generated directory. This file is populated by calling
- * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
- */
-#include <snippets-rom-sections.ld>
-#include <zephyr/linker/thread-local-storage.ld>
-
-	SECTION_PROLOGUE(pinned.rodata,,)
-	{
-#include <zephyr/arch/x86/ia32/scripts/static_intr.ld>
-
-		*(.pinned_rodata)
-		*(.pinned_rodata.*)
-
-#include <zephyr/linker/kobject-rom.ld>
-
-		MMU_PAGE_ALIGN_PERM
-
-		lnkr_pinned_rodata_end = .;
-	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_PROLOGUE(pinned.data,,)
-	{
-		MMU_PAGE_ALIGN_PERM
-
-		lnkr_pinned_data_start = .;
-
-		. = ALIGN(4);
-
-#include <zephyr/arch/x86/ia32/scripts/shared_kernel_pages.ld>
-#include <zephyr/arch/x86/ia32/scripts/dynamic_intr.ld>
-
-		*(.pinned_data)
-		*(.pinned_data.*)
-
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-#include <zephyr/linker/common-ram.ld>
-#include <zephyr/arch/x86/pagetables.ld>
-#include <zephyr/linker/kobject-data.ld>
-
-	lnkr_pinned_data_end = .;
-
-	SECTION_PROLOGUE(pinned.bss, (NOLOAD),)
-	{
-		. = ALIGN(4);
-
-		lnkr_pinned_bss_start = .;
-
-		*(.pinned_bss)
-		*(.pinned_bss.*)
-
-		lnkr_pinned_bss_end = .;
-	} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_PROLOGUE(pinned.noinit, (NOLOAD),)
-	{
-		. = ALIGN(4);
-
-		lnkr_pinned_noinit_start = .;
-
-		*(.pinned_noinit)
-		*(.pinned_noinit.*)
-
-		lnkr_pinned_noinit_end = .;
-
-		MMU_PAGE_ALIGN
-
-		lnkr_pinned_end = .;
-
-	} GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	lnkr_pinned_text_size = lnkr_pinned_text_end - lnkr_pinned_text_start;
-	lnkr_pinned_rodata_size = lnkr_pinned_rodata_end - lnkr_pinned_rodata_start;
-	lnkr_pinned_data_size = lnkr_pinned_data_end - lnkr_pinned_data_start;
-	lnkr_pinned_bss_size = lnkr_pinned_bss_end - lnkr_pinned_bss_start;
-	lnkr_pinned_noinit_size = lnkr_pinned_noinit_end - lnkr_pinned_noinit_start;
-
-#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
-
 	GROUP_START(ROMABLE_REGION)
 
 	. = ALIGN(8);
@@ -302,15 +188,11 @@ SECTIONS
 	{
 	__text_region_start = .;
 
-#if !defined(CONFIG_LINKER_USE_BOOT_SECTION) || \
-    !defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#ifndef CONFIG_LINKER_USE_BOOT_SECTION
 #ifndef CONFIG_XIP
 	z_mapped_start = .;
 #endif
-#endif
 
-#if !defined(CONFIG_LINKER_USE_BOOT_SECTION) || \
-    !defined(CONFIG_LINKER_USE_PINNED_SECTION)
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...). This typically contains the vector
  * table and debug information.
@@ -338,9 +220,7 @@ SECTIONS
 
 #include <snippets-text-sections.ld>
 
-#ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/kobject-text.ld>
-#endif
 
 	MMU_PAGE_ALIGN_PERM
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
@@ -349,14 +229,12 @@ SECTIONS
 	__text_region_size = __text_region_end - __text_region_start;
 	__rodata_region_start = .;
 
-#ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/common-rom.ld>
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_SECTIONS ...). Useful for grouping iterable RO structs.
  */
 #include <snippets-rom-sections.ld>
 #include <zephyr/linker/thread-local-storage.ld>
-#endif
 
 	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
@@ -365,9 +243,7 @@ SECTIONS
 	*(.gnu.linkonce.r.*)
 
 #ifndef CONFIG_DYNAMIC_INTERRUPTS
-#ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/arch/x86/ia32/scripts/static_intr.ld>
-#endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
 /* Located in generated directory. This file is populated by the
@@ -375,9 +251,7 @@ SECTIONS
  */
 #include <snippets-rodata.ld>
 
-#ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/kobject-rom.ld>
-#endif
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #include <zephyr/linker/cplusplus-rom.ld>
@@ -437,9 +311,7 @@ SECTIONS
 	*(".kernel.*")
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-#ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/arch/x86/ia32/scripts/dynamic_intr.ld>
-#endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
 /* Located in generated directory. This file is populated by the
@@ -447,9 +319,7 @@ SECTIONS
  */
 #include <snippets-rwdata.ld>
 
-#ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/arch/x86/ia32/scripts/shared_kernel_pages.ld>
-#endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
 
 	. = ALIGN(4);
 	__data_end = .;
@@ -462,7 +332,6 @@ SECTIONS
 
 #include <zephyr/linker/cplusplus-ram.ld>
 
-#ifndef CONFIG_LINKER_USE_PINNED_SECTION
 #include <zephyr/linker/common-ram.ld>
 #include <zephyr/arch/x86/pagetables.ld>
 
@@ -494,7 +363,6 @@ SECTION_PROLOGUE(.x86shadowstack.arr,,)
 
 /* Must be last in RAM */
 #include <zephyr/linker/kobject-data.ld>
-#endif /* !CONFIG_LINKER_USE_PINNED_SECTION */
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.

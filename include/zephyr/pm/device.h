@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Device Power Management API.
+ * @ingroup subsys_pm_device
+ */
+
 #ifndef ZEPHYR_INCLUDE_PM_DEVICE_H_
 #define ZEPHYR_INCLUDE_PM_DEVICE_H_
 

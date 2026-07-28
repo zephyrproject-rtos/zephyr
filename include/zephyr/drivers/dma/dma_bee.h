@@ -7,18 +7,20 @@
 /**
  * @file
  * @brief Realtek Bee DMA Configuration Macros
+ * @ingroup dma_bee_macros
  *
  * This header contains helper macros to extract DMA configuration parameters
  * (such as direction, data size, burst size, etc.) from the Devicetree
  * `config` cell for the Realtek Bee series SoCs.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_BEE_H_
-#define ZEPHYR_INCLUDE_DRIVERS_DMA_BEE_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_BEE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_BEE_H_
 
 /**
  * @defgroup dma_bee_macros Realtek Bee DMA Macros
  * @brief Macros for extracting DMA configuration from Devicetree
+ * @ingroup dma_interface
  * @{
  */
 
@@ -162,4 +164,4 @@
 
 /** @} */ /* End of dma_bee_macros group */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_BEE_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_BEE_H_ */

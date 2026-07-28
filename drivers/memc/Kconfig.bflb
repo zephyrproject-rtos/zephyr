@@ -9,3 +9,11 @@ config MEMC_BFLB_BL61X
 	depends on CLOCK_CONTROL
 	help
 	  Enable Bouffalolab BL61x PSRAM Controller.
+
+config MEMC_BFLB_BL808_PSRAM_UHS
+	bool "Bouffalolab BL808 UHS PSRAM Controller"
+	default y
+	depends on DT_HAS_BFLB_BL808_PSRAM_UHS_CONTROLLER_ENABLED
+	depends on CLOCK_CONTROL
+	help
+	  Enable Bouffalolab BL808 UHS PSRAM Controller.

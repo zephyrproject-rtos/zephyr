@@ -9,7 +9,7 @@
 #include <zephyr/pm/device_runtime.h>
 
 #include "test_driver.h"
-#include "zephyr/sys/util_macro.h"
+#include <zephyr/sys/util_macro.h>
 
 
 static const struct device *test_dev;

@@ -1,0 +1,42 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * GIC interrupt routing for peripherals common to all Ensemble SoCs
+ * (the bottom resource layer; see ensemble_common.dtsi). Included by the
+ * per-SoC <soc>_gic_irq.dtsi.
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+&uart0 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&uart1 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&uart2 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&uart3 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&uart4 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&uart5 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 118 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
