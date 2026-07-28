@@ -2333,3 +2333,20 @@ void sys_trace_pm_system_suspend_exit(int32_t ticks, enum pm_state state)
 {
 	ctf_top_pm_system_suspend_exit(ticks, (uint8_t)state);
 }
+
+/* Syscall */
+
+void sys_trace_syscall_enter(uint32_t id, const char *name)
+{
+	ctf_bounded_string_t ctf_name = {""};
+
+	strncpy(ctf_name.buf, name, CTF_MAX_STRING_LEN);
+	ctf_name.buf[CTF_MAX_STRING_LEN - 1] = '\0';
+
+	ctf_top_syscall_enter(id, ctf_name);
+}
+
+void sys_trace_syscall_exit(uint32_t id)
+{
+	ctf_top_syscall_exit(id);
+}

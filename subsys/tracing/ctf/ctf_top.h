@@ -497,6 +497,10 @@ typedef enum {
 	/* PM system */
 	CTF_EVENT_PM_SYSTEM_SUSPEND_ENTER = 0x180,
 	CTF_EVENT_PM_SYSTEM_SUSPEND_EXIT = 0x181,
+	/* Syscall */
+	CTF_EVENT_SYSCALL_ENTER = 0x182,
+	CTF_EVENT_SYSCALL_EXIT = 0x183,
+
 } ctf_event_t;
 
 typedef struct {
@@ -2477,4 +2481,16 @@ static inline void ctf_top_pm_system_suspend_exit(int32_t ticks, uint8_t state)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_PM_SYSTEM_SUSPEND_EXIT), ticks, state);
 }
+/* Syscall */
+
+static inline void ctf_top_syscall_enter(uint32_t id, ctf_bounded_string_t name)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SYSCALL_ENTER), id, name);
+}
+
+static inline void ctf_top_syscall_exit(uint32_t id)
+{
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_SYSCALL_EXIT), id);
+}
+
 #endif /* SUBSYS_DEBUG_TRACING_CTF_TOP_H */
