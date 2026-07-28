@@ -33,6 +33,20 @@ struct mspm0_sys_clock {
  */
 #define MSPM0_CLOCK_SUBSYS_FN(index) {.clk = DT_INST_CLOCKS_CELL(index, clk)}
 
+/** @brief clock_control_configure() source selector for the MSPM0 clock controller. */
+enum mspm0_clock_source {
+	MSPM0_CLOCK_SRC_SYSOSC,   /**< Internal system oscillator. */
+	MSPM0_CLOCK_SRC_LFCLK,    /**< Low-frequency clock. */
+	MSPM0_CLOCK_SRC_LFXT,     /**< Low-frequency crystal. */
+	MSPM0_CLOCK_SRC_LFOSC,    /**< Internal low-frequency oscillator. */
+	MSPM0_CLOCK_SRC_LFCLK_IN, /**< External low-frequency digital input. */
+	MSPM0_CLOCK_SRC_HFXT,     /**< High-frequency crystal. */
+	MSPM0_CLOCK_SRC_HFCLK_IN, /**< External high-frequency digital input. */
+	MSPM0_CLOCK_SRC_HFCLK,    /**< High-frequency clock. */
+	MSPM0_CLOCK_SRC_HSCLK,    /**< High-speed clock. */
+	MSPM0_CLOCK_SRC_SYSPLL,   /**< System PLL. */
+};
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MSPM0_CLOCK_CONTROL */

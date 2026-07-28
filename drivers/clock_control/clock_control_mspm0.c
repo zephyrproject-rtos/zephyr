@@ -180,6 +180,16 @@ static int clock_mspm0_get_rate(const struct device *dev,
 	return 0;
 }
 
+static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_t sys, void *data)
+{
+	struct mspm0_sys_clock *sys_clock = (struct mspm0_sys_clock *)sys;
+
+	switch (sys_clock->clk) {
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static int clock_mspm0_init(const struct device *dev)
 {
 	/* setup clocks based on specific rates */
@@ -278,6 +288,7 @@ static DEVICE_API(clock_control, clock_mspm0_driver_api) = {
 	.on = clock_mspm0_on,
 	.off = clock_mspm0_off,
 	.get_rate = clock_mspm0_get_rate,
+	.configure = clock_mspm0_configure,
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(ckm), &clock_mspm0_init, NULL, NULL, NULL,
