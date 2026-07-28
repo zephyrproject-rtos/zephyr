@@ -82,8 +82,14 @@ ZTEST(device_runtime_stress, test_pm_runtime_timer_emulated_irq)
 		ret = emulated_pm_stress_wait(stress_dev);
 		zassert_ok(ret, "iter %d wait (put_async from timer)", i);
 
-		(void)pm_device_state_get(stress_dev, &state);
-		zassert_equal(state, PM_DEVICE_STATE_SUSPENDED, "iter %d", i);
+		/* The asynchronous suspend completes on the system workqueue, which
+		 * on SMP may still be running when the timer handler signals
+		 * completion, so poll for the suspended state with a bounded wait.
+		 */
+		zassert_true(WAIT_FOR((pm_device_state_get(stress_dev, &state) == 0) &&
+				      (state == PM_DEVICE_STATE_SUSPENDED),
+				      100000, k_msleep(1)),
+			     "iter %d", i);
 	}
 }
 
