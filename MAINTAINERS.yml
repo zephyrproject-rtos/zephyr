@@ -2455,6 +2455,21 @@ Documentation Infrastructure:
     - drivers.modem
     - sample.drivers.modem
 
+"Drivers: NFC":
+  status: odd fixes
+  files:
+    - doc/hardware/peripherals/nfc.rst
+    - drivers/nfc/
+    - dts/bindings/nfc/
+    - include/zephyr/drivers/nfc.h
+    - include/zephyr/drivers/nfc/
+    - tests/drivers/build_all/nfc/
+    - tests/drivers/nfc/
+  labels:
+    - "area: NFC"
+  tests:
+    - drivers.nfc
+
 "Drivers: Opamp":
   status: maintained
   maintainers:
