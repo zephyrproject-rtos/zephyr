@@ -598,3 +598,57 @@ ZTEST(net_buf_simple_test_suite, test_net_buf_simple_hardening_pull_corrupt_len)
 	ptr = net_buf_simple_pull(&buf, 1);
 	zassert_is_null(ptr, "pull() on corrupted buffer must return NULL");
 }
+
+/*
+ * Typed scalar accessors dereference the pointer returned by the raw
+ * add/push/pull/remove primitives. Under hardening a corrupted buffer must
+ * make them fail closed (add_* returns NULL / skips the store, pull_* and
+ * remove_* return 0) instead of writing to or reading from a NULL pointer.
+ */
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_hardening_add_u8_corrupt_len)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_BUF_HARDENING);
+
+	buf.len = 0xFFFF;
+
+	zassert_is_null(net_buf_simple_add_u8(&buf, 0x42),
+			"add_u8() on corrupted buffer must return NULL");
+}
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_hardening_add_scalar_corrupt_len)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_BUF_HARDENING);
+
+	buf.len = 0xFFFF;
+
+	/* Void helper: must skip the store rather than dereferencing NULL. The
+	 * buffer must be left untouched (len not advanced).
+	 */
+	net_buf_simple_add_le32(&buf, 0xdeadbeef);
+	zassert_equal(buf.len, 0xFFFF, "add_le32() must not mutate a rejected buffer");
+}
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_hardening_pull_scalar_corrupt_len)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_BUF_HARDENING);
+
+	buf.len = 0xFFFF;
+
+	zassert_equal(net_buf_simple_pull_u8(&buf), 0,
+		      "pull_u8() on corrupted buffer must return 0");
+	zassert_equal(net_buf_simple_pull_le16(&buf), 0,
+		      "pull_le16() on corrupted buffer must return 0");
+	zassert_equal(net_buf_simple_pull_be32(&buf), 0,
+		      "pull_be32() on corrupted buffer must return 0");
+}
+
+ZTEST(net_buf_simple_test_suite, test_net_buf_simple_hardening_remove_scalar_corrupt_len)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_BUF_HARDENING);
+
+	buf.len = 0xFFFF;
+
+	zassert_equal(net_buf_simple_remove_le16(&buf), 0,
+		      "remove_le16() on corrupted buffer must return 0");
+}
