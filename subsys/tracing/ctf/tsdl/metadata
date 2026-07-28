@@ -2250,3 +2250,244 @@ event {
 		int32_t result;
 	};
 };
+
+event {
+	name = queue_init;
+	id = 0x106;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_cancel_wait;
+	id = 0x107;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_queue_insert_enter;
+	id = 0x108;
+	fields := struct {
+		uint32_t id;
+		uint8_t alloc;
+	};
+};
+
+event {
+	name = queue_queue_insert_blocking;
+	id = 0x109;
+	fields := struct {
+		uint32_t id;
+		uint8_t alloc;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = queue_queue_insert_exit;
+	id = 0x10A;
+	fields := struct {
+		uint32_t id;
+		uint8_t alloc;
+		int32_t ret;
+	};
+};
+
+event {
+	name = queue_append_enter;
+	id = 0x10B;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_append_exit;
+	id = 0x10C;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_alloc_append_enter;
+	id = 0x10D;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_alloc_append_exit;
+	id = 0x10E;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = queue_prepend_enter;
+	id = 0x10F;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_prepend_exit;
+	id = 0x110;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_alloc_prepend_enter;
+	id = 0x111;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_alloc_prepend_exit;
+	id = 0x112;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = queue_insert_enter;
+	id = 0x113;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_insert_exit;
+	id = 0x114;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_append_list_enter;
+	id = 0x115;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_append_list_exit;
+	id = 0x116;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = queue_merge_slist_enter;
+	id = 0x117;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_merge_slist_exit;
+	id = 0x118;
+	fields := struct {
+		uint32_t id;
+		int32_t ret;
+	};
+};
+
+event {
+	name = queue_get_enter;
+	id = 0x119;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = queue_get_blocking;
+	id = 0x11A;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = queue_get_exit;
+	id = 0x11B;
+	fields := struct {
+		uint32_t id;
+		uint32_t timeout;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = queue_remove_enter;
+	id = 0x11C;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_remove_exit;
+	id = 0x11D;
+	fields := struct {
+		uint32_t id;
+		uint8_t ret;
+	};
+};
+
+event {
+	name = queue_unique_append_enter;
+	id = 0x11E;
+	fields := struct {
+		uint32_t id;
+	};
+};
+
+event {
+	name = queue_unique_append_exit;
+	id = 0x11F;
+	fields := struct {
+		uint32_t id;
+		uint8_t ret;
+	};
+};
+
+event {
+	name = queue_peek_head;
+	id = 0x120;
+	fields := struct {
+		uint32_t id;
+		uint32_t ret;
+	};
+};
+
+event {
+	name = queue_peek_tail;
+	id = 0x121;
+	fields := struct {
+		uint32_t id;
+		uint32_t ret;
+	};
+};
