@@ -174,7 +174,7 @@
 		};
 
 		mac: ethernet@40028000 {
-			compatible = "st,stm32-ethernet";
+			compatible = "st,stm32-ethernet", "snps,dwmac";
 			reg = <0x40028000 0x1400>;
 			clock-names = "mac-clk-int", "stm-eth", "mac-clk-tx", "mac-clk-rx",
 				      "eth1clk-sel", "eth1clkdiv-sel", "eth1refclk-sel";
