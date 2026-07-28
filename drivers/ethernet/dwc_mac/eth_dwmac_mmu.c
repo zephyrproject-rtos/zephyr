@@ -65,9 +65,9 @@ int dwmac_platform_init(const struct device *dev)
 	desc_uncached_addr += NB_TX_DESCS * sizeof(struct dwmac_dma_desc);
 	p->rx_descs = (void *)desc_uncached_addr;
 
-	p->tx_descs_phys = desc_phys_addr;
+	p->tx_descs_phys = UINT_TO_POINTER(desc_phys_addr);
 	desc_phys_addr += NB_TX_DESCS * sizeof(struct dwmac_dma_desc);
-	p->rx_descs_phys = desc_phys_addr;
+	p->rx_descs_phys = UINT_TO_POINTER(desc_phys_addr);
 
 	/* basic configuration for this platform */
 	DWMAC_REG_WRITE(MAC_CONF,
