@@ -72,3 +72,29 @@ int xen_sched_pin_override(int32_t pcpu)
 
 	return HYPERVISOR_sched_op(SCHEDOP_pin_override, &pin_override);
 }
+
+int xen_sched_watchdog(uint32_t *id, uint32_t timeout)
+{
+	int ret;
+	struct sched_watchdog watchdog;
+
+	if (!id || (*id == 0 && timeout == 0)) {
+		return -EINVAL;
+	}
+
+	watchdog = (struct sched_watchdog) {
+		.id = *id,
+		.timeout = timeout,
+	};
+
+	ret = HYPERVISOR_sched_op(SCHEDOP_watchdog, &watchdog);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (*id == 0) {
+		*id = ret;
+	}
+
+	return 0;
+}
