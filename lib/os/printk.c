@@ -97,6 +97,42 @@ static int char_out(int c, void *ctx_p)
 	return _char_out(c);
 }
 
+/*
+ * Format and emit through an I/O path we fully control: a private,
+ * unbuffered stream (or a direct callback) wired to the character output
+ * hook installed by the platform. Never stdout and never the logging
+ * subsystem, so there is no shared buffer and no lock other than the
+ * one the caller may be holding.
+ */
+static void vprintk_core(const char *fmt, va_list ap)
+{
+#ifdef CONFIG_PICOLIBC
+	FILE console = FDEV_SETUP_STREAM((int(*)(char, FILE *))char_out,
+					 NULL, NULL, _FDEV_SETUP_WRITE);
+	(void) vfprintf(&console, fmt, ap);
+#else
+	cbvprintf(char_out, NULL, fmt, ap);
+#endif
+}
+
+void vprintk_unlocked(const char *fmt, va_list ap)
+{
+	vprintk_core(fmt, ap);
+}
+EXPORT_SYMBOL(vprintk_unlocked);
+
+void printk_unlocked(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+
+	vprintk_core(fmt, ap);
+
+	va_end(ap);
+}
+EXPORT_SYMBOL(printk_unlocked);
+
 void vprintk(const char *fmt, va_list ap)
 {
 	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
@@ -128,13 +164,7 @@ void vprintk(const char *fmt, va_list ap)
 		k_spinlock_key_t key = k_spin_lock(&lock);
 #endif
 
-#ifdef CONFIG_PICOLIBC
-		FILE console = FDEV_SETUP_STREAM((int(*)(char, FILE *))char_out,
-						 NULL, NULL, _FDEV_SETUP_WRITE);
-		(void) vfprintf(&console, fmt, ap);
-#else
-		cbvprintf(char_out, NULL, fmt, ap);
-#endif
+		vprintk_core(fmt, ap);
 
 #ifdef CONFIG_PRINTK_SYNC
 		k_spin_unlock(&lock, key);

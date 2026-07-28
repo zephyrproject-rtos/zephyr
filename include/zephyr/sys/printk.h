@@ -60,7 +60,53 @@ __printf_like(1, 2) void printk(const char *fmt, ...);
 
 __printf_like(1, 0) void vprintk(const char *fmt, va_list ap);
 
+/**
+ * @brief Output a string without any locking
+ *
+ * Same output as printk() but the internal spinlock is never taken, and
+ * the logging subsystem and the user mode output buffer are both bypassed:
+ * the text goes straight to the character output hook installed by the
+ * platform.
+ *
+ * This is meant for contexts where taking a lock is impossible or unwise:
+ *
+ * - Fatal error and assertion paths. The lock may be held by the very
+ *   context that failed, or by a CPU that will never release it, in which
+ *   case a locking printk() would hang instead of reporting.
+ * - Early boot, before locking primitives are usable. On some
+ *   architectures the atomic instructions a spinlock relies on require the
+ *   MMU to be enabled first.
+ * - Re-entrant output. An assertion firing while a message is being
+ *   printed would otherwise deadlock on a non-recursive spinlock.
+ *
+ * Output may therefore interleave with a concurrent printk(). In the
+ * situations above that is preferable to deadlocking or losing the
+ * message entirely.
+ *
+ * @note Only usable from kernel context, and only as lock free as the
+ * character output hook behind it: a console driver that takes its own
+ * lock reintroduces the problem.
+ *
+ * @param fmt Format string.
+ * @param ... Optional list of format arguments.
+ */
+__printf_like(1, 2) void printk_unlocked(const char *fmt, ...);
+
+/**
+ * @brief Output a string without any locking, va_list version
+ *
+ * See printk_unlocked() for when this is appropriate and what it gives up.
+ *
+ * @param fmt Format string.
+ * @param ap Format arguments.
+ */
+__printf_like(1, 0) void vprintk_unlocked(const char *fmt, va_list ap);
+
 #else
+/** @cond INTERNAL_HIDDEN */
+/* Stubs for CONFIG_PRINTK=n. The API is documented above; these carry no
+ * documentation of their own so that Doxygen describes each function once.
+ */
 static inline __printf_like(1, 2) void printk(const char *fmt, ...)
 {
 	ARG_UNUSED(fmt);
@@ -71,6 +117,18 @@ static inline __printf_like(1, 0) void vprintk(const char *fmt, va_list ap)
 	ARG_UNUSED(fmt);
 	ARG_UNUSED(ap);
 }
+
+static inline __printf_like(1, 2) void printk_unlocked(const char *fmt, ...)
+{
+	ARG_UNUSED(fmt);
+}
+
+static inline __printf_like(1, 0) void vprintk_unlocked(const char *fmt, va_list ap)
+{
+	ARG_UNUSED(fmt);
+	ARG_UNUSED(ap);
+}
+/** @endcond */
 #endif
 
 #ifdef CONFIG_PICOLIBC
