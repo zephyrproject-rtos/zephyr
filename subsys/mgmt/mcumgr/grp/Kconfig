@@ -21,3 +21,5 @@ rsource "zephyr_basic/Kconfig"
 rsource "settings_mgmt/Kconfig"
 
 rsource "enum_mgmt/Kconfig"
+
+rsource "transport_mgmt/Kconfig"
