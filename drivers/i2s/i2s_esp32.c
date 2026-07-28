@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 #include <hal/i2s_hal.h>
 
 #if !SOC_GDMA_SUPPORTED
@@ -35,7 +36,15 @@
 
 LOG_MODULE_REGISTER(i2s_esp32, CONFIG_I2S_LOG_LEVEL);
 
-#define I2S_ESP32_CLK_SRC             I2S_CLK_SRC_DEFAULT
+/* I2S_CLK_SRC_DEFAULT is an auto-select sentinel on esp32p4, not an
+ * alias of a module clock, so its rate resolves to zero. PLL_F160M is
+ * available on the revisions zephyr supports.
+ */
+#ifdef CONFIG_SOC_SERIES_ESP32P4
+#define I2S_ESP32_CLK_SRC I2S_CLK_SRC_PLL_160M
+#else
+#define I2S_ESP32_CLK_SRC I2S_CLK_SRC_DEFAULT
+#endif
 #define I2S_ESP32_DMA_BUFFER_MAX_SIZE 4092
 
 #define I2S_ESP32_NUM_INST_OK          DT_NUM_INST_STATUS_OKAY(espressif_esp32_i2s)
@@ -984,6 +993,9 @@ static int i2s_esp32_initialize(const struct device *dev)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_SOC_SERIES_ESP32P4
+	esp_clk_tree_enable_src((soc_module_clk_t)I2S_ESP32_CLK_SRC, true);
+#endif
 	err = clock_control_on(clk_dev, dev_cfg->clock_subsys);
 	if (err != 0) {
 		LOG_DBG("Clock control enabling failed: %d", err);
