@@ -215,6 +215,7 @@ jobs:
         run: |
           pip install -r scripts/requirements-actions.txt --require-hashes
           west packages pip --install
+          pip install "$(west list trusted-firmware-m -f '{abspath}')"
 
       - name: Set up ccache
         run: |

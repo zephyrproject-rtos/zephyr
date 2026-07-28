@@ -53,7 +53,7 @@ You can install them via:
 
    .. code-block:: bash
 
-      $ pip3 install "$(west list trusted-firmware-m -f '{abspath}')/."
+      $ pip3 install "$(west list trusted-firmware-m -f '{abspath}')"
 
 They are used by TF-M's signing utility to prepare firmware images for
 validation by the bootloader.
