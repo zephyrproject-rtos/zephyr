@@ -980,6 +980,22 @@ static int transceive(const struct device *dev,
 #ifdef CONFIG_SPI_ESP32_INTERRUPT
 	spi_ll_enable_int(cfg->spi);
 	spi_ll_set_int_stat(cfg->spi);
+
+	if (!asynchronous) {
+		ret = spi_context_wait_for_completion(&data->ctx);
+		if (ret != 0) {
+			/* A late ISR completion must not signal the context of
+			 * the next transfer
+			 */
+			spi_ll_disable_int(cfg->spi);
+			spi_ll_clear_int_stat(cfg->spi);
+			spi_context_cs_control(&data->ctx, false);
+#ifdef CONFIG_PM
+			spi_esp32_pm_policy_state_lock_put(dev);
+#endif
+		}
+	}
+
 	spi_context_release(&data->ctx, ret);
 	return ret;
 #else
