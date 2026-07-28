@@ -2,7 +2,7 @@ description: STM32 SDMMC Host Controller
 
 compatible: "st,stm32-sdmmc"
 
-include: [sdhc.yaml, mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
+include: [sdhc.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   disk-name:
