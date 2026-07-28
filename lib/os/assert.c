@@ -60,7 +60,13 @@ __weak void assert_print(const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	vprintk(fmt, ap);
+	/*
+	 * Unlocked: an assertion can fire while a printk() is in progress,
+	 * including from within printk()'s own locked region, and the lock
+	 * is not recursive. It can also fire on a CPU while another one
+	 * holds the lock and is no longer able to release it.
+	 */
+	vprintk_unlocked(fmt, ap);
 
 	va_end(ap);
 }
