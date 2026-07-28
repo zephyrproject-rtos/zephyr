@@ -71,3 +71,5 @@ SECTION_DATA_PROLOGUE(.option_setting_otp_pbps_sec, DT_REG_ADDR(DT_NODELABEL(opt
 	KEEP(*(.option_setting_otp_pbps_sec))
 } GROUP_LINK_IN(OFS_OTP_PBPS_SEC_MEMORY)
 #endif
+
+#endif
