@@ -12,17 +12,15 @@
  * for the Nordic Semiconductor nRF71 family processor.
  */
 
-#ifdef __NRF_TFM__
 #include <zephyr/autoconf.h>
-#endif
 
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
-
-#ifndef __NRF_TFM__
 #include <zephyr/cache.h>
+#ifndef __ZEPHYR__
+#include <hal/nrf_cache.h>
 #endif
 
 #if defined(NRF_APPLICATION)
@@ -122,7 +120,6 @@ static void set_mpc_region_override(NRF_MPC_Type *mpc,
 	nrf_mpc_override_config_set(mpc, index, &override->config);
 }
 
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 static void mpc_configuration(void)
 {
 	ARRAY_FOR_EACH(mpc00_region_overrides, i) {
@@ -133,7 +130,6 @@ static void mpc_configuration(void)
 		set_mpc_region_override(NRF_MPC03, i, &mpc03_region_overrides[i]);
 	}
 }
-#endif
 
 /**
  * Return the SPU instance that can be used to configure the
@@ -166,7 +162,8 @@ static void ipct_configuration(void)
 #endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
 #if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(__NRF_TFM__)
+#if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
+	!defined(__ZEPHYR__)
 static void wifi_setup(void)
 {
 	/* Kickstart the LMAC processor */
@@ -181,11 +178,9 @@ static void wifi_setup(void)
 void soc_early_init_hook(void)
 {
 	/* Update the SystemCoreClock global variable with current core clock
-	 * retrieved from hardware state.
+	 * retrieved from the DT.
 	 */
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(__NRF_TFM__)
-	/* Currently not supported for non-secure */
-	SystemCoreClockUpdate();
+	SystemCoreClock = NRF_PERIPH_GET_FREQUENCY(DT_NODELABEL(cpu));
 
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	/* Skip for tf-m, configuration exist in target_cfg_71.c */
@@ -194,6 +189,8 @@ void soc_early_init_hook(void)
 	ipct_configuration();
 #endif
 
+#if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
+	!defined(__ZEPHYR__)
 #if defined(CONFIG_SOC_NRF7120_WICR_SETUP)
 	int ret = wicr_setup();
 
@@ -215,15 +212,12 @@ void soc_early_init_hook(void)
 	nrf_lfxo_cload_set(NRF_LFXO,
 			(uint8_t)(DT_PROP(LFXO_NODE, load_capacitance_femtofarad) / 1000));
 #endif
-#endif /* !CONFIG_TRUSTED_EXECUTION_NONSECURE || __NRF_TFM__ */
+#endif /* (NRF_APPLICATION && !CONFIG_TRUSTED_EXECUTION_NONSECURE) || !__ZEPHYR__  */
 
-#ifdef __NRF_TFM__
-	/* TF-M enables the instruction cache from target_cfg_71.c, so we
-	 * don't need to enable it here.
-	 */
-#else
-	/* Enable ICACHE */
+#ifdef __ZEPHYR__
 	sys_cache_instr_enable();
+#elif defined(NRF_ICACHE)
+	nrf_cache_enable(NRF_ICACHE);
 #endif
 }
 
