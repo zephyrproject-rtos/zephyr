@@ -18,12 +18,6 @@
 
 #include "nxp_lpc55S0x_common.dtsi"
 
-&sramx {
-	compatible = "zephyr,memory-region", "mmio-sram";
-	reg = <0x04000000 DT_SIZE_K(16)>;
-	zephyr,memory-region = "SRAMX";
-};
-
 &iap {
 	status = "okay";
 };
