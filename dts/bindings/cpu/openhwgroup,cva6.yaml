@@ -10,5 +10,4 @@ include: riscv-common.yaml
 properties:
   timebase-frequency:
     required: true
-    type: int
     description: Clock speed at which the core-local machine timer operates.
