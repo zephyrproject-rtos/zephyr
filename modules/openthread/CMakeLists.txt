@@ -11,6 +11,17 @@ zephyr_library_sources(
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_SHELL shell.c)
 zephyr_include_directories(include)
 
+# Zephyr logging options
+if(CONFIG_LOG_BACKEND_SPINEL)
+  add_definitions(-DOPENTHREAD_CONFIG_LOG_OUTPUT=OPENTHREAD_CONFIG_LOG_OUTPUT_APP)
+endif()
+
+# Other options
+add_definitions(
+  -DOPENTHREAD_CONFIG_LOG_LEVEL=${CONFIG_OPENTHREAD_LOG_LEVEL}
+  -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE="openthread-core-zephyr-config.h"
+)
+
 add_subdirectory(platform)
 
 if(NOT CONFIG_OPENTHREAD_SOURCES)
@@ -172,18 +183,6 @@ if(CONFIG_OPENTHREAD_CLI_VENDOR_EXTENSION)
 endif()
 
 set(BUILD_TESTING OFF CACHE BOOL "Disable openthread cmake testing targets" FORCE)
-
-# Zephyr logging options
-
-if(CONFIG_LOG_BACKEND_SPINEL)
-  add_definitions(-DOPENTHREAD_CONFIG_LOG_OUTPUT=OPENTHREAD_CONFIG_LOG_OUTPUT_APP)
-endif()
-
-# Other options
-add_definitions(
-  -DOPENTHREAD_CONFIG_LOG_LEVEL=${CONFIG_OPENTHREAD_LOG_LEVEL}
-  -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE="openthread-core-zephyr-config.h"
-)
 
 # Need to specify build directory as well
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} build)
