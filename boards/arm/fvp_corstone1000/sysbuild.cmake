@@ -76,6 +76,85 @@ message(STATUS "Corstone-1000: TF-A source: ${tfa_source_dir}")
 message(STATUS "Corstone-1000: TF-PSA-Crypto: ${tf_psa_crypto_dir}")
 message(STATUS "Corstone-1000: CMSIS_6: ${cmsis_6_module_dir}")
 
+# TF-M's build runs its Python tools as console scripts, by bare name, and as
+# plain scripts that import its packages.  Both normally need TF-M's Python
+# package installed; a board build must not install anything, so provide them
+# from the build directory instead.
+#
+# pyproject.toml maps package names onto directories with different names, which
+# PYTHONPATH cannot express, so each package gets a stub __init__.py pointing its
+# __path__ at the real directory.  The four scripts below are the ones this
+# board's build actually calls; a fifth would fail loudly with "command not
+# found" rather than silently.
+set(tfm_pythonpath ${CMAKE_CURRENT_BINARY_DIR}/tfm-pythonpath)
+set(tfm_scripts_dir ${CMAKE_CURRENT_BINARY_DIR}/tfm-scripts)
+set(tfm_python_wrapper ${tfm_scripts_dir}/python3-tfm)
+
+# package name -> directory holding it, from [tool.setuptools.package-dir]
+set(tfm_packages
+  bl1        bl1/bl1_1/scripts
+  bl2        bl2/ext/mcuboot/scripts
+  tfm_tools  tools/modules
+)
+# console script -> entry point, from [project.scripts]
+set(tfm_entry_points
+  bl1_1_create_bl1_2_image          bl1.create_bl1_2_img:main
+  bl1_1_create_provisioning_bundle  bl1.create_provisioning_bundle:main
+  hex_generation                    tfm_tools.hex_generation:main
+  mcuboot_imagesign_wrapper         bl2.wrapper:main
+)
+
+file(MAKE_DIRECTORY ${tfm_scripts_dir})
+
+# The package stubs, plus the directories themselves: some scripts import a
+# sibling module by its bare name (wrapper.py does "import macro_parser").
+set(tfm_python_paths "\"${tfm_pythonpath}\"")
+while(tfm_packages)
+  list(POP_FRONT tfm_packages name subdir)
+  if(NOT EXISTS ${tfm_source_dir}/${subdir})
+    message(FATAL_ERROR "Corstone-1000: TF-M package directory '${subdir}' is missing")
+  endif()
+  file(WRITE ${tfm_pythonpath}/${name}/__init__.py
+    "# Generated for the Corstone-1000 TF-M build: do not edit.\n"
+    "__path__ = [\"${tfm_source_dir}/${subdir}\"]\n")
+  string(APPEND tfm_python_paths ", \"${tfm_source_dir}/${subdir}\"")
+endwhile()
+
+# Each launcher puts those paths first on sys.path, and on PYTHONPATH for any
+# Python process it starts.
+string(CONCAT tfm_launcher_head
+  "#!${PYTHON_EXECUTABLE}\n"
+  "# Generated for the Corstone-1000 TF-M build: do not edit.\n"
+  "import os, sys\n"
+  "paths = [${tfm_python_paths}]\n"
+  "sys.path[:0] = paths\n"
+  "os.environ[\"PYTHONPATH\"] = os.pathsep.join(\n"
+  "    paths + [p for p in [os.environ.get(\"PYTHONPATH\")] if p])\n")
+
+while(tfm_entry_points)
+  list(POP_FRONT tfm_entry_points script entry)
+  string(REPLACE ":" ";" entry_parts ${entry})
+  list(GET entry_parts 0 entry_module)
+  list(GET entry_parts 1 entry_func)
+  file(WRITE ${tfm_scripts_dir}/${script}
+    "${tfm_launcher_head}"
+    "from ${entry_module} import ${entry_func}\n"
+    "sys.exit(${entry_func}())\n")
+  file(CHMOD ${tfm_scripts_dir}/${script} PERMISSIONS
+    OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+endwhile()
+
+# Interpreter launcher, handed to TF-M as Python3_EXECUTABLE.  Some of its rules
+# run "cmake -E env PYTHONPATH=<tfm>/tools/modules python3 <script>", pointing
+# PYTHONPATH inside the tfm_tools package rather than at its parent, so their
+# "import tfm_tools.foo" would otherwise still need an installed copy.
+file(WRITE ${tfm_python_wrapper}
+  "${tfm_launcher_head}"
+  "import subprocess\n"
+  "sys.exit(subprocess.call([sys.executable] + sys.argv[1:]))\n")
+file(CHMOD ${tfm_python_wrapper} PERMISSIONS
+  OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+
 # Output directories
 set(tfm_binary_dir ${CMAKE_BINARY_DIR}/tfm)
 set(tfa_binary_dir ${CMAKE_BINARY_DIR}/tfa)
@@ -191,12 +270,20 @@ file(WRITE ${tfm_toolchain_wrapper}
 list(REMOVE_ITEM tfm_cmake_args "-DTFM_TOOLCHAIN_FILE=${tfm_toolchain_file}")
 list(APPEND tfm_cmake_args "-DTFM_TOOLCHAIN_FILE=${tfm_toolchain_wrapper}")
 
+# Use the interpreter launcher generated above so TF-M's python helpers can
+# import tfm_tools without the package being installed.
+list(APPEND tfm_cmake_args -DPython3_EXECUTABLE=${tfm_python_wrapper})
+
+# Run the TF-M build with the console scripts on PATH.
+set(tfm_env ${CMAKE_COMMAND} -E env "PATH=${tfm_scripts_dir}:$ENV{PATH}")
+
 ExternalProject_Add(
   tfm_secure_enclave
   SOURCE_DIR ${tfm_source_dir}
   BINARY_DIR ${tfm_binary_dir}
-  CMAKE_ARGS ${tfm_cmake_args}
-  BUILD_COMMAND ${CMAKE_COMMAND} --build . -- install
+  CONFIGURE_COMMAND ${tfm_env} ${CMAKE_COMMAND} -G ${CMAKE_GENERATOR}
+    -S ${tfm_source_dir} -B ${tfm_binary_dir} ${tfm_cmake_args}
+  BUILD_COMMAND ${tfm_env} ${CMAKE_COMMAND} --build . -- install
   INSTALL_COMMAND ""
   BUILD_ALWAYS True
   USES_TERMINAL_BUILD True
@@ -384,7 +471,7 @@ set(tfa_header_size 0x1000)
 
 add_custom_command(
   OUTPUT ${CORSTONE1000_FIRMWARE_DIR}/bl2_signed.bin
-  COMMAND ${Python3_EXECUTABLE} ${imgtool} sign
+  COMMAND ${PYTHON_EXECUTABLE} ${imgtool} sign
     --key ${signing_key}
     --header-size ${tfa_header_size}
     --align 1
