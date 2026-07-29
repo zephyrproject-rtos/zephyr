@@ -149,9 +149,10 @@ void audio_process_sbc_buf(uint8_t sbc_hdr, uint8_t *data, size_t len, uint16_t 
 {
 	const void *in_data;
 	size_t samples_count;
-	size_t out_size;
+	uint32_t out_size;
 	size_t samples_lost;
 	uint8_t num_frames;
+	uint32_t in_size;
 	int err;
 
 	samples_lost = 0;
@@ -176,6 +177,7 @@ void audio_process_sbc_buf(uint8_t sbc_hdr, uint8_t *data, size_t len, uint16_t 
 
 	samples_count = 0;
 	in_data = (void *)data;
+	in_size = (uint32_t)len;
 	for (uint8_t i = 0; i < num_frames; ++i) {
 		if (audio_pcm_buffer_free_size() == 0) {
 			/* if no enough space, don't need decode. */
@@ -183,7 +185,7 @@ void audio_process_sbc_buf(uint8_t sbc_hdr, uint8_t *data, size_t len, uint16_t 
 		}
 
 		out_size = sizeof(pcm_frame_buffer);
-		err = sbc_decode(&decoder, &in_data, &len, pcm_frame_buffer, &out_size);
+		err = sbc_decode(&decoder, &in_data, &in_size, pcm_frame_buffer, &out_size);
 
 		if (err == 0) {
 			audio_add_pcm_data((uint8_t *)pcm_frame_buffer, out_size);
