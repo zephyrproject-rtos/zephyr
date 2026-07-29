@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	/omit-if-no-ref/ spi0_pins: spi0 {
+		spi0-pinmux {
+			pinmux = <RZV_PINMUX(PORT_43, 0, 1)>, /* CK */
+				 <RZV_PINMUX(PORT_43, 1, 1)>, /* MOSI */
+				 <RZV_PINMUX(PORT_43, 2, 1)>; /* MISO */
+		};
+	};
+
+	/omit-if-no-ref/ spi1_pins: spi1 {
+		spi1-pinmux {
+			pinmux = <RZV_PINMUX(PORT_44, 0, 1)>, /* CK */
+				 <RZV_PINMUX(PORT_44, 1, 1)>, /* MOSI */
+				 <RZV_PINMUX(PORT_44, 2, 1)>, /* MISO */
+				 <RZV_PINMUX(PORT_44, 3, 1)>; /* SSL */
+		};
+	};
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_pins>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio3 1 GPIO_ACTIVE_LOW>;
+	renesas,spn-delay = <3>;
+	renesas,rx-trigger = <4>;
+	renesas,tx-trigger = <0>;
+
+	dmas = <&dma0 6 RZ_DMA_PERIPH_TO_MEM>,
+	       <&dma0 5 RZ_DMA_MEM_TO_PERIPH>;
+	dma-names = "rx", "tx";
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		spi-cs-setup-delay-ns = <1800000>;
+		spi-cs-hold-delay-ns = <1800000>;
+	};
+};
+
+dut_spis: &spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_pins>;
+	pinctrl-names = "default";
+	renesas,rx-trigger = <4>;
+	renesas,tx-trigger = <0>;
+
+	dmas = <&dma0 1 RZ_DMA_PERIPH_TO_MEM>,
+	       <&dma0 2 RZ_DMA_MEM_TO_PERIPH>;
+	dma-names = "rx", "tx";
+};
+
+&dma0 {
+	status = "okay";
+	dma-buf-addr-alignment = <1>;
+};
