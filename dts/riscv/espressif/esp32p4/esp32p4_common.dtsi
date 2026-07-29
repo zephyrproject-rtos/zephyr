@@ -679,7 +679,9 @@
 			reg = <0x50098000 0x4000>;
 			interrupts = <ETH_MAC_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			clocks = <&clock ESP32_EMAC_MODULE>;
+			clocks = <&clock ESP32_EMAC_MODULE>,
+				 <&clock ESP32_EMAC_PTP_MODULE>;
+			clock-names = "mac", "ptp";
 			status = "disabled";
 
 			mdio: mdio {
@@ -687,6 +689,10 @@
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
 			};
 		};
 	};
