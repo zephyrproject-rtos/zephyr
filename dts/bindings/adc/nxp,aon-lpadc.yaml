@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Always-On Low-Power ADC (AON_LPADC).
+
+compatible: "nxp,aon-lpadc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  voltage-ref:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+    description: |
+      Voltage reference selection (CFG[REFSEL]). 0 selects reference
+      Option 1, 1 selects Option 2 (see the chip reference manual for the
+      Option 1/2 mapping). The default matches the register reset value.
+
+  power-level:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+    description: |
+      Converter power configuration (CFG[PWRSEL]). 0 selects power
+      Option 1, 1 selects Option 2 (see the chip reference manual). The
+      default matches the register reset value.
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
