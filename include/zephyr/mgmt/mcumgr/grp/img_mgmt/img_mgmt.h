@@ -8,6 +8,12 @@
 #ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_IMG_MGMT_IMG_MGMT_H_
 #define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_IMG_MGMT_IMG_MGMT_H_
 
+/**
+ * @file
+ * @brief Header file for the MCUmgr image management group API.
+ * @ingroup mcumgr_img_mgmt
+ */
+
 #include <inttypes.h>
 #include <bootutil/image.h>
 #include <zcbor_common.h>
