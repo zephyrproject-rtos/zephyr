@@ -47,7 +47,13 @@ static void zbus_proxy_agent_ipc_recv_callback(const void *data, size_t len, voi
 	if (ipc_data->recv_cb) {
 		ret = ipc_data->recv_cb(ipc_data->recv_cb_config_ptr, msg);
 		if (ret < 0) {
-			LOG_WRN("Proxy agent receive callback failed for channel '%s': %d",
+			/*
+			 * The frame comes from a peer domain and, on the recv_cb
+			 * error path, channel_name[] is not guaranteed to be
+			 * NUL-terminated within the fixed-size frame.
+			 */
+			LOG_WRN("Proxy agent receive callback failed for channel '%.*s': %d",
+				(int)MIN(msg->channel_name_len, sizeof(msg->channel_name)),
 				msg->channel_name, ret);
 		}
 	}

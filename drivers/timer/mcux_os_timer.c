@@ -244,7 +244,7 @@ bool z_nxp_os_timer_ignore_timer_wakeup(void)
 	return (wait_forever || counter_remaining_ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Only for tickless kernel system */
@@ -267,8 +267,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #else
 	ARG_UNUSED(idle);
 #endif
-	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t now = mcux_lpc_ostick_get_compensated_timer_value();

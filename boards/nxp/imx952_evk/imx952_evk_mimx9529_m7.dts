@@ -31,6 +31,10 @@
 	pinctrl-names = "default";
 };
 
+&sar_adc {
+	status = "okay";
+};
+
 &tstmr2 {
 	status = "okay";
 };

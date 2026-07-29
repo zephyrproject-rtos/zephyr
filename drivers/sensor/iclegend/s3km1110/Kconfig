@@ -6,7 +6,6 @@ config S3KM1110
 	default y
 	depends on DT_HAS_ICLEGEND_S3KM1110_ENABLED
 	depends on UART_INTERRUPT_DRIVEN
-	select UART
 	help
 	  Enable driver for the Iclegend S3KM1110 UART radar.
 

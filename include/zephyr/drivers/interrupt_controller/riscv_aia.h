@@ -82,6 +82,9 @@ void riscv_aia_config_source(uint32_t irq, uint32_t mode);
  * @param irq Multi-level encoded interrupt ID.
  * @param hart Target hart index.
  * @param eiid EIID to deliver to the target hart's IMSIC.
+ *
+ * @note `eiid` is specified to APLIC + IMSIC enabled.
+ *       With APLIC direct delivery mode this parameter does not exist.
  */
 void riscv_aia_route_to_hart(uint32_t irq, uint32_t hart, uint32_t eiid);
 
@@ -93,6 +96,16 @@ void riscv_aia_route_to_hart(uint32_t irq, uint32_t hart, uint32_t eiid);
  */
 void riscv_aia_inject_msi(uint32_t hart, uint32_t eiid);
 #endif /* CONFIG_RISCV_APLIC_MSI */
+
+#if defined(CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY)
+/**
+ * @brief Route an APLIC source to a specific hart.
+ *
+ * @param irq Multi-level encoded interrupt ID.
+ * @param hart Target hart index.
+ */
+void riscv_aia_route_to_hart(uint32_t irq, uint32_t hart);
+#endif /* CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY */
 
 /**
  * @brief Enable an APLIC source using the convenience wrapper.

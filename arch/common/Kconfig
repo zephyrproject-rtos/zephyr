@@ -6,7 +6,7 @@
 
 config SEMIHOST
 	bool "Semihosting support for ARM, RISC-V and Xtensa targets"
-	depends on ARM || ARM64 || RISCV || XTENSA
+	depends on ARCH_HAS_SEMIHOST
 	help
 	  Semihosting is a mechanism that enables code running on an ARM, RISC-V
 	  or Xtensa target to communicate and use the Input/Output facilities on
@@ -24,10 +24,15 @@ config ISR_TABLE_SHELL
 	help
 	  This option enables a shell command to dump the ISR tables.
 
+config ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM
+	bool "Word granular access instruction memory support"
+	select WORD_GRANULAR_ACCESS
+	help
+	  This option enables support for access to byte addressable and word granular
+	  access instruction memory.
+
 config ARCH_SUPPORTS_ROM_OFFSET
 	bool
-	default y
-	depends on  (ARM || X86 || ARM64 || RISCV || ARC)
 	help
 	  Hidden option to enable support for ROM offset within the linker
 	  script, which will place a block of 0x0 of size

@@ -31,6 +31,8 @@
 		flash0: flash@8000000 {
 			compatible = "soc-nv-flash";
 			write-block-size = <8>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 
 		sram0: memory@20000000 {

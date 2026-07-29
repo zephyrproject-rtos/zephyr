@@ -175,61 +175,75 @@ static int udc_mcux_handler_setup(const struct device *dev, struct usb_setup_pac
 }
 
 static int udc_mcux_handler_ctrl_out(const struct device *dev, struct net_buf *buf,
-				uint8_t *mcux_buf, uint16_t mcux_len)
-{
-	uint32_t len;
-
-	len = MIN(net_buf_tailroom(buf), mcux_len);
-	net_buf_add(buf, len);
-
-	return udc_submit_ep_event(dev, buf, 0);
-}
-
-static int udc_mcux_handler_ctrl_in(const struct device *dev, struct net_buf *buf,
-				uint8_t *mcux_buf, uint16_t mcux_len)
-{
-	uint32_t len;
-
-	len = MIN(buf->len, mcux_len);
-	buf->data += len;
-	buf->len -= len;
-
-	return udc_submit_ep_event(dev, buf, 0);
-}
-
-static int udc_mcux_handler_non_ctrl_in(const struct device *dev, uint8_t ep,
-			struct net_buf *buf, uint8_t *mcux_buf, uint16_t mcux_len)
+				uint8_t *mcux_buf, uint32_t mcux_len)
 {
 	int err;
 	uint32_t len;
 
-	len = MIN(buf->len, mcux_len);
-	buf->data += len;
-	buf->len -= len;
+	err = mcux_len == USB_CANCELLED_TRANSFER_LENGTH ? -ECONNABORTED : 0;
+	if (err == 0) {
+		len = MIN(net_buf_tailroom(buf), mcux_len);
+		net_buf_add(buf, len);
+	}
 
-	err = udc_submit_ep_event(dev, buf, 0);
+	return udc_submit_ep_event(dev, buf, err);
+}
+
+static int udc_mcux_handler_ctrl_in(const struct device *dev, struct net_buf *buf,
+				uint8_t *mcux_buf, uint32_t mcux_len)
+{
+	int err;
+	uint32_t len;
+
+	err = mcux_len == USB_CANCELLED_TRANSFER_LENGTH ? -ECONNABORTED : 0;
+	if (err == 0) {
+		len = MIN(buf->len, mcux_len);
+		buf->data += len;
+		buf->len -= len;
+	}
+
+	return udc_submit_ep_event(dev, buf, err);
+}
+
+static int udc_mcux_handler_non_ctrl_in(const struct device *dev, uint8_t ep,
+			struct net_buf *buf, uint8_t *mcux_buf, uint32_t mcux_len)
+{
+	int err;
+	uint32_t len;
+
+	err = mcux_len == USB_CANCELLED_TRANSFER_LENGTH ? -ECONNABORTED : 0;
+	if (err == 0) {
+		len = MIN(buf->len, mcux_len);
+		buf->data += len;
+		buf->len -= len;
+	}
+
+	err = udc_submit_ep_event(dev, buf, err);
 	udc_mcux_ep_try_feed(dev, udc_get_ep_cfg(dev, ep));
 
 	return err;
 }
 
 static int udc_mcux_handler_non_ctrl_out(const struct device *dev, uint8_t ep,
-			struct net_buf *buf, uint8_t *mcux_buf, uint16_t mcux_len)
+			struct net_buf *buf, uint8_t *mcux_buf, uint32_t mcux_len)
 {
 	int err;
 	uint32_t len;
 
-	len = MIN(net_buf_tailroom(buf), mcux_len);
-	net_buf_add(buf, len);
+	err = mcux_len == USB_CANCELLED_TRANSFER_LENGTH ? -ECONNABORTED : 0;
+	if (err == 0) {
+		len = MIN(net_buf_tailroom(buf), mcux_len);
+		net_buf_add(buf, len);
+	}
 
-	err = udc_submit_ep_event(dev, buf, 0);
+	err = udc_submit_ep_event(dev, buf, err);
 	udc_mcux_ep_try_feed(dev, udc_get_ep_cfg(dev, ep));
 
 	return err;
 }
 
 static int udc_mcux_handler_out(const struct device *dev, uint8_t ep,
-				uint8_t *mcux_buf, uint16_t mcux_len)
+				uint8_t *mcux_buf, uint32_t mcux_len)
 {
 	struct udc_ep_config *const cfg = udc_get_ep_cfg(dev, ep);
 	int err;
@@ -257,11 +271,15 @@ static int udc_mcux_handler_out(const struct device *dev, uint8_t ep,
 
 /* return true - zlp is feed; false - no zlp */
 static bool udc_mcux_handler_zlt(const struct device *dev, uint8_t ep, struct net_buf *buf,
-				uint16_t mcux_len)
+				uint32_t mcux_len)
 {
 	const struct udc_mcux_config *config = dev->config;
 	const usb_device_controller_interface_struct_t *mcux_if = config->mcux_if;
 	struct udc_mcux_data *priv = udc_get_private(dev);
+
+	if (mcux_len == USB_CANCELLED_TRANSFER_LENGTH) {
+		return false;
+	}
 
 	/* The whole transfer is already done by MCUX controller driver. */
 	if (mcux_len >= buf->len) {
@@ -283,7 +301,7 @@ static bool udc_mcux_handler_zlt(const struct device *dev, uint8_t ep, struct ne
 }
 
 static int udc_mcux_handler_in(const struct device *dev, uint8_t ep,
-				uint8_t *mcux_buf, uint16_t mcux_len)
+				uint8_t *mcux_buf, uint32_t mcux_len)
 {
 	struct udc_ep_config *const cfg = udc_get_ep_cfg(dev, ep);
 	int err;

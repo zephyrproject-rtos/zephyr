@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef __ZEPHYR_INCLUDE_DRIVERS__FLASH_SIMULATOR_H__
-#define __ZEPHYR_INCLUDE_DRIVERS__FLASH_SIMULATOR_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_FLASH_SIMULATOR_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FLASH_FLASH_SIMULATOR_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -120,4 +120,4 @@ __syscall void *flash_simulator_get_memory(const struct device *dev,
 
 #include <zephyr/syscalls/flash_simulator.h>
 
-#endif /* __ZEPHYR_INCLUDE_DRIVERS__FLASH_SIMULATOR_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_FLASH_SIMULATOR_H_ */

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022 Kamil Serwus
  * Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,6 +70,7 @@
 			interrupts = <6 0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			lock-regions = <16>;
 
@@ -76,6 +78,9 @@
 				compatible = "soc-nv-flash";
 
 				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
 			};
 		};
 

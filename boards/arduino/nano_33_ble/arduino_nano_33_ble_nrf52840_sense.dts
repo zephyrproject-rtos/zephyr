@@ -13,6 +13,10 @@
 	model = "Arduino Nano 33 BLE Sense";
 	compatible = "arduino,arduino_nano_33_ble_sense";
 
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+
 	mic_pwr: mic_pwr {
 		compatible = "regulator-fixed";
 		regulator-name = "mic_pwr";

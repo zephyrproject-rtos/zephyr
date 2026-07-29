@@ -1183,6 +1183,15 @@ static void ucpd_isr(const struct device *dev_inst[])
 			/* Rx message is complete, but there were bit errors */
 			LOG_ERR("ucpd: rx message error");
 		}
+
+		/*
+		 * UCPD_EVT_RX_MSG is set only for messages passed to the TCPM
+		 * layer. If it is not set, discard the buffer so its stale
+		 * bytes are not reported as a pending message.
+		 */
+		if (!atomic_test_bit(&info->evt, UCPD_EVT_RX_MSG)) {
+			*(uint32_t *)data->ucpd_rx_buffer = 0;
+		}
 	}
 	/* Check for fault conditions */
 	if (sr & UCPD_SR_RXHRSTDET) {

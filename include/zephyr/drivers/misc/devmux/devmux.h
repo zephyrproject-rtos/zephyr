@@ -10,8 +10,8 @@
  * @ingroup demux_interface
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_MISC_DEVMUX_H_
-#define INCLUDE_ZEPHYR_DRIVERS_MISC_DEVMUX_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_DEVMUX_DEVMUX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_DEVMUX_DEVMUX_H_
 
 #include <stdint.h>
 
@@ -88,4 +88,4 @@ __syscall int devmux_select_set(struct device *dev, size_t index);
 
 #include <zephyr/syscalls/devmux.h>
 
-#endif /* INCLUDE_ZEPHYR_DRIVERS_MISC_DEVMUX_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_DEVMUX_DEVMUX_H_ */

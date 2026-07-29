@@ -6,6 +6,7 @@ zephyr_library_sources(
   fido2_core.c
   fido2_cbor.c
   fido2_crypto.c
+  fido2_clientpin.c
 )
 
 add_subdirectory(attestation)

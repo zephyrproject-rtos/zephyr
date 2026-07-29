@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+};
+
 &pinctrl {
 	pdm20_default_alt: pdm20_default_alt {
 		group1 {

@@ -1,0 +1,12 @@
+identifier: rock_3b
+name: Radxa ROCK 3B
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

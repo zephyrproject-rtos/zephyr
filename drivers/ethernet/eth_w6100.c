@@ -204,6 +204,10 @@ static void w6100_rx(const struct device *dev)
 	off = sys_get_be16(tmp);
 
 	w6100_readbuf(dev, off, header, 2);
+	if (sys_get_be16(header) <= 2U) {
+		LOG_ERR("Invalid W6100 header size %u", sys_get_be16(header));
+		return;
+	}
 	rx_len = sys_get_be16(header) - 2;
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_len,
@@ -325,7 +329,10 @@ static void w6100_thread(void *p1, void *p2, void *p3)
 			/* Read interrupt */
 			w6100_spi_read(dev, W6100_S0_IR, &ir, 1);
 			w6100_spi_read(dev, W6100_SLIR, &slir, 1);
-			w6100_spi_write(dev, W6100_SLIRCLR, &slir, 1);
+			/* SLIRCLR is write-1-to-clear; nothing to do when slir == 0 */
+			if (slir != 0U) {
+				w6100_spi_write(dev, W6100_SLIRCLR, &slir, 1);
+			}
 
 
 			if (ir) {

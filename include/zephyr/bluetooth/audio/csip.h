@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_CSIP_H_
-#define ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_CSIP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CSIP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CSIP_H_
 
 /**
  * @brief Coordinated Set Identification Profile (CSIP)
@@ -650,4 +650,4 @@ int bt_csip_set_coordinator_release(const struct bt_csip_set_coordinator_set_mem
  * @}
  */
 
-#endif /* ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_CSIP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CSIP_H_ */

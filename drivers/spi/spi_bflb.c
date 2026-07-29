@@ -29,16 +29,23 @@ LOG_MODULE_REGISTER(spi_bflb, CONFIG_SPI_LOG_LEVEL);
 #if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
 	defined(CONFIG_SOC_SERIES_BL70XL)
 #define GLB_SPI_MODE_ADDRESS (GLB_BASE + GLB_PARM_OFFSET)
-/* be careful: counted in words here */
+/* be careful: FIFO size counted in words here */
 #define SPI_FIFO_SIZE		4
 #define SPI_MAX_FREQ		MHZ(40)
 #define SPI_MAX_INPUT_FREQ	MHZ(80)
+/* and FIFO size counted in bytes thereafter.
+ * Because the value is returned as a different unit in the registers!
+ */
 #elif defined(CONFIG_SOC_SERIES_BL61X)
 #include <zephyr/dt-bindings/clock/bflb_bl61x_clock.h>
 #define GLB_SPI_MODE_ADDRESS (GLB_BASE + GLB_PARM_CFG0_OFFSET)
-/* and counted in bytes there.
- * Because the value is returned as a different unit in the registers!
- */
+#define SPI_FIFO_SIZE		32
+#define SPI_MAX_FREQ		MHZ(80)
+#define SPI_MAX_INPUT_FREQ	MHZ(160)
+#define SPI_MAX_XCLK_FREQ	MHZ(20)
+#elif defined(CONFIG_SOC_SERIES_BL616CL)
+#include <zephyr/dt-bindings/clock/bflb_bl616cl_clock.h>
+#define GLB_SPI_MODE_ADDRESS (GLB_BASE + GLB_PARM_CFG0_OFFSET)
 #define SPI_FIFO_SIZE		32
 #define SPI_MAX_FREQ		MHZ(80)
 #define SPI_MAX_INPUT_FREQ	MHZ(160)
@@ -104,6 +111,42 @@ static uint32_t spi_bflb_get_clk(void)
 	clock_control_get_rate(clock_ctrl, (void *)BL61X_CLKID_CLK_160M, &uclk);
 	return uclk / (spi_divider + 1);
 }
+
+#elif defined(CONFIG_SOC_SERIES_BL616CL)
+
+static uint32_t spi_bflb_get_clk(const struct device *dev)
+{
+	uint32_t uclk;
+	uint32_t spi_divider;
+	uint32_t spi_mux;
+	const struct spi_bflb_cfg *cfg = dev->config;
+	const struct device *clock_ctrl =  DEVICE_DT_GET_ANY(bflb_clock_controller);
+	uint32_t main_clock = clock_bflb_get_root_clock();
+
+	/* mux -> spiclk */
+	spi_divider = sys_read32(GLB_BASE + GLB_SPI_CFG0_OFFSET);
+	if (cfg->base == SPI1_BASE) {
+		spi_mux = (spi_divider & GLB_SPI1_CLK_SEL_MSK) >> GLB_SPI1_CLK_SEL_POS;
+		spi_divider = (spi_divider & GLB_SPI1_CLK_DIV_MSK) >> GLB_SPI1_CLK_DIV_POS;
+	} else {
+		spi_mux = (spi_divider & GLB_SPI_CLK_SEL_MSK) >> GLB_SPI_CLK_SEL_POS;
+		spi_divider = (spi_divider & GLB_SPI_CLK_DIV_MSK) >> GLB_SPI_CLK_DIV_POS;
+	}
+
+	if (spi_mux > 0) {
+		if (main_clock == BFLB_MAIN_CLOCK_RC32M
+			|| main_clock == BFLB_MAIN_CLOCK_PLL_RC32M) {
+			return BFLB_RC32M_FREQUENCY / (spi_divider + 1);
+		}
+		clock_control_get_rate(clock_ctrl, (void *)BFLB_CLKID_CLK_CRYSTAL, &uclk);
+
+		return uclk / (spi_divider + 1);
+	}
+
+	clock_control_get_rate(clock_ctrl, (void *)BL616CL_CLKID_CLK_160M, &uclk);
+	return uclk / (spi_divider + 1);
+}
+
 #else
 #error Unsupported platform
 #endif
@@ -163,7 +206,60 @@ static int spi_bflb_configure_freqs(const struct device *dev, const struct spi_c
 	uint32_t tmp;
 	uint32_t tmpb;
 	uint32_t clkdiv = 0;
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+	const struct device *clock_ctrl =  DEVICE_DT_GET_ANY(bflb_clock_controller);
+
+	tmp = sys_read32(GLB_BASE + GLB_SPI_CFG0_OFFSET);
+	if (cfg->base == SPI1_BASE) {
+		tmp &= GLB_SPI1_CLK_DIV_UMSK;
+		tmp &= GLB_SPI1_CLK_SEL_UMSK;
+		tmp &= GLB_SPI1_CLK_EN_UMSK;
+	} else {
+		tmp &= GLB_SPI_CLK_DIV_UMSK;
+		tmp &= GLB_SPI_CLK_SEL_UMSK;
+		tmp &= GLB_SPI_CLK_EN_UMSK;
+	}
+	if (config->frequency > SPI_MAX_FREQ) {
+		return -EINVAL;
+	} else if (config->frequency > SPI_MAX_XCLK_FREQ
+		&& clock_control_get_rate(clock_ctrl, (void *)BL616CL_CLKID_CLK_160M, &tmpb) >= 0) {
+		/* select PLL mux */
+		if (cfg->base == SPI1_BASE) {
+			tmp |= 0U <<  GLB_SPI1_CLK_SEL_POS;
+		} else {
+			tmp |= 0U <<  GLB_SPI_CLK_SEL_POS;
+		}
+	} else {
+		/* select XCLK */
+		if (cfg->base == SPI1_BASE) {
+			tmp |= 1U <<  GLB_SPI1_CLK_SEL_POS;
+		} else {
+			tmp |= 1U <<  GLB_SPI_CLK_SEL_POS;
+		}
+	}
+	sys_write32(tmp, GLB_BASE + GLB_SPI_CFG0_OFFSET);
+
+	while (spi_bflb_get_clk(dev) > SPI_MAX_INPUT_FREQ) {
+		clkdiv++;
+		tmp = sys_read32(GLB_BASE + GLB_SPI_CFG0_OFFSET);
+		if (cfg->base == SPI1_BASE) {
+			tmp &= GLB_SPI1_CLK_DIV_UMSK;
+			tmp |= clkdiv << GLB_SPI1_CLK_DIV_POS;
+		} else {
+			tmp &= GLB_SPI_CLK_DIV_UMSK;
+			tmp |= clkdiv << GLB_SPI_CLK_DIV_POS;
+		}
+		sys_write32(tmp, GLB_BASE + GLB_SPI_CFG0_OFFSET);
+	}
+
+	tmp = sys_read32(GLB_BASE + GLB_SPI_CFG0_OFFSET);
+	if (cfg->base == SPI1_BASE) {
+		tmp |= GLB_SPI1_CLK_EN_MSK;
+	} else {
+		tmp |= GLB_SPI_CLK_EN_MSK;
+	}
+	sys_write32(tmp, GLB_BASE + GLB_SPI_CFG0_OFFSET);
+#elif defined(CONFIG_SOC_SERIES_BL61X)
 	const struct device *clock_ctrl =  DEVICE_DT_GET_ANY(bflb_clock_controller);
 
 	tmp = sys_read32(GLB_BASE + GLB_SPI_CFG0_OFFSET);
@@ -215,7 +311,11 @@ static int spi_bflb_configure_freqs(const struct device *dev, const struct spi_c
 	sys_write32(tmp, GLB_BASE + GLB_CLK_CFG3_OFFSET);
 #endif
 
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+	tmp = (spi_bflb_get_clk(dev) / 2 * 10 / config->frequency + 5) / 10;
+#else
 	tmp = (spi_bflb_get_clk() / 2 * 10 / config->frequency + 5) / 10;
+#endif
 	tmp = (tmp) ? (tmp - 1) : 0;
 	tmp = (tmp > 0xff) ? 0xff : tmp;
 
@@ -260,6 +360,9 @@ static int spi_bflb_configure(const struct device *dev, const struct spi_config 
 	tmp = sys_read32(GLB_SPI_MODE_ADDRESS);
 	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
 		tmp |= 1U << GLB_REG_SPI_0_MASTER_MODE_POS;
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+		tmp |= 1U << GLB_REG_SPI_1_MASTER_MODE_POS;
+#endif
 	} else {
 		/* TODO: slave mode */
 		return -ENOTSUP;

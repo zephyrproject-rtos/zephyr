@@ -76,4 +76,4 @@ References
    https://ai.google.dev/edge/litert
 
 .. _microTVM:
-   https://tvm.apache.org/docs/v0.9.0/topic/microtvm/index.html
+   https://tvm.apache.org/docs/

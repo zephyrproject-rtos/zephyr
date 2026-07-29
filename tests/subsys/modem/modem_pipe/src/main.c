@@ -32,15 +32,20 @@ struct modem_backend_fake {
 
 	const uint8_t *transmit_buffer;
 	size_t transmit_buffer_size;
+#ifdef CONFIG_TEST_PIPE_BACKEND_TRANSMIT_CHAIN
+	const struct modem_pipe_data_fragment *frags;
+	size_t num_frags;
+#endif /* CONFIG_TEST_PIPE_BACKEND_TRANSMIT_CHAIN */
 
 	uint8_t *receive_buffer;
 	size_t receive_buffer_size;
 
-	uint8_t synchronous : 1;
-	uint8_t open_called : 1;
-	uint8_t transmit_called : 1;
-	uint8_t receive_called : 1;
-	uint8_t close_called : 1;
+	uint8_t synchronous: 1;
+	uint8_t open_called: 1;
+	uint8_t transmit_called: 1;
+	uint8_t transmit_chain_called: 1;
+	uint8_t receive_called: 1;
+	uint8_t close_called: 1;
 };
 
 static void modem_backend_fake_opened_handler(struct k_work *item)
@@ -76,6 +81,38 @@ static void modem_backend_fake_transmit_idle_handler(struct k_work *item)
 	modem_pipe_notify_transmit_idle(&backend->pipe);
 }
 
+#ifdef CONFIG_TEST_PIPE_BACKEND_TRANSMIT_CHAIN
+
+static int modem_backend_fake_transmit_chain(void *data,
+					     const struct modem_pipe_data_fragment *frags,
+					     size_t num_frags)
+{
+	struct modem_backend_fake *backend = data;
+	int total_size = 0;
+
+	backend->transmit_chain_called = true;
+	/* Store the first fragment explicitly so the `transmit` API tests pass */
+	backend->transmit_buffer = frags[0].data;
+	backend->transmit_buffer_size = frags[0].size;
+	/* Store the full chain for `transmit_chain` tests */
+	backend->frags = frags;
+	backend->num_frags = num_frags;
+
+	for (int i = 0; i < num_frags; i++) {
+		total_size += frags[i].size;
+	}
+
+	if (backend->synchronous) {
+		modem_pipe_notify_transmit_idle(&backend->pipe);
+	} else {
+		k_work_schedule(&backend->transmit_idle_dwork, TEST_MODEM_PIPE_NOTIFY_TIMEOUT);
+	}
+
+	return total_size;
+}
+
+#else
+
 static int modem_backend_fake_transmit(void *data, const uint8_t *buf, size_t size)
 {
 	struct modem_backend_fake *backend = data;
@@ -92,6 +129,8 @@ static int modem_backend_fake_transmit(void *data, const uint8_t *buf, size_t si
 
 	return size;
 }
+
+#endif /* CONFIG_TEST_PIPE_BACKEND_TRANSMIT_CHAIN */
 
 static int modem_backend_fake_receive(void *data, uint8_t *buf, size_t size)
 {
@@ -129,7 +168,11 @@ static int modem_backend_fake_close(void *data)
 
 static struct modem_pipe_api modem_backend_fake_api = {
 	.open = modem_backend_fake_open,
+#ifdef CONFIG_TEST_PIPE_BACKEND_TRANSMIT_CHAIN
+	.transmit_chain = modem_backend_fake_transmit_chain,
+#else
 	.transmit = modem_backend_fake_transmit,
+#endif
 	.receive = modem_backend_fake_receive,
 	.close = modem_backend_fake_close,
 };
@@ -267,12 +310,15 @@ static void test_pipe_reclose(void)
 
 static void test_pipe_async_transmit(void)
 {
+	bool is_chain = IS_ENABLED(CONFIG_TEST_PIPE_BACKEND_TRANSMIT_CHAIN);
+
 	zassert_equal(modem_pipe_transmit(test_pipe, test_buffer, test_buffer_size),
 		      test_buffer_size, "Failed to transmit");
-	zassert_true(test_backend.transmit_called, "transmit was not called");
+	zassert_equal(is_chain, test_backend.transmit_chain_called,
+		      "Unexpected transmit_chain call count");
+	zassert_equal(!is_chain, test_backend.transmit_called, "Unexpected transmit call count");
 	zassert_equal(test_backend.transmit_buffer, test_buffer, "Incorrect buffer");
-	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size,
-		      "Incorrect buffer size");
+	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size, "Incorrect buffer size");
 	zassert_equal(atomic_get(&test_state), 0, "Unexpected state %u",
 		      (uint32_t)atomic_get(&test_state));
 	k_sleep(TEST_MODEM_PIPE_WAIT_TIMEOUT);
@@ -282,12 +328,74 @@ static void test_pipe_async_transmit(void)
 
 static void test_pipe_sync_transmit(void)
 {
+	bool is_chain = IS_ENABLED(CONFIG_TEST_PIPE_BACKEND_TRANSMIT_CHAIN);
+
 	zassert_equal(modem_pipe_transmit(test_pipe, test_buffer, test_buffer_size),
 		      test_buffer_size, "Failed to transmit");
-	zassert_true(test_backend.transmit_called, "transmit was not called");
+	zassert_equal(is_chain, test_backend.transmit_chain_called,
+		      "Unexpected transmit_chain call count");
+	zassert_equal(!is_chain, test_backend.transmit_called, "Unexpected transmit call count");
 	zassert_equal(test_backend.transmit_buffer, test_buffer, "Incorrect buffer");
-	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size,
-		      "Incorrect buffer size");
+	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size, "Incorrect buffer size");
+	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_TRANSMIT_IDLE_BIT),
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
+}
+
+static void test_pipe_async_transmit_chain(void)
+{
+	const struct modem_pipe_data_fragment frags[2] = {
+		[0] = {.data = test_buffer, .size = test_buffer_size},
+		[1] = {.data = test_buffer, .size = 1},
+	};
+	int rc;
+
+	rc = modem_pipe_transmit_chain(test_pipe, frags, ARRAY_SIZE(frags));
+
+#ifdef CONFIG_TEST_PIPE_BACKEND_TRANSMIT_CHAIN
+	zassert_equal(rc, test_buffer_size + 1);
+	zassert_equal(0, test_backend.transmit_called);
+	zassert_equal(1, test_backend.transmit_chain_called);
+	zassert_equal(test_backend.frags, frags, "Unexpected fragment pointer");
+	zassert_equal(test_backend.num_frags, ARRAY_SIZE(frags), "Unexpected fragment counter");
+#else
+	zassert_equal(rc, test_buffer_size);
+	zassert_equal(1, test_backend.transmit_called);
+	zassert_equal(0, test_backend.transmit_chain_called);
+	zassert_equal(test_backend.transmit_buffer, test_buffer, "Incorrect buffer");
+	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size, "Incorrect buffer size");
+#endif
+
+	zassert_equal(atomic_get(&test_state), 0, "Unexpected state %u",
+		      (uint32_t)atomic_get(&test_state));
+	k_sleep(TEST_MODEM_PIPE_WAIT_TIMEOUT);
+	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_TRANSMIT_IDLE_BIT),
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
+}
+
+static void test_pipe_sync_transmit_chain(void)
+{
+	const struct modem_pipe_data_fragment frags[2] = {
+		[0] = {.data = test_buffer, .size = test_buffer_size},
+		[1] = {.data = test_buffer, .size = 1},
+	};
+	int rc;
+
+	rc = modem_pipe_transmit_chain(test_pipe, frags, ARRAY_SIZE(frags));
+
+#ifdef CONFIG_TEST_PIPE_BACKEND_TRANSMIT_CHAIN
+	zassert_equal(rc, test_buffer_size + 1);
+	zassert_equal(0, test_backend.transmit_called);
+	zassert_equal(1, test_backend.transmit_chain_called);
+	zassert_equal(test_backend.frags, frags, "Unexpected fragment pointer");
+	zassert_equal(test_backend.num_frags, ARRAY_SIZE(frags), "Unexpected fragment counter");
+#else
+	zassert_equal(rc, test_buffer_size);
+	zassert_equal(1, test_backend.transmit_called);
+	zassert_equal(0, test_backend.transmit_chain_called);
+	zassert_equal(test_backend.transmit_buffer, test_buffer, "Incorrect buffer");
+	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size, "Incorrect buffer size");
+#endif
+
 	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_TRANSMIT_IDLE_BIT),
 		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
 }
@@ -360,6 +468,7 @@ ZTEST(modem_pipe, test_sync_open_close)
 
 ZTEST(modem_pipe, test_async_transmit)
 {
+	modem_backend_fake_set_sync(&test_backend, false);
 	test_pipe_open();
 	test_reset();
 	test_pipe_async_transmit();
@@ -371,6 +480,22 @@ ZTEST(modem_pipe, test_sync_transmit)
 	test_pipe_open();
 	test_reset();
 	test_pipe_sync_transmit();
+}
+
+ZTEST(modem_pipe, test_async_transmit_chain)
+{
+	modem_backend_fake_set_sync(&test_backend, false);
+	test_pipe_open();
+	test_reset();
+	test_pipe_async_transmit_chain();
+}
+
+ZTEST(modem_pipe, test_sync_transmit_chain)
+{
+	modem_backend_fake_set_sync(&test_backend, true);
+	test_pipe_open();
+	test_reset();
+	test_pipe_sync_transmit_chain();
 }
 
 ZTEST(modem_pipe, test_attach)

@@ -132,6 +132,7 @@ static int sd_init_io(struct sd_card *card)
 	bus_io->bus_width = SDHC_BUS_WIDTH1BIT;
 	/* Cards start with legacy timing and Maximum voltage Host controller support */
 	bus_io->timing = SDHC_TIMING_LEGACY;
+	bus_io->enhanced_strobe = false;
 
 	if (host_props->host_caps.vol_330_support) {
 		LOG_DBG("Host controller support %sV max", "3.3");

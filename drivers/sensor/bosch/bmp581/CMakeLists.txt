@@ -17,3 +17,6 @@ zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API
 zephyr_library_sources_ifdef(CONFIG_BMP581_STREAM
   bmp581_stream.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_EMUL_BMP581 bmp581_emul.c)
+zephyr_include_directories_ifdef(CONFIG_EMUL_BMP581 .)

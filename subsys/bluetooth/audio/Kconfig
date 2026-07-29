@@ -52,7 +52,7 @@ rsource "Kconfig.gmap"
 rsource "Kconfig.pbp"
 
 module = BT_AUDIO
-module-str = "Bluetooth Audio"
+module-str = Bluetooth Audio
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # BT_AUDIO

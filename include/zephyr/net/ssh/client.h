@@ -63,6 +63,53 @@ int ssh_client_start(struct ssh_client *ssh,
  */
 int ssh_client_stop(struct ssh_client *ssh);
 
+/**
+ * @brief Register a callback function for getting the transport
+ *        associated with a server connection.
+ *
+ * The registered callback is invoked for client-side transport events.
+ * On the client role only the following event types are emitted:
+ *  - @ref SSH_TRANSPORT_EVENT_SERVICE_ACCEPTED when the requested SSH
+ *    service was accepted by the server.
+ *  - @ref SSH_TRANSPORT_EVENT_AUTHENTICATE_RESULT when an authentication
+ *    attempt completes.
+ *  - @ref SSH_TRANSPORT_EVENT_CLOSED when the transport is torn down.
+ *
+ * The callback return value is ignored; the callback acts as an observer
+ * and cannot influence the transport flow.
+ *
+ * @param conf Configuration data for the transport callback. The structure
+ *        must remain valid until it is unregistered.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int ssh_client_register_transport_callback(struct ssh_transport_conf *conf);
+
+/**
+ * @brief Unregister a callback function for getting the transport
+ *        associated with a server connection.
+ *
+ * @param conf Configuration data for the transport callback
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int ssh_client_unregister_transport_callback(struct ssh_transport_conf *conf);
+
+/**
+ * @brief Get the SSH client instance that owns a given transport.
+ *
+ * This is useful inside a registered transport callback, which is invoked
+ * globally for events from all client instances, to determine which client
+ * instance a transport belongs to. It must only be called for a transport
+ * obtained from a client transport callback.
+ *
+ * @param transport Transport to get the owning client for.
+ *
+ * @return Pointer to the owning SSH client instance, or NULL if the transport
+ *         is NULL.
+ */
+struct ssh_client *ssh_transport_get_client(struct ssh_transport *transport);
+
 #ifdef __cplusplus
 }
 #endif

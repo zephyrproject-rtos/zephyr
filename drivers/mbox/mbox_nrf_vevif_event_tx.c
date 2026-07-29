@@ -22,7 +22,7 @@ BUILD_ASSERT(DT_INST_PROP(0, nordic_events) <= NRF_VPR_EVENTS_TRIGGERED_COUNT,
 
 static inline bool vevif_event_tx_is_valid(uint32_t id)
 {
-	return (id < EVENTS_IDX_MAX) && ((VEVIF_EVENTS_MASK & BIT(id)) != 0U);
+	return (id <= EVENTS_IDX_MAX) && ((VEVIF_EVENTS_MASK & BIT(id)) != 0U);
 }
 
 static int vevif_event_tx_send(const struct device *dev, uint32_t id, const struct mbox_msg *msg)

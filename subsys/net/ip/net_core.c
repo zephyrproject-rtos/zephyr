@@ -46,6 +46,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include "net_private.h"
 #include "shell/net_shell.h"
 
+#include "dplpmtud_internal.h"
 #include "pmtu.h"
 
 #include "icmpv6.h"
@@ -74,8 +75,6 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #if defined(CONFIG_NET_NATIVE)
 static inline enum net_verdict process_data(struct net_pkt *pkt)
 {
-	int ret;
-
 	net_packet_socket_input(pkt, ETH_P_ALL, NET_SOCK_RAW);
 
 	/* If there is no data, then drop the packet. */
@@ -87,15 +86,17 @@ static inline enum net_verdict process_data(struct net_pkt *pkt)
 	}
 
 	if (!net_pkt_is_l2_processed(pkt)) {
-		ret = net_if_recv_data(net_pkt_iface(pkt), pkt);
-		if (ret != NET_CONTINUE) {
-			if (ret == NET_DROP) {
+		enum net_verdict verdict;
+
+		verdict = net_if_recv_data(net_pkt_iface(pkt), pkt);
+		if (verdict != NET_CONTINUE) {
+			if (verdict == NET_DROP) {
 				NET_DBG("Packet %p discarded by L2", pkt);
 				net_stats_update_processing_error(
 							net_pkt_iface(pkt));
 			}
 
-			return ret;
+			return verdict;
 		}
 	}
 
@@ -166,9 +167,6 @@ static void net_post_init(void)
 {
 #if defined(CONFIG_NET_ARP)
 	net_arp_init();
-#endif
-#if defined(CONFIG_NET_LLDP)
-	net_lldp_init();
 #endif
 #if defined(CONFIG_NET_GPTP)
 	net_gptp_init();
@@ -357,9 +355,8 @@ static inline bool process_multicast(struct net_pkt *pkt)
 
 #if defined(CONFIG_NET_IPV4)
 	if (family == NET_AF_INET) {
-		const struct net_in_addr *dst = (const struct net_in_addr *)&NET_IPV4_HDR(pkt)->dst;
-
-		return net_ipv4_is_addr_mcast(dst) && net_context_get_ipv4_mcast_loop(ctx);
+		return net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst) &&
+		       net_context_get_ipv4_mcast_loop(ctx);
 	}
 #endif
 #if defined(CONFIG_NET_IPV6)
@@ -491,13 +488,17 @@ err:
 
 static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 {
-	size_t pkt_len;
+	/* Only walk the fragment chain to get the packet length if
+	 * someone is going to use it.
+	 */
+	if (IS_ENABLED(CONFIG_NET_STATISTICS) ||
+	    CONFIG_NET_CORE_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		size_t pkt_len = net_pkt_get_len(pkt);
 
-	pkt_len = net_pkt_get_len(pkt);
+		NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
 
-	NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
-
-	net_stats_update_bytes_recv(iface, pkt_len);
+		net_stats_update_bytes_recv(iface, pkt_len);
+	}
 
 	if (IS_ENABLED(CONFIG_NET_LOOPBACK)) {
 #ifdef CONFIG_NET_L2_DUMMY
@@ -525,7 +526,7 @@ void net_process_rx_packet(struct net_pkt *pkt)
 
 static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 {
-	size_t len = net_pkt_get_len(pkt);
+	size_t len = IS_ENABLED(CONFIG_NET_STATISTICS) ? net_pkt_get_len(pkt) : 0;
 	uint8_t prio = net_pkt_priority(pkt);
 	uint8_t tc = net_rx_priority2tc(prio);
 
@@ -614,12 +615,11 @@ err:
 static inline void l3_init(void)
 {
 	net_pmtu_init();
+	net_dplpmtud_init();
 	net_icmpv4_init();
 	net_icmpv6_init();
 	net_ipv4_init();
 	net_ipv6_init();
-
-	net_ipv4_autoconf_init();
 
 	if (IS_ENABLED(CONFIG_NET_UDP) ||
 	    IS_ENABLED(CONFIG_NET_TCP) ||
@@ -688,7 +688,6 @@ static inline int services_init(void)
 
 	net_dhcpv4_server_init();
 
-	dns_dispatcher_init();
 	dns_init_resolver();
 	mdns_init_responder();
 
@@ -710,8 +709,6 @@ static int net_init(void)
 	NET_DBG("Priority %d", CONFIG_NET_INIT_PRIO);
 
 	net_pkt_init();
-
-	net_context_init();
 
 	l3_init();
 

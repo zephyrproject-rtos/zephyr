@@ -1,0 +1,431 @@
+/*
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <st/h7/stm32h753Xi.dtsi>
+#include "stm32h7_renode_reference_board-pinctrl.dtsi"
+
+/ {
+	model = "Antmicro STM32H7 Renode Reference Platform";
+	compatible = "antmicro,stm32h7_renode_reference_board";
+
+	chosen {
+		zephyr,crc = &crc;
+		zephyr,entropy = &rng;
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,canbus = &fdcan1;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		accel0 = &lsm6dso;
+		ambient-temp0 = &tmp108;
+		magn0 = &iis2mdc;
+		light-sensor = &veml7700;
+		pressure-sensor = &lps25hb;
+		led0 = &green_rgb_led;
+		led1 = &red_rgb_led;
+		led2 = &blue_rgb_led;
+		pwm-led0 = &green_pwm_led_0;
+		pwm-led1 = &green_pwm_led_1;
+		pwm-led2 = &green_pwm_led_2;
+		pwm-led3 = &green_pwm_led_3;
+		rtc = &rtc;
+		spi-flash0 = &mt25ql01g;
+		sw0 = &btn0;
+		sw1 = &btn1;
+		sw2 = &btn2;
+		sw3 = &btn3;
+		i2c-0 = &i2c1;
+		watchdog0 = &iwdg;
+
+		/* mcuboot uses those to enter recovery mode */
+		mcuboot-button0 = &btn0;
+		mcuboot-led0 = &red_rgb_led;
+	};
+
+	zephyr,user {
+		io-channels = <&adc1 2>;
+	};
+
+	can_phy1: can-phy1 {
+		compatible = "ti,tcan3414", "can-transceiver-gpio";
+		standby-gpios = <&gpiof 13 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+		max-bitrate = <8000000>;
+	};
+
+	can_phy2: can-phy2 {
+		compatible = "ti,tcan3414", "can-transceiver-gpio";
+		standby-gpios = <&gpiof 13 GPIO_ACTIVE_HIGH>;
+		#phy-cells = <0>;
+		max-bitrate = <8000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_rgb_led: led_rgb_g {
+			gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
+		};
+
+		red_rgb_led: led_rgb_r {
+			gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		blue_rgb_led: led_rgb_b {
+			gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm_led_0: led_0 {
+			pwms = <&pwm3 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		green_pwm_led_1: led_1 {
+			pwms = <&pwm3 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		green_pwm_led_2: led_2 {
+			pwms = <&pwm3 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+
+		green_pwm_led_3: led_3 {
+			pwms = <&pwm3 4 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		/* Buttons labeled 1-4 on board */
+		btn0: btn_0 {
+			gpios = <&gpiog 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "SW1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		btn1: btn_1 {
+			gpios = <&gpiog 8 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		btn2: btn_2 {
+			gpios = <&gpiog 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "SW3";
+			zephyr,code = <INPUT_KEY_3>;
+		};
+
+		btn3: btn_3 {
+			gpios = <&gpiog 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "SW4";
+			zephyr,code = <INPUT_KEY_4>;
+		};
+	};
+};
+
+&pwr {
+	power-supply = "ldo";
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	hse-bypass;
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <192>;
+	div-p = <2>;
+	div-q = <2>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <5>;
+	mul-n = <48>;
+	div-p = <2>;
+	div-q = <3>; /* 80MHz used in the FDCAN -> HSE / DIV-M * MUL-N / DIV-Q */
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(480)>;
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&ext_memory {
+	reg = <0x90000000 DT_SIZE_M(128)>; /* 1Gb = 128MB */
+	zephyr,memory-attr = <DT_MEM_ARM_MPU_FLASH>;
+};
+
+&gpioc {
+	status = "okay";
+
+	pc13_hog {
+		gpio-hog;
+		gpios = <13 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpiof {
+	status = "okay";
+};
+
+&gpiog {
+	status = "okay";
+};
+
+&usart2 {
+	status = "okay";
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pa3>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&fdcan1 {
+	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
+	pinctrl-names = "default";
+
+	status = "okay";
+	phys = <&can_phy1>;
+};
+
+&fdcan2 {
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
+		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	pinctrl-0 = <&fdcan2_rx_pb12 &fdcan2_tx_pb13>;
+	pinctrl-names = "default";
+
+	status = "okay";
+	phys = <&can_phy2>;
+};
+
+&timers3 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pb4 &tim3_ch2_pc7 &tim3_ch3_pc8 &tim3_ch4_pb1>;
+		pinctrl-names = "default";
+	};
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	veml7700: veml7700@10 {
+		compatible = "vishay,veml7700";
+		reg = <0x10>;
+		status = "okay";
+	};
+
+	iis2mdc: iis2mdc@1e {
+		compatible = "st,iis2mdc";
+		reg = <0x1e>;
+		drdy-gpios = <&gpiog 11 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	tmp108: tmp108@48 {
+		compatible = "ti,tmp108";
+		reg = <0x48>;
+		status = "okay";
+	};
+
+	lps25hb: lps25hb@5d {
+		compatible = "st,lps25hb-press";
+		reg = <0x5d>;
+		status = "okay";
+	};
+
+	lsm6dso: lsm6dso@6a {
+		compatible = "st,lsm6dso";
+		reg = <0x6a>;
+		irq-gpios = <&gpiog 3 GPIO_ACTIVE_HIGH>,
+			    <&gpiog 4 GPIO_ACTIVE_HIGH>;
+		accel-odr = <1>;
+		gyro-odr = <1>;
+		status = "okay";
+	};
+};
+
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&adc1 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&adc1_inp2_pf11>;
+	pinctrl-names = "default";
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+
+	pot1: channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pb11
+		     &eth_txd0_pg13
+		     &eth_txd1_pg12>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_ncs_pb10
+		     &quadspi_bk1_io0_pf8 &quadspi_bk1_io1_pf9
+		     &quadspi_bk1_io2_pf7 &quadspi_bk1_io3_pf6>;
+	pinctrl-names = "default";
+	flash-id = <1>;
+	status = "okay";
+
+	mt25ql01g: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(1024)>; /* 1Gb = 128MB */
+		qspi-max-frequency = <DT_FREQ_M(72)>;
+		cs-high-time = <4>; /* >= 50 ns */
+		spi-bus-width = <4>;
+		reset-cmd;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_M(64)>;
+			};
+		};
+	};
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* 128KB for bootloader */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+			read-only;
+		};
+
+		/* application image slot: 384KB */
+		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(384)>;
+		};
+
+		/* backup slot: 512KB */
+		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x00080000 DT_SIZE_K(512)>;
+		};
+	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&cryp {
+	status = "okay";
+};
+
+&hash {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};

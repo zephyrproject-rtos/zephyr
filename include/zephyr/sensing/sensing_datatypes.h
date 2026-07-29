@@ -10,8 +10,8 @@
  * @ingroup sensing_datatypes
  */
 
-#ifndef ZEPHYR_INCLUDE_SENSING_DATATYPES_H_
-#define ZEPHYR_INCLUDE_SENSING_DATATYPES_H_
+#ifndef ZEPHYR_INCLUDE_SENSING_SENSING_DATATYPES_H_
+#define ZEPHYR_INCLUDE_SENSING_SENSING_DATATYPES_H_
 
 #include <stdint.h>
 #include <zephyr/dsp/types.h>
@@ -139,4 +139,4 @@ struct sensing_sensor_value_q31 {
  * @}
  */
 
-#endif /*ZEPHYR_INCLUDE_SENSING_DATATYPES_H_*/
+#endif /* ZEPHYR_INCLUDE_SENSING_SENSING_DATATYPES_H_ */

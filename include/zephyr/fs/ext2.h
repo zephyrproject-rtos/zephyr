@@ -11,24 +11,30 @@
 
 /** @brief Configuration used to format ext2 file system.
  *
- * If a field is set to 0 then default value is used.
- * (In volume name the first cell of an array must be 0 to use default value.)
- *
- * @param block_size Requested size of block.
- * @param fs_size Requested size of file system. If 0 then whole available memory is used.
- * @param bytes_per_inode Requested memory for one inode. It is used to calculate number of inodes
- *	in created file system.
- * @param uuid UUID for created file system. Used when set_uuid is true.
- * @param volume_name Name for created file system.
- * @param set_uuid If true then UUID from that structure is used in created file system.
- *	If false then UUID (ver4) is generated.
+ * If a field is set to 0 then its default value is used.
+ * (For the volume name, the first byte of the array must be 0 to use the
+ * default value.)
  */
 struct ext2_cfg {
+	/** Requested size of block, in bytes. */
 	uint32_t block_size;
-	uint32_t fs_size; /* Number of blocks that we want to take. */
+	/** Requested size of file system, as a number of blocks. If 0 then the
+	 *  whole available memory is used.
+	 */
+	uint32_t fs_size;
+	/** Requested amount of memory per inode, in bytes. It is used to
+	 *  calculate the number of inodes in the created file system.
+	 */
 	uint32_t bytes_per_inode;
+	/** UUID for the created file system. Used only when @ref set_uuid is true. */
 	uint8_t uuid[16];
-	uint8_t volume_name[17]; /* If first byte is 0 then name ext2" is given. */
+	/** Name for the created file system. If the first byte is 0 then the
+	 *  default name "ext2" is used.
+	 */
+	uint8_t volume_name[16];
+	/** If true then the UUID from @ref uuid is used in the created file
+	 *  system. If false then a version 4 UUID is generated.
+	 */
 	bool set_uuid;
 };
 

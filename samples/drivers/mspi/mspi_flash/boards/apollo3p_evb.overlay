@@ -33,7 +33,7 @@
 	cmdq-buffer-size = <256>;
 
 	aps6404l: aps6404l@0 {
-		compatible = "ambiq,mspi-device", "mspi-aps6404l";
+		compatible = "ambiq,mspi-device", "aps6404l";
 		size = <DT_SIZE_M(64)>;
 		reg = <0>;
 		status = "disabled";
@@ -47,14 +47,14 @@
 		address-length = "ADDR_3_BYTE";
 		rx-dummy = <6>;
 		tx-dummy = <0>;
-		xip-config = <1 0 0 0>;
+		memmap-config = <1 0 0 0>;
 		ce-break-config = <1024 3>;
 		ambiq,timing-config-mask = <3>;
 		ambiq,timing-config = <0 6 0 0 0 0 0 0>;
 	};
 
 	atxp032: atxp032@1 {
-		compatible = "ambiq,mspi-device", "mspi-atxp032";
+		compatible = "ambiq,mspi-device", "atxp032";
 		size = <DT_SIZE_M(32)>;
 		reg = <1>;
 		status = "okay";
@@ -68,7 +68,7 @@
 		address-length = "ADDR_4_BYTE";
 		rx-dummy = <8>;
 		tx-dummy = <0>;
-		xip-config = <1 0 0 0>;
+		memmap-config = <1 0 0 0>;
 		ce-break-config = <0 0>;
 		ambiq,timing-config-mask = <3>;
 		ambiq,timing-config = <0 8 0 0 0 0 0 0>;

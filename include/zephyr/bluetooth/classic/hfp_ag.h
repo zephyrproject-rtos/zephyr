@@ -8,8 +8,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_HFP_AG_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_HFP_AG_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_HFP_AG_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_HFP_AG_H_
 
 /**
  * @brief Hands Free Profile - Audio Gateway (HFP-AG)
@@ -302,7 +302,7 @@ struct bt_hfp_ag_cb {
 	 *  call is in the ringing
 	 *
 	 *  @param call HFP AG call object.
-	 *  @param in_bond true - in-bond ringing, false - No in-bond ringing
+	 *  @param in_band true - in-band ringing, false - No in-band ringing
 	 */
 	void (*ringing)(struct bt_hfp_ag_call *call, bool in_band);
 
@@ -357,6 +357,7 @@ struct bt_hfp_ag_cb {
 	 *  supported codec ids are updated.
 	 *
 	 *  @param ag HFP AG object.
+	 *  @param ids Bitmap of supported codec IDs.
 	 */
 	void (*codec)(struct bt_hfp_ag *ag, uint32_t ids);
 
@@ -383,7 +384,6 @@ struct bt_hfp_ag_cb {
 	 *  default codec id `BT_HFP_AG_CODEC_CVSD`.
 	 *
 	 *  @param ag HFP AG object.
-	 *  @param err Result of codec negotiation.
 	 */
 	void (*audio_connect_req)(struct bt_hfp_ag *ag);
 
@@ -931,4 +931,4 @@ int bt_hfp_ag_ongoing_calls(struct bt_hfp_ag *ag, struct bt_hfp_ag_ongoing_call 
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_HFP_HF_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_HFP_AG_H_ */

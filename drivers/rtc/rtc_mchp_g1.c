@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -642,6 +642,11 @@ static int rtc_mchp_get_alarm_time(const struct device *dev, uint16_t alarm_id,
 	timeptr->tm_mday = (int)rtc_alarm_time.date_of_month;
 	timeptr->tm_year = (int)rtc_alarm_time.year;
 
+	timeptr->tm_wday = -1;
+	timeptr->tm_yday = -1;
+	timeptr->tm_isdst = -1;
+	timeptr->tm_nsec = 0;
+
 	return 0;
 }
 
@@ -732,6 +737,11 @@ static int rtc_mchp_get_clock_time(const struct device *dev, struct rtc_time *ti
 	timeptr->tm_mon = (int)rtc_current_time.month;
 	timeptr->tm_mday = (int)rtc_current_time.date_of_month;
 	timeptr->tm_year = (int)rtc_current_time.year;
+
+	timeptr->tm_wday = -1;
+	timeptr->tm_yday = -1;
+	timeptr->tm_isdst = -1;
+	timeptr->tm_nsec = 0;
 
 	return 0;
 }

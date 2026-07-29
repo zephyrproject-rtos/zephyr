@@ -66,8 +66,7 @@ static void sleeptimer_clock_set_timeout(int32_t ticks, struct sleeptimer_timer_
 		return;
 	}
 
-	ticks = (ticks == K_TICKS_FOREVER) ? timer->max_timeout_ticks : ticks;
-	ticks = CLAMP(ticks, 0, timer->max_timeout_ticks);
+	ticks = MIN(ticks, timer->max_timeout_ticks);
 
 	k_spinlock_key_t key = k_spin_lock(&timer->lock);
 
@@ -99,7 +98,7 @@ static uint32_t sleeptimer_clock_elapsed(struct sleeptimer_timer_data *timer)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 

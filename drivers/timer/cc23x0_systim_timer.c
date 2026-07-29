@@ -52,22 +52,19 @@ static int sys_clock_driver_init(void);
 /*
  * Set system clock timeout.
  */
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-	/* If timeout is necessary */
-	if (ticks != K_TICKS_FOREVER) {
-		/* Get current value as early as possible */
-		uint32_t now_tick = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
-		uint32_t timeout = ticks * TICK_PERIOD_MICRO_SEC;
+	/* Get current value as early as possible */
+	uint32_t now_tick = HWREG(SYSTIM_BASE + SYSTIM_O_TIME1U);
+	uint32_t timeout = ticks * TICK_PERIOD_MICRO_SEC;
 
-		if (timeout > SYSTIM_TIMEOUT_MAX) {
-			timeout = SYSTIM_TIMEOUT_MAX;
-		}
-		/* This should wrap around */
-		HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC) = now_tick + timeout;
+	if (timeout > SYSTIM_TIMEOUT_MAX) {
+		timeout = SYSTIM_TIMEOUT_MAX;
 	}
+	/* This should wrap around */
+	HWREG(SYSTIM_BASE + SYSTIM_O_CH0CC) = now_tick + timeout;
 }
 
 uint32_t sys_clock_elapsed(void)

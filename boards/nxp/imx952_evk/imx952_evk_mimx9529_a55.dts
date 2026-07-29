@@ -1,0 +1,46 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_mimx952_a55.dtsi>
+#include "imx952_evk-pinctrl.dtsi"
+
+/ {
+	model = "NXP i.MX952 A55";
+	compatible = "fsl,mimx952";
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,sram = &dram;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+
+		cpu@100 {
+			status = "disabled";
+		};
+
+		cpu@200 {
+			status = "disabled";
+		};
+	};
+
+	dram: memory@d0000000 {
+		reg = <0xd0000000 DT_SIZE_M(10)>;
+	};
+};
+
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart1_default>;
+	pinctrl-names = "default";
+};

@@ -101,8 +101,7 @@ struct i2c_mchp_dev_data {
 	void *user_data;
 #endif /*CONFIG_I2C_CALLBACK*/
 #if defined(CONFIG_I2C_TARGET)
-	struct i2c_target_config tgt_cfg;
-	struct i2c_target_callbacks tgt_cb;
+	struct i2c_target_config *tgt_cfg;
 #endif /*CONFIG_I2C_TARGET*/
 	struct k_sem lock;
 	struct k_sem sync_sem;
@@ -899,18 +898,18 @@ static void i2c_target_set_addr(const struct device *dev, uint16_t addr)
 static void i2c_target_on_addr_match(const struct device *dev, uint16_t status)
 {
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
-	const struct i2c_target_callbacks *cb = &data->tgt_cb;
-
-	i2c_target_send_cmd(dev, I2C_TARGET_CMD_ACK);
-	data->first_read = true;
+	const struct i2c_target_callbacks *cb = data->tgt_cfg->callbacks;
 
 	if ((status & SERCOM_I2CS_STATUS_DIR_Msk) != 0) {
+		/* Controller is reading - get first byte */
 		if (cb->read_requested != NULL) {
-			cb->read_requested(&data->tgt_cfg, &data->tgt_rx_data);
+			cb->read_requested(data->tgt_cfg, &data->tgt_rx_data);
 		}
+		data->first_read = true;
 	} else {
+		/* Controller is writing */
 		if (cb->write_requested != NULL) {
-			cb->write_requested(&data->tgt_cfg);
+			cb->write_requested(data->tgt_cfg);
 		}
 	}
 }
@@ -919,33 +918,39 @@ static void i2c_target_on_addr_match(const struct device *dev, uint16_t status)
 static void i2c_target_on_data_ready(const struct device *dev, uint16_t status)
 {
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
-	const struct i2c_target_callbacks *cb = &data->tgt_cb;
-	int ret = -ENOTSUP;
+	const struct i2c_target_callbacks *cb = data->tgt_cfg->callbacks;
 
 	if ((status & SERCOM_I2CS_STATUS_DIR_Msk) != 0) {
-		/* Host is reading from us */
-		if ((data->first_read) || ((status & SERCOM_I2CS_STATUS_RXNACK_Msk) == 0)) {
-			I2CS(dev).SERCOM_DATA = data->tgt_rx_data;
 
+		if (data->first_read) {
+			/* First DRDY: load first byte prepared in AMATCH */
 			data->first_read = false;
-			i2c_target_send_cmd(dev, I2C_TARGET_RECEIVE_ACK_NAK);
-
-			/* Prepare next byte */
-			if (cb->read_processed != NULL) {
-				cb->read_processed(&data->tgt_cfg, &data->tgt_rx_data);
-			}
 		} else {
-			/* Host NACKed */
-			i2c_target_send_cmd(dev, I2C_TARGET_CMD_WAIT_START);
+
+			/* Subsequent DRDY: check if controller NACKed the previous byte */
+			if ((status & SERCOM_I2CS_STATUS_RXNACK_Msk) != 0) {
+
+				/* wait for next START */
+				i2c_target_send_cmd(dev, I2C_TARGET_CMD_WAIT_START);
+				return;
+			}
+
+			/* Get next byte */
+			if (cb->read_processed != NULL) {
+				cb->read_processed(data->tgt_cfg, &data->tgt_rx_data);
+			}
 		}
+
+		/* Load data to send - writing DATA clears DRDY */
+		I2CS(dev).SERCOM_DATA = data->tgt_rx_data;
 	} else {
-		/* Host is writing to us - read the byte first, then ACK */
+
+		/* Controller is writing - reading DATA clears DRDY */
 		data->tgt_rx_data = I2CS(dev).SERCOM_DATA;
 
 		if (cb->write_received != NULL) {
-			ret = cb->write_received(&data->tgt_cfg, data->tgt_rx_data);
+			cb->write_received(data->tgt_cfg, data->tgt_rx_data);
 		}
-		i2c_target_send_cmd(dev, ret == 0 ? I2C_TARGET_CMD_ACK : I2C_TARGET_CMD_NACK);
 	}
 }
 
@@ -953,12 +958,10 @@ static void i2c_target_on_data_ready(const struct device *dev, uint16_t status)
 static void i2c_target_on_stop(const struct device *dev)
 {
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
-	const struct i2c_target_callbacks *cb = &data->tgt_cb;
-
-	i2c_target_clear_intflags(dev, SERCOM_I2CS_INTFLAG_PREC_Msk);
+	const struct i2c_target_callbacks *cb = data->tgt_cfg->callbacks;
 
 	if (cb->stop != NULL) {
-		cb->stop(&data->tgt_cfg);
+		cb->stop(data->tgt_cfg);
 	}
 }
 
@@ -969,23 +972,25 @@ static void i2c_target_isr(const struct device *dev)
 	uint8_t intflags = I2CS(dev).SERCOM_INTFLAG & SERCOM_I2CS_INTFLAG_Msk;
 	uint16_t status = I2CS(dev).SERCOM_STATUS & SERCOM_I2CS_STATUS_Msk;
 
+	if ((intflags & SERCOM_I2CS_INTFLAG_AMATCH_Msk) != 0) {
+		i2c_target_clear_intflags(dev, SERCOM_I2CS_INTFLAG_AMATCH_Msk);
+		i2c_target_on_addr_match(dev, status);
+	}
+
 	if ((intflags & SERCOM_I2CS_INTFLAG_DRDY_Msk) != 0) {
 		i2c_target_on_data_ready(dev, status);
 	}
 
-	if ((intflags & SERCOM_I2CS_INTFLAG_AMATCH_Msk) != 0) {
-		i2c_target_on_addr_match(dev, status);
-	}
-
 	if ((intflags & SERCOM_I2CS_INTFLAG_PREC_Msk) != 0) {
+		i2c_target_clear_intflags(dev, SERCOM_I2CS_INTFLAG_PREC_Msk);
 		i2c_target_on_stop(dev);
 	}
 
 	if ((intflags & SERCOM_I2CS_INTFLAG_ERROR_Msk) != 0) {
 		i2c_target_clear_intflags(dev, SERCOM_I2CS_INTFLAG_ERROR_Msk);
-		LOG_ERR("Target error");
-		if (data->tgt_cb.stop != NULL) {
-			data->tgt_cb.stop(&data->tgt_cfg);
+		LOG_ERR("Target error: status=0x%04X", status);
+		if (data->tgt_cfg->callbacks->stop != NULL) {
+			data->tgt_cfg->callbacks->stop(data->tgt_cfg);
 		}
 	}
 
@@ -1156,11 +1161,10 @@ static int i2c_mchp_target_register(const struct device *dev, struct i2c_target_
 
 	k_sem_take(&data->lock, K_FOREVER);
 
-	data->tgt_cfg.address = cfg->address;
-	data->tgt_cb = *cfg->callbacks;
+	/* Store pointer to original config - callbacks use CONTAINER_OF on this */
+	data->tgt_cfg = cfg;
 
 	i2c_enable(dev, false);
-	I2CS(dev).SERCOM_INTENCLR = SERCOM_I2CS_INTENCLR_Msk;
 	i2c_setup_target_mode(dev);
 	i2c_target_set_addr(dev, cfg->address);
 	I2CS(dev).SERCOM_INTENSET = SERCOM_I2CS_INTENSET_Msk;
@@ -1186,22 +1190,17 @@ static int i2c_mchp_target_unregister(const struct device *dev, struct i2c_targe
 		LOG_ERR("Not in target mode");
 		return -EBUSY;
 	}
-	if (data->tgt_cfg.address != cfg->address) {
-		LOG_ERR("Address mismatch");
+	if (data->tgt_cfg != cfg) {
+		LOG_ERR("Config mismatch");
 		return -EINVAL;
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
 
-	(void)memset(&data->tgt_cb, 0, sizeof(data->tgt_cb));
-
-	I2CS(dev).SERCOM_INTENCLR = SERCOM_I2CS_INTENCLR_Msk;
 	i2c_enable(dev, false);
-	i2c_target_set_addr(dev, 0);
 
 	data->target_mode = false;
-	data->tgt_cfg.address = 0;
-	data->tgt_cfg.callbacks = NULL;
+	data->tgt_cfg = NULL;
 
 	i2c_setup_controller_mode(dev);
 	i2c_set_runstandby(dev);

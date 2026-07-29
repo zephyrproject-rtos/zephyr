@@ -35,15 +35,18 @@
 int hl78xx_enable_lte_coverage_urc(struct hl78xx_data *data, bool *modem_require_restart,
 				   uint16_t timeout_s);
 
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+int hl78xx_set_prl_internal(struct hl78xx_data *data, const struct kselacq_syntax kselacq_rats);
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+
 int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		   enum hl78xx_cell_rat_mode *rat_request);
 
 int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		    enum hl78xx_cell_rat_mode rat_config_request);
 
-#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
 int hl78xx_gsm_pdp_activate(struct hl78xx_data *data);
-#endif
+
 #ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
 int hl78xx_rat_ntn_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		       enum hl78xx_cell_rat_mode rat_config_request);
@@ -51,6 +54,67 @@ int hl78xx_rat_ntn_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t size);
 
 int hl78xx_get_uart_config(struct hl78xx_data *data);
+
+/**
+ * @brief Remove one surrounding pair of double quotes from a string in place.
+ *
+ * @param str Mutable null-terminated string buffer.
+ */
+void hl78xx_trim_surrounding_quotes(char *str);
+
+/**
+ * @brief Parse a +CTZEU unsolicited result code into a typed event payload.
+ *
+ * @param argv Tokenized URC arguments from modem chat.
+ * @param argc Number of tokens in argv.
+ * @param update Output structure populated on success.
+ *
+ * @return 0 on success, negative errno on parse failure.
+ */
+int hl78xx_ctzeu_parse_urc(char **argv, uint16_t argc, struct hl78xx_ctzeu_update *update);
+
+/**
+ * @brief Parse a +CEREG/+CREG response into cached registration details.
+ *
+ * @param data HL78XX data structure.
+ * @param argv Tokenized URC arguments from modem chat.
+ * @param argc Number of tokens in argv.
+ * @param has_n_param Indicates if argv includes the query response <n> field.
+ */
+void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t argc,
+			     bool has_n_param);
+
+/**
+ * @brief Set network operator format.
+ *
+ * @param data Pointer to HL78xx data structure.
+ * @param format Network operator format.
+ * @return 0 on success, negative error code on failure.
+ */
+int hl78xx_set_network_operator_format(struct hl78xx_data *data,
+				       enum hl78xx_operator_format format);
+
+/**
+ * @brief Parse a PLMN string into MCC and MNC.
+ *
+ * @param operator Null-terminated string containing the PLMN.
+ * @param mcc Pointer to store the Mobile Country Code.
+ * @param mnc Pointer to store the Mobile Network Code.
+ * @return true if parsing was successful, false otherwise.
+ */
+bool hl78xx_parse_plmn(const char *operator, uint16_t *mcc, uint16_t *mnc);
+
+/**
+ * @brief Convert an active band hex bitmap string to a band number.
+ *
+ * Scans the hex bitmap string from least-significant nibble to most-significant,
+ * finds the first set bit, and returns the corresponding band number (1-based).
+ * Assumes only a single band bit is set, as reported by AT+KBND?.
+ *
+ * @param bmp Null-terminated hex bitmap string (e.g. "00020000000000000000").
+ * @return Band number >= 1 on success, -ENODATA if bitmap is empty or all zeros.
+ */
+int hl78xx_band_bitmap_to_number(const char *bmp);
 
 #ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
 /* Baud rate detection and switching */
@@ -92,11 +156,13 @@ const char *hl78xx_trim_leading_zeros(const char *hex_str);
  * @param max_len Maximum length of the essential APN buffer.
  */
 void hl78xx_extract_essential_part_apn(const char *full_apn, char *essential_apn, size_t max_len);
+
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 int hl78xx_enable_pmc(struct hl78xx_data *data);
 int hl78xx_psm_settings(struct hl78xx_data *data);
 int hl78xx_edrx_settings(struct hl78xx_data *data);
 int hl78xx_power_down_settings(struct hl78xx_data *data);
+void hl78xx_dynamic_cmd_feed_lpm_timers(struct hl78xx_data *data, uint16_t response_timeout);
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
 
 int hl78xx_init_power_down(struct hl78xx_data *data);
@@ -127,10 +193,13 @@ uint32_t hl78xx_edrx_idle_get_remaining_timetosleep(struct hl78xx_data *data);
 void hl78xx_psmev_init(struct hl78xx_data *data);
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 
-int binary_str_to_byte(const char *bin_str);
-void byte_to_binary_str(uint8_t byte, char *output);
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+void byte_to_binary_str(uint8_t byte, char *output);
+int binary_str_to_byte(const char *bin_str);
 
+bool hl78xx_is_rsrp_value_valid(int16_t rsrp);
+bool hl78xx_is_rsrq_value_valid(int16_t rsrq);
+bool hl78xx_is_sinr_value_valid(int16_t sinr);
 bool hl78xx_is_rsrp_valid(struct hl78xx_data *data);
 
 #endif /* ZEPHYR_DRIVERS_MODEM_HL78XX_HL78XX_CFG_H_ */

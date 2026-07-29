@@ -38,6 +38,10 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+			};
 		};
 
 		fdcan2: can@4000a800 {

@@ -17,7 +17,7 @@
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
 			clock-frequency = <48000000>;
-			cpu-power-states = <&sleep>;
+			cpu-power-states = <&sleep &deepsleep>;
 		};
 
 		power-states {
@@ -29,6 +29,23 @@
 				 * long enough to provide the power saving benefit.
 				 */
 				min-residency-us = <100>;
+			};
+
+			deepsleep: deepsleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				/* min-residency-us is set to 200 us safe margin
+				 * to ensure deep-sleep is only entered when the idle period is
+				 * long enough to provide the power saving benefit.
+				 */
+				min-residency-us = <200>;
+				/*
+				 * Worst-case latency to exit Deep Sleep. Must be at
+				 * least one system tick. The PM core only arms the LPM
+				 * companion WDT when this value rounds to >= 1 tick,
+				 * but Deep Sleep is entered unconditionally.
+				 */
+				exit-latency-us = <50>;
 			};
 		};
 	};

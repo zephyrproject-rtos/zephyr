@@ -5,6 +5,9 @@
  * ALU/Memory instructions pseudo-mnemonics for ARC64 ISA
  */
 
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_ASM_COMPAT_ASM_MACRO_64_BIT_MWDT_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_ASM_COMPAT_ASM_MACRO_64_BIT_MWDT_H_
+
 .macro MOVR, d, s
 	movl\&$suffix d, s
 .endm
@@ -91,3 +94,5 @@
 .macro CMPR, op1, op2
 	cmpl op1, op2
 .endm
+
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_ASM_COMPAT_ASM_MACRO_64_BIT_MWDT_H_ */

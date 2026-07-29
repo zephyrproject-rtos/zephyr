@@ -391,5 +391,20 @@
 			interrupts = <16 4>;
 			status = "disabled";
 		};
+
+		cryptolite0: crypto@40230000 {
+			compatible = "infineon,mxcryptolite";
+			reg = <0x40230000 0x10000>;
+
+			mxcryptolite_trng: mxcryptolite_trng {
+				compatible = "infineon,mxcryptolite-trng";
+				status = "disabled";
+			};
+
+			mxcryptolite_crypto: mxcryptolite_crypto {
+				compatible = "infineon,mxcryptolite-crypto";
+				status = "disabled";
+			};
+		};
 	};
 };

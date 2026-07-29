@@ -23,29 +23,15 @@
 #define CYCLE_DIFF_MAX (~(cycle_diff_t)0)
 
 /*
- * We have two constraints on the maximum number of cycles we can wait for.
- *
- * 1) sys_clock_announce() accepts at most INT32_MAX ticks.
- *
- * 2) The number of cycles between two reports must fit in a cycle_diff_t
- *    variable before converting it to ticks.
- *
- * Then:
- *
- * 3) Pick the smallest between (1) and (2).
- *
- * 4) Take into account some room for the unavoidable IRQ servicing latency.
- *    Let's use 3/4 of the max range.
- *
- * Finally let's add the LSB value to the result so to clear out a bunch of
- * consecutive set bits coming from the original max values to produce a
- * nicer literal for assembly generation.
+ * Maximum number of cycles to wait between two sys_clock_announce() reports:
+ * the elapsed cycle count must fit in a cycle_diff_t before it is divided down
+ * to ticks. Reserve 1/4 of the range as headroom for the unavoidable IRQ
+ * servicing latency so a late report still fits, then add the LSB so the value
+ * clears a run of low set bits for a nicer literal in the generated assembly.
  */
-#define CYCLES_MAX_1 ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
-#define CYCLES_MAX_2 ((uint64_t)CYCLE_DIFF_MAX)
-#define CYCLES_MAX_3 MIN(CYCLES_MAX_1, CYCLES_MAX_2)
-#define CYCLES_MAX_4 (CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
-#define CYCLES_MAX   (CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
+#define CYCLES_MAX_1 ((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_2 (CYCLES_MAX_1 / 2 + CYCLES_MAX_1 / 4)
+#define CYCLES_MAX   (CYCLES_MAX_2 + LSB_GET(CYCLES_MAX_2))
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = IRQ_S_TIMER;
@@ -59,18 +45,33 @@ static uint32_t last_elapsed;
 static void sbi_set_timer(uint64_t deadline)
 {
 	register unsigned long a0 __asm__("a0") = (unsigned long)deadline;
+#ifndef CONFIG_64BIT
+	register unsigned long a1 __asm__("a1") = (unsigned long)(deadline >> 32);
+#endif
 	register unsigned long a6 __asm__("a6") = SBI_FUNC_SET_TIMER;
 	register unsigned long a7 __asm__("a7") = SBI_EXT_TIME;
 
-	__asm__ volatile("ecall"
-					: "+r"(a0)
-					: "r"(a6), "r"(a7)
-					: "a1", "memory");
+#ifdef CONFIG_64BIT
+	__asm__ volatile("ecall" : "+r"(a0) : "r"(a6), "r"(a7) : "a1", "memory");
+#else
+	__asm__ volatile("ecall" : "+r"(a0), "+r"(a1) : "r"(a6), "r"(a7) : "memory");
+#endif
 }
 
 static uint64_t stime(void)
 {
+#ifdef CONFIG_64BIT
 	return csr_read(time);
+#else
+	/* guard against lower half rollover */
+	uint32_t hi, lo;
+
+	do {
+		hi = csr_read(timeh);
+		lo = csr_read(time);
+	} while (csr_read(timeh) != hi);
+	return ((uint64_t)hi << 32) | lo;
+#endif
 }
 
 static void timer_isr(const void *arg)
@@ -97,7 +98,7 @@ static void timer_isr(const void *arg)
 	sys_clock_announce(dticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -108,13 +109,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t cyc;
 
-	if (ticks == K_TICKS_FOREVER) {
+	cyc = (last_ticks + last_elapsed + ticks) * CYC_PER_TICK;
+	if ((cyc - last_count) > CYCLES_MAX) {
 		cyc = last_count + CYCLES_MAX;
-	} else {
-		cyc = (last_ticks + last_elapsed + ticks) * CYC_PER_TICK;
-		if ((cyc - last_count) > CYCLES_MAX) {
-			cyc = last_count + CYCLES_MAX;
-		}
 	}
 	sbi_set_timer(cyc);
 

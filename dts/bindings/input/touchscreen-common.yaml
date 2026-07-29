@@ -33,3 +33,31 @@ properties:
   swapped-x-y:
     type: boolean
     description: X and Y axis are swapped. Swapping is done after inverting the axis.
+
+  display:
+    type: phandle
+    description: |
+      Optional handle to the display controller this touchscreen feeds. When set, output-width /
+      output-height are taken from the referenced node's width / height instead of the properties
+      below, so the panel resolution is not duplicated. Falls back to output-width / output-height
+      when this is not set.
+
+  output-width:
+    type: int
+    description: |
+      Horizontal resolution of the display the touchscreen is bonded to. The two pairs name two
+      different spaces: screen-width / screen-height describe what the touch controller reports,
+      output-width / output-height describe the panel those reports should land on. When this
+      and output-height are both set, reported coordinates are scaled from the former into
+      the latter. Omitting them disables scaling, so coordinates are reported exactly as the
+      controller produced them. Ignored when display is set, which supplies these
+      dimensions instead.
+
+      Scaling is applied after inverting and swapping, and is what makes swapped-x-y usable on a
+      rotated panel whose two dimensions differ: the swapped axes carry each other's range, which
+      a bare swap would leave mismatched against the display.
+
+  output-height:
+    type: int
+    description: |
+      Vertical resolution of the display the touchscreen is bonded to. See output-width.

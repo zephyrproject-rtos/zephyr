@@ -16,7 +16,6 @@ properties:
 
   sifli,prescaler:
     type: int
-    default: 0
     required: true
     description: |
       Counter prescaler from 0 to 65535. The clock frequency to the counter

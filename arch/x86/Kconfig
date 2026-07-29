@@ -313,9 +313,12 @@ config MULTIBOOT_MEMMAP
 
 endif # MULTIBOOT
 
+DT_CHOSEN_ZEPHYR_CONSOLE := zephyr,console
+
 config X86_VERY_EARLY_CONSOLE
 	bool "Support very early boot printk"
 	depends on PRINTK
+	depends on $(dt_chosen_has_compat,$(DT_CHOSEN_ZEPHYR_CONSOLE),ns16550)
 	help
 	  Non-emulated X86 devices often require special hardware to attach
 	  a debugger, which may not be easily available. This option adds a

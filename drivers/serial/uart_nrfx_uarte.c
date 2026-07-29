@@ -16,6 +16,7 @@
 #include <hal/nrf_uarte.h>
 #include <hal/nrf_timer.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
 #include <soc.h>
@@ -1109,7 +1110,7 @@ static uint32_t fill_usr_buf(const struct device *dev, uint32_t len)
 	uint8_t *buf = cfg->bounce_buf[cbwt_data->bounce_idx];
 	uint32_t usr_rem = async_rx->buf_len - cbwt_data->usr_wr_off;
 	uint32_t bounce_rem = cbwt_data->bounce_limit - cbwt_data->bounce_off;
-	uint32_t cpy_len = MIN(bounce_rem, MIN(usr_rem, len));
+	uint32_t cpy_len = min3(bounce_rem, usr_rem, len);
 
 	__ASSERT(cpy_len + cbwt_data->bounce_off <= cfg->bounce_buf_len,
 		"Exceeding the buffer cpy_len:%d off:%d limit:%d",
@@ -1585,6 +1586,7 @@ static void cbwt_rx_enable(const struct device *dev, bool with_timeout)
 
 	atomic_or(&data->flags, UARTE_FLAG_RX_BUF_REQ);
 	nrf_uarte_task_trigger(cfg->uarte_regs, NRF_UARTE_TASK_STARTRX);
+	async_rx->enabled = true;
 	NRFX_IRQ_PENDING_SET(cfg->timer_irqn);
 }
 
@@ -2031,6 +2033,7 @@ static void rx_idle_line_handle(const struct device *dev)
 	irq_disable(cfg->uarte_irqn);
 
 	nrf_timer_task_trigger(cfg->timer_regs, NRF_TIMER_TASK_CAPTURE0);
+	nrf_barrier_rw();
 	len = nrf_timer_cc_get(cfg->timer_regs, 0) - async_rx->total_user_byte_cnt;
 	if ((len > 0) && ((len + async_rx->offset) < async_rx->buf_len)) {
 		notify_uart_rx_rdy(dev, len);
@@ -2055,7 +2058,13 @@ static void rx_timeout(struct k_timer *timer)
 {
 	const struct device *dev = k_timer_user_data_get(timer);
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	struct uarte_nrfx_data *data = dev->data;
+	struct uarte_async_rx *async_rx = &data->async->rx;
 
+	if (!async_rx->enabled) {
+		/* RX is already disabled and timer expired while RX was being disabled. */
+		return;
+	}
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 #ifdef CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
 	if (IS_CBWT(dev)) {
@@ -2064,8 +2073,6 @@ static void rx_timeout(struct k_timer *timer)
 	}
 #endif
 
-	struct uarte_nrfx_data *data = dev->data;
-	struct uarte_async_rx *async_rx = &data->async->rx;
 	bool rxdrdy = nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXDRDY);
 
 	if (IS_ENABLED(RX_FRAMETIMEOUT_WORKAROUND) &&
@@ -2083,9 +2090,6 @@ static void rx_timeout(struct k_timer *timer)
 
 	return;
 #else /* UARTE_HAS_FRAME_TIMEOUT */
-	struct uarte_nrfx_data *data = dev->data;
-	struct uarte_async_rx *async_rx = &data->async->rx;
-
 	if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXDRDY)) {
 		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXDRDY);
 		async_rx->idle_cnt = 0;
@@ -2442,7 +2446,12 @@ static void rxdrdy_isr(const struct device *dev)
 {
 	struct uarte_nrfx_data *data = dev->data;
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	struct uarte_async_rx *async_rx = &data->async->rx;
 
+	if (!async_rx->enabled) {
+		/* RX is already being disabled, ignore the interrupt. */
+		return;
+	}
 	data->async->rx.idle_cnt = 0;
 	k_timer_start(&data->async->rx.timer, data->async->rx.timeout, data->async->rx.timeout);
 	nrf_uarte_int_disable(uarte, NRF_UARTE_INT_RXDRDY_MASK);

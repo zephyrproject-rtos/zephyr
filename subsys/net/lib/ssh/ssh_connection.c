@@ -215,6 +215,24 @@ int ssh_channel_write_stderr(struct ssh_channel *channel, const void *data, uint
 	return (int)len;
 }
 
+int ssh_channel_close(struct ssh_channel *channel)
+{
+	struct ssh_transport_user_request request;
+
+	if (channel == NULL || !channel->in_use || !channel->open ||
+	    channel->remote_channel == UINT32_MAX || channel->transport == NULL) {
+		return -EINVAL;
+	}
+
+	/* The CHANNEL_CLOSE message is sent and the channel freed from the
+	 * transport thread, so just queue the request here.
+	 */
+	request.type = SSH_TRANSPORT_USER_REQUEST_CHANNEL_CLOSE;
+	request.channel_close.channel = channel;
+
+	return ssh_transport_queue_user_request(channel->transport, &request);
+}
+
 int ssh_connection_process_msg(struct ssh_transport *transport, uint8_t msg_id,
 			       struct ssh_payload *rx_pkt)
 {
@@ -255,6 +273,7 @@ int ssh_connection_process_msg(struct ssh_transport *transport, uint8_t msg_id,
 		struct ssh_string channel_type;
 		uint32_t sender_channel, initial_window_size, maximum_packet_size;
 		struct ssh_channel *channel;
+		struct ssh_transport_event event;
 
 		NET_DBG("CHANNEL_OPEN");
 
@@ -291,14 +310,19 @@ int ssh_connection_process_msg(struct ssh_transport *transport, uint8_t msg_id,
 		/* TODO: MTU = sizeof(transport->rx_buf) - HEADER_LEN - MAX_PADDING - MAC_LEN? */
 		channel->rx_mtu = sizeof(channel->rx_ring_buf_data);
 
-		if (transport->callback != NULL) {
-			struct ssh_transport_event event;
+		event.type = SSH_TRANSPORT_EVENT_CHANNEL_OPEN;
+		event.channel_open.channel = channel;
 
-			event.type = SSH_TRANSPORT_EVENT_CHANNEL_OPEN;
-			event.channel_open.channel = channel;
+		ret = ssh_transport_traverse_callbacks(true, transport, &event);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (transport->callback != NULL) {
 			ret = transport->callback(transport, &event,
 						  transport->callback_user_data);
 		}
+
 		break;
 	}
 #endif
@@ -694,8 +718,12 @@ int ssh_connection_process_msg(struct ssh_transport *transport, uint8_t msg_id,
 
 		channel = ssh_connection_get_channel(transport, recipient_channel);
 		if (channel == NULL) {
-			NET_ERR("Invalid channel");
-			return -1;
+			/* The channel may already have been freed if we
+			 * initiated the close ourselves; this is the peer's
+			 * acknowledging CHANNEL_CLOSE, so just ignore it.
+			 */
+			NET_DBG("Channel %u already closed", recipient_channel);
+			return 0;
 		}
 
 		ssh_connection_free_channel(channel);
@@ -950,6 +978,27 @@ int ssh_connection_send_channel_result(struct ssh_transport *transport, bool suc
 	ret = ssh_transport_send_packet(transport, &payload);
 	if (ret < 0) {
 		NET_DBG("Failed to send %s (%d)", "CHANNEL_SUCCESS", ret);
+	}
+
+	return ret;
+}
+
+int ssh_connection_send_channel_close(struct ssh_transport *transport,
+				      uint32_t recipient_channel)
+{
+	int ret;
+
+	SSH_PAYLOAD_BUF(payload, transport->tx_buf);
+
+	if (!ssh_payload_skip_bytes(&payload, SSH_PKT_MSG_ID_OFFSET) ||
+	    !ssh_payload_write_byte(&payload, SSH_MSG_CHANNEL_CLOSE) ||
+	    !ssh_payload_write_u32(&payload, recipient_channel)) {
+		return -ENOBUFS;
+	}
+
+	ret = ssh_transport_send_packet(transport, &payload);
+	if (ret < 0) {
+		NET_DBG("Failed to send %s (%d)", "CHANNEL_CLOSE", ret);
 	}
 
 	return ret;

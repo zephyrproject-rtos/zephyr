@@ -111,6 +111,7 @@ static int i2c_atciic100_configure(const struct device *dev,
 
 	case I2C_SPEED_FAST_PLUS:
 		reg |= SETUP_SPEED_FAST_PLUS;
+		break;
 
 	case I2C_SPEED_HIGH:
 		ret = -EIO;

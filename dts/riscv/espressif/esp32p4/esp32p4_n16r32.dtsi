@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "esp32p4_common.dtsi"
+
+/* 16MB flash */
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+/* 32MB PSRAM */
+&psram0 {
+	size = <DT_SIZE_M(32)>;
+};

@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "NXP MCX suspend-to-RAM sample"
+
+choice
+	prompt "Suspend-to-RAM wakeup source"
+	default SAMPLE_S2RAM_WAKEUP_TIMER
+	help
+	  Select how the SoC is woken from suspend-to-RAM (Deep Power Down).
+
+config SAMPLE_S2RAM_WAKEUP_TIMER
+	bool "Timed wakeup"
+	help
+	  Wake after a fixed delay using a low-power timer.
+
+config SAMPLE_S2RAM_WAKEUP_BUTTON
+	bool "Button wakeup"
+	help
+	  Wake on a user button press.
+
+endchoice
+
+config SAMPLE_APP_TEST_CYCLES
+	int "Number of suspend-to-RAM cycles to execute"
+	range 1 1000
+	default 10
+	help
+	  Number of times the sample suspends to RAM and resumes before it
+	  stops. The retained cycle counter is checked against this value so
+	  a test harness can confirm every wakeup happened.
+
+source "Kconfig.zephyr"

@@ -285,7 +285,7 @@ config BT_CTLR_ADV_DATA_BUF_MAX
 	  advertising sets.
 
 module = BT_CTLR_ISOAL
-module-str = "Bluetooth Controller ISO-AL"
+module-str = Bluetooth Controller ISO-AL
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
 config BT_CTLR_ISOAL_LOG_DBG_VERBOSE

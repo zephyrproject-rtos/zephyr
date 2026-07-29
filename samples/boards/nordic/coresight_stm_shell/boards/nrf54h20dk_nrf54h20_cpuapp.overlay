@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Enable CPUPPR / CPUFLPR VPRs and IPC between cpuapp and each coprocessor (icmsg).
+ * CPURAD IPC uses ipc0 in board DTS; CPURAD core boot uses Kconfig on cpuapp.
+ */
+
+&cpuapp_cpuppr_ipc {
+	status = "okay";
+};
+
+&cpuapp_cpuflpr_ipc {
+	status = "okay";
+};
+
+&cpuppr_vevif {
+	status = "okay";
+};
+
+&cpuflpr_vevif {
+	status = "okay";
+};
+
+&cpuppr_vpr {
+	status = "okay";
+};
+
+&cpuflpr_vpr {
+	status = "okay";
+};

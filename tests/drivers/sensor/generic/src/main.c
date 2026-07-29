@@ -274,6 +274,7 @@ ZTEST(sensor_api, test_sensor_handle_triggers)
 ZTEST(sensor_api, test_sensor_unit_conversion)
 {
 	struct sensor_value data;
+	int ret;
 
 	/* Test acceleration unit conversion */
 	sensor_g_to_ms2(1, &data);
@@ -327,8 +328,6 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 			"the data does not match");
 
 	/* Extensive tests for edge cases */
-	int ret;
-
 	sensor_value_from_double(&data, -2147483648.0);
 	zassert_equal(data.val1, -2147483648, "the data does not match");
 	zassert_equal(data.val2, 0, "the data does not match");
@@ -358,6 +357,116 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 	zassert_equal(ret, -ERANGE, "range error expected");
 
 #endif
+	/* Test struct sensor_value to fixed point */
+	uint32_t val;
+
+	data.val1 = -1;
+	data.val2 = -500000;
+	ret = sensor_value_to_fixed_point(&val, &data, 1, 30, true);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(val, 0xA0000000U, "the result does not match");
+
+	data.val1 = 1;
+	data.val2 = 500000;
+	ret = sensor_value_to_fixed_point(&val, &data, 1, 30, true);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(val, 0x60000000U, "the result does not match");
+
+	data.val1 = 25;
+	data.val2 = 500000;
+	ret = sensor_value_to_fixed_point(&val, &data, 12, 4, false);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(val, 0x00000198U, "the result does not match");
+
+	data.val1 = -25;
+	data.val2 = -500000;
+	ret = sensor_value_to_fixed_point(&val, &data, 11, 4, true);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(val, 0x0000FE68U, "the result does not match");
+
+	/* Test struct sensor_value from fixed point */
+	ret = sensor_value_from_fixed_point(&data, 0xA0000000U, 1, 30, true);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(data.val1, -1, "the result does not match");
+	zassert_equal(data.val2, -500000, "the result does not match");
+
+	ret = sensor_value_from_fixed_point(&data, 0x60000000U, 1, 30, true);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(data.val1, 1, "the result does not match");
+	zassert_equal(data.val2, 500000, "the result does not match");
+
+	ret = sensor_value_from_fixed_point(&data, 0x00000198U, 12, 4, false);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(data.val1, 25, "the result does not match");
+	zassert_equal(data.val2, 500000, "the result does not match");
+
+	ret = sensor_value_from_fixed_point(&data, 0x0000FE68U, 11, 4, true);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(data.val1, -25, "the result does not match");
+	zassert_equal(data.val2, -500000, "the result does not match");
+
+	/* Test edge cases for struct sensor_value to/from fixed point */
+	ret = sensor_value_to_fixed_point(&val, &data, 10, 30, false);
+	zassert_equal(ret, -EINVAL, "invalid argument error expected");
+
+	ret = sensor_value_from_fixed_point(&data, val, 10, 30, false);
+	zassert_equal(ret, -EINVAL, "invalid argument error expected");
+
+	ret = sensor_value_to_fixed_point(&val, &data, 0, 32, true);
+	zassert_equal(ret, -EINVAL, "invalid argument error expected");
+
+	ret = sensor_value_from_fixed_point(&data, val, 0, 32, true);
+	zassert_equal(ret, -EINVAL, "invalid argument error expected");
+
+	ret = sensor_value_to_fixed_point(&val, &data, 10, 0, true);
+	zassert_equal(ret, -EINVAL, "invalid argument error expected");
+
+	ret = sensor_value_from_fixed_point(&data, val, 10, 0, true);
+	zassert_equal(ret, -EINVAL, "invalid argument error expected");
+
+	data.val1 = 1;
+	data.val2 = 0;
+	ret = sensor_value_to_fixed_point(&val, &data, 0, 31, true);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	data.val1 = -1;
+	data.val2 = 0;
+	ret = sensor_value_to_fixed_point(&val, &data, 0, 31, true);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(val, 0x80000000U, "the result does not match");
+
+	ret = sensor_value_from_fixed_point(&data, 0x80000000U, 0, 31, true);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(data.val1, -1, "the result does not match");
+	zassert_equal(data.val2, 0, "the result does not match");
+
+	data.val1 = 0;
+	data.val2 = 0;
+	ret = sensor_value_to_fixed_point(&val, &data, 0, 31, true);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(val, 0x00000000U, "the result does not match");
+
+	ret = sensor_value_from_fixed_point(&data, 0x00000000U, 0, 31, true);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(data.val1, 0, "the result does not match");
+	zassert_equal(data.val2, 0, "the result does not match");
+
+	data.val1 = 0;
+	data.val2 = 500000;
+	ret = sensor_value_to_fixed_point(&val, &data, 0, 1, false);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(val, 0x00000001U, "the result does not match");
+
+	ret = sensor_value_from_fixed_point(&data, 0x00000001U, 0, 1, false);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(data.val1, 0, "the result does not match");
+	zassert_equal(data.val2, 500000, "the result does not match");
+
+	ret = sensor_value_from_fixed_point(&data, 0x7FFFFFFFU, 0, 31, true);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(data.val1, 0, "the result does not match");
+	zassert_equal(data.val2, 999999, "the result does not match");
+
 	/* reset test data to positive value */
 	data.val1 = 3;
 	data.val2 = 300000;
@@ -393,6 +502,107 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 			"the result does not match");
 	zassert_equal(sensor_value_to_micro(&data), 5432109876543LL,
 			"the result does not match");
+
+	struct sensor_value data2, out;
+
+	/* Testing sensor_value additions */
+	data.val1 = 0;
+	data.val2 = 500000;
+	data2.val1 = 0;
+	data2.val2 = 500000;
+	ret = sensor_value_add(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 1, "the result does not match");
+	zassert_equal(out.val2, 0, "the result does not match");
+
+	data.val1 = 1;
+	data.val2 = 0;
+	data2.val1 = 0;
+	data2.val2 = -250000;
+	ret = sensor_value_add(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 0, "the result does not match");
+	zassert_equal(out.val2, 750000, "the result does not match");
+
+	/* Testing sensor_value subtractions */
+	data.val1 = 1;
+	data.val2 = 0;
+	data2.val1 = 0;
+	data2.val2 = 250000;
+	ret = sensor_value_subtract(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 0, "the result does not match");
+	zassert_equal(out.val2, 750000, "the result does not match");
+
+	data.val1 = 0;
+	data.val2 = -250000;
+	data2.val1 = 1;
+	data2.val2 = 0;
+	ret = sensor_value_subtract(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, -1, "the result does not match");
+	zassert_equal(out.val2, -250000, "the result does not match");
+
+	/* Testing sensor_value multiplications */
+	data.val1 = 1;
+	data.val2 = 500000;
+	data2.val1 = 2;
+	data2.val2 = 0;
+	ret = sensor_value_multiply(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 3, "the result does not match");
+	zassert_equal(out.val2, 0, "the result does not match");
+
+	data.val1 = 0;
+	data.val2 = 500000;
+	data2.val1 = 0;
+	data2.val2 = -500000;
+	ret = sensor_value_multiply(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 0, "the result does not match");
+	zassert_equal(out.val2, -250000, "the result does not match");
+
+	/* Testing sensor_value scaling */
+	data.val1 = 0;
+	data.val2 = 750000;
+	ret = sensor_value_scale(&data, 2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 1, "the result does not match");
+	zassert_equal(out.val2, 500000, "the result does not match");
+
+	data.val1 = -1;
+	data.val2 = -500000;
+	ret = sensor_value_scale(&data, -3, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 4, "the result does not match");
+	zassert_equal(out.val2, 500000, "the result does not match");
+
+	/* Testing out-of-range edge cases for sensor_value arithmetic functions */
+	data.val1 = INT32_MAX;
+	data.val2 = 999999;
+	data2.val1 = 0;
+	data2.val2 = 1;
+	ret = sensor_value_add(&data, &data2, &out);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	data.val1 = INT32_MIN;
+	data.val2 = -999999;
+	data2.val1 = 0;
+	data2.val2 = 1;
+	ret = sensor_value_subtract(&data, &data2, &out);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	data.val1 = INT32_MAX;
+	data.val2 = 0;
+	data2.val1 = 2;
+	data2.val2 = 0;
+	ret = sensor_value_multiply(&data, &data2, &out);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	data.val1 = INT32_MAX;
+	data.val2 = 0;
+	ret = sensor_value_scale(&data, 2, &out);
+	zassert_equal(ret, -ERANGE, "range error expected");
 }
 
 ZTEST_SUITE(sensor_api, NULL, NULL, ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the logging subsystem.
+ * @ingroup log_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_H_
 
@@ -25,14 +31,6 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_LOG_RATELIMIT
-#define LOG_RATELIMIT_INTERVAL_MS CONFIG_LOG_RATELIMIT_INTERVAL_MS
-
-#else
-#define LOG_RATELIMIT_INTERVAL_MS 0
-
-#endif
-
 /**
  * @brief Logging
  * @defgroup logging Logging
@@ -47,6 +45,11 @@ extern "C" {
  * @brief Logger API
  * @defgroup log_api Logging API
  * @ingroup logger
+ * @{
+ */
+
+/**
+ * @name Standard logging
  * @{
  */
 
@@ -109,6 +112,34 @@ extern "C" {
 		}                                                                                  \
 	} while (0)
 
+/** @} */
+
+/**
+ * @name Rate-limited logging
+ *
+ * Rate-limited variants drop repeated messages so that a frequently-hit call
+ * site cannot flood the log. Each call site is limited independently using
+ * atomic operations for thread safety, and a summary of skipped messages is
+ * emitted when logging resumes. The plain variants use the default interval
+ * @ref LOG_RATELIMIT_INTERVAL_MS; the `_RATE` variants take an explicit
+ * interval.
+ * @{
+ */
+
+/**
+ * @brief Default interval for rate-limited log messages, in milliseconds.
+ *
+ * Period used by the rate-limited logging macros that do not take an explicit
+ * rate (for example @ref LOG_ERR_RATELIMIT). It evaluates to
+ * @kconfig{CONFIG_LOG_RATELIMIT_INTERVAL_MS} when @kconfig{CONFIG_LOG_RATELIMIT}
+ * is enabled, and to 0 (no rate limiting) otherwise.
+ */
+#ifdef CONFIG_LOG_RATELIMIT
+#define LOG_RATELIMIT_INTERVAL_MS CONFIG_LOG_RATELIMIT_INTERVAL_MS
+#else
+#define LOG_RATELIMIT_INTERVAL_MS 0
+#endif
+
 /**
  * @brief Core rate-limited logging macro for regular messages
  *
@@ -142,22 +173,6 @@ extern "C" {
 			atomic_inc(&__skipped_count);                                              \
 		}                                                                                  \
 	} while (0)
-
-/**
- * @brief Rate-limited logging macros
- *
- * @details These macros provide rate-limited logging functionality to prevent
- * log flooding when messages are generated frequently. Each macro ensures that
- * log messages are not output more frequently than a specified interval.
- * Rate limiting is per-macro-call-site, meaning each unique call has its own
- * independent rate limit.
- *
- * The macros use atomic operations to ensure thread safety in multi-threaded
- * environments. Only one thread can successfully log a message within the
- * specified rate limit period.
- *
- * @see CONFIG_LOG_RATELIMIT_INTERVAL_MS
- */
 
 /**
  * @brief Core rate-limited logging macro with level parameter
@@ -353,14 +368,6 @@ extern "C" {
 	_LOG_HEXDUMP_RATELIMIT_LVL(LOG_LEVEL_DBG, LOG_RATELIMIT_INTERVAL_MS, _data, _length, _str)
 
 /**
- * @brief Rate-limited logging macros with custom rate
- *
- * @details These macros provide rate-limited logging functionality with custom
- * rate intervals. They take an explicit rate parameter (in milliseconds) that
- * specifies the minimum interval between log messages.
- */
-
-/**
  * @brief Writes an ERROR level message to the log with custom rate limiting.
  *
  * @details It's meant to report severe errors, such as those from which it's
@@ -476,6 +483,13 @@ extern "C" {
 #define LOG_HEXDUMP_DBG_RATELIMIT_RATE(_rate_ms, _data, _length, _str)                             \
 	_LOG_HEXDUMP_RATELIMIT_LVL(LOG_LEVEL_DBG, _rate_ms, _data, _length, _str)
 
+/** @} */
+
+/**
+ * @name Raw output
+ * @{
+ */
+
 /**
  * @brief Unconditionally print raw log message.
  *
@@ -496,6 +510,13 @@ extern "C" {
  * followed by as many values as specifiers.
  */
 #define LOG_RAW(...) Z_LOG_PRINTK(1, __VA_ARGS__)
+
+/** @} */
+
+/**
+ * @name Instance logging
+ * @{
+ */
 
 /**
  * @brief Writes an ERROR level message associated with the instance to the log.
@@ -554,6 +575,13 @@ extern "C" {
  */
 #define LOG_INST_DBG(_log_inst, ...) Z_LOG_INSTANCE(LOG_LEVEL_DBG, _log_inst, __VA_ARGS__)
 
+/** @} */
+
+/**
+ * @name Hexdump logging
+ * @{
+ */
+
 /**
  * @brief Writes an ERROR level hexdump message to the log.
  *
@@ -599,6 +627,13 @@ extern "C" {
  * @param _str    Persistent, raw string.
  */
 #define LOG_HEXDUMP_DBG(_data, _length, _str) Z_LOG_HEXDUMP(LOG_LEVEL_DBG, _data, _length, (_str))
+
+/** @} */
+
+/**
+ * @name Instance hexdump logging
+ * @{
+ */
 
 /**
  * @brief Writes an ERROR hexdump message associated with the instance to the
@@ -659,6 +694,8 @@ extern "C" {
  */
 #define LOG_INST_HEXDUMP_DBG(_log_inst, _data, _length, _str)                                      \
 	Z_LOG_HEXDUMP_INSTANCE(LOG_LEVEL_DBG, _log_inst, _data, _length, _str)
+
+/** @} */
 
 /**
  * @brief Writes an formatted string to the log.
@@ -736,6 +773,11 @@ extern struct k_mem_partition k_log_partition;
 #else
 #define Z_LOG_MODULE_PARTITION(_k_app_mem)
 #endif
+
+/**
+ * @name Module registration
+ * @{
+ */
 
 /**
  * @brief Create module-specific state and register the module with Logger.
@@ -833,6 +875,8 @@ extern struct k_mem_partition k_log_partition;
  */
 #define LOG_LEVEL_SET(level)                                                                       \
 	static const uint32_t __log_level __unused = Z_LOG_RESOLVED_LEVEL(level, 0)
+
+/** @} */
 
 #ifdef CONFIG_LOG_CUSTOM_HEADER
 /* This include must always be at the end of log.h */

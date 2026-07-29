@@ -14,7 +14,7 @@ Optionally, it also shows how to use the upper threshold triggers.
 References
 **********
 
- - `SHT3X-DIS sensor <https://www.sensirion.com/en/environmental-sensors/humidity-sensors/digital-humidity-sensors-for-various-applications/>`_
+ - `SHT3X-DIS sensor <https://sensirion.com/products/catalog/SHT31-DIS-B>`_
 
 Wiring
 *******

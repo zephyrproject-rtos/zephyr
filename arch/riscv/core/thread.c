@@ -8,6 +8,7 @@
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/riscv/csr.h>
+#include <zephyr/llext/symbol.h>
 #include <pmp.h>
 
 #ifdef CONFIG_USERSPACE
@@ -15,6 +16,17 @@
  * Per-thread (TLS) variable indicating whether execution is in user mode.
  */
 Z_THREAD_LOCAL uint8_t is_user_mode;
+
+/*
+ * Exported accessor for the user-mode flag so loadable extensions (llext) -
+ * which cannot relocate a thread-local symbol - can resolve it and thus call
+ * syscalls. Mirrors the Arm z_arm_thread_is_in_user_mode().
+ */
+bool z_riscv_thread_is_user_mode(void)
+{
+	return is_user_mode != 0;
+}
+EXPORT_SYMBOL(z_riscv_thread_is_user_mode);
 #endif
 
 void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,

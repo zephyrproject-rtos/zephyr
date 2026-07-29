@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef INCLUDE_ZEPHYR_LINKER_ITERABLE_SECTIONS_H_
-#define INCLUDE_ZEPHYR_LINKER_ITERABLE_SECTIONS_H_
+#ifndef ZEPHYR_INCLUDE_LINKER_ITERABLE_SECTIONS_H_
+#define ZEPHYR_INCLUDE_LINKER_ITERABLE_SECTIONS_H_
 
 /**
  * @addtogroup iterable_section_apis
@@ -150,4 +150,4 @@
  * @}
  */ /* end of struct_section_apis */
 
-#endif /* INCLUDE_ZEPHYR_LINKER_ITERABLE_SECTIONS_H_ */
+#endif /* ZEPHYR_INCLUDE_LINKER_ITERABLE_SECTIONS_H_ */

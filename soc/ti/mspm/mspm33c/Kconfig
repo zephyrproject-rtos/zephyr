@@ -1,0 +1,13 @@
+# TI MSPM33C
+
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MSPM33C
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select ARMV8_M_DSP
+	select BUILD_OUTPUT_BIN
+	select BUILD_OUTPUT_HEX

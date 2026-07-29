@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2026 Siratul Islam <email@sirat.me>
+ * Copyright (c) 2026 Siratul Islam <siratul.islam@linux.dev>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
+#include <sys/errno.h>
 #include <zephyr/authentication/fido2/fido2_types.h>
 #include <zephyr/authentication/fido2/fido2_storage.h>
 
@@ -62,6 +62,37 @@ static int none_backend_sign_count_increment(const uint8_t *cred_id, size_t cred
 	return -ENOTSUP;
 }
 
+static int none_backend_pin_retries_get(uint8_t *retries)
+{
+	*retries = 0;
+
+	return -ENOTSUP;
+}
+
+static int none_backend_pin_retries_decrement(void)
+{
+	return -ENOTSUP;
+}
+
+static int none_backend_pin_retries_reset(void)
+{
+	return -ENOTSUP;
+}
+
+static int none_backend_pin_set(const uint8_t *pin_hash)
+{
+	ARG_UNUSED(pin_hash);
+
+	return -ENOTSUP;
+}
+
+static int none_backend_pin_get(uint8_t *pin_hash)
+{
+	ARG_UNUSED(pin_hash);
+
+	return -ENOTSUP;
+}
+
 const struct fido2_storage_api fido2_storage_backend = {
 	.init = none_backend_init,
 	.store = none_backend_store,
@@ -69,4 +100,9 @@ const struct fido2_storage_api fido2_storage_backend = {
 	.remove = none_backend_remove,
 	.find_by_rp = none_backend_find_by_rp,
 	.sign_count_increment = none_backend_sign_count_increment,
+	.pin_retries_get = none_backend_pin_retries_get,
+	.pin_retries_decrement = none_backend_pin_retries_decrement,
+	.pin_retries_reset = none_backend_pin_retries_reset,
+	.pin_set = none_backend_pin_set,
+	.pin_get = none_backend_pin_get,
 };

@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Suspend-to-RAM for NXP MCX
+
+common:
+  tags:
+    - power
+    - pm
+  platform_allow:
+    - frdm_mcxn947/mcxn947/cpu0
+    - mcx_n5xx_evk/mcxn547/cpu0
+    - mcx_n9xx_evk/mcxn947/cpu0
+    - frdm_mcxn236
+    - frdm_mcxa153
+    - frdm_mcxa156
+    - frdm_mcxa344
+    - frdm_mcxa266
+    - frdm_mcxa346
+    - frdm_mcxa366
+    - frdm_mcxa577
+  integration_platforms:
+    - frdm_mcxn947/mcxn947/cpu0
+    - frdm_mcxa156
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "suspend-to-RAM demo"
+
+tests:
+  sample.boards.nxp.mcxn_a.s2ram.timer:
+    timeout: 120
+    harness_config:
+      type: one_line
+      regex:
+        - "Completed 10 suspend-to-RAM cycles"
+    extra_configs:
+      - CONFIG_SAMPLE_S2RAM_WAKEUP_TIMER=y
+  sample.boards.nxp.mcxn_a.s2ram.button:
+    extra_configs:
+      - CONFIG_SAMPLE_S2RAM_WAKEUP_BUTTON=y

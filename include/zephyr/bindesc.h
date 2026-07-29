@@ -10,8 +10,8 @@
  * @ingroup bindesc
  */
 
-#ifndef ZEPHYR_INCLUDE_ZEPHYR_BINDESC_H_
-#define ZEPHYR_INCLUDE_ZEPHYR_BINDESC_H_
+#ifndef ZEPHYR_INCLUDE_BINDESC_H_
+#define ZEPHYR_INCLUDE_BINDESC_H_
 
 /**
  * @defgroup bindesc Binary Descriptors
@@ -633,4 +633,4 @@ extern const struct bindesc_entry BINDESC_NAME(cxx_compiler_version);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_ZEPHYR_BINDESC_H_ */
+#endif /* ZEPHYR_INCLUDE_BINDESC_H_ */

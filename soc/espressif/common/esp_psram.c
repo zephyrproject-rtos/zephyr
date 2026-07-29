@@ -96,3 +96,25 @@ void esp_init_psram(void)
 	memset(&_ext_ram_bss_start, 0,
 	       (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
 }
+
+#if CONFIG_ESP_SPIRAM && defined(CONFIG_SOC_SERIES_ESP32P4)
+static int esp32p4_psram_init(void)
+{
+	esp_init_psram();
+
+	if (esp_psram_smh_init()) {
+		printk("Failed to initialize PSRAM shared multi heap\n");
+	}
+
+	return 0;
+}
+
+/*
+ * On ESP32-P4 the PSRAM/MPLL rail is powered by an internal LDO owned by the
+ * devicetree regulator driver, which comes up at PRE_KERNEL_1. Initialize
+ * PSRAM at PRE_KERNEL_1 as well, at the default priority so it runs after the
+ * regulator (lower priority value), and before POST_KERNEL consumers of the
+ * external RAM heap.
+ */
+SYS_INIT(esp32p4_psram_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif

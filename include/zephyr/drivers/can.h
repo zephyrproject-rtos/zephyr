@@ -380,9 +380,9 @@ struct can_driver_config {
 	}
 
 /**
- * @brief Static initializer for @p can_driver_config struct from DT_DRV_COMPAT instance
+ * @brief Static initializer for @p can_driver_config struct from @c DT_DRV_COMPAT instance
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param _min_bitrate minimum bitrate supported by the CAN controller
  * @param _max_bitrate maximum bitrate supported by the CAN controller
  * @see CAN_DT_DRIVER_CONFIG_GET()
@@ -459,7 +459,7 @@ typedef int (*can_send_t)(const struct device *dev,
 
 /**
  * @brief Callback API upon adding an RX filter
- * See @a can_add_rx_callback() for argument description
+ * See @a can_add_rx_filter() for argument description
  */
 typedef int (*can_add_rx_filter_t)(const struct device *dev,
 				   can_rx_callback_t callback,
@@ -843,9 +843,9 @@ struct can_device_state {
 #endif /* CONFIG_CAN_STATS */
 
 /**
- * @brief Like CAN_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
+ * @brief Like CAN_DEVICE_DT_DEFINE() for an instance of a @c DT_DRV_COMPAT compatible
  *
- * @param inst Instance number. This is replaced by <tt>DT_DRV_COMPAT(inst)</tt>
+ * @param inst Instance number. This is replaced by <tt>DT_DRV_INST(inst)</tt>
  *             in the call to CAN_DEVICE_DT_DEFINE().
  * @param ...  Other parameters as expected by CAN_DEVICE_DT_DEFINE().
  */

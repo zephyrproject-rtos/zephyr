@@ -89,6 +89,7 @@
 		pinctrl: pin-controller@fe200000 {
 			compatible = "brcm,bcm2711-pinctrl";
 			reg = <0xfe200000 0xf4>;
+			ngpios = <58>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
@@ -240,6 +241,29 @@
 			#size-cells = <0>;
 			clocks = <&clk_vpu>;
 			status = "disabled";
+		};
+	};
+
+	axi {
+		#address-cells = <2>;
+		#size-cells = <1>;
+
+		eth0: ethernet@fd580000 {
+			compatible = "brcm,genet";
+			reg = <0x0 0xfd580000 0x10000>;
+			interrupts = <GIC_SPI 158 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			mdio0: mdio@e14 {
+				compatible = "brcm,genet-mdio";
+				reg = <0xe14 0x8>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 };

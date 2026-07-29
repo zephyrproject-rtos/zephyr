@@ -8,6 +8,7 @@
 #include <wch/ch32v208/ch32v208gbu.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "linkw-pinctrl.dtsi"
 
 / {
@@ -34,6 +35,21 @@
 		};
 	};
 
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm3 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Green LED";
+		};
+
+		blue_pwm_led: blue_pwm_led {
+			pwms = <&pwm3 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "Blue LED";
+		};
+	};
+
 	buttons {
 		compatible = "gpio-keys";
 
@@ -50,6 +66,7 @@
 
 	aliases {
 		led0 = &blue_led;
+		pwm-led0 = &blue_pwm_led;
 		sw0 = &mode;
 		watchdog0 = &iwdg;
 	};

@@ -91,7 +91,7 @@ struct net_route_entry *net_route_ipv4_lookup(struct net_if *iface,
 struct net_route_entry *net_route_ipv4_add(struct net_if *iface,
 					   struct net_in_addr *addr,
 					   uint8_t mask_len,
-					   struct net_in_addr *nexthop,
+					   const struct net_in_addr *nexthop,
 					   uint32_t lifetime,
 					   uint8_t preference)
 {
@@ -124,7 +124,7 @@ int net_route_ipv4_del(struct net_route_entry *route)
 }
 
 int net_route_ipv4_del_by_nexthop(struct net_if *iface,
-				  struct net_in_addr *nexthop)
+				  const struct net_in_addr *nexthop)
 {
 	struct net_addr addr = route_ipv4_addr(nexthop);
 

@@ -124,6 +124,7 @@ config SHELL_ARGC_MAX
 	int "Maximum arguments in shell command"
 	range 3 $(UINT8_MAX)
 	default 30 if NET_L2_WIFI_SHELL
+	default 71 if CAN_SHELL
 	default 20
 	help
 	  Maximum number of arguments that can build a command.
@@ -441,7 +442,6 @@ if SHELL_REMOTE_CLI
 
 config SHELL_REMOTE_CLI_SKIP_RO_STRINGS
 	bool "Skip read-only strings in remote message"
-	default y
 	help
 	  When enabled, read-only strings are not included in the remote message.
 	  This can save some memory (for example, stack space) and reduces the size of

@@ -6,6 +6,7 @@ menuconfig INPUT_CST8XX
 	default y
 	depends on DT_HAS_HYNITRON_CST8XX_ENABLED
 	select I2C
+	select INPUT_TOUCH
 	help
 	  Enable driver for hynitron cst8xx touch panel.
 

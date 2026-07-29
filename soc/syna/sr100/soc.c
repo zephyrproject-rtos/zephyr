@@ -12,6 +12,7 @@
  * for the Synaptics SR1xx SoC.
  */
 
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -26,6 +27,15 @@ void soc_early_init_hook(void)
 {
 	const mem_addr_t swire_ctrl = DT_REG_ADDR(DT_NODELABEL(pinctrl_swire));
 	uint32_t value;
+
+	/* Enable caches */
+	sys_cache_instr_enable();
+	sys_cache_data_enable();
+
+	/* Enable Loop and branch info cache */
+	SCB->CCR |= SCB_CCR_LOB_Msk;
+	__DSB();
+	__ISB();
 
 	/* Setup various clocks and wakeup sources */
 

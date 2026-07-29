@@ -6,3 +6,21 @@ description: ESP32 counters
 compatible: "espressif,esp32-counter"
 
 include: base.yaml
+
+counter-capture-cells:
+  - channel
+  - flags
+
+properties:
+  capture-gpios:
+    type: phandle-array
+    description: |
+      GPIO used as the input source for counter capture. A signal edge on
+      this pad is routed through the Event Task Matrix (ETM) to the timer
+      capture task, latching the counter value in hardware. Only used when
+      counter capture is enabled and only supported on SoCs that expose
+      ETM for both the timer and GPIO peripherals.
+
+      The 32-bit capture callback delivers the lower 32 bits of the counter
+      and wraps accordingly. Use the 64-bit capture callback for timestamping
+      across long intervals.

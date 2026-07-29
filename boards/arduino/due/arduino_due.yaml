@@ -10,6 +10,7 @@ ram: 96
 supported:
   - adc
   - arduino_i2c
+  - dac
   - gpio
   - watchdog
 vendor: arduino

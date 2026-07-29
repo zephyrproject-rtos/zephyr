@@ -8,8 +8,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_CLASSIC_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_CLASSIC_H_
 
 /**
  * @brief Bluetooth APIs
@@ -659,4 +659,4 @@ int bt_br_write_eir(const struct bt_data *eir, size_t eir_count, bool fec_requir
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_CLASSIC_H_ */

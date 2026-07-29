@@ -32,7 +32,7 @@ The shield can be used in any application by setting ``SHIELD`` to
 Set ``--shield "st_mb1897_cam"`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: stm32mp135f_dk
    :shield: st_mb1897_cam
    :goals: build

@@ -97,15 +97,14 @@ static void IRAM_ATTR sys_timer_isr(void *arg)
 	sys_clock_announce(dticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 #if defined(CONFIG_TICKLESS_KERNEL)
 	if (systimer_hal.dev == NULL) {
 		return;
 	}
 
-	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t now = get_systimer_alarm();
@@ -127,7 +126,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	set_systimer_alarm(cyc + last_count);
 
 #if defined(CONFIG_PM)
-	if (idle && ticks != K_TICKS_FOREVER) {
+	if (idle) {
 		uint64_t timeout_us =
 			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 

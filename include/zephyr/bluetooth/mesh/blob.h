@@ -183,6 +183,8 @@ struct bt_mesh_blob_io {
 	 *  @param io    BLOB stream.
 	 *  @param xfer  BLOB transfer.
 	 *  @param block Block that was started.
+	 *
+	 *  @return 0 on success, or (negative) error code otherwise.
 	 */
 	int (*block_start)(const struct bt_mesh_blob_io *io,
 			   const struct bt_mesh_blob_xfer *xfer,

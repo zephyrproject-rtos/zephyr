@@ -25,6 +25,8 @@ extern "C" {
 /**
  * @brief Interfaces for PS/2 devices.
  * @defgroup ps2_interface PS/2
+ * @since 2.1
+ * @version 0.8.0
  * @ingroup io_interfaces
  *
  * Callers of this API are responsible for setting the typematic rate

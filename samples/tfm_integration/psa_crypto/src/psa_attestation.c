@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <zephyr/logging/log.h>
 
-#include "psa/initial_attestation.h"
+#include <psa/initial_attestation.h>
 #include "psa_attestation.h"
 #include "util_app_log.h"
 #include "util_sformat.h"

@@ -24,6 +24,8 @@ extern "C" {
  * @brief Interfaces for eSPI SAF (Serial Attached Flash)
  *        controllers.
  * @defgroup espi_saf_interface eSPI SAF
+ * @since 2.6
+ * @version 0.8.0
  * @ingroup espi_interface
  * @{
  */
@@ -344,9 +346,9 @@ static inline int z_impl_espi_saf_flash_write(const struct device *dev,
 }
 
 /**
- * @brief Sends a write request packet for slave attached flash.
+ * @brief Sends an erase request packet for slave attached flash.
  *
- * This routines provides an interface to send a request to write to the flash
+ * This routines provides an interface to send a request to erase the flash
  * components shared between the eSPI master and eSPI slaves.
  *
  * @param dev Pointer to the device structure for the driver instance.

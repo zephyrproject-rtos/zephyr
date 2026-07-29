@@ -8,9 +8,9 @@ from the ``tests_scripts`` harness configuration option, runs each script as
 a subprocess, and reports individual pass/fail results based on the script
 exit code.
 
-The ``script`` harness also serves as a base class for the ``bsim``, ``pytest``,
-and ``ctest`` harnesses, providing shared subprocess execution, output
-streaming, and log handling.
+The ``script`` harness also serves as a base class for the :ref:`bsim <twister_bsim_harness>`,
+:ref:`pytest <twister_pytest_harness>`, and :ref:`ctest <twister_ctest_harness>` harnesses,
+providing shared subprocess execution, output streaming, and log handling.
 
 tests_scripts: <list of script paths> (default tests_scripts)
     Specify a list of shell script paths, relative to the test source
@@ -29,5 +29,5 @@ tests_scripts: <list of script paths> (default tests_scripts)
             - ../../test/test_b.sh
             - $ENV_VAR/tests_scripts
 
-Extra arguments following ``--`` on the twister command line are passed to
-every script as additional positional arguments.
+Any extra command-line arguments passed to Twister after ``--`` are forwarded to every script as
+additional positional arguments.

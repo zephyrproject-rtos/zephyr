@@ -6,7 +6,10 @@
  */
 
 #define DT_DRV_COMPAT	  infineon_flash_controller
-#define SOC_NV_FLASH_NODE DT_PARENT(DT_INST(0, fixed_partitions))
+
+#include "flash_priv.h"
+
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
 
 #define PAGE_LEN DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
 

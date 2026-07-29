@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Process Mission
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32P4_WIFI6_DEV_KIT_ESP32P4_HPCORE
+
+config NET_L2_ETHERNET
+	default y if DT_HAS_ESPRESSIF_ESP32_ETH_ENABLED
+
+endif # BOARD_ESP32P4_WIFI6_DEV_KIT_ESP32P4_HPCORE

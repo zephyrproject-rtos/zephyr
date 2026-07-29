@@ -11,7 +11,7 @@ if(CONFIG_SOC_MIMXRT1189_CM33)
 zephyr_linker_sources(DTCM_SECTION cm33/dtcm.ld)
 endif()
 
-if(CONFIG_NXP_BOARD_SPECIFIC_MPU_SETTINGS)
+if(CONFIG_BOARD_NXP_SPECIFIC_MPU_SETTINGS)
   if(CONFIG_SOC_MIMXRT1189_CM7)
     zephyr_sources(cm7/mpu_regions.c)
     # The DTCM_SECTION snippet only applies when a dedicated DTCM region is

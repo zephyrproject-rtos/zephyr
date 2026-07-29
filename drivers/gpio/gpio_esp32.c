@@ -19,6 +19,7 @@
 #include <esp_sleep.h>
 #include <esp_system.h>
 #include <hal/rtc_io_hal.h>
+#include <esp_private/io_mux.h>
 
 #include <soc.h>
 #include <errno.h>
@@ -261,6 +262,15 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 			if (esp_sleep_is_valid_wakeup_gpio(io_pin)) {
 				int polarity = (flags & GPIO_ACTIVE_LOW) ? 0 : 1;
 				int err;
+
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+				/* LP IO wakeup sampling uses this clock (not the LP IO
+				 * matrix). Enable it when programming wakeup on RTCIO.
+				 */
+				if (rtc_gpio_is_valid_gpio(io_pin)) {
+					io_mux_enable_lp_io_clock(io_pin, true);
+				}
+#endif
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
 				err = esp_sleep_enable_ext1_wakeup_io(BIT64(io_pin), polarity);
 
@@ -314,6 +324,11 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
 		if (esp_sleep_is_valid_wakeup_gpio(io_pin)) {
 			esp_sleep_disable_ext1_wakeup_io(BIT64(io_pin));
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+			if (rtc_gpio_is_valid_gpio(io_pin)) {
+				io_mux_enable_lp_io_clock(io_pin, false);
+			}
+#endif
 		}
 #elif SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 		/* No API to disable for now */

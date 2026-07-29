@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_LIB_SBC_H_
-#define ZEPHYR_INCLUDE_LIB_SBC_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SBC_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_SBC_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -137,4 +137,4 @@ int sbc_setup_decoder(struct sbc_decoder *decoder);
  */
 int sbc_decode(struct sbc_decoder *decoder, const void **in_data, uint32_t *in_size,
 		void *out_data, uint32_t *out_size);
-#endif /* ZEPHYR_INCLUDE_LIB_SBC_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SBC_H_ */

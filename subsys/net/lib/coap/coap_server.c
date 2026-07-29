@@ -331,7 +331,7 @@ static void coap_server_retransmit(void)
 				LOG_ERR("Failed to send pending retransmission for %s (%d)",
 					service->name, ret);
 			}
-			__ASSERT_NO_MSG(ret == pending->len);
+			__ASSERT_NO_MSG(ret < 0 || ret == pending->len);
 		} else {
 			LOG_WRN("Packet retransmission failed for %s", service->name);
 

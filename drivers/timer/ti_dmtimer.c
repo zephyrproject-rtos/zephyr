@@ -103,7 +103,7 @@ static void ti_dmtimer_isr(void *param)
 	sys_clock_announce(delta_ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -114,8 +114,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks, 1, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 

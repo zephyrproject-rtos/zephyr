@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_MGMT_MGMT_DEFINES_
-#define H_MGMT_MGMT_DEFINES_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_MGMT_DEFINES_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_MGMT_DEFINES_H_
 
 #include <inttypes.h>
 
@@ -150,4 +150,4 @@ enum mcumgr_err_t {
 }
 #endif
 
-#endif /* MGMT_MGMT_DEFINES_H_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_MGMT_DEFINES_H_ */

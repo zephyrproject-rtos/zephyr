@@ -9,4 +9,5 @@ config UART_RPI_PICO_PIO
 	select PICOSDK_USE_PIO
 	select PICOSDK_USE_CLAIM
 	select PINCTRL
+	select SERIAL_HAS_POST_KERNEL_INIT
 	depends on RESET

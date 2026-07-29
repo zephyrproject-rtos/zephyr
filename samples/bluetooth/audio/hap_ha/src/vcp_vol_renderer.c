@@ -107,7 +107,7 @@ static void vocs_location_cb(struct bt_vocs *inst, int err, uint32_t location)
 	if (err != 0) {
 		printk("VOCS location get failed (%d) for inst %p\n", err, inst);
 	} else {
-		printk("VOCS inst %p location %u\n", inst, location);
+		printk("VOCS inst %p location 0x%08X\n", inst, location);
 	}
 }
 

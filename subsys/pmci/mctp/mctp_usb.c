@@ -16,7 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mctp_usb, CONFIG_MCTP_LOG_LEVEL);
 
-#include "libmctp-alloc.h"
+#include <libmctp-alloc.h>
 
 #define MCTP_USB_DMTF_0 0x1A
 #define MCTP_USB_DMTF_1 0xB4

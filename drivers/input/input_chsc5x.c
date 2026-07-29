@@ -68,7 +68,7 @@ static void chsc5x_work_handler(struct k_work *work)
 	uint16_t row, col;
 	bool is_pressed;
 	int ret;
-	const uint8_t write_buffer[] = {
+	static const uint8_t write_buffer[] = {
 		CHSC5X_BASE_ADDR1,
 		CHSC5X_BASE_ADDR2,
 		CHSC5X_BASE_ADDR3,
@@ -112,7 +112,7 @@ static int chsc5x_verify_ic(const struct device *dev)
 {
 	const struct chsc5x_config *cfg = dev->config;
 	int ret;
-	const uint8_t write_buffer[] = {
+	static const uint8_t write_buffer[] = {
 		CHSC5X_BASE_ADDR1,
 		CHSC5X_BASE_ADDR2,
 		CHSC5X_BASE_ADDR3,
@@ -198,7 +198,7 @@ static int chsc5x_pm_action(const struct device *dev, enum pm_device_action acti
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND: {
-		const uint8_t write_buffer[] = {
+		static const uint8_t write_buffer[] = {
 			CHSC5X_BASE_ADDR1,
 			CHSC5X_BASE_ADDR2,
 			CHSC5X_BASE_ADDR3,

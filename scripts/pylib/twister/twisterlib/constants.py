@@ -32,6 +32,17 @@ SUPPORTED_SIMS = [
 SUPPORTED_SIMS_IN_PYTEST = ['native', 'qemu']
 SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native', 'simics', 'custom']
 
+# Simulators whose executable is resolved at CMake configure time (via
+# find_program) instead of being known during test planning. The binary that
+# gets used can depend on the build configuration (e.g. Arm FVP selects a
+# different model depending on the Ethos-U NPU), so these cannot be listed in
+# SUPPORTED_SIMS_WITH_EXEC and checked up front. After the build, availability
+# is read from the named CMakeCache variable: a missing entry or a *-NOTFOUND
+# value means the simulator was not found and the test cannot be executed.
+SIM_PROGRAM_CMAKE_VARS = {
+    'armfvp': 'ARMFVP',
+}
+
 PYTEST_HARNESSES = ['pytest', 'shell', 'power', 'display_capture']
 
 SUPPORTED_HARNESSES = [

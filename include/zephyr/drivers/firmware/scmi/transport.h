@@ -10,8 +10,8 @@
  * @brief Header file for the SCMI Transport Layer.
  */
 
-#ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_
-#define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -316,4 +316,4 @@ int scmi_core_transport_init(const struct device *transport);
  * @}
  */
 
-#endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_TRANSPORT_H_ */

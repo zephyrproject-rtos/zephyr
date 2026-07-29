@@ -671,9 +671,14 @@ const char *wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode);
  * @brief Wi-Fi power save exit strategy
  */
 enum wifi_ps_exit_strategy {
-	/** PS-Poll frame based */
+	/** Custom algorithm: the driver/firmware decides how to exit power save
+	 *  based on traffic, e.g. by sending a PS-Poll, fully exiting power save,
+	 *  or a mix of both.
+	 */
 	WIFI_PS_EXIT_CUSTOM_ALGO = 0,
-	/** QoS NULL frame based */
+	/** Exit power save on every TIM, typically by sending a QoS NULL (or any
+	 *  data) frame to retrieve the buffered traffic.
+	 */
 	WIFI_PS_EXIT_EVERY_TIM,
 
 /** @cond INTERNAL_HIDDEN */

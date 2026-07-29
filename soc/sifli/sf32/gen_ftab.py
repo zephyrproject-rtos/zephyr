@@ -172,10 +172,8 @@ def main() -> None:
     except KeyError as exc:
         raise SystemExit("Unable to locate 'ptable' labeled partition in devicetree") from exc
 
-    code_offset, code_size = _partition_bounds(code_node)
-    code_start = flash_base + code_offset
-    ptable_offset, _ = _partition_bounds(ptable_node)
-    ptable_addr = flash_base + ptable_offset
+    code_start, code_size = _partition_bounds(code_node)
+    ptable_addr, _ = _partition_bounds(ptable_node)
     sec_image_desc_index = (
         PartitionIndex.SECONDARY_BOOTLOADER.value - PartitionIndex.LCPU_IMAGE_PING.value
     )

@@ -13,8 +13,10 @@ extern "C" {
 
 #ifdef SECURE_UART1
 
-#if defined(NRF54L_SERIES) || defined(NRF71_SERIES)
+#if defined(NRF54L_SERIES)
 #define TFM_PERIPHERAL_UARTE30_SECURE 1
+#elif defined(NRF71_SERIES)
+#define TFM_PERIPHERAL_UARTE21_SECURE 1
 #else
 #define TFM_PERIPHERAL_UARTE1_SECURE 1
 #endif

@@ -235,6 +235,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x50000000 0x2000>;
+			ranges;
 
 			gpioa: gpio@50000000 {
 				compatible = "st,stm32-gpio";
@@ -510,7 +511,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
-			interrupts = <9 0 10 0 10 0>;
+			interrupts = <9 0>, <10 0>, <10 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-requests = <3>;
 			dma-offset = <0>;

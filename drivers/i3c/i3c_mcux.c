@@ -1277,7 +1277,7 @@ static int mcux_i3c_do_daa(const struct device *dev)
 			 */
 			if ((target->static_addr != 0U) && (dyn_addr != target->static_addr)) {
 				i3c_addr_slots_mark_free(&data->common.attached_dev.addr_slots,
-							 dyn_addr);
+							 target->static_addr);
 			}
 
 			/* Emit process DAA again to send the address to the device */

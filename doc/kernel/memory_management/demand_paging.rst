@@ -69,6 +69,16 @@ a considerable amount of time. This frees up page frames so that the next
 page in can be executed faster as the paging code does not need to invoke
 the eviction algorithm.
 
+A data region can also be **pinned** in physical memory using
+:c:func:`k_mem_pin()`. This pages the region in if necessary and marks its page
+frames so that the eviction algorithm will never select them, guaranteeing that
+the region remains resident and that accesses to it never fault. This is a
+stronger form of :c:func:`k_mem_page_in()` and is appropriate for latency- or
+safety-critical data that must always be available. A pinned region is later
+released with :c:func:`k_mem_unpin()`, which marks the page frames as evictable
+again; unpinning does not itself evict the region, so it may be followed by
+:c:func:`k_mem_page_out()` if immediate eviction is desired.
+
 Terminology
 ***********
 

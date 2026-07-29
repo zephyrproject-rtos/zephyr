@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_RTS5817
+	bool "RTS5817 OCOTP driver"
+	default y
+	depends on DT_HAS_REALTEK_RTS5817_OCOTP_ENABLED
+	depends on RESET_RTS5817 && CLOCK_CONTROL_RTS5817
+	select SYSCON
+	help
+	  Enable support for RTS5817 OCOTP driver.

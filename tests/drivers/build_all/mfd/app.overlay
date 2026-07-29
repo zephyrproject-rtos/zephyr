@@ -53,6 +53,12 @@
 				compatible = "m5stack,m5pm1";
 				reg = <0x6e>;
 			};
+
+			test_i2c_tla2528: tla2528@1 {
+				compatible = "ti,tla2528";
+				reg = <0x1>;
+				#io-channel-cells = <1>;
+			};
 		};
 
 		test_uart: uart@55556666 {

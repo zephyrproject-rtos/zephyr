@@ -369,7 +369,42 @@ static int icm4268x_fifo_decode(const uint8_t *buffer, struct sensor_chan_spec c
 		return 0;
 	}
 
-	((struct sensor_data_header *)data_out)->base_timestamp_ns = edata->header.timestamp;
+	/* Pre-count frames for the requested channel to compute first-sample timestamp */
+	uint16_t total_frames = 0;
+	const uint8_t *pre = buffer + sizeof(struct icm4268x_fifo_data);
+
+	while (pre < buffer_end) {
+		const bool is_20b = FIELD_GET(FIFO_HEADER_20, pre[0]) == 1;
+		const bool has_accel = FIELD_GET(FIFO_HEADER_ACCEL, pre[0]) == 1;
+		const bool has_gyro = FIELD_GET(FIFO_HEADER_GYRO, pre[0]) == 1;
+
+		if ((IS_ACCEL(chan_spec.chan_type) && has_accel) ||
+		    (IS_GYRO(chan_spec.chan_type) && has_gyro) ||
+		    (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP && (has_accel || has_gyro))) {
+			total_frames++;
+		}
+		if (is_20b) {
+			pre += 20;
+		} else if (has_accel && has_gyro) {
+			pre += 16;
+		} else {
+			pre += 8;
+		}
+	}
+
+	uint64_t period_ns = 0;
+
+	if (IS_ACCEL(chan_spec.chan_type) || chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
+		icm4268x_calc_timestamp_delta(edata->rtc_freq, SENSOR_CHAN_ACCEL_XYZ,
+					      edata->accel_odr, 1, &period_ns);
+	} else {
+		icm4268x_calc_timestamp_delta(edata->rtc_freq, SENSOR_CHAN_GYRO_XYZ,
+					      edata->gyro_odr, 1, &period_ns);
+	}
+
+	((struct sensor_data_header *)data_out)->base_timestamp_ns =
+		edata->header.timestamp -
+		(total_frames > 0 ? (total_frames - 1) : 0) * period_ns;
 
 	buffer += sizeof(struct icm4268x_fifo_data);
 	while (count < max_count && buffer < buffer_end) {

@@ -20,12 +20,9 @@
 #include <fsl_common.h>
 #include <fsl_power.h>
 
+#include "flash_priv.h"
+
 LOG_MODULE_REGISTER(flash_lpc84x_iap, CONFIG_FLASH_LOG_LEVEL);
-
-#define SOC_NV_FLASH_COMPAT(node_id)                                                               \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
-
-#define SOC_NV_FLASH_NODE(inst) DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, SOC_NV_FLASH_COMPAT)
 
 #define FLASH_ERASE_VALUE 0xff
 #define LPC84X_PAGE_SIZE  FSL_FEATURE_SYSCON_FLASH_PAGE_SIZE_BYTES
@@ -375,24 +372,24 @@ static int flash_lpc84x_iap_init(const struct device *dev)
                                                                                                    \
 	static const struct flash_lpc84x_iap_config flash_lpc84x_iap_config_##inst = {             \
 		DEVICE_MMIO_NAMED_ROM_INIT(regs, DT_DRV_INST(inst)),                               \
-		DEVICE_MMIO_NAMED_ROM_INIT(flash_base, SOC_NV_FLASH_NODE(inst)),                   \
+		DEVICE_MMIO_NAMED_ROM_INIT(flash_base, SOC_NV_FLASH_CHILD_NODE(inst)),             \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name),           \
-		.flash_size = DT_REG_SIZE(SOC_NV_FLASH_NODE(inst)),                                \
-		.erase_size = DT_PROP(SOC_NV_FLASH_NODE(inst), erase_block_size),                  \
-		.page_size = DT_PROP(SOC_NV_FLASH_NODE(inst), write_block_size),                   \
+		.flash_size = DT_REG_SIZE(SOC_NV_FLASH_CHILD_NODE(inst)),                          \
+		.erase_size = DT_PROP(SOC_NV_FLASH_CHILD_NODE(inst), erase_block_size),            \
+		.page_size = DT_PROP(SOC_NV_FLASH_CHILD_NODE(inst), write_block_size),             \
 		.flashcfg_time = DT_INST_PROP(inst, flash_access_time),                            \
 		.flash_param =                                                                     \
 			{                                                                          \
 				.write_block_size =                                                \
-					DT_PROP(SOC_NV_FLASH_NODE(inst), write_block_size),        \
+					DT_PROP(SOC_NV_FLASH_CHILD_NODE(inst), write_block_size), \
 				.erase_value = FLASH_ERASE_VALUE,                                  \
 			},                                                                         \
 		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,						   \
 			(.layout = {								   \
-			 .pages_count = DT_REG_SIZE(SOC_NV_FLASH_NODE(inst)) /			   \
-			 DT_PROP(SOC_NV_FLASH_NODE(inst), erase_block_size),			   \
-			 .pages_size = DT_PROP(SOC_NV_FLASH_NODE(inst), erase_block_size),	   \
+			 .pages_count = DT_REG_SIZE(SOC_NV_FLASH_CHILD_NODE(inst)) /		\
+			 DT_PROP(SOC_NV_FLASH_CHILD_NODE(inst), erase_block_size),		\
+			 .pages_size = DT_PROP(SOC_NV_FLASH_CHILD_NODE(inst), erase_block_size), \
 			 }))};         \
                                                                                                    \
 	static struct flash_lpc84x_iap_data flash_lpc84x_iap_data_##inst;                          \

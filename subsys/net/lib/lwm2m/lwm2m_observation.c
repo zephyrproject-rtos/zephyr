@@ -788,7 +788,7 @@ static void engine_observe_single_path_id_remove(struct lwm2m_ctx *ctx, struct o
 	sys_snode_t *prev_node = NULL;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&obs->path_list, o_p, tmp, node) {
-		if (o_p->path.obj_id != obj_id && o_p->path.obj_inst_id) {
+		if (o_p->path.obj_id != obj_id) {
 			prev_node = &o_p->node;
 			continue;
 		}

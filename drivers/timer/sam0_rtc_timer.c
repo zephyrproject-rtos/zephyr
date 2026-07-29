@@ -181,14 +181,13 @@ static void rtc_isr(const void *arg)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks - 1, 0, (int32_t) MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	/* Compute number of RTC cycles until the next timeout. */
 	uint32_t count = rtc_count();
@@ -206,10 +205,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 #else /* !CONFIG_TICKLESS_KERNEL */
 
-	if (ticks == K_TICKS_FOREVER) {
-		/* Disable comparator for K_TICKS_FOREVER and other negative
-		 * values.
-		 */
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		/* Disable comparator when the kernel has no pending timeout. */
 		rtc_timeout = rtc_counter;
 		return;
 	}

@@ -89,6 +89,12 @@ config AARCH32_ARMV8_A_MONITOR_INIT
 	  has already performed this initialization, or when booting in
 	  Non-Secure state.
 
+config ARMV7_A_NS
+	bool "ARMv7-A Non-Secure state (Non-secure world of TrustZone)"
+	depends on ARMV7_A
+	help
+	  Zephyr is running in ARM TrustZone Non-Secure state on an ARMv7-A core.
+
 config ARMV7_EXCEPTION_STACK_SIZE
 	int "Undefined Instruction and Abort stack size (in bytes)"
 	default 256

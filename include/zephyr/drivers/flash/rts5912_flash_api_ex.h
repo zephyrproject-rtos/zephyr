@@ -10,8 +10,8 @@
  * @ingroup rts5912_flash_ex_op
  */
 
-#ifndef __ZEPHYR_INCLUDE_DRIVERS_RTS5912_FLASH_API_EX_H__
-#define __ZEPHYR_INCLUDE_DRIVERS_RTS5912_FLASH_API_EX_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_RTS5912_FLASH_API_EX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FLASH_RTS5912_FLASH_API_EX_H_
 
 /**
  * @brief Extended operations for Realtek RTS5912 flash controller.
@@ -120,4 +120,4 @@ enum flash_rts5912_ex_ops {
  * @}
  */
 
-#endif /* __ZEPHYR_INCLUDE_DRIVERS_RTS5912_FLASH_API_EX_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_RTS5912_FLASH_API_EX_H_ */

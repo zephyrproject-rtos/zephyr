@@ -8,7 +8,7 @@
 #define ZEPHYR_SOC_NXP_IMX_IMX8ULP_PINCTR_SOC_H_
 
 #include <zephyr/devicetree.h>
-#include "fsl_iomuxc.h"
+#include <fsl_iomuxc.h>
 
 #ifdef __cplusplus
 extern "C" {

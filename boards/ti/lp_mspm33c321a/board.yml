@@ -1,0 +1,6 @@
+board:
+  name: lp_mspm33c321a
+  full_name: MSPM33C321A Launchpad
+  vendor: ti
+  socs:
+    - name: mspm33c321a

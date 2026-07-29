@@ -478,11 +478,6 @@ void net_if_ipv4_acd_succeeded(struct net_if *iface, struct net_if_addr *ifaddr)
 void net_if_ipv4_acd_failed(struct net_if *iface, struct net_if_addr *ifaddr);
 
 /**
- * @brief Initialize IPv4 address conflict detection module.
- */
-void net_ipv4_acd_init(void);
-
-/**
  * @brief Process ARP packet in terms of conflict detection.
  *
  * @param iface Network interface the packet was received on.

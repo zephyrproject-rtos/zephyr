@@ -331,7 +331,7 @@ static mlan_status process_mgmt_packet(t_u8 *data)
 		return MLAN_STATUS_RESOURCE;
 	}
 
-	if (wlan_bypass_802dot11_mgmt_pkt(data) == MLAN_STATUS_SUCCESS) {
+	if (wlan_bypass_802dot11_mgmt_pkt((void *)rxpd) == MLAN_STATUS_SUCCESS) {
 		return MLAN_STATUS_RESOURCE;
 	}
 
@@ -350,6 +350,12 @@ static mlan_status process_mgmt_packet(t_u8 *data)
 		net_d("%s: gen_pkt_from_data fail", __func__);
 		return MLAN_STATUS_FAILURE;
 	}
+
+#ifdef CONFIG_NXP_WIFI_TX_RX_ZERO_COPY
+	/* Skip interface header */
+	net_buf_pull(p->frags, INTF_HEADER_LEN);
+	net_pkt_cursor_init(p);
+#endif
 
 	if (wifi_event_completion(WIFI_EVENT_MGMT_FRAME, WIFI_EVENT_REASON_SUCCESS, p) !=
 	    WM_SUCCESS) {
@@ -633,6 +639,15 @@ int nxp_wifi_internal_tx(const struct device *dev, struct net_pkt *pkt, bool pkt
 	/* Save the ethernet header */
 	net_pkt_set_overwrite(pkt, false);
 	net_pkt_read(pkt, ((outbuf_t *)wmm_outbuf)->eth_header, ETH_HDR_LEN);
+	/* The ETH header has been copied into outbuf->eth_header.
+	 * If the first frag only contained the ETH header, remove it
+	 * to free one tx_buf back to the pool.
+	 */
+	if (pkt->frags != NULL && pkt->frags->len == ETH_HDR_LEN &&
+	    pkt->frags->frags != NULL) {
+		net_pkt_frag_del(pkt, NULL, pkt->frags);
+	}
+
 	((outbuf_t *)wmm_outbuf)->buffer = pkt;
 	/* Save the data payload pointer without ethernet header */
 	if (net_pkt_len > ETH_HDR_LEN) {
@@ -1115,6 +1130,10 @@ int net_configure_address(struct net_ip_config *addr, void *intrfc_handle)
 		 * DAD finished event from zephyr.
 		 */
 		net_if_dormant_off(if_handle->netif);
+#ifndef CONFIG_NXP_WIFI_IPV6
+		(void)wlan_wlcmgr_send_msg(WIFI_EVENT_UAP_NET_ADDR_CONFIG,
+					   WIFI_EVENT_REASON_SUCCESS, NULL);
+#endif
 	}
 #endif
 	else { /* Do Nothing */

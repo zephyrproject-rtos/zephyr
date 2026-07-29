@@ -52,7 +52,7 @@ config STM32_BACKUP_PROTECTION
 	  Enabled for SoCs for which access protection to backup domain
 	  resources needs to be explicitly handled.
 
-config STM32_IOCELL
+menuconfig STM32_IOCELL
 	bool "STM32 I/O cell"
 	default y
 	depends on DT_HAS_ST_STM32_IOCELL_ENABLED
@@ -62,14 +62,15 @@ config STM32_IOCELL
 config STM32_IOCELL_PRIORITY
 	int "STM32 I/O cell initialization priority"
 	default 50
+	depends on STM32_IOCELL
 	help
 	  Initialization priority of the routine within the EARLY level.
 
 config STM32_IOCELL_CHECK_ENABLE
 	bool "STM32 I/O cell check"
 	default y
+	depends on STM32_IOCELL
 	depends on LOG
-	depends on DT_HAS_ST_STM32_IOCELL_ENABLED
 	help
 	  Enables logging of I/O cell driver. This can be useful for reporting
 	  discrepancy between device-tree configuration and value stored in
@@ -78,9 +79,11 @@ config STM32_IOCELL_CHECK_ENABLE
 config STM32_XSPIM
 	bool "STM32 XSPI Manager"
 	select USE_STM32_HAL_XSPI
+	depends on !STM32_APP_IN_EXT_FLASH
 	default y if DT_HAS_ST_STM32_XSPIM_ENABLED
 	help
-	  Enables support for XSPI Manager.
+	  Enables support for XSPI Manager. Shouldn't be used by applications
+	  running from external flash as it reinitializes the serial bus controllers.
 
 if STM32_XSPIM
 

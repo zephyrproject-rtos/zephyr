@@ -10,7 +10,8 @@ config CRYPTO_MCHP_AES_G1
 
 config CRYPTO_MCHP_SHA_G1
 	bool "Microchip SAM SHA driver"
-	default y if DT_HAS_MICROCHIP_SHA_G1_CRYPTO_ENABLED
+	default y
+	depends on DT_HAS_MICROCHIP_SHA_G1_CRYPTO_ENABLED
 	help
 	  Enable Microchip SAM Secure Hash Algorithm (SHA) driver.
 

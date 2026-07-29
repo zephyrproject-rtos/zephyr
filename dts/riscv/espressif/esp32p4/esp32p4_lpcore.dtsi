@@ -44,7 +44,7 @@
 
 			ulp_ram: memory@0 {
 				compatible = "zephyr,memory-region", "mmio-sram";
-				reg = <0x0 0x7800>;
+				reg = <0x0 0x77f0>;
 				zephyr,memory-region = "SRAMLP_ULP";
 			};
 

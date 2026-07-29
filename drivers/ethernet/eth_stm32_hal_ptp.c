@@ -16,7 +16,7 @@
 
 #include "eth_stm32_hal_priv.h"
 
-#define DT_DRV_COMPAT st_stm32_ethernet
+#define DT_DRV_COMPAT snps_dwmac_ptp_clock
 
 LOG_MODULE_REGISTER(eth_stm32_hal_ptp, CONFIG_ETHERNET_LOG_LEVEL);
 
@@ -28,17 +28,6 @@ LOG_MODULE_REGISTER(eth_stm32_hal_ptp, CONFIG_ETHERNET_LOG_LEVEL);
 #define ETH_STM32_PTP_CONFIGURED HAL_ETH_PTP_CONFIGURED
 #define ETH_STM32_PTP_NOT_CONFIGURED HAL_ETH_PTP_NOT_CONFIGURED
 #endif /* stm32F7x or sm32F4x */
-
-bool eth_stm32_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt)
-{
-	if (net_ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
-		return false;
-	}
-
-	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
-
-	return true;
-}
 
 void HAL_ETH_TxPtpCallback(uint32_t *buff, ETH_TimeStampTypeDef *timestamp)
 {
@@ -58,17 +47,11 @@ const struct device *eth_stm32_get_ptp_clock(const struct device *dev,
 	return dev_data->ptp_clock;
 }
 
-struct ptp_context {
-	struct eth_stm32_hal_dev_data *eth_dev_data;
-};
-
-static struct ptp_context ptp_stm32_0_context;
-
 static int ptp_clock_stm32_set(const struct device *dev,
 			      struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->data;
-	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
+	const struct device *eth_dev = dev->config;
+	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	unsigned int key;
 
@@ -98,8 +81,8 @@ static int ptp_clock_stm32_set(const struct device *dev,
 static int ptp_clock_stm32_get(const struct device *dev,
 			      struct net_ptp_time *tm)
 {
-	struct ptp_context *ptp_context = dev->data;
-	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
+	const struct device *eth_dev = dev->config;
+	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	unsigned int key;
 	uint32_t second_2;
@@ -131,8 +114,8 @@ static int ptp_clock_stm32_get(const struct device *dev,
 
 static int ptp_clock_stm32_adjust(const struct device *dev, int increment)
 {
-	struct ptp_context *ptp_context = dev->data;
-	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
+	const struct device *eth_dev = dev->config;
+	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	int key, ret;
 
@@ -175,8 +158,8 @@ static int ptp_clock_stm32_adjust(const struct device *dev, int increment)
 
 static int ptp_clock_stm32_rate_adjust(const struct device *dev, double ratio)
 {
-	struct ptp_context *ptp_context = dev->data;
-	struct eth_stm32_hal_dev_data *eth_dev_data = ptp_context->eth_dev_data;
+	const struct device *eth_dev = dev->config;
+	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	int key, ret;
 	uint32_t addend_val;
@@ -288,20 +271,24 @@ static DEVICE_API(ptp_clock, api) = {
 	.rate_adjust = ptp_clock_stm32_rate_adjust,
 };
 
-static int ptp_stm32_init(const struct device *port)
+BUILD_ASSERT(NSEC_PER_SEC % CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ == 0,
+	     "PTP clock period must be an integer nanosecond value");
+
+BUILD_ASSERT(NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ <= UINT8_MAX,
+	     "PTP clock period is more than 255 nanoseconds");
+
+static int ptp_stm32_init(const struct device *dev)
 {
-	const struct device *const dev = DEVICE_DT_GET(DT_NODELABEL(mac));
-	struct eth_stm32_hal_dev_data *eth_dev_data = dev->data;
-	const struct eth_stm32_hal_dev_cfg *eth_cfg = dev->config;
-	struct ptp_context *ptp_context = port->data;
+	const struct device *const eth_dev = dev->config;
+	struct eth_stm32_hal_dev_data *eth_dev_data = eth_dev->data;
+	const struct eth_stm32_hal_dev_cfg *eth_cfg = eth_dev->config;
 	ETH_HandleTypeDef *heth = &eth_dev_data->heth;
 	int ret;
 	uint32_t ptp_clk_rate;
-	uint32_t ss_incr_ns;
+	uint32_t ss_incr_ns = NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ;
 	uint32_t addend_val;
 
-	eth_dev_data->ptp_clock = port;
-	ptp_context->eth_dev_data = eth_dev_data;
+	eth_dev_data->ptp_clock = dev;
 
 	eth_stm32_ptp_enable_timestamping(heth);
 
@@ -315,16 +302,6 @@ static int ptp_stm32_init(const struct device *port)
 		return -EIO;
 	}
 
-	/* Program the subsecond increment register based on the PTP clock freq */
-	if (NSEC_PER_SEC % CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ != 0) {
-		LOG_ERR("PTP clock period must be an integer nanosecond value");
-		return -EINVAL;
-	}
-	ss_incr_ns = NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ;
-	if (ss_incr_ns > UINT8_MAX) {
-		LOG_ERR("PTP clock period is more than %d nanoseconds", UINT8_MAX);
-		return -EINVAL;
-	}
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 	heth->Instance->MACSSIR = ss_incr_ns << ETH_MACMACSSIR_SSINC_Pos;
 #else
@@ -358,6 +335,8 @@ static int ptp_stm32_init(const struct device *port)
 	return 0;
 }
 
-DEVICE_DEFINE(stm32_ptp_clock_0, PTP_CLOCK_NAME, ptp_stm32_init,
-		NULL, &ptp_stm32_0_context, NULL, POST_KERNEL,
-		CONFIG_ETH_STM32_HAL_PTP_CLOCK_INIT_PRIO, &api);
+#define PTP_CLOCK_STM32_INIT(n)                                                                    \
+	DEVICE_DT_INST_DEFINE(n, ptp_stm32_init, NULL, NULL, DEVICE_DT_GET(DT_INST_PARENT(n)),     \
+			      POST_KERNEL, CONFIG_PTP_CLOCK_INIT_PRIORITY, &api);
+
+DT_INST_FOREACH_STATUS_OKAY(PTP_CLOCK_STM32_INIT)

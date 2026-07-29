@@ -636,12 +636,19 @@ int supplicant_send_wifi_mgmt_ap_sta_event(void *ctx,
 int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd event,
 				    void *supplicant_status, size_t len)
 {
-	struct net_if *iface = net_if_get_by_index(net_if_get_by_name(ifname));
 	union supplicant_event_data data;
 	struct supplicant_int_event_data event_data;
+	int idx;
+	struct net_if *iface;
 
+	idx = net_if_get_by_name(ifname);
+	if (idx < 0) {
+		wpa_printf(MSG_ERROR, "Could not find iface for %s (idx=%d)", ifname, idx);
+		return -ENODEV;
+	}
+	iface = net_if_get_by_index(idx);
 	if (!iface) {
-		wpa_printf(MSG_ERROR, "Could not find iface for %s", ifname);
+		wpa_printf(MSG_ERROR, "Could not find iface for %s (idx=%d)", ifname, idx);
 		return -ENODEV;
 	}
 
@@ -740,11 +747,17 @@ int supplicant_generate_state_event(const char *ifname,
 				    enum net_event_supplicant_cmd event,
 				    int status)
 {
+	int idx;
 	struct net_if *iface;
 
-	iface = net_if_get_by_index(net_if_get_by_name(ifname));
+	idx = net_if_get_by_name(ifname);
+	if (idx < 0) {
+		wpa_printf(MSG_ERROR, "Could not find iface for %s (idx=%d)", ifname, idx);
+		return -ENODEV;
+	}
+	iface = net_if_get_by_index(idx);
 	if (!iface) {
-		wpa_printf(MSG_ERROR, "Could not find iface for %s", ifname);
+		wpa_printf(MSG_ERROR, "Could not find iface for %s (idx=%d)", ifname, idx);
 		return -ENODEV;
 	}
 

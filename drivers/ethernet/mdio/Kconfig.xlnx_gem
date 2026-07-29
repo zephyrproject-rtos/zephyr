@@ -11,19 +11,11 @@ config MDIO_XLNX_GEM
 
 if MDIO_XLNX_GEM
 
-config MDIO_XLNX_GEM_MAX_POLL_RETRIES
-	int "Poll MDIO transaction completion max. retries"
-	default 10
+config MDIO_XLNX_GEM_IDLE_TIMEOUT_US
+	int "MDIO idle wait timeout"
+	default 1000000
 	help
-	  The number of times the completion of an MDIO
-	  transaction is polled before it is considered
-	  timed out.
-
-config MDIO_XLNX_GEM_POLL_DELAY
-	int "Poll MDIO transaction completion delay"
-	default 50
-	help
-	  Delay in microseconds between two MDIO transaction
-	  completion polling operations.
+	  Timeout in microseconds to wait for the GEM MDIO Bus
+	  to become idle before or after a read or write operation.
 
 endif # MDIO_XLNX_GEM

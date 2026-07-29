@@ -17,6 +17,7 @@ config SOC_IT51XXX
 
 config SOC_IT51XXX_CPU_IDLE_GATING
 	bool
+	default y if I2C_ITE_IT51XXX && I2C_TARGET
 	help
 	  This option determines whether the entering CPU idle mode can be
 	  gated by individual drivers. When this option is disabled, CPU idle

@@ -1,0 +1,20 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_imxrt700/mimxrt798s/cm33_cpu0
+name: NXP FRDM-IMXRT700 (CPU0)
+type: mcu
+arch: arm
+ram: 512
+flash: 32768
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - serial
+vendor: nxp

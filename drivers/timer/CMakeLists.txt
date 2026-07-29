@@ -3,6 +3,7 @@
 zephyr_library()
 zephyr_library_sources(sys_clock_init.c)
 
+zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/counter)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_AMBIQ_STIMER_TIMER ambiq_stimer.c)
 zephyr_library_sources_ifdef(CONFIG_APIC_TIMER apic_timer.c)
@@ -14,6 +15,7 @@ zephyr_library_sources_ifdef(CONFIG_CC13XX_CC26XX_RTC_TIMER cc13xx_cc26xx_rtc_ti
 zephyr_library_sources_ifdef(CONFIG_CC23X0_RTC_TIMER cc23x0_rtc_timer.c)
 zephyr_library_sources_ifdef(CONFIG_CC23X0_SYSTIM_TIMER cc23x0_systim_timer.c)
 zephyr_library_sources_ifdef(CONFIG_CH32V00X_SYSTICK wch_systick_ch32v00x.c)
+zephyr_library_sources_ifdef(CONFIG_CMSDK_APB_TIMER cmsdk_apb_timer.c)
 zephyr_library_sources_ifdef(CONFIG_CORTEX_M_SYSTICK cortex_m_systick.c)
 zephyr_library_sources_ifdef(CONFIG_ESP32_SYS_TIMER esp32_sys_timer.c)
 zephyr_library_sources_ifdef(CONFIG_GECKO_BURTC_TIMER gecko_burtc_timer.c)
@@ -33,6 +35,7 @@ zephyr_library_sources_ifdef(CONFIG_MCHP_XEC_RTOS_TIMER mchp_xec_rtos_timer.c)
 zephyr_library_sources_ifdef(CONFIG_MCUX_GPT_TIMER mcux_gpt_timer.c)
 zephyr_library_sources_ifdef(CONFIG_MCUX_LPTMR_TIMER mcux_lptmr_timer.c)
 zephyr_library_sources_ifdef(CONFIG_MCUX_OS_TIMER mcux_os_timer.c)
+zephyr_library_sources_ifdef(CONFIG_MCUX_RTC_JDP_TIMER mcux_rtc_jdp_timer.c)
 zephyr_library_sources_ifdef(CONFIG_MCUX_STM_TIMER mcux_stm_timer.c)
 zephyr_library_sources_ifdef(CONFIG_MCUX_SYSCTR_TIMER mcux_sysctr_timer.c)
 zephyr_library_sources_ifdef(CONFIG_MIPS_CP0_TIMER mips_cp0_timer.c)

@@ -1,0 +1,19 @@
+# Copyright (c) 2024-2026 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_AIPI_EYES_S2
+
+configdefault CONSOLE
+	default y
+
+configdefault SERIAL
+	default y
+
+configdefault UART_CONSOLE
+	default y
+
+configdefault MEMC
+	default y
+
+endif

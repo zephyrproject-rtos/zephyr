@@ -1,7 +1,6 @@
-/** @file
- @brief Ethernet
-
- This is not to be included by the application.
+/**
+ * @file
+ * @brief Ethernet
  */
 
 /*
@@ -26,6 +25,7 @@
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet_vlan.h>
 #include <zephyr/net/ptp_time.h>
+#include <zephyr/net/virtual.h>
 #include <zephyr/random/random.h>
 
 #if defined(CONFIG_NVMEM)
@@ -165,9 +165,6 @@ enum ethernet_hw_caps {
 
 	/** 5 Gbits link supported */
 	ETHERNET_LINK_5000BASE		= BIT(7),
-
-	/** IEEE 802.1AS (gPTP) clock supported */
-	ETHERNET_PTP			= BIT(8),
 
 	/** IEEE 802.1Qav (credit-based shaping) supported */
 	ETHERNET_QAV			= BIT(9),
@@ -979,14 +976,16 @@ static inline uint16_t net_eth_get_vlan_tag(struct net_if *iface)
  * @return Network interface related to this tag or NULL if no such interface
  * exists.
  */
-#if defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
 struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag);
 #else
 static inline
 struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
 {
-	ARG_UNUSED(iface);
-	ARG_UNUSED(tag);
+	/* Special case for priority tagged frames, without vlan ifaces being present */
+	if (IS_ENABLED(CONFIG_NET_VLAN) && (tag == NET_VLAN_TAG_PRIORITY)) {
+		return iface;
+	}
 
 	return NULL;
 }
@@ -1001,21 +1000,15 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
  * @return Network interface related to this tag or NULL if no such interface
  * exists.
  */
-#if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
-struct net_if *net_eth_get_vlan_main(struct net_if *iface);
-#else
-static inline
-struct net_if *net_eth_get_vlan_main(struct net_if *iface)
+static inline struct net_if *net_eth_get_vlan_main(struct net_if *iface)
 {
-	ARG_UNUSED(iface);
-
-	return NULL;
+	return net_virtual_get_iface(iface);
 }
-#endif
 
 /**
  * @brief Check if there are any VLAN interfaces enabled to this specific
- *        Ethernet network interface.
+ *        Ethernet network interface or if priority tagged frames (tag 0)
+ *        are supported.
  *
  * Note that the iface must be the actual Ethernet interface and not the
  * virtual VLAN interface.
@@ -1026,7 +1019,7 @@ struct net_if *net_eth_get_vlan_main(struct net_if *iface)
  * @return True if there are enabled VLANs for this network interface,
  *         false if not.
  */
-#if defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
 bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
 			     struct net_if *iface);
 #else
@@ -1036,7 +1029,7 @@ static inline bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(iface);
 
-	return false;
+	return IS_ENABLED(CONFIG_NET_VLAN);
 }
 #endif
 
@@ -1186,7 +1179,7 @@ static inline bool net_eth_is_vlan_interface(struct net_if *iface)
  * compatible
  *
  * @param inst instance number.  This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to ETH_NET_DEVICE_DT_DEFINE.
+ * <tt>DT_DRV_INST(inst)</tt> in the call to ETH_NET_DEVICE_DT_DEFINE.
  *
  * @param ... other parameters as expected by ETH_NET_DEVICE_DT_DEFINE.
  */

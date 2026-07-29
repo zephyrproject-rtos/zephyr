@@ -25,9 +25,17 @@ config WIFI_ESP_HOSTED_EVENT_TASK_PRIORITY
 	int "Event task priority"
 	default 4
 
+config WIFI_ESP_HOSTED_TX_QUEUE_SIZE
+	int "TX message queue size"
+	default 8
+
+config WIFI_ESP_HOSTED_RX_QUEUE_SIZE
+	int "RX message queue size"
+	default 8
+
 config WIFI_ESP_HOSTED_EVENT_TASK_STACK_SIZE
 	int "Event task stack size"
-	default 16384
+	default 8192
 
 config WIFI_ESP_HOSTED_EVENT_TASK_POLL_MS
 	int "Event task poll rate in ms"

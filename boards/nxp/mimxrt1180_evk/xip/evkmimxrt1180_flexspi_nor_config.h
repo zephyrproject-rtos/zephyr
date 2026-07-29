@@ -8,7 +8,7 @@
 #ifndef EVKMIMXRT1180_FLEXSPI_NOR_CONFIG_
 #define EVKMIMXRT1180_FLEXSPI_NOR_CONFIG_
 
-#include "fsl_common.h"
+#include <fsl_common.h>
 
 #define FLEXSPI_CFG_BLK_TAG     (0x42464346UL) /* ascii "FCFB" Big Endian */
 #define FLEXSPI_CFG_BLK_VERSION (0x56010400UL) /* V1.4.0 */

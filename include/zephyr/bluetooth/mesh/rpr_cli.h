@@ -10,8 +10,8 @@
  * @ingroup bt_mesh_rpr_cli
  */
 
-#ifndef ZEPHYR_INCLUDE_BT_MESH_RPR_CLI_H__
-#define ZEPHYR_INCLUDE_BT_MESH_RPR_CLI_H__
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_RPR_CLI_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_RPR_CLI_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/mesh/access.h>
@@ -258,4 +258,4 @@ extern const struct bt_mesh_model_cb _bt_mesh_rpr_cli_cb;
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BT_MESH_RPR_CLI_H__ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_RPR_CLI_H_ */

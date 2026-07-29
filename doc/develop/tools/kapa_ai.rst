@@ -119,10 +119,10 @@ synchronized at the indicated frequencies:
        Markdown, Python, and text files
      - Hourly
    * - API reference
-     - https://docs.zephyrproject.org/latest/doxygen/
+     - https://docs.zephyrproject.org/latest/doxygen/html/index.html
      - Daily
    * - Devicetree bindings
-     - https://docs.zephyrproject.org/latest/build/dts/api/
+     - https://docs.zephyrproject.org/latest/build/dts/api/bindings.html
      - Daily
    * - Main documentation
      - https://docs.zephyrproject.org/latest/ (excluding the API reference and Devicetree bindings

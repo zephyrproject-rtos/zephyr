@@ -15,40 +15,39 @@
  */
 static struct arc_mpu_region mpu_regions[] = {
 
+#if defined(CONFIG_NOCACHE_MEMORY)
+	/* Region Nocache */
+	MPU_REGION_ENTRY("NOCACHE", (uint32_t)&_nocache_ram_start, (uint32_t)&_nocache_ram_size,
+			 REGION_NOCACHE_ATTR),
+#endif /* CONFIG_NOCACHE_MEMORY */
+
 #if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
 	/* Region Coverage */
-	MPU_REGION_ENTRY("COVERAGE",
-			 (uint32_t)&(__gcov_bss_start),
-			 (uint32_t)&__gcov_bss_size,
+	MPU_REGION_ENTRY("COVERAGE", (uint32_t)&(__gcov_bss_start), (uint32_t)&__gcov_bss_size,
 			 REGION_IO_ATTR),
 #endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
 
 #ifdef CONFIG_HARVARD
 #if DT_REG_SIZE(DT_INST(0, arc_iccm)) > 0
 	/* Region ICCM */
-	MPU_REGION_ENTRY("ICCM",
-			 DT_REG_ADDR(DT_INST(0, arc_iccm)),
-			 DT_REG_SIZE(DT_INST(0, arc_iccm)),
-			 REGION_ROM_ATTR),
+	MPU_REGION_ENTRY("ICCM", DT_REG_ADDR(DT_INST(0, arc_iccm)),
+			 DT_REG_SIZE(DT_INST(0, arc_iccm)), REGION_ROM_ATTR),
 #endif
 #if DT_REG_SIZE(DT_INST(0, arc_dccm)) > 0
 	/* Region DCCM */
-	MPU_REGION_ENTRY("DCCM",
-			 DT_REG_ADDR(DT_INST(0, arc_dccm)),
+	MPU_REGION_ENTRY("DCCM", DT_REG_ADDR(DT_INST(0, arc_dccm)),
 			 DT_REG_SIZE(DT_INST(0, arc_dccm)),
 			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
 #endif
 #if DT_REG_SIZE(DT_INST(0, arc_xccm)) > 0
 	/* Region XCCM */
-	MPU_REGION_ENTRY("XCCM",
-			 DT_REG_ADDR(DT_INST(0, arc_xccm)),
+	MPU_REGION_ENTRY("XCCM", DT_REG_ADDR(DT_INST(0, arc_xccm)),
 			 DT_REG_SIZE(DT_INST(0, arc_xccm)),
 			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
 #endif
 #if DT_REG_SIZE(DT_INST(0, arc_yccm)) > 0
 	/* Region YCCM */
-	MPU_REGION_ENTRY("YCCM",
-			 DT_REG_ADDR(DT_INST(0, arc_yccm)),
+	MPU_REGION_ENTRY("YCCM", DT_REG_ADDR(DT_INST(0, arc_yccm)),
 			 DT_REG_SIZE(DT_INST(0, arc_yccm)),
 			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
 #endif
@@ -92,10 +91,7 @@ static struct arc_mpu_region mpu_regions[] = {
  */
 #ifndef CONFIG_ARC_SECURE_FIRMWARE
 	/* Region Peripheral */
-	MPU_REGION_ENTRY("PERIPHERAL",
-			 0xF0000000,
-			 64 * 1024,
-			 REGION_KERNEL_RAM_ATTR),
+	MPU_REGION_ENTRY("PERIPHERAL", 0xF0000000, 64 * 1024, REGION_KERNEL_RAM_ATTR),
 #endif
 };
 

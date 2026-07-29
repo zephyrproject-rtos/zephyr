@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.bmp581:
+    tags:
+      - drivers
+      - sensor
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

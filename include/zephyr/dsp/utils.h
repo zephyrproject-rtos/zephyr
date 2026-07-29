@@ -10,8 +10,8 @@
  * @brief Extra utility functions for DSP
  */
 
-#ifndef INCLUDE_ZEPHYR_DSP_UTILS_H_
-#define INCLUDE_ZEPHYR_DSP_UTILS_H_
+#ifndef ZEPHYR_INCLUDE_DSP_UTILS_H_
+#define ZEPHYR_INCLUDE_DSP_UTILS_H_
 
 #include <stdint.h>
 #include <zephyr/sys/minmax.h>
@@ -211,4 +211,4 @@ static inline q31_t zdsp_f64_to_q31_shift(float64_t src, uint32_t m)
 }
 #endif
 
-#endif /* INCLUDE_ZEPHYR_DSP_UTILS_H_ */
+#endif /* ZEPHYR_INCLUDE_DSP_UTILS_H_ */

@@ -242,8 +242,6 @@ static unsigned int cyc_per_tick;
 	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
-#define HPET_MAX_TICKS ((int32_t)0x7fffffff)
-
 #ifdef HPET_INT_LEVEL_TRIGGER
 /**
  * @brief Write to General Interrupt Status Register
@@ -351,7 +349,7 @@ void smp_timer_init(void)
 	 */
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -360,16 +358,14 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t reg;
 
-	if (ticks == K_TICKS_FOREVER && idle) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
 		reg = hpet_gconf_get();
 		reg &= ~GCONF_ENABLE;
 		hpet_gconf_set(reg);
 		return;
 	}
 
-	ticks = ticks == K_TICKS_FOREVER ? HPET_MAX_TICKS : ticks;
-	ticks = CLAMP(ticks, 0, HPET_MAX_TICKS/2);
-
+	/* The comparator is 64-bit, so the requested timeout needs no clamp. */
 	uint64_t cyc = (last_tick + last_elapsed + ticks) * cyc_per_tick;
 
 	hpet_timer_comparator_set_safe(cyc);

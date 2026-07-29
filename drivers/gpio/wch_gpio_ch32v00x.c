@@ -10,6 +10,7 @@
 #include <zephyr/drivers/interrupt_controller/wch_exti.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
 
 #include <errno.h>
 #include <hal_ch32fun.h>
@@ -17,6 +18,28 @@
 #define DT_DRV_COMPAT wch_gpio
 
 #define GPIO_CH32V00X_CFGLR_MASK 0x0FU
+
+#if defined(CONFIG_SOC_SERIES_CH32H41X)
+#define GPIO_CH32V00X_OUT_PP GPIO_CFGLR_OUT_PP
+#define GPIO_CH32V00X_OUT_OD GPIO_CFGLR_OUT_OD
+
+static void gpio_ch32v00x_set_output_speed(GPIO_TypeDef *regs, gpio_pin_t pin)
+{
+	uint32_t speed_shift = pin * 2U;
+
+	regs->SPEED = (regs->SPEED & ~(0x3U << speed_shift)) |
+		      ((uint32_t)GPIO_Speed_50MHz << speed_shift);
+}
+#else
+#define GPIO_CH32V00X_OUT_PP GPIO_CFGLR_OUT_50Mhz_PP
+#define GPIO_CH32V00X_OUT_OD GPIO_CFGLR_OUT_50Mhz_OD
+
+static void gpio_ch32v00x_set_output_speed(GPIO_TypeDef *regs, gpio_pin_t pin)
+{
+	ARG_UNUSED(regs);
+	ARG_UNUSED(pin);
+}
+#endif
 
 struct gpio_ch32v00x_config {
 	struct gpio_driver_config common;
@@ -47,16 +70,17 @@ static int gpio_ch32v00x_configure(const struct device *dev, gpio_pin_t pin, gpi
 		switch (flags & (GPIO_PUSH_PULL | GPIO_OPEN_SOURCE | GPIO_OPEN_DRAIN)) {
 		case GPIO_PUSH_PULL:
 			/* Note that the actual slew rate depends on the SOC */
-			cnf_mode = GPIO_CFGLR_OUT_50Mhz_PP;
+			cnf_mode = GPIO_CH32V00X_OUT_PP;
 			break;
 		case GPIO_OPEN_DRAIN:
-			cnf_mode = GPIO_CFGLR_OUT_50Mhz_OD;
+			cnf_mode = GPIO_CH32V00X_OUT_OD;
 			break;
 		case GPIO_OPEN_SOURCE:
 			return -ENOTSUP;
 		default:
 			return -EINVAL;
 		}
+		gpio_ch32v00x_set_output_speed(regs, pin);
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
 			bshr = GPIO_BSHR_BS0 << pin;
 		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {

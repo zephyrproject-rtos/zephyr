@@ -11,6 +11,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
 
+#include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 #include <hal/emac_periph.h>
 #include <soc/gpio_periph.h>
 #include <soc/io_mux_reg.h>
@@ -185,6 +187,100 @@ static inline int esp32_emac_config_apll_clock(void)
 
 	return 0;
 }
+#else
+static inline void esp32_emac_iomux_rmii_clk_input(int gpio_num)
+{
+	const emac_iomux_info_t *pin;
+
+	pin = esp32_emac_iomux_find(emac_rmii_iomux_pins.clki, gpio_num);
+	if (pin != NULL) {
+		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+}
 #endif
+
+static inline void esp32_emac_iomux_init_mii(void)
+{
+	const emac_iomux_info_t *pin;
+
+	/*
+	 * ESP32 EMAC uses dedicated IOMUX pins, not GPIO matrix.
+	 * Only PIN_FUNC_SELECT is needed to route signals.
+	 */
+
+	/* TX_CLK - input */
+	pin = emac_mii_iomux_pins.clk_tx;
+	if (pin != NULL) {
+		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+
+	/* TX_EN - output */
+	pin = emac_mii_iomux_pins.tx_en;
+	if (pin != NULL) {
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+
+	/* TXD0-3 - outputs */
+	pin = emac_mii_iomux_pins.txd0;
+	if (pin != NULL) {
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+
+	pin = emac_mii_iomux_pins.txd1;
+	if (pin != NULL) {
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+
+	pin = emac_mii_iomux_pins.txd2;
+	if (pin != NULL) {
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+
+	pin = emac_mii_iomux_pins.txd3;
+	if (pin != NULL) {
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+
+	/* RX_CLK - input */
+	pin = emac_mii_iomux_pins.clk_rx;
+	if (pin != NULL) {
+		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+
+	/* RX_DV - input */
+	pin = emac_mii_iomux_pins.rx_dv;
+	if (pin != NULL) {
+		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+
+	/* RXD0-3 - inputs */
+	pin = emac_mii_iomux_pins.rxd0;
+	if (pin != NULL) {
+		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+
+	pin = emac_mii_iomux_pins.rxd1;
+	if (pin != NULL) {
+		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+
+	pin = emac_mii_iomux_pins.rxd2;
+	if (pin != NULL) {
+		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+
+	pin = emac_mii_iomux_pins.rxd3;
+	if (pin != NULL) {
+		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
+		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
+	}
+}
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_ESP32_PRIV_H_ */

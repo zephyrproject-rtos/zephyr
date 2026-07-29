@@ -26,14 +26,14 @@ static void tlifo_put(struct k_lifo *plifo)
 	}
 }
 
-static void tlifo_get(struct k_lifo *plifo)
+static void tlifo_get(struct k_lifo *plifo, k_timeout_t timeout)
 {
 	void *rx_data;
 
 	/*get lifo data*/
 	for (int i = LIST_LEN-1; i >= 0; i--) {
 		/**TESTPOINT: lifo get*/
-		rx_data = k_lifo_get(plifo, K_FOREVER);
+		rx_data = k_lifo_get(plifo, timeout);
 		zassert_equal(rx_data, (void *)&data[i]);
 	}
 }
@@ -46,12 +46,12 @@ static void tIsr_entry_put(const void *p)
 
 static void tIsr_entry_get(const void *p)
 {
-	tlifo_get((struct k_lifo *)p);
+	tlifo_get((struct k_lifo *)p, K_NO_WAIT);
 }
 
 static void tThread_entry(void *p1, void *p2, void *p3)
 {
-	tlifo_get((struct k_lifo *)p1);
+	tlifo_get((struct k_lifo *)p1, K_FOREVER);
 	k_sem_give(&end_sema);
 }
 
@@ -72,7 +72,7 @@ static void tlifo_thread_isr(struct k_lifo *plifo)
 	k_sem_init(&end_sema, 0, 1);
 	/**TESTPOINT: thread-isr data passing via lifo*/
 	irq_offload(tIsr_entry_put, (const void *)plifo);
-	tlifo_get(plifo);
+	tlifo_get(plifo, K_FOREVER);
 }
 
 static void tlifo_isr_thread(struct k_lifo *plifo)

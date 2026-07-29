@@ -51,8 +51,7 @@ def test_check_build_or_run(
     Scenario 2: Test if build_only is enabled when the OS is Windows"""
 
     class_testplan.testsuites = all_testsuites_dict
-    testsuite = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/tests/'
-                                              'test_a/test_a.check_1')
+    testsuite = class_testplan.testsuites.get('test_a.check_1')
     print(testsuite)
 
     class_testplan.platforms = platforms_list
@@ -135,8 +134,7 @@ def test_create_overlay(
 ):
     """Test correct content is written to testcase_extra.conf based on if conditions."""
     class_testplan.testsuites = all_testsuites_dict
-    testcase = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/samples/'
-                                             'test_app/sample_test.app')
+    testcase = class_testplan.testsuites.get('sample_test.app')
 
     if extra_configs:
         testcase.extra_configs = extra_configs
@@ -151,8 +149,7 @@ def test_create_overlay(
 def test_calculate_sizes(class_testplan, all_testsuites_dict, platforms_list):
     """ Test Calculate sizes method for zephyr elf"""
     class_testplan.testsuites = all_testsuites_dict
-    testcase = class_testplan.testsuites.get('scripts/tests/twister/test_data/testsuites/samples/'
-                                             'test_app/sample_test.app')
+    testcase = class_testplan.testsuites.get('sample_test.app')
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
     testinstance = TestInstance(testcase, platform, 'zephyr', class_testplan.env.outdir)
@@ -199,14 +196,15 @@ def test_which_filter_stages(filter_expr, expected_stages):
 
 @pytest.fixture(name='testinstance')
 def sample_testinstance(all_testsuites_dict, class_testplan, platforms_list, request):
-    testsuite_path = 'scripts/tests/twister/test_data/testsuites'
     if request.param['testsuite_kind']  == 'sample':
-        testsuite_path += '/samples/test_app/sample_test.app'
+        testsuite_id = 'sample_test.app'
     elif request.param['testsuite_kind'] == 'tests':
-        testsuite_path += '/tests/test_a/test_a.check_1'
+        testsuite_id = 'test_a.check_1'
+    else:
+        raise ValueError(f"Unknown testsuite_kind: {request.param['testsuite_kind']}")
 
     class_testplan.testsuites = all_testsuites_dict
-    testsuite = class_testplan.testsuites.get(testsuite_path)
+    testsuite = class_testplan.testsuites.get(testsuite_id)
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform(request.param.get('board_name', 'demo_board_2'))
 
@@ -221,9 +219,9 @@ TESTDATA_1 = [
 
 @pytest.mark.parametrize('detailed_test_id', TESTDATA_1)
 def test_testinstance_init(all_testsuites_dict, class_testplan, platforms_list, detailed_test_id):
-    testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    testsuite_id = 'sample_test.app'
     class_testplan.testsuites = all_testsuites_dict
-    testsuite = class_testplan.testsuites.get(testsuite_path)
+    testsuite = class_testplan.testsuites.get(testsuite_id)
     testsuite.detailed_test_id = detailed_test_id
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2/unit_testing")
@@ -231,7 +229,7 @@ def test_testinstance_init(all_testsuites_dict, class_testplan, platforms_list, 
     testinstance = TestInstance(testsuite, platform, 'zephyr', class_testplan.env.outdir)
 
     if detailed_test_id:
-        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.normalized_name, 'zephyr', testsuite_path)
+        assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.normalized_name, 'zephyr', testsuite.name)
     else:
         assert testinstance.build_dir == os.path.join(class_testplan.env.outdir, platform.normalized_name, 'zephyr', testsuite.source_dir_rel, testsuite.name)
 
@@ -281,9 +279,9 @@ def test_testinstance_add_filter(testinstance):
 
 
 def test_testinstance_init_cases(all_testsuites_dict, class_testplan, platforms_list):
-    testsuite_path = 'scripts/tests/twister/test_data/testsuites/tests/test_a/test_a.check_1'
+    testsuite_id = 'test_a.check_1'
     class_testplan.testsuites = all_testsuites_dict
-    testsuite = class_testplan.testsuites.get(testsuite_path)
+    testsuite = class_testplan.testsuites.get(testsuite_id)
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
 
@@ -335,9 +333,9 @@ def test_testinstance_add_missing_case_status(testinstance, reason, expected_rea
 
 
 def test_testinstance_dunders(all_testsuites_dict, class_testplan, platforms_list):
-    testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    testsuite_id = 'sample_test.app'
     class_testplan.testsuites = all_testsuites_dict
-    testsuite = class_testplan.testsuites.get(testsuite_path)
+    testsuite = class_testplan.testsuites.get(testsuite_id)
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")
 
@@ -359,7 +357,7 @@ def test_testinstance_dunders(all_testsuites_dict, class_testplan, platforms_lis
     assert not testinstance < testinstance_copy
     assert not testinstance_copy < testinstance
 
-    assert testinstance.__repr__() == f'<TestSuite {testsuite_path} on demo_board_2/unit_testing>'
+    assert testinstance.__repr__() == f'<TestSuite {testsuite.name} on demo_board_2/unit_testing>'
 
 
 @pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
@@ -648,9 +646,9 @@ TESTDATA_9 = [
 
 @pytest.mark.parametrize('harness_config, expected_content', TESTDATA_9)
 def test_create_overlay_with_harness_config(class_testplan, all_testsuites_dict, platforms_list, harness_config, expected_content):
-    testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
+    testsuite_id = 'sample_test.app'
     class_testplan.testsuites = all_testsuites_dict
-    testsuite = class_testplan.testsuites.get(testsuite_path)
+    testsuite = class_testplan.testsuites.get(testsuite_id)
     testsuite.harness_config = harness_config
     class_testplan.platforms = platforms_list
     platform = class_testplan.get_platform("demo_board_2")

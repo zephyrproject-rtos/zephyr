@@ -92,7 +92,7 @@ static int sbs_gauge_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	switch (prop) {
 	case FUEL_GAUGE_AVG_CURRENT_UA:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_AVG_CURRENT, &tmp_val);
-		val->avg_current_ua = tmp_val * 1000;
+		val->avg_current_ua = (int16_t)tmp_val * 1000;
 		break;
 	case FUEL_GAUGE_CYCLE_COUNT:
 		rc = sbs_cmd_reg_read(dev, SBS_GAUGE_CMD_CYCLE_COUNT, &tmp_val);

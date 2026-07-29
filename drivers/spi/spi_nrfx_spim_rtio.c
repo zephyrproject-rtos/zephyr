@@ -245,7 +245,7 @@ static int driver_deinit(const struct device *dev)
 		.common = SPI_NRFX_COMMON_DATA_INIT(inst),					\
 	};											\
 												\
-	SPI_NRFX_COMMON_DEFINE(inst, &CONCAT(data, inst));					\
+	SPI_NRFX_COMMON_DEFINE(inst, &CONCAT(data, inst).common.spim);				\
 												\
 	SPI_RTIO_DEFINE(									\
 		CONCAT(spi_rtio_ctx, inst),							\

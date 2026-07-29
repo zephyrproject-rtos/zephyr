@@ -19,6 +19,16 @@ Verify the board and chip you are targeting provide Wi-Fi support.
 
 For instance you can use Nordic's nrf7002dk by selecting the nrf7002dk/nrf5340/cpuapp board.
 
+To run without hardware, build for native_sim with the in-tree wifi_hwsim driver (two virtual
+radios: one AP, one STA). Start the AP on the first interface, then scan and connect from the
+second:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/wifi/shell
+   :board: native_sim
+   :goals: build
+   :compact:
+
 .. zephyr-app-commands::
    :zephyr-app: samples/net/wifi/shell
    :board: nrf7002dk/nrf5340/cpuapp

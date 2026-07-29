@@ -116,6 +116,23 @@ int stm32_gpioport_configure_pin(const struct device *port,
 				 pinctrl_soc_pin_t config,
 				 bool apply_out_level);
 
+#if defined(CONFIG_STM32_WKUP_PINS)
+/**
+ * @brief Configure a GPIO pin as a source for STM32 PWR wake-up pins
+ *
+ * @param gpio Container for GPIO pin information specified in devicetree
+ *
+ * @return 0 on success, -EINVAL on invalid values
+ */
+int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio);
+
+/**
+ * @brief Enable or Disable pull-up and pull-down configuration for
+ * GPIO Ports that are associated with STM32 PWR wake-up pins
+ */
+void stm32_pwr_wkup_pin_cfg_pupd(void);
+#endif /* defined(CONFIG_STM32_WKUP_PINS) */
+
 /*
  * GPIO port device API
  *

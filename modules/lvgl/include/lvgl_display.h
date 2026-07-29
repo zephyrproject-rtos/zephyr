@@ -18,6 +18,9 @@ extern "C" {
 struct lvgl_disp_data {
 	const struct device *display_dev;
 	struct display_capabilities cap;
+#ifdef CONFIG_LV_Z_FLUSH_THREAD
+	struct k_sem flush_complete;
+#endif
 	bool blanking_on;
 };
 

@@ -504,8 +504,6 @@ struct bt_l2cap_br_window {
 	struct net_buf_simple_state sdu_state;
 	/** @internal Holds the sending buffer. */
 	struct net_buf *sdu;
-	/** @internal Total length of TX SDU */
-	uint16_t sdu_total_len;
 };
 
 /** @brief BREDR L2CAP Channel structure. */
@@ -538,9 +536,6 @@ struct bt_l2cap_br_chan {
 	sys_slist_t                     _pdu_tx_queue;
 
 #if defined(CONFIG_BT_L2CAP_RET_FC) || defined(__DOXYGEN__)
-	/** @internal Total length of TX SDU */
-	uint16_t                        _sdu_total_len;
-
 	/** @internal Holds the remaining length of current sending buffer */
 	size_t                          _pdu_remaining;
 
@@ -748,7 +743,7 @@ struct bt_l2cap_chan_ops {
 	 */
 	void (*reconfigured)(struct bt_l2cap_chan *chan);
 
-#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+#if defined(CONFIG_BT_L2CAP_SEG_RECV) || defined(__DOXYGEN__)
 	/** @brief Handle L2CAP segments directly
 	 *
 	 *  This is an alternative to @ref bt_l2cap_chan_ops.recv. They cannot

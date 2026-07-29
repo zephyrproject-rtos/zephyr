@@ -168,6 +168,10 @@ ${MODULE_NAME_UPPER} is a restricted name for Zephyr modules as it is used for \
   endforeach()
 else()
 
+  file(WRITE ${KCONFIG_BINARY_DIR}/kconfig_module_dirs.env "")
+
+  file(WRITE ${KCONFIG_BINARY_DIR}/kconfig_module_dirs.cmake "")
+
   file(WRITE ${kconfig_modules_file}
     "# No west and no Zephyr modules\n"
     )

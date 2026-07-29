@@ -1,0 +1,12 @@
+# Flow meter sensor driver configuration
+# Copyright (c) 2026 Nicolas Belin <nbelin@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config FLOW_METER
+	bool "Hall-effect flow meter driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FLOW_METER_ENABLED
+	depends on GPIO
+	help
+	  Enable driver for Hall-effect pulse-output flow meters.
+	  Provides flow rate and cumulative volume channels.

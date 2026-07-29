@@ -204,22 +204,5 @@ static inline unsigned int z_vrfy_k_sem_count_get(struct k_sem *sem)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_SEM
-static int init_sem_obj_core_list(void)
-{
-	/* Initialize semaphore object type */
-
-	z_obj_type_init(&obj_type_sem, K_OBJ_TYPE_SEM_ID,
-			offsetof(struct k_sem, obj_core));
-
-	/* Initialize and link statically defined semaphores */
-
-	STRUCT_SECTION_FOREACH(k_sem, sem) {
-		k_obj_core_init_and_link(K_OBJ_CORE(sem), &obj_type_sem);
-	}
-
-	return 0;
-}
-
-SYS_INIT(init_sem_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(obj_type_sem, k_sem, K_OBJ_TYPE_SEM_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_SEM */

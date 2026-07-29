@@ -59,6 +59,7 @@
 	pinctrl-names = "default";
 	phy-handle = <&phy0>;
 	phy-connection-type = "rgmii";
+	ptp-clock = <&enetc_ptp_clock>;
 	status = "okay";
 };
 

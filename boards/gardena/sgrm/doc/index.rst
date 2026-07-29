@@ -18,7 +18,7 @@ Hardware
 - UART is connected to the Linux SoC. Usually it's used for PPP, but it can also be used for
   debugging when PPP is not active.
 
-.. _SiM3U167-B-GM: https://www.silabs.com/mcu/32-bit-microcontrollers/precision32-sim3u1xx/device.SiM3U167-B-GQ?tab=specs
+.. _SiM3U167-B-GM: https://www.silabs.com/products/mcu/32-bit/precision32-sim3u1xx/device.sim3u167-b-gm
 .. _Si4467: https://www.silabs.com/wireless/proprietary/ezradiopro-sub-ghz-ics/device.si4467?tab=specs
 
 Supported Features

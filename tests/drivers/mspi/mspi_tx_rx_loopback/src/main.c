@@ -22,6 +22,12 @@
 
 #define PRINT_RAW_DATA 0
 
+#if defined(CONFIG_MSPI_DMA)
+#define MSPI_XFER_MODE MSPI_DMA
+#else
+#define MSPI_XFER_MODE MSPI_PIO
+#endif
+
 static uint8_t tx_buff[DATA_LEN_MAX] __aligned(4);
 static uint8_t rx_buff[NUM_PACKETS_MAX][DATA_LEN_MAX + CMD_LEN_MAX + ADDR_LEN_MAX] __aligned(4);
 
@@ -81,17 +87,13 @@ static void configure_devices(enum mspi_io_mode io_mode)
 	zassert_false(rc < 0, "mspi_register_callback() failed: %d", rc);
 }
 
-static void test_tx_transfer_multi_packet(struct mspi_xfer *tx_xfer, struct mspi_xfer *rx_xfer,
+static void test_tx_transfer_multi_packet(struct mspi_xfer *tx_xfer,
 					  struct mspi_xfer_packet *tx_packets,
 					  struct mspi_xfer_packet *rx_packets,
 					  uint32_t transfer_length)
 {
 	uint32_t rx_idx;
 	int rc;
-
-	rx_xfer->num_packet = tx_xfer->num_packet;
-	rx_xfer->cmd_length = tx_xfer->cmd_length;
-	rx_xfer->addr_length = tx_xfer->addr_length;
 
 	/* Set packet sizes */
 	for (int i = 0; i < tx_xfer->num_packet; i++) {
@@ -101,16 +103,16 @@ static void test_tx_transfer_multi_packet(struct mspi_xfer *tx_xfer, struct mspi
 	}
 
 	/* Clean up RX buffers */
-	for (int p = 0; p < rx_xfer->num_packet; ++p) {
-		memset(rx_xfer->packets[p].data_buf, 0xAA,
-		       rx_xfer->packets[p].num_bytes);
+	for (int p = 0; p < tx_xfer->num_packet; ++p) {
+		memset(rx_packets[p].data_buf, 0xAA, rx_packets[p].num_bytes);
 	}
 
 	k_sem_reset(&async_sem);
 
 	/* Start peripheral transfer in async mode */
-	rc = mspi_transceive(mspi_peripheral, &rx_id, rx_xfer);
-	zassert_false(rc < 0, "mspi_transceive() peripheral failed: %d", rc);
+	rc = mspi_transceive_data_only(mspi_peripheral, &rx_id, rx_packets,
+				       tx_xfer->num_packet, MSPI_XFER_MODE, true, 1000);
+	zassert_false(rc < 0, "mspi_transceive_data_only() peripheral failed: %d", rc);
 
 	k_msleep(10);
 
@@ -123,9 +125,9 @@ static void test_tx_transfer_multi_packet(struct mspi_xfer *tx_xfer, struct mspi
 	zassert_false(rc < 0, "peripheral transfer timeout");
 
 	/* Verify each packet */
-	for (int p = 0; p < tx_xfer->num_packet && p < rx_xfer->num_packet; ++p) {
+	for (int p = 0; p < tx_xfer->num_packet; ++p) {
 		const struct mspi_xfer_packet *tx_packet = &tx_xfer->packets[p];
-		const struct mspi_xfer_packet *rx_packet = &rx_xfer->packets[p];
+		const struct mspi_xfer_packet *rx_packet = &rx_packets[p];
 
 		rx_idx = 0;
 
@@ -183,8 +185,8 @@ static void test_tx_transfers(uint32_t transfer_length, uint8_t num_packets)
 	TC_PRINT("Testing with transfer length of %d and %d packets\r\n",
 		transfer_length, num_packets);
 
-	struct mspi_xfer_packet tx_packets[NUM_PACKETS_MAX];
-	struct mspi_xfer_packet rx_packets[NUM_PACKETS_MAX];
+	struct mspi_xfer_packet tx_packets[NUM_PACKETS_MAX] = {0};
+	struct mspi_xfer_packet rx_packets[NUM_PACKETS_MAX] = {0};
 
 	for (int i = 0; i < num_packets; i++) {
 		/* TX packet setup */
@@ -197,80 +199,63 @@ static void test_tx_transfers(uint32_t transfer_length, uint8_t num_packets)
 		rx_packets[i].dir = MSPI_RX;
 		rx_packets[i].data_buf = rx_buff[i];
 		rx_packets[i].cb_mask = MSPI_BUS_XFER_COMPLETE_CB;
-		rx_packets[i].cmd = 0;
-		rx_packets[i].address = 0;
 	}
 
 	struct mspi_xfer tx_xfer = {
-#if defined(CONFIG_MSPI_DMA)
-		.xfer_mode = MSPI_DMA,
-#else
-		.xfer_mode = MSPI_PIO,
-#endif
+		.xfer_mode = MSPI_XFER_MODE,
 		.packets = tx_packets,
 		.num_packet = num_packets,
 		.timeout = 1000,
-	};
-
-	struct mspi_xfer rx_xfer = {
-#if defined(CONFIG_MSPI_DMA)
-		.xfer_mode = MSPI_DMA,
-#else
-		.xfer_mode = MSPI_PIO,
-#endif
-		.packets = rx_packets,
-		.timeout = 1000,
-		.async = true,
 	};
 
 	if (transfer_length == 0) {
 		TC_PRINT("- 8-bit command only\n");
 		tx_xfer.cmd_length = 1;
 		tx_xfer.addr_length = 0;
-		test_tx_transfer_multi_packet(&tx_xfer, &rx_xfer, tx_packets, rx_packets,
+		test_tx_transfer_multi_packet(&tx_xfer, tx_packets, rx_packets,
 					      transfer_length);
 
 		TC_PRINT("- 16-bit command only\n");
 		tx_xfer.cmd_length = 2;
 		tx_xfer.addr_length = 0;
-		test_tx_transfer_multi_packet(&tx_xfer, &rx_xfer, tx_packets, rx_packets,
+		test_tx_transfer_multi_packet(&tx_xfer, tx_packets, rx_packets,
 					      transfer_length);
 
 		TC_PRINT("- 8-bit command and 24-bit address only\n");
 		tx_xfer.cmd_length = 1;
 		tx_xfer.addr_length = 3;
-		test_tx_transfer_multi_packet(&tx_xfer, &rx_xfer, tx_packets, rx_packets,
+		test_tx_transfer_multi_packet(&tx_xfer, tx_packets, rx_packets,
 					      transfer_length);
 
 	} else {
 		TC_PRINT("- 8-bit command, 24-bit address\n");
 		tx_xfer.cmd_length = 1;
 		tx_xfer.addr_length = 3;
-		test_tx_transfer_multi_packet(&tx_xfer, &rx_xfer, tx_packets, rx_packets,
+		test_tx_transfer_multi_packet(&tx_xfer, tx_packets, rx_packets,
 					      transfer_length);
 
 		TC_PRINT("- 8-bit command, 32-bit address\n");
 		tx_xfer.cmd_length = 1;
 		tx_xfer.addr_length = 4;
-		test_tx_transfer_multi_packet(&tx_xfer, &rx_xfer, tx_packets, rx_packets,
+		test_tx_transfer_multi_packet(&tx_xfer, tx_packets, rx_packets,
 					      transfer_length);
 
 		TC_PRINT("- 16-bit command, 24-bit address\n");
 		tx_xfer.cmd_length = 2;
 		tx_xfer.addr_length = 3;
-		test_tx_transfer_multi_packet(&tx_xfer, &rx_xfer, tx_packets, rx_packets,
+		test_tx_transfer_multi_packet(&tx_xfer, tx_packets, rx_packets,
 					      transfer_length);
 
 		TC_PRINT("- 16-bit command, 32-bit address\n");
 		tx_xfer.cmd_length = 2;
 		tx_xfer.addr_length = 4;
-		test_tx_transfer_multi_packet(&tx_xfer, &rx_xfer, tx_packets, rx_packets,
+		test_tx_transfer_multi_packet(&tx_xfer, tx_packets, rx_packets,
 					      transfer_length);
 
 		TC_PRINT("- Just data\n");
 		tx_xfer.cmd_length = 0;
 		tx_xfer.addr_length = 0;
-		test_tx_transfer_multi_packet(&tx_xfer, &rx_xfer, tx_packets, rx_packets,
+		test_tx_transfer_multi_packet(&tx_xfer, tx_packets, rx_packets,
 					      transfer_length);
 	}
 }

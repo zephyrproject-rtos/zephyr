@@ -319,7 +319,7 @@ static int counter_it51xxx_init(const struct device *dev)
 	config->irq_config_func(dev);
 
 	LOG_DBG("Max top timer ticks = 0x%x", config->info.max_top_value);
-	LOG_DBG("Clock frequency = %d", config->info.freq);
+	LOG_DBG("Clock frequency = %llu", (unsigned long long)config->info.freq);
 	LOG_DBG("Channels = %d", config->info.channels);
 
 	return 0;

@@ -13,11 +13,11 @@
 #include <zephyr/net/wifi_nm.h>
 #include <zephyr/net/icmp.h>
 
-#include "icmpv4.h"
+#include <icmpv4.h>
 
 LOG_MODULE_REGISTER(wifi_test, LOG_LEVEL_INF);
 
-#include "net_private.h"
+#include <net_private.h>
 
 K_SEM_DEFINE(wifi_event, 0, 1);
 

@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "settings_test.h"
-#include "settings_priv.h"
+#include <settings_priv.h>
 #include <zephyr/storage/flash_map.h>
 
 #define TEST_PARTITION		storage_partition

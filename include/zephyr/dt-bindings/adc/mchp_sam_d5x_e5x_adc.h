@@ -10,8 +10,8 @@
  *
  */
 
-#ifndef INCLUDE_ZEPHYR_DT_BINDINGS_ADC_SAM_D5X_E5X_ADC_H_
-#define INCLUDE_ZEPHYR_DT_BINDINGS_ADC_SAM_D5X_E5X_ADC_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ADC_MCHP_SAM_D5X_E5X_ADC_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_ADC_MCHP_SAM_D5X_E5X_ADC_H_
 
 /* External analog inputs */
 #define MCHP_ADC_AIN0  0x00 /**< ADC input AIN0 */
@@ -58,4 +58,4 @@
 #define MCHP_ADC_REF_AREFB   0x05 /**< External reference B */
 #define MCHP_ADC_REF_AREFC   0x06 /**< External reference C (ADC1 only) */
 
-#endif /* INCLUDE_ZEPHYR_DT_BINDINGS_ADC_SAM_D5X_E5X_ADC_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_MCHP_SAM_D5X_E5X_ADC_H_ */

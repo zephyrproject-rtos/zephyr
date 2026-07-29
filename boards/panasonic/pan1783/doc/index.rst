@@ -58,7 +58,7 @@ Please use the ``pan1783_evb_cpuapp``, ``pan1783a_evb_cpuapp`` or
 for network core when :ref:`build_an_application` and :ref:`application_run`.
 
 .. target-notes::
-.. _product website: https://industry.panasonic.eu/products/devices/wireless-connectivity/bluetooth-low-energy-modules
+.. _product website: https://pideu.panasonic.de/development-hub/pan1783/
 .. _Panasonic Wireless Connectivity Development Hub: https://pideu.panasonic.de/development-hub/
 .. _pan1783_evb user guide: https://pideu.panasonic.de/development-hub/pan1783/evaluation_board/user_guide/
 .. _pan1783a_evb user guide: https://pideu.panasonic.de/development-hub/pan1783a/evaluation_board/user_guide/

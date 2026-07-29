@@ -29,6 +29,13 @@ struct ieee802154_esp32_data {
 	 */
 	struct k_sem tx_wait;
 
+	/* Outcome of the last transmission, as reported by the
+	 * esp_ieee802154_transmit_done/esp_ieee802154_transmit_failed
+	 * callbacks. Both unlock tx_wait, so this is what distinguishes a
+	 * delivered frame from a failed one.
+	 */
+	esp_ieee802154_tx_error_t tx_error;
+
 	/* TX buffer. First byte is PHR (length), remaining bytes are
 	 * MPDU data.
 	 */

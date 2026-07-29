@@ -13,11 +13,7 @@ static volatile uint32_t critical_nesting;
 
 int rtos_critical_is_in_interrupt(void)
 {
-#ifdef CONFIG_ARM_CORE_CM4
-	return (__get_xPSR() & 0x1FF) != 0;
-#else
 	return __get_IPSR() != 0;
-#endif
 }
 
 /*-------------------------------critical------------------------------*/

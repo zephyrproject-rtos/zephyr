@@ -40,10 +40,7 @@ LOG_MODULE_REGISTER(flexspi_hyperflash, CONFIG_FLASH_LOG_LEVEL);
 
 #define HYPERFLASH_ERASE_VALUE                  (0xFF)
 
-#define FLEXSPI_HYPERFLASH_SOC_NV_FLASH_COMPAT(node_id) \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
-#define FLEXSPI_HYPERFLASH_SOC_NV_FLASH_NODE(node_id) \
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(node_id, FLEXSPI_HYPERFLASH_SOC_NV_FLASH_COMPAT)
+#include "flash_priv.h"
 
 /* Hyper flash support SDR and DDR, from the FlexSPI controller point of view,
  * if DDR enabled, commands in LUT need to be DDR command and root clock is
@@ -727,7 +724,7 @@ static DEVICE_API(flash, flash_flexspi_hyperflash_api) = {
 		},))							\
 		.flash_parameters = {					\
 			.write_block_size = DT_PROP(			\
-				FLEXSPI_HYPERFLASH_SOC_NV_FLASH_NODE(n),\
+				SOC_NV_FLASH_CHILD_NODE(n),\
 				write_block_size),		\
 			.erase_value = HYPERFLASH_ERASE_VALUE,		\
 		},							\

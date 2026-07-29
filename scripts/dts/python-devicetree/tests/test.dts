@@ -595,6 +595,35 @@
 	};
 
 	//
+	// Node with properties using 'dependency-mode:' in binding
+	//
+
+	dependency-mode-target {};
+
+	dependency-mode-normal {
+		compatible = "dependency-mode-test";
+		normal-ref = <&{/dependency-mode-target}>;
+	};
+
+	dependency-mode-reverse {
+		compatible = "dependency-mode-test";
+		reverse-ref = <&{/dependency-mode-target}>;
+	};
+
+	dependency-mode-ignore {
+		compatible = "dependency-mode-test";
+		ignore-ref = <&{/dependency-mode-target}>;
+	};
+
+	dependency-mode-child-ignore {
+		compatible = "dependency-mode-test";
+		child-ignore-ref = <&{/dependency-mode-child-ignore/local-child}>;
+		child-ignore-external-ref = <&{/dependency-mode-target}>;
+
+		local-child {};
+	};
+
+	//
 	// zephyr,user binding inference
 	//
 
@@ -651,6 +680,29 @@
 
 		sub-node {
 			foos = <&{/deprecated} 1 2>;
+		};
+	};
+
+	/*
+	 * CPU properties may be defined in /cpus when they are identical across
+	 * all CPUs. Per-CPU properties should still override parent values.
+	 */
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clock-frequency = <1000>;
+
+		cpu@0 {
+			compatible = "test-cpu-fallback";
+			device_type = "cpu";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			compatible = "test-cpu-fallback";
+			device_type = "cpu";
+			reg = <1>;
+			clock-frequency = <2000>;
 		};
 	};
 };

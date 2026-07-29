@@ -76,14 +76,14 @@ void z_timer_expiration_handler(struct _timeout *t)
 	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 
 	/* A same-CPU IRQ may have raced with our dispatch between
-	 * sys_clock_announce() popping us off the list and us taking
+	 * sys_clock_announce() popping us off the queue and us taking
 	 * timer.c::lock. Two cases:
-	 *  - The timer was restarted (z_add_timeout re-linked the node):
-	 *    sys_dnode_is_linked() is true, the new schedule fires later.
+	 *  - The timer was restarted (z_add_timeout re-queued the timeout):
+	 *    it is active again, and the new schedule fires later.
 	 *  - The timer was stopped (z_try_abort_timeout marked the
 	 *    in-flight slot superseded): bail without firing expiry_fn.
 	 */
-	if (sys_dnode_is_linked(&t->node) ||
+	if (!z_is_inactive_timeout(t) ||
 	    z_timeout_inflight_superseded(t)) {
 		k_spin_unlock(&timer_lock, key);
 		return;
@@ -452,21 +452,5 @@ static inline void z_vrfy_k_timer_user_data_set(struct k_timer *timer,
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_TIMER
-static int init_timer_obj_core_list(void)
-{
-	/* Initialize timer object type */
-
-	z_obj_type_init(&obj_type_timer, K_OBJ_TYPE_TIMER_ID,
-			offsetof(struct k_timer, obj_core));
-
-	/* Initialize and link statically defined timers */
-
-	STRUCT_SECTION_FOREACH(k_timer, timer) {
-		k_obj_core_init_and_link(K_OBJ_CORE(timer), &obj_type_timer);
-	}
-
-	return 0;
-}
-SYS_INIT(init_timer_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(obj_type_timer, k_timer, K_OBJ_TYPE_TIMER_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_TIMER */

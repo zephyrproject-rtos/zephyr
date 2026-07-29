@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_ICCARM_H_
-#define ZEPHYR_INCLUDE_TOOLCHAIN_ICCARM_H_
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_IAR_ICCARM_H_
+#define ZEPHYR_INCLUDE_TOOLCHAIN_IAR_ICCARM_H_
 
 /**
  * @file
@@ -438,4 +438,4 @@ do {                                                                    \
 #endif
 
 #endif /* !_LINKER */
-#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_ICCARM_H_ */
+#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_IAR_ICCARM_H_ */

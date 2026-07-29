@@ -241,7 +241,7 @@ config OPENTHREAD_COPROCESSOR
 	bool "OpenThread Co-Processor"
 	select OPENTHREAD_MANUAL_START
 	select RING_BUFFER
-	select UART_INTERRUPT_DRIVEN
+	select UART_INTERRUPT_DRIVEN if !OPENTHREAD_COPROCESSOR_UART_ASYNC
 	help
 	  Enable Co-Processor in OpenThread stack.
 

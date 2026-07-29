@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  arch_allow: riscv
+  tags:
+    - drivers
+    - interrupt
+    - riscv
+    - aia
+    - aplic
+    - imsic
+  platform_allow:
+    - qemu_riscv32/qemu_virt_riscv32/aia-imsic
+    - qemu_riscv32/qemu_virt_riscv32/aia-imsic/smp
+    - qemu_riscv32/qemu_virt_riscv32/aia-direct
+    - qemu_riscv32/qemu_virt_riscv32/aia-direct/smp
+  integration_platforms:
+    - qemu_riscv32/qemu_virt_riscv32/aia-imsic
+    - qemu_riscv32/qemu_virt_riscv32/aia-direct
+
+tests:
+  drivers.interrupt_controller.intc_riscv_aia: {}

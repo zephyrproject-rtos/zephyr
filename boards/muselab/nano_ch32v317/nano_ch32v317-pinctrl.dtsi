@@ -27,4 +27,13 @@
 	mdio_default: mdio_default {
 		/* No MDIO pinmux required for internal PHY */
 	};
+
+	pwm2_default: pwm2_default {
+		group1 {
+			pinmux = <TIM2_CH1_PA0_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-10mhz";
+		};
+	};
 };

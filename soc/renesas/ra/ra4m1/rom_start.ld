@@ -7,6 +7,9 @@
 
 #include <zephyr/devicetree.h>
 
+/* Emit option setting sections only when standalone app OR MCUboot itself */
+#if !defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_MCUBOOT)
+
 . = DT_REG_ADDR(DT_NODELABEL(option_setting_ofs0));
 KEEP(*(.option_setting_ofs0))
 
@@ -15,3 +18,5 @@ KEEP(*(.option_setting_ofs1))
 
 . = DT_REG_ADDR(DT_NODELABEL(option_setting_secmpu));
 KEEP(*(.option_setting_secmpu))
+
+#endif

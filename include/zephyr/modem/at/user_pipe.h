@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_MODEM_AT_USER_PIPE_
-#define ZEPHYR_MODEM_AT_USER_PIPE_
+#ifndef ZEPHYR_INCLUDE_MODEM_AT_USER_PIPE_H_
+#define ZEPHYR_INCLUDE_MODEM_AT_USER_PIPE_H_
 
 #include <zephyr/modem/chat.h>
 
@@ -33,4 +33,4 @@ int modem_at_user_pipe_claim(struct modem_chat *chat, k_timeout_t timeout);
  */
 void modem_at_user_pipe_release(void);
 
-#endif /* ZEPHYR_MODEM_AT_USER_PIPE_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_AT_USER_PIPE_H_ */

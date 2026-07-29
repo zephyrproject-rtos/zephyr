@@ -405,7 +405,7 @@ struct spi_cs_control {
  * This is equivalent to
  * <tt>SPI_CS_CONTROL_INIT(DT_DRV_INST(inst), delay)</tt>.
  *
- * Therefore, @p DT_DRV_COMPAT must already be defined before using
+ * Therefore, @c DT_DRV_COMPAT must already be defined before using
  * this macro.
  *
  * @param inst Devicetree node instance number
@@ -550,7 +550,7 @@ struct spi_dt_spec {
  * spi_dt_spec</tt> by reading the relevant bus, frequency, slave, and cs
  * data from the devicetree.
  *
- * @important Multiple fields are automatically constructed by this macro
+ * @note Multiple fields are automatically constructed by this macro
  * which must be checked before use. @ref spi_is_ready_dt performs the required
  * @ref device_is_ready checks.
  *
@@ -836,7 +836,7 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 				    level, prio, api, __VA_ARGS__)
 
 /**
- * @brief Like SPI_DEVICE_DT_DEINIT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
+ * @brief Like SPI_DEVICE_DT_DEINIT_DEFINE(), but uses an instance of a @c DT_DRV_COMPAT
  * compatible instead of a node identifier.
  *
  * @param inst Instance number. The `node_id` argument to SPI_DEVICE_DT_DEINIT_DEFINE() is
@@ -847,7 +847,7 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 	SPI_DEVICE_DT_DEINIT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
- * @brief Like SPI_DEVICE_DT_DEFINE(), but uses an instance of a `DT_DRV_COMPAT`
+ * @brief Like SPI_DEVICE_DT_DEFINE(), but uses an instance of a @c DT_DRV_COMPAT
  * compatible instead of a node identifier.
  *
  * @param inst Instance number. The `node_id` argument to SPI_DEVICE_DT_DEFINE() is

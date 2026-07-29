@@ -44,6 +44,18 @@
 	) \
 }
 
+#elif DT_PINCTRL_HAS_NAME(DT_NODELABEL(uart21), default) && (NRF_SECURE_UART_INSTANCE == 21)
+
+#define RTE_USART21 1
+
+#define RTE_USART21_PINS \
+{ \
+	DT_FOREACH_CHILD_VARGS( \
+		DT_PINCTRL_BY_NAME(DT_NODELABEL(uart21), default, 0), \
+		DT_FOREACH_PROP_ELEM, psels, UART_PIN_INIT \
+	) \
+}
+
 #elif DT_PINCTRL_HAS_NAME(DT_NODELABEL(uart30), default)
 
 #define RTE_USART30 1

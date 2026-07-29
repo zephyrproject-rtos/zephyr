@@ -206,6 +206,35 @@ ZTEST_USER(timer_api, test_timer_duration_period)
 }
 
 /**
+ * @brief Verify run-time initialization of a timer.
+ *
+ * @details A timer initialized at run time with k_timer_init() must start
+ * out inactive -- no expiries recorded and no time remaining -- and be
+ * immediately usable: starting it as a one-shot makes it expire once.
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @see k_timer_init(), k_timer_start(), k_timer_status_get()
+ */
+ZTEST(timer_api, test_timer_init_runtime)
+{
+	static struct k_timer runtime_timer;
+
+	k_timer_init(&runtime_timer, NULL, NULL);
+
+	/* freshly initialized: inactive, no expiries */
+	zassert_equal(k_timer_status_get(&runtime_timer), 0);
+	zassert_equal(k_timer_remaining_get(&runtime_timer), 0);
+
+	/* immediately usable as a one-shot timer */
+	k_timer_start(&runtime_timer, K_MSEC(DURATION), K_NO_WAIT);
+	busy_wait_ms(DURATION + 50);
+	zassert_equal(k_timer_status_get(&runtime_timer), 1);
+
+	k_timer_stop(&runtime_timer);
+}
+
+/**
  *
  * @brief Test restart the timer
  *
@@ -683,7 +712,6 @@ ZTEST_USER(timer_api, test_timer_user_data)
 
 ZTEST_USER(timer_api, test_timer_remaining)
 {
-	uint32_t dur_ticks = k_ms_to_ticks_ceil32(DURATION);
 	uint32_t target_rem_ticks = k_ms_to_ticks_ceil32(DURATION / 2);
 	uint32_t rem_ms, rem_ticks, exp_ticks;
 	uint32_t latency_ticks;
@@ -717,15 +745,22 @@ ZTEST_USER(timer_api, test_timer_remaining)
 	 * the k_timer api is limited by the system tick abstraction. As result
 	 * the value obtained through k_timer_remaining_get() could be larger
 	 * than actual remaining time with maximum error equal to one tick.
+	 * That one tick of error has to be converted to ms by rounding up:
+	 * a tick shorter than a millisecond would otherwise round down to a
+	 * zero tolerance and the legitimate one-tick overshoot would trip the
+	 * check on high tick rate platforms.
 	 */
-	zassert_true(rem_ms <= (DURATION / 2) + k_ticks_to_ms_floor64(1),
+	zassert_true(rem_ms <= (DURATION / 2) + k_ticks_to_ms_ceil64(1),
 		     NULL);
 
-	/* Half the value of DURATION in ticks may not be the value of
-	 * half DURATION in ticks, when DURATION/2 is not an integer
-	 * multiple of ticks, so target_rem_ticks is used rather than
-	 * dur_ticks/2.  Also set a threshold based on expected clock
-	 * skew.
+	/* We stopped half way through the wait, so the remaining ticks
+	 * should match the half duration converted to ticks. That is
+	 * target_rem_ticks, k_ms_to_ticks_ceil32(DURATION / 2). Halving
+	 * the full duration in ticks would not do: it truncates when
+	 * DURATION / 2 is not a whole number of ticks (at a 2048 Hz tick
+	 * rate the full duration rounds to 205 ticks, half of which floors
+	 * to 102 while ceil(50 ms) is 103). Allow the larger of the
+	 * busy-wait clock skew and the read latency.
 	 */
 	delta_ticks = (int32_t)(rem_ticks - target_rem_ticks);
 	slew_ticks = BUSY_SLEW_THRESHOLD_TICKS(DURATION * USEC_PER_MSEC / 2U);
@@ -733,17 +768,19 @@ ZTEST_USER(timer_api, test_timer_remaining)
 		     "tick/busy slew %d larger than test threshold %u",
 		     delta_ticks, slew_ticks);
 
-	/* Note +1 tick precision: even though we're calculating in
-	 * ticks, we're waiting in k_busy_wait(), not for a timer
-	 * interrupt, so it's possible for that to take 1 tick longer
-	 * than expected on systems where the requested microsecond
-	 * delay cannot be exactly represented as an integer number of
-	 * ticks.
-	 * As above, use higher tolerance on platforms where the clock used
-	 * by the kernel timer and the one used for busy-waiting may be skewed.
+	/* k_timer_expires_ticks() returns the absolute expiry tick, so
+	 * "now" plus the remaining ticks must land on it. This checks the
+	 * three queries agree; it is not another half-way check, so neither
+	 * the duration nor the busy-wait slew enter into it.
+	 *
+	 * rem_ticks, now and exp_ticks are read in three separate syscalls.
+	 * exp_ticks is invariant over time, but "now" can only have advanced
+	 * past the rem_ticks sample, so (exp_ticks - now) is at most rem_ticks
+	 * and falls short of it by at most the read latency.
 	 */
-	zassert_true(((int64_t)exp_ticks - (int64_t)now)
-		     <= (dur_ticks / 2) + 1 + slew_ticks, NULL);
+	zassert_between_inclusive((int64_t)rem_ticks -
+				  ((int64_t)exp_ticks - (int64_t)now),
+				  0, latency_ticks, NULL);
 }
 
 ZTEST_USER(timer_api, test_timeout_abs)

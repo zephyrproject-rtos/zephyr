@@ -4,6 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/dts-v1/;
+
+#include <qemu/virt-riscv32.dtsi>
+
+/ {
+	cpus {
+		riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr",
+				       "zifencei", "smcsrind", "smaia", "ssaia";
+	};
+};
+
 &{/soc} {
 	aplic: interrupt-controller@c000000 {
 		compatible = "riscv,aplic";

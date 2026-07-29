@@ -23,7 +23,6 @@
 #include <zephyr/drivers/interrupt_controller/gpio_intc_stm32.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include <zephyr/drivers/misc/stm32_wkup_pins/stm32_wkup_pins.h>
 #include <zephyr/dt-bindings/gpio/stm32-gpio.h>
 
 #include "stm32_hsem.h"

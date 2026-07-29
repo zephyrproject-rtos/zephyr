@@ -22,6 +22,7 @@
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,bt-hci = &bluetooth;
+		zephyr,entropy = &mxcryptolite_trng;
 	};
 };
 
@@ -91,5 +92,13 @@ uart2: &scb2 {
 };
 
 &bluetooth {
+	status = "okay";
+};
+
+&mxcryptolite_crypto {
+	status = "okay";
+};
+
+&mxcryptolite_trng {
 	status = "okay";
 };

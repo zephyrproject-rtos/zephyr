@@ -11,6 +11,9 @@
 #ifdef CONFIG_SOC_ACP_7_0
 #include <acp70_chip_offsets.h>
 #include <acp70_chip_reg.h>
+#elif defined(CONFIG_SOC_ACP_7_X)
+#include <acp7x_chip_offsets.h>
+#include <acp7x_chip_reg.h>
 #endif
 
 #define DT_DRV_COMPAT amd_tdm_dai
@@ -34,6 +37,7 @@ struct dai_amd_tdm_params {
 	uint32_t fsync_rate; /**< Sample rate in Hz (e.g. 48000). */
 	uint32_t tdm_slots;  /**< Number of TDM slots per frame (e.g. 2, 4, 8). */
 	uint32_t tdm_mode;   /**< TDM mode selector. */
+	uint32_t sample_format; /**< Sample format (e.g. 16, 24, 32). */
 } __packed __aligned(4);
 
 /**
@@ -61,7 +65,7 @@ static int acp_tdm_dai_get_config(const struct device *dev, struct dai_config *c
 	cfg->type = acp_cfg->type;
 	cfg->dai_index = acp_cfg->dai_index;
 	cfg->rate = acp_cfg->acp_params->fsync_rate;
-
+	cfg->format = acp_cfg->acp_params->sample_format;
 	return 0;
 }
 
@@ -89,7 +93,10 @@ static int acp_tdm_dai_set_config(const struct device *dev, const struct dai_con
 	if (params && params->fsync_rate) {
 		acp_cfg->acp_params->fsync_rate = params->fsync_rate;
 	}
-	acp_cfg->acp_params->tdm_slots = params->tdm_slots;
+	if (params && params->tdm_slots) {
+		acp_cfg->acp_params->tdm_slots = params->tdm_slots;
+	}
+	acp_cfg->acp_params->sample_format = params->sample_format;
 	LOG_DBG("tdm config: tdm_inst=%u rate=%u slots=%u format=0x%x", acp_cfg->dai_index,
 		acp_cfg->acp_params->fsync_rate, acp_cfg->acp_params->tdm_slots, cfg->format);
 
@@ -118,7 +125,9 @@ static int acp_tdm_dai_set_config(const struct device *dev, const struct dai_con
 	}
 
 	/* 1. Configure MSTRCLKGEN first (clock must be set before protocol) */
-	tdm_mstrclkgen.u32all = io_reg_read(PU_REGISTER_BASE + ACP_TDM_MSTRCLKGEN + mstrclkgen_off);
+	tdm_mstrclkgen.u32all =
+		io_reg_read(PU_REGISTER_BASE + ACP_TDM_MSTRCLKGEN +
+			    (IS_ENABLED(CONFIG_SOC_ACP_7_0) ? mstrclkgen_off : tdm_offset));
 	tdm_mstrclkgen.bits.tdm_master_mode = 1U;
 	switch (cfg->format & DAI_FORMAT_PROTOCOL_MASK) {
 	case DAI_PROTO_DSP_A:
@@ -150,11 +159,23 @@ static int acp_tdm_dai_set_config(const struct device *dev, const struct dai_con
 	case DAI_PROTO_I2S:
 	default:
 		tdm_mstrclkgen.bits.tdm_format_mode = 0U;
-		tdm_mstrclkgen.bits.tdm_lrclk_div_val = 0x20U;
-		tdm_mstrclkgen.bits.tdm_bclk_div_val = 0x80U;
+		switch (params ? params->sample_format : 0) {
+		case 1: /* 24-bit slot */
+		case 2: /* 32-bit slot */
+			tdm_mstrclkgen.bits.tdm_lrclk_div_val = 0x40U;
+			tdm_mstrclkgen.bits.tdm_bclk_div_val  = 0x40U;
+			break;
+		default: /* 16-bit slot */
+			tdm_mstrclkgen.bits.tdm_lrclk_div_val = 0x20U;
+			tdm_mstrclkgen.bits.tdm_bclk_div_val  = 0x80U;
+			break;
+		}
 		break;
 	}
-	io_reg_write(PU_REGISTER_BASE + ACP_TDM_MSTRCLKGEN + mstrclkgen_off, tdm_mstrclkgen.u32all);
+
+	io_reg_write(PU_REGISTER_BASE + ACP_TDM_MSTRCLKGEN +
+			     (IS_ENABLED(CONFIG_SOC_ACP_7_0) ? mstrclkgen_off : tdm_offset),
+		     tdm_mstrclkgen.u32all);
 
 	/* 2. Read ITER/IRER */
 	tdm_iter.u32all = io_reg_read(PU_REGISTER_BASE + ACP_TDM_ITER + tdm_offset);

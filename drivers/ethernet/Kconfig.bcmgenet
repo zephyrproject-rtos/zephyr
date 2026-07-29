@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_BCMGENET
+	bool "Broadcom GENET (Gigabit Ethernet) driver"
+	default y
+	depends on DT_HAS_BRCM_GENET_ENABLED
+	help
+	  Enable Broadcom GENET (Gigabit Ethernet) driver.
+
+if ETH_BCMGENET
+
+configdefault NET_BUF_ALIGNMENT
+	default DCACHE_LINE_SIZE if DCACHE
+
+config ETH_BCMGENET_RX_POLLING_INTERVAL_US
+	int "Receive Polling interval in us"
+	default 500
+	range 100 1000
+	help
+	  Receive polling interval in us
+
+config ETH_BCMGENET_RX_THREAD_STACK_SIZE
+	int "Stack size for internal incoming packet handler"
+	default 1024
+	help
+	  Size of the stack used for internal thread which is ran for
+	  incoming packet processing.
+
+config ETH_BCMGENET_RX_THREAD_PRIORITY
+	int "Priority for internal incoming packet handler"
+	default 0
+	help
+	  Priority level for internal thread which is ran for incoming
+	  packet processing.
+
+endif # ETH_BCMGENET

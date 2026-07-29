@@ -344,6 +344,7 @@ function(dts_gen_defines)
     --header-out ${DEVICETREE_GENERATED_H}.new
     --deps-out ${DEVICETREE_BINDINGS_USED}
     --edt-pickle ${EDT_PICKLE}
+    --zephyr-base ${ZEPHYR_BASE}
     ${EXTRA_GEN_DEFINES_ARGS}
   )
 

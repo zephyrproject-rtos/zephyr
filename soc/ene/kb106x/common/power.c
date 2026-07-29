@@ -11,7 +11,7 @@
 
 void kb106x_soc_deep_sleep(void)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 	/*
@@ -37,7 +37,7 @@ void kb106x_soc_deep_sleep(void)
 	__WFI();
 	SCB->SCR &= ~BIT(2);
 
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle_exit();
 #endif
 	__enable_irq();
@@ -46,7 +46,7 @@ void kb106x_soc_deep_sleep(void)
 
 void kb106x_soc_idle(void)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 	/*
@@ -70,7 +70,7 @@ void kb106x_soc_idle(void)
 
 	__DSB();
 	__WFI();
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle_exit();
 #endif
 

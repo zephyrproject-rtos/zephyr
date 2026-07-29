@@ -17,8 +17,8 @@
 
 #include <openamp/open_amp.h>
 
-#include "common.h"
-#include "dsp.h"
+#include <common.h>
+#include <dsp.h>
 
 #define APP_TASK_STACK_SIZE (1024)
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
@@ -55,7 +55,7 @@ static struct virtio_vring_info rvrings_hifi4[2] = {
 		},
 };
 
-#include "fsl_cache.h"
+#include <fsl_cache.h>
 
 static struct virtio_device vdev;
 static struct rpmsg_virtio_device rvdev;

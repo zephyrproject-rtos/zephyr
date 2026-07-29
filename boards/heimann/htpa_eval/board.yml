@@ -1,0 +1,8 @@
+board:
+  name: htpa_eval
+  full_name: Heimann HTPA Eval Board (rev0)
+  vendor: heimann
+  socs:
+    - name: same70q20b
+    - name: same70q21
+    - name: same70q21b

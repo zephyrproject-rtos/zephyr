@@ -6,7 +6,6 @@
  */
 
 #define DT_DRV_COMPAT     silabs_series2_flash_controller
-#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
 #include <stddef.h>
 #include <string.h>
@@ -17,6 +16,9 @@
 #include <zephyr/drivers/dma.h>
 #include <soc.h>
 #include <em_msc.h>
+#include "flash_priv.h"
+
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_silabs, CONFIG_FLASH_LOG_LEVEL);

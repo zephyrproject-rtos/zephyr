@@ -1,4 +1,4 @@
-/* Bluetooth CCP - Call Control Profile Call Control Server
+/* Bluetooth CCP - Call Control Profile Call Control Client
  *
  * Copyright (c) 2024 Nordic Semiconductor ASA
  *

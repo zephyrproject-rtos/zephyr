@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_MCUMGR_CALLBACKS_
-#define H_MCUMGR_CALLBACKS_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_CALLBACKS_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_CALLBACKS_H_
 
 #include <inttypes.h>
 #include <zephyr/sys/slist.h>
@@ -187,4 +187,4 @@ void mgmt_callback_unregister(struct mgmt_callback *callback);
 }
 #endif
 
-#endif /* H_MCUMGR_CALLBACKS_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_CALLBACKS_H_ */

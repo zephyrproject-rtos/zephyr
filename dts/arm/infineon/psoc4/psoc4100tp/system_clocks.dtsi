@@ -11,7 +11,7 @@
 
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_psoc4xx.h>
-#include "freq.h"
+#include <freq.h>
 
 / {
 	clocks {

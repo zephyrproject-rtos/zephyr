@@ -27,7 +27,7 @@ extern "C" {
 /**
  * @defgroup cs40l5x_interface CS40L5x
  * @ingroup haptics_interface_ext
- * @brief CS40L5x Haptic Driver
+ * @brief CS40L5x Haptic Driver for LRA and VCM
  * @{
  */
 
@@ -260,4 +260,4 @@ int cs40l5x_upload_pwle(const struct device *const dev, const enum cs40l5x_custo
 }
 #endif /* __cplusplus */
 
-#endif
+#endif /* ZEPHYR_INCLUDE_DRIVERS_HAPTICS_CS40L5X_H_ */

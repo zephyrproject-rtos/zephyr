@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Texas Instruments
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <ti/mspm33c/mspm33c.dtsi>
+
+/ {
+	soc {
+		sram0: memory@30000000 {
+			reg = <0x30000000 DT_SIZE_K(256)>;
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_K(1024)>;
+	ranges = <0x0 0x10000000 DT_SIZE_K(1024)>;
+};

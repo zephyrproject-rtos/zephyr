@@ -36,7 +36,6 @@ properties:
     description: |
       Erase block size of target flash. The default was 4KB Erase Block Size.
       All Intel platforms require support for at least 4 KB Erase Block Size.
-    default: "NPCX_ESPI_TAF_ERASE_BLOCK_SIZE_4KB"
     enum:
       - "NPCX_ESPI_TAF_ERASE_BLOCK_SIZE_4KB"
       - "NPCX_ESPI_TAF_ERASE_BLOCK_SIZE_32KB"
@@ -49,7 +48,6 @@ properties:
     description: |
       Maximum read request size of flash access channel. The default was 64 bytes.
       This value is recommended in datasheet.
-    default: "NPCX_ESPI_TAF_MAX_READ_REQ_64B"
     enum:
       - "NPCX_ESPI_TAF_MAX_READ_REQ_64B"
       - "NPCX_ESPI_TAF_MAX_READ_REQ_128B"

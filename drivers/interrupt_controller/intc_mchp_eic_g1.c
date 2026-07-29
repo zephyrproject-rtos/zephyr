@@ -37,19 +37,24 @@ LOG_MODULE_REGISTER(intc_mchp_eic_g1, CONFIG_INTC_LOG_LEVEL);
 #define EIC_TRIG_TYPE_BIT_POS(eic_line)                                                            \
 	(NUM_OF_BITS_FOR_EACH_LINE * EIC_CONFIG_EIC_LINE_OFFSET(eic_line))
 /* Port A */
-#define PORTA_UNSUPPORTED_PINS DT_INST_PROP(0, porta_unsupported_pins)
+#define PORTA_UNSUPPORTED_PINS      DT_INST_PROP(0, porta_unsupported_pins)
+#define PORTA_SPECIAL_PINS_1        DT_INST_PROP_BY_IDX(0, porta_special_pins_1, 0)
+#define PORTA_SPECIAL_PINS_1_OFFSET DT_INST_PROP_BY_IDX(0, porta_special_pins_1, 1)
 
 /* Port B */
+#define PORTB_UNSUPPORTED_PINS    DT_INST_PROP(0, portb_unsupported_pins)
 /* The special pins need an offset when calculating the eic line */
 #define PORTB_SPECIAL_PINS        DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 0)
 #define PORTB_SPECIAL_PINS_OFFSET DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 1)
 
 /* Port C */
-#define PORTC_UNSUPPORTED_PINS DT_INST_PROP(0, portc_unsupported_pins)
-
+#define PORTC_SUPPORTED_PINS        DT_INST_PROP(0, portc_supported_pins)
+#define PORTC_UNSUPPORTED_PINS      DT_INST_PROP(0, portc_unsupported_pins)
 /* The special pins need an offset when calculating the eic line */
-#define PORTC_SPECIAL_PINS        DT_INST_PROP_BY_IDX(0, portc_special_pins_1, 0)
-#define PORTC_SPECIAL_PINS_OFFSET DT_INST_PROP_BY_IDX(0, portc_special_pins_1, 1)
+#define PORTC_SPECIAL_PINS_1        DT_INST_PROP_BY_IDX(0, portc_special_pins_1, 0)
+#define PORTC_SPECIAL_PINS_1_OFFSET DT_INST_PROP_BY_IDX(0, portc_special_pins_1, 1)
+#define PORTC_SPECIAL_PINS_2        DT_INST_PROP_BY_IDX(0, portc_special_pins_2, 0)
+#define PORTC_SPECIAL_PINS_2_OFFSET DT_INST_PROP_BY_IDX(0, portc_special_pins_2, 1)
 
 /* Port D */
 #define PORTD_SUPPORTED_PINS DT_INST_PROP(0, portd_supported_pins)
@@ -119,6 +124,48 @@ struct eic_mchp_dev_data {
  * It returns the EIC line number corresponding to the given port and pin.
  *         If the pin is unsupported, returns INTC_LINE_FREE.
  */
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
+uint8_t find_eic_line_from_pin(int port, int pin)
+{
+	uint8_t eic_line = pin % EIC_LINES_PER_PORT;
+	uint32_t pin_mask = BIT(pin);
+
+	switch (port) {
+	case MCHP_PORT_ID0:
+		if ((PORTA_UNSUPPORTED_PINS & pin_mask) != 0) {
+			eic_line = INTC_LINE_FREE;
+		} else if ((PORTA_SPECIAL_PINS_1 & pin_mask) != 0) {
+			eic_line += PORTA_SPECIAL_PINS_1_OFFSET;
+		} else {
+			/* Nothing to be done */
+		}
+		break;
+	case MCHP_PORT_ID1:
+		if ((PORTB_UNSUPPORTED_PINS & pin_mask) != 0) {
+			eic_line = INTC_LINE_FREE;
+		}
+		break;
+	case MCHP_PORT_ID2:
+		if ((PORTC_SUPPORTED_PINS & pin_mask) == 0) {
+			eic_line = INTC_LINE_FREE;
+		} else if ((PORTC_SPECIAL_PINS_1 & pin_mask) != 0) {
+			eic_line += PORTC_SPECIAL_PINS_1_OFFSET;
+		} else if ((PORTC_SPECIAL_PINS_2 & pin_mask) != 0) {
+			eic_line -= PORTC_SPECIAL_PINS_2_OFFSET;
+		} else {
+			/* Nothing to be done */
+		}
+		break;
+	default:
+		LOG_ERR("Unsupported port id provided");
+		break;
+	}
+
+	return eic_line;
+}
+
+#else
+
 uint8_t find_eic_line_from_pin(int port, int pin)
 {
 	uint8_t eic_line = pin % EIC_LINES_PER_PORT;
@@ -138,10 +185,10 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 	case MCHP_PORT_ID2:
 		if ((PORTC_UNSUPPORTED_PINS & pin_mask) != 0) {
 			eic_line = INTC_LINE_FREE;
-		} else if ((PORTC_SPECIAL_PINS & pin_mask) != 0) {
-			eic_line += PORTC_SPECIAL_PINS_OFFSET;
+		} else if ((PORTC_SPECIAL_PINS_1 & pin_mask) != 0) {
+			eic_line += PORTC_SPECIAL_PINS_1_OFFSET;
 		} else {
-			/*Nothing to be done*/
+			/* Nothing to be done */
 		}
 		break;
 	case MCHP_PORT_ID3:
@@ -162,6 +209,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 
 	return eic_line;
 }
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
 static inline void eic_sync_wait(eic_registers_t *eic_reg)
 {
@@ -312,11 +360,13 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	eic_pin_config->port_addr->PORT_PMUX[pmux_offset] &=
 		((pin & 1) == 0) ? (~PORT_PMUX_PMUXE_Msk) : (~PORT_PMUX_PMUXO_Msk);
 
-/* The bit position for respective eic line in the config
- * register is calculated and written into the respective config
- * register
- */
-#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG
+	/* The bit position for respective eic line in the config
+	 * register is calculated and written into the respective config
+	 * register
+	 */
+
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG) ||                                             \
+	defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
 	if (EIC_CONFIG_REG_IDX(eic_line) == 0) {
 		eic_cfg->regs->EIC_CONFIG0 &=
 			~(EIC_CONFIG_EIC_LINE_MSK << EIC_TRIG_TYPE_BIT_POS(eic_line));
@@ -337,7 +387,7 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	eic_cfg->regs->EIC_CONFIG[EIC_CONFIG_REG_IDX(eic_line)] |=
 		((eic_pin_config->trig_type) << EIC_TRIG_TYPE_BIT_POS(eic_line));
 
-#endif /*CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG*/
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG || CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
 	/* Set the debouncing feature of the eic line if required */
 	if (eic_pin_config->debounce != 0) {
@@ -392,9 +442,66 @@ static int eic_mchp_init(const struct device *dev)
 
 #define EIC_MCHP_DATA_DEFN(n)        static struct eic_mchp_dev_data eic_mchp_data_##n
 #define EIC_MCHP_IRQ_HANDLER_DECL(n) static void eic_irq_connect_##n(void)
-#define EIC_MCHP_CREATE_HANDLERS(n)  LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), EIC_MCHP_CB_INIT, (;),)
+
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
+/* A single ISR is kept because in this family we only have a single IRQ line for all the
+ * interrupts
+ */
+#define EIC_MCHP_CREATE_HANDLERS(n)
+#define EIC_NIBS_BIT_COUNT 4
+#define EIC_INT_NIBS       4
+#define EIC_NIBS_MASK      0xf
+
+static void eic_mchp_isr(const struct device *dev)
+{
+	const struct eic_mchp_dev_cfg *eic_cfg = dev->config;
+	struct eic_mchp_dev_data *eic_data = dev->data;
+	uint16_t eic_int_flag = eic_cfg->regs->EIC_INTFLAG;
+	uint8_t eic_line = 0;
+
+	eic_cfg->regs->EIC_INTFLAG = eic_int_flag;
+	/* Divides the interrupt flag into nibbles and
+	 *checks whether it has a set bit inside it
+	 */
+	for (int nibs = 0; nibs < EIC_INT_NIBS; nibs++) {
+		if ((eic_int_flag & (EIC_NIBS_MASK << eic_line)) == 0) {
+			eic_line += EIC_NIBS_BIT_COUNT;
+			continue;
+		}
+		/* find the set eic line from within the nibble
+		 * and call the callback as expected
+		 */
+		for (int i = 0; i < EIC_NIBS_BIT_COUNT; i++) {
+			if ((eic_int_flag & BIT(eic_line)) == 0) {
+				eic_line++;
+				continue;
+			}
+			uint8_t port_id = eic_data->lines[eic_line].port;
+
+			if (eic_data->eic_line_callback != NULL) {
+				uint32_t pins = BIT(eic_data->lines[eic_line].pin);
+
+				eic_data->eic_line_callback(pins, eic_data->gpio_data[port_id]);
+			}
+			eic_int_flag &= ~BIT(eic_line);
+			eic_line++;
+		}
+	}
+}
 
 /* clang-format off */
+#define EIC_MCHP_IRQ_CONNECT(eic_line, inst)                                                    \
+	IF_ENABLED(DT_INST_IRQ_HAS_IDX(inst, eic_line), (					\
+	do {											\
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, eic_line, irq),				\
+				DT_INST_IRQ_BY_IDX(inst, eic_line, priority), eic_mchp_isr,	\
+				DEVICE_DT_INST_GET(inst), inst);				\
+		irq_enable(DT_INST_IRQ_BY_IDX(inst, eic_line, irq));				\
+	} while (false);									\
+			))
+#else
+
+#define EIC_MCHP_CREATE_HANDLERS(n)  LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), EIC_MCHP_CB_INIT, (;),)
 #define EIC_MCHP_CB_INIT(eic_line, _)							\
 	static void eic_mchp_isr_##eic_line(const struct device *dev)			\
 	{										\
@@ -413,12 +520,12 @@ static int eic_mchp_init(const struct device *dev)
 	IF_ENABLED(DT_INST_IRQ_HAS_IDX(inst, eic_line), (					\
 	do {											\
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, eic_line, irq),				\
-			    DT_INST_IRQ_BY_IDX(inst, eic_line, priority), eic_mchp_isr_##eic_line,\
-			    DEVICE_DT_INST_GET(inst), inst);					\
+			DT_INST_IRQ_BY_IDX(inst, eic_line, priority), eic_mchp_isr_##eic_line,	\
+			DEVICE_DT_INST_GET(inst), inst);					\
 		irq_enable(DT_INST_IRQ_BY_IDX(inst, eic_line, irq));				\
 	} while (false);									\
 			))
-
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
 #define EIC_MCHP_CLOCK_DEFN(n)                                                                  \
 	.eic_clock.clock_dev = DEVICE_DT_GET(DT_NODELABEL(clock)),                              \

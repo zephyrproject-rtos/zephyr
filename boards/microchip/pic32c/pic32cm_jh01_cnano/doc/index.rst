@@ -55,6 +55,10 @@ Programming & Debugging
 Setting Up the Debug Interface
 ==============================
 
+Flash Using MPLAB IPE
+=====================
+For instructions on flashing using MPLAB IPE see :ref:`microchip-mplab-ipe-flashing`.
+
 PyOCD Setup
 ===========
 

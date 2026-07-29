@@ -4,6 +4,8 @@
 config VIDEO_HM0360
 	bool "HM0360 CMOS digital image sensor"
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_HIMAX_HM0360),pwdn-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_HIMAX_HM0360),reset-gpios)
 	depends on DT_HAS_HIMAX_HM0360_ENABLED
 	default y
 	help

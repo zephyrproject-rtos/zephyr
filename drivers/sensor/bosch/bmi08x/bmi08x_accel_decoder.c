@@ -42,10 +42,23 @@ struct frame_len {
 	{.header = BMI08X_ACCEL_FIFO_FRAME_EMPTY, .len = 2},
 };
 
+/* Period in ns indexed by BMI08X_ACCEL_ODR_* register value (0x05 = 12.5 Hz .. 0x0C = 1600 Hz) */
+static const uint32_t accel_period_ns[] = {
+	[BMI08X_ACCEL_ODR_12_5_HZ] = UINT32_C(80000000),
+	[BMI08X_ACCEL_ODR_25_HZ]   = UINT32_C(40000000),
+	[BMI08X_ACCEL_ODR_50_HZ]   = UINT32_C(20000000),
+	[BMI08X_ACCEL_ODR_100_HZ]  = UINT32_C(10000000),
+	[BMI08X_ACCEL_ODR_200_HZ]  = UINT32_C(5000000),
+	[BMI08X_ACCEL_ODR_400_HZ]  = UINT32_C(2500000),
+	[BMI08X_ACCEL_ODR_800_HZ]  = UINT32_C(1250000),
+	[BMI08X_ACCEL_ODR_1600_HZ] = UINT32_C(625000),
+};
+
 void bmi08x_accel_encode_header(const struct device *dev, struct bmi08x_accel_encoded_data *edata,
 			       bool is_streaming, uint16_t buf_len)
 {
 	struct bmi08x_accel_data *data = dev->data;
+	const struct bmi08x_accel_config *config = dev->config;
 	uint64_t cycles;
 
 	if (sensor_clock_get_cycles(&cycles) == 0) {
@@ -59,6 +72,7 @@ void bmi08x_accel_encode_header(const struct device *dev, struct bmi08x_accel_en
 	edata->header.is_streaming = is_streaming;
 	edata->header.sample_count = is_streaming ? data->stream.fifo_wm : 1;
 	edata->header.buf_len = buf_len;
+	edata->header.accel_odr = config->accel_hz;
 }
 
 static int bmi08x_decoder_get_frame_count(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
@@ -154,9 +168,15 @@ static inline int bmi08x_decode_fifo(const struct bmi08x_accel_encoded_data *eda
 	 * - 8 - 12 G (78.4 - 117.6 m/s2) = 7 bits.
 	 * - 16 - 24 G (156.8 235.2 m/s2) = 8 bits.
 	 */
+	uint32_t period_ns = (edata->header.accel_odr < ARRAY_SIZE(accel_period_ns))
+			     ? accel_period_ns[edata->header.accel_odr] : 0;
+
 	data_output->shift = 5 + edata->header.range;
 	data_output->header.reading_count = 0;
-	data_output->header.base_timestamp_ns = edata->header.timestamp;
+	data_output->header.base_timestamp_ns =
+		edata->header.timestamp -
+		(uint64_t)(edata->header.sample_count > 0
+			   ? edata->header.sample_count - 1 : 0) * period_ns;
 
 	do {
 		uint8_t header_byte = edata->fifo[*fit] & 0xFC;
@@ -174,6 +194,8 @@ static inline int bmi08x_decode_fifo(const struct bmi08x_accel_encoded_data *eda
 			fixed_point_from_encoded_data(
 				values, data_output->shift, fsr_value_g,
 				data_output->readings[reading_count].values);
+			data_output->readings[reading_count].timestamp_delta =
+				reading_count * period_ns;
 			reading_count++;
 		}
 		*fit += frame_len;

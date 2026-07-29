@@ -62,7 +62,7 @@ ZTEST(test_timestamp, test_custom_timestamp)
 	}
 	static const char *exp_str = IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP) ?
 			"custom-timestamp: " DNAME "/" SNAME ": " TEST_STR "\r\n" :
-			"[00000001] " DNAME "/" SNAME ": " TEST_STR "\r\n";
+			"[0000000001] " DNAME "/" SNAME ": " TEST_STR "\r\n";
 
 	char package[256];
 	uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP;

@@ -62,6 +62,24 @@ console
     Position = 30 degrees
     ...
 
+If the driver supports getting speed (RPM) and revolution count channels, these
+data will be displayed on the console.
+
+When ``CONFIG_EQDC_MCUX_TRIGGER=y`` (e.g. on ``frdm_mcxa153``), the sample also
+registers the ``SENSOR_TRIG_OVERFLOW`` trigger on the revolution channel and
+prints the trigger count each cycle:
+
+.. code-block:: console
+
+    Quadrature decoder sensor test
+    Registered SENSOR_TRIG_OVERFLOW on SENSOR_CHAN_ENCODER_REVOLUTIONS
+    Position = 0 degrees
+    Revolutions = 0
+    Triggers = 0
+    Position = 180 degrees
+    Revolutions = 1
+    Triggers = 1
+    ...
 
 Of course the read value changes once the user manually rotates the mechanical
 encoder.

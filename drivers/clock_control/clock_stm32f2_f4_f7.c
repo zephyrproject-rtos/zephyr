@@ -155,7 +155,7 @@ void config_pll_sysclock(void)
 	LL_RCC_PLL_ConfigDomain_SAI(get_pll_source(),
 				    pllm(STM32_PLL_M_DIVISOR),
 				    STM32_PLL_N_MULTIPLIER,
-				    pllr(STM32_PLL_R_DIVISOR)
+				    pllr(STM32_PLL_R_DIVISOR),
 				    plldivr(STM32_PLL_POST_R_DIVISOR));
 #elif defined(RCC_PLLR_I2S_CLKSOURCE_SUPPORT) /* RCC_DCKCFGR_PLLDIVR */
 	/* STM32F410 / F412 / F446 */

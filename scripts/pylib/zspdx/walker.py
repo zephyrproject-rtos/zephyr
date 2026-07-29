@@ -5,17 +5,20 @@
 import logging
 import os
 import re
+import subprocess
 from dataclasses import dataclass
 
 import yaml
 from west.util import WestNotFound, west_topdir
 
 from zspdx.cmakecache import parse_cmake_cache_file
-from zspdx.cmakefileapijson import parse_reply
+from zspdx.cmakefileapijson import parse_reply, parse_toolchains_and_info
 from zspdx.getincludes import get_c_includes
 from zspdx.model import (
+    BuildInfo,
     ComponentPurpose,
     RelationshipType,
+    SBOMBuild,
     SBOMComponent,
     SBOMDocument,
     SBOMFile,
@@ -23,6 +26,44 @@ from zspdx.model import (
 )
 
 _logger = logging.getLogger(__name__)
+
+
+def get_tool_version(tool_path):
+    """Get a tool's version by running it with ``--version``.
+
+    Used for the linker and archiver, which the CMake toolchains-v1 reply does
+    not describe. Returns "" when the tool is missing or no version can be parsed.
+    """
+    if not tool_path or not os.path.isfile(tool_path):
+        return ""
+
+    try:
+        result = subprocess.run(
+            [tool_path, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5,  # avoid hanging on a misbehaving tool
+        )
+        output = result.stdout or result.stderr
+        if not output:
+            return ""
+
+        # parse the version from the first line of output, e.g.
+        # "GNU ld (Zephyr SDK 0.17.4) 2.38" -> "2.38",
+        # "cmake version 3.28.1" -> "3.28.1"
+        first_line = output.strip().split('\n')[0]
+        for pattern in (
+            r'version\s+(\d+\.\d+(?:\.\d+)?)',
+            r'\b(\d+\.\d+(?:\.\d+)?)\s*$',
+            r'\b(\d+\.\d+(?:\.\d+)?)\b',
+        ):
+            match = re.search(pattern, first_line, re.IGNORECASE)
+            if match:
+                return match.group(1)
+        return ""
+    except (subprocess.SubprocessError, OSError) as e:
+        _logger.debug(f"Could not get version for {tool_path}: {e}")
+        return ""
 
 
 # WalkerConfig contains configuration data for the Walker.
@@ -81,6 +122,12 @@ class Walker:
         # parsed CMake codemodel
         self.cm = None
 
+        # parsed CMake toolchains-v1 reply (compiler ids and versions)
+        self.toolchains = None
+
+        # parsed CMake info (generator and version) from the file API index
+        self.cmake_info = None
+
         # parsed CMake cache dict
         self.cmake_cache = {}
 
@@ -138,6 +185,11 @@ class Walker:
             _logger.error("could not parse codemodel from CMake API reply; bailing")
             return None
 
+        # extract Build profile info; non-fatal, the profile is omitted if absent
+        _logger.info("extracting build information from CMake file-based API")
+        self.get_toolchains_and_info()
+        self.extract_build_info()
+
         # set up components
         _logger.info("setting up SBOM components")
         retval = self.setup_components()
@@ -167,12 +219,8 @@ class Walker:
             self.sdk_path = self.cmake_cache.get("ZEPHYR_SDK_INSTALL_DIR", "")
             self.meta_file = self.cmake_cache.get("KERNEL_META_PATH", "")
 
-    # determine path from build dir to CMake file-based API index file, then
-    # parse it and return the Codemodel
-    def get_codemodel(self):
-        _logger.debug("getting codemodel from CMake API reply files")
-
-        # make sure the reply directory exists
+    # locate the CMake file-based API reply index file within the build dir
+    def get_reply_index_path(self):
         cmake_reply_dir_path = os.path.join(self.cfg.build_dir, ".cmake", "api", "v1", "reply")
         if not os.path.exists(cmake_reply_dir_path):
             _logger.error(f'cmake api reply directory {cmake_reply_dir_path} does not exist')
@@ -185,18 +233,107 @@ class Walker:
             return None
 
         # find file with "index" prefix; there should only be one
-        index_file_path = ""
         for f in os.listdir(cmake_reply_dir_path):
             if f.startswith("index"):
-                index_file_path = os.path.join(cmake_reply_dir_path, f)
-                break
-        if index_file_path == "":
-            # didn't find it
-            _logger.error(f'cmake api reply index file not found in {cmake_reply_dir_path}')
+                return os.path.join(cmake_reply_dir_path, f)
+
+        _logger.error(f'cmake api reply index file not found in {cmake_reply_dir_path}')
+        return None
+
+    # determine path from build dir to CMake file-based API index file, then
+    # parse it and return the Codemodel
+    def get_codemodel(self):
+        _logger.debug("getting codemodel from CMake API reply files")
+
+        index_file_path = self.get_reply_index_path()
+        if not index_file_path:
             return None
 
         # parse it
         return parse_reply(index_file_path)
+
+    # parse the toolchains-v1 reply and CMake info from the file-based API index
+    def get_toolchains_and_info(self):
+        _logger.debug("getting toolchains and CMake info from CMake API reply files")
+
+        index_file_path = self.get_reply_index_path()
+        if not index_file_path:
+            return
+
+        self.cmake_info, self.toolchains = parse_toolchains_and_info(index_file_path)
+
+    def extract_build_info(self):
+        """Collect global build information for the SPDX 3.0 Build profile.
+
+        Stores the details on the graph's ``SBOMBuild`` (its ``id``, ``build_type`` and
+        the detailed ``metadata`` mapping); serializers without a build vocabulary ignore
+        them.
+        """
+        if not self.cmake_cache:
+            _logger.debug("no CMake cache parsed; skipping build info extraction")
+            return
+
+        build_info: BuildInfo = {}
+
+        # compiler paths, ids and versions: prefer toolchains-v1, fall back to cache
+        if self.toolchains and self.toolchains.by_language:
+            for lang, key in (("C", "c"), ("CXX", "cxx"), ("ASM", "asm")):
+                build_info[f"cmake_{key}_compiler"] = self.toolchains.get_compiler_path(lang)
+                build_info[f"{key}_compiler_version"] = self.toolchains.get_compiler_version(lang)
+                build_info[f"{key}_compiler_id"] = self.toolchains.get_compiler_id(lang)
+            # generic compiler-path key, set to the C compiler
+            build_info["cmake_compiler"] = build_info.get("cmake_c_compiler", "")
+        else:
+            build_info["cmake_compiler"] = self.cmake_cache.get("CMAKE_C_COMPILER", "")
+            build_info["cmake_cxx_compiler"] = self.cmake_cache.get("CMAKE_CXX_COMPILER", "")
+            build_info["cmake_asm_compiler"] = self.cmake_cache.get("CMAKE_ASM_COMPILER", "")
+
+        # linker, archiver, build type and target system always come from the cache
+        build_info["cmake_linker"] = self.cmake_cache.get("CMAKE_LINKER", "")
+        build_info["cmake_ar"] = self.cmake_cache.get("CMAKE_AR", "")
+        build_info["cmake_build_type"] = self.cmake_cache.get("CMAKE_BUILD_TYPE", "")
+        build_info["cmake_system_name"] = self.cmake_cache.get("CMAKE_SYSTEM_NAME", "")
+        build_info["cmake_system_processor"] = self.cmake_cache.get("CMAKE_SYSTEM_PROCESSOR", "")
+
+        # CMake generator and version from the file-API index
+        if self.cmake_info:
+            build_info["cmake_generator"] = self.cmake_info.generator_name
+            build_info["cmake_version"] = self.cmake_info.version_string
+
+        # build environment: Zephyr config inputs surfaced as build_environment
+        environment = {}
+        for var in (
+            "BOARD",
+            "ARCH",
+            "ZEPHYR_TOOLCHAIN_VARIANT",
+            "ZEPHYR_SDK_INSTALL_DIR",
+            "CMAKE_BUILD_TYPE",
+        ):
+            value = self.cmake_cache.get(var, "")
+            if value:
+                environment[var] = value
+        build_info["environment"] = environment
+
+        # linker and archiver versions are not in toolchains-v1; query the tools
+        for version_key, path in (
+            ("linker_version", build_info["cmake_linker"]),
+            ("ar_version", build_info["cmake_ar"]),
+        ):
+            version = get_tool_version(path)
+            if version:
+                build_info[version_key] = version
+
+        # drop empty entries to keep the build_parameter output tidy
+        build_info = {k: v for k, v in build_info.items() if v}
+        if not build_info:
+            _logger.debug("no build information available; skipping Build profile inputs")
+            return
+
+        # summarise as an SBOMBuild; build timestamps are omitted to keep builds reproducible
+        self.sbom_graph.build = SBOMBuild(
+            build_type=build_info.get("cmake_build_type", ""),
+            metadata=build_info,
+        )
 
     def _create_document(self, name: str, title: str = "") -> SBOMDocument:
         """Create a document with the given name and register it with SBOM data.
@@ -452,6 +589,8 @@ class Walker:
                 else:
                     component.purpose = ComponentPurpose.LIBRARY
 
+                self.capture_build_metadata(cfg_target, component)
+
                 # get its source files if build file is found
                 if bf:
                     self.collect_pending_source_files(cfg_target, component, bf)
@@ -460,6 +599,37 @@ class Walker:
 
             # get its target dependencies
             self.collect_target_dependencies(cfg_targets, cfg_target, component)
+
+    # capture the per-target metadata the SPDX 3.0 Build profile needs to attribute a compiler/
+    # archiver to each artifact: target type, compiled languages and per-language compile flags
+    def capture_build_metadata(self, cfg_target, component):
+        target = cfg_target.target
+        component.metadata["target_type"] = target.type.name
+
+        languages = set()
+        compile_flags = {}
+        compile_defines = {}
+        for cg in target.compile_groups:
+            if not cg.language:
+                continue
+            languages.add(cg.language)
+            flags = [frag for frag in (cg.compile_command_fragments or []) if frag]
+            if flags:
+                compile_flags.setdefault(cg.language, []).extend(flags)
+            defines = [f"-D{d.define}" for d in (cg.defines or []) if d.define]
+            if defines:
+                compile_defines.setdefault(cg.language, []).extend(defines)
+
+        if languages:
+            component.metadata["compile_languages"] = sorted(languages)
+        if compile_flags:
+            component.metadata["compile_flags"] = {
+                lang: " ".join(flags) for lang, flags in compile_flags.items()
+            }
+        if compile_defines:
+            component.metadata["compile_defines"] = {
+                lang: " ".join(defs) for lang, defs in compile_defines.items()
+            }
 
     # build a Component for the given ConfigTarget
     def init_config_target_component(self, cfg_target):

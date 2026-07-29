@@ -6,7 +6,7 @@
 #include <soc.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <autoconf.h>
+#include <zephyr/autoconf.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>

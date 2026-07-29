@@ -882,6 +882,7 @@ static int airoc_mgmt_scan(const struct device *dev,
 	if (whd_wifi_scan(airoc_sta_if, scan_type, WHD_BSS_TYPE_ANY, &(data->ssid), NULL, NULL,
 			  NULL, scan_callback, &(data->scan_result), data) != WHD_SUCCESS) {
 		LOG_ERR("Failed to start scan");
+		data->scan_rslt_cb = NULL;
 		k_sem_give(&data->sema_common);
 		return -EAGAIN;
 	}

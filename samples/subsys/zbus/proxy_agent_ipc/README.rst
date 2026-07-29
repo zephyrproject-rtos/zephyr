@@ -27,7 +27,7 @@ publish-subscribe structure across domain boundaries.
 Building and Running
 ********************
 
-This sample uses sysbuild for multi-core platforms. Use the test configurations from sample.yaml:
+This sample uses sysbuild for multi-core platforms. Use the test configurations from tests.yaml:
 
 .. zephyr-app-commands::
    :zephyr-app: .
@@ -44,7 +44,7 @@ This sample uses sysbuild for multi-core platforms. Use the test configurations 
   - **ESP32**: PROCPU + APPCPU
   - **ESP32-S3**: PROCPU + APPCPU
 
-  Use ``-T <test_name>`` with the corresponding test from sample.yaml to build for different configurations.
+  Use ``-T <test_name>`` with the corresponding test from tests.yaml to build for different configurations.
 
 Sample Output
 *************

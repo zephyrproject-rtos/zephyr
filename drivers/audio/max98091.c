@@ -12,7 +12,7 @@
 #include <zephyr/logging/log.h>
 #include "max98091.h"
 
-LOG_MODULE_REGISTER(maxim_max98091);
+LOG_MODULE_REGISTER(maxim_max98091, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 
 #define DT_DRV_COMPAT maxim_max98091
 

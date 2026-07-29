@@ -256,13 +256,13 @@ static void cht8315_work_handler(struct k_work *work)
 	}
 
 	if (data->t_cb != NULL && !data->t_triggered
-	    && ((tmp & CHT8315_REG_STATUS_THIGH) != 0 || (tmp & CHT8315_REG_STATUS_TLOW) != 0)) {
+	    && (tmp & (CHT8315_REG_STATUS_THIGH | CHT8315_REG_STATUS_TLOW)) != 0) {
 		data->t_triggered = true;
 		data->t_cb(data->dev, data->t_trig);
 	}
 
 	if (data->rh_cb != NULL && !data->rh_triggered
-	    && ((tmp & CHT8315_REG_STATUS_HHIGH) != 0 || (tmp & CHT8315_REG_STATUS_HLOW) != 0)) {
+	    && (tmp & (CHT8315_REG_STATUS_HHIGH | CHT8315_REG_STATUS_HLOW)) != 0) {
 		data->rh_triggered = true;
 		data->rh_cb(data->dev, data->rh_trig);
 	}

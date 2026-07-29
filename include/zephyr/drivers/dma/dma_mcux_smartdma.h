@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_MCUX_SMARTDMA_H_
-#define ZEPHYR_INCLUDE_DRIVERS_DMA_MCUX_SMARTDMA_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_MCUX_SMARTDMA_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_MCUX_SMARTDMA_H_
 
 /**
  * @brief install SMARTDMA firmware
@@ -20,4 +20,4 @@
 void dma_smartdma_install_fw(const struct device *dev, uint8_t *firmware,
 			     uint32_t len);
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_MCUX_SMARTDMA_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_MCUX_SMARTDMA_H_ */

@@ -29,7 +29,6 @@ properties:
       - <APDS9253_MEASUREMENT_RATE_100MS>:  2
       - <APDS9253_MEASUREMENT_RATE_50MS>    1
       - <APDS9253_MEASUREMENT_RATE_25MS>    0
-    default: 2
     enum:
       - 6
       - 5
@@ -50,7 +49,6 @@ properties:
       - <APDS9253_GAIN_RANGE_6>:  2
       - <APDS9253_GAIN_RANGE_3>:  1
       - <APDS9253_GAIN_RANGE_1>:  0
-    default: 1
     enum:
       - 4
       - 3
@@ -70,7 +68,6 @@ properties:
       - <APDS9253_RESOLUTION_17BIT_50MS>:   48
       - <APDS9253_RESOLUTION_16BIT_25MS>:   64
       - <APDS9253_RESOLUTION_13BIT_3MS>:    80
-    default: 32
     enum:
       - 0
       - 16

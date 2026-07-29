@@ -131,6 +131,12 @@
 			zephyr,memory-region = "RTC_SLOW_RAM";
 		};
 
+		instr_mem: memory@40020000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x40020000 DT_SIZE_K(320)>;
+			zephyr,memory-region = "IRAM";
+		};
+
 		icache0: icache0@40080000 {
 			compatible = "zephyr,memory-region";
 			reg = <0x40080000 DT_SIZE_K(7680)>;

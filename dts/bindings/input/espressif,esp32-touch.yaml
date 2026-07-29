@@ -26,7 +26,11 @@ properties:
       - 2500000
       - 2700000
     default: 2700000
-    description: Touch sensor high reference voltage.
+    description: |
+      Touch sensor high reference voltage.
+
+      This value is only used by touch sensor version 1 and 2, used on ESP32 (v1),
+      ESP32-S2 (v2) and ESP32-S3 (v2).
 
   lref-microvolt:
     type: int
@@ -36,7 +40,11 @@ properties:
       - 700000
       - 800000
     default: 500000
-    description: Touch sensor low reference voltage.
+    description: |
+      Touch sensor low reference voltage.
+
+      This value is only used by touch sensor version 1 and 2, used on ESP32 (v1),
+      ESP32-S2 (v2) and ESP32-S3 (v2).
 
   href-atten-microvolt:
     type: int
@@ -46,7 +54,11 @@ properties:
       - 500000
       - 0
     default: 1000000
-    description: Touch sensor high reference attenuation voltage.
+    description: |
+      Touch sensor high reference attenuation voltage.
+
+      This value is only used by touch sensor version 1 and 2, used on ESP32 (v1),
+      ESP32-S2 (v2) and ESP32-S3 (v2).
 
   filter-mode:
     type: int

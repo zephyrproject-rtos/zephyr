@@ -1,0 +1,8 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM Cortex-A57 CPU
+
+compatible: "arm,cortex-a57"
+
+include: cpu.yaml

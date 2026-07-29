@@ -5,7 +5,10 @@
  */
 
 #define DT_DRV_COMPAT ite_it8xxx2_flash_controller
-#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+
+#include "flash_priv.h"
+
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
 
 #define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 #define FLASH_ERASE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
@@ -209,7 +212,9 @@ void __soc_ram_code ramcode_flash_cmd_read_status(enum flash_status_mask mask,
 	 */
 	while ((flash_regs->SMFI_ECINDDR & mask) != target) {
 		/* read status and check if it is we want. */
-		;
+		for (volatile int delay = 0; delay < 100; delay++) {
+			/* Inline delay to ensure this is RAM resident */
+		}
 	}
 
 	/* transaction done, drive #CS high */

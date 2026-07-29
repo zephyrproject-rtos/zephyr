@@ -6,7 +6,7 @@
 / {
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
-		mboxes = <&mbox 1>, <&mbox 12>, <&mbox 0>, <&mbox 18>;
+		mboxes = <&mbox 1>, <&mbox 16>, <&mbox 0>, <&mbox 17>;
 		mbox-names = "remote_valid", "remote_incorrect",
 			     "local_valid", "local_incorrect";
 	};

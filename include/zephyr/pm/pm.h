@@ -37,6 +37,7 @@ extern "C" {
  * @brief System Power Management API
  * @defgroup subsys_pm_sys System
  * @since 1.2
+ * @version 1.0.0
  * @ingroup subsys_pm
  * @{
  */

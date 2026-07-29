@@ -9,8 +9,8 @@
  * @brief Driver for Platform Level Interrupt Controller (PLIC)
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_RISCV_PLIC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_RISCV_PLIC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_RISCV_PLIC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_RISCV_PLIC_H_
 
 #include <zephyr/device.h>
 
@@ -86,4 +86,4 @@ unsigned int riscv_plic_get_irq(void);
  */
 const struct device *riscv_plic_get_dev(void);
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_RISCV_PLIC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_RISCV_PLIC_H_ */

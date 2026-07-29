@@ -132,7 +132,7 @@ config BT_STM32WBA
 	bool
 	default y
 	depends on DT_HAS_ST_HCI_STM32WBA_ENABLED
-	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
+	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
 	select HAS_STM32LIB
 	select BT_HCI_SET_PUBLIC_ADDR if !BT_HCI_RAW
 	help
@@ -275,7 +275,6 @@ config BT_AIROC
 	bool "AIROC BT connectivity"
 	default y
 	select GPIO                          if BT_H4
-	select UART                          if BT_H4
 	select UART_USE_RUNTIME_CONFIGURE    if BT_H4
 	select BT_HCI_SETUP
 	select BT_HCI_SET_PUBLIC_ADDR

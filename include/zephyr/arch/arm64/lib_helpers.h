@@ -221,6 +221,19 @@ static inline bool is_sve_implemented(void)
 	return (((read_id_aa64pfr0_el1() >> ID_AA64PFR0_SVE_SHIFT) & ID_AA64PFR0_SVE_MASK) != 0U);
 }
 
+#if defined(CONFIG_ARM64_PMUV3)
+MAKE_REG_HELPER(id_aa64dfr0_el1);
+MAKE_REG_HELPER(pmcr_el0);
+MAKE_REG_HELPER(pmccntr_el0);
+MAKE_REG_HELPER(pmcntenset_el0);
+MAKE_REG_HELPER(pmcntenclr_el0);
+MAKE_REG_HELPER(pmovsclr_el0);
+MAKE_REG_HELPER(pmuserenr_el0);
+MAKE_REG_HELPER(pmselr_el0);
+MAKE_REG_HELPER(pmxevtyper_el0);
+MAKE_REG_HELPER(pmxevcntr_el0);
+#endif /* CONFIG_ARM64_PMUV3 */
+
 #ifdef CONFIG_ARM_PAC
 /* PAC Key Register Helpers */
 MAKE_REG_HELPER(apiakeylo_el1);

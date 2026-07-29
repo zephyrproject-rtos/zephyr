@@ -31,23 +31,20 @@ static uint32_t last_rtc_count;
 
 #define TICK_PERIOD_MICRO_SEC (1000000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-	/* If timeout is necessary */
-	if (ticks != K_TICKS_FOREVER) {
-		/* Get current value as early as possible */
-		uint32_t ticks_now = HWREG(RTC_BASE + RTC_O_TIME8U);
+	/* Get current value as early as possible */
+	uint32_t ticks_now = HWREG(RTC_BASE + RTC_O_TIME8U);
 
-		if ((ticks_now + ticks) >= RTC_TIMEOUT_MAX) {
-			/* Reset timer and start from 0 */
-			HWREG(RTC_BASE + RTC_O_CTL) = RTC_CTL_RST_CLR;
-			HWREG(RTC_BASE + RTC_O_CH0CC8U) = ticks;
-		}
-
-		HWREG(RTC_BASE + RTC_O_CH0CC8U) = ticks_now + ticks;
+	if ((ticks_now + ticks) >= RTC_TIMEOUT_MAX) {
+		/* Reset timer and start from 0 */
+		HWREG(RTC_BASE + RTC_O_CTL) = RTC_CTL_RST_CLR;
+		HWREG(RTC_BASE + RTC_O_CH0CC8U) = ticks;
 	}
+
+	HWREG(RTC_BASE + RTC_O_CH0CC8U) = ticks_now + ticks;
 }
 
 uint32_t get_elapsed_ticks_rtc(uint32_t current_rtc_count)

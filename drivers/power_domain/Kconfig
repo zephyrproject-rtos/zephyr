@@ -151,6 +151,7 @@ endif #POWER_DOMAIN_ARM_SCMI
 # zephyr-keep-sorted-start
 rsource "Kconfig.nrfs_gdpwr"
 rsource "Kconfig.nrfs_swext"
+rsource "Kconfig.rpi_bcm283x"
 rsource "Kconfig.silabs_siwx91x"
 # zephyr-keep-sorted-stop
 

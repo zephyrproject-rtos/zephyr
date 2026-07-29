@@ -8,6 +8,7 @@
 #include <string.h>
 #include <zephyr/display/cfb.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/minmax.h>
 
 #define LOG_LEVEL CONFIG_CFB_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -95,8 +96,8 @@ static inline bool is_tofu_border_pixel(const struct cfb_font *fptr, uint8_t px,
 	const uint8_t bottom = fptr->height - margin;
 	const uint8_t max_stroke_x = (right > (left + 1U)) ? (right - left - 1U) / 2U : 1U;
 	const uint8_t max_stroke_y = (bottom > (top + 1U)) ? (bottom - top - 1U) / 2U : 1U;
-	const uint8_t stroke = MIN(MAX(MIN(right - left, bottom - top) / 10U, 1U),
-				       MIN(max_stroke_x, max_stroke_y));
+	const uint8_t stroke = min3(max(min(right - left, bottom - top) / 10U, 1U),
+				    max_stroke_x, max_stroke_y);
 	const bool inside_box = (px >= left) && (px < right) && (py >= top) && (py < bottom);
 	const bool on_left_or_right_edge = (px < (left + stroke)) || (px >= (right - stroke));
 	const bool on_top_or_bottom_edge = (py < (top + stroke)) || (py >= (bottom - stroke));

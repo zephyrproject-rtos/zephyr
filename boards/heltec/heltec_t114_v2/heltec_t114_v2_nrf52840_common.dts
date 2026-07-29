@@ -71,7 +71,7 @@
 		compatible = "gpio-keys";
 
 		button0: button_0 {
-			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 			label = "Button 0";
 			zephyr,code = <INPUT_KEY_0>;
 		};

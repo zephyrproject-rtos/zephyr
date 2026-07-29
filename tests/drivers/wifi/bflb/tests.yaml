@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  build_only: true
+  tags:
+    - drivers
+    - wifi
+    - bflb
+  platform_allow:
+    - bl618g0
+    - ai_m61_32s_kit
+    - ai_m62_12f_kit
+    - maix_m0s_dock
+  extra_configs:
+    - CONFIG_BUILD_ONLY_NO_BLOBS=y
+tests:
+  drivers.wifi.bflb.sta: {}
+  drivers.wifi.bflb.macsw_bridge:
+    extra_configs:
+      - CONFIG_BFLB_WIFI_BL61X_MACSW_BRIDGE=y
+  drivers.wifi.bflb.macsw_ack:
+    extra_configs:
+      - CONFIG_BFLB_WIFI_BL61X_MACSW_ACK=y
+  drivers.wifi.bflb.macsw_coex:
+    extra_configs:
+      - CONFIG_BFLB_WIFI_BL61X_MACSW_COEX=y
+  drivers.wifi.bflb.ap:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_AP=y
+  drivers.wifi.bflb.stats:
+    extra_configs:
+      - CONFIG_NET_STATISTICS=y
+      - CONFIG_NET_STATISTICS_WIFI=y

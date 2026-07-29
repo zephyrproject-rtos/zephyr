@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_H_
 
 /**
  * @brief Bluetooth Basic Audio Profile (BAP)
@@ -1089,6 +1089,10 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream);
  * Broadcast sink streams cannot be released, but can be deleted by bt_bap_broadcast_sink_delete().
  * Broadcast source streams cannot be released, but can be deleted by
  * bt_bap_broadcast_source_delete().
+ *
+ * If the stream's endpoint is non-NULL and its state is @ref BT_BAP_EP_STATE_IDLE,
+ * the function will reset the stream and endpoint locally if the return value is 0,
+ * but will not send the release command.
  *
  * @param stream Stream object
  *
@@ -3026,4 +3030,4 @@ int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn, uint8_t idx
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_H_ */

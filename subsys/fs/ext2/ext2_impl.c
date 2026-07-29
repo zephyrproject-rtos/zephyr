@@ -9,6 +9,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "ext2.h"
@@ -698,7 +699,7 @@ ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, si
 
 		uint32_t left_on_blk = block_size - block_off;
 		uint32_t left_in_file = inode->i_size - offset;
-		size_t to_read = MIN(nbytes_to_read, MIN(left_on_blk, left_in_file));
+		size_t to_read = min3(nbytes_to_read, left_on_blk, left_in_file);
 
 		memcpy((uint8_t *)buf + read, inode_current_block_mem(inode) + block_off, to_read);
 

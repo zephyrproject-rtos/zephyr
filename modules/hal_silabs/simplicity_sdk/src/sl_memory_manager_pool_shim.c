@@ -11,8 +11,8 @@
 
 #include <zephyr/kernel.h>
 
-#include "sl_memory_manager.h"
-#include "sl_status.h"
+#include <sl_memory_manager.h>
+#include <sl_status.h>
 
 sl_status_t sl_memory_create_pool(size_t block_size, uint32_t block_count,
 				  sl_memory_pool_t *pool_handle)

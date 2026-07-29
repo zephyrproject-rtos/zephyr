@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_IPC_SERVICE_IPC_SERVICE_BACKEND_H_
-#define ZEPHYR_INCLUDE_IPC_SERVICE_IPC_SERVICE_BACKEND_H_
+#ifndef ZEPHYR_INCLUDE_IPC_IPC_SERVICE_BACKEND_H_
+#define ZEPHYR_INCLUDE_IPC_IPC_SERVICE_BACKEND_H_
 
 #include <zephyr/ipc/ipc_service.h>
 #include <zephyr/kernel.h>
@@ -249,4 +249,4 @@ struct ipc_service_backend {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_IPC_SERVICE_IPC_SERVICE_BACKEND_H_ */
+#endif /* ZEPHYR_INCLUDE_IPC_IPC_SERVICE_BACKEND_H_ */

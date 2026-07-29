@@ -51,6 +51,12 @@ static int ifx_rram_validate_range(off_t offset, size_t len)
 		return -EINVAL;
 	}
 
+	if (offset % IFX_RRAM_WRITE_BLOCK_SIZE != 0 || len % IFX_RRAM_WRITE_BLOCK_SIZE != 0) {
+		LOG_ERR("Offset %ld or length %zu is not aligned to write block size %d",
+			(long)offset, len, IFX_RRAM_WRITE_BLOCK_SIZE);
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
@@ -86,16 +92,15 @@ static int ifx_rram_read(const struct device *dev, off_t offset, void *data, siz
 	const struct ifx_rram_config *cfg = dev->config;
 	struct ifx_rram_data *dev_data = dev->data;
 	uint32_t read_offset;
-	int ret;
 
 	if (len == 0) {
 		LOG_DBG("Read: Zero-length read, nothing to do");
 		return 0;
 	}
 
-	ret = ifx_rram_validate_range(offset, len);
-	if (ret) {
-		return ret;
+	if (offset < 0 || offset > IFX_RRAM_SIZE || len > (IFX_RRAM_SIZE - offset)) {
+		LOG_ERR("Offset %ld is out of bounds", (long)offset);
+		return -EINVAL;
 	}
 
 	read_offset = IFX_RRAM_START + offset;

@@ -48,7 +48,7 @@ def test_warnings(caplog):
 
     enums_hpath = hpath('test-bindings/enums.yaml')
     expected_warnings = [
-        f"'oldprop' is marked as deprecated in 'properties:' in '{hpath('test-bindings/deprecated.yaml')}' for node /test-deprecated.",
+        f"'oldprop' is marked as deprecated in 'properties:' in '{hpath('test-bindings/deprecated.yaml')}' for node /test-deprecated (set in /test-deprecated).",
         "unit address and first address in 'reg' (0x1) don't match for /reg-zero-size-cells/node",
         "unit address and first address in 'reg' (0x5) don't match for /reg-ranges/parent/node",
         "unit address and first address in 'reg' (0x30000000200000001) don't match for /reg-nested-ranges/grandparent/parent/node",
@@ -768,6 +768,19 @@ def test_props():
                               'bar-io-channels',
                               [(ctrl_2, {'io-channel-one': 2})])
 
+def test_cpu_props_fallback_from_cpus_node():
+    """CPU property lookup falls back to parent /cpus when missing on cpu@N."""
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    cpu0 = edt.get_node("/cpus/cpu@0")
+    cpu1 = edt.get_node("/cpus/cpu@1")
+
+    # Inherited from /cpus.
+    assert cpu0.props["clock-frequency"].val == 1000
+    # CPU-local value takes precedence.
+    assert cpu1.props["clock-frequency"].val == 2000
+
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
     with from_here():
@@ -1459,6 +1472,32 @@ def test_child_dependencies():
     assert edt.get_node("/child-binding") in dep_node.required_by
     assert edt.get_node("/child-binding/child-1/grandchild") in dep_node.required_by
     assert edt.get_node("/child-binding/child-2") in dep_node.required_by
+
+def test_dependency_mode():
+    '''Test dependency relations affected by dependency-mode in bindings.'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    target = edt.get_node("/dependency-mode-target")
+    normal = edt.get_node("/dependency-mode-normal")
+    reverse = edt.get_node("/dependency-mode-reverse")
+    ignore = edt.get_node("/dependency-mode-ignore")
+    child_ignore = edt.get_node("/dependency-mode-child-ignore")
+    local_child = edt.get_node("/dependency-mode-child-ignore/local-child")
+
+    assert target in normal.depends_on
+    assert normal in target.required_by
+
+    assert reverse in target.depends_on
+    assert target in reverse.required_by
+
+    assert target not in ignore.depends_on
+    assert ignore not in target.required_by
+
+    assert local_child not in child_ignore.depends_on
+    assert child_ignore not in local_child.required_by
+    assert target in child_ignore.depends_on
+    assert child_ignore in target.required_by
 
 def test_slice_errs(tmp_path):
     '''Test error messages from the internal _slice() helper'''

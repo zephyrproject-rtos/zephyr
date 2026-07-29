@@ -71,22 +71,28 @@ atomic_val_t ipi_mask_create(struct k_thread *thread)
 
 void signal_pending_ipi(void)
 {
-	/* Note: with directed IPIs, arch_sched_directed_ipi() skips the
-	 * calling CPU, so if a CPU consumes its own pending bit the IPI
-	 * is silently dropped. When rescheduling, callers must ensure
-	 * that signal_pending_ipi() is invoked while the scheduler lock is
-	 * still held. Holding the lock ensures the scheduling decision and
-	 * IPI dispatch are atomic: either a concurrent flag_ipi() lands
-	 * before the lock is acquired (and the CPU sees the new thread),
-	 * or it lands after the lock is released (and the other CPU
-	 * dispatches the IPI).
+	/* Drain only the bits for other CPUs. Clearing our own bit here
+	 * would silently drop an IPI destined for us, because
+	 * arch_sched_directed_ipi() skips the calling CPU. Our own bit
+	 * is left set so the next interrupt entry on this CPU will see
+	 * it and run the scheduler.
+	 *
+	 * When rescheduling, callers must ensure that signal_pending_ipi()
+	 * is invoked while the scheduler lock is still held. Holding the
+	 * lock ensures the scheduling decision and IPI dispatch are atomic:
+	 * either a concurrent flag_ipi() lands before the lock is acquired
+	 * (and the CPU sees the new thread), or it lands after the lock is
+	 * released (and the other CPU dispatches the IPI).
 	 */
 
 #if defined(CONFIG_SCHED_IPI_SUPPORTED)
 	if (arch_num_cpus() > 1) {
-		uint32_t  cpu_bitmap;
+		uint32_t self_bit = BIT(_current_cpu->id);
+		uint32_t cpu_bitmap;
 
-		cpu_bitmap = (uint32_t)atomic_clear(&_kernel.pending_ipi);
+		cpu_bitmap = (uint32_t)atomic_and(&_kernel.pending_ipi,
+						  (atomic_val_t)self_bit);
+		cpu_bitmap &= ~self_bit;
 		if (cpu_bitmap != 0) {
 #ifdef CONFIG_ARCH_HAS_DIRECTED_IPIS
 			arch_sched_directed_ipi(cpu_bitmap);
@@ -99,10 +105,9 @@ void signal_pending_ipi(void)
 }
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
-static struct k_ipi_work *first_ipi_work(sys_dlist_t *list)
+static struct k_ipi_work *first_ipi_work(sys_dlist_t *list, unsigned int cpu_id)
 {
 	sys_dnode_t *work = sys_dlist_peek_head(list);
-	unsigned int cpu_id = _current_cpu->id;
 
 	return (work == NULL) ? NULL
 			      : CONTAINER_OF(work, struct k_ipi_work, node[cpu_id]);
@@ -163,14 +168,12 @@ void k_ipi_work_signal(void)
 	signal_pending_ipi();
 }
 
-static void ipi_work_process(sys_dlist_t *list)
+static void ipi_work_process(sys_dlist_t *list, unsigned int cpu_id)
 {
-	unsigned int cpu_id = _current_cpu->id;
-
 	k_spinlock_key_t key = k_spin_lock(&ipi_lock);
 
-	for (struct k_ipi_work *work = first_ipi_work(list);
-	     work != NULL; work = first_ipi_work(list)) {
+	for (struct k_ipi_work *work = first_ipi_work(list, cpu_id);
+	     work != NULL; work = first_ipi_work(list, cpu_id)) {
 		sys_dlist_remove(&work->node[cpu_id]);
 		k_spin_unlock(&ipi_lock, key);
 
@@ -202,6 +205,8 @@ void z_sched_ipi(void)
 #endif
 
 #ifdef CONFIG_SCHED_IPI_SUPPORTED
-	ipi_work_process(&_kernel.cpus[_current_cpu->id].ipi_workq);
+	unsigned int cpu_id = _current_cpu->id;
+
+	ipi_work_process(&_kernel.cpus[cpu_id].ipi_workq, cpu_id);
 #endif
 }

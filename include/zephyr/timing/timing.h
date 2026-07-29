@@ -17,6 +17,8 @@ extern "C" {
 /**
  * @brief Timing Measurement APIs
  * @defgroup timing_api Timing Measurement APIs
+ * @since 2.4
+ * @version 1.0.0
  * @ingroup os_services
  *
  * The timing measurement APIs can be used to obtain execution
@@ -288,6 +290,24 @@ void timing_start(void);
  * is no longer being gathered from this point forward.
  */
 void timing_stop(void);
+
+/**
+ * @brief Return a monotonic timestamp in nanoseconds.
+ *
+ * Unlike timing_counter_get(), whose backing counter may be narrower than
+ * 64 bits and wrap, this returns a 64-bit nanosecond value that increases
+ * monotonically across counter wraps. It is intended for consumers that need
+ * an absolute time reference (e.g. trace event timestamps) rather than the
+ * duration between two explicit readings.
+ *
+ * The value is always monotonic. It is also accurate as long as the function
+ * is called at least once per wrap period of the underlying counter; if calls
+ * are further apart the value still only increases but may undercount the
+ * true elapsed time.
+ *
+ * @return Monotonic timestamp in nanoseconds.
+ */
+uint64_t timing_ns_get(void);
 
 /**
  * @brief Return timing counter.

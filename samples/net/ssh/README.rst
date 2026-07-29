@@ -173,3 +173,45 @@ In host computer shell, connect to the Zephyr SSH server, no password needed.
    ssh -i ~/.ssh/id_rsa root@192.0.2.1
 
 To exit press 'Enter' then '~' then '.' (i.e. enter tilde dot).
+
+
+Creating SSH Channels
+*********************
+
+In addition to the built-in ``net ssh`` and ``net sshd`` shell commands, the
+sample registers a small ``sample`` command set that shows how an application
+can create and remove SSH channels on top of an existing client connection.
+Connection management itself is left to the SSH client shell commands described
+above.
+
+First establish a client connection, which authenticates and opens an
+interactive session channel:
+
+.. code-block:: console
+
+   net ssh start username@192.0.2.2
+
+Press ``Ctrl+d`` or type ``exit`` to return to the Zephyr shell while keeping
+the connection open. Then create an additional channel on that connection:
+
+.. code-block:: console
+
+   sample open
+
+The opened channels and the active server and client connections can be listed
+with:
+
+.. code-block:: console
+
+   sample info
+
+Finally, remove a channel by its number (as shown by ``sample info``):
+
+.. code-block:: console
+
+   sample close 1
+
+The ``sample`` commands rely on the SSH transport callbacks: the sample
+registers a server and a client transport callback to track the connections,
+and uses :c:func:`ssh_transport_channel_open` and :c:func:`ssh_channel_close`
+to create and remove channels.

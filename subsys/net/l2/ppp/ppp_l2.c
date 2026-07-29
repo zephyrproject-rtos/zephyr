@@ -77,15 +77,30 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 	struct ppp_context *ctx = net_if_l2_data(iface);
 	enum net_verdict verdict = NET_DROP;
 	uint16_t protocol;
+	bool pfc = false;
+	uint8_t hi;
 	int ret;
 
 	if (!ctx->is_ready_to_serve) {
 		goto quit;
 	}
 
-	ret = net_pkt_read_be16(pkt, &protocol);
+	ret = net_pkt_read_u8(pkt, &hi);
 	if (ret < 0) {
 		goto quit;
+	}
+
+	if (hi & 0x01U) {
+		protocol = hi;
+		pfc = true;
+	} else {
+		uint8_t lo;
+
+		ret = net_pkt_read_u8(pkt, &lo);
+		if (ret < 0) {
+			goto quit;
+		}
+		protocol = ((uint16_t)hi << 8) | lo;
 	}
 
 	if ((IS_ENABLED(CONFIG_NET_IPV4) && protocol == PPP_IP) ||
@@ -93,7 +108,11 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 		/* Remove the protocol field so that IP packet processing
 		 * continues properly in net_core.c:process_data()
 		 */
-		(void)net_buf_pull_be16(pkt->buffer);
+		if (pfc) {
+			(void)net_buf_pull_u8(pkt->buffer);
+		} else {
+			(void)net_buf_pull_be16(pkt->buffer);
+		}
 		net_pkt_cursor_init(pkt);
 		return NET_CONTINUE;
 	}

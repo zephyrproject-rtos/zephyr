@@ -9,7 +9,6 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/state.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/pm/device.h>
 
 struct pm_state_device_constraint {
 	const char *const dev;

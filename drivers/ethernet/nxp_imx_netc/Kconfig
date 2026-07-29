@@ -12,10 +12,9 @@ menuconfig ETH_NXP_IMX_NETC
 
 if ETH_NXP_IMX_NETC
 
-DT_GIC_ITS_COMPAT := arm,gic-v3-its
 DT_NETC_PATH := $(dt_nodelabel_path,netc)
 DT_NETC_INT_PARENT_PATH := $(dt_node_ph_prop_path,$(DT_NETC_PATH),msi-parent)
-DT_NETC_INT_IS_GIC := $(dt_node_has_compat,$(DT_NETC_INT_PARENT_PATH),$(DT_GIC_ITS_COMPAT))
+DT_NETC_INT_IS_GIC := $(dt_node_has_compat,$(DT_NETC_INT_PARENT_PATH),$(DT_COMPAT_ARM_GIC_V3_ITS))
 
 config ETH_NXP_IMX_NETC_MSI_GIC
 	bool

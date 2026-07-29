@@ -6,7 +6,7 @@
  * this file is based on the GSRD DTS for Linux
  */
 
-#include "intel_socfpga_std/socfpga_cyclonev.dtsi"
+#include <intel_socfpga_std/socfpga_cyclonev.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {

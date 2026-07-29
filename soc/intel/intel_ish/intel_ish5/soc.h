@@ -14,7 +14,7 @@
 #include <zephyr/random/random.h>
 
 #ifdef CONFIG_HPET_TIMER
-#include "sedi_driver_hpet.h"
+#include <sedi_driver_hpet.h>
 
 #define HPET_USE_CUSTOM_REG_ACCESS_FUNCS
 

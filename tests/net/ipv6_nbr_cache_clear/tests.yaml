@@ -1,0 +1,9 @@
+common:
+  min_ram: 16
+  depends_on: netif
+  tags:
+    - net
+    - ipv6
+    - neighbor
+tests:
+  net.ipv6.nbr_cache_clear: {}

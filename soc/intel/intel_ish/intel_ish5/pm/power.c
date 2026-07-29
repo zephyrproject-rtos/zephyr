@@ -8,7 +8,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/init.h>
 
-#include "sedi_driver_pm.h"
+#include <sedi_driver_pm.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ish_pm, CONFIG_PM_LOG_LEVEL);

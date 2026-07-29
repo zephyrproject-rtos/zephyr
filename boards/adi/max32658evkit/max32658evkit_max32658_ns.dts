@@ -73,3 +73,12 @@
 		};
 	};
 };
+
+&uart0 {
+	dmas = <&dma0 1 MAX32_DMA_SLOT_UART_TX>, <&dma0 0 MAX32_DMA_SLOT_UART_RX>;
+	dma-names = "tx", "rx";
+};
+
+&dma0 {
+	status = "okay";
+};

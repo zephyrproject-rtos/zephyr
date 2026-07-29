@@ -119,7 +119,7 @@ ZTEST(ipc_backend, test_set_recv_cb)
 ZTEST(ipc_backend, test_backend_init)
 {
 	int ret;
-	struct zbus_proxy_agent_ipc_data ipc_data = {0};
+	static struct zbus_proxy_agent_ipc_data ipc_data = {0};
 	struct zbus_proxy_agent_ipc_config ipc_config = {
 		.dev = DEVICE_DT_GET(FAKE_IPC_NODE),
 		.ept_name = "test_ept",
@@ -171,7 +171,7 @@ ZTEST(ipc_backend, test_backend_init)
 ZTEST(ipc_backend, test_backend_send)
 {
 	int ret;
-	struct zbus_proxy_agent_ipc_data ipc_data = {0};
+	static struct zbus_proxy_agent_ipc_data ipc_data = {0};
 	struct zbus_proxy_agent_ipc_config ipc_config = {
 		.dev = DEVICE_DT_GET(FAKE_IPC_NODE),
 		.ept_name = "test_ept",
@@ -237,7 +237,7 @@ ZTEST(ipc_backend, test_backend_send)
 /* Test recv */
 ZTEST(ipc_backend, test_backend_recv)
 {
-	struct zbus_proxy_agent_ipc_data ipc_data = {0};
+	static struct zbus_proxy_agent_ipc_data ipc_data = {0};
 	struct zbus_proxy_agent_ipc_config ipc_config = {
 		.dev = DEVICE_DT_GET(FAKE_IPC_NODE),
 		.ept_name = "test_ept",
@@ -287,9 +287,54 @@ ZTEST(ipc_backend, test_backend_recv)
 		      "Receive callback should not be called when length is invalid");
 }
 
+/*
+ * Regression test for OOB read when logging the channel name on the recv_cb
+ * error path.
+ *
+ * A frame originating from a peer domain is not guaranteed to have a
+ * NUL-terminated channel_name[]. When the receive callback rejects such a
+ * frame, the backend logs the channel name. Logging it with a plain "%s" reads
+ * past the fixed-size buffer. This test crafts a frame whose channel_name[]
+ * fully occupies the buffer without a terminator and whose channel_name_len is
+ * larger than the buffer, then forces the recv_cb to fail. The logged name must
+ * be bounded to the buffer size (verified by the regex in tests.yaml) and the
+ * read must not run off the end of the buffer.
+ */
+ZTEST(ipc_backend, test_recv_error_unterminated_channel_name)
+{
+	static struct zbus_proxy_agent_ipc_data ipc_data = {0};
+	struct zbus_proxy_agent_ipc_config ipc_config = {
+		.dev = DEVICE_DT_GET(FAKE_IPC_NODE),
+		.ept_name = "test_ept",
+		.data = &ipc_data,
+	};
+	struct zbus_proxy_msg msg = {0};
+
+	struct zbus_proxy_agent agent_config = create_test_proxy_agent(&ipc_config);
+
+	init_backend(&agent_config);
+
+	/* Fill the whole channel name buffer with no NUL terminator and claim a
+	 * length larger than the buffer, mimicking a malformed peer frame.
+	 */
+	memset(msg.channel_name, 'A', sizeof(msg.channel_name));
+	msg.channel_name_len = UINT32_MAX;
+	msg.message_size = 0;
+
+	/* Force the error path that logs the channel name. */
+	fake_recv_callback_fake.return_val = -EINVAL;
+
+	trigger_received_callback(&msg, sizeof(msg));
+
+	zassert_equal(fake_recv_callback_fake.call_count, 1,
+		      "Receive callback should be called once");
+
+	fake_recv_callback_fake.return_val = 0;
+}
+
 ZTEST(ipc_backend, test_ipc_error)
 {
-	struct zbus_proxy_agent_ipc_data ipc_data = {0};
+	static struct zbus_proxy_agent_ipc_data ipc_data = {0};
 	struct zbus_proxy_agent_ipc_config ipc_config = {
 		.dev = DEVICE_DT_GET(FAKE_IPC_NODE),
 		.ept_name = "test_ept",

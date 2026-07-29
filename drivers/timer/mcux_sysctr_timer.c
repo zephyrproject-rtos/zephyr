@@ -23,8 +23,9 @@
  * Tickless operation:
  *   - ISR disables compare (clears ISTAT) and masks the interrupt.
  *   - sys_clock_set_timeout() programs a new compare value and re-enables.
- *   - For K_TICKS_FOREVER + idle, the compare interrupt stays disabled
- *     until sys_clock_idle_exit() or the next set_timeout call.
+ *   - Under sloppy idle with no near deadline, the compare interrupt
+ *     stays disabled until sys_clock_idle_exit() or the next set_timeout
+ *     call.
  */
 
 #include <zephyr/init.h>
@@ -65,21 +66,11 @@ BUILD_ASSERT((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SE
 		      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /*
- * Limit the maximum programmed compare distance. Two constraints apply:
- *
- *   1) Half of the 56-bit counter span. This prevents ambiguity with the
- *      ">=" comparison when the counter eventually wraps.
- *
- *   2) INT32_MAX * CYC_PER_TICK. The tick delta computed in the ISR
- *      (delta_cycles / CYC_PER_TICK) must fit in uint32_t and, more
- *      importantly, in the int32_t parameter accepted by
- *      sys_clock_announce(). With a 56-bit counter this bound is tighter
- *      than (1) at typical tick rates (e.g. 24 MHz / 10 kHz ticks leaves
- *      ~5e12 cycles, far below 2^55).
- *
- * Use the smaller of the two so both invariants hold.
+ * Limit the maximum programmed compare distance to half the 56-bit counter
+ * span. This keeps the ">=" comparison unambiguous when the counter
+ * eventually wraps.
  */
-#define MAX_CYCLES MIN((uint64_t)INT32_MAX * CYC_PER_TICK, COUNTER_SPAN / 2)
+#define MAX_CYCLES (COUNTER_SPAN / 2)
 
 #define MIN_DELAY_CYCLES  CONFIG_MCUX_SYSCTR_TIMER_MIN_DELAY
 
@@ -163,21 +154,23 @@ static void sysctr_timer_isr(const void *arg)
 	sys_clock_announce(delta_ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	uint64_t next_cycle;
 	uint64_t now;
 	uint64_t min;
 
+	ARG_UNUSED(idle);
+
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	if (idle && (ticks == K_TICKS_FOREVER)) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
 		/*
-		 * No kernel timeout pending and going to idle — disable the
-		 * compare interrupt entirely.  sys_clock_idle_exit() will
-		 * re-enable if the CPU wakes from an external source.
+		 * No near deadline to schedule: under sloppy idle, disable the
+		 * compare interrupt entirely. sys_clock_idle_exit() will
+		 * re-enable it when the CPU wakes from an external source.
 		 */
 		SYSCTR_EnableCompare(CMP_BASE, TIMER_CMP_FRAME, false);
 		SYSCTR_DisableInterrupts(CMP_BASE, TIMER_CMP_INT_MASK);
@@ -188,26 +181,17 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	now = counter_read();
 
-	if (ticks == K_TICKS_FOREVER) {
-		next_cycle = last_cycle + MAX_CYCLES;
-	} else {
-		/* Per sys_clock API: treat any other negative value as "fire ASAP". */
-		if (ticks < 0) {
-			ticks = 0;
-		}
-		/*
-		 * Compute elapsed ticks from the most recent announce locally
-		 * instead of relying on a cached value from sys_clock_elapsed(),
-		 * which may be stale (or never have been called) by the time we
-		 * arrive here.
-		 */
-		uint64_t elapsed_ticks = (now - last_cycle) / CYC_PER_TICK;
+	/*
+	 * Compute elapsed ticks from the most recent announce locally
+	 * instead of relying on a cached value from sys_clock_elapsed(),
+	 * which may be stale (or never have been called) by the time we
+	 * arrive here.
+	 */
+	uint64_t elapsed_ticks = (now - last_cycle) / CYC_PER_TICK;
 
-		next_cycle = last_cycle +
-			     (elapsed_ticks + (uint64_t)ticks) * CYC_PER_TICK;
-		if ((next_cycle - last_cycle) > MAX_CYCLES) {
-			next_cycle = last_cycle + MAX_CYCLES;
-		}
+	next_cycle = last_cycle + (elapsed_ticks + (uint64_t)ticks) * CYC_PER_TICK;
+	if ((next_cycle - last_cycle) > MAX_CYCLES) {
+		next_cycle = last_cycle + MAX_CYCLES;
 	}
 
 	min = now + MIN_DELAY_CYCLES;

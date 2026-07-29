@@ -1314,10 +1314,16 @@ static void pmc2_it8xxx2_init(const struct device *dev)
 	const struct espi_it8xxx2_config *const config = dev->config;
 	struct pmc_regs *const pmc_reg = (struct pmc_regs *)config->base_pmc;
 
+	/* Clear processing flag before enabling host's interrupts
+	 * in case it's set by the other command during sysjump.
+	 */
+	pmc_reg->PM2STS &= ~PMC_PM2STS_GPF;
+
 	/* Dedicated interrupt for PMC2 */
 	pmc_reg->MBXCTRL |= PMC_MBXCTRL_DINT;
 	/* Enable pmc2 input buffer full interrupt */
 	pmc_reg->PM2CTL |= PMC_PM2CTL_IBFIE;
+
 	IRQ_CONNECT(IT8XXX2_PMC2_IBF_IRQ, 0, pmc2_it8xxx2_ibf_isr,
 			DEVICE_DT_INST_GET(0), 0);
 	if (!IS_ENABLED(CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE)) {

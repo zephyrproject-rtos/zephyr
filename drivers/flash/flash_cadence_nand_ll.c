@@ -1297,40 +1297,42 @@ int cdns_nand_read(struct cadence_nand_params *params, const void *buffer, uint3
 	} else if ((check_page_last == 0) && (check_page_first == 0) && (page_count > 2)) {
 		first_end_page = (char *)k_malloc(sizeof(char) * (params->page_size));
 		last_end_page = (char *)k_malloc(sizeof(char) * (params->page_size));
-		if ((first_end_page != NULL) && (last_end_page != NULL)) {
-			memset(first_end_page, 0xFF, sizeof(char) * (params->page_size));
-			memset(last_end_page, 0xFF, sizeof(char) * (params->page_size));
-		} else {
+		if ((first_end_page == NULL) || (last_end_page == NULL)) {
 			LOG_ERR("Memory allocation error occurred %s", __func__);
-			return -ENOSR;
+			ret = -ENOSR;
+			goto free_end_pages;
 		}
+
+		memset(first_end_page, 0xFF, sizeof(char) * (params->page_size));
+		memset(last_end_page, 0xFF, sizeof(char) * (params->page_size));
 		ret = cdns_read_data(params, start_page_number, first_end_page, 1);
 		if (ret != 0) {
-			k_free(first_end_page);
-			k_free(last_end_page);
-			return ret;
+			goto free_end_pages;
 		}
 		r_bytes = (offset) % (params->page_size);
 		bytes_dif = (((start_page_number + 1) * params->page_size) - r_bytes);
 		lp_bytes_dif = (offset + size) % (params->page_size);
 		ret = cdns_read_data(params, end_page_number, last_end_page, 1);
 		if (ret != 0) {
-			k_free(last_end_page);
-			k_free(first_end_page);
-			return ret;
+			goto free_end_pages;
 		}
 		r_bytes = (offset + size) % (params->page_size);
 		ret = cdns_read_data(params, (++start_page_number), ((char *)buffer + bytes_dif),
 				     (page_count - 2));
 		if (ret != 0) {
-			k_free(last_end_page);
-			k_free(first_end_page);
-			return ret;
+			goto free_end_pages;
 		}
 		memcpy((char *)buffer, first_end_page + r_bytes, bytes_dif);
 		memcpy(((char *)buffer + bytes_dif +
 			((page_count - 2) * (params->npages_per_block))),
 		       last_end_page, lp_bytes_dif);
+
+free_end_pages:
+		k_free(last_end_page);
+		k_free(first_end_page);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	return 0;

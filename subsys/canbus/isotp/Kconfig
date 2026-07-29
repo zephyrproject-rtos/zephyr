@@ -4,11 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ISOTP
-	bool "ISO-TP Transport [EXPERIMENTAL]"
+	bool "ISO-TP Transport"
 	depends on CAN
 	select NET_BUF
 	select POLL
-	select EXPERIMENTAL
 	help
 	  Enable ISO TP support for CAN
 

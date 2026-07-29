@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+:name: STM32H7 Renode Reference Platform
+:description: This script is prepared to run Zephyr on STM32H7 Renode Reference Platform board.
+
+$name?="STM32H7 Renode Reference Platform"
+mach create $name
+machine LoadPlatformDescription $ORIGIN/stm32h7_renode_reference_board.repl
+
+showAnalyzer sysbus.usart2
+
+macro reset
+"""
+    sysbus LoadELF $elf
+    cpu EnableZephyrMode
+    cpu VectorTableOffset `sysbus GetSymbolAddress "_vector_table"`
+"""
+runMacro $reset

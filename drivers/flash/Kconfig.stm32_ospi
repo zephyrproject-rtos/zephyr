@@ -18,6 +18,7 @@ config FLASH_STM32_OSPI
 	select FLASH_HAS_EXPLICIT_ERASE
 	select PINCTRL
 	select DMA if $(DT_STM32_OCTOSPI_HAS_DMA)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_OSPI_NOR),reset-gpios)
 	select USE_STM32_HAL_DMA if $(DT_STM32_OCTOSPI_HAS_DMA)
 	select USE_STM32_HAL_DMA_EX if SOC_SERIES_STM32U5X && \
 					$(DT_STM32_OCTOSPI_HAS_DMA)

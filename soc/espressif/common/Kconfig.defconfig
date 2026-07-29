@@ -72,6 +72,9 @@ endif # RISCV
 if XTENSA
 
 # Xtensa default options for ESP32 family
+config HARVARD
+	default y
+
 config XTENSA_RESET_VECTOR
 	default n
 

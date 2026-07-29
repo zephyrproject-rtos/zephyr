@@ -1,4 +1,4 @@
-# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MPS4
@@ -26,6 +26,7 @@ config SOC_CORSTONE320
 	select ARMV8_1_M_MVEF
 	select ARMV8_1_M_PMU
 	select ARM_MPU_PXN if ARM_MPU
+	select USE_SWITCH
 
 config ARMV8_1_M_PMU_EVENTCNT
 	int

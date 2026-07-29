@@ -680,6 +680,74 @@ ZTEST(net_socket_tcp, test_z_so_linger_timeout)
 	test_context_cleanup();
 }
 
+static void test_accept_after_client_close_common(int af)
+{
+	int c_sock;
+	int s_sock;
+	int new_sock;
+	struct net_sockaddr_in6 c_saddr;
+	struct net_sockaddr_in6 s_saddr;
+	struct net_sockaddr_in6 addr;
+	net_socklen_t addrlen;
+	char rx_buf[sizeof(TEST_STR_SMALL)];
+
+	switch (af) {
+	case NET_AF_INET:
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, ANY_PORT, &c_sock,
+				    (struct net_sockaddr_in *)&c_saddr);
+		prepare_sock_tcp_v4(MY_IPV4_ADDR, SERVER_PORT, &s_sock,
+				    (struct net_sockaddr_in *)&s_saddr);
+		addrlen = sizeof(struct net_sockaddr_in);
+		break;
+	case NET_AF_INET6:
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, ANY_PORT, &c_sock, &c_saddr);
+		prepare_sock_tcp_v6(MY_IPV6_ADDR, SERVER_PORT, &s_sock, &s_saddr);
+		addrlen = sizeof(struct net_sockaddr_in6);
+		break;
+	default:
+		zassert_true(false, "unsupported address family %d", af);
+		return;
+	}
+
+	test_bind(s_sock, (struct net_sockaddr *)&s_saddr, addrlen);
+	test_listen(s_sock);
+
+	test_connect(c_sock, (struct net_sockaddr *)&s_saddr, addrlen);
+	test_send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
+	test_close(c_sock);
+
+	/* Give the stack time to process the close before accept(). */
+	k_msleep(THREAD_SLEEP);
+
+	test_accept(s_sock, &new_sock, (struct net_sockaddr *)&addr, &addrlen);
+	zassert_equal(addrlen, af == NET_AF_INET ? sizeof(struct net_sockaddr_in) :
+		      sizeof(struct net_sockaddr_in6), "wrong addrlen");
+
+	zassert_equal(zsock_recv(new_sock, rx_buf, sizeof(rx_buf), 0),
+		      strlen(TEST_STR_SMALL),
+		      "unexpected received bytes");
+	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
+		      0,
+		      "unexpected data");
+
+	test_eof(new_sock);
+
+	test_close(new_sock);
+	test_close(s_sock);
+
+	k_sleep(TCP_TEARDOWN_TIMEOUT);
+}
+
+ZTEST_USER(net_socket_tcp, test_v4_accept_after_client_close)
+{
+	test_accept_after_client_close_common(NET_AF_INET);
+}
+
+ZTEST_USER(net_socket_tcp, test_v6_accept_after_client_close)
+{
+	test_accept_after_client_close_common(NET_AF_INET6);
+}
+
 /* Test the stack behavior with a reasonable sized block data, be sure to have multiple packets */
 #define TEST_LARGE_TRANSFER_SIZE 60000
 #define TEST_PRIME 811

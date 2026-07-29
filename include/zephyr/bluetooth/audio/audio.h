@@ -15,6 +15,8 @@
 /**
  * @brief Bluetooth Audio
  * @defgroup bt_audio Bluetooth Audio
+ * @since 3.1
+ * @version 0.8.0
  * @ingroup bluetooth
  * @{
  */
@@ -238,7 +240,7 @@ struct bt_audio_codec_cfg {
 	 * BT_HCI_CODING_FORMAT_TRANSPARENT if false, else uses the @ref bt_audio_codec_cfg.id.
 	 */
 	bool ctlr_transcode;
-#if defined(CONFIG_BT_BAP_UNICAST)
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(__DOXYGEN__)
 	/** Target latency
 	 *
 	 * Unused for broadcast streams.

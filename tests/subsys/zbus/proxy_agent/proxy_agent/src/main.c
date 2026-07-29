@@ -189,11 +189,11 @@ ZTEST(zbus_proxy_agent_tests, test_zbus_init_proxy_agent_error_handling)
 		.data = &backend_data,
 		.name = "error_handling_agent",
 	};
-	struct k_thread thread;
-	struct k_msgq msgq;
+	static struct k_thread thread;
+	static struct k_msgq msgq;
 	k_tid_t thread_id = NULL;
-	char msgq_buf[CONFIG_ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH *
-		      sizeof(struct zbus_proxy_agent_rx_msg)];
+	static char msgq_buf[CONFIG_ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH *
+			     sizeof(struct zbus_proxy_agent_rx_msg)];
 	struct zbus_proxy_agent agent = {
 		.name = "error_handling_agent",
 		.backend_config = &backend_config,

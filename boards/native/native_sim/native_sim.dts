@@ -31,7 +31,7 @@
 
 	aliases {
 		codec0 = &audio_codec;
-		dmic-dev = &dmic0;
+		dmic0 = &dmic0;
 		eeprom-0 = &eeprom0;
 		i2c-0 = &i2c0;
 		i2s-node0 = &i2s_rxtx;

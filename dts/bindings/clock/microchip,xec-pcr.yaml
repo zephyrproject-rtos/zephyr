@@ -64,7 +64,6 @@ properties:
   xtal-enable-delay-ms:
     type: int
     required: true
-    default: 300
     description: |
       Delay in milliseconds after crystal is enabled and clock monitor is
       started.
@@ -72,7 +71,6 @@ properties:
   pll-lock-timeout-ms:
     type: int
     required: true
-    default: 30
     description: |
       Timeout in milliseconds waiting for PLL to lock to new clock source.
 

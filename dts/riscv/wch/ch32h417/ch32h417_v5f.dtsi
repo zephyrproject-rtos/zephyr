@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Liu Changjie
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+
+#include <wch/qingke-v5f.dtsi>
+#include <wch/ch32h417/ch32h417.dtsi>
+
+/ {
+	soc {
+		sram0: memory@200c0400 {
+			compatible = "mmio-sram";
+			reg = <0x200c0400 DT_SIZE_K(255)>;
+		};
+	};
+};
+
+&flash {
+	flash0: flash@8010000 {
+		compatible = "soc-nv-flash";
+		reg = <0x08010000 DT_SIZE_K(480)>;
+		ranges = <0x0 0x08010000 DT_SIZE_K(480)>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};

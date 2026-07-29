@@ -43,3 +43,33 @@ family:
       cpuclusters:
       - name: hpcore
       - name: lpcore
+runners:
+  run_once:
+    '--erase':
+    - runners:
+      - esp32
+      run: first
+      groups:
+      - qualifiers:
+        - esp32/procpu
+        - esp32/appcpu
+      - qualifiers:
+        - esp32s2
+      - qualifiers:
+        - esp32s3/procpu
+        - esp32s3/appcpu
+      - qualifiers:
+        - esp32c2
+      - qualifiers:
+        - esp32c3
+      - qualifiers:
+        - esp32c5/hpcore
+        - esp32c5/lpcore
+      - qualifiers:
+        - esp32c6/hpcore
+        - esp32c6/lpcore
+      - qualifiers:
+        - esp32h2
+      - qualifiers:
+        - esp32p4/hpcore
+        - esp32p4/lpcore

@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/sys/atomic.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/entropy.h>
 #include <string.h>

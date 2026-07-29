@@ -140,7 +140,7 @@ References
 
 .. _Ronoth: https://ronoth.com/
 
-.. _LoDev: https://ronoth.com/products/lodev-s76s-lora-soc-development-board?variant=31608819417220
+.. _LoDev: https://www.crowdsupply.com/ronoth/lodev
 
 .. _AcSIP: http://www.acsip.com.tw
 

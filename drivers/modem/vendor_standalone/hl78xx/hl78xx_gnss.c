@@ -141,10 +141,10 @@ void gnss_set_search_state(struct hl78xx_gnss_data *gnss, enum hl78xx_gnss_searc
 
 struct hl78xx_gnss_data *hl78xx_get_gnss_data(struct hl78xx_data *data)
 {
-	if (data == NULL || data->gnss_dev == NULL) {
+	if (data == NULL || data->devices.gnss == NULL) {
 		return NULL;
 	}
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 
 	if (data_nmea == NULL || data_nmea->gnss == NULL) {
 		return NULL;
@@ -317,7 +317,7 @@ void hl78xx_gnss_nmea0183_match_gga(struct modem_chat *chat, char **argv, uint16
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 
-	gnss_nmea0183_match_gga_callback(chat, argv, argc, data->gnss_dev->data);
+	gnss_nmea0183_match_gga_callback(chat, argv, argc, data->devices.gnss->data);
 }
 
 void hl78xx_gnss_nmea0183_match_rmc(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -325,7 +325,7 @@ void hl78xx_gnss_nmea0183_match_rmc(struct modem_chat *chat, char **argv, uint16
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 
-	gnss_nmea0183_match_rmc_callback(chat, argv, argc, data->gnss_dev->data);
+	gnss_nmea0183_match_rmc_callback(chat, argv, argc, data->devices.gnss->data);
 }
 
 void hl78xx_gnss_nmea0183_match_gsv(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -333,7 +333,7 @@ void hl78xx_gnss_nmea0183_match_gsv(struct modem_chat *chat, char **argv, uint16
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 
-	gnss_nmea0183_match_gsv_callback(chat, argv, argc, data->gnss_dev->data);
+	gnss_nmea0183_match_gsv_callback(chat, argv, argc, data->devices.gnss->data);
 }
 #endif /* CONFIG_HL78XX_GNSS_SOURCE_NMEA */
 #ifdef CONFIG_HL78XX_GNSS_AUX_DATA_PARSER
@@ -342,7 +342,7 @@ void hl78xx_gnss_nmea0183_match_gsa(struct modem_chat *chat, char **argv, uint16
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 
-	gnss_nmea0183_match_gsa_callback(chat, argv, argc, data->gnss_dev->data);
+	gnss_nmea0183_match_gsa_callback(chat, argv, argc, data->devices.gnss->data);
 }
 
 void hl78xx_gnss_nmea0183_match_gst(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -350,7 +350,7 @@ void hl78xx_gnss_nmea0183_match_gst(struct modem_chat *chat, char **argv, uint16
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 
-	gnss_nmea0183_match_gst_callback(chat, argv, argc, data->gnss_dev->data);
+	gnss_nmea0183_match_gst_callback(chat, argv, argc, data->devices.gnss->data);
 }
 
 void hl78xx_gnss_nmea_match_epu(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -358,7 +358,7 @@ void hl78xx_gnss_nmea_match_epu(struct modem_chat *chat, char **argv, uint16_t a
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 
-	gnss_nmea0183_match_epu_callback(chat, argv, argc, data->gnss_dev->data);
+	gnss_nmea0183_match_epu_callback(chat, argv, argc, data->devices.gnss->data);
 }
 #endif /* CONFIG_HL78XX_GNSS_AUX_DATA_PARSER */
 /* -------------------------------------------------------------------------
@@ -375,7 +375,7 @@ void hl78xx_gnss_on_gnssloc(struct modem_chat *chat, char **argv, uint16_t argc,
 	ARG_UNUSED(argv);
 	ARG_UNUSED(argc);
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 
 	/* Reset navigation data for new GNSSLOC response */
 	memset(&data_nmea->data.nav_data, 0, sizeof(data_nmea->data.nav_data));
@@ -390,7 +390,7 @@ void hl78xx_gnss_on_gnssloc_latitude(struct modem_chat *chat, char **argv, uint1
 {
 	ARG_UNUSED(chat);
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	int64_t latitude_ndeg;
 	int ret;
 
@@ -414,7 +414,7 @@ void hl78xx_gnss_on_gnssloc_longitude(struct modem_chat *chat, char **argv, uint
 {
 	ARG_UNUSED(chat);
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	int64_t longitude_ndeg;
 	int ret;
 
@@ -438,7 +438,7 @@ void hl78xx_gnss_on_gnssloc_gpstime(struct modem_chat *chat, char **argv, uint16
 {
 	ARG_UNUSED(chat);
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	int ret;
 
 	if (argc < 2 || argv[1] == NULL || strlen(argv[1]) == 0) {
@@ -463,7 +463,7 @@ void hl78xx_gnss_on_gnssloc_fixtype(struct modem_chat *chat, char **argv, uint16
 {
 	ARG_UNUSED(chat);
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 
 	if (argc < 2 || argv[1] == NULL || strlen(argv[1]) == 0) {
 		LOG_WRN("GNSSLOC FixType: no data");
@@ -495,7 +495,7 @@ void hl78xx_gnss_on_gnssloc_hepe(struct modem_chat *chat, char **argv, uint16_t 
 {
 	ARG_UNUSED(chat);
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	int64_t hepe_milli;
 	int ret;
 
@@ -521,7 +521,7 @@ void hl78xx_gnss_on_gnssloc_altitude(struct modem_chat *chat, char **argv, uint1
 {
 	ARG_UNUSED(chat);
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	int64_t altitude_milli;
 	int ret;
 
@@ -566,7 +566,7 @@ void hl78xx_gnss_on_gnssloc_direction(struct modem_chat *chat, char **argv, uint
 {
 	ARG_UNUSED(chat);
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	int64_t bearing_milli;
 	int ret;
 
@@ -597,7 +597,7 @@ void hl78xx_gnss_on_gnssloc_horspeed(struct modem_chat *chat, char **argv, uint1
 {
 	ARG_UNUSED(chat);
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	uint32_t speed_mms;
 	int ret;
 
@@ -637,7 +637,7 @@ void hl78xx_gnss_on_gnssloc_OK(struct modem_chat *chat, char **argv, uint16_t ar
 	ARG_UNUSED(argv);
 	ARG_UNUSED(argc);
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 
 	LOG_DBG("GNSSLOC completed successfully");
 
@@ -656,7 +656,7 @@ void hl78xx_gnss_on_gnssloc_OK(struct modem_chat *chat, char **argv, uint16_t ar
 void hl78xx_on_gnssnmea(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	struct hl78xx_gnss_data *data_gnss = data_nmea->gnss->data;
 
 	if (argc < 5) {
@@ -673,7 +673,7 @@ void hl78xx_on_gnssconf_enabledsys(struct modem_chat *chat, char **argv, uint16_
 				   void *user_data)
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	struct hl78xx_gnss_data *data_gnss = data_nmea->gnss->data;
 	int enabled_systems;
 
@@ -690,7 +690,7 @@ void hl78xx_on_gnssconf_enabledfilter(struct modem_chat *chat, char **argv, uint
 				      void *user_data)
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	struct hl78xx_gnss_data *data_gnss = data_nmea->gnss->data;
 	int static_filter;
 
@@ -726,12 +726,12 @@ void hl78xx_on_gnssad(struct modem_chat *chat, char **argv, uint16_t argc, void 
 	struct hl78xx_gnss_data *data_gnss;
 	int mode;
 
-	if (data == NULL || data->gnss_dev == NULL) {
+	if (data == NULL || data->devices.gnss == NULL) {
 		LOG_ERR("GNSS device not available");
 		return;
 	}
 
-	data_nmea = data->gnss_dev->data;
+	data_nmea = data->devices.gnss->data;
 	if (data_nmea == NULL || data_nmea->gnss == NULL) {
 		LOG_ERR("GNSS NMEA data not available");
 		return;
@@ -792,7 +792,7 @@ void hl78xx_on_gnssad(struct modem_chat *chat, char **argv, uint16_t argc, void 
 void hl78xx_gnss_on_gnssev(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	struct hl78xx_gnss_data *data_gnss = data_nmea->gnss->data;
 	struct hl78xx_evt gnss_evt;
 	int event_type = 0;
@@ -859,6 +859,10 @@ void hl78xx_gnss_on_gnssev(struct modem_chat *chat, char **argv, uint16_t argc, 
 			gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_IDLE);
 
 			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_GNSS_STOPPED);
+
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+			hl78xx_power_down_allow_feeding(data);
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
 			gnss_evt.type = HL78XX_GNSS_EVENT_STOP;
 			gnss_evt.content.event_status = (enum hl78xx_event_status)event_value;
@@ -1365,7 +1369,7 @@ static int hl78xx_gnss_init(const struct device *dev)
 	}
 
 	/* Store reference to GNSS device in parent modem */
-	data->parent_data->gnss_dev = dev;
+	data->parent_data->devices.gnss = dev;
 
 	/* Initialize NMEA0183 match subsystem */
 	ret = hl78xx_gnss_init_nmea0183_match(dev);
@@ -1389,36 +1393,38 @@ static int hl78xx_gnss_init(const struct device *dev)
 
 int hl78xx_on_run_gnss_init_script_state_enter(struct hl78xx_data *data)
 {
+	struct gnss_nmea0183_match_data *match_data = data->devices.gnss->data;
+	struct hl78xx_gnss_data *gnss_data = match_data->gnss->data;
+
+	gnss_data->gnss_init_status = false;
+
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 #ifdef CONFIG_MODEM_HL78XX_PSM
-	LOG_DBG("PSMEV curr:%d prev:%d CFUN=%d", data->status.psmev.current,
-		data->status.psmev.previous, data->status.phone_functionality.functionality);
+	LOG_DBG("PSMEV curr:%d prev:%d CFUN=%d", data->status.lpm.psmev.current,
+		data->status.lpm.psmev.previous, data->status.phone_functionality.functionality);
 #ifdef CONFIG_MODEM_HL78XX_HAS_KPSMEV_URC
 	/* HL7812 PSM: the modem truly hibernates (no reboot on wake), so
 	 * the LTE modem is still off and the RF Rx path is free for GNSS.
 	 * No CFUN=4 is needed, go straight to GNSS configuration.
 	 */
-	if (data->status.psmev.current == HL78XX_PSM_EVENT_ENTER ||
-	    (data->status.psmev.current == HL78XX_PSM_EVENT_EXIT &&
-	     data->status.psmev.previous == HL78XX_PSM_EVENT_ENTER)) {
+	if (data->status.lpm.psmev.current == HL78XX_PSM_EVENT_ENTER ||
+	    (data->status.lpm.psmev.current == HL78XX_PSM_EVENT_EXIT &&
+	     data->status.lpm.psmev.previous == HL78XX_PSM_EVENT_ENTER)) {
 		LOG_DBG("HL7812 PSM context (curr=%d prev=%d), starting GNSS immediately",
-			data->status.psmev.current, data->status.psmev.previous);
+			data->status.lpm.psmev.current, data->status.lpm.psmev.previous);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
 		return 0;
 	}
 #else
 	LOG_DBG("HL7800 PSM context, modem rebooted on PSM exit");
-	if (data->status.psmev.current == HL78XX_PSM_EVENT_EXIT &&
-	    data->status.psmev.previous == HL78XX_PSM_EVENT_ENTER) {
+	if (data->status.lpm.psmev.current == HL78XX_PSM_EVENT_EXIT &&
+	    data->status.lpm.psmev.previous == HL78XX_PSM_EVENT_ENTER) {
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
 		return 0;
 	}
 #endif /* CONFIG_MODEM_HL78XX_HAS_KPSMEV_URC */
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-	struct gnss_nmea0183_match_data *match_data = data->gnss_dev->data;
-	struct hl78xx_gnss_data *gnss_data = match_data->gnss->data;
-
 	/* In eDRX, run RRC check before GNSS.
 	 * HL7812: query immediately on GNSS init entry.
 	 * HL7800: wait for DEVICE_AWAKE (+KSUP) so chat path is ready.
@@ -1443,7 +1449,7 @@ int hl78xx_on_run_gnss_init_script_state_enter(struct hl78xx_data *data)
 	}
 
 	HL78XX_LOG_DBG("Setting airplane mode (CFUN=4)...");
-	hl78xx_api_func_set_phone_functionality(data->dev, HL78XX_AIRPLANE, false);
+	hl78xx_api_func_set_phone_functionality(data->devices.hl78xx, HL78XX_AIRPLANE, false);
 
 	return hl78xx_run_gnss_init_chat_script_async(data);
 }
@@ -1481,15 +1487,15 @@ static bool hl78xx_gnss_rf_path_is_free(struct hl78xx_data *data,
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 #ifdef CONFIG_MODEM_HL78XX_PSM
 #ifdef CONFIG_MODEM_HL78XX_HAS_KPSMEV_URC
-		|| data->status.psmev.current == HL78XX_PSM_EVENT_ENTER
+		|| data->status.lpm.psmev.current == HL78XX_PSM_EVENT_ENTER
 #else
-		|| (data->status.psmev.current == HL78XX_PSM_EVENT_EXIT &&
-		    data->status.psmev.previous == HL78XX_PSM_EVENT_ENTER)
+		|| (data->status.lpm.psmev.current == HL78XX_PSM_EVENT_EXIT &&
+		    data->status.lpm.psmev.previous == HL78XX_PSM_EVENT_ENTER)
 #endif /* CONFIG_MODEM_HL78XX_HAS_KPSMEV_URC */
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-		|| (data->status.edrxev.previous == HL78XX_EDRX_EVENT_IDLE_ENTER &&
-		    data->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_EXIT)
+		|| (data->status.lpm.edrxev.previous == HL78XX_EDRX_EVENT_IDLE_ENTER &&
+		    data->status.lpm.edrxev.current == HL78XX_EDRX_EVENT_IDLE_EXIT)
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 		||
 		hl78xx_gnss_get_search_state(data_gnss) == HL78XX_GNSS_SEARCH_STATE_BLOCKED_BY_LTE
@@ -1521,7 +1527,7 @@ static void hl78xx_gnss_handle_timeout_event(struct hl78xx_data *data,
 					? "airplane"
 					: "PSM/eDRX idle");
 			gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_STARTING);
-			hl78xx_gnss_start(data->gnss_dev, HL78XX_GNSS_START_MODE);
+			hl78xx_gnss_start(data->devices.gnss, HL78XX_GNSS_START_MODE);
 			if (data_gnss->search_timeout_ms != 0) {
 				hl78xx_start_timer(data_gnss->parent_data,
 						   K_MSEC(data_gnss->search_timeout_ms));
@@ -1536,17 +1542,17 @@ static void hl78xx_gnss_handle_timeout_event(struct hl78xx_data *data,
 	hl78xx_start_timer(data_gnss->parent_data, K_MSEC(3000));
 	LOG_DBG("Current functionality: %d", data->status.phone_functionality.functionality);
 #ifdef CONFIG_MODEM_HL78XX_PSM
-	LOG_DBG(" PSM event: %d,", data->status.psmev.current);
+	LOG_DBG(" PSM event: %d,", data->status.lpm.psmev.current);
 #endif
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-	LOG_DBG(" eDRX event: %d -> Prev: %d", data->status.edrxev.current,
-		data->status.edrxev.previous);
+	LOG_DBG(" eDRX event: %d -> Prev: %d", data->status.lpm.edrxev.current,
+		data->status.lpm.edrxev.previous);
 #endif
 }
 
 void hl78xx_run_gnss_init_script_event_handler(struct hl78xx_data *data, enum hl78xx_event event)
 {
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	struct hl78xx_gnss_data *data_gnss = data_nmea->gnss->data;
 	struct hl78xx_evt gnss_evt;
 
@@ -1567,11 +1573,16 @@ void hl78xx_run_gnss_init_script_event_handler(struct hl78xx_data *data, enum hl
 		break;
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+		if (data_gnss->gnss_init_status) {
+			LOG_DBG("GNSS init: SCRIPT_SUCCESS after GNSS config, ignoring");
+			break;
+		}
 		if (hl78xx_gnss_handle_script_success_rrc(data, data_gnss)) {
 			break;
 		}
 		LOG_DBG("GNSS init: SCRIPT_SUCCESS - configuring GNSS");
-		hl78xx_gnss_configure(data->gnss_dev);
+		hl78xx_gnss_configure(data->devices.gnss);
+		data_gnss->gnss_init_status = true;
 		gnss_evt.content.status = true;
 		gnss_evt.type = HL78XX_GNSS_ENGINE_READY;
 		event_dispatcher_dispatch(&gnss_evt);
@@ -1668,12 +1679,14 @@ int hl78xx_on_gnss_search_started_state_enter(struct hl78xx_data *data)
 
 int hl78xx_on_gnss_search_started_state_leave(struct hl78xx_data *data)
 {
+	hl78xx_stop_timer(data);
+
 	return 0;
 }
 
 void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl78xx_event event)
 {
-	struct gnss_nmea0183_match_data *data_nmea = data->gnss_dev->data;
+	struct gnss_nmea0183_match_data *data_nmea = data->devices.gnss->data;
 	struct hl78xx_gnss_data *data_gnss = data_nmea->gnss->data;
 	struct hl78xx_evt gnss_evt;
 	int ret;
@@ -1694,6 +1707,12 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 		break;
 
 	case MODEM_HL78XX_EVENT_TIMEOUT:
+		if (data_gnss->search_state != HL78XX_GNSS_SEARCH_STATE_SEARCHING) {
+			LOG_DBG("GNSS search: ignoring timeout in state=%s",
+				gnss_search_state_str(data_gnss->search_state));
+			break;
+		}
+
 		LOG_WRN("GNSS search: timeout expired - stopping search");
 
 		/* Notify user about timeout */
@@ -1713,6 +1732,7 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 		break;
 	case MODEM_HL78XX_EVENT_GNSS_STOP_REQUESTED:
 		LOG_INF("GNSS search: stop requested %d", data_gnss->output_port);
+		hl78xx_stop_timer(data);
 		gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_STOPPING);
 		hl78xx_gnss_clear_search_queue(data_gnss);
 
@@ -1741,6 +1761,7 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 
 	case MODEM_HL78XX_EVENT_GNSS_STOPPED:
 		LOG_INF("GNSS search: stopped");
+		hl78xx_stop_timer(data);
 		gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_IDLE);
 		/* Check if GNSS mode exit was requested */
 		if (data_gnss->exit_to_lte_pending) {
@@ -1793,9 +1814,9 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 			if (data->status.phone_functionality.functionality != HL78XX_AIRPLANE) {
 				LOG_INF("GNSS mode exited - returning to LTE");
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-				data->status.edrxev.current = HL78XX_EDRX_EVENT_IDLE_EXIT;
-				data->status.edrxev.previous = HL78XX_EDRX_EVENT_IDLE_EXIT;
-				data->status.edrxev.is_edrx_idle_requested = false;
+				data->status.lpm.edrxev.current = HL78XX_EDRX_EVENT_IDLE_EXIT;
+				data->status.lpm.edrxev.previous = HL78XX_EDRX_EVENT_IDLE_EXIT;
+				data->status.lpm.edrxev.is_requested = false;
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 				hl78xx_enter_state(data, MODEM_HL78XX_STATE_AWAIT_REGISTERED);
 			} else {
@@ -1803,6 +1824,13 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 					"phone functionality.");
 			}
 		}
+		break;
+
+	case MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED:
+		LOG_INF("LTE_RESTORE_REQUESTED: entering RUN_INIT_SCRIPT on modem_workq");
+		gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_IDLE);
+		data_gnss->exit_to_lte_pending = false;
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 		break;
 
 	case MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED:
@@ -1869,24 +1897,23 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
  * Device instantiation
  * -------------------------------------------------------------------------
  */
-#define HL78XX_GNSS_DEVICE_DEFINE(inst)                                                            \
-	static const struct hl78xx_gnss_config hl78xx_gnss_config_##inst = {                       \
-		.parent_modem = DEVICE_DT_GET(DT_INST_PARENT(inst)),                               \
-		.fix_rate_default = DT_INST_PROP_OR(inst, fix_rate, 1000),                         \
+#define HL78XX_GNSS_CONFIG_NAME(node_id) UTIL_CAT(hl78xx_gnss_config_, DT_NODE_HASH(node_id))
+
+#define HL78XX_GNSS_DATA_NAME(node_id) UTIL_CAT(hl78xx_gnss_data_, DT_NODE_HASH(node_id))
+
+#define HL78XX_GNSS_DEVICE_DEFINE(node_id)                                                         \
+	static const struct hl78xx_gnss_config HL78XX_GNSS_CONFIG_NAME(node_id) = {                \
+		.parent_modem = DEVICE_DT_GET(DT_PARENT(node_id)),                                 \
+		.fix_rate_default = DT_PROP_OR(node_id, fix_rate, 1000),                           \
 	};                                                                                         \
                                                                                                    \
-	static struct hl78xx_gnss_data hl78xx_gnss_data_##inst;                                    \
+	static struct hl78xx_gnss_data HL78XX_GNSS_DATA_NAME(node_id);                             \
                                                                                                    \
-	PM_DEVICE_DT_INST_DEFINE(inst, hl78xx_gnss_pm_action);                                     \
+	PM_DEVICE_DT_DEFINE(node_id, hl78xx_gnss_pm_action);                                       \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, hl78xx_gnss_init, PM_DEVICE_DT_INST_GET(inst),                 \
-			      &hl78xx_gnss_data_##inst, &hl78xx_gnss_config_##inst, POST_KERNEL,   \
-			      CONFIG_GNSS_INIT_PRIORITY, &hl78xx_gnss_api);
+	DEVICE_DT_DEFINE(node_id, hl78xx_gnss_init, PM_DEVICE_DT_GET(node_id),                     \
+			 &HL78XX_GNSS_DATA_NAME(node_id), &HL78XX_GNSS_CONFIG_NAME(node_id),       \
+			 POST_KERNEL, CONFIG_GNSS_INIT_PRIORITY, &hl78xx_gnss_api);
 
-#define DT_DRV_COMPAT swir_hl7812_gnss
-DT_INST_FOREACH_STATUS_OKAY(HL78XX_GNSS_DEVICE_DEFINE)
-#undef DT_DRV_COMPAT
-
-#define DT_DRV_COMPAT swir_hl7800_gnss
-DT_INST_FOREACH_STATUS_OKAY(HL78XX_GNSS_DEVICE_DEFINE)
-#undef DT_DRV_COMPAT
+DT_FOREACH_STATUS_OKAY(swir_hl7812_gnss, HL78XX_GNSS_DEVICE_DEFINE)
+DT_FOREACH_STATUS_OKAY(swir_hl7800_gnss, HL78XX_GNSS_DEVICE_DEFINE)

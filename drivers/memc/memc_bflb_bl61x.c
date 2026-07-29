@@ -9,13 +9,32 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/otp.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/dt-bindings/clock/bflb_bl61x_clock.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(memc_bflb_bl61x, CONFIG_MEMC_LOG_LEVEL);
 
-#include <bouffalolab/bl61x/bflb_soc.h>
-#include <bouffalolab/bl61x/glb_reg.h>
-#include <bouffalolab/bl61x/psram_reg.h>
+#include <bflb_soc.h>
+#include <glb_reg.h>
+#include <psram_reg.h>
+
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+
+#include <zephyr/dt-bindings/clock/bflb_bl616cl_clock.h>
+
+#define EFUSE_DEV_INFOS_OFFSET 0x8
+#define EFUSE_PSRAM_SIZE_POS 24
+#define EFUSE_PSRAM_SIZE_MSK 3
+#define EFUSE_FLASH_SIZE_POS 26
+#define EFUSE_FLASH_SIZE_MSK 7
+
+#define EFUSE_PSRAM_TRIM_OFFSET 0x7c
+#define EFUSE_PSRAM_TRIM_EN_POS 9
+#define EFUSE_PSRAM_TRIM_PARITY_POS 8
+#define EFUSE_PSRAM_TRIM_POS 0
+#define EFUSE_PSRAM_TRIM_MSK 0xff
+
+#else
+
+#include <zephyr/dt-bindings/clock/bflb_bl61x_clock.h>
 
 #define EFUSE_DEV_INFOS_OFFSET 0x18
 #define EFUSE_PSRAM_SIZE_POS 24
@@ -28,6 +47,8 @@ LOG_MODULE_REGISTER(memc_bflb_bl61x, CONFIG_MEMC_LOG_LEVEL);
 #define EFUSE_PSRAM_TRIM_PARITY_POS 11
 #define EFUSE_PSRAM_TRIM_POS 0
 #define EFUSE_PSRAM_TRIM_MSK 0x7FF
+
+#endif
 
 #define PSRAM_CONFIG_WAIT 4096
 
@@ -69,6 +90,17 @@ static void memc_bflb_bl61x_init_psram_clock(const struct device *dev, uint8_t s
 }
 
 /* This initializes internal pins that are not exposed via pinctrl */
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+static void memc_bflb_bl61x_init_gpio(void)
+{
+	uint32_t tmp;
+
+	for (uint8_t i = 0; i < 12; i++) {
+		tmp = GLB_REG_GPIO_46_IE_MSK | GLB_REG_GPIO_46_SMT_MSK;
+		sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG46_OFFSET + i * 4);
+	}
+}
+#else
 static void memc_bflb_bl61x_init_gpio(void)
 {
 	uint32_t tmp;
@@ -78,6 +110,7 @@ static void memc_bflb_bl61x_init_gpio(void)
 		sys_write32(tmp, GLB_BASE + GLB_GPIO_CFG41_OFFSET + i * 4);
 	}
 }
+#endif
 
 static int memc_bflb_bl61x_get_psram_ctrl(const struct device *dev)
 {
@@ -338,6 +371,29 @@ static int memc_bflb_bl61x_init(const struct device *dev)
 	flash_size = (dev_infos >> EFUSE_FLASH_SIZE_POS) & EFUSE_FLASH_SIZE_MSK;
 	if (flash_size) {
 		switch (flash_size) {
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+		case 1:
+			data->flash_size = KB(512);
+		break;
+		case 2:
+			data->flash_size = MB(1);
+		break;
+		case 3:
+			data->flash_size = MB(2);
+		break;
+		case 4:
+			data->flash_size = MB(4);
+		break;
+		case 5:
+			data->flash_size = MB(8);
+		break;
+		case 6:
+			data->flash_size = MB(16);
+		break;
+		case 7:
+			data->flash_size = MB(32);
+		break;
+#else
 		case 1:
 			data->flash_size = MB(2);
 		break;
@@ -350,6 +406,7 @@ static int memc_bflb_bl61x_init(const struct device *dev)
 		case 4:
 			data->flash_size = MB(8);
 		break;
+#endif
 		default:
 			data->flash_size = 0;
 			LOG_WRN("Unknown Flash size");
@@ -370,6 +427,15 @@ static int memc_bflb_bl61x_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+	if (clock_control_get_status(clock_dev, (clock_control_subsys_t)BL616CL_CLKID_CLK_PLL)
+		== CLOCK_CONTROL_STATUS_ON) {
+		memc_bflb_bl61x_init_psram_clock(dev, 0);
+	} else {
+		LOG_ERR("PLL must be enabled to use PSRAM");
+		return -ENOTSUP;
+	}
+#else
 	if (clock_control_get_status(clock_dev, (clock_control_subsys_t)BL61X_CLKID_CLK_WIFIPLL)
 		== CLOCK_CONTROL_STATUS_ON) {
 		memc_bflb_bl61x_init_psram_clock(dev, 0);
@@ -380,6 +446,7 @@ static int memc_bflb_bl61x_init(const struct device *dev)
 		LOG_ERR("WIFIPLL or AUPLL must be enabled to use PSRAM");
 		return -ENOTSUP;
 	}
+#endif
 
 	memc_bflb_bl61x_init_gpio();
 	err = memc_bflb_bl61x_init_psram(dev);

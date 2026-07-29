@@ -105,7 +105,7 @@ allows flash programming and debugging over USB. There is also a SWD header
    https://gd32mcu.com/data/documents/datasheet/GD32F450xx_Datasheet_Rev2.3.pdf
 
 .. _GD32F4xx User Manual:
-   https://www.gigadevice.com/manual/gd32f450xxxx-user-manual/
+   https://www.gd32mcu.com/data/documents/userManual/GD32F4xx_User_Manual_Rev3.0.pdf
 
 .. _GD32F450V-START User Manual:
    https://gd32mcu.com/data/documents/evaluationBoard/GD32F4xx_Demo_Suites_V2.6.1.rar

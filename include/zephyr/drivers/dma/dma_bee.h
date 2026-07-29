@@ -14,8 +14,8 @@
  * `config` cell for the Realtek Bee series SoCs.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_BEE_H_
-#define ZEPHYR_INCLUDE_DRIVERS_DMA_BEE_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_BEE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_BEE_H_
 
 /**
  * @defgroup dma_bee_macros Realtek Bee DMA Macros
@@ -164,4 +164,4 @@
 
 /** @} */ /* End of dma_bee_macros group */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_BEE_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_BEE_H_ */

@@ -377,12 +377,21 @@ int ssh_auth_process_msg(struct ssh_transport *transport, uint8_t msg_id,
 				transport, sshc->user_name, sshc->host_key_index);
 			transport->auths_allowed_mask &= ~BIT(SSH_AUTH_PUBKEY);
 
-		} else if ((transport->auths_allowed_mask & BIT(SSH_AUTH_PASSWORD)) != 0 &&
-			   transport->callback != NULL) {
+		} else if ((transport->auths_allowed_mask & BIT(SSH_AUTH_PASSWORD)) != 0) {
 			struct ssh_transport_event event;
 
 			event.type = SSH_TRANSPORT_EVENT_SERVICE_ACCEPTED;
-			ret = transport->callback(transport, &event, transport->callback_user_data);
+
+			ret = ssh_transport_traverse_callbacks(false, transport, &event);
+			if (ret < 0) {
+				return ret;
+			}
+
+			if (transport->callback != NULL) {
+				ret = transport->callback(transport, &event,
+							  transport->callback_user_data);
+			}
+
 			transport->auths_allowed_mask &= ~BIT(SSH_AUTH_PASSWORD);
 		} else {
 			NET_DBG("No available auth methods");
@@ -392,6 +401,8 @@ int ssh_auth_process_msg(struct ssh_transport *transport, uint8_t msg_id,
 		break;
 	}
 	case SSH_MSG_USERAUTH_SUCCESS: {
+		struct ssh_transport_event event;
+
 		NET_DBG("USERAUTH_SUCCESS");
 
 		/* Client only */
@@ -406,12 +417,17 @@ int ssh_auth_process_msg(struct ssh_transport *transport, uint8_t msg_id,
 
 		transport->authenticated = true;
 
-		if (transport->callback != NULL) {
-			struct ssh_transport_event event;
+		event.type = SSH_TRANSPORT_EVENT_AUTHENTICATE_RESULT;
+		event.authenticate_result.success = true;
 
-			event.type = SSH_TRANSPORT_EVENT_AUTHENTICATE_RESULT;
-			event.authenticate_result.success = true;
-			ret = transport->callback(transport, &event, transport->callback_user_data);
+		ret = ssh_transport_traverse_callbacks(false, transport, &event);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (transport->callback != NULL) {
+			ret = transport->callback(transport, &event,
+						  transport->callback_user_data);
 		}
 		break;
 	}

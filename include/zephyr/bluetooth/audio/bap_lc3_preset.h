@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_H_
 
 /**
  * @brief Basic Audio Profile (BAP) LC3 Presets
@@ -838,4 +838,4 @@ struct bt_bap_lc3_preset {
 #endif
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_LC3_PRESET_H_ */

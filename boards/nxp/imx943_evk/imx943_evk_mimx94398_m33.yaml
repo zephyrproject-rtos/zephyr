@@ -14,12 +14,12 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - uart
-  - netif:eth
   - gpio
-  - pwm
   - i2c
   - i2s
+  - netif:eth
+  - pwm
+  - uart
   - watchdog
 testing:
   binaries:

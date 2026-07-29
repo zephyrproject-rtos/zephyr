@@ -14,6 +14,7 @@
 			compatible = "st,stm32-usbphyc";
 			reg = <0x40017c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 31)>;
+			clock-names = "gate";
 			#phy-cells = <0>;
 			status = "disabled";
 		};

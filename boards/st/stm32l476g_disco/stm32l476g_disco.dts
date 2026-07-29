@@ -18,7 +18,10 @@
 	compatible = "st,stm32l476g-disco";
 
 	aliases {
+		dmic0 = &dmic_dev;
 		i2s-codec-tx = &sai1_a;
+		led0 = &green_led_4;
+		sw0 = &joy_center;
 	};
 
 	chosen {
@@ -74,11 +77,6 @@
 			gpios = <&gpioa 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_RIGHT>;
 		};
-	};
-
-	aliases {
-		led0 = &green_led_4;
-		sw0 = &joy_center;
 	};
 };
 

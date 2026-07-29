@@ -8,6 +8,7 @@ permissions:
 jobs:
   contribs:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       pull-requests: write # to create/update pull request comments
     name: Manifest

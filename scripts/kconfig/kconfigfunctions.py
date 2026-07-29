@@ -1118,6 +1118,32 @@ def dt_highest_controller_irq_number(kconfig, _, path, irq_cell_name):
 
     return str(max(irqns))
 
+def dt_partition_mtd(kconf, _, path):
+    """
+    This function takes a 'path' and returns the mtd node for that path.
+    """
+    if doc_mode or edt is None:
+        return ""
+
+    try:
+        node = edt.get_node(path)
+    except edtlib.EDTError:
+        return ""
+
+    if node is None:
+        return ""
+
+    # Look for the parent node compatible with "soc-nv-flash"
+    parent = node.parent
+
+    while parent and "soc-nv-flash" not in parent.compats:
+        parent = parent.parent
+
+    if parent and "soc-nv-flash" in parent.compats:
+        return parent.path
+
+    return ""
+
 def normalize_upper(kconf, _, string):
     """
     Normalize the string, so that the string only contains alphanumeric
@@ -1300,6 +1326,7 @@ functions = {
         "dt_chosen_partition_addr_int": (dt_chosen_partition_addr, 1, 3),
         "dt_chosen_partition_addr_hex": (dt_chosen_partition_addr, 1, 3),
         "dt_highest_controller_irq_number": (dt_highest_controller_irq_number, 2, 2),
+        "dt_partition_mtd": (dt_partition_mtd, 1, 1),
         "normalize_upper": (normalize_upper, 1, 1),
         "shields_list_contains": (shields_list_contains, 1, 1),
         "substring": (substring, 2, 3),

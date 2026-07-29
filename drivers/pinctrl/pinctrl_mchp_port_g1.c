@@ -77,9 +77,13 @@ static void pinctrl_pinmux(const pinctrl_soc_pin_t *pin)
 		 * numbered pin in bits 4..7.
 		 */
 		if (is_odd == true) {
-			pRegister->PORT_PMUX[idx] |= PORT_PMUX_PMUXO(pin_mux);
+			pRegister->PORT_PMUX[idx] =
+				(pRegister->PORT_PMUX[idx] & ~PORT_PMUX_PMUXO_Msk) |
+				PORT_PMUX_PMUXO(pin_mux);
 		} else {
-			pRegister->PORT_PMUX[idx] |= PORT_PMUX_PMUXE(pin_mux);
+			pRegister->PORT_PMUX[idx] =
+				(pRegister->PORT_PMUX[idx] & ~PORT_PMUX_PMUXE_Msk) |
+				PORT_PMUX_PMUXE(pin_mux);
 		}
 		pRegister->PORT_PINCFG[pin_num] |= (uint8_t)PORT_PINCFG_PMUXEN_Msk;
 	}

@@ -943,6 +943,7 @@ static const struct zep_wpa_supp_dev_ops wpa_supp_ops = {
 	.authenticate = nrf_wifi_wpa_supp_authenticate,
 	.associate = nrf_wifi_wpa_supp_associate,
 	.set_supp_port = nrf_wifi_wpa_set_supp_port,
+	.tx_control_port = nrf_wifi_wpa_tx_control_port,
 	.set_key = nrf_wifi_wpa_supp_set_key,
 	.signal_poll = nrf_wifi_wpa_supp_signal_poll,
 	.send_mlme = nrf_wifi_nl80211_send_mlme,

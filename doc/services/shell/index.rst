@@ -912,6 +912,8 @@ is written to file.
 
 See `shell backends <backends_>`_ for details on how to enable RTT as a Shell backend.
 
+.. _shell_remote:
+
 Remote Shell
 ************
 

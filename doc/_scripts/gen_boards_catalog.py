@@ -140,7 +140,7 @@ def gather_board_build_info(twister_out_dir):
     return board_devicetrees, board_runners
 
 
-def run_twister_cmake_only(outdir, vendor_filter):
+def run_twister_cmake_only(outdir, vendor_filter, extra_flags):
     """Run twister in cmake-only mode to generate build info files.
 
     Delegates to ``gen_catalogs.run_twister_cmake_only()`` so the
@@ -150,7 +150,7 @@ def run_twister_cmake_only(outdir, vendor_filter):
         outdir: Directory where twister should output its files
         vendor_filter: Limit build info to boards from listed vendors
     """
-    gen_catalogs.run_twister_cmake_only(Path(outdir), vendor_filter)
+    gen_catalogs.run_twister_cmake_only(Path(outdir), vendor_filter, extra_flags)
 
 
 def guess_file_from_patterns(directory, patterns, name, extensions):
@@ -198,7 +198,9 @@ def guess_doc_page(board_or_shield):
     return doc_file
 
 
-def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
+def get_catalog(
+    generate_hw_features=False, hw_features_vendor_filter=None, extra_twister_flags=None
+):
     """Get the board catalog.
 
     Args:
@@ -246,7 +248,7 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
     if generate_hw_features:
         logger.info("Running twister in cmake-only mode to get Devicetree files for all boards")
         with tempfile.TemporaryDirectory() as tmp_dir:
-            run_twister_cmake_only(tmp_dir, hw_features_vendor_filter)
+            run_twister_cmake_only(tmp_dir, hw_features_vendor_filter, extra_twister_flags)
             board_devicetrees, board_runners = gather_board_build_info(Path(tmp_dir))
     else:
         logger.info("Skipping generation of supported hardware features.")

@@ -6,6 +6,7 @@ config INPUT_XPT2046
 	default y
 	depends on DT_HAS_XPTEK_XPT2046_ENABLED
 	select SPI
+	select INPUT_TOUCH
 	help
 	  Enable driver for Xptek XPT2046 resistive touch panel.
 	  This driver is very similar to ADS7843, but differs on channel numbering.

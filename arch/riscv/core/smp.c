@@ -81,10 +81,10 @@ void arch_secondary_cpu_init(int hartid)
 #ifdef CONFIG_SMP
 	irq_enable(RISCV_IRQ_MSOFT);
 #endif /* CONFIG_SMP */
-#ifdef CONFIG_PLIC_IRQ_AFFINITY
+#if defined(CONFIG_PLIC_IRQ_AFFINITY) || defined(CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY)
 	/* Enable on secondary cores so that they can respond to PLIC */
 	irq_enable(RISCV_IRQ_MEXT);
-#endif /* CONFIG_PLIC_IRQ_AFFINITY */
+#endif /* CONFIG_PLIC_IRQ_AFFINITY || CONFIG_RISCV_APLIC_DIRECT_IRQ_AFFINITY */
 #if defined(CONFIG_RISCV_IMSIC) && defined(CONFIG_SMP)
 	/* Initialize IMSIC on secondary CPU */
 	z_riscv_imsic_secondary_init();

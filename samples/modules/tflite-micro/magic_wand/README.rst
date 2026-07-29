@@ -54,7 +54,7 @@ start the emulator:
     https://github.com/renode/renode/releases/
 
 .. _Renode GitHub README:
-    https://github.com/renode/renode/blob/master/README.rst
+    https://github.com/renode/renode/blob/master/README.md
 
 Sample Output
 =============

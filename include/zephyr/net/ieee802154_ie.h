@@ -268,7 +268,7 @@ struct ieee802154_header_ie {
  *   uint16_t csl_period = ...;
  *   uint16_t csl_rendezvous_time = ...;
  *   struct ieee802154_header_ie header_ie =
- *       IEEE802154_DEFINE_HEADER_IE_CSL_REDUCED(csl_phase, csl_period, csl_rendezvous_time);
+ *       IEEE802154_DEFINE_HEADER_IE_CSL_FULL(csl_phase, csl_period, csl_rendezvous_time);
  * @endcode
  *
  * @param _csl_phase CSL phase in CPU byte order

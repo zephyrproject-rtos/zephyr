@@ -196,6 +196,12 @@ static int sdio_io_rw_extended_helper(struct sdio_func *func,
 		}
 	}
 	/* Remaining data must be written using byte I/O */
+	if (func->cis.max_blk_size == 0U) {
+		/* A zero max_blk_size would make MIN(remaining, 0) == 0 and
+		 * the loop below spin forever without making progress.
+		 */
+		return -EIO;
+	}
 	while (remaining > 0) {
 		size = MIN(remaining, func->cis.max_blk_size);
 
@@ -671,18 +677,6 @@ int sdio_card_init(struct sd_card *card)
 	return ret;
 }
 
-/**
- * @brief Initialize SDIO function.
- *
- * Initializes SDIO card function. The card function will not be enabled,
- * but after this call returns the SDIO function structure can be used to read
- * and write data from the card.
- * @param func: function structure to initialize
- * @param card: SD card to enable function on
- * @param num: function number to initialize
- * @retval 0 function was initialized successfully
- * @retval -EIO: I/O error
- */
 int sdio_init_func(struct sd_card *card, struct sdio_func *func,
 		   enum sdio_func_num num)
 {
@@ -694,18 +688,6 @@ int sdio_init_func(struct sd_card *card, struct sdio_func *func,
 	return sdio_read_cis(func, cis_tuples, ARRAY_SIZE(cis_tuples));
 }
 
-
-
-/**
- * @brief Enable SDIO function
- *
- * Enables SDIO card function. @ref sdio_init_func must be called to
- * initialized the function structure before enabling it in the card.
- * @param func: function to enable
- * @retval 0 function was enabled successfully
- * @retval -ETIMEDOUT: card I/O timed out
- * @retval -EIO: I/O error
- */
 int sdio_enable_func(struct sdio_func *func)
 {
 	int ret;
@@ -743,17 +725,6 @@ int sdio_enable_func(struct sdio_func *func)
 	return -ETIMEDOUT;
 }
 
-/**
- * @brief Set block size of SDIO function
- *
- * Set desired block size for SDIO function, used by block transfers
- * to SDIO registers.
- * @param func: function to set block size for
- * @param bsize: block size
- * @retval 0 block size was set
- * @retval -EINVAL: unsupported/invalid block size
- * @retval -EIO: I/O error
- */
 int sdio_set_block_size(struct sdio_func *func, uint16_t bsize)
 {
 	int ret;
@@ -774,18 +745,6 @@ int sdio_set_block_size(struct sdio_func *func, uint16_t bsize)
 	return 0;
 }
 
-/**
- * @brief Read byte from SDIO register
- *
- * Reads byte from SDIO register
- * @param func: function to read from
- * @param reg: register address to read from
- * @param val: filled with byte value read from register
- * @retval 0 read succeeded
- * @retval -EBUSY: card is busy with another request
- * @retval -ETIMEDOUT: card read timed out
- * @retval -EIO: I/O error
- */
 int sdio_read_byte(struct sdio_func *func, uint32_t reg, uint8_t *val)
 {
 	int ret;
@@ -804,18 +763,6 @@ int sdio_read_byte(struct sdio_func *func, uint32_t reg, uint8_t *val)
 	return ret;
 }
 
-/**
- * @brief Write byte to SDIO register
- *
- * Writes byte to SDIO register
- * @param func: function to write to
- * @param reg: register address to write to
- * @param write_val: value to write to register
- * @retval 0 write succeeded
- * @retval -EBUSY: card is busy with another request
- * @retval -ETIMEDOUT: card write timed out
- * @retval -EIO: I/O error
- */
 int sdio_write_byte(struct sdio_func *func, uint32_t reg, uint8_t write_val)
 {
 	int ret;
@@ -835,19 +782,6 @@ int sdio_write_byte(struct sdio_func *func, uint32_t reg, uint8_t write_val)
 	return ret;
 }
 
-/**
- * @brief Write byte to SDIO register, and read result
- *
- * Writes byte to SDIO register, and reads the register after write
- * @param func: function to write to
- * @param reg: register address to write to
- * @param write_val: value to write to register
- * @param read_val: filled with value read from register
- * @retval 0 write succeeded
- * @retval -EBUSY: card is busy with another request
- * @retval -ETIMEDOUT: card write timed out
- * @retval -EIO: I/O error
- */
 int sdio_rw_byte(struct sdio_func *func, uint32_t reg, uint8_t write_val,
 		 uint8_t *read_val)
 {
@@ -868,20 +802,6 @@ int sdio_rw_byte(struct sdio_func *func, uint32_t reg, uint8_t write_val,
 	return ret;
 }
 
-/**
- * @brief Read bytes from SDIO fifo
- *
- * Reads bytes from SDIO register, treating it as a fifo. Reads will
- * all be done from same address.
- * @param func: function to read from
- * @param reg: register address of fifo
- * @param data: filled with data read from fifo
- * @param len: length of data to read from card
- * @retval 0 read succeeded
- * @retval -EBUSY: card is busy with another request
- * @retval -ETIMEDOUT: card read timed out
- * @retval -EIO: I/O error
- */
 int sdio_read_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 		   uint32_t len)
 {
@@ -902,20 +822,6 @@ int sdio_read_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 	return ret;
 }
 
-/**
- * @brief Write bytes to SDIO fifo
- *
- * Writes bytes to SDIO register, treating it as a fifo. Writes will
- * all be done to same address.
- * @param func: function to write to
- * @param reg: register address of fifo
- * @param data: data to write to fifo
- * @param len: length of data to write to card
- * @retval 0 write succeeded
- * @retval -EBUSY: card is busy with another request
- * @retval -ETIMEDOUT: card write timed out
- * @retval -EIO: I/O error
- */
 int sdio_write_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 		    uint32_t len)
 {
@@ -936,20 +842,6 @@ int sdio_write_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 	return ret;
 }
 
-/**
- * @brief Read blocks from SDIO fifo
- *
- * Reads blocks from SDIO register, treating it as a fifo. Reads will
- * all be done from same address.
- * @param func: function to read from
- * @param reg: register address of fifo
- * @param data: filled with data read from fifo
- * @param blocks: number of blocks to read from fifo
- * @retval 0 read succeeded
- * @retval -EBUSY: card is busy with another request
- * @retval -ETIMEDOUT: card read timed out
- * @retval -EIO: I/O error
- */
 int sdio_read_blocks_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 			  uint32_t blocks)
 {
@@ -970,20 +862,6 @@ int sdio_read_blocks_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 	return ret;
 }
 
-/**
- * @brief Write blocks to SDIO fifo
- *
- * Writes blocks from SDIO register, treating it as a fifo. Writes will
- * all be done to same address.
- * @param func: function to write to
- * @param reg: register address of fifo
- * @param data: data to write to fifo
- * @param blocks: number of blocks to write to fifo
- * @retval 0 write succeeded
- * @retval -EBUSY: card is busy with another request
- * @retval -ETIMEDOUT: card write timed out
- * @retval -EIO: I/O error
- */
 int sdio_write_blocks_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 			   uint32_t blocks)
 {
@@ -1004,19 +882,6 @@ int sdio_write_blocks_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 	return ret;
 }
 
-/**
- * @brief Copy bytes from an SDIO card
- *
- * Copies bytes from an SDIO card, starting from provided address.
- * @param func: function to read from
- * @param reg: register address to start copy at
- * @param data: buffer to copy data into
- * @param len: length of data to read
- * @retval 0 read succeeded
- * @retval -EBUSY: card is busy with another request
- * @retval -ETIMEDOUT: card read timed out
- * @retval -EIO: I/O error
- */
 int sdio_read_addr(struct sdio_func *func, uint32_t reg, uint8_t *data,
 		   uint32_t len)
 {
@@ -1037,20 +902,6 @@ int sdio_read_addr(struct sdio_func *func, uint32_t reg, uint8_t *data,
 	return ret;
 }
 
-/**
- * @brief Copy bytes to an SDIO card
- *
- * Copies bytes to an SDIO card, starting from provided address.
- *
- * @param func: function to write to
- * @param reg: register address to start copy at
- * @param data: buffer to copy data from
- * @param len: length of data to write
- * @retval 0 write succeeded
- * @retval -EBUSY: card is busy with another request
- * @retval -ETIMEDOUT: card write timed out
- * @retval -EIO: I/O error
- */
 int sdio_write_addr(struct sdio_func *func, uint32_t reg, uint8_t *data,
 		    uint32_t len)
 {

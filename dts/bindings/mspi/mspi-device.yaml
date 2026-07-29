@@ -150,19 +150,19 @@ properties:
     description: |
       Length in bytes of address to be sent in address phase.
 
-  xip-config:
+  memmap-config:
     type: array
     description: |
-      Array of parameters to configure the xip feature.
-      enable: whether XIP feature is enabled.
+      Array of parameters to configure the memory map feature.
+      enable: whether the memory map feature is enabled.
       address_offset: The offset in bytes to the start of the
-                      platform specific XIP address region.
-      size: The size in bytes of the XIP address region one
+                      platform specific memory mapped address region.
+      size: The size in bytes of the memory mapped address region one
             wish to enable or disable.
       permission: The permission granted to the region. (RW/RO)
 
       For controller that support this feature. One may map the device
-      memory into Soc system memory map. i.e. XIP address region
+      memory into Soc system memory map. i.e. memory mapped address region
       So that the device may be used as an external RAM and execute code.
 
       default =
@@ -180,7 +180,7 @@ properties:
       enable: whether scrambling feature is enabled.
       address_offset: The offset in bytes to the start address which
                       can be the offset to the start of the platform
-                      specific XIP address region or physical device address.
+                      specific memory mapped address region or physical device address.
 
       size: The size in bytes of the region one wish to enable or disable.
       For controller that support hardware scrambling, one may use it for

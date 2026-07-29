@@ -4,13 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/ {
-	chosen {
-		zephyr,flash = &flash_m1k0;
-		zephyr,flash-controller = &manual_flash_1k;
-	};
-};
-
 &manual_flash_1k {
 	status = "okay";
 
@@ -22,15 +15,15 @@
 		     &fspi_fsck_gpg7_default>;
 	pinctrl-names = "default";
 
-	flash_m1k0: flash_m1k0@0 {
+	flash_m1k1: flash_m1k1@1 {
 		compatible = "soc-nv-flash";
-		reg = <0 DT_SIZE_M(1)>;
+		reg = <1 DT_SIZE_M(1)>;
 		erase-block-size = <4096>;
 		write-block-size = <1>;
 	};
 };
 
-&flash_m1k0 {
+&flash_m1k1 {
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

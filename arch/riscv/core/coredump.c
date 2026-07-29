@@ -211,6 +211,10 @@ void arch_coredump_priv_stack_dump(struct k_thread *thread)
 {
 	uintptr_t start_addr, end_addr;
 
+	if (thread->arch.priv_stack_start == 0) {
+		return;
+	}
+
 	/* See: zephyr/include/zephyr/arch/riscv/arch.h */
 	if (IS_ENABLED(CONFIG_PMP_POWER_OF_TWO_ALIGNMENT)) {
 		start_addr = thread->arch.priv_stack_start + Z_RISCV_STACK_GUARD_SIZE;

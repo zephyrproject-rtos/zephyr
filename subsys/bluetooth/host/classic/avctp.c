@@ -120,7 +120,6 @@ static void avctp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 
 	session = AVCTP_CHAN(chan);
 	LOG_DBG("chan %p session %p", chan, session);
-	session->br_chan.chan.conn = NULL;
 
 	net_buf_drop(&session->reassembly_buf);
 

@@ -35,20 +35,18 @@ struct gpio_aesc_config {
 	void (*irq_config)(const struct device *dev);
 };
 
-struct gpio_aesc_regs {
-	uint32_t info;
-	uint32_t read;
-	uint32_t write;
-	uint32_t direction;
-	uint32_t high_ip;
-	uint32_t high_ie;
-	uint32_t low_ip;
-	uint32_t low_ie;
-	uint32_t rise_ip;
-	uint32_t rise_ie;
-	uint32_t fall_ip;
-	uint32_t fall_ie;
-} __packed;
+#define GPIO_AESC_INFO		0x00
+#define GPIO_AESC_READ		0x04
+#define GPIO_AESC_WRITE		0x08
+#define GPIO_AESC_DIRECTION	0x0c
+#define GPIO_AESC_HIGH_IP	0x10
+#define GPIO_AESC_HIGH_IE	0x14
+#define GPIO_AESC_LOW_IP	0x18
+#define GPIO_AESC_LOW_IE	0x1c
+#define GPIO_AESC_RISE_IP	0x20
+#define GPIO_AESC_RISE_IE	0x24
+#define GPIO_AESC_FALL_IP	0x28
+#define GPIO_AESC_FALL_IE	0x2c
 
 struct gpio_aesc_data {
 	struct gpio_driver_data common;
@@ -62,23 +60,23 @@ struct gpio_aesc_data {
 
 #define DEV_CFG(dev) ((const struct gpio_aesc_config * const)(dev)->config)
 #define DEV_DATA(dev) ((struct gpio_aesc_data *)(dev)->data)
-#define DEV_GPIO(dev)							      \
-	((volatile struct gpio_aesc_regs *)DEV_DATA(dev)->reg_base)
 
 static int gpio_aesc_config(const struct device *dev, gpio_pin_t pin,
 			    gpio_flags_t flags)
 {
-	volatile struct gpio_aesc_regs *gpio = DEV_GPIO(dev);
 	struct gpio_aesc_data *data = DEV_DATA(dev);
 	k_spinlock_key_t key;
+	uint32_t direction;
 
 	key = k_spin_lock(&data->lock);
 	/* Configure gpio direction */
+	direction = sys_read32(data->reg_base + GPIO_AESC_DIRECTION);
 	if (flags & GPIO_OUTPUT) {
-		gpio->direction |= BIT(pin);
+		direction |= BIT(pin);
 	} else {
-		gpio->direction &= ~BIT(pin);
+		direction &= ~BIT(pin);
 	}
+	sys_write32(direction, data->reg_base + GPIO_AESC_DIRECTION);
 	k_spin_unlock(&data->lock, key);
 
 	return 0;
@@ -87,9 +85,9 @@ static int gpio_aesc_config(const struct device *dev, gpio_pin_t pin,
 static int gpio_aesc_port_get_raw(const struct device *dev,
 				  gpio_port_value_t *value)
 {
-	volatile struct gpio_aesc_regs *gpio = DEV_GPIO(dev);
+	struct gpio_aesc_data *data = DEV_DATA(dev);
 
-	*value = gpio->read;
+	*value = sys_read32(data->reg_base + GPIO_AESC_READ);
 
 	return 0;
 }
@@ -98,12 +96,14 @@ static int gpio_aesc_port_set_masked_raw(const struct device *dev,
 					 gpio_port_pins_t mask,
 					 gpio_port_value_t value)
 {
-	volatile struct gpio_aesc_regs *gpio = DEV_GPIO(dev);
 	struct gpio_aesc_data *data = DEV_DATA(dev);
 	k_spinlock_key_t key;
+	uint32_t write;
 
 	key = k_spin_lock(&data->lock);
-	gpio->write = (gpio->write & ~mask) | (value & mask);
+	write = sys_read32(data->reg_base + GPIO_AESC_WRITE);
+	write = (write & ~mask) | (value & mask);
+	sys_write32(write, data->reg_base + GPIO_AESC_WRITE);
 	k_spin_unlock(&data->lock, key);
 
 	return 0;
@@ -112,12 +112,14 @@ static int gpio_aesc_port_set_masked_raw(const struct device *dev,
 static int gpio_aesc_port_set_bits_raw(const struct device *dev,
 				       gpio_port_pins_t mask)
 {
-	volatile struct gpio_aesc_regs *gpio = DEV_GPIO(dev);
 	struct gpio_aesc_data *data = DEV_DATA(dev);
 	k_spinlock_key_t key;
+	uint32_t write;
 
 	key = k_spin_lock(&data->lock);
-	gpio->write |= mask;
+	write = sys_read32(data->reg_base + GPIO_AESC_WRITE);
+	write |= mask;
+	sys_write32(write, data->reg_base + GPIO_AESC_WRITE);
 	k_spin_unlock(&data->lock, key);
 
 	return 0;
@@ -126,12 +128,14 @@ static int gpio_aesc_port_set_bits_raw(const struct device *dev,
 static int gpio_aesc_port_clear_bits_raw(const struct device *dev,
 					 gpio_port_pins_t mask)
 {
-	volatile struct gpio_aesc_regs *gpio = DEV_GPIO(dev);
 	struct gpio_aesc_data *data = DEV_DATA(dev);
 	k_spinlock_key_t key;
+	uint32_t write;
 
 	key = k_spin_lock(&data->lock);
-	gpio->write &= ~mask;
+	write = sys_read32(data->reg_base + GPIO_AESC_WRITE);
+	write &= ~mask;
+	sys_write32(write, data->reg_base + GPIO_AESC_WRITE);
 	k_spin_unlock(&data->lock, key);
 
 	return 0;
@@ -140,12 +144,14 @@ static int gpio_aesc_port_clear_bits_raw(const struct device *dev,
 static int gpio_aesc_port_toggle_bits(const struct device *dev,
 				      gpio_port_pins_t mask)
 {
-	volatile struct gpio_aesc_regs *gpio = DEV_GPIO(dev);
 	struct gpio_aesc_data *data = DEV_DATA(dev);
 	k_spinlock_key_t key;
+	uint32_t write;
 
 	key = k_spin_lock(&data->lock);
-	gpio->write ^= mask;
+	write = sys_read32(data->reg_base + GPIO_AESC_WRITE);
+	write ^= mask;
+	sys_write32(write, data->reg_base + GPIO_AESC_WRITE);
 	k_spin_unlock(&data->lock, key);
 
 	return 0;
@@ -156,40 +162,45 @@ static int gpio_aesc_pin_interrupt_configure(const struct device *dev,
 					     enum gpio_int_mode mode,
 					     enum gpio_int_trig trig)
 {
-	volatile struct gpio_aesc_regs *gpio = DEV_GPIO(dev);
-
-	gpio->rise_ie &= ~BIT(pin);
-	gpio->fall_ie &= ~BIT(pin);
-	gpio->high_ie &= ~BIT(pin);
-	gpio->low_ie  &= ~BIT(pin);
+	struct gpio_aesc_data *data = DEV_DATA(dev);
+	uintptr_t base = data->reg_base;
+	uint32_t rise_ie = sys_read32(base + GPIO_AESC_RISE_IE) & ~BIT(pin);
+	uint32_t fall_ie = sys_read32(base + GPIO_AESC_FALL_IE) & ~BIT(pin);
+	uint32_t high_ie = sys_read32(base + GPIO_AESC_HIGH_IE) & ~BIT(pin);
+	uint32_t low_ie = sys_read32(base + GPIO_AESC_LOW_IE) & ~BIT(pin);
 
 	switch (mode) {
 	case GPIO_INT_MODE_DISABLED:
 		break;
 	case GPIO_INT_MODE_LEVEL:
 		if (trig == GPIO_INT_TRIG_HIGH) {
-			gpio->high_ip = BIT(pin);
-			gpio->high_ie |= BIT(pin);
+			sys_write32(BIT(pin), base + GPIO_AESC_HIGH_IP);
+			high_ie |= BIT(pin);
 		}
 		if (trig == GPIO_INT_TRIG_LOW) {
-			gpio->low_ip = BIT(pin);
-			gpio->low_ie  |= BIT(pin);
+			sys_write32(BIT(pin), base + GPIO_AESC_LOW_IP);
+			low_ie |= BIT(pin);
 		}
 		break;
 	case GPIO_INT_MODE_EDGE:
 		if ((trig & GPIO_INT_HIGH_1) != 0) {
-			gpio->rise_ip = BIT(pin);
-			gpio->rise_ie |= BIT(pin);
+			sys_write32(BIT(pin), base + GPIO_AESC_RISE_IP);
+			rise_ie |= BIT(pin);
 		}
 		if ((trig & GPIO_INT_LOW_0) != 0) {
-			gpio->fall_ip = BIT(pin);
-			gpio->fall_ie |= BIT(pin);
+			sys_write32(BIT(pin), base + GPIO_AESC_FALL_IP);
+			fall_ie |= BIT(pin);
 		}
 		break;
 	default:
 		__ASSERT(false, "Invalid MODE %d passed to driver", mode);
 		return -ENOTSUP;
 	}
+
+	sys_write32(rise_ie, base + GPIO_AESC_RISE_IE);
+	sys_write32(fall_ie, base + GPIO_AESC_FALL_IE);
+	sys_write32(high_ie, base + GPIO_AESC_HIGH_IE);
+	sys_write32(low_ie, base + GPIO_AESC_LOW_IE);
 
 	return 0;
 }
@@ -205,19 +216,19 @@ static int gpio_aesc_manage_callback(const struct device *dev,
 
 static void gpio_aesc_isr(const struct device *dev)
 {
-	volatile struct gpio_aesc_regs *gpio = DEV_GPIO(dev);
 	struct gpio_aesc_data *data = DEV_DATA(dev);
+	uintptr_t base = data->reg_base;
 	gpio_port_value_t pins = 0;
 
-	pins |= gpio->rise_ip;
-	pins |= gpio->fall_ip;
-	pins |= gpio->high_ip;
-	pins |= gpio->low_ip;
+	pins |= sys_read32(base + GPIO_AESC_RISE_IP);
+	pins |= sys_read32(base + GPIO_AESC_FALL_IP);
+	pins |= sys_read32(base + GPIO_AESC_HIGH_IP);
+	pins |= sys_read32(base + GPIO_AESC_LOW_IP);
 
-	gpio->rise_ip = pins;
-	gpio->fall_ip = pins;
-	gpio->high_ip = pins;
-	gpio->low_ip  = pins;
+	sys_write32(pins, base + GPIO_AESC_RISE_IP);
+	sys_write32(pins, base + GPIO_AESC_FALL_IP);
+	sys_write32(pins, base + GPIO_AESC_HIGH_IP);
+	sys_write32(pins, base + GPIO_AESC_LOW_IP);
 
 	gpio_fire_callbacks(&data->cb, dev, pins);
 }
@@ -229,7 +240,6 @@ static int gpio_aesc_init(const struct device *dev)
 	volatile uintptr_t *base_addr =
 		(volatile uintptr_t *)DEVICE_MMIO_NAMED_GET(dev, mmio);
 	struct gpio_aesc_data *data = DEV_DATA(dev);
-	volatile struct gpio_aesc_regs *gpio;
 	int ret;
 
 	LOG_DBG("IP core version: %i.%i.%i.",
@@ -239,7 +249,6 @@ static int gpio_aesc_init(const struct device *dev)
 	);
 	data->reg_base = ip_id_relocate_driver(base_addr);
 	LOG_DBG("Relocate driver to address 0x%lx.", data->reg_base);
-	gpio = DEV_GPIO(dev);
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -247,10 +256,10 @@ static int gpio_aesc_init(const struct device *dev)
 		return ret;
 	}
 
-	gpio->high_ie = 0;
-	gpio->low_ie = 0;
-	gpio->rise_ie = 0;
-	gpio->fall_ie = 0;
+	sys_write32(0, data->reg_base + GPIO_AESC_HIGH_IE);
+	sys_write32(0, data->reg_base + GPIO_AESC_LOW_IE);
+	sys_write32(0, data->reg_base + GPIO_AESC_RISE_IE);
+	sys_write32(0, data->reg_base + GPIO_AESC_FALL_IE);
 
 	cfg->irq_config(dev);
 
@@ -280,7 +289,7 @@ static DEVICE_API(gpio, gpio_aesc_driver_api) = {
 			    0);						      \
 		irq_enable(DT_INST_IRQN(no));				      \
 	}								      \
-	static struct gpio_aesc_config gpio_aesc_dev_cfg_##no = {	      \
+	static const struct gpio_aesc_config gpio_aesc_dev_cfg_##no = {	      \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(no),		      \
 		DEVICE_MMIO_NAMED_ROM_INIT(mmio, DT_DRV_INST(no)),	      \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(no),		      \

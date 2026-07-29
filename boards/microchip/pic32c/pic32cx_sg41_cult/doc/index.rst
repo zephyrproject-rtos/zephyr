@@ -59,32 +59,9 @@ Programming & Debugging
 
 .. zephyr:board-supported-runners::
 
-Flash Using MPLab IPE
+Flash Using MPLAB IPE
 =====================
-To flash the board using MPLAB IPE, follow the steps below:
-
-1. Install MPLAB IPE
-
-   - Download the `MPLAB X IDE`_ installer from the Microchip Technology website.
-   - Extract the downloaded package and run the installer script on your system.
-   - During installation, select **MPLAB IPE** from the available components.
-   - Ensure that the ``ipecmd`` executable is available in your system ``PATH``.
-
-2. Connect the Board
-
-   - Connect the **DEBUG USB (J300)** port on the board to your host machine.
-   - This connection powers up the board and provides access to the on-board
-     Debugger (PKoB).
-   - The PKoB enables programming of the target microcontroller through MPLAB IPE.
-
-3.  Flash the Firmware
-
-   - Run the following command from your project directory:
-
-   .. code-block:: console
-
-      west flash
-
+For instructions on flashing using MPLAB IPE see :ref:`microchip-mplab-ipe-flashing`.
 
 Flash Using J-Link
 ==================

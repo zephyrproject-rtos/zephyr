@@ -9,8 +9,8 @@
  * @ingroup dvp-20pin-connector
  */
 
-#ifndef INCLUDE_ZEPHYR_DT_BINDINGS_GPIO_DVP_20PIN_CONNECTOR_H_
-#define INCLUDE_ZEPHYR_DT_BINDINGS_GPIO_DVP_20PIN_CONNECTOR_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_DVP_20PIN_CONNECTOR_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_DVP_20PIN_CONNECTOR_H_
 
 /**
  * @defgroup dvp-20pin-connector Arducam DVP 20-pin connector
@@ -38,4 +38,4 @@
 #define DVP_20PIN_GPIO1	20	/**< Extra GPIO pin present on some modules */
 /** @} */
 
-#endif /* INCLUDE_ZEPHYR_DT_BINDINGS_GPIO_DVP_20PIN_CONNECTOR_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_GPIO_DVP_20PIN_CONNECTOR_H_ */

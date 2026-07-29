@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_POSIX_TYPES_H_
-#define ZEPHYR_INCLUDE_POSIX_TYPES_H_
+#ifndef ZEPHYR_INCLUDE_POSIX_POSIX_TYPES_H_
+#define ZEPHYR_INCLUDE_POSIX_POSIX_TYPES_H_
 
 #if !(defined(CONFIG_NATIVE_LIBC))
 #include <sys/types.h>
@@ -156,4 +156,4 @@ BUILD_ASSERT(sizeof(pthread_once_t) >= sizeof(struct pthread_once));
 }
 #endif
 
-#endif	/* ZEPHYR_INCLUDE_POSIX_TYPES_H_ */
+#endif /* ZEPHYR_INCLUDE_POSIX_POSIX_TYPES_H_ */

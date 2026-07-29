@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_H_
 
 /**
  * @brief Public Broadcast Profile (PBP)
@@ -101,4 +101,4 @@ int bt_pbp_parse_announcement(struct bt_data *data, enum bt_pbp_announcement_fea
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_PBP_H_ */

@@ -4,6 +4,8 @@
 config VIDEO_GC2145
 	bool "GC2145 CMOS digital image sensor"
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_GALAXYCORE_GC2145),pwdn-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_GALAXYCORE_GC2145),reset-gpios)
 	depends on DT_HAS_GALAXYCORE_GC2145_ENABLED
 	default y
 	help

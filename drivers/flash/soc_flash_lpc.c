@@ -25,7 +25,8 @@
 #error No matching compatible for soc_flash_lpc.c
 #endif
 
-#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
+
 
 struct flash_priv {
 	/* HACK: flash write protection is managed in software. */

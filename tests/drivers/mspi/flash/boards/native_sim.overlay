@@ -18,7 +18,7 @@
 
 	flash_dummy0: flash_dummy0@0 {
 		status = "okay";
-		compatible = "zephyr,mspi-emul-flash";
+		compatible = "zephyr,emul-flash";
 		reg = <0x0>;
 		size = <DT_SIZE_K(8*8)>;
 		mspi-max-frequency = <48000000>;
@@ -35,7 +35,7 @@
 
 	flash_dummy1: flash_dummy1@1 {
 		status = "okay";
-		compatible = "zephyr,mspi-emul-flash";
+		compatible = "zephyr,emul-flash";
 		reg = <0x1>;
 		size = <DT_SIZE_K(8*8)>;
 		mspi-max-frequency = <96000000>;
@@ -49,7 +49,7 @@
 		address-length = "ADDR_3_BYTE";
 		rx-dummy = <6>;
 		tx-dummy = <5>;
-		xip-config = <1 0 0 0>;
+		memmap-config = <1 0 0 0>;
 		ce-break-config = <1024 4>;
 	};
 };

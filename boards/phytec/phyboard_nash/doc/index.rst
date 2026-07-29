@@ -141,4 +141,4 @@ For more information refer to the `PHYTEC website`_.
 .. _PHYTEC website:
    https://www.phytec.eu/en/produkte/development-kits/phyboard-nash/
 .. _phyCORE-i.MX93 BSP Manual:
-   https://phytec.github.io/doc-bsp-yocto/bsp/imx9/imx93/imx93.html
+   https://phytec.github.io/doc-bsp-yocto/bsp/imx9/imx9.html

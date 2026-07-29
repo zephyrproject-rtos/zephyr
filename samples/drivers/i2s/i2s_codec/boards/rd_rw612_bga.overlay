@@ -6,6 +6,7 @@
 
 / {
 	aliases {
+		dmic0 = &dmic_dev;
 		i2s-codec-tx = &flexcomm1;
 	};
 };

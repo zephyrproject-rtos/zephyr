@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Sean Nyekjaer
  * # Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -108,9 +109,9 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * The final 16 KiB is reserved for the application.
@@ -118,6 +119,7 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@3c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0003c000 0x00004000>;
 		};

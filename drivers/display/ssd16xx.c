@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(ssd16xx);
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/display/ssd16xx.h>
 #include "ssd16xx_regs.h"
@@ -31,6 +32,9 @@ LOG_MODULE_REGISTER(ssd16xx);
 #define SSD16XX_PIXELS_PER_BYTE		8
 #define SSD16XX_DEFAULT_TR_VALUE	25U
 #define SSD16XX_TR_SCALE_FACTOR		256U
+#define SSD16XX_DISPLAY_OPTION_LEN	10U
+#define SSD16XX_DISPLAY_OPTION_F	5U
+#define SSD16XX_DISPLAY_OPTION_RAM_PINGPONG	BIT(6)
 
 
 enum ssd16xx_profile_type {
@@ -104,6 +108,7 @@ struct ssd16xx_config {
 	uint16_t rotation;
 	uint16_t height;
 	uint16_t width;
+	bool ram_ping_pong_mode2;
 	uint8_t tssv;
 };
 
@@ -732,6 +737,18 @@ static int ssd16xx_load_lut(const struct device *dev,
 	}
 }
 
+static int ssd16xx_enable_ram_pingpong(const struct device *dev)
+{
+	uint8_t display_option[SSD16XX_DISPLAY_OPTION_LEN] = { 0 };
+
+	/* F[6] enables RAM ping-pong for display mode 2. */
+	display_option[SSD16XX_DISPLAY_OPTION_F] =
+		SSD16XX_DISPLAY_OPTION_RAM_PINGPONG;
+
+	return ssd16xx_write_cmd(dev, SSD16XX_CMD_OTP_SELECTION_CTRL,
+				      display_option, sizeof(display_option));
+}
+
 static int ssd16xx_set_profile(const struct device *dev,
 			       enum ssd16xx_profile_type type)
 {
@@ -838,6 +855,13 @@ static int ssd16xx_set_profile(const struct device *dev,
 		LOG_DBG("Setting BWF");
 		err = ssd16xx_write_cmd(dev, SSD16XX_CMD_BWF_CTRL,
 					&p->bwf, 1);
+		if (err < 0) {
+			return err;
+		}
+	}
+
+	if (type == SSD16XX_PROFILE_PARTIAL && config->ram_ping_pong_mode2) {
+		err = ssd16xx_enable_ram_pingpong(dev);
 		if (err < 0) {
 			return err;
 		}
@@ -1071,6 +1095,7 @@ static struct ssd16xx_quirks quirks_solomon_ssd1681 = {
 		.quirks = quirks_ptr,					\
 		.height = DT_PROP(n, height),				\
 		.width = DT_PROP(n, width),				\
+		.ram_ping_pong_mode2 = DT_PROP_OR(n, ram_ping_pong_mode2, false),	\
 		.rotation = DT_PROP(n, rotation),			\
 		.tssv = DT_PROP_OR(n, tssv, 0),				\
 		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),	\

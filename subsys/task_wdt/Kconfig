@@ -66,6 +66,16 @@ config TASK_WDT_HW_FALLBACK_DELAY
 	  kernel timer. This is especially important if the hardware watchdog
 	  is clocked by an inaccurate low-speed RC oscillator.
 
+config TASK_WDT_HW_FALLBACK_PAUSE_HALTED_BY_DBG
+	bool "Pause the hardware watchdog when halted by the debugger"
+	depends on TASK_WDT_HW_FALLBACK
+	default y
+	help
+	  Configure the hardware watchdog to automatically pause when the
+	  system is halted by the debugger.
+	  Note that this feature is supported only by a subset of hardware
+	  watchdogs.
+
 config TASK_WDT_HW_FALLBACK_PAUSE_IN_SLEEP
 	bool "Pause the hardware watchdog in system sleep"
 	depends on TASK_WDT_HW_FALLBACK

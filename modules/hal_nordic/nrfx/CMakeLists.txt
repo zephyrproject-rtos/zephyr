@@ -134,7 +134,7 @@ if(NOT CONFIG_NRF_DONT_USE_STABLE_BSP)
     zephyr_library_sources(${MDK_DIR}/nrf54l/system_nrf54l.c)
   endif()
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF71
-                               ${MDK_DIR}/nrf71/nrf7120_enga/system_nrf7120_enga.c)
+                               ${MDK_DIR}/nrf71/system_nrf71.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF91
                                ${MDK_DIR}/nrf91/system_nrf91.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_NRF92

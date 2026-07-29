@@ -109,23 +109,21 @@ typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
  *  - Others ('usb-nop-xceiv') are assumed to be embedded FS PHYs
  */
 #define UDC_STM32_NODE_PHY_ITFACE(usb_node)					\
-	COND_CODE_1(USB_STM32_NODE_PHY_IS_ULPI(usb_node),			\
-		(STM32_PCD_PHY_EXTERNAL_ULPI),					\
-	(COND_CODE_1(USB_STM32_NODE_PHY_IS_EMBEDDED_HS(usb_node),		\
-		(STM32_PCD_PHY_EMBEDDED_HS),					\
-		(STM32_PCD_PHY_EMBEDDED_FS))					\
-	))
+	COND_CASE_1(								\
+		USB_STM32_NODE_PHY_IS_ULPI(usb_node),				\
+			(STM32_PCD_PHY_EXTERNAL_ULPI),				\
+		USB_STM32_NODE_PHY_IS_EMBEDDED_HS(usb_node),			\
+			(STM32_PCD_PHY_EMBEDDED_HS),				\
+		(STM32_PCD_PHY_EMBEDDED_FS))
 
 /*
  * Evaluates to 1 if 'usb_node' uses an embedded FS PHY or has
  * the 'maximum-speed' property set to 'full-speed', 0 otherwise.
- *
- * N.B.: enum index 1 corresponds to 'full-speed'
  */
 #define UDC_STM32_NODE_LIMITED_TO_FS(usb_node)					\
 	UTIL_OR(IS_EQ(UDC_STM32_NODE_PHY_ITFACE(usb_node), PHY_PCD_EMBEDDED),	\
 		UTIL_AND(DT_NODE_HAS_PROP(usb_node, maximum_speed),		\
-			IS_EQ(DT_ENUM_IDX(usb_node, maximum_speed), 1)))
+			DT_ENUM_HAS_VALUE(usb_node, maximum_speed, full_speed)))
 
 /*
  * Returns the 'PCD_Speed' value for 'usb_node', which indicates

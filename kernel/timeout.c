@@ -16,18 +16,18 @@
 
 #include <timeslicing.h>
 
+/* Absolute tick counter: ticks since boot. */
 static uint64_t curr_tick;
-
-static sys_dlist_t timeout_list = SYS_DLIST_STATIC_INIT(&timeout_list);
 
 /*
  * The timeout code shall take no locks other than its own (timeout_lock), nor
- * shall it call any other subsystem while holding this lock.
+ * shall it call any other subsystem while holding this lock. Code outside this
+ * file takes it through sys_clock_lock()/sys_clock_unlock().
  */
 static struct k_spinlock timeout_lock;
 
 /* Ticks left to process in the currently-executing sys_clock_announce() */
-static int announce_remaining;
+static uint32_t announce_remaining;
 
 /* CPU id currently inside sys_clock_announce_locked()'s firing loop, or -1
  * when no CPU is. The SMP early-return below ensures at most one CPU is in
@@ -69,30 +69,7 @@ static inline void inflight_mark_superseded(void)
 					       INFLIGHT_SUPERSEDED_BIT);
 }
 
-static struct _timeout *first(void)
-{
-	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list);
-
-	return (t == NULL) ? NULL : CONTAINER_OF(t, struct _timeout, node);
-}
-
-static struct _timeout *next(struct _timeout *t)
-{
-	sys_dnode_t *n = sys_dlist_peek_next(&timeout_list, &t->node);
-
-	return (n == NULL) ? NULL : CONTAINER_OF(n, struct _timeout, node);
-}
-
-static void remove_timeout(struct _timeout *t)
-{
-	if (next(t) != NULL) {
-		next(t)->dticks += t->dticks;
-	}
-
-	sys_dlist_remove(&t->node);
-}
-
-static int32_t elapsed(void)
+static uint32_t elapsed(void)
 {
 	/*
 	 * While *this* CPU is executing sys_clock_announce_locked()'s firing
@@ -120,19 +97,76 @@ static int32_t elapsed(void)
 	       (IS_ENABLED(CONFIG_SMP) ? announce_remaining : 0);
 }
 
-static int32_t next_timeout(int32_t ticks_elapsed)
-{
-	struct _timeout *to = first();
-	int32_t ret;
+/*
+ * Backend queue implementation. The selected backend's queue instance and its
+ * z_timeout_q_*() operations are private to this file: the backend is a header
+ * included only here, after the shared state above, so those operations can
+ * reach curr_tick / announce_remaining / inflight_timeout / timeout_lock
+ * directly. The per-node helpers (z_init_timeout / z_is_inactive_timeout) are
+ * tree-wide and live in timeout_q.h.
+ */
+#if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP)
+#include "timeout_minheap.h"
+#elif defined(CONFIG_TIMEOUT_BACKEND_WHEEL)
+#include "timeout_wheel.h"
+#elif defined(CONFIG_TIMEOUT_BACKEND_BUCKET)
+#include "timeout_bucket.h"
+#else /* CONFIG_TIMEOUT_BACKEND_DLIST */
+#include "timeout_list.h"
+#endif
 
-	if ((to == NULL) ||
-	    ((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
-		ret = SYS_CLOCK_MAX_WAIT;
-	} else {
-		ret = max(0, to->dticks - ticks_elapsed);
+/*
+ * Ticks the driver may wait before the next sys_clock_announce(). The
+ * announce-range cap lives here, in the backend-independent front end, so no
+ * backend has to reproduce it: the backend only reports the delta to its
+ * earliest pending timeout via z_timeout_q_next_expiry().
+ */
+static uint32_t next_timeout(uint32_t ticks_elapsed)
+{
+	k_ticks_t next = z_timeout_q_next_expiry();
+	uint32_t dticks;
+
+	/*
+	 * sys_clock_announce() reports the ticks elapsed since the previous
+	 * announce, so the gap between two announces must not exceed
+	 * SYS_CLOCK_MAX_WAIT for the announced count to fit. The budget left
+	 * from now on is SYS_CLOCK_MAX_WAIT - ticks_elapsed; if it is already
+	 * spent ask for an announce right away.
+	 */
+	if (ticks_elapsed >= SYS_CLOCK_MAX_WAIT) {
+		return 0;
 	}
 
-	return ret;
+	/*
+	 * With nothing pending under sloppy idle, report SYS_CLOCK_MAX_WAIT
+	 * verbatim (not the budget): it is the "no deadline" value a driver
+	 * looks for to stop the clock entirely, and a skewed uptime is
+	 * acceptable. Without sloppy idle the uptime must stay correct, so
+	 * respect the budget and keep waking up.
+	 */
+	if (next == K_TICKS_FOREVER) {
+		if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE)) {
+			return SYS_CLOCK_MAX_WAIT;
+		}
+		return SYS_CLOCK_MAX_WAIT - ticks_elapsed;
+	}
+
+	/*
+	 * A timeout further out than can be scheduled in one step: wait nearly
+	 * the whole budget, but stop one short of SYS_CLOCK_MAX_WAIT so it is
+	 * never mistaken for the "no deadline" value above (which would drop
+	 * the timeout under sloppy idle); an intermediate announce re-evaluates.
+	 * Testing next (which may be 64-bit) against the cap also keeps the
+	 * remaining arithmetic in 32 bits.
+	 */
+	if (next >= SYS_CLOCK_MAX_WAIT) {
+		return SYS_CLOCK_MAX_WAIT - 1 - ticks_elapsed;
+	}
+
+	/* Otherwise wait until the timeout, relative to now (0 if due). */
+	dticks = (uint32_t)next;
+
+	return (dticks > ticks_elapsed) ? (dticks - ticks_elapsed) : 0;
 }
 
 k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout)
@@ -147,13 +181,13 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(to));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
-	__ASSERT(!sys_dnode_is_linked(&to->node), "");
+	__ASSERT(z_is_inactive_timeout(to), "");
 	to->fn = fn;
 
 	K_SPINLOCK(&timeout_lock) {
-		struct _timeout *t;
-		int32_t ticks_elapsed;
+		uint32_t ticks_elapsed;
 		bool has_elapsed = false;
+		k_ticks_t dticks;
 
 		if (Z_IS_TIMEOUT_RELATIVE(timeout)) {
 			ticks_elapsed = elapsed();
@@ -175,30 +209,16 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 			 * announce is *not* at a tick edge and still needs
 			 * the round-up.
 			 */
-			to->dticks = timeout.ticks + ticks_elapsed +
-				     (this_cpu_announcing() ? 0 : 1);
-			ticks = curr_tick + to->dticks;
+			dticks = timeout.ticks + ticks_elapsed +
+				 (this_cpu_announcing() ? 0 : 1);
+			ticks = curr_tick + dticks;
 		} else {
-			k_ticks_t dticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
-
-			to->dticks = max(1, dticks);
+			dticks = Z_TICK_ABS(timeout.ticks) - curr_tick;
+			dticks = max(1, dticks);
 			ticks = timeout.ticks;
 		}
 
-		for (t = first(); t != NULL; t = next(t)) {
-			if (t->dticks > to->dticks) {
-				t->dticks -= to->dticks;
-				sys_dlist_insert(&t->node, &to->node);
-				break;
-			}
-			to->dticks -= t->dticks;
-		}
-
-		if (t == NULL) {
-			sys_dlist_append(&timeout_list, &to->node);
-		}
-
-		if (to == first() && !any_cpu_announcing()) {
+		if (z_timeout_q_insert(to, dticks) && !any_cpu_announcing()) {
 			if (!has_elapsed) {
 				/* In case of absolute timeout that is first to expire
 				 * elapsed need to be read from the system clock.
@@ -217,12 +237,11 @@ int z_try_abort_timeout(struct _timeout *to)
 	int ret = -EINVAL;
 
 	K_SPINLOCK(&timeout_lock) {
-		if (sys_dnode_is_linked(&to->node)) {
-			bool is_first = (to == first());
+		if (!z_is_inactive_timeout(to)) {
+			bool was_first = z_timeout_q_remove(to);
 
-			remove_timeout(to);
 			ret = 0;
-			if (is_first) {
+			if (was_first) {
 				sys_clock_set_timeout(next_timeout(elapsed()), false);
 			}
 		} else if (IS_ENABLED(CONFIG_SMP) && inflight_ptr() == to &&
@@ -243,7 +262,7 @@ int z_try_abort_timeout(struct _timeout *to)
 		}
 	}
 
-	if (ret == -EAGAIN) {
+	if (IS_ENABLED(CONFIG_SMP) && ret == -EAGAIN) {
 		arch_spin_relax();
 	}
 
@@ -262,28 +281,13 @@ bool z_timeout_inflight_superseded(const struct _timeout *to)
 	return superseded;
 }
 
-/* must be locked */
-static k_ticks_t timeout_rem(const struct _timeout *timeout)
-{
-	k_ticks_t ticks = 0;
-
-	for (struct _timeout *t = first(); t != NULL; t = next(t)) {
-		ticks += t->dticks;
-		if (timeout == t) {
-			break;
-		}
-	}
-
-	return ticks;
-}
-
 k_ticks_t z_timeout_remaining(const struct _timeout *timeout)
 {
 	k_ticks_t ticks = 0;
 
 	K_SPINLOCK(&timeout_lock) {
 		if (!z_is_inactive_timeout(timeout)) {
-			ticks = timeout_rem(timeout) - elapsed();
+			ticks = z_timeout_q_remainder(timeout) - elapsed();
 		}
 	}
 
@@ -298,7 +302,7 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 	K_SPINLOCK(&timeout_lock) {
 		ticks = curr_tick;
 		if (!z_is_inactive_timeout(timeout)) {
-			ticks += timeout_rem(timeout);
+			ticks += z_timeout_q_remainder(timeout);
 		}
 	}
 
@@ -311,12 +315,21 @@ int32_t z_get_next_timeout_expiry(void)
 	int32_t ret = (int32_t) K_TICKS_FOREVER;
 
 	K_SPINLOCK(&timeout_lock) {
-		ret = next_timeout(elapsed());
+		uint32_t t = next_timeout(elapsed());
+
+		/*
+		 * next_timeout() is unsigned; only fold it into the signed
+		 * result when it fits, otherwise leave the K_TICKS_FOREVER
+		 * default.
+		 */
+		if (t <= INT32_MAX) {
+			ret = (int32_t)t;
+		}
 	}
 	return ret;
 }
 
-void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
+void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key)
 {
 	/* We release the lock around the callbacks below, so on SMP
 	 * systems someone might be already running the loop.  Don't
@@ -333,42 +346,54 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 	announce_remaining = ticks;
 	announcing_cpu = CPU_ID;
 
-	struct _timeout *t;
+#ifdef _TIMEOUT_BACKEND_OWNS_ANNOUNCE
+	/* The backend (timer wheel) runs the firing loop itself: its per-tick
+	 * advance is a bitmap jump over empty ticks and its sift is a
+	 * time-driven event with no single timeout to drive a generic loop.
+	 * It advances curr_tick / announce_remaining and fires handlers via
+	 * the same inflight_timeout dance as below.
+	 */
+	key = z_timeout_q_announce(key);
+#else
+	while (announce_remaining > 0) {
+		struct _timeout *t;
+		int32_t dt = z_timeout_q_next_gap();
 
-	for (t = first();
-	     (t != NULL) && (t->dticks <= announce_remaining);
-	     t = first()) {
-		_timeout_func_t handler = t->fn;
+		if ((uint32_t)dt > announce_remaining) {
+			/* Next event is past this announce window: advance the
+			 * backend by the residual ticks without firing anything.
+			 */
+			dt = (int32_t)announce_remaining;
+		}
 
-		/* Advance curr_tick and decrement announce_remaining
-		 * together under the lock so non-announcing CPUs observe
-		 * a consistent (curr_tick + announce_remaining +
-		 * sys_clock_elapsed()) == T_real even while we drop the
-		 * lock around the handler. The "we are announcing" state
-		 * is carried by announcing_cpu, so announce_remaining
-		 * reaching 0 mid-loop is harmless: same-tick handlers'
-		 * z_add_timeout() still anchors via this_cpu_announcing(),
-		 * and another CPU's announce still folds into ours via
-		 * any_cpu_announcing() in the SMP early-return.
+		/* Advance curr_tick and decrement announce_remaining together
+		 * under the lock so non-announcing CPUs observe a consistent
+		 * (curr_tick + announce_remaining + sys_clock_elapsed()) ==
+		 * T_real even while we drop the lock around handlers. The "we
+		 * are announcing" state is carried by announcing_cpu, so
+		 * announce_remaining reaching 0 mid-loop is harmless: same-tick
+		 * handlers' z_add_timeout() still anchors via
+		 * this_cpu_announcing(), and another CPU's announce still folds
+		 * into ours via any_cpu_announcing() in the SMP early-return.
 		 */
-		curr_tick += t->dticks;
-		announce_remaining -= t->dticks;
+		z_timeout_q_advance(dt);
+		curr_tick += dt;
+		announce_remaining -= dt;
 
-		sys_dlist_remove(&t->node);
-		inflight_timeout = t;
+		/* Drain everything due at the new curr_tick. */
+		while ((t = z_timeout_q_pop_due()) != NULL) {
+			_timeout_func_t handler = t->fn;
 
-		k_spin_unlock(&timeout_lock, key);
-		handler(t);
-		key = k_spin_lock(&timeout_lock);
-		inflight_timeout = NULL;
+			inflight_timeout = t;
+
+			k_spin_unlock(&timeout_lock, key);
+			handler(t);
+			key = k_spin_lock(&timeout_lock);
+			inflight_timeout = NULL;
+		}
 	}
+#endif /* _TIMEOUT_BACKEND_OWNS_ANNOUNCE */
 
-	if (t != NULL) {
-		t->dticks -= announce_remaining;
-	}
-
-	curr_tick += announce_remaining;
-	announce_remaining = 0;
 	announcing_cpu = -1;
 
 	sys_clock_set_timeout(next_timeout(0), false);

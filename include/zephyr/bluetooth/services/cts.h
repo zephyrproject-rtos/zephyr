@@ -163,7 +163,7 @@ struct bt_cts_cb {
 	 *
 	 * It is the responsibility of the application to store the new Local time.
 	 *
-	 * @param[in] local_time Requested local time to write
+	 * @param[in] cts_local_time Requested local time to write
 	 *
 	 * @return 0 if written successfully, negative error code on failure
 	 *

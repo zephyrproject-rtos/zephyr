@@ -6,6 +6,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/time_units.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/random/random.h>
 
 #define NUM_RANDOM 100
@@ -18,6 +19,14 @@ static const char *const round_s[] __maybe_unused = {
 	[ROUND_floor] = "floor",
 	[ROUND_ceil] = "ceil",
 	[ROUND_near] = "near",
+};
+
+static const char *const unit_s[] = {
+	[UNIT_ticks] = "ticks",
+	[UNIT_cyc] = "cyc",
+	[UNIT_ms] = "ms",
+	[UNIT_us] = "us",
+	[UNIT_ns] = "ns",
 };
 
 struct test_rec {
@@ -236,7 +245,7 @@ uint32_t get_hz(enum units u)
 	return 0;
 }
 
-static void test_conversion(struct test_rec *t, uint64_t val)
+static void test_conversion(const struct test_rec *t, uint64_t val)
 {
 	uint32_t from_hz = get_hz(t->src), to_hz = get_hz(t->dst);
 	uint64_t result;
@@ -291,21 +300,43 @@ static void test_conversion(struct test_rec *t, uint64_t val)
 		     result, result, diff, diff, mindiff, maxdiff);
 }
 
-ZTEST(timer_api, test_time_conversions)
+/* Human-readable per-case label, e.g. "ms_to_cyc_floor32". */
+static const char *conversion_name(size_t index, const void *value)
 {
-	for (int i = 0; i < ARRAY_SIZE(tests); i++) {
-		test_conversion(&tests[i], 0);
-		test_conversion(&tests[i], 1);
-		test_conversion(&tests[i], 0x7fffffff);
-		test_conversion(&tests[i], 0x80000000);
-		test_conversion(&tests[i], 0xfffffff0);
-		if (tests[i].precision == 64) {
-			test_conversion(&tests[i], 0xffffffff);
-			test_conversion(&tests[i], 0x100000000ULL);
-		}
+	const struct test_rec *t = value;
+	static char buf[32];
 
-		for (int j = 0; j < NUM_RANDOM; j++) {
-			test_conversion(&tests[i], sys_rand32_get());
-		}
+	ARG_UNUSED(index);
+	snprintk(buf, sizeof(buf), "%s_to_%s_%s%d",
+		 unit_s[t->src], unit_s[t->dst], round_s[t->round], t->precision);
+	return buf;
+}
+
+static const struct ztest_param_values conversion_vals = {
+	.values = tests,
+	.count = ARRAY_SIZE(tests),
+	.elem_size = sizeof(tests[0]),
+	.name_cb = conversion_name,
+};
+
+ZTEST_P(timer_api, test_time_conversions)
+{
+	const struct test_rec *t = ZTEST_GET_PARAM_PTR(struct test_rec);
+
+	test_conversion(t, 0);
+	test_conversion(t, 1);
+	test_conversion(t, 0x7fffffff);
+	test_conversion(t, 0x80000000);
+	test_conversion(t, 0xfffffff0);
+	if (t->precision == 64) {
+		test_conversion(t, 0xffffffff);
+		test_conversion(t, 0x100000000ULL);
+	}
+
+	for (int j = 0; j < NUM_RANDOM; j++) {
+		test_conversion(t, sys_rand32_get());
 	}
 }
+
+ZTEST_INSTANTIATE_TEST_SUITE_P(conversions, timer_api, test_time_conversions,
+			       conversion_vals);

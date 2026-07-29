@@ -187,7 +187,6 @@ void eth_stm32_mcast_filter(const struct device *dev,
 
 #ifdef CONFIG_PTP_CLOCK_STM32_HAL
 const struct device *eth_stm32_get_ptp_clock(const struct device *dev, struct net_if *iface);
-bool eth_stm32_is_ptp_pkt(struct net_if *iface, struct net_pkt *pkt);
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_STM32_HAL_PRIV_H_ */

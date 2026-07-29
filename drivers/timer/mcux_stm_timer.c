@@ -81,10 +81,10 @@ static void mcux_stm_timer_isr(const void *arg)
 		stm_disable_compare();
 	}
 
-	sys_clock_announce_locked((int32_t)delta_ticks, key);
+	sys_clock_announce_locked(delta_ticks, key);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -94,20 +94,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	uint32_t cycles;
-
-	if (ticks == K_TICKS_FOREVER) {
-		cycles = cycles_max;
-	} else {
-		if (ticks < 0) {
-			ticks = 0;
-		}
-
-		uint64_t wait_ticks = (uint64_t)last_elapsed + (uint64_t)ticks;
-		uint64_t wait_cycles = wait_ticks * (uint64_t)cycles_per_tick;
-
-		cycles = (wait_cycles > cycles_max) ? cycles_max : (uint32_t)wait_cycles;
-	}
+	uint64_t wait_ticks = (uint64_t)last_elapsed + (uint64_t)ticks;
+	uint64_t wait_cycles = wait_ticks * (uint64_t)cycles_per_tick;
+	uint32_t cycles = (wait_cycles > cycles_max) ? cycles_max : (uint32_t)wait_cycles;
 
 	stm_set_compare(last_count + cycles);
 }

@@ -38,6 +38,9 @@ int ssh_connection_send_channel_open_confirmation(struct ssh_transport *transpor
 int ssh_connection_send_channel_result(struct ssh_transport *transport, bool success,
 				       uint32_t recipient_channel);
 
+int ssh_connection_send_channel_close(struct ssh_transport *transport,
+				      uint32_t recipient_channel);
+
 struct ssh_channel *ssh_connection_allocate_channel(struct ssh_transport *transport);
 void ssh_connection_free_channel(struct ssh_channel *channel);
 struct ssh_channel *ssh_connection_get_channel(struct ssh_transport *transport,

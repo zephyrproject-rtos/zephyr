@@ -109,9 +109,7 @@ static int intel_adsp_wdt_install_timeout(const struct device *dev,
 		return ret;
 	}
 
-	if (config->flags & WDT_FLAG_RESET_CPU_CORE) {
-		dev_data->allow_reset = true;
-	}
+	dev_data->allow_reset = (config->flags & WDT_FLAG_RESET_MASK) != WDT_FLAG_RESET_NONE;
 
 	return 0;
 }

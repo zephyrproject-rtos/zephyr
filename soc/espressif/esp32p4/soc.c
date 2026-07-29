@@ -20,12 +20,54 @@
 #include <zephyr/arch/riscv/arch.h>
 #include <hal/interrupt_clic_ll.h>
 #include <riscv/interrupt.h>
+#include <riscv/csr.h>
 #include <soc/interrupts.h>
 #include <psram.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/cache.h>
+
+#if defined(CONFIG_NOCACHE_MEMORY)
+#include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/util.h>
+#include "cache.h"
+#endif
 
 extern void esp_reset_reason_init(void);
 extern FUNC_NORETURN void z_cstart(void);
+
+#if defined(CONFIG_NOCACHE_MEMORY)
+void nocache_region_init(void)
+{
+	const uintptr_t start = (uintptr_t)_nocache_ram_start;
+	const size_t used = (size_t)(uintptr_t)_nocache_ram_size;
+	size_t size;
+	uintptr_t napot_addr;
+	uint32_t cfg;
+
+	if (used == 0) {
+		return;
+	}
+
+	/* A PMA NAPOT entry can only describe a power-of-two region that is
+	 * aligned to its own size. The linker sizes the section to its content,
+	 * so round the length up to the next power of two and make sure the
+	 * base is aligned to it, otherwise the entry would leave part of the
+	 * section cached and silently break DMA coherency.
+	 */
+	size = BIT(LOG2CEIL(used));
+
+	__ASSERT((start & (size - 1)) == 0U,
+		 "nocache region 0x%lx not aligned to its NAPOT size 0x%zx", start, size);
+
+	napot_addr = (start | ((size >> 1) - 1)) >> PMA_SHIFT;
+	cfg = PMA_NAPOT | PMA_EN | PMA_R | PMA_W | PMA_NONCACHEABLE;
+
+	sys_cache_data_flush_and_invd_range(_nocache_ram_start, used);
+
+	RV_WRITE_CSR(CSR_PMAADDR0 + NOCACHE_PMA_ENTRY, napot_addr);
+	RV_WRITE_CSR(CSR_PMACFG0 + NOCACHE_PMA_ENTRY, cfg);
+}
+#endif /* CONFIG_NOCACHE_MEMORY */
 
 static void core_intr_matrix_clear(void)
 {
@@ -61,14 +103,8 @@ void IRAM_ATTR __esp_platform_app_start(void)
 
 	esp_efuse_init_virtual();
 
-#if CONFIG_ESP_SPIRAM
-	esp_init_psram();
-
-	int err = esp_psram_smh_init();
-
-	if (err) {
-		printk("Failed to initialize PSRAM shared multi heap (%d)\n", err);
-	}
+#if defined(CONFIG_NOCACHE_MEMORY)
+	nocache_region_init();
 #endif
 
 	z_cstart();

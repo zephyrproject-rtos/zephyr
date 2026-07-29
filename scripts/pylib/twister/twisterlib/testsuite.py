@@ -9,13 +9,12 @@ import logging
 import mmap
 import os
 import re
-from enum import Enum
 from pathlib import Path
 from typing import Any
 
 from twisterlib.constants import PYTEST_HARNESSES, canonical_zephyr_base
-from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
-from twisterlib.statuses import TwisterStatus
+from twisterlib.error import TwisterException, TwisterRuntimeError
+from twisterlib.statuses import StatusMixin, TwisterStatus
 from twisterlib.testsuitedata import HarnessConfig, RequiredApplication
 
 logger = logging.getLogger('twister')
@@ -376,7 +375,7 @@ def _find_src_dir_path(test_dir_path):
     return ""
 
 
-class TestCase:
+class TestCase(StatusMixin):
     """Class representing a single test case."""
     __test__ = False
 
@@ -388,19 +387,6 @@ class TestCase:
         self.output: str = ""
         self.freeform: bool = False
 
-    @property
-    def status(self) -> TwisterStatus:
-        return self._status
-
-    @status.setter
-    def status(self, value : TwisterStatus) -> None:
-        # Check for illegal assignments by value
-        try:
-            key = value.name if isinstance(value, Enum) else value
-            self._status = TwisterStatus[key]
-        except KeyError as err:
-            raise StatusAttributeError(self.__class__, value) from err
-
     def __lt__(self, other):
         return self.name < other.name
 
@@ -411,7 +397,7 @@ class TestCase:
         return self.name
 
 
-class TestSuite:
+class TestSuite(StatusMixin):
     """Class representing a test application."""
 
     __test__ = False
@@ -463,23 +449,15 @@ class TestSuite:
         self._status = TwisterStatus.NONE
 
         self.harness_config: HarnessConfig | None = None
+        self.sidecar: str | None = None
+        # Per-sidecar configuration, namespaced by sidecar name (see the
+        # `sidecar_config` schema key). Left as a raw dict here; each sidecar
+        # coerces its own block into a typed config when it is configured.
+        self.sidecar_config: dict = {}
         self.required_applications: list[RequiredApplication] = []
 
         if data:
             self.load(data)
-
-    @property
-    def status(self) -> TwisterStatus:
-        return self._status
-
-    @status.setter
-    def status(self, value : TwisterStatus) -> None:
-        # Check for illegal assignments by value
-        try:
-            key = value.name if isinstance(value, Enum) else value
-            self._status = TwisterStatus[key]
-        except KeyError as err:
-            raise StatusAttributeError(self.__class__, value) from err
 
     def load(self, data):
         for k, v in data.items():

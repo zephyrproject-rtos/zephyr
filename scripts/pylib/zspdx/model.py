@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any
+from typing import Any, TypedDict
 
 # SPDX sentinel used when a value is intentionally left unasserted.
 NOASSERTION = "NOASSERTION"
@@ -312,6 +312,48 @@ class SBOMDocument:
         return all_files
 
 
+class BuildInfo(TypedDict, total=False):
+    """Compiler, linker and CMake details stored on ``SBOMBuild.metadata``"""
+
+    # compiler binaries (``cmake_compiler`` is the generic/C compiler path)
+    cmake_compiler: str
+    cmake_c_compiler: str
+    cmake_cxx_compiler: str
+    cmake_asm_compiler: str
+    # compiler versions and ids, per language
+    c_compiler_version: str
+    cxx_compiler_version: str
+    asm_compiler_version: str
+    c_compiler_id: str
+    cxx_compiler_id: str
+    asm_compiler_id: str
+    # linker and archiver binaries and versions
+    cmake_linker: str
+    cmake_ar: str
+    linker_version: str
+    ar_version: str
+    # build type and target system
+    cmake_build_type: str
+    cmake_system_name: str
+    cmake_system_processor: str
+    # CMake generator and version
+    cmake_generator: str
+    cmake_version: str
+    # build environment variables, keyed by name (e.g. BOARD, ARCH)
+    environment: dict[str, str]
+
+
+@dataclass
+class SBOMBuild:
+    """Format-agnostic identity of the build that produced the graph's artifacts."""
+
+    id: str = ""
+    build_type: str = ""
+    started_at: str = ""
+    finished_at: str = ""
+    metadata: BuildInfo = field(default_factory=dict)
+
+
 @dataclass
 class SBOMGraph:
     """Format-agnostic SBOM graph and consistency boundary.
@@ -328,6 +370,7 @@ class SBOMGraph:
         files: Files in the graph, keyed by absolute path.
         relationships: Relationships in the graph.
         custom_license_ids: Custom license IDs that need to be declared by serializers.
+        build: Build that produced the graph's artifacts, or ``None`` if it carries no build.
         metadata: Additional data not represented by the common model fields.
     """
 
@@ -338,6 +381,7 @@ class SBOMGraph:
     files: dict[str, SBOMFile] = field(default_factory=dict)
     relationships: list[SBOMRelationship] = field(default_factory=list)
     custom_license_ids: set[str] = field(default_factory=set)
+    build: SBOMBuild | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def add_document(self, document: SBOMDocument) -> None:

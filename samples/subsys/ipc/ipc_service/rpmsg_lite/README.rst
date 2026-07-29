@@ -35,7 +35,7 @@ sequential starting from 0.
 Building and Running
 ********************
 
-The sample supports the boards listed in ``sample.yaml``. Build with sysbuild
+The sample supports the boards listed in ``tests.yaml``. Build with sysbuild
 to compile both the host and remote images in one step:
 
 .. zephyr-app-commands::

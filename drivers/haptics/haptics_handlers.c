@@ -14,7 +14,7 @@ static inline int z_vrfy_haptics_calibrate(const struct device *dev, const uint3
 	return z_impl_haptics_calibrate(dev, routine);
 }
 
-#include <syscalls/haptics_calibrate_mrsh.c>
+#include <zephyr/syscalls/haptics_calibrate_mrsh.c>
 
 static inline int z_vrfy_haptics_monitor_get(const struct device *dev,
 					     const enum haptics_monitor monitor,
@@ -28,7 +28,7 @@ static inline int z_vrfy_haptics_monitor_get(const struct device *dev,
 	return z_impl_haptics_monitor_get(dev, monitor, type, val);
 }
 
-#include <syscalls/haptics_monitor_get_mrsh.c>
+#include <zephyr/syscalls/haptics_monitor_get_mrsh.c>
 
 static inline int z_vrfy_haptics_monitor_set(const struct device *dev,
 					     const enum haptics_monitor monitor, const bool enable)
@@ -38,7 +38,7 @@ static inline int z_vrfy_haptics_monitor_set(const struct device *dev,
 	return z_impl_haptics_monitor_set(dev, monitor, enable);
 }
 
-#include <syscalls/haptics_monitor_set_mrsh.c>
+#include <zephyr/syscalls/haptics_monitor_set_mrsh.c>
 
 static inline int z_vrfy_haptics_select_source(const struct device *dev,
 					       const enum haptics_source src,
@@ -53,11 +53,11 @@ static inline int z_vrfy_haptics_select_source(const struct device *dev,
 	return z_impl_haptics_select_source(dev, src, cfg);
 }
 
-#include <syscalls/haptics_select_source_mrsh.c>
+#include <zephyr/syscalls/haptics_select_source_mrsh.c>
 
 static inline int z_vrfy_haptics_set_level(const struct device *dev, const enum haptics_source src,
 					   const union haptics_config *const cfg,
-					   const uint8_t level)
+					   const uint32_t level)
 {
 	K_OOPS(K_SYSCALL_DRIVER_HAPTICS(dev, set_level));
 
@@ -68,7 +68,7 @@ static inline int z_vrfy_haptics_set_level(const struct device *dev, const enum 
 	return z_impl_haptics_set_level(dev, src, cfg, level);
 }
 
-#include <syscalls/haptics_set_level_mrsh.c>
+#include <zephyr/syscalls/haptics_set_level_mrsh.c>
 
 static inline int z_vrfy_haptics_start_output(const struct device *dev)
 {
@@ -77,7 +77,7 @@ static inline int z_vrfy_haptics_start_output(const struct device *dev)
 	return z_impl_haptics_start_output(dev);
 }
 
-#include <syscalls/haptics_start_output_mrsh.c>
+#include <zephyr/syscalls/haptics_start_output_mrsh.c>
 
 static inline int z_vrfy_haptics_stop_output(const struct device *dev)
 {
@@ -86,7 +86,7 @@ static inline int z_vrfy_haptics_stop_output(const struct device *dev)
 	return z_impl_haptics_stop_output(dev);
 }
 
-#include <syscalls/haptics_stop_output_mrsh.c>
+#include <zephyr/syscalls/haptics_stop_output_mrsh.c>
 
 static inline int z_vrfy_haptics_stream_samples(const struct device *dev,
 						const uint8_t *const samples, const size_t len)
@@ -98,4 +98,4 @@ static inline int z_vrfy_haptics_stream_samples(const struct device *dev,
 	return z_impl_haptics_stream_samples(dev, samples, len);
 }
 
-#include <syscalls/haptics_stream_samples_mrsh.c>
+#include <zephyr/syscalls/haptics_stream_samples_mrsh.c>

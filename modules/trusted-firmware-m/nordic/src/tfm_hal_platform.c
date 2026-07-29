@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "tfm_hal_defs.h"
-#include "tfm_hal_platform_common.h"
+#include <tfm_hal_defs.h>
+#include <tfm_hal_platform_common.h>
 
 enum tfm_hal_status_t tfm_hal_platform_init(void)
 {

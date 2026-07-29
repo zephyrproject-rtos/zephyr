@@ -249,7 +249,15 @@ static void nrf_wifi_net_iface_work_handler(struct k_work *work)
 	}
 
 	if (vif_ctx_zep->if_carr_state == NRF_WIFI_FMAC_IF_CARR_STATE_ON) {
-		net_if_dormant_off(vif_ctx_zep->zep_net_if_ctx);
+		/* For STA mode, keep the interface dormant on association and only
+		 * clear it once the controlled port is authorized (see
+		 * nrf_wifi_wpa_set_supp_port). This withholds data TX during the
+		 * 802.1X handshake window while EAPOL still flows out-of-band via
+		 * the control port (nrf_wifi_wpa_tx_control_port).
+		 */
+		if (vif_ctx_zep->if_type != NRF_WIFI_IFTYPE_STATION) {
+			net_if_dormant_off(vif_ctx_zep->zep_net_if_ctx);
+		}
 	} else if (vif_ctx_zep->if_carr_state == NRF_WIFI_FMAC_IF_CARR_STATE_OFF) {
 		net_if_dormant_on(vif_ctx_zep->zep_net_if_ctx);
 	}
@@ -510,6 +518,129 @@ unlock:
 #endif /* CONFIG_NRF70_DATA_TX */
 
 out:
+	return ret;
+}
+
+int nrf_wifi_wpa_tx_control_port(void *if_priv, const unsigned char *dest, unsigned short proto,
+				 const unsigned char *buf, size_t len, int no_encrypt)
+{
+	int ret = -EINVAL;
+#ifdef CONFIG_NRF70_DATA_TX
+	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = if_priv;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
+	struct nrf_wifi_sys_fmac_dev_ctx *sys_dev_ctx = NULL;
+	struct rpu_host_stats *host_stats = NULL;
+	struct net_linkaddr *link_addr = NULL;
+	struct net_if *iface = NULL;
+	struct net_eth_hdr eth_hdr;
+	struct net_pkt *pkt = NULL;
+	void *nbuf = NULL;
+	bool locked = false;
+
+	ARG_UNUSED(no_encrypt);
+
+	if (!vif_ctx_zep || !dest || !buf) {
+		LOG_ERR("%s: Invalid params", __func__);
+		goto out;
+	}
+
+	iface = vif_ctx_zep->zep_net_if_ctx;
+	if (!iface) {
+		LOG_ERR("%s: iface is NULL", __func__);
+		goto out;
+	}
+
+	link_addr = net_if_get_link_addr(iface);
+
+	/* Build the Ethernet frame carrying the EAPOL payload and hand it straight
+	 * to the driver TX path. This bypasses the networking stack so that the
+	 * handshake is not gated by the interface operational state (the interface
+	 * is held dormant until the controlled port is authorized).
+	 */
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_eth_hdr) + len,
+					NET_AF_UNSPEC, 0, K_MSEC(100));
+	if (!pkt) {
+		LOG_ERR("%s: Failed to allocate net_pkt", __func__);
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	memcpy(eth_hdr.dst.addr, dest, sizeof(eth_hdr.dst.addr));
+	memcpy(eth_hdr.src.addr, link_addr->addr, sizeof(eth_hdr.src.addr));
+	eth_hdr.type = net_htons(proto);
+
+	if (net_pkt_write(pkt, &eth_hdr, sizeof(eth_hdr)) ||
+	    net_pkt_write(pkt, buf, len)) {
+		LOG_ERR("%s: Failed to write EAPOL frame", __func__);
+		net_pkt_unref(pkt);
+		ret = -ENOBUFS;
+		goto out;
+	}
+
+	net_pkt_cursor_init(pkt);
+
+	nbuf = net_pkt_to_nbuf(pkt);
+	net_pkt_unref(pkt);
+	if (!nbuf) {
+		LOG_ERR("%s: nbuf allocation failed", __func__);
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	ret = k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+	if (ret != 0) {
+		LOG_ERR("%s: Failed to lock vif_lock", __func__);
+		goto drop;
+	}
+	locked = true;
+
+	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
+	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
+		ret = -ENODEV;
+		goto drop;
+	}
+
+	sys_dev_ctx = wifi_dev_priv(rpu_ctx_zep->rpu_ctx);
+	host_stats = &sys_dev_ctx->host_stats;
+
+	if (vif_ctx_zep->if_carr_state != NRF_WIFI_FMAC_IF_CARR_STATE_ON) {
+		LOG_DBG("%s: Carrier not ON, dropping EAPOL frame", __func__);
+		ret = -ENETDOWN;
+		goto drop;
+	}
+
+	ret = nrf_wifi_fmac_start_xmit(rpu_ctx_zep->rpu_ctx, vif_ctx_zep->vif_idx, nbuf);
+	/* FMAC owns the nbuf from here on (and frees it on failure) */
+	nbuf = NULL;
+	if (ret == NRF_WIFI_STATUS_FAIL) {
+		host_stats->total_tx_drop_pkts++;
+		ret = -ENOBUFS;
+		goto unlock;
+	}
+
+	ret = 0;
+	goto unlock;
+drop:
+	if (host_stats != NULL) {
+		host_stats->total_tx_drop_pkts++;
+	}
+	if (nbuf != NULL) {
+		nrf_wifi_osal_nbuf_free(nbuf);
+	}
+unlock:
+	if (locked) {
+		k_mutex_unlock(&vif_ctx_zep->vif_lock);
+	}
+out:
+#else
+	ARG_UNUSED(if_priv);
+	ARG_UNUSED(dest);
+	ARG_UNUSED(proto);
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+	ARG_UNUSED(no_encrypt);
+#endif /* CONFIG_NRF70_DATA_TX */
+
 	return ret;
 }
 

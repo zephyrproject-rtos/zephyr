@@ -18,6 +18,8 @@ from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 
 logger = logging.getLogger('twister')
 
+_PLATFORMS_CACHE: dict = {}
+
 
 class Simulator:
     """Class representing a simulator"""
@@ -84,6 +86,9 @@ class Platform:
         self.simulators: list[Simulator] = []
         self.simulation: str = "na"
         self.supported_toolchains = []
+        self.preferred_toolchain = None
+        # toolchains this platform should build every test with, one build each
+        self.build_toolchains = []
         self.env = []
         self.env_satisfied = True
         self.filter_data = dict()
@@ -154,6 +159,14 @@ class Platform:
         if self.supported_toolchains is None:
             self.supported_toolchains = []
 
+        self.preferred_toolchain = variant_data.get("preferred_toolchain",
+                                                    data.get("preferred_toolchain",
+                                                             None))
+
+        self.build_toolchains = variant_data.get("build_toolchains",
+                                                 data.get("build_toolchains",
+                                                          self.build_toolchains)) or []
+
         support_toolchain_variants = {
           # we don't provide defaults for 'arc' intentionally: some targets can't be built with GNU
           # toolchain ("zephyr", "cross-compile" options) and for some targets we haven't provided
@@ -202,6 +215,21 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
     An exception is raised if not all platform files are valid YAML,
     or if not all platform names are unique.
     """
+    cache_key = (
+        tuple(sorted(str(r) for r in board_roots)),
+        tuple(sorted(str(r) for r in soc_roots)),
+        tuple(sorted(str(r) for r in arch_roots)),
+    )
+    if cache_key in _PLATFORMS_CACHE:
+        yield from _PLATFORMS_CACHE[cache_key]
+        return
+
+    platforms = list(_generate_platforms(board_roots, soc_roots, arch_roots))
+    _PLATFORMS_CACHE[cache_key] = platforms
+    yield from platforms
+
+
+def _generate_platforms(board_roots, soc_roots, arch_roots):
     alias2target = {}
     target2board = {}
     target2data = {}

@@ -132,7 +132,7 @@ To build the bossa tool, follow these steps:
 
    .. code-block:: console
 
-     $ git checkout arduino
+     $ git switch arduino
 
 #. Build the command line version of the bossa tool.
 

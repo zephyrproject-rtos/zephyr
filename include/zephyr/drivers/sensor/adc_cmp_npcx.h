@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ADC_CMP_NPCX_H_
-#define _ADC_CMP_NPCX_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADC_CMP_NPCX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADC_CMP_NPCX_H_
 
 enum adc_cmp_npcx_comparison {
 	ADC_CMP_NPCX_GREATER,
@@ -28,4 +28,4 @@ enum adc_cmp_npcx_sensor_attribute {
 	SENSOR_ATTR_UPPER_VOLTAGE_THRESH,
 };
 
-#endif /* _ADC_CMP_NPCX_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADC_CMP_NPCX_H_ */

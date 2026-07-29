@@ -1,0 +1,16 @@
+identifier: rh02_plus_2026
+name: RH02 Plus (2026)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 32
+flash: 128
+supported:
+  - can
+  - counter
+  - gpio
+  - usb_device
+  - usbd
+vendor: jhoinrch

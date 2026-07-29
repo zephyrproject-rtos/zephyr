@@ -24,8 +24,8 @@ To make use of the heater have a look at the Kconfig options for this applicatio
 References
 **********
 
- - `SHT4X sensor <https://www.sensirion.com/en/environmental-sensors/humidity-sensors/humidity-sensor-sht4x/>`_
- - `SGP40 sensor <https://www.sensirion.com/en/environmental-sensors/gas-sensors/sgp40/>`_
+ - `SHT4X sensor <https://sensirion.com/products/catalog/SHT40>`_
+ - `SGP40 sensor <https://sensirion.com/products/catalog/SGP40>`_
 
 Wiring
 ******

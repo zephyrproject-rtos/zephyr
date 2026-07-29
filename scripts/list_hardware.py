@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright (c) 2023 Nordic Semiconductor ASA
+# Copyright (c) 2023-2026 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -313,19 +313,44 @@ def dump_v2_archs(args):
 
 
 def dump_v2_system(args, type, system):
+    if args.soc is not None and system.name != args.soc:
+        return
+
+    if args.soc_family is not None and (type != "soc" or system.family is None or \
+       system.family != args.soc_family):
+        return
+
+    if args.soc_series is not None and (type != "soc" or system.series is None or \
+       system.series != args.soc_series):
+        return
+
+    if type == "soc" and system.family is not None:
+        family = system.family
+    else:
+        family = ""
+
+    if type == "soc" and system.series is not None:
+        series = system.series
+    else:
+        series = ""
+
     if args.cmakeformat is not None:
         info = args.cmakeformat.format(
            TYPE='TYPE;' + type,
            NAME='NAME;' + system.name,
            DIR='DIR;' + ';'.join([Path(x).as_posix() for x in system.folder]),
-           HWM='HWM;' + 'v2'
+           HWM='HWM;' + 'v2',
+           FAMILY='FAMILY;' + family,
+           SERIES='SERIES;' + series
         )
     else:
         info = args.format.format(
            type=type,
            name=system.name,
            dir=system.folder,
-           hwm='v2'
+           hwm='v2',
+           family=family,
+           series=series
         )
 
     print(info)

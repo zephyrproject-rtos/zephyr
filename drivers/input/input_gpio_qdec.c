@@ -129,9 +129,10 @@ static void gpio_qdec_idle_mode(const struct device *dev)
 static uint8_t gpio_qdec_get_step(const struct device *dev)
 {
 	const struct gpio_qdec_config *cfg = dev->config;
+	bool idle_polling = gpio_qdec_idle_polling_mode(dev);
 	uint8_t step = 0x00;
 
-	if (gpio_qdec_idle_polling_mode(dev)) {
+	if (idle_polling) {
 		for (int i = 0; i < cfg->led_gpio_count; i++) {
 			gpio_pin_set_dt(&cfg->led_gpio[i], 1);
 		}
@@ -146,7 +147,7 @@ static uint8_t gpio_qdec_get_step(const struct device *dev)
 		step |= 0x02;
 	}
 
-	if (gpio_qdec_idle_polling_mode(dev)) {
+	if (idle_polling) {
 		for (int i = 0; i < cfg->led_gpio_count; i++) {
 			gpio_pin_set_dt(&cfg->led_gpio[i], 0);
 		}

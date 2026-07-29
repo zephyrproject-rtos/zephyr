@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for the logger control functions.
+ * @ingroup log_ctrl
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_CTRL_H_
 
@@ -32,6 +39,14 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Timestamp source callback.
+ *
+ * Returns the current timestamp value used to stamp log messages. Registered
+ * with log_set_timestamp_func().
+ *
+ * @return Current timestamp.
+ */
 typedef log_timestamp_t (*log_timestamp_get_t)(void);
 
 /** @brief Function system initialization of the logger.
@@ -295,6 +310,7 @@ int log_mem_get_usage(uint32_t *buf_size, uint32_t *usage);
  */
 int log_mem_get_max_usage(uint32_t *max);
 
+/** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_LOG) && !defined(CONFIG_LOG_MODE_MINIMAL)
 #define LOG_CORE_INIT() log_core_init()
 #define LOG_PANIC() log_panic()
@@ -311,6 +327,7 @@ int log_mem_get_max_usage(uint32_t *max);
 #define LOG_PANIC() /* Empty */
 #define LOG_PROCESS() false
 #endif
+/** @endcond */
 
 #include <zephyr/syscalls/log_ctrl.h>
 

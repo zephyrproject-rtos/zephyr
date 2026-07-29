@@ -8,6 +8,7 @@
 
 #include "stm32_common_clocks.h"
 
+/** @cond INTERNAL_HIDDEN */
 /** Domain clocks */
 
 /* RM0477  */
@@ -86,6 +87,8 @@
 #define SDMMC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 2, 2, D1CCIPR_REG)
 #define XSPI1_SEL(val)		STM32_DT_CLOCK_SELECT((val), 5, 4, D1CCIPR_REG)
 #define XSPI2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 7, 6, D1CCIPR_REG)
+#define USBREFCK_SEL(val)	STM32_DT_CLOCK_SELECT((val), 11, 8, D1CCIPR_REG)
+#define USBPHYC_SEL(val)	STM32_DT_CLOCK_SELECT((val), 13, 12, D1CCIPR_REG)
 #define OTGFS_SEL(val)		STM32_DT_CLOCK_SELECT((val), 15, 14, D1CCIPR_REG)
 #define ADC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 25, 24, D1CCIPR_REG)
 #define CKPER_SEL(val)		STM32_DT_CLOCK_SELECT((val), 29, 28, D1CCIPR_REG)
@@ -136,5 +139,7 @@
 #define MCO_PRE_DIV_13 13
 #define MCO_PRE_DIV_14 14
 #define MCO_PRE_DIV_15 15
+
+/** INTERNAL_HIDDEN @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7RS_CLOCK_H_ */

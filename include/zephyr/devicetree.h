@@ -3560,7 +3560,7 @@
  *            this is required to enable providing a comma as separator.
  * @param ... variable number of arguments to pass to @p fn
  *
- * @see DT_FOREACH_CHILD_SEP_STATUS_OKAY
+ * @see DT_FOREACH_CHILD_STATUS_OKAY_SEP
  */
 #define DT_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(node_id, fn, sep, ...) \
 	DT_CAT(node_id, _FOREACH_CHILD_STATUS_OKAY_SEP_VARGS)(fn, sep, __VA_ARGS__)
@@ -6064,5 +6064,6 @@
 #include <zephyr/devicetree/mapped-partition.h>
 #include <zephyr/devicetree/partitions.h>
 #include <zephyr/devicetree/sram.h>
+#include <zephyr/devicetree/cpu.h>
 
 #endif /* ZEPHYR_INCLUDE_DEVICETREE_H_ */

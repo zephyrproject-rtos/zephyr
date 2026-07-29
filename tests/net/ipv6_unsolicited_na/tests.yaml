@@ -1,0 +1,12 @@
+common:
+  min_ram: 16
+  depends_on: netif
+  tags:
+    - net
+    - ipv6
+    - neighbor
+tests:
+  net.ipv6.unsolicited_na: {}
+  net.ipv6.unsolicited_na.no_dad:
+    extra_configs:
+      - CONFIG_NET_IPV6_DAD=n

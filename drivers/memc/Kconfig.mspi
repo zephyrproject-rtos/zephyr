@@ -12,14 +12,16 @@ config MEMC_MSPI
 config MEMC_MSPI_APS6404L
 	bool "MSPI AP Memory APS6404L pSRAM driver"
 	default y
-	depends on DT_HAS_MSPI_APS6404L_ENABLED
+	depends on DT_HAS_APS6404L_ENABLED
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_APS6404L),mspi)
 	select MEMC_MSPI
 	select MSPI_AMBIQ_CONTROLLER if SOC_FAMILY_AMBIQ
 
 config MEMC_MSPI_APS_Z8
 	bool "MSPI AP Memory gen Z8 pSRAM driver"
 	default y
-	depends on DT_HAS_MSPI_APS_Z8_ENABLED
+	depends on DT_HAS_APS_Z8_ENABLED
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_APS_Z8),mspi)
 	select MEMC_MSPI
 	select MSPI_AMBIQ_CONTROLLER if SOC_FAMILY_AMBIQ
 

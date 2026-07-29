@@ -1,0 +1,4 @@
+vendor: intel
+comment: "Intel Nova Lake SoC"
+socs:
+- name: nova_lake

@@ -75,6 +75,8 @@ struct z_heap_stress_result {
 
 /**
  * @defgroup low_level_heap_allocator Low Level Heap Allocator
+ * @since 2.3
+ * @version 1.0.0
  * @ingroup heaps
  * @{
  */

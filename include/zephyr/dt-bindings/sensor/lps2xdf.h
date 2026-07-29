@@ -11,8 +11,8 @@
  * @ingroup lps2xdf_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_ST_LPS2xDF_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_ST_LPS2xDF_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_LPS2XDF_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_LPS2XDF_H_
 
 /**
  * @defgroup lps2xdf_interface LPS2xDF
@@ -79,4 +79,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ST_LPS22DF_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_LPS2XDF_H_ */

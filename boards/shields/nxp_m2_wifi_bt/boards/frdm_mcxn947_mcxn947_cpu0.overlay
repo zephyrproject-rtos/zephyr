@@ -1,0 +1,84 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/MCXN947VDF-pinctrl.h>
+
+&arduino_serial {
+	status = "disabled";
+};
+
+&m2_hci_bt_uart {
+	/delete-property/ pinctrl-0;
+	/delete-property/ pinctrl-names;
+	pinctrl-0 = <&pinmux_flexcomm2_lpuart_flow_control>;
+	pinctrl-names = "default";
+
+	bt_hci_uart: bt_hci_uart {
+		m2_bt_module: m2_bt_module {
+			sdio-reset-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+			w-disable-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&m2_wifi_sdio {
+	pinctrl-0 = <&pinmux_usdhc0>;
+	pinctrl-1 = <&pinmux_usdhc0>;
+	pinctrl-2 = <&pinmux_usdhc0>;
+	pinctrl-3 = <&pinmux_usdhc0>;
+	pinctrl-4 = <&pinmux_usdhc0_dat3_nopull>;
+	pinctrl-names = "default", "slow", "med", "fast", "nopull";
+	detect-dat3;
+	no-1-8-v;
+
+	nxp_wifi: nxp_wifi {
+		pwr-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		sd-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	/* FC2 LPUART2: TX(P4_2) RX(P4_3) CTS(P4_4) RTS(P4_5) */
+	pinmux_flexcomm2_lpuart_flow_control: pinmux_flexcomm2_lpuart_flow_control {
+		group0 {
+			pinmux = <FC2_P2_PIO4_2>,
+				 <FC2_P3_PIO4_3>,
+				 <FC2_P4_PIO4_4>,
+				 <FC2_P5_PIO4_5>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* USDHC0 DAT3 no-pull for card-detect */
+	pinmux_usdhc0_dat3_nopull: pinmux_usdhc0_dat3_nopull {
+		group0 {
+			pinmux = <SDHC0_CMD_PIO2_5>,
+				 <SDHC0_D0_PIO2_3>,
+				 <SDHC0_D1_PIO2_2>,
+				 <SDHC0_D2_PIO2_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			bias-pull-up;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <SDHC0_CLK_PIO2_4>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <SDHC0_D3_PIO2_6>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+};

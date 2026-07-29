@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_FLEXRAM_NXP_FLEXRAM_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_FLEXRAM_NXP_FLEXRAM_H_
+
 #include <zephyr/devicetree.h>
 #include <soc.h>
 
@@ -103,3 +106,5 @@ int flexram_set_itcm_magic_addr(uint32_t itcm_addr);
 int flexram_set_dtcm_magic_addr(uint32_t dtcm_addr);
 
 #endif /* CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API */
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_FLEXRAM_NXP_FLEXRAM_H_ */

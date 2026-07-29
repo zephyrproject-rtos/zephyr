@@ -504,23 +504,5 @@ static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *msgq)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_MSGQ
-static int init_msgq_obj_core_list(void)
-{
-	/* Initialize msgq object type */
-
-	z_obj_type_init(&obj_type_msgq, K_OBJ_TYPE_MSGQ_ID,
-			offsetof(struct k_msgq, obj_core));
-
-	/* Initialize and link statically defined message queues */
-
-	STRUCT_SECTION_FOREACH(k_msgq, msgq) {
-		k_obj_core_init_and_link(K_OBJ_CORE(msgq), &obj_type_msgq);
-	}
-
-	return 0;
-};
-
-SYS_INIT(init_msgq_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
+K_OBJ_TYPE_DEFINE(obj_type_msgq, k_msgq, K_OBJ_TYPE_MSGQ_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_MSGQ */

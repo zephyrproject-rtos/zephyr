@@ -28,7 +28,7 @@ config COUNTER_SUPPORTS_CAPTURE
 
 config COUNTER_INIT_PRIORITY
 	int "Counter init priority"
-	default 60
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  Counter driver device initialization priority.
 
@@ -138,6 +138,7 @@ source "drivers/counter/Kconfig.stm32_timer"
 source "drivers/counter/Kconfig.tmr_cmsdk_apb"
 source "drivers/counter/Kconfig.xec"
 source "drivers/counter/Kconfig.xlnx"
+source "drivers/counter/Kconfig.xlnx_ttc"
 source "drivers/counter/Kconfig.xlnx_zynqmp_rtc"
 # zephyr-keep-sorted-stop
 

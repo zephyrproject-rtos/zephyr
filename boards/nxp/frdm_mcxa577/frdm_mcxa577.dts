@@ -23,6 +23,7 @@
 		zephyr,edac = &erm0;
 		zephyr,crc = &crc;
 		zephyr,canbus = &flexcan0;
+		zephyr,system-timer-companion = &lptmr0;
 	};
 };
 

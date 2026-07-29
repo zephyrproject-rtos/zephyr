@@ -18,7 +18,7 @@ static inline int z_vrfy_adc_channel_setup(const struct device *dev,
 				(struct adc_channel_cfg *)user_channel_cfg,
 				sizeof(struct adc_channel_cfg)));
 
-	return z_impl_adc_channel_setup((const struct device *)dev,
+	return z_impl_adc_channel_setup(dev,
 					&channel_cfg);
 }
 #include <zephyr/syscalls/adc_channel_setup_mrsh.c>
@@ -64,7 +64,7 @@ static inline int z_vrfy_adc_read(const struct device *dev,
 			    "ADC sequence callbacks forbidden from user mode"));
 	}
 
-	return z_impl_adc_read((const struct device *)dev, &sequence);
+	return z_impl_adc_read(dev, &sequence);
 }
 #include <zephyr/syscalls/adc_read_mrsh.c>
 
@@ -86,8 +86,8 @@ static inline int z_vrfy_adc_read_async(const struct device *dev,
 	}
 	K_OOPS(K_SYSCALL_OBJ(async, K_OBJ_POLL_SIGNAL));
 
-	return z_impl_adc_read_async((const struct device *)dev, &sequence,
-				     (struct k_poll_signal *)async);
+	return z_impl_adc_read_async(dev, &sequence,
+				     async);
 }
 #include <zephyr/syscalls/adc_read_async_mrsh.c>
 #endif /* CONFIG_ADC_ASYNC */

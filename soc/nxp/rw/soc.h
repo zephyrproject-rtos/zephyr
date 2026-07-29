@@ -9,7 +9,7 @@
 #ifndef _ASMLANGUAGE
 #include <zephyr/sys/util.h>
 #include <fsl_common.h>
-#include "fsl_power.h"
+#include <fsl_power.h>
 
 /* Add include for DTS generated information */
 #include <zephyr/devicetree.h>

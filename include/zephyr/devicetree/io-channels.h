@@ -89,10 +89,10 @@ extern "C" {
 #define DT_IO_CHANNELS_CTLR(node_id) DT_IO_CHANNELS_CTLR_BY_IDX(node_id, 0)
 
 /**
- * @brief Get the node identifier from a DT_DRV_COMPAT instance's io-channels
+ * @brief Get the node identifier from a @c DT_DRV_COMPAT instance's io-channels
  *        property at an index
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into io-channels property
  * @return the node identifier for the node referenced at index "idx"
  * @see DT_IO_CHANNELS_CTLR_BY_IDX()
@@ -101,9 +101,9 @@ extern "C" {
 	DT_IO_CHANNELS_CTLR_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Get the node identifier from a DT_DRV_COMPAT instance's io-channels
+ * @brief Get the node identifier from a @c DT_DRV_COMPAT instance's io-channels
  *        property by name
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of an io-channels element
  *             as defined by the node's io-channel-names property
  * @return the node identifier for the node referenced at the named element
@@ -114,7 +114,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_IO_CHANNELS_CTLR_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the node identifier for the node referenced at index 0
  *         in the node's "io-channels" property
  * @see DT_IO_CHANNELS_CTLR_BY_IDX()
@@ -213,7 +213,7 @@ extern "C" {
 /**
  * @brief Get an input cell from the "DT_DRV_INST(inst)" io-channels
  *        property at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into io-channels property
  * @return the input cell in the specifier at index "idx"
  * @see DT_IO_CHANNELS_INPUT_BY_IDX()
@@ -224,7 +224,7 @@ extern "C" {
 /**
  * @brief Get an input cell from the "DT_DRV_INST(inst)" io-channels
  *        property by name
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of an io-channels element
  *             as defined by the instance's io-channel-names property
  * @return the input cell in the specifier at the named element
@@ -235,7 +235,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_IO_CHANNELS_INPUT_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the input cell in the specifier at index 0
  */
 #define DT_INST_IO_CHANNELS_INPUT(inst) DT_INST_IO_CHANNELS_INPUT_BY_IDX(inst, 0)
@@ -333,7 +333,7 @@ extern "C" {
 /**
  * @brief Get an output cell from the "DT_DRV_INST(inst)" io-channels
  *        property at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into io-channels property
  * @return the output cell in the specifier at index "idx"
  * @see DT_IO_CHANNELS_OUTPUT_BY_IDX()
@@ -344,7 +344,7 @@ extern "C" {
 /**
  * @brief Get an output cell from the "DT_DRV_INST(inst)" io-channels
  *        property by name
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of an io-channels element
  *             as defined by the instance's io-channel-names property
  * @return the output cell in the specifier at the named element
@@ -355,7 +355,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_IO_CHANNELS_OUTPUT_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the output cell in the specifier at index 0
  */
 #define DT_INST_IO_CHANNELS_OUTPUT(inst) DT_INST_IO_CHANNELS_OUTPUT_BY_IDX(inst, 0)

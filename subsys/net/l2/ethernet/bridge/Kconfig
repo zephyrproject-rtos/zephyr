@@ -29,6 +29,52 @@ config NET_ETHERNET_BRIDGE_ETH_INTERFACE_COUNT
 	  How many Ethernet interfaces can be bridged together per each
 	  bridge interface.
 
+choice NET_ETHERNET_BRIDGE_MAC
+	prompt "Bridge interface MAC address source"
+	default NET_ETHERNET_BRIDGE_RANDOM_MAC
+	help
+	  Select how the MAC (link) address of a bridge interface is assigned.
+	  A bridge interface can own an IP address and terminate/originate
+	  traffic of its own, so it needs a MAC address. For a fully custom
+	  address the application can instead call net_if_set_link_addr() on the
+	  bridge interface while it is down (bridge interfaces do not auto-start).
+
+config NET_ETHERNET_BRIDGE_RANDOM_MAC
+	bool "Random MAC address"
+	help
+	  Assign a random locally administered MAC address to each bridge
+	  interface. A new address is generated on every boot, so peers'
+	  ARP/neighbor caches for the bridge become stale across reboots.
+
+config NET_ETHERNET_BRIDGE_UNIQUE_MAC
+	bool "Stable MAC address derived from the device ID"
+	depends on HWINFO
+	help
+	  Derive a stable locally administered MAC address from the hardware
+	  device ID. The same address is used across reboots so peers' caches
+	  stay valid. The bridge index is mixed in so multiple bridge interfaces
+	  get distinct addresses. Falls back to a random address when no device
+	  ID is available.
+
+config NET_ETHERNET_BRIDGE_PREFIX_MAC
+	bool "Stable MAC address from configured prefix"
+	help
+	  Assign a stable MAC address by appending the bridge index to a
+	  configured five-octet MAC address prefix. The resulting address is the
+	  same across reboots so peers' caches stay valid.
+
+endchoice
+
+config NET_ETHERNET_BRIDGE_MAC_PREFIX
+	string "Bridge MAC address prefix"
+	depends on NET_ETHERNET_BRIDGE_PREFIX_MAC
+	default "02:00:00:00:00"
+	help
+	  Five-octet colon-separated MAC address prefix used for bridge
+	  interfaces. The bridge index is used as the final octet, so bridge0
+	  with prefix "02:00:00:00:00" gets "02:00:00:00:00:00" and bridge1
+	  gets "02:00:00:00:00:01".
+
 config NET_ETHERNET_BRIDGE_TXRX_DEBUG
 	bool "Debug received and sent packets in bridge"
 	depends on NET_L2_ETHERNET_LOG_LEVEL_DBG

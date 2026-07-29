@@ -382,16 +382,17 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			inst->start_handle = chrc->value_handle;
 		}
 		inst->end_handle = chrc->value_handle;
-
 		if (!bt_uuid_cmp(chrc->uuid, BT_UUID_VOCS_STATE)) {
 			LOG_DBG("Volume offset state");
 			inst->state_handle = chrc->value_handle;
 			sub_params = &inst->state_sub_params;
+			sub_params->disc_params = &inst->state_ccc_disc_params;
 		} else if (!bt_uuid_cmp(chrc->uuid, BT_UUID_VOCS_LOCATION)) {
 			LOG_DBG("Location");
 			inst->location_handle = chrc->value_handle;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				sub_params = &inst->location_sub_params;
+				sub_params->disc_params = &inst->location_ccc_disc_params;
 			}
 			if (chrc->properties & BT_GATT_CHRC_WRITE_WITHOUT_RESP) {
 				atomic_set_bit(inst->flags, BT_VOCS_CLIENT_FLAG_LOC_WRITABLE);
@@ -404,6 +405,7 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 			inst->desc_handle = chrc->value_handle;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				sub_params = &inst->desc_sub_params;
+				sub_params->disc_params = &inst->desc_ccc_disc_params;
 			}
 			if (chrc->properties & BT_GATT_CHRC_WRITE_WITHOUT_RESP) {
 				atomic_set_bit(inst->flags, BT_VOCS_CLIENT_FLAG_DESC_WRITABLE);
@@ -415,11 +417,12 @@ static uint8_t vocs_discover_func(struct bt_conn *conn, const struct bt_gatt_att
 
 			sub_params->value = BT_GATT_CCC_NOTIFY;
 			sub_params->value_handle = chrc->value_handle;
-			/*
-			 * TODO: Don't assume that CCC is at handle + 2;
-			 * do proper discovery;
-			 */
-			sub_params->ccc_handle = attr->handle + 2;
+
+			/* Use auto-discovery with the DEDICATED params we assigned above */
+			sub_params->ccc_handle = BT_GATT_AUTO_DISCOVER_CCC_HANDLE;
+
+			/* Set the end handle to the end of the ENTIRE service discovery */
+			sub_params->end_handle = inst->discover_params.end_handle;
 			sub_params->notify = vocs_client_notify_handler;
 			atomic_set_bit(sub_params->flags, BT_GATT_SUBSCRIBE_FLAG_VOLATILE);
 

@@ -8,7 +8,7 @@
  */
 
 #include "main_functions.h"
-#include "model.hpp"
+#include <model.hpp>
 /* Include image data and labels */
 #include "image_data.h"
 #include "labels.h"
@@ -18,7 +18,7 @@
 #include <tensorflow/lite/micro/micro_mutable_op_resolver.h>
 #include <tensorflow/lite/micro/kernels/micro_ops.h>
 #include <tensorflow/lite/schema/schema_generated.h>
-#include "tensorflow/lite/micro/kernels/neutron/neutron.h"
+#include <tensorflow/lite/micro/kernels/neutron/neutron.h>
 
 #include <zephyr/sys/printk.h>
 #include <zephyr/linker/section_tags.h>

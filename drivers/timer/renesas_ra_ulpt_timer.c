@@ -82,7 +82,7 @@ static void ra_ulpt_timer_isr(void)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -91,13 +91,20 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	/* No timeout change for K_TICKS_FOREVER or INT32_MAX. */
-	if (ticks == K_TICKS_FOREVER || ticks == INT32_MAX) {
+	/* No timeout change when the kernel has no near deadline to schedule. */
+	if (ticks == SYS_CLOCK_MAX_WAIT) {
 		return;
 	}
 
-	/* Clamp the ticks value to a valid range. */
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	/* Preserve the original behavior even though it looks wrong; to be
+	 * revisited.
+	 */
+	if (ticks >= 1) {
+		ticks -= 1;
+	}
+	if (ticks > MAX_TICKS) {
+		ticks = MAX_TICKS;
+	}
 
 	/* Calculate the timer delay in cycles. */
 	uint32_t cycles = ~RA_ULPT_INST1_REG->ULPTCNT;

@@ -4,6 +4,13 @@ options:
 platforms:
   override_default_platforms: false
   increased_platform_scope: true
+  # Platforms to build with more than one toolchain. Every test assigned to the
+  # platform is built once per toolchain listed here. Kept out of
+  # tests/test_config.yaml so local runs stay single-toolchain.
+  build_toolchains:
+    native_sim:
+      - host/gnu
+      - host/llvm
 levels:
   - name: smoke
     description: >

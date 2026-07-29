@@ -10,8 +10,8 @@
  * @ingroup veml60xx_interface
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_VEML60XX_H_
-#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_VEML60XX_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_VEML60XX_COMMON_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_VEML60XX_COMMON_H_
 
 /**
  * @defgroup veml60xx_interface VEML60XX
@@ -119,4 +119,4 @@ static inline bool veml60xx_pers_in_range(int32_t pers)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_VEML60XX_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_VEML60XX_COMMON_H_ */

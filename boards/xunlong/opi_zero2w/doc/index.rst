@@ -11,6 +11,10 @@ Overview
 `Orange Pi Zero 2W`_ is an open-source single-board computer. It uses the Allwinner H618 SoC and comes with 1GB, 1.5GB, or 2GB of LPDDR4 SDRAM.
 The Allwinner H618 SoC is based on a quad-core ARM Cortex-A53 processor.
 
+.. image:: img/opi_zero2w.webp
+   :align: center
+   :alt: Orange Pi Zero 2W
+
 Hardware
 ********
 

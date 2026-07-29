@@ -116,6 +116,7 @@ static enum test_case_no {
 	TEST_CLIENT_SEQ_VALIDATION = 19,
 	TEST_SERVER_ACK_VALIDATION = 20,
 	TEST_SERVER_FIN_ACK_AFTER_DATA = 21,
+	TEST_SERVER_RST_ON_CLOSED_PORT_FIN = 22,
 } test_case_no;
 
 static enum test_state t_state;
@@ -137,6 +138,7 @@ static void handle_data_fin1_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_data_during_fin1_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_server_recv_out_of_order(struct net_pkt *pkt);
 static void handle_server_rst_on_closed_port(net_sa_family_t af, struct tcphdr *th);
+static void handle_server_rst_on_closed_port_fin(net_sa_family_t af, struct tcphdr *th);
 static void handle_server_rst_on_listening_port(net_sa_family_t af, struct tcphdr *th);
 static void handle_syn_invalid_ack(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_ack_with_data_test(net_sa_family_t af, struct tcphdr *th);
@@ -383,6 +385,12 @@ static struct net_pkt *prepare_fin_ack_packet(net_sa_family_t af, uint16_t src_p
 				      NULL, 0U);
 }
 
+static struct net_pkt *prepare_fin_packet(net_sa_family_t af, uint16_t src_port,
+					  uint16_t dst_port)
+{
+	return tester_prepare_tcp_pkt(af, src_port, dst_port, FIN, NULL, 0U);
+}
+
 static struct net_pkt *prepare_rst_packet(net_sa_family_t af, uint16_t src_port,
 					  uint16_t dst_port)
 {
@@ -471,6 +479,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case TEST_SERVER_RST_ON_CLOSED_PORT:
 		handle_server_rst_on_closed_port(net_pkt_family(pkt), &th);
+		break;
+	case TEST_SERVER_RST_ON_CLOSED_PORT_FIN:
+		handle_server_rst_on_closed_port_fin(net_pkt_family(pkt), &th);
 		break;
 	case TEST_SERVER_RST_ON_LISTENING_PORT_NO_ACTIVE_CONNECTION:
 		handle_server_rst_on_listening_port(net_pkt_family(pkt), &th);
@@ -776,6 +787,17 @@ static void test_server_timeout(struct k_work *work)
 		handle_server_test(NET_AF_INET, NULL);
 	} else if (test_case_no == TEST_SERVER_IPV6) {
 		handle_server_test(NET_AF_INET6, NULL);
+	} else if (test_case_no == TEST_SERVER_RST_ON_CLOSED_PORT_FIN) {
+		struct net_pkt *reply;
+
+		/* Inject a FIN-only segment (no ACK) targeting a closed port. */
+		reply = prepare_fin_packet(NET_AF_INET, net_htons(MY_PORT),
+					   net_htons(PEER_PORT));
+		zassert_not_null(reply, "Failed to prepare FIN packet");
+
+		if (net_recv_data(net_iface, reply) < 0) {
+			zassert_true(false, "%s failed to inject FIN", __func__);
+		}
 	} else {
 		zassert_true(false, "Invalid test case");
 	}
@@ -2254,6 +2276,48 @@ ZTEST(net_tcp, test_server_rst_on_closed_port)
 	k_sem_reset(&test_sem);
 
 	/* Trigger the peer to send SYN */
+	k_work_reschedule(&test_server, K_NO_WAIT);
+
+	/* Peer will release the semaphore after it receives RST */
+	test_sem_take(K_MSEC(100), __LINE__);
+}
+
+static void handle_server_rst_on_closed_port_fin(net_sa_family_t af, struct tcphdr *th)
+{
+	switch (t_state) {
+	case T_FIN:
+		/* Port was closed so expect RST instead of accepting the FIN.
+		 * The incoming FIN carried no ACK, so per RFC 9293 the RST ACK
+		 * field must be SEG.SEQ + SEG.LEN. A FIN occupies one sequence
+		 * number, so the expected ACK is SEG.SEQ + 1 (regression check
+		 * for the missing FIN increment in net_tcp_reply_rst()).
+		 */
+		test_verify_flags(th, RST | ACK);
+		zassert_equal(net_ntohl(th->th_seq), 0, "Invalid SEQ value");
+		zassert_equal(net_ntohl(th->th_ack), seq + 1, "Invalid ACK value");
+		t_state = T_CLOSING;
+		test_sem_give();
+		break;
+	default:
+		return;
+	}
+}
+
+/* Test case scenario
+ *   Send a FIN-only segment (no ACK) to a closed port
+ *   expect RST ACK with ACK == SEG.SEQ + 1 (FIN consumes a sequence number)
+ *   any failures cause test case to fail.
+ */
+ZTEST(net_tcp, test_server_rst_on_closed_port_fin)
+{
+	t_state = T_FIN;
+	test_case_no = TEST_SERVER_RST_ON_CLOSED_PORT_FIN;
+	seq = 200;
+	ack = 0;
+
+	k_sem_reset(&test_sem);
+
+	/* Trigger the peer to send a FIN-only segment to a closed port */
 	k_work_reschedule(&test_server, K_NO_WAIT);
 
 	/* Peer will release the semaphore after it receives RST */

@@ -57,34 +57,37 @@
 
 /* Safety margin between MCUboot segments and ROM stack */
 #define BOOTLOADER_STACK_OVERHEAD      0x2000
-#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1a00
+
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x1C00
+#define BOOTLOADER_DRAM_LOADER_SEG_LEN 0x0C00
 
 /* Upper limit of SRAM available for MCUboot bootloader segments */
 #define BOOTLOADER_USER_DRAM_END \
 	((DRAM_SHARED_BUFFERS_END - BOOTLOADER_STACK_OVERHEAD) & ~0xFF)
 
-#define BOOTLOADER_IRAM_LOADER_SEG_START                                                           \
-	(BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN + IRAM_DRAM_OFFSET)
-
-/* MCUboot iram/dram segments: stacked in upper SRAM, below iram_loader_seg.
+/* MCUboot iram/dram segments: stacked in upper SRAM, below dram_loader_seg.
  * On Xtensa split-bus SoCs, iram_seg and dram_seg MUST occupy separate physical
  * SRAM regions (IRAM and DRAM buses map to the same physical memory).
  * Layout (in physical/DRAM space, top-down):
  *   iram_loader_seg  (IRAM bus)
+ *   dram_loader_seg  (DRAM bus)
  *   iram_seg         (IRAM bus, 1024-byte aligned start for Xtensa VECBASE)
  *   dram_seg         (DRAM bus)
  */
+#define BOOTLOADER_IRAM_LOADER_SEG_START \
+	(BOOTLOADER_USER_DRAM_END + IRAM_DRAM_OFFSET - BOOTLOADER_IRAM_LOADER_SEG_LEN)
+#define BOOTLOADER_DRAM_LOADER_SEG_START \
+	(BOOTLOADER_IRAM_LOADER_SEG_START - IRAM_DRAM_OFFSET - BOOTLOADER_DRAM_LOADER_SEG_LEN)
 #define BOOTLOADER_IRAM_SEG_TARGET_LEN \
-	((BOOTLOADER_IRAM_LOADER_SEG_START - IRAM_DRAM_OFFSET - SRAM1_DRAM_START) / 4)
+	((BOOTLOADER_DRAM_LOADER_SEG_START - SRAM1_DRAM_START) / 4)
 #define BOOTLOADER_IRAM_SEG_START \
-	ALIGN_UP(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_TARGET_LEN, 0x400)
+	ALIGN_UP(BOOTLOADER_DRAM_LOADER_SEG_START + IRAM_DRAM_OFFSET - \
+	  BOOTLOADER_IRAM_SEG_TARGET_LEN, 0x400)
 #define BOOTLOADER_IRAM_SEG_LEN \
-	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_START)
+	(BOOTLOADER_DRAM_LOADER_SEG_START + IRAM_DRAM_OFFSET - BOOTLOADER_IRAM_SEG_START)
 #define BOOTLOADER_DRAM_SEG_LEN   BOOTLOADER_IRAM_SEG_LEN
 #define BOOTLOADER_DRAM_SEG_START \
 	(BOOTLOADER_IRAM_SEG_START - IRAM_DRAM_OFFSET - BOOTLOADER_DRAM_SEG_LEN)
-
-/* Upper boundary for user DRAM allocation */
 
 /* AMP */
 #if defined(CONFIG_SOC_ESP32S3_APPCPU)
@@ -123,7 +126,7 @@
 #elif defined(CONFIG_SOC_ENABLE_APPCPU)
 #define USER_DRAM_END DRAM_USER_END
 #else
-#define USER_DRAM_END (BOOTLOADER_IRAM_LOADER_SEG_START - IRAM_DRAM_OFFSET)
+#define USER_DRAM_END BOOTLOADER_DRAM_LOADER_SEG_START
 #endif
 #define USER_IRAM_END (USER_DRAM_END + IRAM_DRAM_OFFSET)
 

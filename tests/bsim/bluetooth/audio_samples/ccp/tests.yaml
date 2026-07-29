@@ -1,0 +1,20 @@
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  platform_allow:
+    - nrf52_bsim
+    - nrf5340bsim/nrf5340/cpuapp
+    - nrf54l15bsim/nrf54l15/cpuapp
+  harness: bsim
+  build: false
+
+tests:
+  tests.bsim.bluetooth.audio_samples.ccp:
+    harness_config:
+      fixture: bsim_multi_test
+    required_applications:
+      - application: tests.bsim.bluetooth.audio_samples.ccp.client
+        path: call_control_client
+      - application: tests.bsim.bluetooth.audio_samples.ccp.server
+        path: call_control_server

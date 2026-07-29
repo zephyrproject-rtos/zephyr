@@ -50,7 +50,7 @@ static int wdt_m5pm1_setup(const struct device *dev, uint8_t options)
 		return -EBUSY;
 	}
 
-	if ((options & WDT_OPT_PAUSE_IN_SLEEP) || (options & WDT_OPT_PAUSE_HALTED_BY_DBG)) {
+	if (options & (WDT_OPT_PAUSE_IN_SLEEP | WDT_OPT_PAUSE_HALTED_BY_DBG)) {
 		return -ENOTSUP;
 	}
 

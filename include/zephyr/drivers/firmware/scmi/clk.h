@@ -10,8 +10,8 @@
  * @brief Header file for the SCMI Clock Protocol.
  */
 
-#ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CLK_H_
-#define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CLK_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_CLK_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_CLK_H_
 
 #include <zephyr/drivers/firmware/scmi/protocol.h>
 
@@ -47,7 +47,7 @@
 /**
  * @brief Extract major version from SCMI protocol version
  *
- * @param v Combined 32-bit protocol version (major << 16 | minor)
+ * @param v Combined 32-bit protocol version <tt>(major << 16 | minor)</tt>
  * @return Major version number
  */
 #define SCMI_PROTO_VER_MAJOR(v) ((v) >> 16)
@@ -55,7 +55,7 @@
 /**
  * @brief Extract minor version from SCMI protocol version
  *
- * @param v Combined 32-bit protocol version (major << 16 | minor)
+ * @param v Combined 32-bit protocol version <tt>(major << 16 | minor)</tt>
  * @return Minor version number
  */
 #define SCMI_PROTO_VER_MINOR(v) ((v) & 0xFFFF)
@@ -200,4 +200,4 @@ int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
  * @}
  */
 
-#endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CLK_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_CLK_H_ */

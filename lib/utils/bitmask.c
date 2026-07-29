@@ -38,7 +38,6 @@ int bitmask_find_gap(uint32_t mask, size_t num_bits, size_t total_bits, bool fir
 
 		if ((block_size == num_bits) || (first_match && block_size > num_bits)) {
 			max_loc = loc;
-			max = block_size;
 			break;
 		} else if (block_size >= num_bits && block_size < max) {
 			max_loc = loc;

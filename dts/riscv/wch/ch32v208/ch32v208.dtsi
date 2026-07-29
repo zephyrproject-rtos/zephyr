@@ -17,6 +17,25 @@
 			interrupts = <54>;
 			status = "disabled";
 		};
+
+		tim5: counter@40000c00 {
+			compatible = "wch,gptm";
+			reg = <0x40000c00 16>;
+			prescaler = <1>;
+			channels = <4>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_TIM5>;
+			interrupt-parent = <&pfic>;
+			interrupts = <65>;
+			interrupt-names = "global";
+			status = "disabled";
+
+			pwm5: pwm {
+				compatible = "wch,gptm-pwm";
+				pwm-controller;
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
 	};
 };
 

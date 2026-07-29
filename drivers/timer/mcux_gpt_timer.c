@@ -130,7 +130,7 @@ void mcux_imx_gpt_isr(const void *arg)
  * Next needed call to sys_clock_announce will not be until the specified number
  * of ticks from the current time have elapsed.
  */
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Not supported on tickful kernels */
@@ -139,9 +139,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	k_spinlock_key_t key;
 	uint32_t next, adj, now;
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	/* Clamp ticks. We subtract one since we round up to next tick */
-	ticks = CLAMP((ticks - 1), 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	key = k_spin_lock(&lock);
 

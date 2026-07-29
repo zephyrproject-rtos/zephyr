@@ -21,7 +21,7 @@ clic: &cpuflpr_clic {};
 		reg = <0x3de000 DT_SIZE_K(116)>;
 		ranges = <0x0 0x3de000 DT_SIZE_K(116)>;
 		erase-block-size = <4096>;
-		write-block-size = <4>;
+		write-block-size = <16>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 	};

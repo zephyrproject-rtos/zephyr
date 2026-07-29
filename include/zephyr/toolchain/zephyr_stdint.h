@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_
-#define ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_ZEPHYR_STDINT_H_
+#define ZEPHYR_INCLUDE_TOOLCHAIN_ZEPHYR_STDINT_H_
 
 /*
  * Some gcc versions and/or configurations as found in the Zephyr SDK
@@ -103,4 +103,4 @@
 #define __INT64_C(c) c ## LL
 #define __UINT64_C(c) c ## ULL
 
-#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_STDINT_H_ */
+#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_ZEPHYR_STDINT_H_ */

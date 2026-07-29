@@ -1,0 +1,27 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config TI_TDP2004
+	bool "TDP2004 Four-Channel 20Gbps DisplayPort 2.1 and 12Gbps HDMI2.1 Linear Redriver"
+	default y
+	depends on DT_HAS_TI_TDP2004_ENABLED
+	select GPIO
+	select I2C
+	help
+	  The TDP2004 is a four-channel linear repeater or redriver designed
+	  to support DisplayPort 2.1 up to 20Gbps and AC coupled HDMI2.1 source
+	  up to 12Gbps.
+
+if TI_TDP2004
+
+module = TI_TDP2004
+module-str = TI TDP2004 DisplayPort and HDMI linear redriver
+source "subsys/logging/Kconfig.template.log_config"
+
+config TI_TDP2004_INIT_PRIORITY
+	int "TI TDP2004 init priority"
+	default I2C_INIT_PRIORITY
+	help
+	  The init priority of the TI TDP2004 redriver.
+
+endif # TI_TDP2004

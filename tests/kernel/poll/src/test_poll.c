@@ -879,6 +879,61 @@ ZTEST(poll_api_1cpu, test_poll_zero_events)
 	zassert_equal(k_poll(&event, 0, K_MSEC(50)), -EAGAIN);
 }
 
+static struct k_poll_signal lifecycle_signal;
+
+/**
+ * @brief Test poll signal initialization and raising
+ *
+ * @ingroup kernel_poll_tests
+ *
+ * @details A poll signal object initialized with k_poll_signal_init() must
+ * start in the unsignaled state; raising it with k_poll_signal_raise() must
+ * put it in the signaled state carrying the caller's result value, as
+ * reported by k_poll_signal_check().
+ *
+ * @see k_poll_signal_init(), k_poll_signal_raise(), k_poll_signal_check()
+ */
+ZTEST(poll_api, test_poll_signal_raise)
+{
+	unsigned int signaled;
+	int result;
+
+	k_poll_signal_init(&lifecycle_signal);
+
+	/* initialized signals start out unsignaled */
+	k_poll_signal_check(&lifecycle_signal, &signaled, &result);
+	zassert_equal(signaled, 0, "signal should start unsignaled");
+
+	/* raising signals the object and stores the result value */
+	zassert_equal(k_poll_signal_raise(&lifecycle_signal, SIGNAL_RESULT), 0);
+	k_poll_signal_check(&lifecycle_signal, &signaled, &result);
+	zassert_not_equal(signaled, 0, "signal should be signaled after raise");
+	zassert_equal(result, SIGNAL_RESULT);
+}
+
+/**
+ * @brief Test resetting a poll signal
+ *
+ * @ingroup kernel_poll_tests
+ *
+ * @details k_poll_signal_reset() must return a raised poll signal to the
+ * unsignaled state.
+ *
+ * @see k_poll_signal_raise(), k_poll_signal_reset(), k_poll_signal_check()
+ */
+ZTEST(poll_api, test_poll_signal_reset)
+{
+	unsigned int signaled;
+	int result;
+
+	k_poll_signal_init(&lifecycle_signal);
+	zassert_equal(k_poll_signal_raise(&lifecycle_signal, SIGNAL_RESULT), 0);
+
+	k_poll_signal_reset(&lifecycle_signal);
+	k_poll_signal_check(&lifecycle_signal, &signaled, &result);
+	zassert_equal(signaled, 0, "signal should be unsignaled after reset");
+}
+
 static struct k_poll_signal persist_signal;
 
 /**

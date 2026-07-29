@@ -3,7 +3,7 @@
 
 # keep first
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-if(CONFIG_STM32_MEMMAP OR CONFIG_BOOTLOADER_MCUBOOT)
+if(CONFIG_FLASH_STM32_NOR_MEMMAP OR CONFIG_BOOTLOADER_MCUBOOT)
   board_runner_args(stm32cubeprogrammer "--extload=MT25TL01G_STM32H750B-DISCO.stldr")
 endif()
 

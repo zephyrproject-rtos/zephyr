@@ -114,7 +114,7 @@ the JP2 header.
       :compact:
 
 .. _GigaDevice Cortex-M33 High Performance SoC Website:
-   https://www.gigadevice.com/products/microcontrollers/gd32/arm-cortex-m33/high-performance-line/
+   https://www.gigadevice.com/product/mcu/high-performance-mcus/gd32e5xx-series
 
 .. _GD32E507X Datasheet:
    https://gd32mcu.com/download/down/document_id/252/path_type/1

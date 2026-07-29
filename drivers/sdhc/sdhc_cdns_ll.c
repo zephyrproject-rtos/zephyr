@@ -735,7 +735,7 @@ static int sdhc_cdns_send_cmd(struct sdmmc_cmd *cmd, struct sdhc_data *data)
 		return -EIO;
 	}
 
-	if ((op & RES_TYPE_SEL_48) || (op & RES_TYPE_SEL_136)) {
+	if (op & (RES_TYPE_SEL_48 | RES_TYPE_SEL_136)) {
 		cmd->resp_data[0] = sys_read32(cdns_params.reg_base + SDHC_CDNS_SRS04);
 		if (op & RES_TYPE_SEL_136) {
 			cmd->resp_data[1] = sys_read32(cdns_params.reg_base + SDHC_CDNS_SRS05);

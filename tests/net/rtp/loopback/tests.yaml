@@ -1,0 +1,62 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - rtp
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+
+tests:
+  net.rtp.loopback.net_pkt.ipv4:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_NET_PKT=y
+      - CONFIG_RTP_TRANSPORT_SOCKET=n
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=n
+  net.rtp.loopback.net_pkt.ipv6:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_NET_PKT=y
+      - CONFIG_RTP_TRANSPORT_SOCKET=n
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_IPV6_DAD=n
+  net.rtp.loopback.net_pkt.csrc.ipv4:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_NET_PKT=y
+      - CONFIG_RTP_TRANSPORT_SOCKET=n
+      - CONFIG_RTP_MAX_CSRC_COUNT=4
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=n
+  net.rtp.loopback.net_pkt.csrc.ipv6:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_NET_PKT=y
+      - CONFIG_RTP_TRANSPORT_SOCKET=n
+      - CONFIG_RTP_MAX_CSRC_COUNT=4
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_IPV6_DAD=n
+  net.rtp.loopback.socket.ipv4:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_SOCKET_MAX_SESSIONS=1
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=n
+  net.rtp.loopback.socket.ipv6:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_SOCKET_MAX_SESSIONS=1
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_IPV6_DAD=n
+  net.rtp.loopback.socket.csrc.ipv4:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_SOCKET_MAX_SESSIONS=1
+      - CONFIG_RTP_MAX_CSRC_COUNT=4
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=n
+  net.rtp.loopback.socket.csrc.ipv6:
+    extra_configs:
+      - CONFIG_RTP_TRANSPORT_SOCKET_MAX_SESSIONS=1
+      - CONFIG_RTP_MAX_CSRC_COUNT=4
+      - CONFIG_NET_IPV4=n
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_IPV6_DAD=n

@@ -10,8 +10,8 @@
  * @brief NXP LLWU wakeup source encodings.
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_WUC_NXP_LLWU_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_WUC_NXP_LLWU_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_WUC_WUC_NXP_LLWU_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_WUC_WUC_NXP_LLWU_H_
 
 /**
  * @brief Wakeup source encoding layout.
@@ -210,4 +210,4 @@
 #define NXP_LLWU_GET_MODULE_INDEX(source) ((source) & 0xFF)
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_WUC_NXP_LLWU_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_WUC_WUC_NXP_LLWU_H_ */

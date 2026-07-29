@@ -15,9 +15,11 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <stddef.h>
-#include <zephyr/modem/chat.h>
+#include <stdint.h>
+#include <time.h>
 #include <zephyr/drivers/cellular.h>
 #include <zephyr/sys/util_macro.h>
 #ifdef __cplusplus
@@ -32,55 +34,90 @@ extern "C" {
  */
 /* clang-format off */
 /** Unknown RSSI value returned by AT+CSQ command */
-#define CSQ_RSSI_UNKNOWN         (99)
+#define CSQ_RSSI_UNKNOWN  (99)
+/** Maximum valid RSSI code returned by AT+CSQ command */
+#define CSQ_RSSI_MAX      (31)
 /** Unknown RSRP value returned by AT+CESQ command */
-#define CESQ_RSRP_UNKNOWN        (255)
+#define CESQ_RSRP_UNKNOWN (255)
+/** Maximum valid RSRP code returned by AT+CESQ command */
+#define CESQ_RSRP_MAX     (97)
 /** Unknown RSRQ value returned by AT+CESQ command */
-#define CESQ_RSRQ_UNKNOWN        (255)
+#define CESQ_RSRQ_UNKNOWN (255)
+/** Maximum valid RSRQ code returned by AT+CESQ command */
+#define CESQ_RSRQ_MAX     (34)
+
+/** Modem response type for generic ERROR responses returned by public AT helpers. */
+#define HL78XX_MODEM_AT_ERROR     1
+/** Modem response type for +CME ERROR responses returned by public AT helpers. */
+#define HL78XX_MODEM_AT_CME_ERROR 2
+/** Modem response type for +CMS ERROR responses returned by public AT helpers. */
+#define HL78XX_MODEM_AT_CMS_ERROR 3
 
 /**
  * Convert CSQ RSSI value to dBm
  * @param v RSSI value (0-31)
  * @return Signal strength in dBm (-113 to -51)
  */
-#define CSQ_RSSI_TO_DB(v)        (-113 + (2 * (v)))
+#define CSQ_RSSI_TO_DB(v)  (-113 + (2 * (v)))
 /**
  * Convert CESQ RSRP value to dBm
  * @param v RSRP value (0-97)
- * @return Reference signal received power in dBm (-140 to -44)
+ * @return Conservative lower-bound representative in dBm (-141 to -44)
  */
-#define CESQ_RSRP_TO_DB(v)       (-140 + (v))
+#define CESQ_RSRP_TO_DB(v) (-141 + (v))
 /**
  * Convert CESQ RSRQ value to dB
  * @param v RSRQ value (0-34)
- * @return Reference signal received quality in dB (-20 to -3)
+ * @return Conservative integer representative in dB (-21 to -3)
  */
-#define CESQ_RSRQ_TO_DB(v)       (-20 + ((v) / 2))
+#define CESQ_RSRQ_TO_DB(v) (((v) == 0U) ? -21 : (-20 + ((v) / 2)))
 
 /** Monitor is paused */
-#define PAUSED                   1
+#define PAUSED 1
 /** Monitor is active, default */
-#define ACTIVE                   0
+#define ACTIVE 0
 /** Maximum length of modem manufacturer string */
-#define MDM_MANUFACTURER_LENGTH  20
+#define MDM_MANUFACTURER_LENGTH        20
 /** Maximum length of modem model string */
-#define MDM_MODEL_LENGTH         32
+#define MDM_MODEL_LENGTH               32
 /** Maximum length of modem revision string */
-#define MDM_REVISION_LENGTH      64
+#define MDM_REVISION_LENGTH            64
 /** Maximum length of modem IMEI string */
-#define MDM_IMEI_LENGTH          16
+#define MDM_IMEI_LENGTH                16
 /** Maximum length of modem IMSI string */
-#define MDM_IMSI_LENGTH          23
+#define MDM_IMSI_LENGTH                23
 /** Maximum length of modem ICCID string */
-#define MDM_ICCID_LENGTH         22
+#define MDM_ICCID_LENGTH               22
 /** Maximum length of APN string */
-#define MDM_APN_MAX_LENGTH       64
+#define MDM_APN_MAX_LENGTH             64
 /** Maximum length of certificate */
-#define MDM_MAX_CERT_LENGTH      4096
+#define MDM_MAX_CERT_LENGTH            4096
 /** Maximum length of hostname */
-#define MDM_MAX_HOSTNAME_LEN     128
+#define MDM_MAX_HOSTNAME_LEN           128
 /** Maximum length of serial number string */
-#define MDM_SERIAL_NUMBER_LENGTH 32
+#define MDM_SERIAL_NUMBER_LENGTH       32
+/** Recommended buffer size for extracted +CTZEU universal time strings */
+#define HL78XX_CTZEU_UTIME_MAX_LEN     32
+/** Maximum length of CEREG timer string */
+#define HL78XX_CEREG_TIMER_STR_LEN     9
+/** Maximum length of network address string */
+#define HL78XX_NETWORK_ADDRESS_MAX_LEN 46
+/** Pattern used to indicate end-of-file or completion of data transmission */
+#define MDM_HL78XX_EOF_PATTERN         "--EOF--Pattern--"
+/** Escape/termination sequence used to exit data mode and return to command mode */
+#define MDM_HL78XX_TERMINATION_PATTERN "+++"
+/** Response string indicating a successful data connection has been established */
+#define MDM_HL78XX_CONNECT_STRING      "CONNECT"
+/** Response string indicating the connection has been lost or terminated */
+#define MDM_HL78XX_NO_CARRIER_STRING   "NO CARRIER"
+/** Prefix for CME (Mobile Equipment) error responses, typically followed by an error code */
+#define MDM_HL78XX_CME_ERROR_STRING    "+CME ERROR: "
+/** Prefix for CMS (Message Service) error responses, typically related to SMS operations */
+#define MDM_HL78XX_CMS_ERROR_STRING    "+CMS ERROR: "
+/** Generic error response string indicating command failure */
+#define MDM_HL78XX_ERROR_STRING        "ERROR"
+/** Standard response string indicating successful execution of an AT command */
+#define MDM_HL78XX_OK_STRING           "OK"
 
 /**
  * @brief Initial active state for HL78xx monitors.
@@ -206,6 +243,55 @@ enum hl78xx_cell_rat_mode {
 };
 
 /**
+ * @brief Raw AT+KSELACQ PRL RAT entries.
+ *
+ * These values follow the modem command syntax directly and are not the same
+ * numeric encoding as enum hl78xx_cell_rat_mode.
+ */
+enum hl78xx_kselacq_rat {
+	/** Clear PRL and disable automatic RAT switching. */
+	HL78XX_KSELACQ_RAT_CLEAR = 0,
+	/** PRL entry for Cat-M1. */
+	HL78XX_KSELACQ_RAT_CAT_M1 = 1,
+	/** PRL entry for NB-IoT. */
+	HL78XX_KSELACQ_RAT_NB1 = 2,
+	/** PRL entry for GSM. Supported only on HL7812. */
+	HL78XX_KSELACQ_RAT_GSM = 3,
+};
+
+/**
+ * @brief KSELACQ RAT configuration syntax
+ */
+struct kselacq_syntax {
+	/** 0 = configure PRL, 1 = reserved. */
+	bool mode;
+	/** Preferred RAT in PRL position 1, expressed as raw AT+KSELACQ value. */
+	enum hl78xx_kselacq_rat rat1;
+	/** Preferred RAT in PRL position 2, expressed as raw AT+KSELACQ value. */
+	enum hl78xx_kselacq_rat rat2;
+	/** Preferred RAT in PRL position 3, expressed as raw AT+KSELACQ value. */
+	enum hl78xx_kselacq_rat rat3;
+};
+
+/**
+ * @brief Callback used to supply an optional runtime band override for a RAT.
+ *
+ * The modem driver stays agnostic to how callers store or derive runtime band
+ * choices. When a provider is registered, hl78xx_band_cfg() asks for an
+ * override band for the requested RAT and falls back to Kconfig defaults when
+ * none is supplied.
+ *
+ * @param dev Cellular network device instance.
+ * @param rat RAT currently being configured.
+ * @param band Output band number, written only when the callback returns true.
+ * @param user_data Opaque caller-owned context passed at registration time.
+ * @return true when a valid runtime band override exists for @p rat.
+ */
+typedef bool (*hl78xx_runtime_band_provider_t)(const struct device *dev,
+					       enum hl78xx_cell_rat_mode rat, uint16_t *band,
+					       void *user_data);
+
+/**
  * @brief Phone functionality modes
  *
  * AT+CFUN command modes for controlling modem operational state
@@ -217,6 +303,29 @@ enum hl78xx_phone_functionality {
 	HL78XX_FULLY_FUNCTIONAL,
 	/** Airplane mode, RF transmitters disabled */
 	HL78XX_AIRPLANE = 4,
+};
+
+/**
+ * @brief External SIM slot selection driven by the optional SIM-switch GPIO.
+ *
+ * Slot 1 maps to a logical low on the SIM-switch GPIO, and slot 2 maps to a
+ * logical high. Devicetree polarity flags still apply to the physical pin.
+ */
+enum hl78xx_sim_slot {
+	/** Select SIM slot 1 (logical low). */
+	HL78XX_SIM_SLOT_1 = 0,
+	/** Select SIM slot 2 (logical high). */
+	HL78XX_SIM_SLOT_2 = 1,
+};
+
+/**
+ * @brief Driver-managed modem restart modes.
+ */
+enum hl78xx_modem_restart_mode {
+	/** Restart the modem with the dedicated reset pin. */
+	HL78XX_MODEM_RESTART_HARD = 0,
+	/** Restart the modem by issuing `AT+CFUN=4,1`. */
+	HL78XX_MODEM_RESTART_SOFT,
 };
 
 /**
@@ -247,16 +356,124 @@ enum hl78xx_module_status {
  * Types of modem information that can be queried
  */
 enum hl78xx_modem_info_type {
-	/** Access Point Name */
-	HL78XX_MODEM_INFO_APN,
-	/** Current Radio Access Technology */
-	HL78XX_MODEM_INFO_CURRENT_RAT,
-	/** Network Operator name */
-	HL78XX_MODEM_INFO_NETWORK_OPERATOR,
 	/** Modem Serial Number */
 	HL78XX_MODEM_INFO_SERIAL_NUMBER,
 	/** Current Baud Rate */
 	HL78XX_MODEM_INFO_CURRENT_BAUD_RATE,
+};
+
+/**
+ * @brief Network operator format options
+ */
+enum hl78xx_operator_format {
+	/** Long alphanumeric operator name format (AT+COPS format 0) */
+	HL78XX_OPERATOR_FORMAT_LONG_ALPHANUMERIC = 0,
+	/** Short alphanumeric operator name format (AT+COPS format 1) */
+	HL78XX_OPERATOR_FORMAT_SHORT_ALPHANUMERIC,
+	/** Numeric operator name format / MCC-MNC (AT+COPS format 2) */
+	HL78XX_OPERATOR_FORMAT_NUMERIC,
+};
+
+/**
+ * @brief Cached +CEREG/+CREG registration details.
+ */
+struct hl78xx_cxreg_status {
+	/** Registration status from +CEREG/+CREG. */
+	enum cellular_registration_status reg_status;
+	/** Parsed tracking area code is present. */
+	bool has_tac;
+	/** Tracking area code from +CEREG/+CREG. */
+	uint32_t tac;
+	/** Parsed cell ID is present. */
+	bool has_cell_id;
+	/** Cell ID from +CEREG/+CREG. */
+	uint32_t cell_id;
+	/** Parsed RAT mode is present. */
+	bool has_rat_mode;
+	/** RAT mode derived from +CEREG/+CREG AcT. */
+	enum hl78xx_cell_rat_mode rat_mode;
+	/** Cause type is present. */
+	bool has_cause_type;
+	/** Registration reject cause type. */
+	int cause_type;
+	/** Reject cause is present. */
+	bool has_reject_cause;
+	/** Registration reject cause value. */
+	int reject_cause;
+	/** Active time field is present. */
+	bool has_active_time;
+	/** Raw active time timer string. */
+	char active_time[HL78XX_CEREG_TIMER_STR_LEN];
+	/** TAU field is present. */
+	bool has_tau;
+	/** Raw TAU timer string. */
+	char tau[HL78XX_CEREG_TIMER_STR_LEN];
+};
+
+/**
+ * @brief Cached network information types.
+ */
+enum hl78xx_network_info_type {
+	/** Access Point Name */
+	HL78XX_NETWORK_INFO_APN,
+	/** Current Radio Access Technology */
+	HL78XX_NETWORK_INFO_CURRENT_RAT,
+	/** Network Operator name in long alphanumeric format */
+	HL78XX_NETWORK_INFO_NETWORK_OPERATOR_LONG_ALPHA,
+	/** Network Operator name in short alphanumeric format */
+	HL78XX_NETWORK_INFO_NETWORK_OPERATOR_SHORT_ALPHA,
+	/** Network Operator name in numeric format */
+	HL78XX_NETWORK_INFO_NETWORK_OPERATOR_NUMERIC,
+	/** Current operator format from +COPS */
+	HL78XX_NETWORK_INFO_OPERATOR_FORMAT,
+	/** Tracking area code from +CEREG */
+	HL78XX_NETWORK_INFO_TAC,
+	/** Mobile country code parsed from numeric operator */
+	HL78XX_NETWORK_INFO_MCC,
+	/** Mobile network code parsed from numeric operator */
+	HL78XX_NETWORK_INFO_MNC,
+	/** Cell ID from +CEREG */
+	HL78XX_NETWORK_INFO_CELL_ID,
+	/** PDP IP address. */
+	HL78XX_NETWORK_INFO_IP_ADDRESS,
+	/** Primary DNS address. */
+	HL78XX_NETWORK_INFO_DNS_PRIMARY,
+	/** Active band number from AT+KBND? decoded from the bitmap. */
+	HL78XX_NETWORK_INFO_ACTIVE_BAND,
+	/** Signal-to-Interference-plus-Noise Ratio from the last +KCELLMEAS URC. */
+	HL78XX_NETWORK_INFO_SINR,
+};
+
+/**
+ * @brief Cached network operator information.
+ */
+struct hl78xx_network_operator {
+	/** Operator is available. */
+	bool has_operator;
+	/** Operator name in the currently selected +COPS format. */
+	char operator_name[MDM_MODEL_LENGTH];
+	/** MCC is available. */
+	bool has_mcc;
+	/** Mobile country code. */
+	uint16_t mcc;
+	/** MNC is available. */
+	bool has_mnc;
+	/** Mobile network code. */
+	uint16_t mnc;
+	/** Current +COPS operator format. */
+	enum hl78xx_operator_format format;
+};
+
+/**
+ * @brief Cached network information.
+ */
+struct hl78xx_network_info {
+	/** Cached network operator information. */
+	struct hl78xx_network_operator operator_info;
+	/** IP address. */
+	char ip_address[HL78XX_NETWORK_ADDRESS_MAX_LEN];
+	/** Primary DNS server. */
+	char dns_primary[HL78XX_NETWORK_ADDRESS_MAX_LEN];
 };
 
 /**
@@ -350,6 +567,19 @@ enum power_down_event {
 	/** No power down event */
 	POWER_DOWN_EVENT_NONE,
 };
+
+/**
+ * @brief Application responses to a pending power-down request
+ *
+ * These values control how the driver handles the stage-2 shutdown work after
+ * HL78XX_POWER_DOWN_UPDATE is dispatched with POWER_DOWN_EVENT_ENTER.
+ */
+enum hl78xx_power_down_response {
+	/** Proceed with shutdown as soon as the driver workqueue can run it */
+	HL78XX_POWER_DOWN_RESPONSE_IMMEDIATE = 0,
+	/** Extend the shutdown grace period from now by a caller-supplied timeout */
+	HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE,
+};
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
 #ifdef CONFIG_MODEM_HL78XX_EDRX
@@ -413,6 +643,25 @@ struct hl78xx_network {
 };
 
 /**
+ * @brief Parsed +CTZEU update payload.
+ *
+ * The @p tz field already includes any daylight saving adjustment, matching the
+ * modem specification for +CTZEU.
+ */
+struct hl78xx_ctzeu_update {
+	/** Local timezone offset from GMT in quarter-hours, including DST adjustment. */
+	int tz;
+	/** Daylight saving indicator reported by the modem (0, 1, or 2). */
+	int dst;
+	/** Universal time field is present in the notification. */
+	bool has_utime;
+	/** Parsed universal time in UTC Unix epoch milliseconds. */
+	int64_t date_time_ms;
+	/** Parsed universal time in broken-down UTC form. Valid when has_utime is true. */
+	struct tm utc_time;
+};
+
+/**
  * @brief HL78xx event types
  *
  * Asynchronous event notifications from the HL78xx modem
@@ -428,6 +677,14 @@ enum hl78xx_evt_type {
 	HL78XX_LTE_MODEM_STARTUP,
 	/** FOTA update status changed */
 	HL78XX_LTE_FOTA_UPDATE_STATUS,
+	/** DNS resolution path completed and modem is ready for data transmission */
+	HL78XX_LTE_DNS_READY,
+	/** The AT command interface is ready for application use. */
+	HL78XX_LTE_AT_CMD_READY,
+	/** Phone functionality changed (+CFUN) */
+	HL78XX_LTE_PHONE_FUNCTIONALITY_UPDATE,
+	/** Extended timezone and universal time update (+CTZEU) */
+	HL78XX_LTE_CTZEU_UPDATE,
 #ifdef CONFIG_HL78XX_GNSS
 	/** GNSS engine initialized and ready */
 	HL78XX_GNSS_ENGINE_READY,
@@ -459,6 +716,14 @@ enum hl78xx_evt_type {
 	/** Modem power-down event update */
 	HL78XX_POWER_DOWN_UPDATE,
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+	/** VGPIO pin went LOW */
+	HL78XX_VGPIO_LOW,
+	/** VGPIO pin went HIGH */
+	HL78XX_VGPIO_HIGH,
+	/** GPIO6 pin went LOW indicating sleep or power-down entry */
+	HL78XX_GPIO6_LOW,
+	/** GPIO6 pin went HIGH indicating wake from sleep or power-down */
+	HL78XX_GPIO6_HIGH,
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	/** Cellular measurement update */
 	HL78XX_CELLMEAS_UPDATE,
@@ -601,6 +866,8 @@ struct hl78xx_evt {
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 		/** Cellular measurement event content */
 		struct k_cellmeas_signal_info cellmeas;
+		/** Full +CTZEU update payload */
+		struct hl78xx_ctzeu_update ctzeu;
 		/** Boolean status value */
 		bool status;
 		/** Integer value */
@@ -608,7 +875,6 @@ struct hl78xx_evt {
 	} content;
 };
 
-#if defined(CONFIG_HL78XX_GNSS_AUX_DATA_PARSER) || defined(__DOXYGEN__)
 /**
  * @brief Parsed GSA sentence data (GNSS DOP and Active Satellites)
  *
@@ -701,6 +967,20 @@ struct hl78xx_gnss_nmea_aux_data {
 };
 
 /**
+ * @brief Forward declaration for modem chat response match descriptors.
+ *
+ * This declaration is intentionally used instead of including
+ * <zephyr/modem/chat.h> from this public API header. The API only needs to
+ * expose pointers to struct modem_chat_match, so the full structure definition
+ * is not required here.
+ *
+ * Source files that dereference struct modem_chat_match members, allocate
+ * instances, or otherwise need the complete type definition must include
+ * <zephyr/modem/chat.h> directly.
+ */
+struct modem_chat_match;
+
+/**
  * @brief GNSS auxiliary data callback function type
  *
  * @param dev Pointer to the GNSS device
@@ -748,22 +1028,7 @@ struct hl78xx_gnss_aux_data_callback {
 		.dev = DEVICE_DT_GET(_node_id),                                                    \
 		.callback = _callback,                                                             \
 	}
-#else
-/**
- * @brief Register a callback structure for GNSS auxiliary data published
- *
- * @param _dev Device pointer
- * @param _callback The callback function
- */
-#define GNSS_AUX_DATA_CALLBACK_DEFINE(_dev, _callback)
-/**
- * @brief Register a callback structure for GNSS auxiliary data published
- *
- * @param _node_id Device tree node identifier
- * @param _callback The callback function
- */
-#define GNSS_DT_AUX_DATA_CALLBACK_DEFINE(_node_id, _callback)
-#endif
+
 /**
  * @brief API function pointer for configuring networks
  *
@@ -974,6 +1239,31 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 					    bool reset);
 
 /**
+ * @brief Request a driver-managed modem restart.
+ *
+ * Hard restart enters the reset-pin state-machine path. Soft restart enters
+ * a driver-owned `AT+CFUN=4,1` path and waits for the modem restart
+ * indication before re-running initialization.
+ *
+ * Soft restart requires the modem chat path to be active. If the modem is in
+ * sleep, idle, or power-off transition states, the call returns `-EAGAIN`.
+ * If the soft-reset request cannot be issued or the modem never reports the
+ * restart indication, the driver falls back to the full restart path when
+ * hardware restart control is available.
+ *
+ * @param dev Cellular network device instance.
+ * @param mode Requested restart mode.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p dev or @p mode is invalid.
+ * @retval -ENOTSUP if hard restart is requested but no reset GPIO is configured.
+ * @retval -EAGAIN if a soft restart is requested while the modem is not ready
+ *         to accept AT commands.
+ * @retval -EBUSY if another restart is already in progress.
+ */
+int hl78xx_api_func_restart(const struct device *dev, enum hl78xx_modem_restart_mode mode);
+
+/**
  * @brief Get phone functionality mode (internal implementation)
  *
  * Internal function to query the modem's phone functionality mode.
@@ -1012,9 +1302,129 @@ int hl78xx_api_func_get_signal(const struct device *dev, const enum cellular_sig
  * @param size Size of the info buffer
  * @return 0 if successful, negative errno on failure
  */
-int hl78xx_api_func_get_modem_info_vendor(const struct device *dev,
-					  enum hl78xx_modem_info_type type, void *info,
-					  size_t size);
+int hl78xx_api_func_get_modem_info(const struct device *dev, enum hl78xx_modem_info_type type,
+				   void *info, size_t size);
+
+/**
+ * @brief Get standard (Zephyr cellular API) modem information from cache
+ *
+ * Reads identity fields cached by the driver during the init script.
+ * Does NOT issue any AT command and is safe to call from any context.
+ *
+ * @param dev Cellular network device instance
+ * @param type Zephyr cellular modem info type
+ * @param info Buffer to store the info string
+ * @param size Buffer size in bytes
+ * @return 0 on success, -ENOTSUP if type not handled, negative errno on failure
+ */
+int hl78xx_api_func_get_modem_info_standard(const struct device *dev,
+					    enum cellular_modem_info_type type, char *info,
+					    size_t size);
+
+/**
+ * @brief Get cached vendor-specific network information.
+ *
+ * Internal function to retrieve HL78xx-specific network information.
+ * Users should call hl78xx_get_network_info() instead.
+ *
+ * @param dev Cellular network device instance
+ * @param type Type of the network info to retrieve
+ * @param info Pointer to store the network info
+ * @param size Size of the info buffer
+ * @return 0 if successful, negative errno on failure
+ */
+int hl78xx_api_func_get_network_info(const struct device *dev, enum hl78xx_network_info_type type,
+				     void *info, size_t size);
+
+/**
+ * @brief Check whether the current RSRP meets the configured minimum threshold.
+ *
+ * Uses the driver's standard signal query path and compares the returned RSRP
+ * in dBm against CONFIG_MODEM_MIN_ALLOWED_SIGNAL_STRENGTH.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_api_func_get_rsrp_validity(const struct device *dev, bool *is_valid);
+
+/**
+ * @brief Check whether the current RSRQ meets the configured minimum threshold.
+ *
+ * Uses the driver's standard signal query path and compares the returned RSRQ
+ * in dB against CONFIG_MODEM_MIN_ALLOWED_SIGNAL_QUALITY.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_api_func_get_rsrq_validity(const struct device *dev, bool *is_valid);
+
+/**
+ * @brief Check whether the current SINR meets the configured minimum threshold.
+ *
+ * Uses the cached +KCELLMEAS-derived SINR value and compares it in dB against
+ * CONFIG_MODEM_MIN_ALLOWED_SINR.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_api_func_get_sinr_validity(const struct device *dev, bool *is_valid);
+
+/**
+ * @brief Set the +COPS network operator format.
+ *
+ * @param dev Cellular network device instance
+ * @param format Desired operator format to set
+ * @return 0 if successful, negative errno on failure
+ */
+int hl78xx_api_func_set_network_operator_format(const struct device *dev,
+						enum hl78xx_operator_format format);
+
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+/**
+ * @brief Set a new Preferred RAT List through AT+KSELACQ.
+ *
+ * Sends `AT+KSELACQ=0,<rat1>,<rat2>,<rat3>` immediately, updates the driver's
+ * cached PRL values, and does not force an immediate modem restart.
+ *
+ * Duplicate RAT entries are allowed to bias the modem's search order. To clear
+ * the PRL and disable automatic RAT switching, pass rat1/rat2/rat3 as
+ * HL78XX_KSELACQ_RAT_CLEAR; the driver emits `AT+KSELACQ=0,0` for that case.
+ *
+ * @param dev Cellular network device instance
+ * @param kselacq_rats Raw `AT+KSELACQ` PRL entries to set
+ * @return 0 if successful, negative errno on failure
+ */
+int hl78xx_api_func_set_prl(const struct device *dev, const struct kselacq_syntax kselacq_rats);
+
+/**
+ * @brief Get the current Preferred RAT List.
+ *
+ * Retrieves the current raw `AT+KSELACQ` PRL values from the modem cache.
+ *
+ * @param dev Cellular network device instance
+ * @param kselacq_rats Pointer to store the current PRL entries
+ * @return 0 if successful, negative errno on failure
+ */
+int hl78xx_api_func_get_prl(const struct device *dev, struct kselacq_syntax *kselacq_rats);
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+
+/**
+ * @brief Register or clear a runtime band provider for the driver.
+ *
+ * When a provider is registered, hl78xx_band_cfg() may use its per-RAT band
+ * override instead of the default Kconfig bitmap. Passing NULL clears the
+ * provider.
+ *
+ * @param dev Cellular network device instance.
+ * @param provider Callback invoked to obtain a runtime band override.
+ * @param user_data Opaque context passed back to @p provider.
+ * @return 0 on success, negative errno on failure.
+ */
+int hl78xx_set_runtime_band_provider(const struct device *dev,
+				     hl78xx_runtime_band_provider_t provider, void *user_data);
 
 /**
  * @brief Send dynamic AT command (internal implementation)
@@ -1033,6 +1443,38 @@ int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char 
 					   uint16_t cmd_size,
 					   const struct modem_chat_match *response_matches,
 					   uint16_t matches_size);
+
+/**
+ * @brief Send a pre-formatted AT command to the modem.
+ *
+ * Returns 0 on OK responses, a positive encoded modem error on
+ * ERROR/+CME ERROR/+CMS ERROR responses, and a negative errno on
+ * transport failure. Callers must format the command string first
+ * with snprintf() when variable arguments are needed.
+ *
+ * @param dev Cellular network device instance
+ * @param cmd AT command string to send
+ * @return 0 on success, positive encoded modem error, or negative errno on failure
+ */
+int hl78xx_modem_at_send(const struct device *dev, const char *cmd);
+
+/**
+ * @brief Send a pre-formatted AT command and copy the whole modem response
+ * into a caller-supplied buffer.
+ *
+ * Callers must format the command string first with snprintf() when
+ * variable arguments are needed. The response buffer receives the full
+ * modem response collected by the driver.
+ *
+ * @param dev Cellular network device instance
+ * @param response Output buffer for the whole modem response
+ * @param response_size Output buffer size
+ * @param cmd AT command string to send
+ * @return 0 on success, positive encoded modem error, or negative errno on failure
+ */
+int hl78xx_modem_at_cmd(const struct device *dev, char *response, size_t response_size,
+			const char *cmd);
+
 /**
  * @brief Get modem info for the device
  *
@@ -1050,8 +1492,85 @@ static inline int hl78xx_get_modem_info(const struct device *dev,
 					const enum hl78xx_modem_info_type type, void *info,
 					size_t size)
 {
-	return hl78xx_api_func_get_modem_info_vendor(dev, type, info, size);
+	return hl78xx_api_func_get_modem_info(dev, type, info, size);
 }
+
+/**
+ * @brief Get cached network info for the device.
+ *
+ * @param dev Cellular network device instance
+ * @param type Type of the network info requested
+ * @param info Info destination buffer
+ * @param size Size of the destination buffer
+ *
+ * @retval 0 if successful.
+ * @retval -ENOTSUP if the type is not supported.
+ * @retval -ENODATA if the modem does not provide the requested info.
+ * @retval Negative errno-code from chat module otherwise.
+ */
+static inline int hl78xx_get_network_info(const struct device *dev,
+					  enum hl78xx_network_info_type type, void *info,
+					  size_t size)
+{
+	return hl78xx_api_func_get_network_info(dev, type, info, size);
+}
+
+/**
+ * @brief Check whether the current RSRP meets the configured threshold.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @retval 0 on success.
+ * @retval Negative errno-code on failure.
+ */
+static inline int hl78xx_get_rsrp_validity(const struct device *dev, bool *is_valid)
+{
+	return hl78xx_api_func_get_rsrp_validity(dev, is_valid);
+}
+
+/**
+ * @brief Check whether the current RSRQ meets the configured threshold.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @retval 0 on success.
+ * @retval Negative errno-code on failure.
+ */
+static inline int hl78xx_get_rsrq_validity(const struct device *dev, bool *is_valid)
+{
+	return hl78xx_api_func_get_rsrq_validity(dev, is_valid);
+}
+
+/**
+ * @brief Check whether the current SINR meets the configured threshold.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @retval 0 on success.
+ * @retval Negative errno-code on failure.
+ */
+static inline int hl78xx_get_sinr_validity(const struct device *dev, bool *is_valid)
+{
+	return hl78xx_api_func_get_sinr_validity(dev, is_valid);
+}
+
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+/**
+ * @brief Set a new raw `AT+KSELACQ` Preferred RAT List.
+ *
+ * @param dev Pointer to the modem device instance.
+ * @param prl Preferred RAT List expressed as raw `AT+KSELACQ` values.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if the inputs are invalid.
+ * @retval Negative errno on modem command failure.
+ */
+static inline int hl78xx_set_prl(const struct device *dev, struct kselacq_syntax prl)
+{
+	return hl78xx_api_func_set_prl(dev, prl);
+}
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+
 /**
  * @brief Set the modem phone functionality mode.
  *
@@ -1073,6 +1592,22 @@ static inline int hl78xx_set_phone_functionality(const struct device *dev,
 {
 	return hl78xx_api_func_set_phone_functionality(dev, functionality, reset);
 }
+
+/**
+ * @brief Request a driver-managed modem restart.
+ *
+ * @param dev Pointer to the modem device instance.
+ * @param mode Restart mode to execute.
+ *
+ * @retval 0 on success.
+ * @retval Negative errno-code on failure.
+ */
+static inline int hl78xx_restart_modem(const struct device *dev,
+				       enum hl78xx_modem_restart_mode mode)
+{
+	return hl78xx_api_func_restart(dev, mode);
+}
+
 /**
  * @brief Get the current phone functionality mode of the modem.
  *
@@ -1119,6 +1654,32 @@ static inline int hl78xx_modem_cmd_send(const struct device *dev, const char *cm
 	return hl78xx_api_func_modem_dynamic_cmd_send(dev, cmd, cmd_size, response_matches,
 						      matches_size);
 }
+
+/**
+ * @brief Return the modem error type encoded in hl78xx_modem_at_send/cmd return values.
+ *
+ * @param error Return value from hl78xx_modem_at_send() or hl78xx_modem_at_cmd().
+ *
+ * @retval HL78XX_MODEM_AT_ERROR for ERROR responses.
+ * @retval HL78XX_MODEM_AT_CME_ERROR for +CME ERROR responses.
+ * @retval HL78XX_MODEM_AT_CMS_ERROR for +CMS ERROR responses.
+ */
+static inline int hl78xx_modem_at_err_type(int error)
+{
+	return (error & 0x00ff0000U) >> 16;
+}
+
+/**
+ * @brief Return the modem CME/CMS error code encoded in hl78xx_modem_at_send/cmd.
+ *
+ * @param error Return value from hl78xx_modem_at_send() or hl78xx_modem_at_cmd().
+ *
+ * @return Encoded modem error value, or 0 for generic ERROR responses.
+ */
+static inline int hl78xx_modem_at_err(int error)
+{
+	return (error & 0xff00ffffU);
+}
 /**
  * @brief Convert raw RSSI value from the modem to dBm.
  *
@@ -1139,7 +1700,7 @@ static inline int hl78xx_parse_rssi(uint8_t rssi, int16_t *value)
 	 * - ber is an integer from 0 to 7 that describes the error rate, it can also
 	 *   be 99 for an unknown error rate
 	 */
-	if (rssi == CSQ_RSSI_UNKNOWN) {
+	if ((rssi == CSQ_RSSI_UNKNOWN) || (rssi > CSQ_RSSI_MAX)) {
 		return -EINVAL;
 	}
 
@@ -1167,10 +1728,12 @@ static inline int hl78xx_parse_rsrp(uint8_t rsrp, int16_t *value)
 	 * Signal Receive Quality between -20 dB for 0 and -3 dB for 34
 	 * (0.5 dB steps), or unknown for 255
 	 * rsrp is an integer from 0 to 97 that describes the Reference Signal
-	 * Receive Power between -140 dBm for 0 and -44 dBm for 97 (1 dBm steps),
-	 * or unknown for 255
+	 * Receive Power between below -140 dBm for 0 and -44 dBm for 97
+	 * (1 dBm steps), or unknown for 255. Return a conservative lower-bound
+	 * integer so threshold comparisons do not treat code 0 as valid for a
+	 * -140 dBm minimum.
 	 */
-	if (rsrp == CESQ_RSRP_UNKNOWN) {
+	if ((rsrp == CESQ_RSRP_UNKNOWN) || (rsrp > CESQ_RSRP_MAX)) {
 		return -EINVAL;
 	}
 
@@ -1192,7 +1755,10 @@ static inline int hl78xx_parse_rsrp(uint8_t rsrp, int16_t *value)
  */
 static inline int hl78xx_parse_rsrq(uint8_t rsrq, int16_t *value)
 {
-	if (rsrq == CESQ_RSRQ_UNKNOWN) {
+	/* AT+CESQ encodes RSRQ in 0.5 dB steps. Return a conservative integer dB
+	 * representative so code 0 stays below a -20 dB threshold.
+	 */
+	if ((rsrq == CESQ_RSRQ_UNKNOWN) || (rsrq > CESQ_RSRQ_MAX)) {
 		return -EINVAL;
 	}
 
@@ -1353,6 +1919,14 @@ int hl78xx_evt_monitor_unregister(struct hl78xx_evt_monitor_entry *mon);
  * @return Corresponding cellular_access_technology value
  */
 enum cellular_access_technology hl78xx_rat_to_access_tech(enum hl78xx_cell_rat_mode rat_mode);
+
+/**
+ * @brief Convert standard cellular access technology to HL78xx RAT mode.
+ *
+ * @param access_tech Standard cellular access technology.
+ * @return Corresponding HL78xx RAT mode.
+ */
+enum hl78xx_cell_rat_mode hl78xx_access_tech_to_rat(enum cellular_access_technology access_tech);
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 /**
  * @brief Start an AirVantage Device Management (DM) session
@@ -1375,6 +1949,52 @@ int hl78xx_start_airvantage_dm_session(const struct device *dev);
  */
 int hl78xx_stop_airvantage_dm_session(const struct device *dev);
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
+/**
+ * @brief Drive the modem WAKE pin low.
+ *
+ * This directly maps to `gpio_pin_set_dt(&config->mdm_gpio_wake, 0)` inside
+ * the driver.
+ *
+ * @param dev Pointer to the modem device.
+ * @return 0 on success.
+ * @return -EINVAL if @p dev is invalid.
+ * @return -ENOTSUP if the modem WAKE GPIO is not configured in devicetree.
+ * @return Negative errno from the GPIO driver on failure.
+ */
+int hl78xx_set_wake_pin_low(const struct device *dev);
+
+/**
+ * @brief Drive the modem WAKE pin high.
+ *
+ * This directly maps to `gpio_pin_set_dt(&config->mdm_gpio_wake, 1)` inside
+ * the driver.
+ *
+ * @param dev Pointer to the modem device.
+ * @return 0 on success.
+ * @return -EINVAL if @p dev is invalid.
+ * @return -ENOTSUP if the modem WAKE GPIO is not configured in devicetree.
+ * @return Negative errno from the GPIO driver on failure.
+ */
+int hl78xx_set_wake_pin_high(const struct device *dev);
+
+/**
+ * @brief Select the active external SIM slot.
+ *
+ * This only drives the optional `mdm-sim-switch-gpios` line exposed by the
+ * modem devicetree node. It does not perform any modem state transition or
+ * restart sequence, so callers should switch SIMs only when the modem is in a
+ * safe state for the attached hardware.
+ *
+ * @param dev Pointer to the modem device.
+ * @param sim_slot SIM slot to select. Only slot 1 and slot 2 are supported.
+ * @return 0 on success.
+ * @return -EINVAL if @p dev or @p sim_slot is invalid.
+ * @return -ENOTSUP if the modem SIM-switch GPIO is not configured in
+ *         devicetree.
+ * @return Negative errno from the GPIO driver on failure.
+ */
+int hl78xx_set_active_sim(const struct device *dev, enum hl78xx_sim_slot sim_slot);
 
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 /**
@@ -1487,9 +2107,13 @@ int hl78xx_gnss_set_nmea_output(const struct device *dev, enum nmea_output_port 
 /**
  * @brief Set GNSS search timeout
  *
+ * If a GNSS search is already active, the remaining timeout is replaced from
+ * the moment this function is called. Setting @p timeout_ms to 0 disables the
+ * active search timeout.
+ *
  * @param dev Pointer to the GNSS device
  * @param timeout_ms Timeout in milliseconds (0 = no timeout)
- * @return 0 on success, -EBUSY if GNSS search is active, negative errno on failure
+ * @return 0 on success, negative errno on failure
  */
 int hl78xx_gnss_set_search_timeout(const struct device *dev, uint32_t timeout_ms);
 
@@ -1544,6 +2168,62 @@ int hl78xx_gnss_assist_data_delete(const struct device *dev);
 #endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
 #endif /* CONFIG_HL78XX_GNSS */
+
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+/**
+ * @brief Trigger the HL78xx shutdown process after a caller-supplied delay.
+ *
+ * This overrides any currently pending stage-1 power-down delay. Pass
+ * K_NO_WAIT to dispatch HL78XX_POWER_DOWN_UPDATE immediately, or a relative
+ * delay such as K_SECONDS(5) to start the graceful shutdown flow later.
+ *
+ * @param dev Pointer to the HL78xx modem device.
+ * @param delay Delay before stage-1 power-down notification runs.
+ *
+ * @return 0 on success or -EINVAL for invalid arguments.
+ */
+int hl78xx_power_down_trigger(const struct device *dev, k_timeout_t delay);
+
+/**
+ * @brief Cancel a pending stage-1 HL78xx shutdown timer.
+ *
+ * @param dev Pointer to the HL78xx modem device.
+ *
+ * @return 0 on success, -EINVAL for invalid arguments, or -ENOENT if no
+ *         stage-1 shutdown timer is pending.
+ */
+int hl78xx_power_down_cancel(const struct device *dev);
+
+/**
+ * @brief Respond to a pending HL78XX power-down update.
+ *
+ * Call this after receiving HL78XX_POWER_DOWN_UPDATE with
+ * POWER_DOWN_EVENT_ENTER. Use HL78XX_POWER_DOWN_RESPONSE_IMMEDIATE to allow
+ * the modem to proceed with physical shutdown right away, or
+ * HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE to extend the shutdown grace period by
+ * @p timeout_s seconds from the time of this call.
+ *
+ * @param dev Pointer to the HL78xx modem device.
+ * @param response Requested handling of the pending shutdown.
+ * @param timeout_s New grace period in seconds when @p response is
+ *        HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE. Ignored otherwise.
+ *
+ * @return 0 on success, -EINVAL for invalid arguments, or -ENOENT if no
+ *         application-controlled shutdown is pending.
+ */
+int hl78xx_power_down_respond(const struct device *dev, enum hl78xx_power_down_response response,
+			      uint32_t timeout_s);
+
+/**
+ * @brief Confirm that application cleanup is complete and the modem may
+ *        proceed with physical shutdown.
+ *
+ * If no shutdown is pending this call is a no-op.
+ *
+ * @param dev Pointer to the HL78xx modem device.
+ */
+void hl78xx_power_down_confirm(const struct device *dev);
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
 #ifdef __cplusplus
 }

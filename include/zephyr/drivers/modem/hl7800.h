@@ -1,5 +1,6 @@
 /** @file
  * @brief HL7800 modem public API header file.
+ * @ingroup hl7800_interface
  *
  * Allows an application to control the HL7800 modem.
  *
@@ -18,6 +19,13 @@ extern "C" {
 #include <zephyr/types.h>
 
 #include <time.h>
+
+/**
+ * @defgroup hl7800_interface HL7800
+ * @brief Sierra Wireless HL7800 cellular modems.
+ * @ingroup cellular_interface_ext
+ * @{
+ */
 
 /* The size includes the NUL character, the strlen doesn't */
 #define MDM_HL7800_REVISION_MAX_SIZE 29
@@ -556,5 +564,7 @@ uint32_t mdm_hl7800_log_filter_set(uint32_t level);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MODEM_HL7800_H_ */

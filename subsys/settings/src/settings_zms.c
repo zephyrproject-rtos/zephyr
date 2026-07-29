@@ -9,7 +9,7 @@
 #include <errno.h>
 #include <string.h>
 
-#include "settings/settings_zms.h"
+#include <settings/settings_zms.h>
 #include "settings_priv.h"
 
 #include <zephyr/settings/settings.h>

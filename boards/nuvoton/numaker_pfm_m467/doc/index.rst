@@ -88,4 +88,4 @@ References
 .. _PFM M467 User Manual:
    https://www.nuvoton.com/export/resource-files/UM_NuMaker-PFM-M467_User_Manual_EN_Rev1.01.pdf
 .. _M460 TRM:
-   https://www.nuvoton.com/export/resource-files/TRM_M460_Series_EN_Rev1.01.pdf
+   https://www.nuvoton.com/export/resource-files/en-us--TRM_M460_Series_EN_Rev1.03.pdf

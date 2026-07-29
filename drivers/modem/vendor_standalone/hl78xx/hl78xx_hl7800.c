@@ -32,6 +32,7 @@
 
 LOG_MODULE_DECLARE(hl78xx_dev, CONFIG_MODEM_LOG_LEVEL);
 
+#define HL7800_VGPIO_DEBOUNCE_MS 0
 #define HL7800_GPIO6_DEBOUNCE_MS 0
 
 static void hl78xx_hl7800_on_rrc_status_urc(struct hl78xx_data *data, bool is_idle)
@@ -101,24 +102,6 @@ static bool hl78xx_hl7800_on_gnss_mode_enter_lpm(struct hl78xx_data *data)
 #endif /* CONFIG_HL78XX_GNSS */
 }
 
-static bool hl78xx_hl7800_cxreg_try_parse_rat_mode(struct hl78xx_data *data, int act_value,
-						   enum hl78xx_cell_rat_mode *rat_mode)
-{
-	ARG_UNUSED(data);
-
-	switch (act_value) {
-	case 7:
-		*rat_mode = HL78XX_RAT_CAT_M1;
-		return true;
-	case 9:
-		*rat_mode = HL78XX_RAT_NB1;
-		return true;
-	default:
-		*rat_mode = HL78XX_RAT_MODE_NONE;
-		return true;
-	}
-}
-
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 
 /* Defined in hl78xx_sockets.c */
@@ -143,39 +126,46 @@ static void hl78xx_hl7800_gpio6_handler(struct hl78xx_data *data, bool pin_state
 	bool dispatch_lpm_evt = false;
 
 	if (!pin_state) {
+		if (hl78xx_is_config_restart_pending(data)) {
+			LOG_DBG("GPIO6 LOW during config restart - ignoring low-power transition");
+			return;
+		}
+
 		/* GPIO6 LOW: modem is entering sleep */
 #ifdef CONFIG_MODEM_HL78XX_PSM
-		data->status.psmev.previous = data->status.psmev.current;
-		data->status.psmev.current = HL78XX_PSM_EVENT_ENTER;
+		data->status.lpm.psmev.previous = data->status.lpm.psmev.current;
+		data->status.lpm.psmev.current = HL78XX_PSM_EVENT_ENTER;
 		lpm_evt.type = HL78XX_LTE_PSMEV_UPDATE;
-		lpm_evt.content.psm_event = data->status.psmev.current;
+		lpm_evt.content.psm_event = data->status.lpm.psmev.current;
 		dispatch_lpm_evt = true;
 
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-		data->status.power_down.previous = data->status.power_down.current;
-		if (data->status.power_down.is_power_down_requested) {
-			data->status.power_down.current = POWER_DOWN_EVENT_ENTER;
-			if (data->status.power_down.current != data->status.power_down.previous) {
-				struct hl78xx_evt pd_evt = {.type = HL78XX_POWER_DOWN_UPDATE};
-
-				pd_evt.content.power_down_event = data->status.power_down.current;
-				event_dispatcher_dispatch(&pd_evt);
-			}
+		data->status.lpm.power_down.previous = data->status.lpm.power_down.current;
+		if (data->status.lpm.power_down.is_power_down_requested) {
+			data->status.lpm.power_down.current = POWER_DOWN_EVENT_ENTER;
+			LOG_DBG("GPIO6 LOW: power-down confirmed (internal state updated)");
 		}
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-		data->status.edrxev.previous = data->status.edrxev.current;
-		if (data->status.edrxev.is_edrx_idle_requested) {
-			data->status.edrxev.current = HL78XX_EDRX_EVENT_IDLE_ENTER;
+		data->status.lpm.edrxev.previous = data->status.lpm.edrxev.current;
+		if (data->status.lpm.edrxev.is_requested) {
+			data->status.lpm.edrxev.current = HL78XX_EDRX_EVENT_IDLE_ENTER;
 		}
 		lpm_evt.type = HL78XX_EDRX_IDLE_UPDATE;
-		lpm_evt.content.edrx_event = data->status.edrxev.current;
+		lpm_evt.content.edrx_event = data->status.lpm.edrxev.current;
 		dispatch_lpm_evt = true;
 
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
+
+		/* Notify application: raw GPIO6 LOW pin-state signal (unconditional). */
+		{
+			struct hl78xx_evt gpio6_evt = {.type = HL78XX_GPIO6_LOW};
+
+			event_dispatcher_dispatch(&gpio6_evt);
+		}
 
 		/* Dispatch sleep event to drive state machine into SLEEP */
 		if (data->status.state != MODEM_HL78XX_STATE_SLEEP &&
@@ -185,40 +175,41 @@ static void hl78xx_hl7800_gpio6_handler(struct hl78xx_data *data, bool pin_state
 	} else {
 		/* GPIO6 HIGH: modem is waking up */
 #ifdef CONFIG_MODEM_HL78XX_PSM
-		data->status.psmev.previous = data->status.psmev.current;
-		data->status.psmev.current = HL78XX_PSM_EVENT_EXIT;
+		data->status.lpm.psmev.previous = data->status.lpm.psmev.current;
+		data->status.lpm.psmev.current = HL78XX_PSM_EVENT_EXIT;
 
 		lpm_evt.type = HL78XX_LTE_PSMEV_UPDATE;
-		lpm_evt.content.psm_event = data->status.psmev.current;
+		lpm_evt.content.psm_event = data->status.lpm.psmev.current;
 		dispatch_lpm_evt = true;
 
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-		data->status.power_down.previous = data->status.power_down.current;
-		if (data->status.power_down.is_power_down_requested) {
-			data->status.power_down.current = POWER_DOWN_EVENT_EXIT;
-			LOG_DBG("GPIO6 indicates wake, set power down event to EXIT");
-			if (data->status.power_down.current != data->status.power_down.previous) {
-				struct hl78xx_evt pd_evt = {.type = HL78XX_POWER_DOWN_UPDATE};
-
-				pd_evt.content.power_down_event = data->status.power_down.current;
-				event_dispatcher_dispatch(&pd_evt);
-			}
+		data->status.lpm.power_down.previous = data->status.lpm.power_down.current;
+		if (data->status.lpm.power_down.is_power_down_requested) {
+			data->status.lpm.power_down.current = POWER_DOWN_EVENT_EXIT;
+			LOG_DBG("GPIO6 HIGH: modem waking from power-down (state updated)");
 		}
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-		data->status.edrxev.previous = data->status.edrxev.current;
-		data->status.edrxev.current = HL78XX_EDRX_EVENT_IDLE_EXIT;
-		if (data->status.edrxev.is_edrx_idle_requested) {
-			data->status.edrxev.is_edrx_idle_requested = false;
+		data->status.lpm.edrxev.previous = data->status.lpm.edrxev.current;
+		data->status.lpm.edrxev.current = HL78XX_EDRX_EVENT_IDLE_EXIT;
+		if (data->status.lpm.edrxev.is_requested) {
+			data->status.lpm.edrxev.is_requested = false;
 		}
 		lpm_evt.type = HL78XX_EDRX_IDLE_UPDATE;
-		lpm_evt.content.edrx_event = data->status.edrxev.current;
+		lpm_evt.content.edrx_event = data->status.lpm.edrxev.current;
 		dispatch_lpm_evt = true;
 
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
+
+		/* Notify application: raw GPIO6 HIGH pin-state signal (unconditional). */
+		{
+			struct hl78xx_evt gpio6_evt = {.type = HL78XX_GPIO6_HIGH};
+
+			event_dispatcher_dispatch(&gpio6_evt);
+		}
 
 		/* Intentionally do not dispatch DEVICE_AWAKE from raw GPIO6 HIGH.
 		 * Keep wake sequencing centralized in explicit RESUME handling.
@@ -254,11 +245,12 @@ static void hl78xx_hl7800_on_ksup_lpm(struct hl78xx_data *data)
 	} else {
 #endif /* CONFIG_HL78XX_GNSS */
 		if (data->status.state == MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT ||
-		    data->status.state == MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT) {
-			/* KSUP during RAT_CFG or PMC_CFG state: these states
-			 * explicitly send AT+CFUN=4,1 and are waiting for the
-			 * modem to reboot.  Dispatch MDM_RESTART so the event
-			 * handler transitions to RUN_INIT_SCRIPT.
+		    data->status.state == MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT ||
+		    data->status.state == MODEM_HL78XX_STATE_SOFT_RESET) {
+			/* KSUP during RAT_CFG, PMC_CFG, or SOFT_RESET means the driver
+			 * explicitly sent AT+CFUN=4,1 and is waiting for the modem to
+			 * reboot. Dispatch MDM_RESTART so the event handler transitions
+			 * back to RUN_INIT_SCRIPT.
 			 */
 			LOG_DBG("KSUP after config restart (state=%d) - "
 				"dispatching MDM_RESTART",
@@ -288,8 +280,8 @@ static void hl78xx_hl7800_on_ksup_lpm(struct hl78xx_data *data)
 static int hl78xx_hl7800_await_registered_enter_lpm(struct hl78xx_data *data)
 {
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-	if (data->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER ||
-	    data->status.edrxev.is_edrx_idle_requested) {
+	if (data->status.lpm.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER ||
+	    data->status.lpm.edrxev.is_requested) {
 		LOG_INF("eDRX wake: waiting for modem to become responsive");
 		hl78xx_start_timer(data, K_SECONDS(3));
 		return 0;
@@ -300,8 +292,8 @@ static int hl78xx_hl7800_await_registered_enter_lpm(struct hl78xx_data *data)
 	 * This avoids sending PING on cold boot where GPIO6 can report NONE -> EXIT.
 	 */
 	if (IS_ENABLED(CONFIG_HL78XX_GNSS) &&
-	    data->status.psmev.previous == HL78XX_PSM_EVENT_ENTER &&
-	    data->status.psmev.current == HL78XX_PSM_EVENT_EXIT) {
+	    data->status.lpm.psmev.previous == HL78XX_PSM_EVENT_ENTER &&
+	    data->status.lpm.psmev.current == HL78XX_PSM_EVENT_EXIT) {
 		modem_dynamic_cmd_send_req(data, &(const struct hl78xx_dynamic_cmd_request){
 							 .script_user_callback = NULL,
 							 .cmd = (const uint8_t *)WAKE_LTE_LAYER_CMD,
@@ -325,8 +317,8 @@ static bool hl78xx_hl7800_await_registered_timeout_lpm(struct hl78xx_data *data)
 {
 #ifdef CONFIG_MODEM_HL78XX_EDRX
 	if (hl78xx_is_registered(data) &&
-	    (data->status.edrxev.previous == HL78XX_EDRX_EVENT_IDLE_ENTER ||
-	     data->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER)) {
+	    (data->status.lpm.edrxev.previous == HL78XX_EDRX_EVENT_IDLE_ENTER ||
+	     data->status.lpm.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER)) {
 		LOG_INF("eDRX wake settling complete - requesting signal quality check");
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_REGISTERED);
 		return true;
@@ -344,8 +336,8 @@ static bool hl78xx_hl7800_await_registered_timeout_lpm(struct hl78xx_data *data)
 static int hl78xx_hl7800_carrier_on_enter_lpm(struct hl78xx_data *data, bool *is_lpm)
 {
 #ifdef CONFIG_MODEM_HL78XX_PSM
-	LOG_DBG("PSMEV previous: %d, current: %d", data->status.psmev.previous,
-		data->status.psmev.current);
+	LOG_DBG("PSMEV previous: %d, current: %d", data->status.lpm.psmev.previous,
+		data->status.lpm.psmev.current);
 	/* HL7800 PSM: sockets, PDP context and KCNXCFG are all destroyed
 	 * when the modem enters PSM sleep.  Network setup (CGCONTRDP,
 	 * DNS, KCNXCFG) is therefore needed on EVERY CARRIER_ON entry:
@@ -357,15 +349,15 @@ static int hl78xx_hl7800_carrier_on_enter_lpm(struct hl78xx_data *data, bool *is
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-	LOG_DBG("eDRX event previous: %d, current: %d, is_lpm: %d", data->status.edrxev.previous,
-		data->status.edrxev.current, *is_lpm);
+	LOG_DBG("eDRX event previous: %d, current: %d, is_lpm: %d",
+		data->status.lpm.edrxev.previous, data->status.lpm.edrxev.current, *is_lpm);
 	/* HL7800 eDRX: ENTER/EXIT or NONE/EXIT means the modem woke from
 	 * eDRX idle.  Although the PDP context survives eDRX idle
 	 * (CGCONTRDP still returns valid IP/DNS), the KCNXCFG connection
 	 * profile is lost.  Without it, KUDPCFG / KTCPCNX / KUDPSND all
 	 * fail with CME 910.
 	 */
-	*is_lpm = *is_lpm || (data->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_EXIT);
+	*is_lpm = *is_lpm || (data->status.lpm.edrxev.current == HL78XX_EDRX_EVENT_IDLE_EXIT);
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 
 	return 0;
@@ -383,11 +375,11 @@ static void hl78xx_hl7800_carrier_on_dns_complete(struct hl78xx_data *data)
 	 * in LPM, then release the socket semaphore.
 	 */
 #ifdef CONFIG_MODEM_HL78XX_PSM
-	data->status.psmev.previous = HL78XX_PSM_EVENT_EXIT;
+	data->status.lpm.psmev.previous = HL78XX_PSM_EVENT_EXIT;
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-	data->status.edrxev.previous = HL78XX_EDRX_EVENT_IDLE_EXIT;
+	data->status.lpm.edrxev.previous = HL78XX_EDRX_EVENT_IDLE_EXIT;
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 
 	hl78xx_release_socket_comms(data);
@@ -399,7 +391,7 @@ static void hl78xx_hl7800_carrier_on_dns_complete(struct hl78xx_data *data)
  */
 static void hl78xx_hl7800_carrier_on_deregistered_psm(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = data->dev->config;
+	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	/* HL7800: Must pull WAKE LOW to allow modem to enter PSM sleep.
 	 * Without this, the modem stays awake and GPIO6 never transitions.
@@ -471,16 +463,16 @@ static void hl78xx_hl7800_check_lpm_state(struct hl78xx_data *data, bool *in_lpm
 					  bool *early_return)
 {
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-	*in_lpm = *in_lpm || (data->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER) ||
-		  (data->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_EXIT &&
-		   data->status.edrxev.previous == HL78XX_EDRX_EVENT_IDLE_ENTER);
+	*in_lpm = *in_lpm || (data->status.lpm.edrxev.current == HL78XX_EDRX_EVENT_IDLE_ENTER) ||
+		  (data->status.lpm.edrxev.current == HL78XX_EDRX_EVENT_IDLE_EXIT &&
+		   data->status.lpm.edrxev.previous == HL78XX_EDRX_EVENT_IDLE_ENTER);
 
-	LOG_DBG("EDRX status: current=%d previous=%d is_edrx_idle_requested=%d",
-		data->status.edrxev.current, data->status.edrxev.previous,
-		data->status.edrxev.is_edrx_idle_requested);
+	LOG_DBG("EDRX status: current=%d previous=%d is_requested=%d",
+		data->status.lpm.edrxev.current, data->status.lpm.edrxev.previous,
+		data->status.lpm.edrxev.is_requested);
 
 	/* Not currently in eDRX sleep and no idle sleep requested → awake */
-	if (!*in_lpm && !data->status.edrxev.is_edrx_idle_requested) {
+	if (!*in_lpm && !data->status.lpm.edrxev.is_requested) {
 		*early_return = true;
 		return;
 	}
@@ -506,6 +498,7 @@ const struct hl78xx_variant_ops hl78xx_variant_ops_hl7800 = {
 	.on_psmev_urc = NULL,   /* HL7800 does not use +PSMEV */
 	.on_rrc_status_urc = hl78xx_hl7800_on_rrc_status_urc,
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	.vgpio_debounce_ms = HL7800_VGPIO_DEBOUNCE_MS,
 	.gpio6_debounce_ms = HL7800_GPIO6_DEBOUNCE_MS,
 	.gpio6_handler = hl78xx_hl7800_gpio6_handler,
 	.on_ksup_lpm = hl78xx_hl7800_on_ksup_lpm,
@@ -520,7 +513,6 @@ const struct hl78xx_variant_ops hl78xx_variant_ops_hl7800 = {
 	.on_registered_ready = NULL, /* HL7800 readiness gates on carrier_on_dns_complete */
 	.on_kcellmeas_ready = NULL,  /* HL7800 readiness gates on carrier_on_dns_complete */
 #endif                               /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-	.cxreg_try_parse_rat_mode = hl78xx_hl7800_cxreg_try_parse_rat_mode,
 	.carrier_on_gnss_pending = hl78xx_hl7800_carrier_on_gnss_pending,
 	.on_gnss_mode_enter_lpm = hl78xx_hl7800_on_gnss_mode_enter_lpm,
 };

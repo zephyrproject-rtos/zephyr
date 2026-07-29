@@ -329,7 +329,7 @@ __maybe_unused static void ctsu_renesas_ra_button_cb(const struct device *dev, v
 	ARG_UNUSED(data);
 	const struct ctsu_device_cfg *cfg = dev->config;
 
-	input_report_key(dev, cfg->event_code, 0, false, K_NO_WAIT);
+	input_report_key(dev, cfg->event_code, 1, false, K_NO_WAIT);
 }
 
 __maybe_unused static void ctsu_renesas_ra_slider_cb(const struct device *dev, void *data)

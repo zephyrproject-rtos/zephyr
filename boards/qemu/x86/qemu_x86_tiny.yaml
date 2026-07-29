@@ -14,5 +14,5 @@ testing:
     - llext
   ignore_tags:
     - benchmark
-ram: 256
+ram: 384
 vendor: qemu

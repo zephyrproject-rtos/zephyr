@@ -124,23 +124,30 @@ static void compare_isr(const void *arg)
 	set_compare(next);
 #endif
 
-	sys_clock_announce_locked((int32_t)dticks, key);
+	sys_clock_announce_locked(dticks, key);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 #ifdef CONFIG_TICKLESS_KERNEL
-	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
 
 	uint64_t curr = count();
 	uint64_t next;
-	uint32_t cyc = ticks * CYC_PER_TICK;
+	uint32_t adj, cyc = ticks * CYC_PER_TICK;
 
+	/* Round up to next tick boundary */
+	adj = (uint32_t)(curr - last_count) + (CYC_PER_TICK - 1);
+	if (cyc <= MAX_CYC - adj) {
+		cyc += adj;
+	} else {
+		cyc = MAX_CYC;
+	}
+	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
 	next = last_count + cyc;
 
 	if (((uint32_t)next - (uint32_t)curr) < MIN_DELAY) {

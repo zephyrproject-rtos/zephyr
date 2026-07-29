@@ -10,8 +10,8 @@
  * @ingroup bt_mesh_large_comp_data_cli
  */
 
-#ifndef BT_MESH_LARGE_COMP_DATA_CLI_H__
-#define BT_MESH_LARGE_COMP_DATA_CLI_H__
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_LARGE_COMP_DATA_CLI_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_LARGE_COMP_DATA_CLI_H_
 
 #include <zephyr/bluetooth/mesh.h>
 
@@ -156,4 +156,4 @@ extern const struct bt_mesh_model_cb _bt_mesh_large_comp_data_cli_cb;
 }
 #endif
 
-#endif /* BT_MESH_LARGE_COMP_DATA_CLI_H__ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_LARGE_COMP_DATA_CLI_H_ */

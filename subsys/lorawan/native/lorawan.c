@@ -12,6 +12,7 @@
 #include "engine.h"
 #include "radio.h"
 #include "crypto/crypto.h"
+#include "mac/mac_commands.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lorawan_native, CONFIG_LORAWAN_LOG_LEVEL);
@@ -188,6 +189,11 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 		return -EINVAL;
 	}
 
+	/* FPort 0 is reserved for MAC commands */
+	if (port == 0 && len > 0) {
+		return -EINVAL;
+	}
+
 	if (len > LWAN_MAX_APP_PAYLOAD) {
 		return -EMSGSIZE;
 	}
@@ -269,23 +275,26 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 {
 	struct lwan_dr_params dr_params;
 	int8_t power;
-	uint8_t payload;
+	uint8_t max_next_payload;
+	uint8_t max_payload;
 
 	if (lwan_ctx.region != NULL &&
 	    lwan_ctx.region->get_tx_params((uint8_t)lwan_ctx.current_dr,
 					    lwan_ctx.mac.tx_power_idx,
 					    &dr_params, &power) == 0) {
-		payload = dr_params.max_payload;
+		max_payload = dr_params.max_payload;
 	} else {
-		payload = LWAN_DEFAULT_MAX_PAYLOAD;
+		max_payload = LWAN_DEFAULT_MAX_PAYLOAD;
 	}
 
+	max_next_payload = mac_cmd_next_payload_size(&lwan_ctx, max_payload);
+
 	if (max_next_payload_size != NULL) {
-		*max_next_payload_size = payload;
+		*max_next_payload_size = max_next_payload;
 	}
 
 	if (max_payload_size != NULL) {
-		*max_payload_size = payload;
+		*max_payload_size = max_payload;
 	}
 }
 
@@ -344,7 +353,7 @@ void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb)
 
 void lorawan_register_link_check_ans_callback(lorawan_link_check_ans_cb_t cb)
 {
-	ARG_UNUSED(cb);
+	mac_cmd_set_link_check_cb(cb);
 }
 
 int lorawan_request_device_time(bool force_request)
@@ -363,7 +372,20 @@ int lorawan_device_time_get(uint32_t *gps_time)
 
 int lorawan_request_link_check(bool force_request)
 {
-	ARG_UNUSED(force_request);
+	struct lwan_link_check_req lc_req = {
+		.force_request = force_request,
+	};
+	struct lwan_req msg = LWAN_REQ(LWAN_REQ_LINK_CHECK, &lc_req);
 
-	return -ENOTSUP;
+	if (!atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_STARTED)) {
+		return -EPERM;
+	}
+
+	/* The forced empty uplink needs an established session */
+	if (force_request &&
+	    !atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_JOINED)) {
+		return -ENETDOWN;
+	}
+
+	return engine_post_req_wait(&msg);
 }

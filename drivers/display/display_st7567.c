@@ -359,7 +359,7 @@ static int st7567_set_contrast(const struct device *dev, const uint8_t contrast)
 {
 	uint8_t cmd_buf[] = {
 		ST7567_SET_CONTRAST_CTRL,
-		contrast,
+		contrast >> 2,
 	};
 
 	return st7567_write_cmd_bus(dev, cmd_buf, sizeof(cmd_buf));

@@ -23,12 +23,9 @@
 #include <zephyr/drivers/gpio.h>
 #endif
 
-#define NOR_ERASE_VALUE	0xff
+#include "flash_priv.h"
 
-#define FLEXSPI_NOR_SOC_NV_FLASH_COMPAT(node_id) \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
-#define FLEXSPI_NOR_SOC_NV_FLASH_NODE(node_id) \
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(node_id, FLEXSPI_NOR_SOC_NV_FLASH_COMPAT)
+#define NOR_ERASE_VALUE	0xff
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 static uint8_t nor_write_buf[SPI_NOR_PAGE_SIZE];
@@ -2106,7 +2103,7 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 		},))							\
 		.flash_parameters = {					\
 			.write_block_size = DT_PROP(			\
-				FLEXSPI_NOR_SOC_NV_FLASH_NODE(n),\
+				SOC_NV_FLASH_CHILD_NODE(n),\
 				write_block_size),		\
 			.erase_value = NOR_ERASE_VALUE,			\
 		},							\

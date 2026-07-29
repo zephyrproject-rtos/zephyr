@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_AN536
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/timer,clock-frequency)
+
+config NUM_IRQS
+	default 128
+
+endif # SOC_AN536

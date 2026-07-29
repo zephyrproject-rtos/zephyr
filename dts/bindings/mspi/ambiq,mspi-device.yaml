@@ -17,7 +17,6 @@ properties:
   mspi-hardware-ce-num:
     type: int
     required: true
-    default: 0
     description: |
       It can be only CE0 or CE1,
       but there could be multiple of CE0 or CE1 for a controller

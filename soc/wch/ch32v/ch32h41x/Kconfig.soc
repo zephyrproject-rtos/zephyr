@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Liu Changjie
+# SPDX-License-Identifier: Apache-2.0
+
+# CH32H41X is an SoC series (not a single SoC): it groups the dual-core CH32H41x
+# parts, which pair a QingKe V3F boot core with a QingKe V5F application core.
+# Because the series spans two heterogeneous QingKe cores it is named after the
+# chip subfamily rather than a single core (cf. SOC_SERIES_QINGKE_V4B), the same
+# way Zephyr models other multi-core parts such as the STM32H7 series.
+config SOC_SERIES_CH32H41X
+	bool
+	select SOC_FAMILY_CH32V
+
+config SOC_SERIES
+	default "ch32h41x" if SOC_SERIES_CH32H41X
+
+rsource "Kconfig.soc.*"

@@ -7,13 +7,15 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SDP_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_SDP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_SDP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_SDP_H_
 
 /**
  * @file
  * @brief Service Discovery Protocol (SDP)
  * @defgroup bt_sdp Service Discovery Protocol (SDP)
+ * @since 1.6
+ * @version 0.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -1091,4 +1093,4 @@ int bt_sdp_attr_addl_proto_read(const struct bt_sdp_attribute *attr, uint16_t in
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SDP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_SDP_H_ */

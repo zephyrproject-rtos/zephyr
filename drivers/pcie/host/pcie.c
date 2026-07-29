@@ -500,6 +500,12 @@ static bool pcie_dev_cb(pcie_bdf_t bdf, pcie_id_t id, void *cb_data)
 	return (data->found != data->max_dev);
 }
 
+#define PCIE_SCAN_EXTRA_BUS(node_id, prop, idx)                                \
+	if (data.found != data.max_dev) {                                          \
+		opt.bus = DT_PROP_BY_IDX(node_id, prop, idx);                     \
+		pcie_scan(&opt);                                                   \
+	}
+
 static int pcie_init(void)
 {
 	struct scan_data data;
@@ -533,7 +539,13 @@ static int pcie_init(void)
 
 	data.found = 0;
 
+	/* Scan default bus 0 */
 	pcie_scan(&opt);
+
+	/* Scan additional buses defined in devicetree scan-buses property */
+#if DT_INST_NODE_HAS_PROP(0, scan_buses)
+	DT_INST_FOREACH_PROP_ELEM(0, scan_buses, PCIE_SCAN_EXTRA_BUS)
+#endif
 
 	return 0;
 }

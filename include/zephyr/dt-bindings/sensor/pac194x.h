@@ -10,8 +10,8 @@
  * @ingroup pac194x_interface
  */
 
-#ifndef PAC194X_H_DTS_BINDINGS
-#define PAC194X_H_DTS_BINDINGS
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_PAC194X_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_PAC194X_H_
 
 /**
  * @defgroup pac194x_interface PAC194X
@@ -55,4 +55,4 @@
 
 /** @} */
 
-#endif /* PAC194X_H_DTS_BINDINGS */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_PAC194X_H_ */

@@ -22,6 +22,7 @@ description: |
     is66wv51216dbll@0 {
       reg = <0>;
 
+      atmel,smc-data-bus-width = <8>;
       atmel,smc-write-mode = "nwe";
       atmel,smc-read-mode = "nrd";
       atmel,smc-setup-timing = <1 1 1 1>;
@@ -30,16 +31,17 @@ description: |
     };
   };
 
-  The above example configures a is66wv51216dbll-55 device. The device is a
-  low power static RAM which uses NWE and NRD signals connected to the WE
-  and OE inputs respectively. Assuming that MCK is 120MHz (cpu at full speed)
-  each MCK cycle will be equivalent to 8ns. Since the memory full cycle is
-  55ns, as per specification, it requires atmel,smc-cycle-timing of at least
-  7 pulses (56ns). The atmel,smc-cycle-timing is composed of three parts:
-  setup, pulse and hold. The setup is used to address the memory. The pulse
-  is the time used to read/write. The hold is used to release memory. For the
-  is66wv51216dbll-55 a minimum setup of 5ns (1 cycle) with at least 45ns
-  (6 cycles) for CPU read/write and no hold time is required.
+  The above example configures an is66wv51216dbll-55 device using the
+  controller's default 8-bit interface. The device is a low power static RAM
+  which uses NWE and NRD signals connected to the WE and OE inputs
+  respectively. Assuming that MCK is 120 MHz (CPU at full speed), each MCK
+  cycle is approximately 8.33 ns. Since the memory full cycle is 55 ns, as per
+  specification, it requires atmel,smc-cycle-timing of at least 7 cycles
+  (approximately 58.33 ns). The atmel,smc-cycle-timing is composed of three
+  parts: setup, pulse and hold. The setup is used to address the memory. The
+  pulse is the time used to read/write. The hold is used to release memory.
+  For the is66wv51216dbll-55 a minimum setup of 5 ns (1 cycle) with at least
+  45 ns (6 cycles) for CPU read/write and no hold time is required.
   Note: Since no hold parameter is available at SMC the atmel,smc-cycle-timing
   should have additional cycles to accommodate for hold values.
 
@@ -48,6 +50,31 @@ description: |
 
     With 3 Hold Times:
     cycle-timing (10) = setup (1) + pulse (6) + hold (3)
+
+  A 16-bit CY62157EV30LL-45BVXI SRAM connected to a SAME70 SMC can be
+  configured as follows:
+
+  &smc {
+    status = "okay";
+    pinctrl-0 = <&smc_default>;
+    pinctrl-names = "default";
+
+    ext_sram_bus: ext-sram@0 {
+      reg = <0>;
+
+      atmel,smc-data-bus-width = <16>;
+      atmel,smc-write-mode = "nwe";
+      atmel,smc-read-mode = "nrd";
+      atmel,smc-setup-timing = <1 1 1 1>;
+      /*
+       * MCK is 300 MHz on SAME70, so one cycle is approximately 3.33 ns.
+       * 14 cycles is the minimum value that meets the 45 ns access time.
+       */
+      atmel,smc-pulse-timing = <14 14 14 14>;
+      atmel,smc-cycle-timing = <15 15>;
+      status = "okay";
+    };
+  };
 
   Finally, in order to make the memory available you will need to define new
   memory device/s in DeviceTree:
@@ -134,7 +161,7 @@ child-binding:
         The pulse value is an array of the signals NWE, NCS_WR, NRD and NCS_RD where
         each value is configured in terms of MCK cycles and a value of 0 is forbidden.
         Each value is encoded in 7 bits where the highest bit adds an offset of 256
-        cycles. The effective value for each element is: 256 x setup[6] + setup[5:0]
+        cycles. The effective value for each element is: 256 x pulse[6] + pulse[5:0]
 
     atmel,smc-cycle-timing:
       type: array
@@ -148,3 +175,34 @@ child-binding:
         is encoded in 9 bits where the two highest bits are multiplied
         with an offset of 256.
         Effective value for each element: 256 x cycle[8:7] + cycle[6:0]
+
+    atmel,smc-data-bus-width:
+      type: int
+      enum:
+        - 8
+        - 16
+      description: |
+        External data bus width used by the connected device.
+
+    atmel,smc-byte-access-type:
+      type: string
+      enum:
+        - "byte-select"
+        - "byte-write"
+      description: |
+        Selects how byte-access cycles are handled by the connected device.
+
+    atmel,smc-page-mode:
+      type: boolean
+      description: |
+        Enable page mode for the connected device when supported.
+
+    atmel,smc-page-size:
+      type: int
+      enum:
+        - 4
+        - 8
+        - 16
+        - 32
+      description: |
+        Page size, in bytes, used when page mode is enabled.

@@ -791,10 +791,10 @@ static void foreign_clock_cleanup(struct ptp_foreign_tt_clock *foreign)
 		} else if (msg->header.log_msg_interval >= 31) {
 			timeout = INT64_MAX;
 		} else if (msg->header.log_msg_interval > 0) {
-			timeout = FOREIGN_TIME_TRANSMITTER_TIME_WINDOW_MUL *
+			timeout = (int64_t)FOREIGN_TIME_TRANSMITTER_TIME_WINDOW_MUL *
 				  (1 << msg->header.log_msg_interval) * NSEC_PER_SEC;
 		} else {
-			timeout = FOREIGN_TIME_TRANSMITTER_TIME_WINDOW_MUL * NSEC_PER_SEC /
+			timeout = (int64_t)FOREIGN_TIME_TRANSMITTER_TIME_WINDOW_MUL * NSEC_PER_SEC /
 				  (1 << (-msg->header.log_msg_interval));
 		}
 

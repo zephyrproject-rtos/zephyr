@@ -10,8 +10,8 @@
  * @brief Header file for the SCMI Reset Protocol.
  */
 
-#ifndef DRIVERS_ARM_SCMI_RESET_H_
-#define DRIVERS_ARM_SCMI_RESET_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_RESET_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_RESET_H_
 
 #include <zephyr/drivers/firmware/scmi/protocol.h>
 
@@ -88,4 +88,4 @@ int scmi_reset_domain(struct scmi_protocol *proto, uint32_t id, uint32_t flags,
  * @}
  */
 
-#endif /* DRIVERS_ARM_SCMI_RESET_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_RESET_H_ */

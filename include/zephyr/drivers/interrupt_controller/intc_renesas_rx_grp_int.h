@@ -8,8 +8,8 @@
  * @brief Renesas RX group interrupt controller header file
  */
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RENESAS_RX_GRP_INT_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RENESAS_RX_GRP_INT_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RENESAS_RX_GRP_INT_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RENESAS_RX_GRP_INT_H_
 
 #include "platform.h"
 
@@ -53,4 +53,4 @@ int rx_grp_intc_set_gen(const struct device *dev, uint8_t vector_num, bool set);
 int rx_grp_intc_set_callback(const struct device *dev, bsp_int_src_t vector, bsp_int_cb_t callback,
 			     void *context);
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_RENESAS_RX_GRP_INT_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RENESAS_RX_GRP_INT_H_ */

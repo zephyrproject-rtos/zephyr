@@ -131,7 +131,7 @@ References
     https://learn.adafruit.com/adafruit-trinket-m0-circuitpython-arduino
 
 .. _pinouts:
-    https://learn.adafruit.com/assets/49778
+    https://learn.adafruit.com/adafruit-trinket-m0-circuitpython-arduino/pinouts
 
 .. _schematic:
     https://learn.adafruit.com/assets/45723

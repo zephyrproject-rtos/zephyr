@@ -207,17 +207,26 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	if (ticks == K_TICKS_FOREVER || ticks == INT32_MAX) {
+	/* Nothing to do when the kernel has no near deadline to schedule. */
+	if (ticks == SYS_CLOCK_MAX_WAIT) {
 		return;
 	}
 
-	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
+	/* Preserve the original behavior even though it looks wrong; to be
+	 * revisited.
+	 */
+	if (ticks >= 1) {
+		ticks -= 1;
+	}
+	if (ticks > MAX_TICKS) {
+		ticks = MAX_TICKS;
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 

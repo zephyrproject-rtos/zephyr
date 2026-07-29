@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2026 Yasushi SHOJI <yashi@spacecubics.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <wch/ch32v0/ch32v003f4u.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "UIAPduino Pro Micro CH32V003";
+	compatible = "uiap,uiapduino_pro_micro_ch32v003";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		status = "okay";
+
+		led0: led0 {
+			gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+	};
+};
+
+&pll {
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpioc {
+	status = "okay";
+};

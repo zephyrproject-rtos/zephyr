@@ -1030,7 +1030,7 @@ static int adc_stm32_preselection_setup(const struct device *dev, uint32_t chann
 #endif /* STM32H72X_ADC */
 
 	if (!config->has_channel_preselection ||
-	    (stm32_reg_read(pcsel_reg) & channel) == channel) {
+	    (stm32_reg_read(pcsel_reg) & BIT(channel_id)) == BIT(channel_id)) {
 		/* Nothing to configure */
 		return 0;
 	}
@@ -1470,7 +1470,11 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 #if ANY_ADC_HAS_CHANNEL_PRESELECTION
 	if (config->has_channel_preselection) {
 		/* Reset channel preselection register */
-		LL_ADC_SetChannelPreselection(adc, 0);
+#ifdef STM32H72X_ADC
+		stm32_reg_write(&adc->PCSEL_RES0, 0U);
+#else /* STM32H72X_ADC */
+		stm32_reg_write(&adc->PCSEL, 0U);
+#endif /* STM32H72X_ADC */
 	}
 #endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION */
 #endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
@@ -1605,7 +1609,9 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 							     (uint32_t)acq_time_index);
 		} else {
 			/* Reg is used and value does not match */
-			LOG_ERR("Multiple sampling times not supported");
+			LOG_ERR("Multiple sampling times not supported. "
+				"Previously configured sampling time remain reserved until the "
+				"next ADC read.");
 			return -EINVAL;
 		}
 #endif
@@ -1637,7 +1643,9 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 							     (uint32_t)acq_time_index);
 		} else {
 			/* Both regs are used, value does not match any of them */
-			LOG_ERR("Only two different sampling times supported");
+			LOG_ERR("Only two different sampling times supported. "
+				"Previously configured sampling times remain reserved until the "
+				"next ADC read.");
 			return -EINVAL;
 		}
 #endif

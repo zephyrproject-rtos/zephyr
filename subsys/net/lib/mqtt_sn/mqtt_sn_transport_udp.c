@@ -210,10 +210,10 @@ static void tp_udp_deinit(struct mqtt_sn_transport *transport)
 	}
 }
 
-static int tp_udp_sendto(struct mqtt_sn_client *client, void *buf, size_t sz, const void *dest_addr,
-			 size_t addrlen)
+static int tp_udp_sendto(struct mqtt_sn_transport *transport, void *buf, size_t sz,
+			 const void *dest_addr, size_t addrlen)
 {
-	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(client->transport);
+	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
 	int rc;
 	int ttl;
 	net_socklen_t ttl_len;
@@ -252,10 +252,10 @@ static int tp_udp_sendto(struct mqtt_sn_client *client, void *buf, size_t sz, co
 	return 0;
 }
 
-static ssize_t tp_udp_recvfrom(struct mqtt_sn_client *client, void *buffer, size_t length,
+static ssize_t tp_udp_recvfrom(struct mqtt_sn_transport *transport, void *buffer, size_t length,
 			       void *src_addr, size_t *addrlen)
 {
-	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(client->transport);
+	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
 	ssize_t ret;
 	int errno_backup;
 	net_socklen_t addrlen_local = *addrlen;
@@ -274,9 +274,9 @@ static ssize_t tp_udp_recvfrom(struct mqtt_sn_client *client, void *buffer, size
 	return ret;
 }
 
-static int tp_udp_poll(struct mqtt_sn_client *client)
+static int tp_udp_poll(struct mqtt_sn_transport *transport)
 {
-	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(client->transport);
+	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
 	int rc;
 
 	struct zsock_pollfd pollfd = {

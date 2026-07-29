@@ -1,0 +1,18 @@
+tests:
+  bluetooth.host.security.id_addr_update:
+    tags:
+      - bluetooth
+    depends_on: bsim
+    build: false
+    platform_allow:
+      - nrf52_bsim/native
+    harness: bsim
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts
+    required_applications:
+      - application: bluetooth.host.security.id_addr_update.central
+        path: central
+      - application: bluetooth.host.security.id_addr_update.peripheral
+        path: peripheral

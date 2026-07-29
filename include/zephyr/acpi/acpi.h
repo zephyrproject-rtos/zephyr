@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DRIVERS_ACPI_H_
-#define ZEPHYR_INCLUDE_DRIVERS_ACPI_H_
+#ifndef ZEPHYR_INCLUDE_ACPI_ACPI_H_
+#define ZEPHYR_INCLUDE_ACPI_ACPI_H_
 #include <acpica/source/include/acpi.h>
 #include <zephyr/drivers/pcie/pcie.h>
 
@@ -322,4 +322,4 @@ static inline int acpi_poweroff(void)
 }
 #endif /* CONFIG_ACPI_POWEROFF */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_ACPI_H_ */
+#endif /* ZEPHYR_INCLUDE_ACPI_ACPI_H_ */

@@ -6,12 +6,12 @@
 
 /**
  * @file
- * @brief Pin control (pinctrl) definitions for R-Car V4H Sparrowhawk board
+ * @brief Renesas R-Car V4H (R8A779G0) pin and function definitions
+ * @ingroup pinctrl_rcar
  *
  * This header provides macro constants for encoding pin function selections
- * and pin indices for R-Car V4H Sparrowhawk.
- * These values are used by the DeviceTree pinctrl subsystem to describe
- * peripheral pin mappings.
+ * and pin indices for R-Car V4H. These values are used by the DeviceTree
+ * pinctrl subsystem to describe peripheral pin mappings.
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_R8A779G0_H_

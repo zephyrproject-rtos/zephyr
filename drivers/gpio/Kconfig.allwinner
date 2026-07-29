@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Khai Do
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_ALLWINNER
+	bool "Allwinner GPIO driver"
+	default y
+	depends on DT_HAS_ALLWINNER_SUNXI_GPIO_ENABLED
+	help
+	  Enable the Allwinner GPIO driver for H618.

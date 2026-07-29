@@ -4,6 +4,12 @@
  * Copyright 2025 NXP
  */
 
+/ {
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+};
+
 dmic_dev: &micfil {
 	status = "okay";
 

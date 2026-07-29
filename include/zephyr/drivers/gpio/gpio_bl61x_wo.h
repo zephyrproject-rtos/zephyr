@@ -10,8 +10,8 @@
  * @ingroup gpio_bl61x_wo_interface
  */
 
-#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_BL61X_WO_H_
-#define ZEPHYR_DRIVERS_GPIO_GPIO_BL61X_WO_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_BL61X_WO_H_
+#define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_BL61X_WO_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -191,4 +191,4 @@ int bl61x_wo_write_async(const uint16_t *const data, const size_t len,
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_BL61X_WO_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_BL61X_WO_H_ */

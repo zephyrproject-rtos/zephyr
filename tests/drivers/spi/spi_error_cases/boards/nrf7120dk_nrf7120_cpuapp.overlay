@@ -8,16 +8,16 @@
 	spi22_default_alt: spi22_default_alt {
 		group1 {
 			psels = <NRF_PSEL(SPIM_SCK, 1, 13)>,
-				<NRF_PSEL(SPIM_MISO, 1, 11)>,
-				<NRF_PSEL(SPIM_MOSI, 1, 9)>;
+				<NRF_PSEL(SPIM_MISO, 1, 7)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 4)>;
 		};
 	};
 
 	spi22_sleep_alt: spi22_sleep_alt {
 		group1 {
 			psels = <NRF_PSEL(SPIM_SCK, 1, 13)>,
-				<NRF_PSEL(SPIM_MISO, 1, 11)>,
-				<NRF_PSEL(SPIM_MOSI, 1, 9)>;
+				<NRF_PSEL(SPIM_MISO, 1, 7)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 4)>;
 			low-power-enable;
 		};
 	};
@@ -25,8 +25,8 @@
 	spi21_default_alt: spi21_default_alt {
 		group1 {
 			psels = <NRF_PSEL(SPIS_SCK, 1, 12)>,
-				<NRF_PSEL(SPIS_MISO, 1, 10)>,
-				<NRF_PSEL(SPIS_MOSI, 1, 8)>,
+				<NRF_PSEL(SPIS_MISO, 1, 15)>,
+				<NRF_PSEL(SPIS_MOSI, 1, 6)>,
 				<NRF_PSEL(SPIS_CSN, 1, 14)>;
 		};
 	};
@@ -34,8 +34,8 @@
 	spi21_sleep_alt: spi21_sleep_alt {
 		group1 {
 			psels = <NRF_PSEL(SPIS_SCK, 1, 12)>,
-				<NRF_PSEL(SPIS_MISO, 1, 10)>,
-				<NRF_PSEL(SPIS_MOSI, 1, 8)>,
+				<NRF_PSEL(SPIS_MISO, 1, 15)>,
+				<NRF_PSEL(SPIS_MOSI, 1, 6)>,
 				<NRF_PSEL(SPIS_CSN, 1, 14)>;
 			low-power-enable;
 		};

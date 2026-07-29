@@ -60,34 +60,18 @@ const int32_t z_sys_timer_irq_for_test = OSTM_IRQ_NUM;
 #define OSTM_CTL_FREERUN           2
 
 /*
- * We have two constraints on the maximum number of cycles we can wait for.
- *
- * 1) sys_clock_announce() accepts at most INT32_MAX ticks.
- *
- * 2) The number of cycles between two reports must fit in a cycle_diff_t
- *    variable before converting it to ticks.
- *
- * Then:
- *
- * 3) Pick the smallest between (1) and (2).
- *
- * 4) Take into account some room for the unavoidable IRQ servicing latency.
- *    Let's use 3/4 of the max range.
- *
- * Finally let's add the LSB value to the result so to clear out a bunch of
- * consecutive set bits coming from the original max values to produce a
- * nicer literal for assembly generation.
+ * Maximum number of cycles to wait between two sys_clock_announce() reports:
+ * the elapsed cycle count must fit in a cycle_diff_t before it is divided down
+ * to ticks. Reserve 1/4 of the range as headroom for the unavoidable IRQ
+ * servicing latency so a late report still fits, then add the LSB so the value
+ * clears a run of low set bits for a nicer literal in the generated assembly.
  */
-#define CYCLES_MAX_1 ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
-#define CYCLES_MAX_2 ((uint64_t)CYCLE_DIFF_MAX)
-#define CYCLES_MAX_3 MIN(CYCLES_MAX_1, CYCLES_MAX_2)
-#define CYCLES_MAX_4 (CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
-#define CYCLES_MAX_5 (CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
+#define CYCLES_MAX_1 ((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_2 (CYCLES_MAX_1 / 2 + CYCLES_MAX_1 / 4)
+#define CYCLES_MAX   (CYCLES_MAX_2 + LSB_GET(CYCLES_MAX_2))
 
-/* Precompute CYCLES_MAX and CYC_PER_TICK at driver init to avoid runtime double divisions */
-static uint64_t cycles_max;
+/* Precompute CYC_PER_TICK at driver init to avoid runtime double divisions */
 static uint32_t cyc_per_tick;
-#define CYCLES_MAX   cycles_max
 #define CYC_PER_TICK cyc_per_tick
 
 static struct k_spinlock lock;
@@ -119,13 +103,11 @@ static void ostm_irq_handler(const struct device *dev)
 	sys_clock_announce(delta_ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
+	ARG_UNUSED(idle);
 
-	if (idle && ticks == K_TICKS_FOREVER) {
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
@@ -133,13 +115,9 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	if (ticks == K_TICKS_FOREVER) {
+	next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
+	if ((next_cycle - last_cycle) > CYCLES_MAX) {
 		next_cycle = last_cycle + CYCLES_MAX;
-	} else {
-		next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
-		if ((next_cycle - last_cycle) > CYCLES_MAX) {
-			next_cycle = last_cycle + CYCLES_MAX;
-		}
 	}
 
 	sys_write32(next_cycle, OSTM_REG_ADDR(OSTM_CMP_OFFSET));
@@ -209,7 +187,6 @@ static int sys_clock_driver_init(void)
 	last_tick = 0;
 	last_cycle = 0;
 	cyc_per_tick = sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-	cycles_max = CYCLES_MAX_5;
 
 	DEVICE_MMIO_TOPLEVEL_MAP(ostm_base, K_MEM_CACHE_NONE);
 

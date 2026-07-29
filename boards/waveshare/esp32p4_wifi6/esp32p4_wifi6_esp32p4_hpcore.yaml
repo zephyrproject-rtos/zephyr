@@ -1,0 +1,21 @@
+identifier: esp32p4_wifi6/esp32p4/hpcore
+name: ESP32-P4-WIFI6 HP Core
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - heap
+supported:
+  - counter
+  - entropy
+  - gpio
+  - hwinfo
+  - i2c
+  - input
+  - sdhc
+  - sensor
+  - uart
+  - watchdog
+vendor: waveshare

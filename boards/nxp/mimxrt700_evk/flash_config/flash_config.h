@@ -7,7 +7,7 @@
 #ifndef FLASH_CONFIG_H_
 #define FLASH_CONFIG_H_
 #include <stdint.h>
-#include "fsl_common.h"
+#include <fsl_common.h>
 
 /* XSPI memory config block related definitions */
 #define FC_XSPI_CFG_BLK_TAG     (0x42464346UL) /* ascii "FCFB" Big Endian */

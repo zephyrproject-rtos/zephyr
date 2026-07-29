@@ -315,17 +315,17 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 }
 ARCH_ISR_DIAG_ON
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 	/* Fast CPUs and a 24 bit counter mean that even idle systems
 	 * need to wake up multiple times per second.  If the kernel
-	 * allows us to miss tick announcements in idle, then shut off
-	 * the counter. (Note: we can assume if idle==true that
-	 * interrupts are already disabled)
+	 * allows us to miss tick announcements while nothing is pending
+	 * (sloppy idle), then shut off the counter.
 	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && idle && ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
+	    ticks == SYS_CLOCK_MAX_WAIT) {
 		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 		last_load = TIMER_STOPPED;
 		return;
@@ -404,10 +404,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	cycle_diff_t unannounced = cycle_count - announced_cycles;
 
-	if (ticks == K_TICKS_FOREVER) {
-		/* Schedule as far out as SysTick can go in one LOAD. */
-		cycles = MAX_CYCLES;
-	} else if (unannounced < 0) {
+	if (unannounced < 0) {
 		/*
 		 * cycle_count has overtaken announced_cycles by more than half
 		 * the cycle_diff_t range. This is reachable when the ISR is

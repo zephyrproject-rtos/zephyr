@@ -7,8 +7,8 @@
 #include <zephyr/kernel.h>
 #include <stdlib.h>
 
-#include "math_ops.h"
-#include "input.h"
+#include <math_ops.h>
+#include <input.h>
 
 static int start, stop;
 

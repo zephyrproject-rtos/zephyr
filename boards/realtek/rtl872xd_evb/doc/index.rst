@@ -87,4 +87,4 @@ References
 
 .. _`RTL872XD-EVB`: https://www.realmcu.com/en/Home/Products/RTL872xCS-RTL872xD-Series#
 .. _`RTL872xCS/D Series`: https://www.realmcu.com
-.. _`AmebaImageTool`: https://github.com/Ameba-AIoT/ameba-rtos/tree/master/tools/ameba/ImageTool_Legacy/AmebaImageTool.exe
+.. _`AmebaImageTool`: https://github.com/Ameba-AIoT/ameba-rtos/blob/master/tools/ameba/ImageTool/AmebaImageTool.exe

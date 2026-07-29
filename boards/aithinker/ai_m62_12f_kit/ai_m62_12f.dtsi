@@ -5,7 +5,7 @@
  */
 
 #include <bflb/bl616.dtsi>
-#include <bflb/bl61x_em_32kb.dtsi>
+#include <bflb/bl61x_em_32kb_wifi.dtsi>
 #include "ai_m62_12f-pinctrl.dtsi"
 
 / {
@@ -105,5 +105,9 @@
 };
 
 &bt_hci_bflb {
+	status = "okay";
+};
+
+&wifi0 {
 	status = "okay";
 };

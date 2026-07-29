@@ -3993,7 +3993,7 @@ endfunction()
 # of the build info file.
 #
 # <tag>...: One of the pre-defined valid CMake keys supported by build info or vendor-specific.
-#           See 'scripts/schemas/build-schema.yml' CMake section for valid tags.
+#           See 'scripts/schemas/build-schema.yaml' CMake section for valid tags.
 # VALUE <value>... : value(s) to place in the build_info.yml file.
 # PATH  <path>... : path(s) to place in the build_info.yml file. All paths are converted to CMake
 #                   style. If no conversion is required, for example when paths are already
@@ -4021,7 +4021,7 @@ function(build_info)
 
   yaml_context(EXISTS NAME build_info result)
   if(NOT result)
-    yaml_load(FILE ${ZEPHYR_BASE}/scripts/schemas/build-schema.yml NAME build_info_schema)
+    yaml_load(FILE ${ZEPHYR_BASE}/scripts/schemas/build-schema.yaml NAME build_info_schema)
     if(EXISTS ${CMAKE_BINARY_DIR}/build_info.yml)
       yaml_load(FILE ${CMAKE_BINARY_DIR}/build_info.yml NAME build_info)
     else()
@@ -4047,14 +4047,14 @@ function(build_info)
     set(type VALUE)
   else()
     set(schema_check ${keys})
-    list(TRANSFORM schema_check PREPEND "mapping;")
-    yaml_get(check NAME build_info_schema KEY mapping cmake ${schema_check})
+    list(TRANSFORM schema_check PREPEND "properties;")
+    yaml_get(check NAME build_info_schema KEY properties cmake ${schema_check})
     if(check MATCHES ".*-NOTFOUND")
       message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) called with invalid tag: ${keys}")
     endif()
 
-    yaml_get(type NAME build_info_schema KEY mapping cmake ${schema_check} type)
-    if(type MATCHES "seq|sequence")
+    yaml_get(type NAME build_info_schema KEY properties cmake ${schema_check} type)
+    if(type MATCHES "array")
       set(type LIST)
     else()
       set(type VALUE)
@@ -6166,8 +6166,20 @@ function(add_llext_target target_name)
     # output a relocatable file. The output file suffix is changed so
     # the result looks like the object file it actually is.
     add_executable(${llext_lib_target} EXCLUDE_FROM_ALL ${source_files})
-    target_link_options(${llext_lib_target} PRIVATE
-      $<TARGET_PROPERTY:linker,partial_linking>)
+    if("${LINKER}" STREQUAL "lld")
+      # lld does not group sections by type in -r mode; an explicit grouping
+      # script is required to prevent section interleaving that would cause
+      # the LLEXT loader to see overlapping file-offset regions.
+      target_link_options(${llext_lib_target} PRIVATE
+        $<TARGET_PROPERTY:linker,partial_linking>
+        -T ${ZEPHYR_BASE}/cmake/linker/llext_relocatable.ld)
+    else()
+      # GNU ld naturally groups sections by type; no grouping script is needed.
+      # Applying the script would cause xt-ld and similar linkers to assign
+      # non-zero VMAs to sections, breaking the LLEXT Xtensa relocation handler.
+      target_link_options(${llext_lib_target} PRIVATE
+        $<TARGET_PROPERTY:linker,partial_linking>)
+    endif()
     set_target_properties(${llext_lib_target} PROPERTIES
       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
       SUFFIX ${CMAKE_C_OUTPUT_EXTENSION})

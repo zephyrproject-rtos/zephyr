@@ -347,11 +347,22 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_to_FLEXCAN0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
+	RESET_ReleasePeripheralReset(kEWM0_RST_SHIFT_RSTn);
+	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN | kCLKE_16K_VBAT);
+	CLOCK_EnableClock(kCLOCK_GateEWM0);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac0))
 	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac0);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_DAC0);
 	CLOCK_SetClockDiv(kCLOCK_DivDAC0, 1u);
 	CLOCK_EnableClock(kCLOCK_GateDAC0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
+	/* RTC uses the OSC32K (32.768 kHz) as its clock source */
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToAll);
 #endif
 
 	/* Set SystemCoreClock variable. */

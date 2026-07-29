@@ -174,7 +174,7 @@ static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_conte
 	}
 
 	last_elapsed = 0;
-	sys_clock_announce((int32_t)dticks);
+	sys_clock_announce(dticks);
 }
 
 int32_t z_nrf_grtc_timer_chan_alloc(void)
@@ -626,7 +626,7 @@ static int grtc_post_init(void)
 #endif
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 

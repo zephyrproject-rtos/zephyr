@@ -411,7 +411,7 @@ static void telnet_restart_server(void)
 static void telnet_accept(struct zsock_pollfd *pollfd)
 {
 	int sock, ret = 0;
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage addr = {};
 	net_socklen_t addrlen = sizeof(addr);
 
 	sock = zsock_accept(pollfd->fd, net_sad(&addr), &addrlen);

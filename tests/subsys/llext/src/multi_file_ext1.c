@@ -27,8 +27,13 @@ void test_entry(void)
 		/* initial run: test variable initialization */
 		break;
 	case 42:
-		/* user-mode run: reinit number */
+		/*
+		 * Second (user-mode) run: the extension's writable data persists
+		 * from the first run, which left both globals swapped. Re-init
+		 * both so the checks below start from the loaded values again.
+		 */
 		number = 0x42;
+		ext_number = 0x18;
 		break;
 	default:
 		/* possible llext loader issue */

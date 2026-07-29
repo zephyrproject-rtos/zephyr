@@ -1,0 +1,12 @@
+# AMEBA PWM configuration options
+
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_AMEBA
+	bool "AMEBA PWM driver"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_PWM_ENABLED
+	select PINCTRL
+	help
+	  Enable the PWM driver for AMEBA family of processors.

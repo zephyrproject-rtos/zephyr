@@ -697,7 +697,6 @@ static void probe_cb(char *metadata, size_t metadata_size)
 	char tmp[MAX_DOWNLOAD_DATA];
 	const uint8_t *payload_start;
 	uint16_t payload_len;
-	size_t tmp_len;
 	int rcvd = -1;
 
 	wait_fds();
@@ -728,7 +727,10 @@ static void probe_cb(char *metadata, size_t metadata_size)
 		return;
 	}
 
-	if (metadata_size < payload_len) {
+	/* ensures payload have a valid string with size lower
+	 * than metadata_size (it needs to account for the trailing NUL)
+	 */
+	if (metadata_size <= payload_len) {
 		LOG_ERR("There is no buffer available");
 		ctx.code_status = UPDATEHUB_METADATA_ERROR;
 		return;
@@ -736,16 +738,6 @@ static void probe_cb(char *metadata, size_t metadata_size)
 
 	memset(metadata, 0, metadata_size);
 	memcpy(metadata, payload_start, payload_len);
-
-	/* ensures payload have a valid string with size lower
-	 * than metadata_size
-	 */
-	tmp_len = strlen(metadata);
-	if (tmp_len >= metadata_size) {
-		LOG_ERR("Invalid metadata data received");
-		ctx.code_status = UPDATEHUB_METADATA_ERROR;
-		return;
-	}
 
 	ctx.code_status = UPDATEHUB_OK;
 
@@ -849,8 +841,7 @@ enum updatehub_response z_impl_updatehub_probe(void)
 	LOG_DBG("metadata size: %d", strlen(metadata));
 	LOG_HEXDUMP_DBG(metadata, MAX_DOWNLOAD_DATA, "metadata");
 
-	memset(metadata_copy, 0, MAX_DOWNLOAD_DATA);
-	memcpy(metadata_copy, metadata, strlen(metadata));
+	strcpy(metadata_copy, metadata);
 	if (json_obj_parse(metadata, strlen(metadata),
 			   recv_probe_sh_array_descr,
 			   ARRAY_SIZE(recv_probe_sh_array_descr),

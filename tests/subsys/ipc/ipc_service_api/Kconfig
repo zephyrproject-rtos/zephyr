@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+menu "IPC service API test options"
+
+config IPC_SERVICE_API_TEST_DEREGISTER
+	bool "Test ipc_service_deregister_endpoint()"
+	default y if IPC_SERVICE_BACKEND_ICBMSG
+	help
+	  Run the endpoint deregistration test case.
+
+config IPC_SERVICE_API_TEST_SECOND_ENDPOINT
+	bool "Test second endpoint"
+	default y if IPC_SERVICE_BACKEND_ICBMSG || IPC_SERVICE_BACKEND_RPMSG
+	help
+	  Run the second endpoint test case.
+
+endmenu

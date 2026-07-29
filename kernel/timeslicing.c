@@ -73,10 +73,9 @@ static void slice_timeout(struct _timeout *timeout)
 	}
 }
 
-void z_time_slice_reset(struct k_thread *thread)
+static void slice_reset(int slice_size)
 {
 	int cpu = _current_cpu->id;
-	int slice_size = z_time_slice_size(thread);
 
 	/* Best-effort cancel: if the slice timeout is already in flight,
 	 * its handler only flips slice_expired[cpu] (which we clear below)
@@ -95,6 +94,11 @@ void z_time_slice_reset(struct k_thread *thread)
 			      K_TICKS(delay));
 	}
 	slice_expired[cpu] = false;
+}
+
+void z_time_slice_reset(struct k_thread *thread)
+{
+	slice_reset(z_time_slice_size(thread));
 }
 
 static ALWAYS_INLINE bool thread_defines_time_slice_size(struct k_thread *thread)
@@ -154,7 +158,13 @@ void z_time_slice(void)
 	pending_current = NULL;
 #endif
 
-	if (slice_expired[_current_cpu->id] && (z_time_slice_size(curr) != 0)) {
+	int slice_size = 0;
+
+	if (slice_expired[_current_cpu->id]) {
+		slice_size = z_time_slice_size(curr);
+	}
+
+	if (slice_size != 0) {
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 		k_thread_timeslice_fn_t handler = curr->base.slice_expired;
 
@@ -162,6 +172,11 @@ void z_time_slice(void)
 			k_spin_unlock(&_sched_spinlock, key);
 			handler(curr, curr->base.slice_data);
 			key = k_spin_lock(&_sched_spinlock);
+			/* The handler ran with the lock dropped and may have
+			 * changed this thread's slice configuration, so the
+			 * cached size is stale; recompute before rearming.
+			 */
+			slice_size = z_time_slice_size(curr);
 		}
 #endif
 		if (!z_is_thread_prevented_from_running(curr)) {
@@ -177,11 +192,11 @@ void z_time_slice(void)
 			struct k_thread *next = runq_best();
 
 			if (next == NULL || z_is_idle_thread_object(next)) {
-				z_time_slice_reset(curr);
+				slice_reset(slice_size);
 			}
 #else
 			if (_kernel.ready_q.cache == curr) {
-				z_time_slice_reset(curr);
+				slice_reset(slice_size);
 			}
 #endif
 		}

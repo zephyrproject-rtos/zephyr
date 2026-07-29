@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		wakeup-source;
+		wakeup-ctrls = <&sleepcon0 26>,	/* RTC0 alarm  -> WAKEUPEN0 bit 26 */
+			       <&sleepcon0 91>;	/* GPIO0       -> WAKEUPEN2 bit 27 */
+	};
+};
+
+&sleepcon0 {
+	status = "okay";
+};

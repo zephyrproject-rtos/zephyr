@@ -49,7 +49,7 @@ The above features are supported by following configuration.
           loc 0x1c090000
           intr gic:37
 
-  # Enable virtio-console (Need to disable CONFIG_BOOT_BANNER)
+  # Enable virtio-console
   vdev virtio-console
           loc 0x20000000
           intr gic:42

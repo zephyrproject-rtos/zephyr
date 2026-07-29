@@ -79,7 +79,7 @@ static void pit64b_isr(const void *arg)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -93,7 +93,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	uint32_t val1, val2;
 	uint32_t delay;
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
+	ticks = MIN(ticks, (uint32_t)MAX_TICKS);
 
 	key = k_spin_lock(&lock);
 	cycle_count += cycles_elapsed();

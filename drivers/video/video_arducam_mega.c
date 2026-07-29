@@ -9,14 +9,12 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/video-controls.h>
+#include <zephyr/video/video.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/video/arducam_mega.h>
 
 #include "video_common.h"
-#include "video_ctrls.h"
-#include "video_device.h"
 
 LOG_MODULE_REGISTER(mega_camera, CONFIG_VIDEO_LOG_LEVEL);
 
@@ -42,7 +40,7 @@ enum mega_ev_level {
 	MEGA_EV_LEVEL_3 = 5,
 };
 
-/* Configure camera saturation  level */
+/* Configure camera saturation level */
 enum mega_saturation_level {
 	MEGA_SATURATION_LEVEL_NEGATIVE_3 = 6,
 	MEGA_SATURATION_LEVEL_NEGATIVE_2 = 4,

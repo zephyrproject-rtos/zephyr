@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2026 Arkadiusz Grzelka
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* 1. No orientation/scaling properties: coordinates pass through unchanged. */
+	test_ts_passthrough: test-ts-passthrough {
+		compatible = "test-touchscreen-common";
+	};
+
+	/* 2. inverted-x / inverted-y: value becomes screen_{width,height} - value. */
+	test_ts_inverted: test-ts-inverted {
+		compatible = "test-touchscreen-common";
+		screen-width = <100>;
+		screen-height = <50>;
+		inverted-x;
+		inverted-y;
+	};
+
+	/* 3. swapped-x-y: x is reported under INPUT_ABS_Y and y under INPUT_ABS_X. */
+	test_ts_swapped: test-ts-swapped {
+		compatible = "test-touchscreen-common";
+		swapped-x-y;
+	};
+
+	/* 4. output-width/height set, no swap: each axis scaled by its own ratio. */
+	test_ts_scaled: test-ts-scaled {
+		compatible = "test-touchscreen-common";
+		screen-width = <480>;
+		screen-height = <272>;
+		output-width = <240>;
+		output-height = <136>;
+	};
+
+	/*
+	 * 5. output-width/height set together with swapped-x-y. This is the case the
+	 * change exists for: on a rotated panel the swapped axes still carry the
+	 * *other* axis' source range, so each value must be scaled by the ratio of
+	 * the destination dimension its swapped code reports under, divided by its
+	 * own source range. Controller and display are both 480x272 here, so the
+	 * scaling factors (272/480 and 480/272) are non-trivial even though the
+	 * panel is "square" in area.
+	 */
+	test_ts_scaled_swapped: test-ts-scaled-swapped {
+		compatible = "test-touchscreen-common";
+		screen-width = <480>;
+		screen-height = <272>;
+		output-width = <480>;
+		output-height = <272>;
+		swapped-x-y;
+	};
+
+	/* 6. Only output-width set: scaling must stay disabled (needs both != 0). */
+	test_ts_scale_disabled: test-ts-scale-disabled {
+		compatible = "test-touchscreen-common";
+		screen-width = <480>;
+		screen-height = <272>;
+		output-width = <240>;
+	};
+
+	/* Display node whose width/height a touch node can source via `display`. */
+	test_display: test-display {
+		compatible = "test-display";
+		width = <240>;
+		height = <136>;
+	};
+
+	/* 7. output dims come from the `display` phandle, not explicit props. */
+	test_ts_from_display: test-ts-from-display {
+		compatible = "test-touchscreen-common";
+		screen-width = <480>;
+		screen-height = <272>;
+		display = <&test_display>;
+	};
+};

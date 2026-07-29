@@ -6,13 +6,13 @@
 # Copyright (c) 2023 Google Inc
 # SPDX-License-Identifier: Apache-2.0
 
-config STM32_MEMMAP
-	bool "NOR Flash in MemoryMapped"
+config FLASH_STM32_NOR_MEMMAP
+	bool "External Flash in memory-mapped mode"
 	depends on DT_HAS_ST_STM32_QSPI_NOR_ENABLED || \
 		   DT_HAS_ST_STM32_OSPI_NOR_ENABLED || \
 		   DT_HAS_ST_STM32_XSPI_NOR_ENABLED
 	help
-	  This option enables the MemoryMapped mode for the external NOR flash
+	  Enable the memory-mapped mode for external NOR flash
 	  mounted on STM32 boards.
 
 menuconfig SOC_FLASH_STM32

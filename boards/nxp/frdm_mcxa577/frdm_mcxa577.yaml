@@ -29,4 +29,6 @@ supported:
   - edac
   - can
   - dac
+  - rtc
+  - crc
 vendor: nxp

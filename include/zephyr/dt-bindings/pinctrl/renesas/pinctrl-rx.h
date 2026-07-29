@@ -6,21 +6,71 @@
 
 /**
  * @file
- * @brief Renesas RX pin control (pinctrl) definitions for Zephyr.
- *
- * This header provides macro constants for encoding pin function selections
- * and pin indices for Renesas RX SoCs. These values are used by the DeviceTree
- * pinctrl subsystem to describe peripheral pin mappings.
+ * @brief Devicetree pin control helpers for Renesas RX
+ * @ingroup pinctrl_rx
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_PINCTRL_RX_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_PINCTRL_RX_H_
 
 /**
- * @name Multi-Function Pin Controller (MPC) Definitions for Renesas RX SoCs.
+ * @addtogroup renesas_pinctrl Renesas pin control helpers
+ * @ingroup devicetree-pinctrl
+ */
+
+/**
+ * @defgroup pinctrl_rx Renesas RX pin control helpers
+ * @brief Macros for pin control configuration of Renesas RX SoCs
+ * @ingroup renesas_pinctrl
+ *
+ * Pins are configured through the Multi-Function Pin Controller (MPC). Each pin
+ * configuration is built with the RX_PSEL() macro, which combines a
+ * peripheral-function selector, the port number, and the pin number within that
+ * port.
+ *
+ * Two flavors of selector are provided. Generic selectors named
+ * @c RX_PSEL_\<PERIPHERAL\> carry a function code shared by every pin of a
+ * peripheral, where @c \<PERIPHERAL\> is one of @c RSCI, @c SCI_1, @c SCI_5,
+ * @c SCI_6, @c SCI_12, @c TMR, @c POE, @c ADC or @c LVD.
+ *
+ * Per-pin selectors named @c RX_PSEL_P\<PORT\>nPFS_\<SIGNAL\> (for example
+ * @c RX_PSEL_P1nPFS_RXD1) give the exact code for one pin, where @c \<PORT\> is
+ * the port letter/number and @c \<SIGNAL\> is the peripheral signal routed to
+ * the pin. Signals are grouped by peripheral:
+ *
+ * - Multi-function timer (MTU): @c MTIOC0A ... @c MTIOC5W, @c MTCLKA ... @c MTCLKD
+ * - 8-bit timer (TMR): @c TMO0 ... @c TMO3, @c TMCI0 ... @c TMCI3, @c TMRI0 ...
+ *   @c TMRI3
+ * - Serial (SCI): @c RXD0 ... @c RXD12, @c TXD0 ... @c TXD12, @c SCK0 ... @c SCK12,
+ *   @c CTS, @c RTS, @c SS
+ * - SPI (RSPI, or SCI in simple-SPI mode): @c RSPCKA, @c MOSIA, @c MISOA,
+ *   @c SSLA0 ... @c SSLA3, @c SMOSI, @c SMISO
+ * - I2C (RIIC, or SCI in simple-I2C mode): @c SCL, @c SDA, @c SSCL, @c SSDA
+ * - Capacitive touch (CTSU): @c TS0 ... @c TS35, @c TSCAP
+ * - Comparator: @c CMPOB0, @c CMPOB1
+ * - Misc: @c POE0 ... @c POE8, @c ADTRG0, @c RTCOUT, @c CLKOUT, @c CACREF
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rx.h>
+ *
+ * &pinctrl {
+ *         sci1_default: sci1_default {
+ *                 group1 {
+ *                         psels = <RX_PSEL(RX_PSEL_SCI_1, 2, 6)>;
+ *                 };
+ *                 group2 {
+ *                         psels = <RX_PSEL(RX_PSEL_SCI_1, 3, 0)>;
+ *                 };
+ *         };
+ * };
+ * @endcode
+ *
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
+/* Multi-Function Pin Controller (MPC) bit field positions and masks. */
 /** @brief Bit position of the port number field. */
 #define RX_PORT_NUM_POS  0 /**< Port number position. */
 /** @brief Mask for the port number field. */
@@ -36,11 +86,7 @@
 /** @brief Mask for the Peripheral Select (PSEL) field. */
 #define RX_PSEL_POS  9 /**< PSEL position. */
 
-/**
- * @name Renesas RX Peripheral Selection (PSEL) Pins
- * @{
- */
-
+/* Peripheral-function selector (PSEL) values. */
 #define RX_PSEL_RSCI      0xA /**< RSCI function. */
 #define RX_PSEL_RSCI_TXDB 0xC /**< RSCI TXD/B function. */
 #define RX_PSEL_SCI_1     0xA /**< SCI1 function. */
@@ -51,8 +97,6 @@
 #define RX_PSEL_POE       0x7 /**< POE function. */
 #define RX_PSEL_ADC       0x0 /**< ADC function. */
 #define RX_PSEL_LVD       0x0 /**< LVD function. */
-
-/** @} */
 
 /**
  * @name Renesas RX MPC Port 0 Pin Function Select codes (PSEL values)
@@ -484,6 +528,8 @@
 #define RX_PSEL_PJnPFS_SS6  0xB /**< SPI slave select channel 6. */
 
 /** @} */
+
+/** @endcond */
 
 /**
  * @brief Macro to encode a pin configuration for Renesas RX SoCs.

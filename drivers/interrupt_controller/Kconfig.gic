@@ -65,13 +65,22 @@ config GIC_V3_ITS
 
 config GIC_SAFE_CONFIG
 	bool "GIC Distributor Safe Configuration"
-	depends on GIC_V3
-	default n
+	depends on GIC
 	help
-	  In case of multiple OSes running on different CPU Cores which share the
-	  same GIC controller, need to avoid the distributor re-configured to avoid
-	  crash the OS has already been started. With this enabled, it will bypass
-	  GIC distributor configuration if it has been configured by other OS.
+	  Multiple operating systems may share one GIC distributor. When another OS
+	  has already enabled the distributor, re-running full distributor init
+	  can clobber its enables, targets, and priorities. When this option is
+	  enabled, Zephyr skips GIC distributor initialization if the distributor
+	  is already active. Per-IRQ affinity updates still occur from
+	  arm_gic_irq_enable().
+	  Applies to GICv1, GICv2, and GICv3.
+
+	  Limitation (GICv1/GICv2): the per-IRQ affinity update in
+	  arm_gic_irq_enable() is a read-modify-write of the shared
+	  GICD_ITARGETSRn register and is not serialized across OSes. Two
+	  independent Zephyr instances enabling the same shared SPI
+	  concurrently may race and lose an update; concurrent enable of the
+	  same shared SPI from multiple OSes is out of scope for this option.
 
 config GIC_V3_RDIST_DMA_NONCOHERENT
 	bool "GIC redistributor is DMA noncoherent"

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the STMESP stream demultiplexer.
+ * @ingroup log_frontend_stmesp_demux_apis
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_STMESP_DEMUX_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_STMESP_DEMUX_H_
 
@@ -15,12 +21,13 @@ extern "C" {
 #endif
 
 /**
- * @defgroup log_frontend_stmesp_apis Trace and Debug Domain APIs
+ * @defgroup log_frontend_stmesp_apis Trace and debug domain
  * @ingroup logging
  * @{
  * @}
- * @defgroup log_frontend_stpesp_demux_apis Logging frontend STMESP Demultiplexer API
+ * @defgroup log_frontend_stmesp_demux_apis STMESP demultiplexer
  * @ingroup log_frontend_stmesp_apis
+ * @brief Host-side demultiplexer for STPv2 streams carrying logs and trace points.
  * @{
  */
 
@@ -297,6 +304,19 @@ void log_frontend_stmesp_demux_free(union log_frontend_stmesp_demux_packet packe
  *         cannot be retrieved.
  */
 const char *log_frontend_stmesp_demux_sname_get(uint32_t m_id, uint16_t s_id);
+
+/** @brief Get the format string of a turbo log message.
+ *
+ * Turbo log messages reference their format string by index rather than
+ * carrying it inline. This helper resolves that index, using the source data
+ * shared by the originating core, back to the format string.
+ *
+ * @param m_id Major ID.
+ * @param s_id Source ID (index of the string).
+ *
+ * @return Pointer to the format string, or an empty/"unknown" string if it
+ *         cannot be retrieved.
+ */
 const char *log_frontend_stmesp_demux_str_get(uint32_t m_id, uint16_t s_id);
 
 /** @brief Check if there are any started but not completed log messages.

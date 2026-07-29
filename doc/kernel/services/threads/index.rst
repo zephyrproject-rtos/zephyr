@@ -74,6 +74,18 @@ executing. A cancellation request has no effect if the thread has already
 started. A thread whose delayed start was successfully canceled must be
 re-spawned before it can be used.
 
+Starting a Thread
+=================
+
+A thread that is created with :c:macro:`K_FOREVER` as its start delay is not
+added to the scheduler's ready queue and does not begin executing until it is
+explicitly started. The :c:func:`k_thread_start` function starts such an
+inactive thread, making it eligible for scheduling. Starting a thread that has
+already started has no effect.
+
+This is useful when a thread object must be created at one point in time but its
+execution deferred until the application has completed additional setup.
+
 Thread Termination
 ===================
 
@@ -228,7 +240,7 @@ have an identical effect to the ``K_KERNEL_STACK`` macros.
 .. _thread_priorities:
 
 Thread Priorities
-******************
+*****************
 
 A thread's priority is an integer value, and can be either negative or
 non-negative.
@@ -414,6 +426,79 @@ each thread calls a specific routine.
 Use thread custom data to allow a routine to access thread-specific information,
 by using the custom data as a pointer to a data structure owned by the thread.
 
+.. _thread_name_v2:
+
+Thread Name
+***********
+
+When :kconfig:option:`CONFIG_THREAD_NAME` is enabled, a human-readable name can
+be associated with each thread. Names are primarily an aid for debugging,
+logging, and shell introspection; the kernel does not use them for scheduling.
+
+A thread name may be assigned in one of two ways:
+
+* Statically, by passing a name to :c:macro:`K_THREAD_DEFINE`.
+* At run time, using :c:func:`k_thread_name_set`. The supplied string must
+  remain valid for the lifetime of the thread, as only a pointer to it is
+  retained.
+
+A thread's name can be retrieved with :c:func:`k_thread_name_get`, which returns
+a pointer to the name string, or with :c:func:`k_thread_name_copy`, which copies
+the name into a caller-supplied buffer. The copying variant is the safe choice
+from user mode, where the calling thread may not have access to the memory
+backing another thread's name.
+
+If :kconfig:option:`CONFIG_THREAD_NAME` is not enabled,
+:c:func:`k_thread_name_set` returns an error and :c:func:`k_thread_name_get`
+returns ``NULL``.
+
+Thread Introspection
+********************
+
+The kernel provides several interfaces for inspecting threads at run time.
+
+**Identifying the current thread**
+    :c:func:`k_current_get` returns the thread id (:c:type:`k_tid_t`) of the
+    thread that is currently executing. This id can be passed to the other
+    thread APIs to operate on the calling thread.
+
+**Reading a thread's priority**
+    :c:func:`k_thread_priority_get` returns the current scheduling priority of a
+    thread. This reflects any changes made since the thread was created, for
+    example by :c:func:`k_thread_priority_set`.
+
+**Obtaining a thread's state**
+    :c:func:`k_thread_state_str` writes a human-readable representation of a
+    thread's current state (for example ``pending``, ``suspended``, or
+    ``ready``) into a caller-supplied buffer. This is intended for diagnostic
+    output and should not be parsed programmatically.
+
+**Iterating over all threads**
+    When :kconfig:option:`CONFIG_THREAD_MONITOR` is enabled,
+    :c:func:`k_thread_foreach` invokes a caller-supplied callback once for each
+    thread in the system. It holds an internal lock that blocks thread creation
+    and termination for the duration of the iteration, which guarantees a
+    consistent snapshot of the thread list but can introduce latency
+    proportional to the number of threads. :c:func:`k_thread_foreach_unlocked`
+    is a lower-latency variant that releases the lock around each callback at the
+    cost of a less strictly consistent view.
+
+**Querying stack usage**
+    When :kconfig:option:`CONFIG_INIT_STACKS` and
+    :kconfig:option:`CONFIG_THREAD_STACK_INFO` are enabled,
+    :c:func:`k_thread_stack_space_get` reports the number of unused bytes
+    remaining in a thread's stack, computed by scanning the stack for its unused
+    (still-initialized) region. This complements the build-time stack analysis
+    tools and the runtime stack safety feature described below.
+
+**Querying a pending timeout**
+    A thread that is blocked on a timed operation (such as :c:func:`k_sleep` or
+    a kernel object operation with a timeout) has a pending timeout. Its
+    remaining duration can be queried in ticks with
+    :c:func:`k_thread_timeout_remaining_ticks`, and the absolute system tick at
+    which it will expire with :c:func:`k_thread_timeout_expires_ticks`. Both
+    return zero if the thread has no pending timeout.
+
 Implementation
 **************
 
@@ -586,6 +671,19 @@ Here is an example:
    k_thread_runtime_stats_get(k_current_get(), &rt_stats_thread);
 
    printk("Cycles: %llu\n", rt_stats_thread.execution_cycles);
+
+The combined statistics for every thread in the system can be retrieved with
+:c:func:`k_thread_runtime_stats_all_get`, which reports the aggregate runtime
+usage across all threads (including the idle thread). This is useful for
+computing overall CPU utilization.
+
+When :kconfig:option:`CONFIG_SCHED_THREAD_USAGE` is enabled, statistics
+collection can be toggled at run time on a per-thread basis with
+:c:func:`k_thread_runtime_stats_enable` and
+:c:func:`k_thread_runtime_stats_disable`. Whether collection is currently active
+for a thread can be checked with :c:func:`k_thread_runtime_stats_is_enabled`.
+Disabling collection for threads that do not need to be measured reduces the
+bookkeeping overhead incurred on each context switch.
 
 Runtime Stack Safety
 ********************

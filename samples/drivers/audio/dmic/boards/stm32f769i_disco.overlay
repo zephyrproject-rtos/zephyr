@@ -3,4 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+};
+
 dmic_dev: &pdm0 {};

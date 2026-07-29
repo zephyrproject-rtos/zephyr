@@ -260,15 +260,13 @@ struct nxp_ctlr_fw_upload_state {
 
 static struct nxp_ctlr_fw_upload_state fw_upload;
 
-static int fw_upload_read_data(uint8_t *buffer, uint32_t len)
+static int fw_upload_read_data_tmo(uint8_t *buffer, uint32_t len, uint32_t timeout_ms)
 {
 	int err;
 
 	while (len > 0) {
-		err = k_sem_take(&fw_upload.rx.sem,
-				 K_MSEC(CONFIG_BT_H4_NXP_CTLR_WAIT_HDR_SIG_TIMEOUT));
+		err = k_sem_take(&fw_upload.rx.sem, K_MSEC(timeout_ms));
 		if (err < 0) {
-			LOG_ERR("Fail to read data");
 			return err;
 		}
 		*buffer = fw_upload.rx.buffer[fw_upload.rx.tail];
@@ -278,6 +276,12 @@ static int fw_upload_read_data(uint8_t *buffer, uint32_t len)
 		len--;
 	}
 	return 0;
+}
+
+static int fw_upload_read_data(uint8_t *buffer, uint32_t len)
+{
+	return fw_upload_read_data_tmo(buffer, len,
+					   CONFIG_BT_H4_NXP_CTLR_WAIT_HDR_SIG_TIMEOUT);
 }
 
 static void fw_upload_read_to_clear(void)
@@ -1106,6 +1110,47 @@ static int fw_uploading(const uint8_t *fw, uint32_t fw_length)
 	return -EINVAL;
 }
 
+#ifdef CONFIG_BT_NXP_CTRL_BSP_TRIGGER
+static int fw_upload_wake_bt_from_bootsleep(void)
+{
+	int err;
+	uint8_t c;
+	int64_t start = k_uptime_get();
+
+	while ((k_uptime_get() - start) < CONFIG_BT_NXP_CTRL_BSP_WAIT_TIMEOUT) {
+		err = fw_upload_read_data_tmo(&c, 1,
+					    CONFIG_BT_NXP_CTRL_HDR_SIG_INTERVAL);
+		if (err < 0) {
+			/* Timeout: no data received - BT CPU has entered BSP sleep.
+			 * Proceed to send wakeup trigger.
+			 */
+			goto send_bsp_trigger;
+		}
+
+		LOG_DBG("HDR SIG 0x%02X received, BT CPU still awake", c);
+	}
+
+	LOG_WRN("Timeout waiting for BT CPU to enter BSP sleep, sending trigger anyway");
+
+send_bsp_trigger:
+	err = uart_line_ctrl_set(uart_dev, UART_LINE_CTRL_RTS, 0);
+	if (err) {
+		LOG_ERR("Fail to set RTS low, err %d", err);
+		return err;
+	}
+
+	k_sleep(K_MSEC(CONFIG_BT_NXP_CTRL_BSP_RTS_PULSE_MS));
+
+	err = uart_line_ctrl_set(uart_dev, UART_LINE_CTRL_RTS, 1);
+	if (err) {
+		LOG_ERR("Fail to set RTS high, err %d", err);
+		return err;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_NXP_CTRL_BSP_TRIGGER */
+
 static void bt_nxp_ctlr_uart_isr(const struct device *unused, void *user_data)
 {
 	int err = 0;
@@ -1239,6 +1284,16 @@ static int bt_nxp_ctlr_init(void)
 
 	uart_irq_rx_enable(uart_dev);
 
+#ifdef CONFIG_BT_NXP_CTRL_BSP_TRIGGER
+	/* Wait for BT CPU to enter boot-sleep-patch state, then send
+	 * RTS trigger to wake it up for FW download in coex scenario.
+	 */
+	err = fw_upload_wake_bt_from_bootsleep();
+	if (err) {
+		LOG_ERR("Fail to wake BT CPU from boot sleep");
+		return err;
+	}
+#endif /* CONFIG_BT_NXP_CTRL_BSP_TRIGGER */
 	err = fw_uploading(bt_fw_bin, bt_fw_bin_len);
 
 	if (err) {

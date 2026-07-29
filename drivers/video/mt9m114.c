@@ -7,16 +7,15 @@
 
 #define DT_DRV_COMPAT aptina_mt9m114
 
-#include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/video.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/drivers/video.h>
-#include <zephyr/drivers/video-controls.h>
-#include <zephyr/drivers/i2c.h>
+#include <zephyr/video/video.h>
 
-#include "video_ctrls.h"
-#include "video_device.h"
+#include "video_common.h"
 
 LOG_MODULE_REGISTER(video_mt9m114, CONFIG_VIDEO_LOG_LEVEL);
 
@@ -238,6 +237,7 @@ static int mt9m114_write_reg(const struct device *dev, uint16_t reg_addr, uint8_
 		val = sys_cpu_to_be32(*(const uint32_t *)value);
 		break;
 	case 1:
+		val = *(const uint8_t *)value;
 		break;
 	default:
 		return -ENOTSUP;

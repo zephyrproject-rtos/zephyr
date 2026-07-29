@@ -239,7 +239,7 @@ static void debug_show_pte(uint64_t *pte, unsigned int level)
 
 	uint8_t mem_type = (*pte >> 2) & MT_TYPE_MASK;
 
-	MMU_DEBUG((mem_type == MT_NORMAL) ? "MEM" :
+	MMU_DEBUG((mem_type == MT_NORMAL || mem_type == MT_NORMAL_WT) ? "MEM" :
 		  ((mem_type == MT_NORMAL_NC) ? "NC" : "DEV"));
 	MMU_DEBUG((*pte & PTE_BLOCK_DESC_AP_RO) ? "-RO" : "-RW");
 	MMU_DEBUG((*pte & PTE_BLOCK_DESC_NS) ? "-NS" : "-S");
@@ -744,6 +744,7 @@ static uint64_t get_region_desc(uint32_t attrs)
 		break;
 	case MT_NORMAL_NC:
 	case MT_NORMAL:
+	case MT_NORMAL_WT:
 		/* Make Normal RW memory as execute never */
 		if ((attrs & MT_RW) || (attrs & MT_P_EXECUTE_NEVER)) {
 			desc |= PTE_BLOCK_DESC_PXN;
@@ -761,7 +762,7 @@ static uint64_t get_region_desc(uint32_t attrs)
 		}
 #endif
 
-		if (mem_type == MT_NORMAL) {
+		if (mem_type == MT_NORMAL || mem_type == MT_NORMAL_WT) {
 			desc |= PTE_BLOCK_DESC_INNER_SHARE;
 		} else {
 			desc |= PTE_BLOCK_DESC_OUTER_SHARE;
@@ -869,6 +870,18 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 	  .start = _nocache_ram_start,
 	  .end   = _nocache_ram_end,
 	  .attrs = MT_NORMAL_NC | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE },
+#endif
+
+#if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
+	/* GCOV code coverage accounting area. Instrumented code updates the
+	 * counters from user mode too, so the region needs User read-write
+	 * permissions. Placed after "zephyr_data" so it overrides the
+	 * kernel-only mapping for this sub-range.
+	 */
+	{ .name  = "gcov_bss",
+	  .start = __gcov_bss_start,
+	  .end   = __gcov_bss_end,
+	  .attrs = MT_NORMAL | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE },
 #endif
 };
 

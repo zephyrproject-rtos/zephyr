@@ -135,12 +135,9 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 	}
 
 	if ((pev->event.revents & ZSOCK_POLLERR) ||
-	    (pev->event.revents & ZSOCK_POLLNVAL) ||
-	    (pev->event.revents & ZSOCK_POLLHUP)) {
+	    (pev->event.revents & ZSOCK_POLLNVAL)) {
 		if (pev->event.revents & ZSOCK_POLLNVAL) {
 			default_error = EBADF;
-		} else if (pev->event.revents & ZSOCK_POLLHUP) {
-			default_error = ENOTCONN;
 		}
 
 		(void)zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
@@ -155,6 +152,37 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 			family == NET_AF_INET ? 4 : 6, sock_error);
 		ret = -sock_error;
 		goto error;
+	}
+
+	/* POLLHUP means the peer closed the connection (TCP FIN). Treat it as
+	 * EOF on the accepted data socket so that zperf can finalize the
+	 * session and report results normally. POLLHUP on a listen socket is
+	 * unexpected and should be ignored here (it will be caught by POLLERR).
+	 * Only handle POLLHUP when POLLIN is not set to avoid duplicate
+	 * processing - when both are set, recv() will return 0 (EOF) naturally.
+	 */
+	if ((pev->event.revents & ZSOCK_POLLHUP) &&
+	    !(pev->event.revents & ZSOCK_POLLIN)) {
+		if (pev->event.fd != fds[SOCK_ID_IPV4_LISTEN].fd &&
+		    pev->event.fd != fds[SOCK_ID_IPV6_LISTEN].fd) {
+			i = SOCK_ID_IPV6_LISTEN + 1;
+			for (; i < SOCK_ID_MAX; i++) {
+				if (fds[i].fd == pev->event.fd) {
+					break;
+				}
+			}
+
+			if (i < SOCK_ID_MAX) {
+				tcp_received(&sock_addr[i], 0);
+				zsock_close(fds[i].fd);
+				fds[i].fd = -1;
+				memset(&sock_addr[i], 0, sizeof(struct net_sockaddr));
+				(void)net_socket_service_register(&svc_tcp, fds,
+								  ARRAY_SIZE(fds),
+								  NULL);
+			}
+		}
+		return 0;
 	}
 
 	if (!(pev->event.revents & ZSOCK_POLLIN)) {

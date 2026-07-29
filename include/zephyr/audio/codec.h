@@ -77,7 +77,8 @@ typedef enum {
 	AUDIO_PROPERTY_OUTPUT_VOLUME, /**< Output volume */
 	AUDIO_PROPERTY_OUTPUT_MUTE,   /**< Output mute/unmute */
 	AUDIO_PROPERTY_INPUT_VOLUME,  /**< Input volume */
-	AUDIO_PROPERTY_INPUT_MUTE     /**< Input mute/unmute */
+	AUDIO_PROPERTY_INPUT_MUTE,    /**< Input mute/unmute */
+	AUDIO_PROPERTY_EQ_GAIN        /**< Output equalizer gain */
 } audio_property_t;
 
 /**
@@ -175,11 +176,20 @@ struct audio_codec_cfg {
 };
 
 /**
+ * Codec EQ property values
+ */
+struct audio_codec_eq_cfg {
+	uint32_t band; /**< EQ band center frequency in Hz, must match a supported codec EQ band. */
+	int32_t gain;  /**< EQ band gain in dB, codec-specific range. */
+};
+
+/**
  * Codec property values
  */
 typedef union {
-	int vol;   /**< Volume level (codec-specific) */
-	bool mute; /**< Mute if @a true, unmute if @a false */
+	int vol;                      /**< Volume level (codec-specific) */
+	bool mute;                    /**< Mute if @a true, unmute if @a false */
+	struct audio_codec_eq_cfg eq; /**< Codec Equalizer settings */
 } audio_property_value_t;
 
 /**

@@ -593,10 +593,7 @@ class DeviceHandler(Handler):
                 ):
                     command_extra_args.append("--cmd-pre-init")
                     command_extra_args.append(f"hla_serial {board_id}")
-                elif runner == "openocd" and product == "EDBG CMSIS-DAP":
-                    command_extra_args.append("--cmd-pre-init")
-                    command_extra_args.append(f"cmsis_dap_serial {board_id}")
-                elif runner == "openocd" and product == "LPC-LINK2 CMSIS-DAP":
+                elif runner == "openocd" and (product in ("EDBG CMSIS-DAP", "LPC-LINK2 CMSIS-DAP")):
                     command_extra_args.append("--cmd-pre-init")
                     command_extra_args.append(f"adapter serial {board_id}")
                 elif runner in ("jlink", "mplab_ipe"):

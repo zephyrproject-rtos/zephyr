@@ -109,6 +109,7 @@
 
 /**
  * @defgroup imx952_peripheral_clocks Peripheral Clocks (41-163)
+ * @ingroup imx952_clock_sources
  * Peripheral clock definitions based on MIMX9529 fsl_clock.h
  * @{
  */

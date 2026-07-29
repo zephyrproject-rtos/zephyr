@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 
-#include "NatureDSP_Signal.h"
+#include <NatureDSP_Signal.h>
 
 /**
  * For fft_real32x32, scaling options are:

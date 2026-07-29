@@ -88,7 +88,7 @@ uint32_t tfm_ns_interface_init(void)
 
 
 #if defined(TFM_PSA_API)
-#include "psa_manifest/sid.h"
+#include <psa_manifest/sid.h>
 #endif /* TFM_PSA_API */
 
 static int ns_interface_init(void)

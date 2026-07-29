@@ -384,13 +384,12 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
     robot.option = option
     robot.instance = instance
     proc_mock = mock.Mock(
-        returncode=returncode, communicate=mock.Mock(return_value=(b"output", None))
+        returncode=returncode,
+        communicate=mock.Mock(return_value=(b"output", None)),
     )
-    popen_mock = mock.Mock(
-        return_value=mock.Mock(
-            __enter__=mock.Mock(return_value=proc_mock), __exit__=mock.Mock()
-        )
-    )
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock()
+    popen_mock = mock.Mock(return_value=proc_mock)
 
     # Act
     with mock.patch("subprocess.Popen", popen_mock) as mock.mock_popen, mock.patch(

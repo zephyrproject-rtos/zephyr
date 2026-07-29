@@ -346,9 +346,9 @@
 		sf_ctrl: sf@4000b000 {
 			compatible = "bflb,sf-controller";
 			reg = <0x4000b000 0x1000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 			status = "okay";
 
 			interrupts = <39 0>;

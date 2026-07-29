@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <zephyr/sys/minmax.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -327,7 +328,7 @@ static uint8_t chan_d(uint8_t n)
 	}
 
 	/* Calculate d using the above sub expressions */
-	return MAX(1, MAX(MIN(3, x), MIN(11, y)));
+	return max3(1, min(3, x), min(11, y));
 }
 #endif /* CONFIG_BT_CTLR_ISO */
 

@@ -143,10 +143,6 @@
 	};
 };
 
-&clk_hse {
-	clock-frequency = <DT_FREQ_M(8)>;
-};
-
 &pll {
 	mul = <18>;
 };

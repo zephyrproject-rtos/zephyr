@@ -1,0 +1,38 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	aliases {
+		wm8960 = &wm8960;
+	};
+
+	dummy_clock: dummy_clock {
+		compatible = "fixed-clock";
+		clock-frequency = <12288000>;
+		#clock-cells = <0>;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	wm8960: wm8960@1a {
+		compatible = "wolfson,wm8960";
+		reg = <0x1a>;
+		clocks = <&dummy_clock>;
+		status = "okay";
+		hp-jd = "WM8960_JD3";
+		clk-out;
+		gpio1-sel = "WM8960_SYSCLK_OUT";
+		left-input = "WM8960_IN_MIC_DE_13";
+		right-input = "WM8960_IN_MIC_DE_12";
+	};
+};

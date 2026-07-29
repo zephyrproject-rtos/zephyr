@@ -9,7 +9,11 @@
 #if defined(CONFIG_ARM) || defined(CONFIG_ARM64)
 SECTION_DATA_PROLOGUE(_GCOV_BSS_SECTION_NAME,(NOLOAD),)
 {
-#ifdef CONFIG_USERSPACE
+/*
+ * ARM64 isolates userspace regions with the MMU and only needs page (region)
+ * alignment; MPU_ALIGN is a Cortex-M/A-R MPU macro and is not defined there.
+ */
+#if defined(CONFIG_USERSPACE) && !defined(CONFIG_ARM64)
 	MPU_ALIGN(__gcov_bss_end - __gcov_bss_start );
 #else  /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT && CONFIG_USERSPACE */
 	. = ALIGN(_region_min_align);
@@ -18,7 +22,7 @@ SECTION_DATA_PROLOGUE(_GCOV_BSS_SECTION_NAME,(NOLOAD),)
 	__gcov_bss_start = .;
 	KEEP(*(".bss.__gcov0.*"));
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) && !defined(CONFIG_ARM64)
 	MPU_ALIGN(__gcov_bss_end - __gcov_bss_start );
 #else  /* CONFIG_USERSPACE */
 	. = ALIGN(_region_min_align);

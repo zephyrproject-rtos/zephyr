@@ -378,8 +378,8 @@ int conn_mgr_all_if_connect(bool skip_ignored);
  *
  * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
  *			 Otherwise, affect all ifaces.
- * @return 0 if all net_if_up and conn_mgr_if_connect calls returned 0, otherwise the first nonzero
- *	   value returned by either net_if_up or conn_mgr_if_connect.
+ * @return 0 if all net_if_down calls returned 0, otherwise the first nonzero
+ *	   value returned by a net_if_down call.
  */
 int conn_mgr_all_if_disconnect(bool skip_ignored);
 

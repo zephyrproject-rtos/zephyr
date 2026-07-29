@@ -91,11 +91,11 @@ static int mcux_scg_get_rate(const struct device *dev,
 	case KINETIS_SCG_SIRC_ASYNC_DIV2_CLK:
 		clock_name = kCLOCK_ScgSircAsyncDiv2Clk;
 		break;
-#if (defined(FSL_FEATURE_FSL_FEATURE_SCG_HAS_FIRCDIV1) && FSL_FEATURE_SCG_HAS_FIRCDIV1)
+#if (defined(FSL_FEATURE_SCG_HAS_FIRCDIV1) && FSL_FEATURE_SCG_HAS_FIRCDIV1)
 	case KINETIS_SCG_FIRC_ASYNC_DIV1_CLK:
 		clock_name = kCLOCK_ScgFircAsyncDiv1Clk;
 		break;
-#endif /* (defined(FSL_FEATURE_FSL_FEATURE_SCG_HAS_FIRCDIV1) && FSL_FEATURE_SCG_HAS_FIRCDIV1) */
+#endif /* (defined(FSL_FEATURE_SCG_HAS_FIRCDIV1) && FSL_FEATURE_SCG_HAS_FIRCDIV1) */
 	case KINETIS_SCG_FIRC_ASYNC_DIV2_CLK:
 		clock_name = kCLOCK_ScgFircAsyncDiv2Clk;
 		break;

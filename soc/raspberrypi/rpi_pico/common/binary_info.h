@@ -18,7 +18,7 @@
 #include <boot_stage2/config.h>
 #include <pico/binary_info.h>
 
-#include <version.h>
+#include <zephyr/version.h>
 
 #ifdef CONFIG_RPI_PICO_BINARY_INFO_PROGRAM_NAME_OVERRIDDEN
 #define BI_PROGRAM_NAME CONFIG_RPI_PICO_BINARY_INFO_OVERRIDE_PROGRAM_NAME

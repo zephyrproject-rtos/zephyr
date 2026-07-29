@@ -253,7 +253,7 @@ static int alif_clock_control_on(const struct device *dev,
 	 */
 	if (ALIF_CLOCK_CFG_SRC_FIELD_WIDTH(clk_id)) {
 		uint32_t src_bit = ALIF_CLOCK_CFG_SRC_FIELD_POS(clk_id);
-		uint32_t src_mask = ALIF_CLOCK_CFG_SRC_FIELD_WIDTH(clk_id);
+		uint32_t src_mask = BIT_MASK(ALIF_CLOCK_CFG_SRC_FIELD_WIDTH(clk_id));
 		uint32_t src_value = ALIF_CLOCK_CFG_SRC_VAL(clk_id);
 
 		/* Clear and set source bits */

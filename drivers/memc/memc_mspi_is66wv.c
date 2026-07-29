@@ -45,8 +45,8 @@ struct memc_mspi_is66wv_config {
 
 	bool sw_multi_periph;
 
-	MSPI_XIP_CFG_STRUCT_DECLARE(tar_xip_cfg)
-	MSPI_XIP_BASE_ADDR_DECLARE(bus_xip_base)
+	MSPI_MEMMAP_CFG_STRUCT_DECLARE(tar_memmap_cfg)
+	MSPI_MEMMAP_BASE_ADDR_DECLARE(bus_xip_base)
 };
 
 struct memc_mspi_is66wv_data {
@@ -436,20 +436,20 @@ static int memc_mspi_is66wv_init(const struct device *psram)
 
 	LOG_INF("pSRAM ready - %u KB", cfg->mem_size / 1024);
 
-#if CONFIG_MSPI_XIP
+#if CONFIG_MSPI_MEMMAP
 	/*
-	 * Enable memory-mapped access if xip-config is present in DT with
+	 * Enable memory-mapped access if memmap-config is present in DT with
 	 * enable=true and the controller exposes an XIP aperture (bus_xip_base != 0).
 	 * When enabled, memc_read()/memc_write() use memcpy instead of bus
 	 * transactions for lower overhead.
 	 */
-	if (cfg->tar_xip_cfg.enable && cfg->bus_xip_base != 0) {
-		if (mspi_xip_config(cfg->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
+	if (cfg->tar_memmap_cfg.enable && cfg->bus_xip_base != 0) {
+		if (mspi_memmap_config(cfg->bus, &cfg->dev_id, &cfg->tar_memmap_cfg)) {
 			LOG_ERR("Failed to enable memory-mapped access");
 			return -EIO;
 		}
 
-		data->mem_base = (void *)(cfg->bus_xip_base + cfg->tar_xip_cfg.address_offset);
+		data->mem_base = (void *)(cfg->bus_xip_base + cfg->tar_memmap_cfg.address_offset);
 	}
 #endif
 
@@ -464,7 +464,8 @@ static int memc_mspi_is66wv_init(const struct device *psram)
 		.io_mode                = MSPI_IO_MODE_SINGLE,                                     \
 		.data_rate              = MSPI_DATA_RATE_SINGLE,                                   \
 		.cpp                    = MSPI_CPP_MODE_0,                                         \
-		.endian                 = MSPI_XFER_LITTLE_ENDIAN,                                 \
+		.endian                 = DT_ENUM_IDX_OR(DT_DRV_INST(n), mspi_endian,              \
+							 MSPI_XFER_BIG_ENDIAN),                    \
 		.ce_polarity            = MSPI_CE_ACTIVE_LOW,                                      \
 		.dqs_enable             = false,                                                   \
 		.rx_dummy               = 8,                                                       \
@@ -486,10 +487,10 @@ static int memc_mspi_is66wv_init(const struct device *psram)
 		.dev_id                 = MSPI_DEVICE_ID_DT_INST(n),                               \
 		.init_cfg               = MSPI_DEVICE_CONFIG_INIT(n),                              \
 		.tar_dev_cfg            = MSPI_DEVICE_CONFIG_DT_INST(n),                           \
-		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_XIP,                                     \
-					      tar_xip_cfg, MSPI_XIP_CONFIG_DT_INST(n))             \
-		IF_ENABLED(CONFIG_MSPI_XIP, (                                                      \
-			.bus_xip_base   = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, xip_config),        \
+		MSPI_OPTIONAL_CFG_STRUCT_INIT(CONFIG_MSPI_MEMMAP,                                  \
+					      tar_memmap_cfg, MSPI_MEMMAP_CONFIG_DT_INST(n))       \
+		IF_ENABLED(CONFIG_MSPI_MEMMAP, (                                                   \
+			.bus_xip_base   = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, memmap_config),     \
 					  (DT_REG_ADDR_BY_IDX(DT_INST_BUS(n), 1)), (0)),           \
 		))                                                                                 \
 		.sw_multi_periph = DT_PROP(DT_INST_BUS(n), software_multiperipheral),              \

@@ -9,8 +9,8 @@
  * @brief List reset subsystem IDs for Synaptics SR100 family.
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SYNA_SR100_RESET_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_SYNA_SR100_RESET_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_SYNA_SR100_RESET_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_SYNA_SR100_RESET_H_
 
 #include <zephyr/sys/util_macro.h>
 
@@ -102,4 +102,4 @@
 /** @brief xSPI reset */
 #define SYNA_XSPI_RST  ((PERIF_RST << RST_REG) | (5 << RST_BIT))
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_SYNA_SR100_RESET_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_RESET_SYNA_SR100_RESET_H_ */

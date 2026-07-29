@@ -1,0 +1,60 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <cherrence.sarip@analog.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * UART variant overlay for Nucleo F413ZH.
+ *
+ * TMC6460 on USART6 (TX=PG14, RX=PG9), DRV_EN on PB11, SLEEPN on PF14.
+ * Wire the MCU USART6 TX to the TMC6460 UART RX and the MCU USART6 RX to the
+ * TMC6460 UART TX (two-wire, common ground).
+ *
+ * Build with:
+ *   west build -b nucleo_f413zh samples/drivers/misc/tmc6460 --
+ *   -DDTC_OVERLAY_FILE=uart.overlay -DEXTRA_CONF_FILE=overlay-uart.conf
+ */
+
+/*
+ * Idle the USART6 TX line (PG14) high before the peripheral drives it. During
+ * MCU boot the pin is Hi-Z until pinctrl runs; without a pull-up the TMC6460 RX
+ * floats and can latch a false start bit, corrupting its UART auto-baud FSM for
+ * the first configuration pass (motor fails to spin until a manual reset, when
+ * the line is already idle-high). The pull-up is overridden while the pin is
+ * actively driven, so it only affects the pre-init window.
+ */
+&usart6_tx_pg14 {
+	bias-pull-up;
+};
+
+&usart6 {
+	status = "okay";
+	current-speed = <115200>;
+
+	tmc6460: tmc6460 {
+		compatible = "adi,tmc6460";
+		pole-pairs = <4>;
+		/* uart-crc; */ /* uncomment to enable CRC8 on the UART link */
+	};
+};
+
+/ {
+	tmc6460_gpios {
+		compatible = "gpio-leds";
+
+		drv_en: drv_en {
+			gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
+			label = "TMC6460 DRV_EN";
+		};
+
+		sleepn: sleepn {
+			gpios = <&gpiof 14 GPIO_ACTIVE_HIGH>;
+			label = "TMC6460 SLEEPN";
+		};
+	};
+
+	aliases {
+		tmc6460-drv-en = &drv_en;
+		tmc6460-sleepn = &sleepn;
+	};
+};

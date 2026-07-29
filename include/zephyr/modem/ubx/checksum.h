@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_MODEM_UBX_CHECKSUM_
-#define ZEPHYR_MODEM_UBX_CHECKSUM_
+#ifndef ZEPHYR_INCLUDE_MODEM_UBX_CHECKSUM_H_
+#define ZEPHYR_INCLUDE_MODEM_UBX_CHECKSUM_H_
 
 /** Macrobatics to compute UBX checksum at compile time */
 
@@ -35,4 +35,4 @@
 
 #define UBX_CSUM(...) UBX_CSUM_A(__VA_ARGS__), UBX_CSUM_B(__VA_ARGS__)
 
-#endif /* ZEPHYR_MODEM_UBX_CHECKSUM_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_UBX_CHECKSUM_H_ */

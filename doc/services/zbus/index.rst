@@ -673,6 +673,48 @@ to a channel. Users can then retrieve the channel reference by using the identif
         ...
     }
 
+Runtime channel creation
+------------------------
+
+ZBus allows for the creation of channels at runtime when
+:kconfig:option:`CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION` is enabled. This is useful in
+scenarios where the number of channels or their configuration is not known at compile time.
+The following code demonstrates how to create a channel at runtime. Note that the
+:c:struct:`zbus_runtime_channel`, :c:struct:`zbus_channel_data` and message structures passed
+to :c:func:`zbus_runtime_channel_register` must remain valid in memory until
+:c:func:`zbus_runtime_channel_unregister` is called.
+
+.. code-block:: c
+
+    struct runtime_msg {
+        int data;
+    };
+
+    void create_runtime_channel(void)
+    {
+        struct zbus_runtime_channel runtime_chan;
+        struct zbus_channel_data data;
+        struct runtime_msg msg = {0};
+        int ret;
+
+        /* Initialise and register the runtime channel */
+        zbus_runtime_channel_init(&runtime_chan, &data, "chan", 0x12345678, NULL, &msg,
+                                  sizeof(msg), NULL);
+        ret = zbus_runtime_channel_register(&runtime_chan);
+        if (ret < 0) {
+            LOG_ERR("Failed to register runtime channel (%d)", ret);
+            return;
+        }
+
+        /* Use the runtime channel here */
+        struct runtime_msg pub_data = {42};
+
+        zbus_chan_pub(&runtime_chan.channel, &pub_data, K_MSEC(100));
+        ...
+
+        /* Unregister the runtime channel when done */
+        zbus_runtime_channel_unregister(&runtime_chan);
+    }
 
 Iterating over channels and observers
 =====================================
@@ -1101,7 +1143,8 @@ Related configuration options:
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE` the available number of message
   buffers to be used simultaneously;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION` enables the developer to isolate
-  a pool for the message subscriber for a set of channels;
+  a pool for the message subscriber for a set of channels; a channel only switches to a dedicated pool once
+  :c:func:`zbus_chan_set_msg_sub_pool` has been called for it;
 * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE` the biggest message of zbus
   channels to be transported into a message buffer;
 * :kconfig:option:`CONFIG_HEAP_MEM_POOL_ADD_SIZE_ZBUS` the reserved heap size for ZBus in a whole

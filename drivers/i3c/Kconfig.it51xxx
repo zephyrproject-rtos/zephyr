@@ -28,6 +28,16 @@ config I3CM_IT51XXX_DLM_SIZE
 	help
 	  Set i3cm data-local-memory(DLM) size.
 
+config IT51XXX_AUTO_IBI_MAX_TARGETS
+	int
+	depends on I3C_USE_IBI
+	default 0 if SOC_IT51526AW || SOC_IT51526BW
+	default 3
+	range 0 4
+	help
+	  Maximum number of targets supported by the it51xxx
+	  automatic IBI response mechanism.
+
 endif # I3CM_IT51XXX
 
 config I3CS_IT51XXX

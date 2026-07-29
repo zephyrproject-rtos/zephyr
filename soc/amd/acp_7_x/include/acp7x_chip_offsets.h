@@ -118,7 +118,7 @@
 #define ACP_PDM_RX_LINEARPOSITIONCNTR_HIGH       0x1242C18
 #define ACP_PDM_RX_LINEARPOSITIONCNTR_LOW        0x1242C1C
 /* Registers from ACP_WOV_96K block */
-#define ACP_PDM_2_Enable                         0x1242D04
+#define ACP_PDM_2_ENABLE                         0x1242D04
 #define ACP_PDM_2_DMA_Enable                     0x1242D08
 #define ACP_PDM_2_RX_RINGBUFADDR_96K             0x1242D0C
 #define ACP_PDM_2_RX_RINGBUFADDR_48K             0x1242D10
@@ -925,8 +925,6 @@
 #define ACP_DMA_BUFFER_PERIOD_COUNT              2
 /* default max number of channels supported */
 #define ACP_DEFAULT_NUM_CHANNELS                 2
-/* default sample rate */
-#define ACP_DEFAULT_SAMPLE_RATE                  48000
 #define ACP_DMA_BUFFER_ALIGN                     64
 #define ACP_DMA_BUFFER_ALIGN_128                 128
 #define ACP_DMA_TRANS_SIZE                       64

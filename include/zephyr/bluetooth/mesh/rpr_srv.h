@@ -10,8 +10,8 @@
  * @ingroup bt_mesh_rpr_srv
  */
 
-#ifndef ZEPHYR_INCLUDE_BT_MESH_RPR_SRV_H__
-#define ZEPHYR_INCLUDE_BT_MESH_RPR_SRV_H__
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_RPR_SRV_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_RPR_SRV_H_
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/mesh/access.h>
@@ -47,4 +47,4 @@ extern const struct bt_mesh_model_cb _bt_mesh_rpr_srv_cb;
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BT_MESH_RPR_SRV_H__ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_RPR_SRV_H_ */

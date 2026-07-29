@@ -15,7 +15,6 @@
 #include "rom_uuid.h"
 #include "rtl_boot_record.h"
 #include "system_rtl876x.h"
-#include "utils.h"
 #include "vector_table.h"
 #include "rtl876x_aon_reg.h"
 
@@ -150,17 +149,17 @@ void soc_early_init_hook(void)
 	power_manager_master_init();
 	power_manager_slave_init();
 	platform_pm_init();
+}
 
+void soc_late_init_hook(void)
+{
 	/* Initialize OSC32 SDM software timer. */
 	init_osc_sdm_timer();
 
 	/* Initialize PHY hardware control. */
 	phy_hw_control_init(false);
 	phy_init(false);
-}
 
-void soc_late_init_hook(void)
-{
 	/* Initialize HW AES mutex. */
 	hw_aes_create_mutex();
 
@@ -175,10 +174,3 @@ void soc_late_init_hook(void)
 
 	rtl_boot_stage_record(PON_BOOT_DONE);
 }
-
-#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
-void arch_busy_wait(uint32_t usec_to_wait)
-{
-	platform_delay_us(usec_to_wait);
-}
-#endif

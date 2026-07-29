@@ -7,6 +7,7 @@ config I2C_ITE_IT51XXX
 	depends on DT_HAS_ITE_IT51XXX_I2C_ENABLED
 	select PINCTRL
 	select I2C_BITBANG
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  Enable I2C support on IT51XXX series.
 	  Supports nine hosts and three targets and each one able to located
@@ -48,18 +49,18 @@ config I2C_TARGET_BUFFER_MODE
 	           $(dt_compat_any_has_prop,$(DT_COMPAT_ITE_IT51XXX_I2C),target-shared-fifo-mode,True)
 
 config I2C_TARGET_IT51XXX_MAX_BUF_SIZE
-	int "It is allowed to configure the dedicated FIFO size up to 256 bytes."
+	int "I2C target driver buffer size"
 	default 256
+	range 32 2048
+	help
+	  Size of the buffer used by the I2C target driver, used to accumulate
+	  data across multiple FIFO transfers.
 
 config I2C_IT51XXX_MAX_SHARE_FIFO_SIZE
 	int "It is allowed to configure the shared FIFO size up to 256 bytes."
 	range 16 256
 	default 256
 
-config SOC_IT51XXX_CPU_IDLE_GATING
-	default y
-	help
-	  This option is used when the I2C target shared FIFO property is enabled.
-
 endif # I2C_TARGET
+
 endif # I2C_ITE_IT51XXX

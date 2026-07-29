@@ -238,18 +238,36 @@ out:
 	return ret;
 }
 
-/* TWT interval conversion helpers: User <-> Protocol */
-static struct twt_interval_float nrf_wifi_twt_us_to_float(uint32_t twt_interval)
+/* TWT interval conversion helpers: User <-> Protocol
+ *
+ * Per IEEE 802.11, the TWT interval is encoded as mantissa * 2^exponent
+ * micro-seconds, where the mantissa is a 16-bit field and the exponent a
+ * 5-bit field (max WIFI_MAX_TWT_EXPONENT). Encode directly in micro-seconds
+ * using the full 16-bit mantissa: this supports the complete uint64_t range
+ * the API exposes (no 32-bit truncation) with micro-second resolution.
+ */
+static struct twt_interval_float nrf_wifi_twt_us_to_float(uint64_t twt_interval)
 {
-	double mantissa = 0.0;
-	int exponent = 0;
-	struct twt_interval_float twt_interval_fp;
+	struct twt_interval_float twt_interval_fp = { 0 };
+	uint64_t mantissa = twt_interval;
+	uint8_t exponent = 0;
 
-	double twt_interval_ms = twt_interval / 1000.0;
+	/* Pick the smallest exponent that fits the mantissa in the 16-bit
+	 * field, without exceeding the 5-bit exponent field.
+	 */
+	while (mantissa > UINT16_MAX && exponent < WIFI_MAX_TWT_EXPONENT) {
+		mantissa >>= 1;
+		exponent++;
+	}
 
-	mantissa = frexp(twt_interval_ms, &exponent);
-	/* Ceiling and conversion to milli seconds */
-	twt_interval_fp.mantissa = ceil(mantissa * 1000);
+	/* Saturate if the requested interval exceeds the encodable maximum
+	 * (UINT16_MAX * 2^WIFI_MAX_TWT_EXPONENT us).
+	 */
+	if (mantissa > UINT16_MAX) {
+		mantissa = UINT16_MAX;
+	}
+
+	twt_interval_fp.mantissa = (unsigned short)mantissa;
 	twt_interval_fp.exponent = exponent;
 
 	return twt_interval_fp;
@@ -257,9 +275,8 @@ static struct twt_interval_float nrf_wifi_twt_us_to_float(uint32_t twt_interval)
 
 static uint64_t nrf_wifi_twt_float_to_us(struct twt_interval_float twt_interval_fp)
 {
-	/* Conversion to micro-seconds */
-	return floor(ldexp(twt_interval_fp.mantissa, twt_interval_fp.exponent) / (1000)) *
-			     1000;
+	/* TWT interval = mantissa * 2^exponent (in micro-seconds). */
+	return (uint64_t)twt_interval_fp.mantissa << twt_interval_fp.exponent;
 }
 
 static unsigned char twt_wifi_mgmt_to_rpu_neg_type(enum wifi_twt_negotiation_type neg_type)

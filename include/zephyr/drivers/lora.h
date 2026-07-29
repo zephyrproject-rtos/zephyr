@@ -277,6 +277,7 @@ typedef int (*lora_api_recv)(const struct device *dev, uint8_t *data,
  *
  * @param dev Modem to receive data on.
  * @param cb Callback to run on receiving data.
+ * @param user_data User data passed to callback
  */
 typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb,
 			     void *user_data);

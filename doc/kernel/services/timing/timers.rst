@@ -105,6 +105,22 @@ returns the timer's status and resets it to zero.
     with a given timer. ISRs are not permitted to synchronize with timers,
     since ISRs are not allowed to block.
 
+Timer Observers
+***************
+
+When :kconfig:option:`CONFIG_TIMER_OBSERVER` is enabled, code can register
+:dfn:`timer observers` that are notified of timer lifecycle events across all
+timers in the system. An observer is a set of optional callbacks invoked when a
+timer is initialized, started, stopped, or expires. This allows external modules
+-- for example tracing, profiling, or power-management code -- to react to timer
+activity without modifying kernel internals or the individual timers.
+
+An observer is defined statically with :c:macro:`K_TIMER_OBSERVER_DEFINE`, which
+takes pointers to the ``on_init``, ``on_start``, ``on_stop``, and ``on_expiry``
+callbacks; any callback that is not needed may be passed as ``NULL``. Because the
+expiry callback runs in interrupt context, it must be kept short and
+non-blocking.
+
 Implementation
 **************
 

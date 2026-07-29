@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/soc.h"
-#include "soc/interrupt_reg.h"
-#include "riscv/rvruntime-frames.h"
-#include "soc/soc_caps.h"
+#include <soc/soc.h>
+#include <soc/interrupt_reg.h>
+#include <riscv/rvruntime-frames.h>
+#include <soc/soc_caps.h>
 #include <zephyr/toolchain.h>
 
 /* Imports */

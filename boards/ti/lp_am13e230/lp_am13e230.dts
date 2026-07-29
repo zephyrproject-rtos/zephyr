@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am13/am13e23019.dtsi>
+
+/ {
+	model = "TI AM13E230X Launchpad";
+	compatible = "ti,am13e23019";
+
+	chosen {
+		zephyr,sram = &sram0_1_2;
+		zephyr,flash = &flash0;
+	};
+};

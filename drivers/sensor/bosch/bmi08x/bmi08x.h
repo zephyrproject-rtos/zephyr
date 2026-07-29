@@ -632,6 +632,7 @@ struct bmi08x_accel_encoded_data {
 		uint16_t fifo_len;
 		uint8_t sample_count;
 		uint16_t buf_len;
+		uint8_t accel_odr;
 	} header;
 	union {
 		uint16_t payload[3];
@@ -648,6 +649,7 @@ struct bmi08x_gyro_encoded_data {
 		uint8_t int_status;
 		uint8_t fifo_status;
 		uint8_t sample_count;
+		uint8_t gyro_odr;
 	} header;
 	union {
 		struct bmi08x_gyro_frame frame;

@@ -443,11 +443,23 @@
 			compatible = "raspberrypi,pico-sio";
 			reg = <0xd0000000 0x180>;
 
-			mbox: mbox {
+			/*
+			 * Interrupt numbers are core-specific, so enable the correct
+			 * one for the respective IPM instance below.
+			 */
+			mbox0: mbox-core-0 {
 				compatible = "raspberrypi,pico-mbox";
-				interrupts = <15 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
-					     <16 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
-				interrupt-names = "mbox0", "mbox1";
+				interrupts = <15 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+				interrupt-names = "mbox";
+				fifo-depth = <8>;
+				#mbox-cells = <0>;
+				status = "disabled";
+			};
+
+			mbox1: mbox-core-1 {
+				compatible = "raspberrypi,pico-mbox";
+				interrupts = <16 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+				interrupt-names = "mbox";
 				fifo-depth = <8>;
 				#mbox-cells = <0>;
 				status = "disabled";
@@ -455,15 +467,22 @@
 		};
 	};
 
-	ipm_mbox: ipm-mbox {
-		/*
-		 * The zephyr,mbox-ipm driver expects two mailbox
-		 * channels, but the mailbox block in the RP2040
-		 * implements a single instance per core. Point the
-		 * two driver channels to the same single mbox.
-		 */
+	/*
+	 * The zephyr,mbox-ipm driver expects two mailbox
+	 * channels, but the mailbox block in the RP2040
+	 * implements a single instance per core. Point the
+	 * two driver channels to the same single mbox.
+	 */
+	ipm_mbox0: ipm-mbox-core-0 {
 		compatible = "zephyr,mbox-ipm";
-		mboxes = <&mbox>, <&mbox>;
+		mboxes = <&mbox0>, <&mbox0>;
+		mbox-names = "tx", "rx";
+		status = "disabled";
+	};
+
+	ipm_mbox1: ipm-mbox-core-1 {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox1>, <&mbox1>;
 		mbox-names = "tx", "rx";
 		status = "disabled";
 	};

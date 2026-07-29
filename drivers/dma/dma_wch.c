@@ -55,7 +55,7 @@ static uint8_t dma_wch_get_ip(const struct device *dev, uint32_t chan)
 	struct dma_wch_regs *regs = config->regs;
 	uint32_t intfr;
 
-	if (chan > DMA_WCH_MAX_CHAN_BASE) {
+	if (chan >= DMA_WCH_MAX_CHAN_BASE) {
 		chan -= DMA_WCH_MAX_CHAN_BASE;
 		intfr = regs->ext.INTFR;
 		return (intfr >> DMA_WCH_IF_OFF(chan)) & DMA_WCH_AIF;
@@ -211,7 +211,7 @@ static int dma_wch_config(const struct device *dev, uint32_t ch, struct dma_conf
 
 	regs->channels[ch].CFGR = 0;
 
-	if (ch <= DMA_WCH_MAX_CHAN_BASE) {
+	if (ch < DMA_WCH_MAX_CHAN_BASE) {
 		regs->base.INTFCR = DMA_WCH_AIF << DMA_WCH_IF_OFF(ch);
 	} else {
 		regs->ext.INTFCR = DMA_WCH_AIF << DMA_WCH_IF_OFF(ch - DMA_WCH_MAX_CHAN_BASE);
@@ -464,7 +464,7 @@ static DEVICE_API(dma, dma_wch_driver_api) = {
 #define GENERATE_ISR(ch, _)                                                                        \
 	__used static void dma_wch_isr##ch(const struct device *dev)                               \
 	{                                                                                          \
-		if (ch <= DMA_WCH_MAX_CHAN_BASE) {                                                 \
+		if (ch < DMA_WCH_MAX_CHAN_BASE) {                                                  \
 			dma_wch_isr(dev, ch);                                                      \
 		} else {                                                                           \
 			dma_wch_isr_ext(dev, ch);                                                  \

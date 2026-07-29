@@ -5,8 +5,8 @@
  *
  */
 
-#ifndef ZEPHYR_MCTP_I3C_CONTROLLER_H_
-#define ZEPHYR_MCTP_I3C_CONTROLLER_H_
+#ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_CONTROLLER_H_
+#define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_CONTROLLER_H_
 
 #include <stdint.h>
 #include <zephyr/kernel.h>
@@ -80,4 +80,4 @@ int mctp_i3c_controller_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt
 		.endpoint_i3c_devs = _name##_endpoint_i3c_devs,					\
 	};
 
-#endif /* ZEPHYR_MCTP_I3C_CONTROLLER_H_ */
+#endif /* ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_CONTROLLER_H_ */

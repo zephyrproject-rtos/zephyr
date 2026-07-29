@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 /**
- * @defgroup arch-timing Architecture timing APIs
+ * @addtogroup arch-timing
  * @{
  */
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
@@ -249,7 +249,7 @@ int arch_coprocessors_disable(struct k_thread *thread);
  * @return 0 on success
  * @return -EBADF Bad thread object
  * @return -EPERM No permissions on thread object
- * #return -ENOTSUP Forbidden by hardware policy
+ * @return -ENOTSUP Forbidden by hardware policy
  * @return -EINVAL Thread is uninitialized or exited or not a user thread
  * @return -EFAULT Bad memory address for unused_ptr
  */
@@ -359,29 +359,6 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
  * @param size Page-aligned region size
  */
 void arch_mem_unmap(void *addr, size_t size);
-
-/**
- * Get the mapped physical memory address from virtual address.
- *
- * The function only needs to query the current set of page tables as
- * the information it reports must be common to all of them if multiple
- * page tables are in use. If multiple page tables are active it is unnecessary
- * to iterate over all of them.
- *
- * Unless otherwise specified, virtual pages have the same mappings
- * across all page tables. Calling this function on data pages that are
- * exceptions to this rule (such as the scratch page) is undefined behavior.
- * Just check the currently installed page tables and return the information
- * in that.
- *
- * @param virt Page-aligned virtual address
- * @param[out] phys Mapped physical address (can be NULL if only checking
- *                  if virtual address is mapped)
- *
- * @retval 0 if mapping is found and valid
- * @retval -EFAULT if virtual address is not mapped
- */
-int arch_page_phys_get(void *virt, uintptr_t *phys);
 
 /**
  * Update page frame database with reserved pages

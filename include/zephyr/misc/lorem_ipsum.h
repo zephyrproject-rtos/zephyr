@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_MISC_LOREM_IPSUM_H_
-#define ZEPHYR_MISC_LOREM_IPSUM_H_
+#ifndef ZEPHYR_INCLUDE_MISC_LOREM_IPSUM_H_
+#define ZEPHYR_INCLUDE_MISC_LOREM_IPSUM_H_
 
 #include <zephyr/toolchain.h>
 
@@ -171,4 +171,4 @@ BUILD_ASSERT(sizeof(LOREM_IPSUM_LONG) == LOREM_IPSUM_LONG_STRLEN + 1);
 
 /** @endcond */
 
-#endif /* ZEPHYR_MISC_LOREM_IPSUM_H_ */
+#endif /* ZEPHYR_INCLUDE_MISC_LOREM_IPSUM_H_ */

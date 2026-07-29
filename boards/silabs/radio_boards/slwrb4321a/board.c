@@ -9,7 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/printk.h>
-#include "em_cmu.h"
+#include <em_cmu.h>
 #include "board.h"
 
 static int efm32gg_slwstk6121a_init(void)

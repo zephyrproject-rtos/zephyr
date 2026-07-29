@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LP_MSPM33C321A
+	select SOC_MSPM33C321A

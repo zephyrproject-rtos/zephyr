@@ -27,6 +27,12 @@
   #error Library does not support the specified device
 #endif
 
+/*
+ * override the register definitions in DFP (Device Family Pack) for reuse the
+ * current drivers with minimum changes.
+ */
+#include "dfp_override.h"
+
 #endif /* _ASMLANGUAGE */
 
 /* number of clocks registered */
@@ -37,5 +43,17 @@
 #define SOC_NUM_CLOCK_SYSTEM       8	/* PCK 0 ~ 7 */
 #define SOC_NUM_CLOCK_PERIPHERAL   72
 #define SOC_NUM_CLOCK_GENERATED    44
+
+enum PLL_ID {
+	PLL_ID_CPUPLL = 0,
+	PLL_ID_SYSPLL = 1,
+	PLL_ID_DDRPLL = 2,
+	PLL_ID_GPUPLL = 3,
+	PLL_ID_BAUDPLL = 4,
+	PLL_ID_AUDIOPLL = 5,
+	PLL_ID_ETHPLL = 6,
+	PLL_ID_LVDSPLL = 7,
+	PLL_ID_USBPLL = 8,
+};
 
 #endif /* _SOC_MICROCHIP_SAMA7D6_SOC__H_ */

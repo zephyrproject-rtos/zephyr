@@ -10,8 +10,8 @@
  * @ingroup sensing_sensor_types
  */
 
-#ifndef ZEPHYR_INCLUDE_SENSING_SENSOR_TYPES_H_
-#define ZEPHYR_INCLUDE_SENSING_SENSOR_TYPES_H_
+#ifndef ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_TYPES_H_
+#define ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_TYPES_H_
 
 /**
  * @defgroup sensing_sensor_types Sensor Types (Sensing)
@@ -78,4 +78,4 @@
  * @}
  */
 
-#endif /*ZEPHYR_INCLUDE_SENSING_SENSOR_TYPES_H_*/
+#endif /* ZEPHYR_INCLUDE_SENSING_SENSING_SENSOR_TYPES_H_ */

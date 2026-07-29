@@ -94,6 +94,18 @@ int lpspi_wait_tx_fifo_empty(const struct device *dev)
 int spi_lpspi_release(const struct device *dev, const struct spi_config *spi_cfg)
 {
 	struct lpspi_data *data = dev->data;
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+
+	/*
+	 * lpspi_end_xfer() only clears TCR CONT/CONTC when SPI_HOLD_ON_CS is
+	 * absent from the transfer's config, so that transfers within a
+	 * HOLD_ON_CS transaction keep native (non-GPIO) CS asserted between
+	 * spi_transceive() calls. But once the caller is done with the whole
+	 * transaction and explicitly calls spi_release(), CS must actually be
+	 * released - clear them here so native CS doesn't stay asserted
+	 * indefinitely after a HOLD_ON_CS transaction.
+	 */
+	base->TCR &= ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK);
 
 	spi_context_unlock_unconditionally(&data->ctx);
 

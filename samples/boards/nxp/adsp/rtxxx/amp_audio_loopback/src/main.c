@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 
-#include "dsp.h"
+#include <dsp.h>
 
 int main(void)
 {

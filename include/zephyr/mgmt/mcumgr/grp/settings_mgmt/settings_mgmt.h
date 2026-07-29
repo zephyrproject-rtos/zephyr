@@ -10,8 +10,8 @@
  * @ingroup mcumgr_settings_mgmt
  */
 
-#ifndef H_SETTINGS_MGMT_
-#define H_SETTINGS_MGMT_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_SETTINGS_MGMT_SETTINGS_MGMT_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_SETTINGS_MGMT_SETTINGS_MGMT_H_
 
 /**
  * @brief MCUmgr Settings Management API
@@ -81,4 +81,4 @@ enum settings_mgmt_ret_code_t {
  * @}
  */
 
-#endif
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_SETTINGS_MGMT_SETTINGS_MGMT_H_ */

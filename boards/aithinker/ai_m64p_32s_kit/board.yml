@@ -1,0 +1,6 @@
+board:
+  name: ai_m64p_32s_kit
+  full_name: Ai-Thinker M64P-32S Development Board
+  vendor: aithinker
+  socs:
+    - name: bl616cl4855

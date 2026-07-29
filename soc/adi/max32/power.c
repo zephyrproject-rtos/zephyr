@@ -9,6 +9,7 @@
 #include <zephyr/platform/hooks.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/cache.h>
 #include <zephyr/arch/common/pm_s2ram.h>
 
 #include <mxc_device.h>
@@ -46,7 +47,13 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		break;
 	case PM_STATE_STANDBY:
 		LOG_DBG("entering PM state standby");
+#ifdef CONFIG_SOC_FAMILY_MAX32_ERRATA_30282
+		sys_cache_instr_disable();
 		Wrap_MXC_LP_EnterStandbyMode();
+		sys_cache_instr_enable();
+#else
+		Wrap_MXC_LP_EnterStandbyMode();
+#endif /* CONFIG_SOC_FAMILY_MAX32_ERRATA_30282 */
 		break;
 	case PM_STATE_SUSPEND_TO_RAM:
 #ifdef CONFIG_PM_S2RAM

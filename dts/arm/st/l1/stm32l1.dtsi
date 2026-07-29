@@ -539,6 +539,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x40020000 0x2000>;
+			ranges;
 
 			gpioa: gpio@40020000 {
 				compatible = "st,stm32-gpio";
@@ -613,7 +614,7 @@
 			#dma-cells = <2>;
 			reg = <0x40026000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 24)>;
-			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>;
 			status = "disabled";
 		};
 	};

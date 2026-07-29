@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: dependency-mode property behavior test
+
+compatible: "dependency-mode-test"
+
+properties:
+  normal-ref:
+    type: phandle
+
+  reverse-ref:
+    type: phandle
+    dependency-mode: reverse
+
+  ignore-ref:
+    type: phandle
+    dependency-mode: ignore
+
+  child-ignore-ref:
+    type: phandle
+    dependency-mode: child-ignore
+
+  child-ignore-external-ref:
+    type: phandle
+    dependency-mode: child-ignore

@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/gpio.h>
-#include "ulp_lp_core_utils.h"
+#include <ulp_lp_core_utils.h>
 
 #define WAKEUP_PIN_NODE DT_ALIAS(wakeup_pin)
 

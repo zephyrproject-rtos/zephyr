@@ -6,6 +6,13 @@
 include: base.yaml
 
 properties:
+  device_type:
+    type: string
+    default: "cpu"
+    description: |
+      Standard device_type identifying this node as a cpu. Required to maintain compatibility
+      with the IEEE 1275 standard as well as for DT_FOREACH_CPU family of devicetree macros to
+      identify cpu nodes within the "/cpus" parent node
   clock-frequency:
     type: int
     description: Clock frequency in Hz

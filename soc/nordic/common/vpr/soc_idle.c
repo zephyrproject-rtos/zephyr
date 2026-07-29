@@ -26,7 +26,7 @@ static ALWAYS_INLINE void hibernate_dummy_write(void)
  */
 void arch_cpu_idle(void)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 
@@ -38,7 +38,7 @@ void arch_cpu_idle(void)
 	__asm__ volatile("wfi");
 	hibernate_dummy_write();
 	if (!NRF_ERRATA_DYNAMIC_CHECK(54H, 93)) {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 		/* Makes sense only if sleeping with interrupts locked. */
 		sys_trace_idle_exit();
 #endif
@@ -48,7 +48,7 @@ void arch_cpu_idle(void)
 
 void arch_cpu_atomic_idle(unsigned int key)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 	if (NRF_ERRATA_DYNAMIC_CHECK(54H, 93)) {
@@ -65,7 +65,7 @@ void arch_cpu_atomic_idle(unsigned int key)
 			  : "r" (~key & MSTATUS_IEN)
 			  : "memory");
 	} else {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 		/* Makes sense only if sleeping with interrupts locked. */
 		sys_trace_idle_exit();
 #endif

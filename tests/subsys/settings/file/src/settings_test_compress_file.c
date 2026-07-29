@@ -7,8 +7,8 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "settings_test.h"
-#include "settings/settings_file.h"
+#include <settings_test.h>
+#include <settings/settings_file.h>
 
 #define EXP_STR_CONTENT_1 "\x10\x00myfoo/mybar16=\x00\x01"\
 			  "\x0d\x00myfoo/mybar=\x14"\

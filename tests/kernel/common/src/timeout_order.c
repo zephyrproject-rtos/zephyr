@@ -71,6 +71,14 @@ ZTEST(common_1cpu, test_timeout_order)
 {
 	int ii, prio = k_thread_priority_get(k_current_get()) + 1;
 
+	if (IS_ENABLED(CONFIG_TIMEOUT_BACKEND_MINHEAP) ||
+	    IS_ENABLED(CONFIG_TIMEOUT_BACKEND_WHEEL)) {
+		/* The min-heap and timer-wheel backends make no same-tick
+		 * ordering guarantee.
+		 */
+		ztest_test_skip();
+	}
+
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
 		(void)k_thread_create(&threads[ii], stacks[ii], STACKSIZE,
 				      thread, INT_TO_POINTER(ii), 0, 0,

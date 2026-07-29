@@ -527,6 +527,8 @@ void bt_conn_notify_remote_info(struct bt_conn *conn);
 
 void bt_conn_notify_le_param_updated(struct bt_conn *conn);
 
+void bt_conn_notify_le_param_rejected(struct bt_conn *conn, uint8_t hci_err);
+
 void bt_conn_notify_le_data_len_updated(struct bt_conn *conn);
 
 void bt_conn_notify_le_phy_updated(struct bt_conn *conn);

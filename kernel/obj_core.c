@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/obj_core.h>
+#include <kernel_internal.h>
 
 static struct k_spinlock  obj_core_lock;
 
@@ -46,6 +47,41 @@ void k_obj_core_init_and_link(struct k_obj_core *obj_core,
 	k_obj_core_init(obj_core, type);
 	k_obj_core_link(obj_core);
 }
+
+static void z_obj_core_init_all(void)
+{
+	STRUCT_SECTION_FOREACH(k_obj_core_desc, desc) {
+		z_obj_type_init(desc->type, desc->type_id,
+				desc->obj_core_offset);
+#ifdef CONFIG_OBJ_CORE_STATS
+		if (desc->stats_desc != NULL) {
+			k_obj_type_stats_init(desc->type, desc->stats_desc);
+		}
+#endif /* CONFIG_OBJ_CORE_STATS */
+
+		/* Initialize and link every statically defined object */
+
+		for (const uint8_t *obj = desc->objs_start;
+		     obj < (const uint8_t *)desc->objs_end;
+		     obj += desc->obj_size) {
+			struct k_obj_core *obj_core =
+				(struct k_obj_core *)(obj + desc->obj_core_offset);
+
+			k_obj_core_init_and_link(obj_core, desc->type);
+#ifdef CONFIG_OBJ_CORE_STATS
+			if ((desc->stats_desc != NULL) &&
+			    (desc->stats_size != 0)) {
+				k_obj_core_stats_register(
+					obj_core,
+					(void *)(obj + desc->stats_offset),
+					desc->stats_size);
+			}
+#endif /* CONFIG_OBJ_CORE_STATS */
+		}
+	}
+}
+
+K_KERNEL_INIT_PRE(z_obj_core_init_all);
 
 void k_obj_core_unlink(struct k_obj_core *obj_core)
 {
@@ -285,3 +321,42 @@ int k_obj_core_stats_enable(struct k_obj_core *obj_core)
 	return rv;
 }
 #endif /* CONFIG_OBJ_CORE_STATS */
+
+#ifdef CONFIG_OBJ_CORE_SYSTEM
+static struct k_obj_type obj_type_kernel;
+
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+static struct k_obj_core_stats_desc kernel_stats_desc = {
+	.raw_size = sizeof(struct k_cycle_stats) * CONFIG_MP_MAX_NUM_CPUS,
+	.query_size = sizeof(struct k_thread_runtime_stats),
+	.raw   = z_kernel_stats_raw,
+	.query = z_kernel_stats_query,
+	.reset = NULL,
+	.disable = NULL,
+	.enable  = NULL,
+};
+#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
+
+/* The kernel object is a singleton (_kernel), so it is registered and linked
+ * here directly rather than through the object type table.
+ */
+static void init_kernel_obj_core_list(void)
+{
+	/* Initialize kernel object type */
+
+	z_obj_type_init(&obj_type_kernel, K_OBJ_TYPE_KERNEL_ID,
+			offsetof(struct z_kernel, obj_core));
+
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+	k_obj_type_stats_init(&obj_type_kernel, &kernel_stats_desc);
+#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
+
+	k_obj_core_init_and_link(K_OBJ_CORE(&_kernel), &obj_type_kernel);
+#ifdef CONFIG_OBJ_CORE_STATS_SYSTEM
+	k_obj_core_stats_register(K_OBJ_CORE(&_kernel), _kernel.usage,
+				  sizeof(_kernel.usage));
+#endif /* CONFIG_OBJ_CORE_STATS_SYSTEM */
+}
+
+K_KERNEL_INIT_PRE(init_kernel_obj_core_list);
+#endif /* CONFIG_OBJ_CORE_SYSTEM */

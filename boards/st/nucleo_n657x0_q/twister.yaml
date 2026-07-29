@@ -8,6 +8,7 @@ supported:
   - arduino_serial
   - arduino_spi
   - adc
+  - backup_sram
   - can
   - dma
   - i2c

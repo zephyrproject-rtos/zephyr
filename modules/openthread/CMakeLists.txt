@@ -1,18 +1,34 @@
-if(CONFIG_OPENTHREAD)
-if(CONFIG_OPENTHREAD_SOURCES)
+if(NOT CONFIG_OPENTHREAD)
+  return()
+endif()
+
+# Create a library for the OpenThread Zephyr utils
+zephyr_library_named(openthread_utils)
+zephyr_library_sources(
+  openthread.c
+  openthread_utils.c
+)
+zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_SHELL shell.c)
+zephyr_include_directories(include)
+
+add_subdirectory(platform)
+
+if(NOT CONFIG_OPENTHREAD_SOURCES)
+  return()
+endif()
 
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
 macro(kconfig_to_ot_option kconfig_option ot_config description)
-    if(${kconfig_option})
-      set(${ot_config} ON CACHE BOOL "${description}" FORCE)
-    else()
-      set(${ot_config} OFF CACHE BOOL "${description}" FORCE)
-    endif()
+  if(${kconfig_option})
+    set(${ot_config} ON CACHE BOOL "${description}" FORCE)
+  else()
+    set(${ot_config} OFF CACHE BOOL "${description}" FORCE)
+  endif()
 endmacro()
 
 macro(kconfig_to_ot_option_value kconfig_option ot_config description)
-      set(${ot_config} ${${kconfig_option}} CACHE STRING "${description}" FORCE)
+  set(${ot_config} ${${kconfig_option}} CACHE STRING "${description}" FORCE)
 endmacro()
 
 # OpenThread options
@@ -25,12 +41,11 @@ set(OT_CLI_TRANSPORT "CONSOLE" CACHE STRING "Set CLI to use console interpreter"
 
 string(REPLACE " " ";" OT_MBEDTLS_LIB_LIST " ${CONFIG_OPENTHREAD_MBEDTLS_LIB_NAME}")
 
-set(
-    OT_EXTERNAL_MBEDTLS
-    ${OT_MBEDTLS_LIB_LIST}
-    CACHE STRING
-    "Specify external mbedtls library"
-    FORCE
+set(OT_EXTERNAL_MBEDTLS
+  ${OT_MBEDTLS_LIB_LIST}
+  CACHE STRING
+  "Specify external mbedtls library"
+  FORCE
 )
 
 if(CONFIG_OPENTHREAD_FTD)
@@ -161,15 +176,13 @@ set(BUILD_TESTING OFF CACHE BOOL "Disable openthread cmake testing targets" FORC
 # Zephyr logging options
 
 if(CONFIG_LOG_BACKEND_SPINEL)
-  add_definitions(
-      -DOPENTHREAD_CONFIG_LOG_OUTPUT=OPENTHREAD_CONFIG_LOG_OUTPUT_APP
-  )
+  add_definitions(-DOPENTHREAD_CONFIG_LOG_OUTPUT=OPENTHREAD_CONFIG_LOG_OUTPUT_APP)
 endif()
 
 # Other options
 add_definitions(
-    -DOPENTHREAD_CONFIG_LOG_LEVEL=${CONFIG_OPENTHREAD_LOG_LEVEL}
-    -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE="openthread-core-zephyr-config.h"
+  -DOPENTHREAD_CONFIG_LOG_LEVEL=${CONFIG_OPENTHREAD_LOG_LEVEL}
+  -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE="openthread-core-zephyr-config.h"
 )
 
 # Need to specify build directory as well
@@ -193,15 +206,15 @@ target_compile_definitions(ot-config INTERFACE MBEDTLS_SSL_EXPORT_KEYS)
 
 # Zephyr compiler options
 target_include_directories(ot-config INTERFACE
-    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
 target_include_directories(ot-config SYSTEM INTERFACE
-    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>
 )
 
 target_compile_definitions(ot-config INTERFACE
-    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
+  $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>
 )
 
 # Openthread can use minimal libc, which requires autoconf.h
@@ -210,9 +223,9 @@ target_compile_definitions(ot-config INTERFACE
 # libraries do not include this header. So we add the defines to all
 # OpenThread files through the gcc flag -imacros instead.
 target_compile_options(ot-config INTERFACE
-    $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>
-    $<TARGET_PROPERTY:compiler,no_builtin>
-    -imacros ${AUTOCONF_H}
+  $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>
+  $<TARGET_PROPERTY:compiler,no_builtin>
+  -imacros ${AUTOCONF_H}
 )
 
 # FIXME Temporary suppress -Wundef option to avoid warning about
@@ -240,44 +253,44 @@ zephyr_system_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/examples/platform
 set(ot_libs "")
 
 if(CONFIG_OPENTHREAD_FTD)
-set(cli_lib openthread-cli-ftd)
+  set(cli_lib openthread-cli-ftd)
 elseif(CONFIG_OPENTHREAD_MTD)
-set(cli_lib openthread-cli-mtd)
+  set(cli_lib openthread-cli-mtd)
 endif()
 
 if(CONFIG_OPENTHREAD_SHELL)
-list(APPEND ot_libs ${cli_lib})
+  list(APPEND ot_libs ${cli_lib})
 endif()
 
 if(CONFIG_OPENTHREAD_COPROCESSOR_RCP)
-list(APPEND ot_libs openthread-rcp)
+  list(APPEND ot_libs openthread-rcp)
 endif()
 
 if(CONFIG_OPENTHREAD_COPROCESSOR_NCP)
-if(CONFIG_OPENTHREAD_FTD)
-list(APPEND ot_libs openthread-ncp-ftd)
-elseif(CONFIG_OPENTHREAD_MTD)
-list(APPEND ot_libs openthread-ncp-mtd)
-endif()
+  if(CONFIG_OPENTHREAD_FTD)
+    list(APPEND ot_libs openthread-ncp-ftd)
+  elseif(CONFIG_OPENTHREAD_MTD)
+    list(APPEND ot_libs openthread-ncp-mtd)
+  endif()
 endif()
 
 if(NOT CONFIG_OPENTHREAD_COPROCESSOR_RCP)
-if(CONFIG_OPENTHREAD_FTD)
-list(APPEND ot_libs openthread-ftd)
-elseif(CONFIG_OPENTHREAD_MTD)
-list(APPEND ot_libs openthread-mtd)
-endif()
+  if(CONFIG_OPENTHREAD_FTD)
+    list(APPEND ot_libs openthread-ftd)
+  elseif(CONFIG_OPENTHREAD_MTD)
+    list(APPEND ot_libs openthread-mtd)
+  endif()
 endif()
 
 if(CONFIG_HDLC_RCP_IF)
-list(APPEND ot_libs
-  ot-config
-  openthread-platform
-  openthread-radio-spinel
-  openthread-spinel-ncp
-  openthread-url
-  openthread-hdlc
-)
+  list(APPEND ot_libs
+    ot-config
+    openthread-platform
+    openthread-radio-spinel
+    openthread-spinel-ncp
+    openthread-url
+    openthread-hdlc
+  )
 endif()
 
 if(CONFIG_OPENTHREAD_SETTINGS_RAM)
@@ -290,18 +303,3 @@ if(CONFIG_OPENTHREAD_SETTINGS_RAM)
 endif()
 
 zephyr_link_libraries(${ot_libs})
-
-endif()
-
-# Create a library for the OpenThread Zephyr utils
-zephyr_library_named(openthread_utils)
-zephyr_library_sources(
-  openthread.c
-  openthread_utils.c
-)
-zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_SHELL shell.c)
-zephyr_include_directories(include)
-
-add_subdirectory(platform)
-
-endif()

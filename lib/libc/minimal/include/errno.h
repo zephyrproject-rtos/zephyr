@@ -21,7 +21,8 @@
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_ERRNO_H_
 
 /**
- * @brief System error numbers
+ * @brief System error numbers.
+ *
  *        Error codes returned by functions.
  *        Includes a list of those defined by IEEE Std 1003.1-2017.
  * @defgroup system_errno Error numbers

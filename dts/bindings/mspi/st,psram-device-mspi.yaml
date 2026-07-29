@@ -46,3 +46,15 @@ properties:
 
   write-command:
     required: true
+
+  st,mem-type:
+    type: string
+    description: |
+      The type of memory to be supported by the controller.
+    enum:
+      - "micron"
+      - "macronix"
+      - "apmem"
+      - "macronix_ram"
+      - "hyperbus"
+      - "apmem_16bits"

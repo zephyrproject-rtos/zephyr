@@ -18,6 +18,7 @@
 #include <soc_secure.h>
 
 #include "soc_flash_nrf.h"
+#include "flash_priv.h"
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -35,7 +36,8 @@ LOG_MODULE_REGISTER(flash_nrf);
 #error No matching compatible for soc_flash_nrf.c
 #endif
 
-#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
+
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 #define FLASH_SLOT_WRITE     7500
