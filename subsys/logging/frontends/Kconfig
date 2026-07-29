@@ -30,6 +30,51 @@ config LOG_FRONTEND_DICT_UART_DROPPED_NOTIFY_PERIOD
 
 endif
 
+config LOG_FRONTEND_IPC
+	bool "IPC service frontend"
+	depends on IPC_SERVICE
+	select LOG_FRONTEND_OPT_API
+	help
+	  Frontend sends log messages over IPC service to a remote domain.
+	  Requires an IPC instance labeled ipc0 in devicetree.
+
+if LOG_FRONTEND_IPC
+
+config LOG_FRONTEND_IPC_EARLY_BUFFER_SIZE
+	int "Early buffer size"
+	default 1024
+	help
+	  Number of bytes dedicated for buffering log messages emitted before the IPC service
+	  is ready.
+
+config LOG_FRONTEND_IPC_PACKET_SIZE
+	int "Packet size"
+	default 256
+	help
+	  Target size of the IPC service packets.
+
+config LOG_FRONTEND_IPC_MSG_TIMEOUT
+	int "Message timeout"
+	default 5
+	help
+	  Timeout in milliseconds after which current buffer with logging messages is sent.
+	  Buffer with messages is sent when it is full or when this timeout is reached.
+
+config LOG_FRONTEND_IPC_DROPPED_MSG_TIMEOUT
+	int "Dropped message timeout"
+	default 1000
+	help
+	  Timeout in milliseconds after which a report about dropped messages is printed.
+
+config LOG_FRONTEND_IPC_STRING_ACCESS
+	bool "Main core has access to local RO strings"
+	help
+	  Enable if core that processes messages has access to local read-only strings.
+	  It allows to reduce processing and message size as read-only strings are not copied
+	  into the IPC message.
+
+endif
+
 config LOG_FRONTEND_STMESP
 	bool "Coresight STM frontend"
 	depends on DT_HAS_ARM_STMESP_ENABLED
