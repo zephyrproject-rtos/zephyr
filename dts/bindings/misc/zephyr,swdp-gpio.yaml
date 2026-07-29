@@ -92,6 +92,13 @@ properties:
     description: |
       Optional GPIO pin used for RESET output.
 
+      The GPIO flags describe the reset assertion level: the driver
+      asserts reset by driving the pin to its logical active state.
+      For the common directly wired active-low nRESET signal, use
+      GPIO_ACTIVE_LOW. DAP_SWJ_Pins requests are the exception: they
+      operate on raw line levels, as defined by CMSIS-DAP, and are not
+      affected by these flags.
+
   keep-reset-deasserted:
     type: boolean
     description: |
