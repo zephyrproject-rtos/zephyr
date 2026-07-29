@@ -24,7 +24,7 @@
 		/* stdby_ram memory supports content retention in Standby mode */
 		stdby_ram: memory@20400000 {
 			compatible = "mmio-sram";
-			reg = <0x20400000 DT_SIZE_K(32)>;
+			reg = <0x20400000 DT_SIZE_K(16)>;
 		};
 
 		peripheral: peripheral@40000000 {
@@ -33,10 +33,10 @@
 	};
 };
 
-#include <nxp/mcx/nxp_mcxe31x_common.dtsi>
+#include <nxp/mcx/mcxe/nxp_mcxe31x_common.dtsi>
 
 &program_flash {
-	reg = <0x400000 DT_SIZE_K(1024)>;
+	reg = <0x400000 DT_SIZE_K(512)>;
 };
 
 &flexcan_0 {
