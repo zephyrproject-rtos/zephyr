@@ -14,6 +14,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+#include <zephyr/drivers/ptp_clock.h>
+#endif
 
 #include <esp_attr.h>
 #include <esp_mac.h>
@@ -71,6 +74,9 @@ struct eth_esp32_dev_data {
 	uint8_t rxb[NET_ETH_MAX_FRAME_SIZE];
 	uint8_t *dma_rx_buf[CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM];
 	uint8_t *dma_tx_buf[CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM];
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	const struct device *ptp_clock;
+#endif
 	struct k_sem int_sem;
 	struct k_sem tx_sem;
 
@@ -737,12 +743,25 @@ static void eth_esp32_iface_init(struct net_if *iface)
 	}
 }
 
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+static const struct device *eth_esp32_get_ptp_clock(const struct device *dev,
+						   struct net_if *iface __unused)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+
+	return dev_data->ptp_clock;
+}
+#endif
+
 static const struct ethernet_api eth_esp32_api = {
 	.iface_api.init		= eth_esp32_iface_init,
 	.get_capabilities	= eth_esp32_caps,
 	.set_config		= eth_esp32_set_config,
 	.get_phy		= eth_esp32_phy_get,
 	.send			= eth_esp32_send,
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	.get_ptp_clock		= eth_esp32_get_ptp_clock,
+#endif
 };
 
 /* DMA data must be in DRAM, descriptors must be aligned to EMAC_HAL_DMA_DESC_SIZE */
@@ -754,3 +773,103 @@ static struct eth_esp32_dev_data eth_esp32_dev = {
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_esp32_initialize, NULL, &eth_esp32_dev, &eth_esp32_config,
 			      CONFIG_ETH_INIT_PRIORITY, &eth_esp32_api, NET_ETH_MTU);
+
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+
+#define PTP_CLOCK_NODE DT_INST_CHILD(0, ptp_clock)
+
+static int eth_esp32_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+
+	return emac_hal_ptp_set_sys_time(&dev_data->hal, tm->second, tm->nanosecond) == ESP_OK
+		       ? 0
+		       : -EIO;
+}
+
+static int eth_esp32_ptp_clock_get(const struct device *dev, struct net_ptp_time *tm)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+	uint32_t seconds;
+	uint32_t nanoseconds;
+
+	if (emac_hal_ptp_get_sys_time(&dev_data->hal, &seconds, &nanoseconds) != ESP_OK) {
+		return -EIO;
+	}
+
+	tm->second = seconds;
+	tm->nanosecond = nanoseconds;
+
+	return 0;
+}
+
+static int eth_esp32_ptp_clock_adjust(const struct device *dev, int increment)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+	bool sign = increment >= 0;
+	uint32_t offset = sign ? increment : -increment;
+
+	return emac_hal_ptp_time_add(&dev_data->hal, offset / NSEC_PER_SEC,
+				     offset % NSEC_PER_SEC, sign) == ESP_OK
+		       ? 0
+		       : -EIO;
+}
+
+static int eth_esp32_ptp_clock_rate_adjust(const struct device *dev, double ratio)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+	int32_t adj_ppb = (int32_t)((ratio - 1.0) * 1000000000.0);
+
+	return emac_hal_ptp_adj_freq(&dev_data->hal, adj_ppb) == ESP_OK ? 0 : -EIO;
+}
+
+static DEVICE_API(ptp_clock, eth_esp32_ptp_clock_api) = {
+	.set = eth_esp32_ptp_clock_set,
+	.get = eth_esp32_ptp_clock_get,
+	.adjust = eth_esp32_ptp_clock_adjust,
+	.rate_adjust = eth_esp32_ptp_clock_rate_adjust,
+};
+
+static int eth_esp32_ptp_clock_init(const struct device *dev)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+	const struct device *clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(eth)));
+	clock_control_subsys_t ptp_subsys =
+		(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(0, ptp, offset);
+	emac_hal_ptp_config_t ptp_config;
+	uint32_t ptp_clk_rate;
+	int ret;
+
+	ret = clock_control_on(clock_dev, ptp_subsys);
+	if (ret < 0 && ret != -EALREADY) {
+		LOG_ERR("Failed to enable PTP reference clock");
+		return ret;
+	}
+
+	ret = clock_control_get_rate(clock_dev, ptp_subsys, &ptp_clk_rate);
+	if (ret < 0 || ptp_clk_rate == 0) {
+		LOG_ERR("Failed to get PTP reference clock rate");
+		return -EIO;
+	}
+
+	ptp_config.upd_method = ETH_PTP_UPDATE_METHOD_FINE;
+	ptp_config.roll = ETH_PTP_DIGITAL_ROLLOVER;
+	ptp_config.ptp_clk_src_period_ns = 1000000000.0f / (float)ptp_clk_rate;
+	ptp_config.ptp_req_accuracy_ns = ptp_config.ptp_clk_src_period_ns;
+
+	if (emac_hal_ptp_start(&dev_data->hal, &ptp_config) != ESP_OK) {
+		LOG_ERR("Failed to start PTP");
+		return -EIO;
+	}
+
+	dev_data->ptp_clock = dev;
+
+	LOG_INF("PTP clock started, reference %u Hz", ptp_clk_rate);
+
+	return 0;
+}
+
+DEVICE_DT_DEFINE(PTP_CLOCK_NODE, eth_esp32_ptp_clock_init, NULL, &eth_esp32_dev, NULL, POST_KERNEL,
+		 CONFIG_PTP_CLOCK_INIT_PRIORITY, &eth_esp32_ptp_clock_api);
+
+#endif /* CONFIG_PTP_CLOCK_ESP32 */
