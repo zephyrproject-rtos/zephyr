@@ -538,6 +538,30 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 		enable_mclk_direction(dev, dev_cfg->mclk_output);
 	}
 
+#ifndef CONFIG_I2S_HAS_PLL_SETTING
+	/*
+	 * Re-tune the SAI root clock to a value that matches the requested
+	 * sample rate's clock family. The default value programmed at driver
+	 * initialization (12.288MHz, 48kHz-family) cannot generate a valid
+	 * 44.1kHz LRCK via any integer bit-clock divider, so leaving it in
+	 * place for a 44.1kHz stream produces silence at the codec (the SAI
+	 * rounds LRCK to 48kHz and the codec's SYSCLK:LRCK ratio falls out
+	 * of its supported range). Pick the closest MCLK that is an integer
+	 * multiple of 256 * frame_clk_freq; the platform's CCM driver is
+	 * responsible for reconfiguring the underlying audio PLL family.
+	 */
+	{
+		uint32_t desired_mclk;
+
+		if ((i2s_cfg->frame_clk_freq % 11025U) == 0U) {
+			desired_mclk = 11289600U;   /* 44.1kHz family */
+		} else {
+			desired_mclk = 12288000U;   /* 48kHz family (default) */
+		}
+		set_mclk_rate(dev, desired_mclk);
+	}
+#endif
+
 	get_mclk_rate(dev, &mclk);
 	LOG_DBG("mclk is %d", mclk);
 
