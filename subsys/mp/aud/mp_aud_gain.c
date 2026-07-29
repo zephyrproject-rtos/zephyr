@@ -24,8 +24,7 @@ LOG_MODULE_REGISTER(mp_aud_gain, CONFIG_MP_LOG_LEVEL);
 #define GAIN_PERCENT_UNITY 100  /* 100% = unity gain (no change) */
 
 /* Q16.16 signed fixed-point definitions */
-#define GAIN_UNITY_FIXED            (1 << 16) /* 65536 = 1.0 in Q16.16 */
-#define GAIN_MULTIPLY(sample, gain) (((int32_t)(sample) * (gain)) >> 16)
+#define GAIN_UNITY_FIXED (1 << 16) /* 65536 = 1.0 in Q16.16 */
 
 /* Convert percentage to Q16.16 fixed-point gain */
 static int32_t percent_to_fixed_gain(int gain_percent)
@@ -84,8 +83,12 @@ static void apply_gain_16bit(struct net_buf *buffer, int32_t gain_fixed)
 	size_t num_samples = mp_buffer_get_meta(buffer)->bytes_used / sizeof(int16_t);
 
 	for (size_t i = 0; i < num_samples; i++) {
-		/* Apply gain using fixed-point arithmetic */
-		int32_t temp = GAIN_MULTIPLY(samples[i], gain_fixed);
+		/* Apply gain using fixed-point arithmetic with 64-bit intermediate.
+		 * A 32-bit intermediate overflows here: a full-scale int16 sample
+		 * times an above-unity Q16.16 gain exceeds INT32_MAX before the
+		 * shift, wrapping through zero instead of saturating.
+		 */
+		int64_t temp = ((int64_t)samples[i] * gain_fixed) >> 16;
 
 		/* Clamp to 16-bit range */
 		if (temp > INT16_MAX) {
