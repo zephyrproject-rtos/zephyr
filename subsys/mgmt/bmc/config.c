@@ -1,870 +1,760 @@
 /*
- * SPDX-FileCopyrightText: © 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bmc_config, LOG_LEVEL_INF);
 
-#include <zephyr/shell/shell.h>
 #include <stdlib.h>
-#include <ctype.h>
-#include <zephyr/sys/util.h>
+#include <string.h>
+
 #include <zephyr/kernel.h>
-
+#include <zephyr/logging/log.h>
+#include <zephyr/mgmt/bmc.h>
+#include <zephyr/mgmt/bmc/config.h>
 #include <zephyr/net/hostname.h>
-#include <zephyr/posix/arpa/inet.h> /* inet_ntop */
+#include <zephyr/net/net_ip.h>
+#include <zephyr/settings/settings.h>
+#include <zephyr/sys/util.h>
 
-#include "config.h"
-#include "bmc_init.h"
-#include "net.h"
-#include "ntp.h"
-#include "fs.h"
+#include "bmc_internal.h"
 
-#define MAX_HOSTNAME_LEN 20
+LOG_MODULE_DECLARE(bmc, CONFIG_BMC_LOG_LEVEL);
 
-#define MAX_PW_LEN 20
+#define BMC_SETTINGS_TREE "bmc"
 
-#define MAX_NTP_SERVER_LEN 40
-
-/* Incrementing this allows a flag-day upgrade, but avoid doing it. */
-#define CFG_CURRENT_VERSION 3
-
-enum config_id {
-	CFG_VERSION = 1,			/* uint8_t */
-	CFG_BMC_ADMIN_PASSWORD = 2,		/* C string */
-	CFG_BMC_HOSTNAME = 3,		/* C string */
-	CFG_BMC_DEFAULT_IP4 = 4,		/* uint32_t */
-	CFG_BMC_DEFAULT_IP4_NM = 5,		/* uint32_t */
-	CFG_BMC_DEFAULT_IP4_GW = 6,		/* uint32_t */
-	CFG_BMC_USE_DHCP4 = 7,		/* uint8_t */
-	CFG_BMC_USE_NTP = 8,			/* uint8_t */
-	CFG_BMC_NTP_SERVER = 9,		/* C string */
-	CFG_HOST_AUTO_POWERON = 10,		/* uint8_t */
-	/*
-	 * Add field IDs in increasing order and do not reuse deprecated
-	 * ones. Do not change meaning but add new and deprecate old.
-	 * Old fields should be deleted after they are upgraded to new --
-	 * don't bother handling downgrades.
-	 */
-};
-
-struct config_data {
-	uint8_t version;
-	char bmc_hostname[MAX_HOSTNAME_LEN + 1]; /* NULL terminated */
-	uint32_t bmc_default_ip4;
-	uint8_t bmc_use_dhcp4;
+struct bmc_config_data {
+	char hostname[BMC_CONFIG_HOSTNAME_MAX_LEN + 1];
+	char admin_password[BMC_CONFIG_PASSWORD_MAX_LEN + 1];
+	char ntp_server[BMC_CONFIG_NTP_SERVER_MAX_LEN + 1];
+	uint32_t static_ip4;
+	uint32_t static_ip4_netmask;
+	uint32_t static_ip4_gateway;
+	uint8_t use_dhcp4;
+	uint8_t use_ntp;
 	uint8_t host_auto_poweron;
-	char bmc_admin_password[MAX_PW_LEN + 1]; /* NULL terminated */
-	uint8_t bmc_use_ntp;
-	char bmc_ntp_server[MAX_NTP_SERVER_LEN + 1]; /* NULL terminated */
-	uint32_t bmc_default_ip4_nm;
-	uint32_t bmc_default_ip4_gw;
 };
 
-BUILD_ASSERT((sizeof(CONFIG_DEFAULT_ADMIN_PASSWORD) - 1) <= MAX_PW_LEN);
+BUILD_ASSERT(sizeof(CONFIG_BMC_DEFAULT_ADMIN_PASSWORD) - 1 <= BMC_CONFIG_PASSWORD_MAX_LEN,
+	     "CONFIG_BMC_DEFAULT_ADMIN_PASSWORD is too long");
+BUILD_ASSERT(sizeof(CONFIG_BMC_ADMIN_USER) - 1 <= BMC_CONFIG_USER_MAX_LEN,
+	     "CONFIG_BMC_ADMIN_USER is too long");
+BUILD_ASSERT(sizeof(CONFIG_BMC_DEFAULT_NTP_SERVER) - 1 <= BMC_CONFIG_NTP_SERVER_MAX_LEN,
+	     "CONFIG_BMC_DEFAULT_NTP_SERVER is too long");
 
-static struct config_data config_data;
+static struct bmc_config_data config;
 
 /*
- * strlcpy() is not available in Zephyr, define it ourselves.
- *
- * > strlcpy() copies up to dstsize - 1 characters from the string src to dst,
- * > NUL-terminating the result if dstsize is not 0.
- * > strlcpy() returns the total length of the string it tried to create,
- * > ie. the length of src.
+ * Settings keys, relative to the BMC_SETTINGS_TREE subtree. Do not change the
+ * spelling of an existing key, it would silently orphan stored values.
  */
-static size_t strlcpy(char *ZRESTRICT dst, const char *ZRESTRICT src, size_t dstsize)
+#define KEY_HOSTNAME   "hostname"
+#define KEY_PASSWORD   "password"
+#define KEY_IP4        "ip4"
+#define KEY_IP4_NM     "ip4_nm"
+#define KEY_IP4_GW     "ip4_gw"
+#define KEY_DHCP4      "dhcp4"
+#define KEY_NTP        "ntp"
+#define KEY_NTP_SERVER "ntp_server"
+#define KEY_AUTO_PWR   "auto_poweron"
+
+static const char *const config_keys[] = {
+	KEY_HOSTNAME, KEY_PASSWORD, KEY_IP4,        KEY_IP4_NM,  KEY_IP4_GW,
+	KEY_DHCP4,    KEY_NTP,      KEY_NTP_SERVER, KEY_AUTO_PWR,
+};
+
+static size_t copy_string(char *dst, const char *src, size_t dst_size)
 {
 	size_t src_len = strlen(src);
+	size_t copy_len = MIN(src_len, dst_size - 1);
 
-	if (dstsize != 0) {
-		size_t copy_len = min(src_len, dstsize - 1);
-		memcpy(dst, src, copy_len);
-		dst[copy_len] = '\0';
+	memcpy(dst, src, copy_len);
+	dst[copy_len] = '\0';
+
+	return copy_len;
+}
+
+static int ip4_from_string(const char *str, uint32_t *out)
+{
+	struct in_addr addr;
+
+	if (str == NULL) {
+		*out = 0;
+		return 0;
 	}
 
-	return src_len;
-}
-
-static bool config_use_fs = false;
-
-static ssize_t __config_read(uint16_t id, void *buf, size_t size)
-{
-	if (config_use_fs)
-		return fs_key_read(id, buf, size);
-	return -ENODEV;
-}
-
-static ssize_t __config_write(uint16_t id, const void *buf, size_t size)
-{
-	if (config_use_fs)
-		return fs_key_write(id, buf, size);
-	return -ENODEV;
-}
-
-#define config_read(id, var)				\
-({							\
-	__config_read(id, &var, sizeof(var));		\
-})
-
-#define config_read_str(id, var)			\
-({							\
-	ssize_t __rc;					\
-	__rc = __config_read(id, var, sizeof(var) - 1);	\
-	if (__rc >= 0)					\
-		var[__rc] = '\0';			\
-	__rc;						\
-})
-
-#define config_write(id, var)				\
-({							\
-	__config_write(id, &var, sizeof(var));		\
-})
-
-#define config_write_str(id, var)			\
-({							\
-	__config_write(id, var, strlen(var));		\
-})
-
-
-const char *config_bmc_hostname(void)
-{
-	return config_data.bmc_hostname;
-}
-
-uint32_t config_bmc_default_ip4(void)
-{
-	return config_data.bmc_default_ip4;
-}
-
-uint32_t config_bmc_default_ip4_nm(void)
-{
-	return config_data.bmc_default_ip4_nm;
-}
-
-uint32_t config_bmc_default_ip4_gw(void)
-{
-	return config_data.bmc_default_ip4_gw;
-}
-
-bool config_bmc_use_dhcp4(void)
-{
-	return config_data.bmc_use_dhcp4;
-}
-
-bool config_host_auto_poweron(void)
-{
-	return config_data.host_auto_poweron;
-}
-
-const char *config_bmc_admin_password(void)
-{
-	return config_data.bmc_admin_password;
-}
-
-bool config_bmc_use_ntp(void)
-{
-	return config_data.bmc_use_ntp;
-}
-
-const char *config_bmc_ntp_server(void)
-{
-	return config_data.bmc_ntp_server;
-}
-
-#if defined(CONFIG_BMC_APP_HTTPS_PSK)
-/*
- * This is a placeholder to test PSK. If we want to support it
- * properly it would have to be configurable.
- */
-bool config_bmc_https_psk(const char **psk, int *psk_len)
-{
-	static const char p[] = { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, };
-
-	*psk = p;
-	*psk_len = sizeof(p);
-	return true;
-}
-#endif
-
-int config_bmc_hostname_set(const char *hostname)
-{
-	int rc;
-
-	rc = net_do_set_hostname(hostname);
-	if (rc)
-		return rc;
-
-	strlcpy(config_data.bmc_hostname, hostname, sizeof(config_data.bmc_hostname));
-	rc = config_write_str(CFG_BMC_HOSTNAME, config_data.bmc_hostname);
-	if (rc < 0) {
-		LOG_ERR("Configuration could not be saved (err=%d)", rc);
-		return rc;
-	}
-
-	return 0;
-}
-
-#define CMD_HELP_BMC_HOSTNAME			\
-	"Configure BMC hostname\n"		\
-	"Usage: bmc hostname <hostname>"
-
-static int cmd_config_bmc_hostname(const struct shell *sh, size_t argc, char **argv)
-{
-	int rc;
-
-	ARG_UNUSED(argc);
-
-	if (!is_boot_finished()) {
-		shell_error(sh, "must wait for boot to finish");
-		return -EAGAIN;
-	}
-
-	rc = config_bmc_hostname_set(argv[1]);
-	if (rc) {
-		shell_error(sh, "Could not set BMC hostname (err=%d)", rc);
-		return rc;
-	}
-
-	shell_info(sh, "BMC hostname set to %s", config_data.bmc_hostname);
-
-	return 0;
-}
-
-/* Not reentrant, don't use outside config.c */
-static const char *ip4_atos(uint32_t a)
-{
-	static char ip4_str[INET_ADDRSTRLEN];
-	static struct in_addr addr;
-
-	addr.s_addr = a;
-
-	if (inet_ntop(AF_INET, &addr, ip4_str, sizeof(ip4_str)) == NULL) {
-		LOG_ERR("Could not convert IPv4 address 0x%08x to str", a);
-		return NULL;
-	}
-
-	return ip4_str;
-}
-
-/* Not reentrant, don't use outside config.c */
-static int ip4_stoa(const char *str, uint32_t *out)
-{
-	static struct in_addr addr;
-	int rc;
-
-	rc = inet_pton(AF_INET, str, &addr);
-	if (rc != 1) {
-		LOG_ERR("Could not convert IPv4 address %s to in_addr", str);
+	if (net_addr_pton(AF_INET, str, &addr) < 0) {
+		LOG_ERR("Could not parse IPv4 address %s", str);
 		return -EINVAL;
 	}
 
 	*out = addr.s_addr;
+
 	return 0;
 }
 
-static uint32_t default_ip4_from_kconfig(const char *str, const char *field)
+/* Not reentrant, only used by the shell. */
+static __maybe_unused const char *ip4_to_string(uint32_t addr)
 {
-	uint32_t addr = 0;
-	int rc;
+	static char buf[NET_IPV4_ADDR_LEN];
+	struct in_addr in_addr = {.s_addr = addr};
 
-	rc = ip4_stoa(str, &addr);
-	if (rc < 0) {
-		LOG_ERR("Invalid default %s IPv4 setting %s", field, str);
+	return net_addr_ntop(AF_INET, &in_addr, buf, sizeof(buf));
+}
+
+#if defined(CONFIG_BMC_SETTINGS)
+static int config_save(const char *key, const void *value, size_t len)
+{
+	char path[sizeof(BMC_SETTINGS_TREE "/") + 16];
+	int ret;
+
+	ret = snprintk(path, sizeof(path), BMC_SETTINGS_TREE "/%s", key);
+	if (ret < 0 || ret >= sizeof(path)) {
+		return -ENAMETOOLONG;
+	}
+
+	ret = settings_save_one(path, value, len);
+	if (ret < 0) {
+		LOG_ERR("Could not save %s (err=%d)", path, ret);
+	}
+
+	return ret;
+}
+
+static int config_set(const char *name, size_t len, settings_read_cb read_cb, void *cb_arg)
+{
+	const char *next;
+	ssize_t ret = -ENOENT;
+
+	if (settings_name_steq(name, KEY_HOSTNAME, &next) && !next) {
+		ret = read_cb(cb_arg, config.hostname, sizeof(config.hostname) - 1);
+	} else if (settings_name_steq(name, KEY_PASSWORD, &next) && !next) {
+		ret = read_cb(cb_arg, config.admin_password, sizeof(config.admin_password) - 1);
+	} else if (settings_name_steq(name, KEY_NTP_SERVER, &next) && !next) {
+		ret = read_cb(cb_arg, config.ntp_server, sizeof(config.ntp_server) - 1);
+	} else if (settings_name_steq(name, KEY_IP4, &next) && !next) {
+		ret = read_cb(cb_arg, &config.static_ip4, sizeof(config.static_ip4));
+	} else if (settings_name_steq(name, KEY_IP4_NM, &next) && !next) {
+		ret = read_cb(cb_arg, &config.static_ip4_netmask,
+			      sizeof(config.static_ip4_netmask));
+	} else if (settings_name_steq(name, KEY_IP4_GW, &next) && !next) {
+		ret = read_cb(cb_arg, &config.static_ip4_gateway,
+			      sizeof(config.static_ip4_gateway));
+	} else if (settings_name_steq(name, KEY_DHCP4, &next) && !next) {
+		ret = read_cb(cb_arg, &config.use_dhcp4, sizeof(config.use_dhcp4));
+	} else if (settings_name_steq(name, KEY_NTP, &next) && !next) {
+		ret = read_cb(cb_arg, &config.use_ntp, sizeof(config.use_ntp));
+	} else if (settings_name_steq(name, KEY_AUTO_PWR, &next) && !next) {
+		ret = read_cb(cb_arg, &config.host_auto_poweron,
+			      sizeof(config.host_auto_poweron));
+	}
+
+	if (ret < 0) {
+		return (int)ret;
+	}
+
+	return 0;
+}
+
+SETTINGS_STATIC_HANDLER_DEFINE(bmc, BMC_SETTINGS_TREE, NULL, config_set, NULL, NULL);
+#else /* CONFIG_BMC_SETTINGS */
+static int config_save(const char *key, const void *value, size_t len)
+{
+	ARG_UNUSED(key);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return 0;
+}
+#endif /* CONFIG_BMC_SETTINGS */
+
+static int config_save_string(const char *key, const char *value)
+{
+	return config_save(key, value, strlen(value));
+}
+
+static void config_changed(const char *key)
+{
+	bmc_event_notify(BMC_EVENT_CONFIG_CHANGED, (void *)key, strlen(key) + 1);
+}
+
+const char *bmc_config_hostname(void)
+{
+	return config.hostname;
+}
+
+const char *bmc_config_admin_user(void)
+{
+	return CONFIG_BMC_ADMIN_USER;
+}
+
+const char *bmc_config_admin_password(void)
+{
+	return config.admin_password;
+}
+
+uint32_t bmc_config_static_ip4(void)
+{
+	return config.static_ip4;
+}
+
+uint32_t bmc_config_static_ip4_netmask(void)
+{
+	return config.static_ip4_netmask;
+}
+
+uint32_t bmc_config_static_ip4_gateway(void)
+{
+	return config.static_ip4_gateway;
+}
+
+bool bmc_config_use_dhcp4(void)
+{
+	return config.use_dhcp4 != 0;
+}
+
+bool bmc_config_use_ntp(void)
+{
+	return config.use_ntp != 0;
+}
+
+const char *bmc_config_ntp_server(void)
+{
+	return config.ntp_server;
+}
+
+bool bmc_config_host_auto_poweron(void)
+{
+	return config.host_auto_poweron != 0;
+}
+
+int bmc_config_hostname_set(const char *hostname)
+{
+	int ret;
+
+	if (strlen(hostname) > BMC_CONFIG_HOSTNAME_MAX_LEN) {
+		return -ENAMETOOLONG;
+	}
+
+	ret = bmc_net_set_hostname(hostname);
+	if (ret < 0) {
+		return ret;
+	}
+
+	copy_string(config.hostname, hostname, sizeof(config.hostname));
+
+	ret = config_save_string(KEY_HOSTNAME, config.hostname);
+	if (ret < 0) {
+		return ret;
+	}
+
+	config_changed(KEY_HOSTNAME);
+
+	return 0;
+}
+
+int bmc_config_admin_password_set(const char *password)
+{
+	int ret;
+
+	if (strlen(password) > BMC_CONFIG_PASSWORD_MAX_LEN) {
+		LOG_ERR("Password too long, maximum is %d characters",
+			BMC_CONFIG_PASSWORD_MAX_LEN);
+		return -ENAMETOOLONG;
+	}
+
+	copy_string(config.admin_password, password, sizeof(config.admin_password));
+
+	ret = config_save_string(KEY_PASSWORD, config.admin_password);
+	if (ret < 0) {
+		return ret;
+	}
+
+	config_changed(KEY_PASSWORD);
+
+	return 0;
+}
+
+static int static_ip4_set(const char *str, uint32_t *field, const char *key)
+{
+	int ret;
+
+	ret = ip4_from_string(str, field);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = bmc_net_apply_static_ip4();
+	if (ret < 0) {
+		LOG_ERR("Could not apply static IPv4 configuration (err=%d)", ret);
+		return ret;
+	}
+
+	ret = config_save(key, field, sizeof(*field));
+	if (ret < 0) {
+		return ret;
+	}
+
+	config_changed(key);
+
+	return 0;
+}
+
+int bmc_config_static_ip4_set(const char *str)
+{
+	return static_ip4_set(str, &config.static_ip4, KEY_IP4);
+}
+
+int bmc_config_static_ip4_netmask_set(const char *str)
+{
+	return static_ip4_set(str, &config.static_ip4_netmask, KEY_IP4_NM);
+}
+
+int bmc_config_static_ip4_gateway_set(const char *str)
+{
+	return static_ip4_set(str, &config.static_ip4_gateway, KEY_IP4_GW);
+}
+
+int bmc_config_use_dhcp4_set(bool use)
+{
+	int ret;
+
+	if (bmc_config_use_dhcp4() == use) {
 		return 0;
 	}
 
-	return addr;
-}
-
-int config_bmc_default_ip4_set(const char *str)
-{
-	int rc;
-
-	if (str) {
-		rc = ip4_stoa(str, &config_data.bmc_default_ip4);
-		if (rc) {
-			LOG_ERR("Invalid IPv4 address string: %s", str);
-			return rc;
-		}
-	} else {
-		config_data.bmc_default_ip4 = 0; /* Remove default addr */
-	}
-
-	rc = net_do_set_default_ip4_from_config();
-	if (rc) {
-		LOG_ERR("Could not apply BMC default IPv4 address (err=%d)", rc);
-		return rc;
-	}
-
-	rc = config_write(CFG_BMC_DEFAULT_IP4, config_data.bmc_default_ip4);
-	if (rc < 0) {
-		LOG_ERR("Configuration could not be saved (err=%d)", rc);
-		return rc;
-	}
-
-	return 0;
-}
-
-int config_bmc_default_ip4_nm_set(const char *str)
-{
-	int rc;
-
-	if (str) {
-		rc = ip4_stoa(str, &config_data.bmc_default_ip4_nm);
-		if (rc)
-			return rc;
-	} else {
-		config_data.bmc_default_ip4_nm = 0;
-	}
-
-	rc = net_do_set_default_ip4_from_config();
-	if (rc) {
-		LOG_ERR("Could not apply BMC default IPv4 subnet mask address (err=%d)", rc);
-		return rc;
-	}
-
-	rc = config_write(CFG_BMC_DEFAULT_IP4_NM, config_data.bmc_default_ip4_nm);
-	if (rc < 0) {
-		LOG_ERR("Configuration could not be saved (err=%d)", rc);
-		return rc;
-	}
-
-	return 0;
-}
-
-int config_bmc_default_ip4_gw_set(const char *str)
-{
-	int rc;
-
-	if (str) {
-		rc = ip4_stoa(str, &config_data.bmc_default_ip4_gw);
-		if (rc)
-			return rc;
-	} else {
-		config_data.bmc_default_ip4_gw = 0;
-	}
-
-	rc = net_do_set_default_ip4_from_config();
-	if (rc) {
-		LOG_ERR("Could not apply BMC default IPv4 gateway address (err=%d)", rc);
-		return rc;
-	}
-
-	rc = config_write(CFG_BMC_DEFAULT_IP4_GW, config_data.bmc_default_ip4_gw);
-	if (rc < 0) {
-		LOG_ERR("Configuration could not be saved (err=%d)", rc);
-		return rc;
-	}
-
-	return 0;
-}
-
-#define CMD_HELP_BMC_DEFAULT_IP4		\
-	"Configure BMC default IPv4 address\n"	\
-	"Usage: bmc ipv4_address <IPv4 address>"
-
-static int cmd_config_bmc_default_ip4(const struct shell *sh, size_t argc, char **argv)
-{
-	int rc;
-
-	ARG_UNUSED(argc);
-
-	if (!is_boot_finished()) {
-		shell_error(sh, "must wait for boot to finish");
-		return -EAGAIN;
-	}
-
-	rc = config_bmc_default_ip4_set(argv[1]);
-	if (rc) {
-		shell_error(sh, "Could not set BMC default IPv4 address (err=%d)", rc);
-		return rc;
-	}
-
-	shell_info(sh, "BMC default IPv4 address set to %s", argv[1]);
-
-	return 0;
-}
-
-#define CMD_HELP_BMC_DEFAULT_IP4_NM			\
-	"Configure BMC default IPv4 subnet mask\n"	\
-	"Usage: bmc ipv4_subnet_mask <IPv4 address>"
-
-static int cmd_config_bmc_default_ip4_nm(const struct shell *sh, size_t argc, char **argv)
-{
-	int rc;
-
-	ARG_UNUSED(argc);
-
-	if (!is_boot_finished()) {
-		shell_error(sh, "must wait for boot to finish");
-		return -EAGAIN;
-	}
-
-	rc = config_bmc_default_ip4_nm_set(argv[1]);
-	if (rc) {
-		shell_error(sh, "Could not set BMC default IPv4 subnet mask (err=%d)", rc);
-		return rc;
-	}
-
-	shell_info(sh, "BMC default IPv4 subnet mask set to %s", argv[1]);
-
-	return 0;
-}
-
-#define CMD_HELP_BMC_DEFAULT_IP4_GW			\
-	"Configure BMC default IPv4 gateway\n"	\
-	"Usage: bmc ipv4_gateway <IPv4 address>"
-
-static int cmd_config_bmc_default_ip4_gw(const struct shell *sh, size_t argc, char **argv)
-{
-	int rc;
-
-	ARG_UNUSED(argc);
-
-	if (!is_boot_finished()) {
-		shell_error(sh, "must wait for boot to finish");
-		return -EAGAIN;
-	}
-
-	rc = config_bmc_default_ip4_gw_set(argv[1]);
-	if (rc) {
-		shell_error(sh, "Could not set BMC default IPv4 gateway (err=%d)", rc);
-		return rc;
-	}
-
-	shell_info(sh, "BMC default IPv4 gateway set to %s", argv[1]);
-
-	return 0;
-}
-
-int config_bmc_use_dhcp4_set(bool use)
-{
-	int rc;
+	config.use_dhcp4 = use ? 1 : 0;
 
 	if (use) {
-		if (config_data.bmc_use_dhcp4 == 1)
-			return 0;
-		config_data.bmc_use_dhcp4 = 1;
-		net_start_dhcp4();
+		ret = bmc_net_start_dhcp4();
 	} else {
-		if (config_data.bmc_use_dhcp4 == 0)
-			return 0;
-		config_data.bmc_use_dhcp4 = 0;
-		net_stop_dhcp4();
+		ret = bmc_net_stop_dhcp4();
 	}
 
-	rc = config_write(CFG_BMC_USE_DHCP4, config_data.bmc_use_dhcp4);
-	if (rc < 0) {
-		LOG_ERR("Configuration could not be saved (err=%d)", rc);
-		return rc;
+	if (ret < 0) {
+		LOG_ERR("Could not %s DHCPv4 (err=%d)", use ? "start" : "stop", ret);
+		return ret;
 	}
+
+	ret = config_save(KEY_DHCP4, &config.use_dhcp4, sizeof(config.use_dhcp4));
+	if (ret < 0) {
+		return ret;
+	}
+
+	config_changed(KEY_DHCP4);
 
 	return 0;
 }
 
-#define CMD_HELP_BMC_DHCP4			\
-	"BMC DHCP4 enabled\n"			\
-	"Usage: bmc dhcpv4 <enable|disable>"
-
-static int cmd_config_bmc_dhcp4(const struct shell *sh, size_t argc, char **argv)
+int bmc_config_use_ntp_set(bool use)
 {
-	ARG_UNUSED(argc);
+	int ret;
 
-	if (!is_boot_finished()) {
-		shell_error(sh, "must wait for boot to finish");
-		return -EAGAIN;
+	if (bmc_config_use_ntp() == use) {
+		return 0;
 	}
 
-	if (!strcmp(argv[1], "enable")) {
-		config_bmc_use_dhcp4_set(true);
-		shell_info(sh, "BMC DHCPv4 enabled");
-	} else if (!strcmp(argv[1], "disable")) {
-		config_bmc_use_dhcp4_set(false);
-		shell_info(sh, "BMC DHCPv4 disabled");
-	} else {
-		shell_error(sh, "bmc dhcpv4: unknown argument %s", argv[1]);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-int config_bmc_use_ntp_set(bool use)
-{
-	int rc;
+	config.use_ntp = use ? 1 : 0;
 
 	if (use) {
-		if (config_data.bmc_use_ntp == 1)
-			return 0;
-		config_data.bmc_use_ntp = 1;
-		start_ntp();
+		ret = bmc_ntp_start();
 	} else {
-		if (config_data.bmc_use_ntp == 0)
-			return 0;
-		config_data.bmc_use_ntp = 0;
-		stop_ntp();
+		ret = bmc_ntp_stop();
 	}
 
-	rc = config_write(CFG_BMC_USE_NTP, config_data.bmc_use_ntp);
-	if (rc < 0) {
-		LOG_ERR("Configuration could not be saved (err=%d)", rc);
-		return rc;
+	if (ret < 0 && ret != -ENOTSUP) {
+		LOG_ERR("Could not %s NTP (err=%d)", use ? "start" : "stop", ret);
+		return ret;
 	}
+
+	ret = config_save(KEY_NTP, &config.use_ntp, sizeof(config.use_ntp));
+	if (ret < 0) {
+		return ret;
+	}
+
+	config_changed(KEY_NTP);
 
 	return 0;
 }
 
-#define CMD_HELP_BMC_NTP				\
-	"BMC NTP time sync enabled\n"			\
-	"Usage: bmc ntp <enable|disable>"
-
-static int cmd_config_bmc_ntp(const struct shell *sh, size_t argc, char **argv)
+int bmc_config_ntp_server_set(const char *server)
 {
-	ARG_UNUSED(argc);
+	int ret;
 
-	if (!is_boot_finished()) {
-		shell_error(sh, "must wait for boot to finish");
-		return -EAGAIN;
+	if (strlen(server) > BMC_CONFIG_NTP_SERVER_MAX_LEN) {
+		return -ENAMETOOLONG;
 	}
 
-	if (!strcmp(argv[1], "enable")) {
-		config_bmc_use_ntp_set(true);
-		shell_info(sh, "BMC NTP enabled");
-	} else if (!strcmp(argv[1], "disable")) {
-		config_bmc_use_ntp_set(false);
-		shell_info(sh, "BMC NTP disabled");
-	} else {
-		shell_error(sh, "bmc ntp: unknown argument %s", argv[1]);
-		return -EINVAL;
+	copy_string(config.ntp_server, server, sizeof(config.ntp_server));
+
+	ret = config_save_string(KEY_NTP_SERVER, config.ntp_server);
+	if (ret < 0) {
+		return ret;
 	}
 
-	return 0;
-}
+	if (bmc_config_use_ntp()) {
+		(void)bmc_ntp_stop();
 
-int config_bmc_ntp_server_set(const char *ntp_server)
-{
-	int rc;
-
-	strlcpy(config_data.bmc_ntp_server, ntp_server, sizeof(config_data.bmc_ntp_server));
-	rc = config_write_str(CFG_BMC_NTP_SERVER, config_data.bmc_ntp_server);
-	if (rc < 0) {
-		LOG_ERR("Configuration could not be saved (err=%d)", rc);
-		return rc;
-	}
-
-	if (config_bmc_use_ntp()) {
-		rc = stop_ntp();
-		if (rc < 0)
-			LOG_ERR("Error stopping NTP (err=%d)", rc);
-		rc = start_ntp();
-		if (rc < 0) {
-			LOG_ERR("Error restarting NTP (err=%d)", rc);
-			return rc;
+		ret = bmc_ntp_start();
+		if (ret < 0 && ret != -ENOTSUP) {
+			LOG_ERR("Could not restart NTP (err=%d)", ret);
+			return ret;
 		}
 	}
 
-	return 0;
-}
-
-#define CMD_HELP_BMC_NTP_SERVER				\
-	"BMC NTP server address\n"			\
-	"Usage: bmc ntp_server <server address>"
-
-static int cmd_config_bmc_ntp_server(const struct shell *sh, size_t argc, char **argv)
-{
-	int rc;
-
-	ARG_UNUSED(argc);
-
-	if (!is_boot_finished()) {
-		shell_error(sh, "must wait for boot to finish");
-		return -EAGAIN;
-	}
-
-	rc = config_bmc_ntp_server_set(argv[1]);
-	if (rc) {
-		shell_error(sh, "Could not set BMC NTP server (err=%d)", rc);
-		return rc;
-	}
-
-	shell_info(sh, "BMC NTP server updated");
+	config_changed(KEY_NTP_SERVER);
 
 	return 0;
 }
 
-
-int config_bmc_password_set(const char *password)
+int bmc_config_host_auto_poweron_set(bool on)
 {
-	int rc;
+	int ret;
 
-	if (strlen(password) > MAX_PW_LEN) {
-		LOG_ERR("Password too long, max length is %d characters", MAX_PW_LEN);
-		return -EINVAL;
+	if (bmc_config_host_auto_poweron() == on) {
+		return 0;
 	}
 
-	strlcpy(config_data.bmc_admin_password, password, sizeof(config_data.bmc_admin_password));
-	rc = config_write_str(CFG_BMC_ADMIN_PASSWORD, config_data.bmc_admin_password);
-	if (rc < 0) {
-		LOG_ERR("Configuration could not be saved (err=%d)", rc);
-		return rc;
+	config.host_auto_poweron = on ? 1 : 0;
+
+	ret = config_save(KEY_AUTO_PWR, &config.host_auto_poweron,
+			  sizeof(config.host_auto_poweron));
+	if (ret < 0) {
+		return ret;
 	}
+
+	config_changed(KEY_AUTO_PWR);
 
 	return 0;
 }
 
-#define CMD_HELP_BMC_ADMIN_PASSWORD		\
-	"BMC admin password\n"			\
-	"Usage: bmc password <pw>"
-
-static int cmd_config_bmc_password(const struct shell *sh, size_t argc, char **argv)
+int bmc_config_clear(void)
 {
-	int rc;
+#if defined(CONFIG_BMC_SETTINGS)
+	int last_err = 0;
 
-	ARG_UNUSED(argc);
+	for (size_t i = 0; i < ARRAY_SIZE(config_keys); i++) {
+		char path[sizeof(BMC_SETTINGS_TREE "/") + 16];
+		int ret;
 
-	if (!is_boot_finished()) {
-		shell_error(sh, "must wait for boot to finish");
-		return -EAGAIN;
+		ret = snprintk(path, sizeof(path), BMC_SETTINGS_TREE "/%s", config_keys[i]);
+		if (ret < 0 || ret >= sizeof(path)) {
+			return -ENAMETOOLONG;
+		}
+
+		ret = settings_delete(path);
+		if (ret < 0 && ret != -ENOENT) {
+			LOG_ERR("Could not delete %s (err=%d)", path, ret);
+			last_err = ret;
+		}
 	}
 
-	rc = config_bmc_password_set(argv[1]);
-	if (rc) {
-		shell_error(sh, "Could not set BMC admin password (err=%d)", rc);
-		return rc;
+	return last_err;
+#else
+	ARG_UNUSED(config_keys);
+
+	return -ENOTSUP;
+#endif
+}
+
+static void config_apply_defaults(void)
+{
+	memset(&config, 0, sizeof(config));
+
+	copy_string(config.hostname, CONFIG_BMC_DEFAULT_HOSTNAME, sizeof(config.hostname));
+	copy_string(config.admin_password, CONFIG_BMC_DEFAULT_ADMIN_PASSWORD,
+		    sizeof(config.admin_password));
+	copy_string(config.ntp_server, CONFIG_BMC_DEFAULT_NTP_SERVER, sizeof(config.ntp_server));
+
+	(void)ip4_from_string(CONFIG_BMC_DEFAULT_IPV4_ADDRESS, &config.static_ip4);
+	(void)ip4_from_string(CONFIG_BMC_DEFAULT_IPV4_SUBNET_MASK, &config.static_ip4_netmask);
+	(void)ip4_from_string(CONFIG_BMC_DEFAULT_IPV4_GATEWAY, &config.static_ip4_gateway);
+
+	config.use_dhcp4 = IS_ENABLED(CONFIG_BMC_DEFAULT_USE_DHCP4);
+	config.use_ntp = IS_ENABLED(CONFIG_BMC_DEFAULT_USE_NTP);
+	config.host_auto_poweron = IS_ENABLED(CONFIG_BMC_DEFAULT_HOST_AUTO_POWERON);
+}
+
+int bmc_config_load(void)
+{
+	config_apply_defaults();
+
+	if (config.hostname[0] == '\0') {
+		copy_string(config.hostname, net_hostname_get(), sizeof(config.hostname));
 	}
 
-	shell_info(sh, "BMC admin password updated");
+#if defined(CONFIG_BMC_SETTINGS)
+	int ret;
+
+	ret = settings_subsys_init();
+	if (ret < 0) {
+		LOG_WRN("Settings init failed (err=%d), using configuration defaults", ret);
+		return 0;
+	}
+
+	ret = settings_load_subtree(BMC_SETTINGS_TREE);
+	if (ret < 0) {
+		LOG_WRN("Settings load failed (err=%d), using configuration defaults", ret);
+		return 0;
+	}
+
+	LOG_INF("Configuration loaded from persistent storage");
+#else
+	LOG_INF("Persistent storage disabled, using configuration defaults");
+#endif
 
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_config_bmc_cmds,
-	SHELL_CMD_ARG(password,		NULL, CMD_HELP_BMC_ADMIN_PASSWORD, cmd_config_bmc_password, 2, 0),
-	SHELL_CMD_ARG(hostname,		NULL, CMD_HELP_BMC_HOSTNAME, cmd_config_bmc_hostname, 2, 0),
-	SHELL_CMD_ARG(ipv4_address,	NULL, CMD_HELP_BMC_DEFAULT_IP4, cmd_config_bmc_default_ip4, 2, 0),
-	SHELL_CMD_ARG(ipv4_subnet_mask,	NULL, CMD_HELP_BMC_DEFAULT_IP4_NM, cmd_config_bmc_default_ip4_nm, 2, 0),
-	SHELL_CMD_ARG(ipv4_gateway,	NULL, CMD_HELP_BMC_DEFAULT_IP4_GW, cmd_config_bmc_default_ip4_gw, 2, 0),
-	SHELL_CMD_ARG(dhcpv4,		NULL, CMD_HELP_BMC_DHCP4, cmd_config_bmc_dhcp4, 2, 0),
-	SHELL_CMD_ARG(ntp,		NULL, CMD_HELP_BMC_NTP, cmd_config_bmc_ntp, 2, 0),
-	SHELL_CMD_ARG(ntp_server,	NULL, CMD_HELP_BMC_NTP_SERVER, cmd_config_bmc_ntp_server, 2, 0),
-	SHELL_SUBCMD_SET_END
-);
+BMC_COMPONENT_DEFINE(bmc_config, BMC_INIT_PHASE_STORAGE, bmc_config_load, false);
 
-int config_host_auto_poweron_set(bool on)
+#if defined(CONFIG_SHELL)
+#include <zephyr/shell/shell.h>
+
+static int parse_enable(const struct shell *sh, const char *arg, bool *out)
 {
-	int rc;
-
-	if (on) {
-		if (config_data.host_auto_poweron == 1)
-			return 0;
-		config_data.host_auto_poweron = 1;
+	if (strcmp(arg, "enable") == 0) {
+		*out = true;
+	} else if (strcmp(arg, "disable") == 0) {
+		*out = false;
 	} else {
-		if (config_data.host_auto_poweron == 0)
-			return 0;
-		config_data.host_auto_poweron = 0;
-	}
-
-	rc = config_write(CFG_HOST_AUTO_POWERON, config_data.host_auto_poweron);
-	if (rc < 0) {
-		LOG_ERR("Configuration could not be saved (err=%d)", rc);
-		return rc;
-	}
-
-	return 0;
-}
-
-#define CMD_HELP_HOST_AUTO_POWERON		\
-	"Host auto poweron enabled\n"		\
-	"Usage: host auto_poweron <enable|disable>"
-
-static int cmd_config_host_auto_poweron(const struct shell *sh, size_t argc, char **argv)
-{
-	ARG_UNUSED(argc);
-
-	if (!is_boot_finished()) {
-		shell_error(sh, "must wait for boot to finish");
-		return -EAGAIN;
-	}
-
-	if (!strcmp(argv[1], "enable")) {
-		config_host_auto_poweron_set(true);
-		shell_info(sh, "Host auto poweron enabled");
-	} else if (!strcmp(argv[1], "disable")) {
-		config_host_auto_poweron_set(false);
-		shell_info(sh, "Host auto poweron disabled");
-	} else {
-		shell_error(sh, "host auto_poweron: unknown argument %s", argv[1]);
+		shell_error(sh, "Expected \"enable\" or \"disable\", got \"%s\"", arg);
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_config_host_cmds,
-	SHELL_CMD_ARG(auto_poweron,	NULL, CMD_HELP_HOST_AUTO_POWERON, cmd_config_host_auto_poweron, 2, 0),
-	SHELL_SUBCMD_SET_END
-);
+static int cmd_config_hostname(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	ret = bmc_config_hostname_set(argv[1]);
+	if (ret < 0) {
+		shell_error(sh, "Could not set hostname (err=%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Hostname set to %s", bmc_config_hostname());
+
+	return 0;
+}
+
+static int cmd_config_password(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	ret = bmc_config_admin_password_set(argv[1]);
+	if (ret < 0) {
+		shell_error(sh, "Could not set password (err=%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Administrator password updated");
+
+	return 0;
+}
+
+static int cmd_config_ipv4_address(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	ret = bmc_config_static_ip4_set(argv[1]);
+	if (ret < 0) {
+		shell_error(sh, "Could not set static IPv4 address (err=%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Static IPv4 address set to %s", argv[1]);
+
+	return 0;
+}
+
+static int cmd_config_ipv4_netmask(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	ret = bmc_config_static_ip4_netmask_set(argv[1]);
+	if (ret < 0) {
+		shell_error(sh, "Could not set static IPv4 netmask (err=%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Static IPv4 netmask set to %s", argv[1]);
+
+	return 0;
+}
+
+static int cmd_config_ipv4_gateway(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	ret = bmc_config_static_ip4_gateway_set(argv[1]);
+	if (ret < 0) {
+		shell_error(sh, "Could not set static IPv4 gateway (err=%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Static IPv4 gateway set to %s", argv[1]);
+
+	return 0;
+}
+
+static int cmd_config_dhcpv4(const struct shell *sh, size_t argc, char **argv)
+{
+	bool enable;
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	ret = parse_enable(sh, argv[1], &enable);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = bmc_config_use_dhcp4_set(enable);
+	if (ret < 0) {
+		shell_error(sh, "Could not change DHCPv4 setting (err=%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "DHCPv4 %s", enable ? "enabled" : "disabled");
+
+	return 0;
+}
+
+static int cmd_config_ntp(const struct shell *sh, size_t argc, char **argv)
+{
+	bool enable;
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	ret = parse_enable(sh, argv[1], &enable);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = bmc_config_use_ntp_set(enable);
+	if (ret < 0) {
+		shell_error(sh, "Could not change NTP setting (err=%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "NTP %s", enable ? "enabled" : "disabled");
+
+	return 0;
+}
+
+static int cmd_config_ntp_server(const struct shell *sh, size_t argc, char **argv)
+{
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	ret = bmc_config_ntp_server_set(argv[1]);
+	if (ret < 0) {
+		shell_error(sh, "Could not set NTP server (err=%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "NTP server set to %s", bmc_config_ntp_server());
+
+	return 0;
+}
+
+static int cmd_config_auto_poweron(const struct shell *sh, size_t argc, char **argv)
+{
+	bool enable;
+	int ret;
+
+	ARG_UNUSED(argc);
+
+	ret = parse_enable(sh, argv[1], &enable);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = bmc_config_host_auto_poweron_set(enable);
+	if (ret < 0) {
+		shell_error(sh, "Could not change host auto power-on (err=%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Host auto power-on %s", enable ? "enabled" : "disabled");
+
+	return 0;
+}
 
 static int cmd_config_show(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "--- Configuration ---");
-	shell_print(sh, "BMC hostname: %s",	config_data.bmc_hostname);
-	shell_print(sh, "BMC default IPv4 address: %s", ip4_atos(config_data.bmc_default_ip4));
-	shell_print(sh, "BMC default IPv4 subnet mask: %s", ip4_atos(config_data.bmc_default_ip4_nm));
-	shell_print(sh, "BMC default IPv4 gateway: %s", ip4_atos(config_data.bmc_default_ip4_gw));
-	shell_print(sh, "BMC use DHCPv4: %d",	config_data.bmc_use_dhcp4);
-	shell_print(sh, "BMC use NTP: %d",	config_data.bmc_use_ntp);
-	shell_print(sh, "BMC NTP server: %s",	config_data.bmc_ntp_server);
-	shell_print(sh, "Host auto poweron: %d", config_data.host_auto_poweron);
-	shell_print(sh, "---------------------");
+	shell_print(sh, "hostname:          %s", config.hostname);
+	shell_print(sh, "ipv4 address:      %s", ip4_to_string(config.static_ip4));
+	shell_print(sh, "ipv4 netmask:      %s", ip4_to_string(config.static_ip4_netmask));
+	shell_print(sh, "ipv4 gateway:      %s", ip4_to_string(config.static_ip4_gateway));
+	shell_print(sh, "dhcpv4:            %s", config.use_dhcp4 ? "enabled" : "disabled");
+	shell_print(sh, "ntp:               %s", config.use_ntp ? "enabled" : "disabled");
+	shell_print(sh, "ntp server:        %s", config.ntp_server);
+	shell_print(sh, "host auto poweron: %s",
+		    config.host_auto_poweron ? "enabled" : "disabled");
 
 	return 0;
 }
 
 static int cmd_config_clear(const struct shell *sh, size_t argc, char **argv)
 {
-	int rc;
+	int ret;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	if (!is_boot_finished()) {
-		shell_error(sh, "must wait for boot to finish");
-		return -EAGAIN;
-	}
-
-	rc = config_clear();
-	if (rc) {
-		shell_error(sh, "could not clear config (err=%d)", rc);
-		return rc;
+	ret = bmc_config_clear();
+	if (ret < 0) {
+		shell_error(sh, "Could not clear configuration (err=%d)", ret);
+		return ret;
 	}
 
 	bmc_reboot();
-
-	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_config_cmds,
-	SHELL_CMD(show,	NULL, "Show configuration.", &cmd_config_show),
-	SHELL_CMD(bmc,	&sub_config_bmc_cmds, "BMC configuration commands.", NULL),
-	SHELL_CMD(host,	&sub_config_host_cmds, "Host configuration commands.", NULL),
-	SHELL_CMD(clear_and_reboot, NULL, "Clear configuration and reboot system.", &cmd_config_clear),
-	SHELL_SUBCMD_SET_END
-);
-
-SHELL_CMD_REGISTER(config, &sub_config_cmds, "Configuration commands", NULL);
-
-int config_clear(void)
-{
-	return fs_clear();
-}
-
-int config_init(void)
-{
-	ssize_t rc;
-
-	memset(&config_data, 0, sizeof(config_data));
-
-	if (fs_enabled()) {
-		config_use_fs = true;
-
-		rc = config_read(CFG_VERSION, config_data.version);
-		if (rc < 0) {
-			if (rc == -ENOENT)
-				LOG_INF("Config creating new");
-			else
-				LOG_INF("Config could not be read, creating new");
-			config_data.version = CFG_CURRENT_VERSION;
-			rc = config_write(CFG_VERSION, config_data.version);
-		} else if (config_data.version != CFG_CURRENT_VERSION) {
-			LOG_WRN("Config version unknown (version=%d), creating new config", config_data.version);
-			rc = config_clear();
-			if (rc == 0) {
-				config_data.version = CFG_CURRENT_VERSION;
-				rc = config_write(CFG_VERSION, config_data.version);
-			}
-		} else {
-			LOG_INF("Config loading from flash");
-			rc = 0;
-		}
-		if (rc < 0) {
-			LOG_ERR("Config persistent storage failed, continuing with defaults");
-			config_use_fs = false;
-		}
-
-	} else {
-		LOG_INF("Config persistent storage unavailable, using defaults");
-	}
-
-	/*
-	 * Fields that can not be read from disk should be given defaults and
-	 * written back. Could avoid writing in that case, but that would make
-	 * it harder to change defaults in future.
-	 */
-	rc = config_read_str(CFG_BMC_ADMIN_PASSWORD, config_data.bmc_admin_password);
-	if (rc < 0) {
-		strlcpy(config_data.bmc_admin_password, CONFIG_DEFAULT_ADMIN_PASSWORD, sizeof(config_data.bmc_admin_password));
-		config_write_str(CFG_BMC_ADMIN_PASSWORD, config_data.bmc_admin_password);
-	}
-
-	rc = config_read_str(CFG_BMC_HOSTNAME, config_data.bmc_hostname);
-	if (rc < 0) {
-		/* Default to CONFIG_NET_HOSTNAME, which net_hostname_get() will return */
-		strlcpy(config_data.bmc_hostname, net_hostname_get(), sizeof(config_data.bmc_hostname));
-		config_write_str(CFG_BMC_HOSTNAME, config_data.bmc_hostname);
-	}
-
-	rc = config_read(CFG_BMC_DEFAULT_IP4, config_data.bmc_default_ip4);
-	if (rc < 0) {
-		config_data.bmc_default_ip4 = default_ip4_from_kconfig(
-			CONFIG_BMC_DEFAULT_IPV4_ADDRESS, "address");
-		config_write(CFG_BMC_DEFAULT_IP4, config_data.bmc_default_ip4);
-	}
-
-	rc = config_read(CFG_BMC_DEFAULT_IP4_NM, config_data.bmc_default_ip4_nm);
-	if (rc < 0) {
-		config_data.bmc_default_ip4_nm = default_ip4_from_kconfig(
-			CONFIG_BMC_DEFAULT_IPV4_SUBNET_MASK, "subnet mask");
-		config_write(CFG_BMC_DEFAULT_IP4_NM, config_data.bmc_default_ip4_nm);
-	}
-
-	rc = config_read(CFG_BMC_DEFAULT_IP4_GW, config_data.bmc_default_ip4_gw);
-	if (rc < 0) {
-		config_data.bmc_default_ip4_gw = default_ip4_from_kconfig(
-			CONFIG_BMC_DEFAULT_IPV4_GATEWAY, "gateway");
-		config_write(CFG_BMC_DEFAULT_IP4_GW, config_data.bmc_default_ip4_gw);
-	}
-
-	rc = config_read(CFG_BMC_USE_DHCP4, config_data.bmc_use_dhcp4);
-	if (rc < 0) {
-		config_data.bmc_use_dhcp4 = IS_ENABLED(CONFIG_BMC_DEFAULT_USE_DHCP4);
-		config_write(CFG_BMC_USE_DHCP4, config_data.bmc_use_dhcp4);
-	}
-
-	rc = config_read(CFG_BMC_USE_NTP, config_data.bmc_use_ntp);
-	if (rc < 0) {
-		config_data.bmc_use_ntp = IS_ENABLED(CONFIG_BMC_DEFAULT_USE_NTP);
-		config_write(CFG_BMC_USE_NTP, config_data.bmc_use_ntp);
-	}
-
-	rc = config_read_str(CFG_BMC_NTP_SERVER, config_data.bmc_ntp_server);
-	if (rc < 0) {
-		strlcpy(config_data.bmc_ntp_server, CONFIG_BMC_DEFAULT_NTP_SERVER,
-			sizeof(config_data.bmc_ntp_server));
-		config_write_str(CFG_BMC_NTP_SERVER, config_data.bmc_ntp_server);
-	}
-
-	rc = config_read(CFG_HOST_AUTO_POWERON, config_data.host_auto_poweron);
-	if (rc < 0) {
-		config_data.host_auto_poweron =
-			IS_ENABLED(CONFIG_BMC_DEFAULT_HOST_AUTO_POWERON);
-		config_write(CFG_HOST_AUTO_POWERON, config_data.host_auto_poweron);
-	}
-
-	return 0;
-}
+SHELL_SUBCMD_SET_CREATE(bmc_config_subcmds, (bmc, config));
+SHELL_SUBCMD_ADD((bmc, config), show, NULL, "Show the BMC configuration.", cmd_config_show, 1, 0);
+SHELL_SUBCMD_ADD((bmc, config), hostname, NULL, "Set the BMC hostname.\nUsage: hostname <name>",
+		 cmd_config_hostname, 2, 0);
+SHELL_SUBCMD_ADD((bmc, config), password, NULL,
+		 "Set the administrator password.\nUsage: password <password>",
+		 cmd_config_password, 2, 0);
+SHELL_SUBCMD_ADD((bmc, config), ipv4_address, NULL,
+		 "Set the static IPv4 address.\nUsage: ipv4_address <address>",
+		 cmd_config_ipv4_address, 2, 0);
+SHELL_SUBCMD_ADD((bmc, config), ipv4_netmask, NULL,
+		 "Set the static IPv4 netmask.\nUsage: ipv4_netmask <netmask>",
+		 cmd_config_ipv4_netmask, 2, 0);
+SHELL_SUBCMD_ADD((bmc, config), ipv4_gateway, NULL,
+		 "Set the static IPv4 gateway.\nUsage: ipv4_gateway <gateway>",
+		 cmd_config_ipv4_gateway, 2, 0);
+SHELL_SUBCMD_ADD((bmc, config), dhcpv4, NULL, "Control DHCPv4.\nUsage: dhcpv4 <enable|disable>",
+		 cmd_config_dhcpv4, 2, 0);
+SHELL_SUBCMD_ADD((bmc, config), ntp, NULL, "Control NTP.\nUsage: ntp <enable|disable>",
+		 cmd_config_ntp, 2, 0);
+SHELL_SUBCMD_ADD((bmc, config), ntp_server, NULL,
+		 "Set the NTP server.\nUsage: ntp_server <server>", cmd_config_ntp_server, 2, 0);
+SHELL_SUBCMD_ADD((bmc, config), auto_poweron, NULL,
+		 "Control host auto power-on.\nUsage: auto_poweron <enable|disable>",
+		 cmd_config_auto_poweron, 2, 0);
+SHELL_SUBCMD_ADD((bmc, config), clear_and_reboot, NULL,
+		 "Erase the stored configuration and reboot.", cmd_config_clear, 1, 0);
+SHELL_SUBCMD_ADD((bmc), config, &bmc_config_subcmds, "Configuration commands.", NULL, 1, 0);
+#endif /* CONFIG_SHELL */

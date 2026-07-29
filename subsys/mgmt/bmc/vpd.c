@@ -1,67 +1,50 @@
 /*
- * SPDX-FileCopyrightText: © 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bmc_vpd, LOG_LEVEL_INF);
 
-#include <zephyr/sys/uuid.h>
 #include <zephyr/drivers/hwinfo.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/mgmt/bmc.h>
+#include <zephyr/sys/uuid.h>
 #include <zephyr/version.h>
 
-#include "vpd.h"
-#include "bmc_git_sha.h"
+LOG_MODULE_DECLARE(bmc, CONFIG_BMC_LOG_LEVEL);
 
-#ifdef CONFIG_SHELL
-#include <zephyr/shell/shell.h>
-#include <zephyr/sys/util.h>
-
-static int cmd_vpd_show(const struct shell *sh, size_t argc, char **argv)
-{
-	const char *uuid;
-	int ret;
-
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	ret = get_bmc_uuid_string(&uuid);
-	if (ret < 0) {
-		shell_error(sh, "Could not get BMC UUID (err=%d)", ret);
-		return ret;
-	}
-
-	shell_print(sh, "BMC UUID: %s", uuid);
-	shell_print(sh, "BMC version: %s", PROJECT_GIT_SHA);
-	shell_print(sh, "BMC Zephyr version: %s", BANNER_VERSION);
-	return 0;
-}
-
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_vpd_cmds,
-	SHELL_CMD(show, NULL, "Show VPD.", cmd_vpd_show),
-	SHELL_SUBCMD_SET_END
-);
-
-SHELL_CMD_REGISTER(vpd, &sub_vpd_cmds, "Vital product data", NULL);
-#endif /* CONFIG_SHELL */
-
-#define BMC_UUID_FALLBACK "58893887-8974-2487-2389-389233423423"
-
-#ifdef CONFIG_BMC_APP_BMC_UUID
-static char bmc_uuid_str[UUID_STR_LEN] = BMC_UUID_FALLBACK;
+/* Taken from zephyr/kernel/banner.c */
+#if defined(BUILD_VERSION) && !IS_EMPTY(BUILD_VERSION)
+#define BMC_BANNER_VERSION STRINGIFY(BUILD_VERSION)
 #else
-static const char *bmc_uuid_str = BMC_UUID_FALLBACK;
+#define BMC_BANNER_VERSION KERNEL_VERSION_STRING
 #endif
 
-int get_bmc_uuid_string(const char **str)
+/*
+ * Used when the SoC has no readable hardware identifier, or when
+ * CONFIG_BMC_UUID is disabled.
+ */
+#define BMC_UUID_FALLBACK "58893887-8974-2487-2389-389233423423"
+
+#if defined(CONFIG_BMC_UUID)
+static char bmc_uuid_str[UUID_STR_LEN] = BMC_UUID_FALLBACK;
+#else
+static const char bmc_uuid_str[] = BMC_UUID_FALLBACK;
+#endif
+
+const char *bmc_uuid_get(void)
 {
-	*str = bmc_uuid_str;
-	return 0;
+	return bmc_uuid_str;
 }
 
-int vpd_init(void)
+const char *bmc_firmware_version(void)
 {
-#ifdef CONFIG_BMC_APP_BMC_UUID
+	return BMC_BANNER_VERSION;
+}
+
+#if defined(CONFIG_BMC_UUID)
+static int bmc_vpd_init(void)
+{
 	struct uuid uuid_v5_ns;
 	struct uuid bmc_uuid;
 	uint8_t mcu_uid[16];
@@ -83,15 +66,37 @@ int vpd_init(void)
 
 	ret = uuid_generate_v5(&uuid_v5_ns, mcu_uid, length, &bmc_uuid);
 	if (ret < 0) {
-		LOG_ERR("Could not generate device UUID");
-		return -EINVAL;
+		LOG_ERR("Could not generate device UUID (err=%d)", ret);
+		return ret;
 	}
 
 	ret = uuid_to_string(&bmc_uuid, bmc_uuid_str);
 	if (ret < 0) {
-		LOG_ERR("Could not convert UUID to string");
-		return -EINVAL;
+		LOG_ERR("Could not convert UUID to string (err=%d)", ret);
+		return ret;
 	}
-#endif
+
 	return 0;
 }
+
+BMC_COMPONENT_DEFINE(bmc_vpd, BMC_INIT_PHASE_PLATFORM, bmc_vpd_init, true);
+#endif /* CONFIG_BMC_UUID */
+
+#if defined(CONFIG_SHELL)
+#include <zephyr/shell/shell.h>
+
+static int cmd_bmc_vpd_show(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	shell_print(sh, "BMC UUID: %s", bmc_uuid_get());
+	shell_print(sh, "BMC firmware version: %s", bmc_firmware_version());
+
+	return 0;
+}
+
+SHELL_SUBCMD_SET_CREATE(bmc_vpd_subcmds, (bmc, vpd));
+SHELL_SUBCMD_ADD((bmc, vpd), show, NULL, "Show vital product data.", cmd_bmc_vpd_show, 1, 0);
+SHELL_SUBCMD_ADD((bmc), vpd, &bmc_vpd_subcmds, "Vital product data.", NULL, 1, 0);
+#endif /* CONFIG_SHELL */

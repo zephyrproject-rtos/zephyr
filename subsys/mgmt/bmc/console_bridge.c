@@ -1,137 +1,153 @@
 /*
- * SPDX-FileCopyrightText: © 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <zephyr/kernel.h>
+/*
+ * Bridges the captured host console to a plain TCP port. Only output produced
+ * after a client connects is forwarded, history is left to the websocket
+ * transport.
+ */
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(console_bridge, LOG_LEVEL_INF);
-
-#include <zephyr/posix/fcntl.h>
-#include <zephyr/net/socket.h>
-#include <errno.h>
-#include <unistd.h>
-#include <sys/socket.h>
 #include <string.h>
 
-#include "console_logger.h"
-#include "synch.h"
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/mgmt/bmc.h>
+#include <zephyr/mgmt/bmc/console.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/sys/atomic.h>
 
-#define CONSOLE_BRIDGE_PORT 22
-#define CONSOLE_BRIDGE_STACK_SIZE K_THREAD_STACK_SIZEOF(console_bridge_stack_area)
-#define CONSOLE_BRIDGE_PRIORITY   CONFIG_CONSOLE_BRIDGE_PRIORITY
+#include "bmc_internal.h"
 
-K_THREAD_STACK_DEFINE(console_bridge_stack_area, CONFIG_CONSOLE_BRIDGE_STACK_SIZE);
-static struct k_thread console_bridge_thread_data;
+LOG_MODULE_DECLARE(bmc, CONFIG_BMC_LOG_LEVEL);
 
-K_THREAD_STACK_DEFINE(socket_send_thread_stack_area, CONFIG_CONSOLE_BRIDGE_STACK_SIZE);
-static struct k_thread socket_send_thread_data;
+#define CONSOLE_BRIDGE_PORT     CONFIG_BMC_CONSOLE_BRIDGE_PORT
+#define CONSOLE_BRIDGE_PRIORITY CONFIG_BMC_CONSOLE_BRIDGE_PRIORITY
+#define CONSOLE_BRIDGE_BUF_SIZE 64
 
-static volatile int active_client_fd = -1;
-static volatile bool new_client;
+static K_THREAD_STACK_DEFINE(listen_stack, CONFIG_BMC_CONSOLE_BRIDGE_STACK_SIZE);
+static struct k_thread listen_thread_data;
 
-static void socket_send_thread(void *a, void *b, void *c)
+static K_THREAD_STACK_DEFINE(send_stack, CONFIG_BMC_CONSOLE_BRIDGE_STACK_SIZE);
+static struct k_thread send_thread_data;
+
+/* Shared between the listening thread and the sending thread. */
+static atomic_t active_client_fd = ATOMIC_INIT(-1);
+static atomic_t new_client;
+
+static void drop_client(int fd)
 {
-	uint64_t pos = 0;
-	uint8_t buf[64];
+	if (atomic_cas(&active_client_fd, fd, -1)) {
+		(void)zsock_shutdown(fd, ZSOCK_SHUT_RDWR);
+	}
+}
 
-	while (1) {
+static void send_thread(void *a, void *b, void *c)
+{
+	uint8_t buf[CONSOLE_BRIDGE_BUF_SIZE];
+	uint64_t pos = 0;
+
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	while (true) {
+		int fd = (int)atomic_get(&active_client_fd);
 		ssize_t ret;
 
-		if (active_client_fd == -1) {
-			k_event_wait_safe(&events, EVENT_TELNET_CLIENT, false, K_FOREVER);
+		if (fd < 0) {
+			(void)k_event_wait_safe(&bmc_console_events,
+						BMC_CONSOLE_EVENT_TCP_CLIENT, false, K_FOREVER);
 			continue;
 		}
 
-		if (new_client) {
+		if (atomic_cas(&new_client, 1, 0)) {
 			/*
-			 * Whereas websocket clients get all history, telnet
-			 * clients only send subsequent console output.
+			 * Unlike websocket clients, TCP clients only get output
+			 * produced after they connected.
 			 */
-			host_console_seek_end(&pos);
-			new_client = false;
+			bmc_console_seek_end(&pos);
 		}
 
-		ret = host_console_read(buf, sizeof(buf), &pos);
-		if (ret < 0)
+		ret = bmc_console_read(buf, sizeof(buf), &pos);
+		if (ret < 0) {
 			continue;
+		}
+
 		if (ret == 0) {
-			k_event_wait_safe(&events,
-					EVENT_TELNET_CLIENT |
-					EVENT_CONSOLE_LOG_DATA,
-					false, K_FOREVER);
+			(void)k_event_wait_safe(&bmc_console_events,
+						BMC_CONSOLE_EVENT_TCP_CLIENT |
+							BMC_CONSOLE_EVENT_DATA,
+						false, K_FOREVER);
 			continue;
 		}
 
-		if (active_client_fd == -1)
-			continue;
-
-		ret = send(active_client_fd, buf, ret, 0);
+		ret = zsock_send(fd, buf, ret, 0);
 		if (ret <= 0) {
-			LOG_WRN("Socket send error: %d len: %zd", errno, ret);
-			shutdown(active_client_fd, 2);
-			active_client_fd = -1;
+			LOG_WRN("Console bridge send error (err=%d)", errno);
+			drop_client(fd);
 		}
 	}
 }
 
 static void handle_client(int client_fd)
 {
-	/*
-	 * Improve performance by enabling TCP_NODELAY (ie disabling Nagle)
-	 */
+	uint8_t buf[CONSOLE_BRIDGE_BUF_SIZE];
 	int opt = 1;
-	if (setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) < 0) {
-		LOG_WRN("Failed to set TCP_NODELAY: %d", errno);
+
+	/* Disable Nagle so that keystrokes are not batched. */
+	if (zsock_setsockopt(client_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt)) < 0) {
+		LOG_WRN("Could not set TCP_NODELAY (err=%d)", errno);
 	}
 
-	LOG_INF("Client connected to console bridge (host console UART -> TCP port %d)",
-		CONSOLE_BRIDGE_PORT);
+	LOG_INF("Console bridge client connected on port %d", CONSOLE_BRIDGE_PORT);
 
-	/* Set active client */
-	active_client_fd = client_fd;
-	new_client = true;
-	k_event_post(&events, EVENT_TELNET_CLIENT);
+	atomic_set(&new_client, 1);
+	atomic_set(&active_client_fd, client_fd);
+	k_event_post(&bmc_console_events, BMC_CONSOLE_EVENT_TCP_CLIENT);
 
-	uint8_t socket_buf[64];
+	while (atomic_get(&active_client_fd) == client_fd) {
+		ssize_t ret = zsock_recv(client_fd, buf, sizeof(buf), 0);
 
-	while (active_client_fd != -1) {
-		ssize_t rc = recv(active_client_fd, socket_buf, sizeof(socket_buf), 0);
-		if (rc <= 0) {
-			if (rc == 0) {
-				LOG_INF("Client disconnected gracefully");
+		if (ret <= 0) {
+			if (ret == 0) {
+				LOG_INF("Console bridge client disconnected");
 			} else {
-				LOG_WRN("Socket recv() error: %d", errno);
+				LOG_WRN("Console bridge recv error (err=%d)", errno);
 			}
-			shutdown(active_client_fd, 2);
-			active_client_fd = -1;
+
+			drop_client(client_fd);
 			break;
 		}
 
-		/* XXX: error handling */
-		host_console_write(socket_buf, rc);
+		ret = bmc_console_write(buf, ret);
+		if (ret < 0) {
+			LOG_WRN("Could not forward input to the host console (err=%d)",
+				(int)ret);
+		}
 	}
-
-	LOG_INF("Console bridge client disconnected");
 }
 
-static void console_bridge_daemon_thread(void *a, void *b, void *c)
+static void listen_thread(void *a, void *b, void *c)
 {
-	int server_fd;
 	struct sockaddr_in server_addr;
-	int opt;
+	int server_fd;
+	int opt = 1;
 
-	server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	server_fd = zsock_socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (server_fd < 0) {
-		LOG_ERR("socket() failed: %d", errno);
+		LOG_ERR("Console bridge socket() failed (err=%d)", errno);
 		return;
 	}
 
-	/* Set SO_REUSEADDR to allow rebinding */
-	opt = 1;
-	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-		LOG_WRN("Failed to set SO_REUSEADDR: %d", errno);
+	if (zsock_setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		LOG_WRN("Could not set SO_REUSEADDR (err=%d)", errno);
 	}
 
 	memset(&server_addr, 0, sizeof(server_addr));
@@ -139,61 +155,48 @@ static void console_bridge_daemon_thread(void *a, void *b, void *c)
 	server_addr.sin_port = htons(CONSOLE_BRIDGE_PORT);
 	server_addr.sin_addr.s_addr = INADDR_ANY;
 
-	if (bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-		LOG_ERR("bind() failed: %d", errno);
-		close(server_fd);
+	if (zsock_bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+		LOG_ERR("Console bridge bind() failed (err=%d)", errno);
+		zsock_close(server_fd);
 		return;
 	}
 
-	if (listen(server_fd, 1) < 0) {
-		LOG_ERR("listen() failed: %d", errno);
-		close(server_fd);
+	if (zsock_listen(server_fd, 1) < 0) {
+		LOG_ERR("Console bridge listen() failed (err=%d)", errno);
+		zsock_close(server_fd);
 		return;
 	}
 
-	LOG_INF("Console bridge daemon listening on port %d...", CONSOLE_BRIDGE_PORT);
+	LOG_INF("Console bridge listening on port %d", CONSOLE_BRIDGE_PORT);
 
-	while (1) {
+	while (true) {
 		struct sockaddr_in client_addr;
 		socklen_t client_addr_len = sizeof(client_addr);
 		int client_fd;
 
-		client_fd = accept(server_fd, (struct sockaddr *)&client_addr,
-				   &client_addr_len);
+		client_fd = zsock_accept(server_fd, (struct sockaddr *)&client_addr,
+					 &client_addr_len);
 		if (client_fd < 0) {
-			LOG_ERR("accept() failed: %d", errno);
+			LOG_ERR("Console bridge accept() failed (err=%d)", errno);
 			continue;
 		}
 
 		handle_client(client_fd);
-
-		close(client_fd);
-		LOG_INF("Client disconnected. Waiting for new connection...");
+		zsock_close(client_fd);
 	}
-
-	/* Unreachable */
-	close(server_fd);
 }
 
-int console_bridge_init(void)
+static int console_bridge_init(void)
 {
-	LOG_INF("Starting console bridge daemon (host console UART -> TCP port %d)...", CONSOLE_BRIDGE_PORT);
+	k_thread_create(&listen_thread_data, listen_stack, K_THREAD_STACK_SIZEOF(listen_stack),
+			listen_thread, NULL, NULL, NULL, CONSOLE_BRIDGE_PRIORITY, 0, K_NO_WAIT);
+	k_thread_name_set(&listen_thread_data, "bmc_con_listen");
 
-	k_thread_create(&console_bridge_thread_data, console_bridge_stack_area,
-			CONSOLE_BRIDGE_STACK_SIZE,
-			console_bridge_daemon_thread,
-			NULL, NULL, NULL,
-			CONSOLE_BRIDGE_PRIORITY, 0, K_NO_WAIT);
-
-	k_thread_name_set(&console_bridge_thread_data, "console_bridge");
-
-	k_thread_create(&socket_send_thread_data, socket_send_thread_stack_area,
-			CONFIG_CONSOLE_BRIDGE_STACK_SIZE,
-			socket_send_thread,
-			NULL, NULL, NULL,
-			CONSOLE_BRIDGE_PRIORITY, 0, K_NO_WAIT);
-
-	k_thread_name_set(&socket_send_thread_data, "socket_send");
+	k_thread_create(&send_thread_data, send_stack, K_THREAD_STACK_SIZEOF(send_stack),
+			send_thread, NULL, NULL, NULL, CONSOLE_BRIDGE_PRIORITY, 0, K_NO_WAIT);
+	k_thread_name_set(&send_thread_data, "bmc_con_send");
 
 	return 0;
 }
+
+BMC_COMPONENT_DEFINE(bmc_console_bridge, BMC_INIT_PHASE_SERVICE, console_bridge_init, true);

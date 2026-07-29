@@ -3,22 +3,38 @@
  * Copyright (c) 2017 Linaro Limited
  * Copyright (c) 2019 Intel Corporation
  *
- * SPDX-FileCopyrightText: © 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bmc_ntp, LOG_LEVEL_DBG);
-
-#include <zephyr/net/socket.h>
-#include <zephyr/net/socket_service.h>
-#include <zephyr/net/sntp.h>
-#include <arpa/inet.h>
 #include <netdb.h>
 
-#include "ntp.h"
-#include "rtc.h"
-#include "config.h"
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/mgmt/bmc.h>
+#include <zephyr/mgmt/bmc/config.h>
+#include <zephyr/net/sntp.h>
+#include <zephyr/net/socket.h>
+
+#include "bmc_internal.h"
+
+LOG_MODULE_DECLARE(bmc, CONFIG_BMC_LOG_LEVEL);
+
+#define NTP_SERVER_PORT      123
+#define NTP_QUERY_TIMEOUT_MS 4000
+
+/*
+ * The initial interval is short so that the clock is set as soon as the
+ * network comes up, then it backs off once a sync succeeded.
+ */
+#define NTP_RETRY_INTERVAL_INITIAL K_SECONDS(20)
+#define NTP_RETRY_INTERVAL         K_SECONDS(60)
+#define NTP_RESYNC_INTERVAL        K_HOURS(6)
+
+static K_SEM_DEFINE(ntp_wakeup, 0, 1);
+static bool ntp_synced;
+static bool ntp_running;
 
 static int sntp_set_clocks(struct sntp_time *ts)
 {
@@ -27,37 +43,37 @@ static int sntp_set_clocks(struct sntp_time *ts)
 
 	tspec.tv_sec = ts->seconds;
 	tspec.tv_nsec = ((uint64_t)ts->fraction * NSEC_PER_SEC) >> 32;
+
 	ret = sys_clock_settime(SYS_CLOCK_REALTIME, &tspec);
 	if (ret < 0) {
-		LOG_ERR("Setting sys clock failed (err=%d)", ret);
+		LOG_ERR("Setting the system clock failed (err=%d)", ret);
 		return ret;
 	}
 
-	LOG_INF("Time synced to NTP");
+	LOG_INF("Time synchronised to NTP");
 
-	ret = rtc_set_from_clock();
-	if (ret < 0) {
-		LOG_ERR("Updating RTC to clock failed (err=%d)", ret);
-		ret = 0; /* Don't really need to update RTC, so don't fail */
+	ret = bmc_rtc_set_from_clock();
+	if (ret < 0 && ret != -ENOTSUP) {
+		/* Not fatal, the system clock is what the services use. */
+		LOG_WRN("Updating the RTC from the system clock failed (err=%d)", ret);
 	}
 
-	return ret;
+	return 0;
 }
 
-static int dns_query(const char *host, uint16_t port, int family, int socktype,
-			struct sockaddr *addr, socklen_t *addrlen)
+static int ntp_resolve(const char *host, struct sockaddr *addr, socklen_t *addrlen)
 {
 	struct addrinfo hints = {
-		.ai_family = family,
-		.ai_socktype = socktype,
+		.ai_family = AF_INET,
+		.ai_socktype = SOCK_DGRAM,
 	};
 	struct addrinfo *res = NULL;
-	int rv;
+	int ret;
 
-	rv = getaddrinfo(host, NULL, &hints, &res);
-	if (rv < 0) {
-		LOG_ERR("getaddrinfo failed (%d, errno %d)", rv, errno);
-		return rv;
+	ret = getaddrinfo(host, NULL, &hints, &res);
+	if (ret != 0) {
+		LOG_ERR("Could not resolve %s (err=%d)", host, ret);
+		return -EHOSTUNREACH;
 	}
 
 	*addr = *res->ai_addr;
@@ -65,124 +81,105 @@ static int dns_query(const char *host, uint16_t port, int family, int socktype,
 
 	freeaddrinfo(res);
 
-	net_sin(addr)->sin_port = htons(port);
+	net_sin(addr)->sin_port = htons(NTP_SERVER_PORT);
 
 	return 0;
 }
 
-#define NTP_TIMEOUT_MS 3000
-#define NTP_SERVER_ADDR "pool.ntp.org"
-#define NTP_SERVER_PORT 123
-
-static int do_sntp(int family)
+static int ntp_sync_once(void)
 {
-	char *family_str = family == AF_INET ? "IPv4" : "IPv6";
+	const char *server = bmc_config_ntp_server();
 	struct sntp_time s_time;
 	struct sntp_ctx ctx;
 	struct sockaddr addr;
 	socklen_t addrlen;
-	int rv;
-	const char *server = config_bmc_ntp_server();
+	int ret;
 
-	/* Get SNTP server */
-	rv = dns_query(server, NTP_SERVER_PORT, family, SOCK_DGRAM, &addr, &addrlen);
-	if (rv != 0) {
-		LOG_ERR("Failed to lookup %s SNTP server (err=%d)", family_str, rv);
-		return rv;
+	ret = ntp_resolve(server, &addr, &addrlen);
+	if (ret < 0) {
+		return ret;
 	}
 
-	rv = sntp_init(&ctx, &addr, addrlen);
-	if (rv < 0) {
-		LOG_ERR("Failed to init SNTP %s ctx (err=%d)", family_str, rv);
-		goto err;
+	ret = sntp_init(&ctx, &addr, addrlen);
+	if (ret < 0) {
+		LOG_ERR("Could not init the SNTP context (err=%d)", ret);
+		return ret;
 	}
 
-	rv = sntp_query(&ctx, 4 * MSEC_PER_SEC, &s_time);
-	if (rv < 0) {
-		LOG_ERR("SNTP %s request failed (err=%d)", family_str, rv);
-		goto err;
-	}
-
+	ret = sntp_query(&ctx, NTP_QUERY_TIMEOUT_MS, &s_time);
 	sntp_close(&ctx);
 
-	rv = sntp_set_clocks(&s_time);
-	if (rv < 0) {
-		LOG_WRN("SNTP Could not set clock (err=%d)", rv);
-		return rv;
+	if (ret < 0) {
+		LOG_ERR("SNTP request to %s failed (err=%d)", server, ret);
+		return ret;
 	}
 
-	return 0;
-
-err:
-	sntp_close(&ctx);
-
-	return rv;
+	return sntp_set_clocks(&s_time);
 }
 
-static bool ntp_synced;
-static bool ntp_started;
-static uint32_t ntp_interval_sec = 20; /* Initially 20 second sync so the network can come up */
-static struct k_work_delayable ntp_sync_work;
-
-static void ntp_sync_work_handler(struct k_work *work)
+/*
+ * SNTP resolves a name and waits for a UDP reply, both of which block for a
+ * long time, so this runs on its own thread rather than on the system
+ * workqueue.
+ */
+static void ntp_thread(void *p1, void *p2, void *p3)
 {
-	ntp_interval_sec = 60; /* Upgrade to 1 minute sync until synced */
-	if (do_sntp(AF_INET) == 0) {
-		if (!ntp_synced) {
+	k_timeout_t interval = NTP_RETRY_INTERVAL_INITIAL;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (true) {
+		(void)k_sem_take(&ntp_wakeup, interval);
+
+		if (!ntp_running) {
+			interval = K_FOREVER;
+			continue;
+		}
+
+		if (ntp_sync_once() == 0) {
 			ntp_synced = true;
-			/* Upgrade to 6 hour resync */
-			ntp_interval_sec = 6*60*60;
+			interval = NTP_RESYNC_INTERVAL;
+		} else {
+			interval = ntp_synced ? NTP_RESYNC_INTERVAL : NTP_RETRY_INTERVAL;
 		}
 	}
-
-#if 0
-#if defined(CONFIG_NET_IPV6)
-	do_sntp(AF_INET6);
-#endif
-#endif
-
-	k_work_schedule(&ntp_sync_work, K_SECONDS(ntp_interval_sec));
 }
 
-bool ntp_is_synced(void)
+K_THREAD_DEFINE(bmc_ntp_thread_id, CONFIG_BMC_NTP_THREAD_STACK_SIZE, ntp_thread, NULL, NULL, NULL,
+		CONFIG_BMC_NTP_THREAD_PRIORITY, 0, -1);
+
+bool bmc_ntp_is_synced(void)
 {
 	return ntp_synced;
 }
 
-int start_ntp(void)
+int bmc_ntp_start(void)
 {
-	if (ntp_started)
-		return 0;
-
-	k_work_init_delayable(&ntp_sync_work, ntp_sync_work_handler);
-
-	k_work_schedule(&ntp_sync_work, K_SECONDS(ntp_interval_sec));
-
-	ntp_started = true;
+	ntp_running = true;
+	k_sem_give(&ntp_wakeup);
 
 	return 0;
 }
 
-int stop_ntp(void)
+int bmc_ntp_stop(void)
 {
-	struct k_work_sync work_sync;
-
-	if (!ntp_started)
-		return 0;
-
-	k_work_cancel_delayable_sync(&ntp_sync_work, &work_sync);
-
-	ntp_interval_sec = 1; /* Wait 1 second if we start again */
-
-	ntp_started = false;
+	ntp_running = false;
 
 	return 0;
 }
 
-int ntp_init(void)
+static int bmc_ntp_init(void)
 {
-	if (config_bmc_use_ntp())
-		return start_ntp();
+	k_thread_name_set(bmc_ntp_thread_id, "bmc_ntp");
+	k_thread_start(bmc_ntp_thread_id);
+
+	if (bmc_config_use_ntp()) {
+		return bmc_ntp_start();
+	}
 
 	return 0;
 }
+
+BMC_COMPONENT_DEFINE(bmc_ntp, BMC_INIT_PHASE_SERVICE, bmc_ntp_init, true);

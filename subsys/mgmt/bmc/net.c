@@ -1,165 +1,153 @@
-/* Networking */
-
 /*
- * SPDX-FileCopyrightText: © 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bmc_net, LOG_LEVEL_INF);
+
+#include <string.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/linker/sections.h>
-#include <errno.h>
-#include <stdio.h>
-
+#include <zephyr/logging/log.h>
+#include <zephyr/mgmt/bmc.h>
+#include <zephyr/mgmt/bmc/config.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/hostname.h>
 #include <zephyr/net/net_config.h>
 #include <zephyr/net/net_if.h>
-#include <zephyr/net/net_core.h>
-#include <zephyr/net/net_context.h>
-#include <zephyr/net/net_mgmt.h>
-#include <zephyr/net/dns_resolve.h>
 
-#include "net.h"
-#include "dhcp.h"
-#include "config.h"
-#include "ntp.h"
+#include "bmc_internal.h"
 
-int net_do_set_hostname(const char *hostname)
+LOG_MODULE_DECLARE(bmc, CONFIG_BMC_LOG_LEVEL);
+
+int bmc_net_set_hostname(const char *hostname)
 {
-	int rc;
+	int ret;
 
-	rc = net_hostname_set(hostname, strlen(hostname));
-	if (rc) {
-		return rc;
+	ret = net_hostname_set(hostname, strlen(hostname));
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (config_bmc_use_dhcp4()) {
-		rc = restart_dhcp4();
-		if (rc) {
-			return rc;
-		}
+	if (bmc_config_use_dhcp4()) {
+		return bmc_dhcp4_restart();
 	}
 
-	return rc;
+	return 0;
 }
 
-static int net_do_set_default_ip4(uint32_t ip4_addr, uint32_t ip4_netmask, uint32_t ip4_gateway)
+static int net_set_static_ip4(uint32_t ip4_addr, uint32_t ip4_netmask, uint32_t ip4_gateway)
 {
 	struct net_if *iface = net_if_get_default();
+	struct net_if_ipv4 *ipv4;
+	struct net_if_addr *if_addr;
 	struct in_addr addr;
 	struct in_addr netmask;
 	struct in_addr gateway;
-	struct net_if_addr *if_addr;
-	struct net_if_ipv4 *ipv4;
 
-	if (!iface) {
-		LOG_ERR("No default interface to set IPv4 address");
+	if (iface == NULL) {
+		LOG_ERR("No default interface to set the IPv4 address on");
 		return -ENOENT;
 	}
 
-	/* Set gateway */
 	gateway.s_addr = ip4_gateway;
 	net_if_ipv4_set_gw(iface, &gateway);
 
-	/* Remove existing MANUAL/OVERRIDABLE */
+	/* Drop any address we configured previously. */
 	ipv4 = iface->config.ip.ipv4;
-	if (ipv4) {
+	if (ipv4 != NULL) {
 		for (int i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-			if (!ipv4->unicast[i].ipv4.is_used)
+			if (!ipv4->unicast[i].ipv4.is_used) {
 				continue;
+			}
 
 			if (ipv4->unicast[i].ipv4.addr_type == NET_ADDR_MANUAL ||
 			    ipv4->unicast[i].ipv4.addr_type == NET_ADDR_OVERRIDABLE) {
-				/* XXX: Check return value? */
-				net_if_ipv4_addr_rm(iface, &ipv4->unicast[i].ipv4.address.in_addr);
+				(void)net_if_ipv4_addr_rm(
+					iface, &ipv4->unicast[i].ipv4.address.in_addr);
 			}
 		}
 	}
 
-	/* Just remove any manual address if this was 0 */
-	if (!ip4_addr)
+	if (ip4_addr == 0) {
+		/* Address cleared, nothing left to add. */
 		return 0;
+	}
 
 	addr.s_addr = ip4_addr;
 	if_addr = net_if_ipv4_addr_add(iface, &addr, NET_ADDR_OVERRIDABLE, 0);
-	if (!if_addr) {
-		LOG_ERR("Failed to add IPv4 address");
+	if (if_addr == NULL) {
+		LOG_ERR("Failed to add the IPv4 address");
 		return -EINVAL;
 	}
 
 	netmask.s_addr = ip4_netmask;
 	if (!net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask)) {
-		LOG_ERR("Failed to set IPv4 netmask address");
+		LOG_ERR("Failed to set the IPv4 netmask");
 		return -EINVAL;
 	}
 
 	return 0;
 }
 
-int net_do_set_default_ip4_from_config(void)
+int bmc_net_apply_static_ip4(void)
 {
-	uint32_t ip4_addr, ip4_nm, ip4_gw;
-	int rc;
-
-	ip4_addr = config_bmc_default_ip4();
-	ip4_nm = config_bmc_default_ip4_nm();
-	ip4_gw = config_bmc_default_ip4_gw();
-	rc = net_do_set_default_ip4(ip4_addr, ip4_nm, ip4_gw);
-	if (rc)
-		LOG_ERR("Cannot set default IPv4 address (err=%d)", rc);
-
-	return rc;
+	return net_set_static_ip4(bmc_config_static_ip4(), bmc_config_static_ip4_netmask(),
+				  bmc_config_static_ip4_gateway());
 }
 
-int net_start_dhcp4(void)
+int bmc_net_start_dhcp4(void)
 {
-	return start_dhcp4();
+	return bmc_dhcp4_start();
 }
 
-int net_stop_dhcp4(void)
+int bmc_net_stop_dhcp4(void)
 {
-	int rc;
+	int ret;
 
-	rc = stop_dhcp4();
-	if (rc)
-		return rc;
+	ret = bmc_dhcp4_stop();
+	if (ret < 0) {
+		return ret;
+	}
 
-	rc = net_do_set_default_ip4_from_config();
-	if (rc)
-		LOG_ERR("Cannot reset IPv4 address (err=%d)", rc);
+	ret = bmc_net_apply_static_ip4();
+	if (ret < 0) {
+		LOG_ERR("Could not restore the static IPv4 address (err=%d)", ret);
+	}
 
-#ifdef CONFIG_BMC_APP_DNS_RESOLVE
-	static const char *dns_servers[] = { CONFIG_DNS_SERVER1, NULL };
-	rc = dns_resolve_reconfigure(dns_resolve_get_default(), dns_servers,
-					NULL, DNS_SOURCE_MANUAL);
-	if (rc)
-		LOG_ERR("Cannot reset DNS resolver (err=%d)", rc);
+#if defined(CONFIG_BMC_DNS_RESOLVE)
+	static const char *const dns_servers[] = {CONFIG_DNS_SERVER1, NULL};
+
+	ret = dns_resolve_reconfigure(dns_resolve_get_default(), dns_servers, NULL,
+				      DNS_SOURCE_MANUAL);
+	if (ret < 0) {
+		LOG_ERR("Could not reconfigure the DNS resolver (err=%d)", ret);
+	}
 #endif
 
 	return 0;
 }
 
-int net_init(void)
+static int bmc_net_init(void)
 {
-	int rc;
 	uint32_t net_config_flags = 0;
-	const char *hostname = config_bmc_hostname();
+	int ret;
 
-	rc = net_hostname_set(hostname, strlen(hostname));
-	if (rc)
-		LOG_ERR("Net hostname set failed");
-
-	if (config_bmc_default_ip4()) {
-		LOG_INF("Network static IP set");
-		rc = net_do_set_default_ip4_from_config();
-		if (rc)
-			LOG_ERR("Static IPv4 init failed");
+	ret = bmc_net_set_hostname(bmc_config_hostname());
+	if (ret < 0) {
+		LOG_ERR("Could not set the network hostname (err=%d)", ret);
 	}
 
-	rc = dhcp4_init();
-	if (rc) {
-		LOG_ERR("DHCPv4 init failed");
-		return rc;
+	if (bmc_config_static_ip4() != 0) {
+		ret = bmc_net_apply_static_ip4();
+		if (ret < 0) {
+			LOG_ERR("Static IPv4 configuration failed (err=%d)", ret);
+		}
+	}
+
+	ret = bmc_dhcp4_init();
+	if (ret < 0) {
+		LOG_ERR("DHCPv4 init failed (err=%d)", ret);
+		return ret;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
@@ -170,29 +158,30 @@ int net_init(void)
 		net_config_flags |= NET_CONFIG_NEED_IPV6;
 	}
 
-	rc = net_config_init("Initializing network", net_config_flags,
-			     CONFIG_NET_CONFIG_INIT_TIMEOUT * MSEC_PER_SEC);
-	if (rc) {
-		LOG_ERR("Network init failed");
-		return rc;
+	ret = net_config_init("Initializing network", net_config_flags,
+			      CONFIG_NET_CONFIG_INIT_TIMEOUT * MSEC_PER_SEC);
+	if (ret < 0) {
+		LOG_ERR("Network init failed (err=%d)", ret);
+		return ret;
 	}
 
 	/*
-	 * Net init always starts dhcp if it is in the Kconfig.
-	 * Stop it if our config does not want it. This is
-	 * somewhat hacky.
+	 * net_config_init() unconditionally starts DHCPv4 when it is built in,
+	 * so stop it again if the stored configuration asks for a static
+	 * address.
 	 */
-	if (!config_bmc_use_dhcp4()) {
-		if (net_stop_dhcp4())
-			LOG_ERR("DHCPv4 stop failed, continuing");
+	if (!bmc_config_use_dhcp4()) {
+		ret = bmc_net_stop_dhcp4();
+		if (ret < 0) {
+			LOG_ERR("Could not stop DHCPv4 (err=%d), continuing", ret);
+		}
 	}
 
 	LOG_INF("Network hostname: %s", net_hostname_get());
 
-	LOG_DBG("NTP init");
-	rc = ntp_init();
-	if (rc)
-		LOG_ERR("NTP init failed");
+	bmc_event_notify(BMC_EVENT_NET_READY, NULL, 0);
 
 	return 0;
 }
+
+BMC_COMPONENT_DEFINE(bmc_net, BMC_INIT_PHASE_NETWORK, bmc_net_init, false);

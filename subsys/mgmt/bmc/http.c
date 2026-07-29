@@ -1,219 +1,181 @@
 /*
- * HTTP web server
+ * HTTP and HTTPS services hosted by the BMC.
  *
  * Copyright (c) 2023, Emna Rekik
  * Copyright (c) 2024, Nordic Semiconductor
  *
- * SPDX-FileCopyrightText: © 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2025-2026 Tenstorrent USA, Inc.
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+
 #include <zephyr/kernel.h>
-#include <zephyr/net/tls_credentials.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/mgmt/bmc.h>
+#include <zephyr/mgmt/bmc/auth.h>
+#include <zephyr/mgmt/bmc/config.h>
+#include <zephyr/mgmt/bmc/http.h>
 #include <zephyr/net/http/server.h>
 #include <zephyr/net/http/service.h>
+#include <zephyr/net/websocket.h>
+
 #if defined(CONFIG_SHELL_BACKEND_WEBSOCKET)
 #include <zephyr/shell/shell_websocket.h>
 #endif
-#include <stdio.h>
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(bmc_http, LOG_LEVEL_INF);
+#include "bmc_internal.h"
 
-#include "http.h"
-#include "config.h"
+LOG_MODULE_DECLARE(bmc, CONFIG_BMC_LOG_LEVEL);
 
-static uint16_t http_service_port = 80;
-HTTP_SERVICE_DEFINE(http_service, NULL, &http_service_port,
-		    3, 10, NULL, NULL, NULL);
+static uint16_t http_service_port = CONFIG_BMC_HTTP_PORT;
+HTTP_SERVICE_DEFINE(bmc_http_service, NULL, &http_service_port, CONFIG_BMC_HTTP_CONCURRENT,
+		    CONFIG_BMC_HTTP_BACKLOG, NULL, NULL, NULL);
 
 #if defined(CONFIG_SHELL_BACKEND_WEBSOCKET)
-DEFINE_WEBSOCKET_SERVICE(http_service);
+DEFINE_WEBSOCKET_SERVICE(bmc_http_service);
 #endif
 
-#if defined(CONFIG_BMC_APP_HTTPS)
+#if defined(CONFIG_BMC_HTTPS)
+BUILD_ASSERT(IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS),
+	     "CONFIG_BMC_HTTPS needs CONFIG_NET_SOCKETS_SOCKOPT_TLS");
 
-#include "certificate.h"
-
-#ifndef CONFIG_NET_SOCKETS_SOCKOPT_TLS
-#error "CONFIG_NET_SOCKETS_SOCKOPT_TLS=n"
-#endif
-
-#if defined(CONFIG_BMC_APP_HTTPS_PSK)
-#ifndef CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED
-#error "CONFIG_MBEDTLS_KEY_EXCHANGE_PSK_ENABLED=n"
-#endif
-#endif
-
-enum tls_tag {
-#if defined(CONFIG_BMC_APP_HTTPS_PUBLIC_KEY)
-        /** Used for both the public and private server keys */
-        HTTP_SERVER_CERTIFICATE_TAG,
-#endif
-#if defined(CONFIG_BMC_APP_HTTPS_PSK)
-        PSK_TAG,
-#endif
+/*
+ * The credentials for this tag are supplied by the application before
+ * bmc_init() runs, so that the BMC core carries no keys of its own.
+ */
+static const sec_tag_t bmc_sec_tag_list[] = {
+	CONFIG_BMC_HTTPS_SEC_TAG,
 };
 
-static const sec_tag_t sec_tag_list_verify_none[] = {
-#if defined(CONFIG_BMC_APP_HTTPS_PUBLIC_KEY)
-		HTTP_SERVER_CERTIFICATE_TAG,
-#endif
-#if defined(CONFIG_BMC_APP_HTTPS_PSK)
-		PSK_TAG,
-#endif
-	};
-
-static uint16_t https_service_port = 443;
-HTTPS_SERVICE_DEFINE(https_service, NULL, &https_service_port,
-		     3, 10, NULL, NULL, NULL, sec_tag_list_verify_none,
-		     sizeof(sec_tag_list_verify_none));
+static uint16_t https_service_port = CONFIG_BMC_HTTPS_PORT;
+HTTPS_SERVICE_DEFINE(bmc_https_service, NULL, &https_service_port, CONFIG_BMC_HTTP_CONCURRENT,
+		     CONFIG_BMC_HTTP_BACKLOG, NULL, NULL, NULL, bmc_sec_tag_list,
+		     sizeof(bmc_sec_tag_list));
 
 #if defined(CONFIG_SHELL_BACKEND_WEBSOCKET)
-DEFINE_WEBSOCKET_SERVICE(https_service);
+DEFINE_WEBSOCKET_SERVICE(bmc_https_service);
 #endif
+#endif /* CONFIG_BMC_HTTPS */
 
-static int setup_tls(void)
+/* "Auth:" followed by "<user>_<password>". */
+#define WS_AUTH_PREFIX      "Auth:"
+#define WS_CREDENTIALS_MAX  (BMC_CONFIG_USER_MAX_LEN + 1 + BMC_CONFIG_PASSWORD_MAX_LEN)
+#define WS_AUTH_TIMEOUT_MS  3000
+
+int bmc_http_ws_auth(int ws_socket, struct http_request_ctx *request_ctx, void *user_data)
 {
-	int err = 0;
-
-#if defined(CONFIG_BMC_APP_HTTPS_PUBLIC_KEY)
-	err = tls_credential_add(HTTP_SERVER_CERTIFICATE_TAG,
-				 TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
-				 server_certificate,
-				 sizeof(server_certificate));
-	if (err < 0) {
-		LOG_ERR("Failed to register public certificate: %d", err);
-		return err;
-	}
-
-	err = tls_credential_add(HTTP_SERVER_CERTIFICATE_TAG,
-				 TLS_CREDENTIAL_PRIVATE_KEY,
-				 private_key, sizeof(private_key));
-	if (err < 0) {
-		LOG_ERR("Failed to register private key: %d", err);
-		return err;
-	}
-#endif
-
-#if defined(CONFIG_BMC_APP_HTTPS_PSK)
-	const char *psk;
-	int psk_len;
-	if (config_bmc_https_psk(&psk, &psk_len)) {
-		err = tls_credential_add(PSK_TAG,
-					 TLS_CREDENTIAL_PSK,
-					 psk,
-					 psk_len);
-		if (err < 0) {
-			LOG_ERR("Failed to register PSK: %d", err);
-			return err;
-		}
-
-		static const char psk_id[] = "bmc";
-		err = tls_credential_add(PSK_TAG,
-					 TLS_CREDENTIAL_PSK_ID,
-					 psk_id,
-					 sizeof(psk_id) - 1);
-		if (err < 0) {
-			LOG_ERR("Failed to register PSK ID: %d", err);
-			return err;
-		}
-	}
-#endif
-
-	return err;
-}
-#else /* defined(CONFIG_BMC_APP_HTTPS) */
-static int setup_tls(void)
-{
-	return 0;
-}
-#endif /* defined(CONFIG_BMC_APP_HTTPS) */
-
-#include <zephyr/net/websocket.h>
-#define CREDENTIALS_MAX_LEN 64
-int ws_validate_auth(int ws_socket, struct http_request_ctx *request_ctx, void *user_data)
-{
-	static const char auth_prefix[] = "Auth:";
-	uint8_t rx_buf[sizeof(auth_prefix) + CREDENTIALS_MAX_LEN];
+	char rx_buf[sizeof(WS_AUTH_PREFIX) + WS_CREDENTIALS_MAX];
 	uint32_t message_type;
 	uint64_t remaining;
-	int rc;
-	int32_t timeout_ms = 3000;
+	int ret;
 
-	rc = websocket_recv_msg(ws_socket, rx_buf, sizeof(rx_buf) - 1,
-				&message_type, &remaining, timeout_ms);
-	if (rc <= 0) {
-		LOG_WRN("No websocket auth message (err=%d)", rc);
+	ARG_UNUSED(request_ctx);
+	ARG_UNUSED(user_data);
+
+	ret = websocket_recv_msg(ws_socket, rx_buf, sizeof(rx_buf) - 1, &message_type, &remaining,
+				 WS_AUTH_TIMEOUT_MS);
+	if (ret <= 0) {
+		LOG_WRN("No websocket authentication message (err=%d)", ret < 0 ? ret : -EIO);
 		websocket_disconnect(ws_socket);
-		return -EIO;
+		return ret < 0 ? ret : -EIO;
 	}
 
-	rx_buf[rc] = '\0'; /* Nul terminate so we can strcmp it */
+	rx_buf[ret] = '\0';
 
-	if (memcmp(rx_buf, auth_prefix, sizeof(auth_prefix) - 1)) {
-		LOG_WRN("No websocket auth message (%s)", rx_buf);
+	if (strncmp(rx_buf, WS_AUTH_PREFIX, sizeof(WS_AUTH_PREFIX) - 1) != 0) {
+		LOG_WRN("Malformed websocket authentication message");
 		websocket_disconnect(ws_socket);
 		return -EINVAL;
 	}
 
-	const char *auth = rx_buf + sizeof(auth_prefix) - 1;
-
-	uint8_t expected[CREDENTIALS_MAX_LEN];
-	snprintf(expected, sizeof(expected), "%s_%s", "admin", config_bmc_admin_password());
-
-	if (strcmp(auth, expected)) {
-		LOG_WRN("Websocket auth incorrect (%s)", rx_buf);
+	ret = bmc_auth_check_pair(rx_buf + sizeof(WS_AUTH_PREFIX) - 1, '_');
+	if (ret < 0) {
+		LOG_WRN("Websocket authentication failed (err=%d)", ret);
 		websocket_disconnect(ws_socket);
-		return -EPERM;
+		return -EACCES;
 	}
 
 	return 0;
 }
 
-static int (*shell_http_ws_cb)(int ws_socket, struct http_request_ctx *request_ctx, void *user_data);
-static int (*shell_https_ws_cb)(int ws_socket, struct http_request_ctx *request_ctx, void *user_data);
-
-int shell_http_ws_auth_cb(int ws_socket, struct http_request_ctx *request_ctx, void *user_data)
-{
-	int rc = ws_validate_auth(ws_socket, request_ctx, user_data);
-	if (rc < 0)
-		return rc;
-
-	return shell_http_ws_cb(ws_socket, request_ctx, user_data);
-}
-
-int shell_https_ws_auth_cb(int ws_socket, struct http_request_ctx *request_ctx, void *user_data)
-{
-	int rc = ws_validate_auth(ws_socket, request_ctx, user_data);
-	if (rc < 0)
-		return rc;
-
-	return shell_https_ws_cb(ws_socket, request_ctx, user_data);
-}
-
-int app_http_server_init(void)
-{
-	int err;
-
-	err = setup_tls();
-	if (err)
-		return err;
-
 #if defined(CONFIG_SHELL_BACKEND_WEBSOCKET)
-	shell_http_ws_cb = GET_WS_DETAIL_NAME(http_service).cb;
-	GET_WS_DETAIL_NAME(http_service).cb = shell_http_ws_auth_cb;
-	err = shell_websocket_enable(&GET_WS_SHELL_NAME(http_service));
-	if (err)
-		return err;
-#if defined(CONFIG_BMC_APP_HTTPS)
-	shell_https_ws_cb = GET_WS_DETAIL_NAME(https_service).cb;
-	GET_WS_DETAIL_NAME(https_service).cb = shell_https_ws_auth_cb;
-	err = shell_websocket_enable(&GET_WS_SHELL_NAME(https_service));
-	if (err)
-		return err;
+/*
+ * The websocket shell backend installs its own resource callback, so wrap it
+ * to authenticate the client before the shell session is handed over.
+ */
+static http_resource_websocket_cb_t shell_ws_cb[IS_ENABLED(CONFIG_BMC_HTTPS) ? 2 : 1];
+
+static int shell_ws_auth_cb(int ws_socket, struct http_request_ctx *request_ctx, void *user_data,
+			    unsigned int index)
+{
+	int ret;
+
+	ret = bmc_http_ws_auth(ws_socket, request_ctx, user_data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return shell_ws_cb[index](ws_socket, request_ctx, user_data);
+}
+
+static int shell_http_ws_auth_cb(int ws_socket, struct http_request_ctx *request_ctx,
+				 void *user_data)
+{
+	return shell_ws_auth_cb(ws_socket, request_ctx, user_data, 0);
+}
+
+#if defined(CONFIG_BMC_HTTPS)
+static int shell_https_ws_auth_cb(int ws_socket, struct http_request_ctx *request_ctx,
+				  void *user_data)
+{
+	return shell_ws_auth_cb(ws_socket, request_ctx, user_data, 1);
+}
 #endif
+
+static int shell_ws_start(void)
+{
+	int ret;
+
+	shell_ws_cb[0] = GET_WS_DETAIL_NAME(bmc_http_service).cb;
+	GET_WS_DETAIL_NAME(bmc_http_service).cb = shell_http_ws_auth_cb;
+
+	ret = shell_websocket_enable(&GET_WS_SHELL_NAME(bmc_http_service));
+	if (ret < 0) {
+		return ret;
+	}
+
+#if defined(CONFIG_BMC_HTTPS)
+	shell_ws_cb[1] = GET_WS_DETAIL_NAME(bmc_https_service).cb;
+	GET_WS_DETAIL_NAME(bmc_https_service).cb = shell_https_ws_auth_cb;
+
+	ret = shell_websocket_enable(&GET_WS_SHELL_NAME(bmc_https_service));
+	if (ret < 0) {
+		return ret;
+	}
 #endif
+
+	return 0;
+}
+#else /* CONFIG_SHELL_BACKEND_WEBSOCKET */
+static int shell_ws_start(void)
+{
+	return 0;
+}
+#endif /* CONFIG_SHELL_BACKEND_WEBSOCKET */
+
+int bmc_http_start(void)
+{
+	int ret;
+
+	ret = shell_ws_start();
+	if (ret < 0) {
+		LOG_ERR("Could not enable the websocket shell (err=%d)", ret);
+		return ret;
+	}
 
 	return http_server_start();
 }
+
+BMC_COMPONENT_DEFINE(bmc_http, BMC_INIT_PHASE_SERVICE, bmc_http_start, false);
