@@ -52,6 +52,17 @@
 	};
 };
 
+&aon_peripheral {
+	lpadc0: adc@92000 {
+		compatible = "nxp,aon-lpadc";
+		reg = <0x92000 0x1000>;
+		interrupts = <149 0>;
+		clocks = <&syscon MCUX_AON_LPADC_CLK>;
+		status = "disabled";
+		#io-channel-cells = <1>;
+	};
+};
+
 &fmu {
 	flash: flash@0 {
 		compatible = "soc-nv-flash";
