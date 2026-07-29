@@ -28,6 +28,7 @@ DECLARE_FAKE_VALUE_FUNC(const bt_addr_le_t *, bt_conn_get_dst, const struct bt_c
 DECLARE_FAKE_VOID_FUNC(bt_foreach_bond, uint8_t, bt_foreach_bond_cb, void *);
 
 struct bt_conn {
+	bt_addr_le_t addr;
 	uint8_t index;
 	struct bt_conn_info info;
 	struct bt_iso_chan *chan;
@@ -35,5 +36,7 @@ struct bt_conn {
 
 void mock_bt_conn_connected(struct bt_conn *conn, uint8_t err);
 void mock_bt_conn_disconnected(struct bt_conn *conn, uint8_t err);
+void mock_bt_conn_security_changed(struct bt_conn *conn, bt_security_t level,
+				   enum bt_security_err err);
 
 #endif /* MOCKS_CONN_H_ */
