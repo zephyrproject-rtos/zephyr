@@ -31,6 +31,9 @@ LOG_MODULE_REGISTER(mp_aud_i2s_codec_sink, CONFIG_MP_LOG_LEVEL);
  */
 #define AUD_I2S_SINK_START_PRIME 3
 
+static enum mp_state_change_return (*sink_parent_change_state)(struct mp_element *,
+							      enum mp_state_change);
+
 static struct mp_caps *mp_aud_i2s_codec_sink_supported_caps(struct mp_sink *sink)
 {
 	int ret = 0;
@@ -297,7 +300,76 @@ static int mp_aud_i2s_codec_sink_set_caps(struct mp_sink *sink, struct mp_caps *
 		return ret;
 	}
 
+	aud_i2s_codec_sink->prime_block_size = config.block_size;
+
 	return 0;
+}
+
+/* A capture source whose receiver is clock-synced to this transmitter produces
+ * nothing until the transmitter runs, while this sink waits for its buffers.
+ * Break that deadlock by starting the transmitter on silence at PLAYING,
+ * before any upstream buffer arrives.
+ */
+static enum mp_state_change_return
+mp_aud_i2s_codec_sink_change_state(struct mp_element *self, enum mp_state_change transition)
+{
+	struct mp_aud_i2s_codec_sink *sink = (struct mp_aud_i2s_codec_sink *)self;
+
+	/*
+	 * On a full stop, return the SAI transmitter to READY so the next
+	 * set_caps can reconfigure it (i2s_configure() refuses a RUNNING channel
+	 * with -EBUSY) and re-arm the start-priming so a later replay primes and
+	 * starts again from scratch.
+	 */
+	if (transition == MP_STATE_CHANGE_PAUSED_TO_READY && sink->i2s_dev != NULL) {
+		(void)i2s_trigger(sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+		sink->started = false;
+		sink->count = 0;
+	}
+
+#ifdef CONFIG_MP_AUD_I2S_CODEC_SINK_SILENCE_PRIME
+	const uint8_t prime_n = CONFIG_MP_AUD_I2S_CODEC_SINK_SILENCE_PRIME_COUNT;
+
+	if (transition == MP_STATE_CHANGE_PAUSED_TO_PLAYING && !sink->started &&
+	    sink->mem_slab != NULL && sink->prime_block_size != 0U) {
+		for (uint8_t p = 0; p < prime_n; p++) {
+			void *blk;
+
+			if (k_mem_slab_alloc(sink->mem_slab, &blk, K_NO_WAIT) != 0) {
+				LOG_WRN("silence-prime: pool exhausted at %u/%u", p, prime_n);
+				break;
+			}
+
+			memset(blk, 0, sink->prime_block_size);
+
+			if (i2s_write(sink->i2s_dev, blk, sink->prime_block_size) < 0) {
+				k_mem_slab_free(sink->mem_slab, blk);
+				break;
+			}
+
+			sink->count++;
+		}
+
+		if (sink->count >= prime_n) {
+			if (i2s_trigger(sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_START) == 0) {
+				sink->started = true;
+				/* Second place the stream starts, so the codec
+				 * output has to be enabled here too.
+				 */
+				audio_codec_start_output(sink->codec_dev);
+				LOG_INF("TX started with %u silence buffers", sink->count);
+			} else {
+				LOG_ERR("silence-prime: TX start failed");
+			}
+		}
+	}
+#endif /* CONFIG_MP_AUD_I2S_CODEC_SINK_SILENCE_PRIME */
+
+	if (sink_parent_change_state != NULL) {
+		return sink_parent_change_state(self, transition);
+	}
+
+	return MP_STATE_CHANGE_SUCCESS;
 }
 
 int mp_aud_i2s_codec_sink_chainfn(struct mp_pad *pad, struct net_buf *in_buf,
@@ -310,9 +382,29 @@ int mp_aud_i2s_codec_sink_chainfn(struct mp_pad *pad, struct net_buf *in_buf,
 
 	ret = i2s_write(aud_i2s_codec_sink->i2s_dev, in_buf->data, bytes_used);
 	if (ret < 0) {
-		LOG_DBG("Failed to write data: %d\n", ret);
-		*out_buf = NULL;
-		return -EIO;
+		/* A transient underrun latches the channel in error and every
+		 * later write fails, so recover and retry instead of ending
+		 * the pipeline.
+		 */
+		LOG_DBG("I2S write failed (%d), recovering TX", ret);
+		(void)i2s_trigger(aud_i2s_codec_sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_PREPARE);
+		aud_i2s_codec_sink->started = false;
+		aud_i2s_codec_sink->count = 0;
+
+		ret = i2s_write(aud_i2s_codec_sink->i2s_dev, in_buf->data, bytes_used);
+		if (ret < 0) {
+			/*
+			 * i2s_write() did not take the buffer, so its block is
+			 * still ours. Return it to the slab before dropping the
+			 * wrapper: unreferencing only frees the net_buf, and the
+			 * block would otherwise be lost from the pool for good.
+			 */
+			LOG_DBG("I2S TX recovery failed (%d), dropping buffer", ret);
+			k_mem_slab_free(aud_i2s_codec_sink->mem_slab, in_buf->data);
+			net_buf_unref(in_buf);
+			*out_buf = NULL;
+			return 0;
+		}
 	}
 
 	if (!aud_i2s_codec_sink->started) {
@@ -321,10 +413,16 @@ int mp_aud_i2s_codec_sink_chainfn(struct mp_pad *pad, struct net_buf *in_buf,
 			ret = i2s_trigger(aud_i2s_codec_sink->i2s_dev, I2S_DIR_TX,
 					  I2S_TRIGGER_START);
 			if (ret < 0) {
-				LOG_ERR("Failed to start I2S stream: %d", ret);
+				/* Re-prime and retry on the next buffer. */
+				LOG_DBG("Failed to start I2S stream (%d), will retry", ret);
+				(void)i2s_trigger(aud_i2s_codec_sink->i2s_dev, I2S_DIR_TX,
+						  I2S_TRIGGER_PREPARE);
+				aud_i2s_codec_sink->count = 0;
+				net_buf_unref(in_buf);
 				*out_buf = NULL;
-				return -EIO;
+				return 0;
 			}
+			audio_codec_start_output(aud_i2s_codec_sink->codec_dev);
 			aud_i2s_codec_sink->started = true;
 		}
 	}
@@ -357,9 +455,13 @@ void mp_aud_i2s_codec_sink_init(struct mp_element *self)
 	sink->sinkpad.chainfn = mp_aud_i2s_codec_sink_chainfn;
 	sink->set_caps = mp_aud_i2s_codec_sink_set_caps;
 
+	sink_parent_change_state = self->change_state;
+	self->change_state = mp_aud_i2s_codec_sink_change_state;
+
 	mp_aud_i2s_codec_sink_update_caps(sink);
 
 	aud_i2s_codec_sink->started = false;
 	aud_i2s_codec_sink->count = 0;
+	aud_i2s_codec_sink->prime_block_size = 0U;
 	aud_i2s_codec_sink->mem_slab = NULL;
 }

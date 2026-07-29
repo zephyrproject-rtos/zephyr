@@ -75,6 +75,8 @@ struct mp_aud_i2s_codec_sink {
 	uint8_t count;
 	/** Number of queued buffers required before starting the stream */
 	uint8_t start_threshold;
+	/** Negotiated I2S block size, used to size silence-prime buffers */
+	uint32_t prime_block_size;
 	/** Flag indicating if the sink has been started */
 	bool started;
 	/** Clock role configuration for I2S and codec */
