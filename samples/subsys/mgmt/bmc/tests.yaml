@@ -1,0 +1,19 @@
+sample:
+  name: BMC subsystem
+common:
+  tags:
+    - net
+    - mgmt
+    - bmc
+  depends_on: netif
+  build_only: true
+tests:
+  sample.subsys.mgmt.bmc:
+    platform_allow:
+      - native_sim
+      - mps2/an385
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - mps2/an385
+      - native_sim/native/64
