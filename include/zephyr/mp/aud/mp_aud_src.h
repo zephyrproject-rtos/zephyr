@@ -36,6 +36,8 @@ enum mp_prop_aud_src {
 	MP_PROP_AUD_SRC_SLAB_PTR = MP_PROP_SRC_LAST,
 	/** Audio source device */
 	MP_PROP_AUD_SRC_DEVICE,
+	/** Last audio source property marker (start of derived element properties) */
+	MP_PROP_AUD_SRC_LAST,
 };
 
 /**

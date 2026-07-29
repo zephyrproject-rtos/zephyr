@@ -10,6 +10,7 @@ if(CONFIG_MP_AUD)
     mp_aud_dmic_src.c
     mp_aud_gain.c
     mp_aud_i2s_codec_sink.c
+    mp_aud_i2s_src.c
     mp_aud_src.c
     mp_aud.c
   )
