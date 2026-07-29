@@ -97,19 +97,18 @@
 		lfclk: lfclk {
 			#clock-cells = <0>;
 			compatible = "ti,mspm0-clk";
-			clock-frequency = <32768>;
 			clocks = <&lfosc>;
 		};
 
 		ulpclk: ulpclk {
 			#clock-cells = <0>;
 			compatible = "ti,mspm0-clk";
-			clock-frequency = <DT_FREQ_M(32)>;
 		};
 
 		mclk: mclk {
 			#clock-cells = <0>;
 			compatible = "ti,mspm0-clk";
+			/* read by SYS_CLOCK_HW_CYCLES_PER_SEC's Kconfig default */
 			clock-frequency = <DT_FREQ_M(32)>;
 			clocks = <&sysosc>;
 		};
@@ -117,7 +116,6 @@
 		mfpclk: mfpclk {
 			#clock-cells = <0>;
 			compatible = "ti,mspm0-clk";
-			clock-frequency = <DT_FREQ_M(4)>;
 			clocks = <&sysosc>;
 			status = "disabled";
 		};
