@@ -1,9 +1,11 @@
 /*
+ * Copyright (c) 2026 Conclusive Engineering Sp. z o.o.
  * SPDX-License-Identifier: Apache-2.0
  */
 
 &spi0 {
 	status = "okay";
+
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;
