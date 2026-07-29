@@ -10,3 +10,9 @@ tests:
     build_only: true
     platform_allow:
       - rpi_pico
+  sample.usb.cdc-acm-bridge.reset_lines:
+    tags: usb
+    build_only: true
+    platform_allow:
+      - nucleo_u575zi_q
+      - arduino_portenta_c33

@@ -1,0 +1,49 @@
+/*
+ * Copyright (C) Arduino s.r.l. and/or its affiliated companies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * cdc_acm_bridge on NUCLEO-U575ZI-Q + X-NUCLEO-67W61M1 (ST67W611M1
+ * coprocessor). Bridges USB CDC-ACM <-> LPUART1 (Arduino D0/D1, the module
+ * firmware-update UART) and drives the module boot/reset straps from the CDC
+ * DTR/RTS lines, so ST's QConn flashing tool can put the coprocessor into UART
+ * ISP without a manual button press.
+ *
+ * A boards/<board>.overlay replaces the sample's app.overlay, so the bridge and
+ * CDC-ACM nodes are declared here too.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	uart-bridge0 {
+		compatible = "zephyr,uart-bridge";
+		peers = <&cdc_acm_uart0 &arduino_serial>;
+	};
+
+	zephyr,user {
+		/* boot <- DTR, reset <- RTS; active-low matches the classic
+		 * auto-download-reset circuit.
+		 *   boot-gpios  : Arduino D6 = PE9  (module BOOT / GPIO0)
+		 *   reset-gpios : Arduino D5 = PE11 (module CHIP_EN)
+		 */
+		boot-gpios = <&gpioe 9 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpioe 11 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&arduino_serial {
+	/* Enable the hardware FIFO for reliable operation at higher baud rates;
+	 * baud itself is set at runtime from the CDC line coding.
+	 */
+	current-speed = <115200>;
+	fifo-enable;
+	status = "okay";
+};
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+		label = "Zephyr USB CDC-ACM";
+	};
+};

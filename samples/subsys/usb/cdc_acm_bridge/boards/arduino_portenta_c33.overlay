@@ -1,0 +1,65 @@
+/*
+ * Copyright (C) Arduino s.r.l. and/or its affiliated companies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * cdc_acm_bridge on Arduino Portenta C33: flash the onboard ESP32-C3
+ * coprocessor from a host esptool over USB CDC-ACM.
+ *
+ * Bridges USB CDC-ACM <-> SCI8 (the ESP32-C3 UART) and drives the ESP boot
+ * (P803, GPIO0/download strap) and reset/EN (P804) pins from the CDC DTR/RTS
+ * lines, reproducing esptool's auto-download-reset circuit. The normal SPI
+ * esp-hosted WiFi, the BT HCI link, and the download-strap regulator are
+ * disabled so the UART and those pins are free for flashing.
+ *
+ * A boards/<board>.overlay replaces the sample's app.overlay, so the bridge and
+ * CDC-ACM nodes are declared here too (reusing the board's board_cdc_acm_uart).
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	uart-bridge0 {
+		compatible = "zephyr,uart-bridge";
+		peers = <&board_cdc_acm_uart &uart8>;
+	};
+
+	zephyr,user {
+		/* boot <- DTR, reset <- RTS; active-low (esptool default_reset).
+		 *   boot-gpios  : P803 (ESP32-C3 GPIO0 / download strap)
+		 *   reset-gpios : P804 (ESP32-C3 EN / reset)
+		 */
+		boot-gpios = <&ioport8 3 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&ioport8 4 GPIO_ACTIVE_LOW>;
+	};
+
+	/* P803 is also the esp-hosted download-strap regulator; disable it so the
+	 * boot line above is free.
+	 */
+	download-esp32 {
+		status = "disabled";
+	};
+};
+
+/* ESP UART becomes a plain bridge peer: no BT HCI, no hardware flow control. */
+&uart8 {
+	/delete-property/ hw-flow-control;
+};
+
+&bt_hci_uart {
+	status = "disabled";
+};
+
+/* Disable the SPI WiFi so it does not claim the reset/handshake pins. */
+&spi1 {
+	esp_hosted@1 {
+		status = "disabled";
+	};
+};
+
+/* Full-speed is ample for flashing (bulk 64-byte, ~1 MB/s) and avoids a
+ * high-speed bulk-IN device->host stall in the RA USBHS UDC.
+ */
+&usbhs {
+	maximum-speed = "full-speed";
+};
