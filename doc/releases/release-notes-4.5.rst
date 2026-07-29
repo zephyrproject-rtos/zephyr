@@ -650,6 +650,14 @@ Other notable changes
     See the :ref:`migration guide <migration_4.5>` for how to update
     out-of-tree board includes.
 
+  * The NXP i.MX DTSI files have been reorganized from the flat
+    ``dts/arm/nxp/imx/`` and ``dts/arm64/nxp/`` directories into
+    per-series subdirectories (``imx6sx/``, ``imx7d/``, ``imx8m/``,
+    ``imx9/`` under the arm32 tree, and ``imx8m/``, ``imx9/`` under
+    the arm64 tree).
+    See the :ref:`migration guide <migration_4.5>` for how to update
+    out-of-tree board includes.
+
 * Arm
 
   * The non-secure variant of

@@ -749,6 +749,44 @@ NXP
     /* After */
     #include <nxp/imxrt/imxrt118x/nxp_rt1186_cm7.dtsi>
 
+* The NXP i.MX DTSI files were reorganized from the flat directories
+  ``dts/arm/nxp/imx/`` and ``dts/arm64/nxp/`` into per-series subdirectories.
+  Out-of-tree boards that include these files directly must update their
+  includes.
+
+  The new subdirectory layout is:
+
+  ============================  ============================
+  i.MX series                   New location
+  ============================  ============================
+  i.MX 6SX (Arm Cortex-M4)       ``dts/arm/nxp/imx/imx6sx/``
+  i.MX 7D (Arm Cortex-M4)        ``dts/arm/nxp/imx/imx7d/``
+  i.MX 8M (Arm Cortex-M4/M7)     ``dts/arm/nxp/imx/imx8m/``
+  i.MX 9 (Arm Cortex-M33/M7)     ``dts/arm/nxp/imx/imx9/``
+  i.MX 8M (Arm Cortex-A53)       ``dts/arm64/nxp/imx/imx8m/``
+  i.MX 9 (Arm Cortex-A55)        ``dts/arm64/nxp/imx/imx9/``
+  ============================  ============================
+
+  Example for an Arm Cortex-M boot core (arm32 tree):
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/imx/nxp_imx8mm_m4.dtsi>
+
+    /* After */
+    #include <nxp/imx/imx8m/nxp_imx8mm_m4.dtsi>
+
+  Example for an Arm Cortex-A core (arm64 tree):
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/nxp_mimx93_a55.dtsi>
+
+    /* After */
+    #include <nxp/imx/imx9/nxp_mimx93_a55.dtsi>
+
 PWM
 ===
 
