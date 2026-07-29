@@ -14,6 +14,10 @@ config SOC_SERIES_INTEL_ADSP_ACE
 	select HAS_PM
 	select PM_STATE_SET_IRQ_UNLOCKED
 	select ARCH_HAS_GDBSTUB
+	# With testing, there are too many IPIs being sent which can
+	# overwhelm the IDC block. So enable IPI optimization to limit
+	# sched IPIs for specific target.
+	imply IPI_OPTIMIZE if ZTEST && SMP && MP_MAX_NUM_CPUS > 1
 
 config SOC_SERIES_INTEL_ADSP_ACE15
 	select XTENSA_CPU_HAS_HIFI4
