@@ -811,6 +811,20 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 		/* Failed to get OFFER message, send DISCOVER again */
 		return dhcpv4_send_discover(iface);
 	case NET_DHCPV4_INIT_REBOOT:
+		/* INIT-REBOOT is an optimistic fast probe (RFC2131 3.2). If the
+		 * remembered address is not confirmed within a tight retransmit
+		 * budget (e.g. the interface moved to a different network whose
+		 * server silently drops the foreign-subnet REQUEST), fall back
+		 * to a full DISCOVER instead of burning the whole schedule.
+		 */
+		if (iface->config.dhcpv4.attempts >=
+					DHCPV4_INIT_REBOOT_MAX_ATTEMPTS) {
+			NET_DBG("INIT-REBOOT unanswered, restart with discover");
+			dhcpv4_enter_selecting(iface);
+			return dhcpv4_send_discover(iface);
+		}
+
+		return dhcpv4_send_request(iface);
 	case NET_DHCPV4_REQUESTING:
 		/* Maximum number of renewal attempts failed, so start
 		 * from the beginning.
