@@ -138,6 +138,16 @@ static int dummy_codec_stop(const struct device *dev, audio_dai_dir_t dir)
 	return 0;
 }
 
+static void dummy_codec_start_output(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static void dummy_codec_stop_output(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
 static int dummy_codec_write(const struct device *dev, uint8_t *data, size_t data_size)
 {
 	struct dummy_codec_data *dummy_data = dev->data;
@@ -163,6 +173,8 @@ static int dummy_codec_init(const struct device *dev)
 
 static DEVICE_API(audio_codec, dummy_codec_api) = {
 	.configure = dummy_codec_configure,
+	.start_output = dummy_codec_start_output,
+	.stop_output = dummy_codec_stop_output,
 	.set_property = dummy_codec_set_property,
 	.start = dummy_codec_start,
 	.stop = dummy_codec_stop,
