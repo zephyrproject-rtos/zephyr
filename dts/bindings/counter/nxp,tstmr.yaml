@@ -11,7 +11,23 @@ properties:
   reg:
     required: true
 
+  clocks:
+    description: |
+      Clock of the time base the TSTMR reflects. Whether to set it depends on
+      how the SoC implements the TSTMR:
+
+        - On SoCs where the TSTMR is a snapshot of a System Counter (SCTR)
+          that acts as the timing source and must be brought up in software
+          (e.g. i.MX RT118x), set this. The driver then enables the clock via
+          the clock-control driver and takes the counter frequency from it
+          (clock-frequency is ignored).
+
+        - On SoCs where the TSTMR is a self-contained, free-running counter
+          that starts after system reset and needs no clock management
+          (e.g. MCXW71), leave this unset. The driver touches no clock and
+          clock-frequency supplies the rate.
+
   clock-frequency:
     type: int
-    required: true
-    description: TSTMR counter frequency in Hz.
+    description: |
+      TSTMR counter frequency in Hz. Used when 'clocks' is not present.
