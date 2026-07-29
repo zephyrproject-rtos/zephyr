@@ -356,6 +356,8 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 				   ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 		}
 
+		rel_addr = rel_addr;
+
 		if (tgt) {
 			/* Relocatable / partially linked ELF. */
 			if (rela.r_offset >= tgt->sh_size) {
