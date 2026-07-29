@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <arm64/nxp/nxp_mimx95_a55.dtsi>
+#include <arm64/nxp/imx/imx9/nxp_mimx95_a55.dtsi>
 
 /*
  * GPIO pinmux options. These options define the pinmux settings
