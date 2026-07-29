@@ -13,21 +13,20 @@
 #include <zephyr/mp/aud/mp_aud_i2s_codec_sink.h>
 #include <zephyr/mp/aud/mp_aud_gain.h>
 #include <zephyr/mp/aud/mp_aud_dmic_src.h>
+#include <zephyr/mp/aud/mp_aud_i2s_src.h>
 #include <zephyr/mp/aud/mp_aud_buffer_pool.h>
 #include <zephyr/mp/base/mp_capsfilter.h>
+#include <zephyr/mp/utils/mp_player.h>
 
 LOG_MODULE_REGISTER(main);
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 
-/* Element IDs (values are arbitrary; only uniqueness within the pipeline matters) */
-enum {
-	PIPE_ID,
-	DMIC_SRC_ID,
-	CAPS_FILTER_ID,
-	AUD_GAIN_ID,
-	I2S_SINK_ID,
-};
+#define PIPE_ID        0
+#define AUD_SRC_ID     1
+#define CAPS_FILTER_ID 2
+#define AUD_GAIN_ID    3
+#define I2S_SINK_ID    4
 
 /*
  * WORKAROUND: Direct memory slab management in application code
@@ -41,18 +40,25 @@ enum {
 __nocache struct k_mem_slab mem_slab;
 
 static struct mp_pipeline pipe;
+#ifdef CONFIG_SAMPLE_AUDIO_SOURCE_I2S
+static struct mp_aud_i2s_src source;
+#define audio_src_init mp_aud_i2s_src_init
+#else
 static struct mp_aud_dmic_src source;
+#define audio_src_init mp_aud_dmic_src_init
+#endif
 static struct mp_aud_gain gain;
 static struct mp_aud_i2s_codec_sink sink;
 static struct mp_caps_filter caps_filter;
+static struct mp_player player;
 
 int main(void)
 {
-	int gain_val = 90; /* Set gain to 90% (0.9x amplification) */
+	int gain_val = CONFIG_SAMPLE_AUDIO_GAIN_PERCENT;
 	int ret = 0;
 
 	MP_ELEMENT_INIT(&pipe, mp_pipeline_init, PIPE_ID);
-	MP_ELEMENT_INIT(&source, mp_aud_dmic_src_init, DMIC_SRC_ID);
+	MP_ELEMENT_INIT(&source, audio_src_init, AUD_SRC_ID);
 	MP_ELEMENT_INIT(&gain, mp_aud_gain_init, AUD_GAIN_ID);
 	MP_ELEMENT_INIT(&sink, mp_aud_i2s_codec_sink_init, I2S_SINK_ID);
 
@@ -125,34 +131,22 @@ int main(void)
 	}
 	/* clang-format on */
 
-	/* Start playing */
-	if (mp_element_set_state((struct mp_element *)&pipe, MP_STATE_PLAYING) !=
-	    MP_STATE_CHANGE_SUCCESS) {
-		LOG_ERR("Failed to start pipeline");
+	/*
+	 * Hand the pipeline to the mp_player helper, which runs its lifecycle on
+	 * its own worker and exposes "mp player play/pause/stop/replay/quit"
+	 * shell commands for control and debugging. mp_player_wait_quit() blocks
+	 * until an error, EOS, or a "mp player quit"; mp_player_deinit() then
+	 * stops and tears the pipeline down.
+	 */
+	ret = mp_player_init(&player, &pipe);
+	if (ret < 0) {
+		LOG_ERR("Failed to init player (%d)", ret);
 		goto err;
 	}
 
-	/* Handle message from the pipeline */
-	struct mp_bus *bus = mp_element_get_bus((struct mp_element *)&pipe);
-	struct mp_message msg;
-
-	/* Wait until an Error or an EOS - blocking */
-	mp_bus_pop_msg(bus, MP_MESSAGE_ERROR | MP_MESSAGE_EOS, &msg);
-
-	switch (msg.type) {
-	case MP_MESSAGE_ERROR:
-		LOG_ERR("ERROR message from element %d", msg.origin->object.id);
-		break;
-	case MP_MESSAGE_EOS:
-		LOG_INF("EOS message from element %d", msg.origin->object.id);
-		break;
-	default:
-		LOG_ERR("Unexpected message from element %d", msg.origin->object.id);
-		break;
-	}
-
-	/* Stop/Deinit the pipeline */
-	(void)mp_element_set_state((struct mp_element *)&pipe, MP_STATE_READY);
+	(void)mp_player_play(&player);
+	(void)mp_player_wait_quit(&player);
+	(void)mp_player_deinit(&player);
 
 	return 0;
 
