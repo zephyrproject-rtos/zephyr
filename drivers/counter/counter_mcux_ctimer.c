@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, Toby Firth.
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -157,15 +158,27 @@ static int mcux_lpc_ctimer_set_alarm(const struct device *dev, uint8_t chan_id,
 		}
 	}
 
-	data->channels[chan_id].alarm_callback = alarm_cfg->callback;
-	data->channels[chan_id].alarm_user_data = alarm_cfg->user_data;
-
 	ctimer_match_config_t match_config = { .matchValue = ticks,
 					       .enableCounterReset = false,
 					       .enableCounterStop = false,
 					       .outControl = kCTIMER_Output_NoAction,
 					       .outPinInitState = false,
 					       .enableInterrupt = true };
+
+	/*
+	 * A previously cancelled alarm can leave its match value programmed; on
+	 * this SoC the counter reaching that value latches the channel's status
+	 * flag even while the match interrupt is disabled. Mask this channel's
+	 * interrupt and drop any latched flag before registering the callback so
+	 * a stale match cannot be delivered as a spurious expiry. Only the match
+	 * armed by CTIMER_SetupMatch() below, which re-enables the interrupt, can
+	 * then reach the callback.
+	 */
+	CTIMER_DisableInterrupts(config->base, (1U << chan_id));
+	CTIMER_ClearStatusFlags(config->base, (1U << chan_id));
+
+	data->channels[chan_id].alarm_callback = alarm_cfg->callback;
+	data->channels[chan_id].alarm_user_data = alarm_cfg->user_data;
 
 	CTIMER_SetupMatch(config->base, chan_id, &match_config);
 
@@ -178,6 +191,11 @@ static int mcux_lpc_ctimer_cancel_alarm(const struct device *dev, uint8_t chan_i
 	struct mcux_lpc_ctimer_data *data = dev->data;
 
 	CTIMER_DisableInterrupts(config->base, (1 << chan_id));
+	/*
+	 * Drop any match flag latched for this channel (see set_alarm) so a
+	 * cancelled alarm cannot be delivered once the channel is re-armed.
+	 */
+	CTIMER_ClearStatusFlags(config->base, (1U << chan_id));
 
 	data->channels[chan_id].alarm_callback = NULL;
 	data->channels[chan_id].alarm_user_data = NULL;
