@@ -10,4 +10,4 @@
  * RT1185 shares the same package and peripheral set as RT1186, except it
  * has no EtherCAT block (no ECAT node exists in the DTS yet).
  */
-#include <nxp/imxrt/rt118x/nxp_rt1186_cm33.dtsi>
+#include <nxp/imxrt/imxrt118x/nxp_rt1186_cm33.dtsi>
