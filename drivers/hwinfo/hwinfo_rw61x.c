@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2026 NXP
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 
 #include <fsl_ocotp.h>
 #include <fsl_power.h>
-#include "pmu.h"
 
 /* Because of the ROM clearing the reset register and using scratch register
  * which cannot be cleared, we have to "fake" this to meet the hwinfo api.
@@ -77,7 +76,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 int z_impl_hwinfo_clear_reset_cause(void)
 {
-	nxp_pmu_clear_reset_cause(kPOWER_ResetCauseAll);
+	POWER_ClearResetCause(kPOWER_ResetCauseAll);
 
 	reset_cleared = true;
 
