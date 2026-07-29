@@ -67,9 +67,24 @@ void codec_play_configure(uint32_t sample_rate, uint8_t sample_width, uint8_t ch
 	struct audio_codec_cfg audio_cfg;
 	size_t block_size;
 
+	int ret;
+
 	audio_sample_rate = sample_rate;
 	if (sample_rate == 44100) {
-		block_size = A2DP_SBC_DATA_PLAY_SIZE_44_1K;
+		/*
+		 * A2DP_SBC_DATA_PLAY_SIZE_44_1K (1764 bytes) is not a multiple of
+		 * sizeof(void *). k_mem_slab_init()/create_free_list() require the
+		 * block size to be word aligned (they build an in-place free list by
+		 * linking each block's first pointer-sized word). On 32-bit targets
+		 * 1764 happens to be 4-byte aligned so this went unnoticed, but on
+		 * this AArch64 board (8-byte pointers) it fails the alignment check,
+		 * k_mem_slab_init() returns -EINVAL, and the mem_slab is left with
+		 * an uninitialized wait_q/free_list. The buffer itself is already
+		 * sized using the larger A2DP_SBC_DATA_PLAY_SIZE_48K, so rounding
+		 * the block size up here is safe (the actual data written per
+		 * block, A2DP_SBC_DATA_PLAY_SIZE_44_1K, still fits within it).
+		 */
+		block_size = ROUND_UP(A2DP_SBC_DATA_PLAY_SIZE_44_1K, sizeof(void *));
 	} else {
 		block_size = A2DP_SBC_DATA_PLAY_SIZE_48K;
 	}
@@ -87,8 +102,6 @@ void codec_play_configure(uint32_t sample_rate, uint8_t sample_width, uint8_t ch
 	audio_cfg.dai_cfg.i2s.frame_clk_freq = sample_rate;
 	audio_cfg.dai_cfg.i2s.mem_slab = &mem_slab;
 	audio_cfg.dai_cfg.i2s.block_size = block_size;
-	audio_codec_configure(codec_dev, &audio_cfg);
-	k_msleep(1000);
 
 	config.word_size = sample_width;
 	config.channels = channels;
@@ -102,11 +115,35 @@ void codec_play_configure(uint32_t sample_rate, uint8_t sample_width, uint8_t ch
 	config.mem_slab = &mem_slab;
 	config.block_size = block_size;
 	config.timeout = I2S_TIMEOUT;
+
+	/*
+	 * Configure the SAI (MCLK master) BEFORE the codec. On boards where
+	 * MCLK is derived from a runtime-tunable CCM root clock (i.MX93 SAI3),
+	 * i2s_configure() may need to retune the SAI root clock to a
+	 * sample-rate-aligned frequency (e.g. 11.2896 MHz for the 44.1 kHz
+	 * family vs. 12.288 MHz for the 48 kHz family). If the codec is
+	 * configured first, it reads a stale MCLK rate via
+	 * clock_control_get_rate() and programs its internal FLL for the
+	 * wrong input frequency, producing an out-of-spec SYSCLK once the
+	 * SAI subsequently retunes MCLK.
+	 *
+	 * Reordering is safe on boards whose MCLK is DT-static (e.g. NXP RT
+	 * anatop pll-clocks): configuring the SAI first has no effect on the
+	 * codec beyond a slightly earlier MCLK enable, which the WM8962
+	 * tolerates.
+	 */
 	if (i2s_configure(codec_tx, I2S_DIR_TX, &config)) {
 		printk("failure to config streams\n");
 	}
 
-	k_mem_slab_init(&mem_slab, mem_slab_buffer, block_size, CONFIG_A2DP_BOARD_CODEC_PLAY_COUNT);
+	audio_codec_configure(codec_dev, &audio_cfg);
+	k_msleep(1000);
+
+	ret = k_mem_slab_init(&mem_slab, mem_slab_buffer, block_size,
+			      CONFIG_A2DP_BOARD_CODEC_PLAY_COUNT);
+	if (ret < 0) {
+		printk("failed to init mem slab: %d\n", ret);
+	}
 }
 
 static void codec_play_to_dev(uint8_t *data, uint32_t length)
@@ -176,6 +213,7 @@ void codec_keep_play(void)
 
 	while (true) {
 		if (!audio_start) {
+			k_sleep(K_MSEC(1));
 			continue;
 		}
 
