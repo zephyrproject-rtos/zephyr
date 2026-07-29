@@ -98,6 +98,15 @@ static int clock_control_esp32_get_rate(const struct device *dev, clock_control_
 	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW_NOMINAL:
 		*rate = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX);
 		break;
+#if defined(ESP32_EMAC_PTP_MODULE)
+	case ESP32_EMAC_PTP_MODULE:
+		if (esp_clk_tree_src_get_freq_hz(EMAC_PTP_CLK_SRC_DEFAULT,
+						 ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
+						 rate) != ESP_OK) {
+			return -EINVAL;
+		}
+		break;
+#endif
 	default:
 		*rate = clk_hal_cpu_get_freq_hz();
 	}
