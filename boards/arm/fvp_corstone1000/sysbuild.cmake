@@ -76,6 +76,36 @@ message(STATUS "Corstone-1000: TF-A source: ${tfa_source_dir}")
 message(STATUS "Corstone-1000: TF-PSA-Crypto: ${tf_psa_crypto_dir}")
 message(STATUS "Corstone-1000: CMSIS_6: ${cmsis_6_module_dir}")
 
+# TF-M's build invokes its Python tools both as console scripts (by bare name)
+# and as plain scripts importing its packages, which normally requires TF-M's
+# Python package to be installed.  Nothing is installed here: the helper below
+# provides both from the build directory, driven by TF-M's own pyproject.toml so
+# it does not drift.  See boards/arm/fvp_corstone1000/tfm_python_env.py.
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(NOT Python3_EXECUTABLE)
+  set(Python3_EXECUTABLE python3)
+endif()
+
+set(tfm_pythonpath ${CMAKE_CURRENT_BINARY_DIR}/tfm-pythonpath)
+set(tfm_scripts_dir ${CMAKE_CURRENT_BINARY_DIR}/tfm-scripts)
+set(tfm_python_wrapper ${tfm_scripts_dir}/python3-tfm)
+
+execute_process(
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/tfm_python_env.py
+    --tfm-dir ${tfm_source_dir}
+    --pythonpath-dir ${tfm_pythonpath}
+    --scripts-dir ${tfm_scripts_dir}
+    --python ${Python3_EXECUTABLE}
+  RESULT_VARIABLE tfm_pyenv_rc
+  OUTPUT_VARIABLE tfm_pyenv_out
+  ERROR_VARIABLE tfm_pyenv_err
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(NOT tfm_pyenv_rc EQUAL 0)
+  message(FATAL_ERROR
+    "Corstone-1000: could not provide TF-M's Python tools: ${tfm_pyenv_err}")
+endif()
+message(STATUS "Corstone-1000: ${tfm_pyenv_out}")
+
 # Output directories
 set(tfm_binary_dir ${CMAKE_BINARY_DIR}/tfm)
 set(tfa_binary_dir ${CMAKE_BINARY_DIR}/tfa)
@@ -191,12 +221,30 @@ file(WRITE ${tfm_toolchain_wrapper}
 list(REMOVE_ITEM tfm_cmake_args "-DTFM_TOOLCHAIN_FILE=${tfm_toolchain_file}")
 list(APPEND tfm_cmake_args "-DTFM_TOOLCHAIN_FILE=${tfm_toolchain_wrapper}")
 
+# Use the interpreter wrapper generated above so TF-M's python helpers can
+# import tfm_tools without the package being installed.
+list(APPEND tfm_cmake_args -DPython3_EXECUTABLE=${tfm_python_wrapper})
+
+# Run the TF-M build with the console scripts on PATH and the package mapping on
+# PYTHONPATH, so its image generation works without anything being installed
+# system-wide.  PYTHONPATH is needed for the whole build, not just the two
+# scripts above: TF-M also runs plain python scripts that import tfm_tools.
+if(DEFINED ENV{PYTHONPATH})
+  set(tfm_pythonpath_env "${tfm_pythonpath}:$ENV{PYTHONPATH}")
+else()
+  set(tfm_pythonpath_env "${tfm_pythonpath}")
+endif()
+set(tfm_env ${CMAKE_COMMAND} -E env
+  "PATH=${tfm_scripts_dir}:$ENV{PATH}"
+  "PYTHONPATH=${tfm_pythonpath_env}")
+
 ExternalProject_Add(
   tfm_secure_enclave
   SOURCE_DIR ${tfm_source_dir}
   BINARY_DIR ${tfm_binary_dir}
-  CMAKE_ARGS ${tfm_cmake_args}
-  BUILD_COMMAND ${CMAKE_COMMAND} --build . -- install
+  CONFIGURE_COMMAND ${tfm_env} ${CMAKE_COMMAND} -G ${CMAKE_GENERATOR}
+    -S ${tfm_source_dir} -B ${tfm_binary_dir} ${tfm_cmake_args}
+  BUILD_COMMAND ${tfm_env} ${CMAKE_COMMAND} --build . -- install
   INSTALL_COMMAND ""
   BUILD_ALWAYS True
   USES_TERMINAL_BUILD True
