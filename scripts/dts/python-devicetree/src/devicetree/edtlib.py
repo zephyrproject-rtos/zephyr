@@ -2404,6 +2404,7 @@ class EDT:
 
         # Public attributes (the rest are properties)
         self.nodes: list[Node] = []
+        self.cpus: list[Node] = []
         self.compat2nodes: dict[str, list[Node]] = defaultdict(list)
         self.compat2okay: dict[str, list[Node]] = defaultdict(list)
         self.compat2notokay: dict[str, list[Node]] = defaultdict(list)
@@ -2735,6 +2736,11 @@ class EDT:
 
             self.nodes.append(node)
             self._node2enode[dt_node] = node
+
+            if (node.parent
+                    and node.parent.path == "/cpus"
+                    and node.name.split("@", 1)[0] == "cpu"):
+                self.cpus.append(node)
 
         for node in self.nodes:
             # Initialize properties that may depend on other Node objects having

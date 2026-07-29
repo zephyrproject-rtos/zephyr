@@ -781,6 +781,16 @@ def test_cpu_props_fallback_from_cpus_node():
     # CPU-local value takes precedence.
     assert cpu1.props["clock-frequency"].val == 2000
 
+def test_cpus():
+    """Test that edt.cpus contains the /cpus/cpu@N nodes."""
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    cpu0 = edt.get_node("/cpus/cpu@0")
+    cpu1 = edt.get_node("/cpus/cpu@1")
+
+    assert edt.cpus == [cpu0, cpu1]
+
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
     with from_here():
