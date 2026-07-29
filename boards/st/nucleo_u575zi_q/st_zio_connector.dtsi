@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 2026 Michele Vaccari
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/st-zio-header.h>
+
+/*
+ * ST Zio connector pin mapping for the NUCLEO-U575ZI-Q board.
+ *
+ * Pinout taken from UM2861 (Rev 10), "8.1 Zio connectors supporting ARDUINO
+ * Uno V3", Table 15 (CN7), Table 16 (CN8), Table 17 (CN9) and Table 18 (CN10).
+ *
+ * Only pins routed to an STM32 GPIO are listed below; power, ground and other
+ * dedicated pins (VREFP, IOREF, NRST, 3V3, 5V, VIN, AVDD, AGND, NC) are
+ * omitted. Some STM32 pins are exposed on two Zio positions through mutually
+ * exclusive alternate functions (e.g. SAI_D vs SPI_B on CN7, OCTOSPI vs motor
+ * control on CN10); such shared pins are annotated below.
+ */
+
+/ {
+	st_zio_header: st-zio-header {
+		compatible = "st-zio-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <ST_ZIO_PIN_MASK 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <ST_ZIO_CN7_1 0 &gpioc 6 0>,
+			   <ST_ZIO_CN7_2 0 &gpiob 8 0>,   /* D15 */
+			   <ST_ZIO_CN7_3 0 &gpiod 11 0>,
+			   <ST_ZIO_CN7_4 0 &gpiob 9 0>,   /* D14 */
+			   <ST_ZIO_CN7_5 0 &gpiob 13 0>,
+			   <ST_ZIO_CN7_7 0 &gpiod 12 0>,
+			   <ST_ZIO_CN7_9 0 &gpioa 4 0>,   /* shared with CN7 pin 17 */
+			   <ST_ZIO_CN7_10 0 &gpioa 5 0>,  /* D13 */
+			   <ST_ZIO_CN7_11 0 &gpiob 4 0>,  /* shared with CN7 pin 19 */
+			   <ST_ZIO_CN7_12 0 &gpioa 6 0>,  /* D12 */
+			   <ST_ZIO_CN7_13 0 &gpiob 5 0>,
+			   <ST_ZIO_CN7_14 0 &gpioa 7 0>,  /* D11 */
+			   <ST_ZIO_CN7_15 0 &gpiob 3 0>,
+			   <ST_ZIO_CN7_16 0 &gpiod 14 0>, /* D10 */
+			   <ST_ZIO_CN7_17 0 &gpioa 4 0>,  /* shared with CN7 pin 9 */
+			   <ST_ZIO_CN7_18 0 &gpiod 15 0>, /* D9 */
+			   <ST_ZIO_CN7_19 0 &gpiob 4 0>,  /* shared with CN7 pin 11 */
+			   <ST_ZIO_CN7_20 0 &gpiof 12 0>, /* D8 */
+			   <ST_ZIO_CN8_2 0 &gpioc 8 0>,   /* D43 */
+			   <ST_ZIO_CN8_4 0 &gpioc 9 0>,   /* D44 */
+			   <ST_ZIO_CN8_6 0 &gpioc 10 0>,  /* D45 */
+			   <ST_ZIO_CN8_8 0 &gpioc 11 0>,  /* D46 */
+			   <ST_ZIO_CN8_10 0 &gpioc 12 0>, /* D47 */
+			   <ST_ZIO_CN8_12 0 &gpiod 2 0>,  /* D48 */
+			   <ST_ZIO_CN8_14 0 &gpiof 3 0>,  /* D49 */
+			   <ST_ZIO_CN8_16 0 &gpiof 5 0>,  /* D50 */
+			   <ST_ZIO_CN9_1 0 &gpioa 3 0>,   /* A0 */
+			   <ST_ZIO_CN9_2 0 &gpiod 7 0>,   /* D51 */
+			   <ST_ZIO_CN9_3 0 &gpioa 2 0>,   /* A1, shared with CN10 pin 13 */
+			   <ST_ZIO_CN9_4 0 &gpiod 6 0>,   /* D52 */
+			   <ST_ZIO_CN9_5 0 &gpioc 3 0>,   /* A2 */
+			   <ST_ZIO_CN9_6 0 &gpiod 5 0>,   /* D53 */
+			   <ST_ZIO_CN9_7 0 &gpiob 0 0>,   /* A3, shared with CN10 pin 21 */
+			   <ST_ZIO_CN9_8 0 &gpiod 4 0>,   /* D54 */
+			   <ST_ZIO_CN9_9 0 &gpioc 1 0>,   /* A4 */
+			   <ST_ZIO_CN9_10 0 &gpiod 3 0>,  /* D55 */
+			   <ST_ZIO_CN9_11 0 &gpioc 0 0>,  /* A5 */
+			   <ST_ZIO_CN9_13 0 &gpiob 2 0>,  /* D72 */
+			   <ST_ZIO_CN9_14 0 &gpioe 2 0>,  /* D56 */
+			   <ST_ZIO_CN9_15 0 &gpiob 6 0>,  /* D71 */
+			   <ST_ZIO_CN9_16 0 &gpioe 4 0>,  /* D57 */
+			   <ST_ZIO_CN9_17 0 &gpiof 2 0>,  /* D70 */
+			   <ST_ZIO_CN9_18 0 &gpioe 5 0>,  /* D58 */
+			   <ST_ZIO_CN9_19 0 &gpiof 1 0>,  /* D69 */
+			   <ST_ZIO_CN9_20 0 &gpioe 6 0>,  /* D59 */
+			   <ST_ZIO_CN9_21 0 &gpiof 0 0>,  /* D68 */
+			   <ST_ZIO_CN9_22 0 &gpioe 3 0>,  /* D60 */
+			   <ST_ZIO_CN9_24 0 &gpiof 8 0>,  /* D61 */
+			   <ST_ZIO_CN9_25 0 &gpiod 0 0>,  /* D67 */
+			   <ST_ZIO_CN9_26 0 &gpiof 7 0>,  /* D62 */
+			   <ST_ZIO_CN9_27 0 &gpiod 1 0>,  /* D66 */
+			   <ST_ZIO_CN9_28 0 &gpiof 9 0>,  /* D63 */
+			   <ST_ZIO_CN9_29 0 &gpiog 0 0>,  /* D65 */
+			   <ST_ZIO_CN9_30 0 &gpiog 1 0>,  /* D64 */
+			   <ST_ZIO_CN10_2 0 &gpiof 13 0>, /* D7 */
+			   <ST_ZIO_CN10_4 0 &gpioe 9 0>,  /* D6 */
+			   <ST_ZIO_CN10_6 0 &gpioe 11 0>, /* D5 */
+			   <ST_ZIO_CN10_7 0 &gpiob 1 0>,  /* A6 */
+			   <ST_ZIO_CN10_8 0 &gpiof 14 0>, /* D4 */
+			   <ST_ZIO_CN10_9 0 &gpioc 2 0>,  /* A7 */
+			   <ST_ZIO_CN10_10 0 &gpioe 13 0>, /* D3 */
+			   <ST_ZIO_CN10_11 0 &gpioa 1 0>,  /* A8 */
+			   <ST_ZIO_CN10_12 0 &gpiof 15 0>, /* D2 */
+			   <ST_ZIO_CN10_13 0 &gpioa 2 0>,  /* D26, shared with CN9 pin 3 */
+			   <ST_ZIO_CN10_14 0 &gpiog 7 0>,  /* D1 */
+			   <ST_ZIO_CN10_15 0 &gpiob 10 0>, /* D27, shared with CN10 pin 32 */
+			   <ST_ZIO_CN10_16 0 &gpiog 8 0>,  /* D0 */
+			   <ST_ZIO_CN10_18 0 &gpioe 8 0>,  /* D42 */
+			   <ST_ZIO_CN10_19 0 &gpioe 15 0>, /* D28, shared with CN10 pin 30 */
+			   <ST_ZIO_CN10_20 0 &gpioe 7 0>,  /* D41 */
+			   <ST_ZIO_CN10_21 0 &gpiob 0 0>,  /* D29, shared with CN9 pin 7 */
+			   <ST_ZIO_CN10_23 0 &gpioe 12 0>, /* D30, shared with CN10 pin 26 */
+			   <ST_ZIO_CN10_24 0 &gpioe 10 0>, /* D40 */
+			   <ST_ZIO_CN10_25 0 &gpioe 14 0>, /* D31, shared with CN10 pin 28 */
+			   <ST_ZIO_CN10_26 0 &gpioe 12 0>, /* D39, shared with CN10 pin 23 */
+			   <ST_ZIO_CN10_28 0 &gpioe 14 0>, /* D38, shared with CN10 pin 25 */
+			   <ST_ZIO_CN10_29 0 &gpioa 0 0>,  /* D32 */
+			   <ST_ZIO_CN10_30 0 &gpioe 15 0>, /* D37, shared with CN10 pin 19 */
+			   <ST_ZIO_CN10_31 0 &gpioa 8 0>,  /* D33 */
+			   <ST_ZIO_CN10_32 0 &gpiob 10 0>, /* D36, shared with CN10 pin 15 */
+			   <ST_ZIO_CN10_33 0 &gpioe 0 0>,  /* D34 */
+			   <ST_ZIO_CN10_34 0 &gpiob 11 0>; /* D35 */
+	};
+};
+
+/*
+ * ST Zio connector alternate node labels.
+ *
+ * OCTOSPI1 (OCTOSPIM port 1) is routed to the Zio connector (D26-D31):
+ * NCS=PA2 (D26), CLK=PB10 (D27), IO0=PE12 (D30), IO1=PB0 (D29),
+ * IO2=PE14 (D31), IO3=PE15 (D28).
+ */
+st_zio_qspi: &octospi1 {};
