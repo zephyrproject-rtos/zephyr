@@ -75,7 +75,7 @@ static void core_intr_matrix_clear(void)
 		interrupt_clic_ll_route(0, i, ETS_INVALID_INUM);
 	}
 
-	for (int i = 0; i < 32; i++) {
+	for (int i = 0; i < SOC_CPU_INTR_NUM; i++) {
 		esprv_int_set_vectored(i, true);
 	}
 }
