@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #define STM32H7_FLASH_OPT_TIMEOUT_MS 800
 
 #if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_nv_flash), bank2_flash_size)
+
 #define STM32H7_M4_FLASH_SIZE DT_PROP_OR(DT_INST(0, st_stm32_nv_flash), bank2_flash_size, 0)
 #ifdef CONFIG_CPU_CORTEX_M4
 #if STM32H7_M4_FLASH_SIZE == 0
@@ -44,9 +45,17 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #else
 #define REAL_FLASH_SIZE_KB (DT_REG_SIZE(DT_INST(0, st_stm32_nv_flash)) * 2)
 #endif
+
+#else /* DT_NODE_HAS_PROP(DT_INST(0, st_stm32_nv_flash), bank2_flash_size) */
+
+#if defined(CONFIG_STM32H7_DUAL_CORE)
+/* Dual core STM32H7x products feature two banks of the same size */
+#define REAL_FLASH_SIZE_KB (DT_REG_SIZE(DT_INST(0, st_stm32_nv_flash)) * 2)
 #else
 #define REAL_FLASH_SIZE_KB DT_REG_SIZE(DT_INST(0, st_stm32_nv_flash))
-#endif
+#endif /* CONFIG_STM32H7_DUAL_CORE */
+
+#endif /* DT_NODE_HAS_PROP(DT_INST(0, st_stm32_nv_flash), bank2_flash_size) */
 #define SECTOR_PER_BANK ((REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE) / 2)
 #if defined(DUAL_BANK)
 #define STM32H7_SERIES_MAX_FLASH_KB KB(2048)
