@@ -628,9 +628,11 @@ static bool openthread_border_router_check_unicast_packet_forwarding_policy(stru
 
 bool openthread_border_router_check_packet_forwarding_rules(struct net_pkt *pkt)
 {
-	if (!openthread_border_router_can_forward_multicast(pkt)) {
-		if (!openthread_border_router_check_unicast_packet_forwarding_policy(pkt)) {
-			return false;
+	if (is_border_router_started) {
+		if (!openthread_border_router_can_forward_multicast(pkt)) {
+			if (!openthread_border_router_check_unicast_packet_forwarding_policy(pkt)) {
+				return false;
+			}
 		}
 	}
 
@@ -685,6 +687,10 @@ void openthread_border_router_remove_checksums_for_eth_offloading_ipv6(struct ne
 	NET_PKT_DATA_ACCESS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct ethernet_config config;
 	struct net_ipv6_hdr *ipv6_hdr;
+
+	if (!is_border_router_started) {
+		return;
+	}
 
 	if ((net_eth_get_hw_capabilities(ail_iface_ptr) & ETHERNET_HW_TX_CHKSUM_OFFLOAD) == 0) {
 		return; /* No checksum offload capabilities*/
