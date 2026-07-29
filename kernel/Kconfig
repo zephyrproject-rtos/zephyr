@@ -335,6 +335,22 @@ config WAITQ_SIMPLE
 
 endchoice # WAITQ_ALGORITHM
 
+config SEM_LOCK_STRIPES
+	int "Number of semaphore spinlock stripes" if SMP
+	default 1
+	range 1 256
+	help
+	  Number of spinlocks used to synchronize semaphore operations. This
+	  value must be a power of two. The default is one system-wide lock,
+	  which preserves the existing semaphore behavior and memory footprint.
+	  Non-SMP systems always use one lock.
+
+	  Additional stripes reduce serialization and hash collisions on SMP
+	  systems at the cost of additional static memory. Stripes are not
+	  individually cache-line aligned. With 4-byte spinlocks and a 64-byte
+	  cache line, 16 stripes fit within a single cache line. Increasing the
+	  count beyond 16 can also reduce cache-line contention.
+
 menu "Misc Kernel related options"
 
 config CURRENT_THREAD_USE_NO_TLS
