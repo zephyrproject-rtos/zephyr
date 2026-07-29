@@ -1111,7 +1111,10 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 	thread_base->slice_expired = NULL;
 #endif /* CONFIG_TIMESLICE_PER_THREAD */
 
-	/* swap_data does not need to be initialized */
+#ifdef CONFIG_SPIN_VALIDATE
+	thread_base->swap_data = NULL;
+	/* otherwise swap_data does not need to be initialized */
+#endif
 
 	z_init_thread_timeout(thread_base);
 }
