@@ -76,6 +76,8 @@ struct eth_esp32_dev_data {
 	uint8_t *dma_tx_buf[CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM];
 #if defined(CONFIG_PTP_CLOCK_ESP32)
 	const struct device *ptp_clock;
+	struct net_ptp_time rx_timestamp;
+	bool rx_timestamp_valid;
 #endif
 	struct k_sem int_sem;
 	struct k_sem tx_sem;
@@ -186,8 +188,13 @@ static void eth_esp32_reset_desc_chain(struct eth_esp32_dev_data *dev_data)
 }
 
 static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, uint8_t *buf,
-					 uint32_t length)
+					 uint32_t length, struct net_pkt *pkt)
 {
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	const bool timestamp = net_pkt_is_tx_timestamping(pkt);
+#else
+	ARG_UNUSED(pkt);
+#endif
 	uint32_t bufcount = 0;
 	uint32_t lastlen = length;
 	uint32_t sentout = 0;
@@ -205,6 +212,9 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 	}
 
 	eth_dma_tx_descriptor_t *desc_iter = dev_data->tx_desc;
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	eth_dma_tx_descriptor_t *first_desc = dev_data->tx_desc;
+#endif
 
 	/* Fill descriptors */
 	for (size_t i = 0; i < bufcount; i++) {
@@ -217,6 +227,9 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 
 		if (i == 0) {
 			desc_iter->TDES0.FirstSegment = 1;
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+			desc_iter->TDES0.TransmitTimestampEnable = timestamp;
+#endif
 		}
 		if (i == (bufcount - 1)) {
 			desc_iter->TDES0.LastSegment = 1;
@@ -240,6 +253,35 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 		dev_data->tx_desc = tx_desc_next(dev_data, dev_data->tx_desc);
 	}
 	emac_hal_transmit_poll_demand(&dev_data->hal);
+
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	/*
+	 * The transmit timestamp is written back into the first descriptor
+	 * of the frame once the DMA has released it. Only wait for it when
+	 * the caller asked for a timestamp, and bound the wait so a stuck
+	 * transmission cannot block the TX path.
+	 */
+	if (timestamp) {
+		k_timepoint_t ts_deadline = sys_timepoint_calc(K_MSEC(20));
+
+		while (first_desc->TDES0.Own == EMAC_LL_DMADESC_OWNER_DMA) {
+			if (sys_timepoint_expired(ts_deadline)) {
+				return sentout;
+			}
+			k_yield();
+		}
+
+		if (first_desc->TDES0.TxTimestampStatus) {
+			struct net_ptp_time ts = {
+				.second = first_desc->TimeStampHigh,
+				.nanosecond = first_desc->TimeStampLow,
+			};
+
+			net_pkt_set_timestamp(pkt, &ts);
+			net_if_add_tx_timestamp(pkt);
+		}
+	}
+#endif
 
 	return sentout;
 }
@@ -381,6 +423,22 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 		desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
 		desc_iter = rx_desc_next(dev_data, desc_iter);
 	}
+
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	/*
+	 * The capture is reported in the last descriptor of the frame. A
+	 * timestamp is only present when the MAC snapshotted this frame,
+	 * which it does for PTP frames only, so it must be latched here
+	 * before the descriptor is handed back to the DMA.
+	 */
+	dev_data->rx_timestamp_valid = desc_iter->RDES0.TSAvailIPChecksumErrGiantFrame &&
+				       !desc_iter->ExtendedStatus.TimestampDropped;
+	if (dev_data->rx_timestamp_valid) {
+		dev_data->rx_timestamp.second = desc_iter->TimeStampHigh;
+		dev_data->rx_timestamp.nanosecond = desc_iter->TimeStampLow;
+	}
+#endif
+
 	desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
 
 	dev_data->rx_desc = rx_desc_next(dev_data, desc_iter);
@@ -433,7 +491,7 @@ static int eth_esp32_send(const struct device *dev, struct net_pkt *pkt)
 	k_timepoint_t deadline = sys_timepoint_calc(K_MSEC(100));
 
 	do {
-		if (eth_esp32_transmit_frame(dev_data, dev_data->txb, len) == len) {
+		if (eth_esp32_transmit_frame(dev_data, dev_data->txb, len, pkt) == len) {
 			return 0;
 		}
 	} while (k_sem_take(&dev_data->tx_sem, sys_timepoint_timeout(deadline)) == 0);
@@ -465,6 +523,13 @@ static struct net_pkt *eth_esp32_rx(
 		net_pkt_unref(pkt);
 		return NULL;
 	}
+
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	if (dev_data->rx_timestamp_valid) {
+		net_pkt_set_timestamp(pkt, &dev_data->rx_timestamp);
+		net_pkt_set_rx_timestamping(pkt, true);
+	}
+#endif
 
 	return pkt;
 }
@@ -665,6 +730,14 @@ int eth_esp32_initialize(const struct device *dev)
 
 	eth_esp32_reset_desc_chain(dev_data);
 	emac_hal_init_mac_default(&dev_data->hal);
+
+	/*
+	 * The MAC filters out multicast destinations by default, which drops
+	 * IPv4/IPv6 multicast traffic such as PTP, mDNS and neighbour
+	 * discovery before it reaches the DMA. Zephyr performs multicast
+	 * filtering in the network stack, so let all multicast frames pass.
+	 */
+	emac_ll_pass_all_multicast_enable(dev_data->hal.mac_regs, true);
 	emac_hal_init_dma_default(&dev_data->hal, &dma_config);
 
 	/*
