@@ -49,4 +49,12 @@
 			input-enable;
 		};
 	};
+
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <AON_LPADC0_A0_P0_12>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
 };
