@@ -16,6 +16,11 @@ properties:
   clock-frequency:
     type: int
     description: Clock frequency in Hz
+  timebase-frequency:
+    type: int
+    description: |
+      Specifies the current frequency in Hertz at which the
+      timebase and decrementer registers are updated
   cpu-power-states:
     type: phandles
     description: List of power management states supported by this cpu
