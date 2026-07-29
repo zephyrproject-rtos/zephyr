@@ -155,9 +155,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
     def bmp_flash(self, command, **kwargs):
         # if hex file is present and signed, use it else use elf file
         if self.hex_file:
-            split = self.hex_file.split('.')
-            # eg zephyr.signed.hex
-            if len(split) >= 3 and split[-2] == 'signed':
+            if self.hex_file.endswith((".signed.hex", ".signed.confirmed.hex")):
                 flash_file = self.hex_file
             else:
                 flash_file = self.elf_file
