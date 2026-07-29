@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/imxrt/nxp_rt11xx.dtsi>
+#include <nxp/imxrt/imxrt11xx/nxp_rt11xx.dtsi>
 
 / {
 	cpus {
