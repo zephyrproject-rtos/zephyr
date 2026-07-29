@@ -396,6 +396,7 @@
 		low-freq = <DT_FREQ_K(32)>;
 		osc-freq = <DT_FREQ_M(24)>;
 		clocks = <&ccm IMX_CCM_GPT1_CLK 0x41 0>;
+		run-mode = "free-run";
 		status = "disabled";
 	};
 
@@ -407,6 +408,7 @@
 		low-freq = <DT_FREQ_K(32)>;
 		osc-freq = <DT_FREQ_M(24)>;
 		clocks = <&ccm IMX_CCM_GPT2_CLK 0x41 0>;
+		run-mode = "free-run";
 	};
 
 	acmp1: comparator@2dc0000 {
