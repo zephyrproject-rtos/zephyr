@@ -44,6 +44,13 @@ A flashing script is included in the X-CUBE package:
    cd x-cube-st67w61/Projects/ST67W6X_Scripts/Binaries/
    ./NCP_update_mission_profile_t02.sh
 
+Alternatively, the coprocessor can be flashed from the host through the STM32
+with the :zephyr:code-sample:`usb-cdc-acm-bridge` sample: built for
+``nucleo_u575zi_q`` (its board overlay targets this shield) it bridges USB
+CDC-ACM to the module UART and drives the module boot/reset straps from the
+DTR/RTS control lines, so the X-CUBE flashing tool can be run against the
+resulting USB CDC-ACM serial port.
+
 Programming
 ***********
 
