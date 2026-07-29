@@ -1437,7 +1437,7 @@ static void current_calls_cfg_changed(const struct bt_gatt_attr *attr, uint16_t 
 	LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 
 	if (value == 0U) {
-		int err = k_mutex_lock(&tbs_mutex, K_FOREVER);
+		int err = k_mutex_lock(&tbs_mutex, MUTEX_TIMEOUT);
 
 		if (err != 0) {
 			LOG_DBG("Failed to lock mutex: %d", err);
@@ -1632,7 +1632,7 @@ static void call_state_cfg_changed(const struct bt_gatt_attr *attr, uint16_t val
 	LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 
 	if (value == 0U) {
-		int err = k_mutex_lock(&tbs_mutex, K_FOREVER);
+		int err = k_mutex_lock(&tbs_mutex, MUTEX_TIMEOUT);
 
 		if (err != 0) {
 			LOG_DBG("Failed to lock mutex: %d", err);
