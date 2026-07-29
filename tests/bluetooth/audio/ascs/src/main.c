@@ -129,9 +129,12 @@ static void ascs_test_suite_teardown(void *f)
 
 static void ascs_test_suite_after(void *f)
 {
+	struct ascs_test_suite_fixture *fixture = (struct ascs_test_suite_fixture *)f;
 	int err;
 
-	ARG_UNUSED(f);
+	if (fixture->conn.info.state == BT_CONN_STATE_CONNECTED) {
+		mock_bt_conn_disconnected(&fixture->conn, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+	}
 
 	err = bt_ascs_unregister();
 	zassert_true(err == 0 || err == -EALREADY, "Unexpected err response %d", err);
