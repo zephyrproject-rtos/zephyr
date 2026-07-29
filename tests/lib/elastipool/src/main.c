@@ -30,6 +30,13 @@ SYS_ELASTIPOOL_DEFINE_ADVANCED(
 	SYS_ELASTIPOOL_THREAD_HEAP_ALLOC_FN(1, (size_t)CONFIG_TEST_ELASTIC_POOL_MAX_ELEMS),
 	_elastipool_slab_storage_elastic_pool, static);
 
+/* regression sections, defined below with their dedicated pools */
+static void init_min_zero_dynamic(void);
+static void alloc_full_word_boundary(void);
+static void free_high_bit(void);
+static void clear_static_bounded(void);
+static void storage_sized_by_min(void);
+
 ZTEST(elastipool, test_sys_elastipool_init)
 {
 	struct sys_elastipool pool;
@@ -44,6 +51,7 @@ ZTEST(elastipool, test_sys_elastipool_init)
 
 	zexpect_mem_equal(&api, elastic_pool.api, sizeof(api));
 	zexpect_mem_equal(&config, elastic_pool.config, sizeof(config));
+	init_min_zero_dynamic();
 }
 
 ZTEST(elastipool, test_sys_elastipool_alloc)
@@ -58,6 +66,7 @@ ZTEST(elastipool, test_sys_elastipool_alloc)
 
 	zexpect_ok(sys_elastipool_alloc(&elastic_pool, &elem));
 	zexpect_ok(sys_elastipool_alloc(&elastic_pool, &elem2));
+	alloc_full_word_boundary();
 }
 
 ZTEST(elastipool, test_sys_elastipool_free)
@@ -77,6 +86,7 @@ ZTEST(elastipool, test_sys_elastipool_free)
 	zexpect_ok(sys_elastipool_free(&elastic_pool, elem));
 	zexpect_ok(sys_elastipool_free(&elastic_pool, elem2));
 	zexpect_equal(-EINVAL, sys_elastipool_free(&elastic_pool, (void *)0x4242));
+	free_high_bit();
 }
 
 ZTEST(elastipool, test_sys_elastipool_clear)
@@ -134,6 +144,7 @@ ZTEST(elastipool, test_sys_elastipool_clear)
 	}
 
 	TC_PRINT("Re-allocated %zu objects of size %zu\n", count, sizeof(struct elem));
+	clear_static_bounded();
 }
 
 /* min large enough that the bitmap spans multiple words and slots >= 64 exist */
@@ -151,7 +162,7 @@ BUILD_ASSERT(sizeof(_elastipool_slab_storage_highbit_pool) ==
 		     ROUND_UP(sizeof(uint64_t), __alignof(uint64_t)) * HIGHBIT_POOL_MIN,
 	     "SYS_ELASTIPOOL_DEFINE storage is not sized by min");
 
-ZTEST(elastipool, test_storage_sized_by_min)
+static void storage_sized_by_min(void)
 {
 	static void *ptrs[HIGHBIT_POOL_MIN];
 	const uint8_t *storage = highbit_pool.config->storage;
@@ -172,7 +183,7 @@ ZTEST(elastipool, test_storage_sized_by_min)
 	}
 }
 
-ZTEST(elastipool, test_free_high_bit)
+static void free_high_bit(void)
 {
 	static void *ptrs[HIGHBIT_POOL_MIN];
 	void *elem;
@@ -197,7 +208,7 @@ ZTEST(elastipool, test_free_high_bit)
 	}
 }
 
-ZTEST(elastipool, test_alloc_full_word_boundary)
+static void alloc_full_word_boundary(void)
 {
 	void *elem;
 	static void *ptrs[FULLWORD_POOL_MIN];
@@ -214,7 +225,7 @@ ZTEST(elastipool, test_alloc_full_word_boundary)
 	zexpect_equal_ptr(elem, ptrs[FULLWORD_POOL_MIN - 1]);
 }
 
-ZTEST(elastipool, test_clear_static_bounded)
+static void clear_static_bounded(void)
 {
 	struct sys_elastipool pool;
 	struct sys_elastipool_api api;
@@ -254,7 +265,7 @@ ZTEST(elastipool, test_clear_static_bounded)
 
 SYS_HASHMAP_DEFINE_STATIC(init_dyn_map);
 
-ZTEST(elastipool, test_init_min_zero_dynamic)
+static void init_min_zero_dynamic(void)
 {
 	struct sys_elastipool pool;
 	struct sys_elastipool_api api;
@@ -276,6 +287,11 @@ ZTEST(elastipool, test_init_min_zero_dynamic)
 	zexpect_equal(-ENOMEM, sys_elastipool_alloc(&pool, &elem2));
 	zassert_ok(sys_elastipool_free(&pool, elem));
 	zexpect_equal(pool.data->pool_size, 0);
+}
+
+ZTEST(elastipool, test_sys_elastipool_define)
+{
+	storage_sized_by_min();
 }
 
 static void after(void *arg)
