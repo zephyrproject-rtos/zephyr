@@ -199,6 +199,9 @@ set(tfm_cmake_args
   # Cortex-A320 variant with DSU-120T PPU power management
   -DCORSTONE1000_CORTEX_A320=TRUE
   -DCORSTONE1000_DSU_120T=TRUE
+  # Verify boot images with MCUboot's default key model (public-key hash), not
+  # the builtin-key/key-id model (which would need an out-of-tree mcuboot patch).
+  -DMCUBOOT_BUILTIN_KEY=OFF
 )
 
 # Multi-core support: boot all 4 host CPUs (secondaries enter holding pen)
