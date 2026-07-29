@@ -496,9 +496,8 @@
 		dma-channels = <4>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-			     <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		channels-shared-irq-mask = <0x00000003>, <0x0000000c>;
 		#dma-cells = <2>;
 		status = "disabled";
 	};
