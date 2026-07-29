@@ -728,6 +728,8 @@ menu "Other Kernel Object Options"
 
 config CONDVAR_OPTIONS
 	bool "Support optional condition variable features"
+	# absolute deadlines are armed as absolute kernel timeouts, in one conversion
+	select TIMEOUT_64BIT
 	help
 	  Say 'Y' here to support condition variable options such as those required for clock-based
 	  waiting.

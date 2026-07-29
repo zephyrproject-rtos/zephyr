@@ -159,7 +159,6 @@ int z_impl_k_condvar_clockwait(struct k_condvar *condvar, struct k_mutex *mutex,
 {
 	int ret;
 	k_timeout_t timeout;
-	k_timepoint_t timepoint;
 
 	switch (clock_id) {
 	case SYS_CLOCK_REALTIME:
@@ -170,23 +169,23 @@ int z_impl_k_condvar_clockwait(struct k_condvar *condvar, struct k_mutex *mutex,
 	}
 
 	if (!timespec_is_valid(abstime)) {
-		return EINVAL;
+		return -EINVAL;
 	}
 
-	timepoint = timespec_abs_to_timepoint(clock_id, abstime);
-	if (sys_timepoint_expired(timepoint)) {
-		return -ETIMEDOUT;
-	}
-
-	timeout = sys_timepoint_timeout(timepoint);
+	/*
+	 * A single coherent conversion to an absolute kernel timeout: the deadline
+	 * does not decay across preemption between here and the pend below, and an
+	 * already-past deadline pends and expires immediately.
+	 *
+	 * TODO(clock-settime-reactive-waits): a SYS_CLOCK_REALTIME deadline bakes in
+	 * the realtime offset sampled here; a later sys_clock_settime() does not
+	 * re-target blocked waiters.
+	 */
+	timeout = timespec_abs_to_timeout(clock_id, abstime);
 
 	ret = k_condvar_wait(condvar, mutex, timeout);
-	switch (ret) {
-	case -EAGAIN:
+	if (ret == -EAGAIN) {
 		ret = -ETIMEDOUT;
-		__fallthrough;
-	default:
-		break;
 	}
 
 	return ret;
