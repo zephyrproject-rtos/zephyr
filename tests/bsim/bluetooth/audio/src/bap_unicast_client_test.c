@@ -78,7 +78,8 @@ CREATE_FLAG(flag_sink_supp_ctx_changed);
 CREATE_FLAG(flag_source_avail_ctx_changed);
 CREATE_FLAG(flag_source_supp_ctx_changed);
 
-static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
+static void stream_codec_configured(struct bt_bap_stream *stream,
+				    const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_conn *ep_conn;
 
@@ -100,7 +101,7 @@ static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_
 	SET_FLAG(flag_stream_codec_configured);
 }
 
-static void stream_qos_set(struct bt_bap_stream *stream)
+static void stream_qos_configured(struct bt_bap_stream *stream)
 {
 	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 
@@ -188,8 +189,8 @@ static void stream_released(struct bt_bap_stream *stream)
 }
 
 static struct bt_bap_stream_ops stream_ops = {
-	.configured = stream_configured,
-	.qos_set = stream_qos_set,
+	.codec_configured = stream_codec_configured,
+	.qos_configured = stream_qos_configured,
 	.enabled = stream_enabled,
 	.started = stream_started,
 	.metadata_updated = stream_metadata_updated,
