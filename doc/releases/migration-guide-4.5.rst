@@ -196,6 +196,18 @@ Controller Area Network (CAN)
   are processed in the order received on the bus. Out-of-tree users may want to update any
   ``bosch,mram-cfg`` devicetree property overrides to allocate all FIFO elements to RX FIFO0.
 
+Debug
+=====
+
+* The :dtcompatible:`zephyr,swdp-gpio` driver now consistently treats the ``reset-gpios``
+  active-level flags as the reset assertion level: the driver asserts reset by driving the pin to
+  its logical active state, so a directly wired active-low nRESET line must be declared
+  ``GPIO_ACTIVE_LOW``. ``DAP_SWJ_Pins`` requests now operate on raw line levels, as defined by
+  CMSIS-DAP, and are unaffected by the flags. Boards that declared ``reset-gpios`` with
+  ``GPIO_ACTIVE_HIGH`` for a directly wired nRESET (as the ``dap`` sample previously did) must flip
+  the flag to ``GPIO_ACTIVE_LOW``, otherwise the debug port setup holds the target in reset
+  (:github:`114549`).
+
 Devicetree
 ==========
 
