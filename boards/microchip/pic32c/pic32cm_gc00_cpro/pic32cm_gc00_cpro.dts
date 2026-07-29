@@ -91,7 +91,7 @@
 };
 
 &cpu0 {
-	clock-frequency = <180000000>;
+	clock-frequency = <72000000>;
 };
 
 &clock {
@@ -116,7 +116,7 @@
 		compatible = "microchip,pic32cm-sg-gc-dpll";
 		dpll-bandwidth-sel = "4mhz-10mhz";
 		dpll-ref-division-factor = <2>;
-		dpll-feedback-divider-factor = <180>;
+		dpll-feedback-divider-factor = <144>;
 		dpll-src = "xosc";
 		dpll-en = <1>;
 
@@ -139,7 +139,7 @@
 
 		gclkgen0 {
 			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN0>;
-			gclkgen-div-factor = <1>;
+			gclkgen-div-factor = <2>;
 			gclkgen-run-in-standby-en = <1>;
 			gclkgen-src = "pll0-clkout0";
 			gclkgen-en = <1>;
