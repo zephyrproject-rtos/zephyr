@@ -136,39 +136,6 @@ void arm_core_mpu_configure_static_mpu_regions(
 	const uint8_t regions_num, const uint32_t background_area_start,
 	const uint32_t background_area_end);
 
-#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
-
-/* Number of memory areas, inside which dynamic regions
- * may be programmed in run-time.
- */
-#define MPU_DYNAMIC_REGION_AREAS_NUM 1
-
-/**
- * @brief mark a set of memory regions as eligible for dynamic configuration
- *
- * Internal API function to configure a set of memory regions, determined
- * by their start address and size, as memory areas eligible for dynamically
- * programming MPU regions (such as a supervisor stack overflow guard) at
- * run-time (for example, thread upon context-switch).
- *
- * The function shall be invoked once, upon system initialization.
- *
- * @param dyn_region_areas an array of z_arm_mpu_partition objects declaring the
- *                             eligible memory areas for dynamic programming
- * @param dyn_region_areas_num the number of eligible areas for dynamic
- *                             programming.
- *
- * The function shall assert if the operation cannot be not performed
- * successfully. Therefore, the requested areas shall correspond to
- * static memory regions, configured earlier by
- * arm_core_mpu_configure_static_mpu_regions().
- */
-void arm_core_mpu_mark_areas_for_dynamic_regions(
-	const struct z_arm_mpu_partition *dyn_region_areas,
-	const uint8_t dyn_region_areas_num);
-
-#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
-
 /**
  * @brief configure a set of dynamic MPU regions
  *
