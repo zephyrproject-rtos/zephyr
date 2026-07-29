@@ -116,7 +116,7 @@ static inline void lpspi_fill_tx_fifo(const struct device *dev, const uint8_t *b
 	}
 
 	lpspi_data->words_clocked += fill_len;
-	LOG_DBG("Filled TX FIFO to %d words (%d bytes)", fill_len, offset);
+	LOG_DBG("Filled TX FIFO to %zu words (%zu bytes)", fill_len, offset);
 }
 
 /* just fills TX fifo with the specified amount of NOPS */
@@ -131,7 +131,7 @@ static void lpspi_fill_tx_fifo_nop(const struct device *dev, size_t fill_len)
 	}
 
 	lpspi_data->words_clocked += fill_len;
-	LOG_DBG("Filled TX fifo with %d NOPs", fill_len);
+	LOG_DBG("Filled TX fifo with %zu NOPs", fill_len);
 }
 
 /* handles refilling the TX fifo from empty */
