@@ -15,6 +15,11 @@ zephyr_sources_ifdef(
   log_frontend_stmesp_demux.c
 )
 
+zephyr_sources_ifdef(
+  CONFIG_LOG_FRONTEND_IPC
+  log_frontend_ipc.c
+)
+
 zephyr_include_directories_ifdef(
   CONFIG_LOG_FRONTEND_STMESP_FSC
   stmesp
