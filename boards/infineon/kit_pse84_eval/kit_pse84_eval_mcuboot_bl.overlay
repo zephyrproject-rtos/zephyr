@@ -1,0 +1,36 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * DTS overlay applied to the MCUBoot bootloader image only.
+ *
+ * Overrides the chosen code-partition to boot_partition so that MCUBoot is
+ * linked at the RRAM address where the extended boot expects it
+ * (0x22011000).
+ *
+ * The absolute, shared MCUboot image-numbering slotN labels are attached
+ * here (rather than in kit_pse84_eval_memory_map.dtsi) because only the
+ * bootloader consumes them. They are layered onto the role-labelled flash
+ * regions from the memory map:
+ *   image 0 (CM33 Secure)     : slot0/slot1 (from kit_pse84_eval_m33.dts)
+ *   image 1 (CM33 Non-Secure) : slot2/slot3 (m33_xip/m33_upgrade)
+ *   image 2 (CM55)            : slot4/slot5 (m55_xip/m55_upgrade)
+ */
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+		zephyr,flash = &rram0;
+	};
+};
+
+slot2_partition: &m33_xip {};
+
+slot3_partition: &m33_upgrade {};
+
+slot4_partition: &m55_xip {};
+
+slot5_partition: &m55_upgrade {};

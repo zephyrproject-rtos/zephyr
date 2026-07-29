@@ -5,16 +5,72 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * kit_pse84_eval memory map.
+ *
+ * =========================================================================
+ * SRAM (1 MB)
+ *   0x34000000  ext-boot reserved            4 kB
+ *   0x34001000  CM33-S <-> secure enclave    4 kB
+ *   0x34002000  CM33-S code                212 kB   M33SCODE
+ *   0x34037000  CM33-S data                132 kB
+ *   0x24058000  CM33-NS code               404 kB   M33CODE
+ *   0x240bd000  CM33-NS data               256 kB
+ *   0x340fd000  CM33-S alloc shared          4 kB   SHARED_MEMORY_SEC
+ *   0x240fe000  CM33-NS alloc shared         4 kB   SHARED_MEMORY_M33
+ *   0x240ff000  CM55 alloc shared            4 kB   SHARED_MEMORY_M55
+ *
+ * SoCMEM (5 MB)
+ *   0x26100000  CM55 data                  256 kB
+ *
+ * RRAM (512 kB)
+ *   0x220000000  ext-boot reserved   68 kB
+ *   0x220011000  MCUboot bootloader 256 kB  boot_partition
+ *   0x220051000  storage             72 kB
+ *   0x220063000  security reserved  116 kB
+ *
+ * External QSPI flash (16 MB) - ONE physical device, four bus windows onto
+ * the SAME bytes at the SAME offsets. Only the window base differs, so the
+ * same partition offset appears once per view it is exposed in:
+ *
+ *   CBUS-NS  0x08000000  flash0        NSPE run-time  (zephyr,flash for NS)
+ *   CBUS-S   0x18000000  flash0_s      SPE + MCUboot  (zephyr,flash for S)
+ *   SAHB-NS  0x60000000  flash0_sahb   CM55 run-time  (zephyr,flash for M55)
+ *   SAHB-S   0x70000000  (not in DTS)  secure programming alias
+ *
+ *   offset    size     CBUS-NS(flash0)   CBUS-S(flash0_s)   SAHB(flash0_sahb)
+ *   0x000000  1.00 MB  storage_partition -                  -
+ *   0x100000  2.25 MB  -                 m33s_xip           -
+ *   0x340000  1.75 MB  m33_xip           -                  -
+ *   0x580000  1.50 MB  -                 -                  m55_xip
+ *   0x700000  2.25 MB  -                 m33s_upgrade       -
+ *   0x940000  1.75 MB  m33_upgrade       -                  -
+ *   0xb00000  1.50 MB  -                 -                  m55_upgrade
+ *
+ * CM33 images link for CBUS and are programmed at SAHB; the constant
+ * 0x58000000 CBUS -> SAHB delta is applied at flash time by
+ * CONFIG_BUILD_OUTPUT_ADJUST_LMA. CONFIG_ROM_START_OFFSET reserves the
+ * 0x400 image header (extended-boot or MCUboot) in every case.
+ *
+ * MCUboot image-numbering labels. MCUboot maps image 0 -> slot0/slot1,
+ * image 1 -> slot2/slot3, image 2 -> slot4/slot5:
+ *   - slot0/slot1 are relative (the image being signed now), so they are
+ *     bound per-build in kit_pse84_eval_m33.dts (Secure) /
+ *     kit_pse84_eval_m33_ns.dts (NS) / kit_pse84_eval_m55.dts.
+ *   - slot2..slot5 are absolute and shared and only the MCUboot bootloader
+ *     consumes them, so they are attached to the role-labelled nodes
+ *     (m33_xip/upgrade, m55_xip/upgrade) in the bootloader overlay
+ *     kit_pse84_eval_mcuboot_bl.overlay rather than here.
+ *   - slot0_ns_partition / slot1_ns_partition are consumed only by the
+ *     Non-Secure build (Zephyr's TF-M integration looks them up by name,
+ *     dt_nodelabel ... REQUIRED, to size the Non-Secure image), so they are
+ *     attached to the m33_xip/m33_upgrade nodes in kit_pse84_eval_m33_ns.dts
+ *     rather than here. Their Secure counterpart slot0_partition is likewise
+ *     supplied per-build by the board files.
+ * =========================================================================
+ */
+
 / {
-	/* Default SRAM(1MB) assignment
-	 * - Lowest 4kb reserved for the Extended boot
-	 * - 4kb shared between CM33 secure project and secure enclave
-	 * - 212 kB allocated to CM33 Secure code
-	 * - 132 kB allocated to CM33 Secure data
-	 * - 404 kB allocated to CM33 Non-Secure code
-	 * - 256 kB allocated to the CM33 Non-Secure data
-	 * - 4 kB allocated to shared memory for each core (cm33_s, cm33 and cm55)
-	 */
 	reserved-memory {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -71,16 +127,6 @@
 		};
 	};
 
-	/* Default Flash memory(16MB) assignment
-	 * - 1 MB  reserved for Storage
-	 * - 1 KB  header for CM33 Secure
-	 * - 2304 KB allocated to CM33 Secure XIP
-	 * - 1791 KB allocated to CM33 Non-Secure XIP
-	 * - 2 MB  allocated to CM55 XIP
-	 *
-	 * Each code-partition uses zephyr,mapped-partition under the flash
-	 * alias whose base address matches the executing core's view.
-	 */
 	flash_controller: flash_controller@44460000 {
 		compatible = "infineon,qspi-flash";
 		reg = <0x44460000 0x20000>;
@@ -104,7 +150,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x08000000 DT_SIZE_M(16)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {
@@ -115,13 +161,19 @@
 				storage_partition: storage@0 {
 					compatible = "zephyr,mapped-partition";
 					label = "storage";
-					reg = <0 DT_SIZE_M(1)>;
+					reg = <0x0 DT_SIZE_M(1)>;
 				};
 
-				m33_xip: m33_xip@340400 {
+				m33_xip: partition@340000 {
 					compatible = "zephyr,mapped-partition";
-					label = "m33-xip";
-					reg = <0x340400 0x1bfc00>;
+					label = "image-2";
+					reg = <0x340000 0x1c0000>;
+				};
+
+				m33_upgrade: partition@940000 {
+					compatible = "zephyr,mapped-partition";
+					label = "image-3";
+					reg = <0x940000 0x1c0000>;
 				};
 			};
 		};
@@ -139,7 +191,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x18000000 DT_SIZE_M(16)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {
@@ -147,16 +199,16 @@
 				#size-cells = <1>;
 				ranges;
 
-				m33s_header: m33s_header@100000 {
+				m33s_xip: partition@100000 {
 					compatible = "zephyr,mapped-partition";
-					label = "m33s-header";
-					reg = <0x100000 0x400>;
+					label = "image-0";
+					reg = <0x100000 0x240000>;
 				};
 
-				m33s_xip: m33s_xip@100400 {
+				m33s_upgrade: partition@700000 {
 					compatible = "zephyr,mapped-partition";
-					label = "m33s-xip";
-					reg = <0x100400 DT_SIZE_K(2304)>;
+					label = "image-1";
+					reg = <0x700000 0x240000>;
 				};
 			};
 		};
@@ -174,7 +226,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x60000000 DT_SIZE_M(16)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {
@@ -182,21 +234,21 @@
 				#size-cells = <1>;
 				ranges;
 
-				m55_xip: m55_xip@580000 {
+				m55_xip: partition@580000 {
 					compatible = "zephyr,mapped-partition";
-					label = "m55-xip";
-					reg = <0x580000 DT_SIZE_M(2)>;
+					label = "image-4";
+					reg = <0x580000 0x180000>;
+				};
+
+				m55_upgrade: partition@b00000 {
+					compatible = "zephyr,mapped-partition";
+					label = "image-5";
+					reg = <0xb00000 0x180000>;
 				};
 			};
 		};
 	};
 
-	/* RRAM memory (512 KB) assignment
-	 *   0x00000 - 0x10FFF : reserved-extended-boot (68 KB)
-	 *   0x11000 - 0x50FFF : boot_partition (256 KB) - MCUBoot bootloader
-	 *   0x51000 - 0x62FFF : storage_rram (72 KB)
-	 *   0x63000 - 0x7FFFF : reserved-security (116 KB)
-	 */
 	rram_controller: rram_controller@42200000 {
 		compatible = "infineon,rram-controller";
 		reg = <0x42200000 0x10000>;

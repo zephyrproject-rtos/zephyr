@@ -28,8 +28,27 @@
 		zephyr,sram = &m33s_data;
 		zephyr,code-partition = &m33s_xip;
 		zephyr,console = &uart2;
+		zephyr,flash-controller = &flash_controller;
 		zephyr,shell-uart = &uart2;
 		zephyr,bt-hci = &bt_hci_uart;
+	};
+};
+
+/*
+ * Attach the relative MCUboot slot0_partition/slot1_partition labels
+ * (image 0 primary/secondary) to the Secure image slots. These are kept
+ * out of kit_pse84_eval_memory_map.dtsi so the Non-Secure build
+ * (kit_pse84_eval_m33_ns.dts) can bind them to the Non-Secure slots
+ * instead - see "Partition label schemes" in the memory map. The MCUboot
+ * bootloader image, which also builds from this file, inherits the
+ * Secure slot0/slot1 (image 0) plus the absolute slot2..slot5 from the
+ * mcuboot_bl overlay file.
+ */
+&flash0_s {
+	partitions {
+		slot0_partition: partition@100000 {};
+
+		slot1_partition: partition@700000 {};
 	};
 };
 
