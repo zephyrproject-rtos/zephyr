@@ -270,6 +270,20 @@ New APIs and options
   * :c:func:`lora_recv_duty_cycle`
   * :c:func:`lora_recv_duty_cycle_async`
 
+* Management
+
+  * MCUmgr
+
+    * :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_LOCKING`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_MAX_BRIDGES`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_DEFAULT`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_VALUE`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_VALUE_GROUP_ID`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_FUNCTION`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS` see
+      :ref:`transport management <mcumgr_smp_group_11>` for details.
+
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
