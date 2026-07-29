@@ -68,7 +68,7 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 					     addr, addrlen,
 					     dns_data, data_len);
 		} else if (dispatcher->pair) {
-			ret = dispatcher->pair->cb(dispatcher, sock,
+			ret = dispatcher->pair->cb(dispatcher->pair, sock,
 						   addr, addrlen,
 						   dns_data, data_len);
 		} else {
@@ -86,7 +86,7 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 					     addr, addrlen,
 					     dns_data, data_len);
 		} else if (dispatcher->pair) {
-			ret = dispatcher->pair->cb(dispatcher, sock,
+			ret = dispatcher->pair->cb(dispatcher->pair, sock,
 						   addr, addrlen,
 						   dns_data, data_len);
 		} else {
