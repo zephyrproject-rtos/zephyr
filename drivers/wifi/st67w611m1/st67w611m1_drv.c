@@ -761,6 +761,7 @@ static void st67_init_work(struct k_work *work)
 	struct st67_driver_data *st67_data = CONTAINER_OF(work, struct st67_driver_data, init_work);
 
 	static const struct setup_cmd cmds[] = {
+		SETUP_CMD_NOHANDLE("AT+CWMODE=1,1\r\n"),
 		SETUP_CMD("AT+CIPSTAMAC?\r\n", "+CIPSTAMAC:", on_cmd_cipstamac, 1U, ""),
 		SETUP_CMD_NOHANDLE(ST67W611M1_CWLAPOPT_CMD),
 		SETUP_CMD("AT+CWNETMODE?\r\n", "+CWNETMODE:", on_cmd_cwnetmode, 1U, ""),
