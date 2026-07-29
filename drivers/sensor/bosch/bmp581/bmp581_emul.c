@@ -146,7 +146,7 @@ static int bmp581_emul_io_spi(const struct emul *target, const struct spi_config
 			      const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs)
 {
 	struct bmp581_emul_data *data = target->data;
-	const struct spi_buf *tx, *txd, *rxd;
+	const struct spi_buf *tx;
 	uint8_t regn;
 	int count;
 
@@ -155,28 +155,34 @@ static int bmp581_emul_io_spi(const struct emul *target, const struct spi_config
 	__ASSERT_NO_MSG(!tx_bufs || !rx_bufs || tx_bufs->count == rx_bufs->count);
 
 	count = tx_bufs ? tx_bufs->count : rx_bufs->count;
-	if (count != 2) {
-		LOG_ERR("Unexpected SPI buffer count %d", count);
+	if (count < 1) {
+		LOG_ERR("Invalid SPI buffer count %d", count);
 		return -EIO;
 	}
 
-	/* buffers[0] carries the 1-byte register address, buffers[1] the data. */
 	tx = tx_bufs ? tx_bufs->buffers : NULL;
-	txd = tx_bufs ? &tx_bufs->buffers[1] : NULL;
-	rxd = rx_bufs ? &rx_bufs->buffers[1] : NULL;
 
-	if (tx == NULL || tx->len != 1) {
-		LOG_ERR("Expected a 1-byte register address");
+	if (tx == NULL || tx->buf == NULL || tx->len < 1) {
+		LOG_ERR("Missing SPI register address");
 		return -EIO;
 	}
 
 	regn = *(uint8_t *)tx->buf;
 
 	if (regn & BMP5_SPI_RD_MASK) {
+		const struct spi_buf *rxd;
+
 		/* Read transaction. */
-		if (rxd == NULL) {
+		if (count != 2 || tx->len != 1 || rx_bufs == NULL) {
+			LOG_ERR("Invalid SPI read transaction");
+			return -EIO;
+		}
+
+		rxd = &rx_bufs->buffers[1];
+		if (rxd->buf == NULL) {
 			return -EPERM;
 		}
+
 		regn &= ~BMP5_SPI_RD_MASK;
 		for (uint32_t i = 0; i < rxd->len; i++) {
 			uint8_t a = regn + i;
@@ -184,17 +190,45 @@ static int bmp581_emul_io_spi(const struct emul *target, const struct spi_config
 			((uint8_t *)rxd->buf)[i] = (a < BMP581_EMUL_NUM_REGS) ? data->reg[a] : 0;
 		}
 	} else {
-		/* Write transaction. */
-		if (txd == NULL) {
-			return -EIO;
-		}
-		for (uint32_t i = 0; i < txd->len; i++) {
-			int ret = bmp581_emul_handle_write(target, regn + i,
-							   ((uint8_t *)txd->buf)[i]);
+		bool expect_addr = true;
 
-			if (ret < 0) {
-				return ret;
+		/*
+		 * SPI writes consist of an address/data pair for each register.
+		 * Parse the wire byte stream independently of spi_buf boundaries.
+		 */
+		for (int m = 0; m < count; m++) {
+			const struct spi_buf *msg = &tx_bufs->buffers[m];
+			const uint8_t *buf = msg->buf;
+
+			if (buf == NULL) {
+				LOG_ERR("Missing SPI write data");
+				return -EIO;
 			}
+
+			for (size_t i = 0; i < msg->len; i++) {
+				if (expect_addr) {
+					if (buf[i] & BMP5_SPI_RD_MASK) {
+						LOG_ERR("Invalid SPI write address");
+						return -EIO;
+					}
+
+					regn = buf[i];
+					expect_addr = false;
+				} else {
+					int ret = bmp581_emul_handle_write(target, regn, buf[i]);
+
+					if (ret < 0) {
+						return ret;
+					}
+
+					expect_addr = true;
+				}
+			}
+		}
+
+		if (!expect_addr) {
+			LOG_ERR("SPI write address without data");
+			return -EIO;
 		}
 	}
 
