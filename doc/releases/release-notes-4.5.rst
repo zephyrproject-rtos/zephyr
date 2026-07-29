@@ -301,6 +301,16 @@ New APIs and options
     * Added support for SPI MCUmgr SMP transport, which can be enabled with
       :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_SPI`.
 
+    * Added experimental :ref:`transport management group<mcumgr_smp_group_11>`:
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_LOCKING`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_MAX_BRIDGES`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_DEFAULT`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_VALUE`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_VALUE_GROUP_ID`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_FUNCTION` and
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS`.
+
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
