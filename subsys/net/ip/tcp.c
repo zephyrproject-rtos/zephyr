@@ -2985,6 +2985,11 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
+	if (th_off(th) < 5) {
+		NET_DBG("[%p] DROP: invalid th_off %u", conn, (unsigned int)th_off(th));
+		return NET_DROP;
+	}
+
 	tcp_options_len = (th_off(th) - 5) * 4;
 
 	/* Currently we ignore ECN and CWR flags */
