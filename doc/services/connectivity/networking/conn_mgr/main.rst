@@ -130,6 +130,27 @@ To receive connectivity updates, create and register a listener for the :c:macro
            net_mgmt_add_event_callback(&l4_callback);
    }
 
+You can also use :c:macro:`NET_MGMT_REGISTER_EVENT_HANDLER` to register your callback handler at
+compile time, instead of at runtime. That way, you can ensure your callback is registered before
+Connection Manager monitoring initializes.
+
+.. code-block:: c
+
+   static void l4_event_handler(uint64_t event, struct net_if *iface, void *info,
+                                size_t info_length, void *user_data)
+   {
+           if (event == NET_EVENT_L4_CONNECTED) {
+                   LOG_INF("Network connectivity gained!");
+           } else if (event == NET_EVENT_L4_DISCONNECTED) {
+                   LOG_INF("Network connectivity lost!");
+           }
+
+           /* Otherwise, it's some other event type we didn't register for. */
+   }
+
+   NET_MGMT_REGISTER_EVENT_HANDLER(l4_callback, l4_event_handler,
+                                   NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED, NULL);
+
 See :ref:`net_mgmt_listening` for more details on listening for net_mgmt events.
 
 .. note::
