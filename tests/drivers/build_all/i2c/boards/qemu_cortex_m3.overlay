@@ -14,6 +14,17 @@
 		reg = <0x88888888 0x10000>;
 		interrupt-parent = <&nvic>;
 		interrupts = <4 1>;
+
+		eeprom@0 {
+			reg = <0x0>;
+			size = <32>;
+			compatible = "zephyr,i2c-target-eeprom";
+		};
+
+		tmp103@1 {
+			reg = <0x1>;
+			compatible = "zephyr,i2c-target-tmp103";
+		};
 	};
 
 	i2c1: i2c@88898888 {
