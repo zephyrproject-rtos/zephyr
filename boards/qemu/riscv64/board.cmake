@@ -18,9 +18,15 @@ if(CONFIG_INPUT_VIRTIO)
   set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-device,bus=virtio-mmio-bus.3)
 endif()
 
+if(CONFIG_RISCV_S_MODE_EXTERNAL_SBI)
+  set(qemu_bios default)
+else()
+  set(qemu_bios none)
+endif()
+
 set(QEMU_BOARD_FLAGS
   -machine virt
-  -bios none
+  -bios ${qemu_bios}
   -m 256
   -cpu ${qemu_riscv_cpu}
   ${QEMU_VIRTIO_INPUT_FLAGS}
