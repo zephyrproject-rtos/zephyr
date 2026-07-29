@@ -118,9 +118,13 @@ static void test_ase_src_state_transition_before(void *f)
 
 static void test_ase_state_transition_after(void *f)
 {
+	struct test_ase_state_transition_fixture *fixture =
+		(struct test_ase_state_transition_fixture *)f;
 	int err;
 
-	ARG_UNUSED(f);
+	if (fixture->conn.info.state == BT_CONN_STATE_CONNECTED) {
+		mock_bt_conn_disconnected(&fixture->conn, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+	}
 
 	err = bt_ascs_unregister();
 	zassert_equal(err, 0, "Unexpected err response %d", err);
@@ -704,13 +708,6 @@ static void *test_source_ase_state_transition_setup(void)
 
 	fixture = malloc(sizeof(*fixture));
 	zassert_not_null(fixture);
-
-	memset(fixture, 0, sizeof(*fixture));
-	test_conn_init(&fixture->conn);
-	test_ase_src_get(CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT, &fixture->ase.attr);
-	if (fixture->ase.attr != NULL) {
-		fixture->ase.id = test_ase_id_get(fixture->ase.attr);
-	}
 
 	return fixture;
 }

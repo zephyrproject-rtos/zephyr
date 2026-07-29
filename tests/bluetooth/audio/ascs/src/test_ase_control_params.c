@@ -14,6 +14,7 @@
 
 #include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -81,9 +82,13 @@ static void test_ase_control_params_before(void *f)
 
 static void test_ase_control_params_after(void *f)
 {
+	struct test_ase_control_params_fixture *fixture =
+		(struct test_ase_control_params_fixture *)f;
 	int err;
 
-	ARG_UNUSED(f);
+	if (fixture->conn.info.state == BT_CONN_STATE_CONNECTED) {
+		mock_bt_conn_disconnected(&fixture->conn, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+	}
 
 	err = bt_ascs_unregister();
 	zassert_equal(err, 0, "Unexpected err response %d", err);
