@@ -275,6 +275,62 @@ static int lp586x_initialize(const struct device *dev)
 	return 0;
 }
 
+static int lp586x_resume(const struct device *dev)
+{
+	int err;
+
+	err = lp586x_hw_enable(dev, true);
+	if (err < 0) {
+		LOG_ERR("Failed to enable hardware (error %d)", err);
+		return err;
+	}
+
+	err = lp586x_enable(dev, true);
+	if (err < 0) {
+		LOG_ERR("Failed to enable (error %d)", err);
+		return err;
+	}
+
+	err = lp586x_initialize(dev);
+	if (err < 0) {
+		LOG_ERR("Failed to initialize (error %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int lp586x_suspend(const struct device *dev)
+{
+	int err;
+
+	err = lp586x_enable(dev, false);
+	if (err < 0) {
+		LOG_ERR("Failed to disable (error %d)", err);
+		return err;
+	}
+
+	err = lp586x_hw_enable(dev, false);
+	if (err < 0) {
+		LOG_ERR("Failed to disable hardware (error %d)", err);
+		return err;
+	}
+
+	return 0;
+}
+
+static int lp586x_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		return lp586x_suspend(dev);
+	case PM_DEVICE_ACTION_RESUME:
+		return lp586x_resume(dev);
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static int lp586x_init(const struct device *dev)
 {
 	const struct lp586x_config *config = dev->config;
@@ -306,48 +362,16 @@ static int lp586x_init(const struct device *dev)
 			LOG_ERR("Failed to initialize enable gpio (error %d)", err);
 			return err;
 		}
+	} else {
+		err = lp586x_reset(dev);
+		if (err < 0) {
+			LOG_ERR("Failed to reset (error %d)", err);
+			return err;
+		}
 	}
 
-	err = lp586x_hw_enable(dev, true);
-	if (err < 0) {
-		LOG_ERR("Failed to enable hardware (error %d)", err);
-		return err;
-	}
-
-	err = lp586x_reset(dev);
-	if (err < 0) {
-		LOG_ERR("Failed to reset (error %d)", err);
-		return err;
-	}
-
-	err = lp586x_enable(dev, true);
-	if (err < 0) {
-		LOG_ERR("Failed to enable (error %d)", err);
-		return err;
-	}
-
-	err = lp586x_initialize(dev);
-	if (err < 0) {
-		LOG_ERR("Failed to initialize (error %d)", err);
-		return err;
-	}
-
-	return 0;
+	return pm_device_driver_init(dev, lp586x_pm_action);
 }
-
-#ifdef CONFIG_PM_DEVICE
-static int lp586x_pm_action(const struct device *dev, enum pm_device_action action)
-{
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		return lp586x_enable(dev, false);
-	case PM_DEVICE_ACTION_RESUME:
-		return lp586x_enable(dev, true);
-	default:
-		return -ENOTSUP;
-	}
-}
-#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(led, lp586x_led_api) = {
 	.get_info = lp586x_get_info,
