@@ -4,13 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/* gpt runs in free-run mode (run-mode default comes from the SoC dtsi). */
 &gpt1 {
 	status = "okay";
-	run-mode = "free-run";
-};
-
-&gpt2 {
-	run-mode = "free-run";
 };
 
 &lpit1 {
