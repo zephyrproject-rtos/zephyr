@@ -30,6 +30,8 @@ family:
     socs:
     - name: designstart_fpga_cortex_m1
     - name: designstart_fpga_cortex_m3
+  socs:
+  - name: qemu_cortex_a7
 - name: arm64
   series:
   - name: fvp_aem
