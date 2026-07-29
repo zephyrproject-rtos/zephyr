@@ -120,7 +120,7 @@ ZTEST(vector_table, test_arm_irq_vector_table)
 	/*
 	 * It is recommended to have a DSB followed by ISB while
 	 * enabling interrupts using NVIC. Also without this, the
-	 * test fails in scenarios where CONFIG_ROMSTART_RELOCATION_ROM is
+	 * test fails in scenarios where the chosen `zephyr,romstart` node is
 	 * enabled e.g. MPS3 Corstone310.
 	 */
 	__DSB(); /* Ensure write to NVIC completes before continuing */
