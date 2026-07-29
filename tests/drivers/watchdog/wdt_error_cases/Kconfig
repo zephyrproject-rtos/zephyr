@@ -14,7 +14,7 @@ config TEST_WDT_DISABLE_SUPPORTED
 
 config TEST_WDT_FLAG_RESET_NONE_SUPPORTED
 	bool "Watchdog flag WDT_FLAG_RESET_NONE is supported"
-	default y if SOC_FAMILY_SILABS_S2 || SOC_SERIES_M48X
+	default y if SOC_FAMILY_SILABS_S2 || SOC_SERIES_M48X || DT_HAS_TI_MSPM0_WATCHDOG_ENABLED
 	help
 	  Set this Kconfig to 'y' if wdt_install_timeout() can be called with
 	  cfg.flags=WDT_FLAG_RESET_NONE.
@@ -51,7 +51,7 @@ config TEST_WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED
 
 config TEST_WDT_WINDOW_MIN_SUPPORTED
 	bool "Watchdog supports lower limit of watchdog feed timeout"
-	default y if SOC_FAMILY_SILABS_S2
+	default y if SOC_FAMILY_SILABS_S2 || DT_HAS_TI_MSPM0_WATCHDOG_ENABLED
 	help
 	  Set this Kconfig to 'y' if wdt_install_timeout() can be called with
 	  cfg.window.min value higher than 0.
@@ -64,6 +64,7 @@ config TEST_WDT_WINDOW_MAX_ALLOWED
 					  SOC_FAMILY_MICROCHIP_PIC32CM_JH
 	default 0xFFFFFFFF if SOC_IT51XXX
 	default 0x6667 if SOC_SERIES_M48X
+	default 0x7D0000 if DT_HAS_TI_MSPM0_WATCHDOG_ENABLED
 	default 0xFFFFFFF
 	help
 	  Maximal value of the Watchdog timeout passed in the
