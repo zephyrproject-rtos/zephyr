@@ -61,6 +61,7 @@ tests:
       - mck_ra4t1
       - fpb_ra8e1
       - raytac_an54lv_db_15/nrf54l15/cpuapp
+      - frdm_mcxl255/mcxl255/cpu0
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840
