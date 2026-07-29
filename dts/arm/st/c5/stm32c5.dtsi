@@ -122,6 +122,13 @@
 			compatible = "fixed-clock";
 			status = "disabled";
 		};
+
+		clk48: clk48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-clock-mux";
+			clocks = <&rcc STM32_SRC_HSIDIV3 CK48_SEL(2)>;
+			status = "disabled";
+		};
 	};
 
 	mcos {
@@ -428,7 +435,8 @@
 		rng: rng@420c0800 {
 			compatible = "st,stm32-rng";
 			reg = <0x420c0800 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 18)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
+				 <&rcc STM32_SRC_CK48 NO_SEL>;
 			interrupts = <64 0>;
 			nist-config = <0x8451f00>;
 			health-test-config = <0xaac7>;
@@ -730,7 +738,7 @@
 			ram-size = <2048>;
 			maximum-speed = "full-speed";
 			clocks = <&rcc STM32_CLOCK(APB2, 24)>,
-				 <&rcc STM32_SRC_CK48 CK48_SEL(0)>;
+				 <&rcc STM32_SRC_CK48 NO_SEL>;
 			phys = <&usb_fs_phy>;
 			status = "disabled";
 		};
