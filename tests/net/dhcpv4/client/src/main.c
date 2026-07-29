@@ -341,6 +341,8 @@ static bool discover_req_included_dns;
 static bool init_reboot_req_included_dns;
 static bool init_reboot_request_seen;
 static bool reject_init_reboot;
+static bool drop_init_reboot;
+static uint8_t init_reboot_request_count;
 
 #define EVT_ADDR_ADD        BIT(0)
 #define EVT_ADDR_DEL        BIT(1)
@@ -376,6 +378,8 @@ static void dhcp_test_reset_iface(struct net_if *iface)
 	init_reboot_req_included_dns = false;
 	init_reboot_request_seen = false;
 	reject_init_reboot = false;
+	drop_init_reboot = false;
+	init_reboot_request_count = 0U;
 }
 
 static void dhcpv4_tests_before(void *fixture)
@@ -696,6 +700,18 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		dns_requested = dhcp_msg_req_list_contains(&msg, OPTION_DNS_SERVER);
 		is_init_reboot = msg.has_requested_ip && !msg.has_server_id;
 		init_reboot_request_seen |= is_init_reboot;
+		if (is_init_reboot) {
+			init_reboot_request_count++;
+		}
+
+		if (drop_init_reboot && is_init_reboot) {
+			/* Emulate a server (e.g. on a different network) that
+			 * silently ignores the foreign-subnet REQUEST instead of
+			 * NAKing it, forcing the client to time out and fall back
+			 * to DISCOVER.
+			 */
+			return 0;
+		}
 
 		if (strict_dhcp_server && is_init_reboot) {
 			init_reboot_req_included_dns = dns_requested;
@@ -1102,6 +1118,49 @@ ZTEST(dhcpv4_tests, test_init_reboot_nak_restarts_discovery)
 	evt = k_event_wait_all(&events, EVT_DHCP_OFFER | EVT_DHCP_ACK, false, WAIT_TIME);
 	zassert_equal(evt, EVT_DHCP_OFFER | EVT_DHCP_ACK,
 		      "INIT-REBOOT NAK did not restart discovery %08x", evt);
+
+	net_dhcpv4_stop(iface);
+}
+
+ZTEST(dhcpv4_tests, test_init_reboot_unanswered_falls_back_to_discover)
+{
+	/* Worst-case INIT-REBOOT backoff is 4 + 8 + ... = 4 * (2^N - 1) seconds
+	 * for N attempts, plus per-attempt randomisation and the follow-up
+	 * DISCOVER round. native_sim fast-forwards idle time, so this large
+	 * timeout costs no wall-clock.
+	 */
+	const struct net_in_addr requested_ip = {{{10, 237, 72, 158}}};
+	const k_timeout_t fallback_wait = K_SECONDS(
+		4 * (BIT(DHCPV4_INIT_REBOOT_MAX_ATTEMPTS) - 1) +
+		DHCPV4_INIT_REBOOT_MAX_ATTEMPTS + 5);
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	/* Emulate a network change: a stale lease drives INIT-REBOOT, but the
+	 * new network's server silently drops the foreign-subnet REQUEST.
+	 */
+	zassert_ok(net_dhcpv4_set_reboot_hint(iface, &requested_ip));
+	drop_init_reboot = true;
+
+	net_dhcpv4_start(iface);
+
+	/* An OFFER is only produced in response to a DISCOVER, so its arrival
+	 * proves the client abandoned INIT-REBOOT and restarted configuration
+	 * rather than retransmitting the REQUEST for the full attempt budget.
+	 */
+	evt = k_event_wait_all(&events, EVT_DHCP_OFFER | EVT_DHCP_ACK, false,
+			       fallback_wait);
+	zassert_equal(evt, EVT_DHCP_OFFER | EVT_DHCP_ACK,
+		      "Unanswered INIT-REBOOT did not fall back to DISCOVER %08x", evt);
+	zassert_true(init_reboot_request_seen, "INIT-REBOOT REQUEST was not sent");
+	zassert_equal(init_reboot_request_count, DHCPV4_INIT_REBOOT_MAX_ATTEMPTS,
+		      "Expected %d INIT-REBOOT attempt(s) before fallback, got %d",
+		      DHCPV4_INIT_REBOOT_MAX_ATTEMPTS, init_reboot_request_count);
 
 	net_dhcpv4_stop(iface);
 }
