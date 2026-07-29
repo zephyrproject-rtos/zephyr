@@ -1239,10 +1239,10 @@ static void unicast_client_ep_notify_app(struct bt_bap_stream *stream, bool stat
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 
 		/* Notify upper layer */
-		if (ops->configured != NULL) {
-			ops->configured(stream, &stream->ep->qos_pref);
+		if (ops->codec_configured != NULL) {
+			ops->codec_configured(stream, &stream->ep->qos_pref);
 		} else {
-			LOG_WRN("No callback for configured set");
+			LOG_WRN("No callback for codec_configured set");
 		}
 		break;
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
@@ -1271,10 +1271,10 @@ static void unicast_client_ep_notify_app(struct bt_bap_stream *stream, bool stat
 			__ASSERT(false, "Invalid dir: %d", dir);
 		}
 
-		if (ops->qos_set != NULL) {
-			ops->qos_set(stream);
+		if (ops->qos_configured != NULL) {
+			ops->qos_configured(stream);
 		} else {
-			LOG_WRN("No callback for qos_set set");
+			LOG_WRN("No callback for qos_configured set");
 		}
 		break;
 	case BT_BAP_EP_STATE_ENABLING:

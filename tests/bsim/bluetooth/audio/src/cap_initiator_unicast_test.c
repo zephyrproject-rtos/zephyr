@@ -136,8 +136,8 @@ static const struct named_lc3_preset lc3_unicast_presets[] = {
 	{"48_6_2", BT_BAP_LC3_UNICAST_PRESET_48_6_2(LOCATION, CONTEXT)},
 };
 
-static void unicast_stream_configured(struct bt_bap_stream *stream,
-				      const struct bt_bap_qos_cfg_pref *pref)
+static void unicast_stream_codec_configured(struct bt_bap_stream *stream,
+					    const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_cap_stream *cap_stream = cap_stream_from_bap_stream(stream);
 
@@ -160,7 +160,7 @@ static void unicast_stream_configured(struct bt_bap_stream *stream,
 	 */
 }
 
-static void unicast_stream_qos_set(struct bt_bap_stream *stream)
+static void unicast_stream_qos_configured(struct bt_bap_stream *stream)
 {
 	printk("QoS set stream %p\n", stream);
 }
@@ -237,8 +237,8 @@ static void unicast_stream_released(struct bt_bap_stream *stream)
 }
 
 static struct bt_bap_stream_ops unicast_stream_ops = {
-	.configured = unicast_stream_configured,
-	.qos_set = unicast_stream_qos_set,
+	.codec_configured = unicast_stream_codec_configured,
+	.qos_configured = unicast_stream_qos_configured,
 	.enabled = unicast_stream_enabled,
 	.started = unicast_stream_started,
 	.metadata_updated = unicast_stream_metadata_updated,

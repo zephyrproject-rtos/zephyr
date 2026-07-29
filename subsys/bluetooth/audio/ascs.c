@@ -334,8 +334,8 @@ static void ase_enter_state_codec_configured(struct bt_ascs_ase *ase)
 	stream->iso = NULL;
 
 	ops = stream->ops;
-	if (ops != NULL && ops->configured != NULL) {
-		ops->configured(stream, &ase->ep.qos_pref);
+	if (ops != NULL && ops->codec_configured != NULL) {
+		ops->codec_configured(stream, &ase->ep.qos_pref);
 	}
 }
 
@@ -349,8 +349,8 @@ static void ase_enter_state_qos_configured(struct bt_ascs_ase *ase)
 	ase->ep.receiver_ready = false;
 
 	ops = stream->ops;
-	if (ops != NULL && ops->qos_set != NULL) {
-		ops->qos_set(stream);
+	if (ops != NULL && ops->qos_configured != NULL) {
+		ops->qos_configured(stream);
 	}
 }
 

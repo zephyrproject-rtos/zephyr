@@ -161,8 +161,8 @@ const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_au
 	return NULL;
 }
 
-static void stream_configured_cb(struct bt_bap_stream *stream,
-				 const struct bt_bap_qos_cfg_pref *pref)
+static void stream_codec_configured_cb(struct bt_bap_stream *stream,
+				       const struct bt_bap_qos_cfg_pref *pref)
 {
 	ARG_UNUSED(pref);
 
@@ -173,7 +173,7 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 	 */
 }
 
-static void stream_qos_set_cb(struct bt_bap_stream *stream)
+static void stream_qos_configured_cb(struct bt_bap_stream *stream)
 {
 	printk("QoS set stream %p\n", stream);
 }
@@ -242,8 +242,8 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 }
 
 static struct bt_bap_stream_ops stream_ops = {
-	.configured = stream_configured_cb,
-	.qos_set = stream_qos_set_cb,
+	.codec_configured = stream_codec_configured_cb,
+	.qos_configured = stream_qos_configured_cb,
 	.enabled = stream_enabled_cb,
 	.started = stream_started_cb,
 	.metadata_updated = stream_metadata_updated_cb,

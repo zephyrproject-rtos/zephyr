@@ -252,8 +252,8 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.release = lc3_release,
 };
 
-static void stream_configured_cb(struct bt_bap_stream *stream,
-				 const struct bt_bap_qos_cfg_pref *pref)
+static void stream_codec_configured_cb(struct bt_bap_stream *stream,
+				       const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_conn *ep_conn;
 
@@ -328,7 +328,7 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 }
 
 static struct bt_bap_stream_ops stream_ops = {
-	.configured = stream_configured_cb,
+	.codec_configured = stream_codec_configured_cb,
 	.enabled = stream_enabled_cb,
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,

@@ -267,8 +267,8 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 	.release = unicast_server_release_cb,
 };
 
-static void unicast_stream_configured_cb(struct bt_bap_stream *bap_stream,
-					 const struct bt_bap_qos_cfg_pref *pref)
+static void unicast_stream_codec_configured_cb(struct bt_bap_stream *bap_stream,
+					       const struct bt_bap_qos_cfg_pref *pref)
 {
 	LOG_INF("Configured bap_stream %p", bap_stream);
 
@@ -282,7 +282,7 @@ static void unicast_stream_configured_cb(struct bt_bap_stream *bap_stream,
 		pref->latency, pref->pd_min, pref->pd_max, pref->pref_pd_min, pref->pref_pd_max);
 }
 
-static void unicast_stream_qos_set_cb(struct bt_bap_stream *bap_stream)
+static void unicast_stream_qos_configured_cb(struct bt_bap_stream *bap_stream)
 {
 	LOG_INF("QoS set bap_stream %p", bap_stream);
 }
@@ -427,8 +427,8 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 int init_cap_acceptor_unicast(struct peer_config *peer)
 {
 	static struct bt_bap_stream_ops unicast_stream_ops = {
-		.configured = unicast_stream_configured_cb,
-		.qos_set = unicast_stream_qos_set_cb,
+		.codec_configured = unicast_stream_codec_configured_cb,
+		.qos_configured = unicast_stream_qos_configured_cb,
 		.enabled = unicast_stream_enabled_cb,
 		.started = unicast_stream_started_cb,
 		.metadata_updated = unicast_stream_metadata_updated_cb,

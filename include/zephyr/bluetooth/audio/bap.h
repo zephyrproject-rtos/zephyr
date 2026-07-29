@@ -753,24 +753,26 @@ struct bt_bap_stream {
 struct bt_bap_stream_ops {
 #if defined(CONFIG_BT_BAP_UNICAST) || defined(__DOXYGEN__)
 	/**
-	 * @brief Stream configured callback
+	 * @brief Stream codec configured callback
 	 *
-	 * Configured callback is called whenever an Audio Stream has been configured.
+	 * Codec configured callback is called whenever an Audio Stream has been configured with a
+	 * codec configuration.
 	 *
 	 * @param stream Stream object that has been configured.
 	 * @param pref   Remote QoS preferences.
 	 */
-	void (*configured)(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref);
+	void (*codec_configured)(struct bt_bap_stream *stream,
+				 const struct bt_bap_qos_cfg_pref *pref);
 
 	/**
-	 * @brief Stream QoS set callback
+	 * @brief Stream QoS configured callback
 	 *
-	 * QoS set callback is called whenever an Audio Stream Quality of Service has been set or
-	 * updated.
+	 * QoS configured callback is called whenever an Audio Stream Quality of Service has been
+	 * set or updated.
 	 *
 	 * @param stream Stream object that had its QoS updated.
 	 */
-	void (*qos_set)(struct bt_bap_stream *stream);
+	void (*qos_configured)(struct bt_bap_stream *stream);
 
 	/**
 	 * @brief Stream enabled callback
