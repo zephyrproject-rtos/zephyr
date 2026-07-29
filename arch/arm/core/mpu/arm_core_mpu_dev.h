@@ -13,7 +13,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_ARM_MPU)
 struct k_thread;
 
 #if defined(CONFIG_USERSPACE)
@@ -99,7 +98,6 @@ struct k_thread;
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS || CPU_HAS_NXP_SYSMPU */
 
 #endif /* CONFIG_USERSPACE */
-
 
 /* ARM Core MPU Driver API */
 
@@ -279,8 +277,6 @@ int arm_core_mpu_get_max_available_dyn_regions(void);
  *       permit user access).
  */
 int arm_core_mpu_buffer_validate(const void *addr, size_t size, int write);
-
-#endif /* CONFIG_ARM_MPU */
 
 #ifdef __cplusplus
 }
