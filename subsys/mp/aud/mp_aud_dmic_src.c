@@ -147,6 +147,29 @@ static int mp_aud_dmic_src_start(struct mp_buffer_pool *pool)
 	return 0;
 }
 
+static int (*pool_parent_stop)(struct mp_buffer_pool *pool);
+
+static int mp_aud_dmic_src_stop(struct mp_buffer_pool *pool)
+{
+	struct mp_aud_buffer_pool *aud_pool = CONTAINER_OF(pool, struct mp_aud_buffer_pool, pool);
+
+	/*
+	 * Stop the DMIC so it hands its queued blocks back to the slab and a
+	 * later replay can reconfigure from a clean pool. Only a full stop
+	 * reaches here (the pool is stopped on PAUSED_TO_READY, not on pause),
+	 * so pause/resume is unaffected.
+	 */
+	if (aud_pool->aud_dev != NULL) {
+		(void)dmic_trigger(aud_pool->aud_dev, DMIC_TRIGGER_STOP);
+	}
+
+	if (pool_parent_stop != NULL) {
+		return pool_parent_stop(pool);
+	}
+
+	return 0;
+}
+
 void mp_aud_dmic_src_init(struct mp_element *self)
 {
 	struct mp_src *src = (struct mp_src *)self;
@@ -166,6 +189,9 @@ void mp_aud_dmic_src_init(struct mp_element *self)
 	src->set_caps = mp_aud_dmic_src_set_caps;
 	src->pool->acquire_buffer = mp_aud_dmic_src_acquire_buffer;
 	src->pool->start = mp_aud_dmic_src_start;
+
+	pool_parent_stop = src->pool->stop;
+	src->pool->stop = mp_aud_dmic_src_stop;
 
 	mp_aud_src_update_caps(src);
 }
