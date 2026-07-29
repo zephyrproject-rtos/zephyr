@@ -15,6 +15,7 @@ board:
 - Two types of extension resources:
 
   - Arduino Uno V3 connectivity
+  - ST Zio connector (CN7, CN8, CN9, CN10) extending Arduino Uno V3
   - ST morpho extension pin headers for full access to all STM32 I/Os
 
 - On-board ST-LINK/V3E debugger/programmer
