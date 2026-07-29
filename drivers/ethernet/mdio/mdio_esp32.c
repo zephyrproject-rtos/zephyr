@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT espressif_esp32_mdio
+#define DT_DRV_COMPAT snps_dwmac_mdio
 
 #include <soc.h>
 #include <zephyr/drivers/clock_control.h>
