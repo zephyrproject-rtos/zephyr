@@ -378,6 +378,18 @@
 			status = "disabled";
 		};
 
+		aes: aes@40014000 {
+			compatible = "realtek,bee-aes";
+			reg = <0x40014000 0x7c>;
+			status = "disabled";
+		};
+
+		sha256: sha256@4002b000 {
+			compatible = "realtek,bee-sha256";
+			reg = <0x4002b000 0x220>;
+			status = "disabled";
+		};
+
 		trng: trng@400c2400 {
 			compatible = "realtek,bee-trng";
 			reg = <0x400c2400 0x68>;
