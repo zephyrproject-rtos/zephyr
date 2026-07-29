@@ -1867,12 +1867,14 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 		 */
 		iface->config.dhcpv4.xid = entropy;
 
-		/* Use default */
-		if (first_start) {
-			/* RFC2131 4.4.1 requires we wait a random period
-			 * between 1 and 10 seconds before sending the initial
-			 * discover.
-			 */
+		/* RFC2131 4.4.1 requires we wait a random period between 1 and
+		 * 10 seconds before sending the initial discover. This desync
+		 * delay applies to the initial DISCOVER only; an INIT-REBOOT
+		 * re-REQUEST of a known address is an optimistic fast probe
+		 * (RFC2131 3.2), so skip the delay in that state.
+		 */
+		if (first_start &&
+		    iface->config.dhcpv4.state == NET_DHCPV4_INIT) {
 			timeout = entropy % (CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
 					DHCPV4_INITIAL_DELAY_MIN) + DHCPV4_INITIAL_DELAY_MIN;
 		}
