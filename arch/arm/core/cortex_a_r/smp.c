@@ -92,7 +92,7 @@ static uint32_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {
 };
 
 #ifdef CONFIG_ARM_MPU
-extern void z_arm_mpu_init(void);
+extern int z_arm_mpu_init(void);
 extern void z_arm_configure_static_mpu_regions(void);
 #elif defined(CONFIG_ARM_AARCH32_MMU)
 extern int z_arm_mmu_init(void);
