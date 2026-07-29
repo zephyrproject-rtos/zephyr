@@ -840,6 +840,13 @@ Bluetooth Audio
     :zephyr:code-sample:`bluetooth_bap_unicast_client` and
     :zephyr:code-sample:`bluetooth_bap_unicast_server` have been moved from
     :zephyr_file:`samples/bluetooth/` to :zephyr_file:`samples/bluetooth/audio`.
+  * ``bt_bap_stream_ops.configured`` has been renamed to
+    :c:member:`bt_bap_stream_ops.codec_configured` and ``bt_bap_stream_ops.qos_set`` has been
+    renamed to :c:member:`bt_bap_stream_ops.qos_configured`, to align the names with the ASE states
+    defined by the ASCS specification. The callback signatures and the conditions where they are
+    called are unchanged, so applications only need to do a search-and-replace from ``configured``
+    to ``codec_configured`` and from ``qos_set`` to ``qos_configured`` where the callbacks are
+    assigned. (:github:`114835`)
 
 * CAP
 
