@@ -979,7 +979,7 @@
 				status = "disabled";
 
 				mdio: mdio {
-					compatible = "st,stm32-mdio";
+					compatible = "snps,dwmac-mdio";
 					#address-cells = <1>;
 					#size-cells = <0>;
 					status = "disabled";
