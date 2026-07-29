@@ -1622,13 +1622,13 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 
 		LOG_DBG("op %s (0x%02x) id 0x%02x code %s (0x%02x) "
 			"reason %s (0x%02x)",
-			bt_ascs_op_str(rsp->op), rsp->op, ase_rsp->id,
+			bt_ascs_op_str(rsp->op), rsp->op, ase_rsp->ase_id,
 			bt_ascs_rsp_str(ase_rsp->code), ase_rsp->code,
 			bt_ascs_reason_str(ase_rsp->reason), ase_rsp->reason);
 
-		stream = audio_stream_by_ep_id(conn, ase_rsp->id);
+		stream = audio_stream_by_ep_id(conn, ase_rsp->ase_id);
 		if (stream == NULL) {
-			LOG_DBG("Could not find stream by id %u", ase_rsp->id);
+			LOG_DBG("Could not find stream by id %u", ase_rsp->ase_id);
 
 			continue;
 		} else {
@@ -1979,7 +1979,7 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 	LOG_DBG("id 0x%02x dir %s codec 0x%02x", ep->id, bt_audio_dir_str(ep->dir), codec_cfg->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->id;
+	req->ase_id = ep->id;
 	req->latency = codec_cfg->target_latency;
 	req->phy = codec_cfg->target_phy;
 	req->codec.id = codec_cfg->id;
@@ -2018,7 +2018,7 @@ static int unicast_client_add_qos(struct bt_bap_ep *ep, struct net_buf_simple *b
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->id;
+	req->ase_id = ep->id;
 	req->cig = conn_iso->info.unicast.cig_id;
 	req->cis = conn_iso->info.unicast.cis_id;
 	sys_put_le24(qos->interval, req->interval);
@@ -2046,7 +2046,7 @@ static int unicast_client_ep_enable(struct bt_bap_ep *ep, struct net_buf_simple 
 	LOG_DBG("id 0x%02x", ep->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->id;
+	req->ase_id = ep->id;
 
 	req->len = meta_len;
 	net_buf_simple_add_mem(buf, meta, meta_len);
@@ -2068,7 +2068,7 @@ static int unicast_client_ep_metadata(struct bt_bap_ep *ep, struct net_buf_simpl
 	LOG_DBG("id 0x%02x", ep->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->id;
+	req->ase_id = ep->id;
 
 	req->len = meta_len;
 	net_buf_simple_add_mem(buf, meta, meta_len);
