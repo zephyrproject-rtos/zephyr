@@ -47,3 +47,31 @@ If the hardware port is connected to an on-board debugger then the output
 should be echoed between the two ports, if it's connected to some pins on the
 boards the pins can be shorted together to test that the driver is working
 correctly.
+
+Flashing a coprocessor
+**********************
+
+Some boards carry a coprocessor (for example a Wi-Fi/BT module) whose own
+firmware is updated over a UART ROM bootloader. Host flashing tools enter
+that bootloader by toggling the serial DTR/RTS control lines.
+
+A board overlay can add ``boot-gpios`` and ``reset-gpios`` to ``/zephyr,user``
+node, to drive the boot pin from DTR and the reset pin from RTS, with polarity
+taken from the ``GPIO_ACTIVE_*`` flag on each property. This allows flashing
+the coprocessor straight through the bridge with the vendor's normal host tool,
+no separate firmware or wiring required.
+
+Two overlays demonstrate this:
+
+* ``nucleo_u575zi_q`` with the ``x_nucleo_67w61m1`` shield bridges to the
+  ST67W611M1 (Qualcomm) module UART; flash it with ST's QConn tool.
+* ``arduino_portenta_c33`` bridges to the onboard ESP32-C3; flash it with
+  ``esptool``:
+
+  .. code-block:: console
+
+     esptool.py --chip esp32c3 -p /dev/ttyACM0 -b 230400 \
+       --before=default_reset --after=hard_reset write_flash 0x0 firmware.bin
+
+  If the USB path drops bytes, add ``--no-stub`` and lower the baud rate
+  (``-b 115200``).
