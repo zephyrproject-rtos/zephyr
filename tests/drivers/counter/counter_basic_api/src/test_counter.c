@@ -980,8 +980,14 @@ static bool ms_period_capable(const struct device *dev)
 	uint32_t freq_khz;
 	uint32_t max_time_ms;
 
+	freq_khz = counter_get_frequency(dev);
+
+	if (freq_khz == 0) {
+		return false;
+	}
+
 	/* Assume 2 ms counter period can be set for frequency below 1 kHz*/
-	if (counter_get_frequency(dev) < 1000) {
+	if (freq_khz < 1000) {
 		return true;
 	}
 
