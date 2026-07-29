@@ -6,7 +6,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
-#include <zephyr/dt-bindings/interrupt-controller/esp-esp32c6-intmux.h>
+#include <zephyr/dt-bindings/interrupt-controller/espressif-esp32c6-intmux.h>
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
 #include <zephyr/dt-bindings/pinctrl/esp32c6-pinctrl.h>
 
