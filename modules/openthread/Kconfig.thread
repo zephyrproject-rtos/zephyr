@@ -155,6 +155,38 @@ config OPENTHREAD_CLI_MAX_LINE_LENGTH
 	range 16 $(UINT16_MAX)
 	default 384
 
+config OPENTHREAD_SHELL_DEFERRED_OUTPUT
+	bool "Deferred OpenThread CLI shell output"
+	depends on SHELL
+	help
+	  Defer OpenThread CLI console output to the system workqueue instead
+	  of writing it synchronously from the OpenThread thread. Output is
+	  accumulated in a ring buffer and drained line by line from the
+	  workqueue. This avoids blocking the OpenThread thread on synchronous
+	  shell UART writes and eliminates the ABBA deadlock risk between the
+	  OpenThread mutex and the shell mutex.
+
+config OPENTHREAD_SHELL_DEFERRED_OUTPUT_BUF_SIZE
+	int "Deferred OpenThread CLI shell output ring buffer size"
+	depends on OPENTHREAD_SHELL_DEFERRED_OUTPUT
+	default 4096
+	help
+	  Size in bytes of the ring buffer used to hold deferred OpenThread CLI
+	  console output before it is drained by the system workqueue. Verbose
+	  commands (e.g. "router table", "netdata show") can emit large bursts,
+	  so keep this large enough to avoid dropping output.
+
+config OPENTHREAD_CLI_LINK_METRICS_ENH_ACK_VERBOSE
+	bool "Unsolicited CLI output of Link Metrics data from Enhanced-ACK frames"
+	depends on OPENTHREAD_LINK_METRICS_INITIATOR
+	help
+	  Enable unsolicited CLI output of Link Metrics data received in
+	  Enhanced-ACK frames. When disabled (default), Link Metrics data is
+	  still processed internally and queryable via "linkmetrics show".
+	  Enabling this option adds CLI output calls inside the time-critical
+	  MAC transmit-done path, which on platforms with synchronous/blocking
+	  CLI transport may break SED fast-poll timing.
+
 config OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS
 	int "The maximum number of supported IPv6 addresses allows to be externally added"
 	range 0 32
