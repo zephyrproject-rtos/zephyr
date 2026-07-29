@@ -114,6 +114,12 @@ static int wdt_xilinx_wwdt_install_timeout(const struct device *dev,
 	}
 
 	timeout_ms = cfg->window.max;
+
+	if (timeout_ms == 0) {
+		ret = -EINVAL;
+		goto out;
+	}
+
 	max_hw_timeout_ms = (XWWDT_MAX_COUNT_WINDOW_COMBINED * 1000) / config->wdt_clock_freq;
 
 	/* Timeout greater than the maximum hardware timeout is invalid. */
