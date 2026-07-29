@@ -2773,6 +2773,12 @@ Documentation Infrastructure:
     - doc/hardware/peripherals/sensor/
     - tests/drivers/build_all/sensor/
     - include/zephyr/drivers/sensor_*
+  file-groups:
+    - name: Vendor-owned sensor drivers
+      defer-to-other-areas: true
+      files:
+        - drivers/sensor/tdk/
+        - drivers/sensor/wsen/
   labels:
     - "area: Sensors"
   tests:
