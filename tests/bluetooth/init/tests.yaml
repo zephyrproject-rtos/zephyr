@@ -324,7 +324,7 @@ tests:
     platform_allow: qemu_cortex_m3
   bluetooth.init.test_llcp:
     extra_args: CONF_FILE=prj_llcp.conf
-    extra_config:
+    extra_configs:
       - CONFIG_SOC_FLASH_NRF_RADIO_SYNC_TICKER=y
     platform_allow:
       - nrf52840dk/nrf52840
