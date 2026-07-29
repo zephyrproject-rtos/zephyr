@@ -410,7 +410,7 @@ manifest:
       revision: 9164bd18dcd88ff9d9ef98279501fc1093571017
       path: modules/lib/zcbor
     - name: zephyr-xenlib
-      revision: fa1fcd1d925f0ba82afaee81b323a9035e0c1269
+      revision: 7f0884563f865a2a223f26dd0d847fb0faad397d
       path: modules/lib/zephyr-xenlib
   # zephyr-keep-sorted-stop
 
