@@ -1848,6 +1848,13 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 		NET_DBG("iface %p state=%s", iface,
 			net_dhcpv4_state_name(iface->config.dhcpv4.state));
 
+		/* A fresh (re)start must not inherit a retransmit count left
+		 * over from a previous binding or an aborted cycle, otherwise
+		 * the backoff starts too high or the client falls straight
+		 * through to DISCOVER.
+		 */
+		iface->config.dhcpv4.attempts = 0U;
+
 		/* We need entropy for both an XID and a random delay
 		 * before sending the initial discover message.
 		 */
