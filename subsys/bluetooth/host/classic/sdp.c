@@ -1427,7 +1427,7 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf, 
 	}
 
 	if (max_att_len < sizeof(*seq)) {
-		LOG_WRN("Invalid maximum attribute byte count %u < %u", max_att_len, sizeof(*seq));
+		LOG_WRN("Invalid maximum attribute byte count %u < %zu", max_att_len, sizeof(*seq));
 		return BT_SDP_INVALID_SYNTAX;
 	}
 
@@ -2898,7 +2898,7 @@ static int sdp_pass_value_u16(struct bt_sdp_attr_value *value, uint16_t *param)
 		*param = value->uint.u16;
 		break;
 	default:
-		LOG_WRN("Mismatched size %u != %u", value->uint.size, sizeof(*param));
+		LOG_WRN("Mismatched size %u != %zu", value->uint.size, sizeof(*param));
 		return -EINVAL;
 	}
 
@@ -2969,7 +2969,7 @@ int bt_sdp_get_addl_proto_param(const struct net_buf *buf, uint16_t proto, uint8
 	}
 
 	if (index >= count) {
-		LOG_ERR("Index out of range 0 ~ %d", count - 1);
+		LOG_ERR("Index out of range 0 ~ %zd", count - 1);
 		return -EINVAL;
 	}
 
