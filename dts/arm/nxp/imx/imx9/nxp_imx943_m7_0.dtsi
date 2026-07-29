@@ -7,7 +7,7 @@
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/clock/imx943_clock.h>
 #include <mem.h>
-#include <nxp/imx/nxp_imx94x.dtsi>
+#include <nxp/imx/imx9/nxp_imx94x.dtsi>
 #include <freq.h>
 
 / {
