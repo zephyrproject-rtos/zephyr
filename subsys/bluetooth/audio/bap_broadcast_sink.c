@@ -600,7 +600,8 @@ static void update_recv_state_base(const struct bt_bap_broadcast_sink *sink,
 	/* Will set the mod_src_param.num_subgroups and subgroup-related parameters */
 	err = update_recv_state_base_copy_meta(base);
 	if (err != 0) {
-		LOG_WRN("Failed to parse all subgroups from BASE for sink %p: %d (%u != %d)", sink,
+		LOG_WRN_RATELIMIT(
+			"Failed to parse all subgroups from BASE for sink %p: %d (%u != %d)", sink,
 			err, mod_src_param.num_subgroups, bt_bap_base_get_subgroup_count(base));
 		return;
 	}
@@ -733,10 +734,11 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 			ret = base_get_bis_count(base);
 
 			if (ret < 0) {
-				LOG_DBG("Invalid BASE: %d", ret);
+				LOG_DBG_RATELIMIT("Invalid BASE: %d", ret);
 				return false;
 			} else if (ret != sink->biginfo.num_bis) {
-				LOG_DBG("BASE contains different amount of BIS (%u) than reported "
+				LOG_DBG_RATELIMIT(
+					"BASE contains different amount of BIS (%u) than reported "
 					"by BIGInfo (%u)",
 					ret, sink->biginfo.num_bis);
 				return false;
@@ -752,7 +754,8 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 
 			err = bt_bap_base_foreach_subgroup(base, base_decode_subgroup_cb, sink);
 			if (err != 0) {
-				LOG_WRN("Failed to parse all subgroups for sink %p: %d (%u != %d)",
+				LOG_WRN_RATELIMIT(
+					"Failed to parse all subgroups for sink %p: %d (%u != %d)",
 					sink, err, sink->subgroup_count,
 					bt_bap_base_get_subgroup_count(base));
 				return false;
