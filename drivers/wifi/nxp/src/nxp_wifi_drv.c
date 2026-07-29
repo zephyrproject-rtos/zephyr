@@ -1941,7 +1941,7 @@ static int nxp_wifi_reg_domain(const struct device *dev, struct net_if *iface __
 			index += nxp_wifi_cfp_no;
 		}
 		reg_domain->num_channels = index;
-		wlan_get_country_code(reg_domain->country_code);
+		wifi_get_country_code(reg_domain->country_code);
 	} else {
 		if (is_uap_started()) {
 			LOG_ERR("region code can not be set after uAP start!");
