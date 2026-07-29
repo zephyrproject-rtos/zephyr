@@ -204,6 +204,32 @@ set(tfm_cmake_args
   -DMCUBOOT_BUILTIN_KEY=OFF
 )
 
+# TF-M's corstone1000 platform builds the CryptoCell (cc3xx) PSA crypto driver
+# unconditionally: BL1 links it to verify boot images, so it is a hard
+# dependency rather than an optional accelerator.  TF-M fetches it from
+# git.trustedfirmware.org at configure time, which Zephyr does not allow in CI
+# (and its post-build checks reject a repository appearing under the build
+# directory).  Point TF-M at a pre-installed copy when one is available, the
+# same way this board relies on sgdisk being installed.  Without it, TF-M falls
+# back to its own fetch, which keeps local builds working out of the box.
+set(c1000_psa_crypto_drivers "$ENV{TFM_PSA_CRYPTO_DRIVERS_PATH}")
+if(NOT c1000_psa_crypto_drivers AND EXISTS /opt/tf-psa-crypto-drivers)
+  set(c1000_psa_crypto_drivers /opt/tf-psa-crypto-drivers)
+endif()
+if(c1000_psa_crypto_drivers)
+  if(NOT EXISTS "${c1000_psa_crypto_drivers}")
+    message(FATAL_ERROR
+      "Corstone-1000: TFM_PSA_CRYPTO_DRIVERS_PATH is set to "
+      "'${c1000_psa_crypto_drivers}' but that path does not exist.")
+  endif()
+  message(STATUS
+    "Corstone-1000: PSA crypto drivers: ${c1000_psa_crypto_drivers}")
+  list(APPEND tfm_cmake_args
+    -DPSA_CRYPTO_DRIVER_PATH=${c1000_psa_crypto_drivers})
+else()
+  message(STATUS "Corstone-1000: PSA crypto drivers: fetched by TF-M")
+endif()
+
 # Multi-core support: boot all 4 host CPUs (secondaries enter holding pen)
 if("${BOARD_QUALIFIERS}" MATCHES "/smp$")
   list(APPEND tfm_cmake_args -DENABLE_MULTICORE=TRUE)
