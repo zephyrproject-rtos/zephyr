@@ -1115,6 +1115,12 @@ static int ase_release(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 		return -EBADMSG;
 	}
 
+	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
+		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
+		return -EBUSY;
+	}
+
 	if (ascs_cb == NULL || ascs_cb->release == NULL) {
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				       BT_BAP_ASCS_REASON_NONE);
@@ -1180,6 +1186,12 @@ static int ase_disable(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 				       BT_BAP_ASCS_REASON_NONE);
 		return -EBADMSG;
+	}
+
+	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
+		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
+		return -EBUSY;
 	}
 
 	stream = ep->stream;
@@ -1530,6 +1542,13 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 				BT_BAP_ASCS_REASON_NONE);
 		return -EINVAL;
+	}
+
+	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
+		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+				BT_BAP_ASCS_REASON_NONE);
+		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
+		return -EBUSY;
 	}
 
 	/* Store current codec configuration to be able to restore it
@@ -2024,6 +2043,12 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 		return;
 	}
 
+	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
+		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
+		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
+		return;
+	}
+
 	stream = ep->stream;
 	if (stream == NULL) {
 		LOG_ERR("NULL stream");
@@ -2375,6 +2400,13 @@ static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 		return;
 	}
 
+	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
+		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+				BT_BAP_ASCS_REASON_NONE);
+		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
+		return;
+	}
+
 	stream = ep->stream;
 
 	err = ascs_verify_metadata(ep, meta, &rsp);
@@ -2430,6 +2462,13 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 				BT_BAP_ASCS_REASON_NONE);
 		return err;
+	}
+
+	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
+		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+				BT_BAP_ASCS_REASON_NONE);
+		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
+		return -EBUSY;
 	}
 
 	stream = ep->stream;
@@ -2571,6 +2610,13 @@ static void ase_start(struct bt_ascs_ase *ase)
 		LOG_WRN("Invalid operation in state: %s", bt_bap_ep_state_str(ep->state));
 		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 				BT_BAP_ASCS_REASON_NONE);
+		return;
+	}
+
+	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
+		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+				BT_BAP_ASCS_REASON_NONE);
+		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
 		return;
 	}
 
@@ -2782,6 +2828,13 @@ static void ase_stop(struct bt_ascs_ase *ase)
 		LOG_WRN("Invalid operation in state: %s", bt_bap_ep_state_str(ep->state));
 		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_INVALID_ASE_STATE,
 				BT_BAP_ASCS_REASON_NONE);
+		return;
+	}
+
+	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
+		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+				BT_BAP_ASCS_REASON_NONE);
+		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
 		return;
 	}
 
