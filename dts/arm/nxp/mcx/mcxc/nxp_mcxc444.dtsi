@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/nxp_mcxc_common.dtsi>
+#include <nxp/mcx/mcxc/nxp_mcxc_common.dtsi>
 
 /delete-node/ &sram0;
 
