@@ -24,6 +24,7 @@ zephyr_library_sources_ifdef(CONFIG_ARM_ZIMAGE_HEADER header.S)
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
 zephyr_library_sources_ifdef(CONFIG_ARCH_STACKWALK stacktrace.c)
+zephyr_library_sources_ifdef(CONFIG_HAS_ARM_SMCCC smccc-call.S)
 
 zephyr_cc_option_ifdef(CONFIG_ARCH_STACKWALK -funwind-tables)
 
