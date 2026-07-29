@@ -35,7 +35,7 @@
 extern void z_arm_mpu_init(void);
 extern void z_arm_configure_static_mpu_regions(void);
 #elif defined(CONFIG_ARM_AARCH32_MMU)
-extern int z_arm_mmu_init(void);
+extern int z_arm_mmu_init(bool is_primary_core);
 #endif
 
 #if defined(CONFIG_CPU_HAS_FPU)
@@ -122,7 +122,7 @@ FUNC_NORETURN void z_prep_c(void)
 	z_arm_mpu_init();
 	z_arm_configure_static_mpu_regions();
 #elif defined(CONFIG_ARM_AARCH32_MMU)
-	z_arm_mmu_init();
+	z_arm_mmu_init(true);
 #endif
 	z_cstart();
 	CODE_UNREACHABLE;
