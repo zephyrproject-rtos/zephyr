@@ -74,7 +74,6 @@
 };
 
 &ulpclk {
-	clock-frequency = <DT_FREQ_M(40)>;
 	clk-div = <2>;
 };
 
@@ -90,7 +89,6 @@
 
 &canclk {
 	clocks = <&syspll>;
-	clock-frequency = <DT_FREQ_M(40)>;
 	status = "okay";
 };
 
