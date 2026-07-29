@@ -851,6 +851,7 @@ ZTEST_F(zms, test_zms_gc_corrupt_ate)
 	struct zms_ate close_ate;
 	int err;
 
+	memset(&close_ate, 0xff, sizeof(struct zms_ate));
 	close_ate.id = ZMS_HEAD_ID;
 	close_ate.offset = fixture->fs.sector_size / 2;
 	close_ate.len = 0;
@@ -858,6 +859,7 @@ ZTEST_F(zms, test_zms_gc_corrupt_ate)
 		crc8_ccitt(0xff, (uint8_t *)&close_ate + SIZEOF_FIELD(struct zms_ate, crc8),
 			   sizeof(struct zms_ate) - SIZEOF_FIELD(struct zms_ate, crc8));
 
+	memset(&corrupt_ate, 0xff, sizeof(struct zms_ate));
 	corrupt_ate.id = 0xdeadbeef;
 	corrupt_ate.offset = 0;
 	corrupt_ate.len = 20;
