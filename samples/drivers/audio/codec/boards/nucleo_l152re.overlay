@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 Draeger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dac1 {
+	status = "okay";
+	pinctrl-0 = <&dac_out1_pa4>;
+	pinctrl-names = "default";
+};
+
+&timers6 {
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&dma1 {
+	status = "okay";
+};
+
+/ {
+	aliases {
+		codec0 = &audio_dac0;
+	};
+
+	audio_dac0: audio-dac {
+		compatible = "st,stm32-dac-audio";
+		io-channels = <&dac1 1>;
+		st,dac-trigger-timer = <&timers6>;
+		st,dac-trigger-source = "TIM6_TRGO";
+		dmas = <&dma1 2 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>;
+	};
+};
