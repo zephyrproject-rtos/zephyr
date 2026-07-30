@@ -5,6 +5,9 @@
  */
 
 /* Enable both DMA controllers on RW612 */
-tst_dma0: &dma0 {};
 
-tst_dma1: &gdma {};
+/ {
+	zephyr,user {
+		dma-test-devs = <&dma0>, <&gdma>;
+	};
+};
