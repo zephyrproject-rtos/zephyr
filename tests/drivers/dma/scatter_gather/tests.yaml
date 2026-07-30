@@ -27,7 +27,7 @@ tests:
       - kg100s_rb4332a
       - pic32cz_ca80_cult
       - sixg301_rb4407a
-    filter: dt_nodelabel_enabled("tst_dma0")
+    filter: dt_nodelabel_enabled("tst_dma0") or dt_node_has_prop("/zephyr,user", "dma-test-devs")
     integration_platforms:
       - intel_adsp/cavs25
       - native_sim

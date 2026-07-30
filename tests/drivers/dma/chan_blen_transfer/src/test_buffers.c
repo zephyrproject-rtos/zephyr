@@ -6,13 +6,13 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/test_devices.h>
 
 #include "test_buffers.h"
 
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), dma_test_devs)
+#if TEST_DEVS_EXIST(dma_test_devs)
 #define DMA_DATA_ALIGNMENT                                                                         \
-	DT_PROP_OR(DT_PHANDLE_BY_IDX(DT_PATH(zephyr_user), dma_test_devs, 0),                     \
-		   dma_buf_addr_alignment, 32)
+	DT_PROP_OR(TEST_DEVS_NODE_BY_IDX(dma_test_devs, 0), dma_buf_addr_alignment, 32)
 #else
 #define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
 #endif
