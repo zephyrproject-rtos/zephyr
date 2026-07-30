@@ -14,3 +14,4 @@ Connectivity
    lora_lorawan/index.rst
    modbus/index.rst
    modem/index.rst
+   nfc/index.rst
