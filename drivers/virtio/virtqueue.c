@@ -50,7 +50,7 @@ int virtq_create(struct virtq *v, size_t size)
 		descriptor_table_size + available_ring_size + used_ring_pad + used_ring_size;
 	size_t recv_cbs_pad = WB_UP(shared_size) - shared_size;
 	size_t recv_cbs_size = recv_cbs_pad + sizeof(struct virtq_receive_callback_entry) * size;
-	size_t v_size = shared_size + recv_cbs_size;
+	size_t v_size = shared_size + recv_cbs_size + size * sizeof(stack_data_t);
 
 	uint8_t *v_area = k_aligned_alloc(16, v_size);
 
@@ -77,7 +77,10 @@ int virtq_create(struct virtq *v, size_t size)
 
 	v->last_used_idx = 0;
 
-	k_stack_alloc_init(&v->free_desc_stack, size);
+	/* pointer-aligned as recv_cbs starts WB_UP()-aligned and holds pointer pairs */
+	stack_data_t *stack_buf = (stack_data_t *)(v_area + shared_size + recv_cbs_size);
+
+	k_stack_init(&v->free_desc_stack, stack_buf, size);
 	for (uint16_t i = 0; i < size; i++) {
 		k_stack_push(&v->free_desc_stack, i);
 	}
@@ -89,7 +92,6 @@ int virtq_create(struct virtq *v, size_t size)
 void virtq_free(struct virtq *v)
 {
 	k_free(v->desc);
-	k_stack_cleanup(&v->free_desc_stack);
 }
 
 static int virtq_add_available(struct virtq *v, uint16_t desc_idx)
