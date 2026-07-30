@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../../../boards/esp32c5_devkitc_hpcore_flash.dtsi"

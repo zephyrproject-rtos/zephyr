@@ -464,6 +464,9 @@ SECTIONS
     *libzephyr.a:spi_flash_dpd_enable.*(.literal .literal.* .text .text.*)
 #endif
     *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT)
+    *libzephyr.a:esp_efuse_utility.*(.literal .text .literal.* .text.*)
+#endif
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
@@ -770,6 +773,9 @@ SECTIONS
     *libzephyr.a:spi_flash_dpd_enable.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 #endif
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT)
+    *libzephyr.a:esp_efuse_utility.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+#endif
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache_utils.*(.rodata .rodata.*)
@@ -1138,7 +1144,7 @@ SECTIONS
 
   /* --- END OF DROM --- */
 
-#if defined(CONFIG_BOOTLOADER_MCUBOOT) && defined(CONFIG_ESP_FLASH_ENCRYPTION)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT) && defined(CONFIG_ESP32_FLASH_ENCRYPTION)
   /* Pad the image to the next CACHE_ALIGN boundary so MCUboot TLVs
    * start outside any IROM/DROM mapping window. Required for reliable
    * TLV reads with flash encryption.
