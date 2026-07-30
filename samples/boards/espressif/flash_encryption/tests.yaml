@@ -8,3 +8,37 @@ tests:
       - yd_esp32/esp32/procpu
     tags: esp32
     build_only: true
+
+  sample.boards.espressif.flash_encryption.sysbuild.release:
+    sysbuild: true
+    build_only: true
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c5_devkitc/esp32c5/hpcore
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c5_devkitc/esp32c5/hpcore
+    tags:
+      - esp32
+      - mcuboot
+    extra_args:
+      - SB_CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION=y
+      - SB_CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_RELEASE=y
+
+  sample.boards.espressif.flash_encryption.sysbuild.virtual:
+    sysbuild: true
+    build_only: true
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c5_devkitc/esp32c5/hpcore
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c5_devkitc/esp32c5/hpcore
+    tags:
+      - esp32
+      - mcuboot
+    extra_args:
+      - SB_CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION=y
+      - SB_CONFIG_SOC_FAMILY_ESPRESSIF_FLASH_ENCRYPTION_DEVELOPMENT=y
+      - SB_CONFIG_SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL=y
+      - SB_CONFIG_SOC_FAMILY_ESPRESSIF_EFUSE_VIRTUAL_KEEP_IN_FLASH=y
