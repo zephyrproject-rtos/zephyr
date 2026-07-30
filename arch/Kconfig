@@ -76,6 +76,16 @@ config ARM64
 	help
 	  ARM64 (AArch64) architecture
 
+config M68K
+	bool
+	select ARCH_IS_SET
+	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select BIG_ENDIAN
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	help
+	  Motorola 68000 family architecture
+
 config MIPS
 	bool
 	select ARCH_IS_SET

@@ -95,7 +95,8 @@
 
   #if defined(CONFIG_X86) || defined(CONFIG_ARM) || defined(CONFIG_ARM64) || \
 	defined(CONFIG_RISCV) || defined(CONFIG_XTENSA) || defined(CONFIG_MIPS) || \
-	defined(CONFIG_ARCH_POSIX) || defined(CONFIG_RX) || defined(CONFIG_OPENRISC)
+	defined(CONFIG_ARCH_POSIX) || defined(CONFIG_RX) || defined(CONFIG_OPENRISC) || \
+	defined(CONFIG_M68K)
     #define   ALIGN(x)    .balign   x
   #elif defined(CONFIG_ARC)
     /* .align assembler directive is supported by all ARC toolchains and it is
@@ -135,6 +136,10 @@
      * implemented in a same way across ARC toolchains.
      */
     #define PERFOPT_ALIGN .align  4
+
+  #elif defined(CONFIG_M68K)
+
+    #define PERFOPT_ALIGN .balign 2
 
   #elif defined(CONFIG_RISCV) ||  defined(CONFIG_XTENSA) || \
 	  defined(CONFIG_MIPS) || defined(CONFIG_RX) || \
