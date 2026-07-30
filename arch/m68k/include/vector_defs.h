@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2026 Dimitri Varpusvuori
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/sys/util_macro.h>
+
+/*
+ * Unguarded X-macro list included twice by vector_table.S. Entries must stay
+ * in ascending vector order. SYNC vectors stay in thread context; ASYNC
+ * vectors use ISR accounting and may reschedule on return.
+ */
+
+M68K_EXC(M68K_VECTOR_BUS_ERROR,      buserr,   SYNC)
+M68K_EXC(M68K_VECTOR_ADDRESS_ERROR,  addrerr,  SYNC)
+M68K_EXC(M68K_VECTOR_ILLEGAL_INSTR,  illinst,  SYNC)
+M68K_EXC(M68K_VECTOR_ZERO_DIVIDE,    zerodiv,  SYNC)
+M68K_EXC(M68K_VECTOR_CHK,            chk,      SYNC)
+M68K_EXC(M68K_VECTOR_TRAPV,          trapv,    SYNC)
+M68K_EXC(M68K_VECTOR_PRIVILEGE,      priv,     SYNC)
+M68K_EXC(M68K_VECTOR_TRACE,          trace,    SYNC)
+M68K_EXC(M68K_VECTOR_LINE_A,         linea,    SYNC)
+M68K_EXC(M68K_VECTOR_LINE_F,         linef,    SYNC)
+M68K_EXC(M68K_VECTOR_RESERVED_12,    reserved12, SYNC)
+M68K_EXC(M68K_VECTOR_RESERVED_13,    reserved13, SYNC)
+
+/* Vector 14 is a format error only on 68010 and later. */
+#ifdef CONFIG_M68K_EXCEPTION_FRAME_HAS_FORMAT_WORD
+M68K_EXC(M68K_VECTOR_FORMAT_ERROR,   fmterr,   SYNC)
+#else
+M68K_EXC(M68K_VECTOR_FORMAT_ERROR,   reserved14, SYNC)
+#endif
+
+M68K_EXC(M68K_VECTOR_UNINITIALIZED_INTERRUPT, uninit, ASYNC)
+
+#define M68K_RESERVED_LOW_VECTOR(offset, _) \
+	M68K_EXC(M68K_VECTOR_RESERVED_LOW_FIRST + (offset), \
+		 reserved_low_offset_##offset, SYNC)
+
+LISTIFY(M68K_VECTOR_RESERVED_LOW_COUNT, M68K_RESERVED_LOW_VECTOR, (;))
+
+#undef M68K_RESERVED_LOW_VECTOR
+
+M68K_EXC(M68K_VECTOR_SPURIOUS,       spurious, ASYNC)
+
+M68K_EXC(M68K_VECTOR_AUTOVEC_LEVEL1, autovec1, ASYNC)
+M68K_EXC(M68K_VECTOR_AUTOVEC_LEVEL2, autovec2, ASYNC)
+M68K_EXC(M68K_VECTOR_AUTOVEC_LEVEL3, autovec3, ASYNC)
+M68K_EXC(M68K_VECTOR_AUTOVEC_LEVEL4, autovec4, ASYNC)
+M68K_EXC(M68K_VECTOR_AUTOVEC_LEVEL5, autovec5, ASYNC)
+M68K_EXC(M68K_VECTOR_AUTOVEC_LEVEL6, autovec6, ASYNC)
+M68K_EXC(M68K_VECTOR_AUTOVEC_LEVEL7, autovec7, ASYNC)
+
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 0,  trap0,    SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 1,  trap1,    SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 2,  trap2,    SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 3,  trap3,    SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 4,  trap4,    SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 5,  trap5,    SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 6,  trap6,    SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 7,  trap7,    SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 8,  trap8,    SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 9,  trap9,    SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 10, trap10,   SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 11, trap11,   SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 12, trap12,   SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 13, trap13,   SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 14, trap14,   SYNC)
+M68K_EXC(M68K_VECTOR_TRAP_BASE + 15, trap15,   SYNC)
+
+#define M68K_RESERVED_HIGH_VECTOR(offset, _) \
+	M68K_EXC(M68K_VECTOR_RESERVED_HIGH_FIRST + (offset), \
+		 reserved_high_offset_##offset, SYNC)
+
+LISTIFY(M68K_VECTOR_RESERVED_HIGH_COUNT, M68K_RESERVED_HIGH_VECTOR, (;))
+
+#undef M68K_RESERVED_HIGH_VECTOR
+
+/* Stub names use offsets because the preprocessor cannot paste evaluated sums. */
+#define M68K_USER_VECTOR_COUNT 192
+
+#if (M68K_VECTOR_USER_BASE + M68K_USER_VECTOR_COUNT) != \
+	M68K_CPU_VECTOR_COUNT
+#error "M68K user-vector range does not fill the CPU vector table"
+#endif
+
+#define M68K_USER_VECTOR(offset, _) \
+	M68K_EXC(M68K_VECTOR_USER_BASE + (offset), user_offset_##offset, ASYNC)
+
+LISTIFY(M68K_USER_VECTOR_COUNT, M68K_USER_VECTOR, (;))
+
+#undef M68K_USER_VECTOR
+#undef M68K_USER_VECTOR_COUNT
