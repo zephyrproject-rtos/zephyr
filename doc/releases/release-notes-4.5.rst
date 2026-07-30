@@ -431,13 +431,13 @@ New Drivers
 
   * Arm CoreLink TrustZone Memory Protection Controller
     (:dtcompatible:`arm,tz-mpc`).
-  * Infineon MXS40 MPC (:dtcompatible:`infineon,mxs40-mpc`).
+  * Infineon MPC (:dtcompatible:`infineon,mpc`).
 
 * PPC (Peripheral Protection Controller)
 
   * Arm SSE-200 Secure Privilege Control block
     (:dtcompatible:`arm,sse-200-spctrl`).
-  * Infineon MXS40 PPC (:dtcompatible:`infineon,mxs40-ppc`).
+  * Infineon PPC (:dtcompatible:`infineon,ppc`).
 
 * Clock Monitor
 

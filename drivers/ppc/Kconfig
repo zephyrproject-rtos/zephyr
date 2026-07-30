@@ -18,7 +18,7 @@ config PPC
 
 # zephyr-keep-sorted-start
 source "drivers/ppc/arm_sse200_spctrl/Kconfig"
-source "drivers/ppc/infineon_mxs40_ppc/Kconfig"
+source "drivers/ppc/infineon_ppc/Kconfig"
 # zephyr-keep-sorted-stop
 
 endmenu

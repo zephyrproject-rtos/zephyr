@@ -2420,7 +2420,7 @@ Documentation Infrastructure:
     - drivers/mpc/
     - dts/bindings/memory-controllers/arm,mpc-base.yaml
     - dts/bindings/memory-controllers/arm,tz-mpc.yaml
-    - dts/bindings/misc/infineon,mxs40-mpc.yaml
+    - dts/bindings/misc/infineon,mpc.yaml
     - include/zephyr/drivers/mpc/
     - include/zephyr/drivers/misc/arm_tz_mpc/
   labels:

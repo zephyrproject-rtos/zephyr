@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Infineon Memory Protection Controller (MPC)
+
+description: |
+  Infineon MPC hardware block. Each instance controls access to
+  a specific memory region (RRAM, SRAM, SoC memory, or external flash).
+
+  Memory regions governed by this MPC are described as child nodes. Each
+  child defines an (offset, size) range within the controlled memory and
+  the protection-context (PC) configuration that grants access to it.  The
+  MPC block size is read from the hardware, so no size property is needed.
+
+  The pc-configs value uses the field constants from
+  <zephyr/dt-bindings/mpc/infineon-mpc.h>.
+
+  Example (RAMC0 MPC, granting M33-S PC2/PC7 secure RW to an SRAM slice):
+
+    #include <zephyr/dt-bindings/mpc/infineon-mpc.h>
+
+    mpc_ramc0: mpc@52234000 {
+        compatible = "infineon,mpc";
+        reg = <0x52234000 0x1000>;
+        violation-response = "bus-error";
+        #address-cells = <1>;
+        #size-cells = <1>;
+        status = "okay";
+
+        region@1000 {
+            reg = <0x00001000 0x00057000>;
+            pc-configs = <2 INFINEON_MPC_SECURE INFINEON_MPC_ACCESS_RW
+                          7 INFINEON_MPC_SECURE INFINEON_MPC_ACCESS_RW>;
+        };
+    };
+
+include: arm,mpc-base.yaml
+
+compatible: "infineon,mpc"
+
+properties:
+  skip-auto-config:
+    type: boolean
+    description: |
+      When set, the driver skips automatic region configuration for this MPC.
+      Required for controllers (e.g. RRAMC0) whose block-level programming must
+      go through SROM.
+
+child-binding:
+  description: |
+    A single MPC-controlled memory region. The reg property encodes the
+    byte offset and size of the region within the memory controlled by
+    the parent MPC instance.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: "<offset size> within the MPC-controlled memory, in bytes."
+
+    pc-configs:
+      type: array
+      required: true
+      description: |
+        Flat array of <protection-context secure access> 3-tuples that configure
+        which protection contexts may access this region. The secure and access
+        fields use the INFINEON_MPC_SECURE / INFINEON_MPC_NON_SECURE and
+        INFINEON_MPC_ACCESS_* constants from
+        <zephyr/dt-bindings/mpc/infineon-mpc.h>.
+
+    bus-nonsecure:
+      type: boolean
+      description: |
+        When set, the driver also marks this region Non-Secure in the MPC's
+        non-ROT (bus) security-attribute LUT, in addition to the per-PC ROT
+        configuration from pc-configs. This is the attribute the IDAU / BXNS
+        check consults, so it is required for a Non-Secure code region (e.g. the
+        NS image in external flash) to be reachable from the Non-Secure world.

@@ -3,7 +3,5 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# zephyr-keep-sorted-start
-add_subdirectory_ifdef(CONFIG_ARM_SSE200_SPCTRL  arm_sse200_spctrl)
-add_subdirectory_ifdef(CONFIG_INFINEON_PPC infineon_ppc)
-# zephyr-keep-sorted-stop
+zephyr_library()
+zephyr_library_sources(infineon_ppc.c)

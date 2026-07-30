@@ -5,5 +5,5 @@
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_ARM_TZ_MPC        arm_tz_mpc)
-add_subdirectory_ifdef(CONFIG_INFINEON_MXS40_MPC infineon_mxs40_mpc)
+add_subdirectory_ifdef(CONFIG_INFINEON_MPC infineon_mpc)
 # zephyr-keep-sorted-stop

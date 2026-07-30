@@ -115,6 +115,13 @@ void soc_late_init_hook(void)
 	/* SAU Init */
 	cy_sau_init();
 
+	/*
+	 * Power up the SOCMEM domain so its MPC is accessible when the Secure
+	 * image programs the memory protection controllers (the SOCMEM MPC node
+	 * is DT-driven; see dts/arm/infineon/edge/pse84/pse84_s.dtsi).
+	 */
+	Cy_SysEnableSOCMEM(true);
+
 #if defined(CONFIG_SOC_PSE84_M55_ENABLE)
 	ifx_pse84_cm55_startup();
 #endif

@@ -6,6 +6,8 @@
  */
 
 #include <mem.h>
+#include <zephyr/dt-bindings/mpc/infineon-mpc.h>
+#include <zephyr/dt-bindings/ppc/infineon-ppc.h>
 #include <zephyr/dt-bindings/ppc/infineon-edge-ppc.h>
 
 / {
@@ -1438,7 +1440,7 @@
 
 		/* RRAMC0 MPC - RRAM requires separate SROM-level init; skip all auto-config */
 		mpc_rram0: mpc@52211000 {
-			compatible = "infineon,mxs40-mpc";
+			compatible = "infineon,mpc";
 			reg = <0x52211000 0x1000>;
 			skip-auto-config;
 			#address-cells = <1>;
@@ -1448,19 +1450,23 @@
 			/* M33-S: PC2/PC7 Secure RW */
 			region@11000 {
 				reg = <0x00011000 0x0004A000>;
-				pc-configs = <2 0 3  7 0 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 
 			/* M33-M55 shared: PC2/PC5/PC6/PC7 Non-Secure RW */
 			region@5b000 {
 				reg = <0x0005B000 0x00008000>;
-				pc-configs = <2 1 3  5 1 3  6 1 3  7 1 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM33_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM55_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 		};
 
 		/* RAMC0 MPC - SRAM bank 0 */
 		mpc_ramc0: mpc@52234000 {
-			compatible = "infineon,mxs40-mpc";
+			compatible = "infineon,mpc";
 			reg = <0x52234000 0x1000>;
 			violation-response = "bus-error";
 			#address-cells = <1>;
@@ -1470,19 +1476,22 @@
 			/* M33-S: PC2/PC7 Secure RW */
 			region@1000 {
 				reg = <0x00001000 0x00057000>;
-				pc-configs = <2 0 3  7 0 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 
 			/* M33-NS: PC2/PC5/PC7 Non-Secure RW */
 			region@58000 {
 				reg = <0x00058000 0x00028000>;
-				pc-configs = <2 1 3  5 1 3  7 1 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM33_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 		};
 
 		/* RAMC1 MPC - SRAM bank 1 */
 		mpc_ramc1: mpc@52244000 {
-			compatible = "infineon,mxs40-mpc";
+			compatible = "infineon,mpc";
 			reg = <0x52244000 0x1000>;
 			violation-response = "bus-error";
 			#address-cells = <1>;
@@ -1492,13 +1501,18 @@
 			/* M33-NS: PC2/PC5/PC7 Non-Secure RW */
 			region@0 {
 				reg = <0x00000000 0x0003D000>;
-				pc-configs = <2 1 3  5 1 3  7 1 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM33_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 
 			/* M33-M55 shared: PC2/PC5/PC6/PC7 Non-Secure RW */
 			region@3d000 {
 				reg = <0x0003D000 0x00043000>;
-				pc-configs = <2 1 3  5 1 3  6 1 3  7 1 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM33_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM55_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 		};
 
@@ -1509,7 +1523,7 @@
 		 *   mpc_smif0_axi   = SMIF0_CORE_AXI_MPC0               @ 0x54463000
 		 */
 		mpc_smif0_cache: mpc@54454000 {
-			compatible = "infineon,mxs40-mpc";
+			compatible = "infineon,mpc";
 			reg = <0x54454000 0x1000>;
 			violation-response = "bus-error";
 			#address-cells = <1>;
@@ -1519,7 +1533,8 @@
 			/* M33-S: PC2/PC7 Secure RW */
 			region@100000 {
 				reg = <0x00100000 0x00200000>;
-				pc-configs = <2 0 3  7 0 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 
 			/* M33-NS: PC2/PC5/PC7 Non-Secure RW.
@@ -1529,20 +1544,24 @@
 			 */
 			region@300000 {
 				reg = <0x00300000 0x00240000>;
-				pc-configs = <2 1 3  5 1 3  7 1 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM33_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW>;
 				bus-nonsecure;
 			};
 
 			/* M55: PC2/PC6/PC7 Non-Secure RW */
 			region@500000 {
 				reg = <0x00500000 0x00300000>;
-				pc-configs = <2 1 3  6 1 3  7 1 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM55_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 		};
 
 		/* SMIF0 core AXI MPC - external flash AXI path */
 		mpc_smif0_axi: mpc@54463000 {
-			compatible = "infineon,mxs40-mpc";
+			compatible = "infineon,mpc";
 			reg = <0x54463000 0x1000>;
 			violation-response = "bus-error";
 			#address-cells = <1>;
@@ -1552,28 +1571,36 @@
 			/* M33-S: PC2/PC7 Secure RW */
 			region@100000 {
 				reg = <0x00100000 0x00200000>;
-				pc-configs = <2 0 3  7 0 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 
 			/* M33-NS: PC2/PC5/PC7 Non-Secure RW */
 			region@300000 {
 				reg = <0x00300000 0x00240000>;
-				pc-configs = <2 1 3  5 1 3  7 1 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM33_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 
 			/* M55: PC2/PC6/PC7 Non-Secure RW */
 			region@500000 {
 				reg = <0x00500000 0x00300000>;
-				pc-configs = <2 1 3  6 1 3  7 1 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM55_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 		};
 
-		/* SOCMEM SRAM MPC - large SoC memory */
+		/*
+		 * SOCMEM SRAM MPC - large SoC memory.  The SOCMEM power domain is
+		 * enabled by the PSE84 Secure SoC init (Cy_SysEnableSOCMEM) before
+		 * mpc_configure_all() reaches this node.
+		 */
 		mpc_socmem: mpc@54642000 {
-			compatible = "infineon,mxs40-mpc";
+			compatible = "infineon,mpc";
 			reg = <0x54642000 0x1000>;
 			violation-response = "bus-error";
-			infineon,enable-socmem;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
@@ -1581,13 +1608,18 @@
 			/* M55: PC2/PC6/PC7 Non-Secure RW */
 			region@0 {
 				reg = <0x00000000 0x00040000>;
-				pc-configs = <2 1 3  6 1 3  7 1 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM55_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 
 			/* M33-M55 shared: PC2/PC5/PC6/PC7 Non-Secure RW */
 			region@40000 {
 				reg = <0x00040000 0x004C0000>;
-				pc-configs = <2 1 3  5 1 3  6 1 3  7 1 3>;
+				pc-configs = <PSE84_PC_CM33_S INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM33_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_CM55_NS INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW
+				     PSE84_PC_DAP INFINEON_MPC_NON_SECURE INFINEON_MPC_ACCESS_RW>;
 			};
 		};
 
@@ -1609,7 +1641,7 @@
 
 		/* PPC0 - PERI0 peripheral bus (MAIN, GR1..GR5, PCLK0, console SCB2). */
 		ppc0: ppc@52020000 {
-			compatible = "infineon,mxs40-ppc";
+			compatible = "infineon,ppc";
 			reg = <0x52020000 0x2000>;
 			nonsecure-regions = <PROT_PERI0_MAIN
 					     PROT_PERI0_GR1_GROUP
@@ -1619,7 +1651,9 @@
 					     PROT_PERI0_GR5_GROUP
 					     PROT_PERI0_PERI_PCLK0_MAIN
 					     PROT_PERI0_SCB2>;
-			pc-mask = <0xE6>;
+			pc-mask = <(INFINEON_PPC_PC(PSE84_PC_SE_RT) | INFINEON_PPC_PC(PSE84_PC_CM33_S) |
+			     INFINEON_PPC_PC(PSE84_PC_CM33_NS) | INFINEON_PPC_PC(PSE84_PC_CM55_NS) |
+			     INFINEON_PPC_PC(PSE84_PC_DAP))>;
 			status = "okay";
 		};
 
@@ -1629,10 +1663,12 @@
 		 * == 0x10000000 — see infineon-edge-ppc.h.)
 		 */
 		ppc1: ppc@54020000 {
-			compatible = "infineon,mxs40-ppc";
+			compatible = "infineon,ppc";
 			reg = <0x54020000 0x2000>;
 			nonsecure-regions = <PROT_PERI1_MAIN>;
-			pc-mask = <0xE6>;
+			pc-mask = <(INFINEON_PPC_PC(PSE84_PC_SE_RT) | INFINEON_PPC_PC(PSE84_PC_CM33_S) |
+			     INFINEON_PPC_PC(PSE84_PC_CM33_NS) | INFINEON_PPC_PC(PSE84_PC_CM55_NS) |
+			     INFINEON_PPC_PC(PSE84_PC_DAP))>;
 			status = "disabled";
 		};
 	};

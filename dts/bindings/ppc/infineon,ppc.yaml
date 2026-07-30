@@ -1,12 +1,12 @@
-# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
-title: Infineon MXS40 Peripheral Protection Controller (PPC)
+title: Infineon Peripheral Protection Controller (PPC)
 
 description: |
-  Infineon MXS40 PPC hardware block. Configures access rights for
+  Infineon PPC hardware block. Configures access rights for
   peripheral bus slots governed by a single PPC instance (PERI0 or PERI1).
 
   nonsecure-regions lists the specific cy_en_prot_region_t enum values (as
@@ -20,7 +20,7 @@ description: |
   Example (PPC0, opening the PERI0 console SCB path to NS):
 
     ppc0: ppc@52020000 {
-        compatible = "infineon,mxs40-ppc";
+        compatible = "infineon,ppc";
         reg = <0x52020000 0x2000>;
         /* MAIN, GR1..GR5 groups, PCLK0_MAIN, SCB2 (console) */
         nonsecure-regions = <0x00 0x02 0x03 0x04 0x05 0x06 0x10 0x130>;
@@ -28,7 +28,7 @@ description: |
         status = "okay";
     };
 
-compatible: "infineon,mxs40-ppc"
+compatible: "infineon,ppc"
 
 include: base.yaml
 

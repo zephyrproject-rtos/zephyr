@@ -35,7 +35,7 @@ void ifx_pse84_cm55_startup(void)
 				     CY_MMIO_SMIF0_SLAVE_NR, CY_MMIO_SMIF0_CLK_HF_NR);
 
 	/* Configure Memory Protection Controller for Non-Secure */
-#if !defined(CONFIG_INFINEON_MXS40_MPC)
+#if !defined(CONFIG_INFINEON_MPC)
 	cy_mpc_init();
 #endif
 
@@ -57,7 +57,7 @@ void ifx_pse84_cm55_startup(void)
 	Cy_SysPm_SetSOCMEMDeepSleepMode(CY_SYSPM_MODE_DEEPSLEEP);
 
 	/* Configure Peripheral Protection Controller for Non-Secure */
-#if !defined(CONFIG_INFINEON_MXS40_PPC)
+#if !defined(CONFIG_INFINEON_PPC)
 	cy_ppc0_init();
 	cy_ppc1_init();
 #endif

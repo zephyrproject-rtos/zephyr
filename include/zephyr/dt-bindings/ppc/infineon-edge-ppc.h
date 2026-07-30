@@ -9,8 +9,25 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PPC_INFINEON_EDGE_PPC_H_
 
 /*
+ * PSE84 protection contexts — the fixed core / bus master each protection
+ * context is bound to by the part's security policy (PSOC Edge E8x architecture
+ * reference manual, "Protection context assignment" tables 98/99 for the EPC2
+ * and EPC4 variants).  The bus master is the same in both variants for the
+ * contexts below.  Use these as the protection-context field of an
+ * "infineon,mpc" pc-configs entry, or inside INFINEON_PPC_PC() in an
+ * "infineon,ppc" pc-mask.
+ */
+#define PSE84_PC_SE_BOOT  0 /* SE:   ROM_BOOT / RRAM_BOOT */
+#define PSE84_PC_SE_RT    1 /* SE:   SE_RT_SERVICES */
+#define PSE84_PC_CM33_S   2 /* CM33: extended boot / TF-M SPM / PSA RoT (secure) */
+#define PSE84_PC_CM33_APP 4 /* CM33: TF-M application RoT (EPC4) / user (EPC2) */
+#define PSE84_PC_CM33_NS  5 /* CM33: Non-Secure application (NSPE) */
+#define PSE84_PC_CM55_NS  6 /* CM55: Non-Secure application */
+#define PSE84_PC_DAP      7 /* DAP:  SYS-AP debug (MXDEBUG600) */
+
+/*
  * Infineon PSE84 Peripheral Protection Controller (PPC) region indices, for use
- * in the "nonsecure-regions" property of "infineon,mxs40-ppc" nodes.
+ * in the "nonsecure-regions" property of "infineon,ppc" nodes.
  *
  * These mirror the cy_en_prot_region_t enum in the HAL's pse84_config.h.  PERI1
  * region IDs are offset by PROT_PERI1_START (0x10000000), which is why a raw
