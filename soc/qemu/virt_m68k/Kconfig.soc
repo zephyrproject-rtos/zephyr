@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Dimitri Varpusvuori
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_QEMU_VIRT_M68K
+	bool
+
+config SOC_QEMU_VIRT_M68K_M68000
+	bool
+	select SOC_FAMILY_QEMU_VIRT_M68K
+
+config SOC_QEMU_VIRT_M68K_M68010
+	bool
+	select SOC_FAMILY_QEMU_VIRT_M68K
+
+config SOC_FAMILY
+	default "qemu_virt_m68k" if SOC_FAMILY_QEMU_VIRT_M68K
+
+config SOC
+	default "qemu_virt_m68k_m68000" if SOC_QEMU_VIRT_M68K_M68000
+	default "qemu_virt_m68k_m68010" if SOC_QEMU_VIRT_M68K_M68010
