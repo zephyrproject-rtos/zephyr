@@ -51,3 +51,6 @@ family:
   - name: psoc4100smax
     socs:
     - name: cy8c4149azi_s598
+  - name: psoc4_hvpa_144k
+    socs:
+    - name: cy8c4147lce_hv423
