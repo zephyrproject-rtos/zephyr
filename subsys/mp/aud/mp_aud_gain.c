@@ -254,15 +254,8 @@ static struct mp_caps *mp_aud_gain_supported_caps(struct mp_transform *transform
 	mp_value_list_append(supported_bit_width, mp_value_new(MP_TYPE_UINT, MP_AUD_BIT_WIDTH_16));
 
 	if ((direction == MP_PAD_SRC) || (direction == MP_PAD_SINK)) {
-		/*
-		 * The gain element only manipulates sample values, so it constrains
-		 * the bit width and channel layout it can process but is agnostic to
-		 * the sample rate, channel count and frame interval, which it passes
-		 * through unchanged. Advertise those pass-through fields as open
-		 * ranges so the pad caps share fields with neighbouring elements
-		 * (e.g. a caps filter fixing frame interval and channel count).
-		 * Without them the structures would have no field in common and caps
-		 * negotiation would refuse to link the pads.
+		/* Rate, channels and interval pass through as open ranges so
+		 * neighbouring elements can fixate them during negotiation.
 		 */
 		return mp_caps_new(MP_MEDIA_AUDIO_PCM, MP_CAPS_SAMPLE_RATE, MP_TYPE_UINT_RANGE, 1U,
 				   UINT32_MAX, 1U, MP_CAPS_NUM_OF_CHANNEL, MP_TYPE_UINT_RANGE, 1U,

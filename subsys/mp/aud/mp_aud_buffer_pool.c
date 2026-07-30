@@ -33,10 +33,9 @@ static void mp_aud_buffer_pool_release_allocations(struct mp_aud_buffer_pool *au
 
 	if ((aud_pool->mem_slab != NULL) && clear_mem_slab) {
 		/*
-		 * Release the shared backing buffer so a later negotiation can
-		 * resize it, but keep the mem_slab pointer itself: the
-		 * application sets it once through a property, so a stop
-		 * followed by play/replay has no other way to restore it.
+		 * Release the backing buffer so a later negotiation can resize it,
+		 * but keep the mem_slab pointer: the application sets it once via a
+		 * property and a stop/replay has no other way to restore it.
 		 */
 		aud_pool->mem_slab->buffer = NULL;
 	}
@@ -61,16 +60,9 @@ static int mp_aud_buffer_pool_config(struct mp_buffer_pool *pool, struct mp_stru
 		mp_value_get_uint(mp_structure_get_value(config, MP_CAPS_BUFFER_COUNT));
 
 	/*
-	 * TEMPORARY WORKAROUND: Adding 2 extra buffers to the minimum count
-	 *
-	 * Currently adding +2 buffers beyond the requested buffer_count because
-	 * the current buffer management system requires additional buffers
-	 *
-	 * This is a temporary solution
-	 *
-	 * TODO: Remove this hardcoded +2 offset when:
-	 * - Buffer lifecycle management is properly implemented
-	 * - Proper flow control prevents buffer starvation
+	 * Reserve 2 buffers beyond the requested count as headroom for the
+	 * current buffer management. TODO: drop once proper buffer lifecycle
+	 * management and flow control are in place.
 	 */
 	pool->config.min_buffers = buffer_count + 2;
 	pool->config.size = (bit_width / BITS_PER_BYTE) *

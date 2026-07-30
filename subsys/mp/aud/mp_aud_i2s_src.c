@@ -331,11 +331,10 @@ static int mp_aud_i2s_src_stop(struct mp_buffer_pool *pool)
 	struct mp_aud_buffer_pool *aud_pool = CONTAINER_OF(pool, struct mp_aud_buffer_pool, pool);
 
 	/*
-	 * Return the SAI receiver to READY so a later set_caps can reconfigure
-	 * it: i2s_configure() refuses a RUNNING channel with -EBUSY. Only a full
-	 * stop reaches here (the source pool is stopped on PAUSED_TO_READY, not
-	 * on pause), so this does not disturb pause/resume. DROP is valid in any
-	 * state other than NOT_READY and hands the driver's queued blocks back.
+	 * Return the SAI RX to READY so a later set_caps can reconfigure it
+	 * (i2s_configure() refuses a RUNNING channel with -EBUSY). Only a full
+	 * stop reaches here (PAUSED_TO_READY), so pause/resume is unaffected;
+	 * DROP hands the driver's queued blocks back.
 	 */
 	if (aud_pool->aud_dev != NULL) {
 		(void)i2s_trigger(aud_pool->aud_dev, I2S_DIR_RX, I2S_TRIGGER_DROP);

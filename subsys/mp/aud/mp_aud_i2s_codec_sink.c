@@ -21,13 +21,9 @@ LOG_MODULE_REGISTER(mp_aud_i2s_codec_sink, CONFIG_MP_LOG_LEVEL);
 #define DEFAULT_PROP_CODEC_DEVICE DEVICE_DT_GET(DT_NODELABEL(audio_codec));
 
 /*
- * Number of buffers to queue into the I2S TX FIFO before issuing the START
- * trigger. The source and sink are clocked at the same rate, so the I2S
- * consumer can momentarily get one buffer ahead of the source right after
- * start. Priming more than one buffer keeps the TX queue from draining to
- * empty on a scheduling tie, which would otherwise raise a TX underrun.
- * This needs the negotiated buffer count to be at least 2 (true for any
- * double-buffered codec).
+ * Buffers to queue into the I2S TX FIFO before the START trigger. Source and
+ * sink share a clock, so priming more than one keeps the TX queue from
+ * draining to empty on a scheduling tie and raising a TX underrun.
  */
 #define AUD_I2S_SINK_START_PRIME 3
 
@@ -305,10 +301,9 @@ static int mp_aud_i2s_codec_sink_set_caps(struct mp_sink *sink, struct mp_caps *
 	return 0;
 }
 
-/* A capture source whose receiver is clock-synced to this transmitter produces
- * nothing until the transmitter runs, while this sink waits for its buffers.
- * Break that deadlock by starting the transmitter on silence at PLAYING,
- * before any upstream buffer arrives.
+/* When a capture source's receiver is clock-synced to this transmitter, it
+ * produces nothing until the transmitter runs while the sink waits for buffers.
+ * Break the deadlock by priming the transmitter with silence at PLAYING.
  */
 static enum mp_state_change_return
 mp_aud_i2s_codec_sink_change_state(struct mp_element *self, enum mp_state_change transition)
@@ -316,10 +311,8 @@ mp_aud_i2s_codec_sink_change_state(struct mp_element *self, enum mp_state_change
 	struct mp_aud_i2s_codec_sink *sink = (struct mp_aud_i2s_codec_sink *)self;
 
 	/*
-	 * On a full stop, return the SAI transmitter to READY so the next
-	 * set_caps can reconfigure it (i2s_configure() refuses a RUNNING channel
-	 * with -EBUSY) and re-arm the start-priming so a later replay primes and
-	 * starts again from scratch.
+	 * On a full stop return the SAI TX to READY (i2s_configure() refuses a
+	 * RUNNING channel with -EBUSY) and re-arm the priming for the next replay.
 	 */
 	if (transition == MP_STATE_CHANGE_PAUSED_TO_READY && sink->i2s_dev != NULL) {
 		(void)i2s_trigger(sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
@@ -394,10 +387,9 @@ int mp_aud_i2s_codec_sink_chainfn(struct mp_pad *pad, struct net_buf *in_buf,
 		ret = i2s_write(aud_i2s_codec_sink->i2s_dev, in_buf->data, bytes_used);
 		if (ret < 0) {
 			/*
-			 * i2s_write() did not take the buffer, so its block is
-			 * still ours. Return it to the slab before dropping the
-			 * wrapper: unreferencing only frees the net_buf, and the
-			 * block would otherwise be lost from the pool for good.
+			 * i2s_write() did not take the buffer, so free its block
+			 * back to the slab: net_buf_unref() only frees the wrapper
+			 * and the block would leak from the pool otherwise.
 			 */
 			LOG_DBG("I2S TX recovery failed (%d), dropping buffer", ret);
 			k_mem_slab_free(aud_i2s_codec_sink->mem_slab, in_buf->data);
