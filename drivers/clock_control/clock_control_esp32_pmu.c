@@ -241,7 +241,8 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 				new_config.source != SOC_CPU_CLK_SRC_PLL_F240M)
 			     : (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_XTAL
 					? (new_config.source != SOC_CPU_CLK_SRC_XTAL)
-					: (new_config.source != cpu_cfg->clk_src)))) {
+					: (cpu_cfg->clk_src != ESP32_CLK_SRC_RC_FAST ||
+					   new_config.source != SOC_CPU_CLK_SRC_RC_FAST)))) {
 #elif defined(CONFIG_SOC_SERIES_ESP32C61)
 	/* C61 DT binding values (ESP32_CPU_CLK_SRC_*) don't match HAL
 	 * enums (SOC_CPU_CLK_SRC_*). C61 PLL is fixed at 160 MHz
@@ -251,7 +252,8 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 			     ? (new_config.source != SOC_CPU_CLK_SRC_PLL_F160M)
 			     : (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_XTAL
 					? (new_config.source != SOC_CPU_CLK_SRC_XTAL)
-					: (new_config.source != cpu_cfg->clk_src)))) {
+					: (cpu_cfg->clk_src != ESP32_CLK_SRC_RC_FAST ||
+					   new_config.source != SOC_CPU_CLK_SRC_RC_FAST)))) {
 #elif defined(CONFIG_SOC_SERIES_ESP32P4)
 	/*
 	 * P4 uses CPLL as its PLL source.
@@ -330,8 +332,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {
 		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_XTAL);
 		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
-				     CONFIG_ESP_CONSOLE_UART_BAUDRATE,
-				     cpu_cfg->xtal_freq * MHZ(1));
+				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, cpu_cfg->xtal_freq * MHZ(1));
 	}
 #elif defined(CONFIG_SOC_SERIES_ESP32P4)
 	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {
