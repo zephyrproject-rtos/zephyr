@@ -260,6 +260,13 @@ New APIs and options
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
+* System I/O
+
+  * :c:func:`sys_read64_lo_hi`
+  * :c:func:`sys_read64_hi_lo`
+  * :c:func:`sys_write64_lo_hi`
+  * :c:func:`sys_write64_hi_lo`
+
 * Zbus
 
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION`
