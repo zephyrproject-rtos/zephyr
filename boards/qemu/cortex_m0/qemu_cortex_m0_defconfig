@@ -1,7 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-CONFIG_QEMU_ICOUNT_SHIFT=6
-
 # Enable GPIO
 CONFIG_GPIO=y
 
