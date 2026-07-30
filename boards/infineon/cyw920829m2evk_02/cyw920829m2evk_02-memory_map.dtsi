@@ -68,28 +68,32 @@
 	};
 
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x0 0x20000>;
 			read-only;
 		};
 
 		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x20000 0x60000>;
 		};
 
 		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x80000 0x60000>;
 		};
 
-		storage_partition: storage_partition@e0000 {
-			compatible = "soc-nv-flash";
+		storage_partition: partition@e0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
 			reg = <0xe0000 DT_SIZE_K(64)>;
 		};
 	};
