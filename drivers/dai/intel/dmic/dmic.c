@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <stdint.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/sys_io_non_atomic.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
@@ -29,10 +30,6 @@ static const uint32_t dmic_base[4] = {PDM0, PDM1, PDM2, PDM3};
 
 /* global data shared between all dmic instances */
 struct dai_dmic_global_shared dai_dmic_global;
-
-/* Helper macro to read 64-bit data using two 32-bit data read */
-#define sys_read64(addr)    (((uint64_t)(sys_read32(addr + 4)) << 32) | \
-			     sys_read32(addr))
 
 int dai_dmic_set_config_nhlt(struct dai_intel_dmic *dmic, const void *spec_config);
 
@@ -419,10 +416,10 @@ static int dai_timestamp_dmic_get(const struct device *dev, struct dai_ts_cfg *c
 	}
 
 	/* NTK was set, get wall clock */
-	tsd->walclk = sys_read64(TS_DMIC_LOCAL_WALCLK);
+	tsd->walclk = sys_read64_hi_lo(TS_DMIC_LOCAL_WALCLK);
 
 	/* Sample */
-	tsd->sample = sys_read64(TS_DMIC_LOCAL_SAMPLE);
+	tsd->sample = sys_read64_hi_lo(TS_DMIC_LOCAL_SAMPLE);
 
 	/* Clear NTK to enable successive timestamps */
 	sys_write32(TS_LOCAL_TSCTRL_NTK, tsctrl);

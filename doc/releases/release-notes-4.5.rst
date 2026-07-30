@@ -1116,6 +1116,13 @@ New APIs and options
     applications that frequently create short-lived memory domains no longer exhaust the ASID
     space.
 
+* System I/O
+
+  * :c:func:`sys_read64_lo_hi`
+  * :c:func:`sys_read64_hi_lo`
+  * :c:func:`sys_write64_lo_hi`
+  * :c:func:`sys_write64_hi_lo`
+
 * Zbus
 
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION`

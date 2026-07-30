@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/sys_io_non_atomic.h>
 #include <zephyr/devicetree.h>
 #include <adsp_shim.h>
 #include <adsp_timestamp.h>
@@ -81,9 +82,9 @@ int intel_adsp_get_timestamp(uint32_t tsctrl, struct intel_adsp_timestamp *times
 	 * data in HW is guaranteed to be valid and static.
 	 */
 	timestamp->iscs = sys_read32(ISCS_ADDR);
-	timestamp->lscs = sys_read64(LSCS_ADDR);
-	timestamp->dwccs = sys_read64(DWCCS_ADDR);
-	timestamp->artcs = sys_read64(ARTCS_ADDR);
+	timestamp->lscs = sys_read64_hi_lo(LSCS_ADDR);
+	timestamp->dwccs = sys_read64_hi_lo(DWCCS_ADDR);
+	timestamp->artcs = sys_read64_hi_lo(ARTCS_ADDR);
 	timestamp->lwccs = sys_read32(LWCCS_ADDR);
 
 	/* Clear NTK (RW/1C) bit */
