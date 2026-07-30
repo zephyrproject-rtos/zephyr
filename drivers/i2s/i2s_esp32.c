@@ -739,8 +739,7 @@ int IRAM_ATTR i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
 	}
 	dma_cfg.user_data = (void *)dev;
-	dma_cfg.dma_slot =
-		dev_cfg->unit == 0 ? ESP_GDMA_TRIG_PERIPH_I2S0 : ESP_GDMA_TRIG_PERIPH_I2S1;
+	dma_cfg.dma_slot = ESP_GDMA_TRIG_PERIPH_I2S0 + dev_cfg->unit;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
 
