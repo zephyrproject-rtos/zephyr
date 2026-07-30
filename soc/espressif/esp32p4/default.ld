@@ -425,6 +425,10 @@ SECTIONS
     *libzephyr.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
     *libzephyr.a:flash_mmap.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT)
+    *libzephyr.a:bootloader_flash.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_efuse_utility.*(.literal .text .literal.* .text.*)
+#endif
 
     /* [mapping:esp_system] */
     *libzephyr.a:reset_reason.*(.literal .literal.* .text .text.*)
@@ -663,6 +667,10 @@ SECTIONS
     *libzephyr.a:spi_flash_os_func_noos.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .srodata .srodata.*)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT)
+    *libzephyr.a:bootloader_flash.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_efuse_utility.*(.rodata .rodata.* .srodata .srodata.*)
+#endif
 
     /* [mapping:esp_psram] */
     *libzephyr.a:esp_psram_impl_ap_hex.*(.rodata .rodata.* .srodata .srodata.*)

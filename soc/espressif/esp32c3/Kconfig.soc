@@ -63,3 +63,9 @@ config SOC_PART_NUMBER
 	default "ESP32C3_WROOM_02_N4" if SOC_ESP32C3_WROOM_02_N4
 	default "ESP32C3_WROOM_02_N8" if SOC_ESP32C3_WROOM_02_N8
 	default "ESP32C3" if SOC_ESP32C3
+
+if SOC_SERIES_ESP32C3
+
+rsource "Kconfig.caps"
+
+endif

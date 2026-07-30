@@ -419,6 +419,10 @@ SECTIONS
 #endif
     *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_mmap.*(.literal .text .literal.* .text.*)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT)
+    *libzephyr.a:bootloader_flash.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_efuse_utility.*(.literal .text .literal.* .text.*)
+#endif
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
@@ -679,6 +683,10 @@ SECTIONS
 #endif
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT)
+    *libzephyr.a:bootloader_flash.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:esp_efuse_utility.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+#endif
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache_utils.*(.rodata .rodata.*)
