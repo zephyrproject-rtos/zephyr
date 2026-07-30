@@ -116,6 +116,8 @@ struct bt_keys {
  */
 void bt_keys_reset(void);
 
+bool bt_keys_has_bond(uint8_t id);
+
 /**
  * @brief Get a call through the callback for each key with the same type
  *

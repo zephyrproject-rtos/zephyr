@@ -1,12 +1,36 @@
+common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+
 tests:
   bluetooth.host_id:
+    {}
+  bluetooth.host_id.privacy:
     extra_args:
-      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
-    platform_allow:
-      - native_sim
-      - native_sim/native/64
-    integration_platforms:
-      - native_sim
-    tags:
-      - bluetooth
-      - host
+      - CONFIG_BT_PRIVACY=y
+      - CONFIG_BT_SMP=y
+      - CONFIG_BT_BROADCASTER=y
+      - CONFIG_BT_OBSERVER=y
+      - CONFIG_BT_CENTRAL=y
+      - CONFIG_BT_HOST_CRYPTO_PRNG=n
+  bluetooth.host_id.privacy.no_smp:
+    extra_args:
+      - CONFIG_BT_PRIVACY=y
+      - CONFIG_BT_SMP=n
+      - CONFIG_BT_HOST_CRYPTO_PRNG=n
+  bluetooth.host_id.privacy.rpa_sharing:
+    extra_args:
+      - CONFIG_BT_PRIVACY=y
+      - CONFIG_BT_SMP=y
+      - CONFIG_BT_BROADCASTER=y
+      - CONFIG_BT_EXT_ADV=y
+      - CONFIG_BT_RPA_SHARING=y
+      - CONFIG_BT_HOST_CRYPTO_PRNG=n

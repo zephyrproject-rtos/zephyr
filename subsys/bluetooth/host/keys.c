@@ -104,6 +104,17 @@ void bt_keys_reset(void)
 	memset(key_pool, 0, sizeof(key_pool));
 }
 
+bool bt_keys_has_bond(uint8_t id)
+{
+	for (size_t i = 0U; i < ARRAY_SIZE(key_pool); i++) {
+		if ((key_pool[i].keys != 0U) && (key_pool[i].id == id)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 struct bt_keys *bt_keys_get_addr(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys;
