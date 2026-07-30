@@ -1652,3 +1652,8 @@ test_i2c_icm40627: icm40627@d6 {
 	accel-fs = <16>;
 	gyro-fs = <2000>;
 };
+
+test_i2c_mlx90632: mlx90632@d7 {
+	compatible = "melexis,mlx90632";
+	reg = <0xd7>;
+};
