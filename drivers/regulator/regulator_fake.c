@@ -50,6 +50,15 @@ DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_active_discharge, const struct de
 DEFINE_FAKE_VALUE_FUNC(int, regulator_fake_get_error_flags,
 		       const struct device *, regulator_error_flags_t *);
 
+static int regulator_fake_get_voltage_delegate(const struct device *dev, int32_t *volt_uv)
+{
+	ARG_UNUSED(dev);
+
+	*volt_uv = 1e6; /* 1V */
+
+	return 0;
+};
+
 static DEVICE_API(regulator, api) = {
 	.enable = regulator_fake_enable,
 	.disable = regulator_fake_disable,
@@ -71,6 +80,8 @@ static DEVICE_API(regulator, api) = {
 static int regulator_fake_init(const struct device *dev)
 {
 	const struct regulator_fake_config *config = dev->config;
+
+	regulator_fake_get_voltage_fake.custom_fake = regulator_fake_get_voltage_delegate;
 
 	regulator_common_data_init(dev);
 
