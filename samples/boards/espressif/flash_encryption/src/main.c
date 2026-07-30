@@ -17,10 +17,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_encryption, CONFIG_LOG_DEFAULT_LEVEL);
 
-#if !defined(CONFIG_SOC_SERIES_ESP32)
-#error Flash encryption feature is only available for ESP32 SOC yet.
-#endif
-
 int main(void)
 {
 	uint8_t buffer[32];
