@@ -4428,6 +4428,44 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct net_in_addr *addr,
 	return net_if_ipv4_addr_lookup_raw(addr->s4_addr, ret);
 }
 
+struct net_if_addr *net_if_ipv4_addr_lookup_by_iface_raw(struct net_if *iface,
+							 const uint8_t *addr)
+{
+	struct net_if_addr *ifaddr = NULL;
+	struct net_if_ipv4 *ipv4;
+
+	net_if_lock(iface);
+
+	ipv4 = iface->config.ip.ipv4;
+	if (ipv4 == NULL) {
+		goto out;
+	}
+
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
+		    ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
+			continue;
+		}
+
+		if (UNALIGNED_GET((uint32_t *)addr) ==
+		    ipv4->unicast[i].ipv4.address.in_addr.s_addr) {
+			ifaddr = &ipv4->unicast[i].ipv4;
+			goto out;
+		}
+	}
+
+out:
+	net_if_unlock(iface);
+
+	return ifaddr;
+}
+
+struct net_if_addr *net_if_ipv4_addr_lookup_by_iface(struct net_if *iface,
+						     const struct net_in_addr *addr)
+{
+	return net_if_ipv4_addr_lookup_by_iface_raw(iface, addr->s4_addr);
+}
+
 int z_impl_net_if_ipv4_addr_lookup_by_index(const struct net_in_addr *addr)
 {
 	struct net_if_addr *if_addr;
