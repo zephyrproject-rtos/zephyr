@@ -20,6 +20,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/uaol.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/sys_io_non_atomic.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/arch/common/sys_io.h>
 #include <zephyr/pm/device.h>
@@ -385,14 +386,14 @@ static void uaol_intel_adsp_program_format(const struct device *dev, int stream,
 	sample_block_size = sample_size * channels;
 	payload_size = sample_block_size * ((sample_rate * service_interval_usec) / USEC_PER_SEC);
 
-	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, stream));
+	pcms_ctl.full = sys_read64_lo_hi(UAOLxPCMSyCTL_ADDR(dp, stream));
 	pcms_ctl.part.si = uaol_intel_adsp_encode_service_interval(service_interval_usec);
 	pcms_ctl.part.ass = sample_size - 1;
 	pcms_ctl.part.asbs = sample_block_size;
 	pcms_ctl.part.aps = payload_size;
 	pcms_ctl.part.mps = sio_credit_size;
 	pcms_ctl.part.pm = DIV_ROUND_UP(payload_size, sio_credit_size);
-	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
+	sys_write64_lo_hi(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
 }
 
 /*
@@ -439,13 +440,13 @@ static int uaol_intel_adsp_set_stream_state(const struct device *dev, int stream
 	union UAOLxPCMSyCTL pcms_ctl;
 	uint32_t timeout = UAOL_STREAM_STATE_CHANGE_TIMEOUT_USEC;
 
-	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, stream));
+	pcms_ctl.full = sys_read64_lo_hi(UAOLxPCMSyCTL_ADDR(dp, stream));
 	if (pcms_ctl.part.sen != uaol_intel_adsp_get_sbusy(dev, stream)) {
 		LOG_ERR("Unexpected stream state; SEN %d", pcms_ctl.part.sen);
 		return -EBUSY;
 	}
 	pcms_ctl.part.sen = start;
-	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
+	sys_write64_lo_hi(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
 
 	if (!WAIT_FOR(uaol_intel_adsp_get_sbusy(dev, stream) == start, timeout, k_busy_wait(1))) {
 		LOG_ERR("Stream start/stop timeout; start %d", start);
@@ -463,9 +464,9 @@ static void uaol_intel_adsp_reset_stream(const struct device *dev, int stream, b
 	struct uaol_intel_adsp_data *dp = dev->data;
 	union UAOLxPCMSyCTL pcms_ctl;
 
-	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, stream));
+	pcms_ctl.full = sys_read64_lo_hi(UAOLxPCMSyCTL_ADDR(dp, stream));
 	pcms_ctl.part.srst = reset;
-	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
+	sys_write64_lo_hi(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
 }
 
 static bool uaol_intel_adsp_frame_adjust_idle(const struct device *dev)
