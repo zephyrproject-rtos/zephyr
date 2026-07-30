@@ -1232,6 +1232,9 @@ Trusted Firmware-M
   :kconfig:option:`TFM_ZEPHYR_4_2_COMPATIBILITY`, which more accurately describes when the symbol
   needs to be set.
 
+* :kconfig:option:`CONFIG_BUILD_WITH_TFM` does not enable :kconfig:option:`CONFIG_MBEDTLS` /
+  :kconfig:option:`CONFIG_PSA_CRYPTO` anymore. Make sure to enable them explicitly in your build as needed. (:github:`114762#`)
+
 Snippets
 ********
 
