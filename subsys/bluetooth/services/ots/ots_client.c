@@ -1421,12 +1421,13 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 	}
 
 	if ((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
-		LOG_ERR("offset %ld exceeds UINT32 and must be >= 0", offset);
+		LOG_ERR("offset %ld exceeds UINT32 and must be >= 0", (long)offset);
 		return -EINVAL;
 	}
 
 	if (offset > otc_inst->cur_object.size.cur) {
-		LOG_ERR("offset %ld exceeds cur size %zu", offset, otc_inst->cur_object.size.cur);
+		LOG_ERR("offset %ld exceeds cur size %zu",
+			(long)offset, otc_inst->cur_object.size.cur);
 		return -EINVAL;
 	}
 
@@ -1438,8 +1439,8 @@ int bt_ots_client_write_object_data(struct bt_ots_client *otc_inst,
 
 	if (((len + offset) > otc_inst->cur_object.size.alloc) &&
 	    !BT_OTS_OBJ_GET_PROP_APPEND(otc_inst->cur_object.props)) {
-		LOG_ERR("APPEND is not supported. Invalid new end of object %lu alloc %zu."
-		, (len + offset), otc_inst->cur_object.size.alloc);
+		LOG_ERR("APPEND is not supported. Invalid new end of object %lu alloc %zu.",
+			(len + (long)offset), otc_inst->cur_object.size.alloc);
 		return -EINVAL;
 	}
 
@@ -1482,13 +1483,14 @@ int bt_ots_client_get_object_checksum(struct bt_ots_client *otc_inst, struct bt_
 	}
 
 	if ((sizeof(offset) > sizeof(uint32_t) && (offset > UINT32_MAX)) || (offset < 0)) {
-		LOG_DBG("offset exceeds %ld UINT32 and must be >= 0", offset);
+		LOG_DBG("offset exceeds %ld UINT32 and must be >= 0", (long)offset);
 		return -EINVAL;
 	}
 
 	if ((len + offset) > otc_inst->cur_object.size.cur) {
 		LOG_DBG("The sum of offset (%ld) and length (%zu) exceed the Current Size %lu "
-			"alloc %zu.", offset, len, (len + offset), otc_inst->cur_object.size.cur);
+			"alloc %zu.", (long)offset, len, (len + (long)offset),
+			otc_inst->cur_object.size.cur);
 		return -EINVAL;
 	}
 
