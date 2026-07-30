@@ -133,7 +133,8 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 #define NETC_PSI_INSTANCE_DEFINE(n)                                                                \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	AT_NONCACHEABLE_SECTION_ALIGN(                                                             \
-		static uint8_t eth##n##_tx_buff[CONFIG_ETH_NXP_IMX_TX_RING_BUF_SIZE],              \
+		static uint8_t eth##n##_tx_buff[CONFIG_ETH_NXP_IMX_TX_RING_LEN]                    \
+					       [CONFIG_ETH_NXP_IMX_TX_RING_BUF_SIZE],             \
 		NETC_BUFF_ALIGN);                                                                  \
 	AT_NONCACHEABLE_SECTION_ALIGN(                                                             \
 		static netc_tx_bd_t eth##n##_txbd_array[CONFIG_ETH_NXP_IMX_TX_RING_NUM]            \
@@ -180,7 +181,8 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		bdr_config->txBdrConfig[0].len = CONFIG_ETH_NXP_IMX_TX_RING_LEN;                   \
 		bdr_config->txBdrConfig[0].dirtyArray = &eth##n##_txdirty_array[0][0];             \
 		bdr_config->txBdrConfig[0].msixEntryIdx = NETC_TX_MSIX_ENTRY_IDX;                  \
-		bdr_config->txBdrConfig[0].enIntr = true;                                          \
+		bdr_config->txBdrConfig[0].enIntr = false;                                         \
+		bdr_config->txBdrConfig[0].enThresIntr = true;                                     \
 	}                                                                                          \
 	static struct netc_eth_data netc_eth##n##_data = {                                         \
 		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),                            \
@@ -198,6 +200,7 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		.pseudo_mac = DT_ENUM_HAS_VALUE(DT_DRV_INST(n), phy_connection_type, internal),    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.si_idx = (DT_INST_PROP(n, mac_index) << 8) | DT_INST_PROP(n, si_index),           \
+		.msix_entry_num = NETC_MSIX_PSI_EVENTS_COUNT,                                     \
 		IF_ENABLED(CONFIG_ETH_NXP_IMX_NETC_MSI_GIC,                                        \
 			(.msi_device_id = DT_INST_PROP_OR(n, msi_device_id, 0),                    \
 			.msi_dev = (COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_PARENT(n), msi_parent),   \
