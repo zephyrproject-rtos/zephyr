@@ -16,6 +16,6 @@ dut_timer2: &timer10 {
 	status = "reserved";
 };
 
-&comp {
+dut_egu: &egu20 {
 	status = "reserved";
 };
