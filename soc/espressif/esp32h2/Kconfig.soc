@@ -17,3 +17,9 @@ config SOC
 
 config SOC_PART_NUMBER
 	default "ESP32H2" if SOC_ESP32H2
+
+if SOC_SERIES_ESP32H2
+
+rsource "Kconfig.caps"
+
+endif
