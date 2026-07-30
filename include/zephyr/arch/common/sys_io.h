@@ -55,6 +55,7 @@ static ALWAYS_INLINE void sys_write32(uint32_t data, mem_addr_t addr)
 	*(volatile uint32_t *)addr = data;
 }
 
+#ifdef CONFIG_64BIT
 static ALWAYS_INLINE uint64_t sys_read64(mem_addr_t addr)
 {
 	return *(volatile uint64_t *)addr;
@@ -64,6 +65,7 @@ static ALWAYS_INLINE void sys_write64(uint64_t data, mem_addr_t addr)
 {
 	*(volatile uint64_t *)addr = data;
 }
+#endif /* CONFIG_64BIT */
 
 /**
  * @endcond

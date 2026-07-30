@@ -201,7 +201,9 @@ config RISCV_SOC_HAS_CUSTOM_SYS_IO
 
 	  Enable this hidden option and specialize the z_soc_* functions when
 	  the RISC-V SoC needs to do something different and more than reading and
-	  writing the registers.
+	  writing the registers. On 32-bit targets, a SoC may provide
+	  z_soc_sys_read64() or z_soc_sys_write64() only when it defines the access
+	  semantics; drivers must not assume these functions are available.
 
 config RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	bool

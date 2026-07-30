@@ -102,6 +102,11 @@ Removed APIs and options
     * ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR``
     * ``CONFIG_CS_CTR_DRBG_PERSONALIZATION``
 
+* System I/O
+
+    * Generic implementations of :c:func:`sys_read64` and :c:func:`sys_write64` on 32-bit targets.
+      Architectures can continue to provide explicit implementations.
+
 * West sign support for imgtool, which was deprecated in Zephyr 4.0, has been removed.
 
 Deprecated APIs and options

@@ -1223,6 +1223,15 @@ Snippets
 Architectures
 *************
 
+* The generic implementations of :c:func:`sys_read64` and :c:func:`sys_write64` are no longer
+  available on 32-bit targets. An architecture can still provide either accessor when it defines
+  the access semantics. Out-of-tree drivers that used the generic accessors on a 32-bit target must
+  include ``<zephyr/sys/sys_io_non_atomic.h>`` and migrate to :c:func:`sys_read64_lo_hi`,
+  :c:func:`sys_read64_hi_lo`, :c:func:`sys_write64_lo_hi`, or :c:func:`sys_write64_hi_lo` when the
+  addressed register supports non-atomic 32-bit accesses in the selected order. Use
+  :c:func:`sys_read32` and :c:func:`sys_write32` directly for register-specific sequences such as
+  latched or stability-checked reads.
+
 * A new architecture primitive, ``arch_cpu_irqs_are_enabled()``, has been added.
   It returns the current interrupt-enable state of the calling CPU without
   modifying it, complementing ``arch_irq_unlocked()`` which inspects a saved
