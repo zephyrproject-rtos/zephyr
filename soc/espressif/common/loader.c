@@ -147,8 +147,9 @@ void map_rom_segments(int core, struct rom_segments *map)
 	unsigned int segments = 0;
 	unsigned int ram_segments = 0;
 
-	if (esp_rom_flash_read(offset, &bootloader_image_hdr, sizeof(esp_image_header_t), true) !=
-	    0) {
+	/* ROM path: runs before flash stack is ready under Simple Boot */
+	if (esp_rom_flash_read(offset, &bootloader_image_hdr, sizeof(esp_image_header_t),
+			       true) != 0) {
 		ESP_EARLY_LOGE(TAG, "Failed to read image header at %x", offset);
 		abort();
 	}
@@ -158,7 +159,7 @@ void map_rom_segments(int core, struct rom_segments *map)
 	while (segments++ < ESP_IMAGE_MAX_SEGMENTS) {
 
 		if (esp_rom_flash_read(offset, &segment_hdr,
-					      sizeof(esp_image_segment_header_t), true) != 0) {
+				       sizeof(esp_image_segment_header_t), true) != 0) {
 			ESP_EARLY_LOGE(TAG, "Failed to read segment header at %x", offset);
 			abort();
 		}
