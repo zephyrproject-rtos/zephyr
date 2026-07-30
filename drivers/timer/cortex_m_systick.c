@@ -186,8 +186,9 @@ static cycle_t cycle_pre_idle;
  * holds the amount of elapsed HW cycles due to (possibly) multiple
  * timer wraps (overflows).
  *
- * @param val_out Optional pointer to store the SysTick->VAL snapshot (val2)
- *                used in the calculation.
+ * @param val_out Optional pointer to store the raw SysTick->VAL snapshot (C)
+ *                taken by this function, for callers that need to chain a
+ *                measurement onto the window this call accounted for.
  *
  * Prerequisites:
  * - reprogramming of SysTick.LOAD must be clearing the SysTick.COUNTER
@@ -203,6 +204,10 @@ static uint32_t elapsed(uint32_t *val_out)
 	uint32_t val1 = SysTick->VAL;	/* A */
 	uint32_t ctrl = SysTick->CTRL;	/* B */
 	uint32_t val2 = SysTick->VAL;	/* C */
+
+	if (val_out != NULL) {
+		*val_out = val2;
+	}
 
 	/* SysTick behavior: The counter wraps after zero automatically.
 	 * The COUNTFLAG field of the CTRL register is set when it
@@ -241,10 +246,6 @@ static uint32_t elapsed(uint32_t *val_out)
 		/* We know there was a wrap, but we might not have
 		 * seen it in CTRL, so clear it. */
 		(void)SysTick->CTRL;
-	}
-
-	if (val_out != NULL) {
-		*val_out = val2;
 	}
 
 	return (last_load - val2) + overflow_cyc;
@@ -393,12 +394,17 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	 * state here to catch any wrap before writing VAL=0 destroys COUNTFLAG.
 	 */
 
-	/* elapsed() is called passing the address of val1 so that the SysTick->VAL
-	 * snapshot used for computing 'pending' is also returned and stored
-	 * in val1. This eliminates the timing gap that would exist if we read
-	 * SysTick->VAL separately after elapsed(), ensuring perfect precision.
+	/* val1 is taken from elapsed()'s own last VAL sample rather than from a
+	 * separate read afterwards, so the window measured by (val1 - val2) at
+	 * the bottom of this function abuts the window already accounted for by
+	 * elapsed() with no gap in between. Any cycles in such a gap would be
+	 * neither in elapsed()'s return value nor in the drift compensation,
+	 * i.e. systematically lost drift.
+	 *
+	 * Note that val1 and the val2 read further down must both be raw VAL
+	 * samples: mixing a wrap-realigned sample with a raw one would fabricate
+	 * a whole counter period whenever VAL reads 0.
 	 */
-
 	uint32_t val1;
 	uint32_t pending = elapsed(&val1);
 	uint32_t old_load = last_load;
