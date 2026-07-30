@@ -4,4 +4,13 @@
 config SYS_CLOCK_TICKS_PER_SEC
 	default 16384 if NRF_RTC_TIMER && TICKLESS_KERNEL
 
+config TEST_PROVIDE_PM_HOOKS
+	bool "Provide the PM hooks this test needs"
+	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
+	help
+	  CONFIG_PM needs HAS_PM, which only SoCs implementing low-power states
+	  select. src/pm_hooks.c supplies the two required hooks so the PM idle
+	  path can be exercised anywhere.
+
 source "Kconfig.zephyr"
