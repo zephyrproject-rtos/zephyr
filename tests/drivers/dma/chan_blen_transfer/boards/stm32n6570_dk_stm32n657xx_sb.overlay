@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-tst_dma0: &hpdma1 {
+&hpdma1 {
 	status = "okay";
+};
+
+/ {
+	zephyr,user {
+		dma-test-devs = <&hpdma1>;
+	};
 };
