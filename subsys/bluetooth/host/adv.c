@@ -365,15 +365,6 @@ int bt_le_adv_set_enable(struct bt_le_ext_adv *adv, bool enable)
 	return bt_le_adv_set_enable_legacy(adv, enable);
 }
 
-static uint32_t adv_interval_max_get(void)
-{
-	if (IS_ENABLED(CONFIG_BT_EXT_ADV) && BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		return BT_LE_EXT_ADV_INTERVAL_MAX;
-	}
-
-	return BT_LE_ADV_INTERVAL_MAX;
-}
-
 static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 {
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
@@ -440,9 +431,19 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 
 	if ((param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY) ||
 	    !param->peer) {
+		uint32_t interval_max_limit = BT_LE_ADV_INTERVAL_MAX;
+
+		if (param->options & BT_LE_ADV_OPT_EXT_ADV) {
+			/* BT Core [Vol 4, Part E, 7.8.53]: extended advertising uses
+			 * a 24-bit interval with a permitted range of 0x000020 to
+			 * 0xFFFFFF (~10485s), not the legacy 0x4000 ceiling.
+			 */
+			interval_max_limit = BT_HCI_LE_PRIM_ADV_INTERVAL_MAX;
+		}
+
 		if (param->interval_min > param->interval_max ||
-		    param->interval_min < 0x0020 ||
-		    param->interval_max > adv_interval_max_get()) {
+		    param->interval_min < BT_LE_ADV_INTERVAL_MIN ||
+		    param->interval_max > interval_max_limit) {
 			return false;
 		}
 	}
