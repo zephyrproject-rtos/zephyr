@@ -256,7 +256,7 @@
 			status = "disabled";
 
 			mdio: mdio {
-				compatible = "infineon,xmc4xxx-mdio";
+				compatible = "snps,dwmac-mdio";
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
