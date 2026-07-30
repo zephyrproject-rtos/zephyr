@@ -18,6 +18,7 @@
 #include <zephyr/llext/symbol.h>
 #include <zephyr/llext/buf_loader.h>
 #include <zephyr/llext/fs_loader.h>
+#include <zephyr/llext/semihost_loader.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/sys/libc-hooks.h>
@@ -722,6 +723,28 @@ ZTEST(llext, test_fs_loader)
 	fs_unmount(&mp);
 }
 #endif
+
+#if defined(CONFIG_SEMIHOST)
+ZTEST(llext, test_semihost_loader)
+{
+	int res;
+	struct llext_semihost_loader sh_loader = LLEXT_SEMIHOST_LOADER("llext/hello_world.llext");
+	struct llext_loader *loader = &sh_loader.loader;
+	struct llext_load_param ldr_parm = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+
+	res = llext_load(loader, "hello_world", &ext, &ldr_parm);
+	zassert_ok(res, "load should succeed");
+
+	void (*test_entry_fn)() = llext_find_sym(&ext->exp_tab, "test_entry");
+
+	zassert_not_null(test_entry_fn, "test_entry should be an exported symbol");
+
+	llext_bootstrap(ext, test_entry_fn, NULL);
+
+	llext_unload(&ext);
+}
+#endif /* defined(CONFIG_SEMIHOST) */
 
 /*
  * Ensure that EXPORT_SYMBOL does indeed provide a symbol and a valid address
