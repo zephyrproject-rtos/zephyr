@@ -25,11 +25,6 @@
 extern "C" {
 #endif
 
-/** @cond INTERNAL_HIDDEN */
-BUILD_ASSERT(!(sizeof(off_t) > sizeof(size_t)),
-	     "Size of off_t must be equal or less than size of size_t");
-/** @endcond */
-
 /**
  * @brief Interfaces for retained memory.
  * @defgroup retained_mem_interface Retained memory
