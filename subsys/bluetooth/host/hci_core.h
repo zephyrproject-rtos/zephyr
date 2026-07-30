@@ -452,7 +452,7 @@ struct bt_dev {
 
 #if defined(CONFIG_BT_PRIVACY)
 	/* Local Identity Resolving Key */
-	uint8_t			irk[CONFIG_BT_ID_MAX][16];
+	uint8_t			irk[CONFIG_BT_ID_MAX][BT_IRK_SIZE];
 
 #if defined(CONFIG_BT_RPA_SHARING)
 	/* Only 1 RPA per identity */
