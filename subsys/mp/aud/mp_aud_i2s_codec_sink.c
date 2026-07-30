@@ -131,7 +131,7 @@ static struct mp_caps *mp_aud_i2s_codec_sink_supported_caps(struct mp_sink *sink
 		(i2s_caps.max_frame_interval < codec_caps.max_frame_interval)
 			? i2s_caps.max_frame_interval
 			: codec_caps.max_frame_interval,
-		1, MP_CAPS_BUFFER_COUNT, MP_TYPE_UINT_RANGE, min_num_buffers, UINT8_MAX, 1,
+		1, MP_CAPS_BUFFER_COUNT, MP_TYPE_UINT, min_num_buffers,
 		MP_CAPS_INTERLEAVED, MP_TYPE_BOOLEAN, codec_caps.interleaved, MP_CAPS_END);
 
 	mp_caps_append(caps, structure);
