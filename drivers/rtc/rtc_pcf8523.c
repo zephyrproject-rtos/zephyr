@@ -718,14 +718,14 @@ unlock:
 static int pcf8523_set_calibration(const struct device *dev, int32_t freq_ppb)
 {
 	int32_t period_ppb = freq_ppb * -1;
-	int8_t offset;
+	uint8_t offset;
 
 	if (period_ppb < PCF8523_OFFSET_PPB_MIN || period_ppb > PCF8523_OFFSET_PPB_MAX) {
 		LOG_WRN("calibration value (%d ppb) out of range", freq_ppb);
 		return -EINVAL;
 	}
 
-	offset = period_ppb / PCF8523_OFFSET_PPB_PER_LSB;
+	offset = (period_ppb / PCF8523_OFFSET_PPB_PER_LSB) & PCF8523_OFFSET_MASK;
 
 	if (IS_ENABLED(CONFIG_RTC_PCF8523_OFFSET_MODE_FAST)) {
 		offset |= PCF8523_OFFSET_MODE;
