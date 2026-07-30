@@ -8,3 +8,8 @@ properties:
     type: int
     required: true
     description: Number of items to expect in a HW spinlock specifier
+
+  num-locks:
+    type: int
+    required: true
+    description: Number of available hardware spinlock for this controller
