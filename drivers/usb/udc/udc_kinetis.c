@@ -139,6 +139,29 @@ static struct usbfsotg_bd *usbfsotg_get_ebd(const struct device *const dev,
 	return &config->bdt[bd_idx];
 }
 
+/* Get buffer descriptor (BD) by explicit ping-pong parity. Used by the
+ * TOKDNE path: the STAT FIFO entry carries the parity of the BD the SIE
+ * actually completed, which is ground truth. Selecting by the software
+ * mirror (stat.odd) instead reads the wrong BD whenever the mirror has
+ * fallen out of sync — the completed transfer is then attributed to a
+ * stale token/length, or silently dropped, and the endpoint deadlocks
+ * with a transfer armed on a parity the SIE will never process.
+ */
+static struct usbfsotg_bd *usbfsotg_get_ebd_parity(const struct device *const dev,
+						   struct udc_ep_config *const cfg,
+						   const bool odd)
+{
+	const struct usbfsotg_config *config = dev->config;
+	uint8_t bd_idx;
+
+	bd_idx = USB_EP_GET_IDX(cfg->addr) * 4U + (odd ? 1U : 0U);
+	if (USB_EP_DIR_IS_IN(cfg->addr)) {
+		bd_idx += 2U;
+	}
+
+	return &config->bdt[bd_idx];
+}
+
 static void usbfsotg_ebd_ctrl_discard(const struct device *const dev)
 {
 	const struct usbfsotg_config *config = dev->config;
@@ -368,7 +391,15 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 	size_t len;
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
-	bd = usbfsotg_get_ebd(dev, ep_cfg, false);
+	if (unlikely(ep_cfg->stat.odd != odd)) {
+		/* The software parity mirror disagrees with the completion
+		 * entry. The entry's parity is authoritative; warn and
+		 * continue — the mirror is resynchronized below
+		 * (stat.odd = !odd).
+		 */
+		LOG_WRN("ep 0x%02x: parity mirror out of sync with entry", ep);
+	}
+	bd = usbfsotg_get_ebd_parity(dev, ep_cfg, odd);
 	token_pid = bd->get.tok_pid;
 	len  = bd->get.bc;
 	data1 = bd->get.data1 ? true : false;
@@ -438,6 +469,14 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 
 		break;
 	default:
+		/* A completion whose BD holds no valid token PID would
+		 * previously be dropped without even updating the parity
+		 * mirror, wedging the endpoint. Keep the mirror in sync
+		 * with the hardware and account for the event.
+		 */
+		ep_cfg->stat.odd = !odd;
+		LOG_WRN("ep 0x%02x: completion with unknown token PID %u",
+			ep, token_pid);
 		break;
 	}
 }
