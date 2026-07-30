@@ -103,6 +103,18 @@ static int virtq_add_available(struct virtq *v, uint16_t desc_idx)
 	return 0;
 }
 
+static void virtq_return_desc_chain(struct virtq *v, uint16_t head, uint16_t count)
+{
+	uint16_t curr = head;
+
+	for (uint16_t i = 0; i < count; i++) {
+		uint16_t next = sys_le16_to_cpu(v->desc[curr].next);
+
+		virtq_add_free_desc(v, curr);
+		curr = next;
+	}
+}
+
 int virtq_add_buffer_chain(
 	struct virtq *v, struct virtq_buf *bufs, uint16_t bufs_size,
 	uint16_t device_readable_count, virtq_receive_callback cb, void *cb_opaque,
@@ -123,26 +135,18 @@ int virtq_add_buffer_chain(
 		return -EINVAL;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&v->lock);
-
-	if (v->free_desc_n < bufs_size && !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		/* we don't have enough free descriptors to push all buffers to the queue */
-		k_spin_unlock(&v->lock, key);
-		return -EBUSY;
-	}
-
 	uint16_t prev_desc = VIRTQ_DESC_NEXT_SENTINEL;
 	uint16_t head = VIRTQ_DESC_NEXT_SENTINEL;
 
 	for (uint16_t buf_n = 0; buf_n < bufs_size; buf_n++) {
 		uint16_t desc;
+		/* popped outside the queue lock as k_stack_pop() may block */
+		int ret = virtq_get_free_desc(v, &desc, timeout);
 
-		/*
-		 * we've checked before that we have enough free descriptors
-		 * and the queue is locked, so popping from stack is guaranteed
-		 * to succeed and we don't have to check its return value
-		 */
-		virtq_get_free_desc(v, &desc, timeout);
+		if (ret != 0) {
+			virtq_return_desc_chain(v, head, buf_n);
+			return ret;
+		}
 
 		if (head == VIRTQ_DESC_NEXT_SENTINEL) {
 			head = desc;
@@ -169,8 +173,9 @@ int virtq_add_buffer_chain(
 	v->recv_cbs[head].cb = cb;
 	v->recv_cbs[head].opaque = cb_opaque;
 
-	virtq_add_available(v, head);
+	k_spinlock_key_t key = k_spin_lock(&v->lock);
 
+	virtq_add_available(v, head);
 	k_spin_unlock(&v->lock, key);
 
 	return 0;
@@ -184,7 +189,9 @@ int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout
 
 	if (ret == 0) {
 		*desc_idx = (uint16_t)desc;
-		v->free_desc_n--;
+		K_SPINLOCK(&v->lock) {
+			v->free_desc_n--;
+		}
 	}
 
 	return ret;
@@ -193,5 +200,7 @@ int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout
 void virtq_add_free_desc(struct virtq *v, uint16_t desc_idx)
 {
 	k_stack_push(&v->free_desc_stack, desc_idx);
-	v->free_desc_n++;
+	K_SPINLOCK(&v->lock) {
+		v->free_desc_n++;
+	}
 }
