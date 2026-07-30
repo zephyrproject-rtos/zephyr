@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Kasper Sloth <kasper.sloth99@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig FAN
+    bool "Fan drivers"
+	help
+	  Include fan drivers in the system configuration.
+
+if FAN
+
+module = FAN
+module-str = fan
+source "subsys/logging/Kconfig.template.log_config"
+
+config FAN_INIT_PRIORITY
+	int "Fan initialization priority"
+	default 90
+	help
+	  System initialization priority for fan drivers.
+
+rsource "Kconfig.pwm"
+
+endif # FAN
