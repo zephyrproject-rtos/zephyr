@@ -3967,6 +3967,26 @@ M5Stack Platforms:
   labels:
     - "platform: M5Stack"
 
+M68K arch:
+  status: maintained
+  maintainers:
+    - dmvo
+  files:
+    - arch/m68k/
+    - boards/qemu/m68k/
+    - dts/bindings/cpu/motorola,m68000.yaml
+    - dts/bindings/cpu/motorola,m68010.yaml
+    - dts/bindings/interrupt-controller/motorola,m68k-cpu-intc.yaml
+    - dts/m68k/
+    - include/zephyr/arch/m68k/
+    - include/zephyr/dt-bindings/interrupt-controller/m68k.h
+    - soc/qemu/virt_m68k/
+    - tests/arch/m68k/
+  labels:
+    - "area: M68K"
+    - arch
+    - kernel
+
 MAINTAINERS file:
   status: maintained
   maintainers:
