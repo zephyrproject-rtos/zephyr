@@ -1,0 +1,11 @@
+tests:
+  mp.aud.i2s_src:
+    platform_allow:
+      - native_sim/native/64
+    tags:
+      - mp
+      - audio
+      - unit
+    integration_platforms:
+      - native_sim/native/64
+    timeout: 60
