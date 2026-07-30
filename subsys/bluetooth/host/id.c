@@ -1535,6 +1535,93 @@ int bt_id_delete(uint8_t id)
 }
 
 #if defined(CONFIG_BT_PRIVACY)
+static void adv_is_enabled_cb(struct bt_le_ext_adv *adv, void *data)
+{
+	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
+		bool *adv_enabled = data;
+
+		*adv_enabled = true;
+	}
+}
+
+int bt_id_reset_irk(uint8_t id, uint8_t *irk)
+{
+	uint8_t new_irk[sizeof(bt_dev.irk[id])];
+	uint8_t zero_irk[sizeof(new_irk)] = { 0 };
+	bool generate_irk = true;
+	int err;
+
+	if (id >= bt_dev.id_count) {
+		return -EINVAL;
+	}
+
+	if (bt_addr_le_eq(&bt_dev.id_addr[id], BT_ADDR_LE_ANY)) {
+		return -EALREADY;
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		struct bt_adv_id_check_data check_data = {
+			.id = id,
+			.adv_enabled = false,
+		};
+
+		bt_le_ext_adv_foreach(adv_id_check_func, &check_data);
+		if (check_data.adv_enabled) {
+			return -EBUSY;
+		}
+
+		bool adv_enabled = false;
+
+		bt_le_ext_adv_foreach(adv_is_enabled_cb, &adv_enabled);
+		if (adv_enabled) {
+			return -EBUSY;
+		}
+	}
+
+	if ((id == BT_ID_DEFAULT) && (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) ||
+				      atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING))) {
+		return -EBUSY;
+	}
+
+	if (bt_keys_has_bond(id)) {
+		return -ENOTEMPTY;
+	}
+
+	if (irk != NULL) {
+		generate_irk = util_memeq(irk, zero_irk, sizeof(new_irk));
+	}
+
+	if (!generate_irk) {
+		(void)memcpy(new_irk, irk, sizeof(new_irk));
+	} else {
+		err = bt_rand(new_irk, sizeof(new_irk));
+		if (err != 0) {
+			return err == -ENOTSUP ? -ENOTSUP : -EIO;
+		}
+	}
+
+	(void)memcpy(bt_dev.irk[id], new_irk, sizeof(new_irk));
+	if (irk != NULL) {
+		(void)memcpy(irk, new_irk, sizeof(new_irk));
+	}
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
+
+#if defined(CONFIG_BT_RPA_SHARING)
+	bt_addr_copy(&bt_dev.rpa[id], BT_ADDR_NONE);
+#endif
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		(void)bt_settings_store_irk();
+	}
+
+	return 0;
+}
+
 static void bt_read_identity_root(uint8_t *ir)
 {
 	/* Invalid IR */

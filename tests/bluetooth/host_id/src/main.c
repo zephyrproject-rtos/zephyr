@@ -10,6 +10,7 @@
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/device.h>
@@ -20,6 +21,11 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
+
+#if defined(CONFIG_BT_PRIVACY)
+#include <common/rpa.h>
+#include <host/keys.h>
+#endif
 
 #define DT_DRV_COMPAT zephyr_bt_hci_test
 
@@ -65,6 +71,29 @@ static void generic_success(struct net_buf *buf, struct net_buf **evt, uint8_t l
 	rp = cmd_complete(evt, len, opcode);
 	(void)memset(rp, 0, len);
 	rp->status = BT_HCI_ERR_SUCCESS;
+}
+
+static bool rand_failure;
+
+static void le_rand(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
+{
+	struct bt_hci_rp_le_rand *rp;
+	static uint8_t rand_value;
+
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	rp = cmd_complete(evt, sizeof(*rp), opcode);
+	if (rand_failure) {
+		rp->status = BT_HCI_ERR_HW_FAILURE;
+		return;
+	}
+
+	rp->status = BT_HCI_ERR_SUCCESS;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(rp->rand); i++) {
+		rp->rand[i] = rand_value++;
+	}
 }
 
 static void read_local_features(struct net_buf *buf, struct net_buf **evt, uint8_t len,
@@ -133,6 +162,35 @@ static void le_read_supp_states(struct net_buf *buf, struct net_buf **evt, uint8
 	(void)memset(rp->le_states, 0xFF, sizeof(rp->le_states));
 }
 
+static void le_read_buffer_size(struct net_buf *buf, struct net_buf **evt, uint8_t len,
+				uint16_t opcode)
+{
+	struct bt_hci_rp_le_read_buffer_size *rp;
+
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	rp = cmd_complete(evt, sizeof(*rp), opcode);
+	rp->status = BT_HCI_ERR_SUCCESS;
+	rp->le_max_len = sys_cpu_to_le16(27U);
+	rp->le_max_num = 1U;
+}
+
+static void command_status(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
+{
+	struct bt_hci_evt_cmd_status *cs;
+
+	ARG_UNUSED(buf);
+	ARG_UNUSED(len);
+
+	*evt = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
+	evt_create(*evt, BT_HCI_EVT_CMD_STATUS, sizeof(*cs));
+	cs = net_buf_add(*evt, sizeof(*cs));
+	cs->status = BT_HCI_ERR_SUCCESS;
+	cs->ncmd = 1U;
+	cs->opcode = sys_cpu_to_le16(opcode);
+}
+
 static const struct cmd_handler cmds[] = {
 	{
 		BT_HCI_OP_READ_LOCAL_FEATURES,
@@ -155,9 +213,24 @@ static const struct cmd_handler cmds[] = {
 		le_read_local_features,
 	},
 	{
+		BT_HCI_OP_LE_READ_BUFFER_SIZE,
+		sizeof(struct bt_hci_rp_le_read_buffer_size),
+		le_read_buffer_size,
+	},
+	{
 		BT_HCI_OP_LE_READ_SUPP_STATES,
 		sizeof(struct bt_hci_rp_le_read_supp_states),
 		le_read_supp_states,
+	},
+	{
+		BT_HCI_OP_LE_RAND,
+		sizeof(struct bt_hci_rp_le_rand),
+		le_rand,
+	},
+	{
+		BT_HCI_OP_LE_CREATE_CONN,
+		0U,
+		command_status,
 	},
 };
 
@@ -260,6 +333,16 @@ static void cleanup_secondary_identities(void)
 
 static void *id_setup(void)
 {
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		bt_addr_le_t addr = test_addr(0x10U);
+		uint8_t irk[BT_IRK_SIZE] = {1U};
+
+		zassert_equal(bt_id_create(&addr, irk), BT_ID_DEFAULT,
+			      "Failed to create the identity before enabling Bluetooth");
+		zassert_equal(bt_id_reset_irk(BT_ID_DEFAULT, NULL), -EAGAIN,
+			      "IRK reset was allowed before the stack was ready");
+	}
+
 	int err;
 
 	err = bt_enable(NULL);
@@ -327,7 +410,7 @@ ZTEST(bt_id_public_api, test_create_errors_and_capacity)
 	bt_addr_le_t addr3 = test_addr(4U);
 	bt_addr_le_t addr4 = test_addr(5U);
 	bt_addr_le_t public_addr = test_addr(6U);
-	uint8_t irk[16] = {1U};
+	uint8_t irk[BT_IRK_SIZE] = {1U};
 	int id;
 
 	invalid_addr.a.val[5] = 0x40U;
@@ -336,11 +419,19 @@ ZTEST(bt_id_public_api, test_create_errors_and_capacity)
 		      "Non-static random identity address was accepted");
 	zassert_equal(bt_id_create(&public_addr, NULL), -EINVAL,
 		      "Public identity address was accepted without controller support");
-	zassert_equal(bt_id_create(&addr1, irk), -EINVAL,
-		      "IRK was accepted while privacy is disabled");
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		zassert_equal(bt_id_create(&addr1, irk), 1, "IRK was not accepted");
+	} else {
+		zassert_equal(bt_id_create(&addr1, irk), -EINVAL,
+			      "IRK was accepted while privacy is disabled");
+	}
 
-	id = bt_id_create(&addr1, NULL);
-	zassert_equal(id, 1, "First secondary identity got id %d", id);
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		id = 1;
+	} else {
+		id = bt_id_create(&addr1, NULL);
+		zassert_equal(id, 1, "First secondary identity got id %d", id);
+	}
 	zassert_equal(bt_id_create(&addr1, NULL), -EALREADY,
 		      "Duplicate identity address was accepted");
 
@@ -361,7 +452,7 @@ ZTEST(bt_id_public_api, test_reset_errors_and_updates_identity)
 	bt_addr_le_t addr2 = test_addr(3U);
 	bt_addr_le_t addr3 = test_addr(4U);
 	bt_addr_le_t addrs[CONFIG_BT_ID_MAX];
-	uint8_t irk[16] = {1U};
+	uint8_t irk[BT_IRK_SIZE] = {1U};
 	size_t count = ARRAY_SIZE(addrs);
 	uint8_t first_unused_id;
 	int id1;
@@ -376,8 +467,10 @@ ZTEST(bt_id_public_api, test_reset_errors_and_updates_identity)
 	invalid_addr.a.val[5] = 0x40U;
 	zassert_equal(bt_id_reset((uint8_t)id1, &invalid_addr, NULL), -EINVAL,
 		      "Non-static random reset address was accepted");
-	zassert_equal(bt_id_reset((uint8_t)id1, &addr3, irk), -EINVAL,
-		      "IRK was accepted while privacy is disabled");
+	if (!IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		zassert_equal(bt_id_reset((uint8_t)id1, &addr3, irk), -EINVAL,
+			      "IRK was accepted while privacy is disabled");
+	}
 	zassert_equal(bt_id_reset(BT_ID_DEFAULT, &addr3, NULL), -EINVAL,
 		      "Default identity was reset");
 	zassert_equal(bt_id_reset(first_unused_id, &addr3, NULL), -EINVAL,
@@ -429,3 +522,191 @@ ZTEST(bt_id_public_api, test_delete_errors_and_empty_slot)
 	zassert_equal(identity_count(), 2U,
 		      "Deleting the tail identity did not shrink identity count");
 }
+
+#if defined(CONFIG_BT_PRIVACY)
+static bool is_zero_irk(const uint8_t *irk)
+{
+	for (size_t i = 0U; i < BT_IRK_SIZE; i++) {
+		if (irk[i] != 0U) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+static ZTEST(bt_id_public_api, test_reset_irk_updates_key)
+{
+	bt_addr_le_t before;
+	bt_addr_le_t after;
+	struct bt_le_oob old_oob = {0};
+	struct bt_le_oob new_oob = {0};
+	uint8_t old_irk[BT_IRK_SIZE] = {1U};
+	const uint8_t expected_irk[BT_IRK_SIZE] = {2U};
+	uint8_t supplied_irk[BT_IRK_SIZE] = {2U};
+	uint8_t generated_irk[BT_IRK_SIZE] = {0};
+	size_t count = 1U;
+
+	bt_id_get(&before, &count);
+	zassert_equal(count, 1U, "Unexpected identity count");
+
+	zassert_ok(bt_id_reset_irk(BT_ID_DEFAULT, old_irk), "Failed to set the old IRK");
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &old_oob), "Failed to get the old RPA");
+	zassert_true(bt_addr_le_is_rpa(&old_oob.addr), "The old address is not an RPA");
+	zassert_true(bt_rpa_irk_matches(old_irk, &old_oob.addr.a),
+		     "The old RPA does not match the old IRK");
+
+	zassert_ok(bt_id_reset_irk(BT_ID_DEFAULT, supplied_irk), "Failed to set the supplied IRK");
+	zassert_mem_equal(supplied_irk, expected_irk, sizeof(supplied_irk),
+			  "The supplied IRK was modified");
+
+	count = 1U;
+	bt_id_get(&after, &count);
+	zassert_equal(count, 1U, "Unexpected identity count after IRK reset");
+	zassert_mem_equal(&before, &after, sizeof(before), "Identity address changed");
+
+	zassert_ok(bt_le_oob_get_local(BT_ID_DEFAULT, &new_oob), "Failed to get the new RPA");
+	zassert_true(bt_addr_le_is_rpa(&new_oob.addr), "The new address is not an RPA");
+	zassert_true(bt_rpa_irk_matches(supplied_irk, &new_oob.addr.a),
+		     "The new RPA does not match the supplied IRK");
+	zassert_false(bt_rpa_irk_matches(old_irk, &new_oob.addr.a),
+		      "The new RPA still matches the old IRK");
+	zassert_false(bt_addr_le_eq(&old_oob.addr, &new_oob.addr),
+		      "The RPA did not change after the IRK reset");
+
+	zassert_ok(bt_id_reset_irk(BT_ID_DEFAULT, generated_irk), "Failed to generate a new IRK");
+	zassert_false(is_zero_irk(generated_irk), "Generated IRK is all zeroes");
+}
+
+#if defined(CONFIG_BT_RPA_SHARING)
+static ZTEST(bt_id_public_api, test_reset_irk_invalidates_cached_rpa)
+{
+	struct bt_le_ext_adv *adv;
+	struct bt_le_ext_adv_info info;
+	bt_addr_le_t old_rpa;
+	bt_addr_le_t new_rpa;
+	uint8_t old_irk[BT_IRK_SIZE] = {1U};
+	uint8_t new_irk[BT_IRK_SIZE] = {2U};
+	int err;
+
+	zassert_ok(bt_id_reset_irk(BT_ID_DEFAULT, old_irk), "Failed to set the old IRK");
+
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, &adv);
+	zassert_ok(err, "Failed to create the old advertising set");
+	err = bt_le_ext_adv_get_info(adv, &info);
+	zassert_ok(err, "Failed to get the old advertising set info");
+	bt_addr_le_copy(&old_rpa, info.addr);
+	zassert_true(bt_rpa_irk_matches(old_irk, &old_rpa.a),
+		     "The cached RPA does not match the old IRK");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the old advertising set");
+
+	zassert_ok(bt_id_reset_irk(BT_ID_DEFAULT, new_irk), "Failed to set the new IRK");
+	err = bt_le_ext_adv_create(BT_LE_EXT_ADV_NCONN, NULL, &adv);
+	zassert_ok(err, "Failed to create the new advertising set");
+	err = bt_le_ext_adv_get_info(adv, &info);
+	zassert_ok(err, "Failed to get the new advertising set info");
+	bt_addr_le_copy(&new_rpa, info.addr);
+	zassert_true(bt_rpa_irk_matches(new_irk, &new_rpa.a),
+		     "The refreshed cached RPA does not match the new IRK");
+	zassert_false(bt_rpa_irk_matches(old_irk, &new_rpa.a),
+		      "The refreshed cached RPA still matches the old IRK");
+	zassert_false(bt_addr_le_eq(&old_rpa, &new_rpa),
+		      "The cached RPA did not change after the IRK reset");
+	zassert_ok(bt_le_ext_adv_delete(adv), "Failed to delete the new advertising set");
+}
+#endif /* defined(CONFIG_BT_RPA_SHARING) */
+
+static ZTEST(bt_id_public_api, test_reset_irk_rejects_random_failure)
+{
+	uint8_t supplied_irk[BT_IRK_SIZE] = {1U};
+	uint8_t failed_irk[BT_IRK_SIZE] = {0};
+	int err;
+
+	zassert_ok(bt_id_reset_irk(BT_ID_DEFAULT, supplied_irk), "Failed to set the supplied IRK");
+
+	rand_failure = true;
+	err = bt_id_reset_irk(BT_ID_DEFAULT, failed_irk);
+	rand_failure = false;
+
+	zassert_equal(err, -EIO, "Unexpected error from random IRK generation: %d", err);
+	zassert_true(is_zero_irk(failed_irk), "Failed IRK output buffer was modified");
+}
+
+#if defined(CONFIG_BT_SMP)
+static ZTEST(bt_id_public_api, test_reset_irk_rejects_bond)
+{
+	bt_addr_le_t remote = test_addr(0x42U);
+	struct bt_keys *keys;
+
+	keys = bt_keys_get_type(BT_KEYS_IRK, BT_ID_DEFAULT, &remote);
+	zassert_not_null(keys, "Failed to create a test bond");
+	zassert_equal(bt_id_reset_irk(BT_ID_DEFAULT, NULL), -ENOTEMPTY,
+		      "IRK reset succeeded while a bond existed");
+	zassert_ok(bt_unpair(BT_ID_DEFAULT, NULL), "Failed to remove the test bond");
+	zassert_ok(bt_id_reset_irk(BT_ID_DEFAULT, NULL), "Failed to reset IRK after unpair");
+}
+#endif
+
+static ZTEST(bt_id_public_api, test_reset_irk_rejects_empty_slot)
+{
+	bt_addr_le_t addr1 = test_addr(0x44U);
+	bt_addr_le_t addr2 = test_addr(0x45U);
+	int id1;
+	int id2;
+
+	id1 = bt_id_create(&addr1, NULL);
+	id2 = bt_id_create(&addr2, NULL);
+	zassert_equal(id1, 1, "Unexpected first secondary identity id");
+	zassert_equal(id2, 2, "Unexpected second secondary identity id");
+
+	zassert_ok(bt_id_delete((uint8_t)id1), "Failed to delete non-tail identity");
+	zassert_equal(bt_id_reset_irk((uint8_t)id1, NULL), -EALREADY,
+		      "IRK reset was allowed for an empty identity slot");
+}
+
+static ZTEST(bt_id_public_api, test_reset_irk_rejects_active_roles)
+{
+	int err;
+
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
+		bt_addr_le_t secondary_addr = test_addr(0x46U);
+		int secondary_id;
+
+		secondary_id = bt_id_create(&secondary_addr, NULL);
+		zassert_equal(secondary_id, 1, "Failed to create secondary identity");
+
+		err = bt_le_adv_start(BT_LE_ADV_NCONN, NULL, 0U, NULL, 0U);
+		zassert_ok(err, "Failed to start advertising");
+		zassert_equal(bt_id_reset_irk(BT_ID_DEFAULT, NULL), -EBUSY,
+			      "IRK reset was allowed while advertising");
+		zassert_equal(bt_id_reset_irk((uint8_t)secondary_id, NULL), -EBUSY,
+			      "Secondary IRK reset was allowed while advertising");
+		zassert_ok(bt_le_adv_stop(), "Failed to stop advertising");
+	}
+
+	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
+		err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
+		zassert_ok(err, "Failed to start scanning");
+		zassert_equal(bt_id_reset_irk(BT_ID_DEFAULT, NULL), -EBUSY,
+			      "IRK reset was allowed while scanning");
+		zassert_ok(bt_le_scan_stop(), "Failed to stop scanning");
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
+		bt_addr_le_t remote = test_addr(0x43U);
+		struct bt_conn *conn = NULL;
+
+		err = bt_conn_le_create(&remote, BT_CONN_LE_CREATE_CONN,
+					BT_LE_CONN_PARAM_DEFAULT, &conn);
+		zassert_ok(err, "Failed to start initiating");
+		zassert_equal(bt_id_reset_irk(BT_ID_DEFAULT, NULL), -EBUSY,
+			      "IRK reset was allowed while initiating");
+		zassert_ok(bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN),
+			   "Failed to cancel initiating");
+		bt_conn_unref(conn);
+	}
+
+	err = bt_id_reset_irk(BT_ID_DEFAULT, NULL);
+	zassert_ok(err, "IRK reset failed after active roles stopped");
+}
+#endif /* defined(CONFIG_BT_PRIVACY) */

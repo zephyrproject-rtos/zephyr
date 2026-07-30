@@ -60,7 +60,7 @@ extern "C" {
  *
  * @defgroup bt_gap Generic Access Profile (GAP)
  * @since 1.0
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -71,6 +71,9 @@ extern "C" {
  * only one identity address is supported.
  */
 #define BT_ID_DEFAULT 0
+
+/** Size of an Identity Resolving Key in octets. */
+#define BT_IRK_SIZE 16U
 
 /**
  * @brief Number of octets for local supported features
@@ -495,7 +498,7 @@ void bt_id_get(bt_addr_le_t *addrs, size_t *count);
  *             to BT_ADDR_LE_ANY the stack will generate a new random static address
  *             for the identity address and copy it to the given parameter upon return
  *             from this function (in case the parameter was non-NULL).
- * @param irk  Identity Resolving Key (16 octets) to be used with this
+ * @param irk  Identity Resolving Key (@ref BT_IRK_SIZE octets) to be used with this
  *             identity address. If set to all zeroes or NULL, the stack will
  *             generate a random IRK for the identity address and copy it back
  *             to the parameter upon return from this function (in case
@@ -523,7 +526,7 @@ int bt_id_create(bt_addr_le_t *addr, uint8_t *irk);
  *             to BT_ADDR_LE_ANY the stack will generate a new static random
  *             address for the identity address and copy it to the given
  *             parameter upon return from this function.
- * @param irk  Identity Resolving Key (16 octets) to be used with this
+ * @param irk  Identity Resolving Key (@ref BT_IRK_SIZE octets) to be used with this
  *             identity address. If set to all zeroes or NULL, the stack will
  *             generate a random IRK for the identity address and copy it back
  *             to the parameter upon return from this function (in case
@@ -552,6 +555,45 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk);
  * @return 0 in case of success, or a negative error code on failure.
  */
 int bt_id_delete(uint8_t id);
+
+/**
+ * @brief Reset the local Identity Resolving Key (IRK) for an identity.
+ *
+ * Replaces the IRK for the given identity and persists it to flash when
+ * @kconfig{CONFIG_BT_SETTINGS} is enabled. Existing bonds must be removed
+ * before calling this function because bonded peers retain the old IRK and
+ * cannot resolve RPAs generated with the new one. Without
+ * @kconfig{CONFIG_BT_SETTINGS}, the new IRK is lost on reboot.
+ *
+ * @note Unlike @ref bt_id_reset, this function also accepts
+ *       @ref BT_ID_DEFAULT because it does not modify the identity address.
+ *
+ * @kconfig_dep{CONFIG_BT_PRIVACY}.
+ *
+ * @note The Bluetooth stack must be enabled via @ref bt_enable before calling
+ *       this function.
+ *
+ * @note With extended advertising, an advertising set assigned to this identity
+ *       must be deleted before calling this function; stopping it is not enough.
+ *
+ * @param id  Identity index, as returned by @ref bt_id_get or @ref BT_ID_DEFAULT.
+ *            Must be less than the number of currently configured identities.
+ * @param[in,out] irk Identity Resolving Key (@ref BT_IRK_SIZE octets) to use for the identity.
+ *                    If NULL or all zeroes, the stack generates a new random
+ *                    IRK and copies it back to this buffer when non-NULL.
+ *
+ * @retval 0           Success.
+ * @retval -EAGAIN     Bluetooth stack is not ready.
+ * @retval -EINVAL     @p id is out of range.
+ * @retval -EALREADY   The identity slot is empty.
+ * @retval -EBUSY      An advertising set is active, the identity is used by
+ *                     scanning or initiating, or a created extended advertising
+ *                     set is assigned to the identity.
+ * @retval -ENOTEMPTY  Bonds exist for this identity; call @ref bt_unpair first.
+ * @retval -EIO        Random IRK generation failed.
+ * @retval -ENOTSUP    Random generation is unsupported.
+ */
+int bt_id_reset_irk(uint8_t id, uint8_t *irk);
 
 /**
  * @brief Local Bluetooth LE controller features and capabilities.
