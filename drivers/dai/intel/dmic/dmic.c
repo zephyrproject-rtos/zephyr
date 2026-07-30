@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <stdint.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/sys/sys_io_non_atomic.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
@@ -398,6 +399,15 @@ static int dai_timestamp_dmic_stop(const struct device *dev, struct dai_ts_cfg *
 	return 0;
 }
 
+static inline uint64_t dai_dmic_read64(mem_addr_t addr)
+{
+#if defined(CONFIG_INTEL_ADSP_HIFI_64BIT_MMIO)
+	return sys_read64(addr);
+#else
+	return sys_read64_hi_lo(addr);
+#endif
+}
+
 static int dai_timestamp_dmic_get(const struct device *dev, struct dai_ts_cfg *cfg,
 				  struct dai_ts_data *tsd)
 {
@@ -412,10 +422,10 @@ static int dai_timestamp_dmic_get(const struct device *dev, struct dai_ts_cfg *c
 	}
 
 	/* NTK was set, get wall clock */
-	tsd->walclk = sys_read64(TS_DMIC_LOCAL_WALCLK);
+	tsd->walclk = dai_dmic_read64(TS_DMIC_LOCAL_WALCLK);
 
 	/* Sample */
-	tsd->sample = sys_read64(TS_DMIC_LOCAL_SAMPLE);
+	tsd->sample = dai_dmic_read64(TS_DMIC_LOCAL_SAMPLE);
 
 	/* Clear NTK to enable successive timestamps */
 	sys_write32(TS_LOCAL_TSCTRL_NTK, tsctrl);

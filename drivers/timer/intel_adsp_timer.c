@@ -7,6 +7,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/sys_io_non_atomic.h>
 #include <zephyr/drivers/interrupt_controller/dw_ace.h>
 
 #include <cavs-idc.h>
@@ -55,7 +56,11 @@ static void set_compare(uint64_t time)
 	sys_write32(sys_read32(DSPWCTCS_ADDR) & (~DSP_WCT_CS_TA(COMPARATOR_IDX)),
 			SYSCON_REG_ADDR + ADSP_DSPWCTCS_OFFSET);
 
+#if defined(CONFIG_INTEL_ADSP_HIFI_64BIT_MMIO)
 	sys_write64(time, DSPWCT0C_LO_ADDR);
+#else
+	sys_write64_lo_hi(time, DSPWCT0C_LO_ADDR);
+#endif
 
 	/* Arm the timer */
 	sys_write32(sys_read32(DSPWCTCS_ADDR) | (DSP_WCT_CS_TA(COMPARATOR_IDX)),
