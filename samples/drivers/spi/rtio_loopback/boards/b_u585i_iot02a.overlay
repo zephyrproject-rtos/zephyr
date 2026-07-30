@@ -1,0 +1,64 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SPI bus pins of SPI1 and SPI3 are exposed on the STMod+ CN2 and CN3 connectors
+ *
+ *  Bus     MISO           MOSI           SCK            NSS
+ *          Pin   Hdr      Pin   Hdr      Pin   Hdr      Pin   Hdr
+ *  spi1    PE14  CN3:3    PE15  CN3:2    PE13  CN3:4    PA4   CN3:1
+ *  spi3    PG10  CN2:3    PD6   CN2:2    PG9   CN2:4    PG12  CN2:1
+ *
+ * Short CN2:1 to CN3:1, CN2:2 to CN3:2, CN2:3 to CN3:3 and CN2:4 to CN3:4 for the
+ * test to pass.
+ */
+
+&gpioh {
+	status = "okay";
+
+	stmod-cn3-spi-select {
+		gpio-hog;
+		gpios = <13 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+
+	stmod-cn2-spi-select {
+		gpio-hog;
+		gpios = <15 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_miso_pe14 &spi1_mosi_pe15 &spi1_sck_pe13 &spi1_nss_pa4>;
+	pinctrl-names = "default";
+	dmas = <&gpdma1 0 7 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 1 6 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	st,fifo-threshold = <8>;
+
+	spi_controller: spi-device@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+};
+
+&spi3 {
+	status = "okay";
+	pinctrl-0 = <&spi3_miso_pg10 &spi3_mosi_pd6 &spi3_sck_pg9 &spi3_nss_pg12>;
+	pinctrl-names = "default";
+	dmas = <&gpdma1 2 11 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 3 10 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+	st,fifo-threshold = <8>;
+
+	spi_target: spi-device@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+	};
+};
