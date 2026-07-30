@@ -154,6 +154,20 @@ static void sysctr_timer_isr(const void *arg)
 	sys_clock_announce(delta_ticks);
 }
 
+void sys_clock_no_timeout(void)
+{
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	/* No timeout pending: mask the compare interrupt. The CPU keeps
+	 * running, so the recovery is the next sys_clock_set_timeout():
+	 * sysctr_set_compare() re-enables both the interrupt and the compare.
+	 */
+	SYSCTR_EnableCompare(CMP_BASE, TIMER_CMP_FRAME, false);
+	SYSCTR_DisableInterrupts(CMP_BASE, TIMER_CMP_INT_MASK);
+}
+
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	uint64_t next_cycle;
@@ -163,17 +177,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	ARG_UNUSED(idle);
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		/*
-		 * No near deadline to schedule: under sloppy idle, disable the
-		 * compare interrupt entirely. sys_clock_idle_exit() will
-		 * re-enable it when the CPU wakes from an external source.
-		 */
-		SYSCTR_EnableCompare(CMP_BASE, TIMER_CMP_FRAME, false);
-		SYSCTR_DisableInterrupts(CMP_BASE, TIMER_CMP_INT_MASK);
 		return;
 	}
 
