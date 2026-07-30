@@ -578,8 +578,7 @@ void ccm_mode(const struct device *dev)
 	struct cipher_ctx ini = {
 		.keylen = sizeof(ccm_key),
 		.key.bit_stream = ccm_key,
-		.mode_params.ccm_info =
-			{
+		.mode_params.ccm_info = {
 				.nonce_len = sizeof(ccm_nonce),
 				.tag_len = 8,
 			},
@@ -676,8 +675,7 @@ void gcm_mode(const struct device *dev)
 	struct cipher_ctx ini = {
 		.keylen = sizeof(gcm_key),
 		.key.bit_stream = gcm_key,
-		.mode_params.gcm_info =
-			{
+		.mode_params.gcm_info = {
 				.nonce_len = sizeof(gcm_nonce),
 				.tag_len = 16,
 			},

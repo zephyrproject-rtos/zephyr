@@ -394,8 +394,7 @@ ZTEST(crypto_aes, test_ccm_encrypt)
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(ccm_key),
 		.key.bit_stream = ccm_key,
-		.mode_params.ccm_info =
-			{
+		.mode_params.ccm_info = {
 				.nonce_len = sizeof(ccm_nonce),
 				.tag_len = 8,
 			},
@@ -448,8 +447,7 @@ ZTEST(crypto_aes, test_ccm_decrypt)
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(ccm_key),
 		.key.bit_stream = ccm_key,
-		.mode_params.ccm_info =
-			{
+		.mode_params.ccm_info = {
 				.nonce_len = sizeof(ccm_nonce),
 				.tag_len = 8,
 			},
@@ -501,8 +499,7 @@ ZTEST(crypto_aes, test_gcm_encrypt)
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(gcm_key),
 		.key.bit_stream = gcm_key,
-		.mode_params.gcm_info =
-			{
+		.mode_params.gcm_info = {
 				.nonce_len = sizeof(gcm_nonce),
 				.tag_len = 16,
 			},
@@ -555,8 +552,7 @@ ZTEST(crypto_aes, test_gcm_decrypt)
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(gcm_key),
 		.key.bit_stream = gcm_key,
-		.mode_params.gcm_info =
-			{
+		.mode_params.gcm_info = {
 				.nonce_len = sizeof(gcm_nonce),
 				.tag_len = 16,
 			},
