@@ -2013,7 +2013,7 @@ static int uarte_nrfx_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	unsigned int key = irq_lock();
 
-	if (async_rx->buf == NULL) {
+	if (!async_rx->enabled || async_rx->buf == NULL) {
 		err = -EACCES;
 	} else if (async_rx->next_buf == NULL) {
 #ifdef CONFIG_HAS_NORDIC_DMM
@@ -2023,6 +2023,7 @@ static int uarte_nrfx_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 
 			err = dmm_buffer_in_prepare(config->mem_reg, buf, len, (void **)&dma_buf);
 			if (err < 0) {
+				irq_unlock(key);
 				return err;
 			}
 			async_rx->next_usr_buf = buf;
