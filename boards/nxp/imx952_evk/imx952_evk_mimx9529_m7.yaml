@@ -17,6 +17,7 @@ supported:
   - adc
   - dma
   - gpio
+  - pwm
   - uart
 testing:
   binaries:
