@@ -40,6 +40,13 @@ extern "C" {
 #define ST67W611M1_CWLAPOPT_CMD                                                                    \
 	"AT+CWLAPOPT=1,31,-100,255," STRINGIFY(CONFIG_ST67W611M1_SCAN_RESULT_MAX_NUMBER) "\r\n"
 
+/*
+ * AT+CWAUTOCONN=<enable>: persistent power-on auto-connect, saved to flash by the
+ * module. The value follows CONFIG_ST67W611M1_WIFI_AUTO_CONNECT.
+ */
+#define ST67W611M1_CWAUTOCONN_SET_CMD                                                              \
+	"AT+CWAUTOCONN=" STRINGIFY(IS_ENABLED(CONFIG_ST67W611M1_WIFI_AUTO_CONNECT)) "\r\n"
+
 #define CONN_CMD_MAX_LEN                                                                           \
 	(sizeof("AT+CWJAP=\"\",\"\"\r\n") + WIFI_SSID_MAX_LEN * 2 + WIFI_PSK_MAX_LEN * 2)
 
@@ -97,6 +104,9 @@ struct st67_driver_data {
 	enum st67_sta_current_state sta_current_state;
 
 	bool is_supported_st67_firmware_detected;
+
+	/* Module's current AT+CWAUTOCONN value, read back during init. */
+	bool is_auto_connect_enabled;
 };
 
 #ifdef __cplusplus
