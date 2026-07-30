@@ -152,21 +152,44 @@
 #define ESP_TWAI2_TX 86 /**< TWAI2 TX output */
 
 /* MCPWM0 */
-#define ESP_PWM0_SYNC0_IN 89 /**< MCPWM0 sync 0 input */
-#define ESP_PWM0_OUT0A    89 /**< MCPWM0 output 0A */
-#define ESP_PWM0_SYNC1_IN 90 /**< MCPWM0 sync 1 input */
-#define ESP_PWM0_OUT0B    90 /**< MCPWM0 output 0B */
-#define ESP_PWM0_SYNC2_IN 91 /**< MCPWM0 sync 2 input */
-#define ESP_PWM0_OUT1A    91 /**< MCPWM0 output 1A */
-#define ESP_PWM0_F0_IN    92 /**< MCPWM0 fault 0 input */
-#define ESP_PWM0_OUT1B    92 /**< MCPWM0 output 1B */
-#define ESP_PWM0_F1_IN    93 /**< MCPWM0 fault 1 input */
-#define ESP_PWM0_OUT2A    93 /**< MCPWM0 output 2A */
-#define ESP_PWM0_F2_IN    94 /**< MCPWM0 fault 2 input */
-#define ESP_PWM0_OUT2B    94 /**< MCPWM0 output 2B */
-#define ESP_PWM0_CAP0_IN  95 /**< MCPWM0 capture 0 input */
-#define ESP_PWM0_CAP1_IN  96 /**< MCPWM0 capture 1 input */
-#define ESP_PWM0_CAP2_IN  97 /**< MCPWM0 capture 2 input */
+#define ESP_PWM0_SYNC0_IN  89 /**< MCPWM0 sync 0 input */
+#define ESP_PWM0_OUT0A     89 /**< MCPWM0 output 0A */
+#define ESP_PWM0_CH0_A_OUT 89 /**< MCPWM0 output 0A */
+#define ESP_PWM0_SYNC1_IN  90 /**< MCPWM0 sync 1 input */
+#define ESP_PWM0_OUT0B     90 /**< MCPWM0 output 0B */
+#define ESP_PWM0_CH0_B_OUT 90 /**< MCPWM0 output 0B */
+#define ESP_PWM0_SYNC2_IN  91 /**< MCPWM0 sync 2 input */
+#define ESP_PWM0_OUT1A     91 /**< MCPWM0 output 1A */
+#define ESP_PWM0_CH1_A_OUT 91 /**< MCPWM0 output 1A */
+#define ESP_PWM0_F0_IN     92 /**< MCPWM0 fault 0 input */
+#define ESP_PWM0_OUT1B     92 /**< MCPWM0 output 1B */
+#define ESP_PWM0_CH1_B_OUT 92 /**< MCPWM0 output 1B */
+#define ESP_PWM0_F1_IN     93 /**< MCPWM0 fault 1 input */
+#define ESP_PWM0_OUT2A     93 /**< MCPWM0 output 2A */
+#define ESP_PWM0_CH2_A_OUT 93 /**< MCPWM0 output 2A */
+#define ESP_PWM0_F2_IN     94 /**< MCPWM0 fault 2 input */
+#define ESP_PWM0_OUT2B     94 /**< MCPWM0 output 2B */
+#define ESP_PWM0_CH2_B_OUT 94 /**< MCPWM0 output 2B */
+#define ESP_PWM0_CAP0_IN   95 /**< MCPWM0 capture 0 input */
+#define ESP_PWM0_CAP1_IN   96 /**< MCPWM0 capture 1 input */
+#define ESP_PWM0_CAP2_IN   97 /**< MCPWM0 capture 2 input */
+
+/* MCPWM1 */
+#define ESP_PWM1_CH0_A_OUT 95  /**< MCPWM1 output 0A */
+#define ESP_PWM1_CH0_B_OUT 96  /**< MCPWM1 output 0B */
+#define ESP_PWM1_CH1_A_OUT 97  /**< MCPWM1 output 1A */
+#define ESP_PWM1_SYNC0_IN  98  /**< MCPWM1 sync 0 input */
+#define ESP_PWM1_CH1_B_OUT 98  /**< MCPWM1 output 1B */
+#define ESP_PWM1_SYNC1_IN  99  /**< MCPWM1 sync 1 input */
+#define ESP_PWM1_CH2_A_OUT 99  /**< MCPWM1 output 2A */
+#define ESP_PWM1_SYNC2_IN  100 /**< MCPWM1 sync 2 input */
+#define ESP_PWM1_CH2_B_OUT 100 /**< MCPWM1 output 2B */
+#define ESP_PWM1_F0_IN     101 /**< MCPWM1 fault 0 input */
+#define ESP_PWM1_F1_IN     102 /**< MCPWM1 fault 1 input */
+#define ESP_PWM1_F2_IN     103 /**< MCPWM1 fault 2 input */
+#define ESP_PWM1_CAP0_IN   104 /**< MCPWM1 capture 0 input */
+#define ESP_PWM1_CAP1_IN   105 /**< MCPWM1 capture 1 input */
+#define ESP_PWM1_CAP2_IN   106 /**< MCPWM1 capture 2 input */
 
 /* TWAI0 */
 #define ESP_TWAI0_RX 80 /**< TWAI0 RX input */
