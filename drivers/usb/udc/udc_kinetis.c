@@ -323,6 +323,7 @@ static void xfer_work_handler(struct k_work *item)
 	priv = CONTAINER_OF(item, struct usbfsotg_data, work);
 	while ((ev = k_fifo_get(&priv->fifo, K_NO_WAIT)) != NULL) {
 		struct udc_ep_config *ep_cfg;
+		unsigned int key;
 		int err = 0;
 
 		LOG_DBG("dev %p, ep 0x%02x, event %u",
@@ -340,7 +341,23 @@ static void xfer_work_handler(struct k_work *item)
 		case USBFSOTG_EVT_DOUT:
 		case USBFSOTG_EVT_DIN:
 			err = work_handler_data(ev->dev, ep_cfg);
+			/* cfg->stat is a single bitfield word shared with
+			 * stat.odd and stat.data1, which the TOKDNE handler
+			 * updates from interrupt context. A bitfield write
+			 * is a read-modify-write of the whole word: if a
+			 * completion interrupt lands between this thread's
+			 * load and store (a window arbitrarily widened by
+			 * preemption), the store reverts the ISR's parity
+			 * and toggle updates. The next transfer is then
+			 * armed on the BD parity the SIE is not watching —
+			 * a permanent NAK stall — carrying a stale data
+			 * toggle. Every thread-context write to cfg->stat
+			 * of an endpoint with live traffic must therefore
+			 * be atomic with respect to this driver's ISR.
+			 */
+			key = irq_lock();
 			udc_ep_set_busy(ep_cfg, false);
+			irq_unlock(key);
 			break;
 		case USBFSOTG_EVT_XFER:
 			break;
@@ -352,11 +369,18 @@ static void xfer_work_handler(struct k_work *item)
 			udc_submit_event(ev->dev, UDC_EVT_ERROR, err);
 		}
 
-		/* Peek next transfer */
+		/* Peek next transfer. The busy flag must be set within the
+		 * same critical section as the arming: setting OWN makes a
+		 * completion (and its ISR stat.odd/stat.data1 update)
+		 * possible immediately, and the set_busy() RMW on the
+		 * shared stat word must not straddle it.
+		 */
 		if (ev->ep != USB_CONTROL_EP_OUT && !udc_ep_is_busy(ep_cfg)) {
+			key = irq_lock();
 			if (usbfsotg_xfer_next(ev->dev, ep_cfg) == 0) {
 				udc_ep_set_busy(ep_cfg, true);
 			}
+			irq_unlock(key);
 		}
 
 xfer_work_error:
@@ -619,13 +643,15 @@ static int usbfsotg_ep_dequeue(const struct device *dev,
 	struct usbfsotg_bd *bd;
 	unsigned int lock_key;
 
-	bd = usbfsotg_get_ebd(dev, cfg, false);
-
 	lock_key = irq_lock();
+	bd = usbfsotg_get_ebd(dev, cfg, false);
 	bd->set.bd_ctrl = USBFSOTG_BD_DTS;
+	/* stat is written under the lock: it shares a bitfield word with
+	 * the ISR-owned stat.odd/stat.data1.
+	 */
+	cfg->stat.halted = false;
 	irq_unlock(lock_key);
 
-	cfg->stat.halted = false;
 	udc_ep_cancel_queued(dev, cfg);
 
 	udc_ep_set_busy(cfg, false);
@@ -637,10 +663,13 @@ static int usbfsotg_ep_set_halt(const struct device *dev,
 				struct udc_ep_config *const cfg)
 {
 	struct usbfsotg_bd *bd;
+	unsigned int lock_key;
 
+	lock_key = irq_lock();
 	bd = usbfsotg_get_ebd(dev, cfg, false);
 	bd->set.bd_ctrl = USBFSOTG_BD_STALL | USBFSOTG_BD_DTS | USBFSOTG_BD_OWN;
 	cfg->stat.halted = true;
+	irq_unlock(lock_key);
 	LOG_DBG("Halt ep 0x%02x bd %p", cfg->addr, bd);
 
 	return 0;
