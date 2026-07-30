@@ -25,11 +25,9 @@ enum {
 	THREAD_INFO_OFFSET_T_COOP_FLOAT,
 	THREAD_INFO_OFFSET_T_ARM_EXC_RETURN,
 	THREAD_INFO_OFFSET_T_ARC_RELINQUISH_CAUSE,
+	THREAD_INFO_OFFSET_CPU_STRIDE,
+	THREAD_INFO_OFFSET_NUM_CPUS,
 };
-
-#if CONFIG_MP_MAX_NUM_CPUS > 1
-#error "This code doesn't work properly with multiple CPUs enabled"
-#endif
 
 /* Forward-compatibility notes: 1) Only append items to this table; otherwise
  * debugger plugin versions that expect fewer items will read garbage values.
@@ -157,6 +155,18 @@ const size_t _kernel_thread_info_offsets[] = {
 #else
 	[THREAD_INFO_OFFSET_T_ARC_RELINQUISH_CAUSE] = THREAD_INFO_UNIMPLEMENTED,
 #endif /* CONFIG_ARC */
+
+	/*
+	 * THREAD_INFO_OFFSET_K_CURR_THREAD above is offsetof(struct _cpu,
+	 * current), applied directly to the dumped struct z_kernel -- this
+	 * only gives cpus[0].current, because struct _cpu cpus[] is the
+	 * first field of struct z_kernel (offset 0) on every arch. On SMP,
+	 * every other CPU's current thread is at
+	 * K_CURR_THREAD_offset + i * CPU_STRIDE for i in [1, NUM_CPUS).
+	 * On non-SMP, NUM_CPUS is 1 and these are unused.
+	 */
+	[THREAD_INFO_OFFSET_CPU_STRIDE] = sizeof(struct _cpu),
+	[THREAD_INFO_OFFSET_NUM_CPUS] = CONFIG_MP_MAX_NUM_CPUS,
 };
 
 extern const size_t __attribute__((alias("_kernel_thread_info_offsets")))
