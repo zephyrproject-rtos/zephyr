@@ -789,14 +789,14 @@ static int cs40l5x_irq_config(const struct device *const dev)
 		return ret;
 	}
 
-	ret = cs40lxx_multi_write(&config->io_bus, cs40l5x_irq_masks,
-				  ARRAY_SIZE(cs40l5x_irq_masks));
+	ret = cs40lxx_raw_multi_write(&config->io_bus, cs40l5x_irq_masks,
+				      ARRAY_SIZE(cs40l5x_irq_masks));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40lxx_multi_write(&config->io_bus, cs40l5x_irq_clear,
-				  ARRAY_SIZE(cs40l5x_irq_clear));
+	ret = cs40lxx_raw_multi_write(&config->io_bus, cs40l5x_irq_clear,
+				      ARRAY_SIZE(cs40l5x_irq_clear));
 	if (ret < 0) {
 		return ret;
 	}
@@ -899,16 +899,16 @@ static int cs40l5x_pseq_config(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	ret = cs40lxx_multi_write(&config->io_bus, cs40l5x_pseq, ARRAY_SIZE(cs40l5x_pseq));
+	ret = cs40lxx_raw_multi_write(&config->io_bus, cs40l5x_pseq, ARRAY_SIZE(cs40l5x_pseq));
 	if (ret < 0) {
 		return ret;
 	}
 
 	return (config->external_boost != NULL)
-		       ? cs40lxx_multi_write(&config->io_bus, cs40l5x_pseq_external,
-					     ARRAY_SIZE(cs40l5x_pseq_external))
-		       : cs40lxx_multi_write(&config->io_bus, cs40l5x_pseq_internal,
-					     ARRAY_SIZE(cs40l5x_pseq_internal));
+		       ? cs40lxx_raw_multi_write(&config->io_bus, cs40l5x_pseq_external,
+						 ARRAY_SIZE(cs40l5x_pseq_external))
+		       : cs40lxx_raw_multi_write(&config->io_bus, cs40l5x_pseq_internal,
+						 ARRAY_SIZE(cs40l5x_pseq_internal));
 }
 
 static int cs40l5x_dsp_config(const struct device *const dev)
@@ -965,15 +965,15 @@ static int cs40l5x_write_errata(const struct device *const dev)
 	const struct cs40l5x_config *const config = dev->config;
 	int ret;
 
-	ret = cs40lxx_multi_write(&config->io_bus, cs40l5x_b0_errata,
-				  ARRAY_SIZE(cs40l5x_b0_errata));
+	ret = cs40lxx_raw_multi_write(&config->io_bus, cs40l5x_b0_errata,
+				      ARRAY_SIZE(cs40l5x_b0_errata));
 	if (ret < 0) {
 		return ret;
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L5X_EXTERNAL_BOOST) && config->external_boost != NULL) {
-		return cs40lxx_multi_write(&config->io_bus, cs40l5x_b0_errata_external_boost,
-					   ARRAY_SIZE(cs40l5x_b0_errata_external_boost));
+		return cs40lxx_raw_multi_write(&config->io_bus, cs40l5x_b0_errata_external_boost,
+					       ARRAY_SIZE(cs40l5x_b0_errata_external_boost));
 	}
 
 	return 0;
@@ -990,10 +990,10 @@ static int cs40l5x_boost_configuration(const struct device *const dev)
 
 	return (!IS_ENABLED(CONFIG_HAPTICS_CS40L5X_INTERNAL_BOOST) ||
 		config->external_boost != NULL)
-		       ? cs40lxx_multi_write(&config->io_bus, cs40l5x_b0_external_boost,
-					     ARRAY_SIZE(cs40l5x_b0_external_boost))
-		       : cs40lxx_multi_write(&config->io_bus, cs40l5x_b0_internal_boost,
-					     ARRAY_SIZE(cs40l5x_b0_internal_boost));
+		       ? cs40lxx_raw_multi_write(&config->io_bus, cs40l5x_b0_external_boost,
+						 ARRAY_SIZE(cs40l5x_b0_external_boost))
+		       : cs40lxx_raw_multi_write(&config->io_bus, cs40l5x_b0_internal_boost,
+						 ARRAY_SIZE(cs40l5x_b0_internal_boost));
 }
 
 static int cs40l5x_fingerprint(const struct device *const dev)
