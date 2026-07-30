@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# UART driver
+CONFIG_SERIAL=y
+
+#GPIO driver
+CONFIG_GPIO=y
+
+# Clock controller
+CONFIG_CLOCK_CONTROL=y
+
+# This SoC only has 8 KB of SRAM, keep stacks and heap small.
+CONFIG_MAIN_STACK_SIZE=512
+CONFIG_ISR_STACK_SIZE=512
+CONFIG_HEAP_MEM_POOL_SIZE=0
+
+# This SoC only has 8 KB of SRAM. CONFIG_INPUT's default "dedicated thread"
+# mode adds an extra ~1 KB stack + message queue for dispatching input
+# events, which leaves very little headroom and risks a silent stack
+# overflow. Process input callbacks synchronously in the reporting context
+# instead.
+CONFIG_INPUT_MODE_SYNCHRONOUS=y
