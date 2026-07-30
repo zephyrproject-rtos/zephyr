@@ -73,6 +73,8 @@ tests:
     extra_args:
       - platform:frdm_k82f/mk82f25615:"DTC_OVERLAY_FILE=nxp/dut_lpuart0_loopback.overlay"
       - platform:frdm_ke15z/mke15z7:"DTC_OVERLAY_FILE=nxp/dut_lpuart0_loopback.overlay"
+      - platform:frdm_ke17z/mke17z7:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay"
+      - platform:frdm_ke17z512/mke17z9:"DTC_OVERLAY_FILE=nxp/dut_lpuart0_loopback.overlay"
       - platform:frdm_mcxa156/mcxa156:"DTC_OVERLAY_FILE=nxp/dut_lpuart1.overlay"
       - platform:frdm_mcxe247/mcxe247:"DTC_OVERLAY_FILE=nxp/dut_lpuart1.overlay"
       - platform:frdm_mcxa153/mcxa153:"DTC_OVERLAY_FILE=nxp/dut_lpuart2_loopback.overlay;nxp/enable_edma0.overlay"
