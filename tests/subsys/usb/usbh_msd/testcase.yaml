@@ -1,0 +1,14 @@
+tests:
+  subsys.usb.usbh_msd:
+    tags:
+      - usb
+      - msd
+    harness: ztest
+    harness_config:
+      type: one_line
+      regex:
+        - "PASS"
+    depends_on: usb_host
+    platform_allow:
+      - rdrw612_evk
+      - mimxrt700_evk

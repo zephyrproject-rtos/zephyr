@@ -39,6 +39,11 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_USBH_MSD_CLASS
+  class/usbh_msd.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_USBIP
   usbip.c
 )
