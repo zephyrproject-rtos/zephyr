@@ -152,7 +152,12 @@ static int mpu_configure_dt_region(uint8_t *reg_index,
 		return -EINVAL;
 	}
 
-	for (uint8_t index = 0; index < *reg_index; index++) {
+	/* DT regions are programmed after the SoC's broad static mappings and
+	 * therefore have higher MPU priority.  Allow a narrower DT policy to
+	 * override a static mapping, while still rejecting overlap between two
+	 * independently supplied DT regions.
+	 */
+	for (uint8_t index = static_regions_num; index < *reg_index; index++) {
 		uint32_t existing_base;
 		uint32_t existing_limit;
 
