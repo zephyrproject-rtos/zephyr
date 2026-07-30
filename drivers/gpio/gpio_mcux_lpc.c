@@ -1,5 +1,6 @@
 /*
  * Copyright 2017-2020,2022-2023 NXP
+ * Copyright (c) 2026 Aerlync Labs Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +16,7 @@
  */
 
 #include <errno.h>
+#include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device.h>
@@ -23,8 +25,12 @@
 #include <soc.h>
 #include <fsl_common.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
+#include <zephyr/drivers/clock_control.h>
 #ifdef CONFIG_NXP_PINT
 #include <zephyr/drivers/interrupt_controller/nxp_pint.h>
+#endif
+#if defined(CONFIG_SOC_SERIES_LPC84X)
+#include <pinctrl_soc.h>
 #endif
 #include <fsl_gpio.h>
 #include <fsl_device_registers.h>
@@ -51,6 +57,10 @@ struct gpio_mcux_lpc_config {
 #endif
 	uint32_t port_no;
 	const struct pinctrl_dev_config *pincfg;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+#endif
 };
 
 struct gpio_mcux_lpc_data {
@@ -89,11 +99,69 @@ static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 	/* Select GPIO mux for this pin (func 0 is always GPIO) */
 	*pinconfig &= ~(IOPCTL_PIO_FSEL_MASK);
 #endif
+	/* Configure output value and direction before setting up pad controls */
+	if (flags & GPIO_OUTPUT_INIT_HIGH) {
+		gpio_base->SET[port] = BIT(pin);
+	}
+
+	if (flags & GPIO_OUTPUT_INIT_LOW) {
+		gpio_base->CLR[port] = BIT(pin);
+	}
+
+#if defined(CONFIG_SOC_SERIES_LPC84X)
+	if (flags & GPIO_OUTPUT) {
+		if ((gpio_base->DIR[port] & BIT(pin)) == 0) {
+			gpio_base->DIRSET[port] = BIT(pin);
+		}
+	} else {
+		if ((gpio_base->DIR[port] & BIT(pin)) != 0) {
+			gpio_base->DIRCLR[port] = BIT(pin);
+		}
+	}
+#else
+	/* input-0,output-1 */
+	WRITE_BIT(gpio_base->DIR[port], pin, flags & GPIO_OUTPUT);
+#endif
+
 #ifdef IOCON /* LPC SOCs */
 	volatile uint32_t *pinconfig;
 	IOCON_Type *pinmux_base;
 
 	pinmux_base = config->pinmux_base;
+#if defined(CONFIG_SOC_SERIES_LPC84X)
+	int idx = lpc84x_iocon_index(port, pin);
+
+	if (idx < 0) {
+		return -EINVAL;
+	}
+	pinconfig = (volatile uint32_t *)&(pinmux_base->PIO[idx]);
+
+	/*
+	 * PIO0_10 and PIO0_11 are true open drain pins muxed with I2C port 0.
+	 * Can be configured as GPIO's but only in open drain mode and with
+	 * out pull-down or pull-up resisters enabled.
+	 */
+	if (port == 0 && (pin == 10 || pin == 11) &&
+	    ((flags & GPIO_OPEN_DRAIN) == 0 || (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)))) {
+		return -EINVAL;
+	}
+
+	uint32_t iocon_val = 0;
+
+	if (flags & GPIO_PULL_UP) {
+		iocon_val |= IOCON_PIO_MODE(0x2);
+	} else if (flags & GPIO_PULL_DOWN) {
+		iocon_val |= IOCON_PIO_MODE(0x1);
+	}
+
+	if (flags & (GPIO_SINGLE_ENDED | GPIO_OPEN_DRAIN)) {
+		iocon_val |= IOCON_PIO_OD(0x1);
+	}
+
+	if (*pinconfig != iocon_val) {
+		*pinconfig = iocon_val;
+	}
+#else
 	pinconfig = (volatile uint32_t *)&(pinmux_base->PIO[port][pin]);
 
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
@@ -106,6 +174,7 @@ static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 
 	/* Select GPIO mux for this pin (func 0 is always GPIO) */
 	*pinconfig &= ~(IOCON_PIO_FUNC_MASK);
+#endif
 #endif
 #ifdef MCI_IO_MUX /* RW61x SOCs */
 		/* Construct a pin control state, and apply it directly. */
@@ -125,6 +194,7 @@ static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 		pinctrl_configure_pins(&pin_cfg, 1, 0);
 #endif
 
+#if !defined(CONFIG_SOC_SERIES_LPC84X)
 	if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) {
 #ifdef IOPCTL /* RT600 and RT500 series */
 		*pinconfig |= IOPCTL_PIO_PUPD_EN;
@@ -154,18 +224,7 @@ static int gpio_mcux_lpc_configure(const struct device *dev, gpio_pin_t pin,
 
 #endif
 	}
-
-	/* supports access by pin now,you can add access by port when needed */
-	if (flags & GPIO_OUTPUT_INIT_HIGH) {
-		gpio_base->SET[port] = BIT(pin);
-	}
-
-	if (flags & GPIO_OUTPUT_INIT_LOW) {
-		gpio_base->CLR[port] = BIT(pin);
-	}
-
-	/* input-0,output-1 */
-	WRITE_BIT(gpio_base->DIR[port], pin, flags & GPIO_OUTPUT);
+#endif
 
 	return 0;
 }
@@ -189,11 +248,16 @@ static int gpio_mcux_lpc_port_set_masked_raw(const struct device *dev,
 	GPIO_Type *gpio_base = config->gpio_base;
 	uint32_t port = config->port_no;
 
+#if defined(CONFIG_SOC_SERIES_LPC84X)
+	gpio_base->SET[port] = mask & value;
+	gpio_base->CLR[port] = mask & ~value;
+#else
 	/* Writing 0 allows R+W, 1 disables the pin */
 	gpio_base->MASK[port] = ~mask;
 	gpio_base->MPIN[port] = value;
 	/* Enable back the pins, user won't assume pins remain masked*/
 	gpio_base->MASK[port] = 0U;
+#endif
 
 	return 0;
 }
@@ -436,6 +500,17 @@ static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_acti
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+		if (config->clock_dev != NULL) {
+			if (!device_is_ready(config->clock_dev)) {
+				return -ENODEV;
+			}
+			error = clock_control_on(config->clock_dev, config->clock_subsys);
+			if (error < 0) {
+				return error;
+			}
+		}
+#endif
 		GPIO_PortInit(config->gpio_base, config->port_no);
 		error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (error) {
@@ -502,7 +577,13 @@ static DEVICE_API(gpio, gpio_mcux_lpc_driver_api) = {
 		.pinmux_base = PINMUX_BASE,						\
 		.int_source = DT_INST_ENUM_IDX(n, int_source),				\
 		.port_no = DT_INST_REG_ADDR(n),						\
-		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)				\
+		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
+		IF_ENABLED(DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks),			\
+		(.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),		\
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),		\
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),		\
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),	\
+			((clock_control_subsys_t)0U)),))					\
 	};										\
 											\
 	static struct gpio_mcux_lpc_data gpio_mcux_lpc_data_##n;			\
