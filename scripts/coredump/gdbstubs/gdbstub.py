@@ -212,6 +212,47 @@ class GdbStub(abc.ABC):
                     if ptr != 0 and ptr not in curr_thread_ptrs:
                         curr_thread_ptrs.append(ptr)
 
+                # Thread 1 (selected_thread == 0) is expected by the
+                # architecture backend to be the panicking thread, whose
+                # real ESF/arch-data-block registers are already available
+                # without a memory read (see e.g. arm64.py). With more than
+                # one CPU, the loop above has no reason to have found that
+                # one first -- reorder it to the front.
+                #
+                # Preferred: a zero-length snapshot entry is a direct,
+                # unambiguous marker of the panicking thread (see
+                # arch_coredump_cpu_snapshot_dump() in
+                # arch/arm64/core/coredump.c). Fall back to "whichever CPU's
+                # current thread has no snapshot at all" only if no marker
+                # is present (older captures, or an arch that doesn't emit
+                # one) -- that fallback is not reliable on its own: if some
+                # *other* CPU's freeze also times out for an unrelated
+                # reason, its current thread looks identical (no snapshot)
+                # to the actual panicking one, and this could pick the
+                # wrong thread. Confirmed on hardware
+                # (hs3_smp_baseline: cpu 0's freeze timed out even though
+                # cpu 0 was not the panicking CPU).
+                if len(curr_thread_ptrs) > 1:
+                    panicking_ptr = None
+                    for s in self.logfile.get_cpu_snapshots():
+                        if len(s["data"]) == 0:
+                            panicking_ptr = s["thread_ptr"]
+                            break
+
+                    if panicking_ptr is None:
+                        snapshot_thread_ptrs = {
+                            s["thread_ptr"] for s in self.logfile.get_cpu_snapshots()
+                        }
+                        if snapshot_thread_ptrs:
+                            for ptr in curr_thread_ptrs:
+                                if ptr not in snapshot_thread_ptrs:
+                                    panicking_ptr = ptr
+                                    break
+
+                    if panicking_ptr is not None and panicking_ptr in curr_thread_ptrs:
+                        curr_thread_ptrs.remove(panicking_ptr)
+                        curr_thread_ptrs.insert(0, panicking_ptr)
+
                 self.thread_ptrs.extend(curr_thread_ptrs)
 
                 thread_count = len(curr_thread_ptrs)

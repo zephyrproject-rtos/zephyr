@@ -76,53 +76,61 @@ class GdbStub_ARM64(GdbStub):
         self.registers = None
         self.gdb_signal = self.GDB_SIGNAL_DEFAULT
 
-        self.parse_arch_data_block()
+        self.registers = self._decode_arch_block(self.logfile.get_arch_data()['data'])
 
-    def parse_arch_data_block(self):
-        arch_data_blk = self.logfile.get_arch_data()['data']
+    @classmethod
+    def _decode_arch_block(cls, arch_data_blk):
+        """Decode one arm64_arch_block-layout payload (x0-x18, lr, spsr,
+        elr, optionally fp/sp) into a {RegNum: value} dict. Shared by the
+        panicking thread's own arch block and by any live per-CPU snapshot
+        blocks (CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS) -- both use the same
+        on-wire layout."""
+
         block_len = len(arch_data_blk)
 
-        has_fp_sp = block_len == struct.calcsize(self.ARCH_DATA_BLK_STRUCT_V2)
+        has_fp_sp = block_len == struct.calcsize(cls.ARCH_DATA_BLK_STRUCT_V2)
 
         if has_fp_sp:
-            tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V2, arch_data_blk)
+            tu = struct.unpack(cls.ARCH_DATA_BLK_STRUCT_V2, arch_data_blk)
         else:
-            tu = struct.unpack(self.ARCH_DATA_BLK_STRUCT_V1, arch_data_blk)
+            tu = struct.unpack(cls.ARCH_DATA_BLK_STRUCT_V1, arch_data_blk)
 
-        self.registers = dict()
+        registers = dict()
 
-        self.registers[RegNum.X0] = tu[0]
-        self.registers[RegNum.X1] = tu[1]
-        self.registers[RegNum.X2] = tu[2]
-        self.registers[RegNum.X3] = tu[3]
-        self.registers[RegNum.X4] = tu[4]
-        self.registers[RegNum.X5] = tu[5]
-        self.registers[RegNum.X6] = tu[6]
-        self.registers[RegNum.X7] = tu[7]
-        self.registers[RegNum.X8] = tu[8]
-        self.registers[RegNum.X9] = tu[9]
-        self.registers[RegNum.X10] = tu[10]
-        self.registers[RegNum.X11] = tu[11]
-        self.registers[RegNum.X12] = tu[12]
-        self.registers[RegNum.X13] = tu[13]
-        self.registers[RegNum.X14] = tu[14]
-        self.registers[RegNum.X15] = tu[15]
-        self.registers[RegNum.X16] = tu[16]
-        self.registers[RegNum.X17] = tu[17]
-        self.registers[RegNum.X18] = tu[18]
+        registers[RegNum.X0] = tu[0]
+        registers[RegNum.X1] = tu[1]
+        registers[RegNum.X2] = tu[2]
+        registers[RegNum.X3] = tu[3]
+        registers[RegNum.X4] = tu[4]
+        registers[RegNum.X5] = tu[5]
+        registers[RegNum.X6] = tu[6]
+        registers[RegNum.X7] = tu[7]
+        registers[RegNum.X8] = tu[8]
+        registers[RegNum.X9] = tu[9]
+        registers[RegNum.X10] = tu[10]
+        registers[RegNum.X11] = tu[11]
+        registers[RegNum.X12] = tu[12]
+        registers[RegNum.X13] = tu[13]
+        registers[RegNum.X14] = tu[14]
+        registers[RegNum.X15] = tu[15]
+        registers[RegNum.X16] = tu[16]
+        registers[RegNum.X17] = tu[17]
+        registers[RegNum.X18] = tu[18]
 
-        self.registers[RegNum.LR] = tu[19]
+        registers[RegNum.LR] = tu[19]
         # tu[20] is SPSR - not a GDB GP register, skip it
-        self.registers[RegNum.PC] = tu[21]  # ELR = faulting PC
+        registers[RegNum.PC] = tu[21]  # ELR = faulting/live PC
 
         if has_fp_sp:
-            self.registers[RegNum.X29] = tu[22]  # FP
-            self.registers[RegNum.SP_EL0] = tu[23]  # SP at fault
+            registers[RegNum.X29] = tu[22]  # FP
+            registers[RegNum.SP_EL0] = tu[23]  # SP
             logger.debug(
                 "LR=0x%016x PC=0x%016x FP=0x%016x SP=0x%016x", tu[19], tu[21], tu[22], tu[23]
             )
         else:
             logger.debug("LR=0x%016x PC=0x%016x (no FP/SP)", tu[19], tu[21])
+
+        return registers
 
     def send_registers_packet(self, registers):
         reg_fmt = "<Q"
@@ -167,6 +175,27 @@ class GdbStub_ARM64(GdbStub):
             return
 
         thread_ptr = self.thread_ptrs[self.selected_thread]
+
+        # If this thread was actively running on another CPU when the
+        # system was frozen for the dump (CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS),
+        # a live snapshot exists with its *exact* register state (real PC,
+        # SP, x0-x18, x19-x29) -- prefer it over the callee_saved-derived
+        # approximation below, which is only ever as fresh as that thread's
+        # last voluntary context switch and would otherwise be stale here.
+        for snapshot in self.logfile.get_cpu_snapshots():
+            # A zero-length entry is the panicking-CPU marker (see
+            # arch_coredump_cpu_snapshot_dump() in arch/arm64/core/coredump.c)
+            # -- it records a thread pointer but carries no register payload,
+            # since selected_thread == 0 above already covers that thread
+            # using the real ESF-based data.
+            if snapshot["thread_ptr"] == thread_ptr and len(snapshot["data"]) > 0:
+                logger.debug(
+                    "Using live CPU snapshot (cpu=%d) for thread 0x%x",
+                    snapshot["cpu_id"],
+                    thread_ptr,
+                )
+                self.send_registers_packet(self._decode_arch_block(snapshot["data"]))
+                return
 
         # THREAD_INFO_OFFSET_T_STACK_PTR is offsetof(k_thread, callee_saved.sp_elx)
         # on ARM64 (see subsys/debug/thread_info.c) -- back out the base of
