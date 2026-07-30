@@ -2514,6 +2514,22 @@ bool net_if_ipv4_addr_onlink(struct net_if **iface, const struct net_in_addr *ad
 struct net_if_addr *net_if_ipv4_addr_lookup(const struct net_in_addr *addr,
 					    struct net_if **iface);
 
+/** @cond INTERNAL_HIDDEN */
+struct net_if_addr *net_if_ipv4_addr_lookup_by_iface_raw(struct net_if *iface,
+							 const uint8_t *addr);
+/** @endcond */
+
+/**
+ * @brief Check if this IPv4 address belongs to this specific interfaces.
+ *
+ * @param iface Network interface
+ * @param addr IPv4 address
+ *
+ * @return Pointer to interface address, NULL if not found.
+ */
+struct net_if_addr *net_if_ipv4_addr_lookup_by_iface(struct net_if *iface,
+						     const struct net_in_addr *addr);
+
 /**
  * @brief Add a IPv4 address to an interface
  *
