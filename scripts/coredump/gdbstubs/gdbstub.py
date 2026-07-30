@@ -249,7 +249,10 @@ class GdbStub(abc.ABC):
                     thread_index_str += chr(pkt[n])
 
                 thread_id = int(thread_index_str, 16)
-                if len(self.thread_ptrs) > thread_id:
+                # thread_id is 1-based and indexed below as thread_id - 1, so the
+                # last valid id equals len(self.thread_ptrs); use >= to include it
+                # (a bare > dropped the final thread's name/state in info threads).
+                if len(self.thread_ptrs) >= thread_id:
                     thread_info_bytes += b'name: '
                     thread_ptr = self.thread_ptrs[thread_id - 1]
                     t_name_offset = self.elffile.get_kernel_thread_info_offset(
