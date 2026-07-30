@@ -284,3 +284,19 @@ tests:
     extra_configs:
       - CONFIG_PICOLIBC=y
       - CONFIG_THREAD_LOCAL_STORAGE=y
+
+  llext.semihost:
+    arch_allow:
+      - arm
+      - arm64
+      - riscv
+      - xtensa
+    platform_allow:
+      - mps2/an385
+      - qemu_cortex_a53
+      - qemu_xtensa/dc233c
+      - qemu_riscv32
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_SEMIHOST=y
+      - CONFIG_LLEXT_SEMIHOST_LOADER=y
