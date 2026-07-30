@@ -121,8 +121,33 @@ static const struct device *netc_eth_get_phy(const struct device *dev,
 	return cfg->phy_dev;
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static struct net_stats_eth *netc_eth_psi_get_stats(const struct device *dev, struct net_if *iface)
+{
+	struct netc_eth_data *data = dev->data;
+	netc_port_discard_statistic_t discard;
+
+	/* SI-level stats, including tx_dropped from SITDFCR. */
+	(void)netc_eth_get_stats(dev, iface);
+
+	/*
+	 * The PSI owns the MAC port, so it can also read the port-level RX
+	 * discard counter that no software path or SI counter tracks. It is
+	 * free-running, so assigning it is idempotent.
+	 */
+	if (EP_GetPortDiscardStatistic(&data->handle, false, &discard) == kStatus_Success) {
+		data->stats.error_details.rx_missed_errors = discard.count;
+	}
+
+	return &data->stats;
+}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
+
 static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_iface_init,
 						 .get_capabilities = netc_eth_get_capabilities,
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+						 .get_stats = netc_eth_psi_get_stats,
+#endif
 						 .get_phy = netc_eth_get_phy,
 						 .set_config = netc_eth_set_config,
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
