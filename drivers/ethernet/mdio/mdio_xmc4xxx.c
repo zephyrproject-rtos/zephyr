@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT infineon_xmc4xxx_mdio
+#define DT_DRV_COMPAT snps_dwmac_mdio
 
 #include <errno.h>
 
