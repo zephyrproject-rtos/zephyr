@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2026 Dimitri Varpusvuori
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <m68k/m68000.dtsi>
+#include "qemu_m68k_qemu_virt_m68k.dtsi"
