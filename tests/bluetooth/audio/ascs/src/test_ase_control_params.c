@@ -133,8 +133,9 @@ static void test_expect_unsupported_opcode(struct test_ase_control_params_fixtur
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, (void *)buf, sizeof(buf), 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
-					     fixture->ase_cp, data_expected, sizeof(data_expected));
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(&fixture->conn, BT_UUID_ASCS_ASE_CP, fixture->ase_cp,
+					     data_expected, sizeof(data_expected));
 }
 
 ZTEST_F(test_ase_control_params, test_unsupported_opcode_0x00)
@@ -160,8 +161,9 @@ static void test_codec_configure_expect_invalid_length(
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, len, 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
-					     fixture->ase_cp, data_expected, sizeof(data_expected));
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(&fixture->conn, BT_UUID_ASCS_ASE_CP, fixture->ase_cp,
+					     data_expected, sizeof(data_expected));
 }
 
 /*
@@ -368,8 +370,9 @@ ZTEST_F(test_ase_control_params, test_codec_configure_invalid_ase_id_0x00)
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
-					     fixture->ase_cp, data_expected, sizeof(data_expected));
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(&fixture->conn, BT_UUID_ASCS_ASE_CP, fixture->ase_cp,
+					     data_expected, sizeof(data_expected));
 }
 
 static struct bt_bap_stream test_stream;
@@ -442,8 +445,12 @@ ZTEST_F(test_ase_control_params, test_codec_configure_invalid_ase_id_unavailable
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
-					     fixture->ase_cp, data_expected, sizeof(data_expected));
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	/* TODO: Since we are draining the syswq, this will trigger both the cp_rsp and ase_state
+	 * notification, causing the following check to fail.
+	 */
+	expect_bt_gatt_notify_cb_called_with(&fixture->conn, BT_UUID_ASCS_ASE_CP, fixture->ase_cp,
+					     data_expected, sizeof(data_expected));
 }
 
 static void test_target_latency_out_of_range(struct test_ase_control_params_fixture *fixture,
@@ -470,8 +477,9 @@ static void test_target_latency_out_of_range(struct test_ase_control_params_fixt
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
-					     fixture->ase_cp, data_expected, sizeof(data_expected));
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(&fixture->conn, BT_UUID_ASCS_ASE_CP, fixture->ase_cp,
+					     data_expected, sizeof(data_expected));
 }
 
 ZTEST_F(test_ase_control_params, test_target_latency_out_of_range_0x00)
@@ -514,8 +522,9 @@ static void test_target_phy_out_of_range(struct test_ase_control_params_fixture 
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
-					     fixture->ase_cp, data_expected, sizeof(data_expected));
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(&fixture->conn, BT_UUID_ASCS_ASE_CP, fixture->ase_cp,
+					     data_expected, sizeof(data_expected));
 }
 
 ZTEST_F(test_ase_control_params, test_target_phy_out_of_range_0x00)
@@ -551,7 +560,8 @@ static void test_config_qos_expect_invalid_length(struct bt_conn *conn, uint8_t 
 
 	ase_cp->write(conn, ase_cp, buf, len, 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
 					     sizeof(data_expected));
 }
 
@@ -669,7 +679,8 @@ static void test_enable_expect_invalid_length(struct bt_conn *conn, uint8_t ase_
 
 	ase_cp->write(conn, ase_cp, buf, len, 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
 					     sizeof(data_expected));
 }
 
@@ -787,8 +798,9 @@ ZTEST_F(test_ase_control_params, test_enable_invalid_ase_id)
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
-					     fixture->ase_cp, data_expected, sizeof(data_expected));
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(&fixture->conn, BT_UUID_ASCS_ASE_CP, fixture->ase_cp,
+					     data_expected, sizeof(data_expected));
 }
 
 ZTEST_F(test_ase_control_params, test_enable_metadata_prohibited_context)
@@ -813,8 +825,9 @@ ZTEST_F(test_ase_control_params, test_enable_metadata_prohibited_context)
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
-					     fixture->ase_cp, data_expected, sizeof(data_expected));
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(&fixture->conn, BT_UUID_ASCS_ASE_CP, fixture->ase_cp,
+					     data_expected, sizeof(data_expected));
 }
 
 static void test_receiver_start_ready_expect_invalid_length(struct bt_conn *conn, uint8_t ase_id,
@@ -839,7 +852,8 @@ static void test_receiver_start_ready_expect_invalid_length(struct bt_conn *conn
 
 	ase_cp->write(conn, ase_cp, buf, len, 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
 					     sizeof(data_expected));
 }
 
@@ -948,7 +962,8 @@ static void test_disable_expect_invalid_length(struct bt_conn *conn, uint8_t ase
 
 	ase_cp->write(conn, ase_cp, buf, len, 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
 					     sizeof(data_expected));
 }
 
@@ -1030,7 +1045,8 @@ static void test_receiver_stop_ready_expect_invalid_length(struct bt_conn *conn,
 
 	ase_cp->write(conn, ase_cp, buf, len, 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
 					     sizeof(data_expected));
 }
 
@@ -1139,7 +1155,8 @@ static void test_update_metadata_expect_invalid_length(struct bt_conn *conn, uin
 
 	ase_cp->write(conn, ase_cp, buf, len, 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
 					     sizeof(data_expected));
 }
 
@@ -1257,8 +1274,9 @@ ZTEST_F(test_ase_control_params, test_update_metadata_invalid_ase_id)
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(&fixture->conn, BT_UUID_ASCS_ASE_CP,
-					     fixture->ase_cp, data_expected, sizeof(data_expected));
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(&fixture->conn, BT_UUID_ASCS_ASE_CP, fixture->ase_cp,
+					     data_expected, sizeof(data_expected));
 }
 
 static void test_release_expect_invalid_length(struct bt_conn *conn, uint8_t ase_id,
@@ -1278,7 +1296,8 @@ static void test_release_expect_invalid_length(struct bt_conn *conn, uint8_t ase
 
 	ase_cp->write(conn, ase_cp, buf, len, 0, 0);
 
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
+	test_drain_syswq(); /* Ensure that state transitions are completed */
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, data_expected,
 					     sizeof(data_expected));
 }
 
