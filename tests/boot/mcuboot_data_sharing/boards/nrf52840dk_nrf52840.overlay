@@ -48,11 +48,11 @@
 		};
 		slot0_partition: partition@20000 {
 			label = "image-0";
-			reg = <0x00020000 0x00022000>;
+			reg = <0x00020000 0x00023000>;
 		};
-		slot1_partition: partition@42000 {
+		slot1_partition: partition@43000 {
 			label = "image-1";
-			reg = <0x00042000 0x00024000>;
+			reg = <0x00043000 0x00022000>;
 		};
 	};
 };
