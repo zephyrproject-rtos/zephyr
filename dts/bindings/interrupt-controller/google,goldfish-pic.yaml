@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Google Goldfish programmable interrupt controller.
+
+  A second-level interrupt aggregator: up to 32 device interrupt sources
+  are combined onto a single line delivered to the parent controller (on
+  QEMU's m68k virt machine, one CPU interrupt level, autovectored). The
+  "interrupts" property gives the parent line this PIC is wired to; child
+  devices reference this node as their interrupt-parent and their
+  "interrupts" cell is the source line (0..31) within the PIC.
+
+compatible: "google,goldfish-pic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  big-endian:
+    type: boolean
+    description: |
+      MMIO registers use big-endian byte order. If absent, registers use the
+      little-endian Goldfish byte order.
+
+  "#interrupt-cells":
+    const: 1
+
+interrupt-cells:
+  - irq
