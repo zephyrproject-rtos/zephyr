@@ -11,15 +11,25 @@
 
 #define NUM_TAPS   10 /* Number of taps in the FIR filter (length of the moving average window) */
 #define BLOCK_SIZE 32 /* Number of samples processed per block */
+#define ROUND_UP_4(x) (((x) + 3) & ~3)
+
+#if defined(ARM_MATH_MVEI) && !defined(ARM_MATH_AUTOVECTORIZE)
+#define NUM_TAPS_ARRAY ROUND_UP_4(NUM_TAPS)
+#define FIR_STATE_SIZE (NUM_TAPS + BLOCK_SIZE - 1 + (2 * ROUND_UP_4(BLOCK_SIZE)))
+#else
+#define NUM_TAPS_ARRAY NUM_TAPS
+#define FIR_STATE_SIZE (NUM_TAPS + BLOCK_SIZE - 1)
+#endif
 
 /*
  * Filter coefficients are all equal for a moving average filter. Here, 1/NUM_TAPS = 0.1f.
+ * The Helium version requires the coefficient array to be padded to a multiple of 4.
  */
-q31_t firCoeffs[NUM_TAPS] = {0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD,
-			     0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD};
+q31_t firCoeffs[NUM_TAPS_ARRAY] = {0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD,
+				   0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD, 0x0CCCCCCD};
 
 arm_fir_instance_q31 sFIR;
-q31_t firState[NUM_TAPS + BLOCK_SIZE - 1];
+q31_t firState[FIR_STATE_SIZE];
 
 int main(void)
 {
