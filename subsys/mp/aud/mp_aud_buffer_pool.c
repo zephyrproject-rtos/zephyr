@@ -73,8 +73,8 @@ static int mp_aud_buffer_pool_config(struct mp_buffer_pool *pool, struct mp_stru
 	 * - Proper flow control prevents buffer starvation
 	 */
 	pool->config.min_buffers = buffer_count + 2;
-	pool->config.size = (bit_width / BITS_PER_BYTE) * (sample_rate * frame_interval / 1000000) *
-			    num_of_channel;
+	pool->config.size = (bit_width / BITS_PER_BYTE) *
+			    ((uint64_t)sample_rate * frame_interval / 1000000) * num_of_channel;
 	/* The address needs to be aligned to the size of the DMA transfer */
 	required_align = bit_width >> 3;
 
@@ -93,8 +93,8 @@ static int mp_aud_buffer_pool_config(struct mp_buffer_pool *pool, struct mp_stru
 		pool->config.align = AUD_BUFFER_POOL_BASE_ALIGN;
 	}
 
-	if (pool->config.size * pool->config.min_buffers > AUD_BUFFER_POOL_SIZE) {
-		LOG_ERR("aud_buffer_pool_buf hos not enough space for requested buffers");
+	if ((uint64_t)pool->config.size * pool->config.min_buffers > AUD_BUFFER_POOL_SIZE) {
+		LOG_ERR("aud_buffer_pool_buf has not enough space for requested buffers");
 		return -EINVAL;
 	}
 
