@@ -84,6 +84,9 @@ void entry_cpu_exception(void *p1, void *p2, void *p3)
 	__asm__ volatile ("ud2");
 #elif defined(CONFIG_ARC)
 	__asm__ volatile ("swi");
+#elif defined(CONFIG_M68K)
+	/* ILLEGAL instruction. */
+	__asm__ volatile (".word 0x4afc");
 #elif defined(CONFIG_RISCV)
 	/* Illegal instruction on RISCV. */
 	__asm__ volatile (".word 0x77777777");
@@ -113,6 +116,9 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 	__asm__ volatile ("udf #0");
 #elif defined(CONFIG_RX)
 	__asm__ volatile ("brk");
+#elif defined(CONFIG_M68K)
+	/* ILLEGAL instruction. */
+	__asm__ volatile (".word 0x4afc");
 #elif defined(CONFIG_SOC_FAMILY_MAX32_RV32)
 	/* The MAX32 RV32 core does not trap on writes to
 	 * non-existent CSRs, so use a different illegal instruction

@@ -1,6 +1,15 @@
 common:
   ignore_faults: true
 tests:
+  kernel.common.cpu_exception.m68k:
+    extra_args: CONF_FILE=prj.conf
+    arch_allow: m68k
+    integration_platforms:
+      - qemu_m68k/qemu_virt_m68k_m68000
+      - qemu_m68k/qemu_virt_m68k_m68010
+    tags:
+      - kernel
+      - m68k
   kernel.common.stack_protection:
     extra_args: CONF_FILE=prj.conf
     platform_exclude:
