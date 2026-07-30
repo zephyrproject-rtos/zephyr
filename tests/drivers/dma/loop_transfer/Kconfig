@@ -14,10 +14,6 @@ config DMA_LOOP_TRANSFER_RELOCATE_SECTION
 	depends on CODE_DATA_RELOCATION
 	default "RAM"
 
-config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
-	int "Number of DMAs to test"
-	default 1
-
 config DMA_LOOP_TRANSFER_SIZE
 	int "Number of bytes to transfer"
 	default 8192

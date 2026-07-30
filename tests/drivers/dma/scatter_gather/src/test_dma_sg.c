@@ -24,27 +24,15 @@
 
 #define XFERS 4
 
-#define DMA_TEST_DEVS_PROP dma_test_devs
-
-#if TEST_DEVS_EXIST(DMA_TEST_DEVS_PROP)
 /* Boards list the DMA controllers to test in a zephyr,user dma-test-devs
  * phandle list.
  */
-#define DMA_TEST_DEV_COUNT       TEST_DEVS_LEN(DMA_TEST_DEVS_PROP)
-#define DMA_TEST_DEV_GET(idx, _) TEST_DEVS_GET_BY_IDX(DMA_TEST_DEVS_PROP, idx)
-#define DMA_TEST_DEV0_NODE       TEST_DEVS_NODE_BY_IDX(DMA_TEST_DEVS_PROP, 0)
-#else
-/* Legacy single-controller boards use a tst_dma0 devicetree label. */
-#define DMA_TEST_DEV_COUNT       1
-#define DMA_TEST_DEV_GET(idx, _) DEVICE_DT_GET(DT_NODELABEL(tst_dma0))
-#define DMA_TEST_DEV0_NODE       DT_NODELABEL(tst_dma0)
-#endif
+#define DMA_DATA_ALIGNMENT                                                                         \
+	DT_PROP_OR(TEST_DEVS_NODE_BY_IDX(dma_test_devs, 0), dma_buf_addr_alignment, 32)
 
-#define DMA_DATA_ALIGNMENT DT_PROP_OR(DMA_TEST_DEV0_NODE, dma_buf_addr_alignment, 32)
+TEST_DEVS_REQUIRE(dma_test_devs);
 
-static const struct device *const dma_test_devs[] = {
-	LISTIFY(DMA_TEST_DEV_COUNT, DMA_TEST_DEV_GET, (,))
-};
+static const struct device *const dma_test_devs[] = TEST_DEVS_ARRAY(dma_test_devs);
 
 #if CONFIG_NOCACHE_MEMORY
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_SG_XFER_SIZE] __used
@@ -177,11 +165,11 @@ static int test_sg(const struct device *dma)
 /* Generate one test case per DMA controller under test so a failure on one
  * controller does not prevent the remaining controllers from running.
  */
-#define DEFINE_DMA_M2M_SG_TESTS(idx, _)                                                            \
+#define DEFINE_DMA_M2M_SG_TESTS(idx, prop)                                                         \
 	ZTEST(dma_m2m_sg, test_dma##idx##_m2m_sg)                                                  \
 	{                                                                                          \
 		zassert_true(test_sg(dma_test_devs[idx]) == TC_PASS,                               \
 			     "%s failed scatter-gather transfer", dma_test_devs[idx]->name);       \
 	}
 
-LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_SG_TESTS, ())
+TEST_DEVS_FOR_EACH_IDX(dma_test_devs, DEFINE_DMA_M2M_SG_TESTS)
