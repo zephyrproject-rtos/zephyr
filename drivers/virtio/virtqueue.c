@@ -108,6 +108,10 @@ int virtq_add_buffer_chain(
 	uint16_t device_readable_count, virtq_receive_callback cb, void *cb_opaque,
 	k_timeout_t timeout)
 {
+	if (bufs_size == 0) {
+		return -EINVAL;
+	}
+
 	uint64_t total_len = 0;
 
 	for (int i = 0; i < bufs_size; i++) {
