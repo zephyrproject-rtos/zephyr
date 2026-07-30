@@ -4,19 +4,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig LPS22HH
-	bool "LPS22HH pressure and temperature"
+	bool "LPS22HH/LPS22HB pressure and temperature"
 	default y
-	depends on DT_HAS_ST_LPS22HH_ENABLED
+	depends on DT_HAS_ST_LPS22HH_ENABLED || DT_HAS_ST_LPS22HX_ENABLED
 	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),i2c)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HX),i2c)
 	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),i3c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),spi)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HX),spi)
 	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LPS22HH),drdy-gpios)
 	select HAS_STMEMSC
 	select USE_STDC_LPS22HH
 	help
-	  Enable driver for LPS22HH I2C-based pressure and temperature
-	  sensor.
+	  Enable driver for LPS22HH/LPS22HB I2C-based pressure and
+	  temperature sensor.
 
 if LPS22HH
 
