@@ -9,6 +9,7 @@
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include "rtc_utils.h"
 
 #define RV8263C8_REGISTER_CONTROL_1     0x00
@@ -667,7 +668,7 @@ int rv8263c8_calibration_get(const struct device *dev, int32_t *calibration)
 {
 	int err;
 	int32_t temp;
-	int8_t offset;
+	uint8_t offset;
 	const struct rv8263c8_config *config = dev->config;
 
 	if (calibration == NULL) {
@@ -679,20 +680,15 @@ int rv8263c8_calibration_get(const struct device *dev, int32_t *calibration)
 		return err;
 	}
 
-	/* Convert the signed 7 bit into a signed 8 bit value. */
-	if (offset & (0x01 << 6)) {
-		temp = offset | (0x01 << 7);
-	} else {
-		temp = offset & (0x3F);
-		temp &= ~(0x01 << 7);
-	}
+	/* OFFSET[6:0] is a signed 7-bit two's complement value. */
+	temp = sign_extend(offset & RV8263C8_BM_REGISTER_OFFSET, 6);
 
 	LOG_DBG("Read offset: %i", temp);
 
 	if (offset & RV8263_BM_FAST_MODE) {
-		temp = temp * 4340L;
+		temp = temp * RV8263C8_OFFSET_FAST_PPB_PER_LSB;
 	} else {
-		temp = temp * 4069L;
+		temp = temp * RV8263C8_OFFSET_SLOW_PPB_PER_LSB;
 	}
 
 	*calibration = temp;
