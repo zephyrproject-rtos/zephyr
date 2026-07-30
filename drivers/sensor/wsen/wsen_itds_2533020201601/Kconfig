@@ -5,6 +5,7 @@ menuconfig WSEN_ITDS_2533020201601
 	bool "WSEN-ITDS-2533020201601 3-axis acceleration sensor"
 	default y
 	depends on DT_HAS_WE_WSEN_ITDS_2533020201601_ENABLED
+	depends on ZEPHYR_HAL_WURTHELEKTRONIK_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_WE_WSEN_ITDS_2533020201601),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_WE_WSEN_ITDS_2533020201601),spi)
 	select HAS_WESENSORS

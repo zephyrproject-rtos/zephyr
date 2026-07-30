@@ -5,6 +5,7 @@ config WSEN_PDUS_25131308XXXXX
 	bool "WSEN-PDUS-25131308XXXXX differential pressure sensor"
 	default y
 	depends on DT_HAS_WE_WSEN_PDUS_25131308XXXXX_ENABLED
+	depends on ZEPHYR_HAL_WURTHELEKTRONIK_MODULE
 	select I2C
 	select HAS_WESENSORS
 	help
