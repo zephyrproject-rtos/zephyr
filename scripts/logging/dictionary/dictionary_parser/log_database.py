@@ -28,6 +28,9 @@ ARCHS = {
     "hexagon": {
         "kconfig": "CONFIG_HEXAGON",
     },
+    "m68k": {
+        "kconfig": "CONFIG_M68K",
+    },
     "mips": {
         "kconfig": "CONFIG_MIPS",
     },
