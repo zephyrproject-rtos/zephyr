@@ -121,7 +121,7 @@ struct i2c_mchp_dev_data {
 #endif /*CONFIG_I2C_MCHP_DMA_DRIVEN*/
 #if defined(CONFIG_I2C_TARGET)
 	bool first_read;
-	uint8_t tgt_rx_data;
+	uint8_t tgt_xfer_data;
 #endif /*CONFIG_I2C_TARGET*/
 };
 
@@ -1026,13 +1026,21 @@ static void i2c_target_on_addr_match(const struct device *dev, uint16_t status)
 	if ((status & SERCOM_I2CS_STATUS_DIR_Msk) != 0) {
 		/* Controller is reading - get first byte */
 		if (cb->read_requested != NULL) {
-			cb->read_requested(data->tgt_cfg, &data->tgt_rx_data);
+			if (cb->read_requested(data->tgt_cfg, &data->tgt_xfer_data) < 0) {
+				/* Error - wait for next START */
+				i2c_target_send_cmd(dev, I2C_TARGET_CMD_WAIT_START);
+				return;
+			}
 		}
 		data->first_read = true;
 	} else {
 		/* Controller is writing */
 		if (cb->write_requested != NULL) {
-			cb->write_requested(data->tgt_cfg);
+			if (cb->write_requested(data->tgt_cfg) < 0) {
+				/* Error - NACK the address */
+				i2c_target_send_cmd(dev, I2C_TARGET_CMD_NACK);
+				return;
+			}
 		}
 	}
 }
@@ -1060,19 +1068,24 @@ static void i2c_target_on_data_ready(const struct device *dev, uint16_t status)
 
 			/* Get next byte */
 			if (cb->read_processed != NULL) {
-				cb->read_processed(data->tgt_cfg, &data->tgt_rx_data);
+				if (cb->read_processed(data->tgt_cfg, &data->tgt_xfer_data) < 0) {
+					i2c_target_send_cmd(dev, I2C_TARGET_CMD_WAIT_START);
+					return;
+				}
 			}
 		}
 
 		/* Load data to send - writing DATA clears DRDY */
-		I2CS(dev).SERCOM_DATA = data->tgt_rx_data;
+		I2CS(dev).SERCOM_DATA = data->tgt_xfer_data;
 	} else {
-
-		/* Controller is writing - reading DATA clears DRDY */
-		data->tgt_rx_data = I2CS(dev).SERCOM_DATA;
+		data->tgt_xfer_data = I2CS(dev).SERCOM_DATA;
 
 		if (cb->write_received != NULL) {
-			cb->write_received(data->tgt_cfg, data->tgt_rx_data);
+			if (cb->write_received(data->tgt_cfg, data->tgt_xfer_data) < 0) {
+				/* Error - NACK next byte as smart mode enabled */
+				i2c_target_send_cmd(dev, I2C_TARGET_CMD_NACK);
+				return;
+			}
 		}
 	}
 }
