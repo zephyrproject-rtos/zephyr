@@ -1652,3 +1652,10 @@ test_i2c_icm40627: icm40627@d6 {
 	accel-fs = <16>;
 	gyro-fs = <2000>;
 };
+
+test_i2c_lps22hx: lps22hx@d7 {
+	compatible = "st,lps22hx";
+	reg = <0xd7>;
+	drdy-gpios = <&test_gpio 0 0>;
+	odr = <LPS22HH_DT_ODR_75HZ>;
+};
