@@ -11,3 +11,10 @@ tests:
   drivers.i2c.build.bus_recovery:
     platform_allow: nucleo_f411re
     extra_args: "CONFIG_I2C=y CONFIG_I2C_BUS_RECOVERY=y"
+  drivers.i2c.build.virtio:
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_riscv64
+    integration_platforms:
+      - qemu_cortex_a53
+    extra_args: DTC_OVERLAY_FILE="virtio.overlay"
