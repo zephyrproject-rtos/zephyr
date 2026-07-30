@@ -249,14 +249,11 @@
 			status = "disabled";
 		};
 
-		ethernet@5000c000 {
+		eth: ethernet@5000c000 {
+			compatible = "infineon,xmc4xxx-ethernet", "snps,dwmac";
 			reg = <0x5000c000 0x3fff>;
-
-			eth: ethernet {
-				compatible = "infineon,xmc4xxx-ethernet", "snps,dwmac";
-				interrupts = <108 1>;
-				status = "disabled";
-			};
+			interrupts = <108 1>;
+			status = "disabled";
 
 			mdio: mdio {
 				compatible = "infineon,xmc4xxx-mdio";

@@ -45,7 +45,6 @@ struct mdio_xmc4xxx_dev_data {
 struct mdio_xmc4xxx_dev_config {
 	ETH_GLOBAL_TypeDef *const regs;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t mdi_port_ctrl;
 };
 
 static int mdio_xmc4xxx_transfer(const struct device *dev, uint8_t phy_addr, uint8_t reg_addr,
@@ -129,7 +128,6 @@ static int mdio_xmc4xxx_initialize(const struct device *dev)
 {
 	const struct mdio_xmc4xxx_dev_config *dev_cfg = dev->config;
 	struct mdio_xmc4xxx_dev_data *dev_data = dev->data;
-	XMC_ETH_MAC_PORT_CTRL_t port_ctrl = {0};
 	int ret;
 
 	k_mutex_init(&dev_data->mutex);
@@ -144,9 +142,6 @@ static int mdio_xmc4xxx_initialize(const struct device *dev)
 		LOG_ERR("Error setting MDIO clock divider");
 		return -EINVAL;
 	}
-
-	port_ctrl.mdio = dev_cfg->mdi_port_ctrl;
-	ETH0_CON->CON = port_ctrl.raw;
 
 	/* this will enable the clock for ETH, which generates to MDIO clk  */
 	XMC_ETH_MAC_Enable(NULL);
@@ -163,7 +158,6 @@ PINCTRL_DT_INST_DEFINE(0);
 static const struct mdio_xmc4xxx_dev_config mdio_xmc4xxx_dev_config_0 = {
 	.regs = (ETH_GLOBAL_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(0)),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-	.mdi_port_ctrl = DT_INST_ENUM_IDX(0, mdi_port_ctrl),
 };
 
 static struct mdio_xmc4xxx_dev_data mdio_xmc4xxx_dev_data_0;
