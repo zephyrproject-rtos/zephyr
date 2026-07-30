@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Dimitri Varpusvuori
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_M68K
+	select QEMU_TARGET
