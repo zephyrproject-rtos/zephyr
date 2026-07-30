@@ -503,7 +503,7 @@ test_spi_ade7978: ade7978@3c {
 
 test_spi_hx711: hx711@3d {
 	compatible = "avia,hx711-spi";
-	reg = <0>;
+	reg = <0x3d>;
 	spi-max-frequency = <1000000>;
 	gain = <64>;
 	avdd = <5000>;

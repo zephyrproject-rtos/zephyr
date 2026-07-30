@@ -34,7 +34,7 @@ test_i3c_lps28dfw: lps28dfw@300000803e0000003 {
 
 test_i3c_ilps22qs: ilps22qs@400000803e0000004 {
 	compatible = "st,ilps22qs";
-	reg = <0x3 0x00000803 0xe0000004>;
+	reg = <0x4 0x00000803 0xe0000004>;
 	assigned-address = <0x4>;
 };
 
