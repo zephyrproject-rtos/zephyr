@@ -54,8 +54,7 @@ static struct pint_irq_slot pint_irq_cfg[DT_INST_PROP(0, num_lines)];
 /* Tracks pint interrupt source selected for each pin */
 static uint8_t pin_pint_id[DT_INST_PROP(0, num_inputs)];
 
-#define PIN_TO_INPUT_MUX_CONNECTION(pin) \
-	((PINTSEL_PMUX_ID << PMUX_SHIFT) + (pin))
+#define PIN_TO_INPUT_MUX_CONNECTION(pin) ((PINTSEL_PMUX_ID << PMUX_SHIFT) + (pin))
 
 /* Attaches pin to PINT IRQ slot using INPUTMUX */
 static void attach_pin_to_pint(uint8_t pin, uint8_t pint_slot)
@@ -71,8 +70,7 @@ static void attach_pin_to_pint(uint8_t pin, uint8_t pint_slot)
 	/* Three parameters here- INPUTMUX base, the ID of the PINT slot,
 	 * and a integer describing the GPIO pin.
 	 */
-	INPUTMUX_AttachSignal(INPUTMUX, pint_slot,
-			      PIN_TO_INPUT_MUX_CONNECTION(pin));
+	INPUTMUX_AttachSignal(INPUTMUX, pint_slot, PIN_TO_INPUT_MUX_CONNECTION(pin));
 
 	/* Disable INPUTMUX after making changes, this gates clock and
 	 * saves power.
@@ -239,7 +237,7 @@ static void nxp_pint_isr(uint8_t *slot)
 	PINT_PinInterruptClrStatus(pint_base, *slot);
 	if (pint_irq_cfg[*slot].used && pint_irq_cfg[*slot].callback) {
 		pint_irq_cfg[*slot].callback(pint_irq_cfg[*slot].pin,
-					pint_irq_cfg[*slot].user_data);
+					     pint_irq_cfg[*slot].user_data);
 	}
 }
 
@@ -279,7 +277,7 @@ static int intc_nxp_pm_action(const struct device *dev, enum pm_device_action ac
 }
 
 /* Defines PINT IRQ handler for a given irq index */
-#define NXP_PINT_IRQ(idx, node_id)						\
+#define NXP_PINT_IRQ(idx, node_id)                                                                 \
 	IF_ENABLED(DT_IRQ_HAS_IDX(node_id, idx),				\
 	(static uint8_t nxp_pint_idx_##idx = idx;				\
 	do {									\
@@ -304,5 +302,5 @@ static int intc_nxp_pint_init(const struct device *dev)
 
 PM_DEVICE_DT_INST_DEFINE(0, intc_nxp_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, intc_nxp_pint_init, PM_DEVICE_DT_INST_GET(0), NULL, NULL,
-		      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+DEVICE_DT_INST_DEFINE(0, intc_nxp_pint_init, PM_DEVICE_DT_INST_GET(0), NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_INTC_INIT_PRIORITY, NULL);
