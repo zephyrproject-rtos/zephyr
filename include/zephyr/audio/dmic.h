@@ -40,6 +40,8 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 
+#include <zephyr/audio/audio_caps.h> /* Include common audio caps */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -242,6 +244,12 @@ typedef int (*dmic_read_t)(const struct device *dev, uint8_t stream, void **buff
 			   size_t *size, int32_t timeout);
 
 /**
+ * @brief Callback API to get DMIC capabilities.
+ * See dmic_get_caps() for argument descriptions.
+ */
+typedef int (*dmic_get_caps_t)(const struct device *dev, struct audio_caps *caps);
+
+/**
  * Legacy struct tag alias for @ref dmic_driver_api for DMIC drivers that have not been updated to
  * to use dmic_driver_api for their backend struct.
  *
@@ -265,6 +273,10 @@ __subsystem struct dmic_driver_api {
 	 * @driver_ops_mandatory @copybrief dmic_read
 	 */
 	dmic_read_t read;
+	/**
+	 * @driver_ops_optional @copybrief dmic_get_caps
+	 */
+	dmic_get_caps_t get_caps;
 };
 
 /**
@@ -383,6 +395,31 @@ static inline int dmic_read(const struct device *dev, uint8_t stream,
 			    size_t *size, int32_t timeout)
 {
 	return DEVICE_API_GET(dmic, dev)->read(dev, stream, buffer, size, timeout);
+}
+
+/**
+ * @brief Get dmic capabilities
+ *
+ * @param dev Pointer to device structure
+ * @param caps Pointer to capabilities structure to populate
+ *
+ * @retval 0 on success
+ * @retval -ENOSYS if the get_caps is not implemented by the driver
+ * @retval -EINVAL if invalid parameters are provided (e.g., caps is NULL)
+ */
+static inline int dmic_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	const struct dmic_driver_api *api = DEVICE_API_GET(dmic, dev);
+
+	if (api->get_caps == NULL) {
+		return -ENOSYS;
+	}
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	return api->get_caps(dev, caps);
 }
 
 #ifdef __cplusplus

@@ -76,6 +76,27 @@ static int dummy_codec_register_done_callback(const struct device *dev,
 	return 0;
 }
 
+static int dummy_codec_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	ARG_UNUSED(dev);
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	memset(caps, 0, sizeof(*caps));
+	caps->min_total_channels = 2U;
+	caps->max_total_channels = 2U;
+	caps->supported_sample_rates = AUDIO_SAMPLE_RATE_48000;
+	caps->supported_bit_widths = AUDIO_BIT_WIDTH_16;
+	caps->min_num_buffers = 2U;
+	caps->min_frame_interval = 1U;
+	caps->max_frame_interval = UINT32_MAX;
+	caps->interleaved = true;
+
+	return 0;
+}
+
 static int dummy_codec_start(const struct device *dev, audio_dai_dir_t dir)
 {
 	struct dummy_codec_data *data = dev->data;
@@ -117,6 +138,16 @@ static int dummy_codec_stop(const struct device *dev, audio_dai_dir_t dir)
 	return 0;
 }
 
+static void dummy_codec_start_output(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static void dummy_codec_stop_output(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
 static int dummy_codec_write(const struct device *dev, uint8_t *data, size_t data_size)
 {
 	struct dummy_codec_data *dummy_data = dev->data;
@@ -142,11 +173,14 @@ static int dummy_codec_init(const struct device *dev)
 
 static DEVICE_API(audio_codec, dummy_codec_api) = {
 	.configure = dummy_codec_configure,
+	.start_output = dummy_codec_start_output,
+	.stop_output = dummy_codec_stop_output,
 	.set_property = dummy_codec_set_property,
 	.start = dummy_codec_start,
 	.stop = dummy_codec_stop,
 	.write = dummy_codec_write,
 	.register_done_callback = dummy_codec_register_done_callback,
+	.get_caps = dummy_codec_get_caps,
 };
 
 /* clang-format off */
