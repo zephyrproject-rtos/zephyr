@@ -1507,6 +1507,55 @@ int bt_id_delete(uint8_t id)
 }
 
 #if defined(CONFIG_BT_PRIVACY)
+static void bond_found_cb(const struct bt_bond_info *info, void *user_data)
+{
+	bool *found = user_data;
+
+	*found = true;
+}
+
+int bt_id_reset_irk(uint8_t id)
+{
+	bool bond_found = false;
+	int err;
+
+	if (id >= bt_dev.id_count) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
+	/* Reject if existing bonds are present; caller must bt_unpair() first */
+	bt_foreach_bond(id, bond_found_cb, &bond_found);
+	if (bond_found) {
+		return -ENOTEMPTY;
+	}
+
+	err = bt_rand(bt_dev.irk[id], sizeof(bt_dev.irk[id]));
+	if (err != 0) {
+		return err;
+	}
+
+	/* Invalidate the current RPA so it is regenerated from the new IRK */
+	le_rpa_invalidate();
+
+#if defined(CONFIG_BT_RPA_SHARING)
+	/* Clear the cached per-identity RPA so it cannot be reused with the old IRK */
+	(void)memset(&bt_dev.rpa[id], 0, sizeof(bt_dev.rpa[id]));
+#endif
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		(void)bt_settings_store_irk();
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_BT_PRIVACY */
+
+#if defined(CONFIG_BT_PRIVACY)
 static void bt_read_identity_root(uint8_t *ir)
 {
 	/* Invalid IR */
