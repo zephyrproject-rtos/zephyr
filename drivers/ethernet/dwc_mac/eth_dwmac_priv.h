@@ -1280,11 +1280,30 @@ extern const struct ethernet_api dwmac_api;
 
 #elif defined(CONFIG_ETH_DWC_ETHER_1000_CORE)
 
-#ifdef CONFIG_SOC_SERIES_ESP32
-#define DWMAC_MAC_OFFSET		0x1000
-#define DWMAC_DMA_OFFSET		0x0000
-#else
+/*
+ * In some SoCs, the order of the MAC and DMA register blocks is different from the default order.
+ * The following offsets are used to adjust the register addresses accordingly. We assume here that
+ * the order is the same for all instances of the DWMAC driver, so we only check the first instance.
+ */
+#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), base)
+#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), mac)
+#define DWMAC_MAC_OFFSET                                                                           \
+	(DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), mac) -                                        \
+	 DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), base))
+#endif
+
+#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), dma)
+#define DWMAC_DMA_OFFSET                                                                           \
+	(DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), dma) -                                        \
+	 DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), base))
+#endif
+#endif /* DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), base) */
+
+#ifndef DWMAC_MAC_OFFSET
 #define DWMAC_MAC_OFFSET		0x0000
+#endif
+
+#ifndef DWMAC_DMA_OFFSET
 #define DWMAC_DMA_OFFSET		0x1000
 #endif
 

@@ -579,7 +579,8 @@
 
 		eth: eth@3ff69000 {
 			compatible = "espressif,esp32-eth", "snps,dwmac";
-			reg = <0x3ff69000 0x2000>;
+			reg = <0x3ff69000 0x2000>, <0x3ff6a000 0x1000>, <0x3ff69000 0x800>;
+			reg-names = "base", "mac", "dma";
 			interrupts = <ETH_MAC_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_EMAC_MODULE>;
