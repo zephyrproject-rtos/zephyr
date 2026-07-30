@@ -415,6 +415,13 @@ Haptics
   and :dtcompatible:`cirrus,cs40l53`. Applications using the old compatible must update their
   devicetree nodes accordingly.
 
+HWSPINLOCK
+==========
+
+* The ``num-locks`` DeviceTree property is now a standard, required property of the hwspinlock
+  controller binding. Every hwspinlock controller node must set it, and out-of-tree bindings
+  must drop their own ``num-locks`` ``type``/``required`` declarations.
+
 I2C
 ===
 
