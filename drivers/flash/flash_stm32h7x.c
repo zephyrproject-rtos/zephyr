@@ -26,6 +26,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
+BUILD_ASSERT(DT_NODE_EXISTS(DT_INST(0, st_stm32_nv_flash)), "st,stm32-nv-flash node missing");
+
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
