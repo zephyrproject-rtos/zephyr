@@ -19,10 +19,32 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/test_devices.h>
 #include <zephyr/ztest.h>
 
 #define XFERS 4
-#define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
+
+#define DMA_TEST_DEVS_PROP dma_test_devs
+
+#if TEST_DEVS_EXIST(DMA_TEST_DEVS_PROP)
+/* Boards list the DMA controllers to test in a zephyr,user dma-test-devs
+ * phandle list.
+ */
+#define DMA_TEST_DEV_COUNT       TEST_DEVS_LEN(DMA_TEST_DEVS_PROP)
+#define DMA_TEST_DEV_GET(idx, _) TEST_DEVS_GET_BY_IDX(DMA_TEST_DEVS_PROP, idx)
+#define DMA_TEST_DEV0_NODE       TEST_DEVS_NODE_BY_IDX(DMA_TEST_DEVS_PROP, 0)
+#else
+/* Legacy single-controller boards use a tst_dma0 devicetree label. */
+#define DMA_TEST_DEV_COUNT       1
+#define DMA_TEST_DEV_GET(idx, _) DEVICE_DT_GET(DT_NODELABEL(tst_dma0))
+#define DMA_TEST_DEV0_NODE       DT_NODELABEL(tst_dma0)
+#endif
+
+#define DMA_DATA_ALIGNMENT DT_PROP_OR(DMA_TEST_DEV0_NODE, dma_buf_addr_alignment, 32)
+
+static const struct device *const dma_test_devs[] = {
+	LISTIFY(DMA_TEST_DEV_COUNT, DMA_TEST_DEV_GET, (,))
+};
 
 #if CONFIG_NOCACHE_MEMORY
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_SG_XFER_SIZE] __used
@@ -51,9 +73,8 @@ static void dma_sg_callback(const struct device *dma_dev, void *user_data,
 	}
 }
 
-static int test_sg(void)
+static int test_sg(const struct device *dma)
 {
-	const struct device *dma;
 	static int chan_id;
 
 	TC_PRINT("DMA memory to memory transfer started\n");
@@ -67,7 +88,6 @@ static int test_sg(void)
 
 	memset(rx_data, 0, sizeof(rx_data));
 
-	dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
@@ -154,8 +174,14 @@ static int test_sg(void)
 	return TC_PASS;
 }
 
-/* export test cases */
-ZTEST(dma_m2m_sg, test_dma_m2m_sg)
-{
-	zassert_true((test_sg() == TC_PASS));
-}
+/* Generate one test case per DMA controller under test so a failure on one
+ * controller does not prevent the remaining controllers from running.
+ */
+#define DEFINE_DMA_M2M_SG_TESTS(idx, _)                                                            \
+	ZTEST(dma_m2m_sg, test_dma##idx##_m2m_sg)                                                  \
+	{                                                                                          \
+		zassert_true(test_sg(dma_test_devs[idx]) == TC_PASS,                               \
+			     "%s failed scatter-gather transfer", dma_test_devs[idx]->name);       \
+	}
+
+LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_SG_TESTS, ())
