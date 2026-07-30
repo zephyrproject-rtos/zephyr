@@ -445,7 +445,7 @@ ZTEST(flash_driver, test_flash_page_layout)
 	/* Get page info with flash_get_page_info_by_offs() */
 	rc = flash_get_page_info_by_offs(flash_dev, TEST_AREA_OFFSET, &page_info_off);
 	zassert_true(rc == 0, "flash_get_page_info_by_offs returned %d", rc);
-	TC_PRINT("start_offset=0x%lx\tsize=%d\tindex=%d\n", page_info_off.start_offset,
+	TC_PRINT("start_offset=0x%lx\tsize=%d\tindex=%d\n", (long)page_info_off.start_offset,
 		 (int)page_info_off.size, page_info_off.index);
 	zassert_true(page_info_off.start_offset >= 0, "start_offset is %d", rc);
 	zassert_true(page_info_off.size > 0, "size is %d", rc);
@@ -497,8 +497,8 @@ static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset
 	actual_result = flash_copy(src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size);
 	zassert_equal(actual_result, expected_result,
 		      "flash_copy(%p, %lx, %p, %lx, %zu, %p, %zu) failed: expected: %d actual: %d",
-		      src_dev, src_offset, dst_dev, dst_offset, (size_t)size, buf, buf_size,
-		      expected_result, actual_result);
+		      src_dev, (long)src_offset, dst_dev, (long)dst_offset, (size_t)size,
+		      buf, buf_size, expected_result, actual_result);
 
 	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
 		/* verify a successful copy */
