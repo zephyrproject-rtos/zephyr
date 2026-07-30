@@ -15,6 +15,7 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - pwm
   - uart
 testing:
   binaries:
