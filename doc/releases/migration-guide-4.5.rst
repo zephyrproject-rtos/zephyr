@@ -713,6 +713,14 @@ Syscon
 Timer
 =====
 
+* The ``bool idle`` argument of :c:func:`sys_clock_set_timeout` is deprecated; the
+  low-power idle hint moved to the new weak :c:func:`sys_clock_idle_enter` hook. The
+  kernel now always passes ``false``, except that the default
+  :c:func:`sys_clock_idle_enter` forwards the idle entry as ``true``, so an out-of-tree
+  timer driver keying on the argument keeps working unchanged. Such drivers should move
+  their ``idle``-specific handling to :c:func:`sys_clock_idle_enter`; the argument will
+  be removed in a future release (:github:`114908`).
+
 * :c:func:`sys_clock_set_timeout`, :c:func:`sys_clock_announce` and
   :c:func:`sys_clock_announce_locked` now take their tick count as an unsigned
   ``uint32_t`` rather than a signed ``int32_t``. Out-of-tree system timer drivers must
