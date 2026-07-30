@@ -323,6 +323,10 @@ New Drivers
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
     (:dtcompatible:`diodes,pi4ioe5v6408`).
 
+* I2C
+
+  * VIRTIO I2C adapter device (:dtcompatible:`virtio,i2c`).
+
 * Input
 
   * VIRTIO input device (:dtcompatible:`virtio,input`).
