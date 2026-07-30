@@ -103,6 +103,11 @@ properties:
     description: |
       DSI HOST PHY timing parameters.
 
+  data-lanes:
+    type: int
+    description: |
+      Number of MIPI DSI data lanes connected to the host.
+
   test-pattern:
     type: int
     enum:

@@ -501,8 +501,9 @@ static int mipi_dsi_stm32_init(const struct device *dev)
 		};))										\
 	/* Only child data-lanes property at index 0 is taken into account */			\
 	static const uint32_t data_lanes_##inst[] = {						\
-		DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(inst, DT_PROP_BY_IDX, (,),		\
-							    data_lanes, 0)			\
+		DT_INST_PROP_OR(inst, data_lanes,						\
+				DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(			\
+					inst, DT_PROP_BY_IDX, (,), data_lanes, 0))		\
 	};											\
 	static const struct mipi_dsi_stm32_config stm32_dsi_config_##inst = {			\
 		.rcc = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),					\
