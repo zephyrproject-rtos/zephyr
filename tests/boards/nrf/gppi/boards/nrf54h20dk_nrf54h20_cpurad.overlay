@@ -15,3 +15,7 @@ dut_timer1: &timer021 {
 dut_timer2: &timer022 {
 	status = "reserved";
 };
+
+dut_egu: &egu020 {
+	status = "reserved";
+};
