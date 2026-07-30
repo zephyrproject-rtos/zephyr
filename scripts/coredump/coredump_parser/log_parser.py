@@ -26,6 +26,14 @@ COREDUMP_MEM_HDR_VER = 1
 LOG_MEM_HDR_STRUCT = "<cH"
 LOG_MEM_HDR_SIZE = struct.calcsize(LOG_MEM_HDR_STRUCT)
 
+# Live per-CPU register snapshot (CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS).
+# One of these precedes each frozen CPU's arch-specific register block
+# (same payload layout as the COREDUMP_ARCH_HDR_ID block), tagged with
+# which CPU and which thread it came from.
+COREDUMP_CPU_SNAPSHOT_HDR_ID = b'F'
+LOG_CPU_SNAPSHOT_HDR_STRUCT = "<cHHI"
+LOG_CPU_SNAPSHOT_HDR_SIZE = struct.calcsize(LOG_CPU_SNAPSHOT_HDR_STRUCT)
+
 
 logger = logging.getLogger("parser")
 
@@ -62,6 +70,7 @@ class CoredumpLogFile:
         self.arch_data = list()
         self.memory_regions = list()
         self.threads_metadata = {"hdr_ver": None, "data": None}
+        self.cpu_snapshots = list()
 
     def open(self):
         self.fd = open(self.logfile, "rb")
@@ -77,6 +86,9 @@ class CoredumpLogFile:
 
     def get_threads_metadata(self):
         return self.threads_metadata
+
+    def get_cpu_snapshots(self):
+        return self.cpu_snapshots
 
     def parse_arch_section(self):
         hdr = self.fd.read(LOG_ARCH_HDR_SIZE)
@@ -95,6 +107,35 @@ class CoredumpLogFile:
         data = self.fd.read(num_bytes)
 
         self.threads_metadata = {"hdr_ver": hdr_ver, "data": data}
+
+        return True
+
+    def parse_cpu_snapshot_section(self):
+        hdr = self.fd.read(LOG_CPU_SNAPSHOT_HDR_SIZE)
+        _, hdr_ver, num_bytes, cpu_id = struct.unpack(LOG_CPU_SNAPSHOT_HDR_STRUCT, hdr)
+
+        ptr_fmt = None
+        if self.log_hdr["ptr_size"] == 64:
+            ptr_fmt = "Q"
+        elif self.log_hdr["ptr_size"] == 32:
+            ptr_fmt = "I"
+        else:
+            return False
+
+        ptr_data = self.fd.read(struct.calcsize(ptr_fmt))
+        (thread_ptr,) = struct.unpack(ptr_fmt, ptr_data)
+
+        data = self.fd.read(num_bytes)
+
+        snapshot = {
+            "hdr_ver": hdr_ver,
+            "cpu_id": cpu_id,
+            "thread_ptr": thread_ptr,
+            "data": data,
+        }
+        self.cpu_snapshots.append(snapshot)
+
+        logger.info("CPU snapshot: cpu=%d thread=0x%x (%d bytes)", cpu_id, thread_ptr, num_bytes)
 
         return True
 
@@ -178,6 +219,10 @@ class CoredumpLogFile:
             elif section_id == COREDUMP_MEM_HDR_ID:
                 if not self.parse_memory_section():
                     logger.error("Cannot parse memory section")
+                    return False
+            elif section_id == COREDUMP_CPU_SNAPSHOT_HDR_ID:
+                if not self.parse_cpu_snapshot_section():
+                    logger.error("Cannot parse CPU snapshot section")
                     return False
             else:
                 # Unknown section in log file

@@ -19,6 +19,7 @@ config CPU_CORTEX_A
 	# callee_saved.sp_elx, so THREAD_STACK_TOP cannot rely on the saved SP.
 	# Dump the full stack allocation instead (matches RISC-V and Xtensa).
 	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
+	select ARCH_SUPPORTS_COREDUMP_SMP_FREEZE if SMP
 	imply FPU
 	imply FPU_SHARING
 	help

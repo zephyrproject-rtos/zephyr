@@ -158,6 +158,9 @@ struct coredump_cmd_copy_arg {
 #define	COREDUMP_MEM_HDR_ID		'M'
 #define COREDUMP_MEM_HDR_VER		1
 
+#define COREDUMP_CPU_SNAPSHOT_HDR_ID	'F'
+#define COREDUMP_CPU_SNAPSHOT_HDR_VER	1
+
 /* Target code */
 enum coredump_tgt_code {
 	COREDUMP_TGT_UNKNOWN = 0,
@@ -226,6 +229,32 @@ struct coredump_mem_hdr_t {
 
 	/* Address of end of memory region */
 	uintptr_t	end;
+} __packed;
+
+/*
+ * Live per-CPU register snapshot header (CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS).
+ *
+ * One of these precedes each frozen CPU's register block (same arch-specific
+ * payload layout as the COREDUMP_ARCH_HDR_ID block for the panicking thread,
+ * e.g. arm64_arch_block on ARM64), letting tooling show a correct backtrace
+ * for a thread that was actively running on another CPU at panic time,
+ * instead of falling back to its stale last-swapped-out saved context.
+ */
+struct coredump_cpu_snapshot_hdr_t {
+	/* COREDUMP_CPU_SNAPSHOT_HDR_ID */
+	char		id;
+
+	/* Header version */
+	uint16_t	hdr_version;
+
+	/* Number of bytes in the arch-specific payload that follows */
+	uint16_t	num_bytes;
+
+	/* CPU index (0..CONFIG_MP_MAX_NUM_CPUS-1) this snapshot came from */
+	uint32_t	cpu_id;
+
+	/* The k_thread that was .current on that CPU when it was frozen */
+	uintptr_t	thread_ptr;
 } __packed;
 
 typedef void (*coredump_backend_start_t)(void);
