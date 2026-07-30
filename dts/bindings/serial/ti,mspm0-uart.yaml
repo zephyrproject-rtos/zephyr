@@ -31,3 +31,25 @@ properties:
       - 8
     description: |
       Clock divider selection value.
+
+  rx-fifo-threshold:
+    type: int
+    default: 2
+    enum: [0, 1, 2, 3, 4]
+    description: |
+     0 - MSPM0_UART_RX_FIFO_LEVEL_ONE_ENTRY
+     1 - MSPM0_UART_RX_FIFO_LEVEL_1_4_FULL
+     2 - MSPM0_UART_RX_FIFO_LEVEL_1_2_FULL
+     3 - MSPM0_UART_RX_FIFO_LEVEL_3_4_FULL
+     4 - MSPM0_UART_RX_FIFO_LEVEL_FULL
+
+  tx-fifo-threshold:
+    type: int
+    default: 4
+    enum: [0, 1, 2, 3, 4]
+    description: |
+      0 - MSPM0_UART_TX_FIFO_LEVEL_ONE_ENTRY
+      1 - MSPM0_UART_TX_FIFO_LEVEL_1_4_EMPTY
+      2 - MSPM0_UART_TX_FIFO_LEVEL_1_2_EMPTY
+      3 - MSPM0_UART_TX_FIFO_LEVEL_3_4_EMPTY
+      4 - MSPM0_UART_TX_FIFO_LEVEL_EMPTY
