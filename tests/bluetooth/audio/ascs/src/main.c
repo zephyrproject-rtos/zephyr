@@ -235,8 +235,8 @@ ZTEST_F(ascs_test_suite, test_abort_client_operation_if_callback_not_registered)
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 
 	/* Expected ASE Control Point notification with Unspecified Error was sent */
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp,
-					     EMPTY, TEST_ASE_CP_CHRC_VALUE_SIZE(1));
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, NULL,
+					     TEST_ASE_CP_CHRC_VALUE_SIZE(1));
 
 	notify_params = mock_bt_gatt_notify_cb_fake.arg1_val;
 	hdr = (void *)notify_params->data;

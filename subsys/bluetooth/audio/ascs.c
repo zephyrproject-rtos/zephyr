@@ -89,13 +89,14 @@ struct bt_ascs_ase {
 	struct bt_bap_ep ep;
 	const struct bt_gatt_attr *attr;
 	struct k_work_delayable disconnect_work;
-	struct k_work_delayable state_transition_work;
 	enum bt_bap_ep_state state_pending;
 	bool unexpected_iso_link_loss;
+	bool has_pending_state;
 };
 
 struct ascs_client {
 	struct bt_conn *conn;
+	struct k_work_delayable notify_work;
 
 	uint8_t _cp_rsp_data[CP_RSP_BUF_SIZE];
 	struct net_buf_simple cp_rsp_buf;
@@ -143,7 +144,7 @@ static const struct bt_ascs_cb *ascs_cb;
 static K_SEM_DEFINE(ase_buf_sem, 1, 1);
 NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, ASE_BUF_SIZE);
 
-static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len);
+static int control_point_notify(struct ascs_client *client);
 static int ascs_ep_get_status(struct bt_bap_ep *ep, struct net_buf_simple *buf);
 
 static void ascs_app_rsp_warn_valid(const struct bt_bap_ascs_rsp *rsp)
@@ -208,9 +209,10 @@ static void ase_free(struct bt_ascs_ase *ase)
 	}
 
 	bt_conn_drop(&ase->conn);
+	ase->state_pending = BT_BAP_EP_STATE_IDLE;
+	ase->has_pending_state = false;
 
 	(void)k_work_cancel_delayable(&ase->disconnect_work);
-	(void)k_work_cancel_delayable(&ase->state_transition_work);
 }
 
 static int ase_state_notify(struct bt_ascs_ase *ase)
@@ -548,6 +550,9 @@ static void execute_post_state_transition(struct bt_ascs_ase *ase, enum bt_bap_e
 {
 	const enum bt_bap_ep_state new_state = ase->ep.state;
 
+	LOG_DBG("ase %p ep %p id 0x%02x %s -> %s", ase, &ase->ep, ASE_ID(ase),
+		bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(new_state));
+
 	if (old_state == new_state) {
 		switch (new_state) {
 		case BT_BAP_EP_STATE_ENABLING:
@@ -599,13 +604,13 @@ static void execute_post_state_transition(struct bt_ascs_ase *ase, enum bt_bap_e
 	}
 }
 
-static void state_transition_work_handler(struct k_work *work)
+static int execute_state_transition(struct bt_ascs_ase *ase)
 {
-	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
-	struct bt_ascs_ase *ase = CONTAINER_OF(d_work, struct bt_ascs_ase, state_transition_work);
 	const enum bt_bap_ep_state new_state = ase->state_pending;
 	const enum bt_bap_ep_state old_state = ase->ep.state;
 	int err;
+
+	__ASSERT_NO_MSG(ase->has_pending_state);
 
 	ase->ep.state = new_state;
 
@@ -613,41 +618,74 @@ static void state_transition_work_handler(struct k_work *work)
 	if (ase->conn != NULL) {
 		err = ase_state_notify(ase);
 		if (err == -ENOMEM) {
-			struct bt_conn_info info;
-			uint32_t retry_delay_us;
-
 			/* Revert back to old state */
 			ase->ep.state = old_state;
-
-			err = bt_conn_get_info(ase->conn, &info);
-			__ASSERT_NO_MSG(err == 0);
-
-			retry_delay_us = info.le.interval_us;
-
-			/* Reschedule the state transition */
-			err = k_work_reschedule(d_work, K_USEC(retry_delay_us));
-			if (err >= 0) {
-				LOG_DBG("Out of buffers for ase state notification. "
-					"Will retry in %dus",
-					retry_delay_us);
-				return;
-			}
+			return err;
 		}
 
 		if (err < 0) {
-			LOG_ERR("Failed to notify ASE state (err %d)", err);
+			LOG_ERR("Failed to notify ASE %p state (err %d)", ase, err);
+			return err;
 		}
 	}
 
-	LOG_DBG("ase %p ep %p id 0x%02x %s -> %s", ase, &ase->ep, ASE_ID(ase),
-		bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(new_state));
+	ase->has_pending_state = false;
 
 	execute_post_state_transition(ase, old_state);
+
+	return 0;
+}
+
+static bool cp_rsp_pending(const struct ascs_client *client)
+{
+	return client->cp_rsp_buf.len > 0U;
+}
+
+static void notify_work_handler(struct k_work *work)
+{
+	struct ascs_client *client =
+		CONTAINER_OF(k_work_delayable_from_work(work), struct ascs_client, notify_work);
+	int err;
+
+	if (cp_rsp_pending(client)) {
+		err = control_point_notify(client);
+		if (err != 0) {
+			goto exit;
+		}
+	}
+
+	ARRAY_FOR_EACH_PTR(ascs.ase_pool, ase) {
+		if (ase->conn == client->conn && ase->has_pending_state) {
+			err = execute_state_transition(ase);
+			if (err != 0) {
+				goto exit;
+			}
+		}
+	}
+
+exit:
+	if (err == -ENOMEM) {
+		struct bt_conn_info info;
+		uint32_t retry_delay_us;
+
+		err = bt_conn_get_info(client->conn, &info);
+		__ASSERT_NO_MSG(err == 0);
+
+		retry_delay_us = info.le.interval_us;
+
+		/* Reschedule the state transition */
+		err = k_work_reschedule(&client->notify_work, K_USEC(retry_delay_us));
+		__ASSERT(err >= 0, "Failed to reschedule notify_work for client %p (conn %p): %d",
+			 client, client->conn, err);
+
+		LOG_DBG("Out of buffers for notification. Will retry in %dus", retry_delay_us);
+	}
 }
 
 int ascs_ep_set_state(struct bt_bap_ep *ep, enum bt_bap_ep_state state)
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
+	struct ascs_client *client = client_from_conn(ase->conn);
 	int err;
 
 	if (!bt_bap_stream_valid_state_transition(ep, state)) {
@@ -655,8 +693,9 @@ int ascs_ep_set_state(struct bt_bap_ep *ep, enum bt_bap_ep_state state)
 	}
 
 	ase->state_pending = state;
+	ase->has_pending_state = true;
 
-	err = k_work_schedule(&ase->state_transition_work, K_NO_WAIT);
+	err = k_work_schedule(&client->notify_work, K_NO_WAIT);
 	if (err < 0) {
 		LOG_ERR("Failed to schedule state transition work err %d", err);
 		return err;
@@ -1156,7 +1195,7 @@ static int ase_release(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 		return -EBADMSG;
 	}
 
-	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
+	if (ase->has_pending_state) {
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
 		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
 		return -EBUSY;
@@ -1229,7 +1268,7 @@ static int ase_disable(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 		return -EBADMSG;
 	}
 
-	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
+	if (ase->has_pending_state) {
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
 		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
 		return -EBUSY;
@@ -1284,6 +1323,7 @@ int bt_ascs_disable_ase(struct bt_bap_ep *ep)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct ascs_client *client;
+	struct k_work_sync sync;
 
 	if (bt_conn_get_security(conn) < BT_SECURITY_L2 ||
 	    !bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
@@ -1298,6 +1338,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		}
 
 		if (ase->ep.state != BT_BAP_EP_STATE_IDLE) {
+			const enum bt_bap_ep_state old_state = ase->ep.state;
+
 			/* We must set the state to idle when the ACL is disconnected immediately,
 			 * as when the ACL disconnect callbacks have been called, the application
 			 * should expect there to be only a single reference to the bt_conn pointer
@@ -1307,8 +1349,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 			 * calling stream->stopped when leaving the streaming state.
 			 */
 			ase->ep.reason = reason;
-			ase->state_pending = BT_BAP_EP_STATE_IDLE;
-			state_transition_work_handler(&ase->state_transition_work.work);
+			ase->ep.state = BT_BAP_EP_STATE_IDLE;
+			execute_post_state_transition(ase, old_state);
+
 			/* At this point, `ase` object have been free'd */
 		}
 	}
@@ -1316,6 +1359,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	client = client_from_conn(conn);
 	__ASSERT(client != NULL, "Failed to remove client address %s for conn %p",
 		 bt_conn_dst_str(conn), conn);
+
+	(void)k_work_cancel_delayable_sync(&client->notify_work, &sync);
+	net_buf_simple_reset(&client->cp_rsp_buf);
 	bt_conn_drop(&client->conn);
 }
 
@@ -1442,7 +1488,6 @@ static void ase_init(struct bt_ascs_ase *ase, struct bt_conn *conn, uint8_t id)
 	__ASSERT(ase->attr, "ASE characteristic not found\n");
 
 	k_work_init_delayable(&ase->disconnect_work, ascs_disconnect_stream_work_handler);
-	k_work_init_delayable(&ase->state_transition_work, state_transition_work_handler);
 }
 
 static struct bt_ascs_ase *ase_new(struct bt_conn *conn, uint8_t id)
@@ -1625,8 +1670,8 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 		return -EINVAL;
 	}
 
-	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
-		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+	if (ase->has_pending_state) {
+		ascs_cp_rsp_add(ase->conn, ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				BT_BAP_ASCS_REASON_NONE);
 		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
 		return -EBUSY;
@@ -2124,7 +2169,7 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 		return;
 	}
 
-	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
+	if (ase->has_pending_state) {
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
 		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
 		return;
@@ -2481,8 +2526,8 @@ static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 		return;
 	}
 
-	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
-		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+	if (ase->has_pending_state) {
+		ascs_cp_rsp_add(ase->conn, ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				BT_BAP_ASCS_REASON_NONE);
 		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
 		return;
@@ -2545,8 +2590,8 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 		return err;
 	}
 
-	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
-		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+	if (ase->has_pending_state) {
+		ascs_cp_rsp_add(ase->conn, ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				BT_BAP_ASCS_REASON_NONE);
 		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
 		return -EBUSY;
@@ -2694,8 +2739,8 @@ static void ase_start(struct bt_ascs_ase *ase)
 		return;
 	}
 
-	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
-		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+	if (ase->has_pending_state) {
+		ascs_cp_rsp_add(ase->conn, ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				BT_BAP_ASCS_REASON_NONE);
 		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
 		return;
@@ -2912,8 +2957,8 @@ static void ase_stop(struct bt_ascs_ase *ase)
 		return;
 	}
 
-	if (k_work_delayable_is_pending(&ase->state_transition_work)) {
-		ascs_cp_rsp_add(ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
+	if (ase->has_pending_state) {
+		ascs_cp_rsp_add(ase->conn, ASE_ID(ase), BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				BT_BAP_ASCS_REASON_NONE);
 		LOG_DBG("Rejecting due to ASE %p having a pending state change", ase);
 		return;
@@ -3202,14 +3247,28 @@ static ssize_t ascs_release(struct bt_conn *conn, struct net_buf_simple *buf)
 	return buf->size;
 }
 
+static void control_point_respond(struct ascs_client *client)
+{
+	__maybe_unused int err;
+
+	err = k_work_schedule(&client->notify_work, K_NO_WAIT);
+	__ASSERT(err >= 0, "Failed to schedule notify_work: %d", err);
+}
+
 static ssize_t ascs_cp_write(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr, const void *data,
 			     uint16_t len, uint16_t offset, uint8_t flags)
 {
+	struct ascs_client *client = client_from_conn(conn);
 	const struct bt_ascs_ase_cp *req;
-	struct net_buf_simple *rsp_buf;
 	struct net_buf_simple buf;
 	ssize_t ret;
+
+	if (client == NULL) {
+		LOG_ERR("Failed to get client for conn %p with addr %s", conn,
+			bt_conn_dst_str(conn));
+		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	}
 
 	if (flags & BT_GATT_WRITE_FLAG_PREPARE) {
 		/* Return 0 to allow long writes */
@@ -3231,14 +3290,12 @@ static ssize_t ascs_cp_write(struct bt_conn *conn,
 	LOG_DBG("conn %p attr %p buf %p len %u op %s (0x%02x)",
 		(void *)conn, attr, data, len, bt_ascs_op_str(req->op), req->op);
 
-	rsp_buf = ascs_cp_rsp_get(conn);
-	if (rsp_buf == NULL) {
-		LOG_WRN("Failed to get cp_rsp_buf for conn %p with addr %s", conn,
-			bt_conn_dst_str(conn));
-		return BT_GATT_ERR(BT_ATT_ERR_UNLIKELY);
+	if (cp_rsp_pending(client)) {
+		LOG_WRN("Already processing control point operation from conn %p", conn);
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
 	}
 
-	ascs_cp_rsp_init(rsp_buf, req->op);
+	ascs_cp_rsp_init(&client->cp_rsp_buf, req->op);
 
 	switch (req->op) {
 	case BT_ASCS_CONFIG_OP:
@@ -3278,7 +3335,7 @@ static ssize_t ascs_cp_write(struct bt_conn *conn,
 	}
 
 respond:
-	control_point_notify(conn, rsp_buf->data, rsp_buf->len);
+	control_point_respond(client);
 
 	return len;
 }
@@ -3421,6 +3478,8 @@ int bt_ascs_register(const struct bt_ascs_register_param *param)
 		net_buf_simple_init_with_data(&client->cp_rsp_buf, client->_cp_rsp_data,
 					      sizeof(client->_cp_rsp_data));
 		net_buf_simple_reset(&client->cp_rsp_buf);
+
+		k_work_init_delayable(&client->notify_work, notify_work_handler);
 	}
 
 	err = bt_gatt_service_register(&ascs_svc);
@@ -3445,9 +3504,17 @@ int bt_ascs_register(const struct bt_ascs_register_param *param)
 	return 0;
 }
 
-static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len)
+static int control_point_notify(struct ascs_client *client)
 {
-	return bt_gatt_notify_uuid(conn, BT_UUID_ASCS_ASE_CP, ascs_svc.attrs, data, len);
+	int err;
+
+	err = bt_gatt_notify_uuid(client->conn, BT_UUID_ASCS_ASE_CP, ascs_svc.attrs,
+				  client->cp_rsp_buf.data, client->cp_rsp_buf.len);
+	if (err == 0) {
+		net_buf_simple_reset(&client->cp_rsp_buf);
+	}
+
+	return err;
 }
 
 int bt_ascs_unregister(void)
@@ -3469,19 +3536,26 @@ int bt_ascs_unregister(void)
 		return err;
 	}
 
+	ARRAY_FOR_EACH_PTR(ascs.clients, client) {
+		struct k_work_sync sync;
+
+		(void)k_work_cancel_delayable_sync(&client->notify_work, &sync);
+
+		__ASSERT(!k_work_delayable_is_pending(&client->notify_work),
+			 "client %p still has pending notify_work", client);
+	}
+
 	ARRAY_FOR_EACH_PTR(ascs.ase_pool, ase) {
 		if (ase->conn != NULL) { /* Codec configured or "above" state */
 			enum bt_bap_ep_state old_state;
 			struct k_work_sync sync;
 
-			(void)k_work_cancel_delayable_sync(&ase->state_transition_work, &sync);
 			(void)k_work_cancel_delayable_sync(&ase->disconnect_work, &sync);
 
 			/* Force the releasing state change, and cancel any pending state changes */
 			old_state = ase->ep.state;
 			ase->ep.state = BT_BAP_EP_STATE_RELEASING;
 			execute_post_state_transition(ase, old_state);
-			(void)k_work_cancel_delayable_sync(&ase->state_transition_work, &sync);
 
 			if (ase->state_pending != BT_BAP_EP_STATE_IDLE) {
 				/* Force any disconnect work to complete */
@@ -3497,8 +3571,6 @@ int bt_ascs_unregister(void)
 			}
 		}
 
-		__ASSERT(!k_work_delayable_is_pending(&ase->state_transition_work),
-			 "ase %p still has pending state_transition_work", ase);
 		__ASSERT(!k_work_delayable_is_pending(&ase->disconnect_work),
 			 "ase %p still has pending disconnect_work", ase);
 		__ASSERT(ase->ep.state == BT_BAP_EP_STATE_IDLE, "Unexpected ASE state: %d",
