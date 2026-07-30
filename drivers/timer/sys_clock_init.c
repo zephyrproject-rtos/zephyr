@@ -25,3 +25,13 @@ void __weak sys_clock_set_timeout(uint32_t ticks, bool idle)
 void __weak sys_clock_idle_exit(void)
 {
 }
+
+void __weak sys_clock_no_timeout(void)
+{
+	/* Ask for the longest wait the interface can express. UINT32_MAX is
+	 * numerically what K_TICKS_FOREVER was here, so a driver that has not
+	 * migrated and still keys on that value stops its clock as it always
+	 * did. It carries no special meaning otherwise.
+	 */
+	sys_clock_set_timeout(UINT32_MAX, false);
+}

@@ -253,6 +253,32 @@ uint32_t sys_clock_elapsed(void);
 void sys_clock_disable(void);
 
 /**
+ * @brief Notify the timer driver that no timeout is pending.
+ *
+ * Called by the kernel in place of sys_clock_set_timeout() when the timeout
+ * queue is empty and @kconfig{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} is enabled.
+ * No tick announcement is forthcoming and the system does not care about
+ * precise uptime keeping, so the driver may do something to save resources:
+ * mask the wakeup, program the longest interval the hardware can hold, or
+ * both.  Normal operation resumes at the next sys_clock_set_timeout().
+ *
+ * The CPU keeps running, so sys_clock_cycle_get_32() and
+ * sys_clock_cycle_get_64() must keep counting: a thread can still call
+ * k_cycle_get_32() or k_busy_wait().  A driver whose cycle counter is driven
+ * by the timer it would stop can therefore only mask the interrupt.  One
+ * whose cycle counter lives in a different clock or power domain may stop
+ * more.  Stopping the time base belongs in sys_clock_idle_enter().
+ *
+ * Unlike sys_clock_disable(), this is not a teardown.
+ *
+ * The hook is optional.  Without it, sys_clock_set_timeout() is asked for the
+ * longest wait it can express, UINT32_MAX ticks.  That is numerically what
+ * K_TICKS_FOREVER was here, so a driver that has not migrated and still keys
+ * on that value stops its clock as it always did.
+ */
+void sys_clock_no_timeout(void);
+
+/**
  * @brief Hardware cycle counter
  *
  * Timer drivers are generally responsible for the system cycle
