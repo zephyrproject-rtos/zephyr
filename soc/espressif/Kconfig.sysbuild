@@ -1,0 +1,309 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+if BOOTLOADER_MCUBOOT
+
+menu "Espressif hardware secure features"
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION
+	bool "Hardware flash encryption on first boot"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+	help
+	  Enable Espressif hardware-assisted flash encryption in the MCUboot
+	  bootloader. On first boot, after image validation, the bootloader
+	  encrypts flash contents in place and burns the required eFuses.
+
+	  This is distinct from MCUboot software image encryption (BOOT_ENCRYPTION).
+
+if MCUBOOT_ESP_FLASH_ENCRYPTION
+
+choice MCUBOOT_ESP_FLASH_ENCRYPTION_MODE
+	prompt "Flash encryption usage mode"
+	default MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT
+	help
+	  Development mode allows UART re-flash with encryption and is intended
+	  for testing only. Release mode permanently disables UART encryption
+	  paths and is intended for production.
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT
+	bool "Development (NOT SECURE)"
+	select MCUBOOT_ESP_SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION_RELEASE
+	bool "Release"
+	depends on !MCUBOOT_ESP_EFUSE_VIRTUAL
+
+endchoice
+
+choice MCUBOOT_ESP_FLASH_ENCRYPTION_KEYSIZE
+	prompt "XTS-AES key size"
+	default MCUBOOT_ESP_FLASH_ENCRYPTION_AES128
+	depends on SOC_ESP32_FLASH_ENCRYPTION_XTS_AES_OPTIONS
+	help
+	  Key size for hardware flash encryption. Ignored if a key is already
+	  burned in eFuse.
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION_AES128_DERIVED
+	bool "AES-128 derived (SHA256 of 128 bits)"
+	depends on SOC_ESP32_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION_AES128
+	bool "AES-128 (256-bit key)"
+	depends on SOC_ESP32_FLASH_ENCRYPTION_XTS_AES_128
+	depends on SOC_ESP32_EFUSE_XTS_AES_KEY_128
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION_AES256
+	bool "AES-256 (512-bit key)"
+	depends on SOC_ESP32_FLASH_ENCRYPTION_XTS_AES_256
+	depends on SOC_ESP32_EFUSE_XTS_AES_KEY_256
+
+endchoice
+
+config MCUBOOT_ESP_EFUSE_VIRTUAL
+	bool "Simulate eFuses in RAM (testing only)"
+	help
+	  Redirect eFuse operations to RAM instead of hardware eFuses.
+	  FOR TESTING ONLY — provides no real security.
+
+config MCUBOOT_ESP_EFUSE_VIRTUAL_KEEP_IN_FLASH
+	bool "Keep virtual eFuses in flash across reboots"
+	depends on MCUBOOT_ESP_EFUSE_VIRTUAL
+	help
+	  Persist virtual eFuse state in the sys_partition flash region across
+	  reboots. Requires a sys_partition in the devicetree.
+
+config MCUBOOT_ESP_SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
+	bool
+	default y if SOC_ESP32_EFUSE_DIS_ICACHE || SOC_SERIES_ESP32
+
+menu "Potentially insecure options"
+	visible if MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT
+
+	# Options here also need MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT in
+	# "depends on": the menu visibility alone does not disable children.
+
+config MCUBOOT_ESP_SECURE_BOOT_ALLOW_ROM_BASIC
+	bool "Leave ROM BASIC Interpreter available on reset"
+	depends on MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT && SOC_SERIES_ESP32
+	help
+	  By default, the BASIC ROM Console starts on reset if no valid
+	  bootloader is read from the flash.
+
+	  When flash encryption is enabled, the default is to disable this
+	  BASIC fallback mode permanently via eFuse.
+
+	  If this option is set, this eFuse is not burned and the BASIC ROM
+	  Console may remain accessible. Only set this option in testing
+	  environments.
+
+config MCUBOOT_ESP_SECURE_BOOT_ALLOW_JTAG
+	bool "Allow JTAG Debugging"
+	depends on MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT
+	select MCUBOOT_ESP_SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE \
+		if MCUBOOT_ESP_SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
+	help
+	  If not set (default), the bootloader will permanently disable JTAG
+	  (across entire chip) on first boot when flash encryption is enabled.
+
+	  Setting this option leaves JTAG on for debugging, which negates
+	  all protections of flash encryption.
+
+	  Only set this option in testing environments.
+
+config MCUBOOT_ESP_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA
+	bool "Skip write-protection of MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH"
+	default y if MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC && \
+		!MCUBOOT_ESP_FLASH_ENCRYPTION_RELEASE
+	depends on SOC_ESP32_ECDSA_SUPPORT_CURVE_P384 && \
+		SOC_ESP32_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+	help
+	  If not set (default, recommended), on the first boot the bootloader
+	  may burn the write-protection bit of SECURE_BOOT_SHA384_EN that is
+	  shared with other eFuse bits like XTS_DPA_PSEUDO_LEVEL.
+
+	  Once that eFuse bit is write-protected you cannot update the values of
+	  the shared eFuses, for example the security strength value of
+	  XTS_DPA_PSEUDO_LEVEL or ECC_FORCE_CONST_TIME.
+
+	  List of eFuses with the same write protection bit:
+
+	  ESP32-C5: XTS_DPA_PSEUDO_LEVEL and ECC_FORCE_CONST_TIME
+
+	  Enable this when you need to change XTS-AES pseudo-round strength after
+	  the first boot on targets that share this write-protection bit.
+
+config MCUBOOT_ESP_SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
+	bool "Leave UART bootloader encryption enabled"
+	depends on MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT
+	select MCUBOOT_ESP_SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE \
+		if MCUBOOT_ESP_SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
+	help
+	  If not set (default), the bootloader will permanently disable UART
+	  bootloader encryption access on first boot. If set, the UART
+	  bootloader will still be able to access hardware encryption.
+
+	  It is recommended to only set this option in testing environments.
+	  Selected automatically by Development mode.
+
+config MCUBOOT_ESP_SECURE_FLASH_UART_BOOTLOADER_ALLOW_DEC
+	bool "Leave UART bootloader decryption enabled"
+	depends on MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT && SOC_SERIES_ESP32
+	help
+	  If not set (default), the bootloader will permanently disable UART
+	  bootloader decryption access on first boot. If set, the UART
+	  bootloader will still be able to access hardware decryption.
+
+	  Only set this option in testing environments. Setting this option
+	  allows complete bypass of flash encryption.
+
+config MCUBOOT_ESP_SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE
+	bool "Leave UART bootloader flash cache enabled"
+	depends on MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT && \
+		(SOC_SERIES_ESP32 || SOC_ESP32_EFUSE_DIS_DOWNLOAD_ICACHE || \
+		SOC_ESP32_EFUSE_DIS_DOWNLOAD_DCACHE)
+	select MCUBOOT_ESP_SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE \
+		if MCUBOOT_ESP_SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
+	help
+	  If not set (default), the bootloader will permanently disable UART
+	  bootloader flash cache access on first boot. If set, the UART
+	  bootloader will still be able to access the flash cache.
+
+	  Only set this option in testing environments.
+
+config MCUBOOT_ESP_SECURE_FLASH_REQUIRE_ALREADY_ENABLED
+	bool "Require flash encryption already enabled in eFuse"
+	depends on MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT
+	help
+	  If not set (default), and flash encryption is not yet enabled in
+	  eFuses, the bootloader will enable flash encryption: generate the
+	  flash encryption key and program eFuses.
+	  If this option is set, and flash encryption is not yet enabled, the
+	  bootloader will error out and reboot.
+	  If flash encryption is enabled in eFuses, this option does not
+	  change the bootloader behavior.
+
+	  Only use this option in testing environments, to avoid accidentally
+	  enabling flash encryption on the wrong device.
+
+config MCUBOOT_ESP_SECURE_FLASH_SKIP_WRITE_PROTECTION_CACHE
+	bool "Skip write-protection of DIS_CACHE (DIS_ICACHE, DIS_DCACHE)"
+	depends on MCUBOOT_ESP_SECURE_FLASH_HAS_WRITE_PROTECTION_CACHE
+	help
+	  If not set (default, recommended), on the first boot the bootloader
+	  will burn the write-protection of DIS_CACHE (ESP32) or
+	  DIS_ICACHE/DIS_DCACHE (other chips) eFuse when Flash Encryption is
+	  enabled. Write protection for cache disable efuse prevents the chip
+	  from being blocked if it is set by accident.
+
+	  Due to other eFuses sharing the same write protection bit,
+	  write-protection will not be done if UART bootloader encryption,
+	  JTAG, or UART bootloader cache are left enabled, to allow enabling
+	  release mode later.
+
+endmenu # Potentially insecure options
+
+config MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC
+	bool "Permanently enable XTS-AES's pseudo rounds function"
+	default y if MCUBOOT_ESP_FLASH_ENCRYPTION_RELEASE
+	depends on SOC_ESP32_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+	help
+	  If set (default), the bootloader will permanently enable the XTS-AES
+	  peripheral's pseudo rounds function.
+	  Note: Enabling this config would burn an efuse.
+
+choice MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH
+	prompt "Strength of the pseudo rounds function"
+	depends on MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC
+	default MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH_LOW
+	help
+	  The strength of the pseudo rounds functions can be configured to low,
+	  medium and high, each denoting the values that would be stored in the
+	  efuses field. By default the value is set to low.
+
+	  It is recommended that the required strength of the pseudo rounds
+	  function should be set during the first boot itself. If your workflow
+	  needs to update the function's strength after the first boot, you
+	  should enable MCUBOOT_ESP_SECURE_BOOT_SKIP_WRITE_PROTECTION_SCA to avoid
+	  write protecting this bit during boot up for targets that support
+	  Secure Boot using ECDSA-P384.
+
+	  Increasing the strength provides higher security but slows down
+	  flash encryption/decryption operations.
+
+config MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH_LOW
+	bool "Low"
+
+config MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH_MEDIUM
+	bool "Medium"
+
+config MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH_HIGH
+	bool "High"
+
+endchoice
+
+config MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH
+	int
+	default 1 if MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH_LOW
+	default 2 if MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH_MEDIUM
+	default 3 if MCUBOOT_ESP_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH_HIGH
+
+config MCUBOOT_ESP_SECURE_ROM_DL_MODE_ENABLED
+	bool
+	default y if SOC_ESP32_SUPPORTS_SECURE_DL_MODE && \
+		!MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT
+
+choice MCUBOOT_ESP_SECURE_UART_ROM_DL_MODE
+	prompt "UART ROM download mode"
+	default MCUBOOT_ESP_SECURE_ENABLE_SECURE_ROM_DL_MODE \
+		if MCUBOOT_ESP_SECURE_ROM_DL_MODE_ENABLED
+	default MCUBOOT_ESP_SECURE_INSECURE_ALLOW_DL_MODE
+
+config MCUBOOT_ESP_SECURE_DISABLE_ROM_DL_MODE
+	bool "UART ROM download mode (Permanently disabled (recommended))"
+	help
+	  If set, during startup the app will burn an eFuse bit to permanently
+	  disable the UART ROM Download Mode. This prevents any future use of
+	  esptool, espefuse and similar tools.
+
+	  Once disabled, if the SoC is booted with strapping pins set for ROM
+	  Download Mode then an error is printed instead.
+
+	  It is recommended to enable this option in any production application
+	  where Flash Encryption is enabled and access to Download Mode is not
+	  required.
+
+config MCUBOOT_ESP_SECURE_ENABLE_SECURE_ROM_DL_MODE
+	bool "UART ROM download mode (Permanently switch to Secure mode (recommended))"
+	depends on SOC_ESP32_SUPPORTS_SECURE_DL_MODE
+	help
+	  If set, during startup the app will burn an eFuse bit to permanently
+	  switch the UART ROM Download Mode into a separate Secure Download
+	  mode. This option can only work if Download Mode is not already
+	  disabled by eFuse.
+
+	  Secure Download mode limits the use of Download Mode functions to
+	  update SPI config, changing baud rate, basic flash write and a
+	  command to return a summary of currently enabled security features
+	  (`get-security-info`).
+
+	  Secure Download mode should be enabled in any application where Flash
+	  Encryption is enabled. Disabling this option does not immediately
+	  cancel the benefits of the security features, but it increases the
+	  potential attack surface for a physical attacker.
+
+	  Note: Secure Download mode is not available for ESP32.
+
+config MCUBOOT_ESP_SECURE_INSECURE_ALLOW_DL_MODE
+	bool "UART ROM download mode (Enabled (not recommended))"
+	help
+	  This is a potentially insecure option.
+	  Enabling this option will allow the full UART download mode to stay
+	  enabled. This option SHOULD NOT BE ENABLED for production use cases.
+
+endchoice
+
+endif # MCUBOOT_ESP_FLASH_ENCRYPTION
+
+endmenu
+
+endif # BOOTLOADER_MCUBOOT
