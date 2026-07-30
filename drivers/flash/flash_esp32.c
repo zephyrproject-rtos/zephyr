@@ -383,7 +383,7 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 	bool allow_decrypt = esp_efuse_is_flash_encryption_enabled();
 
 	if (flash_esp32_is_aligned(address, buffer, length)) {
-		ret = esp_rom_flash_read(address, buffer, length, allow_decrypt);
+		ret = bootloader_flash_read(address, buffer, length, allow_decrypt);
 		return (ret == ESP_OK) ? 0 : -EIO;
 	}
 
@@ -397,7 +397,7 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 
 		if (addr_offset == 0 && buf_offset == 0 && copy_size >= 4) {
 			aligned_size = copy_size & ~3;
-			ret = esp_rom_flash_read(address, dest_ptr, aligned_size, allow_decrypt);
+			ret = bootloader_flash_read(address, dest_ptr, aligned_size, allow_decrypt);
 			if (ret != ESP_OK) {
 				return -EIO;
 			}
@@ -410,7 +410,8 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 
 			aligned_size = (copy_size + addr_offset + 3) & ~3;
 
-			ret = esp_rom_flash_read(start_addr, temp_buf, aligned_size, allow_decrypt);
+			ret = bootloader_flash_read(start_addr, temp_buf, aligned_size,
+						 allow_decrypt);
 			if (ret != ESP_OK) {
 				return -EIO;
 			}
@@ -449,7 +450,7 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 
 	bool encrypt = esp_efuse_is_flash_encryption_enabled();
 
-	ret = esp_rom_flash_write(address, (void *)buffer, length, encrypt);
+	ret = bootloader_flash_write(address, (void *)buffer, length, encrypt);
 #else
 	flash_esp32_sem_take(dev);
 
@@ -487,7 +488,7 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 	int ret = 0;
 
 #ifdef CONFIG_MCUBOOT
-	ret = esp_rom_flash_erase_range(start, len);
+	ret = bootloader_flash_erase_range(start, len);
 #else
 	flash_esp32_sem_take(dev);
 
