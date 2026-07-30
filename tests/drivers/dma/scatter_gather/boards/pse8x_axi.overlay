@@ -8,3 +8,9 @@
 tst_dma0: &axidmac {
 	status = "okay";
 };
+
+/ {
+	zephyr,user {
+		dma-test-devs = <&axidmac>;
+	};
+};
