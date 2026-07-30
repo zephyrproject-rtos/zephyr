@@ -658,7 +658,7 @@
 
 		mdio0: mdio@40480200 {
 			reg = <0x40480200 0x8>;
-			compatible = "nxp,s32-gmac-mdio";
+			compatible = "snps,dwmac-mdio";
 			clocks = <&clock NXP_S32_AIPS_PLAT_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;

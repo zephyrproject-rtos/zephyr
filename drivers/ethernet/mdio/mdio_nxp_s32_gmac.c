@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_s32_gmac_mdio
+#define DT_DRV_COMPAT snps_dwmac_mdio
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nxp_s32_mdio, CONFIG_MDIO_LOG_LEVEL);
