@@ -129,11 +129,17 @@
 };
 
 &lpuart0 {
-	dmas = <&edma 1 2>, <&edma 2 3>;
-	dma-names = "rx", "tx";
 	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart2 {
+	dmas = <&edma 2 6>, <&edma 3 7>;
+	dma-names = "rx", "tx";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart2_default>;
 	pinctrl-names = "default";
 };
 
