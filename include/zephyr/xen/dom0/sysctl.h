@@ -44,6 +44,17 @@
 int xen_sysctl_physinfo(struct xen_sysctl_physinfo *info);
 
 /**
+ * @brief Performs a Xen trace buffer sysctl operation.
+ *
+ * @param[in,out] tbuf_op A pointer to a `struct xen_sysctl_tbuf_op` object
+ *                        that defines the trace buffer operation and receives
+ *                        any output values returned by Xen.
+ * @retval 0 on success.
+ * @retval -errno on failure.
+ */
+int xen_sysctl_tbuf_op(struct xen_sysctl_tbuf_op *tbuf_op);
+
+/**
  * @brief Retrieves information about Xen domains.
  *
  * @param[out] domaininfo A pointer to the `xen_domctl_getdomaininfo` structure
