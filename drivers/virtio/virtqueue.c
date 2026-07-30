@@ -94,15 +94,13 @@ void virtq_free(struct virtq *v)
 	k_free(v->desc);
 }
 
-static int virtq_add_available(struct virtq *v, uint16_t desc_idx)
+static void virtq_add_available(struct virtq *v, uint16_t desc_idx)
 {
-	uint16_t new_idx = sys_le16_to_cpu(v->avail->idx) % v->num;
+	uint16_t idx = sys_le16_to_cpu(v->avail->idx);
 
-	v->avail->ring[new_idx] = sys_cpu_to_le16(desc_idx);
+	v->avail->ring[idx & (v->num - 1)] = sys_cpu_to_le16(desc_idx);
 	barrier_dmem_fence_full();
-	v->avail->idx = sys_cpu_to_le16(sys_le16_to_cpu(v->avail->idx) + 1);
-
-	return 0;
+	v->avail->idx = sys_cpu_to_le16(idx + 1);
 }
 
 static void virtq_return_desc_chain(struct virtq *v, uint16_t head, uint16_t count)
