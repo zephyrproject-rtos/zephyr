@@ -12,10 +12,15 @@
 #include <hal/nrf_egu.h>
 #include <helpers/nrfx_gppi.h>
 
-static NRF_TIMER_Type *timer0 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer0));
-static NRF_TIMER_Type *timer1 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer1));
-static NRF_TIMER_Type *timer2 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer2));
-static NRF_EGU_Type *egu = (NRF_EGU_Type *)DT_REG_ADDR(DT_NODELABEL(dut_egu));
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+/* included to support converting real addresses to simulated peripheral address */
+#include "NHW_misc.h"
+#endif
+
+static NRF_TIMER_Type * timer0;
+static NRF_TIMER_Type *timer1;
+static NRF_TIMER_Type *timer2;
+static NRF_EGU_Type *egu;
 
 static void sink_setup(void)
 {
@@ -177,6 +182,10 @@ ZTEST(gppi, test_attach_event)
 
 	nrf_timer_cc_set(timer0, NRF_TIMER_CC_CHANNEL0, 100);
 	nrf_timer_cc_set(timer0, NRF_TIMER_CC_CHANNEL1, 200);
+	nrf_timer_prescaler_set(timer0,
+				NRF_TIMER_PRESCALER_CALCULATE(
+					NRF_TIMER_BASE_FREQUENCY_GET(timer0),
+					NRFX_MHZ_TO_HZ(1)));
 	nrf_timer_mode_set(timer1, NRF_TIMER_MODE_COUNTER);
 	nrf_timer_event_clear(timer0, NRF_TIMER_EVENT_COMPARE0);
 	nrf_timer_event_clear(timer0, NRF_TIMER_EVENT_COMPARE1);
@@ -255,6 +264,10 @@ ZTEST(gppi, test_group)
 	nrf_timer_cc_set(timer0, NRF_TIMER_CC_CHANNEL1, 110);
 	nrf_timer_cc_set(timer0, NRF_TIMER_CC_CHANNEL2, 120);
 	nrf_timer_cc_set(timer0, NRF_TIMER_CC_CHANNEL3, 130);
+	nrf_timer_prescaler_set(timer0,
+				NRF_TIMER_PRESCALER_CALCULATE(
+					NRF_TIMER_BASE_FREQUENCY_GET(timer0),
+					NRFX_MHZ_TO_HZ(1)));
 	nrf_timer_mode_set(timer1, NRF_TIMER_MODE_COUNTER);
 	nrf_timer_event_clear(timer0, NRF_TIMER_EVENT_COMPARE0);
 	nrf_timer_event_clear(timer0, NRF_TIMER_EVENT_COMPARE1);
@@ -376,4 +389,22 @@ ZTEST(gppi, test_cpurad_slow_fast_domain)
 }
 #endif
 
-ZTEST_SUITE(gppi, NULL, NULL, NULL, NULL, NULL);
+static void *setup(void)
+{
+	timer0 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer0));
+	timer1 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer1));
+	timer2 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer2));
+	egu = (NRF_EGU_Type *)DT_REG_ADDR(DT_NODELABEL(dut_egu));
+
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+	/* Convert real hw addresses to simulated peripheral addresses */
+	timer0 = nhw_convert_per_addr_hw_to_sim(timer0);
+	timer1 = nhw_convert_per_addr_hw_to_sim(timer1);
+	timer2 = nhw_convert_per_addr_hw_to_sim(timer2);
+	egu = nhw_convert_per_addr_hw_to_sim(egu);
+#endif
+
+	return NULL;
+}
+
+ZTEST_SUITE(gppi, NULL, setup, NULL, NULL, NULL);

@@ -4,14 +4,24 @@ common:
 tests:
   boards.nrf.gppi:
     platform_allow:
+      - nrf52_bsim
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
+      # TODO: Fix simulated timer address translation for nrf5340bsim, then re-enable this test
+      # - nrf5340bsim/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
+      # TODO: Update nrfx_gppi_dppi.c to use nrf_ppib hal APIs
+      # - nrf54l15bsim/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
     integration_platforms:
+      - nrf52_bsim
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
+      # TODO: Fix simulated timer address translation for nrf5340bsim, then re-enable this test
+      # - nrf5340bsim/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad
+      # TODO: Update nrfx_gppi_dppi.c to use nrf_ppib hal APIs
+      # - nrf54l15bsim/nrf54l15/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
