@@ -19,25 +19,24 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/test_devices.h>
 #include <zephyr/ztest.h>
 
 #include "test_buffers.h"
 
-#define DMA_TEST_NODE      DT_PATH(zephyr_user)
 #define DMA_TEST_DEVS_PROP dma_test_devs
 
-#if DT_NODE_HAS_PROP(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
+#if TEST_DEVS_EXIST(DMA_TEST_DEVS_PROP)
 /* Boards list the DMA controllers to test in a zephyr,user dma-test-devs
  * phandle list.
  */
-#define DMA_TEST_DEV_COUNT DT_PROP_LEN(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
-#define DMA_TEST_DEV_GET(idx, _)                                                                   \
-	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DMA_TEST_NODE, DMA_TEST_DEVS_PROP, idx))
+#define DMA_TEST_DEV_COUNT       TEST_DEVS_LEN(DMA_TEST_DEVS_PROP)
+#define DMA_TEST_DEV_GET(idx, _) TEST_DEVS_GET_BY_IDX(DMA_TEST_DEVS_PROP, idx)
 #else
 /* Legacy boards use tst_dmaN devicetree labels and
  * CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS.
  */
-#define DMA_TEST_DEV_COUNT CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
+#define DMA_TEST_DEV_COUNT       CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
 #define DMA_TEST_DEV_GET(idx, _) DEVICE_DT_GET(DT_NODELABEL(tst_dma##idx))
 #endif
 
