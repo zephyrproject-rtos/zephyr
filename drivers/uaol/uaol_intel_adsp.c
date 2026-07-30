@@ -20,6 +20,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/uaol.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/sys_io_non_atomic.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/pm/device.h>
@@ -420,14 +421,14 @@ static void uaol_intel_adsp_program_format(const struct device *dev, int stream,
 		payload_size = DIV_ROUND_UP(payload_size, sio_credit_size) * sio_credit_size;
 	}
 
-	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, stream));
+	pcms_ctl.full = sys_read64_lo_hi(UAOLxPCMSyCTL_ADDR(dp, stream));
 	pcms_ctl.part.si = uaol_intel_adsp_encode_service_interval(service_interval_usec);
 	pcms_ctl.part.ass = sample_size - 1;
 	pcms_ctl.part.asbs = sample_block_size;
 	pcms_ctl.part.aps = payload_size;
 	pcms_ctl.part.mps = sio_credit_size;
 	pcms_ctl.part.pm = DIV_ROUND_UP(payload_size, sio_credit_size);
-	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
+	sys_write64_lo_hi(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
 
 	LOG_INF("stream %d: %uHz/%uch/%ubits, si %uus",
 		stream, sample_rate, channels, sample_bits, service_interval_usec);
@@ -459,14 +460,14 @@ static void uaol_intel_adsp_program_feedback(const struct device *dev, int strea
 	sys_write16(cfg->feedback_hda_link_map, UAOLxPCMSyCM_ADDR(dp, fb_stream));
 
 	/* feedback packet is 3 bytes (10.14) at FS and 4 bytes (16.16) at HS */
-	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, fb_stream));
+	pcms_ctl.full = sys_read64_lo_hi(UAOLxPCMSyCTL_ADDR(dp, fb_stream));
 	pcms_ctl.part.si = uaol_intel_adsp_encode_service_interval(cfg->feedback_service_interval);
 	pcms_ctl.part.ass = cfg->feedback_packet_size - 1;
 	pcms_ctl.part.asbs = cfg->feedback_packet_size;
 	pcms_ctl.part.aps = cfg->feedback_packet_size;
 	pcms_ctl.part.mps = cfg->feedback_packet_size;
 	pcms_ctl.part.pm = 1;
-	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, fb_stream));
+	sys_write64_lo_hi(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, fb_stream));
 
 	LOG_INF("feedback stream %d for stream %d: FSA 0x%04x, CM 0x%04x, si %uus, mps %u",
 		fb_stream, stream, fifo_start_address, cfg->feedback_hda_link_map,
@@ -519,13 +520,13 @@ static int uaol_intel_adsp_set_stream_state(const struct device *dev, int stream
 	union UAOLxPCMSyCTL pcms_ctl;
 	uint32_t timeout;
 
-	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, stream));
+	pcms_ctl.full = sys_read64_lo_hi(UAOLxPCMSyCTL_ADDR(dp, stream));
 	if (start && (pcms_ctl.part.sen || uaol_intel_adsp_get_sbusy(dev, stream))) {
 		LOG_ERR("Unexpected stream state; SEN %d", pcms_ctl.part.sen);
 		return -EBUSY;
 	}
 	pcms_ctl.part.sen = start;
-	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
+	sys_write64_lo_hi(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
 
 	if (start) {
 		return 0;
@@ -553,9 +554,9 @@ static void uaol_intel_adsp_reset_stream(const struct device *dev, int stream, b
 	struct uaol_intel_adsp_data *dp = dev->data;
 	union UAOLxPCMSyCTL pcms_ctl;
 
-	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, stream));
+	pcms_ctl.full = sys_read64_lo_hi(UAOLxPCMSyCTL_ADDR(dp, stream));
 	pcms_ctl.part.srst = reset;
-	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
+	sys_write64_lo_hi(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
 }
 
 static bool uaol_intel_adsp_frame_adjust_idle(const struct device *dev)
