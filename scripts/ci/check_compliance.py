@@ -58,6 +58,7 @@ except ImportError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import list_boards
 import list_hardware
+from check_quoted_includes import normalize_quoted_include
 from get_maintainer import Maintainers, MaintainersError
 
 sys.path.insert(
@@ -2106,6 +2107,43 @@ class CMakeStyle(StyleCheckMixin, ComplianceTest):
             ZEPHYR_BASE / "scripts" / "cmake" / "cmake_style.py",
             lambda file: file.endswith(".cmake") or Path(file).name == "CMakeLists.txt",
         )
+
+
+class QuotedIncludes(ComplianceTest):
+    """
+    Checks that quoted #include directives in added/modified C, assembly and
+    devicetree files refer to a header reachable relative to the including
+    file. Includes that do not must use angle brackets instead.
+    """
+
+    name = "QuotedIncludes"
+    doc = zephyr_doc_detail_builder("/contribute/guidelines.html#include-directives")
+
+    # C, assembly and devicetree source files that may carry #include directives.
+    SUFFIXES = (".c", ".s", ".S", ".dts", ".dtsi", ".overlay")
+
+    def run(self):
+        # Loop through added/modified files
+        for fname in get_files(filter="d"):
+            if Path(fname).suffix not in self.SUFFIXES:
+                continue
+
+            path = GIT_TOP / fname
+            try:
+                text = path.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                continue
+
+            _, changes = normalize_quoted_include(text, path.parent)
+            for line_num, header in changes:
+                self.fmtd_failure(
+                    "error",
+                    "QuotedIncludes",
+                    fname,
+                    line_num,
+                    f'"{header}" does not resolve to a local header; use '
+                    f'#include <{header}> instead of #include "{header}"',
+                )
 
 
 class Identity(ComplianceTest):
