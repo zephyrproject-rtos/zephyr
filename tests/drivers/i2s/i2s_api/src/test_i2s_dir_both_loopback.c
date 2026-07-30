@@ -79,7 +79,7 @@ ZTEST_USER(i2s_dir_both_loopback, test_i2s_dir_both_transfer_short)
 	 */
 }
 
-#define TEST_I2S_TRANSFER_LONG_REPEAT_COUNT  100
+#define TEST_I2S_TRANSFER_LONG_REPEAT_COUNT 100
 
 /** @brief Long I2S transfer.
  *

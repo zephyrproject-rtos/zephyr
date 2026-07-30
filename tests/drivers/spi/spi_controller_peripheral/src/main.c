@@ -18,12 +18,12 @@
 #elif CONFIG_TESTED_SPI_MODE == 2
 #define SPI_MODE (SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_TRANSFER_LSB | SPI_MODE_CPOL)
 #elif CONFIG_TESTED_SPI_MODE == 3
-#define SPI_MODE (SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_TRANSFER_MSB | SPI_MODE_CPHA \
-				| SPI_MODE_CPOL)
+#define SPI_MODE                                                                                   \
+	(SPI_WORD_SET(8) | SPI_LINES_SINGLE | SPI_TRANSFER_MSB | SPI_MODE_CPHA | SPI_MODE_CPOL)
 #endif
 
-#define SPIM_OP	 (SPI_OP_MODE_MASTER | SPI_MODE)
-#define SPIS_OP	 (SPI_OP_MODE_SLAVE | SPI_MODE)
+#define SPIM_OP (SPI_OP_MODE_MASTER | SPI_MODE)
+#define SPIS_OP (SPI_OP_MODE_SLAVE | SPI_MODE)
 
 static struct spi_dt_spec spim = SPI_DT_SPEC_GET(DT_NODELABEL(dut_spi_dt), SPIM_OP);
 static const struct device *spis_dev = DEVICE_DT_GET(DT_NODELABEL(dut_spis));
@@ -101,7 +101,7 @@ static void work_handler(struct k_work *work)
 		}
 	} else {
 		rv = spi_transceive_signal(spim.bus, &spim.config, td->mtx_set, td->mrx_set,
-				&async_sig_spim);
+					   &async_sig_spim);
 		zassert_equal(rv, 0);
 
 		rv = k_poll(&async_evt_spim, 1, K_MSEC(200));

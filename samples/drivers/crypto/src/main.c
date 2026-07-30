@@ -69,8 +69,7 @@ static uint8_t plaintext[64] __aligned(IO_ALIGNMENT_BYTES) = {
 
 uint32_t cap_flags;
 
-static void print_buffer_comparison(const uint8_t *wanted_result,
-				    uint8_t *result, size_t length)
+static void print_buffer_comparison(const uint8_t *wanted_result, uint8_t *result, size_t length)
 {
 	int i, j;
 
@@ -112,13 +111,13 @@ int validate_hw_compatibility(const struct device *dev)
 
 	if ((flags & CAP_SYNC_OPS) == 0U) {
 		LOG_ERR("The app assumes sync semantics. "
-		  "Please rewrite the app accordingly before proceeding");
+			"Please rewrite the app accordingly before proceeding");
 		return -1;
 	}
 
 	if ((flags & CAP_SEPARATE_IO_BUFS) == 0U) {
 		LOG_ERR("The app assumes distinct IO buffers. "
-		"Please rewrite the app accordingly before proceeding");
+			"Please rewrite the app accordingly before proceeding");
 		return -1;
 	}
 
@@ -129,16 +128,13 @@ int validate_hw_compatibility(const struct device *dev)
 	}
 
 	return 0;
-
 }
 
 void ecb_mode(const struct device *dev)
 {
 	/* from FIPS-197 test vectors */
-	const uint8_t ecb_key[16] = {
-		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-		0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F
-	};
+	const uint8_t ecb_key[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+				     0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F};
 	uint8_t ecb_plaintext[16]
 		__aligned(IO_ALIGNMENT_BYTES) = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
 						 0x88, 0x99, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
@@ -166,8 +162,7 @@ void ecb_mode(const struct device *dev)
 		.out_buf_max = sizeof(decrypted),
 	};
 
-	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
-				 CRYPTO_CIPHER_MODE_ECB,
+	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES, CRYPTO_CIPHER_MODE_ECB,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
 		return;
 	}
@@ -181,17 +176,15 @@ void ecb_mode(const struct device *dev)
 
 	if (memcmp(encrypt.out_buf, ecb_ciphertext, sizeof(ecb_ciphertext))) {
 		LOG_ERR("ECB mode ENCRYPT - Mismatch between expected and "
-			    "returned cipher text");
-		print_buffer_comparison(ecb_ciphertext, encrypt.out_buf,
-					sizeof(ecb_ciphertext));
+			"returned cipher text");
+		print_buffer_comparison(ecb_ciphertext, encrypt.out_buf, sizeof(ecb_ciphertext));
 		goto out;
 	}
 
 	LOG_INF("ECB mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
-	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
-				 CRYPTO_CIPHER_MODE_ECB,
+	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES, CRYPTO_CIPHER_MODE_ECB,
 				 CRYPTO_CIPHER_OP_DECRYPT)) {
 		return;
 	}
@@ -205,9 +198,8 @@ void ecb_mode(const struct device *dev)
 
 	if (memcmp(decrypt.out_buf, ecb_plaintext, sizeof(ecb_plaintext))) {
 		LOG_ERR("ECB mode DECRYPT - Mismatch between plaintext and "
-			    "decrypted cipher text");
-		print_buffer_comparison(ecb_plaintext, decrypt.out_buf,
-					sizeof(ecb_plaintext));
+			"decrypted cipher text");
+		print_buffer_comparison(ecb_plaintext, decrypt.out_buf, sizeof(ecb_plaintext));
 		goto out;
 	}
 
@@ -217,14 +209,12 @@ out:
 }
 
 static const uint8_t cbc_ciphertext[80] = {
-	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b,
-	0x0c, 0x0d, 0x0e, 0x0f, 0x76, 0x49, 0xab, 0xac, 0x81, 0x19, 0xb2, 0x46,
-	0xce, 0xe9, 0x8e, 0x9b, 0x12, 0xe9, 0x19, 0x7d, 0x50, 0x86, 0xcb, 0x9b,
-	0x50, 0x72, 0x19, 0xee, 0x95, 0xdb, 0x11, 0x3a, 0x91, 0x76, 0x78, 0xb2,
-	0x73, 0xbe, 0xd6, 0xb8, 0xe3, 0xc1, 0x74, 0x3b, 0x71, 0x16, 0xe6, 0x9e,
-	0x22, 0x22, 0x95, 0x16, 0x3f, 0xf1, 0xca, 0xa1, 0x68, 0x1f, 0xac, 0x09,
-	0x12, 0x0e, 0xca, 0x30, 0x75, 0x86, 0xe1, 0xa7
-};
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+	0x0e, 0x0f, 0x76, 0x49, 0xab, 0xac, 0x81, 0x19, 0xb2, 0x46, 0xce, 0xe9, 0x8e, 0x9b,
+	0x12, 0xe9, 0x19, 0x7d, 0x50, 0x86, 0xcb, 0x9b, 0x50, 0x72, 0x19, 0xee, 0x95, 0xdb,
+	0x11, 0x3a, 0x91, 0x76, 0x78, 0xb2, 0x73, 0xbe, 0xd6, 0xb8, 0xe3, 0xc1, 0x74, 0x3b,
+	0x71, 0x16, 0xe6, 0x9e, 0x22, 0x22, 0x95, 0x16, 0x3f, 0xf1, 0xca, 0xa1, 0x68, 0x1f,
+	0xac, 0x09, 0x12, 0x0e, 0xca, 0x30, 0x75, 0x86, 0xe1, 0xa7};
 
 static const uint8_t cbc_ciphertext_no_iv[64] = {
 	0x76, 0x49, 0xab, 0xac, 0x81, 0x19, 0xb2, 0x46, 0xce, 0xe9, 0x8e, 0x9b,
@@ -253,10 +243,8 @@ void cbc_mode(const struct device *dev)
 		.out_buf = encrypted,
 	};
 
-	static uint8_t iv[16] = {
-		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
-	};
+	static uint8_t iv[16] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+				 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
 
 	if ((cap_flags & CAP_NO_IV_PREFIX) != 0U) {
 		expected_ciphertext = cbc_ciphertext_no_iv;
@@ -289,8 +277,7 @@ void cbc_mode(const struct device *dev)
 	LOG_INF("CBC mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
-	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
-				 CRYPTO_CIPHER_MODE_CBC,
+	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES, CRYPTO_CIPHER_MODE_CBC,
 				 CRYPTO_CIPHER_OP_DECRYPT)) {
 		return;
 	}
@@ -317,9 +304,8 @@ void cbc_mode(const struct device *dev)
 
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
 		LOG_ERR("CBC mode DECRYPT - Mismatch between plaintext and "
-			    "decrypted cipher text");
-		print_buffer_comparison(plaintext, decrypt.out_buf,
-					sizeof(plaintext));
+			"decrypted cipher text");
+		print_buffer_comparison(plaintext, decrypt.out_buf, sizeof(plaintext));
 		goto out;
 	}
 
@@ -494,15 +480,11 @@ out:
 }
 
 static const uint8_t ctr_ciphertext[64] = {
-	0x22, 0xe5, 0x2f, 0xb1, 0x77, 0xd8, 0x65, 0xb2,
-	0xf7, 0xc6, 0xb5, 0x12, 0x69, 0x2d, 0x11, 0x4d,
-	0xed, 0x6c, 0x1c, 0x72, 0x25, 0xda, 0xf6, 0xa2,
-	0xaa, 0xd9, 0xd3, 0xda, 0x2d, 0xba, 0x21, 0x68,
-	0x35, 0xc0, 0xaf, 0x6b, 0x6f, 0x40, 0xc3, 0xc6,
-	0xef, 0xc5, 0x85, 0xd0, 0x90, 0x2c, 0xc2, 0x63,
-	0x12, 0x2b, 0xc5, 0x8e, 0x72, 0xde, 0x5c, 0xa2,
-	0xa3, 0x5c, 0x85, 0x3a, 0xb9, 0x2c, 0x6, 0xbb
-};
+	0x22, 0xe5, 0x2f, 0xb1, 0x77, 0xd8, 0x65, 0xb2, 0xf7, 0xc6, 0xb5, 0x12, 0x69,
+	0x2d, 0x11, 0x4d, 0xed, 0x6c, 0x1c, 0x72, 0x25, 0xda, 0xf6, 0xa2, 0xaa, 0xd9,
+	0xd3, 0xda, 0x2d, 0xba, 0x21, 0x68, 0x35, 0xc0, 0xaf, 0x6b, 0x6f, 0x40, 0xc3,
+	0xc6, 0xef, 0xc5, 0x85, 0xd0, 0x90, 0x2c, 0xc2, 0x63, 0x12, 0x2b, 0xc5, 0x8e,
+	0x72, 0xde, 0x5c, 0xa2, 0xa3, 0x5c, 0x85, 0x3a, 0xb9, 0x2c, 0x6,  0xbb};
 
 void ctr_mode(const struct device *dev)
 {
@@ -527,13 +509,9 @@ void ctr_mode(const struct device *dev)
 		.out_buf = decrypted,
 		.out_buf_max = sizeof(decrypted),
 	};
-	uint8_t iv[12] = {
-		0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
-		0xf8, 0xf9, 0xfa, 0xfb
-	};
+	uint8_t iv[12] = {0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7, 0xf8, 0xf9, 0xfa, 0xfb};
 
-	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
-				 CRYPTO_CIPHER_MODE_CTR,
+	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES, CRYPTO_CIPHER_MODE_CTR,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
 		return;
 	}
@@ -547,17 +525,15 @@ void ctr_mode(const struct device *dev)
 
 	if (memcmp(encrypt.out_buf, ctr_ciphertext, sizeof(ctr_ciphertext))) {
 		LOG_ERR("CTR mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(ctr_ciphertext, encrypt.out_buf,
-					sizeof(ctr_ciphertext));
+			"and returned cipher text");
+		print_buffer_comparison(ctr_ciphertext, encrypt.out_buf, sizeof(ctr_ciphertext));
 		goto out;
 	}
 
 	LOG_INF("CTR mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
-	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
-				 CRYPTO_CIPHER_MODE_CTR,
+	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES, CRYPTO_CIPHER_MODE_CTR,
 				 CRYPTO_CIPHER_OP_DECRYPT)) {
 		return;
 	}
@@ -571,9 +547,8 @@ void ctr_mode(const struct device *dev)
 
 	if (memcmp(decrypt.out_buf, plaintext, sizeof(plaintext))) {
 		LOG_ERR("CTR mode DECRYPT - Mismatch between plaintext "
-			    "and decrypted cipher text");
-		print_buffer_comparison(plaintext,
-					decrypt.out_buf, sizeof(plaintext));
+			"and decrypted cipher text");
+		print_buffer_comparison(plaintext, decrypt.out_buf, sizeof(plaintext));
 		goto out;
 	}
 
@@ -583,17 +558,11 @@ out:
 }
 
 /* RFC 3610 test vector #1 */
-const static uint8_t ccm_key[16] = {
-	0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7, 0xc8, 0xc9, 0xca, 0xcb,
-	0xcc, 0xcd, 0xce, 0xcf
-};
-static uint8_t ccm_nonce[13] = {
-	0x00, 0x00, 0x00, 0x03, 0x02, 0x01, 0x00, 0xa0, 0xa1, 0xa2, 0xa3, 0xa4,
-	0xa5
-};
-static uint8_t ccm_hdr[8] = {
-	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07
-};
+const static uint8_t ccm_key[16] = {0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7,
+				    0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf};
+static uint8_t ccm_nonce[13] = {0x00, 0x00, 0x00, 0x03, 0x02, 0x01, 0x00,
+				0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5};
+static uint8_t ccm_hdr[8] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
 static uint8_t ccm_data[23] __aligned(IO_ALIGNMENT_BYTES) = {
 	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13,
 	0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e};
@@ -609,10 +578,11 @@ void ccm_mode(const struct device *dev)
 	struct cipher_ctx ini = {
 		.keylen = sizeof(ccm_key),
 		.key.bit_stream = ccm_key,
-		.mode_params.ccm_info = {
-			.nonce_len = sizeof(ccm_nonce),
-			.tag_len = 8,
-		},
+		.mode_params.ccm_info =
+			{
+				.nonce_len = sizeof(ccm_nonce),
+				.tag_len = 8,
+			},
 		.flags = cap_flags,
 	};
 	struct cipher_pkt encrypt = {
@@ -634,8 +604,7 @@ void ccm_mode(const struct device *dev)
 		.out_buf_max = sizeof(decrypted),
 	};
 
-	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
-				 CRYPTO_CIPHER_MODE_CCM,
+	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES, CRYPTO_CIPHER_MODE_CCM,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
 		return;
 	}
@@ -650,17 +619,15 @@ void ccm_mode(const struct device *dev)
 
 	if (memcmp(encrypt.out_buf, ccm_expected, sizeof(ccm_expected))) {
 		LOG_ERR("CCM mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(ccm_expected,
-					encrypt.out_buf, sizeof(ccm_expected));
+			"and returned cipher text");
+		print_buffer_comparison(ccm_expected, encrypt.out_buf, sizeof(ccm_expected));
 		goto out;
 	}
 
 	LOG_INF("CCM mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
-	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
-				 CRYPTO_CIPHER_MODE_CCM,
+	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES, CRYPTO_CIPHER_MODE_CCM,
 				 CRYPTO_CIPHER_OP_DECRYPT)) {
 		return;
 	}
@@ -676,8 +643,7 @@ void ccm_mode(const struct device *dev)
 	if (memcmp(decrypt.out_buf, ccm_data, sizeof(ccm_data))) {
 		LOG_ERR("CCM mode DECRYPT - Mismatch between plaintext "
 			"and decrypted cipher text");
-		print_buffer_comparison(ccm_data,
-					decrypt.out_buf, sizeof(ccm_data));
+		print_buffer_comparison(ccm_data, decrypt.out_buf, sizeof(ccm_data));
 		goto out;
 	}
 
@@ -687,17 +653,12 @@ out:
 }
 
 /*  MACsec GCM-AES test vector 2.4.1 */
-const static uint8_t gcm_key[16] = {
-	0x07, 0x1b, 0x11, 0x3b, 0x0c, 0xa7, 0x43, 0xfe, 0xcc, 0xcf, 0x3d, 0x05,
-	0x1f, 0x73, 0x73, 0x82
-};
-static uint8_t gcm_nonce[12] = {
-	0xf0, 0x76, 0x1e, 0x8d, 0xcd, 0x3d, 0x00, 0x01, 0x76, 0xd4, 0x57, 0xed
-};
-static uint8_t gcm_hdr[20] = {
-	0xe2, 0x01, 0x06, 0xd7, 0xcd, 0x0d, 0xf0, 0x76, 0x1e, 0x8d, 0xcd, 0x3d,
-	0x88, 0xe5, 0x4c, 0x2a, 0x76, 0xd4, 0x57, 0xed
-};
+const static uint8_t gcm_key[16] = {0x07, 0x1b, 0x11, 0x3b, 0x0c, 0xa7, 0x43, 0xfe,
+				    0xcc, 0xcf, 0x3d, 0x05, 0x1f, 0x73, 0x73, 0x82};
+static uint8_t gcm_nonce[12] = {0xf0, 0x76, 0x1e, 0x8d, 0xcd, 0x3d,
+				0x00, 0x01, 0x76, 0xd4, 0x57, 0xed};
+static uint8_t gcm_hdr[20] = {0xe2, 0x01, 0x06, 0xd7, 0xcd, 0x0d, 0xf0, 0x76, 0x1e, 0x8d,
+			      0xcd, 0x3d, 0x88, 0xe5, 0x4c, 0x2a, 0x76, 0xd4, 0x57, 0xed};
 static uint8_t gcm_data[42] __aligned(IO_ALIGNMENT_BYTES) = {
 	0x08, 0x00, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a,
 	0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
@@ -715,10 +676,11 @@ void gcm_mode(const struct device *dev)
 	struct cipher_ctx ini = {
 		.keylen = sizeof(gcm_key),
 		.key.bit_stream = gcm_key,
-		.mode_params.gcm_info = {
-			.nonce_len = sizeof(gcm_nonce),
-			.tag_len = 16,
-		},
+		.mode_params.gcm_info =
+			{
+				.nonce_len = sizeof(gcm_nonce),
+				.tag_len = 16,
+			},
 		.flags = cap_flags,
 	};
 	struct cipher_pkt encrypt = {
@@ -740,8 +702,7 @@ void gcm_mode(const struct device *dev)
 		.out_buf_max = sizeof(decrypted),
 	};
 
-	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
-				 CRYPTO_CIPHER_MODE_GCM,
+	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES, CRYPTO_CIPHER_MODE_GCM,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
 		return;
 	}
@@ -756,17 +717,15 @@ void gcm_mode(const struct device *dev)
 
 	if (memcmp(encrypt.out_buf, gcm_expected, sizeof(gcm_expected))) {
 		LOG_ERR("GCM mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(gcm_expected,
-					encrypt.out_buf, sizeof(gcm_expected));
+			"and returned cipher text");
+		print_buffer_comparison(gcm_expected, encrypt.out_buf, sizeof(gcm_expected));
 		goto out;
 	}
 
 	LOG_INF("GCM mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
-	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
-				 CRYPTO_CIPHER_MODE_GCM,
+	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES, CRYPTO_CIPHER_MODE_GCM,
 				 CRYPTO_CIPHER_OP_DECRYPT)) {
 		return;
 	}
@@ -782,8 +741,7 @@ void gcm_mode(const struct device *dev)
 	if (memcmp(decrypt.out_buf, gcm_data, sizeof(gcm_data))) {
 		LOG_ERR("GCM mode DECRYPT - Mismatch between plaintext "
 			"and decrypted cipher text");
-		print_buffer_comparison(gcm_data,
-					decrypt.out_buf, sizeof(gcm_data));
+		print_buffer_comparison(gcm_data, decrypt.out_buf, sizeof(gcm_data));
 		goto out;
 	}
 

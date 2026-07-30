@@ -394,10 +394,11 @@ ZTEST(crypto_aes, test_ccm_encrypt)
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(ccm_key),
 		.key.bit_stream = ccm_key,
-		.mode_params.ccm_info = {
-			.nonce_len = sizeof(ccm_nonce),
-			.tag_len = 8,
-		},
+		.mode_params.ccm_info =
+			{
+				.nonce_len = sizeof(ccm_nonce),
+				.tag_len = 8,
+			},
 		.flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
 	};
 
@@ -447,10 +448,11 @@ ZTEST(crypto_aes, test_ccm_decrypt)
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(ccm_key),
 		.key.bit_stream = ccm_key,
-		.mode_params.ccm_info = {
-			.nonce_len = sizeof(ccm_nonce),
-			.tag_len = 8,
-		},
+		.mode_params.ccm_info =
+			{
+				.nonce_len = sizeof(ccm_nonce),
+				.tag_len = 8,
+			},
 		.flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
 	};
 
@@ -499,10 +501,11 @@ ZTEST(crypto_aes, test_gcm_encrypt)
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(gcm_key),
 		.key.bit_stream = gcm_key,
-		.mode_params.gcm_info = {
-			.nonce_len = sizeof(gcm_nonce),
-			.tag_len = 16,
-		},
+		.mode_params.gcm_info =
+			{
+				.nonce_len = sizeof(gcm_nonce),
+				.tag_len = 16,
+			},
 		.flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
 	};
 
@@ -552,10 +555,11 @@ ZTEST(crypto_aes, test_gcm_decrypt)
 	struct cipher_ctx ctx = {
 		.keylen = sizeof(gcm_key),
 		.key.bit_stream = gcm_key,
-		.mode_params.gcm_info = {
-			.nonce_len = sizeof(gcm_nonce),
-			.tag_len = 16,
-		},
+		.mode_params.gcm_info =
+			{
+				.nonce_len = sizeof(gcm_nonce),
+				.tag_len = 16,
+			},
 		.flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS,
 	};
 

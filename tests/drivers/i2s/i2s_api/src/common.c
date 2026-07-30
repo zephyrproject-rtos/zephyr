@@ -14,18 +14,16 @@ K_MEM_SLAB_DEFINE(tx_mem_slab, BLOCK_SIZE, NUM_TX_BLOCKS, 32);
 
 /* The data_l represent a sine wave */
 ZTEST_DMEM int16_t data_l[SAMPLE_NO] = {
-	  6392,  12539,  18204,  23169,  27244,  30272,  32137,  32767,  32137,
-	 30272,  27244,  23169,  18204,  12539,   6392,      0,  -6393, -12540,
-	-18205, -23170, -27245, -30273, -32138, -32767, -32138, -30273, -27245,
-	-23170, -18205, -12540,  -6393,     -1,
+	6392,   12539,  18204,  23169,  27244,  30272,  32137,  32767,  32137,  30272,  27244,
+	23169,  18204,  12539,  6392,   0,      -6393,  -12540, -18205, -23170, -27245, -30273,
+	-32138, -32767, -32138, -30273, -27245, -23170, -18205, -12540, -6393,  -1,
 };
 
 /* The data_r represent a sine wave with double the frequency of data_l */
 ZTEST_DMEM int16_t data_r[SAMPLE_NO] = {
-	 12539,  23169,  30272,  32767,  30272,  23169,  12539,      0, -12540,
-	-23170, -30273, -32767, -30273, -23170, -12540,     -1,  12539,  23169,
-	 30272,  32767,  30272,  23169,  12539,      0, -12540, -23170, -30273,
-	-32767, -30273, -23170, -12540,     -1,
+	12539,  23169,  30272,  32767,  30272,  23169,  12539,  0,      -12540, -23170, -30273,
+	-32767, -30273, -23170, -12540, -1,     12539,  23169,  30272,  32767,  30272,  23169,
+	12539,  0,      -12540, -23170, -30273, -32767, -30273, -23170, -12540, -1,
 };
 
 static void fill_buf(int16_t *tx_block, int att)
@@ -139,8 +137,7 @@ static int tx_block_write_slab(const struct device *dev_i2s, int att, int err,
 	fill_buf((uint16_t *)tx_block, att);
 	ret = i2s_buf_write(dev_i2s, tx_block, BLOCK_SIZE);
 	if (ret != err) {
-		TC_PRINT("Error: i2s_write failed expected %d, actual %d\n",
-			 err, ret);
+		TC_PRINT("Error: i2s_write failed expected %d, actual %d\n", err, ret);
 		return -TC_FAIL;
 	}
 
@@ -152,8 +149,7 @@ int tx_block_write(const struct device *dev_i2s, int att, int err)
 	return tx_block_write_slab(dev_i2s, att, err, &tx_mem_slab);
 }
 
-static int rx_block_read_slab(const struct device *dev_i2s, int att,
-			      struct k_mem_slab *slab)
+static int rx_block_read_slab(const struct device *dev_i2s, int att, struct k_mem_slab *slab)
 {
 	char rx_block[BLOCK_SIZE];
 	size_t rx_size;
@@ -199,20 +195,16 @@ int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 
 	if (dir == I2S_DIR_TX) {
 		/* Configure the Transmit port as Controller */
-		i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER
-				| I2S_OPT_BIT_CLK_CONTROLLER;
+		i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER;
 	} else if (dir == I2S_DIR_RX) {
 #ifdef CONFIG_I2S_TI_CC35XX
-		i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER
-				| I2S_OPT_BIT_CLK_CONTROLLER;
+		i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER;
 #else
 		/* Configure the Receive port as Target */
-		i2s_cfg.options = I2S_OPT_FRAME_CLK_TARGET
-				| I2S_OPT_BIT_CLK_TARGET;
+		i2s_cfg.options = I2S_OPT_FRAME_CLK_TARGET | I2S_OPT_BIT_CLK_TARGET;
 #endif
 	} else { /* dir == I2S_DIR_BOTH */
-		i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER
-				| I2S_OPT_BIT_CLK_CONTROLLER;
+		i2s_cfg.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER;
 	}
 
 	if (!IS_ENABLED(CONFIG_I2S_TEST_USE_GPIO_LOOPBACK)) {
@@ -223,8 +215,7 @@ int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 		i2s_cfg.mem_slab = &tx_mem_slab;
 		ret = i2s_configure(dev_i2s, I2S_DIR_TX, &i2s_cfg);
 		if (ret < 0) {
-			TC_PRINT("Failed to configure I2S TX stream (%d)\n",
-				 ret);
+			TC_PRINT("Failed to configure I2S TX stream (%d)\n", ret);
 			return -TC_FAIL;
 		}
 	}
@@ -233,8 +224,7 @@ int configure_stream(const struct device *dev_i2s, enum i2s_dir dir)
 		i2s_cfg.mem_slab = &rx_mem_slab;
 		ret = i2s_configure(dev_i2s, I2S_DIR_RX, &i2s_cfg);
 		if (ret < 0) {
-			TC_PRINT("Failed to configure I2S RX stream (%d)\n",
-				 ret);
+			TC_PRINT("Failed to configure I2S RX stream (%d)\n", ret);
 			return -TC_FAIL;
 		}
 	}
