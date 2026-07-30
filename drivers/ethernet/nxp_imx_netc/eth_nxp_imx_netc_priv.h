@@ -10,6 +10,9 @@
 #include <zephyr/drivers/ethernet/nxp_imx_netc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/net/ethernet.h>
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+#include <zephyr/net/net_stats.h>
+#endif
 #include "fsl_netc_endpoint.h"
 #if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(CONFIG_PTP_CLOCK_NXP_NETC)
 #include "fsl_netc_switch.h"
@@ -129,6 +132,10 @@ struct netc_eth_data {
 	ep_handle_t handle;
 	struct net_if *iface;
 	uint8_t mac_addr[6];
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	/* Snapshot returned by get_stats(), refreshed from the SI HW counters. */
+	struct net_stats_eth stats;
+#endif
 	/* TX */
 	/* One buffer per Tx BD ring slot, indexed by the ring producer index. */
 	uint8_t (*tx_buff)[CONFIG_ETH_NXP_IMX_TX_RING_BUF_SIZE];
@@ -183,6 +190,10 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt);
 /* Drain one Rx frame from the SI ring into the net stack; -ENOBUFS when empty. */
 int netc_eth_rx(const struct device *dev);
 enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev, struct net_if *iface);
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+/* Refresh and return the SI hardware counters (shared by the PSI and VSI). */
+struct net_stats_eth *netc_eth_get_stats(const struct device *dev, struct net_if *iface);
+#endif
 int netc_eth_set_config(const struct device *dev, struct net_if *iface,
 			enum ethernet_config_type type, const struct ethernet_config *config);
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC

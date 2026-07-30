@@ -581,6 +581,9 @@ static enum ethernet_hw_caps netc_eth_vsi_get_capabilities(const struct device *
 static const struct ethernet_api netc_eth_vsi_api = {
 	.iface_api.init = netc_eth_vsi_iface_init,
 	.get_capabilities = netc_eth_vsi_get_capabilities,
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.get_stats = netc_eth_get_stats,
+#endif
 	.set_config = netc_eth_vsi_set_config,
 #if defined(CONFIG_NET_VLAN)
 	.vlan_setup = netc_eth_vsi_vlan_setup,

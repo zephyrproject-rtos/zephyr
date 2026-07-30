@@ -688,6 +688,30 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev __maybe
 	return caps;
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+struct net_stats_eth *netc_eth_get_stats(const struct device *dev, struct net_if *iface __unused)
+{
+	struct netc_eth_data *data = dev->data;
+	const struct netc_eth_config *cfg = dev->config;
+
+#ifdef CONFIG_DT_HAS_NXP_IMX_NETC_VSI_ENABLED
+	/* Stats are only available once the VSI is fully ready. */
+	if (cfg->is_vsi && !data->si_ready) {
+		return &data->stats;
+	}
+#else
+	ARG_UNUSED(cfg);
+#endif
+
+	/* SITDFCR counts frames discarded on this SI's transmit path. */
+#ifdef ENETC_SI_SITDFCR_COUNT_MASK
+	data->stats.tx_dropped = data->handle.hw.si->SITDFCR;
+#endif
+
+	return &data->stats;
+}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
+
 int netc_eth_set_config(const struct device *dev, struct net_if *iface __unused,
 			enum ethernet_config_type type, const struct ethernet_config *config)
 {
