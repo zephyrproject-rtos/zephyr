@@ -1,0 +1,112 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * PSC3 Secure image: SAU region table, the CMSE veneer (NSC) window, and the
+ * MPC/PPC nodes that hand SRAM and the console SCB to the Non-Secure
+ * world before arch_secure_domain_swap().
+ *
+ * PSC3 aliasing: Secure alias = Non-Secure alias | 0x10000000
+ *   flash  NS 0x02000000  / S 0x12000000
+ *   SRAM   NS 0x24000000  / S 0x34000000
+ */
+
+#include <zephyr/dt-bindings/mpc/infineon-mpc.h>
+#include <zephyr/dt-bindings/ppc/infineon-ppc.h>
+#include <zephyr/dt-bindings/ppc/infineon-psc3-ppc.h>
+
+/ {
+	/*
+	 * Linker MEMORY region for the CMSE SG veneers (.gnu.sgstubs), placed at
+	 * the end of the 128K Secure flash slot and marked NSC by the SAU below.
+	 */
+	nsc_ns_alias: memory@1201e000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x1201e000 DT_SIZE_K(8)>;
+		zephyr,memory-region = "NSC_NS_ALIAS";
+	};
+
+	/*
+	 * SAU region table (see arch_security_partition_configure()).
+	 *
+	 * The Non-Secure flash alias (0x00000000-0x0FFFFFFF) and SRAM alias
+	 * (0x20000000-0x2FFFFFFF) are NS; the peripheral space (0x40000000+) is
+	 * NS; the Secure flash defaults Secure except the explicit NSC veneer
+	 * window at CONFIG_ARM_NSC_REGION_BASE_ADDRESS.
+	 */
+	security_partition: security-partition {
+		compatible = "zephyr,security-partition";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		region@0 {
+			reg = <0x00000000 0x10000000>;
+			zephyr,attr = "non-secure";
+		};
+		region@1201e000 {
+			reg = <0x1201e000 0x2000>;
+			zephyr,attr = "non-secure-callable";
+		};
+		region@20000000 {
+			reg = <0x20000000 0x10000000>;
+			zephyr,attr = "non-secure";
+		};
+		region@40000000 {
+			reg = <0x40000000 0xc0000000>;
+			zephyr,attr = "non-secure";
+		};
+	};
+
+	soc {
+		/* RAMC0 SRAM MPC: hand the Non-Secure SRAM bank to NS. */
+		mpc_ramc0: mpc@52114000 {
+			compatible = "infineon,mpc";
+			reg = <0x52114000 0x1000>;
+			violation-response = "bus-error";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			/* NS SRAM at 0x24004000 = offset 0x4000, size 44K: NS RW. */
+			region@4000 {
+				reg = <0x00004000 0x0000b000>;
+				pc-configs = <PSC3_PC_NS_APP INFINEON_MPC_NON_SECURE
+					      INFINEON_MPC_ACCESS_RW>;
+				bus-nonsecure;
+			};
+		};
+
+		/*
+		 * PERI0 PPC: open only the curated regions the Non-Secure image
+		 * needs — the console SCB3 (uart3) and its clock/group path.  A
+		 * blanket sweep bus-faults on SROM-locked slots.
+		 */
+		ppc0: ppc@52020000 {
+			compatible = "infineon,ppc";
+			reg = <0x52020000 0x2000>;
+			nonsecure-regions = <PROT_PERI0_MAIN
+					     PROT_PERI0_GR1_GROUP
+					     PROT_PERI0_GR2_GROUP
+					     PROT_PERI0_GR3_GROUP
+					     PROT_PERI0_GR4_GROUP
+					     PROT_PERI0_GR5_GROUP
+					     PROT_PERI0_PERI_PCLK0_MAIN
+					     PROT_SCB3>;
+			pc-mask = <(INFINEON_PPC_PC(PSC3_PC_TFM) |
+				    INFINEON_PPC_PC(PSC3_PC_NS_APP) |
+				    INFINEON_PPC_PC(PSC3_PC_DAP))>;
+			status = "okay";
+		};
+	};
+};
+
+&mxcryptolite_crypto {
+	status = "disabled";
+};
+
+&mxcryptolite_trng {
+	status = "disabled";
+};
+

@@ -28,6 +28,7 @@ tests:
     platform_allow:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
       - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
+      - kit_psc3m5_evk/psc3m5fds2afq1/ns
     integration_platforms:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
     sysbuild: true
