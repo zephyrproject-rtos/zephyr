@@ -8,6 +8,7 @@ menuconfig ICP201XX
 	bool "ICP201xx Barometric Pressure and Temperature Sensor"
 	default y
 	depends on DT_HAS_INVENSENSE_ICP201XX_ENABLED
+	depends on ZEPHYR_HAL_TDK_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICP201XX),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICP201XX),spi)
 	select USE_EMD_ICP201XX
