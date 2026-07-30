@@ -491,9 +491,9 @@ static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset
 	/* perform copy (if args are valid) */
 	actual_result = flash_copy(src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size);
 	zassert_equal(actual_result, expected_result,
-		      "flash_copy(%p, %lx, %p, %lx, %zu, %p, %zu) failed: expected: %d actual: %d",
-		      src_dev, src_offset, dst_dev, dst_offset, (size_t)size, buf, buf_size,
-		      expected_result, actual_result);
+		      "flash_copy(%p, %tx, %p, %tx, %zu, %p, %zu) failed: expected: %d actual: %d",
+		      src_dev, (ptrdiff_t)src_offset, dst_dev, (ptrdiff_t)dst_offset, (size_t)size,
+		      buf, buf_size, expected_result, actual_result);
 
 	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
 		/* verify a successful copy */
