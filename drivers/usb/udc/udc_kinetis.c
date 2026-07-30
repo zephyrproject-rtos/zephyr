@@ -449,6 +449,18 @@ static void usbfsotg_isr_handler(const struct device *dev)
 	const uint8_t istatus  = base->ISTAT;
 	const uint8_t status  = base->STAT;
 
+	if (istatus & USB_ISTAT_TOKDNE_MASK) {
+		/* Advance (pop) the STAT FIFO immediately after capturing
+		 * the entry, before handling it. Clearing TOKDNE in the
+		 * epilogue instead leaves only the IRQ re-entry latency
+		 * between the pop and the next STAT read; the FIFO advance
+		 * takes up to two module clocks, so a back-to-back
+		 * completion can be read as a stale copy of the previous
+		 * entry — processed twice, while the popped entry is lost.
+		 */
+		base->ISTAT = USB_ISTAT_TOKDNE_MASK;
+	}
+
 	if (istatus & USB_ISTAT_USBRST_MASK) {
 		base->ADDR = 0U;
 		udc_submit_event(dev, UDC_EVT_RESET, 0);
@@ -490,8 +502,11 @@ static void usbfsotg_isr_handler(const struct device *dev)
 		udc_submit_event(dev, UDC_EVT_RESUME, 0);
 	}
 
-	/* Clear interrupt status bits */
-	base->ISTAT = istatus;
+	/* Clear interrupt status bits (TOKDNE was already cleared and the
+	 * FIFO advanced above; clearing it again here would pop and lose a
+	 * pending entry).
+	 */
+	base->ISTAT = (uint8_t)(istatus & ~USB_ISTAT_TOKDNE_MASK);
 }
 
 static int usbfsotg_ep_enqueue(const struct device *dev,
