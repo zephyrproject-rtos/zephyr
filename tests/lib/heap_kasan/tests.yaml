@@ -3,6 +3,8 @@ tests:
     tags:
       - heap
       - asan
+    # m68k lacks the validated shadow offset required by its GCC target.
+    arch_exclude: m68k
     # RX does not support -fsanitize=kernel-address.
     filter: not CONFIG_RX
     integration_platforms:
