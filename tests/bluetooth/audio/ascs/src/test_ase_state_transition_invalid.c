@@ -117,7 +117,7 @@ static void test_client_config_codec_expect_transition_error(struct bt_conn *con
 	};
 
 	test_ase_control_client_config_codec(conn, ase_id, NULL);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -134,7 +134,7 @@ static void test_client_config_qos_expect_transition_error(struct bt_conn *conn,
 	};
 
 	test_ase_control_client_config_qos(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -151,7 +151,7 @@ static void test_client_enable_expect_transition_error(struct bt_conn *conn, uin
 	};
 
 	test_ase_control_client_enable(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -168,7 +168,7 @@ static void test_client_receiver_start_ready_expect_transition_error(
 	};
 
 	test_ase_control_client_receiver_start_ready(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -185,7 +185,7 @@ static void test_client_receiver_start_ready_expect_ase_direction_error(
 	};
 
 	test_ase_control_client_receiver_start_ready(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -202,7 +202,7 @@ static void test_client_disable_expect_transition_error(struct bt_conn *conn, ui
 	};
 
 	test_ase_control_client_disable(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -219,7 +219,7 @@ static void test_client_receiver_stop_ready_expect_transition_error(
 	};
 
 	test_ase_control_client_receiver_stop_ready(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -236,7 +236,7 @@ static void test_client_receiver_stop_ready_expect_ase_direction_error(
 	};
 
 	test_ase_control_client_receiver_stop_ready(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -253,7 +253,7 @@ static void test_client_update_metadata_expect_transition_error(
 	};
 
 	test_ase_control_client_update_metadata(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -270,7 +270,7 @@ static void test_client_release_expect_transition_error(struct bt_conn *conn, ui
 	};
 
 	test_ase_control_client_release(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
