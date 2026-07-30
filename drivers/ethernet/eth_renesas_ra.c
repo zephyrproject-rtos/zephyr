@@ -488,7 +488,6 @@ static struct eth_renesas_ra_buf_header eth_0_txb_header[] = {
 		.rx_sem = Z_SEM_INITIALIZER(eth_0_context.rx_sem, 0, UINT_MAX),                    \
 		.tx_sem = Z_SEM_INITIALIZER(eth_0_context.tx_sem, CONFIG_ETH_RENESAS_TX_BUF_NUM,   \
 					    CONFIG_ETH_RENESAS_TX_BUF_NUM),                        \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),                                         \
 		ETH_BUF_INIT};                                                                     \
                                                                                                    \
 	ETH_NET_DEVICE_DT_INST_DEFINE(0, renesas_ra_eth_init, NULL, &eth_0_context, &eth_0_config, \
