@@ -68,9 +68,9 @@ static int in_memory_is_valid(void)
 
 static int in_memory_copy_to(struct coredump_cmd_copy_arg *copy_arg)
 {
-	LOG_DBG("Copy to: %p offset: %lu length: %lu",
-		(void *)copy_arg->buffer, copy_arg->offset,
-		(unsigned long)copy_arg->length);
+	LOG_DBG("Copy to: %p offset: %tu length: %zu",
+		(void *)copy_arg->buffer, (ptrdiff_t)copy_arg->offset,
+		(size_t)copy_arg->length);
 
 	if (copy_arg->buffer == NULL ||
 	    copy_arg->offset >= IN_MEMORY_END ||
