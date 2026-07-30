@@ -67,16 +67,3 @@
 	pinctrl-0 = <&led1_output &led2_output &led3_output>;
 	pinctrl-names = "default";
 };
-
-&main_timer8 {
-	status = "okay";
-};
-
-/*
- * The ROMSTART region from the linker script will occupy the first 0x3C byte
- * with the exception vector. To avoid overlaps the ATCM needs to be shrunken
- * down appropiatly. See the _defconfig for more details.
- */
-&atcm {
-	reg = <0x3c (DT_SIZE_K(32) - 0x3c)>;
-};
