@@ -120,7 +120,12 @@ static inline uintptr_t k_mem_phys_addr(void *virt)
 	__ASSERT(sys_mm_is_virt_addr_in_range(virt),
 		 "address %p not in permanent mappings", virt);
 #elif defined(CONFIG_MMU)
+#if CONFIG_KERNEL_VM_BASE != 0
+	/* Skipped when the VM base is 0, where the comparison is always true and
+	 * some compilers warn about it (-Wtype-limits).
+	 */
 	__ASSERT(addr >= (uintptr_t)CONFIG_KERNEL_VM_BASE, "address %p below VM base", virt);
+#endif /* CONFIG_KERNEL_VM_BASE != 0 */
 	__ASSERT((addr - (uintptr_t)CONFIG_KERNEL_VM_BASE) < (uintptr_t)CONFIG_KERNEL_VM_SIZE,
 		 "address %p above VM limit", virt);
 #else
