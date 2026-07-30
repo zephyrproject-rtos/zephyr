@@ -11,94 +11,32 @@
 #include <hal/nrf_timer.h>
 #include <hal/nrf_egu.h>
 #include <helpers/nrfx_gppi.h>
-#if DT_NODE_EXISTS(DT_NODELABEL(pdm0)) && DT_NODE_HAS_STATUS(DT_NODELABEL(pdm0), reserved)
-#include <hal/nrf_pdm.h>
-#elif DT_NODE_EXISTS(DT_NODELABEL(comp)) && DT_NODE_HAS_STATUS(DT_NODELABEL(comp), reserved)
-#include <hal/nrf_lpcomp.h>
-#elif defined(CONFIG_SOC_NRF54H20_CPURAD)
-#include <hal/nrf_ecb.h>
-#endif
 
-NRF_TIMER_Type *timer0 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer0));
-NRF_TIMER_Type *timer1 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer1));
-NRF_TIMER_Type *timer2 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer2));
-
-#if DT_NODE_EXISTS(DT_NODELABEL(pdm0)) && DT_NODE_HAS_STATUS(DT_NODELABEL(pdm0), reserved)
-NRF_PDM_Type *pdm = (NRF_PDM_Type *)DT_REG_ADDR(DT_NODELABEL(pdm0));
+static NRF_TIMER_Type *timer0 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer0));
+static NRF_TIMER_Type *timer1 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer1));
+static NRF_TIMER_Type *timer2 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer2));
+static NRF_EGU_Type *egu = (NRF_EGU_Type *)DT_REG_ADDR(DT_NODELABEL(dut_egu));
 
 static void sink_setup(void)
 {
-	nrf_pdm_task_trigger(pdm, NRF_PDM_TASK_STOP);
-	nrf_pdm_event_clear(pdm, NRF_PDM_EVENT_STARTED);
-	nrf_pdm_enable(pdm);
+	nrf_egu_task_trigger(egu, NRF_EGU_TASK_TRIGGER0);
+	nrf_egu_event_clear(egu, NRF_EGU_EVENT_TRIGGERED0);
 }
 
 static void sink_cleanup(void)
 {
-	nrf_pdm_task_trigger(pdm, NRF_PDM_TASK_STOP);
-	nrf_pdm_disable(pdm);
+	nrf_egu_event_clear(egu, NRF_EGU_EVENT_TRIGGERED0);
 }
 
 static bool sink_evt_check(void)
 {
-	return nrf_pdm_event_check(pdm, NRF_PDM_EVENT_STARTED);
+	return nrf_egu_event_check(egu, NRF_EGU_EVENT_TRIGGERED0);
 }
 
 static uint32_t sink_tsk_addr(void)
 {
-	return nrf_pdm_task_address_get(pdm, NRF_PDM_TASK_START);
+	return nrf_egu_task_address_get(egu, NRF_EGU_TASK_TRIGGER0);
 }
-
-#elif DT_NODE_EXISTS(DT_NODELABEL(comp)) && DT_NODE_HAS_STATUS(DT_NODELABEL(comp), reserved)
-NRF_LPCOMP_Type *lpcomp = (NRF_LPCOMP_Type *)DT_REG_ADDR(DT_NODELABEL(comp));
-
-static void sink_setup(void)
-{
-	nrf_lpcomp_task_trigger(lpcomp, NRF_LPCOMP_TASK_STOP);
-	nrf_lpcomp_event_clear(lpcomp, NRF_LPCOMP_EVENT_READY);
-	nrf_lpcomp_enable(lpcomp);
-}
-
-static void sink_cleanup(void)
-{
-	nrf_lpcomp_task_trigger(lpcomp, NRF_LPCOMP_TASK_STOP);
-	nrf_lpcomp_disable(lpcomp);
-}
-
-static bool sink_evt_check(void)
-{
-	return nrf_lpcomp_event_check(lpcomp, NRF_LPCOMP_EVENT_READY);
-}
-
-static uint32_t sink_tsk_addr(void)
-{
-	return nrf_lpcomp_task_address_get(lpcomp, NRF_LPCOMP_TASK_START);
-}
-
-#elif defined(CONFIG_SOC_NRF54H20_CPURAD)
-
-static uint32_t sink_tsk_addr(void)
-{
-	return nrf_ecb_task_address_get(NRF_ECB030, NRF_ECB_TASK_START);
-}
-static void sink_setup(void)
-{
-	nrf_ecb_event_clear(NRF_ECB030, NRF_ECB_EVENT_ERROR);
-}
-
-static void sink_cleanup(void)
-{
-	nrf_ecb_event_clear(NRF_ECB030, NRF_ECB_EVENT_ERROR);
-}
-
-static bool sink_evt_check(void)
-{
-	return nrf_ecb_event_check(NRF_ECB030, NRF_ECB_EVENT_ERROR);
-}
-
-#else
-#error "Target not supported"
-#endif
 
 /* Setup a single PPI connection TIMER_COMPARE->sink task. Use various timers. */
 static void test_single_connection(NRF_TIMER_Type *timer)
