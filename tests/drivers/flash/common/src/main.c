@@ -439,8 +439,9 @@ ZTEST(flash_driver, test_flash_page_layout)
 	/* Get page info with flash_get_page_info_by_offs() */
 	rc = flash_get_page_info_by_offs(flash_dev, TEST_AREA_OFFSET, &page_info_off);
 	zassert_true(rc == 0, "flash_get_page_info_by_offs returned %d", rc);
-	TC_PRINT("start_offset=0x%lx\tsize=%d\tindex=%d\n", page_info_off.start_offset,
-		 (int)page_info_off.size, page_info_off.index);
+	TC_PRINT("start_offset=0x%tx\tsize=%zd\tindex=%lu\n",
+		 (ptrdiff_t)page_info_off.start_offset, page_info_off.size,
+		 (unsigned long)page_info_off.index);
 	zassert_true(page_info_off.start_offset >= 0, "start_offset is %d", rc);
 	zassert_true(page_info_off.size > 0, "size is %d", rc);
 	zassert_true(page_info_off.index >= 0, "index is %d", rc);
