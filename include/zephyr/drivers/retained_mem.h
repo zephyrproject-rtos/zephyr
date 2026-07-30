@@ -26,8 +26,8 @@ extern "C" {
 #endif
 
 /** @cond INTERNAL_HIDDEN */
-BUILD_ASSERT(!(sizeof(off_t) > sizeof(size_t)),
-	     "Size of off_t must be equal or less than size of size_t");
+BUILD_ASSERT(!(sizeof(off_t) < sizeof(size_t)),
+	     "Size of off_t must be equal or greater than size of size_t");
 /** @endcond */
 
 /**
@@ -137,7 +137,7 @@ static inline int z_impl_retained_mem_read(const struct device *dev, off_t offse
 
 	area_size = api->size(dev);
 
-	if (offset < 0 || size > area_size || (area_size - size) < (size_t)offset) {
+	if (offset < 0 || size > area_size || (off_t)(area_size - size) < offset) {
 		return -EINVAL;
 	}
 
@@ -171,7 +171,7 @@ static inline int z_impl_retained_mem_write(const struct device *dev, off_t offs
 
 	area_size = api->size(dev);
 
-	if (offset < 0 || size > area_size || (area_size - size) < (size_t)offset) {
+	if (offset < 0 || size > area_size || (off_t)(area_size - size) < offset) {
 		return -EINVAL;
 	}
 
