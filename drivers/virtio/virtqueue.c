@@ -27,7 +27,7 @@ LOG_MODULE_REGISTER(virtio, CONFIG_VIRTIO_LOG_LEVEL);
 #define VIRTQ_DESC_NEXT_SENTINEL 0xffff
 
 /* According to the spec 2.7.5.2 the maximum size of descriptor chain is 4GB */
-#define MAX_DESCRIPTOR_CHAIN_LENGTH ((uint64_t)1 << 32)
+#define MAX_DESCRIPTOR_CHAIN_LENGTH BIT64(32)
 
 int virtq_create(struct virtq *v, size_t size)
 {
@@ -54,7 +54,7 @@ int virtq_create(struct virtq *v, size_t size)
 
 	uint8_t *v_area = k_aligned_alloc(16, v_size);
 
-	if (!v_area) {
+	if (v_area == NULL) {
 		LOG_ERR("unable to allocate virtqueue");
 		return -ENOMEM;
 	}
@@ -74,8 +74,6 @@ int virtq_create(struct virtq *v, size_t size)
 	 * Zephyr, so we don't have to handle it here
 	 */
 	memset(v_area, 0, v_size);
-
-	v->last_used_idx = 0;
 
 	/* pointer-aligned as recv_cbs starts WB_UP()-aligned and holds pointer pairs */
 	stack_data_t *stack_buf = (stack_data_t *)(v_area + shared_size + recv_cbs_size);
