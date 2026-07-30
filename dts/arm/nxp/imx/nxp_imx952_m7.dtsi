@@ -142,17 +142,17 @@
 			reg = <0x20000000 DT_SIZE_K(256)>;
 		};
 
-		flexio1: flexio@425c0000 {
+		flexio1: flexio@421e0000 {
 			compatible = "nxp,flexio";
-			reg = <0x425c0000 0x4000>;
+			reg = <0x421e0000 0x4000>;
 			interrupts = <46 0>;
 			clocks = <&scmi_clk IMX952_CLK_FLEXIO1>;
 			status = "disabled";
 		};
 
-		flexio2: flexio@425d0000 {
+		flexio2: flexio@421f0000 {
 			compatible = "nxp,flexio";
-			reg = <0x425d0000 0x4000>;
+			reg = <0x421f0000 0x4000>;
 			interrupts = <47 0>;
 			clocks = <&scmi_clk IMX952_CLK_FLEXIO2>;
 			status = "disabled";
@@ -241,9 +241,9 @@
 			status = "disabled";
 		};
 
-		tpm3: pwm@424e0000 {
+		tpm3: pwm@42100000 {
 			compatible = "nxp,kinetis-tpm";
-			reg = <0x424e0000 0x88>;
+			reg = <0x42100000 0x88>;
 			interrupts = <73 0>;
 			clocks = <&scmi_clk IMX952_CLK_BUSWAKEUP>;
 			prescaler = <16>;
@@ -261,9 +261,9 @@
 			#pwm-cells = <3>;
 		};
 
-		tpm5: pwm@42500000 {
+		tpm5: pwm@42120000 {
 			compatible = "nxp,kinetis-tpm";
-			reg = <0x42500000 0x88>;
+			reg = <0x42120000 0x88>;
 			interrupts = <75 0>;
 			clocks = <&scmi_clk IMX952_CLK_TPM5>;
 			prescaler = <16>;
@@ -271,9 +271,9 @@
 			#pwm-cells = <3>;
 		};
 
-		tpm6: pwm@42510000 {
+		tpm6: pwm@42130000 {
 			compatible = "nxp,kinetis-tpm";
-			reg = <0x42510000 0x88>;
+			reg = <0x42130000 0x88>;
 			interrupts = <76 0>;
 			clocks = <&scmi_clk IMX952_CLK_TPM6>;
 			prescaler = <16>;
@@ -281,31 +281,31 @@
 			#pwm-cells = <3>;
 		};
 
-		lpi2c3: i2c@42530000 {
+		lpi2c3: i2c@42150000 {
 			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x42530000 0x4000>;
+			reg = <0x42150000 0x4000>;
 			interrupts = <58 0>;
 			clocks = <&scmi_clk IMX952_CLK_LPI2C3>;
 			status = "disabled";
 		};
 
-		lpi2c4: i2c@42540000 {
+		lpi2c4: i2c@42160000 {
 			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x42540000 0x4000>;
+			reg = <0x42160000 0x4000>;
 			interrupts = <59 0>;
 			clocks = <&scmi_clk IMX952_CLK_LPI2C4>;
 			status = "disabled";
 		};
 
-		lpspi3: spi@42550000 {
+		lpspi3: spi@42170000 {
 			compatible = "nxp,lpspi";
-			reg = <0x42550000 0x4000>;
+			reg = <0x42170000 0x4000>;
 			interrupts = <61 3>;
 			clocks = <&scmi_clk IMX952_CLK_LPSPI3>;
 			status = "disabled";
@@ -315,9 +315,9 @@
 			rx-fifo-size = <16>;
 		};
 
-		lpspi4: spi@42560000 {
+		lpspi4: spi@42180000 {
 			compatible = "nxp,lpspi";
-			reg = <0x42560000 0x4000>;
+			reg = <0x42180000 0x4000>;
 			interrupts = <62 3>;
 			clocks = <&scmi_clk IMX952_CLK_LPSPI4>;
 			status = "disabled";
@@ -423,9 +423,9 @@
 			status = "disabled";
 		};
 
-		sai3: dai@42650000 {
+		sai3: dai@433e0000 {
 			compatible = "nxp,dai-sai";
-			reg = <0x42650000 DT_SIZE_K(64)>;
+			reg = <0x433e0000 DT_SIZE_K(64)>;
 			clocks = <&scmi_clk IMX952_CLK_SAI3>;
 			clock-names = "mclk1";
 			interrupts = <170 0>;
@@ -452,53 +452,53 @@
 			status = "disabled";
 		};
 
-		lpi2c5: i2c@426b0000 {
+		lpi2c5: i2c@422d0000 {
 			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426b0000 0x4000>;
+			reg = <0x422d0000 0x4000>;
 			interrupts = <181 0>;
 			clocks = <&scmi_clk IMX952_CLK_LPI2C5>;
 			status = "disabled";
 		};
 
-		lpi2c6: i2c@426c0000 {
+		lpi2c6: i2c@422e0000 {
 			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426c0000 0x4000>;
+			reg = <0x422e0000 0x4000>;
 			interrupts = <182 0>;
 			clocks = <&scmi_clk IMX952_CLK_LPI2C6>;
 			status = "disabled";
 		};
 
-		lpi2c7: i2c@426d0000 {
+		lpi2c7: i2c@422f0000 {
 			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426d0000 0x4000>;
+			reg = <0x422f0000 0x4000>;
 			interrupts = <183 0>;
 			clocks = <&scmi_clk IMX952_CLK_LPI2C7>;
 			status = "disabled";
 		};
 
-		lpi2c8: i2c@426e0000 {
+		lpi2c8: i2c@42300000 {
 			compatible = "nxp,lpi2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426e0000 0x4000>;
+			reg = <0x42300000 0x4000>;
 			interrupts = <184 0>;
 			clocks = <&scmi_clk IMX952_CLK_LPI2C8>;
 			status = "disabled";
 		};
 
-		lpspi5: spi@426f0000 {
+		lpspi5: spi@42310000 {
 			compatible = "nxp,lpspi";
-			reg = <0x426f0000 0x4000>;
+			reg = <0x42310000 0x4000>;
 			interrupts = <177 3>;
 			clocks = <&scmi_clk IMX952_CLK_LPSPI5>;
 			status = "disabled";
@@ -508,9 +508,9 @@
 			rx-fifo-size = <16>;
 		};
 
-		lpspi6: spi@42700000 {
+		lpspi6: spi@42320000 {
 			compatible = "nxp,lpspi";
-			reg = <0x42700000 0x4000>;
+			reg = <0x42320000 0x4000>;
 			interrupts = <178 3>;
 			clocks = <&scmi_clk IMX952_CLK_LPSPI6>;
 			status = "disabled";
@@ -520,9 +520,9 @@
 			rx-fifo-size = <16>;
 		};
 
-		lpspi7: spi@42710000 {
+		lpspi7: spi@42330000 {
 			compatible = "nxp,lpspi";
-			reg = <0x42710000 0x4000>;
+			reg = <0x42330000 0x4000>;
 			interrupts = <179 3>;
 			clocks = <&scmi_clk IMX952_CLK_LPSPI7>;
 			status = "disabled";
@@ -532,9 +532,9 @@
 			rx-fifo-size = <16>;
 		};
 
-		lpspi8: spi@42720000 {
+		lpspi8: spi@42340000 {
 			compatible = "nxp,lpspi";
-			reg = <0x42720000 0x4000>;
+			reg = <0x42340000 0x4000>;
 			interrupts = <180 3>;
 			clocks = <&scmi_clk IMX952_CLK_LPSPI8>;
 			status = "disabled";
@@ -638,9 +638,9 @@
 			status = "disabled";
 		};
 
-		lptmr2: timer@424d0000 {
+		lptmr2: timer@420f0000 {
 			compatible = "nxp,lptmr";
-			reg = <0x424d0000 DT_SIZE_K(4)>;
+			reg = <0x420f0000 DT_SIZE_K(4)>;
 			interrupts = <63 0>;
 			clocks = <&scmi_clk IMX952_CLK_LPTMR2>;
 			clock-frequency = <DT_FREQ_K(32)>;
@@ -677,9 +677,9 @@
 			status = "disabled";
 		};
 
-		i3c2: i3c@42520000 {
+		i3c2: i3c@42140000 {
 			compatible = "nxp,mcux-i3c";
-			reg = <0x42520000 0x1000>;
+			reg = <0x42140000 0x1000>;
 			interrupts = <57 0>;
 			clocks = <&scmi_clk IMX952_CLK_I3C2SLOW>;
 			clk-divider = <6>;
@@ -697,9 +697,9 @@
 			#mbox-cells = <1>;
 		};
 
-		mu7: mailbox@42440000 {
+		mu7: mailbox@42050000 {
 			compatible = "nxp,mbox-imx-mu";
-			reg = <0x42440000 DT_SIZE_K(4)>;
+			reg = <0x42050000 DT_SIZE_K(4)>;
 			interrupts = <207 0>;
 			#mbox-cells = <1>;
 			status = "disabled";
