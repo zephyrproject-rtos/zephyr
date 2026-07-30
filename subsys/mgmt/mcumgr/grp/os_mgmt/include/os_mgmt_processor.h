@@ -168,6 +168,12 @@ extern "C" {
 #elif defined(CONFIG_CPU_EM6)
 #define PROCESSOR_NAME "arcem"
 #endif
+#elif defined(CONFIG_M68K)
+#if defined(CONFIG_CPU_M68000)
+#define PROCESSOR_NAME "m68000"
+#elif defined(CONFIG_CPU_M68010)
+#define PROCESSOR_NAME "m68010"
+#endif
 #elif defined(CONFIG_X86)
 #if defined(CONFIG_X86_64)
 #define PROCESSOR_NAME "x86_64"
