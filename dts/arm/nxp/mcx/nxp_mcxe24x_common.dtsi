@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -750,6 +750,19 @@
 		uuid: uuid@40048000 {
 			compatible = "nxp,sim-uuid";
 			reg = <0x40048000 0x1000>;
+		};
+
+		qspi: spi@40076000 {
+			compatible = "nxp,qspi";
+			reg = <0x40076000 0x1000>,
+			      <0x68000000 DT_SIZE_M(128)>;
+			interrupts = <65 0>;
+			clocks = <&pcc 0x1d8 KINETIS_PCC_SRC_SPLL_ASYNC>,
+				 <&scg KINETIS_SCG_SPLL_ASYNC_DIV1_CLK>;
+			clock-names = "gate", "clksrc";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 	};
 };
