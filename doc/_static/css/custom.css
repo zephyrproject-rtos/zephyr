@@ -1308,3 +1308,110 @@ li>a.code-sample-link.reference.internal.current {
     color: var(--svc-accent-soft, var(--link-color));
     font-weight: 500;
 }
+
+/* Introduction page: clickable architecture diagram and "Where to Go Next"
+ * cards (doc/introduction/index.rst). */
+
+.arch-diagram {
+    max-width: 62rem;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+/* Cancel the nested grids' default container padding so the blocks align
+ * flush with the text margins, and stretch both columns to equal height. */
+.arch-diagram > .sd-row > .sd-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.arch-diagram .sd-col > .sd-container-fluid {
+    flex: 1;
+    padding: 0;
+}
+
+.arch-diagram .sd-col > .sd-container-fluid > .sd-row {
+    /* The row is shifted up by its negative gutter margin; grow it by the
+     * same amount so the last blocks of both columns end flush. */
+    height: calc(100% + var(--sd-gutter-y));
+    align-content: space-between;
+}
+
+.sd-card.arch-block {
+    --arch-accent: var(--navbar-scrollbar-active-color);
+    position: relative;
+    background-color: color-mix(in oklab, var(--arch-accent) 10%, var(--landing-card-background-color));
+    border: 1px solid transparent;
+    border-left: 4px solid var(--arch-accent);
+    border-radius: 0.5rem;
+    box-shadow: none !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sd-card.arch-block:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-style) !important;
+}
+
+.arch-block .sd-card-body {
+    padding: 0.65rem 1rem;
+}
+
+.arch-block .sd-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--body-color);
+    margin-bottom: 0.15rem;
+}
+
+.arch-block .sd-card-body p:not(.sd-card-title) {
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: var(--body-color);
+    opacity: 0.75;
+    margin: 0;
+}
+
+.sd-card.arch-layer-app      { --arch-accent: var(--admonition-tip-title-background-color); }
+.sd-card.arch-layer-services { --arch-accent: var(--link-color); }
+.sd-card.arch-layer-kernel   { --arch-accent: var(--navbar-scrollbar-active-color); }
+.sd-card.arch-layer-drivers  { --arch-accent: var(--admonition-attention-title-background-color); }
+.sd-card.arch-layer-hw       { --arch-accent: var(--footer-color); }
+.sd-card.arch-tool           { --arch-accent: var(--navbar-heading-color); }
+
+.arch-tools-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--body-color);
+    opacity: 0.6;
+    margin: 0 0 0.5rem;
+}
+
+.arch-tool .sd-card-body {
+    padding: 0.5rem 0.75rem;
+}
+
+.arch-tool .sd-card-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.1rem;
+}
+
+.arch-tool .sd-card-body p:not(.sd-card-title) {
+    font-size: 0.75rem;
+}
+
+.intro-next-grid {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.intro-next-card .sd-card-title {
+    margin-bottom: 0.4rem;
+}
+
+.intro-next-card .sd-card-body p:not(.sd-card-title):not(.sd-index-watermark) {
+    font-size: 0.9rem;
+}
