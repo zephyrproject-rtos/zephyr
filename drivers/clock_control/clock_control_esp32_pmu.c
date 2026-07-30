@@ -8,7 +8,7 @@
 /*
  * Clock implementation for SoCs whose slow and CPU clocks are managed
  * through the PMU and LP_CLKRST peripherals: ESP32-C5, ESP32-C6,
- * ESP32-H2 and ESP32-P4.
+ * ESP32-C61, ESP32-H2 and ESP32-P4.
  */
 
 #include "clock_control_esp32_priv.h"
@@ -91,7 +91,7 @@ int esp32_select_rtc_slow_clk(uint8_t slow_clk)
 #if !defined(CONFIG_SOC_SERIES_ESP32P4)
 		xpd_xtal32k |= (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW);
 #endif
-#if !defined(CONFIG_SOC_SERIES_ESP32C5)
+#if !defined(CONFIG_SOC_SERIES_ESP32C5) && !defined(CONFIG_SOC_SERIES_ESP32C61)
 		xpd_rc32k = (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K);
 #endif
 
@@ -143,7 +143,8 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 	_regi2c_ctrl_ll_master_enable_clock(true);
 
 	/* clang-format off */
-#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6)
+#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                   \
+	defined(CONFIG_SOC_SERIES_ESP32C61)
 	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_SCK_DCAP, rtc_clk_cfg.slow_clk_dcap);
 	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_RTC_DREG, 1);
 	REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_DIG_DREG, 1);
@@ -165,7 +166,7 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 	/* clang-format on */
 
 	REG_SET_FIELD(LP_CLKRST_FOSC_CNTL_REG, LP_CLKRST_FOSC_DFREQ, rtc_clk_cfg.clk_8m_dfreq);
-#if !defined(CONFIG_SOC_SERIES_ESP32C5)
+#if !defined(CONFIG_SOC_SERIES_ESP32C5) && !defined(CONFIG_SOC_SERIES_ESP32C61)
 	REG_SET_FIELD(LP_CLKRST_RC32K_CNTL_REG, LP_CLKRST_RC32K_DFREQ, rtc_clk_cfg.rc32k_dfreq);
 #endif
 
@@ -197,7 +198,7 @@ static void esp32_cpu_clock_init(const struct esp32_cpu_clock_config *cpu_cfg)
 	clk_ll_rc_fast_tick_conf();
 #endif
 	esp_rom_output_tx_wait_idle(0);
-#if !defined(CONFIG_SOC_SERIES_ESP32C5)
+#if !defined(CONFIG_SOC_SERIES_ESP32C5) && !defined(CONFIG_SOC_SERIES_ESP32C61)
 	rtc_clk_xtal_freq_update(rtc_clk_cfg.xtal_freq);
 #endif
 
@@ -219,11 +220,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 
 	esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
-#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32P4)
-	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_XTAL) {
-#else
-	if (cpu_cfg->clk_src == SOC_CPU_CLK_SRC_XTAL) {
-#endif
+	if (cpu_cfg->clk_src == ESP32_CLK_SRC_CPU_XTAL) {
 		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_XTAL);
 		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
 				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, cpu_cfg->xtal_freq * MHZ(1));
@@ -245,6 +242,16 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 			     : (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_XTAL
 					? (new_config.source != SOC_CPU_CLK_SRC_XTAL)
 					: (new_config.source != cpu_cfg->clk_src)))) {
+#elif defined(CONFIG_SOC_SERIES_ESP32C61)
+	/* C61 DT binding values (ESP32_CPU_CLK_SRC_*) don't match HAL
+	 * enums (SOC_CPU_CLK_SRC_*). C61 PLL is fixed at 160 MHz
+	 * (PLL_F160M); map each DT value to its HAL equivalent.
+	 */
+	if (!ret || (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL
+			     ? (new_config.source != SOC_CPU_CLK_SRC_PLL_F160M)
+			     : (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_XTAL
+					? (new_config.source != SOC_CPU_CLK_SRC_XTAL)
+					: (new_config.source != cpu_cfg->clk_src)))) {
 #elif defined(CONFIG_SOC_SERIES_ESP32P4)
 	/*
 	 * P4 uses CPLL as its PLL source.
@@ -261,27 +268,25 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 	}
 
 #if !defined(CONFIG_SOC_SERIES_ESP32P4)
-#if defined(CONFIG_SOC_SERIES_ESP32C5)
-	bool keep_pll = (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_XTAL);
-#else
-	bool keep_pll = (cpu_cfg->clk_src == SOC_CPU_CLK_SRC_XTAL);
-#endif
+	bool keep_pll = (cpu_cfg->clk_src == ESP32_CLK_SRC_CPU_XTAL);
 
 	if (keep_pll) {
 		rtc_clk_bbpll_add_consumer();
 	}
 #endif
 
-#if defined(CONFIG_SOC_SERIES_ESP32C6)
-	if (cpu_cfg->clk_src == SOC_CPU_CLK_SRC_PLL) {
+#if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32C61)
+	if (cpu_cfg->clk_src == ESP32_CLK_SRC_CPU_PLL) {
+#if !defined(CONFIG_SOC_SERIES_ESP32C61)
 		clk_ll_mspi_fast_set_hs_divider(6);
+#endif
 		/*
-		 * Use the PLL-derived I2C analog master clock, like the IDF
-		 * bootloader (bootloader_hardware_init()): on the C6 the
-		 * BBPLL is alive on every boot path, since the ROM needs it
-		 * for USB-Serial-JTAG and esp_restart() deliberately keeps
-		 * it running. The XTAL-side source (sel_160m = 0) is routed
-		 * through modem_lpcon state that
+		 * Use the PLL-derived I2C analog master clock, like the
+		 * vendor bootloader (bootloader_hardware_init()): on the C6
+		 * and C61 the BBPLL is alive on every boot path, since the
+		 * ROM needs it for USB-Serial-JTAG and esp_restart()
+		 * deliberately keeps it running. The XTAL-side source
+		 * (sel_160m = 0) is routed through modem_lpcon state that
 		 * esp_system_reset_modules_on_exit() resets at shutdown and
 		 * the ROM's soft-boot path does not restore, so after a
 		 * software reset the BBPLL calibration in
@@ -301,8 +306,8 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 				old_config.freq_mhz);
 	irq_unlock(key);
 
-#if defined(CONFIG_SOC_SERIES_ESP32C6)
-	if (cpu_cfg->clk_src == SOC_CPU_CLK_SRC_PLL) {
+#if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32C61)
+	if (cpu_cfg->clk_src == ESP32_CLK_SRC_CPU_PLL) {
 		regi2c_ctrl_ll_master_configure_clock();
 	}
 #endif
@@ -314,7 +319,21 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 #endif
 
 #if defined(CONFIG_ESP_CONSOLE_UART)
-#if defined(CONFIG_SOC_SERIES_ESP32P4)
+#if defined(CONFIG_SOC_SERIES_ESP32C61)
+	/* On C61 the BBPLL (and thus PLL_F80M) is transiently disabled later in
+	 * boot - e.g. the ocode calibration in pmu_init calls
+	 * rtc_clk_cpu_freq_set_xtal() which runs rtc_clk_bbpll_disable(). If the
+	 * console UART were clocked from PLL_F80M, its TX would stall the moment
+	 * the PLL drops. Clock the console UART from XTAL, which is always on, so
+	 * uart_ll_update() completes and TX never stalls.
+	 */
+	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {
+		uart_ll_set_sclk(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), UART_SCLK_XTAL);
+		uart_ll_set_baudrate(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM),
+				     CONFIG_ESP_CONSOLE_UART_BAUDRATE,
+				     cpu_cfg->xtal_freq * MHZ(1));
+	}
+#elif defined(CONFIG_SOC_SERIES_ESP32P4)
 	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {
 		/*
 		 * The ROM selects XTAL as the console UART source, and XTAL
@@ -331,11 +350,7 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 				     CONFIG_ESP_CONSOLE_UART_BAUDRATE, uart_sclk_freq);
 	}
 #else
-#if defined(CONFIG_SOC_SERIES_ESP32C5)
-	if (cpu_cfg->clk_src == ESP32_CPU_CLK_SRC_PLL) {
-#else
-	if (cpu_cfg->clk_src == SOC_CPU_CLK_SRC_PLL) {
-#endif
+	if (cpu_cfg->clk_src == ESP32_CLK_SRC_CPU_PLL) {
 		uint32_t uart_sclk_freq;
 
 		esp_clk_tree_src_get_freq_hz(
