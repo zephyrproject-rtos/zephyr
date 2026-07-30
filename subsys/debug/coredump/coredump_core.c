@@ -44,6 +44,20 @@ static struct coredump_backend_api
 #define DT_DRV_COMPAT zephyr_coredump
 #endif
 
+/*
+ * Upper bound on the number of threads snapshotted (see the SMP path in
+ * process_memory_region_list()) while z_thread_monitor_lock is held, before
+ * releasing it and running the slow per-thread dump I/O lock-free. Exposed as
+ * CONFIG_DEBUG_COREDUMP_THREAD_SNAPSHOT_MAX so a system with more monitored
+ * threads than the default can capture all of them (at the cost of that many
+ * pointers of fatal-path stack); systems that exceed it dump only the first N.
+ */
+#if defined(CONFIG_DEBUG_COREDUMP_THREAD_SNAPSHOT_MAX)
+#define COREDUMP_THREAD_SNAPSHOT_MAX CONFIG_DEBUG_COREDUMP_THREAD_SNAPSHOT_MAX
+#else
+#define COREDUMP_THREAD_SNAPSHOT_MAX 64
+#endif
+
 #if defined(CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP_LIMIT_FOR_CURRENT) &&                           \
 	CONFIG_DEBUG_COREDUMP_THREAD_STACK_TOP_LIMIT_FOR_CURRENT >= 0
 #define STACK_TOP_LIMIT_FOR_CURRENT                                                                \
@@ -186,6 +200,31 @@ void process_memory_region_list(struct k_thread *current)
 #ifdef CONFIG_SMP
 		k_spinlock_key_t key = {0};
 		bool locked = false;
+		/*
+		 * Snapshot the thread pointers while holding
+		 * z_thread_monitor_lock, then release it before calling
+		 * dump_thread() for each snapshotted thread below.
+		 * dump_thread() can be slow (e.g. the UDP backend transmits
+		 * every thread's stack over the network), and holding this
+		 * lock across that I/O starves any other CPU whose thread
+		 * naturally exits while the dump is in progress: its
+		 * k_thread_abort() -> halt_thread() -> z_thread_monitor_exit()
+		 * path needs this same lock, so that CPU would spin for the
+		 * entire dump duration instead of completing a normal exit.
+		 *
+		 * Like k_thread_foreach_unlocked(), the snapshot stabilizes the
+		 * list for traversal but does not pin each thread object against
+		 * concurrent teardown once the lock is dropped. This is safe here
+		 * because it runs only from the fatal path: the panicking CPU has
+		 * IRQs locked and does not reschedule, so it cannot itself free a
+		 * thread mid-dump, and a peer CPU that aborts a thread blocks in
+		 * halt_thread() -> z_thread_monitor_exit() waiting on the very
+		 * lock this loop just released and re-derefs nothing until the
+		 * dump completes. (The freeze/thaw follow-up additionally holds
+		 * the peers frozen for the duration.)
+		 */
+		struct k_thread *snapshot[COREDUMP_THREAD_SNAPSHOT_MAX];
+		unsigned int snapshot_count = 0;
 
 		/*
 		 * Try to take z_thread_monitor_lock so the list is stable
@@ -213,22 +252,40 @@ void process_memory_region_list(struct k_thread *current)
 #else
 		locked = k_spin_trylock(&z_thread_monitor_lock, &key) == 0;
 #endif /* CONFIG_SPIN_VALIDATE */
+
+		for (thread = _kernel.threads, n = 0;
+		     (thread != NULL) && (n < max_threads);
+		     thread = thread->next_thread, n++) {
+			if (snapshot_count < COREDUMP_THREAD_SNAPSHOT_MAX) {
+				snapshot[snapshot_count++] = thread;
+			}
+			/*
+			 * If the list is longer than the snapshot capacity the
+			 * dump is truncated to the first N threads rather than
+			 * risking unbounded fatal-path stack; raise
+			 * CONFIG_DEBUG_COREDUMP_THREAD_SNAPSHOT_MAX to capture
+			 * more. A mid-dump diagnostic is deliberately not
+			 * emitted here: it would inject stray bytes into the
+			 * backend's coredump stream and break host-side parsing.
+			 */
+		}
+
+		if (locked) {
+			k_spin_unlock(&z_thread_monitor_lock, key);
+		}
+
+		for (n = 0; n < snapshot_count; n++) {
+			dump_thread(snapshot[n], snapshot[n] == current);
+		}
 #else
 		/*
 		 * On uniprocessor, IRQs are already locked by the exception
 		 * entry path so no other context can modify the list.
 		 */
-#endif /* CONFIG_SMP */
-
 		for (thread = _kernel.threads, n = 0;
 		     (thread != NULL) && (n < max_threads);
 		     thread = thread->next_thread, n++) {
 			dump_thread(thread, thread == current);
-		}
-
-#ifdef CONFIG_SMP
-		if (locked) {
-			k_spin_unlock(&z_thread_monitor_lock, key);
 		}
 #endif /* CONFIG_SMP */
 
