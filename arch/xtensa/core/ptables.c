@@ -1699,7 +1699,18 @@ static bool page_validate(uint32_t *ptables, uint32_t page, uint8_t ring, bool w
 	return true;
 }
 
-int arch_buffer_validate(const void *addr, size_t size, int write)
+/**
+ * @brief Check if a memory region can be legally accessed.
+ *
+ * @param[in] addr Start virtual address of the memory region to be checked.
+ * @param[in] size Size of the memory region to be checked.
+ * @param[in] write True if the access needs to write to this page, false if read only.
+ * @param[in] ring Ring value for the access (RING_USER or RING_KERNEL).
+ *
+ * @retval 0 Access is legal.
+ * @retval -1 Access is not legal and will probably generate page fault.
+ */
+static int mem_buffer_validate(const void *addr, size_t size, int write, uint8_t ring)
 {
 	int ret = 0;
 	uint8_t *virt;
@@ -1713,13 +1724,23 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += CONFIG_MMU_PAGE_SIZE) {
-		if (!page_validate(ptables, (uint32_t)(virt + offset), RING_USER, write)) {
+		if (!page_validate(ptables, (uint32_t)(virt + offset), ring, write)) {
 			ret = -1;
 			break;
 		}
 	}
 
 	return ret;
+}
+
+int arch_buffer_validate(const void *addr, size_t size, int write)
+{
+	return mem_buffer_validate(addr, size, write, RING_USER);
+}
+
+bool xtensa_buffer_is_kernel_readable(const void *addr, size_t size)
+{
+	return mem_buffer_validate(addr, size, false, RING_KERNEL) == 0;
 }
 
 void xtensa_exc_dtlb_multihit_handle(void *vaddr)
