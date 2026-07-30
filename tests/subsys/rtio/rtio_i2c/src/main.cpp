@@ -154,7 +154,7 @@ ZTEST(rtio_i2c, test_fallback_submit_rx)
 
 ZTEST(rtio_i2c, test_fallback_transaction_error)
 {
-	uint8_t buffer[3];
+	uint8_t buffer[3] = {0x01, 0x02, 0x03};
 	struct rtio_sqe *phase1 = rtio_sqe_acquire(&test_rtio_ctx);
 	struct rtio_sqe *phase2 = rtio_sqe_acquire(&test_rtio_ctx);
 
@@ -186,7 +186,7 @@ ZTEST(rtio_i2c, test_fallback_transaction_error)
 
 ZTEST(rtio_i2c, test_fallback_transaction)
 {
-	uint8_t buffer[3];
+	uint8_t buffer[3] = {0x01, 0x02, 0x03};
 	struct rtio_sqe *phase1 = rtio_sqe_acquire(&test_rtio_ctx);
 	struct rtio_sqe *phase2 = rtio_sqe_acquire(&test_rtio_ctx);
 
