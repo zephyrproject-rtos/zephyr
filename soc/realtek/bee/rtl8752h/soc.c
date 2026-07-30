@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
+#include <zephyr/sys/reboot.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
 
@@ -17,13 +18,12 @@
 #include <system_rtl876x.h>
 #include <vector_table.h>
 #include <rtl876x_aon_reg.h>
+#include <sys_reset.h>
 
 extern void _isr_wrapper(void);
 
 #define RAM_VECTOR_ADDR   (0x200000)
 #define STACK_ROM_ADDRESS DT_REG_ADDR(DT_NODELABEL(bee_bt_controller))
-
-typedef bool (*BOOL_PATCH_FUNC)(void);
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -173,4 +173,16 @@ void soc_late_init_hook(void)
 	rtl8752h_isr_register();
 
 	rtl_boot_stage_record(PON_BOOT_DONE);
+}
+
+/* Overrides the weak ARM implementation */
+void sys_arch_reboot(int type)
+{
+	/* Convert SYS_REBOOT_WARM (0) to RESET_ALL_EXCEPT_AON (1).
+	 * Convert SYS_REBOOT_COLD (1) to RESET_ALL (0).
+	 */
+	int wdt_mode = (type == SYS_REBOOT_WARM) ? RESET_ALL_EXCEPT_AON : RESET_ALL;
+
+	/* Call the watchdog system reset with the converted mode and reset reason. */
+	WDG_SystemReset(wdt_mode, RESET_REASON_ZEPHYR);
 }
