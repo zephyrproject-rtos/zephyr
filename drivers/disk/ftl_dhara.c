@@ -271,8 +271,8 @@ int disk_ftl_access_init(struct disk_info *disk)
 	ret = flash_get_page_info_by_offs(disk->dev, ctx->area->fa_off, &page);
 	if (ret != 0) {
 		release_disk(disk);
-		LOG_ERR("Getting flash page info at 0x%lX failed with error %d", ctx->area->fa_off,
-			ret);
+		LOG_ERR("Getting flash page info at 0x%llx failed with error %d",
+			(long long)ctx->area->fa_off, ret);
 		return ret;
 	}
 
