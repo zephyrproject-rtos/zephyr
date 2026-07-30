@@ -94,9 +94,9 @@ void virtq_free(struct virtq *v)
 
 static int virtq_add_available(struct virtq *v, uint16_t desc_idx)
 {
-	uint16_t new_idx_le = sys_cpu_to_le16(sys_le16_to_cpu(v->avail->idx) % v->num);
+	uint16_t new_idx = sys_le16_to_cpu(v->avail->idx) % v->num;
 
-	v->avail->ring[new_idx_le] = sys_cpu_to_le16(desc_idx);
+	v->avail->ring[new_idx] = sys_cpu_to_le16(desc_idx);
 	barrier_dmem_fence_full();
 	v->avail->idx = sys_cpu_to_le16(sys_le16_to_cpu(v->avail->idx) + 1);
 
@@ -140,28 +140,23 @@ int virtq_add_buffer_chain(
 		 */
 		virtq_get_free_desc(v, &desc, timeout);
 
-		uint16_t desc_le = sys_cpu_to_le16(desc);
-
 		if (head == VIRTQ_DESC_NEXT_SENTINEL) {
 			head = desc;
 		}
-		v->desc[desc_le].addr = k_mem_phys_addr(bufs[buf_n].addr);
-		v->desc[desc_le].len = bufs[buf_n].len;
-		if (buf_n < device_readable_count) {
-			v->desc[desc_le].flags = 0;
-		} else {
-			v->desc[desc_le].flags = VIRTQ_DESC_F_WRITE;
-		}
+
+		uint16_t flags = buf_n < device_readable_count ? 0 : VIRTQ_DESC_F_WRITE;
+
 		if (buf_n < bufs_size - 1) {
-			v->desc[desc_le].flags |= VIRTQ_DESC_F_NEXT;
+			flags |= VIRTQ_DESC_F_NEXT;
 		} else {
-			v->desc[desc_le].next = 0;
+			v->desc[desc].next = 0;
 		}
+		v->desc[desc].addr = sys_cpu_to_le64(k_mem_phys_addr(bufs[buf_n].addr));
+		v->desc[desc].len = sys_cpu_to_le32(bufs[buf_n].len);
+		v->desc[desc].flags = sys_cpu_to_le16(flags);
 
 		if (prev_desc != VIRTQ_DESC_NEXT_SENTINEL) {
-			uint16_t prev_desc_le = sys_cpu_to_le16(prev_desc);
-
-			v->desc[prev_desc_le].next = desc_le;
+			v->desc[prev_desc].next = sys_cpu_to_le16(desc);
 		}
 
 		prev_desc = desc;
