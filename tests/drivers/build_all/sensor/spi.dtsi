@@ -531,3 +531,9 @@ test_spi_adis1647x: adis1647x@40 {
 	drdy-gpios = <&test_gpio 0 0>;
 	reset-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_lps22hx: lps22hx@41 {
+	compatible = "st,lps22hx";
+	reg = <0x41>;
+	spi-max-frequency = <0>;
+};
