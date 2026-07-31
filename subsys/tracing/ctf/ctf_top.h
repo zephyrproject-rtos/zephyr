@@ -39,38 +39,66 @@
 	}
 
 /*
- * Gather fields to a contiguous event-packet, then atomically emit.
+ * Gather fields to a contiguous event-packet, then atomically emit it through
+ * the given tracing_format_raw_data*() emitter.
  */
-#define CTF_GATHER_FIELDS(...)                                                                     \
+#define CTF_GATHER_FIELDS(_emit, ...)                                                              \
 	{                                                                                          \
 		uint8_t epacket[0 MAP(CTF_INTERNAL_FIELD_SIZE, ##__VA_ARGS__)];                    \
 		uint8_t *epacket_cursor = &epacket[0];                                             \
                                                                                                    \
 		MAP(CTF_INTERNAL_FIELD_APPEND, ##__VA_ARGS__)                                      \
-		tracing_format_raw_data(epacket, sizeof(epacket));                                 \
+		_emit(epacket, sizeof(epacket));                                                   \
 	}
 
-#ifdef CONFIG_TRACING_CTF_TIMESTAMP
-#include <zephyr/timing/timing.h>
-
-static inline uint64_t ctf_top_timestamp_get(void)
+/*
+ * Zephyr CPU number the event was emitted on, emitted as the CTF event common
+ * context so that a trace from an SMP system can be demultiplexed per CPU. This
+ * is Zephyr's own sequential CPU id (the one k_thread_cpu_pin() and the
+ * scheduler use), not the platform-defined hardware id from arch_proc_id().
+ *
+ * The read races with migration, so callers must keep it and the emission of
+ * the packet within one interrupt-locked region.
+ */
+static inline uint8_t ctf_top_cpu_id_get(void)
 {
-	return timing_ns_get();
+#ifdef CONFIG_SMP
+	return (uint8_t)arch_curr_cpu()->id;
+#else
+	return 0U;
+#endif
 }
 
-#define CTF_EVENT(...)                                                                             \
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP
+/*
+ * The leading timestamp field is only reserved here; it is filled in by
+ * tracing_format_raw_data_stamped() once the emitting CPU owns the tracing
+ * lock. Sampling the clock at the call site instead would let two CPUs insert
+ * their events in the opposite order to the one they read the clock in, which
+ * puts a backwards timestamp in the stream and makes the trace unreadable.
+ */
+#define CTF_EVENT(_id, ...)                                                                        \
 	{                                                                                          \
 		if (!is_tracing_enabled()) {                                                       \
 			return;                                                                    \
 		}                                                                                  \
-		int key = irq_lock();                                                              \
-		const uint64_t tstamp = ctf_top_timestamp_get();                                   \
+		unsigned int ctf_key = irq_lock();                                                 \
+		const uint64_t ctf_tstamp = 0U;                                                    \
+		const uint8_t ctf_cpu_id = ctf_top_cpu_id_get();                                   \
                                                                                                    \
-		CTF_GATHER_FIELDS(tstamp, __VA_ARGS__)                                             \
-		irq_unlock(key);                                                                   \
+		CTF_GATHER_FIELDS(tracing_format_raw_data_stamped, ctf_tstamp, _id, ctf_cpu_id,    \
+				  ##__VA_ARGS__)                                                   \
+		irq_unlock(ctf_key);                                                               \
 	}
 #else
-#define CTF_EVENT(...) {CTF_GATHER_FIELDS(__VA_ARGS__)}
+#define CTF_EVENT(_id, ...)                                                                        \
+	{                                                                                          \
+		unsigned int ctf_key = irq_lock();                                                 \
+		const uint8_t ctf_cpu_id = ctf_top_cpu_id_get();                                   \
+                                                                                                   \
+		CTF_GATHER_FIELDS(tracing_format_raw_data, _id, ctf_cpu_id, ##__VA_ARGS__)         \
+		irq_unlock(ctf_key);                                                               \
+	}
 #endif
 
 /* Anonymous compound literal with 1 member. Legal since C99.
