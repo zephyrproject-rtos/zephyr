@@ -509,7 +509,6 @@ ISR_DIRECT_DECLARE(nrfx_grtc_direct_irq_handler)
 
 void sys_clock_disable(void)
 {
-	nrfx_grtc_uninit();
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	int err;
 	struct onoff_manager *mgr =
@@ -518,7 +517,10 @@ void sys_clock_disable(void)
 	err = onoff_release(mgr);
 	__ASSERT_NO_MSG(err >= 0);
 
+	nrfx_grtc_uninit();
 	nrfx_coredep_delay_us(1000);
+#else
+	nrfx_grtc_uninit();
 #endif
 }
 
