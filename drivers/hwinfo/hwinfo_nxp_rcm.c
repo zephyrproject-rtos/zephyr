@@ -8,18 +8,18 @@
 #include <zephyr/logging/log.h>
 #include <fsl_rcm.h>
 
-LOG_MODULE_REGISTER(hwinfo_rcm, CONFIG_HWINFO_LOG_LEVEL);
+LOG_MODULE_REGISTER(hwinfo_nxp_rcm, CONFIG_HWINFO_LOG_LEVEL);
 
 /**
  * @brief Translate from RCM reset source mask to Zephyr hwinfo sources mask.
  *
- * Translate bitmask from MCUX RCM reset source bitmask to Zephyr
+ * Translate bitmask from NXP RCM reset source bitmask to Zephyr
  * hwinfo reset source bitmask.
  *
- * @param sources NXP MCUX RCM reset source mask.
+ * @param sources NXP RCM reset source mask.
  * @retval Zephyr hwinfo reset source mask.
  */
-static uint32_t hwinfo_mcux_rcm_xlate_reset_sources(uint32_t sources)
+static uint32_t hwinfo_nxp_rcm_xlate_reset_sources(uint32_t sources)
 {
 	uint32_t mask = 0;
 
@@ -96,7 +96,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	sources = RCM_GetPreviousResetSources(RCM) & kRCM_SourceAll;
 #endif /* !(defined(FSL_FEATURE_RCM_HAS_SSRS) && FSL_FEATURE_RCM_HAS_SSRS) */
 
-	*cause = hwinfo_mcux_rcm_xlate_reset_sources(sources);
+	*cause = hwinfo_nxp_rcm_xlate_reset_sources(sources);
 
 	LOG_DBG("sources = 0x%08x, cause = 0x%08x", sources, *cause);
 
@@ -119,7 +119,7 @@ int z_impl_hwinfo_clear_reset_cause(void)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = hwinfo_mcux_rcm_xlate_reset_sources(UINT32_MAX);
+	*supported = hwinfo_nxp_rcm_xlate_reset_sources(UINT32_MAX);
 
 	LOG_DBG("supported = 0x%08x", *supported);
 
