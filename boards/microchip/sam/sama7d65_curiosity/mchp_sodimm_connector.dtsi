@@ -1,0 +1,46 @@
+/*
+ * Copyright (C) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/microchip-sodimm-connector.h>
+
+/ {
+	mchp_sodimm_header: mchp_sodimm_header {
+		compatible = "gpio-map";
+
+		#gpio-cells = <2>;
+
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		gpio-map = <MCHP_SODIMM_31 0 &pioa 17 0>, /* MISO */
+			   <MCHP_SODIMM_33 0 &pioa 18 0>, /* MOSI */
+			   <MCHP_SODIMM_35 0 &pioa 16 0>, /* SPCK */
+			   <MCHP_SODIMM_38 0 &pioa 20 0>, /* SPI_CS */
+			   <MCHP_SODIMM_39 0 &piob 19 0>, /* TWCK */
+			   <MCHP_SODIMM_41 0 &piob 20 0>, /* TWD */
+			   <MCHP_SODIMM_45 0 &piod 25 0>, /* GMAC MDC */
+			   <MCHP_SODIMM_47 0 &piod 26 0>, /* GMAC MDIO */
+
+			   /* GMAC IRQ, also connected to PIOBU1_WAKE */
+			   <MCHP_SODIMM_49 0 &pioe 3 0>,
+
+			   /* pin 53 ---- GMAC 25MHz */
+			   <MCHP_SODIMM_93 0 &piod 21 0>, /* GMAC TXEN */
+			   <MCHP_SODIMM_97 0 &piod 29 0>, /* GMAC TXCK */
+			   <MCHP_SODIMM_101 0 &piod 22 0>, /* GMAC TX0 */
+			   <MCHP_SODIMM_105 0 &piod 23 0>, /* GMAC TX1 */
+			   <MCHP_SODIMM_109 0 &pioe 0 0>, /* GMAC TX2 */
+			   <MCHP_SODIMM_113 0 &pioe 1 0>, /* GMAC TX3 */
+			   <MCHP_SODIMM_117 0 &piod 24 0>, /* GMAC RXCTL */
+			   <MCHP_SODIMM_121 0 &pioe 2 0>, /* GMAC RXCK */
+			   <MCHP_SODIMM_125 0 &piod 27 0>, /* GMAC RX0 */
+			   <MCHP_SODIMM_129 0 &piod 28 0>, /* GMAC RX1 */
+			   <MCHP_SODIMM_133 0 &piod 30 0>, /* GMAC RX2 */
+			   <MCHP_SODIMM_137 0 &piod 31 0>; /* GMAC RX3 */
+	};
+};
