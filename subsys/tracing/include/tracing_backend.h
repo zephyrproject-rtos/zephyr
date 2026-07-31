@@ -29,7 +29,14 @@ struct tracing_backend;
  */
 struct tracing_backend_api {
 	void (*init)(void);
-	void (*output)(const struct tracing_backend *backend,
+	/* @a stream_id identifies which trace stream the data belongs to. A
+	 * backend that can express several channels (a file per stream, say)
+	 * should keep the streams separate; one carrying a single link may
+	 * ignore it, as the framing in the stream itself lets the host
+	 * demultiplex. The core emits a single stream, id 0, until per-CPU
+	 * streams are wired up.
+	 */
+	void (*output)(const struct tracing_backend *backend, uint8_t stream_id,
 		       uint8_t *data, uint32_t length);
 	/* Optional: push any buffered data out of the backend. May be NULL. */
 	int (*flush)(const struct tracing_backend *backend);
@@ -71,16 +78,17 @@ static inline void tracing_backend_init(
 /**
  * @brief Output tracing packet with tracing backend.
  *
- * @param backend Pointer to tracing_backend instance.
- * @param data    Address of outputting buffer.
- * @param length  Length of outputting buffer.
+ * @param backend   Pointer to tracing_backend instance.
+ * @param stream_id Trace stream the data belongs to.
+ * @param data      Address of outputting buffer.
+ * @param length    Length of outputting buffer.
  */
 static inline void tracing_backend_output(
-		const struct tracing_backend *backend,
+		const struct tracing_backend *backend, uint8_t stream_id,
 		uint8_t *data, uint32_t length)
 {
 	if (backend && backend->api && backend->api->output) {
-		backend->api->output(backend, data, length);
+		backend->api->output(backend, stream_id, data, length);
 	}
 }
 

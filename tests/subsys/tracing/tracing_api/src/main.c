@@ -62,9 +62,11 @@ static uint8_t *string_tracked[] = {
 
 #if defined(CONFIG_TRACING_BACKEND_UART)
 static void tracing_backends_output(
-		const struct tracing_backend *backend,
+		const struct tracing_backend *backend, uint8_t stream_id,
 		uint8_t *data, uint32_t length)
 {
+	ARG_UNUSED(stream_id);
+
 	/* Check the output data. */
 #ifdef CONFIG_TRACING_ASYNC
 	if (async_tracing_api) {
