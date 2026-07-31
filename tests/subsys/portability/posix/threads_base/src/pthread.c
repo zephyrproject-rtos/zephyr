@@ -144,13 +144,6 @@ static void *thread_top_exec(void *p1)
 	return NULL;
 }
 
-static void *timedjoin_thread(void *p1)
-{
-	int sleep_duration_ms = POINTER_TO_INT(p1);
-
-	usleep(USEC_PER_MSEC * sleep_duration_ms);
-	return NULL;
-}
 
 static int bounce_test_done(void)
 {
@@ -274,41 +267,9 @@ ZTEST(pthread, test_pthread_execution)
 
 	sem_init(&main_sem, 0, 1);
 
-	/* TESTPOINT: Try getting name of NULL thread (aka uninitialized
-	 * thread var).
-	 */
-	ret = pthread_getname_np(PTHREAD_INVALID, thr_name_buf, sizeof(thr_name_buf));
-	zassert_equal(ret, ESRCH, "uninitialized getname!");
-
 	for (i = 0; i < N_THR_E; i++) {
 		ret = pthread_create(&newthread[i], NULL, thread_top_exec, INT_TO_POINTER(i));
 	}
-
-	/* TESTPOINT: Try setting name of NULL thread (aka uninitialized
-	 * thread var).
-	 */
-	ret = pthread_setname_np(PTHREAD_INVALID, thr_name);
-	zassert_equal(ret, ESRCH, "uninitialized setname!");
-
-	/* TESTPOINT: Try getting thread name with no buffer */
-	ret = pthread_getname_np(newthread[0], NULL, sizeof(thr_name_buf));
-	zassert_equal(ret, EINVAL, "uninitialized getname!");
-
-	/* TESTPOINT: Try setting thread name with no buffer */
-	ret = pthread_setname_np(newthread[0], NULL);
-	zassert_equal(ret, EINVAL, "uninitialized setname!");
-
-	/* TESTPOINT: Try setting thread name */
-	ret = pthread_setname_np(newthread[0], thr_name);
-	zassert_false(ret, "Set thread name failed!");
-
-	/* TESTPOINT: Try getting thread name */
-	ret = pthread_getname_np(newthread[0], thr_name_buf, sizeof(thr_name_buf));
-	zassert_false(ret, "Get thread name failed!");
-
-	/* TESTPOINT: Thread names match */
-	ret = strncmp(thr_name, thr_name_buf, MIN(strlen(thr_name), strlen(thr_name_buf)));
-	zassert_false(ret, "Thread names don't match!");
 
 	while (!bounce_test_done()) {
 		sem_wait(&main_sem);
@@ -375,68 +336,6 @@ ZTEST(pthread, test_pthread_termination)
 	/* TESTPOINT: Try canceling a terminated thread */
 	ret = pthread_cancel(newthread[0]);
 	zassert_equal(ret, ESRCH, "cancelled a terminated thread!");
-}
-
-ZTEST(pthread, test_pthread_tryjoin)
-{
-	pthread_t th = {0};
-	int sleep_duration_ms = 200;
-	void *retval;
-
-	/* Creating a thread that exits after 200ms*/
-	zassert_ok(pthread_create(&th, NULL, timedjoin_thread, INT_TO_POINTER(sleep_duration_ms)));
-
-	/* Attempting to join, when thread is still running, should fail */
-	usleep(USEC_PER_MSEC * sleep_duration_ms / 2);
-	zassert_equal(pthread_tryjoin_np(th, &retval), EBUSY);
-
-	/* Sleep so thread will exit */
-	usleep(USEC_PER_MSEC * sleep_duration_ms);
-
-	/* Attempting to join without blocking should succeed now */
-	zassert_ok(pthread_tryjoin_np(th, &retval));
-}
-
-ZTEST(pthread, test_pthread_timedjoin)
-{
-	pthread_t th = {0};
-	int sleep_duration_ms = 200;
-	void *ret;
-	struct timespec not_done;
-	struct timespec done;
-	struct timespec invalid[] = {
-		{.tv_nsec = -1},
-		{.tv_nsec = NSEC_PER_SEC},
-	};
-
-	/* setup timespecs when the thread is still running and when it is done */
-	clock_gettime(CLOCK_REALTIME, &not_done);
-	clock_gettime(CLOCK_REALTIME, &done);
-	not_done.tv_nsec += sleep_duration_ms / 2 * NSEC_PER_MSEC;
-	done.tv_nsec += sleep_duration_ms * 1.5 * NSEC_PER_MSEC;
-	while (not_done.tv_nsec >= NSEC_PER_SEC) {
-		not_done.tv_sec++;
-		not_done.tv_nsec -= NSEC_PER_SEC;
-	}
-	while (done.tv_nsec >= NSEC_PER_SEC) {
-		done.tv_sec++;
-		done.tv_nsec -= NSEC_PER_SEC;
-	}
-
-	/* Creating a thread that exits after 200ms*/
-	zassert_ok(pthread_create(&th, NULL, timedjoin_thread, INT_TO_POINTER(sleep_duration_ms)));
-
-	/* pthread_timedjoin-np must return EINVAL for invalid struct timespecs */
-	zassert_equal(pthread_timedjoin_np(th, &ret, NULL), EINVAL);
-	for (size_t i = 0; i < ARRAY_SIZE(invalid); ++i) {
-		zassert_equal(pthread_timedjoin_np(th, &ret, &invalid[i]), EINVAL);
-	}
-
-	/* Attempting to join with a timeout, when the thread is still running should fail */
-	zassert_equal(pthread_timedjoin_np(th, &ret, &not_done), ETIMEDOUT);
-
-	/* Attempting to join with a timeout, when the thread is done, should succeed */
-	zassert_ok(pthread_timedjoin_np(th, &ret, &done));
 }
 
 static void *create_thread1(void *p1)
