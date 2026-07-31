@@ -178,7 +178,7 @@ static int dai_uaol_process_dma_control_data(struct dai_intel_uaol_data *dp,
 			}
 			ret = pm_device_runtime_get(hw_dev);
 			if (ret) {
-				LOG_ERR("pm_device_runtime_get() failed, ret %d", ret);
+				LOG_ERR_PM_DEVICE_RUNTIME_GET(hw_dev, ret);
 				return -EIO;
 			}
 			entry.usb_ep_address = (ep_table->entry.usb_ep_number << 1) |
