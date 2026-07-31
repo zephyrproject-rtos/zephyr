@@ -6,6 +6,7 @@
 zephyr_syscall_header(
   ${ZEPHYR_BASE}/include/zephyr/device.h
   ${ZEPHYR_BASE}/include/zephyr/kernel.h
+  ${ZEPHYR_BASE}/include/zephyr/sleep.h
   ${ZEPHYR_BASE}/include/zephyr/sys/kobject.h
   ${ZEPHYR_BASE}/include/zephyr/sys/time_units.h
 )
