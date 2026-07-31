@@ -99,6 +99,18 @@ struct sdio_device_function {
 	/** I/O-ready timeout advertised in the CIS in 10ms units (FUNCE) */
 	uint16_t rdy_timeout;
 
+	/**
+	 * Zero-copy RX completion: a buffer posted with
+	 * @ref sdio_device_rx_post now holds @p len bytes (may be NULL).
+	 */
+	void (*rx_done)(struct sdio_device_function *func, uint8_t *buf,
+			uint32_t len);
+	/**
+	 * Zero-copy TX completion: a buffer submitted with
+	 * @ref sdio_device_tx_submit has been consumed (may be NULL).
+	 */
+	void (*tx_done)(struct sdio_device_function *func, uint8_t *buf);
+
 	/** @cond INTERNAL_HIDDEN */
 	uint16_t block_size; /* host-programmed block size (FBR) */
 	sys_snode_t node;
@@ -194,6 +206,44 @@ int sdio_device_raise_interrupt(struct sdio_device_function *func);
  * @retval -EINVAL invalid argument
  */
 int sdio_device_clear_interrupt(struct sdio_device_function *func);
+
+/**
+ * @brief Whether the backing controller offers a zero-copy data path.
+ *
+ * @param dev device endpoint
+ * @retval true controller supports @ref sdio_device_rx_post /
+ *         @ref sdio_device_tx_submit
+ * @retval false only the synchronous FIFO handler path is available
+ */
+bool sdio_device_is_zero_copy(struct sdio_device *dev);
+
+/**
+ * @brief Post an empty buffer to receive an inbound frame (zero-copy).
+ *
+ * The controller takes ownership until it fills the buffer, then calls the
+ * function's @ref sdio_device_function.rx_done.
+ *
+ * @param func function to receive on
+ * @param buf  buffer the controller may write into
+ * @param cap  capacity of @p buf in bytes
+ * @retval 0 on success, negative errno otherwise
+ */
+int sdio_device_rx_post(struct sdio_device_function *func, uint8_t *buf,
+			uint32_t cap);
+
+/**
+ * @brief Submit a filled buffer for the host to read (zero-copy).
+ *
+ * The controller takes ownership until the host reads the data, then calls the
+ * function's @ref sdio_device_function.tx_done.
+ *
+ * @param func function to send from
+ * @param buf  buffer holding the data
+ * @param len  number of bytes in @p buf
+ * @retval 0 on success, negative errno otherwise
+ */
+int sdio_device_tx_submit(struct sdio_device_function *func, uint8_t *buf,
+			  uint32_t len);
 
 /** @} */
 

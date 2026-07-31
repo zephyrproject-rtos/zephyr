@@ -9,4 +9,11 @@
 		num-functions = <3>;
 		max-block-size = <512>;
 	};
+
+	sdio_dc1: sdio_dc1 {
+		compatible = "zephyr,sdio-device-virtual";
+		status = "okay";
+		num-functions = <3>;
+		max-block-size = <512>;
+	};
 };

@@ -21,27 +21,32 @@ LOG_MODULE_DECLARE(sdio_device, CONFIG_SDIO_DEVICE_LOG_LEVEL);
 #define STREAM_COUNT CONFIG_SDIO_STREAM_PKT_COUNT
 #define STREAM_BUF   CONFIG_SDIO_STREAM_BUF_SIZE
 
-K_MEM_SLAB_DEFINE(sdio_stream_pkt_pool, ROUND_UP(sizeof(struct sdio_pkt), STREAM_ALIGN),
-		  STREAM_COUNT, STREAM_ALIGN);
-K_MEM_SLAB_DEFINE(sdio_stream_data_pool, STREAM_BUF, STREAM_COUNT, STREAM_ALIGN);
+/* Packet header and its data buffer share one slab entry, so the owning packet
+ * can be recovered O(1) from a bare data pointer returned by the controller.
+ */
+#define STREAM_HDR  ROUND_UP(sizeof(struct sdio_pkt), STREAM_ALIGN)
+#define STREAM_SLOT (STREAM_HDR + ROUND_UP(STREAM_BUF, STREAM_ALIGN))
+
+K_MEM_SLAB_DEFINE(sdio_stream_pool, STREAM_SLOT, STREAM_COUNT, STREAM_ALIGN);
+
+/* Recover the owning packet from a data pointer handed back by the controller. */
+static struct sdio_pkt *sdio_pkt_from_data(uint8_t *buf)
+{
+	return (struct sdio_pkt *)(buf - STREAM_HDR);
+}
 
 struct sdio_pkt *sdio_pkt_alloc(enum sdio_pkt_dir dir)
 {
 	struct sdio_pkt *pkt = NULL;
-	uint8_t *buf = NULL;
 
 	if (dir != SDIO_PKT_RX && dir != SDIO_PKT_TX) {
 		return NULL;
 	}
-	if (k_mem_slab_alloc(&sdio_stream_pkt_pool, (void **)&pkt, K_NO_WAIT) != 0) {
-		return NULL;
-	}
-	if (k_mem_slab_alloc(&sdio_stream_data_pool, (void **)&buf, K_NO_WAIT) != 0) {
-		k_mem_slab_free(&sdio_stream_pkt_pool, pkt);
+	if (k_mem_slab_alloc(&sdio_stream_pool, (void **)&pkt, K_NO_WAIT) != 0) {
 		return NULL;
 	}
 	pkt->fifo_reserved = NULL;
-	pkt->data = buf;
+	pkt->data = (uint8_t *)pkt + STREAM_HDR;
 	pkt->len = 0;
 	pkt->dir = dir;
 	atomic_set(&pkt->ref, 1);
@@ -62,8 +67,7 @@ void sdio_pkt_free(struct sdio_pkt *pkt)
 		return;
 	}
 	if (atomic_dec(&pkt->ref) == 1) {
-		k_mem_slab_free(&sdio_stream_data_pool, pkt->data);
-		k_mem_slab_free(&sdio_stream_pkt_pool, pkt);
+		k_mem_slab_free(&sdio_stream_pool, pkt);
 	}
 }
 
@@ -116,6 +120,36 @@ static int sdio_stream_fifo_cb(struct sdio_device_function *func,
 	return 0;
 }
 
+/* Zero-copy RX completion: a posted buffer now holds a received frame. */
+static void sdio_stream_rx_done(struct sdio_device_function *func,
+				uint8_t *buf, uint32_t len)
+{
+	struct sdio_stream_function *sf = func->user;
+	struct sdio_pkt *pkt = sdio_pkt_from_data(buf);
+	struct sdio_pkt *next;
+
+	pkt->len = (uint16_t)MIN(len, (uint32_t)STREAM_BUF);
+	k_fifo_put(&sf->rx_fifo, pkt);
+
+	/* Replenish so another frame can be received. */
+	next = sdio_pkt_alloc(SDIO_PKT_RX);
+	if (next == NULL) {
+		LOG_WRN("stream RX pool exhausted, not replenishing");
+		return;
+	}
+	if (sdio_device_rx_post(&sf->base, next->data, STREAM_BUF) != 0) {
+		sdio_pkt_free(next);
+	}
+}
+
+/* Zero-copy TX completion: a submitted buffer has been read by the host. */
+static void sdio_stream_tx_done(struct sdio_device_function *func,
+				uint8_t *buf)
+{
+	ARG_UNUSED(func);
+	sdio_pkt_free(sdio_pkt_from_data(buf));
+}
+
 int sdio_stream_function_init(struct sdio_stream_function *sf,
 			      enum sdio_func_num num, uint32_t fifo_reg)
 {
@@ -126,10 +160,41 @@ int sdio_stream_function_init(struct sdio_stream_function *sf,
 	sf->base.num = num;
 	sf->base.fifo_reg = fifo_reg;
 	sf->base.fifo_cb = sdio_stream_fifo_cb;
+	sf->base.rx_done = sdio_stream_rx_done;
+	sf->base.tx_done = sdio_stream_tx_done;
 	sf->base.user = sf;
+	sf->zero_copy = false;
 	k_fifo_init(&sf->rx_fifo);
 	k_fifo_init(&sf->tx_fifo);
 	return 0;
+}
+
+int sdio_stream_function_start(struct sdio_stream_function *sf)
+{
+	int posted = 0;
+
+	if (sf == NULL || sf->base.parent == NULL) {
+		return -EINVAL;
+	}
+	sf->zero_copy = sdio_device_is_zero_copy(sf->base.parent);
+	if (!sf->zero_copy) {
+		/* Synchronous FIFO-handler path; nothing to post. */
+		return 0;
+	}
+	/* Post receive buffers until the controller queue is full. */
+	for (int i = 0; i < STREAM_COUNT; i++) {
+		struct sdio_pkt *pkt = sdio_pkt_alloc(SDIO_PKT_RX);
+
+		if (pkt == NULL) {
+			break;
+		}
+		if (sdio_device_rx_post(&sf->base, pkt->data, STREAM_BUF) != 0) {
+			sdio_pkt_free(pkt);
+			break;
+		}
+		posted++;
+	}
+	return posted ? 0 : -ENOMEM;
 }
 
 struct sdio_pkt *sdio_stream_read_pkt(struct sdio_stream_function *sf,
@@ -153,6 +218,34 @@ int sdio_stream_read(struct sdio_stream_function *sf, uint8_t *data,
 	return n;
 }
 
+/* Send an owned packet: submit to the controller (zero-copy) or queue for the
+ * synchronous FIFO handler, then nudge the host.
+ */
+static int sdio_stream_tx(struct sdio_stream_function *sf, struct sdio_pkt *pkt)
+{
+	if (sf->zero_copy) {
+		int ret = sdio_device_tx_submit(&sf->base, pkt->data, pkt->len);
+
+		if (ret) {
+			sdio_pkt_free(pkt);
+			return ret;
+		}
+	} else {
+		k_fifo_put(&sf->tx_fifo, pkt);
+	}
+	/* Nudge the host to come and read (ignored if unsupported). */
+	(void)sdio_device_raise_interrupt(&sf->base);
+	return 0;
+}
+
+int sdio_stream_write_pkt(struct sdio_stream_function *sf, struct sdio_pkt *pkt)
+{
+	if (sf == NULL || pkt == NULL) {
+		return -EINVAL;
+	}
+	return sdio_stream_tx(sf, pkt);
+}
+
 int sdio_stream_write(struct sdio_stream_function *sf, const uint8_t *data,
 		      uint16_t len)
 {
@@ -167,10 +260,7 @@ int sdio_stream_write(struct sdio_stream_function *sf, const uint8_t *data,
 	}
 	pkt->len = MIN(len, (uint16_t)STREAM_BUF);
 	memcpy(pkt->data, data, pkt->len);
-	k_fifo_put(&sf->tx_fifo, pkt);
-	/* Nudge the host to come and read (ignored if unsupported). */
-	(void)sdio_device_raise_interrupt(&sf->base);
-	return 0;
+	return sdio_stream_tx(sf, pkt);
 }
 
 int sdio_stream_poll(struct sdio_stream_function *sf, uint32_t events,
