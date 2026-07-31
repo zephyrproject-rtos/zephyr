@@ -144,6 +144,33 @@ config TRACING_CTF_TIMESTAMP
 	  Timestamp prefix will be added to the beginning of CTF
 	  event internally.
 
+if TRACING_CTF
+
+config TRACING_CTF_PACKET_SIZE
+	int "Size of one CTF packet"
+	default 512
+	range 128 8192
+	help
+	  Size in bytes of a single CTF packet. Events are gathered into
+	  packets of this fixed size, which is what lets the amount of data a
+	  packet holds be recorded in the packet itself. A packet is padded to
+	  full size when it is closed, so a very large size wastes bandwidth
+	  on a mostly idle system while a very small one spends more of the
+	  stream on packet headers.
+
+config TRACING_CTF_PACKETS_PER_CPU
+	int "Number of CTF packets per CPU"
+	default 4 if TRACING_ASYNC
+	default 2
+	range 2 32
+	help
+	  Number of packets in each CPU's private ring. One is being filled
+	  while the others wait to be shipped, so at least two are needed to
+	  avoid dropping events while a packet is in flight. Total memory is
+	  this times TRACING_CTF_PACKET_SIZE times the number of CPUs.
+
+endif # TRACING_CTF
+
 choice TRACING_METHOD_CHOICE
 	prompt "Tracing Method"
 	default TRACING_ASYNC
