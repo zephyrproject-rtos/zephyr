@@ -3021,6 +3021,10 @@ static int notify_message_reply_cb(const struct coap_packet *response, struct co
 		sprint_token(reply->token, reply->tkl));
 
 	msg = find_msg(NULL, reply);
+	if (msg == NULL) {
+		LOG_ERR("Orphaned reply %p.", reply);
+		return 0;
+	}
 
 	/* remove observer on COAP_TYPE_RESET */
 	if (type == COAP_TYPE_RESET) {
