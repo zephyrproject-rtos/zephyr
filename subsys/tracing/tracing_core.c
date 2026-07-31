@@ -181,6 +181,13 @@ bool is_tracing_enabled(void)
 	return atomic_get(&tracing_state) == TRACING_ENABLE;
 }
 
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP
+uint64_t tracing_timestamp_get(void)
+{
+	return timing_ns_get();
+}
+#endif
+
 void tracing_cmd_handle(uint8_t *buf, uint32_t length)
 {
 	if (strncmp(buf, TRACING_CMD_ENABLE, length) == 0) {

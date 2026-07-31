@@ -39,15 +39,16 @@
 	}
 
 /*
- * Gather fields to a contiguous event-packet, then atomically emit.
+ * Gather fields to a contiguous event-packet, then atomically emit it through
+ * the given tracing_format_raw_data*() emitter.
  */
-#define CTF_GATHER_FIELDS(...)                                                                     \
+#define CTF_GATHER_FIELDS(_emit, ...)                                                              \
 	{                                                                                          \
 		uint8_t epacket[0 MAP(CTF_INTERNAL_FIELD_SIZE, ##__VA_ARGS__)];                    \
 		uint8_t *epacket_cursor = &epacket[0];                                             \
                                                                                                    \
 		MAP(CTF_INTERNAL_FIELD_APPEND, ##__VA_ARGS__)                                      \
-		tracing_format_raw_data(epacket, sizeof(epacket));                                 \
+		_emit(epacket, sizeof(epacket));                                                   \
 	}
 
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP
@@ -62,24 +63,42 @@ static inline uint64_t ctf_top_timestamp_get(void)
 }
 #endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP */
 
-#define CTF_EVENT(...)                                                                             \
+/* The reserved timestamp slot sits behind the per-event packet header and
+ * context, so tell the emitter where to write it.
+ */
+#define CTF_PACKET_PREFIX_SIZE (sizeof(uint16_t) + sizeof(uint16_t))
+
+static inline void ctf_top_emit_stamped(uint8_t *data, uint32_t length)
+{
+	tracing_format_raw_data_stamped(data, length, CTF_PACKET_PREFIX_SIZE);
+}
+
+/*
+ * The leading timestamp field is only reserved here; it is filled in by
+ * tracing_format_raw_data_stamped() once the emitting CPU owns the tracing
+ * lock. Sampling the clock at the call site instead would let two CPUs insert
+ * their events in the opposite order to the one they read the clock in, which
+ * puts a backwards timestamp in the stream and makes the trace unreadable.
+ */
+#define CTF_EVENT(_id, ...)                                                                        \
 	{                                                                                          \
 		if (!is_tracing_enabled()) {                                                       \
 			return;                                                                    \
 		}                                                                                  \
-		int key = irq_lock();                                                              \
-		const uint16_t stream_id = 0;                                                      \
-		uint16_t packet_size = 0;                                                          \
-		const uint64_t tstamp = ctf_top_timestamp_get();                                   \
+		unsigned int ctf_key = irq_lock();                                                 \
+		const uint16_t ctf_stream_id = 0;                                                  \
+		uint16_t ctf_packet_size = 0;                                                      \
+		const uint64_t ctf_tstamp = 0U;                                                    \
                                                                                                    \
-		packet_size = 8 * (0 MAP(CTF_INTERNAL_FIELD_SIZE, stream_id, packet_size, tstamp,  \
-					 ##__VA_ARGS__));                                          \
+		ctf_packet_size = 8 * (0 MAP(CTF_INTERNAL_FIELD_SIZE, ctf_stream_id,               \
+					     ctf_packet_size, ctf_tstamp, _id, ##__VA_ARGS__));    \
                                                                                                    \
-		CTF_GATHER_FIELDS(stream_id, packet_size, tstamp, __VA_ARGS__)                     \
-		irq_unlock(key);                                                                   \
+		CTF_GATHER_FIELDS(ctf_top_emit_stamped, ctf_stream_id, ctf_packet_size,            \
+				  ctf_tstamp, _id, ##__VA_ARGS__)                                  \
+		irq_unlock(ctf_key);                                                               \
 	}
 #else
-#define CTF_EVENT(...) {CTF_GATHER_FIELDS(__VA_ARGS__)}
+#define CTF_EVENT(_id, ...) {CTF_GATHER_FIELDS(tracing_format_raw_data, _id, ##__VA_ARGS__)}
 #endif
 
 /* Anonymous compound literal with 1 member. Legal since C99.
