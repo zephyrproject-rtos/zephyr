@@ -6749,6 +6749,7 @@ West:
     - LucasTambor
     - marekmatej
     - raffarost
+    - tmedicci
     - wmrsouza
   files:
     - modules/Kconfig.esp32
