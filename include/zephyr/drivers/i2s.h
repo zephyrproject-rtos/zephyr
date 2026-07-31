@@ -28,6 +28,9 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#ifdef CONFIG_I2S_RTIO
+#include <zephyr/rtio/rtio.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -361,6 +364,13 @@ __subsystem struct i2s_driver_api {
 	 */
 	int (*trigger)(const struct device *dev, enum i2s_dir dir,
 		       enum i2s_trigger_cmd cmd);
+#if defined(CONFIG_I2S_RTIO) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief i2s_iodev_submit
+	 * @kconfig_dep{CONFIG_I2S_RTIO}
+	 */
+	void (*iodev_submit)(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+#endif /* defined(CONFIG_I2S_RTIO) || defined(__DOXYGEN__) */
 };
 
 /** @} */
@@ -554,6 +564,45 @@ static inline int z_impl_i2s_trigger(const struct device *dev,
 {
 	return DEVICE_API_GET(i2s, dev)->trigger(dev, dir, cmd);
 }
+
+#if defined(CONFIG_I2S_RTIO) || defined(__DOXYGEN__)
+
+/**
+ * @brief Submit an RTIO request to an I2S device.
+ *
+ * @param iodev_sqe Prepared submission queue entry, connected to an iodev defined by
+ *                  I2S_IODEV_DEFINE()/I2S_INST_IODEV_DEFINE(). Must live as long as the
+ *                  request is in flight.
+ */
+static inline void i2s_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct device *i2s_dev = (const struct device *)iodev_sqe->sqe.iodev->data;
+
+	DEVICE_API_GET(i2s, i2s_dev)->iodev_submit(i2s_dev, iodev_sqe);
+}
+
+/** @cond INTERNAL_HIDDEN */
+extern const struct rtio_iodev_api i2s_iodev_api;
+/** @endcond */
+
+/**
+ * @brief Define an RTIO iodev for a given I2S device node.
+ *
+ * @param name Symbol name for the iodev.
+ * @param node_id Devicetree node identifier for the I2S device.
+ */
+#define I2S_IODEV_DEFINE(name, node_id)                                                            \
+	RTIO_IODEV_DEFINE(name, &i2s_iodev_api, (void *)DEVICE_DT_GET(node_id))
+
+/**
+ * @brief Define an RTIO iodev for a given I2S driver instance.
+ *
+ * @param name Symbol name for the iodev.
+ * @param inst Driver instance number.
+ */
+#define I2S_INST_IODEV_DEFINE(name, inst) I2S_IODEV_DEFINE(name, DT_DRV_INST(inst))
+
+#endif /* defined(CONFIG_I2S_RTIO) || defined(__DOXYGEN__) */
 
 /**
  * @}
