@@ -42,6 +42,19 @@ config FLASH_FILL_BUFFER_SIZE
 config I2S_HAS_PLL_SETTING
 	default n
 
+if MBEDTLS_PSA_CRYPTO_C
+
+config MCUX_ELS_PKC
+	default y
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+	default y
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
+	default y
+
+endif # MBEDTLS_PSA_CRYPTO_C
+
 if PM
 
 configdefault SYSTEM_TIMER_RESET_BY_LPM
