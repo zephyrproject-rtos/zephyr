@@ -10,9 +10,20 @@
 #include <stddef.h>
 #include <string.h>
 #include <tracing_core.h>
+#include <tracing_stream.h>
 #include <ctf_map.h>
 #include <zephyr/tracing/tracing_format.h>
 #include <zephyr/net/net_ip.h>
+
+/* The tracing thread must not trace itself: shipping a packet would generate
+ * more events, which would never drain. Only the asynchronous mode has such a
+ * thread.
+ */
+#ifdef CONFIG_TRACING_ASYNC
+#define IS_TRACING_THREAD() is_tracing_thread()
+#else
+#define IS_TRACING_THREAD() false
+#endif
 
 /* Limit strings to 20 bytes to optimize bandwidth */
 #define CTF_MAX_STRING_LEN 20
@@ -51,55 +62,25 @@
 		_emit(epacket, sizeof(epacket));                                                   \
 	}
 
-#ifdef CONFIG_TRACING_CTF_TIMESTAMP
-#include <zephyr/timing/timing.h>
-
-#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP
-uint64_t ctf_top_timestamp_get(void);
-#else  /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP */
-static inline uint64_t ctf_top_timestamp_get(void)
-{
-	return timing_ns_get();
-}
-#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP */
-
-/* The reserved timestamp slot sits behind the per-event packet header and
- * context, so tell the emitter where to write it.
- */
-#define CTF_PACKET_PREFIX_SIZE (sizeof(uint16_t) + sizeof(uint16_t))
-
-static inline void ctf_top_emit_stamped(uint8_t *data, uint32_t length)
-{
-	tracing_format_raw_data_stamped(data, length, CTF_PACKET_PREFIX_SIZE);
-}
-
 /*
- * The leading timestamp field is only reserved here; it is filled in by
- * tracing_format_raw_data_stamped() once the emitting CPU owns the tracing
- * lock. Sampling the clock at the call site instead would let two CPUs insert
- * their events in the opposite order to the one they read the clock in, which
- * puts a backwards timestamp in the stream and makes the trace unreadable.
+ * The leading timestamp field is only reserved here; tracing_ctf_emit() fills
+ * it while this CPU still has interrupts locked, so that the order in which the
+ * clock is read matches the order events are appended to this CPU's stream.
+ *
+ * The interrupt lock also pins the event to one CPU, so it cannot be appended
+ * to a stream other than the one belonging to the core that produced it.
  */
 #define CTF_EVENT(_id, ...)                                                                        \
 	{                                                                                          \
-		if (!is_tracing_enabled()) {                                                       \
-			return;                                                                    \
+		if (is_tracing_enabled() && !IS_TRACING_THREAD()) {                                \
+			unsigned int ctf_key = irq_lock();                                         \
+			const uint64_t ctf_tstamp = 0U;                                            \
+                                                                                                   \
+			CTF_GATHER_FIELDS(tracing_ctf_emit, ctf_tstamp, _id, ##__VA_ARGS__)        \
+			irq_unlock(ctf_key);                                                       \
+			tracing_ctf_emit_post();                                                   \
 		}                                                                                  \
-		unsigned int ctf_key = irq_lock();                                                 \
-		const uint16_t ctf_stream_id = 0;                                                  \
-		uint16_t ctf_packet_size = 0;                                                      \
-		const uint64_t ctf_tstamp = 0U;                                                    \
-                                                                                                   \
-		ctf_packet_size = 8 * (0 MAP(CTF_INTERNAL_FIELD_SIZE, ctf_stream_id,               \
-					     ctf_packet_size, ctf_tstamp, _id, ##__VA_ARGS__));    \
-                                                                                                   \
-		CTF_GATHER_FIELDS(ctf_top_emit_stamped, ctf_stream_id, ctf_packet_size,            \
-				  ctf_tstamp, _id, ##__VA_ARGS__)                                  \
-		irq_unlock(ctf_key);                                                               \
 	}
-#else
-#define CTF_EVENT(_id, ...) {CTF_GATHER_FIELDS(tracing_format_raw_data, _id, ##__VA_ARGS__)}
-#endif
 
 /* Anonymous compound literal with 1 member. Legal since C99.
  * This permits us to take the address of literals, like so:
