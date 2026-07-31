@@ -814,7 +814,7 @@ static int uaol_intel_adsp_get_capabilities(const struct device *dev,
 
 	ret = pm_device_runtime_get(dev);
 	if (ret) {
-		LOG_ERR("pm_device_runtime_get() failed, ret %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
 		return -EIO;
 	}
 
@@ -826,7 +826,7 @@ static int uaol_intel_adsp_get_capabilities(const struct device *dev,
 
 	ret = pm_device_runtime_put(dev);
 	if (ret) {
-		LOG_ERR("pm_device_runtime_put() failed, ret %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, ret);
 		return -EIO;
 	}
 
