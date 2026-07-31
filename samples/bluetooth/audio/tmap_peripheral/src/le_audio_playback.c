@@ -142,16 +142,26 @@ static void bringup_work_handler(struct k_work *work);
 static void apply_volume(void)
 {
 	audio_property_value_t val;
+	int ret;
 
 	val.vol = (int)(((uint32_t)cached_vcs_volume * 127U) / 255U);
-	(void)audio_codec_set_property(codec_dev, AUDIO_PROPERTY_OUTPUT_VOLUME,
+	ret = audio_codec_set_property(codec_dev, AUDIO_PROPERTY_OUTPUT_VOLUME,
 				       AUDIO_CHANNEL_ALL, val);
+	if (ret != 0) {
+		printk("codec volume set failed: %d\n", ret);
+	}
 
 	val.mute = cached_mute;
-	(void)audio_codec_set_property(codec_dev, AUDIO_PROPERTY_OUTPUT_MUTE,
+	ret = audio_codec_set_property(codec_dev, AUDIO_PROPERTY_OUTPUT_MUTE,
 				       AUDIO_CHANNEL_ALL, val);
+	if (ret != 0) {
+		printk("codec mute set failed: %d\n", ret);
+	}
 
-	(void)audio_codec_apply_properties(codec_dev);
+	ret = audio_codec_apply_properties(codec_dev);
+	if (ret != 0) {
+		printk("codec apply_properties failed: %d\n", ret);
+	}
 }
 
 static void i2s_worker(void *a, void *b, void *c)
