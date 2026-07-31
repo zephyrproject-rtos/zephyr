@@ -16,6 +16,9 @@ config NRFX_ADC
 	bool "ADC driver"
 	depends on $(dt_nodelabel_exists,adc) && SOC_SERIES_NRF51
 
+config NRFX_BELLBOARD
+	bool "BELLBOARD driver"
+
 config NRFX_CLOCK
 	bool "CLOCK driver"
 	depends on $(dt_nodelabel_exists,clock)
