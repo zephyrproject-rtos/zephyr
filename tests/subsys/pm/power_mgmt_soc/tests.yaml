@@ -100,8 +100,10 @@ tests:
           "measurement_duration":20,"num_of_transitions":6,
           "expected_rms_values":[],"tolerance_percentage":20}
       required_devices:
-        - platform: frdm_mcxc444/mcxc444
-          fixture:
+        # Reserve one additional UART-accessible monitor DUT from the same
+        # hardware-map pair. The monitor image is expected to be pre-installed
+        # on that board, so do not force a specific monitor platform here.
+        - fixture:
             - power_pair:general_adc
     platform_allow:
       - mimxrt1060_evk@C/mimxrt1062/qspi
