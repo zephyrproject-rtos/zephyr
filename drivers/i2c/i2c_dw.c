@@ -734,7 +734,6 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 	if (I2C_ADDR_10_BITS & dw->app_config) {
 		LOG_DBG("I2C: using 10-bit address");
 		ic_con.bits.addr_master_10bit = 1U;
-		ic_con.bits.addr_slave_10bit = 1U;
 	}
 
 	/* Setup the clock frequency and speed mode */
@@ -1167,23 +1166,29 @@ static int i2c_dw_set_master_mode(const struct device *dev)
 	return 0;
 }
 
-static int i2c_dw_set_slave_mode(const struct device *dev, uint8_t addr)
+static int i2c_dw_set_slave_mode(const struct device *dev, struct i2c_target_config *cfg)
 {
 	uint32_t reg_base = get_regs(dev);
 	union ic_con_register ic_con;
 
-	ic_con.raw = read_con(reg_base);
-
 	clear_bit_enable_en(reg_base);
+
+	ic_con.raw = read_con(reg_base);
 
 	ic_con.bits.master_mode = 0U;
 	ic_con.bits.slave_disable = 0U;
+
+	if (cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) {
+		ic_con.bits.addr_slave_10bit = 1;
+	} else {
+		ic_con.bits.addr_slave_10bit = 0;
+	}
 	ic_con.bits.rx_fifo_full = 1U;
 	ic_con.bits.restart_en = 1U;
 	ic_con.bits.stop_det = 1U;
 
 	write_con(ic_con.raw, reg_base);
-	write_sar(addr, reg_base);
+	write_sar(cfg->address, reg_base);
 	write_intr_mask(~DW_INTR_MASK_RESET, reg_base);
 
 	set_bit_enable_en(reg_base);
@@ -1209,7 +1214,7 @@ static int i2c_dw_slave_register(const struct device *dev, struct i2c_target_con
 
 	dw->read_in_progress = false;
 	dw->slave_cfg = cfg;
-	ret = i2c_dw_set_slave_mode(dev, cfg->address);
+	ret = i2c_dw_set_slave_mode(dev, cfg);
 	write_intr_mask(DW_INTR_MASK_RX_FULL | DW_INTR_MASK_RD_REQ |
 			DW_INTR_MASK_TX_ABRT | DW_INTR_MASK_STOP_DET |
 			DW_INTR_MASK_START_DET,
