@@ -17,10 +17,11 @@
  */
 static atomic_t fanout_bytes;
 
-static void test_backend_output(const struct tracing_backend *backend,
+static void test_backend_output(const struct tracing_backend *backend, uint8_t stream_id,
 				uint8_t *data, uint32_t length)
 {
 	ARG_UNUSED(backend);
+	ARG_UNUSED(stream_id);
 	ARG_UNUSED(data);
 	atomic_add(&fanout_bytes, (atomic_val_t)length);
 }

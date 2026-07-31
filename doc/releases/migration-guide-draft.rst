@@ -882,6 +882,14 @@ Task Watchdog
   returns the error without leaving a channel allocated. Applications must check
   the returned errors and avoid requesting pause options their backend does not support.
 
+Tracing
+=======
+
+* The ``output`` callback of :c:struct:`tracing_backend_api` takes the trace stream the data
+  belongs to as its second argument. An out-of-tree backend has to add the parameter; one
+  driving a single link can ignore it, since the framing in the stream lets the host
+  demultiplex.
+
 Tools
 *****
 
