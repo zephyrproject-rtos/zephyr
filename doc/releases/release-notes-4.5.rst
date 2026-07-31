@@ -327,6 +327,10 @@ New Drivers
 
   * VIRTIO input device (:dtcompatible:`virtio,input`).
 
+* Sensors
+
+  * Analog Devices ADXL313 3-axis accelerometer (:dtcompatible:`adi,adxl313`).
+
 * Clock Monitor
 
   * :dtcompatible:`nxp,cmu-fc` — NXP Clock Monitoring Unit (Frequency Check)
