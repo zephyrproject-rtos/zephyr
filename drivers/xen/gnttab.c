@@ -411,16 +411,16 @@ const char *gnttabop_error(int16_t status)
 static unsigned long gnttab_get_max_frames(void)
 {
 	int ret;
-	struct gnttab_query_size q = {
-		.dom = DOMID_SELF,
-	};
+	uint32_t nr_frames;
+	uint32_t max_nr_frames;
+	int16_t status;
 
-	ret = HYPERVISOR_grant_table_op(GNTTABOP_query_size, &q, 1);
-	if ((ret < 0) || (q.status != GNTST_okay)) {
+	ret = gnttab_query_size(DOMID_SELF, &nr_frames, &max_nr_frames, &status);
+	if ((ret < 0) || (status != GNTST_okay)) {
 		return LEGACY_MAX_GNT_FRAMES_SUPPORTED;
 	}
 
-	return q.max_nr_frames;
+	return max_nr_frames;
 }
 
 static int gnttab_init(void)
