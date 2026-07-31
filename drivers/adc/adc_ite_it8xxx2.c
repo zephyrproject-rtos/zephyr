@@ -293,6 +293,7 @@ static int adc_it8xxx2_start_read(const struct device *dev,
 {
 	struct adc_it8xxx2_data *data = dev->data;
 	uint32_t channel_mask = sequence->channels;
+	int err;
 
 	/* Channels 13~16 should be shifted to the right by 5 */
 	if (channel_mask > BIT(CHIP_ADC_CH7)) {
@@ -310,6 +311,11 @@ static int adc_it8xxx2_start_read(const struct device *dev,
 	}
 	LOG_DBG("Configure resolution=%d", sequence->resolution);
 
+	err = check_buffer_size(sequence, POPCOUNT(sequence->channels));
+	if (err) {
+		return err;
+	}
+
 	data->buffer = sequence->buffer;
 
 	adc_context_start_read(&data->ctx, sequence);
@@ -322,7 +328,6 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct adc_it8xxx2_data *data =
 		CONTAINER_OF(ctx, struct adc_it8xxx2_data, ctx);
 	uint32_t channels = ctx->sequence.channels;
-	uint8_t channel_count = 0;
 
 	data->repeat_buffer = data->buffer;
 
@@ -335,12 +340,6 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		channels &= ~BIT(data->ch);
 
 		adc_enable_measurement(data->ch);
-
-		channel_count++;
-	}
-
-	if (check_buffer_size(&ctx->sequence, channel_count)) {
-		return;
 	}
 
 	adc_context_on_sampling_done(&data->ctx, DEVICE_DT_INST_GET(0));
