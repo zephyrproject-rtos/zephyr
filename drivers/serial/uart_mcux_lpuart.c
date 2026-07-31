@@ -44,6 +44,12 @@ LOG_MODULE_REGISTER(uart_mcux_lpuart, LOG_LEVEL_ERR);
 #define LPUART_HAS_MCR 1
 #endif
 
+/* LPUART register offsets */
+#define LPUART_STAT_OFFSET  0x14U
+#define LPUART_CTRL_OFFSET  0x18U
+#define LPUART_CTRL_TXDIR_BIT   BIT(29)
+#define LPUART_STAT_TC_BIT      BIT(22)
+
 #if LPUART_ASYNC_ENABLE && defined(CONFIG_UART_INTERRUPT_DRIVEN)
 /* there are already going to be build errors, but at least this message will
  * be the first error from this driver making the reason clear
@@ -189,6 +195,16 @@ static int mcux_lpuart_poll_in(const struct device *dev, unsigned char *c)
 
 static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 {
+	const struct mcux_lpuart_config *config = dev->config;
+	mm_reg_t base = DEVICE_MMIO_GET(dev);
+	uint32_t ctrl;
+
+	/* Switch TXD pin to output */
+	if (config->single_wire) {
+		ctrl = sys_read32(base + LPUART_CTRL_OFFSET);
+		sys_write32(ctrl | LPUART_CTRL_TXDIR_BIT, base + LPUART_CTRL_OFFSET);
+	}
+
 	unsigned int key;
 #ifdef CONFIG_PM
 	struct mcux_lpuart_data *data = dev->data;
@@ -218,6 +234,16 @@ static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 
 	LPUART_WriteByte(get_base(dev), c);
 	irq_unlock(key);
+
+	/* Switch Pin back to RX direction */
+	if (config->single_wire) {
+		while (!(sys_read32(base + LPUART_STAT_OFFSET) & LPUART_STAT_TC_BIT)) {
+			/* Wait for shift register to finish with TC bit */
+		}
+		/* Switch to input/RX mode */
+		ctrl = sys_read32(base + LPUART_CTRL_OFFSET);
+		sys_write32(ctrl & ~LPUART_CTRL_TXDIR_BIT, base + LPUART_CTRL_OFFSET);
+	}
 }
 
 static int mcux_lpuart_err_check(const struct device *dev)
