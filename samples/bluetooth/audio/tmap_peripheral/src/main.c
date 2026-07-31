@@ -52,6 +52,7 @@ static struct k_work_delayable call_terminate_set_work;
 #if defined(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)
 static struct k_work_delayable media_pause_set_work;
 #endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
+static struct bt_le_ext_adv *g_adv;
 
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),    /* ASCS UUID */
@@ -145,6 +146,27 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	k_sem_give(&sem_disconnected);
 }
 
+/* Restart advertising once the connection object is freed. Using the recycled
+ * callback avoids the -ENOMEM race seen when restarting from disconnected(),
+ * where the host is still tearing down conn_tx / ISO contexts.
+ */
+static void recycled_cb(void)
+{
+	int err;
+
+	if (g_adv == NULL) {
+		return;
+	}
+
+	err = bt_le_ext_adv_start(g_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0 && err != -EALREADY) {
+		printk("Failed to restart advertising (err %d)\n", err);
+		return;
+	}
+
+	printk("Advertising restarted\n");
+}
+
 static void security_changed(struct bt_conn *conn, bt_security_t level,
 			     enum bt_security_err err)
 {
@@ -162,6 +184,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = recycled_cb,
 	.security_changed = security_changed,
 };
 
@@ -352,6 +375,7 @@ int main(void)
 		printk("Failed to create advertising set (err %d)\n", err);
 		return err;
 	}
+	g_adv = adv;
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
