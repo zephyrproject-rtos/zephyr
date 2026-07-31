@@ -66,7 +66,7 @@ static void tracing_thread_func(void *dummy1, void *dummy2, void *dummy3)
 			if (len == 0) {
 				break;
 			}
-			tracing_buffer_handle(buf, len);
+			tracing_buffer_handle(0U, buf, len);
 			ring_buf_consume(rb, len);
 		}
 		k_sem_take(&tracing_thread_sem, K_FOREVER);
@@ -197,9 +197,9 @@ void tracing_cmd_handle(uint8_t *buf, uint32_t length)
 	}
 }
 
-void tracing_buffer_handle(uint8_t *data, uint32_t length)
+void tracing_buffer_handle(uint8_t stream_id, uint8_t *data, uint32_t length)
 {
-	tracing_backend_output(primary_backend, data, length);
+	tracing_backend_output(primary_backend, stream_id, data, length);
 
 	if (!multiple_backends) {
 		return;
@@ -207,7 +207,7 @@ void tracing_buffer_handle(uint8_t *data, uint32_t length)
 
 	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
 		if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
-			tracing_backend_output(backend, data, length);
+			tracing_backend_output(backend, stream_id, data, length);
 		}
 	}
 }
