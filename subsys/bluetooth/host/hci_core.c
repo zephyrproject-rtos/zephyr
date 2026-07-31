@@ -4297,9 +4297,9 @@ static const char *vs_hw_variant(uint16_t platform, uint16_t variant)
 	}
 #endif
 #if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
-	static const char * const esp32_str[] = {
-		"reserved", "ESP32", "ESP32-S3", "ESP32-C2", "ESP32-C3", "ESP32-C6", "ESP32-H2"
-	};
+	static const char *const esp32_str[] = {"reserved", "ESP32",    "ESP32-S3",
+						"ESP32-C2", "ESP32-C3", "ESP32-C6",
+						"ESP32-H2", "ESP32-C5", "ESP32-C61"};
 
 	if (platform == BT_HCI_VS_HW_PLAT_ESPRESSIF && variant < ARRAY_SIZE(esp32_str)) {
 		return esp32_str[variant];
