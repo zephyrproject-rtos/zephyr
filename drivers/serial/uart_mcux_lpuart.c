@@ -197,34 +197,50 @@ static int mcux_lpuart_poll_in(const struct device *dev, unsigned char *c)
 
 static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 {
+	const struct mcux_lpuart_config *config = dev->config;
 	unsigned int key;
 #ifdef CONFIG_PM
 	struct mcux_lpuart_data *data = dev->data;
 #endif
+	/* Lock interrupts while we send data */
+	key = irq_lock();
+
+	/* Switch TXD pin to output */
+	if (config->single_wire) {
+		get_base(dev)->CTRL |= LPUART_CTRL_TXDIR(true);
+	}
 
 	while (!(LPUART_GetStatusFlags(get_base(dev))
 		& LPUART_STAT_TDRE_MASK)) {
 	}
-	/* Lock interrupts while we send data */
-	key = irq_lock();
+
 #ifdef CONFIG_PM
 	/*
 	 * We must keep the part from entering lower power mode until the
-	 * transmission completes. Set the power constraint, and enable
-	 * the transmission complete interrupt so we know when transmission is
-	 * completed.
+	 * transmission completes or if single wire mode is enabled.
+	 * Set the power constraint, and enable the transmission complete interrupt
+	 * so we know when transmission is completed.
 	 */
-	if (!data->tx_poll_stream_on && !data->tx_int_stream_on) {
+	if (!config->single_wire && !data->tx_poll_stream_on && !data->tx_int_stream_on) {
 		data->tx_poll_stream_on = true;
 		mcux_lpuart_pm_policy_state_lock_get(dev);
 		/* Enable TC interrupt */
 		LPUART_EnableInterrupts(get_base(dev),
 			kLPUART_TransmissionCompleteInterruptEnable);
-
 	}
 #endif /* CONFIG_PM */
 
 	LPUART_WriteByte(get_base(dev), c);
+
+	/* Switch Pin back to RX direction */
+	if (config->single_wire) {
+		while (!(get_base(dev)->STAT & LPUART_STAT_TC(1))) {
+			/* Wait for shift register to finish with TC bit */
+		}
+		/* Switch to input/RX mode */
+		get_base(dev)->CTRL &= ~(LPUART_CTRL_TXDIR(true));
+	}
+
 	irq_unlock(key);
 }
 
