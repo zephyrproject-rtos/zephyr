@@ -46,9 +46,10 @@ BUILD_ASSERT(TMAP_PERIPHERAL_ROLE_MASK != 0,
 	     "At least one of CONFIG_TMAP_PERIPHERAL_ROLE_CT / _ROLE_UMR must be set");
 
 static struct bt_conn *default_conn;
+static K_MUTEX_DEFINE(conn_lock);
 static struct k_work_delayable call_terminate_set_work;
 static struct k_work_delayable media_pause_set_work;
-#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
+static struct bt_le_ext_adv *g_adv;
 
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),    /* ASCS UUID */
@@ -119,18 +120,26 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
 		       err, bt_hci_err_to_str(err));
 
+		k_mutex_lock(&conn_lock, K_FOREVER);
 		default_conn = NULL;
+		k_mutex_unlock(&conn_lock);
 		return;
 	}
 
 	printk("Connected: %s\n", bt_conn_dst_str(conn));
+
+	k_mutex_lock(&conn_lock, K_FOREVER);
 	default_conn = bt_conn_ref(conn);
+	k_mutex_unlock(&conn_lock);
+
 	k_sem_give(&sem_connected);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	k_mutex_lock(&conn_lock, K_FOREVER);
 	if (conn != default_conn) {
+		k_mutex_unlock(&conn_lock);
 		return;
 	}
 
@@ -138,8 +147,30 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	       reason, bt_hci_err_to_str(reason));
 
 	bt_conn_drop(&default_conn);
+	k_mutex_unlock(&conn_lock);
 
 	k_sem_give(&sem_disconnected);
+}
+
+/* Restart advertising once the connection object is freed. Using the recycled
+ * callback avoids the -ENOMEM race seen when restarting from disconnected(),
+ * where the host is still tearing down conn_tx / ISO contexts.
+ */
+static void recycled_cb(void)
+{
+	int err;
+
+	if (g_adv == NULL) {
+		return;
+	}
+
+	err = bt_le_ext_adv_start(g_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0 && err != -EALREADY) {
+		printk("Failed to restart advertising (err %d)\n", err);
+		return;
+	}
+
+	printk("Advertising restarted\n");
 }
 
 static void security_changed(struct bt_conn *conn, bt_security_t level,
@@ -159,6 +190,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = recycled_cb,
 	.security_changed = security_changed,
 };
 
@@ -217,7 +249,78 @@ static void media_play_timeout(struct k_work *work)
 		printk("Error sending pause command!\n");
 	}
 }
+/* Take a temporary reference on the current connection under conn_lock so a concurrent
+ * disconnect (which drops default_conn) cannot free it while it is being served.
+ */
+static struct bt_conn *conn_get(void)
+{
+	struct bt_conn *conn;
 
+	k_mutex_lock(&conn_lock, K_FOREVER);
+	conn = (default_conn != NULL) ? bt_conn_ref(default_conn) : NULL;
+	k_mutex_unlock(&conn_lock);
+
+	return conn;
+}
+
+/* Run TMAP discovery and per-role control setup for the current connection. Errors are
+ * logged and abort only this connection's setup; main() then waits for the disconnect and
+ * serves the next peer. Re-runnable, so a peer that connects after a reconnect gets its
+ * control clients initialised too.
+ */
+static void serve_connection(struct bt_conn *conn)
+{
+	int err;
+
+	err = bt_tmap_discover(conn, &tmap_callbacks);
+	if (err != 0) {
+		printk("Failed to start TMAP discovery (err %d)\n", err);
+		return;
+	}
+
+	err = k_sem_take(&sem_discovery_done, K_FOREVER);
+	__ASSERT_NO_MSG(err == 0);
+
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT)) {
+		err = ccp_call_ctrl_init(conn);
+		if (err != 0) {
+			printk("CCP init failed (err %d)\n", err);
+			return;
+		}
+		printk("CCP initialized\n");
+	}
+
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)) {
+		err = mcp_ctlr_init(conn);
+		if (err != 0) {
+			printk("MCP init failed (err %d)\n", err);
+			return;
+		}
+		printk("MCP initialized\n");
+	}
+
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT) &&
+	    IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_cg) {
+		/* Initiate a call with CCP */
+		err = ccp_originate_call();
+		if (err != 0) {
+			printk("Error sending call originate command!\n");
+		}
+		/* Start timer to send terminate call command */
+		k_work_schedule(&call_terminate_set_work, K_MSEC(2000));
+	}
+
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR) &&
+	    IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_ums) {
+		/* Play media with MCP */
+		err = mcp_send_cmd(BT_MCS_OPC_PLAY);
+		if (err != 0) {
+			printk("Error sending media play command!\n");
+		}
+		/* Start timer to send media pause command */
+		k_work_schedule(&media_pause_set_work, K_MSEC(2000));
+	}
+}
 int main(void)
 {
 	int err;
@@ -284,6 +387,7 @@ int main(void)
 		printk("Failed to create advertising set (err %d)\n", err);
 		return err;
 	}
+	g_adv = adv;
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
@@ -298,62 +402,37 @@ int main(void)
 	}
 
 	printk("Advertising successfully started\n");
-	err = k_sem_take(&sem_connected, K_FOREVER);
-	__ASSERT_NO_MSG(err == 0);
 
-	err = k_sem_take(&sem_security_updated, K_FOREVER);
-	__ASSERT_NO_MSG(err == 0);
+	while (true) {
+		struct bt_conn *conn;
 
-	err = bt_tmap_discover(default_conn, &tmap_callbacks);
-	if (err != 0) {
-		return err;
-	}
+		err = k_sem_take(&sem_connected, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 
-	err = k_sem_take(&sem_discovery_done, K_FOREVER);
-	__ASSERT_NO_MSG(err == 0);
+		/* Wait for encryption, but bounded: a failed pairing tears the link down
+		 * without ever signalling security, so blocking here forever would wedge
+		 * the loop against every future peer.
+		 */
+		(void)k_sem_take(&sem_security_updated, K_SECONDS(30));
 
-	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT)) {
-		err = ccp_call_ctrl_init(default_conn);
-		if (err != 0) {
-			return err;
-		}
-		printk("CCP initialized\n");
-	}
-
-	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)) {
-		err = mcp_ctlr_init(default_conn);
-		if (err != 0) {
-			return err;
-		}
-		printk("MCP initialized\n");
-	}
-
-	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT) &&
-	    IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_cg) {
-		/* Initiate a call with CCP */
-		err = ccp_originate_call();
-		if (err != 0) {
-			printk("Error sending call originate command!\n");
-		}
-		/* Start timer to send terminate call command */
-		k_work_schedule(&call_terminate_set_work, K_MSEC(2000));
-	}
-
-	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR) &&
-	    IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_ums) {
-		/* Play media with MCP */
-		err = mcp_send_cmd(BT_MCS_OPC_PLAY);
-		if (err != 0) {
-			printk("Error sending media play command!\n");
+		/* Own a reference for the duration of service so a disconnect mid-setup
+		 * cannot free the connection under serve_connection(); NULL means the peer
+		 * already dropped, in which case we just wait for the disconnect below.
+		 */
+		conn = conn_get();
+		if (conn != NULL) {
+			serve_connection(conn);
+			bt_conn_unref(conn);
 		}
 
-		/* Start timer to send media pause command */
-		k_work_schedule(&media_pause_set_work, K_MSEC(2000));
-
+		/* recycled_cb restarts advertising once the connection object is freed. */
 		err = k_sem_take(&sem_disconnected, K_FOREVER);
-		if (err != 0) {
-			printk("failed to take sem_disconnected (err %d)\n", err);
-		}
+		__ASSERT_NO_MSG(err == 0);
+
+		/* Drop a security signal that arrived too late to be consumed above so it
+		 * cannot leak into the next connection.
+		 */
+		k_sem_reset(&sem_security_updated);
 	}
 
 	return 0;
