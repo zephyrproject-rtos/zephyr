@@ -404,6 +404,14 @@ Shell
   ``-ENOEXEC`` instead of ``SHELL_CMD_HELP_PRINTED`` (1). The help is still printed. Update code
   that checks the return value of :c:func:`shell_execute_cmd` for this case.
 
+Tracing
+=======
+
+* The ``output`` callback of :c:struct:`tracing_backend_api` takes the trace stream the data
+  belongs to as its second argument. An out-of-tree backend has to add the parameter; one
+  driving a single link can ignore it, since the framing in the stream lets the host
+  demultiplex.
+
 Modules
 *******
 
