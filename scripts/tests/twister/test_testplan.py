@@ -19,7 +19,12 @@ from twisterlib.platform import Platform
 from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
-from twisterlib.testplan import TestConfiguration, TestPlan, change_skip_to_error_if_integration
+from twisterlib.testplan import (
+    Filters,
+    TestConfiguration,
+    TestPlan,
+    change_skip_to_error_if_integration,
+)
 from twisterlib.testsuite import TestSuite
 from twisterlib.testsuitedata import RequiredApplication
 
@@ -789,7 +794,8 @@ def test_testplan_discover(
         test_pattern=[],
         test='ts1',
         quarantine_list=[tmp_path / qf for qf in ql],
-        quarantine_verify=qv
+        quarantine_verify=qv,
+        load_filter=None
     )
     testplan.testsuites = {
         'ts1': mock.Mock(id=1),
@@ -1957,6 +1963,53 @@ def test_testplan_load_from_file_unknown_platform():
         testplan.load_from_file('dummy.yaml')
 
     assert 'unknown platform Unknown Platform' in str(exc.value)
+
+
+def test_testplan_load_filter_from_file():
+    testplan = TestPlan(env=mock_twister_env())
+
+    filter_data = """\
+{
+    "testsuites": [
+        {
+            "name": "tests/foo/filtered",
+            "platform": "plat_a",
+            "status": "filtered",
+            "reason": "runtime filter"
+        },
+        {
+            "name": "tests/foo/no_reason",
+            "platform": "plat_b",
+            "status": "filtered"
+        },
+        {
+            "name": "tests/foo/passed",
+            "platform": "plat_a",
+            "status": "passed"
+        }
+    ]
+}
+"""
+
+    with mock.patch('builtins.open', mock.mock_open(read_data=filter_data)):
+        ret = testplan.load_filter_from_file('dummy.json')
+
+    assert ret == 0
+    # Only 'filtered' entries are recorded, keyed by (name, platform).
+    assert testplan.load_filter_map == {
+        ('tests/foo/filtered', 'plat_a'): 'runtime filter',
+        ('tests/foo/no_reason', 'plat_b'): Filters.CACHED,
+    }
+
+
+def test_testplan_load_filter_from_file_missing():
+    testplan = TestPlan(env=mock_twister_env())
+
+    with mock.patch('builtins.open', side_effect=FileNotFoundError):
+        ret = testplan.load_filter_from_file('missing.json')
+
+    assert ret == 1
+    assert testplan.load_filter_map == {}
 
 
 def test_testplan_add_instances():
