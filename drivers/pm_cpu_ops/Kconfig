@@ -41,6 +41,16 @@ config PM_CPU_OPS_FVP
 	  This driver directly controls the FVP power controller and
 	  V2M system registers for CPU power-on and system reset operations.
 
+config PM_CPU_OPS_SPINTABLE
+	bool "ARM spin-table secondary CPU release"
+	depends on !PM_CPU_OPS_PSCI
+	select PM_CPU_OPS_HAS_DRIVER
+	help
+	  Release secondary cores parked by the boot stub spin-table by
+	  writing the entry point to each core's release address and issuing
+	  SEV. For PSCI-less Arm platforms such as the BCM2710 (Raspberry Pi
+	  Zero 2 W), whose armstub8 parks cores at 0xd8 + N*8.
+
 config PSCI_SHELL
 	bool "Support for PSCI interface shell commands"
 	depends on SHELL && PM_CPU_OPS_PSCI

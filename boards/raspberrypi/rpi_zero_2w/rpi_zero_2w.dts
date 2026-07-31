@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <broadcom/bcm2710.dtsi>
+#include <broadcom/bcm2711-pinctrl.dtsi>
+
+/ {
+	model = "Raspberry Pi Zero 2 W";
+	compatible = "raspberrypi,model-zero-2-w", "brcm,bcm2710";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+	};
+};
+
+&uart1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1_gpio14>;
+	current-speed = <115200>;
+	status = "okay";
+};
