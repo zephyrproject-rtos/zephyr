@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: esp32p4_pc/esp32p4/hpcore
+name: ESP32-P4-PC HP Core
+vendor: olimex
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - heap
+supported:
+  - counter
+  - entropy
+  - gpio
+  - hwinfo
+  - netif:eth
+  - sdhc
+  - spi
+  - uart
+  - watchdog
