@@ -1,0 +1,6 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Zephyr-aligned Kconfig files for NXP cryptography modules
+osource "$(ZEPHYR_HAL_NXP_MODULE_DIR)/mcux/middleware/mcux-secure-subsystem/zephyr/Kconfig"
