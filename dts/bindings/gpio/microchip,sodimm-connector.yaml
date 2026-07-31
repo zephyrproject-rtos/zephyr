@@ -1,0 +1,15 @@
+# Copyright (c) 2026  Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Microchip's SODIMM connector.
+
+    Microchip’s SODIMM connector is repurposed as a high-density, low-cost
+    board-to-board interface rather than a traditional memory expansion slot.
+    Microchip frequently uses one-piece, standard 260-pin SODIMM form factors
+    on its evaluation boards and host processors to route high-speed
+    networking signals to modular expansion cards.
+
+compatible: "microchip,sodimm-connector"
+
+include: [gpio-nexus.yaml, base.yaml]
