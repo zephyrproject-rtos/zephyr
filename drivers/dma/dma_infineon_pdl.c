@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,8 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/pm.h>
 
 #include <cy_pdl.h>
 #include <soc.h>
@@ -490,6 +492,57 @@ static int ifx_cat1_dma_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int ifx_cat1_dma_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	uint32_t channel;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/*
+		 * Refuse to suspend while any channel is still enabled: a
+		 * DeepSleep gates the DMA clock and would abort an in-flight
+		 * transfer, losing data.  Consumers disable their channel once
+		 * the transfer completes, so an enabled channel signals work in
+		 * progress.  Returning -EBUSY aborts the low-power transition;
+		 * the PM subsystem retries once the channels are idle.
+		 */
+		for (channel = 0U; channel < cfg->num_channels; channel++) {
+			if (Cy_DMA_Channel_IsEnabled(cfg->regs, channel)) {
+				return -EBUSY;
+			}
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * A regular DeepSleep gates the clock but retains the DMA block
+		 * and channel configuration, so nothing needs restoring on that
+		 * path.  The DeepSleep-RAM warm-boot case, where the peripheral
+		 * domain is power-cycled and all DMA state is lost, is a
+		 * power-loss transition handled by PM_DEVICE_ACTION_TURN_ON.
+		 */
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power-loss recovery.  A DeepSleep-RAM warm boot power-cycles the
+		 * peripheral domain and loses all DMA state, so re-enable the DMA
+		 * block and reconnect its interrupts.  The per-channel descriptors
+		 * are reprogrammed by the consumer on its next dma_config().  This
+		 * action is emitted only on a genuine DS-RAM warm boot, by the SoC's
+		 * deferred re-init worker running in thread context.
+		 */
+		return ifx_cat1_dma_init(dev);
+#endif /* CONFIG_PM_S2RAM */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 /* Handles DMA interrupts and dispatches to the individual channel */
 struct ifx_cat1_dma_irq_context {
 	const struct device *dev;
@@ -606,8 +659,10 @@ static DEVICE_API(dma, ifx_cat1_dma_api) = {
 		CONFIGURE_ALL_IRQS(n, DT_NUM_IRQS(DT_DRV_INST(n)));                                \
 	}                                                                                          \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_dma_init, NULL, &ifx_cat1_dma_data##n,                  \
-			      &ifx_cat1_dma_config##n, PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY,     \
-			      &ifx_cat1_dma_api);
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_cat1_dma_pm_action);                                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, &ifx_cat1_dma_init, PM_DEVICE_DT_INST_GET(n),                     \
+			      &ifx_cat1_dma_data##n, &ifx_cat1_dma_config##n, PRE_KERNEL_1,        \
+			      CONFIG_DMA_INIT_PRIORITY, &ifx_cat1_dma_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_DMA_INIT)

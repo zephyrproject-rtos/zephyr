@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,12 +11,18 @@
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/pm.h>
 #include <infineon_kconfig.h>
 #include <zephyr/drivers/timer/ifx_tcpwm.h>
 #include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
+
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+#include <power.h>
+#endif
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ifx_tcpwm_counter, CONFIG_COUNTER_LOG_LEVEL);
@@ -50,6 +56,16 @@ struct ifx_tcpwm_counter_data {
 	struct ifx_cat1_clock clock;
 	/* Counter input frequency, cached at init (see ifx_tcpwm_counter_get_freq) */
 	uint32_t freq;
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	/* Warm-boot generation this instance was last rebuilt at (retained). */
+	uint32_t warm_boot_gen;
+#endif
+#ifdef CONFIG_PM_DEVICE
+	/* Whether the counter was running when suspend was entered, so
+	 * resume only restarts a counter that was previously active.
+	 */
+	bool was_running;
+#endif /* CONFIG_PM_DEVICE */
 };
 
 static const cy_stc_tcpwm_counter_config_t counter_default_config = {
@@ -205,6 +221,14 @@ static int ifx_tcpwm_counter_start(const struct device *dev)
 
 	const struct ifx_tcpwm_counter_config *config = dev->config;
 
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	{
+		struct ifx_tcpwm_counter_data *const pm_data = dev->data;
+
+		(void)ifx_pm_warm_boot_reinit(dev, &pm_data->warm_boot_gen);
+	}
+#endif
+
 	Cy_TCPWM_Counter_Enable(config->reg_base, config->index);
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
@@ -212,6 +236,14 @@ static int ifx_tcpwm_counter_start(const struct device *dev)
 #else
 	Cy_TCPWM_TriggerStart_Single(config->reg_base, config->index);
 #endif
+
+#ifdef CONFIG_PM_DEVICE
+	{
+		struct ifx_tcpwm_counter_data *const data = dev->data;
+
+		data->was_running = true;
+	}
+#endif /* CONFIG_PM_DEVICE */
 
 	return 0;
 }
@@ -223,6 +255,14 @@ static int ifx_tcpwm_counter_stop(const struct device *dev)
 	const struct ifx_tcpwm_counter_config *config = dev->config;
 
 	Cy_TCPWM_Counter_Disable(config->reg_base, config->index);
+
+#ifdef CONFIG_PM_DEVICE
+	{
+		struct ifx_tcpwm_counter_data *const data = dev->data;
+
+		data->was_running = false;
+	}
+#endif /* CONFIG_PM_DEVICE */
 
 	return 0;
 }
@@ -245,6 +285,19 @@ static int ifx_tcpwm_counter_get_value(const struct device *dev, uint32_t *ticks
 	__ASSERT_NO_MSG(ticks != NULL);
 
 	const struct ifx_tcpwm_counter_config *config = dev->config;
+
+#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_PM_DEVICE)
+	/*
+	 * If a DeepSleep-RAM warm boot happened since this counter was last used,
+	 * rebuild (and restart) it here, in the caller's thread context, before
+	 * reading the count.  A no-op on every other call.
+	 */
+	{
+		struct ifx_tcpwm_counter_data *const pm_data = dev->data;
+
+		(void)ifx_pm_warm_boot_reinit(dev, &pm_data->warm_boot_gen);
+	}
+#endif
 
 	*ticks = Cy_TCPWM_Counter_GetCounter(config->reg_base, config->index);
 
@@ -480,6 +533,72 @@ static int ifx_tcpwm_counter_set_guard_period(const struct device *dev, uint32_t
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int ifx_tcpwm_counter_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct ifx_tcpwm_counter_data *const data = dev->data;
+#if defined(CONFIG_PM_S2RAM)
+	int ret;
+#endif /* CONFIG_PM_S2RAM */
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Nothing to do. Returning success ensures DeepSleep entry is never blocked. */
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * Resume from a retained low-power state (regular DeepSleep): the
+		 * clocks were gated but the peripheral domain and its configuration
+		 * survived, so only restart the counter if it was running before the
+		 * transition.
+		 */
+#if defined(CONFIG_PM_S2RAM)
+		/*
+		 * RESUME is invoked for BOTH SUSPEND_TO_IDLE (regular, retained
+		 * DeepSleep) and SUSPEND_TO_RAM (DS-RAM warm boot).  A DS-RAM warm
+		 * boot power-cycles the domain and loses all counter state; the block
+		 * is rebuilt by PM_DEVICE_ACTION_TURN_ON (the SoC's deferred re-init
+		 * worker), which fully re-inits and restarts it.  Skip the light
+		 * restart here on that path so a power-cycled, unconfigured block is
+		 * not enabled before TURN_ON re-initializes it.
+		 */
+		if (pm_state_next_get(_current_cpu->id)->state == PM_STATE_SUSPEND_TO_RAM) {
+			break;
+		}
+#endif /* CONFIG_PM_S2RAM */
+		if (data->was_running) {
+			(void)ifx_tcpwm_counter_start(dev);
+		}
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON:
+		/*
+		 * Power-loss recovery.  A DeepSleep-RAM warm boot power-cycles the
+		 * peripheral domain and loses all counter state, so re-initialize the
+		 * block and restart it if it was running before the transition.  This
+		 * action is emitted only on a genuine DS-RAM warm boot (by the SoC's
+		 * deferred re-init worker running in thread context), so its
+		 * invocation is the "power was lost" signal - no separate warm-boot
+		 * flag query is needed.
+		 */
+		ret = ifx_tcpwm_counter_init(dev);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (data->was_running) {
+			(void)ifx_tcpwm_counter_start(dev);
+		}
+		break;
+#endif /* CONFIG_PM_S2RAM */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(counter, counter_api) = {
 	.start = ifx_tcpwm_counter_start,
 	.stop = ifx_tcpwm_counter_stop,
@@ -545,6 +664,8 @@ static DEVICE_API(counter, counter_api) = {
 	static struct ifx_tcpwm_counter_data ifx_tcpwm_counter##n##_data = {                       \
 		COUNTER_PERI_CLOCK_INIT(n)};                                                       \
                                                                                                    \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_counter_pm_action);                                  \
+                                                                                                   \
 	static const struct ifx_tcpwm_counter_config ifx_tcpwm_counter##n##_config = {             \
 		.counter_info = {.max_top_value = (DT_PROP(DT_INST_PARENT(n), resolution) == 32)   \
 							  ? UINT32_MAX                             \
@@ -560,8 +681,8 @@ static DEVICE_API(counter, counter_api) = {
 		.irq_enable_func = ifx_counter_irq_enable_func_##n,                                \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_counter_init, NULL, &ifx_tcpwm_counter##n##_data,       \
-			      &ifx_tcpwm_counter##n##_config, POST_KERNEL,                         \
-			      CONFIG_COUNTER_INIT_PRIORITY, &counter_api);
+	DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_counter_init, PM_DEVICE_DT_INST_GET(n),                 \
+			      &ifx_tcpwm_counter##n##_data, &ifx_tcpwm_counter##n##_config,        \
+			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY, &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_TCPWM_COUNTER_INIT);
