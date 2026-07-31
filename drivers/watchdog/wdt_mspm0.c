@@ -60,6 +60,11 @@ BUILD_ASSERT(offsetof(struct wwdt_mspm_regs, WWDTSTAT) == 0x110CU);
 #define WWDT_PWREN_KEY    0x26000000U
 #define WWDT_PWREN_ENABLE 0x00000001U
 
+/* GPRCM.RSTCTL */
+#define WWDT_RSTCTL_KEY     0xB1000000U
+#define WWDT_RSTCTL_STKYCLR 0x00000002U
+#define WWDT_RSTCTL_ASSERT  0x00000001U
+
 /* WWDTCTL0 — key required on every write; wrong key → ESM error */
 #define WWDT_CTL0_KEY         0xC9000000U
 /* PER field [6:4] */
@@ -74,9 +79,6 @@ BUILD_ASSERT(offsetof(struct wwdt_mspm_regs, WWDTSTAT) == 0x110CU);
 /* WINDOW0 [10:8] and WINDOW1 [14:12] field offsets */
 #define WWDT_CTL0_WINDOW0_OFS 8U
 #define WWDT_CTL0_WINDOW1_OFS 12U
-/* STISM [17] — stop-in-sleep */
-#define WWDT_CTL0_STISM_CONT  0x00000000U
-#define WWDT_CTL0_STISM_STOP  0x00020000U
 
 /* WWDTCTL1 */
 #define WWDT_CTL1_KEY 0xBE000000U
@@ -156,12 +158,15 @@ static int wwdt_mspm_calculate_timeout_periods(const struct device *dev,
 	}
 
 	/* Determine closed window as per the requested lower limit of watchdog feed timeout */
-	for (window_idx = 0; window_idx < 7; window_idx++) {
+	for (window_idx = 0; window_idx < ARRAY_SIZE(window_sixteenths); window_idx++) {
 		if (min_ms <= (actual_timeout * window_sixteenths[window_idx] / 16)) {
-			/* Use the chosen window size by window_idx */
 			break;
 		}
-		/* If no match, the largest window available is chosen (87.5%) */
+	}
+
+	if (window_idx >= ARRAY_SIZE(window_sixteenths)) {
+		LOG_ERR("Install timeout failed. min_ms %u cannot be enforced", min_ms);
+		return -EINVAL;
 	}
 
 	data->window_count = (window_idx << WWDT_CTL0_WINDOW0_OFS);
@@ -174,12 +179,12 @@ static int wwdt_mspm_setup(const struct device *dev, uint8_t options)
 	const struct wwdt_mspm_config *config = dev->config;
 	struct wwdt_mspm_data *data = dev->data;
 	struct wwdt_mspm_regs *base = config->base;
-	uint32_t stism = WWDT_CTL0_STISM_CONT;
 	uint32_t window0_closed;
 	uint32_t window1_closed;
 
-	if ((options & WDT_OPT_PAUSE_IN_SLEEP) == WDT_OPT_PAUSE_IN_SLEEP) {
-		stism = WWDT_CTL0_STISM_STOP;
+	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
+		/* hw_wwdt.h: STISM has no effect for the global Window Watchdog. */
+		return -ENOTSUP;
 	}
 
 	if ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) != WDT_OPT_PAUSE_HALTED_BY_DBG) {
@@ -198,7 +203,7 @@ static int wwdt_mspm_setup(const struct device *dev, uint8_t options)
 		window1_closed = 0;
 	}
 
-	base->WWDTCTL0 = WWDT_CTL0_KEY | data->clock_divider | data->period_count | stism |
+	base->WWDTCTL0 = WWDT_CTL0_KEY | data->clock_divider | data->period_count |
 			 window0_closed |
 			 (window1_closed << (WWDT_CTL0_WINDOW1_OFS - WWDT_CTL0_WINDOW0_OFS));
 
@@ -249,8 +254,12 @@ static int wwdt_mspm_feed(const struct device *dev, int channel_id)
 
 static int wwdt_mspm_init(const struct device *dev)
 {
-	((const struct wwdt_mspm_config *)dev->config)->base->GPRCM.PWREN =
-		WWDT_PWREN_KEY | WWDT_PWREN_ENABLE;
+	struct wwdt_mspm_regs *base = ((const struct wwdt_mspm_config *)dev->config)->base;
+
+	/* Reset peripheral and enable power — matches counter/PWM init sequence. */
+	base->GPRCM.RSTCTL = WWDT_RSTCTL_KEY | WWDT_RSTCTL_STKYCLR | WWDT_RSTCTL_ASSERT;
+	base->GPRCM.PWREN = WWDT_PWREN_KEY | WWDT_PWREN_ENABLE;
+	k_busy_wait(1U);
 
 	return 0;
 }
