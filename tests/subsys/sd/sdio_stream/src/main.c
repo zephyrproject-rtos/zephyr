@@ -15,6 +15,13 @@
 #define DC_NODE   DT_NODELABEL(sdio_dc0)
 #define FIFO_REG  0x0
 
+/* Function-0 config: the virtual controller does not serve function 0. */
+static const struct sdio_device_config stream_cfg = {
+	.cccr_revision = SDIO_CCCR_CCCR_REV_3_00,
+	.sd_spec = 0x03,
+	.max_blk_size = 512,
+};
+
 static struct sdio_device endpoint;
 static struct sdio_stream_function sf;
 
@@ -50,7 +57,7 @@ static void *setup(void)
 	const struct device *dc = DEVICE_DT_GET(DC_NODE);
 
 	zassert_true(device_is_ready(dc), "controller not ready");
-	zassert_ok(sdio_device_init(&endpoint, dc));
+	zassert_ok(sdio_device_init(&endpoint, dc, &stream_cfg));
 	zassert_ok(sdio_stream_function_init(&sf, SDIO_FUNC_NUM_1, FIFO_REG));
 	zassert_ok(sdio_device_register_function(&endpoint, &sf.base));
 	zassert_ok(sdio_device_enable(&endpoint));

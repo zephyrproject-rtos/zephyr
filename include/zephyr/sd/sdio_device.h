@@ -35,6 +35,25 @@ extern "C" {
 struct sdio_device_function;
 
 /**
+ * @brief Function-0 / card identity configuration.
+ *
+ * Supplied by the vendor. The subsystem uses it to serve the function-0 CCCR,
+ * the FBR of each function and the CIS tuple chains when a host reads them.
+ * Pass to @ref sdio_device_init, or NULL if the controller/hardware serves the
+ * function-0 register file itself.
+ */
+struct sdio_device_config {
+	uint8_t cccr_revision; /**< CCCR/SDIO revision (@c SDIO_CCCR_CCCR_REV_*) */
+	uint8_t sd_spec; /**< SD physical spec version code */
+	uint16_t manf_id; /**< CIS manufacturer ID (MANFID tuple) */
+	uint16_t manf_code; /**< CIS manufacturer code (MANFID tuple) */
+	uint8_t func0_id; /**< CIS function ID of function 0 (FUNCID tuple) */
+	uint16_t max_blk_size; /**< Function-0 maximum block size (FUNCE tuple) */
+	uint8_t max_speed; /**< Function-0 maximum transfer rate code (FUNCE) */
+	uint8_t caps; /**< CCCR capability bits (@c SDIO_CCCR_CAPS_*) */
+};
+
+/**
  * @brief FIFO / data-port handler.
  *
  * Invoked when the host performs a fixed-address (FIFO) access to the
@@ -73,7 +92,15 @@ struct sdio_device_function {
 	/** User data passed to @ref fifo_cb */
 	void *user;
 
+	/** Standard SDIO function interface code (FBR / CIS FUNCID) */
+	uint8_t func_code;
+	/** Maximum block size advertised for this function (CIS FUNCE) */
+	uint16_t max_blk_size;
+	/** I/O-ready timeout advertised in the CIS in 10ms units (FUNCE) */
+	uint16_t rdy_timeout;
+
 	/** @cond INTERNAL_HIDDEN */
+	uint16_t block_size; /* host-programmed block size (FBR) */
 	sys_snode_t node;
 	struct sdio_device *parent;
 	/** @endcond */
@@ -88,21 +115,40 @@ struct sdio_device_function {
 struct sdio_device {
 	/** SDIO device controller backing this endpoint */
 	const struct device *controller;
+	/** Function-0 configuration served by the subsystem (may be NULL) */
+	const struct sdio_device_config *config;
 	/** @cond INTERNAL_HIDDEN */
 	sys_slist_t functions;
 	struct k_mutex lock;
+	uint8_t io_enable; /* CCCR I/O enable bitmap */
+	uint8_t io_ready; /* CCCR I/O ready bitmap */
+	uint8_t int_enable; /* CCCR interrupt enable bitmap */
+	uint8_t int_pending; /* CCCR interrupt pending bitmap */
+	uint8_t bus_width; /* CCCR bus interface width setting */
+	uint8_t speed_sel; /* CCCR bus speed selection */
+	bool serve_func0; /* subsystem serves the function-0 register file */
 	/** @endcond */
 };
 
 /**
  * @brief Initialize a device-role SDIO endpoint.
  *
+ * When the controller does not serve the function-0 register file itself (see
+ * @ref sdio_dc_caps.serves_function0), @p config is required: the subsystem
+ * serves CCCR/FBR/CIS and tracks enable/interrupt state from it. When the
+ * controller serves function 0 in hardware, @p config may be NULL and is
+ * ignored.
+ *
  * @param dev        endpoint to initialize
- * @param controller SDIO device controller device
+ * @param controller backing SDIO device controller
+ * @param config     function-0 configuration; required unless the controller
+ *                   serves function 0 itself
  * @retval 0 on success
- * @retval -EINVAL invalid argument
+ * @retval -EINVAL invalid argument, or @p config is NULL and required
+ * @retval -ENODEV controller is not ready
  */
-int sdio_device_init(struct sdio_device *dev, const struct device *controller);
+int sdio_device_init(struct sdio_device *dev, const struct device *controller,
+		     const struct sdio_device_config *config);
 
 /**
  * @brief Expose a function to the remote host.
@@ -147,6 +193,18 @@ int sdio_device_disable(struct sdio_device *dev);
  * @retval -EINVAL invalid argument
  */
 int sdio_device_raise_interrupt(struct sdio_device_function *func);
+
+/**
+ * @brief Clear a pending SDIO interrupt for a function.
+ *
+ * Clears the function's bit in the CCCR interrupt-pending register. Call once
+ * the condition that raised the interrupt has been serviced.
+ *
+ * @param func function whose interrupt to clear
+ * @retval 0 on success
+ * @retval -EINVAL invalid argument
+ */
+int sdio_device_clear_interrupt(struct sdio_device_function *func);
 
 /** @} */
 
