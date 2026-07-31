@@ -10,6 +10,7 @@ target_sources(app PRIVATE
   src/bap_unicast_sr.c
   src/ccp_call_ctrl.c
   src/mcp_ctlr.c
+  src/le_audio_playback.c
 )
 
 target_sources_ifdef(CONFIG_TMAP_PERIPHERAL_DUO app PRIVATE

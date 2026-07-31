@@ -34,6 +34,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
+#include "le_audio_playback.h"
 #include "tmap_peripheral.h"
 
 static struct bt_conn *default_conn;
@@ -255,6 +256,14 @@ int main(void)
 		return err;
 	}
 	printk("BAP initialized\n");
+
+	err = le_audio_playback_init();
+	if (err != 0) {
+		printk("LE Audio playback init failed (err %d)\n", err);
+		/* Not fatal - continue without playback. */
+	} else {
+		printk("LE Audio playback initialized\n");
+	}
 
 	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, &adv_cb, &adv);
 	if (err != 0) {
