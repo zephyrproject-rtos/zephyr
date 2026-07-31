@@ -71,6 +71,12 @@ int custom_wifi_credentials_load_entry(size_t idx, void *buf, size_t buf_len)
 #define CHANNEL5      5
 #define PSK5_UNWANTED "unwanted secret"
 
+#define SSID6     "test6"
+#define PSK6      "auto personal secret"
+#define SECURITY6 WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL
+#define FLAGS6    0
+#define CHANNEL6  6
+
 static void wifi_credentials_setup(void *unused)
 {
 	RESET_FAKE(wifi_credentials_store_entry);
@@ -87,6 +93,7 @@ static void wifi_credentials_teardown(void *unused)
 	wifi_credentials_delete_by_ssid(SSID3, ARRAY_SIZE(SSID3));
 	wifi_credentials_delete_by_ssid(SSID4, ARRAY_SIZE(SSID4));
 	wifi_credentials_delete_by_ssid(SSID5, ARRAY_SIZE(SSID5));
+	wifi_credentials_delete_by_ssid(SSID6, ARRAY_SIZE(SSID6));
 	wifi_credentials_delete_by_ssid("", 0);
 }
 
@@ -329,6 +336,39 @@ ZTEST(wifi_credentials, test_add_network_owe)
 	}
 
 	err = wifi_credentials_delete_by_ssid(SSID5, sizeof(SSID5));
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+}
+
+/* Verify that we can set/get a network using the WPA_AUTO_PERSONAL security type. */
+ZTEST(wifi_credentials, test_single_wpa_auto_personal)
+{
+	int err;
+
+	/* set network credentials with an auto-personal security type */
+	err = wifi_credentials_set_personal(SSID6, sizeof(SSID6), SECURITY6, NULL, 0, PSK6,
+					    sizeof(PSK6), FLAGS6, CHANNEL6, 0);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+
+	enum wifi_security_type security = -1;
+	uint8_t bssid_buf[WIFI_MAC_ADDR_LEN] = "";
+	char psk_buf[WIFI_CREDENTIALS_MAX_PASSWORD_LEN] = "";
+	size_t psk_len = 0;
+	uint32_t flags = 0;
+	uint8_t channel = 0;
+	uint32_t timeout = 0;
+
+	/* retrieve network credentials */
+	err = wifi_credentials_get_by_ssid_personal(
+		SSID6, sizeof(SSID6), &security, bssid_buf, ARRAY_SIZE(bssid_buf), psk_buf,
+		ARRAY_SIZE(psk_buf), &psk_len, &flags, &channel, &timeout);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+	zassert_equal(strncmp(PSK6, psk_buf, ARRAY_SIZE(psk_buf)), 0, "PSK mismatch");
+	zassert_equal(psk_len, sizeof(PSK6), "PSK length mismatch");
+	zassert_equal(security, SECURITY6, "Security type mismatch");
+	zassert_equal(flags, FLAGS6, "Flags mismatch");
+	zassert_equal(channel, CHANNEL6, "Channel mismatch");
+
+	err = wifi_credentials_delete_by_ssid(SSID6, sizeof(SSID6));
 	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
 }
 
