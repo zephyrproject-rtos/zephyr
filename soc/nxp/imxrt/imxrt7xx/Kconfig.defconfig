@@ -9,3 +9,16 @@ config MFD
 # Default offset 0x200 is not enough with higher ISR count
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
+
+if MBEDTLS_PSA_CRYPTO_C && SOC_SERIES_IMXRT7XX
+
+config MCUX_ELS_PKC
+	default y
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+	default y
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
+	default y
+
+endif # MBEDTLS_PSA_CRYPTO_C && SOC_SERIES_IMXRT7XX
