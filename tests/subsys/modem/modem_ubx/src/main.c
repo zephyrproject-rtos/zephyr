@@ -523,6 +523,9 @@ ZTEST(modem_ubx, test_unsol_matches_trigger_cb)
 	static struct ubx_frame ack_frame = UBX_FRAME_ACK_INITIALIZER(0x01, 0x02);
 	static struct ubx_frame nak_frame = UBX_FRAME_NAK_INITIALIZER(0x01, 0x02);
 
+	script_runner_start(&test_script_runner, 0);
+	test_thread_yield();
+
 	zassert_false(atomic_test_bit(&callback_called, MODEM_UBX_UTEST_ON_ACK_RECEIVED_BIT));
 	zassert_false(atomic_test_bit(&callback_called, MODEM_UBX_UTEST_ON_NAK_RECEIVED_BIT));
 
