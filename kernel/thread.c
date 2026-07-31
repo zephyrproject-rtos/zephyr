@@ -133,18 +133,43 @@ static inline int z_vrfy_k_thread_priority_get(k_tid_t thread)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_THREAD_NAME
+/*
+ * Serializes renaming a thread against taking a copy of its name.
+ *
+ * Renaming writes several bytes into a buffer another CPU may be reading at the
+ * same moment, so without this a reader can come away with a mixture of the old
+ * and the new name. Renaming a thread that is already running is what makes
+ * this reachable: tracing, for one, reads the name of every thread it sees
+ * switched in, and has been observed recording a name spliced out of both.
+ *
+ * This is a leaf lock. Nothing is acquired while it is held, so it stays safe
+ * to take from a context that already holds another lock - a thread switch
+ * tracing hook running under the scheduler lock, in particular.
+ */
+static struct k_spinlock thread_name_lock;
+
 static void set_thread_name(struct k_thread *thread, const char *str)
 {
+	k_spinlock_key_t key = k_spin_lock(&thread_name_lock);
+
 	if (str != NULL) {
 		strncpy(thread->name, str, CONFIG_THREAD_MAX_NAME_LEN - 1);
 		/* Ensure NULL termination, truncate if longer */
 		thread->name[CONFIG_THREAD_MAX_NAME_LEN - 1] = '\0';
-#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
-		arch_thread_name_set(thread, str);
-#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
 	} else {
 		thread->name[0] = '\0';
 	}
+
+	k_spin_unlock(&thread_name_lock, key);
+
+#ifdef CONFIG_ARCH_HAS_THREAD_NAME_HOOK
+	if (str != NULL) {
+		/* Kept outside the lock: this is arch code that does more than
+		 * write the buffer above, and the lock has to remain a leaf.
+		 */
+		arch_thread_name_set(thread, str);
+	}
+#endif /* CONFIG_ARCH_HAS_THREAD_NAME_HOOK */
 }
 #endif /* CONFIG_THREAD_NAME */
 
@@ -211,7 +236,22 @@ const char *k_thread_name_get(k_tid_t thread)
 int z_impl_k_thread_name_copy(k_tid_t thread, char *buf, size_t size)
 {
 #ifdef CONFIG_THREAD_NAME
+	k_spinlock_key_t key;
+
+	if (size == 0U) {
+		return 0;
+	}
+
+	key = k_spin_lock(&thread_name_lock);
 	strncpy(buf, thread->name, size);
+	k_spin_unlock(&thread_name_lock, key);
+
+	/* strncpy() writes no terminator when the name is at least as long as
+	 * the destination, so supply one rather than hand back a string the
+	 * caller cannot safely read.
+	 */
+	buf[size - 1U] = '\0';
+
 	return 0;
 #else
 	ARG_UNUSED(thread);
@@ -293,6 +333,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 					    char *buf, size_t size)
 {
 #ifdef CONFIG_THREAD_NAME
+	char name[CONFIG_THREAD_MAX_NAME_LEN];
 	size_t len;
 	struct k_object *ko = k_object_find(thread);
 
@@ -306,12 +347,20 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 	if (K_SYSCALL_MEMORY_WRITE(buf, size) != 0) {
 		return -EFAULT;
 	}
-	len = strlen(thread->name);
+
+	/* Take one stable copy and work from that. Measuring the name and then
+	 * copying it straight out of the thread reads the buffer twice, so a
+	 * rename in between could change the length out from under the check,
+	 * quite apart from handing user mode a torn name.
+	 */
+	(void)z_impl_k_thread_name_copy(thread, name, sizeof(name));
+
+	len = strlen(name);
 	if ((len + 1) > size) {
 		return -ENOSPC;
 	}
 
-	return k_usermode_to_copy((void *)buf, thread->name, len + 1);
+	return k_usermode_to_copy((void *)buf, name, len + 1);
 #else
 	ARG_UNUSED(thread);
 	ARG_UNUSED(buf);
