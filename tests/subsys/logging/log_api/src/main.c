@@ -11,6 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/sys/cbprintf.h>
+#include <zephyr/linker/utils.h>
 
 #ifndef CONFIG_LOG_BUFFER_SIZE
 #define CONFIG_LOG_BUFFER_SIZE 4
@@ -22,20 +23,29 @@
 
 LOG_MODULE_REGISTER(test, CONFIG_SAMPLE_MODULE_LOG_LEVEL);
 
-#ifdef CONFIG_LOG_USE_TAGGED_ARGUMENTS
-/* The extra sizeof(int) is the end of arguments tag. */
-#define LOG_SIMPLE_MSG_LEN \
-	ROUND_UP(sizeof(struct log_msg) + \
-		 sizeof(struct cbprintf_package_hdr_ext) + \
-		 sizeof(int) + (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC) ? 1 : 0), \
-		 CBPRINTF_PACKAGE_ALIGNMENT)
-#else
-#define LOG_SIMPLE_MSG_LEN \
-	ROUND_UP(sizeof(struct log_msg) + \
-		 sizeof(struct cbprintf_package_hdr_ext) + \
-		 (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC) ? 1 : 0), \
-		 CBPRINTF_PACKAGE_ALIGNMENT)
-#endif
+#define LOG_COMPRESSED_MSG_LEN(args_cnt) \
+	(offsetof(struct log_msg_compressed, args) + args_cnt * sizeof(int))
+
+/** Calculate the length of a log message. It does not include the hexdump data length.
+ *
+ * It supports the case where a single %s argument is used.
+ *
+ * @param args_cnt Number of arguments.
+ * @param str_arg If 1, the message contains a dynamic string argument.
+ * @param ... Dynamic string argument.
+ * @return The length of the log message.
+ */
+#define LOG_MSG_LEN(args_cnt, str_arg, ...) \
+	((IS_ENABLED(CONFIG_LOG_SIMPLE_MSG_COMPRESS) && (str_arg == 0)) ? \
+	LOG_COMPRESSED_MSG_LEN(args_cnt) : \
+	(ROUND_UP(offsetof(struct log_msg, data) + \
+	 sizeof(struct cbprintf_package_hdr_ext) + \
+	 (IS_ENABLED(CONFIG_LOG_USE_TAGGED_ARGUMENTS) ? args_cnt * sizeof(int) : 0) + \
+	 (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC) ? 1 : 0) + \
+	 (args_cnt * sizeof(int)) + \
+	 COND_CODE_1(str_arg, \
+		((linker_is_in_rodata(__VA_ARGS__) ? 0 : sizeof(__VA_ARGS__) + 1)), (0)), \
+	 CBPRINTF_PACKAGE_ALIGNMENT)))
 
 #ifdef CONFIG_LOG_TIMESTAMP_64BIT
 #define TIMESTAMP_INIT_VAL 0x100000000
@@ -356,34 +366,11 @@ static size_t get_max_hexdump(void)
 
 static size_t get_long_hexdump(void)
 {
-	size_t extra_msg_sz = 0;
-	size_t extra_hexdump_sz = 0;
+	uint32_t first_msg_len = LOG_MSG_LEN(2, 0, _);
+	uint32_t hexdump_msg_len = LOG_MSG_LEN(1, 1, "hexdump");
 
-	if (IS_ENABLED(CONFIG_LOG_USE_TAGGED_ARGUMENTS)) {
-		/* First message with 2 arguments => 2 tags */
-		extra_msg_sz = 2 * sizeof(int);
-
-		/*
-		 * Hexdump with an implicit "%s" and the "hexdump" string
-		 * as argument => 1 tag.
-		 */
-		extra_hexdump_sz = sizeof(int);
-	}
-	if (IS_ENABLED(CONFIG_TEST_LOG_MSG_APPEND_RO_STRING_LOC)) {
-		extra_msg_sz += sizeof(uint8_t); /* Location of format string. */
-	}
-
-	return CONFIG_LOG_BUFFER_SIZE -
-		/* First message */
-		ROUND_UP(LOG_SIMPLE_MSG_LEN + 2 * sizeof(int) + extra_msg_sz,
-			 CBPRINTF_PACKAGE_ALIGNMENT) -
-		/* Hexdump message excluding data */
-		ROUND_UP(LOG_SIMPLE_MSG_LEN + STR_SIZE("hexdump") + extra_hexdump_sz,
-			 CBPRINTF_PACKAGE_ALIGNMENT) -
-		/* cbprintf_package_copy may append the format string when
-		 * the toolchain places it in a read-write section.
-		 */
-		sizeof("hexdump");
+	/* +1 to ensure that message will trigger dropping of the first message. */
+	return CONFIG_LOG_BUFFER_SIZE - (first_msg_len + hexdump_msg_len) + 1;
 }
 
 /*
@@ -601,7 +588,7 @@ ZTEST(test_log_api, test_log_from_declared_module)
  */
 static size_t get_short_msg_capacity(void)
 {
-	return CONFIG_LOG_BUFFER_SIZE / LOG_SIMPLE_MSG_LEN;
+	return CONFIG_LOG_BUFFER_SIZE / LOG_MSG_LEN(0, 0, _);
 }
 
 static void log_n_messages(uint32_t n_msg, uint32_t exp_dropped)

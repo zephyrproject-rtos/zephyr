@@ -596,7 +596,7 @@ void log_frontend_init(void)
 
 	(void)stmesp_get_port(CONFIG_LOG_FRONTEND_STPESP_TURBO_SOURCE_PORT_ID, &stm_esp);
 	log_const_start = (uintptr_t)TYPE_SECTION_START(log_const);
-	log_str_start = (uintptr_t)TYPE_SECTION_START(log_stmesp_ptr);
+	log_str_start = (uintptr_t)TYPE_SECTION_START(log_str_ptr);
 	STM_D32(stm_esp, log_const_start, false, true);
 	STM_D32(stm_esp, log_str_start, false, true);
 #endif
