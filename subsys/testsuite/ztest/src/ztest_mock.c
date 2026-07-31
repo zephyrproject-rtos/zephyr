@@ -206,6 +206,8 @@ void z_ztest_check_expected_value(const char *fn, const char *name, uintptr_t va
 	if (!param) {
 		PRINT_DATA("Failed to find parameter %s for %s\n", name, fn);
 		ztest_test_fail();
+		/* ztest_test_fail() may return, depending on the test phase. */
+		return;
 	}
 
 	expected = param->value;
@@ -300,6 +302,8 @@ uintptr_t z_ztest_get_return_value(const char *fn)
 	if (!param) {
 		PRINT_DATA("Failed to find return value for function %s\n", fn);
 		ztest_test_fail();
+		/* ztest_test_fail() may return, depending on the test phase. */
+		return 0;
 	}
 
 	value = param->value;
