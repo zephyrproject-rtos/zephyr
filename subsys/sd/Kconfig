@@ -122,6 +122,30 @@ module = SDIO_DEVICE
 module-str = SDIO device subsystem
 source "subsys/logging/Kconfig.template.log_config"
 
+config SDIO_DEVICE_STREAM
+	bool "SDIO device streaming (packet/poll) extension"
+	select POLL
+	help
+	  Optional pooled-packet data path with RX/TX FIFOs and a poll() wait,
+	  layered on top of an SDIO device function. Adapted from the NXP sd_dev
+	  proposal.
+
+if SDIO_DEVICE_STREAM
+
+config SDIO_STREAM_PKT_COUNT
+	int "SDIO stream packet pool size"
+	default 8
+
+config SDIO_STREAM_BUF_SIZE
+	int "SDIO stream packet buffer size (bytes)"
+	default 2048
+
+config SDIO_STREAM_DMA_ALIGN
+	int "SDIO stream buffer alignment (bytes)"
+	default 4
+
+endif # SDIO_DEVICE_STREAM
+
 endif # SDIO_DEVICE
 
 endmenu
