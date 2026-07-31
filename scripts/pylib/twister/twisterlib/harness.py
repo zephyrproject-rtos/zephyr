@@ -248,7 +248,7 @@ class Robot(Harness):
         try:
             renode_test_proc = subprocess.Popen(command, stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT, cwd=self.instance.build_dir, env=env)
-        except FileNotFoundError as err:
+        except (FileNotFoundError, PermissionError) as err:
             reason = f"Robot test executable '{command[0]}' not found: {err.strerror}"
             logger.warning(reason)
             self.instance.status = TwisterStatus.SKIP
