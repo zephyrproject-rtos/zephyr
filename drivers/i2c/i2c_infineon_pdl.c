@@ -91,6 +91,7 @@ struct ifx_cat1_i2c_config {
 	en_clk_dst_t clk_dst;
 	void (*irq_config_func)(const struct device *dev);
 	cy_cb_scb_i2c_handle_events_t i2c_handle_events_func;
+	k_timeout_t transfer_timeout;
 #ifdef CONFIG_I2C_INFINEON_BUS_RECOVERY
 	struct gpio_dt_spec scl;
 	struct gpio_dt_spec sda;
@@ -693,9 +694,9 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 		}
 
 		/* Wait for the async transfer to complete, bounded by the
-		 * configured transfer timeout.
+		 * per-bus transfer timeout.
 		 */
-		ret = k_sem_take(&data->transfer_sem, I2C_TRANSFER_TIMEOUT);
+		ret = k_sem_take(&data->transfer_sem, config->transfer_timeout);
 		if (ret != 0) {
 			cy_rslt_t abort_status;
 
@@ -1054,6 +1055,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 		.clk_dst = DT_INST_PROP(n, clk_dst),                                               \
 		.irq_config_func = ifx_cat1_i2c_irq_config_func_##n,                               \
 		.i2c_handle_events_func = i2c_handle_events_func_##n,                              \
+		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(n),                               \
 		I2C_CAT1_SCL_INIT(n)                                                               \
 		I2C_CAT1_SDA_INIT(n)                                                               \
 	};                                                                                         \
