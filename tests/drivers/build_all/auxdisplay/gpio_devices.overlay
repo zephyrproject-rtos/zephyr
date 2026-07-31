@@ -24,5 +24,14 @@
 			aux-columns = <1>;
 			status = "okay";
 		};
+
+		test_tm1650: tm1650 {
+			compatible = "titanmec,tm1650";
+			clk-gpios = <&test_gpio 0 0>;
+			dio-gpios = <&test_gpio 1 0>;
+			columns = <4>;
+			rows = <1>;
+			status = "okay";
+		};
 	};
 };
