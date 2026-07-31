@@ -243,6 +243,30 @@ ZTEST(devicetree_api, test_inst_props)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_reg_holder_2
+ZTEST(devicetree_api, test_any_compat_reg_names)
+{
+	zexpect_equal(DT_ANY_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, foo), 1, "");
+	zexpect_equal(DT_ANY_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, bar), 1, "");
+	zexpect_equal(DT_ANY_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, baz), 0, "");
+	zexpect_equal(DT_ANY_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, does_not_exist), 0,
+		      "");
+	zexpect_equal(COND_CODE_1(DT_ANY_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, foo),
+				  (5), (6)), 5, "");
+	zexpect_true(IS_ENABLED(DT_ANY_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, foo)), "");
+}
+
+ZTEST(devicetree_api, test_all_compat_reg_names)
+{
+	zexpect_equal(DT_ALL_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, foo), 1, "");
+	zexpect_equal(DT_ALL_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, bar), 0, "");
+	zexpect_equal(DT_ALL_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, baz), 0, "");
+	zexpect_equal(DT_ALL_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, does_not_exist), 0,
+		      "");
+	zexpect_equal(COND_CODE_1(DT_ALL_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, foo),
+				  (5), (6)), 5, "");
+	zexpect_true(IS_ENABLED(DT_ALL_COMPAT_REG_HAS_NAME_STATUS_OKAY(vnd_reg_holder_2, foo)), "");
+}
+
 ZTEST(devicetree_api, test_any_inst_reg_names)
 {
 	zassert_equal(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(foo), 1, "");
@@ -344,15 +368,62 @@ ZTEST(devicetree_api, test_all_inst_prop)
 #undef DT_DRV_COMPAT
 ZTEST(devicetree_api, test_any_compat_inst_prop)
 {
-	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, foo), 1, "");
-	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, bar), 1, "");
-	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, baz), 0, "");
-	zassert_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, does_not_exist),
+	zexpect_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, foo), 1, "");
+	zexpect_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, bar), 1, "");
+	zexpect_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, baz), 0, "");
+	zexpect_equal(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, does_not_exist),
 		      0, "");
+	zexpect_equal(COND_CODE_1(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, foo),
+				  (5), (6)), 5, "");
+	zexpect_true(IS_ENABLED(DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, foo)),
+		     "");
+}
+
+ZTEST(devicetree_api, test_all_compat_inst_prop)
+{
+	zexpect_equal(DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, foo), 1, "");
+	zexpect_equal(DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, bar), 0, "");
+	zexpect_equal(DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, baz), 0, "");
+	zexpect_equal(DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, does_not_exist),
+		      0, "");
+	zexpect_equal(COND_CODE_1(DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, foo),
+				  (5), (6)), 5, "");
+	zexpect_true(IS_ENABLED(DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY(vnd_device_with_props, foo)),
+		     "");
 }
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT vnd_device_with_props
+ZTEST(devicetree_api, test_any_compat_bool)
+{
+	zexpect_equal(DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, bool_foo), 1, "");
+	zexpect_equal(DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, bool_bar), 1, "");
+	zexpect_equal(DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, bool_baz), 0, "");
+	zexpect_equal(DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, does_not_exist), 0,
+		      "");
+	zexpect_equal(
+		COND_CODE_1(DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, bool_foo),
+			    (5), (6)), 5, "");
+	zexpect_true(
+		IS_ENABLED(DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, bool_foo)),
+		"");
+}
+
+ZTEST(devicetree_api, test_all_compat_bool)
+{
+	zexpect_equal(DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, bool_foo), 1, "");
+	zexpect_equal(DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, bool_bar), 0, "");
+	zexpect_equal(DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, bool_baz), 0, "");
+	zexpect_equal(DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, does_not_exist), 0,
+		      "");
+	zexpect_equal(
+		COND_CODE_1(DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, bool_foo),
+			    (5), (6)), 5, "");
+	zexpect_true(
+		IS_ENABLED(DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY(vnd_device_with_props, bool_foo)),
+		"");
+}
+
 ZTEST(devicetree_api, test_any_inst_bool)
 {
 	zassert_equal(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(bool_foo), 1, "");
