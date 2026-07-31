@@ -458,6 +458,78 @@ ZTEST(hwsim, test_06_connect_wpa2_psk)
 	sta_ping_ap();
 }
 
+ZTEST(hwsim, test_08_pmksa_roundtrip)
+{
+	struct wifi_pmksa_cache_entry entry;
+	struct wifi_pmksa_cache_entry restored;
+	struct hwsim_waiter w;
+	int ret;
+
+	secured_connect(&wpa2_psk_params);
+
+	memset(&entry, 0, sizeof(entry));
+	ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_GET, iface_sta,
+		       &entry, sizeof(entry));
+	zassert_equal(ret, 0, "PMKSA get failed: %d", ret);
+	zassert_equal(entry.pmk_len, 32, "Unexpected PMK length: %u", entry.pmk_len);
+	zassert_false((entry.bssid[0] & 0x01U) != 0U, "Invalid BSSID");
+	zassert_mem_equal(entry.sta_addr, net_if_get_link_addr(iface_sta)->addr,
+			  WIFI_MAC_ADDR_LEN, "Unexpected station address");
+	zassert_not_equal(entry.akm_suite, 0U, "Missing AKM selector");
+	zassert_not_equal(entry.expiration_remaining_s, 0U, "Missing expiration");
+	zassert_true(entry.reauth_remaining_s <= entry.expiration_remaining_s,
+		      "Invalid PMKSA lifetime");
+
+	hwsim_waiter_init(&w, iface_sta, NET_EVENT_WIFI_DISCONNECT_RESULT);
+	zassert_equal(net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface_sta, NULL, 0),
+		      0, "disconnect request failed");
+	zassert_equal(hwsim_waiter_wait(&w, K_SECONDS(2)), 0,
+		      "disconnect result not received");
+	hwsim_waiter_cleanup(&w);
+
+	ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_FLUSH, iface_sta, NULL, 0);
+	zassert_equal(ret, 0, "PMKSA flush failed: %d", ret);
+	entry.sta_addr[WIFI_MAC_ADDR_LEN - 1] ^= 0x01U;
+	ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_ADD, iface_sta,
+		       &entry, sizeof(entry));
+	zassert_equal(ret, -EINVAL, "PMKSA for another station was accepted");
+	entry.sta_addr[WIFI_MAC_ADDR_LEN - 1] ^= 0x01U;
+	ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_ADD, iface_sta,
+		       &entry, sizeof(entry));
+	zassert_equal(ret, 0, "PMKSA add failed: %d", ret);
+
+	secured_connect(&wpa2_psk_params);
+
+	hwsim_waiter_init(&w, iface_sta, NET_EVENT_WIFI_DISCONNECT_RESULT);
+	zassert_equal(net_mgmt(NET_REQUEST_WIFI_DISCONNECT, iface_sta, NULL, 0),
+		      0, "disconnect request failed");
+	zassert_equal(hwsim_waiter_wait(&w, K_SECONDS(2)), 0,
+		      "disconnect result not received");
+	hwsim_waiter_cleanup(&w);
+
+	ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_FLUSH, iface_sta, NULL, 0);
+	zassert_equal(ret, 0, "PMKSA flush before expiry test failed: %d", ret);
+	entry.reauth_remaining_s = 0U;
+	entry.expiration_remaining_s = 2U;
+	ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_ADD, iface_sta,
+		       &entry, sizeof(entry));
+	zassert_equal(ret, 0, "Short-lived PMKSA add failed: %d", ret);
+	k_sleep(K_SECONDS(3));
+
+	secured_connect(&wpa2_psk_params);
+	memset(&restored, 0, sizeof(restored));
+	ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_GET, iface_sta,
+		       &restored, sizeof(restored));
+	zassert_equal(ret, 0, "PMKSA get after expiry failed: %d", ret);
+	zassert_true(restored.expiration_remaining_s > entry.expiration_remaining_s,
+		     "ADD extended an expired PMKSA lifetime");
+
+	ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_FLUSH, iface_sta, NULL, 0);
+	zassert_equal(ret, 0, "Final PMKSA flush failed: %d", ret);
+	memset(&entry, 0, sizeof(entry));
+	memset(&restored, 0, sizeof(restored));
+}
+
 ZTEST(hwsim, test_07_connect_wpa3_sae)
 {
 	secured_connect(&wpa3_sae_params);

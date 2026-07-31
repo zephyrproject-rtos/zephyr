@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdarg.h>
+#include <limits.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
@@ -18,6 +19,9 @@
 #include "common/ieee802_11_common.h"
 #include "wpa_supplicant/config.h"
 #include "wpa_supplicant_i.h"
+#include "rsn_supp/pmksa_cache.h"
+#include "rsn_supp/wpa.h"
+#include "rsn_supp/wpa_i.h"
 #include "driver_i.h"
 
 #include "supp_main.h"
@@ -60,6 +64,68 @@ enum status_thread_state {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 static struct wifi_enterprise_creds_params enterprise_creds;
 #endif
+
+#ifdef CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL
+BUILD_ASSERT(WIFI_MAC_ADDR_LEN == ETH_ALEN);
+BUILD_ASSERT(WIFI_PMKSA_PMKID_LEN == PMKID_LEN);
+BUILD_ASSERT(WIFI_PMKSA_PMK_MAX_LEN >= PMK_LEN_MAX);
+
+struct supplicant_pmksa_stage {
+	struct net_if *iface;
+	struct wifi_pmksa_cache_entry entry;
+	os_time_t expiration;
+	os_time_t reauth_time;
+	bool valid;
+};
+
+static struct supplicant_pmksa_stage
+	pmksa_stage[CONFIG_WIFI_NM_MAX_MANAGED_INTERFACES];
+
+static void supplicant_pmksa_stage_clear(struct supplicant_pmksa_stage *stage)
+{
+	if (stage->valid) {
+		forced_memzero(&stage->entry, sizeof(stage->entry));
+	}
+
+	stage->iface = NULL;
+	stage->expiration = 0;
+	stage->reauth_time = 0;
+	stage->valid = false;
+}
+
+static struct supplicant_pmksa_stage *supplicant_pmksa_stage_find(struct net_if *iface,
+							 bool allocate)
+{
+	struct supplicant_pmksa_stage *free_stage = NULL;
+
+	for (int i = 0; i < CONFIG_WIFI_NM_MAX_MANAGED_INTERFACES; i++) {
+		if (pmksa_stage[i].valid && pmksa_stage[i].iface == iface) {
+			return &pmksa_stage[i];
+		}
+		if (!pmksa_stage[i].valid && free_stage == NULL) {
+			free_stage = &pmksa_stage[i];
+		}
+	}
+
+	return allocate ? free_stage : NULL;
+}
+
+static int supplicant_pmksa_akm_from_suite(uint32_t suite)
+{
+	switch (suite) {
+	case RSN_AUTH_KEY_MGMT_802_1X_SHA256:
+		return WPA_KEY_MGMT_IEEE8021X_SHA256;
+	case RSN_AUTH_KEY_MGMT_UNSPEC_802_1X:
+		return WPA_KEY_MGMT_IEEE8021X;
+	case RSN_AUTH_KEY_MGMT_PSK_SHA256:
+		return WPA_KEY_MGMT_PSK_SHA256;
+	case RSN_AUTH_KEY_MGMT_PSK_OVER_802_1X:
+		return WPA_KEY_MGMT_PSK;
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL */
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 #define P2P_CMD_BUF_SIZE 128
@@ -699,9 +765,78 @@ static int psk_validate(struct wifi_connect_req_params *params,
 	return 0;
 }
 
+#ifdef CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL
+static void supplicant_pmksa_install(struct wpa_supplicant *wpa_s,
+				     struct net_if *iface, int network_id)
+{
+	struct supplicant_pmksa_stage *stage;
+	struct wpa_ssid *ssid;
+	struct rsn_pmksa_cache_entry *entry;
+	struct rsn_pmksa_cache_entry *existing;
+	struct os_reltime now;
+	int akmp;
+
+	stage = supplicant_pmksa_stage_find(iface, false);
+	if (stage == NULL) {
+		return;
+	}
+
+	ssid = wpa_config_get_network(wpa_s->conf, network_id);
+	if (ssid == NULL || wpa_s->wpa == NULL || wpa_s->wpa->pmksa == NULL) {
+		goto out;
+	}
+
+	if (stage->entry.pmk_len < PMK_LEN || stage->entry.pmk_len > PMK_LEN_MAX ||
+	    stage->expiration == 0 || stage->reauth_time > stage->expiration ||
+	    os_get_reltime(&now) < 0 || stage->expiration <= now.sec ||
+	    os_memcmp(stage->entry.sta_addr, wpa_s->own_addr, ETH_ALEN) != 0) {
+		goto out;
+	}
+	akmp = supplicant_pmksa_akm_from_suite(stage->entry.akm_suite);
+	if (akmp < 0) {
+		goto out;
+	}
+
+	entry = os_zalloc(sizeof(*entry));
+	if (entry == NULL) {
+		goto out;
+	}
+
+	os_memcpy(entry->aa, stage->entry.bssid, WIFI_MAC_ADDR_LEN);
+	os_memcpy(entry->pmkid, stage->entry.pmkid, PMKID_LEN);
+	os_memcpy(entry->pmk, stage->entry.pmk, stage->entry.pmk_len);
+	os_memcpy(entry->spa, stage->entry.sta_addr, ETH_ALEN);
+	entry->pmk_len = stage->entry.pmk_len;
+	entry->akmp = akmp;
+	entry->expiration = stage->expiration;
+	entry->reauth_time = stage->reauth_time;
+	entry->network_ctx = ssid;
+	entry->external = true;
+
+	/* Avoid the duplicate fast path freeing a secret-bearing entry. */
+	existing = pmksa_cache_get(wpa_s->wpa->pmksa, entry->aa, entry->spa,
+				   NULL, NULL, 0);
+	if (existing != NULL && existing->pmk_len == entry->pmk_len &&
+	    os_memcmp_const(existing->pmk, entry->pmk, entry->pmk_len) == 0 &&
+	    os_memcmp_const(existing->pmkid, entry->pmkid, PMKID_LEN) == 0) {
+		if (existing == wpa_s->wpa->cur_pmksa) {
+			pmksa_cache_clear_current(wpa_s->wpa);
+		}
+		pmksa_cache_remove(wpa_s->wpa->pmksa, existing);
+	}
+
+	if (wpa_sm_pmksa_cache_add_entry(wpa_s->wpa, entry) == NULL) {
+		bin_clear_free(entry, sizeof(*entry));
+	}
+
+out:
+	supplicant_pmksa_stage_clear(stage);
+}
+#endif /* CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL */
+
 static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				       struct wifi_connect_req_params *params,
-				       bool mode_ap)
+				       struct net_if *iface, bool mode_ap)
 {
 	struct add_network_resp resp = {0};
 	char *chan_list = NULL;
@@ -1368,6 +1503,12 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 	}
 
+#ifdef CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL
+	if (!mode_ap) {
+		supplicant_pmksa_install(wpa_s, iface, resp.network_id);
+	}
+#endif
+
 	/* enable and select network */
 	if (!wpa_cli_cmd_v("enable_network %d", resp.network_id)) {
 		goto out;
@@ -1491,7 +1632,7 @@ int supplicant_connect(const struct device *dev __unused, struct net_if *iface,
 		goto out;
 	}
 
-	ret = wpas_add_and_config_network(wpa_s, params, false);
+	ret = wpas_add_and_config_network(wpa_s, params, iface, false);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "Failed to add and configure network for STA mode: %d", ret);
 		goto out;
@@ -1515,6 +1656,155 @@ int supplicant_disconnect(const struct device *dev __unused, struct net_if *ifac
 {
 	return wpas_disconnect_network(iface, WPAS_MODE_INFRA);
 }
+
+#ifdef CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL
+int supplicant_pmksa_get(const struct device *dev __unused, struct net_if *iface,
+			 struct wifi_pmksa_cache_entry *entry)
+{
+	struct wpa_supplicant *wpa_s;
+	struct rsn_pmksa_cache_entry *cached;
+	struct os_reltime now;
+	uint64_t expiration;
+	uint64_t reauth;
+	uint32_t akm_suite;
+	int ret = 0;
+
+	if (entry == NULL) {
+		return -EINVAL;
+	}
+
+	memset(entry, 0, sizeof(*entry));
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(iface);
+	if (wpa_s == NULL || wpa_s->wpa == NULL) {
+		ret = -ENODEV;
+		goto out;
+	}
+
+	if (wpa_s->wpa_state != WPA_COMPLETED) {
+		ret = -EBUSY;
+		goto out;
+	}
+
+	cached = pmksa_cache_get_current(wpa_s->wpa);
+	if (cached == NULL) {
+		ret = -ENOENT;
+		goto out;
+	}
+
+	if (cached->pmk_len < PMK_LEN || cached->pmk_len > PMK_LEN_MAX) {
+		ret = -ENOTSUP;
+		goto out;
+	}
+
+	akm_suite = wpa_akm_to_suite(cached->akmp);
+	if (supplicant_pmksa_akm_from_suite(akm_suite) < 0) {
+		ret = -ENOTSUP;
+		goto out;
+	}
+	if (is_zero_ether_addr(cached->spa) || is_multicast_ether_addr(cached->spa) ||
+	    os_memcmp(cached->spa, wpa_s->own_addr, ETH_ALEN) != 0) {
+		ret = -EINVAL;
+		goto out;
+	}
+	if (os_get_reltime(&now) < 0 ||
+	    cached->expiration <= now.sec) {
+		ret = -ENOENT;
+		goto out;
+	}
+
+	expiration = (uint64_t)(cached->expiration - now.sec);
+	reauth = cached->reauth_time > now.sec ?
+		(uint64_t)(cached->reauth_time - now.sec) : 0U;
+	entry->expiration_remaining_s = expiration > WIFI_PMKSA_MAX_LIFETIME_S ?
+		WIFI_PMKSA_MAX_LIFETIME_S : (uint32_t)expiration;
+	entry->reauth_remaining_s = reauth > entry->expiration_remaining_s ?
+		entry->expiration_remaining_s : (uint32_t)reauth;
+	memcpy(entry->bssid, cached->aa, WIFI_MAC_ADDR_LEN);
+	memcpy(entry->sta_addr, cached->spa, WIFI_MAC_ADDR_LEN);
+	memcpy(entry->pmkid, cached->pmkid, WIFI_PMKSA_PMKID_LEN);
+	memcpy(entry->pmk, cached->pmk, cached->pmk_len);
+	entry->pmk_len = cached->pmk_len;
+	entry->akm_suite = akm_suite;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	if (ret < 0) {
+		memset(entry, 0, sizeof(*entry));
+	}
+	return ret;
+}
+
+int supplicant_pmksa_add(const struct device *dev __unused, struct net_if *iface,
+			 const struct wifi_pmksa_cache_entry *entry)
+{
+	struct wpa_supplicant *wpa_s;
+	struct supplicant_pmksa_stage *stage;
+	struct os_reltime now;
+	int akmp;
+	int ret = 0;
+
+	if (entry == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+	wpa_s = get_wpa_s_handle(iface);
+	if (wpa_s == NULL) {
+		ret = -ENODEV;
+		goto out;
+	}
+
+	if (wpa_s->wpa_state != WPA_DISCONNECTED &&
+	    wpa_s->wpa_state != WPA_INTERFACE_DISABLED &&
+	    wpa_s->wpa_state != WPA_INACTIVE) {
+		ret = -EBUSY;
+		goto out;
+	}
+
+	if (entry->pmk_len < PMK_LEN || entry->pmk_len > PMK_LEN_MAX ||
+	    entry->expiration_remaining_s == 0U ||
+	    entry->expiration_remaining_s > WIFI_PMKSA_MAX_LIFETIME_S ||
+	    entry->reauth_remaining_s > entry->expiration_remaining_s) {
+		ret = -EINVAL;
+		goto out;
+	}
+	akmp = supplicant_pmksa_akm_from_suite(entry->akm_suite);
+	if (akmp < 0) {
+		ret = akmp;
+		goto out;
+	}
+	if ((!is_zero_ether_addr(entry->sta_addr) &&
+	     os_memcmp(entry->sta_addr, wpa_s->own_addr, ETH_ALEN) != 0) ||
+	    os_get_reltime(&now) < 0 ||
+	    (uint64_t)now.sec + entry->expiration_remaining_s > (uint64_t)LONG_MAX) {
+		ret = -EINVAL;
+		goto out;
+	}
+
+	stage = supplicant_pmksa_stage_find(iface, true);
+	if (stage == NULL) {
+		ret = -ENOSPC;
+		goto out;
+	}
+
+	supplicant_pmksa_stage_clear(stage);
+	stage->iface = iface;
+	stage->entry = *entry;
+	if (is_zero_ether_addr(stage->entry.sta_addr)) {
+		os_memcpy(stage->entry.sta_addr, wpa_s->own_addr, ETH_ALEN);
+	}
+	stage->expiration = now.sec + entry->expiration_remaining_s;
+	stage->reauth_time = now.sec + entry->reauth_remaining_s;
+	stage->valid = true;
+
+out:
+	k_mutex_unlock(&wpa_supplicant_mutex);
+	return ret;
+}
+#endif /* CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL */
 
 enum wifi_mfp_options get_mfp(enum mfp_options supp_mfp_option)
 {
@@ -1788,8 +2078,18 @@ int supplicant_pmksa_flush(const struct device *dev __unused, struct net_if *ifa
 {
 	struct wpa_supplicant *wpa_s;
 	int ret = 0;
+#ifdef CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL
+	struct supplicant_pmksa_stage *stage;
+#endif
 
 	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
+
+#ifdef CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL
+	stage = supplicant_pmksa_stage_find(iface, false);
+	if (stage != NULL) {
+		supplicant_pmksa_stage_clear(stage);
+	}
+#endif
 
 	wpa_s = get_wpa_s_handle(iface);
 	if (!wpa_s) {
@@ -2432,7 +2732,7 @@ int supplicant_ap_enable(const struct device *dev, struct net_if *iface,
 	/* Set BSS parameter max_num_sta to default configured value */
 	wpa_s->conf->max_num_sta = CONFIG_WIFI_MGMT_AP_MAX_NUM_STA;
 
-	ret = wpas_add_and_config_network(wpa_s, params, true);
+	ret = wpas_add_and_config_network(wpa_s, params, iface, true);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "Failed to add and configure network for AP mode: %d", ret);
 		goto out;

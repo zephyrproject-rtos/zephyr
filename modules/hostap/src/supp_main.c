@@ -97,6 +97,10 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
 	.nan_cfg = supplicant_nan_cfg,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+#ifdef CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL
+	.pmksa_get = supplicant_pmksa_get,
+	.pmksa_add = supplicant_pmksa_add,
+#endif /* CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL */
 	.pmksa_flush = supplicant_pmksa_flush,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
