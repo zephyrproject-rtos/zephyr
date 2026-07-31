@@ -5,8 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/mspm0_clock_control.h>
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 #define DT_DRV_COMPAT ti_mspm0_watchdog
@@ -96,6 +98,8 @@ struct wwdt_mspm_config {
 	struct wwdt_mspm_regs *base;
 	uint8_t reset_action;
 	uint8_t closed_window;
+	const struct device *clock_dev;
+	struct mspm0_sys_clock clock_subsys;
 };
 
 struct wwdt_mspm_data {
@@ -108,67 +112,102 @@ struct wwdt_mspm_data {
 };
 
 struct wwdt_period_lut {
-	uint8_t period_count;
-	uint32_t max_msec;
-	uint32_t interval;
+	uint32_t period_count; /* WWDTCTL0.PER raw value */
+	uint32_t per_counts;   /* 2^n counter counts      */
 };
 
 static int wwdt_mspm_calculate_timeout_periods(const struct device *dev,
 						const struct wdt_timeout_cfg *cfg)
 {
+	/* PER field values and their corresponding counter bit-widths */
+	static const struct wwdt_period_lut period_lut[] = {
+		{WWDT_CTL0_PER_6, 64},       {WWDT_CTL0_PER_8, 256},
+		{WWDT_CTL0_PER_10, 1024},    {WWDT_CTL0_PER_12, 4096},
+		{WWDT_CTL0_PER_15, 32768},   {WWDT_CTL0_PER_18, 262144},
+		{WWDT_CTL0_PER_21, 2097152}, {WWDT_CTL0_PER_25, 33554432},
+	};
+	const struct wwdt_mspm_config *config = dev->config;
 	struct wwdt_mspm_data *data = dev->data;
-	struct wwdt_period_lut *lut_entry = NULL;
+	struct mspm0_sys_clock clock_subsys = config->clock_subsys;
 	uint32_t max_ms = cfg->window.max;
 	uint32_t min_ms = cfg->window.min;
-	uint32_t actual_timeout;
+	uint32_t clock_freq;
 	uint8_t window_idx;
+	int ret;
 
-	struct wwdt_period_lut period_lut[] = {
-		/* Timer_max_period_count,	 max_timeout(ms),   interval(ms) */
-		{WWDT_CTL0_PER_6, 16, 2},          {WWDT_CTL0_PER_8, 64, 8},
-		{WWDT_CTL0_PER_10, 256, 32},       {WWDT_CTL0_PER_12, 1000, 125},
-		{WWDT_CTL0_PER_15, 8000, 1000},    {WWDT_CTL0_PER_18, 64000, 8000},
-		{WWDT_CTL0_PER_21, 512000, 64000}, {WWDT_CTL0_PER_25, 8192000, 1024000}};
+	ret = clock_control_get_rate(config->clock_dev, (clock_control_subsys_t)&clock_subsys,
+				     &clock_freq);
+	if (ret != 0) {
+		LOG_ERR("Failed to get LFCLK rate: %d", ret);
+		return ret;
+	}
 
-	uint8_t window_sixteenths[] = {0, 2, 3, 4, 8, 12, 13, 14};
-
-	if (max_ms > period_lut[7].max_msec || min_ms >= max_ms) {
-		LOG_ERR("Install timeout failed. Invalid window timing");
+	if (clock_freq == 0U) {
+		LOG_ERR("LFCLK rate is zero");
 		return -EINVAL;
 	}
 
-	/* Find appropriate period count (PER_count) */
-	for (uint8_t i = 0; i < 8; i++) {
-		if (max_ms <= period_lut[i].max_msec) {
-			lut_entry = &period_lut[i];
+	/*
+	 * Closed-window fractions as n/16 of the timeout period.
+	 * Maps to: 0%, 12.5%, 18.75%, 25%, 50%, 75%, 81.25%, 87.5%.
+	 */
+	static const uint8_t window_sixteenths[] = {0, 2, 3, 4, 8, 12, 13, 14};
+
+	/* Compute max achievable timeout: 8 × 2^25 / clock_freq × 1000 ms */
+	uint32_t abs_max_ms =
+		(uint32_t)(((uint64_t)8 * period_lut[7].per_counts * 1000U) / clock_freq);
+
+	if (max_ms > abs_max_ms || min_ms >= max_ms) {
+		LOG_ERR("Invalid window timing (max=%u ms, abs_max=%u ms)", max_ms, abs_max_ms);
+		return -EINVAL;
+	}
+
+	/* Find the smallest PER where max_timeout_ms (at CLKDIV=7) >= max_ms */
+	uint32_t lut_idx = 0;
+
+	for (uint32_t i = 0; i < ARRAY_SIZE(period_lut); i++) {
+		uint32_t max_timeout_ms =
+			(uint32_t)(((uint64_t)8 * period_lut[i].per_counts * 1000U) / clock_freq);
+
+		if (max_ms <= max_timeout_ms) {
+			lut_idx = i;
 			break;
 		}
 	}
 
-	data->period_count = lut_entry->period_count;
+	data->period_count = period_lut[lut_idx].period_count;
 
 	/*
-	 * Determine clock divider based on the period count. Since rounding up
-	 * is the defined behavior, walking up and checking for when the value is
-	 * equal or underneath will yield the rounded up value
+	 * Walk CLKDIV 0→7 to find the smallest divider where the timeout
+	 * is >= max_ms (always rounds up, never under-programs the watchdog).
 	 */
-	actual_timeout = lut_entry->interval;
+	uint32_t actual_timeout = 0;
+
 	for (data->clock_divider = 0; data->clock_divider < 8; data->clock_divider++) {
+		actual_timeout = (uint32_t)(((uint64_t)(data->clock_divider + 1U) *
+					     period_lut[lut_idx].per_counts * 1000U) /
+					    clock_freq);
 		if (max_ms <= actual_timeout) {
 			break;
 		}
-		actual_timeout += lut_entry->interval;
 	}
+	data->clock_divider = MIN(data->clock_divider, 7U);
 
-	/* Determine closed window as per the requested lower limit of watchdog feed timeout */
+	/* Find the smallest closed-window fraction that enforces min_ms */
 	for (window_idx = 0; window_idx < ARRAY_SIZE(window_sixteenths); window_idx++) {
-		if (min_ms <= (actual_timeout * window_sixteenths[window_idx] / 16)) {
+		uint32_t window_ms = actual_timeout * window_sixteenths[window_idx] / 16U;
+
+		if (min_ms <= window_ms) {
 			break;
 		}
 	}
 
 	if (window_idx >= ARRAY_SIZE(window_sixteenths)) {
-		LOG_ERR("Install timeout failed. min_ms %u cannot be enforced", min_ms);
+		LOG_ERR("min_ms %u cannot be enforced; max available closed "
+			"window is %u ms",
+			min_ms,
+			actual_timeout * window_sixteenths[ARRAY_SIZE(window_sixteenths) - 1] /
+				16U);
 		return -EINVAL;
 	}
 
@@ -287,7 +326,7 @@ static int wwdt_mspm_install_timeout(const struct device *dev, const struct wdt_
 
 	/*
 	 * To calculate the timeout period as per :
-	 * TIMEOUT = (CLKDIV + 1) * PER_count / 32768 (LFCLK Frequency)
+	 * TIMEOUT = (CLKDIV + 1) * PER_count / LFCLK Frequency
 	 */
 	ret = wwdt_mspm_calculate_timeout_periods(dev, cfg);
 	if (ret == 0) {
@@ -340,19 +379,23 @@ static DEVICE_API(wdt, wwdt_mspm_driver_api) = {
 	.feed = wwdt_mspm_feed
 };
 
-#define WWDT_MSPM_INIT(index)								\
-static const struct wwdt_mspm_config wwdt_mspm_cfg_##index = {			\
-	.base = (struct wwdt_mspm_regs *)DT_INST_REG_ADDR(index),			\
-	.reset_action = COND_CODE_1(DT_INST_PROP(index, ti_watchdog_reset_action),	\
-				    (WDT_FLAG_RESET_SOC), (WDT_FLAG_RESET_CPU_CORE)),	\
-	.closed_window = DT_INST_PROP(index, closed_window),				\
-};											\
-											\
-static struct wwdt_mspm_data wwdt_mspm_data_##index;					\
-											\
-DEVICE_DT_INST_DEFINE(index, wwdt_mspm_init, NULL, &wwdt_mspm_data_##index,		\
-		      &wwdt_mspm_cfg_##index, POST_KERNEL,				\
-		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,				\
-		      &wwdt_mspm_driver_api);						\
+#define WWDT_MSPM_INIT(index)									\
+static const struct wwdt_mspm_config wwdt_mspm_cfg_##index = {					\
+	.base = (struct wwdt_mspm_regs *)DT_INST_REG_ADDR(index),				\
+	.reset_action = COND_CODE_1(DT_INST_PROP(index, ti_watchdog_reset_action),		\
+				    (WDT_FLAG_RESET_SOC), (WDT_FLAG_RESET_CPU_CORE)),		\
+	.closed_window = DT_INST_PROP(index, closed_window),					\
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_IDX(index, 0)),			\
+	.clock_subsys = {									\
+		.clk = DT_INST_CLOCKS_CELL_BY_IDX(index, 0, clk),				\
+	},											\
+};												\
+												\
+static struct wwdt_mspm_data wwdt_mspm_data_##index;						\
+												\
+DEVICE_DT_INST_DEFINE(index, wwdt_mspm_init, NULL, &wwdt_mspm_data_##index,			\
+		      &wwdt_mspm_cfg_##index, POST_KERNEL,					\
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,					\
+		      &wwdt_mspm_driver_api);							\
 
 DT_INST_FOREACH_STATUS_OKAY(WWDT_MSPM_INIT)
