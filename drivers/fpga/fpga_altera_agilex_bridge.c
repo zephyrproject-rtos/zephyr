@@ -150,6 +150,12 @@ static void smc_callback(uint32_t c_token, struct sip_svc_response *response)
 			response_header = (union mailbox_response_header)resp_data[0];
 			private_data->mbox_response_data =
 				(uint32_t *)k_malloc(sizeof(uint32_t) * resp_len);
+			if (!private_data->mbox_response_data) {
+				LOG_ERR("Failed to allocate memory for mailbox response data");
+				k_free((char *)response->resp_data_addr);
+				k_sem_give(&(private_data->smc_sem));
+				return;
+			}
 			for (mbox_idx = 0; mbox_idx < resp_len; mbox_idx++) {
 				LOG_DBG("\t\t[%4d] %08x", mbox_idx, resp_data[mbox_idx]);
 				private_data->mbox_response_data[mbox_idx] = resp_data[mbox_idx];
@@ -253,6 +259,10 @@ static int32_t smc_send(const struct device *dev, uint32_t cmd_type, uint64_t fu
 
 	if (trans_id == SIP_SVC_ID_INVALID) {
 		LOG_ERR("SiP SVC send request fail");
+		if (cmd_type == SIP_SVC_PROTO_CMD_ASYNC) {
+			k_free(cmd_addr);
+			k_free(resp_addr);
+		}
 		return -EBUSY;
 	}
 
@@ -316,6 +326,11 @@ static int32_t fpga_config_ready_check(const struct device *dev)
 	if (!priv_data.response.resp_data_size &&
 		priv_data.mbox_response_len != FPGA_CONFIG_STATUS_RESPONSE_LEN) {
 		return -EINVAL;
+	}
+
+	if (!priv_data.mbox_response_data) {
+		LOG_ERR("Failed to allocate memory for mailbox response data");
+		return -ENOMEM;
 	}
 
 	/* Verify the FPGA config status response */
