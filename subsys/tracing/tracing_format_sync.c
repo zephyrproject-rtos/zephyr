@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <tracing_core.h>
 #include <tracing_buffer.h>
@@ -47,6 +48,23 @@ void tracing_format_raw_data(uint8_t *data, uint32_t length)
 	tracing_buffer_handle(data, length);
 	TRACING_UNLOCK();
 }
+
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP
+void tracing_format_raw_data_stamped(uint8_t *data, uint32_t length)
+{
+	uint64_t tstamp;
+
+	if (!is_tracing_enabled()) {
+		return;
+	}
+
+	TRACING_LOCK();
+	tstamp = tracing_timestamp_get();
+	(void)memcpy(data, &tstamp, sizeof(tstamp));
+	tracing_buffer_handle(data, length);
+	TRACING_UNLOCK();
+}
+#endif
 
 void tracing_format_data(tracing_data_t *tracing_data_array, uint32_t count)
 {
