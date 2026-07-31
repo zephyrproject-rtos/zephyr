@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/tracing/tracing_macros.h>
+#include <zephyr/sleep.h>
 #include <zephyr/sys/mem_stats.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -743,57 +744,6 @@ void k_thread_system_pool_assign(struct k_thread *thread);
  *                  is the caller
  */
 __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
-
-/**
- * @brief Put the current thread to sleep.
- *
- * This routine puts the current thread to sleep for @a duration,
- * specified as a k_timeout_t object.
- *
- * @param timeout Desired duration of sleep.
- *
- * @return Zero if the requested time has elapsed or the time left to
- * sleep rounded up to the nearest millisecond (e.g. if the thread was
- * awoken by the \ref k_wakeup call).  Will be clamped to INT_MAX in
- * the case where the remaining time is unrepresentable in an int32_t.
- * If @a timeout is K_FOREVER and the thread is woken early via
- * k_wakeup(), -1 is returned.
- */
-__syscall int32_t k_sleep(k_timeout_t timeout);
-
-/**
- * @brief Put the current thread to sleep.
- *
- * This routine puts the current thread to sleep for @a duration milliseconds.
- *
- * @param ms Number of milliseconds to sleep.
- *
- * @return Zero if the requested time has elapsed or if the thread was woken up
- * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
- * millisecond.
- */
-static inline int32_t k_msleep(int32_t ms)
-{
-	return k_sleep(Z_TIMEOUT_MS(ms));
-}
-
-/**
- * @brief Put the current thread to sleep with microsecond resolution.
- *
- * This function is unlikely to work as expected without kernel tuning.
- * In particular, because the lower bound on the duration of a sleep is
- * the duration of a tick, @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC} must be
- * adjusted to achieve the resolution desired. The implications of doing
- * this must be understood before attempting to use k_usleep(). Use with
- * caution.
- *
- * @param us Number of microseconds to sleep.
- *
- * @return Zero if the requested time has elapsed or if the thread was woken up
- * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
- * microsecond.
- */
-__syscall int32_t k_usleep(int32_t us);
 
 /**
  * @brief Cause the current thread to busy wait.
