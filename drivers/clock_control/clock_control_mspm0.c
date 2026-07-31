@@ -16,16 +16,13 @@
 
 LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-#include <ti/driverlib/driverlib.h>
-#include <string.h>
-
 #if defined(CONFIG_SOC_SERIES_MSPM33C)
 #define MSPM0_REQUIRES_SYSPLLPARAM2
 #define MSPM0_MCLK_CANNOT_USE_LFCLK 1
 #endif
 
 #if DT_NODE_EXISTS(MSPM_CPUSS_NODE)
-#define MSPM0_HAS_CPUSS
+#define MSPM0_HAS_CPUSS 1
 #endif
 
 #define MSPM0_CLK_WAIT_TIMEOUT_US 1000
@@ -52,6 +49,7 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define DT_LFCLK_IN DT_NODELABEL(lfclk_in)
 #define DT_LFOSC    DT_NODELABEL(lfosc)
 #define DT_LFXT     DT_NODELABEL(lfxt)
+#define DT_CANCLK   DT_NODELABEL(canclk)
 #define DT_MCLK     DT_NODELABEL(mclk)
 #define DT_MFPCLK   DT_NODELABEL(mfpclk)
 #define DT_SYSPLL   DT_NODELABEL(syspll)
@@ -60,6 +58,7 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define MSPM0_ULPCLK_DIV DT_PROP_OR(DT_ULPCLK, clk_div, 1)
 #define MSPM0_MCLK_DIV   DT_PROP_OR(DT_MCLK, clk_div, 1)
 
+#define DT_CANCLK_OKAY   DT_NODE_HAS_STATUS_OKAY(DT_CANCLK)
 #define DT_HFCLK_IN_OKAY DT_NODE_HAS_STATUS_OKAY(DT_HFCLK_IN)
 #define DT_HFCLK_OKAY    DT_NODE_HAS_STATUS_OKAY(DT_HFCLK)
 #define DT_HFXT_OKAY     DT_NODE_HAS_STATUS_OKAY(DT_HFXT)
@@ -70,16 +69,13 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define DT_MFPCLK_OKAY   DT_NODE_HAS_STATUS_OKAY(DT_MFPCLK)
 #define DT_SYSPLL_OKAY   DT_NODE_HAS_STATUS_OKAY(DT_SYSPLL)
 
-#if DT_NODE_HAS_STATUS(DT_NODELABEL(canclk), okay)
-#define MSPM0_CANCLK_ENABLED 1
-#endif
-
-#define DT_MCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_MCLK)
-#define DT_LFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_LFCLK)
-#define DT_HFCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_HFCLK)
-#define DT_HSCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_HSCLK)
-#define DT_MFPCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_MFPCLK)
-#define DT_SYSPLL_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_SYSPLL)
+#define DT_CANCLK_CLOCKS_CTRL DT_CLOCKS_CTLR(DT_CANCLK)
+#define DT_MCLK_CLOCKS_CTRL   DT_CLOCKS_CTLR(DT_MCLK)
+#define DT_LFCLK_CLOCKS_CTRL  DT_CLOCKS_CTLR(DT_LFCLK)
+#define DT_HFCLK_CLOCKS_CTRL  DT_CLOCKS_CTLR(DT_HFCLK)
+#define DT_HSCLK_CLOCKS_CTRL  DT_CLOCKS_CTLR(DT_HSCLK)
+#define DT_MFPCLK_CLOCKS_CTRL DT_CLOCKS_CTLR(DT_MFPCLK)
+#define DT_SYSPLL_CLOCKS_CTRL DT_CLOCKS_CTLR(DT_SYSPLL)
 
 /* High Frequency Clock */
 #if DT_HFCLK_OKAY
@@ -113,8 +109,8 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_HFCLK_CLOCKS_CTRL), "HFCLK source not en
 #endif /* DT_HFCLK_OKAY */
 
 /* Low-Frequency clock */
-#if !DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFXT) &&                                               \
-	!DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFCLK_IN) &&                                       \
+#if !DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFXT) &&                                                \
+	!DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFCLK_IN) &&                                        \
 	!DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFOSC)
 #error "Invalid LFCLK source"
 #endif
@@ -152,6 +148,15 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_HSCLK_CLOCKS_CTRL), "HSCLK source not en
 #endif
 BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_MCLK_CLOCKS_CTRL), "MCLK source not enabled");
 
+/* CAN Clock */
+#if DT_CANCLK_OKAY
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_CANCLK_CLOCKS_CTRL), "CANCLK source not enabled");
+#if !DT_SAME_NODE(DT_CANCLK_CLOCKS_CTRL, DT_HFCLK) &&                                              \
+	!DT_SAME_NODE(DT_CANCLK_CLOCKS_CTRL, DT_SYSPLL)
+#error "Invalid CANCLK source"
+#endif
+#endif /* DT_CANCLK_OKAY */
+
 /* System PLL */
 #if DT_SYSPLL_OKAY
 
@@ -185,18 +190,6 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_CLOCKS_CTLR(DT_SYSPLL)), "SYSPLL source 
 static int clock_mspm0_syspll_output_rate(const struct device *dev, uint32_t clk, uint32_t *rate);
 #endif /* DT_SYSPLL_OKAY */
 
-struct mspm0_clk_cfg {
-	uint32_t clk_div;
-	uint32_t clk_freq;
-};
-
-#if MSPM0_CANCLK_ENABLED
-static struct mspm0_clk_cfg mspm0_canclk_cfg = {
-	.clk_freq = DT_PROP(DT_NODELABEL(canclk), clock_frequency),
-};
-#endif
-
-/* Only 32/4 MHz supported; 16/24 MHz needs board trim we can't source. */
 static int clock_mspm0_set_rate(const struct device *dev, clock_control_subsys_t sys,
 				clock_control_subsys_rate_t rate)
 {
@@ -362,6 +355,21 @@ static enum clock_control_status clock_mspm0_get_status(const struct device *dev
 		return CLOCK_CONTROL_STATUS_STARTING;
 #endif /* DT_HSCLK_OKAY */
 
+#if DT_CANCLK_OKAY
+	case MSPM0_CLOCK_CANCLK: {
+		struct mspm0_sys_clock src_subsys;
+
+#if DT_SYSPLL_OKAY
+		src_subsys.clk = (soclock->genclkcfg & SYSCTL_GENCLKCFG_CANCLKSRC)
+					 ? MSPM0_CLOCK_SYSPLL
+					 : MSPM0_CLOCK_HFCLK;
+#else
+		src_subsys.clk = MSPM0_CLOCK_HFCLK;
+#endif /* DT_SYSPLL_OKAY */
+		return clock_mspm0_get_status(dev, (clock_control_subsys_t)&src_subsys);
+	}
+#endif /* DT_CANCLK_OKAY */
+
 	case MSPM0_CLOCK_LFCLK: {
 		uint32_t mux = FIELD_GET(SYSCTL_CLKSTATUS_LFCLKMUX, soclock->clkstatus);
 
@@ -442,8 +450,7 @@ static uint32_t clock_mspm0_lfclk_rate(void)
 	}
 }
 
-static int clock_mspm0_get_rate(const struct device *dev,
-				clock_control_subsys_t sys,
+static int clock_mspm0_get_rate(const struct device *dev, clock_control_subsys_t sys,
 				uint32_t *rate)
 {
 	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
@@ -487,8 +494,8 @@ static int clock_mspm0_get_rate(const struct device *dev,
 	case MSPM0_CLOCK_ULPCLK: {
 		uint32_t mclk_rate;
 		struct mspm0_sys_clock mclk_subsys = {.clk = MSPM0_CLOCK_MCLK};
-		int ret = clock_mspm0_get_rate(dev, (clock_control_subsys_t)&mclk_subsys,
-					       &mclk_rate);
+		int ret =
+			clock_mspm0_get_rate(dev, (clock_control_subsys_t)&mclk_subsys, &mclk_rate);
 
 		if (ret < 0) {
 			return ret;
@@ -503,11 +510,34 @@ static int clock_mspm0_get_rate(const struct device *dev,
 		break;
 #endif /* DT_MFPCLK_OKAY */
 
-#if MSPM0_CANCLK_ENABLED
+#if DT_CANCLK_OKAY
 	case MSPM0_CLOCK_CANCLK:
-		*rate = mspm0_canclk_cfg.clk_freq;
-		break;
+		if (soclock->genclkcfg & SYSCTL_GENCLKCFG_CANCLKSRC) {
+#if DT_SYSPLL_OKAY
+			int ret =
+				clock_mspm0_syspll_output_rate(dev, MSPM0_CLOCK_SYSPLL_CLK1, rate);
+
+			if (ret < 0) {
+				return ret;
+			}
+#else
+			return -ENOTSUP;
 #endif
+		} else {
+#if DT_HFCLK_OKAY
+			struct mspm0_sys_clock hfclk_subsys = {.clk = MSPM0_CLOCK_HFCLK};
+			int ret = clock_mspm0_get_rate(dev, (clock_control_subsys_t)&hfclk_subsys,
+						       rate);
+
+			if (ret < 0) {
+				return ret;
+			}
+#else
+			return -ENOTSUP;
+#endif
+		}
+		break;
+#endif /* DT_CANCLK_OKAY */
 
 #if DT_HFCLK_OKAY
 	case MSPM0_CLOCK_HFCLK: {
@@ -532,7 +562,6 @@ static int clock_mspm0_get_rate(const struct device *dev,
 			struct mspm0_sys_clock hfclk_subsys = {.clk = MSPM0_CLOCK_HFCLK};
 			int ret = clock_mspm0_get_rate(dev, (clock_control_subsys_t)&hfclk_subsys,
 						       rate);
-
 			if (ret < 0) {
 				return ret;
 			}
@@ -722,13 +751,12 @@ static int clock_mspm0_configure_syspll(const struct device *dev,
 #if DT_HFCLK_OKAY
 	case MSPM0_CLOCK_SRC_HFCLK: {
 		struct mspm0_sys_clock hfclk_subsys = {.clk = MSPM0_CLOCK_HFCLK};
-		int ret = clock_mspm0_get_rate(dev, (clock_control_subsys_t)&hfclk_subsys,
-					       &ref_rate);
+		int ret =
+			clock_mspm0_get_rate(dev, (clock_control_subsys_t)&hfclk_subsys, &ref_rate);
 
 		if (ret < 0) {
 			return ret;
 		}
-
 		soclock->syspllcfg0 |= SYSCTL_SYSPLLCFG0_SYSPLLREF;
 		break;
 	}
@@ -794,27 +822,27 @@ static int clock_mspm0_init_syspll(const struct device *dev)
 
 	/* set syspllclk1 divider */
 	if (MSPM0_SYSPLL_HAS_CLK1) {
-		soclock->syspllcfg0 = (soclock->syspllcfg0 & ~SYSCTL_SYSPLLCFG0_RDIVCLK1) |
-				      SYSCTL_SYSPLLCFG0_ENABLECLK1 |
-				      FIELD_PREP(SYSCTL_SYSPLLCFG0_RDIVCLK1,
-						 SYSCTL_SYSPLLCFG0_RDIVCLK1_VAL(
-							 MSPM0_SYSPLL_CLK1_DIV));
+		soclock->syspllcfg0 =
+			(soclock->syspllcfg0 & ~SYSCTL_SYSPLLCFG0_RDIVCLK1) |
+			SYSCTL_SYSPLLCFG0_ENABLECLK1 |
+			FIELD_PREP(SYSCTL_SYSPLLCFG0_RDIVCLK1,
+				   SYSCTL_SYSPLLCFG0_RDIVCLK1_VAL(MSPM0_SYSPLL_CLK1_DIV));
 	} else {
 		soclock->syspllcfg0 &= ~SYSCTL_SYSPLLCFG0_ENABLECLK1;
 	}
 
 	/* set syspllclk0 divider */
 	if (MSPM0_SYSPLL_HAS_CLK0) {
-		soclock->syspllcfg0 = (soclock->syspllcfg0 & ~SYSCTL_SYSPLLCFG0_RDIVCLK0) |
-				      SYSCTL_SYSPLLCFG0_ENABLECLK0 |
-				      FIELD_PREP(SYSCTL_SYSPLLCFG0_RDIVCLK0,
-						 SYSCTL_SYSPLLCFG0_RDIVCLK0_VAL(
-							 MSPM0_SYSPLL_CLK0_DIV));
+		soclock->syspllcfg0 =
+			(soclock->syspllcfg0 & ~SYSCTL_SYSPLLCFG0_RDIVCLK0) |
+			SYSCTL_SYSPLLCFG0_ENABLECLK0 |
+			FIELD_PREP(SYSCTL_SYSPLLCFG0_RDIVCLK0,
+				   SYSCTL_SYSPLLCFG0_RDIVCLK0_VAL(MSPM0_SYSPLL_CLK0_DIV));
 	} else {
 		soclock->syspllcfg0 &= ~SYSCTL_SYSPLLCFG0_ENABLECLK0;
 	}
 
-#if DT_HSCLK_OKAY && DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_HSCLK) &&                               \
+#if DT_HSCLK_OKAY && DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_HSCLK) &&                                \
 	DT_SAME_NODE(DT_HSCLK_CLOCKS_CTRL, DT_SYSPLL)
 	if (MSPM0_SYSPLL_HAS_CLK2X) {
 		soclock->syspllcfg0 |= SYSCTL_SYSPLLCFG0_MCLK2XVCO;
@@ -836,7 +864,7 @@ static int clock_mspm0_configure_hfclk(volatile struct mspm_sysctl_soclock_regs 
 
 	switch (source) {
 #if DT_HFXT_OKAY
-	case MSPM0_CLOCK_SRC_HFXT:
+	case MSPM0_CLOCK_SRC_HFXT: {
 		/* disable HFXT */
 		soclock->hsclken &= ~SYSCTL_HSCLKEN_HFXTEN;
 
@@ -859,13 +887,16 @@ static int clock_mspm0_configure_hfclk(volatile struct mspm_sysctl_soclock_regs 
 
 		timeout_us = MSPM0_XTAL_WAIT_TIMEOUT_US(MSPM0_HFXT_STARTUP_US);
 		break;
+	}
 #endif /* DT_HFXT_OKAY */
 
 #if DT_HFCLK_IN_OKAY
-	case MSPM0_CLOCK_SRC_HFCLK_IN:
+	case MSPM0_CLOCK_SRC_HFCLK_IN: {
 		/* set external digital clock input as HFCLK source */
 		soclock->hsclken |= SYSCTL_HSCLKEN_USEEXTHFCLK;
+
 		break;
+	}
 #endif /* DT_HFCLK_IN_OKAY */
 
 	default:
@@ -1181,6 +1212,33 @@ static int clock_mspm0_init_mclk(const struct device *dev)
 	return 0;
 }
 
+#if DT_CANCLK_OKAY
+static int clock_mspm0_configure_canclk(volatile struct mspm_sysctl_soclock_regs *soclock,
+					enum mspm0_clock_source source)
+{
+	switch (source) {
+#if DT_HFCLK_OKAY
+	case MSPM0_CLOCK_SRC_HFCLK:
+		/* set HFCLK as CANCLK source */
+		soclock->genclkcfg &= ~SYSCTL_GENCLKCFG_CANCLKSRC;
+		break;
+#endif
+
+#if DT_SYSPLL_OKAY
+	case MSPM0_CLOCK_SRC_SYSPLL:
+		/* set SYSPLLCLK1 as CANCLK source */
+		soclock->genclkcfg |= SYSCTL_GENCLKCFG_CANCLKSRC;
+		break;
+#endif
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* DT_CANCLK_OKAY */
+
 static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_t sys, void *data)
 {
 	volatile struct mspm_sysctl_regs *regs = MSPM_SYSCTL_REGS;
@@ -1226,6 +1284,12 @@ static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_
 	case MSPM0_CLOCK_MCLK:
 		ret = clock_mspm0_configure_mclk(soclock, *source);
 		break;
+
+#if DT_CANCLK_OKAY
+	case MSPM0_CLOCK_CANCLK:
+		ret = clock_mspm0_configure_canclk(soclock, *source);
+		break;
+#endif /* DT_CANCLK_OKAY */
 
 	default:
 		ret = -ENOTSUP;
@@ -1343,6 +1407,23 @@ static int clock_mspm0_init(const struct device *dev)
 	}
 #endif /* DT_MFPCLK_OKAY */
 
+#if DT_CANCLK_OKAY
+#if DT_SAME_NODE(DT_CANCLK_CLOCKS_CTRL, DT_SYSPLL)
+	LOG_DBG("CANCLK booting from SYSPLL");
+	ret = clock_mspm0_configure_canclk(soclock, MSPM0_CLOCK_SRC_SYSPLL);
+#else
+	/* validated at top of file: must be HFCLK */
+	LOG_DBG("CANCLK booting from HFCLK");
+	ret = clock_mspm0_configure_canclk(soclock, MSPM0_CLOCK_SRC_HFCLK);
+#endif /* DT_SAME_NODE(DT_CANCLK_CLOCKS_CTRL, DT_SYSPLL) */
+	if (ret < 0) {
+		LOG_ERR("failed to configure CANCLK: %d", ret);
+		return ret;
+	}
+#endif /* DT_CANCLK_OKAY */
+
+	LOG_DBG("MSPM0 clock tree initialized");
+
 	return 0;
 }
 
@@ -1355,6 +1436,5 @@ static DEVICE_API(clock_control, clock_mspm0_driver_api) = {
 	.configure = clock_mspm0_configure,
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(ckm), &clock_mspm0_init, NULL, NULL, NULL,
-		 PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
-		 &clock_mspm0_driver_api);
+DEVICE_DT_DEFINE(DT_NODELABEL(ckm), &clock_mspm0_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &clock_mspm0_driver_api);
