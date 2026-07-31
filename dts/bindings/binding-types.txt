@@ -33,6 +33,7 @@ comparator	Comparator
 coredump	Core dump
 counter	Counter
 cpu	CPU (Central Processing Unit)
+cpu_enable CPU enable
 crc	CRC (Cyclic Redundancy Check)
 crypto	Cryptographic accelerator
 dac	DAC (Digital to Analog Converter)
