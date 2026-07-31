@@ -9,6 +9,7 @@
 #include <zephyr/sd/sd.h>
 #include <zephyr/sd/sdmmc.h>
 #include <zephyr/sd/sd_spec.h>
+#include <zephyr/sd/sdio.h>
 #include <zephyr/logging/log.h>
 
 #include "sd_ops.h"
@@ -83,7 +84,7 @@ static int sdio_send_ocr(struct sd_card *card, uint32_t ocr)
 	return 0;
 }
 
-static int sdio_io_rw_direct(struct sd_card *card,
+static int sdio_io_rw_direct(struct sdio_dev *dev,
 			     enum sdio_io_dir direction,
 			     enum sdio_func_num func,
 			     uint32_t reg_addr,
@@ -106,12 +107,12 @@ static int sdio_io_rw_direct(struct sd_card *card,
 	cmd.response_type = (SD_RSP_TYPE_R5 | SD_SPI_RSP_TYPE_R5);
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
 
-	ret = sdhc_request(card->sdhc, &cmd, NULL);
+	ret = sdhc_request(dev->sdhc, &cmd, NULL);
 	if (ret) {
 		return ret;
 	}
 	if (data_out) {
-		if (card->host_props.is_spi) {
+		if (dev->caps & SDIO_CAP_SPI) {
 			*data_out = (cmd.response[0U] >> 8) & SDIO_DIRECT_CMD_DATA_MASK;
 		} else {
 			*data_out = cmd.response[0U] & SDIO_DIRECT_CMD_DATA_MASK;
@@ -121,7 +122,7 @@ static int sdio_io_rw_direct(struct sd_card *card,
 }
 
 
-static int sdio_io_rw_extended(struct sd_card *card,
+static int sdio_io_rw_extended(struct sdio_dev *dev,
 			       enum sdio_io_dir direction,
 			       enum sdio_func_num func,
 			       uint32_t reg_addr,
@@ -164,7 +165,7 @@ static int sdio_io_rw_extended(struct sd_card *card,
 	data.blocks = blocks ? blocks : 1;
 	data.data = buf;
 	data.timeout_ms = CONFIG_SD_DATA_TIMEOUT;
-	return sdhc_request(card->sdhc, &cmd, &data);
+	return sdhc_request(dev->sdhc, &cmd, &data);
 }
 
 /*
@@ -186,13 +187,13 @@ static int sdio_io_rw_extended_helper(struct sdio_func *func,
 		return -EINVAL;
 	}
 
-	if ((func->card->cccr_flags & SDIO_SUPPORT_MULTIBLOCK) &&
+	if ((func->dev->caps & SDIO_CAP_MULTIBLOCK) &&
 		((len > func->block_size))) {
 		/* Use block I/O for r/w where possible */
 		while (remaining >= func->block_size) {
 			blocks = remaining / func->block_size;
 			size = blocks * func->block_size;
-			ret = sdio_io_rw_extended(func->card, direction,
+			ret = sdio_io_rw_extended(func->dev, direction,
 				func->num, reg_addr, increment, buf, blocks,
 				func->block_size);
 			if (ret) {
@@ -207,16 +208,18 @@ static int sdio_io_rw_extended_helper(struct sdio_func *func,
 		}
 	}
 	/* Remaining data must be written using byte I/O */
-	if (func->cis.max_blk_size == 0U) {
-		/* A zero max_blk_size would make MIN(remaining, 0) == 0 and
-		 * the loop below spin forever without making progress.
-		 */
+	uint16_t max_byte = func->cis.max_blk_size ? func->cis.max_blk_size
+			  : (func->block_size ? func->block_size
+					      : func->dev->max_blk_size);
+
+	if (max_byte == 0U) {
+		/* No known byte-mode limit: a zero size would spin forever. */
 		return -EIO;
 	}
 	while (remaining > 0) {
-		size = MIN(remaining, func->cis.max_blk_size);
+		size = MIN(remaining, max_byte);
 
-		ret = sdio_io_rw_extended(func->card, direction, func->num,
+		ret = sdio_io_rw_extended(func->dev, direction, func->num,
 			reg_addr, increment, buf, 0, size);
 		if (ret) {
 			return ret;
@@ -233,13 +236,15 @@ static int sdio_io_rw_extended_helper(struct sdio_func *func,
 /*
  * Read card capability register to determine features card supports.
  */
-static int sdio_read_cccr(struct sd_card *card)
+int sdio_read_cccr(struct sdio_dev *dev, struct sdio_cccr *cccr, bool probe_uhs)
 {
 	int ret;
 	uint8_t data;
 	uint32_t cccr_ver;
 
-	ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+	memset(cccr, 0, sizeof(*cccr));
+
+	ret = sdio_io_rw_direct(dev, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 		SDIO_CCCR_CCCR, 0, &data);
 	if (ret) {
 		LOG_DBG("CCCR read failed: %d", ret);
@@ -247,73 +252,51 @@ static int sdio_read_cccr(struct sd_card *card)
 	}
 	cccr_ver = (data & SDIO_CCCR_CCCR_REV_MASK) >>
 		SDIO_CCCR_CCCR_REV_SHIFT;
+	cccr->sdio_revision = cccr_ver;
 	LOG_DBG("SDIO cccr revision %u", cccr_ver);
 	/* Read SD spec version */
-	ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+	ret = sdio_io_rw_direct(dev, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 		SDIO_CCCR_SD, 0, &data);
 	if (ret) {
 		return ret;
 	}
-	card->sd_version = (data & SDIO_CCCR_SD_SPEC_MASK) >> SDIO_CCCR_SD_SPEC_SHIFT;
+	cccr->sd_spec = (data & SDIO_CCCR_SD_SPEC_MASK) >> SDIO_CCCR_SD_SPEC_SHIFT;
 	/* Read CCCR capability flags */
-	ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+	ret = sdio_io_rw_direct(dev, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 		SDIO_CCCR_CAPS, 0, &data);
 	if (ret) {
 		return ret;
 	}
-	card->cccr_flags = 0;
-	if (data & SDIO_CCCR_CAPS_BLS) {
-		card->cccr_flags |= SDIO_SUPPORT_4BIT_LS_BUS;
-	}
-	if (data & SDIO_CCCR_CAPS_SMB) {
-		card->cccr_flags |= SDIO_SUPPORT_MULTIBLOCK;
-	}
+	cccr->support_4bit_ls = (data & SDIO_CCCR_CAPS_BLS) != 0;
+	cccr->support_multiblock = (data & SDIO_CCCR_CAPS_SMB) != 0;
 	if (cccr_ver >= SDIO_CCCR_CCCR_REV_2_00) {
 		/* Read high speed properties */
-		ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+		ret = sdio_io_rw_direct(dev, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 			SDIO_CCCR_SPEED, 0, &data);
 		if (ret) {
 			return ret;
 		}
-		if (data & SDIO_CCCR_SPEED_SHS) {
-			card->cccr_flags |= SDIO_SUPPORT_HS;
-		}
+		cccr->support_hs = (data & SDIO_CCCR_SPEED_SHS) != 0;
 	}
-	if (cccr_ver >= SDIO_CCCR_CCCR_REV_3_00 &&
-		(card->flags & SD_1800MV_FLAG)) {
+	if (cccr_ver >= SDIO_CCCR_CCCR_REV_3_00 && probe_uhs) {
 		/* Read UHS properties */
-		ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+		ret = sdio_io_rw_direct(dev, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 			SDIO_CCCR_UHS, 0, &data);
 		if (ret) {
 			return ret;
 		}
-		if (sdmmc_host_uhs(&card->host_props)) {
-			if (data & SDIO_CCCR_UHS_SDR50) {
-				card->cccr_flags |= SDIO_SUPPORT_SDR50;
-			}
-			if (data & SDIO_CCCR_UHS_SDR104) {
-				card->cccr_flags |= SDIO_SUPPORT_SDR104;
-			}
-			if (data & SDIO_CCCR_UHS_DDR50) {
-				card->cccr_flags |= SDIO_SUPPORT_DDR50;
-			}
-		}
+		cccr->support_sdr50 = (data & SDIO_CCCR_UHS_SDR50) != 0;
+		cccr->support_sdr104 = (data & SDIO_CCCR_UHS_SDR104) != 0;
+		cccr->support_ddr50 = (data & SDIO_CCCR_UHS_DDR50) != 0;
 
-		ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+		ret = sdio_io_rw_direct(dev, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 			SDIO_CCCR_DRIVE_STRENGTH, 0, &data);
 		if (ret) {
 			return ret;
 		}
-		card->switch_caps.sd_drv_type = 0;
-		if (data & SDIO_CCCR_DRIVE_STRENGTH_A) {
-			card->switch_caps.sd_drv_type |= SD_DRIVER_TYPE_A;
-		}
-		if (data & SDIO_CCCR_DRIVE_STRENGTH_C) {
-			card->switch_caps.sd_drv_type |= SD_DRIVER_TYPE_C;
-		}
-		if (data & SDIO_CCCR_DRIVE_STRENGTH_D) {
-			card->switch_caps.sd_drv_type |= SD_DRIVER_TYPE_D;
-		}
+		cccr->drv_type_a = (data & SDIO_CCCR_DRIVE_STRENGTH_A) != 0;
+		cccr->drv_type_c = (data & SDIO_CCCR_DRIVE_STRENGTH_C) != 0;
+		cccr->drv_type_d = (data & SDIO_CCCR_DRIVE_STRENGTH_D) != 0;
 	}
 	return 0;
 }
@@ -353,7 +336,8 @@ static int sdio_read_cis(struct sdio_func *func,
 			 uint32_t tuple_count)
 {
 	int ret;
-	char *data = func->card->card_buffer;
+	/* CIS tuple chains may be at most 255 bytes long. */
+	uint8_t data[255];
 	uint32_t cis_ptr = 0, num = 0;
 	uint8_t tpl_code, tpl_link;
 	bool match_tpl = false;
@@ -361,7 +345,7 @@ static int sdio_read_cis(struct sdio_func *func,
 	memset(&func->cis, 0, sizeof(struct sdio_cis));
 	/* First find the CIS pointer for this function */
 	for (int i = 0; i < 3; i++) {
-		ret = sdio_io_rw_direct(func->card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+		ret = sdio_io_rw_direct(func->dev, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 			SDIO_FBR_BASE(func->num) + SDIO_FBR_CIS + i, 0, data);
 		if (ret) {
 			return ret;
@@ -371,7 +355,7 @@ static int sdio_read_cis(struct sdio_func *func,
 	/* Read CIS tuples until we have read all requested CIS tuple codes */
 	do {
 		/* Read tuple code */
-		ret = sdio_io_rw_direct(func->card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+		ret = sdio_io_rw_direct(func->dev, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 			cis_ptr++, 0, &tpl_code);
 		if (ret) {
 			return ret;
@@ -385,7 +369,7 @@ static int sdio_read_cis(struct sdio_func *func,
 			continue;
 		}
 		/* Read tuple link */
-		ret = sdio_io_rw_direct(func->card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+		ret = sdio_io_rw_direct(func->dev, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 			cis_ptr++, 0, &tpl_link);
 		if (ret) {
 			return ret;
@@ -405,7 +389,7 @@ static int sdio_read_cis(struct sdio_func *func,
 			/* tuple chains may be maximum of 255 bytes long */
 			memset(data, 0, 255);
 			for (int i = 0; i < tpl_link; i++) {
-				ret = sdio_io_rw_direct(func->card, SDIO_IO_READ,
+				ret = sdio_io_rw_direct(func->dev, SDIO_IO_READ,
 					SDIO_FUNC_NUM_0, cis_ptr++, 0, data + i);
 				if (ret) {
 					return ret;
@@ -431,7 +415,7 @@ static int sdio_set_bus_width(struct sd_card *card, enum sdhc_bus_width width)
 	uint8_t reg_bus_interface = 0U;
 	int ret;
 
-	ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+	ret = sdio_io_rw_direct(&card->sdio_bus, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 		SDIO_CCCR_BUS_IF, 0, &reg_bus_interface);
 	if (ret) {
 		return ret;
@@ -450,7 +434,7 @@ static int sdio_set_bus_width(struct sd_card *card, enum sdhc_bus_width width)
 	default:
 		return -ENOTSUP;
 	}
-	ret = sdio_io_rw_direct(card, SDIO_IO_WRITE, SDIO_FUNC_NUM_0,
+	ret = sdio_io_rw_direct(&card->sdio_bus, SDIO_IO_WRITE, SDIO_FUNC_NUM_0,
 		SDIO_CCCR_BUS_IF, reg_bus_interface, &reg_bus_interface);
 	if (ret) {
 		return ret;
@@ -526,7 +510,7 @@ static int sdio_set_bus_speed(struct sd_card *card)
 		return 0;
 	}
 	/* Read the bus speed register */
-	ret = sdio_io_rw_direct(card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+	ret = sdio_io_rw_direct(&card->sdio_bus, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 		SDIO_CCCR_SPEED, 0, &speed_reg);
 	if (ret) {
 		return ret;
@@ -536,7 +520,7 @@ static int sdio_set_bus_speed(struct sd_card *card)
 		/* Set new speed */
 		speed_reg &= ~SDIO_CCCR_SPEED_MASK;
 		speed_reg |= (target_speed << SDIO_CCCR_SPEED_SHIFT);
-		ret = sdio_io_rw_direct(card, SDIO_IO_WRITE, SDIO_FUNC_NUM_0,
+		ret = sdio_io_rw_direct(&card->sdio_bus, SDIO_IO_WRITE, SDIO_FUNC_NUM_0,
 			SDIO_CCCR_SPEED, speed_reg, &speed_reg);
 		if (ret) {
 			return ret;
@@ -575,6 +559,9 @@ int sdio_card_init(struct sd_card *card)
 	}
 	/* Card responded to CMD5, type is SDIO */
 	card->type = CARD_SDIO;
+	/* Bind the SDIO host endpoint used for all function I/O */
+	sdio_dev_init(&card->sdio_bus, card->sdhc,
+		      card->host_props.is_spi ? SDIO_CAP_SPI : 0);
 	/* Set voltage window */
 	if (card->host_props.host_caps.vol_300_support) {
 		ocr_arg |= SD_OCR_VDD29_30FLAG;
@@ -653,18 +640,66 @@ int sdio_card_init(struct sd_card *card)
 		}
 	}
 	/* Read SDIO card common control register */
-	ret = sdio_read_cccr(card);
+	struct sdio_cccr cccr;
+
+	ret = sdio_read_cccr(&card->sdio_bus, &cccr,
+			     (card->flags & SD_1800MV_FLAG) != 0);
 	if (ret) {
 		return ret;
+	}
+	/* Map the parsed CCCR onto card bookkeeping */
+	card->sd_version = cccr.sd_spec;
+	card->cccr_flags = 0;
+	if (cccr.support_4bit_ls) {
+		card->cccr_flags |= SDIO_SUPPORT_4BIT_LS_BUS;
+	}
+	if (cccr.support_multiblock) {
+		card->cccr_flags |= SDIO_SUPPORT_MULTIBLOCK;
+	}
+	if (cccr.support_hs) {
+		card->cccr_flags |= SDIO_SUPPORT_HS;
+	}
+	if (sdmmc_host_uhs(&card->host_props)) {
+		if (cccr.support_sdr50) {
+			card->cccr_flags |= SDIO_SUPPORT_SDR50;
+		}
+		if (cccr.support_sdr104) {
+			card->cccr_flags |= SDIO_SUPPORT_SDR104;
+		}
+		if (cccr.support_ddr50) {
+			card->cccr_flags |= SDIO_SUPPORT_DDR50;
+		}
+	}
+	card->switch_caps.sd_drv_type = 0;
+	if (cccr.drv_type_a) {
+		card->switch_caps.sd_drv_type |= SD_DRIVER_TYPE_A;
+	}
+	if (cccr.drv_type_c) {
+		card->switch_caps.sd_drv_type |= SD_DRIVER_TYPE_C;
+	}
+	if (cccr.drv_type_d) {
+		card->switch_caps.sd_drv_type |= SD_DRIVER_TYPE_D;
+	}
+	/* Reflect the negotiated CCCR capabilities on the host endpoint */
+	if (card->cccr_flags & SDIO_SUPPORT_MULTIBLOCK) {
+		card->sdio_bus.caps |= SDIO_CAP_MULTIBLOCK;
+	}
+	if (card->cccr_flags & SDIO_SUPPORT_HS) {
+		card->sdio_bus.caps |= SDIO_CAP_HS;
+	}
+	if (card->cccr_flags & SDIO_SUPPORT_4BIT_LS_BUS) {
+		card->sdio_bus.caps |= SDIO_CAP_4BIT_BUS;
 	}
 	/* Initialize internal card function 0 structure */
 	card->func0.num = SDIO_FUNC_NUM_0;
 	card->func0.card = card;
+	card->func0.dev = &card->sdio_bus;
 	ret = sdio_read_cis(&card->func0, cis_tuples,
 		ARRAY_SIZE(cis_tuples));
 	if (ret) {
 		return ret;
 	}
+	card->sdio_bus.max_blk_size = card->func0.cis.max_blk_size;
 
 	/* If card and host support 4 bit bus, enable it */
 	if (IS_ENABLED(CONFIG_SDHC_SUPPORTS_NATIVE_MODE) &&
@@ -695,12 +730,40 @@ int sdio_card_init(struct sd_card *card)
 	return ret;
 }
 
+int sdio_dev_init(struct sdio_dev *dev, const struct device *sdhc,
+		  uint32_t caps)
+{
+	if (dev == NULL || sdhc == NULL) {
+		return -EINVAL;
+	}
+	dev->sdhc = sdhc;
+	dev->caps = caps;
+	dev->max_blk_size = 0;
+	k_mutex_init(&dev->lock);
+	return 0;
+}
+
+int sdio_func_bind(struct sdio_dev *dev, struct sdio_func *func,
+		   enum sdio_func_num num)
+{
+	if (dev == NULL || func == NULL) {
+		return -EINVAL;
+	}
+	func->num = num;
+	func->dev = dev;
+	func->card = NULL;
+	func->block_size = 0;
+	memset(&func->cis, 0, sizeof(func->cis));
+	return 0;
+}
+
 int sdio_init_func(struct sd_card *card, struct sdio_func *func,
 		   enum sdio_func_num num)
 {
 	/* Initialize function structure */
 	func->num = num;
 	func->card = card;
+	func->dev = &card->sdio_bus;
 	func->block_size = 0;
 	/* Read function properties from CCCR */
 	return sdio_read_cis(func, cis_tuples, ARRAY_SIZE(cis_tuples));
@@ -713,13 +776,13 @@ int sdio_enable_func(struct sdio_func *func)
 	uint16_t retries = CONFIG_SD_RETRY_COUNT;
 
 	/* Enable the I/O function */
-	ret = sdio_io_rw_direct(func->card, SDIO_IO_READ, SDIO_FUNC_NUM_0,
+	ret = sdio_io_rw_direct(func->dev, SDIO_IO_READ, SDIO_FUNC_NUM_0,
 		SDIO_CCCR_IO_EN, 0, &reg);
 	if (ret) {
 		return ret;
 	}
 	reg |= BIT(func->num);
-	ret = sdio_io_rw_direct(func->card, SDIO_IO_WRITE, SDIO_FUNC_NUM_0,
+	ret = sdio_io_rw_direct(func->dev, SDIO_IO_WRITE, SDIO_FUNC_NUM_0,
 		SDIO_CCCR_IO_EN, reg, &reg);
 	if (ret) {
 		return ret;
@@ -731,7 +794,7 @@ int sdio_enable_func(struct sdio_func *func)
 	do {
 		/* Timeout is in units of 10ms */
 		sd_delay(((uint32_t)func->cis.rdy_timeout) * 10U);
-		ret = sdio_io_rw_direct(func->card, SDIO_IO_READ,
+		ret = sdio_io_rw_direct(func->dev, SDIO_IO_READ,
 			SDIO_FUNC_NUM_0, SDIO_CCCR_IO_RD, 0, &reg);
 		if (ret) {
 			return ret;
@@ -753,7 +816,7 @@ int sdio_set_block_size(struct sdio_func *func, uint16_t bsize)
 	}
 	for (int i = 0; i < 2; i++) {
 		reg = (bsize >> (i * 8));
-		ret = sdio_io_rw_direct(func->card, SDIO_IO_WRITE, SDIO_FUNC_NUM_0,
+		ret = sdio_io_rw_direct(func->dev, SDIO_IO_WRITE, SDIO_FUNC_NUM_0,
 			SDIO_FBR_BASE(func->num) + SDIO_FBR_BLK_SIZE + i, reg, NULL);
 		if (ret) {
 			return ret;
@@ -767,17 +830,18 @@ int sdio_read_byte(struct sdio_func *func, uint32_t reg, uint8_t *val)
 {
 	int ret;
 
-	if ((func->card->type != CARD_SDIO) && (func->card->type != CARD_COMBO)) {
+	if (func->card && (func->card->type != CARD_SDIO) &&
+	    (func->card->type != CARD_COMBO)) {
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	ret = k_mutex_lock(&func->dev->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
 	}
-	ret = sdio_io_rw_direct(func->card, SDIO_IO_READ, func->num, reg, 0, val);
-	k_mutex_unlock(&func->card->lock);
+	ret = sdio_io_rw_direct(func->dev, SDIO_IO_READ, func->num, reg, 0, val);
+	k_mutex_unlock(&func->dev->lock);
 	return ret;
 }
 
@@ -785,18 +849,19 @@ int sdio_write_byte(struct sdio_func *func, uint32_t reg, uint8_t write_val)
 {
 	int ret;
 
-	if ((func->card->type != CARD_SDIO) && (func->card->type != CARD_COMBO)) {
+	if (func->card && (func->card->type != CARD_SDIO) &&
+	    (func->card->type != CARD_COMBO)) {
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	ret = k_mutex_lock(&func->dev->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
 	}
-	ret = sdio_io_rw_direct(func->card, SDIO_IO_WRITE, func->num, reg,
+	ret = sdio_io_rw_direct(func->dev, SDIO_IO_WRITE, func->num, reg,
 		write_val, NULL);
-	k_mutex_unlock(&func->card->lock);
+	k_mutex_unlock(&func->dev->lock);
 	return ret;
 }
 
@@ -805,18 +870,19 @@ int sdio_rw_byte(struct sdio_func *func, uint32_t reg, uint8_t write_val,
 {
 	int ret;
 
-	if ((func->card->type != CARD_SDIO) && (func->card->type != CARD_COMBO)) {
+	if (func->card && (func->card->type != CARD_SDIO) &&
+	    (func->card->type != CARD_COMBO)) {
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	ret = k_mutex_lock(&func->dev->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
 	}
-	ret = sdio_io_rw_direct(func->card, SDIO_IO_WRITE, func->num, reg,
+	ret = sdio_io_rw_direct(func->dev, SDIO_IO_WRITE, func->num, reg,
 		write_val, read_val);
-	k_mutex_unlock(&func->card->lock);
+	k_mutex_unlock(&func->dev->lock);
 	return ret;
 }
 
@@ -825,18 +891,19 @@ int sdio_read_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 {
 	int ret;
 
-	if ((func->card->type != CARD_SDIO) && (func->card->type != CARD_COMBO)) {
+	if (func->card && (func->card->type != CARD_SDIO) &&
+	    (func->card->type != CARD_COMBO)) {
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	ret = k_mutex_lock(&func->dev->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
 	}
 	ret = sdio_io_rw_extended_helper(func, SDIO_IO_READ, reg, false,
 		data, len);
-	k_mutex_unlock(&func->card->lock);
+	k_mutex_unlock(&func->dev->lock);
 	return ret;
 }
 
@@ -845,18 +912,19 @@ int sdio_write_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 {
 	int ret;
 
-	if ((func->card->type != CARD_SDIO) && (func->card->type != CARD_COMBO)) {
+	if (func->card && (func->card->type != CARD_SDIO) &&
+	    (func->card->type != CARD_COMBO)) {
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	ret = k_mutex_lock(&func->dev->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
 	}
 	ret = sdio_io_rw_extended_helper(func, SDIO_IO_WRITE, reg, false,
 		data, len);
-	k_mutex_unlock(&func->card->lock);
+	k_mutex_unlock(&func->dev->lock);
 	return ret;
 }
 
@@ -865,18 +933,19 @@ int sdio_read_blocks_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 {
 	int ret;
 
-	if ((func->card->type != CARD_SDIO) && (func->card->type != CARD_COMBO)) {
+	if (func->card && (func->card->type != CARD_SDIO) &&
+	    (func->card->type != CARD_COMBO)) {
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	ret = k_mutex_lock(&func->dev->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
 	}
-	ret = sdio_io_rw_extended(func->card, SDIO_IO_READ, func->num, reg,
+	ret = sdio_io_rw_extended(func->dev, SDIO_IO_READ, func->num, reg,
 		false, data, blocks, func->block_size);
-	k_mutex_unlock(&func->card->lock);
+	k_mutex_unlock(&func->dev->lock);
 	return ret;
 }
 
@@ -885,18 +954,19 @@ int sdio_write_blocks_fifo(struct sdio_func *func, uint32_t reg, uint8_t *data,
 {
 	int ret;
 
-	if ((func->card->type != CARD_SDIO) && (func->card->type != CARD_COMBO)) {
+	if (func->card && (func->card->type != CARD_SDIO) &&
+	    (func->card->type != CARD_COMBO)) {
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	ret = k_mutex_lock(&func->dev->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
 	}
-	ret = sdio_io_rw_extended(func->card, SDIO_IO_WRITE, func->num, reg,
+	ret = sdio_io_rw_extended(func->dev, SDIO_IO_WRITE, func->num, reg,
 		false, data, blocks, func->block_size);
-	k_mutex_unlock(&func->card->lock);
+	k_mutex_unlock(&func->dev->lock);
 	return ret;
 }
 
@@ -905,18 +975,19 @@ int sdio_read_addr(struct sdio_func *func, uint32_t reg, uint8_t *data,
 {
 	int ret;
 
-	if ((func->card->type != CARD_SDIO) && (func->card->type != CARD_COMBO)) {
+	if (func->card && (func->card->type != CARD_SDIO) &&
+	    (func->card->type != CARD_COMBO)) {
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	ret = k_mutex_lock(&func->dev->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
 	}
 	ret = sdio_io_rw_extended_helper(func, SDIO_IO_READ, reg, true,
 		data, len);
-	k_mutex_unlock(&func->card->lock);
+	k_mutex_unlock(&func->dev->lock);
 	return ret;
 }
 
@@ -925,17 +996,18 @@ int sdio_write_addr(struct sdio_func *func, uint32_t reg, uint8_t *data,
 {
 	int ret;
 
-	if ((func->card->type != CARD_SDIO) && (func->card->type != CARD_COMBO)) {
+	if (func->card && (func->card->type != CARD_SDIO) &&
+	    (func->card->type != CARD_COMBO)) {
 		LOG_WRN("Card does not support SDIO commands");
 		return -ENOTSUP;
 	}
-	ret = k_mutex_lock(&func->card->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
+	ret = k_mutex_lock(&func->dev->lock, K_MSEC(CONFIG_SD_DATA_TIMEOUT));
 	if (ret) {
 		LOG_WRN("Could not get SD card mutex");
 		return -EBUSY;
 	}
 	ret = sdio_io_rw_extended_helper(func, SDIO_IO_WRITE, reg, true,
 		data, len);
-	k_mutex_unlock(&func->card->lock);
+	k_mutex_unlock(&func->dev->lock);
 	return ret;
 }
