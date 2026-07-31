@@ -721,7 +721,8 @@ static void msg_commit(struct mpsc_pbuf_buffer *buffer, struct log_msg *msg)
 	bool lock_acquired;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
-		k_spinlock_key_t key;
+		k_spinlock_key_t key = {0};
+
 		lock_acquired = process_lock_acquire_if_needed(&key);
 
 		msg_process(m);
