@@ -268,19 +268,40 @@ Decoding a CTF trace
 ********************
 
 The CTF backends (UART, USB, POSIX and RAM) emit a binary stream that follows
-the metadata in :zephyr_file:`subsys/tracing/ctf/tsdl/metadata`. To view it,
-place the captured stream next to that metadata file and open it with a
+the metadata in :zephyr_file:`subsys/tracing/ctf/tsdl/metadata`. Events are
+gathered into fixed-size CTF packets, and each CPU produces its own sequence of
+them, tagged with the CPU number in the packet context.
+
+Because a backend such as UART, USB or RAM carries one link, the packets of
+every CPU arrive interleaved on it. Split them into the one-file-per-stream
+layout a CTF reader expects with
+:zephyr_file:`scripts/tracing/split_ctf_streams.py`, then open the result with a
 CTF-aware tool such as `babeltrace2 <https://babeltrace.org/>`_:
 
 .. code-block:: console
 
-	mkdir ctf
-	cp channel0_0 ctf/
+	$ZEPHYR_BASE/scripts/tracing/split_ctf_streams.py -i channel0_0 -o ctf/
 	cp $ZEPHYR_BASE/subsys/tracing/ctf/tsdl/metadata ctf/
 	babeltrace2 ctf/
 
+The splitter also reports how many events, if any, the target had to discard
+because no free packet was available. On a uniprocessor build there is only one
+CPU, so the step just produces a single ``channel0_0``; running it is harmless
+either way.
+
+The reader merges the per-CPU streams into one timeline ordered by the trace
+clock, so events from different CPUs appear interleaved in time, each carrying
+the ``cpu_id`` of the CPU that produced it.
+
 The same ``ctf`` directory can also be opened in `Trace Compass
 <https://eclipse.dev/tracecompass/>`_ for a graphical timeline.
+
+.. note::
+   Correlating streams across CPUs assumes the timing counter behind the trace
+   clock is shared by all of them. That holds for the counters Zephyr uses on
+   the SMP-capable targets - the x86 TSC and the Arm generic timer, for example
+   - but a per-core cycle counter would place each CPU on its own time base and
+   the merge would be meaningless.
 
 Viewing a CTF trace in the terminal
 ***********************************
