@@ -7,8 +7,28 @@ typealias integer { size = 32; align = 8; signed = true; } := int32_t;
 typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
 typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := ctf_bounded_string_t;
 
+/* The tracing clock. Declaring it is what lets a reader order and merge events
+ * by time; without a clock block the timestamp is just an integer field and
+ * streams cannot be correlated at all. Zephyr emits the timestamp already
+ * converted to nanoseconds, so the clock runs at 1 GHz by definition. It is not
+ * absolute: it counts from an arbitrary origin near boot, not from the epoch.
+ */
+clock {
+	name = zephyr;
+	description = "Zephyr tracing clock, in nanoseconds since an arbitrary origin";
+	freq = 1000000000;
+	precision = 1;
+	offset_s = 0;
+	absolute = false;
+};
+
+typealias integer {
+	size = 64; align = 8; signed = false;
+	map = clock.zephyr.value;
+} := uint64_clock_t;
+
 struct event_header {
-	uint64_t timestamp;
+	uint64_clock_t timestamp;
 	uint16_t id;
 };
 
