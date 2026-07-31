@@ -429,8 +429,10 @@ int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);
 int pthread_once(pthread_once_t *once, void (*initFunc)(void));
 #endif
 FUNC_NORETURN void pthread_exit(void *retval);
+#if defined(CONFIG_PTHREAD_NP) || defined(__DOXYGEN__)
 int pthread_timedjoin_np(pthread_t thread, void **status, const struct timespec *abstime);
 int pthread_tryjoin_np(pthread_t thread, void **status);
+#endif /* CONFIG_PTHREAD_NP */
 int pthread_join(pthread_t thread, void **status);
 int pthread_cancel(pthread_t pthread);
 int pthread_detach(pthread_t thread);
@@ -477,10 +479,13 @@ void __z_pthread_cleanup_pop(int execute);
 		__z_pthread_cleanup_pop(_ex);                                                      \
 	} /* enforce '}'-like behaviour */ while (0)
 
+#if defined(CONFIG_PTHREAD_NP) || defined(__DOXYGEN__)
 /* Glibc / Oracle Extension Functions */
 
 /**
  * @brief Set name of POSIX thread.
+ *
+ * @kconfig_dep{CONFIG_PTHREAD_NP}
  *
  * Non-portable, extension function that conforms with most
  * other definitions of this function.
@@ -499,6 +504,8 @@ int pthread_setname_np(pthread_t thread, const char *name);
  * @brief Get name of POSIX thread and store in name buffer
  *  	  that is of size len.
  *
+ * @kconfig_dep{CONFIG_PTHREAD_NP}
+ *
  * Non-portable, extension function that conforms with most
  * other definitions of this function.
  *
@@ -511,6 +518,7 @@ int pthread_setname_np(pthread_t thread, const char *name);
  * @retval <0 negative value if kernel function error
  */
 int pthread_getname_np(pthread_t thread, char *name, size_t len);
+#endif /* CONFIG_PTHREAD_NP */
 
 #ifdef CONFIG_POSIX_THREADS
 
