@@ -13,6 +13,13 @@ target_sources_ifdef(CONFIG_ENABLE_LC3 app PRIVATE src/lc3.c)
 
 if(CONFIG_USE_CODEC_AUDIO_OUTPUT)
   target_sources(app PRIVATE src/hw_codec.c)
+
+  if(CONFIG_I2S AND CONFIG_AUDIO_CODEC)
+    target_sources(app PRIVATE
+      src/audio_buf.c
+      src/i2s_play.c
+    )
+  endif()
 endif()
 
 if(CONFIG_USE_USB_AUDIO_OUTPUT)
