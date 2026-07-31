@@ -12,6 +12,16 @@ struct event_header {
 	uint16_t id;
 };
 
+/* Common context carried by every event. cpu_id is Zephyr's sequential CPU
+ * number, so an SMP trace can be demultiplexed per CPU. It lives in the event
+ * common context rather than the event header because babeltrace2 consumes the
+ * CTF 1.8 event header itself and does not expose its extra fields to readers,
+ * while the common context is surfaced as event.common_context_field.
+ */
+struct event_context {
+	uint8_t cpu_id;
+};
+
 trace {
 	major = 1;
 	minor = 8;
@@ -20,6 +30,7 @@ trace {
 
 stream {
 	event.header := struct event_header;
+	event.context := struct event_context;
 };
 
 event {
