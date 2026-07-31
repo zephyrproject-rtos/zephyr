@@ -50,7 +50,7 @@ static void *setup(void)
 	const struct device *dc = DEVICE_DT_GET(DC_NODE);
 
 	zassert_true(device_is_ready(dc), "controller not ready");
-	zassert_ok(sdio_device_init(&endpoint, dc));
+	zassert_ok(sdio_device_init(&endpoint, dc, NULL));
 	zassert_ok(sdio_stream_function_init(&sf, SDIO_FUNC_NUM_1, FIFO_REG));
 	zassert_ok(sdio_device_register_function(&endpoint, &sf.base));
 	zassert_ok(sdio_device_enable(&endpoint));
