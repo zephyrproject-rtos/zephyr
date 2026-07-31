@@ -35,6 +35,15 @@ from the TSDL ``metadata`` file that ships next to the tracing subsystem
 events added there; a built-in fallback table covers the core scheduling events
 so the time graph still works even when the metadata file cannot be found.
 
+A capture taken on an SMP system holds one stream per CPU, and on a backend
+carrying a single link those streams arrive interleaved. The raw capture can be
+opened directly - there is no need to split it first - but since the time graph
+draws a single running-thread lane it shows one CPU at a time, the first one
+seen unless ``--cpu`` says otherwise. A capture predating any framing, which is
+a stream of bare records, is read as-is; the per-event framing that came
+between the two is not read, so a capture holding it needs the viewer it was
+taken with.
+
 Usage::
 
     # interactive viewer (a terminal/TTY is required)
@@ -48,6 +57,9 @@ Usage::
 
     # point at a specific metadata file
     ./trace_viewer.py build/tracing.bin --metadata path/to/metadata
+
+    # pick which CPU to show from an SMP capture
+    ./trace_viewer.py build/tracing.bin --cpu 1
 """
 
 import argparse
@@ -73,17 +85,33 @@ def safe_open(path, mode, **kwargs):
     return open(real, mode, **kwargs)  # noqa: SIM115
 
 
-# Packet framing:
-#   uint16_t stream_id
-#   uint16_t packet_size (bits)
-PACKET_HDR = struct.Struct("<HH")
-
 # Event framing inside a packet:
 #   uint64_t timestamp (ns)   <- present when CONFIG_TRACING_CTF_TIMESTAMP=y
 #   uint16_t id
 #   <packed, byte-aligned event specific fields>
 HDR = struct.Struct("<QH")
 HDR_NO_TS = struct.Struct("<H")
+
+# Events are gathered into CTF packets, one sequence of them per CPU. A packet
+# opens with these two structures and holds records up to content_size; it is
+# packet_size long on the wire, which earlier captures padded out to a fixed
+# length and later ones size to their contents.
+#
+#   struct packet_header  { uint32_t magic; uint32_t stream_id; }
+#   struct packet_context { uint64_t timestamp_begin, timestamp_end;
+#                           uint32_t content_size, packet_size, events_discarded;
+#                           uint8_t  cpu_id; }
+#
+# A capture from before any framing existed is just records back to back, and is
+# read too, decided by whether the stream opens with the magic. The per-event
+# framing that briefly sat between the two - a stream id and a size on every
+# record, with no magic - is not read: it would be indistinguishable from those
+# bare records without guessing.
+PACKET_MAGIC = 0xC1FC1FC1
+PACKET_MAGIC_BYTES = struct.pack("<I", PACKET_MAGIC)
+PKT_HEADER = struct.Struct("<II")
+PKT_CONTEXT = struct.Struct("<QQIIIB")
+PKT_PREFIX = PKT_HEADER.size + PKT_CONTEXT.size
 
 # Map a TSDL integer typedef to a struct format character and byte size.
 TYPES = {
@@ -312,7 +340,7 @@ class TraceReader:
     next feed.
     """
 
-    def __init__(self, defs, has_ts=True):
+    def __init__(self, defs, has_ts=True, cpu=None):
         self.defs = defs
         self.has_ts = has_ts
         self.hdr = HDR if has_ts else HDR_NO_TS
@@ -320,6 +348,12 @@ class TraceReader:
         self._buf = b""  # undecoded bytes (possibly a partial record)
         self._fake_ts = 0
         self._desync = False
+        # None until the first bytes say whether this trace is packetized.
+        self._packetized = None
+        # CPU whose stream is being followed, and everything seen in the trace.
+        self.cpu = cpu
+        self.cpus_seen = set()
+        self.discarded = 0
         # Some platforms back the CTF timestamp with a free-running cycle
         # counter that wraps, giving a sawtooth instead of a monotonic clock.
         # Unwrap it: every time the raw value jumps backwards, add the previous
@@ -451,68 +485,106 @@ class TraceReader:
 
         self._state_machine(ts, name, fields, tid)
 
-    def _decode_buf(self):
+    def _decode_records(self, data, off, end, stream_id=0):
+        """Decode records in data[off:end]. Returns (events, offset reached)."""
+        hsz = self.hdr.size
+        new = 0
+        while off + hsz <= end:
+            if self.has_ts:
+                ts, eid = self.hdr.unpack_from(data, off)
+            else:
+                (eid,) = self.hdr.unpack_from(data, off)
+                ts = None
+            edef = self.defs.get((stream_id, eid)) or self.defs.get(eid)
+            if edef is None:
+                # Unknown id: the record length is unknown, so we cannot safely
+                # skip it. Stop and keep the bytes; flag the desync for the UI.
+                self._desync = True
+                break
+            rec = hsz + edef.size
+            if off + rec > end:
+                break  # incomplete trailing record; wait for more
+            if ts is None:
+                ts = self._fake_ts
+                self._fake_ts += 1
+            else:
+                if self._prev_raw is not None and ts < self._prev_raw:
+                    self._ts_off += self._prev_raw  # counter wrapped
+                self._prev_raw = ts
+                ts += self._ts_off
+            fields, _ = edef.decode(data, off + hsz)
+            off += rec
+            self._consume(ts, eid, edef.name, fields)
+            new += 1
+        return new, off
+
+    def _decode_packets(self):
         data = self._buf
         off = 0
         n = len(data)
-        hsz = self.hdr.size
         new = 0
 
-        while off + PACKET_HDR.size <= n:
-            stream_id, packet_size_bits = PACKET_HDR.unpack_from(data, off)
-            if packet_size_bits % 8:
+        while off + PKT_PREFIX <= n:
+            magic, stream_id = PKT_HEADER.unpack_from(data, off)
+            if magic != PACKET_MAGIC:
+                nxt = data.find(PACKET_MAGIC_BYTES, off + 1)
                 self._desync = True
-                break
+                if nxt < 0:
+                    off = n
+                    break
+                off = nxt
+                continue
 
-            packet_size = packet_size_bits // 8
-            if packet_size < PACKET_HDR.size:
+            (_ts_begin, _ts_end, content_bits, packet_bits, discarded,
+             cpu) = PKT_CONTEXT.unpack_from(data, off + PKT_HEADER.size)
+            psize = packet_bits // 8
+            csize = content_bits // 8
+
+            if psize < PKT_PREFIX or csize < PKT_PREFIX or csize > psize:
+                # The magic was a coincidence in the middle of event data.
+                nxt = data.find(PACKET_MAGIC_BYTES, off + 1)
                 self._desync = True
-                break
-            if off + packet_size > n:
+                if nxt < 0:
+                    off = n
+                    break
+                off = nxt
+                continue
+
+            if off + psize > n:
                 break  # incomplete trailing packet; wait for more
 
-            packet_end = off + packet_size
-            event_off = off + PACKET_HDR.size
-            packet_bad = False
+            self.cpus_seen.add(cpu)
+            self.discarded = max(self.discarded, discarded)
+            if self.cpu is None:
+                self.cpu = cpu
 
-            while event_off + hsz <= packet_end:
-                if self.has_ts:
-                    ts, eid = self.hdr.unpack_from(data, event_off)
-                else:
-                    (eid,) = self.hdr.unpack_from(data, event_off)
-                    ts = None
+            # Only one CPU's stream is followed. This viewer draws a single
+            # running-thread lane, which cannot represent several CPUs at once,
+            # and taking every CPU's packets would also interleave two
+            # independent time sequences into one and confuse the wrap
+            # detection above.
+            if cpu == self.cpu:
+                got, _ = self._decode_records(data, off + PKT_PREFIX,
+                                             off + csize, stream_id)
+                new += got
 
-                edef = self.defs.get((stream_id, eid)) or self.defs.get(eid)
-                if edef is None:
-                    self._desync = True
-                    packet_bad = True
-                    break
-
-                rec = hsz + edef.size
-                if event_off + rec > packet_end:
-                    self._desync = True
-                    packet_bad = True
-                    break
-
-                if ts is None:
-                    ts = self._fake_ts
-                    self._fake_ts += 1
-                else:
-                    if self._prev_raw is not None and ts < self._prev_raw:
-                        self._ts_off += self._prev_raw  # counter wrapped
-                    self._prev_raw = ts
-                    ts += self._ts_off
-
-                fields, _ = edef.decode(data, event_off + hsz)
-                event_off += rec
-                self._consume(ts, eid, edef.name, fields)
-                new += 1
-
-            if not packet_bad and event_off != packet_end:
-                self._desync = True
-            off = packet_end
+            off += psize
 
         self._buf = data[off:]
+        return new
+
+    def _decode_buf(self):
+        if self._packetized is None:
+            if len(self._buf) < PKT_HEADER.size:
+                return 0
+            (magic,) = struct.unpack_from("<I", self._buf, 0)
+            self._packetized = magic == PACKET_MAGIC
+
+        if self._packetized:
+            return self._decode_packets()
+
+        new, off = self._decode_records(self._buf, 0, len(self._buf))
+        self._buf = self._buf[off:]
         return new
 
     def feed(self, data):
@@ -529,9 +601,24 @@ class TraceReader:
         return new
 
 
-def parse_trace(path, defs, has_ts=True):
+def _report_cpus(reader):
+    """Tell the user when a trace holds more CPUs than can be shown at once."""
+    others = sorted(c for c in reader.cpus_seen if c != reader.cpu)
+    if others:
+        sys.stderr.write(
+            f"note: showing CPU {reader.cpu}; this trace also has "
+            f"{', '.join(str(c) for c in others)} (use --cpu N to switch)\n"
+        )
+    if reader.discarded:
+        sys.stderr.write(
+            f"warning: the target discarded {reader.discarded} event(s) on CPU "
+            f"{reader.cpu} for want of a free packet\n"
+        )
+
+
+def parse_trace(path, defs, has_ts=True, cpu=None):
     """Read a complete trace file in one shot (non-live path)."""
-    reader = TraceReader(defs, has_ts)
+    reader = TraceReader(defs, has_ts, cpu)
     with safe_open(path, "rb") as fh:
         reader.feed(fh.read())
     return reader.tr
@@ -1479,6 +1566,14 @@ def main():
         help="trace was built without CONFIG_TRACING_CTF_TIMESTAMP",
     )
     ap.add_argument(
+        "--cpu",
+        type=int,
+        default=None,
+        help="CPU whose stream to display (default: the first one seen). "
+        "Only meaningful for a trace captured on an SMP system, where each "
+        "CPU produces its own stream",
+    )
+    ap.add_argument(
         "-f",
         "--follow",
         action="store_true",
@@ -1501,9 +1596,13 @@ def main():
         if args.text or not sys.stdout.isatty():
             sys.stderr.write("--follow requires an interactive terminal\n")
             return 1
-        return _run_follow(args.binary, defs, has_ts)
+        return _run_follow(args.binary, defs, has_ts, args.cpu)
 
-    tr = parse_trace(args.binary, defs, has_ts=has_ts)
+    reader = TraceReader(defs, has_ts, args.cpu)
+    with safe_open(args.binary, "rb") as fh:
+        reader.feed(fh.read())
+    tr = reader.tr
+    _report_cpus(reader)
     if not tr.events:
         sys.stderr.write("no events decoded; is this a CTF trace? try --no-timestamp\n")
         return 1
@@ -1513,17 +1612,13 @@ def main():
         run_text(tr, width)
         return 0
 
-    reader = TraceReader(defs, has_ts)
-    with safe_open(args.binary, "rb") as fh:
-        reader.feed(fh.read())
-
     import curses
 
     curses.wrapper(run_curses, reader)
     return 0
 
 
-def _run_follow(path, defs, has_ts):
+def _run_follow(path, defs, has_ts, cpu=None):
     """Open the trace, catch up on existing bytes, then follow it live."""
     import curses
     import time
@@ -1535,7 +1630,7 @@ def _run_follow(path, defs, has_ts):
             deadline = True
         time.sleep(0.3)
 
-    reader = TraceReader(defs, has_ts)
+    reader = TraceReader(defs, has_ts, cpu)
     fh = safe_open(path, "rb")
     try:
         reader.feed(fh.read())  # catch up on whatever already exists

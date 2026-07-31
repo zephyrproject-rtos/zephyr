@@ -33,7 +33,9 @@ struct tracing_backend_api {
 	 * backend that can express several channels (a file per stream, say)
 	 * should keep the streams separate; one carrying a single link may
 	 * ignore it, as the framing in the stream itself lets the host
-	 * demultiplex.
+	 * demultiplex. The CTF format puts the CPU that produced the data
+	 * here, since each CPU fills a stream of its own; the formats that
+	 * produce one stream use id 0.
 	 */
 	void (*output)(const struct tracing_backend *backend, uint8_t stream_id, uint8_t *data,
 		       uint32_t length);

@@ -36,9 +36,15 @@ bool is_tracing_enabled(void);
 /**
  * @brief Sample the tracing clock.
  *
- * Meant to be called from the emission path with the tracing lock held, so that
- * the order in which CPUs sample the clock matches the order in which their
- * events reach the tracing buffer.
+ * Called from the emission path with interrupts locked on the emitting CPU, so
+ * that the order in which a CPU samples the clock is the order in which its
+ * events are appended to its stream.
+ *
+ * With CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP this is a weak symbol an
+ * application overrides to supply its own clock. The value has to be in
+ * nanoseconds and must not run backwards on a given CPU; the TSDL metadata
+ * declares it as the trace clock, which is what lets a reader merge the
+ * per-CPU streams.
  *
  * @return Current tracing timestamp in nanoseconds.
  */
@@ -71,7 +77,8 @@ int tracing_backends_flush(void);
 /**
  * @brief Give tracing buffer to backend.
  *
- * @param stream_id Trace stream the data belongs to.
+ * @param stream_id Trace stream the data belongs to: the CPU that produced it
+ *                  for CTF, which gives each CPU a stream, and 0 otherwise.
  * @param data Tracing buffer address.
  * @param length Tracing buffer length.
  */

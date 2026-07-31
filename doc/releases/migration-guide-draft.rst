@@ -412,6 +412,17 @@ Tracing
   driving a single link can ignore it, since the framing in the stream lets the host
   demultiplex.
 
+* An application overriding the CTF timestamp with
+  :kconfig:option:`CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP` now overrides
+  ``tracing_timestamp_get()`` rather than ``ctf_top_timestamp_get()``, which no longer exists.
+  Rename the definition; the signature is unchanged.
+
+* CTF events are gathered into packets, so synchronous tracing hands a packet to the backend
+  when it fills or when the CPU goes idle instead of one event at a time. Events produced by
+  code that then hangs, faults or spins without idling no longer reach the backend. Enable
+  :kconfig:option:`CONFIG_TRACING_CTF_SYNC_IMMEDIATE` to send every event as it is produced,
+  at the cost of a packet header and context per event.
+
 Modules
 *******
 

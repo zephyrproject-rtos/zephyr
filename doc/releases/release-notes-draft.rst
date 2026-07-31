@@ -129,6 +129,12 @@ Libraries / Subsystems
   * :ref:`MQTT 5.0 <mqtt_socket_interface>` support in the MQTT client
     (:kconfig:option:`CONFIG_MQTT_VERSION_5_0`) is no longer experimental.
 
+* Tracing
+
+  * CTF traces from an SMP system can be read: each CPU produces its own CTF stream, and the
+    packet context names the CPU that filled it, so a reader merges the streams on the trace
+    clock instead of seeing one stream whose timestamps jump between cores.
+
 Devicetree
 **********
 
