@@ -5,6 +5,19 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# LC3 decode plus audio_codec bring-up push main and sysworkq past their
+# defaults. Declared before Kconfig.zephyr so our defaults are searched
+# ahead of kernel/Kconfig's defaults.
+if LIBLC3
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096
+
+endif # LIBLC3
+
 mainmenu "Bluetooth: Earbuds"
 
 menu "Zephyr"
