@@ -10,15 +10,15 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(hwinfo_mcux_rgm, CONFIG_HWINFO_LOG_LEVEL);
+LOG_MODULE_REGISTER(hwinfo_nxp_rgm, CONFIG_HWINFO_LOG_LEVEL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "Exactly one nxp,mc-rgm node must be enabled");
 
-#define MCUX_RGM ((MC_RGM_Type *)DT_INST_REG_ADDR(0))
+#define NXP_RGM ((MC_RGM_Type *)DT_INST_REG_ADDR(0))
 
 /* All reset-cause flags this driver is able to report. */
-#define MCUX_RGM_SUPPORTED_CAUSES                                              \
+#define NXP_RGM_SUPPORTED_CAUSES                                              \
 	(RESET_POR | RESET_PIN | RESET_SOFTWARE | RESET_WATCHDOG |              \
 	 RESET_DEBUG | RESET_PLL | RESET_CLOCK | RESET_SECURITY | RESET_HARDWARE)
 
@@ -26,7 +26,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
  * @brief Translate the MC_RGM DES (Destructive Event Status) register to Zephyr
  *        hwinfo reset cause flags.
  */
-static uint32_t hwinfo_mcux_rgm_xlate_des(uint32_t des)
+static uint32_t hwinfo_nxp_rgm_xlate_des(uint32_t des)
 {
 	uint32_t mask = 0;
 
@@ -70,7 +70,7 @@ static uint32_t hwinfo_mcux_rgm_xlate_des(uint32_t des)
  * @brief Translate the MC_RGM FES (Functional/External Reset Status) register to
  *        Zephyr hwinfo reset cause flags.
  */
-static uint32_t hwinfo_mcux_rgm_xlate_fes(uint32_t fes)
+static uint32_t hwinfo_nxp_rgm_xlate_fes(uint32_t fes)
 {
 	uint32_t mask = 0;
 
@@ -111,11 +111,11 @@ static uint32_t hwinfo_mcux_rgm_xlate_fes(uint32_t fes)
 
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
-	MC_RGM_Type *base = MCUX_RGM;
+	MC_RGM_Type *base = NXP_RGM;
 	uint32_t des = base->DES;
 	uint32_t fes = base->FES;
 
-	*cause = hwinfo_mcux_rgm_xlate_des(des) | hwinfo_mcux_rgm_xlate_fes(fes);
+	*cause = hwinfo_nxp_rgm_xlate_des(des) | hwinfo_nxp_rgm_xlate_fes(fes);
 
 	LOG_DBG("DES = 0x%08x, FES = 0x%08x, cause = 0x%08x", des, fes, *cause);
 
@@ -124,7 +124,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 int z_impl_hwinfo_clear_reset_cause(void)
 {
-	MC_RGM_Type *base = MCUX_RGM;
+	MC_RGM_Type *base = NXP_RGM;
 	uint32_t des = base->DES;
 	uint32_t fes = base->FES;
 
@@ -142,7 +142,7 @@ int z_impl_hwinfo_clear_reset_cause(void)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = MCUX_RGM_SUPPORTED_CAUSES;
+	*supported = NXP_RGM_SUPPORTED_CAUSES;
 
 	return 0;
 }
