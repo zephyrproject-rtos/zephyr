@@ -113,6 +113,165 @@ int sdio_read_cccr(struct sdio_dev *dev, struct sdio_cccr *cccr,
 		   bool probe_uhs);
 
 /**
+ * @name Endpoint-level I/O
+ *
+ * Role-neutral SDIO I/O keyed on a host endpoint (@ref sdio_dev) and a function
+ * number, with no dependency on @ref sdio_func. The @ref sdio_func based calls
+ * further down are thin wrappers over these; per-function state (block size,
+ * CIS limits) is supplied explicitly.
+ * @{
+ */
+
+/**
+ * @brief Enable a function through the CCCR I/O-enable register.
+ *
+ * @param dev         host endpoint
+ * @param func        function number to enable
+ * @param rdy_timeout I/O-ready timeout in 10ms units (0 to poll once)
+ * @retval 0 function was enabled
+ * @retval -ETIMEDOUT function did not become ready
+ * @retval -EIO I/O error
+ */
+int sdio_dev_enable_func(struct sdio_dev *dev, enum sdio_func_num func,
+			 uint16_t rdy_timeout);
+
+/**
+ * @brief Program a function's block size in its FBR.
+ *
+ * @param dev   host endpoint
+ * @param func  function number
+ * @param bsize block size
+ * @retval 0 block size was set
+ * @retval -EIO I/O error
+ */
+int sdio_dev_set_block_size(struct sdio_dev *dev, enum sdio_func_num func,
+			    uint16_t bsize);
+
+/**
+ * @brief Read a byte from a function register (CMD52).
+ * @param dev  host endpoint
+ * @param func function number
+ * @param reg  register address
+ * @param val  filled with the byte read
+ * @retval 0 on success, -EIO on I/O error, -EBUSY if the bus is busy
+ */
+int sdio_dev_read_byte(struct sdio_dev *dev, enum sdio_func_num func,
+		       uint32_t reg, uint8_t *val);
+
+/**
+ * @brief Write a byte to a function register (CMD52).
+ * @param dev       host endpoint
+ * @param func      function number
+ * @param reg       register address
+ * @param write_val value to write
+ * @retval 0 on success, -EIO on I/O error, -EBUSY if the bus is busy
+ */
+int sdio_dev_write_byte(struct sdio_dev *dev, enum sdio_func_num func,
+			uint32_t reg, uint8_t write_val);
+
+/**
+ * @brief Write a byte and read back the result (CMD52).
+ * @param dev       host endpoint
+ * @param func      function number
+ * @param reg       register address
+ * @param write_val value to write
+ * @param read_val  filled with the value read back
+ * @retval 0 on success, -EIO on I/O error, -EBUSY if the bus is busy
+ */
+int sdio_dev_rw_byte(struct sdio_dev *dev, enum sdio_func_num func,
+		     uint32_t reg, uint8_t write_val, uint8_t *read_val);
+
+/**
+ * @brief Read bytes from a fixed-address FIFO (CMD53).
+ * @param dev        host endpoint
+ * @param func       function number
+ * @param reg        FIFO register address
+ * @param data       filled with the data read
+ * @param len        number of bytes to read
+ * @param block_size negotiated block size (0 to force byte mode)
+ * @param max_byte   byte-mode transfer limit
+ * @retval 0 on success, -EIO on I/O error, -EBUSY if the bus is busy
+ */
+int sdio_dev_read_fifo(struct sdio_dev *dev, enum sdio_func_num func,
+		       uint32_t reg, uint8_t *data, uint32_t len,
+		       uint16_t block_size, uint16_t max_byte);
+
+/**
+ * @brief Write bytes to a fixed-address FIFO (CMD53).
+ * @param dev        host endpoint
+ * @param func       function number
+ * @param reg        FIFO register address
+ * @param data       data to write
+ * @param len        number of bytes to write
+ * @param block_size negotiated block size (0 to force byte mode)
+ * @param max_byte   byte-mode transfer limit
+ * @retval 0 on success, -EIO on I/O error, -EBUSY if the bus is busy
+ */
+int sdio_dev_write_fifo(struct sdio_dev *dev, enum sdio_func_num func,
+			uint32_t reg, uint8_t *data, uint32_t len,
+			uint16_t block_size, uint16_t max_byte);
+
+/**
+ * @brief Read blocks from a fixed-address FIFO (CMD53, block mode).
+ * @param dev        host endpoint
+ * @param func       function number
+ * @param reg        FIFO register address
+ * @param data       filled with the data read
+ * @param blocks     number of blocks to read
+ * @param block_size block size
+ * @retval 0 on success, -EIO on I/O error, -EBUSY if the bus is busy
+ */
+int sdio_dev_read_blocks_fifo(struct sdio_dev *dev, enum sdio_func_num func,
+			      uint32_t reg, uint8_t *data, uint32_t blocks,
+			      uint16_t block_size);
+
+/**
+ * @brief Write blocks to a fixed-address FIFO (CMD53, block mode).
+ * @param dev        host endpoint
+ * @param func       function number
+ * @param reg        FIFO register address
+ * @param data       data to write
+ * @param blocks     number of blocks to write
+ * @param block_size block size
+ * @retval 0 on success, -EIO on I/O error, -EBUSY if the bus is busy
+ */
+int sdio_dev_write_blocks_fifo(struct sdio_dev *dev, enum sdio_func_num func,
+			       uint32_t reg, uint8_t *data, uint32_t blocks,
+			       uint16_t block_size);
+
+/**
+ * @brief Copy bytes from an incrementing-address window (CMD53).
+ * @param dev        host endpoint
+ * @param func       function number
+ * @param reg        start register address
+ * @param data       filled with the data read
+ * @param len        number of bytes to read
+ * @param block_size negotiated block size (0 to force byte mode)
+ * @param max_byte   byte-mode transfer limit
+ * @retval 0 on success, -EIO on I/O error, -EBUSY if the bus is busy
+ */
+int sdio_dev_read_addr(struct sdio_dev *dev, enum sdio_func_num func,
+		       uint32_t reg, uint8_t *data, uint32_t len,
+		       uint16_t block_size, uint16_t max_byte);
+
+/**
+ * @brief Copy bytes to an incrementing-address window (CMD53).
+ * @param dev        host endpoint
+ * @param func       function number
+ * @param reg        start register address
+ * @param data       data to write
+ * @param len        number of bytes to write
+ * @param block_size negotiated block size (0 to force byte mode)
+ * @param max_byte   byte-mode transfer limit
+ * @retval 0 on success, -EIO on I/O error, -EBUSY if the bus is busy
+ */
+int sdio_dev_write_addr(struct sdio_dev *dev, enum sdio_func_num func,
+			uint32_t reg, uint8_t *data, uint32_t len,
+			uint16_t block_size, uint16_t max_byte);
+
+/** @} */
+
+/**
  * @brief Initialize SDIO function on an SD card.
  *
  * SD-card stack entry point. Binds the function to the card's host endpoint and
