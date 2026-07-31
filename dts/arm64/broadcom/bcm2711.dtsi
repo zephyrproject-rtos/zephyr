@@ -152,11 +152,12 @@
 		};
 
 		uart1: uart@fe215040 {
-			compatible = "brcm,bcm2711-aux-uart";
+			compatible = "brcm,bcm283x-aux-uart", "ns16550";
 			reg = <0xfe215040 0x40>;
+			reg-shift = <2>;
 			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clk_vpu>;
+			clock-frequency = <DT_FREQ_M(500)>;
 			status = "disabled";
 		};
 
