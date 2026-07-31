@@ -45,6 +45,13 @@ config TMAP_PERIPHERAL_LEFT
 config TMAP_PERIPHERAL_RIGHT
 	bool "Right Ear"
 
+config TMAP_PERIPHERAL_STEREO
+	bool "Stereo speaker (front left + front right)"
+	help
+	  Advertise the sink and source PAC locations as a stereo speaker.
+	  Required by some phones (e.g. Pixel running Android) before they
+	  will route stereo media to a solo LE Audio device.
+
 endchoice # TMAP_PERIPHERAL_LOCATION
 
 menu "Audio playback"

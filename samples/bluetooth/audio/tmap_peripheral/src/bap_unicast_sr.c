@@ -551,7 +551,11 @@ int bap_unicast_sr_init(void)
 			return err;
 		}
 
-		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
+		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_STEREO)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+						   BT_AUDIO_LOCATION_FRONT_LEFT |
+						   BT_AUDIO_LOCATION_FRONT_RIGHT);
+		} else if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
 			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
 						       BT_AUDIO_LOCATION_FRONT_LEFT);
 		} else {
@@ -586,7 +590,11 @@ int bap_unicast_sr_init(void)
 			return err;
 		}
 
-		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
+		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_STEREO)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+						   BT_AUDIO_LOCATION_FRONT_LEFT |
+						   BT_AUDIO_LOCATION_FRONT_RIGHT);
+		} else if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
 			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
 						       BT_AUDIO_LOCATION_FRONT_LEFT);
 		} else {
