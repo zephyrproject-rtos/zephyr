@@ -323,7 +323,13 @@ static int wwdt_mspm0_install_timeout(const struct device *dev, const struct wdt
 		return -ENOTSUP;
 	}
 
-	if (cfg->flags != config->reset_action) {
+	if ((cfg->flags & WDT_FLAG_RESET_MASK) > WDT_FLAG_RESET_SOC) {
+		LOG_ERR("Install timeout failed. Unsupported reset flags 0x%x", cfg->flags);
+		k_mutex_unlock(&data->lock);
+		return -ENOTSUP;
+	}
+
+	if ((cfg->flags & WDT_FLAG_RESET_MASK) != config->reset_action) {
 		LOG_ERR("Install timeout failed. Reset action mismatch");
 		k_mutex_unlock(&data->lock);
 		return -EINVAL;
