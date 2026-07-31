@@ -25,17 +25,18 @@ typedef union {
 	};
 } otp_analog_option;
 
-#define OTP_DATA_BASE       DT_REG_ADDR_BY_NAME(DT_INST(0, egis_et171_otp), mem)
-#define OTP_DATA_ROOT_CLOCK 0x000C
-#define OTP_DATA_ANALOG     0x0018
+#define OTP_DATA_BASE              DT_REG_ADDR_BY_NAME(DT_INST(0, egis_et171_otp), mem)
+#define OTP_DATA_OFFSET_ROOT_CLOCK 0x000C
+#define OTP_DATA_OFFSET_ANALOG     0x0018
 
-#define LL_READ_OTP_DATA(data_offset) \
-	((uint32_t)sys_read32(OTP_DATA_BASE + (data_offset)))
-
+static inline uint32_t otp_ll_read_data(uint32_t data_offset)
+{
+	return sys_read32(OTP_DATA_BASE + data_offset);
+}
 
 static otp_analog_option et171_otp_ll_get_analog_config(void)
 {
-	otp_analog_option ret = { .__word = LL_READ_OTP_DATA(OTP_DATA_ANALOG) };
+	otp_analog_option ret = { .__word = otp_ll_read_data(OTP_DATA_OFFSET_ANALOG) };
 
 	return ret;
 }
@@ -88,5 +89,5 @@ void et171_otp_ll_apply_analog_config(void)
 
 uint32_t et171_otp_ll_get_root_clock(void)
 {
-	return LL_READ_OTP_DATA(OTP_DATA_ROOT_CLOCK);
+	return otp_ll_read_data(OTP_DATA_OFFSET_ROOT_CLOCK);
 }
