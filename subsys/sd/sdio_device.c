@@ -344,8 +344,9 @@ int sdio_device_register_function(struct sdio_device *dev,
 	if (dev == NULL || func == NULL || func->num > SDIO_MAX_IO_NUMS) {
 		return -EINVAL;
 	}
-	if (func->regs == NULL && func->fifo_cb == NULL) {
-		/* A function must expose at least one access type */
+	if (func->regs == NULL && func->fifo_cb == NULL &&
+	    func->rx_done == NULL && func->tx_done == NULL) {
+		/* A function must expose at least one access path */
 		return -EINVAL;
 	}
 
@@ -362,6 +363,28 @@ unlock:
 	return ret;
 }
 
+/* Controller callback: a posted/submitted zero-copy buffer completed. */
+static void sdio_device_completion(const struct device *controller,
+				   enum sdio_func_num num, enum sdio_dc_evt evt,
+				   const struct sdio_dc_buf_set *bufs,
+				   uint32_t len, int status, void *user)
+{
+	struct sdio_device *dev = user;
+	struct sdio_device_function *func;
+
+	ARG_UNUSED(controller);
+
+	func = sdio_device_find(dev, num);
+	if (func == NULL) {
+		return;
+	}
+	if (evt == SDIO_DC_RX_DONE && func->rx_done != NULL) {
+		func->rx_done(func, bufs, len, status);
+	} else if (evt == SDIO_DC_TX_DONE && func->tx_done != NULL) {
+		func->tx_done(func, bufs, status);
+	}
+}
+
 int sdio_device_enable(struct sdio_device *dev)
 {
 	int ret;
@@ -373,7 +396,39 @@ int sdio_device_enable(struct sdio_device *dev)
 	if (ret) {
 		return ret;
 	}
+	if (sdio_device_is_zero_copy(dev)) {
+		(void)sdio_dc_set_completion_cb(dev->controller,
+						sdio_device_completion, dev);
+	}
 	return sdio_dc_enable(dev->controller);
+}
+
+bool sdio_device_is_zero_copy(struct sdio_device *dev)
+{
+	struct sdio_dc_caps caps;
+
+	if (dev == NULL || sdio_dc_get_caps(dev->controller, &caps) != 0) {
+		return false;
+	}
+	return caps.zero_copy;
+}
+
+int sdio_device_rx_post(struct sdio_device_function *func,
+			const struct sdio_dc_buf_set *bufs)
+{
+	if (func == NULL || func->parent == NULL) {
+		return -EINVAL;
+	}
+	return sdio_dc_rx_post(func->parent->controller, func->num, bufs);
+}
+
+int sdio_device_tx_submit(struct sdio_device_function *func,
+			  const struct sdio_dc_buf_set *bufs)
+{
+	if (func == NULL || func->parent == NULL) {
+		return -EINVAL;
+	}
+	return sdio_dc_tx_submit(func->parent->controller, func->num, bufs);
 }
 
 int sdio_device_disable(struct sdio_device *dev)

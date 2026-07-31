@@ -77,6 +77,37 @@ static struct sdio_device_function f_fifo = {
 	.fifo_cb = fifo_cb,
 };
 
+/* Function 3: pure zero-copy (scatter-gather) endpoint. */
+static const struct sdio_dc_buf_set *zc_rx_set;
+static uint32_t zc_rx_len;
+static int zc_rx_status;
+static const struct sdio_dc_buf_set *zc_tx_set;
+static int zc_tx_status;
+
+static void zc_rx_done(struct sdio_device_function *func,
+		       const struct sdio_dc_buf_set *bufs, uint32_t len,
+		       int status)
+{
+	ARG_UNUSED(func);
+	zc_rx_set = bufs;
+	zc_rx_len = len;
+	zc_rx_status = status;
+}
+
+static void zc_tx_done(struct sdio_device_function *func,
+		       const struct sdio_dc_buf_set *bufs, int status)
+{
+	ARG_UNUSED(func);
+	zc_tx_set = bufs;
+	zc_tx_status = status;
+}
+
+static struct sdio_device_function f_zc = {
+	.num = SDIO_FUNC_NUM_3,
+	.rx_done = zc_rx_done,
+	.tx_done = zc_tx_done,
+};
+
 /* Host-side interrupt bookkeeping. */
 static volatile uint32_t irq_count;
 static volatile enum sdio_func_num irq_func;
@@ -121,6 +152,7 @@ static void *setup(void)
 	zassert_ok(sdio_device_init(&endpoint, dc, &dev_config));
 	zassert_ok(sdio_device_register_function(&endpoint, &f_reg));
 	zassert_ok(sdio_device_register_function(&endpoint, &f_fifo));
+	zassert_ok(sdio_device_register_function(&endpoint, &f_zc));
 	zassert_ok(sdio_device_enable(&endpoint));
 	sdio_dc_virtual_set_irq_cb(dc, irq_cb, NULL);
 
@@ -293,6 +325,64 @@ ZTEST(sdio_device, test_cis)
 	zassert_equal(f1[4], SDIO_TPL_CODE_FUNCE, "no FUNCE tuple");
 	/* FUNCE body starts at f1[6]; max block size at body offset 12. */
 	zassert_equal((uint16_t)f1[6 + 12] | (f1[6 + 13] << 8), TEST_F1_BLKSIZE);
+}
+
+/* An inbound frame is scattered across a multi-descriptor posted buffer set. */
+ZTEST(sdio_device, test_zero_copy_scatter)
+{
+	uint8_t buf_a[8];
+	uint8_t buf_b[8];
+	struct sdio_dc_buf iov[2] = {
+		{ .data = buf_a, .len = sizeof(buf_a) },
+		{ .data = buf_b, .len = sizeof(buf_b) },
+	};
+	struct sdio_dc_buf_set set = { .bufs = iov, .count = 2 };
+	uint8_t frame[12];
+
+	for (int i = 0; i < (int)sizeof(frame); i++) {
+		frame[i] = (uint8_t)(i + 1);
+	}
+
+	zc_rx_set = NULL;
+	zassert_ok(sdio_device_rx_post(&f_zc, &set));
+
+	/* Host writes a 12-byte frame to the function-3 data port. */
+	zassert_ok(host_access(SDIO_FUNC_NUM_3, SDIO_DC_DIR_WRITE, 0, false,
+			       frame, sizeof(frame)));
+
+	zassert_equal_ptr(zc_rx_set, &set, "wrong set returned");
+	zassert_equal(zc_rx_status, 0, "status not ok");
+	zassert_equal(zc_rx_len, sizeof(frame), "wrong total length");
+	/* First 8 bytes land in descriptor 0, the next 4 in descriptor 1. */
+	zassert_mem_equal(buf_a, frame, sizeof(buf_a), "descriptor 0 mismatch");
+	zassert_mem_equal(buf_b, &frame[8], 4, "descriptor 1 mismatch");
+}
+
+/* An outbound frame is gathered from a multi-descriptor submitted buffer set. */
+ZTEST(sdio_device, test_zero_copy_gather)
+{
+	uint8_t buf_a[5] = {0xA0, 0xA1, 0xA2, 0xA3, 0xA4};
+	uint8_t buf_b[7] = {0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6};
+	struct sdio_dc_buf iov[2] = {
+		{ .data = buf_a, .len = sizeof(buf_a) },
+		{ .data = buf_b, .len = sizeof(buf_b) },
+	};
+	struct sdio_dc_buf_set set = { .bufs = iov, .count = 2 };
+	uint8_t rx[12];
+
+	zc_tx_set = NULL;
+	zassert_ok(sdio_device_tx_submit(&f_zc, &set));
+
+	/* Host reads the function-3 data port. */
+	memset(rx, 0, sizeof(rx));
+	zassert_ok(host_access(SDIO_FUNC_NUM_3, SDIO_DC_DIR_READ, 0, false,
+			       rx, sizeof(rx)));
+
+	zassert_mem_equal(rx, buf_a, sizeof(buf_a), "descriptor 0 not gathered");
+	zassert_mem_equal(&rx[5], buf_b, sizeof(buf_b),
+			  "descriptor 1 not gathered");
+	zassert_equal_ptr(zc_tx_set, &set, "wrong set returned");
+	zassert_equal(zc_tx_status, 0, "status not ok");
 }
 
 ZTEST_SUITE(sdio_device, NULL, setup, NULL, NULL, NULL);

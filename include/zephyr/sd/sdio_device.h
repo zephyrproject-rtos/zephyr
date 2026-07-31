@@ -33,6 +33,7 @@ extern "C" {
  */
 
 struct sdio_device_function;
+struct sdio_dc_buf_set;
 
 /**
  * @brief Function-0 / card identity configuration.
@@ -74,8 +75,9 @@ typedef int (*sdio_device_fifo_cb_t)(struct sdio_device_function *func,
 /**
  * @brief Device-side SDIO function.
  *
- * Configure @ref num and at least one of a register window (@ref regs /
- * @ref regs_size) or a FIFO handler (@ref fifo_reg / @ref fifo_cb), then
+ * Configure @ref num and at least one access path -- a register window
+ * (@ref regs / @ref regs_size), a FIFO handler (@ref fifo_reg / @ref fifo_cb),
+ * or the zero-copy completion handlers (@ref rx_done / @ref tx_done) -- then
  * register it with @ref sdio_device_register_function.
  */
 struct sdio_device_function {
@@ -98,6 +100,22 @@ struct sdio_device_function {
 	uint16_t max_blk_size;
 	/** I/O-ready timeout advertised in the CIS in 10ms units (FUNCE) */
 	uint16_t rdy_timeout;
+
+	/**
+	 * Zero-copy RX completion: a buffer set posted with
+	 * @ref sdio_device_rx_post is returned (holding @p len bytes total when
+	 * @p status is 0, else a negative errno). May be NULL.
+	 */
+	void (*rx_done)(struct sdio_device_function *func,
+			const struct sdio_dc_buf_set *bufs, uint32_t len,
+			int status);
+	/**
+	 * Zero-copy TX completion: a buffer set submitted with
+	 * @ref sdio_device_tx_submit is returned (@p status 0 on success, else
+	 * a negative errno). May be NULL.
+	 */
+	void (*tx_done)(struct sdio_device_function *func,
+			const struct sdio_dc_buf_set *bufs, int status);
 
 	/** @cond INTERNAL_HIDDEN */
 	uint16_t block_size; /* host-programmed block size (FBR) */
@@ -194,6 +212,44 @@ int sdio_device_raise_interrupt(struct sdio_device_function *func);
  * @retval -EINVAL invalid argument
  */
 int sdio_device_clear_interrupt(struct sdio_device_function *func);
+
+/**
+ * @brief Whether the backing controller offers a zero-copy data path.
+ *
+ * @param dev device endpoint
+ * @retval true controller supports @ref sdio_device_rx_post /
+ *         @ref sdio_device_tx_submit
+ * @retval false only the synchronous FIFO handler path is available
+ */
+bool sdio_device_is_zero_copy(struct sdio_device *dev);
+
+/**
+ * @brief Post a buffer set to receive an inbound frame (zero-copy).
+ *
+ * The controller takes ownership until it fills the set, then calls the
+ * function's @ref sdio_device_function.rx_done. @p bufs must stay valid until
+ * then.
+ *
+ * @param func function to receive on
+ * @param bufs buffer set the controller may write into
+ * @retval 0 on success, negative errno otherwise
+ */
+int sdio_device_rx_post(struct sdio_device_function *func,
+			const struct sdio_dc_buf_set *bufs);
+
+/**
+ * @brief Submit a filled buffer set for the host to read (zero-copy).
+ *
+ * The controller takes ownership until the host reads the data, then calls the
+ * function's @ref sdio_device_function.tx_done. @p bufs must stay valid until
+ * then.
+ *
+ * @param func function to send from
+ * @param bufs buffer set holding the data
+ * @retval 0 on success, negative errno otherwise
+ */
+int sdio_device_tx_submit(struct sdio_device_function *func,
+			  const struct sdio_dc_buf_set *bufs);
 
 /** @} */
 

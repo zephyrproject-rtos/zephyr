@@ -12,11 +12,15 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/sd/sd_spec.h>
 #include <zephyr/drivers/sdio_dc.h>
 #include <zephyr/drivers/sdio_dc_virtual.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(sdio_dc_virtual, CONFIG_SDIO_DC_LOG_LEVEL);
+
+#define SDIO_DC_VIRTUAL_NUM_Q (SDIO_MAX_IO_NUMS + 1)
 
 struct sdio_dc_virtual_config {
 	uint8_t num_funcs;
@@ -30,6 +34,14 @@ struct sdio_dc_virtual_data {
 	void *xfer_user;
 	sdio_dc_virtual_irq_cb_t irq_cb;
 	void *irq_user;
+	sdio_dc_completion_cb_t comp_cb;
+	void *comp_user;
+	/* Depth-1 zero-copy queues per function (loopback model). */
+	const struct sdio_dc_buf_set *rx_set[SDIO_DC_VIRTUAL_NUM_Q];
+	const struct sdio_dc_buf_set *tx_set[SDIO_DC_VIRTUAL_NUM_Q];
+	/* First buffer handed through the zero-copy path (test inspection). */
+	uint8_t *last_rx;
+	uint8_t *last_tx;
 };
 
 /* --- SDIO device controller API ------------------------------------------ */
@@ -80,6 +92,50 @@ static int sdio_dc_virtual_get_caps(const struct device *dev,
 	caps->num_funcs = cfg->num_funcs;
 	caps->max_blk_size = cfg->max_blk_size;
 	caps->interrupt_supported = true;
+	caps->zero_copy = true;
+	return 0;
+}
+
+static int sdio_dc_virtual_set_completion_cb(const struct device *dev,
+					     sdio_dc_completion_cb_t cb,
+					     void *user)
+{
+	struct sdio_dc_virtual_data *data = dev->data;
+
+	data->comp_cb = cb;
+	data->comp_user = user;
+	return 0;
+}
+
+static int sdio_dc_virtual_rx_post(const struct device *dev,
+				   enum sdio_func_num func,
+				   const struct sdio_dc_buf_set *bufs)
+{
+	struct sdio_dc_virtual_data *data = dev->data;
+
+	if (func >= SDIO_DC_VIRTUAL_NUM_Q || bufs == NULL) {
+		return -EINVAL;
+	}
+	if (data->rx_set[func] != NULL) {
+		return -EBUSY;
+	}
+	data->rx_set[func] = bufs;
+	return 0;
+}
+
+static int sdio_dc_virtual_tx_submit(const struct device *dev,
+				     enum sdio_func_num func,
+				     const struct sdio_dc_buf_set *bufs)
+{
+	struct sdio_dc_virtual_data *data = dev->data;
+
+	if (func >= SDIO_DC_VIRTUAL_NUM_Q || bufs == NULL) {
+		return -EINVAL;
+	}
+	if (data->tx_set[func] != NULL) {
+		return -EBUSY;
+	}
+	data->tx_set[func] = bufs;
 	return 0;
 }
 
@@ -89,18 +145,102 @@ static DEVICE_API(sdio_dc, sdio_dc_virtual_api) = {
 	.set_xfer_callback = sdio_dc_virtual_set_xfer_callback,
 	.raise_interrupt = sdio_dc_virtual_raise_interrupt,
 	.get_caps = sdio_dc_virtual_get_caps,
+	.set_completion_cb = sdio_dc_virtual_set_completion_cb,
+	.rx_post = sdio_dc_virtual_rx_post,
+	.tx_submit = sdio_dc_virtual_tx_submit,
 };
 
 /* --- Injected access hook ------------------------------------------------- */
+
+/* Serve a fixed-address (data-port) access from the zero-copy queues if a
+ * buffer is available; returns true if it was handled that way. The data copy
+ * here models the controller's DMA between bus and device memory; the
+ * subsystem/application never copies.
+ */
+static bool sdio_dc_virtual_zc(struct sdio_dc_virtual_data *data,
+			       const struct device *dc, struct sdio_dc_xfer *xfer)
+{
+	enum sdio_func_num f = xfer->func;
+
+	if (data->comp_cb == NULL || f >= SDIO_DC_VIRTUAL_NUM_Q) {
+		return false;
+	}
+
+	if (xfer->dir == SDIO_DC_DIR_WRITE && data->rx_set[f] != NULL) {
+		const struct sdio_dc_buf_set *set = data->rx_set[f];
+		uint32_t remaining = xfer->len;
+		uint32_t total = 0;
+		const uint8_t *src = xfer->data;
+
+		/* Scatter the inbound frame across the posted descriptors. */
+		for (size_t i = 0; i < set->count && remaining > 0; i++) {
+			uint32_t n = MIN(remaining, set->bufs[i].len);
+
+			memcpy(set->bufs[i].data, src, n);
+			src += n;
+			remaining -= n;
+			total += n;
+		}
+		data->rx_set[f] = NULL;
+		data->last_rx = set->count ? set->bufs[0].data : NULL;
+		data->comp_cb(dc, f, SDIO_DC_RX_DONE, set, total, 0,
+			      data->comp_user);
+		return true;
+	}
+
+	if (xfer->dir == SDIO_DC_DIR_READ && data->tx_set[f] != NULL) {
+		const struct sdio_dc_buf_set *set = data->tx_set[f];
+		uint32_t off = 0;
+
+		/* Gather the outbound frame from the submitted descriptors. */
+		for (size_t i = 0; i < set->count && off < xfer->len; i++) {
+			uint32_t n = MIN(xfer->len - off, set->bufs[i].len);
+
+			memcpy(xfer->data + off, set->bufs[i].data, n);
+			off += n;
+		}
+		if (off < xfer->len) {
+			memset(xfer->data + off, 0, xfer->len - off);
+		}
+		data->tx_set[f] = NULL;
+		data->last_tx = set->count ? set->bufs[0].data : NULL;
+		data->comp_cb(dc, f, SDIO_DC_TX_DONE, set, off, 0,
+			      data->comp_user);
+		return true;
+	}
+
+	return false;
+}
 
 int sdio_dc_virtual_access(const struct device *dc, struct sdio_dc_xfer *xfer)
 {
 	struct sdio_dc_virtual_data *data = dc->data;
 
-	if (!data->enabled || data->xfer_cb == NULL) {
+	if (!data->enabled) {
+		return -EIO;
+	}
+	/* Fixed-address data-port accesses may be served zero-copy. */
+	if (!xfer->increment && sdio_dc_virtual_zc(data, dc, xfer)) {
+		return 0;
+	}
+	if (data->xfer_cb == NULL) {
 		return -EIO;
 	}
 	return data->xfer_cb(dc, xfer, data->xfer_user);
+}
+
+uint8_t *sdio_dc_virtual_last_rx(const struct device *dc)
+{
+	struct sdio_dc_virtual_data *data = dc->data;
+
+	return data->last_rx;
+}
+
+uint8_t *sdio_dc_virtual_last_tx(const struct device *dc)
+{
+	struct sdio_dc_virtual_data *data = dc->data;
+
+	return data->last_tx;
 }
 
 void sdio_dc_virtual_set_irq_cb(const struct device *dc,

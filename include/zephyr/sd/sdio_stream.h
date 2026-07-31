@@ -31,6 +31,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/drivers/sdio_dc.h>
 #include <zephyr/sd/sdio_device.h>
 
 #ifdef __cplusplus
@@ -73,6 +74,11 @@ struct sdio_pkt {
 	uint8_t dir;
 	/** Reference count */
 	atomic_t ref;
+	/** @cond INTERNAL_HIDDEN */
+	/* Single-descriptor view of @ref data, submitted to the controller. */
+	struct sdio_dc_buf iov;
+	struct sdio_dc_buf_set set;
+	/** @endcond */
 };
 
 /**
@@ -88,6 +94,7 @@ struct sdio_stream_function {
 	/** @cond INTERNAL_HIDDEN */
 	struct k_fifo rx_fifo;
 	struct k_fifo tx_fifo;
+	bool zero_copy; /* controller offers the buffer-ownership path */
 	/** @endcond */
 };
 
@@ -131,6 +138,21 @@ int sdio_stream_function_init(struct sdio_stream_function *sf,
 			      enum sdio_func_num num, uint32_t fifo_reg);
 
 /**
+ * @brief Start the streaming data path.
+ *
+ * Call after the function is registered and the device is enabled. If the
+ * backing controller offers a zero-copy path, this posts receive buffers so
+ * inbound frames land directly in pool packets; otherwise it is a no-op and
+ * the synchronous FIFO-handler path is used.
+ *
+ * @param sf stream function
+ * @retval 0 on success
+ * @retval -EINVAL invalid argument
+ * @retval -ENOMEM could not post any receive buffer
+ */
+int sdio_stream_function_start(struct sdio_stream_function *sf);
+
+/**
  * @brief Blocking read of one received packet.
  *
  * @param sf      stream function
@@ -170,6 +192,21 @@ int sdio_stream_read(struct sdio_stream_function *sf, uint8_t *data,
  */
 int sdio_stream_write(struct sdio_stream_function *sf, const uint8_t *data,
 		      uint16_t len);
+
+/**
+ * @brief Queue a caller-owned packet for transmission (zero-copy).
+ *
+ * Takes ownership of @p pkt and sends it without copying its payload. On the
+ * zero-copy path the packet is freed once the host has read it; on the
+ * fallback path it is freed when the host drains the data port.
+ *
+ * @param sf  stream function
+ * @param pkt packet to send (allocated with @ref sdio_pkt_alloc, payload in
+ *            @c pkt->data, length in @c pkt->len)
+ * @retval 0 on success (ownership transferred)
+ * @retval -EINVAL invalid argument
+ */
+int sdio_stream_write_pkt(struct sdio_stream_function *sf, struct sdio_pkt *pkt);
 
 /**
  * @brief Wait for stream events.

@@ -42,6 +42,8 @@ struct sdio_dc_caps {
 	uint16_t max_blk_size;
 	/** Controller supports asserting the SDIO interrupt towards the host */
 	bool interrupt_supported;
+	/** Controller supports the async, buffer-ownership (zero-copy) path */
+	bool zero_copy;
 };
 
 /**
@@ -90,6 +92,68 @@ struct sdio_dc_xfer {
 typedef int (*sdio_dc_xfer_cb_t)(const struct device *dev,
 				 struct sdio_dc_xfer *xfer, void *user);
 
+/**
+ * @brief A single scatter-gather buffer descriptor.
+ */
+struct sdio_dc_buf {
+	/** Buffer memory */
+	uint8_t *data;
+	/** RX: capacity in bytes; TX: number of bytes to send */
+	uint32_t len;
+};
+
+/**
+ * @brief A vector of buffers forming one logical transfer.
+ *
+ * Lets a controller drive a multi-descriptor (scatter-gather) transfer. A
+ * controller without DMA may simply loop over the descriptors; @c count == 1
+ * is the ordinary single-buffer case. The set (and the buffers it points to)
+ * must stay valid until the transfer completes.
+ */
+struct sdio_dc_buf_set {
+	/** Array of @ref count descriptors */
+	const struct sdio_dc_buf *bufs;
+	/** Number of descriptors in @ref bufs */
+	size_t count;
+};
+
+/**
+ * @brief Completion event for the async (zero-copy) data path.
+ *
+ * Identifies which transfer completed. Success or failure is reported
+ * separately by the @c status argument of @ref sdio_dc_completion_cb_t.
+ */
+enum sdio_dc_evt {
+	/** A posted RX buffer set was returned (filled on success) */
+	SDIO_DC_RX_DONE = 0,
+	/** A submitted TX buffer set was returned (consumed on success) */
+	SDIO_DC_TX_DONE = 1,
+};
+
+/**
+ * @brief Async data-path completion callback.
+ *
+ * Signals that ownership of @p bufs returns to the subsystem. On success (@p
+ * status 0), @p len is the total number of bytes received for
+ * @ref SDIO_DC_RX_DONE or consumed for @ref SDIO_DC_TX_DONE across the set;
+ * @p len is unspecified otherwise. @p bufs is the same set passed to
+ * @ref sdio_dc_rx_post / @ref sdio_dc_tx_submit.
+ *
+ * @param dev    SDIO device controller
+ * @param func   function the transfer belongs to
+ * @param evt    completion event
+ * @param bufs   buffer set whose ownership returns to the caller
+ * @param len    total bytes received (RX) or consumed (TX) on success
+ * @param status 0 on success, or a negative errno: -ECONNABORTED if the
+ *               transfer was aborted, -EIO on a transfer/FIFO/bus error
+ * @param user   user data supplied to @ref sdio_dc_set_completion_cb
+ */
+typedef void (*sdio_dc_completion_cb_t)(const struct device *dev,
+					enum sdio_func_num func,
+					enum sdio_dc_evt evt,
+					const struct sdio_dc_buf_set *bufs,
+					uint32_t len, int status, void *user);
+
 /** @cond INTERNAL_HIDDEN */
 __subsystem struct sdio_dc_driver_api {
 	int (*enable)(const struct device *dev);
@@ -99,6 +163,12 @@ __subsystem struct sdio_dc_driver_api {
 	int (*raise_interrupt)(const struct device *dev,
 			       enum sdio_func_num func);
 	int (*get_caps)(const struct device *dev, struct sdio_dc_caps *caps);
+	int (*set_completion_cb)(const struct device *dev,
+				 sdio_dc_completion_cb_t cb, void *user);
+	int (*rx_post)(const struct device *dev, enum sdio_func_num func,
+		       const struct sdio_dc_buf_set *bufs);
+	int (*tx_submit)(const struct device *dev, enum sdio_func_num func,
+			 const struct sdio_dc_buf_set *bufs);
 };
 /** @endcond */
 
@@ -200,6 +270,82 @@ static inline int sdio_dc_get_caps(const struct device *dev,
 		return -ENOSYS;
 	}
 	return api->get_caps(dev, caps);
+}
+
+/**
+ * @brief Register the async data-path completion callback.
+ *
+ * @param dev  SDIO device controller
+ * @param cb   callback invoked when a posted/submitted buffer completes
+ * @param user user data passed to @p cb
+ * @retval 0 on success
+ * @retval -ENOSYS controller has no zero-copy path
+ */
+static inline int sdio_dc_set_completion_cb(const struct device *dev,
+					    sdio_dc_completion_cb_t cb,
+					    void *user)
+{
+	const struct sdio_dc_driver_api *api = (const struct sdio_dc_driver_api *)
+		dev->api;
+
+	if (api->set_completion_cb == NULL) {
+		return -ENOSYS;
+	}
+	return api->set_completion_cb(dev, cb, user);
+}
+
+/**
+ * @brief Post a buffer set to receive an inbound frame (zero-copy RX).
+ *
+ * The controller takes ownership until it fills the set and signals
+ * @ref SDIO_DC_RX_DONE through the completion callback. @p bufs must stay valid
+ * until then.
+ *
+ * @param dev  SDIO device controller
+ * @param func function the set is posted for
+ * @param bufs buffer set the controller may write into
+ * @retval 0 on success
+ * @retval -ENOSYS controller has no zero-copy path
+ * @retval -EBUSY no room to post another transfer
+ */
+static inline int sdio_dc_rx_post(const struct device *dev,
+				  enum sdio_func_num func,
+				  const struct sdio_dc_buf_set *bufs)
+{
+	const struct sdio_dc_driver_api *api = (const struct sdio_dc_driver_api *)
+		dev->api;
+
+	if (api->rx_post == NULL) {
+		return -ENOSYS;
+	}
+	return api->rx_post(dev, func, bufs);
+}
+
+/**
+ * @brief Submit a filled buffer set for the host to read (zero-copy TX).
+ *
+ * The controller takes ownership until the host has read the data and signals
+ * @ref SDIO_DC_TX_DONE through the completion callback. @p bufs must stay valid
+ * until then.
+ *
+ * @param dev  SDIO device controller
+ * @param func function the set is submitted for
+ * @param bufs buffer set holding the data to send
+ * @retval 0 on success
+ * @retval -ENOSYS controller has no zero-copy path
+ * @retval -EBUSY no room to submit another transfer
+ */
+static inline int sdio_dc_tx_submit(const struct device *dev,
+				    enum sdio_func_num func,
+				    const struct sdio_dc_buf_set *bufs)
+{
+	const struct sdio_dc_driver_api *api = (const struct sdio_dc_driver_api *)
+		dev->api;
+
+	if (api->tx_submit == NULL) {
+		return -ENOSYS;
+	}
+	return api->tx_submit(dev, func, bufs);
 }
 
 /** @} */

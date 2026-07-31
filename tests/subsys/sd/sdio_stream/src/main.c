@@ -117,3 +117,94 @@ ZTEST(sdio_stream, test_tx_to_host)
 }
 
 ZTEST_SUITE(sdio_stream, NULL, setup, NULL, NULL, NULL);
+
+/* ----- Zero-copy path (second controller instance) ---------------------- */
+
+#define DC_ZC_NODE DT_NODELABEL(sdio_dc1)
+
+static struct sdio_device zc_endpoint;
+static struct sdio_stream_function zc_sf;
+
+static int zc_fifo(enum sdio_dc_dir dir, uint8_t *data, uint32_t len)
+{
+	const struct device *dc = DEVICE_DT_GET(DC_ZC_NODE);
+	struct sdio_dc_xfer xfer = {
+		.func = SDIO_FUNC_NUM_1,
+		.dir = dir,
+		.reg = FIFO_REG,
+		.increment = false,
+		.data = data,
+		.len = len,
+	};
+
+	return sdio_dc_virtual_access(dc, &xfer);
+}
+
+static void *zc_setup(void)
+{
+	const struct device *dc = DEVICE_DT_GET(DC_ZC_NODE);
+
+	zassert_true(device_is_ready(dc), "controller not ready");
+	zassert_ok(sdio_device_init(&zc_endpoint, dc, NULL));
+	zassert_ok(sdio_stream_function_init(&zc_sf, SDIO_FUNC_NUM_1, FIFO_REG));
+	zassert_ok(sdio_device_register_function(&zc_endpoint, &zc_sf.base));
+	zassert_ok(sdio_device_enable(&zc_endpoint));
+	zassert_true(sdio_device_is_zero_copy(&zc_endpoint), "no zero-copy path");
+	zassert_ok(sdio_stream_function_start(&zc_sf));
+	return NULL;
+}
+
+/* An inbound frame lands directly in the pool packet the consumer reads. */
+ZTEST(sdio_stream_zc, test_zero_copy_rx)
+{
+	const struct device *dc = DEVICE_DT_GET(DC_ZC_NODE);
+	uint8_t tx[40];
+	struct sdio_pkt *pkt;
+
+	for (int i = 0; i < (int)sizeof(tx); i++) {
+		tx[i] = (uint8_t)(0x11 * i);
+	}
+
+	zassert_ok(zc_fifo(SDIO_DC_DIR_WRITE, tx, sizeof(tx)));
+
+	pkt = sdio_stream_read_pkt(&zc_sf, K_MSEC(100));
+	zassert_not_null(pkt, "no packet received");
+	zassert_equal(pkt->len, sizeof(tx), "wrong length");
+	zassert_mem_equal(pkt->data, tx, sizeof(tx), "payload mismatch");
+	/* Zero-copy: the buffer the consumer holds is the one the controller
+	 * filled -- no copy took place in the subsystem.
+	 */
+	zassert_equal_ptr(pkt->data, sdio_dc_virtual_last_rx(dc),
+			  "RX was not zero-copy");
+	sdio_pkt_free(pkt);
+}
+
+/* An outbound packet is handed to the controller without copying. */
+ZTEST(sdio_stream_zc, test_zero_copy_tx)
+{
+	const struct device *dc = DEVICE_DT_GET(DC_ZC_NODE);
+	struct sdio_pkt *pkt = sdio_pkt_alloc(SDIO_PKT_TX);
+	uint8_t rx[24];
+	uint8_t *sent;
+
+	zassert_not_null(pkt, "alloc failed");
+	for (int i = 0; i < (int)sizeof(rx); i++) {
+		pkt->data[i] = (uint8_t)(0xC0 + i);
+	}
+	pkt->len = sizeof(rx);
+	sent = pkt->data;
+
+	zassert_ok(sdio_stream_write_pkt(&zc_sf, pkt));
+
+	/* Host reads the data port. */
+	memset(rx, 0, sizeof(rx));
+	zassert_ok(zc_fifo(SDIO_DC_DIR_READ, rx, sizeof(rx)));
+	for (int i = 0; i < (int)sizeof(rx); i++) {
+		zassert_equal(rx[i], (uint8_t)(0xC0 + i), "payload mismatch");
+	}
+	/* Zero-copy: the controller sent the exact buffer we submitted. */
+	zassert_equal_ptr(sdio_dc_virtual_last_tx(dc), sent,
+			  "TX was not zero-copy");
+}
+
+ZTEST_SUITE(sdio_stream_zc, NULL, zc_setup, NULL, NULL, NULL);
