@@ -38,3 +38,17 @@ The harness executes the following steps:
 - **num_of_transitions** – Expected number of power state transitions in the DUT during test execution.
 - **expected_rms_values** – Target RMS values for each identified execution phase (in milliamps).
 - **tolerance_percentage** – Allowed deviation percentage from the expected RMS values.
+
+General ADC measurements
+************************
+
+The ``general_powershield`` probe uses a second DUT with a pre-installed ADC monitor image.
+The ``pm.soc.measure.general_adc`` test reserves this monitor through ``required_devices``.
+It exports route current in milliamps instead of applying the STM probe's RMS validation.
+Single-ended channel pairs also export rail voltage in millivolts and power in milliwatts.
+Differential routes use the signed reading from ``channels_p`` to calculate current;
+they do not require a separate reading from ``channels_n``. Since a differential shunt
+reading does not provide the rail voltage, these routes do not export voltage or power.
+
+Missing channel data, malformed readings, and incomplete sample counts fail the measurement.
+They are not converted into zero-valued measurements. A valid zero ADC reading is accepted.
