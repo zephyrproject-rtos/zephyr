@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/toolchain.h>
 #include <kernel_internal.h>
 #include <ctf_top.h>
 #include <zephyr/net/net_core.h>
@@ -21,13 +20,6 @@ struct rtio;
 struct rtio_sqe;
 struct rtio_cqe;
 struct rtio_iodev_sqe;
-
-#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP
-__weak uint64_t ctf_top_timestamp_get(void)
-{
-	return timing_ns_get();
-}
-#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP */
 
 static void _get_thread_name(struct k_thread *thread, ctf_bounded_string_t *name)
 {
@@ -332,6 +324,16 @@ void sys_trace_idle(void)
 #ifdef CONFIG_TRACING_IDLE
 	ctf_top_idle();
 #endif
+	/*
+	 * This CPU has run out of work, so whatever it has gathered would sit
+	 * in an unfinished packet until enough further events arrived to fill
+	 * it - on a CPU that has just gone quiet, possibly never. Close it here
+	 * instead, which bounds how long an event can be held to the point the
+	 * CPU next goes idle. Packets are sized to their contents, so closing
+	 * one early costs only what is in it.
+	 */
+	tracing_stream_idle();
+
 	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
 		cpu_load_on_enter_idle();
 	}
