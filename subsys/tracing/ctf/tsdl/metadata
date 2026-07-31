@@ -32,13 +32,26 @@ struct event_header {
 	uint16_t id;
 };
 
-/* Common context carried by every event. cpu_id is Zephyr's sequential CPU
- * number, so an SMP trace can be demultiplexed per CPU. It lives in the event
- * common context rather than the event header because babeltrace2 consumes the
- * CTF 1.8 event header itself and does not expose its extra fields to readers,
- * while the common context is surfaced as event.common_context_field.
+/* Events are gathered into fixed-size packets, one sequence of them per CPU.
+ * content_size is what makes that possible: it is written when a packet is
+ * closed and tells the reader where the events stop and the tail padding
+ * begins, so the size never has to be known in advance.
+ *
+ * cpu_id names the CPU that produced the packet. For a backend that carries
+ * one link, every CPU's packets travel interleaved on it and cpu_id is what
+ * lets the host split them back into one file per CPU.
  */
-struct event_context {
+struct packet_header {
+	uint32_t magic;
+	uint32_t stream_id;
+};
+
+struct packet_context {
+	uint64_clock_t timestamp_begin;
+	uint64_clock_t timestamp_end;
+	uint32_t content_size;
+	uint32_t packet_size;
+	uint32_t events_discarded;
 	uint8_t cpu_id;
 };
 
@@ -46,11 +59,13 @@ trace {
 	major = 1;
 	minor = 8;
 	byte_order = le;
+	packet.header := struct packet_header;
 };
 
 stream {
+	id = 0;
+	packet.context := struct packet_context;
 	event.header := struct event_header;
-	event.context := struct event_context;
 };
 
 event {
