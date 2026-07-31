@@ -89,28 +89,6 @@ void tracing_format_string(const char *str, ...);
 void tracing_format_raw_data(uint8_t *data, uint32_t length);
 
 /**
- * @brief Tracing a message in raw data format, timestamped at emission.
- *
- * Identical to tracing_format_raw_data(), except that the first
- * sizeof(uint64_t) bytes of @a data are overwritten with a tracing timestamp
- * sampled while the emitting CPU holds the tracing lock. Reading the clock at
- * that point rather than at the call site is what keeps the timestamps in the
- * stream monotonic: on SMP the caller may otherwise lose the race for the
- * tracing lock to a CPU that sampled the clock later, and insert an event with
- * an older timestamp behind it.
- *
- * Callers must reserve the leading timestamp slot themselves, so @a length must
- * be at least sizeof(uint64_t). Intended for tracing formats that carry a
- * timestamp in their event header; other callers want
- * tracing_format_raw_data().
- *
- * @param data   Raw data to be traced, with sizeof(uint64_t) leading bytes
- *               reserved for the timestamp.
- * @param length Raw data length, including the reserved timestamp.
- */
-void tracing_format_raw_data_stamped(uint8_t *data, uint32_t length);
-
-/**
  * @brief Tracing a message in tracing data format.
  *
  * @param tracing_data_array Tracing_data format data array to be traced.
