@@ -59,6 +59,22 @@ void sdio_dc_virtual_set_irq_cb(const struct device *dc,
  */
 int sdio_dc_virtual_access(const struct device *dc, struct sdio_dc_xfer *xfer);
 
+/**
+ * @brief Last buffer filled through the zero-copy RX path (test inspection).
+ *
+ * @param dc virtual controller device
+ * @return pointer to the most recently completed RX buffer, or NULL
+ */
+uint8_t *sdio_dc_virtual_last_rx(const struct device *dc);
+
+/**
+ * @brief Last buffer consumed through the zero-copy TX path (test inspection).
+ *
+ * @param dc virtual controller device
+ * @return pointer to the most recently completed TX buffer, or NULL
+ */
+uint8_t *sdio_dc_virtual_last_tx(const struct device *dc);
+
 #ifdef __cplusplus
 }
 #endif

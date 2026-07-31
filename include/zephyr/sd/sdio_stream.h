@@ -8,10 +8,11 @@
  * @file
  * @brief Optional device-side SDIO streaming (packet/poll) extension
  *
- * A streaming layer on top of @ref sdio_device for device/slave functions
- * (Wi-Fi/BT companion transports and similar). It adds per-function RX/TX
- * FIFOs and a @c poll() style wait, carrying payloads in @ref net_buf packets,
- * on top of the plain register-window / FIFO model of
+ * A streaming layer on top of @ref sdio_device for high-throughput device/slave
+ * functions (Wi-Fi/BT companion transports and similar). It adds per-function
+ * RX/TX FIFOs, an asynchronous receive path and a @c poll() style wait, using
+ * @ref net_buf packets so payloads cross into Wi-Fi/BT/USB stacks without a
+ * copy, on top of the plain register-window / FIFO model of
  * @ref sdio_device_function.
  *
  * The data-path model is adapted from the NXP @c sd_dev proposal
@@ -62,8 +63,21 @@ struct sdio_stream_function {
 	/** @cond INTERNAL_HIDDEN */
 	struct k_fifo rx_fifo;
 	struct k_fifo tx_fifo;
+	bool zero_copy; /* controller offers the buffer-ownership path */
 	/** @endcond */
 };
+
+/**
+ * @brief Allocate a stream packet from the streaming pool.
+ *
+ * The returned buffer is empty; fill it with @c net_buf_add() / related helpers
+ * before passing it to @ref sdio_stream_write_pkt. Release an unused buffer with
+ * @c net_buf_unref().
+ *
+ * @param timeout wait timeout if the pool is empty
+ * @return buffer with one reference, or NULL on timeout/exhaustion
+ */
+struct net_buf *sdio_stream_alloc(k_timeout_t timeout);
 
 /**
  * @brief Initialize a streaming function.
@@ -80,6 +94,21 @@ struct sdio_stream_function {
  */
 int sdio_stream_function_init(struct sdio_stream_function *sf,
 			      enum sdio_func_num num, uint32_t fifo_reg);
+
+/**
+ * @brief Start the streaming data path.
+ *
+ * Call after the function is registered and the device is enabled. If the
+ * backing controller offers a zero-copy path, this posts receive buffers so
+ * inbound frames land directly in pool packets; otherwise it is a no-op and
+ * the synchronous FIFO-handler path is used.
+ *
+ * @param sf stream function
+ * @retval 0 on success
+ * @retval -EINVAL invalid argument
+ * @retval -ENOMEM could not post any receive buffer
+ */
+int sdio_stream_function_start(struct sdio_stream_function *sf);
 
 /**
  * @brief Blocking read of one received packet.
@@ -110,7 +139,7 @@ int sdio_stream_read(struct sdio_stream_function *sf, uint8_t *data,
  *
  * The data is copied into a pool buffer, queued, and the SDIO interrupt is
  * asserted towards the host. The host retrieves it by reading the function
- * data port.
+ * data port (register-access controllers) or via the controller's push path.
  *
  * @param sf   stream function
  * @param data payload
@@ -121,6 +150,21 @@ int sdio_stream_read(struct sdio_stream_function *sf, uint8_t *data,
  */
 int sdio_stream_write(struct sdio_stream_function *sf, const uint8_t *data,
 		      uint16_t len);
+
+/**
+ * @brief Queue a caller-owned packet for transmission (zero-copy).
+ *
+ * Takes ownership of @p buf and sends it without copying its payload. On the
+ * zero-copy path the packet is freed once the host has read it; on the
+ * fallback path it is freed when the host drains the data port.
+ *
+ * @param sf  stream function
+ * @param buf packet to send (from @ref sdio_stream_alloc, payload length set
+ *            with @c net_buf_add())
+ * @retval 0 on success (ownership transferred)
+ * @retval -EINVAL invalid argument
+ */
+int sdio_stream_write_pkt(struct sdio_stream_function *sf, struct net_buf *buf);
 
 /**
  * @brief Wait for stream events.
