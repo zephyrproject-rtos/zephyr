@@ -185,11 +185,14 @@ int coap_oscore_context_init(struct coap_oscore_init_params *params,
 		return -EINVAL;
 	}
 
-	/* Currently session reuse is not supported */
+#if !defined(CONFIG_COAP_OSCORE_CONTEXT_REUSE)
+	/* If context reuse is not enabled, the master secret and salt must be unique at every boot.
+	 */
 	if (!params->fresh_master_secret_salt) {
-		LOG_ERR("Session reuse is not supported; fresh_master_secret_salt must be true");
+		LOG_ERR("Session reuse is not activated. fresh_master_secret_salt must be true");
 		return -ENOTSUP;
 	}
+#endif
 
 	/* Map the Zephyr parameters onto the uoscore initialization parameters.
 	 * uoscore keeps pointers to master_secret, master_salt, id_context and
