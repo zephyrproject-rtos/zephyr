@@ -311,7 +311,10 @@ For a quick look without installing any external tooling,
 the console, in the spirit of SEGGER SystemView or Trace Compass.
 It decodes the packed CTF records itself (reading the field layout from the same
 :zephyr_file:`subsys/tracing/ctf/tsdl/metadata`) so it has no dependencies
-beyond Python 3.
+beyond Python 3. It reads a raw capture directly, with no need to split the
+per-CPU streams out of it first; because the timeline draws a single
+running-thread lane it shows one CPU at a time, the first one seen unless
+``--cpu`` selects another.
 
 With the default semihosting backend the run produces a ``tracing.bin`` in the
 build directory:
