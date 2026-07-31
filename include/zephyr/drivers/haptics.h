@@ -17,7 +17,7 @@
  * @brief Interfaces for haptic drivers.
  * @defgroup haptics_interface Haptics
  * @since 4.0
- * @version 0.3.0
+ * @version 0.4.0
  * @ingroup io_interfaces
  * @{
  *
@@ -127,6 +127,26 @@ enum haptics_source {
 };
 
 /**
+ * @brief Options for GPI-triggered effects
+ *
+ * Trigger options for haptic drivers that support edge- or level-triggered effects. A value of zero
+ * is reserved for @ref HAPTICS_TRIGGER_NONE to indicate that haptic effects should be disabled for
+ * the specified trigger. Refer to device drivers for implementation details.
+ */
+enum haptics_trigger_type {
+	HAPTICS_TRIGGER_NONE,             /**< Disable triggered effects */
+	HAPTICS_TRIGGER_RISING = BIT(0),  /**< Rising-edge (low to high) GPI event */
+	HAPTICS_TRIGGER_FALLING = BIT(1), /**< Falling-edge (high to low) GPI event */
+	HAPTICS_TRIGGER_HIGH = BIT(2),    /**< Level-triggered (high) GPI condition */
+	HAPTICS_TRIGGER_LOW = BIT(3),     /**< Level-triggered (low) GPI condition */
+
+	/* Device-specific GPI trigger options can follow, refer to the device’s header file */
+	/** @cond INTERNAL_HIDDEN */
+	HAPTICS_TRIGGER_PRIV_START = BIT(4),
+	/** @endcond */
+};
+
+/**
  * @brief Haptics source configuration
  *
  * Most haptic drivers provide pre-programmed effects or expose methods for programming new effects
@@ -202,6 +222,15 @@ typedef int (*haptics_set_level_t)(const struct device *dev, const enum haptics_
 				   const union haptics_config *const cfg, const uint32_t level);
 
 /**
+ * @brief Assign a haptic effect to a specified GPI event or condition.
+ * See haptics_set_trigger() for argument description.
+ */
+typedef int (*haptics_set_trigger_t)(const struct device *dev, const uint32_t trigger,
+				     const enum haptics_trigger_type type,
+				     const enum haptics_source src,
+				     const union haptics_config *const cfg, const uint32_t level);
+
+/**
  * @brief Start playback for a haptic effect.
  * See haptics_start_output() for argument description.
  */
@@ -219,6 +248,13 @@ typedef int (*haptics_stop_output_t)(const struct device *dev);
  */
 typedef int (*haptics_stream_samples_t)(const struct device *dev, const uint8_t *const samples,
 					const size_t len);
+
+/**
+ * @brief Trigger a haptic effect.
+ * See haptics_trigger() for argument description.
+ */
+typedef int (*haptics_trigger_t)(const struct device *dev, const uint32_t trigger,
+				 const enum haptics_trigger_type type);
 
 /**
  * @driver_ops{Haptics}
@@ -249,6 +285,10 @@ __subsystem struct haptics_driver_api {
 	 */
 	haptics_set_level_t set_level;
 	/**
+	 * @driver_ops_optional @copybrief haptics_set_trigger
+	 */
+	haptics_set_trigger_t set_trigger;
+	/**
 	 * @driver_ops_mandatory @copybrief haptics_start_output
 	 */
 	haptics_start_output_t start_output;
@@ -260,6 +300,10 @@ __subsystem struct haptics_driver_api {
 	 * @driver_ops_optional @copybrief haptics_stream_samples
 	 */
 	haptics_stream_samples_t stream_samples;
+	/**
+	 * @driver_ops_optional @copybrief haptics_trigger
+	 */
+	haptics_trigger_t trigger;
 };
 
 /**
@@ -454,6 +498,47 @@ static inline int z_impl_haptics_set_level(const struct device *dev, const enum 
 }
 
 /**
+ * @brief Assign a haptic effect to a specified GPI event or condition
+ *
+ * Most haptic drivers support edge- or level-triggered effects to reduce latency for time-critical
+ * or rapid effects. Triggered effects are typically @ref HAPTICS_SOURCE_ROM or
+ * @ref HAPTICS_SOURCE_RAM waveforms.
+ *
+ * @attention @p level can specify gain or attenuation for the triggered-effect. The interaction
+ * between @p level and @ref haptics_set_level() is driver-specific. Refer to device drivers for
+ * implementation details.
+ *
+ * @param[in] dev Pointer to the device structure for the haptic device instance
+ * @param[in] trigger Identifier for the desired trigger
+ * @param[in] type Bitmask of trigger types (of type @ref haptics_trigger_type)
+ * @param[in] src Playback source (of type @ref haptics_source)
+ * @param[in] cfg Source configuration (of type @ref haptics_config) or NULL
+ * @param[in] level Device-specific output level value, refer to device drivers for details
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS if not implemented
+ */
+__syscall int haptics_set_trigger(const struct device *dev, const uint32_t trigger,
+				  const enum haptics_trigger_type type,
+				  const enum haptics_source src,
+				  const union haptics_config *const cfg, const uint32_t level);
+
+static inline int z_impl_haptics_set_trigger(const struct device *dev, const uint32_t trigger,
+					     const enum haptics_trigger_type type,
+					     const enum haptics_source src,
+					     const union haptics_config *const cfg,
+					     const uint32_t level)
+{
+	const struct haptics_driver_api *api = DEVICE_API_GET(haptics, dev);
+
+	if (api->set_trigger == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_trigger(dev, trigger, type, src, cfg, level);
+}
+
+/**
  * @brief Start playback for a haptic effect
  *
  * Start playback for a haptic effect specified using @ref haptics_select_source(). If no source is
@@ -528,6 +613,40 @@ static inline int z_impl_haptics_stream_samples(const struct device *dev,
 	__ASSERT_NO_MSG(samples != NULL);
 
 	return api->stream_samples(dev, samples, len);
+}
+
+/**
+ * @brief Trigger a haptic effect
+ *
+ * Performs action required to produce the specified haptic effect. For example, if a rising-edge
+ * effect is set using @ref haptics_set_trigger() and this function is called with @p type set to
+ * @ref HAPTICS_TRIGGER_RISING, then a device driver may drive the specified pin high. Refer to
+ * device drivers for implementation details.
+ *
+ * @attention The application is responsible for managing the physical line level. For example,
+ * calling this function with @p type set to @ref HAPTICS_TRIGGER_RISING when the physical level is
+ * already high may result in a no-op.
+ *
+ * @param[in] dev Pointer to the device structure for the haptic device instance
+ * @param[in] trigger Identifier for the desired trigger
+ * @param[in] type Trigger type (of type @ref haptics_trigger_type)
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS if not implemented
+ */
+__syscall int haptics_trigger(const struct device *dev, const uint32_t trigger,
+			      const enum haptics_trigger_type type);
+
+static inline int z_impl_haptics_trigger(const struct device *dev, const uint32_t trigger,
+					 const enum haptics_trigger_type type)
+{
+	const struct haptics_driver_api *api = DEVICE_API_GET(haptics, dev);
+
+	if (api->trigger == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->trigger(dev, trigger, type);
 }
 
 /**
