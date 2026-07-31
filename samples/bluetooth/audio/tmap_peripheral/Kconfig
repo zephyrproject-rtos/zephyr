@@ -54,6 +54,34 @@ config TMAP_PERIPHERAL_STEREO
 
 endchoice # TMAP_PERIPHERAL_LOCATION
 
+config TMAP_PERIPHERAL_ROLE_CT
+	bool "TMAP Call Terminal (CT) role"
+	default y
+	help
+	  Advertise the TMAP Call Terminal role. Compiles in and
+	  initializes the CCP client used to interact with a peer Call
+	  Gateway (typically a phone). Disable to build a media-only
+	  peripheral that does not participate in call control.
+
+config TMAP_PERIPHERAL_ROLE_UMR
+	bool "TMAP Unicast Media Receiver (UMR) role"
+	default y
+	help
+	  Advertise the TMAP Unicast Media Receiver role. Compiles in and
+	  initializes the MCP client on top of the BAP unicast sink to
+	  interact with a peer Unicast Media Sender. Disable to build a
+	  call-only peripheral that does not receive media playback.
+
+config TMAP_PERIPHERAL_AUTO_CTRL
+	bool "Run the CT/MCC control demo after TMAP discovery"
+	depends on TMAP_PERIPHERAL_ROLE_CT || TMAP_PERIPHERAL_ROLE_UMR
+	default y
+	help
+	  When enabled the sample originates a call via CCP and issues a
+	  play/pause via MCP after discovering the peer. Disable this to
+	  keep the sample as a passive media sink (UMR) that waits for the
+	  peer to open a CIS to it.
+
 menu "Audio playback"
 	depends on LIBLC3 && I2S && AUDIO_CODEC
 

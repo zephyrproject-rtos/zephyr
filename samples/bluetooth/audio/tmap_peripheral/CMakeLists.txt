@@ -8,9 +8,15 @@ target_sources(app PRIVATE
   src/main.c
   src/vcp_vol_renderer.c
   src/bap_unicast_sr.c
-  src/ccp_call_ctrl.c
-  src/mcp_ctlr.c
   src/le_audio_playback.c
+)
+
+target_sources_ifdef(CONFIG_TMAP_PERIPHERAL_ROLE_CT app PRIVATE
+  src/ccp_call_ctrl.c
+)
+
+target_sources_ifdef(CONFIG_TMAP_PERIPHERAL_ROLE_UMR app PRIVATE
+  src/mcp_ctlr.c
 )
 
 target_sources_ifdef(CONFIG_TMAP_PERIPHERAL_DUO app PRIVATE

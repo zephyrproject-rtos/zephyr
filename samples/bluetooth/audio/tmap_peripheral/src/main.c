@@ -37,9 +37,21 @@
 #include "le_audio_playback.h"
 #include "tmap_peripheral.h"
 
+/* Advertised and registered TMAP role mask derived from Kconfig. */
+#define TMAP_PERIPHERAL_ROLE_MASK ( \
+	(IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT)  ? BT_TMAP_ROLE_CT  : 0) | \
+	(IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR) ? BT_TMAP_ROLE_UMR : 0))
+
+BUILD_ASSERT(TMAP_PERIPHERAL_ROLE_MASK != 0,
+	     "At least one of CONFIG_TMAP_PERIPHERAL_ROLE_CT / _ROLE_UMR must be set");
+
 static struct bt_conn *default_conn;
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_CT)
 static struct k_work_delayable call_terminate_set_work;
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_CT */
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)
 static struct k_work_delayable media_pause_set_work;
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
 
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),    /* ASCS UUID */
@@ -56,7 +68,7 @@ static const uint8_t cap_addata[] = {
 
 static uint8_t tmap_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL),                    /* TMAS UUID */
-	BT_BYTES_LIST_LE16(BT_TMAP_ROLE_UMR | BT_TMAP_ROLE_CT), /* TMAP Role */
+	BT_BYTES_LIST_LE16(TMAP_PERIPHERAL_ROLE_MASK),          /* TMAP Role */
 };
 
 static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
@@ -187,6 +199,7 @@ static const struct bt_le_ext_adv_cb adv_cb = {
 #endif /* CONFIG_BT_PRIVACY && CONFIG_BT_CSIP_SET_MEMBER */
 };
 
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_CT)
 static void audio_timer_timeout(struct k_work *work)
 {
 	int err = ccp_terminate_call();
@@ -197,7 +210,9 @@ static void audio_timer_timeout(struct k_work *work)
 		printk("Error sending call terminate command!\n");
 	}
 }
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_CT */
 
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)
 static void media_play_timeout(struct k_work *work)
 {
 	int err = mcp_send_cmd(BT_MCS_OPC_PAUSE);
@@ -208,6 +223,7 @@ static void media_play_timeout(struct k_work *work)
 		printk("Error sending pause command!\n");
 	}
 }
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
 
 int main(void)
 {
@@ -222,11 +238,15 @@ int main(void)
 
 	printk("Bluetooth initialized\n");
 
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_CT)
 	k_work_init_delayable(&call_terminate_set_work, audio_timer_timeout);
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_CT */
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)
 	k_work_init_delayable(&media_pause_set_work, media_play_timeout);
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
 
 	printk("Initializing TMAP and setting role\n");
-	err = bt_tmap_register(BT_TMAP_ROLE_CT | BT_TMAP_ROLE_UMR);
+	err = bt_tmap_register(TMAP_PERIPHERAL_ROLE_MASK);
 	if (err != 0) {
 		return err;
 	}
@@ -298,19 +318,24 @@ int main(void)
 	err = k_sem_take(&sem_discovery_done, K_FOREVER);
 	__ASSERT_NO_MSG(err == 0);
 
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_CT)
 	err = ccp_call_ctrl_init(default_conn);
 	if (err != 0) {
 		return err;
 	}
 	printk("CCP initialized\n");
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_CT */
 
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)
 	err = mcp_ctlr_init(default_conn);
 	if (err != 0) {
 		return err;
 	}
 	printk("MCP initialized\n");
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
 
-	if (peer_is_cg) {
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_CT)
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_cg) {
 		/* Initiate a call with CCP */
 		err = ccp_originate_call();
 		if (err != 0) {
@@ -319,8 +344,10 @@ int main(void)
 		/* Start timer to send terminate call command */
 		k_work_schedule(&call_terminate_set_work, K_MSEC(2000));
 	}
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_CT */
 
-	if (peer_is_ums) {
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_ums) {
 		/* Play media with MCP */
 		err = mcp_send_cmd(BT_MCS_OPC_PLAY);
 		if (err != 0) {
@@ -335,6 +362,7 @@ int main(void)
 			printk("failed to take sem_disconnected (err %d)\n", err);
 		}
 	}
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
 
 	return 0;
 }
