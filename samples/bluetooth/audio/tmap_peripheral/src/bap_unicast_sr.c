@@ -294,17 +294,16 @@ static bool data_func_cb(struct bt_data *data, void *user_data)
 	}
 
 	if (data->type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
+		/* Log unknown CCIDs but do not reject: rejecting causes Pixel's
+		 * Update Metadata (which advertises its own MCS CCID) to fail
+		 * mid-stream. The ASCS layer already warns about unknown CCIDs.
+		 */
 		for (uint8_t j = 0U; j < data->data_len; j++) {
 			const uint8_t ccid = data->data[j];
 
 			if (!(IS_ENABLED(CONFIG_BT_TBS_CLIENT_CCID) &&
 			      bt_tbs_client_get_by_ccid(default_conn, ccid) != NULL)) {
-				printk("CCID %u is unknown", ccid);
-				*func_param->rsp =
-					BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
-							BT_BAP_ASCS_REASON_NONE);
-
-				return false;
+				printk("CCID %u is unknown (ignored)\n", ccid);
 			}
 		}
 	}
