@@ -121,6 +121,10 @@ test_nordic_nrf91_slm: nordic_nrf91_slm {
 	mdm-power-gpios = <&test_gpio 0 0>;
 };
 
+test_nordic_nrf91_sm_v2: nordic_nrf91_sm_v2 {
+	compatible = "nordic,nrf91-sm-v2";
+};
+
 test_sqn_gm02s: sqn_gm02s {
 	compatible = "sqn,gm02s";
 
