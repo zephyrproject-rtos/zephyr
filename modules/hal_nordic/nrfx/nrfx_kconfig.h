@@ -101,36 +101,6 @@
 #ifdef CONFIG_NRFX_EGU_LOG
 #define NRFX_EGU_CONFIG_LOG_ENABLED 1
 #endif
-#ifdef CONFIG_NRFX_EGU0
-#define NRFX_EGU0_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_EGU1
-#define NRFX_EGU1_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_EGU2
-#define NRFX_EGU2_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_EGU3
-#define NRFX_EGU3_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_EGU4
-#define NRFX_EGU4_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_EGU5
-#define NRFX_EGU5_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_EGU10
-#define NRFX_EGU10_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_EGU20
-#define NRFX_EGU20_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_EGU020
-#define NRFX_EGU020_ENABLED 1
-#endif
-#ifdef CONFIG_NRFX_EGU130
-#define NRFX_EGU130_ENABLED 1
-#endif
 
 #ifdef CONFIG_NRFX_GRTC
 #define NRFX_GRTC_ENABLED 1
