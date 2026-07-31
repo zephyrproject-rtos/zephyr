@@ -118,6 +118,14 @@
 			reg = <0x40000c00 0x400>;
 		};
 
+		supc: supc@40001800 {
+			compatible = "microchip,supc-g1";
+			reg = <0x40001800 0x20>;
+			standby-regulator-sel = <0>;
+			vref-standby-mode = <0>;
+			status = "disabled";
+		};
+
 		wdt: watchdog@40002000 {
 			compatible = "microchip,wdt-g1";
 			reg = <0x40002000 13>;

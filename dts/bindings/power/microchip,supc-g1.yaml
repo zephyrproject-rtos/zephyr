@@ -1,0 +1,72 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip G1 SUPC
+
+description: |
+  Microchip G1 SUPC peripherals.
+
+  Group G1 SUPC includes the following hardware peripherals:
+    - module name="SUPC" id="U2117" version="2.1.1"
+
+compatible: "microchip,supc-g1"
+
+include:
+  - name: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  standby-regulator-sel:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+    description: |
+     Voltage regulator selection in standby mode.
+
+     When 0, the voltage regulator switches to Low-Power
+     mode whenever the device enters Standby Sleep mode.
+     when 1, the voltage regulator remains in Normal
+     mode during Standby Sleep mode. Low-power mode is
+     configured as default value.
+
+  vref-on-demand:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+    description: |
+      Voltage reference on demand comtrol.
+
+      when 0, The voltage reference remains enabled whenever
+      it is configured to be enabled. when 1, The voltage reference
+      is enabled only when a peripheral requests it and is
+      automatically disabled when no peripheral is using it.
+
+  vref-standby-mode:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+    description: |
+      Voltage reference standby configuration.
+
+      The voltage reference is halted during standby sleep mode upon 0.
+      when 1, The voltage reference is not stopped in standby sleep mode.
+      If vref-on-demand = 1, the voltage reference will be running when a
+      peripheral is requesting it. If 0, the voltage reference will always be
+      running in standby sleep mode.
+
+examples:
+  - |
+    supc: supc@40001800 {
+      compatible = "microchip,supc-g1";
+      reg = <0x40001800 0x20>;
+      vref-standby-mode = <1>;
+      status = "disabled";
+    };
