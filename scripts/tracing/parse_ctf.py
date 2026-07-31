@@ -61,12 +61,12 @@ def main():
         ns_from_origin = msg.default_clock_snapshot.ns_from_origin
         event = msg.event
 
-        # Zephyr's sequential CPU id, carried as the event common context by
-        # every event. Guarded so that traces captured with an older metadata
-        # that has no common context still parse.
+        # Zephyr's sequential CPU id, carried by the context of the packet the
+        # event came in. Guarded so a trace captured with an older metadata
+        # that has no packet context still parses.
         cpu = None
-        if event.common_context_field is not None:
-            cpu = event.common_context_field.get("cpu_id", None)
+        if event.packet is not None and event.packet.context_field is not None:
+            cpu = event.packet.context_field.get("cpu_id", None)
         cpu_string = "" if cpu is None else f"(cpu: {cpu})"
 
         # Compute the time difference since the last event message.
