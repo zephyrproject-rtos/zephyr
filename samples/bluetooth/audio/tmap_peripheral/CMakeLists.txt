@@ -12,6 +12,9 @@ target_sources(app PRIVATE
   src/mcp_ctlr.c
 )
 
+add_subdirectory(${ZEPHYR_BASE}/samples/bluetooth/audio/common
+                 ${CMAKE_BINARY_DIR}/bt_audio_common)
+
 target_sources_ifdef(CONFIG_TMAP_PERIPHERAL_DUO app PRIVATE
   src/csip_set_member.c
 )
