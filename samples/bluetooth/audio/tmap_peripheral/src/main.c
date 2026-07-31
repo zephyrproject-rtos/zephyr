@@ -165,6 +165,56 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.security_changed = security_changed,
 };
 
+/* Peers such as Pixel phones require MITM for LE Audio unicast. Expose
+ * DisplayYesNo IO caps (passkey_display + passkey_confirm) and auto-accept
+ * numeric comparison so bonding completes without a UI on the device.
+ *
+ * WARNING: auto-confirming the passkey provides no real MITM protection.
+ * A production build with a UI must show the passkey to the user and only
+ * call bt_conn_auth_passkey_confirm() on explicit user acceptance.
+ */
+static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
+{
+	printk("Passkey for %s: %06u\n", bt_conn_dst_str(conn), passkey);
+}
+
+static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
+{
+	int err;
+
+	printk("Confirming passkey for %s: %06u\n", bt_conn_dst_str(conn), passkey);
+	err = bt_conn_auth_passkey_confirm(conn);
+	if (err != 0) {
+		printk("Failed to confirm passkey (err %d)\n", err);
+	}
+}
+
+static void auth_cancel(struct bt_conn *conn)
+{
+	printk("Pairing cancelled: %s\n", bt_conn_dst_str(conn));
+}
+
+static struct bt_conn_auth_cb auth_cb = {
+	.passkey_display = auth_passkey_display,
+	.passkey_confirm = auth_passkey_confirm,
+	.cancel = auth_cancel,
+};
+
+static void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
+{
+	printk("Pairing failed with %s: reason %u\n", bt_conn_dst_str(conn), reason);
+}
+
+static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
+{
+	printk("Pairing complete with %s (bonded=%d)\n", bt_conn_dst_str(conn), bonded);
+}
+
+static struct bt_conn_auth_info_cb auth_info_cb = {
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
+};
+
 #if defined(CONFIG_BT_PRIVACY) && defined(CONFIG_BT_CSIP_SET_MEMBER)
 static bool adv_rpa_expired_cb(struct bt_le_ext_adv *adv)
 {
@@ -237,6 +287,18 @@ int main(void)
 	}
 
 	printk("Bluetooth initialized\n");
+
+	err = bt_conn_auth_cb_register(&auth_cb);
+	if (err != 0) {
+		printk("Failed to register auth callbacks (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_conn_auth_info_cb_register(&auth_info_cb);
+	if (err != 0) {
+		printk("Failed to register auth info callbacks (err %d)\n", err);
+		return err;
+	}
 
 #if defined(CONFIG_TMAP_PERIPHERAL_ROLE_CT)
 	k_work_init_delayable(&call_terminate_set_work, audio_timer_timeout);
