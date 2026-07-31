@@ -175,7 +175,7 @@ void stack_buffer_scenarios(void)
 	 * stack pointer up to the highest addresses in the buffer
 	 * Starting from &val which is close enough to stack pointer
 	 */
-	stack_ptr = &val;
+	stack_ptr = (char *)&val;
 	for (pos = stack_ptr; pos < stack_end; pos++) {
 		/* pos is volatile so this doesn't get optimized out */
 		val = *pos;
