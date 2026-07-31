@@ -319,6 +319,15 @@ class Trace:
     """Parsed trace: ordered events plus reconstructed running timeline."""
 
     def __init__(self):
+        self.reset()
+
+    def reset(self):
+        """Empty the trace in place.
+
+        Deliberately not a fresh object: the front-ends hold on to the Trace for
+        the lifetime of the display, and rebuilding it on every live update
+        would leave them rendering an orphan.
+        """
         self.events = []
         self.threads = {}  # tid -> {name, prio, stack_base, stack_size}
         self.segments = []  # (start_ts, end_ts, tid, cpu) running thread spans
@@ -386,7 +395,10 @@ class TraceReader:
 
     def _reset_derived(self):
         """Clear everything replayed from the decoded events."""
-        self.tr = Trace()
+        if getattr(self, "tr", None) is None:
+            self.tr = Trace()
+        else:
+            self.tr.reset()
         # running-thread / ISR state, per CPU
         self._cur_tid = {}  # cpu -> tid
         self._seg_start = {}  # cpu -> ts
@@ -1215,7 +1227,10 @@ def run_curses(stdscr, reader, fh=None):
     # Live follow: when reading a file that is still being written, keep the
     # view pinned to the latest events. Panning/zooming detaches; 'f' re-pins.
     live_follow = live
-    nthreads = len(tr.threads)
+    # Lanes are rebuilt when either count changes: a secondary CPU comes
+    # online partway through boot, so the CPU set grows during a live trace
+    # just as the thread set does.
+    lane_sig = (len(tr.threads), len(tr.cpus))
 
     def clampview():
         nonlocal view0, view1
@@ -1254,10 +1269,13 @@ def run_curses(stdscr, reader, fh=None):
             except OSError:
                 chunk = b""
             if reader.feed(chunk):
-                ts_list.extend(ev.ts for ev in tr.events[len(ts_list) :])
+                # Rebuilt rather than extended: the trace is reassembled in
+                # timestamp order on every update, so a late packet from
+                # another CPU can land events before the end of the list.
+                ts_list[:] = [ev.ts for ev in tr.events]
                 full_span = max(1, tr.t1 - tr.t0)
-                if len(tr.threads) != nthreads:
-                    nthreads = len(tr.threads)
+                if (len(tr.threads), len(tr.cpus)) != lane_sig:
+                    lane_sig = (len(tr.threads), len(tr.cpus))
                     order = all_lanes(tr)
             if live_follow and tr.t1 > tr.t0:
                 span = max(100, view1 - view0)
