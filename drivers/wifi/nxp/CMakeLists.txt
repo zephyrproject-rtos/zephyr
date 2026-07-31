@@ -316,7 +316,7 @@ zephyr_code_relocate(FILES ${ZEPHYR_BASE}/kernel/thread.c
                      LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
 
 zephyr_code_relocate(FILES ${ZEPHYR_BASE}/kernel/sleep.c
-                     FILTER ".*\\.z_impl_k_sleep|.*\\.z_tick_sleep"
+                     FILTER ".*\\.z_impl_k_sleep_ticks"
                      LOCATION ${QUICK_ACCESS_CODE_AREA} NOKEEP)
 
 string(JOIN "" NXP_CONDVAR_FILTER
