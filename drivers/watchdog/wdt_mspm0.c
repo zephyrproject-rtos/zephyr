@@ -79,9 +79,6 @@ BUILD_ASSERT(offsetof(struct wwdt_mspm0_regs, WWDTSTAT) == 0x110CU);
 /* WINDOW0 [10:8] and WINDOW1 [14:12] field offsets */
 #define WWDT_CTL0_WINDOW0_OFS 8U
 #define WWDT_CTL0_WINDOW1_OFS 12U
-/* STISM [17] — stop-in-sleep */
-#define WWDT_CTL0_STISM_CONT  0x00000000U
-#define WWDT_CTL0_STISM_STOP  0x00020000U
 
 /* WWDTCTL1 */
 #define WWDT_CTL1_KEY 0xBE000000U
@@ -166,7 +163,7 @@ static int wwdt_mspm0_calculate_timeout_periods(const struct device *dev,
 	}
 	data->clock_divider = MIN(data->clock_divider, 7U);
 
-	/* Find smallest closed-window fraction that enforces min_ms */
+	/* Determine closed window as per the requested lower limit of watchdog feed timeout */
 	for (window_idx = 0; window_idx < ARRAY_SIZE(window_sixteenths); window_idx++) {
 		if (min_ms <= (actual_timeout * window_sixteenths[window_idx] / 16)) {
 			break;
@@ -188,12 +185,12 @@ static int wwdt_mspm0_setup(const struct device *dev, uint8_t options)
 	const struct wwdt_mspm0_config *config = dev->config;
 	struct wwdt_mspm0_data *data = dev->data;
 	struct wwdt_mspm0_regs *base = config->base;
-	uint32_t stism = WWDT_CTL0_STISM_CONT;
 	uint32_t window0_closed;
 	uint32_t window1_closed;
 
-	if ((options & WDT_OPT_PAUSE_IN_SLEEP) == WDT_OPT_PAUSE_IN_SLEEP) {
-		stism = WWDT_CTL0_STISM_STOP;
+	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
+		/* hw_wwdt.h: STISM has no effect for the global Window Watchdog. */
+		return -ENOTSUP;
 	}
 
 	if ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) != WDT_OPT_PAUSE_HALTED_BY_DBG) {
@@ -212,7 +209,7 @@ static int wwdt_mspm0_setup(const struct device *dev, uint8_t options)
 		window1_closed = 0;
 	}
 
-	base->WWDTCTL0 = WWDT_CTL0_KEY | data->clock_divider | data->period_count | stism |
+	base->WWDTCTL0 = WWDT_CTL0_KEY | data->clock_divider | data->period_count |
 			 window0_closed |
 			 (window1_closed << (WWDT_CTL0_WINDOW1_OFS - WWDT_CTL0_WINDOW0_OFS));
 
