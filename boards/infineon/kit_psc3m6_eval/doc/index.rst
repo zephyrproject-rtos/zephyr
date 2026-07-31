@@ -231,6 +231,70 @@ and application together:
    :west-args: --sysbuild
    :gen-args: -DSB_CONFIG_BOOTLOADER_MCUBOOT=y
 
+Secure Boot
+***********
+
+The PSOC™ Control C3M6 MCU includes a ROM boot stage (FLASH_BOOT) that
+authenticates and launches the first OEM application from internal flash.
+
+The device operates in ``SIMPLE_APP`` mode by default: FLASH_BOOT loads
+the application at the start of internal flash with no cryptographic signature
+verification. Standard Zephyr builds work without any signing in this mode.
+
+When the MCUboot bootloader is used via sysbuild, MCUboot itself is the first
+application launched by FLASH_BOOT. MCUboot then independently authenticates
+the Zephyr application image in ``slot0_partition`` using the standard Zephyr
+``imgtool`` signing flow. No OEM key provisioning is required for this
+configuration; ``SIMPLE_APP`` mode applies and the MCUboot binary runs
+without BootROM signature verification.
+
+Enabling Secure Boot
+====================
+
+To enable BootROM signature verification the device must be provisioned.
+Follow the AN243370 `PSOC™ Control C3 (P/M) 6 MCU security`_ application
+note and use `Infineon EdgeProtect Tools`_ (``edgeprotecttools -t psoc_c3x6``)
+to initialise a project, generate an OEM key pair, obtain an Infineon-signed
+OEM certificate from the `Infineon OSTS portal`_, and run
+``provision-device`` to transfer ownership.
+
+Generate the OEM key as ``ECDSA-P256`` and set ``boot_auth_signature`` to
+``ES256`` in the OEM policy. The policy template defaults to ``ES512``, which
+``imgtool`` cannot sign. In the same policy set ``boot_cfg_id`` to
+``SECURE_APP`` and make the first ``boot_app_layout`` entry describe
+``boot_partition`` (address ``0x32000000``, size ``0xA000``), then provision
+the device again.
+
+.. warning::
+
+   A development OEM certificate keeps the device in the development
+   lifecycle stage, where it can be re-provisioned, for example back to
+   ``SIMPLE_APP``. Provisioning with a production certificate or with
+   ``prov_oem_complete`` set to ``true`` cannot be undone.
+
+After provisioning, the first image that FLASH_BOOT verifies must be signed
+with the OEM key. FLASH_BOOT expects the MCUboot image format, so the image
+is signed with ``imgtool``; EdgeProtect Tools is only needed for provisioning.
+When using MCUboot via sysbuild this is the MCUboot binary, and
+``--slot-size`` is the size of ``boot_partition``. For a standalone Zephyr
+application without MCUboot, adjust the input file and ``--slot-size`` to
+match the application binary and its partition. Sign and flash the image:
+
+.. code-block:: console
+
+   python bootloader/mcuboot/scripts/imgtool.py sign \
+     --key <oem-private-key>.pem \
+     --version 0.0.0 \
+     --header-size 0x400 --slot-size 0xA000 \
+     --align 1 --erased-val 0 --overwrite-only \
+     <build>/mcuboot/zephyr/zephyr.hex \
+     <build>/mcuboot/zephyr/zephyr.signed.hex
+
+   west flash --hex-file <build>/mcuboot/zephyr/zephyr.signed.hex
+
+When using MCUboot, the Zephyr application in ``slot0_partition`` is
+signed by the standard ``imgtool`` sysbuild flow with the MCUboot key.
+
 References
 **********
 
@@ -245,3 +309,12 @@ References
 
 .. _Infineon OpenOCD:
     https://github.com/Infineon/openocd/releases/latest
+
+.. _PSOC™ Control C3 (P/M) 6 MCU security:
+    https://www.infineon.com/assets/row/public/documents/non-assigned/42/infineon-an243370-getting-started-psoc-control-c3pm6-security-applicationnotes-en.pdf
+
+.. _Infineon EdgeProtect Tools:
+    https://pypi.org/project/edgeprotecttools/
+
+.. _Infineon OSTS portal:
+    https://osts.infineon.com/epss/home
