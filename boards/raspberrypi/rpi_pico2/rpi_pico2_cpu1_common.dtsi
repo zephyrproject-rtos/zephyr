@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+#include "rpi_pico2_common.dtsi"
+
+/* Include default flash partition */
+#define WITH_CPU1_PARTITIONS
+#include <raspberrypi/partitions_4M_default.dtsi>
+
+#include <raspberrypi/rp2350_amp_sram_partitions.dtsi>
+
+/ {
+	chosen {
+		zephyr,sram = &sram0_cpu1;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &qmi;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,code-partition = &cpu1_slot0_partition;
+	};
+};
+
+&pinctrl {
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_P8>;
+		};
+
+		group2 {
+			pinmux = <UART1_RX_P9>;
+			input-enable;
+		};
+	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+&uart0 {
+	status = "reserved";
+};
+
+&spi0 {
+	status = "reserved";
+};
+
+&i2c0 {
+	status = "reserved";
+};
+
+&i2c1 {
+	status = "reserved";
+};
+
+&adc {
+	status = "reserved";
+};
+
+&pwm {
+	status = "reserved";
+};
+
+&timer0 {
+	status = "reserved";
+};
+
+&wdt0 {
+	status = "reserved";
+};
+
+&rng {
+	status = "reserved";
+};
+
+zephyr_udc0: &usbd {
+	status = "reserved";
+};

@@ -40,6 +40,7 @@
 
 		cpu1: cpu@1 {
 			reg = <1>;
+			enable-method = "raspberrypi,pico-pcbs";
 		};
 	};
 

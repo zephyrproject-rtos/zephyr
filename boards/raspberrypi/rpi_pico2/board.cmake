@@ -16,6 +16,15 @@ endif()
 # https://www.raspberrypi.com/documentation/microcontrollers/debug-probe.html#debugging-with-swd
 board_runner_args(openocd --cmd-pre-init "set_adapter_speed_if_not_set 5000")
 
+# HACK: The "cold_reset" OpenOCD command is specific to the rp2350 target in
+# Raspberry Pi's downstream fork of OpenOCD and resets everything except for the
+# debug port, restarting the power-on state machine (See RP2350 Datasheet
+# Section 7.4). This is required when flashing multi-core builds to reset the
+# Boot ROM. Since we don't know the order of flashing, we need to do the
+# cold_reset for every core.
+board_runner_args(openocd --cmd-post-verify "cold_reset")
+board_runner_args(openocd --cmd-post-verify "shutdown")
+
 board_runner_args(probe-rs "--chip=RP235x")
 
 board_runner_args(jlink "--device=RP2350_M33_0")

@@ -131,3 +131,18 @@ tests:
       regex:
         - "Ping \\(on channel 21\\)"
         - "Pong \\(on channel 20\\)"
+
+  sample.drivers.mbox.rp2350:
+    platform_allow:
+      - rpi_pico2/rp2350a/m33
+    integration_platforms:
+      - rpi_pico2/rp2350a/m33
+    extra_args:
+      - mbox_SNIPPET=rp2xxx-cpu1
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Pong \\(on channel.0\\)"
+        - "Ping \\(on channel.0\\)"
