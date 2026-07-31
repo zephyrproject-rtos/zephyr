@@ -507,7 +507,7 @@ int i2c_stm32_target_register(const struct device *dev,
 	/* Mark device as active */
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_ERR("i2c: PM runtime failure: %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
 		return ret;
 	}
 
