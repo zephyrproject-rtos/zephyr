@@ -5384,9 +5384,8 @@
  *     DT_ANY_INST_HAS_PROP_STATUS_OKAY(baz) // 0
  * @endcode
  */
-#define DT_ANY_INST_HAS_PROP_STATUS_OKAY(prop)							\
-	UTIL_NOT(IS_EMPTY(									\
-		DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ANY_INST_HAS_PROP_STATUS_OKAY_, prop)))
+#define DT_ANY_INST_HAS_PROP_STATUS_OKAY(prop) \
+	DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(DT_DRV_COMPAT, prop)
 
 /**
  * @brief Check if all `DT_DRV_COMPAT` node with status `okay` has a given
@@ -5433,7 +5432,7 @@
  * @endcode
  */
 #define DT_ALL_INST_HAS_PROP_STATUS_OKAY(prop) \
-	IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ALL_INST_HAS_PROP_STATUS_OKAY_, prop))
+	DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY(DT_DRV_COMPAT, prop)
 
 /**
  * @brief Check if any device node with status `okay` has a given
@@ -5479,8 +5478,50 @@
  *     DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(vnd_some_sensor, baz) // 0
  * @endcode
  */
-#define DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(compat, prop) \
-	(DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(compat, DT_COMPAT_NODE_HAS_PROP_AND_OR, prop) 0)
+#define DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY(compat, prop)                                           \
+	UTIL_NOT(IS_EMPTY(DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(                                     \
+		compat, DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY_, prop)))
+
+/**
+ * @brief Check if all device nodes with status `okay` have a given
+ *        property. If all nodes are disabled, this will return 1.
+ *
+ * @param compat lowercase-and-underscores devicetree compatible
+ * @param prop lowercase-and-underscores property name
+ */
+#define DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY(compat, prop)                                           \
+	IS_EMPTY(DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(compat, DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY_,  \
+						     prop))
+
+/**
+ * @brief Check if any device node with status `okay` has a given
+ *        boolean property that exists.
+ *
+ * This differs from @ref DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY because even when
+ * not present on a node, the boolean property is generated with a value of 0
+ * and therefore exists.
+ *
+ * @param compat lowercase-and-underscores devicetree compatible
+ * @param prop lowercase-and-underscores property name
+ */
+#define DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY(compat, prop)                                           \
+	UTIL_NOT(IS_EMPTY(DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(                                     \
+		compat, DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY_, prop)))
+
+/**
+ * @brief Check if all device nodes with status `okay` have a given boolean
+ *        property that exists. If all nodes are disabled, this will return 1.
+ *
+ * This differs from @ref DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY because even when
+ * not present on a node, the boolean property is generated with a value of 0
+ * and therefore exists.
+ *
+ * @param compat lowercase-and-underscores devicetree compatible
+ * @param prop lowercase-and-underscores property name
+ */
+#define DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY(compat, prop)                                           \
+	IS_EMPTY(DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(compat, DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY_,  \
+						     prop))
 
 /**
  * @brief Check if any `DT_DRV_COMPAT` node with status `okay` has a given
@@ -5529,9 +5570,8 @@
  *     DT_ANY_INST_HAS_BOOL_STATUS_OKAY(baz) // 0
  * @endcode
  */
-#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY(prop)							\
-	UTIL_NOT(IS_EMPTY(									\
-		DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ANY_INST_HAS_BOOL_STATUS_OKAY_, prop)))
+#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY(prop) \
+	DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY(DT_DRV_COMPAT, prop)
 
 /**
  * @brief Check if all `DT_DRV_COMPAT` node with status `okay` has a given
@@ -5579,7 +5619,29 @@
  * @endcode
  */
 #define DT_ALL_INST_HAS_BOOL_STATUS_OKAY(prop) \
-	IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ALL_INST_HAS_BOOL_STATUS_OKAY_, prop))
+	DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY(DT_DRV_COMPAT, prop)
+
+/**
+ * @brief Check if any device node with status `okay` has a given register
+ *        name.
+ *
+ * @param compat lowercase-and-underscores devicetree compatible
+ * @param name lowercase-and-underscores register name
+ */
+#define DT_ANY_COMPAT_REG_HAS_NAME_STATUS_OKAY(compat, name)                                       \
+	UTIL_NOT(IS_EMPTY(DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(                                     \
+		compat, DT_ANY_COMPAT_REG_HAS_NAME_STATUS_OKAY_, name)))
+
+/**
+ * @brief Check if all device nodes with status `okay` have a given register
+ *        name. If all nodes are disabled, this will return 1.
+ *
+ * @param compat lowercase-and-underscores devicetree compatible
+ * @param name lowercase-and-underscores register name
+ */
+#define DT_ALL_COMPAT_REG_HAS_NAME_STATUS_OKAY(compat, name)                                       \
+	IS_EMPTY(DT_COMPAT_FOREACH_STATUS_OKAY_VARGS(                                              \
+		compat, DT_ALL_COMPAT_REG_HAS_NAME_STATUS_OKAY_, name))
 
 /**
  * @brief Check if any `DT_DRV_COMPAT` node with status `okay` has a given
@@ -5587,9 +5649,8 @@
  *
  * @param name lowercase-and-underscores register name
  */
-#define DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(name)						\
-	UTIL_NOT(IS_EMPTY(									\
-		DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY_, name)))
+#define DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY(name) \
+	DT_ANY_COMPAT_REG_HAS_NAME_STATUS_OKAY(DT_DRV_COMPAT, name)
 
 /**
  * @brief Check if all `DT_DRV_COMPAT` node with status `okay` has a given
@@ -5598,7 +5659,7 @@
  * @param name lowercase-and-underscores register name
  */
 #define DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY(name) \
-	IS_EMPTY(DT_INST_FOREACH_STATUS_OKAY_VARGS(DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY_, name))
+	DT_ALL_COMPAT_REG_HAS_NAME_STATUS_OKAY(DT_DRV_COMPAT, name)
 
 /**
  * @brief Call @p fn on all nodes with compatible `DT_DRV_COMPAT`
@@ -5869,93 +5930,101 @@
 
 /** @cond INTERNAL_HIDDEN */
 
-/** @brief Helper for DT_ANY_INST_HAS_PROP_STATUS_OKAY
+/** @brief Helper for DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY
  *
- * This macro generates token "1," for instance of a device,
- * identified by index @p inst, if instance has property @p prop.
+ * This macro generates token "1," for instance of a device, identified by
+ * index @p inst, if the status `okay` node matching @p compat has property
+ * @p prop.
  *
  * @param inst instance number
+ * @param compat lowercase-and-underscores devicetree compatible
  * @param prop property to check for
  *
- * @return Macro evaluates to `1,` if instance has the property,
- * otherwise it evaluates to literal nothing.
+ * @return Macro evaluates to `1,` if the property exists, otherwise it
+ * evaluates to literal nothing.
  */
-#define DT_ANY_INST_HAS_PROP_STATUS_OKAY_(inst, prop)	\
-	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, prop), (1,))
+#define DT_ANY_COMPAT_HAS_PROP_STATUS_OKAY_(inst, compat, prop) \
+	IF_ENABLED(DT_NODE_HAS_PROP(DT_INST(inst, compat), prop), (1,))
 
-/** @brief Helper for DT_ANY_INST_HAS_BOOL_STATUS_OKAY
+/** @brief Helper for DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY
  *
- * This macro generates token "1," for instance of a device,
- * identified by index @p inst, if instance has boolean property
- * @p prop with value 1.
+ * This macro generates token "1," for instance of a device, identified by
+ * index @p inst, if the status `okay` node matching @p compat has boolean
+ * property @p prop with value 1.
  *
  * @param inst instance number
+ * @param compat lowercase-and-underscores devicetree compatible
  * @param prop property to check for
  *
- * @return Macro evaluates to `1,` if instance property value is 1,
- * otherwise it evaluates to literal nothing.
+ * @return Macro evaluates to `1,` if the property value is 1, otherwise it
+ * evaluates to literal nothing.
  */
-#define DT_ANY_INST_HAS_BOOL_STATUS_OKAY_(inst, prop)	\
-	IF_ENABLED(DT_INST_PROP(inst, prop), (1,))
+#define DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY_(inst, compat, prop) \
+	IF_ENABLED(DT_PROP(DT_INST(inst, compat), prop), (1,))
 
-/** @brief Helper for DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY
+/** @brief Helper for DT_ANY_COMPAT_REG_HAS_NAME_STATUS_OKAY
  *
- * This macro generates token "1," for instance of a device,
- * identified by index @p inst, if instance has named register
- * @p name.
+ * This macro generates token "1," for instance of a device, identified by
+ * index @p inst, if the status `okay` node matching @p compat has named
+ * register @p name.
  *
  * @param inst instance number
+ * @param compat lowercase-and-underscores devicetree compatible
  * @param name register name to check for
  *
- * @return Macro evaluates to `1,` if instance register name exists,
- * otherwise it evaluates to literal nothing.
+ * @return Macro evaluates to `1,` if the register exists, otherwise it
+ * evaluates to literal nothing.
  */
-#define DT_ANY_INST_REG_HAS_NAME_STATUS_OKAY_(inst, name)	\
-	IF_ENABLED(DT_INST_REG_HAS_NAME(inst, name), (1,))
+#define DT_ANY_COMPAT_REG_HAS_NAME_STATUS_OKAY_(inst, compat, name) \
+	IF_ENABLED(DT_REG_HAS_NAME(DT_INST(inst, compat), name), (1,))
 
-/** @brief Helper for DT_ALL_INST_HAS_PROP_STATUS_OKAY
+/** @brief Helper for DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY
  *
- * This macro generates token "1," for instance of a device,
- * identified by index @p inst, if instance has no property @p prop.
+ * This macro generates token "1," for instance of a device, identified by
+ * index @p inst, if the status `okay` node matching @p compat does not have
+ * property @p prop.
  *
  * @param inst instance number
+ * @param compat lowercase-and-underscores devicetree compatible
  * @param prop property to check for
  *
- * @return Macro evaluates to `1,` if instance has the property,
- * otherwise it evaluates to literal nothing.
+ * @return Macro evaluates to `1,` if the property does not exist, otherwise
+ * it evaluates to literal nothing.
  */
-#define DT_ALL_INST_HAS_PROP_STATUS_OKAY_(inst, prop)	\
-	IF_DISABLED(DT_INST_NODE_HAS_PROP(inst, prop), (1,))
+#define DT_ALL_COMPAT_HAS_PROP_STATUS_OKAY_(inst, compat, prop) \
+	IF_DISABLED(DT_NODE_HAS_PROP(DT_INST(inst, compat), prop), (1,))
 
-/** @brief Helper for DT_ALL_INST_HAS_BOOL_STATUS_OKAY
+/** @brief Helper for DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY
  *
- * This macro generates token "1," for instance of a device,
- * identified by index @p inst, if instance has no boolean property
- * @p prop with value 1.
+ * This macro generates token "1," for instance of a device, identified by
+ * index @p inst, if the status `okay` node matching @p compat has boolean
+ * property @p prop with value 0.
  *
  * @param inst instance number
+ * @param compat lowercase-and-underscores devicetree compatible
  * @param prop property to check for
  *
- * @return Macro evaluates to `1,` if instance property value is 0,
- * otherwise it evaluates to literal nothing.
+ * @return Macro evaluates to `1,` if the property value is 0, otherwise it
+ * evaluates to literal nothing.
  */
-#define DT_ALL_INST_HAS_BOOL_STATUS_OKAY_(inst, prop)	\
-	IF_DISABLED(DT_INST_PROP(inst, prop), (1,))
+#define DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY_(inst, compat, prop) \
+	IF_DISABLED(DT_PROP(DT_INST(inst, compat), prop), (1,))
 
-/** @brief Helper for DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY
+/** @brief Helper for DT_ALL_COMPAT_REG_HAS_NAME_STATUS_OKAY
  *
- * This macro generates token "1," for instance of a device,
- * identified by index @p inst, if instance has no named register
- * @p name.
+ * This macro generates token "1," for instance of a device, identified by
+ * index @p inst, if the status `okay` node matching @p compat does not have
+ * named register @p name.
  *
  * @param inst instance number
+ * @param compat lowercase-and-underscores devicetree compatible
  * @param name register name to check for
  *
- * @return Macro evaluates to `1,` if instance register name exists,
- * otherwise it evaluates to literal nothing.
+ * @return Macro evaluates to `1,` if the register does not exist, otherwise
+ * it evaluates to literal nothing.
  */
-#define DT_ALL_INST_REG_HAS_NAME_STATUS_OKAY_(inst, name)	\
-	IF_DISABLED(DT_INST_REG_HAS_NAME(inst, name), (1,))
+#define DT_ALL_COMPAT_REG_HAS_NAME_STATUS_OKAY_(inst, compat, name) \
+	IF_DISABLED(DT_REG_HAS_NAME(DT_INST(inst, compat), name), (1,))
 
 #define DT_PATH_INTERNAL(...) \
 	UTIL_CAT(DT_ROOT, MACRO_MAP_CAT(DT_S_PREFIX, __VA_ARGS__))
