@@ -149,6 +149,10 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_BGSCAN,
 	/** Wi-Fi Direct (P2P) operations*/
 	NET_REQUEST_WIFI_CMD_P2P_OPER,
+	/** Get the current PMKSA cache entry */
+	NET_REQUEST_WIFI_CMD_PMKSA_GET,
+	/** Add a PMKSA cache entry for the next connection */
+	NET_REQUEST_WIFI_CMD_PMKSA_ADD,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
@@ -315,6 +319,69 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_FLUSH)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH);
+
+#if defined(CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL) || defined(__DOXYGEN__)
+/** Request the current PMKSA cache entry. */
+#define NET_REQUEST_WIFI_PMKSA_GET \
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_GET)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_GET);
+
+/** Add a PMKSA cache entry for the next connection. */
+#define NET_REQUEST_WIFI_PMKSA_ADD \
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_ADD)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_ADD);
+#endif /* CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL || __DOXYGEN__ */
+
+/** Maximum PMKID length in a PMKSA cache entry. */
+#define WIFI_PMKSA_PMKID_LEN 16U
+
+/** Maximum PMK length in a PMKSA cache entry. */
+#define WIFI_PMKSA_PMK_MAX_LEN 64U
+
+/** Maximum PMKSA lifetime accepted by the management API. */
+#define WIFI_PMKSA_MAX_LIFETIME_S (INT32_MAX - 1U)
+
+/** IEEE 802.1X AKM suite selector. */
+#define WIFI_PMKSA_AKM_802_1X 0x000FAC01U
+
+/** IEEE PSK AKM suite selector. */
+#define WIFI_PMKSA_AKM_PSK 0x000FAC02U
+
+/** IEEE 802.1X SHA-256 AKM suite selector. */
+#define WIFI_PMKSA_AKM_802_1X_SHA256 0x000FAC05U
+
+/** IEEE PSK SHA-256 AKM suite selector. */
+#define WIFI_PMKSA_AKM_PSK_SHA256 0x000FAC06U
+
+/**
+ * @brief PMKSA cache entry exchanged with a Wi-Fi backend.
+ *
+ * The PMK is secret material. Applications must protect it when storing this
+ * record and wipe temporary copies. Lifetime fields are relative seconds from
+ * the time the request is processed; reauthentication must not exceed expiry.
+ * The AKM selector is the native-endian integer form of the IEEE selector.
+ * This structure is an API transport record, not a persistent file format.
+ */
+struct wifi_pmksa_cache_entry {
+	/** AP BSSID. */
+	uint8_t bssid[WIFI_MAC_ADDR_LEN];
+	/** Station address. All-zero on ADD selects the current address. */
+	uint8_t sta_addr[WIFI_MAC_ADDR_LEN];
+	/** PMK identifier. */
+	uint8_t pmkid[WIFI_PMKSA_PMKID_LEN];
+	/** Pairwise master key. */
+	uint8_t pmk[WIFI_PMKSA_PMK_MAX_LEN];
+	/** Number of valid bytes in @ref pmk. */
+	uint8_t pmk_len;
+	/** IEEE 802.11 AKM suite selector in native-endian form. */
+	uint32_t akm_suite;
+	/** Seconds until reauthentication is due. */
+	uint32_t reauth_remaining_s;
+	/** Seconds until the entry expires. */
+	uint32_t expiration_remaining_s;
+};
 
 /** Set Wi-Fi enterprise mode CA/client Cert and key */
 #define NET_REQUEST_WIFI_ENTERPRISE_CREDS                               \
@@ -2274,6 +2341,31 @@ struct wifi_mgmt_ops {
 		       struct net_if *iface,
 		       struct wifi_nan_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
+#if defined(CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL) || defined(__DOXYGEN__)
+	/** Get the current PMKSA cache entry.
+	 *
+	 * @retval 0 Entry returned.
+	 * @retval -EINVAL Entry or cached station binding is invalid.
+	 * @retval -ENOENT No current entry.
+	 * @retval -EBUSY Interface is not connected.
+	 * @retval -ENODEV Backend state is unavailable.
+	 * @retval -ENOTSUP Operation or entry type is unsupported.
+	 */
+	int (*pmksa_get)(const struct device *dev, struct net_if *iface,
+			struct wifi_pmksa_cache_entry *entry);
+	/** Stage a PMKSA cache entry for the next connection.
+	 *
+	 * @retval 0 Entry staged.
+	 * @retval -EINVAL Entry is invalid or bound to another station.
+	 * @retval -EBUSY Interface state does not permit staging.
+	 * @retval -ENODEV Backend state is unavailable.
+	 * @retval -ENOSPC No staging slot is available.
+	 * @retval -ENOTSUP Operation or entry type is unsupported.
+	 */
+	int (*pmksa_add)(const struct device *dev, struct net_if *iface,
+			const struct wifi_pmksa_cache_entry *entry);
+#endif /* CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL || __DOXYGEN__ */
 
 	/** Flush PMKSA cache entries
 	 *

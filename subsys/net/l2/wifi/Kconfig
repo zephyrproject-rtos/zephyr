@@ -39,6 +39,17 @@ config WIFI_MGMT_TWT_CHECK_IP
 	  even when it is awake intervals. Rejecting TWT setup till Wi-Fi
 	  interface has a valid IP address might be desirable in most scenarios.
 
+config WIFI_MGMT_PMKSA_CACHE_EXTERNAL
+	bool "External PMKSA cache management"
+	help
+	  Enable applications to export and restore a station PMKSA cache
+	  entry through the Wi-Fi management API.
+
+	  Exported entries contain the PMK. Applications are responsible for
+	  protecting persistent storage, ageing entries while the device is
+	  off, deleting entries when credentials or station identity change,
+	  and wiping temporary copies.
+
 config WIFI_MGMT_FORCED_PASSIVE_SCAN
 	bool "Force passive Wi-Fi scanning"
 	help

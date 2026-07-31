@@ -28,6 +28,41 @@ Currently, two types of Wi-Fi drivers are supported:
 * Networking or socket offloaded drivers
 * Native L2 Ethernet drivers
 
+External PMKSA cache
+====================
+
+When :kconfig:option:`CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL` is enabled, an
+application can export one current station PMKSA entry and stage it for the
+next connection. The record contains the PMK and is an API transport record,
+not a persistent serialized format.
+
+The application owns storage protection, profile binding, rollback protection,
+offline ageing, and deletion when credentials, station MAC, or policy changes.
+GET records the station MAC. On ADD, an all-zero station MAC selects the current
+address; an explicit address must match it. The API supports plain 802.1X and
+PSK AKMs, including their SHA-256 variants. Backends can support a narrower
+subset of PMK lengths, AKMs, and lifetimes, so applications must retain a full
+authentication fallback. The API does not carry OKC, FILS Cache ID, or
+FT-specific metadata.
+
+The intended sequence is::
+
+    associated -> PMKSA_GET -> protected application storage
+    power-off interval -> application deducts elapsed time
+    disconnected -> PMKSA_ADD -> CONNECT
+    credentials/MAC/policy change -> PMKSA_FLUSH + delete stored record
+
+``NET_REQUEST_WIFI_PMKSA_GET`` returns ``-EINVAL`` for a malformed request or
+invalid cached station binding, ``-ENOENT`` when no current entry is available,
+``-EBUSY`` when the interface is not connected, ``-ENETDOWN`` when it is
+administratively down, ``-ENODEV`` when backend state is unavailable, and
+``-ENOTSUP`` for unsupported operations or entry types.
+``NET_REQUEST_WIFI_PMKSA_ADD`` returns ``-EINVAL`` for malformed or
+station-mismatched records, ``-EBUSY`` when the interface state prevents
+staging, ``-ENETDOWN`` when it is administratively down, ``-ENODEV`` when
+backend state is unavailable, ``-ENOSPC`` when no staging slot is available,
+and ``-ENOTSUP`` for unsupported operations or entry types.
+
 Compiled Features
 *****************
 
