@@ -1268,19 +1268,34 @@ def run_curses(stdscr, reader, fh=None):
                 chunk = fh.read()
             except OSError:
                 chunk = b""
+            prev_span = max(0, tr.t1 - tr.t0)
             if reader.feed(chunk):
                 # Rebuilt rather than extended: the trace is reassembled in
                 # timestamp order on every update, so a late packet from
                 # another CPU can land events before the end of the list.
                 ts_list[:] = [ev.ts for ev in tr.events]
+                was_empty = full_span <= 1
                 full_span = max(1, tr.t1 - tr.t0)
+                if was_empty:
+                    # Following a trace that had not started yet: the autoplay
+                    # rate was derived from an empty span and would be useless.
+                    speed = max(1.0, full_span / 20.0)
                 if (len(tr.threads), len(tr.cpus)) != lane_sig:
                     lane_sig = (len(tr.threads), len(tr.cpus))
                     order = all_lanes(tr)
             if live_follow and tr.t1 > tr.t0:
-                span = max(100, view1 - view0)
-                view1 = tr.t1
-                view0 = max(tr.t0, view1 - span)
+                # A window that was showing the whole trace keeps showing the
+                # whole trace as it grows; one the user has zoomed into keeps
+                # its width and rides the live edge. Without this a viewer
+                # started before the application produced anything is stuck
+                # with the width of an empty trace, which reads as being zoomed
+                # in to nothing.
+                if (view1 - view0) >= prev_span:
+                    view0, view1 = tr.t0, tr.t1
+                else:
+                    keep = max(100, view1 - view0)
+                    view1 = tr.t1
+                    view0 = max(tr.t0, view1 - keep)
                 cursor_ns = float(tr.t1)
                 log_scroll = len(tr.events)  # keep log view at the newest row
 
