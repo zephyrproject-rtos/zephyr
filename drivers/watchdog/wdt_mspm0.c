@@ -102,6 +102,9 @@ struct wwdt_mspm_data {
 	uint8_t period_count;
 	uint8_t clock_divider;
 	uint16_t window_count;
+	bool timeout_valid; /* true after install_timeout(), false after disable() */
+	bool is_setup;      /* true after setup(), false after disable() */
+	struct k_mutex lock;
 };
 
 struct wwdt_period_lut {
@@ -182,8 +185,22 @@ static int wwdt_mspm_setup(const struct device *dev, uint8_t options)
 	uint32_t window0_closed;
 	uint32_t window1_closed;
 
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	if (!data->timeout_valid) {
+		k_mutex_unlock(&data->lock);
+		return -EINVAL;
+	}
+
+	if (data->is_setup) {
+		LOG_ERR("WWDT already running — call wdt_disable() first");
+		k_mutex_unlock(&data->lock);
+		return -EBUSY;
+	}
+
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
 		/* hw_wwdt.h: STISM has no effect for the global Window Watchdog. */
+		k_mutex_unlock(&data->lock);
 		return -ENOTSUP;
 	}
 
@@ -207,33 +224,64 @@ static int wwdt_mspm_setup(const struct device *dev, uint8_t options)
 			 window0_closed |
 			 (window1_closed << (WWDT_CTL0_WINDOW1_OFS - WWDT_CTL0_WINDOW0_OFS));
 
+	data->is_setup = true;
+	k_mutex_unlock(&data->lock);
 	return 0;
 }
 
 static int wwdt_mspm_disable(const struct device *dev)
 {
-	/* Disabling a watchdog that is configured is not possible */
-	ARG_UNUSED(dev);
-	return -EPERM;
+	struct wwdt_mspm_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	/*
+	 * hw_wwdt.h: "For safety devices a watchdog reset by software is not
+	 * possible." Once started, the WDT runs until SoC reset. -EFAULT if
+	 * never started (also frees the install slot), -EPERM if started.
+	 */
+	if (data->is_setup) {
+		ret = -EPERM;
+	} else {
+		data->timeout_valid = false;
+		ret = -EFAULT;
+	}
+
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int wwdt_mspm_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
 	const struct wwdt_mspm_config *config = dev->config;
+	struct wwdt_mspm_data *data = dev->data;
+	int ret;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
 
 	/* Cannot install timeout if the WWDT is already running */
-	if (config->base->WWDTSTAT & WWDT_STAT_RUN) {
+	if (data->is_setup) {
 		LOG_ERR("Install timeout failed. WWDT is already running");
+		k_mutex_unlock(&data->lock);
 		return -EBUSY;
+	}
+
+	/* Single channel: slot freed by disable(). Second install before disable -> -ENOMEM. */
+	if (data->timeout_valid) {
+		k_mutex_unlock(&data->lock);
+		return -ENOMEM;
 	}
 
 	if (cfg->callback) {
 		LOG_ERR("Install timeout failed. Callback not supported");
+		k_mutex_unlock(&data->lock);
 		return -ENOTSUP;
 	}
 
 	if (cfg->flags != config->reset_action) {
 		LOG_ERR("Install timeout failed. Reset action mismatch");
+		k_mutex_unlock(&data->lock);
 		return -EINVAL;
 	}
 
@@ -241,20 +289,41 @@ static int wwdt_mspm_install_timeout(const struct device *dev, const struct wdt_
 	 * To calculate the timeout period as per :
 	 * TIMEOUT = (CLKDIV + 1) * PER_count / 32768 (LFCLK Frequency)
 	 */
-	return wwdt_mspm_calculate_timeout_periods(dev, cfg);
+	ret = wwdt_mspm_calculate_timeout_periods(dev, cfg);
+	if (ret == 0) {
+		data->timeout_valid = true;
+	}
+
+	k_mutex_unlock(&data->lock);
+	return ret;
 }
 
 static int wwdt_mspm_feed(const struct device *dev, int channel_id)
 {
-	ARG_UNUSED(channel_id);
-	((const struct wwdt_mspm_config *)dev->config)->base->WWDTCNTRST = WWDT_CNTRST_KEY;
+	const struct wwdt_mspm_config *config = dev->config;
+	struct wwdt_mspm_data *data = dev->data;
 
+	ARG_UNUSED(channel_id);
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	if (!data->is_setup) {
+		k_mutex_unlock(&data->lock);
+		return -EINVAL;
+	}
+
+	config->base->WWDTCNTRST = WWDT_CNTRST_KEY;
+
+	k_mutex_unlock(&data->lock);
 	return 0;
 }
 
 static int wwdt_mspm_init(const struct device *dev)
 {
 	struct wwdt_mspm_regs *base = ((const struct wwdt_mspm_config *)dev->config)->base;
+	struct wwdt_mspm_data *data = dev->data;
+
+	k_mutex_init(&data->lock);
 
 	/* Reset peripheral and enable power — matches counter/PWM init sequence. */
 	base->GPRCM.RSTCTL = WWDT_RSTCTL_KEY | WWDT_RSTCTL_STKYCLR | WWDT_RSTCTL_ASSERT;
