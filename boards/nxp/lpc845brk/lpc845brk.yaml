@@ -1,5 +1,5 @@
 identifier: lpc845brk
-name: LPC845 Breakout Board
+name: NXP LPC845-BRK
 type: mcu
 arch: arm
 ram: 16
