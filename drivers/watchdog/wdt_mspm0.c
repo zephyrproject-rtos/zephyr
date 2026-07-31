@@ -318,7 +318,13 @@ static int wwdt_mspm_install_timeout(const struct device *dev, const struct wdt_
 		return -ENOTSUP;
 	}
 
-	if (cfg->flags != config->reset_action) {
+	if ((cfg->flags & WDT_FLAG_RESET_MASK) > WDT_FLAG_RESET_SOC) {
+		LOG_ERR("Install timeout failed. Unsupported reset flags 0x%x", cfg->flags);
+		k_mutex_unlock(&data->lock);
+		return -ENOTSUP;
+	}
+
+	if ((cfg->flags & WDT_FLAG_RESET_MASK) != config->reset_action) {
 		LOG_ERR("Install timeout failed. Reset action mismatch");
 		k_mutex_unlock(&data->lock);
 		return -EINVAL;
@@ -342,7 +348,10 @@ static int wwdt_mspm_feed(const struct device *dev, int channel_id)
 	const struct wwdt_mspm_config *config = dev->config;
 	struct wwdt_mspm_data *data = dev->data;
 
-	ARG_UNUSED(channel_id);
+	/* Single channel (0) only. */
+	if (channel_id != 0) {
+		return -EINVAL;
+	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
