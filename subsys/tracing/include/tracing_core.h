@@ -73,10 +73,12 @@ int tracing_backends_flush(void);
 /**
  * @brief Give tracing buffer to backend.
  *
+ * @param stream_id Trace stream the data belongs to. The core emits a single
+ *                  stream, id 0, until per-CPU streams are wired up.
  * @param data Tracing buffer address.
  * @param length Tracing buffer length.
  */
-void tracing_buffer_handle(uint8_t *data, uint32_t length);
+void tracing_buffer_handle(uint8_t stream_id, uint8_t *data, uint32_t length);
 
 /**
  * @brief Handle tracing packet drop.
