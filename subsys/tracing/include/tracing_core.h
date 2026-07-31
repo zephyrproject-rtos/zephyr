@@ -33,6 +33,19 @@ extern struct k_spinlock tracing_lock;
  */
 bool is_tracing_enabled(void);
 
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP
+/**
+ * @brief Sample the tracing clock.
+ *
+ * Meant to be called from the emission path with the tracing lock held, so that
+ * the order in which CPUs sample the clock matches the order in which their
+ * events reach the tracing buffer.
+ *
+ * @return Current tracing timestamp in nanoseconds.
+ */
+uint64_t tracing_timestamp_get(void);
+#endif
+
 /**
  * @brief Enable or disable emission of tracing data at runtime.
  *
