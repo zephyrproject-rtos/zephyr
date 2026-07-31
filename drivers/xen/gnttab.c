@@ -374,6 +374,25 @@ int gnttab_unmap_refs(struct gnttab_unmap_grant_ref *unmap_ops, unsigned int cou
 	return HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap_ops, count);
 }
 
+int gnttab_query_size(domid_t dom, uint32_t *nr_frames, uint32_t *max_nr_frames,
+		      int16_t *status)
+{
+	struct gnttab_query_size query = {
+		.dom = dom,
+	};
+	int ret;
+
+	if (!nr_frames || !max_nr_frames || !status) {
+		return -EINVAL;
+	}
+
+	ret = HYPERVISOR_grant_table_op(GNTTABOP_query_size, &query, 1);
+	*nr_frames = query.nr_frames;
+	*max_nr_frames = query.max_nr_frames;
+	*status = query.status;
+
+	return ret;
+}
 
 static const char * const gnttab_error_msgs[] = GNTTABOP_error_msgs;
 
