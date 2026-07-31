@@ -333,6 +333,7 @@ class JsonReport:
                 continue
             suite = {}
             handler_log = os.path.join(instance.build_dir, "handler.log")
+            handler_stderr_log = os.path.join(instance.build_dir, "handler_stderr.log")
             script_log = os.path.join(instance.build_dir, "twister_harness.log")
             build_log = os.path.join(instance.build_dir, "build.log")
             device_log = os.path.join(instance.build_dir, "device.log")
@@ -381,6 +382,10 @@ class JsonReport:
                     suite["log"] = self.process_log(device_log)
                 else:
                     suite["log"] = self.process_log(build_log)
+
+                stderr_output = self.process_log(handler_stderr_log)
+                if stderr_output.strip():
+                    suite["log"] = f"{suite['log']}\n{stderr_output}"
 
                 suite["reason"] = self.get_detailed_reason(instance.reason, suite["log"])  # type: ignore
                 # update the reason to get more details also in other reports (e.g. junit)
