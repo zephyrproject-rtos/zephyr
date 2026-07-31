@@ -348,7 +348,7 @@ static int adc_ambiq_read(const struct device *dev, const struct adc_sequence *s
 
 	error = pm_device_runtime_get(dev);
 	if (error < 0) {
-		LOG_ERR("Failed to get device runtime PM state");
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, error);
 		adc_context_release(&data->ctx, error);
 		return error;
 	}
