@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the PCIe Virtual Channel support APIs.
+ * @ingroup pcie_vc_host_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_VC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_VC_H_
 
