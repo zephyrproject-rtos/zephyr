@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief ISP handler hooks for the STM32 DCMIPP video driver.
+ * @ingroup video_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_VIDEO_STM32_DCMIPP_H_
 #define ZEPHYR_INCLUDE_VIDEO_STM32_DCMIPP_H_
 
