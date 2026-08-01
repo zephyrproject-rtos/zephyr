@@ -2,6 +2,7 @@
  * @file drivers/stepper/stepper_trinamic.h
  *
  * @brief Public API for Trinamic Stepper Controller Specific Functions
+ * @ingroup trinamic_stepper_ctrl
  *
  */
 
@@ -18,7 +19,7 @@
 /**
  * @brief Trinamic Stepper Controller
  * @defgroup trinamic_stepper_ctrl Trinamic Stepper Controller
- * @ingroup stepper_ctrl
+ * @ingroup stepper_interface_ext
  * @since 4.0
  * @version 0.9.0
  * @{
