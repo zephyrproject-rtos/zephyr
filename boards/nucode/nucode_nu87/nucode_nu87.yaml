@@ -1,0 +1,16 @@
+# Copyright (c) 2026 NUCODE Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nucode_nu87
+name: NUCODE NU87-TinyDK
+vendor: nucode
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 464
+flash: 1968
+supported:
+  - gpio
+  - serial
