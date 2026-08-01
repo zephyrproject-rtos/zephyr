@@ -17,6 +17,7 @@
  * @file
  *
  * @brief Public APIs for the SPI emulation drivers.
+ * @ingroup spi_emul_interface
  */
 
 /**

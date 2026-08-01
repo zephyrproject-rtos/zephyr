@@ -2,6 +2,7 @@
  * @file
  *
  * @brief Public APIs for the I2C emulation drivers.
+ * @ingroup i2c_emul_interface
  */
 
 /*

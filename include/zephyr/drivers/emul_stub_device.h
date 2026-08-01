@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Stub device support for emulators without a corresponding driver.
+ * @ingroup io_emulators
+ */
+
 #ifndef ZEPHYR_INCLUDE_EMUL_STUB_DEVICE_H_
 #define ZEPHYR_INCLUDE_EMUL_STUB_DEVICE_H_
 
