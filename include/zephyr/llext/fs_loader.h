@@ -17,6 +17,7 @@ extern "C" {
 /**
  * @file
  * @brief LLEXT filesystem loader implementation.
+ * @ingroup llext_loader_apis
  *
  * @addtogroup llext_loader_apis
  * @{
