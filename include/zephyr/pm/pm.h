@@ -62,6 +62,11 @@ extern "C" {
  */
 struct pm_notifier {
 	sys_snode_t _node;
+	/**
+	 * Callbacks to be invoked on power state entry and exit. Set either
+	 * the plain variants or the substate reporting ones, and select
+	 * between them with the report_substate field.
+	 */
 	union {
 		struct {
 			/**
@@ -88,7 +93,12 @@ struct pm_notifier {
 			void (*substate_exit)(enum pm_state state, uint8_t substate_id);
 		};
 	};
-	bool report_substate; /* 0 is for backwards compatibility that didn't report substates */
+	/**
+	 * True if the substate reporting callbacks are set. False, the default
+	 * for backwards compatibility, selects the callbacks that do not report
+	 * the substate id.
+	 */
+	bool report_substate;
 };
 
 #if defined(CONFIG_PM) || defined(__DOXYGEN__)
