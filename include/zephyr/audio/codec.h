@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Public API header file for Audio Codec
+ * @ingroup audio_codec_interface
  *
  * This file contains the Audio Codec APIs
  */
