@@ -37,6 +37,17 @@ extern "C" {
 #define SYS_CLOCK_MAX_WAIT (UINT32_MAX / 2)
 
 /**
+ * @brief Tick count meaning "nothing needs to wake the CPU up"
+ *
+ * Passed to sys_clock_idle_enter() when no wakeup is expected. It is above
+ * SYS_CLOCK_MAX_WAIT, the longest wait the kernel ever asks for, so it cannot
+ * be taken for one. K_TICKS_FOREVER is not usable here: it is (int64_t)-1 with
+ * CONFIG_TIMEOUT_64BIT and UINT32_MAX without it, so comparing an unsigned tick
+ * count against it means different things in the two configurations.
+ */
+#define SYS_CLOCK_IDLE_FOREVER UINT32_MAX
+
+/**
  * @brief System Clock APIs
  * @defgroup clock_apis System Clock APIs
  * @{
@@ -174,8 +185,10 @@ bool sys_clock_is_locked(void);
  * lock held.
  *
  * @param ticks Timeout in tick units
- * @param idle Hint to the driver that the system is about to enter
- *        the idle state immediately after setting the timeout
+ * @param idle Deprecated, and always false when the kernel calls this
+ *        function: idle entry is notified through sys_clock_idle_enter(),
+ *        whose fallback passes true here.  Scheduled for removal in a future
+ *        release; new code must ignore it.
  */
 void sys_clock_set_timeout(uint32_t ticks, bool idle);
 
@@ -277,6 +290,30 @@ void sys_clock_disable(void);
  * on that value stops its clock as it always did.
  */
 void sys_clock_no_timeout(void);
+
+/**
+ * @brief Notify the timer driver that the CPU is entering low-power idle.
+ *
+ * Called from the power-management idle path when the CPU is about to sleep.
+ * A driver that hands off to a low-power wakeup timer, or otherwise
+ * reconfigures itself for sleep, does so here.  sys_clock_idle_exit() undoes
+ * it on the way out.  A driver with no low-power handling does not need to
+ * implement this hook.
+ *
+ * The hook is optional.  Without it, sys_clock_set_timeout() is called with
+ * its deprecated idle argument set to true, which keeps a driver keying its
+ * low-power handling on that argument working.  It goes with the argument, by
+ * which time a platform using the power management facility is expected to
+ * have implemented sys_clock_idle_enter() itself.
+ *
+ * @param ticks Ticks until the next expected wakeup, or SYS_CLOCK_IDLE_FOREVER
+ *        when nothing needs to wake the CPU and the uptime accounting is
+ *        allowed to drift, in which case the driver may stop its time base.
+ *        Only the calling CPU is going idle: a driver whose time base is
+ *        shared between CPUs must ensure only the last CPU going idle stops
+ *        the clock.
+ */
+void sys_clock_idle_enter(uint32_t ticks);
 
 /**
  * @brief Hardware cycle counter
