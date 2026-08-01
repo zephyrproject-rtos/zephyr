@@ -174,8 +174,12 @@ bool sys_clock_is_locked(void);
  * lock held.
  *
  * @param ticks Timeout in tick units
- * @param idle Hint to the driver that the system is about to enter
- *        the idle state immediately after setting the timeout
+ * @param idle Deprecated, and always false when the kernel calls this
+ *        function: idle entry is notified through sys_clock_idle_enter(),
+ *        whose default implementation passes true here so that a driver
+ *        keying its low-power handling on this argument still works. Retained
+ *        for source compatibility and scheduled for removal in a future
+ *        release; new code must ignore it.
  */
 void sys_clock_set_timeout(uint32_t ticks, bool idle);
 
@@ -279,6 +283,28 @@ void sys_clock_disable(void);
  * and a driver implementing this hook must not rely on the tick value.
  */
 void sys_clock_no_timeout(void);
+
+/**
+ * @brief Notify the timer driver that the CPU is entering low-power idle.
+ *
+ * Called from the power-management idle path when the CPU is about to sleep.
+ * A driver that hands off to a low-power wakeup timer, or otherwise
+ * reconfigures itself for sleep, does so here. sys_clock_idle_exit() undoes
+ * it on the way out. A driver with no low-power handling does not need to
+ * implement this hook.
+ *
+ * The default implementation calls sys_clock_set_timeout() with the
+ * deprecated @p idle argument set to true, which keeps a driver keying its
+ * low-power handling on that argument working. That default is a
+ * compatibility shim and goes away together with the argument.
+ *
+ * @param ticks Ticks until the next expected wakeup, or K_TICKS_FOREVER when
+ *        nothing needs to wake the CPU and the uptime is allowed to drift, in
+ *        which case the driver may stop its time base. Only the calling CPU is
+ *        going idle: a driver whose time base is shared between CPUs must
+ *        account for the others itself.
+ */
+void sys_clock_idle_enter(uint32_t ticks);
 
 /**
  * @brief Hardware cycle counter
