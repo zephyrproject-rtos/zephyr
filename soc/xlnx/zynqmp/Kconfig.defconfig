@@ -6,13 +6,15 @@ if SOC_XILINX_ZYNQMP
 
 if SOC_XILINX_ZYNQMP_RPU
 
+DT_COMPAT_XLNX_TTCPS := xlnx,ttcps
+
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	# - include the UART interrupts
 	default 220
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_nodelabel_int_prop,ttc0,clock-frequency)
+	default $(dt_compat_int_prop_int,$(DT_COMPAT_XLNX_TTCPS),clock-frequency)
 
 endif # SOC_XILINX_ZYNQMP_RPU
 
