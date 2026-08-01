@@ -38,6 +38,18 @@
 
 #define CYCLES_CYCLE_TIMER (COUNTER_MAX + 1)
 
+/*
+ * Shortest period ever programmed into CMT0. A compare match clears CMCNT, so
+ * CMCOR is the interrupt *period* rather than a one-shot deadline: too small a
+ * value re-triggers the tick interrupt before its own ISR can return, and the
+ * CPU never runs anything else again. Nothing recovers from that once the
+ * kernel timeout queue is empty, because sys_clock_set_timeout() is then
+ * called with SYS_CLOCK_MAX_WAIT and returns without reprogramming. A quarter
+ * tick bounds the interrupt rate at four times the tick rate, which the driver
+ * services with room to spare.
+ */
+#define MIN_PERIOD_CYCLES ((uint16_t)MAX(CYCLES_PER_TICK / 4, 1))
+
 static const struct clock_control_rx_subsys_cfg cmt_clk_cfg = {
 	.mstp = DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(0), 0, mstp),
 	.stop_bit = DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(0), 0, stop_bit),
@@ -248,6 +260,10 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 
 	uint16_t current = *tick_timer_cfg.cmcnt;
 	uint16_t new_cmcor = (uint16_t)(current + delay - 1U);
+
+	if (new_cmcor < MIN_PERIOD_CYCLES) {
+		new_cmcor = MIN_PERIOD_CYCLES;
+	}
 
 	*tick_timer_cfg.cmcor = new_cmcor;
 
