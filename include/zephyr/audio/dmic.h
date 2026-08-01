@@ -10,6 +10,7 @@
 /**
  * @file
  * @brief Public API header file for Digital Microphones
+ * @ingroup audio_dmic_interface
  *
  * This file contains the Digital Microphone APIs
  */
