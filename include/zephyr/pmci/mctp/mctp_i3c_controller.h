@@ -5,6 +5,12 @@
  *
  */
 
+/**
+ * @file
+ * @brief MCTP bus binding over I3C using IBI signaling, controller side.
+ * @ingroup mctp
+ */
+
 #ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_CONTROLLER_H_
 #define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_CONTROLLER_H_
 

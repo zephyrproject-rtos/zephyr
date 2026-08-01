@@ -6,6 +6,12 @@
  *
  */
 
+/**
+ * @file
+ * @brief MCTP bus binding over the Zephyr USB device stack.
+ * @ingroup mctp
+ */
+
 #ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_USB_H_
 #define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_USB_H_
 
