@@ -218,7 +218,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		{
 			k_spinlock_key_t key = sys_clock_lock();
 
-			sys_clock_set_timeout(0, true);
+			sys_clock_idle_enter(0);
 			sys_clock_unlock(key);
 		}
 
@@ -239,7 +239,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 				{
 					k_spinlock_key_t key = sys_clock_lock();
 
-					sys_clock_set_timeout(0, true);
+					sys_clock_idle_enter(0);
 					sys_clock_unlock(key);
 				}
 				/* GDET got enabled when exiting PM3, disable it
