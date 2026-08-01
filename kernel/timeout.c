@@ -312,20 +312,23 @@ k_ticks_t z_timeout_expires(const struct _timeout *timeout)
 }
 EXPORT_SYMBOL(z_timeout_expires);
 
-int32_t z_get_next_timeout_expiry(void)
+uint32_t z_get_next_timeout_expiry(void)
 {
-	int32_t ret = (int32_t) K_TICKS_FOREVER;
+	uint32_t ret = (uint32_t)K_TICKS_FOREVER;
 
 	K_SPINLOCK(&timeout_lock) {
-		uint32_t t = next_timeout(elapsed());
-
 		/*
-		 * next_timeout() is unsigned; only fold it into the signed
-		 * result when it fits, otherwise leave the K_TICKS_FOREVER
-		 * default.
+		 * Same decision as reprogram_next(). Sloppy idle lets the
+		 * uptime drift, so an empty list means nothing to wake up for
+		 * and that is reported as K_TICKS_FOREVER. Otherwise the
+		 * answer is a wait: either a real deadline, or the synthetic
+		 * one that keeps the announce range covered.
 		 */
-		if (t <= INT32_MAX) {
-			ret = (int32_t)t;
+		if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
+		    z_timeout_q_next_expiry() == K_TICKS_FOREVER) {
+			ret = (uint32_t)K_TICKS_FOREVER;
+		} else {
+			ret = next_timeout(elapsed());
 		}
 	}
 	return ret;
