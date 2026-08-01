@@ -12,6 +12,7 @@
 		test_gpio_0: gpio@1000 {
 			compatible = "vnd,gpio";
 			reg = <0x1000 0x1000>;
+			clock-frequency = <1048576>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			status = "okay";

@@ -123,6 +123,28 @@ config KCONFIG_VND_GPIO_ENABLED_NUM_4
 	int
 	default $(dt_compat_enabled_num,$(DT_COMPAT_VND_GPIO))
 
+config KCONFIG_VND_GPIO_CLOCK_FREQUENCY_INT
+	int
+	default $(dt_compat_int_prop_int,$(DT_COMPAT_VND_GPIO),clock-frequency)
+
+config KCONFIG_VND_GPIO_CLOCK_FREQUENCY_HEX
+	hex
+	default $(dt_compat_int_prop_hex,$(DT_COMPAT_VND_GPIO),clock-frequency)
+
+config KCONFIG_VND_GPIO_CLOCK_FREQUENCY_KIB
+	int
+	default $(dt_compat_int_prop_int,$(DT_COMPAT_VND_GPIO),clock-frequency,k)
+
+DT_COMPAT_VND_MISSING := vnd,missing
+
+config KCONFIG_MISSING_COMPAT_INT_PROP
+	int
+	default $(dt_compat_int_prop_int,$(DT_COMPAT_VND_MISSING),clock-frequency)
+
+config KCONFIG_MISSING_COMPAT_HEX_PROP
+	hex
+	default $(dt_compat_int_prop_hex,$(DT_COMPAT_VND_MISSING),clock-frequency)
+
 DT_COMPAT_VND_CAN_CONTROLLER := vnd,can-controller
 
 config KCONFIG_VND_CAN_CONTROLLER_ENABLED_NUM_2

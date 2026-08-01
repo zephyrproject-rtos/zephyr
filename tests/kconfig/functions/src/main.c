@@ -59,6 +59,15 @@ ZTEST(test_kconfig_functions, test_dt_num_compat_enabled)
 	zassert_equal(CONFIG_KCONFIG_VND_PWM_ENABLED_NUM_0, 0);
 }
 
+ZTEST(test_kconfig_functions, test_dt_compat_int_prop)
+{
+	zassert_equal(CONFIG_KCONFIG_VND_GPIO_CLOCK_FREQUENCY_INT, 1048576);
+	zassert_equal(CONFIG_KCONFIG_VND_GPIO_CLOCK_FREQUENCY_HEX, 0x100000);
+	zassert_equal(CONFIG_KCONFIG_VND_GPIO_CLOCK_FREQUENCY_KIB, 1024);
+	zassert_equal(CONFIG_KCONFIG_MISSING_COMPAT_INT_PROP, 0);
+	zassert_equal(CONFIG_KCONFIG_MISSING_COMPAT_HEX_PROP, 0x0);
+}
+
 ZTEST(test_kconfig_functions, test_dt_partition_mtd)
 {
 	zassert_str_equal(CONFIG_KCONFIG_DT_MTD_DUMMY_0, CONFIG_KCONFIG_DT_DUMMY_FLASH_PATH);

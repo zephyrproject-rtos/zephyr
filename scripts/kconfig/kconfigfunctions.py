@@ -835,6 +835,25 @@ def dt_compat_enabled_num(kconf, _, compat):
 
     return str(len(edt.compat2okay[compat]))
 
+def dt_compat_int_prop(kconf, name, compat, prop, unit=None):
+    """
+    Return an integer property from the first enabled node matching 'compat'
+    as either a decimal or hexadecimal string. If no enabled matching node has
+    the property, return zero in the requested format.
+    """
+    if doc_mode or edt is None:
+        value = 0
+    else:
+        value = 0
+        for node in edt.compat2okay.get(compat, []):
+            if prop in node.props:
+                value = _node_int_prop(node, prop, unit)
+                break
+
+    if name == "dt_compat_int_prop_int":
+        return str(value)
+    if name == "dt_compat_int_prop_hex":
+        return hex(value)
 
 def dt_compat_on_bus(kconf, _, compat, bus):
     """
@@ -1276,6 +1295,8 @@ functions = {
         "dt_has_compat": (dt_has_compat, 1, 1),
         "dt_compat_enabled": (dt_compat_enabled, 1, 1),
         "dt_compat_enabled_num": (dt_compat_enabled_num, 1, 1),
+        "dt_compat_int_prop_int": (dt_compat_int_prop, 2, 3),
+        "dt_compat_int_prop_hex": (dt_compat_int_prop, 2, 3),
         "dt_compat_on_bus": (dt_compat_on_bus, 2, 2),
         "dt_compat_all_has_prop": (dt_compat_all_has_prop, 2, 3),
         "dt_compat_any_has_prop": (dt_compat_any_has_prop, 2, 3),
