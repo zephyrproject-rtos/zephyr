@@ -8,6 +8,8 @@ if SOC_AMD_VERSAL
 
 if SOC_VERSAL_RPU
 
+DT_COMPAT_XLNX_TTCPS := xlnx,ttcps
+
 config CACHE_MANAGEMENT
 	default y
 
@@ -17,7 +19,7 @@ config NUM_IRQS
 	default 256
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_nodelabel_int_prop,ttc0,clock-frequency)
+	default $(dt_compat_int_prop_int,$(DT_COMPAT_XLNX_TTCPS),clock-frequency)
 
 endif # SOC_VERSAL_RPU
 
