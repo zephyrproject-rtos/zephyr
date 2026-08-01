@@ -548,12 +548,19 @@ struct device {
 	 * @kconfig{CONFIG_PM_DEVICE} is enabled).
 	 */
 	union {
+		/** Info common to all device PM variants */
 		struct pm_device_base *pm_base;
+		/** Info for a device using generic PM */
 		struct pm_device *pm;
+		/** Info for a device using synchronous PM */
 		struct pm_device_isr *pm_isr;
 	};
 #endif
 #if defined(CONFIG_DEVICE_DT_METADATA) || defined(__DOXYGEN__)
+	/**
+	 * Devicetree metadata associated with the device (only available if
+	 * @kconfig{CONFIG_DEVICE_DT_METADATA} is enabled).
+	 */
 	const struct device_dt_metadata *dt_meta;
 #endif /* CONFIG_DEVICE_DT_METADATA */
 };
