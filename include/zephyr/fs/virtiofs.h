@@ -18,7 +18,9 @@
 extern "C" {
 #endif
 
+/** @brief File system data for a VirtioFS mount */
 struct virtiofs_fs_data {
+	/** Maximum size of a single write request, in bytes */
 	uint32_t max_write;
 };
 
