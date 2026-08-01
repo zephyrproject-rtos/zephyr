@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Real-time clock control based on the MCUX IMX SNVS counter API.
+ * @ingroup counter_interface_ext
  *
  * The core Zephyr API to this device is as a counter.
  *
