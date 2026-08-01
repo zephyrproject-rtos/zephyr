@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for NXP ENET Ethernet driver internal definitions.
+ * @ingroup ethernet
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_H__
 #define ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_H__
 
