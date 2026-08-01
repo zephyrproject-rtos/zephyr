@@ -357,6 +357,8 @@ int usbc_suspend(const struct device *dev);
  */
 int usbc_request(const struct device *dev, const enum usbc_policy_request_t req);
 
+/** @cond INTERNAL_HIDDEN */
+
 /**
  * @internal
  * @brief Bypass the next USB-C stack sleep and execute one more iteration of the state machines.
@@ -365,6 +367,8 @@ int usbc_request(const struct device *dev, const enum usbc_policy_request_t req)
  * @param dev Runtime device structure
  */
 void usbc_bypass_next_sleep(const struct device *dev);
+
+/** @endcond */
 
 /**
  * @brief Set pointer to Device Policy Manager (DPM) data
