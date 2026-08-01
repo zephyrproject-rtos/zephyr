@@ -30,27 +30,28 @@ extern "C" {
 
 #include <zephyr/drivers/pcie/pcie.h>
 
-/*
- * 1 default VC + 7 extended VCs
+/**
+ * Maximum number of Virtual Channels: 1 default VC + 7 extended VCs
  */
 #define PCIE_VC_MAX_COUNT 8U
 
-#define PCIE_VC_SET_TC0 BIT(0)
-#define PCIE_VC_SET_TC1 BIT(1)
-#define PCIE_VC_SET_TC2 BIT(2)
-#define PCIE_VC_SET_TC3 BIT(3)
-#define PCIE_VC_SET_TC4 BIT(4)
-#define PCIE_VC_SET_TC5 BIT(5)
-#define PCIE_VC_SET_TC6 BIT(6)
-#define PCIE_VC_SET_TC7 BIT(7)
+#define PCIE_VC_SET_TC0 BIT(0) /**< Map Traffic Class 0 to a VC */
+#define PCIE_VC_SET_TC1 BIT(1) /**< Map Traffic Class 1 to a VC */
+#define PCIE_VC_SET_TC2 BIT(2) /**< Map Traffic Class 2 to a VC */
+#define PCIE_VC_SET_TC3 BIT(3) /**< Map Traffic Class 3 to a VC */
+#define PCIE_VC_SET_TC4 BIT(4) /**< Map Traffic Class 4 to a VC */
+#define PCIE_VC_SET_TC5 BIT(5) /**< Map Traffic Class 5 to a VC */
+#define PCIE_VC_SET_TC6 BIT(6) /**< Map Traffic Class 6 to a VC */
+#define PCIE_VC_SET_TC7 BIT(7) /**< Map Traffic Class 7 to a VC */
 
+/** @brief Traffic Class (TC) to Virtual Channel (VC) map */
 struct pcie_vctc_map {
-	/*
+	/**
 	 * Map the TCs for each VC by setting bits relevantly
 	 * Note: one bit cannot be set more than once among the VCs
 	 */
 	uint8_t vc_tc[PCIE_VC_MAX_COUNT];
-	/*
+	/**
 	 * Number of VCs being addressed
 	 */
 	int vc_count;
