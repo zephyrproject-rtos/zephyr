@@ -174,7 +174,7 @@ static void virtio_mmio_reset(const struct device *dev)
 {
 	virtio_mmio_write32(dev, VIRTIO_MMIO_STATUS, 0);
 
-	while (virtio_mmio_read_status_bit(dev, VIRTIO_MMIO_STATUS) != 0) {
+	while (virtio_mmio_read32(dev, VIRTIO_MMIO_STATUS) != 0) {
 	}
 }
 
