@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Multi-endpoint extension of the icmsg IPC library.
+ * @ingroup ipc_icmsg_me_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_ICMSG_ME_H_
 #define ZEPHYR_INCLUDE_IPC_ICMSG_ME_H_
 

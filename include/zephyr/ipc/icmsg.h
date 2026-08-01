@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Icmsg IPC library for inter core messaging over shared memory.
+ * @ingroup ipc_icmsg_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_ICMSG_H_
 #define ZEPHYR_INCLUDE_IPC_ICMSG_H_
 

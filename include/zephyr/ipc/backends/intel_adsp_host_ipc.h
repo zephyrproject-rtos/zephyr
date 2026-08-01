@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief IPC service backend for Intel Audio DSP host communication.
+ * @ingroup ipc_service_backend
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_BACKENDS_INTEL_ADSP_HOST_IPC_H_
 #define ZEPHYR_INCLUDE_IPC_BACKENDS_INTEL_ADSP_HOST_IPC_H_
 

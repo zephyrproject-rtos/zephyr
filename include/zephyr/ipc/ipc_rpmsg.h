@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief RPMsg support library for the IPC service.
+ * @ingroup ipc_service_rpmsg_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_IPC_RPMSG_H_
 #define ZEPHYR_INCLUDE_IPC_IPC_RPMSG_H_
 

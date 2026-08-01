@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Static VRINGs support library for the IPC service.
+ * @ingroup ipc_service_static_vrings_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_IPC_STATIC_VRINGS_H_
 #define ZEPHYR_INCLUDE_IPC_IPC_STATIC_VRINGS_H_
 

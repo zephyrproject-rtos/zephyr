@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Packed buffer API for data exchange over shared memory.
+ * @ingroup pbuf
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_PBUF_H_
 #define ZEPHYR_INCLUDE_IPC_PBUF_H_
 
