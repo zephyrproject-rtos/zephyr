@@ -55,6 +55,15 @@ enum usbc_ppc_event {
 	USBC_PPC_EVENT_SNK_OVERVOLTAGE,
 };
 
+/**
+ * @brief Callback used to notify about PPC events
+ *
+ * Registered with ppc_set_event_handler().
+ *
+ * @param dev PPC device structure
+ * @param data User data passed to ppc_set_event_handler()
+ * @param ev Event being notified
+ */
 typedef void (*usbc_ppc_event_cb_t)(const struct device *dev, void *data, enum usbc_ppc_event ev);
 
 /**
