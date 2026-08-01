@@ -16,6 +16,7 @@ extern "C" {
 /**
  * @file
  * @brief Private header for linkable loadable extensions
+ * @ingroup internal_api
  */
 
 /** @cond ignore */
