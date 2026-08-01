@@ -168,6 +168,14 @@ Deprecated APIs and options
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
     Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
+* Timer
+
+  * New :c:func:`sys_clock_no_timeout` hook for handling of
+    :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE`, replacing the call to
+    :c:func:`sys_clock_set_timeout` with ``ticks=K_TICKS_FOREVER``.
+  * New :c:func:`sys_clock_idle_enter` hook for handling of entry in low-power state,
+    replacing the call to :c:func:`sys_clock_set_timeout` with ``idle=true``.
+
 * Video
 
   * All functions in the video driver API (``<zephyr/drivers/video.h>``) have moved to the video
@@ -467,6 +475,15 @@ Other notable changes
     :c:func:`k_thread_cpu_mask_disable` in PIN_ONLY mode triggers an assertion
     failure.  Use :c:func:`k_thread_cpu_pin` to reassign a thread to a
     different CPU.
+
+* Timer
+
+  * With :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE` enabled, a driver may no
+    longer stop its time base as soon as no timeout is pending, if that breaks
+    :c:func:`sys_clock_cycle_get_32` / :c:func:`sys_clock_cycle_get_64`. Those must
+    keep counting while the CPU runs. Stopping the time base is permitted only from
+    :c:func:`sys_clock_idle_enter`, where :c:func:`sys_clock_idle_exit` is
+    guaranteed to follow.
 
 * Wi-Fi
 
