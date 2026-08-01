@@ -26,6 +26,8 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
 /*
  * Reasons for callback to a driver:
  *
@@ -80,6 +82,8 @@ extern void nxp_enet_driver_cb(const struct device *dev,
 				enum nxp_enet_driver dev_type,
 				enum nxp_enet_callback_reason event,
 				void *data);
+
+/** INTERNAL_HIDDEN @endcond */
 
 #ifdef __cplusplus
 }
