@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public APIs for the device emulation framework.
+ * @ingroup io_emulators
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_EMUL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_EMUL_H_
 

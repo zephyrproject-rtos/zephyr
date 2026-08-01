@@ -17,6 +17,7 @@
  * @file
  *
  * @brief Public APIs for the UART device emulation drivers.
+ * @ingroup uart_emul_interface
  */
 
 /**

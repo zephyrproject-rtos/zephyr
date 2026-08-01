@@ -17,6 +17,7 @@
  * @file
  *
  * @brief Public APIs for the MSPI emulation drivers.
+ * @ingroup mspi_emul_interface
  */
 
 /**
