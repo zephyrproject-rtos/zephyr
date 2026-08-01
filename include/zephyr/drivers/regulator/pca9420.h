@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Utilities for the PCA9420 PMIC regulator driver.
+ * @ingroup regulator_parent_pca9420
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_REGULATOR_PCA9420_H_
 #define ZEPHYR_INCLUDE_DRIVERS_REGULATOR_PCA9420_H_
 

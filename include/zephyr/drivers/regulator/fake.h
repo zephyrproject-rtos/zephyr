@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Fake regulator driver API functions.
+ * @ingroup regulator_interface
+ */
+
 #ifndef ZEPHYR_DRIVERS_REGULATOR_FAKE_H_
 #define ZEPHYR_DRIVERS_REGULATOR_FAKE_H_
 
