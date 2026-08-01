@@ -1,0 +1,19 @@
+sample:
+  name: MediaPipe network streaming sample
+
+tests:
+  sample.mp.net_stream:
+    tags:
+      - mp
+      - networking
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    extra_args:
+      - EXTRA_CONF_FILE=loopback.conf
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "\\[selftest\\] PASS: received 3 frames"
