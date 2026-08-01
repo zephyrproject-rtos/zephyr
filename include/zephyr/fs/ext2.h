@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Ext2 file system configuration structures.
+ * @ingroup file_system_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_FS_EXT2_H_
 #define ZEPHYR_INCLUDE_FS_EXT2_H_
 

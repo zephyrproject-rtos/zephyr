@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief File system core structures and file name length limits.
+ * @ingroup file_system_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_FS_FS_INTERFACE_H_
 #define ZEPHYR_INCLUDE_FS_FS_INTERFACE_H_
 
