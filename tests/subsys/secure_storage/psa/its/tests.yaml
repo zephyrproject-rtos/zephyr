@@ -63,6 +63,8 @@ tests:
     filter: CONFIG_SECURE_STORAGE
     extra_args: "EXTRA_CONF_FILE=\
       overlay-secure_storage.conf;overlay-transform_default.conf;overlay-store_custom.conf"
+    platform_exclude:
+      - qemu_rx/r5f562n8 # Due to 115144
 
   secure_storage.psa.its.secure_storage.custom.both:
     filter: CONFIG_SECURE_STORAGE
