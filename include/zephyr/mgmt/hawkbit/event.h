@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief hawkBit event header file
+ * @ingroup hawkbit_event
  */
 
 /**
