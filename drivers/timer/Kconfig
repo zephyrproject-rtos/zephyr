@@ -43,12 +43,16 @@ config SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE
 
 config SYSTEM_CLOCK_SLOPPY_IDLE
 	bool "Timer allowed to skew uptime clock during idle"
+	select EXPERIMENTAL
 	help
 	  When true, the timer driver is not required to maintain a
 	  correct system uptime count when the system enters idle.
 	  Some platforms may take advantage of this to reduce the
 	  overhead from regular interrupts required to handle counter
 	  wraparound conditions.
+
+	  No in-tree board enables this option and driver support for it has
+	  not been fully audited, hence the experimental tag.
 
 config SYSTEM_CLOCK_INIT_PRIORITY
 	int "System clock driver initialization priority"
