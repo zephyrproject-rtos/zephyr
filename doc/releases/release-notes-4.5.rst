@@ -476,6 +476,18 @@ Other notable changes
     failure.  Use :c:func:`k_thread_cpu_pin` to reassign a thread to a
     different CPU.
 
+* Timer
+
+  * When :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE` is enabled, the cycle
+    counter returned by :c:func:`k_cycle_get_32` is now guaranteed to keep
+    incrementing. Drivers used to stop their time base as soon as no timeout was
+    pending, which froze the counter under a running thread and could hang a
+    :c:func:`k_busy_wait`, and in some cases the clock could not be started again at
+    all. The time base is now stopped only on the way into idle, where
+    :c:func:`sys_clock_idle_exit` is guaranteed to follow. The option is only
+    partially fixed, as driver support for it has not been fully audited, and
+    is now marked experimental.
+
 * Wi-Fi
 
   * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
