@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief WiFi L2 stack public header
+ * @ingroup wifi_mgmt
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_
