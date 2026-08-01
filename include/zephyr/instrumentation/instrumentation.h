@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the code instrumentation subsystem APIs.
+ * @ingroup instrumentation_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_INSTRUMENTATION_INSTRUMENTATION_H_
 #define ZEPHYR_INCLUDE_INSTRUMENTATION_INSTRUMENTATION_H_
 
