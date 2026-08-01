@@ -322,6 +322,7 @@ struct rtio_sqe {
 	 */
 	void *userdata;
 
+	/** Operation specific arguments, selected by the op code */
 	union {
 
 		/** OP_TX */
@@ -344,7 +345,7 @@ struct rtio_sqe {
 
 		/** OP_CALLBACK */
 		struct {
-			rtio_callback_t callback;
+			rtio_callback_t callback; /**< Function to run */
 			void *arg0; /**< Last argument given to callback */
 		} callback;
 
@@ -369,8 +370,8 @@ struct rtio_sqe {
 		/** OP_I3C_CONFIGURE */
 		struct {
 			/* enum i3c_config_type type; */
-			int type;
-			void *config;
+			int type; /**< Configuration type, an enum i3c_config_type value */
+			void *config; /**< Configuration to apply */
 		} i3c_config;
 
 		/** OP_I3C_CCC */
@@ -379,8 +380,10 @@ struct rtio_sqe {
 
 		/** OP_AWAIT */
 		struct {
+			/** @cond INTERNAL_HIDDEN */
 			atomic_t ok;
-			rtio_signaled_t callback;
+			/** @endcond */
+			rtio_signaled_t callback; /**< Function to run once signaled */
 			void *userdata;
 		} await;
 	};
@@ -393,10 +396,10 @@ struct rtio_sqe {
  * May be cast safely to and from a rtio_sqe as they occupy the same memory provided by the pool
  */
 struct rtio_iodev_sqe {
-	struct rtio_sqe sqe;
-	struct mpsc_node q;
-	struct rtio_iodev_sqe *next;
-	struct rtio *r;
+	struct rtio_sqe sqe; /**< Submission this entry carries */
+	struct mpsc_node q; /**< Link used to enqueue this entry */
+	struct rtio_iodev_sqe *next; /**< Next entry in the chain or transaction, NULL if last */
+	struct rtio *r; /**< RTIO context the submission belongs to */
 };
 
 
@@ -476,6 +479,13 @@ static inline void rtio_sqe_prep_read_with_pool(struct rtio_sqe *sqe,
 	sqe->flags = RTIO_SQE_MEMPOOL_BUFFER;
 }
 
+/**
+ * @brief Prepare a multishot read op submission with context's mempool
+ *
+ * The submission keeps producing completions until it is canceled.
+ *
+ * @see rtio_sqe_prep_read_with_pool()
+ */
 static inline void rtio_sqe_prep_read_multishot(struct rtio_sqe *sqe,
 						const struct rtio_iodev *iodev, int8_t prio,
 						void *userdata)
