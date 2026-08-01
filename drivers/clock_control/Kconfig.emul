@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_EMUL
+	bool "Clock controller emulation driver"
+	default y
+	depends on DT_HAS_ZEPHYR_CLOCK_CONTROLLER_EMUL_ID_ENABLED || \
+		DT_HAS_ZEPHYR_CLOCK_CONTROLLER_EMUL_CLKID_ENABLED || \
+		DT_HAS_ZEPHYR_CLOCK_CONTROLLER_EMUL_CLK_ID_ENABLED || \
+	help
+	  Enable clock controller emulation driver.
