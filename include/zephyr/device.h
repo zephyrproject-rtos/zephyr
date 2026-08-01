@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief APIs and macros for the Zephyr device model.
+ * @ingroup device_model
+ */
+
 #ifndef ZEPHYR_INCLUDE_DEVICE_H_
 #define ZEPHYR_INCLUDE_DEVICE_H_
 
