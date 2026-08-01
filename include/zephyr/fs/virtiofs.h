@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief VirtioFS file system data structures.
+ * @ingroup file_system_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_FS_VIRTIOFS_H_
 #define ZEPHYR_INCLUDE_FS_VIRTIOFS_H_
 #include <stdint.h>
