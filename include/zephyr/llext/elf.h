@@ -218,6 +218,7 @@ struct elf64_shdr {
 #define SHF_MASKOS 0x0ff00000           /**< OS specific flags */
 #define SHF_LLEXT_HAS_RELOCS 0x00100000 /**< Section is a target for relocations */
 
+/** Mask selecting the basic section flags */
 #define SHF_BASIC_TYPE_MASK	(SHF_WRITE | SHF_ALLOC | SHF_EXECINSTR)
 
 /**
