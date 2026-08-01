@@ -2,6 +2,7 @@
  * @file drivers/stepper/stepper_drv84xx.h
  *
  * @brief Public API for DRV84XX Stepper Controller Specific Functions
+ * @ingroup stepper_interface_ext
  *
  */
 
