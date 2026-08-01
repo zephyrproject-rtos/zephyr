@@ -65,14 +65,19 @@ extern "C" {
 #endif
 
 #if !defined(MAX_FILE_NAME) /* filesystem selection */
-/* Use standard 8.3 when no filesystem is explicitly selected */
+/**
+ * @brief Maximum length of a file name, without the terminating null character.
+ *
+ * The value depends on the enabled file systems. The standard 8.3 length is
+ * used when no file system is explicitly selected.
+ */
 #define MAX_FILE_NAME 12
 #endif /* filesystem selection */
 
 #endif /* CONFIG_FILE_SYSTEM_MAX_FILE_NAME */
 
 
-/* Type for fs_open flags */
+/** Type for fs_open() flags */
 typedef uint8_t fs_mode_t;
 
 struct fs_mount_t;
