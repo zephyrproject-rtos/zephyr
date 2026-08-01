@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief Registers and fields definitions for TypeC Port Controller Interface
+ * @ingroup usb_type_c_port_controller_api
  *
  * This file contains register addresses, fields and masks used to retrieve specific data from
  * registry values. They may be used by all TCPC drivers compliant to the TCPCI specification.
