@@ -46,6 +46,7 @@ static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[0].lock),
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[0].cond),
+		.mode = ZVFS_MODE_IFCHR,
 	},
 	{
 		/* STDOUT */
@@ -53,6 +54,7 @@ static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[1].lock),
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[1].cond),
+		.mode = ZVFS_MODE_IFCHR,
 	},
 	{
 		/* STDERR */
@@ -60,6 +62,7 @@ static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
 		.refcount = ATOMIC_INIT(1),
 		.lock = Z_MUTEX_INITIALIZER(fdtable[2].lock),
 		.cond = Z_CONDVAR_INITIALIZER(fdtable[2].cond),
+		.mode = ZVFS_MODE_IFCHR,
 	},
 #else
 	{0},

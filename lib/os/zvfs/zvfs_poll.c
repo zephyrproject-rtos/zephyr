@@ -1,8 +1,5 @@
 /*
- * Copyright (c) 2017-2018 Linaro Limited
- * Copyright (c) 2021 Nordic Semiconductor
- * Copyright (c) 2023 Arm Limited (or its affiliates). All rights reserved.
- * Copyright (c) 2024 Tenstorrent AI ULC
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +13,89 @@ bool net_socket_is_tls(void *obj);
 #else
 #define net_socket_is_tls(obj) false
 #endif
+
+/*
+ * fds whose backends implement no poll ioctls have no waitable condition:
+ * they are always ready for both input and output (e.g. regular files, as
+ * POSIX requires of poll()).
+ */
+static bool zvfs_poll_always_ready(uint32_t mode)
+{
+	switch (mode & ZVFS_MODE_IFMT) {
+	case ZVFS_MODE_IFBLK:
+	case ZVFS_MODE_IFCHR:
+	case ZVFS_MODE_IFDIR:
+	case ZVFS_MODE_IFREG:
+	case ZVFS_MODE_IFSHM:
+	case ZVFS_MODE_IMSGQ:
+		return true;
+	default:
+		return false;
+	}
+}
+
+int zvfs_poll_prepare_fd(struct zvfs_pollfd *pfd, struct k_poll_event **pev,
+			 struct k_poll_event *pev_end)
+{
+	int result;
+	struct fd_entry *entry = zvfs_fd_entry_get(pfd->fd);
+
+	if (entry == NULL) {
+		return -EBADF;
+	}
+
+	if (zvfs_poll_always_ready(entry->mode)) {
+		return ZVFS_POLL_READY;
+	}
+
+	(void)k_mutex_lock(&entry->lock, K_FOREVER);
+	if (entry->obj == NULL) {
+		k_mutex_unlock(&entry->lock);
+		return -EBADF;
+	}
+	result = zvfs_fdtable_call_ioctl(entry->vtable, entry->obj, ZFD_IOCTL_POLL_PREPARE, pfd,
+					 pev, pev_end);
+	k_mutex_unlock(&entry->lock);
+
+	if (result == -EALREADY) {
+		return ZVFS_POLL_READY;
+	}
+
+	if (result < 0) {
+		return result;
+	}
+
+	return ZVFS_POLL_PREPARED;
+}
+
+int zvfs_poll_update_fd(struct zvfs_pollfd *pfd, struct k_poll_event **pev)
+{
+	int result;
+	struct fd_entry *entry = zvfs_fd_entry_get(pfd->fd);
+
+	if (entry == NULL) {
+		pfd->revents = ZVFS_POLLNVAL;
+		return 0;
+	}
+
+	if (zvfs_poll_always_ready(entry->mode)) {
+		pfd->revents = pfd->events & (ZVFS_POLLIN | ZVFS_POLLRDNORM | ZVFS_POLLOUT |
+					      ZVFS_POLLWRNORM);
+		return 0;
+	}
+
+	(void)k_mutex_lock(&entry->lock, K_FOREVER);
+	if (entry->obj == NULL) {
+		k_mutex_unlock(&entry->lock);
+		pfd->revents = ZVFS_POLLNVAL;
+		return 0;
+	}
+	result = zvfs_fdtable_call_ioctl(entry->vtable, entry->obj, ZFD_IOCTL_POLL_UPDATE, pfd,
+					 pev);
+	k_mutex_unlock(&entry->lock);
+
+	return result;
+}
 
 int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 {
@@ -37,7 +117,6 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 
 	pev = poll_events;
 	for (pfd = fds, i = nfds; i--; pfd++) {
-		void *ctx;
 		int result;
 
 		/* Per POSIX, negative fd's are just ignored */
@@ -45,46 +124,33 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 			continue;
 		}
 
-		ctx = zvfs_get_fd_obj_and_vtable(pfd->fd, &vtable, &lock);
-		if (ctx == NULL) {
+		result = zvfs_poll_prepare_fd(pfd, &pev, pev_end);
+		if (result == -EBADF) {
 			/* Will set POLLNVAL in return loop */
 			continue;
-		}
-
-		(void)k_mutex_lock(lock, K_FOREVER);
-
-		result = zvfs_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_PREPARE, pfd, &pev,
-						 pev_end);
-		if (result == -EALREADY) {
-			/* If POLL_PREPARE returned with EALREADY, it means
-			 * it already detected that some socket is ready. In
-			 * this case, we still perform a k_poll to pick up
-			 * as many events as possible, but without any wait.
+		} else if (result == ZVFS_POLL_READY) {
+			/* Some fd is already ready. In this case, we still
+			 * perform a k_poll to pick up as many events as
+			 * possible, but without any wait.
 			 */
 			timeout = K_NO_WAIT;
 			end = sys_timepoint_calc(timeout);
-			result = 0;
 		} else if (result == -EXDEV) {
-			/* If POLL_PREPARE returned EXDEV, it means
-			 * it detected an offloaded socket.
+			/* An offloaded socket was detected.
 			 * If offloaded socket is used with native TLS, the TLS
 			 * wrapper for the offloaded poll will be used.
 			 * In case the fds array contains a mixup of offloaded
 			 * and non-offloaded sockets, the offloaded poll handler
 			 * shall return an error.
 			 */
+			void *ctx = zvfs_get_fd_obj_and_vtable(pfd->fd, &vtable, &lock);
+
 			offload = true;
 			if (offl_vtable == NULL || net_socket_is_tls(ctx)) {
 				offl_vtable = vtable;
 				offl_ctx = ctx;
 			}
-
-			result = 0;
-		}
-
-		k_mutex_unlock(lock);
-
-		if (result < 0) {
+		} else if (result < 0) {
 			errno = -result;
 			return -1;
 		}
@@ -118,7 +184,6 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 
 		pev = poll_events;
 		for (pfd = fds, i = nfds; i--; pfd++) {
-			void *ctx;
 			int result;
 
 			pfd->revents = 0;
@@ -127,19 +192,7 @@ int zvfs_poll_internal(struct zvfs_pollfd *fds, int nfds, k_timeout_t timeout)
 				continue;
 			}
 
-			ctx = zvfs_get_fd_obj_and_vtable(pfd->fd, &vtable, &lock);
-			if (ctx == NULL) {
-				pfd->revents = ZVFS_POLLNVAL;
-				ret++;
-				continue;
-			}
-
-			(void)k_mutex_lock(lock, K_FOREVER);
-
-			result = zvfs_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_UPDATE, pfd,
-							 &pev);
-			k_mutex_unlock(lock);
-
+			result = zvfs_poll_update_fd(pfd, &pev);
 			if (result == -EAGAIN) {
 				retry = true;
 				continue;

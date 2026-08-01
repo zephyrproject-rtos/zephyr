@@ -29,6 +29,18 @@ struct fd_entry {
 struct fd_entry *zvfs_fd_entry_get(int fd);
 struct fd_entry *zvfs_fd_syscall_verify(int fd);
 
+/** zvfs_poll_prepare_fd() armed *pev with the fd's wait condition(s) */
+#define ZVFS_POLL_PREPARED 0
+/** zvfs_poll_prepare_fd() found the fd ready without waiting */
+#define ZVFS_POLL_READY    1
+
+struct k_poll_event;
+struct zvfs_pollfd;
+
+int zvfs_poll_prepare_fd(struct zvfs_pollfd *pfd, struct k_poll_event **pev,
+			 struct k_poll_event *pev_end);
+int zvfs_poll_update_fd(struct zvfs_pollfd *pfd, struct k_poll_event **pev);
+
 bool supports_pread_pwrite(uint32_t mode);
 int zvfs_rw_unlocked(int fd, void *buf, size_t sz, bool is_write, const size_t *from_offset);
 
