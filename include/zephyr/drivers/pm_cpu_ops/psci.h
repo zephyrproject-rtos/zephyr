@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief ARM PSCI specific APIs for CPU power management.
+ * @ingroup power_management_cpu_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PM_CPU_OPS_PSCI_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PM_CPU_OPS_PSCI_H_
 
