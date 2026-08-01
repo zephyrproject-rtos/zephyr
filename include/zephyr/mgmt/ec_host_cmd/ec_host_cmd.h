@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the embedded controller (EC) host command APIs.
+ * @ingroup ec_host_cmd_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_H_
 #define ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_H_
 
