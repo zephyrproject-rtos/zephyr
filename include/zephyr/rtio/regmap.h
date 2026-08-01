@@ -27,6 +27,7 @@ struct rtio_regs {
 	/** Number of registers in the list **/
 	size_t rtio_regs_num;
 
+	/** Description of a single memory chunk **/
 	struct rtio_regs_list {
 		/** Register address **/
 		uint8_t reg_addr;
@@ -36,7 +37,7 @@ struct rtio_regs {
 
 		/** Length of the buffer in bytes **/
 		size_t len;
-	} *rtio_regs_list;
+	} *rtio_regs_list; /**< Array of rtio_regs_num memory chunks **/
 };
 
 /**
@@ -46,9 +47,9 @@ struct rtio_regs {
  * a bus-related handling (e.g. rtio_read_regs_async)
  */
 typedef enum {
-	RTIO_BUS_I2C,
-	RTIO_BUS_SPI,
-	RTIO_BUS_I3C,
+	RTIO_BUS_I2C, /**< I2C bus */
+	RTIO_BUS_SPI, /**< SPI bus */
+	RTIO_BUS_I3C, /**< I3C bus */
 } rtio_bus_type;
 
 /**
@@ -81,7 +82,7 @@ static inline bool rtio_is_i3c(rtio_bus_type bus_type)
 	return (bus_type == RTIO_BUS_I3C);
 }
 
-/*
+/**
  * @brief Create a chain of SQEs representing a bus transaction to read a reg.
  *
  * The RTIO-enabled bus driver is instrumented to perform bus read ops
