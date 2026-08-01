@@ -86,18 +86,18 @@ struct rtio {
 	struct k_sem *consume_sem;
 #endif
 
-	/* Total number of completions */
+	/** Total number of completions */
 	atomic_t cq_count;
 
-	/* Number of completions that were unable to be submitted with results
-	 * due to the cq spsc being full
+	/** Number of completions that could not be submitted with their results
+	 * because the completion queue was full
 	 */
 	atomic_t xcqcnt;
 
-	/* Submission queue object pool with free list */
+	/** Submission queue object pool with free list */
 	struct rtio_sqe_pool *sqe_pool;
 
-	/* Complete queue object pool with free list */
+	/** Completion queue object pool with free list */
 	struct rtio_cqe_pool *cqe_pool;
 
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
@@ -105,10 +105,10 @@ struct rtio {
 	struct sys_mem_blocks *block_pool;
 #endif
 
-	/* Submission queue */
+	/** Submission queue */
 	struct mpsc sq;
 
-	/* Completion queue */
+	/** Completion queue */
 	struct mpsc cq;
 };
 
@@ -190,6 +190,8 @@ static inline uint16_t __rtio_compute_mempool_block_index(const struct rtio *r, 
 }
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
 static inline int rtio_block_pool_alloc(struct rtio *r, size_t min_sz,
 					  size_t max_sz, uint8_t **buf, uint32_t *buf_len)
 {
@@ -243,6 +245,8 @@ static inline void rtio_block_pool_free(struct rtio *r, void *buf, uint32_t buf_
 	sys_mem_blocks_free_contiguous(r->block_pool, buf, num_blks);
 #endif
 }
+
+/** @endcond */
 
 
 /** The memory partition associated with all RTIO context information */
@@ -646,9 +650,13 @@ static inline int z_impl_rtio_cqe_get_mempool_buffer(const struct rtio *r, struc
 #endif
 }
 
+/** @cond INTERNAL_HIDDEN */
+
 void rtio_executor_submit(struct rtio *r);
 void rtio_executor_ok(struct rtio_iodev_sqe *iodev_sqe, int result);
 void rtio_executor_err(struct rtio_iodev_sqe *iodev_sqe, int result);
+
+/** @endcond */
 
 /**
  * @brief Inform the executor of a submission completion with success
