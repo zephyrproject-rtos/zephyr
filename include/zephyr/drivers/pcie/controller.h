@@ -2,6 +2,7 @@
  * @file
  *
  * @brief Public APIs for the PCIe Controllers drivers.
+ * @ingroup pcie_controller_interface
  */
 
 /*

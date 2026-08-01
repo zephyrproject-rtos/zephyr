@@ -2,6 +2,7 @@
  * @file
  *
  * @brief Public APIs for the PCIe EP drivers.
+ * @ingroup pcie_interface
  */
 
 /*
