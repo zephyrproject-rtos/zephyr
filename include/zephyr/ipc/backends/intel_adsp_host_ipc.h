@@ -136,7 +136,7 @@ struct intel_adsp_ipc_data {
  * Endpoint private data struct.
  */
 struct intel_adsp_ipc_ept_priv_data {
-	/* Message done flag. */
+	/** Message done flag, set when processing of a received message is complete. */
 	bool msg_done;
 	/** Pointer to additional private data. */
 	void *priv;
