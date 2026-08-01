@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Helpers for reading and writing device register lists through RTIO.
+ * @ingroup rtio
+ */
+
 #ifndef ZEPHYR_INCLUDE_RTIO_REGMAP_H_
 #define ZEPHYR_INCLUDE_RTIO_REGMAP_H_
 

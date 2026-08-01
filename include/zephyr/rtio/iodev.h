@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief RTIO I/O Device and Related Functions
+ * @ingroup rtio
  */
 
 #ifndef ZEPHYR_INCLUDE_RTIO_IODEV_H_
