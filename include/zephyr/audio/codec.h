@@ -156,13 +156,17 @@ typedef union {
 			       /* Other DAI types go here */
 } audio_dai_cfg_t;
 
-/*
+/**
  * DAI Route types
  */
 typedef enum {
+	/** Bypass, neither the playback nor the capture path is configured */
 	AUDIO_ROUTE_BYPASS,
+	/** Playback path only */
 	AUDIO_ROUTE_PLAYBACK,
+	/** Both the playback and the capture paths */
 	AUDIO_ROUTE_PLAYBACK_CAPTURE,
+	/** Capture path only */
 	AUDIO_ROUTE_CAPTURE,
 } audio_route_t;
 
