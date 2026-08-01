@@ -8,6 +8,7 @@
  * @file
  *
  * @brief Test helper APIs for the biometrics emulator.
+ * @ingroup biometrics_emulator
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_BIOMETRICS_EMUL_H_
