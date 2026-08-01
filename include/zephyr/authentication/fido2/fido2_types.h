@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief FIDO2 shared type definitions.
+ * @ingroup fido2
  */
 
 #ifndef ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_TYPES_H_
