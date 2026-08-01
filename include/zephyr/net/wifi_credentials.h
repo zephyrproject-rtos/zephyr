@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Library for storing and loading Wi-Fi credentials.
+ * @ingroup wifi_credentials
+ */
+
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_CREDENTIALS_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_CREDENTIALS_H_
 

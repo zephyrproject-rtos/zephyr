@@ -8,6 +8,7 @@
 /**
  * @file
  * @brief IEEE 802.11 protocol and general Wi-Fi definitions.
+ * @ingroup wifi_mgmt
  */
 
 /**
