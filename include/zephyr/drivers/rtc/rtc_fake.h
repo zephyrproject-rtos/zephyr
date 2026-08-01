@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Fake RTC driver API for testing purposes.
+ * @ingroup rtc_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_RTC_RTC_FAKE_H_
 #define ZEPHYR_INCLUDE_DRIVERS_RTC_RTC_FAKE_H_
 
