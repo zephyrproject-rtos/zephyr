@@ -21,6 +21,12 @@
  */
 
 /**
+ * @file
+ * @brief Header file for the MODBUS transport protocol API.
+ * @ingroup modbus
+ */
+
+/**
  * @brief MODBUS transport protocol API
  * @defgroup modbus MODBUS
  * @ingroup connectivity
