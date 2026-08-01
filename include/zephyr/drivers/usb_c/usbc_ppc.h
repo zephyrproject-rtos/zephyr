@@ -6,6 +6,7 @@
 /**
  * @file
  * @brief USB Type-C Power Path Controller device API
+ * @ingroup usb_type_c_power_path_controller
  *
  */
 

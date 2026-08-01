@@ -6,6 +6,7 @@
 /**
  * @file
  * @brief USBC Type-C Port Controller device APIs
+ * @ingroup usb_type_c_port_controller_api
  *
  * This file contains the USB Type-C Port Controller device APIs.
  * All Type-C Port Controller device drivers should implement the
