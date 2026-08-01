@@ -2,6 +2,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Fractional and floating point data types for DSP operations.
+ * @ingroup math_dsp
+ */
+
 #ifndef ZEPHYR_INCLUDE_DSP_TYPES_H_
 #define ZEPHYR_INCLUDE_DSP_TYPES_H_
 

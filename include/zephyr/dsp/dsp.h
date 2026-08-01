@@ -6,6 +6,7 @@
  * @file zephyr/dsp/dsp.h
  *
  * @brief Public APIs for Digital Signal Processing (DSP) math.
+ * @ingroup math_dsp
  */
 
 #ifndef ZEPHYR_INCLUDE_DSP_DSP_H_
