@@ -168,6 +168,14 @@ Deprecated APIs and options
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
     Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
+* Timer
+
+  * New :c:func:`sys_clock_no_timeout` hook for handling of
+    :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE`, replacing the call to
+    :c:func:`sys_clock_set_timeout` with ``ticks=K_TICKS_FOREVER``.
+  * New :c:func:`sys_clock_idle_enter` hook for handling of entry in low-power state,
+    replacing the call to :c:func:`sys_clock_set_timeout` with ``idle=true``.
+
 * Video
 
   * All functions in the video driver API (``<zephyr/drivers/video.h>``) have moved to the video

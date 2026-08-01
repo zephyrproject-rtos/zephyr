@@ -147,20 +147,19 @@ bool sys_clock_is_locked(void);
  * Similarly a ticks value of zero is legal: it simply indicates the
  * kernel would like the next tick announcement as soon as possible.
  *
- * Note that ticks can also be passed the special value K_TICKS_FOREVER,
- * indicating that no future timer interrupts are expected or required
- * and that the system is permitted to enter an indefinite sleep even
- * if this could cause rollover of the internal counter (i.e. the
- * system uptime counter is allowed to be wrong
+ * The kernel never asks for more than SYS_CLOCK_MAX_WAIT ticks.  That is a
+ * plain upper bound and not a signal: it is indistinguishable from any other
+ * tick count, and the driver must not read a meaning into it.  A driver whose
+ * hardware cannot hold a wait that long clamps to what it can and announces
+ * the ticks that did elapse.
  *
- * Note also that it is conventional for the kernel to pass INT_MAX
- * for ticks if it wants to preserve the uptime tick count but doesn't
- * have a specific event to await.  The intent here is that the driver
- * will schedule any needed timeout as far into the future as
- * possible.  For the specific case of INT_MAX, the next call to
- * sys_clock_announce() may occur at any point in the future, not just
- * at INT_MAX ticks.  But the correspondence between the announced
- * ticks and real-world time must be correct.
+ * The two conditions a driver used to infer from the tick value now have
+ * their own entry points: sys_clock_no_timeout() for "no timeout is pending"
+ * and sys_clock_idle_enter() for "the CPU is going to sleep".  The special
+ * value K_TICKS_FOREVER is deprecated as an argument to this function.  It
+ * reaches a driver only through the default sys_clock_no_timeout(), on behalf
+ * of drivers that do not implement that hook, and that is the one place a
+ * value above SYS_CLOCK_MAX_WAIT is still passed.
  *
  * A final note about SMP: note that the call to sys_clock_set_timeout()
  * is made on any CPU, and reflects the next timeout desired globally.
