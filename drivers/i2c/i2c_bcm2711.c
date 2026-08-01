@@ -15,6 +15,9 @@
 #include <zephyr/drivers/gpio.h>
 #include "i2c_bitbang.h"
 #endif /* CONFIG_I2C_BCM2711_BUS_RECOVERY */
+#ifdef CONFIG_CLOCK_CONTROL
+#include <zephyr/drivers/clock_control.h>
+#endif /* CONFIG_CLOCK_CONTROL */
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bcm2711_i2c, CONFIG_I2C_LOG_LEVEL);
@@ -58,17 +61,21 @@ LOG_MODULE_REGISTER(bcm2711_i2c, CONFIG_I2C_LOG_LEVEL);
 struct bcm2711_i2c_config {
 	DEVICE_MMIO_ROM;
 	uint32_t bitrate;
-	uint32_t pclk;
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
 #ifdef CONFIG_I2C_BCM2711_BUS_RECOVERY
 	struct gpio_dt_spec scl;
 	struct gpio_dt_spec sda;
 #endif /* CONFIG_I2C_BCM2711_BUS_RECOVERY */
+#ifdef CONFIG_CLOCK_CONTROL
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_id;
+#endif /* CONFIG_CLOCK_CONTROL */
 };
 
 struct bcm2711_i2c_data {
 	DEVICE_MMIO_RAM;
+	uint32_t pclk;
 	struct k_sem bus_sem;
 	struct k_sem dev_sync;
 	struct i2c_msg *msgs;
@@ -273,18 +280,23 @@ static void bcm2711_i2c_isr(const struct device *dev)
 
 static int bcm2711_i2c_configure(const struct device *dev, uint32_t dev_config)
 {
-	const struct bcm2711_i2c_config *config = dev->config;
+	struct bcm2711_i2c_data *data = dev->data;
 	uint32_t divider, edge_delay;
+
+	if (data->pclk == 0) {
+		LOG_ERR("Platform clock rate is not set");
+		return -EINVAL;
+	}
 
 	/* Configure clock divider based on requested speed */
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
 		LOG_DBG("Standard mode selected");
-		divider = config->pclk / I2C_BITRATE_STANDARD;
+		divider = data->pclk / I2C_BITRATE_STANDARD;
 		break;
 	case I2C_SPEED_FAST:
 		LOG_DBG("Fast mode selected");
-		divider = config->pclk / I2C_BITRATE_FAST;
+		divider = data->pclk / I2C_BITRATE_FAST;
 		break;
 	default:
 		LOG_ERR("Only Standard or Fast modes are supported");
@@ -389,7 +401,6 @@ static int bcm2711_i2c_init(const struct device *dev)
 {
 	struct bcm2711_i2c_data *data = dev->data;
 	const struct bcm2711_i2c_config *config = dev->config;
-	uint32_t bitrate;
 	int ret;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -405,11 +416,24 @@ static int bcm2711_i2c_init(const struct device *dev)
 	bcm2711_i2c_write_reg(dev, BCM2711_I2C_CLKT, 0);
 	bcm2711_i2c_write_reg(dev, BCM2711_I2C_CR, 0);
 
-	bitrate = i2c_map_dt_bitrate(config->bitrate);
+#ifdef CONFIG_CLOCK_CONTROL
+	if (config->clock_dev) {
+		ret = clock_control_on(config->clock_dev, config->clock_id);
+		if (ret < 0) {
+			LOG_ERR("Failed to enable clock control");
+			return ret;
+		}
 
-	ret = bcm2711_i2c_configure(dev, bitrate);
+		ret = clock_control_get_rate(config->clock_dev, config->clock_id, &data->pclk);
+		if (ret < 0) {
+			LOG_ERR("Failed to get clock rate");
+			return ret;
+		}
+	}
+#endif /* CONFIG_CLOCK_CONTROL */
+
+	ret = bcm2711_i2c_configure(dev, i2c_map_dt_bitrate(config->bitrate));
 	if (ret < 0) {
-		LOG_ERR("Failed to configure I2C controller");
 		return ret;
 	}
 
@@ -440,18 +464,26 @@ static DEVICE_API(i2c, bcm2711_i2c_driver_api) = {
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
 
-#define BCM2711_I2C_DEV_DATA(n) static struct bcm2711_i2c_data bcm2711_i2c_data_##n
+#define BCM2711_I2C_DEV_DATA(n)                                                                    \
+	static struct bcm2711_i2c_data bcm2711_i2c_data_##n = {                                    \
+		.pclk = COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(n), fixed_clock),       \
+				    (DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency)), (0)),   \
+	}
 
 #define BCM2711_I2C_DEV_CFG(n)                                                                     \
 	static const struct bcm2711_i2c_config bcm2711_i2c_config_##n = {                          \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                                              \
 		.bitrate = DT_INST_PROP(n, clock_frequency),                                       \
-		.pclk = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),                       \
 		.irq_config_func = bcm2711_i2c_irq_config_func_##n,                                \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		IF_ENABLED(CONFIG_I2C_BCM2711_BUS_RECOVERY,                                        \
 		(.scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),                               \
-		 .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),)) };
+		 .sda = GPIO_DT_SPEC_INST_GET_OR(n, sda_gpios, {0}),))                             \
+		COND_CODE_1(DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(n), fixed_clock), (),           \
+		    (.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                           \
+		     .clock_id = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n,                    \
+				  COMPAT_SPECIFIC_CLOCK_CTLR_SUBSYS_CELL(n)),))                    \
+	}
 
 #define BCM2711_I2C_INIT(n)                                                                        \
 	DEVICE_DT_INST_DEFINE(n, &bcm2711_i2c_init, NULL, &bcm2711_i2c_data_##n,                   \
