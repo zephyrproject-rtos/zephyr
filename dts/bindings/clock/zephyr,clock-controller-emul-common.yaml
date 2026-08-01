@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Clock controller emulation
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  clock-ids:
+    type: array
+    required: true
+    description: |
+      Clock identifiers supported by the controller. Each identifier consists
+      of #clock-cells values, laid out in the same order as the clock-cells
+      of a clocks phandle-array entry. How those cells reach the driver as a
+      clock_control_subsys_t is described by each compatible.
+
+  clock-initial-values:
+    type: array
+    required: true
+    description: Initial rate in Hz for each identifier in clock-ids.
