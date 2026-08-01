@@ -6,6 +6,7 @@
 /**
  * @file
  * @brief USB-C Device APIs
+ * @ingroup _usbc_device_api
  *
  * This file contains the USB-C Device APIs.
  */
