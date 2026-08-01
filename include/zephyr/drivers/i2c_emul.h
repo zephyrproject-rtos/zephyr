@@ -37,12 +37,13 @@ struct i2c_emul_api;
 
 /** Node in a linked list of emulators for I2C devices */
 struct i2c_emul {
+	/** Node in the controller's linked list of emulators */
 	sys_snode_t node;
 
 	/** Target emulator - REQUIRED for all emulated bus nodes of any type */
 	const struct emul *target;
 
-	/* API provided for this device */
+	/** API provided for this device */
 	const struct i2c_emul_api *api;
 
 	/**
@@ -51,7 +52,7 @@ struct i2c_emul {
 	 */
 	struct i2c_emul_api *mock_api;
 
-	/* I2C address of the emulated device */
+	/** I2C address of the emulated device */
 	uint16_t addr;
 };
 
@@ -82,6 +83,7 @@ int i2c_emul_register(const struct device *dev, struct i2c_emul *emul);
 
 /** Definition of the emulator API */
 struct i2c_emul_api {
+	/** Passes I2C messages to the emulator */
 	i2c_emul_transfer_t transfer;
 };
 
