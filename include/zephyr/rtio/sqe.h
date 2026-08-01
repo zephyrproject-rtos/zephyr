@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief RTIO Submission Queue Events and Related Functions
+ * @ingroup rtio
  */
 
 

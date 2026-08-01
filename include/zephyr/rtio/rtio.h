@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief Real-Time IO device API for moving bytes with low effort
+ * @ingroup rtio
  *
  * RTIO is a context for asynchronous batch operations using a submission and completion queue.
  *

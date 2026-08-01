@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief RTIO work queues for executing blocking operations asynchronously.
+ * @ingroup rtio
+ */
+
 #ifndef ZEPHYR_INCLUDE_RTIO_WORK_H_
 #define ZEPHYR_INCLUDE_RTIO_WORK_H_
 
