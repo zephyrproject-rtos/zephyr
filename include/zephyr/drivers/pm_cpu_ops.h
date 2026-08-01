@@ -10,6 +10,7 @@
 /**
  * @file
  * @brief Public API for CPU Power Management
+ * @ingroup power_management_cpu_api
  */
 
 #include <zephyr/types.h>
