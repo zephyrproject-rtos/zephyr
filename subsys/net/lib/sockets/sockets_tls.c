@@ -2952,9 +2952,9 @@ static int tls_opt_cert_nocopy_set(struct tls_context *context,
 static int tls_opt_mfl_set(struct tls_context *context,
 			   const void *optval, net_socklen_t optlen)
 {
-	int *mfl;
+	const int *mfl;
 
-	if (!optval) {
+	if (optval == NULL) {
 		return -EINVAL;
 	}
 
@@ -2962,7 +2962,7 @@ static int tls_opt_mfl_set(struct tls_context *context,
 		return -EINVAL;
 	}
 
-	mfl = (int *)optval;
+	mfl = (const int *)optval;
 	if (*mfl < ZSOCK_TLS_MFL_DISABLED || *mfl > ZSOCK_TLS_MFL_4096) {
 		return -EINVAL;
 	}

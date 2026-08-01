@@ -156,6 +156,7 @@ config NET_SOCKETS_TLS_PRIORITY
 config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 	bool "Set Maximum Fragment Length (MFL)"
 	default y
+	depends on MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
 	help
 	  Call mbedtls_ssl_conf_max_frag_len() on created TLS context
 	  configuration, so that Maximum Fragment Length (MFL) will be sent to
@@ -165,11 +166,15 @@ config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 	  MBEDTLS_SSL_OUT_CONTENT_LEN and MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS
 	  macros (which are configured by CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN and
 	  CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN in
-	  case of default mbed TLS config). With DTLS, MFL value may be further
-	  limited with NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH.
+	  case of default mbed TLS config), with no upper bound exception: MFL
+	  is derived and advertised even if the buffers are already at the TLS
+	  maximum (16384 bytes). With DTLS, MFL value may be further limited
+	  with NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH.
 
 	  This is mostly useful for TLS client side to tell TLS server what is
-	  the maximum supported receive record length.
+	  the maximum supported receive record length. Disable this option to
+	  turn off all MFL handling, both this automatic derivation and the
+	  per-socket TLS_MAX_FRAGMENT_LENGTH override.
 
 config NET_SOCKETS_ENABLE_DTLS
 	bool "DTLS socket support"
