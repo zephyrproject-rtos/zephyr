@@ -315,86 +315,18 @@ static inline uint32_t z_clock_lptim_getcounter(void)
 	return lp_time;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+static void lptim_set_timeout(uint32_t ticks)
 {
 	/* new LPTIM AutoReload value to set (aligned on Kernel ticks) */
 	uint32_t next_arr = 0;
 	int err;
 
-	ARG_UNUSED(idle);
-
-#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
-	const struct pm_state_info *next;
-
-	next = pm_policy_next_state(_current_cpu->id, ticks);
-
-	/* Check if STANBY or STOP3 is requested */
-	timeout_stdby = false;
-	if ((next != NULL) && idle) {
-#ifdef CONFIG_PM_S2RAM
-		if (next->state == PM_STATE_SUSPEND_TO_RAM) {
-			timeout_stdby = true;
-		}
-#endif
-#ifdef CONFIG_STM32_STOP3_LP_MODE
-		if ((next->state == PM_STATE_SUSPEND_TO_IDLE) && (next->substate_id == 4)) {
-			timeout_stdby = true;
-		}
-#endif
-	}
-
-	if (timeout_stdby) {
-		uint64_t timeout_us =
-			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-		struct counter_alarm_cfg cfg = {
-			.callback = NULL,
-			.ticks = counter_us_to_ticks(stdby_timer, timeout_us),
-			.user_data = NULL,
-			.flags = 0,
-		};
-
-		/* Set the alarm using timer that runs the standby.
-		 * Needed rump-up/setting time, lower accurency etc. should be
-		 * included in the exit-latency in the power state definition.
-		 */
-		counter_cancel_channel_alarm(stdby_timer, 0);
-		counter_set_channel_alarm(stdby_timer, 0, &cfg);
-
-		/* Store current values to calculate a difference in
-		 * measurements after exiting the standby state.
-		 */
-		counter_get_value(stdby_timer, &stdby_timer_pre_stdby);
-		lptim_cnt_pre_stdby = z_clock_lptim_getcounter();
-
-		LL_LPTIM_DisableIT_ARROK(LPTIM);
-		LL_LPTIM_ClearFlag_ARROK(LPTIM);
-		NVIC_ClearPendingIRQ(DT_IRQN(LPTIM_SYSTIMER_NODE));
-		/* Stop clocks for LPTIM, since RTC is used instead */
-		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
-
-		return;
-	}
-#endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
-
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	/*
-	 * The kernel has no pending timeout, which it signals with
-	 * ticks == SYS_CLOCK_MAX_WAIT. Under sloppy idle the LPTIM can be
-	 * turned off entirely (never waking up, not clocked anymore).
-	 * Without sloppy idle we fall through and schedule the (capped)
-	 * timeout so the uptime tick count stays correct.
-	 */
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
-		return;
-	}
-	/*
-	 * When CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = n, ticks equals to INT_MAX
-	 * is treated as a maximum possible value LPTIM_MAX_TIMEBASE (16bit counter)
+	/* A request beyond what the 16 bit counter can hold is clamped to
+	 * LPTIM_MAX_TIMEBASE below, so the longest wait needs no special case.
 	 */
 
 	/* if LPTIM clock was previously stopped, it must now be restored */
@@ -456,6 +388,92 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	lptim_set_autoreload(next_arr);
 
 	k_spin_unlock(&lock, key);
+}
+
+void sys_clock_idle_enter(uint32_t ticks)
+{
+	if (ticks == (uint32_t)K_TICKS_FOREVER) {
+		/* Nothing to wake up for and the uptime may drift: gate the
+		 * LPTIM off. It is unclocked from here and cannot wake the CPU.
+		 * This timer serves a single CPU, so nothing else can observe
+		 * sys_clock_cycle_get_32() standing still. The
+		 * clock_control_on() in lptim_set_timeout() restores it on the
+		 * next deadline.
+		 */
+		clock_control_off(clk_ctrl, (clock_control_subsys_t)&lptim_clk[0]);
+		return;
+	}
+
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+	const struct pm_state_info *next;
+
+	next = pm_policy_next_state(_current_cpu->id, ticks);
+
+	/* Check if STANBY or STOP3 is requested */
+	timeout_stdby = false;
+	if (next != NULL) {
+#ifdef CONFIG_PM_S2RAM
+		if (next->state == PM_STATE_SUSPEND_TO_RAM) {
+			timeout_stdby = true;
+		}
+#endif
+#ifdef CONFIG_STM32_STOP3_LP_MODE
+		if ((next->state == PM_STATE_SUSPEND_TO_IDLE) && (next->substate_id == 4)) {
+			timeout_stdby = true;
+		}
+#endif
+	}
+
+	if (timeout_stdby) {
+		uint64_t timeout_us = k_ticks_to_us_ceil64(ticks);
+
+		struct counter_alarm_cfg cfg = {
+			.callback = NULL,
+			.ticks = counter_us_to_ticks(stdby_timer, timeout_us),
+			.user_data = NULL,
+			.flags = 0,
+		};
+
+		/* Set the alarm using timer that runs the standby.
+		 * Needed rump-up/setting time, lower accurency etc. should be
+		 * included in the exit-latency in the power state definition.
+		 */
+		counter_cancel_channel_alarm(stdby_timer, 0);
+		counter_set_channel_alarm(stdby_timer, 0, &cfg);
+
+		/* Store current values to calculate a difference in
+		 * measurements after exiting the standby state.
+		 */
+		counter_get_value(stdby_timer, &stdby_timer_pre_stdby);
+		lptim_cnt_pre_stdby = z_clock_lptim_getcounter();
+
+		LL_LPTIM_DisableIT_ARROK(LPTIM);
+		LL_LPTIM_ClearFlag_ARROK(LPTIM);
+		NVIC_ClearPendingIRQ(DT_IRQN(LPTIM_SYSTIMER_NODE));
+		/* Stop clocks for LPTIM, since RTC is used instead */
+		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
+
+		return;
+	}
+#endif /* CONFIG_STM32_LPTIM_STDBY_TIMER */
+
+	lptim_set_timeout(ticks);
+}
+
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
+{
+	ARG_UNUSED(idle);
+
+	/* Idle entry comes through sys_clock_idle_enter(), so this deprecated
+	 * argument is never set here. Catch a stale caller until it goes away.
+	 */
+	__ASSERT(!idle, "the idle argument is deprecated");
+
+#ifdef CONFIG_STM32_LPTIM_STDBY_TIMER
+	timeout_stdby = false;
+#endif
+
+	lptim_set_timeout(ticks);
 }
 
 static uint32_t sys_clock_lp_time_get(void)
