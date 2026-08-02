@@ -343,6 +343,28 @@ typedef int16_t device_handle_t;
 #define DEVICE_DT_INST_DEFINE_AUTO(inst, ...)                                  \
 	DEVICE_DT_DEFINE_AUTO(DT_DRV_INST(inst), __VA_ARGS__)
 
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Emit a validation record for an init entry ordered after a device.
+ *
+ * Records the entry's level, the devicetree dependency ordinal of the device
+ * it is ordered after, and its name, as a string in a non-allocated section
+ * (like debug info: present in the ELF for build-time tooling, never loaded,
+ * absent from binary outputs). The records are consumed by
+ * scripts/build/check_init_priorities.py, which verifies that the device is
+ * part of the build and does not initialize at a later level than the entry
+ * ordered after it.
+ */
+#define Z_SYS_INIT_DEPENDS_RECORD(init_fn_, level, node_id)                    \
+	__asm__(PUSHSECTION_DIRECTIVE " .zinit_depends_info,\"\"\n\t"          \
+		".asciz \"" STRINGIFY(_CONCAT(Z_INIT_SECTION_LEVEL_, level))   \
+		":" STRINGIFY(DT_DEP_ORD(node_id))                             \
+		":" STRINGIFY(init_fn_) "\"\n\t"                               \
+		POPSECTION_DIRECTIVE)
+
+/** @endcond */
+
 /**
  * @brief Register an initialization function ordered after a device's
  * initialization.
@@ -378,6 +400,7 @@ typedef int16_t device_handle_t;
 #define SYS_INIT_DEPENDS(init_fn_, level, node_id)                             \
 	BUILD_ASSERT(DT_NODE_EXISTS(node_id),                                  \
 		     "SYS_INIT_DEPENDS requires a devicetree node");           \
+	Z_SYS_INIT_DEPENDS_RECORD(init_fn_, level, node_id);                   \
 	static const Z_DECL_ALIGN(struct init_entry)                           \
 		Z_INIT_ENTRY_SECTION(level, AUTO,                              \
 			_CONCAT(DT_DEP_ORD_STR_SORTABLE(node_id), _0))         \

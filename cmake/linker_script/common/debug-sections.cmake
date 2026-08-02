@@ -14,9 +14,11 @@ zephyr_linker_section(NAME  .stab.indexstr ADDRESS 0)
 zephyr_linker_section(NAME  .gnu.build.attributes ADDRESS 0)
 zephyr_linker_section(NAME  .comment ADDRESS 0)
 
-# Anchored init entry validation records (see SYS_INIT_ANCHORED()),
-# consumed by check_init_priorities.py. Not loaded into memory.
+# Init entry validation records (see SYS_INIT_ANCHORED() and
+# SYS_INIT_DEPENDS()), consumed by check_init_priorities.py. Not loaded into
+# memory.
 zephyr_linker_section(NAME  .zinit_anchor_info ADDRESS 0)
+zephyr_linker_section(NAME  .zinit_depends_info ADDRESS 0)
 
 # DWARF debug sections.
 # Symbols in the DWARF debugging sections are relative to the beginning
