@@ -60,6 +60,14 @@ Kernel
   ``PRE_MAIN`` entry. The linker symbol ``__init_SMP_start`` has been renamed to
   ``__init_PRE_MAIN_start``; tooling that inspects init sections by name must be updated.
 
+* The ``CONFIG_SMP_BOOT_DELAY`` Kconfig option has been removed. Deferring the start of secondary
+  CPUs to run time is now expressed per CPU in the devicetree: add the ``zephyr,deferred-start``
+  flag to the corresponding ``cpu`` node under ``/cpus`` (typically in a board overlay) and start
+  the CPU later with :c:func:`k_smp_cpu_start` or :c:func:`k_smp_cpu_resume`, as before. Unlike
+  the removed option, which skipped every secondary CPU, deferral can now be chosen for each CPU
+  individually. Note that the flag only takes effect on cpu nodes whose devicetree binding
+  includes ``cpu.yaml``; a node without such a binding cannot be deferred.
+
 * When :kconfig:option:`CONFIG_SCHED_CPU_MASK_PIN_ONLY` is enabled, calling
   :c:func:`k_thread_cpu_mask_clear`, :c:func:`k_thread_cpu_mask_enable_all`,
   or :c:func:`k_thread_cpu_mask_disable` now triggers an assertion instead of

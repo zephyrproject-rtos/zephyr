@@ -324,9 +324,11 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 #ifdef CONFIG_SMP
-	if (!IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
-		z_smp_init();
-	}
+	/* Start the secondary CPUs; CPUs whose devicetree node carries
+	 * zephyr,deferred-start are skipped and left for a run-time
+	 * k_smp_cpu_start()/k_smp_cpu_resume().
+	 */
+	z_smp_init();
 #endif /* CONFIG_SMP */
 
 	/* Last init level before the application starts: everything is up,
