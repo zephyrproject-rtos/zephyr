@@ -5,6 +5,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/smp.h>
 #include <zephyr/ztest.h>
+#include <zephyr/devicetree.h>
 
 /* Experimentally 10ms is enough time to get the second CPU to run on
  * all known platforms.
@@ -15,7 +16,8 @@
 #define CPU_IPI_DELAY 2500
 
 BUILD_ASSERT(CONFIG_SMP);
-BUILD_ASSERT(CONFIG_SMP_BOOT_DELAY);
+BUILD_ASSERT(DT_PROP(DT_PATH(cpus, cpu_1), zephyr_deferred_start),
+	     "cpu@1 must carry zephyr,deferred-start for this test");
 BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS > 1);
 
 #define STACKSZ 2048
