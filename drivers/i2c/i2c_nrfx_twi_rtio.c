@@ -25,6 +25,7 @@ struct i2c_nrfx_twi_rtio_data {
 	uint32_t dev_config;
 	bool twi_enabled;
 	struct i2c_rtio *ctx;
+	struct k_work recovery_work;
 };
 
 /* Enforce dev_config matches the same offset as the common structure,
@@ -97,8 +98,11 @@ static bool i2c_nrfx_twi_rtio_start(const struct device *dev, int *status)
 		*status = i2c_nrfx_twi_configure(dev, sqe->i2c_config);
 		return false;
 	case RTIO_OP_I2C_RECOVER:
-		*status = i2c_nrfx_twi_recover_bus(dev);
-		return false;
+		error = k_work_submit(&dev_data->recovery_work);
+		if (error < 0) {
+			break;
+		}
+		return true;
 	case RTIO_OP_AWAIT:
 		iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
 		rtio_iodev_sqe_await_signal(iodev_sqe, i2c_nrfx_twi_rtio_sqe_signaled,
@@ -158,6 +162,15 @@ static int i2c_nrfx_twi_rtio_recover_bus(const struct device *dev)
 	return i2c_rtio_recover(ctx);
 }
 
+static void i2c_nrfx_twi_rtio_recovery_work_fn(struct k_work *work)
+{
+	struct i2c_nrfx_twi_rtio_data *data = CONTAINER_OF(work, struct i2c_nrfx_twi_rtio_data,
+							   recovery_work);
+	const struct device *dev = data->ctx->dt_spec.bus;
+
+	i2c_nrfx_twi_rtio_complete(dev, i2c_nrfx_twi_rtio_recover_bus(dev));
+}
+
 static void event_handler(nrfx_twi_event_t const *p_event, void *p_context)
 {
 	const struct device *dev = p_context;
@@ -208,13 +221,14 @@ static DEVICE_API(i2c, i2c_nrfx_twi_rtio_driver_api) = {
 		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority),                        \
 				nrfx_twi_irq_handler, &twi_##idx##_data.twi, 0);                  \
 		const struct i2c_nrfx_twi_config *config = dev->config;                           \
-		const struct i2c_nrfx_twi_rtio_data *dev_data = dev->data;                        \
+		struct i2c_nrfx_twi_rtio_data *dev_data = dev->data;                              \
 		int err = pinctrl_apply_state(config->pcfg,                                       \
 						PINCTRL_STATE_DEFAULT);                           \
 		if (err < 0) {                                                                    \
 			return err;                                                               \
 		}                                                                                 \
 		i2c_rtio_init(dev_data->ctx, dev);                                                \
+		k_work_init(&dev_data->recovery_work, i2c_nrfx_twi_rtio_recovery_work_fn);        \
 		return i2c_nrfx_twi_init(dev);                                                    \
 	}                                                                                         \
 												  \
