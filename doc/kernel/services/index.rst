@@ -120,6 +120,7 @@ These pages cover other kernel services.
 .. toctree::
    :maxdepth: 1
 
+   other/init.rst
    other/atomic.rst
    other/float.rst
    other/version.rst
