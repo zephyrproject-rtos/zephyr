@@ -116,7 +116,10 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 		return false;
 #if CONFIG_I2C_STM32_BUS_RECOVERY
 	case RTIO_OP_I2C_RECOVER:
-		k_work_submit(&data->recovery_work);
+		error = k_work_submit(&data->recovery_work);
+		if (error < 0) {
+			break;
+		}
 		return true;
 #endif
 	default:
