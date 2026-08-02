@@ -78,6 +78,7 @@
 					status = "okay";
 					reset-gpios = <&test_gpio 0 0>;
 					int-gpios = <&test_gpio 0 0>;
+					ti,interface-type = "rgmii";
 				};
 
 				ethernet-phy@9 {
