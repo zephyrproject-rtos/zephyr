@@ -70,6 +70,10 @@ DEVICE_INIT_OFFSET = 5
 # entry (see SYS_INIT_ANCHORED()).
 _ANCHOR_INFO_SECTION = ".zinit_anchor_info"
 
+# Non-allocated section holding one "<level>:<ordinal>:<name>" record per init
+# entry ordered after a device (see SYS_INIT_DEPENDS()).
+_DEPENDS_INFO_SECTION = ".zinit_depends_info"
+
 # Separator between the anchor names of a key's dependency chain.
 _ANCHOR_KEY_SEPARATOR = "~"
 
@@ -93,6 +97,11 @@ class Priority:
                 return
 
         raise ValueError(f"Unknown level in {level}")
+
+    @property
+    def level(self):
+        """Index of the initialization level, comparable between priorities."""
+        return self._level
 
     def __repr__(self):
         level = _DEVICE_INIT_LEVELS[self._level]
@@ -133,6 +142,7 @@ class ZephyrInitLevels:
         self._load_level_addr()
         self._process_initlevels()
         self._load_anchor_records()
+        self._load_depends_records()
 
     def _load_objects(self):
         """Initialize the object table."""
@@ -278,6 +288,27 @@ class ZephyrInitLevels:
             level, _, key = record.decode("ascii").partition(":")
             self.anchors.append((level, key))
 
+    def _load_depends_records(self):
+        """Load the records of init entries ordered after a device.
+
+        Entries registered with SYS_INIT_DEPENDS() each leave a
+        "<level>:<ordinal>:<name>" string record in a non-allocated section,
+        naming the devicetree dependency ordinal of the device they must run
+        after.
+        """
+        self.depends = []
+
+        section = self._elf.get_section_by_name(_DEPENDS_INFO_SECTION)
+        if section is None:
+            return
+
+        for record in section.data().split(b"\x00"):
+            if not record:
+                continue
+            level, _, rest = record.decode("ascii").partition(":")
+            ordinal, _, name = rest.partition(":")
+            self.depends.append((level, int(ordinal), name))
+
 
 class Validator:
     """Validates the initialization priorities.
@@ -380,6 +411,35 @@ class Validator:
             dev = self._ord2node[dev_ord]
             for dep in dev.depends_on:
                 self._check_dep(dev_ord, dep.dep_ordinal)
+
+    def check_depends(self):
+        """Validate the init entries ordered after a device.
+
+        An entry registered with SYS_INIT_DEPENDS() is placed in the
+        automatic-ordering slot of its level, keyed by the devicetree
+        dependency ordinal of the device it must run after. The linker sort
+        only guarantees the order when both are in the same level, so check
+        that the device is part of the build and does not initialize later
+        than the entry ordered after it.
+        """
+        for level, dep_ord, name in self._obj.depends:
+            dep_node = self._ord2node.get(dep_ord)
+            dep_path = dep_node.path if dep_node else f"devicetree ordinal {dep_ord}"
+
+            dep = self._obj.devices.get(dep_ord)
+            if dep is None:
+                self._flag_anchor_error(
+                    f"init entry {name} ({level}) is ordered after {dep_path}, "
+                    "which has no device in this build"
+                )
+                continue
+
+            dep_prio, dep_init = dep
+            if dep_prio.level > _DEVICE_INIT_LEVELS.index(level):
+                self._flag_anchor_error(
+                    f"init entry {name} ({level}) runs before {dep_path} "
+                    f"<{dep_init}> ({dep_prio}), the device it is ordered after"
+                )
 
     def _flag_anchor_error(self, msg):
         """Remember that an anchor validation error occurred and report it."""
@@ -523,6 +583,7 @@ def main(argv=None):
         else:
             validator.check_edt()
             validator.check_anchors()
+            validator.check_depends()
 
         if args.always_succeed:
             return 0
