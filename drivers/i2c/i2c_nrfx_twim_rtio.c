@@ -32,6 +32,7 @@ struct i2c_nrfx_twim_rtio_data {
 	uint8_t *user_rx_buf;
 	uint16_t user_rx_buf_size;
 	struct i2c_rtio *ctx;
+	struct k_work recovery_work;
 };
 
 static void i2c_nrfx_twim_rtio_complete(const struct device *dev, int status);
@@ -107,8 +108,11 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 		*status = i2c_nrfx_twim_configure(dev, sqe->i2c_config);
 		return false;
 	case RTIO_OP_I2C_RECOVER:
-		*status = i2c_nrfx_twim_recover_bus(dev);
-		return false;
+		error = k_work_submit(&data->recovery_work);
+		if (error < 0) {
+			break;
+		}
+		return true;
 	case RTIO_OP_AWAIT:
 		iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
 		rtio_iodev_sqe_await_signal(iodev_sqe, i2c_nrfx_twim_rtio_sqe_signaled,
@@ -170,6 +174,15 @@ static int i2c_nrfx_twim_rtio_recover_bus(const struct device *dev)
 	return i2c_rtio_recover(data->ctx);
 }
 
+static void i2c_nrfx_twim_rtio_recovery_work_fn(struct k_work *work)
+{
+	struct i2c_nrfx_twim_rtio_data *data = CONTAINER_OF(work, struct i2c_nrfx_twim_rtio_data,
+							   recovery_work);
+	const struct device *dev = data->ctx->dt_spec.bus;
+
+	i2c_nrfx_twim_rtio_complete(dev, i2c_nrfx_twim_rtio_recover_bus(dev));
+}
+
 static void i2c_nrfx_twim_rtio_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_seq)
 {
 	struct i2c_nrfx_twim_rtio_data *data = dev->data;
@@ -219,6 +232,7 @@ static int i2c_nrfx_twim_rtio_init(const struct device *dev)
 	struct i2c_nrfx_twim_rtio_data *data = dev->data;
 
 	i2c_rtio_init(data->ctx, dev);
+	k_work_init(&data->recovery_work, i2c_nrfx_twim_rtio_recovery_work_fn);
 	return i2c_nrfx_twim_common_init(dev);
 }
 
