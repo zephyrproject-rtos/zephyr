@@ -23,10 +23,6 @@ LOG_MODULE_REGISTER(i2c_nrfx_twim, CONFIG_I2C_LOG_LEVEL);
 
 #define DT_DRV_COMPAT nordic_nrf_twim
 
-struct i2c_nrfx_twim_rtio_config {
-	struct i2c_nrfx_twim_common_config common;
-};
-
 struct i2c_nrfx_twim_rtio_data {
 	nrfx_twim_t twim;
 	uint8_t *user_rx_buf;
@@ -46,7 +42,7 @@ static void i2c_nrfx_twim_rtio_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, vo
 
 static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 {
-	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
+	const struct i2c_nrfx_twim_common_config *config = dev->config;
 	struct i2c_nrfx_twim_rtio_data *data = dev->data;
 	struct i2c_rtio *ctx = data->ctx;
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
@@ -56,8 +52,8 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		if (!nrf_dma_accessible_check(&config->common.twim, sqe->rx.buf)) {
-			if (sqe->rx.buf_len > config->common.msg_buf_size) {
+		if (!nrf_dma_accessible_check(&config->twim, sqe->rx.buf)) {
+			if (sqe->rx.buf_len > config->msg_buf_size) {
 				error = -ENOSPC;
 				break;
 			}
@@ -65,8 +61,7 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 			data->user_rx_buf = sqe->rx.buf;
 			data->user_rx_buf_size = sqe->rx.buf_len;
 			error = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_READ | sqe->iodev_flags,
-							   config->common.msg_buf,
-							   data->user_rx_buf_size,
+							   config->msg_buf, data->user_rx_buf_size,
 							   dt_spec->addr);
 		} else {
 			data->user_rx_buf = NULL;
@@ -82,9 +77,9 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 		break;
 	case RTIO_OP_TX:
 		/* If buffer is not accessible by DMA, copy it into the internal driver buffer */
-		if (!nrf_dma_accessible_check(&config->common.twim, sqe->tx.buf)) {
+		if (!nrf_dma_accessible_check(&config->twim, sqe->tx.buf)) {
 			/* Validate buffer will fit */
-			if (sqe->tx.buf_len > config->common.msg_buf_size) {
+			if (sqe->tx.buf_len > config->msg_buf_size) {
 				LOG_ERR("Need to use the internal driver "
 					"buffer but its size is insufficient "
 					"(%u > %u). "
@@ -92,13 +87,13 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 					"zephyr,flash-buf-max-size property "
 					"(the one with greater value) in the "
 					"\"%s\"' node.",
-					sqe->tx.buf_len, config->common.msg_buf_size, dev->name);
+					sqe->tx.buf_len, config->msg_buf_size, dev->name);
 				error = -ENOSPC;
 				break;
 			}
 
-			memcpy(config->common.msg_buf, sqe->tx.buf, sqe->tx.buf_len);
-			sqe->tx.buf = config->common.msg_buf;
+			memcpy(config->msg_buf, sqe->tx.buf, sqe->tx.buf_len);
+			sqe->tx.buf = config->msg_buf;
 		}
 		error = i2c_nrfx_twim_msg_transfer(dev, I2C_MSG_WRITE | sqe->iodev_flags,
 						   (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
@@ -209,12 +204,12 @@ static void i2c_nrfx_twim_rtio_submit(const struct device *dev, struct rtio_iode
 static void event_handler(nrfx_twim_event_t const *p_event, void *p_context)
 {
 	const struct device *dev = p_context;
-	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
+	const struct i2c_nrfx_twim_common_config *config = dev->config;
 	struct i2c_nrfx_twim_rtio_data *data = dev->data;
 	int status = p_event->type == NRFX_TWIM_EVT_DONE ? 0 : -EIO;
 
 	if (data->user_rx_buf) {
-		memcpy(data->user_rx_buf, config->common.msg_buf, data->user_rx_buf_size);
+		memcpy(data->user_rx_buf, config->msg_buf, data->user_rx_buf_size);
 	}
 
 	i2c_nrfx_twim_rtio_complete(dev, status);
@@ -302,23 +297,19 @@ static int i2c_nrfx_twim_rtio_deinit(const struct device *dev)
 												\
 	PINCTRL_DT_INST_DEFINE(inst);								\
 												\
-	static const struct i2c_nrfx_twim_rtio_config twim_##inst##z_config = {			\
-		.common =									\
-			{									\
-				.twim_config =							\
-					{							\
-						.skip_gpio_cfg = true,				\
-						.skip_psel_cfg = true,				\
-						.frequency = I2C_FREQUENCY(inst),		\
-					},							\
-				.event_handler = event_handler,					\
-				.msg_buf_size = MSG_BUF_SIZE(inst),				\
-				.pre_init = pre_init##inst,					\
-				.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),			\
-				IF_ENABLED(USES_MSG_BUF(inst), (.msg_buf = MSG_BUF_SYM(inst),))	\
-				.max_transfer_size = MAX_TRANSFER_SIZE(inst),			\
-				.twim = &twim_##inst##z_data.twim,				\
-			},									\
+	static const struct i2c_nrfx_twim_common_config twim_##inst##z_config = {		\
+		.twim_config = {								\
+			.skip_gpio_cfg = true,							\
+			.skip_psel_cfg = true,							\
+			.frequency = I2C_FREQUENCY(inst),					\
+		},										\
+		.event_handler = event_handler,							\
+		.msg_buf_size = MSG_BUF_SIZE(inst),						\
+		.pre_init = pre_init##inst,							\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
+		IF_ENABLED(USES_MSG_BUF(inst), (.msg_buf = MSG_BUF_SYM(inst),))			\
+		.max_transfer_size = MAX_TRANSFER_SIZE(inst),					\
+		.twim = &twim_##inst##z_data.twim,						\
 	};											\
 												\
 	PM_DEVICE_DT_INST_DEFINE(inst, twim_nrfx_pm_action, I2C_PM_ISR_SAFE(inst));		\
