@@ -2309,6 +2309,303 @@
 	DT_CAT(node_id, _FOREACH_RANGE)(fn)
 
 /**
+ * @brief Is @p idx a valid dma-range block index?
+ *
+ * If this returns 1, then DT_DMA_RANGES_CHILD_BUS_ADDRESS_BY_IDX(node_id, idx),
+ * DT_DMA_RANGES_PARENT_BUS_ADDRESS_BY_IDX(node_id, idx) or
+ * DT_DMA_RANGES_LENGTH_BY_IDX(node_id, idx) are valid.
+ * If it returns 0, it is an error to use those macros with index @p idx.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     parent {
+ *             #address-cells = <2>;
+ *
+ *             pcie0: pcie@0 {
+ *                     compatible = "pcie-controller";
+ *                     reg = <0 0 1>;
+ *                     #address-cells = <3>;
+ *                     #size-cells = <2>;
+ *
+ *                     dma-ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                                  <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                                  <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *             };
+ *
+ *             other: other@1 {
+ *                     reg = <0 1 1>;
+ *
+ *                     dma-ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                                  <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_DMA_RANGES_HAS_IDX(DT_NODELABEL(pcie0), 0) // 1
+ *     DT_DMA_RANGES_HAS_IDX(DT_NODELABEL(pcie0), 1) // 1
+ *     DT_DMA_RANGES_HAS_IDX(DT_NODELABEL(pcie0), 2) // 1
+ *     DT_DMA_RANGES_HAS_IDX(DT_NODELABEL(pcie0), 3) // 0
+ *
+ *     DT_DMA_RANGES_HAS_IDX(DT_NODELABEL(other), 0) // 1
+ *     DT_DMA_RANGES_HAS_IDX(DT_NODELABEL(other), 1) // 1
+ *     DT_DMA_RANGES_HAS_IDX(DT_NODELABEL(other), 2) // 0
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param idx logical index into the dma-ranges array
+ * @return 1 if @p idx is a valid dma-ranges block index,
+ *         0 otherwise.
+ */
+#define DT_DMA_RANGES_HAS_IDX(node_id, idx) \
+	IS_ENABLED(DT_CAT4(node_id, _DMA_RANGES_IDX_, idx, _EXISTS))
+
+/**
+ * @brief Get the dma-ranges property child bus address at index
+ *
+ * When the node is a PCIe bus, the Child Bus Address has an extra cell used to store
+ * some flags, thus this cell is removed from the Child Bus Address.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     parent {
+ *             #address-cells = <2>;
+ *
+ *             pcie0: pcie@0 {
+ *                     compatible = "pcie-controller";
+ *                     reg = <0 0 1>;
+ *                     #address-cells = <3>;
+ *                     #size-cells = <2>;
+ *
+ *                     dma-ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                                  <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                                  <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *             };
+ *
+ *             other: other@1 {
+ *                     reg = <0 1 1>;
+ *
+ *                     dma-ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                                  <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_DMA_RANGES_CHILD_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 0) // 0x0
+ *     DT_DMA_RANGES_CHILD_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 1) // 0x0
+ *     DT_DMA_RANGES_CHILD_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 2) // 0x8000000000
+ *
+ *     DT_DMA_RANGES_CHILD_BUS_ADDRESS_BY_IDX(DT_NODELABEL(other), 0) // 0x0
+ *     DT_DMA_RANGES_CHILD_BUS_ADDRESS_BY_IDX(DT_NODELABEL(other), 1) // 0x10000000
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param idx logical index into the dma-ranges array
+ * @returns dma-range child bus address field at idx
+ */
+#define DT_DMA_RANGES_CHILD_BUS_ADDRESS_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _DMA_RANGES_IDX_, idx, _VAL_CHILD_BUS_ADDRESS)
+
+/**
+ * @brief Get the dma-ranges property parent bus address at index
+ *
+ * Similarly to DT_DMA_RANGES_CHILD_BUS_ADDRESS_BY_IDX(), this properly accounts
+ * for child bus flags cells when the node is a PCIe bus.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     parent {
+ *             #address-cells = <2>;
+ *
+ *             pcie0: pcie@0 {
+ *                     compatible = "pcie-controller";
+ *                     reg = <0 0 1>;
+ *                     #address-cells = <3>;
+ *                     #size-cells = <2>;
+ *
+ *                     dma-ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                                  <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                                  <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *             };
+ *
+ *             other: other@1 {
+ *                     reg = <0 1 1>;
+ *
+ *                     dma-ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                                  <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_DMA_RANGES_PARENT_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 0) // 0x3eff0000
+ *     DT_DMA_RANGES_PARENT_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 1) // 0x10000000
+ *     DT_DMA_RANGES_PARENT_BUS_ADDRESS_BY_IDX(DT_NODELABEL(pcie0), 2) // 0x8000000000
+ *
+ *     DT_DMA_RANGES_PARENT_BUS_ADDRESS_BY_IDX(DT_NODELABEL(other), 0) // 0x3eff0000
+ *     DT_DMA_RANGES_PARENT_BUS_ADDRESS_BY_IDX(DT_NODELABEL(other), 1) // 0x10000000
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param idx logical index into the dma-ranges array
+ * @returns dma-range parent bus address field at idx
+ */
+#define DT_DMA_RANGES_PARENT_BUS_ADDRESS_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _DMA_RANGES_IDX_, idx, _VAL_PARENT_BUS_ADDRESS)
+
+/**
+ * @brief Get the dma-ranges property length at index
+ *
+ * Similarly to DT_DMA_RANGES_CHILD_BUS_ADDRESS_BY_IDX(), this properly accounts
+ * for child bus flags cells when the node is a PCIe bus.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     parent {
+ *             #address-cells = <2>;
+ *
+ *             pcie0: pcie@0 {
+ *                     compatible = "pcie-controller";
+ *                     reg = <0 0 1>;
+ *                     #address-cells = <3>;
+ *                     #size-cells = <2>;
+ *
+ *                     dma-ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                                  <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                                  <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *             };
+ *
+ *             other: other@1 {
+ *                     reg = <0 1 1>;
+ *
+ *                     dma-ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                                  <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_DMA_RANGES_LENGTH_BY_IDX(DT_NODELABEL(pcie0), 0) // 0x10000
+ *     DT_DMA_RANGES_LENGTH_BY_IDX(DT_NODELABEL(pcie0), 1) // 0x2eff0000
+ *     DT_DMA_RANGES_LENGTH_BY_IDX(DT_NODELABEL(pcie0), 2) // 0x8000000000
+ *
+ *     DT_DMA_RANGES_LENGTH_BY_IDX(DT_NODELABEL(other), 0) // 0x10000
+ *     DT_DMA_RANGES_LENGTH_BY_IDX(DT_NODELABEL(other), 1) // 0x2eff0000
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param idx logical index into the dma-ranges array
+ * @returns dma-range length field at idx
+ */
+#define DT_DMA_RANGES_LENGTH_BY_IDX(node_id, idx) \
+	DT_CAT4(node_id, _DMA_RANGES_IDX_, idx, _VAL_LENGTH)
+
+/**
+ * @brief Get the number of dma-range blocks in the dma-ranges property
+ *
+ * Use this instead of DT_PROP_LEN(node_id, dma_ranges).
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     parent {
+ *             #address-cells = <2>;
+ *
+ *             pcie0: pcie@0 {
+ *                     compatible = "pcie-controller";
+ *                     reg = <0 0 1>;
+ *                     #address-cells = <3>;
+ *                     #size-cells = <2>;
+ *
+ *                     dma-ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                                  <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                                  <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *             };
+ *
+ *             other: other@1 {
+ *                     reg = <0 1 1>;
+ *
+ *                     dma-ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                                  <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     DT_NUM_DMA_RANGES(DT_NODELABEL(pcie0)) // 3
+ *     DT_NUM_DMA_RANGES(DT_NODELABEL(other)) // 2
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return Number of dma-range blocks in the dma-ranges property
+ */
+#define DT_NUM_DMA_RANGES(node_id) DT_CAT(node_id, _NUM_DMA_RANGES)
+
+/**
+ * @brief Invokes @p fn for each entry of @p node_id dma-ranges property
+ *
+ * The macro @p fn must take two parameters, @p node_id which will be the node
+ * identifier of the node with the dma-ranges property and @p idx the index of
+ * the dma-ranges block.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     parent {
+ *             #address-cells = <2>;
+ *
+ *             pcie0: pcie@0 {
+ *                     compatible = "pcie-controller";
+ *                     reg = <0 0 1>;
+ *                     #address-cells = <3>;
+ *                     #size-cells = <2>;
+ *
+ *                     dma-ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+ *                                  <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+ *                                  <0x3000000 0x80 0 0x80 0 0x80 0>;
+ *             };
+ *
+ *             other: other@1 {
+ *                     reg = <0 1 1>;
+ *
+ *                     dma-ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+ *                                  <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
+ *             };
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define DMA_RANGE_LENGTH(node_id, idx) DT_DMA_RANGES_LENGTH_BY_IDX(node_id, idx),
+ *
+ *     const uint64_t *dma_ranges_length[] = {
+ *             DT_FOREACH_DMA_RANGE(DT_NODELABEL(pcie0), DMA_RANGE_LENGTH)
+ *     };
+ * @endcode
+ *
+ * @param node_id node identifier with a dma-ranges property
+ * @param fn macro to invoke
+ */
+#define DT_FOREACH_DMA_RANGE(node_id, fn) \
+	DT_CAT(node_id, _FOREACH_DMA_RANGE)(fn)
+
+/**
  * @}
  */
 
