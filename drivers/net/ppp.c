@@ -526,6 +526,7 @@ static int ppp_input_byte(struct ppp_driver_context *ppp, uint8_t byte)
 		if (byte == 0x7e) {
 			/* Note that we do not save the sync flag */
 			LOG_DBG("Sync byte (0x%02x) start", byte);
+			ppp->next_escaped = false;
 			ppp_change_state(ppp, STATE_HDLC_FRAME_ADDRESS);
 #if defined(CONFIG_PPP_CLIENT_CLIENTSERVER)
 		} else {
@@ -540,6 +541,7 @@ static int ppp_input_byte(struct ppp_driver_context *ppp, uint8_t byte)
 			/* Check if we need to sync again */
 			if (byte == 0x7e) {
 				/* Just skip to the start of the pkt byte */
+				ppp->next_escaped = false;
 				return -EAGAIN;
 			}
 
@@ -575,6 +577,11 @@ static int ppp_input_byte(struct ppp_driver_context *ppp, uint8_t byte)
 		 */
 		if (byte == 0x7e) {
 			LOG_DBG("End of pkt (0x%02x)", byte);
+			/* An escape at the very end of a frame (0x7d 0x7e) is
+			 * an aborted frame, RFC 1662 ch. 4.2. Do not let the
+			 * pending escape leak into the next frame.
+			 */
+			ppp->next_escaped = false;
 			ppp_change_state(ppp, STATE_HDLC_FRAME_ADDRESS);
 			ret = 0;
 		} else {
