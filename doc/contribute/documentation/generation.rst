@@ -76,7 +76,7 @@ Installing the documentation processors
 
 Our documentation processing has been tested to run with:
 
-* Doxygen version 1.15.0
+* Doxygen version 1.17.0
 * Graphviz 2.43
 * Latexmk version 4.83
 * All Python dependencies listed in the repository file
