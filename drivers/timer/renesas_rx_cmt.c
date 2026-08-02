@@ -207,14 +207,26 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_no_timeout(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	/* Nothing to do when the kernel has no near deadline to schedule. */
-	if (ticks == SYS_CLOCK_MAX_WAIT) {
+	/* CMCOR is a period, not a deadline: a compare match clears CMCNT, so
+	 * whatever is programmed keeps firing at that rate. Stretch it to the
+	 * longest the register can hold, which is all this hardware can do to
+	 * slow the wakeups down. The cycle count comes from CMT1, so lengthening
+	 * this one leaves sys_clock_cycle_get_32() untouched.
+	 */
+	*tick_timer_cfg.cmcor = (uint16_t)COUNTER_MAX;
+}
+
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
+{
+	ARG_UNUSED(idle);
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
