@@ -63,4 +63,11 @@
 			bias-pull-up;
 		};
 	};
+
+	mcpwm0_default: mcpwm0_default {
+		group1 {
+			pinmux = <MCPWM0_OUT0A_GPIO26>;
+			output-enable;
+		};
+	};
 };
