@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Emulated PCIe EP configuration options
+
+menuconfig PCIE_EP_EMUL
+	bool "Emulated PCIe EP driver [EXPERIMENTAL]"
+	depends on PCIE_ENDPOINT
+	depends on ARCH_POSIX
+	depends on IRQ_OFFLOAD
+	depends on DT_HAS_ZEPHYR_PCIE_EP_EMUL_ENABLED
+	select EXPERIMENTAL
+	help
+	  This option enables a process-local PCIe Endpoint emulator driver
+	  implementing the PCIe EP driver API purely in software. The
+	  emulated endpoint is not externally PCIe-enumerable. It is usable
+	  on POSIX/native targets such as native_sim.
+
+	  Reset callbacks are delivered in interrupt context through
+	  irq_offload(), so this driver requires IRQ_OFFLOAD (enabled, for
+	  example, by setting CONFIG_TEST and CONFIG_IRQ_OFFLOAD in a test
+	  application).
+
+if PCIE_EP_EMUL
+
+config PCIE_EP_EMUL_MAX_APERTURES
+	int "Maximum registered host apertures per emulated endpoint"
+	range 1 32
+	default 4
+	help
+	  Bounds the per-instance aperture table. Host apertures are
+	  registered explicitly by the test host to model host memory; a
+	  small fixed table keeps per-instance RAM use bounded and
+	  deterministic.
+
+config PCIE_EP_EMUL_MAX_MAPS
+	int "Maximum concurrent outbound mappings per emulated endpoint"
+	range 1 64
+	default 8
+	help
+	  Bounds the per-instance mapping table. Each pcie_ep_map_addr()
+	  call occupies one entry until pcie_ep_unmap_addr() releases it;
+	  a small fixed table keeps per-instance RAM use bounded and
+	  deterministic.
+
+config PCIE_EP_EMUL_MAX_IRQ_EVENTS
+	int "Maximum queued interrupt events per emulated endpoint"
+	range 1 64
+	default 8
+	help
+	  Bounds the per-instance interrupt event queue. Each successful
+	  pcie_ep_raise_irq() call occupies one entry until the test host
+	  consumes it; a small fixed queue keeps per-instance RAM use
+	  bounded and surfaces unbounded producer/consumer drift in tests
+	  as -ENOSPC instead of unbounded memory growth.
+
+endif # PCIE_EP_EMUL
