@@ -21,6 +21,11 @@ LOG_MODULE_REGISTER(mipi_dbi_bitbang, CONFIG_MIPI_DBI_LOG_LEVEL);
 #define _8_BIT_MODE_PRESENT(n) (DT_INST_PROP_LEN(n, data_gpios) == 8) |
 #define MIPI_DBI_8_BIT_MODE    DT_INST_FOREACH_STATUS_OKAY(_8_BIT_MODE_PRESENT) 0
 
+/* An 8-bit data bus has exactly 8 pins, so it can never span more than 8 distinct GPIO
+ * controllers (one pin per port, worst case) -- this is a physical ceiling, not an arbitrary cap.
+ */
+#define MIPI_DBI_BITBANG_MAX_LUT_PORTS 8
+
 struct mipi_dbi_bitbang_config {
 	/* Parallel 8080/6800 data GPIOs */
 	const struct gpio_dt_spec data[MIPI_DBI_MAX_DATA_BUS_WIDTH];
@@ -45,41 +50,45 @@ struct mipi_dbi_bitbang_config {
 	const struct gpio_dt_spec reset;
 
 #if MIPI_DBI_8_BIT_MODE
-	/* Data GPIO remap look-up table. Valid if mipi_dbi_bitbang_data.single_port is set */
-	const uint32_t data_lut[256];
-
-	/* Mask of all data pins. Valid if mipi_dbi_bitbang_data.single_port is set */
-	const uint32_t data_mask;
+	/* Byte-write LUT fast path: the 8 data pins are grouped by GPIO controller at compile
+	 * time. Slot i is populated (mask != 0) only when data pin i is the lowest-index pin on
+	 * its controller -- an 8-bit bus spanning K distinct controllers therefore populates
+	 * exactly K of these 8 slots, each pointing at its own real 256-entry table; the other
+	 * (8-K) slots cost only a null pointer + zero mask, not an unused table. A single-port bus
+	 * (K=1) costs exactly what the old single-port-only LUT cost: one 256-entry table, nothing
+	 * more. Tables live in separate top-level `static const` arrays (see
+	 * MIPI_DBI_BITBANG_GROUP_TABLES) so unused slots never emit unused table data.
+	 */
+	const struct device *const lut_port_dev[MIPI_DBI_BITBANG_MAX_LUT_PORTS];
+	const uint32_t lut_port_mask[MIPI_DBI_BITBANG_MAX_LUT_PORTS];
+	const uint32_t *const lut_port_words[MIPI_DBI_BITBANG_MAX_LUT_PORTS];
 #endif
 };
 
 struct mipi_dbi_bitbang_data {
 	struct k_mutex lock;
-
-#if MIPI_DBI_8_BIT_MODE
-	/* Indicates whether all data GPIO pins are on the same port and the data LUT is used. */
-	bool single_port;
-
-	/* Data GPIO port device. Valid if mipi_dbi_bitbang_data.single_port is set */
-	const struct device *data_port;
-#endif
 };
 
 static inline void mipi_dbi_bitbang_set_data_gpios(const struct mipi_dbi_bitbang_config *config,
 						   struct mipi_dbi_bitbang_data *data,
 						   uint32_t value)
 {
+	ARG_UNUSED(data);
 #if MIPI_DBI_8_BIT_MODE
-	if (data->single_port) {
-		gpio_port_set_masked(data->data_port, config->data_mask, config->data_lut[value]);
-	} else {
-#endif
-		for (int i = 0; i < config->data_bus_width; i++) {
-			gpio_pin_set_dt(&config->data[i], (value & (1 << i)) != 0);
+	if (config->data_bus_width == 8) {
+		for (int p = 0; p < MIPI_DBI_BITBANG_MAX_LUT_PORTS; p++) {
+			if (config->lut_port_mask[p] == 0) {
+				continue;
+			}
+			gpio_port_set_masked(config->lut_port_dev[p], config->lut_port_mask[p],
+					     config->lut_port_words[p][value]);
 		}
-#if MIPI_DBI_8_BIT_MODE
+		return;
 	}
 #endif
+	for (int i = 0; i < config->data_bus_width; i++) {
+		gpio_pin_set_dt(&config->data[i], (value & (1 << i)) != 0);
+	}
 }
 
 static int mipi_dbi_bitbang_write_helper(const struct device *dev,
@@ -192,9 +201,6 @@ static int mipi_dbi_bitbang_init(const struct device *dev)
 	const struct mipi_dbi_bitbang_config *config = dev->config;
 	const char *failed_pin = NULL;
 	int ret = 0;
-#if MIPI_DBI_8_BIT_MODE
-	struct mipi_dbi_bitbang_data *data = dev->data;
-#endif
 
 	if (gpio_is_ready_dt(&config->cmd_data)) {
 		ret = gpio_pin_configure_dt(&config->cmd_data, GPIO_OUTPUT_ACTIVE);
@@ -250,22 +256,8 @@ static int mipi_dbi_bitbang_init(const struct device *dev)
 	}
 
 #if MIPI_DBI_8_BIT_MODE
-	/* To optimize performance, we test whether all the data pins are
-	 * on the same port. If they are, we can set the whole port in one go
-	 * instead of setting each pin individually.
-	 * For 8-bit mode only because LUT size grows exponentially.
-	 */
 	if (config->data_bus_width == 8) {
-		data->single_port = true;
-		data->data_port = config->data[0].port;
-		for (int i = 1; i < config->data_bus_width; i++) {
-			if (data->data_port != config->data[i].port) {
-				data->single_port = false;
-			}
-		}
-	}
-	if (data->single_port) {
-		LOG_DBG("LUT optimization enabled. data_mask=0x%x", config->data_mask);
+		LOG_DBG("LUT optimization enabled");
 	}
 #endif
 
@@ -281,36 +273,144 @@ static DEVICE_API(mipi_dbi, mipi_dbi_bitbang_driver_api) = {
 	.write_display = mipi_dbi_bitbang_write_display
 };
 
-/* This macro is repeatedly called by LISTIFY() at compile-time to generate the data bus LUT */
-#define LUT_GEN(i, n) (((i & (1 << 0)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 0)) : 0) |   \
-		       ((i & (1 << 1)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 1)) : 0) |   \
-		       ((i & (1 << 2)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 2)) : 0) |   \
-		       ((i & (1 << 3)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 3)) : 0) |   \
-		       ((i & (1 << 4)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 4)) : 0) |   \
-		       ((i & (1 << 5)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 5)) : 0) |   \
-		       ((i & (1 << 6)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 6)) : 0) |   \
-		       ((i & (1 << 7)) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 7)) : 0))
-
-/* If at least one instance has an 8-bit bus, add a data look-up table to the read-only config.
- * Whether or not it is valid and actually used for a particular instance is decided at runtime
- * and stored in the instance's mipi_dbi_bitbang_data.single_port.
- */
 #if MIPI_DBI_8_BIT_MODE
-#define DATA_LUT_OPTIMIZATION(n)                                                                   \
-		.data_lut = { LISTIFY(256, LUT_GEN, (,), n) },                                     \
-		.data_mask = ((1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 0)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 1)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 2)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 3)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 4)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 5)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 6)) |                   \
-			      (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 7)))
+
+/* Compile-time port-grouping machinery: partitions an 8-bit data bus's 8 pins by GPIO
+ * controller, entirely at preprocessor time, so the byte-write LUT fast path (above) generalizes
+ * from "all 8 pins on one port" to "however many distinct ports this instance's pins actually
+ * span" without paying flash for unused capacity. See MIPI_DBI_BITBANG_INIT's LUT_PORT_FIELDS_INIT
+ * for how this feeds the config struct.
+ */
+
+#define _MIPI_DBI_BB_CTLR(n, k)    DT_GPIO_CTLR_BY_IDX(DT_DRV_INST(n), data_gpios, k)
+#define _MIPI_DBI_BB_SAME(n, i, j) DT_SAME_NODE(_MIPI_DBI_BB_CTLR(n, i), _MIPI_DBI_BB_CTLR(n, j))
+
+/* IS_REP_i(n): bare 0/1 token, 1 if pin i is the first pin on its GPIO controller. Uses
+ * UTIL_OR/UTIL_NOT, not plain ||/!, so the result stays usable by COND_CODE_1/IF_ENABLED.
+ */
+#define MIPI_DBI_BB_IS_REP_0(n) 1
+#define MIPI_DBI_BB_IS_REP_1(n) UTIL_NOT(_MIPI_DBI_BB_SAME(n, 0, 1))
+#define MIPI_DBI_BB_IS_REP_2(n)                                                                    \
+	UTIL_NOT(UTIL_OR(_MIPI_DBI_BB_SAME(n, 0, 2), _MIPI_DBI_BB_SAME(n, 1, 2)))
+#define MIPI_DBI_BB_IS_REP_3(n)                                                                    \
+	UTIL_NOT(UTIL_OR(_MIPI_DBI_BB_SAME(n, 0, 3),                                               \
+			 UTIL_OR(_MIPI_DBI_BB_SAME(n, 1, 3), _MIPI_DBI_BB_SAME(n, 2, 3))))
+#define MIPI_DBI_BB_IS_REP_4(n)                                                                    \
+	UTIL_NOT(                                                                                  \
+		UTIL_OR(_MIPI_DBI_BB_SAME(n, 0, 4),                                                \
+			UTIL_OR(_MIPI_DBI_BB_SAME(n, 1, 4),                                        \
+				UTIL_OR(_MIPI_DBI_BB_SAME(n, 2, 4), _MIPI_DBI_BB_SAME(n, 3, 4)))))
+#define MIPI_DBI_BB_IS_REP_5(n)                                                                    \
+	UTIL_NOT(UTIL_OR(_MIPI_DBI_BB_SAME(n, 0, 5),                                               \
+			 UTIL_OR(_MIPI_DBI_BB_SAME(n, 1, 5),                                       \
+				 UTIL_OR(_MIPI_DBI_BB_SAME(n, 2, 5),                               \
+					 UTIL_OR(_MIPI_DBI_BB_SAME(n, 3, 5),                       \
+						 _MIPI_DBI_BB_SAME(n, 4, 5))))))
+#define MIPI_DBI_BB_IS_REP_6(n)                                                                    \
+	UTIL_NOT(UTIL_OR(_MIPI_DBI_BB_SAME(n, 0, 6),                                               \
+			 UTIL_OR(_MIPI_DBI_BB_SAME(n, 1, 6),                                       \
+				 UTIL_OR(_MIPI_DBI_BB_SAME(n, 2, 6),                               \
+					 UTIL_OR(_MIPI_DBI_BB_SAME(n, 3, 6),                       \
+						 UTIL_OR(_MIPI_DBI_BB_SAME(n, 4, 6),               \
+							 _MIPI_DBI_BB_SAME(n, 5, 6)))))))
+#define MIPI_DBI_BB_IS_REP_7(n)                                                                    \
+	UTIL_NOT(UTIL_OR(_MIPI_DBI_BB_SAME(n, 0, 7),                                               \
+			 UTIL_OR(_MIPI_DBI_BB_SAME(n, 1, 7),                                       \
+				 UTIL_OR(_MIPI_DBI_BB_SAME(n, 2, 7),                               \
+					 UTIL_OR(_MIPI_DBI_BB_SAME(n, 3, 7),                       \
+						 UTIL_OR(_MIPI_DBI_BB_SAME(n, 4, 7),               \
+							 UTIL_OR(_MIPI_DBI_BB_SAME(n, 5, 7),       \
+								 _MIPI_DBI_BB_SAME(n, 6, 7))))))))
+
+/* Mask of every pin that shares a GPIO controller with pin i (used for both the runtime port
+ * mask and to select which bits of the byte value feed this group's LUT entries).
+ */
+#define _MIPI_DBI_BB_MASK_TERM(k, n, i)                                                            \
+	(_MIPI_DBI_BB_SAME(n, k, i) ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, k)) : 0) |
+#define MIPI_DBI_BB_GROUP_MASK(n, i) (LISTIFY(8, _MIPI_DBI_BB_MASK_TERM, (), n, i) 0)
+
+/* Repeatedly called by the outer LISTIFY(256, ...) at compile time to generate one group's
+ * 256-entry LUT: for byte value `val`, OR together the bit positions of whichever pins both
+ * (a) are set in `val` and (b) belong to group `i`. Hardcodes all 8 candidate bits directly
+ * (matching the original LUT_GEN's own style) rather than nesting another LISTIFY call here --
+ * the preprocessor won't re-expand a macro (LISTIFY) from within its own already-expanding call
+ * tree, so a LISTIFY(8, ...) inside a LISTIFY(256, ...) callback silently fails to expand.
+ */
+#define MIPI_DBI_BB_GROUP_LUT_ENTRY(val, n, i)                                                     \
+	((((val) & (1 << 0)) && _MIPI_DBI_BB_SAME(n, 0, i)                                         \
+		  ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 0))                               \
+		  : 0) |                                                                           \
+	 (((val) & (1 << 1)) && _MIPI_DBI_BB_SAME(n, 1, i)                                         \
+		  ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 1))                               \
+		  : 0) |                                                                           \
+	 (((val) & (1 << 2)) && _MIPI_DBI_BB_SAME(n, 2, i)                                         \
+		  ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 2))                               \
+		  : 0) |                                                                           \
+	 (((val) & (1 << 3)) && _MIPI_DBI_BB_SAME(n, 3, i)                                         \
+		  ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 3))                               \
+		  : 0) |                                                                           \
+	 (((val) & (1 << 4)) && _MIPI_DBI_BB_SAME(n, 4, i)                                         \
+		  ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 4))                               \
+		  : 0) |                                                                           \
+	 (((val) & (1 << 5)) && _MIPI_DBI_BB_SAME(n, 5, i)                                         \
+		  ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 5))                               \
+		  : 0) |                                                                           \
+	 (((val) & (1 << 6)) && _MIPI_DBI_BB_SAME(n, 6, i)                                         \
+		  ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 6))                               \
+		  : 0) |                                                                           \
+	 (((val) & (1 << 7)) && _MIPI_DBI_BB_SAME(n, 7, i)                                         \
+		  ? (1 << DT_INST_GPIO_PIN_BY_IDX(n, data_gpios, 7))                               \
+		  : 0))
+
+/* Emits a real 256-entry `static const` table for group `i` only when pin `i` is that group's
+ * representative (IS_REP); otherwise emits nothing, so non-representative slots cost zero flash.
+ */
+#define MIPI_DBI_BB_MAYBE_GROUP_TABLE(n, i)                                                        \
+	IF_ENABLED(MIPI_DBI_BB_IS_REP_##i(n),                                                      \
+		   (static const uint32_t mipi_dbi_bitbang_lut_##n##_##i[256] = {                 \
+			    LISTIFY(256, MIPI_DBI_BB_GROUP_LUT_ENTRY, (,), n, i)};))
+
+#define MIPI_DBI_BITBANG_GROUP_TABLES(n)                                                           \
+	MIPI_DBI_BB_MAYBE_GROUP_TABLE(n, 0)                                                        \
+	MIPI_DBI_BB_MAYBE_GROUP_TABLE(n, 1)                                                        \
+	MIPI_DBI_BB_MAYBE_GROUP_TABLE(n, 2)                                                        \
+	MIPI_DBI_BB_MAYBE_GROUP_TABLE(n, 3)                                                        \
+	MIPI_DBI_BB_MAYBE_GROUP_TABLE(n, 4)                                                        \
+	MIPI_DBI_BB_MAYBE_GROUP_TABLE(n, 5)                                                        \
+	MIPI_DBI_BB_MAYBE_GROUP_TABLE(n, 6)                                                        \
+	MIPI_DBI_BB_MAYBE_GROUP_TABLE(n, 7)
+
+#define _MIPI_DBI_BB_DEV_ENTRY(n, i)                                                               \
+	COND_CODE_1(MIPI_DBI_BB_IS_REP_##i(n), (DEVICE_DT_GET(_MIPI_DBI_BB_CTLR(n, i))), (NULL)),
+#define _MIPI_DBI_BB_MASK_ENTRY(n, i)                                                              \
+	COND_CODE_1(MIPI_DBI_BB_IS_REP_##i(n), (MIPI_DBI_BB_GROUP_MASK(n, i)), (0)),
+#define _MIPI_DBI_BB_WORDS_ENTRY(n, i)                                                             \
+	COND_CODE_1(MIPI_DBI_BB_IS_REP_##i(n), (mipi_dbi_bitbang_lut_##n##_##i), (NULL)),
+
+#define LUT_PORT_FIELDS_INIT(n)                                                                    \
+	.lut_port_dev = {_MIPI_DBI_BB_DEV_ENTRY(n, 0) _MIPI_DBI_BB_DEV_ENTRY(n, 1)                 \
+				 _MIPI_DBI_BB_DEV_ENTRY(n, 2) _MIPI_DBI_BB_DEV_ENTRY(n, 3)         \
+					 _MIPI_DBI_BB_DEV_ENTRY(n, 4) _MIPI_DBI_BB_DEV_ENTRY(n, 5) \
+						 _MIPI_DBI_BB_DEV_ENTRY(n, 6)                      \
+							 _MIPI_DBI_BB_DEV_ENTRY(n, 7)},            \
+	.lut_port_mask = {_MIPI_DBI_BB_MASK_ENTRY(n, 0) _MIPI_DBI_BB_MASK_ENTRY(n, 1)              \
+				  _MIPI_DBI_BB_MASK_ENTRY(n, 2) _MIPI_DBI_BB_MASK_ENTRY(n, 3)      \
+					  _MIPI_DBI_BB_MASK_ENTRY(n, 4)                            \
+						  _MIPI_DBI_BB_MASK_ENTRY(n, 5)                    \
+							  _MIPI_DBI_BB_MASK_ENTRY(n, 6)            \
+								  _MIPI_DBI_BB_MASK_ENTRY(n, 7)},  \
+	.lut_port_words = {_MIPI_DBI_BB_WORDS_ENTRY(n, 0) _MIPI_DBI_BB_WORDS_ENTRY(                \
+		n, 1) _MIPI_DBI_BB_WORDS_ENTRY(n, 2) _MIPI_DBI_BB_WORDS_ENTRY(n, 3)                \
+				   _MIPI_DBI_BB_WORDS_ENTRY(n, 4) _MIPI_DBI_BB_WORDS_ENTRY(n, 5)   \
+					   _MIPI_DBI_BB_WORDS_ENTRY(n, 6)                          \
+						   _MIPI_DBI_BB_WORDS_ENTRY(n, 7)},
 #else
-#define DATA_LUT_OPTIMIZATION(n)
+#define MIPI_DBI_BITBANG_GROUP_TABLES(n)
+#define LUT_PORT_FIELDS_INIT(n)
 #endif
 
 #define MIPI_DBI_BITBANG_INIT(n)                                                                   \
+	MIPI_DBI_BITBANG_GROUP_TABLES(n)                                                           \
 	static const struct mipi_dbi_bitbang_config mipi_dbi_bitbang_config_##n = {                \
 		.data = {GPIO_DT_SPEC_INST_GET_BY_IDX_OR(n, data_gpios, 0, {0}),                   \
 			 GPIO_DT_SPEC_INST_GET_BY_IDX_OR(n, data_gpios, 1, {0}),                   \
@@ -335,8 +435,7 @@ static DEVICE_API(mipi_dbi, mipi_dbi_bitbang_driver_api) = {
 		.cs = GPIO_DT_SPEC_INST_GET_OR(n, cs_gpios, {}),                                   \
 		.cmd_data = GPIO_DT_SPEC_INST_GET_OR(n, dc_gpios, {}),                             \
 		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {}),                             \
-		DATA_LUT_OPTIMIZATION(n)                                                           \
-	};                                                                                         \
+		LUT_PORT_FIELDS_INIT(n)};                                                          \
 	BUILD_ASSERT(DT_INST_PROP_LEN(n, data_gpios) <= MIPI_DBI_MAX_DATA_BUS_WIDTH,               \
 		     "Number of data GPIOs in DT exceeds MIPI_DBI_MAX_DATA_BUS_WIDTH");            \
 	static struct mipi_dbi_bitbang_data mipi_dbi_bitbang_data_##n;                             \
