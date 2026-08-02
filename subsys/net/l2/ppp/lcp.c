@@ -258,10 +258,18 @@ static void lcp_lower_up(struct ppp_context *ctx)
 	ppp_fsm_lower_up(&ctx->lcp.fsm);
 }
 
+static void lcp_reset_peer_compression(struct ppp_context *ctx)
+{
+	ctx->lcp.peer_options.pfc = false;
+	ctx->lcp.peer_options.acfc = false;
+}
+
 static void lcp_open(struct ppp_context *ctx)
 {
 	/* Reset peer async control character map */
 	ctx->lcp.peer_options.async_map = 0xffffffff;
+
+	lcp_reset_peer_compression(ctx);
 
 	ppp_fsm_open(&ctx->lcp.fsm);
 }
@@ -287,6 +295,9 @@ static void lcp_down(struct ppp_fsm *fsm)
 
 	memset(&ctx->lcp.peer_options.auth_proto, 0,
 	       sizeof(ctx->lcp.peer_options.auth_proto));
+
+	/* The peer has to ask for compression again after renegotiation */
+	lcp_reset_peer_compression(ctx);
 
 	k_sem_give(&ctx->wait_ppp_link_down);
 
