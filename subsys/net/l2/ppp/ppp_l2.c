@@ -125,18 +125,25 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 		return proto->handler(ctx, iface, pkt);
 	}
 
-	switch (protocol) {
-	case PPP_IP:
-	case PPP_IPV6:
-	case PPP_ECP:
-	case PPP_CCP:
-	case PPP_LCP:
-	case PPP_IPCP:
-	case PPP_IPV6CP:
-		ppp_send_proto_rej(iface, pkt, protocol);
-		break;
-	default:
-		break;
+	/* The Rejected-Protocol field of a Protocol-Reject is copied verbatim
+	 * from the received frame, but RFC 1661 ch. 5.7 requires it to be two
+	 * octets. There is no headroom to expand a compressed Protocol field
+	 * in place, so stay silent rather than send a malformed reject.
+	 */
+	if (!pfc) {
+		switch (protocol) {
+		case PPP_IP:
+		case PPP_IPV6:
+		case PPP_ECP:
+		case PPP_CCP:
+		case PPP_LCP:
+		case PPP_IPCP:
+		case PPP_IPV6CP:
+			ppp_send_proto_rej(iface, pkt, protocol);
+			break;
+		default:
+			break;
+		}
 	}
 
 	NET_DBG("%s protocol %s%s(0x%02x)",
