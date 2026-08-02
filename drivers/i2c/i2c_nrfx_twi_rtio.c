@@ -189,16 +189,20 @@ static DEVICE_API(i2c, i2c_nrfx_twi_rtio_driver_api) = {
 
 #define I2C_NRFX_TWI_RTIO_DEVICE(idx)                                                             \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(DT_DRV_INST(idx));                                    \
+												  \
 	BUILD_ASSERT(I2C_FREQUENCY(DT_DRV_INST(idx)) !=                                           \
 			I2C_NRFX_TWI_INVALID_FREQUENCY,                                           \
 			"Wrong I2C " #idx " frequency setting in dts");                           \
+												  \
 	I2C_RTIO_DEFINE(_i2c##idx##_twi_rtio,                                                     \
 			DT_INST_PROP_OR(idx, sq_size, CONFIG_I2C_RTIO_SQ_SIZE),                   \
 			DT_INST_PROP_OR(idx, cq_size, CONFIG_I2C_RTIO_CQ_SIZE));                  \
+												  \
 	static struct i2c_nrfx_twi_rtio_data twi_##idx##_data = {                                 \
 		.twi = NRFX_TWI_INSTANCE(DT_INST_REG_ADDR(idx)),	                          \
 		.ctx = &_i2c##idx##_twi_rtio,                                                     \
 	};                                                                                        \
+												  \
 	static int twi_##idx##_init(const struct device *dev)                                     \
 	{                                                                                         \
 		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority),                        \
@@ -213,7 +217,9 @@ static DEVICE_API(i2c, i2c_nrfx_twi_rtio_driver_api) = {
 		i2c_rtio_init(dev_data->ctx, dev);                                                \
 		return i2c_nrfx_twi_init(dev);                                                    \
 	}                                                                                         \
+												  \
 	PINCTRL_DT_INST_DEFINE(idx);                                                              \
+												  \
 	static const struct i2c_nrfx_twi_config twi_##idx##z_config = {                           \
 		.config = {                                                                       \
 			.skip_gpio_cfg = true,                                                    \
@@ -223,7 +229,9 @@ static DEVICE_API(i2c, i2c_nrfx_twi_rtio_driver_api) = {
 		.event_handler = event_handler,                                                   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                      \
 	};                                                                                        \
+												  \
 	PM_DEVICE_DT_INST_DEFINE(idx, twi_nrfx_pm_action);                                        \
+												  \
 	I2C_DEVICE_DT_INST_DEFINE(idx,                                                            \
 			twi_##idx##_init,                                                         \
 			PM_DEVICE_DT_INST_GET(idx),                                               \
