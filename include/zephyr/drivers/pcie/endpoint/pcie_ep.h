@@ -279,9 +279,14 @@ static inline int pcie_ep_register_reset_cb(const struct device *dev,
  *	  which does not understand PCIe address directly, and
  *	  uses the mapped Host memory.
  *
- * @details If DMA controller is available in the EP device, this API can be
- *	    used to achieve data transfer between mapped Host memory,
- *	    i.e. outbound memory and EP device's local memory with DMA
+ * @details Transfer data synchronously between mapped Host memory and
+ * endpoint-local memory. A successful return means the transfer has completed,
+ * rather than merely being submitted. Keep the mapping and both memory buffers
+ * valid for the duration of this call.
+ *
+ * This function may block. Call from a thread that can yield, with interrupts
+ * enabled. Do not call from an ISR or from a context needed to complete the
+ * transfer, such as the DMA controller's own completion workqueue.
  *
  * @param   dev         Pointer to the device structure for the driver instance
  * @param   mapped_addr Mapped Host memory address
@@ -289,7 +294,10 @@ static inline int pcie_ep_register_reset_cb(const struct device *dev,
  * @param   size        DMA transfer length (bytes)
  * @param   dir         Direction of DMA transfer
  *
- * @return 0 if successful, negative errno code if failure.
+ * @retval 0 Transfer completed successfully.
+ * @retval -EDEADLK Driver detected a calling context that cannot safely complete.
+ * @retval -ENOTSUP System DMA is not supported.
+ * @return Other negative errno code reported by the driver on failure.
  */
 
 static inline int pcie_ep_dma_xfer(const struct device *dev,
@@ -334,7 +342,13 @@ int pcie_ep_xfer_data_memcpy(const struct device *dev, uint64_t pcie_addr,
  *
  * @details Helper API to achieve data transfer with system DMA through PCIe
  *          outbound memory, this API is based off pcie_ep_xfer_data_memcpy,
- *          here we use "system dma" instead of memcpy
+ *          here we use "system dma" instead of memcpy.
+ *
+ * This helper maps the Host range and releases each mapping after the
+ * corresponding pcie_ep_dma_xfer() call returns. A successful return means
+ * all requested data has been transferred. Keep the local buffer valid for
+ * the duration of the call. The calling-context requirements of
+ * pcie_ep_dma_xfer() also apply here.
  *
  * @param dev         Pointer to the device structure for the driver instance
  * @param pcie_addr   Host memory buffer address
@@ -344,7 +358,9 @@ int pcie_ep_xfer_data_memcpy(const struct device *dev, uint64_t pcie_addr,
  *                    (PCIE_OB_LOWMEM / PCIE_OB_HIGHMEM / PCIE_OB_ANYMEM)
  * @param dir         Data transfer direction (HOST_TO_DEVICE / DEVICE_TO_HOST)
  *
- * @return 0 if successful, negative errno code if failure.
+ * @retval 0 Transfer completed successfully.
+ * @retval -EDEADLK Driver detected a calling context that cannot safely complete.
+ * @return Other negative errno code reported by the driver on failure.
  */
 int pcie_ep_xfer_data_dma(const struct device *dev, uint64_t pcie_addr,
 			  uintptr_t *local_addr, uint32_t size,
