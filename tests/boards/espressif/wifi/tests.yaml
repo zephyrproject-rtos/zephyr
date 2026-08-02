@@ -22,6 +22,23 @@ tests:
       - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitc
       - esp8684_devkitm
+  esp.wifi.sec.wpa2.pm:
+    tags: wifi
+    filter: CONFIG_WIFI_ESP32
+    extra_configs:
+      - CONFIG_WIFI_TEST_AUTH_MODE_WPA2=y
+      - CONFIG_COUNTER=y
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_HEAP_MEM_POOL_ADD_SIZE_WIFI_TEST=16384
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp8684_devkitm
   esp.wifi.sec.wpa3:
     tags: wifi
     filter: CONFIG_WIFI_ESP32
