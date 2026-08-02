@@ -23,6 +23,15 @@ typedef uint64_t dma_addr_t;
 typedef uint32_t dma_addr_t;
 #endif
 
+/*
+ * Transfer addresses are native pointers; on 64-bit targets they only
+ * survive the dma_block_config fields when those are 64 bits wide.
+ * Kconfig makes DMA_64BIT the default there; overriding it off must
+ * fail the build rather than truncate addresses at runtime.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_64BIT) || IS_ENABLED(CONFIG_DMA_64BIT),
+	     "dma_emul requires CONFIG_DMA_64BIT=y on 64-bit targets");
+
 enum dma_emul_channel_state {
 	DMA_EMUL_CHANNEL_UNUSED,
 	DMA_EMUL_CHANNEL_LOADED,
@@ -56,6 +65,8 @@ struct dma_emul_config {
 	struct dma_emul_xfer_desc *xfer;
 	/* points to an array of size num_channels * num_requests */
 	struct dma_block_config *block;
+	/* points to an array of size num_channels */
+	struct dma_emul_work *work;
 };
 
 struct dma_emul_data {
@@ -63,7 +74,6 @@ struct dma_emul_data {
 	atomic_t *channels_atomic;
 	struct k_spinlock lock;
 	struct k_work_q work_q;
-	struct dma_emul_work work;
 };
 
 static void dma_emul_work_handler(struct k_work *work);
@@ -406,6 +416,7 @@ static int dma_emul_start(const struct device *dev, uint32_t channel)
 {
 	int ret = 0;
 	k_spinlock_key_t key;
+	uint32_t first_channel = channel;
 	enum dma_emul_channel_state state;
 	struct dma_emul_xfer_desc *xfer;
 	struct dma_config *xfer_config;
@@ -427,7 +438,6 @@ static int dma_emul_start(const struct device *dev, uint32_t channel)
 		break;
 	case DMA_EMUL_CHANNEL_LOADED:
 	case DMA_EMUL_CHANNEL_STOPPED:
-		data->work.channel = channel;
 		while (true) {
 			dma_emul_set_channel_state(dev, channel, DMA_EMUL_CHANNEL_STARTED);
 
@@ -440,7 +450,7 @@ static int dma_emul_start(const struct device *dev, uint32_t channel)
 				break;
 			}
 		}
-		ret = k_work_submit_to_queue(&data->work_q, &data->work.work);
+		ret = k_work_submit_to_queue(&data->work_q, &config->work[first_channel].work);
 		ret = (ret < 0) ? ret : 0;
 		break;
 	default:
@@ -500,6 +510,16 @@ static bool dma_emul_chan_filter(const struct device *dev, int channel, void *fi
 	k_spinlock_key_t key;
 	struct dma_emul_data *data = dev->data;
 
+	/*
+	 * A non-NULL filter_param requests one exact channel: it points to
+	 * a uint32_t holding the channel number, the same convention used
+	 * by other DMA drivers with exact-channel filters. NULL keeps the
+	 * any-free-channel behavior.
+	 */
+	if (filter_param != NULL && channel != (int)*(uint32_t *)filter_param) {
+		return false;
+	}
+
 	key = k_spin_lock(&data->lock);
 	/* lets assume the struct dma_context handles races properly */
 	success = dma_emul_get_channel_state(dev, channel) == DMA_EMUL_CHANNEL_UNUSED;
@@ -532,16 +552,20 @@ static int dma_emul_pm_device_pm_action(const struct device *dev, enum pm_device
 
 static int dma_emul_init(const struct device *dev)
 {
+	size_t i;
 	struct dma_emul_data *data = dev->data;
 	const struct dma_emul_config *config = dev->config;
 
-	data->work.dev = dev;
 	data->dma_ctx.magic = DMA_MAGIC;
 	data->dma_ctx.dma_channels = config->num_channels;
 	data->dma_ctx.atomic = data->channels_atomic;
 
 	k_work_queue_init(&data->work_q);
-	k_work_init(&data->work.work, dma_emul_work_handler);
+	for (i = 0; i < config->num_channels; ++i) {
+		config->work[i].dev = dev;
+		config->work[i].channel = i;
+		k_work_init(&config->work[i].work, dma_emul_work_handler);
+	}
 	k_work_queue_start(&data->work_q, config->work_q_stack, config->work_q_stack_size,
 			   config->work_q_priority, NULL);
 
@@ -582,6 +606,8 @@ static int dma_emul_init(const struct device *dev)
 		dma_emul_block_config_##_inst[DMA_EMUL_INST_NUM_CHANNELS(_inst) *                  \
 					      DMA_EMUL_INST_NUM_REQUESTS(_inst)];                  \
                                                                                                    \
+	static struct dma_emul_work dma_emul_work_##_inst[DMA_EMUL_INST_NUM_CHANNELS(_inst)];      \
+                                                                                                   \
 	static const struct dma_emul_config dma_emul_config_##_inst = {                            \
 		.channel_mask = DMA_EMUL_INST_CHANNEL_MASK(_inst),                                 \
 		.num_channels = DMA_EMUL_INST_NUM_CHANNELS(_inst),                                 \
@@ -594,6 +620,7 @@ static int dma_emul_init(const struct device *dev)
 		.work_q_priority = DT_INST_PROP_OR(_inst, priority, 0),                            \
 		.xfer = dma_emul_xfer_desc_##_inst,                                                \
 		.block = dma_emul_block_config_##_inst,                                            \
+		.work = dma_emul_work_##_inst,                                                     \
 	};                                                                                         \
                                                                                                    \
 	static ATOMIC_DEFINE(dma_emul_channels_atomic_##_inst,                                     \
