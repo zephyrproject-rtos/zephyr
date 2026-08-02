@@ -17,6 +17,7 @@
 	 * check_init_priorities.py. Not loaded into memory.
 	 */
 	SECTION_PROLOGUE(.zinit_anchor_info, 0,) { KEEP(*(.zinit_anchor_info)) }
+	SECTION_PROLOGUE(.zinit_depends_info, 0,) { KEEP(*(.zinit_depends_info)) }
 	/* DWARF debug sections.
 	   Symbols in the DWARF debugging sections are relative to the beginning
 	   of the section so we begin them at 0. */

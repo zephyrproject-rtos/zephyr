@@ -19,6 +19,8 @@ zephyr_linker_section(NAME  .comment ADDRESS 0)
 # check_init_priorities.py. Not loaded into memory.
 zephyr_linker_section(NAME  .zinit_anchor_info ADDRESS 0)
 
+zephyr_linker_section(NAME  .zinit_depends_info ADDRESS 0)
+
 # DWARF debug sections.
 # Symbols in the DWARF debugging sections are relative to the beginning
 # of the section so we begin them at 0.
