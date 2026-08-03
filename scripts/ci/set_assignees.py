@@ -56,9 +56,10 @@ two exceptions that contribute 0:
 
   - CMakeLists.txt files: build-system boilerplate present in nearly every
     directory, not a reliable signal for area ownership.
-  - Meta-areas (Documentation, Samples, Tests, Release Notes, Release): used
-    only for assignee selection when they are the *sole* area touched (see
-    below); not weighted for mixed PRs.
+  - Meta-areas, i.e. areas carrying ``meta: true`` in MAINTAINERS.yml
+    (Documentation, Samples, Tests, ...): used only for assignee selection
+    when they are the *sole* area touched (see below); not weighted for
+    mixed PRs.
 
 Platform (driver/board) areas receive a weight of 1 for the first file that
 maps to them.  Subsequent files that also map to the *same* Platform area
@@ -163,8 +164,7 @@ weight) using the following priority rules:
      of the ranked list, and the search stops.
   4. Platform areas (drivers, boards) are appended as lower-priority
      fallbacks.
-  5. Meta-areas (Documentation, Samples, Tests, Release Notes, Release)
-     are skipped in mixed PRs.
+  5. Meta-areas (``meta: true`` in MAINTAINERS.yml) are skipped in mixed PRs.
 
 After iterating all areas, the first entry in the ranked list is chosen.
 If the ranking process yielded nothing (e.g. all areas had the author as sole
@@ -310,9 +310,6 @@ query($owner: String!, $name: String!, $number: Int!) {
 
 # Courtesy sleep between consecutive GitHub API calls to avoid secondary rate limits.
 API_SLEEP_SECONDS = 1
-
-# Areas where assignee selection only fires when they are the sole area affected.
-META_AREAS = frozenset(['Release Notes', 'Documentation', 'Samples', 'Tests', 'Release'])
 
 
 def parse_args():
@@ -577,7 +574,7 @@ def _pick_assignees(pr, area_counter: dict, all_maintainers: dict, num_files: in
                 assignees,
             )
             ranked_assignees.append(assignees)
-        elif area.name not in META_AREAS:
+        elif not area.meta:
             logger.debug(
                 "Non-platform area '%s' with maintainers %s takes priority for assignment",
                 area.name,
@@ -1128,7 +1125,7 @@ def process_pr(gh, args, maintainer_file, number: int):
         for area in sorted_areas:
             # CMakeLists.txt changes and meta-area files do not count toward
             # the area weight used for assignee selection.
-            if 'CMakeLists.txt' in filename or area.name in META_AREAS:
+            if 'CMakeLists.txt' in filename or area.meta:
                 count = 0
             else:
                 # Once an instance (Platform) area has been seen, subsequent
