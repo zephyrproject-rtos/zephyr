@@ -151,7 +151,7 @@ config XTENSA_EAGER_HIFI_SHARING
 
 config XTENSA_LAZY_HIFI_SHARING
 	bool "Lazy HiFi Sharing"
-	depends on SCHED_IPI_SUPPORTED || (MP_MAX_NUM_CPUS = 1)
+	depends on (SCHED_IPI_SUPPORTED && ARCH_HAS_DIRECTED_IPIS) || (MP_MAX_NUM_CPUS = 1)
 	select ARCH_IPI_LAZY_COPROCESSORS_SAVE
 	help
 	  This option enables lazy sharing of HiFi registers across context
