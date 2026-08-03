@@ -1,7 +1,7 @@
 # Copyright (c) 2026 ITE Corporation. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.5)
+cmake_minimum_required(VERSION 3.28.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(smbus_it51xxx_test)
