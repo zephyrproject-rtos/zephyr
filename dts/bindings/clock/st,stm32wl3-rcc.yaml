@@ -1,0 +1,61 @@
+# Copyright (c) 2024 STMicroelectronics
+# Copyright (c) 2026 Anders Frandsen <anfran@anfran.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32WL3x RCC (Reset and Clock Controller).
+
+  This node is in charge of the system clock ('SYSCLK') source
+  selection and generation.
+
+  The SYSCLK source is selected with the 'clocks' property pointing to one of:
+
+    - clk_hsi: RC64MPLL in RC mode (64 MHz internal RC).
+    - pll:     RC64MPLL in PLL mode (Equal to HSE x 4/3).
+    - clk_hse: Direct HSE.
+
+  Sub-GHz radio operation requires either 'pll' or 'clk_hse' as SYSCLK source.
+
+compatible: "st,stm32wl3-rcc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+  clock-frequency:
+    required: true
+    type: int
+    description: |
+      Resulting CLK_SYS frequency in Hz.
+      Must equal the CLK_ROOT source frequency divided by 'clksys-prescaler'.
+      The driver verifies this at build time.
+
+  clksys-prescaler:
+    type: int
+    required: true
+    enum: [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64]
+    description: |
+      CLK_SYS prescaler. Defines the actual core clock frequency (CLK_SYS)
+      based on the system clock (CLK_ROOT).
+
+      Available division factors depend on the SYSCLK source:
+        - clk_hsi / pll (RC64MPLL): 1, 2, 4, 8, 16, 32, 64
+        - clk_hse (Direct HSE):     1, 2, 3, 6, 12, 24, 48
+
+  slow-clock:
+    type: phandle
+    description: |
+      Slow clock source selection.
+      On STM32WL3, all slow clock devices are clocked from the same
+      slow clock source which is selected by this property.
+
+      The slow clock can be either clk_lsi, clk_lse or CLK_ROOT_DIV / 512.
+
+clock-cells:
+  - bus
+  - bits
