@@ -80,19 +80,22 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	if (rc < 0) {
 		return rc;
 	}
+
+	/*
+	 * Apply the interrupt flags before installing the ISR: z_soc_irq_flags_apply()
+	 * returns every error before it mutates any state, so a failure needs no
+	 * rollback - nothing has been installed yet. This avoids the install-then-undo
+	 * dance and its z_isr_uninstall()/CONFIG_SHARED_INTERRUPTS dependency.
+	 */
+	rc = z_soc_irq_flags_apply(irq, flags);
+	if (rc < 0) {
+		return rc;
+	}
+
+	z_riscv_irq_priority_set(irq, priority, flags);
 #endif
 
 	z_isr_install(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, routine, parameter);
-
-#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
-	z_riscv_irq_priority_set(irq, priority, flags);
-	rc = z_soc_irq_flags_apply(irq, flags);
-	if (rc < 0) {
-		(void)z_isr_uninstall(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET,
-				      routine, parameter);
-		return rc;
-	}
-#endif
 
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) ||                            \
 	defined(CONFIG_RISCV_HAS_AIA)
