@@ -152,6 +152,10 @@ LOG_MODULE_REGISTER(CS40L5X, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L5X_T_WAIT                K_MSEC(5000)
 #define CS40L5X_T_INTERRUPT_DEBOUNCER K_USEC(500)
 
+/* Kconfig options */
+#define CS40L5X_PM_ACTIVE_TIMEOUT CONFIG_HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT
+#define CS40L5X_PM_STDBY_TIMEOUT  CONFIG_HAPTICS_CS40L5X_PM_STDBY_TIMEOUT
+
 /* Miscellaneous helpers */
 #define CS40L5X_WRITE_SFT_RESET         0x5A000000U
 #define CS40L5X_WRITE_LOGGER_DISABLE    0x00000000U
@@ -941,23 +945,14 @@ static int cs40l5x_dsp_config(const struct device *const dev)
 static int cs40l5x_timeout_config(const struct device *const dev)
 {
 	const struct cs40l5x_config *const config = dev->config;
-	uint32_t active_timeout[2], standby_timeout[2];
 	int ret;
 
-	active_timeout[0] = FIELD_GET(GENMASK(23, 0), CONFIG_HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT_MS);
-	active_timeout[1] = FIELD_GET(GENMASK(31, 24), CONFIG_HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT_MS);
-
-	standby_timeout[0] = FIELD_GET(GENMASK(23, 0), CONFIG_HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS);
-	standby_timeout[1] = FIELD_GET(GENMASK(31, 24), CONFIG_HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS);
-
-	ret = cs40lxx_burst_write(&config->io_bus, CS40L5X_REG_ACTIVE_TIMEOUT, active_timeout,
-				  ARRAY_SIZE(active_timeout));
+	ret = cs40lxx_write(&config->io_bus, CS40L5X_REG_ACTIVE_TIMEOUT, CS40L5X_PM_ACTIVE_TIMEOUT);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return cs40lxx_burst_write(&config->io_bus, CS40L5X_REG_STDBY_TIMEOUT, standby_timeout,
-				   ARRAY_SIZE(standby_timeout));
+	return cs40lxx_write(&config->io_bus, CS40L5X_REG_STDBY_TIMEOUT, CS40L5X_PM_STDBY_TIMEOUT);
 }
 
 static int cs40l5x_write_errata(const struct device *const dev)
@@ -1138,13 +1133,13 @@ static int cs40l5x_bringup(const struct device *const dev)
 		return ret;
 	}
 
-	if (CS40L5X_ANY_DEV_USE_HIBERNATION) {
-		ret = cs40l5x_timeout_config(dev);
-		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed to update timeouts (%d)", ret);
-			return ret;
-		}
+	ret = cs40l5x_timeout_config(dev);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "failed to update timeouts (%d)", ret);
+		return ret;
+	}
 
+	if (CS40L5X_ANY_DEV_USE_HIBERNATION) {
 		ret = cs40l5x_pseq_config(dev);
 		if (ret < 0) {
 			LOG_INST_DBG(config->log, "failed write sequencer update (%d)", ret);

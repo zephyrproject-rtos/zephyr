@@ -55,7 +55,7 @@ config HAPTICS_CS40L26_DYNAMIC_F0
 
 config HAPTICS_CS40L26_PM_ACTIVE_TIMEOUT
 	int "Active Timeout"
-	default 8000
+	default 0
 	range 0 327680
 	help
 	  After the device has finished playing an effect, wait the specified amount
@@ -63,7 +63,7 @@ config HAPTICS_CS40L26_PM_ACTIVE_TIMEOUT
 
 config HAPTICS_CS40L26_PM_STDBY_TIMEOUT
 	int "Standby Timeout"
-	default 160000
+	default 3277
 	range 0 327680
 	help
 	  When the device enters the standby state with hibernation enabled, wait the
