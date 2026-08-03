@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: m2s_hello_fpga_kit
+  full_name: Microchip M2S Hello FPGA Kit
+  vendor: microchip
+  socs:
+    - name: m2s010

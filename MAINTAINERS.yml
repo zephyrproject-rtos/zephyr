@@ -4067,6 +4067,7 @@ Microchip SmartFusion2 platform:
   collaborators:
     - AntonVynohradov
   files:
+    - boards/microchip/m2s_hello_fpga_kit/
     - boards/microchip/m2s010_mkr_kit/
     - drivers/clock_control/*smartfusion2*
     - dts/arm/microchip/smartfusion2*/
