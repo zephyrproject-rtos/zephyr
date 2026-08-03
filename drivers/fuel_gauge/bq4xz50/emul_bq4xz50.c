@@ -386,8 +386,8 @@ static int emul_bq4xz50_init(const struct emul *target, const struct device *par
 }
 
 /*
- * Main instantiation macro. The part token keeps the per-instance symbols distinct when more
- * than one compatible is instantiated from this translation unit.
+ * Main instantiation macro. Both compatibles are instantiated from this translation unit, so the
+ * part token is needed to keep the per-instance symbols distinct.
  */
 #define BQ4XZ50_EMUL(n, part, dev_name)                                                            \
 	static const struct bq4xz50_emul_cfg bq4xz50_emul_cfg_##part##n = {                        \
@@ -400,4 +400,8 @@ static int emul_bq4xz50_init(const struct emul *target, const struct device *par
 
 #define DT_DRV_COMPAT ti_bq40z50
 DT_INST_FOREACH_STATUS_OKAY_VARGS(BQ4XZ50_EMUL, bq40z50, "bq40z50")
+#undef DT_DRV_COMPAT
+
+#define DT_DRV_COMPAT ti_bq41z50
+DT_INST_FOREACH_STATUS_OKAY_VARGS(BQ4XZ50_EMUL, bq41z50, "bq41z50")
 #undef DT_DRV_COMPAT
