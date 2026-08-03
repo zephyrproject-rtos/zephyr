@@ -175,6 +175,20 @@ static int ethernet_set_config(uint64_t mgmt_request,
 			return -ENOTSUP;
 		}
 
+		/* A multicast group can be needed by several users at once,
+		 * so the L2 counts them and tells the driver only when the
+		 * first user joins and when the last one leaves.
+		 */
+		if (IS_ENABLED(NET_ETH_MCAST_FILTER_SUPPORTED) &&
+		    params->filter.type == ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS &&
+		    net_eth_is_addr_multicast(&params->filter.mac_address)) {
+			if (params->filter.set) {
+				return net_eth_mcast_addr_add(iface, &params->filter.mac_address);
+			}
+
+			return net_eth_mcast_addr_rm(iface, &params->filter.mac_address);
+		}
+
 		memcpy(&config.filter, &params->filter, sizeof(struct ethernet_filter));
 		type = ETHERNET_CONFIG_TYPE_FILTER;
 	} else {

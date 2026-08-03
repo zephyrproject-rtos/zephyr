@@ -40,6 +40,25 @@ config NET_L2_ETHERNET_MGMT
 	  configure at run-time Ethernet drivers and L2 settings.
 
 
+config NET_L2_ETHERNET_MCAST_FILTER_COUNT
+	int "Minimum number of L2 multicast addresses per network interface"
+	default 0
+	range 0 255
+	help
+	  Minimum number of link layer multicast addresses that one Ethernet
+	  network interface can listen to at the same time. The addresses are
+	  tracked by the Ethernet L2 so that a driver is asked to change its
+	  receive filter only when a group is joined by its first user or left
+	  by its last one. Both the IP level multicast groups and the packet
+	  socket multicast memberships are stored here, and several IP
+	  multicast addresses can map to the same link layer address.
+
+	  Every subsystem that needs the addresses states how many of them it
+	  can use with its own NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_ option.
+	  Those are summed up at build time, and the larger of that sum and
+	  this option is used, so this only needs to be set when an
+	  application needs more addresses than the subsystems asked for.
+
 config NET_L2_ETHERNET_ACCEPT_MISMATCH_L3_L2_ADDR
 	bool "Accept mismatched L3 and L2 addresses"
 	help

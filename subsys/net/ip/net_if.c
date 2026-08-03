@@ -110,7 +110,7 @@ static struct {
  */
 static sys_slist_t link_callbacks;
 
-#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(NET_IF_MCAST_MONITOR_SUPPORTED)
 /* Multicast join/leave tracking.
  */
 static sys_slist_t mcast_monitor_callbacks;
@@ -1053,7 +1053,7 @@ static void iface_router_init(void)
 #define iface_router_init(...)
 #endif /* CONFIG_NET_NATIVE_IPV4 || CONFIG_NET_NATIVE_IPV6 */
 
-#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6)
+#if defined(NET_IF_MCAST_MONITOR_SUPPORTED)
 void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
 			       struct net_if *iface,
 			       net_if_mcast_callback_t cb)
@@ -1064,7 +1064,24 @@ void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
 	sys_slist_prepend(&mcast_monitor_callbacks, &mon->node);
 
 	mon->iface = iface;
+	mon->type = NET_IF_MCAST_MONITOR_IP;
 	mon->cb = cb;
+
+	k_mutex_unlock(&lock);
+}
+
+void net_if_mcast_mon_register_l2(struct net_if_mcast_monitor *mon,
+				  struct net_if *iface,
+				  net_if_mcast_l2_callback_t cb)
+{
+	k_mutex_lock(&lock, K_FOREVER);
+
+	sys_slist_find_and_remove(&mcast_monitor_callbacks, &mon->node);
+	sys_slist_prepend(&mcast_monitor_callbacks, &mon->node);
+
+	mon->iface = iface;
+	mon->type = NET_IF_MCAST_MONITOR_L2;
+	mon->cb_l2 = cb;
 
 	k_mutex_unlock(&lock);
 }
@@ -1088,18 +1105,34 @@ void net_if_mcast_monitor(struct net_if *iface,
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
 					  mon, tmp, node) {
-		if (iface == mon->iface || mon->iface == NULL) {
+		if ((iface == mon->iface || mon->iface == NULL) &&
+		    mon->type == NET_IF_MCAST_MONITOR_IP) {
 			mon->cb(iface, addr, is_joined);
 		}
 	}
 
 	k_mutex_unlock(&lock);
 }
-#else
-#define net_if_mcast_mon_register(...)
-#define net_if_mcast_mon_unregister(...)
-#define net_if_mcast_monitor(...)
-#endif /* CONFIG_NET_NATIVE_IPV4 || CONFIG_NET_NATIVE_IPV6 */
+
+void net_if_mcast_monitor_l2(struct net_if *iface,
+			     const struct net_linkaddr *addr,
+			     bool add_membership)
+{
+	struct net_if_mcast_monitor *mon, *tmp;
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&mcast_monitor_callbacks,
+					  mon, tmp, node) {
+		if ((iface == mon->iface || mon->iface == NULL) &&
+		    mon->type == NET_IF_MCAST_MONITOR_L2) {
+			mon->cb_l2(iface, addr, add_membership);
+		}
+	}
+
+	k_mutex_unlock(&lock);
+}
+#endif /* NET_IF_MCAST_MONITOR_SUPPORTED */
 
 #if defined(CONFIG_NET_IPV6)
 int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)

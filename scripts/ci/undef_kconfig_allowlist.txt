@@ -124,6 +124,7 @@ MODULES
 MODVERSIONS  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
 MYFEATURE
 MY_DRIVER_0
+NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_  # Used as an option matching prefix
 NORMAL_SLEEP  # #defined by RV32M1 in ext/
 NRF_WIFI_FW_BIN  # Directly passed from CMakeLists.txt
 OPT

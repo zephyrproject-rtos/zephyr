@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_sock_packet, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/net_context.h>
+#include <zephyr/net/net_event.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
@@ -592,9 +593,92 @@ int zpacket_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					    optval, optlen);
 }
 
-int zpacket_setsockopt_ctx(struct net_context *ctx, int level, int optname,
-			const void *optval, net_socklen_t optlen)
+#if defined(CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP)
+static int mcast_setsockopt(struct net_context *ctx, int optname,
+			    const void *optval, net_socklen_t optlen)
 {
+	const struct net_packet_mreq *maddr = optval;
+	struct net_event_packet_mcast info;
+	struct net_linkaddr *lladdr;
+	bool add_membership;
+	uint64_t mgmt_event;
+	struct net_if *iface;
+
+	ARG_UNUSED(ctx);
+
+	if (optname == ZSOCK_PACKET_ADD_MEMBERSHIP) {
+		add_membership = true;
+		mgmt_event = NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD;
+	} else if (optname == ZSOCK_PACKET_DROP_MEMBERSHIP) {
+		add_membership = false;
+		mgmt_event = NET_EVENT_PACKET_MCAST_MEMBERSHIP_DROP;
+	} else {
+		errno = ENOPROTOOPT;
+		return -1;
+	}
+
+	if (optval == NULL || optlen != sizeof(struct net_packet_mreq)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* Only the membership of one specific multicast group can be
+	 * changed. NET_PACKET_MR_PROMISC and NET_PACKET_MR_ALLMULTI would
+	 * change how the interface filters received frames as a whole,
+	 * which the L2 multicast monitors cannot express.
+	 */
+	if (maddr->mr_type != NET_PACKET_MR_MULTICAST) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	iface = net_if_get_by_index(maddr->mr_ifindex);
+	if (iface == NULL) {
+		errno = ENODEV;
+		return -1;
+	}
+
+	if (net_if_l2(iface) == NULL || net_if_l2(iface)->get_flags == NULL ||
+	    !(net_if_l2(iface)->get_flags(iface) & NET_L2_MULTICAST)) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	lladdr = net_if_get_link_addr(iface);
+
+	if (maddr->mr_alen != lladdr->len) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	memset(&info, 0, sizeof(info));
+
+	if (net_linkaddr_set(&info.addr, maddr->mr_address,
+			     (uint8_t)maddr->mr_alen) < 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	info.addr.type = lladdr->type;
+	info.type = maddr->mr_type;
+
+	net_if_mcast_monitor_l2(iface, &info.addr, add_membership);
+
+	net_mgmt_event_notify_with_info(mgmt_event, iface, &info, sizeof(info));
+
+	return 0;
+}
+#endif /* CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP */
+
+int zpacket_setsockopt_ctx(struct net_context *ctx, int level, int optname,
+			   const void *optval, net_socklen_t optlen)
+{
+#if defined(CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP)
+	if (level == ZSOCK_SOL_PACKET) {
+		return mcast_setsockopt(ctx, optname, optval, optlen);
+	}
+#endif
+
 	return sock_fd_op_vtable.setsockopt(ctx, level, optname,
 					    optval, optlen);
 }

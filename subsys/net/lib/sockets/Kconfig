@@ -378,6 +378,14 @@ config NET_SOCKETS_PACKET_DGRAM
 	  on the information in the net_sockaddr_ll destination address before
 	  they are queued.
 
+config NET_SOCKETS_PACKET_MCAST_MEMBERSHIP
+	bool "Packet socket multicast membership support"
+	depends on NET_SOCKETS_PACKET
+	help
+	  Add support for ZSOCK_PACKET_ADD_MEMBERSHIP and ZSOCK_PACKET_DROP_MEMBERSHIP
+	  socket options for AF_PACKET sockets. The options operate at layer 2 and tell
+	  the NIC's receive filter which link-layer multicast addresses to let through.
+
 config NET_SOCKETS_INET_RAW
 	bool "AF_INET/AF_INET6 and SOCK_RAW sockets support"
 	depends on NET_NATIVE_IP

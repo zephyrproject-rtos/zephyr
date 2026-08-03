@@ -1790,12 +1790,44 @@ typedef void (*net_if_mcast_callback_t)(struct net_if *iface,
 					bool is_joined);
 
 /**
+ * @typedef net_if_mcast_l2_callback_t
+ *
+ * @brief Define a callback that is called whenever a layer 2 multicast address
+ *        group membership is added or dropped.
+ * @param iface A pointer to a struct net_if to which the L2 multicast address is
+ *        attached.
+ * @param addr L2 multicast link address.
+ * @param add_membership True if the multicast group membership is added,
+ *        false if group is dropped.
+ */
+typedef void (*net_if_mcast_l2_callback_t)(struct net_if *iface,
+					   const struct net_linkaddr *addr,
+					   bool add_membership);
+
+/**
+ * @brief Level that a multicast monitor is listening to.
+ */
+enum net_if_mcast_monitor_type {
+	/** IP level monitor, registered by net_if_mcast_mon_register() */
+	NET_IF_MCAST_MONITOR_IP,
+
+	/** L2 level monitor, registered by net_if_mcast_mon_register_l2() */
+	NET_IF_MCAST_MONITOR_L2,
+};
+
+/**
  * @brief Multicast monitor handler struct.
  *
  * Stores the multicast callback information. Caller must make sure that
  * the variable pointed by this is valid during the lifetime of
  * registration. Typically this means that the variable cannot be
  * allocated from stack.
+ *
+ * A monitor is either an IP level monitor, registered by
+ * net_if_mcast_mon_register(), or a L2 level monitor, registered by
+ * net_if_mcast_mon_register_l2(), never both. Registering the monitor
+ * again switches it to the level of the register function that was
+ * called last.
  */
 struct net_if_mcast_monitor {
 	/** Node information for the slist. */
@@ -1804,9 +1836,33 @@ struct net_if_mcast_monitor {
 	/** Network interface */
 	struct net_if *iface;
 
-	/** Multicast callback */
-	net_if_mcast_callback_t cb;
+	/** Level the monitor is listening to, tells which callback is set */
+	enum net_if_mcast_monitor_type type;
+
+	/** Callback of the level given by @ref net_if_mcast_monitor.type */
+	union {
+		/** IP level callback */
+		net_if_mcast_callback_t cb;
+
+		/** L2 level callback */
+		net_if_mcast_l2_callback_t cb_l2;
+	};
 };
+
+/** @cond INTERNAL_HIDDEN */
+
+/* The multicast monitors are needed by the IP level multicast group
+ * handling (IGMP and MLD) and by the packet socket L2 multicast membership
+ * handling.
+ */
+#if defined(CONFIG_NET_NATIVE_IPV4) || defined(CONFIG_NET_NATIVE_IPV6) ||	\
+	(defined(CONFIG_NET_NATIVE) && defined(CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP))
+#define NET_IF_MCAST_MONITOR_SUPPORTED 1
+#endif
+
+/** @endcond */
+
+#if defined(NET_IF_MCAST_MONITOR_SUPPORTED) || defined(__DOXYGEN__)
 
 /**
  * @brief Register a multicast monitor
@@ -1819,6 +1875,18 @@ struct net_if_mcast_monitor {
 void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
 			       struct net_if *iface,
 			       net_if_mcast_callback_t cb);
+
+/**
+ * @brief Register a L2 multicast monitor
+ *
+ * @param mon Monitor handle. This is a pointer to a monitor storage structure
+ * which should be allocated by caller, but does not need to be initialized.
+ * @param iface Network interface or NULL for all interfaces
+ * @param cb Monitor callback
+ */
+void net_if_mcast_mon_register_l2(struct net_if_mcast_monitor *mon,
+				  struct net_if *iface,
+				  net_if_mcast_l2_callback_t cb);
 
 /**
  * @brief Unregister a multicast monitor
@@ -1836,6 +1904,63 @@ void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon);
  */
 void net_if_mcast_monitor(struct net_if *iface, const struct net_addr *addr,
 			  bool is_joined);
+
+/**
+ * @brief Call registered L2 multicast monitors
+ *
+ * @param iface Network interface
+ * @param addr Multicast L2 address
+ * @param add_membership Is this multicast address group membership added (true)
+ *        or not (false)
+ */
+void net_if_mcast_monitor_l2(struct net_if *iface,
+			     const struct net_linkaddr *addr,
+			     bool add_membership);
+
+#else /* NET_IF_MCAST_MONITOR_SUPPORTED */
+
+static inline void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
+					     struct net_if *iface,
+					     net_if_mcast_callback_t cb)
+{
+	ARG_UNUSED(mon);
+	ARG_UNUSED(iface);
+	ARG_UNUSED(cb);
+}
+
+static inline void net_if_mcast_mon_register_l2(struct net_if_mcast_monitor *mon,
+						struct net_if *iface,
+						net_if_mcast_l2_callback_t cb)
+{
+	ARG_UNUSED(mon);
+	ARG_UNUSED(iface);
+	ARG_UNUSED(cb);
+}
+
+static inline void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon)
+{
+	ARG_UNUSED(mon);
+}
+
+static inline void net_if_mcast_monitor(struct net_if *iface,
+					const struct net_addr *addr,
+					bool is_joined)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(is_joined);
+}
+
+static inline void net_if_mcast_monitor_l2(struct net_if *iface,
+					   const struct net_linkaddr *addr,
+					   bool add_membership)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(add_membership);
+}
+
+#endif /* NET_IF_MCAST_MONITOR_SUPPORTED */
 
 /**
  * @brief Mark a given multicast address to be joined.
