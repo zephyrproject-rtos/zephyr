@@ -1111,6 +1111,17 @@ config KERNEL_NO_LTO
 	  Running kernel code from RAM can improve execution performance, especially
 	  for timing-critical routines or context switch paths.
 
+config KERNEL_UNITY_BUILD
+	bool "Unity build for the kernel"
+	help
+	  Combine kernel C source files into a single translation unit before
+	  compilation. This can reduce footprint and improve inlining across
+	  kernel sources by giving the compiler a wider view.
+
+	  Disable this option if you need per-file compiler diagnostics, are
+	  debugging symbol-visibility issues, or encounter toolchain problems
+	  with the combined translation unit.
+
 rsource "Kconfig.device"
 rsource "Kconfig.vm"
 rsource "Kconfig.init"

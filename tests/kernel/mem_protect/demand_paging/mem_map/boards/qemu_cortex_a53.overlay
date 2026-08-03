@@ -1,3 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 &sram0 {
-	reg = <0x0 0x40000000 0x0 0x72000>;
+	/* Sized so the demand_paging arena exceeds the backing store after
+	 * accounting for the kernel image (which can grow with unity builds
+	 * or future kernel changes); see test_k_mem_page_out().
+	 */
+	reg = <0x0 0x40000000 0x0 0x76000>;
 };
