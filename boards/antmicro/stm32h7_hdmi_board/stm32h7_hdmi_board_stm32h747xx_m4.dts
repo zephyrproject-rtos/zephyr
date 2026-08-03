@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m4.dtsi>
+#include "stm32h7_hdmi_board.dtsi"
+
+/ {
+	model = "Antmicro STM32H7 Hdmi Board";
+	compatible = "antmicro,stm32h7-hdmi-board";
+
+	chosen {
+		/* zephyr,console = &uart5; */
+		/* zephyr,shell-uart = &uart5; */
+		zephyr,flash = &flash1;
+		zephyr,sram = &sram1;
+	};
+
+	aliases {
+		/* led0 = &led_g; */
+		/* led1 = &led_r; */
+		/* led2 = &led_b; */
+		/* sw0 = &user_btn; */
+	};
+};
+
+&rcc {
+	clock-frequency = <DT_FREQ_M(200)>;
+};
+
+&uart5 {
+	/* status = "okay"; */
+};
