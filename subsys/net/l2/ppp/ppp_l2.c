@@ -516,8 +516,8 @@ static void tx_handler(void *p1, void *p2, void *p3)
 	}
 }
 
-static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
-				     struct net_if *iface)
+static void net_ppp_mgmt_evt_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+				     size_t info_length __unused, void *user_data __unused)
 {
 	struct ppp_context *ctx;
 
@@ -547,6 +547,9 @@ static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint64_
 	}
 }
 
+NET_MGMT_REGISTER_EVENT_HANDLER(net_ppp_mgmt_events, NET_EVENT_IF_UP | NET_EVENT_IF_DOWN,
+				net_ppp_mgmt_evt_handler, NULL);
+
 void net_ppp_init(struct net_if *iface)
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
@@ -564,11 +567,6 @@ void net_ppp_init(struct net_if *iface)
 #if defined(CONFIG_NET_SHELL)
 	k_sem_init(&ctx->shell.wait_echo_reply, 0, K_SEM_MAX_LIMIT);
 #endif
-
-	net_mgmt_init_event_callback(&ctx->mgmt_evt_cb, net_ppp_mgmt_evt_handler,
-				     (NET_EVENT_IF_UP | NET_EVENT_IF_DOWN));
-
-	net_mgmt_add_event_callback(&ctx->mgmt_evt_cb);
 
 	STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_LCP) {
