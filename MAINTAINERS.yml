@@ -2782,6 +2782,14 @@ Documentation Infrastructure:
     - name: Vendor-owned sensor drivers
       defer-to-other-areas: true
       files:
+        - drivers/sensor/adi/
+        - drivers/sensor/espressif/
+        - drivers/sensor/infineon/
+        - drivers/sensor/ite/
+        - drivers/sensor/microchip/
+        - drivers/sensor/nordic/
+        - drivers/sensor/nxp/
+        - drivers/sensor/silabs/
         - drivers/sensor/st/
         - drivers/sensor/tdk/
         - drivers/sensor/wsen/
