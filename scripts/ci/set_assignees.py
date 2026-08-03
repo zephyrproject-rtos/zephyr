@@ -188,6 +188,33 @@ If the ranking process yielded nothing (e.g. all areas had the author as sole
 maintainer), the maintainer with the highest cumulative file-weight score is
 used as a last resort.
 
+Reset mode
+----------
+With --reset, the PR is staffed from scratch instead of being topped up.  The
+new staffing is worked out first, and every decision an earlier run made is then
+undone, just before the new one is applied:
+
+  - review requests are withdrawn, except from people who reviewed or commented
+    on the PR (they are involved by their own action) and people this run is
+    about to request again (withdrawing only to re-send would notify them
+    twice).  Team review requests are left alone: the script only ever requests
+    individuals, so a team was requested by hand;
+  - all assignees are removed;
+  - all area labels defined in MAINTAINERS.yml are removed.  Size labels are
+    left to update_size_labels, which recomputes them on every run, and labels
+    the script does not own (``bug``, backport labels, ...) are never touched.
+
+Labels, reviewers and the assignee are chosen exactly as they would be for a
+newly opened PR -- including the rule that people who removed themselves from
+the review request are never re-added, which --reset cannot route around.
+
+A PR the run skips (draft, closed, more than MAX_FILES changed files) is not
+reset either: the skip is decided before the reset runs, so such a PR keeps the
+staffing it has rather than being stripped and left bare.
+
+Use it after MAINTAINERS.yml changed, or when a previous run staffed a PR
+badly.
+
 Deferred file-groups
 --------------------
 A file-group in MAINTAINERS.yml may carry ``defer-to-other-areas: true``.
@@ -419,6 +446,19 @@ def parse_args():
         action="count",
         default=0,
         help="Verbose output. Use -v for INFO, -vv for DEBUG.",
+    )
+
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        default=False,
+        help=(
+            "Re-staff the pull request from scratch: drop the review requests of "
+            "everyone who has not reviewed or commented, remove the assignees and "
+            "the MAINTAINERS.yml area labels, then apply labels, reviewers and an "
+            "assignee as if the pull request had just been opened. Reviewers who "
+            "removed themselves are not re-added."
+        ),
     )
 
     parser.add_argument(
@@ -1106,6 +1146,99 @@ def _select_labels(pr, labels: set, area_counter: dict, area_files: dict) -> set
     return kept | (labels & _SIZE_LABELS)
 
 
+def _interacted_logins(pr) -> set:
+    """Return the logins of everyone who has engaged with *pr*.
+
+    That is anyone who submitted a review, or commented on the PR itself or on
+    one of its review threads.  Such people are involved in the change by their
+    own action, so a reset must not drop them.
+    """
+    logins = set()
+
+    def _add(user):
+        login = getattr(user, 'login', None)
+        if login:
+            logins.add(login)
+
+    for review in pr.get_reviews():
+        _add(review.user)
+    for comment in pr.get_issue_comments():
+        _add(comment.user)
+    for comment in pr.get_review_comments():
+        _add(comment.user)
+
+    return logins
+
+
+def _reset_pr(pr, args, maintainer_file, keep=()) -> set:
+    """Undo this script's earlier decisions on *pr* so it can be staffed afresh.
+
+    Removes the review request from everyone who has not engaged with the PR,
+    drops every assignee, and strips the area labels that MAINTAINERS.yml
+    defines.  The caller then applies the staffing it has just computed, so the
+    PR ends up as if it had been opened now.
+
+    Called late in process_pr, once that staffing is known, for two reasons:
+    every early return (draft, closed, MAX_FILES) has already had its say, so a
+    reset cannot strip a PR and then bail out without restaffing it; and *keep*
+    can hold the logins about to be requested again.  Their request is left in
+    place, since withdrawing it only to re-send it would notify them twice.
+
+    Four things are deliberately left alone:
+
+      - Reviewers who reviewed or commented (see _interacted_logins).  They are
+        already part of the conversation, and dropping their request would
+        either lose that or notify them again for nothing.
+      - Team review requests.  This script only ever requests individuals, so a
+        team request was added by hand and a reset has no basis to withdraw it.
+      - Size labels: update_size_labels recomputes them on every run and
+        removes the stale ones itself.
+      - Labels the script does not own (``bug``, ``RFC``, backport labels, ...).
+        They are not derived from MAINTAINERS.yml, so a reset has no basis for
+        second-guessing whoever added them.
+
+    People who removed themselves from the review request are not handled here:
+    _add_reviewers already refuses to re-request them, so the reset cannot
+    route around that opt-out.
+
+    Returns the names of the labels removed, since pr.labels is a snapshot
+    taken before the reset.
+    """
+    protected = _interacted_logins(pr) | set(keep)
+
+    review_users, _review_teams = pr.get_review_requests()
+    requested = {user.login for user in review_users}
+
+    kept = sorted(requested & protected)
+    if kept:
+        logger.info(
+            "Reset: keeping review request(s) for users who engaged or are still responsible: %s",
+            kept,
+        )
+
+    stale = sorted(requested - protected)
+    if stale:
+        logger.info("Reset: removing %d review request(s): %s", len(stale), stale)
+        if not args.dry_run:
+            pr.delete_review_request(reviewers=stale)
+
+    assignees = sorted({assignee.login for assignee in pr.assignees})
+    if assignees:
+        logger.info("Reset: removing assignee(s): %s", assignees)
+        if not args.dry_run:
+            pr.remove_from_assignees(*assignees)
+
+    area_labels = {label for area in maintainer_file.areas.values() for label in area.labels}
+    removed_labels = {label.name for label in pr.labels} & area_labels
+    if removed_labels:
+        logger.info("Reset: removing label(s): %s", sorted(removed_labels))
+        for name in sorted(removed_labels):
+            if not args.dry_run:
+                pr.remove_from_labels(name)
+
+    return removed_labels
+
+
 def process_pr(gh, args, maintainer_file, number: int):
     gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
     pr = gh_repo.get_pull(number)
@@ -1331,11 +1464,20 @@ def process_pr(gh, args, maintainer_file, number: int):
 
     assignees = _pick_assignees(pr, area_counter, all_maintainers, num_files)
 
+    # With --reset, wipe what an earlier run decided before applying the above,
+    # so the PR ends up staffed as if it were new.  This happens here, not
+    # earlier: every skip condition above has had its say, so a reset cannot
+    # strip a PR the run then declines to restaff, and the reviewers about to be
+    # requested again keep the request they already have.  What the reset
+    # removed is tracked because pr.labels and pr.assignee still describe the
+    # PR as it was before.
+    removed_labels = _reset_pr(pr, args, maintainer_file, keep=collab) if args.reset else set()
+
     # Apply labels — skip any that are already present, then add the rest in
     # a single API call to avoid per-label timeline noise.
     if labels:
         labels = _select_labels(pr, labels, area_counter, area_files)
-        current_label_names = {lbl.name for lbl in pr.labels}
+        current_label_names = {lbl.name for lbl in pr.labels} - removed_labels
         new_labels = sorted(labels - current_label_names)
         if new_labels:
             logger.info("Adding labels: %s", new_labels)
@@ -1351,10 +1493,12 @@ def process_pr(gh, args, maintainer_file, number: int):
         _add_reviewers(gh, gh_repo, pr, args, collab)
 
     # Set assignees (only when none are set yet, unless doing a dry run).
-    if assignees and (not pr.assignee or args.dry_run):
+    # --reset just cleared them, so pr.assignee describes a state that is gone.
+    has_assignee = pr.assignee and not args.reset
+    if assignees and (not has_assignee or args.dry_run):
         _assign_maintainers(gh, pr, args, assignees)
     else:
-        reason = "already has assignee" if pr.assignee else "no assignees found"
+        reason = "already has assignee" if has_assignee else "no assignees found"
         logger.info("Not setting assignee for PR #%d: %s", pr.number, reason)
 
     time.sleep(API_SLEEP_SECONDS)

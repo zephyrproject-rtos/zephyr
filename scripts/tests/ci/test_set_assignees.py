@@ -15,6 +15,8 @@ import sys
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 # ---------------------------------------------------------------------------
 # Stub heavy third-party and project-local modules before the SUT is imported.
 # ---------------------------------------------------------------------------
@@ -541,11 +543,13 @@ def _make_process_pr_harness(areas_per_file, pr_user="someone"):
     pr.labels = []
     pr.user = SimpleNamespace(login=pr_user)
     pr.assignee = None
+    pr.assignees = []
     pr.get_files.return_value = [SimpleNamespace(filename=fn) for fn in areas_per_file]
     pr.get_reviews.return_value = []
     pr.get_review_requests.return_value = ([], [])
     pr.get_issue_events.return_value = []
     pr.get_issue_comments.return_value = []
+    pr.get_review_comments.return_value = []
 
     mf = MagicMock()
     mf.path2areas.side_effect = lambda p: areas_per_file.get(p, [])
@@ -584,6 +588,7 @@ def _make_process_pr_harness(areas_per_file, pr_user="someone"):
         updated_manifest=None,
         updated_maintainer_file=None,
         size_labels=False,
+        reset=False,
     )
     return gh, args, mf, pr
 
@@ -1315,6 +1320,224 @@ class TestReviewRequestRetry:
         sut._add_reviewers(gh, gh_repo, pr, args, [f"u{i}" for i in range(25)])
 
         assert pr.create_review_request.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Reset mode  (--reset / _reset_pr)
+# ---------------------------------------------------------------------------
+
+
+def _user(login):
+    return SimpleNamespace(login=login)
+
+
+def _label(name):
+    return SimpleNamespace(name=name)
+
+
+def _requests_deleted(pr):
+    """Logins passed to delete_review_request() across all calls."""
+    return [
+        login
+        for call in pr.delete_review_request.call_args_list
+        for login in call.kwargs.get("reviewers", call.args[0] if call.args else [])
+    ]
+
+
+def _labels_removed(pr):
+    """Label names passed to remove_from_labels() across all calls."""
+    return [name for call in pr.remove_from_labels.call_args_list for name in call.args]
+
+
+class TestResetPr:
+    @staticmethod
+    def _mf(*areas):
+        mf = MagicMock()
+        mf.areas = {area.name: area for area in areas}
+        return mf
+
+    def _pr(self, requested=(), reviewed=(), commented=(), assignees=(), labels=()):
+        pr = MagicMock()
+        pr.number = 99
+        pr.labels = [_label(name) for name in labels]
+        pr.assignees = [_user(login) for login in assignees]
+        pr.get_review_requests.return_value = ([_user(u) for u in requested], [])
+        pr.get_reviews.return_value = [SimpleNamespace(user=_user(u)) for u in reviewed]
+        pr.get_issue_comments.return_value = [SimpleNamespace(user=_user(u)) for u in commented]
+        pr.get_review_comments.return_value = []
+        return pr
+
+    def test_uninvolved_reviewers_are_removed(self):
+        pr = self._pr(requested=["idle_a", "idle_b"])
+        sut._reset_pr(pr, _make_args(), self._mf())
+        assert sorted(_requests_deleted(pr)) == ["idle_a", "idle_b"]
+
+    def test_reviewer_who_reviewed_is_kept(self):
+        pr = self._pr(requested=["reviewer", "idle"], reviewed=["reviewer"])
+        sut._reset_pr(pr, _make_args(), self._mf())
+        assert _requests_deleted(pr) == ["idle"]
+
+    @pytest.mark.parametrize("state", ["APPROVED", "CHANGES_REQUESTED", "COMMENTED", "DISMISSED"])
+    def test_submitted_review_is_never_removed(self, state):
+        """Whatever the verdict, having reviewed protects the review request.
+
+        GitHub normally clears the pending request when a review is submitted,
+        so such a reviewer is not in get_review_requests() at all; this covers
+        the case where someone re-requested a review afterwards.
+        """
+        pr = self._pr(requested=["reviewer", "idle"])
+        pr.get_reviews.return_value = [SimpleNamespace(user=_user("reviewer"), state=state)]
+
+        sut._reset_pr(pr, _make_args(), self._mf())
+
+        assert "reviewer" not in _requests_deleted(pr)
+        assert _requests_deleted(pr) == ["idle"]
+
+    def test_reviewer_who_commented_is_kept(self):
+        pr = self._pr(requested=["talker", "idle"], commented=["talker"])
+        sut._reset_pr(pr, _make_args(), self._mf())
+        assert _requests_deleted(pr) == ["idle"]
+
+    def test_review_thread_comment_counts_as_interaction(self):
+        pr = self._pr(requested=["nitpicker", "idle"])
+        pr.get_review_comments.return_value = [SimpleNamespace(user=_user("nitpicker"))]
+        sut._reset_pr(pr, _make_args(), self._mf())
+        assert _requests_deleted(pr) == ["idle"]
+
+    def test_reviewer_about_to_be_requested_again_is_kept(self):
+        """Withdrawing a request the run is about to re-send would notify twice."""
+        pr = self._pr(requested=["still_owns_it", "idle"])
+        sut._reset_pr(pr, _make_args(), self._mf(), keep=["still_owns_it"])
+        assert _requests_deleted(pr) == ["idle"]
+
+    def test_team_review_requests_are_left_alone(self):
+        pr = self._pr(requested=["idle"])
+        pr.get_review_requests.return_value = ([_user("idle")], [SimpleNamespace(slug="a-team")])
+
+        sut._reset_pr(pr, _make_args(), self._mf())
+
+        assert _requests_deleted(pr) == ["idle"]
+        assert pr.delete_review_request.call_args.kwargs.get("team_reviewers") is None
+
+    def test_assignees_are_removed(self):
+        pr = self._pr(assignees=["assignee_a", "assignee_b"])
+        sut._reset_pr(pr, _make_args(), self._mf())
+        pr.remove_from_assignees.assert_called_once_with("assignee_a", "assignee_b")
+
+    def test_only_maintainer_file_labels_are_removed(self):
+        area = _make_area("Kernel", labels=["area: Kernel"])
+        pr = self._pr(labels=["area: Kernel", "bug", "size: M"])
+        removed = sut._reset_pr(pr, _make_args(), self._mf(area))
+        assert _labels_removed(pr) == ["area: Kernel"]
+        assert removed == {"area: Kernel"}
+
+    def test_dry_run_changes_nothing(self):
+        area = _make_area("Kernel", labels=["area: Kernel"])
+        pr = self._pr(requested=["idle"], assignees=["a"], labels=["area: Kernel"])
+        removed = sut._reset_pr(pr, _make_args(dry_run=True), self._mf(area))
+
+        pr.delete_review_request.assert_not_called()
+        pr.remove_from_assignees.assert_not_called()
+        pr.remove_from_labels.assert_not_called()
+        # Still reported, so the caller can log what a real run would do.
+        assert removed == {"area: Kernel"}
+
+
+class TestProcessPrReset:
+    @staticmethod
+    def _harness(areas_per_file, **kwargs):
+        gh, args, mf, pr = _make_process_pr_harness(areas_per_file, **kwargs)
+        args.reset = True
+        return gh, args, mf, pr
+
+    def test_labels_are_reapplied_after_removal(self):
+        area = _make_area("Kernel", maintainers=["m"], labels=["area: Kernel"])
+        gh, args, mf, pr = self._harness({"kernel/sched.c": [area]})
+        pr.labels = [_label("area: Kernel")]
+
+        sut.process_pr(gh, args, mf, 99)
+
+        # Removed by the reset, then re-added by the normal flow rather than
+        # being considered already present.
+        assert _labels_removed(pr) == ["area: Kernel"]
+        assert "area: Kernel" in _labels_added(pr)
+
+    def test_assignee_is_set_again_after_removal(self):
+        area = _make_area("Kernel", maintainers=["m"], labels=["area: Kernel"])
+        gh, args, mf, pr = self._harness({"kernel/sched.c": [area]})
+        pr.assignee = _user("old_assignee")
+        pr.assignees = [_user("old_assignee")]
+
+        sut.process_pr(gh, args, mf, 99)
+
+        pr.remove_from_assignees.assert_called_once_with("old_assignee")
+        assert [call.args[0].login for call in pr.add_to_assignees.call_args_list] == ["m"]
+
+    def test_self_removed_reviewer_is_not_re_added(self):
+        area = _make_area("Kernel", maintainers=["m"], collaborators=["quitter"])
+        gh, args, mf, pr = self._harness({"kernel/sched.c": [area]})
+        quitter = gh.get_user("quitter")
+        pr.get_issue_events.return_value = [
+            SimpleNamespace(
+                event="review_request_removed", actor=quitter, requested_reviewer=quitter
+            )
+        ]
+
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "quitter" not in _reviewers_requested(pr)
+        assert "m" in _reviewers_requested(pr)
+
+    def test_reviewers_are_requested_as_for_a_new_pr(self):
+        area = _make_area("Kernel", maintainers=["m"], collaborators=["c1"])
+        gh, args, mf, pr = self._harness({"kernel/sched.c": [area]})
+        # An earlier run left a request for someone the areas no longer name.
+        pr.get_review_requests.return_value = ([gh.get_user("stale_reviewer")], [])
+
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _requests_deleted(pr) == ["stale_reviewer"]
+        assert sorted(_reviewers_requested(pr)) == ["c1", "m"]
+
+    def test_still_valid_reviewer_is_not_withdrawn_and_re_requested(self):
+        """Churning the request would notify a maintainer who never left."""
+        area = _make_area("Kernel", maintainers=["m"], collaborators=["c1"])
+        gh, args, mf, pr = self._harness({"kernel/sched.c": [area]})
+        pr.get_review_requests.return_value = ([gh.get_user("m")], [])
+
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _requests_deleted(pr) == []
+        # Already requested, so _add_reviewers leaves them be and asks the rest.
+        assert _reviewers_requested(pr) == ["c1"]
+
+    def test_skipped_pr_is_not_stripped(self):
+        """A PR the run declines to staff must not be left bare (MAX_FILES)."""
+        area = _make_area("Kernel", maintainers=["m"], labels=["area: Kernel"])
+        areas_per_file = {f"kernel/f{i}.c": [area] for i in range(sut.MAX_FILES + 1)}
+        gh, args, mf, pr = self._harness(areas_per_file)
+        pr.labels = [_label("area: Kernel")]
+        pr.assignees = [_user("old_assignee")]
+        pr.get_review_requests.return_value = ([gh.get_user("stale_reviewer")], [])
+
+        sut.process_pr(gh, args, mf, 99)
+
+        pr.delete_review_request.assert_not_called()
+        pr.remove_from_assignees.assert_not_called()
+        pr.remove_from_labels.assert_not_called()
+
+    def test_without_reset_nothing_is_removed(self):
+        area = _make_area("Kernel", maintainers=["m"], labels=["area: Kernel"])
+        gh, args, mf, pr = _make_process_pr_harness({"kernel/sched.c": [area]})
+        pr.labels = [_label("area: Kernel")]
+        pr.assignees = [_user("old_assignee")]
+        pr.get_review_requests.return_value = ([gh.get_user("stale_reviewer")], [])
+
+        sut.process_pr(gh, args, mf, 99)
+
+        pr.delete_review_request.assert_not_called()
+        pr.remove_from_assignees.assert_not_called()
+        assert _labels_removed(pr) == []
 
 
 # ---------------------------------------------------------------------------
