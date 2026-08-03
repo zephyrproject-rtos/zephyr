@@ -64,17 +64,6 @@ _DEEP_GROUP_PREFIXES: frozenset[str] = frozenset(
     }
 )
 
-# Meta-areas that intentionally cover large swaths of tests/ or samples/.
-# Adding auto-generated identifiers to these would be too broad and unhelpful.
-_META_AREAS: frozenset[str] = frozenset(
-    {
-        "Benchmarks",
-        "Boards",
-        "Samples",
-        "Tests",
-    }
-)
-
 
 def _is_plain_dir_path(path: str) -> bool:
     """Return True when *path* is a plain (non-glob) directory path."""
@@ -459,7 +448,12 @@ def main() -> int:
         total_areas += 1
         logging.info("Processing: %s", area_name)
 
-        if area_name in _META_AREAS:
+        # Meta-areas (meta: true in MAINTAINERS.yml) intentionally cover large
+        # swaths of tests/ or samples/; identifiers derived from their file
+        # patterns would be too broad to be useful.  This reads the raw YAML,
+        # which get_maintainer.py's boolean check has not vetted, so compare
+        # against True rather than trusting truthiness.
+        if area_dict.get("meta") is True:
             logging.debug("  [%s] skipping meta-area", area_name)
             continue
 

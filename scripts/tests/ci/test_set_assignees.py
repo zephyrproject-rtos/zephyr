@@ -56,11 +56,12 @@ import set_assignees as sut  # noqa: E402, I001  (import after sys.modules manip
 class _Area:
     """Lightweight hashable area stub accepted by _pick_assignees and process_pr."""
 
-    def __init__(self, name, maintainers=None, labels=None, collaborators=None):
+    def __init__(self, name, maintainers=None, labels=None, collaborators=None, meta=False):
         self.name = name
         self.maintainers = list(maintainers or [])
         self.labels = list(labels or [])
         self.collaborators = list(collaborators or [])
+        self.meta = meta
 
     def is_deferred_for_path(self, path):
         return False
@@ -76,8 +77,10 @@ class _DeferredArea(_Area):
         return True
 
 
-def _make_area(name, maintainers=None, labels=None, collaborators=None):
-    return _Area(name, maintainers=maintainers, labels=labels, collaborators=collaborators)
+def _make_area(name, maintainers=None, labels=None, collaborators=None, meta=False):
+    return _Area(
+        name, maintainers=maintainers, labels=labels, collaborators=collaborators, meta=meta
+    )
 
 
 def _make_pr(commits=1, additions=0, deletions=0, labels=None, user_login="contributor"):
@@ -426,12 +429,12 @@ class TestPickAssignees:
         assert result == ["dave"]
 
     def test_meta_area_only_assigns_meta_maintainer(self):
-        area = _make_area("Documentation", maintainers=["eve"])
+        area = _make_area("Documentation", maintainers=["eve"], meta=True)
         result = sut._pick_assignees(self._pr(), {area: 2}, {"eve": 2}, num_files=2)
         assert result == ["eve"]
 
     def test_meta_area_not_sole_area_skips_meta_logic(self):
-        meta = _make_area("Documentation", maintainers=["eve"])
+        meta = _make_area("Documentation", maintainers=["eve"], meta=True)
         other = _make_area("Kernel", maintainers=["frank"])
         # area_counter is always sorted descending by count before _pick_assignees
         # is called; put the higher-count non-meta area first so it is visited first.
