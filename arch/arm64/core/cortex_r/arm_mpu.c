@@ -666,11 +666,12 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 		uint32_t max_parts = CONFIG_MAX_DOMAIN_PARTITIONS;
 		struct k_mem_partition *partition;
 
-		for (size_t i = 0; i < max_parts && num_parts > 0; i++, num_parts--) {
+		for (size_t i = 0; i < max_parts && num_parts > 0; i++) {
 			partition = &mem_domain->partitions[i];
 			if (partition->size == 0) {
 				continue;
 			}
+			num_parts--;
 			LOG_DBG("set region 0x%lx 0x%lx\n",
 				partition->start, partition->size);
 			ret = insert_region(dyn_regions,
@@ -784,7 +785,13 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partitio
 
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain, uint32_t partition_id)
 {
-	ARG_UNUSED(partition_id);
+	/*
+	 * The kernel zeroes partitions[partition_id].size only after this
+	 * hook returns (kernel/userspace/mem_domain.c), so a plain rescan
+	 * would program the removed partition right back. Exclude it from
+	 * the reconfiguration; the kernel clears the slot again afterwards.
+	 */
+	domain->partitions[partition_id].size = 0;
 
 	return configure_domain_partitions(domain);
 }
