@@ -767,8 +767,8 @@ static int ifx_hppass_mfd_init(const struct device *dev)
 
 /*
  * A CSG slice is in-use when the CSG parent is okay AND either its
- * comparator (comp@N) or DAC (dac@N+4) child is okay.  Slice register
- * spacing is 0x40.
+ * comparator (comparator@b00XX) or DAC (dac@b00XX+4) child is okay.
+ * Slice register spacing is 0x40.
  */
 #define CSG_NODE(n) DT_CHILD(DT_DRV_INST(n), csg_b0000)
 
@@ -776,11 +776,11 @@ static int ifx_hppass_mfd_init(const struct device *dev)
 	COND_CODE_1(DT_NODE_HAS_STATUS(DT_CHILD(CSG_NODE(n), comp_tok), okay), (1),            \
 		    (DT_NODE_HAS_STATUS(DT_CHILD(CSG_NODE(n), dac_tok), okay)))
 
-#define _CSG_IS_USED_0(n) _CSG_SLICE_USED(n, comp_0,   dac_4)
-#define _CSG_IS_USED_1(n) _CSG_SLICE_USED(n, comp_40,  dac_44)
-#define _CSG_IS_USED_2(n) _CSG_SLICE_USED(n, comp_80,  dac_84)
-#define _CSG_IS_USED_3(n) _CSG_SLICE_USED(n, comp_c0,  dac_c4)
-#define _CSG_IS_USED_4(n) _CSG_SLICE_USED(n, comp_100, dac_104)
+#define _CSG_IS_USED_0(n) _CSG_SLICE_USED(n, comparator_b0000, dac_b0004)
+#define _CSG_IS_USED_1(n) _CSG_SLICE_USED(n, comparator_b0040, dac_b0044)
+#define _CSG_IS_USED_2(n) _CSG_SLICE_USED(n, comparator_b0080, dac_b0084)
+#define _CSG_IS_USED_3(n) _CSG_SLICE_USED(n, comparator_b00c0, dac_b00c4)
+#define _CSG_IS_USED_4(n) _CSG_SLICE_USED(n, comparator_b0100, dac_b0104)
 
 #define CSG_IS_USED(n, slice)                                                                  \
 	COND_CODE_1(DT_NODE_HAS_STATUS(CSG_NODE(n), okay),                                     \

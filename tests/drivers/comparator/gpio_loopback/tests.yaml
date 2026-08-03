@@ -1,3 +1,4 @@
+
 # Copyright (c) 2024 Nordic Semiconductor
 # SPDX-License-Identifier: Apache-2.0
 
@@ -94,3 +95,8 @@ tests:
       - FILE_SUFFIX="ptcomp"
     platform_allow:
       - kit_pse84_eval/pse846gps2dbzc4a/m55
+  drivers.comparator.gpio_loopback.infineon_csg:
+    extra_args:
+      - FILE_SUFFIX="csg"
+    platform_allow:
+      - kit_psc3m5_evk/psc3m5fds2afq1

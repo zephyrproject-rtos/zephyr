@@ -1,0 +1,43 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * gpio_loopback variant for the HPPASS CSG comparator (slice 3).
+ *
+ * Wiring (one jumper required, fixture: gpio_loopback):
+ *   P3.0 (gpio_prt3 pin 0)  ---->  AN_A3   [comp3 positive, AIN_PA on slice 3]
+ *
+ * The negative input is the in-slice DAC (DAC3), pre-loaded to code 512
+ * (~1.65 V on a 3.3 V VDDA) via the new infineon,hppass-csg-dac
+ * `initial-value` property.  Toggling P3.0 between 0 V and 3.3 V then
+ * gives a clean ~1.65 V threshold crossing in both directions.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &comp3;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio_prt3 0 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio_prt3 {
+	status = "okay";
+};
+
+&dac3 {
+	status = "okay";
+	initial-value = <512>;
+};
+
+&comp3 {
+	status = "okay";
+	positive-input = "ain-pa";
+	negative-input = "dac";
+};
