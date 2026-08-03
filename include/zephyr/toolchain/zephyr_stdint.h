@@ -53,12 +53,6 @@
 #undef __UINT_FAST32_TYPE__
 #undef __INT_LEAST32_TYPE__
 #undef __UINT_LEAST32_TYPE__
-#undef __INT64_TYPE__
-#undef __UINT64_TYPE__
-#undef __INT_FAST64_TYPE__
-#undef __UINT_FAST64_TYPE__
-#undef __INT_LEAST64_TYPE__
-#undef __UINT_LEAST64_TYPE__
 
 #define __INT32_TYPE__ int
 #define __UINT32_TYPE__ unsigned int
@@ -66,12 +60,30 @@
 #define __UINT_FAST32_TYPE__ __UINT32_TYPE__
 #define __INT_LEAST32_TYPE__ __INT32_TYPE__
 #define __UINT_LEAST32_TYPE__ __UINT32_TYPE__
+
+/*
+ * On LP64 targets (e.g. aarch64) where sizeof(long) == 8, the compiler-native
+ * __UINT64_TYPE__ is already 'long unsigned int', which matches the parameter
+ * types used by intrinsics shipped in the toolchain's own headers (e.g.
+ * arm_acle.h). Overriding it to 'unsigned long long int' desynchronises those
+ * built-ins from 'uint64_t', which GCC 14 flags as an incompatible-pointer-
+ * types error. Only redefine the 64-bit types when sizeof(long) == 4.
+ */
+#if __SIZEOF_LONG__ == 4
+#undef __INT64_TYPE__
+#undef __UINT64_TYPE__
+#undef __INT_FAST64_TYPE__
+#undef __UINT_FAST64_TYPE__
+#undef __INT_LEAST64_TYPE__
+#undef __UINT_LEAST64_TYPE__
+
 #define __INT64_TYPE__ long long int
 #define __UINT64_TYPE__ unsigned long long int
 #define __INT_FAST64_TYPE__ __INT64_TYPE__
 #define __UINT_FAST64_TYPE__ __UINT64_TYPE__
 #define __INT_LEAST64_TYPE__ __INT64_TYPE__
 #define __UINT_LEAST64_TYPE__ __UINT64_TYPE__
+#endif
 
 /*
  * The confusion also exists with __INTPTR_TYPE__ which is either an int
