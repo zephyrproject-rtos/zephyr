@@ -39,8 +39,6 @@ LOG_MODULE_REGISTER(bt_cap_commander, CONFIG_BT_CAP_COMMANDER_LOG_LEVEL);
 
 #include "common/bt_str.h"
 
-static void cap_commander_proc_complete(struct bt_cap_common_proc *active_proc);
-
 static const struct bt_cap_commander_cb *cap_cb;
 
 int bt_cap_commander_register_cb(const struct bt_cap_commander_cb *cb)
@@ -1506,7 +1504,7 @@ void cap_commander_register_broadcast_assistant_callbacks(void)
  *
  * This will also unlock the provided @p active_proc
  */
-static void cap_commander_proc_complete(struct bt_cap_common_proc *active_proc)
+void cap_commander_proc_complete(struct bt_cap_common_proc *active_proc)
 {
 	enum bt_cap_common_proc_type proc_type;
 	struct bt_conn *failed_conn;
