@@ -312,12 +312,7 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t 
 
 	uint32_t match_count;
 
-	match_count = (Cy_WDT_GetMatch() + dev_data->ilo_compensated_counts);
-
-	/* Ensure match count is within valid range for 16-bit WDT */
-	if (match_count > UINT16_MAX) {
-		match_count = UINT16_MAX;
-	}
+	match_count = (Cy_WDT_GetMatch() + dev_data->ilo_compensated_counts) & UINT16_MAX;
 
 	return match_count;
 #else
