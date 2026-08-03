@@ -95,4 +95,55 @@
 			slew-rate = "fast";
 		};
 	};
+
+	/* EMC: 16-bit data, address, and SDRAM control/strobe/clock lines. */
+	pinmux_emc: pinmux_emc {
+		group0 {
+			pinmux = <EMC_EMC_D0_PIO0_2>,
+				 <EMC_EMC_D1_PIO0_3>,
+				 <EMC_EMC_D2_PIO0_4>,
+				 <EMC_EMC_D3_PIO0_5>,
+				 <EMC_EMC_D4_PIO0_6>,
+				 <EMC_EMC_D5_PIO0_7>,
+				 <EMC_EMC_D6_PIO0_8>,
+				 <EMC_EMC_D7_PIO0_9>,
+				 <EMC_EMC_D8_PIO1_19>,
+				 <EMC_EMC_D9_PIO1_20>,
+				 <EMC_EMC_D10_PIO1_21>,
+				 <EMC_EMC_D11_PIO1_4>,
+				 <EMC_EMC_D12_PIO1_28>,
+				 <EMC_EMC_D13_PIO1_29>,
+				 <EMC_EMC_D14_PIO1_30>,
+				 <EMC_EMC_D15_PIO1_31>,
+				 <EMC_EMC_A0_PIO0_18>,
+				 <EMC_EMC_A1_PIO0_19>,
+				 <EMC_EMC_A2_PIO0_20>,
+				 <EMC_EMC_A3_PIO0_21>,
+				 <EMC_EMC_A4_PIO1_5>,
+				 <EMC_EMC_A5_PIO1_6>,
+				 <EMC_EMC_A6_PIO1_7>,
+				 <EMC_EMC_A7_PIO1_8>,
+				 <EMC_EMC_A8_PIO1_26>,
+				 <EMC_EMC_A9_PIO1_27>,
+				 <EMC_EMC_A10_PIO1_16>,
+				 <EMC_EMC_A11_PIO1_23>,
+				 <EMC_EMC_A12_PIO1_24>,
+				 <EMC_EMC_A13_PIO1_25>,
+				 <EMC_EMC_A14_PIO3_25>,
+				 <EMC_CASN_PIO1_9>,
+				 <EMC_RASN_PIO1_10>,
+				 <EMC_EMC_CLK0_PIO1_11>,
+				 <EMC_EMC_DYCS0_PIO1_12>,
+				 <EMC_EMC_DQM0_PIO1_13>,
+				 <EMC_EMC_DQM1_PIO1_14>,
+				 <EMC_EMC_CKE0_PIO1_15>;
+			slew-rate = "fast";
+		};
+
+		/* Write-enable is driven at standard slew in the reference design. */
+		group1 {
+			pinmux = <EMC_WEN_PIO0_15>;
+			slew-rate = "standard";
+		};
+	};
 };
