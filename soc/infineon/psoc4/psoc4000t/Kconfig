@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# SOC Packages for Infineon PSOC4000T series MCUs
+config SOC_PACKAGE_PSOC4000T_24_QFN
+	bool
+	help
+	  24-pin QFN package
+
+# Hardware configuration for PSOC4000T series
+config SOC_SERIES_PSOC4000T
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
+	select BUILD_OUTPUT_HEX
+	select BUILD_OUTPUT_BIN
+	select DYNAMIC_INTERRUPTS
+	select SOC_EARLY_INIT_HOOK
+	select CPU_CORTEX_M_HAS_SYSTICK
+
+# Infineon PSOC4000T series MPNs
+config SOC_CY8C4046LQI_T452
+	select SOC_PACKAGE_PSOC4000T_24_QFN
