@@ -127,3 +127,59 @@ bq24295@b {
 
 	ce-gpios = <&test_gpio 0 0>;
 };
+
+bq24296@c {
+	compatible = "ti,bq24296";
+	reg = <0xc>;
+
+	status = "okay";
+
+	constant-charge-current-max-microamp = <512000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+
+	watchdog-timeout-ms = <0>;
+
+	ce-gpios = <&test_gpio 0 0>;
+};
+
+bq24296m@d {
+	compatible = "ti,bq24296m";
+	reg = <0xd>;
+
+	status = "okay";
+
+	constant-charge-current-max-microamp = <512000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+
+	watchdog-timeout-ms = <0>;
+
+	ce-gpios = <&test_gpio 0 0>;
+};
+
+bq24297@e {
+	compatible = "ti,bq24297";
+	reg = <0xe>;
+
+	status = "okay";
+
+	constant-charge-current-max-microamp = <512000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+
+	watchdog-timeout-ms = <0>;
+
+	ce-gpios = <&test_gpio 0 0>;
+};
+
+bq24298@f {
+	compatible = "ti,bq24298";
+	reg = <0xf>;
+
+	status = "okay";
+
+	constant-charge-current-max-microamp = <512000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+
+	watchdog-timeout-ms = <0>;
+
+	ce-gpios = <&test_gpio 0 0>;
+};

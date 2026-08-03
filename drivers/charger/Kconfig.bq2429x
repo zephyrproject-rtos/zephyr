@@ -1,0 +1,22 @@
+# Copyright 2026 Sacra Systems Private Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_BQ2429X
+	bool "BQ2429X Battery Charger"
+	default y
+	depends on DT_HAS_TI_BQ24295_ENABLED || \
+		DT_HAS_TI_BQ24296_ENABLED || \
+		DT_HAS_TI_BQ24296M_ENABLED || \
+		DT_HAS_TI_BQ24297_ENABLED || \
+		DT_HAS_TI_BQ24298_ENABLED
+	select I2C
+	help
+	  Enable the TI BQ2429X battery charger driver.
+
+	  Supported devices include:
+	    - BQ24295
+	    - BQ24296
+	    - BQ24296M
+	    - BQ24297
+	    - BQ24298
