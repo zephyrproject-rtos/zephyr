@@ -377,11 +377,18 @@ Libraries / Subsystems
 
   * Added AES CFB and OFB cipher mode support.
 
+* Mbed TLS
+
   * Mbed TLS was updated to version 4.1.1. Release notes can be found
     `here <https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-4.1.1>`_.
 
   * TF-PSA-Crypto was updated to version 1.1.1. Release notes can be found
     `here <https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.1>`_.
+
+* TF-M
+
+  * TF-M was updated from version 2.2.2 to version 2.3.0. Release notes can be
+    found `here <https://trustedfirmware-m.readthedocs.io/en/tf-mv2.3.0/releases/2.3.0.htm>`_.
 
 * DFU
 
@@ -415,13 +422,6 @@ Devicetree
 
   * :c:macro:`DT_NODELABEL_C_TOKEN`
   * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
-
-
-* TF-M
-
-  * TF-M was updated from version 2.2.2 to version 2.3.0. Release notes can be
-    found at:
-    https://trustedfirmware-m.readthedocs.io/en/tf-mv2.3.0/releases/2.3.0.html
 
 Other notable changes
 *********************
