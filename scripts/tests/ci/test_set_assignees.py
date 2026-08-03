@@ -1318,6 +1318,132 @@ class TestReviewRequestRetry:
 
 
 # ---------------------------------------------------------------------------
+# Label selection  (_rank_labels / _select_labels)
+# ---------------------------------------------------------------------------
+
+
+def _labels_added(pr):
+    """Label names passed to add_to_labels() on *pr*."""
+    return [name for call in pr.add_to_labels.call_args_list for name in call.args]
+
+
+class TestRankLabels:
+    def test_orders_by_area_weight(self):
+        heavy = _make_area("Heavy", labels=["area: heavy"])
+        light = _make_area("Light", labels=["area: light"])
+        ranked = sut._rank_labels({"area: heavy", "area: light"}, {heavy: 9, light: 1}, {})
+        assert ranked == ["area: heavy", "area: light"]
+
+    def test_weights_of_areas_sharing_a_label_add_up(self):
+        a = _make_area("A", labels=["shared"])
+        b = _make_area("B", labels=["shared"])
+        solo = _make_area("Solo", labels=["solo"])
+        ranked = sut._rank_labels({"shared", "solo"}, {solo: 3, a: 2, b: 2}, {})
+        assert ranked == ["shared", "solo"]
+
+    def test_labels_from_no_contributing_area_sort_last(self):
+        area = _make_area("A", labels=["area: a"])
+        ranked = sut._rank_labels({"area: a", "deferred"}, {area: 1}, {})
+        assert ranked == ["area: a", "deferred"]
+
+    def test_ties_break_by_name(self):
+        a = _make_area("A", labels=["area: b"])
+        b = _make_area("B", labels=["area: a"])
+        assert sut._rank_labels({"area: a", "area: b"}, {a: 2, b: 2}, {}) == ["area: a", "area: b"]
+
+    def test_unweighted_area_falls_back_to_its_file_count(self):
+        """A meta-area weighs 0 for assignment but still describes the PR."""
+        meta = _make_area("Documentation", labels=["area: Documentation"], meta=True)
+        other = _make_area("Kernel", labels=["area: Kernel"])
+        area_files = {"Documentation": {f"doc/{i}.rst" for i in range(9)}, "Kernel": {"k.c"}}
+
+        ranked = sut._rank_labels(
+            {"area: Documentation", "area: Kernel"}, {meta: 0, other: 1}, area_files
+        )
+        assert ranked == ["area: Documentation", "area: Kernel"]
+
+
+class TestSelectLabels:
+    @staticmethod
+    def _areas(count, weight_of=lambda i: i):
+        """count areas, each with one label, area i weighing weight_of(i)."""
+        return {_make_area(f"A{i}", labels=[f"area: {i:02d}"]): weight_of(i) for i in range(count)}
+
+    def test_under_the_limit_keeps_everything(self):
+        area_counter = self._areas(sut.MAX_LABELS)
+        labels = {next(iter(a.labels)) for a in area_counter}
+        assert sut._select_labels(_make_pr(), labels, area_counter, {}) == labels
+
+    def test_over_the_limit_keeps_the_heaviest(self):
+        area_counter = self._areas(sut.MAX_LABELS + 1)
+        labels = {next(iter(a.labels)) for a in area_counter}
+        kept = sut._select_labels(_make_pr(), labels, area_counter, {})
+        # Weights are 0..MAX_LABELS, so the highest-numbered labels win.
+        assert kept == {f"area: {i:02d}" for i in range(1, sut.MAX_LABELS + 1)}
+
+    def test_size_label_survives_truncation(self):
+        area_counter = self._areas(sut.MAX_LABELS + 1)
+        labels = {next(iter(a.labels)) for a in area_counter} | {"size: L"}
+        kept = sut._select_labels(_make_pr(), labels, area_counter, {})
+        assert "size: L" in kept
+        # The size label is exempt rather than taking one of the MAX_LABELS slots.
+        assert len(kept) == sut.MAX_LABELS + 1
+
+    def test_size_label_does_not_count_towards_the_limit(self, caplog):
+        """MAX_LABELS area labels plus a size label is not an overflow."""
+        area_counter = self._areas(sut.MAX_LABELS)
+        labels = {next(iter(a.labels)) for a in area_counter} | {"size: L"}
+
+        with caplog.at_level(logging.WARNING, logger=sut.logger.name):
+            kept = sut._select_labels(_make_pr(), labels, area_counter, {})
+
+        assert kept == labels
+        assert caplog.records == []
+
+
+class TestLabelApplication:
+    def test_labels_are_applied(self):
+        area = _make_area("Kernel", maintainers=["m"], labels=["area: Kernel"])
+        gh, args, mf, pr = _make_process_pr_harness({"kernel/sched.c": [area]})
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "area: Kernel" in _labels_added(pr)
+
+    def test_broad_pr_keeps_top_labels_instead_of_none(self):
+        """Exceeding MAX_LABELS used to drop every label; now the heaviest stay."""
+        areas_per_file = {}
+        for i in range(sut.MAX_LABELS + 1):
+            area = _make_area(f"A{i}", maintainers=[f"m{i}"], labels=[f"area: {i:02d}"])
+            # Area i matches i + 1 files, so later areas weigh more.
+            for f in range(i + 1):
+                areas_per_file.setdefault(f"subsys/a{i}/f{f}.c", []).append(area)
+
+        gh, args, mf, pr = _make_process_pr_harness(areas_per_file)
+        sut.process_pr(gh, args, mf, 99)
+
+        added = [label for label in _labels_added(pr) if label.startswith("area: ")]
+        # The lightest area (a single file) is the one dropped.
+        assert added == [f"area: {i:02d}" for i in range(1, sut.MAX_LABELS + 1)]
+
+    def test_truncation_does_not_remove_labels_already_on_the_pr(self):
+        """The cap governs what a run applies, not what the PR already carries."""
+        areas_per_file = {}
+        for i in range(sut.MAX_LABELS + 1):
+            area = _make_area(f"A{i}", maintainers=[f"m{i}"], labels=[f"area: {i:02d}"])
+            for f in range(i + 1):
+                areas_per_file.setdefault(f"subsys/a{i}/f{f}.c", []).append(area)
+
+        gh, args, mf, pr = _make_process_pr_harness(areas_per_file)
+        # The label the truncation drops is already on the PR.
+        pr.labels = [SimpleNamespace(name="area: 00")]
+
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "area: 00" not in _labels_added(pr)
+        pr.remove_from_labels.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
 # Mention fallback
 # ---------------------------------------------------------------------------
 
