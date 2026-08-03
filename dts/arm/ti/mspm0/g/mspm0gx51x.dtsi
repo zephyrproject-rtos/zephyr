@@ -68,6 +68,13 @@
 			};
 		};
 
+		iwdt: iwdt@40095300 {
+			compatible = "ti,mspm0-iwdt";
+			reg = <0x40095300 0x100>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
 		timg14: timg14@40096000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40096000 0x2000>;
