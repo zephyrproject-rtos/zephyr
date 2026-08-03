@@ -13,6 +13,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mspm0_counter, CONFIG_COUNTER_LOG_LEVEL);
@@ -140,12 +141,40 @@ static inline void mspm0_timer_write_cc(struct mspm0_gptimer_regs *base, uint8_t
 	}
 }
 
-struct counter_mspm0_data {
-	void *user_data_top;
+/* Tick arithmetic helpers for alarm scheduling */
+
+static uint32_t mspm0_ticks_add(uint32_t val1, uint32_t val2, uint32_t top)
+{
+	uint32_t to_top;
+
+	if (likely(IS_BIT_MASK(top))) {
+		return (val1 + val2) & top;
+	}
+	to_top = top - val1;
+	return (val2 <= to_top) ? val1 + val2 : val2 - to_top - 1U;
+}
+
+static uint32_t mspm0_ticks_sub(uint32_t val, uint32_t old, uint32_t top)
+{
+	if (likely(IS_BIT_MASK(top))) {
+		return (val - old) & top;
+	}
+	return (val >= old) ? (val - old) : val + top + 1U - old;
+}
+
+struct counter_mspm0_ch_data {
+	counter_alarm_callback_t callback;
 	void *user_data;
+};
+
+struct counter_mspm0_data {
 	counter_top_callback_t top_cb;
-	counter_alarm_callback_t alarm_cb;
+	void *top_user_data;
+	uint32_t guard_period;
+	atomic_t cc_int_pending;
 	uint32_t freq;
+	/* 6 CC channels in 3 identical pairs (CC0/1, CC2/3, CC4/5); CC0-CC3 used */
+	struct counter_mspm0_ch_data ch[4];
 };
 
 struct counter_mspm0_config {
@@ -155,9 +184,20 @@ struct counter_mspm0_config {
 	const struct mspm0_sys_clock clock_subsys;
 	uint32_t clk_sel;
 	uint32_t clk_div_reg; /* CLKDIV register value: 0 = div-by-1, 1 = div-by-2, ... */
-	uint8_t prescaler;
+	uint32_t prescaler;
+	unsigned int irqn;
 	void (*irq_config_func)(void);
 };
+
+/* Software-pending interrupt for late alarm detection */
+static void mspm0_set_cc_int_pending(const struct device *dev, uint8_t chan)
+{
+	const struct counter_mspm0_config *config = dev->config;
+	struct counter_mspm0_data *data = dev->data;
+
+	atomic_or(&data->cc_int_pending, BIT(chan));
+	NVIC_SetPendingIRQ((IRQn_Type)config->irqn);
+}
 
 static int counter_mspm0_start(const struct device *dev)
 {
@@ -190,38 +230,73 @@ static int counter_mspm0_get_value(const struct device *dev, uint32_t *ticks)
 	return 0;
 }
 
+static int counter_mspm0_reset(const struct device *dev)
+{
+	const struct counter_mspm0_config *config = dev->config;
+
+	config->base->counterregs.ctr = 0U;
+
+	return 0;
+}
+
+static int counter_mspm0_set_value(const struct device *dev, uint32_t ticks)
+{
+	const struct counter_mspm0_config *config = dev->config;
+
+	if (ticks > config->counter_info.max_top_value) {
+		return -EINVAL;
+	}
+	config->base->counterregs.ctr = ticks;
+
+	return 0;
+}
+
 static int counter_mspm0_set_top_value(const struct device *dev,
 				       const struct counter_top_cfg *cfg)
 {
 	const struct counter_mspm0_config *config = dev->config;
 	struct counter_mspm0_data *data = dev->data;
+	struct mspm0_gptimer_regs *base = config->base;
+	int err = 0;
 
 	if (cfg->ticks > config->counter_info.max_top_value) {
 		return -ENOTSUP;
 	}
 
-	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
-		config->base->counterregs.ctrctl &= ~GPTIMER_CTRCTL_EN_MASK;
-		config->base->counterregs.ctrctl |= GPTIMER_CTRCTL_EN_ENABLED;
-	} else if (config->base->counterregs.ctr >= cfg->ticks) {
-		if (cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
-			config->base->counterregs.ctrctl &= ~GPTIMER_CTRCTL_EN_MASK;
-			config->base->counterregs.ctrctl |= GPTIMER_CTRCTL_EN_ENABLED;
+	/* Top can only be changed when all alarms are disabled; a lower top
+	 * would leave any active alarm's CC value unreachable, so it never fires.
+	 */
+	for (int i = 0; i < config->counter_info.channels; i++) {
+		if (data->ch[i].callback != NULL) {
+			return -EBUSY;
 		}
-
-		return -ETIME;
 	}
 
-	config->base->counterregs.load = cfg->ticks;
+	base->cpu_int.imask &= ~GPTIMER_CPU_INT_IMASK_L_SET;
 
+	bool do_reset = !(cfg->flags & COUNTER_TOP_CFG_DONT_RESET);
+
+	if ((cfg->flags & COUNTER_TOP_CFG_DONT_RESET) && base->counterregs.ctr >= cfg->ticks) {
+		err = -ETIME;
+		do_reset = !!(cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE);
+	}
+
+	if (do_reset) {
+		base->counterregs.ctrctl &= ~GPTIMER_CTRCTL_EN_MASK;
+		base->counterregs.ctr = 0U;
+		base->counterregs.ctrctl |= GPTIMER_CTRCTL_EN_ENABLED;
+	}
+
+	base->counterregs.load = cfg->ticks;
 	data->top_cb = cfg->callback;
-	data->user_data_top = cfg->user_data;
+	data->top_user_data = cfg->user_data;
+
 	if (cfg->callback) {
-		config->base->cpu_int.iclr = GPTIMER_CPU_INT_IMASK_L_SET;
-		config->base->cpu_int.imask |= GPTIMER_CPU_INT_IMASK_L_SET;
+		base->cpu_int.iclr = GPTIMER_CPU_INT_IMASK_L_SET;
+		base->cpu_int.imask |= GPTIMER_CPU_INT_IMASK_L_SET;
 	}
 
-	return 0;
+	return err;
 }
 
 static uint32_t counter_mspm0_get_top_value(const struct device *dev)
@@ -237,35 +312,66 @@ static int counter_mspm0_set_alarm(const struct device *dev,
 {
 	const struct counter_mspm0_config *config = dev->config;
 	struct counter_mspm0_data *data = dev->data;
+	struct mspm0_gptimer_regs *base = config->base;
 	uint32_t top = counter_mspm0_get_top_value(dev);
-	uint32_t ticks = alarm_cfg->ticks;
+	uint32_t val = alarm_cfg->ticks;
+	bool absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
+	bool irq_on_late = false;
+	uint32_t now, diff, max_rel_val;
+	int err = 0;
 
-	ARG_UNUSED(chan_id);
+	if (chan_id >= config->counter_info.channels) {
+		return -EINVAL;
+	}
 
 	if (alarm_cfg->ticks > top) {
 		return -EINVAL;
 	}
 
-	if (data->alarm_cb != NULL) {
-		LOG_DBG("Alarm busy\n");
+	if (data->ch[chan_id].callback) {
 		return -EBUSY;
 	}
 
-	if ((COUNTER_ALARM_CFG_ABSOLUTE & alarm_cfg->flags) == 0) {
-		ticks += config->base->counterregs.ctr;
-		if (ticks > top) {
-			ticks %= top;
-		}
+	data->ch[chan_id].callback = alarm_cfg->callback;
+	data->ch[chan_id].user_data = alarm_cfg->user_data;
+
+	now = base->counterregs.ctr;
+
+	if (absolute) {
+		max_rel_val = top - data->guard_period;
+		irq_on_late = alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
+	} else {
+		irq_on_late = val < (top / 2U);
+		max_rel_val = irq_on_late ? top / 2U : top;
+		val = mspm0_ticks_add(now, val, top);
 	}
 
-	data->alarm_cb = alarm_cfg->callback;
-	data->user_data = alarm_cfg->user_data;
+	/* Lock interrupts: CC write, ICLR clear, late-check, and IMASK enable
+	 * must be atomic to prevent a missed alarm if the counter reaches val
+	 * between the CC write and the IMASK enable.
+	 */
+	uint32_t key = irq_lock();
 
-	mspm0_timer_write_cc(config->base, 0, ticks);
-	config->base->cpu_int.iclr = GPTIMER_CPU_INT_CCU_MASK(0);
-	config->base->cpu_int.imask |= GPTIMER_CPU_INT_CCU_MASK(0);
+	mspm0_timer_write_cc(base, chan_id, val);
+	base->cpu_int.iclr = GPTIMER_CPU_INT_CCU_MASK(chan_id);
 
-	return 0;
+	diff = mspm0_ticks_sub(val - 1U, base->counterregs.ctr, top);
+	if (diff > max_rel_val) {
+		if (absolute) {
+			err = -ETIME;
+		}
+		if (irq_on_late) {
+			mspm0_set_cc_int_pending(dev, chan_id);
+		} else {
+			data->ch[chan_id].callback = NULL;
+		}
+	} else {
+		base->cpu_int.imask |= GPTIMER_CPU_INT_CCU_MASK(chan_id);
+	}
+
+	irq_unlock(key);
+
+	return err;
 }
 
 static int counter_mspm0_cancel_alarm(const struct device *dev, uint8_t chan_id)
@@ -273,10 +379,13 @@ static int counter_mspm0_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	const struct counter_mspm0_config *config = dev->config;
 	struct counter_mspm0_data *data = dev->data;
 
-	ARG_UNUSED(chan_id);
+	if (chan_id >= config->counter_info.channels) {
+		return -EINVAL;
+	}
 
-	config->base->cpu_int.imask &= ~GPTIMER_CPU_INT_CCU_MASK(0);
-	data->alarm_cb = NULL;
+	config->base->cpu_int.imask &= ~GPTIMER_CPU_INT_CCU_MASK(chan_id);
+	atomic_and(&data->cc_int_pending, ~BIT(chan_id));
+	data->ch[chan_id].callback = NULL;
 
 	return 0;
 }
@@ -284,9 +393,12 @@ static int counter_mspm0_cancel_alarm(const struct device *dev, uint8_t chan_id)
 static uint32_t counter_mspm0_get_pending_int(const struct device *dev)
 {
 	const struct counter_mspm0_config *config = dev->config;
+	uint32_t mask = GPTIMER_CPU_INT_IMASK_L_SET;
 
-	return !!(config->base->cpu_int.ris &
-		  (GPTIMER_CPU_INT_IMASK_L_SET | GPTIMER_CPU_INT_CCU_MASK(0)));
+	for (int i = 0; i < config->counter_info.channels; i++) {
+		mask |= GPTIMER_CPU_INT_CCU_MASK(i);
+	}
+	return !!(config->base->cpu_int.ris & mask);
 }
 
 static uint32_t counter_mspm0_get_freq(const struct device *dev)
@@ -294,6 +406,23 @@ static uint32_t counter_mspm0_get_freq(const struct device *dev)
 	const struct counter_mspm0_data *data = dev->data;
 
 	return data->freq;
+}
+
+static int counter_mspm0_set_guard_period(const struct device *dev, uint32_t guard, uint32_t flags)
+{
+	struct counter_mspm0_data *data = dev->data;
+
+	ARG_UNUSED(flags);
+	__ASSERT_NO_MSG(guard < counter_mspm0_get_top_value(dev));
+	data->guard_period = guard;
+
+	return 0;
+}
+
+static uint32_t counter_mspm0_get_guard_period(const struct device *dev, uint32_t flags)
+{
+	ARG_UNUSED(flags);
+	return ((const struct counter_mspm0_data *)dev->data)->guard_period;
 }
 
 static int counter_mspm0_init(const struct device *dev)
@@ -331,7 +460,7 @@ static int counter_mspm0_init(const struct device *dev)
 	base->commonregs.cps = config->prescaler;
 	base->commonregs.cclkctl = GPTIMER_CCLKCTL_CLKEN_ENABLED;
 
-	data->freq = clock_rate / ((config->clk_div_reg + 1U) * ((uint32_t)config->prescaler + 1U));
+	data->freq = clock_rate / ((config->clk_div_reg + 1U) * (config->prescaler + 1U));
 
 	base->counterregs.ctrctl =
 		GPTIMER_CTRCTL_CM_UP | GPTIMER_CTRCTL_REPEAT_REPEAT_1 | GPTIMER_CTRCTL_CVAE_ZEROVAL;
@@ -349,12 +478,16 @@ static DEVICE_API(counter, mspm0_counter_api) = {
 	.start = counter_mspm0_start,
 	.stop = counter_mspm0_stop,
 	.get_value = counter_mspm0_get_value,
+	.reset = counter_mspm0_reset,
+	.set_value = counter_mspm0_set_value,
 	.set_top_value = counter_mspm0_set_top_value,
 	.get_pending_int = counter_mspm0_get_pending_int,
 	.get_top_value = counter_mspm0_get_top_value,
 	.get_freq = counter_mspm0_get_freq,
-	.cancel_alarm = counter_mspm0_cancel_alarm,
 	.set_alarm = counter_mspm0_set_alarm,
+	.cancel_alarm = counter_mspm0_cancel_alarm,
+	.set_guard_period = counter_mspm0_set_guard_period,
+	.get_guard_period = counter_mspm0_get_guard_period,
 };
 
 static void counter_mspm0_isr(void *arg)
@@ -363,19 +496,33 @@ static void counter_mspm0_isr(void *arg)
 	const struct counter_mspm0_config *config = dev->config;
 	struct counter_mspm0_data *data = dev->data;
 	struct mspm0_gptimer_regs *base = config->base;
+	counter_alarm_callback_t cb;
+	void *user_data;
 	uint32_t ris;
 
 	ris = base->cpu_int.ris;
 	base->cpu_int.iclr = ris;
 
-	if ((ris & GPTIMER_CPU_INT_CCU_MASK(0)) && data->alarm_cb) {
-		uint32_t now = base->counterregs.ctr;
-		counter_alarm_callback_t alarm_cb = data->alarm_cb;
+	if ((ris & GPTIMER_CPU_INT_IMASK_L_SET) && data->top_cb) {
+		data->top_cb(dev, data->top_user_data);
+	}
 
-		data->alarm_cb = NULL;
-		alarm_cb(dev, 0, now, data->user_data);
-	} else if ((ris & GPTIMER_CPU_INT_IMASK_L_SET) && data->top_cb) {
-		data->top_cb(dev, data->user_data_top);
+	for (int i = 0; i < config->counter_info.channels; i++) {
+		bool hw = !!(ris & GPTIMER_CPU_INT_CCU_MASK(i));
+		bool sw = !!(atomic_and(&data->cc_int_pending, ~BIT(i)) & BIT(i));
+
+		if (!hw && !sw) {
+			continue;
+		}
+
+		base->cpu_int.imask &= ~GPTIMER_CPU_INT_CCU_MASK(i);
+		cb = data->ch[i].callback;
+		user_data = data->ch[i].user_data;
+		data->ch[i].callback = NULL;
+
+		if (cb) {
+			cb(dev, (uint8_t)i, base->counterregs.ctr, user_data);
+		}
 	}
 }
 
@@ -406,10 +553,11 @@ static void counter_mspm0_isr(void *arg)
 				DT_CLOCKS_CELL_BY_IDX(DT_INST_PARENT(n), 0, clk)),	\
 		.clk_div_reg = DT_PROP(DT_INST_PARENT(n), ti_clk_div) - 1U,		\
 		.prescaler = DT_PROP(DT_INST_PARENT(n), ti_clk_prescaler),		\
+		.irqn = DT_IRQN(DT_INST_PARENT(n)),					\
 		.counter_info = {.max_top_value = (DT_INST_PROP(n, resolution) == 32)	\
 							? UINT32_MAX : UINT16_MAX,	\
 				 .flags = COUNTER_CONFIG_INFO_COUNT_UP,			\
-				 .channels = 1},					\
+				 .channels = DT_INST_PROP(n, channels)},			\
 	};										\
 											\
 	DEVICE_DT_INST_DEFINE(n,							\
