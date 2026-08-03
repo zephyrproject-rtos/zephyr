@@ -892,6 +892,31 @@ static bool find_echo_option(const struct coap_packet *response, struct coap_opt
 	return coap_find_options(response, COAP_OPTION_ECHO, option, 1);
 }
 
+/* Resolve the destination for an ACK / RST reply: use the received packet's
+ * source when the transport provided one, otherwise fall back to the request's
+ * address. Returns false if no reply should be sent (multicast group).
+ */
+static bool select_reply_addr(const struct coap_client_internal_request *internal_req,
+			      const struct net_sockaddr *from, net_socklen_t from_len,
+			      const struct net_sockaddr **to, net_socklen_t *to_len)
+{
+	if (from->sa_family != NET_AF_UNSPEC) {
+		*to = from;
+		*to_len = from_len;
+		return true;
+	}
+
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	if (internal_req->is_mcast) {
+		return false;
+	}
+#endif
+
+	*to = net_sad(&internal_req->addr);
+	*to_len = internal_req->addrlen;
+	return true;
+}
+
 static int handle_response(struct coap_client *client, const struct net_sockaddr *addr,
 			   net_socklen_t addrlen, const struct coap_packet *response,
 			   bool response_truncated)
@@ -950,8 +975,14 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	if (!internal_req) {
 		LOG_WRN("No matching request for response");
 		if (response_type != COAP_TYPE_ACK) {
-			/* Ignore errors, unrelated to our queries */
-			(void)send_rst(client->fd, addr, addrlen, response);
+			/* Ignore errors, unrelated to our queries. If no source address
+			 * was provided, assume the socket is connected and use the send()
+			 * path.
+			 */
+			net_socklen_t rst_addrlen =
+				(addr->sa_family != NET_AF_UNSPEC) ? addrlen : 0;
+
+			(void)send_rst(client->fd, addr, rst_addrlen, response);
 		}
 		return 0;
 	}
@@ -1007,6 +1038,9 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 
 	/* Send ack for CON */
 	if (response_type == COAP_TYPE_CON) {
+		const struct net_sockaddr *ack_addr;
+		net_socklen_t ack_addrlen;
+
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
 		if (internal_req->is_mcast) {
 			/* RFC 7252 Section 8.2: Responses to multicast requests MUST NOT be
@@ -1017,9 +1051,12 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		}
 #endif
 		/* CON response is always a separate response, respond with empty ACK. */
-		ret = send_ack(client->fd, addr, addrlen, response, COAP_CODE_EMPTY);
-		if (ret < 0) {
-			goto fail;
+		if (select_reply_addr(internal_req, addr, addrlen, &ack_addr, &ack_addrlen)) {
+			ret = send_ack(client->fd, ack_addr, ack_addrlen, response,
+				       COAP_CODE_EMPTY);
+			if (ret < 0) {
+				goto fail;
+			}
 		}
 	}
 
@@ -1034,7 +1071,13 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 
 	if (!internal_req->request_ongoing) {
 		if (internal_req->is_observe) {
-			(void)send_rst(client->fd, addr, addrlen, response);
+			const struct net_sockaddr *rst_addr;
+			net_socklen_t rst_addrlen;
+
+			if (select_reply_addr(internal_req, addr, addrlen, &rst_addr,
+					      &rst_addrlen)) {
+				(void)send_rst(client->fd, rst_addr, rst_addrlen, response);
+			}
 			return 0;
 		}
 		LOG_DBG("Drop request, already handled");
