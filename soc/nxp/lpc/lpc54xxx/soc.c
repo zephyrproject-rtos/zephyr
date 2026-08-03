@@ -136,6 +136,57 @@ __weak void clock_init(void)
 	/* Attach 12 MHz clock to FLEXCOMM0 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM0);
 
+#if defined(CONFIG_UDC_NXP_IP3511) || defined(CONFIG_USB_DC_NXP_LPCIP3511)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhs), nxp_lpcip3511, okay)
+	/* Turn on the USB1 high-speed PHY. */
+	POWER_DisablePD(kPDRUNCFG_PD_USB1_PHY);
+
+	/* enable usb1 host clock */
+	CLOCK_EnableClock(kCLOCK_Usbh1);
+	/*
+	 * According to the reference manual, device mode has to be selected by
+	 * accessing the USB1 host controller's PORTMODE register.
+	 */
+	USBHSH->PORTMODE |= USBHSH_PORTMODE_DEV_ENABLE_MASK;
+	/* disable usb1 host clock */
+	CLOCK_DisableClock(kCLOCK_Usbh1);
+
+	/* enable USB1 device clock (sets up the USB PLL from the 12 MHz xtal) */
+	CLOCK_EnableUsbhs0DeviceClock(kCLOCK_UsbSrcUsbPll, 0U);
+#if defined(FSL_FEATURE_USBHSD_USB_RAM) && (FSL_FEATURE_USBHSD_USB_RAM)
+	memset((uint8_t *)FSL_FEATURE_USBHSD_USB_RAM_BASE_ADDRESS, 0,
+	       FSL_FEATURE_USBHSD_USB_RAM);
+#endif
+#endif
+
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbfs), nxp_lpcip3511, okay)
+	/* Turn on the USB0 full-speed PHY. */
+	POWER_DisablePD(kPDRUNCFG_PD_USB0_PHY);
+
+	/* USB0 is clocked from FRO_HF, which is not set up by the main clock */
+	CLOCK_SetupFROClocking(96000000U);
+	CLOCK_SetClkDiv(kCLOCK_DivUsb0Clk, 1, false);
+	CLOCK_AttachClk(kFRO_HF_to_USB0_CLK);
+
+	/* enable usb0 host clock */
+	CLOCK_EnableClock(kCLOCK_Usbhsl0);
+	/*
+	 * According to the reference manual, device mode has to be selected by
+	 * accessing the USB0 host controller's PORTMODE register.
+	 */
+	USBFSH->PORTMODE |= USBFSH_PORTMODE_DEV_ENABLE_MASK;
+	/* disable usb0 host clock */
+	CLOCK_DisableClock(kCLOCK_Usbhsl0);
+
+	/* enable USB0 device clock */
+	CLOCK_EnableUsbfs0DeviceClock(kCLOCK_UsbSrcFro, CLOCK_GetFroHfFreq());
+#if defined(FSL_FEATURE_USB_USB_RAM) && (FSL_FEATURE_USB_USB_RAM)
+	memset((uint8_t *)FSL_FEATURE_USB_USB_RAM_BASE_ADDRESS, 0,
+	       FSL_FEATURE_USB_USB_RAM);
+#endif
+#endif
+#endif
+
 	/*
 	 * The M_CAN functional clock is the core clock divided by CANnCLKDIV,
 	 * which is halted out of reset. Divide by 11 -> 20 MHz at a 220 MHz

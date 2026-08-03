@@ -70,4 +70,11 @@ config LPC54XXX_SRAM2_CLOCK
 	  will enable the clock to this RAM bank. Disable this Kconfig to leave
 	  this ram bank untouched out of reset.
 
+config LPC54XXX_USB_RAM
+	bool
+	help
+	  Link the USB device stack's endpoint command/status list and data
+	  buffers into the dedicated USB SRAM. The IP3511HS high-speed device
+	  controller can only access its structures from this region.
+
 endif # SOC_SERIES_LPC54XXX
