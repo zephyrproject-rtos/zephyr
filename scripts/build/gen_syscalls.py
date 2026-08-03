@@ -27,7 +27,9 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
+import tempfile
 
 # Some kernel headers cannot include automated tracing without causing unintended recursion or
 # other serious issues.
@@ -36,6 +38,20 @@ import sys
 notracing = ["kernel.h", "zephyr/kernel.h", "errno_private.h", "zephyr/errno_private.h"]
 
 types64 = ["int64_t", "uint64_t"]
+
+typessmall = [
+    "char",
+    "short",
+    "int",
+    "long",
+    "uint8_t",
+    "int8_t",
+    "uint16_t",
+    "int16_t",
+    "int32_t",
+    "uint32_t",
+    "size_t",
+]
 
 # The kernel linkage is complicated.  These functions from
 # userspace_handlers.c are present in the kernel .a library after
@@ -214,8 +230,96 @@ def typename_split(item):
     return (m[0].strip(), m[1])
 
 
+def compiler_type_wide(argtype):
+    # Include most of the standard C headers to try and define as many
+    # compiler types as possible
+    program = f'''
+#define _POSIX_C_SOURCE 200809L
+#define _GNU_SOURCE
+#include <sys/types.h>
+#include <ctype.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <locale.h>
+#include <math.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+#include <wchar.h>
+_Static_assert(sizeof({argtype}) > sizeof(uintptr_t));
+'''
+
+    # Write the above program to a temporary file, deleting when
+    # we're done, but not on close as we need to close it before the
+    # compiler will be able to read it on Windows
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.c', delete_on_close=False) as source_file:
+        print(program, file=source_file)
+        source_file.close()
+
+        # The c_compiler parameter is a cmake-style list with elements
+        # separated by semicolons. Split it apart, elide any empty
+        # items and then append our arguments
+        compiler = list(filter(None, args.c_compiler.split(';'))) + [
+            '-S',
+            source_file.name,
+            '-o',
+            '/dev/null',
+        ]
+
+        if not os.path.isfile(compiler[0]):
+            raise SyscallParseException(f"Cannot find compiler {compiler[0]}")
+
+        proc = subprocess.run(compiler, capture_output=True)
+
+    if proc.returncode == 0:
+        print(f"C compiler detects wide type {argtype}")
+
+    return proc.returncode == 0
+
+
+type_wide = {}
+
+typetrim = ["const", "volatile", "unsigned", "signed", "ZRESTRICT"]
+
+
+# Detect whether an argument must be split across two registers
 def need_split(argtype):
-    return (not args.long_registers) and (argtype in types64)
+    # targets with 64-bit registers can pass all params in a single register
+    if args.long_registers:
+        return False
+
+    # elide type modifiers from the type
+    while True:
+        for trim in typetrim:
+            match = re.search(f"\\b{trim}\\b", argtype)
+            if match:
+                argtype = (argtype[: match.start(0)] + argtype[match.end(0) :]).strip()
+                break
+        else:
+            break
+
+    # pointers always fit in one register
+    if argtype.endswith('*'):
+        return False
+
+    # known 64-bit types always take two registers
+    if argtype in types64:
+        return True
+
+    # known non-64-bit types always take a single register
+    if argtype in typessmall:
+        return False
+
+    # ask the compiler for help (memoizing the result)
+    if argtype not in type_wide:
+        type_wide[argtype] = compiler_type_wide(argtype)
+    return type_wide[argtype]
 
 
 # Note: "lo" and "hi" are named in little endian conventions,
@@ -494,6 +598,11 @@ def parse_args():
         "--userspace-only",
         action="store_true",
         help="Only generate the userpace path of wrappers",
+    )
+    parser.add_argument(
+        "-c",
+        "--c-compiler",
+        help="C compiler command line",
     )
     args = parser.parse_args()
 
