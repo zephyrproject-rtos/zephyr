@@ -91,7 +91,9 @@ the maintainers of every other touched area:
 
        - files in an under-covered area, i.e. one that names no maintainers or
          at most THIN_AREA_COLLABORATORS (2) collaborators, and so cannot
-         supply enough reviewers on its own, and
+         supply enough reviewers on its own.  Meta-areas are excluded: they
+         cover large parts of the tree by design, and the people they name are
+         the right reviewers for them, and
        - orphaned files, which match no area at all.  A PR consisting only of
          these would otherwise get no reviewer whatsoever, since every tier
          above is derived from matched areas.
@@ -605,10 +607,18 @@ def _thin_areas(maintainer_file, area_counter: dict) -> set:
     or names at most THIN_AREA_COLLABORATORS collaborators.  These areas cannot
     supply enough reviewers on their own, so the caller supplements them with
     recent Git contributors (see _history_reviewers).
+
+    Meta-areas (``meta: true`` in MAINTAINERS.yml) are never reported as
+    under-covered.  Their file patterns span large parts of the tree, so the
+    small number of people they name is deliberate rather than a gap, and
+    walking the history of every documentation or sample file they match would
+    add reviewers on top of the maintainers who already own the area.
     """
     thin = set()
     for area in area_counter:
         entry = maintainer_file.areas[area.name]
+        if entry.meta:
+            continue
         if not entry.maintainers or len(entry.collaborators) <= THIN_AREA_COLLABORATORS:
             thin.add(area.name)
     return thin

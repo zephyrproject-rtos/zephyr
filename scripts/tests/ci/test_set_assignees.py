@@ -788,6 +788,19 @@ class TestThinAreas:
         mf = self._mf(thin, full)
         assert sut._thin_areas(mf, {thin: 2, full: 1}) == {"Thin"}
 
+    def test_meta_area_is_never_thin(self):
+        # Meta-areas name few people on purpose; they must not pull in
+        # heuristic reviewers on top of their own maintainers.
+        area = _make_area("Documentation", maintainers=["m"], collaborators=[], meta=True)
+        mf = self._mf(area)
+        assert sut._thin_areas(mf, {area: 1}) == set()
+
+    def test_meta_area_excluded_but_thin_area_still_reported(self):
+        meta = _make_area("Documentation", maintainers=[], collaborators=[], meta=True)
+        thin = _make_area("Thin", maintainers=[], collaborators=[])
+        mf = self._mf(meta, thin)
+        assert sut._thin_areas(mf, {meta: 2, thin: 1}) == {"Thin"}
+
 
 # ---------------------------------------------------------------------------
 # _history_reviewers
