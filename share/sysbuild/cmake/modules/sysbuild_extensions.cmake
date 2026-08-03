@@ -345,6 +345,17 @@ function(ExternalZephyrProject_Add)
     endif()
   endforeach()
 
+  # Pass selected CMake preset to CMake commandline argument
+  if(DEFINED CACHE{${ZBUILD_APPLICATION}_CMAKE_PRESET})
+    list(APPEND shared_cmake_vars_argument
+         "--preset=$CACHE{${ZBUILD_APPLICATION}_CMAKE_PRESET}"
+    )
+  elseif(DEFINED CACHE{CMAKE_PRESET})
+    list(APPEND shared_cmake_vars_argument
+         "--preset=$CACHE{CMAKE_PRESET}"
+    )
+  endif()
+
   set(list_separator ",")
   set(image_extra_kconfig_targets "-DEXTRA_KCONFIG_TARGETS=$CACHE{EXTRA_KCONFIG_TARGETS}")
   string(REPLACE ";" "${list_separator}" image_extra_kconfig_targets "${image_extra_kconfig_targets}")
@@ -544,6 +555,17 @@ function(ExternalZephyrVariantProject_Add)
       )
     endif()
   endforeach()
+
+  # Pass selected CMake preset to CMake commandline argument
+  if(DEFINED CACHE{${ZBUILD_APPLICATION}_CMAKE_PRESET})
+    list(APPEND shared_cmake_vars_argument
+         "--preset=$CACHE{${ZBUILD_APPLICATION}_CMAKE_PRESET}"
+    )
+  elseif(DEFINED CACHE{CMAKE_PRESET})
+    list(APPEND shared_cmake_vars_argument
+         "--preset=$CACHE{CMAKE_PRESET}"
+    )
+  endif()
 
   # Add the variant image CMake module path to replace the normal Zephyr module path
   list(APPEND shared_cmake_vars_argument
