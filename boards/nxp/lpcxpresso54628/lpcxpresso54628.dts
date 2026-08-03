@@ -67,3 +67,12 @@
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
 };
+
+&usbfs {
+	pinctrl-0 = <&pinmux_usbfs>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
