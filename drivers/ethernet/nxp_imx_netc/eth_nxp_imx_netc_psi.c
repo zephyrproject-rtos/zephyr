@@ -132,7 +132,6 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 
 #define NETC_PSI_INSTANCE_DEFINE(n)                                                                \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	NETC_GENERATE_MAC_ADDRESS(n)                                                               \
 	AT_NONCACHEABLE_SECTION_ALIGN(                                                             \
 		static uint8_t eth##n##_tx_buff[CONFIG_ETH_NXP_IMX_TX_RING_BUF_SIZE],              \
 		NETC_BUFF_ALIGN);                                                                  \
@@ -191,7 +190,7 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 	static const struct netc_eth_config netc_eth##n##_config = {                               \
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(port, DT_DRV_INST(n)),                          \
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(pfconfig, DT_DRV_INST(n)),                      \
-		.generate_mac = netc_eth##n##_generate_mac,                                        \
+		.mac_config = NET_ETH_MAC_DT_INST_CONFIG_INIT(n),                                  \
 		.bdr_init = netc_eth##n##_bdr_init,                                                \
 		.phy_dev = (COND_CODE_1(DT_INST_NODE_HAS_PROP(n, phy_handle),                      \
 					(DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle))), NULL)),   \

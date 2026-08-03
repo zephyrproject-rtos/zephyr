@@ -8,6 +8,7 @@
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 
 #include <zephyr/drivers/ethernet/nxp_imx_netc.h>
+#include <zephyr/net/ethernet.h>
 #include "fsl_netc_endpoint.h"
 #if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(CONFIG_PTP_CLOCK_NXP_NETC)
 #include "fsl_netc_switch.h"
@@ -57,37 +58,6 @@
 /* Timeout for various operations */
 #define NETC_TIMEOUT K_MSEC(20)
 
-/* Helper function to generate an Ethernet MAC address for a given ENETC instance */
-#define FREESCALE_OUI_B0 0x00
-#define FREESCALE_OUI_B1 0x04
-#define FREESCALE_OUI_B2 0x9f
-
-#define _NETC_GENERATE_MAC_ADDRESS_RANDOM                                                          \
-	gen_random_mac(mac_addr, FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2)
-
-#define _NETC_GENERATE_MAC_ADDRESS_UNIQUE(n)                                                       \
-	do {                                                                                       \
-		uint32_t id = 0x001100;                                                            \
-                                                                                                   \
-		/* Set MAC address locally administered bit (LAA) */                               \
-		mac_addr[0] = FREESCALE_OUI_B0 | 0x02;                                             \
-		mac_addr[1] = FREESCALE_OUI_B1;                                                    \
-		mac_addr[2] = FREESCALE_OUI_B2;                                                    \
-		mac_addr[3] = (id >> 16) & 0xff;                                                   \
-		mac_addr[4] = (id >> 8) & 0xff;                                                    \
-		mac_addr[5] = (id + n) & 0xff;                                                     \
-	} while (0)
-
-#define NETC_GENERATE_MAC_ADDRESS(n)                                                               \
-	static void netc_eth##n##_generate_mac(uint8_t mac_addr[6])                                \
-	{                                                                                          \
-		COND_CODE_1(DT_INST_PROP(n, zephyr_random_mac_address),                            \
-			    (_NETC_GENERATE_MAC_ADDRESS_RANDOM),                                   \
-			    (COND_CODE_0(DT_INST_NODE_HAS_PROP(n, local_mac_address),              \
-					 (_NETC_GENERATE_MAC_ADDRESS_UNIQUE(n)),                   \
-					 (ARG_UNUSED(mac_addr)))));                      \
-	}
-
 struct netc_eth_config {
 	DEVICE_MMIO_NAMED_ROM(port);
 	DEVICE_MMIO_NAMED_ROM(pfconfig);
@@ -95,7 +65,8 @@ struct netc_eth_config {
 	const struct device *phy_dev;
 	netc_hw_mii_mode_t phy_mode;
 	volatile bool pseudo_mac;
-	void (*generate_mac)(uint8_t *mac_addr);
+	/* Standard MAC-address source (device tree); see net_eth_mac_load(). */
+	struct net_eth_mac_config mac_config;
 	void (*bdr_init)(netc_bdr_config_t *bdr_config, netc_rx_bdr_config_t *rx_bdr_config,
 			 netc_tx_bdr_config_t *tx_bdr_config);
 	const struct pinctrl_dev_config *pincfg;

@@ -394,7 +394,10 @@ int netc_eth_init_common(const struct device *dev)
 	ep_config.rxCacheMaintain = true;
 	ep_config.txCacheMaintain = true;
 
-	config->generate_mac(&data->mac_addr[0]);
+	if (net_eth_mac_load(&config->mac_config, data->mac_addr) == -ENODATA) {
+		LOG_WRN("No MAC address in the device tree; set local-mac-address or "
+			"zephyr,random-mac-address");
+	}
 
 	result = EP_Init(&data->handle, &data->mac_addr[0], &ep_config, &bdr_config);
 	if (result != kStatus_Success) {
