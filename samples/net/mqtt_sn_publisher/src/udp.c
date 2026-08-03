@@ -9,7 +9,8 @@
 #include <errno.h>
 #include <stdio.h>
 #include <zephyr/kernel.h>
-#include <zephyr/net/mqtt_sn.h>
+#include <zephyr/mqtt_sn.h>
+#include <zephyr/net/mqtt_sn/udp.h>
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/socket.h>
