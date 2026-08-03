@@ -395,6 +395,21 @@ Fuel Gauge
   Applications that relied on the old behavior should be updated.
   (:github:`112276`)
 
+* The :dtcompatible:`ti,bq40z50` driver has moved to a shared implementation that also backs the
+  new :dtcompatible:`ti,bq41z50`. ``CONFIG_BQ40Z50`` is unchanged, but two properties now behave
+  differently.
+
+  ``FUEL_GAUGE_CHARGE_CUTOFF`` now obtains ``OperationStatus`` through the documented
+  ``ManufacturerAccess`` (0x00) subcommand and reads the result back from ``ManufacturerData``
+  (0x23). The previous implementation read two bytes directly from ``ManufacturerAccess``, which
+  returns undocumented internal data whose layout is not the same on both parts, so the property
+  may report a different value than before.
+
+  ``FUEL_GAUGE_REMAINING_CAPACITY_UAH`` and ``FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH`` now return
+  ``-ENOTSUP`` when ``BatteryMode`` selects ``CAPACITY_MODE``, because the gauge then reports
+  capacity in 10 mWh, which those properties cannot express. They previously returned the raw
+  reading scaled as if it were mAh. (:github:`115257`)
+
 GPIO
 ====
 
