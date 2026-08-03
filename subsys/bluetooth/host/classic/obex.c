@@ -1485,9 +1485,11 @@ static int obex_client_action_common(struct bt_obex_client *client, uint8_t rsp_
 	}
 
 	if (client->ops->action == NULL) {
-		LOG_WRN("Setpath rsp handling not implemented");
+		LOG_WRN("Action rsp handling not implemented");
 		return -ENOTSUP;
 	}
+
+	atomic_set_bit(&client->_flags, BT_OBEX_RSP_RECV);
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
 		obex_client_req_complete(client);
@@ -2843,10 +2845,13 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 {
 	struct bt_obex_req_hdr *hdr;
 	struct bt_obex_client *active_client = NULL;
+	struct net_buf_simple_state state;
 	int err;
 	uint8_t req_code;
 	uint8_t opcode = 0;
 	bool allocated = false;
+	bool rsp_recv_flag;
+	bool final_flag;
 
 	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
@@ -2898,27 +2903,59 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 		buf = obex_alloc_buf(client->obex);
 		if (buf == NULL) {
 			LOG_WRN("No buffers");
-			err = -ENOBUFS;
-			goto failed;
+			obex_client_restore_active_state(client, active_client, opcode);
+			return -ENOBUFS;
 		}
 		allocated = true;
+	}
+
+	net_buf_simple_save(&buf->b, &state);
+
+	err = obex_client_req_check(client, opcode == 0);
+	if (err != 0) {
+		goto failed;
+	}
+
+	if (net_buf_headroom(buf) < sizeof(*hdr)) {
+		err = -EINVAL;
+		goto failed;
 	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = req_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
+	if (opcode == 0) {
+		atomic_clear(&client->_flags);
+	}
+
+	rsp_recv_flag = atomic_test_and_clear_bit(&client->_flags, BT_OBEX_RSP_RECV);
+
+	if (final) {
+		final_flag = atomic_test_and_set_bit(&client->_flags, BT_OBEX_REQ_F_BIT);
+	}
+
 	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err == 0) {
 		return 0;
 	}
 
+	if (final) {
+		atomic_set_bit_to(&client->_flags, BT_OBEX_REQ_F_BIT, final_flag);
+	}
+	atomic_set_bit_to(&client->_flags, BT_OBEX_RSP_RECV, rsp_recv_flag);
+
 failed:
 	obex_client_restore_active_state(client, active_client, opcode);
 
 	if (allocated) {
-		net_buf_unref(buf);
+		net_buf_drop(&buf);
 	}
+
+	if (buf != NULL) {
+		net_buf_simple_restore(&buf->b, &state);
+	}
+
 	return err;
 }
 
