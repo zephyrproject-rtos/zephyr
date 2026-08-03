@@ -1184,19 +1184,17 @@ static void start_announce(struct net_if *iface)
 }
 #endif /* CONFIG_NET_DHCPV4 */
 
-static void mdns_addr_event_handler(uint64_t mgmt_event __maybe_unused, struct net_if *iface,
-				    void *info __maybe_unused, size_t info_length __maybe_unused,
-				    void *user_data __unused)
+#if defined(CONFIG_NET_IPV4)
+static void mdns_addr_ipv4_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
+					 size_t info_length, void *user_data __unused)
 {
 	uint32_t probe_delay = sys_rand32_get() % 250;
-	bool probe_started = false;
 	int ret;
 
 	if (!mdns_iface_is_enabled(iface)) {
 		return;
 	}
 
-#if defined(CONFIG_NET_IPV4)
 	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
 		ARRAY_FOR_EACH(v4_ctx, i) {
 			if (v4_ctx[i].iface != iface) {
@@ -1215,8 +1213,6 @@ static void mdns_addr_event_handler(uint64_t mgmt_event __maybe_unused, struct n
 			if (ret < 0) {
 				NET_DBG("Cannot schedule %s probe work (%d)", "IPv4", ret);
 			} else {
-				probe_started = true;
-
 				NET_DBG("%s %s probing scheduled for iface %d ctx %p",
 					"IPv4", "add", net_if_get_by_iface(iface),
 					&v4_ctx[i]);
@@ -1254,8 +1250,6 @@ static void mdns_addr_event_handler(uint64_t mgmt_event __maybe_unused, struct n
 			if (ret < 0) {
 				NET_DBG("Cannot schedule %s probe work (%d)", "IPv4", ret);
 			} else {
-				probe_started = true;
-
 				NET_DBG("%s %s probing scheduled for iface %d ctx %p",
 					"IPv4", "del", net_if_get_by_iface(iface),
 					&v4_ctx[i]);
@@ -1263,12 +1257,25 @@ static void mdns_addr_event_handler(uint64_t mgmt_event __maybe_unused, struct n
 
 			break;
 		}
-
-		return;
 	}
+}
+
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_addr_ipv4_events,
+				NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL,
+				mdns_addr_ipv4_event_handler, NULL);
 #endif /* defined(CONFIG_NET_IPV4) */
 
 #if defined(CONFIG_NET_IPV6)
+static void mdns_addr_ipv6_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
+					 size_t info_length, void *user_data __unused)
+{
+	uint32_t probe_delay = sys_rand32_get() % 250;
+	int ret;
+
+	if (!mdns_iface_is_enabled(iface)) {
+		return;
+	}
+
 	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
 		ARRAY_FOR_EACH(v6_ctx, i) {
 			if (v6_ctx[i].iface != iface) {
@@ -1287,8 +1294,6 @@ static void mdns_addr_event_handler(uint64_t mgmt_event __maybe_unused, struct n
 			if (ret < 0) {
 				NET_DBG("Cannot schedule %s probe work (%d)", "IPv6", ret);
 			} else {
-				probe_started = true;
-
 				NET_DBG("%s %s probing scheduled for iface %d ctx %p",
 					"IPv6", "add", net_if_get_by_iface(iface),
 					&v6_ctx[i]);
@@ -1326,8 +1331,6 @@ static void mdns_addr_event_handler(uint64_t mgmt_event __maybe_unused, struct n
 			if (ret < 0) {
 				NET_DBG("Cannot schedule %s probe work (%d)", "IPv6", ret);
 			} else {
-				probe_started = true;
-
 				NET_DBG("%s %s probing scheduled for iface %d ctx %p",
 					"IPv6", "del", net_if_get_by_iface(iface),
 					&v6_ctx[i]);
@@ -1335,33 +1338,31 @@ static void mdns_addr_event_handler(uint64_t mgmt_event __maybe_unused, struct n
 
 			break;
 		}
-
-		return;
 	}
+}
+
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_addr_ipv6_events,
+				NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL,
+				mdns_addr_ipv6_event_handler, NULL);
 #endif /* defined(CONFIG_NET_IPV6) */
 
 #if defined(CONFIG_NET_DHCPV4)
-	if (mgmt_event == NET_EVENT_IPV4_DHCP_BOUND) {
-		start_announce(iface);
+static void mdns_addr_dhcpv4_event_handler(uint64_t mgmt_event, struct net_if *iface,
+					   void *info __unused, size_t info_length __unused,
+					   void *user_data __unused)
+{
+	if (!mdns_iface_is_enabled(iface)) {
 		return;
 	}
-#endif /* CONFIG_NET_DHCPV4 */
+
+	if (mgmt_event == NET_EVENT_IPV4_DHCP_BOUND) {
+		start_announce(iface);
+	}
 }
 
-#if defined(CONFIG_NET_IPV4)
-NET_MGMT_REGISTER_EVENT_HANDLER(mdns_addr_ipv4_events,
-				NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL,
-				mdns_addr_event_handler, NULL);
-#endif
-#if defined(CONFIG_NET_IPV6)
-NET_MGMT_REGISTER_EVENT_HANDLER(mdns_addr_ipv6_events,
-				NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL,
-				mdns_addr_event_handler, NULL);
-#endif
-#if defined(CONFIG_NET_DHCPV4)
 NET_MGMT_REGISTER_EVENT_HANDLER(mdns_addr_dhcpv4_events, NET_EVENT_IPV4_DHCP_BOUND,
-				mdns_addr_event_handler, NULL);
-#endif
+				mdns_addr_dhcpv4_event_handler, NULL);
+#endif /* CONFIG_NET_DHCPV4 */
 
 static void mdns_conn_event_handler(uint64_t mgmt_event, struct net_if *iface __unused,
 				    void *info __unused, size_t info_length __unused,
