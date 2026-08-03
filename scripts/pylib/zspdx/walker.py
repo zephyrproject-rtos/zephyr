@@ -869,19 +869,21 @@ class Walker:
         ):
             return self.component_sdk
 
-        # Check app
-        if self.component_app and self._is_within(src_abspath, self.component_app.base_dir):
-            return self.component_app
-
-        # Check zephyr sources and module sources. A module path is nested under
-        # the zephyr west topdir, so prefer the deepest matching base_dir to attribute
-        # a file to its owning module rather than to the top-level zephyr component.
-        zephyr_candidates = list(self.component_zephyr_modules.values())
+        # Check app sources, zephyr sources and module sources together,
+        # preferring the deepest (most specific) matching base_dir. A module can
+        # be nested under the application's source directory or under the zephyr
+        # west topdir, so an ordered check that returned the app (or the
+        # top-level zephyr) component first would misattribute a module's files.
+        # Selecting the deepest base_dir instead assigns each file to its true
+        # owner.
+        candidates = list(self.component_zephyr_modules.values())
         if self.component_zephyr:
-            zephyr_candidates.append(self.component_zephyr)
+            candidates.append(self.component_zephyr)
+        if self.component_app:
+            candidates.append(self.component_app)
 
         best_match = None
-        for component in zephyr_candidates:
+        for component in candidates:
             if self._is_within(src_abspath, component.base_dir) and (
                 best_match is None or len(component.base_dir) > len(best_match.base_dir)
             ):
