@@ -49,56 +49,49 @@ __weak void mimxrt798s_hifi4_irq_init(void)
 	 * - IRQ 6  (SEL 1):  FLEXCOMM0
 	 * - IRQ 7  (SEL 2):  FLEXCOMM2
 	 * - IRQ 8  (SEL 3):  WWDT1
-	 * - IRQ 9  (SEL 4):  Unmapped
-	 * - IRQ 10 (SEL 5):  Unmapped
-	 * - IRQ 11 (SEL 6):  Unmapped
-	 * - IRQ 12 (SEL 7):  Unmapped
-	 * - IRQ 13 (SEL 8):  Unmapped
-	 * - IRQ 14 (SEL 9):  Unmapped
-	 * - IRQ 15 (SEL 10): Unmapped
+	 * - IRQ 9  (SEL 4):  LPSPI14
+	 * - IRQ 10 (SEL 5):  MU2
+	 * - IRQ 11 (SEL 6):  MU4
+	 * - IRQ 12 (SEL 7):  EDMA1-7
+	 * - IRQ 13 (SEL 8):  EDMA1-6
+	 * - IRQ 14 (SEL 9):  EDMA1-5
+	 * - IRQ 15 (SEL 10): EDMA1-4
 	 *
 	 * L2:
-	 * - IRQ 16 (SEL 11): Unmapped
-	 * - IRQ 17 (SEL 12): LPSPI14
-	 * - IRQ 18 (SEL 13): MU2
-	 * - IRQ 19 (SEL 14): MU4
-	 * - IRQ 20 (SEL 15): EDMA1-0
-	 * - IRQ 21 (SEL 16): EDMA1-1
-	 * - IRQ 22 (SEL 17): EDMA1-2
-	 * - IRQ 23 (SEL 18): EDMA1-3
+	 * - IRQ 16 (SEL 11): EDMA1-3
+	 * - IRQ 17 (SEL 12): EDMA1-2
+	 * - IRQ 18 (SEL 13): EDMA1-1
+	 * - IRQ 19 (SEL 14): EDMA1-0
+	 * - IRQ 20 (SEL 15): MICFIL
+	 * - IRQ 21 (SEL 16): SAI0
+	 * - IRQ 22 (SEL 17): SAI1
+	 * - IRQ 23 (SEL 18): SAI2
 	 *
 	 * L3: (highest priority)
-	 * - IRQ 24 (SEL 19): EDMA1-4
-	 * - IRQ 25 (SEL 20): EDMA1-5
-	 * - IRQ 26 (SEL 21): EDMA1-6
-	 * - IRQ 27 (SEL 22): EDMA1-7
-	 * - IRQ 28 (SEL 23): MICFIL
-	 * - IRQ 29 (SEL 24): SAI0
-	 * - IRQ 30 (SEL 25): SAI1
-	 * - IRQ 31 (SEL 26): SAI2
+	 * - IRQ 24 - 31 (SEL 19 - 26): Unmapped.
+	 *   Don't use - these IRQs are above XCHAL_EXCM_LEVEL. (issue #41039)
 	 */
 	INPUTMUX_Init(INPUTMUX0);
 
 	INPUTMUX_AttachSignal(INPUTMUX0, 1, kINPUTMUX_Flexcomm0ToDspInterrupt);
 	INPUTMUX_AttachSignal(INPUTMUX0, 2, kINPUTMUX_Flexcomm2ToDspInterrupt);
 	INPUTMUX_AttachSignal(INPUTMUX0, 3, kINPUTMUX_Wdt1ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 4, kINPUTMUX_Spi14ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 5, kINPUTMUX_Mu2AToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 6, kINPUTMUX_Mu4BToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 7, kINPUTMUX_Dma1Irq7ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 8, kINPUTMUX_Dma1Irq6ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 9, kINPUTMUX_Dma1Irq5ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 10, kINPUTMUX_Dma1Irq4ToDspInterrupt);
 
-	INPUTMUX_AttachSignal(INPUTMUX0, 12, kINPUTMUX_Spi14ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 13, kINPUTMUX_Mu2AToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 14, kINPUTMUX_Mu4BToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 15, kINPUTMUX_Dma1Irq0ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 16, kINPUTMUX_Dma1Irq1ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 17, kINPUTMUX_Dma1Irq2ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 18, kINPUTMUX_Dma1Irq3ToDspInterrupt);
-
-	INPUTMUX_AttachSignal(INPUTMUX0, 19, kINPUTMUX_Dma1Irq4ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 20, kINPUTMUX_Dma1Irq5ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 21, kINPUTMUX_Dma1Irq6ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 22, kINPUTMUX_Dma1Irq7ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 23, kINPUTMUX_MicfilToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 24, kINPUTMUX_Sai0ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 25, kINPUTMUX_Sai1ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX0, 26, kINPUTMUX_Sai2ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 11, kINPUTMUX_Dma1Irq3ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 12, kINPUTMUX_Dma1Irq2ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 13, kINPUTMUX_Dma1Irq1ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 14, kINPUTMUX_Dma1Irq0ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 15, kINPUTMUX_MicfilToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 16, kINPUTMUX_Sai0ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 17, kINPUTMUX_Sai1ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX0, 18, kINPUTMUX_Sai2ToDspInterrupt);
 
 	INPUTMUX_Deinit(INPUTMUX0);
 }
