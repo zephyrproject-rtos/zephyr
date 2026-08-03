@@ -18,6 +18,14 @@ config BQ40Z50
 	help
 	  Enable I2C-based driver for BQ40Z50 Fuel Gauge.
 
+config BQ41Z50
+	bool "BQ41Z50 Fuel Gauge"
+	default y
+	depends on DT_HAS_TI_BQ41Z50_ENABLED
+	select BQ4XZ50
+	help
+	  Enable I2C-based driver for BQ41Z50 Fuel Gauge.
+
 config EMUL_BQ4XZ50
 	bool "Emulate a bq4xz50 family fuel gauge"
 	default y
