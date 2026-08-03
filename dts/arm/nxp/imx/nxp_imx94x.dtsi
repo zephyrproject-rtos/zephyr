@@ -135,6 +135,15 @@
 			status = "disabled";
 		};
 
+		igf: input-glitch-filter@446e0000 {
+			compatible = "nxp,imx-igf";
+			reg = <0x446e0000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX943_CLK_GLITCHFILTER>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		mu11_a: mbox@42730000 {
 			compatible = "nxp,mbox-imx-mu";
 			reg = <0x42730000 DT_SIZE_K(64)>;

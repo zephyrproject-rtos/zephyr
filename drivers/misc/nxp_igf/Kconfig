@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_IGF
+	bool "NXP IGF (Input Glitch Filter) driver"
+	default y
+	depends on DT_HAS_NXP_IMX_IGF_ENABLED
+	help
+	  Enable the NXP Input Glitch Filter (IGF) driver. The IGF filters
+	  glitches out of input signals on i.MX SoCs (e.g. MIMX94398). Channels
+	  are configured statically from devicetree child nodes and applied at
+	  init time; the driver wraps the fsl_igf HAL and exposes only status
+	  read/clear helpers at runtime.
