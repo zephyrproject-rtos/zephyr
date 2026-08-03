@@ -343,3 +343,11 @@ tests:
       - CONFIG_TEST_DRIVER_FLASH_SIZE=-1
     integration_platforms:
       - kit_pse84_eval/pse846gps2dbzc4a/m33
+  drivers.flash.common.spi_nand.w25n01gv:
+    platform_allow:
+      - nrf7120dk/nrf7120/cpuapp
+    harness_config:
+      fixture: w25n01gv
+    extra_args:
+      - FILE_SUFFIX="w25n01gv"
+      - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
