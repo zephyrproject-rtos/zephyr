@@ -3107,8 +3107,6 @@ int net_ipv6_nbr_test_cancel(void)
 #endif /* CONFIG_NET_TEST */
 
 #if defined(CONFIG_NET_IPV6_UNSOLICITED_NA)
-static struct net_mgmt_event_callback unsolicited_na_addr_cb;
-
 static void send_unsolicited_na(struct net_if *iface, const struct net_in6_addr *addr)
 {
 	struct net_in6_addr dst;
@@ -3127,8 +3125,8 @@ static void send_unsolicited_na(struct net_if *iface, const struct net_in6_addr 
 	}
 }
 
-static void unsolicited_na_addr_event(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
-				      struct net_if *iface)
+static void unsolicited_na_addr_event(uint64_t mgmt_event, struct net_if *iface, void *info,
+				      size_t info_length, void *user_data __unused)
 {
 	struct net_if_addr *ifaddr;
 	struct net_in6_addr addr;
@@ -3145,11 +3143,11 @@ static void unsolicited_na_addr_event(struct net_mgmt_event_callback *cb, uint64
 		return;
 	}
 
-	if (cb->info == NULL || cb->info_length != sizeof(struct net_in6_addr)) {
+	if (info == NULL || info_length != sizeof(struct net_in6_addr)) {
 		return;
 	}
 
-	net_ipaddr_copy(&addr, (const struct net_in6_addr *)cb->info);
+	net_ipaddr_copy(&addr, (const struct net_in6_addr *)info);
 
 	/* Only announce a usable (preferred) address, and announce each exactly
 	 * once: with DAD enabled the address is still tentative on ADDR_ADD and
@@ -3164,6 +3162,10 @@ static void unsolicited_na_addr_event(struct net_mgmt_event_callback *cb, uint64
 
 	send_unsolicited_na(iface, &addr);
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(unsolicited_na_addr_events,
+				NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_DAD_SUCCEED,
+				unsolicited_na_addr_event, NULL);
 #endif /* CONFIG_NET_IPV6_UNSOLICITED_NA */
 
 void net_ipv6_nbr_init(void)
@@ -3199,15 +3201,6 @@ void net_ipv6_nbr_init(void)
 			ret);
 	}
 #endif
-
-#if defined(CONFIG_NET_IPV6_UNSOLICITED_NA)
-	net_mgmt_init_event_callback(&unsolicited_na_addr_cb,
-				     unsolicited_na_addr_event,
-				     NET_EVENT_IPV6_ADDR_ADD |
-				     NET_EVENT_IPV6_DAD_SUCCEED);
-
-	net_mgmt_add_event_callback(&unsolicited_na_addr_cb);
-#endif /* CONFIG_NET_IPV6_UNSOLICITED_NA */
 
 	ARG_UNUSED(ret);
 }
