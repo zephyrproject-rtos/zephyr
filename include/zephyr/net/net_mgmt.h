@@ -83,6 +83,7 @@ enum net_mgmt_layer_code {
 	NET_MGMT_LAYER_CODE_PPP        = 0x0B, /**< PPP layer code */
 	NET_MGMT_LAYER_CODE_VIRTUAL    = 0x0C, /**< Virtual network interface layer code */
 	NET_MGMT_LAYER_CODE_WIFI       = 0x0D, /**< Wi-Fi layer code */
+	NET_MGMT_LAYER_CODE_PACKET     = 0x0E, /**< Packet (L2) layer code */
 
 	/* Out of tree code can use the following userX layer codes */
 	NET_MGMT_LAYER_CODE_USER3      = 0x7C, /**< User layer code 3 */

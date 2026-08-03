@@ -378,6 +378,25 @@ config NET_SOCKETS_PACKET_DGRAM
 	  on the information in the net_sockaddr_ll destination address before
 	  they are queued.
 
+config NET_SOCKETS_PACKET_MCAST_MEMBERSHIP
+	bool "Packet socket multicast membership support"
+	depends on NET_SOCKETS_PACKET && NET_NATIVE && NET_L2_ETHERNET
+	help
+	  Add support for ZSOCK_PACKET_ADD_MEMBERSHIP and ZSOCK_PACKET_DROP_MEMBERSHIP
+	  socket options for AF_PACKET sockets. The options operate at layer 2 and tell
+	  the NIC's receive filter which link-layer multicast addresses to let through.
+	  Ethernet is currently the only link layer that can do this, so the
+	  dependency to it can be relaxed when another one gains the support.
+
+config NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_PACKET_SOCKET
+	int
+	depends on NET_SOCKETS_PACKET_MCAST_MEMBERSHIP && NET_L2_ETHERNET
+	default 1
+	help
+	  Every packet socket multicast membership needs a link layer
+	  multicast address on an Ethernet interface. Two sockets joining the
+	  same group share one address, so this is an upper bound.
+
 config NET_SOCKETS_INET_RAW
 	bool "AF_INET/AF_INET6 and SOCK_RAW sockets support"
 	depends on NET_NATIVE_IP
