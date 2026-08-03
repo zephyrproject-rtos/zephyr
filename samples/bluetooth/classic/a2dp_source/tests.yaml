@@ -19,7 +19,7 @@ tests:
     extra_args:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
     build_only: true
-  sample.bluetooth.a2dp.sink.nxp_m2_2el_wifi_bt.no_blobs:
+  sample.bluetooth.a2dp.source.nxp_m2_2el_wifi_bt.no_blobs:
     platform_allow:
       - mimxrt1060_evk@C/mimxrt1062/qspi
     tags:
