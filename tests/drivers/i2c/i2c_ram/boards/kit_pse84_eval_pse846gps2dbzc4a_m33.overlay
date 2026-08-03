@@ -18,7 +18,13 @@ i2c0: &scb0 {
 	#size-cells = <0>;
 	status = "okay";
 
-	clocks = <&peri0_group1_16bit_1>;
+	/*
+	 * Use a dedicated peripheral clock divider. The board console UART
+	 * (scb2) uses peri0_group1_16bit_1, so the SCB0 I2C must not share it:
+	 * the I2C driver programs its divider at init, which would otherwise
+	 * change the console baud rate and corrupt the serial output.
+	 */
+	clocks = <&peri0_group1_16bit_3>;
 
 	pinctrl-0 = <&p8_0_scb0_i2c_scl &p8_1_scb0_i2c_sda>;
 	pinctrl-names = "default";
@@ -38,8 +44,8 @@ i2c0: &scb0 {
 	};
 };
 
-/* Enable the peripheral clock divider for SCB0 */
-&peri0_group1_16bit_1 {
+/* Enable the dedicated peripheral clock divider for SCB0 */
+&peri0_group1_16bit_3 {
 	status = "okay";
 	clock-div = <10>;
 };
