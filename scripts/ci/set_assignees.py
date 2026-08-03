@@ -25,8 +25,16 @@ Labeling strategy
 For every file changed in the PR, MAINTAINERS.yml is consulted to find the
 matching areas.  The union of all area labels across all matched areas is
 collected and applied to the PR, subject to a cap of MAX_LABELS (10).  If more
-than MAX_LABELS distinct labels would be applied, the entire label step is
-skipped to avoid polluting PRs that touch very broad cross-cutting areas.
+than MAX_LABELS distinct labels would be applied, they are ranked by how much of
+the PR the areas carrying them cover (their file weight, falling back to their
+plain file count for areas weighted 0 -- see Area weighting below) and only the
+MAX_LABELS highest-ranked ones are applied.  That keeps a PR touching very
+broad cross-cutting areas from being papered with labels, while still labelling
+it by whatever it predominantly changes.  Size labels are managed separately:
+they neither count towards the cap nor get dropped by it.
+
+The cap governs what a run applies; labels already on the PR are never removed,
+so it cannot pull an over-labelled PR back under the cap (use --reset for that).
 
 A special lightweight "size: XS" label is managed by default:
   - Added when: the PR has exactly one commit AND at most one line added AND
@@ -281,7 +289,9 @@ REVIEWER_RETRY_BATCH = 15
 # previous comment instead of posting a duplicate.
 MENTION_MARKER = "<!-- set_assignees: reviewer-mention -->"
 
-# Maximum number of labels to apply; more than this is likely noise from over-broad matches.
+# Maximum number of labels to apply; beyond this the labels are noise from
+# over-broad matches, so only the ones contributed by the heaviest areas are
+# kept and the PR is still labelled by what it mostly changes.
 MAX_LABELS = 10
 
 # An area is considered under-covered when it names no maintainers, or names at
@@ -1033,6 +1043,69 @@ def update_size_labels(pr, args, changed_files: list, labels: set):
     )
 
 
+def _rank_labels(labels: set, area_counter: dict, area_files: dict) -> list:
+    """Return *labels* ordered by how much of the PR the areas carrying them cover.
+
+    A label's rank is the sum of the file weights of every touched area that
+    carries it, so a label backed by the bulk of the changed files outranks one
+    coming from a single incidentally matched area.  Ties break by label name to
+    keep the choice deterministic.
+
+    Areas weighing 0 fall back to the number of files they matched.  Those
+    weights are zeroed for assignee selection -- meta-areas, files that only
+    matched CMakeLists.txt, repeated matches of one Platform area -- but the
+    areas still describe what the PR changes, and a label is about exactly that.
+    Without the fallback a documentation-only PR would rank "area: Documentation"
+    last and drop it first.  Labels with no contributing area at all (labels of
+    deferred file-groups) still score 0 and sort last.
+    """
+    weights = defaultdict(int)
+    for area, weight in area_counter.items():
+        weight = weight or len(area_files.get(area.name, ()))
+        for label in area.labels:
+            if label in labels:
+                weights[label] += weight
+
+    return sorted(labels, key=lambda label: (-weights[label], label))
+
+
+def _select_labels(pr, labels: set, area_counter: dict, area_files: dict) -> set:
+    """Return the labels to apply to *pr*, truncated to MAX_LABELS if needed.
+
+    Up to MAX_LABELS area labels everything is applied.  Beyond that the PR
+    touches so many areas that labelling it with all of them says nothing, so
+    only the MAX_LABELS highest-ranked ones are applied (see _rank_labels).
+
+    Only the area labels count towards the limit, and only they can be dropped.
+    Size labels are computed for this PR alone and update_size_labels has
+    already removed the stale ones, so dropping the new one would leave the PR
+    with no size label at all -- and counting it would make MAX_LABELS area
+    labels plus a size label look like an overflow.
+
+    This caps what the run *applies*; it never takes a label off the PR.  A
+    label already there stays, whether a human added it or an earlier run did
+    (--reset is the way to clear those).
+    """
+    area_labels = labels - _SIZE_LABELS
+    if len(area_labels) <= MAX_LABELS:
+        return labels
+
+    ranked = _rank_labels(area_labels, area_counter, area_files)
+    kept = set(ranked[:MAX_LABELS])
+
+    logger.warning(
+        "PR #%d matched %d area labels (limit %d); applying only the %d highest-weight: "
+        "%s (not applying: %s)",
+        pr.number,
+        len(area_labels),
+        MAX_LABELS,
+        len(kept),
+        sorted(kept),
+        sorted(area_labels - kept),
+    )
+    return kept | (labels & _SIZE_LABELS)
+
+
 def process_pr(gh, args, maintainer_file, number: int):
     gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
     pr = gh_repo.get_pull(number)
@@ -1261,21 +1334,15 @@ def process_pr(gh, args, maintainer_file, number: int):
     # Apply labels — skip any that are already present, then add the rest in
     # a single API call to avoid per-label timeline noise.
     if labels:
-        if len(labels) <= MAX_LABELS:
-            current_label_names = {lbl.name for lbl in pr.labels}
-            new_labels = sorted(labels - current_label_names)
-            if new_labels:
-                logger.info("Adding labels: %s", new_labels)
-                if not args.dry_run:
-                    pr.add_to_labels(*new_labels)
-            else:
-                logger.info("All labels already present on PR #%d; skipping", pr.number)
+        labels = _select_labels(pr, labels, area_counter, area_files)
+        current_label_names = {lbl.name for lbl in pr.labels}
+        new_labels = sorted(labels - current_label_names)
+        if new_labels:
+            logger.info("Adding labels: %s", new_labels)
+            if not args.dry_run:
+                pr.add_to_labels(*new_labels)
         else:
-            logger.warning(
-                "Too many labels (%d) for PR #%d; skipping label assignment",
-                len(labels),
-                pr.number,
-            )
+            logger.info("All labels already present on PR #%d; skipping", pr.number)
 
     # Request reviews.
     # additional_reviews is already folded into collab by
