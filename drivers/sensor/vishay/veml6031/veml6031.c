@@ -404,7 +404,8 @@ static int veml6031_perform_single_measurement(const struct device *dev)
 	struct veml6031_data *data = dev->data;
 	int ret;
 	uint8_t val;
-	int cnt = 0;
+	int64_t start_time;
+	int64_t timeout_ms;
 
 	data->ir_sd = 0;
 	data->cal = 1;
@@ -422,6 +423,13 @@ static int veml6031_perform_single_measurement(const struct device *dev)
 
 	veml6031_sleep_by_integration_time(data);
 
+	start_time = k_uptime_get();
+	if (veml60xx_it_in_range(data->itim)) {
+		timeout_ms = veml60xx_it_values[data->itim].us / 1000 + 50;
+	} else {
+		timeout_ms = 500;
+	}
+
 	while (1) {
 		ret = veml6031_read(dev, VEML6031_CMDCODE_ALS_INT, &val);
 		if (ret) {
@@ -432,12 +440,15 @@ static int veml6031_perform_single_measurement(const struct device *dev)
 			break;
 		}
 
-		k_sleep(K_MSEC(1));
+		if (k_uptime_get() - start_time > timeout_ms) {
+			LOG_ERR("Timeout waiting for data ready after %lld ms", timeout_ms);
+			return -ETIMEDOUT;
+		}
 
-		cnt++;
+		k_sleep(K_MSEC(1));
 	}
 
-	LOG_DBG("read VEML6031_CMDCODE_ALS_INT: %02X (%d)", val, cnt);
+	LOG_DBG("read VEML6031_CMDCODE_ALS_INT: %02X", val);
 
 	return 0;
 }
