@@ -1979,11 +1979,26 @@ int shell_stop(const struct shell *sh)
 		return -ENOTSUP;
 	}
 
+	/*
+	 * This is the same lock shell_thread() holds for as long as it's
+	 * busy in shell_process()/state_collect(). If we don't grab it here
+	 * too, we can race with a command that's still running on the shell
+	 * thread: it ends with an unconditional state_set(ACTIVE), which
+	 * stomps on the SHELL_STATE_INITIALIZED we're setting below and the
+	 * log backend is left disabled for good (shell_start() won't touch
+	 * it since the state looks wrong).
+	 */
+	if (!z_shell_trylock(sh, SHELL_TX_MTX_TIMEOUT)) {
+		return -EBUSY;
+	}
+
 	state_set(sh, SHELL_STATE_INITIALIZED);
 
 	if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND)) {
 		z_shell_log_backend_disable(sh->log_backend);
 	}
+
+	z_shell_unlock(sh);
 
 	return 0;
 }
