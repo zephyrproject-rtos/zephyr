@@ -1680,3 +1680,10 @@ test_i2c_icm56686: icm56686@68 {
 	gyro-lpf = <1>;
 	gyro-pwr-mode = <2>;
 };
+
+test_i2c_d7s: d7s@d9 {
+	compatible = "omron,d7s";
+	reg = <0xd9>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
