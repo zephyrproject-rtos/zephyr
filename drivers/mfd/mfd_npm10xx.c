@@ -192,7 +192,7 @@ static void events_handler(struct k_work *work)
 	const struct mfd_npm10xx_config *config = data->mfd->config;
 	uint8_t buf[EVENTS_REG_NUM];
 	int ret;
-	struct mfd_npm10xx_event_callback *cb;
+	struct mfd_npm10xx_event_callback *cb, *tmp;
 	uint64_t events = 0U;
 	uint64_t handled = 0U;
 
@@ -206,7 +206,7 @@ static void events_handler(struct k_work *work)
 		events |= (uint64_t)buf[idx] << (idx * 8);
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&data->user_callbacks, cb, node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&data->user_callbacks, cb, tmp, node) {
 		if (cb->event_mask & events) {
 			cb->handler(data->mfd, cb, cb->event_mask & events);
 			handled |= cb->event_mask & events;
