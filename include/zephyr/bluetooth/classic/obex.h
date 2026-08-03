@@ -1022,6 +1022,10 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
  *  to client.
  *  The second parameter `rsp_code` is used to pass the response code @ref bt_obex_rsp_code. The
  *  typical value @ref BT_OBEX_RSP_CODE_SUCCESS for `success`.
+ *  The OBEX layer does not support the Single Response Mode (SRM) for the action operation. So
+ *  only one action response can be sent for each received action request packet. The response
+ *  code @ref BT_OBEX_RSP_CODE_SUCCESS is only accepted for the action request packet with the
+ *  final bit set.
  *
  *  There are three actions defined @ref bt_obex_action_id. For each action request, there are
  *  failure response codes corresponding to it.
@@ -1059,15 +1063,24 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
  *  The third parameter `buf` saves the packet data (sequence of headers) of the action response
  *  is stored in third parameter `buf`. All headers are packed by calling function
  *  bt_obex_add_header_*. Or, the `buf` could be NULL if there is not any data needs to be sent.
+ *  If the `buf` is not NULL, it needs enough head room for the OBEX header and the headers of the
+ *  GOEP transport, such as the buffer allocated by @ref bt_goep_create_pdu.
  *
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
- *  the caller retains the ownership of the buffer.
+ *  the caller retains the ownership of the buffer, and the data and the length of the buffer are
+ *  the same as before the function was called.
  *
  *  @param server OBEX server object.
  *  @param rsp_code Response code.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
+ *  @retval -EPROTO The response of the last received action request packet has been sent.
+ *  @retval -EINVAL No action operation is ongoing.
+ *  @retval -EINVAL The response code is @ref BT_OBEX_RSP_CODE_SUCCESS, but the final bit of the
+ *  last received action request packet is not set.
+ *  @retval -EINVAL The head room of `buf` is not enough for the OBEX header.
+ *  @retval -EBUSY The @p server is busy with an API call.
  */
 int bt_obex_action_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf);
 

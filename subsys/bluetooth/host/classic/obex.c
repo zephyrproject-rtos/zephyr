@@ -731,7 +731,7 @@ static int obex_server_action_common(struct bt_obex_server *server, bool final, 
 	struct bt_obex_rsp_hdr *rsp_hdr;
 	uint8_t rsp_code;
 	uint8_t req_code;
-	uint8_t opcode;
+	uint8_t opcode = 0;
 	int err;
 
 	LOG_DBG("");
@@ -776,6 +776,14 @@ static int obex_server_action_common(struct bt_obex_server *server, bool final, 
 			goto failed;
 		}
 	}
+
+	if (opcode == 0) {
+		atomic_clear(&server->_flags);
+	}
+
+	atomic_set_bit_to(&server->_flags, BT_OBEX_REQ_1ST, opcode == 0);
+	atomic_set_bit(&server->_flags, BT_OBEX_REQ_RECV);
+	atomic_set_bit_to(&server->_flags, BT_OBEX_REQ_F_BIT, final);
 
 	server->ops->action(server, final, buf);
 	return 0;
@@ -2981,9 +2989,12 @@ cleanup_busy:
 int bt_obex_action_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct net_buf *buf)
 {
 	struct bt_obex_rsp_hdr *hdr;
+	struct net_buf_simple_state buf_state;
 	int err;
 	uint8_t opcode;
-	bool allocated = false;
+	bool buf_owned = false;
+	bool first;
+	bool req_recv_flag;
 
 	if (server == NULL || server->obex == NULL) {
 		LOG_WRN("Invalid parameter");
@@ -3000,41 +3011,82 @@ int bt_obex_action_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct n
 		return -EINVAL;
 	}
 
-	if (buf == NULL) {
-		buf = obex_alloc_buf(server->obex);
-		if (buf == NULL) {
-			LOG_WRN("No buffers");
-			return -ENOBUFS;
-		}
-		allocated = true;
+	if (atomic_test_and_set_bit(&server->_flags, BT_OBEX_IS_BUSY)) {
+		LOG_WRN("Server %p is busy with an API call", server);
+		return -EBUSY;
 	}
 
 	opcode = atomic_get(&server->_opcode);
 	if ((opcode != BT_OBEX_OPCODE_ACTION_F) && (opcode != BT_OBEX_OPCODE_ACTION)) {
 		LOG_WRN("Invalid response");
-		return -EINVAL;
+		err = -EINVAL;
+		goto cleanup_busy;
 	}
 
 	if ((opcode != BT_OBEX_OPCODE_ACTION_F) && (rsp_code == BT_OBEX_RSP_CODE_SUCCESS)) {
 		LOG_WRN("Success cannot be responded without final");
-		return -EINVAL;
+		err = -EINVAL;
+		goto cleanup_busy;
+	}
+
+	if (buf == NULL) {
+		buf = obex_alloc_buf(server->obex);
+		if (buf == NULL) {
+			LOG_WRN("No buffers");
+			err = -ENOBUFS;
+			goto cleanup_busy;
+		}
+		buf_owned = true;
+	}
+
+	net_buf_simple_save(&buf->b, &buf_state);
+
+	first = atomic_test_bit(&server->_flags, BT_OBEX_REQ_1ST);
+
+	err = obex_server_rsp_check(server, first);
+	if (err != 0) {
+		goto cleanup;
+	}
+
+	if (net_buf_headroom(buf) < sizeof(*hdr)) {
+		err = -EINVAL;
+		goto cleanup;
 	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = rsp_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
-	err = obex_send(server->obex, server->tx.mopl, buf);
-	if (err == 0) {
-		if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
-			atomic_clear(&server->_opcode);
-			atomic_ptr_clear(&server->obex->_active_server);
-		}
-	} else {
-		if (allocated) {
-			net_buf_unref(buf);
-		}
+	if (first) {
+		atomic_clear_bit(&server->_flags, BT_OBEX_REQ_1ST);
 	}
+	req_recv_flag = atomic_test_and_clear_bit(&server->_flags, BT_OBEX_REQ_RECV);
+
+	err = obex_send(server->obex, server->tx.mopl, buf);
+	if (err != 0) {
+		goto restore_flags;
+	}
+
+	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
+		atomic_clear(&server->_opcode);
+		atomic_ptr_clear(&server->obex->_active_server);
+	}
+	atomic_clear_bit(&server->_flags, BT_OBEX_IS_BUSY);
+	return 0;
+
+restore_flags:
+	atomic_set_bit_to(&server->_flags, BT_OBEX_REQ_RECV, req_recv_flag);
+	atomic_set_bit_to(&server->_flags, BT_OBEX_REQ_1ST, first);
+
+cleanup:
+	if (buf_owned) {
+		net_buf_drop(&buf);
+	} else {
+		net_buf_simple_restore(&buf->b, &buf_state);
+	}
+
+cleanup_busy:
+	atomic_clear_bit(&server->_flags, BT_OBEX_IS_BUSY);
 	return err;
 }
 
