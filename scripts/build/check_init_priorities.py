@@ -23,6 +23,7 @@ import logging
 import os
 import pathlib
 import pickle
+import re
 import sys
 
 from elftools.elf.elffile import ELFFile
@@ -32,9 +33,10 @@ from elftools.elf.sections import SymbolTableSection
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "dts", "python-devicetree", "src"))
 from devicetree import edtlib  # noqa: F401
 
-# Prefix used for "struct device" reference initialized based on devicetree
-# entries with a known ordinal.
-_DEVICE_ORD_PREFIX = "__device_dts_ord_"
+# Pattern of the "struct device" symbol initialized based on a devicetree
+# entry with a known ordinal. Some toolchains (e.g. RX) prefix every C symbol
+# with an extra underscore, so accept any number of leading underscores.
+_DEVICE_ORD_RE = re.compile(r"^_+device_dts_ord_([0-9]+)$")
 
 # Defined init level in order of priority.
 _DEVICE_INIT_LEVELS = [
@@ -181,11 +183,11 @@ class ZephyrInitLevels:
         if not sym_name:
             return None
 
-        if not sym_name.startswith(_DEVICE_ORD_PREFIX):
+        match = _DEVICE_ORD_RE.match(sym_name)
+        if not match:
             return None
 
-        _, device_ord = sym_name.split(_DEVICE_ORD_PREFIX)
-        return int(device_ord)
+        return int(match.group(1))
 
     def _object_name(self, addr):
         if not addr:
