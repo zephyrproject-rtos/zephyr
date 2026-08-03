@@ -12,6 +12,15 @@ properties:
     type: phandle-array
     description: Input pin mapped to CS40L26/27 interrupt pin.
 
+  trigger-gpios:
+    type: phandle-array
+    description: Host GPIOs used to trigger haptic effects.
+
+  trigger-mapping:
+    type: array
+    description: For each host GPIO provided to 'trigger-gpios',
+      provide the corresponding CS40L26/27 GPIO pin number.
+
   flash-storage:
     type: phandle
     description: Flash storage for CS40L26 data. Must be a phandle to

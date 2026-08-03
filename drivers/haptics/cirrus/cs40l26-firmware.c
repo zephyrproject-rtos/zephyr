@@ -42,6 +42,7 @@ static const uint16_t *const cs40l26_firmware[CS40L26_NUM_DEVICES] = {
 		[CS40L26_REG_F0_EST] = 0x6504U,
 		[CS40L26_REG_LOGGER_ENABLE] = 0x6CE0U,
 		[CS40L26_REG_LOGGER_DATA] = 0x6D38U,
+		[CS40L26_REG_GPIO_EVENT_BASE] = 0x6FC4U,
 		[CS40L26_REG_BUZZ_FREQ] = 0x7008U,
 		[CS40L26_REG_BUZZ_LEVEL] = 0x700CU,
 		[CS40L26_REG_BUZZ_DURATION] = 0x7010U,
@@ -70,6 +71,7 @@ static const uint16_t *const cs40l26_firmware[CS40L26_NUM_DEVICES] = {
 		[CS40L26_REG_BUZZ_FREQ] = 0x6D28U,
 		[CS40L26_REG_BUZZ_LEVEL] = 0x6D2CU,
 		[CS40L26_REG_BUZZ_DURATION] = 0x6D30U,
+		[CS40L26_REG_GPIO_EVENT_BASE] = 0x6FB0U,
 		[CS40L26_REG_F0_EST_REDC] = 0x720CU,
 		[CS40L26_REG_F0_EST] = 0x7214U,
 		[CS40L26_REG_MAILBOX_QUEUE_WT] = 0x74A0U,
@@ -142,6 +144,25 @@ int cs40l26_firmware_write(const struct device *const dev, const uint32_t firmwa
 			   uint32_t val)
 {
 	return cs40l26_firmware_burst_write(dev, firmware_control, &val, 1);
+}
+
+int cs40l26_firmware_write_offset(const struct device *const dev, const uint32_t firmware_control,
+				  uint32_t val, const off_t offset)
+{
+	const struct cs40l26_config *const config = dev->config;
+	uint32_t addr;
+	int ret;
+
+	ret = cs40l26_get_firmware_address(dev, firmware_control, &addr);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!IN_RANGE(offset, -(int64_t)addr, UINT32_MAX - addr)) {
+		return -EINVAL;
+	}
+
+	return cs40lxx_write(&config->io_bus, addr + offset, val);
 }
 
 int cs40l26_firmware_raw_write(const struct device *const dev, const uint32_t firmware_control,
