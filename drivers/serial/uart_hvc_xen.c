@@ -13,6 +13,7 @@
 #include <zephyr/xen/events.h>
 #include <zephyr/xen/generic.h>
 #include <zephyr/xen/hvm.h>
+#include <zephyr/xen/sched.h>
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -123,7 +124,7 @@ static int xen_hvc_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 
 		if (len) {
 			/* Need to be able to read it from another domain */
-			HYPERVISOR_sched_op(SCHEDOP_yield, NULL);
+			xen_sched_yield();
 		}
 	}
 
