@@ -1728,3 +1728,10 @@ test_i2c_as7341: as7341@df {
 	compatible = "ams,as7341";
 	reg = <0xdf>;
 };
+
+test_i2c_d7s: d7s@4d {
+	compatible = "omron,d7s";
+	reg = <0x4d>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};
