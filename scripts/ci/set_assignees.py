@@ -98,6 +98,11 @@ the maintainers of every other touched area:
          these would otherwise get no reviewer whatsoever, since every tier
          above is derived from matched areas.
 
+     This tier is skipped entirely once the tiers above have already produced
+     MIN_TOTAL_REVIEWERS (3) candidates other than the author: the PR then has
+     reviewers who own it by declaration, and lower-confidence names added on
+     top would only dilute the request (and cost API calls).
+
      Two heuristics are tried in order, and the result is appended after the
      tiers above (the author and anyone already listed are excluded).  These
      are lower-confidence picks, so they fill only leftover review slots.
@@ -109,7 +114,9 @@ the maintainers of every other touched area:
      b. When GitHub suggests nobody, the recent contributors to the unstaffed
         files, read from the commit history.  Unlike (a) this is scoped to the
         files that are actually short of reviewers, rather than to the PR as a
-        whole.  Bounded by HISTORY_COMMITS_PER_FILE, MAX_HISTORY_FILES, and
+        whole.  Only the last HISTORY_MAX_AGE_DAYS (365) days are looked at, so
+        that people who stopped working on the file long ago are not asked.
+        Further bounded by HISTORY_COMMITS_PER_FILE, MAX_HISTORY_FILES, and
         MAX_HISTORY_REVIEWERS.
 
 Candidates are then filtered:
@@ -286,10 +293,21 @@ THIN_AREA_COLLABORATORS = 2
 # Bounds on the Git-history heuristic, to keep its GitHub API cost predictable:
 #   - sample at most this many recent commits per changed file,
 #   - inspect at most this many under-covered files in total,
-#   - add at most this many heuristic reviewers to the candidate list.
+#   - add at most this many heuristic reviewers to the candidate list,
+#   - ignore commits older than this, so that people who last touched the file
+#     years ago and have long since moved on are not asked to review it.
 HISTORY_COMMITS_PER_FILE = 20
 MAX_HISTORY_FILES = 40
 MAX_HISTORY_REVIEWERS = 3
+HISTORY_MAX_AGE_DAYS = 365
+
+# The heuristic reviewer tiers (GitHub suggestions, Git history) exist to keep a
+# PR from going unreviewed when MAINTAINERS.yml cannot staff it.  They are not
+# consulted once all the touched areas together have yielded this many
+# candidates: at that point the PR has reviewers responsible for it by
+# declaration, and adding lower-confidence names on top only dilutes the
+# request.
+MIN_TOTAL_REVIEWERS = 3
 
 # GitHub's own reviewer suggestions ("based on commit history and past review
 # comments") are exposed only through the GraphQL API, as a plain unpaginated
@@ -686,10 +704,17 @@ def _history_reviewers(gh_repo, filenames, exclude: set) -> list:
     (commit-author emails cannot be mapped to logins reliably) and does not
     depend on the CI checkout having the full history.
 
+    Only commits from the last HISTORY_MAX_AGE_DAYS days are considered: a
+    contributor who has not touched the file within a year is unlikely to still
+    be the right person to ask, and on old files the unbounded history would
+    otherwise fill every heuristic slot with people who have moved on.
+
     *exclude* holds logins already covered (PR author, existing candidates) so
     they are not re-proposed.  Sampling is bounded by HISTORY_COMMITS_PER_FILE,
     MAX_HISTORY_FILES, and MAX_HISTORY_REVIEWERS.
     """
+    since = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=HISTORY_MAX_AGE_DAYS)
+
     sampled_files = sorted(filenames)
     if len(sampled_files) > MAX_HISTORY_FILES:
         logger.info(
@@ -703,7 +728,7 @@ def _history_reviewers(gh_repo, filenames, exclude: set) -> list:
     counts = defaultdict(int)
     for filename in sampled_files:
         try:
-            commits = gh_repo.get_commits(path=filename)
+            commits = gh_repo.get_commits(path=filename, since=since)
         except GithubException as exc:
             logger.debug("No commit history for '%s': %s", filename, exc)
             continue
@@ -1178,7 +1203,19 @@ def process_pr(gh, args, maintainer_file, number: int):
     for name in thin:
         uncovered_files.update(area_files.get(name, ()))
 
-    if uncovered_files:
+    # The heuristics below are a stopgap for PRs the areas cannot staff, so they
+    # only run while the area tiers are short of reviewers.  The author does not
+    # count: they cannot review their own PR.
+    total_reviewers = set(collab) - {pr.user.login}
+
+    if uncovered_files and len(total_reviewers) >= MIN_TOTAL_REVIEWERS:
+        logger.info(
+            "Skipping heuristic reviewers: %d reviewer(s) already found from the "
+            "touched areas (threshold %d)",
+            len(total_reviewers),
+            MIN_TOTAL_REVIEWERS,
+        )
+    elif uncovered_files:
         if orphan_files:
             logger.info(
                 "%d changed file(s) match no area: %s",

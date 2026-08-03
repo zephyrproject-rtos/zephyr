@@ -9,6 +9,7 @@ out at module level so the test suite runs without a full Zephyr environment
 or a live GitHub token.
 """
 
+import datetime
 import logging
 import sys
 from types import SimpleNamespace
@@ -814,9 +815,9 @@ def _commit(login):
 
 
 def _repo_with_history(history):
-    """gh_repo stub whose get_commits(path=...) returns history[path] (or [])."""
+    """gh_repo stub whose get_commits(path=..., since=...) returns history[path] (or [])."""
     repo = MagicMock()
-    repo.get_commits.side_effect = lambda path: list(history.get(path, []))
+    repo.get_commits.side_effect = lambda path, since=None: list(history.get(path, []))
     return repo
 
 
@@ -858,7 +859,7 @@ class TestHistoryReviewers:
         assert result == ["early"]
 
     def test_github_exception_on_a_file_is_skipped(self):
-        def _raise_or_return(path):
+        def _raise_or_return(path, since=None):
             if path == "bad.c":
                 raise sut.GithubException("no history")
             return [_commit("alice")]
@@ -876,6 +877,18 @@ class TestHistoryReviewers:
         repo = _repo_with_history(history)
         result = sut._history_reviewers(repo, {"a.c", "b.c"}, exclude=set())
         assert result == ["alice", "bob"]
+
+    def test_history_is_limited_to_one_year(self):
+        repo = _repo_with_history({"f.c": [_commit("alice")]})
+        sut._history_reviewers(repo, {"f.c"}, exclude=set())
+
+        since = repo.get_commits.call_args.kwargs["since"]
+        age = datetime.datetime.now(datetime.UTC) - since
+        assert sut.HISTORY_MAX_AGE_DAYS == 365
+        # Allow a minute of slack for the time spent between the two calls.
+        assert abs(age - datetime.timedelta(days=sut.HISTORY_MAX_AGE_DAYS)) < datetime.timedelta(
+            minutes=1
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -955,7 +968,7 @@ class TestHistoryReviewersIntegration:
         areas = {"subsys/orphan/foo.c": [area]}
 
         gh, args, mf, pr = _make_process_pr_harness(areas)
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="frequent_contributor"))
         ]
         sut.process_pr(gh, args, mf, 99)
@@ -967,7 +980,7 @@ class TestHistoryReviewersIntegration:
         areas = {"subsys/orphan/foo.c": [area]}
 
         gh, args, mf, pr = _make_process_pr_harness(areas, pr_user="self")
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="self"))
         ]
         sut.process_pr(gh, args, mf, 99)
@@ -1004,7 +1017,7 @@ class TestHistoryReviewersIntegration:
             {},
             _suggested_payload([("suggested_by_github", True)]),
         )
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="from_history"))
         ]
         sut.process_pr(gh, args, mf, 99)
@@ -1021,7 +1034,7 @@ class TestHistoryReviewersIntegration:
 
         gh, args, mf, pr = _make_process_pr_harness(areas)
         gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="from_history"))
         ]
         sut.process_pr(gh, args, mf, 99)
@@ -1074,7 +1087,7 @@ class TestUnmatchedFiles:
     def test_pr_with_no_matching_area_falls_back_to_history(self):
         gh, args, mf, pr = _make_process_pr_harness({"doc/orphaned.rst": []})
         gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="baruser"))
         ]
         sut.process_pr(gh, args, mf, 99)
@@ -1088,10 +1101,13 @@ class TestUnmatchedFiles:
 
         gh, args, mf, _ = _make_process_pr_harness(areas)
         gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="doc_author"))
         ]
-        sut.process_pr(gh, args, mf, 99)
+        # The covered area alone would satisfy MIN_TOTAL_REVIEWERS; disable that
+        # gate so this test covers only which files get walked.
+        with patch.object(sut, "MIN_TOTAL_REVIEWERS", 99):
+            sut.process_pr(gh, args, mf, 99)
 
         walked = [
             call.kwargs.get("path") for call in gh.get_repo.return_value.get_commits.call_args_list
@@ -1108,7 +1124,8 @@ class TestUnmatchedFiles:
             {},
             _suggested_payload([("heuristic_r", True)]),
         )
-        sut.process_pr(gh, args, mf, 99)
+        with patch.object(sut, "MIN_TOTAL_REVIEWERS", 99):
+            sut.process_pr(gh, args, mf, 99)
 
         requested = _reviewers_requested(pr)
         assert requested.index("real_m") < requested.index("heuristic_r")
@@ -1125,10 +1142,66 @@ class TestUnmatchedFiles:
         """Orphaned file with no suggestions and no history: nothing requested."""
         gh, args, mf, pr = _make_process_pr_harness({"doc/orphaned.rst": []})
         gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: []
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: []
         sut.process_pr(gh, args, mf, 99)
 
         assert _reviewers_requested(pr) == []
+
+
+class TestHeuristicThreshold:
+    """The heuristics only top up PRs that the areas left short of reviewers."""
+
+    def test_enough_area_reviewers_skips_heuristics(self):
+        """An orphaned file does not trigger a walk when the areas staffed the PR."""
+        covered = _make_area("Full", maintainers=["m"], collaborators=["c1", "c2", "c3"])
+        areas = {"doc/orphaned.rst": [], "subsys/full/foo.c": [covered]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        gh.requester.graphql_query.assert_not_called()
+        gh.get_repo.return_value.get_commits.assert_not_called()
+        assert _reviewers_requested(pr) == ["m", "c1", "c2", "c3"]
+
+    def test_too_few_area_reviewers_runs_heuristics(self):
+        thin = _make_area("Thin", maintainers=["m"], collaborators=[])
+        areas = {"subsys/thin/foo.c": [thin]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("heuristic_r", True)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "heuristic_r" in _reviewers_requested(pr)
+
+    def test_author_does_not_count_towards_the_threshold(self):
+        """The author cannot review their own PR, so they leave the PR short."""
+        thin = _make_area("Thin", maintainers=["self"], collaborators=["c1", "c2"])
+        areas = {"subsys/thin/foo.c": [thin]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas, pr_user="self")
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("heuristic_r", True)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        # Only c1 and c2 can review: one short of MIN_TOTAL_REVIEWERS.
+        assert "heuristic_r" in _reviewers_requested(pr)
+
+    def test_threshold_counts_reviewers_across_areas(self):
+        """Two thin areas can jointly staff a PR that neither could alone."""
+        thin_a = _make_area("ThinA", maintainers=["ma"], collaborators=["ca"])
+        thin_b = _make_area("ThinB", maintainers=["mb"], collaborators=["cb"])
+        areas = {"subsys/a/foo.c": [thin_a], "subsys/b/bar.c": [thin_b]}
+
+        gh, args, mf, _ = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        gh.requester.graphql_query.assert_not_called()
+        gh.get_repo.return_value.get_commits.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -1397,7 +1470,7 @@ class TestMentionCommentIsIdempotent:
         area = _make_area("Net", maintainers=["outside_m"], collaborators=["inside_c"])
         gh, args, mf, pr = _make_process_pr_harness({"subsys/net/foo.c": [area]})
         gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: []
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: []
         gh.get_repo.return_value.has_in_collaborators.side_effect = (
             lambda user: user.login != "outside_m"
         )
