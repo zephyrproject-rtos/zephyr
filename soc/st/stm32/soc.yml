@@ -282,3 +282,8 @@ family:
     - name: stm32wle5xx
     - name: stm32wl54xx
     - name: stm32wl55xx
+  - name: stm32wl3x
+    socs:
+    - name: stm32wl30xx
+    - name: stm32wl31xx
+    - name: stm32wl33xx
