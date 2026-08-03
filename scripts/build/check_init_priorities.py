@@ -213,7 +213,9 @@ class ZephyrInitLevels:
         start = offset + ptrsize * idx
         stop = offset + ptrsize * (idx + 1)
 
-        return int.from_bytes(data[start:stop], byteorder="little")
+        byteorder = "little" if self._elf.little_endian else "big"
+
+        return int.from_bytes(data[start:stop], byteorder=byteorder)
 
     def _process_initlevels(self):
         """Process the init level and find the init functions and devices."""
