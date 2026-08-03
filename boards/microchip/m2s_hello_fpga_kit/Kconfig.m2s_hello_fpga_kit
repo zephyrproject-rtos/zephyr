@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_M2S_HELLO_FPGA_KIT
+	select SOC_M2S010 if BOARD_M2S_HELLO_FPGA_KIT_M2S010
