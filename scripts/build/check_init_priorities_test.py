@@ -145,6 +145,20 @@ class testZephyrInitLevels(unittest.TestCase):
         self.assertEqual(obj._init_level_end, 0x66)
 
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
+    def test_initlevel_pointer_big_endian(self, mock_zilinit):
+        obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._elf = mock.Mock()
+        obj._elf.elfclass = 32
+        obj._elf.little_endian = False
+        mock_section = mock.Mock()
+        obj._elf.get_section.return_value = mock_section
+        mock_section.header.sh_addr = 0x100
+        mock_section.data.return_value = b"\x00\x00\x00\x01\x00\x00\x00\x02"
+
+        self.assertEqual(obj._initlevel_pointer(0x100, 0, 0), 1)
+        self.assertEqual(obj._initlevel_pointer(0x100, 1, 0), 2)
+
+    @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_device_ord_from_name(self, mock_zilinit):
         obj = check_init_priorities.ZephyrInitLevels("", None)
 
@@ -166,6 +180,7 @@ class testZephyrInitLevels(unittest.TestCase):
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock.Mock()
         obj._elf.elfclass = 32
+        obj._elf.little_endian = True
         mock_section = mock.Mock()
         obj._elf.get_section.return_value = mock_section
         mock_section.header.sh_addr = 0x100
@@ -181,6 +196,7 @@ class testZephyrInitLevels(unittest.TestCase):
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._elf = mock.Mock()
         obj._elf.elfclass = 64
+        obj._elf.little_endian = True
         mock_section = mock.Mock()
         obj._elf.get_section.return_value = mock_section
         mock_section.header.sh_addr = 0x100
