@@ -26,7 +26,9 @@
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -61,6 +63,8 @@ CREATE_FLAG(flag_pa_request);
 CREATE_FLAG(flag_bis_sync_requested);
 CREATE_FLAG(flag_base_metadata_updated);
 CREATE_FLAG(flag_unicast_stream_configured);
+
+CREATE_FLAG(flag_disconnect_in_procedure);
 
 static const struct bt_bap_scan_delegator_recv_state *g_recv_state;
 static struct bt_bap_broadcast_sink *g_broadcast_sink;
@@ -646,7 +650,10 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 			   const struct bt_bap_scan_delegator_recv_state *recv_state,
 			   const uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX_SUBGROUPS])
 {
-	ARG_UNUSED(conn);
+	if (conn != default_conn) {
+		FAIL("Unexpected connection %p != %p", conn, default_conn);
+		return -EINVAL;
+	}
 
 	if (recv_state != g_recv_state) {
 		FAIL("Unexpected receive state: %p != %p", recv_state, g_recv_state);
@@ -668,7 +675,15 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 		UNSET_FLAG(flag_bis_sync_requested);
 	}
 
-	update_sink_state();
+	if (TEST_FLAG(flag_disconnect_in_procedure)) {
+		const int err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+		if (err != 0) {
+			FAIL("Failed to disconnect: %d", err);
+		}
+	} else {
+		update_sink_state();
+	}
 
 	return 0;
 }
@@ -815,6 +830,14 @@ static int unicast_server_enable(struct bt_bap_stream *stream, const uint8_t met
 				 size_t meta_len, struct bt_bap_ascs_rsp *rsp)
 {
 	LOG_INF("Enable: stream %p meta_len %zu", stream, meta_len);
+
+	if (TEST_FLAG(flag_disconnect_in_procedure)) {
+		const int err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+		if (err != 0) {
+			FAIL("Failed to disconnect: %d", err);
+		}
+	}
 
 	return bt_audio_data_parse(meta, meta_len, ascs_data_func_cb, rsp);
 }
@@ -1209,7 +1232,21 @@ static void test_cap_acceptor_unicast_timeout(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	PASS("CAP acceptor unicast passed\n");
+	PASS("CAP acceptor unicast timeout passed\n");
+}
+
+static void test_cap_acceptor_unicast_disconnect(void)
+{
+	init();
+
+	test_start_adv();
+
+	SET_FLAG(flag_disconnect_in_procedure); /* Disconnect during CAP Unicast Audio Start */
+
+	WAIT_FOR_FLAG(flag_connected);
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	PASS("CAP acceptor unicast disconnect passed\n");
 }
 
 static void pa_sync_to_broadcaster(void)
@@ -1343,6 +1380,27 @@ static void test_cap_acceptor_broadcast_reception_reject_first(void)
 	test_cap_acceptor_broadcast_reception();
 }
 
+static void test_cap_acceptor_broadcast_reception_disconnect(void)
+{
+	SET_FLAG(flag_disconnect_in_procedure);
+
+	init();
+
+	test_start_adv();
+
+	LOG_INF("Waiting for PA sync request");
+	WAIT_FOR_FLAG(flag_pa_request);
+
+	LOG_INF("Waiting for BIS sync request");
+	WAIT_FOR_FLAG(flag_bis_sync_requested); /* We disconnect after this */
+
+	backchannel_sync_send_all(); /* let others know we have received what we wanted */
+
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+
+	PASS("CAP acceptor broadcast reception disconnect passed\n");
+}
+
 static void test_cap_acceptor_capture_and_render(void)
 {
 	init();
@@ -1351,7 +1409,7 @@ static void test_cap_acceptor_capture_and_render(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	PASS("CAP acceptor unicast passed\n");
+	PASS("CAP acceptor capture and render passed\n");
 }
 
 static const struct bst_test_instance test_cap_acceptor[] = {
@@ -1366,6 +1424,12 @@ static const struct bst_test_instance test_cap_acceptor[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_unicast_timeout,
+	},
+	{
+		.test_id = "cap_acceptor_unicast_disconnect",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_acceptor_unicast_disconnect,
 	},
 	{
 		.test_id = "cap_acceptor_broadcast",
@@ -1390,6 +1454,12 @@ static const struct bst_test_instance test_cap_acceptor[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_acceptor_broadcast_reception_reject_first,
+	},
+	{
+		.test_id = "cap_acceptor_broadcast_reception_disconnect",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_acceptor_broadcast_reception_disconnect,
 	},
 	{
 		.test_id = "cap_acceptor_capture_and_render",
