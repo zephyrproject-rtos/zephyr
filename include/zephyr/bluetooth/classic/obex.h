@@ -12,6 +12,8 @@
 /**
  * @brief IrDA Object Exchange Protocol (OBEX)
  * @defgroup bt_obex IrDA Object Exchange Protocol (OBEX)
+ * @since 4.3
+ * @version 0.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -990,18 +992,27 @@ enum __packed bt_obex_action_id {
  *
  *  The action operation consists of one or more request packets, the last of which should have
  *  the second parameter `final` set.
+ *  The OBEX layer does not support the Single Response Mode (SRM) for the action operation. So
+ *  the next action request packet can only be sent after the response of the previous action
+ *  request packet has been received.
  *  The third parameter `buf` saves the packet data (sequence of headers) of the action request is
  *  stored in third parameter `buf`. All headers are packed by calling function
  *  bt_obex_add_header_*. Such as header `Name` is packed by calling @ref bt_obex_add_header_name.
+ *  The `buf` needs enough head room for the OBEX header and the headers of the GOEP transport,
+ *  such as the buffer allocated by @ref bt_goep_create_pdu.
  *
  *  @note Buffer ownership is transferred to the stack in case of success, in case of an error
- *  the caller retains the ownership of the buffer.
+ *  the caller retains the ownership of the buffer, and the data and the length of the buffer are
+ *  the same as before the function was called.
  *
  *  @param client OBEX client object.
  *  @param final The final bit of opcode.
  *  @param buf Sequence of headers to be sent out.
  *
  *  @return 0 in case of success or negative value in case of error.
+ *  @retval -EPROTO The response of the previous action request packet has not been received.
+ *  @retval -EINVAL The head room of `buf` is not enough for the OBEX header.
+ *  @retval -EBUSY The @p client is busy with an API call.
  */
 int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *buf);
 

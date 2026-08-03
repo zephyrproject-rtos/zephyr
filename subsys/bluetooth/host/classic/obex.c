@@ -46,6 +46,7 @@ enum {
 	BT_OBEX_RSP_RECV,   /* Response received */
 	BT_OBEX_REQ_RECV,   /* Request received */
 	BT_OBEX_REQ_F_BIT,  /* Request Final bit set */
+	BT_OBEX_IS_BUSY,    /* Busy with an API call */
 };
 
 /* SRM disable value */
@@ -1097,9 +1098,10 @@ static void obex_client_clear_active_state(struct bt_obex_client *client)
 }
 
 static void obex_client_restore_active_state(struct bt_obex_client *client,
-					      struct bt_obex_client *active_client, uint8_t opcode)
+					     struct bt_obex_client *active_client,
+					     uint8_t original_opcode, uint8_t current_code)
 {
-	atomic_set(&client->_opcode, opcode);
+	(void)atomic_cas(&client->_opcode, current_code, original_opcode);
 	(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
 }
 
@@ -1485,9 +1487,11 @@ static int obex_client_action_common(struct bt_obex_client *client, uint8_t rsp_
 	}
 
 	if (client->ops->action == NULL) {
-		LOG_WRN("Setpath rsp handling not implemented");
+		LOG_WRN("Action rsp handling not implemented");
 		return -ENOTSUP;
 	}
+
+	atomic_set_bit(&client->_flags, BT_OBEX_RSP_RECV);
 
 	if (rsp_code != BT_OBEX_RSP_CODE_CONTINUE) {
 		obex_client_req_complete(client);
@@ -2291,7 +2295,7 @@ int bt_obex_put(struct bt_obex_client *client, bool final, struct net_buf *buf)
 
 failed:
 	atomic_set(&client->_flags, flags);
-	obex_client_restore_active_state(client, active_client, opcode);
+	obex_client_restore_active_state(client, active_client, opcode, req_code);
 
 	if (allocated) {
 		net_buf_unref(buf);
@@ -2487,7 +2491,7 @@ int bt_obex_get(struct bt_obex_client *client, bool final, struct net_buf *buf)
 
 failed:
 	atomic_set(&client->_flags, flags);
-	obex_client_restore_active_state(client, active_client, opcode);
+	obex_client_restore_active_state(client, active_client, opcode, req_code);
 
 	if (allocated) {
 		net_buf_unref(buf);
@@ -2662,7 +2666,8 @@ int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf)
 	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err != 0) {
 		atomic_set(&client->_pre_opcode, pre_opcode);
-		obex_client_restore_active_state(client, active_client, opcode);
+		obex_client_restore_active_state(client, active_client, opcode,
+						 BT_OBEX_OPCODE_ABORT);
 
 		if (allocated) {
 			net_buf_unref(buf);
@@ -2839,14 +2844,22 @@ int bt_obex_setpath_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct 
 	return err;
 }
 
+static void obex_client_reset_operation_flags(struct bt_obex_client *client)
+{
+	atomic_set(&client->_flags, BIT(BT_OBEX_IS_BUSY));
+}
+
 int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *buf)
 {
 	struct bt_obex_req_hdr *hdr;
 	struct bt_obex_client *active_client = NULL;
+	struct net_buf_simple_state buf_state;
 	int err;
 	uint8_t req_code;
 	uint8_t opcode = 0;
-	bool allocated = false;
+	bool buf_owned = false;
+	bool rsp_recv_flag;
+	bool final_flag;
 
 	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
@@ -2863,11 +2876,17 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 		return -ENOTCONN;
 	}
 
+	if (atomic_test_and_set_bit(&client->_flags, BT_OBEX_IS_BUSY)) {
+		LOG_WRN("Client %p is busy with an API call", client);
+		return -EBUSY;
+	}
+
 	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client)) {
 		active_client = atomic_ptr_get(&client->obex->_active_client);
 		if (active_client != client) {
 			LOG_WRN("One OBEX request is executing");
-			return -EBUSY;
+			err = -EBUSY;
+			goto cleanup_busy;
 		}
 	}
 
@@ -2876,21 +2895,21 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 		opcode = atomic_get(&client->_opcode);
 		if ((opcode != BT_OBEX_OPCODE_ACTION_F) && (opcode != BT_OBEX_OPCODE_ACTION)) {
 			LOG_WRN("Operation inprogress");
-			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
-			return -EBUSY;
+			err = -EBUSY;
+			goto cleanup_state;
 		}
 
 		if (!final && (opcode == BT_OBEX_OPCODE_ACTION_F)) {
 			LOG_WRN("Unexpected action request without final bit");
-			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
-			return -EBUSY;
+			err = -EBUSY;
+			goto cleanup_state;
 		}
 
 		if ((opcode != req_code) && !atomic_cas(&client->_opcode, opcode, req_code)) {
 			LOG_WRN("OP code mismatch %u != %u", (uint8_t)atomic_get(&client->_opcode),
 				opcode);
-			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
-			return -EINVAL;
+			err = -EINVAL;
+			goto cleanup_state;
 		}
 	}
 
@@ -2899,26 +2918,63 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 		if (buf == NULL) {
 			LOG_WRN("No buffers");
 			err = -ENOBUFS;
-			goto failed;
+			goto cleanup_state;
 		}
-		allocated = true;
+		buf_owned = true;
+	}
+
+	net_buf_simple_save(&buf->b, &buf_state);
+
+	err = obex_client_req_check(client, opcode == 0);
+	if (err != 0) {
+		goto cleanup;
+	}
+
+	if (net_buf_headroom(buf) < sizeof(*hdr)) {
+		err = -EINVAL;
+		goto cleanup;
 	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = req_code;
 	hdr->len = sys_cpu_to_be16(buf->len);
 
+	if (opcode == 0) {
+		obex_client_reset_operation_flags(client);
+	}
+
+	rsp_recv_flag = atomic_test_and_clear_bit(&client->_flags, BT_OBEX_RSP_RECV);
+
+	if (final) {
+		final_flag = atomic_test_and_set_bit(&client->_flags, BT_OBEX_REQ_F_BIT);
+	}
+
 	err = obex_send(client->obex, client->tx.mopl, buf);
-	if (err == 0) {
-		return 0;
+	if (err != 0) {
+		goto restore_flags;
 	}
 
-failed:
-	obex_client_restore_active_state(client, active_client, opcode);
+	atomic_clear_bit(&client->_flags, BT_OBEX_IS_BUSY);
+	return 0;
 
-	if (allocated) {
-		net_buf_unref(buf);
+restore_flags:
+	if (final) {
+		atomic_set_bit_to(&client->_flags, BT_OBEX_REQ_F_BIT, final_flag);
 	}
+	atomic_set_bit_to(&client->_flags, BT_OBEX_RSP_RECV, rsp_recv_flag);
+
+cleanup:
+	if (buf_owned) {
+		net_buf_drop(&buf);
+	} else {
+		net_buf_simple_restore(&buf->b, &buf_state);
+	}
+
+cleanup_state:
+	obex_client_restore_active_state(client, active_client, opcode, req_code);
+
+cleanup_busy:
+	atomic_clear_bit(&client->_flags, BT_OBEX_IS_BUSY);
 	return err;
 }
 
