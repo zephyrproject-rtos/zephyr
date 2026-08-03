@@ -375,6 +375,9 @@ New APIs and options
     interface. The membership changes are reported by the
     :c:macro:`NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD` and
     :c:macro:`NET_EVENT_PACKET_MCAST_MEMBERSHIP_DROP` network management events.
+    Memberships still held when the socket is closed are dropped automatically,
+    and :kconfig:option:`CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT` sets
+    how many memberships can be active at the same time.
 
 * Power Management
 
