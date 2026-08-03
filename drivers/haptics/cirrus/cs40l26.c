@@ -99,10 +99,6 @@ LOG_MODULE_REGISTER(CS40L26, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L26_T_F0                K_MSEC(2500)
 #define CS40L26_T_CALIBRATION_START K_MSEC(1000)
 
-/* Kconfig options */
-#define CS40L26_PM_ACTIVE_TIMEOUT CONFIG_HAPTICS_CS40L26_PM_ACTIVE_TIMEOUT
-#define CS40L26_PM_STDBY_TIMEOUT  CONFIG_HAPTICS_CS40L26_PM_STDBY_TIMEOUT
-
 /* Miscellaneous helpers */
 #define CS40L26_NUM_IRQ1_INT        5
 #define CS40L26_LOGGER_SRC_STEP     12
@@ -735,14 +731,18 @@ static int cs40l26_run_calibration(const struct device *const dev, uint32_t *con
 
 static int cs40l26_timeout_config(const struct device *const dev)
 {
+	uint32_t pm_active_timeout, pm_stdby_timeout;
 	int ret;
 
-	ret = cs40l26_firmware_write(dev, CS40L26_REG_PM_ACTIVE_TIMEOUT, CS40L26_PM_ACTIVE_TIMEOUT);
+	pm_active_timeout = (uint32_t)CONFIG_HAPTICS_CS40L26_PM_ACTIVE_TIMEOUT_MS * 32768 / 1000;
+	pm_stdby_timeout = (uint32_t)CONFIG_HAPTICS_CS40L26_PM_STDBY_TIMEOUT_MS * 32768 / 1000;
+
+	ret = cs40l26_firmware_write(dev, CS40L26_REG_PM_ACTIVE_TIMEOUT, pm_active_timeout);
 	if (ret < 0) {
 		return ret;
 	}
 
-	return cs40l26_firmware_write(dev, CS40L26_REG_PM_STDBY_TIMEOUT, CS40L26_PM_STDBY_TIMEOUT);
+	return cs40l26_firmware_write(dev, CS40L26_REG_PM_STDBY_TIMEOUT, pm_stdby_timeout);
 }
 
 static int cs40l26_dsp_config(const struct device *const dev)

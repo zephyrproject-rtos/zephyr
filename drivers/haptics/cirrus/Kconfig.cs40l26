@@ -53,20 +53,20 @@ config HAPTICS_CS40L26_DYNAMIC_F0
 	help
 	  Enable dynamic F0 compensation for haptic effects.
 
-config HAPTICS_CS40L26_PM_ACTIVE_TIMEOUT
+config HAPTICS_CS40L26_PM_ACTIVE_TIMEOUT_MS
 	int "Active Timeout"
-	default 8000
-	range 0 327680
+	default 0
+	range 0 10000
 	help
 	  After the device has finished playing an effect, wait the specified amount
-	  of time (in units of 1/32768 seconds) before entering the standby state.
+	  of time in milliseconds before entering the standby state.
 
-config HAPTICS_CS40L26_PM_STDBY_TIMEOUT
+config HAPTICS_CS40L26_PM_STDBY_TIMEOUT_MS
 	int "Standby Timeout"
-	default 160000
-	range 0 327680
+	default 100
+	range 0 10000
 	help
 	  When the device enters the standby state with hibernation enabled, wait the
-	  specified amount of time (in units of 1/32768 seconds) before entering hibernation.
+	  specified amount of time in milliseconds before entering hibernation.
 
 endif #HAPTICS_CS40L26
