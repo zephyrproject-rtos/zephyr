@@ -160,14 +160,7 @@ Known Limitations
    contexts within a service. Each service can use only one OSCORE context at a time,
    so all clients share that context. This is sufficient for many use cases, but it
    does not allow separate contexts per client.
-2. **Reboot Replay Recovery (Echo)**: The Echo-based freshness exchange for restored
-   contexts (:rfc:`8613` Appendix B.1.2, :rfc:`9175`) is not implemented. When uoscore reports
-   the first request after a reboot, the server rejects it with 4.01 Unauthorized instead
-   of answering with an Echo challenge, so a client cannot automatically re-synchronize.
-   This is fail-closed meaning no unprotected or replayed request is accepted but a
-   reused or restored context cannot recover after a reboot without re-establishing the
-   context out of band.
-3. **Mixed-Service Expired-Exchange Plaintext**: On a mixed service (one that serves
+2. **Mixed-Service Expired-Exchange Plaintext**: On a mixed service (one that serves
    both OSCORE and non-OSCORE clients), a response whose exchange cache entry has
    expired can no longer be matched to its OSCORE state and is sent as plaintext. This
    affects both synchronous and deferred (separate) responses (see
