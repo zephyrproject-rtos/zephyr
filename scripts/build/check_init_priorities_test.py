@@ -165,6 +165,9 @@ class testZephyrInitLevels(unittest.TestCase):
         self.assertEqual(obj._device_ord_from_name(None), None)
         self.assertEqual(obj._device_ord_from_name("hey, hi!"), None)
         self.assertEqual(obj._device_ord_from_name("__device_dts_ord_123"), 123)
+        # toolchains that prefix C symbols with an extra underscore (e.g. RX)
+        self.assertEqual(obj._device_ord_from_name("___device_dts_ord_123"), 123)
+        self.assertEqual(obj._device_ord_from_name("__device_dts_ord_123_x"), None)
 
     @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
     def test_object_name(self, mock_zilinit):
