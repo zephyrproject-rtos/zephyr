@@ -48,8 +48,6 @@ struct ptp_port {
 	int			       socket[2];
 	/** Status of a link. */
 	uint8_t			       link_status;
-	/** Link event callback. */
-	struct net_mgmt_event_callback link_cb;
 	/** Structure of system timers used by the Port. */
 	struct {
 		struct k_timer	       announce;
