@@ -663,7 +663,7 @@ static void sip_svc_thread(void *ctrl_ptr, void *arg2, void *arg3)
 			}
 		}
 		LOG_INF("Suspend thread, all transactions are completed");
-		k_thread_suspend(ctrl->tid);
+		k_sem_take(&ctrl->thread_sem, K_FOREVER);
 	}
 }
 
@@ -756,7 +756,7 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 	}
 
 	LOG_INF("Wakeup sip_svc thread");
-	k_thread_resume(ctrl->tid);
+	k_sem_give(&ctrl->thread_sem);
 	k_mutex_unlock(&ctrl->data_mutex);
 
 	return (int)trans_id;
@@ -837,21 +837,14 @@ static int sip_svc_subsys_init(void)
 
 		LOG_INF("Got registered conduit %.*s", (int)sizeof(ctrl->method), ctrl->method);
 
-		ctrl->async_resp_data = k_malloc(ctrl->resp_size);
-		if (ctrl->async_resp_data == NULL) {
-			return -ENOMEM;
-		}
-
 		ctrl->client_id_pool = sip_svc_id_mgr_create(ctrl->num_clients);
 		if (!ctrl->client_id_pool) {
-			k_free(ctrl->async_resp_data);
 			return -ENOMEM;
 		}
 
 		ctrl->trans_id_map = sip_svc_id_map_create(ctrl->max_transactions);
 		if (!ctrl->trans_id_map) {
 			sip_svc_id_mgr_delete(ctrl->client_id_pool);
-			k_free(ctrl->async_resp_data);
 			return -ENOMEM;
 		}
 
@@ -861,7 +854,6 @@ static int sip_svc_subsys_init(void)
 		if (!msgq_buf) {
 			sip_svc_id_mgr_delete(ctrl->client_id_pool);
 			sip_svc_id_map_delete(ctrl->trans_id_map);
-			k_free(ctrl->async_resp_data);
 			return -ENOMEM;
 		}
 
@@ -870,7 +862,6 @@ static int sip_svc_subsys_init(void)
 			sip_svc_id_mgr_delete(ctrl->client_id_pool);
 			sip_svc_id_map_delete(ctrl->trans_id_map);
 			k_free(msgq_buf);
-			k_free(ctrl->async_resp_data);
 			return -ENOMEM;
 		}
 
@@ -901,7 +892,6 @@ static int sip_svc_subsys_init(void)
 			sip_svc_id_map_delete(ctrl->trans_id_map);
 			k_free(msgq_buf);
 			k_free(ctrl->clients);
-			k_free(ctrl->async_resp_data);
 
 			for (uint32_t i = 0; i < ctrl->num_clients; i++) {
 				client = &ctrl->clients[i];
@@ -918,6 +908,7 @@ static int sip_svc_subsys_init(void)
 			sip_svc_thread, ctrl, NULL, NULL, CONFIG_ARM_SIP_SVC_SUBSYS_THREAD_PRIORITY,
 			K_ESSENTIAL, K_NO_WAIT);
 		k_thread_name_set(ctrl->tid, "sip_svc");
+		k_sem_init(&ctrl->thread_sem, 0, 1);
 
 		ctrl->active_job_cnt = 0;
 		ctrl->active_async_job_cnt = 0;
