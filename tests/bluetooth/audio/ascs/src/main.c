@@ -129,9 +129,12 @@ static void ascs_test_suite_teardown(void *f)
 
 static void ascs_test_suite_after(void *f)
 {
+	struct ascs_test_suite_fixture *fixture = (struct ascs_test_suite_fixture *)f;
 	int err;
 
-	ARG_UNUSED(f);
+	if (fixture->conn.info.state == BT_CONN_STATE_CONNECTED) {
+		mock_bt_conn_disconnected(&fixture->conn, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+	}
 
 	err = bt_ascs_unregister();
 	zassert_true(err == 0 || err == -EALREADY, "Unexpected err response %d", err);
@@ -232,8 +235,8 @@ ZTEST_F(ascs_test_suite, test_abort_client_operation_if_callback_not_registered)
 	test_ase_control_client_config_codec(conn, ase_id, stream);
 
 	/* Expected ASE Control Point notification with Unspecified Error was sent */
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp,
-					     EMPTY, TEST_ASE_CP_CHRC_VALUE_SIZE(1));
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, NULL,
+					     TEST_ASE_CP_CHRC_VALUE_SIZE(1));
 
 	notify_params = mock_bt_gatt_notify_cb_fake.arg1_val;
 	hdr = (void *)notify_params->data;
