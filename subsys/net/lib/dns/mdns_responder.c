@@ -1181,16 +1181,20 @@ static void mdns_addr_ipv4_event_handler(uint64_t mgmt_event, struct net_if *ifa
 	uint32_t probe_delay = sys_rand32_get() % 250;
 	int ret;
 
+	if ((mgmt_event != NET_EVENT_IPV4_ADDR_ADD) && (mgmt_event != NET_EVENT_IPV4_ADDR_DEL)) {
+		return;
+	}
+
 	if (!mdns_iface_is_enabled(iface)) {
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
-		ARRAY_FOR_EACH(v4_ctx, i) {
-			if (v4_ctx[i].iface != iface) {
-				continue;
-			}
+	ARRAY_FOR_EACH(v4_ctx, i) {
+		if (v4_ctx[i].iface != iface) {
+			continue;
+		}
 
+		if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
 			ret = add_address(iface, NET_AF_INET, info, info_length);
 			if (ret < 0 && ret != -EALREADY) {
 				NET_DBG("Cannot %s %s address (%d)", "add", "IPv4", ret);
@@ -1207,19 +1211,7 @@ static void mdns_addr_ipv4_event_handler(uint64_t mgmt_event, struct net_if *ifa
 					"IPv4", "add", net_if_get_by_iface(iface),
 					&v4_ctx[i]);
 			}
-
-			break;
-		}
-
-		return;
-	}
-
-	if (mgmt_event == NET_EVENT_IPV4_ADDR_DEL) {
-		ARRAY_FOR_EACH(v4_ctx, i) {
-			if (v4_ctx[i].iface != iface) {
-				continue;
-			}
-
+		} else {
 			ret = del_address(iface, NET_AF_INET, info, info_length);
 			if (ret < 0) {
 				if (ret == -ENOENT) {
@@ -1244,9 +1236,9 @@ static void mdns_addr_ipv4_event_handler(uint64_t mgmt_event, struct net_if *ifa
 					"IPv4", "del", net_if_get_by_iface(iface),
 					&v4_ctx[i]);
 			}
-
-			break;
 		}
+
+		return;
 	}
 }
 
@@ -1262,16 +1254,20 @@ static void mdns_addr_ipv6_event_handler(uint64_t mgmt_event, struct net_if *ifa
 	uint32_t probe_delay = sys_rand32_get() % 250;
 	int ret;
 
+	if ((mgmt_event != NET_EVENT_IPV6_ADDR_ADD) && (mgmt_event != NET_EVENT_IPV6_ADDR_DEL)) {
+		return;
+	}
+
 	if (!mdns_iface_is_enabled(iface)) {
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
-		ARRAY_FOR_EACH(v6_ctx, i) {
-			if (v6_ctx[i].iface != iface) {
-				continue;
-			}
+	ARRAY_FOR_EACH(v6_ctx, i) {
+		if (v6_ctx[i].iface != iface) {
+			continue;
+		}
 
+		if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
 			ret = add_address(iface, NET_AF_INET6, info, info_length);
 			if (ret < 0 && ret != -EALREADY) {
 				NET_DBG("Cannot %s %s address (%d)", "add", "IPv6", ret);
@@ -1288,19 +1284,7 @@ static void mdns_addr_ipv6_event_handler(uint64_t mgmt_event, struct net_if *ifa
 					"IPv6", "add", net_if_get_by_iface(iface),
 					&v6_ctx[i]);
 			}
-
-			break;
-		}
-
-		return;
-	}
-
-	if (mgmt_event == NET_EVENT_IPV6_ADDR_DEL) {
-		ARRAY_FOR_EACH(v6_ctx, i) {
-			if (v6_ctx[i].iface != iface) {
-				continue;
-			}
-
+		} else {
 			ret = del_address(iface, NET_AF_INET6, info, info_length);
 			if (ret < 0) {
 				if (ret == -ENOENT) {
@@ -1325,9 +1309,9 @@ static void mdns_addr_ipv6_event_handler(uint64_t mgmt_event, struct net_if *ifa
 					"IPv6", "del", net_if_get_by_iface(iface),
 					&v6_ctx[i]);
 			}
-
-			break;
 		}
+
+		return;
 	}
 }
 
