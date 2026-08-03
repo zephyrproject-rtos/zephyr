@@ -13,6 +13,16 @@ menuconfig DSA_DRIVERS
 
 if DSA_DRIVERS
 
+config DSA_PROMISC_ON_CONDUIT
+	bool "Run DSA conduit in promiscuous mode"
+	default y
+	select NET_PROMISCUOUS_MODE
+	help
+	  Some conduits leverage ingress filters to discard packets whose DMAC field does not match
+	  that programmed into the conduit's MAC before said packets are ever made available to the
+	  software. Such conduits typically need to run in promiscuous mode to ensure packets
+	  received on DSA ports being processed.
+
 config DSA_NXP_IMX_NETC
 	bool "Support for NXP i.MX NETC"
 	default y
