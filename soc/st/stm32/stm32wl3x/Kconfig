@@ -1,0 +1,17 @@
+# STMicroelectronics STM32WL3 MCU line
+
+# Copyright (c) 2026 Anders Frandsen <anfran@anfran.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32WL3X
+	# Architecture options & CPU model selection
+	select ARM
+	select CPU_CORTEX_M0PLUS
+	# Hardware options
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	# Software options
+	select SOC_EARLY_INIT_HOOK
+	# STM32-specific options
+	select HAS_STM32CUBE

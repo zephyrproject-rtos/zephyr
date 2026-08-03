@@ -1,0 +1,28 @@
+# STMicroelectronics STM32WL3 MCU line
+
+# Copyright (c) 2026 Anders Frandsen <anfran@anfran.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32WL3X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32wl3x" if SOC_SERIES_STM32WL3X
+
+config SOC_STM32WL30XX
+	bool
+	select SOC_SERIES_STM32WL3X
+
+config SOC_STM32WL31XX
+	bool
+	select SOC_SERIES_STM32WL3X
+
+config SOC_STM32WL33XX
+	bool
+	select SOC_SERIES_STM32WL3X
+
+config SOC
+	default "stm32wl30xx" if SOC_STM32WL30XX
+	default "stm32wl31xx" if SOC_STM32WL31XX
+	default "stm32wl33xx" if SOC_STM32WL33XX
