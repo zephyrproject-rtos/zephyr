@@ -70,9 +70,6 @@ struct ifx_cat1_i2c_data {
 	bool error;
 	uint32_t async_pending;
 	struct ifx_cat1_clock clock;
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-	uint8_t clock_peri_group;
-#endif
 	struct i2c_target_config *p_target_config;
 	uint8_t i2c_target_wr_byte;
 	uint8_t target_wr_buffer[CONFIG_I2C_INFINEON_CAT1_TARGET_BUF];
@@ -985,12 +982,6 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 #endif /* CONFIG_I2C_INFINEON_BUS_RECOVERY */
 };
 
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-#define PERI_INFO(n) .clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),
-#else
-#define PERI_INFO(n)
-#endif
-
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 #define I2C_PERI_CLOCK_INIT(n)                                                                     \
 	.clock = {                                                                                 \
@@ -999,8 +990,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
 			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
 		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
-	},                                                                                         \
-	PERI_INFO(n)
+	},
 #else
 #define I2C_PERI_CLOCK_INIT(n)                                                                     \
 	.clock = {                                                                                 \
@@ -1008,8 +998,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
 			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
 		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
-	},                                                                                         \
-	PERI_INFO(n)
+	},
 #endif
 
 #ifdef CONFIG_I2C_INFINEON_BUS_RECOVERY
