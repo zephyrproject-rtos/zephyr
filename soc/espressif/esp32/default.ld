@@ -1047,6 +1047,19 @@ SECTIONS
 
   /* --- FLASH TEXT END --- */
 
+#if defined(CONFIG_BOOTLOADER_MCUBOOT) && defined(CONFIG_ESP_FLASH_ENCRYPTION)
+  /* Pad the image to the next CACHE_ALIGN boundary so MCUboot TLVs
+   * start outside any IROM/DROM mapping window. Required for reliable
+   * TLV reads with flash encryption.
+   */
+  .flash.pad_cache_alignment :
+  {
+    LONG(0xFFFFFFFF);
+    FILL(0xFFFFFFFF);
+    . = ALIGN(CACHE_ALIGN);
+  } GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
   /* --- XTENSA GLUE AND DEBUG BEGIN --- */
 
 #include <zephyr/linker/debug-sections.ld>

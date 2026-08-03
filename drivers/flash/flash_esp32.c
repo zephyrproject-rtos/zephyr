@@ -115,7 +115,7 @@ static const struct flash_parameters flash_esp32_parameters = {
 	.erase_value = 0xff,
 };
 
-#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_ESP_FLASH_ASYNC)
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_ESP_FLASH_ASYNC) && !defined(CONFIG_MCUBOOT)
 static inline void flash_esp32_sem_take(const struct device *dev)
 {
 	struct flash_esp32_dev_data *data = dev->data;
@@ -129,25 +129,33 @@ static inline void flash_esp32_sem_give(const struct device *dev)
 
 	k_sem_give(&data->sem);
 }
-#else /* CONFIG_MULTITHREADING && !CONFIG_ESP_FLASH_ASYNC */
+#else /* CONFIG_MULTITHREADING && !CONFIG_ESP_FLASH_ASYNC && !CONFIG_MCUBOOT */
 
 #define flash_esp32_sem_take(dev) do {} while (0)
 #define flash_esp32_sem_give(dev) do {} while (0)
 
-#endif /* CONFIG_MULTITHREADING && !CONFIG_ESP_FLASH_ASYNC */
+#endif /* CONFIG_MULTITHREADING && !CONFIG_ESP_FLASH_ASYNC && !CONFIG_MCUBOOT */
 
 #ifdef CONFIG_ESP_FLASH_HOST
-#ifndef CONFIG_MCUBOOT
+
 static int flash_esp32_read_check_enc(off_t address, void *buffer, size_t length)
 {
 	int ret = 0;
 
 	if (esp_efuse_is_flash_encryption_enabled()) {
 		LOG_DBG("Flash read ENCRYPTED - address 0x%lx size 0x%x", address, length);
+#ifndef CONFIG_MCUBOOT
 		ret = esp_flash_read_encrypted(NULL, address, buffer, length);
+#else
+		ret = bootloader_flash_read(address, buffer, length, true);
+#endif
 	} else {
 		LOG_DBG("Flash read RAW - address 0x%lx size 0x%x", address, length);
+#ifndef CONFIG_MCUBOOT
 		ret = esp_flash_read(NULL, buffer, address, length);
+#else
+		ret = bootloader_flash_read(address, buffer, length, true);
+#endif
 	}
 
 	if (ret != 0) {
@@ -164,10 +172,18 @@ static int flash_esp32_write_check_enc(off_t address, const void *buffer, size_t
 
 	if (esp_efuse_is_flash_encryption_enabled() && !ENCRYPTION_IS_VIRTUAL) {
 		LOG_DBG("Flash write ENCRYPTED - address 0x%lx size 0x%x", address, length);
+#ifndef CONFIG_MCUBOOT
 		ret = esp_flash_write_encrypted(NULL, address, buffer, length);
+#else
+		ret = bootloader_flash_write(address, (void *)buffer, length, true);
+#endif
 	} else {
 		LOG_DBG("Flash write RAW - address 0x%lx size 0x%x", address, length);
+#ifndef CONFIG_MCUBOOT
 		ret = esp_flash_write(NULL, buffer, address, length);
+#else
+		ret = bootloader_flash_write(address, (void *)buffer, length, false);
+#endif
 	}
 
 	if (ret != 0) {
@@ -178,17 +194,55 @@ static int flash_esp32_write_check_enc(off_t address, const void *buffer, size_t
 	return 0;
 }
 
-#ifdef CONFIG_ESP_FLASH_ENCRYPTION
+static int flash_esp32_erase_range(off_t address, size_t length)
+{
+	int ret = 0;
+
+#ifndef CONFIG_MCUBOOT
+	ret = esp_flash_erase_region(NULL, address, length);
+#else
+	ret = bootloader_flash_erase_range(address, length);
+#endif
+
+	if (ret != 0) {
+		LOG_ERR("Flash erase range error: %d", ret);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_ESP_FLASH_ENCRYPTION) || defined(CONFIG_SECURE_FLASH_ENC_ENABLED)
+
+#include "hal/cache_hal.h"
+#include "hal/mmu_hal.h"
+
 #define FLASH_BUFFER_SIZE 32
 
 static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, bool erase);
 static bool aligned_flash_erase(size_t addr, size_t size);
 
 /* Auxiliary buffer to store the sector that will be partially written */
-static uint8_t write_aux_buf[FLASH_SECTOR_SIZE] = {0};
+static uint8_t write_aux_buf[FLASH_SECTOR_SIZE] __aligned(32) = {0};
 
 /* Auxiliary buffer to store the sector that will be partially erased */
-static uint8_t erase_aux_buf[FLASH_SECTOR_SIZE] = {0};
+static uint8_t erase_aux_buf[FLASH_SECTOR_SIZE] __aligned(32) = {0};
+
+static void flush_cache(size_t start_addr, size_t length)
+{
+#if CONFIG_IDF_TARGET_ESP32
+	Cache_Read_Disable(0);
+	Cache_Flush(0);
+	Cache_Read_Enable(0);
+#else
+	uint32_t vaddr = 0;
+
+	mmu_hal_paddr_to_vaddr(0, start_addr, MMU_TARGET_FLASH0, MMU_VADDR_DATA, &vaddr);
+	if ((void *)vaddr != NULL) {
+		cache_hal_invalidate_addr(vaddr, length);
+	}
+#endif
+}
 
 static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, bool erase)
 {
@@ -206,13 +260,20 @@ static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, 
 		/* A single write operation is enough when all parameters are aligned */
 
 		if (flash_encryption_enabled && erase) {
-			if (esp_flash_erase_region(NULL, dest_addr, size) != ESP_OK) {
+			if (flash_esp32_erase_range(dest_addr, size) != ESP_OK) {
 				LOG_ERR("%s: Flash erase failed at 0x%08lx", __func__,
 					(uintptr_t)dest_addr);
 				return false;
 			}
+			flush_cache(dest_addr, size);
 		}
-		return flash_esp32_write_check_enc(dest_addr, (void *)src, size) == ESP_OK;
+		if (flash_esp32_write_check_enc(dest_addr, (void *)src, size) != ESP_OK) {
+			LOG_ERR("%s: Flash write failed at 0x%08lx", __func__,
+				(uintptr_t)dest_addr);
+			return false;
+		}
+		flush_cache(dest_addr, size);
+		return true;
 	}
 
 	LOG_DBG("%s: forcing unaligned write dest_addr: 0x%08lx src: 0x%08lx size: 0x%x erase: %c",
@@ -237,13 +298,13 @@ static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, 
 
 		/* Erase if needed */
 		if (flash_encryption_enabled && erase) {
-			if (esp_flash_erase_region(NULL, aligned_curr_addr,
-						   ROUND_UP(chunk_len, FLASH_SECTOR_SIZE)) !=
-			    ESP_OK) {
+			if (flash_esp32_erase_range(aligned_curr_addr,
+						   ROUND_UP(chunk_len, FLASH_SECTOR_SIZE)) != 0) {
 				LOG_ERR("%s: Flash erase failed at 0x%08lx", __func__,
 					(uintptr_t)aligned_curr_addr);
 				return false;
 			}
+			flush_cache(aligned_curr_addr, ROUND_UP(chunk_len, FLASH_SECTOR_SIZE));
 		}
 
 		/* Merge data into buffer */
@@ -257,6 +318,7 @@ static bool aligned_flash_write(size_t dest_addr, const void *src, size_t size, 
 				(uintptr_t)aligned_curr_addr);
 			return false;
 		}
+		flush_cache(aligned_curr_addr, ROUND_UP(chunk_len, alignment));
 
 		write_addr += chunk_len;
 		src_offset += chunk_len;
@@ -275,10 +337,12 @@ static bool erase_partial_sector(size_t addr, size_t sector_size, size_t erase_s
 		return false;
 	}
 	/* Erase full sector */
-	if (esp_flash_erase_region(NULL, addr, sector_size) != ESP_OK) {
+	if (flash_esp32_erase_range(addr, sector_size) != ESP_OK) {
 		LOG_ERR("%s: Flash erase failed at 0x%08lx", __func__, (uintptr_t)addr);
 		return false;
 	}
+	flush_cache(addr, sector_size);
+
 	/* Write back preserved head data up to erase_start */
 	if (erase_start > 0) {
 		if (!aligned_flash_write(addr, erase_aux_buf, erase_start, false)) {
@@ -302,7 +366,12 @@ static bool aligned_flash_erase(size_t addr, size_t size)
 {
 	if (IS_ALIGNED(addr, FLASH_SECTOR_SIZE) && IS_ALIGNED(size, FLASH_SECTOR_SIZE)) {
 		/* A single erase operation is enough when all parameters are aligned */
-		return esp_flash_erase_region(NULL, addr, size) == ESP_OK;
+		if (flash_esp32_erase_range(addr, size) != ESP_OK) {
+			LOG_ERR("%s: Flash erase failed at 0x%08lx", __func__, (uintptr_t)addr);
+			return false;
+		}
+		flush_cache(addr, size);
+		return true;
 	}
 
 	const size_t sector_size = FLASH_SECTOR_SIZE;
@@ -343,11 +412,12 @@ static bool aligned_flash_erase(size_t addr, size_t size)
 			LOG_DBG("%s: sectors erased from: 0x%08lx length: 0x%x", __func__,
 				(uintptr_t)current_addr, contiguous_size);
 
-			if (esp_flash_erase_region(NULL, current_addr, contiguous_size) != ESP_OK) {
+			if (flash_esp32_erase_range(current_addr, contiguous_size) != ESP_OK) {
 				LOG_ERR("%s: Flash erase failed at 0x%08lx", __func__,
 					(uintptr_t)current_addr);
 				return false;
 			}
+			flush_cache(current_addr, contiguous_size);
 
 			current_addr += contiguous_size;
 		}
@@ -356,7 +426,6 @@ static bool aligned_flash_erase(size_t addr, size_t size)
 	return true;
 }
 #endif /* CONFIG_ESP_FLASH_ENCRYPTION */
-#endif /* !CONFIG_MCUBOOT */
 
 #ifdef CONFIG_MCUBOOT
 #define READ_BUFFER_SIZE 32
@@ -365,7 +434,7 @@ static bool flash_esp32_is_aligned(off_t address, void *buffer, size_t length)
 	/* check if address, buffer pointer, and length are 4-byte aligned */
 	return ((address & 3) == 0) && (((uintptr_t)buffer & 3) == 0) && ((length & 3) == 0);
 }
-#endif
+#endif /* CONFIG_MCUBOOT */
 
 static int flash_esp32_read(const struct device *dev, off_t address, void *buffer, size_t length)
 {
@@ -383,12 +452,12 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 	bool allow_decrypt = esp_efuse_is_flash_encryption_enabled();
 
 	if (flash_esp32_is_aligned(address, buffer, length)) {
-		ret = esp_rom_flash_read(address, buffer, length, allow_decrypt);
+		ret = bootloader_flash_read(address, buffer, length, allow_decrypt);
 		return (ret == ESP_OK) ? 0 : -EIO;
 	}
 
 	/* handle unaligned reading */
-	uint8_t __aligned(4) temp_buf[READ_BUFFER_SIZE + 8];
+	uint8_t __aligned(32) temp_buf[READ_BUFFER_SIZE + 8];
 	while (remaining > 0) {
 		size_t addr_offset = address & 3;
 		size_t buf_offset = (uintptr_t)dest_ptr & 3;
@@ -397,7 +466,7 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 
 		if (addr_offset == 0 && buf_offset == 0 && copy_size >= 4) {
 			aligned_size = copy_size & ~3;
-			ret = esp_rom_flash_read(address, dest_ptr, aligned_size, allow_decrypt);
+			ret = bootloader_flash_read(address, dest_ptr, aligned_size, allow_decrypt);
 			if (ret != ESP_OK) {
 				return -EIO;
 			}
@@ -410,7 +479,8 @@ static int flash_esp32_read(const struct device *dev, off_t address, void *buffe
 
 			aligned_size = (copy_size + addr_offset + 3) & ~3;
 
-			ret = esp_rom_flash_read(start_addr, temp_buf, aligned_size, allow_decrypt);
+			ret = bootloader_flash_read(start_addr, temp_buf, aligned_size,
+						 allow_decrypt);
 			if (ret != ESP_OK) {
 				return -EIO;
 			}
@@ -441,19 +511,9 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 {
 	int ret = 0;
 
-#ifdef CONFIG_MCUBOOT
-	if (!flash_esp32_is_aligned(address, (void *)buffer, length)) {
-		LOG_ERR("Unaligned flash write is not supported");
-		return -EINVAL;
-	}
-
-	bool encrypt = esp_efuse_is_flash_encryption_enabled();
-
-	ret = esp_rom_flash_write(address, (void *)buffer, length, encrypt);
-#else
 	flash_esp32_sem_take(dev);
 
-#ifdef CONFIG_ESP_FLASH_ENCRYPTION
+#if defined(CONFIG_ESP_FLASH_ENCRYPTION) || defined(CONFIG_SECURE_FLASH_ENC_ENABLED)
 	bool erase = false;
 
 	if (esp_efuse_is_flash_encryption_enabled()) {
@@ -469,10 +529,9 @@ static int flash_esp32_write(const struct device *dev, off_t address, const void
 	}
 #else
 	ret = flash_esp32_write_check_enc(address, buffer, length);
-#endif /* CONFIG_ESP_FLASH_ENCRYPTION */
+#endif /* CONFIG_ESP_FLASH_ENCRYPTION || CONFIG_SECURE_FLASH_ENC_ENABLED */
 
 	flash_esp32_sem_give(dev);
-#endif /* CONFIG_MCUBOOT */
 
 	if (ret != 0) {
 		LOG_ERR("Flash write error: %d", ret);
@@ -486,12 +545,9 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 {
 	int ret = 0;
 
-#ifdef CONFIG_MCUBOOT
-	ret = esp_rom_flash_erase_range(start, len);
-#else
 	flash_esp32_sem_take(dev);
 
-#ifdef CONFIG_ESP_FLASH_ENCRYPTION
+#if defined(CONFIG_ESP_FLASH_ENCRYPTION) || defined(CONFIG_SECURE_FLASH_ENC_ENABLED)
 	if (!aligned_flash_erase(start, len)) {
 		ret = -EIO;
 	}
@@ -525,11 +581,10 @@ static int flash_esp32_erase(const struct device *dev, off_t start, size_t len)
 		}
 	}
 #else
-	ret = esp_flash_erase_region(NULL, start, len);
-#endif /* CONFIG_ESP_FLASH_ENCRYPTION */
+	ret = flash_esp32_erase_range(start, len);
+#endif /* CONFIG_ESP_FLASH_ENCRYPTION || CONFIG_SECURE_FLASH_ENC_ENABLED */
 
 	flash_esp32_sem_give(dev);
-#endif /* CONFIG_MCUBOOT */
 
 	if (ret != 0) {
 		LOG_ERR("Flash erase error: %d", ret);

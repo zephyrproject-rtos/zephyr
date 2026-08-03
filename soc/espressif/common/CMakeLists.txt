@@ -68,6 +68,16 @@ if(DEFINED dts_shell_uart AND dts_shell_uart)
   dt_prop(monitor_baud PATH ${dts_shell_uart} PROPERTY "current-speed")
 endif()
 
+# Flash encryption requires write-block-size to be a multiple of 32.
+dt_prop(write_block_size PATH "${dts_flash}" PROPERTY "write-block-size")
+if(CONFIG_ESP_FLASH_ENCRYPTION OR CONFIG_SECURE_FLASH_ENC_ENABLED)
+  math(EXPR write_block_size_mod "${write_block_size} % 32")
+  if(NOT write_block_size_mod EQUAL 0)
+    message(FATAL_ERROR
+      "Flash write-block-size ${write_block_size} must be a multiple of 32 for flash encryption")
+  endif()
+endif()
+
 message("-- Espressif HAL path: ${ESP_IDF_PATH}")
 
 if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
@@ -122,6 +132,18 @@ if(CONFIG_MCUBOOT)
         --roots='do_boot,start_cpu0_image'
         --outplacers
         --summary)
+
+    # Compare bootloader binary to DT boot_partition size.
+    dt_nodelabel(boot_part_path NODELABEL "boot_partition")
+    dt_reg_size(boot_part_size PATH ${boot_part_path})
+    math(EXPR boot_part_size_dec "${boot_part_size}" OUTPUT_FORMAT DECIMAL)
+    message(STATUS "boot_partition size: ${boot_part_size_dec} bytes")
+    set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+      COMMAND ${CMAKE_COMMAND}
+      ARGS
+        -DBIN_FILE=${CMAKE_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}
+        -DMAX_SIZE=${boot_part_size_dec}
+        -P ${CMAKE_CURRENT_LIST_DIR}/check_boot_partition_size.cmake)
 endif()
 
 if(CONFIG_MCUBOOT)

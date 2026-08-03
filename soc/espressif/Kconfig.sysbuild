@@ -4,3 +4,77 @@
 choice MCUBOOT_MODE
 	default MCUBOOT_MODE_OVERWRITE_ONLY if SOC_FAMILY_ESPRESSIF_ESP32
 endchoice
+
+if BOOTLOADER_MCUBOOT
+
+menu "Espressif hardware secure features"
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION
+	bool "Enable hardware flash encryption on first boot"
+	depends on SOC_FAMILY_ESPRESSIF_ESP32
+	help
+	  Enable Espressif hardware-assisted flash encryption in the MCUboot
+	  bootloader. On first boot, after image validation, the bootloader
+	  encrypts flash contents in place and burns the required eFuses.
+
+	  This is distinct from MCUboot software image encryption (BOOT_ENCRYPTION).
+
+if MCUBOOT_ESP_FLASH_ENCRYPTION
+
+choice MCUBOOT_ESP_FLASH_ENCRYPTION_MODE
+	prompt "Flash encryption usage mode"
+	default MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT
+	help
+	  Development mode allows UART re-flash with encryption and is intended
+	  for testing only. Release mode permanently disables UART encryption
+	  paths and is intended for production.
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION_DEVELOPMENT
+	bool "Development (NOT SECURE)"
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION_RELEASE
+	bool "Release"
+	depends on !MCUBOOT_ESP_EFUSE_VIRTUAL
+
+endchoice
+
+choice MCUBOOT_ESP_FLASH_ENCRYPTION_KEYSIZE
+	prompt "XTS-AES key size"
+	default MCUBOOT_ESP_FLASH_ENCRYPTION_AES128
+	depends on SOC_FLASH_ENCRYPTION_XTS_AES_OPTIONS
+	help
+	  Key size for hardware flash encryption. Ignored if a key is already
+	  burned in eFuse.
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION_AES128_DERIVED
+	bool "AES-128 derived (SHA256 of 128 bits)"
+	depends on SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION_AES128
+	bool "AES-128 (256-bit key)"
+	depends on SOC_FLASH_ENCRYPTION_XTS_AES_128
+
+config MCUBOOT_ESP_FLASH_ENCRYPTION_AES256
+	bool "AES-256 (512-bit key)"
+	depends on SOC_FLASH_ENCRYPTION_XTS_AES_256
+
+endchoice
+
+config MCUBOOT_ESP_EFUSE_VIRTUAL
+	bool "Simulate eFuses in RAM (testing only)"
+	help
+	  Redirect eFuse operations to RAM instead of hardware eFuses.
+	  FOR TESTING ONLY — provides no real security.
+
+config MCUBOOT_ESP_EFUSE_VIRTUAL_KEEP_IN_FLASH
+	bool "Keep virtual eFuses in flash across reboots"
+	depends on MCUBOOT_ESP_EFUSE_VIRTUAL
+	help
+	  Persist virtual eFuse state in the sys_partition flash region across
+	  reboots. Requires a sys_partition in the devicetree.
+
+endif # MCUBOOT_ESP_FLASH_ENCRYPTION
+
+endmenu
+
+endif # BOOTLOADER_MCUBOOT
