@@ -60,7 +60,6 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define DMA_DW_AXI_AXCACHE_READ_ALLOC     BIT(2)
 #define DMA_DW_AXI_AXCACHE_WRITE_ALLOC    BIT(3)
 
-
 /* AXI AxPROT[2:0]
  * AxProt[0]:
  *	1: Privileged access 0: unprivileged access
@@ -88,9 +87,9 @@ LOG_MODULE_REGISTER(dma_designware_axi, CONFIG_DMA_LOG_LEVEL);
 #define CH_ABORT(chan) (BIT64(40 + chan) | BIT64(32 + chan))
 
 /* channel susp/resume write enable pos */
-#define CH_RESUME_WE(chan) (BIT64(24 + chan))
+#define CH_RESUME_WE(chan) (24 + (chan))
 /* channel resume bit pos */
-#define CH_RESUME(chan)    (BIT64(16 + chan))
+#define CH_RESUME(chan)    (16 + (chan))
 
 #define DMA_DW_AXI_CHAN_OFFSET(chan)             (0x100 * chan)
 
@@ -660,7 +659,7 @@ static int dma_dw_axi_config(const struct device *dev, uint32_t channel,
 
 #if !defined(CONFIG_NOCACHE_MEMORY) && !defined(CONFIG_DMA_DW_AXI_CCU_SUPPORT)
 	sys_cache_data_flush_range((void *)chan_data->lli_desc_base,
-				sizeof(struct dma_lli) * cfg->block_count);
+				   sizeof(struct dma_lli) * cfg->block_count);
 #endif
 
 
@@ -761,7 +760,9 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 {
 	bool is_channel_busy;
 	uint32_t ch_state;
+	struct dma_dw_axi_ch_data *chan_data;
 	const struct dma_dw_axi_dev_cfg *dw_dma_config = DEV_CFG(dev);
+	struct dma_dw_axi_dev_data *const dw_dev_data = DEV_DATA(dev);
 	uintptr_t reg_base = DEVICE_MMIO_NAMED_GET(dev, dma_mmio);
 
 	/* channel should be valid */
@@ -789,21 +790,26 @@ static int dma_dw_axi_stop(const struct device *dev, uint32_t channel)
 
 	/* Try to disable the channel */
 	sys_clear_bit(reg_base + DMA_DW_AXI_CHENREG, channel);
+	sys_set_bit(reg_base + DMA_DW_AXI_CHENREG, channel + 16);
 
-	is_channel_busy = WAIT_FOR((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) & (BIT(channel)),
+	is_channel_busy = !WAIT_FOR(!((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) & (BIT(channel))),
 						CONFIG_DMA_CHANNEL_STATUS_TIMEOUT, k_busy_wait(10));
 	if (is_channel_busy) {
 		LOG_WRN("No response from handshaking interface... Aborting a channel...");
 		sys_write64(CH_ABORT(channel), reg_base + DMA_DW_AXI_CHENREG);
 
-		is_channel_busy = WAIT_FOR((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) &
-				(BIT(channel)), CONFIG_DMA_CHANNEL_STATUS_TIMEOUT,
+		is_channel_busy = !WAIT_FOR(!((sys_read64(reg_base + DMA_DW_AXI_CHENREG)) &
+				(BIT(channel))), CONFIG_DMA_CHANNEL_STATUS_TIMEOUT,
 				k_busy_wait(10));
 		if (is_channel_busy) {
 			LOG_ERR("Channel abort failed");
 			return -EBUSY;
 		}
+		/* Setting Globl_en bit to 0 */
+		sys_clear_bit(reg_base + DMA_DW_AXI_CHENREG, 0);
 	}
+	chan_data = &dw_dev_data->chan[channel];
+	atomic_set(&chan_data->ch_state, dma_dw_axi_get_ch_status(dev, channel));
 
 	return 0;
 }
@@ -946,7 +952,7 @@ static DEVICE_API(dma, dma_dw_axi_driver_api) = {
 			.atomic = dma_dw_axi_atomic##inst,				\
 			.dma_channels = DT_INST_PROP(inst, dma_channels),		\
 		},									\
-		.chan = chan_##inst,							\
+		.chan = chan_##inst,	\
 		.dma_desc_pool = dma_desc_pool_##inst,					\
 		};									\
 	static void dw_dma_irq_config_##inst(void);					\
