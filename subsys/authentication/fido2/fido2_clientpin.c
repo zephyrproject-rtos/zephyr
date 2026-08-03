@@ -312,6 +312,138 @@ enum fido2_status fido2_clientpin_cmd_set_pin(uint8_t protocol, const uint8_t *p
 	return FIDO2_OK;
 }
 
+enum fido2_status fido2_clientpin_cmd_change_pin(uint8_t protocol, const uint8_t *platform_key,
+						 size_t platform_key_len,
+						 const uint8_t *pin_hash_enc,
+						 size_t pin_hash_enc_len,
+						 const uint8_t *new_pin_enc, size_t new_pin_enc_len,
+						 const uint8_t *pin_uv_auth_param)
+{
+	uint8_t pin_enc_w_hash_enc[FIDO2_PIN_ENC_MAX_SIZE + FIDO2_PIN_HASH_ENC_MAX_SIZE];
+	uint8_t pin_hash[FIDO2_PIN_HASH_SIZE];
+	size_t pin_hash_len;
+	uint8_t stored_pin_hash[FIDO2_PIN_HASH_SIZE];
+	uint8_t padded_pin[FIDO2_PIN_PADDED_SIZE];
+	size_t padded_pin_len;
+	size_t new_pin_len;
+	uint8_t new_pin_hash[FIDO2_SHA256_SIZE];
+	uint8_t retries;
+	int ret;
+
+	if (!fido2_clientpin_pin_is_set()) {
+		return FIDO2_ERR_PIN_AUTH_INVALID;
+	}
+
+	ret = fido2_storage_pin_retries_get(&retries);
+	if (ret) {
+		return FIDO2_ERR_OTHER;
+	}
+	if (retries == 0) {
+		return FIDO2_ERR_PIN_BLOCKED;
+	}
+
+	ret = decapsulate(platform_key, platform_key_len, protocol);
+	if (ret) {
+		return FIDO2_ERR_INVALID_PARAMETER;
+	}
+
+	if (new_pin_enc_len + pin_hash_enc_len > sizeof(pin_enc_w_hash_enc)) {
+		return FIDO2_ERR_INVALID_PARAMETER;
+	}
+	memcpy(pin_enc_w_hash_enc, new_pin_enc, new_pin_enc_len);
+	memcpy(pin_enc_w_hash_enc + new_pin_enc_len, pin_hash_enc, pin_hash_enc_len);
+
+	ret = verify(shared_secret, pin_enc_w_hash_enc, new_pin_enc_len + pin_hash_enc_len,
+		     pin_uv_auth_param,
+		     protocol == FIDO2_PIN_PROTOCOL_V1 ? FIDO2_PIN_AUTH_SIZE_P1
+						       : FIDO2_PIN_AUTH_SIZE_P2);
+	if (ret) {
+		return FIDO2_ERR_PIN_AUTH_INVALID;
+	}
+
+	ret = fido2_storage_pin_retries_decrement();
+	if (ret) {
+		return FIDO2_ERR_OTHER;
+	}
+
+	ret = decrypt(protocol, pin_hash_enc, pin_hash_enc_len, pin_hash, sizeof(pin_hash),
+		      &pin_hash_len);
+	if (ret) {
+		return FIDO2_ERR_PIN_AUTH_INVALID;
+	}
+
+	ret = fido2_storage_pin_get(stored_pin_hash);
+	if (ret) {
+		return FIDO2_ERR_OTHER;
+	}
+
+	if (memcmp(pin_hash, stored_pin_hash, FIDO2_PIN_HASH_SIZE) != 0) {
+		ret = generate_key_agreement();
+		if (ret) {
+			return FIDO2_ERR_OTHER;
+		}
+
+		ret = fido2_storage_pin_retries_get(&retries);
+		if (ret) {
+			return FIDO2_ERR_OTHER;
+		}
+
+		if (retries == 0) {
+			return FIDO2_ERR_PIN_BLOCKED;
+		}
+
+		++consecutive_pin_mismatches;
+		if (consecutive_pin_mismatches >= 3) {
+			return FIDO2_ERR_PIN_AUTH_BLOCKED;
+		}
+
+		return FIDO2_ERR_PIN_INVALID;
+	}
+
+	consecutive_pin_mismatches = 0;
+
+	ret = fido2_storage_pin_retries_reset();
+	if (ret) {
+		return FIDO2_ERR_OTHER;
+	}
+
+	ret = decrypt(protocol, new_pin_enc, new_pin_enc_len, padded_pin, sizeof(padded_pin),
+		      &padded_pin_len);
+	if (ret) {
+		return FIDO2_ERR_PIN_AUTH_INVALID;
+	}
+
+	if (padded_pin_len != FIDO2_PIN_PADDED_SIZE) {
+		return FIDO2_ERR_INVALID_PARAMETER;
+	}
+
+	/* Remove trailng 0s */
+	new_pin_len = strnlen((const char *)padded_pin, FIDO2_PIN_PADDED_SIZE);
+	if (new_pin_len < CONFIG_FIDO2_MIN_PIN_LENGTH) {
+		return FIDO2_ERR_PIN_POLICY_VIOLATION;
+	}
+
+	ret = fido2_crypto_sha256(padded_pin, new_pin_len, new_pin_hash);
+	if (ret) {
+		return FIDO2_ERR_OTHER;
+	}
+
+	ret = fido2_storage_pin_set(new_pin_hash);
+	if (ret) {
+		return FIDO2_ERR_OTHER;
+	}
+
+	/* Reset again because spec says so. */
+	ret = fido2_storage_pin_retries_reset();
+	if (ret) {
+		return FIDO2_ERR_OTHER;
+	}
+
+	reset_pin_uv_auth_token();
+
+	return FIDO2_OK;
+}
+
 enum fido2_status fido2_clientpin_cmd_get_pin_token_pin_w_perms(
 	uint8_t protocol, const uint8_t *platform_key, size_t platform_key_len,
 	const uint8_t *pin_hash_enc, size_t pin_hash_enc_len, uint8_t permissions,
