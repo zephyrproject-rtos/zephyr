@@ -11,6 +11,11 @@ properties:
   reg:
     required: true
 
+  sysmgr:
+    type: phandle
+    required: true
+    description: phandle to the syscon node backing sysmgr registers
+
   "#clock-cells":
     const: 1
 

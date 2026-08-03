@@ -11,6 +11,7 @@
 #include <assert.h>
 
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/drivers/syscon.h>
 
 /* Clock control MMIO register base address */
 #define CLKCTRL_BASE_ADDR			DT_REG_ADDR(DT_NODELABEL(clock))
@@ -186,7 +187,7 @@
  *
  *  @return returns MPU clock value
  */
-uint32_t get_mpu_clk(void);
+uint32_t get_mpu_clk(const struct device *sysmgr);
 
 /**
  *  @brief  Get Watchdog peripheral clock value
@@ -195,7 +196,7 @@ uint32_t get_mpu_clk(void);
  *
  *  @return returns Watchdog clock value
  */
-uint32_t get_wdt_clk(void);
+uint32_t get_wdt_clk(const struct device *sysmgr);
 
 /**
  *  @brief  Get UART peripheral clock value
@@ -204,7 +205,7 @@ uint32_t get_wdt_clk(void);
  *
  *  @return returns UART clock value
  */
-uint32_t get_uart_clk(void);
+uint32_t get_uart_clk(const struct device *sysmgr);
 
 /**
  *  @brief  Get MMC peripheral clock value
@@ -213,7 +214,7 @@ uint32_t get_uart_clk(void);
  *
  *  @return returns MMC clock value
  */
-uint32_t get_sdmmc_clk(void);
+uint32_t get_sdmmc_clk(const struct device *sysmgr);
 
 /**
  *  @brief  Get Timer peripheral clock value
@@ -222,7 +223,7 @@ uint32_t get_sdmmc_clk(void);
  *
  *  @return returns Timer clock value
  */
-uint32_t get_timer_clk(void);
+uint32_t get_timer_clk(const struct device *sysmgr);
 
 /**
  *  @brief  Get QSPI peripheral clock value
@@ -231,7 +232,7 @@ uint32_t get_timer_clk(void);
  *
  *  @return returns QSPI clock value
  */
-uint32_t get_qspi_clk(void);
+uint32_t get_qspi_clk(const struct device *sysmgr);
 
 /**
  *  @brief  Get I2C peripheral clock value
@@ -240,7 +241,7 @@ uint32_t get_qspi_clk(void);
  *
  *  @return returns I2C clock value
  */
-uint32_t get_i2c_clk(void);
+uint32_t get_i2c_clk(const struct device *sysmgr);
 
 /**
  *  @brief  Get I3C peripheral clock value
@@ -249,6 +250,6 @@ uint32_t get_i2c_clk(void);
  *
  *  @return returns I3C clock value
  */
-uint32_t get_i3c_clk(void);
+uint32_t get_i3c_clk(const struct device *sysmgr);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_AGILEX5_LL_H_ */
