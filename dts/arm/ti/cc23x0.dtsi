@@ -111,7 +111,7 @@
 		};
 
 		aes: aes@400c0000 {
-			compatible = "ti,cc23x0-aes";
+			compatible = "ti,cc23xx-cc27xx-aes";
 			reg = <0x400c0000 0x120>;
 			interrupts = <9 0>;
 			dmas = <&dma 4 3>, <&dma 5 4>;
@@ -120,7 +120,7 @@
 		};
 
 		dma: dma@40026000 {
-			compatible = "ti,cc23x0-cc27xx-dma";
+			compatible = "ti,lpf3-dma";
 			reg = <0x40026000 0x524>;
 			interrupts = <8 0>;
 			#dma-cells = <2>;

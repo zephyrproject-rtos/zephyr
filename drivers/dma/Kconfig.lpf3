@@ -1,0 +1,12 @@
+# TI LPF3 DMA configuration options
+
+# Copyright (c) 2026 Texas Instruments Incorporated
+# Copyright (c) 2024 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_LPF3
+	bool "TI SimpleLink LPF3 DMA driver"
+	default y
+	depends on DT_HAS_TI_LPF3_DMA_ENABLED
+	help
+	  Enable the TI SimpleLink LPF3 DMA driver (CC23x0 and CC27xx).

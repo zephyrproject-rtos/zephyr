@@ -1,13 +1,19 @@
 /*
+ * Copyright (c) 2026 Texas Instruments Incorporated
  * Copyright (c) 2024 BayLibre, SAS
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ti_cc23x0_cc27xx_dma
+/*
+ * Unified DMA driver for TI LPF3 family (CC23x0, CC27xx).
+ * Both SOC lines share the same uDMA IP block and driverlib API.
+ */
+
+#define DT_DRV_COMPAT ti_lpf3_dma
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(dma_cc23x0_cc27xx, CONFIG_DMA_LOG_LEVEL);
+LOG_MODULE_REGISTER(dma_lpf3, CONFIG_DMA_LOG_LEVEL);
 
 #include <zephyr/arch/arm/cortex_m/memory_map.h>
 #include <zephyr/device.h>
@@ -44,21 +50,21 @@ LOG_MODULE_REGISTER(dma_cc23x0_cc27xx, CONFIG_DMA_LOG_LEVEL);
  */
 
 #if CONFIG_SOC_SERIES_CC27XX
-#define DMA_CC23X0_CC27XX_PERIPH_CH_MAX 7
-#define DMA_CC23X0_CC27XX_ECH_CH_MIN    8
-#define DMA_CC23X0_CC27XX_ECH_CH_MAX    11
-#define DMA_CC23X0_CC27XX_EVT_PUB_MIN   0x2
-#define DMA_CC23X0_CC27XX_EVT_PUB_MAX   0x4C
+#define DMA_LPF3_PERIPH_CH_MAX 7
+#define DMA_LPF3_ECH_CH_MIN    8
+#define DMA_LPF3_ECH_CH_MAX    11
+#define DMA_LPF3_EVT_PUB_MIN   0x2
+#define DMA_LPF3_EVT_PUB_MAX   0x4C
 #elif CONFIG_SOC_SERIES_CC23X0
-#define DMA_CC23X0_CC27XX_PERIPH_CH_MAX 5
-#define DMA_CC23X0_CC27XX_ECH_CH_MIN    6
-#define DMA_CC23X0_CC27XX_ECH_CH_MAX    7
-#define DMA_CC23X0_CC27XX_EVT_PUB_MIN   0x2
-#define DMA_CC23X0_CC27XX_EVT_PUB_MAX   0x39
+#define DMA_LPF3_PERIPH_CH_MAX 5
+#define DMA_LPF3_ECH_CH_MIN    6
+#define DMA_LPF3_ECH_CH_MAX    7
+#define DMA_LPF3_EVT_PUB_MIN   0x2
+#define DMA_LPF3_EVT_PUB_MAX   0x39
 #endif
 
-#define DMA_CC23X0_CC27XX_IS_ECH_CH(ch) ((ch) >= DMA_CC23X0_CC27XX_ECH_CH_MIN)
-#define DMA_CC23X0_CC27XX_NUM_CHANNELS  (DMA_CC23X0_CC27XX_ECH_CH_MAX + 1)
+#define DMA_LPF3_IS_ECH_CH(ch) ((ch) >= DMA_LPF3_ECH_CH_MIN)
+#define DMA_LPF3_NUM_CHANNELS  (DMA_LPF3_ECH_CH_MAX + 1)
 
 /*
  * Only valid for DCH channels (0-5 on CC23X0, 0-7 on CC27XX). On CC27XX, the
@@ -66,14 +72,13 @@ LOG_MODULE_REGISTER(dma_cc23x0_cc27xx, CONFIG_DMA_LOG_LEVEL);
  * precede CH8 and CH9 in the address map), so this formula must not be used
  * for ECH channels.
  */
-#define DMA_CC23X0_CC27XX_CHXSEL_REG(ch)                                                           \
-	HWREG(EVTSVT_BASE + EVTSVT_O_DMACH0SEL + sizeof(uint32_t) * (ch))
+#define DMA_LPF3_CHXSEL_REG(ch) HWREG(EVTSVT_BASE + EVTSVT_O_DMACH0SEL + sizeof(uint32_t) * (ch))
 
 #ifdef CONFIG_PM_DEVICE
-#define DMA_CC23X0_CC27XX_ALL_CH_MASK GENMASK(DMA_CC23X0_CC27XX_ECH_CH_MAX, 0)
+#define DMA_LPF3_ALL_CH_MASK GENMASK(DMA_LPF3_ECH_CH_MAX, 0)
 #endif
 
-static const uint32_t dma_cc23X0_cc27xx_evtsvt_offsets[] = {
+static const uint32_t dma_lpf3_evtsvt_offsets[] = {
 #if CONFIG_SOC_SERIES_CC23X0 || CONFIG_SOC_SERIES_CC27XX
 	EVTSVT_O_DMACH0SEL, EVTSVT_O_DMACH1SEL, EVTSVT_O_DMACH2SEL,  EVTSVT_O_DMACH3SEL,
 	EVTSVT_O_DMACH4SEL, EVTSVT_O_DMACH5SEL, EVTSVT_O_DMACH6SEL,  EVTSVT_O_DMACH7SEL,
@@ -87,29 +92,36 @@ static const uint32_t dma_cc23X0_cc27xx_evtsvt_offsets[] = {
 #define HW_TRIGGERED_TRANSFER 0
 #define SW_TRIGGERED_TRANSFER 1
 
-#define DMA_CC23X0_CC27XX_IS_PERIPH_ADDR(addr)                                                     \
+#define DMA_LPF3_IS_PERIPH_ADDR(addr)                                                              \
 	(((uintptr_t)(addr) >= 0x40000000) && ((uintptr_t)(addr) <= 0x4BFFFFFF))
 
-static uint32_t dma_cc23x0_cc27xx_get_evtsvt_offset(uint32_t channel)
+static uint32_t dma_lpf3_get_evtsvt_offset(uint32_t channel)
 {
-	return dma_cc23X0_cc27xx_evtsvt_offsets[channel];
+	return dma_lpf3_evtsvt_offsets[channel];
 }
 
-struct dma_cc23x0_cc27xx_channel {
+struct dma_lpf3_channel {
 	uint8_t data_size;
 	uint8_t mode;
 	bool trigger;
 	dma_callback_t cb;
 	void *user_data;
+	uint32_t total_size;
+#ifdef CONFIG_PM_DEVICE
+	bool configured;
+	struct dma_block_config dma_blk_cfg;
+	struct dma_config dma_cfg;
+#endif
 };
 
-struct dma_cc23x0_cc27xx_data {
+struct dma_lpf3_data {
 	/* dma_context must be the first member for dma_request_channel() */
 	struct dma_context ctx;
 
-	ATOMIC_DEFINE(channels_atomic, DMA_CC23X0_CC27XX_NUM_CHANNELS);
-	__aligned(512) uDMAControlTableEntry desc[UDMA_ALT_SELECT + DMA_CC23X0_CC27XX_NUM_CHANNELS];
-	struct dma_cc23x0_cc27xx_channel channels[DMA_CC23X0_CC27XX_NUM_CHANNELS];
+	ATOMIC_DEFINE(channels_atomic, DMA_LPF3_NUM_CHANNELS);
+
+	__aligned(512) uDMAControlTableEntry desc[UDMA_ALT_SELECT + DMA_LPF3_NUM_CHANNELS];
+	struct dma_lpf3_channel channels[DMA_LPF3_NUM_CHANNELS];
 };
 
 static inline void dma_cc23x0_pm_policy_state_lock_get(void)
@@ -130,16 +142,16 @@ static inline void dma_cc23x0_pm_policy_state_lock_put(void)
  * If a peripheral channel is used, then the completion will be signaled on the
  * peripheral's interrupt.
  */
-static void dma_cc23x0_cc27xx_isr(const struct device *dev)
+static void dma_lpf3_isr(const struct device *dev)
 {
-	struct dma_cc23x0_cc27xx_data *data = dev->data;
-	struct dma_cc23x0_cc27xx_channel *ch_data;
+	struct dma_lpf3_data *data = dev->data;
+	struct dma_lpf3_channel *ch_data;
 	uint32_t done_flags;
 	int i;
 
 	done_flags = uDMAIntStatus();
 
-	for (i = 0; i < DMA_CC23X0_CC27XX_NUM_CHANNELS; i++) {
+	for (i = 0; i < DMA_LPF3_NUM_CHANNELS; i++) {
 		if ((done_flags & BIT(i))) {
 			LOG_DBG("DMA transfer completed on channel %d", i);
 
@@ -162,9 +174,8 @@ static void dma_cc23x0_cc27xx_isr(const struct device *dev)
 	}
 }
 
-static uint32_t dma_cc23x0_cc27xx_set_addr_adj(uint32_t *control, uint16_t addr_adj,
-					       uint32_t inc_flags, uint32_t no_inc_flags,
-					       uint32_t inc_mask)
+static uint32_t dma_lpf3_set_addr_adj(uint32_t *control, uint16_t addr_adj, uint32_t inc_flags,
+				      uint32_t no_inc_flags, uint32_t inc_mask)
 {
 	*control = *control & ~inc_mask;
 	switch (addr_adj) {
@@ -181,11 +192,10 @@ static uint32_t dma_cc23x0_cc27xx_set_addr_adj(uint32_t *control, uint16_t addr_
 	return 0;
 }
 
-static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
-				    struct dma_config *config)
+static int dma_lpf3_config(const struct device *dev, uint32_t channel, struct dma_config *config)
 {
-	struct dma_cc23x0_cc27xx_data *data = dev->data;
-	struct dma_cc23x0_cc27xx_channel *ch_data;
+	struct dma_lpf3_data *data = dev->data;
+	struct dma_lpf3_channel *ch_data;
 	struct dma_block_config *block = config->head_block;
 	uint32_t control;
 	uint32_t data_size;
@@ -194,8 +204,11 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 	uint32_t xfer_size;
 	uint32_t burst_len;
 	int ret;
+#ifdef CONFIG_PM_DEVICE
+	enum pm_device_state pm_state;
+#endif
 
-	if (channel >= DMA_CC23X0_CC27XX_NUM_CHANNELS) {
+	if (channel >= DMA_LPF3_NUM_CHANNELS) {
 		LOG_ERR("Invalid channel");
 		return -EINVAL;
 	}
@@ -205,12 +218,12 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 	 * ECH channels accept a PUBID in [EVT_PUB_MIN, EVT_PUB_MAX].
 	 */
 	if (config->source_handshake == HW_TRIGGERED_TRANSFER) {
-		if (DMA_CC23X0_CC27XX_IS_ECH_CH(channel)) {
-			if (config->dma_slot < DMA_CC23X0_CC27XX_EVT_PUB_MIN ||
-			    config->dma_slot > DMA_CC23X0_CC27XX_EVT_PUB_MAX) {
+		if (DMA_LPF3_IS_ECH_CH(channel)) {
+			if (config->dma_slot < DMA_LPF3_EVT_PUB_MIN ||
+			    config->dma_slot > DMA_LPF3_EVT_PUB_MAX) {
 				LOG_ERR("Channel %d: invalid PUBID %d (valid %d-%d)", channel,
-					config->dma_slot, DMA_CC23X0_CC27XX_EVT_PUB_MIN,
-					DMA_CC23X0_CC27XX_EVT_PUB_MAX);
+					config->dma_slot, DMA_LPF3_EVT_PUB_MIN,
+					DMA_LPF3_EVT_PUB_MAX);
 				return -EINVAL;
 			}
 		} else {
@@ -274,15 +287,15 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	ret = dma_cc23x0_cc27xx_set_addr_adj(&control, block->source_addr_adj, src_inc_flags,
-					     UDMA_SRC_INC_NONE, UDMA_SRC_INC_M);
+	ret = dma_lpf3_set_addr_adj(&control, block->source_addr_adj, src_inc_flags,
+				    UDMA_SRC_INC_NONE, UDMA_SRC_INC_M);
 	if (ret) {
 		LOG_ERR("Invalid source address adjustment type (%u)", block->source_addr_adj);
 		return ret;
 	}
 
-	ret = dma_cc23x0_cc27xx_set_addr_adj(&control, block->dest_addr_adj, dst_inc_flags,
-					     UDMA_DST_INC_NONE, UDMA_DST_INC_M);
+	ret = dma_lpf3_set_addr_adj(&control, block->dest_addr_adj, dst_inc_flags,
+				    UDMA_DST_INC_NONE, UDMA_DST_INC_M);
 	if (ret) {
 		LOG_ERR("Invalid dest address adjustment type (%u)", block->dest_addr_adj);
 		return ret;
@@ -310,8 +323,17 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
+	/*
+	 * Reject a reconfigure of a still-enabled channel before touching any
+	 * shared channel state below.
+	 */
+	if (uDMAIsChannelEnabled(BIT(channel))) {
+		return -EBUSY;
+	}
+
 	ch_data = &data->channels[channel];
 	ch_data->data_size = data_size;
+	ch_data->total_size = block->block_size;
 
 	/* Interpret source chaining as auto mode */
 	ch_data->mode = config->source_chaining_en ? UDMA_MODE_AUTO : UDMA_MODE_BASIC;
@@ -321,14 +343,10 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 	ch_data->cb = config->dma_callback;
 	ch_data->user_data = config->user_data;
 
-	if (uDMAIsChannelEnabled(BIT(channel))) {
-		return -EBUSY;
-	}
-
 	if (ch_data->trigger == SW_TRIGGERED_TRANSFER) {
 		uDMAEnableSwEventInt(BIT(channel));
 	} else {
-		uint32_t evtsvt_ch = dma_cc23x0_cc27xx_get_evtsvt_offset(channel);
+		uint32_t evtsvt_ch = dma_lpf3_get_evtsvt_offset(channel);
 
 		LOG_DBG("Channel %d: configuring EVTSVT trigger %d", channel, config->dma_slot);
 		EVTSVTConfigureDma(evtsvt_ch, config->dma_slot);
@@ -378,18 +396,18 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-static int dma_cc23x0_cc27xx_stop(const struct device *dev, uint32_t channel)
+static int dma_lpf3_stop(const struct device *dev, uint32_t channel)
 {
 	uDMADisableChannel(BIT(channel));
 
 	return 0;
 }
 
-static int dma_cc23x0_cc27xx_reload(const struct device *dev, uint32_t channel, uint32_t src,
-				    uint32_t dst, size_t size)
+static int dma_lpf3_reload(const struct device *dev, uint32_t channel, uint32_t src, uint32_t dst,
+			   size_t size)
 {
-	struct dma_cc23x0_cc27xx_data *data = dev->data;
-	struct dma_cc23x0_cc27xx_channel *ch_data = &data->channels[channel];
+	struct dma_lpf3_data *data = dev->data;
+	struct dma_lpf3_channel *ch_data = &data->channels[channel];
 	uint32_t xfer_size = size / ch_data->data_size;
 
 	if (uDMAIsChannelEnabled(BIT(channel))) {
@@ -398,6 +416,8 @@ static int dma_cc23x0_cc27xx_reload(const struct device *dev, uint32_t channel, 
 
 	uDMASetChannelTransfer(&data->desc[channel], ch_data->mode, (void *)src, (void *)dst,
 			       xfer_size);
+
+	ch_data->total_size = size;
 
 #ifdef CONFIG_PM_DEVICE
 	/* Save context */
@@ -411,24 +431,41 @@ static int dma_cc23x0_cc27xx_reload(const struct device *dev, uint32_t channel, 
 	return 0;
 }
 
-static int dma_cc23x0_cc27xx_get_status(const struct device *dev, uint32_t channel,
-					struct dma_status *stat)
+static int dma_lpf3_get_status(const struct device *dev, uint32_t channel, struct dma_status *stat)
 {
-	struct dma_cc23x0_cc27xx_data *data = dev->data;
+	struct dma_lpf3_data *data = dev->data;
+	struct dma_lpf3_channel *ch_data;
 
 	const volatile uDMAControlTableEntry *desc;
-
 	bool isSrcPeriph;
-
 	bool isDstPeriph;
 
-	if (channel >= DMA_CC23X0_CC27XX_NUM_CHANNELS || !stat) {
+	if (channel >= DMA_LPF3_NUM_CHANNELS || !stat) {
 		return -EINVAL;
 	}
 
+	ch_data = &data->channels[channel];
+
+	/*
+	 * Report the real remaining transfer count. uDMAGetChannelSize() returns the
+	 * number of items still to transfer (0 when complete); scale by the item size
+	 * to get bytes.
+	 */
+	stat->busy = uDMAIsChannelEnabled(BIT(channel));
+	stat->pending_length = uDMAGetChannelSize(&data->desc[channel]) * ch_data->data_size;
+	stat->total_copied = ch_data->total_size - stat->pending_length;
+
+	/*
+	 * This controller does not support circular buffers (chained transfers
+	 * are rejected in dma_lpf3_config()), so these fields are not applicable.
+	 */
+	stat->free = 0;
+	stat->write_position = 0;
+	stat->read_position = 0;
+
 	desc = &data->desc[channel];
-	isSrcPeriph = DMA_CC23X0_CC27XX_IS_PERIPH_ADDR(desc->pSrcEndAddr);
-	isDstPeriph = DMA_CC23X0_CC27XX_IS_PERIPH_ADDR(desc->pDstEndAddr);
+	isSrcPeriph = DMA_LPF3_IS_PERIPH_ADDR(desc->pSrcEndAddr);
+	isDstPeriph = DMA_LPF3_IS_PERIPH_ADDR(desc->pDstEndAddr);
 
 	if (!isSrcPeriph && isDstPeriph) {
 		stat->dir = MEMORY_TO_PERIPHERAL;
@@ -441,10 +478,10 @@ static int dma_cc23x0_cc27xx_get_status(const struct device *dev, uint32_t chann
 	return 0;
 }
 
-static int dma_cc23x0_cc27xx_start(const struct device *dev, uint32_t channel)
+static int dma_lpf3_start(const struct device *dev, uint32_t channel)
 {
-	struct dma_cc23x0_cc27xx_data *data = dev->data;
-	struct dma_cc23x0_cc27xx_channel *ch_data = &data->channels[channel];
+	struct dma_lpf3_data *data = dev->data;
+	struct dma_lpf3_channel *ch_data = &data->channels[channel];
 
 	if (uDMAIsChannelEnabled(BIT(channel))) {
 		return -EBUSY;
@@ -461,7 +498,7 @@ static int dma_cc23x0_cc27xx_start(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static bool dma_cc23x0_cc27xx_chan_filter(const struct device *dev, int channel, void *filter_param)
+static bool dma_lpf3_chan_filter(const struct device *dev, int channel, void *filter_param)
 {
 	uint32_t filter;
 
@@ -475,48 +512,30 @@ static bool dma_cc23x0_cc27xx_chan_filter(const struct device *dev, int channel,
 	return (filter & BIT(channel));
 }
 
-static int dma_cc23x0_cc27xx_enable(struct dma_cc23x0_cc27xx_data *data)
+static int dma_lpf3_enable(struct dma_lpf3_data *data)
 {
-	struct dma_cc23x0_data *data = dev->data;
-	int ret = 0;
+	CLKCTLEnable(CLKCTL_BASE, CLKCTL_DMA);
+	uDMAEnable();
+	/* Set base address for channel control table (descriptors) */
+	uDMASetControlBase(data->desc);
 
-	switch (action) {
-	case PM_DEVICE_ACTION_SUSPEND:
-		uDMADisable();
-		CLKCTLDisable(CLKCTL_BASE, CLKCTL_DMA);
-		dma_cc23x0_pm_policy_state_lock_put();
-		break;
-	case PM_DEVICE_ACTION_RESUME:
-		dma_cc23x0_pm_policy_state_lock_get();
-		CLKCTLEnable(CLKCTL_BASE, CLKCTL_DMA);
-		uDMAEnable();
-		/* Set base address for channel control table (descriptors) */
-		uDMASetControlBase(data->desc);
-		break;
-	case PM_DEVICE_ACTION_TURN_ON:
-	case PM_DEVICE_ACTION_TURN_OFF:
-		break;
-	default:
-		ret = -ENOTSUP;
-	}
-
-	return ret;
+	return 0;
 }
 
-static int dma_cc23x0_cc27xx_init(const struct device *dev)
+static int dma_lpf3_init(const struct device *dev)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), dma_cc23x0_cc27xx_isr,
-		    DEVICE_DT_INST_GET(0), 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), dma_lpf3_isr, DEVICE_DT_INST_GET(0),
+		    0);
 	irq_enable(DT_INST_IRQN(0));
 
-	return dma_cc23x0_cc27xx_enable(dev->data);
+	return dma_lpf3_enable(dev->data);
 }
 
 #ifdef CONFIG_PM_DEVICE
 
-static int dma_cc23x0_cc27xx_pm_action(const struct device *dev, enum pm_device_action action)
+static int dma_lpf3_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	struct dma_cc23x0_cc27xx_data *data = dev->data;
+	struct dma_lpf3_data *data = dev->data;
 	int i = 0;
 
 	switch (action) {
@@ -538,7 +557,7 @@ static int dma_cc23x0_cc27xx_pm_action(const struct device *dev, enum pm_device_
 		 * Despite this assumption, ensure that none transfer is ongoing in case
 		 * PM state lock was not properly handled by DMA clients.
 		 */
-		if (uDMAIsChannelEnabled(DMA_CC23X0_CC27XX_ALL_CH_MASK)) {
+		if (uDMAIsChannelEnabled(DMA_LPF3_ALL_CH_MASK)) {
 			return -EBUSY;
 		}
 
@@ -547,12 +566,12 @@ static int dma_cc23x0_cc27xx_pm_action(const struct device *dev, enum pm_device_
 
 		return 0;
 	case PM_DEVICE_ACTION_RESUME:
-		dma_cc23x0_cc27xx_enable(data);
+		dma_lpf3_enable(data);
 
 		/* Restore context for the channels that were configured before */
 		ARRAY_FOR_EACH_PTR(data->channels, ch_data) {
 			if (ch_data->configured) {
-				dma_cc23x0_cc27xx_config(dev, i, &ch_data->dma_cfg);
+				dma_lpf3_config(dev, i, &ch_data->dma_cfg);
 			}
 			i++;
 		}
@@ -565,24 +584,24 @@ static int dma_cc23x0_cc27xx_pm_action(const struct device *dev, enum pm_device_
 
 #endif /* CONFIG_PM_DEVICE */
 
-static struct dma_cc23x0_cc27xx_data cc23x0_data = {
+static struct dma_lpf3_data lpf3_data = {
 	.ctx = {
-			.magic = DMA_MAGIC,
-			.dma_channels = DMA_CC23X0_CC27XX_NUM_CHANNELS,
-			.atomic = cc23x0_data.channels_atomic,
-		},
+		.magic = DMA_MAGIC,
+		.dma_channels = DMA_LPF3_NUM_CHANNELS,
+		.atomic = lpf3_data.channels_atomic,
+	},
 };
 
-static const struct dma_driver_api dma_cc23x0_cc27xx_api = {
-	.config = dma_cc23x0_cc27xx_config,
-	.start = dma_cc23x0_cc27xx_start,
-	.stop = dma_cc23x0_cc27xx_stop,
-	.reload = dma_cc23x0_cc27xx_reload,
-	.get_status = dma_cc23x0_cc27xx_get_status,
-	.chan_filter = dma_cc23x0_cc27xx_chan_filter,
+static DEVICE_API(dma, dma_lpf3_api) = {
+	.config = dma_lpf3_config,
+	.start = dma_lpf3_start,
+	.stop = dma_lpf3_stop,
+	.reload = dma_lpf3_reload,
+	.get_status = dma_lpf3_get_status,
+	.chan_filter = dma_lpf3_chan_filter,
 };
 
-PM_DEVICE_DT_INST_DEFINE(0, dma_cc23x0_cc27xx_pm_action);
+PM_DEVICE_DT_INST_DEFINE(0, dma_lpf3_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, &dma_cc23x0_cc27xx_init, PM_DEVICE_DT_INST_GET(0), &cc23x0_data, NULL,
-		      PRE_KERNEL_1, CONFIG_DMA_INIT_PRIORITY, &dma_cc23x0_cc27xx_api);
+DEVICE_DT_INST_DEFINE(0, &dma_lpf3_init, PM_DEVICE_DT_INST_GET(0), &lpf3_data, NULL, PRE_KERNEL_1,
+		      CONFIG_DMA_INIT_PRIORITY, &dma_lpf3_api);

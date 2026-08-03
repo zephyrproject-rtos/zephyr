@@ -1,8 +1,9 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
 # Copyright (c) 2024 BayLibre, SAS
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  TI CC23X0_CC27XX uDMA controller
+  TI SimpleLink LPF3 uDMA controller (CC23x0, CC27xx)
 
   channel: Select channel for data transmitting. Channels are either
     Dedicated uDMA channels (DCH) for peripherals or Event Publisher Channels
@@ -16,7 +17,7 @@ description: |
   triggered transfers and deselecting it enables hardware triggered transfers.
 
 
-compatible: "ti,cc23x0-cc27xx-dma"
+compatible: "ti,lpf3-dma"
 
 include: dma-controller.yaml
 
