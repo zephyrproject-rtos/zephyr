@@ -9,6 +9,7 @@
 
 #include <stddef.h>
 #include <errno.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -183,7 +184,7 @@ static void test_central_main(void)
 
 	WAIT_FOR_FLAG(flag_is_connected);
 
-	err = bt_conn_disconnect(g_conn, 0x13);
+	err = bt_conn_disconnect(g_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 	if (err != 0) {
 		TEST_FAIL("Disconnect failed (err %d)", err);
