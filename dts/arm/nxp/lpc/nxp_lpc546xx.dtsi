@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 
 / {
@@ -77,6 +78,13 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x04000000 DT_SIZE_K(32)>;
 			zephyr,memory-region = "SRAMX";
+		};
+
+		usb_sram: memory@40100000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x40100000 DT_SIZE_K(8)>;
+			zephyr,memory-region = "USB_SRAM";
+			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 		};
 
 		iap: flash-controller@40034000 {
@@ -301,6 +309,23 @@
 			clocks = <&syscon MCUX_MCAN1_CLK>;
 			resets = <&reset NXP_SYSCON_RESET(1, 8)>;
 			bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+			status = "disabled";
+		};
+
+		usbfs: usbfs@40084000 {
+			compatible = "nxp,lpcip3511";
+			reg = <0x40084000 0x1000>;
+			interrupts = <28 1>;
+			num-bidir-endpoints = <5>;
+			maximum-speed = "full-speed";
+			status = "disabled";
+		};
+
+		usbhs: usbhs@40094000 {
+			compatible = "nxp,lpcip3511";
+			reg = <0x40094000 0x1000>;
+			interrupts = <47 1>;
+			num-bidir-endpoints = <6>;
 			status = "disabled";
 		};
 	};

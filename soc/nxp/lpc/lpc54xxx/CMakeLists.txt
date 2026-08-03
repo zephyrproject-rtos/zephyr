@@ -16,6 +16,16 @@ zephyr_library_include_directories(
   )
 
 
+if(DEFINED CONFIG_LPC54XXX_USB_RAM)
+  zephyr_linker_sources_ifdef(CONFIG_USB_DEVICE_DRIVER SECTIONS usb.ld)
+  zephyr_linker_sources_ifdef(CONFIG_UDC_DRIVER SECTIONS usb.ld)
+  zephyr_linker_sources_ifdef(CONFIG_UHC_DRIVER SECTIONS usb.ld)
+
+  zephyr_compile_definitions_ifdef(CONFIG_USB_DEVICE_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
+  zephyr_compile_definitions_ifdef(CONFIG_UDC_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
+  zephyr_compile_definitions_ifdef(CONFIG_UHC_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
+endif()
+
 # CMSIS SystemInit allows us to skip enabling clock to SRAM2 bank via
 # this compiler definition
 if(NOT DEFINED CONFIG_LPC54XXX_SRAM2_CLOCK)
