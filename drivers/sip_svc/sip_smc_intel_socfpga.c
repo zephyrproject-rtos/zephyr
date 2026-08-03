@@ -12,6 +12,7 @@
 #include <zephyr/drivers/sip_svc/sip_svc_agilex_smc.h>
 #include <zephyr/drivers/sip_svc/sip_svc_driver.h>
 #include <zephyr/internal/syscall_handler.h>
+#include <zephyr/cache.h>
 
 #include <zephyr/logging/log.h>
 
@@ -97,6 +98,7 @@ static void intel_sip_smc_plat_update_trans_id(const struct device *dev,
 	if ((void *)request->a2 != NULL) {
 		data = (uint32_t *)request->a2;
 		SIP_SVC_MB_HEADER_SET_TRANS_ID(data[0], trans_id);
+		sys_cache_data_flush_range(data, request->a3);
 	}
 }
 
@@ -121,6 +123,8 @@ static int intel_sip_smc_plat_async_res_req(const struct device *dev, unsigned l
 {
 	ARG_UNUSED(dev);
 
+	sys_cache_data_flush_range(buf, size);
+
 	/* Fill in SMC parameter to read mailbox response */
 	*a0 = SMC_FUNC_ID_MAILBOX_POLL_RESPONSE;
 	*a1 = 0;
@@ -135,10 +139,22 @@ static int intel_sip_smc_plat_async_res_res(const struct device *dev, struct arm
 {
 	ARG_UNUSED(dev);
 	uint32_t *resp = (uint32_t *)buf;
+	size_t inv_len;
 
 	__ASSERT((res && buf && size && trans_id), "invalid parameters\n");
 
 	if (((long)res->a0) <= SMC_STATUS_OKAY) {
+		/*
+		 * TF-A returned OK with a3==0 for header-only
+		 * mailbox responses (e.g. CANCEL). Invalidate at least the
+		 * header word so EL1 does not reuse a stale cached header.
+		 */
+		inv_len = res->a3;
+		if (inv_len < sizeof(uint32_t)) {
+			inv_len = sizeof(uint32_t);
+		}
+		sys_cache_data_invd_range(resp, inv_len);
+
 		/* Extract transaction id from mailbox response header */
 		*trans_id = SIP_SVC_MB_HEADER_GET_TRANS_ID(resp[0]);
 		/* The final length should include both header and body */
