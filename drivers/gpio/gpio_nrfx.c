@@ -453,7 +453,13 @@ static int gpio_nrfx_pin_interrupt_configure(const struct device *port,
 	}
 
 #if NRF_GPIO_HAS_DETECT_MODE
-	nrf_gpio_port_detect_latch_set(cfg->port, cfg->latch_detect);
+	/* Program DETECTMODE only when latch-detect is set in devicetree. Clearing LDETECT
+	 * (the reset default) is unnecessary; on nRF54H20 the register is not CPU-accessible
+	 * and the write can bus-fault.
+	 */
+	if (cfg->latch_detect) {
+		nrf_gpio_port_detect_latch_set(cfg->port, cfg->latch_detect);
+	}
 #endif
 
 	nrfx_gpiote_trigger_config_t trigger_config = {

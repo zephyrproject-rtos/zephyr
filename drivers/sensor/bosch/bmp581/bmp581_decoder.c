@@ -34,10 +34,8 @@ static uint8_t bmp581_encode_channel(enum sensor_channel chan)
 	return encode_bmask;
 }
 
-int bmp581_encode(const struct device *dev,
-		  const struct sensor_read_config *read_config,
-		  uint8_t trigger_status,
-		  uint8_t *buf)
+int bmp581_encode(const struct device *dev, const struct sensor_read_config *read_config,
+		  uint8_t trigger_status, uint8_t *buf)
 {
 	struct bmp581_encoded_data *edata = (struct bmp581_encoded_data *)buf;
 	struct bmp581_data *data = dev->data;
@@ -45,11 +43,16 @@ int bmp581_encode(const struct device *dev,
 	int err;
 
 	edata->header.channels = 0;
+	edata->header.fifo_count = 0;
 	edata->header.press_en = data->osr_odr_press_config.press_en;
 
-	if (trigger_status) {
+	if ((trigger_status & BMP581_EVENT_FIFO_WM) != 0) {
 		edata->header.channels |= bmp581_encode_channel(SENSOR_CHAN_ALL);
 		edata->header.fifo_count = data->stream.fifo_thres;
+	} else if (trigger_status != 0) {
+		/* Non-FIFO trigger: single 6-byte P/T frame. */
+		edata->header.channels |= bmp581_encode_channel(SENSOR_CHAN_ALL);
+		edata->header.fifo_count = 1;
 	} else {
 		const struct sensor_chan_spec *const channels = read_config->channels;
 		size_t num_channels = read_config->count;
@@ -70,9 +73,8 @@ int bmp581_encode(const struct device *dev,
 	return 0;
 }
 
-static int bmp581_decoder_get_frame_count(const uint8_t *buffer,
-					 struct sensor_chan_spec chan_spec,
-					 uint16_t *frame_count)
+static int bmp581_decoder_get_frame_count(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+					  uint16_t *frame_count)
 {
 	const struct bmp581_encoded_data *edata = (const struct bmp581_encoded_data *)buffer;
 
@@ -95,8 +97,7 @@ static int bmp581_decoder_get_frame_count(const uint8_t *buffer,
 	return 0;
 }
 
-static int bmp581_decoder_get_size_info(struct sensor_chan_spec chan_spec,
-					size_t *base_size,
+static int bmp581_decoder_get_size_info(struct sensor_chan_spec chan_spec, size_t *base_size,
 					size_t *frame_size)
 {
 	switch (chan_spec.chan_type) {
@@ -111,22 +112,18 @@ static int bmp581_decoder_get_size_info(struct sensor_chan_spec chan_spec,
 }
 
 static int bmp581_convert_raw_to_q31_value(const struct bmp581_encoded_header *header,
-					   struct sensor_chan_spec *chan_spec,
-					   const struct bmp581_frame *frame,
-					   uint32_t *fit,
-					   struct sensor_q31_data *out)
+					   struct sensor_chan_spec *chan_spec, const uint8_t *row,
+					   uint32_t *fit, struct sensor_q31_data *out)
 {
 	if (((header->events & BMP581_EVENT_FIFO_WM) != 0 && *fit >= header->fifo_count) ||
-	     ((header->events & BMP581_EVENT_FIFO_WM) == 0 && *fit != 0)) {
+	    ((header->events & BMP581_EVENT_FIFO_WM) == 0 && *fit != 0)) {
 		return -ENODATA;
 	}
 
 	switch (chan_spec->chan_type) {
 	case SENSOR_CHAN_AMBIENT_TEMP: {
 		/* Temperature is in data[2:0], data[2] is integer part */
-		uint32_t raw_temp = ((uint32_t)frame[*fit].payload[2] << 16) |
-				    ((uint16_t)frame[*fit].payload[1] << 8) |
-				    frame[*fit].payload[0];
+		uint32_t raw_temp = ((uint32_t)row[2] << 16) | ((uint16_t)row[1] << 8) | row[0];
 		int32_t raw_temp_signed = sign_extend(raw_temp, 23);
 
 		out->shift = (31 - 16); /* 16 left shifts gives us the value in celsius */
@@ -138,9 +135,7 @@ static int bmp581_convert_raw_to_q31_value(const struct bmp581_encoded_header *h
 			return -ENODATA;
 		}
 		/* Shift by 10 bits because we'll divide by 1000 to make it kPa */
-		uint64_t raw_press = (((uint32_t)frame[*fit].payload[5] << 16) |
-				       ((uint16_t)frame[*fit].payload[4] << 8) |
-				       frame[*fit].payload[3]);
+		uint64_t raw_press = (((uint32_t)row[5] << 16) | ((uint16_t)row[4] << 8) | row[3]);
 
 		int64_t raw_press_signed = sign_extend_64(raw_press, 23);
 
@@ -163,11 +158,8 @@ static int bmp581_convert_raw_to_q31_value(const struct bmp581_encoded_header *h
 	return 0;
 }
 
-static int bmp581_decoder_decode(const uint8_t *buffer,
-				struct sensor_chan_spec chan_spec,
-				uint32_t *fit,
-				uint16_t max_count,
-				void *data_out)
+static int bmp581_decoder_decode(const uint8_t *buffer, struct sensor_chan_spec chan_spec,
+				 uint32_t *fit, uint16_t max_count, void *data_out)
 {
 	const struct bmp581_encoded_data *edata = (const struct bmp581_encoded_data *)buffer;
 	uint8_t channel_request;
@@ -182,6 +174,7 @@ static int bmp581_decoder_decode(const uint8_t *buffer,
 	}
 
 	struct sensor_q31_data *out = data_out;
+	const uint8_t *payload_base = edata->payload;
 
 	out->header.base_timestamp_ns = edata->header.timestamp;
 
@@ -189,8 +182,9 @@ static int bmp581_decoder_decode(const uint8_t *buffer,
 	uint32_t fit_0 = *fit;
 
 	do {
-		err = bmp581_convert_raw_to_q31_value(&edata->header, &chan_spec,
-						      edata->frame, fit, out);
+		err = bmp581_convert_raw_to_q31_value(
+			&edata->header, &chan_spec,
+			payload_base + (*fit) * sizeof(struct bmp581_frame), fit, out);
 	} while (err == 0 && *fit < max_count);
 
 	if (*fit == fit_0 || err != 0) {
@@ -205,8 +199,7 @@ static bool bmp581_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigge
 {
 	const struct bmp581_encoded_data *edata = (const struct bmp581_encoded_data *)buffer;
 
-	if ((trigger == SENSOR_TRIG_DATA_READY &&
-	     edata->header.events & BMP581_EVENT_DRDY) ||
+	if ((trigger == SENSOR_TRIG_DATA_READY && edata->header.events & BMP581_EVENT_DRDY) ||
 	    (trigger == SENSOR_TRIG_FIFO_WATERMARK &&
 	     edata->header.events & BMP581_EVENT_FIFO_WM)) {
 		return true;
