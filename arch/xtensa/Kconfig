@@ -209,17 +209,22 @@ choice
 config XTENSA_MMU_PTEVADDR_20000000
 	bool "0x20000000"
 
+config XTENSA_MMU_PTEVADDR_60000000
+	bool "0x60000000"
+
 endchoice
 
 config XTENSA_MMU_PTEVADDR
 	hex
 	default 0x20000000 if XTENSA_MMU_PTEVADDR_20000000
+	default 0x60000000 if XTENSA_MMU_PTEVADDR_60000000
 	help
 	  The virtual address for Xtensa page table (PTEVADDR).
 
 config XTENSA_MMU_PTEVADDR_SHIFT
 	int
 	default 29 if XTENSA_MMU_PTEVADDR_20000000
+	default 29 if XTENSA_MMU_PTEVADDR_60000000
 	help
 	  The bit shift number for the virtual address for Xtensa
 	  page table (PTEVADDR).

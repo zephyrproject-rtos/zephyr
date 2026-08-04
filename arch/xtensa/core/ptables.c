@@ -261,6 +261,17 @@ static struct k_spinlock xtensa_counter_lock;
  * initialization, so they can never be allocated.
  */
 
+/*
+ * When PTEVADDR is 0x20000000 the self-reference for ASID 'a' lands at
+ * L1 position 128 + a. Positions 256+ map the uncached alias region
+ * (VA 0x40000000), so ASIDs must stay below 128. For other PTEVADDR
+ * values where no overlap exists, the full range up to
+ * XTENSA_MMU_SHARED_ASID - 1 is usable.
+ */
+#define ASID_PTEVADDR_MAX \
+	(256u - (CONFIG_XTENSA_MMU_PTEVADDR >> 22) - 1u)
+#define ASID_LAST_USER   MIN(XTENSA_MMU_SHARED_ASID - 1, ASID_PTEVADDR_MAX)
+
 #define ASID_SPACE 256
 
 static SYS_BITARRAY_DEFINE(asid_used, ASID_SPACE);
@@ -268,16 +279,18 @@ static SYS_BITARRAY_DEFINE(asid_used, ASID_SPACE);
 /**
  * @brief Initialize ASID bitmap.
  *
- * Marks reserved ASIDs (0 through ASID_DEFAULT, and
- * XTENSA_MMU_SHARED_ASID through 255) as in-use (bit = 1) so they
- * are never allocated. Usable ASIDs remain at 0 (free).
+ * Marks reserved ASIDs (0 through ASID_DEFAULT, and ASID_LAST_USER+1
+ * through 255) as in-use (bit = 1) so they are never allocated.
+ * Usable ASIDs remain at 0 (free).
  */
 static void asid_init(void)
 {
 	sys_bitarray_set_region(&asid_used, ASID_DEFAULT + 1, 0);
-	sys_bitarray_set_region(&asid_used,
-				ASID_SPACE - XTENSA_MMU_SHARED_ASID,
-				XTENSA_MMU_SHARED_ASID);
+	if (ASID_LAST_USER < ASID_SPACE - 1) {
+		sys_bitarray_set_region(&asid_used,
+					ASID_SPACE - 1 - ASID_LAST_USER,
+					ASID_LAST_USER + 1);
+	}
 }
 
 /**
@@ -307,7 +320,7 @@ static uint8_t asid_alloc(void)
  */
 static void asid_free(uint8_t asid)
 {
-	__ASSERT(asid > ASID_DEFAULT && asid < XTENSA_MMU_SHARED_ASID,
+	__ASSERT(asid > ASID_DEFAULT && asid <= ASID_LAST_USER,
 		 "ASID %u out of range", asid);
 	if (asid <= ASID_DEFAULT || asid > ASID_LAST_USER) {
 		LOG_ERR("Trying to free a bad or static ASID %u", asid);
