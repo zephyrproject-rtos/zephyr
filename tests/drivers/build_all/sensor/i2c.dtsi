@@ -1680,3 +1680,9 @@ test_i2c_icm56686: icm56686@68 {
 	gyro-lpf = <1>;
 	gyro-pwr-mode = <2>;
 };
+
+test_i2c_iim42652: iim42652@d9 {
+	compatible = "invensense,iim42652", "invensense,icm4268x";
+	reg = <0xd9>;
+	int-gpios = <&test_gpio 0 0>;
+};

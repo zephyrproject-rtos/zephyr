@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Google LLC
+ * Copyright (c) 2026 RAKwireless Technology Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +17,8 @@ struct icm4268x_decoder_header {
 	uint8_t is_fifo: 1;
 	uint8_t gyro_fs: 3;
 	uint8_t accel_fs: 3;
-	uint8_t variant: 1;
+	uint8_t reserved: 1;
+	uint8_t variant;
 	struct alignment axis_align[3];
 };
 
