@@ -276,6 +276,32 @@ static int ssd16xx_update_display(const struct device *dev)
 		(partial ? quirks->ctrl2_partial : quirks->ctrl2_full) |
 		SSD16XX_CTRL2_DISABLE_ANALOG |
 		SSD16XX_CTRL2_DISABLE_CLK;
+	/*
+	 * Display Update Control 1 (0x21) - RED (0x26) RAM handling.
+	 *
+	 * Only relevant when the panel has a 'partial' profile: that is the
+	 * only configuration in which the driver writes RED RAM, so it is the
+	 * only one where a full refresh can be corrupted by stale RED content.
+	 * Panels without a partial profile never touch RED here, so leave 0x21
+	 * at its default and skip the write for them.
+	 *
+	 * With a partial profile present, a FULL refresh must ignore RED RAM
+	 * (0x40): it is an absolute update driven from BLACK (0x24) RAM only.
+	 * Leaving RED in NORMAL mode makes the controller treat it as the
+	 * "previous" frame and corrupts the update - RED == BLACK superimposes
+	 * every frame, RED == ~BLACK blanks the panel. Bypassing RED matches
+	 * the known-good bare-metal init for the Winstar WAA0420A2ANB5. A
+	 * PARTIAL refresh keeps RED NORMAL (0x00): the mode-2 waveform needs
+	 * the previous frame in RED to compute the differential update.
+	 */
+	if (config->profiles[SSD16XX_PROFILE_PARTIAL] != NULL) {
+		uint8_t ctrl1[] = { partial ? 0x00 : 0x40, 0x00 };
+		int err = ssd16xx_write_cmd(dev, SSD16XX_CMD_UPDATE_CTRL1, ctrl1, sizeof(ctrl1));
+
+		if (err < 0) {
+			return err;
+		}
+	}
 
 	return ssd16xx_activate(dev, update_cmd);
 }
