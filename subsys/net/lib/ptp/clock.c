@@ -555,7 +555,8 @@ void ptp_clock_handle_state_decision_evt(void)
 	struct ptp_foreign_tt_clock *best = NULL, *foreign;
 	struct ptp_port *port;
 	bool decision_requested = ptp_clk.state_decision_event;
-	bool reset_needed = false;
+	bool reset_needed;
+	bool tt_changed = false;
 
 	if (!decision_requested && !ptp_clk.sync_source.reset_pending) {
 		return;
@@ -593,9 +594,9 @@ void ptp_clock_handle_state_decision_evt(void)
 	}
 
 	if (sync_best != NULL) {
-		reset_needed = ptp_clk.sync_source.valid && !clock_sync_source_matches(sync_best);
+		tt_changed = ptp_clk.sync_source.valid && !clock_sync_source_matches(sync_best);
 	}
-	reset_needed = reset_needed || ptp_clk.sync_source.reset_pending;
+	reset_needed = tt_changed || ptp_clk.sync_source.reset_pending;
 
 	if (reset_needed) {
 		clock_sync_data_reset();
@@ -642,7 +643,8 @@ void ptp_clock_handle_state_decision_evt(void)
 			break;
 		}
 
-		ptp_port_event_handle(port, event, false);
+		ptp_port_event_handle(port, event,
+				      tt_changed && port->state_decision == PTP_PS_TIME_RECEIVER);
 	}
 
 	ptp_clk.state_decision_event = false;
