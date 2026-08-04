@@ -9,7 +9,7 @@
 #include <zephyr/drivers/counter.h>
 #include <fsl_ctimer.h>
 #ifdef CONFIG_COUNTER_CAPTURE
-#include <fsl_inputmux.h>
+#include <zephyr/drivers/mux.h>
 #include <zephyr/drivers/pinctrl.h>
 #endif /* CONFIG_COUNTER_CAPTURE */
 #include <zephyr/logging/log.h>
@@ -52,10 +52,9 @@ struct mcux_lpc_ctimer_data {
 };
 
 #ifdef CONFIG_COUNTER_CAPTURE
-struct mcux_lpc_ctimer_inputmux_entry {
-	INPUTMUX_Type *base;
-	uint16_t channel;
-	uint32_t connection;
+struct mcux_lpc_ctimer_mux_entry {
+	const struct device *dev;
+	const struct mux_state *state;
 };
 #endif /* CONFIG_COUNTER_CAPTURE */
 
@@ -70,8 +69,8 @@ struct mcux_lpc_ctimer_config {
 	void (*irq_config_func)(const struct device *dev);
 #ifdef CONFIG_COUNTER_CAPTURE
 	const struct pinctrl_dev_config *pincfg;
-	const struct mcux_lpc_ctimer_inputmux_entry *inputmux_entries;
-	uint8_t inputmux_entries_count;
+	const struct mcux_lpc_ctimer_mux_entry *mux_entries;
+	uint8_t mux_entries_count;
 #endif /* CONFIG_COUNTER_CAPTURE */
 };
 
@@ -286,16 +285,25 @@ static uint32_t mcux_lpc_ctimer_get_freq(const struct device *dev)
 }
 
 #ifdef CONFIG_COUNTER_CAPTURE
-static void mcux_lpc_ctimer_setup_inputmux(const struct mcux_lpc_ctimer_config *config)
+static int mcux_lpc_ctimer_apply_mux(const struct mcux_lpc_ctimer_config *config)
 {
-	for (uint8_t i = 0; i < config->inputmux_entries_count; i++) {
-		const struct mcux_lpc_ctimer_inputmux_entry *entry = &config->inputmux_entries[i];
+	for (uint8_t i = 0; i < config->mux_entries_count; i++) {
+		const struct mcux_lpc_ctimer_mux_entry *entry = &config->mux_entries[i];
+		int err;
 
-		INPUTMUX_Init(entry->base);
-		INPUTMUX_AttachSignal(entry->base, entry->channel,
-				      (inputmux_connection_t)entry->connection);
-		INPUTMUX_Deinit(entry->base);
+		if (!device_is_ready(entry->dev)) {
+			LOG_ERR("mux controller %s not ready", entry->dev->name);
+			return -ENODEV;
+		}
+
+		err = mux_state_apply(entry->dev, entry->state);
+		if (err) {
+			LOG_ERR("failed to apply mux state %u: %d", i, err);
+			return err;
+		}
 	}
+
+	return 0;
 }
 
 static int mcux_lpc_ctimer_capture_edge(counter_capture_flags_t flags,
@@ -503,7 +511,10 @@ static int mcux_lpc_ctimer_init_common(const struct device *dev)
 		}
 	}
 
-	mcux_lpc_ctimer_setup_inputmux(config);
+	ret = mcux_lpc_ctimer_apply_mux(config);
+	if (ret != 0) {
+		return ret;
+	}
 #endif /* CONFIG_COUNTER_CAPTURE */
 
 	for (uint8_t chan = 0; chan < NUM_CHANNELS; chan++) {
@@ -580,23 +591,23 @@ static DEVICE_API(counter, mcux_ctimer_driver_api) = {
 #define COUNTER_LPC_CTIMER_PINCTRL_INIT(id) \
 	.pincfg = COND_CODE_1(DT_INST_NODE_HAS_PROP(id, pinctrl_0), \
 				 (PINCTRL_DT_INST_DEV_CONFIG_GET(id)), (NULL)),
-#define COUNTER_LPC_CTIMER_INPUTMUX_ENTRY(node_id, prop, idx) \
+#define COUNTER_LPC_CTIMER_MUX_ENTRY(node_id, prop, idx) \
 	{ \
-		.base = (INPUTMUX_Type *)DT_REG_ADDR(DT_PHANDLE_BY_IDX(node_id, prop, idx)), \
-		.channel = (uint16_t)DT_PHA_BY_IDX(node_id, prop, idx, channel), \
-		.connection = (uint32_t)DT_PHA_BY_IDX(node_id, prop, idx, connection), \
+		.dev   = MUX_STATE_DT_DEV_GET_BY_IDX(node_id, idx), \
+		.state = MUX_STATE_DT_GET_BY_IDX(node_id, idx), \
 	}
 #define COUNTER_LPC_CTIMER_INPUTMUX_DEFINE(id) \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, inputmux_connections), \
-		    (static const struct mcux_lpc_ctimer_inputmux_entry \
-			    mcux_lpc_ctimer_inputmux_entries_##id[] = { \
-			    DT_INST_FOREACH_PROP_ELEM_SEP(id, inputmux_connections, \
-							 COUNTER_LPC_CTIMER_INPUTMUX_ENTRY, (,)) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, mux_states), \
+		    (MUX_STATE_DT_INST_SPEC_DEFINE_ALL(id); \
+		     static const struct mcux_lpc_ctimer_mux_entry \
+			    mcux_lpc_ctimer_mux_entries_##id[] = { \
+			    DT_INST_FOREACH_PROP_ELEM_SEP(id, mux_states, \
+							 COUNTER_LPC_CTIMER_MUX_ENTRY, (,)) \
 		    };), ())
 #define COUNTER_LPC_CTIMER_INPUTMUX_INIT(id) \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, inputmux_connections), \
-		    (.inputmux_entries = mcux_lpc_ctimer_inputmux_entries_##id, \
-		     .inputmux_entries_count = DT_INST_PROP_LEN(id, inputmux_connections),), ())
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(id, mux_states), \
+		    (.mux_entries = mcux_lpc_ctimer_mux_entries_##id, \
+		     .mux_entries_count = ARRAY_SIZE(mcux_lpc_ctimer_mux_entries_##id),), ())
 #else
 #define COUNTER_LPC_CTIMER_PINCTRL_DEFINE(id)
 #define COUNTER_LPC_CTIMER_PINCTRL_INIT(id)

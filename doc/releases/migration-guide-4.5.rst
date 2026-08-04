@@ -594,6 +594,11 @@ NXP
     /* After */
     #include <nxp/imxrt/rt118x/nxp_rt1189_cm33.dtsi>
 
+* :dtcompatible:`nxp,lpc-ctimer` (counter capture) now routes its capture trigger signal through
+  the generic :ref:`mux <mux_api>` subsystem. The ``inputmux-connections`` property has been
+  removed; describe the routing with an INPUTMUX controller node (:dtcompatible:`nxp,inputmux`) and
+  reference it from the timer node's ``mux-states`` property instead.
+
 PWM
 ===
 
