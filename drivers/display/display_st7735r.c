@@ -198,7 +198,7 @@ static int st7735r_write(const struct device *dev,
 		write_h = 1U;
 		nbr_of_writes = desc->height;
 		mipi_desc.height = 1;
-		mipi_desc.buf_size = desc->pitch * ST7735R_PIXEL_SIZE;
+		mipi_desc.buf_size = desc->width * ST7735R_PIXEL_SIZE;
 	} else {
 		write_h = desc->height;
 		nbr_of_writes = 1U;
