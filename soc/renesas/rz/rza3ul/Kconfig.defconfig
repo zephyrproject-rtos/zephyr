@@ -14,6 +14,8 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_CHOSEN_IMAGE_ZEPHYR = zephyr,code-partition
+DT_CHOSEN_SRAM_ZEPHYR = zephyr,sram
 
 config FLASH_SIZE
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
@@ -22,15 +24,12 @@ config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config FLASH_LOAD_OFFSET
-	default $(dt_nodelabel_reg_addr_hex,header)
-
-DT_CHOSEN_IMAGE_ZEPHYR = zephyr,code-partition
-DT_CHOSEN_SRAM_ZEPHYR = zephyr,sram
+	default $(sub_hex, $(dt_nodelabel_reg_addr_hex,header), \
+	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)))
 
 config BUILD_OUTPUT_ADJUST_LMA
-	default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)) + \
-	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_ZEPHYR)) - \
-	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_SRAM_ZEPHYR))"
+	default "$(sub_hex, $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_ZEPHYR)), \
+	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_SRAM_ZEPHYR)))"
 
 config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
 	default "*;!.header"
