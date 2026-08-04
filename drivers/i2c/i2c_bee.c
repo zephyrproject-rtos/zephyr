@@ -348,6 +348,9 @@ static int i2c_bee_init(const struct device *dev)
 static DEVICE_API(i2c, i2c_bee_driver_api) = {
 	.configure = i2c_bee_configure,
 	.transfer = i2c_bee_transfer,
+#ifdef CONFIG_I2C_RTIO
+	.iodev_submit = i2c_iodev_submit_fallback,
+#endif
 };
 
 #define I2C_IRQ_FUNC_DEFINE(index)                                                                 \
