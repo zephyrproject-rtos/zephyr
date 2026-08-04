@@ -144,7 +144,7 @@ static inline void npcx_itim_evt_disable(void)
 }
 
 /* ITIM local functions */
-static int npcx_itim_start_evt_tmr_by_tick(int32_t ticks)
+static int npcx_itim_start_evt_tmr_by_tick(uint32_t ticks)
 {
 	/*
 	 * Get desired cycles of event timer from the requested ticks which
