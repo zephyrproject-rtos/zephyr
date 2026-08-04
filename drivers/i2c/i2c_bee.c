@@ -15,6 +15,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
 
 #include <zephyr/logging/log.h>
@@ -22,6 +23,9 @@
 LOG_MODULE_REGISTER(i2c_bee, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
+#ifdef CONFIG_I2C_BEE_BUS_RECOVERY
+#include "i2c_bitbang.h"
+#endif
 
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
 #include <rtl_i2c.h>
@@ -51,6 +55,10 @@ struct i2c_bee_config {
 	uint16_t clkid;
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_cfg_func)(void);
+#ifdef CONFIG_I2C_BEE_BUS_RECOVERY
+	struct gpio_dt_spec scl_gpio;
+	struct gpio_dt_spec sda_gpio;
+#endif
 };
 
 struct i2c_bee_data {
@@ -303,6 +311,119 @@ static int i2c_bee_get_config(const struct device *dev, uint32_t *dev_config)
 	return 0;
 }
 
+#ifdef CONFIG_I2C_BEE_BUS_RECOVERY
+#if defined(CONFIG_SOC_SERIES_RTL8752H)
+/*
+ * RTL8752H has no hardware open-drain output mode, so open-drain is emulated by
+ * switching the pin direction on every edge: released == input with pull-up,
+ * driven low == output low.
+ */
+static void i2c_bee_bitbang_set_line(const struct gpio_dt_spec *gpio, int state)
+{
+	(void)gpio_pin_configure_dt(gpio, state ? (GPIO_INPUT | GPIO_PULL_UP) : GPIO_OUTPUT_LOW);
+}
+
+static void i2c_bee_bitbang_set_scl(void *io_context, int state)
+{
+	const struct i2c_bee_config *cfg = io_context;
+
+	i2c_bee_bitbang_set_line(&cfg->scl_gpio, state);
+}
+
+static void i2c_bee_bitbang_set_sda(void *io_context, int state)
+{
+	const struct i2c_bee_config *cfg = io_context;
+
+	i2c_bee_bitbang_set_line(&cfg->sda_gpio, state);
+}
+#else
+/*
+ * Other Bee SoCs support a hardware open-drain output mode, so the lines are
+ * configured once (see i2c_bee_recover_bus) and each edge only writes the data
+ * register - fast enough to meet the SCL timing and free of the transient that
+ * re-running the full pad configuration on every edge would cause.
+ */
+static void i2c_bee_bitbang_set_scl(void *io_context, int state)
+{
+	const struct i2c_bee_config *cfg = io_context;
+
+	gpio_pin_set_dt(&cfg->scl_gpio, state);
+}
+
+static void i2c_bee_bitbang_set_sda(void *io_context, int state)
+{
+	const struct i2c_bee_config *cfg = io_context;
+
+	gpio_pin_set_dt(&cfg->sda_gpio, state);
+}
+#endif
+
+static int i2c_bee_bitbang_get_sda(void *io_context)
+{
+	const struct i2c_bee_config *cfg = io_context;
+
+	return gpio_pin_get_dt(&cfg->sda_gpio) != 0 ? 1 : 0;
+}
+
+static int i2c_bee_recover_bus(const struct device *dev)
+{
+	const struct i2c_bee_config *cfg = dev->config;
+	struct i2c_bee_data *data = dev->data;
+	const struct i2c_bitbang_io bitbang_io = {
+		.set_scl = i2c_bee_bitbang_set_scl,
+		.set_sda = i2c_bee_bitbang_set_sda,
+		.get_sda = i2c_bee_bitbang_get_sda,
+	};
+	struct i2c_bitbang bitbang;
+	uint32_t dev_config;
+	int ret;
+
+	if (!gpio_is_ready_dt(&cfg->scl_gpio) || !gpio_is_ready_dt(&cfg->sda_gpio)) {
+		LOG_ERR("SCL/SDA recovery GPIO not available");
+		return -ENOSYS;
+	}
+
+	k_mutex_lock(&data->bus_mutex, K_FOREVER);
+
+	ret = 0;
+#if !defined(CONFIG_SOC_SERIES_RTL8752H)
+	/*
+	 * Configure both lines once as open-drain outputs. The bit-bang helper
+	 * then only writes the data register on each edge (a single register
+	 * access), which is fast enough to meet the SCL timing and never
+	 * re-runs the full pad configuration, so the line does not glitch while
+	 * toggling between the driven-low and released states.
+	 */
+	ret = gpio_pin_configure_dt(&cfg->scl_gpio,
+				    GPIO_OUTPUT_HIGH | GPIO_OPEN_DRAIN | GPIO_PULL_UP);
+	if (ret == 0) {
+		ret = gpio_pin_configure_dt(&cfg->sda_gpio,
+					    GPIO_OUTPUT_HIGH | GPIO_OPEN_DRAIN | GPIO_PULL_UP);
+	}
+#endif
+
+	if (ret == 0) {
+		i2c_bitbang_init(&bitbang, &bitbang_io, (void *)cfg);
+
+		ret = i2c_bitbang_recover_bus(&bitbang);
+		if (ret < 0) {
+			LOG_ERR("failed to recover bus (%d)", ret);
+		}
+	} else {
+		LOG_ERR("failed to configure recovery GPIO (%d)", ret);
+	}
+
+	(void)i2c_bee_get_config(dev, &dev_config);
+	(void)pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	(void)clock_control_on(BEE_CLOCK_CONTROLLER, (clock_control_subsys_t)&cfg->clkid);
+	(void)i2c_bee_do_configure(dev, dev_config);
+
+	k_mutex_unlock(&data->bus_mutex);
+
+	return ret;
+}
+#endif /* CONFIG_I2C_BEE_BUS_RECOVERY */
+
 static void i2c_bee_isr(const struct device *dev)
 {
 	struct i2c_bee_data *data = dev->data;
@@ -366,6 +487,9 @@ static DEVICE_API(i2c, i2c_bee_driver_api) = {
 	.configure = i2c_bee_configure,
 	.get_config = i2c_bee_get_config,
 	.transfer = i2c_bee_transfer,
+#ifdef CONFIG_I2C_BEE_BUS_RECOVERY
+	.recover_bus = i2c_bee_recover_bus,
+#endif
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
@@ -379,6 +503,14 @@ static DEVICE_API(i2c, i2c_bee_driver_api) = {
 		irq_enable(DT_INST_IRQN(index));                                                   \
 	}
 
+#ifdef CONFIG_I2C_BEE_BUS_RECOVERY
+#define I2C_BEE_RECOVERY_INIT(index)                                                               \
+	.scl_gpio = GPIO_DT_SPEC_INST_GET_OR(index, scl_gpios, {0}),                               \
+	.sda_gpio = GPIO_DT_SPEC_INST_GET_OR(index, sda_gpios, {0}),
+#else
+#define I2C_BEE_RECOVERY_INIT(index)
+#endif
+
 #define I2C_BEE_INIT(index)                                                                        \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
 	I2C_IRQ_FUNC_DEFINE(index);                                                                \
@@ -389,6 +521,7 @@ static DEVICE_API(i2c, i2c_bee_driver_api) = {
 		.clkid = DT_INST_CLOCKS_CELL(index, id),                                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.irq_cfg_func = i2c_bee_irq_cfg_func_##index,                                      \
+		I2C_BEE_RECOVERY_INIT(index)                                                       \
 	};                                                                                         \
 	I2C_DEVICE_DT_INST_DEFINE(index, i2c_bee_init, NULL, &i2c_bee_data_##index,                \
 				  &i2c_bee_cfg_##index, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,     \
