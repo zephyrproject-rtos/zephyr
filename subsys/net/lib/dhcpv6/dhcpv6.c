@@ -52,7 +52,8 @@ static const struct net_in6_addr all_dhcpv6_ra_and_servers = { { { 0xff, 0x02, 0
 							       0, 0, 0, 0, 0, 0x01, 0, 0x02 } } };
 
 static sys_slist_t dhcpv6_ifaces = SYS_SLIST_STATIC_INIT(&dhcpv6_ifaces);
-static struct k_work_delayable dhcpv6_timeout_work;
+static void dhcpv6_timeout(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(dhcpv6_timeout_work, dhcpv6_timeout);
 static struct net_mgmt_event_callback dhcpv6_mgmt_cb;
 
 const char *net_dhcpv6_state_name(enum net_dhcpv6_state state)
@@ -2655,7 +2656,6 @@ int net_dhcpv6_init(void)
 		return ret;
 	}
 
-	k_work_init_delayable(&dhcpv6_timeout_work, dhcpv6_timeout);
 	net_mgmt_init_event_callback(&dhcpv6_mgmt_cb, dhcpv6_iface_event_handler,
 				     NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
 
