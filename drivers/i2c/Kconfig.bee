@@ -9,3 +9,13 @@ config I2C_BEE
 	select PINCTRL
 	help
 	  This option enables the I2C driver for Realtek Bee SoCs.
+
+config I2C_BEE_BUS_RECOVERY
+	bool "Bus recovery support"
+	depends on I2C_BEE
+	default y if I2C_BUS_RECOVERY
+	select I2C_BITBANG
+	help
+	  Enable I2C bus recovery on Realtek Bee SoCs by bit-banging the SCL/SDA
+	  lines through GPIO. Requires GPIO to be enabled and the scl-gpios and
+	  sda-gpios properties on the I2C node.
