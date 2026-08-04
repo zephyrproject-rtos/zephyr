@@ -23,6 +23,8 @@
 extern "C" {
 #endif
 
+/**  @cond INTERNAL_HIDDEN */
+
 #define IVSHMEM_V2_PROTO_UNDEFINED	0x0000
 #define IVSHMEM_V2_PROTO_NET		0x0001
 
@@ -80,6 +82,8 @@ __subsystem struct ivshmem_driver_api {
 	ivshmem_enable_interrupts_f enable_interrupts;
 #endif
 };
+
+/** @endcond */
 
 /**
  * @brief Get the inter-VM shared memory
@@ -176,10 +180,11 @@ static inline int z_impl_ivshmem_register_handler(const struct device *dev,
 	return DEVICE_API_GET(ivshmem, dev)->register_handler(dev, signal, vector);
 }
 
-#ifdef CONFIG_IVSHMEM_V2
-
+#if defined(CONFIG_IVSHMEM_V2) || defined(__DOXYGEN__)
 /**
  * @brief Get the ivshmem read/write section (ivshmem-v2 only)
+ *
+ * @kconfig_dep{CONFIG_IVSHMEM_V2}
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param memmap A pointer to fill in with the memory address
@@ -197,6 +202,8 @@ static inline size_t z_impl_ivshmem_get_rw_mem_section(const struct device *dev,
 
 /**
  * @brief Get the ivshmem output section for a peer (ivshmem-v2 only)
+ *
+ * @kconfig_dep{CONFIG_IVSHMEM_V2}
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param peer_id The VM ID whose output memory section to get
@@ -218,6 +225,8 @@ static inline size_t z_impl_ivshmem_get_output_mem_section(const struct device *
 /**
  * @brief Get the state value of a peer (ivshmem-v2 only)
  *
+ * @kconfig_dep{CONFIG_IVSHMEM_V2}
+ *
  * @param dev Pointer to the device structure for the driver instance
  * @param peer_id The VM ID whose state to get
  *
@@ -234,6 +243,8 @@ static inline uint32_t z_impl_ivshmem_get_state(const struct device *dev,
 
 /**
  * @brief Set our state (ivshmem-v2 only)
+ *
+ * @kconfig_dep{CONFIG_IVSHMEM_V2}
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param state The state value to set
@@ -252,6 +263,8 @@ static inline int z_impl_ivshmem_set_state(const struct device *dev,
 /**
  * @brief Get the maximum number of peers supported (ivshmem-v2 only)
  *
+ * @kconfig_dep{CONFIG_IVSHMEM_V2}
+ *
  * @param dev Pointer to the device structure for the driver instance
  *
  * @return the maximum number of peers supported, or 0
@@ -266,6 +279,8 @@ static inline uint32_t z_impl_ivshmem_get_max_peers(const struct device *dev)
 /**
  * @brief Get the protocol used by this ivshmem instance (ivshmem-v2 only)
  *
+ * @kconfig_dep{CONFIG_IVSHMEM_V2}
+ *
  * @param dev Pointer to the device structure for the driver instance
  *
  * @return the protocol
@@ -279,6 +294,8 @@ static inline uint16_t z_impl_ivshmem_get_protocol(const struct device *dev)
 
 /**
  * @brief Set the interrupt enablement for our VM (ivshmem-v2 only)
+ *
+ * @kconfig_dep{CONFIG_IVSHMEM_V2}
  *
  * @param dev Pointer to the device structure for the driver instance
  * @param enable True to enable interrupts, false to disable
