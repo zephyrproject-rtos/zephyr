@@ -1266,7 +1266,7 @@ static void leave_mcast_all(struct net_if *iface)
 			continue;
 		}
 
-		net_ipv6_mld_leave(iface, &ipv6->mcast[i].address.in6_addr);
+		net_ipv6_mld_send_leave(iface, &ipv6->mcast[i]);
 	}
 }
 
@@ -1746,11 +1746,9 @@ out:
  */
 static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 {
-	struct net_in6_addr solicit_addrs[NET_IF_MAX_IPV6_ADDR];
 	struct net_if_mcast_addr *ifaddr, *next;
 	struct net_if_ipv6 *ipv6;
 	sys_slist_t rejoin_needed;
-	int solicit_count = 0;
 
 	sys_slist_init(&rejoin_needed);
 
@@ -1762,24 +1760,6 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 
 	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
 		goto out;
-	}
-
-	/* Collect the addresses whose solicited node multicast groups need to
-	 * be (re)joined if the interface has ND enabled. The join itself is
-	 * done below without the iface lock held: join_mcast_nodes() transmits
-	 * MLD reports, whose TX path locks other interfaces, so doing it under
-	 * net_if_lock() could deadlock (ABBA) when two interfaces are brought
-	 * up concurrently.
-	 */
-	if (!net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
-		ARRAY_FOR_EACH(ipv6->unicast, i) {
-			if (!ipv6->unicast[i].is_used) {
-				continue;
-			}
-
-			solicit_addrs[solicit_count++] =
-				ipv6->unicast[i].address.in6_addr;
-		}
 	}
 
 	/* If MLD is disabled on the interface, skip rejoining. */
@@ -1799,13 +1779,6 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 
 out:
 	net_if_unlock(iface);
-
-	/* Join the solicited node multicast groups without holding the iface
-	 * lock, see the comment above.
-	 */
-	for (int i = 0; i < solicit_count; i++) {
-		join_mcast_nodes(iface, &solicit_addrs[i]);
-	}
 
 	/* Rejoin multicast groups without holding the iface lock to avoid any
 	 * possible mutex deadlock issues.
@@ -5493,7 +5466,7 @@ static void leave_ipv4_mcast_all(struct net_if *iface)
 			continue;
 		}
 
-		net_ipv4_igmp_leave(iface, &ipv4->mcast[i].address.in_addr);
+		net_ipv4_igmp_send_leave(iface, &ipv4->mcast[i]);
 	}
 }
 
