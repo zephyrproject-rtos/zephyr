@@ -1869,6 +1869,7 @@ static int init_listener(void)
 
 #if defined(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL)
 static K_MUTEX_DEFINE(reconfigure_lock);
+static void mdns_leave_groups_cb(struct net_if *iface, void *user_data);
 
 /* Tear down every listener socket and its dispatcher registration. The sockets
  * are recreated for the interfaces that remain enabled by init_listener().
@@ -1955,6 +1956,7 @@ int mdns_test_reinit_with_stale_slot(unsigned int slot)
 {
 	/* Start from a clean state (every slot marked closed). */
 	mdns_close_listeners();
+	net_if_foreach(mdns_leave_groups_cb, NULL);
 
 #if defined(CONFIG_NET_IPV6)
 	if (slot < ARRAY_SIZE(v6_ctx)) {
