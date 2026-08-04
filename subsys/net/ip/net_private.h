@@ -454,14 +454,14 @@ void net_pkt_tx_init(struct net_pkt *pkt);
 
 /** Rejoin IGMP mcast group w/o registering address, for internal use only. */
 #if defined(CONFIG_NET_IPV4_IGMP)
-int net_ipv4_igmp_rejoin(struct net_if *iface, const struct net_in_addr *addr);
+int net_ipv4_igmp_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr);
 #else
 #define net_ipv4_igmp_rejoin(...) -ENOSYS
 #endif
 
 /** Rejoin MLD mcast group w/o registering address, for internal use only. */
 #if defined(CONFIG_NET_IPV6_MLD)
-int net_ipv6_mld_rejoin(struct net_if *iface, const struct net_in6_addr *addr);
+int net_ipv6_mld_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr);
 #else
 #define net_ipv6_mld_rejoin(...) -ENOSYS
 #endif
