@@ -1,0 +1,34 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    IIM-42652 high-performance 6-Axis SmartIndustrial MotionTracking MEMS
+    device accessed over I2C.
+
+    When setting the accel-pwr-mode, accel-fs, accel-odr, gyro-pwr-mode,
+    gyro-fs, and gyro-odr properties in a .dts or .dtsi file you may include
+    iim42652.h and use the macros defined there.
+
+compatible: "invensense,iim42652"
+include: [i2c-device.yaml, "invensense,icm4268x.yaml"]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/gpio/gpio.h>
+    #include <zephyr/dt-bindings/sensor/iim42652.h>
+
+    &i2c0 {
+      status = "okay";
+
+      iim42652: iim42652@69 {
+        compatible = "invensense,iim42652", "invensense,icm4268x";
+        reg = <0x69>;
+        int-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+        accel-pwr-mode = <IIM42652_DT_ACCEL_LN>;
+        accel-fs = <IIM42652_DT_ACCEL_FS_16>;
+        accel-odr = <IIM42652_DT_ACCEL_ODR_1000>;
+        gyro-pwr-mode = <IIM42652_DT_GYRO_LN>;
+        gyro-fs = <IIM42652_DT_GYRO_FS_2000>;
+        gyro-odr = <IIM42652_DT_GYRO_ODR_1000>;
+      };
+    };

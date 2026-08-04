@@ -1699,3 +1699,9 @@ test_i2c_pmsa003i: pmsa003i@dc {
 	reset-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 	set-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
 };
+
+test_i2c_iim42652: iim42652@df {
+	compatible = "invensense,iim42652", "invensense,icm4268x";
+	reg = <0xdf>;
+	int-gpios = <&test_gpio 0 0>;
+};
