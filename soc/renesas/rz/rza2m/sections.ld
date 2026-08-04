@@ -5,7 +5,7 @@
  */
 #include <zephyr/devicetree.h>
 
-SECTION_PROLOGUE(.loader, CONFIG_FLASH_BASE_ADDRESS,)
+SECTION_PROLOGUE(.loader, DT_REG_ADDR(DT_CHOSEN(zephyr_flash)),)
 {
 	__loader_program_start = .;
 	KEEP(*(.loader_text.*))
