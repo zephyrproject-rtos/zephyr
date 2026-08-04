@@ -553,6 +553,8 @@ int arch_coprocessors_disable(struct k_thread *thread)
  */
 static void z_arm_prepare_switch_to_main(void)
 {
+	z_arm_interrupt_stack_setup();
+
 #if defined(CONFIG_FPU)
 	/* Initialize the Floating Point Status and Control Register when in
 	 * Unshared FP Registers mode (In Shared FP Registers mode, FPSCR is
