@@ -257,6 +257,13 @@ static struct k_spinlock xtensa_counter_lock;
  * Set bit (1) = in use or reserved, clear bit (0) = free.
  * This matches sys_bitarray_alloc() semantics which finds clear bits.
  *
+ * A second bitarray (asid_dirty) tracks freed ASIDs that have stale
+ * TLB entries. On free, the ASID is placed in asid_dirty (asid_used
+ * bit stays set). When no free ASIDs remain in asid_used, a single
+ * TLB flush is performed and dirty bits are XORed back into asid_used
+ * (clearing the in-use bits), amortizing the flush cost across many
+ * alloc/free cycles.
+ *
  * Reserved ASIDs are marked as in-use (set to 1) during
  * initialization, so they can never be allocated.
  */
@@ -275,6 +282,7 @@ static struct k_spinlock xtensa_counter_lock;
 #define ASID_SPACE 256
 
 static SYS_BITARRAY_DEFINE(asid_used, ASID_SPACE);
+static SYS_BITARRAY_DEFINE(asid_dirty, ASID_SPACE);
 
 /**
  * @brief Initialize ASID bitmap.
@@ -296,12 +304,28 @@ static void asid_init(void)
 /**
  * @brief Allocate a free ASID.
  *
+ * Tries to allocate from asid_used. If no free ASIDs remain,
+ * performs a TLB flush, moves dirty ASIDs back via XOR, clears
+ * dirty, and retries.
+ *
  * @return The allocated ASID number, or 0 if no ASIDs are available.
  */
 static uint8_t asid_alloc(void)
 {
 	size_t asid;
 	int ret;
+
+	ret = sys_bitarray_alloc(&asid_used, 1, &asid);
+	if (ret == 0) {
+		return (uint8_t)asid;
+	}
+
+	/* No free ASIDs — flush TLB, reclaim dirty ones */
+	xtensa_tlb_autorefill_invalidate();
+	xtensa_mmu_tlb_ipi();
+
+	sys_bitarray_xor(&asid_used, &asid_dirty, ASID_SPACE, 0);
+	sys_bitarray_clear_region(&asid_dirty, ASID_SPACE, 0);
 
 	ret = sys_bitarray_alloc(&asid_used, 1, &asid);
 	if (ret < 0) {
@@ -313,8 +337,9 @@ static uint8_t asid_alloc(void)
 /**
  * @brief Free a previously allocated ASID.
  *
- * Returns the ASID to the available pool and invalidates TLB
- * autorefill entries on all cores to prevent stale mappings.
+ * Places the ASID into the dirty set. It will be reclaimed
+ * (cleared in asid_used) on the next TLB flush triggered by
+ * asid_alloc().
  *
  * @param asid The ASID to free.
  */
@@ -327,9 +352,7 @@ static void asid_free(uint8_t asid)
 		return;
 	}
 
-	sys_bitarray_free(&asid_used, 1, asid);
-	xtensa_tlb_autorefill_invalidate();
-	xtensa_mmu_tlb_ipi();
+	sys_bitarray_set_bit(&asid_dirty, asid);
 }
 
 /** Linked list with all active and initialized memory domains. */
