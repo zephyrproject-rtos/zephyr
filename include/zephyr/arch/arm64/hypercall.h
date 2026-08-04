@@ -17,6 +17,7 @@ int HYPERVISOR_memory_op(int op, void *param);
 int HYPERVISOR_grant_table_op(int op, void *uop, unsigned int count);
 int HYPERVISOR_dm_op(domid_t domid, unsigned int nr_bufs, struct xen_dm_op_buf *bufs);
 int HYPERVISOR_xen_version(int op, void *param);
+int HYPERVISOR_vcpu_op(int op, unsigned int vcpuid, void *param);
 
 #ifdef CONFIG_XEN_DOM0
 int HYPERVISOR_domctl(void *param);
