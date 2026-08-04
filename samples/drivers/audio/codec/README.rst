@@ -8,6 +8,8 @@ Overview
 
 A simple sample that to demo audio speaker play, and mic to speaker loopback functions.
 
+It plays a 1 kHz sine wave tone with 16-bit width and 16 kSPS rate.
+
 Building and Running
 ********************
 
