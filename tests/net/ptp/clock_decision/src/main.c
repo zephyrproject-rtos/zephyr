@@ -480,6 +480,87 @@ ZTEST(ptp_clock_decision, test_time_receiver_update_path)
 	assert_single_event(&port, PTP_EVT_RS_TIME_RECEIVER);
 }
 
+ZTEST(ptp_clock_decision, test_same_transmitter_reappearing_does_not_report_tt_diff)
+{
+	struct ptp_port port;
+	struct ptp_foreign_tt_clock foreign_initial;
+	struct ptp_foreign_tt_clock foreign_reappeared;
+	struct ptp_msg msg_initial;
+	struct ptp_msg msg_reappeared;
+
+	init_announce_msg(&msg_initial, 0x81, 111, 112, 6, 44, 0x5A);
+	init_announce_msg(&msg_reappeared, 0x81, 111, 112, 6, 44, 0x5A);
+	init_port(&port, 0x43, 1);
+	init_foreign(&foreign_initial, &port, make_foreign_desc(0x57, 8, 120, 100, 6),
+		     &msg_initial);
+	map_port(&port, PTP_PS_TIME_RECEIVER, &foreign_initial);
+
+	ptp_clock_state_decision_req();
+	ptp_clock_handle_state_decision_evt();
+
+	assert_single_event(&port, PTP_EVT_RS_TIME_RECEIVER);
+
+	map_port(&port, PTP_PS_LISTENING, NULL);
+	ptp_clock_state_decision_req();
+	ptp_clock_handle_state_decision_evt();
+
+	zassert_is_null(ptp_clock_best_time_transmitter(),
+			"best transmitter should disappear during source loss");
+	assert_single_event(&port, PTP_EVT_NONE);
+
+	init_foreign(&foreign_reappeared, &port, make_foreign_desc(0x57, 8, 120, 100, 6),
+		     &msg_reappeared);
+	map_port(&port, PTP_PS_TIME_RECEIVER, &foreign_reappeared);
+
+	ptp_clock_state_decision_req();
+	ptp_clock_handle_state_decision_evt();
+
+	zassert_equal(ptp_clock_best_time_transmitter(), &foreign_reappeared,
+		      "reappeared transmitter should be selected");
+	assert_single_event(&port, PTP_EVT_RS_TIME_RECEIVER);
+}
+
+ZTEST(ptp_clock_decision, test_local_grandmaster_does_not_replace_sync_source)
+{
+	struct ptp_port port;
+	struct ptp_foreign_tt_clock foreign_initial;
+	struct ptp_foreign_tt_clock foreign_holdover;
+	struct ptp_foreign_tt_clock foreign_reappeared;
+	struct ptp_msg msg_initial;
+	struct ptp_msg msg_reappeared;
+
+	init_announce_msg(&msg_initial, 0x84, 111, 112, 6, 44, 0x5A);
+	init_announce_msg(&msg_reappeared, 0x84, 111, 112, 6, 44, 0x5A);
+	init_port(&port, 0x45, 1);
+	init_foreign(&foreign_initial, &port, make_foreign_desc(0x5A, 8, 120, 100, 6),
+		     &msg_initial);
+	map_port(&port, PTP_PS_TIME_RECEIVER, &foreign_initial);
+
+	ptp_clock_state_decision_req();
+	ptp_clock_handle_state_decision_evt();
+
+	assert_single_event(&port, PTP_EVT_RS_TIME_RECEIVER);
+
+	init_foreign(&foreign_holdover, &port, make_foreign_desc(0x5B, 9, 130, 110, 7), NULL);
+	map_port(&port, PTP_PS_GRAND_MASTER, &foreign_holdover);
+
+	ptp_clock_state_decision_req();
+	ptp_clock_handle_state_decision_evt();
+
+	assert_single_event(&port, PTP_EVT_RS_GRAND_MASTER);
+
+	init_foreign(&foreign_reappeared, &port, make_foreign_desc(0x5A, 8, 120, 100, 6),
+		     &msg_reappeared);
+	map_port(&port, PTP_PS_TIME_RECEIVER, &foreign_reappeared);
+
+	ptp_clock_state_decision_req();
+	ptp_clock_handle_state_decision_evt();
+
+	zassert_equal(ptp_clock_best_time_transmitter(), &foreign_reappeared,
+		      "reappeared transmitter should be selected");
+	assert_single_event(&port, PTP_EVT_RS_TIME_RECEIVER);
+}
+
 ZTEST(ptp_clock_decision, test_getters_reflect_selected_best)
 {
 	struct ptp_port port;

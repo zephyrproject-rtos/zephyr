@@ -20,10 +20,10 @@ config PTP_PRIORITY1
 config PTP_PRIORITY2
 	default 128
 
-config PTP_SERVO_KP
+config PRECISION_TIMING_PI_KP
 	default 700
 
-config PTP_SERVO_KI
+config PRECISION_TIMING_PI_KI
 	default 300
 
 config PTP_PEER_DELAY_MAX_NS

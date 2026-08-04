@@ -987,6 +987,8 @@ static void port_sync_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 		port->port_ds.log_sync_interval = msg->header.log_msg_interval;
 	}
 
+	ptp_clock_sync_interval_update(port->port_ds.log_sync_interval);
+
 	if (!port_sync_rx_timestamp_valid(port, msg)) {
 		return;
 	}
