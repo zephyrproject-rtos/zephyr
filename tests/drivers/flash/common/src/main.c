@@ -30,12 +30,6 @@
 						  mspi_data_rate_dual)
 #elif defined(CONFIG_FLASH_RENESAS_RA_QSPI)
 #define TEST_AREA_DEV_NODE DT_INST(0, renesas_ra_qspi_nor)
-#elif defined(CONFIG_FLASH_RENESAS_RZ_QSPI_XSPI)
-#define TEST_AREA_DEV_NODE DT_INST(0, renesas_rz_qspi_xspi)
-#elif defined(CONFIG_FLASH_RENESAS_RZ_QSPI_SPIBSC)
-#define TEST_AREA_DEV_NODE DT_INST(0, renesas_rz_qspi_spibsc)
-#elif defined(CONFIG_FLASH_RENESAS_RZA2M_QSPI_SPIBSC)
-#define TEST_AREA_DEV_NODE DT_INST(0, renesas_rza2m_qspi_spibsc)
 #else
 #define TEST_AREA	storage_partition
 #endif
