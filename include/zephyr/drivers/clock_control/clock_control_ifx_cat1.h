@@ -96,7 +96,9 @@ enum ifx_cat1_clock_block {
 	IFX_CAT1_CLOCK_BLOCK_ALTLF, /*!< Alternate Low Frequency Input Clock */
 	IFX_CAT1_CLOCK_BLOCK_ILO,   /*!< Internal Low Speed Oscillator Input Clock */
 #if !(defined(SRSS_HT_VARIANT) && (SRSS_HT_VARIANT > 0))
-	IFX_CAT1_CLOCK_BLOCK_PILO, /*!< Precision ILO Input Clock */
+	IFX_CAT1_CLOCK_BLOCK_PILO, /*!< Precision ILO Input Clock.
+				    * Depends on @kconfig{SRSS_HT_VARIANT} > 0
+				    */
 #endif
 
 	IFX_CAT1_CLOCK_BLOCK_WCO, /*!< Watch Crystal Oscillator Input Clock */
@@ -106,10 +108,19 @@ enum ifx_cat1_clock_block {
 
 	IFX_CAT1_CLOCK_BLOCK_FLL, /*!< Frequency-Locked Loop Clock */
 #if defined(CY_IP_MXS40SRSS) && (CY_IP_MXS40SRSS_VERSION >= 3)
-	IFX_CAT1_CLOCK_BLOCK_PLL200, /*!< 200MHz Phase-Locked Loop Clock */
-	IFX_CAT1_CLOCK_BLOCK_PLL400, /*!< 400MHz Phase-Locked Loop Clock */
+	IFX_CAT1_CLOCK_BLOCK_PLL200, /*!< 200MHz Phase-Locked Loop Clock.
+				      * Depends on @kconfig{CY_IP_MXS40SRSS} and
+				      * @kconfig{CY_IP_MXS40SRSS_VERSION} >= 3.
+				      */
+	IFX_CAT1_CLOCK_BLOCK_PLL400, /*!< 400MHz Phase-Locked Loop Clock.
+				      * Depends on @kconfig{CY_IP_MXS40SRSS} and
+				      * @kconfig{CY_IP_MXS40SRSS_VERSION} >= 3.
+				      */
 #else
-	IFX_CAT1_CLOCK_BLOCK_PLL, /*!< Phase-Locked Loop Clock */
+	IFX_CAT1_CLOCK_BLOCK_PLL, /*!< Phase-Locked Loop Clock.
+				   * Depends on @kconfig{CY_IP_MXS40SRSS} being disabled
+				   * @kconfig{CY_IP_MXS40SRSS_VERSION} < 3.
+				   */
 #endif
 
 	IFX_CAT1_CLOCK_BLOCK_LF, /*!< Low Frequency Clock */
@@ -544,28 +555,36 @@ static inline cy_rslt_t ifx_cat1_utils_peri_pclk_assign_divider(en_clk_dst_t clk
 #endif
 }
 
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE) || defined(__DOXYGEN__)
 /**
  * @brief Pack a PERI instance and group number into a single switch key.
  *
  * PSE84 has multiple PERI instances (PERI0, PERI1), each with its own set of
  * peri clock groups.  This macro combines the two into a unique value for use
  * in switch statements that map (instance, group) → HF clock index.
+ *
+ * @kconfig_dep{CONFIG_SOC_FAMILY_INFINEON_EDGE}
  */
 #define IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(instance, group) (((instance) << 4) | (group))
+#endif /* CONFIG_SOC_FAMILY_INFINEON_EDGE */
 
 /**
  * @brief Map a peripheral group index to the HF clock that sources it.
  *
  * The mapping is SoC-specific and fixed in hardware.
  *
+ * Fallback for SoC families that do not yet implement this mapping
+ * when @kconfiog{CONFIG_SOC_FAMILY_INFINEON_EDGE} and @kconfig{CONFIG_SOC_FAMILY_INFINEON_CAT1B}
+ * and both disabled in which case always returns -EINVAL.
+ *
  * @param peri_group Peripheral group index (or instance|group composite
  *                   on EDGE family SoCs).
- * @return HF clock index suitable for Cy_SysClk_ClkHfGetFrequency().
+ * @return HF clock index suitable for Cy_SysClk_ClkHfGetFrequency() or -EINVAL
  */
 static inline uint8_t ifx_cat1_utils_peri_pclk_get_hfclk(uint8_t peri_group)
 {
 	switch (peri_group) {
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 0):
 	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(1, 4):
 		return CLK_HF0;
@@ -590,25 +609,7 @@ static inline uint8_t ifx_cat1_utils_peri_pclk_get_hfclk(uint8_t peri_group)
 	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 6):
 	case IFX_CAT1_PERIPHERAL_INSTANCE_GROUP(0, 9):
 		return CLK_HF13;
-	default:
-		break;
-	}
-	return -EINVAL;
-}
-
 #elif defined(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
-/**
- * @brief Map a peripheral group index to the HF clock that sources it.
- *
- * The mapping is SoC-specific and fixed in hardware.
- *
- * @param peri_group Peripheral group index (or instance|group composite
- *                   on EDGE family SoCs).
- * @return HF clock index suitable for Cy_SysClk_ClkHfGetFrequency().
- */
-static inline uint8_t ifx_cat1_utils_peri_pclk_get_hfclk(uint8_t peri_group)
-{
-	switch (peri_group) {
 	case 0:
 	case 2:
 		return CLK_HF0;
@@ -621,28 +622,11 @@ static inline uint8_t ifx_cat1_utils_peri_pclk_get_hfclk(uint8_t peri_group)
 		return CLK_HF3;
 	case 6:
 		return CLK_HF4;
+#endif /* CONFIG_SOC_FAMILY_INFINEON_CAT1 */
 	default:
 		break;
 	}
 	return -EINVAL;
 }
-
-#else /* !CONFIG_SOC_FAMILY_INFINEON_EDGE && !CONFIG_SOC_FAMILY_INFINEON_CAT1B */
-/**
- * @brief Map a peripheral group index to the HF clock that sources it.
- *
- * Fallback for SoC families that do not yet implement this mapping.
- * Always returns -EINVAL.
- *
- * @param peri_group Peripheral group index (unused).
- * @return -EINVAL always.
- */
-static inline uint8_t ifx_cat1_utils_peri_pclk_get_hfclk(uint8_t peri_group)
-{
-	ARG_UNUSED(peri_group);
-
-	return -EINVAL;
-}
-#endif
 
 /** @} */

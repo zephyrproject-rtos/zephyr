@@ -27,13 +27,14 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
+#if defined(CONFIG_CLOCK_CONTROL_NRF) || defined(__DOXYGEN__)
 
 #include <hal/nrf_clock.h>
 
 /** @brief Clocks handled by the CLOCK peripheral.
  *
  * Used as the @c sys argument to the clock_control API.
+ * @kconfig_dep{CONFIG_CLOCK_CONTROL_NRF}
  */
 enum clock_control_nrf_type {
 	CLOCK_CONTROL_NRF_TYPE_HFCLK, /**< High-frequency clock. */
@@ -54,6 +55,9 @@ enum clock_control_nrf_type {
  *
  * These can be used with the clock control API instead of casting the
  * @ref clock_control_nrf_type enumerators directly, to improve readability.
+ *
+ * @kconfig_dep{CONFIG_CLOCK_CONTROL_NRF}
+ *
  * @{
  */
 /** @brief High-frequency clock subsystem. */
@@ -73,7 +77,9 @@ enum clock_control_nrf_type {
 	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO)
 /** @} */
 
-/** @brief LF clock start modes. */
+/** @brief LF clock start modes
+ * @kconfig_dep{CONFIG_CLOCK_CONTROL_NRF}
+ */
 enum nrf_lfclk_start_mode {
 	CLOCK_CONTROL_NRF_LF_START_NOWAIT,    /**< Return without waiting for the clock. */
 	CLOCK_CONTROL_NRF_LF_START_AVAILABLE, /**< Wait until the clock is available. */
