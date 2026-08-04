@@ -871,6 +871,40 @@ config BT_MAP_MSE
 	help
 	  This option enables the MAP profile messaging server equipment function
 
+config BT_FTP
+	bool
+	select BT_GOEP
+	select EXPERIMENTAL
+	help
+	  This option enables the FTP profile
+
+config BT_FTP_CLIENT
+	bool "Bluetooth FTP Profile Client"
+	select BT_FTP
+	help
+	  This option enables the FTP profile client function
+
+config BT_FTP_SERVER
+	bool "Bluetooth FTP Profile Server"
+	select BT_FTP
+	help
+	  This option enables the FTP profile server function
+
+config BT_FTP_SERVICE_NAME
+	string "Bluetooth FTP service name"
+	depends on BT_FTP_SERVER
+	default "OBEX File Transfer"
+	help
+	  This option sets the Bluetooth FTP service name in the SDP record.
+
+config BT_FTP_PWD_MAX_LEN
+	int "Maximum FTP password length"
+	depends on BT_FTP
+	default 16
+	range 1 128
+	help
+	  This option sets the maximum length of the FTP password.
+
 endif # BT_CLASSIC
 
 endmenu
