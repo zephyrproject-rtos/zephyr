@@ -331,7 +331,7 @@ static int a2dp_process_config_ind(struct bt_avdtp *session, struct bt_avdtp_sep
 	if (codec_info_element_len > CONFIG_BT_A2DP_CODEC_MAX_IE_LEN) {
 		LOG_WRN("Received IE exceeds the max supported length (%u > %u)",
 			codec_info_element_len, CONFIG_BT_A2DP_CODEC_MAX_IE_LEN);
-		*errcode = BT_AVDTP_UNSUPPORTED_CONFIGURAION;
+		*errcode = BT_AVDTP_UNSUPPORTED_CONFIGURATION;
 		return -EINVAL;
 	}
 
@@ -1112,7 +1112,7 @@ static int bt_a2dp_get_config_cb(struct bt_avdtp_req *req, struct net_buf *buf)
 	if (err == 0 && codec_info_element_len > CONFIG_BT_A2DP_CODEC_MAX_IE_LEN) {
 		LOG_WRN("Received IE exceeds the max supported length (%u > %u)",
 			codec_info_element_len, CONFIG_BT_A2DP_CODEC_MAX_IE_LEN);
-		status = BT_AVDTP_UNSUPPORTED_CONFIGURAION;
+		status = BT_AVDTP_UNSUPPORTED_CONFIGURATION;
 	}
 
 	if (status != BT_AVDTP_SUCCESS) {
