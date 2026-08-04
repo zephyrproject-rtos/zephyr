@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 
-add_subdirectory(${SOC_SERIES})
+add_subdirectory(${CONFIG_SOC_SERIES})
 
 zephyr_include_directories(.)
 
