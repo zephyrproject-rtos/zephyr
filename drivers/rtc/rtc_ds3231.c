@@ -608,6 +608,13 @@ static int rtc_ds3231_get_alarm_states(const struct device *dev, bool *states)
 static int rtc_ds3231_alarm_set_callback(const struct device *dev, uint16_t id,
 					 rtc_alarm_callback cb, void *user_data)
 {
+	const struct rtc_ds3231_conf *config = dev->config;
+
+	if (config->isw_gpios.port == NULL) {
+		LOG_ERR("isw-gpios not configured, alarm callbacks are not supported.");
+		return -ENOTSUP;
+	}
+
 	if (id >= ALARM_COUNT) {
 		return -EINVAL;
 	}
@@ -652,6 +659,13 @@ static int rtc_ds3231_init_update(struct rtc_ds3231_data *data)
 static int rtc_ds3231_update_set_callback(const struct device *dev, rtc_update_callback cb,
 					  void *user_data)
 {
+	const struct rtc_ds3231_conf *config = dev->config;
+
+	if (config->isw_gpios.port == NULL) {
+		LOG_ERR("isw-gpios not configured, update callbacks are not supported.");
+		return -ENOTSUP;
+	}
+
 	struct rtc_ds3231_data *data = dev->data;
 
 	data->update = (struct rtc_ds3231_update){cb, user_data};
@@ -689,6 +703,11 @@ static void rtc_ds3231_isw_isr(const struct device *port, struct gpio_callback *
 }
 static int rtc_ds3231_init_isw(const struct rtc_ds3231_conf *config, struct rtc_ds3231_data *data)
 {
+	if (config->isw_gpios.port == NULL) {
+		LOG_WRN("isw-gpios not configured, alarm/update callbacks will not fire.");
+		return 0;
+	}
+
 	if (!gpio_is_ready_dt(&config->isw_gpios)) {
 		LOG_ERR("ISW GPIO pin is not ready.");
 		return -ENODEV;
@@ -849,7 +868,7 @@ static int rtc_ds3231_init(const struct device *dev)
 	static struct rtc_ds3231_data rtc_ds3231_data_##inst;                                      \
 	static const struct rtc_ds3231_conf rtc_ds3231_conf_##inst = {                             \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                        \
-		.isw_gpios = GPIO_DT_SPEC_INST_GET(inst, isw_gpios),                               \
+		.isw_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, isw_gpios, {NULL}),                    \
 		.freq_32k_gpios = GPIO_DT_SPEC_INST_GET_OR(inst, freq_32khz_gpios, {NULL})};       \
 	PM_DEVICE_DT_INST_DEFINE(inst, rtc_ds3231_pm_action);                                      \
 	DEVICE_DT_INST_DEFINE(inst, &rtc_ds3231_init, PM_DEVICE_DT_INST_GET(inst),                 \
