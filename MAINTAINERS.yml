@@ -4171,12 +4171,12 @@ NXP Platform Drivers:
   status: maintained
   maintainers:
     - zejiang0jason
-    - mmahadevan108
+    - butok
   collaborators:
-    - manuargue
+    - iuliana-prodan
     - dbaluta
     - Holt-Sun
-    - butok
+    - mmahadevan108
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
@@ -4272,9 +4272,10 @@ NXP Platforms (MCU):
   status: maintained
   maintainers:
     - iuliana-prodan
-    - mmahadevan108
-  collaborators:
     - butok
+    - zejiang0jason
+  collaborators:
+    - mmahadevan108
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
@@ -6932,13 +6933,13 @@ West:
   maintainers:
     - mmahadevan108
     - zejiang0jason
+    - axelnxp
   collaborators:
     - manuargue
     - PetervdPerk-NXP
     - bperseghetti
     - JiafeiPan
     - MaochenWang1
-    - axelnxp
     - Holt-Sun
     - lucien-nxp
   files:
