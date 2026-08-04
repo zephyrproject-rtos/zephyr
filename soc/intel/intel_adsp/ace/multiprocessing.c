@@ -34,39 +34,45 @@
 
 #define ACE_INTC_IRQ DT_IRQN(DT_NODELABEL(ace_intc))
 
-#ifdef CONFIG_XTENSA_MMU
-#define IPI_TLB_FLUSH 0x01
-#endif
-
-static void ipc_isr(void *arg)
+#ifdef CONFIG_SMP
+static void ipc_sched_isr(void *arg)
 {
 	uint32_t cpu_id = arch_proc_id();
 
-#if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
-	uint32_t msg = IDC[cpu_id].agents[0].ipc.tdr & ~INTEL_ADSP_IPC_BUSY;
-
-	if (msg == IPI_TLB_FLUSH) {
-		xtensa_mmu_tlb_shootdown();
-	}
-#endif
-
-	/*
-	 * Clearing the BUSY bits in both TDR and TDA are needed to
-	 * complete an IDC message. If we do only one (and not both),
-	 * the other side will not be able to send another IDC
-	 * message as the hardware still thinks you are processing
-	 * the IDC message (and thus will not send another one).
-	 * On TDR, it is to write one to clear, while on TDA, it is
-	 * to write zero to clear.
+	/* Must lock interrupt to prevent higher priority
+	 * interrupts from preempting this IPI.
 	 */
-	IDC[cpu_id].agents[0].ipc.tdr = INTEL_ADSP_IPC_BUSY;
-	IDC[cpu_id].agents[0].ipc.tda = 0;
+	unsigned int key = arch_irq_lock();
 
-#ifdef CONFIG_SMP
 	void z_sched_ipi(void);
 	z_sched_ipi();
-#endif
+
+	/* Clear CSR so future writing to CST will trigger interrupt. */
+	IDC[cpu_id].agents[0].ipc.csr = INTEL_ADSP_IPC_BUSY;
+
+	arch_irq_unlock(key);
 }
+#endif
+
+#if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+static void ipc_tlb_isr(void *arg)
+{
+	uint32_t cpu_id = arch_proc_id();
+
+	/* Must lock interrupt to prevent higher priority
+	 * interrupts from preempting this IPI as we don't want
+	 * to be interrupted while we are changing page tables.
+	 */
+	unsigned int key = arch_irq_lock();
+
+	xtensa_mmu_tlb_shootdown();
+
+	/* Clear CSR so future writing to CST will trigger interrupt. */
+	IDC[cpu_id].agents[1].ipc.csr = INTEL_ADSP_IPC_BUSY;
+
+	arch_irq_unlock(key);
+}
+#endif
 
 #define DFIDCCP			0x2020
 #define CAP_INST_SHIFT		24
@@ -84,18 +90,36 @@ __imr void soc_num_cpus_init(void)
 
 void soc_mp_init(void)
 {
-	IRQ_CONNECT(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA), 0, ipc_isr, 0, 0);
+#ifdef CONFIG_SMP
+	IRQ_CONNECT(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA), 0, ipc_sched_isr, 0, 0);
 
 	irq_enable(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCA));
+#endif
+
+#if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	IRQ_CONNECT(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCB), 0, ipc_tlb_isr, 0, 0);
+
+	irq_enable(ACE_IRQ_TO_ZEPHYR(ACE_INTL_IDCB));
+#endif
 
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 0; i < num_cpus; i++) {
+#ifdef CONFIG_SMP
 		/* DINT has one bit per IPC, unmask only IPC "Ax" on core "x" */
 		ACE_DINT[i].ie[ACE_INTL_IDCA] = BIT(i);
 
-		/* Agent A should signal only BUSY interrupts */
-		IDC[i].agents[0].ipc.ctl = BIT(0); /* IPCTBIE */
+		/* Agent A should signal only CST/CSR interrupts. */
+		IDC[i].agents[0].ipc.ctl = BIT(2);
+#endif
+
+#if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+		/* DINT has one bit per IPC, unmask only IPC "Bx" on core "x" */
+		ACE_DINT[i].ie[ACE_INTL_IDCB] = BIT(i);
+
+		/* Agent B should signal only CST/CSR interrupts. */
+		IDC[i].agents[1].ipc.ctl = BIT(2);
+#endif
 	}
 
 	/* Set the core 0 active */
@@ -204,47 +228,47 @@ void soc_mp_startup(uint32_t cpu)
 #endif /* CONFIG_ADSP_IDLE_CLOCK_GATING */
 }
 
-/**
- * @brief Send a IPI to other processors.
- *
- * @note: Leave the MSB clear when passing @param msg.
- *
- * @param msg Message to be sent (31-bit integer).
- */
-#ifndef CONFIG_XTENSA_MMU
-ALWAYS_INLINE
-#endif
-static void send_ipi(uint32_t msg, uint32_t cpu_bitmap)
+void send_ipi(uint32_t cpu_bitmap, int agent_idx)
 {
 	uint32_t curr = arch_proc_id();
 
-	/* Signal agent B[n] to cause an interrupt from agent A[n] */
 	unsigned int num_cpus = arch_num_cpus();
 
+	/* Only send to other CPUs */
+	uint32_t other_cpus = cpu_bitmap & ~BIT(curr);
+
+	/* Prevent being interrupted until after sending all the IPIs */
+	unsigned int key = arch_irq_lock();
+
+	/* agent_idx:
+	 * 0: Signal agent A[n] to cause an interrupt from agent B[n]
+	 * 1: Signal agent B[n] to cause an interrupt from agent A[n]
+	 */
 	for (int core = 0; core < num_cpus; core++) {
-		if ((core != curr) && soc_cpus_active[core] &&
-		    ((cpu_bitmap & BIT(core)) != 0)) {
-			IDC[core].agents[1].ipc.idr = msg | INTEL_ADSP_IPC_BUSY;
+		if (soc_cpus_active[core] && ((other_cpus & BIT(core)) != 0)) {
+			IDC[core].agents[agent_idx].ipc.cst = INTEL_ADSP_IPC_BUSY;
 		}
 	}
+
+	arch_irq_unlock(key);
+}
+
+void arch_sched_broadcast_ipi(void)
+{
+	send_ipi(IPI_ALL_CPUS_MASK, 1);
+}
+
+void arch_sched_directed_ipi(uint32_t cpu_bitmap)
+{
+	send_ipi(cpu_bitmap, 1);
 }
 
 #if defined(CONFIG_XTENSA_MMU) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 void xtensa_mmu_tlb_ipi(void)
 {
-	send_ipi(IPI_TLB_FLUSH, IPI_ALL_CPUS_MASK);
+	send_ipi(IPI_ALL_CPUS_MASK, 0);
 }
 #endif
-
-void arch_sched_broadcast_ipi(void)
-{
-	send_ipi(0, IPI_ALL_CPUS_MASK);
-}
-
-void arch_sched_directed_ipi(uint32_t cpu_bitmap)
-{
-	send_ipi(0, cpu_bitmap);
-}
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 int soc_adsp_halt_cpu(int id)
