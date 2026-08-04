@@ -63,16 +63,16 @@ typedef int (*emul_espi_api_set_vw)(const struct emul *target, enum espi_vwire_s
 typedef int (*emul_espi_api_get_vw)(const struct emul *target, enum espi_vwire_signal vw,
 				    uint8_t *level);
 
-#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
 /**
  * Get the ACPI shared memory address owned by the emulator.
+ *
+ * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION}
  *
  * @param target The device Emulator instance
  *
  * @return The address of the memory.
  */
 typedef uintptr_t (*emul_espi_api_get_acpi_shm)(const struct emul *target);
-#endif
 
 /**
  * Find an emulator present on a eSPI bus
@@ -101,9 +101,14 @@ typedef int (*emul_trigger_event)(const struct device *dev, struct espi_event *e
 
 /** Definition of the eSPI device emulator API */
 struct emul_espi_device_api {
+	/** eSPI virtual wires set handler */
 	emul_espi_api_set_vw set_vw;
+	/** eSPI virtual wires get handler */
 	emul_espi_api_get_vw get_vw;
-#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
+#if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION) || defined(__DOXYGEN__)
+	/** ACPI shared memory address get handler
+	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION}
+	 */
 	emul_espi_api_get_acpi_shm get_acpi_shm;
 #endif
 };
@@ -168,16 +173,16 @@ int emul_espi_host_send_vw(const struct device *espi_dev, enum espi_vwire_signal
  */
 int emul_espi_host_port80_write(const struct device *espi_dev, uint32_t data);
 
-#ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
 /**
  * Get the host device's ACPI shared memory start address. The size of the region is
  * CONFIG_EMUL_ESPI_HOST_ACPI_SHM_REGION_SIZE.
+ *
+ * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION}
  *
  * @param espi_dev eSPI emulation controller device.
  * @return Address of the start of the ACPI shared memory.
  */
 uintptr_t emul_espi_host_get_acpi_shm(const struct device *espi_dev);
-#endif
 
 #ifdef __cplusplus
 }
