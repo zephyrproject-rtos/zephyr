@@ -1692,3 +1692,9 @@ test_i2c_ltc4286: ltc4286@da {
 	power-good-gpios = <&test_gpio 0 0>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_iim42652: iim42652@db {
+	compatible = "invensense,iim42652", "invensense,icm4268x";
+	reg = <0xdb>;
+	int-gpios = <&test_gpio 0 0>;
+};

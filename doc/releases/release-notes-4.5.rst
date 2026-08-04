@@ -468,6 +468,9 @@ New Drivers
 * Sensors
 
   * Analog Devices ADXL313 3-axis accelerometer (:dtcompatible:`adi,adxl313`).
+  * TDK InvenSense IIM-42652 6-axis IMU over I2C
+    (:dtcompatible:`invensense,iim42652`), extending the existing ICM4268X
+    driver with Classic Sensor API and ``SENSOR_TRIG_DATA_READY`` support.
 
 * Clock Monitor
 

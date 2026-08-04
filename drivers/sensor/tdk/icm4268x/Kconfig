@@ -2,6 +2,7 @@
 #
 # Copyright (c) 2022 Intel Corporation
 # Copyright (c) 2024 Croxel Inc.
+# Copyright (c) 2026 RAKwireless Technology Limited
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,12 +10,23 @@ menuconfig ICM4268X
 	bool "ICM4268X Six-Axis Motion Tracking Device"
 	default y
 	depends on DT_HAS_INVENSENSE_ICM4268X_ENABLED
-	select SPI
 	select RTIO_WORKQ if SENSOR_ASYNC_API
 	help
-	  Enable driver for ICM4268X SPI-based six-axis motion tracking device.
+	  Enable driver for ICM4268X SPI- or I2C-based six-axis motion tracking device.
 
 if ICM4268X
+
+config ICM4268X_BUS_SPI
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM4268X),spi)
+	select SPI
+
+config ICM4268X_BUS_I2C
+	bool
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM4268X),i2c)
+	select I2C
 
 config EMUL_ICM4268X
 	bool "Emulator for the ICM4268X"
