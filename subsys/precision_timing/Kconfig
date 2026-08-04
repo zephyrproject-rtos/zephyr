@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Philipp Steiner
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config PRECISION_TIMING
+	bool "Precision timing infrastructure [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable experimental protocol-neutral precision timing helpers for
+	  domain-qualified timestamps, clock adapters, mappings, and clock
+	  discipline.

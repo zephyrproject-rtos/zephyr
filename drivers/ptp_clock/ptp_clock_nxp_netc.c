@@ -6,6 +6,8 @@
 
 #define DT_DRV_COMPAT nxp_netc_ptp_clock
 
+#include <limits.h>
+
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -102,6 +104,34 @@ static int ptp_clock_nxp_netc_rate_adjust(const struct device *dev,
 	return 0;
 }
 
+static int ptp_clock_nxp_netc_get_caps(const struct device *dev, struct ptp_clock_caps *caps)
+{
+	ARG_UNUSED(dev);
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	*caps = (struct ptp_clock_caps){
+		.flags = PTP_CLOCK_CAP_READ | PTP_CLOCK_CAP_SET | PTP_CLOCK_CAP_ADJUST |
+			 PTP_CLOCK_CAP_RATE_ADJUST,
+		.resolution_ns = 1,
+		/* NETC_TimerAddOffset() takes the offset in nanoseconds and the
+		 * API passes the increment through unchanged, so the range is
+		 * only bounded by the argument type.
+		 */
+		.max_adjust_ns = INT_MAX,
+		/* NETC_TimerAdjustFreq() takes a signed ppb correction. Bound it
+		 * symmetrically at one part per one, which already covers a
+		 * stopped and a doubled clock.
+		 */
+		.min_rate_ppb = -999999999,
+		.max_rate_ppb = 999999999,
+	};
+
+	return 0;
+}
+
 static int ptp_clock_nxp_netc_init(const struct device *dev)
 {
 	const struct ptp_clock_nxp_netc_config *config = dev->config;
@@ -131,12 +161,12 @@ static int ptp_clock_nxp_netc_init(const struct device *dev)
 	return ret;
 }
 
-
 static DEVICE_API(ptp_clock, ptp_clock_nxp_netc_api) = {
 	.set = ptp_clock_nxp_netc_set,
 	.get = ptp_clock_nxp_netc_get,
 	.adjust = ptp_clock_nxp_netc_adjust,
 	.rate_adjust = ptp_clock_nxp_netc_rate_adjust,
+	.get_caps = ptp_clock_nxp_netc_get_caps,
 };
 
 #define PTP_CLOCK_NXP_NETC_INIT(n)						\

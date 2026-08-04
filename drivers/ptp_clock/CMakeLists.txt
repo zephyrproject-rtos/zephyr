@@ -7,6 +7,11 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK ptp_clock.c)
 zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_SHELL ptp_clock_shell.c)
 
+# The adapter bridges this driver API onto the protocol-neutral precision
+# timing clock abstraction. CONFIG_PTP_CLOCK is implied by this directory
+# only being added when it is enabled.
+zephyr_library_sources_ifdef(CONFIG_PRECISION_TIMING precision_ptp_clock.c)
+
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_NXP_ENET ptp_clock_nxp_enet.c)
 zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_NXP_ENET_QOS ptp_clock_nxp_enet_qos.c)

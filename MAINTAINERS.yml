@@ -5167,6 +5167,25 @@ Power management:
     - drivers.power_domain.build
     - sample.power
 
+Precision Timing:
+  status: maintained
+  maintainers:
+    - DBS06
+  collaborators:
+    - awojasinski
+    - jukkar
+  files:
+    - include/zephyr/timing/precision_timing.h
+    - include/zephyr/timing/precision_ptp_clock.h
+    - subsys/precision_timing/
+    - drivers/ptp_clock/precision_ptp_clock.c
+    - tests/subsys/precision_timing/
+    - doc/kernel/precision_timing.rst
+  labels:
+    - "area: Precision Timing"
+  tests:
+    - subsys.precision_timing
+
 QNX Hypervisor Platforms:
   status: maintained
   maintainers:
