@@ -21,6 +21,10 @@
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
 
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#include <zephyr/mgmt/mcumgr/grp/transport_mgmt/transport_mgmt.h>
+#endif
+
 #ifdef CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS
 BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS != 0,
 	     "CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT_TIME_MS must be > 0");
@@ -34,8 +38,14 @@ static struct mcumgr_serial_rx_ctxt mcumgr_raw_uart_rx_ctxt = {
 };
 static struct smp_transport smp_raw_uart_transport;
 
-#ifdef CONFIG_SMP_CLIENT
-static struct smp_client_transport_entry smp_raw_uart_client_transport;
+#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
+static struct smp_client_transport_entry smp_raw_uart_client_transport = {
+	.smpt = &smp_raw_uart_transport,
+	.smpt_type = SMP_RAW_SERIAL_TRANSPORT,
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS
+	.name = "Raw UART",
+#endif
+};
 #endif
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_RAW_UART_INPUT_TIMEOUT
@@ -120,6 +130,82 @@ static int smp_raw_uart_tx_pkt(struct net_buf *nb)
 	return rc;
 }
 
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+static bool smp_raw_uart_bridge_connect(struct smp_transport_bridge *bridge, bool outgoing,
+					uint32_t mode, bool same_transport,
+					zcbor_state_t *input_data, zcbor_state_t *output_data)
+{
+	ARG_UNUSED(bridge);
+	ARG_UNUSED(outgoing);
+	ARG_UNUSED(input_data);
+	ARG_UNUSED(output_data);
+
+	if (mode != 0) {
+		smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_INVALID_MODE);
+
+		return false;
+	}
+
+	if (same_transport == true) {
+		smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_SAME_BRIDGE_DEVICE_DISALLOWED);
+		return false;
+	}
+
+	return true;
+}
+
+static void smp_raw_uart_bridge_disconnect(struct smp_transport_bridge *bridge, bool outgoing)
+{
+	ARG_UNUSED(bridge);
+	ARG_UNUSED(outgoing);
+}
+
+static int smp_raw_uart_bridge_tx(const struct smp_transport_bridge *bridge, struct net_buf *nb,
+				  bool outgoing)
+{
+	ARG_UNUSED(bridge);
+	ARG_UNUSED(outgoing);
+
+	return smp_raw_uart_tx_pkt(nb);
+}
+
+#if defined(CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS)
+static bool smp_raw_uart_bridge_modes(zcbor_state_t *output_data, int *rc)
+{
+	bool ok;
+
+	ok = zcbor_map_start_encode(output_data, 2) &&
+	     zcbor_tstr_put_lit(output_data, "id") &&
+	     zcbor_uint32_put(output_data, 0) &&
+	     zcbor_tstr_put_lit(output_data, "description") &&
+	     zcbor_tstr_put_lit(output_data, "UART") &&
+	     zcbor_tstr_put_lit(output_data, "incoming") &&
+	     zcbor_bool_put(output_data, true) &&
+	     zcbor_tstr_put_lit(output_data, "outgoing") &&
+	     zcbor_bool_put(output_data, true) &&
+	     zcbor_map_end_encode(output_data, 2);
+
+	*rc = MGMT_RETURN_CHECK(ok);
+	return ok;
+}
+
+static bool smp_raw_uart_bridge_config_details(uint32_t mode, zcbor_state_t *output_data, int *rc)
+{
+	if (mode == 0) {
+		return true;
+	}
+
+	smp_mgmt_reset_zse_writer(output_data);
+	smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT, TRANSPORT_MGMT_ERR_INVALID_MODE);
+	*rc = 0;
+
+	return false;
+}
+#endif
+#endif
+
 static int smp_raw_uart_init(void)
 {
 	int rc;
@@ -127,14 +213,22 @@ static int smp_raw_uart_init(void)
 	smp_raw_uart_transport.functions.output = smp_raw_uart_tx_pkt;
 	smp_raw_uart_transport.functions.get_mtu = smp_raw_uart_get_mtu;
 
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+	smp_raw_uart_transport.functions.bridge_connect = smp_raw_uart_bridge_connect;
+	smp_raw_uart_transport.functions.bridge_disconnect = smp_raw_uart_bridge_disconnect;
+	smp_raw_uart_transport.functions.bridge_output = smp_raw_uart_bridge_tx;
+#if defined(CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS)
+	smp_raw_uart_transport.functions.bridge_modes = smp_raw_uart_bridge_modes;
+	smp_raw_uart_transport.functions.bridge_config_details = smp_raw_uart_bridge_config_details;
+#endif
+#endif
+
 	rc = smp_transport_init(&smp_raw_uart_transport);
 
 	if (rc == 0) {
 		uart_mcumgr_register(smp_raw_uart_process_frag);
-#ifdef CONFIG_SMP_CLIENT
-		smp_client_transport.smpt = &smp_raw_uart_transport;
-		smp_client_transport.smpt_type = SMP_RAW_SERIAL_TRANSPORT;
-		smp_client_transport_register(&smp_raw_client_transport);
+#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
+		smp_client_transport_register(&smp_raw_uart_client_transport);
 #endif
 	}
 
