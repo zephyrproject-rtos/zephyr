@@ -1035,6 +1035,12 @@ test_i2c_am2301b: am2301b@89 {
 	reg = <0x89>;
 };
 
+test_i2c_aht30: aht30@8b {
+	compatible = "aosong,aht30";
+	reg = <0x9a>;
+	status = "okay";
+};
+
 test_i2c_lis2dux12: lis2dux12@8a {
 	compatible = "st,lis2dux12";
 	reg = <0x8a>;

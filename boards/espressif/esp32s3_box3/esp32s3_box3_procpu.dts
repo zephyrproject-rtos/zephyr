@@ -11,6 +11,7 @@
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 #include <zephyr/dt-bindings/display/panel.h>
 #include "esp32s3_box3-pinctrl.dtsi"
+#include "esp32s3-box-3-header.dtsi"
 
 / {
 	model = "Espressif ESP32S3-BOX-3 PROCPU";
@@ -46,7 +47,6 @@
 		compatible = "regulator-fixed";
 		regulator-name = "lcd_backlight_enable";
 		enable-gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
 	};
 
 	mipi_dbi {
