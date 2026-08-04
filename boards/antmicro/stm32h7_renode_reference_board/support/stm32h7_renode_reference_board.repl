@@ -47,7 +47,7 @@ timer3:
 watchdog:
     frequency: 32000
 
-qspiFlash: SPI.Micron_MT25Q @ qspi
+qspiFlash: SPI.ISSI_IS25WP @ qspi
     underlyingMemory: flashMem
 
 flashMem: Memory.MappedMemory @ sysbus 0x90000000
