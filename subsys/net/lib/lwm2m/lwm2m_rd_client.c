@@ -1033,11 +1033,19 @@ cleanup:
 	return ret;
 }
 
+static void rd_client_context_close(void)
+{
+	lwm2m_engine_context_close(client.ctx);
+	if (client.ctx->event_cb != 0) {
+		client.ctx->event_cb(client.ctx, LWM2M_RD_CLIENT_EVENT_CONTEXT_CLOSED);
+	}
+}
+
 static void sm_handle_registration_update_failure(void)
 {
 	k_mutex_lock(&client.mutex, K_FOREVER);
 	LOG_WRN("Registration Update fail -> trigger full registration");
-	lwm2m_engine_context_close(client.ctx);
+	rd_client_context_close();
 	set_sm_state(ENGINE_SEND_REGISTRATION);
 	k_mutex_unlock(&client.mutex);
 }
@@ -1066,7 +1074,7 @@ static void sm_do_registration(void)
 
 	if (client.ctx->connection_suspended) {
 		if (lwm2m_engine_connection_resume(client.ctx)) {
-			lwm2m_engine_context_close(client.ctx);
+			rd_client_context_close();
 			/* perform full registration */
 			set_sm_state(ENGINE_DO_REGISTRATION);
 			return;
@@ -1086,7 +1094,7 @@ static void sm_do_registration(void)
 				client.close_socket = false;
 				lwm2m_engine_stop(client.ctx);
 			} else {
-				lwm2m_engine_context_close(client.ctx);
+				rd_client_context_close();
 				/* Keep current connection, retry registration with same server */
 				select_srv = false;
 			}
@@ -1251,7 +1259,7 @@ static int sm_do_deregister(void)
 	int ret;
 
 	if (lwm2m_engine_connection_resume(client.ctx)) {
-		lwm2m_engine_context_close(client.ctx);
+		rd_client_context_close();
 		/* Connection failed, enter directly to deregistered state */
 		set_sm_state(ENGINE_DEREGISTERED);
 		return 0;
@@ -1401,7 +1409,7 @@ static void sm_do_network_error(void)
 	/* Retry bootstrap */
 	if (IS_ENABLED(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)) {
 		if (client.ctx->bootstrap_mode) {
-			lwm2m_engine_context_close(client.ctx);
+			rd_client_context_close();
 			/* If we don't have fallback BS server, retry with current one */
 			if (sm_next_bootstrap_inst(&client.ctx->sec_obj_inst) < 0) {
 				client.ctx->sec_obj_inst = -1;
