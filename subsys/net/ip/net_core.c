@@ -419,6 +419,13 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 
 		if (clone != NULL) {
 			net_pkt_set_iface(clone, net_pkt_iface(pkt));
+			/* The clone has no L2 header yet, so mark it as already
+			 * processed. Otherwise the receive path passes it to the
+			 * L2, which reads the network header as a link layer one
+			 * and drops the packet.
+			 */
+			net_pkt_set_loopback(clone, true);
+			net_pkt_set_l2_processed(clone, true);
 			if (net_recv_data(net_pkt_iface(clone), clone) < 0) {
 				if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
 					switch (net_pkt_family(pkt)) {
