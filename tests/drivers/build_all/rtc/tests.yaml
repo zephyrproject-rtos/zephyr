@@ -21,3 +21,10 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+  drivers.rtc.build.ds3231_no_isw:
+    extra_args: DTC_OVERLAY_FILE="ds3231_no_isw.overlay"
+    extra_configs:
+      - CONFIG_I2C=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
