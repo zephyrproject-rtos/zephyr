@@ -428,11 +428,34 @@ static int ptp_clock_e1000_rate_adjust(const struct device *dev, double ratio)
 	return 0;
 }
 
+static int ptp_clock_e1000_get_caps(const struct device *dev, struct ptp_clock_caps *caps)
+{
+	ARG_UNUSED(dev);
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	/* The clock is simulated in software: reads and writes work, but
+	 * phase and rate adjustment are not implemented.
+	 */
+	*caps = (struct ptp_clock_caps){
+		.flags = PTP_CLOCK_CAP_READ | PTP_CLOCK_CAP_SET,
+		.resolution_ns = 1,
+		.max_adjust_ns = 0,
+		.min_rate_ppb = 0,
+		.max_rate_ppb = 0,
+	};
+
+	return 0;
+}
+
 static DEVICE_API(ptp_clock, api) = {
 	.set = ptp_clock_e1000_set,
 	.get = ptp_clock_e1000_get,
 	.adjust = ptp_clock_e1000_adjust,
 	.rate_adjust = ptp_clock_e1000_rate_adjust,
+	.get_caps = ptp_clock_e1000_get_caps,
 };
 
 static int ptp_e1000_init(const struct device *port)

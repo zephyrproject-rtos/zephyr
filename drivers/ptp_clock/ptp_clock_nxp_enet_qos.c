@@ -157,6 +157,32 @@ static int ptp_clock_nxp_enet_qos_rate_adjust(const struct device *dev, double r
 	return 0;
 }
 
+static int ptp_clock_nxp_enet_qos_get_caps(const struct device *dev, struct ptp_clock_caps *caps)
+{
+	struct ptp_clock_nxp_enet_qos_data *data = dev->data;
+	double max_rate_ppb = INT32_MAX;
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	if (data->nominal_addend > 0U) {
+		max_rate_ppb =
+			(((double)UINT32_MAX / (double)data->nominal_addend) - 1.0) * 1000000000.0;
+	}
+
+	*caps = (struct ptp_clock_caps){
+		.flags = PTP_CLOCK_CAP_READ | PTP_CLOCK_CAP_SET | PTP_CLOCK_CAP_ADJUST |
+			 PTP_CLOCK_CAP_RATE_ADJUST,
+		.resolution_ns = NSEC_PER_SEC / PTP_CLOCK_NXP_ENET_QOS_PTPCLK_HZ,
+		.max_adjust_ns = NSEC_PER_SEC - 1,
+		.min_rate_ppb = -999999999,
+		.max_rate_ppb = (int32_t)MIN(max_rate_ppb, (double)INT32_MAX),
+	};
+
+	return 0;
+}
+
 static int ptp_clock_nxp_enet_qos_init(const struct device *dev)
 {
 	LOG_INF("Initializing NXP ENET QoS PTP clock on device %s", dev->name);
@@ -236,6 +262,7 @@ static DEVICE_API(ptp_clock, ptp_clock_nxp_enet_qos_api) = {
 	.get = ptp_clock_nxp_enet_qos_get,
 	.adjust = ptp_clock_nxp_enet_qos_adjust,
 	.rate_adjust = ptp_clock_nxp_enet_qos_rate_adjust,
+	.get_caps = ptp_clock_nxp_enet_qos_get_caps,
 };
 
 #define PTP_CLOCK_NXP_ENET_QOS_INIT(n)                                                             \

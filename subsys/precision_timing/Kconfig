@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Philipp Steiner
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PRECISION_TIMING
+	bool "Precision timing infrastructure"
+	help
+	  Enable protocol-neutral precision timing helpers for domain-qualified
+	  timestamps, clock adapters, mappings, and clock discipline.
+
+	  The API is at experimental maturity as described by the Zephyr API
+	  lifecycle, so it may still change. The subsystem is a building block
+	  for protocols such as PTP and gPTP and does not change their maturity.
+
+if PRECISION_TIMING
+
+config PRECISION_TIMING_PI_KP
+	int "PI clock discipline proportional gain in thousandths"
+	default 700
+	range 0 10000
+	help
+	  Proportional gain used by the precision timing PI clock discipline,
+	  expressed in thousandths. For example, 700 configures a gain of 0.7.
+
+	  The default is suitable for a synchronization interval around one
+	  second. Shorter intervals may require a smaller gain to avoid
+	  oscillation.
+
+config PRECISION_TIMING_PI_KI
+	int "PI clock discipline integral gain in thousandths"
+	default 300
+	range 0 10000
+	help
+	  Integral gain used by the precision timing PI clock discipline,
+	  expressed in thousandths. For example, 300 configures a gain of 0.3.
+
+	  The default is suitable for a synchronization interval around one
+	  second. Shorter intervals may require a smaller gain to avoid
+	  oscillation.
+
+endif # PRECISION_TIMING
