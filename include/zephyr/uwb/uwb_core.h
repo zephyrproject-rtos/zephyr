@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __UWB_CORE_H__
-#define __UWB_CORE_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_UWB_CORE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_UWB_CORE_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -26,7 +26,8 @@ typedef struct {
 	uint8_t gid: 4;
 	uint8_t pbf: 1;
 	uint8_t mt: 3;
-	uint8_t oid;
+	uint8_t oid: 6;
+	uint8_t rfu: 2;
 	uint16_t len_le;
 } uci_control_packet_header_t;
 
@@ -238,4 +239,4 @@ int uwb_uci_configure_max_data_payload(const uint16_t maxDataPacketSize);
  * @}
  */
 
-#endif /* __UWB_CORE_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_UWB_CORE_H_ */

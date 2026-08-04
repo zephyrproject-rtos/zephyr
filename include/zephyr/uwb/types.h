@@ -3,26 +3,36 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __UWB_API_TYPES_H__
-#define __UWB_API_TYPES_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_UWB_API_TYPES_H_
+#define ZEPHYR_INCLUDE_DRIVERS_UWB_API_TYPES_H_
 
 #include "zephyr/uwb/uci.h"
 #include "zephyr/uwb/status.h"
 #include "zephyr/uwb/uwb_types.h"
 #include <stdint.h>
 
+/**
+ * @brief UWB subsystem types
+ * @defgroup uwb_types Ultra-Wideband subsystem types
+ * @{
+ */
+
+/** Maximum number of Aliro supported protocol versions accepted from UWB device */
 #ifndef CONFIG_NUM_SUPPORTED_ALIRO_PROTOCOL_VERSIONS
 #define CONFIG_NUM_SUPPORTED_ALIRO_PROTOCOL_VERSIONS 2
 #endif /* CONFIG_NUM_SUPPORTED_ALIRO_PROTOCOL_VERSIONS */
 
+/** Maximum number of CCC supported protocol versions accepted from UWB device */
 #ifndef CONFIG_NUM_SUPPORTED_CCC_PROTOCOL_VERSIONS
 #define CONFIG_NUM_SUPPORTED_CCC_PROTOCOL_VERSIONS 2
 #endif /* CONFIG_NUM_SUPPORTED_CCC_PROTOCOL_VERSIONS */
 
+/** Maximum number of CCC UWB Config IDs accepted from UWB device */
 #ifndef CONFIG_NUM_SUPPORTED_CCC_UWB_CONFIG_ID
 #define CONFIG_NUM_SUPPORTED_CCC_UWB_CONFIG_ID 2
 #endif /* CONFIG_NUM_SUPPORTED_CCC_UWB_CONFIG_ID */
 
+/** Maximum number of CCC pulseshape combo values accepted from UWB device */
 #ifndef CONFIG_NUM_SUPPORTED_CCC_PULSESHAPE_COMBO
 #define CONFIG_NUM_SUPPORTED_CCC_PULSESHAPE_COMBO 9
 #endif /* CONFIG_NUM_SUPPORTED_CCC_PULSESHAPE_COMBO */
@@ -61,6 +71,9 @@
 
 typedef uint8_t uwb_session_type_t;
 
+/**
+ * @brief Enumeration lists out various session types
+ */
 enum uwb_session_type {
 	/** Ranging Session */
 	kUwb_SessionType_Ranging = 0x00,
@@ -153,6 +166,8 @@ enum uwb_capability_param {
 	kUwb_Capability_DtTagMaxActiveRr = 0x18,
 	kUwb_Capability_LlCapabilityParam = 0x1B,
 	kUwb_Capability_BypassModeSupport = 0x1C,
+	kUwb_Capability_MinSlotDurationSupport = 0x1D,
+	kUwb_Capability_FiraLLVersion = 0x1E,
 	kUwb_Capability_DtTagBlockSkipping = 0x19,
 	kUwb_Capability_PsduLengthSupport = 0x1A,
 	kUwb_Capability_CCCSlotBitmask = 0xA0,
@@ -240,6 +255,10 @@ typedef struct uwb_dev_caps {
 	uint16_t llCapabilityParam;
 	/** 0x1C */
 	uint8_t bypassModeSupport;
+	/** 0x1D */
+	uint16_t minSlotDurationSupport;
+	/** 0x1E */
+	uint8_t firaLlVersion;
 	/** 0x19 */
 	uint8_t dtTagBlockSkipping;
 	/** 0x1A */
@@ -303,7 +322,6 @@ enum uwb_core_config {
 typedef uint16_t uwb_app_config_t;
 
 enum uwb_app_config {
-	/****** App config *****/
 	/** 0x00 - Device Type
 	 * 0x00 = Controlee
 	 * 0x01 = Controller
@@ -867,6 +885,34 @@ enum uwb_app_config {
 	 */
 	kUwb_AppConfig_StsLength = 0x35,
 
+	/** 0x36 - Suspend Ranging Rounds
+	 * Configuration to suspend ranging rounds.
+	 *
+	 */
+	kUwb_AppConfig_SuspendRangingRounds = 0x36,
+
+	/** 0x37 - UL-TDoA NTF Report Config
+	 * UT-Anchor configuration to specify if UL-TDoA related SESSION_INFO_NTF
+	 * shall be reported.
+	 * 0x00 = Disable UL-TDoA SESSION_INFO_NTF
+	 * 0x01 = Enable UL-TDoA SESSION_INFO_NTF (default)
+	 * 0x02-0xFF = RFU
+	 */
+	kUwb_AppConfig_UlTdoaNtfReportConfig = 0x37,
+
+	/** 0x38 - UL-TDoA Device ID
+	 * This value shall be used to specify the length and presence of the UL-TDoA Device ID
+	 * in UTMs.
+	 *
+	 */
+	kUwb_AppConfig_UlTdoaDeviceId = 0x38,
+
+	/** 0x39 - UL-TDoA TX Timestamp
+	 * Presence and length of TX timestamps in UTMs.
+	 *
+	 */
+	kUwb_AppConfig_UlTdoaTxTimestamp = 0x39,
+
 	/** 0x3A - Min Frames Per RR
 	 * Minimum number of frames to be transmitted in a ranging round.
 	 * Value range: 1-255
@@ -1357,21 +1403,23 @@ enum {
 };
 
 /** Logical Link Get Param control field bitmask */
-#define UWB_LL_GET_PARAM_CONTROL_FIELD_MASK                (0x007F)
+#define UWB_LL_GET_PARAM_CONTROL_FIELD_MASK                        (0x00FF)
 /** Maximum LL SDU size */
-#define UWB_LL_GET_PARAM_CONTROL_FIELD_SDU_SIZE_BITMASK    0x01
+#define UWB_LL_GET_PARAM_CONTROL_FIELD_SDU_SIZE_BITMASK            0x01
 /** Maximum LL PDU size */
-#define UWB_LL_GET_PARAM_CONTROL_FIELD_PDU_SIZE_BITMASK    0x02
+#define UWB_LL_GET_PARAM_CONTROL_FIELD_PDU_SIZE_BITMASK            0x02
 /** Transmit Window Size, TxW */
-#define UWB_LL_GET_PARAM_CONTROL_FIELD_TxW_BITMASK         0x04
+#define UWB_LL_GET_PARAM_CONTROL_FIELD_TxW_BITMASK                 0x04
 /** Receive Window Size, RxW */
-#define UWB_LL_GET_PARAM_CONTROL_FIELD_RxW_BITMASK         0x08
+#define UWB_LL_GET_PARAM_CONTROL_FIELD_RxW_BITMASK                 0x08
 /** Repetition count Max */
-#define UWB_LL_GET_PARAM_CONTROL_FIELD_REP_CNT_MAX_BITMASK 0x10
+#define UWB_LL_GET_PARAM_CONTROL_FIELD_REP_CNT_MAX_BITMASK         0x10
 /** Link TO */
-#define UWB_LL_GET_PARAM_CONTROL_FIELD_LINK_TO_BITMASK     0x20
+#define UWB_LL_GET_PARAM_CONTROL_FIELD_LINK_TO_BITMASK             0x20
 /** PORT */
-#define UWB_LL_GET_PARAM_CONTROL_FIELD_PORT_BITMASK        0x40
+#define UWB_LL_GET_PARAM_CONTROL_FIELD_PORT_BITMASK                0x40
+/** Maximum Transceiver LL SDU size */
+#define UWB_LL_GET_PARAM_CONTROL_FIELD_MAX_TRANSCEIVER_SDU_BITMASK 0x80
 
 /**
  * \brief Structure for Logical Link Mode get parameters
@@ -1394,6 +1442,8 @@ typedef struct uwb_logical_link_get_params_rsp {
 	uint8_t link_to;
 	/** PORT */
 	uint8_t port;
+	/** Max Transceiver LL SDU size*/
+	uint8_t max_transceiver_ll_sdu_size;
 } uwb_logical_link_get_params_rsp_t;
 
 #define UWB_DTPCM_DATA_TRANSFER_SLOT_BITMAP_MASK (0x0E)
@@ -1530,6 +1580,14 @@ typedef struct uwb_logical_link_create_ntf {
 	uint32_t ll_connect_id;
 	/** Status Code */
 	uint8_t status;
+	/** MAX SDU SIZE Length
+	 * 0x00 = not present, 0x01 = present
+	 */
+	uint8_t max_sdu_size_length;
+	/** MAX SDU SIZE Value
+	 * bits 0-3: TX, bits 4-7: RX encoding
+	 */
+	uint8_t max_sdu_size_value;
 } uwb_logical_link_create_ntf_t;
 
 /**
@@ -1551,6 +1609,14 @@ typedef struct uwb_logical_link_uwbs_create_ntf {
 	 * to 0x00.
 	 **/
 	uint8_t src_address[UWB_EXTENDED_MAC_ADDRESS_LEN];
+	/** MAX SDU SIZE Length
+	 * 0x00 = not present, 0x01 = present
+	 */
+	uint8_t max_sdu_size_length;
+	/** MAX SDU SIZE Value
+	 * bits 0-3: TX, bits 4-7: RX encoding
+	 */
+	uint8_t max_sdu_size_value;
 } uwb_logical_link_uwbs_create_ntf_t;
 
 /**
@@ -1655,10 +1721,14 @@ typedef struct uwb_message {
 	uint16_t Size;     /* Size of the data block*/
 } uwb_message_t;
 
+/**
+ * @}
+ */
+
 #define UWB_DECLARE_QUEUE(NAME, LEN)                                                               \
 	struct k_msgq NAME;                                                                        \
 	char buffer_##NAME[LEN * sizeof(uwb_message_t)];
 
 #define UWB_QUEUE_BUFFER_HANDLE(NAME) buffer_##NAME
 
-#endif /* __UWB_API_TYPES_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_UWB_API_TYPES_H_ */

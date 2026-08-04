@@ -613,6 +613,23 @@ uwb_status_code_t uwb_parse_generic_capability_info(uwb_dev_caps_t *const p_dev_
 			}
 			UWB_STREAM_TO_UINT8(p_dev_cap->bypassModeSupport, caps_info_data, offset);
 		} break;
+		case kUwb_Capability_MinSlotDurationSupport: {
+			if (length != sizeof(p_dev_cap->minSlotDurationSupport)) {
+				LOG_ERR("Invalid length");
+				status = kUwb_StatusCode_Corrupted;
+				break;
+			}
+			UWB_STREAM_TO_UINT16(p_dev_cap->minSlotDurationSupport, caps_info_data,
+					     offset);
+		} break;
+		case kUwb_Capability_FiraLLVersion: {
+			if (length != sizeof(p_dev_cap->firaLlVersion)) {
+				LOG_ERR("Invalid length");
+				status = kUwb_StatusCode_Corrupted;
+				break;
+			}
+			UWB_STREAM_TO_UINT8(p_dev_cap->firaLlVersion, caps_info_data, offset);
+		} break;
 		case kUwb_Capability_DtTagBlockSkipping: {
 			if (length != sizeof(p_dev_cap->dtTagBlockSkipping)) {
 				LOG_ERR("Invalid length");
@@ -750,7 +767,7 @@ uwb_status_code_t uwb_parse_generic_capability_info(uwb_dev_caps_t *const p_dev_
 			}
 			for (uint8_t iter = 0;
 			     iter < p_dev_cap->num_aliro_supported_protocol_versions; iter++) {
-				UWB_STREAM_TO_UINT16(
+				UWB_BE_STREAM_TO_UINT16(
 					p_dev_cap->aliro_supported_protocol_versions[iter],
 					caps_info_data, offset);
 			}
@@ -1345,16 +1362,18 @@ uint16_t uwb_calculate_logical_link_create_payload_length()
 	total_length += sizeof(uint8_t);              /* Size of llm_selector */
 	total_length += UWB_EXTENDED_MAC_ADDRESS_LEN; /* Size of dst_address */
 	total_length += sizeof(uint8_t);              /* Size of ll_class_length */
+	total_length += sizeof(uint8_t);              /* Size of max_sdu_size_length */
+	total_length += sizeof(uint8_t);              /* Size of max_sdu_size_value */
 
 	return total_length;
 }
 
-uwb_status_code_t
-uwb_serialize_create_logical_link_cmd(const uint32_t session_handle,
-				      const uwb_link_layer_mode_selector_t link_layer_mode_selector,
-				      const uint8_t *const destination_address,
-				      const uint8_t logical_link_class, uint8_t *const p_cmd_buf,
-				      uint16_t *const p_cmd_buf_len)
+uwb_status_code_t uwb_serialize_create_logical_link_cmd(
+	const uint32_t session_handle,
+	const uwb_link_layer_mode_selector_t link_layer_mode_selector,
+	const uint8_t *const destination_address, const uint8_t logical_link_class,
+	const uint8_t max_sdu_size_length, const uint8_t max_sdu_size_value,
+	uint8_t *const p_cmd_buf, uint16_t *const p_cmd_buf_len)
 {
 	uint32_t offset = 0;
 
@@ -1374,6 +1393,17 @@ uwb_serialize_create_logical_link_cmd(const uint32_t session_handle,
 		return kUwb_StatusCode_InsufficientBuffer;
 	}
 	UWB_UINT8_TO_STREAM(p_cmd_buf, logical_link_class, offset);
+	/** MAX SDU SIZE Value field not present if MAX SDU SIZE Length is 0. */
+	if ((offset + sizeof(uint8_t)) > *p_cmd_buf_len) {
+		return kUwb_StatusCode_InsufficientBuffer;
+	}
+	UWB_UINT8_TO_STREAM(p_cmd_buf, max_sdu_size_length, offset);
+	if (max_sdu_size_length != 0x00) {
+		if ((offset + sizeof(uint8_t)) > *p_cmd_buf_len) {
+			return kUwb_StatusCode_InsufficientBuffer;
+		}
+		UWB_UINT8_TO_STREAM(p_cmd_buf, max_sdu_size_value, offset);
+	}
 
 	*p_cmd_buf_len = offset;
 	return kUwb_StatusCode_Success;
@@ -1423,6 +1453,11 @@ uwb_status_code_t uwb_deserialize_link_get_params_payload(
 	/* PORT */
 	if (controlField & UWB_LL_GET_PARAM_CONTROL_FIELD_PORT_BITMASK) {
 		UWB_STREAM_TO_UINT8(p_logical_link_get_params_rsp->port, p_response, offset);
+	}
+	/* Maximum Transceiver LL SDU size */
+	if (controlField & UWB_LL_GET_PARAM_CONTROL_FIELD_MAX_TRANSCEIVER_SDU_BITMASK) {
+		UWB_STREAM_TO_UINT8(p_logical_link_get_params_rsp->max_transceiver_ll_sdu_size,
+				    p_response, offset);
 	}
 
 	return kUwb_StatusCode_Success;

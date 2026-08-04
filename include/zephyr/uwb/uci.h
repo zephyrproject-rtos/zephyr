@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __UCI_CORE_H__
-#define __UCI_CORE_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_UCI_H_
+#define ZEPHYR_INCLUDE_DRIVERS_UCI_H_
 
 #include <stdint.h>
 
@@ -185,8 +185,9 @@
  */
 #define MEASUREMENT_TYPE_ONEWAY       0x00
 #define MEASUREMENT_TYPE_TWOWAY       0x01
-#define MEASUREMENT_TYPE_DLTDOA       0x02
+#define MEASUREMENT_TYPE_DLTDOA_V1    0x02
 #define MEASUREMENT_TYPE_OWR_WITH_AOA 0x03
+#define MEASUREMENT_TYPE_DLTDOA_V2    0x06
 
 #define RADAR_MEASUREMENT_TYPE_CIR                0x00
 #define RADAR_MEASUREMENT_TYPE_PRESENCE_DETECTION 0x01
@@ -287,7 +288,10 @@ enum {
 	 * the measurement
 	 */
 	kUci_Status_OkNegativeDistanceReport = 0x1B,
-
+	/** CMT3 segmentation is not possible for the configured start slot index. */
+	kUci_Status_ErrorCmt3SegmentationNotPossible = 0x1C,
+	/** LL Unit of the UWBS is not ready to accept creation of a new link. */
+	kUci_Status_UwbsLlUnitBusy = 0x1D,
 	/** UWB Ranging session specific status codes */
 	/* Failed to transmit UWB packet. */
 	kUci_Status_RangingTxFailed = 0x20,
@@ -464,4 +468,4 @@ enum uwb_session_status {
 	kUwb_SessionStatus_Error = 0xFF
 };
 
-#endif /* __UCI_CORE_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_UCI_H_ */

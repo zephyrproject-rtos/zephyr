@@ -1457,7 +1457,8 @@ uwb_status_code_t
 uwb_api_logical_link_create(const uint32_t session_handle,
 			    const uwb_link_layer_mode_selector_t link_layer_mode_selector,
 			    const uint8_t *const destination_address,
-			    const uint8_t logical_link_class,
+			    const uint8_t logical_link_class, const uint8_t max_sdu_size_length,
+			    const uint8_t max_sdu_size_value,
 			    uint32_t *const p_logical_link_connect_id)
 {
 	uwb_status_code_t status = kUwb_StatusCode_InvalidArgument;
@@ -1481,9 +1482,9 @@ uwb_api_logical_link_create(const uint32_t session_handle,
 	}
 
 	/* Serialize logical link create command payload */
-	status = uwb_serialize_create_logical_link_cmd(session_handle, link_layer_mode_selector,
-						       destination_address, logical_link_class,
-						       payload, &payload_length);
+	status = uwb_serialize_create_logical_link_cmd(
+		session_handle, link_layer_mode_selector, destination_address, logical_link_class,
+		max_sdu_size_length, max_sdu_size_value, payload, &payload_length);
 	if (kUwb_StatusCode_Success != status) {
 		LOG_ERR("Could not serialize payload");
 		goto exit;

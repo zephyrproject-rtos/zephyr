@@ -1,23 +1,18 @@
 /*
- * Copyright 2012-2020,2022,2023,2026 NXP.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __UWB_TML_H__
-#define __UWB_TML_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_UWB_TML_H_
+#define ZEPHYR_INCLUDE_DRIVERS_UWB_TML_H_
 
 #include "zephyr/uwb/status.h"
+
+/**
+ * @brief UWB subsystem Status codes
+ * @defgroup uwb_status Ultra-Wideband subsystem status codes
+ * @{
+ */
 
 /**
  * UWB Transport Management Layer software component
@@ -31,7 +26,13 @@ enum {
 };
 
 /**
- * External APIs
+ * @}
+ */
+
+/**
+ * @brief UWB subsystem transport layer
+ * @defgroup uwb_transport Ultra-Wideband subsystem transport APIs
+ * @{
  */
 
 /**
@@ -72,14 +73,22 @@ extern int uwb_transport_uci_read(uint8_t *pBuffer, int bytes_to_read);
  *  This API should write \p bytes_to_write number of bytes from \p pBuffer to UWB device
  *
  *  \param[out] pBuffer Input buffer to be written to UWB device
- *  \param[in] bytes_to_read Number of bytes to write to UWB device
+ *  \param[in] bytes_to_write Number of bytes to write to UWB device
  *
  *  \retval >0, number of bytes written
  *  \retval 0 or negative, otherwise
  */
 extern int uwb_transport_uci_write(uint8_t *pBuffer, uint16_t bytes_to_write);
 
-/** Global Function declarations */
+/**
+ * @}
+ */
+
+/**
+ * @brief UWB subsystem Transport Management Layer APIs
+ * @defgroup uwb_tml Ultra-Wideband subsystem TML APIs
+ * @{
+ */
 
 /**
  * \brief Initialize Transport Management Layer
@@ -87,7 +96,7 @@ extern int uwb_transport_uci_write(uint8_t *pBuffer, uint16_t bytes_to_write);
  * Initializes the TML and underlying transport layer.
  * This function will create a reader thread which waits for any available
  * packet from UWB device.
- * \fn uwb_transport_open will be called from this API. uwb_transport_open
+ * \ref uwb_transport_open will be called from this API. uwb_transport_open
  * must ensure that underlying transport layer is correctly initialized to enable reading
  * from a thread.
  *
@@ -102,7 +111,7 @@ uwb_status_code_t uwb_tml_init(void);
  *
  * De-initializes the TML and underlying transport layer.
  * All allocated resources are cleared and the reader thread is deleted
- * \fn uwb_transport_close will be called from this API. uwb_transport_close
+ * \ref uwb_transport_close will be called from this API. uwb_transport_close
  * must ensure that underlying transport layer is correctly de-initialized
  */
 void uwb_tml_deinit(void);
@@ -110,7 +119,7 @@ void uwb_tml_deinit(void);
 /**
  * \brief Write UCI packet to UWB device
  *
- * This API will call \fn uwb_transport_uci_write.
+ * This API will call \ref uwb_transport_uci_write.
  * uwb_transport_uci_write must ensure that the packet is written to UWB device
  *
  * \retval kUwb_StatusCode_Success Successfully initialized TML and transport layer
@@ -135,7 +144,7 @@ uwb_status_code_t uwb_tml_read(void);
  * and disable the read operation for the reader thread.
  *
  * \note Reader thread is not suspended in this function. It will wait
- * for \fn uwb_tml_read to be called again to issue the next \fn uwb_transport_uci_read call
+ * for \ref uwb_tml_read to be called again to issue the next \ref uwb_transport_uci_read call
  */
 void uwb_tml_read_abort(void);
 
@@ -145,7 +154,7 @@ void uwb_tml_read_abort(void);
  * This API will discard any data that has been read from UWB device
  * and suspend the reader thread.
  *
- * \note \fn uwb_tml_resume_reader must be called to resume the thread operation
+ * \note \ref uwb_tml_resume_reader must be called to resume the thread operation
  */
 void uwb_tml_suspend_reader(void);
 
@@ -153,8 +162,12 @@ void uwb_tml_suspend_reader(void);
  * \brief Resume reader thread
  *
  * This API will resume the reader thread. Reader thread must have
- * been previously suspended by a call to \fn uwb_tml_suspend_reader
+ * been previously suspended by a call to \ref uwb_tml_suspend_reader
  */
 void uwb_tml_resume_reader(void);
 
-#endif /*  __UWB_TML_H__  */
+/**
+ * @}
+ */
+
+#endif /*  ZEPHYR_INCLUDE_DRIVERS_UWB_TML_H_  */

@@ -7,30 +7,36 @@ config UCI_FRAME_LEN
 	int "Maximum buffer size of single UCI packet"
 	default 259
 	help
-		Maximum buffer size of single UCI packet.
+	  Maximum buffer size of single UCI packet.
 
 config UWB_READER_STACK_SIZE
 	int "Stack size of UWB reader task"
-	default 1500
+	default 6000
 	help
-		Stack size of UWB reader task
+	  Stack size of UWB reader task
 
 config UWB_READER_PRIO
 	int "UWB reader task priority"
 	default 4
 	help
-		UWB reader task priority
+	  UWB reader task priority
 
 config UCI_RESPONSE_TIMEOUT_MS
 	int "Timeout to receive response after sending UCI command"
 	default 200
 	help
-		Timeout to receive response after sending UCI command.
+	  Timeout to receive response after sending UCI command.
 
 config UCI_CREDIT_NTF_TIMEOUT_MS
 	int "Timeout to receive credit available notification after sending data packet"
 	default 500
 	help
-		Timeout to receive credit available notification after sending data packet.
+	  Timeout to receive credit available notification after sending data packet.
+
+config UCI_MESSAGE_LEN_MAX
+	int "Maximum number of bytes that can be received at a time from UWB device"
+	default 4200
+	help
+	  Maximum number of bytes that can be received at a time from UWB device
 
 endif

@@ -1,4 +1,4 @@
-.. zephyr:code-sample:: uwb-ranging
+.. zephyr:code-sample:: uwb-ranging-clee
    :name: Ultra-Wide Band Ranging controlee
    :relevant-api: uwb_api
 
@@ -24,7 +24,7 @@ Following sequence of steps are handled.
 - Perform normal ranging with static STS.
 
 
-Building
+Building and Running
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Enable the required UWB shield through ``--shield`` option on command line

@@ -42,6 +42,10 @@ void uwb_print_ll_create_ntf(const uwb_logical_link_create_ntf_t *p_ll_create_nt
 			p_ll_create_ntf->ll_connect_id);
 		LOG_DBG("p_ll_create_ntf->status                              : %x\n",
 			p_ll_create_ntf->status);
+		LOG_DBG("p_ll_create_ntf->max_sdu_size_length                 : %x\n",
+			p_ll_create_ntf->max_sdu_size_length);
+		LOG_DBG("p_ll_create_ntf->max_sdu_size_value                   : %x\n",
+			p_ll_create_ntf->max_sdu_size_value);
 	} else {
 		LOG_ERR("p_ll_create_ntf is NULL");
 	}
@@ -70,6 +74,10 @@ void uwb_print_ll_uwbs_create_ntf(const uwb_logical_link_uwbs_create_ntf_t *p_ll
 			p_ll_uwbs_create_ntf->llm_selector);
 		LOG_HEXDUMP_DBG(p_ll_uwbs_create_ntf->src_address, UWB_EXTENDED_MAC_ADDRESS_LEN,
 				"p_ll_uwbs_create_ntf->src_address                             : ");
+		LOG_DBG("p_ll_create_ntf->max_sdu_size_length                          : %x\n",
+			p_ll_uwbs_create_ntf->max_sdu_size_length);
+		LOG_DBG("p_ll_create_ntf->max_sdu_size_value                           : %x\n",
+			p_ll_uwbs_create_ntf->max_sdu_size_value);
 	} else {
 		LOG_ERR("p_ll_uwbs_create_ntf is NULL");
 	}

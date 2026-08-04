@@ -50,12 +50,14 @@ void StandaloneTask(void *args)
 
 	uwb_device_info_t device_info = {0};
 	int ret = uwb_uci_register_callback(demo_ntf_callback_handler);
+
 	if (ret != 0) {
 		LOG_ERR("Could not register callback");
 		return;
 	}
 
 	uwb_status_code_t status = uwb_api_core_get_device_info(&device_info);
+
 	uint32_t session_handle = 0;
 	status = uwb_api_session_init(session_id, kUwb_SessionType_Ranging, &session_handle);
 	if (kUwb_StatusCode_Success != status) {
@@ -76,8 +78,8 @@ void StandaloneTask(void *args)
 		{kUwb_AppConfig_RangingRoundUsage, 1, ARR(kUwb_RangingRoundUsage_DS_TWR), 0},
 		{kUwb_AppConfig_DeviceType, 1, ARR(kUwb_DeviceType_Controlee), 0},
 	};
-	status = uwb_api_set_app_configs(session_handle, configs,
-					 sizeof(configs) / sizeof(configs[0]));
+
+	status = uwb_api_set_app_configs(session_handle, configs, ARRAY_SIZE(configs));
 	if (kUwb_StatusCode_Success != status) {
 		LOG_ERR("Could not configure application configurations");
 		goto exit;
@@ -85,12 +87,12 @@ void StandaloneTask(void *args)
 
 #ifdef DEMO_APP_CONFIGS
 	status = uwb_api_set_app_configs(session_handle, DEMO_APP_CONFIGS,
-					 sizeof(DEMO_APP_CONFIGS) / sizeof(DEMO_APP_CONFIGS[0]));
+					 ARRAY_SIZE(DEMO_APP_CONFIGS));
 	if (kUwb_StatusCode_Success != status) {
 		LOG_ERR("Could not configure application configs");
 		goto exit;
 	}
-#endif /** DEMO_APP_CONFIGS */
+#endif /* DEMO_APP_CONFIGS */
 
 	status = uwb_api_session_start(session_handle);
 	if (kUwb_StatusCode_Success != status) {
@@ -99,11 +101,11 @@ void StandaloneTask(void *args)
 	}
 
 	/* When Ranging is terminated due to inband termination this semaphore will
-	 * be signaled, otherwise ranging will be performed for the time specified */
+	 * be signaled, otherwise ranging will be performed for the time specified
+	 */
 	if (0 == k_sem_take(&g_inband_termination_semaphore, delay)) {
 		status = kUwb_StatusCode_Success;
-		LOG_INF("\n-------------------------------------------\n in band termination "
-			"is done  \n-------------------------------------------\n");
+		LOG_INF("In-band termination done");
 		uwb_api_session_deinit(session_handle);
 		goto exit;
 	}

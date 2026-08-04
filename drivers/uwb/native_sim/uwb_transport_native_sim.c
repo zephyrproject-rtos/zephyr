@@ -1,6 +1,5 @@
 /*
  * Copyright 2026 NXP
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -44,9 +43,10 @@ static struct {
 	uint32_t session_handle;
 } g_session_ctx = {0};
 
-/* -------------------------------------------------------------------------
+/* -----------------------------------------------------------------------
  * UCI helpers
- * -----------------------------------------------------------------------*/
+ * -----------------------------------------------------------------------
+ */
 
 static void build_rsp(uint8_t *buf, size_t *len, uint8_t gid, uint8_t oid, const uint8_t *payload,
 		      uint8_t plen)
@@ -74,9 +74,10 @@ static void build_ntf(uint8_t *buf, size_t *len, uint8_t gid, uint8_t oid, const
 	*len = UCI_HEADER_SIZE + plen;
 }
 
-/* -------------------------------------------------------------------------
+/* -----------------------------------------------------------------------
  * Simulated device thread – processes commands and produces responses
- * -----------------------------------------------------------------------*/
+ * -----------------------------------------------------------------------
+ */
 
 static void handle_core_reset(int write_fd)
 {
@@ -97,7 +98,8 @@ static void handle_core_get_capabilities(int write_fd)
 	uint8_t rsp[UCI_MAX_CTRL_PACKET_SIZE];
 	size_t rsp_len;
 	/* status | uciVerMaj | uciVerMin | macVerMaj | macVerMin |
-	 * phyVerMaj | phyVerMin | vendor_spec_len */
+	 * phyVerMaj | phyVerMin | vendor_spec_len
+	 */
 	uint8_t payload[] = {
 		0x00, 0x25, 0x00, 0x02, 0xF7, 0x07, 0x01, 0x02, 0xF7, 0x07, 0x02, 0x04, 0x01, 0x00,
 		0x03, 0x00, 0x03, 0x04, 0x01, 0x00, 0x03, 0x00, 0x04, 0x01, 0x0B, 0x05, 0x02, 0x23,
@@ -122,7 +124,8 @@ static void handle_core_get_device_state(int write_fd)
 	uint8_t rsp[UCI_MAX_CTRL_PACKET_SIZE];
 	size_t rsp_len;
 	/* status | uciVerMaj | uciVerMin | macVerMaj | macVerMin |
-	 * phyVerMaj | phyVerMin | vendor_spec_len */
+	 * phyVerMaj | phyVerMin | vendor_spec_len
+	 */
 	uint8_t payload[] = {0x00, 1, kUwb_CoreConfig_DeviceState, 1, kUci_DeviceState_Ready};
 
 	build_rsp(rsp, &rsp_len, UCI_GID_CORE, UCI_MSG_CORE_GET_CONFIG, payload, sizeof(payload));
@@ -135,7 +138,8 @@ static void handle_core_get_device_info(int write_fd)
 	uint8_t rsp[UCI_HEADER_SIZE + 10];
 	size_t rsp_len;
 	/* status | uciVerMaj | uciVerMin | macVerMaj | macVerMin |
-	 * phyVerMaj | phyVerMin | vendor_spec_len */
+	 * phyVerMaj | phyVerMin | vendor_spec_len
+	 */
 	uint8_t payload[] = {0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x94};
 
 	build_rsp(rsp, &rsp_len, UCI_GID_CORE, UCI_MSG_CORE_DEVICE_INFO, payload, sizeof(payload));
@@ -348,9 +352,10 @@ void uwb_vendor_deinitialize(void)
 {
 }
 
-/* -------------------------------------------------------------------------
+/* -----------------------------------------------------------------------
  * uwb_transport_* API implementation
- * -----------------------------------------------------------------------*/
+ * -----------------------------------------------------------------------
+ */
 static k_tid_t uwb_dev;
 static struct k_thread uwb_dev_thread;
 K_THREAD_STACK_DEFINE(uwb_dev_stack, 2000);
@@ -371,7 +376,7 @@ int uwb_transport_open(void)
 		return -1;
 	}
 
-	LOG_INF("uwb_transport_open: native_sim backend ready");
+	LOG_INF("%s: native_sim backend ready", __func__);
 	return 0;
 }
 
@@ -381,17 +386,19 @@ void uwb_transport_close(void)
 
 	k_thread_join(&uwb_dev_thread, K_FOREVER);
 
-	LOG_INF("uwb_transport_close: native_sim backend closed");
+	LOG_INF("%s: native_sim backend closed", __func__);
 }
 
 int uwb_transport_uci_read(uint8_t *pBuffer, int bytes_to_read)
 {
 	LOG_INF("requesting read");
 	int rc = k_pipe_read(&pipe_dev_to_host, pBuffer, UCI_HEADER_SIZE, K_FOREVER);
+
 	if (rc < UCI_HEADER_SIZE) {
 		return -1;
 	}
 	uint8_t payload_len = pBuffer[3];
+
 	rc += k_pipe_read(&pipe_dev_to_host, &pBuffer[UCI_HEADER_SIZE], payload_len, K_FOREVER);
 	LOG_DBG("rc = %d", rc);
 	return rc;
@@ -400,5 +407,6 @@ int uwb_transport_uci_read(uint8_t *pBuffer, int bytes_to_read)
 int uwb_transport_uci_write(uint8_t *pBuffer, uint16_t bytes_to_write)
 {
 	int rc = k_pipe_write(&pipe_host_to_dev, pBuffer, bytes_to_write, K_FOREVER);
+
 	return rc;
 }

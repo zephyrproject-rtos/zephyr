@@ -3,10 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __UWB_STATUS_H__
-#define __UWB_STATUS_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_UWB_STATUS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_UWB_STATUS_H_
 
 #include <stdint.h>
+
+/**
+ * @brief UWB subsystem Status codes
+ * @defgroup uwb_status Ultra-Wideband subsystem status codes
+ * @{
+ */
 
 typedef uint32_t uwb_status_code_t;
 
@@ -18,6 +24,7 @@ typedef uint32_t uwb_status_code_t;
  * Bitshift for UWB software component identifier
  */
 #define UWB_COMPONENT_STATUS_BITSHIFT (16U)
+
 /**
  * Macro to create component specific status code based on component identifier and status value
  */
@@ -43,4 +50,8 @@ enum {
 	kUwb_StatusCode_VendorFailed = UWB_MAKE_COMPONENT_STATUS(UWB_COMPONENT_GENERIC, 7),
 };
 
-#endif /** __UWB_STATUS_H__ */
+/**
+ * @}
+ */
+
+#endif /** ZEPHYR_INCLUDE_DRIVERS_UWB_STATUS_H_ */

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __UWB_HELPERS_H__
-#define __UWB_HELPERS_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_UWB_HELPERS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_UWB_HELPERS_H_
 
 #include <stdint.h>
 #include <zephyr/uwb/types.h>
@@ -30,7 +30,7 @@ void uwb_print_ll_data_rcv_ntf(const uwb_ll_data_receive_notification_t *p_rcv_d
  *
  * \param p           Pointer to byte array containing data receive notification
  * \param len         Length of input array \p p
- * \param pRcvDataPkt Pointer to uwb_data_receive_notification_t structure to be populated
+ * \param p_rcv_data_pkt Pointer to uwb_data_receive_notification_t structure to be populated
  *
  */
 void uwb_parse_data_rcv_ntf(const uint8_t *const p, uint16_t len,
@@ -42,10 +42,10 @@ void uwb_parse_data_rcv_ntf(const uint8_t *const p, uint16_t len,
  *
  * \param p           Pointer to byte array containing data receive notification
  * \param len         Length of input array \p p
- * \param pRcvDataPkt Pointer to uwb_ll_data_receive_notification_t structure to be populated
+ * \param p_rcv_data_pkt Pointer to uwb_ll_data_receive_notification_t structure to be populated
  *
  */
 void uwb_parse_ll_data_rcv_ntf(const uint8_t *const p, uint16_t len,
 			       uwb_ll_data_receive_notification_t *p_rcv_data_pkt);
 
-#endif /* __UWB_HELPERS_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_UWB_HELPERS_H_ */

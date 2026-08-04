@@ -2,10 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig UWB
-    bool "Enable UWB subsystem"
-    default n
-    help 
-      Enable Ultra wideband subsystem
+	bool "Ultra-Wideband subsystem"
+	default n
+	help
+	  Enable Ultra wideband subsystem
 
 if UWB
 

@@ -157,13 +157,14 @@ static int uci_remove_waiting_response_nolock(uci_waiting_packets_t *response)
 	if (g_uci_context.waiting_packets == response) {
 		g_uci_context.waiting_packets = response->next;
 		g_uci_context.num_waiting_responses--;
+		k_free(response);
 	} else {
 		uci_waiting_packets_t *current = g_uci_context.waiting_packets;
 
 		while ((current != NULL) && (current->next != response)) {
 			current = current->next;
 		}
-		if (NULL == current) {
+		if (current == NULL) {
 			/* Could not find matching response in the list */
 			return -1;
 		}
@@ -234,9 +235,13 @@ static void uwb_uci_rx_handler(const uint8_t *const packet, const uint32_t packe
 	uci_waiting_packets_t *p_waiting_response = NULL;
 	bool sent_to_waiter = false;
 
-	LOG_HEXDUMP_INF(packet, packet_len, "RECV <:");
+	LOG_HEXDUMP_INF(packet,
+			packet_len > UCI_MAX_CTRL_PACKET_SIZE ? UCI_MAX_CTRL_PACKET_SIZE
+							      : packet_len,
+			"RECV <:");
 
 	const uci_control_packet_header_t *header = (const uci_control_packet_header_t *)packet;
+
 	LOG_DBG("Received mt=%02x gid=%02x oid=%02x", (header->mt << 1), header->gid, header->oid);
 
 	k_mutex_lock(&g_uci_context.mutex, K_FOREVER);
@@ -491,33 +496,25 @@ int uwb_uci_transceive(uint8_t mt, uint8_t gid, uint8_t oid, const uint8_t *payl
 			do {
 				uwb_status_code_t sem_ret = k_sem_take(
 					&g_uci_context.response_semaphore, response_timeout);
+
 				if (sem_ret == kUwb_StatusCode_Success) {
 					uci_control_packet_header_t *header =
-						(uci_control_packet_header_t *)response_buf;
+						(uci_control_packet_header_t *)rsp_ptr;
+
 					if ((header->mt == UCI_MT_NTF) &&
 					    (header->gid == UCI_GID_CORE) &&
 					    (header->oid == UCI_MSG_CORE_GENERIC_ERROR_NTF)) {
 						if (kUci_Status_UciMessageRetry ==
-						    response_buf[UCI_HEADER_SIZE]) {
+						    rsp_ptr[UCI_HEADER_SIZE]) {
 							/* Received retry */
 							LOG_DBG("Retry received");
 							retry_count++;
 							memset(response_buf, 0, *response_len);
-							*response_len = response_len_dup;
+							*response_len = response_len_dup - offset;
 							break;
 						}
 					}
 					pbf = header->pbf;
-					if (offset > 0) {
-						/* Not the first packet, remove UCI header */
-						if (*response_len < UCI_HEADER_SIZE) {
-							LOG_ERR("Invalid response length");
-							goto exit;
-						}
-						*response_len -= UCI_HEADER_SIZE;
-						memmove(rsp_ptr, rsp_ptr + UCI_HEADER_SIZE,
-							*response_len);
-					}
 					rsp_ptr += *response_len;
 					offset += *response_len;
 					ret = 0;

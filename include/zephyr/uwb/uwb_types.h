@@ -1,23 +1,10 @@
 /*
- *
- *  Copyright (C) 1999-2014 Broadcom Corporation
- *  Copyright 2018-2020,2022-2024 NXP
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at:
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef UWB_TYPES_H
-#define UWB_TYPES_H
+
+#ifndef ZEPHYR_INCLUDE_DRIVERS_UWB_TYPES_H_
+#define ZEPHYR_INCLUDE_DRIVERS_UWB_TYPES_H_
 
 #include <stdint.h>
 
@@ -117,6 +104,18 @@
 				 ((uint32_t)((p)[(index) + 2U]) << 16U) |                          \
 				 ((uint32_t)((p)[(index) + 3U]) << 24U));                          \
 		(index) = ((index) + sizeof(uint32_t));                                            \
+	}
+#define UWB_STREAM_TO_UINT64(u64, p, index)                                                        \
+	{                                                                                          \
+		u64 = (uint64_t)(((uint64_t)((p)[(index) + 0U]) << 0U) |                           \
+				 ((uint64_t)((p)[(index) + 1U]) << 8U) |                           \
+				 ((uint64_t)((p)[(index) + 2U]) << 16U) |                          \
+				 ((uint64_t)((p)[(index) + 3U]) << 24U) |                          \
+				 ((uint64_t)((p)[(index) + 4U]) << 32U) |                          \
+				 ((uint64_t)((p)[(index) + 5U]) << 40U) |                          \
+				 ((uint64_t)((p)[(index) + 6U]) << 48U) |                          \
+				 ((uint64_t)((p)[(index) + 7U]) << 56U));                          \
+		(index) = ((index) + sizeof(uint64_t));                                            \
 	}
 #define UWB_STREAM_TO_ARRAY(a, p, len, index)                                                      \
 	{                                                                                          \
@@ -222,4 +221,4 @@
 	((((x) & 0xFF000000) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) |      \
 	 (((x) & 0x000000FF) << 24))
 
-#endif /* UWB_TYPES_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_UWB_TYPES_H_ */

@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __UWB_API_FIRA_H__
-#define __UWB_API_FIRA_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_UWB_H_
+#define ZEPHYR_INCLUDE_DRIVERS_UWB_H_
 
 #include "zephyr/uwb/uwb_core.h"
 #include <zephyr/uwb/types.h>
@@ -12,7 +12,7 @@
 
 /**
  * @brief UWB APIs
- * @defgroup uwb_api
+ * @defgroup uwb_api Ultra-Wideband subsystem APIs
  * @{
  */
 
@@ -23,7 +23,7 @@ extern "C" {
 /**
  * \brief Initialize vendor UWB stack
  *
- * This function is called from \fn uwb_api_initialize after initializing
+ * This function is called from \ref uwb_api_initialize after initializing
  * TML, transport and UCI core layers.
  *
  * The implementation of this function is vendor specific.
@@ -33,7 +33,7 @@ extern int uwb_vendor_initialize(void);
 /**
  * \brief De-initialize vendor UWB stack
  *
- * This function is called from \fn uwb_api_deinitialize before de-initializing
+ * This function is called from \ref uwb_api_deinitialize before de-initializing
  * TML, transport and UCI core layers.
  *
  * The implementation of this function is vendor specific.
@@ -216,8 +216,8 @@ uwb_status_code_t uwb_api_set_app_configs(const uint32_t sessionHandle, uwb_conf
  * for the specified UWB session.
  *
  * \param[in] sessionHandle Handle of the session to query
- * \param[in] noOfparams Number of parameters to retrieve
- * \param[in,out] appParams Array of application parameters to retrieve
+ * \param[in,out] configs Array of application parameters to retrieve
+ * \param[in] num_configs Number of parameters to retrieve
  *
  * \retval kUwb_StatusCode_Success All parameters retrieved successfully
  * \retval kUwb_StatusCode_InvalidArgument Invalid arguments passed
@@ -242,7 +242,7 @@ uwb_status_code_t uwb_api_session_get_count(uint8_t *const pSessionCount);
  * \brief Get Session State
  *
  * \param[in] sessionHandle      Initialized Session Handle
- * \param[out] sessionState   Session Status
+ * \param[out] pSessionState   Session Status
  *
  * \retval kUwb_StatusCode_Success Success
  * \retval kUwb_StatusCode_InvalidArgument Invalid parameters are passed
@@ -421,14 +421,12 @@ uwb_status_code_t uwb_api_session_get_ranging_count(const uint32_t sessionHandle
 /**
  * \brief Creates Logical Link for Data Transfer.
  *
- * \param[in]    pLogicalLinkCreateCmd - Pointer to structure that contains params to create Logical
- * Link.
- * \param[out]   pLogicalLinkConnectId  - Pointer to uint32 that return the Logical Link connect ID.
- *
  * \param[in] sessionHandle Session handle for data transfer session
  * \param[in] linkLayerModeSelector Link layer mode selector
  * \param[in] destination_address Logical destination address of controlee
  * \param[in] logicalLinkClass Logical link class - must be 0x00
+ * \param[in] max_sdu_size_length MAX SDU SIZE Value field length
+ * \param[in] max_sdu_size_value Maximum transmit and receive SDU Size
  * \param[out] pLogicalLinkConnectId Connection ID of created link
  *
  * \retval kUwb_StatusCode_Success Success
@@ -442,11 +440,11 @@ uwb_status_code_t uwb_api_session_get_ranging_count(const uint32_t sessionHandle
  *
  * \note In case of SHORT_ADDR mode is used, then each Octet from octets 2 - 7 shall be set to 0x00.
  */
-uwb_status_code_t
-uwb_api_logical_link_create(const uint32_t sessionHandle,
-			    const uwb_link_layer_mode_selector_t linkLayerModeSelector,
-			    const uint8_t *const destination_address,
-			    const uint8_t logicalLinkClass, uint32_t *const pLogicalLinkConnectId);
+uwb_status_code_t uwb_api_logical_link_create(
+	const uint32_t sessionHandle, const uwb_link_layer_mode_selector_t linkLayerModeSelector,
+	const uint8_t *const destination_address, const uint8_t logicalLinkClass,
+	const uint8_t max_sdu_size_length, const uint8_t max_sdu_size_value,
+	uint32_t *const pLogicalLinkConnectId);
 
 /**
  * \brief Closes Logical Link for Data Transfer, that was established before.
@@ -464,9 +462,9 @@ uwb_status_code_t uwb_api_logical_link_close(const uint32_t logicalLinkConnectId
  * the Logical Link parameters used for the logical link associated to the LL_CONNECT_ID or the
  * Session Handle associated to the session.
  *
- * \param[in] ConnectionIdentifier       - This can be either the CONNECT_ID or the Session Handle.
+ * \param[in] connectionIdentifier       - This can be either the CONNECT_ID or the Session Handle.
  * Identifies the link or the data transfer session/phase params.
- * \param[out] phLogicalLinkGetParamsRsp - Pointer to structure that contains
+ * \param[out] pLogicalLinkGetParamsRsp - Pointer to structure that contains
  * params for Logical Link.
  *
  * \retval kUwb_StatusCode_Success Success
@@ -694,16 +692,14 @@ uwb_status_code_t uwb_serialize_controller_hus_session_payload(
  *
  * \brief uwb_parse_config_response
  *
- * Description      Parse Config Response. Parses the response received after
- *                  setting configurations and populates the configuration
- *                  structures with status information for each parameter.
+ * Parse Config Response. Parses the response received after
+ * setting configurations and populates the configuration
+ * structures with status information for each parameter.
  *
- * Parameters       pBuffer - Pointer to response buffer
- *                  bufferLength - Length of response data in bytes
- *                  configs - Pointer to array of config structures to populate
- *                  num_configs - Number of configurations to parse
- *
- * \retval None
+ * \param[in] pBuffer Pointer to response buffer
+ * \param[in] bufferLength Length of response data in bytes
+ * \param[out] configs Pointer to array of config structures to populate
+ * \param[in] num_configs Number of configurations to parse
  *
  */
 void uwb_parse_config_response(const uint8_t *const pBuffer, const uint16_t bufferLength,
@@ -713,12 +709,12 @@ void uwb_parse_config_response(const uint8_t *const pBuffer, const uint16_t buff
  *
  * \brief uwb_calculate_get_config_command_buffer_length
  *
- * Description      Calculate Get Config Command Buffer Length. Determines the
- *                  required buffer size for a Get Config command based on the
- *                  number of configuration parameters to retrieve.
+ * Calculate Get Config Command Buffer Length. Determines the
+ * required buffer size for a Get Config command based on the
+ * number of configuration parameters to retrieve.
  *
- * Parameters       configs - Pointer to array of configuration structures
- *                  num_configs - Number of configurations to retrieve
+ * \param[in] configs Pointer to array of configuration structures
+ * \param[in] num_configs Number of configurations to retrieve
  *
  * \retval Required buffer length in bytes
  *
@@ -730,14 +726,14 @@ uint16_t uwb_calculate_get_config_command_buffer_length(const uwb_config_t *cons
  *
  * \brief serialize_get_config_payload
  *
- * Description      Serialize Get Config Payload. Serializes a Get Config command
- *                  payload to retrieve current configuration values from the UWB
- *                  device or session.
+ * Serialize Get Config Payload. Serializes a Get Config command
+ * payload to retrieve current configuration values from the UWB
+ * device or session.
  *
- * Parameters       configs - Pointer to array of configuration structures
- *                  num_configs - Number of configurations to retrieve
- *                  pBuffer - Pointer to output buffer for serialized data
- *                  pBufferLen - Pointer to buffer length (input: max size, output: actual size)
+ * \param[in] configs Pointer to array of configuration structures
+ * \param[in] num_configs Number of configurations to retrieve
+ * \param[out] pBuffer Pointer to output buffer for serialized data
+ * \param[out] pBufferLen Pointer to buffer length (input: max size, output: actual size)
  *
  * \retval Status code indicating success or failure of serialization
  *
@@ -750,16 +746,14 @@ uwb_status_code_t serialize_get_config_payload(uwb_config_t *const configs,
  *
  * \brief uwb_parse_get_config_response
  *
- * Description      Parse Get Config Response. Parses the response received after
- *                  requesting configuration values and populates the configuration
- *                  structures with the retrieved parameter values.
+ * Parse Get Config Response. Parses the response received after
+ * requesting configuration values and populates the configuration
+ * structures with the retrieved parameter values.
  *
- * Parameters       pBuffer - Pointer to response buffer
- *                  bufferLength - Length of response data in bytes
- *                  configs - Pointer to array of config structures to populate
- *                  num_configs - Number of configurations in response
- *
- * \retval None
+ * \param[in] pBuffer Pointer to response buffer
+ * \param[in] bufferLength Length of response data in bytes
+ * \param[out] configs Pointer to array of config structures to populate
+ * \param[in] num_configs Number of configurations in response
  *
  */
 void uwb_parse_get_config_response(const uint8_t *const pBuffer, const uint16_t bufferLength,
@@ -824,9 +818,9 @@ uint16_t uwb_calculate_dtpcm_payload_length(const uint8_t dataTransferControl,
  *
  * \brief uwb_serialize_dtpcm_payload
  *
- * Description      Serialize DTPCM Payload. Serializes the Data Transfer Phase
- *                  Configuration Message payload for configuring data transfer
- *                  phase parameters in a UWB session.
+ * Serialize DTPCM Payload. Serializes the Data Transfer Phase
+ * Configuration Message payload for configuring data transfer
+ * phase parameters in a UWB session.
  *
  * \param[in] sessionHandle Session handle to data transfer phase/session to be configured
  * \param[in] dtpcmRepetition Data repetition field
@@ -851,11 +845,12 @@ uwb_status_code_t uwb_serialize_dtpcm_payload(const uint32_t sessionHandle,
  *
  * \brief uwb_calculate_update_controller_multicast_list_payload_length
  *
- * Description      Calculate Update Controller Multicast List Payload Length.
- *                  Determines the required payload size for updating the controller
- *                  multicast list based on the number of controlees.
+ * Calculate Update Controller Multicast List Payload Length.
+ * Determines the required payload size for updating the controller
+ * multicast list based on the number of controlees and action.
  *
- * Parameters       pControleeContext - Pointer to controlee list context structure
+ * \param[in] action Controller multicast action
+ * \param[in] num_controlees Number of controlees
  *
  * \retval Required payload length in bytes
  *
@@ -866,7 +861,7 @@ uwb_calculate_update_controller_multicast_list_payload_length(const uint8_t acti
 
 /**
  *
- * \brief uwb_calculate_update_controller_multicast_list_payload_length
+ * \brief uwb_calculate_update_controller_multicast_list_response_length
  *
  * Calculate Update Controller Multicast List Payload Length.
  * Determines the required payload size for updating the controller
@@ -884,14 +879,19 @@ uwb_calculate_update_controller_multicast_list_response_length(const uint8_t num
  *
  * \brief uwb_serialize_update_controller_multicast_list_payload
  *
- * Description      Serialize Update Controller Multicast List Payload. Serializes
- *                  the payload for adding or removing controlees from a multicast
- *                  ranging session.
+ * Serialize Update Controller Multicast List Payload. Serializes
+ * the payload for adding or removing controlees from a multicast
+ * ranging session.
  *
- * Parameters       pControleeContext - Pointer to controlee list context structure
- *                  pCmdBuf - Pointer to command buffer for serialized output
+ * \param[in] sessionHandle Session handle of ranging session
+ * \param[in] action Controller multicast action
+ * \param[in] pControleeContext Pointer to controlee list context structure
+ * \param[in] num_controlees Number of controlees
+ * \param[out] pCmdBuf Pointer to command buffer for serialized output
+ * \param[out] length Length of the serialized payload in bytes
  *
- * \retval Length of the serialized payload in bytes
+ * \retval kUwb_StatusCode_Success Success
+ * \retval kUwb_StatusCode_InsufficientBuffer Not enough buffer allocated
  *
  */
 uwb_status_code_t uwb_serialize_update_controller_multicast_list_payload(
@@ -903,14 +903,17 @@ uwb_status_code_t uwb_serialize_update_controller_multicast_list_payload(
  *
  * \brief uwb_deserialize_update_controller_multicast_list_resp
  *
- * Description      Deserialize Update Controller Multicast List Response. Parses
- *                  the response from updating the controller multicast list and
- *                  populates the response structure with status information.
+ * Deserialize Update Controller Multicast List Response. Parses
+ * the response from updating the controller multicast list and
+ * populates the response structure with status information.
  *
- * Parameters       pControleeListRsp - Pointer to controlee list response structure to populate
- *                  rsp_data - Pointer to raw response data
+ * \param[out] pControleeList Pointer to controlee list structure to populate
+ * \param[in] num_controlees Number of controlees
+ * \param[in] response Pointer to raw response data
+ * \param[in] response_length Length of \p response
  *
- * \retval None
+ * \retval kUwb_StatusCode_Success Success
+ * \retval kUwb_StatusCode_Failed Generic failure
  *
  */
 uwb_status_code_t uwb_deserialize_update_controller_multicast_list_resp(
@@ -921,13 +924,13 @@ uwb_status_code_t uwb_deserialize_update_controller_multicast_list_resp(
  *
  * \brief uwb_calculate_dt_anchor_ranging_round_command_length
  *
- * Description      Calculate DT Anchor Ranging Round Command Buffer. Determines
- *                  the required buffer size for DT anchor ranging round command
- *                  based on the number of active rounds and MAC addressing mode.
+ * Calculate DT Anchor Ranging Round Command Buffer. Determines
+ * the required buffer size for DT anchor ranging round command
+ * based on the number of active rounds and MAC addressing mode.
  *
- * Parameters       nActiveRounds - Number of active ranging rounds
- *                  macAddressingMode - MAC addressing mode (short/extended)
- *                  roundConfigList - Array of round configuration structures
+ * \param[in] nActiveRounds Number of active ranging rounds
+ * \param[in] macAddressingMode MAC addressing mode (short/extended)
+ * \param[in] roundConfigList Array of round configuration structures
  *
  * \retval Required buffer length in bytes
  *
@@ -940,9 +943,16 @@ uint16_t uwb_calculate_dt_anchor_ranging_round_command_length(
  *
  * \brief uwb_serialize_update_active_rounds_anchor_payload
  *
- * Description      serialize update active rounds Anchor Payload
+ * Serialize update active rounds Anchor Payload
+ * \param[in] sessionHandle Session handle of ranging session
+ * \param[in] nActiveRounds Number of active rounds
+ * \param[in] macAddressingMode MAC Addressing mode - 2 bytes or 8 bytes
+ * \param[in] roundConfigList Ranging round config list
+ * \param[out] pCmdBuf Output buffer
+ * \param[in,out] payloadLength Size of output buffer
  *
- * \retval Length of payload
+ * \retval kUwb_StatusCode_Success Success
+ * \retval kUwb_StatusCode_InsufficientBuffer Not enough buffer allocated
  *
  */
 uwb_status_code_t uwb_serialize_update_active_rounds_anchor_payload(
@@ -950,22 +960,6 @@ uwb_status_code_t uwb_serialize_update_active_rounds_anchor_payload(
 	const uwb_mac_addr_mode_t macAddressingMode,
 	const uwb_active_rounds_config_t *const roundConfigList, uint8_t *const pCmdBuf,
 	uint16_t *const payloadLength);
-/**
- *
- * \brief uwb_parse_session_update_dt_anchor_ranging_round_rsp
- *
- * Description      Parse Session Update DT Anchor Ranging Round Response. Parses
- *                  the response from updating DT anchor ranging rounds and extracts
- *                  information about rounds that failed to activate.
- *
- * Parameters       response - Pointer to response data
- *                  pNotActivatedRound - Pointer to structure for rounds that failed activation
- *
- * \retval Status code indicating success or failure of parsing
- *
- */
-uwb_status_code_t uwb_parse_session_update_dt_anchor_ranging_round_rsp(
-	uint8_t *response, uwb_active_rounds_config_t *pNotActivatedRound);
 
 /**
  *
@@ -987,6 +981,12 @@ uint16_t uwb_calculate_update_active_rounds_receiver_command_length(const uint8_
  * \brief uwb_serialize_update_tag_active_rounds_payload
  *
  * Serialize update active rounds receiver Payload
+ *
+ * \param[in] sessionHandle Session handle of ranging session
+ * \param[in] nActiveRounds Number of active ranging rounds
+ * \param[in] roundIndexList Ranging round index list
+ * \param[in] pCmdBuf Output buffer
+ * \param[in,out] pCmdBufLen Size of output buffer
  *
  * \retval Length of payload
  *
@@ -1019,6 +1019,8 @@ uint16_t uwb_calculate_logical_link_create_payload_length(void);
  * \param[in] linkLayerModeSelector Link layer mode selector
  * \param[in] destination_address Logical destination address of controlee
  * \param[in] logicalLinkClass Logical link class - must be 0x00
+ * \param[in] max_sdu_size_length MAX SDU SIZE Value field length
+ * \param[in] max_sdu_size_value Maximum transmit and receive SDU Size
  * \param[out] pCmdBuf Buffer to contain serialized payload
  * \param[inout] pCmdBufLen Size of \p pCmdBuf. Input value is allocated size of buffer, output
  * value is populated size
@@ -1029,7 +1031,8 @@ uint16_t uwb_calculate_logical_link_create_payload_length(void);
 uwb_status_code_t uwb_serialize_create_logical_link_cmd(
 	const uint32_t sessionHandle, const uwb_link_layer_mode_selector_t linkLayerModeSelector,
 	const uint8_t *const destination_address, const uint8_t logicalLinkClass,
-	uint8_t *const pCmdBuf, uint16_t *const pCmdBufLen);
+	const uint8_t max_sdu_size_length, const uint8_t max_sdu_size_value, uint8_t *const pCmdBuf,
+	uint16_t *const pCmdBufLen);
 
 /**
  *
@@ -1050,7 +1053,7 @@ uwb_status_code_t uwb_deserialize_link_get_params_payload(
  *  \brief Calculate payload length required for creating SendData command
  *
  *  This function calculates the payload length required to create a SendData UCI command in bypass
- * mode. It does not append the UCI header size and must be incorporated by the caller.
+ *  mode. It does not append the UCI header size and must be incorporated by the caller.
  *
  *  \param[in] dataSize Size of data to transmit
  *
@@ -1089,7 +1092,8 @@ uwb_status_code_t uwb_serialize_send_data_payload(const uint32_t connectionIdent
  *  \brief Calculate payload length required for creating LL Send Data command
  *
  *  This function calculates the payload length required to create a Send Data UCI command in
- * logical link mode. It does not append the UCI header size and must be incorporated by the caller.
+ *  logical link mode. It does not append the UCI header size and must be incorporated by the
+ * caller.
  *
  *  \param[in] dataSize Size of data to send
  *
@@ -1136,7 +1140,8 @@ int uwb_ntf_handler_start(void);
 void uwb_ntf_handler_stop(void);
 
 /**
- * \brief Callback for notification handler which should be registered during \fn uwb_api_initialize
+ * \brief Callback for notification handler which should be registered during \ref
+ * uwb_api_initialize
  */
 void uwb_ntf_callback_handler(const uint8_t *const packet, const uint32_t len);
 
@@ -1148,4 +1153,4 @@ void uwb_ntf_callback_handler(const uint8_t *const packet, const uint32_t len);
  * @}
  */
 
-#endif /* __UWB_API_FIRA_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_UWB_H_ */
