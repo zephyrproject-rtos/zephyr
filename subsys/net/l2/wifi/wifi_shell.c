@@ -2456,8 +2456,6 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	}
 #endif
 
-	k_mutex_init(&wifi_ap_sta_list_lock);
-
 	ret = net_mgmt(NET_REQUEST_WIFI_AP_ENABLE, iface, &cnx_params,
 		       sizeof(struct wifi_connect_req_params));
 	if (ret) {
