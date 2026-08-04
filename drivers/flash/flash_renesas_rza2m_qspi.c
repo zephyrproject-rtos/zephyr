@@ -1092,6 +1092,11 @@ static int flash_rza2m_init(const struct device *dev)
 	return 0;
 }
 
+#define RZA2M_QSPI_SPIBSC_SOC_NV_FLASH_COMPAT(node_id)                                             \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
+#define RZA2M_QSPI_SPIBSC_SOC_NV_FLASH_NODE(n)                                                     \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, RZA2M_QSPI_SPIBSC_SOC_NV_FLASH_COMPAT)
+
 #define FLASH_RENESAS_RZA2M_QSPI_SPIBSC_DEFINE(n)                                                  \
 	PINCTRL_DT_DEFINE(DT_INST_PARENT(n));                                                      \
 	uint32_t clock_subsys_spibsc##n = DT_CLOCKS_CELL(DT_INST_PARENT(n), clk_id);               \
@@ -1099,19 +1104,24 @@ static int flash_rza2m_init(const struct device *dev)
 		DEVICE_MMIO_ROM_INIT(DT_INST_PARENT(n)),                                           \
 		.type = SERIAL_FLASH,                                                              \
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(DT_INST_PARENT(n)),                              \
-		.flash_size = DT_INST_REG_SIZE(n),                                                 \
-		.erase_block_size = DT_INST_PROP_OR(n, erase_block_size, 4096),                    \
+		.flash_size = DT_REG_SIZE(RZA2M_QSPI_SPIBSC_SOC_NV_FLASH_NODE(n)),                 \
+		.erase_block_size = DT_PROP_OR(RZA2M_QSPI_SPIBSC_SOC_NV_FLASH_NODE(n),             \
+					       erase_block_size, 4096),                            \
 		.flash_param =                                                                     \
 			{                                                                          \
-				.write_block_size = DT_INST_PROP(n, write_block_size),             \
+				.write_block_size = DT_PROP(                                       \
+					RZA2M_QSPI_SPIBSC_SOC_NV_FLASH_NODE(n), write_block_size), \
 				.erase_value = ERASE_VALUE,                                        \
 			},                                                                         \
 		IF_ENABLED(CONFIG_FLASH_PAGE_LAYOUT,	\
 		(.layout = {                                                                       \
 			.pages_count =                                                             \
-				DT_INST_REG_SIZE(n) / DT_INST_PROP_OR(n, erase_block_size, 4096),  \
-			.pages_size = DT_INST_PROP_OR(n, erase_block_size, 4096),                  \
-		},))};               \
+				DT_REG_SIZE(RZA2M_QSPI_SPIBSC_SOC_NV_FLASH_NODE(n)) /              \
+				DT_PROP_OR(RZA2M_QSPI_SPIBSC_SOC_NV_FLASH_NODE(n),                 \
+					   erase_block_size, 4096),                                \
+			.pages_size = DT_PROP_OR(RZA2M_QSPI_SPIBSC_SOC_NV_FLASH_NODE(n),           \
+						  erase_block_size, 4096),                         \
+		},))};                  \
 	static struct flash_rza2m_data flash_renesas_rz_data_##n;                                  \
 	DEVICE_DT_INST_DEFINE(n, flash_rza2m_init, NULL, &flash_renesas_rz_data_##n,               \
 			      &flash_renesas_rz_config_##n, POST_KERNEL,                           \
