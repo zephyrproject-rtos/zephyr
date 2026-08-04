@@ -412,6 +412,13 @@ static void scan_done_handler(void)
 		case WIFI_AUTH_WPA3_PSK:
 			res.security = WIFI_SECURITY_TYPE_SAE;
 			break;
+		case WIFI_AUTH_WPA_WPA2_PSK:
+		case WIFI_AUTH_WPA2_WPA3_PSK:
+			res.security = WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
+			break;
+		case WIFI_AUTH_DPP:
+			res.security = WIFI_SECURITY_TYPE_DPP;
+			break;
 		case WIFI_AUTH_WAPI_PSK:
 			res.security = WIFI_SECURITY_TYPE_WAPI;
 			break;
@@ -1676,6 +1683,13 @@ static int esp32_wifi_status(const struct device *dev __unused,
 		break;
 	case WIFI_AUTH_WPA3_PSK:
 		status->security = WIFI_SECURITY_TYPE_SAE;
+		break;
+	case WIFI_AUTH_WPA_WPA2_PSK:
+	case WIFI_AUTH_WPA2_WPA3_PSK:
+		status->security = WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
+		break;
+	case WIFI_AUTH_DPP:
+		status->security = WIFI_SECURITY_TYPE_DPP;
 		break;
 	case WIFI_AUTH_WPA_ENTERPRISE:
 	case WIFI_AUTH_WPA2_ENTERPRISE:
