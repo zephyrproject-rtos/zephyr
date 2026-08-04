@@ -59,8 +59,22 @@ struct stm32_tsc_config {
 	bool iodef;
 	bool sync_acq;
 	bool sync_pol;
+	uint32_t acq_interval_ms;
 	void (*irq_func)(void);
 };
+
+struct stm32_tsc_data {
+	struct k_timer acq_timer;
+};
+
+void stm32_tsc_start(const struct device *dev);
+
+static void stm32_tsc_acq_timer_cb(struct k_timer *timer)
+{
+	const struct device *dev = k_timer_user_data_get(timer);
+
+	stm32_tsc_start(dev);
+}
 
 int stm32_tsc_group_register_callback(const struct device *dev, uint8_t group_idx,
 				      stm32_tsc_group_ready_cb cb, void *user_data)
@@ -289,6 +303,17 @@ static int stm32_tsc_init(const struct device *dev)
 
 	config->irq_func();
 
+	/* If a TSC-owned acquisition timer is configured, start it. Otherwise the
+	 * per-tsc-keys-child timers drive acquisition (single child only).
+	 */
+	if (config->acq_interval_ms != 0U) {
+		struct stm32_tsc_data *data = dev->data;
+
+		k_timer_init(&data->acq_timer, stm32_tsc_acq_timer_cb, NULL);
+		k_timer_user_data_set(&data->acq_timer, (void *)dev);
+		k_timer_start(&data->acq_timer, K_NO_WAIT, K_MSEC(config->acq_interval_ms));
+	}
+
 	return 0;
 }
 
@@ -318,6 +343,8 @@ static int stm32_tsc_init(const struct device *dev)
 	static struct stm32_tsc_group_data                                                         \
 		group_data_cfg_##index[DT_INST_CHILD_NUM_STATUS_OKAY(index)];                      \
                                                                                                    \
+	static struct stm32_tsc_data stm32_tsc_data_##index;                                       \
+                                                                                                   \
 	static const struct stm32_tsc_config stm32_tsc_cfg_##index = {                             \
 		.tsc = (TSC_TypeDef *)DT_INST_REG_ADDR(index),                                     \
 		.pclken = pclken_##index,                                                          \
@@ -336,10 +363,12 @@ static int stm32_tsc_init(const struct device *dev)
 		.iodef = DT_INST_PROP(index, st_iodef_float),                                      \
 		.sync_acq = DT_INST_PROP(index, st_synced_acquisition),                            \
 		.sync_pol = DT_INST_PROP(index, st_syncpol_rising),                                \
+		.acq_interval_ms = DT_INST_PROP_OR(index, st_acquisition_interval_ms, 0),          \
 		.irq_func = stm32_tsc_irq_init_##index,                                            \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(index, stm32_tsc_init, NULL, NULL, &stm32_tsc_cfg_##index,           \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+	DEVICE_DT_INST_DEFINE(index, stm32_tsc_init, NULL, &stm32_tsc_data_##index,                \
+			      &stm32_tsc_cfg_##index, POST_KERNEL,                                 \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(STM32_TSC_INIT)
 
@@ -419,9 +448,18 @@ static int input_tsc_keys_init(const struct device *dev)
 		return ret;
 	}
 
-	k_timer_init(&data->sampling_timer, input_tsc_sampling_timer_callback, NULL);
-	k_timer_user_data_set(&data->sampling_timer, (void *)config->tsc_dev);
-	k_timer_start(&data->sampling_timer, K_NO_WAIT, K_MSEC(config->sampling_interval_ms));
+	/* If the parent TSC owns the acquisition timer, do not start a per-child
+	 * timer (multiple children calling stm32_tsc_start() would race on the
+	 * single START bit).
+	 */
+	const struct stm32_tsc_config *parent_cfg = config->tsc_dev->config;
+
+	if (parent_cfg->acq_interval_ms == 0U) {
+		k_timer_init(&data->sampling_timer, input_tsc_sampling_timer_callback, NULL);
+		k_timer_user_data_set(&data->sampling_timer, (void *)config->tsc_dev);
+		k_timer_start(&data->sampling_timer, K_NO_WAIT,
+			      K_MSEC(config->sampling_interval_ms));
+	}
 
 	return 0;
 }
