@@ -986,30 +986,6 @@ ZTEST(test_mdns_responder, test_ipv6_group_ref_not_leaked_on_cycles)
 		      "(%ld -> %ld)", ref_before, ref_after);
 }
 
-/* Reproduces the state the connection-manager reporter observed: the mDNS
- * IPv4 group is still marked "joined" when NET_EVENT_IF_UP is delivered (the
- * link bounce did not clear it). A plain net_ipv4_igmp_join() is then a no-op
- * (igmp.c returns early when the address is already joined), so no membership
- * report reaches an IGMP-snooping switch and the responder stops receiving
- * queries even though the local state looks fine. Recovery must force a fresh
- * report in this case.
- */
-ZTEST(test_mdns_responder, test_ipv4_igmp_report_when_already_joined_on_if_up)
-{
-	zassert_true(ipv4_group_joined(iface1),
-		     "IPv4 mDNS group should be joined at start");
-
-	/* Group stays joined; only an IF_UP event is delivered (no down). */
-	igmp_report_count = 0;
-
-	net_mgmt_event_notify(NET_EVENT_IF_UP, iface1);
-	k_sleep(K_MSEC(200));
-
-	zassert_true(igmp_report_count > 0,
-		     "No IGMP report was re-emitted when the group was already joined "
-		     "on interface up");
-}
-
 /* Same, but for a carrier loss (Ethernet cable unplugged/replugged) without an
  * administrative down.
  */

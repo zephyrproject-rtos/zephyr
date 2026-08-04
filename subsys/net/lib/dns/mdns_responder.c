@@ -235,9 +235,8 @@ NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v6_svc, dns_dispatcher_svc_handler,
 				      MDNS_V6_SVC_POLL_COUNT);
 #endif
 
-static struct net_mgmt_event_callback mgmt_iface_cb;
-
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
+static struct net_mgmt_event_callback mgmt_iface_cb;
 static void cancel_probes(struct mdns_responder_context *ctx);
 static struct net_mgmt_event_callback mgmt_conn_cb;
 #if defined(CONFIG_NET_IPV4)
@@ -329,6 +328,7 @@ static void mark_needs_announce(struct net_if *iface, bool needs_announce)
 }
 #endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
+#if defined(CONFIG_MDNS_RESPONDER_PROBE)
 static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 				     uint64_t mgmt_event, struct net_if *iface)
 
@@ -337,73 +337,14 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_IF_UP) {
-		/* When the interface comes back up (e.g. Ethernet cable was
-		 * reattached), the stack has left the mDNS multicast groups if
-		 * the interface was fully brought down. Rejoin them here so
-		 * that the responder keeps receiving queries. The well-known
-		 * group addresses are constant, so construct them directly
-		 * instead of relying on any interface-index bookkeeping.
-		 */
-#if defined(CONFIG_NET_IPV4)
-		if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
-			struct net_sockaddr_in addr4;
-			int ret;
-
-			create_ipv4_addr(&addr4);
-
-			/* Rejoin so that a fresh IGMP membership report is always
-			 * emitted, even when the group is still locally marked as
-			 * joined (net_ipv4_igmp_join() would return early without
-			 * sending a report in that case). This matters for e.g. an
-			 * IGMP-snooping switch that dropped its state while the link
-			 * was down. If the group was fully removed while the
-			 * interface was down, rejoin returns -ENOENT, so fall back
-			 * to a join which re-adds it.
-			 */
-			ret = net_ipv4_igmp_rejoin(iface, &addr4.sin_addr);
-			if (ret == -ENOENT) {
-				ret = net_ipv4_igmp_join(iface, &addr4.sin_addr, NULL);
-			}
-
-			if (ret < 0) {
-				NET_DBG("Cannot add IPv4 multicast address %s to iface %d (%d)",
-					net_sprint_ipv4_addr(&addr4.sin_addr),
-					net_if_get_by_iface(iface), ret);
-			}
-		}
-#endif /* defined(CONFIG_NET_IPV4) */
-
-#if defined(CONFIG_NET_IPV6)
-		if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
-			struct net_sockaddr_in6 addr6;
-			int ret;
-
-			create_ipv6_addr(&addr6);
-
-			ret = net_ipv6_mld_rejoin(iface, &addr6.sin6_addr);
-			if (ret == -ENOENT) {
-				ret = net_ipv6_mld_join(iface, &addr6.sin6_addr);
-			}
-
-			if (ret < 0) {
-				NET_DBG("Cannot add IPv6 multicast address %s to iface %d (%d)",
-					net_sprint_ipv6_addr(&addr6.sin6_addr),
-					net_if_get_by_iface(iface), ret);
-			}
-		}
-#endif /* defined(CONFIG_NET_IPV6) */
-	}
-
-#if defined(CONFIG_MDNS_RESPONDER_PROBE)
 	if (mgmt_event == NET_EVENT_IF_UP && init_listener_done) {
 		do_announce = true;
 		announce_count = 0;
 
 		mark_needs_announce(iface, true);
 	}
-#endif /* CONFIG_MDNS_RESPONDER_PROBE */
 }
+#endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
 static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
 {
@@ -2468,15 +2409,14 @@ static void do_init_listener(struct k_work *work)
 
 static int mdns_responder_init(void)
 {
-	uint64_t flags = NET_EVENT_IF_UP;
 	external_records = NULL;
 	external_records_count = 0;
 
-	net_mgmt_init_event_callback(&mgmt_iface_cb, mdns_iface_event_handler, flags);
-	net_mgmt_add_event_callback(&mgmt_iface_cb);
-
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
 	int ret;
+
+	net_mgmt_init_event_callback(&mgmt_iface_cb, mdns_iface_event_handler, NET_EVENT_IF_UP);
+	net_mgmt_add_event_callback(&mgmt_iface_cb);
 
 	net_mgmt_init_event_callback(&mgmt_conn_cb, mdns_conn_event_handler,
 				     NET_EVENT_L4_DISCONNECTED);
