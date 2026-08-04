@@ -4,3 +4,4 @@ board:
   vendor: udoo
   socs:
     - name: esp32
+    - name: rp2040
