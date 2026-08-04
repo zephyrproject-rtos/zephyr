@@ -111,6 +111,9 @@ static void tc_setup(void *fixture)
 	do_not_call_cb = false;
 	cb_err_status = 0;
 	k_sem_reset(&delayed_msg_sent);
+	/* The module only queues messages for a provisioned, running node. */
+	atomic_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+	atomic_set_bit(bt_mesh.flags, BT_MESH_VALID);
 	bt_mesh_delayable_msg_init();
 }
 
