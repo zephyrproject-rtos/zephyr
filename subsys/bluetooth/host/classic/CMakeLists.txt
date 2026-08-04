@@ -12,6 +12,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_AVCTP            avctp.c)
 zephyr_library_sources_ifdef(CONFIG_BT_RFCOMM           rfcomm.c)
 zephyr_library_sources_ifdef(CONFIG_BT_BIP              bip.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MAP              map.c)
+zephyr_library_sources_ifdef(CONFIG_BT_FTP              ftp.c)
 
 zephyr_library_sources_ifdef(
   CONFIG_BT_CLASSIC
