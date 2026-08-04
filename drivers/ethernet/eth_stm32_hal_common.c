@@ -54,6 +54,9 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			/* semaphore taken and receive packets */
 			while ((pkt = eth_stm32_rx(dev)) != NULL) {
 				iface = net_pkt_iface(pkt);
+#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
+				(void)eth_stm32_is_ptp_pkt(pkt);
+#endif
 				res = net_recv_data(iface, pkt);
 				if (res < 0) {
 					eth_stats_update_errors_rx(net_pkt_iface(pkt));

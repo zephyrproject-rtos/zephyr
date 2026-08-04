@@ -29,6 +29,39 @@ LOG_MODULE_REGISTER(eth_stm32_hal_ptp, CONFIG_ETHERNET_LOG_LEVEL);
 #define ETH_STM32_PTP_NOT_CONFIGURED HAL_ETH_PTP_NOT_CONFIGURED
 #endif /* stm32F7x or sm32F4x */
 
+bool eth_stm32_is_ptp_pkt(struct net_pkt *pkt)
+{
+	const struct net_buf *buf = pkt->frags;
+	const struct net_eth_hdr *hdr;
+	uint16_t type;
+
+	if (buf == NULL || buf->len < sizeof(struct net_eth_hdr)) {
+		return false;
+	}
+
+	hdr = (const struct net_eth_hdr *)buf->data;
+	type = net_ntohs(hdr->type);
+
+	if (type == NET_ETH_PTYPE_VLAN) {
+		const struct net_eth_vlan_hdr *vlan_hdr;
+
+		if (buf->len < sizeof(struct net_eth_vlan_hdr)) {
+			return false;
+		}
+
+		vlan_hdr = (const struct net_eth_vlan_hdr *)buf->data;
+		type = net_ntohs(vlan_hdr->type);
+	}
+
+	if (type != NET_ETH_PTYPE_PTP) {
+		return false;
+	}
+
+	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
+
+	return true;
+}
+
 void HAL_ETH_TxPtpCallback(uint32_t *buff, ETH_TimeStampTypeDef *timestamp)
 {
 	struct eth_stm32_tx_context *ctx = (struct eth_stm32_tx_context *)buff;
