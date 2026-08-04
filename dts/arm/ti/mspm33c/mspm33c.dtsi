@@ -127,6 +127,18 @@
 				#size-cells = <1>;
 			};
 		};
+
+		vref0: vref@400e8000 {
+			compatible = "ti,mspm0-vref";
+			reg = <0x400e8000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_BUSCLK>;
+			ti,clk-div = <0x1>;
+			off-on-delay-us = <350>;
+			regulator-uv = <1400000>;
+			ti,sample-cycles = <10>;
+			ti,hold-cycles = <40>;
+			status = "disabled";
+		};
 	};
 };
 
