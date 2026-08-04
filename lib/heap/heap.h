@@ -17,7 +17,6 @@
  * only when debugging the heap code.  They shouldn't be routine
  * assertions.
  */
-
 #ifdef CONFIG_SYS_HEAP_VALIDATE
 #define CHECK(x) __ASSERT(x, "")
 #else
