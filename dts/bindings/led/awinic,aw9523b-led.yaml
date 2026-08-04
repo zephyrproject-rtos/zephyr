@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Smartbox Assistive Technlogy Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: AW9523B LED Controller
+
+compatible: "awinic,aw9523b-led"
+
+on-bus: aw9523b
+
+include: ["base.yaml", "led-controller.yaml"]
+
+properties:
+  i-max-microamp:
+    type: int
+    description: Global LED Max Current
+    enum: [37000, 27750, 18500, 9250]
+    default: 37000
+
+child-binding:
+  properties:
+    port:
+      type: int
+      required: true
+      description: AW9523B LED port number (0..1)
+      enum: [0, 1]
+    pin:
+      type: int
+      required: true
+      description: AW9523B LED pin/channel number (0..7)
+      enum: [0, 1, 2, 3, 4, 5, 6, 7]

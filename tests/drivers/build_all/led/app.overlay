@@ -242,6 +242,29 @@
 					current-limit = <10>;
 				};
 			};
+
+			aw9523b@19 {
+				status = "okay";
+				reg = <0x19>;
+				reset-gpios = <&test_gpio 0 0>;
+				compatible = "awinic,aw9523b";
+
+				leds {
+					compatible = "awinic,aw9523b-led";
+					i-max-microamp = <9250>;
+					status = "okay";
+
+					led0 {
+						port = <1>;
+						pin = <0>;
+					};
+
+					led1 {
+						port = <1>;
+						pin = <1>;
+					};
+				};
+			};
 		};
 
 		test_pwm: pwm@12341234 {
