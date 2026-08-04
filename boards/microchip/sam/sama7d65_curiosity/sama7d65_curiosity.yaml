@@ -15,6 +15,7 @@ supported:
   - eeprom
   - entropy
   - gpio
+  - hwinfo
   - i2c
   - led
   - pinctrl
