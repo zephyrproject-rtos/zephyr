@@ -22,6 +22,7 @@
 #include <time.h>
 #include <zephyr/drivers/cellular.h>
 #include <zephyr/sys/util_macro.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -189,6 +190,7 @@ extern "C" {
 			.direct = false,                                                           \
 			.paused = HL78XX_MONITOR_INITIAL_PAUSED(__VA_ARGS__),                      \
 		}}
+
 /**
  * @brief Define an AT monitor to receive parsed unsolicited AT notifications directly
  * in the HL78xx modem RX workqueue context.
@@ -224,18 +226,24 @@ enum hl78xx_cell_rat_mode {
 	HL78XX_RAT_CAT_M1 = 0,
 	/** NB-IoT radio access technology */
 	HL78XX_RAT_NB1,
-#ifdef CONFIG_MODEM_HL78XX_12
-	/** GSM radio access technology (HL7812 only) */
+#if defined(CONFIG_MODEM_HL78XX_12) || defined(__DOXYGEN__)
+	/** GSM radio access technology (HL7812 only)
+	 * @kconfig_dep{CONFIG_MODEM_HL78XX_12}
+	 */
 	HL78XX_RAT_GSM,
-#ifdef CONFIG_MODEM_HL78XX_12_FW_R6
-	/** NB-IoT Non-Terrestrial Network (HL7812 FW R6+) */
+#if defined(CONFIG_MODEM_HL78XX_12_FW_R6) || defined(__DOXYGEN__)
+	/** NB-IoT Non-Terrestrial Network (HL7812 FW R6+)
+	 * @kconfig_dep{CONFIG_MODEM_HL78XX_12_FW_R6}
+	 */
 	HL78XX_RAT_NBNTN,
 #endif /* CONFIG_MODEM_HL78XX_12_FW_R6 */
 #endif /* CONFIG_MODEM_HL78XX_12 */
-#ifdef CONFIG_MODEM_HL78XX_AUTORAT
-	/** Automatic RAT selection mode */
+#if defined(CONFIG_MODEM_HL78XX_AUTORAT) || defined(__DOXYGEN__)
+	/** Automatic RAT selection mode
+	 * @kconfig_dep{CONFIG_MODEM_HL78XX_AUTORAT}
+	 */
 	HL78XX_RAT_MODE_AUTO,
-#endif
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 	/** No RAT mode */
 	HL78XX_RAT_MODE_NONE,
 	/** Number of valid RAT modes */
@@ -500,11 +508,11 @@ enum nmea_output_port {
 	NMEA_OUTPUT_CMUX_DLC4 = 0x08
 };
 
-#if defined(CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE) || defined(__DOXYGEN__)
 /**
  * @brief A-GNSS assistance data validity mode
  *
  * Mode value returned by AT+GNSSAD? read command or used by write command
+ * @kconfig_dep{CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE}
  */
 enum hl78xx_agnss_mode {
 	/** Data is not valid (read) / Delete data (write) */
@@ -518,6 +526,7 @@ enum hl78xx_agnss_mode {
  * or number of days before it expires (read command)
  *
  * Only these values are accepted by the AT+GNSSAD=1,\<days\> command
+ * @kconfig_dep{CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE}
  */
 enum hl78xx_agnss_days {
 	/** Request 1 day of A-GNSS assistance data */
@@ -539,6 +548,8 @@ enum hl78xx_agnss_days {
  *
  * Contains the parsed response from AT+GNSSAD? command.
  * When mode is VALID, the expiry fields indicate time remaining.
+ *
+ * @kconfig_dep{CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE}
  */
 struct hl78xx_agnss_status {
 	/** Validity mode: 0 = invalid/empty, 1 = valid */
@@ -550,14 +561,15 @@ struct hl78xx_agnss_status {
 	/** Minutes remaining before expiry (0-59), valid only when mode=1 */
 	uint8_t minutes;
 };
-#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
-#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
-#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) || defined(__DOXYGEN__)
+#if defined(CONFIG_MODEM_HL78XX_POWER_DOWN) || defined(__DOXYGEN__)
 /**
  * @brief Power down event types
  *
  * Types of power down events reported by the modem
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE,CONFIG_MODEM_HL78XX_POWER_DOWN}
  */
 enum power_down_event {
 	/** Power down event: Modem is entering power down mode */
@@ -573,6 +585,8 @@ enum power_down_event {
  *
  * These values control how the driver handles the stage-2 shutdown work after
  * HL78XX_POWER_DOWN_UPDATE is dispatched with POWER_DOWN_EVENT_ENTER.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE,CONFIG_MODEM_HL78XX_POWER_DOWN}
  */
 enum hl78xx_power_down_response {
 	/** Proceed with shutdown as soon as the driver workqueue can run it */
@@ -582,11 +596,13 @@ enum hl78xx_power_down_response {
 };
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
-#ifdef CONFIG_MODEM_HL78XX_EDRX
+#if defined(CONFIG_MODEM_HL78XX_EDRX) || defined(__DOXYGEN__)
 /**
  * @brief eDRX event types
  *
  * Types of eDRX events reported by the modem
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE,CONFIG_MODEM_HL78XX_EDRX}
  */
 enum hl78xx_edrx_event {
 	/** Modem exited eDRX idle mode */
@@ -597,11 +613,14 @@ enum hl78xx_edrx_event {
 	HL78XX_EDRX_EVENT_IDLE_NONE,
 };
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
-#ifdef CONFIG_MODEM_HL78XX_PSM
+
+#if defined(CONFIG_MODEM_HL78XX_PSM) || defined(__DOXYGEN__)
 /**
  * @brief PSM event types
  *
  * Types of Power Saving Mode events reported by the modem
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE,CONFIG_MODEM_HL78XX_PSM}
  */
 enum hl78xx_psmev_event {
 	/** Modem exited PSM mode */
@@ -685,44 +704,58 @@ enum hl78xx_evt_type {
 	HL78XX_LTE_PHONE_FUNCTIONALITY_UPDATE,
 	/** Extended timezone and universal time update (+CTZEU) */
 	HL78XX_LTE_CTZEU_UPDATE,
-#ifdef CONFIG_HL78XX_GNSS
-	/** GNSS engine initialized and ready */
+#if defined(CONFIG_HL78XX_GNSS) || defined(__DOXYGEN__)
+	/** GNSS engine initialized and ready. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 	HL78XX_GNSS_ENGINE_READY,
-	/** GNSS engine initialization event */
+	/** GNSS engine initialization event. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 	HL78XX_GNSS_EVENT_INIT,
-	/** GNSS search started */
+	/** GNSS search started. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 	HL78XX_GNSS_EVENT_START,
-	/** GNSS search stopped */
+	/** GNSS search stopped. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 	HL78XX_GNSS_EVENT_STOP,
-	/** GNSS position fix obtained */
+	/** GNSS position fix obtained. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 	HL78XX_GNSS_EVENT_POSITION,
-	/** GNSS start failed because LTE is active (shared RF path) */
+	/** GNSS start failed because LTE is active (shared RF path)
+	 * @kconfig_dep{CONFIG_HL78XX_GNSS}
+	 */
 	HL78XX_GNSS_EVENT_START_BLOCKED,
-	/** GNSS search timeout expired */
+	/** GNSS search timeout expired. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 	HL78XX_GNSS_EVENT_SEARCH_TIMEOUT,
-	/** GNSS mode exited - modem is now in airplane mode, user can decide next step */
+	/** GNSS mode exited - modem is now in airplane mode, user can decide next step
+	 * @kconfig_dep{CONFIG_HL78XX_GNSS}
+	 */
 	HL78XX_GNSS_EVENT_MODE_EXITED,
 #endif /* CONFIG_HL78XX_GNSS */
-#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
-#ifdef CONFIG_MODEM_HL78XX_EDRX
-	/** eDRX idle mode entered */
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) || defined(__DOXYGEN__)
+#if defined(CONFIG_MODEM_HL78XX_EDRX) || defined(__DOXYGEN__)
+	/** eDRX idle mode entered
+	 * @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE,CONFIG_MODEM_HL78XX_EDRX}
+	 */
 	HL78XX_EDRX_IDLE_UPDATE,
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
-#ifdef CONFIG_MODEM_HL78XX_PSM
-	/** Modem PSM event update */
+#if defined(CONFIG_MODEM_HL78XX_PSM) || defined(__DOXYGEN__)
+	/** Modem PSM event update
+	 * @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE,CONFIG_MODEM_HL78XX_PSM}
+	 */
 	HL78XX_LTE_PSMEV_UPDATE,
 #endif /* CONFIG_MODEM_HL78XX_PSM */
-#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-	/** Modem power-down event update */
+#if defined(CONFIG_MODEM_HL78XX_POWER_DOWN) || defined(__DOXYGEN__)
+	/** Modem power-down event update
+	 * @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE,CONFIG_MODEM_HL78XX_POWER_DOWN}
+	 */
 	HL78XX_POWER_DOWN_UPDATE,
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
-	/** VGPIO pin went LOW */
+	/** VGPIO pin went LOW. @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE} */
 	HL78XX_VGPIO_LOW,
-	/** VGPIO pin went HIGH */
+	/** VGPIO pin went HIGH. @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE} */
 	HL78XX_VGPIO_HIGH,
-	/** GPIO6 pin went LOW indicating sleep or power-down entry */
+	/** GPIO6 pin went LOW indicating sleep or power-down entry
+	 * @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE}
+	 */
 	HL78XX_GPIO6_LOW,
-	/** GPIO6 pin went HIGH indicating wake from sleep or power-down */
+	/** GPIO6 pin went HIGH indicating wake from sleep or power-down
+	 * @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE}
+	 */
 	HL78XX_GPIO6_HIGH,
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	/** Cellular measurement update */
@@ -730,11 +763,13 @@ enum hl78xx_evt_type {
 	/** Event type count */
 	HL78XX_EVT_TYPE_COUNT
 };
-#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+
+#if defined(CONFIG_MODEM_HL78XX_AIRVANTAGE) || defined(__DOXYGEN__)
 /**
  * @brief Device Services Indications (+WDSI)
  *
  * Enum representing AirVantage Device Services Indications
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AIRVANTAGE}
  */
 enum wdsi_indication {
 	/** Raised at startup if credentials for Bootstrap Server are present */
@@ -778,11 +813,12 @@ enum wdsi_indication {
 };
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
-#ifdef CONFIG_HL78XX_GNSS
+#if defined(CONFIG_HL78XX_GNSS) || defined(__DOXYGEN__)
 /**
  * @brief GNSS event type
  *
  * Types of GNSS events reported by the modem
+ * @kconfig_dep{CONFIG_HL78XX_GNSS}
  */
 enum hl78xx_gnss_event_type {
 	/** GNSS engine initialization event */
@@ -794,10 +830,12 @@ enum hl78xx_gnss_event_type {
 	/** GNSS position fix event */
 	HL78XX_GNSSEV_POSITION = 3
 };
+
 /**
  * @brief GNSS event status
  *
  * Status codes for GNSS operations
+ * @kconfig_dep{CONFIG_HL78XX_GNSS}
  */
 enum hl78xx_event_status {
 	/** Operation failed */
@@ -805,10 +843,12 @@ enum hl78xx_event_status {
 	/** Operation succeeded */
 	HL78XX_STATUS_SUCCESS = 1
 };
+
 /**
  * @brief GNSS position events (eventType = 3)
  *
  * Position fix status reported by the modem
+ * @kconfig_dep{CONFIG_HL78XX_GNSS}
  */
 enum gnss_position_events {
 	/** 0 — The GNSS fix is lost or not available yet */
@@ -840,27 +880,29 @@ struct hl78xx_evt {
 		enum cellular_registration_status reg_status;
 		/** Radio access technology mode (for HL78XX_LTE_RAT_UPDATE) */
 		enum hl78xx_cell_rat_mode rat_mode;
-#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
-		/** AirVantage device service indication */
+#if defined(CONFIG_MODEM_HL78XX_AIRVANTAGE) || defined(__DOXYGEN__)
+		/** AirVantage device service indication
+		 * @kconfig_dep{CONFIG_MODEM_HL78XX_AIRVANTAGE}
+		 */
 		enum wdsi_indication wdsi_indication;
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
-#ifdef CONFIG_HL78XX_GNSS
-		/** GNSS event status */
+#if defined(CONFIG_HL78XX_GNSS) || defined(__DOXYGEN__)
+		/** GNSS event status. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 		enum hl78xx_event_status event_status;
-		/** GNSS position event type */
+		/** GNSS position event type. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 		enum gnss_position_events position_event;
 #endif /* CONFIG_HL78XX_GNSS */
-#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
-#ifdef CONFIG_MODEM_HL78XX_PSM
-		/* PSM event */
+#if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) || defined(__DOXYGEN__)
+#if defined(CONFIG_MODEM_HL78XX_PSM) || defined(__DOXYGEN__)
+		/** PSM event. @kconfig_dep{CONFIG_MODEM_HL78XX_PSM} */
 		enum hl78xx_psmev_event psm_event;
 #endif /* CONFIG_MODEM_HL78XX_PSM */
-#ifdef CONFIG_MODEM_HL78XX_EDRX
-		/* eDRX event */
+#if defined(CONFIG_MODEM_HL78XX_EDRX) || defined(__DOXYGEN__)
+		/** eDRX event. @kconfig_dep{CONFIG_MODEM_HL78XX_EDRX} */
 		enum hl78xx_edrx_event edrx_event;
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
-#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
-		/* Power-down event */
+#if defined(CONFIG_MODEM_HL78XX_POWER_DOWN) || defined(__DOXYGEN__)
+		/** Power-down event. @kconfig_dep{CONFIG_MODEM_HL78XX_POWER_DOWN} */
 		enum power_down_event power_down_event;
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
@@ -1015,6 +1057,7 @@ struct hl78xx_gnss_aux_data_callback {
 		.dev = _dev,                                                                       \
 		.callback = _callback,                                                             \
 	}
+
 /**
  * @brief Register a callback structure for GNSS auxiliary data published
  *
@@ -1382,7 +1425,6 @@ int hl78xx_api_func_get_sinr_validity(const struct device *dev, bool *is_valid);
 int hl78xx_api_func_set_network_operator_format(const struct device *dev,
 						enum hl78xx_operator_format format);
 
-#ifdef CONFIG_MODEM_HL78XX_AUTORAT
 /**
  * @brief Set a new Preferred RAT List through AT+KSELACQ.
  *
@@ -1392,6 +1434,8 @@ int hl78xx_api_func_set_network_operator_format(const struct device *dev,
  * Duplicate RAT entries are allowed to bias the modem's search order. To clear
  * the PRL and disable automatic RAT switching, pass rat1/rat2/rat3 as
  * HL78XX_KSELACQ_RAT_CLEAR; the driver emits `AT+KSELACQ=0,0` for that case.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AUTORAT}
  *
  * @param dev Cellular network device instance
  * @param kselacq_rats Raw `AT+KSELACQ` PRL entries to set
@@ -1404,12 +1448,13 @@ int hl78xx_api_func_set_prl(const struct device *dev, const struct kselacq_synta
  *
  * Retrieves the current raw `AT+KSELACQ` PRL values from the modem cache.
  *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AUTORAT}
+ *
  * @param dev Cellular network device instance
  * @param kselacq_rats Pointer to store the current PRL entries
  * @return 0 if successful, negative errno on failure
  */
 int hl78xx_api_func_get_prl(const struct device *dev, struct kselacq_syntax *kselacq_rats);
-#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 
 /**
  * @brief Register or clear a runtime band provider for the driver.
@@ -1554,9 +1599,11 @@ static inline int hl78xx_get_sinr_validity(const struct device *dev, bool *is_va
 	return hl78xx_api_func_get_sinr_validity(dev, is_valid);
 }
 
-#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+#if defined(CONFIG_MODEM_HL78XX_AUTORAT) || defined(__DOXYGEN__)
 /**
  * @brief Set a new raw `AT+KSELACQ` Preferred RAT List.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AUTORAT}
  *
  * @param dev Pointer to the modem device instance.
  * @param prl Preferred RAT List expressed as raw `AT+KSELACQ` values.
@@ -1627,6 +1674,7 @@ static inline int hl78xx_get_phone_functionality(const struct device *dev,
 {
 	return hl78xx_api_func_get_phone_functionality(dev, functionality);
 }
+
 /**
  * @brief Send an AT command to the modem and wait for a matched response.
  *
@@ -1680,6 +1728,7 @@ static inline int hl78xx_modem_at_err(int error)
 {
 	return (error & 0xff00ffffU);
 }
+
 /**
  * @brief Convert raw RSSI value from the modem to dBm.
  *
@@ -1707,6 +1756,7 @@ static inline int hl78xx_parse_rssi(uint8_t rssi, int16_t *value)
 	*value = (int16_t)CSQ_RSSI_TO_DB(rssi);
 	return 0;
 }
+
 /**
  * @brief Convert raw RSRP value from the modem to dBm.
  *
@@ -1740,6 +1790,7 @@ static inline int hl78xx_parse_rsrp(uint8_t rsrp, int16_t *value)
 	*value = (int16_t)CESQ_RSRP_TO_DB(rsrp);
 	return 0;
 }
+
 /**
  * @brief Convert raw RSRQ value from the modem to dB.
  *
@@ -1765,6 +1816,7 @@ static inline int hl78xx_parse_rsrq(uint8_t rsrq, int16_t *value)
 	*value = (int16_t)CESQ_RSRQ_TO_DB(rsrq);
 	return 0;
 }
+
 /**
  * @brief Pause monitor.
  *
@@ -1776,6 +1828,7 @@ static inline void hl78xx_evt_monitor_pause(struct hl78xx_evt_monitor_entry *mon
 {
 	mon->flags.paused = true;
 }
+
 /**
  * @brief Resume monitor.
  *
@@ -1927,12 +1980,14 @@ enum cellular_access_technology hl78xx_rat_to_access_tech(enum hl78xx_cell_rat_m
  * @return Corresponding HL78xx RAT mode.
  */
 enum hl78xx_cell_rat_mode hl78xx_access_tech_to_rat(enum cellular_access_technology access_tech);
-#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
+
 /**
  * @brief Start an AirVantage Device Management (DM) session
  *
  * Initiates a connection to the Sierra Wireless AirVantage server
  * for device management operations.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AIRVANTAGE}
  *
  * @param dev Pointer to the modem device
  * @return 0 on success, negative errno on failure
@@ -1944,11 +1999,12 @@ int hl78xx_start_airvantage_dm_session(const struct device *dev);
  *
  * Terminates the active connection to the AirVantage server.
  *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AIRVANTAGE}
+ *
  * @param dev Pointer to the modem device
  * @return 0 on success, negative errno on failure
  */
 int hl78xx_stop_airvantage_dm_session(const struct device *dev);
-#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
 /**
  * @brief Drive the modem WAKE pin low.
@@ -1996,7 +2052,6 @@ int hl78xx_set_wake_pin_high(const struct device *dev);
  */
 int hl78xx_set_active_sim(const struct device *dev, enum hl78xx_sim_slot sim_slot);
 
-#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 /**
  * @brief Wake the modem from PSM sleep
  *
@@ -2014,6 +2069,8 @@ int hl78xx_set_active_sim(const struct device *dev, enum hl78xx_sim_slot sim_slo
  * Can also be used independently of GNSS to wake the modem for any
  * purpose (e.g. sending data earlier than the next PSM cycle).
  *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE}
+ *
  * @param dev Pointer to the modem device
  * @return 0 on success
  * @return -EALREADY if modem is not in sleep state
@@ -2021,18 +2078,16 @@ int hl78xx_set_active_sim(const struct device *dev, enum hl78xx_sim_slot sim_slo
  */
 int hl78xx_wakeup_modem(const struct device *dev);
 
-#ifdef CONFIG_MODEM_HL78XX_EDRX
 /**
  * @brief Get the remaining time for the modem to go in eDRX idle state
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_LOW_POWER_MODE,CONFIG_MODEM_HL78XX_EDRX}
  *
  * @param dev Pointer to the modem device
  * @return Remaining time in milliseconds, or negative errno on failure
  */
 int hl78xx_edrx_get_time_to_sleep(const struct device *dev);
-#endif /* CONFIG_MODEM_HL78XX_EDRX */
-#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
-#ifdef CONFIG_HL78XX_GNSS
 /**
  * @brief Enter GNSS mode
  *
@@ -2057,6 +2112,8 @@ int hl78xx_edrx_get_time_to_sleep(const struct device *dev);
  *
  * After entering GNSS mode, call hl78xx_queue_gnss_search() to start fix acquisition.
  *
+ * @kconfig_dep{CONFIG_HL78XX_GNSS}
+ *
  * @param dev Pointer to the modem device
  * @return 0 on success, negative errno on failure
  */
@@ -2079,6 +2136,8 @@ int hl78xx_enter_gnss_mode(const struct device *dev);
  *  * - **LOW-POWER-PSM mode**: User does not need to do anything, the modem will automatically
  * transition back to LTE registration after the kcellmeasure or socket data transmission starts.
  *
+ * @kconfig_dep{CONFIG_HL78XX_GNSS}
+ *
  * @param dev Pointer to the modem device
  * @return 0 on success, -EALREADY if not in GNSS mode, negative errno on failure
  */
@@ -2090,6 +2149,8 @@ int hl78xx_exit_gnss_mode(const struct device *dev);
  * Starts GNSS satellite search to obtain a position fix.
  * Must be called after hl78xx_enter_gnss_mode().
  *
+ * @kconfig_dep{CONFIG_HL78XX_GNSS}
+ *
  * @param dev Pointer to the GNSS device
  * @return 0 on success, negative errno on failure
  */
@@ -2097,6 +2158,8 @@ int hl78xx_queue_gnss_search(const struct device *dev);
 
 /**
  * @brief Set NMEA output port for GNSS
+ *
+ * @kconfig_dep{CONFIG_HL78XX_GNSS}
  *
  * @param dev Pointer to the GNSS device
  * @param port NMEA output port configuration
@@ -2111,6 +2174,8 @@ int hl78xx_gnss_set_nmea_output(const struct device *dev, enum nmea_output_port 
  * the moment this function is called. Setting @p timeout_ms to 0 disables the
  * active search timeout.
  *
+ * @kconfig_dep{CONFIG_HL78XX_GNSS}
+ *
  * @param dev Pointer to the GNSS device
  * @param timeout_ms Timeout in milliseconds (0 = no timeout)
  * @return 0 on success, negative errno on failure
@@ -2123,17 +2188,20 @@ int hl78xx_gnss_set_search_timeout(const struct device *dev, uint32_t timeout_ms
  * Queries the modem for the last known position using AT+GNSSLOC?
  * Result is delivered via GNSS data callback.
  *
+ * @kconfig_dep{CONFIG_HL78XX_GNSS}
+ *
  * @param dev Pointer to the GNSS device
  * @return 0 on success, -EBUSY if another script is running, other negative errno on failure
  */
 int hl78xx_gnss_get_latest_known_fix(const struct device *dev);
 
-#ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
 /**
  * @brief Get A-GNSS assistance data status
  *
  * Queries the modem for A-GNSS assistance data validity and expiry
  * using AT+GNSSAD? command.
+ *
+ * @kconfig_dep{CONFIG_HL78XX_GNSS,CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE}
  *
  * @param dev Pointer to the GNSS device
  * @param status Pointer to structure to receive the status
@@ -2148,6 +2216,8 @@ int hl78xx_gnss_assist_data_get_status(const struct device *dev,
  * Initiates download of predicted assistance data from the network
  * using AT+GNSSAD=1,\<days\> command. Requires active network connection.
  *
+ * @kconfig_dep{CONFIG_HL78XX_GNSS,CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE}
+ *
  * @param dev Pointer to the GNSS device
  * @param days Number of days of prediction data to download.
  *             Valid values: 1, 2, 3, 7, 14, 28
@@ -2161,21 +2231,21 @@ int hl78xx_gnss_assist_data_download(const struct device *dev, enum hl78xx_agnss
  * Deletes any stored assistance data from the modem
  * using AT+GNSSAD=0 command.
  *
+ * @kconfig_dep{CONFIG_HL78XX_GNSS,CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE}
+ *
  * @param dev Pointer to the GNSS device
  * @return 0 on success, negative errno on failure
  */
 int hl78xx_gnss_assist_data_delete(const struct device *dev);
-#endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
-#endif /* CONFIG_HL78XX_GNSS */
-
-#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
 /**
  * @brief Trigger the HL78xx shutdown process after a caller-supplied delay.
  *
  * This overrides any currently pending stage-1 power-down delay. Pass
  * K_NO_WAIT to dispatch HL78XX_POWER_DOWN_UPDATE immediately, or a relative
  * delay such as K_SECONDS(5) to start the graceful shutdown flow later.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_POWER_DOWN}
  *
  * @param dev Pointer to the HL78xx modem device.
  * @param delay Delay before stage-1 power-down notification runs.
@@ -2186,6 +2256,8 @@ int hl78xx_power_down_trigger(const struct device *dev, k_timeout_t delay);
 
 /**
  * @brief Cancel a pending stage-1 HL78xx shutdown timer.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_POWER_DOWN}
  *
  * @param dev Pointer to the HL78xx modem device.
  *
@@ -2202,6 +2274,8 @@ int hl78xx_power_down_cancel(const struct device *dev);
  * the modem to proceed with physical shutdown right away, or
  * HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE to extend the shutdown grace period by
  * @p timeout_s seconds from the time of this call.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_POWER_DOWN}
  *
  * @param dev Pointer to the HL78xx modem device.
  * @param response Requested handling of the pending shutdown.
@@ -2220,10 +2294,11 @@ int hl78xx_power_down_respond(const struct device *dev, enum hl78xx_power_down_r
  *
  * If no shutdown is pending this call is a no-op.
  *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_POWER_DOWN}
+ *
  * @param dev Pointer to the HL78xx modem device.
  */
 void hl78xx_power_down_confirm(const struct device *dev);
-#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
 #ifdef __cplusplus
 }
