@@ -49,6 +49,10 @@ enum cs40l26_source {
 int cs40l26_configure_buzz(const struct device *const dev, const uint32_t frequency,
 			   const uint8_t level, const uint32_t duration);
 
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
