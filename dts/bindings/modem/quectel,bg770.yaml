@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Mark Geiger
+# SPDX-License-Identifier: Apache-2.0
+
+description: Quectel BG770 modem
+
+compatible: "quectel,bg770"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]
