@@ -7,8 +7,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
+#include <inttypes.h>
+
 #include <zephyr/net/net_log.h>
 #include <zephyr/drivers/ptp_clock.h>
+#include <zephyr/timing/precision_ptp_clock.h>
 
 #include "gptp_messages.h"
 #include "gptp_data_set.h"
@@ -745,11 +748,22 @@ static void gptp_update_local_port_clock(void)
 	struct gptp_clk_slave_sync_state *state;
 	struct gptp_global_ds *global_ds;
 	struct gptp_port_ds *port_ds;
+	struct precision_ptp_clock_adapter adapter;
+	struct precision_time_observation observation;
+	struct precision_discipline_result discipline;
+	struct precision_pi_config config;
+	struct precision_time_point current;
+	struct precision_time_point target;
+	const struct precision_clock *precision_clk;
 	int port;
-	int64_t nanosecond_diff;
-	int64_t second_diff;
 	const struct device *clk;
-	struct net_ptp_time tm;
+	precision_time_t source_time;
+	precision_time_t local_time;
+	uint64_t source_nsec_total;
+	uint64_t source_sec;
+	uint64_t target_sec;
+	uint32_t target_nsec;
+	int ret;
 	unsigned int key;
 
 	state = &GPTP_STATE()->clk_slave_sync;
@@ -766,77 +780,224 @@ static void gptp_update_local_port_clock(void)
 
 	port_ds->neighbor_rate_ratio_valid = false;
 
-	second_diff = global_ds->sync_receipt_time.second -
-		(global_ds->sync_receipt_local_time / NSEC_PER_SEC);
-	nanosecond_diff =
-		(global_ds->sync_receipt_time.fract_nsecond / GPTP_POW2_16) -
-		(global_ds->sync_receipt_local_time % NSEC_PER_SEC);
-
 	clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
 	if (!clk) {
 		return;
 	}
 
-	if (second_diff > 0 && nanosecond_diff < 0) {
-		second_diff--;
-		nanosecond_diff = NSEC_PER_SEC + nanosecond_diff;
+	ret = gptp_clock_source_activate(clk, port,
+					 global_ds->gm_priority.root_system_id.grand_master_id);
+	if (ret < 0) {
+		NET_WARN("Failed to switch gPTP synchronization source (%d)", ret);
+		return;
 	}
 
-	if (second_diff < 0 && nanosecond_diff > 0) {
-		second_diff++;
-		nanosecond_diff = -(int64_t)NSEC_PER_SEC + nanosecond_diff;
+	ret = precision_pi_get_config(&gptp_clock.discipline, &config);
+	if (ret < 0) {
+		NET_WARN("Failed to read gPTP discipline configuration (%d)", ret);
+		return;
 	}
 
-	/* If time difference is too high, set the clock value.
-	 * Otherwise, adjust it.
-	 */
-	if (second_diff || (second_diff == 0 &&
-			    (nanosecond_diff < -50000000 ||
-			     nanosecond_diff > 50000000))) {
-		bool underflow = false;
+	ret = precision_ptp_clock_init(&adapter, clk, config.local_domain);
+	if (ret < 0) {
+		NET_WARN("Failed to initialize gPTP clock adapter (%d)", ret);
+		return;
+	}
 
+	precision_clk = precision_ptp_clock_get(&adapter);
+	gptp_clock_update_rate_caps(precision_clk);
+
+	source_nsec_total = global_ds->sync_receipt_time.fract_nsecond / GPTP_POW2_16;
+	source_sec = global_ds->sync_receipt_time.second + source_nsec_total / NSEC_PER_SEC;
+	if (source_sec < global_ds->sync_receipt_time.second) {
+		NET_WARN("Invalid gPTP source time");
+		return;
+	}
+
+	ret = precision_time_from_u64_sec_nsec(source_sec, source_nsec_total % NSEC_PER_SEC,
+					       &source_time);
+	if (ret < 0) {
+		NET_WARN("Invalid gPTP source time (%d)", ret);
+		return;
+	}
+
+	if (global_ds->sync_receipt_local_time > (uint64_t)PRECISION_TIME_MAX) {
+		NET_WARN("Invalid gPTP local time");
+		return;
+	}
+	local_time = (precision_time_t)global_ds->sync_receipt_local_time;
+
+	observation = (struct precision_time_observation){
+		.source = {.time = source_time, .domain = config.source_domain},
+		.local = {.time = local_time, .domain = config.local_domain},
+		.flags = PRECISION_OBSERVATION_SOURCE_VALID | PRECISION_OBSERVATION_LOCAL_VALID,
+	};
+
+	ret = precision_pi_process(&gptp_clock.discipline, &observation, &discipline);
+	if (ret < 0) {
+		NET_WARN("Rejected gPTP sync observation (%d)", ret);
+		return;
+	}
+
+	if (discipline.action == PRECISION_DISCIPLINE_STEP) {
 		key = irq_lock();
-		ptp_clock_get(clk, &tm);
 
-		if (second_diff < 0 && tm.second < -second_diff) {
-			NET_DBG("Do not set local clock because %lu < %ld",
-				(unsigned long int)tm.second,
-				(long int)-second_diff);
-			goto skip_clock_set;
+		ret = precision_clock_read(precision_clk, &current);
+		if (ret < 0) {
+			irq_unlock(key);
+			NET_WARN("Failed to read local clock (%d)", ret);
+			gptp_clock_servo_fault();
+			return;
 		}
 
-		tm.second += second_diff;
-
-		if (nanosecond_diff < 0 &&
-		    tm.nanosecond < -nanosecond_diff) {
-			underflow = true;
+		target.domain = current.domain;
+		ret = precision_time_add(current.time, discipline.phase_correction_ns,
+					 &target.time);
+		if (ret < 0) {
+			irq_unlock(key);
+			NET_WARN("Failed to calculate local clock step (%d)", ret);
+			gptp_clock_servo_fault();
+			return;
 		}
 
-		tm.nanosecond += nanosecond_diff;
-
-		if (underflow) {
-			tm.second--;
-			tm.nanosecond += NSEC_PER_SEC;
-		} else if (tm.nanosecond >= NSEC_PER_SEC) {
-			tm.second++;
-			tm.nanosecond -= NSEC_PER_SEC;
+		if (target.time < 0) {
+			/* The grandmaster is behind the local epoch. The PHC cannot
+			 * represent a negative time, so wait for the next sync
+			 * instead of faulting the servo.
+			 */
+			irq_unlock(key);
+			NET_DBG("Skipping local clock step to negative time");
+			return;
 		}
-		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
-			NET_INFO("Set local clock %"PRIu64".%09u", tm.second, tm.nanosecond);
-		}
-		ptp_clock_set(clk, &tm);
 
-	skip_clock_set:
+		ret = gptp_clock_set(precision_clk, &target);
+		if (ret < 0) {
+			irq_unlock(key);
+			NET_WARN("Failed to set local clock (%d)", ret);
+			return;
+		}
+
 		irq_unlock(key);
-	} else {
-		double ppb = gptp_servo_pi(nanosecond_diff);
-
-		ptp_clock_rate_adjust(clk, 1.0 + (ppb / 1000000000.0));
+		ret = gptp_clock_servo_reset(precision_clk);
+		if (ret < 0) {
+			NET_WARN("Failed to reset local clock after step (%d)", ret);
+		}
 
 		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
-			NET_INFO("sync offset %9"PRId64" ns, freq offset %f ppb",
-				 nanosecond_diff, ppb);
+			ret = precision_time_to_u64_sec_nsec(target.time, &target_sec,
+							     &target_nsec);
+			if (ret == 0) {
+				NET_INFO("Set local clock %" PRIu64 ".%09u", target_sec,
+					 target_nsec);
+			}
 		}
+
+		return;
+	}
+
+	if (discipline.action == PRECISION_DISCIPLINE_ADJUST_RATE) {
+		ret = gptp_clock_adjust_rate(precision_clk, discipline.rate_ppb);
+		if (ret < 0) {
+			NET_WARN("Failed to adjust local clock rate (%d)", ret);
+			return;
+		}
+		gptp_clock_source_timeout_update(port_ds->sync_receipt_timeout_time_itv);
+
+		ret = precision_time_mapping_update(&gptp_clock.mapping, &observation);
+		if (ret < 0) {
+			NET_DBG("Failed to update gPTP sync mapping (%d)", ret);
+		}
+
+		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
+			NET_INFO("sync offset %9" PRId64 " ns, freq offset %d ppb",
+				 discipline.offset_ns, discipline.rate_ppb);
+		}
+	}
+}
+
+void gptp_clock_check_source_timeout(void)
+{
+	struct precision_ptp_clock_adapter adapter;
+	struct precision_discipline_result discipline;
+	struct precision_pi_config config;
+	struct precision_pi_status status;
+	struct precision_time_point current;
+	const struct precision_clock *precision_clk;
+	const uint8_t *gm_id;
+	enum precision_sync_state old_state;
+	int ret;
+
+	if (!gptp_clock.active_source_valid || gptp_clock.active_clock == NULL) {
+		return;
+	}
+
+	if (GPTP_GLOBAL_DS()->gm_present == false) {
+		NET_WARN("gPTP sync source unavailable; resetting servo");
+		ret = gptp_clock_source_reset();
+		if (ret < 0) {
+			NET_WARN("Failed to reset previous gPTP clock (%d)", ret);
+		}
+		return;
+	}
+
+	gm_id = GPTP_GLOBAL_DS()->gm_priority.root_system_id.grand_master_id;
+	if (GPTP_GLOBAL_DS()->selected_role[gptp_clock.active_port] != GPTP_PORT_SLAVE ||
+	    memcmp(gptp_clock.active_gm_id, gm_id, GPTP_CLOCK_ID_LEN) != 0) {
+		NET_WARN("gPTP synchronization source changed; resetting servo");
+		ret = gptp_clock_source_reset();
+		if (ret < 0) {
+			NET_WARN("Failed to reset previous gPTP clock (%d)", ret);
+		}
+		return;
+	}
+
+	if (precision_pi_get_status(&gptp_clock.discipline, &status) < 0 ||
+	    status.state == PRECISION_SYNC_FAULT) {
+		return;
+	}
+
+	if (!gptp_clock_source_timeout_due()) {
+		return;
+	}
+
+	if (precision_pi_get_config(&gptp_clock.discipline, &config) < 0) {
+		return;
+	}
+
+	ret = precision_ptp_clock_init(&adapter, gptp_clock.active_clock, config.local_domain);
+	if (ret < 0) {
+		NET_WARN("Failed to initialize gPTP clock adapter (%d)", ret);
+		gptp_clock_servo_fault();
+		return;
+	}
+
+	precision_clk = precision_ptp_clock_get(&adapter);
+
+	ret = precision_clock_read(precision_clk, &current);
+	if (ret < 0) {
+		NET_WARN("Failed to read local clock for source timeout (%d)", ret);
+		gptp_clock_servo_fault();
+		return;
+	}
+
+	old_state = status.state;
+	ret = precision_pi_check_source_timeout(&gptp_clock.discipline, current.time, &discipline);
+	gptp_clock_source_timeout_reschedule(current.time);
+	if (ret != -ESTALE) {
+		return;
+	}
+
+	if (discipline.action == PRECISION_DISCIPLINE_RESET) {
+		NET_WARN("gPTP sync holdover expired; resetting servo");
+		ret = gptp_clock_servo_reset(precision_clk);
+		if (ret < 0) {
+			NET_WARN("Failed to reset local clock after holdover (%d)", ret);
+		}
+		return;
+	}
+
+	if (discipline.state == PRECISION_SYNC_HOLDOVER && old_state != PRECISION_SYNC_HOLDOVER) {
+		NET_WARN("gPTP sync source timed out; entering holdover");
 	}
 }
 #endif /* CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE */

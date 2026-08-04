@@ -27,6 +27,20 @@ interfaces (also defined as "ports" in the standard) and thus act as
 a 802.1AS bridge. However, this mode of operation has not been validated on
 the Zephyr OS.
 
+Precision timing integration
+****************************
+
+gPTP uses the experimental :ref:`precision_timing` discipline and clock adapter
+for the default local-clock update path. IEEE 802.1AS state machines, datasets,
+neighbor rate ratio handling, and quality calculations remain in the gPTP layer.
+Only the generic source/local observation, PI discipline, clock control, and
+domain mapping state are shared with other timing protocols.
+
+The gPTP stack invalidates its precision-time mapping after hard clock steps,
+grandmaster or slave-PHC changes, source loss, expired holdover, and discipline
+reset paths. Source timeout and holdover durations follow the Sync interval
+advertised by the selected grandmaster.
+
 Supported hardware
 ******************
 

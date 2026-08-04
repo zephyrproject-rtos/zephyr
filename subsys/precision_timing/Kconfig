@@ -3,9 +3,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# NET_GPTP selects this shared dependency. Keep the prompt marked experimental
+# without propagating EXPERIMENTAL into otherwise stable gPTP configurations.
 config PRECISION_TIMING
 	bool "Precision timing infrastructure [EXPERIMENTAL]"
-	select EXPERIMENTAL
 	help
 	  Enable experimental protocol-neutral precision timing helpers for
 	  domain-qualified timestamps, clock adapters, mappings, and clock
