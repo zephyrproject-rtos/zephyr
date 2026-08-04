@@ -70,8 +70,8 @@ static uint32_t stale_counter;
 #endif
 
 #if defined(CONFIG_NET_IPV6_ND)
-static struct k_work_delayable ipv6_nd_reachable_timer;
 static void ipv6_nd_reachable_timeout(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(ipv6_nd_reachable_timer, ipv6_nd_reachable_timeout);
 static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, int64_t time);
 #endif
 
@@ -86,8 +86,10 @@ static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, int64_t time);
 extern void net_neighbor_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
 
+static void ipv6_ns_reply_timeout(struct k_work *work);
+
 /** Neighbor Solicitation reply timer */
-static struct k_work_delayable ipv6_ns_reply_timer;
+static K_WORK_DELAYABLE_DEFINE(ipv6_ns_reply_timer, ipv6_ns_reply_timeout);
 
 NET_NBR_POOL_INIT(net_neighbor_pool,
 		  CONFIG_NET_IPV6_MAX_NEIGHBORS,
@@ -3180,8 +3182,6 @@ void net_ipv6_nbr_init(void)
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_NA),
 			ret);
 	}
-
-	k_work_init_delayable(&ipv6_ns_reply_timer, ipv6_ns_reply_timeout);
 #endif
 #if defined(CONFIG_NET_IPV6_ND)
 	ret = net_icmp_init_ctx(&ra_ctx, NET_AF_INET6, NET_ICMPV6_RA, 0, handle_ra_input);
@@ -3189,9 +3189,6 @@ void net_ipv6_nbr_init(void)
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_RA),
 			ret);
 	}
-
-	k_work_init_delayable(&ipv6_nd_reachable_timer,
-			      ipv6_nd_reachable_timeout);
 #endif
 
 #if defined(CONFIG_NET_IPV6_PMTU_PTB)
