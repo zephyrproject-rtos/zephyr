@@ -988,12 +988,28 @@ static const struct i2s_config *stm32_sai_sub_conf_get(const struct device *dev,
 	return NULL;
 }
 
+static enum i2s_state stm32_sai_sub_state_get(const struct device *dev, enum i2s_dir dir)
+{
+	const struct stm32_sai_sub_cfg *const sub_cfg = dev->config;
+	struct stm32_sai_sub_data *sub_data = dev->data;
+	struct stream *stream = &sub_data->stream;
+
+	if (sub_cfg->dir != dir) {
+		LOG_WRN("Direction mismatch: requested %d, sub-block configured as %d", dir,
+			sub_cfg->dir);
+		return I2S_STATE_UNKNOWN;
+	}
+
+	return stream->state;
+}
+
 static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 	.configure = stm32_sai_sub_conf,
 	.trigger = stm32_sai_sub_trigger,
 	.write = stm32_sai_sub_write,
 	.read = stm32_sai_sub_read,
 	.config_get = stm32_sai_sub_conf_get,
+	.state_get = stm32_sai_sub_state_get,
 };
 
 #define SAI_FIFO_THRESHOLD(node) sai_fifo_threshold[DT_ENUM_IDX(node, fifo_threshold)]
