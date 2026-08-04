@@ -90,11 +90,11 @@ config QEMU_ICOUNT_SLEEP
 	depends on QEMU_ICOUNT
 	help
 	  When the virtual CPU is sleeping, the virtual time will advance
-	  at default speed unless this option is set. With this option set,
-	  the virtual time will jump to the next timer deadline instantly
-	  whenever the virtual CPU goes to sleep mode and will not advance
-	  if no timer is enabled. This behavior gives deterministic execution
-	  times from the guest point of view.
+	  at default speed when this option is enabled. When disabled, the
+	  virtual time will jump to the next timer deadline instantly whenever
+	  the virtual CPU goes to sleep mode and will not advance if no timer
+	  is enabled. This behavior gives deterministic execution times from
+	  the guest point of view.
 
 config QEMU_IVSHMEM_PLAIN_MEM_SIZE
 	int "QEMU ivshmem-plain shared memory size in mega-bytes"
