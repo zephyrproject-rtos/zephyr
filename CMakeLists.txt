@@ -2364,7 +2364,7 @@ endif()
 
 if(CONFIG_SOC_DEPRECATED_RELEASE)
   message(WARNING "
-      WARNING:  The SoC '${SOC_NAME}' is deprecated and will be
+      WARNING:  The SoC '${CONFIG_SOC}' is deprecated and will be
       removed in version ${CONFIG_SOC_DEPRECATED_RELEASE}"
   )
 endif()
