@@ -6,7 +6,6 @@ config REGULATOR_MSPM0_VREF
 	depends on REGULATOR
 	depends on DT_HAS_TI_MSPM0_VREF_ENABLED
 	default y
-	select USE_MSPM0_DL_VREF
 	help
 	  Enable the MSPM0 VREF driver
 
