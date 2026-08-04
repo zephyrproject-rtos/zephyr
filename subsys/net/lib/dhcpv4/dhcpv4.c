@@ -46,7 +46,8 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 static K_MUTEX_DEFINE(lock);
 
 static sys_slist_t dhcpv4_ifaces;
-static struct k_work_delayable timeout_work;
+static void dhcpv4_timeout(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(timeout_work, dhcpv4_timeout);
 
 static struct net_mgmt_event_callback mgmt4_if_cb;
 #if defined(CONFIG_NET_IPV4_ACD)
@@ -2100,8 +2101,6 @@ int net_dhcpv4_init(void)
 		NET_DBG("UDP callback registration failed");
 		return ret;
 	}
-
-	k_work_init_delayable(&timeout_work, dhcpv4_timeout);
 
 	/* Catch network interface UP or DOWN events and renew the address
 	 * if interface is coming back up again.
