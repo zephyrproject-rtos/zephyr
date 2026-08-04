@@ -78,7 +78,7 @@ static int ptp_clock_nxp_netc_adjust(const struct device *dev,
 	int key;
 
 	key = irq_lock();
-	NETC_TimerAddOffset(&data->handle, (int64_t)increment * NSEC_PER_SEC);
+	NETC_TimerAddOffset(&data->handle, increment);
 	irq_unlock(key);
 
 	return 0;
