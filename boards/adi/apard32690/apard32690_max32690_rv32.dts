@@ -25,7 +25,7 @@
 		zephyr,sram = &sram8;
 		zephyr,flash-controller = &flc1;
 		zephyr,flash = &flash1;
-		zephyr,code-partition = &rv32_slot0;
+		zephyr,code-partition = &rv32_partition;
 		zephyr,settings-partition = &rv32_storage_partition;
 	};
 
