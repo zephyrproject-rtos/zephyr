@@ -184,8 +184,9 @@ static int st7735r_write(const struct device *dev,
 	struct display_buffer_descriptor mipi_desc;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT((desc->pitch * ST7735R_PIXEL_SIZE * desc->height)
-		 <= desc->buf_size, "Input buffer too small");
+	__ASSERT(((((size_t)desc->height - 1U) * desc->pitch + desc->width) *
+		  ST7735R_PIXEL_SIZE) <= desc->buf_size,
+		 "Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)",
 		desc->width, desc->height, x, y);
