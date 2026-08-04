@@ -255,7 +255,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 	struct sip_svc_request request;
 	int trans_id;
 	uint32_t cmd_size = 0;
-	struct private_data priv;
+	static struct private_data priv;
 	char *cmd_addr;
 	char *resp_addr, *endptr;
 	int err;

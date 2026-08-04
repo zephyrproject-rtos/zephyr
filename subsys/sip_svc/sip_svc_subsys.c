@@ -609,6 +609,11 @@ static int sip_svc_async_response_handler(struct sip_svc_controller *ctrl)
 		data_size = ((size_t)trans_id_item->arg4);
 	}
 
+	/* Clamp to the polling buffer size to avoid over-reading it */
+	if (data_size > ctrl->resp_size) {
+		data_size = ctrl->resp_size;
+	}
+
 	response.header =
 		SIP_SVC_PROTO_HEADER(sip_svc_plat_get_error_code(ctrl->dev, &res), trans_id);
 	response.a0 = res.a0;
@@ -751,6 +756,7 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 		LOG_ERR("Thread not spawned during init");
 		sip_svc_id_map_remove_item(ctrl->trans_id_map, trans_id);
 		sip_svc_id_mgr_free(ctrl->clients[c_idx].trans_idx_pool, trans_idx);
+		--ctrl->clients[c_idx].active_trans_cnt;
 		k_mutex_unlock(&ctrl->data_mutex);
 		return -EHOSTDOWN;
 	}
@@ -900,7 +906,6 @@ static int sip_svc_subsys_init(void)
 			sip_svc_id_mgr_delete(ctrl->client_id_pool);
 			sip_svc_id_map_delete(ctrl->trans_id_map);
 			k_free(msgq_buf);
-			k_free(ctrl->clients);
 			k_free(ctrl->async_resp_data);
 
 			for (uint32_t i = 0; i < ctrl->num_clients; i++) {
@@ -909,6 +914,7 @@ static int sip_svc_subsys_init(void)
 					sip_svc_id_mgr_delete(client->trans_idx_pool);
 				}
 			}
+			k_free(ctrl->clients);
 			return ret;
 		}
 
