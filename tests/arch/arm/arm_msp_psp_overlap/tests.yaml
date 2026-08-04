@@ -1,0 +1,7 @@
+tests:
+  arch.arm.msp_psp_overlap:
+    tags: arch arm
+    filter: CONFIG_ARM
+    ignore_faults: true
+    integration_platforms:
+      - qemu_cortex_m3

@@ -43,7 +43,6 @@ extern int z_arm_mmu_init(void);
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-	z_arm_interrupt_stack_setup();
 	z_arm_exc_setup();
 	z_arm_fault_init();
 	z_arm_cpu_idle_init();
