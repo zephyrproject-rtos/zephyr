@@ -14,7 +14,7 @@ rsource "*/Kconfig"
 config MSPM0_PERIPH_STARTUP_DELAY
 	int
 	default 8
-	depends on SOC_SERIES_MSPM0G || SOC_SERIES_MSPM0L
+	depends on SOC_SERIES_MSPM0G || SOC_SERIES_MSPM0L || SOC_SERIES_MSPM33C
 
 config HWINFO
 	bool
