@@ -21,3 +21,6 @@ boards:
   rcar_spider_s4/r8a779f0/a55:
     append:
       EXTRA_DTC_OVERLAY_FILE: boards/rcar_spider_s4_r8a779f0_a55.overlay
+  rpi_5/bcm2712:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/rpi_5.overlay
