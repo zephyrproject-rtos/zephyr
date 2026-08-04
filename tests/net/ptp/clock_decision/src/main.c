@@ -239,14 +239,21 @@ static void map_port(struct ptp_port *port, enum ptp_port_state decision,
 	ctx->last_tt_diff = false;
 }
 
-static void assert_single_event(struct ptp_port *port, enum ptp_port_event expected_event)
+static void assert_single_event_with_tt_diff(struct ptp_port *port,
+					     enum ptp_port_event expected_event,
+					     bool expected_tt_diff)
 {
 	struct port_stub_ctx *ctx = ctx_for_port(port, false);
 
 	zassert_not_null(ctx, "missing context for asserted port");
 	zassert_equal(ctx->event_calls, 1, "unexpected event count");
 	zassert_equal(ctx->last_event, expected_event, "unexpected event value");
-	zassert_false(ctx->last_tt_diff, "tt_diff should remain false");
+	zassert_equal(ctx->last_tt_diff, expected_tt_diff, "unexpected tt_diff value");
+}
+
+static void assert_single_event(struct ptp_port *port, enum ptp_port_event expected_event)
+{
+	assert_single_event_with_tt_diff(port, expected_event, false);
 }
 
 static void reset_clock_decision_state(void)
@@ -559,6 +566,41 @@ ZTEST(ptp_clock_decision, test_local_grandmaster_does_not_replace_sync_source)
 	zassert_equal(ptp_clock_best_time_transmitter(), &foreign_reappeared,
 		      "reappeared transmitter should be selected");
 	assert_single_event(&port, PTP_EVT_RS_TIME_RECEIVER);
+}
+
+ZTEST(ptp_clock_decision, test_different_transmitter_reports_tt_diff)
+{
+	struct ptp_port port;
+	struct ptp_port passive_port;
+	struct ptp_foreign_tt_clock foreign_initial;
+	struct ptp_foreign_tt_clock foreign_new;
+	struct ptp_msg msg_initial;
+	struct ptp_msg msg_new;
+
+	init_announce_msg(&msg_initial, 0x82, 111, 112, 6, 44, 0x5A);
+	init_announce_msg(&msg_new, 0x83, 111, 112, 6, 44, 0x5A);
+	init_port(&port, 0x44, 1);
+	init_foreign(&foreign_initial, &port, make_foreign_desc(0x58, 8, 120, 100, 6),
+		     &msg_initial);
+	map_port(&port, PTP_PS_TIME_RECEIVER, &foreign_initial);
+
+	ptp_clock_state_decision_req();
+	ptp_clock_handle_state_decision_evt();
+
+	assert_single_event(&port, PTP_EVT_RS_TIME_RECEIVER);
+
+	init_port(&passive_port, 0x46, 2);
+	map_port(&passive_port, PTP_PS_PASSIVE, NULL);
+	init_foreign(&foreign_new, &port, make_foreign_desc(0x59, 9, 120, 100, 6), &msg_new);
+	map_port(&port, PTP_PS_TIME_RECEIVER, &foreign_new);
+
+	ptp_clock_state_decision_req();
+	ptp_clock_handle_state_decision_evt();
+
+	zassert_equal(ptp_clock_best_time_transmitter(), &foreign_new,
+		      "new transmitter should be selected");
+	assert_single_event_with_tt_diff(&port, PTP_EVT_RS_TIME_RECEIVER, true);
+	assert_single_event(&passive_port, PTP_EVT_RS_PASSIVE);
 }
 
 ZTEST(ptp_clock_decision, test_getters_reflect_selected_best)
