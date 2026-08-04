@@ -117,11 +117,17 @@ struct usbfsotg_data {
 	struct k_work work;
 	struct k_fifo fifo;
 	struct usb_setup_packet setup;
+	uint32_t odd;
 	bool setup_valid;
 };
 
 static int usbfsotg_ep_clear_halt(const struct device *dev,
 				  struct udc_ep_config *const cfg);
+
+static uint8_t usbfsotg_get_odd_bit(const uint8_t ep)
+{
+	return USB_EP_DIR_IS_IN(ep) * 16U + USB_EP_GET_IDX(ep);
+}
 
 /* Get buffer descriptor (BD) based on endpoint address */
 static struct usbfsotg_bd *usbfsotg_get_ebd(const struct device *const dev,
@@ -129,9 +135,11 @@ static struct usbfsotg_bd *usbfsotg_get_ebd(const struct device *const dev,
 					    const bool opposite)
 {
 	const struct usbfsotg_config *config = dev->config;
+	struct usbfsotg_data *priv = udc_get_private(dev);
+	bool odd = priv->odd & BIT(usbfsotg_get_odd_bit(cfg->addr));
 	uint8_t bd_idx;
 
-	bd_idx = USB_EP_GET_IDX(cfg->addr) * 4U + (cfg->stat.odd ^ opposite);
+	bd_idx = USB_EP_GET_IDX(cfg->addr) * 4U + (odd ^ opposite);
 	if (USB_EP_DIR_IS_IN(cfg->addr)) {
 		bd_idx += 2U;
 	}
@@ -359,6 +367,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 {
 	struct usbfsotg_data *priv = udc_get_private(dev);
 	uint8_t ep = stat_reg_get_ep(status);
+	const uint8_t odd_bit = usbfsotg_get_odd_bit(ep);
 	bool odd = stat_reg_is_odd(status);
 	struct usbfsotg_bd *bd;
 	struct udc_ep_config *ep_cfg;
@@ -378,7 +387,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 
 	switch (token_pid) {
 	case USBFSOTG_SETUP_TOKEN:
-		ep_cfg->stat.odd = !odd;
+		WRITE_BIT(priv->odd, odd_bit, !odd);
 		ep_cfg->stat.data1 = true;
 
 		/* Record whether the number of received setup data was valid */
@@ -392,7 +401,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 		usbfsotg_event_submit(dev, ep, USBFSOTG_EVT_SETUP);
 		break;
 	case USBFSOTG_OUT_TOKEN:
-		ep_cfg->stat.odd = !odd;
+		WRITE_BIT(priv->odd, odd_bit, !odd);
 		ep_cfg->stat.data1 = !data1;
 
 		buf = udc_buf_peek(ep_cfg);
@@ -413,7 +422,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 
 		break;
 	case USBFSOTG_IN_TOKEN:
-		ep_cfg->stat.odd = !odd;
+		WRITE_BIT(priv->odd, odd_bit, !odd);
 		ep_cfg->stat.data1 = !data1;
 
 		buf = udc_buf_peek(ep_cfg);
@@ -820,6 +829,7 @@ static int usbfsotg_init(const struct device *dev)
 static int usbfsotg_shutdown(const struct device *dev)
 {
 	const struct usbfsotg_config *config = dev->config;
+	struct usbfsotg_data *priv = udc_get_private(dev);
 
 	config->irq_disable_func(dev);
 
@@ -845,10 +855,7 @@ static int usbfsotg_shutdown(const struct device *dev)
 	memset(config->bdt, 0, sizeof(struct usbfsotg_bd) * config->num_of_eps * 2 * 2);
 
 	/* All controller odd bits are reset, update internal tracking */
-	for (int i = 0; i < config->num_of_eps; i++) {
-		config->ep_cfg_in[i].stat.odd = false;
-		config->ep_cfg_out[i].stat.odd = false;
-	}
+	priv->odd = 0;
 
 	return 0;
 }
