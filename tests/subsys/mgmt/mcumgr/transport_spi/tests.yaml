@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2026 Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+common:
+  platform_allow: frdm_rw612
+  tags:
+    - mgmt
+    - mcumgr
+    - transport
+  build_only: true
+tests:
+  mgmt.mcumgr.transport.spi: {}
+  mgmt.mcumgr.transport.spi.all:
+    extra_args:
+      - EXTRA_CONF_FILE="spi_all.conf"
