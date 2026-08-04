@@ -656,6 +656,11 @@ SD Host Controller
   consolidated into the existing ``pwr-gpios`` property. Replace
   ``sdhi-on-gpios`` with ``pwr-gpios`` in out-of-tree devicetree nodes.
 
+* :kconfig:option:`CONFIG_SDMMC_STM32_HWFC` is now enabled by default for the legacy SDMMC_STM32
+  disk driver to prevent FIFO underrun and overrun errors during disk access. Applications that
+  previously set ``CONFIG_SDMMC_STM32_HWFC=y`` should remove this configuration from their board
+  configuration files since it is now the default.
+
 * :dtcompatible:`litex,mmc` now uses the ``dma-coherent`` devicetree property to indicate that the
   controller's DMA accesses are coherent with the CPU.
   :kconfig:option:`CONFIG_SDHC_LITEX_LITESDCARD_NO_COHERENT_DMA` is automatically set based on that
