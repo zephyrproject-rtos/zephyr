@@ -28,13 +28,13 @@ use the :ref:`Twister <twister_script>` tool, for example:
 
 .. code-block:: console
 
-    ./scripts/twister -T tests/foo/bar/
+    west twister -T tests/foo/bar/
 
 To select just one of the test scenarios, run Twister with ``--scenario`` command:
 
 .. code-block:: console
 
-   ./scripts/twister --scenario tests/foo/bar/your.test.scenario.name
+   west twister --scenario tests/foo/bar/your.test.scenario.name
 
 In the command line above ``tests/foo/bar`` is the path to your test application and
 ``your.test.scenario.name`` references a test scenario defined in :file:`tests.yaml`
@@ -102,7 +102,7 @@ can list all kernel test cases, for example, by running:
 
 .. code-block:: console
 
-   ./scripts/twister --list-tests -T tests/kernel
+   west twister --list-tests -T tests/kernel
 
 Skipping Tests
 ==============
