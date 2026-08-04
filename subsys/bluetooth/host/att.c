@@ -2092,7 +2092,6 @@ static uint8_t att_read_group_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 struct write_data {
 	struct bt_conn *conn;
-	struct net_buf *buf;
 	uint8_t req;
 	const void *value;
 	uint16_t len;
@@ -2123,10 +2122,12 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	}
 
 	/* Set command flag if not a request */
-	if (!data->req) {
+	if (data->req == BT_ATT_OP_WRITE_CMD || data->req == BT_ATT_OP_SIGNED_WRITE_CMD) {
 		flags |= BT_GATT_WRITE_FLAG_CMD;
 	} else if (data->req == BT_ATT_OP_EXEC_WRITE_REQ) {
 		flags |= BT_GATT_WRITE_FLAG_EXECUTE;
+	} else {
+		__ASSERT(data->req == BT_ATT_OP_WRITE_REQ, "Invalid data->req: %u", data->req);
 	}
 
 	/* Write attribute value */
@@ -2142,9 +2143,8 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static uint8_t att_write_rsp(struct bt_att_chan *chan, uint8_t req, uint8_t rsp,
-			  uint16_t handle, uint16_t offset, const void *value,
-			  uint16_t len)
+static uint8_t perform_write(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
+			     uint16_t offset, const void *value, uint16_t len)
 {
 	struct write_data data;
 
@@ -2162,15 +2162,6 @@ static uint8_t att_write_rsp(struct bt_att_chan *chan, uint8_t req, uint8_t rsp,
 
 	(void)memset(&data, 0, sizeof(data));
 
-	/* Only allocate buf if required to respond */
-	if (rsp) {
-		data.buf = bt_att_chan_create_pdu(chan, rsp, 0);
-		if (!data.buf) {
-			LOG_ERR("Unable to create rsp PDU");
-			return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
-		}
-	}
-
 	data.conn = chan->att->conn;
 	data.req = req;
 	data.offset = offset;
@@ -2180,33 +2171,31 @@ static uint8_t att_write_rsp(struct bt_att_chan *chan, uint8_t req, uint8_t rsp,
 
 	bt_gatt_foreach_attr(handle, handle, write_cb, &data);
 
-	if (data.err) {
-		/* In case of error discard data and respond with an error */
-		if (rsp) {
-			net_buf_unref(data.buf);
-			/* Respond here since handle is set */
-			send_err_rsp(chan, req, handle, data.err);
-		}
-		return req == BT_ATT_OP_EXEC_WRITE_REQ ? data.err : 0;
-	}
-
-	if (data.buf) {
-		bt_att_chan_send_rsp(chan, data.buf);
-	}
-
-	return 0;
+	return data.err;
 }
 
 static uint8_t att_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 {
 	uint16_t handle;
+	uint8_t err;
 
 	handle = net_buf_pull_le16(buf);
 
 	LOG_DBG("handle 0x%04x", handle);
 
-	return att_write_rsp(chan, BT_ATT_OP_WRITE_REQ, BT_ATT_OP_WRITE_RSP,
-			     handle, 0, buf->data, buf->len);
+	err = perform_write(chan, BT_ATT_OP_WRITE_REQ, handle, 0, buf->data, buf->len);
+	if (err == 0) {
+		buf = bt_att_chan_create_pdu(chan, BT_ATT_OP_WRITE_RSP, 0);
+		if (buf == NULL) {
+			LOG_ERR("Unable to create rsp PDU");
+			return BT_ATT_ERR_INSUFFICIENT_RESOURCES;
+		}
+		bt_att_chan_send_rsp(chan, buf);
+	} else {
+		send_err_rsp(chan, BT_ATT_OP_WRITE_REQ, handle, err);
+	}
+
+	return 0;
 }
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
@@ -2441,10 +2430,8 @@ static uint8_t att_exec_write_rsp(struct bt_att_chan *chan, uint8_t flags)
 
 		/* Just discard the data if an error was set */
 		if (!err && flags == BT_ATT_FLAG_EXEC) {
-			err = att_write_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ, 0,
-					    handle, data->offset,
-					    reassembled_data.data,
-					    reassembled_data.len);
+			err = perform_write(chan, BT_ATT_OP_EXEC_WRITE_REQ, handle, data->offset,
+					    reassembled_data.data, reassembled_data.len);
 			if (err) {
 				/* Respond here since handle is set */
 				send_err_rsp(chan, BT_ATT_OP_EXEC_WRITE_REQ,
@@ -2490,7 +2477,11 @@ static uint8_t att_write_cmd(struct bt_att_chan *chan, struct net_buf *buf)
 
 	LOG_DBG("handle 0x%04x", handle);
 
-	return att_write_rsp(chan, 0, 0, handle, 0, buf->data, buf->len);
+	if (perform_write(chan, BT_ATT_OP_WRITE_CMD, handle, 0, buf->data, buf->len)) {
+		/* Nothing we can do here, as this is a write command */
+	}
+
+	return 0;
 }
 
 #if defined(CONFIG_BT_SIGNING)
@@ -2527,8 +2518,12 @@ static uint8_t att_signed_write_cmd(struct bt_att_chan *chan, struct net_buf *bu
 	net_buf_pull(buf, sizeof(struct bt_att_hdr));
 	net_buf_pull(buf, sizeof(*req));
 
-	return att_write_rsp(chan, 0, 0, handle, 0, buf->data,
-			     buf->len - sizeof(struct bt_att_signature));
+	if (perform_write(chan, BT_ATT_OP_SIGNED_WRITE_CMD, handle, 0, buf->data,
+			  buf->len - sizeof(struct bt_att_signature)) != 0) {
+		/* Nothing we can do here, as this is a write command */
+	}
+
+	return 0;
 }
 #endif /* CONFIG_BT_SIGNING */
 
