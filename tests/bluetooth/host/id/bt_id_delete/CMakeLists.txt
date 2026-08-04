@@ -4,11 +4,6 @@ cmake_minimum_required(VERSION 3.28.0)
 
 project(bt_id_delete)
 
-# Suppress the format-zero-length error if GNUC is used
-if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-add_compile_options(-Wno-error=format-zero-length -Wno-format-zero-length)
-endif()
-
 find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
 include_directories(BEFORE
