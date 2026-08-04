@@ -45,10 +45,9 @@ To run Twister in the local tree, follow the steps below:
    operating systems. The following invocations are equivalent:
 
    * ``west twister ...`` (recommended).
-   * ``./scripts/twister ...`` (Linux/macOS) or ``python .\scripts\twister ...``
-     (Windows): invoking the script directly. This requires the Zephyr
-     environment to be set up first (``source zephyr-env.sh`` or
-     ``zephyr-env.cmd``).
+   * ``python .\scripts\twister ...`` (Windows): invoking the script
+     directly. This requires the Zephyr environment to be set up first (``source
+     zephyr-env.sh`` or ``zephyr-env.cmd``).
 
    All forms accept the same command line options.
 
