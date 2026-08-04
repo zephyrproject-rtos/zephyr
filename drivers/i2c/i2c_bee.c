@@ -57,6 +57,7 @@ struct i2c_bee_data {
 	struct k_mutex bus_mutex;
 	struct k_sem sync_sem;
 	struct i2c_bee_context ctx;
+	uint32_t dev_config;
 	uint8_t errs;
 };
 
@@ -234,20 +235,17 @@ static int i2c_bee_transfer(const struct device *dev, struct i2c_msg *msgs, uint
 	return ret;
 }
 
-static int i2c_bee_configure(const struct device *dev, uint32_t dev_config)
+static int i2c_bee_do_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_bee_data *data = dev->data;
 	const struct i2c_bee_config *cfg = dev->config;
 	I2C_TypeDef *i2c = (I2C_TypeDef *)cfg->reg;
 	I2C_InitTypeDef i2c_init_struct;
-	int err = 0;
 
 	/* Only support Controller mode for now, since Target API is not implemented */
 	if ((dev_config & I2C_MODE_CONTROLLER) == 0) {
 		return -ENOTSUP;
 	}
-
-	k_mutex_lock(&data->bus_mutex, K_FOREVER);
 
 	I2C_Cmd(i2c, DISABLE);
 
@@ -272,18 +270,37 @@ static int i2c_bee_configure(const struct device *dev, uint32_t dev_config)
 		i2c_init_struct.I2C_ClockSpeed = I2C_BITRATE_FAST_PLUS;
 		break;
 	default:
-		err = -EINVAL;
-		goto error;
+		return -EINVAL;
 	}
 
 	I2C_Init(i2c, &i2c_init_struct);
 
 	I2C_Cmd(i2c, ENABLE);
 
-error:
+	data->dev_config = dev_config;
+
+	return 0;
+}
+
+static int i2c_bee_configure(const struct device *dev, uint32_t dev_config)
+{
+	struct i2c_bee_data *data = dev->data;
+	int err;
+
+	k_mutex_lock(&data->bus_mutex, K_FOREVER);
+	err = i2c_bee_do_configure(dev, dev_config);
 	k_mutex_unlock(&data->bus_mutex);
 
 	return err;
+}
+
+static int i2c_bee_get_config(const struct device *dev, uint32_t *dev_config)
+{
+	struct i2c_bee_data *data = dev->data;
+
+	*dev_config = data->dev_config;
+
+	return 0;
 }
 
 static void i2c_bee_isr(const struct device *dev)
@@ -347,6 +364,7 @@ static int i2c_bee_init(const struct device *dev)
 
 static DEVICE_API(i2c, i2c_bee_driver_api) = {
 	.configure = i2c_bee_configure,
+	.get_config = i2c_bee_get_config,
 	.transfer = i2c_bee_transfer,
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
