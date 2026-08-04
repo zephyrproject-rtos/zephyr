@@ -254,6 +254,7 @@ New APIs and options
 
   * :c:func:`k_thread_runtime_stats_is_enabled`
   * :c:func:`atomic_test_and_set_bit_to`
+  * :c:func:`k_sleep_ticks`
 
 * LoRa
 
