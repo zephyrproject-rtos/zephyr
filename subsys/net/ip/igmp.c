@@ -777,6 +777,30 @@ out:
 	return ret;
 }
 
+void net_ipv4_igmp_send_leave(struct net_if *iface, const struct net_if_mcast_addr *addr)
+{
+	if (net_if_is_offloaded(iface)) {
+		goto out;
+	}
+
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+	struct net_if_mcast_addr removed_addr = *addr;
+
+	removed_addr.record_type = IGMPV3_CHANGE_TO_INCLUDE_MODE;
+	removed_addr.sources_len = 0;
+
+	igmpv3_send_generic(iface, &removed_addr);
+#else
+	igmp_send_generic(iface, &addr->address.in_addr, false);
+#endif
+out:
+	net_if_mcast_monitor(iface, &addr->address, false);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_LEAVE, iface,
+					&addr->address.in_addr,
+					sizeof(struct net_in_addr));
+}
+
 void net_ipv4_igmp_init(struct net_if *iface)
 {
 	struct net_if_mcast_addr *maddr;

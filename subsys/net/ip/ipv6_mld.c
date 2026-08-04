@@ -336,6 +336,27 @@ out:
 	return ret;
 }
 
+void net_ipv6_mld_send_leave(struct net_if *iface, const struct net_if_mcast_addr *addr)
+{
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
+		return;
+	}
+
+	if (net_if_is_offloaded(iface)) {
+		goto out;
+	}
+
+	net_ipv6_mld_send_single(iface, &addr->address.in6_addr,
+				 NET_IPV6_MLDv2_CHANGE_TO_INCLUDE_MODE);
+
+out:
+	net_if_mcast_monitor(iface, &addr->address, false);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_MCAST_LEAVE, iface,
+					&addr->address.in6_addr,
+					sizeof(struct net_in6_addr));
+}
+
 static int send_mld_report(struct net_if *iface)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
