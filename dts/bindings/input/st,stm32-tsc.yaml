@@ -117,7 +117,14 @@ child-binding:
     channel-ios:
       type: int
       required: true
-      description: Channel I/Os to be enabled
+      description: |
+        Bitmask of channel I/Os enabled in this group, formed by ORing TSC_IOn
+        defines. The TSC peripheral can only sample a single channel I/O per
+        group per acquisition; when more than one bit is set the driver
+        multiplexes acquisitions across those I/Os in round-robin order.
+
+        Each enabled channel I/O is exposed via a dedicated tsc-keys child
+        node that names the I/O via its channel-io property.
       min: 1
       max: 16
 
