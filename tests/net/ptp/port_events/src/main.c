@@ -60,6 +60,7 @@ static uint64_t last_sync_ingress;
 static uint64_t last_sync_egress;
 static ptp_timeinterval last_sync_mean_delay;
 static bool last_sync_ingress_ts_valid;
+static int8_t last_sync_log_interval;
 static int64_t last_pdelay_t1;
 static int64_t last_pdelay_t2;
 static int64_t last_pdelay_t3;
@@ -217,6 +218,11 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_va
 	last_sync_ingress = ingress;
 	last_sync_egress = egress;
 	last_sync_ingress_ts_valid = ingress_ts_valid;
+}
+
+void ptp_clock_sync_interval_update(int8_t log_sync_interval)
+{
+	last_sync_log_interval = log_sync_interval;
 }
 
 void ptp_clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
@@ -547,6 +553,7 @@ static void reset_fakes(void)
 	last_sync_egress = 0;
 	last_sync_mean_delay = 0;
 	last_sync_ingress_ts_valid = false;
+	last_sync_log_interval = 0;
 	last_pdelay_t1 = 0;
 	last_pdelay_t2 = 0;
 	last_pdelay_t3 = 0;
@@ -993,6 +1000,10 @@ ZTEST(ptp_port_events, test_event_gen_sync_follow_up_pair_synchronizes)
 		      "Sync should not change port event state");
 	zassert_not_null(port.last_sync_fup, "two-step Sync should wait for Follow_Up");
 	zassert_equal(clock_sync_calls, 0, "Sync should wait for Follow_Up");
+	zassert_equal(port.port_ds.log_sync_interval, -1,
+		      "port should retain the received Sync interval");
+	zassert_equal(last_sync_log_interval, -1,
+		      "received Sync interval should update the source timeout");
 
 	init_rx_msg(PTP_MSG_FOLLOW_UP, 0x60);
 	scripted_rx_msg.header.sequence_id = 11;

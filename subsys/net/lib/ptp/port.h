@@ -78,6 +78,8 @@ struct ptp_port {
 	uint16_t		       pdelay_req_sequence_id;
 	/** Pointer to the Port's best Foreign TimeTransmitter. */
 	struct ptp_foreign_tt_clock    *best;
+	/** State decided by the BTCA during the current STATE DECISION EVENT. */
+	enum ptp_port_state state_decision;
 	/** List of Foreign TimeTransmitters discovered through received Announce messages. */
 	sys_slist_t		       foreign_list;
 	/** List of valid sent Delay_Req messages (in network byte order). */

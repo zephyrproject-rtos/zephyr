@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/timing/precision_ptp_clock.h>
 
 #include "btca.h"
 #include "clock.h"
@@ -46,11 +47,40 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
  * bad timestamps; they are not clock-accuracy guarantees.
  */
 #define SYNC_SERVO_STEP_THRESHOLD_NS (1LL * NSEC_PER_SEC)
-#define SYNC_SERVO_LOCK_OFFSET_NS (10LL * NSEC_PER_MSEC)
-#define SYNC_SERVO_OUTLIER_NS (100LL * NSEC_PER_MSEC)
-#define SYNC_SERVO_LOCK_SAMPLES 3U
-#define SYNC_SERVO_OUTLIER_SAMPLES 2U
-#define PTP_SERVO_GAIN_SCALE 1000.0
+#define SYNC_SERVO_LOCK_OFFSET_NS    (10LL * NSEC_PER_MSEC)
+#define SYNC_SERVO_OUTLIER_NS        (100LL * NSEC_PER_MSEC)
+#define SYNC_SERVO_LOCK_SAMPLES      3U
+#define SYNC_SERVO_OUTLIER_SAMPLES   2U
+#define SYNC_SERVO_MIN_RATE_PPB      (-999999999)
+#define SYNC_SERVO_MAX_RATE_PPB      INT32_MAX
+#if defined(CONFIG_PTP_ANNOUNCE_RECV_TIMEOUT)
+#define SYNC_SERVO_SOURCE_TIMEOUT_FACTOR CONFIG_PTP_ANNOUNCE_RECV_TIMEOUT
+#else
+#define SYNC_SERVO_SOURCE_TIMEOUT_FACTOR 3
+#endif
+#if defined(CONFIG_PTP_SYNC_LOG_INTERVAL)
+#define SYNC_SERVO_LOG_INTERVAL CONFIG_PTP_SYNC_LOG_INTERVAL
+#else
+#define SYNC_SERVO_LOG_INTERVAL 0
+#endif
+/* Bound the Sync interval decoded from a received message header. IEEE 1588-2019
+ * allows the full int8_t range, but 2^24 s and 2^-24 s already exceed anything a
+ * sane deployment uses, and the bound keeps the shift below in range.
+ */
+#define SYNC_SERVO_LOG_INTERVAL_LIMIT 24
+/* The source timeout is polled from the event loop, which also runs on every
+ * received message. Rate limit the poll to a fraction of the timeout so that a
+ * fast Sync rate does not turn every message into an extra PHC read.
+ */
+#define SYNC_SOURCE_CHECK_DIVIDER     4
+#define SYNC_SOURCE_CHECK_MIN_NS      (10LL * NSEC_PER_MSEC)
+#define SYNC_SOURCE_CHECK_MAX_NS      (1LL * NSEC_PER_SEC)
+/* Keep the last frequency correction while the selected transmitter is absent.
+ * A real transmitter identity change resets the discipline explicitly.
+ */
+#define SYNC_SERVO_HOLDOVER_NS        0
+/* CONFIG_PTP_SERVO_KP and CONFIG_PTP_SERVO_KI express the PI gains in thousandths. */
+#define SYNC_SERVO_GAIN_DEN           1000
 
 /**
  * @brief PTP Clock structure.
@@ -68,16 +98,23 @@ struct ptp_clock {
 	bool			    pollfd_valid;
 	bool			    state_decision_event;
 	uint8_t			    time_src;
+	struct precision_ptp_clock_adapter precision_phc;
+	struct precision_pi_discipline sync_discipline;
+	struct precision_time_mapping sync_mapping;
+	struct precision_deadline sync_timeout_check;
+	bool sync_discipline_ready;
+	struct {
+		struct ptp_port_id sender;
+		ptp_clk_id grandmaster;
+		bool reset_pending;
+		bool valid;
+	} sync_source;
 	struct {
 		uint64_t	    t1;
 		uint64_t	    t2;
 		uint64_t	    t3;
 		uint64_t	    t4;
 	} timestamp;			/* latest timestamps in nanoseconds */
-	double pi_drift;
-	uint8_t sync_servo_lock_samples;
-	uint8_t sync_servo_outlier_samples;
-	bool sync_servo_locked;
 };
 
 __maybe_unused static struct ptp_clock ptp_clk = { 0 };
@@ -128,6 +165,169 @@ static ptp_timeinterval clock_ns_to_timeinterval(int64_t val)
 
 	return (uint64_t)val << 16;
 }
+
+static bool clock_sync_source_matches(struct ptp_foreign_tt_clock *best)
+{
+	return best != NULL && ptp_clk.sync_source.valid &&
+	       ptp_port_id_eq(&ptp_clk.sync_source.sender, &best->dataset.sender) &&
+	       ptp_clock_id_eq(&ptp_clk.sync_source.grandmaster, &best->dataset.clk_id);
+}
+
+static void clock_sync_source_update(struct ptp_foreign_tt_clock *best)
+{
+	if (best == NULL) {
+		return;
+	}
+
+	ptp_clk.sync_source.sender = best->dataset.sender;
+	ptp_clk.sync_source.grandmaster = best->dataset.clk_id;
+	ptp_clk.sync_source.valid = true;
+}
+
+static struct precision_time_domain clock_ptp_domain(void)
+{
+	return (struct precision_time_domain){
+		.type = PRECISION_TIME_DOMAIN_PTP,
+		.id = ptp_clk.default_ds.domain,
+	};
+}
+
+static struct precision_time_domain clock_phc_domain(void)
+{
+	return (struct precision_time_domain){
+		.type = PRECISION_TIME_DOMAIN_PHC,
+		.id = 0,
+	};
+}
+
+static int clock_precision_phc(const struct precision_clock **phc)
+{
+	int ret;
+
+	ret = precision_ptp_clock_init(&ptp_clk.precision_phc, ptp_clk.phc, clock_phc_domain());
+	if (ret < 0) {
+		return ret;
+	}
+
+	*phc = precision_ptp_clock_get(&ptp_clk.precision_phc);
+
+	return 0;
+}
+
+static void clock_servo_update_rate_caps(struct precision_pi_config *config)
+{
+	const struct precision_clock *phc;
+	struct precision_clock_caps caps;
+
+	if (ptp_clk.phc == NULL) {
+		return;
+	}
+
+	if ((clock_precision_phc(&phc) == 0) && (precision_clock_get_caps(phc, &caps) == 0)) {
+		config->min_rate_ppb = MAX(config->min_rate_ppb, caps.min_rate_ppb);
+		config->max_rate_ppb = MIN(config->max_rate_ppb, caps.max_rate_ppb);
+	}
+}
+
+static precision_time_t clock_source_timeout_ns(int8_t log_sync_interval)
+{
+	precision_time_t interval_ns;
+	int8_t log_interval = CLAMP(log_sync_interval, -SYNC_SERVO_LOG_INTERVAL_LIMIT,
+				    SYNC_SERVO_LOG_INTERVAL_LIMIT);
+
+	if (log_interval < 0) {
+		interval_ns = (precision_time_t)NSEC_PER_SEC >> (-log_interval);
+	} else {
+		interval_ns = (precision_time_t)NSEC_PER_SEC << log_interval;
+	}
+
+	return (precision_time_t)SYNC_SERVO_SOURCE_TIMEOUT_FACTOR * interval_ns;
+}
+
+static void clock_servo_init(void)
+{
+	struct precision_pi_config config = {
+		.source_domain = clock_ptp_domain(),
+		.local_domain = clock_phc_domain(),
+		.step_threshold_ns = SYNC_SERVO_STEP_THRESHOLD_NS,
+		.lock_threshold_ns = SYNC_SERVO_LOCK_OFFSET_NS,
+		.outlier_threshold_ns = SYNC_SERVO_OUTLIER_NS,
+		.source_timeout_ns = clock_source_timeout_ns(SYNC_SERVO_LOG_INTERVAL),
+		.holdover_ns = SYNC_SERVO_HOLDOVER_NS,
+		.lock_sample_count = SYNC_SERVO_LOCK_SAMPLES,
+		.outlier_sample_count = SYNC_SERVO_OUTLIER_SAMPLES,
+		.min_rate_ppb = SYNC_SERVO_MIN_RATE_PPB,
+		.max_rate_ppb = SYNC_SERVO_MAX_RATE_PPB,
+		.kp_num = CONFIG_PTP_SERVO_KP,
+		.ki_num = CONFIG_PTP_SERVO_KI,
+		.gain_den = SYNC_SERVO_GAIN_DEN,
+	};
+	int ret;
+
+	clock_servo_update_rate_caps(&config);
+
+	/* The configuration is build time constant, so a rejected configuration
+	 * cannot be fixed by trying again. Record the attempt and leave a rejected
+	 * discipline faulted instead of retrying on every worker wake.
+	 */
+	ret = precision_pi_init(&ptp_clk.sync_discipline, &config);
+	ptp_clk.sync_discipline_ready = true;
+	if (ret < 0) {
+		LOG_ERR("Failed to initialize PTP sync discipline (err %d)", ret);
+		precision_pi_fault(&ptp_clk.sync_discipline);
+		return;
+	}
+
+	precision_time_mapping_init(&ptp_clk.sync_mapping, config.source_domain,
+				    config.local_domain);
+	precision_deadline_cancel(&ptp_clk.sync_timeout_check);
+}
+
+static void clock_servo_ensure_init(void)
+{
+	if (!ptp_clk.sync_discipline_ready) {
+		clock_servo_init();
+	}
+}
+
+/* Not every PHC supports rate adjustment. Such a clock can still be stepped, so
+ * treat a missing rate adjustment as a no-op instead of faulting the servo.
+ */
+static int clock_adjust_rate(const struct precision_clock *phc, int32_t rate_ppb)
+{
+	int ret = precision_clock_adjust_rate(phc, rate_ppb);
+
+	return ret == -ENOTSUP ? 0 : ret;
+}
+
+/* A read-only PHC can still be used to exercise the PTP protocol state machine.
+ * Preserve that behavior while keeping genuine set failures sticky.
+ */
+static int clock_set_time(const struct precision_clock *phc,
+			  const struct precision_time_point *target)
+{
+	int ret = precision_clock_set(phc, target);
+
+	return ret == -ENOTSUP ? 0 : ret;
+}
+
+static precision_time_t clock_source_check_period_ns(void)
+{
+	struct precision_pi_config config;
+
+	if (precision_pi_get_config(&ptp_clk.sync_discipline, &config) < 0 ||
+	    config.source_timeout_ns <= 0) {
+		return SYNC_SOURCE_CHECK_MAX_NS;
+	}
+
+	return CLAMP(config.source_timeout_ns / SYNC_SOURCE_CHECK_DIVIDER, SYNC_SOURCE_CHECK_MIN_NS,
+		     SYNC_SOURCE_CHECK_MAX_NS);
+}
+
+static void clock_sync_data_reset(void);
+static int clock_servo_reset(void);
+static void clock_servo_fault(void);
+static void clock_servo_holdover_apply(void);
 
 static int clock_forward_msg(struct ptp_port *ingress,
 			     struct ptp_port *port,
@@ -318,6 +518,9 @@ const struct ptp_clock *ptp_clock_init(void)
 		LOG_ERR("Couldn't get PTP HW Clock for the interface.");
 		return NULL;
 	}
+	ptp_clk.sync_source.valid = false;
+	ptp_clk.sync_source.reset_pending = false;
+	clock_servo_init();
 
 	ret = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (ret < 0) {
@@ -349,11 +552,21 @@ struct zsock_pollfd *ptp_clock_poll_sockets(void)
 
 void ptp_clock_handle_state_decision_evt(void)
 {
+	struct ptp_foreign_tt_clock *sync_best = NULL;
 	struct ptp_foreign_tt_clock *best = NULL, *foreign;
 	struct ptp_port *port;
-	bool tt_changed = false;
+	bool decision_requested = ptp_clk.state_decision_event;
+	bool reset_needed = false;
 
-	if (!ptp_clk.state_decision_event) {
+	if (!decision_requested && !ptp_clk.sync_source.reset_pending) {
+		return;
+	}
+
+	if (sys_slist_is_empty(&ptp_clk.ports_list)) {
+		ptp_clk.best = NULL;
+		ptp_clk.sync_source.valid = false;
+		ptp_clk.sync_source.reset_pending = false;
+		ptp_clk.state_decision_event = false;
 		return;
 	}
 
@@ -369,21 +582,53 @@ void ptp_clock_handle_state_decision_evt(void)
 
 	ptp_clk.best = best;
 
+	/* Decide the state of every Port once. The decision has no side effects,
+	 * so it can be taken before the servo is reset for a source change and
+	 * reused when the resulting events are dispatched below.
+	 */
 	SYS_SLIST_FOR_EACH_CONTAINER(&ptp_clk.ports_list, port, node) {
-		enum ptp_port_state state;
+		port->state_decision = ptp_btca_state_decision(port);
+		if (port->state_decision == PTP_PS_TIME_RECEIVER) {
+			sync_best = best;
+		}
+	}
+
+	if (sync_best != NULL) {
+		reset_needed = ptp_clk.sync_source.valid && !clock_sync_source_matches(sync_best);
+	}
+	reset_needed = reset_needed || ptp_clk.sync_source.reset_pending;
+
+	if (reset_needed) {
+		clock_sync_data_reset();
+		if (clock_servo_reset() == 0) {
+			ptp_clk.sync_source.reset_pending = false;
+			clock_sync_source_update(sync_best);
+		} else {
+			/* Retry when normal PTP traffic next wakes the worker. */
+			ptp_clk.sync_source.reset_pending = true;
+		}
+	} else {
+		clock_sync_source_update(sync_best);
+	}
+
+	if (!decision_requested) {
+		return;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&ptp_clk.ports_list, port, node) {
 		enum ptp_port_event event;
 
-		state = ptp_btca_state_decision(port);
-
-		switch (state) {
+		switch (port->state_decision) {
 		case PTP_PS_LISTENING:
 			event = PTP_EVT_NONE;
 			break;
 		case PTP_PS_GRAND_MASTER:
 			clock_update_grandmaster();
+			clock_servo_holdover_apply();
 			event = PTP_EVT_RS_GRAND_MASTER;
 			break;
 		case PTP_PS_TIME_TRANSMITTER:
+			clock_servo_holdover_apply();
 			event = PTP_EVT_RS_TIME_TRANSMITTER;
 			break;
 		case PTP_PS_TIME_RECEIVER:
@@ -398,7 +643,7 @@ void ptp_clock_handle_state_decision_evt(void)
 			break;
 		}
 
-		ptp_port_event_handle(port, event, tt_changed);
+		ptp_port_event_handle(port, event, false);
 	}
 
 	ptp_clk.state_decision_event = false;
@@ -541,58 +786,182 @@ int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 	return state_decision_required;
 }
 
-static double ptp_servo_pi(int64_t nanosecond_diff)
+static void clock_sync_data_reset(void)
 {
-	const double kp = (double)CONFIG_PTP_SERVO_KP / PTP_SERVO_GAIN_SCALE;
-	const double ki = (double)CONFIG_PTP_SERVO_KI / PTP_SERVO_GAIN_SCALE;
-	double ppb;
-
-	ptp_clk.pi_drift += ki * nanosecond_diff;
-	ppb = kp * nanosecond_diff + ptp_clk.pi_drift;
-
-	return ppb;
+	memset(&ptp_clk.timestamp, 0, sizeof(ptp_clk.timestamp));
+	ptp_clk.current_ds.offset_from_tt = 0;
+	ptp_clk.current_ds.mean_delay = 0;
 }
 
-static void clock_servo_reset(void)
+static void clock_servo_fault(void)
 {
+	clock_servo_ensure_init();
+	precision_pi_fault(&ptp_clk.sync_discipline);
+	precision_time_mapping_invalidate(&ptp_clk.sync_mapping);
+	precision_deadline_cancel(&ptp_clk.sync_timeout_check);
+	clock_sync_data_reset();
+}
+
+static int clock_servo_reset(void)
+{
+	const struct precision_clock *phc;
 	int ret;
 
-	ptp_clk.pi_drift = 0.0;
-	ptp_clk.sync_servo_lock_samples = 0;
-	ptp_clk.sync_servo_outlier_samples = 0;
-	ptp_clk.sync_servo_locked = false;
+	clock_servo_ensure_init();
+	precision_pi_reset(&ptp_clk.sync_discipline);
+	precision_time_mapping_invalidate(&ptp_clk.sync_mapping);
+	precision_deadline_cancel(&ptp_clk.sync_timeout_check);
 
-	ret = ptp_clock_rate_adjust(ptp_clk.phc, 1.0);
+	if (ptp_clk.phc == NULL) {
+		return 0;
+	}
+
+	ret = clock_precision_phc(&phc);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = clock_adjust_rate(phc, 0);
 	if (ret < 0) {
 		LOG_WRN("Failed to reset PHC rate to nominal (err %d)", ret);
+		clock_servo_fault();
 	}
+
+	return ret;
 }
 
-static void clock_servo_update_lock(int64_t offset)
+static void clock_servo_holdover_apply(void)
 {
-	if (llabs(offset) > SYNC_SERVO_LOCK_OFFSET_NS) {
-		ptp_clk.sync_servo_lock_samples = 0;
+	struct precision_pi_status status;
+	const struct precision_clock *phc;
+	int ret;
+
+	clock_servo_ensure_init();
+
+	if (ptp_clk.phc == NULL || precision_pi_get_status(&ptp_clk.sync_discipline, &status) < 0 ||
+	    !status.has_observation) {
 		return;
 	}
 
-	if (ptp_clk.sync_servo_lock_samples < SYNC_SERVO_LOCK_SAMPLES) {
-		ptp_clk.sync_servo_lock_samples++;
+	ret = clock_precision_phc(&phc);
+	if (ret < 0) {
+		clock_servo_fault();
+		return;
 	}
 
-	if (!ptp_clk.sync_servo_locked &&
-	    ptp_clk.sync_servo_lock_samples >= SYNC_SERVO_LOCK_SAMPLES) {
-		ptp_clk.sync_servo_locked = true;
+	ret = clock_adjust_rate(phc, status.frequency_correction_ppb);
+	if (ret < 0) {
+		LOG_WRN("Failed to keep PHC holdover rate (ppb=%d err %d)",
+			status.frequency_correction_ppb, ret);
+		clock_servo_fault();
 	}
 }
 
-static uint64_t clock_ptp_time_to_ns(const struct net_ptp_time *ptp_time)
+void ptp_clock_check_source_timeout(void)
 {
-	return ptp_time->second * NSEC_PER_SEC + ptp_time->nanosecond;
+	struct precision_discipline_result discipline;
+	struct precision_pi_status status;
+	struct precision_time_point current;
+	const struct precision_clock *phc;
+	enum precision_sync_state old_state;
+	int ret;
+
+	clock_servo_ensure_init();
+
+	if (ptp_clk.phc == NULL || precision_pi_get_status(&ptp_clk.sync_discipline, &status) < 0) {
+		return;
+	}
+
+	if (status.state == PRECISION_SYNC_FAULT || !status.has_observation) {
+		precision_deadline_cancel(&ptp_clk.sync_timeout_check);
+		return;
+	}
+
+	if (!ptp_clk.sync_timeout_check.scheduled) {
+		precision_deadline_schedule(&ptp_clk.sync_timeout_check,
+					    clock_source_check_period_ns());
+		return;
+	}
+
+	/* This runs on every event loop wakeup, so only sample the PHC once per
+	 * check period instead of once per received message.
+	 */
+	if (!precision_deadline_due(&ptp_clk.sync_timeout_check)) {
+		return;
+	}
+
+	precision_deadline_schedule(&ptp_clk.sync_timeout_check, clock_source_check_period_ns());
+
+	ret = clock_precision_phc(&phc);
+	if (ret < 0) {
+		clock_servo_fault();
+		return;
+	}
+
+	ret = precision_clock_read(phc, &current);
+	if (ret < 0) {
+		LOG_WRN("Failed to read PHC time for source timeout (err %d)", ret);
+		clock_servo_fault();
+		return;
+	}
+
+	old_state = status.state;
+	ret = precision_pi_check_source_timeout(&ptp_clk.sync_discipline, current.time,
+						&discipline);
+	if (ret != -ESTALE) {
+		return;
+	}
+
+	if (discipline.action == PRECISION_DISCIPLINE_RESET) {
+		LOG_WRN("PTP sync holdover expired; resetting servo");
+		clock_sync_data_reset();
+		(void)clock_servo_reset();
+		return;
+	}
+
+	if (discipline.state == PRECISION_SYNC_HOLDOVER) {
+		if (old_state != PRECISION_SYNC_HOLDOVER) {
+			LOG_WRN("PTP sync source timed out; entering holdover");
+		}
+		clock_servo_holdover_apply();
+	}
+}
+
+void ptp_clock_sync_interval_update(int8_t log_sync_interval)
+{
+	precision_time_t timeout_ns = clock_source_timeout_ns(log_sync_interval);
+	struct precision_pi_config config;
+
+	clock_servo_ensure_init();
+
+	if (precision_pi_get_config(&ptp_clk.sync_discipline, &config) < 0 ||
+	    config.source_timeout_ns == timeout_ns) {
+		return;
+	}
+
+	(void)precision_pi_set_source_timeout(&ptp_clk.sync_discipline, timeout_ns,
+					      config.holdover_ns);
+	precision_deadline_cancel(&ptp_clk.sync_timeout_check);
 }
 
 static uint64_t clock_abs_delta_u64(uint64_t a, uint64_t b)
 {
 	return a >= b ? a - b : b - a;
+}
+
+static int clock_u64_ns_to_precision(uint64_t ns, precision_time_t *precision_ns)
+{
+	if (precision_ns == NULL) {
+		return -EINVAL;
+	}
+
+	if (ns > (uint64_t)PRECISION_TIME_MAX) {
+		return -ERANGE;
+	}
+
+	*precision_ns = (precision_time_t)ns;
+
+	return 0;
 }
 
 static void clock_update_neighbor_rate_ratio(struct ptp_port *port, int64_t resp_origin_ns,
@@ -626,34 +995,66 @@ static void clock_update_neighbor_rate_ratio(struct ptp_port *port, int64_t resp
 static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 					 ptp_timeinterval mean_delay, bool ingress_ts_valid)
 {
-	double ppb;
-	int64_t offset;
+	struct precision_time_observation observation;
+	struct precision_discipline_result discipline;
+	struct precision_pi_status status;
+	struct precision_time_point current;
+	struct precision_time_point target;
+	const struct precision_clock *phc;
+	precision_time_t source_time;
+	precision_time_t ingress_time;
+	precision_time_t egress_time;
+	precision_time_t phc_now_ns;
+	precision_time_t offset;
 	int ret;
 	int64_t delay = mean_delay >> 16;
-	struct net_ptp_time current;
-	uint64_t phc_now_ns;
 	uint64_t ingress_phc_delta;
+	uint64_t target_sec;
+	uint32_t target_nsec;
 
-	ret = ptp_clock_get(ptp_clk.phc, &current);
-	if (ret < 0) {
-		LOG_WRN("Failed to read PHC time (err %d)", ret);
+	clock_servo_ensure_init();
+	if (precision_pi_get_status(&ptp_clk.sync_discipline, &status) < 0 ||
+	    status.state == PRECISION_SYNC_FAULT) {
 		return;
 	}
 
-	phc_now_ns = clock_ptp_time_to_ns(&current);
-	ingress_phc_delta = clock_abs_delta_u64(ingress, phc_now_ns);
+	ret = clock_precision_phc(&phc);
+	if (ret < 0) {
+		clock_servo_fault();
+		return;
+	}
+
+	ret = precision_clock_read(phc, &current);
+	if (ret < 0) {
+		LOG_WRN("Failed to read PHC time (err %d)", ret);
+		clock_servo_fault();
+		return;
+	}
+
+	ret = clock_u64_ns_to_precision(ingress, &ingress_time);
+	if (ret < 0) {
+		LOG_WRN("Ingress timestamp out of precision range (%" PRIu64 "ns)", ingress);
+		return;
+	}
+
+	ret = clock_u64_ns_to_precision(egress, &egress_time);
+	if (ret < 0) {
+		LOG_WRN("Egress timestamp out of precision range (%" PRIu64 "ns)", egress);
+		return;
+	}
+
+	phc_now_ns = current.time;
+	ingress_phc_delta = clock_abs_delta_u64((uint64_t)ingress_time, (uint64_t)phc_now_ns);
 
 	if (!ingress_ts_valid || ingress_phc_delta > INGRESS_TS_PHC_DELTA_GUARD_NS) {
 		LOG_WRN("Ingress timestamp fallback (%s): ingress=%" PRIu64 ".%09u phc_now=%" PRIu64
 			".%09u |ingress-phc|=%" PRIu64 "ns",
-			ingress_ts_valid ? "out-of-range" : "missing",
-			ingress / NSEC_PER_SEC,
-			(uint32_t)(ingress % NSEC_PER_SEC),
-			current.second,
-			current.nanosecond,
-			ingress_phc_delta);
+			ingress_ts_valid ? "out-of-range" : "missing", ingress / NSEC_PER_SEC,
+			(uint32_t)(ingress % NSEC_PER_SEC), (uint64_t)(phc_now_ns / NSEC_PER_SEC),
+			(uint32_t)(phc_now_ns % NSEC_PER_SEC), ingress_phc_delta);
 
-		ingress = phc_now_ns;
+		ingress = (uint64_t)phc_now_ns;
+		ingress_time = phc_now_ns;
 		ingress_phc_delta = 0;
 	}
 
@@ -664,84 +1065,118 @@ static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 		return;
 	}
 
-	offset = (int64_t)(ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1) - delay;
+	ret = precision_time_add(egress_time, delay, &source_time);
+	if (ret < 0) {
+		LOG_WRN("Failed to build sync observation (err %d)", ret);
+		return;
+	}
 
-	/* If diff is too big, ptp_clk needs to be set first. */
-	if (offset > SYNC_SERVO_STEP_THRESHOLD_NS ||
-	    offset < -SYNC_SERVO_STEP_THRESHOLD_NS) {
-		int32_t dest_nsec;
+	observation = (struct precision_time_observation){
+		.source = {.time = source_time, .domain = clock_ptp_domain()},
+		.local = {.time = ingress_time, .domain = clock_phc_domain()},
+		.flags = PRECISION_OBSERVATION_SOURCE_VALID | PRECISION_OBSERVATION_LOCAL_VALID,
+	};
 
+	ret = precision_time_sub(observation.local.time, observation.source.time, &offset);
+	if (ret < 0) {
+		LOG_WRN("Failed to calculate sync offset (err %d)", ret);
+		return;
+	}
+
+	ret = precision_pi_process(&ptp_clk.sync_discipline, &observation, &discipline);
+	if (ret < 0) {
+		LOG_WRN("Rejected sync observation: offset=%" PRId64 "ns err %d", offset, ret);
+		return;
+	}
+
+	if (discipline.action == PRECISION_DISCIPLINE_STEP) {
 		LOG_WRN("Clock offset exceeds 1 second (t1=%" PRIu64 ".%09u t2=%" PRIu64
-			".%09u delay=%lldns offset=%lldns phc_now=%" PRIu64 ".%09u |t2-phc|=%"
-			PRIu64 "ns)",
+			".%09u delay=%lldns offset=%lldns phc_now=%" PRIu64
+			".%09u |t2-phc|=%" PRIu64 "ns)",
 			ptp_clk.timestamp.t1 / NSEC_PER_SEC,
 			(uint32_t)(ptp_clk.timestamp.t1 % NSEC_PER_SEC),
 			ptp_clk.timestamp.t2 / NSEC_PER_SEC,
-			(uint32_t)(ptp_clk.timestamp.t2 % NSEC_PER_SEC),
-			delay,
-			offset,
-			current.second,
-			current.nanosecond,
-			clock_abs_delta_u64(ptp_clk.timestamp.t2, phc_now_ns));
+			(uint32_t)(ptp_clk.timestamp.t2 % NSEC_PER_SEC), delay, offset,
+			(uint64_t)(phc_now_ns / NSEC_PER_SEC),
+			(uint32_t)(phc_now_ns % NSEC_PER_SEC),
+			clock_abs_delta_u64(ptp_clk.timestamp.t2, (uint64_t)phc_now_ns));
 
-		ret = ptp_clock_get(ptp_clk.phc, &current);
+		ret = precision_clock_read(phc, &current);
 		if (ret < 0) {
 			LOG_WRN("Failed to read PHC time for clock step (err %d)", ret);
+			clock_servo_fault();
 			return;
 		}
 
-		current.second = (uint64_t)(current.second - (offset / NSEC_PER_SEC));
-		dest_nsec = (int32_t)(current.nanosecond - (offset % NSEC_PER_SEC));
-
-		if (dest_nsec < 0) {
-			current.second--;
-			dest_nsec += NSEC_PER_SEC;
-		} else if (dest_nsec >= NSEC_PER_SEC) {
-			current.second++;
-			dest_nsec -= NSEC_PER_SEC;
+		target.domain = current.domain;
+		ret = precision_time_add(current.time, discipline.phase_correction_ns,
+					 &target.time);
+		if (ret < 0) {
+			LOG_WRN("Failed to calculate PHC step target (err %d)", ret);
+			clock_servo_fault();
+			return;
 		}
 
-		current.nanosecond = (uint32_t)dest_nsec;
-		ptp_clock_set(ptp_clk.phc, &current);
+		ret = clock_set_time(phc, &target);
+		if (ret < 0) {
+			LOG_WRN("Failed to set PHC time for clock step (err %d)", ret);
+			clock_servo_fault();
+			return;
+		}
 
-		/* A hard step invalidates the timestamps used by the E2E delay path and
-		 * any accumulated frequency correction from the previous time base.
+		/* A hard step invalidates the timestamps used by the E2E delay path.
+		 * The servo reset also drops any accumulated frequency correction from
+		 * the previous time base.
 		 */
-		memset(&ptp_clk.timestamp, 0, sizeof(ptp_clk.timestamp));
-		ptp_clk.current_ds.mean_delay = 0;
-		clock_servo_reset();
+		clock_sync_data_reset();
+		ret = clock_servo_reset();
+		if (ret < 0) {
+			return;
+		}
 
-		LOG_WRN("Set clock time: %"PRIu64".%09u", current.second, current.nanosecond);
+		ret = precision_time_to_u64_sec_nsec(target.time, &target_sec, &target_nsec);
+		if (ret == 0) {
+			LOG_WRN("Set clock time: %" PRIu64 ".%09u", target_sec, target_nsec);
+		}
 		return;
 	}
 
 	LOG_DBG("Offset %lldns", offset);
 	ptp_clk.current_ds.offset_from_tt = clock_ns_to_timeinterval(offset);
 
-	if (ptp_clk.sync_servo_locked && llabs(offset) > SYNC_SERVO_OUTLIER_NS) {
-		ptp_clk.sync_servo_outlier_samples++;
-		LOG_WRN("Rejecting sync outlier after servo lock: offset=%lldns (%u/%u)",
-			offset, (unsigned int)ptp_clk.sync_servo_outlier_samples,
-			SYNC_SERVO_OUTLIER_SAMPLES);
-		if (ptp_clk.sync_servo_outlier_samples >= SYNC_SERVO_OUTLIER_SAMPLES) {
-			clock_servo_reset();
+	if (discipline.action == PRECISION_DISCIPLINE_IGNORE) {
+		if (precision_pi_get_status(&ptp_clk.sync_discipline, &status) == 0 &&
+		    status.outlier_samples > 0) {
+			LOG_WRN("Rejecting sync outlier after servo lock: offset=%lldns (%u/%u)",
+				offset, (unsigned int)status.outlier_samples,
+				SYNC_SERVO_OUTLIER_SAMPLES);
 		}
 		return;
 	}
 
-	ptp_clk.sync_servo_outlier_samples = 0;
-
-	ppb = ptp_servo_pi(-offset);
-	ret = ptp_clock_rate_adjust(ptp_clk.phc, 1.0 + (ppb / 1000000000.0));
-	if (ret < 0) {
-		LOG_WRN("Failed to adjust PHC rate for offset %lldns (ppb=%f err %d), "
-			"resetting servo",
-			offset, ppb, ret);
-		clock_servo_reset();
+	if (discipline.action == PRECISION_DISCIPLINE_RESET) {
+		LOG_WRN("Rejecting sync outlier after servo lock: offset=%lldns (%u/%u)", offset,
+			SYNC_SERVO_OUTLIER_SAMPLES, SYNC_SERVO_OUTLIER_SAMPLES);
+		ret = clock_servo_reset();
+		if (ret < 0) {
+			return;
+		}
 		return;
 	}
 
-	clock_servo_update_lock(offset);
+	ret = precision_time_mapping_update(&ptp_clk.sync_mapping, &observation);
+	if (ret < 0) {
+		LOG_DBG("Failed to update PTP sync mapping (err %d)", ret);
+	}
+
+	ret = clock_adjust_rate(phc, discipline.rate_ppb);
+	if (ret < 0) {
+		LOG_WRN("Failed to adjust PHC rate for offset %lldns (ppb=%d err %d), "
+			"faulting servo",
+			offset, discipline.rate_ppb, ret);
+		clock_servo_fault();
+		return;
+	}
 }
 
 void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_valid)

@@ -11,6 +11,7 @@ menuconfig PTP
 	select NET_CONTEXT_PRIORITY
 	select PTP_CLOCK
 	select NET_L2_PTP_TIMESTAMPING
+	select PRECISION_TIMING
 	depends on NET_L2_ETHERNET
 	depends on !NET_GPTP
 	help

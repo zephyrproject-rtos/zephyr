@@ -87,6 +87,7 @@ static void ptp_thread(void *p1, void *p2, void *p3)
 			}
 		}
 
+		ptp_clock_check_source_timeout();
 		ptp_clock_handle_state_decision_evt();
 	}
 }
