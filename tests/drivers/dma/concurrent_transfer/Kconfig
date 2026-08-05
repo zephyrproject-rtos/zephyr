@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Tenstorrent AI ULC
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DMA Concurrent Transfer Test"
+
+source "Kconfig.zephyr"
+
+config DMA_CONCURRENT_CHANNEL_NR
+	int "First DMA channel to use when dma_request_channel() is unsupported"
+	default 0
+
+config DMA_NUM_TEST_CHAN
+	int "Number of DMA channels to test per controller"
+	default 1
+	help
+	  Number of channels to run concurrently per DMA controller. All
+	  channels are acquired up front (via dma_request_channel(), falling
+	  back to CONFIG_DMA_CONCURRENT_CHANNEL_NR + index), configured, then
+	  started together, so every channel is in flight at the same time.
+
+config DMA_CONCURRENT_XFER_SIZE
+	int "Number of bytes per block"
+	default 64
+
+config DMA_CONCURRENT_BURST_LEN
+	int "Source and destination burst length"
+	default 1
+
+config DMA_CONCURRENT_TIMEOUT_MS
+	int "Per-transfer completion timeout in milliseconds"
+	default 2000

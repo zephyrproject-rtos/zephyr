@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 Tenstorrent AI ULC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma {
+	/* dma_emul never returns a channel to the UNUSED state, so its
+	 * chan_filter refuses to hand the same channel out twice. Provide
+	 * headroom above CONFIG_DMA_NUM_TEST_CHAN.
+	 */
+	dma-channels = <4>;
+	status = "okay";
+};
+
+tst_dma0: &dma {};

@@ -1,0 +1,11 @@
+tests:
+  drivers.dma.concurrent_transfer:
+    min_ram: 16
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    filter: dt_nodelabel_enabled("tst_dma0")
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
