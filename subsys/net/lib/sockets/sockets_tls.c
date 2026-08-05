@@ -1161,7 +1161,7 @@ static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
-	net_socklen_t addrlen = sizeof(struct net_sockaddr);
+	net_socklen_t addrlen = sizeof(struct net_sockaddr_storage);
 	struct net_sockaddr_storage addr = { 0 };
 	int err;
 	ssize_t received;
@@ -1217,7 +1217,7 @@ static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 static int dtls_client_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
-	net_socklen_t addrlen = sizeof(struct net_sockaddr);
+	net_socklen_t addrlen = sizeof(struct net_sockaddr_storage);
 	struct net_sockaddr_storage addr = { 0 };
 	ssize_t received;
 
@@ -1363,7 +1363,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 		 * static buffer for the purpose, and protect it with a mutex to
 		 * avoid races in case multiple DTLS server sockets run in parallel.
 		 */
-		addrlen = sizeof(struct net_sockaddr);
+		addrlen = sizeof(struct net_sockaddr_storage);
 		len = zsock_recvfrom(tls_ctx->sock, &dtls_helper_buf, sizeof(dtls_helper_buf),
 				     ZSOCK_MSG_DONTWAIT | ZSOCK_MSG_PEEK,
 				     net_sad(&addr), &addrlen);
@@ -1401,7 +1401,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
  */
 static int dtls_server_switch_session_on_rx(struct tls_context *tls_ctx)
 {
-	net_socklen_t addrlen = sizeof(struct net_sockaddr);
+	net_socklen_t addrlen = sizeof(struct net_sockaddr_storage);
 	struct net_sockaddr_storage addr = { 0 };
 	uint8_t tmp_buf;
 	int ret;
