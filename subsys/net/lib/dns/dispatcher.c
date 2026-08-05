@@ -125,7 +125,7 @@ static int recv_data(struct net_socket_service_event *pev)
 	struct dns_socket_dispatcher *dispatcher;
 	net_socklen_t optlen = sizeof(int);
 	struct net_buf *dns_data = NULL;
-	struct net_sockaddr addr;
+	struct net_sockaddr_storage addr;
 	net_socklen_t addrlen;
 	int family, sock_error;
 	int ret = 0, len;
@@ -176,7 +176,7 @@ static int recv_data(struct net_socket_service_event *pev)
 
 	ret = zsock_recvfrom(pev->event.fd, dns_data->data,
 			     net_buf_max_len(dns_data), 0,
-			     (struct net_sockaddr *)&addr, &addrlen);
+			     net_sad(&addr), &addrlen);
 	if (ret < 0) {
 		ret = -errno;
 		NET_ERR("recv failed on IPv%d socket (%d)",
@@ -187,7 +187,7 @@ static int recv_data(struct net_socket_service_event *pev)
 	len = ret;
 
 	ret = dns_dispatch(dispatcher, pev->event.fd,
-			   (struct net_sockaddr *)&addr, addrlen,
+			   net_sad(&addr), addrlen,
 			   dns_data, len);
 free_buf:
 	if (dns_data) {
