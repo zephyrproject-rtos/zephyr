@@ -10,7 +10,7 @@
 #define SAM_DT_SUPC_CONTROLLER DEVICE_DT_GET(DT_NODELABEL(supc))
 
 #define SAM_DT_SUPC_WAKEUP_SOURCE_ID(node_id) \
-	DT_PROP_BY_IDX(node_id, wakeup_source_id wakeup_source_id)
+	DT_PHA(node_id, wakeup_source_id, wakeup_source_id)
 
 #define SAM_DT_INST_SUPC_WAKEUP_SOURCE_ID(inst) \
 	SAM_DT_SUPC_WAKEUP_SOURCE_ID(DT_DRV_INST(inst))
