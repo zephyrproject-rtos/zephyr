@@ -6046,6 +6046,7 @@ TI MSPM Platforms:
   collaborators:
     - d-philpot
     - Aman-Lachhiramka-ti
+    - SanjayyyV
   files:
     - soc/ti/mspm/
     - boards/ti/*mspm*/
