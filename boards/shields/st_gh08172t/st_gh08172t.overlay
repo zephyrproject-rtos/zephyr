@@ -1,0 +1,60 @@
+/*
+ * Copyright 2026 Renato Mauro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+auxdisplay_0: &slcd {
+	slcd_panel: st_gh08172t {
+		compatible = "slcd-panel";
+		columns = <6>;
+		rows = <1>;
+		segment-type = <14>; /* 14 segment SLCD panel */
+		/* Which pin controls which segment. 6 positions x 14 segments = 84 elements.
+		 * Segment order per position: A B C D E F G H J K M N O P
+		 * Since the display starts from left to right
+		 */
+		segment-pins = <
+				/* Pins for dig1 segments(1A~1P) */
+				22 22 1 0 0 23 23 23 22 22 1 0 0 23
+				/* Pins for dig2 segments(2A~2P) */
+				20 20 3 2 2 21 21 21 20 20 3 2 2 21
+				/* Pins for dig3 segments(3A~3P) */
+				18 18 5 4 4 19 19 19 18 18 5 4 4 19
+				/* Pins for dig4 segments(4A~4P) */
+				16 16 7 6 6 17 17 17 16 16 7 6 6 17
+				/* Pins for dig5 segments(5A~5P) */
+				14 14 9 8 8 15 15 15 14 14 9 8 8 15
+				/* Pins for dig6 segments(6A~6P) */
+				12 12 11 10 10 13 13 13 12 12 11 10 10 13>;
+
+		/* Which com controls which segment. 6 positions x 14 segments = 84 elements. */
+		segment-coms = <
+				/* COMs for dig1 segments(1A~1P) */
+				1 0 1 1 0 1 0 3 3 2 0 3 2 2
+				/* COMs for dig2 segments(2A~2P) */
+				1 0 1 1 0 1 0 3 3 2 0 3 2 2
+				/* COMs for dig3 segments(3A~3P) */
+				1 0 1 1 0 1 0 3 3 2 0 3 2 2
+				/* COMs for dig4 segments(4A~4P) */
+				1 0 1 1 0 1 0 3 3 2 0 3 2 2
+				/* COMs for dig5 segments(5A~5P) */
+				1 0 1 1 0 1 0 3 3 2 0 3 2 2
+				/* COMs for dig6 segments(6A~6P) */
+				1 0 1 1 0 1 0 3 3 2 0 3 2 2>;
+
+		num-indicators = <12>;
+		indicator-pins = <1 1 3 3 5 5 7 7 11 11 9 9>;
+		indicator-coms = <3 2 3 2 3 2 3 2 3 2 3 2>;
+		display-indicators = <
+				      /* single dot */
+				      0 2 4 6 0xff 0xff
+				      /* double dot (colon) */
+				      1 3 5 7 0xff 0xff
+				      /* 4 bars, BAR0-BAR3 */
+				      0xff 0xff 0xff 0xff 0xff 8
+				      0xff 0xff 0xff 0xff 0xff 9
+				      0xff 0xff 0xff 0xff 0xff 10
+				      0xff 0xff 0xff 0xff 0xff 11>;
+	};
+};
