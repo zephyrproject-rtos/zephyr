@@ -587,8 +587,10 @@ int net_context_get(net_sa_family_t family, enum net_sock_type type, uint16_t pr
 			IS_ENABLED(CONFIG_NET_INITIAL_IPV4_MCAST_LOOP);
 #endif
 		if (IS_ENABLED(CONFIG_NET_IP)) {
-			(void)memset(&contexts[i].remote, 0, sizeof(struct net_sockaddr));
-			(void)memset(&contexts[i].local, 0, sizeof(struct net_sockaddr));
+			(void)memset(&contexts[i].remote_storage, 0,
+				     sizeof(contexts[i].remote_storage));
+			(void)memset(&contexts[i].local_storage, 0,
+				     sizeof(contexts[i].local_storage));
 
 			if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
 				struct net_sockaddr_in6 *addr6 =
@@ -1429,7 +1431,8 @@ int net_context_connect(struct net_context *context,
 			void *user_data)
 {
 	struct net_sockaddr *laddr = NULL;
-	struct net_sockaddr local_addr __unused;
+	struct net_sockaddr_storage local_addr_storage __maybe_unused = { 0 };
+	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	uint16_t lport, rport;
 	int ret;
 
@@ -1455,7 +1458,7 @@ int net_context_connect(struct net_context *context,
 	if (IS_ENABLED(CONFIG_NET_UDP) && addr->sa_family == NET_AF_UNSPEC &&
 	    net_context_get_type(context) == NET_SOCK_DGRAM) {
 		context->flags &= ~NET_CONTEXT_REMOTE_ADDR_SET;
-		memset(&context->remote, 0, sizeof(context->remote));
+		memset(&context->remote_storage, 0, sizeof(context->remote_storage));
 		ret = 0;
 		goto unlock;
 	}
@@ -1520,15 +1523,15 @@ int net_context_connect(struct net_context *context,
 		}
 
 		net_sin6(&context->local)->sin6_family = NET_AF_INET6;
-		net_sin6(&local_addr)->sin6_family = NET_AF_INET6;
-		net_sin6(&local_addr)->sin6_port = lport =
+		net_sin6(local_addr)->sin6_family = NET_AF_INET6;
+		net_sin6(local_addr)->sin6_port = lport =
 			net_sin6(&context->local)->sin6_port;
 
 		if (net_context_is_local_addr_set(context)) {
-			net_ipaddr_copy(&net_sin6(&local_addr)->sin6_addr,
+			net_ipaddr_copy(&net_sin6(local_addr)->sin6_addr,
 				     &net_sin6(&context->local)->sin6_addr);
 
-			laddr = &local_addr;
+			laddr = local_addr;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_context_get_family(context) == NET_AF_INET) {
@@ -1568,15 +1571,15 @@ int net_context_connect(struct net_context *context,
 		}
 
 		net_sin(&context->local)->sin_family = NET_AF_INET;
-		net_sin(&local_addr)->sin_family = NET_AF_INET;
-		net_sin(&local_addr)->sin_port = lport =
+		net_sin(local_addr)->sin_family = NET_AF_INET;
+		net_sin(local_addr)->sin_port = lport =
 			net_sin(&context->local)->sin_port;
 
 		if (net_context_is_local_addr_set(context)) {
-			net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
+			net_ipaddr_copy(&net_sin(local_addr)->sin_addr,
 				       &net_sin(&context->local)->sin_addr);
 
-			laddr = &local_addr;
+			laddr = local_addr;
 		}
 	} else {
 		ret = -EINVAL; /* Not IPv4 or IPv6 */
@@ -3975,9 +3978,10 @@ static int recv_dgram(struct net_context *context,
 		      k_timeout_t timeout,
 		      void *user_data)
 {
-	struct net_sockaddr local_addr = {
-		.sa_family = net_context_get_family(context),
+	struct net_sockaddr_storage local_addr_storage = {
+		.ss_family = net_context_get_family(context),
 	};
+	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	struct net_sockaddr *laddr = NULL;
 	uint16_t lport = 0U;
 	int ret;
@@ -3992,22 +3996,22 @@ static int recv_dgram(struct net_context *context,
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == NET_AF_INET6) {
 		if (net_context_is_local_addr_set(context)) {
-			net_ipaddr_copy(&net_sin6(&local_addr)->sin6_addr,
+			net_ipaddr_copy(&net_sin6(local_addr)->sin6_addr,
 				     &net_sin6(&context->local)->sin6_addr);
 
-			laddr = &local_addr;
+			laddr = local_addr;
 		}
 
-		net_sin6(&local_addr)->sin6_port =
+		net_sin6(local_addr)->sin6_port =
 			net_sin6(&context->local)->sin6_port;
 		lport = net_sin6(&context->local)->sin6_port;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_context_get_family(context) == NET_AF_INET) {
 		if (net_context_is_local_addr_set(context)) {
-			net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
+			net_ipaddr_copy(&net_sin(local_addr)->sin_addr,
 				      &net_sin(&context->local)->sin_addr);
 
-			laddr = &local_addr;
+			laddr = local_addr;
 		}
 
 		lport = net_sin(&context->local)->sin_port;
