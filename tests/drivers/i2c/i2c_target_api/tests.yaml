@@ -87,6 +87,8 @@ tests:
       - sam_e54_xpro
       - pic32cx_sg41_cult
       - pic32cm_jh01_cpro
+      - rtl8752h_evb/rtl8752hjl
+      - rtl87x2g_evb_a/rtl8762gku
     integration_platforms:
       - max32690evkit/max32690/m4
       - nrf54l15dk/nrf54l15/cpuapp
