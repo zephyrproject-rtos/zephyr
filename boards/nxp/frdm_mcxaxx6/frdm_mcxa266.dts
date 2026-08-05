@@ -46,6 +46,28 @@
 
 &flexio0 {
 	status = "okay";
+
+	zephyr_mipi_dbi_parallel: flexio-lcd {
+		compatible = "nxp,mipi-dbi-flexio-lcdif";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		dmas = <&edma0 0 71>;
+		dma-names = "tx";
+		shifters-count = <4>;
+		timers-count = <1>;
+		enwr-pin = <7>;
+		rd-pin = <8>;
+		data-pin-start = <16>;
+		reset-gpios = <&gpio4 3 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio3 16 GPIO_ACTIVE_HIGH>;
+		rs-gpios = <&gpio4 1 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&pinmux_flexio_lcd>;
+		pinctrl-names = "default";
+	};
+};
+
+nxp_8080_touch_panel_i2c: &lpi2c3 {
+	status = "okay";
 };
 
 zephyr_udc0: &usb {
