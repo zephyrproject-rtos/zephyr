@@ -137,6 +137,40 @@
 			reg = <0xe001d900 0x8>;
 		};
 
+		tc1: timer@e0800000 {
+			reg = <0xe0800000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe0800000 0x100>;
+
+			tc1_ch0: timer@e0800000 {
+				compatible = "microchip,tc-g2-counter";
+				reg = <0x0 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 86>, <&pmc PMC_TYPE_GCK 86>;
+				status = "disabled";
+			};
+
+			tc1_ch1: timer@e0800040 {
+				compatible = "microchip,tc-g2-counter";
+				reg = <0x40 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 87 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 87>, <&pmc PMC_TYPE_GCK 86>;
+				status = "disabled";
+			};
+
+			tc1_ch2: timer@e0800080 {
+				compatible = "microchip,tc-g2-counter";
+				reg = <0x80 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 88 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 88>, <&pmc PMC_TYPE_GCK 86>;
+				status = "disabled";
+			};
+		};
+
 		mcan0: mcan@e0828000 {
 			compatible = "atmel,sam-can";
 			reg = <0xe0828000 0x100>, <0x100000 0x7800>, <0xe181c030 0x4>;
@@ -493,6 +527,40 @@
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
 				interrupt-parent = <&gic>;
 				interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+		};
+
+		tc0: timer@e2014000 {
+			reg = <0xe2014000 0x100>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe2014000 0x100>;
+
+			tc0_ch0: timer@e2014000 {
+				compatible = "microchip,tc-g2-counter";
+				reg = <0x0 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 83>, <&pmc PMC_TYPE_GCK 83>;
+				status = "disabled";
+			};
+
+			tc0_ch1: timer@e2014040 {
+				compatible = "microchip,tc-g2-counter";
+				reg = <0x40 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 84>, <&pmc PMC_TYPE_GCK 83>;
+				status = "disabled";
+			};
+
+			tc0_ch2: timer@e2014080 {
+				compatible = "microchip,tc-g2-counter";
+				reg = <0x80 0x40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 85>, <&pmc PMC_TYPE_GCK 83>;
 				status = "disabled";
 			};
 		};
