@@ -15,6 +15,7 @@ tests:
     platform_allow:
       - native_sim
       - qemu_riscv32
+      - qemu_x86
     integration_platforms:
       - native_sim
     extra_configs:
