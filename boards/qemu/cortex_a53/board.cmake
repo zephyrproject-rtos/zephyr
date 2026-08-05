@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
-set(QEMU_BINARY_SUFFIX aarch64)
+set(QEMU_ARCH aarch64)
 
-set(QEMU_CPU_TYPE cortex-a53)
+set(QEMU_CPU_TYPE_${ARCH} cortex-a53)
 
 if(CONFIG_ARMV8_A_NS)
   set(QEMU_MACH virt,gic-version=3)
@@ -16,14 +16,10 @@ if(CONFIG_ENTROPY_VIRTIO)
   set(QEMU_VIRTIO_ENTROPY_FLAGS -device virtio-rng-device,bus=virtio-mmio-bus.0)
 endif()
 
-if(CONFIG_INPUT_VIRTIO)
-  set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-device,bus=virtio-mmio-bus.3)
-endif()
-
-set(QEMU_BOARD_FLAGS
-  -cpu ${QEMU_CPU_TYPE}
+set(QEMU_FLAGS_${ARCH}
+  -global virtio-mmio.force-legacy=false
+  -cpu ${QEMU_CPU_TYPE_${ARCH}}
   ${QEMU_VIRTIO_ENTROPY_FLAGS}
-  ${QEMU_VIRTIO_INPUT_FLAGS}
   -machine ${QEMU_MACH}
   )
 
@@ -36,4 +32,4 @@ if(CONFIG_XIP)
   )
 endif()
 
-include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)
+board_set_debugger_ifnset(qemu)
