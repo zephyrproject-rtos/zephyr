@@ -399,6 +399,8 @@ New Drivers
 
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
     (:dtcompatible:`diodes,pi4ioe5v6408`).
+  * ST Zio connector for STM32 Nucleo-144 boards
+    (:dtcompatible:`st-zio-header`).
 
 * Input
 
