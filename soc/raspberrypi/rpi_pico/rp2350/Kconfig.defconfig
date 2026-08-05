@@ -25,4 +25,12 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y if ARM_MPU
 
+# SUSPEND_TO_RAM powers down SysTick; hand off timekeeping via hooks (rp2350_powman.c).
+choice SYSTEM_TIMER_LPM_COMPANION
+	default SYSTEM_TIMER_LPM_COMPANION_HOOKS if PM_S2RAM
+endchoice
+
+config SYSTEM_TIMER_RESET_BY_LPM
+	default y if PM_S2RAM && !SYSTEM_TIMER_LPM_COMPANION_NONE
+
 endif # SOC_SERIES_RP2350
