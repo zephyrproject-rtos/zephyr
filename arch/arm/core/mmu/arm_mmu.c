@@ -980,8 +980,10 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
  * @param size Size (in bytes) of the memory area to map.
  * @param flags Memory attributes & permissions. Comp. K_MEM_...
  *              flags in kernel/mm.h.
+ *
+ * @retval 0 on success
  */
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	int ret = __arch_mem_map(virt, phys, size, flags);
 
@@ -991,6 +993,8 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	} else {
 		invalidate_tlb_all();
 	}
+
+	return ret;
 }
 
 /**

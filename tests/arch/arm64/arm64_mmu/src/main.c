@@ -45,11 +45,10 @@ static void *arm64_mmu_test_init(void)
 
 static int mem_map_test(uintptr_t virt_addr, uintptr_t phys_addr, size_t size)
 {
-	/*
-	 * This is not defined to return any error but the implementation
-	 * will call k_panic() if an error occurs.
-	 */
-	arch_mem_map((void *)virt_addr, phys_addr, size, K_MEM_ARM_NORMAL_NC);
+	int ret;
+
+	ret = arch_mem_map((void *)virt_addr, phys_addr, size, K_MEM_ARM_NORMAL_NC);
+	zassert_ok(ret, "arch_mem_map() returned %d", ret);
 
 	int mapped_nb_free_tables = arm64_mmu_nb_free_tables();
 	int mapped_tables_usage = arm64_mmu_tables_total_usage();
@@ -161,8 +160,10 @@ ZTEST(arm64_mmu, test_arm64_mmu_05_hole_in_block)
 	uintptr_t virt = TEST_VIRT_ADDR & ~(block_size - 1);
 	uintptr_t phys = TEST_PHYS_ADDR & ~(block_size - 1);
 	size_t size = block_size;
+	int ret;
 
-	arch_mem_map((void *)virt, phys, size, K_MEM_ARM_NORMAL_NC);
+	ret = arch_mem_map((void *)virt, phys, size, K_MEM_ARM_NORMAL_NC);
+	zassert_ok(ret, "arch_mem_map() returned %d", ret);
 
 	int mapped_nb_free_tables = arm64_mmu_nb_free_tables();
 	int mapped_tables_usage = arm64_mmu_tables_total_usage();
