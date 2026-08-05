@@ -30,6 +30,15 @@ if(CONFIG_SOC_VERSAL_RPU_OCM_BOOT)
   )
 endif()
 
+if(CONFIG_SOC_VERSAL_RPU_REMOTEPROC)
+  zephyr_linker_sources(RAM_SECTIONS SORT_KEY 0x0metadata rpu_remoteproc_metadata.ld)
+  zephyr_linker_sources(SECTIONS rpu_remoteproc_resource_table.ld)
+endif()
+
+if(CONFIG_SOC_VERSAL_RPU_REMOTEPROC_DATA_LMA)
+  zephyr_linker_sources(RAM_SECTIONS SORT_KEY 0x1data_lma rpu_remoteproc_data_lma.ld)
+endif()
+
 if(CONFIG_SOC_VERSAL_APU)
   # Use generic ARM64 linker script
   set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm64/scripts/linker.ld CACHE INTERNAL "")
