@@ -48,8 +48,8 @@
 };
 
 &pmod_sd_shield {
-	interrupt-names = "accs", "card", "dma-req";
-	interrupts = <84 12>, <85 12>, <86 12>;
+	interrupt-names = "accs", "card", "dma-req", "sdio-int";
+	interrupts = <84 12>, <85 12>, <86 12>, <91 12>;
 	pinctrl-0 = <&pmod_sd_default>;
 };
 
