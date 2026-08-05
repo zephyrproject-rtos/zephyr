@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -122,6 +123,16 @@ bool usbh_desc_is_valid_association(const void *const desc);
 bool usbh_desc_is_valid_endpoint(const void *const desc);
 
 /**
+ * @brief Checks that the pointed descriptor is an string descriptor.
+ *
+ * @param[in] desc The descriptor to validate
+ *
+ * @return true if the descriptor size and type are correct
+ * @return false if the descriptor size or type is wrong
+ */
+bool usbh_desc_is_valid_string(const void *const desc);
+
+/**
  * @brief Get the next function in the descriptor list.
  *
  * This searches the interface or interface association of the next USB
@@ -151,4 +162,42 @@ const void *usbh_desc_get_next_function(const void *const desc);
  */
 const void *usbh_desc_get_next_alt_setting(const void *const desc);
 
+/**
+ * @brief Parse supported USB LANGIDs from string descriptor 0.
+ *
+ * Parses the list of supported LANGIDs from USB string descriptor index 0 and
+ * stores them in the provided buffer. The number of LANGIDs copied is limited
+ * by both the descriptor content and the buffer size.
+ *
+ * @param[in] desc Pointer to the string descriptor index 0 to parse.
+ * @param[in] len Length of the string descriptor in bytes.
+ * @param[out] lang_ids Buffer to store the parsed LANGIDs.
+ * @param[in] lang_ids_len Maximum number of LANGIDs the buffer can hold.
+ *
+ * @retval Number of available LANGIDs copied to @p lang_ids buffer.
+ * @retval -EINVAL if descriptor @p desc is malformed.
+ */
+int usbh_desc_get_lang_ids(const void *const desc, const uint8_t len, uint16_t *const lang_ids,
+			   const uint8_t lang_ids_len);
+
+/**
+ * @brief Convert UTF-16LE encoded string descriptor to ASCII.
+ *
+ * Converts the UTF-16LE encoded string descriptor to an ASCII string. The ASCII
+ * string is always null-terminated. Only characters in the ASCII range (0x00 -
+ * 0x7F) are supported; characters outside this range will cause the conversion
+ * to fail.
+ *
+ * @param[in] desc Pointer to the string descriptor to convert.
+ * @param[in] len Length of the string descriptor in bytes.
+ * @param[out] str Buffer to store the converted ASCII string.
+ * @param[in] str_len Maximum length of the ASCII buffer (including null
+ *            terminator).
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p str_len is zero, or descriptor @p desc is malformed.
+ * @retval -ENOTSUP if a non-ASCII character (> 0x7F) is encountered.
+ */
+int usbh_desc_str_to_ascii(const void *const desc, const uint8_t len, char *const str,
+			   const uint8_t str_len);
 #endif /* ZEPHYR_INCLUDE_USBH_DESC_H */
