@@ -85,7 +85,7 @@ struct regulator_mspm0_vref_data {
 	struct regulator_common_data common;
 	uint32_t buf_config;
 	bool sh_mode_enable;
-	uint16_t sh_cycle_count;
+	uint16_t sample_cycle_count;
 	uint16_t hold_cycle_count;
 };
 
@@ -101,8 +101,9 @@ static void regulator_mspm0_vref_configure(const struct regulator_mspm0_vref_con
 					   struct regulator_mspm0_vref_data *data)
 {
 	config->regs->ctl0 = data->buf_config | (data->sh_mode_enable ? VREF_CTL0_SHMODE : 0);
-	config->regs->ctl2 = FIELD_PREP(VREF_CTL2_SHCYCLE, data->sh_cycle_count) |
-			     FIELD_PREP(VREF_CTL2_HCYCLE, data->hold_cycle_count);
+	config->regs->ctl2 =
+		FIELD_PREP(VREF_CTL2_SHCYCLE, data->sample_cycle_count + data->hold_cycle_count) |
+		FIELD_PREP(VREF_CTL2_HCYCLE, data->hold_cycle_count);
 }
 
 static int regulator_mspm0_vref_enable(const struct device *dev)
@@ -311,7 +312,7 @@ static DEVICE_API(regulator, mspm0_vref_api) = {
 			(DT_INST_PROP(n, regulator_uv) == VREF_1_4V ? VREF_CTL0_BUFCONFIG_1_4V     \
 								    : VREF_CTL0_BUFCONFIG_2_5V),   \
 		.sh_mode_enable = DT_INST_PROP(n, ti_sample_hold_enable),                          \
-		.sh_cycle_count = DT_INST_PROP(n, ti_sample_cycles),                               \
+		.sample_cycle_count = DT_INST_PROP(n, ti_sample_cycles),                           \
 		.hold_cycle_count = DT_INST_PROP(n, ti_hold_cycles),                               \
 	};                                                                                         \
                                                                                                    \
