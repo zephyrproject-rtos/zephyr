@@ -139,6 +139,11 @@ if(CONFIG_HAS_RPI_PICO)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_RTC
           ${rp2_common_dir}/hardware_rtc/include)
 
+  zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_POWMAN
+          ${rp2_common_dir}/hardware_powman/powman.c)
+  zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_POWMAN
+          ${rp2_common_dir}/hardware_powman/include)
+
   zephyr_library_sources_ifdef(CONFIG_PICOSDK_USE_PIO
           ${rp2_common_dir}/hardware_pio/pio.c)
   zephyr_include_directories_ifdef(CONFIG_PICOSDK_USE_PIO
