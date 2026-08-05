@@ -62,7 +62,8 @@ static int mem_map_test(uintptr_t virt_addr, uintptr_t phys_addr, size_t size)
 	zassert_true(mapped_tables_usage > initial_tables_usage,
 		     "%#x vs %#x", mapped_tables_usage, initial_tables_usage);
 
-	arch_mem_unmap((void *)virt_addr, size);
+	ret = arch_mem_unmap((void *)virt_addr, size);
+	zassert_ok(ret, "arch_mem_unmap() returned %d", ret);
 
 	int unmapped_nb_free_tables = arm64_mmu_nb_free_tables();
 	int unmapped_tables_usage = arm64_mmu_tables_total_usage();
@@ -181,7 +182,8 @@ ZTEST(arm64_mmu, test_arm64_mmu_05_hole_in_block)
 	 * Now poke a hole in the middle of this block mapping, effectively
 	 * splitting it in two disjoint sub-mappings.
 	 */
-	arch_mem_unmap((void *)(virt + CONFIG_MMU_PAGE_SIZE), CONFIG_MMU_PAGE_SIZE);
+	ret = arch_mem_unmap((void *)(virt + CONFIG_MMU_PAGE_SIZE), CONFIG_MMU_PAGE_SIZE);
+	zassert_ok(ret, "arch_mem_unmap() returned %d", ret);
 
 	int split_nb_free_tables = arm64_mmu_nb_free_tables();
 	int split_tables_usage = arm64_mmu_tables_total_usage();
@@ -204,7 +206,8 @@ ZTEST(arm64_mmu, test_arm64_mmu_05_hole_in_block)
 	/*
 	 * Then free it all.
 	 */
-	arch_mem_unmap((void *)virt, size);
+	ret = arch_mem_unmap((void *)virt, size);
+	zassert_ok(ret, "arch_mem_unmap() returned %d", ret);
 
 	int unmapped_nb_free_tables = arm64_mmu_nb_free_tables();
 	int unmapped_tables_usage = arm64_mmu_tables_total_usage();

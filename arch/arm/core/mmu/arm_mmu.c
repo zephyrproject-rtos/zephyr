@@ -1044,8 +1044,12 @@ static int __arch_mem_unmap(void *addr, size_t size)
  *
  * @param addr 32-bit virtual address to unmap.
  * @param size Size (in bytes) of the memory area to unmap.
+ *
+ * @retval 0 On success
+ * @retval -EINVAL If invalid arguments are given (for example, a NULL
+ *                 address or zero size)
  */
-void arch_mem_unmap(void *addr, size_t size)
+int arch_mem_unmap(void *addr, size_t size)
 {
 	int ret = __arch_mem_unmap(addr, size);
 
@@ -1054,6 +1058,8 @@ void arch_mem_unmap(void *addr, size_t size)
 	} else {
 		invalidate_tlb_all();
 	}
+
+	return ret;
 }
 
 /**
