@@ -531,7 +531,7 @@ static int mfd_rv3028_init(const struct device *dev)
 		.backup = RV3028_BACKUP_FROM_DT_INST(inst),                                        \
 		.cof = DT_INST_ENUM_IDX_OR(inst, clkout_frequency, RV3028_CLKOUT_FD_LOW),          \
 		IF_ENABLED(RV3028_INT_GPIOS_IN_USE, (.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst,    \
-						    int_gpios, {0}))),              \
+						    int_gpios, {0}),))                             \
 	};                                                                                         \
                                                                                                    \
 	static struct mfd_rv3028_data mfd_rv3028_data##inst;                                       \
