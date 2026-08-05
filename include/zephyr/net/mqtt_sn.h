@@ -229,7 +229,10 @@ struct mqtt_sn_transport_udp {
 	int sock;
 
 	/** Address of broadcasts */
-	struct net_sockaddr bcaddr;
+	union {
+		struct net_sockaddr bcaddr;
+		struct net_sockaddr_storage bcaddr_storage;
+	};
 	net_socklen_t bcaddrlen;
 };
 
