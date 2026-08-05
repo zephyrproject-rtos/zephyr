@@ -702,11 +702,12 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 	static uint8_t in_buf[NET_IPV6_MTU];
 	net_socklen_t from_addr_len;
 	ssize_t len;
-	static struct net_sockaddr from_addr;
+	static struct net_sockaddr_storage from_addr;
+	struct net_sockaddr *from_sa = net_sad(&from_addr);
 
 	from_addr_len = sizeof(from_addr);
 	len = zsock_recvfrom(client_ctx->sock_fd, in_buf, sizeof(in_buf) - 1, ZSOCK_MSG_DONTWAIT,
-			     &from_addr, &from_addr_len);
+			     from_sa, &from_addr_len);
 
 	if (len < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -726,7 +727,7 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 	}
 
 	in_buf[len] = 0U;
-	lwm2m_udp_receive(client_ctx, in_buf, len, &from_addr);
+	lwm2m_udp_receive(client_ctx, in_buf, len, from_sa);
 
 	return 0;
 }
