@@ -39,6 +39,17 @@ zephyr_get(CONF_FILE SYSBUILD LOCAL)
 if(NOT DEFINED CONF_FILE)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} KCONF CONF_FILE NAMES "prj.conf" SUFFIX ${FILE_SUFFIX} REQUIRED)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/socs KCONF CONF_FILE QUALIFIERS SUFFIX ${FILE_SUFFIX})
+
+  # Shield-specific Kconfig fragments: '<app>/shields/<shield>.conf'.
+  # Applied, in the order shields are given, whenever the matching shield is used.
+  # Added before the board fragment so that board-specific settings take precedence.
+  if(DEFINED SHIELD_AS_LIST)
+    foreach(shield ${SHIELD_AS_LIST})
+      zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/shields KCONF CONF_FILE
+                  NAMES "${shield}.conf" SUFFIX ${FILE_SUFFIX})
+    endforeach()
+  endif()
+
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE SUFFIX ${FILE_SUFFIX})
 else()
   string(CONFIGURE "${CONF_FILE}" CONF_FILE_EXPANDED)
@@ -69,6 +80,17 @@ zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
 # in the 'boards' and `soc` configuration subdirectories.
 if(NOT DEFINED DTC_OVERLAY_FILE)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/socs DTS DTC_OVERLAY_FILE QUALIFIERS SUFFIX ${FILE_SUFFIX})
+
+  # Shield-specific devicetree overlays: '<app>/shields/<shield>.overlay'.
+  # Applied, in the order shields are given, whenever the matching shield is used.
+  # Added before the board overlay so that board-specific settings take precedence.
+  if(DEFINED SHIELD_AS_LIST)
+    foreach(shield ${SHIELD_AS_LIST})
+      zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/shields DTS DTC_OVERLAY_FILE
+                  NAMES "${shield}.overlay" SUFFIX ${FILE_SUFFIX})
+    endforeach()
+  endif()
+
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS DTC_OVERLAY_FILE SUFFIX ${FILE_SUFFIX})
 endif()
 
