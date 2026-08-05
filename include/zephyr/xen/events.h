@@ -83,6 +83,24 @@ int evtchn_set_priority(evtchn_port_t port, uint32_t priority);
 int notify_evtchn(evtchn_port_t port);
 
 /**
+ * @brief Set the vCPU that receives an event channel.
+ *
+ * @kconfig_dep{CONFIG_XEN_EVENTS}
+ *
+ * This updates both Xen's event-channel vCPU binding and the driver's local
+ * dispatch ownership cache for the port.
+ *
+ * Concurrent mask, unmask, and affinity changes for the same port must be
+ * serialized by the caller.
+ *
+ * @param port Local event-channel port number.
+ * @param vcpu Xen vCPU id that should receive the port's upcall.
+ *
+ * @return 0 on success, negative errno value on failure.
+ */
+int set_event_channel_affinity(evtchn_port_t port, uint32_t vcpu);
+
+/**
  * @brief Allocate an unbound event channel for the calling domain.
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
@@ -177,6 +195,9 @@ int get_missed_events(evtchn_port_t port);
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
  *
+ * Concurrent mask, unmask, and affinity changes for the same port must be
+ * serialized by the caller.
+ *
  * @param port Local event-channel port number.
  *
  * @retval 0 Always returned after updating the shared-info mask bit.
@@ -187,6 +208,9 @@ int mask_event_channel(evtchn_port_t port);
  * @brief Unmask local delivery for an event channel.
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
+ *
+ * Concurrent mask, unmask, and affinity changes for the same port must be
+ * serialized by the caller.
  *
  * @param port Local event-channel port number.
  *
