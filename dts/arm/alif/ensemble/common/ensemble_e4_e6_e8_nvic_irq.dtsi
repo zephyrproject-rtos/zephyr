@@ -19,3 +19,87 @@
 	interrupt-parent = <&nvic>;
 	interrupts = <131 0>;
 };
+
+&lpgpio {
+	interrupt-parent = <&nvic>;
+	interrupts = <171 0>,
+		     <172 0>,
+		     <173 0>,
+		     <174 0>,
+		     <175 0>,
+		     <176 0>,
+		     <177 0>,
+		     <178 0>;
+};
+
+&gpio9 {
+	interrupt-parent = <&nvic>;
+	interrupts = <251 0>,
+		     <252 0>,
+		     <253 0>,
+		     <254 0>,
+		     <255 0>,
+		     <256 0>,
+		     <257 0>,
+		     <258 0>;
+};
+
+&gpio10 {
+	interrupt-parent = <&nvic>;
+	interrupts = <259 0>,
+		     <260 0>,
+		     <261 0>,
+		     <262 0>,
+		     <263 0>,
+		     <264 0>,
+		     <265 0>,
+		     <266 0>;
+};
+
+&gpio11 {
+	interrupt-parent = <&nvic>;
+	interrupts = <267 0>,
+		     <268 0>,
+		     <269 0>,
+		     <270 0>,
+		     <271 0>,
+		     <272 0>,
+		     <273 0>,
+		     <274 0>;
+};
+
+&gpio12 {
+	interrupt-parent = <&nvic>;
+	interrupts = <275 0>,
+		     <276 0>,
+		     <277 0>,
+		     <278 0>,
+		     <279 0>,
+		     <280 0>,
+		     <281 0>,
+		     <282 0>;
+};
+
+&gpio13 {
+	interrupt-parent = <&nvic>;
+	interrupts = <283 0>,
+		     <284 0>,
+		     <285 0>,
+		     <286 0>,
+		     <287 0>,
+		     <288 0>,
+		     <289 0>,
+		     <290 0>;
+};
+
+&gpio14 {
+	interrupt-parent = <&nvic>;
+	interrupts = <291 0>,
+		     <292 0>,
+		     <293 0>,
+		     <294 0>,
+		     <295 0>,
+		     <296 0>,
+		     <297 0>,
+		     <298 0>;
+};
