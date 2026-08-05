@@ -37,6 +37,7 @@ tests:
       - CONFIG_NEWLIB_LIBC=y
       - CONFIG_THREAD_LOCAL_STORAGE=y
   posix.threads_base.dynamic_stack:
+    min_ram: 128
     extra_configs:
       - CONFIG_DYNAMIC_THREAD=y
       - CONFIG_THREAD_STACK_INFO=y
