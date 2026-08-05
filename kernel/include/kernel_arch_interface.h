@@ -365,8 +365,13 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags);
  *
  * @param addr Page-aligned base virtual address to un-map
  * @param size Page-aligned region size
+ *
+ * @retval 0 On success
+ * @retval -EINVAL If invalid arguments are given (for example, zero size)
+ * @retval -errno Other negative error codes may be returned by
+ *                architecture-specific implementations for other failure modes
  */
-void arch_mem_unmap(void *addr, size_t size);
+int arch_mem_unmap(void *addr, size_t size);
 
 /**
  * Update page frame database with reserved pages

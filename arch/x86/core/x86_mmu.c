@@ -1250,14 +1250,9 @@ int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 }
 
 /* unmap region addr..addr+size, reset entries and flush TLB */
-void arch_mem_unmap(void *addr, size_t size)
+int arch_mem_unmap(void *addr, size_t size)
 {
-	int ret;
-
-	ret = range_map_unlocked(addr, 0, size, 0, 0,
-				 OPTION_FLUSH | OPTION_CLEAR);
-	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	return range_map_unlocked(addr, 0, size, 0, 0, OPTION_FLUSH | OPTION_CLEAR);
 }
 
 #ifdef K_MEM_IS_VM_KERNEL

@@ -391,7 +391,11 @@ static int sys_mm_drv_unmap_page_wflush(void *virt, bool flush_data)
 	if (flush_data) {
 		sys_cache_data_flush_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 #ifdef CONFIG_MMU
-		arch_mem_unmap(virt, CONFIG_MM_DRV_PAGE_SIZE);
+		ret = arch_mem_unmap(virt, CONFIG_MM_DRV_PAGE_SIZE);
+		__ASSERT(ret == 0, "arch_mem_unmap() failed %d\n", ret);
+		if (ret != 0) {
+			goto out_unlock;
+		}
 #endif
 	}
 

@@ -583,6 +583,8 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	uint8_t *pos;
 	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0U;
 
+	ARG_UNUSED(ret);
+
 	__ASSERT(!is_anon || (is_anon && page_frames_initialized),
 		 "%s called too early", __func__);
 	__ASSERT((flags & K_MEM_CACHE_MASK) == 0U,
@@ -621,9 +623,19 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	/* Unmap both guard pages to make sure accessing them
 	 * will generate fault.
 	 */
-	arch_mem_unmap(dst, CONFIG_MMU_PAGE_SIZE);
-	arch_mem_unmap(dst + CONFIG_MMU_PAGE_SIZE + size,
-		       CONFIG_MMU_PAGE_SIZE);
+	ret = arch_mem_unmap(dst, CONFIG_MMU_PAGE_SIZE);
+	__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
+	if (ret != 0) {
+		dst = NULL;
+		goto out;
+	}
+
+	ret = arch_mem_unmap(dst + CONFIG_MMU_PAGE_SIZE + size, CONFIG_MMU_PAGE_SIZE);
+	__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
+	if (ret != 0) {
+		dst = NULL;
+		goto out;
+	}
 
 	/* Skip over the "before" guard page in returned address. */
 	dst += CONFIG_MMU_PAGE_SIZE;
@@ -696,6 +708,8 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 	size_t total_size;
 	int ret;
 
+	ARG_UNUSED(ret);
+
 	/* Need space for the "before" guard page */
 	__ASSERT_NO_MSG(POINTER_TO_UINT(addr) >= CONFIG_MMU_PAGE_SIZE);
 
@@ -743,7 +757,10 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 				 * Simply get rid of the MMU entry and free
 				 * corresponding backing store.
 				 */
-				arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+				ret = arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+				__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d",
+					 __func__, ret);
+
 				k_mem_paging_backing_store_location_free(location);
 				continue;
 			case ARCH_PAGE_LOCATION_PAGED_IN:
@@ -794,7 +811,9 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 				goto out;
 			}
 
-			arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+			ret = arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+			__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
+
 #ifdef CONFIG_DEMAND_PAGING
 			if (IS_ENABLED(CONFIG_EVICTION_TRACKING) &&
 			    (!k_mem_page_frame_is_pinned(pf))) {
@@ -813,7 +832,8 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 		 * have been unmapped. We just need to unmapped the in-between
 		 * region [addr, (addr + size)).
 		 */
-		arch_mem_unmap(addr, size);
+		ret = arch_mem_unmap(addr, size);
+		__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
 	}
 
 	/* There are guard pages just before and after the mapped
@@ -849,7 +869,12 @@ int k_mem_update_flags(void *addr, size_t size, uint32_t flags)
 
 	/* TODO: detect and handle paged-out memory as well */
 
-	arch_mem_unmap(addr, size);
+	ret = arch_mem_unmap(addr, size);
+	__ASSERT(ret == 0, "%s: arch_mem_unmap failed %d\n", __func__, ret);
+	if (ret != 0) {
+		goto out;
+	}
+
 	ret = arch_mem_map(addr, phys, size, flags);
 	__ASSERT(ret == 0, "%s: arch_mem_map failed %d\n", __func__, ret);
 
@@ -999,6 +1024,9 @@ void k_mem_unmap_phys_bare(uint8_t *virt, size_t size)
 	uintptr_t aligned_virt, addr_offset;
 	size_t aligned_size;
 	k_spinlock_key_t key;
+	int ret;
+
+	ARG_UNUSED(ret);
 
 	addr_offset = k_mem_region_align(&aligned_virt, &aligned_size,
 					 POINTER_TO_UINT(virt), size,
@@ -1013,7 +1041,9 @@ void k_mem_unmap_phys_bare(uint8_t *virt, size_t size)
 	LOG_DBG("arch_mem_unmap(0x%lx, %zu) offset %lu",
 		aligned_virt, aligned_size, addr_offset);
 
-	arch_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
+	ret = arch_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
+	__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
+
 	virt_region_free(UINT_TO_POINTER(aligned_virt), aligned_size);
 	k_spin_unlock(&z_mm_lock, key);
 }
