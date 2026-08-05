@@ -52,8 +52,12 @@
 
 /** @brief Report type field mask (lower two bits of parameter). */
 #define BT_HID_PARAM_REPORT_TYPE_MASK GENMASK(1, 0)
-/** @brief Report size present flag in parameter field. */
-#define BT_HID_PARAM_REPORT_SIZE_MASK BIT(2)
+/** @brief Report size present flag in parameter field.
+ *
+ *  HID spec v1.1.2 Table 3.4: within the GET_REPORT header octet bit 3 is the
+ *  Size flag and bit 2 is reserved, so the flag is bit 3 of the parameter.
+ */
+#define BT_HID_PARAM_REPORT_SIZE_MASK BIT(3)
 
 /** @brief Report type values used in GET/SET/DATA messages. */
 #define BT_HID_PAR_REP_TYPE_OTHER   0x00
