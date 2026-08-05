@@ -11,9 +11,19 @@ include: bt-hci.yaml
 properties:
   clocks:
     required: true
+
   bt-hci-name:
     default: "BT IPM"
+
   bt-hci-bus:
     default: "ipc"
+
   bt-hci-quirks:
     default: ["no-reset"]
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    enum: ["rx", "tx"]
