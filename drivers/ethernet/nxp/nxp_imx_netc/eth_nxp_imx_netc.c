@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(nxp_imx_eth);
 #ifdef CONFIG_GIC_V3_ITS
 #include <zephyr/drivers/interrupt_controller/gicv3_its.h>
 #endif
-#include "../eth.h"
+#include "../../eth.h"
 #include "eth_nxp_imx_netc_priv.h"
 
 const struct device *netc_dev_list[NETC_DRV_MAX_INST_SUPPORT];

@@ -19,7 +19,7 @@ LOG_MODULE_REGISTER(nxp_imx_eth_psi);
 #include <zephyr/net/phy.h>
 #include <ethernet/eth_stats.h>
 
-#include "../eth.h"
+#include "../../eth.h"
 #include "eth_nxp_imx_netc_priv.h"
 
 #define DEV_CFG(_dev)  ((const struct netc_eth_config *)(_dev)->config)
