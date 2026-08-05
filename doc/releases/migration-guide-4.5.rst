@@ -151,6 +151,9 @@ Boards
   used by the other NXP board options and by frdm_imxrt1186. Configurations setting
   ``CONFIG_NXP_BOARD_SPECIFIC_MPU_SETTINGS`` must be updated to the new name.
 
+* Boards must now select :kconfig:option:`CONFIG_TFM_PARTITION_FIRMWARE_UPDATE_SUPPORTED` if they
+  support firmware update via TF-M.
+
 Device Drivers and Devicetree
 *****************************
 
