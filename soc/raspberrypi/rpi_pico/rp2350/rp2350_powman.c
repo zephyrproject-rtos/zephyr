@@ -133,3 +133,29 @@ bool rp2350_powman_had_powerdown(void)
 {
 	return (powman_hw->chip_reset & POWMAN_CHIP_RESET_HAD_SWCORE_PD_BITS) != 0;
 }
+
+#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
+#include <zephyr/drivers/timer/system_timer_lpm.h>
+#include <zephyr/sys/clock.h>
+#include <zephyr/sys/util.h>
+
+/* POWMAN timer value (ms) captured on entry; used to report elapsed time on exit. */
+static uint64_t lpm_enter_ms;
+
+void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
+{
+	rp2350_powman_timer_init();
+
+	lpm_enter_ms = powman_timer_get_ms();
+
+	/* POWMAN's alarm is millisecond-granular; round down so we never wake later
+	 * than max_lpm_time_us.
+	 */
+	powman_enable_alarm_wakeup_at_ms(lpm_enter_ms + (max_lpm_time_us / USEC_PER_MSEC));
+}
+
+uint64_t z_sys_clock_lpm_exit(void)
+{
+	return (powman_timer_get_ms() - lpm_enter_ms) * USEC_PER_MSEC;
+}
+#endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS */
