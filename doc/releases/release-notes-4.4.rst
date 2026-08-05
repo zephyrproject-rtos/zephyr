@@ -1447,6 +1447,7 @@ The following issues are addressed by this release:
 * :github:`112432` - drivers: flash: sf32lb_mpi_qspi_nor: read/write offset check wraps on a negative offset
 * :github:`112435` - kernel: k_queue_peek_head()/k_queue_peek_tail() dereference a node without holding the queue lock
 * :github:`112441` - mgmt: updatehub: socket leak, NULL deref, and concurrency bugs in the OTA client
+* :github:`112478` - mcuboot: RAM load with revert images are not bootable
 * :github:`112555` - drivers: bluetooth: hci_bflb / hci_bee: send() consumes the buffer on error paths
 * :github:`112559` - usb: device_next: dfu: handle_download() dereferences buf without a NULL check
 * :github:`112609` - drivers: usb: udc: MAX32 USB driver problem about nodata setup messages
@@ -1461,6 +1462,7 @@ The following issues are addressed by this release:
 * :github:`113043` - net: 6lo: get_ihpc_inlined_size() reads past da_inline_size_table for reserved destination modes
 * :github:`113048` - net: ipv6: handle_ra_6co() underflows memset length for context_len > 128
 * :github:`113159` - LVGL Dynamic allocation doesn't work
+* :github:`113216` - The issue in Bluetooth Mesh solicitation PDU decryption
 * :github:`113265` - Bluetooth: Host: AoD 2US CTE type not validated in valid_conn_cte_tx_params()
 * :github:`113266` - kernel: thread: thread_obj_validate() fails to oops a denied k_thread_join/k_thread_abort
 * :github:`113299` - net: route: net_route_packet_if() forwards packets without decrementing the hop limit
@@ -1495,8 +1497,16 @@ The following issues are addressed by this release:
 * :github:`114495` - drivers: can: stm32: bxcan: maximum filter ID should not take split-filter banks into consideration
 * :github:`114502` - usb: host: configuration descriptor is freed twice when enumeration fails
 * :github:`114506` - drivers: tgpio: tgpio_pin_read_ts_ec handler does not validate its output pointers
+* :github:`114514` - drivers: ipm: ipm_sedi: inbound message length is not validated before the RX copy
 * :github:`114522` - smbus: remove_cb syscalls forward an unvalidated user pointer into the driver
 * :github:`114526` - drivers: wifi: esp_hosted: RX path parses an unvalidated TLV length and can permanently stop the event thread
+* :github:`114586` - drivers/entropy/mcux_trng: poisons xoshiro128 with all-zero seed -> all TCP breaks (-EADDRINUSE)
+* :github:`114678` - net: sockets: Kernel crash (bus fault) on TCP listening socket when interface flaps twice
+* :github:`114895` - net: ieee802154: unchecked copy into the TX frame buffer, and one MAC frame per net_buf
+* :github:`114902` - net: coap: match_path_uri() reads past the end of the Uri-Query value
+* :github:`114906` - zbus: proxy_agent: IPC receive callback reads past channel_name[] when logging a rejected frame
+* :github:`114978` - drivers: adc: MCUX LPADC and MAX32 write samples past the end of the adc_sequence buffer
+* :github:`115025` - mgmt: mcumgr: transport: serial: Check for minimum size of data
 
 .. _zephyr_4.4.1:
 
