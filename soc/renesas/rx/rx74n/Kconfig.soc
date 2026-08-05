@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RX74N
+	bool
+	select SOC_FAMILY_RENESAS_RX
+	help
+	  Renesas RX74N series
+
+config SOC_R5K574NCB4AE
+	bool
+	select SOC_SERIES_RX74N
+	help
+	  R5K574NCB4AE
+
+config SOC_SERIES
+	default "rx74n" if SOC_SERIES_RX74N
+
+config SOC
+	default "r5k574ncb4ae" if SOC_R5K574NCB4AE
