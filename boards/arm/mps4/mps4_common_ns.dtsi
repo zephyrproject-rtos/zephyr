@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 / {
-	flash_controller: flash-controller@@28000000 {
+	flash_controller: flash-controller@28000000 {
 		reg = <0x28000000 DT_SIZE_M(8)>;
 		ranges;
 		#address-cells = <1>;
