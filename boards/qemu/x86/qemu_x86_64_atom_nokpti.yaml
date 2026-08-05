@@ -14,6 +14,7 @@ testing:
     - kernel
     - userspace
     - llext
+    - integration
   ignore_tags:
     - benchmark
 ram: 3000
