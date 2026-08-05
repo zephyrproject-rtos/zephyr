@@ -1208,7 +1208,7 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	return add_map(ptables, "generic", phys, (uintptr_t)virt, size, entry_flags);
 }
 
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	int ret = __arch_mem_map(virt, phys, size, flags);
 
@@ -1219,6 +1219,8 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 		sync_domains((uintptr_t)virt, size, "mem_map");
 		invalidate_tlb_all();
 	}
+
+	return ret;
 }
 
 void arch_mem_unmap(void *addr, size_t size)

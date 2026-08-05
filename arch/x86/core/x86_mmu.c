@@ -1244,14 +1244,9 @@ static pentry_t flags_to_entry(uint32_t flags)
 }
 
 /* map new region virt..virt+size to phys with provided arch-neutral flags */
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
-	int ret;
-
-	ret = range_map_unlocked(virt, phys, size, flags_to_entry(flags),
-				 MASK_ALL, 0);
-	__ASSERT_NO_MSG(ret == 0);
-	ARG_UNUSED(ret);
+	return range_map_unlocked(virt, phys, size, flags_to_entry(flags), MASK_ALL, 0);
 }
 
 /* unmap region addr..addr+size, reset entries and flush TLB */
