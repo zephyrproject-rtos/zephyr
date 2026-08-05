@@ -150,6 +150,10 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_BGSCAN,
 	/** Wi-Fi Direct (P2P) operations*/
 	NET_REQUEST_WIFI_CMD_P2P_OPER,
+	/** Get one entry from the PMKSA cache by index */
+	NET_REQUEST_WIFI_CMD_PMKSA_GET,
+	/** Flush externally managed PMKSA cache state */
+	NET_REQUEST_WIFI_CMD_PMKSA_FLUSH_EXTERNAL,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
@@ -320,6 +324,21 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH);
 
+/** Request one Wi-Fi PMKSA cache entry by index.
+ *
+ * GET clears the output entry before dispatch and on every error, and
+ * preserves the input index. On -ENOENT, entry_count contains the cache size.
+ */
+#define NET_REQUEST_WIFI_PMKSA_GET (NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_GET)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_GET);
+
+/** Flush only backend PMKSA cache state managed outside the application. */
+#define NET_REQUEST_WIFI_PMKSA_FLUSH_EXTERNAL                                                      \
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_FLUSH_EXTERNAL)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH_EXTERNAL);
+
 /** Set Wi-Fi enterprise mode CA/client Cert and key */
 #define NET_REQUEST_WIFI_ENTERPRISE_CREDS                               \
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_ENTERPRISE_CREDS)
@@ -398,6 +417,8 @@ enum {
 	NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED_VAL,
 	NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED_VAL,
 	NET_EVENT_WIFI_CMD_NAN_RECEIVE_VAL,
+	NET_EVENT_WIFI_CMD_PMKSA_CACHE_ADDED_VAL,
+	NET_EVENT_WIFI_CMD_PMKSA_CACHE_REMOVED_VAL,
 
 	NET_EVENT_WIFI_CMD_MAX,
 };
@@ -447,6 +468,10 @@ enum net_event_wifi_cmd {
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_SUPPLICANT),
 	/** P2P device found */
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND),
+	/** An entry was added to the backend PMKSA cache */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_PMKSA_CACHE_ADDED),
+	/** An entry was removed from the backend PMKSA cache */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_PMKSA_CACHE_REMOVED),
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
 	/** Supplicant specific event */
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT),
@@ -524,6 +549,12 @@ enum net_event_wifi_cmd {
 /** Event emitted for P2P device found event */
 #define NET_EVENT_WIFI_P2P_DEVICE_FOUND				\
 	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND)
+
+/** Event emitted when a backend PMKSA cache entry is added. */
+#define NET_EVENT_WIFI_PMKSA_CACHE_ADDED (NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_PMKSA_CACHE_ADDED)
+
+/** Event emitted when a backend PMKSA cache entry is removed. */
+#define NET_EVENT_WIFI_PMKSA_CACHE_REMOVED (NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_PMKSA_CACHE_REMOVED)
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 /** Maximum length for P2P device name */
@@ -682,6 +713,20 @@ struct wifi_scan_result {
 	uint8_t mac[WIFI_MAC_ADDR_LEN];
 	/** BSSID length */
 	uint8_t mac_length;
+};
+
+struct wifi_pmksa_cache_entry;
+
+/** @brief Result of using the PMKSA cache for the current connection. */
+enum wifi_pmksa_cache_usage {
+	/** The backend cannot determine cache usage. */
+	WIFI_PMKSA_CACHE_USAGE_UNKNOWN,
+	/** No cache lookup was attempted. */
+	WIFI_PMKSA_CACHE_USAGE_NOT_ATTEMPTED,
+	/** A cached key was used. */
+	WIFI_PMKSA_CACHE_USAGE_HIT,
+	/** A cache lookup was attempted but missed. */
+	WIFI_PMKSA_CACHE_USAGE_MISS,
 };
 
 /** @brief Wi-Fi connect request parameters */
@@ -874,6 +919,16 @@ struct wifi_connect_req_params {
 	 *   Bit 3: OWE
 	 */
 	uint8_t transition_disable;
+	/**
+	 * Optional PMKSA cache hints bound to this connection's profile.
+	 *
+	 * Backends import supported, valid entries before association and ignore
+	 * entries they cannot import. PMKSA import must not prevent normal
+	 * association.
+	 */
+	const struct wifi_pmksa_cache_entry *pmksa_entries;
+	/** Number of PMKSA entries supplied for this connection. */
+	size_t pmksa_entry_count;
 };
 
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
@@ -976,6 +1031,8 @@ struct wifi_iface_status {
 	bool twt_capable;
 	/** The current 802.11 PHY TX data rate (in Mbps) */
 	float current_phy_tx_rate;
+	/** How the current connection used the PMKSA cache. */
+	enum wifi_pmksa_cache_usage pmksa_cache_usage;
 };
 
 /** @brief Wi-Fi power save parameters */
@@ -1178,6 +1235,122 @@ struct wifi_ps_config {
 	struct wifi_ps_params ps_params;
 };
 
+/** PMKID length in bytes. */
+#define WIFI_PMKSA_PMKID_LEN   16U
+/** Minimum PMK length in bytes. */
+#define WIFI_PMKSA_PMK_MIN_LEN 32U
+/** Maximum PMK length in bytes. */
+#define WIFI_PMKSA_PMK_MAX_LEN 64U
+
+/** @brief Canonical IEEE 802.11 AKM suite selector values. */
+enum wifi_akm_suite {
+	/** No recognized AKM suite. */
+	WIFI_AKM_SUITE_UNKNOWN = 0,
+	/** 802.1X. */
+	WIFI_AKM_SUITE_802_1X = 0x000FAC01,
+	/** PSK. */
+	WIFI_AKM_SUITE_PSK = 0x000FAC02,
+	/** Fast transition 802.1X. */
+	WIFI_AKM_SUITE_FT_802_1X = 0x000FAC03,
+	/** Fast transition PSK. */
+	WIFI_AKM_SUITE_FT_PSK = 0x000FAC04,
+	/** 802.1X with SHA-256. */
+	WIFI_AKM_SUITE_802_1X_SHA256 = 0x000FAC05,
+	/** PSK with SHA-256. */
+	WIFI_AKM_SUITE_PSK_SHA256 = 0x000FAC06,
+	/** SAE. */
+	WIFI_AKM_SUITE_SAE = 0x000FAC08,
+	/** Fast transition SAE. */
+	WIFI_AKM_SUITE_FT_SAE = 0x000FAC09,
+	/** 802.1X Suite B. */
+	WIFI_AKM_SUITE_802_1X_SUITE_B = 0x000FAC0B,
+	/** 802.1X Suite B 192-bit. */
+	WIFI_AKM_SUITE_802_1X_SUITE_B_192 = 0x000FAC0C,
+	/** Fast transition 802.1X with SHA-384. */
+	WIFI_AKM_SUITE_FT_802_1X_SHA384 = 0x000FAC0D,
+	/** FILS with SHA-256. */
+	WIFI_AKM_SUITE_FILS_SHA256 = 0x000FAC0E,
+	/** FILS with SHA-384. */
+	WIFI_AKM_SUITE_FILS_SHA384 = 0x000FAC0F,
+	/** Fast transition FILS with SHA-256. */
+	WIFI_AKM_SUITE_FT_FILS_SHA256 = 0x000FAC10,
+	/** Fast transition FILS with SHA-384. */
+	WIFI_AKM_SUITE_FT_FILS_SHA384 = 0x000FAC11,
+	/** OWE. */
+	WIFI_AKM_SUITE_OWE = 0x000FAC12,
+	/** Fast transition PSK with SHA-384. */
+	WIFI_AKM_SUITE_FT_PSK_SHA384 = 0x000FAC13,
+	/** PSK with SHA-384. */
+	WIFI_AKM_SUITE_PSK_SHA384 = 0x000FAC14,
+	/** Fast transition 802.1X with SHA-384 without PMF. */
+	WIFI_AKM_SUITE_FT_802_1X_SHA384_UNRESTRICTED = 0x000FAC16,
+	/** 802.1X with SHA-384. */
+	WIFI_AKM_SUITE_802_1X_SHA384 = 0x000FAC17,
+	/** SAE extended key. */
+	WIFI_AKM_SUITE_SAE_EXT_KEY = 0x000FAC18,
+	/** Fast transition SAE extended key. */
+	WIFI_AKM_SUITE_FT_SAE_EXT_KEY = 0x000FAC19,
+	/** Device Provisioning Protocol. */
+	WIFI_AKM_SUITE_DPP = 0x506F9A02,
+};
+
+/** @brief Wi-Fi PMKSA cache entry transfer object.
+ *
+ * This is an API transfer object, not a stable serialized format. It does not
+ * contain SSID or backend network context; CONNECT supplies profile identity.
+ */
+struct wifi_pmksa_cache_entry {
+	/** Remaining lifetime before the cache entry expires, in seconds. */
+	uint32_t expiration_remaining_s;
+	/** Remaining lifetime before reauthentication, in seconds. Zero means immediately. */
+	uint32_t reauth_remaining_s;
+	/** Canonical OUI-plus-suite-type AKM selector. */
+	enum wifi_akm_suite akm;
+	/** Pairwise master key; raw credential-equivalent secret material. */
+	uint8_t pmk[WIFI_PMKSA_PMK_MAX_LEN];
+	/** PMK identifier. */
+	uint8_t pmkid[WIFI_PMKSA_PMKID_LEN];
+	/** BSSID associated with this cache entry. */
+	uint8_t bssid[WIFI_MAC_ADDR_LEN];
+	/** Supplicant address associated with this cache entry. */
+	uint8_t spa[WIFI_MAC_ADDR_LEN];
+	/** FILS cache identifier. */
+	uint8_t fils_cache_id[2];
+	/** Length of the pairwise master key. */
+	uint8_t pmk_len;
+	/** Whether fils_cache_id is present. */
+	bool fils_cache_id_set;
+	/** Whether the entry was obtained opportunistically. */
+	bool opportunistic;
+};
+
+/** @brief Indexed PMKSA cache export query. */
+struct wifi_pmksa_cache_query {
+	/** Selected PMKSA cache entry, cleared before every return on error. */
+	struct wifi_pmksa_cache_entry entry;
+	/** Requested cache entry index, preserved by the management layer. */
+	uint32_t index;
+	/** Total cache entry count returned on success or -ENOENT. */
+	uint32_t entry_count;
+};
+
+/** @brief PMKSA cache change event payload. */
+struct wifi_pmksa_cache_event {
+	/** SSID of the profile whose cache changed. */
+	uint8_t ssid[WIFI_SSID_MAX_LEN];
+	/** BSSID whose cache entry changed. */
+	uint8_t bssid[WIFI_MAC_ADDR_LEN];
+	/** Length of the SSID. */
+	uint8_t ssid_length;
+};
+
+/** Clear PMKSA cache entries using a compiler-resistant byte wipe.
+ *
+ * @param entries Array of entries to clear; NULL is harmless.
+ * @param entry_count Number of entries in the array.
+ */
+void wifi_pmksa_cache_entries_clear(struct wifi_pmksa_cache_entry *entries, size_t entry_count);
+
 /** @brief Generic get/set operation for any command*/
 enum wifi_mgmt_op {
 	/** Get operation */
@@ -1330,6 +1503,7 @@ union wifi_mgmt_events {
 	struct wifi_scan_result scan_result;
 	struct wifi_status connect_status;
 	struct wifi_iface_status iface_status;
+	struct wifi_pmksa_cache_event pmksa_cache_event;
 #ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
 	struct wifi_raw_scan_result raw_scan_result;
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
@@ -1992,7 +2166,7 @@ struct wifi_mgmt_ops {
 	 *           result by the driver. The wifi mgmt part will take care of
 	 *           raising the necessary event etc.
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * @return 0 if successful, otherwise a negative error.
 	 */
 	int (*scan)(const struct device *dev,
 		    struct net_if *iface,
@@ -2004,7 +2178,10 @@ struct wifi_mgmt_ops {
 	 * @param iface Network interface to use for the connection
 	 * @param params Connect parameters
 	 *
-	 * @return 0 if ok, < 0 if error
+	 * PMKSA entries are best-effort hints. Unsupported or invalid entries
+	 * must not prevent normal association.
+	 *
+	 * @return 0 if successful, otherwise a negative error.
 	 */
 	int (*connect)(const struct device *dev,
 		       struct net_if *iface,
@@ -2311,6 +2488,31 @@ struct wifi_mgmt_ops {
 		       struct wifi_nan_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 
+	/** Get one indexed PMKSA cache entry while associated.
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the PMKSA operation.
+	 * @param query Query containing the requested index and output fields.
+	 *
+	 * @return 0 if an entry was returned, -ENOTCONN if no connected station
+	 * profile exists, -ENOENT if the index is unavailable, -ENOTSUP if export
+	 * is unsupported, -ENETDOWN if the interface is down, or another backend
+	 * error. The management layer clears entry on every error and preserves
+	 * entry_count on -ENOENT.
+	 */
+	int (*pmksa_get)(const struct device *dev, struct net_if *iface,
+			 struct wifi_pmksa_cache_query *query);
+
+	/** Flush externally managed PMKSA cache state.
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the PMKSA operation.
+	 *
+	 * @return 0 if successful, -ENOTSUP if unsupported, -ENETDOWN if the
+	 * interface is administratively down, or another backend error.
+	 */
+	int (*pmksa_flush_external)(const struct device *dev, struct net_if *iface);
+
 	/** Flush PMKSA cache entries
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -2520,6 +2722,15 @@ void wifi_mgmt_raise_twt_event(struct net_if *iface,
  * @param twt_sleep_state TWT sleep state
  */
 void wifi_mgmt_raise_twt_sleep_state(struct net_if *iface, int twt_sleep_state);
+
+/** Raise a PMKSA cache change event.
+ *
+ * @param iface Network interface associated with the event.
+ * @param event NET_EVENT_WIFI_PMKSA_CACHE_ADDED or REMOVED.
+ * @param info Cache entry identity.
+ */
+void wifi_mgmt_raise_pmksa_cache_event(struct net_if *iface, uint64_t event,
+				       const struct wifi_pmksa_cache_event *info);
 
 #if defined(CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS) || defined(__DOXYGEN__)
 /** Wi-Fi management raw scan result event

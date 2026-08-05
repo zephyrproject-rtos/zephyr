@@ -260,6 +260,51 @@ To enable and build with Wi-Fi NAN support:
 
     $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_NAN=y
 
+External PMKSA cache
+********************
+
+The PMKSA cache API has independent import and export controls.
+:kconfig:option:`CONFIG_WIFI_MGMT_PMKSA_IMPORT` enables capable backends to
+consume entries supplied in :c:struct:`wifi_connect_req_params`.
+:kconfig:option:`CONFIG_WIFI_MGMT_PMKSA_EXPORT` enables indexed enumeration
+with :c:macro:`NET_REQUEST_WIFI_PMKSA_GET`.
+
+Imported entries are best-effort hints. A backend skips invalid, expired, or
+unsupported entries, including entries whose supplicant address does not match
+the interface. Import failure does not prevent normal association. A backend
+that cannot determine cache usage reports ``UNKNOWN``; ``MISS`` means that
+cache use was attempted but full authentication was required.
+
+The intended lifecycle is:
+
+* :c:macro:`NET_EVENT_WIFI_PMKSA_CACHE_ADDED` -> mark the identified SSID and
+  BSSID dirty.
+* Successful ``CONNECT`` -> enumerate the backend cache and copy entries to
+  protected storage.
+* Power removal -> deduct trusted elapsed time or discard the records.
+* Next ``CONNECT`` -> supply the aged array in
+  :c:struct:`wifi_connect_req_params`.
+* :c:macro:`NET_EVENT_WIFI_PMKSA_CACHE_REMOVED` -> delete the stored entry
+  identified by SSID and BSSID.
+* Credential, station-MAC, or policy change -> issue
+  :c:macro:`NET_REQUEST_WIFI_PMKSA_FLUSH_EXTERNAL` and delete stored records.
+
+A GET before a connected station profile exists returns ``-ENOTCONN``. On
+``-ENOENT``, ``entry_count`` contains the current cache size. Enumeration is
+best effort because the cache can change between requests; an event during
+enumeration can cause duplicates or gaps, so applications that need a fresh
+snapshot should restart enumeration.
+
+Export exposes raw PMKs, which are credential-equivalent secrets. Applications
+must use protected storage, avoid logging them, and promptly wipe temporary
+copies. The transfer object is an API object, not a disk format. CONNECT
+supplies profile identity, and the backend assigns its runtime network context,
+so the public record contains neither SSID nor ``network_ctx``.
+
+The :c:enum:`wifi_akm_suite` values are canonical 32-bit OUI-plus-suite-type
+selectors. They are distinct from :c:enum:`wifi_security_type`, which does not
+identify one negotiated AKM.
+
 API Reference
 *************
 
