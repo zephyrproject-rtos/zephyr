@@ -50,7 +50,6 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define RDES0_LS  BIT(8)
 
 #define RDES1_RBS1 GENMASK(12, 0)
-#define RDES1_RER  BIT(15)
 #define RDES1_RCH  BIT(14)
 
 #define RX_LEN_FROM_RDES0(rdes0) (FIELD_GET(RDES0_FL, (rdes0)))
@@ -348,20 +347,18 @@ static void dwmac_rx_refill_desc(const struct device *dev, struct net_buf *frag)
 {
 	struct dwmac_priv *p = dev->data;
 	struct dwmac_dma_desc *d;
-	unsigned int d_idx;
+	unsigned int d_idx, next_d_idx;
 
 	d_idx = p->rx_desc_head;
+	next_d_idx = (d_idx + 1U) % NB_RX_DESCS;
 	p->rx_frags[d_idx] = frag;
 
 	d = &p->rx_descs[d_idx];
 	__ASSERT(!(d->des0 & RDES0_OWN), "rx desc still owned");
 
-	d->des1 = FIELD_PREP(RDES1_RBS1, frag->size);
-
-	if (d_idx == NB_RX_DESCS - 1) {
-		d->des1 |= RDES1_RER;
-	}
+	d->des1 = FIELD_PREP(RDES1_RBS1, frag->size) | RDES1_RCH;
 	d->des2 = phys_lo32(frag->data);
+	d->des3 = RXDESC_PHYS_L(next_d_idx);
 
 	barrier_dmem_fence_full();
 
