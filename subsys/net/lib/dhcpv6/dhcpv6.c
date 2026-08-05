@@ -2980,14 +2980,15 @@ void net_dhcpv6_restart(struct net_if *iface)
 
 int net_dhcpv6_init(void)
 {
-	struct net_sockaddr unspec_addr = {0};
+	struct net_sockaddr_storage unspec_addr_storage = {0};
+	struct net_sockaddr *unspec_addr = net_sad(&unspec_addr_storage);
 	int ret;
 
-	net_ipaddr_copy(&net_sin6(&unspec_addr)->sin6_addr,
+	net_ipaddr_copy(&net_sin6(unspec_addr)->sin6_addr,
 			net_ipv6_unspecified_address());
-	unspec_addr.sa_family = NET_AF_INET6;
+	unspec_addr->sa_family = NET_AF_INET6;
 
-	ret = net_udp_register(NET_AF_INET6, NULL, &unspec_addr,
+	ret = net_udp_register(NET_AF_INET6, NULL, unspec_addr,
 			       0, DHCPV6_CLIENT_PORT,
 			       NULL, dhcpv6_input, NULL, NULL);
 	if (ret < 0) {
