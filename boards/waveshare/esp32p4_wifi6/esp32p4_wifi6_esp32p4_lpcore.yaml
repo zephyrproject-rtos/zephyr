@@ -11,6 +11,7 @@ supported:
 testing:
   only_tags:
     - introduction
+    - integration
   ignore_tags:
     - kernel
     - posix
