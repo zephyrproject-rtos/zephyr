@@ -101,6 +101,7 @@ struct dwmac_config {
 	const struct device *phy_dev;
 	const struct device *clock;
 	const clock_control_subsys_t mac_clk;
+	bool rx_chain_mode;
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	const struct device *ptp_clock;
 	const clock_control_subsys_t ptp_clk;

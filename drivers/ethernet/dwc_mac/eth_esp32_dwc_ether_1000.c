@@ -163,6 +163,7 @@ static const struct dwmac_config dwmac_config = {
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
 	.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.mac_clk = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
+	.rx_chain_mode = DT_INST_PROP_OR(0, snps_rx_chain_mode, false),
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
 	.ptp_clk = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(0, ptp, offset),

@@ -13,6 +13,14 @@ compatible: "snps,dwmac"
 include: ethernet-controller.yaml
 
 properties:
+  snps,rx-chain-mode:
+    type: boolean
+    description: |
+      Use explicit chained receive descriptors instead of implicit ring
+      descriptors. Chained mode uses one receive buffer per descriptor and
+      stores the next descriptor address in the second address field. This is
+      supported by the DWC Ethernet MAC 10/100/1000 Universal core.
+
   snps,clk-csr:
     type: int
     description: |

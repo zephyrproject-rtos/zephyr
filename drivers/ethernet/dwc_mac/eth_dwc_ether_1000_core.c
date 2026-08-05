@@ -346,22 +346,35 @@ static void dwmac_receive(const struct device *dev)
 
 static void dwmac_rx_refill_desc(const struct device *dev, struct net_buf *frag)
 {
+	const struct dwmac_config *cfg = dev->config;
 	struct dwmac_priv *p = dev->data;
 	struct dwmac_dma_desc *d;
-	unsigned int d_idx;
+	unsigned int d_idx, next_d_idx;
 
 	d_idx = p->rx_desc_head;
+	next_d_idx = (d_idx + 1U) % NB_RX_DESCS;
 	p->rx_frags[d_idx] = frag;
 
 	d = &p->rx_descs[d_idx];
 	__ASSERT(!(d->des0 & RDES0_OWN), "rx desc still owned");
 
 	d->des1 = FIELD_PREP(RDES1_RBS1, frag->size);
-
-	if (d_idx == NB_RX_DESCS - 1) {
-		d->des1 |= RDES1_RER;
-	}
 	d->des2 = phys_lo32(frag->data);
+
+	/*
+	 * Some integrations, including GigaDevice, do not advance an implicit-ring
+	 * descriptor when its second buffer is empty. Chained mode explicitly links
+	 * the driver's one-buffer receive descriptors.
+	 */
+	if (cfg->rx_chain_mode) {
+		d->des1 |= RDES1_RCH;
+		d->des3 = RXDESC_PHYS_L(next_d_idx);
+	} else {
+		d->des3 = 0U;
+		if (d_idx == NB_RX_DESCS - 1) {
+			d->des1 |= RDES1_RER;
+		}
+	}
 
 	barrier_dmem_fence_full();
 
