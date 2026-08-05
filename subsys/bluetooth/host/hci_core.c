@@ -4514,7 +4514,7 @@ static void rx_queue_put(struct net_buf *buf)
 
 static int bt_recv_unsafe(struct net_buf *buf)
 {
-	/* Don't pull the type, snice we still need it in the rx queue */
+	/* Don't pull the type, since we still need it in the rx queue */
 	uint8_t type = buf->data[0];
 
 	bt_monitor_send(bt_monitor_opcode(type, BT_MONITOR_RX), buf->data + 1, buf->len - 1);
