@@ -20,14 +20,14 @@
 #include <ethernet/eth_stats.h>
 #include <stdint.h>
 
-#include "eth.h"
+#include "../eth.h"
 #include "eth_stm32_hal_priv.h"
 
 #define DT_DRV_COMPAT st_stm32_ethernet
 
 LOG_MODULE_REGISTER(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
-#include "dwc_mac/eth_stm32_dwc.h"
+#include "../dwc_mac/eth_stm32_dwc.h"
 
 #if defined(CONFIG_ETH_STM32_HAL_USE_DTCM_FOR_DMA_BUFFER) &&                                       \
 	!DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
