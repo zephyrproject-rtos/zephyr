@@ -737,6 +737,60 @@ ZTEST_USER(adc_emul, test_adc_emul_ref_voltage_set)
 	check_empty_samples(samples * 2);
 }
 
+ZTEST_USER(adc_emul, test_adc_ref_internal_tracks_emul_ref_voltage_set)
+{
+	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+	uint16_t before = adc_ref_internal(adc_dev);
+	int ret;
+
+	zassert_true(before > 0, "expected non-zero DT internal ref");
+
+	ret = adc_emul_ref_voltage_set(adc_dev, ADC_REF_INTERNAL, 2500);
+	zassert_ok(ret, "adc_emul_ref_voltage_set failed: %d", ret);
+	zassert_equal(adc_ref_internal(adc_dev), 2500,
+		      "adc_ref_internal did not observe emul set");
+
+	zassert_ok(adc_emul_ref_voltage_set(adc_dev, ADC_REF_INTERNAL, before));
+}
+
+ZTEST_USER(adc_emul, test_adc_raw_to_millivolts_dt_tracks_emul_ref_internal)
+{
+	const struct device *adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
+	const uint16_t runtime_ref_mv = 2500;
+	const int32_t raw_value = BIT(ADC_RESOLUTION) / 2;
+	const int32_t expected_mv = runtime_ref_mv / 2;
+	int32_t output = raw_value;
+	int ret;
+
+	/* clang-format off */
+	static const struct adc_dt_spec adc_internal_spec = {
+		.dev = DEVICE_DT_GET(ADC_DEVICE_NODE),
+		.channel_id = ADC_1ST_CHANNEL_ID,
+		.channel_cfg_dt_node_exists = true,
+		.channel_cfg = {
+			.gain = ADC_GAIN_1,
+			.reference = ADC_REF_INTERNAL,
+			.acquisition_time = ADC_ACQUISITION_TIME,
+			.channel_id = ADC_1ST_CHANNEL_ID,
+		},
+		.resolution = ADC_RESOLUTION,
+	};
+	/* clang-format on */
+
+	channel_setup(adc_dev, ADC_REF_INTERNAL, ADC_GAIN_1, ADC_1ST_CHANNEL_ID);
+
+	ret = adc_emul_ref_voltage_set(adc_dev, ADC_REF_INTERNAL, runtime_ref_mv);
+	zassert_ok(ret, "adc_emul_ref_voltage_set failed: %d", ret);
+
+	ret = adc_raw_to_millivolts_dt(&adc_internal_spec, &output);
+	zassert_ok(ret, "adc_raw_to_millivolts_dt() failed with code %d", ret);
+	zassert_within(expected_mv, output, MV_OUTPUT_EPS,
+		       "conversion did not track runtime internal ref");
+
+	zassert_ok(adc_emul_ref_voltage_set(adc_dev, ADC_REF_INTERNAL,
+					    ADC_REF_INTERNAL_MV));
+}
+
 void *adc_emul_setup(void)
 {
 	k_object_access_grant(get_adc_device(), k_current_get());

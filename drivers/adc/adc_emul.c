@@ -279,6 +279,13 @@ static uint16_t adc_emul_get_ref_voltage(struct adc_emul_data *data,
 	return voltage;
 }
 
+static uint16_t adc_emul_ref_internal_get(const struct device *dev)
+{
+	struct adc_emul_data *data = dev->data;
+
+	return adc_emul_get_ref_voltage(data, ADC_REF_INTERNAL);
+}
+
 static int adc_emul_channel_setup(const struct device *dev,
 				  const struct adc_channel_cfg *channel_cfg)
 {
@@ -623,6 +630,7 @@ static int adc_emul_init(const struct device *dev)
 		.channel_setup = adc_emul_channel_setup,		\
 		.read = adc_emul_read,					\
 		.ref_internal = DT_INST_PROP(_num, ref_internal_mv),	\
+		.ref_internal_get = adc_emul_ref_internal_get,		\
 		IF_ENABLED(CONFIG_ADC_ASYNC,				\
 			(.read_async = adc_emul_read_async,))		\
 	};								\
