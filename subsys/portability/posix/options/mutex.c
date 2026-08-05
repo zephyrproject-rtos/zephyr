@@ -140,7 +140,6 @@ static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 				(void)k_sleep(K_FOREVER);
 			} while (true);
 			CODE_UNREACHABLE;
-			break;
 		case PTHREAD_MUTEX_RECURSIVE:
 			if (lock_count >= MUTEX_MAX_REC_LOCK) {
 				LOG_DBG("Mutex %p locked recursively too many times", m);
