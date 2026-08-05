@@ -973,24 +973,27 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
  * Maps memory according to the parameters provided by the caller
  * at run-time. This function wraps the ARMv7 MMU specific implementation
  * #__arch_mem_map() for the upper layers of the memory management.
- * If the map operation fails, a kernel panic will be triggered.
  *
  * @param virt 32-bit target virtual address.
  * @param phys 32-bit physical address.
  * @param size Size (in bytes) of the memory area to map.
  * @param flags Memory attributes & permissions. Comp. K_MEM_...
  *              flags in kernel/mm.h.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if invalid arguments are given (for example, zero size)
  */
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	int ret = __arch_mem_map(virt, phys, size, flags);
 
 	if (ret) {
 		LOG_ERR("__arch_mem_map() returned %d", ret);
-		k_panic();
 	} else {
 		invalidate_tlb_all();
 	}
+
+	return ret;
 }
 
 /**

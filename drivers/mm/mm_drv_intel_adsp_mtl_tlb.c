@@ -277,7 +277,11 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	tlb_entries[entry_idx] = entry;
 
 #ifdef CONFIG_MMU
-	arch_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+	ret = arch_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+	__ASSERT(ret == 0, "arch_mem_map() failed %d\n", ret);
+	if (ret != 0) {
+		goto unlock_out;
+	}
 #endif
 	/*
 	 * Invalid the cache of the newly mapped virtual page to
@@ -285,6 +289,7 @@ int sys_mm_drv_map_page(void *virt, uintptr_t phys, uint32_t flags)
 	 */
 	sys_cache_data_invd_range(virt, CONFIG_MM_DRV_PAGE_SIZE);
 
+unlock_out:
 	k_spin_unlock(&tlb_lock, key);
 
 out:
@@ -471,7 +476,8 @@ int sys_mm_drv_update_page_flags(void *virt, uint32_t flags)
 	tlb_entries[entry_idx] = entry;
 
 #ifdef CONFIG_MMU
-	arch_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+	ret = arch_mem_map(virt, va, CONFIG_MM_DRV_PAGE_SIZE, flags);
+	__ASSERT(ret == 0, "arch_mem_map() failed %d\n", ret);
 #endif
 
 out:
@@ -854,8 +860,12 @@ static void adsp_mm_save_context(void *storage_buffer)
 			tlb_entries[entry_idx] = entry;
 
 #ifdef CONFIG_MMU
-			arch_mem_map(UINT_TO_POINTER(phys_addr), phys_addr, CONFIG_MM_DRV_PAGE_SIZE,
-				     K_MEM_CACHE_WB | K_MEM_PERM_RW);
+			int ret = arch_mem_map(UINT_TO_POINTER(phys_addr), phys_addr,
+					       CONFIG_MM_DRV_PAGE_SIZE,
+					       K_MEM_CACHE_WB | K_MEM_PERM_RW);
+
+			__ASSERT(ret == 0, "arch_mem_map() failed %d\n", ret);
+			ARG_UNUSED(ret);
 #endif
 
 			/* Invalidate cache to avoid stalled data

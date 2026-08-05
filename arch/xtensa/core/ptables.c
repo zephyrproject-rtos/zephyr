@@ -693,7 +693,7 @@ static inline bool __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, 
 	return ret;
 }
 
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	uint32_t va = (uint32_t)virt;
 	uint32_t pa = (uint32_t)phys;
@@ -701,11 +701,12 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	uint32_t attrs = 0;
 	k_spinlock_key_t key;
 	bool is_user;
+	int ret = 0;
 
 	if (size == 0) {
 		LOG_ERR("Cannot map physical memory at 0x%08X: invalid "
 			"zero size", (uint32_t)phys);
-		k_panic();
+		return -EINVAL;
 	}
 
 	switch (flags & K_MEM_CACHE_MASK) {
@@ -735,7 +736,8 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 
 	while (rem_size > 0) {
 		if (!__arch_mem_map((void *)va, pa, attrs, is_user)) {
-			k_panic();
+			ret = -ENOMEM;
+			break;
 		}
 
 		rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
@@ -752,6 +754,8 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	}
 
 	k_spin_unlock(&xtensa_mmu_lock, key);
+
+	return ret;
 }
 
 /**

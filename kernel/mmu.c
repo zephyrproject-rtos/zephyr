@@ -524,13 +524,13 @@ static int map_anon_page(void *addr, uint32_t flags)
 	struct k_mem_page_frame *pf;
 	uintptr_t phys;
 	bool lock = (flags & K_MEM_MAP_LOCK) != 0U;
+	int ret;
 
 	pf = free_page_frame_list_get();
 	if (pf == NULL) {
 #ifdef CONFIG_DEMAND_PAGING
 		uintptr_t location;
 		bool dirty;
-		int ret;
 
 		pf = k_mem_paging_eviction_select(&dirty);
 		__ASSERT(pf != NULL, "failed to get a page frame");
@@ -551,7 +551,13 @@ static int map_anon_page(void *addr, uint32_t flags)
 	}
 
 	phys = k_mem_page_frame_to_phys(pf);
-	arch_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE, flags);
+	ret = arch_mem_map(addr, phys, CONFIG_MMU_PAGE_SIZE, flags);
+	__ASSERT(ret == 0, "%s: arch_mem_map failed %d\n", __func__, ret);
+	if (ret != 0) {
+		/* Mapping failed: give the page frame back before bailing out. */
+		page_frame_free_locked(pf);
+		return ret;
+	}
 
 	if (lock) {
 		k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
@@ -629,10 +635,15 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 		if ((flags & K_MEM_MAP_LOCK) == 0) {
 			flags |= K_MEM_MAP_UNPAGED;
 			VIRT_FOREACH(dst, size, pos) {
-				arch_mem_map(pos,
-					     uninit ? ARCH_UNPAGED_ANON_UNINIT
-						    : ARCH_UNPAGED_ANON_ZERO,
-					     CONFIG_MMU_PAGE_SIZE, flags);
+				ret = arch_mem_map(pos,
+						   uninit ? ARCH_UNPAGED_ANON_UNINIT
+							  : ARCH_UNPAGED_ANON_ZERO,
+						   CONFIG_MMU_PAGE_SIZE, flags);
+				__ASSERT(ret == 0, "%s: arch_mem_map failed %d\n", __func__, ret);
+				if (ret != 0) {
+					dst = NULL;
+					goto out;
+				}
 			}
 			LOG_DBG("memory mapping anon pages %p to %p unpaged", dst, pos-1);
 			/* skip the memset() below */
@@ -655,13 +666,12 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 			}
 		}
 	} else {
-		/* Mapping known physical memory.
-		 *
-		 * arch_mem_map() is a void function and does not return
-		 * anything. Arch code usually uses ASSERT() to catch
-		 * mapping errors. Assume this works correctly for now.
-		 */
-		arch_mem_map(dst, phys, size, flags);
+		/* Mapping known physical memory. */
+		ret = arch_mem_map(dst, phys, size, flags);
+		__ASSERT(ret == 0, "%s: arch_mem_map failed %d\n", __func__, ret);
+		if (ret != 0) {
+			dst = NULL;
+		}
 	}
 
 out:
@@ -840,7 +850,8 @@ int k_mem_update_flags(void *addr, size_t size, uint32_t flags)
 	/* TODO: detect and handle paged-out memory as well */
 
 	arch_mem_unmap(addr, size);
-	arch_mem_map(addr, phys, size, flags);
+	ret = arch_mem_map(addr, phys, size, flags);
+	__ASSERT(ret == 0, "%s: arch_mem_map failed %d\n", __func__, ret);
 
 out:
 	k_spin_unlock(&z_mm_lock, key);
@@ -898,6 +909,7 @@ void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32
 	uint8_t *dest_addr;
 	size_t num_bits;
 	size_t offset;
+	int ret;
 
 #ifndef CONFIG_KERNEL_DIRECT_MAP
 	__ASSERT(!(flags & K_MEM_DIRECT_MAP), "The direct-map is not enabled");
@@ -960,7 +972,11 @@ void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32
 	LOG_DBG("arch_mem_map(%p, 0x%lx, %zu, %x) offset %lu", (void *)dest_addr,
 		aligned_phys, aligned_size, flags, addr_offset);
 
-	arch_mem_map(dest_addr, aligned_phys, aligned_size, flags);
+	ret = arch_mem_map(dest_addr, aligned_phys, aligned_size, flags);
+	__ASSERT(ret == 0, "%s: arch_mem_map failed %d\n", __func__, ret);
+	if (ret != 0) {
+		goto fail;
+	}
 	k_spin_unlock(&z_mm_lock, key);
 
 	*virt_ptr = dest_addr + addr_offset;
@@ -1061,12 +1077,18 @@ static void z_paging_ondemand_section_map(void)
 	size_t size;
 	uintptr_t location;
 	uint32_t flags;
+	int ret;
+
+	ARG_UNUSED(ret);
 
 	size = (uintptr_t)lnkr_ondemand_text_size;
 	flags = K_MEM_MAP_UNPAGED | K_MEM_PERM_EXEC | K_MEM_CACHE_WB;
 	VIRT_FOREACH(lnkr_ondemand_text_start, size, addr) {
 		k_mem_paging_backing_store_location_query(addr, &location);
-		arch_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
+
+		ret = arch_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
+		__ASSERT(ret == 0, "arch_mem_map() returned %d", ret);
+
 		sys_bitarray_set_region(&virt_region_bitmap, 1,
 					virt_to_bitmap_offset(addr, CONFIG_MMU_PAGE_SIZE));
 	}
@@ -1075,7 +1097,10 @@ static void z_paging_ondemand_section_map(void)
 	flags = K_MEM_MAP_UNPAGED | K_MEM_CACHE_WB;
 	VIRT_FOREACH(lnkr_ondemand_rodata_start, size, addr) {
 		k_mem_paging_backing_store_location_query(addr, &location);
-		arch_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
+
+		ret = arch_mem_map(addr, location, CONFIG_MMU_PAGE_SIZE, flags);
+		__ASSERT(ret == 0, "arch_mem_map() returned %d", ret);
+
 		sys_bitarray_set_region(&virt_region_bitmap, 1,
 					virt_to_bitmap_offset(addr, CONFIG_MMU_PAGE_SIZE));
 	}
