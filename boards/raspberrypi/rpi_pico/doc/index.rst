@@ -129,6 +129,9 @@ Raspberry Pi Pico's PIO is a programmable chip that can implement a variety of p
    * - WS2812 (PIO)
      - :kconfig:option:`CONFIG_LED_STRIP`
      - :dtcompatible:`worldsemi,ws2812-rpi_pico-pio`
+   * - I2S (PIO)
+     - :kconfig:option:`CONFIG_I2S`
+     - :dtcompatible:`raspberrypi,pico-i2s-pio`
 
 System requirements
 *******************
