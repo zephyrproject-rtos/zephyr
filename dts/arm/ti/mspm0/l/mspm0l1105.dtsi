@@ -10,8 +10,11 @@
 
 / {
 	soc {
-		flash0: serial-flash@0 {
+		flash0: flash@0 {
 			reg = <0x0 DT_SIZE_K(32)>;
+			ranges = <0x0 0x0 DT_SIZE_K(32)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 		};
 	};
 };

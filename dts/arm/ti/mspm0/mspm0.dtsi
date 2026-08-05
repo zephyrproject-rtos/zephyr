@@ -156,8 +156,8 @@
 			compatible = "mmio-sram";
 		};
 
-		flash0: serial-flash@0 {
-			compatible = "serial-flash";
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
 		};
 
 		wdt0: wdt0@40080000 {
