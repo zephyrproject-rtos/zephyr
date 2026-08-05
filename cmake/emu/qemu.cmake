@@ -71,12 +71,12 @@ include(${CMAKE_CURRENT_LIST_DIR}/qemu/dumpdtb.cmake)
 if(CONFIG_FLASH_INTEL_PFLASH_CFI01)
   if(CONFIG_X86)
     # X86 Needs an initial bios file in pflash0 slot
-    list(APPEND QEMU_EXTRA_FLAGS
+    qemu_append_extra_flags(
       -drive file=${HOST_TOOLS_HOME}/usr/share/qemu/bios-256k.bin,if=pflash,format=raw,unit=0
     )
   endif()
 
-  list(APPEND QEMU_EXTRA_FLAGS
+  qemu_append_extra_flags(
     -drive file=${ZEPHYR_BINARY_DIR}/pflash.img,if=pflash,format=raw,unit=1
   )
 
