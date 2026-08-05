@@ -9,8 +9,8 @@
 #include <ctype.h>
 #include <string.h>
 
-#include "mesh/net.h"
-#include "mesh/access.h"
+#include <mesh/net.h>
+#include <mesh/access.h>
 #include "utils.h"
 
 bool bt_mesh_shell_mdl_first_get(uint16_t id, const struct bt_mesh_model **mod)

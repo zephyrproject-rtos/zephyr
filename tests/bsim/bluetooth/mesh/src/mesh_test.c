@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
-#include "argparse.h"
+#include <argparse.h>
 #include <bs_pc_backchannel.h>
-#include "mesh/crypto.h"
+#include <mesh/crypto.h>
 #include <zephyr/bluetooth/hci.h>
 
 #define LOG_MODULE_NAME mesh_test
@@ -16,7 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 /* Max number of messages that can be pending on RX at the same time */
 #define RECV_QUEUE_SIZE 32

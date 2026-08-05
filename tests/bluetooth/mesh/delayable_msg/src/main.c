@@ -9,9 +9,9 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/random/random.h>
 
-#include "net.h"
-#include "access.h"
-#include "delayable_msg.h"
+#include <mesh/net.h>
+#include <mesh/access.h>
+#include <mesh/delayable_msg.h>
 
 #define SRC_ADDR 0x0002
 #define RX_ADDR  0xc000

@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
-#include "argparse.h"
-#include "mesh/net.h"
-#include "mesh/heartbeat.h"
-#include "mesh/lpn.h"
+#include <argparse.h>
+#include <mesh/net.h>
+#include <mesh/heartbeat.h>
+#include <mesh/lpn.h>
 
 #define LOG_MODULE_NAME test_heartbeat
 

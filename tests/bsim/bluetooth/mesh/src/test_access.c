@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
-#include "mesh/net.h"
-#include "mesh/access.h"
-#include "mesh/foundation.h"
+#include <mesh/net.h>
+#include <mesh/access.h>
+#include <mesh/foundation.h>
 
 #define LOG_MODULE_NAME test_access
 

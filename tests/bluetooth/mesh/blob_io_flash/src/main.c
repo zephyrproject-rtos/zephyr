@@ -8,7 +8,7 @@
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#include "mesh/blob.h"
+#include <mesh/blob.h>
 
 #define SLOT1_PARTITION		slot1_partition
 #define SLOT1_PARTITION_ID	PARTITION_ID(SLOT1_PARTITION)

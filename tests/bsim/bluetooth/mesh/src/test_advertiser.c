@@ -7,9 +7,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/bluetooth/hci.h>
 #include "mesh_test.h"
-#include "mesh/net.h"
-#include "mesh/mesh.h"
-#include "mesh/foundation.h"
+#include <mesh/net.h>
+#include <mesh/mesh.h>
+#include <mesh/foundation.h>
 #include "gatt_common.h"
 
 #define LOG_MODULE_NAME test_adv

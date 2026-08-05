@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
-#include "mesh/dfd_srv_internal.h"
-#include "mesh/dfu_slot.h"
-#include "mesh/dfu.h"
-#include "mesh/blob.h"
-#include "argparse.h"
+#include <mesh/dfd_srv_internal.h>
+#include <mesh/dfu_slot.h>
+#include <mesh/dfu.h>
+#include <mesh/blob.h>
+#include <argparse.h>
 #include "dfu_blob_common.h"
 
 #define LOG_MODULE_NAME test_dfu

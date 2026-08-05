@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include "mesh_test.h"
-#include "mesh/net.h"
+#include <mesh/net.h>
 
 #define LOG_MODULE_NAME test_ivi
 

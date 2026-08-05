@@ -8,9 +8,9 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#include "settings.h"
-#include "net.h"
-#include "rpl.h"
+#include <mesh/settings.h>
+#include <mesh/net.h>
+#include <mesh/rpl.h>
 
 #define EMPTY_ENTRIES_CNT (CONFIG_BT_MESH_CRPL - ARRAY_SIZE(test_vector))
 

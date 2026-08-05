@@ -7,9 +7,9 @@
 #include "mesh_test.h"
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/sys/reboot.h>
-#include "mesh/net.h"
-#include "mesh/app_keys.h"
-#include "mesh/keys.h"
+#include <mesh/net.h>
+#include <mesh/app_keys.h>
+#include <mesh/keys.h>
 #include <bs_cmd_line.h>
 
 #include <zephyr/psa/key_ids.h>

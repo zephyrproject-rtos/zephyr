@@ -12,7 +12,7 @@
 
 #include <zephyr/bluetooth/mesh.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #include "cdb.h"
 #include "net.h"

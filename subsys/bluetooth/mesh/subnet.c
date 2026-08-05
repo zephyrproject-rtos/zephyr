@@ -19,7 +19,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/mesh.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #include "crypto.h"
 #include "net.h"

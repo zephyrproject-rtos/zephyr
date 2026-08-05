@@ -15,7 +15,7 @@
 #include "beacon.h"
 #include "prov.h"
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #define LOG_LEVEL CONFIG_BT_MESH_PROV_LOG_LEVEL
 #include <zephyr/logging/log.h>

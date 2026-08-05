@@ -7,11 +7,11 @@
 #include <stdlib.h>
 
 #include "mesh_test.h"
-#include "mesh/access.h"
-#include "mesh/net.h"
-#include "mesh/crypto.h"
-#include "mesh/prov.h"
-#include "argparse.h"
+#include <mesh/access.h>
+#include <mesh/net.h>
+#include <mesh/crypto.h>
+#include <mesh/prov.h>
+#include <argparse.h>
 #include <bs_pc_backchannel.h>
 #include <time_machine.h>
 
@@ -20,7 +20,7 @@
 #define LOG_MODULE_NAME mesh_prov
 
 #include <zephyr/logging/log.h>
-#include "mesh/rpr.h"
+#include <mesh/rpr.h>
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 

@@ -9,9 +9,9 @@
 #include <zephyr/bluetooth/mesh.h>
 #include <stdlib.h>
 
-#include "settings.h"
-#include "brg_cfg.h"
-#include "foundation.h"
+#include <mesh/settings.h>
+#include <mesh/brg_cfg.h>
+#include <mesh/foundation.h>
 
 #define TEST_VECT_SZ (CONFIG_BT_MESH_BRG_TABLE_ITEMS_MAX + 1)
 
