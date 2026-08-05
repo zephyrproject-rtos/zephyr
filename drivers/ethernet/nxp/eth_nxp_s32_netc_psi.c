@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(nxp_s32_eth_psi);
 #include <Netc_Eth_Ip_Irq.h>
 #include <Netc_EthSwt_Ip.h>
 
-#include "eth.h"
+#include "../eth.h"
 #include "eth_nxp_s32_netc_priv.h"
 
 #define TX_RING_IDX	1

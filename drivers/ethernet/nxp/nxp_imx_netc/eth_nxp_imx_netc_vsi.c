@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(nxp_imx_eth_vsi);
 #include <zephyr/net/net_pkt.h>
 #include <ethernet/eth_stats.h>
 
-#include "../eth.h"
+#include "../../eth.h"
 #include "eth_nxp_imx_netc_priv.h"
 #include "eth_nxp_imx_netc_msg.h"
 #include "fsl_netc_msg.h"
