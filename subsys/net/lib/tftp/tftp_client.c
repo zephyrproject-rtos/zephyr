@@ -216,11 +216,12 @@ static int send_request(int sock, struct tftpc *client,
 		}
 
 		/* Receive data from the TFTP Server. */
-		struct net_sockaddr from_addr;
+		struct net_sockaddr_storage from_addr;
+		struct net_sockaddr *from_sa = net_sad(&from_addr);
 		net_socklen_t from_addr_len = sizeof(from_addr);
 
 		ret = zsock_recvfrom(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0,
-				     &from_addr, &from_addr_len);
+				     from_sa, &from_addr_len);
 		if (ret < TFTP_HEADER_SIZE) {
 			req_size = make_request(client->tftp_buf, request,
 						remote_file, mode);
@@ -228,7 +229,7 @@ static int send_request(int sock, struct tftpc *client,
 		}
 
 		/* Limit communication to the specific address:port */
-		if (zsock_connect(sock, &from_addr, from_addr_len) < 0) {
+		if (zsock_connect(sock, from_sa, from_addr_len) < 0) {
 			ret = -errno;
 			LOG_ERR("connect failed, err %d", ret);
 			break;

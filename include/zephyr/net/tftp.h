@@ -127,8 +127,14 @@ typedef void (*tftp_callback_t)(const struct tftp_evt *evt);
  *       GET or PUT API with the `tftpc` structure.
  */
 struct tftpc {
-	/** Socket address pointing to the remote TFTP server */
-	struct net_sockaddr server;
+	/** Socket address storage */
+	union {
+		/** Socket address pointing to the remote TFTP server */
+		struct net_sockaddr server;
+/** @cond INTERNAL_HIDDEN */
+		struct net_sockaddr_storage server_storage;
+/** @endcond */
+	};
 
 	/** Event notification callback. No notification if NULL */
 	tftp_callback_t callback;
