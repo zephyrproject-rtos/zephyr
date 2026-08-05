@@ -30,4 +30,63 @@
 		current-speed = <115200>;
 		status = "disabled";
 	};
+
+	gpio9: gpio@49009000 {
+		compatible = "snps,designware-gpio";
+		reg = <0x49009000 0x1000>;
+		ngpios = <8>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio10: gpio@4900a000 {
+		compatible = "snps,designware-gpio";
+		reg = <0x4900a000 0x1000>;
+		ngpios = <8>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio11: gpio@4900b000 {
+		compatible = "snps,designware-gpio";
+		reg = <0x4900b000 0x1000>;
+		ngpios = <8>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio12: gpio@4900c000 {
+		compatible = "snps,designware-gpio";
+		reg = <0x4900c000 0x1000>;
+		ngpios = <8>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio13: gpio@4900d000 {
+		compatible = "snps,designware-gpio";
+		reg = <0x4900d000 0x1000>;
+		ngpios = <8>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+
+	gpio14: gpio@4900e000 {
+		compatible = "snps,designware-gpio";
+		reg = <0x4900e000 0x1000>;
+		ngpios = <8>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "disabled";
+	};
+};
+
+/* These devices carry the full eight pin wide LPGPIO. */
+&lpgpio {
+	ngpios = <8>;
 };
