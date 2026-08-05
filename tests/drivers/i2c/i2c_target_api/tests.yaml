@@ -88,6 +88,8 @@ tests:
       - pic32cm_jh01_cpro
       - pic32cx_sg41_cult
       - pic32cz_ca80_cult
+      - rtl8752h_evb/rtl8752hjl
+      - rtl87x2g_evb_a/rtl8762gku
       - sam_e54_xpro
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52
