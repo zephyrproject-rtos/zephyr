@@ -4018,18 +4018,13 @@ static int ztls_poll_prepare_pollin(struct tls_context *ctx)
 		return -EALREADY;
 	}
 
-#if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-	if (ctx->type == NET_SOCK_DGRAM) {
-		return 0;
-	}
-#endif
-
 	if (!ctx->is_initialized) {
 		return 0;
 	}
 
 	/* Mbed TLS can hold a message that it already read from the underlying
-	 * socket but did not process yet. The socket has no readiness left to
+	 * socket but did not process yet, for example a further record of a
+	 * datagram that carried several. The socket has no readiness left to
 	 * report in that case, so waiting on it alone can sleep while data is
 	 * available. Advance such a message here instead.
 	 */
