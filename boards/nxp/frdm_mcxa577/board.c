@@ -347,6 +347,14 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_to_FLEXCAN0);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexspi))
+	/* FRO_HF (192 MHz) / 4 = 48 MHz FlexSPI root clock */
+	CLOCK_SetClockDiv(kCLOCK_DivFLEXSPI0, 4U);
+	CLOCK_AttachClk(kFRO_HF_to_FLEXSPI);
+	CLOCK_EnableClock(kCLOCK_GateFLEXSPI0);
+	RESET_ReleasePeripheralReset(kFLEXSPI0_RST_SHIFT_RSTn);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
 	CLOCK_SetClockDiv(kCLOCK_DivFLEXIO0, 1u);
 	CLOCK_AttachClk(kFRO_HF_to_FLEXIO0);
