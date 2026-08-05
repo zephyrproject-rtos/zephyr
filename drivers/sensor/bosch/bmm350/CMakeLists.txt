@@ -10,3 +10,5 @@ zephyr_library_sources(
 )
 zephyr_library_sources_ifdef(CONFIG_BMM350_TRIGGER bmm350_trigger.c)
 zephyr_library_sources_ifdef(CONFIG_BMM350_STREAM bmm350_stream.c)
+zephyr_library_sources_ifdef(CONFIG_EMUL_BMM350 bmm350_emul.c)
+zephyr_include_directories_ifdef(CONFIG_EMUL_BMM350 .)

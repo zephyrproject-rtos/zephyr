@@ -75,3 +75,10 @@ test_i3c_bmp581: bmp581@800000803e0000004 {
 	assigned-address = <0x8>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i3c_bmm350: bmm350@900000803e0000009 {
+	compatible = "bosch,bmm350";
+	reg = <0x9 0x00000803 0xe0000009>;
+	assigned-address = <0x9>;
+	drdy-gpios = <&test_gpio 0 0>;
+};
