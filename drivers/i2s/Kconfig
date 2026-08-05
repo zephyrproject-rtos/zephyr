@@ -13,6 +13,13 @@ menuconfig I2S
 
 if I2S
 
+config I2S_RTIO
+	bool "I2S RTIO API"
+	select EXPERIMENTAL
+	select RTIO
+	help
+	  API and implementations of I2S for RTIO
+
 config I2S_INIT_PRIORITY
 	int "Init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE

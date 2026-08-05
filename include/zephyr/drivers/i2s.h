@@ -28,6 +28,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/rtio/rtio.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -323,6 +324,14 @@ struct i2s_config {
 	int32_t timeout;
 };
 
+/** @brief I2S iodev data structure */
+struct i2s_iodev_data {
+	/** I2S Device */
+	const struct device *dev;
+	/** I2S interface configuration options */
+	struct i2s_config config;
+};
+
 /**
  * @def_driverbackendgroup{I2S,i2s_interface}
  * @ingroup i2s_interface
@@ -361,6 +370,13 @@ __subsystem struct i2s_driver_api {
 	 */
 	int (*trigger)(const struct device *dev, enum i2s_dir dir,
 		       enum i2s_trigger_cmd cmd);
+#if defined(CONFIG_I2S_RTIO) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_mandatory @copybrief i2s_iodev_submit
+	 * See i2s_iodev_submit() fir arguments description.
+	 */
+	void (*iodev_submit)(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+#endif /* CONFIG_I2S_RTIO */
 };
 
 /** @} */
@@ -554,6 +570,104 @@ static inline int z_impl_i2s_trigger(const struct device *dev,
 {
 	return DEVICE_API_GET(i2s, dev)->trigger(dev, dir, cmd);
 }
+
+#if defined(CONFIG_I2S_RTIO) || defined(__DOXYGEN__)
+
+/**
+ * @name I2S RTIO API
+ *
+ * These functions are for using the I2S driver class through an RTIO-based API
+ *
+ * @{
+ */
+
+/**
+ * @brief Submit RTIO request to I2S device
+ *
+ * @param iodev_sqe Prepared submissions queue entry connected to an iodev defined by
+ *                  I2S_IODEV_DEFINE. Must live as long as the request is in flight.
+ */
+static inline void i2s_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct i2s_iodev_data *iodev_data = iodev_sqe->sqe.iodev->data;
+	const struct device *dev = iodev_data->dev;
+
+	DEVICE_API_GET(i2s, dev)->iodev_submit(dev, iodev_sqe);
+}
+
+/** @cond INTERNAL_HIDDEN */
+extern const struct rtio_iodev_api i2s_iodev_api;
+/** @endcond */
+
+/**
+ * @brief Define an I2S iodev for an I2S device from devicetree node
+ *
+ * @param _name Symbolic name to use for defining the iodev
+ * @param _node_id Devicetree node identifier of I2S device
+ * @param _word_size Number of bits representing one data word
+ * @param _channels Number of words per frame
+ * @param _format Data stream format as defined by I2S_FMT_* constants
+ * @param _options Configuration options as defined by I2S_OPT_* constants
+ * @param _frame_clk_freq Frame clock (WS) frequency, this is the sampling rate
+ * @param _timeout Read/Write timeout. Number of milliseconds to wait in case TX queue is full or
+ *                 RX queue is empty, or 0, or SYS_FOREVER_MS.
+ */
+#define I2S_DT_IODEV_DEFINE(_name,								\
+			    _node_id,								\
+			    _word_size,								\
+			    _channels,								\
+			    _format,								\
+			    _options,								\
+			    _frame_clk_freq,							\
+			    _timeout)								\
+	const struct i2s_iodev_data CONCAT(_i2s_iodev_data_, _name) = {				\
+		.dev = DEVICE_DT_GET(_node_id),							\
+		.config = {									\
+			.word_size = _word_size,						\
+			.channels = _channels,							\
+			.format = _format,							\
+			.options = _options,							\
+			.frame_clk_freq = _frame_clk_freq,					\
+			.mem_slab = NULL,							\
+			.block_size = 0,							\
+			.timeout = _timeout,							\
+		},										\
+	};											\
+	RTIO_IODEV_DEFINE(_name, &i2s_iodev_api, (void *)&CONCAT(_i2s_iodev_data_, _name))
+
+/**
+ * @brief Define an I2S iodev for an I2S device from devicetree instance number
+ *
+ * This is equivalent to <tt>I2S_DT_IODEV_DEFINE(name, DT_DRV_INST(inst), ...)</tt>.
+ *
+ * @param _name Symbolic name to use for defining the iodev.
+ * @param _inst Devicetree instance number.
+ * @param ... Following parameters as expected by I2S_DT_IODEV_DEFINE().
+ */
+#define I2S_DT_INST_IODEV_DEFINE(_name, _inst, ...) \
+	I2S_DT_IODEV_DEFINE(_name, DT_DRV_INST(_inst), __VA_ARGS__)
+
+/**
+ * @brief Validate that I2S iodev is ready
+ *
+ * @param i2s_iodev I2S iodev defined with I2S_DT_IODEV_DEFINE.
+ *
+ * @retval true if the I2S iodev is ready for use.
+ * @retval false if the I2S iodev is not ready for use.
+ */
+static inline bool i2s_is_ready_iodev(const struct rtio_iodev *i2s_iodev)
+{
+	const struct i2s_iodev_data *iodev_data = i2s_iodev->data;
+	const struct device *dev = iodev_data->dev;
+
+	return device_is_ready(dev);
+}
+
+/**
+ * @}
+ */
+
+#endif /* CONFIG_I2S_RTIO */
 
 /**
  * @}
