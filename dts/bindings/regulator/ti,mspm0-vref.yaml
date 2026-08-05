@@ -32,6 +32,10 @@ properties:
     type: boolean
     description: Enable sample & hold mode
 
+  ti,v2i-enable:
+    type: boolean
+    description: Enable voltage-to-current mode
+
   ti,sample-cycles:
     type: int
     description: Number of sample cycles for sample & hold mode

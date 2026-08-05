@@ -7,6 +7,7 @@
 
 #include <arm/armv6-m.dtsi>
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
+#include <zephyr/dt-bindings/regulator/mspm0_vref.h>
 #include <freq.h>
 
 / {
@@ -207,6 +208,8 @@
 			regulator-uv = <1400000>;
 			ti,sample-cycles = <10>;
 			ti,hold-cycles = <40>;
+			regulator-allowed-modes = <MSPM0_VREF_MODE_NORMAL>,
+						  <MSPM0_VREF_MODE_SHMODE>;
 			status = "disabled";
 		};
 

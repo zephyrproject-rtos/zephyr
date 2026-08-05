@@ -86,6 +86,7 @@ struct regulator_mspm0_vref_data {
 	uint32_t buf_config;
 	bool sh_mode_enable;
 	uint16_t sample_cycle_count;
+	bool v2i_enable;
 	uint16_t hold_cycle_count;
 };
 
@@ -104,6 +105,22 @@ static void regulator_mspm0_vref_configure(const struct regulator_mspm0_vref_con
 	config->regs->ctl2 =
 		FIELD_PREP(VREF_CTL2_SHCYCLE, data->sample_cycle_count + data->hold_cycle_count) |
 		FIELD_PREP(VREF_CTL2_HCYCLE, data->hold_cycle_count);
+	config->regs->v2ien = data->v2i_enable ? VREF_V2IEN_V2I_EN : 0;
+}
+
+static regulator_mode_t
+regulator_mspm0_vref_mode_from_regs(const struct regulator_mspm0_vref_config *config)
+{
+	regulator_mode_t mode = MSPM0_VREF_MODE_NORMAL;
+
+	if (config->regs->ctl0 & VREF_CTL0_SHMODE) {
+		mode |= MSPM0_VREF_MODE_SHMODE;
+	}
+	if (config->regs->v2ien & VREF_V2IEN_V2I_EN) {
+		mode |= MSPM0_VREF_MODE_V2I;
+	}
+
+	return mode;
 }
 
 static int regulator_mspm0_vref_enable(const struct device *dev)
@@ -208,11 +225,7 @@ static int regulator_mspm0_vref_get_mode(const struct device *dev, regulator_mod
 	k_mutex_lock(&data->common.lock, K_FOREVER);
 #endif
 
-	if (config->regs->ctl0 & VREF_CTL0_SHMODE) {
-		*mode = MSPM0_VREF_MODE_SHMODE;
-	} else {
-		*mode = MSPM0_VREF_MODE_NORMAL;
-	}
+	*mode = regulator_mspm0_vref_mode_from_regs(config);
 
 #ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	k_mutex_unlock(&data->common.lock);
@@ -232,25 +245,20 @@ static int regulator_mspm0_vref_set_mode(const struct device *dev, regulator_mod
 	k_mutex_lock(&data->common.lock, K_FOREVER);
 #endif
 
+	if (mode & ~(MSPM0_VREF_MODE_SHMODE | MSPM0_VREF_MODE_V2I)) {
+		ret = -ENOTSUP;
+		goto out;
+	}
+
 	if (data->common.refcnt != 0) {
-		mode_get = (config->regs->ctl0 & VREF_CTL0_SHMODE) ? MSPM0_VREF_MODE_SHMODE
-								   : MSPM0_VREF_MODE_NORMAL;
+		mode_get = regulator_mspm0_vref_mode_from_regs(config);
 		if (mode_get != mode) {
 			ret = -EBUSY;
 			goto out;
 		}
 	} else {
-		switch (mode) {
-		case MSPM0_VREF_MODE_SHMODE:
-			data->sh_mode_enable = true;
-			break;
-		case MSPM0_VREF_MODE_NORMAL:
-			data->sh_mode_enable = false;
-			break;
-		default:
-			ret = -EINVAL;
-			goto out;
-		}
+		data->sh_mode_enable = (mode & MSPM0_VREF_MODE_SHMODE) != 0;
+		data->v2i_enable = (mode & MSPM0_VREF_MODE_V2I) != 0;
 		regulator_mspm0_vref_configure(config, data);
 	}
 out:
@@ -313,6 +321,7 @@ static DEVICE_API(regulator, mspm0_vref_api) = {
 								    : VREF_CTL0_BUFCONFIG_2_5V),   \
 		.sh_mode_enable = DT_INST_PROP(n, ti_sample_hold_enable),                          \
 		.sample_cycle_count = DT_INST_PROP(n, ti_sample_cycles),                           \
+		.v2i_enable = DT_INST_PROP(n, ti_v2i_enable),                                      \
 		.hold_cycle_count = DT_INST_PROP(n, ti_hold_cycles),                               \
 	};                                                                                         \
                                                                                                    \
