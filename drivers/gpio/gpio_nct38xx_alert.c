@@ -154,9 +154,6 @@ static int nct38xx_alert_init(const struct device *dev)
 	return 0;
 }
 
-/* NCT38XX alert driver must be initialized after NCT38XX GPIO driver */
-BUILD_ASSERT(CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_PRIORITY);
-
 #define NCT38XX_ALERT_DEVICE_INSTANCE(inst)                                                        \
 	const struct device *nct38xx_dev_##inst[] = {                                              \
 		DT_INST_FOREACH_PROP_ELEM_SEP(inst, nct38xx_dev, DEVICE_DT_GET_BY_IDX, (,))};      \
@@ -172,6 +169,6 @@ BUILD_ASSERT(CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, nct38xx_alert_init, NULL, &nct38xx_alert_data_##inst,          \
 			      &nct38xx_alert_cfg_##inst, POST_KERNEL,                              \
-			      CONFIG_GPIO_NCT38XX_ALERT_INIT_PRIORITY, NULL);
+			      CONFIG_GPIO_NCT38XX_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(NCT38XX_ALERT_DEVICE_INSTANCE)
