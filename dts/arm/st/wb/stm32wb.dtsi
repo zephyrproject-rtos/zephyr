@@ -666,6 +666,9 @@
 		compatible = "st,stm32wb-rf";
 		clocks = <&rcc STM32_CLOCK(AHB3, 20)>,
 			 <&rcc STM32_SRC_LSE RFWKP_SEL(1)>;
+		interrupt-parent = <&nvic>;
+		interrupts = <44 0>, <45 0>;
+		interrupt-names = "rx", "tx";
 	};
 
 	smbus1: smbus1 {
