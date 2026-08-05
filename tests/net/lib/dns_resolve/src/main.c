@@ -495,13 +495,13 @@ ZTEST(dns_resolve, test_dns_query_ipv4_server_count)
 			continue;
 		}
 
-		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET6) {
+		if (ctx->servers[i].dns_server_addr.ss_family == NET_AF_INET6) {
 			continue;
 		}
 
 		count++;
 
-		if (net_sin(&ctx->servers[i].dns_server)->sin_port ==
+		if (net_sin(net_sad(&ctx->servers[i].dns_server_addr))->sin_port ==
 		    net_ntohs(53)) {
 			port++;
 		}
@@ -525,13 +525,13 @@ ZTEST(dns_resolve, test_dns_query_ipv6_server_count)
 			continue;
 		}
 
-		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET) {
+		if (ctx->servers[i].dns_server_addr.ss_family == NET_AF_INET) {
 			continue;
 		}
 
 		count++;
 
-		if (net_sin6(&ctx->servers[i].dns_server)->sin6_port ==
+		if (net_sin6(net_sad(&ctx->servers[i].dns_server_addr))->sin6_port ==
 		    net_ntohs(53)) {
 			port++;
 		}
@@ -773,8 +773,8 @@ static void inject_empty_dns_response(struct dns_resolve_context *ctx,
 	ret = ctx->servers[server_idx].dispatcher.cb(
 		&ctx->servers[server_idx].dispatcher,
 		ctx->servers[server_idx].sock,
-		&ctx->servers[server_idx].dns_server,
-		dns_server_addr_len(&ctx->servers[server_idx].dns_server),
+		net_sad(&ctx->servers[server_idx].dns_server_addr),
+		dns_server_addr_len(net_sad(&ctx->servers[server_idx].dns_server_addr)),
 		dns_data, len);
 	zassert_equal(ret, 0, "Cannot inject DNS response");
 
@@ -812,8 +812,8 @@ static void inject_refused_dns_response(struct dns_resolve_context *ctx,
 	ret = ctx->servers[server_idx].dispatcher.cb(
 		&ctx->servers[server_idx].dispatcher,
 		ctx->servers[server_idx].sock,
-		&ctx->servers[server_idx].dns_server,
-		dns_server_addr_len(&ctx->servers[server_idx].dns_server),
+		net_sad(&ctx->servers[server_idx].dns_server_addr),
+		dns_server_addr_len(net_sad(&ctx->servers[server_idx].dns_server_addr)),
 		dns_data, len);
 	zassert_true(ret == 0 || ret == DNS_EAI_FAIL,
 		     "Unexpected REFUSED response status %d", ret);
@@ -877,8 +877,8 @@ static void inject_success_dns_response(struct dns_resolve_context *ctx,
 	ret = ctx->servers[server_idx].dispatcher.cb(
 		&ctx->servers[server_idx].dispatcher,
 		ctx->servers[server_idx].sock,
-		&ctx->servers[server_idx].dns_server,
-		dns_server_addr_len(&ctx->servers[server_idx].dns_server),
+		net_sad(&ctx->servers[server_idx].dns_server_addr),
+		dns_server_addr_len(net_sad(&ctx->servers[server_idx].dns_server_addr)),
 		dns_data, len);
 	zassert_equal(ret, 0, "Cannot inject DNS response");
 
@@ -1351,7 +1351,7 @@ void dns_result_numeric_cb(enum dns_resolve_status status,
 
 	if (info && info->ai_family == NET_AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-		if (net_ipv4_addr_cmp(&net_sin(&info->ai_addr)->sin_addr,
+		if (net_ipv4_addr_cmp(&net_sin(net_sad(&info->ai_addr_storage))->sin_addr,
 				      &my_addr2) != true) {
 			zassert_true(false, "IPv4 address does not match");
 		}
@@ -1360,7 +1360,7 @@ void dns_result_numeric_cb(enum dns_resolve_status status,
 
 	if (info && info->ai_family == NET_AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
-		if (net_ipv6_addr_cmp(&net_sin6(&info->ai_addr)->sin6_addr,
+		if (net_ipv6_addr_cmp(&net_sin6(net_sad(&info->ai_addr_storage))->sin6_addr,
 				      &my_addr3) != true) {
 			zassert_true(false, "IPv6 address does not match");
 		}
