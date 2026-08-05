@@ -373,6 +373,10 @@ linkcheck_ignore = [
 
 extlinks = {
     "github": ("https://github.com/zephyrproject-rtos/zephyr/issues/%s", "GitHub #%s"),
+    # Sphinx gained a built-in "cve" role in 8.1, which the documentation on
+    # main uses.  This branch builds with Sphinx 7, so provide the role here
+    # with the same target and caption.
+    "cve": ("https://www.cve.org/CVERecord?id=CVE-%s", "CVE-%s"),
 }
 
 linkcheck_timeout = 30
