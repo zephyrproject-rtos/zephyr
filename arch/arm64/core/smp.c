@@ -30,6 +30,9 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/irq.h>
+#ifdef CONFIG_XEN_EVENTS
+#include <zephyr/xen/events.h>
+#endif
 #include "boot.h"
 
 #define INV_MPID	UINT64_MAX
@@ -190,6 +193,16 @@ FUNC_NORETURN void arch_secondary_cpu_init(void)
 #endif
 #ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
 	irq_enable(SGI_COREDUMP_FREEZE_IPI);
+#endif
+
+#ifdef CONFIG_XEN_EVENTS
+	/*
+	 * The Xen event-channel interrupt is a per-CPU PPI; xen_events_init()
+	 * only enabled it on the boot CPU, so enable it here on the secondary.
+	 * Without this, event channels bound to this vCPU are delivered by Xen
+	 * but never taken by the guest.
+	 */
+	xen_evtchn_secondary_cpu_init();
 #endif
 #endif
 

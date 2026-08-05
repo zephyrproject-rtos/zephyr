@@ -9,12 +9,15 @@
 
 #include <xen/public/xen.h>
 #include <xen/public/event_channel.h>
+#include <xen/public/vcpu.h>
 
 #include <zephyr/arch/arm64/hypercall.h>
+#include <zephyr/xen/generic.h>
 #include <zephyr/xen/events.h>
 #include <zephyr/sys/barrier.h>
 
 #include <errno.h>
+#include <string.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -419,6 +422,49 @@ static void process_event(evtchn_port_t port)
 	k_spin_unlock(&event_channels[port].lock, key);
 }
 
+/*
+ * Secondary per-vCPU shared state storage.
+ *
+ * On arm64 the shared_info page only holds a single vcpu_info slot (see
+ * XEN_LEGACY_MAX_VCPUS == 1 in arch-arm.h), which Xen assigns to the boot CPU.
+ * Every secondary CPU must register its own vcpu_info via VCPUOP_register_vcpu_info,
+ * otherwise Xen has nowhere to deliver that vCPU's event-channel upcall state and
+ * events bound to it are never seen by the guest. The backing storage lives in a
+ * page-aligned array so no vcpu_info struct straddles a page boundary.
+ */
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+static vcpu_info_t secondary_vcpu_info[CONFIG_MP_MAX_NUM_CPUS - 1]
+	__aligned(XEN_PAGE_SIZE);
+#endif
+
+/*
+ * Select the Xen vcpu_info for the CPU currently running the ISR.
+ *
+ * CPU0 uses the legacy vcpu_info embedded in shared_info. Secondary CPUs use
+ * the page-aligned storage registered with Xen during per-CPU bring-up.
+ */
+static inline vcpu_info_t *this_cpu_vcpu_info(void)
+{
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	unsigned int cpu = arch_curr_cpu()->id;
+
+	__ASSERT(cpu < CONFIG_MP_MAX_NUM_CPUS,
+		 "%s: unexpected CPU id %u\n", __func__, cpu);
+
+	if (cpu != 0) {
+		return &secondary_vcpu_info[cpu - 1];
+	}
+#endif
+	return &HYPERVISOR_shared_info->vcpu_info[0];
+}
+
+/*
+ * Xen event-channel interrupt handler.
+ *
+ * The interrupt only says that this vCPU has event-channel work. The ISR first
+ * drains this CPU's selector, then scans the selected domain-wide pending words
+ * to recover concrete port numbers.
+ */
 static void events_isr(void *data)
 {
 	ARG_UNUSED(data);
@@ -430,8 +476,10 @@ static void events_isr(void *data)
 
 	evtchn_port_t port; /* absolute event index */
 
-	/* TODO: SMP? XEN_LEGACY_MAX_VCPUS == 1*/
-	vcpu_info_t *vcpu = &HYPERVISOR_shared_info->vcpu_info[0];
+	/* Use the vcpu_info of the CPU this ISR is running on (SMP-safe). */
+	vcpu_info_t *vcpu = this_cpu_vcpu_info();
+
+	__ASSERT_NO_MSG(vcpu != NULL);
 
 	/*
 	 * Need to set it to 0 /before/ checking for pending work, thus
@@ -484,4 +532,46 @@ int xen_events_init(void)
 
 	LOG_INF("%s: events inited\n", __func__);
 	return 0;
+}
+
+/*
+ * Secondary CPU bring-up of the Xen event-channel path.
+ *
+ * The boot CPU gets its vcpu_info from the legacy shared_info slot after
+ * shared_info is mapped. Every secondary CPU needs its own registered vcpu_info
+ * storage because arm64 shared_info does not contain slots for CPU1+.
+ *
+ * xen_events_init() also enables the event-channel PPI while running on the
+ * boot CPU. Because a PPI is enabled per CPU, each secondary CPU must enable
+ * the same interrupt locally.
+ */
+void xen_evtchn_secondary_cpu_init(void)
+{
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+	unsigned int cpu = arch_curr_cpu()->id;
+	vcpu_info_t *vi;
+	struct vcpu_register_vcpu_info reg;
+	int rc;
+
+	__ASSERT(cpu != 0, "%s: unexpected secondary CPU id 0\n", __func__);
+
+	vi = this_cpu_vcpu_info();
+	__ASSERT(vi != NULL, "%s: unexpected secondary CPU id %u\n",
+		 __func__, cpu);
+
+	memset(vi, 0, sizeof(*vi));
+
+	reg.mfn = xen_virt_to_gfn(vi);
+	reg.offset = (uint32_t)((uintptr_t)vi & (XEN_PAGE_SIZE - 1));
+	reg.rsvd = 0;
+
+	rc = HYPERVISOR_vcpu_op(VCPUOP_register_vcpu_info, cpu, &reg);
+	if (rc) {
+		LOG_ERR("%s: register vcpu_info for CPU %u failed: %d\n",
+			__func__, cpu, rc);
+		return;
+	}
+#endif
+
+	irq_enable(DT_INST_IRQ_BY_IDX(0, 0, irq));
 }
