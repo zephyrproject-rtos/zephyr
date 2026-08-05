@@ -219,9 +219,16 @@ static int mcux_tsi_init(const struct device *dev)
 	uint32_t mask = config->channel_mask;
 	uint8_t enabled_channels = POPCOUNT(mask);
 
-	if (mask & ~BIT_MASK(FSL_FEATURE_TSI_CHANNEL_COUNT)) {
-		LOG_ERR("Channel mask 0x%x exceeds %d channels", mask,
-			FSL_FEATURE_TSI_CHANNEL_COUNT);
+	/*
+	 * channel_mask is 32-bit, so only channels 0..31 are addressable here
+	 * even on SoCs whose TSI has more than 32 channels (e.g. MCXA577 = 70);
+	 * clamp the width to avoid a shift-count overflow in BIT_MASK().
+	 */
+	uint32_t max_channels = MIN(FSL_FEATURE_TSI_CHANNEL_COUNT, 32);
+
+	if (mask & ~BIT_MASK(max_channels)) {
+		LOG_ERR("Channel mask 0x%x exceeds %u channels", mask,
+			max_channels);
 		return -EINVAL;
 	}
 

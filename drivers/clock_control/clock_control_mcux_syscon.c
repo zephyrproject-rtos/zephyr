@@ -302,7 +302,11 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tsi0))
 	if ((uint32_t)sub_system == MCUX_TSI_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateTSI0);
+#else
 		CLOCK_EnableClock(kCLOCK_Tsi);
+#endif
 	}
 #endif
 
