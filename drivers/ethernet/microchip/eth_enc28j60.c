@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 
 #include "eth_enc28j60_priv.h"
-#include "eth.h"
+#include "../eth.h"
 
 #define D10D24S 11
 

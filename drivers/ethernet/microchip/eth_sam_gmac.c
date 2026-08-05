@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <soc.h>
 #include "eth_sam_gmac_priv.h"
 
-#include "eth.h"
+#include "../eth.h"
 
 #ifdef CONFIG_SOC_FAMILY_ATMEL_SAM0
 #include "eth_sam0_gmac.h"

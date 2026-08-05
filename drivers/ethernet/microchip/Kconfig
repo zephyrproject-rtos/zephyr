@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.enc28j60"
+rsource "Kconfig.enc424j600"
+rsource "Kconfig.lan865x"
+rsource "Kconfig.lan9250"
+rsource "Kconfig.mchp"
+rsource "Kconfig.sam_gmac"
+# zephyr-keep-sorted-stop
