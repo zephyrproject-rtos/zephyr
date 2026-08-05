@@ -73,6 +73,12 @@ struct i2c_bee_data {
 	void *userdata;
 	struct k_timer timeout_timer;
 #endif
+#ifdef CONFIG_I2C_TARGET
+	struct i2c_target_config *target_cfg;
+	bool target_attached;
+	bool target_in_write;
+	bool target_in_read;
+#endif
 };
 
 static inline bool i2c_bee_next_msg_available(struct i2c_bee_context *ctx)
@@ -271,6 +277,14 @@ static int i2c_bee_transfer(const struct device *dev, struct i2c_msg *msgs, uint
 
 	k_sem_take(&data->lock, K_FOREVER);
 
+#ifdef CONFIG_I2C_TARGET
+	if (data->target_attached) {
+		k_sem_give(&data->lock);
+		LOG_ERR("cannot transfer while registered as a target");
+		return -EBUSY;
+	}
+#endif
+
 #ifdef CONFIG_I2C_CALLBACK
 	data->cb = NULL;
 #endif
@@ -320,6 +334,14 @@ static int i2c_bee_transfer_cb(const struct device *dev, struct i2c_msg *msgs, u
 		return -EWOULDBLOCK;
 	}
 
+#ifdef CONFIG_I2C_TARGET
+	if (data->target_attached) {
+		k_sem_give(&data->lock);
+		LOG_ERR("cannot transfer while registered as a target");
+		return -EBUSY;
+	}
+#endif
+
 	data->cb = cb;
 	data->userdata = userdata;
 
@@ -340,7 +362,9 @@ static int i2c_bee_do_configure(const struct device *dev, uint32_t dev_config)
 	I2C_TypeDef *i2c = (I2C_TypeDef *)cfg->reg;
 	I2C_InitTypeDef i2c_init_struct;
 
-	/* Only support Controller mode for now, since Target API is not implemented */
+	/* configure() only sets up controller mode; target mode is entered
+	 * through the target_register() API instead.
+	 */
 	if ((dev_config & I2C_MODE_CONTROLLER) == 0) {
 		return -ENOTSUP;
 	}
@@ -386,6 +410,18 @@ static int i2c_bee_configure(const struct device *dev, uint32_t dev_config)
 	int err;
 
 	k_sem_take(&data->lock, K_FOREVER);
+
+#ifdef CONFIG_I2C_TARGET
+	/* Reconfiguring would switch the peripheral back to controller mode and
+	 * clobber the active target; the target must be unregistered first.
+	 */
+	if (data->target_attached) {
+		k_sem_give(&data->lock);
+		LOG_ERR("cannot reconfigure while registered as a target");
+		return -EBUSY;
+	}
+#endif
+
 	err = i2c_bee_do_configure(dev, dev_config);
 	k_sem_give(&data->lock);
 
@@ -400,6 +436,159 @@ static int i2c_bee_get_config(const struct device *dev, uint32_t *dev_config)
 
 	return 0;
 }
+
+#ifdef CONFIG_I2C_TARGET
+static void i2c_bee_target_isr(const struct device *dev)
+{
+	struct i2c_bee_data *data = dev->data;
+	const struct i2c_bee_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->reg;
+	struct i2c_target_config *target = data->target_cfg;
+	const struct i2c_target_callbacks *cb = target->callbacks;
+	uint8_t val = 0xFFU;
+
+	if (I2C_GetINTStatus(i2c, I2C_INT_TX_ABRT)) {
+		I2C_ClearINTPendingBit(i2c, I2C_INT_TX_ABRT);
+	}
+
+	/* Master is writing to us: drain the RX FIFO into the write callback. */
+	if (I2C_GetINTStatus(i2c, I2C_INT_RX_FULL)) {
+		if (!data->target_in_write) {
+			data->target_in_write = true;
+			if (cb->write_requested != NULL) {
+				cb->write_requested(target);
+			}
+		}
+
+		while (i2c->IC_STATUS & I2C_FLAG_RFNE) {
+			val = (uint8_t)i2c->IC_DATA_CMD;
+			if (cb->write_received != NULL) {
+				cb->write_received(target, val);
+			}
+		}
+
+		I2C_ClearINTPendingBit(i2c, I2C_INT_RX_FULL);
+	}
+
+	/* Master is reading from us: feed one byte per read request. */
+	if (I2C_GetINTStatus(i2c, I2C_INT_RD_REQ)) {
+		if (!data->target_in_read) {
+			data->target_in_read = true;
+			if (cb->read_requested != NULL) {
+				cb->read_requested(target, &val);
+			}
+		} else {
+			if (cb->read_processed != NULL) {
+				cb->read_processed(target, &val);
+			}
+		}
+
+		i2c->IC_DATA_CMD = val;
+		I2C_ClearINTPendingBit(i2c, I2C_INT_RD_REQ);
+	}
+
+	/* Master NACKed the last byte of a slave-transmit: the read is done. */
+	if (I2C_GetINTStatus(i2c, I2C_INT_RX_DONE)) {
+		data->target_in_read = false;
+		I2C_ClearINTPendingBit(i2c, I2C_INT_RX_DONE);
+	}
+
+	if (I2C_GetINTStatus(i2c, I2C_INT_STOP_DET)) {
+		if (cb->stop != NULL) {
+			cb->stop(target);
+		}
+		data->target_in_write = false;
+		data->target_in_read = false;
+		I2C_ClearINTPendingBit(i2c, I2C_INT_STOP_DET);
+	}
+}
+
+static int i2c_bee_target_register(const struct device *dev, struct i2c_target_config *target_cfg)
+{
+	struct i2c_bee_data *data = dev->data;
+	const struct i2c_bee_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->reg;
+	I2C_InitTypeDef i2c_init_struct;
+
+	if (target_cfg == NULL) {
+		return -EINVAL;
+	}
+
+	/* Only 7-bit target addressing is supported for now. */
+	if (target_cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) {
+		return -ENOTSUP;
+	}
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (data->target_attached) {
+		k_sem_give(&data->lock);
+		return -EBUSY;
+	}
+
+	I2C_Cmd(i2c, DISABLE);
+
+	I2C_StructInit(&i2c_init_struct);
+	i2c_init_struct.I2C_DeviveMode = I2C_DeviveMode_Slave;
+	i2c_init_struct.I2C_AddressMode = I2C_AddressMode_7BIT;
+	i2c_init_struct.I2C_SlaveAddress = target_cfg->address;
+
+	switch (I2C_SPEED_GET(data->dev_config)) {
+	case I2C_SPEED_FAST:
+		i2c_init_struct.I2C_ClockSpeed = I2C_BITRATE_FAST;
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		i2c_init_struct.I2C_ClockSpeed = I2C_BITRATE_FAST_PLUS;
+		break;
+	default:
+		i2c_init_struct.I2C_ClockSpeed = I2C_BITRATE_STANDARD;
+		break;
+	}
+
+	I2C_Init(i2c, &i2c_init_struct);
+	I2C_Cmd(i2c, ENABLE);
+
+	data->target_cfg = target_cfg;
+	data->target_in_write = false;
+	data->target_in_read = false;
+	data->target_attached = true;
+
+	I2C_INTConfig(i2c, I2C_INT_RX_FULL | I2C_INT_RD_REQ | I2C_INT_RX_DONE |
+					    I2C_INT_TX_ABRT | I2C_INT_STOP_DET, ENABLE);
+
+	k_sem_give(&data->lock);
+
+	return 0;
+}
+
+static int i2c_bee_target_unregister(const struct device *dev, struct i2c_target_config *target_cfg)
+{
+	struct i2c_bee_data *data = dev->data;
+	const struct i2c_bee_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->reg;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (!data->target_attached || data->target_cfg != target_cfg) {
+		k_sem_give(&data->lock);
+		return -EINVAL;
+	}
+
+	I2C_INTConfig(i2c, I2C_INT_RX_FULL | I2C_INT_RD_REQ | I2C_INT_RX_DONE |
+					    I2C_INT_TX_ABRT | I2C_INT_STOP_DET, DISABLE);
+	I2C_Cmd(i2c, DISABLE);
+
+	data->target_attached = false;
+	data->target_cfg = NULL;
+
+	/* Restore controller mode with the previously configured settings. */
+	(void)i2c_bee_do_configure(dev, data->dev_config);
+
+	k_sem_give(&data->lock);
+
+	return 0;
+}
+#endif /* CONFIG_I2C_TARGET */
 
 #ifdef CONFIG_I2C_BEE_BUS_RECOVERY
 #if defined(CONFIG_SOC_SERIES_RTL8752H)
@@ -520,6 +709,13 @@ static void i2c_bee_isr(const struct device *dev)
 	const struct i2c_bee_config *cfg = dev->config;
 	I2C_TypeDef *i2c = cfg->reg;
 
+#ifdef CONFIG_I2C_TARGET
+	if (data->target_attached) {
+		i2c_bee_target_isr(dev);
+		return;
+	}
+#endif
+
 	if (I2C_GetINTStatus(i2c, I2C_INT_TX_ABRT)) {
 		data->errs = I2C_CheckAbortStatus(i2c);
 		I2C_ClearINTPendingBit(i2c, I2C_INT_TX_ABRT);
@@ -584,6 +780,10 @@ static DEVICE_API(i2c, i2c_bee_driver_api) = {
 #endif
 #ifdef CONFIG_I2C_BEE_BUS_RECOVERY
 	.recover_bus = i2c_bee_recover_bus,
+#endif
+#ifdef CONFIG_I2C_TARGET
+	.target_register = i2c_bee_target_register,
+	.target_unregister = i2c_bee_target_unregister,
 #endif
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
