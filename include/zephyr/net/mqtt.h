@@ -858,7 +858,15 @@ struct mqtt_transport {
 
 #if defined(CONFIG_SOCKS)
 	struct {
-		struct net_sockaddr addr;
+		/** SOCKS5 proxy address storage */
+		union {
+			/** SOCKS5 proxy address */
+			struct net_sockaddr_storage addr_storage;
+/** @cond INTERNAL_HIDDEN */
+			/* Use the addr_storage instead of this one. */
+			struct net_sockaddr addr;
+/** @endcond */
+		};
 		net_socklen_t addrlen;
 	} proxy;
 #endif
