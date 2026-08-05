@@ -1011,6 +1011,13 @@ typedef int (*adc_api_read_async)(const struct device *dev,
 				  struct k_poll_signal *async);
 
 /**
+ * @brief Type definition of ADC API function for getting the internal
+ *        reference voltage in millivolts.
+ * See adc_ref_internal() for related public helper.
+ */
+typedef uint16_t (*adc_api_ref_internal_get)(const struct device *dev);
+
+/**
  * @driver_ops{ADC}
  */
 __subsystem struct adc_driver_api {
@@ -1043,6 +1050,14 @@ __subsystem struct adc_driver_api {
 	 * Set to 0 if internal reference is not supported.
 	 */
 	uint16_t ref_internal;
+	/**
+	 * @driver_ops_optional Get the current internal reference voltage
+	 * in millivolts.
+	 * When NULL, adc_ref_internal() returns @c ref_internal.
+	 * When implemented, return the live cache if valid, otherwise the
+	 * instance DT / @c ref_internal fallback.
+	 */
+	adc_api_ref_internal_get ref_internal_get;
 };
 
 /** @} */
@@ -1298,14 +1313,26 @@ static inline int z_impl_adc_get_decoder(const struct device *dev,
  * Returns the voltage corresponding to @ref ADC_REF_INTERNAL,
  * measured in millivolts.
  *
+ * When the driver provides @c ref_internal_get, that callback is used.
+ * Otherwise, the static @c ref_internal field from the driver API is
+ * returned. Drivers that implement @c ref_internal_get may update the
+ * value over time (for example after hardware calibration); this does
+ * not change the function signature.
+ *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @return a positive value is the reference voltage value.  Returns
+ * @return A positive value is the reference voltage value.  Returns
  * zero if reference voltage information is not available.
  */
 static inline uint16_t adc_ref_internal(const struct device *dev)
 {
-	return DEVICE_API_GET(adc, dev)->ref_internal;
+	const struct adc_driver_api *api = DEVICE_API_GET(adc, dev);
+
+	if (api->ref_internal_get != NULL) {
+		return api->ref_internal_get(dev);
+	}
+
+	return api->ref_internal;
 }
 
 /**
