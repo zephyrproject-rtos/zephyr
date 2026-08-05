@@ -232,7 +232,51 @@ static int wifi_state(void)
 	return status.state;
 }
 
-ZTEST(wifi, test_0_scan)
+#if defined(CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL)
+ZTEST(wifi, test_0_pmksa_cache)
+{
+	static const uint32_t unsupported_akm_suites[] = {
+		WIFI_PMKSA_AKM_PSK,
+		WIFI_PMKSA_AKM_PSK_SHA256,
+	};
+	struct wifi_pmksa_cache_entry entry = {
+		.bssid = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x01 },
+		.pmkid = { [0 ... WIFI_PMKSA_PMKID_LEN - 1] = 0x11 },
+		.pmk = { [0 ... 31] = 0x22 },
+		.pmk_len = 32,
+		.akm_suite = WIFI_PMKSA_AKM_802_1X,
+		.reauth_remaining_s = 60U,
+		.expiration_remaining_s = 120U,
+	};
+	struct wifi_pmksa_cache_entry exported;
+	int ret;
+
+	for (size_t i = 0; i < ARRAY_SIZE(unsupported_akm_suites); i++) {
+		entry.akm_suite = unsupported_akm_suites[i];
+		ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_ADD, wifi_ctx.iface, &entry,
+			       sizeof(entry));
+		zassert_equal(ret, -ENOTSUP, "Unsupported PMKSA AKM returned %d", ret);
+	}
+
+	entry.akm_suite = WIFI_PMKSA_AKM_802_1X;
+	ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_ADD, wifi_ctx.iface, &entry,
+		       sizeof(entry));
+	if (ret == 0) {
+		memset(&exported, 0xaa, sizeof(exported));
+		ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_GET, wifi_ctx.iface, &exported,
+			       sizeof(exported));
+		if (ret == -EBUSY) {
+			ret = net_mgmt(NET_REQUEST_WIFI_PMKSA_FLUSH, wifi_ctx.iface, NULL, 0);
+		}
+	}
+
+	memset(&entry, 0, sizeof(entry));
+	memset(&exported, 0, sizeof(exported));
+	zassert_equal(ret, 0, "PMKSA staging test failed (%d)", ret);
+}
+#endif
+
+ZTEST(wifi, test_1_scan)
 {
 	int ret;
 
@@ -245,7 +289,7 @@ ZTEST(wifi, test_0_scan)
 	LOG_INF("Scan done");
 }
 
-ZTEST(wifi, test_1_connect)
+ZTEST(wifi, test_2_connect)
 {
 	int ret;
 	int retry = CONFIG_WIFI_CONNECT_ATTEMPTS;
@@ -279,7 +323,7 @@ ZTEST(wifi, test_1_connect)
 	zassert_equal(state, WIFI_STATE_COMPLETED, "Interface state check failed");
 }
 
-ZTEST(wifi, test_2_icmp)
+ZTEST(wifi, test_3_icmp)
 {
 	struct net_icmp_ping_params params;
 	struct net_icmp_ctx icmp_ctx;
@@ -327,7 +371,7 @@ ZTEST(wifi, test_2_icmp)
 	net_icmp_cleanup_ctx(&icmp_ctx);
 }
 
-ZTEST(wifi, test_3_disconnect)
+ZTEST(wifi, test_4_disconnect)
 {
 	int ret;
 

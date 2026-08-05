@@ -33,3 +33,13 @@ tests:
       - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitc
       - esp8684_devkitm
+  esp.wifi.pmksa_cache:
+    build_only: true
+    tags: wifi
+    filter: CONFIG_WIFI_ESP32
+    extra_configs:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+      - CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL=y
+      - CONFIG_ESP32_WIFI_ENTERPRISE=y
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
