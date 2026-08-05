@@ -18,11 +18,11 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
-#include "eth.h"
+#include "../eth.h"
 
 LOG_MODULE_REGISTER(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
-#include "dwc_mac/eth_stm32_dwc.h"
+#include "../dwc_mac/eth_stm32_dwc.h"
 
 #define DT_DRV_COMPAT st_stm32_ethernet
 

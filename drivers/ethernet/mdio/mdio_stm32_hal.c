@@ -16,7 +16,7 @@
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/mdio.h>
 
-#include "../eth_stm32_hal_priv.h"
+#include "../stm32/eth_stm32_hal_priv.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mdio_stm32_hal, CONFIG_MDIO_LOG_LEVEL);

@@ -6,21 +6,6 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
 
 add_subdirectory_ifdef(CONFIG_MDIO mdio)
 
-if(CONFIG_ETH_STM32_HAL)
-  if(CONFIG_ETH_STM32_HAL_RX_DESC_COUNT)
-    zephyr_compile_definitions(ETH_RX_DESC_CNT=${CONFIG_ETH_STM32_HAL_RX_DESC_COUNT})
-  endif()
-
-  if(CONFIG_STM32_HAL2)
-    zephyr_library_sources_ifdef(CONFIG_ETH_STM32_HAL2_API eth_stm32_hal2.c)
-  else()
-    zephyr_library_sources(eth_stm32_hal_common.c)
-    zephyr_library_sources_ifdef(CONFIG_ETH_STM32_HAL_API_V1 eth_stm32_hal_v1.c)
-    zephyr_library_sources_ifdef(CONFIG_ETH_STM32_HAL_API_V2 eth_stm32_hal_v2.c)
-    zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_STM32_HAL eth_stm32_hal_ptp.c)
-  endif()
-endif()
-
 if(CONFIG_ETH_NATIVE_TAP)
   zephyr_library_sources(eth_native_tap.c)
   target_sources(native_simulator INTERFACE eth_native_tap_adapt.c)
@@ -32,6 +17,8 @@ add_subdirectory(nxp)
 add_subdirectory(dwc_mac)
 add_subdirectory(dwc_xgmac)
 add_subdirectory(intel)
+
+add_subdirectory_ifdef(CONFIG_ETH_STM32_HAL stm32)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ETH_ADIN2111 eth_adin2111.c)

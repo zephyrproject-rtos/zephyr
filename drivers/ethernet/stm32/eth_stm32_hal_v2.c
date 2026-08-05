@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#include "eth.h"
+#include "../eth.h"
 #include "eth_stm32_hal_priv.h"
 
 #define DT_DRV_COMPAT st_stm32_ethernet
