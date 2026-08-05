@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * lp_mspm0l2228 has two watchdog peripherals: WWDT (window watchdog,
+ * wdt_mspm0.c) and IWDT (independent watchdog, wdt_mspm0_iwdt.c). This
+ * overlay selects IWDT as watchdog0 for this sample.
+ */
+
+/ {
+	aliases {
+		watchdog0 = &iwdt;
+	};
+};
+
+&iwdt {
+	status = "okay";
+};
