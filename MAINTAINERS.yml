@@ -6078,6 +6078,7 @@ TI MSPM Platforms:
   collaborators:
     - d-philpot
     - Aman-Lachhiramka-ti
+    - Alex9360
   files:
     - soc/ti/mspm/
     - boards/ti/*mspm*/
