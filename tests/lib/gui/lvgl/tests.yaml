@@ -63,6 +63,24 @@ tests:
       - native_sim
     integration_platforms:
       - native_sim
+  libraries.gui.lvgl.rendermode.direct:
+    extra_configs:
+      - CONFIG_LV_Z_DIRECT_RENDERING=y
+    platform_allow:
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim
+  libraries.gui.lvgl.rendermode.direct.mono:
+    extra_configs:
+      - CONFIG_LV_Z_DIRECT_RENDERING=y
+      - CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER=y
+      - CONFIG_LV_COLOR_DEPTH_1=y
+    platform_allow:
+      - native_sim/native/64
+      - native_sim
+    integration_platforms:
+      - native_sim
   libraries.gui.lvgl.stm32h747i_disco_m7:
     platform_allow: stm32h747i_disco/stm32h747xx/m7
     extra_args:
