@@ -5030,6 +5030,80 @@ ZTEST(periph_rem_invalid, test_conn_update_periph_rem_invalid_param)
 	conn_update_ind.interval = interval;
 }
 
+/*
+ * Central-initiated Connection Update procedure.
+ * Peripheral accepts a Connection Update with a future instant, and thereby
+ * retains the RX node for the later host notification. Before the instant is
+ * reached, and thus before the retained RX node is consumed, an unexpected LL
+ * Control PDU is received.
+ *
+ * The unexpected PDU is routed to the active remote Connection Update
+ * procedure, which takes the invalid PDU path and completes the procedure. The
+ * retained RX node must be released, and the reference cleared, before the
+ * procedure is completed. Otherwise the retained node reference is leaked and
+ * llcp_rr_check_done() asserts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |                           |      LL_<UNEXPECTED_PDU>  |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ */
+ZTEST(periph_rem_invalid, test_conn_update_periph_rem_unexpected_pdu_awaiting_instant)
+{
+	struct pdu_data_llctrl_length_req length_req = { .max_rx_octets = 251U,
+							 .max_rx_time = 2120U,
+							 .max_tx_octets = 251U,
+							 .max_tx_time = 2120U };
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx, valid Connection Update with a future instant, RX node is retained
+	 * by the remote procedure for the later host notification
+	 */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx, unexpected LL Control PDU while the instant has not been reached
+	 * and the retained RX node has not been consumed
+	 */
+	lt_tx(LL_LENGTH_REQ, &conn, &length_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* All contexts should have been released */
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /*
  * Peripheral-initiated Connection Parameters Request procedure.
