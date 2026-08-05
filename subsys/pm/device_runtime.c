@@ -95,7 +95,7 @@ static bool runtime_usage_put_fast(struct pm_device *pm)
  */
 static int runtime_usage_put(struct pm_device *pm)
 {
-	int ret;
+	int ret = 0;
 
 	__ASSERT_NO_MSG(pm != NULL);
 	/* Caller must hold the per-device semaphore, except in pre-kernel
