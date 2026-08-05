@@ -13,6 +13,116 @@
 			status = "disabled";
 		};
 
+		ipi_psm: mailbox@ff310000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			status = "disabled";
+			interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg = <0xff310000 0x10000>, <0xff3f0000 0x200>;
+			reg-names = "ctrl", "msg";
+			xlnx,ipi-id = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		ipi_pmc: mailbox@ff320000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			status = "disabled";
+			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg = <0xff320000 0x10000>, <0xff3f0200 0x200>;
+			reg-names = "ctrl", "msg";
+			xlnx,ipi-id = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		ipi0: mailbox@ff330000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			status = "disabled";
+			interrupts = <GIC_SPI 30 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg = <0xff330000 0x10000>, <0xff3f0400 0x200>;
+			reg-names = "ctrl", "msg";
+			xlnx,ipi-id = <2>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		ipi1: mailbox@ff340000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			status = "disabled";
+			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg = <0xff340000 0x10000>, <0xff3f0600 0x200>;
+			reg-names = "ctrl", "msg";
+			xlnx,ipi-id = <3>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		ipi2: mailbox@ff350000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			status = "disabled";
+			interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg = <0xff350000 0x10000>, <0xff3f0800 0x200>;
+			reg-names = "ctrl", "msg";
+			xlnx,ipi-id = <4>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		ipi3: mailbox@ff360000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			status = "disabled";
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg = <0xff360000 0x10000>, <0xff3f0a00 0x200>;
+			reg-names = "ctrl", "msg";
+			xlnx,ipi-id = <5>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		ipi4: mailbox@ff370000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			status = "disabled";
+			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg = <0xff370000 0x10000>, <0xff3f0c00 0x200>;
+			reg-names = "ctrl", "msg";
+			xlnx,ipi-id = <6>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		ipi5: mailbox@ff380000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			status = "disabled";
+			interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg = <0xff380000 0x10000>, <0xff3f0e00 0x200>;
+			reg-names = "ctrl", "msg";
+			xlnx,ipi-id = <7>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		ipi_pmc_nobuf: mailbox@ff390000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			status = "disabled";
+			interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg = <0xff390000 0x1000>;
+			reg-names = "ctrl";
+			xlnx,ipi-id = <8>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		ipi6: mailbox@ff3a0000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			status = "disabled";
+			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg = <0xff3a0000 0x1000>;
+			reg-names = "ctrl";
+			xlnx,ipi-id = <9>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
 		uart0: uart@ff000000 {
 			compatible = "arm,sbsa-uart";
 			reg = <0xff000000 DT_SIZE_K(64)>;
