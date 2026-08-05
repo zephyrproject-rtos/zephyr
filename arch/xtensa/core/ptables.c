@@ -1603,17 +1603,17 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 		xtensa_mmu_set_paging(arch_domain);
 	}
 
-#if CONFIG_MP_MAX_NUM_CPUS > 1
+#if defined(CONFIG_SMP) && (CONFIG_MP_MAX_NUM_CPUS > 1)
 	/* Need to tell other CPUs to switch to the new page table
 	 * in case the thread is running on one of them.
 	 *
 	 * Note that there is no need to send TLB IPI if this is
 	 * migration as it was sent above during reset_region().
 	 */
-	if ((thread != _current_cpu->current) && !is_migration) {
+	if (!is_migration && (thread->base.cpu != _current_cpu->id)) {
 		xtensa_mmu_tlb_ipi();
 	}
-#endif
+#endif /* CONFIG_SMP && (CONFIG_MP_MAX_NUM_CPUS > 1) */
 
 	return 0;
 }
