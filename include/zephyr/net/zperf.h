@@ -53,7 +53,10 @@ struct zperf_upload_params {
 	uint64_t unix_offset_us;
 	zperf_data_load_custom data_loader;
 	void *data_loader_ctx;
-	struct net_sockaddr peer_addr;
+	union {
+		struct net_sockaddr peer_addr;
+		struct net_sockaddr_storage peer_addr_storage;
+	};
 	uint32_t duration_ms;
 	uint32_t rate_kbps;
 	uint16_t packet_size;
@@ -72,7 +75,10 @@ struct zperf_upload_params {
 
 struct zperf_download_params {
 	uint16_t port;
-	struct net_sockaddr addr;
+	union {
+		struct net_sockaddr addr;
+		struct net_sockaddr_storage addr_storage;
+	};
 	char if_name[NET_IFNAMSIZ];
 };
 

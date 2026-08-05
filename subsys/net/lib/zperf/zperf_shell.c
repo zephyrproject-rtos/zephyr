@@ -221,11 +221,11 @@ static int zperf_bind_host(const struct shell *sh,
 
 	if (argc >= 3) {
 		char *addr_str = argv[2];
-		struct net_sockaddr addr;
+		struct net_sockaddr_storage addr;
 
 		memset(&addr, 0, sizeof(addr));
 
-		ret = net_ipaddr_parse(addr_str, strlen(addr_str), &addr);
+		ret = net_ipaddr_parse(addr_str, strlen(addr_str), net_sad(&addr));
 		if (ret < 0) {
 			shell_fprintf(sh, SHELL_WARNING,
 				      "Cannot parse address \"%s\"\n",
@@ -233,7 +233,7 @@ static int zperf_bind_host(const struct shell *sh,
 			return ret;
 		}
 
-		memcpy(&param->addr, &addr, sizeof(struct net_sockaddr));
+		memcpy(&param->addr_storage, &addr, sizeof(addr));
 	}
 
 	return 0;
