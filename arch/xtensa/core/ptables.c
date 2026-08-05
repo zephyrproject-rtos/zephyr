@@ -926,38 +926,24 @@ void xtensa_mmu_tlb_shootdown(void)
 	}
 
 #ifdef CONFIG_USERSPACE
-	struct k_thread *thread = _current_cpu->current;
-
-	/* If current thread is a user thread, we need to see if it has
-	 * been migrated to another memory domain as the L1 page table
-	 * is different from the currently used one.
+	/* We have to lock against the domain lock to prevent the computed
+	 * registers from being changed while we are programming them onto
+	 * hardware.
 	 */
-	if ((thread->base.user_options & K_USER) == K_USER) {
-		uint32_t ptevaddr_entry, ptevaddr,
-			thread_ptables, current_ptables;
+	k_spinlock_key_t domain_key = k_spin_lock(&z_mem_domain_lock);
 
-		/* Need to read the currently used L1 page table.
-		 * We know that L1 page table is always mapped at way
-		 * MMU_PTE_WAY, so we can skip the probing step by
-		 * generating the query entry directly.
-		 */
-		ptevaddr = (uint32_t)xtensa_ptevaddr_get();
-		ptevaddr_entry = XTENSA_MMU_PTE_ENTRY_VADDR(ptevaddr, ptevaddr)
-				 | XTENSA_MMU_PTE_WAY;
-		current_ptables = xtensa_dtlb_paddr_read(ptevaddr_entry);
-		thread_ptables = (uint32_t)thread->arch.ptables;
+	/* Note that we can use arch_curr_cpu() here as this must be
+	 * called under some type of inter-processor interrupt where this
+	 * function runs inside an ISR, and the above spinlock has
+	 * interrupts disabled.
+	 */
+	struct k_thread *thread = arch_curr_cpu()->current;
 
-		if (thread_ptables != current_ptables) {
-			/* Need to remap the thread page tables if the ones
-			 * indicated by the current thread are different
-			 * than the current mapped page table.
-			 */
-			struct arch_mem_domain *domain =
-				&(thread->mem_domain_info.mem_domain->arch);
-			xtensa_mmu_set_paging(domain);
-		}
+	struct arch_mem_domain *domain = &(thread->mem_domain_info.mem_domain->arch);
 
-	}
+	xtensa_mmu_set_paging(domain);
+
+	k_spin_unlock(&z_mem_domain_lock, domain_key);
 #endif /* CONFIG_USERSPACE */
 
 	/* L2 are done via autofill, so invalidate autofill TLBs
