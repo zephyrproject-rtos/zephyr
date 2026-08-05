@@ -12,18 +12,10 @@ config REGULATOR_PCA9422
 
 if REGULATOR_PCA9422
 
-config REGULATOR_PCA9422_COMMON_INIT_PRIORITY
-	int "NXP PCA9422 regulator driver init priority (common part)"
-	default 86
-	help
-	  Init priority for the NXP PCA9422 regulator driver (common part). It
-	  must be greater than I2C and MFD init priority.
-
 config REGULATOR_PCA9422_INIT_PRIORITY
 	int "NXP PCA9422 regulator driver init priority"
-	default 87
+	default MFD_INIT_PRIORITY
 	help
-	  Init priority for the NXP PCA9422 regulator driver. It must be
-	  greater than REGULATOR_PCA9422_COMMON_INIT_PRIORITY.
+	  Init priority for the NXP PCA9422 regulator driver.
 
 endif
