@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nordic/nrf7120_enga.dtsi>
+#include <nordic/nrf7120_7120e_enga.dtsi>
 
 cpu: &cpuflpr {};
 
