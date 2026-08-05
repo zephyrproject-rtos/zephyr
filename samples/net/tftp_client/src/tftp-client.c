@@ -37,7 +37,7 @@ static void tftp_event_callback(const struct tftp_evt *evt)
 
 static int tftp_init(const char *hostname)
 {
-	struct sockaddr remote_addr;
+	struct sockaddr_storage remote_addr;
 	struct addrinfo *res, hints = {0};
 	int ret;
 
@@ -51,11 +51,12 @@ static int tftp_init(const char *hostname)
 		return -ENOENT;
 	}
 
-	memcpy(&remote_addr, res->ai_addr, sizeof(remote_addr));
+	memcpy(&remote_addr, res->ai_addr, res->ai_addrlen);
 	freeaddrinfo(res);
 
 	/* Save sockaddr into TFTP client handler */
-	memcpy(&client.server, &remote_addr, sizeof(client.server));
+	memcpy(&client.server_addr, &remote_addr, sizeof(client.server_addr));
+
 	/* Register TFTP client callback */
 	client.callback = tftp_event_callback;
 
