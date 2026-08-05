@@ -2080,20 +2080,21 @@ int net_dhcpv4_init(void)
 	uint64_t events =
 		IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) ?
 		(NET_EVENT_IF_UP | NET_EVENT_IF_DOWN) : NET_EVENT_IF_DOWN;
-	struct net_sockaddr local_addr;
+	struct net_sockaddr_storage local_addr_storage;
+	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	int ret;
 
 	NET_DBG("");
 
-	net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
+	net_ipaddr_copy(&net_sin(local_addr)->sin_addr,
 			net_ipv4_unspecified_address());
-	local_addr.sa_family = NET_AF_INET;
+	local_addr->sa_family = NET_AF_INET;
 
 	/* Register UDP input callback on
 	 * DHCPV4_SERVER_PORT(67) and DHCPV4_CLIENT_PORT(68) for
 	 * all dhcpv4 related incoming packets.
 	 */
-	ret = net_udp_register(NET_AF_INET, NULL, &local_addr,
+	ret = net_udp_register(NET_AF_INET, NULL, local_addr,
 			       0, DHCPV4_CLIENT_PORT,
 			       NULL, net_dhcpv4_input, NULL, NULL);
 	if (ret < 0) {
