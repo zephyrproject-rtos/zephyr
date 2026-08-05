@@ -565,12 +565,18 @@ static int map_anon_page(void *addr, uint32_t flags)
 		 * unmap those first before returning the page frame back
 		 * to the list.
 		 */
-		arch_mem_unmap(addr, CONFIG_MMU_PAGE_SIZE);
-#endif
+		int unmap_ret = arch_mem_unmap(addr, CONFIG_MMU_PAGE_SIZE);
 
-		/* Mapping failed: give the page frame back before bailing out. */
-		page_frame_free_locked(pf);
-		return ret;
+		__ASSERT(unmap_ret == 0, "%s: cannot undo failed mapping %d\n", __func__,
+			 unmap_ret);
+
+		if (unmap_ret == 0)
+#endif
+		{
+			/* Mapping failed: give the page frame back before bailing out. */
+			page_frame_free_locked(pf);
+			return ret;
+		}
 	}
 
 	if (lock) {
@@ -635,9 +641,19 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	/* Unmap both guard pages to make sure accessing them
 	 * will generate fault.
 	 */
-	arch_mem_unmap(dst, CONFIG_MMU_PAGE_SIZE);
-	arch_mem_unmap(dst + CONFIG_MMU_PAGE_SIZE + size,
-		       CONFIG_MMU_PAGE_SIZE);
+	ret = arch_mem_unmap(dst, CONFIG_MMU_PAGE_SIZE);
+	__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
+	if (ret != 0) {
+		dst = NULL;
+		goto out;
+	}
+
+	ret = arch_mem_unmap(dst + CONFIG_MMU_PAGE_SIZE + size, CONFIG_MMU_PAGE_SIZE);
+	__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
+	if (ret != 0) {
+		dst = NULL;
+		goto out;
+	}
 
 	/* Skip over the "before" guard page in returned address. */
 	dst += CONFIG_MMU_PAGE_SIZE;
@@ -757,7 +773,10 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 				 * Simply get rid of the MMU entry and free
 				 * corresponding backing store.
 				 */
-				arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+				ret = arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+				__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__,
+					 ret);
+
 				k_mem_paging_backing_store_location_free(location);
 				continue;
 			case ARCH_PAGE_LOCATION_PAGED_IN:
@@ -808,7 +827,15 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 				goto out;
 			}
 
-			arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+			ret = arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+			__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
+			if (ret != 0) {
+				/* Fail to unmap. Must bail without releasing any resources
+				 * as the page is still mapped.
+				 */
+				goto out;
+			}
+
 #ifdef CONFIG_DEMAND_PAGING
 			if (IS_ENABLED(CONFIG_EVICTION_TRACKING) &&
 			    (!k_mem_page_frame_is_pinned(pf))) {
@@ -827,7 +854,14 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 		 * have been unmapped. We just need to unmapped the in-between
 		 * region [addr, (addr + size)).
 		 */
-		arch_mem_unmap(addr, size);
+		ret = arch_mem_unmap(addr, size);
+		__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
+		if (ret != 0) {
+			/* Fail to unmap. Must bail without releasing any resources
+			 * as some pages are still be mapped.
+			 */
+			goto out;
+		}
 	}
 
 	/* There are guard pages just before and after the mapped
@@ -863,7 +897,12 @@ int k_mem_update_flags(void *addr, size_t size, uint32_t flags)
 
 	/* TODO: detect and handle paged-out memory as well */
 
-	arch_mem_unmap(addr, size);
+	ret = arch_mem_unmap(addr, size);
+	__ASSERT(ret == 0, "%s: arch_mem_unmap failed %d\n", __func__, ret);
+	if (ret != 0) {
+		goto out;
+	}
+
 	ret = arch_mem_map(addr, phys, size, flags);
 	__ASSERT(ret == 0, "%s: arch_mem_map failed %d\n", __func__, ret);
 
@@ -1013,6 +1052,7 @@ void k_mem_unmap_phys_bare(uint8_t *virt, size_t size)
 	uintptr_t aligned_virt, addr_offset;
 	size_t aligned_size;
 	k_spinlock_key_t key;
+	int ret;
 
 	addr_offset = k_mem_region_align(&aligned_virt, &aligned_size,
 					 POINTER_TO_UINT(virt), size,
@@ -1027,8 +1067,18 @@ void k_mem_unmap_phys_bare(uint8_t *virt, size_t size)
 	LOG_DBG("arch_mem_unmap(0x%lx, %zu) offset %lu",
 		aligned_virt, aligned_size, addr_offset);
 
-	arch_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
+	ret = arch_mem_unmap(UINT_TO_POINTER(aligned_virt), aligned_size);
+	__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
+	if (ret != 0) {
+		/* Fail to unmap. We cannot free the virtual memory region
+		 * as some pages are still be mapped.
+		 */
+		goto out;
+	}
+
 	virt_region_free(UINT_TO_POINTER(aligned_virt), aligned_size);
+
+out:
 	k_spin_unlock(&z_mm_lock, key);
 }
 
