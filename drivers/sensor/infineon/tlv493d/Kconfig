@@ -1,0 +1,12 @@
+# TLV493D 3D magnetic sensor configuration options
+
+# Copyright (c) 2026 Junseo Pyun
+# SPDX-License-Identifier: Apache-2.0
+
+config TLV493D
+	bool "TLV493D Magnetic Sensor"
+	default y
+	depends on DT_HAS_INFINEON_TLV493D_ENABLED
+	select I2C
+	help
+	  Enable the driver for Infineon TLV493D 3D Magnetic Sensor.
