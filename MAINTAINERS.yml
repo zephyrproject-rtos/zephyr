@@ -6114,6 +6114,7 @@ TI MSPM Platforms:
     - d-philpot
     - Aman-Lachhiramka-ti
     - Alex9360
+    - SanjayyyV
   files:
     - soc/ti/mspm/
     - boards/ti/*mspm*/
