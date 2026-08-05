@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing driver builds
+ *
+ * Names in this file should be chosen in a way that won't conflict
+ * with real-world devicetree nodes, to allow these tests to run on
+ * (and be extended to test) real hardware.
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_axi_sysid: axi-sysid@deadbeef {
+			compatible = "adi,axi-sysid";
+			reg = <0xdeadbeef 0x1000>;
+			status = "okay";
+		};
+	};
+};
