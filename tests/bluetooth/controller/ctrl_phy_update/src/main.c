@@ -1691,5 +1691,109 @@ ZTEST(phy_periph, test_phy_update_periph_rem_no_actual_change)
 		      llcp_ctx_buffers_free());
 }
 
+/*
+ * Central-initiated PHY Update procedure.
+ * Peripheral accepts a PHY Update with a future instant, and thereby retains
+ * the RX node for the later host notification. Before the instant is reached,
+ * and thus before the retained RX node is consumed, an unexpected LL Control
+ * PDU is received.
+ *
+ * The unexpected PDU is routed to the active remote PHY Update procedure,
+ * which takes the invalid PDU path and completes the procedure. The retained
+ * RX node must be released, and the reference cleared, before the procedure is
+ * completed. Otherwise the retained node reference is leaked and
+ * llcp_rr_check_done() asserts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |               LL_PHY_REQ  |
+ *    |                           |<--------------------------|
+ *    |                           |  LL_PHY_RSP               |
+ *    |                           |-------------------------->|
+ *    |                           |          LL_PHY_UPDATE_IND|
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |                           |      LL_<UNEXPECTED_PDU>  |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ */
+ZTEST(phy_periph, test_phy_update_periph_rem_unexpected_pdu_awaiting_instant)
+{
+	struct node_tx *tx;
+	struct pdu_data_llctrl_phy_req req = { .rx_phys = PHY_1M, .tx_phys = PHY_2M };
+	struct pdu_data_llctrl_phy_req rsp = { .rx_phys = PHY_1M | PHY_2M | PHY_CODED,
+					       .tx_phys = PHY_1M | PHY_2M | PHY_CODED };
+	struct pdu_data_llctrl_phy_upd_ind ind = { .instant = 7,
+						   .c_to_p_phy = 0,
+						   .p_to_c_phy = PHY_2M };
+	struct pdu_data_llctrl_length_req length_req = { .max_rx_octets = 251U,
+							 .max_rx_time = 2120U,
+							 .max_tx_octets = 251U,
+							 .max_tx_time = 2120U };
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_PHY_REQ, &conn, &req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_PHY_RSP, &conn, &tx, &rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Rx, valid PHY Update with a future instant, RX node is retained by
+	 * the remote procedure for the later host notification
+	 */
+	ind.instant = event_counter(&conn) + 6;
+	lt_tx(LL_PHY_UPDATE_IND, &conn, &ind);
+
+	/* TX Ack */
+	event_tx_ack(&conn, tx);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx, unexpected LL Control PDU while the instant has not been reached
+	 * and the retained RX node has not been consumed
+	 */
+	lt_tx(LL_LENGTH_REQ, &conn, &length_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* All contexts should have been released */
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
 ZTEST_SUITE(phy_central, NULL, NULL, phy_setup, NULL, NULL);
 ZTEST_SUITE(phy_periph, NULL, NULL, phy_setup, NULL, NULL);
