@@ -14,13 +14,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_gpio_no_isw: gpio@beefdead {
-			compatible = "vnd,gpio";
-			gpio-controller;
-			reg = <0xbeefdead 0x1000>;
-			#gpio-cells = <0x2>;
-		};
-
 		test_i2c_no_isw: i2c@22221111 {
 			#address-cells = <1>;
 			#size-cells = <0>;
