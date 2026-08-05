@@ -125,6 +125,16 @@ int bind_interdomain_event_channel(domid_t remote_dom, evtchn_port_t remote_port
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
  *
+ * To reconfigure an active channel, callers should mask the port, drain or
+ * clear its pending state, update the Xen binding and/or callback, and then
+ * unmask the port again.
+ *
+ * Event-channel callbacks run in IRQ context and must not sleep. A callback
+ * must not bind or unbind a handler for the same port.
+ *
+ * After this function returns, any previously bound handler for the same port
+ * is no longer running and future events use the new handler.
+ *
  * @param port Local event-channel port number.
  * @param cb Callback to invoke when the port is signaled.
  * @param data User data pointer passed to @p cb.
@@ -135,6 +145,9 @@ int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data);
 
 /**
  * @brief Remove the callback bound to an event channel.
+ *
+ * After this function returns, the previously bound handler is no longer
+ * running and will not be invoked for later events.
  *
  * @kconfig_dep{CONFIG_XEN_EVENTS}
  *

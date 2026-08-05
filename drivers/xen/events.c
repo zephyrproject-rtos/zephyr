@@ -24,21 +24,65 @@ LOG_MODULE_REGISTER(xen_events);
 
 extern shared_info_t *HYPERVISOR_shared_info;
 
+/* Zephyr-owned callback state for one Xen event-channel port. */
 struct event_channel_handle {
+	/*
+	 * Protects callback/private-data replacement and the sticky missed-event
+	 * flag.
+	 */
+	struct k_spinlock lock;
 	evtchn_cb_t cb;
 	void *priv;
+	bool missed;
 };
 typedef struct event_channel_handle evtchn_handle_t;
 
+/* Per-port Zephyr dispatch state. */
 static evtchn_handle_t event_channels[EVTCHN_2L_NR_CHANNELS];
-static bool events_missed[EVTCHN_2L_NR_CHANNELS];
+
+#define EVTCHN_WORD_BITS (8 * sizeof(xen_ulong_t))
 
 static void empty_callback(void *data)
 {
-	/* data is the event_channels entry, subtracting the base, it's the port */
-	unsigned int port = (((evtchn_handle_t *)data) - event_channels);
+	ARG_UNUSED(data);
+}
 
-	events_missed[port] = true;
+/*
+ * Xen can update shared evtchn_pending[] and evtchn_mask[] words concurrently,
+ * so reads and writes use atomic helpers instead of sys_bitfield_* load/store
+ * helpers.
+ */
+static xen_ulong_t shared_event_bit(evtchn_port_t port)
+{
+	return ((xen_ulong_t)1) << (port % EVTCHN_WORD_BITS);
+}
+
+static xen_ulong_t shared_event_word(const xen_ulong_t *bitmap, uint32_t word)
+{
+	return __atomic_load_n(&bitmap[word], __ATOMIC_SEQ_CST);
+}
+
+static void set_shared_event_bit(xen_ulong_t *bitmap, evtchn_port_t port)
+{
+	uint32_t word = port / EVTCHN_WORD_BITS;
+	xen_ulong_t bit = shared_event_bit(port);
+
+	(void)__atomic_fetch_or(&bitmap[word], bit, __ATOMIC_SEQ_CST);
+}
+
+static void clear_shared_event_bit(xen_ulong_t *bitmap, evtchn_port_t port)
+{
+	uint32_t word = port / EVTCHN_WORD_BITS;
+	xen_ulong_t bit = shared_event_bit(port);
+
+	(void)__atomic_fetch_and(&bitmap[word], ~bit, __ATOMIC_SEQ_CST);
+}
+
+static void reset_event_channel_state(evtchn_port_t port)
+{
+	event_channels[port].cb = empty_callback;
+	event_channels[port].priv = NULL;
+	event_channels[port].missed = false;
 }
 
 int alloc_unbound_event_channel(domid_t remote_dom)
@@ -107,8 +151,26 @@ int evtchn_close(evtchn_port_t port)
 	struct evtchn_close close = {
 		.port = port,
 	};
+	k_spinlock_key_t key;
+	int rc;
 
-	return HYPERVISOR_event_channel_op(EVTCHNOP_close, &close);
+	__ASSERT(port < EVTCHN_2L_NR_CHANNELS,
+		"%s: trying to close invalid evtchn #%u\n",
+		__func__, port);
+
+	rc = HYPERVISOR_event_channel_op(EVTCHNOP_close, &close);
+	if (rc != 0) {
+		return rc;
+	}
+
+	mask_event_channel(port);
+	clear_event_channel(port);
+
+	key = k_spin_lock(&event_channels[port].lock);
+	reset_event_channel_state(port);
+	k_spin_unlock(&event_channels[port].lock, key);
+
+	return 0;
 }
 
 int evtchn_set_priority(evtchn_port_t port, uint32_t priority)
@@ -136,44 +198,52 @@ int notify_evtchn(evtchn_port_t port)
 
 int bind_event_channel(evtchn_port_t port, evtchn_cb_t cb, void *data)
 {
+	k_spinlock_key_t key;
+
 	__ASSERT(port < EVTCHN_2L_NR_CHANNELS,
 		"%s: trying to bind invalid evtchn #%u\n",
 		__func__, port);
 	__ASSERT(cb != NULL, "%s: NULL callback for evtchn #%u\n",
 		__func__, port);
 
-	if (event_channels[port].cb != empty_callback) {
-		LOG_WRN("%s: re-bind callback for evtchn #%u\n",
-				__func__, port);
-	}
-
+	key = k_spin_lock(&event_channels[port].lock);
 	event_channels[port].priv = data;
 	event_channels[port].cb = cb;
+	k_spin_unlock(&event_channels[port].lock, key);
 
 	return 0;
 }
 
 int unbind_event_channel(evtchn_port_t port)
 {
+	k_spinlock_key_t key;
+
 	__ASSERT(port < EVTCHN_2L_NR_CHANNELS,
 		"%s: trying to unbind invalid evtchn #%u\n",
 		__func__, port);
 
-	event_channels[port].cb = empty_callback;
-	event_channels[port].priv = &event_channels[port];
-	events_missed[port] = false;
+	key = k_spin_lock(&event_channels[port].lock);
+	reset_event_channel_state(port);
+	k_spin_unlock(&event_channels[port].lock, key);
 
 	return 0;
 }
 
 int get_missed_events(evtchn_port_t port)
 {
+	k_spinlock_key_t key;
+	bool missed;
+
 	__ASSERT(port < EVTCHN_2L_NR_CHANNELS,
 		"%s: trying to get missed event from invalid port #%u\n",
 		__func__, port);
 
-	if (events_missed[port]) {
-		events_missed[port] = false;
+	key = k_spin_lock(&event_channels[port].lock);
+	missed = event_channels[port].missed;
+	event_channels[port].missed = false;
+	k_spin_unlock(&event_channels[port].lock, key);
+
+	if (missed) {
 		return 1;
 	}
 
@@ -188,8 +258,7 @@ int mask_event_channel(evtchn_port_t port)
 		"%s: trying to mask invalid evtchn #%u\n",
 		__func__, port);
 
-
-	sys_bitfield_set_bit((mem_addr_t) s->evtchn_mask, port);
+	set_shared_event_bit(s->evtchn_mask, port);
 
 	return 0;
 }
@@ -202,7 +271,7 @@ int unmask_event_channel(evtchn_port_t port)
 		"%s: trying to unmask invalid evtchn #%u\n",
 		__func__, port);
 
-	sys_bitfield_clear_bit((mem_addr_t) s->evtchn_mask, port);
+	clear_shared_event_bit(s->evtchn_mask, port);
 
 	return 0;
 }
@@ -211,22 +280,51 @@ void clear_event_channel(evtchn_port_t port)
 {
 	shared_info_t *s = HYPERVISOR_shared_info;
 
-	sys_bitfield_clear_bit((mem_addr_t) s->evtchn_pending, port);
+	__ASSERT(port < EVTCHN_2L_NR_CHANNELS,
+		"%s: trying to clear invalid evtchn #%u\n",
+		__func__, port);
+
+	clear_shared_event_bit(s->evtchn_pending, port);
 }
 
-static inline xen_ulong_t get_pending_events(xen_ulong_t pos)
+/*
+ * Called while the ISR is draining the current CPU's evtchn_pending_sel.
+ * pos selects one word in the domain-wide pending bitmap. The returned word has
+ * one bit set for each unmasked port in that word that still needs dispatch.
+ */
+static inline xen_ulong_t get_pending_events(uint32_t pos)
 {
 	shared_info_t *s = HYPERVISOR_shared_info;
+	xen_ulong_t pending = shared_event_word(s->evtchn_pending, pos);
+	xen_ulong_t mask = shared_event_word(s->evtchn_mask, pos);
 
-	return (s->evtchn_pending[pos] & ~(s->evtchn_mask[pos]));
+	return pending & ~mask;
 }
 
+/*
+ * Dispatch one pending port. If the port has no bound callback, record the
+ * missed event so the driver can query it later via get_missed_events().
+ */
 static void process_event(evtchn_port_t port)
 {
-	evtchn_handle_t channel = event_channels[port];
+	k_spinlock_key_t key;
 
 	clear_event_channel(port);
-	channel.cb(channel.priv);
+
+	key = k_spin_lock(&event_channels[port].lock);
+	if (event_channels[port].cb == empty_callback) {
+		event_channels[port].missed = true;
+	} else {
+		/*
+		 * Keep event_channels[port].lock held while invoking the handler, so
+		 * bind/unbind cannot replace or remove callback state until an
+		 * in-flight callback returns. Event-channel callbacks run in IRQ
+		 * context and must not call bind/unbind APIs for the same port.
+		 */
+		event_channels[port].cb(event_channels[port].priv);
+	}
+
+	k_spin_unlock(&event_channels[port].lock, key);
 }
 
 static void events_isr(void *data)
@@ -265,8 +363,7 @@ static void events_isr(void *data)
 			event_index =  __builtin_ffsl(events_pending) - 1;
 			events_pending &= (((xen_ulong_t) 1) << event_index);
 
-			port = (pos_index * 8 * sizeof(xen_ulong_t))
-					+ event_index;
+			port = (pos_index * EVTCHN_WORD_BITS) + event_index;
 			process_event(port);
 		}
 	}
@@ -284,9 +381,7 @@ int xen_events_init(void)
 
 	/* bind all ports with default callback */
 	for (i = 0; i < EVTCHN_2L_NR_CHANNELS; i++) {
-		event_channels[i].cb = empty_callback;
-		event_channels[i].priv = &event_channels[i];
-		events_missed[i] = false;
+		reset_event_channel_state(i);
 	}
 
 	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(0, 0, irq),
