@@ -125,7 +125,7 @@ static int recv_data(struct net_socket_service_event *pev)
 	struct dns_socket_dispatcher *dispatcher;
 	net_socklen_t optlen = sizeof(int);
 	struct net_buf *dns_data = NULL;
-	struct net_sockaddr addr;
+	struct net_sockaddr_storage addr;
 	net_socklen_t addrlen;
 	int family, sock_error;
 	int ret = 0, len;
@@ -176,7 +176,7 @@ static int recv_data(struct net_socket_service_event *pev)
 
 	ret = zsock_recvfrom(pev->event.fd, dns_data->data,
 			     net_buf_max_len(dns_data), 0,
-			     (struct net_sockaddr *)&addr, &addrlen);
+			     net_sad(&addr), &addrlen);
 	if (ret < 0) {
 		ret = -errno;
 		NET_ERR("recv failed on IPv%d socket (%d)",
@@ -187,7 +187,7 @@ static int recv_data(struct net_socket_service_event *pev)
 	len = ret;
 
 	ret = dns_dispatch(dispatcher, pev->event.fd,
-			   (struct net_sockaddr *)&addr, addrlen,
+			   net_sad(&addr), addrlen,
 			   dns_data, len);
 free_buf:
 	if (dns_data) {
@@ -232,10 +232,10 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		 * already registered.
 		 */
 		if (ctx->type == entry->type &&
-		    ctx->local_addr.sa_family == entry->local_addr.sa_family &&
+		    ctx->local_addr_storage.ss_family == entry->local_addr_storage.ss_family &&
 		    ctx->ifindex == entry->ifindex) {
-			if (net_sin(&entry->local_addr)->sin_port ==
-			    net_sin(&ctx->local_addr)->sin_port) {
+			if (net_sin(net_sad(&entry->local_addr_storage))->sin_port ==
+			    net_sin(net_sad(&ctx->local_addr_storage))->sin_port) {
 				dup = true;
 				continue;
 			}
@@ -248,9 +248,9 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		 * can catch possible duplicates.
 		 */
 		if (found == NULL && ctx->type != entry->type &&
-		    ctx->local_addr.sa_family == entry->local_addr.sa_family) {
-			if (net_sin(&entry->local_addr)->sin_port ==
-			    net_sin(&ctx->local_addr)->sin_port) {
+		    ctx->local_addr_storage.ss_family == entry->local_addr_storage.ss_family) {
+			if (net_sin(net_sad(&entry->local_addr_storage))->sin_port ==
+			    net_sin(net_sad(&ctx->local_addr_storage))->sin_port) {
 				found = entry;
 				continue;
 			}
@@ -299,14 +299,14 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 
 	ctx->buf_timeout = DNS_BUF_TIMEOUT;
 
-	if (ctx->local_addr.sa_family == NET_AF_INET) {
+	if (ctx->local_addr_storage.ss_family == NET_AF_INET) {
 		addrlen = sizeof(struct net_sockaddr_in);
 	} else {
 		addrlen = sizeof(struct net_sockaddr_in6);
 	}
 
 	/* Bind and then register a socket service with this combo */
-	ret = zsock_bind(ctx->sock, &ctx->local_addr, addrlen);
+	ret = zsock_bind(ctx->sock, net_sad(&ctx->local_addr_storage), addrlen);
 	if (ret < 0) {
 		ret = -errno;
 		NET_DBG("Cannot bind DNS socket %d (%d)", ctx->sock, ret);
@@ -317,10 +317,10 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 	 * Store the actual socket name so later dispatcher registrations do
 	 * not treat distinct resolver sockets as duplicate port-0 sockets.
 	 */
-	if (net_sin(&ctx->local_addr)->sin_port == 0) {
+	if (net_sin(net_sad(&ctx->local_addr_storage))->sin_port == 0) {
 		net_socklen_t socklen = addrlen;
 
-		ret = zsock_getsockname(ctx->sock, &ctx->local_addr, &socklen);
+		ret = zsock_getsockname(ctx->sock, net_sad(&ctx->local_addr_storage), &socklen);
 		if (ret < 0) {
 			ret = -errno;
 			NET_DBG("Cannot get DNS socket %d name (%d)", ctx->sock,

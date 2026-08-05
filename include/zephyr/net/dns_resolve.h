@@ -271,8 +271,15 @@ struct dns_socket_dispatcher {
 
 	/** Type of the socket (resolver / responder) */
 	enum dns_socket_type type;
-	/** Local endpoint address (used when binding the socket) */
-	struct net_sockaddr local_addr;
+	/** Local endpoint address storage */
+	union {
+		/** Local endpoint address (used when binding the socket) */
+		struct net_sockaddr_storage local_addr_storage;
+/** @cond INTERNAL_HIDDEN */
+		/* Use the local_addr_storage instead of this one. */
+		struct net_sockaddr local_addr;
+/** @endcond */
+	};
 	/** DNS socket dispatcher callback is called for incoming traffic */
 	dns_socket_dispatcher_cb cb;
 	/** Socket descriptors to poll */
@@ -373,7 +380,14 @@ struct dns_addrinfo {
 			net_socklen_t ai_addrlen;
 
 			/** NET_AF_INET or NET_AF_INET6 address info */
-			struct net_sockaddr ai_addr;
+			union {
+				/** Socket address info storage */
+				struct net_sockaddr_storage ai_addr_storage;
+/** @cond INTERNAL_HIDDEN */
+				/** Socket address info (use ai_addr_storage instead) */
+				struct net_sockaddr ai_addr;
+/** @endcond */
+			};
 
 			/** NET_AF_LOCAL Canonical name of the address */
 			char ai_canonname[DNS_MAX_NAME_SIZE + 1];
@@ -491,8 +505,14 @@ enum dns_resolve_context_state {
 struct dns_resolve_context {
 	/** List of configured DNS servers */
 	struct dns_server {
-		/** DNS server information */
-		struct net_sockaddr dns_server;
+		/** DNS server address storage */
+		union {
+			/** DNS server information */
+			struct net_sockaddr_storage dns_server_addr;
+/** @cond INTERNAL_HIDDEN */
+			struct net_sockaddr dns_server;
+/** @endcond */
+		};
 
 		/** Connection to the DNS server */
 		int sock;
@@ -629,7 +649,7 @@ struct mdns_probe_user_data {
 };
 
 struct mdns_responder_context {
-	struct net_sockaddr server_addr;
+	struct net_sockaddr_storage server_addr;
 	struct dns_socket_dispatcher dispatcher;
 	struct zsock_pollfd fds[1];
 	int sock;
