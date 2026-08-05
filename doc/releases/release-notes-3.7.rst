@@ -12,10 +12,327 @@ This is an LTS maintenance release with fixes.
 Security Vulnerability Related
 ******************************
 
-The following CVE is addressed by this release:
+The following CVEs are addressed by this release:
 
 More detailed information can be found in:
 https://docs.zephyrproject.org/latest/security/vulnerabilities.html
+
+* :cve:`2026-2411` `Bluetooth GATT notify/indicate enforces the wrong attribute's permissions,
+  bypassing encryption/authentication requirements on characteristic values
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4w3r-v9q9-4462>`_
+
+  Impacts: >= 2.6.0, <= 4.4.1
+
+* :cve:`2026-7007` `Division by zero in Zephyr ext2 superblock parsing allows DoS via crafted
+  filesystem image
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wrf2-79mm-cvw5>`_
+
+  Impacts: >= 3.5.0, <= 4.4.1
+
+* :cve:`2026-7656` `Broken IPv6 Neighbor Discovery input validation allows spoofed RA/NS/NA
+  acceptance in Zephyr net stack
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-cpjw-rvwx-ph9f>`_
+
+  Impacts: <= 4.4.0
+
+* :cve:`2026-8718` Under embargo until 2026-08-08
+
+* :cve:`2026-9263` `Out-of-bounds read in Bluetooth Controller ISOAL framed RX reassembly leaks
+  adjacent memory into host HCI ISO packets
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-6gvp-pmh8-fjh2>`_
+
+  Impacts: >= 3.3.0, <= 4.4.1
+
+* :cve:`2026-9728` Under embargo until 2026-08-23
+
+* :cve:`2026-10634` `Use-after-free in Zephyr native TCP net_tcp_foreach() due to dropping
+  tcp_lock during the callback
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-6c57-xfhw-j26x>`_
+
+  Impacts: >= 3.6.0, <= 4.4.1
+
+* :cve:`2026-10636` `Use-after-free in Zephyr IPv4 IGMP send path (igmp_send)
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fj6q-975v-65c9>`_
+
+  Impacts: >= 2.6.0, <= 4.4.1
+
+* :cve:`2026-10637` `Use-after-free of net_pkt in IPv6 MLD send path triggerable by a
+  link-local MLD Query
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m23w-34pp-4h92>`_
+
+  Impacts: >= 1.12.0, <= 4.4.0
+
+* :cve:`2026-10638` `Use-after-free in Zephyr ICMPv6 RX path when updating statistics after
+  sending an echo reply or error
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m92g-94xv-wvw2>`_
+
+  Impacts: >= 3.7.0, <= 4.4.1
+
+* :cve:`2026-10639` `Use-after-free reading net_pkt_iface() of a sent ICMPv4 echo-reply packet
+  in icmpv4_handle_echo_request()
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-qhrf-w466-qmpw>`_
+
+  Impacts: >= 4.2.0, <= 4.4.1
+
+* :cve:`2026-10640` `Use-after-free reading net_pkt iface after send in IPv6 Neighbor Discovery
+  (ipv6_nbr.c)
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-r74c-mr4m-7g9g>`_
+
+  Impacts: >= 3.3.0, <= 4.4.1
+
+* :cve:`2026-10641` `Out-of-bounds write in Bluetooth HFP Hands-Free CIND indicator parsing
+  (cind_handle_values)
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wx5j-q6f2-59p3>`_
+
+  Impacts: >= 3.7.0
+
+* :cve:`2026-10643` `Out-of-bounds heap write in Zephyr recvmsg() ancillary-data path
+  (insert_pktinfo undersizes the control-buffer capacity check)
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-pvf7-7mrp-35w7>`_
+
+  Impacts: >= 4.0.0, <= 4.4.1
+
+* :cve:`2026-10645` `Out-of-bounds read in Zephyr ext2 directory entry traversal from a crafted
+  filesystem image
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hwrh-9h3x-vccm>`_
+
+  Impacts: <= 4.4
+
+* :cve:`2026-10652` `Out-of-bounds read in Zephyr DNS resolver TXT/SRV record parsing
+  (unvalidated rdlength)
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3jxq-xx8g-q8j2>`_
+
+  Impacts: >= 4.3.0, <= 4.4.1
+
+* :cve:`2026-10654` `RFCOMM session-disconnect race leaks session/L2CAP and denies further
+  RFCOMM service in Zephyr Bluetooth Classic
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4m37-wp5x-hq4h>`_
+
+  Impacts: >= 1.6.0, <= 4.4.0
+
+* :cve:`2026-10657` `Out-of-bounds read in Zephyr DNS resolver mDNS suffix check (memcmp past
+  string NUL)
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-76jh-3j5f-9vq4>`_
+
+  Impacts: >= 1.10.0, <= 4.4.1
+
+* :cve:`2026-10658` `Out-of-bounds access in Bluetooth ISO receive (bt_iso_recv) due to missing
+  SDU-header length validation
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-26g8-rmpf-j6cw>`_
+
+  Impacts: <= 4.4.0
+
+* :cve:`2026-10660` `Shared reassembly buffer in Bluetooth BAP Broadcast Assistant enables
+  cross-connection memory corruption
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-73c7-3rh7-v5p9>`_
+
+  Impacts: >= 3.6.0, <= 4.4.0
+
+* :cve:`2026-10666` `Stack buffer overflow in net_ipaddr_parse() IPv4 address-with-port parsing
+  in subsys/net/ip/utils.c
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-532c-7g7f-jhmh>`_
+
+  Impacts: >1.10.0
+
+* :cve:`2026-10667` `SMP use-after-free in Zephyr CONFIG_USERSPACE dynamic kernel-object
+  tracking, reachable from unprivileged user threads
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-9x5j-h3rh-x579>`_
+
+  Impacts: <= 4.3
+
+* :cve:`2026-10669` `Xtensa MPU arch_buffer_validate() integer-overflow lets a user thread
+  bypass syscall pointer validation
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4r4p-gh69-v6w4>`_
+
+  Impacts: >= 3.7.0, <= 4.4.1
+
+* :cve:`2026-10670` `User-triggerable kernel NULL-pointer dereference (DoS) in
+  k_thread_name_copy() syscall verifier
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-82h2-v4vm-q2g9>`_
+
+  Impacts: >= 3.7.0, <= 4.4.1
+
+* :cve:`2026-10672` `Unterminated URI buffer causes out-of-bounds read in LwM2M firmware pull
+  (Package URI)
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-rf6j-4mpp-j9mf>`_
+
+  Impacts: v4.3.0, v4.2.1, v3.7.1
+
+* :cve:`2026-10673` `Out-of-bounds write in ADIN2111/ADIN1110 OA SPI Ethernet RX frame
+  reassembly
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-hm6v-4jh4-3qc4>`_
+
+  Impacts: >= 3.7.0, <= 4.4.1
+
+* :cve:`2026-10674` `DoS (hard fault) in NXP LPUART driver: unsupported runtime UART config
+  leaves clocks disabled
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-mw68-r353-m3vf>`_
+
+  Impacts: >= 3.7.0, <= 4.4.1
+
+* :cve:`2026-10675` `Bluetooth Mesh PB-ADV: invalidated provisioning link kept alive
+  indefinitely, blocking (re)provisioning (DoS)
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4rwg-6mr4-55hc>`_
+
+  Impacts: >= 3.5.0, <= 4.4.1
+
+* :cve:`2026-10677` `Kernel heap memory leak in z_vrfy_k_poll() lets an unprivileged user
+  thread exhaust the kernel resource pool
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-r3cc-8wcr-xfj9>`_
+
+  Impacts: >= 1.12.0, <= 4.4.1
+
+* :cve:`2026-10679` `Divide-by-zero in DesignWare SPI driver reachable from spi_transceive
+  syscall (local DoS)
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3qcm-qwh2-v4hq>`_
+
+  Impacts: >= 1.8.0, <= 4.4.1
+
+* :cve:`2026-10680` `Out-of-bounds access in Zephyr BR/EDR L2CAP configuration request handling
+  via uint16_t length underflow
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-vrwx-p97q-8854>`_
+
+  Impacts: >= 4.2.0, < 4.3.1; >= 4.4.0, <= 4.4.1
+
+* :cve:`2026-10681` `SMP race in thread_idx_alloc() lets concurrent
+  k_object_alloc(K_OBJ_THREAD) callers share a kernel-object permission slot
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-j693-5rh5-8g8h>`_
+
+  Impacts: >= 2.0.0, <= 4.4.1
+
+* :cve:`2026-10682` `Out-of-bounds write in Zephyr log_filter_set syscall verifier reachable
+  from userspace
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-6vqh-mg7h-58qh>`_
+
+  Impacts: >= 3.0.0, <= 4.4.1
+
+* :cve:`2026-10685` `Use-after-free of GATT subscribe params in Bluetooth host CCC-write
+  response handler
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-29xh-jm2m-4qvx>`_
+
+  Impacts: >= 2.4.0, <= 4.4.1
+
+* :cve:`2026-10686` `Missing hop-limit decrement on IPv6 forwarding path allows unbounded
+  packet looping (DoS) in Zephyr routers
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4cg6-6jc4-2r6h>`_
+
+  Impacts: >= 1.8.0, <= 4.4.1
+
+* :cve:`2026-10773` `Out-of-bounds read in DHCPv4 client message-type name lookup
+  (net_dhcpv4_msg_type_name)
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-r5hq-xq42-wcfq>`_
+
+  Impacts: >= 1.7.0, <= 4.4.1
+
+* :cve:`2026-10774` `PSA key-slot leak in Bluetooth Mesh subnet deletion leading to
+  resource-exhaustion DoS
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-6q7g-798f-76p2>`_
+
+  Impacts: >= 3.6.0, <= 4.4.1
+
+* :cve:`2026-10849` `Heap out-of-bounds write in Zephyr hawkBit OTA client when terminating
+  server response body
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-39h3-7phx-pwhv>`_
+
+  Impacts: >= 2.4.0, <= 4.4.1
+
+* :cve:`2026-11742` Under embargo until 2026-08-07
+
+* :cve:`2026-11809` Under embargo until 2026-08-08
+
+* :cve:`2026-11810` Under embargo until 2026-08-08
+
+* :cve:`2026-11811` Under embargo until 2026-08-08
+
+* :cve:`2026-11812` Under embargo until 2026-08-08
+
+* :cve:`2026-11985` Under embargo until 2026-08-09
+
+* :cve:`2026-12232` Under embargo until 2026-08-11
+
+* :cve:`2026-12233` Under embargo until 2026-08-11
+
+* :cve:`2026-12234` Under embargo until 2026-08-11
+
+* :cve:`2026-12236` Under embargo until 2026-08-13
+
+* :cve:`2026-12363` Under embargo until 2026-08-14
+
+* :cve:`2026-12519` Under embargo until 2026-08-16
+
+* :cve:`2026-12520` Under embargo until 2026-08-16
+
+* :cve:`2026-12521` Under embargo until 2026-08-16
+
+* :cve:`2026-12522` Under embargo until 2026-08-16
+
+* :cve:`2026-12630` Under embargo until 2026-08-16
+
+* :cve:`2026-12631` Under embargo until 2026-08-16
+
+* :cve:`2026-12632` Under embargo until 2026-08-16
+
+* :cve:`2026-12633` Under embargo until 2026-08-16
+
+* :cve:`2026-12634` Under embargo until 2026-08-16
+
+* :cve:`2026-12999` Under embargo until 2026-08-22
+
+* :cve:`2026-13213` Under embargo until 2026-08-23
+
+* :cve:`2026-13215` Under embargo until 2026-08-23
+
+* :cve:`2026-13478` Under embargo until 2026-08-25
+
+* :cve:`2026-13479` Under embargo until 2026-08-26
+
+* :cve:`2026-13480` Under embargo until 2026-08-26
+
+* :cve:`2026-14368` Under embargo until 2026-08-30
+
+* :cve:`2026-15460` Under embargo until 2026-09-07
+
+* :cve:`2026-15892` Under embargo until 2026-09-12
+
+* :cve:`2026-15893` Under embargo until 2026-09-13
+
+* :cve:`2026-15894` Under embargo until 2026-09-13
+
+* :cve:`2026-15923` Under embargo until 2026-09-13
+
+* :cve:`2026-15924` Under embargo until 2026-09-13
+
+* :cve:`2026-16148` Under embargo until 2026-09-14
+
+* :cve:`2026-16511` Under embargo until 2026-09-18
+
+* :cve:`2026-16512` Under embargo until 2026-09-18
+
+* :cve:`2026-16513` Under embargo until 2026-09-18
+
+* :cve:`2026-16514` Under embargo until 2026-09-18
+
+* :cve:`2026-16515` Under embargo until 2026-09-18
+
+* :cve:`2026-17051` Under embargo until 2026-09-20
+
+* :cve:`2026-17052` Under embargo until 2026-09-20
+
+* :cve:`2026-17053` Under embargo until 2026-09-20
+
+* :cve:`2026-18413` Under embargo until 2026-09-26
+
+* :cve:`2026-18414` Under embargo until 2026-09-26
+
+* :cve:`2026-18415` Under embargo until 2026-09-26
+
+* :cve:`2026-18416` Under embargo until 2026-09-26
+
+* :cve:`2026-18746` Under embargo until 2026-09-28
+
+* :cve:`2026-18747` Under embargo until 2026-09-28
+
+* :cve:`2026-19186` Under embargo until 2026-10-04
 
 Mbed TLS
 ********
