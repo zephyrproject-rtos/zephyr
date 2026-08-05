@@ -1,0 +1,14 @@
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  tags:
+    - net
+    - wifi
+tests:
+  net.wifi.pmksa:
+    extra_args: EXTRA_CONF_FILE=import_export.conf
+  net.wifi.pmksa.import_only:
+    extra_args: EXTRA_CONF_FILE=import.conf
+  net.wifi.pmksa.export_only:
+    extra_args: EXTRA_CONF_FILE=export.conf
