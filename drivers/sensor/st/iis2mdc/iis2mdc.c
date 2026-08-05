@@ -12,6 +12,8 @@
 
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/sensor.h>
 #include <string.h>
 #include <zephyr/logging/log.h>
@@ -210,9 +212,9 @@ static int iis2mdc_sample_fetch_temp(const struct device *dev)
 	return 0;
 }
 
-static int iis2mdc_sample_fetch(const struct device *dev,
-				enum sensor_channel chan)
+static int iis2mdc_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
+	pm_device_runtime_get(dev);
 	int ret = 0;
 
 	switch (chan) {
@@ -233,8 +235,9 @@ static int iis2mdc_sample_fetch(const struct device *dev,
 		ret = iis2mdc_sample_fetch_temp(dev);
 		break;
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
 	}
+	pm_device_runtime_put_async(dev, K_MSEC(20));
 
 	return ret;
 }
@@ -247,6 +250,29 @@ static DEVICE_API(sensor, iis2mdc_driver_api) = {
 	.sample_fetch = iis2mdc_sample_fetch,
 	.channel_get = iis2mdc_channel_get,
 };
+
+static int iis2mdc_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret = 0;
+	struct iis2mdc_data *iis2mdc = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = iis2mdc_operating_mode_set(iis2mdc->ctx, IIS2MDC_POWER_DOWN);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = iis2mdc_operating_mode_set(iis2mdc->ctx, IIS2MDC_CONTINUOUS_MODE);
+		k_sleep(K_MSEC(20));
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_TURN_ON:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
 
 static int iis2mdc_init(const struct device *dev)
 {
@@ -303,12 +329,6 @@ static int iis2mdc_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Set device in continuous mode */
-	if (iis2mdc_operating_mode_set(iis2mdc->ctx, IIS2MDC_CONTINUOUS_MODE)) {
-		LOG_DBG("set continuous mode failed\n");
-		return -EIO;
-	}
-
 #ifdef CONFIG_IIS2MDC_TRIGGER
 	if (iis2mdc_init_interrupt(dev) < 0) {
 		LOG_DBG("Failed to initialize interrupts");
@@ -316,7 +336,7 @@ static int iis2mdc_init(const struct device *dev)
 	}
 #endif
 
-	return 0;
+	return pm_device_driver_init(dev, iis2mdc_pm_action);
 }
 
 #if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 0
@@ -329,14 +349,15 @@ static int iis2mdc_init(const struct device *dev)
  */
 
 #define IIS2MDC_DEVICE_INIT(inst)					\
+	PM_DEVICE_DT_INST_DEFINE(inst, iis2mdc_pm_action);		\
 	SENSOR_DEVICE_DT_INST_DEFINE(inst,				\
-			    iis2mdc_init,				\
-			    NULL,					\
-			    &iis2mdc_data_##inst,			\
-			    &iis2mdc_config_##inst,			\
-			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &iis2mdc_driver_api);
+				iis2mdc_init,				\
+				PM_DEVICE_DT_INST_GET(inst),		\
+				&iis2mdc_data_##inst,			\
+				&iis2mdc_config_##inst,			\
+				POST_KERNEL,				\
+				CONFIG_SENSOR_INIT_PRIORITY,		\
+				&iis2mdc_driver_api);
 
 /*
  * Instantiation macros used when a device is on a SPI bus.
