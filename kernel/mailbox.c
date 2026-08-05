@@ -17,8 +17,17 @@
 /* private kernel APIs */
 #include <ksched.h>
 #include <kthread.h>
+#include <scheduler.h>
 #include <kernel_internal.h>
 #include <wait_q.h>
+
+#define SYNCHRONOUS_MATCH_FOUND  1
+#define ASYNCHRONOUS_MATCH_FOUND 2
+
+struct mbox_walk_data {
+	struct k_thread *thread;
+	struct k_mbox_msg *msg;
+};
 
 #ifdef CONFIG_OBJ_CORE_MAILBOX
 static struct k_obj_type  obj_type_mailbox;
@@ -191,6 +200,34 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	z_reschedule_unlocked();
 }
 
+static int mbox_message_put_walk_op(struct k_thread *thread, void *data)
+{
+	struct mbox_walk_data *walk_data = (struct mbox_walk_data *)data;
+	struct k_mbox_msg *rx_msg;
+
+	rx_msg = (struct k_mbox_msg *)thread->base.swap_data;
+
+	if (mbox_message_match(walk_data->msg, rx_msg) != 0) {
+		/* No match. Proceed to next in wait queue */
+		return 0;
+	}
+
+	/* Final step in the walk. Remove thread from wait queue. */
+
+	unpend_thread_no_timeout(thread);
+	(void)z_try_abort_thread_timeout(thread);
+	arch_thread_return_value_set(thread, 0);
+	z_sched_ready_locked(thread);
+
+#if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
+	if (is_thread_dummy(walk_data->thread)) {
+		return ASYNCHRONOUS_MATCH_FOUND;
+	}
+#endif
+
+	return SYNCHRONOUS_MATCH_FOUND;
+}
+
 /**
  * @brief Send a mailbox message.
  *
@@ -211,8 +248,6 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			     k_timeout_t timeout)
 {
 	struct k_thread *sending_thread;
-	struct k_thread *receiving_thread;
-	struct k_mbox_msg *rx_msg;
 	k_spinlock_key_t key;
 
 	/* save sender id so it can be used during message matching */
@@ -227,44 +262,55 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mbox, message_put, mbox, timeout);
 
-	_WAIT_Q_FOR_EACH(&mbox->rx_msg_queue, receiving_thread) {
-		rx_msg = (struct k_mbox_msg *)receiving_thread->base.swap_data;
+	struct mbox_walk_data walk_data;
+	int status;
 
-		if (mbox_message_match(tx_msg, rx_msg) == 0) {
-			/* take receiver out of rx queue */
-			z_unpend_thread(receiving_thread);
+	walk_data.thread = sending_thread;
+	walk_data.msg = tx_msg;
 
-			/* ready receiver for execution */
-			arch_thread_return_value_set(receiving_thread, 0);
-			z_ready_thread(receiving_thread);
+	/* Search the wait queue for the first matching receiver */
+
+	status = z_sched_waitq_walk(&mbox->rx_msg_queue,
+				    mbox_message_put_walk_op, NULL,
+				    &walk_data);
+
+	/*
+	 * <status> will be one of the following:
+	 *   ASYNCHRONOUS_MATCH_FOUND - match found for an asynchronous send
+	 *   SYNCHRONOUS_MATCH_FOUND  - match found for a synchronous send
+	 *   0                        - no match found
+	 */
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
-			/*
-			 * asynchronous send: swap out current thread
-			 * if receiver has priority, otherwise let it continue
-			 *
-			 * note: dummy sending thread sits (unqueued)
-			 * until the receiver consumes the message
-			 */
-			if (is_thread_dummy(sending_thread)) {
-				z_reschedule(&mbox->lock, key);
-				SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox,
-						message_put, mbox, timeout, 0);
-				return 0;
-			}
-#endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
-			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mbox, message_put, mbox, timeout);
+	if (status == ASYNCHRONOUS_MATCH_FOUND) {
+		/*
+		 * Swap out current thread if receiver has priority, otherwise
+		 * let it continue. Note that the dummy sending thread sits
+		 * (unqueued) until the receiver consumes the message.
+		 */
 
-			/*
-			 * synchronous send: pend current thread (unqueued)
-			 * until the receiver consumes the message
-			 */
-			int ret = z_pend_curr(&mbox->lock, key, NULL, K_FOREVER);
+		z_reschedule(&mbox->lock, key);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, message_put, mbox,
+					       timeout, 0);
+		return 0;
+	}
+#endif
 
-			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, message_put, mbox, timeout, ret);
+	if (status == SYNCHRONOUS_MATCH_FOUND) {
+		/*
+		 * Pend current thread until the receiver
+		 * consumes the message.
+		 */
 
-			return ret;
-		}
+		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mbox, message_put, mbox,
+						   timeout);
+
+		int ret = z_pend_curr(&mbox->lock, key, NULL, K_FOREVER);
+
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, message_put, mbox,
+					       timeout, ret);
+
+		return ret;
 	}
 
 	/* didn't find a matching receiver: don't wait for one */
@@ -380,11 +426,30 @@ static int mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 	return 0;
 }
 
+static int mbox_get_walk_op(struct k_thread *thread, void *data)
+{
+	struct mbox_walk_data *walk_data = (struct mbox_walk_data *)data;
+	struct k_mbox_msg *tx_msg;
+
+	tx_msg = (struct k_mbox_msg *)thread->base.swap_data;
+
+	if (mbox_message_match(tx_msg, walk_data->msg) != 0) {
+		/* No match. Proceed to next in wait queue */
+		return 0;
+	}
+
+	/* Final step in the walk. Remove thread from wait queue. */
+
+	unpend_thread_no_timeout(thread);
+
+	(void)z_try_abort_thread_timeout(thread);
+
+	return 1;
+}
+
 int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	       k_timeout_t timeout)
 {
-	struct k_thread *sending_thread;
-	struct k_mbox_msg *tx_msg;
 	k_spinlock_key_t key;
 	int result;
 
@@ -396,31 +461,33 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mbox, get, mbox, timeout);
 
-	_WAIT_Q_FOR_EACH(&mbox->tx_msg_queue, sending_thread) {
-		tx_msg = (struct k_mbox_msg *)sending_thread->base.swap_data;
+	struct mbox_walk_data walk_data;
+	int status;
 
-		if (mbox_message_match(tx_msg, rx_msg) == 0) {
-			/* take sender out of mailbox's tx queue */
-			z_unpend_thread(sending_thread);
+	walk_data.thread = NULL;   /* Unused by walk operation */
+	walk_data.msg = rx_msg;
 
-			k_spin_unlock(&mbox->lock, key);
+	/* Search the wait queue for the first matching sender */
 
-			/* consume message data immediately, if needed */
-			result = mbox_message_data_check(rx_msg, buffer);
+	status = z_sched_waitq_walk(&mbox->tx_msg_queue,
+				    mbox_get_walk_op, NULL, &walk_data);
 
-			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, get, mbox, timeout, result);
-			return result;
-		}
+	if (status != 0) {
+		/* Matching sender found */
+		k_spin_unlock(&mbox->lock, key);
+		result = 0;
+
+		goto out;
 	}
 
 	/* didn't find a matching sender */
 
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox, get, mbox, timeout, -ENOMSG);
-
 		/* don't wait for a matching sender to appear */
 		k_spin_unlock(&mbox->lock, key);
-		return -ENOMSG;
+
+		result = -ENOMSG;
+		goto out;
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_mbox, get, mbox, timeout);
@@ -429,6 +496,7 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	_current->base.swap_data = rx_msg;
 	result = z_pend_curr(&mbox->lock, key, &mbox->rx_msg_queue, timeout);
 
+out:
 	/* consume message data immediately, if needed */
 	if (result == 0) {
 		result = mbox_message_data_check(rx_msg, buffer);
