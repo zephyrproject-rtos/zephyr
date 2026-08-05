@@ -437,6 +437,11 @@ _flash_used = LOADADDR(.last_section) + SIZEOF(.last_section) - __rom_region_sta
 	__bss_start = .;
 	__kernel_ram_start = .;
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-bss.ld>
+
 	*(.bss)
 	*(".bss.*")
 	*(COMMON)
