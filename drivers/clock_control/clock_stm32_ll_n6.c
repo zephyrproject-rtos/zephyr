@@ -958,6 +958,21 @@ int stm32_clock_control_init(const struct device *dev)
 	LL_MEM_EnableClock(misc_ram);
 	LL_MEM_EnableClockLowPower(misc_ram);
 
+	/*
+	 * A chain-loading bootloader is expected to have initialized the clock tree
+	 * and external XSPI memory used by the application. Reinitializing the
+	 * application-domain RCC can make that memory inaccessible while code or
+	 * data is being fetched. Keep the SRAM gate setup above, preserve the
+	 * retained clock configuration, and refresh the CMSIS clock value.
+	 *
+	 * The application's devicetree must describe the retained clock and
+	 * external-memory configuration.
+	 */
+	if (IS_ENABLED(CONFIG_CLOCK_STM32_N6_PRESERVE_BOOT_CONFIG)) {
+		SystemCoreClockUpdate();
+		return 0;
+	}
+
 	/* Set up individual enabled clocks */
 	set_up_fixed_clock_sources();
 
