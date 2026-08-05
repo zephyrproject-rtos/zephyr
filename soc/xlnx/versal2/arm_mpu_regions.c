@@ -11,6 +11,11 @@
 #define DEVICE_REGION_START	0xE2000000U
 #define DEVICE_REGION_END	0xF8000000U
 
+#define CLK_WIZARD_MPU_ENTRY(id) \
+	MPU_REGION_ENTRY("clk_wiz", \
+			 DT_REG_ADDR(id), \
+			 REGION_DEVICE_ATTR(DT_REG_ADDR(id) + DT_REG_SIZE(id))),
+
 static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("vector",
 			 (uintptr_t)_vector_start,
@@ -31,6 +36,8 @@ static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("DEVICE",
 			 DEVICE_REGION_START,
 			 REGION_DEVICE_ATTR(DEVICE_REGION_END)),
+
+	DT_FOREACH_STATUS_OKAY(xlnx_clkx5_wiz_1_0, CLK_WIZARD_MPU_ENTRY)
 };
 
 const struct arm_mpu_config mpu_config = {
