@@ -21,3 +21,4 @@ testing:
   # Using a non-existent tag effectively makes this build-only.
   only_tags:
     - fvp_corstone1000_smp
+    - integration

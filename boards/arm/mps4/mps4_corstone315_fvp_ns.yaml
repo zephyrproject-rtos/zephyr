@@ -16,3 +16,4 @@ toolchain:
 testing:
   only_tags:
     - trusted-firmware-m
+    - integration
