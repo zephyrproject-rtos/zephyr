@@ -181,8 +181,11 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	/*
 	 * asynchronous send: free asynchronous message descriptor +
 	 * dummy thread pair, then give semaphore (if needed)
+	 *
+	 * sending_thread will never have its dummy status modified, so it is
+	 * safe to check for it here without holding the _sched_spinlock.
 	 */
-	if ((sending_thread->base.thread_state & _THREAD_DUMMY) != 0U) {
+	if (is_thread_dummy(sending_thread)) {
 		struct k_sem *async_sem = tx_msg->_async_sem;
 
 		mbox_async_free((struct k_mbox_async *)sending_thread);
@@ -193,11 +196,18 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	}
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
 
-	/* synchronous send: wake up sending thread */
+	/*
+	 * synchronous send: wake up sending thread
+	 * Must lock _sched_spinlock as thread internals are being modified.
+	 */
+
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
 	arch_thread_return_value_set(sending_thread, 0);
 	z_mark_thread_as_not_pending(sending_thread);
-	z_ready_thread(sending_thread);
-	z_reschedule_unlocked();
+	z_sched_ready_locked(sending_thread);
+
+	z_reschedule(&_sched_spinlock, key);
 }
 
 static int mbox_message_put_walk_op(struct k_thread *thread, void *data)
