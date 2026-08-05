@@ -778,6 +778,7 @@ static void handler(void)
 
 	memset(&params, 0, sizeof(params));
 	params.wpa_debug_level = CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL;
+	params.wpa_debug_show_keys = IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS);
 
 	ctx->supplicant = wpa_supplicant_init(&params);
 	if (ctx->supplicant == NULL) {
