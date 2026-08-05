@@ -419,7 +419,13 @@ struct coap_transmission_parameters {
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
 struct coap_pending {
-	struct net_sockaddr addr; /**< Remote address */
+	/** CoAP remote address storage */
+	union {
+/** @cond INTERNAL_HIDDEN */
+		struct net_sockaddr addr; /**< Remote address. Use the addr_storage instead. */
+/** @endcond */
+		struct net_sockaddr_storage addr_storage; /**< Remote address storage */
+	};
 	int64_t t0;           /**< Time when the request was sent */
 	uint32_t timeout;     /**< Timeout in ms */
 	uint16_t id;          /**< Message id */
