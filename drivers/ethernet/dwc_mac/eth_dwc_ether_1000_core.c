@@ -57,6 +57,11 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define TXDESC_PHYS_L(idx) phys_lo32(&p->tx_descs[idx])
 #define RXDESC_PHYS_L(idx) phys_lo32(&p->rx_descs[idx])
 
+BUILD_ASSERT(RX_FRAG_SIZE <= FIELD_GET(RDES1_RBS1, RDES1_RBS1),
+	     "CONFIG_NET_BUF_DATA_SIZE exceeds the RDES1 receive buffer size field");
+BUILD_ASSERT(RX_FRAG_SIZE % 4U == 0U,
+	     "CONFIG_NET_BUF_DATA_SIZE must be a multiple of 4 to be a valid RX buffer size");
+
 static void dwmac_rx_refill(const struct device *dev);
 
 static uint32_t phys_lo32(void *addr)
@@ -302,18 +307,29 @@ static void dwmac_receive(const struct device *dev)
 
 		sys_cache_data_invd_range(frag->data, frag->size);
 
-		bytes_so_far = RX_LEN_FROM_RDES0(des0);
+		/*
+		 * RDES0.FL is only trustworthy in the last descriptor. Several
+		 * reference manuals describe it as a running total in earlier
+		 * descriptors, but hardware has been observed reporting zero
+		 * there, so size every other fragment from the posted buffer.
+		 */
+		if ((des0 & RDES0_LS) != 0U) {
+			bytes_so_far = RX_LEN_FROM_RDES0(des0);
+			if (bytes_so_far < p->rx_bytes ||
+			    bytes_so_far - p->rx_bytes > frag->size) {
+				eth_stats_update_errors_rx(p->iface);
+				net_pkt_unref(p->rx_pkt);
+				p->rx_pkt = NULL;
+				net_pkt_frag_unref(frag);
+				continue;
+			}
 
-		if (bytes_so_far < p->rx_bytes) {
-			eth_stats_update_errors_rx(p->iface);
-			net_pkt_unref(p->rx_pkt);
-			p->rx_pkt = NULL;
-			net_pkt_frag_unref(frag);
-			continue;
+			frag->len = bytes_so_far - p->rx_bytes;
+			p->rx_bytes = bytes_so_far;
+		} else {
+			frag->len = frag->size;
+			p->rx_bytes += frag->len;
 		}
-
-		frag->len = bytes_so_far - p->rx_bytes;
-		p->rx_bytes = bytes_so_far;
 		net_pkt_frag_add(p->rx_pkt, frag);
 
 		if ((des0 & RDES0_LS) != 0U) {
