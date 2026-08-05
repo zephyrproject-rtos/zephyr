@@ -28,6 +28,12 @@ config WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
 
 endif # WIFI_MGMT_RAW_SCAN_RESULTS
 
+config WIFI_MGMT_PMKSA_CACHE_EXTERNAL
+	bool "External PMKSA cache support"
+	help
+	  Enable the generic Wi-Fi management requests for transferring
+	  application-owned PMKSA cache entries to and from a driver.
+
 config WIFI_MGMT_TWT_CHECK_IP
 	bool "Check IP Assignment for TWT"
 	default y
