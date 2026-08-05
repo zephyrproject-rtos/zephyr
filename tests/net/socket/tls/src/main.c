@@ -11,6 +11,14 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/loopback.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/tls_credentials.h>
+
+/* The BIO callbacks of a socket are needed to build a datagram that carries
+ * two DTLS records.
+ */
+#if !defined(MBEDTLS_ALLOW_PRIVATE_ACCESS)
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+#endif
+
 #include <mbedtls/ssl.h>
 
 #include "../../socket_helpers.h"
@@ -1791,6 +1799,95 @@ ZTEST(net_socket_tls, test_poll_dtls_pollin)
 	ret = zsock_recv(s_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
 	zassert_equal(ret, sizeof(TEST_STR_SMALL) - 1, "zsock_recv() failed");
 	zassert_mem_equal(rx_buf, TEST_STR_SMALL, ret, "Invalid data received");
+
+	test_sockets_close();
+
+	/* Small delay for the final alert exchange */
+	k_msleep(10);
+}
+
+static uint8_t coalesce_buf[512];
+static size_t coalesce_len;
+
+/* Collect the ciphertext of a record instead of sending it. */
+static int coalesce_send(void *ctx, const unsigned char *buf, size_t len)
+{
+	ARG_UNUSED(ctx);
+
+	if (len > sizeof(coalesce_buf) - coalesce_len) {
+		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
+	}
+
+	memcpy(coalesce_buf + coalesce_len, buf, len);
+	coalesce_len += len;
+
+	return (int)len;
+}
+
+/* A datagram can carry more than one DTLS record. Mbed TLS reads the whole
+ * datagram in and processes one record at a time, so once the application
+ * has consumed the first record, the socket has no readiness left to report
+ * while Mbed TLS still holds the second one. poll() has to report that
+ * record instead of waiting for a datagram which never comes.
+ */
+ZTEST(net_socket_tls, test_poll_dtls_second_record_in_datagram)
+{
+	static const uint8_t rec_a = 'A';
+	static const uint8_t rec_b = 'B';
+	mbedtls_ssl_context *ssl;
+	mbedtls_ssl_send_t *orig_send;
+	mbedtls_ssl_recv_t *orig_recv;
+	struct zsock_pollfd fds[1];
+	void *p_bio;
+	uint8_t byte;
+	int ret;
+
+	test_prepare_dtls_connection(NET_AF_INET6);
+
+	ssl = ztls_get_mbedtls_ssl_context(s_sock);
+	zassert_not_null(ssl, "No Mbed TLS context for the server socket");
+
+	orig_send = ssl->MBEDTLS_PRIVATE(f_send);
+	orig_recv = ssl->MBEDTLS_PRIVATE(f_recv);
+	p_bio = ssl->MBEDTLS_PRIVATE(p_bio);
+
+	/* Hold both records back, so that they can be handed over in one
+	 * datagram below.
+	 */
+	coalesce_len = 0;
+	mbedtls_ssl_set_bio(ssl, p_bio, coalesce_send, orig_recv, NULL);
+
+	ret = zsock_send(s_sock, &rec_a, sizeof(rec_a), 0);
+	zassert_equal(ret, sizeof(rec_a), "Cannot write the first record");
+
+	ret = zsock_send(s_sock, &rec_b, sizeof(rec_b), 0);
+	zassert_equal(ret, sizeof(rec_b), "Cannot write the second record");
+
+	mbedtls_ssl_set_bio(ssl, p_bio, orig_send, orig_recv, NULL);
+
+	ret = orig_send(p_bio, coalesce_buf, coalesce_len);
+	zassert_equal(ret, coalesce_len, "Cannot send the records");
+
+	fds[0].fd = c_sock;
+	fds[0].events = ZSOCK_POLLIN;
+
+	ret = zsock_poll(fds, 1, 500);
+	zassert_equal(ret, 1, "poll() did not report the datagram");
+
+	ret = zsock_recv(c_sock, &byte, 1, 0);
+	zassert_equal(ret, 1, "Cannot read the first record");
+	zassert_equal(byte, rec_a, "Wrong first record");
+
+	/* The datagram is gone from the socket at this point, the second
+	 * record only exists inside Mbed TLS.
+	 */
+	ret = zsock_poll(fds, 1, 500);
+	zassert_equal(ret, 1, "poll() did not report the second record");
+	zassert_true(fds[0].revents & ZSOCK_POLLIN, "No POLLIN event");
+
+	ret = zsock_recv(c_sock, &byte, 1, 0);
+	zassert_equal(ret, 1, "Cannot read the second record");
+	zassert_equal(byte, rec_b, "Wrong second record");
 
 	test_sockets_close();
 
