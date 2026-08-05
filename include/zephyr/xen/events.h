@@ -240,6 +240,16 @@ void clear_event_channel(evtchn_port_t port);
  */
 int xen_events_init(void);
 
+/**
+ * @brief Set up Xen event-channel delivery on a secondary CPU.
+ *
+ * @kconfig_dep{CONFIG_XEN_EVENTS}
+ *
+ * Registers per-vCPU info with the hypervisor and enables the
+ * event-channel PPI locally on the calling CPU.
+ */
+void xen_evtchn_secondary_cpu_init(void);
+
 /** @} */
 
 #endif /* __XEN_EVENTS_H__ */
