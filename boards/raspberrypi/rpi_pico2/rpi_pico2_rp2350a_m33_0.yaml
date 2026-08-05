@@ -17,6 +17,7 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - i2s
   - pico_gpio
   - pico_i2c
   - pico_serial
