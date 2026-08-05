@@ -193,11 +193,18 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	}
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */
 
-	/* synchronous send: wake up sending thread */
+	/*
+	 * synchronous send: wake up sending thread
+	 * Lock scheduler's spinlock as thread internals are being modified.
+	 */
+
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
 	arch_thread_return_value_set(sending_thread, 0);
 	z_mark_thread_as_not_pending(sending_thread);
-	z_ready_thread(sending_thread);
-	z_reschedule_unlocked();
+	z_sched_ready_locked(sending_thread);
+
+	z_reschedule(&_sched_spinlock, key);
 }
 
 static int mbox_message_put_walk_op(struct k_thread *thread, void *data)
