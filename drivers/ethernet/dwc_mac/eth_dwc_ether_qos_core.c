@@ -39,6 +39,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 /* size of pre-allocated packet fragments */
 #define RX_FRAG_SIZE CONFIG_NET_BUF_DATA_SIZE
 
+BUILD_ASSERT(RX_FRAG_SIZE <= FIELD_GET(DMA_CHn_RX_CTRL_RBSZ, DMA_CHn_RX_CTRL_RBSZ),
+	     "CONFIG_NET_BUF_DATA_SIZE exceeds the RBSZ receive buffer size field");
+BUILD_ASSERT(RX_FRAG_SIZE % 4U == 0U,
+	     "CONFIG_NET_BUF_DATA_SIZE must be a multiple of 4 to be a valid RX buffer size");
+
 /*
  * Grace period to wait for TX descriptor/fragment availability.
  * Worst case estimate is 1514*8 bits at 10 mbps for an existing packet
@@ -365,9 +370,27 @@ static void dwmac_receive(const struct device *dev)
 
 		sys_cache_data_invd_range(frag->data, frag->size);
 
-		bytes_so_far = FIELD_GET(RDES3_PL, des3_val);
-		frag->len = bytes_so_far - p->rx_bytes;
-		p->rx_bytes = bytes_so_far;
+		/*
+		 * A non-last descriptor has exhausted its posted buffer. Size it
+		 * from software instead of relying on an intermediate status field
+		 * that does not yet describe the complete frame.
+		 */
+		if (des3_val & RDES3_LD) {
+			bytes_so_far = FIELD_GET(RDES3_PL, des3_val);
+			if (bytes_so_far < p->rx_bytes || bytes_so_far - p->rx_bytes > frag->size) {
+				eth_stats_update_errors_rx(p->iface);
+				net_pkt_unref(p->rx_pkt);
+				p->rx_pkt = NULL;
+				net_pkt_frag_unref(frag);
+				continue;
+			}
+
+			frag->len = bytes_so_far - p->rx_bytes;
+			p->rx_bytes = bytes_so_far;
+		} else {
+			frag->len = frag->size;
+			p->rx_bytes += frag->len;
+		}
 		net_pkt_frag_add(p->rx_pkt, frag);
 
 		/* last descriptor: */
