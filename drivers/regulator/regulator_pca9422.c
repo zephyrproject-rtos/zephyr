@@ -815,7 +815,7 @@ static int regulator_pca9422_common_init(const struct device *dev)
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, regulator_pca9422_common_init, NULL, &data_##inst,             \
 			      &config_##inst, POST_KERNEL,                                         \
-			      CONFIG_REGULATOR_PCA9422_COMMON_INIT_PRIORITY, &parent_api);         \
+			      CONFIG_REGULATOR_PCA9422_INIT_PRIORITY, &parent_api);                \
                                                                                                    \
 	REGULATOR_PCA9422_DEFINE_COND(inst, buck1)                                                 \
 	REGULATOR_PCA9422_DEFINE_COND(inst, buck2)                                                 \
