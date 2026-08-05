@@ -1700,6 +1700,55 @@
 		num-locks = <64>;
 		status = "disabled";
 	};
+
+	xbar1: xbar@2750000 {
+		compatible = "nxp,mcux-xbar";
+		reg = <0x2750000 0x100>;
+		clocks = <&ccm IMX_CCM_XBAR1_CLK 0 0>;
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+		status = "disabled";
+	};
+
+	eqdc1: eqdc@2710000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2710000 0x4000>;
+		interrupts = <185 0>;
+		interrupt-names = "index";
+		clocks = <&ccm IMX_CCM_ENC1_CLK 0 0>;
+		counts-per-revolution = <1>;
+		status = "disabled";
+	};
+
+	eqdc2: eqdc@2720000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2720000 0x4000>;
+		interrupts = <186 0>;
+		interrupt-names = "index";
+		clocks = <&ccm IMX_CCM_ENC2_CLK 0 0>;
+		counts-per-revolution = <1>;
+		status = "disabled";
+	};
+
+	eqdc3: eqdc@2730000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2730000 0x4000>;
+		interrupts = <187 0>;
+		interrupt-names = "index";
+		clocks = <&ccm IMX_CCM_ENC3_CLK 0 0>;
+		counts-per-revolution = <1>;
+		status = "disabled";
+	};
+
+	eqdc4: eqdc@2740000 {
+		compatible = "nxp,mcux-eqdc";
+		reg = <0x2740000 0x4000>;
+		interrupts = <188 0>;
+		interrupt-names = "index";
+		clocks = <&ccm IMX_CCM_ENC4_CLK 0 0>;
+		counts-per-revolution = <1>;
+		status = "disabled";
+	};
 };
 
 &flexspi {
