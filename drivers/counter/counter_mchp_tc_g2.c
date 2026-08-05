@@ -423,6 +423,11 @@ static int sam_tc_init(const struct device *dev)
 		tc_configure(config->regs, MODE_TOP_VALUE | TC_CMR_TCCLKS(config->clock_selection));
 	}
 
+	/* Clear TC compare registers */
+	for (int i = 0; i < MAX_ID; i++) {
+		tc_compare_clear_value(config->regs, i);
+	}
+
 	config->irq_config_func(dev);
 
 	LOG_INF("Device %s initialized, reg:0x%08x cs:%d channels:%u top_alarm:%u",
