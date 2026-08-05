@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <ti/mspm33c/mspm33c321a.dtsi>
+#include "lp_mspm33c321a-pinctrl.dtsi"
 
 / {
 	model = "TI LP_MSPM33C321A/MSPM33C321A";
@@ -51,4 +52,10 @@
 &lfxt {
 	clock-frequency = <32768>;
 	ti,xtal-startup-delay-us = <640000>;
+};
+
+&vref0 {
+	status = "okay";
+	pinctrl-0 = <&analog_pa23>;
+	pinctrl-names = "default";
 };

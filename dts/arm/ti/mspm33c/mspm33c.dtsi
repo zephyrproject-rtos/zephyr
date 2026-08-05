@@ -112,6 +112,12 @@
 			compatible = "mmio-sram";
 		};
 
+		pinctrl: pin-controller@400cc000 {
+			compatible = "ti,mspm0-pinctrl";
+			reg = <0x400cc000 0x2000>;
+			status = "disabled";
+		};
+
 		flash_controller: flash-controller@40042000 {
 			reg = <0x40042000 DT_SIZE_K(8)>;
 			interrupts = <2 0>;
