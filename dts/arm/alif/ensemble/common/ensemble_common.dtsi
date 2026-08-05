@@ -123,5 +123,100 @@
 			current-speed = <115200>;
 			status = "disabled";
 		};
+
+		gpio0: gpio@49000000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49000000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio1: gpio@49001000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49001000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio2: gpio@49002000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49002000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio3: gpio@49003000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49003000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio4: gpio@49004000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49004000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio5: gpio@49005000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49005000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio6: gpio@49006000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49006000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio7: gpio@49007000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49007000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		gpio8: gpio@49008000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x49008000 0x1000>;
+			ngpios = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		/*
+		 * LPGPIO sits in the Always-On domain and is reached through a
+		 * separate pin control region. It is only two pins wide on the
+		 * E1C; the E4/E6/E8 layer widens it to eight.
+		 */
+		lpgpio: gpio@42002000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x42002000 0x1000>;
+			ngpios = <2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			status = "disabled";
+		};
 	};
 };
