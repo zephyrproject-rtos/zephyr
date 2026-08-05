@@ -27,4 +27,32 @@
 			pinmux = <PIN_P12_2__UART4_TX_B>;
 		};
 	};
+
+	pinctrl_gpio7: pinctrl_gpio7 {
+		group0 {
+			/* Multicolor LED0: green on P7_4 */
+			pinmux = <PIN_P7_4__GPIO>;
+		};
+	};
+
+	pinctrl_gpio12: pinctrl_gpio12 {
+		group0 {
+			/* Multicolor LED0: blue on P12_0, red on P12_3 */
+			pinmux = <PIN_P12_0__GPIO>,
+				 <PIN_P12_3__GPIO>;
+		};
+	};
+
+	pinctrl_lpgpio: pinctrl_lpgpio {
+		group0 {
+			/* Navigation joystick JOY_SW1 to JOY_SW5 on SW2 */
+			pinmux = <PIN_P15_0__LPGPIO>,
+				 <PIN_P15_1__LPGPIO>,
+				 <PIN_P15_2__LPGPIO>,
+				 <PIN_P15_3__LPGPIO>,
+				 <PIN_P15_4__LPGPIO>;
+			input-enable;
+			bias-pull-up;
+		};
+	};
 };
