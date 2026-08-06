@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(eth_w6300, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/sys/util.h>
 #include <ethernet/eth_stats.h>
 
-#include "eth.h"
+#include "../eth.h"
 #include "eth_w6300_priv.h"
 
 static inline uint8_t w6300_spi_instr(uint8_t rwb, uint8_t bsb)

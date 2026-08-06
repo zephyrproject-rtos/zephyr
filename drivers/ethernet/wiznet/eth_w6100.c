@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(eth_w6100, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 
-#include "eth.h"
+#include "../eth.h"
 #include "eth_w6100_priv.h"
 
 #define W6100_SPI_BLOCK_SELECT(addr)	(((addr) >> 16) & 0x1f)

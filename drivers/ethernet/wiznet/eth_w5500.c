@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(eth_w5500, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <ethernet/eth_stats.h>
 
-#include "eth.h"
+#include "../eth.h"
 #include "eth_w5500_priv.h"
 
 #define WIZNET_OUI_B0	0x00
