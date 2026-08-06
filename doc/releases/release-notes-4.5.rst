@@ -291,6 +291,17 @@ New APIs and options
     :c:func:`mdns_responder_disable_iface`
     (:kconfig:option:`CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL`) to enable or
     disable the mDNS responder on a network interface at runtime.
+  * Add a DHCPv6 server with IPv6 prefix delegation support
+    (:kconfig:option:`CONFIG_NET_DHCPV6_SERVER`):
+    :c:func:`net_dhcpv6_server_start`, :c:func:`net_dhcpv6_server_stop` and
+    :c:func:`net_dhcpv6_server_foreach_lease`.
+  * Add IPv6 router role, that is, transmission of Router Advertisements
+    (:kconfig:option:`CONFIG_NET_IPV6_ND_RA_TX`):
+    :c:func:`net_if_ipv6_router_start`, :c:func:`net_if_ipv6_router_stop` and
+    :c:func:`net_if_ipv6_prefix_set_advertise`.
+  * Add requesting router support to the DHCPv6 client, a delegated prefix can
+    be sub-delegated onto downstream links via
+    :c:member:`net_dhcpv6_params.downstream_ifaces`.
 
 * Power Management
 
