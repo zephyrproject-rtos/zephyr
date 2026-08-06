@@ -38,3 +38,55 @@ tests:
       - CONFIG_ZTEST_THREAD_PRIORITY=1
       - CONFIG_EMUL=y
       - CONFIG_SENSOR_ASYNC_API=y
+  # The XEC tachometer needs a Microchip MEC SoC, so it cannot be reached from
+  # app.overlay. CONF_FILE and DTC_OVERLAY_FILE replace the defaults of this
+  # test rather than adding to them: the full set of sensor drivers app.overlay
+  # pulls in overflows the flash on every MEC part.
+  drivers.sensor.tach.xec.build:
+    platform_allow:
+      - mec15xxevb_assy6853
+      - mec172xevb_assy6906
+      - mec_assy6941/mec1753_qsz
+    integration_platforms:
+      - mec_assy6941/mec1753_qsz
+    extra_args:
+      - CONF_FILE=tach_xec.conf
+      - DTC_OVERLAY_FILE=tach_xec.overlay
+  drivers.sensor.tach.xec.pm.build:
+    platform_allow:
+      - mec15xxevb_assy6853
+      - mec172xevb_assy6906
+      - mec_assy6941/mec1753_qsz
+    integration_platforms:
+      - mec_assy6941/mec1753_qsz
+    extra_args:
+      - CONF_FILE=tach_xec.conf
+      - DTC_OVERLAY_FILE=tach_xec.overlay
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+  # The overlay enables four tachometers, so this also covers four handler
+  # threads and their stacks fitting on the smallest of the three parts.
+  drivers.sensor.tach.xec.trigger.build:
+    platform_allow:
+      - mec15xxevb_assy6853
+      - mec172xevb_assy6906
+      - mec_assy6941/mec1753_qsz
+    integration_platforms:
+      - mec_assy6941/mec1753_qsz
+    extra_args:
+      - CONF_FILE=tach_xec.conf
+      - DTC_OVERLAY_FILE=tach_xec.overlay
+    extra_configs:
+      - CONFIG_TACH_XEC_TRIGGER_OWN_THREAD=y
+  # The work queue path has no series specific code, so one platform covers it.
+  drivers.sensor.tach.xec.trigger.global.build:
+    platform_allow:
+      - mec_assy6941/mec1753_qsz
+    integration_platforms:
+      - mec_assy6941/mec1753_qsz
+    extra_args:
+      - CONF_FILE=tach_xec.conf
+      - DTC_OVERLAY_FILE=tach_xec.overlay
+    extra_configs:
+      - CONFIG_TACH_XEC_TRIGGER_GLOBAL_THREAD=y
