@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Linaro Limited
+ * Copyright (c) 2026 Witekio
  *
  * SPDX-License-Identifier: Apache-2.0
  */
