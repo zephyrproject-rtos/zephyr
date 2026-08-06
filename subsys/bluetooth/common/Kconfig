@@ -50,6 +50,14 @@ config BT_BUF_ACL_TX_COUNT
 
 config BT_BUF_ACL_RX_SIZE
 	int "Maximum supported ACL size for incoming data"
+	# For a HID Host in Report Protocol Mode, the minimum MTU is 672 octets
+	# (HID spec v1.1.2 Section 5.2.3.1), so the buffer holds 676 bytes,
+	# including,
+	# 672 bytes - the minimum MTU of a HID Host in Report Protocol Mode,
+	# 4 bytes - L2CAP Header.
+	# A HID Host that only implements Boot Protocol Mode needs no more than the
+	# L2CAP default minimum of 48 octets and can lower this, hence no range.
+	default 676 if BT_CLASSIC && BT_HID_HOST
 	# For GOEP over RFCOMM, the minimum MTU of GOEP is 264, including,
 	# 255 bytes - the minimum MTU of GOEP,
 	# 4 bytes - L2CAP Header,

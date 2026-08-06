@@ -1,5 +1,5 @@
 /** @file
- *  @brief Internal APIs for Bluetooth HID Device handling.
+ *  @brief Internal APIs shared by the Bluetooth HID Device and Host profiles.
  */
 
 /*
@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/classic/hid_device.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/bluetooth/l2cap.h>
 
 /** @brief HID header size (1 byte). */
@@ -139,4 +139,94 @@ struct bt_hid_device {
 
 	struct k_work_delayable intr_timeout;
 	struct k_work vcu_disconnect;
+};
+
+/** @brief Control channel transaction the HID Host is waiting a response for.
+ *
+ * HID spec v1.1.2 Section 3.2.1 allows a single outstanding transaction on the
+ * Control channel, so this doubles as the serialization state.
+ */
+enum bt_hid_w4 {
+	/** No transaction outstanding. */
+	BT_HID_W4_NONE = 0,
+	BT_HID_W4_GET_REPORT,
+	BT_HID_W4_SET_REPORT,
+	BT_HID_W4_GET_PROTOCOL,
+	BT_HID_W4_SET_PROTOCOL,
+};
+
+/** @brief Outstanding Control channel transaction of a HID Host connection.
+ *
+ * Filled in by the requesting thread and consumed either by the RX thread when
+ * the reply arrives or by the transaction timeout, see the claim token in
+ * @ref bt_hid_host.
+ */
+struct bt_hid_req {
+	/** Transaction type. */
+	uint8_t type;
+	/** Report type sent with GET_REPORT, echoed by the DATA reply. */
+	uint8_t report_type;
+	/** BufferSize sent with GET_REPORT, 0 when the field was omitted. */
+	uint16_t buffer_size;
+	/** Protocol mode sent with SET_PROTOCOL. */
+	uint8_t protocol;
+};
+
+/** @brief HID Host session wrapper for an L2CAP channel.
+ *
+ * Each HID Host connection maintains two sessions: control and interrupt.
+ */
+struct bt_hid_host_session {
+	/** Underlying BR/EDR L2CAP channel. */
+	struct bt_l2cap_br_chan br_chan;
+	/** Channel type: control or interrupt. */
+	uint8_t type;
+};
+
+/** @brief HID Host instance (opaque to applications) */
+struct bt_hid_host {
+	/** Role: whether we initiated or accepted the connection. */
+	uint8_t role;
+	/** Control channel session (PSM 0x0011). */
+	struct bt_hid_host_session ctrl_session;
+	/** Interrupt channel session (PSM 0x0013). */
+	struct bt_hid_host_session intr_session;
+
+	/** True when the remote device is in Boot Protocol Mode. */
+	bool boot_mode;
+	/** True when SUSPEND has been sent. */
+	bool suspended;
+	/** Runtime connection state. */
+	uint8_t state;
+
+	/** True while the control channel is connected. */
+	bool ctrl_connected;
+	/** True while the interrupt channel is connected. */
+	bool intr_connected;
+	/** Outstanding Control channel transaction.
+	 *
+	 * The contents are only valid while the transaction is claimed, see
+	 * @ref _req.
+	 */
+	struct bt_hid_req req;
+	/** Claim token of @ref req.
+	 *
+	 * Holds NULL when no transaction is outstanding, the claiming sentinel
+	 * while @ref req is being filled in, and &req once the transaction is
+	 * published. Every transition is a single atomic operation because the
+	 * requesting thread, the RX thread and the timeout work all race for it.
+	 */
+	atomic_ptr_t _req;
+	/** INTR channel connect timeout. */
+	struct k_work_delayable intr_work;
+	/** Control channel transaction timeout. */
+	struct k_work_delayable trans_work;
+	/** Virtual Cable Unplug teardown.
+	 *
+	 * Runs immediately when the unplug was received, where HID spec v1.1.2
+	 * Section 3.1.2.2.3 makes this host the one that disconnects, and after a
+	 * delay when the unplug was sent, where it only covers a peer that never
+	 * acknowledges.
+	 */
+	struct k_work_delayable vcu_work;
 };
