@@ -34,7 +34,7 @@ source "drivers/sdhc/Kconfig.xlnx"
 
 config SDHC_INIT_PRIORITY
 	int "SDHC driver init priority"
-	default KERNEL_INIT_PRIORITY_DEVICE
+	default 85
 	help
 	  SDHC driver system init priority
 
