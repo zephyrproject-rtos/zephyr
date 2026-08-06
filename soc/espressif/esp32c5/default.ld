@@ -952,7 +952,7 @@ SECTIONS
     /* Align for PMP granularity requirements */
     MPU_MIN_SIZE_ALIGN
     __rom_region_end = ABSOLUTE(.);
-    __rom_region_size = __rom_region_end - __rom_region_start;
+    __rom_region_size = ABSOLUTE(__rom_region_end - __rom_region_start);
     _etext = .;
 
   } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)
