@@ -1,9 +1,6 @@
 # Copyright (c) 2026 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-# DK does no have 32kHz crystal, use the internal RC oscillator
-CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC=y
-
 CONFIG_ARM_MPU=y
 CONFIG_ARM_TRUSTZONE_M=y
 
