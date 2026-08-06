@@ -32,10 +32,11 @@ properties:
     default: "none"
     enum:
       - "none"
-      - "master"
-      - "slave"
+      - "source"
+      - "receiver"
     description: |
-      This property configures the LED controller as a master or slave clock
-      device. This can be used to synchronize the output of multiple LED
-      controllers sharing a SYNC line. See the SYNC bits in the spread spectrum
-      register for more information.
+      This property configures the device to generate the synchronization clock
+      as a source or accept an external synchronization clock as a receiver.
+      This can synchronize the output of multiple LED controllers sharing a
+      SYNC line. See the SYNC bits in the spread spectrum register for more
+      information.

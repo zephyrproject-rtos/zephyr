@@ -69,14 +69,14 @@ LOG_MODULE_REGISTER(is31fl3743b, CONFIG_LED_LOG_LEVEL);
 /*	Sync mode raw values for the spread spectrum register sync field.
  *	See the "SYNC" header on page 16 of the datasheet.
  */
-#define SYNC_DISABLED 0x0	/* Disable SYNC function, internal 30k pull-low */
-#define SYNC_SLAVE    0x2	/* Slave, clock input */
-#define SYNC_MASTER   0x3	/* Master, clock input */
+#define SYNC_DISABLED 0x0 /* Disable SYNC function, internal 30k pull-low */
+#define SYNC_RECEIVER 0x2 /* Receiver, clock input */
+#define SYNC_SOURCE   0x3 /* Source, clock input */
 
 /* Sync mode enumeration indices. these are meant to match the devicetree sync-mode property */
-#define SYNC_MODE_NONE   0
-#define SYNC_MODE_MASTER 1
-#define SYNC_MODE_SLAVE  2
+#define SYNC_MODE_NONE     0
+#define SYNC_MODE_SOURCE   1
+#define SYNC_MODE_RECEIVER 2
 
 /*	Matrix is laid out with 11 columns
  *	(the switch columns/SW1-SW11) and 18 rows (the current sinks/CS1-CS18).
@@ -164,7 +164,7 @@ static int is31fl3743b_init(const struct device *dev)
 {
 	const struct is31fl3743b_config *config = dev->config;
 	struct is31fl3743b_data *data = dev->data;
-	static const uint8_t sync_values[] = {SYNC_DISABLED, SYNC_MASTER, SYNC_SLAVE};
+	static const uint8_t sync_values[] = {SYNC_DISABLED, SYNC_SOURCE, SYNC_RECEIVER};
 	int ret;
 
 	if (!spi_is_ready_dt(&config->bus)) {
@@ -192,7 +192,7 @@ static int is31fl3743b_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Configure the sync mode when the controller is part of a synced group */
+	/* Configure the SYNC clock role when the device is part of a synchronized group */
 	if (config->sync_mode != SYNC_MODE_NONE) {
 		ret = is31fl3743b_write_reg(dev, PAGE_FUNC, SPREAD_SPECTRUM_REG,
 					    sync_values[config->sync_mode] << SS_REG_SYNC_SHIFT);
