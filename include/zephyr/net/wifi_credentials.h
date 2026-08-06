@@ -175,6 +175,9 @@ int wifi_credentials_get_by_ssid_personal(const char *ssid, size_t ssid_len,
 /**
  * @brief Set credentials for given SSID.
  *
+ * @note Storing credentials for an SSID that is already stored overwrites the existing
+ *       entry rather than adding a second one. Only distinct SSIDs consume storage slots.
+ *
  * @param[in] ssid		SSID to look for
  * @param[in] ssid_len		length of SSID
  * @param[in] type		Wi-Fi security type
@@ -213,6 +216,9 @@ int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_l
 
 /**
  * @brief Set credentials for given SSID by struct.
+ *
+ * @note Storing credentials for an SSID that is already stored overwrites the existing
+ *       entry rather than adding a second one. Only distinct SSIDs consume storage slots.
  *
  * @param[in] creds		credentials Pointer to struct from which credentials are loaded
  *
