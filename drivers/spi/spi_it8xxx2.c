@@ -129,15 +129,24 @@ static inline int spi_it8xxx2_set_freq(const struct device *dev, const uint32_t 
 	uint8_t reg_val;
 
 	clk_pll = chip_get_pll_freq();
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
 	clk_sspi = clk_pll / (((IT8XXX2_ECPM_SCDCR2 & 0xF0) >> 4) + 1U);
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+	clk_sspi = clk_pll / ((IT8XXX2_ECPM_SCDCR8 & 0x0F) + 1U);
+#else
+	BUILD_ASSERT(false, "unknown clk_sspi for register set version");
+#endif /* CONFIG_SOC_IT8XXX2_REG_SET_V1 */
 	if (frequency < (clk_sspi / 16) || frequency > clk_sspi) {
-		LOG_ERR("Unsupported frequency %d", frequency);
+		LOG_ERR("Unsupported frequency %d (sspi %d)", frequency, clk_sspi);
 		return -ENOTSUP;
 	}
 
 	if (frequency == clk_sspi) {
+		/* the spi clk must be turned on (un-gated) before setting ssck equal to sspi_clk */
+		spi_it8xxx2_turn_on_clk(dev, true);
 		sys_write8(sys_read8(cfg->base + SPI0D_CTRL5) | SCK_FREQ_DIV_1_EN,
 			   cfg->base + SPI0D_CTRL5);
+		spi_it8xxx2_turn_on_clk(dev, false);
 	} else {
 		for (int i = 0; i <= ARRAY_SIZE(freq_div); i++) {
 			if (i == ARRAY_SIZE(freq_div)) {
@@ -166,6 +175,11 @@ static int spi_it8xxx2_configure(const struct device *dev, const struct spi_conf
 	struct spi_context *ctx = &data->ctx;
 	int ret;
 	uint8_t reg_val;
+
+	if (spi_context_configured(ctx, spi_cfg)) {
+		/* already configured */
+		return 0;
+	}
 
 	if (spi_cfg->slave > (SPI_CHIP_SELECT_COUNT - 1)) {
 		LOG_ERR("Slave %d is greater than %d", spi_cfg->slave, SPI_CHIP_SELECT_COUNT - 1);
