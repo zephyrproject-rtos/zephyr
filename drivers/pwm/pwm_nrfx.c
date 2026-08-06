@@ -200,6 +200,7 @@ static int pwm_nrfx_set_cycles(const struct device *dev, uint32_t channel,
 	if (pulse_cycles == 0) {
 		/* Constantly inactive (duty 0%). */
 		compare_value = 0;
+		needs_pwm = IS_ENABLED(CONFIG_PWM_NRFX_NO_GLITCH_DUTY_100);
 	} else if (pulse_cycles >= period_cycles) {
 		/* Constantly active (duty 100%). */
 		/* This value is always greater than or equal to COUNTERTOP. */
