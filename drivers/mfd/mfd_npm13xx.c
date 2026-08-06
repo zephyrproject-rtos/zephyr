@@ -327,7 +327,7 @@ int mfd_npm13xx_remove_callback(const struct device *dev, struct gpio_callback *
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, mfd_npm13xx_init, NULL, &mfd_##partno##_data##n,                  \
 			      &mfd_##partno##_config##n, POST_KERNEL,                              \
-			      CONFIG_MFD_NPM13XX_INIT_PRIORITY, NULL);
+			      CONFIG_MFD_INIT_PRIORITY, NULL);
 
 #define DT_DRV_COMPAT nordic_npm1300
 #define MFD_NPM1300_DEFINE(n) MFD_NPM13XX_DEFINE(npm1300, n)

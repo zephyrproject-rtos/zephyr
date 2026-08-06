@@ -11,8 +11,7 @@ config ADC_TLA2528
 
 config ADC_TLA2528_INIT_PRIO
 	int "Init priority"
-	default 70
+	default MFD_INIT_PRIORITY
 	depends on ADC_TLA2528
 	help
 	  Device driver initialization priority.
-	  Priority has to be lower (=higher value) than the TLA2528 mfd driver prio.
