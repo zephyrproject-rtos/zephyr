@@ -686,9 +686,7 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 			dma_esp32_pm_policy_state_lock_put(dev);
 		}
 #endif
-	}
-
-	if (dma_channel->dir == DMA_RX) {
+	} else if (dma_channel->dir == DMA_RX) {
 		gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 				     GDMA_LL_RX_EVENT_MASK, false);
 		gdma_hal_stop(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
