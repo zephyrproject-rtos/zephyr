@@ -23,12 +23,6 @@ if BOARD_MIMX93_EVK_EXP_SEL_INIT
 config GPIO
 	default y
 
-config MFD_ADP5585_INIT_PRIORITY
-	default 55
-
-config GPIO_ADP5585_INIT_PRIORITY
-	default 56
-
 endif # BOARD_MIMX93_EVK_EXP_SEL_INIT
 
 configdefault ETH_DRIVER
