@@ -9,6 +9,12 @@ board:
           cpucluster: cpuflpr
         - name: ns
           cpucluster: cpuapp
+    - name: nrf7120e
+      variants:
+        - name: xip
+          cpucluster: cpuflpr
+        - name: ns
+          cpucluster: cpuapp
 
 runners:
   run_once:
@@ -22,6 +28,10 @@ runners:
               - nrf7120dk/nrf7120/cpuapp/ns
               - nrf7120dk/nrf7120/cpuflpr
               - nrf7120dk/nrf7120/cpuflpr/xip
+              - nrf7120dk/nrf7120e/cpuapp
+              - nrf7120dk/nrf7120e/cpuapp/ns
+              - nrf7120dk/nrf7120e/cpuflpr
+              - nrf7120dk/nrf7120e/cpuflpr/xip
     '--erase':
       - runners:
           - jlink
@@ -33,6 +43,10 @@ runners:
               - nrf7120dk/nrf7120/cpuapp/ns
               - nrf7120dk/nrf7120/cpuflpr
               - nrf7120dk/nrf7120/cpuflpr/xip
+              - nrf7120dk/nrf7120e/cpuapp
+              - nrf7120dk/nrf7120e/cpuapp/ns
+              - nrf7120dk/nrf7120e/cpuflpr
+              - nrf7120dk/nrf7120e/cpuflpr/xip
     '--reset':
       - runners:
           - jlink
@@ -44,3 +58,7 @@ runners:
               - nrf7120dk/nrf7120/cpuapp/ns
               - nrf7120dk/nrf7120/cpuflpr
               - nrf7120dk/nrf7120/cpuflpr/xip
+              - nrf7120dk/nrf7120e/cpuapp
+              - nrf7120dk/nrf7120e/cpuapp/ns
+              - nrf7120dk/nrf7120e/cpuflpr
+              - nrf7120dk/nrf7120e/cpuflpr/xip
