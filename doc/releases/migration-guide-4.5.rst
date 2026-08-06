@@ -50,6 +50,10 @@ Kernel
   keeping ``SCHED_SIMPLE`` for affinity purposes can now use their preferred
   backend directly.
 
+* :c:struct:`k_futex` is no longer a kernel object and the corresponding type
+  :c:enumerator:`K_OBJ_FUTEX` has been removed. Any user-accessible memory can
+  be used as futex address.
+
 Boards
 ******
 

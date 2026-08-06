@@ -16,7 +16,7 @@
  *
  * We use a single queue for all futex waiters. This is lightweight and
  * efficient for a small number of threads but does not scale well to larger
- * numbers waiting on different mutexes, because each wake needs to walk the
+ * numbers waiting on different futexes, because each wake needs to walk the
  * full queue while holding _sched_spinlock.
  *
  * Potential alternatives for scaling:
@@ -36,14 +36,29 @@
  *   expected to be the TID of the holder, so that a higher priority thread
  *   waiting for a futex can boost the holders priority.
  */
-static _wait_q_t wait_q = Z_WAIT_Q_INIT(&wait_q);
-static struct k_spinlock lock;
+static _wait_q_t futex_wait_q = Z_WAIT_Q_INIT(&futex_wait_q);
+static struct k_spinlock futex_lock;
 
+/**
+ * Context structure for walking the futex wait queue
+ */
 struct futex_walk_data {
+	/**
+	 * List head of threads to wake up during post op (NULL if empty)
+	 * This is an intermediate value filled by the walk op
+	 * Must be initialized to NULL before the walk
+	 */
 	struct k_thread *head;
+	/**
+	 * Futex address
+	 * This is an input to the walk
+	 */
 	struct k_futex *futex;
+	/**
+	 * Number of threads that have been woken up
+	 * This is an output of the walk and must be initialized to zero
+	 */
 	int woken;
-	bool wake_all;
 };
 
 static void futex_post_walk_op(int status, void *data)
@@ -59,6 +74,7 @@ static void futex_post_walk_op(int status, void *data)
 
 	thread = walk_data->head;
 
+	/* Wake up threads if any */
 	while (thread != NULL) {
 		next = thread->next_wake_link;
 
@@ -71,27 +87,46 @@ static void futex_post_walk_op(int status, void *data)
 	}
 }
 
-static int futex_walk_op(struct k_thread *thread, void *data)
+static int futex_wake_one_walk_op(struct k_thread *thread, void *data)
 {
 	struct futex_walk_data *walk_data = data;
 
 	/* Ignore threads waiting on different futexes */
-	if (thread->base.futex_pointer == walk_data->futex) {
-		/*
-		 * If we want to wake all, we add the found thread to the queue.
-		 * Otherwise, we keep walk_data->head pointing only to the highest
-		 * priority waiter.
-		 */
-		if (walk_data->wake_all) {
-			thread->next_wake_link = walk_data->head;
+	if (thread->futex_pointer == walk_data->futex) {
+		/* Find the highest priority thread */
+		if (walk_data->head == NULL ||
+		    z_is_prio_higher(thread->base.prio, walk_data->head->base.prio)) {
+			/*
+			 * next_wake_link is initialized to NULL in z_impl_k_futex_wait so
+			 * this is always a single thread
+			 */
 			walk_data->head = thread;
-		} else {
-			if (walk_data->head == NULL ||
-			    z_is_prio_higher(thread->base.prio, walk_data->head->base.prio)) {
-				walk_data->head = thread;
-				walk_data->head->next_wake_link = NULL;
-			}
 		}
+	}
+
+	return 0;
+}
+
+static int futex_wake_all_walk_op(struct k_thread *thread, void *data)
+{
+	struct futex_walk_data *walk_data = data;
+
+	/* Ignore threads waiting on different futexes */
+	if (thread->futex_pointer == walk_data->futex) {
+#ifndef CONFIG_WAITQ_SCALABLE
+		/*
+		 * Note: z_sched_wake_thread_locked() is safe
+		 * to call here because this walk_op callback
+		 * is invoked with _sched_spinlock held.
+		 */
+		(void)z_try_abort_thread_timeout(thread);
+		arch_thread_return_value_set(thread, 0);
+		z_sched_wake_thread_locked(thread);
+		walk_data->woken++;
+#else  /* !CONFIG_WAITQ_SCALABLE */
+		thread->next_wake_link = walk_data->head;
+		walk_data->head = thread;
+#endif /* !CONFIG_WAITQ_SCALABLE */
 	}
 
 	return 0;
@@ -100,10 +135,9 @@ static int futex_walk_op(struct k_thread *thread, void *data)
 int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 {
 	k_spinlock_key_t key;
-	struct futex_walk_data walk_data = {
-		.head = NULL, .futex = futex, .wake_all = wake_all, .woken = 0};
+	struct futex_walk_data walk_data = {.head = NULL, .futex = futex, .woken = 0};
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&futex_lock);
 
 	/*
 	 * Walk through wait queue to find threads waiting on this futex. Unlike
@@ -113,12 +147,14 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 	 * z_unpend_first_thread because the overall highest priority thread could
 	 * be waiting on a different futex.
 	 */
-	z_sched_waitq_walk(&wait_q, futex_walk_op, futex_post_walk_op, &walk_data);
+	z_sched_waitq_walk(&futex_wait_q,
+			   (wake_all) ? futex_wake_all_walk_op : futex_wake_one_walk_op,
+			   futex_post_walk_op, &walk_data);
 
 	if (walk_data.woken == 0) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&futex_lock, key);
 	} else {
-		z_reschedule(&lock, key);
+		z_reschedule(&futex_lock, key);
 	}
 
 	return walk_data.woken;
@@ -139,19 +175,20 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected, k_timeout_t timeout
 	int ret;
 	k_spinlock_key_t key;
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&futex_lock);
 
 	if (atomic_get(&futex->val) != (atomic_val_t)expected) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&futex_lock, key);
 		return -EAGAIN;
 	}
 
 	/*
-	 * Store futex pointer we are waiting on, so that it can be used in
-	 * futex_walk_op filtering
+	 * Store futex pointer we are waiting on, so that it can be used to filter
+	 * futexes when walking the wait queue
 	 */
-	_current->base.futex_pointer = futex;
-	ret = z_pend_curr(&lock, key, &wait_q, timeout);
+	_current->futex_pointer = futex;
+	_current->next_wake_link = NULL;
+	ret = z_pend_curr(&futex_lock, key, &futex_wait_q, timeout);
 	if (ret == -EAGAIN) {
 		ret = -ETIMEDOUT;
 	}

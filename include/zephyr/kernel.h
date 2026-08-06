@@ -2697,6 +2697,7 @@ struct k_futex {
  *                K_NO_WAIT or K_FOREVER.
  * @retval -EACCES Caller does not have write access to futex address.
  * @retval -EAGAIN If the futex value did not match the expected parameter.
+ * @retval -EINVAL Futex parameter not recognized by the kernel.
  * @retval -ETIMEDOUT Thread woke up due to timeout and not a futex wakeup.
  * @retval 0 if the caller went to sleep and was woken up. The caller
  *	     should check the futex's value on wakeup to determine if it needs
@@ -2716,6 +2717,7 @@ __syscall int k_futex_wait(struct k_futex *futex, int expected,
  * @param wake_all If true, wake up all pending threads; If false,
  *                 wakeup the highest priority thread.
  * @retval -EACCES Caller does not have access to the futex address.
+ * @retval -EINVAL Futex parameter not recognized by the kernel.
  * @retval >=0 Number of threads that were woken up.
  */
 __syscall int k_futex_wake(struct k_futex *futex, bool wake_all);
