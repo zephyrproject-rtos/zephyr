@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Open Device Partnership and Contributors
 #
-# SPDX-License-Identifier: MIT
+# SPDX-License-Identifier: Apache-2.0
 
 description: ISSI IS31FL3743B LED Matrix Driver
 
@@ -19,6 +19,8 @@ properties:
   current-limit:
     type: int
     default: 0xFF
+    min: 0
+    max: 0xFF
     description: |
       Global current limit. Sets the global current control (GCC) register of
       the LED driver. Limits the global output current based on the following

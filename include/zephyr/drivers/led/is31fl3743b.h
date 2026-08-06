@@ -18,8 +18,8 @@
  * When blank_en is set, the LED display will be disabled. This can be used for
  * flicker-free display updates or power saving.
  *
- * @param dev: LED device structure
- * @param blank_en: should blanking be enabled
+ * @param dev LED device structure
+ * @param blank_en should blanking be enabled
  * @return 0 on success or negative value on error.
  */
 int is31fl3743b_blank(const struct device *dev, bool blank_en);
@@ -35,8 +35,8 @@ int is31fl3743b_blank(const struct device *dev, bool blank_en);
  * the following formula: (343/R_ISET) * (limit/256).
  * This formula corresponds to Formula (3) on page 14 of the datasheet.
  *
- * @param dev: LED device structure
- * @param limit: current limit to apply
+ * @param dev LED device structure
+ * @param limit current limit to apply
  * @return 0 on success, or negative value on error.
  */
 int is31fl3743b_current_limit(const struct device *dev, uint8_t limit);

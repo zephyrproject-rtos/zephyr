@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(is31fl3743b, CONFIG_LED_LOG_LEVEL);
 
 /**
  * @file
- * @brief IS31FL319x LED driver
+ * @brief IS31FL3743B LED Matrix driver
  *
  * General note: This driver is based on the following datasheet:
  * - Title: IS31FL3743B, Rev. C, 10/25/2024
@@ -69,9 +69,9 @@ LOG_MODULE_REGISTER(is31fl3743b, CONFIG_LED_LOG_LEVEL);
 /*	Sync mode raw values for the spread spectrum register sync field.
  *	See the "SYNC" header on page 16 of the datasheet.
  */
-#define SYNC_DISABLED 0x0  /* Disable SYNC function, internal 30k pull-low */
-#define SYNC_SLAVE    0b10 /* Slave, clock input */
-#define SYNC_MASTER   0b11 /* Master, clock input */
+#define SYNC_DISABLED 0x0	/* Disable SYNC function, internal 30k pull-low */
+#define SYNC_SLAVE    0x2	/* Slave, clock input */
+#define SYNC_MASTER   0x3	/* Master, clock input */
 
 /* Sync mode enumeration indices. these are meant to match the devicetree sync-mode property */
 #define SYNC_MODE_NONE   0
@@ -144,7 +144,7 @@ static int is31fl3743b_led_write_channels(const struct device *dev, uint32_t sta
 {
 	struct is31fl3743b_data *data = dev->data;
 
-	if ((start_channel + num_channels) > IS31FL3743B_MAX_LED) {
+	if ((uint64_t)start_channel + num_channels > IS31FL3743B_MAX_LED) {
 		return -EINVAL;
 	}
 
@@ -231,21 +231,30 @@ static int is31fl3743b_init(const struct device *dev)
  * When blank_en is set, the LED display will be disabled. This can be used for
  * flicker-free display updates or power saving.
  *
- * @param dev: LED device structure
- * @param blank_en: should blanking be enabled
+ * @param dev LED device structure
+ * @param blank_en should blanking be enabled
  * @return 0 on success or negative value on error.
  */
 int is31fl3743b_blank(const struct device *dev, bool blank_en)
 {
 	struct is31fl3743b_data *data = dev->data;
+	uint8_t conf_reg = data->conf_reg;
+	int ret = 0;
 
 	if (blank_en) {
-		data->conf_reg &= ~CONF_REG_SSD_MASK;
+		conf_reg &= ~CONF_REG_SSD_MASK;
 	} else {
-		data->conf_reg |= CONF_REG_SSD_MASK;
+		conf_reg |= CONF_REG_SSD_MASK;
 	}
 
-	return is31fl3743b_write_reg(dev, PAGE_FUNC, CONF_REG, data->conf_reg);
+	ret = is31fl3743b_write_reg(dev, PAGE_FUNC, CONF_REG, conf_reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* if we're here the write succeeded */
+	data->conf_reg = conf_reg;
+	return ret;
 }
 
 /**
@@ -259,8 +268,8 @@ int is31fl3743b_blank(const struct device *dev, bool blank_en)
  * the following formula: (343/R_ISET) * (limit/256).
  * This formula corresponds to Formula (3) on page 14 of the datasheet.
  *
- * @param dev: LED device structure
- * @param limit: current limit to apply
+ * @param dev LED device structure
+ * @param limit current limit to apply
  * @return 0 on success, or negative value on error.
  */
 int is31fl3743b_current_limit(const struct device *dev, uint8_t limit)
