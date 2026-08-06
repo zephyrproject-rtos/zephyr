@@ -51,13 +51,7 @@
 #define S0_MR_MACRAW		0x04 /* MAC RAW mode */
 #define S0_MR_MF		0x40 /* MAC Filter for W5500 */
 #define W5500_S0_CR		(W5500_S0_REGS + W5500_Sn_CR)
-#define S0_CR_OPEN		0x01 /* OPEN command */
-#define S0_CR_CLOSE		0x10 /* CLOSE command */
-#define S0_CR_SEND		0x20 /* SEND command */
-#define S0_CR_RECV		0x40 /* RECV command */
 #define W5500_S0_IR		(W5500_S0_REGS + W5500_Sn_IR)
-#define S0_IR_SENDOK		0x10 /* complete sending */
-#define S0_IR_RECV		0x04 /* receiving data */
 #define W5500_S0_SR		(W5500_S0_REGS + W5500_Sn_SR)
 #define S0_SR_MACRAW		0x42 /* mac raw mode */
 #define W5500_S0_TX_FSR		(W5500_S0_REGS + W5500_Sn_TX_FSR)
@@ -70,7 +64,6 @@
 #define W5500_S0_MR_MF		7 /* MAC Filter for W5500 */
 #define W5500_Sn_REGS_LEN	0x0040
 #define W5500_SIMR		0x0018 /* Socket Interrupt Mask Register */
-#define IR_S0			0x01
 #define RTR_DEFAULT		2000
 #define W5500_RTR		0x0019 /* Retry Time-value Register */
 
@@ -84,31 +77,5 @@
 #define W5500_TX_MEM_SIZE	0x04000
 #define W5500_Sn_RX_MEM_START	0x30000
 #define W5500_RX_MEM_SIZE	0x04000
-
-/* Delay for PHY write/read operations (25.6 us) */
-#define W5500_PHY_ACCESS_DELAY		26U
-struct w5500_config {
-	struct spi_dt_spec spi;
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
-	struct gpio_dt_spec interrupt;
-#endif
-	struct gpio_dt_spec reset;
-	struct net_eth_mac_config mac_cfg;
-	const struct device *phy_dev;
-};
-
-struct w5500_runtime {
-	struct net_if *iface;
-
-	K_KERNEL_STACK_MEMBER(thread_stack,
-			      CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE);
-	struct k_thread thread;
-	uint8_t mac_addr[6];
-	struct gpio_callback gpio_cb;
-	struct k_sem tx_sem;
-	struct k_sem int_sem;
-	struct phy_link_state state;
-	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
-};
 
 #endif /*_W5500_*/
