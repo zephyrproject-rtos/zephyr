@@ -537,14 +537,14 @@ static int cs40l26_irq_config(const struct device *const dev)
 		return ret;
 	}
 
-	ret = cs40lxx_multi_write(&config->io_bus, cs40l26_irq_masks,
-				  ARRAY_SIZE(cs40l26_irq_masks));
+	ret = cs40lxx_raw_multi_write(&config->io_bus, cs40l26_irq_masks,
+				      ARRAY_SIZE(cs40l26_irq_masks));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40lxx_multi_write(&config->io_bus, cs40l26_irq_clear,
-				  ARRAY_SIZE(cs40l26_irq_clear));
+	ret = cs40lxx_raw_multi_write(&config->io_bus, cs40l26_irq_clear,
+				      ARRAY_SIZE(cs40l26_irq_clear));
 	if (ret < 0) {
 		return ret;
 	}
