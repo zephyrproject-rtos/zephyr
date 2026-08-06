@@ -132,6 +132,14 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev)
 	}
 }
 
+/* Start RTIO operations until there are no more queued or an async operation is pending */
+static void i2c_nrfx_twim_rtio_start_next_async(const struct device *dev)
+{
+	while (i2c_nrfx_twim_rtio_start(dev)) {
+		;
+	}
+}
+
 static void i2c_nrfx_twim_rtio_complete(const struct device *dev, int status)
 {
 	/** Finalize if there are no more pending xfers */
@@ -139,7 +147,7 @@ static void i2c_nrfx_twim_rtio_complete(const struct device *dev, int status)
 	struct i2c_rtio *ctx = config->ctx;
 
 	if (i2c_rtio_complete(ctx, status)) {
-		(void)i2c_nrfx_twim_rtio_start(dev);
+		i2c_nrfx_twim_rtio_start_next_async(dev);
 	} else {
 		/* Release bus on completion */
 		pm_device_runtime_put(dev);
@@ -180,7 +188,7 @@ static void i2c_nrfx_twim_rtio_submit(const struct device *dev, struct rtio_iode
 		if (pm_device_runtime_get(dev) < 0) {
 			(void)i2c_rtio_complete(ctx, -EINVAL);
 		} else {
-			(void)i2c_nrfx_twim_rtio_start(dev);
+			i2c_nrfx_twim_rtio_start_next_async(dev);
 		}
 	}
 }
