@@ -25,3 +25,25 @@ properties:
           to a division factor of 1 or 2, TIMxCLK = HCKL. Otherwise, the timer clock frequencies are
           set to four times to the frequency of the APB domain to which the timers are connected:
           TIMxCLK = 4xPCLKx.
+
+  st,supply-microvolt:
+    type: int
+    description: |
+      Actual board VDD supply to the MCU, in microvolts. Must be the
+      minimum VDD over tolerance and ripple, not the nominal value -- the
+      wait-state table below is only safe at the worst-case (lowest)
+      voltage the board can see. Optional; when absent, flash wait-states
+      are computed from VOS alone as before (unchanged behavior).
+
+      Only consumed on STM32F405xx/407xx/415xx/417xx, where it is used to
+      compute wait-states from RM0090's voltage-banded Table 11 (HCLK and
+      actual VDD, not VOS) -- the only sub-family this table covers -- and
+      fails the build if the clock-frequency/supply-microvolt combination
+      falls outside Table 11's characterized range. The build also fails
+      if this is set below 2.1V while CONFIG_STM32_FLASH_PREFETCH is
+      enabled, since Table 11's 1.8-2.1V column is characterized by ST
+      with the flash prefetch buffer disabled (RM0090 Section 3.5.1).
+
+      Useful for boards that run below the nominal 2.7-3.6V range by
+      design (e.g. level-shifted to match a companion SoC's logic level),
+      where VOS alone cannot express the actual latency requirement.
