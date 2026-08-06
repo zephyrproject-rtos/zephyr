@@ -615,7 +615,7 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 		l1_page_table.entries[l1_index].l2_page_table_ref.zero0 = 0;
 		l1_page_table.entries[l1_index].l2_page_table_ref.zero1 = 0;
 		l1_page_table.entries[l1_index].l2_page_table_ref.impl_def = 0;
-		l1_page_table.entries[l1_index].l2_page_table_ref.domain = 0; /* TODO */
+		l1_page_table.entries[l1_index].l2_page_table_ref.domain = perms_attrs.domain;
 		l1_page_table.entries[l1_index].l2_page_table_ref.non_sec =
 			perms_attrs.non_sec;
 		l1_page_table.entries[l1_index].l2_page_table_ref.l2_page_table_address =
@@ -642,6 +642,13 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 			l1_page_table.entries[l1_index].l2_page_table_ref.non_sec =
 				perms_attrs.non_sec;
 		}
+
+		if (l1_page_table.entries[l1_index].l2_page_table_ref.domain !=
+		    perms_attrs.domain) {
+			l1_page_table.entries[l1_index].l2_page_table_ref.domain =
+				perms_attrs.domain;
+		}
+
 	} else if (l1_page_table.entries[l1_index].undefined.reserved != 0) {
 		/*
 		 * The matching L1 PT entry currently holds a 1 MB section entry
@@ -739,6 +746,40 @@ static void arm_mmu_l2_unmap_page(uint32_t va)
 	arm_mmu_dec_l2_table_entries(l2_page_table);
 }
 
+static void arm_mmu_map_region(const struct arm_mmu_region *region)
+{
+	uint32_t pa       = (uint32_t)region->base_pa;
+	uint32_t va       = (uint32_t)region->base_va;
+	uint32_t rem_size = (uint32_t)region->size;
+	uint32_t attrs    = region->attrs;
+	struct arm_mmu_perms_attrs perms_attrs;
+
+	perms_attrs = arm_mmu_convert_attr_flags(attrs);
+
+	while (rem_size > 0) {
+		if (rem_size >= MB(1) &&
+		    (pa & 0xFFFFF) == 0 &&
+		    (va & 0xFFFFF) == 0 &&
+		    pa == va &&
+		    (attrs & MATTR_MAY_MAP_L1_SECTION)) {
+			arm_mmu_l1_map_section(va, pa, perms_attrs);
+			rem_size -= MB(1);
+			va += MB(1);
+			pa += MB(1);
+		} else {
+			arm_mmu_l2_map_page(va, pa, perms_attrs);
+			rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
+			va += KB(4);
+			pa += KB(4);
+		}
+	}
+}
+
+void __weak z_arm_mmu_extra_regions(arm_mmu_region_func_t region_func)
+{
+	ARG_UNUSED(region_func);
+}
+
 /**
  * @brief MMU boot-time initialization function
  * Initializes the MMU at boot time. Sets up the page tables and
@@ -831,6 +872,11 @@ int z_arm_mmu_init(void)
 			}
 		}
 	}
+	/* 
+	 * Set up the user-defined extra memory regions after pre-defined 
+	 * regions in case of overwrite scenarios 
+	 */
+	z_arm_mmu_extra_regions(arm_mmu_map_region);
 
 	/* Clear TTBR1 */
 	__asm__ volatile("mcr p15, 0, %0, c2, c0, 1" : : "r"(reg_val));
