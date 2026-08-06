@@ -25,6 +25,7 @@ tests:
     integration_platforms:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
+      - max32690evkit/max32690/m4
     platform_exclude: litex_vexriscv
     harness: console
     harness_config:
