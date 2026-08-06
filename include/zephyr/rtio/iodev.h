@@ -40,6 +40,25 @@ struct rtio_iodev_api {
 	 * @param iodev_sqe Submission queue entry
 	 */
 	void (*submit)(struct rtio_iodev_sqe *iodev_sqe);
+
+	/**
+	 * @brief Attempt to actively cancel a previously submitted entry
+	 *
+	 * Optional. When non-NULL, this is invoked when @p iodev_sqe is being
+	 * canceled, giving the iodev a chance to abort work it still owns (e.g.
+	 * remove a not-yet-started entry from an internal queue, or stop an
+	 * in-flight transfer). If the iodev still owned the entry and removed it,
+	 * the iodev is responsible for completing it (typically
+	 * rtio_iodev_sqe_err() with -ECANCELED). If the entry is not (or no longer)
+	 * owned by the iodev, this must be a no-op.
+	 *
+	 * A NULL hook means cancellation is best-effort: the RTIO_SQE_CANCELED flag
+	 * still stops chain continuation and re-queueing, but an entry already
+	 * queued or in flight runs to its natural completion.
+	 *
+	 * @param iodev_sqe Submission queue entry being canceled
+	 */
+	void (*cancel)(struct rtio_iodev_sqe *iodev_sqe);
 };
 
 /**

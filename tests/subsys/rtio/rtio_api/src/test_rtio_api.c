@@ -328,11 +328,11 @@ static void test_rtio_simple_cancel_(struct rtio *r)
 {
 	struct rtio_sqe sqe[SQE_POOL_SIZE];
 	struct rtio_cqe cqe;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 
 	rtio_sqe_prep_nop(sqe, (struct rtio_iodev *)&iodev_test_simple, NULL);
 	rtio_sqe_copy_in_get_handles(r, sqe, &handle, 1);
-	rtio_sqe_cancel(handle);
+	rtio_sqe_cancel(r, handle);
 	TC_PRINT("Submitting 1 to RTIO\n");
 	rtio_submit(r, 0);
 
@@ -359,11 +359,127 @@ ZTEST_USER(rtio_api, test_rtio_simple_cancel)
 	}
 }
 
+static void test_rtio_cancel_completed_(struct rtio *r)
+{
+	struct rtio_sqe sqe;
+	struct rtio_cqe cqe;
+	rtio_sqe_handle_t handle;
+
+	/* Submit a single nop and let it run to completion, recycling its slot. */
+	rtio_sqe_prep_nop(&sqe, (struct rtio_iodev *)&iodev_test_simple, NULL);
+	zassert_ok(rtio_sqe_copy_in_get_handles(r, &sqe, &handle, 1));
+	rtio_submit(r, 1);
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_ok(cqe.result, "Result should be ok");
+
+	/* Cancelling a stale handle to a completed/recycled slot must be a safe
+	 * no-op rather than dereferencing a dangling chain.
+	 */
+	zassert_ok(rtio_sqe_cancel(r, handle),
+		   "Cancel of a completed sqe should be a no-op");
+}
+
+ZTEST(rtio_api, test_rtio_cancel_completed)
+{
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_cancel_completed_(&r_simple);
+	}
+}
+
+ZTEST_USER(rtio_api, test_rtio_cancel_completed_user)
+{
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_cancel_completed_(&r_simple);
+	}
+}
+
+/* Exercises the identity primitive directly (rtio_sqe_handle /
+ * rtio_iodev_sqe_from_handle), which PR-later cancel-by-handle builds on.
+ */
+static void test_rtio_sqe_handle_identity_(struct rtio *r)
+{
+	struct rtio_sqe *sqe = rtio_sqe_acquire(r);
+
+	zassert_not_null(sqe, "Expected to acquire an sqe");
+
+	rtio_sqe_handle_t handle = rtio_sqe_handle(r, sqe);
+	struct rtio_iodev_sqe *resolved = rtio_iodev_sqe_from_handle(r, handle);
+
+	zassert_not_null(resolved, "A live handle should resolve");
+	zassert_equal_ptr(&resolved->sqe, sqe, "Handle should resolve to the same sqe");
+
+	/* A mismatched generation must be rejected. */
+	zassert_is_null(rtio_iodev_sqe_from_handle(r, handle ^ 1),
+			"Stale generation must not resolve");
+
+	/* An out-of-range block index must be rejected. */
+	zassert_is_null(rtio_iodev_sqe_from_handle(r, (rtio_sqe_handle_t)0xffff0000),
+			"Out-of-range handle must not resolve");
+
+	rtio_sqe_drop_all(r);
+
+	/* Once dropped (freed), the previously valid handle is stale. */
+	zassert_is_null(rtio_iodev_sqe_from_handle(r, handle),
+			"Handle to a freed slot must not resolve");
+}
+
+/* Kernel-only: rtio_sqe_handle() / rtio_iodev_sqe_from_handle() are inline
+ * primitives that touch the SQE pool directly. User code never calls them (it
+ * obtains handles through the rtio_sqe_copy_in_get_handles() syscall, exercised
+ * by the *_user cancel tests), so there is no meaningful user-mode variant.
+ */
+ZTEST(rtio_api, test_rtio_sqe_handle_identity)
+{
+	test_rtio_sqe_handle_identity_(&r_simple);
+}
+
+/* Prove the generation counter (not just ALLOCD) rejects a handle whose pool
+ * slot has been freed and reallocated to a *new* occupant.
+ */
+static void test_rtio_sqe_handle_generation_(struct rtio *r)
+{
+	struct rtio_sqe *sqes[SQE_POOL_SIZE];
+	rtio_sqe_handle_t handles[SQE_POOL_SIZE];
+
+	/* Fill the pool and capture a handle for every slot. */
+	for (int i = 0; i < SQE_POOL_SIZE; i++) {
+		sqes[i] = rtio_sqe_acquire(r);
+		zassert_not_null(sqes[i], "Expected to acquire an sqe");
+		handles[i] = rtio_sqe_handle(r, sqes[i]);
+		zassert_equal_ptr(&rtio_iodev_sqe_from_handle(r, handles[i])->sqe, sqes[i],
+				  "Live handle should resolve to its sqe");
+	}
+
+	/* Free everything (bumps each slot's generation) then refill completely, so
+	 * every slot is allocated again (ALLOCD set) one generation newer.
+	 */
+	rtio_sqe_drop_all(r);
+	for (int i = 0; i < SQE_POOL_SIZE; i++) {
+		zassert_not_null(rtio_sqe_acquire(r), "Expected to reacquire an sqe");
+	}
+
+	/* Every old handle now targets a live slot (so ALLOCD alone would accept it)
+	 * but with a stale generation, so it must be rejected by the generation check.
+	 */
+	for (int i = 0; i < SQE_POOL_SIZE; i++) {
+		zassert_is_null(rtio_iodev_sqe_from_handle(r, handles[i]),
+				"Stale-generation handle to a reallocated slot must not resolve");
+	}
+
+	rtio_sqe_drop_all(r);
+}
+
+/* Kernel-only for the same reason as test_rtio_sqe_handle_identity. */
+ZTEST(rtio_api, test_rtio_sqe_handle_generation)
+{
+	test_rtio_sqe_handle_generation_(&r_simple);
+}
+
 static void test_rtio_chain_cancel_(struct rtio *r)
 {
 	struct rtio_sqe sqe[SQE_POOL_SIZE];
 	struct rtio_cqe cqe;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 
 	/* Prepare the chain */
 	rtio_sqe_prep_nop(&sqe[0], (struct rtio_iodev *)&iodev_test_simple, NULL);
@@ -372,7 +488,7 @@ static void test_rtio_chain_cancel_(struct rtio *r)
 
 	/* Copy the chain */
 	rtio_sqe_copy_in_get_handles(r, sqe, &handle, 2);
-	rtio_sqe_cancel(handle);
+	rtio_sqe_cancel(r, handle);
 	k_msleep(20);
 	rtio_submit(r, 0);
 
@@ -434,7 +550,7 @@ static void test_rtio_transaction_cancel_(struct rtio *r)
 {
 	struct rtio_sqe sqe[SQE_POOL_SIZE];
 	struct rtio_cqe cqe;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 
 	/* Prepare the chain */
 	rtio_sqe_prep_nop(&sqe[0], (struct rtio_iodev *)&iodev_test_simple, NULL);
@@ -443,7 +559,7 @@ static void test_rtio_transaction_cancel_(struct rtio *r)
 
 	/* Copy the chain */
 	rtio_sqe_copy_in_get_handles(r, sqe, &handle, 2);
-	rtio_sqe_cancel(handle);
+	rtio_sqe_cancel(r, handle);
 	TC_PRINT("Submitting 2 to RTIO\n");
 	rtio_submit(r, 0);
 
@@ -475,7 +591,7 @@ static inline void test_rtio_simple_multishot_(struct rtio *r, int idx)
 	int res;
 	struct rtio_sqe sqe;
 	struct rtio_cqe cqe;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 
 	for (int i = 0; i < MEM_BLK_SIZE; ++i) {
 		mempool_data[i] = i + idx;
@@ -516,8 +632,8 @@ static inline void test_rtio_simple_multishot_(struct rtio *r, int idx)
 	rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
 	rtio_release_buffer(r, buffer, buffer_len);
 
-	TC_PRINT("Canceling %p\n", handle);
-	rtio_sqe_cancel(handle);
+	TC_PRINT("Canceling 0x%08x\n", handle);
+	rtio_sqe_cancel(r, handle);
 	/* Flush any pending CQEs */
 	while (rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)) != 0) {
 		rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
@@ -537,7 +653,7 @@ ZTEST(rtio_api, test_rtio_multishot_are_not_resubmitted_when_failed)
 	int res;
 	struct rtio_sqe sqe;
 	struct rtio_cqe cqe;
-	struct rtio_sqe *handle;
+	rtio_sqe_handle_t handle;
 	struct rtio *r = &r_simple;
 	uint8_t *buffer = NULL;
 	uint32_t buffer_len = 0;
@@ -746,6 +862,325 @@ ZTEST(rtio_api, test_rtio_delay)
 		cqe = rtio_cqe_consume(r);
 		zassert_is_null(cqe, "There should not be a cqe since next delay has not expired");
 	}
+}
+
+#define RTIO_DELAY_TIMING_ELEMS 6
+
+RTIO_DEFINE(r_delay_timing, RTIO_DELAY_TIMING_ELEMS, RTIO_DELAY_TIMING_ELEMS);
+
+/**
+ * @brief Interlaced short/long delays expire in sorted order, at or after their tick
+ *
+ * Delays are submitted out of expiration order (shorter and longer durations
+ * interlaced). They must complete in ascending-delay order (proving the timeout
+ * iodev reorders them) and each must be observed at or after its scheduled tick
+ * (proving the shared timeout is armed no earlier than the nearest deadline).
+ */
+ZTEST(rtio_api, test_rtio_delay_reorder_timing)
+{
+	struct rtio *r = &r_delay_timing;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe cqe;
+
+	/* Interlaced short/long delays, submitted out of expiration order. */
+	const uint32_t delay_ms[RTIO_DELAY_TIMING_ELEMS] = {60, 10, 50, 20, 40, 30};
+	/* Ids sorted by delay: the order completions must arrive in. */
+	const size_t expected_order[RTIO_DELAY_TIMING_ELEMS] = {1, 3, 5, 4, 2, 0};
+	int64_t start = k_uptime_ticks();
+	int64_t scheduled_tick[RTIO_DELAY_TIMING_ELEMS];
+
+	for (size_t i = 0; i < RTIO_DELAY_TIMING_ELEMS; i++) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe, "Expected a valid sqe");
+		rtio_sqe_prep_delay(sqe, K_MSEC(delay_ms[i]), (void *)i);
+		/* Lower bound on the expiration tick (the kernel arms no earlier). */
+		scheduled_tick[i] = start + (int64_t)k_ms_to_ticks_floor64(delay_ms[i]);
+	}
+
+	zassert_ok(rtio_submit(r, 0), "Submit should succeed");
+
+	for (size_t n = 0; n < RTIO_DELAY_TIMING_ELEMS; n++) {
+		int got = rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER);
+		int64_t now = k_uptime_ticks();
+		size_t id = (size_t)(cqe.userdata);
+
+		zassert_equal(1, got, "Expected to consume a completion");
+		zassert_ok(cqe.result, "Delay completion should be ok");
+		zassert_equal(expected_order[n], id,
+			      "Delays expired out of order at %zu: got id %zu, expected %zu",
+			      n, id, expected_order[n]);
+		zassert_true(now >= scheduled_tick[id],
+			     "Delay id %zu completed before its scheduled tick "
+			     "(now %lld < scheduled %lld)",
+			     id, (long long)now, (long long)scheduled_tick[id]);
+	}
+
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
+		      "No further completions expected");
+}
+
+#define RTIO_DELAY_CANCEL_ELEMS 4
+
+RTIO_DEFINE(r_delay_cancel, RTIO_DELAY_CANCEL_ELEMS, RTIO_DELAY_CANCEL_ELEMS);
+
+/**
+ * @brief Cancellation actively removes pending delays from the timeout iodev
+ *
+ * An interlaced subset of pending delays is canceled after being dispatched to
+ * the timeout iodev. Via the iodev .cancel hook the canceled delays are removed
+ * from the sorted queue and freed immediately (not left to fire), producing no
+ * completion. Non-canceled delays still complete normally.
+ */
+ZTEST(rtio_api, test_rtio_delay_cancel)
+{
+	struct rtio *r = &r_delay_cancel;
+	struct rtio_sqe *sqe;
+	rtio_sqe_handle_t handle[RTIO_DELAY_CANCEL_ELEMS];
+	struct rtio_cqe cqe;
+
+	const uint32_t delay_ms[RTIO_DELAY_CANCEL_ELEMS] = {20, 30, 40, 50};
+	/* Cancel an interlaced subset of the pending delays. */
+	const bool canceled[RTIO_DELAY_CANCEL_ELEMS] = {false, true, true, false};
+	size_t expected_completions = 0;
+
+	for (size_t i = 0; i < RTIO_DELAY_CANCEL_ELEMS; i++) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe, "Expected a valid sqe");
+		rtio_sqe_prep_delay(sqe, K_MSEC(delay_ms[i]), (void *)i);
+		handle[i] = rtio_sqe_handle(r, sqe);
+		if (!canceled[i]) {
+			expected_completions++;
+		}
+	}
+
+	zassert_ok(rtio_submit(r, 0), "Submit should succeed");
+
+	/* Cancel the selected delays while they are pending in the timeout iodev's
+	 * sorted queue (dispatched, not yet expired). No simulated time has passed
+	 * since submit, so no timer can have fired yet.
+	 */
+	for (size_t i = 0; i < RTIO_DELAY_CANCEL_ELEMS; i++) {
+		if (canceled[i]) {
+			zassert_ok(rtio_sqe_cancel(r, handle[i]), "Cancel should succeed");
+		}
+	}
+
+	/* Active cancellation frees the canceled delays right away rather than
+	 * leaving them to fire, so the pool reflects the freed slots before any
+	 * simulated time passes.
+	 */
+	zassert_equal(rtio_sqe_acquirable(r), RTIO_DELAY_CANCEL_ELEMS - expected_completions,
+		      "Canceled delays should be removed and freed immediately");
+
+	/* Wait past the longest delay so every timer has fired. */
+	k_sleep(K_MSEC(delay_ms[RTIO_DELAY_CANCEL_ELEMS - 1] + 20));
+
+	size_t completions = 0;
+
+	while (rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT) == 1) {
+		size_t id = (size_t)(cqe.userdata);
+
+		zassert_false(canceled[id],
+			      "Canceled delay id %zu should not produce a completion", id);
+		zassert_ok(cqe.result, "Non-canceled delay should complete ok");
+		completions++;
+	}
+
+	zassert_equal(expected_completions, completions,
+		      "Expected %zu completions, got %zu", expected_completions, completions);
+}
+
+RTIO_DEFINE(r_partial_chain, 2, 2);
+
+/**
+ * @brief Cancelling the head of a partially-completed chain is a safe no-op
+ *
+ * The head (a nop) completes and is recycled before the tail (a delay) fires, so
+ * the head handle returned by copy_in is now stale. Cancelling it must be a
+ * satisfied no-op and must not disturb the still-pending tail, which runs to
+ * completion.
+ */
+ZTEST(rtio_api, test_rtio_chain_cancel_partial)
+{
+	struct rtio *r = &r_partial_chain;
+	struct rtio_sqe sqe[2];
+	rtio_sqe_handle_t handle;
+	struct rtio_cqe cqe;
+
+	rtio_sqe_prep_nop(&sqe[0], (struct rtio_iodev *)&iodev_test_simple, (void *)0);
+	sqe[0].flags |= RTIO_SQE_CHAINED;
+	rtio_sqe_prep_delay(&sqe[1], K_MSEC(30), (void *)1);
+
+	zassert_ok(rtio_sqe_copy_in_get_handles(r, sqe, &handle, 2));
+	zassert_ok(rtio_submit(r, 0));
+
+	/* Head nop completes first and is recycled; the tail delay is now pending. */
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_equal_ptr((void *)0, cqe.userdata, "Head nop should complete first");
+
+	/* The head handle is stale: cancel is a no-op and leaves the tail alone. */
+	zassert_ok(rtio_sqe_cancel(r, handle), "Stale head cancel should be a no-op");
+
+	/* The still-pending tail delay runs to completion, unaffected. */
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(70)));
+	zassert_equal_ptr((void *)1, cqe.userdata, "Tail delay should still complete");
+	zassert_ok(cqe.result, "Tail delay should complete ok");
+}
+
+RTIO_DEFINE(r_op_cancel, 4, 4);
+
+/* RTIO_OP_CANCEL against a live submission: the pending delay is removed and the
+ * cancel op itself completes successfully.
+ */
+static void test_rtio_op_cancel_pending_(struct rtio *r)
+{
+	struct rtio_sqe sqe;
+	struct rtio_cqe cqe;
+	rtio_sqe_handle_t handle;
+
+	/* Submit a pending delay and capture its handle (copy-in path so the test
+	 * is valid from user mode, which cannot touch the kernel SQE pool directly).
+	 */
+	rtio_sqe_prep_delay(&sqe, K_MSEC(100), (void *)0xdead);
+	zassert_ok(rtio_sqe_copy_in_get_handles(r, &sqe, &handle, 1));
+	zassert_ok(rtio_submit(r, 0), "Submit should succeed");
+
+	/* Submit a cancel op targeting the still-pending delay. */
+	rtio_sqe_prep_cancel(&sqe, handle, (void *)0xca7);
+	zassert_ok(rtio_sqe_copy_in(r, &sqe, 1));
+	zassert_ok(rtio_submit(r, 0), "Submit cancel should succeed");
+
+	/* The cancel op always completes successfully. */
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_equal_ptr((void *)0xca7, cqe.userdata, "Cancel op should complete");
+	zassert_ok(cqe.result, "Cancel op should complete ok");
+
+	/* The canceled delay produces no completion, even past its deadline. */
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(120)),
+		      "Canceled delay should produce no completion");
+
+	/* Both the canceled submission and the cancel op slots are freed.
+	 * rtio_sqe_acquirable() reads the pool directly, which a user thread cannot
+	 * do, so this internal check is kernel-only.
+	 */
+	if (!k_is_user_context()) {
+		zassert_equal(rtio_sqe_acquirable(r), 4, "Both submissions should be freed");
+	}
+}
+
+ZTEST(rtio_api, test_rtio_op_cancel_pending)
+{
+	test_rtio_op_cancel_pending_(&r_op_cancel);
+}
+
+ZTEST_USER(rtio_api, test_rtio_op_cancel_pending_user)
+{
+	test_rtio_op_cancel_pending_(&r_op_cancel);
+}
+
+/* RTIO_OP_CANCEL against a stale handle (submission already completed and
+ * recycled): the resolve fails, the cancel is a no-op, and the cancel op still
+ * completes.
+ */
+static void test_rtio_op_cancel_stale_(struct rtio *r)
+{
+	struct rtio_sqe sqe;
+	struct rtio_cqe cqe;
+	rtio_sqe_handle_t handle;
+
+	/* Submit a nop and capture its handle (copy-in path, user-mode safe), then
+	 * let it complete so its pool slot is recycled and the handle goes stale.
+	 */
+	rtio_sqe_prep_nop(&sqe, (struct rtio_iodev *)&iodev_test_simple, (void *)0x1);
+	zassert_ok(rtio_sqe_copy_in_get_handles(r, &sqe, &handle, 1));
+	zassert_ok(rtio_submit(r, 1), "Submit should succeed");
+
+	/* Drain the submission's completion so its slot is recycled. */
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_equal_ptr((void *)0x1, cqe.userdata, "Nop submission should complete");
+
+	/* The handle is now stale; a cancel op against it is a no-op that still completes. */
+	rtio_sqe_prep_cancel(&sqe, handle, (void *)0x2);
+	zassert_ok(rtio_sqe_copy_in(r, &sqe, 1));
+	zassert_ok(rtio_submit(r, 0), "Submit cancel should succeed");
+
+	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER));
+	zassert_equal_ptr((void *)0x2, cqe.userdata, "Stale cancel should still complete");
+	zassert_ok(cqe.result, "Stale cancel should complete ok");
+}
+
+ZTEST(rtio_api, test_rtio_op_cancel_stale)
+{
+	test_rtio_op_cancel_stale_(&r_op_cancel);
+}
+
+ZTEST_USER(rtio_api, test_rtio_op_cancel_stale_user)
+{
+	test_rtio_op_cancel_stale_(&r_op_cancel);
+}
+
+#define RTIO_DELAY_CHAIN_ELEMS 4
+
+RTIO_DEFINE(r_delay_chain, RTIO_DELAY_CHAIN_ELEMS, RTIO_DELAY_CHAIN_ELEMS);
+
+/**
+ * @brief Chained delays complete sequentially, exercising timeout-handler reentrancy
+ *
+ * The delays are chained, so each link is only dispatched to the timeout iodev once
+ * its predecessor completes. Because a delay completes from the shared timeout
+ * handler (the system clock announce context), dispatching the next link re-enters
+ * rtio_timeout_iodev_submit() from within rtio_tq_expired(). This proves completions
+ * are delivered with the instance lock released -- completing under the lock would
+ * recursively deadlock on it -- and that chained delays are timed cumulatively and
+ * complete strictly in submission order.
+ */
+ZTEST(rtio_api, test_rtio_delay_chained)
+{
+	struct rtio *r = &r_delay_chain;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe cqe;
+
+	const uint32_t delay_ms[RTIO_DELAY_CHAIN_ELEMS] = {20, 20, 20, 20};
+	int64_t start = k_uptime_ticks();
+	int64_t earliest_tick[RTIO_DELAY_CHAIN_ELEMS];
+	int64_t cumulative_ms = 0;
+
+	for (size_t i = 0; i < RTIO_DELAY_CHAIN_ELEMS; i++) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe, "Expected a valid sqe");
+		rtio_sqe_prep_delay(sqe, K_MSEC(delay_ms[i]), (void *)i);
+		if (i < RTIO_DELAY_CHAIN_ELEMS - 1) {
+			sqe->flags |= RTIO_SQE_CHAINED;
+		}
+		/* A chained link only begins timing after its predecessor completes, so
+		 * expirations are cumulative rather than concurrent.
+		 */
+		cumulative_ms += delay_ms[i];
+		earliest_tick[i] = start + (int64_t)k_ms_to_ticks_floor64(cumulative_ms);
+	}
+
+	zassert_ok(rtio_submit(r, 0), "Submit should succeed");
+
+	/* A chain completes strictly in submission order; each link is submitted from
+	 * within the previous link's completion (timeout-handler reentrancy).
+	 */
+	for (size_t i = 0; i < RTIO_DELAY_CHAIN_ELEMS; i++) {
+		int got = rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER);
+		int64_t now = k_uptime_ticks();
+		size_t id = (size_t)(cqe.userdata);
+
+		zassert_equal(1, got, "Expected to consume a completion");
+		zassert_ok(cqe.result, "Chained delay completion should be ok");
+		zassert_equal(i, id,
+			      "Chained delays completed out of order at %zu: got id %zu", i, id);
+		zassert_true(now >= earliest_tick[id],
+			     "Chained delay id %zu completed before its cumulative tick "
+			     "(now %lld < earliest %lld)",
+			     id, (long long)now, (long long)earliest_tick[id]);
+	}
+
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
+		      "No further completions expected");
 }
 #endif /* CONFIG_RTIO_OP_DELAY */
 
@@ -1204,6 +1639,7 @@ static void rtio_api_before(void *a)
 	k_mem_domain_add_thread(&rtio_domain, k_current_get());
 	rtio_access_grant(&r_simple, k_current_get());
 	rtio_access_grant(&r_syscall, k_current_get());
+	rtio_access_grant(&r_op_cancel, k_current_get());
 	k_object_access_grant(&iodev_test_simple, k_current_get());
 	k_object_access_grant(&iodev_test_syscall, k_current_get());
 #endif

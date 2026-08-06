@@ -7,8 +7,6 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/kernel.h>
 
-#include "rtio_sched.h"
-
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rtio_executor, CONFIG_RTIO_LOG_LEVEL);
 
@@ -40,14 +38,27 @@ static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe, int last_result)
 		sqe->callback.callback(iodev_sqe->r, sqe, last_result, sqe->callback.arg0);
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 		break;
-#ifdef CONFIG_RTIO_OP_DELAY
-	case RTIO_OP_DELAY:
-		rtio_sched_alarm(iodev_sqe, sqe->delay.timeout);
-		break;
-#endif /* CONFIG_RTIO_OP_DELAY */
 	case RTIO_OP_AWAIT:
 		rtio_iodev_sqe_await_signal(iodev_sqe, rtio_executor_sqe_signaled, NULL);
 		break;
+	case RTIO_OP_CANCEL: {
+		struct rtio_iodev_sqe *submission =
+			rtio_iodev_sqe_from_handle(iodev_sqe->r, sqe->cancel.submission);
+
+		/* A stale/invalid handle means the submission already completed and was
+		 * recycled: nothing to cancel. A live submission is flagged canceled
+		 * and, if its iodev supports it, actively aborted.
+		 */
+		if (submission != NULL) {
+			rtio_iodev_sqe_cancel(submission);
+		}
+
+		/* The cancel op never blocks and never depends on the submission it
+		 * cancels, so it always completes successfully.
+		 */
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+		break;
+	}
 	default:
 		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
 	}
@@ -166,16 +177,16 @@ static inline void rtio_executor_handle_multishot(struct rtio_iodev_sqe *iodev_s
 	 * re-submitting, rebooting or anything else.
 	 */
 	if (is_canceled || !is_ok) {
-		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->sqe.rx.buf,
-			iodev_sqe->sqe.rx.buf_len);
-		rtio_release_buffer(r, iodev_sqe->sqe.rx.buf, iodev_sqe->sqe.rx.buf_len);
+		LOG_DBG("Releasing memory @%p size=%u", (void *)iodev_sqe->rt.rx_bind.buf,
+			iodev_sqe->rt.rx_bind.buf_len);
+		rtio_release_buffer(r, iodev_sqe->rt.rx_bind.buf, iodev_sqe->rt.rx_bind.buf_len);
 		rtio_sqe_pool_free(r->sqe_pool, iodev_sqe);
 	} else {
 		/* Request was not canceled, put the SQE back in the queue */
 		if (iodev_sqe->sqe.op == RTIO_OP_RX && uses_mempool) {
 			/* Reset the buffer info so the next request can get a new one */
-			iodev_sqe->sqe.rx.buf = NULL;
-			iodev_sqe->sqe.rx.buf_len = 0;
+			iodev_sqe->rt.rx_bind.buf = NULL;
+			iodev_sqe->rt.rx_bind.buf_len = 0;
 		}
 
 		mpsc_push(&r->sq, &iodev_sqe->q);

@@ -3427,10 +3427,10 @@
 
 /**
  * @brief Trace RTIO Submission Queue Event Cancel API
- * @param sqe Submission Queue Event
+ * @param handle Handle of the submission being cancelled
  */
 #ifndef sys_port_trace_rtio_sqe_cancel
-#define sys_port_trace_rtio_sqe_cancel(sqe)
+#define sys_port_trace_rtio_sqe_cancel(handle)
 #endif
 
 /**

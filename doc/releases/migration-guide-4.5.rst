@@ -1287,6 +1287,45 @@ Random
 
 * ``CONFIG_CS_CTR_DRBG_PERSONALIZATION`` has been removed. It did not have any effect.
 
+RTIO
+====
+
+* The opaque cancellation handle changed type from ``struct rtio_sqe *`` to the validatable,
+  generation-checked :c:type:`rtio_sqe_handle_t`. Unlike a raw pointer, a handle can be checked
+  (bounds + generation) before the target is touched, so cancelling a submission that has already
+  completed and had its pool slot recycled is now a safe no-op instead of a dangling dereference.
+
+* :c:func:`rtio_sqe_cancel` now takes the owning RTIO context in addition to the handle, so it can
+  resolve the handle against the context's SQE pool:
+
+  .. code-block:: c
+
+     /* Before */
+     int rtio_sqe_cancel(struct rtio_sqe *sqe);
+
+     /* After */
+     int rtio_sqe_cancel(struct rtio *r, rtio_sqe_handle_t handle);
+
+* The handle out-parameter of :c:func:`rtio_sqe_copy_in_get_handles`, :c:func:`sensor_stream` and
+  :c:func:`adc_stream` changed from ``struct rtio_sqe **`` to ``rtio_sqe_handle_t *``. Variables that
+  hold such a handle (including the ``stream_sqe`` field of :c:struct:`sensing_sensor`) must be
+  retyped to :c:type:`rtio_sqe_handle_t`. Use :c:macro:`RTIO_SQE_HANDLE_INVALID` as the "no
+  submission" sentinel where code previously compared a handle pointer against ``NULL``.
+
+* Most applications can migrate automatically with the provided Coccinelle semantic patch, which
+  retypes handle variables and rewrites ``rtio_sqe_cancel(handle)`` into
+  ``rtio_sqe_cancel(ctx, handle)`` (binding ``ctx`` from the producing
+  ``rtio_sqe_copy_in_get_handles`` / ``sensor_stream`` / ``adc_stream`` call):
+
+  .. code-block:: shell
+
+     spatch --sp-file scripts/coccinelle/rtio_sqe_handle.cocci --dir . --in-place
+
+  or, using the wrapper, ``MODE=patch scripts/coccicheck``. Handles stored in a struct field or
+  cancelled in a different function than they were produced (as in the sensing subsystem), and
+  handles kept in arrays, fall outside what the patch can bind and must be updated by hand;
+  ``MODE=report`` flags the remaining ``rtio_sqe_cancel()`` call sites.
+
 Tools
 *****
 

@@ -558,8 +558,8 @@ static inline void z_impl_rtio_sqe_signal(struct rtio_sqe *sqe)
 {
 	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
 
-	if (!atomic_cas(&iodev_sqe->sqe.await.ok, 0, 1)) {
-		iodev_sqe->sqe.await.callback(iodev_sqe, iodev_sqe->sqe.await.userdata);
+	if (!atomic_cas(&iodev_sqe->rt.await.ok, 0, 1)) {
+		iodev_sqe->rt.await.callback(iodev_sqe, iodev_sqe->rt.await.userdata);
 	}
 }
 
@@ -580,10 +580,10 @@ static inline uint32_t rtio_cqe_compute_flags(struct rtio_iodev_sqe *iodev_sqe)
 		unsigned int blk_index = 0;
 		unsigned int blk_count = 0;
 
-		if (iodev_sqe->sqe.rx.buf) {
-			blk_index = (iodev_sqe->sqe.rx.buf - mem_pool->buffer) >>
+		if (iodev_sqe->rt.rx_bind.buf) {
+			blk_index = (iodev_sqe->rt.rx_bind.buf - mem_pool->buffer) >>
 				    mem_pool->info.blk_sz_shift;
-			blk_count = iodev_sqe->sqe.rx.buf_len >> mem_pool->info.blk_sz_shift;
+			blk_count = iodev_sqe->rt.rx_bind.buf_len >> mem_pool->info.blk_sz_shift;
 		}
 		flags = RTIO_CQE_FLAG_PREP_MEMPOOL(blk_index, blk_count);
 	}
@@ -738,28 +738,32 @@ static inline void rtio_cqe_submit(struct rtio *r, int result, void *userdata, u
  * @return 0 if @p buf and @p buf_len were successfully filled
  * @return -ENOMEM Not enough memory for @p min_buf_len
  */
-static inline int rtio_sqe_rx_buf(const struct rtio_iodev_sqe *iodev_sqe, uint32_t min_buf_len,
+static inline int rtio_sqe_rx_buf(struct rtio_iodev_sqe *iodev_sqe, uint32_t min_buf_len,
 				  uint32_t max_buf_len, uint8_t **buf, uint32_t *buf_len)
 {
-	struct rtio_sqe *sqe = (struct rtio_sqe *)&iodev_sqe->sqe;
+	const struct rtio_sqe *sqe = &iodev_sqe->sqe;
 
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
 	if (sqe->op == RTIO_OP_RX && sqe->flags & RTIO_SQE_MEMPOOL_BUFFER) {
 		struct rtio *r = iodev_sqe->r;
 
-		if (sqe->rx.buf != NULL) {
-			if (sqe->rx.buf_len < min_buf_len) {
+		/* The mempool buffer is bound at runtime and kept in the wrapper so
+		 * the submission description itself stays immutable.
+		 */
+		if (iodev_sqe->rt.rx_bind.buf != NULL) {
+			if (iodev_sqe->rt.rx_bind.buf_len < min_buf_len) {
 				return -ENOMEM;
 			}
-			*buf = sqe->rx.buf;
-			*buf_len = sqe->rx.buf_len;
+			*buf = iodev_sqe->rt.rx_bind.buf;
+			*buf_len = iodev_sqe->rt.rx_bind.buf_len;
 			return 0;
 		}
 
 		int rc = rtio_block_pool_alloc(r, min_buf_len, max_buf_len, buf, buf_len);
+
 		if (rc == 0) {
-			sqe->rx.buf = *buf;
-			sqe->rx.buf_len = *buf_len;
+			iodev_sqe->rt.rx_bind.buf = *buf;
+			iodev_sqe->rt.rx_bind.buf_len = *buf_len;
 			return 0;
 		}
 
@@ -826,6 +830,13 @@ static inline void rtio_access_grant(struct rtio *r, struct k_thread *t)
 #ifdef CONFIG_RTIO_CONSUME_SEM
 	k_object_access_grant(r->consume_sem, t);
 #endif
+
+#ifdef CONFIG_RTIO_OP_DELAY
+	/* Delay submissions are dispatched to the shared timeout iodev, so a thread
+	 * allowed to use this context must also be able to reference it.
+	 */
+	k_object_access_grant(&rtio_timeout_iodev, t);
+#endif
 }
 
 
@@ -846,6 +857,90 @@ static inline void rtio_access_revoke(struct rtio *r, struct k_thread *t)
 #ifdef CONFIG_RTIO_CONSUME_SEM
 	k_object_access_revoke(r->consume_sem, t);
 #endif
+
+#ifdef CONFIG_RTIO_OP_DELAY
+	k_object_access_revoke(&rtio_timeout_iodev, t);
+#endif
+}
+
+/**
+ * @brief Capture an opaque, validatable handle for a live submission
+ *
+ * The handle encodes the entry's pool block index and current generation. It can
+ * later be resolved with rtio_iodev_sqe_from_handle(), which rejects the handle if
+ * the entry has since completed and been recycled. This is the identity primitive
+ * used for cancellation instead of a raw, un-validatable @ref rtio_sqe pointer.
+ *
+ * @param[in] r   RTIO context that owns @p sqe
+ * @param[in] sqe A submission acquired from @p r
+ * @return An opaque handle for @p sqe
+ */
+static inline rtio_sqe_handle_t rtio_sqe_handle(const struct rtio *r, const struct rtio_sqe *sqe)
+{
+	const struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
+	uint32_t blk_index = (uint32_t)(iodev_sqe - r->sqe_pool->pool);
+	uint32_t gen = (uint32_t)(atomic_get(&iodev_sqe->status) & RTIO_SQE_GEN_MASK);
+
+	return (blk_index << 16) | gen;
+}
+
+/**
+ * @brief Resolve a handle to a live submission, validating identity
+ *
+ * Bounds-checks the block index against the context's pool, then verifies the
+ * slot is still allocated and its generation matches the handle. A garbage,
+ * out-of-range, or stale (completed/recycled) handle resolves to NULL without
+ * dereferencing any freed memory.
+ *
+ * @param[in] r      RTIO context that produced the handle
+ * @param[in] handle Handle previously returned by rtio_sqe_handle()
+ * @retval iodev_sqe The live submission the handle refers to
+ * @retval NULL      The handle is out of range, unallocated, or stale
+ */
+static inline struct rtio_iodev_sqe *rtio_iodev_sqe_from_handle(struct rtio *r,
+								rtio_sqe_handle_t handle)
+{
+	uint32_t blk_index = handle >> 16;
+	uint32_t gen = handle & RTIO_SQE_GEN_MASK;
+
+	if (blk_index >= r->sqe_pool->pool_size) {
+		return NULL;
+	}
+
+	struct rtio_iodev_sqe *iodev_sqe = &r->sqe_pool->pool[blk_index];
+	atomic_val_t status = atomic_get(&iodev_sqe->status);
+
+	if ((status & RTIO_SQE_ALLOCD) == 0 || (uint32_t)(status & RTIO_SQE_GEN_MASK) != gen) {
+		return NULL;
+	}
+
+	return iodev_sqe;
+}
+
+/**
+ * @brief Cancel a live submission and its chain (internal core)
+ *
+ * Flags @p iodev_sqe and its linked chain canceled, then lets the head's iodev
+ * actively abort if it implements the .cancel hook. The caller must have
+ * validated that @p iodev_sqe is live (allocated). Only the head is ever
+ * dispatched to an iodev at a time, so cascading the rest is left to the
+ * executor, which requires the flag to already be set on each member. The hook
+ * may complete and free @p iodev_sqe, so it must not be touched afterwards.
+ */
+static inline void rtio_iodev_sqe_cancel(struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct rtio_iodev_sqe *curr = iodev_sqe;
+
+	do {
+		curr->sqe.flags |= RTIO_SQE_CANCELED;
+		curr = rtio_iodev_sqe_next(curr);
+	} while (curr != NULL);
+
+	const struct rtio_iodev *iodev = iodev_sqe->sqe.iodev;
+
+	if (iodev != NULL && iodev->api->cancel != NULL) {
+		iodev->api->cancel(iodev_sqe);
+	}
 }
 
 /**
@@ -854,21 +949,34 @@ static inline void rtio_access_revoke(struct rtio *r, struct k_thread *t)
  * If possible (not currently executing), cancel an SQE and generate a failure with -ECANCELED
  * result.
  *
- * @param[in] sqe The SQE to cancel
- * @return 0 if the SQE was flagged for cancellation
+ * The submission is identified by an opaque @ref rtio_sqe_handle_t previously
+ * captured from @p r (e.g. via rtio_sqe_copy_in_get_handles()). If the submission
+ * has already completed and its pool slot been recycled, the handle no longer
+ * resolves and the cancel is a satisfied no-op: the outstanding request is
+ * already gone. Because the handle is validated (bounds + generation) before any
+ * chain is dereferenced, a stale or garbage handle cannot cause a dangling access.
+ *
+ * @param[in] r      RTIO context that produced @p handle
+ * @param[in] handle Handle of the SQE to cancel
+ * @return 0 if the SQE was flagged for cancellation (or had already completed)
  * @return <0 on error
  */
-__syscall int rtio_sqe_cancel(struct rtio_sqe *sqe);
+__syscall int rtio_sqe_cancel(struct rtio *r, rtio_sqe_handle_t handle);
 
-static inline int z_impl_rtio_sqe_cancel(struct rtio_sqe *sqe)
+static inline int z_impl_rtio_sqe_cancel(struct rtio *r, rtio_sqe_handle_t handle)
 {
-	SYS_PORT_TRACING_FUNC(rtio, sqe_cancel, sqe);
-	struct rtio_iodev_sqe *iodev_sqe = CONTAINER_OF(sqe, struct rtio_iodev_sqe, sqe);
+	SYS_PORT_TRACING_FUNC(rtio, sqe_cancel, handle);
 
-	do {
-		iodev_sqe->sqe.flags |= RTIO_SQE_CANCELED;
-		iodev_sqe = rtio_iodev_sqe_next(iodev_sqe);
-	} while (iodev_sqe != NULL);
+	/* If the handle no longer resolves the target already completed and was
+	 * recycled; treat cancel as satisfied rather than walking a stale chain.
+	 */
+	struct rtio_iodev_sqe *iodev_sqe = rtio_iodev_sqe_from_handle(r, handle);
+
+	if (iodev_sqe == NULL) {
+		return 0;
+	}
+
+	rtio_iodev_sqe_cancel(iodev_sqe);
 
 	return 0;
 }
@@ -881,7 +989,7 @@ static inline int z_impl_rtio_sqe_cancel(struct rtio_sqe *sqe)
  *
  * @param[in]  r RTIO context
  * @param[in]  sqes Pointer to an array of SQEs
- * @param[out] handle Optional pointer to @ref rtio_sqe pointer to store the handle of the
+ * @param[out] handle Optional pointer to a @ref rtio_sqe_handle_t to store the handle of the
  *             first generated SQE. Use NULL to ignore.
  * @param[in]  sqe_count Count of sqes in array
  *
@@ -889,10 +997,10 @@ static inline int z_impl_rtio_sqe_cancel(struct rtio_sqe *sqe)
  * @retval -ENOMEM not enough room in the queue
  */
 __syscall int rtio_sqe_copy_in_get_handles(struct rtio *r, const struct rtio_sqe *sqes,
-					   struct rtio_sqe **handle, size_t sqe_count);
+					   rtio_sqe_handle_t *handle, size_t sqe_count);
 
 static inline int z_impl_rtio_sqe_copy_in_get_handles(struct rtio *r, const struct rtio_sqe *sqes,
-						      struct rtio_sqe **handle,
+						      rtio_sqe_handle_t *handle,
 						      size_t sqe_count)
 {
 	struct rtio_sqe *sqe;
@@ -906,7 +1014,7 @@ static inline int z_impl_rtio_sqe_copy_in_get_handles(struct rtio *r, const stru
 		sqe = rtio_sqe_acquire(r);
 		__ASSERT_NO_MSG(sqe != NULL);
 		if (handle != NULL && i == 0) {
-			*handle = sqe;
+			*handle = rtio_sqe_handle(r, sqe);
 		}
 		*sqe = sqes[i];
 	}

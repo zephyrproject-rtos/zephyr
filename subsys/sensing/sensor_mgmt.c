@@ -100,7 +100,7 @@ static int set_arbitrate_interval(struct sensing_sensor *sensor, uint32_t interv
 
 	if (sensor->interval) {
 		if (config->is_streaming) {
-			rtio_sqe_cancel(sensor->stream_sqe);
+			rtio_sqe_cancel(&sensing_rtio_ctx, sensor->stream_sqe);
 		} else {
 			k_timer_stop(&sensor->timer);
 		}
