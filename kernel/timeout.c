@@ -26,6 +26,20 @@ static struct k_spinlock timeout_lock;
 /* Ticks left to process in the currently-executing sys_clock_announce() */
 static int announce_remaining;
 
+/*
+ * The timeout whose handler is currently executing, or NULL. It is set
+ * under timeout_lock right before sys_clock_announce_locked() drops the lock
+ * to invoke a handler and cleared once the handler returns. The single
+ * announcer invariant (only one CPU runs the dispatch loop at a time) means a
+ * single global pointer is sufficient to track the in-flight handler.
+ *
+ * This lets a canceller detect the window where a timeout has been popped from
+ * the queue but its handler has not yet run (or is running) and wait for it to
+ * complete before freeing or reusing the timeout's storage. See
+ * z_timeout_is_inflight().
+ */
+static struct _timeout *inflight_timeout;
+
 static struct _timeout *first(void)
 {
 	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list);
@@ -166,6 +180,17 @@ int z_abort_timeout(struct _timeout *to)
 	return ret;
 }
 
+bool z_timeout_is_inflight(const struct _timeout *to)
+{
+	bool ret = false;
+
+	K_SPINLOCK(&timeout_lock) {
+		ret = (inflight_timeout == to);
+	}
+
+	return ret;
+}
+
 /* must be locked */
 static k_ticks_t timeout_rem(const struct _timeout *timeout)
 {
@@ -247,10 +272,12 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 		t->dticks = 0;
 		remove_timeout(t);
 		t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
+		inflight_timeout = t;
 
 		k_spin_unlock(&timeout_lock, key);
 		t->fn(t);
 		key = k_spin_lock(&timeout_lock);
+		inflight_timeout = NULL;
 		announce_remaining -= dt;
 	}
 

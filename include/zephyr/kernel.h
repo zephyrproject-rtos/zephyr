@@ -2112,6 +2112,18 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 	return timer->user_data;
 }
 
+/**
+ * @brief Stop a dynamically allocated timer before free
+ *
+ * If a timer object is dynamically allocated, it needs to be stopped
+ * before associated resources are released.
+ *
+ * @param timer Address of the timer.
+ * @retval 0 on success
+ * @retval -EAGAIN when object is still in use
+ */
+int k_timer_cleanup(struct k_timer *timer);
+
 /** @} */
 
 /**

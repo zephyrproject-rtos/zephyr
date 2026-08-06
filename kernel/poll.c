@@ -595,18 +595,31 @@ static void triggered_work_handler(struct k_work *work)
 	twork->real_handler(work);
 }
 
+extern int z_work_submit_to_queue(struct k_work_q *queue,
+			 struct k_work *work);
+
 static void triggered_work_expiration_handler(struct _timeout *timeout)
 {
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	if (z_is_timeout_handler_canceled(timeout)) {
+		/*
+		 * The timeout was canceled by a thread on another CPU
+		 * or another ISR. Bail.
+		 */
+		k_spin_unlock(&lock, key);
+		return;
+	}
+
 	struct k_work_poll *twork =
 		CONTAINER_OF(timeout, struct k_work_poll, timeout);
 
 	twork->poller.is_polling = false;
 	twork->poll_result = -EAGAIN;
-	k_work_submit_to_queue(twork->workq, &twork->work);
-}
+	z_work_submit_to_queue(twork->workq, &twork->work);
 
-extern int z_work_submit_to_queue(struct k_work_q *queue,
-			 struct k_work *work);
+	k_spin_unlock(&lock, key);
+}
 
 static int signal_triggered_work(struct k_poll_event *event, uint32_t status)
 {
@@ -630,8 +643,24 @@ static int triggered_work_cancel(struct k_work_poll *work,
 {
 	/* Check if the work waits for event. */
 	if (work->poller.is_polling && work->poller.mode != MODE_NONE) {
-		/* Remove timeout associated with the work. */
+		/* Remove timeout associated with the work. If the handler is
+		 * already in flight this flags it to bail (dticks ABORTED),
+		 * but does not wait for it.
+		 */
 		z_abort_timeout(&work->timeout);
+
+		/* Then wait for any in-flight handler to actually complete
+		 * before we proceed. The handler still has a pending
+		 * dereference of work->timeout / work->poller, so returning
+		 * (and letting the caller free `work`, or re-arming the same
+		 * `work` for a new poll) while it is about to run would race
+		 * that access. Dropping the lock lets the blocked handler take
+		 * it, observe the abort, and return.
+		 */
+		while (z_timeout_is_inflight(&work->timeout)) {
+			k_spin_unlock(&lock, key);
+			key = k_spin_lock(&lock);
+		}
 
 		/*
 		 * Prevent work execution if event arrives while we will be
