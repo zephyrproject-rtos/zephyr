@@ -1399,6 +1399,11 @@ Architectures
   replacing their previous hand-rolled ``UNMAPPED`` MPU region table entry with
   identical runtime behavior.
 
+* Both :c:func:`arch_mem_map` and :c:func:`arch_mem_unmap` have changed fom
+  returning ``void`` to ``int`` so that the caller can react to error code when
+  assertion is disabled. If assertion is enabled, it retains mostly the previous
+  behavior of halting the system.
+
 Video
 =====
 
