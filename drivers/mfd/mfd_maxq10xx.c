@@ -40,9 +40,6 @@ static int mfd_maxq10xx_init(const struct device *dev)
 	return 0;
 }
 
-BUILD_ASSERT(CONFIG_SPI_INIT_PRIORITY < CONFIG_MFD_MAXQ10XX_INIT_PRIORITY,
-	     "SPI driver must be initialized before maxq10xx mfd driver");
-
 #define DEFINE_MAXQ10XX_MFD(_num)                                                                  \
 	static const struct mfd_maxq10xx_config mfd_maxq10xx_config##_num = {                      \
 		.spi = SPI_DT_SPEC_INST_GET(_num, SPI_WORD_SET(8)),                                \
@@ -52,6 +49,6 @@ BUILD_ASSERT(CONFIG_SPI_INIT_PRIORITY < CONFIG_MFD_MAXQ10XX_INIT_PRIORITY,
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(_num, mfd_maxq10xx_init, NULL, &mfd_maxq10xx_data##_num,             \
 			      &mfd_maxq10xx_config##_num, POST_KERNEL,                             \
-			      CONFIG_MFD_MAXQ10XX_INIT_PRIORITY, NULL);
+			      CONFIG_MFD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_MAXQ10XX_MFD);

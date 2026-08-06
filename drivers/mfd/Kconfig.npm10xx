@@ -8,10 +8,3 @@ config MFD_NPM10XX
 	select I2C
 	help
 	  Enable the Nordic nPM10xx PMIC multi-function device driver
-
-config MFD_NPM10XX_INIT_PRIORITY
-	int "nPM10xx MFD initialization priority"
-	default MFD_INIT_PRIORITY
-	depends on MFD_NPM10XX
-	help
-	  Multi-function device initialization priority for nPM10xx
