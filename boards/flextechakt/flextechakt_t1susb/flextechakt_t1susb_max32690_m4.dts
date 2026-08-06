@@ -1,0 +1,286 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32690-m4.dtsi>
+#include <adi/max32/max32690-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/gpio/digilent-pmod.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	model = "FlextechAKT T1S to USB Board";
+	compatible = "flextechakt,t1susb";
+
+	chosen {
+		zephyr,code-partition = &code_partition;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &m4_sram;
+		zephyr,flash = &flash0;
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led_1;
+		led2 = &yellow_led;
+		led3 = &green_led_2;
+		sw0 = &user_btn;
+		sw1 = &boot_btn;
+		eeprom-0 = &eeprom;
+	};
+
+	soc {
+		/*
+		 * Concatenate SRAM0 through SRAM7 for the M4
+		 */
+		m4_sram: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_M(1)>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: red-led {
+			gpios = <&gpio1 12 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		green_led_1: green-led-1 {
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+
+		yellow_led: yellow-led {
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			label = "LED3";
+		};
+
+		green_led_2: green-led-2 {
+			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+			label = "LED4";
+		};
+
+		rgb_red: rgb-red {
+			gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
+			label = "RGB_RED";
+		};
+
+		rgb_green: rgb-green {
+			gpios = <&gpio1 21 GPIO_ACTIVE_LOW>;
+			label = "RGB_GREEN";
+		};
+
+		rgb_blue: rgb-blue {
+			gpios = <&gpio1 18 GPIO_ACTIVE_LOW>;
+			label = "RGB_BLUE";
+		};
+	};
+
+	rgb_led: rgb-led {
+		compatible = "leds-group-multicolor";
+		leds = <&rgb_red>, <&rgb_green>, <&rgb_blue>;
+		color-mapping = <LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		user_btn: user-btn {
+			gpios = <&gpio1 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "USER";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		boot_btn: boot-btn {
+			gpios = <&gpio2 23 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	pmod_header: pmod-header {
+		compatible = "digilent,pmod";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffff80>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <PMOD_I2C_INT 0 &gpio2 24 0>,
+			   <PMOD_I2C_RESET 0 &gpio2 25 0>,
+			   <PMOD_I2C_SCL 0 &gpio1 8 0>,
+			   <PMOD_I2C_SDA 0 &gpio1 7 0>,
+			   <PMOD_IO(5) 0 &gpio3 0 0>,
+			   <PMOD_IO(6) 0 &gpio3 1 0>,
+			   <PMOD_IO(7) 0 &gpio3 4 0>,
+			   <PMOD_IO(8) 0 &gpio0 10 0>;
+	};
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&clk_ibro {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&rtc_counter {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&uart0 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&uart0a_tx_p2_12 &uart0a_rx_p2_11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&spi0b_ss1_p2_26 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0b_miso_p2_27 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0b_mosi_p2_28 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0b_sck_p2_29 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0b_mosi_p2_28 &spi0b_miso_p2_27
+		     &spi0b_sck_p2_29 &spi0b_ss1_p2_26>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	dmas = <&dma0 1 MAX32_DMA_SLOT_SPI0_TX>, <&dma0 2 MAX32_DMA_SLOT_SPI0_RX>;
+	dma-names = "tx", "rx";
+
+	adin1140: adin1140@1 {
+		compatible = "adi,adin1140";
+		reg = <0x1>;
+		spi-max-frequency = <DT_FREQ_M(25)>;
+		int-gpios = <&gpio0 8 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
+
+		local-mac-address = [00 e0 22 fe da d0];
+		phy-handle = <&adin1140_phy>;
+		status = "okay";
+
+		mdio {
+			compatible = "adi,adin1140-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			adin1140_phy: ethernet-phy@0 {
+				reg = <0x0>;
+				compatible = "adi,adin1140-phy";
+				plca-enable;
+				plca-node-id = <0>;
+				plca-node-count = <5>;
+				plca-burst-count = <0>;
+				plca-burst-timer = <0x60>;
+				plca-to-timer = <0x20>;
+			};
+		};
+	};
+};
+
+&i2c0a_sda_p2_7 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&i2c0a_scl_p2_8 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+qwiic_i2c: &i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0a_sda_p2_7 &i2c0a_scl_p2_8>;
+	pinctrl-names = "default";
+
+	eeprom: eeprom@50 {
+		compatible = "microchip,24lc256", "atmel,at24";
+		reg = <0x50>;
+		size = <DT_SIZE_K(32)>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <5>;
+	};
+};
+
+&i2c2c_sda_p1_7 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&i2c2c_scl_p1_8 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+pmod_i2c: &i2c2 {
+	pinctrl-0 = <&i2c2c_sda_p1_7 &i2c2c_scl_p1_8>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-m4";
+			reg = <0x0 DT_SIZE_K(3008)>;
+		};
+
+		storage_partition: partition@2f0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x2f0000 DT_SIZE_K(64)>;
+		};
+	};
+};
