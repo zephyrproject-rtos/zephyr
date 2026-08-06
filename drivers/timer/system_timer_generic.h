@@ -23,7 +23,7 @@
  *
  * A driver, before the include, provides:
  *
- *   - The backend feature macro:
+ *   - Exactly one backend feature macro:
  *       TIMER_CORE_BACKEND_COMPARE_ORDERED free-running counter plus an absolute
  *                                compare register whose match is an ordered
  *                                comparison: the interrupt fires once the counter
@@ -32,6 +32,13 @@
  *                                riscv_machine, ...). The usable range is half
  *                                the counter width, which is what
  *                                TIMER_CORE_ALARM_MAX_CYCLES bounds.
+ *       TIMER_CORE_BACKEND_COMPARE_EXACT   the same hardware shape, but the match
+ *                                is on equality only: a target written after the
+ *                                counter has passed it is missed for a whole
+ *                                counter period (hpet, mips_cp0, ...). The core
+ *                                writes such a comparator through a verify loop
+ *                                (see timer_core_set_compare()), so the
+ *                                driver needs no minimum-delay floor of its own.
  *
  * If arming requires the timer interrupt to be enabled, enable it inside the
  * arming primitive rather than tracking it separately. The core does not model
@@ -54,7 +61,9 @@
  *                is the driver's: a 64-bit comparator takes uint64_t; a 32-bit
  *                one may take uint32_t (or mask a uint64_t argument) to drop the
  *                value to its comparator width. A plain register write is all
- *                that is wanted here: the hardware handles a past target itself.
+ *                that is wanted here: with COMPARE_ORDERED the hardware handles a
+ *                past target itself, and with COMPARE_EXACT the core wraps this
+ *                in the verify loop that deals with it.
  *
  * Optional knobs (sensible defaults provided):
  *
@@ -87,6 +96,9 @@
  *     decided by something else: a compare or reload register narrower than the counter,
  *     or a separate device. It is a statement about the hardware, so it carries no
  *     safety margin; the core derives its own from TIMER_CORE_COUNTER_WIDTH.
+ *   - TIMER_CORE_ALARM_LEAD_CYCLES (COMPARE_EXACT): cycles a compare must be ahead of
+ *     the counter for the match to be caught. Defaults to 1. Raise it for hardware
+ *     that carries the write into the counter's clock domain first.
  * The driver completes with its IRQ handler (a hardware acknowledge, then
  * timer_core_announce()), its init (connect the IRQ, then timer_core_init()),
  * sys_clock_cycle_get_32() and, on SMP, an smp_timer_init() that primes the
@@ -100,8 +112,10 @@
 #include <zephyr/sys_clock.h>
 #include <zephyr/sys/util.h>
 
-#if !defined(TIMER_CORE_BACKEND_COMPARE_ORDERED)
-#error "define the backend: TIMER_CORE_BACKEND_COMPARE_ORDERED"
+#if (defined(TIMER_CORE_BACKEND_COMPARE_ORDERED) + \
+	defined(TIMER_CORE_BACKEND_COMPARE_EXACT)) != 1
+#error "define exactly one backend: TIMER_CORE_BACKEND_COMPARE_ORDERED " \
+	"or TIMER_CORE_BACKEND_COMPARE_EXACT"
 #endif
 
 /*
@@ -286,6 +300,77 @@ static inline uint32_t timer_core_ticks_clamp(timer_core_ticks_t ticks)
 #endif
 static timer_core_ticks_t timer_core_last_elapsed;
 
+/* Arm the comparator at an absolute cycle count, whatever the flavour of the
+ * hardware match, so the callers below never branch on it.
+ */
+#if defined(TIMER_CORE_BACKEND_COMPARE_ORDERED)
+static inline void timer_core_set_compare(uint64_t target)
+{
+	/* Ordered match: a target already behind the counter fires at once. */
+	timer_driver_set_compare(target);
+}
+#elif defined(TIMER_CORE_BACKEND_COMPARE_EXACT)
+/* Cycles a compare must be ahead of the counter for the match to be caught.
+ * One by default: a comparator written while the counter is still below it
+ * fires. Hardware that has to carry the write into the counter's clock domain
+ * first misses a match that close, and states the lead that costs it.
+ */
+#ifndef TIMER_CORE_ALARM_LEAD_CYCLES
+#define TIMER_CORE_ALARM_LEAD_CYCLES 1
+#endif
+
+/* True when @p target is no longer far enough ahead of @p now to be caught,
+ * evaluated in the counter's own width so a narrow counter wraps correctly.
+ */
+static inline bool timer_core_target_passed(uint64_t target, uint64_t now)
+{
+	timer_core_cycles_t ahead = ((timer_core_cycles_t)target - (timer_core_cycles_t)now) &
+				    (timer_core_cycles_t)TIMER_CORE_COUNTER_MASK;
+
+	/* "Is the target still ahead" is the signed comparison, so the split is
+	 * at half the counter width and nothing else: a property of the counter,
+	 * not of the arming range or of the announce cadence. The core never arms
+	 * past TIMER_CORE_COUNTER_SAFE_SPAN, which is at most this, so a legitimate
+	 * future target is never mistaken for a wrapped one.
+	 */
+	return (ahead < TIMER_CORE_ALARM_LEAD_CYCLES) ||
+	       (ahead > (timer_core_cycles_t)(TIMER_CORE_COUNTER_MASK >> 1));
+}
+
+/* Arm an equality-match comparator so the interrupt cannot be lost.
+ *
+ * Such hardware fires only while the counter equals the comparator, so a value
+ * written after the counter has gone past it is missed until the counter comes
+ * all the way round. Write it, then read the counter back: if the target is no
+ * longer far enough ahead, push it out by TIMER_CORE_ALARM_LEAD_CYCLES and try
+ * again, doubling the push so a counter that keeps overtaking us still
+ * terminates. The bump costs accuracy only in the case where the deadline was
+ * already unmeetable.
+ *
+ * This is what lets an exact-match driver drop the minimum-delay floor it would
+ * otherwise need: the floor exists to keep the requested deadline far enough
+ * ahead to be caught, and the loop below establishes that directly, at the cost
+ * of one extra counter read on the deadlines that were already close.
+ */
+static inline void timer_core_set_compare(uint64_t target)
+{
+	timer_driver_set_compare(target);
+
+	timer_core_cycles_t now = timer_driver_cycle_get();
+
+	if (unlikely(timer_core_target_passed(target, now))) {
+		uint32_t bump = TIMER_CORE_ALARM_LEAD_CYCLES;
+
+		do {
+			target = now + bump;
+			bump *= 2;
+			timer_driver_set_compare(target);
+			now = timer_driver_cycle_get();
+		} while (timer_core_target_passed(target, now));
+	}
+}
+#endif
+
 /* Whole ticks elapsed since the last announce, from the current counter. */
 static inline timer_core_ticks_t timer_core_delta_ticks(void)
 {
@@ -326,7 +411,7 @@ static void timer_core_arm(uint32_t ticks)
 	if ((deadline - timer_core_last_cycle) > TIMER_CORE_MAX_UNANNOUNCED_CYCLES) {
 		deadline = timer_core_last_cycle + TIMER_CORE_MAX_UNANNOUNCED_CYCLES;
 	}
-	timer_driver_set_compare(deadline);
+	timer_core_set_compare(deadline);
 }
 
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
@@ -424,7 +509,7 @@ static inline void timer_core_rescale(uint32_t to_hz, uint32_t from_hz)
  */
 static inline void timer_core_smp_prime(void)
 {
-	timer_driver_set_compare(timer_core_last_cycle + TIMER_CORE_CYC_PER_TICK);
+	timer_core_set_compare(timer_core_last_cycle + TIMER_CORE_CYC_PER_TICK);
 }
 
 /* Seed the announce baseline from the current counter and arm the first tick.
