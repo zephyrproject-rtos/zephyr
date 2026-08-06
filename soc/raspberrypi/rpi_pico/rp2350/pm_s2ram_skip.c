@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <zephyr/arch/arm/irq.h>
 #include <zephyr/arch/common/pm_s2ram.h>
 #include <zephyr/linker/sections.h>
 
@@ -16,9 +17,6 @@
 
 #include <cmsis_core.h>
 #include <cortex_m/exception.h>
-
-
-extern void z_arm_interrupt_init(void);
 
 #define POWMAN_BASE_ADDR  0x40100000u
 #define POWMAN_SCRATCH0   (*(volatile uint32_t *)(POWMAN_BASE_ADDR + 0xb0u))

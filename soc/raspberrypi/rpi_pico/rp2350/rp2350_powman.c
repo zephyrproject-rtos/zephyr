@@ -15,6 +15,10 @@
 #include <hardware/platform_defs.h>
 #include <hardware/clocks.h>
 #include <hardware/regs/clocks.h>
+#include <hardware/regs/otp_data.h>
+
+#include <pico/bootrom.h>
+#include <boot/bootrom_constants.h>
 
 LOG_MODULE_REGISTER(rp2350_powman, CONFIG_SOC_LOG_LEVEL);
 
@@ -26,18 +30,41 @@ LOG_MODULE_REGISTER(rp2350_powman, CONFIG_SOC_LOG_LEVEL);
 /* Cached LPOSC frequency; 0 = not yet measured. */
 static uint32_t lposc_freq_hz;
 
+/* Factory-trimmed LPOSC frequency (Hz), read from OTP; 0 if unavailable.
+ * Cheaper than frequency_count_khz(), but reflects room-temperature
+ * manufacturing conditions rather than the current ones.
+ */
+static uint32_t rp2350_lposc_freq_from_otp(void)
+{
+	uint16_t otp_val = 0;
+	otp_cmd_t cmd = {.flags = OTP_DATA_LPOSC_CALIB_ROW | OTP_CMD_ECC_BITS};
+
+	if (rom_func_otp_access((uint8_t *)&otp_val, sizeof(otp_val), cmd) != BOOTROM_OK) {
+		return 0;
+	}
+
+	return otp_val;
+}
+
 void rp2350_powman_timer_init(void)
 {
 	if (lposc_freq_hz == 0) {
 		uint32_t khz = frequency_count_khz(CLOCKS_FC0_SRC_VALUE_LPOSC_CLKSRC);
 
-		if (khz == 0) {
-			LOG_ERR("LPOSC frequency measured as 0; using %u Hz nominal",
-				RP2350_LPOSC_NOMINAL_HZ);
-			lposc_freq_hz = RP2350_LPOSC_NOMINAL_HZ;
-		} else {
+		if (khz != 0) {
 			lposc_freq_hz = khz * 1000u;
 			LOG_INF("LPOSC calibrated: %u Hz (%u kHz)", lposc_freq_hz, khz);
+		} else {
+			lposc_freq_hz = rp2350_lposc_freq_from_otp();
+			if (lposc_freq_hz != 0) {
+				LOG_WRN("LPOSC frequency counter failed; using OTP "
+					"factory calibration: %u Hz", lposc_freq_hz);
+			} else {
+				LOG_ERR("LPOSC frequency measured as 0 and OTP calibration "
+					"unavailable; using %u Hz nominal",
+					RP2350_LPOSC_NOMINAL_HZ);
+				lposc_freq_hz = RP2350_LPOSC_NOMINAL_HZ;
+			}
 		}
 	}
 
@@ -67,7 +94,7 @@ void rp2350_powman_arm_alarm(uint32_t seconds)
 {
 	rp2350_powman_timer_init();
 
-	uint64_t wake_at_ms = powman_timer_get_ms() + ((uint64_t)seconds * 1000u);
+	uint64_t wake_at_ms = powman_timer_get_ms() + ((uint64_t)seconds * MSEC_PER_SEC);
 
 	powman_enable_alarm_wakeup_at_ms(wake_at_ms);
 }
@@ -122,9 +149,10 @@ void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 
 	lpm_enter_ms = powman_timer_get_ms();
 
-	/* POWMAN's alarm is millisecond-granular; round up so we never wake early. */
-	powman_enable_alarm_wakeup_at_ms(lpm_enter_ms +
-					  DIV_ROUND_UP(max_lpm_time_us, USEC_PER_MSEC));
+	/* POWMAN's alarm is millisecond-granular; round down so we never wake later
+	 * than max_lpm_time_us.
+	 */
+	powman_enable_alarm_wakeup_at_ms(lpm_enter_ms + (max_lpm_time_us / USEC_PER_MSEC));
 }
 
 uint64_t z_sys_clock_lpm_exit(void)
