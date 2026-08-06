@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
@@ -42,6 +43,19 @@ struct tach_xec_data {
 #define PIN_STS_TIMEOUT		20U
 #define TACH_CTRL_EDGES		(CONFIG_TACH_XEC_EDGES << \
 				 MCHP_TACH_CTRL_NUM_EDGES_POS)
+
+/*
+ * Width of the measurement window in half TACH periods. A TACH period is three
+ * edges and consecutive edge settings share endpoints, so the 2, 3, 5 and 9
+ * edge settings span 1/2, 1, 2 and 4 TACH periods respectively.
+ */
+#define TACH_HALF_PERIODS	(1U << CONFIG_TACH_XEC_EDGES)
+
+/*
+ * TACH periods the fan generates per revolution. A typical DC brushless fan
+ * emits a two period square wave per revolution.
+ */
+#define PULSES_PER_ROUND	2U
 
 static int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
@@ -74,11 +88,6 @@ static int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel c
 		return -EINVAL;
 	}
 
-	/* We interpret a fan stopped or jammed as 0 */
-	if (data->count == FAN_STOPPED) {
-		data->count = 0U;
-	}
-
 	return 0;
 }
 
@@ -87,20 +96,46 @@ static int tach_xec_channel_get(const struct device *dev,
 				struct sensor_value *val)
 {
 	struct tach_xec_data * const data = dev->data;
+	uint64_t numerator;
+	uint64_t denominator;
+	uint64_t rpm_micro;
+	uint16_t count;
 
 	if (chan != SENSOR_CHAN_RPM) {
 		return -ENOTSUP;
 	}
 
-	/* Convert the count per 100khz cycles to rpm */
-	if (data->count != FAN_STOPPED && data->count != 0U) {
-		val->val1 = (SEC_TO_MINUTE * COUNT_100KHZ_SEC)/data->count;
-		val->val2 = 0U;
-	} else {
-		val->val1 =  0U;
+	count = data->count;
+
+	/* A saturated count is a stopped fan; a zero count cannot be converted */
+	if ((count == FAN_STOPPED) || (count == 0U)) {
+		val->val1 = 0;
+		val->val2 = 0;
+
+		return 0;
 	}
 
-	val->val2 = 0U;
+	/*
+	 * The latched counter holds the number of 100 kHz clocks spanning the
+	 * programmed number of TACH edges, and one revolution spans
+	 * PULSES_PER_ROUND full TACH periods, so
+	 *
+	 *            60 * 100000 * TACH_HALF_PERIODS
+	 *   RPM = --------------------------------------
+	 *          2 * PULSES_PER_ROUND * latched_count
+	 *
+	 * The result is computed in micro-RPM so the fractional part can be
+	 * reported in val2 instead of being truncated away.
+	 */
+	numerator = (uint64_t)SEC_TO_MINUTE * COUNT_100KHZ_SEC * TACH_HALF_PERIODS *
+		    USEC_PER_SEC;
+	denominator = (uint64_t)PULSES_PER_ROUND * count * 2U;
+
+	/* Round to nearest rather than toward zero */
+	rpm_micro = (numerator + (denominator / 2U)) / denominator;
+
+	val->val1 = (int32_t)(rpm_micro / USEC_PER_SEC);
+	val->val2 = (int32_t)(rpm_micro % USEC_PER_SEC);
 
 	return 0;
 }
