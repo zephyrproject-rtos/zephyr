@@ -1,6 +1,3 @@
-# The Infineon PSOC™ Control C3M5 Evaluation Kit (KIT_PSC3M5_EVK)
-
-# Copyright (c) 2025 Cypress Semiconductor Corporation.
 # SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
 # SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
@@ -28,5 +25,8 @@ config UART_CONSOLE
 
 config SERIAL
 	default y
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
 
 endif # BOARD_KIT_PSC3M5_EVK
