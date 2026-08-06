@@ -80,7 +80,7 @@ void mfd_mc146818_ext_write(const struct device *dev, uint8_t offset, uint8_t va
 	static struct mfd_mc146818_data data##inst;				\
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &data##inst, NULL,		\
 			      POST_KERNEL,					\
-			      CONFIG_MFD_MOTOROLA_MC146818_INIT_PRIORITY,	\
+			      CONFIG_MFD_INIT_PRIORITY,	\
 			      NULL);						\
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_MC146818_DEFINE)
