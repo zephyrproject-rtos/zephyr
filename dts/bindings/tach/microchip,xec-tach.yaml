@@ -28,3 +28,27 @@ properties:
     required: true
     description: |
       TACH Power Clock Reset(PCR) peripheral index and bit position
+
+  tach-edges:
+    type: int
+    default: 5
+    enum:
+      - 2
+      - 3
+      - 5
+      - 9
+    description: |
+      Number of TACH edges the hardware counts 100 kHz clocks over. A TACH
+      period is three edges, so the measurement window is 1/2, 1, 2 or 4 TACH
+      periods for 2, 3, 5 or 9 edges respectively. A wider window is more
+      accurate but takes longer to latch and saturates at a higher fan speed.
+      The default of 5 edges matches a fan producing two TACH periods per
+      revolution and is the hardware reset value's typical use.
+
+  pulses-per-round:
+    type: int
+    default: 2
+    description: |
+      Number of TACH periods the fan generates per revolution. Typical DC
+      brushless fans emit a 50% duty cycle, two-period square wave per
+      revolution, hence the default of 2.
