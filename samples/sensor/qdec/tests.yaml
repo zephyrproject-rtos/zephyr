@@ -19,19 +19,19 @@ tests:
         - "Position = (.*) degrees"
 
   sample.sensor.eqdc_trigger:
-    platform_allow:
-      - frdm_mcxa153
-      - frdm_mcxa156
-      - frdm_mcxa266
-      - frdm_mcxa344
-      - frdm_mcxa346
-      - frdm_mcxa366
+    filter: >
+      dt_alias_exists("qdec0") and dt_alias_exists("qenca") and
+      dt_alias_exists("qencb") and CONFIG_EQDC_MCUX
     integration_platforms:
       - frdm_mcxa153
+    extra_configs:
+      - CONFIG_EQDC_MCUX_TRIGGER=y
     depends_on: gpio
     harness_config:
       type: multi_line
       ordered: true
+      fixture:
+        - qdec_gpio
       regex:
         - "Quadrature decoder sensor test"
         - "Quadrature encoder emulator enabled with (.*) ms period"
