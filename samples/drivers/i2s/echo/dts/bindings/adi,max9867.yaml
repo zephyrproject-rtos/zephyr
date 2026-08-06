@@ -1,9 +1,10 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # Copyright (c) 2025 Croxel Inc.
+# Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 # This binding has been added solely for the purpose of the overlay files used
-# in the drivers/i2s/output sample. That's why it is located in this sample source
+# in the drivers/i2s/echo sample. That's why it is located in this sample source
 # directory. It can be moved and made available more widely if the need arises.
 
 description: MAX9867 Audio CODEC
@@ -11,3 +12,10 @@ description: MAX9867 Audio CODEC
 compatible: "adi,max9867"
 
 include: i2c-device.yaml
+
+properties:
+  adi,use-line-in:
+    type: boolean
+    description: |
+      Route the stereo line inputs to the ADCs. If this property is absent,
+      the sample configures the digital microphone input instead.
