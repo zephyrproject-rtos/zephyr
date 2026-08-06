@@ -314,7 +314,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		interrupts = <39 0>;
-		clocks = <&clk_ctrl MCXW_CLOCK(0xe0, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+		clocks = <&clk_ctrl MCXW_CLOCK(0xcc, MCXW_CLK_IP_MUX_FRO_192M_DIV,
 					       MCXW_CLK_DIV_BY_16,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		status = "disabled";
@@ -327,7 +327,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		interrupts = <40 0>;
-		clocks = <&clk_ctrl MCXW_CLOCK(0xe4, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+		clocks = <&clk_ctrl MCXW_CLOCK(0xd0, MCXW_CLK_IP_MUX_FRO_192M_DIV,
 					       MCXW_CLK_DIV_BY_16,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		status = "disabled";
