@@ -305,7 +305,9 @@ static void zperf_udp_leave_mcast(int sock)
 	struct net_sockaddr *sa = net_sad(&addr);
 	net_socklen_t addr_len = sizeof(addr);
 
-	zsock_getsockname(sock, sa, &addr_len);
+	if (zsock_getsockname(sock, sa, &addr_len) < 0) {
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && addr.ss_family == NET_AF_INET) {
 		struct net_sockaddr_in *addr4 = net_sin(sa);
