@@ -434,35 +434,44 @@ static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps
 	return video_get_caps(config->sensor_dev, caps);
 }
 
+#define STM32_DCMI_MAX_FRAME_DROP    4
+/* Capture rates the DCMI frame control supports: every frame, every 2nd, every 4th */
+#define STM32_DCMI_NUM_CAPTURE_RATES 3
+
 static int video_stm32_dcmi_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
+	uint32_t capture_rate = BIT(fie->index % STM32_DCMI_NUM_CAPTURE_RATES);
+	struct video_frmival_enum sensor_fie = {
+		.index = fie->index / STM32_DCMI_NUM_CAPTURE_RATES,
+		.format = fie->format,
+	};
 	int ret;
 
-	ret = video_enum_frmival(config->sensor_dev, fie);
+	/*
+	 * Report each sensor interval once per capture rate: dropping every 2nd or 4th
+	 * frame multiplies the interval and its step, which one stepwise range with the
+	 * sensor step cannot express.
+	 */
+	ret = video_enum_frmival(config->sensor_dev, &sensor_fie);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* Adapt the interval in order to report the frame drop capabilities */
-	if (fie->type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
-		struct video_frmival discrete = fie->discrete;
-
-		fie->type = VIDEO_FRMIVAL_TYPE_STEPWISE;
-		fie->stepwise.max = discrete;
-		fie->stepwise.min.denominator = discrete.denominator;
-		fie->stepwise.min.numerator = discrete.numerator * 4;
-		fie->stepwise.step.denominator = discrete.denominator;
-		fie->stepwise.step.numerator = discrete.numerator * 2;
+	fie->type = sensor_fie.type;
+	if (sensor_fie.type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
+		fie->discrete = sensor_fie.discrete;
+		fie->discrete.numerator *= capture_rate;
 	} else {
-		fie->stepwise.min.numerator *= 4;
-		fie->stepwise.step.numerator *= 2;
+		fie->stepwise = sensor_fie.stepwise;
+		fie->stepwise.min.numerator *= capture_rate;
+		fie->stepwise.max.numerator *= capture_rate;
+		fie->stepwise.step.numerator *= capture_rate;
 	}
 
 	return 0;
 }
 
-#define STM32_DCMI_MAX_FRAME_DROP	4
 static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
