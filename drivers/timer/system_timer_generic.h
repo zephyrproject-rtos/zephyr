@@ -39,6 +39,11 @@
  *                                writes such a comparator through a verify loop
  *                                (see timer_core_set_compare()), so the
  *                                driver needs no minimum-delay floor of its own.
+ *       TIMER_CORE_BACKEND_RELOAD          a counter that fires after a relative
+ *                                delay (down-counters, compare-match-reset
+ *                                periodics). Assumed to auto-reload: on a
+ *                                non-tickless kernel it free-runs from the LOAD
+ *                                set at init and is not reprogrammed per tick.
  *
  * If arming requires the timer interrupt to be enabled, enable it inside the
  * arming primitive rather than tracking it separately. The core does not model
@@ -54,8 +59,8 @@
  *     what it reads to the declared width anyway, so returning the register's own type
  *     spares a 32-bit target the widening.
  *
- *   - the arming primitive:
- *       static inline void timer_driver_set_compare(uint32_t/uint64_t cycles)
+ *   - the arming primitive for the chosen backend:
+ *       COMPARE: static inline void timer_driver_set_compare(uint32_t/uint64_t cycles)
  *                Write the comparator so an interrupt fires when the counter
  *                reaches @p cycles, a full-width cycle count. The argument width
  *                is the driver's: a 64-bit comparator takes uint64_t; a 32-bit
@@ -64,6 +69,14 @@
  *                that is wanted here: with COMPARE_ORDERED the hardware handles a
  *                past target itself, and with COMPARE_EXACT the core wraps this
  *                in the verify loop that deals with it.
+ *       RELOAD:  static inline void timer_driver_set_reload(uint32_t/uint64_t cycles)
+ *                Fire an interrupt after @p cycles more cycles. The core has
+ *                already clamped @p cycles to [TIMER_CORE_ALARM_MIN_CYCLES,
+ *                TIMER_CORE_ALARM_MAX_CYCLES]. The argument width is the driver's:
+ *                uint32_t suits a counter whose TIMER_CORE_ALARM_MAX_CYCLES fits 32
+ *                bits (the usual case); a wider counter may take uint64_t and
+ *                raise TIMER_CORE_ALARM_MAX_CYCLES to match. The core does not narrow
+ *                the value, so the two must be kept coherent.
  *
  * Optional knobs (sensible defaults provided):
  *
@@ -96,6 +109,7 @@
  *     decided by something else: a compare or reload register narrower than the counter,
  *     or a separate device. It is a statement about the hardware, so it carries no
  *     safety margin; the core derives its own from TIMER_CORE_COUNTER_WIDTH.
+ *   - TIMER_CORE_ALARM_MIN_CYCLES (RELOAD): reload floor, in cycles.
  *   - TIMER_CORE_ALARM_LEAD_CYCLES (COMPARE_EXACT): cycles a compare must be ahead of
  *     the counter for the match to be caught. Defaults to 1. Raise it for hardware
  *     that carries the write into the counter's clock domain first.
@@ -113,9 +127,10 @@
 #include <zephyr/sys/util.h>
 
 #if (defined(TIMER_CORE_BACKEND_COMPARE_ORDERED) + \
-	defined(TIMER_CORE_BACKEND_COMPARE_EXACT)) != 1
-#error "define exactly one backend: TIMER_CORE_BACKEND_COMPARE_ORDERED " \
-	"or TIMER_CORE_BACKEND_COMPARE_EXACT"
+	defined(TIMER_CORE_BACKEND_COMPARE_EXACT) + \
+	defined(TIMER_CORE_BACKEND_RELOAD)) != 1
+#error "define exactly one backend: TIMER_CORE_BACKEND_COMPARE_ORDERED, " \
+	"TIMER_CORE_BACKEND_COMPARE_EXACT or TIMER_CORE_BACKEND_RELOAD"
 #endif
 
 /*
@@ -212,6 +227,13 @@ typedef uint64_t timer_core_cycles_t;
 #define TIMER_CORE_ALARM_MAX_CYCLES TIMER_CORE_COUNTER_MASK
 #endif
 
+/* Reload floor, in cycles (RELOAD only). A driver whose hardware needs a larger
+ * minimum programmable delay overrides it.
+ */
+#ifndef TIMER_CORE_ALARM_MIN_CYCLES
+#define TIMER_CORE_ALARM_MIN_CYCLES 1
+#endif
+
 /*
  * Widest span since the last announce whose masked delta the core can still
  * resolve, derived from the counter width alone.
@@ -299,6 +321,31 @@ static inline uint32_t timer_core_ticks_clamp(timer_core_ticks_t ticks)
 }
 #endif
 static timer_core_ticks_t timer_core_last_elapsed;
+
+#if defined(TIMER_CORE_BACKEND_RELOAD)
+/* A catch-up reload (floored at TIMER_CORE_ALARM_MIN_CYCLES because the deadline is
+ * already due, or because the un-announced span is about to overrun
+ * TIMER_CORE_MAX_UNANNOUNCED_CYCLES) is in flight. Programming a reload restarts the
+ * counter, so a stream of set_timeout() calls arriving faster than the floor
+ * would rewrite the reload before it can expire and postpone the announce
+ * indefinitely; while this is set, timer_core_arm() leaves the hardware alone
+ * so the pending fire gets through. Cleared by the announce.
+ */
+static bool timer_core_catchup;
+
+/* Tick-aligned deadline currently armed in the hardware, or UINT64_MAX when
+ * nothing is known to be armed (initially, and after each announce, which
+ * consumes the programmed deadline). timer_core_arm() reprograms only when the
+ * deadline actually moves. The kernel re-evaluates its earliest timeout on
+ * every add and abort, a timeslice reset being one of each, so back-to-back
+ * calls usually land on the same tick boundary. Rewriting a reload for those
+ * is not merely churn: it restarts the counter, so a sustained stream of
+ * rewrites keeps any period from ever completing and postpones the announce
+ * for the duration of the stream. A comparator needs none of this, since
+ * writing the same absolute value again changes nothing.
+ */
+static uint64_t timer_core_armed_deadline = UINT64_MAX;
+#endif
 
 /* Arm the comparator at an absolute cycle count, whatever the flavour of the
  * hardware match, so the callers below never branch on it.
@@ -400,6 +447,57 @@ static void timer_core_arm(uint32_t ticks)
 {
 	uint64_t deadline_tick = timer_core_last_tick + timer_core_last_elapsed + ticks;
 
+#if defined(TIMER_CORE_BACKEND_RELOAD)
+	if (deadline_tick == timer_core_armed_deadline) {
+		return;
+	}
+	timer_core_armed_deadline = deadline_tick;
+
+	/*
+	 * Relative reload: the cycles from the last announce to the tick-aligned
+	 * deadline, minus what has already elapsed since then. Both terms are in
+	 * the counter's cycle domain (the elapsed part masked to TIMER_CORE_COUNTER_WIDTH),
+	 * so this stays correct across a counter wrap, and a starved ISR (elapsed
+	 * past the deadline) yields a non-positive value pulled up to the floor.
+	 */
+	uint64_t want = ((uint64_t)timer_core_last_elapsed + ticks) * TIMER_CORE_CYC_PER_TICK;
+	timer_core_cycles_t done = timer_core_cycles_since(timer_core_last_cycle);
+	int64_t rel = (int64_t)(want - done);
+
+	/*
+	 * Clamp against the budget left before the baseline would be
+	 * TIMER_CORE_MAX_UNANNOUNCED_CYCLES behind, not against that span alone.
+	 * Re-arming restarts the counter, so without accounting `done` a stream of
+	 * set_timeout() calls with no intervening announce would push the fire point
+	 * out indefinitely and let `done` grow past TIMER_CORE_COUNTER_MASK, wrapping
+	 * the masked delta and silently losing the elapsed span. Once `done` reaches
+	 * the span the budget goes non-positive and the ALARM_MIN_CYCLES floor forces
+	 * a near-immediate fire, hence an announce that resets the baseline. This
+	 * keeps the same invariant the COMPARE path gets from clamping its absolute
+	 * deadline.
+	 */
+	if (rel > (int64_t)TIMER_CORE_MAX_UNANNOUNCED_CYCLES - (int64_t)done) {
+		rel = (int64_t)TIMER_CORE_MAX_UNANNOUNCED_CYCLES - (int64_t)done;
+	}
+	if (rel < (int64_t)TIMER_CORE_ALARM_MIN_CYCLES) {
+		/*
+		 * The announce is due (or overdue): fire as soon as the floor
+		 * allows. If a floored reload is already in flight, leave it
+		 * to expire rather than restart the counter, or a set_timeout()
+		 * stream arriving faster than the floor (e.g. timeslice resets
+		 * from a syscall-heavy thread) would push the fire point out
+		 * forever and freeze announced time for the storm's duration.
+		 * No incoming deadline can need to fire sooner than the floor
+		 * anyway.
+		 */
+		if (timer_core_catchup) {
+			return;
+		}
+		timer_core_catchup = true;
+		rel = TIMER_CORE_ALARM_MIN_CYCLES;
+	}
+	timer_driver_set_reload((uint64_t)rel);
+#else /* compare backends */
 	/*
 	 * Absolute, tick-aligned deadline. last_cycle is linear (its low
 	 * TIMER_CORE_COUNTER_WIDTH bits track the counter), and a narrow-register driver
@@ -412,6 +510,7 @@ static void timer_core_arm(uint32_t ticks)
 		deadline = timer_core_last_cycle + TIMER_CORE_MAX_UNANNOUNCED_CYCLES;
 	}
 	timer_core_set_compare(deadline);
+#endif
 }
 
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
@@ -453,11 +552,23 @@ static void timer_core_announce_from(k_spinlock_key_t key)
 	timer_core_last_cycle += (uint64_t)dticks * TIMER_CORE_CYC_PER_TICK;
 	timer_core_last_tick += dticks;
 	timer_core_last_elapsed = 0;
+#if defined(TIMER_CORE_BACKEND_RELOAD)
+	/* The programmed deadline is consumed (or obsolete): the kernel decides
+	 * the next one after the announce, and it must reach the hardware even
+	 * if it lands on the same tick.
+	 */
+	timer_core_armed_deadline = UINT64_MAX;
+	timer_core_catchup = false;
+#endif
 
+#if !defined(TIMER_CORE_BACKEND_RELOAD)
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Re-arm the comparator one tick out. */
+		/* Re-arm the comparator one tick out. A RELOAD counter reloads
+		 * itself from the LOAD set at init, so it needs nothing here.
+		 */
 		timer_core_arm(1);
 	}
+#endif
 
 	/* The baseline above moved by the whole delta, so it stays aligned with
 	 * the counter. Only what the kernel is told is clamped to the width of
@@ -509,7 +620,11 @@ static inline void timer_core_rescale(uint32_t to_hz, uint32_t from_hz)
  */
 static inline void timer_core_smp_prime(void)
 {
+#if defined(TIMER_CORE_BACKEND_RELOAD)
+	timer_driver_set_reload(TIMER_CORE_CYC_PER_TICK);
+#else
 	timer_core_set_compare(timer_core_last_cycle + TIMER_CORE_CYC_PER_TICK);
+#endif
 }
 
 /* Seed the announce baseline from the current counter and arm the first tick.
@@ -534,6 +649,17 @@ static inline void timer_core_init(void)
 	timer_core_last_cycle = timer_core_last_tick * TIMER_CORE_CYC_PER_TICK;
 	timer_core_last_elapsed = 0;
 
+#if defined(TIMER_CORE_BACKEND_RELOAD)
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/* A tickful RELOAD driver configures its hardware to auto-reload one
+		 * tick and is never reprogrammed (see timer_core_announce_from()), so the
+		 * driver owns the period. Arming here would instead program it to the
+		 * sub-tick remainder left after seeding the baseline, and that short
+		 * value would stick as the permanent period.
+		 */
+		return;
+	}
+#endif
 	timer_core_arm(1);
 }
 
