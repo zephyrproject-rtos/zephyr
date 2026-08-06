@@ -1508,6 +1508,18 @@ The following issues are addressed by this release:
 * :github:`114978` - drivers: adc: MCUX LPADC and MAX32 write samples past the end of the adc_sequence buffer
 * :github:`115025` - mgmt: mcumgr: transport: serial: Check for minimum size of data
 
+Mbed TLS / TF-PSA-Crypto
+************************
+
+Mbed TLS was updated to version 4.1.1/3.6.7, and TF-PSA-Crypto to version 1.1.1.
+They address a number of CVEs.
+
+Release notes can be found at:
+
+* https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-4.1.1
+* https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-3.6.7
+* https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.1
+
 .. _zephyr_4.4.1:
 
 Zephyr 4.4.1
