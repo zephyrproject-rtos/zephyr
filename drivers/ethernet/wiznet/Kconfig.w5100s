@@ -1,0 +1,11 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config ETH_W5100S
+	bool "W5100S Ethernet Controller"
+	default y
+	depends on DT_HAS_WIZNET_W5100S_ENABLED
+	select ETH_WIZNET
+	select SPI
+	help
+	  W5100S Stand-Alone Ethernet Controller with SPI interface.

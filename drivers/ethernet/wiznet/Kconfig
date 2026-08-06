@@ -6,7 +6,7 @@ config ETH_WIZNET
 	help
 	  Shared MACRAW core for the WIZnet stand-alone Ethernet controllers.
 
-if ETH_W5500 || ETH_W6100 || ETH_W6300
+if ETH_W5100S || ETH_W5500 || ETH_W6100 || ETH_W6300
 
 config ETH_WIZNET_RX_THREAD_STACK_SIZE
 	int "Stack size for internal incoming packet handler"
@@ -49,6 +49,7 @@ config ETH_WIZNET_POLL_PERIOD
 endif # any WIZnet driver
 
 # zephyr-keep-sorted-start
+source "drivers/ethernet/wiznet/Kconfig.w5100s"
 source "drivers/ethernet/wiznet/Kconfig.w5500"
 source "drivers/ethernet/wiznet/Kconfig.w6100"
 source "drivers/ethernet/wiznet/Kconfig.w6300"

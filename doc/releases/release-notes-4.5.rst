@@ -395,6 +395,11 @@ New Drivers
   * Analog Devices AD4190-8 and AD4195-8 Sigma-Delta ADCs
     (:dtcompatible:`adi,ad4190-8-adc`, :dtcompatible:`adi,ad4195-8-adc`).
 
+* Ethernet
+
+  * WIZnet W5100S 10/100 Ethernet controller with SPI interface
+    (:dtcompatible:`wiznet,w5100s`).
+
 * GPIO
 
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
