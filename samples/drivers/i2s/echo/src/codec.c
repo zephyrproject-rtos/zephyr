@@ -13,6 +13,10 @@
 
 #if DT_ON_BUS(WM8731_NODE, i2c)
 
+#if CONFIG_SAMPLE_FREQ != 44100
+#error "The WM8731 configuration supports only a 44.1 kHz sample frequency"
+#endif
+
 #define WM8731_I2C_NODE DT_BUS(WM8731_NODE)
 #define WM8731_I2C_ADDR DT_REG_ADDR(WM8731_NODE)
 
@@ -177,6 +181,16 @@ bool init_wm8731_i2c(void)
 #define MAX9867_NI_LOWER_OTHER   0x00
 #define MAX9867_NI_LOWER_44p1KHZ 0x33
 
+#if CONFIG_SAMPLE_FREQ == 44100
+#define MAX9867_NI_UPPER MAX9867_NI_UPPER_44p1KHZ
+#define MAX9867_NI_LOWER MAX9867_NI_LOWER_44p1KHZ
+#elif CONFIG_SAMPLE_FREQ == 48000
+#define MAX9867_NI_UPPER MAX9867_NI_UPPER_48KHZ
+#define MAX9867_NI_LOWER MAX9867_NI_LOWER_OTHER
+#else
+#error "The MAX9867 configuration supports only 44.1 kHz and 48 kHz sample frequencies"
+#endif
+
 /* MAX9867_08_DAI_FORMAT */
 #define MAX9867_MAS    (1 << 7)
 #define MAX9867_WCI    (1 << 6)
@@ -279,9 +293,9 @@ bool init_max9867_i2c(void)
 		 * 20MHz. Set prescaler, FREQ field is 0 for Normal or PLL mode, < 20MHz.
 		 */
 		{MAX9867_05_SYS_CLK, 0x01 << MAX9867_PSCLK_POS},
-		/* Configure codec to generate 44.1kHz sampling frequency in controller mode */
-		{MAX9867_06_CLK_HIGH, MAX9867_NI_UPPER_44p1KHZ},
-		{MAX9867_07_CLK_LOW, MAX9867_NI_LOWER_44p1KHZ},
+		/* Configure the sampling frequency in controller mode. */
+		{MAX9867_06_CLK_HIGH, MAX9867_NI_UPPER},
+		{MAX9867_07_CLK_LOW, MAX9867_NI_LOWER},
 		{MAX9867_09_DAI_CLOCK, MAX9867_BSEL_PCLK_DIV8},
 		/* I2S format */
 		{MAX9867_08_DAI_FORMAT, MAX9867_MAS | MAX9867_DLY | MAX9867_HIZOFF},
