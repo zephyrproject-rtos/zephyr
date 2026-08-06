@@ -372,46 +372,46 @@ static int rtc_ti_mspm0_alarm_is_pending(const struct device *dev, uint16_t id)
 		return -EINVAL;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	K_SPINLOCK(&data->lock) {
+		alarm = &data->rtc_alarm[id];
+		ret = alarm->is_pending ? 1 : 0;
+		alarm->is_pending = false;
+	}
 
-	alarm = &data->rtc_alarm[id];
-	ret = alarm->is_pending ? 1 : 0;
-	alarm->is_pending = false;
-
-	k_spin_unlock(&data->lock, key);
 	return ret;
 }
 
 static void rtc_ti_mspm0_isr(const struct device *dev)
 {
-	uint8_t id;
-	struct rtc_ti_mspm0_alarm *alarm = NULL;
 	const struct rtc_ti_mspm0_config *cfg = dev->config;
 	struct rtc_ti_mspm0_data *data = dev->data;
-	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	struct rtc_ti_mspm0_alarm alarm = {0};
+	uint8_t alarm_id = 0;
+	bool has_cb = false;
 
-	switch (cfg->registers->IIDX) {
-	case RTC_MSPM0_IIDX_ALARM1:
-		id = RTC_TI_ALARM_1;
-		alarm = &data->rtc_alarm[RTC_TI_ALARM_1];
-		break;
-	case RTC_MSPM0_IIDX_ALARM2:
-		id = RTC_TI_ALARM_2;
-		alarm = &data->rtc_alarm[RTC_TI_ALARM_2];
-		break;
-	default:
-		goto out;
-	}
+	K_SPINLOCK(&data->lock) {
+		switch (cfg->registers->IIDX) {
+			case RTC_MSPM0_IIDX_ALARM1:
+				alarm_id = RTC_TI_ALARM_1;
+				break;
+			case RTC_MSPM0_IIDX_ALARM2:
+				alarm_id = RTC_TI_ALARM_2;
+				break;
+			default:
+			K_SPINLOCK_BREAK;
+		}
 
-	if (alarm != NULL) {
-		alarm->is_pending = true;
-		if (alarm->callback) {
-			alarm->callback(dev, id, alarm->user_data);
+		alarm = data->rtc_alarm[alarm_id];
+		if (!alarm.callback) {
+			data->rtc_alarm[alarm_id].is_pending = true;
+		} else {
+			has_cb = true;
 		}
 	}
 
-out:
-	k_spin_unlock(&data->lock, key);
+	if (has_cb) {
+		alarm.callback(dev, alarm_id, alarm.user_data);
+	}
 }
 #endif
 
