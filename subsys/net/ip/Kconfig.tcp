@@ -249,4 +249,29 @@ config NET_TCP_PRESERVE_CONTEXT_STATE_ON_IFACE_DOWN
 	  sockets when needed. Enable this option only if you can guarantee that
 	  the application handles that properly.
 
+config NET_TCP_CONTIGUOUS_TX
+	bool "Use a single net_buf for TCP data segment TX"
+	help
+	  When enabled, TCP data segments are assembled in one continuous
+	  net_buf by reserving IP/TCP header space before copying the payload
+	  and prepending the headers with net_buf_push(), similar to how the
+	  Ethernet L2 layer handles link-layer headers.
+
+	  This reduces net_buf usage under throughput workloads and produces
+	  a contiguous L3/L4 header and payload in one fragment when the
+	  segment fits in a single buffer. If the segment cannot fit, or if
+	  this option is disabled, the legacy two-fragment path is used.
+
+	  This works with both fixed (NET_BUF_FIXED_DATA_SIZE) and variable
+	  (NET_BUF_VARIABLE_DATA_SIZE) net_buf data sizes. Whether the single
+	  buffer is actually used is decided at runtime from the buffer's
+	  headroom and size, so an unsuitable buffer simply falls back to the
+	  legacy path.
+
+	  With fixed size buffers, set CONFIG_NET_BUF_DATA_SIZE large enough to
+	  hold the TCP MSS plus IP/TCP headers and any L2 headroom reserved for
+	  the network interface (for example MSS + 80 bytes). With variable size
+	  buffers the payload buffer is already allocated with room for the
+	  IP/TCP headers, so no extra tuning is required.
+
 endif # NET_TCP

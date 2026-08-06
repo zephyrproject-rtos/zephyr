@@ -86,6 +86,9 @@ static void tcp_out(struct tcp *conn, uint8_t flags);
 static const char *tcp_state_to_str(enum tcp_state state, bool prefix);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
+#if defined(CONFIG_NET_TEST)
+int tcp_test_last_data_tx_frags;
+#endif
 size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
 
 static bool tcp_backlog_is_full(struct tcp *conn)
@@ -1585,6 +1588,72 @@ err:
 	tcp_pkt_unref(rst);
 }
 
+static void tcp_count_data_tx_frags(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_TEST)
+	struct net_buf *buf = pkt->buffer;
+	int count = 0;
+
+	while (buf) {
+		count++;
+		buf = buf->frags;
+	}
+
+	tcp_test_last_data_tx_frags = count;
+#else
+	ARG_UNUSED(pkt);
+#endif
+}
+
+#if defined(CONFIG_NET_TCP_CONTIGUOUS_TX)
+static size_t tcp_tx_hdr_reserve(struct tcp *conn, struct net_pkt *pkt)
+{
+	/* TCP data segments (PSH | ACK) never carry TCP options, so the
+	 * reserved header space must match exactly the IP + TCP header that
+	 * tcp_out_ext() writes. Reserving extra option space here would leave
+	 * an uninitialized gap between the TCP header and the payload. If TCP
+	 * options are ever emitted on data segments, this must account for
+	 * them (and stay in sync with tcp_header_add()).
+	 */
+	size_t hdr_len = NET_TCPH_LEN;
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
+		hdr_len += NET_IPV6H_LEN;
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
+		hdr_len += NET_IPV4H_LEN;
+	}
+
+	ARG_UNUSED(conn);
+
+	return hdr_len;
+}
+
+static bool tcp_contiguous_tx_can_use(struct tcp *conn, struct net_pkt *pkt,
+				      size_t payload_len)
+{
+	struct net_buf *buf;
+	size_t hdr_len;
+
+	if (!pkt || !pkt->buffer || pkt->buffer->frags != NULL) {
+		return false;
+	}
+
+	buf = pkt->buffer;
+	hdr_len = tcp_tx_hdr_reserve(conn, pkt);
+
+	return net_buf_headroom(buf) + hdr_len + payload_len <= net_buf_max_len(buf);
+}
+
+static bool tcp_contiguous_tx_ready(struct tcp *conn, struct net_pkt *pkt)
+{
+	if (!pkt || !pkt->buffer || pkt->buffer->frags != NULL) {
+		return false;
+	}
+
+	return net_buf_headroom(pkt->buffer) >= tcp_tx_hdr_reserve(conn, pkt);
+}
+#endif /* CONFIG_NET_TCP_CONTIGUOUS_TX */
+
 static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		       uint32_t seq)
 {
@@ -1596,16 +1665,28 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		alloc_len += sizeof(uint32_t);
 	}
 
-	pkt = tcp_pkt_alloc(conn, alloc_len);
-	if (!pkt) {
-		ret = -ENOBUFS;
-		goto out;
-	}
+#if defined(CONFIG_NET_TCP_CONTIGUOUS_TX)
+	if (data != NULL && tcp_contiguous_tx_ready(conn, data)) {
+		size_t hdr_len = tcp_tx_hdr_reserve(conn, data);
 
-	if (data) {
-		/* Append the data buffer to the pkt */
-		net_pkt_append_buffer(pkt, data->buffer);
-		data->buffer = NULL;
+		net_buf_push(data->buffer, hdr_len);
+		net_pkt_cursor_init(data);
+		net_pkt_set_overwrite(data, true);
+		pkt = data;
+	} else
+#endif /* CONFIG_NET_TCP_CONTIGUOUS_TX */
+	{
+		pkt = tcp_pkt_alloc(conn, alloc_len);
+		if (!pkt) {
+			ret = -ENOBUFS;
+			goto out;
+		}
+
+		if (data) {
+			/* Append the data buffer to the pkt */
+			net_pkt_append_buffer(pkt, data->buffer);
+			data->buffer = NULL;
+		}
 	}
 
 	ret = ip_header_add(conn, pkt);
@@ -1628,10 +1709,23 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		}
 	}
 
+#if defined(CONFIG_NET_TCP_CONTIGUOUS_TX)
+	if (data != NULL && pkt == data) {
+		net_pkt_set_overwrite(pkt, false);
+	}
+#endif /* CONFIG_NET_TCP_CONTIGUOUS_TX */
+
+	/* In case support for additional TCP options is added,
+	 * tcp_tx_hdr_reserve() needs to be updated as well.
+	 */
 	ret = tcp_finalize_pkt(pkt);
 	if (ret < 0) {
 		tcp_pkt_unref(pkt);
 		goto out;
+	}
+
+	if (data != NULL) {
+		tcp_count_data_tx_frags(pkt);
 	}
 
 	if (tcp_send_cb) {
@@ -1655,6 +1749,7 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 	} else {
 		tcp_send(pkt);
 	}
+
 out:
 	return ret;
 }
@@ -1856,6 +1951,9 @@ static int tcp_send_data(struct tcp *conn)
 	int ret = 0;
 	int len;
 	struct net_pkt *pkt;
+#if defined(CONFIG_NET_TCP_CONTIGUOUS_TX)
+	bool contiguous_prepared = false;
+#endif
 
 	len = MIN(tcp_unsent_len(conn), conn_mss(conn));
 	if (len < 0) {
@@ -1875,6 +1973,15 @@ static int tcp_send_data(struct tcp *conn)
 		goto out;
 	}
 
+#if defined(CONFIG_NET_TCP_CONTIGUOUS_TX)
+	if (tcp_contiguous_tx_can_use(conn, pkt, len)) {
+		net_buf_reserve(pkt->buffer,
+				net_buf_headroom(pkt->buffer) +
+				tcp_tx_hdr_reserve(conn, pkt));
+		contiguous_prepared = true;
+	}
+#endif /* CONFIG_NET_TCP_CONTIGUOUS_TX */
+
 	ret = tcp_pkt_peek(pkt, &conn->send_data, conn->unacked_len, len);
 	if (ret < 0) {
 		tcp_pkt_unref(pkt);
@@ -1882,6 +1989,11 @@ static int tcp_send_data(struct tcp *conn)
 		goto out;
 	}
 
+	/* On the contiguous path the payload net_pkt itself becomes the
+	 * outgoing packet, so tcp_out_ext() takes ownership of it: on success
+	 * it is handed to the send path, on error it is released. Either way we
+	 * must not unref it again below.
+	 */
 	ret = tcp_out_ext(conn, PSH | ACK, pkt, conn->seq + conn->unacked_len);
 	if (ret == 0) {
 		conn->unacked_len += len;
@@ -1894,6 +2006,17 @@ static int tcp_send_data(struct tcp *conn)
 			net_stats_update_tcp_seg_sent(conn->iface);
 		}
 	}
+
+#if defined(CONFIG_NET_TCP_CONTIGUOUS_TX)
+	if (contiguous_prepared) {
+		/* tcp_out_ext() already owns and consumed pkt, so skip the
+		 * unref below to avoid dropping a reference the send path (or
+		 * the error cleanup) is still responsible for.
+		 */
+		conn_send_data_dump(conn);
+		goto out;
+	}
+#endif /* CONFIG_NET_TCP_CONTIGUOUS_TX */
 
 	/* The data we want to send, has been moved to the send queue so we
 	 * can unref the head net_pkt. If there was an error, we need to remove
