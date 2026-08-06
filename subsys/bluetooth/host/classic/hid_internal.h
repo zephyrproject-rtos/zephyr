@@ -1,5 +1,5 @@
 /** @file
- *  @brief Internal APIs for Bluetooth HID Device handling.
+ *  @brief Internal APIs shared by the Bluetooth HID Device and Host profiles.
  */
 
 /*
@@ -8,7 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/classic/hid_device.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/bluetooth/l2cap.h>
 
 /** @brief HID header size (1 byte). */
@@ -135,4 +135,106 @@ struct bt_hid_device {
 
 	struct k_work_delayable intr_timeout;
 	struct k_work vcu_disconnect;
+};
+
+/** @brief Type of a Control channel request the HID Host can issue.
+ *
+ * HID spec v1.1.2 Section 3.2.1 allows a single outstanding transaction on the
+ * Control channel, so the type of the outstanding request also identifies which
+ * reply is expected.
+ */
+enum bt_hid_ctrl_type {
+	/** No transaction outstanding. */
+	BT_HID_CTRL_TYPE_NONE = 0,
+	BT_HID_CTRL_TYPE_GET_REPORT,
+	BT_HID_CTRL_TYPE_SET_REPORT,
+	BT_HID_CTRL_TYPE_GET_PROTOCOL,
+	BT_HID_CTRL_TYPE_SET_PROTOCOL,
+};
+
+/** @brief HID Host per-connection state flags stored in @ref bt_hid_host.flags.
+ *
+ * Only @ref BT_HID_HOST_FLAG_REQ_PENDING needs atomic protection: the
+ * application thread claims it while the RX thread and the transaction timeout
+ * release it. @ref BT_HID_HOST_FLAG_INITIATOR is written once while the session
+ * is set up and only read afterwards. The remaining flags are written only from
+ * the single-threaded L2CAP RX callback chain and read elsewhere, so their
+ * atomic accessors are for a uniform style rather than for concurrency.
+ */
+enum bt_hid_host_flag {
+	/** A Control channel transaction is outstanding, see @ref bt_hid_req. */
+	BT_HID_HOST_FLAG_REQ_PENDING,
+	/** Set when the local device initiated the connection, see
+	 *  @ref bt_hid_role. Cleared for @ref BT_HID_ROLE_ACCEPTOR.
+	 */
+	BT_HID_HOST_FLAG_INITIATOR,
+	/** The remote device is in Boot Protocol Mode. */
+	BT_HID_HOST_FLAG_BOOT_MODE,
+	/** The control channel is connected. */
+	BT_HID_HOST_FLAG_CTRL_CONNECTED,
+	/** The interrupt channel is connected. */
+	BT_HID_HOST_FLAG_INTR_CONNECTED,
+};
+
+/** @brief Outstanding Control channel transaction of a HID Host connection.
+ *
+ * Filled in by the requesting thread and consumed either by the RX thread when
+ * the reply arrives or by the transaction timeout, see
+ * @ref BT_HID_HOST_FLAG_REQ_PENDING.
+ */
+struct bt_hid_req {
+	/** Transaction type. */
+	uint8_t type;
+	/** Report type sent with GET_REPORT, echoed by the DATA reply. */
+	uint8_t report_type;
+	/** BufferSize sent with GET_REPORT, 0 when the field was omitted. */
+	uint16_t buffer_size;
+	/** Protocol mode sent with SET_PROTOCOL. */
+	uint8_t protocol;
+};
+
+/** @brief HID Host session wrapper for an L2CAP channel.
+ *
+ * Each HID Host connection maintains two sessions: control and interrupt.
+ */
+struct bt_hid_host_session {
+	/** Underlying BR/EDR L2CAP channel. */
+	struct bt_l2cap_br_chan br_chan;
+	/** Channel type: control or interrupt. */
+	uint8_t type;
+};
+
+/** @brief HID Host instance (opaque to applications) */
+struct bt_hid_host {
+	/** Control channel session (PSM 0x0011). */
+	struct bt_hid_host_session ctrl_session;
+	/** Interrupt channel session (PSM 0x0013). */
+	struct bt_hid_host_session intr_session;
+
+	/** Runtime connection state. */
+	uint8_t state;
+
+	/** Per-connection state flags, see @ref bt_hid_host_flag.
+	 *
+	 * Also carries the connection role, see @ref BT_HID_HOST_FLAG_INITIATOR.
+	 */
+	atomic_t flags;
+	/** Outstanding Control channel transaction.
+	 *
+	 * The contents are only valid while @ref BT_HID_HOST_FLAG_REQ_PENDING is
+	 * set.
+	 */
+	struct bt_hid_req req;
+	/** INTR channel connect timeout. */
+	struct k_work_delayable intr_work;
+	/** Control channel transaction timeout. */
+	struct k_work_delayable trans_work;
+	/** Virtual Cable Unplug teardown.
+	 *
+	 * Runs immediately when the unplug was received, where HID spec v1.1.2
+	 * Section 3.1.2.2.3 makes this host the one that disconnects, and after a
+	 * delay when the unplug was sent, where it only covers a peer that never
+	 * acknowledges.
+	 */
+	struct k_work_delayable vcu_work;
 };
