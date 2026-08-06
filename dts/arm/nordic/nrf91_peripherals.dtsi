@@ -328,6 +328,16 @@ clock: clock@5000 {
 	reg = <0x5000 0x1000>;
 	interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
 	status = "okay";
+
+	hfclk: hfclk {
+		compatible = "nordic,nrf-clock-hfclk";
+		status = "okay";
+	};
+
+	lfclk: lfclk {
+		compatible = "nordic,nrf-clock-lfclk";
+		status = "okay";
+	};
 };
 
 power: power@5000 {
