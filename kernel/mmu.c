@@ -574,13 +574,46 @@ static int map_anon_page(void *addr, uint32_t flags)
 	return 0;
 }
 
+/* Undo a page previously established by map_anon_page(). Only used to roll
+ * back a partial k_mem_map_phys_guard() failure, so the page is known to be
+ * currently mapped and not paged out.
+ */
+static void undo_anon_page(void *pos)
+{
+	uintptr_t phys;
+	struct k_mem_page_frame *pf;
+	int ret;
+
+	ARG_UNUSED(ret);
+
+	ret = arch_page_phys_get(pos, &phys);
+	__ASSERT(ret == 0, "%s: cannot unmap an unmapped address %p", __func__, pos);
+
+	pf = k_mem_phys_to_page_frame(phys);
+	__ASSERT(k_mem_page_frame_is_mapped(pf), "%s: 0x%lx is not a mapped page frame",
+		 __func__, phys);
+
+	ret = arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
+	__ASSERT_NO_MSG(ret == 0);
+
+#ifdef CONFIG_DEMAND_PAGING
+	if (IS_ENABLED(CONFIG_EVICTION_TRACKING) && (!k_mem_page_frame_is_pinned(pf))) {
+		k_mem_paging_eviction_remove(pf);
+	}
+#endif
+
+	page_frame_free_locked(pf);
+}
+
 void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_anon)
 {
 	uint8_t *dst;
+	uint8_t *region;
 	size_t total_size;
 	int ret;
 	k_spinlock_key_t key;
 	uint8_t *pos;
+	uint8_t *undo_pos;
 	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0U;
 
 	ARG_UNUSED(ret);
@@ -614,23 +647,24 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 
 	key = k_spin_lock(&z_mm_lock);
 
-	dst = virt_region_alloc(total_size, CONFIG_MMU_PAGE_SIZE);
-	if (dst == NULL) {
+	region = virt_region_alloc(total_size, CONFIG_MMU_PAGE_SIZE);
+	if (region == NULL) {
 		/* Address space has no free region */
+		dst = NULL;
 		goto out;
 	}
 
 	/* Unmap both guard pages to make sure accessing them
 	 * will generate fault.
 	 */
-	ret = arch_mem_unmap(dst, CONFIG_MMU_PAGE_SIZE);
+	ret = arch_mem_unmap(region, CONFIG_MMU_PAGE_SIZE);
 	__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
 	if (ret != 0) {
 		dst = NULL;
 		goto out;
 	}
 
-	ret = arch_mem_unmap(dst + CONFIG_MMU_PAGE_SIZE + size, CONFIG_MMU_PAGE_SIZE);
+	ret = arch_mem_unmap(region + CONFIG_MMU_PAGE_SIZE + size, CONFIG_MMU_PAGE_SIZE);
 	__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
 	if (ret != 0) {
 		dst = NULL;
@@ -638,7 +672,7 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	}
 
 	/* Skip over the "before" guard page in returned address. */
-	dst += CONFIG_MMU_PAGE_SIZE;
+	dst = region + CONFIG_MMU_PAGE_SIZE;
 
 	if (is_anon) {
 		/* Mapping from anonymous memory */
@@ -653,8 +687,17 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 						   CONFIG_MMU_PAGE_SIZE, flags);
 				__ASSERT(ret == 0, "%s: arch_mem_map failed %d\n", __func__, ret);
 				if (ret != 0) {
+					/* Undo the pages mapped before the failure. */
+					VIRT_FOREACH(dst, pos - dst, undo_pos) {
+						ret = arch_mem_unmap(undo_pos,
+								     CONFIG_MMU_PAGE_SIZE);
+						__ASSERT(ret == 0,
+							 "%s: cannot undo mapped pages %d",
+							 __func__, ret);
+					}
+
 					dst = NULL;
-					goto out;
+					goto fail;
 				}
 			}
 			LOG_DBG("memory mapping anon pages %p to %p unpaged", dst, pos-1);
@@ -667,13 +710,13 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 				ret = map_anon_page(pos, flags);
 
 				if (ret != 0) {
-					/* TODO:
-					 * call k_mem_unmap(dst, pos - dst)
-					 * when implemented in #28990 and
-					 * release any guard virtual page as well.
-					 */
+					/* Undo the pages mapped before the failure. */
+					VIRT_FOREACH(dst, pos - dst, undo_pos) {
+						undo_anon_page(undo_pos);
+					}
+
 					dst = NULL;
-					goto out;
+					goto fail;
 				}
 			}
 		}
@@ -682,9 +725,20 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 		ret = arch_mem_map(dst, phys, size, flags);
 		__ASSERT(ret == 0, "%s: arch_mem_map failed %d\n", __func__, ret);
 		if (ret != 0) {
+			/* Clean up any partial mapping left behind. */
+			ret = arch_mem_unmap(dst, size);
+			__ASSERT(ret == 0, "%s: cannot undo mapped pages %d", __func__, ret);
+
 			dst = NULL;
+			goto fail;
 		}
 	}
+
+	goto out;
+
+fail:
+	/* Release the whole region, including the guard pages. */
+	virt_region_free(region, total_size);
 
 out:
 	k_spin_unlock(&z_mm_lock, key);
@@ -811,6 +865,11 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 				goto out;
 			}
 
+			/* Unmap, drop from eviction tracking, and free the frame.
+			 * Cannot use undo_anon_page() here as it looks the page
+			 * frame up with arch_page_phys_get(), which may fail for
+			 * a paged-in page as noted above.
+			 */
 			ret = arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
 			__ASSERT(ret == 0, "%s: arch_mem_unmap() returned %d", __func__, ret);
 
