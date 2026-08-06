@@ -55,8 +55,11 @@ BUILD_ASSERT((RTC_TI_MAX_ALARM != 0),
 #define RTC_MSPM0_ADAY_WEEK_BIN_MASK		BIT_MASK(3)
 #define RTC_MSPM0_ADAY_WEEK_BIN_ENABLE		BIT(7)
 
+#define RTC_MSPM0_IIDX_RTCRDY			0x1
 #define RTC_MSPM0_IIDX_ALARM1			0x3
 #define RTC_MSPM0_IIDX_ALARM2			0x4
+#define RTC_MSPM0_IMASK_RTCRDY			BIT(0)
+#define RTC_MSPM0_STA_RTCTCRDY_MASK		BIT(1)
 
 typedef struct {
 	volatile uint32_t a_min;	/* RTC Alarm Minutes	*/
@@ -137,7 +140,7 @@ typedef struct {
 
 struct rtc_ti_mspm0_config {
 	rtc_ti_mspm0_reg_t *regs;
-#if defined(CONFIG_RTC_ALARM)
+#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE)
 	void (*irq_config_func)(void);
 #endif
 	bool rtc_x;
@@ -154,6 +157,10 @@ struct rtc_ti_mspm0_alarm {
 
 struct rtc_ti_mspm0_data {
 	struct k_spinlock lock;
+#if defined(CONFIG_RTC_UPDATE)
+	rtc_update_callback update_cb;
+	void *update_cb_user_data;
+#endif
 #if defined(CONFIG_RTC_ALARM)
 	struct rtc_ti_mspm0_alarm rtc_alarm[RTC_TI_MAX_ALARM];
 #endif
@@ -405,38 +412,89 @@ static int rtc_ti_mspm0_alarm_is_pending(const struct device *dev, uint16_t id)
 
 	return ret;
 }
+#endif
 
+#if defined(CONFIG_RTC_UPDATE)
+static int rtc_ti_mspm0_update_set_callback(const struct device *dev,
+			rtc_update_callback callback,
+			void *user_data)
+{
+	const struct rtc_ti_mspm0_config *cfg = dev->config;
+	struct rtc_ti_mspm0_data *data = dev->data;
+
+	K_SPINLOCK(&data->lock) {
+		data->update_cb = callback;
+		data->update_cb_user_data = user_data;
+
+		if (callback) {
+			cfg->regs->imask |= RTC_MSPM0_IMASK_RTCRDY;
+		} else {
+			cfg->regs->imask &= ~RTC_MSPM0_IMASK_RTCRDY;
+		}
+	}
+
+	return 0;
+}
+#endif
+
+#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE)
 static void rtc_ti_mspm0_isr(const struct device *dev)
 {
 	const struct rtc_ti_mspm0_config *cfg = dev->config;
 	struct rtc_ti_mspm0_data *data = dev->data;
+#if defined(CONFIG_RTC_ALARM)
 	struct rtc_ti_mspm0_alarm alarm = {0};
 	uint8_t alarm_id = 0;
 	bool has_cb = false;
+#endif
+#if defined(CONFIG_RTC_UPDATE)
+	rtc_update_callback update_cb = NULL;
+	void *update_cb_data = NULL;
+#endif
 
 	K_SPINLOCK(&data->lock) {
 		switch (cfg->regs->iidx) {
+#if defined(CONFIG_RTC_UPDATE)
+		case RTC_MSPM0_IIDX_RTCRDY:
+			update_cb = data->update_cb;
+			update_cb_data = data->update_cb_user_data;
+			break;
+#endif
+#if defined(CONFIG_RTC_ALARM)
 		case RTC_MSPM0_IIDX_ALARM1:
 			alarm_id = RTC_TI_ALARM_1;
+			alarm = data->rtc_alarm[alarm_id];
+			if (!alarm.callback) {
+				data->rtc_alarm[alarm_id].is_pending = true;
+			} else {
+				has_cb = true;
+			}
 			break;
 		case RTC_MSPM0_IIDX_ALARM2:
 			alarm_id = RTC_TI_ALARM_2;
+			alarm = data->rtc_alarm[alarm_id];
+			if (!alarm.callback) {
+				data->rtc_alarm[alarm_id].is_pending = true;
+			} else {
+				has_cb = true;
+			}
 			break;
+#endif
 		default:
 			K_SPINLOCK_BREAK;
 		}
-
-		alarm = data->rtc_alarm[alarm_id];
-		if (!alarm.callback) {
-			data->rtc_alarm[alarm_id].is_pending = true;
-		} else {
-			has_cb = true;
-		}
 	}
 
+#if defined(CONFIG_RTC_UPDATE)
+	if (update_cb != NULL) {
+		update_cb(dev, update_cb_data);
+	}
+#endif
+#if defined(CONFIG_RTC_ALARM)
 	if (has_cb) {
 		alarm.callback(dev, alarm_id, alarm.user_data);
 	}
+#endif
 }
 #endif
 
@@ -457,7 +515,7 @@ static int rtc_ti_mspm0_init(const struct device *dev)
 	/* Set clock format to binary */
 	cfg->regs->ctl = RTC_MSPM0_CTL_BIN;
 
-#if defined(CONFIG_RTC_ALARM)
+#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE)
 	cfg->irq_config_func();
 #endif
 
@@ -474,28 +532,33 @@ static DEVICE_API(rtc, rtc_ti_mspm0_driver_api) = {
 	.alarm_set_callback	= rtc_ti_mspm0_alarm_set_callback,
 	.alarm_get_supported_fields = rtc_ti_mspm0_alarm_get_supported_fields,
 #endif /* CONFIG_RTC_ALARM */
+#if defined(CONFIG_RTC_UPDATE)
+	.update_set_callback = rtc_ti_mspm0_update_set_callback,
+#endif
 };
 
-#define RTC_TI_MSPM0_DEVICE_INIT(n)						\
-	IF_ENABLED(CONFIG_RTC_ALARM,						\
-	(static void ti_mspm0_config_irq_##n(void)				\
-	{									\
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),		\
-			    rtc_ti_mspm0_isr, DEVICE_DT_INST_GET(n), 0);	\
-		irq_enable(DT_INST_IRQN(n));					\
-	}))									\
-										\
-	static struct rtc_ti_mspm0_data rtc_data_##n;				\
-										\
-	static struct rtc_ti_mspm0_config rtc_config_##n = {			\
-		.regs = (rtc_ti_mspm0_reg_t *)DT_INST_REG_ADDR(n),		\
-		.rtc_x		 = DT_INST_PROP(n, ti_rtc_x),			\
-		IF_ENABLED(CONFIG_RTC_ALARM,					\
-		(.irq_config_func = ti_mspm0_config_irq_##n,))			\
-	};									\
-										\
-DEVICE_DT_INST_DEFINE(n, &rtc_ti_mspm0_init, NULL, &rtc_data_##n,		\
-		      &rtc_config_##n, PRE_KERNEL_1,				\
-		      CONFIG_RTC_INIT_PRIORITY, &rtc_ti_mspm0_driver_api);
+#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE)
+#define RTC_TI_MSP_IRQ_FUNC(n)									\
+	static void ti_mspm0_config_irq_##n(void)						\
+	{											\
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), rtc_ti_mspm0_isr,	\
+			    DEVICE_DT_INST_GET(n), 0);						\
+		irq_enable(DT_INST_IRQN(n));							\
+	}
+#define RTC_TI_MSP_IRQ_CFG(n) .irq_config_func = ti_mspm0_config_irq_##n,
+#else
+#define RTC_TI_MSP_IRQ_FUNC(n)
+#define RTC_TI_MSP_IRQ_CFG(n)
+#endif
+
+#define RTC_TI_MSPM0_DEVICE_INIT(n)								\
+	RTC_TI_MSP_IRQ_FUNC(n)									\
+	static struct rtc_ti_mspm0_data rtc_data_##n;						\
+	static const struct rtc_ti_mspm0_config rtc_config_##n = {				\
+		.regs = (rtc_ti_mspm0_reg_t *)DT_INST_REG_ADDR(n),				\
+		.rtc_x = DT_INST_PROP(n, ti_rtc_x),						\
+		RTC_TI_MSP_IRQ_CFG(n)};								\
+	DEVICE_DT_INST_DEFINE(n, &rtc_ti_mspm0_init, NULL, &rtc_data_##n, &rtc_config_##n,	\
+			      PRE_KERNEL_1, CONFIG_RTC_INIT_PRIORITY, &rtc_ti_mspm0_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_TI_MSPM0_DEVICE_INIT);
