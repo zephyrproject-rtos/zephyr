@@ -258,11 +258,20 @@ static int rtc_ti_mspm0_alarm_set_time(const struct device *dev, uint16_t id,
 	struct rtc_ti_mspm0_data *data = dev->data;
 	uint32_t imask_bit;
 
-	if (timeptr == NULL) {
+	if (id != RTC_TI_ALARM_1 && id != RTC_TI_ALARM_2) {
 		return -EINVAL;
 	}
 
-	if (id != RTC_TI_ALARM_1 && id != RTC_TI_ALARM_2) {
+	if (mask == 0) {
+		K_SPINLOCK(&data->lock) {
+			rtc_ti_mspm0_clear_alarm(dev, id);
+			data->rtc_alarm[id].mask = 0;
+			data->rtc_alarm[id].is_pending = false;
+		}
+		return 0;
+	}
+
+	if (timeptr == NULL) {
 		return -EINVAL;
 	}
 
@@ -274,7 +283,7 @@ static int rtc_ti_mspm0_alarm_set_time(const struct device *dev, uint16_t id,
 
 	K_SPINLOCK(&data->lock) {
 		rtc_ti_mspm0_clear_alarm(dev, id);
-		cfg->regs->cpu_int->imask &= ~imask_bit;
+		cfg->regs->cpu_int.imask &= ~imask_bit;
 
 		if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
 			cfg->regs->alarm[id].a_min = RTC_MSPM0_AMIN_BIN_ENABLE |
@@ -301,7 +310,7 @@ static int rtc_ti_mspm0_alarm_set_time(const struct device *dev, uint16_t id,
 			cfg->regs->alarm[id].a_day = day;
 		}
 
-		cfg->regs->cpu_int->imask |= imask_bit;
+		cfg->regs->cpu_int.imask |= imask_bit;
 		data->rtc_alarm[id].mask = mask;
 		data->rtc_alarm[id].is_pending = false;
 	}
@@ -359,10 +368,6 @@ static int rtc_ti_mspm0_alarm_set_callback(const struct device *dev, uint16_t id
 					   void *user_data)
 {
 	struct rtc_ti_mspm0_data *data = dev->data;
-
-	if (callback == NULL) {
-		return -EINVAL;
-	}
 
 	if (id != RTC_TI_ALARM_1 && id != RTC_TI_ALARM_2) {
 		return -EINVAL;
