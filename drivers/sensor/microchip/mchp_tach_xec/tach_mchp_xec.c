@@ -26,6 +26,12 @@ LOG_MODULE_REGISTER(tach_xec, CONFIG_SENSOR_LOG_LEVEL);
 
 struct tach_xec_config {
 	struct tach_regs * const regs;
+	/* TACH_EDGES control field, pre-shifted into position */
+	uint32_t ctrl_edges;
+	/* Width of the measurement window in half TACH periods: 1, 2, 4 or 8 */
+	uint32_t window_half_periods;
+	/* TACH periods the fan generates per revolution */
+	uint32_t pulses_per_round;
 	uint8_t girq;
 	uint8_t girq_pos;
 	uint8_t enc_pcr;
@@ -41,21 +47,6 @@ struct tach_xec_data {
 #define COUNT_100KHZ_SEC	100000U
 #define SEC_TO_MINUTE		60U
 #define PIN_STS_TIMEOUT		20U
-#define TACH_CTRL_EDGES		(CONFIG_TACH_XEC_EDGES << \
-				 MCHP_TACH_CTRL_NUM_EDGES_POS)
-
-/*
- * Width of the measurement window in half TACH periods. A TACH period is three
- * edges and consecutive edge settings share endpoints, so the 2, 3, 5 and 9
- * edge settings span 1/2, 1, 2 and 4 TACH periods respectively.
- */
-#define TACH_HALF_PERIODS	(1U << CONFIG_TACH_XEC_EDGES)
-
-/*
- * TACH periods the fan generates per revolution. A typical DC brushless fan
- * emits a two period square wave per revolution.
- */
-#define PULSES_PER_ROUND	2U
 
 static int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
@@ -95,6 +86,7 @@ static int tach_xec_channel_get(const struct device *dev,
 				enum sensor_channel chan,
 				struct sensor_value *val)
 {
+	const struct tach_xec_config * const cfg = dev->config;
 	struct tach_xec_data * const data = dev->data;
 	uint64_t numerator;
 	uint64_t denominator;
@@ -117,19 +109,24 @@ static int tach_xec_channel_get(const struct device *dev,
 
 	/*
 	 * The latched counter holds the number of 100 kHz clocks spanning the
-	 * programmed number of TACH edges, and one revolution spans
-	 * PULSES_PER_ROUND full TACH periods, so
+	 * programmed number of TACH edges. Measuring that window in half TACH
+	 * periods keeps the arithmetic exact:
 	 *
-	 *            60 * 100000 * TACH_HALF_PERIODS
-	 *   RPM = --------------------------------------
-	 *          2 * PULSES_PER_ROUND * latched_count
+	 *   2 edges -> 1 half period    5 edges -> 4 half periods
+	 *   3 edges -> 2 half periods   9 edges -> 8 half periods
+	 *
+	 * One revolution spans <pulses-per-round> full TACH periods, so
+	 *
+	 *            60 * 100000 * window_half_periods
+	 *   RPM = ---------------------------------------
+	 *          2 * pulses_per_round * latched_count
 	 *
 	 * The result is computed in micro-RPM so the fractional part can be
 	 * reported in val2 instead of being truncated away.
 	 */
-	numerator = (uint64_t)SEC_TO_MINUTE * COUNT_100KHZ_SEC * TACH_HALF_PERIODS *
-		    USEC_PER_SEC;
-	denominator = (uint64_t)PULSES_PER_ROUND * count * 2U;
+	numerator = (uint64_t)SEC_TO_MINUTE * COUNT_100KHZ_SEC *
+		    cfg->window_half_periods * USEC_PER_SEC;
+	denominator = (uint64_t)cfg->pulses_per_round * count * 2U;
 
 	/* Round to nearest rather than toward zero */
 	rpm_micro = (numerator + (denominator / 2U)) / denominator;
@@ -192,7 +189,7 @@ static int tach_xec_init(const struct device *dev)
 	tach_xec_sleep_clr(dev);
 
 	tach->CONTROL = MCHP_TACH_CTRL_READ_MODE_100K_CLOCK	|
-			TACH_CTRL_EDGES	                        |
+			cfg->ctrl_edges				|
 			MCHP_TACH_CTRL_FILTER_EN		|
 			MCHP_TACH_CTRL_EN;
 
@@ -207,9 +204,23 @@ static DEVICE_API(sensor, tach_xec_driver_api) = {
 #define DEV_CFG_GIRQ(inst)     MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, 0))
 #define DEV_CFG_GIRQ_POS(inst) MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, 0))
 
+/* Pre-shifted TACH_EDGES control field for a given number of edges */
+#define TACH_XEC_CTRL_EDGES(edges)						\
+	((edges) == 2 ? MCHP_TACH_CTRL_EDGES_2 :				\
+	 ((edges) == 3 ? MCHP_TACH_CTRL_EDGES_3 :				\
+	  ((edges) == 5 ? MCHP_TACH_CTRL_EDGES_5 : MCHP_TACH_CTRL_EDGES_9)))
+
+/* Half TACH periods spanned by a given number of edges */
+#define TACH_XEC_HALF_PERIODS(edges)						\
+	((edges) == 2 ? 1U : ((edges) == 3 ? 2U : ((edges) == 5 ? 4U : 8U)))
+
 #define XEC_TACH_CONFIG(inst)						\
 	static const struct tach_xec_config tach_xec_config_##inst = {	\
 		.regs = (struct tach_regs * const)DT_INST_REG_ADDR(inst),	\
+		.ctrl_edges = TACH_XEC_CTRL_EDGES(DT_INST_PROP(inst, tach_edges)),	\
+		.window_half_periods =					\
+			TACH_XEC_HALF_PERIODS(DT_INST_PROP(inst, tach_edges)),	\
+		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),	\
 		.girq = DEV_CFG_GIRQ(inst),		\
 		.girq_pos = DEV_CFG_GIRQ_POS(inst),	\
 		.enc_pcr = DT_INST_PROP(inst, pcr_scr),             \
@@ -217,6 +228,15 @@ static DEVICE_API(sensor, tach_xec_driver_api) = {
 	}
 
 #define TACH_XEC_DEVICE(id)						\
+	BUILD_ASSERT((DT_INST_PROP(id, tach_edges) == 2) ||		\
+		     (DT_INST_PROP(id, tach_edges) == 3) ||		\
+		     (DT_INST_PROP(id, tach_edges) == 5) ||		\
+		     (DT_INST_PROP(id, tach_edges) == 9),		\
+		     "tach-edges must be 2, 3, 5 or 9");		\
+									\
+	BUILD_ASSERT(DT_INST_PROP(id, pulses_per_round) > 0,		\
+		     "pulses-per-round must be non-zero");		\
+									\
 	static struct tach_xec_data tach_xec_data_##id;			\
 									\
 	PINCTRL_DT_INST_DEFINE(id);					\
