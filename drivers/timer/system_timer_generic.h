@@ -13,7 +13,7 @@
  * announce baseline (last_cycle / last_tick / last_elapsed), the deadline
  * computation and the range clamp. A driver reduces to a few cycle-domain
  * primitives; the tick contract the kernel calls (sys_clock_set_timeout(),
- * sys_clock_elapsed()) is emitted here.
+ * sys_clock_elapsed(), sys_clock_cycle_get_32/64()) is emitted here.
  *
  * The file is an implementation header, not a normal declaration header: it
  * *defines* the global sys_clock_* entry points. Any number of drivers can be
@@ -103,7 +103,19 @@
  *   - TIMER_CORE_COUNTER_NONMONOTONIC: define if the counter may momentarily read
  *     behind a value already observed (e.g. a global timer under QEMU SMP); the
  *     core then treats a backwards read as no elapse instead of a huge jump.
- * *   - TIMER_CORE_ALARM_MAX_CYCLES: largest value the arming primitive can express,
+ *   - TIMER_CORE_COUNTER_NONATOMIC: define when timer_driver_cycle_get() is not a
+ *     single atomic read but a synthesized count (built from a shared software
+ *     accumulator the ISR and reprogram paths also touch). The core then reads
+ *     it under the clock lock in sys_clock_cycle_get_32/64() instead of raw.
+ *   - TIMER_CORE_HAVE_CYCLE_GET_32 / _64: define (and provide your own
+ *     sys_clock_cycle_get_32 / _64) to suppress the core's, e.g. when the raw counter
+ *     needs scaling. timer_core_cycle_get(), available after the include, gives the
+ *     full-width count in the counter's own domain to scale from. The 32-bit one is
+ *     required of a driver that sets TIMER_CORE_CYCLES_PER_SEC, since a counter
+ *     running at a rate of its own is one the kernel cannot read raw. The core then
+ *     emits no 64-bit getter either, that being in the domain the driver just
+ *     declared foreign; supply one as well to have it.
+ *   - TIMER_CORE_ALARM_MAX_CYCLES: largest value the arming primitive can express,
  *     nothing more. Defaults to the whole span of TIMER_CORE_COUNTER_WIDTH, the alarm and
  *     the counter usually being the same hardware. Set it where the arming range is
  *     decided by something else: a compare or reload register narrower than the counter,
@@ -114,9 +126,9 @@
  *     the counter for the match to be caught. Defaults to 1. Raise it for hardware
  *     that carries the write into the counter's clock domain first.
  * The driver completes with its IRQ handler (a hardware acknowledge, then
- * timer_core_announce()), its init (connect the IRQ, then timer_core_init()),
- * sys_clock_cycle_get_32() and, on SMP, an smp_timer_init() that primes the
- * per-CPU timer via timer_core_smp_prime().
+ * timer_core_announce()), its init (connect the IRQ, then timer_core_init()) and,
+ * on SMP, an smp_timer_init() that primes the per-CPU timer via
+ * timer_core_smp_prime().
  */
 
 #ifndef ZEPHYR_DRIVERS_TIMER_SYSTEM_TIMER_GENERIC_H_
@@ -138,6 +150,11 @@
  * the kernel system clock rate; a driver whose counter runs at another rate (a
  * prescaled or fixed-frequency source) overrides it.
  */
+#if defined(TIMER_CORE_CYCLES_PER_SEC)
+/* The rate is the driver's own, which the cycle getter rule further down keys on. */
+#define TIMER_CORE_DRIVER_CYCLES_PER_SEC
+#endif
+
 #if !defined(TIMER_CORE_CYCLES_PER_SEC)
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
 	defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
@@ -186,9 +203,11 @@ BUILD_ASSERT(TIMER_CORE_CYC_PER_TICK != 0, "timer counter rate is below the tick
 /*
  * Default to the native register width: the masked delta then divides in a
  * single register, and a counter at least this wide never wraps within the
- * scheduling range. A narrower counter overrides TIMER_CORE_COUNTER_WIDTH with its width.
- * The width must never be forced wider than the counter really is: a 64-bit
- * mask on a 32-bit counter underflows once the baseline passes 2^32.
+ * scheduling range. A counter of another width states its own, and must state it:
+ * a genuine 64-bit counter on a 32-bit CPU would otherwise inherit a 32-bit mask
+ * and silently lose any span past 2^32 cycles (a long debugger halt, a low-power
+ * sleep). It must never be forced wider than the counter really is either: a
+ * 64-bit mask on a 32-bit counter underflows once the baseline passes 2^32.
  */
 #if !defined(TIMER_CORE_COUNTER_WIDTH)
 #define TIMER_CORE_COUNTER_WIDTH __LONG_WIDTH__
@@ -587,6 +606,86 @@ static inline void timer_core_announce(void)
 {
 	timer_core_announce_from(sys_clock_lock());
 }
+
+/*
+ * Full-width cycle count, in the counter's own domain: the announce baseline
+ * (which carries the extended upper bits) plus the masked forward delta. A
+ * driver scaling the count into another unit builds its own getters on this.
+ *
+ * The read is taken under the clock lock when it cannot be trusted atomically:
+ *
+ *   - timer_driver_cycle_get() is a synthesized count, not a single register read
+ *     (TIMER_CORE_COUNTER_NONATOMIC): the lock serialises it against the ISR and
+ *     reprogram paths that update the same software state; or
+ *   - the full 64-bit baseline is read on a narrower counter (the getter below
+ *     needs all 64 bits, which is not a single load on a 32-bit CPU).
+ *
+ * A narrow counter feeding only the 32-bit getter does NOT need this: that path
+ * reconstructs from the baseline's low word, a single atomic load, so it stays
+ * lock-free (see sys_clock_cycle_get_32()). Keeping the lock out of the 32-bit
+ * getter matters because it is on the thread-usage timestamp hot path.
+ */
+static inline uint64_t timer_core_cycle_get(void)
+{
+#if defined(TIMER_CORE_COUNTER_NONATOMIC) || TIMER_CORE_COUNTER_WIDTH < 64
+	k_spinlock_key_t key = sys_clock_lock();
+	uint64_t ret = timer_core_last_cycle + timer_core_cycles_since(timer_core_last_cycle);
+
+	sys_clock_unlock(key);
+	return ret;
+#else
+	/* A counter as wide as the count itself needs no extending. */
+	return timer_driver_cycle_get();
+#endif
+}
+
+/*
+ * A driver that states its own TIMER_CORE_CYCLES_PER_SEC has a counter running at
+ * a rate the kernel does not know about, so what this core would emit, the raw
+ * count, is not what the kernel expects to read. The 32-bit getter is then the
+ * driver's, in whatever unit it settles on, and this core emits no 64-bit one
+ * either: that would be in the counter's own domain and disagree. A driver
+ * wanting a 64-bit getter in its unit supplies that too.
+ */
+#if defined(TIMER_CORE_DRIVER_CYCLES_PER_SEC)
+#if !defined(TIMER_CORE_HAVE_CYCLE_GET_32)
+#error "a driver setting TIMER_CORE_CYCLES_PER_SEC must define " \
+	"TIMER_CORE_HAVE_CYCLE_GET_32 and supply sys_clock_cycle_get_32()"
+#endif
+#ifndef TIMER_CORE_HAVE_CYCLE_GET_64
+#define TIMER_CORE_HAVE_CYCLE_GET_64
+#endif
+#endif
+
+#if !defined(TIMER_CORE_HAVE_CYCLE_GET_32)
+uint32_t sys_clock_cycle_get_32(void)
+{
+#if defined(TIMER_CORE_COUNTER_NONATOMIC)
+	/* Synthesized read: serialise the get and baseline under the lock. */
+	return (uint32_t)timer_core_cycle_get();
+#elif TIMER_CORE_COUNTER_WIDTH < 32
+	/* Narrow atomic counter: extend from the baseline's low word. Both reads
+	 * are single loads, and pairing one baseline read with one counter read
+	 * yields the true position regardless of an announce in between, so this
+	 * needs no lock.
+	 */
+	uint32_t base = (uint32_t)timer_core_last_cycle;
+	uint32_t delta = ((uint32_t)timer_driver_cycle_get() - base) &
+			 (uint32_t)TIMER_CORE_COUNTER_MASK;
+
+	return base + delta;
+#else
+	return (uint32_t)timer_driver_cycle_get();
+#endif
+}
+#endif
+
+#if !defined(TIMER_CORE_HAVE_CYCLE_GET_64)
+uint64_t sys_clock_cycle_get_64(void)
+{
+	return timer_core_cycle_get();
+}
+#endif
 
 /* Rescale the announce baseline from one cycle rate to another. A driver that
  * changes the timer frequency at runtime calls this (after rescaling its own
