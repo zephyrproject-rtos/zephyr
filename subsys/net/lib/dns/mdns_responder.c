@@ -1455,6 +1455,7 @@ static int dispatcher_cb(struct dns_socket_dispatcher *ctx, int sock,
 static int register_dispatcher(struct mdns_responder_context *ctx,
 			       const struct net_socket_service_desc *svc,
 			       struct net_sockaddr *local,
+			       size_t local_len,
 			       int ifindex,
 			       struct zsock_pollfd *fds,
 			       size_t fds_len)
@@ -1477,9 +1478,17 @@ static int register_dispatcher(struct mdns_responder_context *ctx,
 	svc->pev[0].event.fd = ctx->sock;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && local->sa_family == NET_AF_INET6) {
+		if (local_len < sizeof(struct net_sockaddr_in6)) {
+			return -EINVAL;
+		}
+
 		memcpy(&ctx->dispatcher.local_addr, local,
 		       sizeof(struct net_sockaddr_in6));
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && local->sa_family == NET_AF_INET) {
+		if (local_len < sizeof(struct net_sockaddr_in)) {
+			return -EINVAL;
+		}
+
 		memcpy(&ctx->dispatcher.local_addr, local,
 		       sizeof(struct net_sockaddr_in));
 	} else {
@@ -1688,7 +1697,8 @@ static int init_listener(void)
 		}
 
 		ret = register_dispatcher(&v6_ctx[i], &v6_svc, (struct net_sockaddr *)&local_addr6,
-					  ifindex, ipv6_fds, ARRAY_SIZE(ipv6_fds));
+					  sizeof(local_addr6), ifindex, ipv6_fds,
+					  ARRAY_SIZE(ipv6_fds));
 		if (ret < 0 && ret != -EALREADY) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv6", "mDNS", ret);
@@ -1797,7 +1807,8 @@ static int init_listener(void)
 		}
 
 		ret = register_dispatcher(&v4_ctx[i], &v4_svc, (struct net_sockaddr *)&local_addr4,
-					  ifindex, ipv4_fds, ARRAY_SIZE(ipv4_fds));
+					  sizeof(local_addr4), ifindex, ipv4_fds,
+					  ARRAY_SIZE(ipv4_fds));
 		if (ret < 0 && ret != -EALREADY) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv4", "mDNS", ret);
