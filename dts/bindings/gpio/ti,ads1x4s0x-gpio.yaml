@@ -18,7 +18,6 @@ properties:
 
   ngpios:
     type: int
-    required: true
     const: 4
     description: Number of gpios supported
 

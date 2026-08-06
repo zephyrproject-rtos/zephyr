@@ -20,7 +20,6 @@ properties:
     const: 2
 
   ngpios:
-    required: true
     const: 8
 
   int-gpios:
