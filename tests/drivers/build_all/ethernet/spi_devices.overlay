@@ -40,6 +40,8 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_enc28j60: enc28j60@0 {
@@ -198,6 +200,14 @@
 						status = "okay";
 					};
 				};
+			};
+
+			test_spi_w6100: w6100@a {
+				compatible = "wiznet,w6100";
+				reg = <0xa>;
+				spi-max-frequency = <0>;
+				int-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
 			};
 		};
 	};
