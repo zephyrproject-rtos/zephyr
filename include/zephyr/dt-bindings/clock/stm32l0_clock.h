@@ -33,6 +33,9 @@
 #define STM32_SRC_TIMPCLK1	(STM32_SRC_PCLK + 1)
 #define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
 
+/** @brief RCC_CFGR register offset */
+#define CFGR_REG               0x0C
+
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x4C
 
@@ -50,5 +53,17 @@
 #define HSI48_SEL(val)		STM32_DT_CLOCK_SELECT((val), 26, 26, CCIPR_REG)
 /** CSR devices */
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 17, 16, CSR_REG)
+
+/** CFGR1 devices */
+#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 27, 24, CFGR_REG)
+#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 30, 28, CFGR_REG)
+
+/* MCO prescaler : division factor */
+#define MCO_PRE_DIV_1  0
+#define MCO_PRE_DIV_2  1
+#define MCO_PRE_DIV_4  2
+#define MCO_PRE_DIV_8  3
+#define MCO_PRE_DIV_16 4
+
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32L0_CLOCK_H_ */
