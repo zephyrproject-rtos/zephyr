@@ -52,6 +52,7 @@ independently of any actual devicetree model (edtlib.EDT instance).
 # pylint: disable=too-many-statements
 
 import contextlib
+import logging
 import os
 from collections.abc import Generator
 from typing import Any
@@ -74,6 +75,11 @@ YAML_KNOWN_BASE_BINDINGS: dict[str, str] = {
     # Test applied rules for compatible strings and descriptions.
     "compat_desc_base.yaml": "test-bindings-init/compat_desc_base.yaml",
     "compat_desc.yaml": "test-bindings-init/compat_desc.yaml",
+    # Declares a "default:" at each nesting level, to test overriding
+    # them with "required: true".
+    "default_base.yaml": "test-bindings-init/default_base.yaml",
+    # Overrides the above, to test including such a binding.
+    "default_override.yaml": "test-bindings-init/default_override.yaml",
 }
 
 
@@ -1091,6 +1097,49 @@ def test_invalid_binding_default_override() -> None:
         load_binding("test-bindings-init/invalid_grandchild_propdefault.yaml")
     assert "grandchild-prop-default" in str(e)
     assert "'3' replaced with '999'" in str(e)
+
+
+def test_required_overriding_inherited_default(caplog) -> None:
+    """An including binding may override an inherited "default:" with
+    "required: true" to force an explicit value.
+
+    This is well defined and should not be reported.
+
+    Tested up to the grandchild-binding level.
+    """
+    with caplog.at_level(logging.WARNING):
+        load_binding("test-bindings-init/default_override.yaml")
+    assert "should not have a default value" not in caplog.text
+
+
+def test_required_overriding_inherited_default_included(caplog) -> None:
+    """A binding which declares no child binding of its own, but inherits
+    one overriding a "default:" with "required: true", declares nothing
+    locally and should not be reported either.
+    """
+    with caplog.at_level(logging.WARNING):
+        load_binding("test-bindings-init/default_override_include.yaml")
+    assert "should not have a default value" not in caplog.text
+
+
+def test_required_with_local_default(caplog) -> None:
+    """A binding which declares both "default:" and "required: true" for
+    the same property should be reported, as the default can never apply.
+
+    Tested up to the grandchild-binding level.
+    """
+    with caplog.at_level(logging.WARNING):
+        load_binding("test-bindings-init/default_required.yaml")
+
+    warnings = [
+        rec.getMessage()
+        for rec in caplog.records
+        if "should not have a default value" in rec.getMessage()
+    ]
+    assert len(warnings) == 3
+    assert any("'prop-required-with-default'" in msg for msg in warnings)
+    assert any("'child-prop-required-with-default'" in msg for msg in warnings)
+    assert any("'grandchild-prop-required-with-default'" in msg for msg in warnings)
 
 
 def test_invalid_binding_enum_override() -> None:
