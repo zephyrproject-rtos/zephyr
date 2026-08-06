@@ -9,10 +9,13 @@ out at module level so the test suite runs without a full Zephyr environment
 or a live GitHub token.
 """
 
+import datetime
 import logging
 import sys
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
+
+import pytest
 
 # ---------------------------------------------------------------------------
 # Stub heavy third-party and project-local modules before the SUT is imported.
@@ -56,11 +59,12 @@ import set_assignees as sut  # noqa: E402, I001  (import after sys.modules manip
 class _Area:
     """Lightweight hashable area stub accepted by _pick_assignees and process_pr."""
 
-    def __init__(self, name, maintainers=None, labels=None, collaborators=None):
+    def __init__(self, name, maintainers=None, labels=None, collaborators=None, meta=False):
         self.name = name
         self.maintainers = list(maintainers or [])
         self.labels = list(labels or [])
         self.collaborators = list(collaborators or [])
+        self.meta = meta
 
     def is_deferred_for_path(self, path):
         return False
@@ -76,8 +80,10 @@ class _DeferredArea(_Area):
         return True
 
 
-def _make_area(name, maintainers=None, labels=None, collaborators=None):
-    return _Area(name, maintainers=maintainers, labels=labels, collaborators=collaborators)
+def _make_area(name, maintainers=None, labels=None, collaborators=None, meta=False):
+    return _Area(
+        name, maintainers=maintainers, labels=labels, collaborators=collaborators, meta=meta
+    )
 
 
 def _make_pr(commits=1, additions=0, deletions=0, labels=None, user_login="contributor"):
@@ -426,12 +432,12 @@ class TestPickAssignees:
         assert result == ["dave"]
 
     def test_meta_area_only_assigns_meta_maintainer(self):
-        area = _make_area("Documentation", maintainers=["eve"])
+        area = _make_area("Documentation", maintainers=["eve"], meta=True)
         result = sut._pick_assignees(self._pr(), {area: 2}, {"eve": 2}, num_files=2)
         assert result == ["eve"]
 
     def test_meta_area_not_sole_area_skips_meta_logic(self):
-        meta = _make_area("Documentation", maintainers=["eve"])
+        meta = _make_area("Documentation", maintainers=["eve"], meta=True)
         other = _make_area("Kernel", maintainers=["frank"])
         # area_counter is always sorted descending by count before _pick_assignees
         # is called; put the higher-count non-meta area first so it is visited first.
@@ -537,11 +543,13 @@ def _make_process_pr_harness(areas_per_file, pr_user="someone"):
     pr.labels = []
     pr.user = SimpleNamespace(login=pr_user)
     pr.assignee = None
+    pr.assignees = []
     pr.get_files.return_value = [SimpleNamespace(filename=fn) for fn in areas_per_file]
     pr.get_reviews.return_value = []
     pr.get_review_requests.return_value = ([], [])
     pr.get_issue_events.return_value = []
     pr.get_issue_comments.return_value = []
+    pr.get_review_comments.return_value = []
 
     mf = MagicMock()
     mf.path2areas.side_effect = lambda p: areas_per_file.get(p, [])
@@ -580,6 +588,7 @@ def _make_process_pr_harness(areas_per_file, pr_user="someone"):
         updated_manifest=None,
         updated_maintainer_file=None,
         size_labels=False,
+        reset=False,
     )
     return gh, args, mf, pr
 
@@ -785,6 +794,19 @@ class TestThinAreas:
         mf = self._mf(thin, full)
         assert sut._thin_areas(mf, {thin: 2, full: 1}) == {"Thin"}
 
+    def test_meta_area_is_never_thin(self):
+        # Meta-areas name few people on purpose; they must not pull in
+        # heuristic reviewers on top of their own maintainers.
+        area = _make_area("Documentation", maintainers=["m"], collaborators=[], meta=True)
+        mf = self._mf(area)
+        assert sut._thin_areas(mf, {area: 1}) == set()
+
+    def test_meta_area_excluded_but_thin_area_still_reported(self):
+        meta = _make_area("Documentation", maintainers=[], collaborators=[], meta=True)
+        thin = _make_area("Thin", maintainers=[], collaborators=[])
+        mf = self._mf(meta, thin)
+        assert sut._thin_areas(mf, {meta: 2, thin: 1}) == {"Thin"}
+
 
 # ---------------------------------------------------------------------------
 # _history_reviewers
@@ -798,9 +820,9 @@ def _commit(login):
 
 
 def _repo_with_history(history):
-    """gh_repo stub whose get_commits(path=...) returns history[path] (or [])."""
+    """gh_repo stub whose get_commits(path=..., since=...) returns history[path] (or [])."""
     repo = MagicMock()
-    repo.get_commits.side_effect = lambda path: list(history.get(path, []))
+    repo.get_commits.side_effect = lambda path, since=None: list(history.get(path, []))
     return repo
 
 
@@ -842,7 +864,7 @@ class TestHistoryReviewers:
         assert result == ["early"]
 
     def test_github_exception_on_a_file_is_skipped(self):
-        def _raise_or_return(path):
+        def _raise_or_return(path, since=None):
             if path == "bad.c":
                 raise sut.GithubException("no history")
             return [_commit("alice")]
@@ -860,6 +882,18 @@ class TestHistoryReviewers:
         repo = _repo_with_history(history)
         result = sut._history_reviewers(repo, {"a.c", "b.c"}, exclude=set())
         assert result == ["alice", "bob"]
+
+    def test_history_is_limited_to_one_year(self):
+        repo = _repo_with_history({"f.c": [_commit("alice")]})
+        sut._history_reviewers(repo, {"f.c"}, exclude=set())
+
+        since = repo.get_commits.call_args.kwargs["since"]
+        age = datetime.datetime.now(datetime.UTC) - since
+        assert sut.HISTORY_MAX_AGE_DAYS == 365
+        # Allow a minute of slack for the time spent between the two calls.
+        assert abs(age - datetime.timedelta(days=sut.HISTORY_MAX_AGE_DAYS)) < datetime.timedelta(
+            minutes=1
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -939,7 +973,7 @@ class TestHistoryReviewersIntegration:
         areas = {"subsys/orphan/foo.c": [area]}
 
         gh, args, mf, pr = _make_process_pr_harness(areas)
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="frequent_contributor"))
         ]
         sut.process_pr(gh, args, mf, 99)
@@ -951,7 +985,7 @@ class TestHistoryReviewersIntegration:
         areas = {"subsys/orphan/foo.c": [area]}
 
         gh, args, mf, pr = _make_process_pr_harness(areas, pr_user="self")
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="self"))
         ]
         sut.process_pr(gh, args, mf, 99)
@@ -988,7 +1022,7 @@ class TestHistoryReviewersIntegration:
             {},
             _suggested_payload([("suggested_by_github", True)]),
         )
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="from_history"))
         ]
         sut.process_pr(gh, args, mf, 99)
@@ -1005,7 +1039,7 @@ class TestHistoryReviewersIntegration:
 
         gh, args, mf, pr = _make_process_pr_harness(areas)
         gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="from_history"))
         ]
         sut.process_pr(gh, args, mf, 99)
@@ -1058,7 +1092,7 @@ class TestUnmatchedFiles:
     def test_pr_with_no_matching_area_falls_back_to_history(self):
         gh, args, mf, pr = _make_process_pr_harness({"doc/orphaned.rst": []})
         gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="baruser"))
         ]
         sut.process_pr(gh, args, mf, 99)
@@ -1072,10 +1106,13 @@ class TestUnmatchedFiles:
 
         gh, args, mf, _ = _make_process_pr_harness(areas)
         gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: [
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: [
             SimpleNamespace(author=SimpleNamespace(login="doc_author"))
         ]
-        sut.process_pr(gh, args, mf, 99)
+        # The covered area alone would satisfy MIN_TOTAL_REVIEWERS; disable that
+        # gate so this test covers only which files get walked.
+        with patch.object(sut, "MIN_TOTAL_REVIEWERS", 99):
+            sut.process_pr(gh, args, mf, 99)
 
         walked = [
             call.kwargs.get("path") for call in gh.get_repo.return_value.get_commits.call_args_list
@@ -1092,7 +1129,8 @@ class TestUnmatchedFiles:
             {},
             _suggested_payload([("heuristic_r", True)]),
         )
-        sut.process_pr(gh, args, mf, 99)
+        with patch.object(sut, "MIN_TOTAL_REVIEWERS", 99):
+            sut.process_pr(gh, args, mf, 99)
 
         requested = _reviewers_requested(pr)
         assert requested.index("real_m") < requested.index("heuristic_r")
@@ -1109,10 +1147,66 @@ class TestUnmatchedFiles:
         """Orphaned file with no suggestions and no history: nothing requested."""
         gh, args, mf, pr = _make_process_pr_harness({"doc/orphaned.rst": []})
         gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: []
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: []
         sut.process_pr(gh, args, mf, 99)
 
         assert _reviewers_requested(pr) == []
+
+
+class TestHeuristicThreshold:
+    """The heuristics only top up PRs that the areas left short of reviewers."""
+
+    def test_enough_area_reviewers_skips_heuristics(self):
+        """An orphaned file does not trigger a walk when the areas staffed the PR."""
+        covered = _make_area("Full", maintainers=["m"], collaborators=["c1", "c2", "c3"])
+        areas = {"doc/orphaned.rst": [], "subsys/full/foo.c": [covered]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        gh.requester.graphql_query.assert_not_called()
+        gh.get_repo.return_value.get_commits.assert_not_called()
+        assert _reviewers_requested(pr) == ["m", "c1", "c2", "c3"]
+
+    def test_too_few_area_reviewers_runs_heuristics(self):
+        thin = _make_area("Thin", maintainers=["m"], collaborators=[])
+        areas = {"subsys/thin/foo.c": [thin]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("heuristic_r", True)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "heuristic_r" in _reviewers_requested(pr)
+
+    def test_author_does_not_count_towards_the_threshold(self):
+        """The author cannot review their own PR, so they leave the PR short."""
+        thin = _make_area("Thin", maintainers=["self"], collaborators=["c1", "c2"])
+        areas = {"subsys/thin/foo.c": [thin]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas, pr_user="self")
+        gh.requester.graphql_query.return_value = (
+            {},
+            _suggested_payload([("heuristic_r", True)]),
+        )
+        sut.process_pr(gh, args, mf, 99)
+
+        # Only c1 and c2 can review: one short of MIN_TOTAL_REVIEWERS.
+        assert "heuristic_r" in _reviewers_requested(pr)
+
+    def test_threshold_counts_reviewers_across_areas(self):
+        """Two thin areas can jointly staff a PR that neither could alone."""
+        thin_a = _make_area("ThinA", maintainers=["ma"], collaborators=["ca"])
+        thin_b = _make_area("ThinB", maintainers=["mb"], collaborators=["cb"])
+        areas = {"subsys/a/foo.c": [thin_a], "subsys/b/bar.c": [thin_b]}
+
+        gh, args, mf, _ = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        gh.requester.graphql_query.assert_not_called()
+        gh.get_repo.return_value.get_commits.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -1226,6 +1320,350 @@ class TestReviewRequestRetry:
         sut._add_reviewers(gh, gh_repo, pr, args, [f"u{i}" for i in range(25)])
 
         assert pr.create_review_request.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# Reset mode  (--reset / _reset_pr)
+# ---------------------------------------------------------------------------
+
+
+def _user(login):
+    return SimpleNamespace(login=login)
+
+
+def _label(name):
+    return SimpleNamespace(name=name)
+
+
+def _requests_deleted(pr):
+    """Logins passed to delete_review_request() across all calls."""
+    return [
+        login
+        for call in pr.delete_review_request.call_args_list
+        for login in call.kwargs.get("reviewers", call.args[0] if call.args else [])
+    ]
+
+
+def _labels_removed(pr):
+    """Label names passed to remove_from_labels() across all calls."""
+    return [name for call in pr.remove_from_labels.call_args_list for name in call.args]
+
+
+class TestResetPr:
+    @staticmethod
+    def _mf(*areas):
+        mf = MagicMock()
+        mf.areas = {area.name: area for area in areas}
+        return mf
+
+    def _pr(self, requested=(), reviewed=(), commented=(), assignees=(), labels=()):
+        pr = MagicMock()
+        pr.number = 99
+        pr.labels = [_label(name) for name in labels]
+        pr.assignees = [_user(login) for login in assignees]
+        pr.get_review_requests.return_value = ([_user(u) for u in requested], [])
+        pr.get_reviews.return_value = [SimpleNamespace(user=_user(u)) for u in reviewed]
+        pr.get_issue_comments.return_value = [SimpleNamespace(user=_user(u)) for u in commented]
+        pr.get_review_comments.return_value = []
+        return pr
+
+    def test_uninvolved_reviewers_are_removed(self):
+        pr = self._pr(requested=["idle_a", "idle_b"])
+        sut._reset_pr(pr, _make_args(), self._mf())
+        assert sorted(_requests_deleted(pr)) == ["idle_a", "idle_b"]
+
+    def test_reviewer_who_reviewed_is_kept(self):
+        pr = self._pr(requested=["reviewer", "idle"], reviewed=["reviewer"])
+        sut._reset_pr(pr, _make_args(), self._mf())
+        assert _requests_deleted(pr) == ["idle"]
+
+    @pytest.mark.parametrize("state", ["APPROVED", "CHANGES_REQUESTED", "COMMENTED", "DISMISSED"])
+    def test_submitted_review_is_never_removed(self, state):
+        """Whatever the verdict, having reviewed protects the review request.
+
+        GitHub normally clears the pending request when a review is submitted,
+        so such a reviewer is not in get_review_requests() at all; this covers
+        the case where someone re-requested a review afterwards.
+        """
+        pr = self._pr(requested=["reviewer", "idle"])
+        pr.get_reviews.return_value = [SimpleNamespace(user=_user("reviewer"), state=state)]
+
+        sut._reset_pr(pr, _make_args(), self._mf())
+
+        assert "reviewer" not in _requests_deleted(pr)
+        assert _requests_deleted(pr) == ["idle"]
+
+    def test_reviewer_who_commented_is_kept(self):
+        pr = self._pr(requested=["talker", "idle"], commented=["talker"])
+        sut._reset_pr(pr, _make_args(), self._mf())
+        assert _requests_deleted(pr) == ["idle"]
+
+    def test_review_thread_comment_counts_as_interaction(self):
+        pr = self._pr(requested=["nitpicker", "idle"])
+        pr.get_review_comments.return_value = [SimpleNamespace(user=_user("nitpicker"))]
+        sut._reset_pr(pr, _make_args(), self._mf())
+        assert _requests_deleted(pr) == ["idle"]
+
+    def test_reviewer_about_to_be_requested_again_is_kept(self):
+        """Withdrawing a request the run is about to re-send would notify twice."""
+        pr = self._pr(requested=["still_owns_it", "idle"])
+        sut._reset_pr(pr, _make_args(), self._mf(), keep=["still_owns_it"])
+        assert _requests_deleted(pr) == ["idle"]
+
+    def test_team_review_requests_are_left_alone(self):
+        pr = self._pr(requested=["idle"])
+        pr.get_review_requests.return_value = ([_user("idle")], [SimpleNamespace(slug="a-team")])
+
+        sut._reset_pr(pr, _make_args(), self._mf())
+
+        assert _requests_deleted(pr) == ["idle"]
+        assert pr.delete_review_request.call_args.kwargs.get("team_reviewers") is None
+
+    def test_assignees_are_removed(self):
+        pr = self._pr(assignees=["assignee_a", "assignee_b"])
+        sut._reset_pr(pr, _make_args(), self._mf())
+        pr.remove_from_assignees.assert_called_once_with("assignee_a", "assignee_b")
+
+    def test_only_maintainer_file_labels_are_removed(self):
+        area = _make_area("Kernel", labels=["area: Kernel"])
+        pr = self._pr(labels=["area: Kernel", "bug", "size: M"])
+        removed = sut._reset_pr(pr, _make_args(), self._mf(area))
+        assert _labels_removed(pr) == ["area: Kernel"]
+        assert removed == {"area: Kernel"}
+
+    def test_dry_run_changes_nothing(self):
+        area = _make_area("Kernel", labels=["area: Kernel"])
+        pr = self._pr(requested=["idle"], assignees=["a"], labels=["area: Kernel"])
+        removed = sut._reset_pr(pr, _make_args(dry_run=True), self._mf(area))
+
+        pr.delete_review_request.assert_not_called()
+        pr.remove_from_assignees.assert_not_called()
+        pr.remove_from_labels.assert_not_called()
+        # Still reported, so the caller can log what a real run would do.
+        assert removed == {"area: Kernel"}
+
+
+class TestProcessPrReset:
+    @staticmethod
+    def _harness(areas_per_file, **kwargs):
+        gh, args, mf, pr = _make_process_pr_harness(areas_per_file, **kwargs)
+        args.reset = True
+        return gh, args, mf, pr
+
+    def test_labels_are_reapplied_after_removal(self):
+        area = _make_area("Kernel", maintainers=["m"], labels=["area: Kernel"])
+        gh, args, mf, pr = self._harness({"kernel/sched.c": [area]})
+        pr.labels = [_label("area: Kernel")]
+
+        sut.process_pr(gh, args, mf, 99)
+
+        # Removed by the reset, then re-added by the normal flow rather than
+        # being considered already present.
+        assert _labels_removed(pr) == ["area: Kernel"]
+        assert "area: Kernel" in _labels_added(pr)
+
+    def test_assignee_is_set_again_after_removal(self):
+        area = _make_area("Kernel", maintainers=["m"], labels=["area: Kernel"])
+        gh, args, mf, pr = self._harness({"kernel/sched.c": [area]})
+        pr.assignee = _user("old_assignee")
+        pr.assignees = [_user("old_assignee")]
+
+        sut.process_pr(gh, args, mf, 99)
+
+        pr.remove_from_assignees.assert_called_once_with("old_assignee")
+        assert [call.args[0].login for call in pr.add_to_assignees.call_args_list] == ["m"]
+
+    def test_self_removed_reviewer_is_not_re_added(self):
+        area = _make_area("Kernel", maintainers=["m"], collaborators=["quitter"])
+        gh, args, mf, pr = self._harness({"kernel/sched.c": [area]})
+        quitter = gh.get_user("quitter")
+        pr.get_issue_events.return_value = [
+            SimpleNamespace(
+                event="review_request_removed", actor=quitter, requested_reviewer=quitter
+            )
+        ]
+
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "quitter" not in _reviewers_requested(pr)
+        assert "m" in _reviewers_requested(pr)
+
+    def test_reviewers_are_requested_as_for_a_new_pr(self):
+        area = _make_area("Kernel", maintainers=["m"], collaborators=["c1"])
+        gh, args, mf, pr = self._harness({"kernel/sched.c": [area]})
+        # An earlier run left a request for someone the areas no longer name.
+        pr.get_review_requests.return_value = ([gh.get_user("stale_reviewer")], [])
+
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _requests_deleted(pr) == ["stale_reviewer"]
+        assert sorted(_reviewers_requested(pr)) == ["c1", "m"]
+
+    def test_still_valid_reviewer_is_not_withdrawn_and_re_requested(self):
+        """Churning the request would notify a maintainer who never left."""
+        area = _make_area("Kernel", maintainers=["m"], collaborators=["c1"])
+        gh, args, mf, pr = self._harness({"kernel/sched.c": [area]})
+        pr.get_review_requests.return_value = ([gh.get_user("m")], [])
+
+        sut.process_pr(gh, args, mf, 99)
+
+        assert _requests_deleted(pr) == []
+        # Already requested, so _add_reviewers leaves them be and asks the rest.
+        assert _reviewers_requested(pr) == ["c1"]
+
+    def test_skipped_pr_is_not_stripped(self):
+        """A PR the run declines to staff must not be left bare (MAX_FILES)."""
+        area = _make_area("Kernel", maintainers=["m"], labels=["area: Kernel"])
+        areas_per_file = {f"kernel/f{i}.c": [area] for i in range(sut.MAX_FILES + 1)}
+        gh, args, mf, pr = self._harness(areas_per_file)
+        pr.labels = [_label("area: Kernel")]
+        pr.assignees = [_user("old_assignee")]
+        pr.get_review_requests.return_value = ([gh.get_user("stale_reviewer")], [])
+
+        sut.process_pr(gh, args, mf, 99)
+
+        pr.delete_review_request.assert_not_called()
+        pr.remove_from_assignees.assert_not_called()
+        pr.remove_from_labels.assert_not_called()
+
+    def test_without_reset_nothing_is_removed(self):
+        area = _make_area("Kernel", maintainers=["m"], labels=["area: Kernel"])
+        gh, args, mf, pr = _make_process_pr_harness({"kernel/sched.c": [area]})
+        pr.labels = [_label("area: Kernel")]
+        pr.assignees = [_user("old_assignee")]
+        pr.get_review_requests.return_value = ([gh.get_user("stale_reviewer")], [])
+
+        sut.process_pr(gh, args, mf, 99)
+
+        pr.delete_review_request.assert_not_called()
+        pr.remove_from_assignees.assert_not_called()
+        assert _labels_removed(pr) == []
+
+
+# ---------------------------------------------------------------------------
+# Label selection  (_rank_labels / _select_labels)
+# ---------------------------------------------------------------------------
+
+
+def _labels_added(pr):
+    """Label names passed to add_to_labels() on *pr*."""
+    return [name for call in pr.add_to_labels.call_args_list for name in call.args]
+
+
+class TestRankLabels:
+    def test_orders_by_area_weight(self):
+        heavy = _make_area("Heavy", labels=["area: heavy"])
+        light = _make_area("Light", labels=["area: light"])
+        ranked = sut._rank_labels({"area: heavy", "area: light"}, {heavy: 9, light: 1}, {})
+        assert ranked == ["area: heavy", "area: light"]
+
+    def test_weights_of_areas_sharing_a_label_add_up(self):
+        a = _make_area("A", labels=["shared"])
+        b = _make_area("B", labels=["shared"])
+        solo = _make_area("Solo", labels=["solo"])
+        ranked = sut._rank_labels({"shared", "solo"}, {solo: 3, a: 2, b: 2}, {})
+        assert ranked == ["shared", "solo"]
+
+    def test_labels_from_no_contributing_area_sort_last(self):
+        area = _make_area("A", labels=["area: a"])
+        ranked = sut._rank_labels({"area: a", "deferred"}, {area: 1}, {})
+        assert ranked == ["area: a", "deferred"]
+
+    def test_ties_break_by_name(self):
+        a = _make_area("A", labels=["area: b"])
+        b = _make_area("B", labels=["area: a"])
+        assert sut._rank_labels({"area: a", "area: b"}, {a: 2, b: 2}, {}) == ["area: a", "area: b"]
+
+    def test_unweighted_area_falls_back_to_its_file_count(self):
+        """A meta-area weighs 0 for assignment but still describes the PR."""
+        meta = _make_area("Documentation", labels=["area: Documentation"], meta=True)
+        other = _make_area("Kernel", labels=["area: Kernel"])
+        area_files = {"Documentation": {f"doc/{i}.rst" for i in range(9)}, "Kernel": {"k.c"}}
+
+        ranked = sut._rank_labels(
+            {"area: Documentation", "area: Kernel"}, {meta: 0, other: 1}, area_files
+        )
+        assert ranked == ["area: Documentation", "area: Kernel"]
+
+
+class TestSelectLabels:
+    @staticmethod
+    def _areas(count, weight_of=lambda i: i):
+        """count areas, each with one label, area i weighing weight_of(i)."""
+        return {_make_area(f"A{i}", labels=[f"area: {i:02d}"]): weight_of(i) for i in range(count)}
+
+    def test_under_the_limit_keeps_everything(self):
+        area_counter = self._areas(sut.MAX_LABELS)
+        labels = {next(iter(a.labels)) for a in area_counter}
+        assert sut._select_labels(_make_pr(), labels, area_counter, {}) == labels
+
+    def test_over_the_limit_keeps_the_heaviest(self):
+        area_counter = self._areas(sut.MAX_LABELS + 1)
+        labels = {next(iter(a.labels)) for a in area_counter}
+        kept = sut._select_labels(_make_pr(), labels, area_counter, {})
+        # Weights are 0..MAX_LABELS, so the highest-numbered labels win.
+        assert kept == {f"area: {i:02d}" for i in range(1, sut.MAX_LABELS + 1)}
+
+    def test_size_label_survives_truncation(self):
+        area_counter = self._areas(sut.MAX_LABELS + 1)
+        labels = {next(iter(a.labels)) for a in area_counter} | {"size: L"}
+        kept = sut._select_labels(_make_pr(), labels, area_counter, {})
+        assert "size: L" in kept
+        # The size label is exempt rather than taking one of the MAX_LABELS slots.
+        assert len(kept) == sut.MAX_LABELS + 1
+
+    def test_size_label_does_not_count_towards_the_limit(self, caplog):
+        """MAX_LABELS area labels plus a size label is not an overflow."""
+        area_counter = self._areas(sut.MAX_LABELS)
+        labels = {next(iter(a.labels)) for a in area_counter} | {"size: L"}
+
+        with caplog.at_level(logging.WARNING, logger=sut.logger.name):
+            kept = sut._select_labels(_make_pr(), labels, area_counter, {})
+
+        assert kept == labels
+        assert caplog.records == []
+
+
+class TestLabelApplication:
+    def test_labels_are_applied(self):
+        area = _make_area("Kernel", maintainers=["m"], labels=["area: Kernel"])
+        gh, args, mf, pr = _make_process_pr_harness({"kernel/sched.c": [area]})
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "area: Kernel" in _labels_added(pr)
+
+    def test_broad_pr_keeps_top_labels_instead_of_none(self):
+        """Exceeding MAX_LABELS used to drop every label; now the heaviest stay."""
+        areas_per_file = {}
+        for i in range(sut.MAX_LABELS + 1):
+            area = _make_area(f"A{i}", maintainers=[f"m{i}"], labels=[f"area: {i:02d}"])
+            # Area i matches i + 1 files, so later areas weigh more.
+            for f in range(i + 1):
+                areas_per_file.setdefault(f"subsys/a{i}/f{f}.c", []).append(area)
+
+        gh, args, mf, pr = _make_process_pr_harness(areas_per_file)
+        sut.process_pr(gh, args, mf, 99)
+
+        added = [label for label in _labels_added(pr) if label.startswith("area: ")]
+        # The lightest area (a single file) is the one dropped.
+        assert added == [f"area: {i:02d}" for i in range(1, sut.MAX_LABELS + 1)]
+
+    def test_truncation_does_not_remove_labels_already_on_the_pr(self):
+        """The cap governs what a run applies, not what the PR already carries."""
+        areas_per_file = {}
+        for i in range(sut.MAX_LABELS + 1):
+            area = _make_area(f"A{i}", maintainers=[f"m{i}"], labels=[f"area: {i:02d}"])
+            for f in range(i + 1):
+                areas_per_file.setdefault(f"subsys/a{i}/f{f}.c", []).append(area)
+
+        gh, args, mf, pr = _make_process_pr_harness(areas_per_file)
+        # The label the truncation drops is already on the PR.
+        pr.labels = [SimpleNamespace(name="area: 00")]
+
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "area: 00" not in _labels_added(pr)
+        pr.remove_from_labels.assert_not_called()
 
 
 # ---------------------------------------------------------------------------
@@ -1381,7 +1819,7 @@ class TestMentionCommentIsIdempotent:
         area = _make_area("Net", maintainers=["outside_m"], collaborators=["inside_c"])
         gh, args, mf, pr = _make_process_pr_harness({"subsys/net/foo.c": [area]})
         gh.requester.graphql_query.return_value = ({}, _suggested_payload([]))
-        gh.get_repo.return_value.get_commits.side_effect = lambda path: []
+        gh.get_repo.return_value.get_commits.side_effect = lambda path, since=None: []
         gh.get_repo.return_value.has_in_collaborators.side_effect = (
             lambda user: user.login != "outside_m"
         )

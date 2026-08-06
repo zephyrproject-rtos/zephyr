@@ -8,7 +8,7 @@
 #include "friendship_common.h"
 #include "mesh/adv.h"
 #include "mesh/blob.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 
 #define LOG_MODULE_NAME test_blob
 

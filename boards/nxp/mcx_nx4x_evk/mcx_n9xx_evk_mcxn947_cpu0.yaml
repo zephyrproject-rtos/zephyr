@@ -35,4 +35,5 @@ supported:
   - watchdog
   - edac
   - crc
+  - tsi
 vendor: nxp

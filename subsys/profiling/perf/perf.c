@@ -1,6 +1,7 @@
 /*
  *  Copyright (c) 2023 KNS Group LLC (YADRO)
  *  Copyright (c) 2020 Yonatan Goldschmidt <yon.goldschmidt@gmail.com>
+ *  Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +14,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size);
+/*
+ * Return the number of captured frames, zero when the buffer is too small,
+ * or a negative errno when the current sample should be skipped.
+ */
+int arch_perf_current_stack_trace(uintptr_t *buf, size_t size);
 
 struct perf_data_t {
 	struct k_timer timer;
@@ -53,7 +58,7 @@ static struct perf_data_t perf_data = {
 /* Common sampling function called from timer on each CPU */
 static void perf_do_sample(void)
 {
-	size_t trace_length = 0;
+	int trace_length = 0;
 	k_tid_t current_thread;
 #ifdef CONFIG_SMP
 	unsigned int cpu_id = arch_curr_cpu()->id;
@@ -92,13 +97,15 @@ static void perf_do_sample(void)
 								     perf_data.idx);
 	}
 
-	if (trace_length != 0) {
-		perf_data.buf[perf_data.idx - 1] = trace_length;
-		perf_data.idx += trace_length;
+	if (trace_length > 0) {
+		perf_data.buf[perf_data.idx - 1] = (uintptr_t)trace_length;
+		perf_data.idx += (size_t)trace_length;
 	} else {
 		--perf_data.idx;
-		perf_data.buf_full = true;
-		k_work_reschedule(&perf_data.dwork, K_NO_WAIT);
+		if (trace_length == 0) {
+			perf_data.buf_full = true;
+			k_work_reschedule(&perf_data.dwork, K_NO_WAIT);
+		}
 	}
 
 #ifdef CONFIG_SMP

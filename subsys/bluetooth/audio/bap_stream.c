@@ -1295,6 +1295,10 @@ int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group)
 	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
 		const struct bt_bap_ep *ep = stream->ep;
 
+		if (conn != stream->conn) {
+			continue;
+		}
+
 		if (ep != NULL && !bap_stream_valid_ase_op(conn, ep, BT_ASCS_QOS_OP)) {
 			return -EBADMSG;
 		}

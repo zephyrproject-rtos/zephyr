@@ -975,9 +975,14 @@ int net_context_bind(struct net_context *context, const struct net_sockaddr *add
 				}
 			}
 
-			ifaddr = net_if_ipv6_addr_lookup(
-					&addr6->sin6_addr,
-					iface == NULL ? &iface : NULL);
+			if (iface != NULL) {
+				ifaddr = net_if_ipv6_addr_lookup_by_iface(iface,
+									  &addr6->sin6_addr);
+			} else {
+				ifaddr = net_if_ipv6_addr_lookup(&addr6->sin6_addr,
+								 &iface);
+			}
+
 			if (!ifaddr) {
 				return -ENOENT;
 			}
@@ -1083,9 +1088,14 @@ int net_context_bind(struct net_context *context, const struct net_sockaddr *add
 
 			ptr = (struct net_in_addr *)net_ipv4_unspecified_address();
 		} else {
-			ifaddr = net_if_ipv4_addr_lookup(
-					&addr4->sin_addr,
-					iface == NULL ? &iface : NULL);
+			if (iface != NULL) {
+				ifaddr = net_if_ipv4_addr_lookup_by_iface(iface,
+									  &addr4->sin_addr);
+			} else {
+				ifaddr = net_if_ipv4_addr_lookup(&addr4->sin_addr,
+								 &iface);
+			}
+
 			if (!ifaddr) {
 				return -ENOENT;
 			}

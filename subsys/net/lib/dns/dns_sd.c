@@ -1124,93 +1124,15 @@ bool dns_sd_rec_match(const struct dns_sd_rec *record,
 	return true;
 }
 
-int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_rec *record,
-			 char **label, size_t *size, size_t *n)
+/* Validates the label count against the two supported DNS-SD name shapes and
+ * assigns label[] into the matching record fields.
+ */
+static int dns_sd_validate_and_assign(size_t qlabels, size_t label_capacity, char **label,
+				      struct dns_sd_rec *record)
 {
-	size_t i;
-	size_t offset;
-	size_t qlabels;
-	size_t qsize;
-	const size_t N = (n) ? (*n) : 0;
-
-	/*
-	 * See RFC 6763, 7.2. Service Name Length Limits
-	 *
-	 *            <sn>._tcp.<servicedomain>.<parentdomain>.
-	 * <Instance>.<sn>._tcp.<servicedomain>.<parentdomain>.
-	 * <sub>._sub.<sn>._tcp.<servicedomain>.<parentdomain>.
-	 */
-	__ASSERT(DNS_SD_MIN_LABELS <= N, "invalid number of labels %zu", N);
-	__ASSERT(!(query == NULL || label == NULL || size == NULL || n == NULL),
-		 "one or more required arguments are NULL");
-	__ASSERT(query + query_size >= query, "query %p + query_size %zu  wraps NULL", query,
-		 query_size);
-	__ASSERT(label + N >= label, "label %p + n %zu  wraps NULL", label, N);
-	__ASSERT(size + N >= size, "size %p + n %zu  wraps NULL", size, N);
-	for (i = 0; i < N; ++i) {
-		if (label[i] == NULL) {
-			__ASSERT(label[i] != NULL, "label[%zu] is NULL", i);
-		}
-	}
-
-	if (query_size <= DNS_MSG_HEADER_SIZE) {
-		NET_DBG("query size %zu is less than DNS_MSG_HEADER_SIZE %d", query_size,
-			DNS_MSG_HEADER_SIZE);
-		return -EINVAL;
-	}
-
-	query += DNS_MSG_HEADER_SIZE;
-	query_size -= DNS_MSG_HEADER_SIZE;
-	offset = DNS_MSG_HEADER_SIZE;
-	dns_sd_create_wildcard_filter(record);
-	/* valid record must have non-NULL port */
-	record->port = &dns_sd_port_zero;
-
-	/* also counts labels */
-	for (i = 0, qlabels = 0; query_size > 0;) {
-		qsize = *query;
-		++offset;
-		++query;
-		--query_size;
-
-		if (qsize == 0) {
-			break;
-		}
-
-		++qlabels;
-		if (qsize >= query_size) {
-			NET_DBG("claimed query size %zu > query buffer size %zu", qsize,
-				query_size);
-			return -EINVAL;
-		}
-
-		if (qsize >= size[i]) {
-			NET_DBG("qsize %zu >= size[%zu] %zu", qsize, i, size[i]);
-			return -ENOBUFS;
-		}
-
-		if (i < N) {
-			/* only extract the label if there is storage for it */
-			memcpy(label[i], query, qsize);
-			label[i][qsize] = '\0';
-			size[i] = qsize;
-			++i;
-		}
-
-		offset += qsize;
-		query += qsize;
-		query_size -= qsize;
-	}
-
-	/* write-out the actual number of labels in 'n' */
-	for (*n = i; i < N; ++i) {
-		label[i] = NULL;
-		size[i] = 0;
-	}
-
-	if (qlabels > N) {
-		NET_DBG("too few buffers to extract query: qlabels: %zu, N: %zu",
-			qlabels, N);
+	if (qlabels > label_capacity) {
+		NET_DBG("too few buffers to extract query: qlabels: %zu, label_capacity: %zu",
+			qlabels, label_capacity);
 		return -ENOBUFS;
 	}
 
@@ -1218,7 +1140,9 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 		NET_DBG("too few labels in query %zu, DNS_SD_MIN_LABELS: %d", qlabels,
 			DNS_SD_MIN_LABELS);
 		return -EINVAL;
-	} else if (qlabels == DNS_SD_MIN_LABELS) {
+	}
+
+	if (qlabels == DNS_SD_MIN_LABELS) {
 		/* e.g. _zephyr._tcp.local */
 		record->service = label[0];
 		record->proto = label[1];
@@ -1238,41 +1162,110 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 			NET_DBG("domain '%s' is invalid", record->domain);
 			return -EINVAL;
 		}
-	} else if (qlabels > DNS_SD_MIN_LABELS && qlabels < DNS_SD_MAX_LABELS) {
-		NET_DBG("unsupported number of labels %zu", qlabels);
-		return -EINVAL;
-	} else if (qlabels >= DNS_SD_MAX_LABELS) {
-		/* e.g.
-		 * "Zephyr 42"._zephyr._tcp.local, or
-		 * _domains._dns-sd._udp.local
-		 */
-		record->instance = label[0];
-		record->service = label[1];
-		record->proto = label[2];
-		record->domain = label[3];
 
-		if (!instance_is_valid(record->instance)) {
-			NET_DBG("service '%s' is invalid", record->instance);
-			return -EINVAL;
-		}
-
-		if (!service_is_valid(record->service)) {
-			NET_DBG("service '%s' is invalid", record->service);
-			return -EINVAL;
-		}
-
-		if (!proto_is_valid(record->proto)) {
-			NET_DBG("proto '%s' is invalid", record->proto);
-			return -EINVAL;
-		}
-
-		if (!domain_is_valid(record->domain)) {
-			NET_DBG("domain '%s' is invalid", record->domain);
-			return -EINVAL;
-		}
+		return 0;
 	}
 
-	return offset;
+	if ((qlabels > DNS_SD_MIN_LABELS && qlabels < DNS_SD_MAX_LABELS) ||
+	    qlabels > DNS_SD_MAX_LABELS) {
+		NET_DBG("unsupported number of labels %zu", qlabels);
+		return -EINVAL;
+	}
+
+	/* e.g.
+	 * "Zephyr 42"._zephyr._tcp.local, or
+	 * _domains._dns-sd._udp.local
+	 */
+	record->instance = label[0];
+	record->service = label[1];
+	record->proto = label[2];
+	record->domain = label[3];
+
+	if (!instance_is_valid(record->instance)) {
+		NET_DBG("instance '%s' is invalid", record->instance);
+		return -EINVAL;
+	}
+
+	if (!service_is_valid(record->service)) {
+		NET_DBG("service '%s' is invalid", record->service);
+		return -EINVAL;
+	}
+
+	if (!proto_is_valid(record->proto)) {
+		NET_DBG("proto '%s' is invalid", record->proto);
+		return -EINVAL;
+	}
+
+	if (!domain_is_valid(record->domain)) {
+		NET_DBG("domain '%s' is invalid", record->domain);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+int dns_sd_query_extract(const char *name, size_t name_len, struct dns_sd_rec *record,
+			 char **label, size_t *size, size_t *n)
+{
+	size_t i = 0;
+	size_t qlabels = 0;
+	size_t seg_start = 0;
+	size_t seg_len;
+	const size_t label_capacity = n ? *n : 0;
+	int ret;
+
+	/*
+	 * See RFC 6763, 7.2. Service Name Length Limits
+	 *
+	 *            <sn>._tcp.<servicedomain>.<parentdomain>.
+	 * <Instance>.<sn>._tcp.<servicedomain>.<parentdomain>.
+	 * <sub>._sub.<sn>._tcp.<servicedomain>.<parentdomain>.
+	 */
+	__ASSERT(DNS_SD_MIN_LABELS <= label_capacity, "invalid number of labels %zu",
+		 label_capacity);
+	__ASSERT(!(name == NULL || label == NULL || size == NULL || n == NULL),
+		 "one or more required arguments are NULL");
+
+	dns_sd_create_wildcard_filter(record);
+	/* valid record must have non-NULL port */
+	record->port = &dns_sd_port_zero;
+
+	for (size_t pos = 0; pos <= name_len; ++pos) {
+		if (pos != name_len && name[pos] != '.') {
+			continue;
+		}
+
+		seg_len = pos - seg_start;
+		if (seg_len == 0) {
+			NET_DBG("empty label in query '%.*s'", (int)name_len, name);
+			return -EINVAL;
+		}
+
+		++qlabels;
+		if (i < label_capacity) {
+			if (seg_len >= size[i]) {
+				NET_DBG("label len %zu >= size[%zu] %zu", seg_len, i, size[i]);
+				return -ENOBUFS;
+			}
+			memcpy(label[i], &name[seg_start], seg_len);
+			label[i][seg_len] = '\0';
+			size[i] = seg_len;
+			++i;
+		}
+		seg_start = pos + 1;
+	}
+
+	for (*n = i; i < label_capacity; ++i) {
+		label[i] = NULL;
+		size[i] = 0;
+	}
+
+	ret = dns_sd_validate_and_assign(qlabels, label_capacity, label, record);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return (int)name_len;
 }
 
 bool dns_sd_is_service_type_enumeration(const struct dns_sd_rec *rec)

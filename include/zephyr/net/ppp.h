@@ -379,13 +379,18 @@ struct lcp_options {
 
 	/** Which authentication protocol was negotiated (0 means none) */
 	uint16_t auth_proto;
+
+	/** Protocol-Field-Compression negotiated */
+	bool pfc;
+
+	/** Address-and-Control-Field-Compression negotiated */
+	bool acfc;
 };
 
-#if defined(CONFIG_NET_L2_PPP_OPTION_MRU)
-#define LCP_NUM_MY_OPTIONS	2
-#else
-#define LCP_NUM_MY_OPTIONS	1
-#endif
+#define LCP_NUM_MY_OPTIONS	(1						\
+	+ IS_ENABLED(CONFIG_NET_L2_PPP_OPTION_MRU)			\
+	+ IS_ENABLED(CONFIG_NET_L2_PPP_OPTION_PFC)			\
+	+ IS_ENABLED(CONFIG_NET_L2_PPP_OPTION_ACFC))
 
 /** IPv4 control protocol options */
 struct ipcp_options {

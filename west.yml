@@ -172,7 +172,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 150e0c1bd24fd568864ae50fa690e9ec526022a4
+      revision: aff3c2c094b32bd2d87fe9211a1b0d0a1d7aa198
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: c73313ab49840fee98cb347034526aaab62122a6
+      revision: 13e4b3cd70fb2d862a37e55665f03af09fe74201
       path: modules/hal/infineon
       groups:
         - hal
@@ -203,7 +203,7 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 39a63673760940e58ee4241238a0642f3c9d39a8
+      revision: 12e1c277b98ef765732e2b2a476076e5bb6c16f4
       path: modules/hal/nordic
       groups:
         - hal
@@ -213,7 +213,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 85d250e97c9319df6c8311f17d6d7eec9e6578e5
+      revision: 53946adb08b54449391c1c0c73cdd094d92a3b6e
       path: modules/hal/nxp
       groups:
         - hal
@@ -229,7 +229,7 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: ba5032a9e47b6ad9e9488665c1e990ed0f434734
+      revision: c20e7ee9744a1b9b5f05b99260930a7f196b9b12
       groups:
         - hal
     - name: hal_renesas
@@ -239,7 +239,7 @@ manifest:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: 562b41e10a1d8b1a761b253b107c5c6a84cf4535
+      revision: 266394b0f23dff8f77c54f67f89d62cee246f21d
       groups:
         - hal
     - name: hal_sifli
@@ -258,12 +258,12 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 9b6fb9e0ee432d12a31b6327a3690d243b74d178
+      revision: 729ba54f3c17a3a298d665ce4b86f2b8f9d3726e
       path: modules/hal/stm32
       groups:
         - hal
     - name: hal_tdk
-      revision: fa54cb65535b0ed69564423c9e0bf4e7ee47dcb1
+      revision: 0f209bd0a4b6511c8c6ffddda75da1fe6988df8f
       path: modules/hal/tdk
       groups:
         - hal
@@ -399,7 +399,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: f2f7a8edd109825de35b0c239c8fbb77b06f24a2
+      revision: 79823893d870345e944f9acb59f08b5e3a3c55a8
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
@@ -410,7 +410,7 @@ manifest:
       revision: 9164bd18dcd88ff9d9ef98279501fc1093571017
       path: modules/lib/zcbor
     - name: zephyr-xenlib
-      revision: fa1fcd1d925f0ba82afaee81b323a9035e0c1269
+      revision: 7f0884563f865a2a223f26dd0d847fb0faad397d
       path: modules/lib/zephyr-xenlib
   # zephyr-keep-sorted-stop
 

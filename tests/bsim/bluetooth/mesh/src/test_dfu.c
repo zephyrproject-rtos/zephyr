@@ -8,7 +8,7 @@
 #include "mesh/dfu_slot.h"
 #include "mesh/dfu.h"
 #include "mesh/blob.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "dfu_blob_common.h"
 
 #define LOG_MODULE_NAME test_dfu

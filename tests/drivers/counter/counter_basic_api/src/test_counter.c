@@ -226,6 +226,12 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MSPM0_TIMER
 	DEVS_FOR_DT_COMPAT(ti_mspm0_timer_counter)
 #endif
+#ifdef CONFIG_COUNTER_CRSAS_MA2
+	DEVS_FOR_DT_COMPAT(arm_crsas_ma2_counter)
+#endif
+#ifdef CONFIG_COUNTER_CRSAS_MA2_TIMER
+	DEVS_FOR_DT_COMPAT(arm_crsas_ma2_timer)
+#endif
 };
 
 static const struct device *const period_devs[] = {

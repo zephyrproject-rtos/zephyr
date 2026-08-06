@@ -42,8 +42,6 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <esp_private/adc_share_hw_ctrl.h>
 #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
-#define DHCPV4_MASK (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)
-
 /* use global iface pointer to support any ethernet driver */
 /* necessary for wifi callback functions */
 NET_IF_DT_INST_DECLARE(0, 0);
@@ -138,11 +136,14 @@ struct esp32_wifi_event {
 K_MSGQ_DEFINE(esp32_wifi_event_msgq, sizeof(struct esp32_wifi_event),
 	      CONFIG_ESP32_WIFI_EVENT_QUEUE_SIZE, 4);
 
-static struct net_mgmt_event_callback esp32_dhcp_cb;
-
-static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
-			       struct net_if *iface)
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
+static void wifi_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+				size_t info_length __unused, void *user_data __unused)
 {
+	if (iface != esp32_wifi_iface) {
+		return;
+	}
+
 	switch (mgmt_event) {
 	case NET_EVENT_IPV4_DHCP_BOUND:
 		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
@@ -151,6 +152,10 @@ static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt
 		break;
 	}
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(esp32_wifi_events, NET_EVENT_IPV4_DHCP_BOUND, wifi_event_handler,
+				NULL);
+#endif /* CONFIG_WIFI_STA_AUTO_DHCPV4 */
 
 static void esp32_wifi_tx_done(uint8_t ifidx, uint8_t *data __unused, uint16_t *data_len __unused,
 			       bool status __unused)
@@ -1213,6 +1218,7 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 		ret = esp_wifi_sta_enterprise_disable();
 		if (ret != ESP_OK) {
 			LOG_ERR("Failed to disable Enterprise authentication (%d)", ret);
+			data->state = ESP32_STA_STARTED;
 			return -EIO;
 		}
 	}
@@ -1278,6 +1284,7 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 #else
 		LOG_ERR("WPA3 not supported for STA mode. Enable "
 			"CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE");
+		data->state = ESP32_STA_STARTED;
 		return -EINVAL;
 #endif /* CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE */
 	case WIFI_SECURITY_TYPE_EAP_TLS:
@@ -1288,16 +1295,19 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 		ret = esp32_wifi_configure_enterprise(data, params, &wifi_config);
 		if (ret) {
+			data->state = ESP32_STA_STARTED;
 			return ret;
 		}
 		break;
 #else
 		LOG_ERR("WPA Enterprise not supported for STA mode. Enable "
 			"CONFIG_ESP32_WIFI_ENTERPRISE");
+		data->state = ESP32_STA_STARTED;
 		return -EINVAL;
 #endif /* CONFIG_ESP32_WIFI_ENTERPRISE */
 	default:
 		LOG_ERR("Authentication method not supported");
+		data->state = ESP32_STA_STARTED;
 		return -EIO;
 	}
 
@@ -1312,12 +1322,14 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 	ret = esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
 	if (ret) {
 		LOG_ERR("Failed to set Wi-Fi configuration (%d)", ret);
+		data->state = ESP32_STA_STARTED;
 		return -EINVAL;
 	}
 
 	ret = esp_wifi_connect();
 	if (ret) {
 		LOG_ERR("Failed to connect to Wi-Fi access point (%d)", ret);
+		data->state = ESP32_STA_STARTED;
 		return -EAGAIN;
 	}
 
@@ -1849,11 +1861,6 @@ static int esp32_wifi_dev_init(const struct device *dev)
 	if (ret != ESP_OK) {
 		LOG_ERR("Unable to start the Wi-Fi: %d", ret);
 		return -EIO;
-	}
-
-	if (IS_ENABLED(CONFIG_WIFI_STA_AUTO_DHCPV4)) {
-		net_mgmt_init_event_callback(&esp32_dhcp_cb, wifi_event_handler, DHCPV4_MASK);
-		net_mgmt_add_event_callback(&esp32_dhcp_cb);
 	}
 
 	return 0;

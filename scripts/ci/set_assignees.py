@@ -25,8 +25,16 @@ Labeling strategy
 For every file changed in the PR, MAINTAINERS.yml is consulted to find the
 matching areas.  The union of all area labels across all matched areas is
 collected and applied to the PR, subject to a cap of MAX_LABELS (10).  If more
-than MAX_LABELS distinct labels would be applied, the entire label step is
-skipped to avoid polluting PRs that touch very broad cross-cutting areas.
+than MAX_LABELS distinct labels would be applied, they are ranked by how much of
+the PR the areas carrying them cover (their file weight, falling back to their
+plain file count for areas weighted 0 -- see Area weighting below) and only the
+MAX_LABELS highest-ranked ones are applied.  That keeps a PR touching very
+broad cross-cutting areas from being papered with labels, while still labelling
+it by whatever it predominantly changes.  Size labels are managed separately:
+they neither count towards the cap nor get dropped by it.
+
+The cap governs what a run applies; labels already on the PR are never removed,
+so it cannot pull an over-labelled PR back under the cap (use --reset for that).
 
 A special lightweight "size: XS" label is managed by default:
   - Added when: the PR has exactly one commit AND at most one line added AND
@@ -56,9 +64,10 @@ two exceptions that contribute 0:
 
   - CMakeLists.txt files: build-system boilerplate present in nearly every
     directory, not a reliable signal for area ownership.
-  - Meta-areas (Documentation, Samples, Tests, Release Notes, Release): used
-    only for assignee selection when they are the *sole* area touched (see
-    below); not weighted for mixed PRs.
+  - Meta-areas, i.e. areas carrying ``meta: true`` in MAINTAINERS.yml
+    (Documentation, Samples, Tests, ...): used only for assignee selection
+    when they are the *sole* area touched (see below); not weighted for
+    mixed PRs.
 
 Platform (driver/board) areas receive a weight of 1 for the first file that
 maps to them.  Subsequent files that also map to the *same* Platform area
@@ -90,10 +99,17 @@ the maintainers of every other touched area:
 
        - files in an under-covered area, i.e. one that names no maintainers or
          at most THIN_AREA_COLLABORATORS (2) collaborators, and so cannot
-         supply enough reviewers on its own, and
+         supply enough reviewers on its own.  Meta-areas are excluded: they
+         cover large parts of the tree by design, and the people they name are
+         the right reviewers for them, and
        - orphaned files, which match no area at all.  A PR consisting only of
          these would otherwise get no reviewer whatsoever, since every tier
          above is derived from matched areas.
+
+     This tier is skipped entirely once the tiers above have already produced
+     MIN_TOTAL_REVIEWERS (3) candidates other than the author: the PR then has
+     reviewers who own it by declaration, and lower-confidence names added on
+     top would only dilute the request (and cost API calls).
 
      Two heuristics are tried in order, and the result is appended after the
      tiers above (the author and anyone already listed are excluded).  These
@@ -106,7 +122,9 @@ the maintainers of every other touched area:
      b. When GitHub suggests nobody, the recent contributors to the unstaffed
         files, read from the commit history.  Unlike (a) this is scoped to the
         files that are actually short of reviewers, rather than to the PR as a
-        whole.  Bounded by HISTORY_COMMITS_PER_FILE, MAX_HISTORY_FILES, and
+        whole.  Only the last HISTORY_MAX_AGE_DAYS (365) days are looked at, so
+        that people who stopped working on the file long ago are not asked.
+        Further bounded by HISTORY_COMMITS_PER_FILE, MAX_HISTORY_FILES, and
         MAX_HISTORY_REVIEWERS.
 
 Candidates are then filtered:
@@ -163,13 +181,39 @@ weight) using the following priority rules:
      of the ranked list, and the search stops.
   4. Platform areas (drivers, boards) are appended as lower-priority
      fallbacks.
-  5. Meta-areas (Documentation, Samples, Tests, Release Notes, Release)
-     are skipped in mixed PRs.
+  5. Meta-areas (``meta: true`` in MAINTAINERS.yml) are skipped in mixed PRs.
 
 After iterating all areas, the first entry in the ranked list is chosen.
 If the ranking process yielded nothing (e.g. all areas had the author as sole
 maintainer), the maintainer with the highest cumulative file-weight score is
 used as a last resort.
+
+Reset mode
+----------
+With --reset, the PR is staffed from scratch instead of being topped up.  The
+new staffing is worked out first, and every decision an earlier run made is then
+undone, just before the new one is applied:
+
+  - review requests are withdrawn, except from people who reviewed or commented
+    on the PR (they are involved by their own action) and people this run is
+    about to request again (withdrawing only to re-send would notify them
+    twice).  Team review requests are left alone: the script only ever requests
+    individuals, so a team was requested by hand;
+  - all assignees are removed;
+  - all area labels defined in MAINTAINERS.yml are removed.  Size labels are
+    left to update_size_labels, which recomputes them on every run, and labels
+    the script does not own (``bug``, backport labels, ...) are never touched.
+
+Labels, reviewers and the assignee are chosen exactly as they would be for a
+newly opened PR -- including the rule that people who removed themselves from
+the review request are never re-added, which --reset cannot route around.
+
+A PR the run skips (draft, closed, more than MAX_FILES changed files) is not
+reset either: the skip is decided before the reset runs, so such a PR keeps the
+staffing it has rather than being stripped and left bare.
+
+Use it after MAINTAINERS.yml changed, or when a previous run staffed a PR
+badly.
 
 Deferred file-groups
 --------------------
@@ -272,7 +316,9 @@ REVIEWER_RETRY_BATCH = 15
 # previous comment instead of posting a duplicate.
 MENTION_MARKER = "<!-- set_assignees: reviewer-mention -->"
 
-# Maximum number of labels to apply; more than this is likely noise from over-broad matches.
+# Maximum number of labels to apply; beyond this the labels are noise from
+# over-broad matches, so only the ones contributed by the heaviest areas are
+# kept and the PR is still labelled by what it mostly changes.
 MAX_LABELS = 10
 
 # An area is considered under-covered when it names no maintainers, or names at
@@ -284,10 +330,21 @@ THIN_AREA_COLLABORATORS = 2
 # Bounds on the Git-history heuristic, to keep its GitHub API cost predictable:
 #   - sample at most this many recent commits per changed file,
 #   - inspect at most this many under-covered files in total,
-#   - add at most this many heuristic reviewers to the candidate list.
+#   - add at most this many heuristic reviewers to the candidate list,
+#   - ignore commits older than this, so that people who last touched the file
+#     years ago and have long since moved on are not asked to review it.
 HISTORY_COMMITS_PER_FILE = 20
 MAX_HISTORY_FILES = 40
 MAX_HISTORY_REVIEWERS = 3
+HISTORY_MAX_AGE_DAYS = 365
+
+# The heuristic reviewer tiers (GitHub suggestions, Git history) exist to keep a
+# PR from going unreviewed when MAINTAINERS.yml cannot staff it.  They are not
+# consulted once all the touched areas together have yielded this many
+# candidates: at that point the PR has reviewers responsible for it by
+# declaration, and adding lower-confidence names on top only dilutes the
+# request.
+MIN_TOTAL_REVIEWERS = 3
 
 # GitHub's own reviewer suggestions ("based on commit history and past review
 # comments") are exposed only through the GraphQL API, as a plain unpaginated
@@ -310,9 +367,6 @@ query($owner: String!, $name: String!, $number: Int!) {
 
 # Courtesy sleep between consecutive GitHub API calls to avoid secondary rate limits.
 API_SLEEP_SECONDS = 1
-
-# Areas where assignee selection only fires when they are the sole area affected.
-META_AREAS = frozenset(['Release Notes', 'Documentation', 'Samples', 'Tests', 'Release'])
 
 
 def parse_args():
@@ -392,6 +446,19 @@ def parse_args():
         action="count",
         default=0,
         help="Verbose output. Use -v for INFO, -vv for DEBUG.",
+    )
+
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        default=False,
+        help=(
+            "Re-staff the pull request from scratch: drop the review requests of "
+            "everyone who has not reviewed or commented, remove the assignees and "
+            "the MAINTAINERS.yml area labels, then apply labels, reviewers and an "
+            "assignee as if the pull request had just been opened. Reviewers who "
+            "removed themselves are not re-added."
+        ),
     )
 
     parser.add_argument(
@@ -577,7 +644,7 @@ def _pick_assignees(pr, area_counter: dict, all_maintainers: dict, num_files: in
                 assignees,
             )
             ranked_assignees.append(assignees)
-        elif area.name not in META_AREAS:
+        elif not area.meta:
             logger.debug(
                 "Non-platform area '%s' with maintainers %s takes priority for assignment",
                 area.name,
@@ -608,10 +675,18 @@ def _thin_areas(maintainer_file, area_counter: dict) -> set:
     or names at most THIN_AREA_COLLABORATORS collaborators.  These areas cannot
     supply enough reviewers on their own, so the caller supplements them with
     recent Git contributors (see _history_reviewers).
+
+    Meta-areas (``meta: true`` in MAINTAINERS.yml) are never reported as
+    under-covered.  Their file patterns span large parts of the tree, so the
+    small number of people they name is deliberate rather than a gap, and
+    walking the history of every documentation or sample file they match would
+    add reviewers on top of the maintainers who already own the area.
     """
     thin = set()
     for area in area_counter:
         entry = maintainer_file.areas[area.name]
+        if entry.meta:
+            continue
         if not entry.maintainers or len(entry.collaborators) <= THIN_AREA_COLLABORATORS:
             thin.add(area.name)
     return thin
@@ -679,10 +754,17 @@ def _history_reviewers(gh_repo, filenames, exclude: set) -> list:
     (commit-author emails cannot be mapped to logins reliably) and does not
     depend on the CI checkout having the full history.
 
+    Only commits from the last HISTORY_MAX_AGE_DAYS days are considered: a
+    contributor who has not touched the file within a year is unlikely to still
+    be the right person to ask, and on old files the unbounded history would
+    otherwise fill every heuristic slot with people who have moved on.
+
     *exclude* holds logins already covered (PR author, existing candidates) so
     they are not re-proposed.  Sampling is bounded by HISTORY_COMMITS_PER_FILE,
     MAX_HISTORY_FILES, and MAX_HISTORY_REVIEWERS.
     """
+    since = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=HISTORY_MAX_AGE_DAYS)
+
     sampled_files = sorted(filenames)
     if len(sampled_files) > MAX_HISTORY_FILES:
         logger.info(
@@ -696,7 +778,7 @@ def _history_reviewers(gh_repo, filenames, exclude: set) -> list:
     counts = defaultdict(int)
     for filename in sampled_files:
         try:
-            commits = gh_repo.get_commits(path=filename)
+            commits = gh_repo.get_commits(path=filename, since=since)
         except GithubException as exc:
             logger.debug("No commit history for '%s': %s", filename, exc)
             continue
@@ -1001,6 +1083,162 @@ def update_size_labels(pr, args, changed_files: list, labels: set):
     )
 
 
+def _rank_labels(labels: set, area_counter: dict, area_files: dict) -> list:
+    """Return *labels* ordered by how much of the PR the areas carrying them cover.
+
+    A label's rank is the sum of the file weights of every touched area that
+    carries it, so a label backed by the bulk of the changed files outranks one
+    coming from a single incidentally matched area.  Ties break by label name to
+    keep the choice deterministic.
+
+    Areas weighing 0 fall back to the number of files they matched.  Those
+    weights are zeroed for assignee selection -- meta-areas, files that only
+    matched CMakeLists.txt, repeated matches of one Platform area -- but the
+    areas still describe what the PR changes, and a label is about exactly that.
+    Without the fallback a documentation-only PR would rank "area: Documentation"
+    last and drop it first.  Labels with no contributing area at all (labels of
+    deferred file-groups) still score 0 and sort last.
+    """
+    weights = defaultdict(int)
+    for area, weight in area_counter.items():
+        weight = weight or len(area_files.get(area.name, ()))
+        for label in area.labels:
+            if label in labels:
+                weights[label] += weight
+
+    return sorted(labels, key=lambda label: (-weights[label], label))
+
+
+def _select_labels(pr, labels: set, area_counter: dict, area_files: dict) -> set:
+    """Return the labels to apply to *pr*, truncated to MAX_LABELS if needed.
+
+    Up to MAX_LABELS area labels everything is applied.  Beyond that the PR
+    touches so many areas that labelling it with all of them says nothing, so
+    only the MAX_LABELS highest-ranked ones are applied (see _rank_labels).
+
+    Only the area labels count towards the limit, and only they can be dropped.
+    Size labels are computed for this PR alone and update_size_labels has
+    already removed the stale ones, so dropping the new one would leave the PR
+    with no size label at all -- and counting it would make MAX_LABELS area
+    labels plus a size label look like an overflow.
+
+    This caps what the run *applies*; it never takes a label off the PR.  A
+    label already there stays, whether a human added it or an earlier run did
+    (--reset is the way to clear those).
+    """
+    area_labels = labels - _SIZE_LABELS
+    if len(area_labels) <= MAX_LABELS:
+        return labels
+
+    ranked = _rank_labels(area_labels, area_counter, area_files)
+    kept = set(ranked[:MAX_LABELS])
+
+    logger.warning(
+        "PR #%d matched %d area labels (limit %d); applying only the %d highest-weight: "
+        "%s (not applying: %s)",
+        pr.number,
+        len(area_labels),
+        MAX_LABELS,
+        len(kept),
+        sorted(kept),
+        sorted(area_labels - kept),
+    )
+    return kept | (labels & _SIZE_LABELS)
+
+
+def _interacted_logins(pr) -> set:
+    """Return the logins of everyone who has engaged with *pr*.
+
+    That is anyone who submitted a review, or commented on the PR itself or on
+    one of its review threads.  Such people are involved in the change by their
+    own action, so a reset must not drop them.
+    """
+    logins = set()
+
+    def _add(user):
+        login = getattr(user, 'login', None)
+        if login:
+            logins.add(login)
+
+    for review in pr.get_reviews():
+        _add(review.user)
+    for comment in pr.get_issue_comments():
+        _add(comment.user)
+    for comment in pr.get_review_comments():
+        _add(comment.user)
+
+    return logins
+
+
+def _reset_pr(pr, args, maintainer_file, keep=()) -> set:
+    """Undo this script's earlier decisions on *pr* so it can be staffed afresh.
+
+    Removes the review request from everyone who has not engaged with the PR,
+    drops every assignee, and strips the area labels that MAINTAINERS.yml
+    defines.  The caller then applies the staffing it has just computed, so the
+    PR ends up as if it had been opened now.
+
+    Called late in process_pr, once that staffing is known, for two reasons:
+    every early return (draft, closed, MAX_FILES) has already had its say, so a
+    reset cannot strip a PR and then bail out without restaffing it; and *keep*
+    can hold the logins about to be requested again.  Their request is left in
+    place, since withdrawing it only to re-send it would notify them twice.
+
+    Four things are deliberately left alone:
+
+      - Reviewers who reviewed or commented (see _interacted_logins).  They are
+        already part of the conversation, and dropping their request would
+        either lose that or notify them again for nothing.
+      - Team review requests.  This script only ever requests individuals, so a
+        team request was added by hand and a reset has no basis to withdraw it.
+      - Size labels: update_size_labels recomputes them on every run and
+        removes the stale ones itself.
+      - Labels the script does not own (``bug``, ``RFC``, backport labels, ...).
+        They are not derived from MAINTAINERS.yml, so a reset has no basis for
+        second-guessing whoever added them.
+
+    People who removed themselves from the review request are not handled here:
+    _add_reviewers already refuses to re-request them, so the reset cannot
+    route around that opt-out.
+
+    Returns the names of the labels removed, since pr.labels is a snapshot
+    taken before the reset.
+    """
+    protected = _interacted_logins(pr) | set(keep)
+
+    review_users, _review_teams = pr.get_review_requests()
+    requested = {user.login for user in review_users}
+
+    kept = sorted(requested & protected)
+    if kept:
+        logger.info(
+            "Reset: keeping review request(s) for users who engaged or are still responsible: %s",
+            kept,
+        )
+
+    stale = sorted(requested - protected)
+    if stale:
+        logger.info("Reset: removing %d review request(s): %s", len(stale), stale)
+        if not args.dry_run:
+            pr.delete_review_request(reviewers=stale)
+
+    assignees = sorted({assignee.login for assignee in pr.assignees})
+    if assignees:
+        logger.info("Reset: removing assignee(s): %s", assignees)
+        if not args.dry_run:
+            pr.remove_from_assignees(*assignees)
+
+    area_labels = {label for area in maintainer_file.areas.values() for label in area.labels}
+    removed_labels = {label.name for label in pr.labels} & area_labels
+    if removed_labels:
+        logger.info("Reset: removing label(s): %s", sorted(removed_labels))
+        for name in sorted(removed_labels):
+            if not args.dry_run:
+                pr.remove_from_labels(name)
+
+    return removed_labels
+
+
 def process_pr(gh, args, maintainer_file, number: int):
     gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
     pr = gh_repo.get_pull(number)
@@ -1128,7 +1366,7 @@ def process_pr(gh, args, maintainer_file, number: int):
         for area in sorted_areas:
             # CMakeLists.txt changes and meta-area files do not count toward
             # the area weight used for assignee selection.
-            if 'CMakeLists.txt' in filename or area.name in META_AREAS:
+            if 'CMakeLists.txt' in filename or area.meta:
                 count = 0
             else:
                 # Once an instance (Platform) area has been seen, subsequent
@@ -1171,7 +1409,19 @@ def process_pr(gh, args, maintainer_file, number: int):
     for name in thin:
         uncovered_files.update(area_files.get(name, ()))
 
-    if uncovered_files:
+    # The heuristics below are a stopgap for PRs the areas cannot staff, so they
+    # only run while the area tiers are short of reviewers.  The author does not
+    # count: they cannot review their own PR.
+    total_reviewers = set(collab) - {pr.user.login}
+
+    if uncovered_files and len(total_reviewers) >= MIN_TOTAL_REVIEWERS:
+        logger.info(
+            "Skipping heuristic reviewers: %d reviewer(s) already found from the "
+            "touched areas (threshold %d)",
+            len(total_reviewers),
+            MIN_TOTAL_REVIEWERS,
+        )
+    elif uncovered_files:
         if orphan_files:
             logger.info(
                 "%d changed file(s) match no area: %s",
@@ -1214,24 +1464,27 @@ def process_pr(gh, args, maintainer_file, number: int):
 
     assignees = _pick_assignees(pr, area_counter, all_maintainers, num_files)
 
+    # With --reset, wipe what an earlier run decided before applying the above,
+    # so the PR ends up staffed as if it were new.  This happens here, not
+    # earlier: every skip condition above has had its say, so a reset cannot
+    # strip a PR the run then declines to restaff, and the reviewers about to be
+    # requested again keep the request they already have.  What the reset
+    # removed is tracked because pr.labels and pr.assignee still describe the
+    # PR as it was before.
+    removed_labels = _reset_pr(pr, args, maintainer_file, keep=collab) if args.reset else set()
+
     # Apply labels — skip any that are already present, then add the rest in
     # a single API call to avoid per-label timeline noise.
     if labels:
-        if len(labels) <= MAX_LABELS:
-            current_label_names = {lbl.name for lbl in pr.labels}
-            new_labels = sorted(labels - current_label_names)
-            if new_labels:
-                logger.info("Adding labels: %s", new_labels)
-                if not args.dry_run:
-                    pr.add_to_labels(*new_labels)
-            else:
-                logger.info("All labels already present on PR #%d; skipping", pr.number)
+        labels = _select_labels(pr, labels, area_counter, area_files)
+        current_label_names = {lbl.name for lbl in pr.labels} - removed_labels
+        new_labels = sorted(labels - current_label_names)
+        if new_labels:
+            logger.info("Adding labels: %s", new_labels)
+            if not args.dry_run:
+                pr.add_to_labels(*new_labels)
         else:
-            logger.warning(
-                "Too many labels (%d) for PR #%d; skipping label assignment",
-                len(labels),
-                pr.number,
-            )
+            logger.info("All labels already present on PR #%d; skipping", pr.number)
 
     # Request reviews.
     # additional_reviews is already folded into collab by
@@ -1240,10 +1493,12 @@ def process_pr(gh, args, maintainer_file, number: int):
         _add_reviewers(gh, gh_repo, pr, args, collab)
 
     # Set assignees (only when none are set yet, unless doing a dry run).
-    if assignees and (not pr.assignee or args.dry_run):
+    # --reset just cleared them, so pr.assignee describes a state that is gone.
+    has_assignee = pr.assignee and not args.reset
+    if assignees and (not has_assignee or args.dry_run):
         _assign_maintainers(gh, pr, args, assignees)
     else:
-        reason = "already has assignee" if pr.assignee else "no assignees found"
+        reason = "already has assignee" if has_assignee else "no assignees found"
         logger.info("Not setting assignee for PR #%d: %s", pr.number, reason)
 
     time.sleep(API_SLEEP_SECONDS)

@@ -9,6 +9,7 @@
 #include <zephyr/drivers/rtc.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include "rtc_utils.h"
 
 #define RV8263C8_REGISTER_CONTROL_1     0x00
@@ -55,6 +56,18 @@
 #define RV8263C8_BM_SOFTWARE_RESET          (0x58)
 #define RV8263C8_BM_REGISTER_OFFSET         0x7F
 #define RV8263_YEAR_OFFSET                  (2000 - 1900)
+
+/* See the offset register description in the application manual. The
+ * register holds a signed 7-bit correction value; bit 7 selects the mode.
+ */
+#define RV8263C8_OFFSET_FIELD_MIN           (-64)
+#define RV8263C8_OFFSET_FIELD_MAX           63
+#define RV8263C8_OFFSET_SLOW_PPB_PER_LSB    4340
+#define RV8263C8_OFFSET_FAST_PPB_PER_LSB    4069
+#define RV8263C8_OFFSET_PPB_MIN \
+	(RV8263C8_OFFSET_FIELD_MIN * RV8263C8_OFFSET_SLOW_PPB_PER_LSB)
+#define RV8263C8_OFFSET_PPB_MAX \
+	(RV8263C8_OFFSET_FIELD_MAX * RV8263C8_OFFSET_SLOW_PPB_PER_LSB)
 
 #define SECONDS_BITS  GENMASK(6, 0)
 #define MINUTES_BITS  GENMASK(7, 0)
@@ -594,47 +607,56 @@ int rv8263_update_callback(const struct device *dev, rtc_update_callback callbac
 #ifdef CONFIG_RTC_CALIBRATION
 int rv8263c8_calibration_set(const struct device *dev, int32_t calibration)
 {
-	int8_t offset;
+	uint8_t offset;
 	int32_t test_mode0;
 	int32_t test_mode1;
 	int32_t offset_ppm_mode0;
 	int32_t offset_ppm_mode1;
 	const struct rv8263c8_config *config = dev->config;
 
+	if ((calibration < RV8263C8_OFFSET_PPB_MIN) || (calibration > RV8263C8_OFFSET_PPB_MAX)) {
+		return -EINVAL;
+	}
+
 	/* NOTE: The RTC API is using a PPB (Parts Per Billion) value. The RTC is using PPM.
 	 * Here we calculate the offset when using MODE = 0.
 	 *  Formula from the application manual:
 	 *  Offset [ppm] = (calibration [ppb] / (4.34 [ppm] x 1000))
 	 */
-	offset_ppm_mode0 = calibration / 4340;
+	offset_ppm_mode0 = calibration / RV8263C8_OFFSET_SLOW_PPB_PER_LSB;
 
 	/* Here we calculate the offset when using MODE = 1.
 	 *  Formula from the application manual:
 	 *  Offset [ppm] = (calibration [ppb] / (4.069 [ppm] x 1000))
 	 */
-	offset_ppm_mode1 = calibration / 4069;
+	offset_ppm_mode1 = calibration / RV8263C8_OFFSET_FAST_PPB_PER_LSB;
 
 	LOG_DBG("Offset Mode = 0: %i", offset_ppm_mode0);
 	LOG_DBG("Offset Mode = 1: %i", offset_ppm_mode1);
 
-	test_mode0 = offset_ppm_mode0 * 4340;
+	test_mode0 = offset_ppm_mode0 * RV8263C8_OFFSET_SLOW_PPB_PER_LSB;
 	test_mode0 = calibration - test_mode0;
-	test_mode1 = offset_ppm_mode1 * 4069;
+	test_mode1 = offset_ppm_mode1 * RV8263C8_OFFSET_FAST_PPB_PER_LSB;
 	test_mode1 = calibration - test_mode1;
 
-	/* Compare the values and select the value with the smallest error. */
+	/* Compare the values and select the value with the smallest error.
+	 * MODE = 1 has the smaller step size, so its candidate can fall
+	 * outside the signed 7-bit offset field even when the requested
+	 * calibration is in range; only select it when it is representable.
+	 */
 	test_mode0 = test_mode0 < 0 ? -test_mode0 : test_mode0;
 	test_mode1 = test_mode1 < 0 ? -test_mode1 : test_mode1;
-	if (test_mode0 > test_mode1) {
+	if ((test_mode0 > test_mode1) && (offset_ppm_mode1 >= RV8263C8_OFFSET_FIELD_MIN) &&
+	    (offset_ppm_mode1 <= RV8263C8_OFFSET_FIELD_MAX)) {
 		LOG_DBG("Use fast mode (Mode = 1)");
 
 		/* Error with MODE = 1 is smaller -> Use MODE = 1. */
-		offset = RV8263_BM_FAST_MODE | (offset_ppm_mode1 & GENMASK(7, 0));
+		offset = RV8263_BM_FAST_MODE | (offset_ppm_mode1 & RV8263C8_BM_REGISTER_OFFSET);
 	} else {
 		LOG_DBG("Use normal mode (Mode = 0)");
 
 		/* Error with MODE = 0 is smaller -> Use MODE = 0. */
-		offset = RV8263_BM_NORMAL_MODE | (offset_ppm_mode0 & GENMASK(7, 0));
+		offset = RV8263_BM_NORMAL_MODE | (offset_ppm_mode0 & RV8263C8_BM_REGISTER_OFFSET);
 	}
 
 	LOG_DBG("Set offset value: %i", (offset & RV8263C8_BM_REGISTER_OFFSET));
@@ -646,7 +668,7 @@ int rv8263c8_calibration_get(const struct device *dev, int32_t *calibration)
 {
 	int err;
 	int32_t temp;
-	int8_t offset;
+	uint8_t offset;
 	const struct rv8263c8_config *config = dev->config;
 
 	if (calibration == NULL) {
@@ -658,20 +680,15 @@ int rv8263c8_calibration_get(const struct device *dev, int32_t *calibration)
 		return err;
 	}
 
-	/* Convert the signed 7 bit into a signed 8 bit value. */
-	if (offset & (0x01 << 6)) {
-		temp = offset | (0x01 << 7);
-	} else {
-		temp = offset & (0x3F);
-		temp &= ~(0x01 << 7);
-	}
+	/* OFFSET[6:0] is a signed 7-bit two's complement value. */
+	temp = sign_extend(offset & RV8263C8_BM_REGISTER_OFFSET, 6);
 
 	LOG_DBG("Read offset: %i", temp);
 
 	if (offset & RV8263_BM_FAST_MODE) {
-		temp = temp * 4340L;
+		temp = temp * RV8263C8_OFFSET_FAST_PPB_PER_LSB;
 	} else {
-		temp = temp * 4069L;
+		temp = temp * RV8263C8_OFFSET_SLOW_PPB_PER_LSB;
 	}
 
 	*calibration = temp;

@@ -111,15 +111,21 @@ MEMORY
 
 #if CONFIG_ESP32_ULP_COPROC_ENABLED
   lp_ram_seg(RW):  org = LPSRAM_RTC_START,
-                   len = LPSRAM_RTC_SIZE
+                   len = LPSRAM_RTC_SIZE - CONFIG_RESERVE_RTC_MEM
 #else
   lp_ram_seg(RW):  org = LPSRAM_IRAM_START,
                    len = LPSRAM_RTC_START + LPSRAM_RTC_SIZE - LPSRAM_IRAM_START
+                        - CONFIG_RESERVE_RTC_MEM
 #endif
-  /* Optional reserved segment at the top of LP memory (retainedmem is
-     placed separately via the devicetree zephyr,memory-region node). */
+  /* We reduced the size of lp_ram_seg by CONFIG_RESERVE_RTC_MEM value.
+     It reserves LP memory for this segment so data keep a fixed address:
+       - rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c).
+     Placed at the end of usable LP linker memory, immediately before the
+     DT retainedmem / ipc / mbox regions.
+  */
 #if (CONFIG_RESERVE_RTC_MEM > 0)
-  lp_reserved_seg(RW): org = LPSRAM_IRAM_START + LPSRAM_SIZE - CONFIG_RESERVE_RTC_MEM,
+  lp_reserved_seg(RW): org = LPSRAM_RTC_START + LPSRAM_RTC_SIZE
+                             - CONFIG_RESERVE_RTC_MEM,
                        len = CONFIG_RESERVE_RTC_MEM
 #endif
 
@@ -308,6 +314,8 @@ SECTIONS
     _rtc_reserved_end = ABSOLUTE(.);
   } GROUP_LINK_IN(lp_reserved_seg)
   _rtc_reserved_length = (_rtc_reserved_end - _rtc_reserved_start);
+  ASSERT((_rtc_reserved_length <= CONFIG_RESERVE_RTC_MEM),
+         "RTC reserved segment does not fit CONFIG_RESERVE_RTC_MEM.")
 #else
   _rtc_reserved_length = 0;
 #endif

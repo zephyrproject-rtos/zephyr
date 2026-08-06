@@ -11,7 +11,7 @@
 #include "mesh/mesh.h"
 #include "mesh/foundation.h"
 #include "mesh/crypto.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "mesh/proxy_cli.h"
 #include "mesh/proxy.h"
 

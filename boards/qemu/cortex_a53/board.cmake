@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
-set(QEMU_ARCH aarch64)
+set(QEMU_BINARY_SUFFIX aarch64)
 
-set(QEMU_CPU_TYPE_${ARCH} cortex-a53)
+set(QEMU_CPU_TYPE cortex-a53)
 
 if(CONFIG_ARMV8_A_NS)
   set(QEMU_MACH virt,gic-version=3)
@@ -20,8 +20,8 @@ if(CONFIG_INPUT_VIRTIO)
   set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-device,bus=virtio-mmio-bus.3)
 endif()
 
-set(QEMU_FLAGS_${ARCH}
-  -cpu ${QEMU_CPU_TYPE_${ARCH}}
+set(QEMU_BOARD_FLAGS
+  -cpu ${QEMU_CPU_TYPE}
   ${QEMU_VIRTIO_ENTROPY_FLAGS}
   ${QEMU_VIRTIO_INPUT_FLAGS}
   -machine ${QEMU_MACH}

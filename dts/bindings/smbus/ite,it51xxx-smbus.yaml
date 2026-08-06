@@ -1,0 +1,52 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE it51xxx SMBus controller
+
+compatible: "ite,it51xxx-smbus"
+
+include: [smbus-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  port-num:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
+      - 7
+      - 8
+    description: Ordinal identifying the port
+      0 = SMB_CHANNEL_A,
+      1 = SMB_CHANNEL_B,
+      2 = SMB_CHANNEL_C,
+      3 = SMB_CHANNEL_D,
+      4 = SMB_CHANNEL_E,
+      5 = SMB_CHANNEL_F,
+      6 = SMB_CHANNEL_G,
+      7 = SMB_CHANNEL_H,
+      8 = SMB_CHANNEL_I,
+
+  fifo-enable:
+    type: boolean
+    description: |
+      The SMBus controller supports two 32-bytes FIFOs,
+      FIFO1 supports SMBus port 0. FIFO2 only supports one port among
+      1~8. The default is SMBus port 1.

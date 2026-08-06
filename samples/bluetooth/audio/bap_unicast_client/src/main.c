@@ -217,7 +217,8 @@ static void start_scan(void)
 	printk("Scanning successfully started\n");
 }
 
-static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
+static void stream_codec_configured(struct bt_bap_stream *stream,
+				    const struct bt_bap_qos_cfg_pref *pref)
 {
 	ARG_UNUSED(pref);
 
@@ -226,7 +227,7 @@ static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_
 	k_sem_give(&sem_stream_configured);
 }
 
-static void stream_qos_set(struct bt_bap_stream *stream)
+static void stream_qos_configured(struct bt_bap_stream *stream)
 {
 	struct bt_iso_info info;
 	int err;
@@ -341,8 +342,8 @@ static void stream_recv(struct bt_bap_stream *stream,
 }
 
 static struct bt_bap_stream_ops stream_ops = {
-	.configured = stream_configured,
-	.qos_set = stream_qos_set,
+	.codec_configured = stream_codec_configured,
+	.qos_configured = stream_qos_configured,
 	.enabled = stream_enabled,
 	.started = stream_started,
 	.metadata_updated = stream_metadata_updated,

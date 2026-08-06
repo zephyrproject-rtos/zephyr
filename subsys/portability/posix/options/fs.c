@@ -151,12 +151,6 @@ int stat(const char *path, struct stat *buf)
 		return -1;
 	}
 
-	rc = fs_statvfs(path, &stat_vfs);
-	if (rc < 0) {
-		errno = -rc;
-		return -1;
-	}
-
 	rc = fs_stat(path, &stat_file);
 	if (rc < 0) {
 		errno = -rc;
@@ -176,6 +170,18 @@ int stat(const char *path, struct stat *buf)
 		errno = EIO;
 		return -1;
 	}
+
+	/*
+	 * fs_statvfs() is only needed for the block-size hint below, and on some
+	 * filesystems it scans the whole volume for free space. Defer it until
+	 * after fs_stat() so a failed lookup skips the scan entirely.
+	 */
+	rc = fs_statvfs(path, &stat_vfs);
+	if (rc < 0) {
+		errno = -rc;
+		return -1;
+	}
+
 	buf->st_size = stat_file.size;
 	buf->st_blksize = stat_vfs.f_bsize;
 	/*

@@ -118,7 +118,11 @@ extern "C" {
 #define MDM_HL78XX_ERROR_STRING        "ERROR"
 /** Standard response string indicating successful execution of an AT command */
 #define MDM_HL78XX_OK_STRING           "OK"
-
+/** Desired firmware version string */
+#define MDM_HL78XX_DESIRED_VERSION_STRING                                                          \
+	(sizeof(CONFIG_MODEM_HL78XX_DESIRED_FW_VERSION) > 1                                        \
+		 ? CONFIG_MODEM_HL78XX_DESIRED_FW_VERSION                                          \
+		 : "HL7812.5.7.4.0")
 /**
  * @brief Initial active state for HL78xx monitors.
  *
@@ -360,6 +364,8 @@ enum hl78xx_modem_info_type {
 	HL78XX_MODEM_INFO_SERIAL_NUMBER,
 	/** Current Baud Rate */
 	HL78XX_MODEM_INFO_CURRENT_BAUD_RATE,
+	/** Firmware version */
+	HL78XX_MODEM_INFO_FW_VERSION
 };
 
 /**

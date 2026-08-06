@@ -23,7 +23,7 @@
 #include "common.h"
 #include "settings.h"
 
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "bs_pc_backchannel.h"
 
 #define CLIENT_CLIENT_CHAN 0

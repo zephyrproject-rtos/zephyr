@@ -102,8 +102,9 @@ int hl78xx_set_network_operator_format(struct hl78xx_data *data,
  * @param mnc Pointer to store the Mobile Network Code.
  * @return true if parsing was successful, false otherwise.
  */
+/* clang-format off */
 bool hl78xx_parse_plmn(const char *operator, uint16_t *mcc, uint16_t *mnc);
-
+/* clang-format on */
 /**
  * @brief Convert an active band hex bitmap string to a band number.
  *
@@ -201,5 +202,28 @@ bool hl78xx_is_rsrp_value_valid(int16_t rsrp);
 bool hl78xx_is_rsrq_value_valid(int16_t rsrq);
 bool hl78xx_is_sinr_value_valid(int16_t sinr);
 bool hl78xx_is_rsrp_valid(struct hl78xx_data *data);
+
+/**
+ * @brief Recover the modem NB-IoT/ LTE band configuration.
+ *
+ * @param data HL78xx driver data.
+ * @param failure Original script failure context.
+ *
+ * @retval 0 on success.
+ * @retval negative errno value on failure.
+ */
+int hl78xx_recover_kbndcfg(struct hl78xx_data *data, const struct hl78xx_script_failure *failure);
+
+/**
+ * @brief Recover the modem KSUP configuration.
+ *
+ * @param data HL78xx driver data.
+ * @param failure Original script failure context.
+ *
+ * @retval 0 on success.
+ * @retval negative errno value on failure.
+ */
+int hl78xx_recover_post_restart_timeout(struct hl78xx_data *data,
+					const struct hl78xx_script_failure *failure);
 
 #endif /* ZEPHYR_DRIVERS_MODEM_HL78XX_HL78XX_CFG_H_ */

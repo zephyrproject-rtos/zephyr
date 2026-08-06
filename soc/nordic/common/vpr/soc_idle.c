@@ -15,7 +15,8 @@ static ALWAYS_INLINE void hibernate_dummy_write(void)
 		return;
 	}
 
-	if (NRF_ERRATA_DYNAMIC_CHECK(54H, 111) || NRF_ERRATA_DYNAMIC_CHECK(54L, 18)) {
+	if (NRF_ERRATA_DYNAMIC_CHECK(54H, 111) || NRF_ERRATA_DYNAMIC_CHECK(54L, 18) ||
+	    NRF_ERRATA_DYNAMIC_CHECK(71, 18)) {
 		*(volatile int *)0x5004C804 = 1;
 	}
 }

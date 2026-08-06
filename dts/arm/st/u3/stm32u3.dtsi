@@ -505,6 +505,7 @@
 			reg = <0x40015400 0x400>;
 			ranges;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
+			clock-names = "sai_ck";
 			status = "disabled";
 
 			sai1_a: sai1a@40015404 {

@@ -22,7 +22,13 @@
 
 LOG_MODULE_DECLARE(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
-#define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
+/* transmit timeout in milliseconds */
+#define ETH_DMA_TX_TIMEOUT_MS	20U
+
+/* context allocation timeout: larger than DMA timeout to allow the driver
+ * to free buffers after DMA completion/transmission timeout
+ */
+#define ETH_TX_CONTEXT_TIMEOUT_MS (ETH_DMA_TX_TIMEOUT_MS * 5)
 
 /* We separate the cases where HAL API uses heth or not */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
@@ -259,6 +265,8 @@ error:
 static inline struct eth_stm32_tx_context *
 allocate_tx_context(struct eth_stm32_hal_dev_data *dev_data, struct net_pkt *pkt)
 {
+	k_timepoint_t deadline = sys_timepoint_calc(K_MSEC(ETH_TX_CONTEXT_TIMEOUT_MS));
+
 	for (;;) {
 		for (uint16_t index = 0; index < ETH_TX_DESC_CNT; index++) {
 			if (!dev_data->tx_context[index].used) {
@@ -269,6 +277,13 @@ allocate_tx_context(struct eth_stm32_hal_dev_data *dev_data, struct net_pkt *pkt
 				return &dev_data->tx_context[index];
 			}
 		}
+
+		/* Check if the timepoint deadline expired (TX stall or hardware failure) */
+		if (sys_timepoint_expired(deadline)) {
+			LOG_ERR("TX context allocation timeout. Hardware may be disconnected");
+			return NULL;
+		}
+
 		k_yield();
 	}
 }
@@ -300,6 +315,10 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	ctx = allocate_tx_context(dev_data, pkt);
+	if (ctx == NULL) {
+		return -ETIMEDOUT;
+	}
+
 	buf_header = &dev_data->tx_buffer_header[ctx->first_tx_buffer_index];
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)

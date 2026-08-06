@@ -16,6 +16,9 @@ config NRFX_ADC
 	bool "ADC driver"
 	depends on $(dt_nodelabel_exists,adc) && SOC_SERIES_NRF51
 
+config NRFX_BELLBOARD
+	bool "BELLBOARD driver"
+
 config NRFX_CLOCK
 	bool "CLOCK driver"
 	depends on $(dt_nodelabel_exists,clock)
@@ -64,57 +67,7 @@ config NRFX_CRACEN_BSIM_SUPPORT
 	bool
 
 config NRFX_EGU
-	bool
-
-config NRFX_EGU0
-	bool "EGU0 driver instance"
-	depends on $(dt_nodelabel_exists,egu0)
-	select NRFX_EGU
-
-config NRFX_EGU1
-	bool "EGU1 driver instance"
-	depends on $(dt_nodelabel_exists,egu1)
-	select NRFX_EGU
-
-config NRFX_EGU2
-	bool "EGU2 driver instance"
-	depends on $(dt_nodelabel_exists,egu2)
-	select NRFX_EGU
-
-config NRFX_EGU3
-	bool "EGU3 driver instance"
-	depends on $(dt_nodelabel_exists,egu3)
-	select NRFX_EGU
-
-config NRFX_EGU4
-	bool "EGU4 driver instance"
-	depends on $(dt_nodelabel_exists,egu4)
-	select NRFX_EGU
-
-config NRFX_EGU5
-	bool "EGU5 driver instance"
-	depends on $(dt_nodelabel_exists,egu5)
-	select NRFX_EGU
-
-config NRFX_EGU10
-	bool "EGU10 driver instance"
-	depends on $(dt_nodelabel_exists,egu10)
-	select NRFX_EGU
-
-config NRFX_EGU20
-	bool "EGU20 driver instance"
-	depends on $(dt_nodelabel_exists,egu20)
-	select NRFX_EGU
-
-config NRFX_EGU020
-	bool "EGU020 driver instance"
-	depends on $(dt_nodelabel_exists,egu020)
-	select NRFX_EGU
-
-config NRFX_EGU130
-	bool "EGU130 driver instance"
-	depends on $(dt_nodelabel_exists,egu130)
-	select NRFX_EGU
+	bool "EGU driver"
 
 config NRFX_GPIOTE
 	bool "GPIOTE driver"
@@ -288,7 +241,7 @@ config NRFX_USBREG
 	depends on $(dt_nodelabel_exists,usbreg)
 
 config NRFX_WDT
-	bool
+	bool "WDT driver"
 
 menu "Peripheral Resource Sharing module"
 

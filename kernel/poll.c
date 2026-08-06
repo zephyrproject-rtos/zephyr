@@ -765,11 +765,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 			 "Some events were not registered!\n");
 
 		/* Setup timeout if such action is requested */
-		if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-			z_add_timeout(&work->timeout,
-				      triggered_work_expiration_handler,
-				      timeout);
-		}
+		z_add_timeout(&work->timeout, triggered_work_expiration_handler, timeout);
 
 		/* From now, any event will result in submitted work. */
 		work->poller.mode = MODE_TRIGGERED;

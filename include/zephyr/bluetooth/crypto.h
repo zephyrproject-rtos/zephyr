@@ -14,6 +14,8 @@
 /**
  * @brief Cryptography
  * @defgroup bt_crypto Cryptography
+ * @since 1.8
+ * @version 1.0.0
  * @ingroup bluetooth
  * @{
  */

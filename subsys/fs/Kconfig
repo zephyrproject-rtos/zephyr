@@ -132,6 +132,7 @@ config FILE_SYSTEM_NATIVE_MOUNT
 	bool "Mount Native Simulator host FS to Zephyr"
 	depends on ARCH_POSIX
 	select NATIVE_USE_NSI_FCNTL
+	select NATIVE_USE_NSI_ERRNO
 	help
 	  Mount a path in the host file system in Zephyr. This allows Zephyr to access, and modify,
 	  host files and folders, like any other embedded mount point.

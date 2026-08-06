@@ -23,6 +23,31 @@ config NRF70_ON_SPI
 			 $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_SPI))
 	select SPI
 
+config NRF70_SUPPLY_GPIO
+	def_bool $(dt_nodelabel_has_prop,nrf70,supply-gpios)
+	help
+	  Selected when the nRF70 supply rail is switched by a GPIO.
+
+config NRF70_VIN_SUPPLY
+	def_bool $(dt_nodelabel_has_prop,nrf70,vin-supply)
+	select REGULATOR
+	help
+	  Selected when the nRF70 supply rail is fed from a regulator, so that
+	  the regulator API the driver calls is built.
+
+config NRF70_SUPPLY
+	def_bool NRF70_SUPPLY_GPIO || NRF70_VIN_SUPPLY
+	help
+	  Selected when this driver switches the nRF70 supply rail, by either
+	  method.
+
+config NRF70_IOVDD_REGULATOR
+	def_bool $(dt_nodelabel_has_prop,nrf70,iovdd-regulator)
+	select REGULATOR
+	help
+	  Selected when IOVDD is fed from a regulator instead of a dedicated
+	  GPIO, so that the regulator API the driver calls is built.
+
 module = WIFI_NRF70_BUSLIB
 module-dep = LOG
 module-str = Log level for Wi-Fi nRF70 bus library

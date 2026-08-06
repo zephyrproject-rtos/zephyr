@@ -298,6 +298,8 @@ SECTIONS
   _rtc_slow_reserved_length = 0;
 #endif
   _rtc_reserved_length = _rtc_slow_reserved_length;
+  ASSERT((_rtc_reserved_length <= CONFIG_RESERVE_RTC_MEM),
+         "RTC reserved segment does not fit CONFIG_RESERVE_RTC_MEM.")
 
   /* --- RTC END --- */
 

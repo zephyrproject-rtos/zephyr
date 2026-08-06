@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(HY4245);
 #define HY4245_CMD_CHRG_CURRENT			0x32
 #define HY4245_CMD_CAPACITY_FULL_AVAIL		0x78
 #define HY4245_CMD_RELATIVE_STATE_OF_CHRG	0x2c
+#define HY4245_CMD_STATE_OF_HEALTH		0x2e
 
 #define HY4245_SUBCMD_CTRL_CHIPID		0x55
 
@@ -57,7 +58,7 @@ static int hy4245_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			   union fuel_gauge_prop_val *val)
 {
 	int ret;
-	uint16_t raw;
+	uint16_t raw = 0;
 
 	switch (prop) {
 	case FUEL_GAUGE_TEMPERATURE_DK:
@@ -107,6 +108,10 @@ static int hy4245_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT:
 		ret = hy4245_read16(dev, HY4245_CMD_RELATIVE_STATE_OF_CHRG, &raw);
 		val->relative_state_of_charge_pct = raw;
+		break;
+	case FUEL_GAUGE_STATE_OF_HEALTH:
+		ret = hy4245_read16(dev, HY4245_CMD_STATE_OF_HEALTH, &raw);
+		val->state_of_health = raw & 0xFF;
 		break;
 	default:
 		ret = -ENOTSUP;

@@ -18,7 +18,7 @@
 #if defined(CONFIG_X86) && defined(CONFIG_X86_SSE)
 #define K_FP_OPTS (K_FP_REGS | K_SSE_REGS)
 #elif defined(CONFIG_X86) || defined(CONFIG_ARM64) || defined(CONFIG_ARM) || \
-	defined(CONFIG_SPARC)
+	defined(CONFIG_SPARC) || defined(CONFIG_RISCV)
 #define K_FP_OPTS K_FP_REGS
 #else
 #error "Architecture not supported for this test"
@@ -38,7 +38,7 @@ static void usr_fp_thread_entry_1(void *p1, void *p2, void *p3)
 	k_yield();
 }
 
-#if defined(CONFIG_ARM64) || defined(CONFIG_ARM) || \
+#if defined(CONFIG_ARM64) || defined(CONFIG_ARM) || defined(CONFIG_RISCV) || \
 	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
 #define K_FLOAT_DISABLE_SYSCALL_RETVAL 0
 #else
@@ -102,7 +102,8 @@ ZTEST(k_float_disable, test_k_float_disable_common)
 	zassert_true(
 		(usr_fp_thread.base.user_options & K_FP_OPTS) != 0,
 		"usr_fp_thread FP options cleared");
-#elif defined(CONFIG_ARM64) || (defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
+#elif defined(CONFIG_ARM64) || defined(CONFIG_RISCV) || \
+	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
 	zassert_true((k_float_disable(&usr_fp_thread) == 0),
 		"k_float_disable() failure");
 
@@ -145,7 +146,7 @@ ZTEST(k_float_disable, test_k_float_disable_syscall)
 	/* Yield will swap-in usr_fp_thread */
 	k_yield();
 
-#if defined(CONFIG_ARM64) || defined(CONFIG_ARM) || \
+#if defined(CONFIG_ARM64) || defined(CONFIG_ARM) || defined(CONFIG_RISCV) || \
 	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
 
 	/* Verify K_FP_OPTS are now cleared by the user thread itself */

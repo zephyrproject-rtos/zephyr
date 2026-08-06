@@ -90,12 +90,12 @@ ZTEST(gnss_emul, test_config_functions)
 ZTEST(gnss_emul, test_callback_behaviour)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_ALIAS(gnss));
-	const struct navigation_data nav = {
+	static const struct navigation_data nav = {
 		.latitude = 150000000000,
 		.longitude = -15199000000,
 		.altitude = 123456,
 	};
-	const struct gnss_info info = {
+	static const struct gnss_info info = {
 		.satellites_cnt = 7,
 		.hdop = 1999,
 		.geoid_separation = 1000,

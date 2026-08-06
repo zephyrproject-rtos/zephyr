@@ -15,6 +15,11 @@ config LLVM_USE_LLD
 	help
 	  Use LLVM built-in lld linker with llvm/clang.
 
+config LLVM_USE_ELD
+	bool "ELD ld.eld"
+	help
+	  Use the ELD linker (ld.eld) with llvm/clang.
+
 endchoice
 
 config TOOLCHAIN_LLVM_SUPPORTS_THREAD_LOCAL_STORAGE

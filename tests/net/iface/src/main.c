@@ -869,6 +869,24 @@ ZTEST(net_iface, test_v4_addr_add_rm)
 	v4_addr_rm();
 }
 
+ZTEST(net_iface, test_v4_addr_lookup_by_iface)
+{
+	struct net_if_addr *ifaddr;
+
+	ifaddr = net_if_ipv4_addr_lookup_by_iface(iface1, &my_ipv4_addr1);
+	zassert_not_null(ifaddr, "IPv4 address not found");
+	zassert_mem_equal(&ifaddr->address.in_addr, &my_ipv4_addr1,
+			  sizeof(struct net_in_addr),
+			  "Wrong IPv4 address returned");
+
+	ifaddr = net_if_ipv4_addr_lookup_by_iface(iface2, &my_ipv4_addr1);
+	zassert_is_null(ifaddr, "IPv4 address found from a wrong interface");
+
+	ifaddr = net_if_ipv4_addr_lookup_by_iface(iface1,
+						  &my_ipv4_addr_not_found);
+	zassert_is_null(ifaddr, "Unknown IPv4 address found");
+}
+
 #define MY_ADDR_V4_USER      { { { 10, 0, 0, 2 } } }
 #define UNKNOWN_ADDR_V4_USER { { { 5, 6, 7, 8 } } }
 

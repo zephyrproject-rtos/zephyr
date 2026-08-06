@@ -141,7 +141,7 @@ struct uc81xx_ptl16 {
 BUILD_ASSERT(sizeof(struct uc81xx_ptl16) == 9);
 
 /* UC8151D-specific structures */
-#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8151d)
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8151d) || DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8253)
 struct uc8151d_tres {
 	/* Horizontal resolution in pixels.
 	 * Hardware interprets as bank[7:3] | column[2:0]

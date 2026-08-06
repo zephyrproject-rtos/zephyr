@@ -57,10 +57,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  * different from the normal RAM virt_to_phys mapping.
  */
 #ifdef CONFIG_MMU
-#define TXDESC_PHYS_H(idx) hi32(p->tx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
-#define TXDESC_PHYS_L(idx) lo32(p->tx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
-#define RXDESC_PHYS_H(idx) hi32(p->rx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
-#define RXDESC_PHYS_L(idx) lo32(p->rx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
+#define TXDESC_PHYS_H(idx) phys_hi32(&p->tx_descs_phys[idx])
+#define TXDESC_PHYS_L(idx) phys_lo32(&p->tx_descs_phys[idx])
+#define RXDESC_PHYS_H(idx) phys_hi32(&p->rx_descs_phys[idx])
+#define RXDESC_PHYS_L(idx) phys_lo32(&p->rx_descs_phys[idx])
 #else
 #define TXDESC_PHYS_H(idx) phys_hi32(&p->tx_descs[idx])
 #define TXDESC_PHYS_L(idx) phys_lo32(&p->tx_descs[idx])
@@ -76,33 +76,20 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  */
 #define RDES3_ERROR_MASK (RDES3_RE | RDES3_OE | RDES3_RWT | RDES3_GP | RDES3_CE)
 
-static inline uint32_t hi32(uintptr_t val)
+static inline uint32_t phys_hi32(void *addr)
 {
 	/* trickery to avoid compiler warnings on 32-bit build targets */
-	if (sizeof(uintptr_t) > 4) {
-		uint64_t hi = val;
+	if (sizeof(void *) > 4) {
+		uint64_t hi = POINTER_TO_UINT(addr);
 
 		return hi >> 32;
 	}
 	return 0;
 }
 
-static inline uint32_t lo32(uintptr_t val)
-{
-	/* just a typecast return to be symmetric with hi32() */
-	return val;
-}
-
-static inline uint32_t phys_hi32(void *addr)
-{
-	/* the default 1:1 mapping is assumed */
-	return hi32((uintptr_t)addr);
-}
-
 static inline uint32_t phys_lo32(void *addr)
 {
-	/* the default 1:1 mapping is assumed */
-	return lo32((uintptr_t)addr);
+	return (uint32_t)POINTER_TO_UINT(addr);
 }
 
 static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if *iface __unused)
@@ -122,6 +109,14 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if 
 
 #ifdef CONFIG_NET_VLAN
 	caps |= ETHERNET_HW_VLAN;
+#endif
+
+#ifdef CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN
+	caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
+#endif
+
+#ifdef CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
+	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD;
 #endif
 
 	return caps;
@@ -181,6 +176,15 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 	/* initial flag values */
 	des2_flags = TDES2_IOC;
 	des3_flags = TDES3_FD | TDES3_OWN;
+
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC) &&
+		net_pkt_is_tx_timestamping(pkt)) {
+		des2_flags |= TDES2_TTSE;
+	}
+
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN)) {
+		des3_flags |= TDES3_CIC;
+	}
 
 	/* map packet fragments */
 	d_idx = p->tx_desc_head;
@@ -267,6 +271,14 @@ static void dwmac_tx_release(const struct device *dev)
 			if (pkt != NULL) {
 				LOG_DBG("pkt len/frags=%zu/%u", net_pkt_get_len(pkt),
 					net_pkt_get_nbfrags(pkt));
+
+#ifdef CONFIG_PTP_CLOCK_DWC_MAC
+				if ((des3_val & TDES3_TTSS) != 0U) {
+					pkt->timestamp.second = d->des1;
+					pkt->timestamp.nanosecond = d->des0;
+					net_if_add_tx_timestamp(pkt);
+				}
+#endif /* CONFIG_PTP_CLOCK_DWC_MAC */
 			}
 
 			net_pkt_unref(pkt);
@@ -313,9 +325,23 @@ static void dwmac_receive(const struct device *dev)
 		frag = p->rx_frags[d_idx];
 		p->rx_frags[d_idx] = NULL;
 
-		/* we ignore those for now */
+		/* a context descriptor, it contains the packet's timestamp */
 		if (des3_val & RDES3_CTXT) {
 			net_pkt_frag_unref(frag);
+#ifdef CONFIG_PTP_CLOCK_DWC_MAC
+			if (p->rx_pkt != NULL) {
+				if (d->des0 != UINT32_MAX && d->des1 != UINT32_MAX) {
+					p->rx_pkt->timestamp.second = d->des1;
+					p->rx_pkt->timestamp.nanosecond = d->des0;
+					net_pkt_set_rx_timestamping(p->rx_pkt, true);
+				}
+
+				if (net_recv_data(p->iface, p->rx_pkt) < 0) {
+					net_pkt_unref(p->rx_pkt);
+				}
+				p->rx_pkt = NULL;
+			}
+#endif
 			continue;
 		}
 
@@ -351,6 +377,17 @@ static void dwmac_receive(const struct device *dev)
 				LOG_DBG("pkt len/frags=%zd/%d",
 					net_pkt_get_len(p->rx_pkt),
 					net_pkt_get_nbfrags(p->rx_pkt));
+#ifdef CONFIG_PTP_CLOCK_DWC_MAC
+				/*
+				 * The next descriptor is a context descriptor with a timestamp
+				 * for this packet, so skip here to the next descriptor, so we
+				 * can add the timestamp to this packet, before submitting it.
+				 */
+				if (((des3_val & RDES3_RS1V) != 0) &&
+				    ((d->des1 & RDES1_TSA) != 0)) {
+					continue;
+				}
+#endif
 				if (net_recv_data(p->iface, p->rx_pkt) < 0) {
 					net_pkt_unref(p->rx_pkt);
 				}
@@ -688,6 +725,8 @@ int dwmac_probe(const struct device *dev)
 	int ret;
 	uint32_t reg_val;
 	k_timepoint_t timeout;
+	uint32_t rx_fifo_size;
+	uint32_t tx_fifo_size;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
@@ -724,11 +763,27 @@ int dwmac_probe(const struct device *dev)
 		return ret;
 	}
 
+	/* setup queues */
+	/* currently only a single queue is supported, assign full FIFO to it */
+	rx_fifo_size = BIT(7 + FIELD_GET(MAC_HW_FEATURE1_RXFIFOSIZE, p->feature1));
+	tx_fifo_size = BIT(7 + FIELD_GET(MAC_HW_FEATURE1_TXFIFOSIZE, p->feature1));
+	LOG_DBG("RX/TX fifo size: %u/%u bytes", rx_fifo_size, tx_fifo_size);
+
+	DWMAC_REG_WRITE(MTL_RXQn_OPERATION_MODE(0),
+			MTL_RXQn_OPERATION_MODE_RSF |
+			FIELD_PREP(MTL_RXQn_OPERATION_MODE_RQS, (rx_fifo_size/256) - 1));
+	DWMAC_REG_WRITE(MAC_RXQ_CTRL0, FIELD_PREP(MAC_RXQ_CTRL0_RXQ0EN, 2));
+	DWMAC_REG_WRITE(MTL_TXQn_OPERATION_MODE(0),
+			MTL_TXQn_OPERATION_MODE_TSF |
+			FIELD_PREP(MTL_TXQn_OPERATION_MODE_TQS, (tx_fifo_size/256) - 1) |
+			FIELD_PREP(MTL_TXQn_OPERATION_MODE_TXQEN, 1));
+
+	/* set up DMA */
 	memset(p->tx_descs, 0, NB_TX_DESCS * sizeof(struct dwmac_dma_desc));
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
-	/* set up DMA */
-	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0), 0);
+	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0),
+			FIELD_PREP(DMA_CHn_TX_CTRL_PBL, 32));
 	DWMAC_REG_WRITE(DMA_CHn_RX_CTRL(0),
 			FIELD_PREP(DMA_CHn_RX_CTRL_PBL, 32) |
 			FIELD_PREP(DMA_CHn_RX_CTRL_RBSZ, RX_FRAG_SIZE));
@@ -738,6 +793,11 @@ int dwmac_probe(const struct device *dev)
 	DWMAC_REG_WRITE(DMA_CHn_RXDESC_LIST_ADDR(0), RXDESC_PHYS_L(0));
 	DWMAC_REG_WRITE(DMA_CHn_TXDESC_RING_LENGTH(0), NB_TX_DESCS - 1);
 	DWMAC_REG_WRITE(DMA_CHn_RXDESC_RING_LENGTH(0), NB_RX_DESCS - 1);
+
+	/* setup RX checksum offloading */
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN)) {
+		DWMAC_REG_WRITE(MAC_CONF, DWMAC_REG_READ(MAC_CONF) | MAC_CONF_IPC);
+	}
 
 	return 0;
 }
@@ -757,6 +817,9 @@ const struct ethernet_api dwmac_api = {
 	.set_config		= dwmac_set_config,
 	.get_phy		= dwmac_get_phy,
 	.send			= dwmac_send,
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+	.get_ptp_clock		= dwmac_get_ptp_clock,
+#endif
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats		= dwmac_stats,
 #endif

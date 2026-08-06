@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "mesh_test.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "mesh/net.h"
 #include "mesh/heartbeat.h"
 #include "mesh/lpn.h"
