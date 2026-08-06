@@ -56,7 +56,7 @@ tests:
     filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
     harness: ztest
     platform_allow:
-      - lp_em_cc35x1
+      - lp_em_cc35x1/cc3551e
     harness_config:
       fixture: gpio_loopback
     extra_configs:
@@ -71,7 +71,7 @@ tests:
     filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
     harness: ztest
     platform_allow:
-      - lp_em_cc35x1
+      - lp_em_cc35x1/cc3551e
     harness_config:
       fixture: gpio_loopback
     extra_configs:

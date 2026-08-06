@@ -32,4 +32,4 @@ tests:
   drivers.disk.disk_performance.cc35xx_sdhc:
     filter: dt_compat_enabled("ti,cc35xx-sdhc")
     platform_allow:
-      - lp_em_cc35x1
+      - lp_em_cc35x1/cc3551e

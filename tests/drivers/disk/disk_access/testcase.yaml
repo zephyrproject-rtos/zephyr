@@ -58,7 +58,7 @@ tests:
   drivers.disk.cc35xx_sdhc:
     filter: dt_compat_enabled("ti,cc35xx-sdhc")
     platform_allow:
-      - lp_em_cc35x1
+      - lp_em_cc35x1/cc3551e
   drivers.disk.simulator.no_explicit_erase:
     extra_args: DTC_OVERLAY_FILE=boards/native_sim_no_explicit_erase.overlay
     extra_configs:
