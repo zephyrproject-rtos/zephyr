@@ -44,7 +44,6 @@
  * overflow,e.g, 0xffffffff + any value will cause overflow
  */
 #define COUNTER_MAX 0x7fffffff
-#define TIMER_STOPPED 0x0
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
@@ -80,13 +79,6 @@ static uint32_t last_load;
  * t = cycle_counter + elapsed();
  */
 static uint32_t cycle_count;
-
-/*
- * This local variable holds the amount of elapsed HW cycles
- * that have been announced to the kernel.
- */
-static uint32_t announced_cycles;
-
 
 /*
  * This local variable holds the amount of elapsed HW cycles due to
@@ -199,6 +191,37 @@ static uint32_t elapsed(void)
 
 	return val + overflow_cycles;
 }
+
+/*
+ * Compare-match-reset up-counter (counts 0..LIMIT, resets on match): a RELOAD
+ * backend. elapsed() is already wrap-aware (it folds a pending overflow in via
+ * the IP bit), so the synthesized count stays monotonic. MIN_DELAY is the
+ * reload floor and the 31-bit software limit on the counter caps the arm.
+ */
+#define TIMER_CORE_BACKEND_RELOAD
+#define TIMER_CORE_ALARM_MIN_CYCLES MIN_DELAY
+#define TIMER_CORE_ALARM_MAX_CYCLES MAX_CYCLES
+#define TIMER_CORE_HAVE_CYCLE_GET_32
+
+static inline uint32_t timer_driver_cycle_get(void)
+{
+	return cycle_count + elapsed();
+}
+
+static void timer_driver_set_reload(uint32_t rel)
+{
+	cycle_count += elapsed();
+	/* Clear the counter as soon as possible after folding it into
+	 * cycle_count: the cycles that elapse between the two are lost.
+	 */
+	timer0_count_register_set(0);
+	overflow_cycles = 0U;
+	last_load = rel;
+	timer0_limit_register_set(rel - 1);
+	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
+}
+
+#include "system_timer_generic.h"
 #endif
 
 /**
@@ -211,9 +234,9 @@ static uint32_t elapsed(void)
 static void timer_int_handler(const void *unused)
 {
 	ARG_UNUSED(unused);
-	uint32_t dticks;
 
 #if defined(CONFIG_SMP) && CONFIG_MP_MAX_NUM_CPUS > 1
+	uint32_t dticks;
 	uint64_t curr_time;
 	k_spinlock_key_t key;
 
@@ -249,32 +272,35 @@ static void timer_int_handler(const void *unused)
 
 	arch_irq_unlock(key);
 
-	dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
-	announced_cycles += dticks * CYC_PER_TICK;
-	sys_clock_announce(TICKLESS ? dticks : 1);
+	timer_core_announce();
 #endif
 
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	/* If the kernel allows us to miss tick announcements in idle,
-	 * then shut off the counter. (Note: we can assume if idle==true
-	 * that interrupts are already disabled)
-	 */
+/*
+ * The non-SMP build takes sys_clock_set_timeout() and sys_clock_elapsed() from
+ * the generic core. What follows is the SMP gfrc implementation.
+ */
 #if SMP_TIMER_DRIVER
-	/* as 64-bits GFRC is used as wall clock, it's ok to ignore idle
-	 * systick will not be missed.
-	 * However for single core using 32-bits arc timer, idle cannot
-	 * be ignored, as 32-bits timer will overflow in a not-long time.
-	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
-	    ticks == SYS_CLOCK_MAX_WAIT) {
-		timer0_control_register_set(0);
-		timer0_count_register_set(0);
-		timer0_limit_register_set(0);
+void sys_clock_no_timeout(void)
+{
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
+
+	/* Nothing pending and the uptime may drift, so stop taking tick
+	 * interrupts. timer0 is only the interrupt source here: the wall
+	 * clock, and sys_clock_cycle_get_32() with it, is the gfrc, which
+	 * keeps running.
+	 */
+	timer0_control_register_set(0);
+	timer0_count_register_set(0);
+	timer0_limit_register_set(0);
+}
+
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
+{
+	ARG_UNUSED(idle);
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t delay;
@@ -298,64 +324,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 
 	arch_irq_unlock(key);
 #endif
-#else
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
-	    ticks == SYS_CLOCK_MAX_WAIT) {
-		timer0_control_register_set(0);
-		timer0_count_register_set(0);
-		timer0_limit_register_set(0);
-		last_load = TIMER_STOPPED;
-		return;
-	}
-
-#if defined(CONFIG_TICKLESS_KERNEL)
-	uint32_t delay;
-	uint32_t unannounced;
-
-	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-
-	cycle_count += elapsed();
-	/* Clear the counter as soon as possible after folding it into
-	 * cycle_count: the cycles that elapse between the two are lost.
-	 */
-	timer0_count_register_set(0);
-	overflow_cycles = 0U;
-
-
-	/* normal case */
-	unannounced = cycle_count - announced_cycles;
-
-	if ((int32_t)unannounced < 0) {
-		/* We haven't announced for more than half the 32-bit
-		 * wrap duration, because new timeouts keep being set
-		 * before the existing one fires. Force an announce
-		 * to avoid loss of a wrap event, making sure the
-		 * delay is at least the minimum delay possible.
-		 */
-		last_load = MIN_DELAY;
-	} else {
-		/* Desired delay in the future */
-		delay = ticks * CYC_PER_TICK;
-
-		/* Round delay up to next tick boundary */
-		delay += unannounced;
-		delay = DIV_ROUND_UP(delay, CYC_PER_TICK) * CYC_PER_TICK;
-
-		delay -= unannounced;
-		delay = MAX(delay, MIN_DELAY);
-
-		last_load = MIN(delay, MAX_CYCLES);
-	}
-
-	timer0_limit_register_set(last_load - 1);
-	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
-
-	k_spin_unlock(&lock, key);
-#endif
-#endif
 }
 
 uint32_t sys_clock_elapsed(void)
@@ -367,16 +335,13 @@ uint32_t sys_clock_elapsed(void)
 	uint32_t cyc;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-#if SMP_TIMER_DRIVER
 	cyc = (z_arc_connect_gfrc_read() - last_time);
-#else
-	cyc =  elapsed() + cycle_count - announced_cycles;
-#endif
 
 	k_spin_unlock(&lock, key);
 
 	return cyc / CYC_PER_TICK;
 }
+#endif /* SMP_TIMER_DRIVER */
 
 uint32_t sys_clock_cycle_get_32(void)
 {
@@ -427,18 +392,26 @@ static int sys_clock_driver_init(void)
 	timer0_limit_register_set(CYC_PER_TICK - 1);
 	last_time = z_arc_connect_gfrc_read();
 	start_time = last_time;
+	timer0_count_register_set(0);
+	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 #else
 	last_load = CYC_PER_TICK;
 	overflow_cycles = 0;
-	announced_cycles = 0;
 
 	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
 		    timer_int_handler, NULL, 0);
 
-	timer0_limit_register_set(last_load - 1);
+	timer_core_init();
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/* timer0 auto-reloads, so the periodic tick is programmed once
+		 * here and the core never reprograms it.
+		 */
+		timer0_limit_register_set(last_load - 1);
+		timer0_count_register_set(0);
+		timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
+	}
 #endif
-	timer0_count_register_set(0);
-	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 
 	/* everything has been configured: safe to enable the interrupt */
 
