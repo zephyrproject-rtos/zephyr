@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,7 @@ LOG_MODULE_REGISTER(uart_ifx, CONFIG_UART_LOG_LEVEL);
 #define IFX_UART_RTS_RX_FIFO_LEVEL 63UL
 
 #ifdef CONFIG_UART_ASYNC_API
+#define IFX_UART_RX_IDLE_RECHECK_US 1000U
 #include <zephyr/drivers/dma.h>
 #include <cy_trigmux.h>
 
@@ -1072,11 +1073,26 @@ static void ifx_cat1_uart_async_rx_timeout(struct k_work *work)
 	if (dma_get_status(dma_rx->dma_dev, dma_rx->dma_channel, &stat) == 0) {
 		size_t rx_rcv_len = dma_rx->buf_len - stat.pending_length;
 
-		if ((rx_rcv_len > 0) && (rx_rcv_len == dma_rx->counter)) {
+		if (rx_rcv_len > dma_rx->counter) {
+			/* Byte count changed since last check – data may still
+			 * be arriving.
+			 */
+			dma_rx->counter = rx_rcv_len;
+			if ((dma_rx->timeout != SYS_FOREVER_US) && (dma_rx->timeout != 0)) {
+				k_work_reschedule(
+					&dma_rx->timeout_work,
+					K_USEC(MIN(dma_rx->timeout, IFX_UART_RX_IDLE_RECHECK_US)));
+			}
+			irq_unlock(key);
+			return;
+		}
+
+		if (rx_rcv_len > dma_rx->offset) {
+			/* Byte count unchanged and unreported data exists –
+			 * the line has been idle since the last check.
+			 */
 			dma_rx->counter = rx_rcv_len;
 			async_evt_rx_rdy(data);
-		} else {
-			dma_rx->counter = rx_rcv_len;
 		}
 	}
 
