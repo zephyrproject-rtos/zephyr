@@ -173,9 +173,7 @@ static inline int start_stream(const struct i2s_max32_stream *stream, enum i2s_d
 	 */
 	struct dma_config dma_cfg = {
 		.dma_slot = stream->dma.slot,
-		.source_data_size = stream_data->i2s_cfg.word_size / 8,
 		.source_burst_length = 4,
-		.dest_data_size = stream_data->i2s_cfg.word_size / 8,
 		.dest_burst_length = 4,
 		.block_count = 1,
 		.user_data = (void *)stream,
@@ -210,6 +208,8 @@ static inline int start_stream(const struct i2s_max32_stream *stream, enum i2s_d
 		dma_block.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 		/* Configure DMA */
 		dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+		dma_cfg.source_data_size = sizeof(uint32_t);
+		dma_cfg.dest_data_size = stream_data->i2s_cfg.word_size / 8;
 		dma_cfg.dma_callback = i2s_max32_rx_dma_callback;
 		dma_cfg.channel_priority = 1;
 	} else {
@@ -226,6 +226,8 @@ static inline int start_stream(const struct i2s_max32_stream *stream, enum i2s_d
 		dma_block.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		/* Configure DMA */
 		dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+		dma_cfg.source_data_size = stream_data->i2s_cfg.word_size / 8;
+		dma_cfg.dest_data_size = sizeof(uint32_t);
 		dma_cfg.dma_callback = i2s_max32_tx_dma_callback;
 		dma_cfg.channel_priority = 0;
 	}
