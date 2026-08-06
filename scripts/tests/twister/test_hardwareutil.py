@@ -58,6 +58,14 @@ def test_hardwareutil_reserve_dut(hwmap: HardwareMap):
     assert all(d.available == 0 for d in duts_with_core)
 
 
+def test_hardwareutil_run_with_fixture_only(hwmap: HardwareMap):
+    hwmap.duts[1].run_with_fixture_only = True
+    hwmgr = HardwareReservationManager(hwmap, platform='platform1', harness_config=HarnessConfig())
+
+    assert hwmgr._get_matched_duts('platform1', raise_exception=False) == [hwmap.duts[0]]
+    assert hwmgr._get_matched_duts('platform1', ['fixture1']) == [hwmap.duts[1]]
+
+
 def test_hardwareutil_reserve_dut_less_failures(hwmap: HardwareMap):
     hwmgr = HardwareReservationManager(hwmap, platform='platform1', harness_config=mock.Mock())
     # Set failures for DUTs

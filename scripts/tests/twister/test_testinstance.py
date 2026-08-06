@@ -537,6 +537,41 @@ def test_testinstance_check_runnable(
     assert res == expected
 
 
+@pytest.mark.parametrize(
+    ('fixture', 'run_with_fixture_only', 'expected'),
+    [
+        (None, True, False),
+        (['fixture1'], True, True),
+        (['fixture2'], True, False),
+        (None, False, True),
+    ],
+)
+@pytest.mark.parametrize('testinstance', [{'testsuite_kind': 'tests'}], indirect=True)
+def test_testinstance_check_runnable_fixture_only_dut(
+    testinstance, fixture, run_with_fixture_only, expected
+):
+    testinstance.testsuite.harness = 'console'
+    testinstance.testsuite.build_only = False
+    testinstance.testsuite.slow = False
+    testinstance.testsuite.harness_config.fixture = fixture
+    dut = mock.Mock(
+        platform=testinstance.platform.name,
+        serial='dummy_serial',
+        serial_pty=None,
+        fixtures=['fixture1'],
+        run_with_fixture_only=run_with_fixture_only,
+    )
+    options = mock.Mock(
+        device_testing=True,
+        enable_slow=True,
+        filter='runnable',
+        fixture=[],
+        sim_name='qemu',
+    )
+
+    assert testinstance.check_runnable(options, mock.Mock(duts=[dut])) == expected
+
+
 TESTDATA_6 = [
     (True, 'build.log'),
     (False, ''),
