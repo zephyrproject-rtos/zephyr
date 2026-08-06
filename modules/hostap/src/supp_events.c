@@ -298,33 +298,52 @@ int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
 /* Parse ssi=<hex_string> from NAN event string */
-static void nan_parse_ssi(const char *event_str, uint8_t *ssi, size_t *ssi_len)
+static int parse_and_alloc_ssi(const char *event_str, uint8_t **ssi_out, size_t *ssi_len_out)
 {
-	const char *pos = strstr(event_str, "ssi=");
-	const char *ssi_start;
-	const char *ssi_end;
-	size_t ssi_hex_len;
+	*ssi_out = NULL;
+	*ssi_len_out = 0;
 
-	if (pos == NULL) {
-		return;
+	const char *ssi_str = strstr(event_str, " ssi=");
+
+	if (!ssi_str) {
+		return 0; /* No SSI, not an error */
 	}
 
-	ssi_start = pos + 4;
-	ssi_end = ssi_start;
+	ssi_str += 5; /* skip " ssi=" */
+	size_t hex_len = 0;
 
-	while (*ssi_end && *ssi_end != ' ' && *ssi_end != '\n' && *ssi_end != '\r') {
-		ssi_end++;
+	while (ssi_str[hex_len] && ssi_str[hex_len] != ' ' &&
+	       ssi_str[hex_len] != '\n' && ssi_str[hex_len] != '\r') {
+		hex_len++;
 	}
 
-	ssi_hex_len = ssi_end - ssi_start;
-
-	if (ssi_hex_len > 0 && ssi_hex_len % 2 == 0) {
-		*ssi_len = ssi_hex_len / 2;
-		if (*ssi_len > WIFI_NAN_MAX_SSI_LEN) {
-			*ssi_len = WIFI_NAN_MAX_SSI_LEN;
-		}
-		hex2bin(ssi_start, ssi_hex_len, ssi, WIFI_NAN_MAX_SSI_LEN);
+	if (hex_len % 2 != 0) {
+		wpa_printf(MSG_ERROR,
+			   "NAN SSI: invalid hex string length: %zu (must be even)",
+			   hex_len);
+		return -1;
 	}
+
+	size_t bin_len = hex_len / 2;
+
+	if (bin_len == 0) {
+		return 0; /* Empty SSI, not an error */
+	}
+
+	if (bin_len > WIFI_NAN_MAX_SSI_LEN) {
+		wpa_printf(MSG_ERROR, "NAN SSI too large: %zu > %d", bin_len, WIFI_NAN_MAX_SSI_LEN);
+		return -1;
+	}
+
+	*ssi_out = k_malloc(bin_len);
+	if (!*ssi_out) {
+		wpa_printf(MSG_ERROR, "NAN SSI: failed to allocate %zu bytes", bin_len);
+		return -1;
+	}
+
+	hex2bin(ssi_str, hex_len, *ssi_out, bin_len);
+	*ssi_len_out = bin_len;
+	return 0;
 }
 
 static void wifi_mgmt_raise_nan_discovery_result_event(struct net_if *iface,
@@ -374,8 +393,8 @@ static void wifi_mgmt_raise_nan_discovery_result_event(struct net_if *iface,
 		event.srv_proto_type = strtol(pos + 15, &end, 10);
 	}
 
-	/* Parse ssi=<hex_string> */
-	nan_parse_ssi(event_str, event.ssi, &event.ssi_len);
+	/* SSI is optional; parse errors are logged internally */
+	(void)parse_and_alloc_ssi(event_str, &event.ssi, &event.ssi_len);
 
 	wpa_printf(MSG_DEBUG, "NAN_DISCOVERY_RESULT parsed: subscribe_id=%d publish_id=%d "
 		   "address=" MACSTR " fsd=%d fsd_gas=%d srv_proto_type=%u ssi_len=%zu",
@@ -422,8 +441,8 @@ static void wifi_mgmt_raise_nan_replied_event(struct net_if *iface,
 		event.srv_proto_type = strtol(pos + 15, &end, 10);
 	}
 
-	/* Parse ssi=<hex_string> */
-	nan_parse_ssi(event_str, event.ssi, &event.ssi_len);
+	/* SSI is optional; parse errors are logged internally */
+	(void)parse_and_alloc_ssi(event_str, &event.ssi, &event.ssi_len);
 
 	wpa_printf(MSG_DEBUG, "NAN_REPLIED parsed: publish_id=%d address=" MACSTR
 		   " subscribe_id=%d srv_proto_type=%u ssi_len=%zu",
@@ -548,8 +567,8 @@ static void wifi_mgmt_raise_nan_receive_event(struct net_if *iface,
 		}
 	}
 
-	/* Parse ssi=<hex_string> */
-	nan_parse_ssi(event_str, event.ssi, &event.ssi_len);
+	/* SSI is optional; parse errors are logged internally */
+	(void)parse_and_alloc_ssi(event_str, &event.ssi, &event.ssi_len);
 
 	wpa_printf(MSG_INFO, "NAN_RECEIVE parsed: id=%d peer_instance_id=%d "
 		   "address=" MACSTR " ssi_len=%zu",

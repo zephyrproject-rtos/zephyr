@@ -59,6 +59,8 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 				NET_EVENT_WIFI_P2P_DEVICE_FOUND)
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/* Shell command SSI buffer size (independent of protocol max) */
+#define NAN_SHELL_SSI_BUF_LEN 128
 #define WIFI_SHELL_NAN_EVENTS (                        \
 				NET_EVENT_WIFI_NAN_DISCOVERY_RESULT |\
 				NET_EVENT_WIFI_NAN_REPLIED          |\
@@ -751,8 +753,17 @@ static void handle_wifi_nan_discovery_result(struct net_mgmt_event_callback *cb)
 		}
 		if (event->ssi_len > 0) {
 			PR_INFO("SSI Length:        %zu bytes\n", event->ssi_len);
+			PR_INFO("SSI Data:\n");
+			for (size_t i = 0; i < event->ssi_len; i++) {
+				PR_INFO(" %02x", event->ssi[i]);
+			}
+			PR_INFO("\n");
 		}
 		PR_INFO("\n");
+	}
+	/* Free dynamically allocated SSI buffer */
+	if (event->ssi) {
+		k_free(event->ssi);
 	}
 }
 
@@ -777,8 +788,17 @@ static void handle_wifi_nan_replied(struct net_mgmt_event_callback *cb)
 		}
 		if (event->ssi_len > 0) {
 			PR_INFO("SSI Length:        %zu bytes\n", event->ssi_len);
+			PR_INFO("SSI Data:\n");
+			for (size_t i = 0; i < event->ssi_len; i++) {
+				PR_INFO(" %02x", event->ssi[i]);
+			}
+			PR_INFO("\n");
 		}
 		PR_INFO("\n");
+	}
+	/* Free dynamically allocated SSI buffer */
+	if (event->ssi) {
+		k_free(event->ssi);
 	}
 }
 
@@ -831,6 +851,10 @@ static void handle_wifi_nan_receive(struct net_mgmt_event_callback *cb)
 		}
 	}
 	PR_INFO("\n");
+	/* Free dynamically allocated SSI buffer */
+	if (event->ssi) {
+		k_free(event->ssi);
+	}
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 
@@ -4713,13 +4737,14 @@ static int parse_nan_args_publish(const struct shell *sh, size_t argc, char *arg
 			break;
 		}
 		case 'd': {
+			static uint8_t ssi_buf[NAN_SHELL_SSI_BUF_LEN];
 			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->publish.ssi,
-					      sizeof(params->publish.ssi));
+					      ssi_buf, sizeof(ssi_buf));
 			if (ssi_len < 0) {
 				PR_ERROR("Invalid SSI hex string\n");
 				return -EINVAL;
 			}
+			params->publish.ssi = ssi_buf;
 			params->publish.ssi_len = ssi_len;
 			break;
 		}
@@ -4806,13 +4831,14 @@ static int parse_nan_args_update_publish(const struct shell *sh, size_t argc, ch
 			params->update_publish.publish_id = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'd': {
+			static uint8_t ssi_buf[NAN_SHELL_SSI_BUF_LEN];
 			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->update_publish.ssi,
-					      sizeof(params->update_publish.ssi));
+					      ssi_buf, sizeof(ssi_buf));
 			if (ssi_len < 0) {
 				PR_ERROR("Invalid SSI hex string\n");
 				return -EINVAL;
 			}
+			params->update_publish.ssi = ssi_buf;
 			params->update_publish.ssi_len = ssi_len;
 			break;
 		}
@@ -4879,13 +4905,14 @@ static int parse_nan_args_subscribe(const struct shell *sh, size_t argc, char *a
 			params->subscribe.freq = shell_strtoul(state->optarg, 10, &ret);
 			break;
 		case 'd': {
+			static uint8_t ssi_buf[NAN_SHELL_SSI_BUF_LEN];
 			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->subscribe.ssi,
-					      sizeof(params->subscribe.ssi));
+					      ssi_buf, sizeof(ssi_buf));
 			if (ssi_len < 0) {
 				PR_ERROR("Invalid SSI hex string\n");
 				return -EINVAL;
 			}
+			params->subscribe.ssi = ssi_buf;
 			params->subscribe.ssi_len = ssi_len;
 			break;
 		}
@@ -4975,13 +5002,14 @@ static int parse_nan_args_transmit(const struct shell *sh, size_t argc, char *ar
 			}
 			break;
 		case 'd': {
+			static uint8_t ssi_buf[NAN_SHELL_SSI_BUF_LEN];
 			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->transmit.ssi,
-					      sizeof(params->transmit.ssi));
+					      ssi_buf, sizeof(ssi_buf));
 			if (ssi_len < 0) {
 				PR_ERROR("Invalid SSI hex string\n");
 				return -EINVAL;
 			}
+			params->transmit.ssi = ssi_buf;
 			params->transmit.ssi_len = ssi_len;
 			break;
 		}

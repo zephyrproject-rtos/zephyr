@@ -63,7 +63,7 @@ extern "C" {
 #define WIFI_MGMT_SKIP_INACTIVITY_POLL IS_ENABLED(CONFIG_WIFI_MGMT_AP_STA_SKIP_INACTIVITY_POLL)
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
-#define WIFI_NAN_MAX_SSI_LEN            128
+#define WIFI_NAN_MAX_SSI_LEN            512
 #define WIFI_NAN_MAX_SERVICE_NAME_LEN   64
 #define WIFI_NAN_RESP_SIZE              64
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
@@ -1256,10 +1256,12 @@ struct wifi_nan_discovery_result_event {
 	bool fsd_gas;
 	/** Service protocol type */
 	uint8_t srv_proto_type;
+	/** Service Specific Info data (dynamically allocated with k_malloc,
+	 *  caller must free with k_free)
+	 */
+	uint8_t *ssi;
 	/** Service Specific Info length */
 	size_t ssi_len;
-	/** Service Specific Info data */
-	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
 };
 
 /** @brief NAN replied event structure (publisher received subscribe request) */
@@ -1272,10 +1274,12 @@ struct wifi_nan_replied_event {
 	uint8_t subscribe_id;
 	/** Service protocol type */
 	uint8_t srv_proto_type;
+	/** Service Specific Info data (dynamically allocated with k_malloc,
+	 *  caller must free with k_free)
+	 */
+	uint8_t *ssi;
 	/** Service Specific Info length */
 	size_t ssi_len;
-	/** Service Specific Info data */
-	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
 };
 
 /** @brief NAN publish/subscribe terminated event structure */
@@ -1294,8 +1298,10 @@ struct wifi_nan_receive_event {
 	uint8_t peer_instance_id;
 	/** Peer MAC address */
 	uint8_t peer_addr[WIFI_MAC_ADDR_LEN];
-	/** Service Specific Info data */
-	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/** Service Specific Info data (dynamically allocated with k_malloc,
+	 *  caller must free with k_free)
+	 */
+	uint8_t *ssi;
 	/** Service Specific Info length */
 	size_t ssi_len;
 };
@@ -1624,10 +1630,10 @@ struct wifi_nan_publish_params {
 	uint32_t freq;
 	/* Multi-channel frequencies */
 	char freq_list[64];
-	/* Service specific information (binary data) */
-	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Service specific information (binary data, pointer - caller must ensure lifetime) */
+	const uint8_t *ssi;
 	/* Actual length of SSI data */
-	uint8_t ssi_len;
+	size_t ssi_len;
 	/* Unsolicited transmission (true by default) */
 	bool unsolicited;
 	/* Solicited transmission (true by default) */
@@ -1639,10 +1645,10 @@ struct wifi_nan_publish_params {
 /* This structure is used to configure nan update publish parameters */
 struct wifi_nan_update_publish_params {
 	uint8_t publish_id;
-	/* Service specific information (binary data) */
-	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Service specific information (binary data, pointer - caller must ensure lifetime) */
+	const uint8_t *ssi;
 	/* Actual length of SSI data */
-	uint8_t ssi_len;
+	size_t ssi_len;
 };
 
 /** This structure is used to configure wlan nan subscribe parameters */
@@ -1657,10 +1663,10 @@ struct wifi_nan_subscribe_params {
 	unsigned int ttl;
 	/* Selected frequency in MHz */
 	unsigned int freq;
-	/* Service specific information (binary data) */
-	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Service specific information (binary data, pointer - caller must ensure lifetime) */
+	const uint8_t *ssi;
 	/* Actual length of SSI data */
-	uint8_t ssi_len;
+	size_t ssi_len;
 };
 
 /** This structure is used to configure nan transmit parameters */
@@ -1671,10 +1677,10 @@ struct wifi_nan_transmit_params {
 	uint8_t req_instance_id;
 	/* peer MAC address */
 	uint8_t peer_addr[WIFI_MAC_ADDR_LEN];
-	/* Service specific information (binary data) */
-	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Service specific information (binary data, pointer - caller must ensure lifetime) */
+	const uint8_t *ssi;
 	/* Actual length of SSI data */
-	uint8_t ssi_len;
+	size_t ssi_len;
 };
 
 /** @brief Wi-Fi NAN parameters */
