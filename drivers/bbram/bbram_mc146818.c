@@ -149,7 +149,7 @@ static int bbram_mc146818_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(n, &bbram_mc146818_init, NULL,				\
 				&bbram_data_##n, &bbram_config_##n,			\
 				POST_KERNEL,						\
-				UTIL_INC(CONFIG_MFD_MOTOROLA_MC146818_INIT_PRIORITY),	\
+				CONFIG_MFD_INIT_PRIORITY,				\
 				&bbram_mc146818_api);					\
 
 DT_INST_FOREACH_STATUS_OKAY(BBRAM_MC146818_DEV_CFG)
