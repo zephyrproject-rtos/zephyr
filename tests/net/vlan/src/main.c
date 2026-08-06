@@ -238,13 +238,39 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 static enum ethernet_hw_caps eth_vlan_capabilities(const struct device *dev __unused,
 						   struct net_if *iface __unused)
 {
-	return ETHERNET_HW_VLAN;
+	return ETHERNET_HW_VLAN | ETHERNET_HW_FILTERING;
+}
+
+/* Last receive filter change that the device was told about */
+static struct {
+	struct net_if *iface;
+	struct net_eth_addr mac_address;
+	bool set;
+	int count;
+} eth_filter_data;
+
+static int eth_vlan_set_config(const struct device *dev __unused,
+			       struct net_if *iface,
+			       enum ethernet_config_type type,
+			       const struct ethernet_config *config)
+{
+	if (type != ETHERNET_CONFIG_TYPE_FILTER) {
+		return -ENOTSUP;
+	}
+
+	eth_filter_data.iface = iface;
+	eth_filter_data.mac_address = config->filter.mac_address;
+	eth_filter_data.set = config->filter.set;
+	eth_filter_data.count++;
+
+	return 0;
 }
 
 static struct ethernet_api api_funcs = {
 	.iface_api.init = eth_vlan_iface_init,
 
 	.get_capabilities = eth_vlan_capabilities,
+	.set_config = eth_vlan_set_config,
 	.send = eth_tx,
 };
 
@@ -1077,6 +1103,45 @@ ZTEST(net_vlan, test_vlan_enable_disable_all)
 {
 	test_vlan_enable_all();
 	test_vlan_disable_all();
+}
+
+/* A VLAN interface has no receive filter of its own, so a multicast group
+ * joined on it must be programmed to the Ethernet interface it is attached
+ * to.
+ */
+ZTEST(net_vlan, test_vlan_mcast_filter)
+{
+	static const struct net_eth_addr mcast_addr = {
+		{ 0x01, 0x00, 0x5e, 0x00, 0x00, 0x01 }
+	};
+	struct net_if *iface, *main_iface;
+	int ret;
+
+	if (NET_VLAN_MAX_COUNT == 0) {
+		ztest_test_skip();
+	}
+
+	iface = vlan_interfaces[0];
+	main_iface = net_eth_get_vlan_main(iface);
+	zassert_not_null(main_iface, "No main interface for the VLAN one");
+
+	memset(&eth_filter_data, 0, sizeof(eth_filter_data));
+
+	ret = net_eth_mcast_addr_add(iface, &mcast_addr);
+	zassert_ok(ret, "Cannot join the group (%d)", ret);
+
+	zassert_equal(eth_filter_data.count, 1, "Filter not programmed");
+	zassert_equal_ptr(eth_filter_data.iface, main_iface,
+			  "Filter programmed for a wrong interface");
+	zassert_true(eth_filter_data.set, "Filter not enabled");
+	zassert_mem_equal(eth_filter_data.mac_address.addr, mcast_addr.addr,
+			  sizeof(mcast_addr.addr), "Wrong address filtered");
+
+	ret = net_eth_mcast_addr_rm(iface, &mcast_addr);
+	zassert_ok(ret, "Cannot leave the group (%d)", ret);
+
+	zassert_equal(eth_filter_data.count, 2, "Filter not removed");
+	zassert_false(eth_filter_data.set, "Filter not disabled");
 }
 
 static bool add_peer_neighbor(struct net_if *iface, struct net_in6_addr *addr,
