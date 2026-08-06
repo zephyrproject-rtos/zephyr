@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nordic_nrf_lfclk
+#define DT_DRV_COMPAT nordic_nrfs_lfclk
 
 #include "clock_control_nrf_common.h"
 #include <zephyr/devicetree.h>
@@ -12,7 +12,7 @@
 #include <nrfs_clock.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
+LOG_MODULE_REGISTER(clock_control_nrfs_lfclk, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "multiple instances not supported");
@@ -26,7 +26,7 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 
 #define LFCLK_MAX_OPTS 4
 
-#define NRFS_CLOCK_TIMEOUT K_MSEC(CONFIG_CLOCK_CONTROL_NRF_LFCLK_CLOCK_TIMEOUT_MS)
+#define NRFS_CLOCK_TIMEOUT K_MSEC(CONFIG_CLOCK_CONTROL_NRFS_LFCLK_CLOCK_TIMEOUT_MS)
 
 #define BICR (NRF_BICR_Type *)DT_REG_ADDR(DT_NODELABEL(bicr))
 
