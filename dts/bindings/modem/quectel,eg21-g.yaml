@@ -1,6 +1,9 @@
-description: Quectel EG25-G modem
+# Copyright (c) 2026 Guilherme Costa
+# SPDX-License-Identifier: Apache-2.0
 
-compatible: "quectel,eg25-g"
+description: Quectel EG21-G modem
+
+compatible: "quectel,eg21-g"
 
 include: zephyr,cellular-modem-device.yaml
 
