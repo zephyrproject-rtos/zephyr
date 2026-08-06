@@ -837,6 +837,7 @@ Bluetooth Mesh:
     - HaavardRei
     - omkar3141
     - KyraLengfeld
+    - ludvigsj
   files:
     - doc/services/connectivity/bluetooth/api/mesh/
     - include/zephyr/bluetooth/mesh/
