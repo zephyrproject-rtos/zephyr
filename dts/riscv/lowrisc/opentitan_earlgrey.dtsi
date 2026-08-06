@@ -46,10 +46,11 @@
 			reg = <0x10000000 0x10000>;
 		};
 
-		mtimer: timer@40100110 {
+		mtimer: timer@40100000 {
 			compatible = "riscv,machine-timer";
-			reg = <0x40100110 0x8 0x40100118 0x8>;
-			reg-names = "mtime", "mtimecmp";
+			/* "ctrl" holds the rv_timer regs the machine-timer binding doesn't cover */
+			reg = <0x40100000 0x104>, <0x40100110 0x8>, <0x40100118 0x8>;
+			reg-names = "ctrl", "mtime", "mtimecmp";
 			interrupts-extended = <&hlic 7>;
 		};
 
