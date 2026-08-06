@@ -671,6 +671,6 @@ static int mfd_npm10xx_init(const struct device *dev)
 	static struct mfd_npm10xx_data mfd_data##n;                                                \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, mfd_npm10xx_init, NULL, &mfd_data##n, &mfd_config##n,             \
-			      POST_KERNEL, CONFIG_MFD_NPM10XX_INIT_PRIORITY, NULL);
+			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_NPM10XX_DEFINE)

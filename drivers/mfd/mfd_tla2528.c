@@ -103,6 +103,6 @@ static int tla2528_init(const struct device *dev)
 	static const struct mfd_tla2528_config config##n = {.bus = I2C_DT_SPEC_INST_GET(n)};       \
 	static struct mfd_tla2528_data data##n;                                                    \
 	DEVICE_DT_INST_DEFINE(n, tla2528_init, NULL, &data##n, &config##n, POST_KERNEL,            \
-			      CONFIG_MFD_TLA2528_INIT_PRIO, NULL);
+			      CONFIG_MFD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_TLA2528_INST_DEFINE);

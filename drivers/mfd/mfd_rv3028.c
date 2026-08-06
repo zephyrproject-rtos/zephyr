@@ -538,6 +538,6 @@ static int mfd_rv3028_init(const struct device *dev)
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &mfd_rv3028_init, NULL, &mfd_rv3028_data##inst,                \
 			      &mfd_rv3028_config##inst, POST_KERNEL,                               \
-			      CONFIG_MFD_RV3028_INIT_PRIORITY, NULL);
+			      CONFIG_MFD_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MFD_RV3028_DEFINE)

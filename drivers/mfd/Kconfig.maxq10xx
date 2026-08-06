@@ -10,15 +10,3 @@ config MFD_MAXQ10XX
 	help
 	  This option enables the mfd driver for the
 	  MAXQ10xx crypto chips.
-
-if MFD_MAXQ10XX
-
-config MFD_MAXQ10XX_INIT_PRIORITY
-	int "MAXQ10xx init priority"
-	default 51
-	help
-	  Device driver initialization priority.
-	  Device is connected to SPI bus, it has to
-	  be initialized after SPI driver.
-
-endif # MFD_MAXQ10XX
