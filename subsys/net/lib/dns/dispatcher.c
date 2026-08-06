@@ -228,14 +228,18 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 	(void)k_mutex_init(&ctx->lock);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sockets, entry, next, node) {
+		uint16_t entry_port = net_sin(&entry->local_addr)->sin_port;
+		uint16_t ctx_port = net_sin(&ctx->local_addr)->sin_port;
+		bool ports_match = ctx_port != 0 && ctx_port == entry_port;
+
 		/* Refuse to register context if we have identical context
-		 * already registered.
+		 * already registered. Port 0 means the local port is not
+		 * known, so it cannot be used to tell two contexts apart.
 		 */
 		if (ctx->type == entry->type &&
 		    ctx->local_addr.sa_family == entry->local_addr.sa_family &&
 		    ctx->ifindex == entry->ifindex) {
-			if (net_sin(&entry->local_addr)->sin_port ==
-			    net_sin(&ctx->local_addr)->sin_port) {
+			if (ports_match) {
 				dup = true;
 				continue;
 			}
@@ -249,8 +253,7 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		 */
 		if (found == NULL && ctx->type != entry->type &&
 		    ctx->local_addr.sa_family == entry->local_addr.sa_family) {
-			if (net_sin(&entry->local_addr)->sin_port ==
-			    net_sin(&ctx->local_addr)->sin_port) {
+			if (ports_match) {
 				found = entry;
 				continue;
 			}
