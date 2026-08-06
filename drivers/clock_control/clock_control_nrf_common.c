@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(clock_control_nrf_common, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-#if (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF91))
+#if (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92))
 
 #define FLAG_UPDATE_IN_PROGRESS BIT(FLAGS_COMMON_BITS - 1)
 #define FLAG_UPDATE_NEEDED      BIT(FLAGS_COMMON_BITS - 2)
@@ -39,7 +39,7 @@ STRUCT_CLOCK_CONFIG(generic, ONOFF_CNT_MAX);
 
 static bool irq_connected;
 
-#endif /* (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF91)) */
+#endif /* (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92)) */
 
 /* Structure used for synchronous clock request. */
 struct sync_req {
@@ -48,7 +48,7 @@ struct sync_req {
 	int res;
 };
 
-#if (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF91))
+#if (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92))
 
 static void update_config(struct clock_config_generic *cfg)
 {
@@ -201,7 +201,7 @@ int api_nosys_on_off(const struct device *dev, clock_control_subsys_t sys)
 	return -ENOSYS;
 }
 
-#else /* IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF91)) */
+#else /* IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92)) */
 
 /* This function should be treated as static.
  * static keyword is not used so that it can be accessed by interrupt oriented tests.
@@ -352,7 +352,7 @@ void common_clear_pending_irq(void)
 	NRFX_IRQ_PENDING_CLEAR(DT_IRQN(DT_INST(0, nordic_nrf_clock)));
 }
 
-#endif /* (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF91)) */
+#endif /* (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92)) */
 
 static void sync_cb(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state, int res)
 {
