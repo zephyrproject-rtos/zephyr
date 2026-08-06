@@ -271,6 +271,7 @@ def test_hardwaremap_load():
   fixtures:
   - dummy fixture 1
   - dummy fixture 2
+  run_with_fixture_only: true
   connected: True
   serial: 'dummy'
 - id: id1
@@ -310,6 +311,7 @@ def test_hardwaremap_load():
             'flash_with_test': True,
             'serial_baud': 14400,
             'fixtures': ['dummy fixture 1', 'dummy fixture 2'],
+            'run_with_fixture_only': True,
             'connected': True,
             'serial': 'dummy',
             'serial_pty': None,
@@ -322,6 +324,7 @@ def test_hardwaremap_load():
             'flash_with_test': False,
             'serial_baud': 115200,
             'fixtures': [],
+            'run_with_fixture_only': False,
             'connected': True,
             'serial_pty': 'dummy',
         },

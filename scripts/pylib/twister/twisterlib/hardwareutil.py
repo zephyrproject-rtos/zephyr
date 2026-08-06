@@ -111,6 +111,8 @@ class HardwareReservationManager:
         for d in self.hwm.duts:
             if d.platform != platform or (d.serial is None and d.serial_pty is None):
                 continue
+            if not fixture and d.run_with_fixture_only:
+                continue
             if fixture and not all(f in (f.split(sep=':')[0] for f in d.fixtures) for f in fixture):
                 continue
             matched_duts.append(d)
