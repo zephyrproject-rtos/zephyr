@@ -12,7 +12,7 @@ menuconfig GPIO_ADP5585
 
 config GPIO_ADP5585_INIT_PRIORITY
 	int "Init priority"
-	default 70
+	default MFD_INIT_PRIORITY
 	depends on GPIO_ADP5585
 	help
 	  Device driver initialization priority.
