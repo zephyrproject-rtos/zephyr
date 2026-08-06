@@ -190,7 +190,7 @@ int net_socks5_connect(struct net_context *ctx, const struct net_sockaddr *addr,
 {
 	struct net_sockaddr_storage proxy;
 	struct net_sockaddr *proxy_sa = net_sad(&proxy);
-	net_socklen_t proxy_len;
+	net_socklen_t proxy_len = sizeof(proxy);
 	int type;
 	int ret;
 
