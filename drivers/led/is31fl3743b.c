@@ -275,7 +275,7 @@ static DEVICE_API(led, is31fl3743b_api) = {
 
 #define IS31FL3743B_DEVICE(n)                                                                      \
 	static const struct is31fl3743b_config is31fl3743b_config_##n = {                          \
-		.bus = SPI_DT_SPEC_INST_GET(n, IS31FL3743B_SPI_OPERATION, 0),                      \
+		.bus = SPI_DT_SPEC_INST_GET(n, IS31FL3743B_SPI_OPERATION),                         \
 		.sdb = GPIO_DT_SPEC_INST_GET_OR(n, sdb_gpios, {}),                                 \
 		.current_limit = DT_INST_PROP(n, current_limit),                                   \
 		.sync_mode = DT_INST_ENUM_IDX(n, sync_mode),                                       \
