@@ -14,6 +14,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/sys_io.h>
@@ -24,66 +25,140 @@
 
 LOG_MODULE_REGISTER(tach_xec, CONFIG_SENSOR_LOG_LEVEL);
 
+/* Frequency of the clock the hardware counts in reading mode 1 */
+#define TACH_XEC_CLOCK_HZ	100000U
+#define TACH_XEC_SEC_PER_MIN	60U
+
+/*
+ * A latched count of 0xffff means the programmed number of TACH edges was not
+ * observed before the internal counter saturated, i.e. the fan is stopped,
+ * jammed, or turning slower than the block can measure.
+ */
+#define TACH_XEC_COUNT_STOPPED	0xffffU
+
+/*
+ * The internal counter is latched either when the programmed number of edges
+ * has been seen or when it saturates. Saturation from zero takes
+ * 0xffff / 100 kHz = 655.35 ms, so a slightly longer timeout guarantees a
+ * reading is available for any fan speed the block supports. Exceeding it
+ * means the block is not counting at all.
+ */
+#define TACH_XEC_LATCH_TIMEOUT_MS	700U
+
+/* Byte offset of the read-only latched counter in the control register */
+#define TACH_XEC_COUNTER_REG_OFS	(MCHP_TACH_CONTROL_REG_OFS + 2U)
+
+/* Writable (R/W1C) bits of the status register */
+#define TACH_XEC_STS_RW1C	(MCHP_TACH_STS_EXCEED_LIMIT | MCHP_TACH_STS_TOGGLE |	\
+				 MCHP_TACH_STS_CNT_RDY)
+
 struct tach_xec_config {
-	struct tach_regs * const regs;
+	uintptr_t base;
 	/* TACH_EDGES control field, pre-shifted into position */
 	uint32_t ctrl_edges;
 	/* Width of the measurement window in half TACH periods: 1, 2, 4 or 8 */
 	uint32_t window_half_periods;
 	/* TACH periods the fan generates per revolution */
 	uint32_t pulses_per_round;
+	uint8_t pcr_scr;
+	/* Interrupt aggregator source this instance is wired to */
 	uint8_t girq;
 	uint8_t girq_pos;
-	uint8_t enc_pcr;
 	const struct pinctrl_dev_config *pcfg;
+	void (*irq_config_func)(void);
 };
 
 struct tach_xec_data {
+	/* Signalled by the ISR once a fresh count has been latched */
+	struct k_sem latched;
+	/* Control register image, maintained so the counter field is never written back */
 	uint32_t control;
 	uint16_t count;
 };
 
-#define FAN_STOPPED		0xFFFFU
-#define COUNT_100KHZ_SEC	100000U
-#define SEC_TO_MINUTE		60U
-#define PIN_STS_TIMEOUT		20U
+/*
+ * COUNT_READY_STATUS is set by the hardware on every latch regardless of
+ * COUNT_READY_INT_EN, so the interrupt is only armed for the duration of a
+ * fetch. Leaving it enabled would generate an interrupt every measurement
+ * window - up to a few hundred per second - with nothing to consume them.
+ */
+static void tach_xec_cnt_rdy_int_set(const struct device *dev, bool enable)
+{
+	const struct tach_xec_config * const cfg = dev->config;
+	struct tach_xec_data * const data = dev->data;
+
+	if (enable) {
+		data->control |= MCHP_TACH_CTRL_CNT_RDY_INT_EN;
+	} else {
+		data->control &= ~MCHP_TACH_CTRL_CNT_RDY_INT_EN;
+	}
+
+	sys_write32(data->control, cfg->base + MCHP_TACH_CONTROL_REG_OFS);
+}
+
+static void tach_xec_isr(const struct device *dev)
+{
+	const struct tach_xec_config * const cfg = dev->config;
+	struct tach_xec_data * const data = dev->data;
+	uint32_t status = sys_read32(cfg->base + MCHP_TACH_STATUS_REG_OFS);
+
+	if ((status & MCHP_TACH_STS_CNT_RDY) != 0U) {
+		data->count = sys_read16(cfg->base + TACH_XEC_COUNTER_REG_OFS);
+		k_sem_give(&data->latched);
+	}
+
+	/*
+	 * Clear the peripheral status first: the aggregator re-latches from a
+	 * source that is still asserted.
+	 */
+	sys_write32(status & TACH_XEC_STS_RW1C, cfg->base + MCHP_TACH_STATUS_REG_OFS);
+	soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
+}
 
 static int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	ARG_UNUSED(chan);
-
 	const struct tach_xec_config * const cfg = dev->config;
 	struct tach_xec_data * const data = dev->data;
-	struct tach_regs * const tach = cfg->regs;
-	uint8_t poll_count = 0;
+	unsigned int key;
+	int ret;
+
+	ARG_UNUSED(chan);
 
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
-	while (poll_count < PIN_STS_TIMEOUT) {
-		/* See whether internal counter is already latched */
-		if (tach->STATUS & MCHP_TACH_STS_CNT_RDY) {
-			data->count =
-				tach->CONTROL >> MCHP_TACH_CTRL_COUNTER_POS;
-			break;
-		}
+	key = irq_lock();
 
-		poll_count++;
+	/*
+	 * Discard a count latched before this call, along with any interrupt it
+	 * raised, so that the value the ISR stores is a fresh measurement.
+	 * COUNT_READY_STATUS is R/W1C; writing zero to the other R/W1C bits
+	 * leaves them untouched. An interrupt already pending in the NVIC at
+	 * this point sees the status cleared and does not signal.
+	 */
+	sys_write32(MCHP_TACH_STS_CNT_RDY, cfg->base + MCHP_TACH_STATUS_REG_OFS);
+	soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
+	k_sem_reset(&data->latched);
 
-		/* Allow other threads to run while we sleep */
-		k_usleep(USEC_PER_MSEC);
-	}
+	tach_xec_cnt_rdy_int_set(dev, true);
+
+	irq_unlock(key);
+
+	ret = k_sem_take(&data->latched, K_MSEC(TACH_XEC_LATCH_TIMEOUT_MS));
+
+	tach_xec_cnt_rdy_int_set(dev, false);
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
-	if (poll_count == PIN_STS_TIMEOUT) {
-		return -EINVAL;
+	if (ret != 0) {
+		LOG_ERR("TACH count not latched within %u ms", TACH_XEC_LATCH_TIMEOUT_MS);
+
+		return -EIO;
 	}
 
 	return 0;
 }
 
-static int tach_xec_channel_get(const struct device *dev,
-				enum sensor_channel chan,
+static int tach_xec_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
 	const struct tach_xec_config * const cfg = dev->config;
@@ -100,7 +175,7 @@ static int tach_xec_channel_get(const struct device *dev,
 	count = data->count;
 
 	/* A saturated count is a stopped fan; a zero count cannot be converted */
-	if ((count == FAN_STOPPED) || (count == 0U)) {
+	if ((count == TACH_XEC_COUNT_STOPPED) || (count == 0U)) {
 		val->val1 = 0;
 		val->val2 = 0;
 
@@ -124,7 +199,7 @@ static int tach_xec_channel_get(const struct device *dev,
 	 * The result is computed in micro-RPM so the fractional part can be
 	 * reported in val2 instead of being truncated away.
 	 */
-	numerator = (uint64_t)SEC_TO_MINUTE * COUNT_100KHZ_SEC *
+	numerator = (uint64_t)TACH_XEC_SEC_PER_MIN * TACH_XEC_CLOCK_HZ *
 		    cfg->window_half_periods * USEC_PER_SEC;
 	denominator = (uint64_t)cfg->pulses_per_round * count * 2U;
 
@@ -137,37 +212,30 @@ static int tach_xec_channel_get(const struct device *dev,
 	return 0;
 }
 
-static void tach_xec_sleep_clr(const struct device *dev)
-{
-	const struct tach_xec_config * const cfg = dev->config;
-
-	soc_xec_pcr_sleep_en_clear(cfg->enc_pcr);
-}
-
 #ifdef CONFIG_PM_DEVICE
 static int tach_xec_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct tach_xec_config * const cfg = dev->config;
 	struct tach_xec_data * const data = dev->data;
-	struct tach_regs * const tach = cfg->regs;
 	int ret = 0;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		if (data->control & MCHP_TACH_CTRL_EN) {
-			tach->CONTROL |= MCHP_TACH_CTRL_EN;
-			data->control &= (~MCHP_TACH_CTRL_EN);
-		}
-	break;
+		sys_write32(data->control, cfg->base + MCHP_TACH_CONTROL_REG_OFS);
+		/* The block resumes mid-count, so any pending event is stale */
+		sys_write32(TACH_XEC_STS_RW1C, cfg->base + MCHP_TACH_STATUS_REG_OFS);
+		soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
+		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		if (tach->CONTROL & MCHP_TACH_CTRL_EN) {
-			/* Take a backup */
-			data->control = tach->CONTROL;
-			tach->CONTROL &= (~MCHP_TACH_CTRL_EN);
-		}
-	break;
+		/* Bits 31:16 are the read-only counter and must not be written back */
+		data->control = sys_read32(cfg->base + MCHP_TACH_CONTROL_REG_OFS) &
+				~MCHP_TACH_CTRL_COUNTER_MASK;
+		sys_write32(data->control & ~MCHP_TACH_CTRL_EN,
+			    cfg->base + MCHP_TACH_CONTROL_REG_OFS);
+		break;
 	default:
 		ret = -ENOTSUP;
+		break;
 	}
 
 	return ret;
@@ -177,21 +245,37 @@ static int tach_xec_pm_action(const struct device *dev, enum pm_device_action ac
 static int tach_xec_init(const struct device *dev)
 {
 	const struct tach_xec_config * const cfg = dev->config;
-	struct tach_regs * const tach = cfg->regs;
+	struct tach_xec_data * const data = dev->data;
+	int ret;
 
-	int ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
 		LOG_ERR("XEC TACH pinctrl init failed (%d)", ret);
 		return ret;
 	}
 
-	tach_xec_sleep_clr(dev);
+	k_sem_init(&data->latched, 0, 1);
 
-	tach->CONTROL = MCHP_TACH_CTRL_READ_MODE_100K_CLOCK	|
-			cfg->ctrl_edges				|
-			MCHP_TACH_CTRL_FILTER_EN		|
-			MCHP_TACH_CTRL_EN;
+	soc_xec_pcr_sleep_en_clear(cfg->pcr_scr);
+
+	/*
+	 * COUNT_READY_INT_EN is left clear here and only set while a fetch is
+	 * waiting for a latch.
+	 */
+	data->control = MCHP_TACH_CTRL_READ_MODE_100K_CLOCK | cfg->ctrl_edges |
+			MCHP_TACH_CTRL_FILTER_EN | MCHP_TACH_CTRL_EN;
+
+	sys_write32(data->control, cfg->base + MCHP_TACH_CONTROL_REG_OFS);
+
+	/* Discard status latched while the block was being configured */
+	sys_write32(TACH_XEC_STS_RW1C, cfg->base + MCHP_TACH_STATUS_REG_OFS);
+	soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
+	soc_ecia_girq_ctrl(cfg->girq, cfg->girq_pos, MCHP_MEC_ECIA_GIRQ_EN);
+
+	cfg->irq_config_func();
+
+	/* Report a stopped fan until the first successful sample fetch */
+	data->count = TACH_XEC_COUNT_STOPPED;
 
 	return 0;
 }
@@ -201,57 +285,62 @@ static DEVICE_API(sensor, tach_xec_driver_api) = {
 	.channel_get = tach_xec_channel_get,
 };
 
-#define DEV_CFG_GIRQ(inst)     MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, 0))
-#define DEV_CFG_GIRQ_POS(inst) MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, 0))
-
 /* Pre-shifted TACH_EDGES control field for a given number of edges */
-#define TACH_XEC_CTRL_EDGES(edges)						\
-	((edges) == 2 ? MCHP_TACH_CTRL_EDGES_2 :				\
-	 ((edges) == 3 ? MCHP_TACH_CTRL_EDGES_3 :				\
+#define TACH_XEC_CTRL_EDGES(edges)							\
+	((edges) == 2 ? MCHP_TACH_CTRL_EDGES_2 :					\
+	 ((edges) == 3 ? MCHP_TACH_CTRL_EDGES_3 :					\
 	  ((edges) == 5 ? MCHP_TACH_CTRL_EDGES_5 : MCHP_TACH_CTRL_EDGES_9)))
 
 /* Half TACH periods spanned by a given number of edges */
-#define TACH_XEC_HALF_PERIODS(edges)						\
+#define TACH_XEC_HALF_PERIODS(edges)							\
 	((edges) == 2 ? 1U : ((edges) == 3 ? 2U : ((edges) == 5 ? 4U : 8U)))
 
-#define XEC_TACH_CONFIG(inst)						\
-	static const struct tach_xec_config tach_xec_config_##inst = {	\
-		.regs = (struct tach_regs * const)DT_INST_REG_ADDR(inst),	\
-		.ctrl_edges = TACH_XEC_CTRL_EDGES(DT_INST_PROP(inst, tach_edges)),	\
-		.window_half_periods =					\
-			TACH_XEC_HALF_PERIODS(DT_INST_PROP(inst, tach_edges)),	\
-		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),	\
-		.girq = DEV_CFG_GIRQ(inst),		\
-		.girq_pos = DEV_CFG_GIRQ_POS(inst),	\
-		.enc_pcr = DT_INST_PROP(inst, pcr_scr),             \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
-	}
+#define TACH_XEC_GIRQ(inst)	MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, 0))
+#define TACH_XEC_GIRQ_POS(inst)	MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, 0))
 
-#define TACH_XEC_DEVICE(id)						\
-	BUILD_ASSERT((DT_INST_PROP(id, tach_edges) == 2) ||		\
-		     (DT_INST_PROP(id, tach_edges) == 3) ||		\
-		     (DT_INST_PROP(id, tach_edges) == 5) ||		\
-		     (DT_INST_PROP(id, tach_edges) == 9),		\
-		     "tach-edges must be 2, 3, 5 or 9");		\
-									\
-	BUILD_ASSERT(DT_INST_PROP(id, pulses_per_round) > 0,		\
-		     "pulses-per-round must be non-zero");		\
-									\
-	static struct tach_xec_data tach_xec_data_##id;			\
-									\
-	PINCTRL_DT_INST_DEFINE(id);					\
-									\
-	XEC_TACH_CONFIG(id);						\
-									\
-	PM_DEVICE_DT_INST_DEFINE(id, tach_xec_pm_action);		\
-									\
-	SENSOR_DEVICE_DT_INST_DEFINE(id,				\
-			    tach_xec_init,				\
-			    PM_DEVICE_DT_INST_GET(id),			\
-			    &tach_xec_data_##id,			\
-			    &tach_xec_config_##id,			\
-			    POST_KERNEL,				\
-			    CONFIG_SENSOR_INIT_PRIORITY,		\
-			    &tach_xec_driver_api);
+#define TACH_XEC_DEVICE(inst)								\
+	BUILD_ASSERT((DT_INST_PROP(inst, tach_edges) == 2) ||				\
+		     (DT_INST_PROP(inst, tach_edges) == 3) ||				\
+		     (DT_INST_PROP(inst, tach_edges) == 5) ||				\
+		     (DT_INST_PROP(inst, tach_edges) == 9),				\
+		     "tach-edges must be 2, 3, 5 or 9");				\
+											\
+	BUILD_ASSERT(DT_INST_PROP(inst, pulses_per_round) > 0,				\
+		     "pulses-per-round must be non-zero");				\
+											\
+	static struct tach_xec_data tach_xec_data_##inst;				\
+											\
+	PINCTRL_DT_INST_DEFINE(inst);							\
+											\
+	static void tach_xec_irq_config_##inst(void)					\
+	{										\
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),		\
+			    tach_xec_isr, DEVICE_DT_INST_GET(inst), 0);			\
+		irq_enable(DT_INST_IRQN(inst));						\
+	}										\
+											\
+	static const struct tach_xec_config tach_xec_config_##inst = {			\
+		.base = (uintptr_t)DT_INST_REG_ADDR(inst),				\
+		.ctrl_edges = TACH_XEC_CTRL_EDGES(DT_INST_PROP(inst, tach_edges)),	\
+		.window_half_periods =							\
+			TACH_XEC_HALF_PERIODS(DT_INST_PROP(inst, tach_edges)),		\
+		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),		\
+		.pcr_scr = DT_INST_PROP(inst, pcr_scr),					\
+		.girq = TACH_XEC_GIRQ(inst),						\
+		.girq_pos = TACH_XEC_GIRQ_POS(inst),					\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
+		.irq_config_func = tach_xec_irq_config_##inst,				\
+	};										\
+											\
+	PM_DEVICE_DT_INST_DEFINE(inst, tach_xec_pm_action);				\
+											\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst,						\
+				     tach_xec_init,					\
+				     PM_DEVICE_DT_INST_GET(inst),			\
+				     &tach_xec_data_##inst,				\
+				     &tach_xec_config_##inst,				\
+				     POST_KERNEL,					\
+				     CONFIG_SENSOR_INIT_PRIORITY,			\
+				     &tach_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TACH_XEC_DEVICE)
