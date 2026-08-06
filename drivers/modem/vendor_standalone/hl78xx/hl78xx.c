@@ -496,6 +496,11 @@ void hl78xx_reschedule_timer(struct hl78xx_data *data, k_timeout_t timeout)
 	(void)k_work_reschedule(&data->work.timeout_work, timeout);
 }
 
+uint32_t hl78xx_get_timer_remaining(struct hl78xx_data *data)
+{
+	return k_ticks_to_ms_floor32(k_work_delayable_remaining_get(&data->work.timeout_work));
+}
+
 void hl78xx_stop_timer(struct hl78xx_data *data)
 {
 	k_work_cancel_delayable(&data->work.timeout_work);

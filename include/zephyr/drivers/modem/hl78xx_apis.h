@@ -2159,6 +2159,15 @@ int hl78xx_gnss_set_nmea_output(const struct device *dev, enum nmea_output_port 
 int hl78xx_gnss_set_search_timeout(const struct device *dev, uint32_t timeout_ms);
 
 /**
+ * @brief Get the remaining GNSS search timeout
+ *
+ * @param dev Pointer to the GNSS device
+ * @param timeout_ms Pointer to variable to receive the remaining timeout in milliseconds
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_gnss_get_search_timeout_remaining(const struct device *dev, uint32_t *timeout_ms);
+
+/**
  * @brief Get the latest known GNSS fix from the modem
  *
  * Queries the modem for the last known position using AT+GNSSLOC?
