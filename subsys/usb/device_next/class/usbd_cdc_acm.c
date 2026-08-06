@@ -138,7 +138,7 @@ static void cdc_acm_irq_rx_enable(const struct device *dev);
 
 #if CONFIG_USBD_CDC_ACM_BUF_POOL
 UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
-		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
+		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT),
 		    CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE,
 		    sizeof(struct udc_buf_info), NULL);
 
@@ -164,7 +164,7 @@ static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
 }
 #else
 /*
- * The required buffer is 128 bytes per instance on a full-speed device. Use
+ * The required IN buffer is 64 bytes per instance on a full-speed device. Use
  * common (UDC) buffer, as this results in a smaller footprint.
  */
 static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
