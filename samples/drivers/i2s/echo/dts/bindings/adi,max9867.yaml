@@ -19,3 +19,10 @@ properties:
     description: |
       Route the stereo line inputs to the ADCs. If this property is absent,
       the sample configures the digital microphone input instead.
+
+  adi,stereo-capacitorless-output:
+    type: boolean
+    description: |
+      Configure the headphone amplifiers for stereo capacitorless output.
+      If this property is absent, the sample uses stereo single-ended
+      clickless mode.
