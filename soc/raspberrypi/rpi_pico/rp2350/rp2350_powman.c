@@ -22,8 +22,11 @@
 
 LOG_MODULE_REGISTER(rp2350_powman, CONFIG_SOC_LOG_LEVEL);
 
-#define RP2350_PWRUP_GPIO0_BIT (1u << 1)
-#define RP2350_PWRUP_ALARM_BIT (1u << 6)
+/* POWMAN_LAST_SWCORE_PWRUP is a 0-6 enum (1=pwrup0, 6=alarm_pwrup), not a bitmask.
+ * https://github.com/zephyrproject-rtos/hal_rpi_pico/blob/266394b0f23dff8f77c54f67f89d62cee246f21d/src/rp2350/hardware_regs/include/hardware/regs/powman.h#L1842-L1859
+ */
+#define RP2350_LAST_SWCORE_PWRUP_GPIO0 1u
+#define RP2350_LAST_SWCORE_PWRUP_ALARM 6u
 
 #define RP2350_LPOSC_NOMINAL_HZ 32768u
 
@@ -120,10 +123,10 @@ enum rp2350_pm_wakeup_source rp2350_powman_wakeup_source(void)
 {
 	uint32_t pwrup = powman_hw->last_swcore_pwrup;
 
-	if (pwrup & RP2350_PWRUP_GPIO0_BIT) {
+	if (pwrup == RP2350_LAST_SWCORE_PWRUP_GPIO0) {
 		return RP2350_PM_WAKEUP_GPIO;
 	}
-	if (pwrup & RP2350_PWRUP_ALARM_BIT) {
+	if (pwrup == RP2350_LAST_SWCORE_PWRUP_ALARM) {
 		return RP2350_PM_WAKEUP_ALARM;
 	}
 
