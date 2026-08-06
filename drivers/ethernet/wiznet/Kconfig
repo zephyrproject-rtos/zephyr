@@ -1,0 +1,8 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/ethernet/wiznet/Kconfig.w5500"
+source "drivers/ethernet/wiznet/Kconfig.w6100"
+source "drivers/ethernet/wiznet/Kconfig.w6300"
+# zephyr-keep-sorted-stop
