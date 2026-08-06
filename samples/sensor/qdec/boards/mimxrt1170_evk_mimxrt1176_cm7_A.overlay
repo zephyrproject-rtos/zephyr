@@ -1,0 +1,85 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	aliases {
+		qdec0 = &qdec1;
+		qenca = &phase_a;
+		qencb = &phase_b;
+		/delete-property/ magn0;
+		/delete-property/ accel0;
+	};
+
+	/* Wire J10 2 <-> J9 4 and J10 4 <-> J9-2 */
+	encoder-emulate {
+		compatible = "gpio-leds";
+
+		phase_a: phase_a {
+			gpios = <&gpio9 6 GPIO_ACTIVE_HIGH>;  /* GPIO_AD_07 */
+		};
+
+		phase_b: phase_b {
+			gpios = <&gpio9 0 GPIO_ACTIVE_HIGH>;  /* GPIO_AD_01 */
+		};
+	};
+};
+
+/* Disable Arduino serial (lpuart2) since GPIO_DISP_B2_10/11 are repurposed
+ * for XBAR QDEC input and the default LPUART2 pinmux conflicts with them.
+ */
+&lpuart2 {
+	status = "disabled";
+};
+
+/* Override the XBAR1 direction-select (IOMUXC_GPR_GPR21) for the two INOUT
+ * pads used as ENC1 inputs. The HAL pinctrl macros default gpr_val to 1
+ * (DIR_SEL = 1 -> output: XBAR drives the pad). For QDEC we need these pads as
+ * XBAR inputs (pad -> XBAR -> DEC1), so force gpr_val = 0. The pinctrl_imx
+ * driver clears the GPR bit when gpr_val is 0.
+ *   INOUT38 -> GPR21 bit 6, INOUT39 -> bit 7
+ */
+&iomuxc_gpio_disp_b2_10_xbar1_xbar_inout38 {
+	gpr = <0x400e4054 0x6 0x0>;
+};
+
+&iomuxc_gpio_disp_b2_11_xbar1_xbar_inout39 {
+	gpr = <0x400e4054 0x7 0x0>;
+};
+
+&pinctrl {
+	pinmux_qdec1: pinmux_qdec1 {
+		/* GPIO_DISP_B2_10 -> XBAR1_INOUT38 (ENC1 Phase A)
+		 * GPIO_DISP_B2_11 -> XBAR1_INOUT39 (ENC1 Phase B)
+		 * Direction select (GPR21) is forced to input (DIR_SEL = 0) via the
+		 * gpr overrides above; the HAL macros default DIR_SEL to 1 (output).
+		 */
+		group0 {
+			pinmux = <&iomuxc_gpio_disp_b2_10_xbar1_xbar_inout38>,
+				 <&iomuxc_gpio_disp_b2_11_xbar1_xbar_inout39>;
+			drive-strength = "high";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+};
+
+&xbar1 {
+	status = "okay";
+};
+
+&qdec1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_qdec1>;
+	pinctrl-names = "default";
+	counts-per-revolution = <120>;
+	/* mux-states cells = <output, input>:
+	 *   XBAR1_INOUT38 -> DEC1_PHASEA  ->  output=108, input=38
+	 *   XBAR1_INOUT39 -> DEC1_PHASEB  ->  output=109, input=39
+	 */
+	mux-states = <&xbar1 108 38>,
+		     <&xbar1 109 39>;
+};
