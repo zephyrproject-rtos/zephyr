@@ -314,6 +314,10 @@ results in the ranges -5 to -1 and 0 to 9, respectively.
 Meta-IRQ Priorities
 ===================
 
+.. design:: DESIGN-THREAD-METAIRQ Meta-IRQ Priorities
+   :fulfills: ZEP-SRS-2-22 ZEP-SRS-2-28 ZEP-SRS-2-29
+
+
 When enabled (see :kconfig:option:`CONFIG_NUM_METAIRQ_PRIORITIES`), there is a special
 subclass of cooperative priorities at the highest (numerically lowest)
 end of the priority space: meta-IRQ threads.  These are scheduled
