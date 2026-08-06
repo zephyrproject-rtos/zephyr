@@ -169,6 +169,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
 
         command = (self.gdb +
                    ['-ex', "set confirm off",
+                    '-ex', "set pagination off",
                     '-ex', f"target extended-remote {self.gdb_serial}"] +
                     self.connect_rst_enable_arg +
                    ['-ex', "monitor swdp_scan",
