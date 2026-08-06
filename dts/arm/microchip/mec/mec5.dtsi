@@ -221,55 +221,73 @@
 		};
 
 		pwm0: pwm@40005800 {
+			compatible = "microchip,xec-pwm";
 			reg = <0x40005800 0x10>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 4)>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm1: pwm@40005810 {
+			compatible = "microchip,xec-pwm";
 			reg = <0x40005810 0x10>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 20)>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm2: pwm@40005820 {
+			compatible = "microchip,xec-pwm";
 			reg = <0x40005820 0x10>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 21)>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm3: pwm@40005830 {
+			compatible = "microchip,xec-pwm";
 			reg = <0x40005830 0x10>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 22)>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm4: pwm@40005840 {
+			compatible = "microchip,xec-pwm";
 			reg = <0x40005840 0x10>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 23)>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm5: pwm@40005850 {
+			compatible = "microchip,xec-pwm";
 			reg = <0x40005850 0x10>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 24)>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm6: pwm@40005860 {
+			compatible = "microchip,xec-pwm";
 			reg = <0x40005860 0x10>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 25)>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm7: pwm@40005870 {
+			compatible = "microchip,xec-pwm";
 			reg = <0x40005870 0x10>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 26)>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
 		pwm8: pwm@40005880 {
+			compatible = "microchip,xec-pwm";
 			reg = <0x40005880 0x10>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 27)>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
