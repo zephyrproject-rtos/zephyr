@@ -146,7 +146,10 @@ static void process_block_data(void *mem_block, uint32_t number_of_samples)
 	if (echo_enabled) {
 		for (int i = 0; i < number_of_samples; ++i) {
 			int16_t *sample = &((int16_t *)mem_block)[i];
-			*sample += echo_block[i];
+			/* Attenuate both paths by 6 dB before mixing. */
+			int32_t mixed_sample = ((int32_t)*sample / 2) + echo_block[i];
+
+			*sample = CLAMP(mixed_sample, INT16_MIN, INT16_MAX);
 			echo_block[i] = (*sample) / 2;
 		}
 
