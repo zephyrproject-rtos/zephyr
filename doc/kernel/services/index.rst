@@ -111,6 +111,7 @@ These pages cover timing related services.
 
    timing/clocks.rst
    timing/timers.rst
+   timing/system_timer_drivers.rst
 
 Other
 *****
