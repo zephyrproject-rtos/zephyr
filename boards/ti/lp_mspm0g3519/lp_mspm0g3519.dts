@@ -94,6 +94,16 @@
 	status = "okay";
 };
 
+&hfxt {
+	clock-frequency = <DT_FREQ_M(48)>;
+	ti,xtal-startup-delay-us = <500>;
+};
+
+&lfxt {
+	clock-frequency = <32768>;
+	ti,xtal-startup-delay-us = <1000000>;
+};
+
 &pinctrl {
 	status = "okay";
 };
