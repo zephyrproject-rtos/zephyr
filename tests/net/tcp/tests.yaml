@@ -15,3 +15,13 @@ tests:
       - CONFIG_NET_BUF_VARIABLE_DATA_SIZE=y
       - CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE=4096
       - CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE=4096
+  net.tcp.contiguous_tx:
+    extra_configs:
+      - CONFIG_NET_TCP_CONTIGUOUS_TX=y
+      - CONFIG_NET_BUF_DATA_SIZE=512
+  net.tcp.contiguous_tx_variable:
+    extra_configs:
+      - CONFIG_NET_TCP_CONTIGUOUS_TX=y
+      - CONFIG_NET_BUF_VARIABLE_DATA_SIZE=y
+      - CONFIG_NET_PKT_BUF_RX_DATA_POOL_SIZE=4096
+      - CONFIG_NET_PKT_BUF_TX_DATA_POOL_SIZE=4096
