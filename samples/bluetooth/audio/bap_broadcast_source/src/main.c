@@ -551,11 +551,15 @@ int main(void)
 
 #if defined(CONFIG_SOC_NRF5340_CPUAPP)
 	/* Use this to turn on 128 MHz clock for the nRF5340 cpu_app */
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	err = nrfx_clock_divider_set(NRF_CLOCK_DOMAIN_HFCLK, NRF_CLOCK_HFCLK_DIV_1);
+
 	if (err != 0) {
-		printk("Failed to set 128 MHz: %d\n", err);
-		return 0;
+		LOG_WRN("Failed to set 128 MHz: %d", err);
 	}
+#else
+	nrfx_clock_hfclk_divider_set(NRF_CLOCK_HFCLK_DIV_1);
+#endif
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 	err = bt_enable(NULL);

@@ -773,7 +773,9 @@ static int sys_clock_driver_init(void)
 
 	compare_set(SYS_CLOCK_CH, initial_timeout, sys_clock_timeout_handler, NULL, false);
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF_COMMON)
+#if defined(CONFIG_CLOCK_CONTROL_NRF) ||                                                           \
+	(defined(CONFIG_CLOCK_CONTROL_NRF_COMMON) &&                                               \
+	 !(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)))
 	static const enum nrf_lfclk_start_mode mode =
 		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
 			CLOCK_CONTROL_NRF_LF_START_NOWAIT :
