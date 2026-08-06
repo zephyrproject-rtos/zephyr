@@ -74,3 +74,8 @@
 		};
 	};
 };
+
+&lfclk {
+	k32src = "rc";
+	k32src-accuracy-ppm = <500>;
+};
