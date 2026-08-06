@@ -21,6 +21,10 @@
 	hfclkaudio-frequency = <12288000>;
 };
 
+&hfclkaudio {
+	hfclkaudio-frequency = <12288000>;
+};
+
 i2s_rxtx: &i2s0 {
 	status = "okay";
 	pinctrl-0 = <&i2s0_default_alt>;
