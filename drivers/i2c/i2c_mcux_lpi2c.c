@@ -591,6 +591,16 @@ static int mcux_lpi2c_init(const struct device *dev)
 	}
 #endif /* CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY */
 
+	error = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+	if (error != 0) {
+		/* Check if error is due to lack of support */
+		if (error != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", error);
+			return error;
+		}
+	}
+
 	if (clock_control_get_rate(config->clock_dev, config->clock_subsys,
 				   &clock_freq)) {
 		return -EINVAL;
