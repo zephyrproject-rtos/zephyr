@@ -29,7 +29,16 @@
 
 &pll {
 	clocks = <&clk_hse>;
+	/*
+	 * 144MHz requires PLLXTPRE (HSE/2), which is not yet supported
+	 * in the DT binding. Use mul=4 (32*4=128MHz) for now.
+	 */
+	mul = <4>;
 	status = "okay";
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(128)>;
 };
 
 &rcc {

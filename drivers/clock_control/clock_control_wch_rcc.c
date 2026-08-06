@@ -56,7 +56,8 @@
 #endif
 
 #if DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_pll_clock) ||                          \
-	DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v20x_30x_pll_clock)
+	DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v20x_30x_pll_clock) ||                \
+	WCH_RCC_SRC_IS_H41X_PLL
 #define WCH_RCC_SRC_IS_PLL 1
 #define WCH_RCC_PLL_NODE   DT_INST_CLOCKS_CTLR(0)
 
@@ -69,15 +70,16 @@
 #define WCH_RCC_PLL_SRC_FREQ   DT_PROP(DT_CLOCKS_CTLR(WCH_RCC_PLL_NODE), clock_frequency)
 #else
 #error Unsupported PLL clock source
-#endif
+#endif /* PLL source: HSE vs HSI */
 
 /* CH32V20x/30x has configurable mul and HSI predivider; CH32V00x is a fixed 2x PLL. */
+/* CH32H41x PLL is configurable but not yet represented in its DT binding. */
 #if DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v20x_30x_pll_clock)
 #define WCH_RCC_PLL_MUL    DT_PROP(WCH_RCC_PLL_NODE, mul)
 #define WCH_RCC_HSI_PREDIV DT_PROP(WCH_RCC_PLL_NODE, hsi_prediv)
 #elif DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_pll_clock)
 #define WCH_RCC_PLL_MUL    WCH_RCC_CH32V00X_PLL_MUL
-#endif
+#endif /* PLL compatible: v20x_30x vs v00x */
 
 #elif DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(0), wch_ch32v00x_hse_clock)
 #define WCH_RCC_SRC_IS_HSE 1
@@ -85,12 +87,16 @@
 #define WCH_RCC_SRC_IS_HSI 1
 #else
 #error Unsupported clock source compatible
-#endif
+#endif /* Clock source: PLL vs HSE vs HSI */
 
 /*
  * Verify that cpu0 clock-frequency matches the actual PLL configuration so that
  * peripheral baud rate divisors (USART, SPI, etc.) are computed correctly.
+ *
+ * CH32H41x PLL is configurable but its DT binding does not yet expose mul/prediv,
+ * so clock validation is not possible for that family.
  */
+#if !WCH_RCC_SRC_IS_H41X_PLL
 #if defined(WCH_RCC_PLL_SRC_IS_HSI) && defined(WCH_RCC_HSI_PREDIV)
 BUILD_ASSERT(WCH_RCC_SYSCLK == (WCH_RCC_PLL_SRC_FREQ / WCH_RCC_HSI_PREDIV) * WCH_RCC_PLL_MUL,
 	     "cpu0 clock-frequency does not match HSI / hsi-prediv * mul");
@@ -101,6 +107,7 @@ BUILD_ASSERT(WCH_RCC_SYSCLK == WCH_RCC_PLL_SRC_FREQ * WCH_RCC_PLL_MUL,
 BUILD_ASSERT(WCH_RCC_SYSCLK == WCH_RCC_PLL_SRC_FREQ * WCH_RCC_PLL_MUL,
 	     "cpu0 clock-frequency does not match HSE * mul");
 #endif
+#endif /* !WCH_RCC_SRC_IS_H41X_PLL */
 
 #if defined(CONFIG_DT_HAS_WCH_CH32V20X_30X_PLL_CLOCK_ENABLED)
 #if defined(CONFIG_SOC_CH32V305) || defined(CONFIG_SOC_CH32V307) || defined(CONFIG_SOC_CH32V317)
