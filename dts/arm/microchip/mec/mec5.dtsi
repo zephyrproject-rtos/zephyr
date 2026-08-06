@@ -566,6 +566,7 @@
 		};
 
 		tach0: tach@40006000 {
+			compatible = "microchip,xec-tach";
 			reg = <0x40006000 0x10>;
 			interrupts = <71 3>;
 			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 1)>;
@@ -576,6 +577,7 @@
 		};
 
 		tach1: tach@40006010 {
+			compatible = "microchip,xec-tach";
 			reg = <0x40006010 0x10>;
 			interrupts = <72 3>;
 			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 2)>;
@@ -586,6 +588,7 @@
 		};
 
 		tach2: tach@40006020 {
+			compatible = "microchip,xec-tach";
 			reg = <0x40006020 0x10>;
 			interrupts = <73 3>;
 			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 3)>;
@@ -596,6 +599,7 @@
 		};
 
 		tach3: tach@40006030 {
+			compatible = "microchip,xec-tach";
 			reg = <0x40006030 0x10>;
 			interrupts = <159 3>;
 			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 4)>;
