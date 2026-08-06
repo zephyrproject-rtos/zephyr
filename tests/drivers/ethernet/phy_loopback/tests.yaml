@@ -1,0 +1,21 @@
+# Copyright (c) 2026, Ylhyra ehf.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  depends_on:
+    - eth
+  filter: CONFIG_ETH_DWC_ETHER_1000_CORE or CONFIG_ETH_DWC_ETHER_QOS_CORE
+  tags:
+    - drivers
+    - ethernet
+    - phy
+  harness: ztest
+  harness_config:
+    fixture: ethernet_phy_loopback
+
+tests:
+  drivers.ethernet.phy_loopback: {}
+
+  drivers.ethernet.phy_loopback.pressure:
+    extra_conf_files:
+      - pressure.conf
