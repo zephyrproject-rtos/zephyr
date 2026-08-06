@@ -796,7 +796,11 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 	if ((priv->controller_id == kUSB_ControllerLpcIp3511Hs0) ||
 	    (priv->controller_id == kUSB_ControllerLpcIp3511Hs1)) {
 		data->caps.hs = true;
+#if (defined USB_DEVICE_CONFIG_DETACH_ENABLE) && (USB_DEVICE_CONFIG_DETACH_ENABLE > 0U)
+		data->caps.can_detect_vbus = true;
+#endif
 	}
+
 	priv->dev = dev;
 
 	pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
