@@ -4527,6 +4527,7 @@ Networking:
   files-exclude:
     - doc/services/connectivity/networking/api/gptp.rst
     - doc/services/connectivity/networking/api/ieee802154.rst
+    - doc/services/connectivity/networking/api/mcp.rst
     - doc/services/connectivity/networking/api/ocpp.rst
     - doc/services/connectivity/networking/api/ptp.rst
     - doc/services/connectivity/networking/api/wifi.rst
@@ -4538,6 +4539,7 @@ Networking:
     - doc/services/connectivity/networking/eth_*.rst
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
+    - include/zephyr/net/mcp/
     - include/zephyr/net/ptp.h
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/dhcpv4*.h
@@ -4549,6 +4551,7 @@ Networking:
     - samples/net/sockets/coap_*/
     - samples/net/sockets/*http*/
     - samples/net/lwm2m_client/
+    - samples/net/mcp/
     - samples/net/ocpp/
     - samples/net/wifi/
     - samples/net/dhcpv4_client/
@@ -4559,12 +4562,14 @@ Networking:
     - subsys/net/lib/config/ieee802154*
     - subsys/net/lib/http/
     - subsys/net/lib/lwm2m/
+    - subsys/net/lib/mcp/
     - subsys/net/lib/ocpp/
     - subsys/net/lib/ptp/
     - subsys/net/lib/tls_credentials/
     - subsys/net/lib/dhcpv4/
     - tests/net/dhcpv4/
     - tests/net/ieee802154/
+    - tests/net/lib/mcp/
     - tests/net/lib/ocpp/
     - tests/net/lib/http*/
     - tests/net/wifi/
