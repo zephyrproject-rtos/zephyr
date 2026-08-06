@@ -1,8 +1,8 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: nrf7120dk/nrf7120/cpuapp/ns
-name: nRF7120-DK-nRF7120-Application-Non-Secure
+identifier: nrf7120dk/nrf7120e/cpuapp/ns
+name: nRF7120-DK-nRF7120E-Application-Non-Secure
 type: mcu
 arch: arm
 toolchain:
