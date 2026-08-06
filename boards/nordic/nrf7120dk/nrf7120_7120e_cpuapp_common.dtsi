@@ -4,10 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* This file is common to the secure and non-secure domain */
+/*
+ * This file is common to the nRF7120 and nRF7120E SoCs, and to the secure and
+ * non-secure domain. The SoC specific cpuapp DTSI is included by the board
+ * target DTS including this file.
+ */
 
-#include <nordic/nrf7120_enga_cpuapp.dtsi>
-#include "nrf7120dk_nrf7120-common.dtsi"
+#include "nrf7120dk_common.dtsi"
 
 / {
 	chosen {

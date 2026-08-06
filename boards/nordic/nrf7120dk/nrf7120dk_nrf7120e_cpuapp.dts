@@ -6,12 +6,12 @@
 
 /dts-v1/;
 
-#include <nordic/nrf7120_enga_cpuapp.dtsi>
+#include <nordic/nrf7120e_enga_cpuapp.dtsi>
 #include "nrf7120_7120e_cpuapp_common.dtsi"
 
 / {
-	compatible = "nordic,nrf7120dk_nrf7120-cpuapp";
-	model = "Nordic nRF7120 DK nRF7120 Application MCU";
+	compatible = "nordic,nrf7120dk_nrf7120e-cpuapp";
+	model = "Nordic nRF7120 DK nRF7120E Application MCU";
 
 	chosen {
 		zephyr,code-partition = &slot0_partition;
@@ -19,4 +19,4 @@
 	};
 };
 
-#include <nordic/nrf7120_cpuapp_partition.dtsi>
+#include <nordic/nrf7120e_cpuapp_partition.dtsi>
