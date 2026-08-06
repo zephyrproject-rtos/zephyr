@@ -1310,6 +1310,13 @@ void hl78xx_start_timer(struct hl78xx_data *data, k_timeout_t timeout);
 void hl78xx_reschedule_timer(struct hl78xx_data *data, k_timeout_t timeout);
 
 /**
+ * @brief Get the remaining time for the timeout work item.
+ * @param data pointer to hl78xx_data.
+ * @return remaining time in milliseconds.
+ */
+uint32_t hl78xx_get_timer_remaining(struct hl78xx_data *data);
+
+/**
  * @brief Stop the timer.
  * @param data pointer to hl78xx_data.
  */

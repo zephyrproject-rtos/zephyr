@@ -1593,6 +1593,33 @@ int hl78xx_gnss_set_nmea_output(const struct device *dev, enum nmea_output_port 
 	return 0;
 }
 
+int hl78xx_gnss_get_search_timeout_remaining(const struct device *dev, uint32_t *timeout_ms)
+{
+	struct hl78xx_gnss_data *data_gnss = NULL;
+	struct hl78xx_data *data_modem = NULL;
+	enum hl78xx_gnss_search_state search_state;
+
+	if (hl78xx_get_gnss_context(dev, &data_gnss, &data_modem) < 0) {
+		return -EINVAL;
+	}
+
+	if (data_modem == NULL) {
+		return -EINVAL;
+	}
+
+	search_state = hl78xx_gnss_get_search_state(data_gnss);
+
+	if ((search_state != HL78XX_GNSS_SEARCH_STATE_SEARCHING) &&
+	    (search_state != HL78XX_GNSS_SEARCH_STATE_STARTING)) {
+		/* Not searching, no need to reschedule timer */
+		return 0;
+	}
+
+	*timeout_ms = hl78xx_get_timer_remaining(data_modem);
+
+	return 0;
+}
+
 int hl78xx_gnss_set_search_timeout(const struct device *dev, uint32_t timeout_ms)
 {
 	struct hl78xx_gnss_data *data_gnss = NULL;
