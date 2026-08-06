@@ -1,0 +1,7 @@
+# FlextechAKT T1SUSB board configuration
+
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FLEXTECHAKT_T1SUSB
+	select SOC_MAX32690_M4 if BOARD_FLEXTECHAKT_T1SUSB_MAX32690_M4
