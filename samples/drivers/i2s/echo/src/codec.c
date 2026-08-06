@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021 Nordic Semiconductor ASA
  * Copyright (c) 2025 Croxel Inc
+ * Copyright The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -230,6 +231,17 @@ bool init_wm8731_i2c(void)
 #define MAX9867_ADLEN (1 << 1)
 #define MAX9867_ADREN (1 << 0)
 
+#if DT_PROP(MAX9867_NODE, adi_use_line_in)
+#define MAX9867_MIC_CONFIG 0
+#define MAX9867_ADC_INPUT_CONFIG                                                                   \
+	((MAX9867_MXIN_LINE << MAX9867_MXINL_POS) | (MAX9867_MXIN_LINE << MAX9867_MXINR_POS))
+#define MAX9867_ADC_POWER (MAX9867_ADLEN | MAX9867_ADREN)
+#else
+#define MAX9867_MIC_CONFIG       (0x1 << MAX9867_DIGMICR_POS)
+#define MAX9867_ADC_INPUT_CONFIG 0
+#define MAX9867_ADC_POWER        MAX9867_ADLEN
+#endif
+
 bool init_max9867_i2c(void)
 {
 	const struct device *const i2c_dev = DEVICE_DT_GET(MAX9867_I2C_NODE);
@@ -267,7 +279,7 @@ bool init_max9867_i2c(void)
 		 * 20MHz. Set prescaler, FREQ field is 0 for Normal or PLL mode, < 20MHz.
 		 */
 		{MAX9867_05_SYS_CLK, 0x01 << MAX9867_PSCLK_POS},
-		/* Configure codec to generate 48kHz sampling frequency in controller mode */
+		/* Configure codec to generate 44.1kHz sampling frequency in controller mode */
 		{MAX9867_06_CLK_HIGH, MAX9867_NI_UPPER_44p1KHZ},
 		{MAX9867_07_CLK_LOW, MAX9867_NI_LOWER_44p1KHZ},
 		{MAX9867_09_DAI_CLOCK, MAX9867_BSEL_PCLK_DIV8},
@@ -275,8 +287,9 @@ bool init_max9867_i2c(void)
 		{MAX9867_08_DAI_FORMAT, MAX9867_MAS | MAX9867_DLY | MAX9867_HIZOFF},
 		/* */
 		{MAX9867_0A_DIG_FILTER, 0xA2},
-		/* Select Digital microphone input */
-		{MAX9867_15_MIC, ((0x1 << MAX9867_DIGMICR_POS))},
+		/* Select the digital microphone or line input. */
+		{MAX9867_15_MIC, MAX9867_MIC_CONFIG},
+		{MAX9867_14_ADC_INPUT, MAX9867_ADC_INPUT_CONFIG},
 		/* ADC level */
 		{MAX9867_0D_LVL_ADC, (3 << MAX9867_AVL_POS) | (3 << MAX9867_AVR_POS)},
 		/*Set line-in level, disconnect line input from playback amplifiers */
@@ -288,7 +301,8 @@ bool init_max9867_i2c(void)
 		{MAX9867_10_VOL_LEFT, 0x04 << MAX9867_VOL_POS},
 		{MAX9867_11_VOL_RIGHT, 0x04 << MAX9867_VOL_POS},
 		/* Enable */
-		{MAX9867_17_PWR_SYS, MAX9867_SHDN | MAX9867_DALEN | MAX9867_DAREN | MAX9867_ADLEN},
+		{MAX9867_17_PWR_SYS,
+		 MAX9867_SHDN | MAX9867_DALEN | MAX9867_DAREN | MAX9867_ADC_POWER},
 	};
 
 	if (!device_is_ready(i2c_dev)) {
