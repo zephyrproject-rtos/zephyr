@@ -104,6 +104,8 @@ static void timer_isr(const void *arg)
 		uint64_t next = last_count + CYC_PER_TICK;
 
 		set_mtimecmp(next);
+	} else {
+		set_mtimecmp(last_count + CYCLES_MAX);
 	}
 
 	sys_clock_announce_locked(dticks, key);
