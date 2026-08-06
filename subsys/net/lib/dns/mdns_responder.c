@@ -224,12 +224,21 @@ static inline bool mdns_iface_is_enabled(struct net_if *iface)
 #if defined(CONFIG_NET_IPV4)
 static struct mdns_responder_context v4_ctx[MAX_IPV4_IFACE_COUNT];
 
+/* The socket service dispatcher keeps a pointer to the poll fd array passed at
+ * registration (and reuses it when a peer dispatcher is unregistered), so it
+ * must outlive init_listener(). Keep it at file scope for that reason.
+ */
+static struct zsock_pollfd ipv4_fds[MAX_IPV4_IFACE_COUNT];
+
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v4_svc, dns_dispatcher_svc_handler,
 				      MDNS_V4_SVC_POLL_COUNT);
 #endif
 
 #if defined(CONFIG_NET_IPV6)
 static struct mdns_responder_context v6_ctx[MAX_IPV6_IFACE_COUNT];
+
+/* See the ipv4_fds comment above: the dispatcher retains this pointer. */
+static struct zsock_pollfd ipv6_fds[MAX_IPV6_IFACE_COUNT];
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v6_svc, dns_dispatcher_svc_handler,
 				      MDNS_V6_SVC_POLL_COUNT);
@@ -1579,9 +1588,9 @@ static int init_listener(void)
 
 #if defined(CONFIG_NET_IPV6)
 	/* Because there is only one IPv6 socket service context for all
-	 * IPv6 sockets, we must collect the sockets in one place.
+	 * IPv6 sockets, we must collect the sockets in one place (ipv6_fds,
+	 * defined at file scope).
 	 */
-	struct zsock_pollfd ipv6_fds[MAX_IPV6_IFACE_COUNT];
 	struct net_sockaddr_in6 local_addr6;
 	int v6;
 
@@ -1691,7 +1700,6 @@ static int init_listener(void)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	struct zsock_pollfd ipv4_fds[MAX_IPV4_IFACE_COUNT];
 	struct net_sockaddr_in local_addr4;
 	int v4;
 
