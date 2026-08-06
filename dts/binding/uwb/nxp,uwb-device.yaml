@@ -1,0 +1,28 @@
+#
+# Copyright NXP 2026
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: NXP UWB Module Support
+
+compatible: "nxp,uwb-device"
+
+include: [spi-device.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  uwb,irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      This irq gpio is used to indicate there is packet ready to receive from UWB device
+
+  uwb,rstn-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Configures pin routing and optionally pin electrical features of RW61X_PDn signal.

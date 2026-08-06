@@ -1,0 +1,36 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if UWB
+
+config UCI_FRAME_LEN
+	int "Maximum buffer size of single UCI packet"
+	default 259
+	help
+		Maximum buffer size of single UCI packet.
+
+config UWB_READER_STACK_SIZE
+	int "Stack size of UWB reader task"
+	default 1500
+	help
+		Stack size of UWB reader task
+
+config UWB_READER_PRIO
+	int "UWB reader task priority"
+	default 4
+	help
+		UWB reader task priority
+
+config UCI_RESPONSE_TIMEOUT_MS
+	int "Timeout to receive response after sending UCI command"
+	default 200
+	help
+		Timeout to receive response after sending UCI command.
+
+config UCI_CREDIT_NTF_TIMEOUT_MS
+	int "Timeout to receive credit available notification after sending data packet"
+	default 500
+	help
+		Timeout to receive credit available notification after sending data packet.
+
+endif
