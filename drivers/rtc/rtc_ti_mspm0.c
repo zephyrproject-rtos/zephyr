@@ -243,11 +243,20 @@ static int rtc_ti_mspm0_alarm_set_time(const struct device *dev, uint16_t id,
 	struct rtc_ti_mspm0_data *data = dev->data;
 	uint32_t imask_bit;
 
+	if (id != RTC_TI_ALARM_1 && id != RTC_TI_ALARM_2) {
+		return -EINVAL;
+	}
+
+	if (mask == 0) {
+		rtc_ti_mspm0_clear_alarm(dev, id);
+		return 0;
+	}
+
 	if (timeptr == NULL) {
 		return -EINVAL;
 	}
 
-	if (id != RTC_TI_ALARM_1 && id != RTC_TI_ALARM_2) {
+	if (!rtc_utils_validate_rtc_time(timeptr, mask)) {
 		return -EINVAL;
 	}
 
@@ -340,10 +349,6 @@ static int rtc_ti_mspm0_alarm_set_callback(const struct device *dev, uint16_t id
 					   rtc_alarm_callback callback, void *user_data)
 {
 	struct rtc_ti_mspm0_data *data = dev->data;
-
-	if (callback == NULL) {
-		return -EINVAL;
-	}
 
 	if (id != RTC_TI_ALARM_1 && id != RTC_TI_ALARM_2) {
 		return -EINVAL;
