@@ -15,3 +15,44 @@ config TACH_XEC
 	  The number of TACH edges to measure over and the number of TACH
 	  periods the fan produces per revolution are set per instance with the
 	  tach-edges and pulses-per-round devicetree properties.
+
+if TACH_XEC
+
+choice
+	prompt "Trigger mode"
+	default TACH_XEC_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config TACH_XEC_TRIGGER_NONE
+	bool "No trigger"
+
+config TACH_XEC_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	select TACH_XEC_TRIGGER
+
+config TACH_XEC_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	select TACH_XEC_TRIGGER
+
+endchoice
+
+config TACH_XEC_TRIGGER
+	bool
+
+config TACH_XEC_THREAD_PRIORITY
+	int "Thread priority"
+	depends on TACH_XEC_TRIGGER_OWN_THREAD && TACH_XEC_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config TACH_XEC_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on TACH_XEC_TRIGGER_OWN_THREAD && TACH_XEC_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts. One
+	  thread is created per enabled tachometer instance.
+
+endif # TACH_XEC

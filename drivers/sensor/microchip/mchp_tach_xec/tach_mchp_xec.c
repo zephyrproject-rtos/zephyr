@@ -74,14 +74,23 @@ struct tach_xec_data {
 	/* Control register image, maintained so the counter field is never written back */
 	uint32_t control;
 	uint16_t count;
+	/* Set while a fetch is waiting for a latch */
+	bool fetch_pending;
+#ifdef CONFIG_TACH_XEC_TRIGGER
+	/* Back pointer for the thread and work queue entry points */
+	const struct device *dev;
+	const struct sensor_trigger *drdy_trigger;
+	sensor_trigger_handler_t drdy_handler;
+#if defined(CONFIG_TACH_XEC_TRIGGER_OWN_THREAD)
+	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_TACH_XEC_THREAD_STACK_SIZE);
+	struct k_sem drdy_sem;
+	struct k_thread thread;
+#elif defined(CONFIG_TACH_XEC_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+#endif
+#endif /* CONFIG_TACH_XEC_TRIGGER */
 };
 
-/*
- * COUNT_READY_STATUS is set by the hardware on every latch regardless of
- * COUNT_READY_INT_EN, so the interrupt is only armed for the duration of a
- * fetch. Leaving it enabled would generate an interrupt every measurement
- * window - up to a few hundred per second - with nothing to consume them.
- */
 static void tach_xec_cnt_rdy_int_set(const struct device *dev, bool enable)
 {
 	const struct tach_xec_config * const cfg = dev->config;
@@ -96,6 +105,81 @@ static void tach_xec_cnt_rdy_int_set(const struct device *dev, bool enable)
 	sys_write32(data->control, cfg->base + MCHP_TACH_CONTROL_REG_OFS);
 }
 
+/*
+ * COUNT_READY_STATUS is set by the hardware on every latch regardless of
+ * COUNT_READY_INT_EN, so the interrupt is only armed while something is waiting
+ * for it: a fetch, or a registered data ready trigger. Leaving it enabled
+ * unconditionally would generate an interrupt every measurement window - up to a
+ * few hundred per second - with nothing to consume them. Call with interrupts
+ * locked so a fetch and a trigger cannot race for the control register.
+ */
+static void tach_xec_cnt_rdy_int_update(const struct device *dev)
+{
+	struct tach_xec_data * const data = dev->data;
+	bool enable = data->fetch_pending;
+
+#ifdef CONFIG_TACH_XEC_TRIGGER
+	enable = enable || (data->drdy_handler != NULL);
+#endif
+
+	tach_xec_cnt_rdy_int_set(dev, enable);
+}
+
+#ifdef CONFIG_TACH_XEC_TRIGGER
+/*
+ * The sensor API calls trigger handlers from a thread, so the ISR only hands the
+ * event over. Both signalling mechanisms coalesce, which is what data ready
+ * needs: only the most recently latched count is of interest, and a handler
+ * slower than the measurement window must not accumulate a backlog of calls.
+ */
+static void tach_xec_drdy_signal(struct tach_xec_data *data)
+{
+#if defined(CONFIG_TACH_XEC_TRIGGER_OWN_THREAD)
+	k_sem_give(&data->drdy_sem);
+#elif defined(CONFIG_TACH_XEC_TRIGGER_GLOBAL_THREAD)
+	k_work_submit(&data->work);
+#endif
+}
+
+static void tach_xec_process_drdy(const struct device *dev)
+{
+	struct tach_xec_data * const data = dev->data;
+	const struct sensor_trigger *trig = data->drdy_trigger;
+	sensor_trigger_handler_t handler = data->drdy_handler;
+
+	/*
+	 * The ISR has already stored the latched count, so the handler can read
+	 * SENSOR_CHAN_RPM without a sensor_sample_fetch() call of its own.
+	 */
+	if (handler != NULL) {
+		handler(dev, trig);
+	}
+}
+
+#if defined(CONFIG_TACH_XEC_TRIGGER_OWN_THREAD)
+static void tach_xec_thread(void *p1, void *p2, void *p3)
+{
+	const struct device *dev = p1;
+	struct tach_xec_data * const data = dev->data;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (true) {
+		k_sem_take(&data->drdy_sem, K_FOREVER);
+		tach_xec_process_drdy(dev);
+	}
+}
+#elif defined(CONFIG_TACH_XEC_TRIGGER_GLOBAL_THREAD)
+static void tach_xec_work_handler(struct k_work *work)
+{
+	struct tach_xec_data * const data = CONTAINER_OF(work, struct tach_xec_data, work);
+
+	tach_xec_process_drdy(data->dev);
+}
+#endif
+#endif /* CONFIG_TACH_XEC_TRIGGER */
+
 static void tach_xec_isr(const struct device *dev)
 {
 	const struct tach_xec_config * const cfg = dev->config;
@@ -105,6 +189,11 @@ static void tach_xec_isr(const struct device *dev)
 	if ((status & MCHP_TACH_STS_CNT_RDY) != 0U) {
 		data->count = sys_read16(cfg->base + TACH_XEC_COUNTER_REG_OFS);
 		k_sem_give(&data->latched);
+#ifdef CONFIG_TACH_XEC_TRIGGER
+		if (data->drdy_handler != NULL) {
+			tach_xec_drdy_signal(data);
+		}
+#endif
 	}
 
 	/*
@@ -139,13 +228,18 @@ static int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel c
 	soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
 	k_sem_reset(&data->latched);
 
-	tach_xec_cnt_rdy_int_set(dev, true);
+	data->fetch_pending = true;
+	tach_xec_cnt_rdy_int_update(dev);
 
 	irq_unlock(key);
 
 	ret = k_sem_take(&data->latched, K_MSEC(TACH_XEC_LATCH_TIMEOUT_MS));
 
-	tach_xec_cnt_rdy_int_set(dev, false);
+	/* A registered trigger keeps the interrupt armed past the end of the fetch */
+	key = irq_lock();
+	data->fetch_pending = false;
+	tach_xec_cnt_rdy_int_update(dev);
+	irq_unlock(key);
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
@@ -212,6 +306,51 @@ static int tach_xec_channel_get(const struct device *dev, enum sensor_channel ch
 	return 0;
 }
 
+#ifdef CONFIG_TACH_XEC_TRIGGER
+static int tach_xec_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+				sensor_trigger_handler_t handler)
+{
+	const struct tach_xec_config * const cfg = dev->config;
+	struct tach_xec_data * const data = dev->data;
+	unsigned int key;
+
+	/*
+	 * The block latches a count every measurement window, which is the data
+	 * ready event. Its out of limit interrupt is not exposed: the driver
+	 * leaves LIMIT_HI and LIMIT_LO alone.
+	 */
+	if (trig->type != SENSOR_TRIG_DATA_READY) {
+		return -ENOTSUP;
+	}
+
+	if ((trig->chan != SENSOR_CHAN_RPM) && (trig->chan != SENSOR_CHAN_ALL)) {
+		return -ENOTSUP;
+	}
+
+	key = irq_lock();
+
+	if (handler != NULL) {
+		/*
+		 * Discard a count latched before this call, along with any
+		 * interrupt it raised, so the first callback reports a window
+		 * that began after the trigger was registered.
+		 */
+		sys_write32(MCHP_TACH_STS_CNT_RDY, cfg->base + MCHP_TACH_STATUS_REG_OFS);
+		soc_ecia_girq_status_clear(cfg->girq, cfg->girq_pos);
+	}
+
+	/* Held by pointer: the same object is handed back to the handler */
+	data->drdy_trigger = trig;
+	data->drdy_handler = handler;
+
+	tach_xec_cnt_rdy_int_update(dev);
+
+	irq_unlock(key);
+
+	return 0;
+}
+#endif /* CONFIG_TACH_XEC_TRIGGER */
+
 #ifdef CONFIG_PM_DEVICE
 static int tach_xec_pm_action(const struct device *dev, enum pm_device_action action)
 {
@@ -256,11 +395,25 @@ static int tach_xec_init(const struct device *dev)
 
 	k_sem_init(&data->latched, 0, 1);
 
+#ifdef CONFIG_TACH_XEC_TRIGGER
+	data->dev = dev;
+#if defined(CONFIG_TACH_XEC_TRIGGER_OWN_THREAD)
+	k_sem_init(&data->drdy_sem, 0, 1);
+
+	k_thread_create(&data->thread, data->thread_stack, CONFIG_TACH_XEC_THREAD_STACK_SIZE,
+			tach_xec_thread, (void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_TACH_XEC_THREAD_PRIORITY), 0, K_NO_WAIT);
+	k_thread_name_set(&data->thread, dev->name);
+#elif defined(CONFIG_TACH_XEC_TRIGGER_GLOBAL_THREAD)
+	k_work_init(&data->work, tach_xec_work_handler);
+#endif
+#endif /* CONFIG_TACH_XEC_TRIGGER */
+
 	soc_xec_pcr_sleep_en_clear(cfg->pcr_scr);
 
 	/*
 	 * COUNT_READY_INT_EN is left clear here and only set while a fetch is
-	 * waiting for a latch.
+	 * waiting for a latch or a data ready trigger is registered.
 	 */
 	data->control = MCHP_TACH_CTRL_READ_MODE_100K_CLOCK | cfg->ctrl_edges |
 			MCHP_TACH_CTRL_FILTER_EN | MCHP_TACH_CTRL_EN;
@@ -283,6 +436,9 @@ static int tach_xec_init(const struct device *dev)
 static DEVICE_API(sensor, tach_xec_driver_api) = {
 	.sample_fetch = tach_xec_sample_fetch,
 	.channel_get = tach_xec_channel_get,
+#ifdef CONFIG_TACH_XEC_TRIGGER
+	.trigger_set = tach_xec_trigger_set,
+#endif
 };
 
 /* Pre-shifted TACH_EDGES control field for a given number of edges */
