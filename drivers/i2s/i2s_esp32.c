@@ -439,6 +439,12 @@ void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
 	if (err < 0) {
 		dev_data->state = I2S_STATE_ERROR;
 		LOG_DBG("Failed to restart TX transfer: %d", err);
+		stream->data->dma_pending = false;
+		if (stream->data->mem_block != NULL) {
+			k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
+		}
+		stream->data->mem_block = NULL;
+		stream->data->mem_block_len = 0;
 		goto tx_disable;
 	}
 
@@ -559,6 +565,12 @@ static int i2s_esp32_tx_start_transfer(const struct device *dev)
 	err = i2s_esp32_start_dma(dev, I2S_DIR_TX);
 	if (err < 0) {
 		LOG_DBG("Failed to start TX DMA transfer: %d", err);
+		stream->data->dma_pending = false;
+		if (stream->data->mem_block != NULL) {
+			k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
+		}
+		stream->data->mem_block = NULL;
+		stream->data->mem_block_len = 0;
 		return -EIO;
 	}
 
