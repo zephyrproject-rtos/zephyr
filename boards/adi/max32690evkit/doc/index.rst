@@ -238,6 +238,18 @@ Connections and IOs
 |           |               |               |                                                                                                  |
 +-----------+---------------+---------------+--------------------------------------------------------------------------------------------------+
 
+Audio
+-----
+
+The onboard `MAX9867`_ audio CODEC uses its 12.288 MHz crystal to generate the
+I2S bit and word clocks. Audio input is available through the J5 ``LINE_IN``
+jack and output through the J6 ``HD_PHONE`` jack. The CODEC is connected to the
+MAX32690 as follows:
+
+- I2C2 uses P1.7 for SDA and P1.8 for SCL. Set JP9 and JP10 to positions 2-3 to
+  connect these signals to the CODEC.
+- I2S0 uses P2.26 for WS, P2.27 for SDI, P2.28 for SDO, and P2.29 for SCK.
+
 Programming and Debugging
 *************************
 
@@ -272,6 +284,9 @@ References
 **********
 
 - `MAX32690EVKIT solution center`_
+- `MAX9867`_
 
 .. _MAX32690EVKIT solution center:
    https://developer.analog.com/solutions/max32690
+.. _MAX9867:
+   https://www.analog.com/en/products/max9867.html
