@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
 common:
   tags: pm
 
@@ -7,3 +11,10 @@ tests:
     platform_allow:
       - qemu_x86
       - qemu_cortex_a53/qemu_cortex_a53/smp
+  pm.device_runtime.stress.isr_safe:
+    timeout: 300
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    extra_configs:
+      - CONFIG_TEST_PM_DEVICE_ISR_SAFE=y
