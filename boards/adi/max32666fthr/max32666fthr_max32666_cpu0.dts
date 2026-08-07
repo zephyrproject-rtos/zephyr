@@ -134,6 +134,19 @@
 	pinctrl-names = "default";
 };
 
+feather_spi: &spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_mosi_p0_25 &spi2_miso_p0_26 &spi2_sck_p0_27>;
+	cs-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+};
+
+feather_i2c: &i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_p0_6 &i2c0_sda_p0_7>;
+	pinctrl-names = "default";
+};
+
 &w1 {
 	pinctrl-0 = <&owm_io_p0_12>;
 	pinctrl-names = "default";
