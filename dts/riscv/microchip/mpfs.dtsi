@@ -332,5 +332,36 @@
 			alarms-count = <2>;
 			status = "disabled";
 		};
+
+		wdt0: wdt@20001000 {
+			compatible = "microchip,mpfs-watchdog";
+			reg = <0x20001000 0x1c>;
+			status = "disabled";
+			reset-capable;
+		};
+
+		wdt1: wdt@20101000 {
+			compatible = "microchip,mpfs-watchdog";
+			reg = <0x20101000 0x1c>;
+			status = "disabled";
+		};
+
+		wdt2: wdt@20103000 {
+			compatible = "microchip,mpfs-watchdog";
+			reg = <0x20103000 0x1c>;
+			status = "disabled";
+		};
+
+		wdt3: wdt@20105000 {
+			compatible = "microchip,mpfs-watchdog";
+			reg = <0x20105000 0x1c>;
+			status = "disabled";
+		};
+
+		wdt4: wdt@20107000 {
+			compatible = "microchip,mpfs-watchdog";
+			reg = <0x20107000 0x1c>;
+			status = "disabled";
+		};
 	};
 };
