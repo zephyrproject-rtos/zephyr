@@ -60,6 +60,14 @@ BUILD_ASSERT(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE <= CONFIG_QUIC_STRE
 BUILD_ASSERT(CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_UNI <= CONFIG_QUIC_STREAM_RX_BUFFER_SIZE,
 	     "Peer-initiated uni flow control window must not exceed RX buffer size");
 
+/* CSPRNG_NEEDED only pulls in an entropy driver where the platform has one.
+ * Without it sys_csrand_get() silently degrades to the non-cryptographic
+ * generator, which would make connection IDs and tokens predictable.
+ */
+BUILD_ASSERT(IS_ENABLED(CONFIG_CSPRNG_ENABLED) || IS_ENABLED(CONFIG_QUIC_ALLOW_NON_CSPRNG),
+	     "QUIC needs a cryptographically secure RNG; this platform provides none. "
+	     "Enable an entropy source, or CONFIG_QUIC_ALLOW_NON_CSPRNG for testing.");
+
 #define SLAB_ALLOC_TIMEOUT K_MSEC(500)
 
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
@@ -1123,9 +1131,33 @@ static uint64_t quic_token_now_sec(void)
 	return (uint64_t)k_uptime_get() / MSEC_PER_SEC;
 }
 
-static void quic_token_ensure_secret(void)
+static int quic_token_ensure_secret(void)
 {
-	sys_rand_get(quic_token_secret, sizeof(quic_token_secret));
+	static bool secret_ready;
+	int ret = 0;
+
+	/* Seeding normally happens once at init, but if the entropy source
+	 * was not ready yet it is retried lazily from the token paths, which
+	 * can run concurrently. Serialise so a reader cannot compute a tag
+	 * over a half-written secret.
+	 */
+	k_mutex_lock(&quic_token_lock, K_FOREVER);
+
+	if (secret_ready) {
+		goto out;
+	}
+
+	ret = sys_csrand_get(quic_token_secret, sizeof(quic_token_secret));
+	if (ret != 0) {
+		goto out;
+	}
+
+	secret_ready = true;
+
+out:
+	k_mutex_unlock(&quic_token_lock);
+
+	return ret;
 }
 
 static int quic_token_compute_tag(const uint8_t *body, size_t body_len,
@@ -1136,6 +1168,11 @@ static int quic_token_compute_tag(const uint8_t *body, size_t body_len,
 
 	if (tag_len > sizeof(full_tag)) {
 		return -EINVAL;
+	}
+
+	ret = quic_token_ensure_secret();
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = quic_hkdf_extract_ex(PSA_ALG_SHA_256,
@@ -1181,7 +1218,10 @@ ZTESTABLE_STATIC int quic_build_address_token(enum quic_address_token_type type,
 	out[pos++] = orig_dcid_len;
 	sys_put_be64(quic_token_now_sec(), &out[pos]);
 	pos += sizeof(uint64_t);
-	sys_rand_get(&out[pos], QUIC_TOKEN_NONCE_LEN);
+	ret = sys_csrand_get(&out[pos], QUIC_TOKEN_NONCE_LEN);
+	if (ret != 0) {
+		return ret;
+	}
 	pos += QUIC_TOKEN_NONCE_LEN;
 	pos += addr_len;
 
@@ -5697,16 +5737,23 @@ static int quic_tls_secret_callback(void *user_data,
 	return 0;
 }
 
-static void quic_client_endpoint_init_cids(struct quic_endpoint *ep,
+static int quic_client_endpoint_init_cids(struct quic_endpoint *ep,
 					  const struct net_sockaddr *remote_addr)
 {
 	size_t token_len;
+	int ret;
 
 	ep->peer_cid_len = 8;
-	sys_rand_get(ep->peer_cid, ep->peer_cid_len);
+	ret = sys_csrand_get(ep->peer_cid, ep->peer_cid_len);
+	if (ret != 0) {
+		return ret;
+	}
 
 	ep->my_cid_len = 8;
-	sys_rand_get(ep->my_cid, ep->my_cid_len);
+	ret = sys_csrand_get(ep->my_cid, ep->my_cid_len);
+	if (ret != 0) {
+		return ret;
+	}
 	ep->token.client_initial_dcid_len = ep->peer_cid_len;
 	memcpy(ep->token.client_initial_dcid, ep->peer_cid, ep->peer_cid_len);
 
@@ -5716,6 +5763,8 @@ static void quic_client_endpoint_init_cids(struct quic_endpoint *ep,
 		ep->token.initial_len = token_len;
 		ep->token.initial_type = QUIC_TOKEN_NEW;
 	}
+
+	return 0;
 }
 
 static bool quic_endpoint_on_active_context(const struct quic_endpoint *ep)
@@ -7738,7 +7787,12 @@ static int quic_send_retry(struct quic_endpoint *ep,
 		return ret;
 	}
 
-	sys_rand_get(retry_scid, sizeof(retry_scid));
+	ret = sys_csrand_get(retry_scid, sizeof(retry_scid));
+	if (ret != 0) {
+		QUIC_EP_STAT_INC(ep, drop_tx);
+		return ret;
+	}
+
 	sys_rand_get(&first_byte, sizeof(first_byte));
 
 	packet[pos++] = QUIC_LONG_HEADER_RETRY | (first_byte & 0x0f);
@@ -8004,7 +8058,11 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 			memcpy(my_cid, dst_conn_id, my_cid_len);
 		} else {
 			my_cid_len = MAX_MY_CONN_ID_LEN;
-			sys_rand_get(my_cid, my_cid_len);
+			ret = sys_csrand_get(my_cid, my_cid_len);
+			if (ret != 0) {
+				QUIC_EP_STAT_INC(ep, drop_rx);
+				return ret;
+			}
 		}
 
 		NET_HEXDUMP_DBG(my_cid, my_cid_len, "Recipient generated CID:");
@@ -8725,7 +8783,10 @@ void net_quic_init(void)
 	tls_subsystem_init();
 	init_quic_recovery_service();
 	init_quic_service();
-	quic_token_ensure_secret();
+
+	if (quic_token_ensure_secret() != 0) {
+		NET_ERR("Cannot seed address validation token secret");
+	}
 }
 
 #if defined(CONFIG_QUIC_TLS_DEBUG_KEYLOG)

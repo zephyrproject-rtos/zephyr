@@ -17,12 +17,32 @@ config QUIC
 	select NET_IPV4_PMTU_DPLPMTUD if NET_NATIVE_IPV4
 	select NET_PMTU_DPLPMTUD if NET_NATIVE_IPV6 || NET_NATIVE_IPV4
 	select NET_STATISTICS_USER_API if NET_STATISTICS_QUIC
+	select CSPRNG_NEEDED
 	help
 	  This option enables the QUIC implementation specified
 	  in RFC 9000, including Retry and NEW_TOKEN-based
 	  address-validation tokens.
 
+	  QUIC requires a cryptographically secure random number
+	  generator for connection IDs, address-validation tokens and
+	  TLS randoms. CSPRNG_NEEDED is selected to pull one in, but it
+	  can only do so on platforms that have an entropy source. See
+	  QUIC_ALLOW_NON_CSPRNG if the build fails because of this.
+
 if QUIC
+
+config QUIC_ALLOW_NON_CSPRNG
+	bool "Allow QUIC to run without a cryptographically secure RNG"
+	depends on TEST_RANDOM_GENERATOR
+	help
+	  Permit QUIC to build on a platform where CSPRNG_ENABLED could not
+	  be satisfied, so that sys_csrand_get() falls back to the plain
+	  non-cryptographic generator.
+
+	  Connection IDs, address-validation tokens, TLS randoms and session
+	  tickets then become predictable to anyone who can observe enough
+	  output, which breaks the unpredictability RFC 9000 requires. Only
+	  enable this for testing on platforms without an entropy source.
 
 config QUIC_SHELL
 	bool "Create a shell to see Quic connectivity information"
