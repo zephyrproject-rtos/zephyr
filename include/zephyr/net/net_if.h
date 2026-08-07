@@ -1056,6 +1056,60 @@ static inline const struct net_l2 *net_if_l2(struct net_if *iface)
 	return iface->if_dev->l2;
 }
 
+/** @cond INTERNAL_HIDDEN */
+static inline int net_if_l2_update_addr(struct net_if *iface, struct net_l2_addr_update *update)
+{
+	const struct net_l2 *l2 = net_if_l2(iface);
+
+	if (!l2 || !l2->addr_update) {
+		return -ENOTSUP;
+	}
+
+	return l2->addr_update(iface, update);
+}
+/** @endcond */
+
+/**
+ * @brief Update an IP address on a network interface
+ *
+ * @param iface Pointer to a network interface structure
+ * @param ifaddr Pointer to a net_addr structure containing the IP address
+ * @param add True if the address is being added, false if it is being removed
+ *
+ * @return 0 if successful, negative error code otherwise
+ */
+static inline int net_if_l2_update_ip_addr(struct net_if *iface, struct net_addr *ifaddr, bool add)
+{
+	struct net_l2_addr_update update = {
+		.type = NET_L2_ADDR_UPDATE_IP,
+		.add = add,
+		.ifaddr = ifaddr,
+	};
+
+	return net_if_l2_update_addr(iface, &update);
+}
+
+/**
+ * @brief Update a link address on a network interface
+ *
+ * @param iface Pointer to a network interface structure
+ * @param linkaddr Pointer to a net_linkaddr structure containing the link address
+ * @param add True if the address is being added, false if it is being removed
+ *
+ * @return 0 if successful, negative error code otherwise
+ */
+static inline int net_if_l2_update_link_addr(struct net_if *iface, struct net_linkaddr *linkaddr,
+					     bool add)
+{
+	struct net_l2_addr_update update = {
+		.type = NET_L2_ADDR_UPDATE_L2,
+		.add = add,
+		.linkaddr = linkaddr,
+	};
+
+	return net_if_l2_update_addr(iface, &update);
+}
+
 /**
  * @brief Input a packet through a net iface
  *

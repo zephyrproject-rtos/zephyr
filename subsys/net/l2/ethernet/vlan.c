@@ -604,6 +604,23 @@ int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt, size_t size,
 	return net_pkt_alloc_buffer_with_reserve(pkt, size, reserve, proto, timeout);
 }
 
+int vlan_addr_update(struct net_if *iface, struct net_l2_addr_update *update)
+{
+	enum virtual_interface_caps caps;
+
+	caps = net_virtual_get_iface_capabilities(iface);
+	if (!(caps & VIRTUAL_INTERFACE_VLAN)) {
+		return -ENOTSUP;
+	}
+
+	iface = net_eth_get_vlan_main(iface);
+	if (iface == NULL) {
+		return -ENOENT;
+	}
+
+	return net_l2_update_addr(iface, update);
+}
+
 static int vlan_interface_attach(struct net_if *vlan_iface,
 				 struct net_if *iface)
 {

@@ -41,10 +41,6 @@ static const struct net_eth_addr multicast_eth_addr __unused = {
 static const struct net_eth_addr broadcast_eth_addr = {
 	{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
 
-#if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
-static struct net_if_mcast_monitor mcast_monitor;
-#endif
-
 const struct net_eth_addr *net_eth_broadcast_addr(void)
 {
 	return &broadcast_eth_addr;
@@ -208,13 +204,11 @@ enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
 }
 #endif
 
-#if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
-static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_addr *addr,
-				      bool is_joined)
+static int ethernet_addr_update(struct net_if *iface, struct net_l2_addr_update *update)
 {
 	struct ethernet_config cfg = {
 		.filter = {
-			.set = is_joined,
+			.set = update->add,
 			.type = ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS,
 		},
 	};
@@ -222,37 +216,49 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->api;
 
-	/* Make sure we're an ethernet device */
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
-		return;
-	}
-
 	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING)) {
-		return;
+		return -ENOTSUP;
 	}
 
 	if (!api || !api->set_config) {
-		return;
+		return -ENOTSUP;
 	}
 
-	switch (addr->family) {
+	if (update->type == NET_L2_ADDR_UPDATE_IP) {
+		const struct net_addr *addr = update->ifaddr;
+
+		if (!addr) {
+			return -EINVAL;
+		}
+
+		switch (addr->family) {
 #if defined(CONFIG_NET_IPV4)
-	case NET_AF_INET:
-		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &cfg.filter.mac_address);
-		break;
+		case NET_AF_INET:
+			net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &cfg.filter.mac_address);
+			break;
 #endif /* CONFIG_NET_IPV4 */
 #if defined(CONFIG_NET_IPV6)
-	case NET_AF_INET6:
-		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &cfg.filter.mac_address);
-		break;
+		case NET_AF_INET6:
+			net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &cfg.filter.mac_address);
+			break;
 #endif /* CONFIG_NET_IPV6 */
-	default:
-		return;
+		default:
+			return -EINVAL;
+		}
+	} else if (update->type == NET_L2_ADDR_UPDATE_L2) {
+		const struct net_linkaddr *lladdr = update->linkaddr;
+
+		if (!lladdr) {
+			return -EINVAL;
+		}
+
+		memcpy(&cfg.filter.mac_address, lladdr->addr, sizeof(cfg.filter.mac_address));
+	} else {
+		return -EINVAL;
 	}
 
-	api->set_config(dev, iface, ETHERNET_CONFIG_TYPE_FILTER, &cfg);
+	return api->set_config(dev, iface, ETHERNET_CONFIG_TYPE_FILTER, &cfg);
 }
-#endif
 
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_pkt *pkt)
@@ -876,8 +882,14 @@ static int ethernet_l2_alloc(struct net_if *iface, struct net_pkt *pkt,
 #define ethernet_l2_alloc NULL
 #endif
 
-NET_L2_INIT(ETHERNET_L2, ethernet_recv, ethernet_send, ethernet_enable,
-	    ethernet_flags, ethernet_l2_alloc);
+NET_L2_INIT_DEFINE(ETHERNET_L2) = {
+	.recv = ethernet_recv,
+	.send = ethernet_send,
+	.enable = ethernet_enable,
+	.get_flags = ethernet_flags,
+	.alloc = ethernet_l2_alloc,
+	.addr_update = ethernet_addr_update,
+};
 
 static void carrier_on_off(struct k_work *work)
 {
@@ -1061,12 +1073,6 @@ void ethernet_init(struct net_if *iface)
 	if ((caps & ETHERNET_PROMISC_MODE) != 0) {
 		ctx->ethernet_l2_flags |= NET_L2_PROMISC_MODE;
 	}
-
-#if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
-	if ((caps & ETHERNET_HW_FILTERING) != 0) {
-		net_if_mcast_mon_register(&mcast_monitor, NULL, ethernet_mcast_monitor_cb);
-	}
-#endif
 
 	if ((caps & ETHERNET_LLDP) != 0) {
 		net_lldp_set_lldpdu(iface);
