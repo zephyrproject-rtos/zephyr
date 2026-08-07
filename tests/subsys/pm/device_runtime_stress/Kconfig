@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_PM_DEVICE_RUNTIME_HOOKS
+	bool "Enable runtime PM test hooks"
+	default y
+
+config TEST_PM_DEVICE_ISR_SAFE
+	bool "Use ISR-safe PM for the stress device"
