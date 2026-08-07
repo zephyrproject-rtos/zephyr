@@ -4489,7 +4489,8 @@ static void quic_server_and_client_with_server_cert(const char *server,
 						    const char *client,
 						    int client_verify_mode,
 						    bool setup_client_ca,
-						    bool expect_success)
+						    bool expect_success,
+						    const char *client_hostname)
 {
 	struct net_sockaddr_storage server_addr;
 	struct net_sockaddr_storage client_addr;
@@ -4575,6 +4576,13 @@ static void quic_server_and_client_with_server_cert(const char *server,
 				       ZSOCK_TLS_PEER_VERIFY,
 				       &client_verify_mode, sizeof(client_verify_mode));
 		zassert_equal(ret, 0, "Failed to set client verify mode (%d)", -errno);
+	}
+
+	if (client_hostname != NULL) {
+		ret = zsock_setsockopt(client_sock, ZSOCK_SOL_TLS,
+				       ZSOCK_TLS_HOSTNAME,
+				       client_hostname, strlen(client_hostname));
+		zassert_equal(ret, 0, "Failed to set client hostname (%d)", -errno);
 	}
 
 	setup_alpn(client_sock, alpn_list, ARRAY_SIZE(alpn_list));
@@ -5073,7 +5081,7 @@ ZTEST(net_socket_quic, test_440_client_requires_server_ca_by_default)
 
 	quic_server_and_client_with_server_cert(LOCAL_ADDR_IPV4_STR3,
 						REMOTE_ADDR_IPV4_STR3,
-						-1, false, false);
+						-1, false, false, NULL);
 }
 
 ZTEST(net_socket_quic, test_450_client_can_disable_server_verification)
@@ -5086,7 +5094,39 @@ ZTEST(net_socket_quic, test_450_client_can_disable_server_verification)
 	quic_server_and_client_with_server_cert(LOCAL_ADDR_IPV4_STR3,
 						REMOTE_ADDR_IPV4_STR3,
 						MBEDTLS_SSL_VERIFY_NONE,
-						false, true);
+						false, true, NULL);
+}
+
+ZTEST(net_socket_quic, test_456_server_cert_matching_hostname_is_accepted)
+{
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	/* The test server certificate carries CN=localhost and a matching
+	 * subjectAltName.
+	 */
+	quic_server_and_client_with_server_cert(LOCAL_ADDR_IPV4_STR3,
+						REMOTE_ADDR_IPV4_STR3,
+						MBEDTLS_SSL_VERIFY_REQUIRED,
+						true, true, "localhost");
+}
+
+ZTEST(net_socket_quic, test_457_server_cert_wrong_hostname_is_rejected)
+{
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	/* Same certificate, issued by a CA the client trusts, but for a
+	 * different name. Required verification must reject it.
+	 */
+	quic_server_and_client_with_server_cert(LOCAL_ADDR_IPV4_STR3,
+						REMOTE_ADDR_IPV4_STR3,
+						MBEDTLS_SSL_VERIFY_REQUIRED,
+						true, false, "not-the-server.example.com");
 }
 
 /* A ClientHello whose fixed part is well formed. The extensions length is
