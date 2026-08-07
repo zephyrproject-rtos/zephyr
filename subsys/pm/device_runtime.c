@@ -2,13 +2,14 @@
  * Copyright (c) 2018 Intel Corporation.
  * Copyright (c) 2021 Nordic Semiconductor ASA.
  * Copyright (c) 2025 HubbleNetwork.
- * Copyright (c) 2025 NXP.
+ * Copyright (c) 2025-2026 NXP.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/device_runtime_internal.h>
 #include <zephyr/sys/__assert.h>
 
 #include <zephyr/logging/log.h>
@@ -37,8 +38,17 @@ static struct k_work_q pm_device_runtime_wq;
 
 #define EVENT_STATE_ACTIVE	BIT(PM_DEVICE_STATE_ACTIVE)
 #define EVENT_STATE_SUSPENDED	BIT(PM_DEVICE_STATE_SUSPENDED)
+#define EVENT_STATE_OFF         BIT(PM_DEVICE_STATE_OFF)
 
-#define EVENT_MASK		(EVENT_STATE_ACTIVE | EVENT_STATE_SUSPENDED)
+#define EVENT_MASK (EVENT_STATE_ACTIVE | EVENT_STATE_SUSPENDED | EVENT_STATE_OFF)
+
+#ifdef CONFIG_TEST_PM_DEVICE_RUNTIME_HOOKS
+#define RUNTIME_TEST_HOOK(dev, hook) z_pm_device_runtime_test_hook(dev, hook)
+#else
+#define RUNTIME_TEST_HOOK(dev, hook)                                                               \
+	do {                                                                                       \
+	} while (false)
+#endif /* CONFIG_TEST_PM_DEVICE_RUNTIME_HOOKS */
 
 /* Increment the usage counter of a device under the global lock. */
 static void runtime_usecount_inc(struct pm_device *pm)
@@ -193,8 +203,12 @@ static int runtime_suspend(const struct device *dev, bool async,
 
 		/* Now put the domain */
 		if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
-			(void)pm_device_runtime_put(PM_DOMAIN(dev->pm_base));
-			atomic_clear_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED);
+			ret = pm_device_runtime_put(PM_DOMAIN(dev->pm_base));
+			if (ret == 0) {
+				atomic_clear_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED);
+			} else {
+				atomic_set_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED);
+			}
 		}
 	}
 
@@ -209,9 +223,12 @@ unlock:
 #ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 static void runtime_suspend_work(struct k_work *work)
 {
+	int domain_ret = 0;
+	bool release_domain = false;
 	int ret;
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct pm_device *pm = CONTAINER_OF(dwork, struct pm_device, work);
+	const struct device *domain = PM_DOMAIN(&pm->base);
 
 	ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
 
@@ -221,34 +238,51 @@ static void runtime_suspend_work(struct k_work *work)
 		pm->base.state = PM_DEVICE_STATE_ACTIVE;
 	} else {
 		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
+		if (atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
+			atomic_set_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_RELEASING);
+			release_domain = true;
+		}
+	}
+	k_sem_give(&pm->lock);
+
+	if (release_domain) {
+		domain_ret = pm_device_runtime_put(domain);
+	}
+
+	(void)k_sem_take(&pm->lock, K_FOREVER);
+	if (release_domain) {
+		if (domain_ret == 0) {
+			atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
+		}
+		atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_RELEASING);
 	}
 	k_event_set(&pm->event, BIT(pm->base.state));
 	k_sem_give(&pm->lock);
 
-	/*
-	 * On async put, we have to suspend the domain when the device
-	 * finishes its operation
-	 */
-	if ((ret == 0) &&
-	    atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
-		(void)pm_device_runtime_put(PM_DOMAIN(&pm->base));
-		atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
+	if (ret < 0) {
+		LOG_ERR("Could not suspend device %s (%d)", pm->dev->name, ret);
 	}
-
-	__ASSERT(ret == 0, "Could not suspend device (%d)", ret);
+	if (domain_ret < 0) {
+		LOG_ERR("Could not release power domain for %s (%d)", pm->dev->name, domain_ret);
+	}
 }
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
 static int get_sync_locked(const struct device *dev)
 {
+	int domain_ret;
 	int ret;
 	struct pm_device_isr *pm = dev->pm_isr;
-	uint32_t flags = pm->base.flags;
+	const struct device *domain = PM_DOMAIN(&pm->base);
+
+	if ((pm->base.state == PM_DEVICE_STATE_OFF) &&
+	    ((domain == NULL) ||
+	     atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED))) {
+		return -EAGAIN;
+	}
 
 	if (pm->base.usage == 0) {
-		if ((flags & BIT(PM_DEVICE_FLAG_PD_CLAIMED)) == 0) {
-			const struct device *domain = PM_DOMAIN(&pm->base);
-
+		if (!atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
 			if (domain != NULL) {
 				if ((domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) != 0) {
 					ret = pm_device_runtime_get(domain);
@@ -263,8 +297,34 @@ static int get_sync_locked(const struct device *dev)
 			}
 		}
 
+		if ((pm->base.state == PM_DEVICE_STATE_OFF) ||
+		    atomic_test_bit(&pm->base.flags,
+				    PM_DEVICE_FLAG_TURN_ON_FAILED)) {
+			if ((domain != NULL) &&
+			    atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
+				domain_ret = pm_device_runtime_put(domain);
+				if (domain_ret == 0) {
+					atomic_clear_bit(&pm->base.flags,
+							 PM_DEVICE_FLAG_PD_CLAIMED);
+				} else {
+					atomic_set_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
+				}
+			}
+			return -EAGAIN;
+		}
+
 		ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_RESUME);
 		if (ret < 0) {
+			if ((domain != NULL) &&
+			    atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
+				domain_ret = pm_device_runtime_put(domain);
+				if (domain_ret == 0) {
+					atomic_clear_bit(&pm->base.flags,
+							 PM_DEVICE_FLAG_PD_CLAIMED);
+				} else {
+					atomic_set_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
+				}
+			}
 			return ret;
 		}
 		pm->base.state = PM_DEVICE_STATE_ACTIVE;
@@ -279,12 +339,16 @@ static int get_sync_locked(const struct device *dev)
 
 int pm_device_runtime_get(const struct device *dev)
 {
+	bool waited_for_transition = false;
+	const struct device *domain;
+	int domain_ret;
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
 
 	if (pm == NULL) {
 		return 0;
 	}
+	domain = PM_DOMAIN(&pm->base);
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_get, dev);
 
@@ -294,6 +358,8 @@ int pm_device_runtime_get(const struct device *dev)
 	if (!atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
 		return 0;
 	}
+
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_BEFORE_GET);
 
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		struct pm_device_isr *pm_sync = dev->pm_isr;
@@ -326,61 +392,72 @@ int pm_device_runtime_get(const struct device *dev)
 		}
 	}
 
-	if (k_is_in_isr() && (pm->base.state == PM_DEVICE_STATE_SUSPENDING)) {
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+retry:
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
+	if ((pm->base.state == PM_DEVICE_STATE_OFF) &&
+	    (waited_for_transition || (domain == NULL) ||
+	     atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED))) {
+		ret = -EAGAIN;
+		goto unlock;
+	}
+
+	if (k_is_in_isr() && ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) ||
+			      atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_RELEASING))) {
 		ret = -EWOULDBLOCK;
 		goto unlock;
 	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+	if ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) &&
+	    ((k_work_cancel_delayable(&pm->work) & K_WORK_RUNNING) == 0)) {
+		pm->base.state = PM_DEVICE_STATE_ACTIVE;
+	}
+
+	if (!k_is_pre_kernel() && ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) ||
+				   atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_RELEASING))) {
+		waited_for_transition = true;
+		k_event_clear(&pm->event, EVENT_MASK);
+		k_sem_give(&pm->lock);
+
+		k_event_wait(&pm->event, EVENT_MASK, false, K_FOREVER);
+
+		(void)k_sem_take(&pm->lock, K_FOREVER);
+		goto retry;
+	}
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
 	/*
 	 * If the device is under a power domain, the domain has to be get
 	 * first.
 	 */
-	const struct device *domain = PM_DOMAIN(&pm->base);
-
 	if (domain != NULL && !atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
 		ret = pm_device_runtime_get(domain);
 		if (ret != 0) {
 			goto unlock;
 		}
-		/* Check if powering up this device failed */
-		if (atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_TURN_ON_FAILED)) {
-			(void)pm_device_runtime_put(domain);
-			ret = -EAGAIN;
-			goto unlock;
-		}
 		/* Power domain successfully claimed */
 		atomic_set_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
 	}
-
-	runtime_usecount_inc(pm);
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
-	/*
-	 * Check if the device has a pending suspend operation (not started
-	 * yet) and cancel it. This way we avoid unnecessary operations because
-	 * the device is actually active.
-	 */
-	if ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) &&
-		((k_work_cancel_delayable(&pm->work) & K_WORK_RUNNING) == 0)) {
-		pm->base.state = PM_DEVICE_STATE_ACTIVE;
+	/* Check if powering up this device failed */
+	if ((pm->base.state == PM_DEVICE_STATE_OFF) ||
+	    atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_TURN_ON_FAILED)) {
+		if (domain != NULL) {
+			domain_ret = pm_device_runtime_put(domain);
+			if (domain_ret == 0) {
+				atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
+			} else {
+				atomic_set_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
+			}
+		}
+		ret = -EAGAIN;
 		goto unlock;
 	}
 
-	if (!k_is_pre_kernel()) {
-		/*
-		 * If the device is already suspending there is
-		 * nothing else we can do but wait until it finishes.
-		 */
-		while (pm->base.state == PM_DEVICE_STATE_SUSPENDING) {
-			k_event_clear(&pm->event, EVENT_MASK);
-			k_sem_give(&pm->lock);
-
-			k_event_wait(&pm->event, EVENT_MASK, false, K_FOREVER);
-
-			(void)k_sem_take(&pm->lock, K_FOREVER);
-		}
+	runtime_usecount_inc(pm);
+	if (pm->base.state == PM_DEVICE_STATE_ACTIVE) {
+		goto unlock;
 	}
-#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 
 	if (pm->base.usage > 1U) {
 		goto unlock;
@@ -390,8 +467,12 @@ int pm_device_runtime_get(const struct device *dev)
 	if (ret < 0) {
 		runtime_usecount_dec(pm);
 		if (domain != NULL) {
-			(void)pm_device_runtime_put(domain);
-			atomic_clear_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED);
+			domain_ret = pm_device_runtime_put(domain);
+			if (domain_ret == 0) {
+				atomic_clear_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED);
+			} else {
+				atomic_set_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED);
+			}
 		}
 		goto unlock;
 	}
@@ -404,11 +485,191 @@ unlock:
 	}
 
 end:
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_AFTER_GET);
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_get, dev, ret);
 
 	return ret;
 }
 
+static int runtime_power_domain_action_sync(const struct device *dev, enum pm_device_action action)
+{
+	struct pm_device_isr *pm = dev->pm_isr;
+	const struct device *domain = PM_DOMAIN(&pm->base);
+	bool release_domain = false;
+	k_spinlock_key_t key;
+	int domain_ret = 0;
+	int action_ret;
+	int ret = 0;
+
+	key = k_spin_lock(&pm->lock);
+	if (action == PM_DEVICE_ACTION_TURN_ON) {
+		if (pm->base.state == PM_DEVICE_STATE_OFF) {
+			pm->base.usage = 0U;
+		}
+		ret = pm_device_action_run(dev, action);
+		k_spin_unlock(&pm->lock, key);
+		return ret;
+	}
+
+	pm->base.usage = 0U;
+	if (pm->base.state == PM_DEVICE_STATE_ACTIVE) {
+		action_ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_SUSPEND);
+		if (action_ret < 0) {
+			ret = action_ret;
+		}
+		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
+	}
+
+	if (atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
+		atomic_set_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_RELEASING);
+		release_domain = true;
+	}
+
+	if (pm->base.state == PM_DEVICE_STATE_SUSPENDED) {
+		action_ret = pm_device_action_run(dev, PM_DEVICE_ACTION_TURN_OFF);
+		if ((action_ret < 0) && (ret == 0)) {
+			ret = action_ret;
+		}
+	}
+	atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_TURN_ON_FAILED);
+	k_spin_unlock(&pm->lock, key);
+
+	if (release_domain) {
+		domain_ret = pm_device_runtime_put(domain);
+
+		key = k_spin_lock(&pm->lock);
+		if (domain_ret == 0) {
+			atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
+		}
+		atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_RELEASING);
+		k_spin_unlock(&pm->lock, key);
+	}
+
+	return (ret != 0) ? ret : domain_ret;
+}
+
+static int runtime_power_domain_action(const struct device *dev, enum pm_device_action action)
+{
+	struct pm_device *pm = dev->pm;
+	const struct device *domain = PM_DOMAIN(&pm->base);
+	bool release_domain = false;
+	bool suspend = false;
+	int domain_ret = 0;
+	int action_ret;
+	int ret = 0;
+
+	(void)k_sem_take(&pm->lock, K_FOREVER);
+	if ((action == PM_DEVICE_ACTION_TURN_ON) &&
+	    (pm->base.state == PM_DEVICE_STATE_SUSPENDING)) {
+		ret = -ENOTSUP;
+		goto unlock;
+	}
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+retry:
+	if ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) &&
+	    ((k_work_cancel_delayable(&pm->work) & K_WORK_RUNNING) == 0)) {
+		pm->base.state = PM_DEVICE_STATE_ACTIVE;
+	}
+
+	if ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) ||
+	    atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_RELEASING)) {
+		k_event_clear(&pm->event, EVENT_MASK);
+		k_sem_give(&pm->lock);
+
+		k_event_wait(&pm->event, EVENT_MASK, false, K_FOREVER);
+
+		(void)k_sem_take(&pm->lock, K_FOREVER);
+		goto retry;
+	}
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
+
+	if (action == PM_DEVICE_ACTION_TURN_ON) {
+		if (pm->base.state == PM_DEVICE_STATE_OFF) {
+			K_SPINLOCK(&lock) {
+				pm->base.usage = 0U;
+			}
+		}
+		ret = pm_device_action_run(dev, action);
+		goto unlock;
+	}
+
+	K_SPINLOCK(&lock) {
+		pm->base.usage = 0U;
+		if (pm->base.state == PM_DEVICE_STATE_ACTIVE) {
+			pm->base.state = PM_DEVICE_STATE_SUSPENDING;
+			suspend = true;
+		}
+	}
+
+	if (suspend) {
+		action_ret = pm->base.action_cb(dev, PM_DEVICE_ACTION_SUSPEND);
+		if (action_ret < 0) {
+			ret = action_ret;
+		}
+		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
+	}
+
+	if (atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
+		atomic_set_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_RELEASING);
+		release_domain = true;
+	}
+
+	if (pm->base.state == PM_DEVICE_STATE_SUSPENDED) {
+		action_ret = pm_device_action_run(dev, PM_DEVICE_ACTION_TURN_OFF);
+		if ((action_ret < 0) && (ret == 0)) {
+			ret = action_ret;
+		}
+	}
+	atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_TURN_ON_FAILED);
+
+unlock:
+	k_sem_give(&pm->lock);
+
+	if (release_domain) {
+		domain_ret = pm_device_runtime_put(domain);
+
+		(void)k_sem_take(&pm->lock, K_FOREVER);
+		if (domain_ret == 0) {
+			atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
+		}
+		atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_RELEASING);
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+		k_event_set(&pm->event, BIT(pm->base.state));
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
+		k_sem_give(&pm->lock);
+	}
+
+	return (ret != 0) ? ret : domain_ret;
+}
+
+int z_pm_device_runtime_power_domain_action_run(const struct device *dev,
+						enum pm_device_action action)
+{
+	int ret;
+
+	if (k_is_in_isr()) {
+		return -EWOULDBLOCK;
+	}
+
+	if ((action != PM_DEVICE_ACTION_TURN_ON) && (action != PM_DEVICE_ACTION_TURN_OFF)) {
+		return -EINVAL;
+	}
+
+	if (dev->pm_base == NULL) {
+		return -ENOTSUP;
+	}
+
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_BEFORE_PD_ACTION);
+	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
+		ret = runtime_power_domain_action_sync(dev, action);
+	} else {
+		ret = runtime_power_domain_action(dev, action);
+	}
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_AFTER_PD_ACTION);
+
+	return ret;
+}
 
 static int put_sync_locked(const struct device *dev)
 {
@@ -438,7 +699,11 @@ static int put_sync_locked(const struct device *dev)
 
 			if (domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) {
 				ret = put_sync_locked(domain);
-				pm->base.flags &= ~BIT(PM_DEVICE_FLAG_PD_CLAIMED);
+				if (ret == 0) {
+					pm->base.flags &= ~BIT(PM_DEVICE_FLAG_PD_CLAIMED);
+				} else {
+					pm->base.flags |= BIT(PM_DEVICE_FLAG_PD_CLAIMED);
+				}
 			} else {
 				ret = -EWOULDBLOCK;
 			}
@@ -460,6 +725,7 @@ int pm_device_runtime_put(const struct device *dev)
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put, dev);
 
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_BEFORE_PUT);
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		struct pm_device_isr *pm_sync = dev->pm_isr;
 		k_spinlock_key_t k = k_spin_lock(&pm_sync->lock);
@@ -470,6 +736,7 @@ int pm_device_runtime_put(const struct device *dev)
 	} else {
 		ret = runtime_suspend(dev, false, K_NO_WAIT);
 	}
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_AFTER_PUT);
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put, dev, ret);
 
 	return ret;
@@ -485,6 +752,7 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put_async, dev, delay);
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_BEFORE_PUT);
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		struct pm_device_isr *pm_sync = dev->pm_isr;
 		k_spinlock_key_t k = k_spin_lock(&pm_sync->lock);
@@ -495,11 +763,11 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 	} else {
 		ret = runtime_suspend(dev, true, delay);
 	}
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_AFTER_PUT);
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put_async, dev, delay, ret);
 
 	return ret;
 #else
-	LOG_WRN("Function not available");
 	return -ENOSYS;
 #endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 }
@@ -661,8 +929,9 @@ int pm_device_runtime_disable(const struct device *dev)
 			goto clear_bit;
 		}
 
-		/* wait until possible async suspend is completed */
-		while (pm->base.state == PM_DEVICE_STATE_SUSPENDING) {
+		/* wait until possible async suspend and domain release are completed */
+		while ((pm->base.state == PM_DEVICE_STATE_SUSPENDING) ||
+		       atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_RELEASING)) {
 			k_event_clear(&pm->event, EVENT_MASK);
 			k_sem_give(&pm->lock);
 
