@@ -93,24 +93,13 @@ struct z_app_region {
 #define Z_PROGBITS_SYM "@"
 #endif
 
-#if defined(CONFIG_ARC) && defined(__CCAC__)
-/* ARC MWDT assembler has slightly different pushsection/popsection directives
- * names.
- */
-#define Z_PUSHSECTION_DIRECTIV		".pushsect"
-#define Z_POPSECTION_DIRECTIVE		".popsect"
-#else
-#define Z_PUSHSECTION_DIRECTIV		".pushsection"
-#define Z_POPSECTION_DIRECTIVE		".popsection"
-#endif
-
 #define Z_APPMEM_PLACEHOLDER(name) \
 	__asm__ ( \
-		Z_PUSHSECTION_DIRECTIV " " STRINGIFY(K_APP_DMEM_SECTION(name)) \
+		PUSHSECTION_DIRECTIVE " " STRINGIFY(K_APP_DMEM_SECTION(name)) \
 			",\"aw\"," Z_PROGBITS_SYM "progbits\n\t" \
 		".global " STRINGIFY(name) "_placeholder\n\t" \
 		STRINGIFY(name) "_placeholder:\n\t" \
-		Z_POPSECTION_DIRECTIVE "\n\t")
+		POPSECTION_DIRECTIVE "\n\t")
 
 /**
  * @brief Define an application memory partition with linker support
