@@ -65,6 +65,18 @@
 		clocks = <&root_clock1>;
 	};
 
+	/*
+	 * The interrupt number and the clocks (the AON_CLK the sampling
+	 * counter runs on, plus the CGU PER_CLK_EN[COMP_CLK_EN] gate, which
+	 * resets to disabled) are per-core facts: the core-specific dtsi
+	 * that enables use of the block must provide both.
+	 */
+	lpacmp: lpacmp@9b000 {
+		compatible = "nxp,lpacmp";
+		reg = <0x9b000 0x1000>;
+		status = "disabled";
+	};
+
 	rtc: rtc@9a000 {
 		compatible = "nxp,rtc-analog";
 		reg = <0x9a000 0x1000>;

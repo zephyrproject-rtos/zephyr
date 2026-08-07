@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Low-Power Analog Comparator (LPACMP)
+
+compatible: "nxp,lpacmp"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  positive-input:
+    type: string
+    required: true
+    enum:
+      - "comp_in4"
+      - "comp_in5"
+      - "comp_in0"
+      - "comp_in1"
+      - "comp_in2"
+      - "comp_in3"
+    description: |
+      Positive input selection for channel 0 (SEL0[INP_SEL]). The enum order
+      matches the register field encoding.
+
+  negative-input:
+    type: int
+    required: true
+    min: 0
+    max: 15
+    description: |
+      Negative (reference) input selection for channel 0 (SEL0[INN_SEL]).
+      Values 0-13 select an internal reference of (value + 1) x AVDD / 15.
+      Value 14 selects external input comp_in4 and value 15 selects external
+      input comp_in5.
+
+  sample-delay:
+    type: int
+    default: 0
+    min: 0
+    max: 65535
+    description: |
+      Channel 0 sample delay counter value (DELAY0[DEL]) in AON_CLK cycles.
+      The comparator output is sampled every time this counter reaches zero,
+      so the value sets the sampling period and must give the output enough
+      time to become steady. The default is the register reset value; in the
+      Continuous mode used by this driver the comparator is always powered,
+      so sampling at every AON_CLK cycle is functional, but a non-zero value
+      adds settling margin between samples.
