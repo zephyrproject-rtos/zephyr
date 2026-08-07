@@ -604,6 +604,7 @@ ZTESTABLE_STATIC bool tls_server_ticket_cache_lookup(const uint8_t *ticket, size
 
 		if (tls_server_ticket_entry_expired(entry)) {
 			entry->valid = false;
+			crypto_zero(entry->psk, sizeof(entry->psk));
 			continue;
 		}
 
@@ -689,6 +690,7 @@ ZTESTABLE_STATIC void tls_server_ticket_cache_consume(const uint8_t *ticket, siz
 		if (entry->valid && entry->ticket_len == ticket_len &&
 		    mbedtls_ct_memcmp(entry->ticket, ticket, ticket_len) == 0) {
 			entry->valid = false;
+			crypto_zero(entry->psk, sizeof(entry->psk));
 			break;
 		}
 	}
@@ -5091,10 +5093,13 @@ static void quic_tls_free(struct quic_tls_context *ctx)
 	}
 
 	/* Clear sensitive data */
-	memset(ctx->shared_secret, 0, sizeof(ctx->shared_secret));
-	memset(ctx->resumption_master_secret, 0, sizeof(ctx->resumption_master_secret));
-	memset(&ctx->session_state, 0, sizeof(ctx->session_state));
-	memset(&ctx->ks, 0, sizeof(ctx->ks));
+	/* These are the last writes to this memory before the endpoint slot is
+	 * released, so a plain memset() is a dead store the compiler may drop.
+	 */
+	crypto_zero(ctx->shared_secret, sizeof(ctx->shared_secret));
+	crypto_zero(ctx->resumption_master_secret, sizeof(ctx->resumption_master_secret));
+	crypto_zero(&ctx->session_state, sizeof(ctx->session_state));
+	crypto_zero(&ctx->ks, sizeof(ctx->ks));
 	ctx->client_hello_prepared = false;
 	ctx->session_state_valid = false;
 	ctx->resumption_master_secret_len = 0U;
