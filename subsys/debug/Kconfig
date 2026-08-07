@@ -204,16 +204,6 @@ config ASSERT_LEVEL
 	  Level 1: on + warning in every file that includes __assert.h
 	  Level 2: on + no warning
 
-config ASSERT_CUSTOM_HEADER
-	bool "Include Custom Assert Header [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	help
-	  When enabled, a custom application provided header, named
-	  "zephyr_custom_assert.h", is included at the end of __assert.h. This enables
-	  extension of the assert APIs at the macro level. Please use cautiously!
-	  The internal assert API may change in future releases.
-
-
 endif # ASSERT
 
 config SPIN_VALIDATE
