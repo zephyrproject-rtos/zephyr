@@ -310,20 +310,30 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 			/* Consume one slot from the open-stream budget */
 			if (is_bidi) {
 				ep->rx_sl.open_bidi++;
+				ep->rx_sl.total_bidi++;
 			} else {
 				ep->rx_sl.open_uni++;
+				ep->rx_sl.total_uni++;
 			}
 		}
 
 		/* New stream from peer, create and queue for accept */
 		stream = quic_create_stream_from_peer(conn, ep, stream_id);
 		if (stream == NULL) {
-			/* Pool exhausted, roll back the counter we just incremented */
+			/* Pool exhausted, roll back the counters we just
+			 * incremented. The total must go back too: no stream
+			 * ever opened, and the totals feed the limit handed
+			 * out for STREAMS_BLOCKED, so retransmissions of an
+			 * unallocatable stream would otherwise grow the
+			 * advertised limit without bound.
+			 */
 			if (peer_init) {
 				if (is_bidi && ep->rx_sl.open_bidi > 0) {
 					ep->rx_sl.open_bidi--;
+					ep->rx_sl.total_bidi--;
 				} else if (!is_bidi && ep->rx_sl.open_uni > 0) {
 					ep->rx_sl.open_uni--;
+					ep->rx_sl.total_uni--;
 				}
 			}
 
@@ -977,10 +987,17 @@ static int handle_streams_blocked_frame(struct quic_endpoint *ep,
 	if (is_bidi) {
 		uint64_t free_slots = (uint64_t)CONFIG_QUIC_MAX_STREAMS_BIDI
 							- ep->rx_sl.open_bidi;
+		/* MAX_STREAMS is a cumulative limit, so derive it from how many
+		 * streams the peer has actually opened. Adding the free slots
+		 * to the current limit instead would let a peer raise it once
+		 * per frame without ever opening or closing anything.
+		 */
+		uint64_t new_limit = ep->rx_sl.total_bidi + free_slots;
 
-		if (free_slots > 0 && ep->rx_sl.max_bidi <= max_streams &&
+		if (free_slots > 0 && new_limit > ep->rx_sl.max_bidi &&
+		    ep->rx_sl.max_bidi <= max_streams &&
 		    quic_reply_budget_take(budget)) {
-			ep->rx_sl.max_bidi += free_slots;
+			ep->rx_sl.max_bidi = new_limit;
 			quic_send_max_streams(ep, true);
 
 			NET_DBG("[EP:%p/%d] STREAMS_BLOCKED: advanced bidi limit to "
@@ -988,16 +1005,19 @@ static int handle_streams_blocked_frame(struct quic_endpoint *ep,
 				ep, quic_get_by_ep(ep),
 				ep->rx_sl.max_bidi, free_slots);
 		} else {
-			NET_DBG("[EP:%p/%d] STREAMS_BLOCKED: pool full "
-				"(open=%" PRIu64 "), not advancing limit",
-				ep, quic_get_by_ep(ep), ep->rx_sl.open_bidi);
+			NET_DBG("[EP:%p/%d] STREAMS_BLOCKED: not advancing bidi limit "
+				"(open=%" PRIu64 ", limit=%" PRIu64 ")",
+				ep, quic_get_by_ep(ep), ep->rx_sl.open_bidi,
+				ep->rx_sl.max_bidi);
 		}
 	} else {
 		uint64_t free_slots = (uint64_t)CONFIG_QUIC_MAX_STREAMS_UNI - ep->rx_sl.open_uni;
+		uint64_t new_limit = ep->rx_sl.total_uni + free_slots;
 
-		if (free_slots > 0 && ep->rx_sl.max_uni <= max_streams &&
+		if (free_slots > 0 && new_limit > ep->rx_sl.max_uni &&
+		    ep->rx_sl.max_uni <= max_streams &&
 		    quic_reply_budget_take(budget)) {
-			ep->rx_sl.max_uni += free_slots;
+			ep->rx_sl.max_uni = new_limit;
 			quic_send_max_streams(ep, false);
 		}
 	}
