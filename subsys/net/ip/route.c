@@ -1086,6 +1086,13 @@ int net_route_packet(struct net_pkt *pkt, struct net_in6_addr *nexthop)
 
 	if (is_ll_addr_supported(nbr->iface) && is_ll_addr_supported(net_pkt_iface(pkt)) &&
 	    is_ll_addr_supported(net_pkt_orig_iface(pkt))) {
+		if (nbr->idx == NET_NBR_LLADDR_UNKNOWN) {
+			NET_DBG("Neighbor %s has no link-layer (idx unknown)",
+				net_sprint_ipv6_addr(nexthop));
+			err = -ESRCH;
+			goto error;
+		}
+
 		lladdr = net_nbr_get_lladdr(nbr->idx);
 		if (!lladdr) {
 			NET_DBG("Cannot find %s neighbor link layer address.",
