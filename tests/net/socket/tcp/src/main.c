@@ -12,9 +12,11 @@
 LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/ztest_assert.h>
+#include <zephyr/ztest_error_hook.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/loopback.h>
+#include <zephyr/sys/fdtable.h>
 
 #include "../../socket_helpers.h"
 
@@ -2520,16 +2522,22 @@ ZTEST_BMEM volatile int result;
 static void child_entry(void *p1, void *p2, void *p3)
 {
 	int sock = POINTER_TO_INT(p1);
+	bool expect_fault = POINTER_TO_INT(p2);
+
+	if (expect_fault) {
+		/* an ungranted fd access oopses in the K_OBJ_FILE verifier */
+		ztest_set_fault_valid(true);
+	}
 
 	result = zsock_close(sock);
 }
 
-static void spawn_child(int sock)
+static void spawn_child(int sock, bool expect_fault)
 {
 	k_thread_create(&child_thread, child_stack,
 			K_THREAD_STACK_SIZEOF(child_stack), child_entry,
-			INT_TO_POINTER(sock), NULL, NULL, 0, K_USER,
-			K_FOREVER);
+			INT_TO_POINTER(sock), INT_TO_POINTER(expect_fault),
+			NULL, 0, K_USER, K_FOREVER);
 }
 #endif
 
@@ -2546,20 +2554,22 @@ ZTEST(net_socket_tcp, test_socket_permission)
 	zassert_not_null(ctx, "zsock_get_context_object() failed");
 
 	/* Spawn a child thread which doesn't inherit our permissions,
-	 * it will try to perform a socket operation and fail due to lack
-	 * of permissions on it.
+	 * it will try to perform a socket operation and oops in the
+	 * K_OBJ_FILE verifier due to lack of permissions on the fd.
 	 */
-	spawn_child(sock);
+	result = -1;
+	spawn_child(sock, true);
 	k_thread_start(&child_thread);
 	k_thread_join(&child_thread, K_FOREVER);
 
 	zassert_not_equal(result, 0, "child succeeded with no permission");
 
 	/* Now spawn the same child thread again, but this time we grant
-	 * permission on the net_context before we start it, and the
-	 * child should now succeed.
+	 * permission on both the fd slot and the net_context before we
+	 * start it, and the child should now succeed.
 	 */
-	spawn_child(sock);
+	spawn_child(sock, false);
+	k_object_access_grant(zvfs_test_fd_entry_kobj(sock), &child_thread);
 	k_object_access_grant(ctx, &child_thread);
 	k_thread_start(&child_thread);
 	k_thread_join(&child_thread, K_FOREVER);

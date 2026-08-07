@@ -1,0 +1,24 @@
+common:
+  ignore_faults: true
+  tags:
+    - zvfs
+    - fatfs
+  modules:
+    - fatfs
+  min_ram: 128
+  platform_key:
+    - arch
+    - simulation
+tests:
+  libraries.zvfs_fs:
+    filter: not CONFIG_NATIVE_LIBC
+  libraries.zvfs_fs.userspace:
+    filter: (not CONFIG_NATIVE_LIBC) and CONFIG_ARCH_HAS_USERSPACE
+    tags: userspace
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_USERSPACE=y
+      - CONFIG_ZTEST_FATAL_HOOK=y
+      # 8-region MPU: stack guard + thread stack leave only 3 domain slots,
+      # one short for zvfs_dir_partition on top of libc/malloc/ztest
+      - platform:mps2/an385:CONFIG_TEST_USERSPACE_WITHOUT_HW_STACK_PROTECTION=y

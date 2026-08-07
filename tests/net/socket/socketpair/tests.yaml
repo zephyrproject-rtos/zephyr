@@ -1,4 +1,5 @@
 common:
+  ignore_faults: true
   tags:
     - net
     - socket

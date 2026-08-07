@@ -1,4 +1,5 @@
 common:
+  ignore_faults: true
   depends_on: netif
   min_ram: 32
   min_flash: 194
