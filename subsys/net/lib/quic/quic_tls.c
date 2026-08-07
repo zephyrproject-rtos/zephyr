@@ -212,8 +212,22 @@ static int verify_peer_certificate(struct quic_tls_context *ctx,
 
 	/* Verify against CA chain if available */
 	if (ctx->ca_cert) {
+		const char *cn = NULL;
+
+		/* Match the certificate against the name we asked for. Only a
+		 * client has a name to check; a server authenticates its peer
+		 * by the certificate alone.
+		 */
+		if (!ctx->ep->is_server && ctx->options.hostname[0] != '\0') {
+			cn = ctx->options.hostname;
+		} else if (!ctx->ep->is_server &&
+			   verify_level == MBEDTLS_SSL_VERIFY_REQUIRED) {
+			NET_WARN("No TLS_HOSTNAME set, peer certificate is accepted for "
+				 "any name it was issued for");
+		}
+
 		ret = mbedtls_x509_crt_verify(&peer_crt, &ctx->ca_chain, NULL,
-					      NULL, &flags, NULL, NULL);
+					      cn, &flags, NULL, NULL);
 		if (ret != 0) {
 			NET_WARN("Certificate verification failed: -0x%04x, flags=0x%08x",
 				 -ret, flags);
