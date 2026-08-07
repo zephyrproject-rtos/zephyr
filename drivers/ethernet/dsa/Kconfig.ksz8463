@@ -1,0 +1,55 @@
+# Microchip KSZ8463 DSA configuration options
+
+# Copyright (c) 2026 Vilhelm Engström
+#
+# SPDX-License-Identifier: Apache-2.0
+
+KSZ8463_COMPAT := microchip,ksz8463
+
+config DSA_MICROCHIP_KSZ8463
+	bool "Support for Microchip KSZ8463 Ethernet switch"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ8463_ENABLED
+	select GPIO if $(dt_compat_any_has_prop,$(KSZ8463_COMPAT),int-gpios,1) || \
+				$(dt_compat_any_has_prop,$(KSZ8463_COMPAT),reset-gpios,1)
+	select SPI
+	help
+	  Add support for the KSZ8463 3-port Ethernet switch family. Both MII and RMII models
+	  are supported.
+
+if DSA_MICROCHIP_KSZ8463
+
+config DSA_MICROCHIP_KSZ8463_SPI_OPERATIONAL_TIMEOUT
+	int "Maximum time to wait for initial SPI resopnse"
+	default 100
+	range 10 10000
+	help
+	  Number of milliseconds to wait for the chip to respond over SPI during initialization.
+
+config DSA_MICROCHIP_KSZ8463_LINK_STATE_POLL_INTERVAL
+	int "Interval at which the link state is polled"
+	default 1000
+	range 10 60000
+	help
+	  Interval at which the link state is polled should no int-gpios property be provided.
+	  Given in ms.
+
+config DSA_MICROCHIP_KSZ8463_PHY_AUTONEG_POLL_INTERVAL
+	int "Interval at which the PHY is polled for auto-negotiation completion"
+	default 100
+	help
+	  During auto-negotiation, the PHY is periodically polled to determine whether or
+	  not the negotiation has completed. This setting determines how often said state is
+	  polled. Given in ms.
+
+config DSA_MICROCHIP_KSZ8463_PHY_AUTONEG_TIMEOUT
+	int "Auto-negotiation timeout"
+	default 5000
+	help
+	  Number of milliseconds after which auto-negotiation is assumed to have failed. On failure,
+	  the PHY falls back on whatever speed is configured via its microchip,fixed-link-speed
+	  devicetree property.
+
+	  The value must be greater DSA_MICROCHIP_KSZ8463_PHY_AUTONEG_POLL_INTERVAL.
+
+endif # DSA_MICROCHIP_KSZ8463
