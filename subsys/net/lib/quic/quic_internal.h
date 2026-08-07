@@ -781,6 +781,12 @@ struct quic_endpoint {
 	} anti_amplification;
 #endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 
+	/** Packets emitted while handling the payload currently being parsed.
+	 * Several frame types are answered with a packet each, so this bounds
+	 * how much one received datagram can make us send.
+	 */
+	uint16_t reply_budget_used;
+
 	/** Stream-count limits, how many streams we allow the peer to open.
 	 * Mirrored from our own transport parameters and grown in response to
 	 * STREAMS_BLOCKED frames (RFC 9000 ch. 19.14 / 4.6).
@@ -1376,6 +1382,12 @@ int parse_certificate(struct quic_tls_context *ctx,
 int parse_client_hello(struct quic_tls_context *ctx,
 		       const uint8_t *data, size_t len,
 		       const uint8_t *full_msg, size_t full_msg_len);
+int handle_crypto_level_packet(struct quic_endpoint *ep,
+			       enum quic_secret_level level,
+			       const uint8_t *payload,
+			       size_t payload_len,
+			       size_t total_packet_len,
+			       bool *ack_only);
 int process_handshake_message(struct quic_tls_context *ctx,
 			      uint8_t msg_type,
 			      const uint8_t *msg, size_t msg_len,
