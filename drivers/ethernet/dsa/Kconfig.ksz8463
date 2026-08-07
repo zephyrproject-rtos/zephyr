@@ -1,0 +1,18 @@
+# Microchip KSZ8463 DSA configuration options
+
+# Copyright (c) 2026 Vilhelm Engström
+#
+# SPDX-License-Identifier: Apache-2.0
+
+KSZ8463_COMPAT := microchip,ksz8463
+
+config DSA_MICROCHIP_KSZ8463
+	bool "Support for Microchip KSZ8463 Ethernet switch"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ8463_ENABLED
+	select GPIO if $(dt_compat_any_has_prop,$(KSZ8463_COMPAT),int-gpios,1) || \
+				$(dt_compat_any_has_prop,$(KSZ8463_COMPAT),reset-gpios,1)
+	select SPI
+	help
+	  Add support for the KSZ8463 3-port Ethernet switch family. Both MII and RMII models
+	  are supported.

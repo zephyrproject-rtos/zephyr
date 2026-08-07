@@ -17,5 +17,6 @@ if DSA_DRIVERS
 DSA_PORT_COMPAT := zephyr,dsa-port
 
 rsource "Kconfig.netc"
+rsource "Kconfig.ksz8463"
 
 endif # DSA_DRIVERS
