@@ -1,5 +1,16 @@
 # SPDX-License-Identifier: Apache-2.0
-# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+
+board_set_debugger_ifnset(pyocd)
+board_set_flasher_ifnset(pyocd)
+
+if(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG_BOARD_MPS2_AN521_CPU1)
+  board_runner_args(pyocd "--target=mps2_an521")
+else()
+  board_runner_args(pyocd "--target=cortex_m")
+endif()
+
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 
 if(CONFIG_BOARD_MPS2_AN385)
   set(SUPPORTED_EMU_PLATFORMS qemu armfvp)
