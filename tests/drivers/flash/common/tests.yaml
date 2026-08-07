@@ -334,3 +334,17 @@ tests:
       - CONFIG_TEST_DRIVER_FLASH_SIZE=-1
     integration_platforms:
       - kit_pse84_eval/pse846gps2dbzc4a/m33
+  drivers.flash.common.infineon_ext_flash_cs0:
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
+      and dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/kit_pse84_eval_cs0.overlay
+    extra_configs:
+      - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
+      - CONFIG_TEST_DRIVER_FLASH_SIZE=-1
+    integration_platforms:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33

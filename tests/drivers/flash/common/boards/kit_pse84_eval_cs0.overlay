@@ -1,0 +1,43 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Retarget the flash "common" test at the second device on SMIF0, the
+ * S28HS01GT on chip-select 0, driven in single-line SPI mode. This removes the
+ * storage partition from the cs1 execute-in-place device and defines one on the
+ * cs0 device instead, so the test operates on cs0 without disturbing cs1.
+ *
+ * The partition is placed at a 256 KiB-aligned offset above the bottom 4 KiB
+ * parameter sectors so it lies in the device's uniform 256 KiB sector region
+ * and is reachable with the device's power-on 3-byte addressing.
+ */
+
+/delete-node/ &storage_partition;
+
+&ext_flash_cs0 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges;
+
+	cs0_flash: cs0_flash@64000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x64000000 0x08000000>;
+		ranges = <0x0 0x64000000 0x08000000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partitions {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@100000 {
+				compatible = "zephyr,mapped-partition";
+				label = "storage";
+				reg = <0x00100000 0x00080000>;
+			};
+		};
+	};
+};
