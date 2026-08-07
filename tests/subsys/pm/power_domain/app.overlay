@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Intel Corporation
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,5 +34,17 @@
 		compatible = "test-device-pm";
 		status = "okay";
 		power-domains = <&test_domain_balanced>;
+	};
+
+	test_domain_helper: test_domain_helper {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	test_dev_helper: test_dev_helper {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domains = <&test_domain_helper>;
 	};
 };
