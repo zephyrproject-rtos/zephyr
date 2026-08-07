@@ -64,6 +64,12 @@ tests:
       - nrf7120dk/nrf7120/cpuapp
     extra_args:
       - FILE_SUFFIX=memc_ram
+  filesystem.fat.api.dirent_ext:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_FS_DIRENT_EXT=y
+      - CONFIG_FS_FATFS_FF_USE_CHMOD=y
   filesystem.fat.api.reentrant:
     platform_allow:
       - native_sim

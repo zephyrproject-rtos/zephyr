@@ -5,14 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define _POSIX_C_SOURCE 200809L /* Required for gmtime_r */
+
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <errno.h>
 #include <zephyr/init.h>
+#include <time.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
+#include <zephyr/sys/timeutil.h>
 #include <zephyr/sys/__assert.h>
 #include <ff.h>
 #include <diskio.h>
@@ -375,6 +379,32 @@ static int fatfs_opendir(struct fs_dir_t *zdp, const char *path)
 	return translate_error(res);
 }
 
+#if defined(CONFIG_FS_DIRENT_EXT)
+static void fatfs_time_to_timespec(WORD fdate, WORD ftime, struct timespec *ts)
+{
+	struct tm tm = {
+		.tm_year = ((fdate >> 9) & 0x7f) + 80,
+		.tm_mon = ((fdate >> 5) & 0xf) - 1,
+		.tm_mday = fdate & 0x1f,
+		.tm_hour = (ftime >> 11) & 0x1f,
+		.tm_min = (ftime >> 5) & 0x3f,
+		.tm_sec = (ftime & 0x1f) * 2,
+	};
+
+	ts->tv_sec = timeutil_timegm64(&tm);
+	ts->tv_nsec = 0;
+}
+
+static void fatfs_fill_dirent_times(struct fs_dirent *entry, const FILINFO *fno)
+{
+	/* FAT records only the modification time */
+	fatfs_time_to_timespec(fno->fdate, fno->ftime, &entry->mtime);
+	entry->atime = entry->mtime;
+}
+#else
+#define fatfs_fill_dirent_times(entry, fno)
+#endif /* defined(CONFIG_FS_DIRENT_EXT) */
+
 static int fatfs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 {
 	FRESULT res;
@@ -387,8 +417,19 @@ static int fatfs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 			entry->type = ((fno.fattrib & AM_DIR) ?
 			       FS_DIR_ENTRY_DIR : FS_DIR_ENTRY_FILE);
 			entry->size = fno.fsize;
+			fatfs_fill_dirent_times(entry, &fno);
 		}
 	}
+
+	return translate_error(res);
+}
+
+static int fatfs_rewinddir(struct fs_dir_t *zdp)
+{
+	FRESULT res;
+
+	/* A NULL FILINFO rewinds the directory stream */
+	res = f_readdir(zdp->dirp, NULL);
 
 	return translate_error(res);
 }
@@ -417,10 +458,39 @@ static int fatfs_stat(struct fs_mount_t *mountp,
 			       FS_DIR_ENTRY_DIR : FS_DIR_ENTRY_FILE);
 		strcpy(entry->name, fno.fname);
 		entry->size = fno.fsize;
+		fatfs_fill_dirent_times(entry, &fno);
 	}
 
 	return translate_error(res);
 }
+
+#if FF_USE_CHMOD && !FF_FS_READONLY
+static int fatfs_utime(struct fs_mount_t *mountp, const char *name,
+		       const struct timespec times[2])
+{
+	FRESULT res;
+	FILINFO fno;
+	struct tm tm;
+	time_t sec = times[1].tv_sec;
+
+	/* FAT records only the modification time; times[0] is ignored */
+	if (gmtime_r(&sec, &tm) == NULL) {
+		return -EINVAL;
+	}
+
+	/* FAT timestamps span 1980 through 2107 */
+	if ((tm.tm_year < 80) || (tm.tm_year > 207)) {
+		return -EINVAL;
+	}
+
+	fno.fdate = ((tm.tm_year - 80) << 9) | ((tm.tm_mon + 1) << 5) | tm.tm_mday;
+	fno.ftime = (tm.tm_hour << 11) | (tm.tm_min << 5) | (tm.tm_sec / 2);
+
+	res = f_utime(translate_path(name), &fno);
+
+	return translate_error(res);
+}
+#endif /* FF_USE_CHMOD && !FF_FS_READONLY */
 
 static int fatfs_statvfs(struct fs_mount_t *mountp,
 			 const char *path, struct fs_statvfs *stat)
@@ -556,6 +626,7 @@ static const struct fs_file_system_t fatfs_fs = {
 	.opendir = fatfs_opendir,
 	.readdir = fatfs_readdir,
 	.closedir = fatfs_closedir,
+	.rewinddir = fatfs_rewinddir,
 	.mount = fatfs_mount,
 	.unmount = fatfs_unmount,
 	.unlink = fatfs_unlink,
@@ -563,6 +634,9 @@ static const struct fs_file_system_t fatfs_fs = {
 	.mkdir = fatfs_mkdir,
 	.stat = fatfs_stat,
 	.statvfs = fatfs_statvfs,
+#if FF_USE_CHMOD && !FF_FS_READONLY
+	.utime = fatfs_utime,
+#endif
 #if defined(CONFIG_FILE_SYSTEM_MKFS) && defined(CONFIG_FS_FATFS_MKFS)
 	.mkfs = fatfs_mkfs,
 #endif

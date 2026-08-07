@@ -97,6 +97,11 @@
 #define FF_FS_NORTC 1
 #endif /* defined(CONFIG_FS_FATFS_HAS_RTC) */
 
+#if defined(CONFIG_FS_FATFS_FF_USE_CHMOD)
+#undef FF_USE_CHMOD
+#define FF_USE_CHMOD 1
+#endif /* defined(CONFIG_FS_FATFS_FF_USE_CHMOD) */
+
 /* Zephyr uses FF_VOLUME_STRS */
 #undef FF_STR_VOLUME_ID
 #define FF_STR_VOLUME_ID 1

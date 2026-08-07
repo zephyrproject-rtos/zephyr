@@ -102,6 +102,15 @@ config FS_FATFS_HAS_RTC
 	    10: 5 = Minute (0..59)
 	     4: 0 = Seconds/2 (0..29)
 
+config FS_FATFS_FF_USE_CHMOD
+	bool "Attribute and timestamp write support"
+	depends on !FS_FATFS_READ_ONLY
+	help
+	  Enable the FatFs f_chmod() and f_utime() functions so file
+	  attributes and timestamps can be changed, backing fs_utime().
+	  The timestamp conversion uses gmtime_r(), which the minimal libc
+	  provides with CONFIG_STD_C23.
+
 config FS_FATFS_EXTRA_NATIVE_API
 	bool "Additional native API functions"
 	help
