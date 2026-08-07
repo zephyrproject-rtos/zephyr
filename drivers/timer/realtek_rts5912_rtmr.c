@@ -37,16 +37,13 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define RTMR_COUNTER_MSK   0x0ffffffful
 #define RTMR_TIMER_STOPPED 0xf0000000ul
 
-#define MAX_TICKS ((k_ticks_t)(RTMR_COUNTER_MAX / CYCLES_PER_TICK) - 1)
-
 /* Adjust cycle count programmed into timer for HW restart latency */
 #define RTMR_ADJUST_LIMIT  8
 #define RTMR_ADJUST_CYCLES 7
 
-static struct k_spinlock lock;
+/* Whole reloads consumed so far, the low bits of the synthesized count */
 static uint32_t accumulated_cycles;
-static uint32_t previous_cnt;      /* Record the counter set into RTMR */
-static uint32_t last_announcement; /* Record the last tick announced to system */
+static uint32_t previous_cnt; /* Record the counter set into RTMR */
 
 #if defined(CONFIG_PM)
 static uint64_t cyc_sleep_compensated;
@@ -72,109 +69,81 @@ static uint32_t rtmr_get_counter(void)
 	return counter;
 }
 
+/*
+ * A down-counter reloaded from LDCNT, which interrupts at zero and does not
+ * free-run: a RELOAD backend. The counter the core reads is synthesized, the
+ * reloads consumed so far plus what the current one has counted down, and it is
+ * 28 bits wide like the hardware. That read touches state the ISR and the
+ * reload path also write, hence TIMER_CORE_COUNTER_NONATOMIC.
+ */
+#define TIMER_CORE_BACKEND_RELOAD
+#define TIMER_CORE_COUNTER_WIDTH 28
+#define TIMER_CORE_COUNTER_NONATOMIC
+
+/* One reload cannot express more than the preload register holds. */
+#define TIMER_CORE_ALARM_MAX_CYCLES RTMR_COUNTER_MAX
+
+static inline uint32_t timer_driver_cycle_get(void)
+{
+	return (accumulated_cycles + (previous_cnt - rtmr_get_counter())) & RTMR_COUNTER_MSK;
+}
+
+static void timer_driver_set_reload(uint32_t cycles)
+{
+	uint32_t cur_cnt = rtmr_get_counter();
+
+	RTMR_REG->CTRL = 0U;
+
+	/* Fold what the reload in flight has already counted down into the
+	 * synthesized count before replacing it.
+	 */
+	accumulated_cycles = (accumulated_cycles + previous_cnt - cur_cnt) & RTMR_COUNTER_MSK;
+	previous_cnt = cycles;
+
+	/* adjust for up to one 32KHz cycle startup time */
+	if (cycles > RTMR_ADJUST_LIMIT) {
+		cycles -= RTMR_ADJUST_CYCLES;
+	}
+
+	rtmr_restart(cycles);
+}
+
+#include "system_timer_generic.h"
+
 static void rtmr_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	uint32_t cycles;
-	int32_t ticks;
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = sys_clock_lock();
 
 	RTMR_REG->INTSTS = RTOSTMR_INTSTS_STS_Msk;
 
-	rtmr_restart(RTMR_COUNTER_MAX * CYCLES_PER_TICK);
+	/* The reload is consumed: account it and restart. A tickless kernel gets
+	 * the next deadline from the core right after the announce, so this
+	 * reload only has to keep the counter running; a ticked one leaves the
+	 * period to the driver.
+	 */
+	accumulated_cycles = (accumulated_cycles + previous_cnt) & RTMR_COUNTER_MSK;
+	previous_cnt = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? RTMR_COUNTER_MAX : CYCLES_PER_TICK;
+	rtmr_restart(previous_cnt);
 
-	cycles = previous_cnt;
-	previous_cnt = RTMR_COUNTER_MAX * CYCLES_PER_TICK;
-
-	accumulated_cycles += cycles;
-
-	if (accumulated_cycles > RTMR_COUNTER_MSK) {
-		accumulated_cycles &= RTMR_COUNTER_MSK;
-	}
-
-	ticks = accumulated_cycles - last_announcement;
-	ticks &= RTMR_COUNTER_MSK;
-	ticks /= CYCLES_PER_TICK;
-
-	last_announcement = accumulated_cycles;
-
-	k_spin_unlock(&lock, key);
-
-	sys_clock_announce(ticks);
+	timer_core_announce_from(key);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_idle_enter(uint32_t ticks)
 {
-	ARG_UNUSED(idle);
-
-	uint32_t cur_cnt, temp;
-	int full_ticks;
-	uint32_t full_cycles;
-	uint32_t partial_cycles;
-
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && (ticks == SYS_CLOCK_MAX_WAIT)) {
-		RTMR_REG->CTRL = 0U;
-		previous_cnt = RTMR_TIMER_STOPPED;
+	if (ticks != SYS_CLOCK_IDLE_FOREVER) {
+		sys_clock_set_timeout(ticks, false);
 		return;
 	}
 
-	if (ticks < 1) {
-		full_ticks = 0;
-	} else if (ticks > MAX_TICKS) {
-		full_ticks = MAX_TICKS - 1;
-	} else {
-		full_ticks = ticks - 1;
-	}
-
-	full_cycles = full_ticks * CYCLES_PER_TICK;
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	cur_cnt = rtmr_get_counter();
-
+	/* Nothing to wake up for and the uptime accounting may drift: stop the
+	 * timer. Only this path may, and only because the CPU is on its way to
+	 * sleep, so nothing is left to read the synthesized count that stops
+	 * with it. sys_clock_idle_exit() starts it again.
+	 */
 	RTMR_REG->CTRL = 0U;
-
-	temp = accumulated_cycles;
-	temp += previous_cnt - cur_cnt;
-	temp &= RTMR_COUNTER_MSK;
-	accumulated_cycles = temp;
-
-	partial_cycles = CYCLES_PER_TICK - (accumulated_cycles % CYCLES_PER_TICK);
-	previous_cnt = full_cycles + partial_cycles;
-	/* adjust for up to one 32KHz cycle startup time */
-	temp = previous_cnt;
-	if (temp > RTMR_ADJUST_LIMIT) {
-		temp -= RTMR_ADJUST_CYCLES;
-	}
-	rtmr_restart(temp);
-
-	k_spin_unlock(&lock, key);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	uint32_t cur_cnt;
-	uint32_t ticks;
-	int32_t elapsed;
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	cur_cnt = rtmr_get_counter();
-
-	elapsed = (int32_t)accumulated_cycles - (int32_t)last_announcement;
-	if (elapsed < 0) {
-		elapsed = -1 * elapsed;
-	}
-	ticks = (uint32_t)elapsed;
-	ticks += previous_cnt - cur_cnt;
-	ticks /= CYCLES_PER_TICK;
-	ticks &= RTMR_COUNTER_MSK;
-
-	k_spin_unlock(&lock, key);
-
-	return ticks;
+	previous_cnt = RTMR_TIMER_STOPPED;
 }
 
 void sys_clock_idle_exit(void)
@@ -191,21 +160,6 @@ void sys_clock_disable(void)
 	RTMR_REG->CTRL = 0ul;
 }
 
-uint32_t sys_clock_cycle_get_32(void)
-{
-	uint32_t ret;
-	uint32_t cur_cnt;
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	cur_cnt = rtmr_get_counter();
-	ret = (accumulated_cycles + (previous_cnt - cur_cnt)) & RTMR_COUNTER_MSK;
-
-	k_spin_unlock(&lock, key);
-
-	return ret;
-}
-
 #if defined(CONFIG_PM)
 void rts5912_clock_capture_low_freq_timer(void)
 {
@@ -215,7 +169,7 @@ void rts5912_clock_capture_low_freq_timer(void)
 void rts5912_clock_compensate_system_timer(void)
 {
 	uint32_t cyc_exit_heavy_sleep = sys_clock_cycle_get_32();
-	uint32_t cyc_elapsed = (cyc_exit_heavy_sleep - cyc_enter_heavy_sleep) & RTMR_COUNTER_MSK;
+	uint32_t cyc_elapsed = cyc_exit_heavy_sleep - cyc_enter_heavy_sleep;
 
 	cyc_sleep_compensated += cyc_elapsed;
 }
@@ -266,6 +220,15 @@ static int sys_clock_driver_init(void)
 	rtmr_restart(previous_cnt);
 	while (RTMR_REG->CNT == 0) {
 	};
+
+	timer_core_init();
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/* The core leaves the period of a reload backend to the driver,
+		 * so program the periodic tick here. The ISR reloads it.
+		 */
+		timer_driver_set_reload(CYCLES_PER_TICK);
+	}
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
 	/* Enable SLWTMR0 clock power */
