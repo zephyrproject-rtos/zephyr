@@ -4325,6 +4325,7 @@ NXP Platforms (MCU):
         - mmahadevan108
       files:
         - boards/nxp/frdm_k*/
+        - boards/nxp/twr_kv*/
         - soc/nxp/kinetis/
         - dts/arm/nxp/kinetis/
     - name: NXP LPC
