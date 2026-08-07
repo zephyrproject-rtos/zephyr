@@ -1278,11 +1278,19 @@ static int handle_ack_frame(struct quic_endpoint *ep,
 			uint64_t smallest = ranges[range_idx - 1].start;
 
 			if (smallest < gap + 2) {
-				/* Malformed: gap exceeds available PN space */
-				break;
+				/* Malformed: gap exceeds available PN space
+				 * (RFC 9000 19.3.1, FRAME_ENCODING_ERROR)
+				 */
+				return -EINVAL;
 			}
 
 			ranges[range_idx].end = smallest - gap - 2;
+
+			if (ranges[range_idx].end < ack_range) {
+				/* Malformed: the range extends below zero */
+				return -EINVAL;
+			}
+
 			ranges[range_idx].start = ranges[range_idx].end - ack_range;
 			range_idx++;
 		}
