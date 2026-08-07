@@ -5702,6 +5702,40 @@ ZTEST(net_socket_quic, test_480_retry_token_round_trip)
 		      "Token must be bound to client address (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_486_replies_per_payload_are_capped)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	/* A payload packed with DATA_BLOCKED frames. Each one is two bytes and
+	 * would otherwise be answered with a MAX_DATA packet of its own.
+	 */
+	uint8_t payload[128];
+	bool ack_only = false;
+	int ret;
+
+	for (size_t i = 0; i < sizeof(payload); i += 2) {
+		payload[i] = QUIC_FRAME_TYPE_DATA_BLOCKED;
+		payload[i + 1] = 0x00;
+	}
+
+	/* Advertise a window above the blocked limit so every frame would
+	 * otherwise trigger a reply.
+	 */
+	ep->rx_fc.max_data = 1000;
+
+	quic_test_reply_budget_spent = 0;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload),
+					 sizeof(payload), &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	zassert_equal(quic_test_reply_budget_spent, CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD,
+		      "Expected replies to stop at %d, got %u",
+		      CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD, quic_test_reply_budget_spent);
+	zassert_true(sizeof(payload) / 2 > CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD,
+		     "Test payload must carry more frames than the budget allows");
+}
+
 ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 {
 	uint8_t nonce[8] = {
@@ -5732,6 +5766,63 @@ ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
 	}
 
 	zassert_unreachable("Clock ticked between the claims on every attempt");
+}
+
+ZTEST(net_socket_quic, test_489_cid_retirement_is_deferred_when_the_budget_runs_out)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t payload[2 * CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD + 28];
+	uint8_t ping = QUIC_FRAME_TYPE_PING;
+	bool ack_only = false;
+	size_t pos = 0;
+	int ret;
+
+	/* Use the whole reply budget up with DATA_BLOCKED frames first. */
+	for (int i = 0; i < CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD; i++) {
+		payload[pos++] = QUIC_FRAME_TYPE_DATA_BLOCKED;
+		payload[pos++] = 0x00;
+	}
+	ep->rx_fc.max_data = 1000;
+
+	/* Then a NEW_CONNECTION_ID in the same payload retires the CID the
+	 * pool currently holds.
+	 */
+	ep->peer_cid_pool[0].active = true;
+	ep->peer_cid_pool[0].seq_num = 0;
+	ep->peer_cid_pool[0].cid_len = 8;
+
+	payload[pos++] = QUIC_FRAME_TYPE_NEW_CONNECTION_ID;
+	payload[pos++] = 0x01; /* Sequence number 1 */
+	payload[pos++] = 0x01; /* Retire prior to 1 */
+	payload[pos++] = 0x08; /* CID length */
+	for (int i = 0; i < 8; i++) {
+		payload[pos++] = (uint8_t)i; /* CID */
+	}
+	for (int i = 0; i < 16; i++) {
+		payload[pos++] = 0xa5; /* Stateless reset token */
+	}
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, pos, pos, &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	zassert_true(ep->peer_cid_pool[0].active, "New CID was not stored");
+	zassert_equal(ep->peer_cid_pool[0].seq_num, 1,
+		      "Pool slot should hold the new CID");
+	zassert_equal(ep->retire_backlog.count, 1,
+		      "An unsent retirement must be deferred, not dropped");
+	zassert_equal(ep->retire_backlog.seq[0], 0,
+		      "Wrong sequence number deferred");
+
+	/* The next payload flushes the backlog with its own budget. The send
+	 * fails on this unconnected test endpoint, so the retirement must
+	 * stay queued for a later attempt rather than be dropped.
+	 */
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 &ping, 1, 1, &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+	zassert_equal(ep->retire_backlog.count, 1,
+		      "A failed send must keep the retirement queued");
 }
 
 ZTEST(net_socket_quic, test_487_address_token_cannot_be_replayed)
