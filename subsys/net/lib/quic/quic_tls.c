@@ -348,8 +348,7 @@ static int tls_cipher_suite_hash_params(uint16_t cipher_suite,
 
 static bool tls_external_psk_cipher_supported(uint16_t cipher_suite)
 {
-	return cipher_suite == TLS_AES_128_GCM_SHA256 ||
-	       cipher_suite == TLS_CHACHA20_POLY1305_SHA256;
+	return cipher_suite == TLS_AES_128_GCM_SHA256;
 }
 
 static int tls_compute_hmac(psa_algorithm_t hash_alg,
@@ -1325,8 +1324,7 @@ ZTESTABLE_STATIC int parse_client_hello(struct quic_tls_context *ctx,
 		uint16_t suite = (data[pos + i] << 8) | data[pos + i + 1];
 
 		if (suite == TLS_AES_128_GCM_SHA256 ||
-		    suite == TLS_AES_256_GCM_SHA384 ||
-		    suite == TLS_CHACHA20_POLY1305_SHA256) {
+		    suite == TLS_AES_256_GCM_SHA384) {
 			if (selected_cipher_suite == 0U) {
 				selected_cipher_suite = suite;
 			}
@@ -1628,8 +1626,11 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	/* Legacy session ID (empty for QUIC) */
 	buf[pos++] = 0;
 
-	/* Cipher suites (2 bytes length + suites) */
-	cipher_suites_len = ctx->psk_configured ? 4U : 6U;
+	/* Cipher suites (2 bytes length + suites).
+	 * TLS_CHACHA20_POLY1305_SHA256 is deliberately not offered, see
+	 * quic_hp_mask().
+	 */
+	cipher_suites_len = ctx->psk_configured ? 2U : 4U;
 	buf[pos++] = (cipher_suites_len >> 8) & 0xFF;
 	buf[pos++] = cipher_suites_len & 0xFF;
 	buf[pos++] = (TLS_AES_128_GCM_SHA256 >> 8) & 0xFF;
@@ -1638,8 +1639,6 @@ static int build_client_hello(struct quic_tls_context *ctx,
 		buf[pos++] = (TLS_AES_256_GCM_SHA384 >> 8) & 0xFF;
 		buf[pos++] = TLS_AES_256_GCM_SHA384 & 0xFF;
 	}
-	buf[pos++] = (TLS_CHACHA20_POLY1305_SHA256 >> 8) & 0xFF;
-	buf[pos++] = TLS_CHACHA20_POLY1305_SHA256 & 0xFF;
 
 	/* Legacy compression methods (single null byte) */
 	buf[pos++] = 0x01;  /* length */
@@ -3733,8 +3732,7 @@ static int parse_server_hello(struct quic_tls_context *ctx,
 
 	/* Verify cipher suite matches what we offered */
 	if (cipher_suite != TLS_AES_128_GCM_SHA256 &&
-	    cipher_suite != TLS_AES_256_GCM_SHA384 &&
-	    cipher_suite != TLS_CHACHA20_POLY1305_SHA256) {
+	    cipher_suite != TLS_AES_256_GCM_SHA384) {
 		NET_DBG("Unsupported cipher suite 0x%04x", cipher_suite);
 		return -ENOTSUP;
 	}
