@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon SMIF (Serial Memory InterFace) controller.
+
+  The SMIF block is the memory-mapped QSPI/OSPI bus controller that hosts up
+  to four external memory devices, one per chip-select (slave-select) slot on
+  a single SMIF instance. This node describes the controller itself: its
+  register window, the shared bus pads (via pinctrl) and whether the driver
+  must bring the controller up from reset.
+
+  The attached memory devices are described by child nodes on the "smif" bus
+  (for example infineon,smif-nor). Each child selects its slot through its
+  own "chip-select" property. The child drivers obtain the
+  controller register base and the shared PDL SMIF context from this parent
+  node.
+
+  On parts where an earlier boot stage (ROM extended boot) already configured
+  the SMIF controller and placed it into XIP mode, this node must NOT re-init
+  the controller. Leave "not-pre-initialized" unset in that case: the driver
+  still enumerates the attached devices (which the PDL leaves the running XIP
+  configuration untouched for) but does not touch the controller PHY/clock
+  configuration. Set "not-pre-initialized" only when the controller is
+  unconfigured at start-up, e.g. when the first stage boots from internal
+  RRAM under MCUboot or when targeting a SMIF instance different from the
+  one the execute-in-place is running from.
+
+compatible: "infineon,smif"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+bus: smif
+
+properties:
+  reg:
+    required: true
+    description: |
+      Base address and length of the SMIF controller register window.
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 1
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  not-pre-initialized:
+    type: boolean
+    description: |
+      When set, the driver fully initialises the SMIF controller (peripheral-group
+      release, Cy_SMIF_Init) at start-up. Required when no earlier boot stage has
+      configured this SMIF instance (e.g. booting from internal RRAM).
+      When unset, the driver assumes the controller is already running (typically
+      brought up by the boot ROM in XIP mode) and only enumerates the attached
+      memory devices.
+
+  input-frequency-mhz:
+    type: int
+    default: 200
+    description: |
+      SMIF interface input clock frequency in MHz. Only used when
+      "not-pre-initialized" is set (passed to Cy_SMIF_Init).
+
+  deselect-delay:
+    type: int
+    default: 7
+    description: |
+      Minimum number of interface clock cycles the chip select is held
+      deasserted between transfers. Only used when "not-pre-initialized" is set.
