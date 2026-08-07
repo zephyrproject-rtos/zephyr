@@ -165,6 +165,15 @@ static struct eth_fake_context eth_fake_data = {
 
 static struct quic_endpoint *reset_test_ep(struct quic_endpoint *ep)
 {
+	/* A previous test that recorded an ack-eliciting packet may have left
+	 * the PTO timer armed, so ep->recovery.pto_work is still linked in the
+	 * system timeout list. Cancel it before memset(): wiping a delayable
+	 * work item out from under the timeout list leaves a dangling node that
+	 * faults when the timer subsystem next walks it. Safe on the first call
+	 * too -- a zeroed work item reads as inactive.
+	 */
+	k_work_cancel_delayable(&ep->recovery.pto_work);
+
 	memset(ep, 0, sizeof(*ep));
 	ep->sock = -1;
 	quic_recovery_init(ep);
@@ -6629,6 +6638,203 @@ ZTEST(net_socket_quic, test_495_new_token_cache_replaces_oldest_entry)
 	zassert_mem_equal(out, tokens[CONFIG_QUIC_TOKEN_CACHE_SIZE],
 			  sizeof(tokens[CONFIG_QUIC_TOKEN_CACHE_SIZE]),
 			  "Replacement token mismatch for new peer");
+}
+
+static int quic_test_count_history_pn(struct quic_endpoint *ep, uint64_t pkt_num)
+{
+	int count = 0;
+
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[2][i];
+
+		if (info->in_flight && info->pkt_num == pkt_num) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+/* Test 496: the sent-packet history must not silently evict in-flight
+ * stream data entries. Losing one drops the annotation that releases the
+ * stream TX buffer when the packet is acknowledged, wedging the stream
+ * forever. Stream sends are gated on free slots beyond a reserve, recording
+ * prefers free slots, and a forced overwrite picks a victim that carries no
+ * stream annotation.
+ */
+ZTEST(net_socket_quic, test_496_sent_packet_history_keeps_stream_entries)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	const enum quic_secret_level level = QUIC_SECRET_LEVEL_APPLICATION;
+	const uint64_t control_pn = 3;
+	uint64_t pn;
+
+	quic_recovery_init(ep);
+
+	zassert_true(quic_recovery_tx_slot_available(ep, level),
+		     "Empty history must have room for stream data");
+
+	/* Fill the whole history with in-flight ack-eliciting packets */
+	for (pn = 0; pn < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; pn++) {
+		quic_recovery_on_packet_sent(ep, level, pn, 100, true, false, 0);
+	}
+
+	zassert_false(quic_recovery_tx_slot_available(ep, level),
+		      "Full history must refuse more stream data");
+
+	/* Annotate everything as stream data except one control packet */
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[2][i];
+
+		if (info->pkt_num != control_pn) {
+			info->has_stream_frame = true;
+			info->stream_id = 0;
+			info->stream_offset = info->pkt_num * 100;
+			info->stream_data_len = 100;
+		}
+	}
+
+	/* A control packet that cannot back off is recorded into the full
+	 * history: the victim must be the entry without a stream annotation.
+	 */
+	pn = CONFIG_QUIC_SENT_PKT_HISTORY_SIZE;
+	quic_recovery_on_packet_sent(ep, level, pn, 50, true, false, 0);
+
+	zassert_equal(quic_test_count_history_pn(ep, control_pn), 0,
+		      "The non-stream entry must be the eviction victim");
+	zassert_equal(quic_test_count_history_pn(ep, pn), 1,
+		      "The new packet must be recorded");
+
+	for (uint64_t old = 0; old < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; old++) {
+		if (old == control_pn) {
+			continue;
+		}
+
+		zassert_equal(quic_test_count_history_pn(ep, old), 1,
+			      "Stream entry pn=%" PRIu64 " was evicted", old);
+	}
+
+	/* Freeing slots up to the reserve is not enough for stream data */
+	for (int i = 0, freed = 0;
+	     i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE && freed < QUIC_SENT_PKT_HISTORY_RESERVE;
+	     i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[2][i];
+
+		if (info->in_flight) {
+			info->in_flight = false;
+			freed++;
+		}
+	}
+
+	zassert_false(quic_recovery_tx_slot_available(ep, level),
+		      "The reserve slots must not be used for stream data");
+
+	/* One more free slot opens the gate again */
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[2][i];
+
+		if (info->in_flight) {
+			info->in_flight = false;
+			break;
+		}
+	}
+
+	zassert_true(quic_recovery_tx_slot_available(ep, level),
+		     "A slot beyond the reserve must open the gate");
+
+	/* Recording reuses a free slot instead of evicting in-flight state */
+	pn++;
+	quic_recovery_on_packet_sent(ep, level, pn, 50, true, false, 0);
+
+	for (uint64_t old = QUIC_SENT_PKT_HISTORY_RESERVE + 1;
+	     old < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; old++) {
+		if (old == control_pn) {
+			continue;
+		}
+
+		zassert_equal(quic_test_count_history_pn(ep, old), 1,
+			      "Stream entry pn=%" PRIu64 " lost to slot reuse", old);
+	}
+}
+
+/* Test 497: a lost stream entry awaiting retransmit must not be treated as a
+ * free slot. Between loss detection marking it (in_flight cleared,
+ * retransmit_pending set) and the retransmit queue draining it, the slot is
+ * the only record of the data to re-send. Counting it free or recording over
+ * it drops the retransmission and wedges the stream -- the same failure the
+ * in-flight protection exists to prevent, reached via a narrower window.
+ */
+ZTEST(net_socket_quic, test_497_sent_packet_history_keeps_pending_retransmit)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	const enum quic_secret_level level = QUIC_SECRET_LEVEL_APPLICATION;
+	const uint64_t lost_pn = 0;
+	struct quic_sent_pkt_info *pending = NULL;
+	int freed = 0;
+	uint64_t pn;
+
+	quic_recovery_init(ep);
+
+	/* Fill the whole history with in-flight ack-eliciting packets */
+	for (pn = 0; pn < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; pn++) {
+		quic_recovery_on_packet_sent(ep, level, pn, 100, true, false, 0);
+	}
+
+	/* Mark pn=lost_pn as a stream entry that loss detection has declared
+	 * lost and queued for retransmission but not yet drained: out of
+	 * flight, retransmit_pending, still carrying its stream annotation.
+	 */
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[2][i];
+
+		if (info->pkt_num == lost_pn) {
+			info->has_stream_frame = true;
+			info->stream_id = 0;
+			info->stream_offset = 0;
+			info->stream_data_len = 100;
+			info->in_flight = false;
+			info->retransmit_pending = true;
+			pending = info;
+			break;
+		}
+	}
+
+	zassert_not_null(pending, "Pending retransmit slot not found");
+
+	/* Free exactly the reserve worth of additional slots. The gate must
+	 * still be closed: the reserve is for control packets, and the pending
+	 * slot is occupied by an unretransmitted stream frame, not free.
+	 */
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE &&
+			 freed < QUIC_SENT_PKT_HISTORY_RESERVE; i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[2][i];
+
+		if (info->in_flight) {
+			info->in_flight = false;
+			freed++;
+		}
+	}
+
+	zassert_false(quic_recovery_tx_slot_available(ep, level),
+		      "A pending-retransmit slot must not count as a free slot");
+
+	/* Point the ring index at the pending slot and record a control
+	 * packet that cannot back off. Recording must skip the pending slot
+	 * and reuse one of the free reserve slots instead of dropping the
+	 * queued retransmission.
+	 */
+	ep->recovery.sent_pkts_idx[2] =
+		(uint16_t)(pending - &ep->recovery.sent_pkts[2][0]);
+
+	pn = CONFIG_QUIC_SENT_PKT_HISTORY_SIZE;
+	quic_recovery_on_packet_sent(ep, level, pn, 50, true, false, 0);
+
+	zassert_true(pending->retransmit_pending,
+		     "Pending retransmit slot was reused and its data dropped");
+	zassert_equal(pending->pkt_num, lost_pn,
+		      "Pending retransmit slot was overwritten");
+	zassert_equal(quic_test_count_history_pn(ep, pn), 1,
+		      "The new packet must be recorded in a free slot");
 }
 
 ZTEST(net_socket_quic, test_500_transport_params_validate_retry_ids)
