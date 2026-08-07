@@ -4326,7 +4326,7 @@ NXP Platforms (MCU):
       files:
         - boards/nxp/frdm_k*/
         - soc/nxp/kinetis/
-        - dts/arm/nxp/kinetis/nxp_k*
+        - dts/arm/nxp/kinetis/
     - name: NXP LPC
       collaborators:
         - mmahadevan108
