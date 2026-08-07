@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2023 EPAM Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a779f0.h>
+
+&pfc {
+	hscif0_data_tx_default: hscif0_data_tx_default {
+		pin = <PIN_HTX0 FUNC_HTX0>;
+	};
+
+	hscif0_data_rx_default: hscif0_data_rx_default {
+		pin = <PIN_HRX0 FUNC_HRX0>;
+	};
+
+	mmc_clk: mmc_clk {
+		pin = <PIN_MMC_SD_CLK FUNC_MMC_SD_CLK>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_cmd: mmc_cmd {
+		pin = <PIN_MMC_SD_CMD FUNC_MMC_SD_CMD>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data0: mmc_data0 {
+		pin = <PIN_MMC_SD_D0 FUNC_MMC_SD_D0>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data1: mmc_data1 {
+		pin = <PIN_MMC_SD_D1 FUNC_MMC_SD_D1>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data2: mmc_data2 {
+		pin = <PIN_MMC_SD_D2 FUNC_MMC_SD_D2>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data3: mmc_data3 {
+		pin = <PIN_MMC_SD_D3 FUNC_MMC_SD_D3>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data4: mmc_data4 {
+		pin = <PIN_MMC_D4 FUNC_MMC_D4>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data5: mmc_data5 {
+		pin = <PIN_MMC_D5 FUNC_MMC_D5>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data6: mmc_data6 {
+		pin = <PIN_MMC_D6 FUNC_MMC_D6>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_data7: mmc_data7 {
+		pin = <PIN_MMC_D7 FUNC_MMC_D7>;
+		power-source = <PIN_VOLTAGE_1P8V>;
+	};
+
+	mmc_ds: mmc_ds {
+		pin = <PIN_MMC_DS FUNC_MMC_DS>;
+	};
+};

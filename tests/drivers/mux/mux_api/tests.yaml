@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - mux
+  harness: ztest
+tests:
+  drivers.mux.xbar:
+    filter: dt_compat_enabled("nxp,mcux-xbar")
+    platform_allow:
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+    integration_platforms:
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+  drivers.mux.trgmux:
+    filter: dt_compat_enabled("nxp,trgmux")
+    platform_allow:
+      - frdm_mcxe247
+    integration_platforms:
+      - frdm_mcxe247
+    extra_configs:
+      - CONFIG_TEST_MUX_SET_VALUE_A=17
+      - CONFIG_TEST_MUX_SET_VALUE_B=1
+  drivers.mux.gpio:
+    filter: dt_compat_enabled("gpio-mux")
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_TEST_MUX_SET_VALUE_A=3
+      - CONFIG_TEST_MUX_SET_VALUE_B=6
+      - CONFIG_TEST_MUX_HAS_DISCONNECT=y

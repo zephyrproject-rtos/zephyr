@@ -1,0 +1,58 @@
+# STMicroelectronics STM32C5 MCU line
+
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32C5X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32c5x" if SOC_SERIES_STM32C5X
+
+config SOC_STM32C531XX
+	bool
+	select SOC_SERIES_STM32C5X
+
+config SOC_STM32C532XX
+	bool
+	select SOC_SERIES_STM32C5X
+
+config SOC_STM32C542XX
+	bool
+	select SOC_SERIES_STM32C5X
+
+config SOC_STM32C551XX
+	bool
+	select SOC_SERIES_STM32C5X
+
+config SOC_STM32C552XX
+	bool
+	select SOC_SERIES_STM32C5X
+
+config SOC_STM32C562XX
+	bool
+	select SOC_SERIES_STM32C5X
+
+config SOC_STM32C591XX
+	bool
+	select SOC_SERIES_STM32C5X
+
+config SOC_STM32C593XX
+	bool
+	select SOC_SERIES_STM32C5X
+
+config SOC_STM32C5A3XX
+	bool
+	select SOC_SERIES_STM32C5X
+
+config SOC
+	default "stm32c531xx" if SOC_STM32C531XX
+	default "stm32c532xx" if SOC_STM32C532XX
+	default "stm32c542xx" if SOC_STM32C542XX
+	default "stm32c551xx" if SOC_STM32C551XX
+	default "stm32c552xx" if SOC_STM32C552XX
+	default "stm32c562xx" if SOC_STM32C562XX
+	default "stm32c591xx" if SOC_STM32C591XX
+	default "stm32c593xx" if SOC_STM32C593XX
+	default "stm32c5a3xx" if SOC_STM32C5A3XX

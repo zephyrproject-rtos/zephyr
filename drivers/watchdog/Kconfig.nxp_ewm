@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_NXP_EWM
+	bool "NXP EWM driver"
+	default y
+	depends on DT_HAS_NXP_EWM_ENABLED
+	help
+	  Enable the nxp ewm driver.

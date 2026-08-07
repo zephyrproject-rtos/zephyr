@@ -1,0 +1,14 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg22/bgm220pc22hna.dtsi>
+#include "xg22_explorer_kit.dtsi"
+
+/ {
+	model = "Silicon Labs BRD4314A (BGM220 Explorer Kit)";
+	compatible = "silabs,bgm220_ek4314a", "silabs,efr32bg22";
+};

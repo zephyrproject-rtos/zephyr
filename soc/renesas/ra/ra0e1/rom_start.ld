@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/devicetree.h>
+
+/* Emit option setting sections only when standalone app OR MCUboot itself */
+#if !defined(CONFIG_BOOTLOADER_MCUBOOT) || defined(CONFIG_MCUBOOT)
+
+. = DT_REG_ADDR(DT_NODELABEL(option_setting_ofs0));
+KEEP(*(.option_setting_ofs0))
+
+. = DT_REG_ADDR(DT_NODELABEL(option_setting_ofs1));
+KEEP(*(.option_setting_ofs1))
+
+#endif

@@ -1,0 +1,20 @@
+# GD32VF103 SOC configuration options
+
+# Copyright (c) 2021 Tokita, Hiroshi <tokita.hiroshi@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_GD32VF103
+	bool
+	select SOC_FAMILY_GD_GD32
+	help
+	  Enable support for GigaDevice GD32VF103 MCU series
+
+config SOC_SERIES
+	default "gd32vf103" if SOC_SERIES_GD32VF103
+
+config SOC_GD32VF103
+	bool
+	select SOC_SERIES_GD32VF103
+
+config SOC
+	default "gd32vf103" if SOC_GD32VF103

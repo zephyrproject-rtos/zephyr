@@ -1,0 +1,21 @@
+# Copyright 2021, 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: fvp_baser_aemv8r/fvp_aemv8r_aarch64
+name: FVP Emulation FVP_BaseR_AEMv8R
+arch: arm64
+type: sim
+simulation:
+  - name: armfvp
+    exec: FVP_BaseR_AEMv8R
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 2048
+flash: 64
+testing:
+  timeout_multiplier: 8
+  ignore_tags:
+    - multi_heap
+    - kernel
+vendor: arm

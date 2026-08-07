@@ -1,0 +1,61 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_IMX93_EVK
+
+if BOARD_IMX93_EVK_MIMX9352_A55 || BOARD_IMX93_EVK_MIMX9352_A55_SMP
+
+if CAN
+
+# Enable board mux configure during init
+config BOARD_MIMX93_EVK_EXP_SEL_INIT
+	default y
+
+# CAN Phy must be initialized after board mux
+config CAN_TRANSCEIVER_INIT_PRIORITY
+	default 65
+
+endif # CAN
+
+if BOARD_MIMX93_EVK_EXP_SEL_INIT
+
+# Enable I2C, MFD, MFD_APD5585 and GPIO_ADP5585
+config GPIO
+	default y
+
+config MFD_ADP5585_INIT_PRIORITY
+	default 55
+
+config GPIO_ADP5585_INIT_PRIORITY
+	default 56
+
+endif # BOARD_MIMX93_EVK_EXP_SEL_INIT
+
+configdefault NET_L2_ETHERNET
+	default y
+
+configdefault NET_TX_STACK_SIZE
+	default 8192
+
+configdefault NET_RX_STACK_SIZE
+	default 8192
+
+configdefault NET_TCP_WORKQ_STACK_SIZE
+	default 8192
+
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 8192
+
+configdefault NET_SOCKETS_SERVICE_STACK_SIZE
+	default 8192
+
+endif # BOARD_IMX93_EVK_MIMX9352_A55
+
+if IMX_USDHC
+
+config GPIO
+	default y
+
+endif # IMX_USDHC
+
+endif # BOARD_IMX93_EVK

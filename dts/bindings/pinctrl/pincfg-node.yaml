@@ -1,0 +1,131 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic pin configuration schema
+
+  Many data items that are represented in a pin configuration node are
+  common and generic. Pin control bindings should use the properties
+  defined below where they are applicable; not all of these properties are
+  relevant or useful for all hardware or binding structures. Each
+  individual binding document should state which of these generic
+  properties, if any, are used, and the structure of the DT nodes that
+  contain these properties.
+
+  This is based on Linux, documentation:
+    https://www.kernel.org/doc/Documentation/devicetree/bindings/pinctrl/pincfg-node.yaml
+
+properties:
+  bias-disable:
+    type: boolean
+    description: disable any pin bias
+
+  bias-high-impedance:
+    type: boolean
+    description: high impedance mode ("third-state", "floating")
+
+  bias-bus-hold:
+    type: boolean
+    description: latch weakly
+
+  bias-pull-up:
+    type: boolean
+    description: enable pull-up resistor
+
+  bias-pull-down:
+    type: boolean
+    description: enable pull-down resistor
+
+  bias-pull-pin-default:
+    type: boolean
+    description: use pin's default pull state
+
+  drive-push-pull:
+    type: boolean
+    description: drive actively high and low
+
+  drive-open-drain:
+    type: boolean
+    description: drive with open drain (hardware AND)
+
+  drive-open-source:
+    type: boolean
+    description: drive with open source (hardware OR)
+
+  drive-strength:
+    type: int
+    description: maximum sink or source current in mA
+
+  drive-strength-microamp:
+    type: int
+    description: maximum sink or source current in μA
+
+  input-enable:
+    type: boolean
+    description: |
+      enable input on pin (e.g. enable an input buffer, no effect on output)
+
+  input-disable:
+    type: boolean
+    description: |
+      disable input on pin (e.g. disable an input buffer, no effect on output)
+
+  input-schmitt-enable:
+    type: boolean
+    description: enable schmitt-trigger mode
+
+  input-schmitt-disable:
+    type: boolean
+    description: disable schmitt-trigger mode
+
+  input-debounce:
+    type: int
+    description: |
+      Takes the debounce time in μsec, as argument or 0 to disable debouncing
+
+  power-source:
+    type: int
+    description: select between different power supplies
+
+  low-power-enable:
+    type: boolean
+    description: enable low power mode
+
+  low-power-disable:
+    type: boolean
+    description: disable low power mode
+
+  output-disable:
+    type: boolean
+    description: disable output on a pin (e.g. disable an output buffer)
+
+  output-enable:
+    type: boolean
+    description: |
+      enable output on a pin without actively driving it (e.g. enable an output
+      buffer)
+
+  output-low:
+    type: boolean
+    description: set the pin to output mode with low level
+
+  output-high:
+    type: boolean
+    description: set the pin to output mode with high level
+
+  sleep-hardware-state:
+    type: boolean
+    description: |
+      indicate this is sleep related state which will be programmed into
+      the registers for the sleep state
+
+  slew-rate:
+    type: int
+    description: set the slew rate
+
+  skew-delay:
+    type: int
+    description: |
+      This affects the expected clock skew on input pins and the delay
+      before latching a value to an output pin. Typically indicates how
+        many double-inverters are used to delay the signal.

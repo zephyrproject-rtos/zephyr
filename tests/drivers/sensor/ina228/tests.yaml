@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Jonas Berg
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.ina228:
+    tags:
+      - drivers
+      - sensor
+      - subsys
+    platform_allow:
+      - native_sim

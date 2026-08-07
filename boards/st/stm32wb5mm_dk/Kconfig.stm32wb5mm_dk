@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Javad Rahimipetroudi <javad.rahimipetroudi@mind.be>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32WB5MM_DK
+	select SOC_STM32WB55XX

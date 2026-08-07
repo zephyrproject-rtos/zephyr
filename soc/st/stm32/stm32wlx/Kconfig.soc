@@ -1,0 +1,33 @@
+# STMicroelectronics STM32WL MCU line
+
+# Copyright (c) 2020 STMicroelectronics.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32WLX
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32wlx" if SOC_SERIES_STM32WLX
+
+config SOC_STM32WLE4XX
+	bool
+	select SOC_SERIES_STM32WLX
+
+config SOC_STM32WLE5XX
+	bool
+	select SOC_SERIES_STM32WLX
+
+config SOC_STM32WL54XX
+	bool
+	select SOC_SERIES_STM32WLX
+
+config SOC_STM32WL55XX
+	bool
+	select SOC_SERIES_STM32WLX
+
+config SOC
+	default "stm32wle4xx" if SOC_STM32WLE4XX
+	default "stm32wle5xx" if SOC_STM32WLE5XX
+	default "stm32wl54xx" if SOC_STM32WL54XX
+	default "stm32wl55xx" if SOC_STM32WL55XX

@@ -1,0 +1,6 @@
+board:
+  name: fpb_ra8e1
+  full_name: Fast Prototyping Board for RA8E1 MCU Group
+  vendor: renesas
+  socs:
+  - name: r7fa8e1afdcfb

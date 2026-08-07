@@ -1,0 +1,38 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Microchip SAMA7G5 Pinctrl container node
+
+compatible: "microchip,sama7g5-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    Each child node defines the configuration for a particular state.
+  child-binding:
+    description: |
+      The grandchild nodes group pins that share the same pin configuration.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+          - drive-open-drain
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should
+          be defined using pre-defined macros used by the SoC series.

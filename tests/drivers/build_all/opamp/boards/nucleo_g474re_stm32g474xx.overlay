@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&opamp2 {
+	pinctrl-0 = <&opamp2_vinp_pa7>;
+	pinctrl-names = "default";
+	functional-mode = "follower";
+	inp = "VINP0";
+	status = "okay";
+};

@@ -1,0 +1,292 @@
+/*
+ * Copyright (c) 2026 The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/battery/battery.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
+#include "m5stack_paper_color-pinctrl.dtsi"
+#include "m5stack_paper_color-grove.dtsi"
+
+/ {
+	model = "M5Stack PaperColor PROCPU";
+	compatible = "m5stack,paper-color";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display = &epd_el040ef1;
+		zephyr,rtc = &rx8130ce_rtc;
+		zephyr,sdhc = &sdcard0;
+	};
+
+	aliases {
+		adc-0 = &m5pm1_adc;
+		fuel-gauge0 = &fuel_gauge;
+		i2c-0 = &i2c0;
+		led-strip = &rgb_leds;
+		rtc = &rx8130ce_rtc;
+		sdhc0 = &sdcard0;
+		sw0 = &user_key1;
+		sw1 = &user_key2;
+		sw2 = &user_key3;
+		uart-0 = &uart0;
+		watchdog0 = &wdt0;
+	};
+
+	fuel_gauge: fuel_gauge {
+		compatible = "zephyr,fuel-gauge-composite";
+		source-primary = <&vbatt>;
+		device-chemistry = "lithium-ion-polymer";
+		ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
+		charge-full-design-microamp-hours = <1250000>;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_key1: button_0 {
+			gpios = <&gpio0 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User key 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		user_key2: button_1 {
+			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User key 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		user_key3: button_2 {
+			gpios = <&gpio0 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "User key 3";
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	ir_tx {
+		compatible = "gpio-leds";
+
+		ir_led: ir_led {
+			gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+			label = "IR TX";
+		};
+	};
+
+	mipi_dbi: mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		epd_el040ef1: ed2208_doa@0 {
+			compatible = "eink,ed2208-doa", "eink,ed2208-gca";
+			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(4)>;
+			width = <400>;
+			height = <600>;
+			busy-gpios = <&gpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+			color-palette {
+				compatible = "zephyr,panel-color-palette";
+
+				colors = <ARGB8888(0,   0,   0,   255) /* 0x00 = Black */
+					  ARGB8888(245, 245, 240, 255) /* 0x01 = White */
+					  ARGB8888(230, 200, 40,  255) /* 0x02 = Yellow */
+					  ARGB8888(196, 50,  58,  255) /* 0x03 = Red */
+					  PANEL_COLOR_PALETTE_NULL /* 0x04 = Unused / reserved */
+					  ARGB8888(40,  85,  180, 255) /* 0x05 = Blue */
+					  ARGB8888(60,  140, 75,  255) /* 0x06 = Green */>;
+			};
+		};
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&uart0 {
+	status = "disabled";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	m5pm1: pmic@6e {
+		compatible = "m5stack,m5pm1";
+		reg = <0x6e>;
+		idle-sleep-timeout-seconds = <2>;
+
+		m5pm1_regulators: regulators {
+			compatible = "m5stack,m5pm1-regulator";
+
+			dcdc_3v3: dcdc_3v3 {
+				regulator-boot-on;
+				regulator-always-on;
+			};
+
+			ldo_3v3: ldo_3v3 {
+				regulator-boot-on;
+			};
+
+			grove_5v: boost_5v: boost_5v {};
+		};
+
+		m5pm1_gpio: gpio {
+			compatible = "m5stack,m5pm1-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <5>;
+
+			epd_pwr_en {
+				gpio-hog;
+				gpios = <0 GPIO_ACTIVE_HIGH>;
+				output-high;
+				line-name = "epd-pwr-en";
+			};
+
+			sd_det_en {
+				gpio-hog;
+				gpios = <4 GPIO_ACTIVE_HIGH>;
+				output-high;
+				line-name = "sd-det-en";
+			};
+		};
+
+		m5pm1_adc: adc {
+			compatible = "m5stack,m5pm1-adc";
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			channel@1 {
+				reg = <1>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_INTERNAL";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				zephyr,resolution = <12>;
+			};
+		};
+
+		m5pm1_wdt: watchdog {
+			compatible = "m5stack,m5pm1-wdt";
+		};
+	};
+
+	sht40: sht4x@44 {
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		repeatability = <2>;
+	};
+
+	rx8130ce_rtc: rtc@32 {
+		compatible = "epson,rx8130ce-rtc";
+		reg = <0x32>;
+		irq-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&m5pm1_adc 1>;
+		output-ohms = <1>;
+		full-ohms = <1>;
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>, <&gpio1 15 GPIO_ACTIVE_LOW>;
+
+	sdcard0: sdhc@1 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <1>;
+		status = "okay";
+		spi-max-frequency = <DT_FREQ_M(20)>;
+		pwr-gpios = <&m5pm1_gpio 3 GPIO_ACTIVE_HIGH>;
+		cd-gpios = <&m5pm1_gpio 1 GPIO_ACTIVE_LOW>;
+		power-delay-ms = <5>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	line-idle-low;
+	pinctrl-0 = <&spim3_ws2812_led>;
+	pinctrl-names = "default";
+
+	rgb_leds: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+		reg = <0>;
+		spi-max-frequency = <WS2812C_SPI_FREQ>;
+
+		chain-length = <2>;
+		color-mapping = <LED_COLOR_ID_GREEN LED_COLOR_ID_RED LED_COLOR_ID_BLUE>;
+		spi-one-frame = <WS2812C_ONE_FRAME>;
+		spi-zero-frame = <WS2812C_ZERO_FRAME>;
+		reset-delay = <50>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};

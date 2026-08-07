@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&rctl {
+	status = "okay";
+};
+
+/* Connect both I3C:
+ *  - I3C1_SCL to I3C2_SCL
+ *  - I3C1_SDA to I3C2_SDA
+ * Note that there are different form factors of the board, so the actual pin
+ * numbers may vary. Check the relevant schematics for details.
+ */
+&i3c1 {
+	zephyr,deferred-init;
+	status = "okay";
+	i3c-scl-hz = <7500000>;
+	i3c-od-scl-hz = <1500000>;
+
+	bcr = <0x46>;
+
+	mctp_endpoint0: mctp_endpoint0@20a00000011 {
+		zephyr,deferred-init;
+		compatible = "zephyr,mctp-i3c-endpoint";
+		reg = <0x0000 0x020a 0x00000011>;
+		status = "okay";
+	};
+};
+
+&i3c0 {
+	status = "okay";
+	i3c-scl-hz = <7500000>;
+	i3c-od-scl-hz = <1500000>;
+
+	bcr = <0x06>;
+	tgt-pid = <0x0000020a 0x00000011>;
+};
+
+&pcc {
+	clock-frequency = <DT_FREQ_M(90)>; /* OFMCLK runs at 90MHz */
+	core-prescaler = <3>; /* CORE_CLK runs at 30MHz */
+	apb1-prescaler = <6>; /* APB1_CLK runs at 15MHz */
+	apb2-prescaler = <6>; /* APB2_CLK runs at 15MHz */
+	apb3-prescaler = <6>; /* APB3_CLK runs at 15MHz */
+	apb4-prescaler = <3>; /* APB4_CLK runs at 30MHz */
+};
+
+/ {
+	mctp_i3c: mctp_i3c {
+		compatible = "zephyr,mctp-i3c-controller";
+		endpoints = <&mctp_endpoint0>;
+		endpoint-ids = <11>;
+	};
+
+	mctp_i3c_target: mctp_i3c_target {
+		compatible = "zephyr,mctp-i3c-target";
+		i3c = <&i3c0>;
+		endpoint-id = <11>;
+	};
+};
+
+i3c_controller: &i3c1 {};

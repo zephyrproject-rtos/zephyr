@@ -1,0 +1,45 @@
+# Copyright(c) 2025, Daniel Kampert
+# SPDX-License-Identifier: Apache-2.0
+
+config SENSOR_MAX32664C
+	bool "MAX32664C Driver"
+	default y
+	depends on DT_HAS_MAXIM_MAX32664C_ENABLED
+	select I2C
+	help
+	  Enable the driver for the MAX32664C biometric sensor hub.
+
+if SENSOR_MAX32664C
+config MAX32664C_USE_FIRMWARE_LOADER
+	bool "Use this option if you want to flash the sensor hub over the I2C firmware loader"
+
+config MAX32664C_USE_EXTERNAL_ACC
+	bool "Use this option if you want to use an external accelerometer"
+
+config MAX32664C_USE_EXTENDED_REPORTS
+	bool "Use this option if you want to use extended reports instead of the default reports"
+
+config MAX32664C_USE_STATIC_MEMORY
+	bool "Disable this option if the driver should use dynamic memory"
+	default y
+
+config MAX32664C_QUEUE_SIZE
+	int "Length of the message queue"
+	default 32
+
+config MAX32664C_SAMPLE_BUFFER_SIZE
+	depends on MAX32664C_USE_STATIC_MEMORY
+	int "Length of the sample buffer for the I2C reading thread"
+	default 64
+	help
+	  This is the number of samples that will be read from the sensor hub in one go.
+	  The maximum value is 64, but you can set it lower if you want to reduce memory usage.
+
+config MAX32664C_THREAD_STACK_SIZE
+	int "MAX32664C sample thread stack size"
+	default 4096
+
+config MAX32664C_USE_INTERRUPT
+	bool "Use this option if you want to use the MFIO interrupt support"
+	depends on GPIO
+endif

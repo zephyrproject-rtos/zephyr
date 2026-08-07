@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_INFINEON_HPPASS
+	bool "Infineon HPPASS multi-function device driver"
+	default y
+	depends on DT_HAS_INFINEON_HPPASS_ANALOG_ENABLED
+	select USE_INFINEON_HPPASS_SAR_ADC
+	help
+	  Enable the Infineon HPPASS MFD driver.  The High Performance
+	  Programmable Analog Subsystem (HPPASS) contains analog peripherals
+	  including a SAR ADC and Comparator and Slope Generator (CSG) which
+	  are coordinated by an Autonomous Controller (AC) state machine.
+	  This driver manages the shared resources including AC management,
+	  trigger configuration, and the combined MCPASS interrupt, providing
+	  APIs for child peripheral drivers.
+
+config MFD_INFINEON_HPPASS_INIT_PRIORITY
+	int "Infineon HPPASS MFD init priority"
+	default 41
+	depends on MFD_INFINEON_HPPASS
+	help
+	  Initialization priority for the HPPASS MFD driver.  This must be
+	  lower (earlier) than the init priority of child drivers such as
+	  CONFIG_ADC_INIT_PRIORITY to ensure the MFD parent is ready before
+	  children attempt to use it.
+
+config MFD_INFINEON_HPPASS_AC_START_PRIORITY
+	int "Infineon HPPASS AC start priority (APPLICATION level)"
+	default 0
+	range 0 99
+	depends on MFD_INFINEON_HPPASS
+	help
+	  APPLICATION-level init priority for the one-shot AC start sweep
+	  (ifx_hppass_late_start).  Runs after all POST_KERNEL device
+	  inits — including the MFD parent and every HPPASS child driver —
+	  so the AC unlock window sees the children's CFG writes.  Lower
+	  values run earlier within APPLICATION level.  The default of 0
+	  starts the AC as early as possible so that any application-level
+	  init that depends on HPPASS being live can run after it.

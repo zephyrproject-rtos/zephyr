@@ -1,0 +1,118 @@
+/*
+ * Copyright (c) 2016 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "test_lifo.h"
+
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+#define LIST_LEN 4
+#define LOOPS 32
+
+static ldata_t data[LIST_LEN];
+static struct k_lifo lifo;
+static K_THREAD_STACK_DEFINE(tstack_loop, STACK_SIZE);
+static struct k_thread tdata;
+static struct k_sem end_sema;
+
+static void tlifo_put(struct k_lifo *plifo)
+{
+	for (int i = 0; i < LIST_LEN; i++) {
+		/**TESTPOINT: lifo put*/
+		k_lifo_put(plifo, (void *)&data[i]);
+	}
+}
+
+static void tlifo_get(struct k_lifo *plifo, k_timeout_t timeout)
+{
+	void *rx_data;
+
+	/*get lifo data*/
+	for (int i = LIST_LEN-1; i >= 0; i--) {
+		/**TESTPOINT: lifo get*/
+		rx_data = k_lifo_get(plifo, timeout);
+		zassert_equal(rx_data, (void *)&data[i]);
+	}
+}
+
+/*entry of contexts*/
+static void tIsr_entry(const void *p)
+{
+	TC_PRINT("isr lifo get\n");
+	tlifo_get((struct k_lifo *)p, K_NO_WAIT);
+	TC_PRINT("isr lifo put ---> ");
+	tlifo_put((struct k_lifo *)p);
+}
+
+static void tThread_entry(void *p1, void *p2, void *p3)
+{
+	TC_PRINT("thread lifo get\n");
+	tlifo_get((struct k_lifo *)p1, K_FOREVER);
+	k_sem_give(&end_sema);
+	TC_PRINT("thread lifo put ---> ");
+	tlifo_put((struct k_lifo *)p1);
+	k_sem_give(&end_sema);
+}
+
+/* lifo read write job */
+static void tlifo_read_write(struct k_lifo *plifo)
+{
+	k_sem_init(&end_sema, 0, 1);
+	/**TESTPOINT: thread-isr-thread data passing via lifo*/
+	k_tid_t tid = k_thread_create(&tdata, tstack_loop, STACK_SIZE,
+		tThread_entry, plifo, NULL, NULL,
+		K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+
+	TC_PRINT("main lifo put ---> ");
+	tlifo_put(plifo);
+	irq_offload(tIsr_entry, (const void *)plifo);
+	k_sem_take(&end_sema, K_FOREVER);
+	k_sem_take(&end_sema, K_FOREVER);
+
+	TC_PRINT("main lifo get\n");
+	tlifo_get(plifo, K_FOREVER);
+	k_thread_abort(tid);
+	TC_PRINT("\n");
+}
+
+/**
+ * @addtogroup tests_kernel_lifo
+ * @{
+ */
+
+/**
+ * @brief Verify LIFO data integrity under repeated cross-context traffic.
+ *
+ * @details
+ * Stresses the LIFO by cycling data through main-thread, ISR and spawned-thread
+ * contexts many times. Across every iteration the items must be passed without
+ * loss, duplication or reordering, exercising put/get stability when producers
+ * and consumers alternate between thread and interrupt context.
+ *
+ * Test steps:
+ * - For LOOPS iterations: put from the main thread, get then put from an ISR,
+ *   and get from a spawned thread.
+ * - Verify each get returns the expected item in LIFO order.
+ *
+ * Expected result:
+ * - Data passes correctly and in LIFO order across all contexts every iteration.
+ *
+ * @see k_lifo_put()
+ * @see k_lifo_get()
+ */
+ZTEST(lifo_loop, test_lifo_loop)
+{
+	k_lifo_init(&lifo);
+	for (int i = 0; i < LOOPS; i++) {
+		TC_PRINT("* Pass data by lifo in loop %d\n", i);
+		tlifo_read_write(&lifo);
+	}
+}
+
+/**
+ * @}
+ */
+
+ZTEST_SUITE(lifo_loop, NULL, NULL,
+		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

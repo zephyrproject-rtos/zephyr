@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2025 Space Cubics Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/xilinx/versal_rpu.dtsi>
+#include <freq.h>
+
+/ {
+	model = "SC-OBC Module V1 Versal Cortex-R5F";
+
+	chosen {
+		zephyr,sram = &ocm;
+		zephyr,flash = &tcm;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,ocm = &ocm;
+	};
+};
+
+&ocm {
+	/*
+	 * Versal OCM is 256 KiB at 0xfffc0000.
+	 *
+	 *   0xfffc0000 - 0xfffdffff: lower 128 KiB, exposed to Zephyr
+	 *   0xfffe0000 - 0xffffffff: upper 128 KiB, default TF-A BL31 location
+	 *
+	 * Keep the upper half out of the Zephyr memory region to avoid
+	 * overwriting the TF-A BL31 location.
+	 */
+	reg = <0xfffc0000 DT_SIZE_K(128)>;
+	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <DT_FREQ_M(100)>;
+};
+
+&ttc0 {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(150)>;
+};

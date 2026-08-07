@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 Analog Devices Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi2 {
+	status = "okay";
+	clock-frequency = <2000000>;
+
+	max2221x_mfd: max2221x@0 {
+		compatible = "adi,max2221x";
+		reg = <0x0>;
+		spi-max-frequency = <DT_FREQ_M(10)>;
+		status = "okay";
+
+		adi_max2221x_pwm: pwm-device {
+			compatible = "adi,max2221x-pwm";
+			status = "okay";
+			#pwm-cells = <3>;
+		};
+	};
+};

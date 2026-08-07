@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Shan Pen <bricle031@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RA8D1_VISION_BOARD
+
+if DISK_DRIVER_SDMMC
+
+config SD_CMD_TIMEOUT
+	default 1000
+
+endif # DISK_DRIVER_SDMMC
+
+endif # BOARD_RA8D1_VISION_BOARD

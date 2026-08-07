@@ -1,0 +1,6 @@
+board:
+  name: sparrowhawk_rcar_v4h
+  full_name: Sparrow Hawk R-Car V4H SBC
+  vendor: retronix
+  socs:
+  - name: r8a779g0

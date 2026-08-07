@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2025 u-blox AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,flash = &mx25l12845g;
+	};
+};
+
+&ext_flash_ctrl {
+	/* Macronix MX25L12845G - 16MB / 128Mbit */
+	size = <DT_SIZE_M(16 * 8)>;
+	ranges = <0x0 0x18000000 DT_SIZE_M(16)>;
+
+	mx25l12845g: flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0x0 DT_SIZE_M(16)>;
+		erase-block-size = <DT_SIZE_K(4)>;
+		write-block-size = <1>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		partitions {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			boot_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(128)>;
+			};
+
+			slot0_partition: partition@20000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0";
+				reg = <0x00020000 DT_SIZE_M(6)>;
+			};
+
+			slot1_partition: partition@620000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-1";
+				reg = <0x00620000 DT_SIZE_M(6)>;
+			};
+
+			storage_partition: partition@c20000 {
+				compatible = "zephyr,mapped-partition";
+				label = "storage";
+				reg = <0x00c20000 (DT_SIZE_M(4) - DT_SIZE_K(128))>;
+			};
+		};
+	};
+};

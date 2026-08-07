@@ -1,0 +1,9 @@
+# Copyright 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_SF32LB
+	bool "SiFli SF32LB DMA driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_DMAC_ENABLED
+	help
+	  Enable DMA driver for SiFli SF32LB

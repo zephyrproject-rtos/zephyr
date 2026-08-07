@@ -1,0 +1,8 @@
+# Copyright (c) 2021, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Hidden option for turning on the dummy driver for vnd,i2c devices
+# used in testing.
+config I2C_TEST
+	def_bool DT_HAS_VND_I2C_ENABLED
+	depends on DT_HAS_VND_I2C_ENABLED

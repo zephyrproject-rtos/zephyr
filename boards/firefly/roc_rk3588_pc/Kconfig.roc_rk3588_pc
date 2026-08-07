@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Syswonder
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ROC_RK3588_PC
+	select SOC_RK3588

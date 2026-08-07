@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 32768 if NRF_RTC_TIMER
+	default 100
+
+source "Kconfig.zephyr"

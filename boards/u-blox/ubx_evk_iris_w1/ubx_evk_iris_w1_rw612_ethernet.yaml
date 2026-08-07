@@ -1,0 +1,20 @@
+#
+# Copyright 2022-2025 NXP
+# Copyright (c) 2025 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: ubx_evk_iris_w1/rw612/ethernet
+name: EVK-IRIS-W106-RW612 (Ethernet)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 960
+flash: 8192
+supported:
+  - netif:eth
+vendor: u-blox
+testing:
+  default: false

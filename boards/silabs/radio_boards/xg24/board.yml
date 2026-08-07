@@ -1,0 +1,21 @@
+boards:
+  - name: xg24_rb4186c
+    full_name: EFR32xG24 2.4 GHz 10 dBm (xG24-RB4186C)
+    vendor: silabs
+    socs:
+      - name: efr32mg24b210f1536im48
+  - name: xg24_rb4187c
+    full_name: EFR32xG24 2.4 GHz 20 dBm (xG24-RB4187C)
+    vendor: silabs
+    socs:
+      - name: efr32mg24b220f1536im48
+  - name: xgm240_rb4316a
+    full_name: xGM240P 10 dBm Module Radio Board (xGM240-RB4316A)
+    vendor: silabs
+    socs:
+      - name: mgm240pb22vna
+  - name: xgm240_rb4317a
+    full_name: xGM240P 20 dBm Module Radio Board (xGM240-RB4317A)
+    vendor: silabs
+    socs:
+      - name: mgm240pb32vna

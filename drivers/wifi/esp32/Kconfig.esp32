@@ -1,0 +1,788 @@
+# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+
+menuconfig WIFI_ESP32
+	bool "ESP32 SoC WiFi support"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_WIFI_ENABLED
+	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
+	depends on !SMP
+	select THREAD_CUSTOM_DATA
+	select EVENTS
+	select NET_L2_WIFI_MGMT
+	select NET_L2_ETHERNET
+	select NET_L2_ETHERNET_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	select MBEDTLS
+	# This is needed because some guards in TLS now require PSA crypto stuff
+	# to be enabled
+	select PSA_CRYPTO
+	select THREAD_STACK_INFO
+	select DYNAMIC_THREAD
+	select DYNAMIC_THREAD_ALLOC
+	help
+	  Enable ESP32 SoC WiFi support. Only supported in single
+	  core mode because the network stack is not aware of SMP
+	  stuff.
+
+if WIFI_ESP32
+
+config HEAP_MEM_POOL_ADD_SIZE_ESP_WIFI
+	int
+	default 51200 if ESP_WIFI_HEAP_SYSTEM
+	default 25400 if ESP_WIFI_HEAP_SPIRAM
+	help
+	  Make sure there is a minimal heap available for Wi-Fi driver.
+
+choice ESP_WIFI_HEAP
+	prompt "Wi-Fi adapter heap memory"
+	default ESP_WIFI_HEAP_SYSTEM
+
+config ESP_WIFI_HEAP_SYSTEM
+	bool "Wi-Fi adapter use kernel mempool heap (k_malloc)"
+
+config ESP_WIFI_HEAP_SPIRAM
+	bool "Wi-Fi adapter use spiram mempool heap (smh_malloc)"
+
+endchoice # ESP_WIFI_HEAP
+
+config NET_TCP_WORKQ_STACK_SIZE
+	default 2048
+
+config NET_RX_STACK_SIZE
+	default 2048
+
+config NET_MGMT_EVENT_STACK_SIZE
+	default 2048
+
+config ESP32_WIFI_AP_STA_MODE
+	bool "Activates the Station/AP co-existence mode."
+	default y if WIFI_USAGE_MODE_STA_AP
+	depends on WIFI_NM
+	help
+	  The Station/AP coexistence mode allows the ESP32 to operate as both a station and
+	  an access point simultaneously.
+
+config ESP32_WIFI_STA_RECONNECT
+	bool "WiFi connection retry"
+	help
+	  Set auto WiFI reconnection when disconnected.
+
+config ESP32_WIFI_STA_SCAN_ALL
+	bool "Scan all available APs when connecting in station mode"
+	help
+	  When connecting in station mode, scan all channels and connect to the channel with the
+	  highest RSSI. Without this, a fast scan is performed which connects to the first AP
+	  found.
+
+config ESP32_WIFI_NET_ALLOC_SPIRAM
+	bool "Allocate memory of WiFi and NET in SPIRAM"
+	depends on ESP_SPIRAM
+	help
+	  Allocate memory of WiFi and NET stack in SPIRAM, increasing available RAM memory space
+	  for application stack.
+
+config ESP32_WIFI_STATIC_RX_BUFFER_NUM
+	int "Max number of WiFi static RX buffers"
+	range 2 25
+	default 10
+	help
+	  Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
+	  The static rx buffers are allocated when esp_wifi_init is called, they are not freed
+	  until esp_wifi_deinit is called.
+
+	  WiFi hardware use these buffers to receive all 802.11 frames.
+	  A higher number may allow higher throughput but increases memory use. If ESP32_WIFI_AMPDU_RX_ENABLED
+	  is enabled, this value is recommended to set equal or bigger than ESP32_WIFI_RX_BA_WIN in order to
+	  achieve better throughput and compatibility with both stations and APs.
+
+config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
+	int "Max number of WiFi dynamic RX buffers"
+	range 0 128
+	default 32
+	help
+	  Set the number of WiFi dynamic RX buffers, 0 means unlimited RX buffers
+	  will be allocated (provided sufficient free RAM). The size of each dynamic
+	  RX buffer depends on the size of the received data frame.
+
+	  For each received data frame, the WiFi driver makes a copy to an RX buffer
+	  and then delivers it to the high layer TCP/IP stack. The dynamic RX buffer
+	  is freed after the higher layer has successfully received the data frame.
+
+	  For some applications, WiFi data frames may be received faster than the
+	  application can process them. In these cases we may run out of memory if
+	  RX buffer number is unlimited (0). If a dynamic RX buffer limit is set,
+	  it should be at least the number of static RX buffers.
+
+choice ESP32_WIFI_TX_BUFFER
+	prompt "Type of WiFi TX buffers"
+	default ESP32_WIFI_DYNAMIC_TX_BUFFER
+	help
+	  Select type of WiFi TX buffers:
+
+	  If "Static" is selected, WiFi TX buffers are allocated when WiFi is
+	  initialized and released when WiFi is de-initialized. The size of each
+	  static TX buffer is fixed to about 1.6KB.
+
+	  If "Dynamic" is selected, each WiFi TX buffer is allocated as needed
+	  when a data frame is delivered to the Wifi driver from the TCP/IP stack.
+	  The buffer is freed after the data frame has been sent by the WiFi driver.
+	  The size of each dynamic TX buffer depends on the length of each data
+	  frame sent by the TCP/IP layer.
+
+	  If PSRAM is enabled, "Static" should be selected to guarantee enough
+	  WiFi TX buffers. If PSRAM is disabled, "Dynamic" should be selected
+	  to improve the utilization of RAM.
+
+config ESP32_WIFI_STATIC_TX_BUFFER
+	bool "Static"
+
+config ESP32_WIFI_DYNAMIC_TX_BUFFER
+	bool "Dynamic"
+
+endchoice # ESP32_WIFI_TX_BUFFER
+
+config ESP32_WIFI_TX_BUFFER_TYPE
+	int
+	default 0 if ESP32_WIFI_STATIC_TX_BUFFER
+	default 1 if ESP32_WIFI_DYNAMIC_TX_BUFFER
+
+config ESP32_WIFI_STATIC_TX_BUFFER_NUM
+	int "Max number of WiFi static TX buffers"
+	depends on ESP32_WIFI_STATIC_TX_BUFFER
+	range 1 64
+	default 16
+	help
+	  Set the number of WiFi static TX buffers. Each buffer takes approximately
+	  1.6KB of RAM. The static RX buffers are allocated when esp_wifi_init() is
+	  called, they are not released until esp_wifi_deinit() is called.
+
+	  For each transmitted data frame from the higher layer TCP/IP stack,
+	  the WiFi driver makes a copy of it in a TX buffer.  For some applications
+	  especially UDP applications, the upper layer can deliver frames faster
+	  than WiFi layer can transmit.
+	  In these cases, we may run out of TX buffers.
+
+config ESP32_WIFI_CACHE_TX_BUFFER_NUM
+	int "Max number of WiFi cache TX buffers"
+	depends on ESP_SPIRAM && ESP_WIFI_HEAP_SPIRAM
+	range 16 128
+	default 32
+	help
+	  Set the number of WiFi cache TX buffer number.
+
+	  For each TX packet from uplayer, such as LWIP etc, WiFi driver needs to
+	  allocate a static TX buffer and makes a copy of uplayer packet. If WiFi
+	  driver fails to allocate the static TX buffer, it caches the uplayer
+	  packets to a dedicated buffer queue, this option is used to configure the
+	  size of the cached TX queue.
+
+config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
+	int "Max number of WiFi dynamic TX buffers"
+	depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
+	range 1 128
+	default 32
+	help
+	  Set the number of WiFi dynamic TX buffers. The size of each
+	  dynamic TXbuffer is not fixed, it depends on the size of each
+	  transmitted data frame.
+
+	  For each transmitted frame from the higher layer TCP/IP stack,
+	  the WiFi driver makes a copy of it in a TX buffer. For some applications,
+	  especially UDP applications, the upper layer can deliver frames faster
+	  than WiFi layer can transmit. In these cases, we may run out of TX
+	  buffers.
+
+config ESP32_WIFI_TX_RETRY_TIMEOUT_MS
+	int "Wi-Fi TX retry timeout (ms)"
+	default 50
+	range 0 1000
+	help
+	  How long a transmit waits for one of the TX buffers above to free up
+	  before the packet is dropped. This blocks the calling thread, so the
+	  timeout also bounds the added latency. Set to 0 to drop immediately.
+
+choice ESP32_WIFI_MGMT_RX_BUFFER
+	prompt "Type of WiFi RX MGMT buffers"
+	default ESP32_WIFI_STATIC_RX_MGMT_BUFFER
+	help
+	  Select type of WiFi RX MGMT buffers:
+
+	  If "Static" is selected, WiFi RX MGMT buffers are allocated when WiFi is initialized and released
+	  when WiFi is de-initialized. The size of each static RX MGMT buffer is fixed to about 500 Bytes.
+
+	  If "Dynamic" is selected, each WiFi RX MGMT buffer is allocated as needed when a MGMT data frame is
+	  received. The MGMT buffer is freed after the MGMT data frame has been processed by the WiFi driver.
+
+config ESP32_WIFI_STATIC_RX_MGMT_BUFFER
+	bool "Static"
+
+config ESP32_WIFI_DYNAMIC_RX_MGMT_BUFFER
+	bool "Dynamic"
+
+endchoice # ESP32_WIFI_MGMT_RX_BUFFER
+
+config ESP32_WIFI_DYNAMIC_RX_MGMT_BUF
+	int
+	default 0 if ESP32_WIFI_STATIC_RX_MGMT_BUFFER
+	default 1 if ESP32_WIFI_DYNAMIC_RX_MGMT_BUFFER
+
+config ESP32_WIFI_RX_MGMT_BUF_NUM_DEF
+	int "Max number of WiFi RX MGMT buffers"
+	range 1 10
+	default 5
+	help
+	  Set the number of WiFi RX_MGMT buffers.
+
+	  For Management buffers, the number of dynamic and static management buffers is the same.
+	  In order to prevent memory fragmentation, the management buffer type should be set to static first.
+
+config ESP32_WIFI_CSI_ENABLED
+	bool "WiFi CSI(Channel State Information)"
+	help
+	  Select this option to enable CSI(Channel State Information) feature.
+	  CSI takes about CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM KB of RAM.
+	  If CSI is not used, it is better to disable this feature in order
+	  to save memory.
+
+config ESP32_WIFI_AMPDU_TX_ENABLED
+	bool "WiFi AMPDU TX"
+	default y
+	help
+	  Select this option to enable AMPDU TX feature. It improves transmission
+	  error checking and overall network performance with the cost of processing
+	  speed. Helpful when the device is operating in crowded wireless area.
+
+config ESP32_WIFI_TX_BA_WIN
+	int "WiFi AMPDU TX BA window size"
+	depends on ESP32_WIFI_AMPDU_TX_ENABLED
+	range 2 32
+	default 6
+	help
+	  Set the size of WiFi Block Ack TX window. Generally a bigger value means
+	  higher throughput but more memory. Most of time we should NOT change the
+	  default value unless special reason, e.g. test the maximum
+	  UDP TX throughput with iperf etc. For iperf test in shieldbox,
+	  the recommended value is 9~12.
+
+config ESP32_WIFI_AMPDU_RX_ENABLED
+	bool "WiFi AMPDU RX"
+	default y
+	help
+	  Select this option to enable AMPDU RX feature. It improves transmission
+	  error checking and overall network performance with the cost of processing
+	  speed. Helpful when the device is operating in crowded wireless area.
+
+config ESP32_WIFI_RX_BA_WIN
+	int "WiFi AMPDU RX BA window size"
+	depends on ESP32_WIFI_AMPDU_RX_ENABLED
+	range 2 32
+	default 6
+	help
+	  Set the size of WiFi Block Ack RX window. Generally a bigger value means
+	  higher throughput and better compatibility but more memory. Most of time
+	  we should NOT change the default value unless special reason,
+	  e.g. test the maximum UDP RX throughput with iperf etc. For iperf test in
+	  shieldbox, the recommended value is 9~12. If PSRAM is used and WiFi memory
+	  is preferred to be allocated in PSRAM first, the default and minimum value
+	  should be 16 to achieve better throughput and compatibility with both
+	  stations and APs.
+
+config ESP32_WIFI_AMSDU_TX_ENABLED
+	bool "WiFi AMSDU TX"
+	depends on ESP_SPIRAM
+	help
+	  Select this option to enable AMSDU TX feature
+
+config ESP32_WIFI_MGMT_SBUF_NUM
+	int "WiFi mgmt short buffer number"
+	range 6 32
+	default 32
+	help
+	  Set the number of WiFi management short buffer.
+
+config ESP32_WIFI_IRAM_OPT
+	bool "WiFi IRAM speed optimization"
+	help
+	  Select this option to place frequently called Wi-Fi library functions in IRAM.
+	  When this option is disabled, more than 10Kbytes of IRAM memory will be saved
+	  but Wi-Fi throughput will be reduced.
+
+config ESP32_WIFI_RX_IRAM_OPT
+	bool "WiFi RX IRAM speed optimization"
+	help
+	  Select this option to place frequently called Wi-Fi library RX functions in IRAM.
+	  When this option is disabled, more than 17Kbytes of IRAM memory will be saved
+	  but Wi-Fi performance will be reduced.
+
+config ESP32_WIFI_MAX_THREAD_PRIORITY
+	int "Maximum work queue thread priority"
+	default 7
+	help
+	  Maximum priority of thread used for processing driver work queue items.
+
+config ESP32_WIFI_TASK_STACK_SIZE
+	int "Wi-Fi task stack size (floor)"
+	default 3584
+	help
+	  Minimum stack size for the Wi-Fi tasks spawned by the Wi-Fi
+	  library blobs. The actual stack used is the larger of this value
+	  and the stack depth requested by the blob at runtime, so a higher
+	  Kconfig value only raises the floor.
+
+config ESP32_WIFI_EVENT_TASK_STACK_SIZE
+	int "Wi-Fi event task stack size"
+	default 2048
+	help
+	  Stack size of the event task that runs the Wi-Fi and mesh event
+	  handlers. The Wi-Fi library posts events from its own task; the
+	  handlers run on this dedicated task instead so a handler cannot
+	  overrun the library task stack or stall the library task.
+
+config ESP32_WIFI_EVENT_TASK_PRIORITY
+	int "Wi-Fi event task priority"
+	default 4
+	help
+	  Preemptible priority of the Wi-Fi event task. Keep it above the
+	  application threads so connect and disconnect state changes are
+	  handled promptly. A caller that must observe a state change before
+	  continuing synchronizes on the event rather than relying on this
+	  task preempting it.
+
+config ESP32_WIFI_STA_START_TIMEOUT
+	int "Wi-Fi station-start wait timeout (ms)"
+	default 1000
+	help
+	  Time a connect request waits for the station-started event, which is
+	  handled on the event task, before it gives up. Raise it if a connect
+	  fails with the station not in station mode under a heavy event load.
+
+config ESP32_WIFI_EVENT_QUEUE_SIZE
+	int "Wi-Fi event queue depth"
+	default 16
+	help
+	  Number of posted events buffered between the Wi-Fi library task and
+	  the event task. Each queued entry carries an inline copy of the event
+	  payload, so the RAM cost is this depth times the entry size.
+
+	  Events are delivered asynchronously on the event task rather than
+	  inline on the library task, which keeps handler work off that task.
+	  The mesh needs this: it brings the network stack up (DHCP server, NAT
+	  and routes) from an event handler, which neither fits the library task
+	  stack nor should block it.
+
+	  A post carries the timeout its caller asked for. The libraries post
+	  most events without waiting, so a full queue drops those and logs at
+	  error level; the events able to fill it are the ones that suits, softAP
+	  client churn and mesh routing updates, which the next event or a
+	  re-parent supersedes. The queue is sized to absorb those bursts. A
+	  caller that must not lose its event waits instead, except from the
+	  event task itself, which drains this queue and so never waits on it.
+
+	  Losing a station or softAP state transition this way leaves the driver
+	  state stale until the next one, which is why the depth covers a burst
+	  of them several times over. Reaching it takes the event task being
+	  starved outright, since its handlers only update state and raise a
+	  network management event. The driver state stays readable through
+	  NET_REQUEST_WIFI_IFACE_STATUS in that case, and the notification hop
+	  to the application has its own backpressure in the network management
+	  layer (see NET_MGMT_EVENT_QUEUE_SIZE and NET_MGMT_EVENT_QUEUE_TIMEOUT).
+	  Raise this depth at the cost of more RAM if drops are ever seen.
+
+config ESP32_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
+	int "Minimum active time"
+	range 8 60
+	default 50
+	help
+	  Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station enters the active state,
+	  it will work for at least ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME. If a data packet is received or sent
+	  during this period, the time will be refreshed. If the time is up, but the station still has packets
+	  to receive or send, the time will also be refreshed. unit: milliseconds.
+
+config ESP32_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME
+	int "Maximum keep alive time"
+	range 10 60
+	default 10
+	help
+	  Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. If no packet has been
+	  sent within ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME, a null data packet will be sent
+	  to maintain the connection with the AP. unit: seconds.
+
+config ESP32_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
+	int "Minimum wait broadcast data time"
+	range 10 30
+	default 15
+	help
+	  Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. When the station knows through the beacon
+	  that AP will send broadcast packet, it will wait for ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
+	  before entering the sleep process. If a broadcast packet is received with more data bits, the time
+	  will refreshed. unit: milliseconds.
+
+config ESP32_WIFI_FTM_ENABLE
+	bool "WiFi FTM"
+	depends on SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
+	help
+	  Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
+
+config ESP32_WIFI_FTM_INITIATOR_SUPPORT
+	bool "FTM Initiator support"
+	default y
+	depends on ESP32_WIFI_FTM_ENABLE
+
+config ESP32_WIFI_FTM_RESPONDER_SUPPORT
+	bool "FTM Responder support"
+	default y
+	depends on ESP32_WIFI_FTM_ENABLE
+
+config ESP32_WIFI_SOFTAP_SUPPORT
+	bool
+	default y
+	help
+	  Hidden option to enable Wi-Fi SoftAP functions in WPA supplicant and RF libraries.
+
+menuconfig WIFI_ESP32_MESH
+	bool "ESP Wi-Fi mesh support"
+	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3 || \
+		SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6
+	select ESP32_WIFI_SOFTAP_SUPPORT
+	help
+	  Enable the self-organizing multi-hop Wi-Fi mesh network stack.
+	  Each node runs Wi-Fi in combined AP and station mode: the station
+	  interface links upward to a parent, the softAP interface accepts
+	  child nodes. Only the root node reaches the external IP network.
+	  Not available on ESP32-C2 and ESP32-H2.
+
+if WIFI_ESP32_MESH
+
+config WIFI_ESP32_MESH_MAX_LAYER
+	int "Maximum mesh layer (tree depth)"
+	default 25
+	range 1 25
+	help
+	  Maximum number of layers (tree depth) the mesh may grow to. The root
+	  is layer 1, its direct children layer 2, and so on. Nodes that would
+	  attach deeper than this limit are refused, bounding the tree height.
+	  The routing table on the root is sized for the whole sub-network, so
+	  the maximum node count is roughly MAX_LAYER * MAX_CONNECTIONS + 1.
+
+config WIFI_ESP32_MESH_MAX_CONNECTIONS
+	int "Maximum direct child connections per node"
+	default 6
+	range 1 10
+	help
+	  Maximum number of direct child nodes a single node accepts on its
+	  softAP interface. This is a per-node fan-out limit, not a whole-network
+	  limit: nodes beyond this count attach one layer deeper instead, so the
+	  network still grows by extending the tree. A larger value makes a
+	  flatter tree (more RAM per node for the extra links); a smaller value
+	  makes a deeper tree. Each direct link consumes Wi-Fi RX/TX buffers from
+	  the system heap, so a node acting as root or as an intermediate hub for
+	  several children needs more heap than a leaf (see the sample prj.conf
+	  for CONFIG_HEAP_MEM_POOL_SIZE guidance).
+
+config WIFI_ESP32_MESH_EVENT_HANDLERS
+	int "Maximum registered mesh event handlers"
+	default 12
+	range 4 32
+	help
+	  Size of the event handler table used to dispatch Wi-Fi and mesh
+	  events. It must cover both the application handlers and the handlers
+	  the mesh stack registers internally, which the application cannot
+	  count; a handler registered beyond this limit is dropped.
+
+config WIFI_ESP32_MESH_START_TIMEOUT
+	int "Mesh-start wait timeout (ms)"
+	default 2000
+	help
+	  Time esp_wifi_mesh_start() waits for the mesh stack to report
+	  MESH_EVENT_STARTED before it proceeds to re-deliver the initial
+	  station-start event. The wait ends as soon as the event arrives; this
+	  is only the upper bound before it gives up and continues anyway.
+
+config WIFI_ESP32_MESH_CHANNEL
+	int "Mesh channel (0 = auto, 1-13 = fixed)"
+	default 0
+	range 0 13
+	help
+	  Channel the mesh network operates on. 0 lets the mesh select the
+	  channel by scanning, which is required when the router channel is
+	  unknown. A fixed value 1-13 pins the channel; all nodes must then
+	  use the same one.
+
+config WIFI_ESP32_MESH_ROUTER_SSID
+	string "Router SSID"
+	default "myssid"
+	help
+	  SSID of the router the root node connects to for external network
+	  access. The mesh stack requires a router SSID to be set, so this
+	  carries a placeholder rather than an empty default. Set it to the
+	  router in use: a node left on the placeholder finds no such network
+	  and keeps searching for a parent.
+
+config WIFI_ESP32_MESH_ROUTER_PSK
+	string "Router password"
+	default "mypassword"
+	help
+	  Password of the router the root node connects to. Leave empty for an
+	  open router.
+
+config WIFI_ESP32_MESH_AP_PSK
+	string "Mesh softAP password"
+	default "meshpassword"
+	help
+	  Password protecting the inter-node mesh softAP links. Must be at
+	  least 8 characters and identical on every node.
+
+config WIFI_ESP32_MESH_ID
+	string "Mesh network ID (6 bytes, colon-separated hex)"
+	default "12:34:56:78:9a:bc"
+	help
+	  Unique 6-byte identifier of this mesh network, written as six
+	  colon-separated hex octets. Nodes only join a mesh that advertises
+	  the same ID, so every node in one network must use the same value and
+	  different networks sharing a channel must use different IDs.
+
+config WIFI_ESP32_MESH_ASSOC_EXPIRE
+	int "Idle child association expiry (seconds)"
+	default 10
+	range 1 60
+	help
+	  How long a node keeps a child association without traffic before
+	  releasing it. When a child re-parents, its previous parent holds the
+	  now-dead association until this expiry, keeping one of its child slots
+	  occupied; with few connections per node a long expiry can stall the
+	  tree from converging. 10 seconds matches the value used with mesh
+	  power save disabled.
+
+config WIFI_ESP32_MESH_XON_QSIZE
+	int "Mesh receive flow-control queue size"
+	default 128
+	range 16 256
+	help
+	  Number of packets the mesh receive queue holds before applying flow
+	  control to upstream senders. A larger queue tolerates bigger traffic
+	  bursts at the cost of RAM.
+
+config WIFI_ESP32_MESH_VOTE_PERCENTAGE
+	int "Root election vote percentage threshold"
+	default 100
+	range 1 100
+	help
+	  Percentage of votes a candidate needs to be approved as root during
+	  self-organized election, as a whole percent (100 = unanimous). Only
+	  relevant in the auto role.
+
+config WIFI_ESP32_MESH_SEND_BLOCK_TIME_MS
+	int "Mesh send block time (milliseconds)"
+	default 30000
+	range 0 60000
+	help
+	  How long esp_wifi_mesh_send() blocks waiting for buffer space under
+	  congestion before failing. A longer time lets bursts drain instead of
+	  dropping frames; 0 fails immediately when no buffer is available.
+
+choice WIFI_ESP32_MESH_ROLE
+	prompt "Mesh role of this node"
+	default WIFI_ESP32_MESH_ROLE_AUTO
+	help
+	  Selects how this node takes its place in the mesh tree.
+
+config WIFI_ESP32_MESH_ROLE_AUTO
+	bool "Self-organized (elect root by router reachability)"
+	help
+	  Default self-organized behavior: the node scans, and if it can reach
+	  the router it votes to become the root, otherwise it attaches to an
+	  in-range mesh node as a child. A router is required for the election.
+
+config WIFI_ESP32_MESH_FORCE_ROOT
+	bool "Force this node to be the root (fixed root)"
+	help
+	  Designate this node as the fixed root of the mesh. It never elects and
+	  always sits at the top of the tree. With a router configured it keeps
+	  the self-organized behavior that drives its association to the router
+	  and the reconnection maintaining that uplink; without one the parent
+	  search is stopped, since there is no parent to find and the search
+	  would disrupt its softAP. A router is still required for children to
+	  auto-attach: a fully router-less mesh needs each child to be given an
+	  explicit parent, which this driver does not do.
+	  The other nodes must be built as fixed children
+	  (WIFI_ESP32_MESH_FORCE_CHILD) so they accept this designated root
+	  instead of running an election.
+
+config WIFI_ESP32_MESH_FORCE_CHILD
+	bool "Force this node to stay a child (never become root)"
+	help
+	  Prevent this node from becoming root, so it always attaches to another
+	  node as a child. Useful with a fixed root, and on a bench where every
+	  board can hear the router and would otherwise each elect itself root
+	  instead of forming one tree.
+
+endchoice # WIFI_ESP32_MESH_ROLE
+
+config WIFI_ESP32_MESH_IP
+	bool "IP over mesh"
+	select NET_L2_ETHERNET
+	help
+	  Build the Ethernet-over-mesh network interface so IP runs on top of
+	  the mesh transport. It carries Ethernet frames as the mesh payload,
+	  letting the Zephyr network stack (addresses, DHCP, NAT, sockets) run
+	  unmodified over the mesh. Without this option the mesh only carries
+	  application data through esp_wifi_mesh_send()/esp_wifi_mesh_recv().
+
+	  The IP-level policy (addresses, DHCP server, NAT, routes) is left to
+	  the application; the driver only provides the transport interface.
+
+endif # WIFI_ESP32_MESH
+
+config ESP32_WIFI_MBEDTLS_CRYPTO
+	bool "Use MbedTLS crypto APIs"
+	select MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+	select MBEDTLS_MD_C
+	select MBEDTLS_PK_PARSE_C
+	select MBEDTLS_PK_WRITE_C
+	select MBEDTLS_PKCS5_C
+	select PSA_CRYPTO
+	select PSA_WANT_ALG_CBC_NO_PADDING
+	select PSA_WANT_ALG_CMAC
+	select PSA_WANT_ALG_CTR
+	select PSA_WANT_ALG_ECB_NO_PADDING
+	select PSA_WANT_ALG_ECDH
+	select PSA_WANT_ALG_ECDSA
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_SHA_1
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ECC_SECP_R1_256
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	help
+	  Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
+
+config ESP32_WIFI_ENTERPRISE
+	bool "WPA2/WPA3-Enterprise station support"
+	select ESP32_WIFI_MBEDTLS_CRYPTO
+	select WIFI_CERTIFICATE_LIB
+	select MBEDTLS
+	select MBEDTLS_PEM_PARSE_C
+	select MBEDTLS_SSL_EXTENDED_MASTER_SECRET
+	select MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+	select MBEDTLS_SSL_SERVER_NAME_INDICATION
+	select MBEDTLS_X509_CRL_PARSE_C
+	select MBEDTLS_X509_CRT_PARSE_C
+	select MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+	select MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	select MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+	help
+	  Select this option to allow the ESP32 Wi-Fi station driver to
+	  connect to WPA2-Enterprise and WPA3-Enterprise networks using the
+	  Espressif EAP supplicant.
+
+config ESP32_WIFI_ENTERPRISE_MBEDTLS_TLS_CLIENT
+	bool "Use MbedTLS TLS client for WPA-Enterprise"
+	depends on ESP32_WIFI_ENTERPRISE
+	default y
+	help
+	  Use the Espressif supplicant MbedTLS TLS backend for EAP TLS
+	  handshakes. This is the backend used by Espressif's enterprise Wi-Fi
+	  examples.
+
+config ESP32_WIFI_GCMP_SUPPORT
+	bool "GCMP cipher support"
+	depends on ESP32_WIFI_ENTERPRISE
+	default y
+	help
+	  Enable GCMP cipher support in the Espressif supplicant. This is
+	  required by WPA3-Enterprise modes.
+
+config ESP32_WIFI_GMAC_SUPPORT
+	bool "GMAC cipher support"
+	depends on ESP32_WIFI_ENTERPRISE
+	default y
+	help
+	  Enable GMAC support in the Espressif supplicant. This is required by
+	  WPA3-Enterprise Suite-B modes.
+
+config ESP32_WIFI_SUITE_B
+	bool "WPA3-Enterprise Suite-B support"
+	depends on ESP32_WIFI_ENTERPRISE
+	default y
+	select ESP32_WIFI_GCMP_SUPPORT
+	select ESP32_WIFI_GMAC_SUPPORT
+	help
+	  Enable WPA3-Enterprise Suite-B support.
+
+config ESP32_WIFI_SUITE_B_192
+	bool "WPA3-Enterprise Suite-B 192-bit support"
+	depends on ESP32_WIFI_ENTERPRISE
+	select ESP32_WIFI_GCMP_SUPPORT
+	select ESP32_WIFI_GMAC_SUPPORT
+	select MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+	select MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	select PSA_WANT_ECC_SECP_R1_384
+	help
+	  Enable WPA3-Enterprise 192-bit Suite-B support.
+
+config ESP32_WIFI_BSS_MAX_IDLE_SUPPORT
+	bool "BSS max idle support"
+	depends on ESP32_WIFI_ENTERPRISE
+	default y
+	help
+	  Enable BSS max idle feature capability advertisement in the Espressif
+	  Wi-Fi driver.
+
+config ESP32_WIFI_ENABLE_WPA3_SAE
+	bool "WPA3-Personal"
+	select ESP32_WIFI_MBEDTLS_CRYPTO
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	help
+	  Select this option to allow the device to establish a WPA3-Personal connection.
+
+config ESP32_WIFI_ENABLE_WPA3_OWE_STA
+	bool "OWE STA"
+	default y
+	depends on ESP32_WIFI_ENABLE_WPA3_SAE
+	help
+	  Select this option to allow the device to establish OWE connection with eligible AP's.
+	  Note: On ESP32, OWE is currently supported for STA mode only.
+
+config ESP32_WIFI_ENABLE_SAE_H2E
+	bool "SAE Hash-to-Element (H2E)"
+	default y
+	depends on ESP32_WIFI_ENABLE_WPA3_SAE
+	help
+	  Select this option to enable Hash-to-Element for SAE password derivation.
+
+config ESP32_WIFI_ENABLE_SAE_PK
+	bool "SAE-PK"
+	default y
+	depends on ESP32_WIFI_ENABLE_SAE_H2E
+	help
+	  Select this option to enable SAE-PK
+
+config ESP32_WIFI_SOFTAP_SAE_SUPPORT
+	bool "WPA3-SAE SoftAP support"
+	depends on ESP32_WIFI_ENABLE_WPA3_SAE
+	depends on ESP32_WIFI_SOFTAP_SUPPORT
+	help
+	  Select this option to enable WPA3-SAE authentication in SoftAP mode.
+
+config ESP32_WIFI_WPA3_COMPATIBLE
+	bool "WPA3 transition mode compatibility"
+	default y
+	depends on ESP32_WIFI_ENABLE_WPA3_SAE
+	help
+	  Select this option to enable WPA3 compatibility mode for interoperability
+	  with APs that use RSNXE override during WPA2/WPA3 transition.
+
+config ESP32_WIFI_DEBUG_PRINT
+	bool "Print debug messages from WPA Supplicant"
+	help
+	  Select this option to print logging information from WPA supplicant,
+	  this includes handshake information and key hex dumps depending
+	  on the project logging level.
+
+	  Enabling this could increase the build size ~60kb
+	  depending on the project logging level.
+
+endif # WIFI_ESP32

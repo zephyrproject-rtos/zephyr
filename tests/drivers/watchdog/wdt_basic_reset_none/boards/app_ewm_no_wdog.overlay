@@ -1,0 +1,19 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		watchdog0 = &ewm0;
+	};
+};
+
+&ewm0 {
+	status = "okay";
+	clk-divider = <3>;
+};
+
+&wdog {
+	status = "disabled";
+};

@@ -1,0 +1,21 @@
+# PAJ7620 gesture sensor configuration options
+
+# Copyright (c) 2025 Paul Timke <ptimkec@live.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PAJ7620
+	bool "PAJ7620 gesture sensor driver"
+	default y
+	depends on DT_HAS_PIXART_PAJ7620_ENABLED
+	select I2C
+	help
+	  Enable driver for the PAJ7620 gesture sensor
+
+if PAJ7620
+
+module = PAJ7620
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif # PAJ7620

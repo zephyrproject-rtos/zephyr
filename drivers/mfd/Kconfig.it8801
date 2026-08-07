@@ -1,0 +1,19 @@
+# Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_ITE_IT8801
+	bool "ITE IT8801 ioexpander multi-function device driver"
+	default y
+	depends on DT_HAS_ITE_IT8801_MFD_ENABLED
+	select I2C
+	help
+	  Enable the ITE IT8801 ioexpander multi-function device driver.
+	  This ioexpander provides a GPIO/PWM/Keyboard function via I2C bus.
+
+if MFD_ITE_IT8801
+
+config MFD_ITE_IT8801_ALTCTRL
+	bool "ITE IT8801 MFD alternate controller"
+	default y
+
+endif # MFD_ITE_IT8801

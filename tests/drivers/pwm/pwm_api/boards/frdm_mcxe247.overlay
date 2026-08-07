@@ -1,0 +1,33 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &ftm3;
+	};
+};
+
+&pinctrl {
+	ftm3_default: ftm3_default {
+		group0 {
+			pinmux = <FTM3_CH7_PTC13>,
+				 <FTM3_CH3_PTB11>,
+				 <FTM3_CH6_PTC12>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+};
+
+&ftm3 {
+	status = "okay";
+	compatible = "nxp,ftm-pwm";
+	clock-source = "external";
+	prescaler = <128>;
+	#pwm-cells = <3>;
+	pinctrl-0 = <&ftm3_default>;
+	pinctrl-names = "default";
+};

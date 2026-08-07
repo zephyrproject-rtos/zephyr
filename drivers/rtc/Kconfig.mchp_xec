@@ -1,0 +1,25 @@
+# Microchip XEC PWM configuration options
+
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_XEC
+	bool "Microchip XEC RTC"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_RTC_ENABLED
+	help
+		Enable driver to utilize RTC on the Microchip XEC IP block
+
+config RTC_XEC_DATA_MODE_BCD
+	bool "Select data mode"
+	default n
+	depends on DT_HAS_MICROCHIP_XEC_RTC_ENABLED
+	help
+		Select binary or BCD representation of time
+
+config RTC_XEC_HOUR_FORMAT_24
+	bool "Select hour format"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_RTC_ENABLED
+	help
+		Select hour format 24/12 representation of time

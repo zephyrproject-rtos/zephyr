@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dut: &uart0 {
+	status = "okay";
+	pinctrl-0 = <&uart0a_tx_p2_12 &uart0a_rx_p2_11>;
+	pinctrl-names = "default";
+
+	dmas = <&dma0 1 MAX32_DMA_SLOT_UART0_TX>, <&dma0 2 MAX32_DMA_SLOT_UART0_RX>;
+	dma-names = "tx", "rx";
+
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+};

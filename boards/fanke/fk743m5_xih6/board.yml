@@ -1,0 +1,6 @@
+board:
+  name: fk743m5_xih6
+  full_name: FK743M5-XIH6
+  vendor: fanke
+  socs:
+    - name: stm32h743xx

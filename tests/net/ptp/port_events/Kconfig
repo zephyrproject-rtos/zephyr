@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "../Kconfig.unit"
+
+# See ../Kconfig.unit for why selected PTP Kconfig entries are redeclared here.
+
+config PTP_NUM_PORTS
+	default 1
+
+config PTP_FOREIGN_TIME_TRANSMITTER_FEATURE
+	default y
+
+config PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE
+	default 5
+
+config PTP_MSG_POLL_SIZE
+	default 4
+
+config PTP_MIN_DELAY_REQ_LOG_INTERVAL
+	default 0
+
+config PTP_ANNOUNCE_LOG_INTERVAL
+	default 0
+
+config PTP_ANNOUNCE_RECV_TIMEOUT
+	default 3
+
+config PTP_SYNC_LOG_INTERVAL
+	default 0
+
+config PTP_MIN_PDELAY_REQ_LOG_INTERVAL
+	default 0
+
+choice PTP_NETWORKING_PROTOCOL
+	bool "PTP port events test protocol"
+	default PTP_IEEE_802_3_PROTOCOL
+endchoice
+
+source "Kconfig.zephyr"

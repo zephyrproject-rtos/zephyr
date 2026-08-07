@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2024 Meta Platforms
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	app {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		vsensor0: sensor@0 {
+			compatible = "vnd,fake-sensor";
+			reg = <0>;
+			friendly-name = "Fake sensor 0";
+			status = "okay";
+		};
+
+		vsensor1: sensor@1 {
+			compatible = "vnd,fake-sensor";
+			reg = <1>;
+			friendly-name = "Fake sensor 1";
+			status = "okay";
+		};
+	};
+};

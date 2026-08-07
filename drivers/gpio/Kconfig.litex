@@ -1,0 +1,11 @@
+# Litex VexRiscV GPIO configuration options
+
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_LITEX
+	bool "Litex GPIO driver"
+	default y
+	depends on DT_HAS_LITEX_GPIO_ENABLED
+	help
+	  Enable Litex GPIO driver.

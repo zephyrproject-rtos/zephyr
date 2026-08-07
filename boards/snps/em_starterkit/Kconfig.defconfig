@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2017 Synopsys
+
+if BOARD_EM_STARTERKIT
+
+if I2C_DW
+
+config I2C_DW_CLOCK_SPEED
+	default 100
+
+endif # I2C_DW
+
+endif # BOARD_EM_STARTERKIT

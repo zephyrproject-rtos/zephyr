@@ -1,0 +1,10 @@
+# Copyright (c) Florian Weber <Florian.Weber@live.de>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Melexis MLX90394 Magnetometer. See datasheet at
+    https://media.melexis.com/-/media/files/documents/datasheets/mlx90394-datasheet-melexis.pdf
+
+compatible: "melexis,mlx90394"
+
+include: [sensor-device.yaml, i2c-device.yaml]

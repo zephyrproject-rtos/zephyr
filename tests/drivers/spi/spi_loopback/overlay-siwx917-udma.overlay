@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	dmas = <&dma0 11>, <&dma0 10>;
+};

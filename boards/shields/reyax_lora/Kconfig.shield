@@ -1,0 +1,5 @@
+# Copyright (c) 2024 David Ullmann
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_REYAX_LORA
+	def_bool $(shields_list_contains,reyax_lora)

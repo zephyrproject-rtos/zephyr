@@ -1,0 +1,46 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			test_serlcd: serlcd@0 {
+				compatible = "sparkfun,serlcd";
+				reg = <0x0>;
+				status = "okay";
+				columns = <16>;
+				rows = <2>;
+				command-delay-ms = <10>;
+				special-command-delay-ms = <50>;
+			};
+
+			test_jhd1313: jhd1313@0 {
+				compatible = "jhd,jhd1313";
+				reg = <0x1>;
+				status = "okay";
+				columns = <16>;
+				rows = <2>;
+			};
+		};
+	};
+};

@@ -1,0 +1,18 @@
+common:
+  arch_allow: x86
+  platform_allow: intel_ehl_crb
+  tags:
+    - edac
+    - ibecc
+tests:
+  edac.ibecc.production:
+    extra_configs:
+      - CONFIG_EDAC_ERROR_INJECT=n
+      - CONFIG_EDAC_LOG_LEVEL_DBG=y
+  edac.ibecc.injection:
+    extra_configs:
+      - CONFIG_EDAC_ERROR_INJECT=y
+  edac.ibecc.injection.user:
+    extra_configs:
+      - CONFIG_EDAC_ERROR_INJECT=y
+      - CONFIG_TEST_USERSPACE=y

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: |
+  A property-blocklist, if given, must be a list. This binding should
+  cause an error.
+compatible: block-not-list
+include:
+  - name: include.yaml
+    property-blocklist:
+      foo:

@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Interrupt controller with one cell
+
+compatible: "interrupt-one-cell"
+
+interrupt-cells:
+  - one

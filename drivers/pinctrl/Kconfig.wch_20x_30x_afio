@@ -1,0 +1,9 @@
+# Copyright (c) 2024 MASSDRIVER EI (massdriver.sapce)
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_WCH_20X_30X_AFIO
+	bool "WCH AFIO pin controller driver for CH32V20x/30x"
+	default y
+	depends on DT_HAS_WCH_20X_30X_AFIO_ENABLED
+	help
+	  WCH CH32V20x/30x AFIO pin controller driver.

@@ -1,0 +1,12 @@
+# Copyright (c) 2025 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  USB Video Class (UVC) device instance.
+
+  Each UVC instance added to the USB Device Controller (UDC) node will be visible
+  as a new camera from the host point of view.
+
+compatible: "zephyr,uvc-device"
+
+include: base.yaml

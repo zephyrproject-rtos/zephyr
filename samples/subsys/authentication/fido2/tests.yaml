@@ -1,0 +1,15 @@
+sample:
+  name: FIDO2 Authenticator
+common:
+  depends_on:
+    - usbd
+  filter: dt_compat_enabled("zephyr,hid-device")
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "FIDO2 authenticator ready"
+  integration_platforms:
+    - weact_stm32wb55_core
+tests:
+  sample.authentication.fido2: {}

@@ -1,0 +1,5 @@
+description: Texas Instruments LP5861 I2C LED controller node
+
+compatible: "ti,lp5861"
+
+include: ti,lp586x.yaml

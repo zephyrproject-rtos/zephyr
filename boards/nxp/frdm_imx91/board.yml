@@ -1,0 +1,6 @@
+board:
+  name: frdm_imx91
+  full_name: FRDM-IMX91
+  vendor: nxp
+  socs:
+  - name: mimx9131

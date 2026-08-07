@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pwm12 {
+	status = "okay";
+};
+
+&arducam_ffc_40pin_i2c {
+	clock-frequency = <DT_FREQ_K(100)>;
+};
+
+&arducam_ffc_40pin_dvp_xclk {
+	clock-frequency = <DT_FREQ_M(12)>;
+	status = "okay";
+};
+
+&arducam_ffc_40pin_dvp_interface {
+	swap-8bits;
+	swap-16bits;
+	swap-32bits;
+
+	port {
+		dvp_ffc40_ep_in: endpoint {
+			hsync-sample = <1>;
+			vsync-sample = <1>;
+		};
+	};
+};

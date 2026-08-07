@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: An empty property-blocklist is valid.
+compatible: empty-blocklist
+include:
+  - name: include.yaml
+    property-blocklist: []

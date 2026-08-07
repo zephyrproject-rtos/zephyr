@@ -1,0 +1,17 @@
+description: Bouffalo Lab SEC Engine AES hardware accelerator
+
+compatible: "bflb,sec-eng-aes"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    type: string-array
+    required: true
+    description: Register names must include "aes" and "sec_eng".
+
+  interrupts:
+    required: true

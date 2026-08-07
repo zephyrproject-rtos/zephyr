@@ -1,0 +1,34 @@
+common:
+  depends_on: i2c
+  tags:
+    - drivers
+    - i2c
+  filter: dt_alias_exists("i2c-ram")
+  harness: ztest
+  harness_config:
+    fixture: i2c_ram
+tests:
+  drivers.i2c.ram:
+    depends_on: i2c
+    tags:
+      - drivers
+      - i2c
+  drivers.i2c.ram.rtio:
+    filter: CONFIG_I2C_RTIO
+    extra_configs:
+      - CONFIG_I2C_RTIO=y
+      - CONFIG_ZTEST_THREAD_PRIORITY=2
+  drivers.i2c.ram.pm:
+    filter: CONFIG_HAS_PM
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+  drivers.i2c.ram.pm.rtio:
+    filter: CONFIG_HAS_PM and CONFIG_I2C_RTIO
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_I2C_RTIO=y
+      - CONFIG_ZTEST_THREAD_PRIORITY=2

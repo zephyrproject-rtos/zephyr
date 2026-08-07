@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2021 Telink Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,ot-uart = &uart0;
+		zephyr,console = &uart1;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <57600>;
+	pinctrl-0 = <&uart0_tx_pb2_default &uart0_rx_pb3_default>;
+	pinctrl-names = "default";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_tx_pc6_default &uart1_rx_pc7_default>;
+	pinctrl-names = "default";
+};

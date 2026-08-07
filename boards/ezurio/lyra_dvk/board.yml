@@ -1,0 +1,11 @@
+boards:
+  - name: lyra_dvk_p
+    full_name: Lyra P DVK
+    vendor: ezurio
+    socs:
+      - name: bgm220pc22hna
+  - name: lyra_dvk_s
+    full_name: Lyra S DVK
+    vendor: ezurio
+    socs:
+      - name: bgm220sc22hna

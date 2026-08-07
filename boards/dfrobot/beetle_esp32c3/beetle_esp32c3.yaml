@@ -1,0 +1,21 @@
+identifier: beetle_esp32c3
+name: DFRobot Beetle ESP32-C3
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - counter
+  - crypto
+  - dma
+  - entropy
+  - gpio
+  - i2c
+  - input
+  - nvs
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: dfrobot

@@ -1,0 +1,26 @@
+# ADI SoC ADC configuration options
+
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_AD405X
+	bool "AD405X ADC driver"
+	depends on DT_HAS_ADI_AD4052_ADC_ENABLED || DT_HAS_ADI_AD4050_ADC_ENABLED
+	select SPI
+	default y
+	help
+	  Enable ADC driver for ADI AD405X.
+
+config AD405X_STREAM
+	bool "Use FIFO to stream data"
+	depends on ADC_AD405X
+	select AD405X_TRIGGER
+	depends on SPI_RTIO
+	help
+	  Use this configuration option to enable streaming ADC data via RTIO.
+
+config AD405X_TRIGGER
+	bool "AD405X interrupts"
+	depends on ADC_AD405X
+	help
+	  Enable interrupts for ADI AD405X.

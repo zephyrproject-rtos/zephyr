@@ -1,0 +1,7 @@
+# Copyright (c) 2022 Zephyr Project members and individual contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF5340DK
+	select SOC_NRF5340_CPUAPP_QKAA if BOARD_NRF5340DK_NRF5340_CPUAPP
+	select SOC_NRF5340_CPUAPP_QKAA if BOARD_NRF5340DK_NRF5340_CPUAPP_NS
+	select SOC_NRF5340_CPUNET_QKAA if BOARD_NRF5340DK_NRF5340_CPUNET

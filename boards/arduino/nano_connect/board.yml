@@ -1,0 +1,6 @@
+board:
+  name: arduino_nano_connect
+  full_name: Arduino Nano RP2040 Connect
+  vendor: arduino
+  socs:
+  - name: rp2040

@@ -1,0 +1,154 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MAX32 HyperBus (HPB) Memory Controller Interface
+
+  The HyperBus and Xccela Memory Controller interface is a high-speed, low-pin
+  count interface for connecting to one or more compatible external memory
+  devices. The external HyperBus or Xccela Bus memory device is mapped into the
+  memory space enabling direct code execution, data storage, or both.
+
+  The memory devices are defined as children of the HPB memory controller node.
+
+  &hpb {
+      status = "okay";
+      pinctrl-0 = <&hyp_cs0n_p1_11 &hyp_d0_p1_12 &hyp_d1_p1_15
+                   &hyp_d2_p1_19 &hyp_d3_p1_20 &hyp_d4_p1_13
+                   &hyp_d5_p1_16 &hyp_d6_p1_18 &hyp_d7_p1_21>;
+      pinctrl-names = "default";
+
+      mem@0 {
+          reg = <0>;
+          base-address = <0x60000000>;
+          device-type = <ADI_MAX32_HPB_DEV_TYPE_HYPER_RAM>;
+          config-regs =     <1>;
+          config-reg-vals = <2>;
+      };
+  };
+
+  Note: the values for most properties take values from
+  zephyr/dt-bindings/memory-controller/adi-max32-hpb.h header which will need to
+  be included.
+
+  Finally, in order to make the memory available you will need to define new
+  memory device/s in DeviceTree, e.g.:
+
+  sdram1: sdram@60000000 {
+      compatible = "zephyr,memory-region", "mmio-sram";
+      device_type = "memory";
+      reg = <0x60000000 DT_SIZE_M(X)>;
+      zephyr,memory-region = "SDRAM1";
+  };
+
+compatible: "adi,max32-hpb"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  enable-emcc:
+    type: boolean
+    description: |
+      Enable the EMCC cache controller for the HyperBus memory devices.
+
+child-binding:
+  description: Memory device.
+
+  properties:
+    reg:
+      type: int
+      required: true
+
+    base-address:
+      type: int
+      description: |
+        The address to which to map this memory device, e.g. 0x60000000. See the
+        user guide for your specific SoC for the allowed range for mapping.
+
+    device-type:
+      type: int
+      required: true
+      description: |
+        The type of attached memory device, i.e. Hyper Flash, Xccela PSRAM, or
+        Hyper RAM.
+
+    fixed-read-latency:
+      type: boolean
+      description: |
+        Enable Xccela bus Fixed Read Latency. Should match the Latency Type
+        configuration in the target PSRAM.
+
+    read-cs-high:
+      type: int
+      description: |
+        The CS# high time, in clock cycles, between read operations.
+
+    write-cs-high:
+      type: int
+      description: |
+        The CS# high time, in clock cycles, between write operations.
+
+    read-cs-setup:
+      type: int
+      description: |
+        The CS# latency, in clock cycles, for read operations. This adds
+        additional clock cycles after CS# goes low.
+
+    write-cs-setup:
+      type: int
+      description: |
+        The CS# latency, in clock cycles, for write operations. This adds
+        additional clock cycles after CS# goes low.
+
+    read-cs-hold:
+      type: int
+      description: |
+        The CS# hold time, in clock cycles, between the completion of a read
+        operation and the CS# deassertion.
+
+    write-cs-hold:
+      type: int
+      description: |
+        The CS# hold time, in clock cycles, between the completion of a write
+        operation and the CS# deassertion.
+
+    latency-cycles:
+      type: int
+      description: |
+        For HyperRAM: set this property to match the external HyperRAM Read
+        Latency Configuration Register value.
+
+        For Xccela PSRAM: The value is adjusted based on `fixed-read-latency`
+        property also being set.
+
+    config-regs:
+      type: array
+      description: |
+        Configuration register addresses to set on the memory device during
+        initialization.
+
+    config-reg-vals:
+      type: array
+      description: |
+        Configuration register values to set on the memory device during
+        initialization.

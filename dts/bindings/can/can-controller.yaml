@@ -1,0 +1,69 @@
+# Common fields for CAN controllers
+
+include: base.yaml
+
+properties:
+  bus-speed:
+    type: int
+    deprecated: true
+    description: |
+      Deprecated. This property has been renamed to bitrate.
+
+      Initial bitrate in bit/s. If this is unset, the initial bitrate is set to
+      CONFIG_CAN_DEFAULT_BITRATE.
+  bitrate:
+    type: int
+    description: |
+      Initial bitrate in bit/s. If this is unset, the initial bitrate is set to
+      CONFIG_CAN_DEFAULT_BITRATE.
+  sample-point:
+    type: int
+    description: |
+      Initial sample point in per mille (e.g. 875 equals 87.5%).
+
+      If this is unset (or if it is set to 0), the initial sample point will default to 75.0% for
+      bitrates over 800 kbit/s, 80.0% for bitrates over 500 kbit/s, and 87.5% for all other
+      bitrates.
+  phys:
+    type: phandle
+    description: |
+      Actively controlled CAN transceiver.
+
+      Example:
+        transceiver0: can-phy0 {
+          compatible = "nxp,tja1040", "can-transceiver-gpio";
+          standby-gpios = <gpioa 0 GPIO_ACTIVE_HIGH>;
+          max-bitrate = <1000000>;
+          #phy-cells = <0>;
+        };
+
+        &can0 {
+          status = "okay";
+
+          phys = <&transceiver0>;
+        };
+
+child-binding:
+  description: |
+    Passive CAN transceiver. The child node must be named "can-transceiver".
+
+    Example:
+      &can0 {
+        status = "okay";
+
+        can-transceiver {
+          max-bitrate = <1000000>;
+        };
+      };
+
+  properties:
+    min-bitrate:
+      type: int
+      description: |
+        The minimum bitrate supported by the CAN transceiver in bits/s.
+
+    max-bitrate:
+      type: int
+      required: true
+      description: |
+        The maximum bitrate supported by the CAN transceiver in bits/s.

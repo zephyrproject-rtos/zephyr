@@ -1,0 +1,40 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	lpspi3_default: lpspi3_default {
+		group0 {
+			pinmux = <PO0_LPSPI3_SOUT_O>, <PO14_LPSPI3_SCK_O>;
+			output-enable;
+		};
+
+		group1 {
+			pinmux = <PO11_LPSPI3_SIN_I>;
+			input-enable;
+		};
+	};
+};
+
+&lpspi3 {
+	status = "okay";
+	pinctrl-0 = <&lpspi3_default>;
+	pinctrl-names = "default";
+	pcs-sck-delay = <1000>;
+	sck-pcs-delay = <1000>;
+	transfer-delay = <1000>;
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <5000000>;
+	};
+};

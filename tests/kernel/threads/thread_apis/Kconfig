@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Thread APIs test"
+
+source "Kconfig.zephyr"
+
+config THREAD_API_UNMAPPED_ADDRESS
+	hex "Unmapped address from which to read"
+	default 0xFFFFFFF0
+	help
+	  This is the unmapped address that test_thread_name_user_get_set()
+	  will attempt to use if CONFIG_TRUSTED_EXECUTION_NONSECURE is not
+	  enabled. For most platforms, this address can be expected to be
+	  near the end of addressable memory; however it is not guaranteed
+	  for all platforms.

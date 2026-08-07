@@ -1,0 +1,146 @@
+/*
+ * Copyright 2025-2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/MCXE31BMPB-pinctrl.h>
+
+&pinctrl {
+	eirq0_default: eirq0_default {
+		group1 {
+			pinmux = <PTD5_EIRQ13>;
+			input-enable;
+		};
+	};
+
+	pinmux_lpuart_2: pinmux_lpuart_2 {
+		group1 {
+			pinmux = <PTA9_LPUART2_TX_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTA8_LPUART2_RX>;
+			input-enable;
+		};
+	};
+
+	pinmux_lpuart_5: pinmux_lpuart_5 {
+		group1 {
+			pinmux = <PTE14_LPUART5_TX_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTE3_LPUART5_RX>;
+			input-enable;
+		};
+	};
+
+	pinmux_flexcan_0: pinmux_flexcan_0 {
+		group1 {
+			pinmux = <PTA6_CAN0_RX>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <PTA7_CAN0_TX>;
+			output-enable;
+		};
+	};
+
+	pinmux_lpi2c_1: pinmux_lpi2c_1 {
+		group1 {
+			pinmux = <(PTC6_LPI2C1_SDA_I | PTC6_LPI2C1_SDA_O)>,
+				 <(PTC7_LPI2C1_SCL_I | PTC7_LPI2C1_SCL_O)>;
+			input-enable;
+			output-enable;
+			bias-pull-up;
+		};
+	};
+
+	pinmux_lpspi_0: pinmux_lpspi_0 {
+		group1 {
+			pinmux = <PTE1_LPSPI0_SCK_O>,
+				 <PTE2_LPSPI0_SOUT_O>,
+				 <PTE6_LPSPI0_PCS2_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTE0_LPSPI0_SIN_I>;
+			input-enable;
+		};
+	};
+
+	pinmux_flexio_pwm: pinmux_flexio_pwm {
+		group1 {
+			pinmux = <PTE15_FXIO_D2_O>;
+			output-enable;
+		};
+	};
+
+	pinmux_flexio_spi: pinmux_flexio_spi {
+		group1 {
+			pinmux = <PTE1_FXIO_D2_O>,
+				 <PTE2_FXIO_D13_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTE0_FXIO_D3_I>;
+			input-enable;
+		};
+	};
+
+	pinmux_flexio_lcd: pinmux_flexio_lcd {
+		group1 {
+			pinmux = <PTC23_FXIO_D16_O>,
+				 <PTC24_FXIO_D17_O>,
+				 <PTC25_FXIO_D18_O>,
+				 <PTC26_FXIO_D19_O>,
+				 <PTC27_FXIO_D20_O>,
+				 <PTC28_FXIO_D21_O>,
+				 <PTC29_FXIO_D22_O>,
+				 <PTC30_FXIO_D23_O>,
+				 <PTC31_FXIO_D24_O>,
+				 <PTD20_FXIO_D25_O>,
+				 <PTD21_FXIO_D26_O>,
+				 <PTD22_FXIO_D27_O>,
+				 <PTD23_FXIO_D28_O>,
+				 <PTD24_FXIO_D29_O>,
+				 <PTD26_FXIO_D30_O>,
+				 <PTD27_FXIO_D31_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTC11_FXIO_D15_O>;
+			output-enable;
+		};
+
+		group3 {
+			pinmux = <PTB0_FXIO_D14_O>;
+			output-enable;
+		};
+	};
+
+	pinmux_sai_0: pinmux_sai_0 {
+		group1 {
+			/* Each entry combines the pad's output mux with its
+			 * own IMCR input path (input buffer enabled), so the
+			 * receiver samples the transmitter's data, bit clock
+			 * and frame sync directly on-pad — TX->RX loopback
+			 * without external wiring:
+			 * PTB2  D0   out (MSCR34 SSS=6)  + RX D0   in (IMCR316)
+			 * PTC12 BCLK out (MSCR76 SSS=7)  + RX BCLK in (IMCR315)
+			 * PTC13 SYNC out (MSCR77 SSS=7)  + RX SYNC in (IMCR321)
+			 */
+			pinmux = <NXP_SIUL2_PINMUX(0, 0, 34, 6, 316, 1)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 76, 7, 315, 1)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 77, 7, 321, 1)>;
+			output-enable;
+			input-enable;
+		};
+	};
+};

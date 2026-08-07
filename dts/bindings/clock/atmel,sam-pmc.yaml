@@ -1,0 +1,51 @@
+# Copyright (c) 2023 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Atmel Power Management Controller (PMC)
+
+  The Power Management Controller (PMC) optimizes power consumption by
+  controlling all system and user peripheral clocks. The PMC enables/disables
+  the clock inputs to many of the peripherals and the processor.
+
+  To specify the clocks in a peripheral, the standard clocks property needs
+  to be used, e.g.:
+
+    uart: uart@xxx {
+      ...
+      clocks = <&pmc PMC_TYPE_PERIPHERAL p-id>;
+      ...
+    };
+
+  In this example the clock-type was defined as PMC_TYPE_PERIPHERAL and the
+  peripheral-id was defined as p-id. The p-id number should be consulted on
+  datasheet, usually it is available at Product Mapping figure.
+
+  NOTE: The predefined clock type cell is defined at
+  include/zephyr/drivers/clock_clontrol/atmel_sam_pmc.h header file.
+
+  The clock-type constants are:
+    PMC_TYPE_CORE
+    PMC_TYPE_SYSTEM
+    PMC_TYPE_PERIPHERAL
+    PMC_TYPE_GCK
+    PMC_TYPE_PROGRAMMABLE
+
+compatible: "atmel,sam-pmc"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+    description: |
+      from common clock binding; shall be set to 2. The first entry is the type
+      of the clock (core, system, peripheral or generated) and the second entry
+      it's the peripheral identification index as provided by the datasheet.
+
+clock-cells:
+  - clock-type
+  - peripheral-id

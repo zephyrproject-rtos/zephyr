@@ -1,0 +1,88 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP XSPI controller
+
+compatible: "nxp,xspi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  byte-order:
+    type: int
+    default: 3
+    enum: [0, 1, 2, 3]
+    description: |
+      Byte ordering endianness.
+      0 = 64-bit BE, 1 = 32-bit LE, 2 = 32-bit BE, 3 = 64-bit LE
+
+  enable-ahb-write:
+    type: boolean
+    description: Enable AHB write access.
+
+  ahb-buffer-write-flush:
+    type: boolean
+    description: Enable flushing AHB buffer on write or IP access.
+
+  ahb-prefetch:
+    type: boolean
+    description: Enable AHB read prefetch feature.
+
+child-binding:
+  description: NXP XSPI MDAD/FRAD configurations
+
+  properties:
+    # MDAD configuration
+    enable-descriptor-lock:
+      type: int
+      description: Enable descriptor lock
+    mask-type:
+      type: int
+      description: Mask type (0=AND, 1=OR)
+    mask:
+      type: int
+      description: 6-bit mask value
+    master-id-reference:
+      type: int
+      description: Master ID reference value
+    secure-attribute:
+      type: int
+      enum: [1, 2, 3]
+      description: Security attribute setting
+
+    # FRAD configuration
+    start-address:
+      type: int
+      description: Start address of the memory region
+    end-address:
+      type: int
+      description: End address of the memory region
+    tg0-master-access:
+      type: int
+      description: Target group 0 access permissions
+    tg1-master-access:
+      type: int
+      description: Target group 1 access permissions
+    descriptor-lock:
+      type: int
+      enum: [0, 1, 2, 3]
+      description: |
+        Descriptor lock mode:
+        - Disable
+        - Enable till hard reset
+        - Enable except master ID
+        - Enable
+    exclusive-access-lock:
+      type: int
+      enum: [0, 2, 3]
+      description: |
+        Exclusive access lock mode:
+        - Disable
+        - Enable except master ID
+        - Enable

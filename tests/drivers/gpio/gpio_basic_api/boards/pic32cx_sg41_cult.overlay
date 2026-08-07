@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*Connect PB08 and PB09*/
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&portb 8 0>;
+		in-gpios = <&portb 9 0>;
+	};
+};
+
+&portb {
+	status = "okay";
+};

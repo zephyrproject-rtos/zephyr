@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	sci9_default: sci9_default {
+		group1 {
+			/* TXD9 RXD9 */
+			psels = <RA_PSEL(RA_PSEL_SCI_9, 1, 9)>,
+				<RA_PSEL(RA_PSEL_SCI_9, 1, 10)>;
+			drive-strength = "high";
+		};
+	};
+
+	spi0_default: spi0_default {
+		group1 {
+			/* MISOA MOSIA RSPCKA SSLA0 */
+			psels = <RA_PSEL(RA_PSEL_SPI, 2, 6)>,
+				<RA_PSEL(RA_PSEL_SPI, 2, 7)>,
+				<RA_PSEL(RA_PSEL_SPI, 3, 2)>,
+				<RA_PSEL(RA_PSEL_SPI, 3, 1)>;
+			drive-strength = "high";
+		};
+	};
+};

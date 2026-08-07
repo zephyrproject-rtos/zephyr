@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2024, Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};
+
+/*
+ * Concatenate SRAM0(16KB), SRAM1(16KB) and SRAM2(16KB)
+ * to lvgl example work
+ */
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(48)>;
+};

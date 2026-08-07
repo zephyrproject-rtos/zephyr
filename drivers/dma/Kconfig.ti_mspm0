@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_TI_MSPM0
+	bool "Texas Instruments MSPM0 DMA Controller Driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_DMA_ENABLED
+	select USE_MSPM0_DL_DMA
+	help
+	  Enable Texas Instruments MSPM0 Family DMA driver.

@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2020 Linumiz
+# Author: Saravanan Sekar <saravanan@linumiz.com>
+
+config SOC_FAMILY_NUMICRO
+	bool
+
+config SOC_FAMILY
+	default "numicro" if SOC_FAMILY_NUMICRO
+
+rsource "*/Kconfig.soc"

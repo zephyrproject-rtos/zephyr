@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nrf93m1dk/nrf54l15/cpuflpr/xip
+name: nRF93M1-EK-nRF54L15-Fast-Lightweight-Peripheral-Processor (RRAM XIP)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 68
+flash: 96
+supported:
+  - counter
+  - gpio
+  - i2c
+  - spi
+  - watchdog

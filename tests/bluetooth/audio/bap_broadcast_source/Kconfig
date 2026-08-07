@@ -1,0 +1,36 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+
+config BT_AUDIO
+	bool
+	default y
+
+config BT_BUF_EVT_RX_COUNT
+	int
+	default 10
+
+config BT_BUF_ACL_TX_COUNT
+	int
+	default 5
+
+config BT_ISO_BROADCASTER
+	bool
+	default y
+
+config BT_ISO_MAX_BIG
+	int
+	default 10
+
+config BT_ISO_MAX_CHAN
+	int
+	default 10
+
+config BT_LOG
+	bool
+	default y
+
+# Include Zephyr's Kconfig.
+source "Kconfig"
+source "subsys/bluetooth/audio/Kconfig"
+source "subsys/bluetooth/Kconfig.logging"

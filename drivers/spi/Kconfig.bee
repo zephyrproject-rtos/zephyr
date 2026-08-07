@@ -1,0 +1,47 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_BEE
+	bool "Realtek Bee series SPI driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_SPI_ENABLED
+	select HAL_REALTEK_BEE_SPI
+	select PINCTRL
+	help
+	  This option enables the SPI driver for Realtek Bee SoCs.
+
+if SPI_BEE
+config SPI_BEE_INTERRUPT
+	bool "BEE MCU SPI Interrupt Support"
+	default y if SPI_ASYNC
+	help
+	  Enable the interrupt driven mode for SPI.
+
+config SPI_BEE_DMA
+	bool "BEE MCU SPI DMA Support"
+	select DMA
+	select SPI_BEE_INTERRUPT
+	select HAL_REALTEK_BEE_DMA
+	help
+	  Enable the DMA driven mode for SPI.
+
+if SPI_BEE_DMA
+config SPI_BEE_DMA_BUF_SIZE
+	int "Size of the DMA buffer slab block"
+	default 512
+	depends on SPI_BEE_DMA
+	help
+	  Size in bytes of each block in the memory slab used for DMA
+	  dummy buffers (when user buffer is NULL).
+
+config SPI_BEE_DMA_BUF_COUNT
+	int "Number of DMA buffer slab blocks"
+	default 4
+	depends on SPI_BEE_DMA
+	help
+	  Number of blocks in the memory slab. Should be enough for
+	  concurrent TX/RX operations across enabled SPI instances.
+
+endif # SPI_BEE_DMA
+
+endif # SPI_BEE

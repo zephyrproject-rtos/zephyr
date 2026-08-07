@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: System Off for NXP MCX
+
+common:
+  tags:
+    - power
+    - poweroff
+  platform_allow:
+    - frdm_mcxn947/mcxn947/cpu0
+    - mcx_n5xx_evk/mcxn547/cpu0
+    - mcx_n9xx_evk/mcxn947/cpu0
+    - frdm_mcxn236
+    - frdm_mcxa153
+    - frdm_mcxa156
+    - frdm_mcxa344
+    - frdm_mcxa266
+    - frdm_mcxa346
+    - frdm_mcxa366
+    - frdm_mcxa577
+  integration_platforms:
+    - frdm_mcxn947/mcxn947/cpu0
+    - frdm_mcxa156
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "system off demo"
+
+tests:
+  sample.boards.nxp.mcxn_a.system_off.timer:
+    timeout: 120
+    harness_config:
+      type: one_line
+      regex:
+        - "Completed 10 system-off cycles"
+    extra_configs:
+      - CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_TIMER=y
+  sample.boards.nxp.mcxn_a.system_off.button:
+    timeout: 300
+    extra_configs:
+      - CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_BUTTON=y

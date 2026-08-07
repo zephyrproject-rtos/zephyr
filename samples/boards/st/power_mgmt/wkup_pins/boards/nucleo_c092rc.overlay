@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 STMicroelectronics
+ * Copyright (c) 2025 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		wkup-src = &user_button;
+	};
+};
+
+&pwr {
+	status = "okay";
+};

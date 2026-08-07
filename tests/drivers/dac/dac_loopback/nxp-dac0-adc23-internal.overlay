@@ -1,0 +1,42 @@
+/*
+ * Copyright 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * Copyright 2026 Analog Devices, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* DAC0 output is internally available on ADC0_SE23 */
+
+/ {
+	zephyr,user {
+		io-channels = <&dac0 0 &adc0 23>;
+		io-channel-names = "dac1", "adc1";
+	};
+};
+
+&dac0 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@23 {
+		reg = <23>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+	};
+};

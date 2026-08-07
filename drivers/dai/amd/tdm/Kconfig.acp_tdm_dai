@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+config DAI_AMD_TDM
+	bool "AMD TDM DAI driver"
+	default y
+	depends on DT_HAS_AMD_TDM_DAI_ENABLED
+	help
+	  Enable the unified TDM DAI driver.
+	  Handles all three TDM instances: TDM0 (Headset), TDM1 (SP),
+	  and TDM2 (Bluetooth).

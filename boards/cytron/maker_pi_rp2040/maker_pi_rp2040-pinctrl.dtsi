@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	adc_default: adc_default {
+		group1 {
+			pinmux = <ADC_CH0_P26>, <ADC_CH1_P27>, <ADC_CH2_P28>, <ADC_CH3_P29>;
+			input-enable;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_P2>, <I2C1_SCL_P3>;
+			input-enable;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_P0>;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_P1>;
+			input-enable;
+		};
+	};
+
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PWM_4A_P8>, <PWM_4B_P9>, <PWM_5A_P10>, <PWM_5B_P11>,
+				 <PWM_6A_P12>, <PWM_6B_P13>, <PWM_7A_P14>, <PWM_7B_P15>,
+				 <PWM_3A_P22>;
+		};
+	};
+
+	ws2812_pio0_default: ws2812_pio0_default {
+		ws2812 {
+			pinmux = <PIO0_P18>;
+		};
+	};
+};

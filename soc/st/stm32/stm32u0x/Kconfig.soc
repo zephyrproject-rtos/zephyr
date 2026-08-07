@@ -1,0 +1,28 @@
+# ST Microelectronics STM32U0 MCU line
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32U0X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32u0x" if SOC_SERIES_STM32U0X
+
+config SOC_STM32U031XX
+	bool
+	select SOC_SERIES_STM32U0X
+
+config SOC_STM32U073XX
+	bool
+	select SOC_SERIES_STM32U0X
+
+config SOC_STM32U083XX
+	bool
+	select SOC_SERIES_STM32U0X
+
+config SOC
+	default "stm32u031xx" if SOC_STM32U031XX
+	default "stm32u073xx" if SOC_STM32U073XX
+	default "stm32u083xx" if SOC_STM32U083XX

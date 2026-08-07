@@ -1,0 +1,14 @@
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+	};
+};
+
+&soc {
+	sram0: memory@0 {
+		compatible = "mmio-sram";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x0 0x80000000>;
+	};
+};

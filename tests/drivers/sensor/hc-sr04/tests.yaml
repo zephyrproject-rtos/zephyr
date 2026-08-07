@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Adrien Leravat
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.hc-sr04:
+    tags:
+      - drivers
+      - sensor
+      - subsys
+    platform_allow:
+      - native_sim

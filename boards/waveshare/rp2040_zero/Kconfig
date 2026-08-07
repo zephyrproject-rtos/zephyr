@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Iacopo Moles
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RP2040_ZERO
+	select RP2_FLASH_W25Q080

@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2026 Realtek Semiconductor Corporation
+#
+
+description: AMEBA SD Host controller
+
+compatible: "realtek,ameba-sdhost"
+
+include:
+  - sdhc.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  cd-gpios:
+    type: phandle-array
+    description: Card detect pin.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  bus-width:
+    type: int
+    default: 4
+    description: |
+      SD bus width in bits.
+      Default is 4, as the AMEBA SD host controller is commonly wired
+      for 4-bit operation on most boards, which provides better
+      performance than 1-bit mode.
+      Only 1-bit and 4-bit modes are supported by the hardware.
+      Boards that require 1-bit mode must explicitly set this property
+      in the device tree.
+    enum:
+      - 1
+      - 4

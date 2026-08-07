@@ -1,0 +1,11 @@
+# Copyright (c) 2023 North River Systems Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.ina237:
+    tags:
+      - drivers
+      - sensor
+      - subsys
+    platform_allow:
+      - native_sim

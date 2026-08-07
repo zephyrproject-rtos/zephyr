@@ -1,0 +1,18 @@
+# Copyright (c) 2020 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_QEMU_ARC
+	select ARC
+	select CPU_HAS_MPU
+
+config SOC_QEMU_ARC_EM
+	select CPU_EM4
+
+config SOC_QEMU_ARC_HS
+	select CPU_HS3X
+
+config SOC_QEMU_ARC_HS5X
+	select CPU_HS5X
+
+config SOC_QEMU_ARC_HS6X
+	select CPU_HS6X

@@ -1,0 +1,9 @@
+board:
+  name: rtl87x2g_evb_a
+  full_name: RTL87x2G Model A Evaluation Board
+  vendor: realtek
+  socs:
+    - name: rtl8762gru
+    - name: rtl8762grh
+    - name: rtl8762gku
+    - name: rtl8762gkh

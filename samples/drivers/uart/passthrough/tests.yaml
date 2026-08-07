@@ -1,0 +1,10 @@
+sample:
+  name: UART Passthrough
+tests:
+  sample.drivers.uart.passthrough:
+    platform_allow:
+      - nucleo_l476rg
+    tags:
+      - serial
+      - uart
+    harness: keyboard

@@ -1,0 +1,31 @@
+/*
+ * Copyright (C) 2021 StarFive, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	apb1clk: apb1clk {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <125000000>;
+	};
+
+	apb2clk: apb2clk {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <125000000>;
+	};
+
+	uartclk: uartclk {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <100000000>;
+	};
+
+	hs_uartclk: hs_uartclk {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <74250000>;
+	};
+};

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2022 ASPEED Technology Inc.
+
+config CACHE_ASPEED
+bool "ASPEED external cache driver"
+	depends on SOC_SERIES_AST10X0
+	depends on SYSCON
+	select CACHE_HAS_DRIVER
+	help
+	  This option enables the CACHE driver for ASPEED AST10X0 series SOC.

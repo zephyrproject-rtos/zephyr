@@ -1,0 +1,60 @@
+# Private config options for Zephyr Wireguard demo app
+
+# Copyright (c) 2025 Jukka Rissanen
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Wireguard demo application"
+
+config NET_SAMPLE_COMMON_VPN_MY_PRIVATE_KEY
+	string "My private key in base64 format"
+	default ""
+	depends on WIREGUARD
+	help
+	  The public key will be calculated from the private one.
+
+config NET_SAMPLE_COMMON_VPN_PEER_PUBLIC_KEY
+	string "Peer public key in base64 format"
+	default ""
+	depends on WIREGUARD
+	help
+	  This specifies the public key of the peer that we are being
+	  connected from.
+
+config NET_SAMPLE_COMMON_VPN_PEER_IP_ADDR
+	string "Peer IP address to connect to"
+	default ""
+	depends on WIREGUARD
+	help
+	  This specifies the IP address of VPN service we are trying to
+	  connect to. You can also set the port number also here like
+	  this: 192.0.2.2:51821 or [2001:db8::2]:51822
+	  if using non standard Wireguard port which is 51820.
+
+config NET_SAMPLE_COMMON_VPN_ALLOWED_PEER_ADDR
+	string "Allowed peer IP addresses"
+	depends on WIREGUARD
+	help
+	  What peer IP address is allowed to connect.
+	  Format is: ip/masklen
+	  Multiple addresses can be given and must be separated by "," or space
+	  characters.
+	  Example: 192.0.2.0/24,2001:db9::/64
+
+config NET_SAMPLE_COMMON_VPN_MY_ADDR
+	string "My addresses for VPN connections"
+	depends on WIREGUARD
+	help
+	  The value depends on your network setup. Can contain multiple
+	  network addresses separated by comma.
+	  Example: 198.51.100.1/24,2001:db8:100::1/64
+
+config NET_SAMPLE_COMMON_VPN_KEEPALIVE_INTERVAL
+	int "Keepalive message period in seconds"
+	default 0
+	depends on WIREGUARD
+	help
+	  The value depends on your network setup. If set to 0, keepalive
+	  messages are not sent. If value is > 0, then a Wireguard keepalive
+	  message is sent periodically. Sensible value is 25 sec.
+
+source "Kconfig.zephyr"

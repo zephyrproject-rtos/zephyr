@@ -1,0 +1,5 @@
+# This makefile builds the sample for a POSIX system, like Linux
+
+uname: src/main.c
+	mkdir -p build
+	$(CC) $^ -o build/$@

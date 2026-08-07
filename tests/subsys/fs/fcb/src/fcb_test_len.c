@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2017-2020 Nordic Semiconductor ASA
+ * Copyright (c) 2015 Runtime Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "fcb_test.h"
+
+ZTEST(fcb_test_with_2sectors_set, test_fcb_len)
+{
+	uint8_t buf[3];
+	uint16_t len;
+	uint16_t len2;
+	int rc;
+	int rc2;
+	struct fcb fcb = { .f_erase_value = fcb_test_erase_value };
+
+
+
+	for (len = 0U; len < FCB_MAX_LEN; len++) {
+		rc = fcb_put_len(&fcb, buf, len);
+		zassert_true(rc == 1 || rc == 2, "fcb_put_len call failure");
+
+		rc2 = fcb_get_len(&fcb, buf, &len2);
+		zassert_true(rc2 == rc, "fcb_get_len call failure");
+
+		zassert_true(len == len2, "fcb_get_len call failure");
+	}
+}

@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* do not define the leds on the pc7 and pb7 but pwmleds */
+	leds {
+		status = "disabled";
+	};
+};
+
+&pwmleds {
+	/* NOTE: enable here because it is disabled by default */
+	status = "okay";
+};

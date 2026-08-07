@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Smile
+
+config BOARD_NUCLEO_U545RE_Q
+	select SOC_STM32U545XX

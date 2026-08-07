@@ -1,0 +1,45 @@
+common:
+  tags:
+    - spiram
+    - spiflash
+    - cache
+  harness: ztest
+tests:
+  boards.esp32.cache_coex:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+  boards.esp32.cache_coex.octal_80m:
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+    extra_configs:
+      - CONFIG_SPIRAM_SPEED_80M=y
+  boards.esp32.cache_coex.reloc:
+    platform_allow:
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+    extra_args:
+      - SNIPPET="espressif-psram-reloc"
+  boards.esp32.cache_coex.mcuboot:
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+    sysbuild: true
+  boards.esp32.cache_coex.reloc_mcuboot:
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+    sysbuild: true
+    extra_args:
+      - SNIPPET="espressif-psram-reloc"

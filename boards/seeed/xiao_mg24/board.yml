@@ -1,0 +1,6 @@
+board:
+  name: xiao_mg24
+  full_name: XIAO MG24
+  vendor: seeed
+  socs:
+    - name: efr32mg24b220f1536im48

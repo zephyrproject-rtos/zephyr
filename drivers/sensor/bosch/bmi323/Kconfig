@@ -1,0 +1,42 @@
+# Copyright (c) 2023 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BMI323
+	bool "BMI323 measurement unit"
+	default y
+	depends on DT_HAS_BOSCH_BMI323_ENABLED
+	help
+	  Enable driver for BMI323 IMU sensor.
+	  The driver implements the following features:
+
+	  * Enable and disable accelerometer and gyroscope respectively
+	  * Set full scale for accelerometer and gyroscope respectively
+	  * Set data rate for accelerometer and gyroscope respectively
+	  * Get samples (x,y,z) from accelerometer and gyroscope respectively
+	  * Get die temperature
+	  * Set trigger to accelerometer data ready, and accelerometer any motion.
+
+	  The driver implements device and device runtime power management. If
+	  runtime management is used, it is initialized into the suspended state,
+	  which soft-resets the device to achieve the lowest possible power
+	  consumption, otherwise it is resumed when initialized. When resumed,
+	  the bus is initialized, the feature engine is enabled, and INT1 is
+	  initialized.
+
+if BMI323
+
+config BMI323_BUS_SPI
+	bool "BMI323 driver support for SPI bus"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI323),spi)
+	select SPI
+	select SPI_RTIO if SENSOR_ASYNC_API
+
+config BMI323_BUS_I2C
+	bool "BMI323 driver support for I2C bus"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI323),i2c)
+	select I2C
+	select I2C_RTIO if SENSOR_ASYNC_API
+
+endif # BMI323

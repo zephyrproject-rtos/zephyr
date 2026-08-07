@@ -1,0 +1,9 @@
+description: GRLIB APBUART
+
+compatible: "gaisler,apbuart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true

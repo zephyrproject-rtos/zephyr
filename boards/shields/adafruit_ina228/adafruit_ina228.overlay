@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2025 Ian Wakely
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_ina228: ina228@40 {
+		compatible = "ti,ina228";
+		reg = <0x40>;
+		rshunt-micro-ohms = <15000>;
+		current-lsb-microamps = <10>;
+		status = "okay";
+	};
+};

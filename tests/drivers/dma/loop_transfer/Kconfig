@@ -1,0 +1,23 @@
+# Copyright (c) 2020 Erwin Rol <erwin@erwinrol.com>
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "DMA Loop Transfer Test"
+
+source "Kconfig.zephyr"
+
+config DMA_LOOP_TRANSFER_CHANNEL_NR
+	int "DMA channel to use"
+	default 0
+
+config DMA_LOOP_TRANSFER_RELOCATE_SECTION
+	string "the section to place the memory buffers."
+	depends on CODE_DATA_RELOCATION
+	default "RAM"
+
+config DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
+	int "Number of DMAs to test"
+	default 1
+
+config DMA_LOOP_TRANSFER_SIZE
+	int "Number of bytes to transfer"
+	default 8192

@@ -1,0 +1,20 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RCAR_GEN5
+	bool
+	select SOC_FAMILY_RENESAS_RCAR
+	help
+	  Support for R-Car Gen5 SoC series
+
+config SOC_R8A78000_R52
+	bool
+	select SOC_SERIES_RCAR_GEN5
+	help
+	  Support for R8A78000 R52 core
+
+config SOC_SERIES
+	default "rcar_gen5" if SOC_SERIES_RCAR_GEN5
+
+config SOC
+	default "r8a78000" if SOC_R8A78000_R52

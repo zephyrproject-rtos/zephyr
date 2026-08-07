@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_TPS55287
+	bool "TPS55287 regulator driver"
+	default y
+	depends on DT_HAS_TI_TPS55287_ENABLED
+	select I2C
+	help
+	  Enable support for the TPS55287 regulator.
+
+if REGULATOR_TPS55287
+
+config REGULATOR_TPS55287_INIT_PRIORITY
+	int "TPS55287 regulator driver init priority"
+	default I2C_INIT_PRIORITY
+	help
+	  Init priority for the TPS55287 regulator driver. This must be higher
+	  or equal to the parent I2C bus init priority.
+
+endif

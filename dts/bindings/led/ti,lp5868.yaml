@@ -1,0 +1,5 @@
+description: Texas Instruments LP5868 I2C LED controller node
+
+compatible: "ti,lp5868"
+
+include: ti,lp586x.yaml

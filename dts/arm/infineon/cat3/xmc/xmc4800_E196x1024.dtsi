@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: Karl Palsson 2026 <karl.palsson@marel.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <infineon/cat3/xmc/xmc4800_E196x.dtsi>
+
+/ {
+	psram1: memory@1ffee000 {
+		compatible = "mmio-sram";
+		reg = <0x1ffee000 DT_SIZE_K(72)>;
+	};
+
+	dsram_joined: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(128)>;
+	};
+};
+
+&flash0 {
+	reg = <0x8000000 DT_SIZE_M(1)>;
+	ranges = <0 0x8000000 DT_SIZE_M(1)>;
+
+	pages_layout: pages_layout {
+		pages_layout_16k: pages_layout_16k {
+			pages-count = <8>;
+			pages-size = <DT_SIZE_K(16)>;
+		};
+
+		pages_layout_128k: pages_layout_128k {
+			pages-count = <1>;
+			pages-size = <DT_SIZE_K(128)>;
+		};
+
+		pages_layout_256k: pages_layout_256k {
+			pages-count = <3>;
+			pages-size = <DT_SIZE_K(256)>;
+		};
+	};
+};

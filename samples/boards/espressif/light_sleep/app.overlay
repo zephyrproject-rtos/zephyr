@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&light_sleep {
+	/* Increase residency time to document that flash power down needs
+	 * extra residency time to accommodate the power down/up process.
+	 */
+	min-residency-us = <3000>;
+};
+
+&rtc_timer {
+	status = "okay";
+
+	/* Configure device as wakeup source */
+	wakeup-source;
+};

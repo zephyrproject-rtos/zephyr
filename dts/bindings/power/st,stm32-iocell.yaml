@@ -1,0 +1,57 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 I/O cell controller
+
+compatible: "st,stm32-iocell"
+
+include:
+  - name: base.yaml
+  - name: nvmem-consumer.yaml
+
+properties:
+  "#address-cells":
+    const: 0
+
+  "#size-cells":
+    const: 0
+
+  nvmem-cells:
+    description: |
+      Single nvmem-cells entry named "safeguard" can be provided to access
+      OTP/option byte value where HSLV enable bit is stored.
+      This is optional depending on the SoC series.
+
+child-binding:
+  description: |
+    IO power domains
+
+  properties:
+    domain:
+      type: int
+      description: |
+        I/O domain managed by the cell.
+        This must be one of the SoC-specific values defined in header
+        `include/zephyr/dt-bindings/power/stm32XXX_iocell.h`.
+
+    hslv-mode:
+      type: string
+      default: "off"
+      enum:
+        - "off"
+        - "on"
+        - "auto"
+      description: |
+        Allows to turn on HSLV (high-speed low voltage) option.
+        This option will work only if the corresponding bit is set in
+        option bytes / OTP fuse.
+        Enabling this option on domain that is powered from 3.3V
+        can permanently damage the device! Please consult datasheet for
+        precise threshold value.
+        Selecting "auto" will follow the setting in option bytes / OTP.
+        This can be useful for board allowing both 1.8V and 3.3V operation.
+
+    compensation-enabled:
+      type: boolean
+      description: |
+        Enables the I/O compensation cell

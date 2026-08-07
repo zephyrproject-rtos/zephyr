@@ -1,0 +1,11 @@
+# ESP32 DAC configuration options
+
+# Copyright (c) 2022 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_ESP32
+	bool "ESP32 DAC driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_DAC_ENABLED
+	help
+	  Enable the ESP32 DAC driver

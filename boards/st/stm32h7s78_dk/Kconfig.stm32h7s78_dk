@@ -1,0 +1,9 @@
+# STM32H7S78-DK Discovery kit board configuration
+#
+# Copyright (c) 2024 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_STM32H7S78_DK
+	select SOC_STM32H7S7XX

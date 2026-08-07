@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_OSD32MP15X
+	select SOC_STM32MP15_M4

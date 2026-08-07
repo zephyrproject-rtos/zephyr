@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>OpenThread Border Router - Configuration</title>
+	<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<div class="header-content">
+				<img src="/images/vendor_logo.png" alt="Vendor Logo" class="header-logo">
+				<div class="header-title">
+					<h1>OpenThread Border Router</h1>
+					<h1><br></h1>
+					<h1 class="board-name">@BOARD_NAME@</h1>
+				</div>
+				<img src="/images/zephyr_logo.png" alt="Zephyr Logo" class="header-logo">
+			</div>
+		</div>
+
+			<!-- Main Layout -->
+			<div class="main-layout">
+				<!-- Control Panel Card -->
+				<div class="card control-panel">
+					<div class="card-header">🎮 Control Panel</div>
+					<div class="card-content">
+						<div class="control-grid">
+							<button class="button success" onclick="startThread()">▶️ Start</button>
+							<button class="button danger" onclick="stopThread()">⏹️ Stop</button>
+							<button class="button" onclick="loadCurrentConfig()">📥 Load</button>
+							<button class="button" onclick="copyDatasetToClipboard()" id="copy-dataset-btn" disabled style="opacity: 0.5; cursor: not-allowed;">📋 Get Dataset</button>
+							<button class="button" onclick="refreshAll()" style="grid-column: 1 / -1;">🔄 Refresh All</button>
+							<!-- Status Bar -->
+							<div id="status-bar" class="status-bar"></div>
+						</div>
+						<div id="control-result" style="margin-top: 10px;"></div>
+
+					</div>
+				</div>
+
+				<!-- Topology Card -->
+				<div class="card topology-zone">
+					<div class="card-header">🌐 Thread Network Topology</div>
+					<div class="card-content">
+						<canvas id="network-topology" style="width: 100%; height: 200px;"></canvas>
+						<div class="topology-legend">
+							<div class="legend-item"><span style="color: #ffcc00; font-size: 18px;">★</span> Leader</div>
+							<div class="legend-item"><span style="color: #99ff99; font-size: 18px;">◆</span> Router</div>
+							<div class="legend-item"><span style="color: #99ccff; font-size: 18px;">●</span> Child</div>
+							<div class="legend-item"><span style="color: #ff9999; font-size: 18px;">■</span> Detached</div>
+							<div class="legend-item"><strong>💡 Click on a node to see details</strong></div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Node Info Card -->
+				<div class="card node-info-zone">
+					<div class="card-header">📍 Node Information</div>
+					<div class="card-content">
+						<div id="topology-info">
+							<div style="color: #7f8c8d; font-style: italic; text-align: center; padding: 20px;">
+								Click on a node in the topology to see details
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Configuration Card -->
+				<div class="card config-panel">
+					<div class="card-header">⚙️ Thread Network Configuration</div>
+					<div class="card-content">
+						<form id="network-config-form" onsubmit="submitNetworkConfig(event)">
+							<div class="form-group">
+								<label for="network_name">Network Name:</label>
+								<input type="text" id="network_name" name="network_name" maxlength="16" placeholder="MyThreadNetwork">
+								<small>Max 16 characters</small>
+							</div>
+
+							<div class="form-group">
+								<label for="pan_id">PAN ID:</label>
+								<input type="text" id="pan_id" name="pan_id" placeholder="0x1234">
+								<small>Hexadecimal format (e.g., 0x1234)</small>
+							</div>
+
+							<div class="form-group">
+								<label for="extpanid">Extended PAN ID:</label>
+								<input type="text" id="extpanid" name="extpanid" placeholder="0011223344556677" maxlength="16">
+								<small>16 hex characters (8 bytes)</small>
+								<button type="button" class="button warning small" onclick="generateRandomExtPanId()" style="margin-top: 5px; width: 100%;">🎲 Generate Random</button>
+							</div>
+
+							<div class="form-group">
+								<label for="channel">Channel:</label>
+								<select id="channel" name="channel">
+									<option value="">-- Select Channel --</option>
+									<option value="11">11 (2405 MHz)</option>
+									<option value="12">12 (2410 MHz)</option>
+									<option value="13">13 (2415 MHz)</option>
+									<option value="14">14 (2420 MHz)</option>
+									<option value="15">15 (2425 MHz)</option>
+									<option value="16">16 (2430 MHz)</option>
+									<option value="17"selected>17 (2435 MHz)</option>
+									<option value="18">18 (2440 MHz)</option>
+									<option value="19">19 (2445 MHz)</option>
+									<option value="20">20 (2450 MHz)</option>
+									<option value="21">21 (2455 MHz)</option>
+									<option value="22">22 (2460 MHz)</option>
+									<option value="23">23 (2465 MHz)</option>
+									<option value="24">24 (2470 MHz)</option>
+									<option value="25">25 (2475 MHz)</option>
+									<option value="26">26 (2480 MHz)</option>
+								</select>
+								<small>IEEE 802.15.4 channel (11-26)</small>
+							</div>
+
+							<div class="form-group">
+								<label for="network_key">Network Key:</label>
+								<input type="text" id="network_key" name="network_key" placeholder="00112233445566778899aabbccddeeff" maxlength="32">
+								<small>32 hex characters (16 bytes)</small>
+								<button type="button" class="button warning small" onclick="generateRandomKey()" style="margin-top: 5px; width: 100%;">🎲 Generate Random</button>
+							</div>
+
+							<div class="info-box">
+								<strong>ℹ️ Info:</strong> A new dataset will be created with random values. Fill in fields to override specific parameters.
+							</div>
+
+							<button type="submit" class="button success" style="width: 100%;">💾 Save Configuration</button>
+						</form>
+						<div id="config-result" style="margin-top: 15px;"></div>
+					</div>
+				</div>
+
+				<!-- Diagnostics Card -->
+				<div class="card diagnostics-zone">
+					<div class="card-header">🔍 Network Diagnostics</div>
+					<div class="card-content">
+						<div id="diagnostics-content">
+							<div style="color: #7f8c8d; font-style: italic; text-align: center; padding: 20px;">
+								Select a node to access diagnostics
+							</div>
+						</div>
+						<div id="diagnostics-result" style="display: none;"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,146 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+&aon_peripheral {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	lpirc: lpirc {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(10)>;
+	};
+
+	ulpirc: ulpirc {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(3)>;
+		status = "disabled";
+	};
+
+	root_clock1: root_clock1 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(10)>;
+	};
+
+	root_clock2: root_clock2 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_M(5)>;
+	};
+
+	root_clock3: root_clock3 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <DT_FREQ_K(2500)>;
+	};
+
+	porta: pinmux@85000 {
+		compatible = "nxp,port-pinmux";
+		reg = <0x85000 0x1000>;
+		clocks = <&root_clock1>;
+	};
+
+	gpio0: gpio@9f000 {
+		compatible = "nxp,kinetis-gpio";
+		status = "disabled";
+		reg = <0x9f000 0x1000>;
+		interrupts = <132 0>, <133 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&porta>;
+	};
+
+	aon_lpuart0: lpuart@82000 {
+		compatible = "nxp,lpuart";
+		status = "disabled";
+		reg = <0x82000 0x1000>;
+		interrupts = <130 0>;
+		clocks = <&root_clock1>;
+	};
+
+	rtc: rtc@9a000 {
+		compatible = "nxp,rtc-analog";
+		reg = <0x9a000 0x1000>;
+		interrupts = <140 0>, <141 0>, <142 0>;
+		interrupt-names = "alarm0", "alarm1", "alarm2";
+		alarms-count = <3>;
+		status = "disabled";
+	};
+
+	aon_qtmr_clock: aon-qtmr-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <2500000>;
+	};
+
+	aon_qtmr0: qtmr@8e000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x8e000 0x1000>;
+		interrupts = <24 0>;
+		clocks = <&aon_qtmr_clock>;
+		status = "disabled";
+
+		aon_qtmr0_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+
+		aon_qtmr0_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+
+		aon_qtmr0_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+
+		aon_qtmr0_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+
+	aon_qtmr1: qtmr@8f000 {
+		compatible = "nxp,imx-qtmr";
+		reg = <0x8f000 0x1000>;
+		interrupts = <25 0>;
+		clocks = <&aon_qtmr_clock>;
+		status = "disabled";
+
+		aon_qtmr1_timer0: timer0 {
+			compatible = "nxp,imx-tmr";
+			channel = <0>;
+			status = "disabled";
+		};
+
+		aon_qtmr1_timer1: timer1 {
+			compatible = "nxp,imx-tmr";
+			channel = <1>;
+			status = "disabled";
+		};
+
+		aon_qtmr1_timer2: timer2 {
+			compatible = "nxp,imx-tmr";
+			channel = <2>;
+			status = "disabled";
+		};
+
+		aon_qtmr1_timer3: timer3 {
+			compatible = "nxp,imx-tmr";
+			channel = <3>;
+			status = "disabled";
+		};
+	};
+};

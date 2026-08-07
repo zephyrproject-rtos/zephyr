@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	nrf_radio_coex: coex {
+		compatible = "nordic,nrf7002-coex";
+		status = "okay";
+
+		status0-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_HIGH>;
+		req-gpios = <&arduino_header ARDUINO_HEADER_R3_D3 GPIO_ACTIVE_HIGH>;
+		grant-gpios = <&arduino_header ARDUINO_HEADER_R3_D4
+			       (GPIO_PULL_DOWN | GPIO_ACTIVE_LOW)>;
+		swctrl1-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+	};
+};

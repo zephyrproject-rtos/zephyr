@@ -1,0 +1,191 @@
+# Copyright (c) 2017 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_LLDP
+	bool "Link Layer Discovery Protocol (LLDP)"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	help
+	  Enable Link Layer Discovery Protocol (LLDP) Transmit support.
+	  Please refer to IEEE Std 802.1AB for more information.
+
+if NET_LLDP
+
+module = NET_LLDP
+module-dep = NET_LOG
+module-str = Log level for LLDP
+module-help = Enables core LLDP code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+#
+# LLDP Tx state machine config
+#
+config NET_LLDP_TX_INTERVAL
+	int "Time between transmissions in seconds (msgTxInterval)"
+	default 30
+	range 1 3600
+	help
+	  Interval between transmissions of LLDPDUs during normal
+	  (non-fast mode) transmission periods. For further information
+	  please refer to section 9.2.5.7 of the LLDP spec.
+
+config NET_LLDP_TX_HOLD
+	int "Multiplier of Tx Interval to result on Time to Live value"
+	default 4
+	range 1 100
+	help
+	  This value (msgTxHold) is used as a multiplier of
+	  CONFIG_NET_LLDP_TX_INTERVAL, to determine the value to be used
+	  as Time to Live in LLDP frames. For further information please
+	  refer to section 9.2.5.6 of the LLDP spec.
+
+#
+# End of LLDPDU TLV CONFIG
+#
+config NET_LLDP_END_LLDPDU_TLV_ENABLED
+	bool "End of LLDPDU TLV"
+	default y
+	help
+	  Tells whether LLDPDU packet will have marker at the end of the packet.
+
+#
+# CHASSIS ID TLV CONFIG
+#
+config NET_LLDP_CHASSIS_ID_SUBTYPE
+	int "Chassis ID TLV subtype"
+	default 4
+	range 1 7
+	help
+	  Chassis ID subtype options are defined below.
+	  Please refer to section 8.5.2.2 of the 802.1AB for more info.
+	  Subtype 1 = Chassis component
+	  Subtype 2 = Interface alias
+	  Subtype 3 = Port component
+	  Subtype 4 = MAC address
+	  Subtype 5 = Network address
+	  Subtype 6 = Interface name
+	  Subtype 7 = Locally assigned
+	  If subtype 4 is selected, MAC address, then configs
+	  NET_LLDP_CHASSIS_ID_MAC0 through NET_LLDP_CHASSIS_ID_MAC5 must
+	  be defined, otherwise you must use NET_LLDP_CHASSIS_ID instead.
+
+if NET_LLDP_CHASSIS_ID_SUBTYPE = 4
+config NET_LLDP_CHASSIS_ID_MAC0
+	hex "Chassis ID MAC Address Byte 0"
+	default 0x00
+	range 0 0xff
+	help
+	  Byte 0 of the MAC address.
+
+config NET_LLDP_CHASSIS_ID_MAC1
+	hex "Chassis ID MAC Address Byte 1"
+	default 0x00
+	range 0 0xff
+	help
+	  Byte 1 of the MAC address.
+
+config NET_LLDP_CHASSIS_ID_MAC2
+	hex "Chassis ID MAC Address Byte 2"
+	default 0x5e
+	range 0 0xff
+	help
+	  Byte 2 of the MAC address.
+
+config NET_LLDP_CHASSIS_ID_MAC3
+	hex "Chassis ID MAC Address Byte 3"
+	default 0x00
+	range 0 0xff
+	help
+	  Byte 3 of the MAC address.
+
+config NET_LLDP_CHASSIS_ID_MAC4
+	hex "Chassis ID MAC Address Byte 4"
+	default 0x53
+	range 0 0xff
+	help
+	  Byte 4 of the MAC address.
+
+config NET_LLDP_CHASSIS_ID_MAC5
+	hex "Chassis ID MAC Address Byte 5"
+	default 0x8d
+	range 0 0xff
+	help
+	  Byte 5 of the MAC address.
+endif
+
+config NET_LLDP_CHASSIS_ID
+	string "Chassis ID value"
+	default "CHASSIS_ID_PLACEHOLDER"
+	depends on NET_LLDP_CHASSIS_ID_SUBTYPE != 4
+
+#
+# PORT ID TLV CONFIG
+#
+config NET_LLDP_PORT_ID_SUBTYPE
+	int "Port ID TLV subtype"
+	default 5
+	range 1 7
+	help
+	  Port ID subtype options are defined below.
+	  Please refer to section 8.5.3.2 of the 802.1AB for more info.
+	  Subtype 1 = Interface alias
+	  Subtype 2 = Port component
+	  Subtype 3 = MAC address
+	  Subtype 4 = Network address
+	  Subtype 5 = Interface name
+	  Subtype 6 = Agent circuit ID
+	  Subtype 7 = Locally assigned
+	  If subtype 3 is selected (MAC address) then configs
+	  NET_LLDP_PORT_ID_MAC0 through NET_LLDP_PORT_ID_MAC5 must
+	  be defined, otherwise you must use NET_LLDP_PORT_ID instead.
+
+if NET_LLDP_PORT_ID_SUBTYPE = 3
+config NET_LLDP_PORT_ID_MAC0
+	hex "Chassis ID MAC Address Byte 0"
+	default 0x00
+	range 0 0xff
+	help
+	  Byte 0 of the MAC address.
+
+config NET_LLDP_PORT_ID_MAC1
+	hex "Chassis ID MAC Address Byte 1"
+	default 0x00
+	range 0 0xff
+	help
+	  Byte 1 of the MAC address.
+
+config NET_LLDP_PORT_ID_MAC2
+	hex "Chassis ID MAC Address Byte 2"
+	default 0x5e
+	range 0 0xff
+	help
+	  Byte 2 of the MAC address.
+
+config NET_LLDP_PORT_ID_MAC3
+	hex "Chassis ID MAC Address Byte 3"
+	default 0x00
+	range 0 0xff
+	help
+	  Byte 3 of the MAC address.
+
+config NET_LLDP_PORT_ID_MAC4
+	hex "Chassis ID MAC Address Byte 4"
+	default 0x53
+	range 0 0xff
+	help
+	  Byte 4 of the MAC address.
+
+config NET_LLDP_PORT_ID_MAC5
+	hex "Chassis ID MAC Address Byte 5"
+	default 0x8d
+	range 0 0xff
+	help
+	  Byte 5 of the MAC address.
+endif
+
+config NET_LLDP_PORT_ID
+	string "Port ID value"
+	default "PORT_ID_PLACEHOLDER"
+	depends on NET_LLDP_PORT_ID_SUBTYPE != 3
+
+endif # NET_LLDP

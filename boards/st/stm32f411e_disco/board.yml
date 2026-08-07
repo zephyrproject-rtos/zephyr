@@ -1,0 +1,12 @@
+board:
+  name: stm32f411e_disco
+  full_name: STM32F411E Discovery
+  vendor: st
+  revision:
+    format: letter
+    default: "D"
+    revisions:
+      - name: "B"
+      - name: "D"
+  socs:
+    - name: stm32f411xe

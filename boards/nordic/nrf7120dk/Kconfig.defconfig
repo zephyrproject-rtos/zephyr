@@ -1,0 +1,22 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+if BOARD_NRF7120DK_NRF7120_CPUAPP
+
+config HAS_BT_CTLR
+	default BT
+
+endif # BOARD_NRF7120DK_NRF7120_CPUAPP
+
+if BOARD_NRF7120DK_NRF7120_CPUAPP_NS
+
+config BOARD_NRF7120DK
+	select USE_DT_CODE_PARTITION
+
+config HAS_BT_CTLR
+	default BT
+
+endif # BOARD_NRF7120DK_NRF7120_CPUAPP_NS

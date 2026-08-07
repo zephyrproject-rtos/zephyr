@@ -1,0 +1,16 @@
+# Copyright 2026 Patryk Koscik
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RV1106
+	bool
+	select SOC_SERIES_RV1106
+
+config SOC_SERIES_RV1106
+	bool
+	select SOC_FAMILY_ROCKCHIP
+
+config SOC
+	default "rv1106" if SOC_RV1106
+
+config SOC_SERIES
+	default "rv1106" if SOC_SERIES_RV1106

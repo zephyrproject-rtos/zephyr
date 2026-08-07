@@ -1,0 +1,28 @@
+# Copyright (c) 2016 Intel Corporation
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_CMSIS_6_MODULE
+	bool
+
+config HAS_CMSIS_CORE
+	bool
+	select HAS_CMSIS_CORE_M if CPU_CORTEX_M
+
+if HAS_CMSIS_CORE
+
+config HAS_CMSIS_CORE_M
+	bool
+
+config CMSIS_M_CHECK_DEVICE_DEFINES
+	bool "Check device defines"
+	depends on HAS_CMSIS_CORE_M
+	help
+	  This options enables the validation of CMSIS configuration flags.
+
+config CMSIS_CORE_HAS_SYSTEM_CORE_CLOCK
+	bool
+	help
+	  Enable this option if CMSIS SystemCoreClock symbols is available.
+
+endif

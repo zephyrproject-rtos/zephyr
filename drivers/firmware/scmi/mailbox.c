@@ -1,0 +1,135 @@
+/*
+ * Copyright 2024,2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/logging/log.h>
+#include "mailbox.h"
+#include <zephyr/drivers/firmware/scmi/protocol.h>
+
+LOG_MODULE_REGISTER(scmi_mbox);
+
+static void scmi_mbox_cb(const struct device *mbox,
+			 mbox_channel_id_t channel_id,
+			 void *user_data,
+			 struct mbox_msg *data)
+{
+	int ret;
+	struct scmi_channel *scmi_chan = user_data;
+	struct scmi_mbox_channel *mbox_chan = scmi_chan->data;
+	uint32_t hdr;
+
+	ret = scmi_shmem_read_hdr(mbox_chan->shmem, &hdr);
+	if (ret < 0) {
+		LOG_ERR("failed to read message header from shmem: %d", ret);
+		return;
+	}
+
+	if (scmi_chan->cb) {
+		scmi_chan->cb(scmi_chan, hdr);
+	}
+}
+
+static int scmi_mbox_send_message(const struct device *transport,
+				  struct scmi_channel *chan,
+				  struct scmi_message *msg,
+				  bool use_polling)
+{
+	struct scmi_mbox_channel *mbox_chan;
+	int ret;
+
+	mbox_chan = chan->data;
+
+	ret = scmi_shmem_write_message(mbox_chan->shmem, msg, use_polling);
+	if (ret < 0) {
+		LOG_ERR("failed to write message to shmem: %d", ret);
+		return ret;
+	}
+
+	ret = mbox_send_dt(&mbox_chan->tx, NULL);
+	if (ret < 0) {
+		LOG_ERR("failed to ring doorbell: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int scmi_mbox_read_message(const struct device *transport,
+				  struct scmi_channel *chan,
+				  struct scmi_message *msg)
+{
+	struct scmi_mbox_channel *mbox_chan = chan->data;
+	int ret;
+
+	ret = scmi_shmem_read_message(mbox_chan->shmem, msg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* For RX notifications, acknowledge the message after it has been read.
+	 * This releases the shared memory channel for subsequent notifications.
+	 */
+	if (!mbox_chan->is_tx) {
+		scmi_shmem_mark_channel_free(mbox_chan->shmem);
+	}
+
+	return 0;
+}
+
+static bool scmi_mbox_channel_is_free(const struct device *transport,
+				      struct scmi_channel *chan)
+{
+	struct scmi_mbox_channel *mbox_chan = chan->data;
+
+	return scmi_shmem_channel_status(mbox_chan->shmem) &
+		SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
+}
+
+static int scmi_mbox_setup_chan(const struct device *transport,
+				struct scmi_channel *chan,
+				bool tx)
+{
+	int ret;
+	struct scmi_mbox_channel *mbox_chan;
+	struct mbox_dt_spec *mbox_spec;
+
+	mbox_chan = chan->data;
+	mbox_chan->is_tx = tx;
+
+	if (tx) {
+		mbox_spec = mbox_chan->tx_reply.dev ? &mbox_chan->tx_reply : &mbox_chan->tx;
+	} else {
+		if (!mbox_chan->rx.dev) {
+			LOG_ERR("RX channel not defined");
+			return -ENOTSUP;
+		}
+		mbox_spec = &mbox_chan->rx;
+	}
+
+	ret = mbox_register_callback_dt(mbox_spec, scmi_mbox_cb, chan);
+	if (ret < 0) {
+		LOG_ERR("failed to register %s callback", tx ? "tx" : "rx");
+		return ret;
+	}
+
+	ret = mbox_set_enabled_dt(mbox_spec, true);
+	if (ret < 0) {
+		LOG_ERR("failed to enable %s dbell", tx ? "tx" : "rx");
+		return ret;
+	}
+
+	return 0;
+}
+
+static struct scmi_transport_api scmi_mbox_api = {
+	.setup_chan = scmi_mbox_setup_chan,
+	.send_message = scmi_mbox_send_message,
+	.read_message = scmi_mbox_read_message,
+	.channel_is_free = scmi_mbox_channel_is_free,
+};
+
+DT_INST_SCMI_MAILBOX_DEFINE(0, PRE_KERNEL_1,
+			    CONFIG_ARM_SCMI_TRANSPORT_INIT_PRIORITY,
+			    &scmi_mbox_api);

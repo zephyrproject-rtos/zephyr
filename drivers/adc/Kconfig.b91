@@ -1,0 +1,27 @@
+# Copyright (c) 2022 Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_TELINK_B91
+	bool "Telink Semiconductor B91 ADC driver"
+	default y
+	depends on DT_HAS_TELINK_B91_ADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enables Telink B91 ADC driver.
+
+if ADC_TELINK_B91
+
+config ADC_B91_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 512
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+config ADC_B91_ACQUISITION_THREAD_PRIO
+	int "Priority for the ADC data acquisition thread"
+	default 0
+	help
+	  Priority level for the internal ADC data acquisition thread.
+
+endif # ADC_TELINK_B91

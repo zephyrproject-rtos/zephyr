@@ -1,0 +1,66 @@
+# ADT7310 temperature sensor configuration options
+
+# Copyright (c) 2023 Andriy Gelman
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ADT7310
+	bool "ADT7310 Temperature Sensor"
+	default y
+	depends on DT_HAS_ADI_ADT7310_ENABLED
+	select SPI
+	help
+	  Enable the driver for Analog Devices ADT7310 High-Accuracy
+	  16-bit Digital SPI Temperature Sensors.
+
+if ADT7310
+
+config ADT7310_TRIGGER
+	bool
+	depends on GPIO
+
+choice
+	prompt "Sets trigger mode"
+	default ADT7310_TRIGGER_NONE
+	help
+	  Sets thread type for the interrupt handler.
+
+config ADT7310_TRIGGER_NONE
+	bool "No trigger"
+
+config ADT7310_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADT7310),int-gpios)
+	select ADT7310_TRIGGER
+	help
+	  Use a global thread for the interrupt handler.
+
+config ADT7310_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADT7310),int-gpios)
+	select ADT7310_TRIGGER
+	help
+	  Use a separate thread for the interrupt handler.
+
+endchoice
+
+if ADT7310_TRIGGER_OWN_THREAD
+
+config ADT7310_THREAD_PRIORITY
+	int "Thread priority of the interrupt handler"
+	default 1
+	help
+	  Thread priority of the interrupt handler. A higher number implies a
+	  higher priority. The thread is cooperative and will not be interrupted by
+	  another thread until execution is released.
+
+config ADT7310_THREAD_STACK_SIZE
+	int "Stack size of the interrupt handler thread"
+	default 1024
+	help
+	  Stack size of the interrupt handler thread.
+
+endif # ADT7310_TRIGGER_OWN_THREAD
+
+endif # ADT7310

@@ -1,0 +1,20 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for MIPI-DBI controllers
+
+include: base.yaml
+
+bus: mipi-dbi
+
+properties:
+  clock-frequency:
+    type: int
+    description: |
+      Clock frequency of the SCL signal of the MBI-DBI peripheral, in Hz
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    required: true
+    const: 0

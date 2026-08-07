@@ -1,0 +1,36 @@
+# Atmel SAME54 MCU series
+
+# Copyright (c) 2019 ML!PA Consulting GmbH
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAME54
+	bool
+	select SOC_FAMILY_ATMEL_SAM0
+	help
+	  Enable support for Atmel SAME54 Cortex-M4F microcontrollers.
+
+config SOC_SERIES
+	default "same54" if SOC_SERIES_SAME54
+
+config SOC_SAME54N19A
+	bool
+	select SOC_SERIES_SAME54
+
+config SOC_SAME54N20A
+	bool
+	select SOC_SERIES_SAME54
+
+config SOC_SAME54P19A
+	bool
+	select SOC_SERIES_SAME54
+
+config SOC_SAME54P20A
+	bool
+	select SOC_SERIES_SAME54
+
+config SOC
+	default "same54n19a" if SOC_SAME54N19A
+	default "same54n20a" if SOC_SAME54N20A
+	default "same54p19a" if SOC_SAME54P19A
+	default "same54p20a" if SOC_SAME54P20A

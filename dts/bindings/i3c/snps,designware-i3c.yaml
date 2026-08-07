@@ -1,0 +1,14 @@
+# Copyright (C) 2020 Samsung Electronics Co., Ltd.
+# Copyright (C) 2023 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: >
+    This is a binding for the Synopsys I3C interface
+
+compatible: "snps,designware-i3c"
+
+include: [i3c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  clocks:
+    required: true

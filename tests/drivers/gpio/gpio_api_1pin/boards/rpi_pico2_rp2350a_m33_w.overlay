@@ -1,0 +1,8 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Magpie Embedded
+ */
+
+/* Pico 2W is pin-compatible with the Raspberry Pi Pico 2, so reuse. */
+#include "rpi_pico2_rp2350a_m33.overlay"

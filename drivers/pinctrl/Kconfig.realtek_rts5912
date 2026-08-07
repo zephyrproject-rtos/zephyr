@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+config PINCTRL_REALTEK_RTS5912
+	bool "Pin controller driver for REALTEK RTS MCUs"
+	depends on SOC_SERIES_RTS5912
+	default y if DT_HAS_REALTEK_RTS5912_PINCTRL_ENABLED
+	help
+	  Enable pin controller driver for REALTEK RTS MCUs

@@ -1,0 +1,6 @@
+shield:
+  name: wiznet_w5500
+  full_name: W5500 Ethernet Shield
+  vendor: wiznet
+  supported_features:
+    - ethernet

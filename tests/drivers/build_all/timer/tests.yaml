@@ -1,0 +1,12 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - timer
+tests:
+  drivers.timer.build:
+    extra_configs:
+      - CONFIG_CORTEX_M_SYSTICK=n
+      - CONFIG_CMSDK_APB_TIMER=y
+    platform_allow:
+      - sr100_rdk/sr100

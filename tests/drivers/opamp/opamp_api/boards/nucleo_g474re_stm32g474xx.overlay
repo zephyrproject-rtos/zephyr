@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		opamp = <&opamp2>;
+	};
+};
+
+/* Disable spi1 to prevent conflict with opmap2 on PA5 pinctrl state */
+&spi1 {
+	status = "disabled";
+};
+
+&opamp2 {
+	pinctrl-0 = <&opamp2_vinm_pa5 &opamp2_vinp_pb0>;
+	pinctrl-names = "default";
+	functional-mode = "follower";
+	inm = "VINM0";
+	inp = "VINP2";
+	st,enable-self-calibration;
+	status = "okay";
+};

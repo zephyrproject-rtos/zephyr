@@ -1,0 +1,16 @@
+# Copyright (c) 2025, Ambiq
+# Author: Richard S Wheatley
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Hardware CRC32 Cyclic Redundancy Check Module.
+
+    This module implements a hardware-based CRC32 calculation.
+
+compatible: "ambiq,hw-crc32"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

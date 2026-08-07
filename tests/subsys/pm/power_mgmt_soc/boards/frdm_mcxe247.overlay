@@ -1,0 +1,18 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,system-timer = &lptmr0;
+	};
+};
+
+&lptmr0 {
+	status = "okay";
+	clock-frequency = <DT_FREQ_K(32)>;
+	prescale-glitch-filter-bypass;
+	clk-source = <2>;
+};

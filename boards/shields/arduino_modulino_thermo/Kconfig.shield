@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ARDUINO_MODULINO_THERMO
+	def_bool $(shields_list_contains,arduino_modulino_thermo)

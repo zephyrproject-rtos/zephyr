@@ -1,0 +1,12 @@
+# Copyright 2023 Grinn
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_MAX20335
+	bool "MAX20335 battery charger driver"
+	default y
+	depends on DT_HAS_MAXIM_MAX20335_CHARGER_ENABLED
+	select GPIO
+	select I2C
+	select MFD
+	help
+	  Enable the MAX20335 battery charger driver.

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 sensry.io
+
+config PINCTRL_SY1XX
+	bool "Sensry sy1xx pin controller driver"
+	default y
+	depends on DT_HAS_SENSRY_SY1XX_PINCTRL_ENABLED
+	help
+	  Sensry pin controller driver is used on sy1xx SoC series

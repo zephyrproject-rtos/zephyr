@@ -1,0 +1,20 @@
+sample:
+  name: Hello Bindesc
+tests:
+  sample.bindesc:
+    tags: bindesc
+    filter: CONFIG_ARCH_SUPPORTS_ROM_START or CONFIG_ARCH_POSIX
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Zephyr version: "
+        - "App version: 1.0.0"
+        - "Build time: "
+        - "Compiler: "
+        - "my_string: Hello world!"
+        - "my_int: 5"
+        - "my_bytes: 01 02 03 04"

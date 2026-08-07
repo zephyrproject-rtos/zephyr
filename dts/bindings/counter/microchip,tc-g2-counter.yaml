@@ -1,0 +1,38 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Microchip SAM Timer Counter
+
+compatible: "microchip,tc-g2-counter"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-selection:
+    type: int
+    enum: [0, 1, 2, 3, 4]
+    default: 0
+    description: |
+      Refer to TC_CMR.TCCLKS in datasheet.
+      GCLK is used by default.
+
+  top-alarm:
+    type: boolean
+    description: |
+      Reuse the top value channel as an alarm channel
+      By default RC is exclusive to "top value",
+      Use this option to enable the RC alarm channel.
+      RA --> alarm channel 0
+      RB --> alarm channel 1
+      RC --> alarm channel 2 or top value

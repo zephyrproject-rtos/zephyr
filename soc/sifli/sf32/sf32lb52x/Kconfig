@@ -1,0 +1,38 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SF32LB52X
+	select ARM
+	# NOTE: Star-MC1, Cortex-M33 compatible
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	select SOC_EARLY_INIT_HOOK
+
+if SOC_SERIES_SF32LB52X
+
+config SF32LB52X_BOOTROM_FLASH_ON_DELAY_MS
+	int "Boot ROM flash on delay (ms)"
+	default 0
+	range 0 4095
+	help
+	  Configure boot ROM flash on delay (PA21) in milliseconds. Boot ROM
+	  will by default set on/off delays to 0ms before jumping to firmware.
+	  Enabling this option allows to configure the on/off delays to non-zero
+	  values. A flash power cycle guarantees to put the external flash into
+	  a known state before executing code from it. This is required if using
+	  4-byte address mode in the external flash, as the boot ROM will always
+	  use 3-byte address mode when reading from external flash.
+
+config SF32LB52X_BOOTROM_FLASH_OFF_DELAY_MS
+	int "Boot ROM flash off delay (ms)"
+	default 0
+	range 0 255
+	help
+	  Configure boot ROM flash off delay (PA21) in milliseconds. See
+	  SF32LB52X_BOOTROM_FLASH_ON_DELAY_MS help for more details.
+
+endif # SOC_SERIES_SF32LB52X

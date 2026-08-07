@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2019 Benjamin Valentin
+ * Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <atmel/samd21.dtsi>
+
+/ {
+	aliases {
+		port-c = &portc;
+	};
+
+	soc {
+		pinctrl: pinctrl@41004400 {
+			ranges = <0x41004400 0x41004400 0x180>;
+
+			portc: gpio@41004500 {
+				compatible = "atmel,sam0-gpio";
+				reg = <0x41004500 0x80>;
+
+				#atmel,pin-cells = <2>;
+				#gpio-cells = <2>;
+
+				gpio-controller;
+			};
+		};
+
+		pinmux_c: pinmux@41004500 {
+			compatible = "atmel,sam0-pinmux";
+			reg = <0x41004500 0x80>;
+		};
+	};
+};

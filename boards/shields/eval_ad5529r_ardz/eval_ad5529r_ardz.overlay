@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+&arduino_spi {
+	status = "okay";
+
+	ad5529r_eval_ad5529r_ardz: dac@0 {
+		compatible = "adi,ad5529r";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(50)>;
+		#io-channel-cells = <1>;
+		reset-gpios = <&arduino_header ARDUINO_HEADER_R3_D8 GPIO_ACTIVE_LOW>;
+		ldac-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>;
+		clear-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};

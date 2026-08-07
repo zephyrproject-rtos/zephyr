@@ -1,0 +1,11 @@
+# Synopsys DesignWare Timer configuration option
+
+# Copyright (c) 2023, Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_SNPS_DW
+	bool "Synopsys DesignWare Timer Driver"
+	default y
+	depends on DT_HAS_SNPS_DW_TIMERS_ENABLED
+	help
+	  Enable Timer driver

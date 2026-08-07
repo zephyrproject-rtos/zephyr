@@ -1,0 +1,21 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mr_navq95b/mimx9596/m7
+name: NXP MR-NavQ95B
+type: mcu
+arch: arm
+ram: 256
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - i2c
+  - pwm
+  - spi
+vendor: nxp

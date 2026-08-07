@@ -1,0 +1,6 @@
+# Copyright (c) 2025 Stephano Cetola
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RP2350_ZERO
+	select SOC_RP2350A_HAZARD3 if BOARD_RP2350_ZERO_RP2350A_HAZARD3
+	select SOC_RP2350A_M33 if BOARD_RP2350_ZERO_RP2350A_M33

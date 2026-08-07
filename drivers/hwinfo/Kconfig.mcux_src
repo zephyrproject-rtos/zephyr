@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_MCUX_SRC
+	bool "NXP SRC reset cause"
+	default y
+	depends on HAS_MCUX_SRC
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable NXP i.MX mcux SRC hwinfo driver.

@@ -1,0 +1,117 @@
+/*
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <zephyr/init.h>
+#include <zephyr/platform/hooks.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/cache.h>
+#include <zephyr/arch/common/pm_s2ram.h>
+
+#include <mxc_device.h>
+#include <wrap_max32_lp.h>
+#include <wrap_max32_sys.h>
+
+#include <zephyr/logging/log.h>
+#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
+LOG_MODULE_REGISTER(soc);
+
+#ifdef CONFIG_PM_S2RAM
+extern int pm_s2ram_suspend(pm_s2ram_system_off_fn_t system_off);
+#endif /* CONFIG_PM_S2RAM */
+
+#define SYS_TIMER_COMPANION DT_CHOSEN(zephyr_system_timer_companion)
+
+void pm_state_set(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(substate_id);
+
+	/* Set PRIMASK */
+	__disable_irq();
+	/* Set BASEPRI to 0 */
+	irq_unlock(0);
+
+	switch (state) {
+	case PM_STATE_RUNTIME_IDLE:
+		LOG_DBG("entering PM state runtime idle");
+		MXC_LP_EnterSleepMode();
+		break;
+	case PM_STATE_SUSPEND_TO_IDLE:
+		LOG_DBG("entering PM state suspend to idle");
+		Wrap_MXC_LP_EnterMicroPowerMode();
+		break;
+	case PM_STATE_STANDBY:
+		LOG_DBG("entering PM state standby");
+#ifdef CONFIG_SOC_FAMILY_MAX32_ERRATA_30282
+		sys_cache_instr_disable();
+		Wrap_MXC_LP_EnterStandbyMode();
+		sys_cache_instr_enable();
+#else
+		Wrap_MXC_LP_EnterStandbyMode();
+#endif /* CONFIG_SOC_FAMILY_MAX32_ERRATA_30282 */
+		break;
+	case PM_STATE_SUSPEND_TO_RAM:
+#ifdef CONFIG_PM_S2RAM
+		LOG_DBG("entering PM state suspend to ram");
+
+		/* Suspend to RAM */
+		pm_s2ram_suspend(Wrap_MXC_LP_EnterBackupMode);
+#else
+		LOG_WRN("PM_STATE_SUSPEND_TO_RAM must be enabled by Kconfig option!");
+#endif /* CONFIG_PM_S2RAM */
+		break;
+	case PM_STATE_SOFT_OFF:
+		LOG_DBG("entering PM state powerdown");
+		Wrap_MXC_LP_EnterPowerDownMode();
+		/*Code not reach here */
+	default:
+		LOG_DBG("Unsupported power state %u", state);
+		return;
+	}
+	LOG_DBG("wakeup from sleep mode");
+}
+
+/* Handle SOC specific activity after Low Power Mode Exit */
+void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
+{
+	ARG_UNUSED(substate_id);
+
+	/* Set run mode config after wakeup */
+	switch (state) {
+	case PM_STATE_RUNTIME_IDLE:
+		LOG_DBG("exited PM state runtime idle");
+		break;
+	case PM_STATE_SUSPEND_TO_IDLE:
+		LOG_DBG("exited PM state suspend to idle");
+		break;
+	case PM_STATE_SUSPEND_TO_RAM:
+#ifdef CONFIG_PM_S2RAM
+		max32xx_system_init();
+		Wrap_MXC_LP_ExitBackupMode();
+#if DT_NODE_HAS_COMPAT(SYS_TIMER_COMPANION, adi_max32_wut)
+		MXC_LP_EnableWUTAlarmWakeup();
+#endif
+		LOG_DBG("exited PM state suspend to ram");
+#else
+		LOG_WRN("PM_STATE_SUSPEND_TO_RAM must be enabled by Kconfig option!");
+#endif /* CONFIG_PM_S2RAM */
+		break;
+	case PM_STATE_STANDBY:
+#if DT_NODE_HAS_COMPAT(SYS_TIMER_COMPANION, adi_max32_rtc_counter)
+		/* For this state wait a little until RTC register being ready
+		 * otherwise seems previous RTC value being read
+		 */
+		k_busy_wait(100);
+#endif
+		LOG_DBG("exited PM state standby");
+		break;
+	default:
+		break;
+	}
+
+	/* Clear PRIMASK after wakeup */
+	__enable_irq();
+}

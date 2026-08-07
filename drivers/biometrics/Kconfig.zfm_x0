@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Siratul Islam
+
+config BIOMETRICS_ZFM_X0
+	bool "ZFM-x0 Series Optical Fingerprint Sensor"
+	default y
+	depends on DT_HAS_ZHIANTEC_ZFM_X0_ENABLED
+	select SERIAL
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Enable driver for ZFM-x0 series optical fingerprint sensors.
+
+if BIOMETRICS_ZFM_X0
+
+config ZFM_X0_TIMEOUT_MS
+	int "Default operation timeout in milliseconds"
+	default 5000
+	help
+	  Default timeout for enrollment and matching operations.
+
+endif # BIOMETRICS_ZFM_X0

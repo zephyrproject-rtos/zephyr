@@ -1,0 +1,84 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip ADC G1 Driver
+
+description: |
+  Binding for the Microchip ADC driver supporting Group G1 peripherals.
+
+  Group G1 ADC driver supports the following hardware peripheral:
+    - module name="ADC" id="U2500" version="1.0.0"
+
+compatible: "microchip,adc-g1"
+
+include:
+  - name: adc-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Register base address and size for the ADC peripheral.
+
+  interrupts:
+    required: true
+    description: |
+      Interrupt specifier for the ADC peripheral.
+
+  clocks:
+    required: true
+    description: |
+      Clock phandles used to drive the ADC.
+
+  clock-names:
+    required: true
+    description: |
+      Clock name corresponding to the `clocks` entry.
+
+  prescaler:
+    type: int
+    required: true
+    enum: [2, 4, 8, 16, 32, 64, 128, 256]
+    description: |
+      Clock prescaler value. Must be a power of 2 between 2 and 256 inclusive.
+
+      The ADC clock is derived by dividing the source clock by this prescaler.
+
+  num-channels:
+    type: int
+    required: true
+    description: |
+      Number of input channels supported by this ADC instance.
+
+  "#io-channel-cells":
+    const: 1
+    description: |
+      Specifies that each io-channel uses a single cell (input index).
+
+  nvm-calib:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the NVM software calibration area containing
+      ADC factory calibration values.
+
+  calib-mapping:
+    type: array
+    required: true
+    description: |
+      Calibration mapping entries describing how values are extracted
+      from the NVM calibration area and programmed into the ADC CALIB
+      register.
+
+      Each entry consists of three cells in the form:
+      <adc_bit nvm_bit mask>.
+
+  calib-mapping-names:
+    type: string-array
+    description: |
+      Names of ADC calibration fields corresponding one-to-one with
+      the entries in calib-mapping.
+
+io-channel-cells:
+  - input

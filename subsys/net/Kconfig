@@ -1,0 +1,39 @@
+# Net stack configuration options
+
+# Copyright (c) 2015 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Networking"
+
+config NETWORKING
+	bool "Link layer and networking (including IP)"
+	select NET_BUF
+	select POLL
+	select ENTROPY_GENERATOR
+	help
+	  This option enables generic link layer and networking support
+	  and is the basis for higher level protocols (e.g. IP protocols).
+
+if NETWORKING
+
+# Such option should not be configured manually but by device drivers
+# which supports PM properly.
+config NET_POWER_MANAGEMENT
+	bool
+	depends on PM_DEVICE
+
+source "subsys/net/Kconfig.hostname"
+
+source "subsys/net/l2/Kconfig"
+
+source "subsys/net/ip/Kconfig"
+
+source "subsys/net/pkt_filter/Kconfig"
+
+source "subsys/net/lib/Kconfig"
+
+source "subsys/net/conn_mgr/Kconfig"
+
+endif
+
+endmenu

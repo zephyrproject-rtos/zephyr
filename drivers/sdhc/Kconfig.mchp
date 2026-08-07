@@ -1,0 +1,11 @@
+# Copyright (C) 2026 Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_MCHP_G1
+	bool "Microchip SDHC G1 driver"
+	default y
+	depends on DT_HAS_MICROCHIP_SDHC_G1_ENABLED
+	select PINCTRL
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  Enable the Microchip SDHC MMC/SD card G1 driver.

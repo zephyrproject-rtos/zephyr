@@ -1,0 +1,6 @@
+board:
+  name: framework_ledmatrix
+  full_name: Framework LED Matrix
+  vendor: framework
+  socs:
+  - name: rp2040

@@ -1,0 +1,20 @@
+# Copyright (c) 2021, Linaro ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 HSI Clock
+
+compatible: "st,stm32h7-hsi-clock"
+
+include: [fixed-clock.yaml]
+
+properties:
+  hsi-div:
+    type: int
+    required: true
+    description: |
+      HSI clock divider. Configures the output HSI clock frequency
+      1: 64 MHz
+      2: 32 MHz
+      4: 16 MHz
+      8: 8 MHz
+    enum: [1, 2, 4, 8]

@@ -1,0 +1,9 @@
+# Copyright (c) 2026 James Bennion-Pedley
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CH32V307V_EVT_R1
+
+configdefault NET_L2_ETHERNET
+	default y
+
+endif # BOARD_CH32V307V_EVT_R1

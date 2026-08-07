@@ -1,0 +1,29 @@
+identifier: b_u585i_iot02a
+name: ST B_U585I_IOT02A Discovery kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 768
+flash: 2048
+supported:
+  - adc
+  - arduino_i2c
+  - arduino_spi
+  - backup_sram
+  - counter
+  - crc
+  - dac
+  - dma
+  - hts221
+  - i2c
+  - memc
+  - nvs
+  - pwm
+  - rtc
+  - spi
+  - usb_device
+  - usbd
+  - watchdog
+vendor: st

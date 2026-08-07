@@ -1,0 +1,11 @@
+# Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_ITE_IT8801
+	bool "ITE IT8801 GPIO device driver"
+	default y
+	depends on DT_HAS_ITE_IT8801_GPIO_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable driver for ITE IT8801 I2C-based GPIO.

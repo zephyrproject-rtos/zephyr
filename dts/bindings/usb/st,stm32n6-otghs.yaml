@@ -1,0 +1,12 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 OTGHS controller without pinmux
+
+  On series such as STM32N6, the `pinctrl-0` and `pinctrl-names` properties
+  are not needed as dedicated pins are reserved for USB communication.
+
+compatible: "st,stm32n6-otghs"
+
+include: st,stm32-otghs-common.yaml

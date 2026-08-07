@@ -1,0 +1,6 @@
+board:
+  name: holyiot_yj17095
+  full_name: YJ-17095
+  vendor: holyiot
+  socs:
+  - name: nrf52832

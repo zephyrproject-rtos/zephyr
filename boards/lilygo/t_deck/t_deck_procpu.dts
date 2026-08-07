@@ -1,0 +1,261 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
+#include "t_deck-pinctrl.dtsi"
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/input/keymap.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/lvgl/lvgl.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	model = "LilyGO T-Deck PROCPU";
+	compatible = "espressif,esp32s3";
+
+	aliases {
+		i2c-0 = &i2c0;
+		i2s-tx = &i2s0;
+		lora0 = &lora;
+		sdhc0 = &sdcard0;
+		sw0 = &trackball_press;
+		uart-0 = &uart0;
+		watchdog0 = &wdt0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,display = &st7789v;
+		zephyr,touch = &gt911;
+	};
+
+	peripheral_pwr: peripheral_pwr {
+		compatible = "power-domain-gpio";
+		enable-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+		#power-domain-cells = <0>;
+	};
+
+	trackball: trackball {
+		compatible = "gpio-keys";
+		power-domains = <&peripheral_pwr>;
+		status = "okay";
+
+		trackball_press: trackball_press {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Trackball Press";
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		trackball_up: trackball_up {
+			gpios = <&gpio0 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Trackball Up";
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		trackball_down: trackball_down {
+			gpios = <&gpio0 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Trackball Down";
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		trackball_left: trackball_left {
+			gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Trackball Left";
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		trackball_right: trackball_right {
+			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Trackball Right";
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+	};
+
+	lvgl_trackball_keypad: lvgl-trackball-keypad {
+		compatible = "zephyr,lvgl-keypad-input";
+		input = <&trackball>;
+		input-codes = <INPUT_KEY_UP INPUT_KEY_DOWN INPUT_KEY_LEFT
+			       INPUT_KEY_RIGHT INPUT_KEY_ENTER>;
+		lvgl-codes = <LV_KEY_UP LV_KEY_DOWN LV_KEY_LEFT
+			      LV_KEY_RIGHT LV_KEY_ENTER>;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		dc-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		spi-dev = <&spi2>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7789v: st7789v@0 {
+			compatible = "sitronix,st7789v";
+			reg = <0>;
+			mipi-max-frequency = <DT_FREQ_M(40)>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			width = <320>;
+			height = <240>;
+			x-offset = <0>;
+			y-offset = <0>;
+			vcom = <0x1a>;
+			gctrl = <0x75>;
+			vrhs = <0x13>;
+			vdvs = <0x20>;
+			mdac = <0x60>;
+			lcm = <0x2c>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565X>;
+			gamma = <0x01>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 01];
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [d0 0d 14 0d 0d 09 38
+				       44 4e 3a 17 18 2f 30];
+			nvgam-param = [d0 09 0f 08 07 14 37
+				       44 4d 38 15 16 2c 3e];
+			ram-param = [00 f0];
+			rgb-param = [40 02 14];
+		};
+	};
+
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 3>;
+		output-ohms = <100000>;
+		full-ohms = <200000>;
+		skip-calibration;
+	};
+};
+
+&dma {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+
+	lcd_backlight {
+		gpio-hog;
+		gpios = <10 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "lcd-backlight";
+	};
+};
+
+&i2c0 {
+	power-domains = <&peripheral_pwr>;
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	gt911: touchscreen@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		alt-addr = <0x14>;
+		irq-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		swapped-x-y;
+		inverted-x;
+		screen-width = <240>;
+		screen-height = <320>;
+		status = "okay";
+	};
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&spi2 {
+	power-domains = <&peripheral_pwr>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_M(40)>;
+	cs-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>, <&gpio0 9 GPIO_ACTIVE_LOW>,
+		   <&gpio0 39 GPIO_ACTIVE_LOW>;
+
+	lora: lora@1 {
+		compatible = "semtech,sx1262";
+		reg = <1>;
+		reset-gpios = <&gpio0 17 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		busy-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+		spi-max-frequency = <DT_FREQ_M(4)>;
+		status = "okay";
+	};
+
+	sdcard0: sdhc@2 {
+		compatible = "zephyr,sdhc-spi-slot";
+		reg = <2>;
+		status = "okay";
+		spi-max-frequency = <DT_FREQ_M(20)>;
+
+		mmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
+
+&i2s0 {
+	power-domains = <&peripheral_pwr>;
+	pinctrl-0 = <&i2s0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};

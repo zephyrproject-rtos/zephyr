@@ -1,0 +1,47 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config UHC_NXP_EHCI
+	bool "NXP MCUX USB EHCI Host controller driver"
+	default y
+	depends on DT_HAS_NXP_UHC_EHCI_ENABLED
+	select EVENTS
+	select NOCACHE_MEMORY if CPU_HAS_DCACHE
+	select DYNAMIC_INTERRUPTS if UDC_NXP_EHCI
+	help
+	  NXP MCUX USB Host Controller Driver for EHCI.
+
+config UHC_NXP_KHCI
+	bool "NXP MCUX USB KHCI Host controller driver"
+	default y
+	depends on DT_HAS_NXP_UHC_KHCI_ENABLED
+	select EVENTS
+	select DYNAMIC_INTERRUPTS if UDC_KINETIS
+	help
+	  NXP MCUX USB Host Controller Driver for KHCI.
+
+config UHC_NXP_IP3516HS
+	bool "NXP MCUX USB IP3516HS Host controller driver"
+	default y
+	depends on DT_HAS_NXP_UHC_IP3516HS_ENABLED
+	select EVENTS
+	help
+	  NXP MCUX USB Host Controller Driver for ip3516hs.
+
+config UHC_NXP_OHCI
+	bool "NXP MCUX USB IP3516HS Host controller driver"
+	default y
+	depends on DT_HAS_NXP_UHC_OHCI_ENABLED
+	select EVENTS
+	help
+	  NXP MCUX USB Host Controller Driver for ohci.
+
+config HEAP_MEM_POOL_ADD_SIZE_UHC_MCUX
+	int "The heap that NXP hal usb host controller drivers need"
+	default 4096
+
+config UHC_NXP_THREAD_STACK_SIZE
+	int "MCUX UHC Driver internal thread stack size"
+	default 2048
+	help
+	  Size of the stack used in the driver.

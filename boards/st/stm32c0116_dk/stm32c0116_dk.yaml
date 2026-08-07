@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: stm32c0116_dk
+name: STM32C0116 DK
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - counter
+  - watchdog
+  - pwm
+  - adc
+  - dma
+ram: 6
+flash: 32
+vendor: st

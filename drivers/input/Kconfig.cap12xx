@@ -1,0 +1,11 @@
+# Copyright (c) 2022 Keiya Nobuta
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_CAP12XX
+	bool "Microchip CAP12xx multi-channel capacitive touch sensor driver"
+	default y
+	depends on DT_HAS_MICROCHIP_CAP12XX_ENABLED
+	select I2C
+	help
+	  Enable driver for Microchip CAP12xx multi-channel capacitive
+	  touch sensor.

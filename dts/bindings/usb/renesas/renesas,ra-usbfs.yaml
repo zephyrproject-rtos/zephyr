@@ -1,0 +1,34 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA USB full-speed controller
+
+compatible: "renesas,ra-usbfs"
+
+include: [pinctrl-device.yaml, usb-ep.yaml]
+
+properties:
+  phys-clock:
+    type: phandles
+    required: true
+    description: USBFS physical clock.
+
+  interrupts:
+    required: true
+    description: |
+      IRQ number and priority to use for USBFS.
+
+  interrupt-names:
+    required: true
+    enum:
+      - "usbfs-i"
+      - "usbfs-r"
+    description: |
+      Interrupts must be given corresponding names so that the shim driver can recognize them.
+
+  reg:
+    required: true
+
+  phys:
+    type: phandle
+    description: PHY provider specifier

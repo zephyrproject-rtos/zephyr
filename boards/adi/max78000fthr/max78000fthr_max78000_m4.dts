@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max78000-m4.dtsi>
+#include "max78000fthr.dtsi"
+
+#include <adi/max32/max78000-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/* Assign the M4 core console to the CMSIS-DAP serial pins */
+m4_serial: &cmsis_serial {};
+
+/ {
+	model = "Analog Devices MAX78000FTHR";
+	compatible = "adi,max78000fthr";
+
+	chosen {
+		zephyr,console = &m4_serial;
+		zephyr,shell-uart = &m4_serial;
+		zephyr,sram = &m4_sram;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &m4_partition;
+		zephyr,settings-partition = &m4_storage_partition;
+		zephyr,code-rv32-partition = &rv32_partition;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		sw0 = &pb1;
+		sw1 = &pb2;
+		watchdog0 = &wdt0;
+	};
+};
+
+&cpu1 {
+	pinctrl-0 = <&rv_tck_p1_0 &rv_tms_p1_1 &rv_tdi_p1_2 &rv_tdo_p1_3>;
+	pinctrl-names = "default";
+};
+
+&m4_serial {
+	status = "okay";
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+&clk_ibro {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss0_p0_4>;
+	pinctrl-names = "default";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&rtc_counter {
+	status = "okay";
+};

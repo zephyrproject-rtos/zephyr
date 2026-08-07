@@ -1,0 +1,14 @@
+# Copyright 2022 The Chromium OS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This device is used to measure VBUS on a Type-C Port and to
+    discharge VBUS when needed.
+
+compatible: "zephyr,usb-c-vbus-adc"
+
+include: [base.yaml, voltage-divider.yaml]
+
+properties:
+  discharge-gpios:
+    type: phandle-array

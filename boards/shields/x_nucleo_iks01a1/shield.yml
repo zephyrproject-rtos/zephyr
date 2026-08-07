@@ -1,0 +1,6 @@
+shield:
+  name: x_nucleo_iks01a1
+  full_name: X-NUCLEO-IKS01A1
+  vendor: st
+  supported_features:
+    - sensor

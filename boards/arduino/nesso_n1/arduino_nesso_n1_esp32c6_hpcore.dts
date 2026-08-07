@@ -1,0 +1,209 @@
+/*
+ * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32c6/esp32c6_common.dtsi>
+#include "arduino_nesso_n1-pinctrl.dtsi"
+#include <espressif/partitions_0x0_default.dtsi>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Arduino Nesso N1";
+	compatible = "arduino,nesso-n1";
+
+	chosen {
+		zephyr,sram = &sramhp;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,display = &st7789v;
+		zephyr,touch = &ft6336;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		accel0 = &bmi270;
+		lora0 = &lora;
+		buzzer0 = &buzzer;
+		ir = &ir_tx;
+		sw0 = &key1;
+		sw1 = &key2;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		ir_tx: ir_tx {
+			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+			label = "IR transmitter";
+		};
+	};
+
+	buzzer: buzzer {
+		compatible = "gpio-buzzer";
+		gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+	};
+
+	keys {
+		compatible = "gpio-keys";
+
+		key1: key1 {
+			gpios = <&expander_e0 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Key 1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		key2: key2 {
+			gpios = <&expander_e0 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			label = "Key 2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	lcd_backlight: lcd_backlight {
+		compatible = "regulator-fixed";
+		regulator-name = "lcd-backlight";
+		enable-gpios = <&expander_e1 6 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi2>;
+		dc-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&expander_e1 1 GPIO_ACTIVE_LOW>;
+		write-only;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7789v: st7789v@1 {
+			compatible = "sitronix,st7789v";
+			reg = <1>;
+			mipi-max-frequency = <DT_FREQ_M(20)>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			width = <240>;
+			height = <135>;
+			x-offset = <40>;
+			y-offset = <52>;
+			vcom = <0x20>;
+			gctrl = <0x35>;
+			vrhs = <0x0b>;
+			vdvs = <0x20>;
+			mdac = <0xa0>;
+			gamma = <0x01>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+			lcm = <0x2c>;
+			porch-param = [0c 0c 00 33 33];
+			cmd2en-param = [5a 69 02 01];
+			pwctrl1-param = [a4 a1];
+			pvgam-param = [70 2c 2e 15 10 09 48 33 53 0b 19 18 20 25];
+			nvgam-param = [70 2c 2e 15 10 09 48 33 53 0b 19 18 20 25];
+			ram-param = [00 f0];
+			rgb-param = [40 02 14];
+		};
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	bmi270: bmi270@68 {
+		compatible = "bosch,bmi270";
+		reg = <0x68>;
+		status = "okay";
+	};
+
+	ft6336: ft6336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpio0 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		screen-width = <240>;
+		screen-height = <135>;
+		inverted-x;
+	};
+
+	expander_e0: pi4ioe5v6408@43 {
+		compatible = "diodes,pi4ioe5v6408";
+		reg = <0x43>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+	};
+
+	expander_e1: pi4ioe5v6408@44 {
+		compatible = "diodes,pi4ioe5v6408";
+		reg = <0x44>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 23 GPIO_ACTIVE_LOW>,
+		   <&gpio0 17 GPIO_ACTIVE_LOW>;
+
+	lora: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		reset-gpios = <&expander_e0 7 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio0 15 GPIO_ACTIVE_HIGH>;
+		tx-enable-gpios = <&expander_e0 6 GPIO_ACTIVE_HIGH>;
+		antenna-enable-gpios = <&expander_e0 5 GPIO_ACTIVE_HIGH>;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_1V8>;
+		tcxo-power-startup-delay-ms = <5>;
+	};
+};
+
+&wifi {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};

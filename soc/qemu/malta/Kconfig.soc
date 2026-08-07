@@ -1,0 +1,9 @@
+# Copyright (c) 2020 Antony Pavlov <antonynpavlov@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_QEMU_MALTA
+	bool
+
+config SOC
+	default "qemu_malta" if SOC_QEMU_MALTA

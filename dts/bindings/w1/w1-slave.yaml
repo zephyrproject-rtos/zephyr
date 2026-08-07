@@ -1,0 +1,21 @@
+# Copyright (c) 2022, Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for W1 slave devices
+
+include: base.yaml
+
+on-bus: w1
+
+properties:
+  family-code:
+    type: int
+    description: |
+        8-bit 1-Wire family code, which is also part of the 64 bit ROM ID.
+  overdrive-speed:
+    type: boolean
+    description: |
+        Instead of standard speed timing, use overdrive speed timing for
+        communication.
+        The driver will automatically use OVERDRIVE_SKIP and OVERDRIVE_MATCH
+        command instead of the standard commands.

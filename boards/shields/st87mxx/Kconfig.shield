@@ -1,0 +1,5 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ST87MXX
+	def_bool $(shields_list_contains,shield_st87mxx)

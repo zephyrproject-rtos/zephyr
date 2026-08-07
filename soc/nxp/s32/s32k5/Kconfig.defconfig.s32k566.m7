@@ -1,0 +1,11 @@
+# NXP S32K5XX MCU series
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_S32K566_M7
+
+config NUM_IRQS
+	default 239
+
+endif # SOC_S32K566_M7

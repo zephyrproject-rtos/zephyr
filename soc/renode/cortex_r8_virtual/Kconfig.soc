@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_CORTEX_R8_VIRTUAL
+	bool
+	help
+	  Cortex R8 Virtual system implementation
+
+config SOC
+	default "cortex_r8_virtual" if SOC_CORTEX_R8_VIRTUAL

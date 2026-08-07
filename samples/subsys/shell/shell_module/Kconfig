@@ -1,0 +1,20 @@
+# Config options for logger sample app
+
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Shell module sample application"
+
+menu "Application configuration"
+
+config SHELL_FOREGROUND_CMDS
+	bool "Shell foreground commands example"
+	default y
+
+config SHELL_DYNAMIC_CMDS
+	bool "Shell dynamic commands example"
+	default y
+
+endmenu
+
+source "Kconfig.zephyr"

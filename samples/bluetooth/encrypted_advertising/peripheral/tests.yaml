@@ -1,0 +1,7 @@
+sample:
+  name: Bluetooth Peripheral Encrypted Advertising Data
+tests:
+  sample.bluetooth.peripheral_ead:
+    harness: bluetooth
+    platform_allow: nrf52840dk/nrf52840
+    tags: bluetooth

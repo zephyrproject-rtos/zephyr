@@ -1,0 +1,4 @@
+testing:
+  ignore_tags:
+    - correct_schema_1
+    - correct_schema_2

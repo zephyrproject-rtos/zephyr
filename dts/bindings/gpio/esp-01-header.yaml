@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on ESP-01 headers.
+
+    This binding provides a nexus mapping for the GPIO-capable pins on an
+    ESP-01 2x4 header. Power and ground pins are not mapped.
+
+        1  GND      2  RXD
+        3  GPIO2    4  CH_PD
+        5  GPIO0    6  RST
+        7  TXD      8  3V3
+
+compatible: "esp-01-header"
+
+include: [gpio-nexus.yaml, base.yaml]

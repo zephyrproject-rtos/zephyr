@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if WHISPER_TARGET
+
+menu "Whisper Simulator"
+
+config WHISPER_USE_CLINT
+	bool "Pass --clint command line argument"
+	help
+	  This enables passing --clint command line argument to Whisper.
+
+config WHISPER_CLINT_BASE_ADDRESS
+	hex "Address for --clint command line argument"
+	depends on WHISPER_USE_CLINT
+	help
+	  Specify the base address for used with --clint command
+	  line argument.
+
+config WHISPER_USE_SWINT
+	bool "Pass --softinterrupt command line argument"
+	depends on !WHISPER_USE_CLINT
+	help
+	  This enables passing --softinterrupt command line argument to Whisper.
+
+config WHISPER_SWINT_BASE_ADDRESS
+	hex "Address for --softinterrupt command line argument"
+	depends on WHISPER_USE_SWINT
+	help
+	  Specify the base address for used with --softinterrupt command
+	  line argument.
+
+endmenu
+
+endif # WHISPER_TARGET

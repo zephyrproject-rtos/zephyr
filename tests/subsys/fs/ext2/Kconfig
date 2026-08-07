@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Antmicro
+
+mainmenu "Ext2 tests"
+
+source "Kconfig.zephyr"
+
+config APP_TEST_BIG
+	bool "Make tests with larger file systems"

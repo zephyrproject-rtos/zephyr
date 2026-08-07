@@ -1,0 +1,12 @@
+common:
+  platform_allow:
+    - nrf54h20dk/nrf54h20/cpuapp
+  integration_platforms:
+    - nrf54h20dk/nrf54h20/cpuapp
+  tags:
+    - nrfs
+  harness: ztest
+  sysbuild: true
+
+tests:
+  boards.nrf.nrfs.stress_test: {}

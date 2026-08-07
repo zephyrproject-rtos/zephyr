@@ -1,0 +1,18 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP ENET QOS IP Module
+
+compatible: "nxp,enet-qos"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true

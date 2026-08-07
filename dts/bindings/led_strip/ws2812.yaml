@@ -1,0 +1,49 @@
+# Copyright (c) 2019, Linaro Limited
+# Copyright (c) 2019, Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Worldsemi WS2812 (and compatible) LED controller
+
+  Driver bindings for daisy chains of WS2812 (and compatible devices
+  like SK6812, or Everlight B1414) LED controllers.
+
+  The PWM protocol is described here:
+  https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
+
+  A 0 bit's pulse width is between 200 and 500 ns. A 1 bit's is
+  at least 550 ns, with 700 ns or so typical. Pixel order is GRB.
+
+  You can connect the device to either a GPIO on your SoC, or a SPI
+  MOSI line. Use the worldsemi,ws2812-spi.yaml or
+  worldsemi,ws2812-gpio.yaml bindings instead of this file after
+  making your choice.
+
+  Everlight B1414:
+
+  The specification of the Everlight B1414 LED controller is slightly different.
+  For the control signal (waveform) each bit is described with a 1.2 us pulse:
+
+    0 bit: 300 ns high and 900 ns low.
+    1 bit: 900 ns high and 300 ns low.
+
+  There is a +/- 80 ns tolerance for each timing.
+
+  The latch/reset delay is 250 us and it must be set using the reset-delay
+  property. The pixel order depends on the model and it can be configured
+  using the color-mapping property.
+
+include: led-strip.yaml
+
+properties:
+  reset-delay:
+    type: int
+    default: 8
+    description: |
+      Minimum delay to wait (in microseconds) to make sure that the strip has
+      latched the signal. If omitted, a default value of 8 microseconds is used.
+      This default is good for the WS2812 controllers. Note that despite the
+      WS2812 datasheet states that a 50 microseconds delay is required, it seems
+      6 microseconds is enough. The default is set to 8 microseconds just to be
+      safe.

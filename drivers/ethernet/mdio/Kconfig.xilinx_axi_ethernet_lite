@@ -1,0 +1,9 @@
+# Copyright 2025 CISPA Helmholtz Center for Information Security
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_XILINX_AXI_ETHERNET_LITE
+	bool "Xilinx AXI Ethernet Lite MDIO driver"
+	default y
+	depends on DT_HAS_XLNX_XPS_ETHERNETLITE_3_00_A_MDIO_ENABLED || DT_HAS_XLNX_XPS_ETHERNETLITE_1_00_A_MDIO_ENABLED
+	help
+	  Enable Xilinx AXI Ethernet Lite MDIO bus driver.

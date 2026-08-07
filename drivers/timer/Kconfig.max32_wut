@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MAX32_WUT_TIMER
+	bool "MAX32 Wake-Up Timer system clock driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_WUT_TIMER_ENABLED
+	depends on SOC_FAMILY_MAX32
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the MAX32
+	  Wake-Up Timer and provides the standard "system clock driver"
+	  interfaces.

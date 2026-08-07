@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rtc = &adafruit_pcf8523;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_pcf8523: pcf8523@68 {
+		status = "okay";
+		compatible = "nxp,pcf8523";
+		reg = <0x68>;
+		battery-switch-over = "standard";
+	};
+};

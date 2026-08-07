@@ -1,0 +1,8 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Native POSIX USB device controller
+
+compatible: "zephyr,native-posix-udc"
+
+include: usb-controller.yaml

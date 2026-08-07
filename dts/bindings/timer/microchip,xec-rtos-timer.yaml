@@ -1,0 +1,27 @@
+# Copyright (c) 2019 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC RTOS timer
+
+compatible: "microchip,xec-rtos-timer"
+
+include: ["base.yaml", "microchip,dmec-ecia-girq.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  busy-wait-timer:
+    type: phandle
+    description: |
+      If custom busy wait Kconfig is enabled then this points to the 32-bit
+      basic timer node used to implement the 1 MHz busy wait timer.
+
+  clock-frequency:
+    type: int
+    required: true
+    const: 32768
+    description: RTOS timer runs at fixed 32 KHz.

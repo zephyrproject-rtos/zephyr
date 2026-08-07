@@ -1,0 +1,17 @@
+common:
+  timeout: 5
+  platform_allow:
+    - nucleo_c5a3zg
+  integration_platforms:
+    - nucleo_c5a3zg
+tests:
+  drivers.clock.stm32_clock_configuration.c5.hse_48:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hse_48.overlay"
+  drivers.clock.stm32_clock_configuration.c5.hsidiv3_48:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsidiv3_48.overlay"
+  drivers.clock.stm32_clock_configuration.c5.hsis_144:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/hsis_144.overlay"
+  drivers.clock.stm32_clock_configuration.c5.psis_100:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/psis_100.overlay"
+  drivers.clock.stm32_clock_configuration.c5.psis_144:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/psis_144.overlay"

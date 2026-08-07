@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2c-ram = &i2c0;
+	};
+};
+
+/* Configure SCB0 as I2C for FRAM connection */
+i2c0: &scb0 {
+	compatible = "infineon,i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	clocks = <&peri0_group1_16bit_1>;
+
+	pinctrl-0 = <&p8_0_scb0_i2c_scl &p8_1_scb0_i2c_sda>;
+	pinctrl-names = "default";
+
+	/* Infineon CY15B104Q I2C FRAM (part of CY15FRAMKIT-001)
+	 * This is a 256Kbit (32KB) I2C FRAM device
+	 * I2C address is 0x51 (with A0=1, A1=0, A2=0)
+	 * Compatible with AT24-style I2C EEPROM interface
+	 */
+	fram@51 {
+		compatible = "atmel,at24";
+		reg = <0x51>;
+		size = <DT_SIZE_K(32)>;  /* 32KB = 256Kbit */
+		pagesize = <256>;
+		address-width = <16>;
+		timeout = <5>;
+	};
+};
+
+/* Enable the peripheral clock divider for SCB0 */
+&peri0_group1_16bit_1 {
+	status = "okay";
+	clock-div = <10>;
+};
+
+/* Ensure GPIO port 8 is enabled for SCB0 I2C pins */
+&gpio_prt8 {
+	status = "okay";
+};
+
+/* Configure pin control for I2C SCB0 pins (for FRAM and other I2C devices) */
+&p8_0_scb0_i2c_scl {
+	drive-open-drain;
+	input-enable;
+};
+
+&p8_1_scb0_i2c_sda {
+	drive-open-drain;
+	input-enable;
+};

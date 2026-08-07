@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: PCAL6408A 8-bit I2C-based I/O expander
+
+compatible: "nxp,pcal6408a"
+
+include: nxp,pcal64xxa-base.yaml
+
+properties:
+  ngpios:
+    required: true
+    const: 8

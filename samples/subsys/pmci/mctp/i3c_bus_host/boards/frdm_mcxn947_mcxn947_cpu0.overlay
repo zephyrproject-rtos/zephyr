@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2025 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/* I3C SDA J5.3 */
+/* I3C SCL J5.4 */
+&i3c1 {
+	status = "okay";
+
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+
+	mctp_endpoint0: mctp_endpoint0@20a00000011 {
+		compatible = "zephyr,mctp-i3c-endpoint";
+		reg = <0x0000 0x020a 0x00000011>;
+		status = "okay";
+	};
+};
+
+/ {
+	mctp_i3c: mctp_i3c {
+		compatible = "zephyr,mctp-i3c-controller";
+		endpoints = <&mctp_endpoint0>;
+		endpoint-ids = <11>;
+	};
+};

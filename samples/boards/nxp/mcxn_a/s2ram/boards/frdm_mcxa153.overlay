@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ostimer0 {
+	status = "disabled";
+};
+
+&systick {
+	status = "okay";
+};
+
+/* Suspend-to-RAM is opt-in (the SoC disables it by default); enable it here. */
+&deeppowerdown {
+	status = "okay";
+};

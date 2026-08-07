@@ -1,0 +1,28 @@
+# Copyright (c) 2023 Martin Kiepfer
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on M5Stack M-Bus headers.
+
+    This binding provides a nexus mapping for 30 pins as depicted below.
+
+        0  GND                  1  ADC0
+        2  GND                  3  ADC1
+        4  GND                  5  RESET
+        6  MOSI                 7  DAC0
+        8  MISO                 9  DAC1
+        10 SCK                  11 3.3V
+        12 RXD0                 13 TXD0
+        14 RXD1                 15 TXD1
+        16 intSDA               17 intSCL
+        18 SDA                  19 SCL
+        20 GPIO                 21 GPIO
+        22 GPIO                 23 GPIO
+        24 NC                   25 GPIO
+        26 NC                   27 5V
+        28 NC                   29 BAT
+
+
+compatible: "m5stack,mbus-header"
+
+include: [gpio-nexus.yaml, base.yaml]

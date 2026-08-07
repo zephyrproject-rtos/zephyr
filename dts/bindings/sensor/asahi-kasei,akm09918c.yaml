@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Asahi Kasei AKM09918C Magnetometer. See datasheet at
+    https://www.akm.com/content/dam/documents/products/electronic-compass/ak09918c/ak09918c-en-datasheet.pdf
+
+compatible: "asahi-kasei,akm09918c"
+
+include: [sensor-device.yaml, i2c-device.yaml]

@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: zynqmp_apu
+name: AMD ZynqMP APU
+arch: arm64
+toolchain:
+  - zephyr
+ram: 2097152
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: amd

@@ -1,0 +1,91 @@
+description: PWM based DALI interface
+
+compatible: "zephyr,dali-pwm"
+
+include: base.yaml
+
+properties:
+  pwms:
+    type: phandle-array
+    required: true
+    description: |
+      The PWM unit will control the transmission of DALI frames.
+      Recommended clock rate is 1 MHz. The minimum clock rate is 200 kHz to
+      meet the requirements set by the DALI standard.
+
+  counter:
+    type: phandle
+    required: true
+    description: |
+      This counter controls all the time critical actions for DALI transmitting and receiving.
+      The minimum clock rate is 1 MHz to meet the requirements set by the DALI standard.
+
+  chan-id-rx:
+    type: int
+    required: true
+    description: |
+      Counter channel for Rx-stopbit and collision timeout.
+
+  chan-id-tx:
+    type: int
+    required: true
+    description: |
+      Counter channel for Tx re-programming.
+
+  tx-prog-delay-us:
+    type: int
+    default: 0
+    description: |
+      Re-programming the PWM unit needs to be handled differently for different
+      controllers. The re-programming is synchronized by the rx-edge-event.
+      The PWM unit is programmed at the end of the PWM-period plus the tx-prog-delay-us
+      value. It can be negative.
+
+  rx-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO pin that connects to the DALI Rx pin.
+
+  tx-flank-shift-us:
+    type: int
+    required: true
+    description: |
+      Difference in propagation delay in us between the falling and rising edge when transmitting.
+      If for example the high to low delay is 8 us and low to high is 22 us, then enter
+      (-14) here. Keep in low us range. The value depends on the controller and the
+      hardware implementation of the DALI physical interface.
+
+  rx-flank-shift-us:
+    type: int
+    required: true
+    description: |
+      Difference in propagation delay in us between the falling and rising edge when receiving.
+      If for example the high to low delay is 47 us and low to high is 15 us, then enter
+      (32) here. Keep in low us range. The value depends on the controller and the
+      hardware implementation of the DALI physical interface.
+
+  tx-rx-propagation-max-us:
+    type: int
+    required: true
+    description: |
+      The maximal time from a transmitted change to read observation.
+      This value needs to be set for proper collision detection.
+      The delay is measured in us. The value depends on the controller and the
+      hardware implementation of the DALI physical interface.
+
+  rx-max-latency-us:
+    type: int
+    required: true
+    description: |
+      The maximal time from the change of a gpio pin state until the irq handler routine is entered.
+      This value needs to be adjusted to ensure standard conforming reading of bit timings.
+      The value depends on the controller and the hardware implementation of the DALI physical
+      interface.
+
+  rx-grey-area-us:
+    type: int
+    required: true
+    description: |
+      This value adds extra margin to inter-frame timings to add extra tolerances, required to
+      pass test procedures.

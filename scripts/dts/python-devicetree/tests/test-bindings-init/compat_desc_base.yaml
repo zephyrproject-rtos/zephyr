@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Base file for testing inheritance rules applied to
+# compatible strings and bindings descriptions.
+
+description: Binding description (base).
+
+compatible: vnd,compat-desc-base
+
+child-binding:
+  description: Child-binding description (base).
+  compatible: vnd,child-compat-desc-base
+
+  child-binding:
+    description: Grandchild-binding description (base).
+    compatible: vnd,grandchild-compat-desc-base

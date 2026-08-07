@@ -1,0 +1,16 @@
+# Copyright 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TX_ENABLED
+	bool "TX enabled"
+	default y
+	help
+	  Enable TX
+
+config RX_ENABLED
+	bool "RX enabled"
+	default y
+	help
+	  Enable RX

@@ -1,0 +1,27 @@
+identifier: nucleo_wb55rg
+name: ST Nucleo WB55RG
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 192
+flash: 876
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - counter
+  - crc
+  - dma
+  - gpio
+  - i2c
+  - nvs
+  - pwm
+  - rtc
+  - spi
+  - usb_device
+  - usbd
+  - watchdog
+vendor: st

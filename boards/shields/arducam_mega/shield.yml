@@ -1,0 +1,24 @@
+shields:
+  - name: arducam_mega
+    full_name: Arducam Mega Shield
+    vendor: arducam
+    supported_features:
+      - video
+
+  - name: arducam_mega_arduino
+    full_name: Arducam Mega Shield (Arduino)
+    vendor: arducam
+    supported_features:
+      - video
+
+  - name: arducam_mega_mikrobus
+    full_name: Arducam Mega Shield (MikroBus)
+    vendor: arducam
+    supported_features:
+      - video
+
+  - name: arducam_mega_xiao
+    full_name: Arducam Mega Shield (Xiao)
+    vendor: arducam
+    supported_features:
+      - video

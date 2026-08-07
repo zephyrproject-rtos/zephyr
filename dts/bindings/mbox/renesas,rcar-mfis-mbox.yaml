@@ -1,0 +1,62 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas R-Car MFIS MBOX
+
+  The multifunctional interface (MFIS) provides an interface between the
+  different CPU Cores, such as AP System Core domain and the Realtime Core
+  domain, SCP Core domain and AP System Core domain or Realtime Core domain.
+  The MFIS supports both signalling and data transfer modes.
+
+  From the current AP/RT core's perspective, two channel types may be used.
+  A channel can be capable of sending (receiving) signal/data to (from)
+  another AP/RT core domain XOR to (from) SCP core domain.
+  - AP/RT channel IDs = 0 to 63
+  - SCP channel IDs = 64 to 95 for AP cores (cores 0 to 31)
+    SCP channel IDs = 64 to 75 for RT cores (cores 0 to 11)
+
+compatible: "renesas,rcar-mfis-mbox"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+    description: |
+      Interrupt index N maps directly to mailbox channel N. As a result, the list
+      must contain one entry per supported channel. Partial interrupt lists are not
+      supported.
+
+mbox-cells:
+  - channel
+
+examples:
+  - |
+    &soc {
+      /* MFIS node on RT core */
+      mfis: mailbox@18800000 {
+        compatible = "renesas,rcar-mfis-mbox";
+        reg = <0x18800000 0x1e2000>;
+        interrupt-parent = <&gic>;
+        interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_00 */
+                     <GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_01 */
+                     /* ... */
+                     <GIC_SPI 180 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_63 */
+                     <GIC_SPI 182 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_00 */
+                     <GIC_SPI 183 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_01 */
+                     /* ... */
+                     <GIC_SPI 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>; /* SCP_11 */
+        #mbox-cells = <1>;
+      };
+
+      /* Consumer using MFIS channel 64 (SCP_00) */
+      scmi {
+        /* ... */
+        mboxes = <&mfis 64>;
+        /* ... */
+      };
+    };

@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Bootlin
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LSM9DS1
+	bool "LSM9DS1 I2C accelerometer and gyroscope chip"
+	default y
+	depends on DT_HAS_ST_LSM9DS1_ENABLED
+	select I2C
+	select HAS_STMEMSC
+	select USE_STDC_LSM9DS1
+
+if LSM9DS1
+
+config LSM9DS1_ENABLE_TEMP
+	bool "LSM9DS1 Temperature sensor"
+	help
+	  Enable/disable temperature
+
+endif #LSM9DS1

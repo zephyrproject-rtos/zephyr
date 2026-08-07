@@ -1,0 +1,38 @@
+# Bluetooth GATT Immediate Alert Service
+
+# Copyright (c) 2022 Codecoup
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_IAS
+	bool "Support for GATT Immediate Alert Service [EXPERIMENTAL]"
+	select EXPERIMENTAL
+
+if BT_IAS
+
+choice BT_IAS_SEC_CHOICE
+	prompt "Default permissions used for IAS characteristics"
+	default BT_IAS_SEC_NONE
+	help
+	  Default write permissions for IAS characteristic attributes
+
+config BT_IAS_SEC_NONE
+	bool "No security required"
+
+config BT_IAS_SEC_ENC
+	bool "Require encryption for write access"
+
+config BT_IAS_SEC_AUTH
+	bool "Require encryption and authentication for write access"
+
+endchoice #BT_IAS_SEC_CHOICE
+
+endif # BT_IAS
+
+#### Immediate Alert Service Client ################################
+
+config BT_IAS_CLIENT
+	bool "Immediate Alert Service Client [Experimental]"
+	select BT_GATT_CLIENT
+	select EXPERIMENTAL
+	help
+	This option enables support for Immediate Alert Service Client

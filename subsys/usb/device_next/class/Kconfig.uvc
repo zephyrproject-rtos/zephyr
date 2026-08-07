@@ -1,0 +1,46 @@
+# Copyright (c) 2025 tinyVision.ai Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_VIDEO_CLASS
+	bool "USB Video Class implementation [EXPERIMENTAL]"
+	depends on DT_HAS_ZEPHYR_UVC_DEVICE_ENABLED
+	select EXPERIMENTAL
+	help
+	  USB Device Video Class (UVC) implementation.
+
+if USBD_VIDEO_CLASS
+
+config USBD_VIDEO_MAX_FORMATS
+	int "Max number of format descriptors"
+	range 1 254
+	default 32
+	help
+	  The table of format descriptors are generated at runtime. This options plans the
+	  storage at build time to allow enough descriptors to be generated. The default value
+	  aims a compromise between enough descriptors for most devices, but not too much memory
+	  being used.
+
+config USBD_VIDEO_MAX_FRMIVAL
+	int "Max number of video output stream per USB Video interface"
+	range 1 255
+	default 8
+	help
+	  Max number of Frame Interval listed on a frame descriptor. The
+	  default value is selected arbitrarily to fit most situations without
+	  requiring too much RAM.
+
+config USBD_VIDEO_NUM_BUFS
+	int "Max number of buffers the UVC class can allocate"
+	default 16
+	help
+	  Control the number of buffer UVC can allocate in parallel.
+	  The default is a compromise to allow enough concurrent buffers but not too much
+	  memory usage.
+
+module = USBD_VIDEO
+module-str = usbd uvc
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBD_VIDEO_CLASS

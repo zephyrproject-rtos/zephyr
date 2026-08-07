@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kit_pse84_ai/pse846gps2dbzc4a/m33/ns
+name: PSOC Edge84 AI Kit (M33_NS)
+type: mcu
+arch: arm
+sysbuild: true
+ram: 5120
+toolchain:
+  - zephyr
+supported:
+  - clock_control
+  - gpio
+  - pinctrl
+  - bluetooth
+  - wifi

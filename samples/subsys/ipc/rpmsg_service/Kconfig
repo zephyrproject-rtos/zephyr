@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config RPMSG_SERVICE_DEMO_CYCLES
+	int "Number of demo message cycles"
+	default 1000
+	range 10 10000
+
+config MAIN_APP_TASK_STACK_SIZE
+	int "Main application task size"
+	default 1024

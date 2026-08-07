@@ -1,0 +1,9 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host.bt_le_oob_get_sc_data.default:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_SMP=y

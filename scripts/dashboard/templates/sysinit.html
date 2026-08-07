@@ -1,0 +1,66 @@
+<!--
+Jinja2 template for the build report sysinit page.
+
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+SPDX-License-Identifier: Apache-2.0
+-->
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="card callout mb-4">
+  <div class="card-body" style="font-size:smaller">
+    This section shows the list of initialization functions at each
+    level, in order of invocation. Any conflicts in priority
+    with Device Tree dependencies will also be shown below.
+  </div>
+</div>
+
+<div class="row">
+  <div class="col">
+    {% if build.sys_init_levels %}
+    {% for level, calls in build.sys_init_levels.items() %}
+    <h6>{{level}}</h6>
+    <ol>
+      {% if calls %}
+      {% for call in calls %}
+      {% set call_split = call.split(':', maxsplit=1) %}
+      <li>{{call_split[0]}}: <code>{{call_split[1]}}</code></li>
+      {% endfor %}
+      {% else %}
+      <i>No init functions at this level</i>
+      {% endif %}
+    </ol>
+    {% endfor %}
+    {% else %}
+    <div class="alert alert-primary" role="alert">
+      No sys-init functions found.
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if build.sys_init_errors %}
+
+<hr/>
+
+<div class="row mb-5">
+  <div class="col">
+    <div class="card card-danger">
+      <div class="card-header">
+        <i class="bi bi-exclamation-circle"></i>
+        Errors in Sys-Init Priorities
+      </div>
+      <ul class="list-group list-group-flush">
+        {% for error in build.sys_init_errors %}
+        <li class="list-group-item">{{error}}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}

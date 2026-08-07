@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cortex-M DTCM (Data Tightly Coupled Memory)
+
+compatible: "arm,dtcm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

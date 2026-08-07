@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CORTEX_R8_VIRTUAL
+
+config NUM_IRQS
+	default 220
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 5000000
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+endif # SOC_CORTEX_R8_VIRTUAL

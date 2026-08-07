@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Yasushi SHOJI <yashi@spacecubics.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UIAPDUINO_PRO_MICRO_CH32V003
+	select SOC_CH32V003

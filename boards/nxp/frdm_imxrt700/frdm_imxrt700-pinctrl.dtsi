@@ -1,0 +1,40 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx/rt/MIMXRT798SGFOB-pinctrl.h>
+
+&pinctrl {
+	/* CPU0 debug console (MCU-Link), FLEXCOMM0 LPUART - same pins as MIMXRT700-EVK */
+	pinmux_flexcomm0_lpuart: pinmux_flexcomm0_lpuart {
+		group0 {
+			pinmux = <LP_FLEXCOMM0_P0_PIO0_31>;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+
+		group1 {
+			pinmux = <LP_FLEXCOMM0_P1_PIO1_0>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
+
+	/* CPU1 debug console, FLEXCOMM19 LPUART - same pins as MIMXRT700-EVK */
+	pinmux_flexcomm19_lpuart: pinmux_flexcomm19_lpuart {
+		group0 {
+			pinmux = <LP_FLEXCOMM19_P0_PIO8_14>;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+
+		group1 {
+			pinmux = <LP_FLEXCOMM19_P1_PIO8_15>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
+};

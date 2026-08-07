@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f1/stm32f103X8.dtsi>
+#include <st/f1/stm32f103r(8-b)tx-pinctrl.dtsi>
+#include <dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Ebyte E80 Module Development Board (HF)";
+	compatible = "stm32f103";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led_0: led_0 {
+			gpios = <&gpiob 13 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+
+		blue_led_1: led_1 {
+			gpios = <&gpiob 12 GPIO_ACTIVE_LOW>;
+			label = "LED 2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button_k1: sw0 {
+			gpios = <&gpiob 15 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Button K1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button_k2: sw1 {
+			gpios = <&gpiob 14 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Button K2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &blue_led_0;
+		led1 = &blue_led_1;
+		sw0 = &button_k1;
+		sw1 = &button_k2;
+		watchdog0 = &iwdg;
+		lora0 = &lora0;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+&pll {
+	mul = <9>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(72)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <2>;
+	apb2-prescaler = <1>;
+	/* usbpre not set: USB clock = 72 / 1.5: 48MHz */
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_master_pa5 &spi1_miso_master_pa6 &spi1_mosi_master_pa7>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	cs-gpios = <&gpioa 4 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+
+	lora0: lora@0 {
+		compatible = "semtech,lr1121";
+		status = "okay";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+		reset-gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+		irq-gpios = <&gpiob 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+		lf-clk = "XTAL";
+		rfsw-enable = <0x07>;
+		rfsw-standby = <0x00>;
+		rfsw-rx = <0x02>;
+		rfsw-tx = <0x03>;
+		rfsw-tx-hp = <0x01>;
+		rfsw-tx-hf = <0x00>;
+		rfsw-gnss = <0x04>;
+		rfsw-wifi = <0x00>;
+		tcxo-voltage = <1800>;
+		use-dcdc;
+		rx-boosted;
+	};
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
+		 <&rcc STM32_SRC_LSI RTC_SEL(2)>;
+	status = "okay";
+};

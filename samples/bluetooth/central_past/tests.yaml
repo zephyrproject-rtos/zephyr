@@ -1,0 +1,11 @@
+sample:
+  name: Bluetooth Central Periodic Advertising Sync Transfer
+tests:
+  sample.bluetooth.central_past:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+    integration_platforms:
+      - qemu_cortex_m3
+    tags: bluetooth

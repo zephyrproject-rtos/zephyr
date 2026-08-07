@@ -1,0 +1,16 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/MCXE31BMPB-pinctrl.h>
+
+&pinctrl {
+	eirq0_default {
+		gt911_int {
+			pinmux = <PTB14_EIRQ28>;
+			input-enable;
+			bias-pull-up;
+		};
+	};
+};

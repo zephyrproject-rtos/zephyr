@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mx25r64 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		settings_file_partition: partition@0 {
+			label = "settings_file_partition";
+			reg = <0x00000000 0x00010000>;
+		};
+	};
+};

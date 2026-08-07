@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: FocalTech FT6146 capacitive touch controller
+
+compatible: "focaltech,ft6146"
+
+include: [i2c-device.yaml, touchscreen-common.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: Interrupt GPIO specification, active low
+
+  reset-gpios:
+    type: phandle-array
+    description: Reset GPIO specification, active low

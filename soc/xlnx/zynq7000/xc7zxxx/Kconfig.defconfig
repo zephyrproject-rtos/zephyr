@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2021 Weidmueller Interface GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_XC7ZXXX
+
+# Zephyr does not support SMP on aarch32 yet, so we default to 1 CPU core
+config MP_MAX_NUM_CPUS
+	default 1
+
+endif # SOC_SERIES_XC7ZXXX

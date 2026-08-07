@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Raspberry Pi BCM2711 framebuffer display device.
+
+    Note:
+      For HDMI output configuration and related framebuffer settings, see:
+      https://www.raspberrypi.com/documentation/computers/legacy_config_txt.html
+
+compatible: "raspberrypi,bcm2711-framebuffer"
+
+include: display-controller.yaml

@@ -1,0 +1,9 @@
+# Copyright (c) 2023-2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Source common USB sample options used to initialize new experimental USB
+# device stack. The scope of these options is limited to USB samples in project
+# tree, you cannot use them in your own application.
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+source "Kconfig.zephyr"

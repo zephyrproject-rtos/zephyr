@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADAFRUIT_FEATHER_RP2040
+	select RP2_FLASH_W25Q080

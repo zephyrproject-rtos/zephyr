@@ -1,0 +1,16 @@
+# Copyright (c) 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+description: Log Backend UART
+
+compatible: "zephyr,log-uart"
+
+include: [base.yaml]
+
+properties:
+
+  uarts:
+    type: phandles
+    required: true
+    description: |
+      UART devices to be used by the UART log backend.

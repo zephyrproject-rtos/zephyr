@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_GPIO=y
+CONFIG_ARM_MPU=y

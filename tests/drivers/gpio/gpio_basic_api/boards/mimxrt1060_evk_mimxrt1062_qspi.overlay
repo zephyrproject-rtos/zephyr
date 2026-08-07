@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* loopback with arduino header D0 and D1 */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		status = "okay";
+		out-gpios = <&arduino_header 6 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
+		in-gpios = <&arduino_header 7 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
+	};
+};

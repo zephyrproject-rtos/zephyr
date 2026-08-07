@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/sensor/mtch9010.h>
+
+&sercom1 {
+	status = "okay";
+	compatible = "atmel,sam0-uart";
+	current-speed = <38400>;
+	rxpo = <3>;
+	txpo = <1>;
+
+	pinctrl-0 = <&sercom1_default>;
+	pinctrl-names = "default";
+
+	my9010: mtch9010 {
+		compatible = "microchip,mtch9010";
+
+		uart-config-enable;
+		operating-mode = "MTCH9010_CONDUCTIVE";
+		extended-output-enable;
+		extended-output-format = "MTCH9010_OUTPUT_FORMAT_BOTH";
+		detect-value = <100>;
+
+		wake-gpios = <&portb 14 GPIO_ACTIVE_LOW>;
+		output-gpios = <&portb 15 GPIO_ACTIVE_HIGH>;
+		heartbeat-gpios = <&porta 20 GPIO_ACTIVE_HIGH>;
+	};
+};

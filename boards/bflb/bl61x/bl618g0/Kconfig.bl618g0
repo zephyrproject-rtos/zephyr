@@ -1,0 +1,6 @@
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BL618G0
+	select SOC_BL618M05Q2I

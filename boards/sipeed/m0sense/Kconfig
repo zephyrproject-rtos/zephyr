@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_M0SENSE
+	select BUILD_OUTPUT_UF2_USE_FLASH_OFFSET

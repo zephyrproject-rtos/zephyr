@@ -1,0 +1,20 @@
+identifier: blackpill_u585ci
+name: WeAct Studio Black Pill STM32U585 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - can
+  - adc
+  - gpio
+  - i2c
+  - spi
+  - usart
+  - watchdog
+  - dma
+  - rtc
+ram: 784
+flash: 2048
+vendor: weact

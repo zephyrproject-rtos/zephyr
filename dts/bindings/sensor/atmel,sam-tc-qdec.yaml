@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM Timer Counter (TC) QDEC mode
+
+compatible: "atmel,sam-tc-qdec"
+
+include:
+  - name: sensor-device.yaml
+  - name: pinctrl-device.yaml

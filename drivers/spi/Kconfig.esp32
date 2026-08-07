@@ -1,0 +1,43 @@
+# ESP32 SPI configuration
+
+# Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ESP32_SPIM
+	bool "ESP32 SPI Master driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_SPI_ENABLED
+	help
+	  Enables support for ESP32 SPI Master driver.
+
+if ESP32_SPIM
+
+config SPI_ESP32_INTERRUPT
+	bool "ESP32 SPI interrupt mode"
+	help
+	  Enables interrupt support for ESP32 SPI driver.
+
+config ESP32_SPI_TARGET
+	bool "ESP32 SPI target mode"
+	select SPI_SLAVE
+	select SPI_ESP32_INTERRUPT
+	help
+	  Enables target mode for the ESP32 SPI driver. Target
+	  transactions are clocked by an external controller, so this
+	  mode is interrupt driven and runs the SPI peripheral through
+	  the dedicated target HAL.
+
+if ESP32_SPI_TARGET
+
+config SPI_ESP32_TARGET_MAX_BUFS
+	int "Maximum scatter/gather buffers per target transaction"
+	default 8
+	help
+	  Number of separate spi_buf segments that can be coalesced into a
+	  single target transaction. A target frame is clocked by the
+	  controller within one chip-select assertion, so the scattered
+	  buffers are gathered into one contiguous FIFO transfer.
+
+endif # ESP32_SPI_TARGET
+
+endif # ESP32_SPIM

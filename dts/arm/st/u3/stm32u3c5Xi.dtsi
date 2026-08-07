@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/u3/stm32u3c5.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(640)>;
+		zephyr,memory-region = "SRAM0";
+	};
+
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(2048)>;
+				ranges = <0x0 0x08000000 DT_SIZE_K(2048)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+	};
+};

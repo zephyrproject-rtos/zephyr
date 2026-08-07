@@ -1,0 +1,12 @@
+# SiFive Freedom WDT configuration
+
+# Copyright (C) 2020 Katsuhiro Suzuki
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_SIFIVE
+	bool "SiFive Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_SIFIVE_WDT_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	help
+	  This option enables WDT driver for SiFive Freedom.

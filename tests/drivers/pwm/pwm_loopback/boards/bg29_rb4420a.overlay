@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connections:
+ * EXP4 - EXP6: TIMER (PC5) to TIMER (PC3)
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&pwm1 0 PWM_MSEC(5) PWM_POLARITY_NORMAL>,
+		       <&pwm0 0 PWM_MSEC(5) PWM_POLARITY_NORMAL>;
+	};
+};
+
+&pinctrl {
+	timer0_default: timer0_default {
+		group1 {
+			pins = <TIMER0_CC0_PC3>;
+			input-enable;
+		};
+	};
+
+	timer1_default: timer1_default {
+		group1 {
+			pins = <TIMER1_CC0_PC5>;
+			drive-push-pull;
+		};
+	};
+};
+
+&timer0 {
+	status = "okay";
+
+	pwm0: pwm {
+		pinctrl-0 = <&timer0_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};
+
+&timer1 {
+	status = "okay";
+
+	pwm1: pwm {
+		pinctrl-0 = <&timer1_default>;
+		pinctrl-names = "default";
+		status = "okay";
+	};
+};

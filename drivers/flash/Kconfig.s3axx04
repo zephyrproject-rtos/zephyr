@@ -1,0 +1,13 @@
+# Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_S3AXX04
+	bool "Netsol S3Axx04 MRAM"
+	default y
+	depends on DT_HAS_NETSOL_S3AXX04_ENABLED
+	select SPI
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	help
+	  Enable Flash API-based driver for Netsol S3Axx04 SPI MRAM

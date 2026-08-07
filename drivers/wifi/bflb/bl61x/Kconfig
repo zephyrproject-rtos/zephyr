@@ -1,0 +1,110 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+choice BFLB_WIFI_BL61X_MACSW_VARIANT
+	prompt "MACSW firmware variant"
+	default BFLB_WIFI_BL61X_MACSW_DEFAULT
+	help
+	  Selects the MACSW lower-MAC firmware blob variant. All variants
+	  share the same host API; they differ only in compile-time tuning
+	  (TX/RX queue depth, AMSDU size, coex hooks).
+
+config BFLB_WIFI_BL61X_MACSW_DEFAULT
+	bool "default"
+	help
+	  Balanced configuration suitable for STA and light AP use.
+	  Includes the built-in PTA (Packet Traffic Arbiter) coex manager
+	  which handles BLE/BT coexistence at the hardware level and works
+	  with the default BLE controller blob out of the box.
+
+config BFLB_WIFI_BL61X_MACSW_BRIDGE
+	bool "bridge"
+	help
+	  High-throughput tuning for simultaneous STA+AP bridging:
+	  64 TX1 descriptors (vs 32), 8K AMSDU (vs 4K), 12-window block ack
+	  and reorder buffer. Adds ~14 KB to RAM usage over default.
+
+config BFLB_WIFI_BL61X_MACSW_ACK
+	bool "ack"
+	help
+	  Enhanced Block Ack and A-MPDU aggregation variant. Increases
+	  BA TX/RX agreement counts and reorder buffer depth over default,
+	  improving throughput on links with high frame aggregation.
+	  Uses more RAM than default but less than bridge.
+
+config BFLB_WIFI_BL61X_MACSW_COEX
+	bool "coex"
+	help
+	  Adds the legacy coex_init/coex_event/coexist_event_* hook API
+	  on top of the default firmware, used by the vendor
+	  components/wireless/coex/ component for TDMA or PTI mode
+	  arbitration with Thread/Zigbee or BR/EDR. Not required for
+	  standard BLE coexistence -- the default variant's built-in PTA
+	  already handles that.
+
+endchoice
+
+config BFLB_WIFI_BL61X_BA_RX
+	int "Number of RX Block Ack agreements"
+	default 4 if BFLB_WIFI_BL61X_MACSW_ACK
+	default 2
+	range 1 8
+	help
+	  Maximum number of concurrent RX Block Ack sessions negotiated
+	  with the AP. Higher values allow parallel aggregated streams
+	  at the cost of additional reorder buffer memory.
+
+config BFLB_WIFI_BL61X_BA_REORDER_BUF
+	int "Block Ack reorder buffer depth per agreement"
+	default 16 if BFLB_WIFI_BL61X_MACSW_ACK
+	default 12 if BFLB_WIFI_BL61X_MACSW_BRIDGE
+	default 4
+	range 4 64
+	help
+	  Number of MPDU slots in each RX Block Ack reorder window.
+	  Deeper buffers tolerate more out-of-order frames before
+	  flushing but consume more WRAM (each slot holds one
+	  RX descriptor plus the AMSDU subframe).
+
+config BFLB_WIFI_BL61X_TASK_STACK_SIZE
+	int "WiFi task stack size"
+	default 4096
+	help
+	  Stack size for the WiFi MACSW task thread.
+
+config BFLB_WIFI_BL61X_TASK_PRIORITY
+	int "WiFi task priority"
+	default 2
+	help
+	  Thread priority of the WiFi MACSW event loop.
+
+config BFLB_WIFI_BL61X_TX_MAX_PENDING
+	int "Maximum in-flight TX packets"
+	default 4
+	range 1 64
+	help
+	  Limits the number of packets queued to the firmware TX path
+	  simultaneously. The driver blocks in send() when this limit
+	  is reached, providing backpressure to the TCP stack and
+	  preventing WRAM heap exhaustion during bulk transfers.
+
+config BFLB_WIFI_BL61X_WRAM_HEAP_SIZE
+	int "Size of the WRAM TX heap (bytes)"
+	default 4096
+	help
+	  Heap size for wl80211_platform_malloc_wram(). Allocated in
+	  non-cached WRAM for DMA coherency. 4 KB holds two concurrent
+	  in-flight TX buffers; minimum ~2 KB for a single full-MTU frame.
+
+config BFLB_WIFI_BL61X_DEFAULT_COUNTRY
+	string "Default regulatory country code"
+	default "US"
+	help
+	  ISO/IEC 3166-1 alpha-2 country code used at boot for both RF
+	  calibration and MAC channel configuration. Must match an entry
+	  in the WL80211_COUNTRY_LIST table. Can be changed at runtime
+	  via the wifi reg_domain shell command.
+
+config WIFI_NM_MAX_MANAGED_INTERFACES
+	default 2 if WIFI_NM_WPA_SUPPLICANT_AP

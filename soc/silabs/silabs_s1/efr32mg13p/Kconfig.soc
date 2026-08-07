@@ -1,0 +1,18 @@
+# Copyright (c) 2020 Piotr Mienkowski
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFR32MG13P
+	bool
+	select SOC_FAMILY_SILABS_S1
+	help
+	  Silicon Labs EFR32MG13P (Mighty Gecko) Series MCU
+
+config SOC_EFR32MG13P732F512GM48
+	bool
+	select SOC_SERIES_EFR32MG13P
+
+config SOC_SERIES
+	default "efr32mg13p" if SOC_SERIES_EFR32MG13P
+
+config SOC
+	default "efr32mg13p732f512gm48" if SOC_EFR32MG13P732F512GM48

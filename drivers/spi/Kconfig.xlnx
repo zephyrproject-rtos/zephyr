@@ -1,0 +1,12 @@
+# Xilinx SPI
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_XLNX_AXI_QUADSPI
+	bool "Xilinx AXI Quad SPI driver"
+	default y
+	depends on DT_HAS_XLNX_XPS_SPI_2_00_A_ENABLED
+	select EVENTS
+	help
+	  Enable Xilinx AXI Quad SPI v3.2 driver.

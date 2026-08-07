@@ -1,0 +1,21 @@
+# Copyright (c) 2022 Yonatan Schachter
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_RPI_PICO
+	bool "Raspberry Pi Pico flash driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select PICOSDK_USE_FLASH
+	help
+	  Enable Raspberry Pi Pico flash driver.
+
+config FLASH_RPI_PICO_READ_UNTRANSLATED
+	bool "Use untranslated window for flash reads"
+	depends on FLASH_RPI_PICO
+	depends on SOC_SERIES_RP2350
+	help
+	  Bypass XIP cache and address translation hardware when reading from flash.

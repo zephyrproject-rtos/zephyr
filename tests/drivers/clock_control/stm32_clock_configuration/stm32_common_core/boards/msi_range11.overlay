@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that applies after clear all clocks with .overlay file.
+ */
+
+&clk_msi {
+	status = "okay";
+	msi-range = <11>;
+};
+
+&rcc {
+	clocks = <&clk_msi>;
+	clock-frequency = <DT_FREQ_M(48)>;
+};

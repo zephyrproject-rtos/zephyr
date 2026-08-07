@@ -1,0 +1,8 @@
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Maxim Integrated 1 channel 8 bit 3 Msps SPI ADC
+
+compatible: "maxim,max11116"
+
+include: maxim,max11102-17-base.yaml

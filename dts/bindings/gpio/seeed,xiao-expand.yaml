@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO pins exposed on Seeeduino Xiao (and compatible devices) pads.
+
+    Some Seeeeduino Xiao layout providing pads for connecting with pogo
+    spring contact pins, along opposite rows on the bottom of the board.
+
+    Proceeding counter-clockwise:
+    * A 4-pin pad row of Digital/Analog Input signals.  This has signals
+      labeled from 11 at the top through 14 at the bottom.
+    * A 4-pin pad row of Digital/Analog Input signals.  This has signals
+      labeled 18 at the top through 15 at the bottom.
+
+    This binding provides a nexus mapping for 8 pins where parent pins 0
+    through 7 correspond to D11 through D18, as depicted below:
+
+        0 D11 (A11/RX1)    (CS1n/A18) D18 7
+        1 D12 (A12/TX1)    (SCK1/A17) D17 6
+        2 D13 (A13/SCL1)  (MISO1/A16) D16 5
+        3 D14 (A14/SDA1)  (MOSI1/A15) D15 4
+
+    https://github.com/Seeed-Studio/OSHW-XIAO-Series
+
+
+compatible: "seeed,xiao-expand"
+
+include: [gpio-nexus.yaml, base.yaml]

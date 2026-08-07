@@ -1,0 +1,24 @@
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: LiteX SPI
+
+compatible: "litex,spi"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  data-width:
+    type: int
+    description: |
+      Maximum data width of the SPI controller in bits.
+    default: 8
+
+  max-cs:
+    type: int
+    description: |
+      Maximum number of chip selects supported by the SPI controller.
+    default: 1

@@ -1,0 +1,27 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Wake Timer.
+
+  A 32-bit down-counter clocked at 1 kHz (the 16 kHz source divided down by the
+  WAKE_TIMER_CTRL[OSC_DIV_ENA] ripple counter). Loading a non-zero count starts a
+  countdown that, on reaching zero, raises a wake/interrupt event and halts.
+
+compatible: "nxp,wake-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    const: 1000
+    description: |
+      Counter clock frequency in Hz. The wake timer is clocked at 1 kHz when
+      OSC_DIV_ENA is enabled, which is the only supported value.

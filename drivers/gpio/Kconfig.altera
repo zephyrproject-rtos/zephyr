@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_ALTERA_PIO
+	bool "Altera PIO"
+	default y
+	depends on DT_HAS_ALTR_PIO_1_0_ENABLED
+	help
+	  Enable driver for Altera PIO

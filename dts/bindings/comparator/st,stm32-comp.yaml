@@ -1,0 +1,121 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Comparator
+
+  The following example displays the minimum node layout:
+
+    comp1: comparator@40010200 {
+      reg = <0x40010200 0x4>;
+      interrupts = <64 0>;
+      clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+      st,exti-line = <21>;
+      positive-input = "IN0";
+      negative-input = "VREFINT";
+      status = "okay";
+    };
+
+  NOTE: The shown example is for stm32g474re
+
+  Enabling the comparator node requires setting the minimum default
+  configuration of the comparator. This includes selecting the
+  positive and negative inputs, and routing them using pinctrl:
+
+    &comp1 {
+      pinctrl-0 = <&comp1_inp_pa1 &comp1_out_pa6>;
+      pinctrl-names = "default";
+
+      positive-input = "IN0";
+      negative-input = "VREFINT";
+      status = "okay";
+    };
+
+  NOTE: Pins used above are an example for stm32g474re
+
+compatible: "st,stm32-comp"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true
+  clocks:
+    required: true
+
+  invert-output:
+    type: string
+    description: |
+      Output polarity selection.
+    enum:
+      - NONINVERTED
+      - INVERTED
+    default: NONINVERTED
+
+  st,exti-line:
+    required: true
+    type: int
+    description: |
+      EXTI interrupt line number connected to the comparator (COMPx) event.
+
+  st,lock-enable:
+    type: boolean
+    description: |
+      The comparator configuration can be locked to prevent any
+      modification until the next system reset.
+      Once the lock bit is set, it can be cleared only by a system reset.
+      This feature allows to protect the comparator configuration against
+      unintentional modification.
+
+  positive-input:
+    required: true
+    type: string
+    description: |
+      Selects positive input pin provided by the pinmux controller.
+      IN0 corresponds to the first pinmux option, IN1 to the second one.
+    enum:
+      - IN0
+      - IN1
+
+  negative-input:
+    required: true
+    type: string
+    description: |
+      Selects negative input. May be a package pin (IN0 / IN1) via pinctrl
+      or an internal signal (e.g. VREFINT, DAC).
+      In case of package pin assignment IN0 will correspond to first pinmux pin
+      option and IN1 to the second one.
+    enum:
+      - 1_4VREFINT
+      - 1_2VREFINT
+      - 3_4VREFINT
+      - VREFINT
+      - IN0
+      - IN1
+
+  hysteresis:
+    type: string
+    description: |
+      Selects the hysteresis voltage level.
+      Hysteresis adds a voltage offset to the comparator threshold to prevent
+      unwanted output toggling when the input voltage is noisy or slowly
+      varying around the comparator threshold.
+    enum:
+      - NONE
+      - LOW
+      - MEDIUM
+      - HIGH
+    default: NONE
+
+  st,blank-sel:
+    type: string
+    description: |
+      Blanking source to mask short spikes at PWM period start.
+      Ref (example): STM32G4 RM0440 Rev 8, 24.3.6.
+    enum:
+      - NONE
+    default: NONE

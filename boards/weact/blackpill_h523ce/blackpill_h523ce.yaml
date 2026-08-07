@@ -1,0 +1,17 @@
+identifier: blackpill_h523ce
+name: WeAct Studio Black Pill STM32H523
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 272
+flash: 512
+supported:
+  - gpio
+  - counter
+  - spi
+  - i2c
+  - uart
+  - pwm
+vendor: weact

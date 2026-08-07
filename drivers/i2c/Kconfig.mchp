@@ -1,0 +1,38 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_MCHP_SERCOM
+	bool
+	help
+	  Common options for Microchip I2C SERCOM drivers.
+
+config I2C_MCHP_SERCOM_G1
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_SERCOM_G1_I2C_ENABLED
+	select PINCTRL
+	select I2C_MCHP_SERCOM
+	help
+	  Enable support for Microchip SERCOM I2C g1 driver.
+
+if I2C_MCHP_SERCOM
+
+config I2C_MCHP_DMA_DRIVEN
+	bool
+	default y
+	depends on DMA
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_SERCOM_G1_I2C),dmas)
+	help
+	  This enables DMA driven transfers for the I2C peripheral.
+	  Requires DMA controller and dmas property in device tree.
+	  It can be used in blocking and non-blocking modes.
+
+config I2C_MCHP_TRANSFER_TIMEOUT
+	int "Microchip Transfer timeout [ms]"
+	default 500
+	help
+	  Timeout in milliseconds used for each I2C transfer.
+	  0 means that the driver should use the K_FOREVER value,
+	  i.e. it should wait as long as necessary.
+
+endif # I2C_MCHP_SERCOM

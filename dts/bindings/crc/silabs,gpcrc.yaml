@@ -1,0 +1,19 @@
+# Copyright 2026 Phuc Hoang
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silabs General Purpose CRC (Cyclic Redundancy Check)
+
+description: |
+  Silabs General Purpose CRC (Cyclic Redundancy Check) driver
+
+  The GPCRC module is a peripheral that implements a Cyclic Redundancy Check (CRC) function.
+  It supports a fixed 32-bit polynomial and a user configurable 16-bit polynomial.
+  The fixed 32-bit polynomial is the commonly used IEEE 802.3 polynomial 0x04C11DB7.
+
+compatible: "silabs,gpcrc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true

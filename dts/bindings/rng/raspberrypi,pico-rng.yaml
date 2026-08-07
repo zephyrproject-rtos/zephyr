@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Xudong Zheng
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico RNG/Entropy
+
+compatible: "raspberrypi,pico-rng"
+
+include: base.yaml

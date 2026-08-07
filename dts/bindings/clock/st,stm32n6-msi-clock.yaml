@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32N6 Multi Speed Internal Clock
+
+compatible: "st,stm32n6-msi-clock"
+
+include:
+  - name: st,stm32-msi-clock.yaml
+    property-blocklist:
+      - msi-range
+
+properties:
+  msi-range:
+    required: true
+    type: int
+    description: |
+        MSI clock ranges:
+        0: around 4 MHz (reset value)
+        1: around 16 MHz
+    enum: [0, 1]

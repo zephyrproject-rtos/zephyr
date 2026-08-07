@@ -1,0 +1,23 @@
+# Copyright (c) 2025 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_KB106X
+	bool
+	select SOC_FAMILY_KB106X
+	help
+	  Enable support for ENE KB106X Cortex-M3 MCU series
+
+config SOC_SERIES
+	default "kb106x" if SOC_SERIES_KB106X
+
+config SOC_KB1062
+	bool
+	select SOC_SERIES_KB106X
+
+config SOC_KB1064
+	bool
+	select SOC_SERIES_KB106X
+
+config SOC
+	default "kb1062" if SOC_KB1062
+	default "kb1064" if SOC_KB1064

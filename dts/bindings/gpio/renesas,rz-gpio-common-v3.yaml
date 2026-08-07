@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ GPIO common v3
+
+compatible: "renesas,rz-gpio-common-v3"
+
+include: base.yaml

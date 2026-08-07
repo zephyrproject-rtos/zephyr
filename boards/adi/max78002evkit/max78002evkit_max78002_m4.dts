@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max78002-m4.dtsi>
+#include "max78002evkit.dtsi"
+
+#include <adi/max32/max78002-pinctrl.dtsi>
+
+storage_partition: &m4_storage_partition {};
+
+/ {
+	model = "Analog Devices MAX78002EVKIT";
+	compatible = "adi,max78002evkit";
+
+	chosen {
+		zephyr,console = &m4_uart;
+		zephyr,shell-uart = &m4_uart;
+		zephyr,sram = &m4_sram;
+		zephyr,code-partition = &m4_partition;
+		zephyr,settings-partition = &m4_storage_partition;
+		zephyr,code-rv32-partition = &rv32_partition;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&flc0 {
+	status = "okay";
+};
+
+&cpu1 {
+	pinctrl-0 = <&rv_tck_p1_0 &rv_tms_p1_1 &rv_tdi_p1_2 &rv_tdo_p1_3>;
+	pinctrl-names = "default";
+};
+
+&m4_uart {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss0_p0_4>;
+	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&w1 {
+	pinctrl-0 = <&owm_io_p0_6 &owm_pe_p0_7>;
+	pinctrl-names = "default";
+};

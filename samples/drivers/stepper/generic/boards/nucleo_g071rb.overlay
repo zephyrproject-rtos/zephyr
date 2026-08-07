@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2025 Jilay Sandeep Pandya
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		stepper-driver = &tmc2209;
+		stepper-ctrl = &step_dir_motion_control;
+	};
+
+	tmc2209: stepper-driver {
+		compatible = "adi,tmc2209";
+		en-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>; /* D12 */
+		m0-gpios = <&gpiob 0 GPIO_ACTIVE_HIGH>; /* D10 */
+		m1-gpios = <&gpioa 7 GPIO_ACTIVE_HIGH>; /* D11 */
+		micro-step-res = <32>;
+	};
+
+	step_dir_motion_control: motion-controller {
+		compatible = "zephyr,gpio-step-dir-stepper-ctrl";
+		step-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>; /* D8 */
+		dir-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>; /* D9 */
+		invert-direction;
+		stepper-driver = <&tmc2209>;
+	};
+};

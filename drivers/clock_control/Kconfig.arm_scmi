@@ -1,0 +1,8 @@
+# Copyright 2024 NXP
+
+config CLOCK_CONTROL_ARM_SCMI
+	bool "SCMI clock protocol clock controller driver"
+	default y
+	depends on ARM_SCMI_CLK_HELPERS
+	help
+	  Enable support for SCMI-based clock control.

@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Bootlin
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nintendo Nunchuk joystick through I2C
+
+compatible: "nintendo,nunchuk"
+
+include: i2c-device.yaml
+
+properties:
+  polling-interval-ms:
+    type: int
+    default: 50
+    description: |
+      Interval between two reads, in ms. The interval must be greater than 20 ms or equal to 0 ms
+      to disable the periodical polling and use the nunchuk_read() function to trigger a readout.
+      Defaults to 50 ms.

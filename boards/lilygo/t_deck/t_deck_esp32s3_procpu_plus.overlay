@@ -1,0 +1,35 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/battery/battery.h>
+
+/ {
+	model = "LilyGO T-Deck Plus PROCPU";
+
+	aliases {
+		fuel-gauge0 = &fuel_gauge;
+		gnss = &gnss;
+	};
+
+	fuel_gauge: fuel_gauge {
+		compatible = "zephyr,fuel-gauge-composite";
+		source-primary = <&vbatt>;
+		device-chemistry = "lithium-ion-polymer";
+		ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
+		charge-full-design-microamp-hours = <2000000>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <38400>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+
+	gnss: gnss-nmea-generic {
+		compatible = "gnss-nmea-generic";
+		status = "okay";
+	};
+};

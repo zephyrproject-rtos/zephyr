@@ -1,0 +1,22 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE, IT51XXX-UART node
+
+compatible: "ite,it51xxx-uart"
+
+include: [uart-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  wucctrl:
+    type: phandles
+    description: |
+      WUC groups internal and external inputs, and asserts wake-up
+      signals to INTC that allows the CPU to exit a Doze/Deep
+      Doze/Sleep mode.
+
+  clocks:
+    required: true

@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic Expansion Board header
+
+  The header is 2x13 in odd/even order.
+
+                   1  2
+            VDDIO |x||x| GND
+               00 |x||x| 01 - PWM
+               02 |x||x| 03
+               04 |x||x| 05
+    SPI MOSI - 06 |x||x| 07 - SPI MISO
+               08 |x||x| 09
+      SPI CS - 10 |x||x| 11 - SPI SCK
+               12 |x||x| 13
+               14 |x||x| 15
+              GND |x||x| VDDIO
+     QSPI D3 - 16 |x||x| 17 - QSPI CLK
+     QSPI D0 - 18 |x||x| 19 - QSPI D2
+     QSPI D1 - 20 |x||x| 21 - QSPI CS
+
+compatible: "nordic,expansion-board-header"
+
+include:
+  - base.yaml
+  - gpio-nexus.yaml

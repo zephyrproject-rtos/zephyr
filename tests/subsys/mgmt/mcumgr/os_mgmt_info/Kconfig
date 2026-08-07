@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config CUSTOM_OS_NAME_VALUE
+	string "Custom OS name"
+	default "Fake OS Name"
+
+config BUILD_DATE_TIME_TEST
+	bool "Build date time test"
+	select MCUMGR_GRP_OS_INFO_BUILD_DATE_TIME
+
+config LIMITED_TEST
+	bool "Limited buffer size test"
+
+source "Kconfig.zephyr"

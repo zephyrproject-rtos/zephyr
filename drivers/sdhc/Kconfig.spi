@@ -1,0 +1,12 @@
+# Copyright (c) 2022, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SDHC
+	bool "SD protocol over SPI bus"
+	default y
+	depends on DT_HAS_ZEPHYR_SDHC_SPI_SLOT_ENABLED
+	select SPI
+	select CRC
+	select SDHC_SUPPORTS_SPI_MODE
+	help
+	  Enable the SPI SD host controller driver

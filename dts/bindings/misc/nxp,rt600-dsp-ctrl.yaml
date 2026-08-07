@@ -1,0 +1,7 @@
+# Copyright (c) 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+include: ["nxp,rtxxx-dsp-ctrl.yaml"]
+
+compatible: "nxp,rt600-dsp-ctrl"
+description: NXP i.MX RTxxx DSP control driver (i.MX RT600 HiFi 4 DSP)

@@ -1,0 +1,16 @@
+/*
+ * Copyright 2024 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Except testing with "nxp,loopback"
+ * frdm_mcxa153 : Short J5.3(P3_14) and J5.4(P3_15)
+ * frdm_mcxa577 : Short J1.2(P2_11) and J1.4(P2_10)
+ */
+
+dut: &lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	nxp,loopback;
+};

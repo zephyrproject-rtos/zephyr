@@ -1,0 +1,45 @@
+common:
+  tags:
+    - trusted-firmware-m
+    - mcuboot
+  modules:
+    - tf-m-tests
+  filter: CONFIG_BUILD_WITH_TFM and not CONFIG_TFM_LOG_LEVEL_SILENCE
+  integration_platforms:
+    - mps2/an521/cpu0/ns
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      # There's an ANSI escape code between has and  PASSED: \x1b[32m (green color). The log file
+      # strips ANSI sequences, which is why it looks clean there. But harness.handle() receives
+      # the raw line with ANSI codes — so has PASSED never matches as a literal string.
+      - "Test suite 'PSA protected storage NS interface tests.*' has.*PASSED"
+      - "Test suite 'PSA internal trusted storage NS interface tests.*' has.*PASSED"
+      - "Test suite 'Crypto non-secure interface test.*' has.*PASSED"
+      - "Test suite 'Platform Service Non-Secure interface tests.*' has.*PASSED"
+
+tests:
+  tfm.regression.ipc.lvl1:
+    platform_exclude:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+    extra_args:
+      - CONFIG_TFM_IPC=y
+      - CONFIG_TFM_ISOLATION_LEVEL=1
+    timeout: 200
+
+  tfm.regression.ipc.lvl2:
+    extra_args:
+      - CONFIG_TFM_IPC=y
+      - CONFIG_TFM_ISOLATION_LEVEL=2
+    timeout: 200
+
+  tfm.regression.sfn:
+    platform_exclude:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+    filter: CONFIG_TFM_PROFILE_TYPE_SMALL or CONFIG_TFM_PROFILE_TYPE_NOT_SET
+    extra_args:
+      - CONFIG_TFM_SFN=y
+      - CONFIG_TFM_ISOLATION_LEVEL=1
+    timeout: 200

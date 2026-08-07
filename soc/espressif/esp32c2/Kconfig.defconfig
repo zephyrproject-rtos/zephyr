@@ -1,0 +1,12 @@
+# Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_ESP32C2
+
+config NUM_IRQS
+	default 32
+
+config MAIN_STACK_SIZE
+	default 2048
+
+endif # SOC_SERIES_ESP32C2

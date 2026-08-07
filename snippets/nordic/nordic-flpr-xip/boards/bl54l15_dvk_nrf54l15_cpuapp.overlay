@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 Ezurio LLC
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * BL54L15 DVK uses uart30 as the cpuapp console (connected to USB-UART
+ * port 0) and uart20 as the cpuflpr console.  Override the SoC-level
+ * reservation so the cpuapp console remains functional.
+ */
+
+&uart30 {
+	status = "okay";
+};

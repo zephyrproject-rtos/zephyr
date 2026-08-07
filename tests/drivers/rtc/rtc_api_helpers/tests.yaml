@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Bjarki Arge Andreasen
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.rtc.rtc_api_helpers:
+    tags:
+      - drivers
+      - rtc
+      - api
+      - helpers
+    filter: not dt_compat_enabled("zephyr,rtc-counter")
+    depends_on: rtc

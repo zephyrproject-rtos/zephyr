@@ -1,0 +1,22 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "nrf54h20dk_nrf54h20_common.dtsi"
+
+&timer020 {
+	status = "okay";
+	prescaler = <7>;
+};
+
+&timer021 {
+	status = "okay";
+	prescaler = <7>;
+};
+
+&timer022 {
+	status = "okay";
+	prescaler = <7>;
+};
+
+&rtc {
+	status = "okay";
+};

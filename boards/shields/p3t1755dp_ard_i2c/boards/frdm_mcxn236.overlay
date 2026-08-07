@@ -1,0 +1,14 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i3c1 {
+	status = "disabled";
+};
+
+&flexcomm5_lpi2c5 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};

@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Lukas Woodtli
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_EFM32TG
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 39
+
+endif

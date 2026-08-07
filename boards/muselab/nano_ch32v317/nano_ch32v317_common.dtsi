@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) 2026 James Bennion-Pedley
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v317/ch32v317wc.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "nano_ch32v317-pinctrl.dtsi"
+
+/ {
+	model = "muselab_nano_ch32v317";
+	compatible = "muselab,nano-ch32v317";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led_1: led1 {
+			gpios = <&gpioa 0 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		/* PA0 is the board user LED (active-low) and also TIM2_CH1
+		 * (no remap). Driving it with PWM2 channel 0 gives a breathing
+		 * LED effect via fade_led without extra wiring.
+		 */
+		pwm_led_2: pwm_led_2 {
+			pwms = <&pwm2 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	aliases {
+		led0 = &led_1;
+		pwm-led0 = &pwm_led_2;
+	};
+};
+
+&clk_hse {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(8)>;
+};
+
+&pll {
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+};
+
+&rng {
+	status = "okay";
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&mac_default>;
+	pinctrl-names = "default";
+	phy-connection-type = "internal";
+	phy-handle = <&eth_phy>;
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
+};

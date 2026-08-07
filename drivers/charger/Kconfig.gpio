@@ -1,0 +1,11 @@
+# Copyright 2026 Embeint Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_GPIO
+	bool "GPIO controlled battery charger"
+	default y
+	depends on DT_HAS_ZEPHYR_CHARGER_GPIO_ENABLED
+	select GPIO
+	help
+	  Enable GPIO battery charger driver.

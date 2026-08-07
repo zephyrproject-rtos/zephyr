@@ -1,0 +1,31 @@
+# Copyright (c) 2023 SLB
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon xmc4xxx Family MDIO Driver node
+
+compatible: "infineon,xmc4xxx-mdio"
+
+include:
+  - name: mdio-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  mdi-port-ctrl:
+    description: |
+      The MDIO input is connected to several port/pins via a mux.
+      This is not handled by pinctrl because the mux is located at the
+      peripheral and not GPIO. The possible connections are defined by
+      an enum.
+    type: string
+
+    enum:
+      - "P0_9"
+      - "P2_0"
+      - "P1_11"
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

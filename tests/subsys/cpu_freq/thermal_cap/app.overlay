@@ -1,0 +1,51 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	performance-states {
+		pstate_0: pstate-0 {
+			compatible = "zephyr,generic-pstate";
+			load-threshold = <60>;
+			pstate-id = <0>;
+		};
+
+		pstate_1: pstate-1 {
+			compatible = "zephyr,generic-pstate";
+			load-threshold = <30>;
+			pstate-id = <1>;
+		};
+
+		pstate_2: pstate-2 {
+			compatible = "zephyr,generic-pstate";
+			load-threshold = <0>;
+			pstate-id = <2>;
+		};
+	};
+
+	thermal_cap_sensor: thermal-cap-sensor {
+		compatible = "vnd,cpu-freq-thermal-cap-sensor";
+	};
+
+	cpu_freq_thermal_cap: cpu-freq-thermal-cap {
+		compatible = "zephyr,cpu-freq-thermal-cap";
+		sensor = <&thermal_cap_sensor>;
+		sensor-channel = "die-temp";
+		polling-delay-ms = <1000000>;
+		trip-active-polling-delay-ms = <100000>;
+
+		trip_0 {
+			temperature-millicelsius = <80000>;
+			hysteresis-millicelsius = <5000>;
+			cap-pstate = <&pstate_1>;
+		};
+
+		trip_1 {
+			temperature-millicelsius = <95000>;
+			hysteresis-millicelsius = <3000>;
+			cap-pstate = <&pstate_2>;
+		};
+	};
+};

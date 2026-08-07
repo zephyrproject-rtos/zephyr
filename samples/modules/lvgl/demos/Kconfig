@@ -1,0 +1,75 @@
+# Copyright (c) 2023 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+choice LV_Z_DEMO
+	prompt "LVGL demo to build"
+	default LV_Z_DEMO_MUSIC
+	help
+	  Demo application to build.
+
+config LV_Z_DEMO_MUSIC
+	bool "LVGL music demo"
+	select LV_USE_DEMO_MUSIC
+	help
+	  Build music player demo application.
+
+config LV_Z_DEMO_BENCHMARK
+	bool "LVGL benchmark demo"
+	select LV_USE_DEMO_BENCHMARK
+	select LV_USE_DEMO_WIDGETS
+	imply LV_USE_PERF_MONITOR
+	imply LV_USE_SYSMON
+	help
+	  Build benchmarking demo application.
+
+config LV_Z_DEMO_STRESS
+	bool "LVGL stress demo"
+	select LV_USE_DEMO_STRESS
+	help
+	  Build stress testing demo application.
+
+config LV_Z_DEMO_WIDGETS
+	bool "LVGL widgets demo"
+	select LV_USE_DEMO_WIDGETS
+	help
+	  Build widgets demo application.
+
+config LV_Z_DEMO_KEYPAD_AND_ENCODER
+	bool "LVGL keypad and encoder demo"
+	select LV_USE_DEMO_KEYPAD_AND_ENCODER
+	help
+	  Build keypad and encoder demo application.
+
+config LV_Z_DEMO_RENDER
+	bool "LVGL render demo"
+	select LV_USE_DEMO_RENDER
+	help
+	  Build render demo application.
+
+endchoice
+
+if LV_Z_DEMO_RENDER
+
+config LV_Z_DEMO_RENDER_SCENE_DYNAMIC
+	bool "Switch scenes dynamically"
+	help
+	  Switch between scenes to render dynamically.
+
+config LV_Z_DEMO_RENDER_SCENE_INDEX
+	int "Index of the rendered scene"
+	depends on !LV_Z_DEMO_RENDER_SCENE_DYNAMIC
+	default 0
+	range 0 11
+	help
+	  Render scene by its index (refer to lv_demo_render.h)
+
+config LV_Z_DEMO_RENDER_DYNAMIC_SCENE_TIMEOUT
+	int "Seconds each rendered scene is shown"
+	depends on LV_Z_DEMO_RENDER_SCENE_DYNAMIC
+	default 3
+	help
+	  Seconds each rendered scenar is shown
+
+endif
+
+source "Kconfig.zephyr"

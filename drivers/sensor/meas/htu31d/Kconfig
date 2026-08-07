@@ -1,0 +1,12 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HTU31D
+	bool "HTU31D Humidity and Temperature Sensor"
+	default y
+	depends on DT_HAS_MEAS_HTU31D_ENABLED
+	select I2C
+	select CRC
+	help
+	  Enable driver for the TE Connectivity HTU31D digital
+	  humidity and temperature sensor over I2C.

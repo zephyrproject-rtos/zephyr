@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_ADI_$(module)_RAMPSTAT_POLL_INTERVAL_IN_MSEC
+	int "$(module-str) poll ramp status interval in ms"
+	default 100
+	help
+	  When DIAG0 pin is not available, the driver automatically falls back to
+	  polling. This setting controls how frequently (in milliseconds) the driver
+	  polls the ramp status register to detect events like position reached, stall
+	  or end stop triggered.
+
+config STEPPER_ADI_$(module)_RAMPSTAT_POLL_STALLGUARD_LOG
+	bool "log $(module-str) stallguard"
+	default n
+	help
+	  Enable stallguard log while polling rampstat.
+
+config STEPPER_ADI_$(module)_RAMP_GEN
+	bool "Use $(module-str) with Ramp Generator"
+	depends on STEPPER_ADI_$(module)
+	default y
+	help
+	  Enable ramp generator for trinamic stepper controller.

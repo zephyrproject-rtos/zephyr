@@ -1,0 +1,12 @@
+description: TI Stellaris UART
+
+compatible: "ti,stellaris-uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

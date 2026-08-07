@@ -1,0 +1,20 @@
+identifier: intel_ptl_h_crb
+name: Panther Lake H CRB
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 2048
+supported:
+  - acpi
+  - smp
+  - smbus
+  - watchdog
+  - uart
+  - rtc
+  - pwm
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: intel

@@ -1,0 +1,20 @@
+sample:
+  name: Clock Monitor - Frequency Meter
+  description: |
+    Uses a clock_monitor instance (referenced by the `clock-meter`
+    devicetree alias) in MEASURE mode to measure a monitored clock
+    once, logging the result in Hz. Demonstrates the start -> callback
+    -> semaphore wait pattern with application-owned timeout handling.
+
+tests:
+  sample.drivers.clock_monitor.measure_freq:
+    platform_allow:
+      - frdm_mcxe31b
+    tags:
+      - drivers
+      - clock_monitor
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Measured frequency = \\d+ Hz"

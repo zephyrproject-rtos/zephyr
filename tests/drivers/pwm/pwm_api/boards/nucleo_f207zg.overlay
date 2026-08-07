@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2021 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&timers1 {
+	st,prescaler = <10000>;
+};

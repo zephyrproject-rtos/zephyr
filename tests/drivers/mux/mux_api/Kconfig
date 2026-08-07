@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_MUX_SET_VALUE_A
+	int "First runtime state value to set and read back"
+	default 3
+	help
+	  A state value driven through mux_control_set() and verified with
+	  mux_state_get(). Must be valid for the target controller's field
+	  width (the default fits the XBAR SEL field).
+
+config TEST_MUX_SET_VALUE_B
+	int "Second runtime state value to set and read back"
+	default 7
+	help
+	  A second state value, used to confirm read-back tracks the latest
+	  write. Must be valid for the target controller and differ from
+	  TEST_MUX_SET_VALUE_A.
+
+config TEST_MUX_HAS_DISCONNECT
+	bool "Fixture supports mux_control_disconnect()"
+	help
+	  Set when the board fixture wires an enable line so the controller
+	  implements mux_control_disconnect(). When enabled, the test observes
+	  the enable line via gpio_emul_output_get_dt(); when disabled, the test
+	  asserts mux_control_disconnect() returns -ENOSYS.

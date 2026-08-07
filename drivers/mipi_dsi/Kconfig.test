@@ -1,0 +1,6 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DSI_TEST
+	def_bool DT_HAS_VND_MIPI_DSI_ENABLED
+	depends on DT_HAS_VND_MIPI_DSI_ENABLED

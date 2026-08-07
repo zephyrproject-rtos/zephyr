@@ -1,0 +1,35 @@
+/*
+ * Copyright 2022 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32Z27-BGA594-pinctrl.h>
+
+/ {
+	/* Pin 1 and 3 of J69 must be connected on the board */
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpioa 11 0>;
+		in-gpios = <&gpioa 12 0>;
+	};
+};
+
+&pinctrl {
+	eirq0_default: eirq0_default {
+		group1 {
+			pinmux = <PA12_EIRQ_3>;
+			input-enable;
+		};
+	};
+};
+
+&eirq0 {
+	pinctrl-0 = <&eirq0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};

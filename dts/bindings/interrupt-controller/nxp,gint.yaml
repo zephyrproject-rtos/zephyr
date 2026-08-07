@@ -1,0 +1,44 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP GINT (Grouped GPIO Input Interrupt) controller
+
+  The GINT module allows multiple GPIO pins to be combined into a single
+  interrupt source with flexible logic combination and trigger modes.
+
+  Features:
+  - Support for multiple digital pins in grouped interrupt
+  - Configurable polarity (active HIGH or active LOW) per pin
+  - OR or AND logic combination
+  - Edge or level triggered
+
+  Example usage:
+
+    gint0: gint@40002000 {
+      compatible = "nxp,gint";
+      reg = <0x40002000 0x1000>;
+      interrupts = <0 2>;
+      port-num = <2>;
+      resets = <&reset 0>;
+      status = "okay";
+    };
+
+compatible: "nxp,gint"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Base address and size of the GINT peripheral register space.
+
+  interrupts:
+    required: true
+    description: |
+      Interrupt line for the GINT controller.
+
+  resets:
+    description: |
+      Reset controller phandle and specifier for the GINT peripheral.

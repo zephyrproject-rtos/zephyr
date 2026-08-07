@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_NXP_MRCC
+	bool "NXP MRCC Reset controller driver"
+	default y
+	depends on DT_HAS_NXP_MRCC_RESET_ENABLED
+	help
+	  Enable the NXP MRCC reset controller driver.

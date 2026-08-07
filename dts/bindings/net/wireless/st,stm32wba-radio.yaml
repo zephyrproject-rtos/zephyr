@@ -1,0 +1,17 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32WBA 2.4 GHz radio.
+  This device groups protocol frontends implemented on top of the same radio IP.
+
+compatible: "st,stm32wba-radio"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

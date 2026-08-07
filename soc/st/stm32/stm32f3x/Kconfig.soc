@@ -1,0 +1,53 @@
+# STMicroelectronics STM32F3 MCU line
+
+# Copyright (c) 2016 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32F3X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32f3x" if SOC_SERIES_STM32F3X
+
+config SOC_STM32F302X8
+	bool
+	select SOC_SERIES_STM32F3X
+
+config SOC_STM32F302XC
+	bool
+	select SOC_SERIES_STM32F3X
+
+config SOC_STM32F303X8
+	bool
+	select SOC_SERIES_STM32F3X
+
+config SOC_STM32F303XB
+	bool
+	select SOC_SERIES_STM32F3X
+
+config SOC_STM32F303XC
+	bool
+	select SOC_SERIES_STM32F3X
+
+config SOC_STM32F303XE
+	bool
+	select SOC_SERIES_STM32F3X
+
+config SOC_STM32F334X8
+	bool
+	select SOC_SERIES_STM32F3X
+
+config SOC_STM32F373XC
+	bool
+	select SOC_SERIES_STM32F3X
+
+config SOC
+	default "stm32f302x8" if SOC_STM32F302X8
+	default "stm32f302xc" if SOC_STM32F302XC
+	default "stm32f303x8" if SOC_STM32F303X8
+	default "stm32f303xb" if SOC_STM32F303XB
+	default "stm32f303xc" if SOC_STM32F303XC
+	default "stm32f303xe" if SOC_STM32F303XE
+	default "stm32f334x8" if SOC_STM32F334X8
+	default "stm32f373xc" if SOC_STM32F373XC

@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: microchip_pic32cm_jh
+  series:
+  - name: pic32cm_jh00
+    socs:
+    - name: pic32cm2532jh00032
+    - name: pic32cm5164jh00032
+    - name: pic32cm2532jh00048
+    - name: pic32cm5164jh00048
+    - name: pic32cm2532jh00064
+    - name: pic32cm5164jh00064
+    - name: pic32cm2532jh00100
+    - name: pic32cm5164jh00100
+  - name: pic32cm_jh01
+    socs:
+    - name: pic32cm2532jh01032
+    - name: pic32cm5164jh01032
+    - name: pic32cm2532jh01048
+    - name: pic32cm5164jh01048
+    - name: pic32cm2532jh01064
+    - name: pic32cm5164jh01064
+    - name: pic32cm2532jh01100
+    - name: pic32cm5164jh01100
+    - name: pic32cm1216jh01032
+    - name: pic32cm1216jh01048

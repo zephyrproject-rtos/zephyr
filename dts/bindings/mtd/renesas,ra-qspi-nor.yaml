@@ -1,0 +1,27 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA QSPI FLASH
+
+compatible: "renesas,ra-qspi-nor"
+
+include: [base.yaml]
+
+on-bus: qspi
+
+properties:
+  reg:
+    required: true
+    description: Flash Memory base address and size in bytes
+
+  erase-block-size:
+    type: int
+    description: address alignment required by flash erase operations
+
+  write-block-size:
+    type: int
+    description: address alignment required by flash write operations
+
+  qpi-enable:
+    type: boolean
+    description: Enable Quad SPI protocol (QPI) (4-4-4)

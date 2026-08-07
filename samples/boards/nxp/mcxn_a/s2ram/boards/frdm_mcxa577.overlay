@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Deep Power Down on MCXAxx7 can retain ONLY SRAM arrays A0 and A3 (per the
+ * reference manual, section "Deep Power Down mode"). A1 and A2 lose power in
+ * DPD regardless of the VBAT retention config. Constrain zephyr,sram to A3
+ * (16 KB at 0x20004000) so the entire retained working set - including the
+ * pm_s2ram marker and saved CPU context - lands in a DPD-retainable array.
+ */
+&sram0 {
+	reg = <0x20004000 0x4000>;
+};
+
+/* Suspend-to-RAM is opt-in (the SoC disables it by default); enable it here. */
+&deeppowerdown {
+	status = "okay";
+};

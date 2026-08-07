@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_i2c {
+	status = "okay";
+
+	/* The shunt resistor on the board is 0.1 Ohm.
+	 * The default max shunt voltage is +/-320mV,
+	 * resulting in a max current range of +/-3.2 Amps.
+	 * Calculate the current LSB value as 3.2/2^15 A = 122 uA.
+	 * Round the current LSB value upwards to 200 uA.
+	 */
+	adafruit_ina219: ina219@40 {
+		status = "okay";
+		compatible = "ti,ina219";
+		reg = <0x40>;
+		shunt-milliohm = <100>;
+		lsb-microamp = <200>;
+	};
+};

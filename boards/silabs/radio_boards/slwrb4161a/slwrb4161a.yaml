@@ -1,0 +1,21 @@
+identifier: slwrb4161a
+name: EFR32MG12 2.4 GHz 19 dBm Radio Board (SLWRB4161A, BRD4161A)
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - counter
+  - gpio
+  - nvs
+  - spi
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: silabs

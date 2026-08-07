@@ -1,0 +1,17 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Generic NTC thermistor
+
+compatible: "ntc-thermistor-generic"
+
+include: ntc-thermistor.yaml
+
+properties:
+  zephyr,compensation-table:
+    type: array
+    required: true
+    description: |
+      Compensation table, formatted as temperature, resistance pairs. A script
+      to generate a valid table is provided in
+      scripts/utils/ntc_thermistor_table.py.

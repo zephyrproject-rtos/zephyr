@@ -1,0 +1,15 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Kinetis RNGA (Random Number Generator Accelerator)
+
+compatible: "nxp,kinetis-rnga"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

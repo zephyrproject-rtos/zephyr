@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2019 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio5 14 0>; /* J4 pin 4 */
+		in-gpios = <&gpio5 15 0>;  /* J4 pin 3 */
+	};
+};

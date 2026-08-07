@@ -1,0 +1,147 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - opamp
+  platform_allow:
+    - nucleo_g474re
+  vendor_allow:
+    - st
+
+tests:
+  drivers.opamp.api.stm32.opamp_stm32.opamp_functional_mode_standalone:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_standalone.overlay;
+                                dts/opamp2_inp_single.overlay;
+                                dts/opamp2_inm_single.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp2_functional_mode_standalone_single_inm_single_inp:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_standalone.overlay;
+                                dts/opamp2_inp_single.overlay;
+                                dts/opamp2_inm_single.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp2_functional_mode_standalone_double_inm_double_inp:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_standalone.overlay;
+                                dts/opamp2_inm_double.overlay;
+                                dts/opamp2_inp_double.overlay;
+                                dts/opamp2_lock_enable.overlay;
+                                dts/opamp2_timer_mux.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp2_user_trimming:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_standalone.overlay;
+                                dts/opamp2_inp_single.overlay;
+                                dts/opamp2_user_trimming.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp_functional_mode_differential:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_differential.overlay;
+                                dts/opamp2_inp_single.overlay;
+                                dts/opamp2_inm_single.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.power_mode_highspeed:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_standalone.overlay;
+                                dts/opamp2_inp_single.overlay;
+                                dts/opamp2_power_mode_highspeed.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.lock_enable:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_standalone.overlay;
+                                dts/opamp2_inp_single.overlay;
+                                dts/opamp2_lock_enable.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.lock_enable_with_timer_mux:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_standalone.overlay;
+                                dts/opamp2_inp_single.overlay;
+                                dts/opamp2_lock_enable.overlay;
+                                dts/opamp2_timer_mux.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp_self_calibration_without_adc:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_standalone.overlay;
+                                dts/opamp2_inp_single.overlay;
+                                dts/opamp2_self_calibration.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp_self_calibration_with_adc:
+    extra_args:
+      - EXTRA_CONF_FILE="config/adc.conf"
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_standalone.overlay;
+                                dts/opamp2_inp_single.overlay;
+                                dts/opamp2_self_calibration.overlay;
+                                dts/opamp2_adc_output.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp_functional_mode_follower:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_follower.overlay;
+                                dts/opamp2_inp_single.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp2_functional_mode_follower_double_inp_double_inm:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_follower.overlay;
+                                dts/opamp2_inm_double.overlay;
+                                dts/opamp2_inp_double.overlay;
+                                dts/opamp2_timer_mux.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp_functional_mode_inverting:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_inverting.overlay;
+                                dts/opamp2_inp_single_vinp0.overlay;
+                                dts/opamp2_inm_single_vinm0.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp2_functional_mode_inverting_double_inm:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_inverting.overlay;
+                                dts/opamp2_inp_single.overlay;
+                                dts/opamp2_inm_double.overlay;
+                                dts/opamp2_timer_mux.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp_functional_mode_non_inverting:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_non_inverting.overlay;
+                                dts/opamp2_inp_single_vinp0.overlay;
+                                dts/opamp2_inm_single_vinm0.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp_functional_mode_non_inverting_double_inm_double_inp:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_non_inverting.overlay;
+                                dts/opamp2_inp_double.overlay;
+                                dts/opamp2_inm_double.overlay;
+                                dts/opamp2_timer_mux.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp_functional_mode_non_inverting_filtering_vinm0:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_non_inverting.overlay;
+                                dts/opamp2_inp_single_vinp0.overlay;
+                                dts/opamp2_inm_single_vinm0.overlay;
+                                dts/opamp2_filtering_vinm0.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.stm32.opamp_stm32.opamp_functional_mode_inverting_filtering_vinm1:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dts/opamp2_functional_mode_inverting.overlay;
+                                dts/opamp2_inp_single_vinp0.overlay;
+                                dts/opamp2_inm_single_vinm0.overlay;
+                                dts/opamp2_filtering_vinm1.overlay"
+    filter: dt_compat_enabled("st,stm32-opamp")

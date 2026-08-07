@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip NVMCTRL (Nonvolatile Memory Controller)
+
+description: |
+  Microchip NVMCTRL Flash driver
+
+  Group g1 NVMCTRL Flash driver supports following hardware peripherals:
+    - module name="NVMCTRL" id="U2409" version="1.0.0"
+
+compatible: "microchip,nvmctrl-g1-flash"
+
+include: flash-controller.yaml
+
+properties:
+  lock-regions:
+    type: int
+    required: true
+    description: |
+      Number of lock regions.
+
+      The main address space is divided into 32 equal size regions. The region size is
+      dependent on the flash memory size.Each region can be protected against write or
+      erase operation.

@@ -1,0 +1,20 @@
+# Copyright (c) 2021, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: gd32vf103v_eval
+name: GigaDevice GD32VF103V-EVAL
+type: mcu
+arch: riscv
+ram: 32
+flash: 128
+toolchain:
+  - zephyr
+supported:
+  - dma
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: gd

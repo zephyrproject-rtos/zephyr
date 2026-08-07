@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+arducam_mega_spi: &mikrobus_spi {};
+
+#include "arducam_mega.overlay"

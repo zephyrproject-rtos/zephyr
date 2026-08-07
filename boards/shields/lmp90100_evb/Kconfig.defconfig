@@ -1,0 +1,16 @@
+# Copyright (c) 2019 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_LMP90100_EVB
+
+if ADC
+
+config ADC_LMP90XXX_GPIO
+	default y
+
+config ADC_INIT_PRIORITY
+	default 80
+
+endif # ADC
+
+endif # SHIELD_LMP90100_EVB

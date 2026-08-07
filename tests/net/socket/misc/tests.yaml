@@ -1,0 +1,21 @@
+common:
+  depends_on: netif
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+  min_ram: 21
+  tags:
+    - net
+    - socket
+    - userspace
+tests:
+  net.socket.misc:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+  net.socket.misc.userspace:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+  net.socket.misc.v4_mapping_to_v6_enabled:
+    extra_configs:
+      - CONFIG_NET_IPV4_MAPPING_TO_IPV6=y
+  net.socket.misc.v4_mapping_to_v6_disabled:
+    extra_configs:
+      - CONFIG_NET_IPV4_MAPPING_TO_IPV6=n

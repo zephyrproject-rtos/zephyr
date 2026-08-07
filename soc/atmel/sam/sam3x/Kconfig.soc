@@ -1,0 +1,43 @@
+# Atmel SAM3X MCU series
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2017 Justin Watson
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAM3X
+	bool
+	select SOC_FAMILY_ATMEL_SAM
+	help
+	  Enable support for Atmel SAM3X MCU Series
+
+config SOC_SERIES
+	default "sam3x" if SOC_SERIES_SAM3X
+
+config SOC_SAM3X4C
+	bool
+	select SOC_SERIES_SAM3X
+
+config SOC_SAM3X4E
+	bool
+	select SOC_SERIES_SAM3X
+
+config SOC_SAM3X8C
+	bool
+	select SOC_SERIES_SAM3X
+
+config SOC_SAM3X8E
+	bool
+	select SOC_SERIES_SAM3X
+
+config SOC_SAM3X8H
+	bool
+	select SOC_SERIES_SAM3X
+
+config SOC
+	default "sam3x4c" if SOC_SAM3X4C
+	default "sam3x4e" if SOC_SAM3X4E
+	default "sam3x8c" if SOC_SAM3X8C
+	default "sam3x8e" if SOC_SAM3X8E
+	default "sam3x8h" if SOC_SAM3X8H

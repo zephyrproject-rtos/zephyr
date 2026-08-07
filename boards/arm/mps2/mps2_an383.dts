@@ -1,0 +1,30 @@
+/*
+ * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "mps2_base.dtsi"
+
+/* FVP does not support uart3 and uart4  */
+/* hence we delete them for AN383 in FVP */
+/delete-node/ &uart3;
+/delete-node/ &uart4;
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+		};
+	};
+};

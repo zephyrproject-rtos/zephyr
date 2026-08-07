@@ -1,0 +1,47 @@
+#
+# Copyright (c) 2025 Space Cubics Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_AMD_VERSAL
+
+if SOC_VERSAL_RPU
+
+config CACHE_MANAGEMENT
+	default y
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	default 256
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,ttc0,clock-frequency)
+
+endif # SOC_VERSAL_RPU
+
+if SOC_VERSAL_APU
+
+configdefault DCACHE_LINE_SIZE
+	default 64
+
+configdefault ICACHE_LINE_SIZE
+	default 64
+
+config CACHE_MANAGEMENT
+	default y
+
+config ARM_ARCH_TIMER
+	default y
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 256
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+endif # SOC_VERSAL_APU
+
+endif # SOC_AMD_VERSAL

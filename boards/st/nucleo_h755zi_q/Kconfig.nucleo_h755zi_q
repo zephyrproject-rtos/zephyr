@@ -1,0 +1,8 @@
+# STM32H755ZI Nucleo board configuration
+
+# Copyright (c) 2024 S&C Electric Company <Michael.Banducci@sandc.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_H755ZI_Q
+	select SOC_STM32H755XX_M7 if BOARD_NUCLEO_H755ZI_Q_STM32H755XX_M7
+	select SOC_STM32H755XX_M4 if BOARD_NUCLEO_H755ZI_Q_STM32H755XX_M4

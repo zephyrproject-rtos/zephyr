@@ -1,0 +1,26 @@
+# Copyright (C) 2023 BeagleBoard.org Foundation
+# Copyright (C) 2023 S Prashanth
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI Dual-Mode Timer
+
+compatible: "ti,am654-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clksel:
+    type: phandle-array
+    specifier-space: clksel
+    description: |
+      Optional syscon configuration for timer clock source selection.
+      Format: <&syscon_phandle offset value>
+      - syscon_phandle: reference to syscon device
+      - offset: register offset within syscon for clock selection
+      - value: value to write for desired clock source

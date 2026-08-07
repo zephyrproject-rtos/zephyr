@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2022 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&radio {
+	status = "okay";
+	/* This is a number of antennas that are available on antenna matrix
+	 * designed by Nordic. For more information see README.rst.
+	 */
+	dfe-antenna-num = <12>;
+	/* This is a setting that enables antenna 12 (in antenna matrix designed
+	 * by Nordic) for Rx PDU. For more information see README.rst.
+	 */
+	dfe-pdu-antenna = <0x0>;
+
+	/* These are GPIO pin numbers that are provided to
+	 * Radio peripheral. The pins will be acquired by Radio to
+	 * drive antenna switching when AoA is enabled.
+	 * Pin numbers are selected to drive switches on antenna matrix
+	 * designed by Nordic. For more information see README.rst.
+	 */
+	dfegpio0-gpios = <&gpio0 3 0>;
+	dfegpio1-gpios = <&gpio0 4 0>;
+	dfegpio2-gpios = <&gpio0 28 0>;
+	dfegpio3-gpios = <&gpio0 29 0>;
+};

@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Navimatix GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config STEPPER_CTRL_EVENT_HANDLER
+	bool
+	help
+	  Enable common helper code for stepper_ctrl drivers to manage and dispatch event callbacks.
+
+if STEPPER_CTRL_EVENT_HANDLER
+
+config STEPPER_CTRL_ISR_SAFE_EVENTS
+	bool "Guarantee that callbacks are executed in a non-ISR context"
+	default y
+	help
+	  Route event callbacks through a work queue when triggered from ISR context. Multiple
+	  events can be pending and are processed sequentially.
+
+config STEPPER_CTRL_EVENT_QUEUE_LEN
+	int "Maximum number of pending stepper_ctrl events"
+	default 4
+	depends on STEPPER_CTRL_ISR_SAFE_EVENTS
+	help
+	  The maximum number of stepper_ctrl events per driver instance that can
+	  be pending before new events are dropped.
+
+endif # STEPPER_CTRL_EVENT_HANDLER

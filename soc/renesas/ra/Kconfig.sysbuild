@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RA_SECOND_CORE_LAUNCHER
+	bool "Start second core launcher"
+	default y
+	depends on HAS_RA_SECOND_CORE_LAUNCHER_IMAGE
+	help
+	  Include a minimal launcher image built for the first core that
+	  enables CONFIG_SOC_RA_ENABLE_START_SECOND_CORE so that the
+	  startup image will start the second core.
+
+config HAS_RA_SECOND_CORE_LAUNCHER_IMAGE
+	bool
+
+if RA_SECOND_CORE_LAUNCHER
+
+config RA_SECOND_CORE_LAUNCHER_NAME
+	string "Launcher core name"
+	help
+	  Specify the core name to use when building the launcher image.
+
+endif # RA_SECOND_CORE_LAUNCHER
+
+rsource "*/Kconfig.sysbuild"

@@ -1,0 +1,20 @@
+description: |
+  Binding describing loopbacks required to run tests/boards/nrf/qdec test in Zephyr.
+
+compatible: "test-qdec-loopbacks"
+
+child-binding:
+  description: |
+    Binding describing a single loopback pair consisting of a QDEC device and two "gpio-leds" pins
+    working as a quadrature encoder for the test.
+  properties:
+    qdec:
+      type: phandle
+      required: true
+      description: Node of the QDEC device used to capture quadrature signal in the loopback.
+    qenc-emul-gpios:
+      type: phandles
+      required: true
+      description: |
+        Children nodes of "gpio-leds" compatible used to generate quadrature signal. The first
+        phandles outputs phase A signal, the second one outputs phase B signal.

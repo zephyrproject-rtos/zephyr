@@ -1,0 +1,13 @@
+/*
+ * Copyright 2023 Daniel DeGrasse <daniel@degrasse.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	led_ctrl1: is31fl3733@50 {
+		reg = <0x50>;
+		compatible = "issi,is31fl3733";
+		sdb-gpios = <&gpioc 2 GPIO_ACTIVE_HIGH>;
+	};
+};

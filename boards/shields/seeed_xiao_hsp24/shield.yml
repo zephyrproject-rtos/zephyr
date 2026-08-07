@@ -1,0 +1,6 @@
+shield:
+  name: seeed_xiao_hsp24
+  full_name: 24GHz mmWave Sensor for XIAO
+  vendor: seeed
+  supported_features:
+    - sensor

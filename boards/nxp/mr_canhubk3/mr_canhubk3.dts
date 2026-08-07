@@ -1,0 +1,39 @@
+/*
+ * Copyright 2023-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "mr_canhubk3_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,code-partition = &code_partition;
+		zephyr,flash = &flash0;
+	};
+};
+
+&c40fc {
+	status = "okay";
+};
+
+&flash0 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ivt_header: partition@0 {
+			label = "ivt-header";
+			reg = <0x00000000 0x100>;
+		};
+
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x00000100 (DT_SIZE_K(4048) - 0x100)>;
+		};
+	};
+};

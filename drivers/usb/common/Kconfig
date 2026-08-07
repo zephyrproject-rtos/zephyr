@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "USB common"
+
+rsource "nrf_usbd_common/Kconfig"
+rsource "stm32/Kconfig"
+rsource "nordic/Kconfig"
+
+endmenu

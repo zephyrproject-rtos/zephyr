@@ -1,0 +1,27 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32F4 RCC (Reset and Clock controller).
+
+  Adds the STM32F4 Timer prescaler to the standard generic STM32 RCC.
+  For more description confere st,stm32-rcc.yaml
+
+compatible: "st,stm32f4-rcc"
+
+include: st,stm32-rcc.yaml
+
+properties:
+  timpre:
+    type: boolean
+    description: |
+        Timers clocks prescalers selection
+        Used to control the clock frequency of all the timers connected to APB1 and APB2 domain.
+        - When absent: If the APB prescaler (PPRE1, PPRE2 in the RCC_CFGR register) is configured to
+          a division factor of 1, TIMxCLK = HCKL. Otherwise, the timer clock frequencies are set to
+          twice to the frequency of the APB domain to which the timers are connected:
+          TIMxCLK = 2xPCLKx.
+        - When present: If the APB prescaler (PPRE1, PPRE2 in the RCC_CFGR register) is configured
+          to a division factor of 1 or 2, TIMxCLK = HCKL. Otherwise, the timer clock frequencies are
+          set to four times to the frequency of the APB domain to which the timers are connected:
+          TIMxCLK = 4xPCLKx.

@@ -1,0 +1,8 @@
+# Copyright (c) 2025 CISPA Helmholtz Center for Information Security
+# SPDX-License-Identifier: Apache-2.0
+
+title: Xilinx AXI Ethernet Lite MAC driver bindings (version 3.00.a).
+
+include: [xps-ethernetlite-base-mac.yaml]
+
+compatible: "xlnx,xps-ethernetlite-3.00.a-mac"

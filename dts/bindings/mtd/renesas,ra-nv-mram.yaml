@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: MRAM memory of Renesas RA family
+
+include: [soc-nv-flash.yaml]
+
+compatible: "renesas,ra-nv-mram"
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,69 @@
+# MPR pressure sensor configuration options
+
+# Copyright (c) 2020 Sven Herrmann
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MPR
+	bool "MPR pressure sensor"
+	default y
+	depends on DT_HAS_HONEYWELL_MPR_ENABLED
+	select I2C
+	help
+	  Enable driver for MPR pressure sensor.
+
+if MPR
+
+choice
+	prompt "MPR Pressure Range"
+	default MPR_PRESSURE_RANGE_0025
+config MPR_PRESSURE_RANGE_0001
+	bool "0 to 1"
+config MPR_PRESSURE_RANGE_01_6
+	bool "0 to 1.6"
+config MPR_PRESSURE_RANGE_02_5
+	bool "0 to 2.5"
+config MPR_PRESSURE_RANGE_0015
+	bool "0 to 15"
+config MPR_PRESSURE_RANGE_0025
+	bool "0 to 25"
+config MPR_PRESSURE_RANGE_0030
+	bool "0 to 30"
+config MPR_PRESSURE_RANGE_0060
+	bool "0 to 60"
+config MPR_PRESSURE_RANGE_0100
+	bool "0 to 100"
+config MPR_PRESSURE_RANGE_0160
+	bool "0 to 160"
+config MPR_PRESSURE_RANGE_0250
+	bool "0 to 250"
+config MPR_PRESSURE_RANGE_0400
+	bool "0 to 400"
+config MPR_PRESSURE_RANGE_0600
+	bool "0 to 600"
+endchoice
+
+choice
+	prompt "MPR Pressure Unit"
+	default MPR_PRESSURE_UNIT_P
+config MPR_PRESSURE_UNIT_P
+	bool "psi"
+config MPR_PRESSURE_UNIT_K
+	bool "kPa"
+config MPR_PRESSURE_UNIT_B
+	bool "bar"
+config MPR_PRESSURE_UNIT_M
+	bool "mbar"
+endchoice
+
+choice
+	prompt "MPR Transfer Function"
+	default MPR_TRANSFER_FUNCTION_A
+config MPR_TRANSFER_FUNCTION_A
+	bool "A"
+config MPR_TRANSFER_FUNCTION_B
+	bool "B"
+config MPR_TRANSFER_FUNCTION_C
+	bool "C"
+endchoice
+
+endif # MPR

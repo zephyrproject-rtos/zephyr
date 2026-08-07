@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: MSPM0 Windowed Watchdog Timer
+
+compatible: "ti,mspm0-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  ti,watchdog-reset-action:
+    type: int
+    required: true
+    description: |
+      The specific reset action associated with a given peripheral. 1 is BOOTRST, 0 is SYSRST
+
+  closed-window:
+    type: int
+    required: true
+    description: Watchdog has two closed windows. 0 is WINDOW0, 1 is WINDOW1

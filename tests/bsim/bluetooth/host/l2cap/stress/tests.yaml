@@ -1,0 +1,37 @@
+common:
+  timeout: 600
+  tags:
+    - bluetooth
+  depends_on: bsim
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.l2cap.stress:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_stress_prj_conf
+      tests_scripts:
+        - tests_scripts/l2cap.sh
+  bluetooth.host.l2cap.stress_early_disconnect:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_stress_prj_conf_overlay-early-disc_conf
+      tests_scripts:
+        - tests_scripts/l2cap_early_disconnect.sh
+    extra_args: EXTRA_CONF_FILE="overlay-early-disconnect.conf"
+  bluetooth.host.l2cap.stress_nofrag:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_stress_prj_conf_overlay-nofrag_conf
+      tests_scripts:
+        - tests_scripts/l2cap_nofrag.sh
+    extra_args: EXTRA_CONF_FILE="overlay-nofrag.conf"
+  bluetooth.host.l2cap.stress_syswq:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_stress_prj_conf_overlay-syswq_conf
+      tests_scripts:
+        - tests_scripts/l2cap_syswq.sh
+    extra_args: EXTRA_CONF_FILE="overlay-syswq.conf"

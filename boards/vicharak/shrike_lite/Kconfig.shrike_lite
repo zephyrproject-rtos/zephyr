@@ -1,0 +1,5 @@
+# Copyright (C) 2025 Dhruv Menon <dhruvmenon1104@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SHRIKE_LITE
+	select SOC_RP2040

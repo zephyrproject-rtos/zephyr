@@ -1,0 +1,14 @@
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADI MAX32 ADC 10-Bits
+
+compatible: "adi,max32-adc-10b"
+
+include:
+  - name: adi,max32-adc.yaml
+    property-blocklist:
+      - clock-source
+      - clock-divider
+      - track-count
+      - idle-count

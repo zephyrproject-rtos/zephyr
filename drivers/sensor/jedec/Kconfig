@@ -1,0 +1,6 @@
+# Copyright (c) 2024 Vogl Electronic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/jedec/jc42/Kconfig"
+# zephyr-keep-sorted-stop

@@ -1,0 +1,16 @@
+identifier: nsim/nsim_hs5x
+name: HS5x nSIM simulator
+type: sim
+simulation:
+  - name: nsim
+    exec: nsimdrv
+arch: arc
+toolchain:
+  - zephyr
+  - arcmwdt
+  - cross-compile
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

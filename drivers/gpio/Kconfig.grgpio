@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Frontgrade Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_GRGPIO2
+	bool "GRLIB GRGPIO revision 2"
+	default y
+	depends on DT_HAS_GAISLER_GRGPIO_ENABLED
+	help
+	  Enable driver for GRLIB GRGPIO revision 2.

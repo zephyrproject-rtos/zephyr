@@ -1,0 +1,14 @@
+sample:
+  description: BSD Sockets API TCP echo server sample using non-blocking sockets
+  name: socket_echo_async
+common:
+  harness: net
+  platform_allow: qemu_x86
+  tags:
+    - net
+    - socket
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+tests:
+  sample.net.sockets.echo_async_select:
+    extra_configs:
+      - CONFIG_POSIX_API=y

@@ -1,0 +1,28 @@
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip DBGU UART controller
+
+description: |
+  Microchip DBGU (Debug Unit) UART driver.
+
+  Group g1 DBGU UART driver supports following hardware peripherals:
+    - module name="DBGU" id="6059" version="212"
+
+compatible: "microchip,dbgu-g1-uart"
+
+include:
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

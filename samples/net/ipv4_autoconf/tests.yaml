@@ -1,0 +1,23 @@
+common:
+  harness: net
+  depends_on: netif
+  tags:
+    - net
+    - ipv4_autoconf
+sample:
+  description: Test IPv4 autoconf functionality
+  name: IPv4 autoconf sample app
+tests:
+  sample.net.ipv4_autoconf:
+    platform_allow:
+      - qemu_x86
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+  sample.net.ipv4_autoconf.wifi.nrf70dk:
+    extra_args:
+      - SNIPPET=wifi-ipv4
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp

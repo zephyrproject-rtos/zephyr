@@ -1,0 +1,12 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP Kinetis Ethernet PTP (Precision Time Protocol)
+
+compatible: "nxp,kinetis-ptp"
+
+include: ["base.yaml", "pinctrl-device.yaml"]
+
+properties:
+  interrupts:
+    required: true

@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "pic64gx_curiosity_kit_common.dtsi"
+
+/ {
+	compatible = "microchip,pic64gx-curiosity-kit", "microchip,pic64gx";
+
+	cpus {
+		cpu@1 {
+			status = "disabled";
+		};
+
+		cpu@2 {
+			status = "disabled";
+		};
+
+		cpu@3 {
+			status = "disabled";
+		};
+
+		cpu@4 {
+			status = "disabled";
+		};
+	};
+
+	chosen {
+		zephyr,console = &mmuart0;
+		zephyr,shell-uart = &mmuart0;
+		zephyr,sram = &dram;
+	};
+};
+
+&mmuart0 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <150000000>;
+};

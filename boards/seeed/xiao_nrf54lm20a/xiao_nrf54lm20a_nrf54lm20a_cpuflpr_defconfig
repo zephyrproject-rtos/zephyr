@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Seeed Technology Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable GPIO
+CONFIG_GPIO=y
+
+# Execute from SRAM
+CONFIG_XIP=n

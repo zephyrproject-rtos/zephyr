@@ -1,0 +1,9 @@
+# Common configuration options for DS2477 and DS2485 1-Wire master drivers
+
+# Copyright (c) 2022 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+config W1_DS2477_85_COMMON
+	bool
+	help
+	  This enables support for the shared ds2477/85 1-Wire driver.

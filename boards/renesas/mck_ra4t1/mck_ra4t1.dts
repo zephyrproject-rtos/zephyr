@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra4/r7fa4t1bb3cfm.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include "mck_ra4t1-pinctrl.dtsi"
+
+/ {
+	model = "Renesas MCK-RA4T1";
+	compatible = "renesas,ra4t1", "renesas,ra";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+		zephyr,entropy = &trng;
+		zephyr,flash-controller = &flash0;
+		zephyr,crc = &crc;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led1 {
+			gpios = <&ioport1 13 GPIO_ACTIVE_LOW>;
+			label = "LED1";
+		};
+
+		led2: led2 {
+			gpios = <&ioport1 6 GPIO_ACTIVE_LOW>;
+			label = "LED2";
+		};
+	};
+
+	aliases {
+		led0 = &led1;
+		watchdog0 = &wdt;
+	};
+};
+
+&xtal {
+	clock-frequency = <DT_FREQ_M(10)>;
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+};
+
+&ioport1 {
+	status = "okay";
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
+
+&wdt {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+&trng {
+	status = "okay";
+};
+
+pmod_spi: &spi0 {};

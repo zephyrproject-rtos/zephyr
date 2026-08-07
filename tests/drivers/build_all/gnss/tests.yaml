@@ -1,0 +1,10 @@
+common:
+  tags:
+    - drivers
+    - gnss
+  build_only: true
+  platform_allow: native_sim
+tests:
+  drivers.gnss.default:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y

@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Khai Do
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: opi_zero2w
+  full_name: Orange Pi Zero 2W
+  vendor: xunlong
+  socs:
+  - name: sun50i_h618

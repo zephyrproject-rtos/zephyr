@@ -1,0 +1,15 @@
+identifier: rv32m1_vega/openisa_rv32m1/ri5cy
+name: RV32M1-VEGA (RI5CY)
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - i2c
+  - pwm
+  - spi
+vendor: openisa

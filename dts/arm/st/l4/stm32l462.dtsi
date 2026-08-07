@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2020 Giancarlo Stasi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/l4/stm32l452.dtsi>
+#include <st/l4/stm32l4_crypt.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32l462", "st,stm32l4", "simple-bus";
+	};
+};

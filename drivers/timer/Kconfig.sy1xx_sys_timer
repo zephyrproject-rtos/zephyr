@@ -1,0 +1,11 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+config SY1XX_SYS_TIMER
+	bool "Sensry ganymed system timer"
+	default y
+	depends on SOC_SERIES_SY1XX
+	depends on $(dt_nodelabel_enabled,systick)
+	help
+	  This module implements a kernel device driver for the system timer
+	  and provides the standard "system clock driver" interfaces.

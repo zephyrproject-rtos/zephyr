@@ -1,0 +1,11 @@
+tests:
+  message_bus.zbus.runtime_channels:
+    tags: zbus
+    integration_platforms:
+      - native_sim
+  message_bus.zbus.runtime_channels.priority_boost:
+    tags: zbus
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_ZBUS_PRIORITY_BOOST=y

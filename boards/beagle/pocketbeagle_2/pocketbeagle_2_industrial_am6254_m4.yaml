@@ -1,0 +1,11 @@
+identifier: pocketbeagle_2_industrial/am6254/m4
+name: BeagleBoard.org PocketBeagle 2 Industrial
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 256
+vendor: beagle
+supported:
+  - uart
+  - gpio

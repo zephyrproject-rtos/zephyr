@@ -1,0 +1,54 @@
+# Copyright (c) 2022, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nPM6001
+
+compatible: "nordic,npm6001"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  nordic,ready-high-drive:
+    type: boolean
+    description: Set drive strength to high for READY pin.
+
+  nordic,nint-high-drive:
+    type: boolean
+    description: Set drive strength to high for NINT pin.
+
+  nordic,sda-high-drive:
+    type: boolean
+    description: Set drive strength to high for SDA pin.
+
+  nordic,buck-mode0-input-type:
+    type: string
+    default: "schmitt"
+    enum: ["schmitt", "cmos"]
+    description: Input type for BUCK_MODE0 pin. Defaults IC boot-time value.
+
+  nordic,buck-mode0-pull-down:
+    type: boolean
+    description: Enable pull-down resistor for BUCK_MODE0 pin.
+
+  nordic,buck-mode1-input-type:
+    type: string
+    default: "schmitt"
+    enum: ["schmitt", "cmos"]
+    description: Input type for BUCK_MODE1 pin. Defaults IC boot-time value.
+
+  nordic,buck-mode1-pull-down:
+    type: boolean
+    description: Enable pull-down resistor for BUCK_MODE1 pin.
+
+  nordic,buck-mode2-input-type:
+    type: string
+    default: "schmitt"
+    enum: ["schmitt", "cmos"]
+    description: Input type for BUCK_MODE2 pin. Defaults IC boot-time value.
+
+  nordic,buck-mode2-pull-down:
+    type: boolean
+    description: Enable pull-down resistor for BUCK_MODE2 pin.

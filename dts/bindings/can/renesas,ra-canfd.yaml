@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA CANFD controller
+
+compatible: "renesas,ra-canfd"
+
+include: [can-fd-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+  rx-max-filters:
+    type: int
+    min: 0
+    max: 16
+    description: |
+      To determine the maximum rx filters can be added on this CAN device.

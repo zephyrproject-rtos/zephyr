@@ -1,0 +1,12 @@
+/*
+ * Copyright 2024-2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Disable flexpwm node as it is mapped to pwm-0 alias which is picked up first by the test.
+ * PWM signal is visible on J3-7.
+ */
+&flexpwm1_pwm0 {
+	status = "disabled";
+};

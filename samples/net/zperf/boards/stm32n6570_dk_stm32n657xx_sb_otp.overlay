@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Enable usage of the OTP MAC address for the Ethernet interface.
+ * A valid MAC address must have been programmed in OTP of the board for this to work.
+ */
+&mac {
+	nvmem-cells = <&mac_address0>;
+	nvmem-cell-names = "mac-address";
+};

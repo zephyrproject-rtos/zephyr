@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Siratul Islam
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WEACT_STM32WB55_CORE
+	select SOC_STM32WB55XX

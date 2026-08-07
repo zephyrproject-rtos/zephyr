@@ -1,0 +1,12 @@
+shield:
+  name: npm2100_ek
+  full_name: nPM2100 EK
+  vendor: nordic
+  supported_features:
+    - mfd
+    - input
+    - gpio
+    - led
+    - regulator
+    - sensor
+    - watchdog

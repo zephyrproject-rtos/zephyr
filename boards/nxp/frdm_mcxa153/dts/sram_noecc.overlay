@@ -1,0 +1,16 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	sram0_noecc: memory@20002000 {
+		compatible = "mmio-sram";
+		reg = <0x20002000 DT_SIZE_K(16)>;
+	};
+
+	chosen {
+		zephyr,sram = &sram0_noecc;
+	};
+};

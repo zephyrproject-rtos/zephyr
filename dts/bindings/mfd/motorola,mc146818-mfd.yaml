@@ -1,0 +1,34 @@
+# Copyright (c) 2025, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Motorola MC146818 MFD
+
+  The following example displays the node layout
+  with every possible partial driver included.
+
+  mfd: mfd@70 {
+    compatible = "motorola,mc146818-mfd";
+    reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
+    rtc: counter: rtc {
+      compatible = "motorola,mc146818";
+      interrupts = <8 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+      interrupt-parent = <&intc>;
+      alarms-count = <1>;
+
+      status = "okay";
+    };
+
+    bbram: bbram {
+      compatible = "motorola,mc146818-bbram";
+      size = <241>;
+      status = "okay";
+    };
+  };
+
+compatible: "motorola,mc146818-mfd"
+
+include: base.yaml
+
+bus: mc146818-mfd

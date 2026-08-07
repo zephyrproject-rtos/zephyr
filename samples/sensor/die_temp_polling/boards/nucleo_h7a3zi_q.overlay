@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2024, Aurelien Jarno
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for creating temperature sensor device instance
+ */
+
+/ {
+	aliases {
+		die-temp0 = &digi_die_temp;
+	};
+};
+
+&digi_die_temp {
+	status = "okay";
+};
