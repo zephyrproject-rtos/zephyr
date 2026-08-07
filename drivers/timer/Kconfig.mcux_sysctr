@@ -21,17 +21,3 @@ config MCUX_SYSCTR_TIMER
 	  driver resets the whole block (counter and both compare frames) at
 	  init. So it must own that instance: don't enable it if another core
 	  or a boot stage is already using the same SYS_CTR.
-
-if MCUX_SYSCTR_TIMER
-
-config MCUX_SYSCTR_TIMER_MIN_DELAY
-	int "Minimum delay cycles for the timer match value"
-	default 1000
-	help
-	  Timer hardware requires a minimum setup time to reliably trigger
-	  interrupts. If a match value is set too close to the current timer
-	  count, the hardware may not have enough time to process it.
-	  Lower values can improve timing precision but may be less reliable.
-	  Higher values provide more safety margin but slightly reduce timing accuracy.
-
-endif # MCUX_SYSCTR_TIMER
