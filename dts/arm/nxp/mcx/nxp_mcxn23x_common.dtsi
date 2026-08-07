@@ -1295,14 +1295,6 @@
 		};
 	};
 
-	inputmux0: inputmux@6000 {
-		compatible = "nxp,inputmux";
-		reg = <0x6000 0x1000>;
-		status = "disabled";
-		#mux-control-cells = <1>;
-		#mux-state-cells = <2>;
-	};
-
 	qdc0: qdc@cf000 {
 		compatible = "nxp,mcux-qdc";
 		reg = <0xcf000 0x1000>;
