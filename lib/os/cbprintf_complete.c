@@ -1195,6 +1195,7 @@ static char *encode_float(double value,
 	fract += round;
 	/* Make sure rounding didn't make fract >= 1.0 */
 	if (fract >= BIT64(60)) {
+		fract += 5U; /* Round to nearest rather than truncate */
 		_ldiv10(&fract);
 		decexp++;
 	}
