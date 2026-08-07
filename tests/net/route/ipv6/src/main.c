@@ -944,3 +944,226 @@ ZTEST(route_test_suite, test_route)
 }
 
 ZTEST_SUITE(route_test_suite, NULL, NULL, NULL, NULL, NULL);
+
+#if defined(CONFIG_NET_L2_ETHERNET) && !defined(CONFIG_ETH_DRIVER)
+
+/*
+ * Packet-forwarding tests for net_route_ipv6_packet(). These require a real
+ * link-layer (Ethernet) because the DUMMY L2 used above skips LL handling.
+ */
+
+static struct net_in6_addr ul_nexthop = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					     0, 0, 0, 0, 0, 0, 0, 0x02 } } };
+static struct net_in6_addr rp_nexthop = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					     0, 0, 0, 0, 0, 0, 0, 0x03 } } };
+static struct net_in6_addr rp_src = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				       0, 0, 0, 0, 0, 0, 0, 0x10 } } };
+static struct net_in6_addr rp_dst = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				       0, 0, 0, 0, 0, 0, 0, 0x99 } } };
+
+struct route_eth_capture {
+	bool armed;
+	bool done;
+	uint8_t ll_src[sizeof(struct net_eth_addr)];
+	struct net_if *iface;
+};
+
+static struct route_eth_capture route_eth_tx_capture;
+
+K_SEM_DEFINE(route_eth_send_sem, 0, 1);
+
+struct route_eth_test {
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
+	struct net_linkaddr ll_addr;
+};
+
+static struct route_eth_test route_eth_data;
+
+static uint8_t *route_eth_get_mac(const struct device *dev)
+{
+	struct route_eth_test *data = dev->data;
+
+	if (data->mac_addr[2] == 0x00) {
+		data->mac_addr[0] = 0x00;
+		data->mac_addr[1] = 0x00;
+		data->mac_addr[2] = 0x5E;
+		data->mac_addr[3] = 0x00;
+		data->mac_addr[4] = 0x53;
+		data->mac_addr[5] = 0x02;
+	}
+
+	memcpy(data->ll_addr.addr, data->mac_addr, sizeof(data->mac_addr));
+	data->ll_addr.len = sizeof(data->mac_addr);
+
+	return data->mac_addr;
+}
+
+static void route_eth_iface_init(struct net_if *iface)
+{
+	uint8_t *mac = route_eth_get_mac(net_if_get_device(iface));
+
+	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
+			     NET_LINK_ETHERNET);
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
+}
+
+static int route_eth_send(const struct device *dev, struct net_pkt *pkt)
+{
+	ARG_UNUSED(dev);
+
+	if (route_eth_tx_capture.armed && pkt != NULL) {
+		struct net_linkaddr *ll_src = net_pkt_lladdr_src(pkt);
+
+		if (ll_src != NULL && ll_src->len > 0U) {
+			memcpy(route_eth_tx_capture.ll_src, ll_src->addr, ll_src->len);
+			route_eth_tx_capture.iface = net_pkt_iface(pkt);
+			route_eth_tx_capture.done = true;
+			k_sem_give(&route_eth_send_sem);
+		}
+	}
+
+	return 0;
+}
+
+static struct ethernet_api route_eth_if_api = {
+	.iface_api.init = route_eth_iface_init,
+	.send = route_eth_send,
+};
+
+#define _ROUTE_ETH_L2_LAYER ETHERNET_L2
+#define _ROUTE_ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
+
+NET_DEVICE_INIT_INSTANCE(route_eth_test, "route_eth", eth0,
+			 net_route_dev_init, NULL,
+			 &route_eth_data, NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &route_eth_if_api, _ROUTE_ETH_L2_LAYER,
+			 _ROUTE_ETH_L2_CTX_TYPE, 128);
+
+/*
+ * An Ethernet nexthop neighbor with NET_NBR_LLADDR_UNKNOWN must make
+ * net_route_ipv6_packet() return -ESRCH instead of calling net_nbr_get_lladdr()
+ * (which asserts on idx 0xff).
+ */
+ZTEST(route_packet_suite, test_route_unknown_ll_nbr)
+{
+	struct net_if *eth_if;
+	struct net_nbr *nbr;
+	struct net_pkt *pkt;
+	int ret;
+
+	eth_if = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	zassert_not_null(eth_if, "Ethernet test iface missing");
+
+	nbr = net_ipv6_nbr_add(eth_if, &ul_nexthop, NULL, false,
+			       NET_IPV6_NBR_STATE_INCOMPLETE);
+	zassert_not_null(nbr, "Cannot seed INCOMPLETE neighbor");
+	zassert_equal(nbr->idx, NET_NBR_LLADDR_UNKNOWN,
+		      "INCOMPLETE neighbor should have unknown LL idx");
+
+	pkt = net_pkt_alloc_with_buffer(eth_if, 64, NET_AF_INET6,
+					NET_IPPROTO_ICMPV6, K_FOREVER);
+	zassert_not_null(pkt, "Cannot allocate test packet");
+
+	net_pkt_set_orig_iface(pkt, eth_if);
+	net_linkaddr_copy(net_pkt_lladdr_src(pkt), net_if_get_link_addr(eth_if));
+
+	ret = net_route_ipv6_packet(pkt, &ul_nexthop);
+	zassert_equal(ret, -ESRCH,
+		      "net_route_ipv6_packet must fail when neighbor LL is unknown");
+
+	net_pkt_unref(pkt);
+	net_ipv6_nbr_rm(eth_if, &ul_nexthop);
+}
+
+/*
+ * net_route_ipv6_packet() must set the link-layer source address from the
+ * outbound nexthop iface, not the inbound iface, on cross-L2 forward.
+ */
+ZTEST(route_packet_suite, test_route_outbound_ll_src)
+{
+	struct net_if *inbound_if = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	struct net_if *outbound_if = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	const struct net_linkaddr *outbound_ll;
+	struct net_linkaddr inbound_ll;
+	struct net_linkaddr nbr_ll;
+	struct net_nbr *nbr;
+	struct net_pkt *pkt;
+	int ret;
+
+	zassert_not_null(inbound_if, "Inbound iface missing");
+	zassert_not_null(outbound_if, "Outbound iface missing");
+
+	outbound_ll = net_if_get_link_addr(outbound_if);
+	zassert_not_null(outbound_ll, "Outbound link address missing");
+
+	inbound_ll.type = NET_LINK_ETHERNET;
+	inbound_ll.len = sizeof(struct net_eth_addr);
+	inbound_ll.addr[0] = 0x00;
+	inbound_ll.addr[1] = 0x00;
+	inbound_ll.addr[2] = 0x5E;
+	inbound_ll.addr[3] = 0x00;
+	inbound_ll.addr[4] = 0x53;
+	inbound_ll.addr[5] = 0x01;
+
+	zassert_false(memcmp(inbound_ll.addr, outbound_ll->addr, outbound_ll->len) == 0,
+		      "Inbound and outbound MACs must differ");
+
+	nbr_ll.len = outbound_ll->len;
+	nbr_ll.type = NET_LINK_ETHERNET;
+	nbr_ll.addr[0] = 0x02;
+	nbr_ll.addr[1] = 0x00;
+	nbr_ll.addr[2] = 0x5E;
+	nbr_ll.addr[3] = 0x00;
+	nbr_ll.addr[4] = 0x53;
+	nbr_ll.addr[5] = 0x42;
+
+	nbr = net_ipv6_nbr_add(outbound_if, &rp_nexthop, &nbr_ll, false,
+			       NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr, "Cannot seed outbound neighbor");
+
+	route_eth_tx_capture.armed = true;
+	route_eth_tx_capture.done = false;
+
+	pkt = net_pkt_alloc_with_buffer(inbound_if, 64, NET_AF_INET6,
+					NET_IPPROTO_ICMPV6, K_FOREVER);
+	zassert_not_null(pkt, "Cannot allocate test packet");
+
+	net_pkt_set_orig_iface(pkt, inbound_if);
+	zassert_ok(net_ipv6_create(pkt, &rp_src, &rp_dst),
+		   "Cannot create IPv6 header");
+	zassert_ok(net_icmpv6_create(pkt, NET_ICMPV6_ECHO_REQUEST, 0),
+		   "Cannot create ICMPv6 header");
+
+	{
+		uint8_t echo_data[4] = { 0x00, 0x01, 0x00, 0x01 };
+
+		zassert_ok(net_pkt_write(pkt, echo_data, sizeof(echo_data)),
+			   "Cannot write ICMPv6 payload");
+	}
+	net_ipv6_finalize(pkt, NET_IPPROTO_ICMPV6);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IPV6);
+
+	net_linkaddr_copy(net_pkt_lladdr_src(pkt), &inbound_ll);
+
+	ret = net_route_ipv6_packet(pkt, &rp_nexthop);
+	zassert_ok(ret, "net_route_ipv6_packet failed (%d)", ret);
+	zassert_ok(k_sem_take(&route_eth_send_sem, K_SECONDS(1)),
+		  "Timed out waiting for outbound send");
+	zassert_true(route_eth_tx_capture.done,
+		     "Packet should be sent on outbound nexthop iface");
+	zassert_equal_ptr(route_eth_tx_capture.iface, outbound_if,
+			  "Packet should be sent on outbound iface");
+	zassert_mem_equal(route_eth_tx_capture.ll_src, outbound_ll->addr, outbound_ll->len,
+			  "LL src should be outbound MAC, not inbound");
+	zassert_false(memcmp(route_eth_tx_capture.ll_src, inbound_ll.addr,
+			     inbound_ll.len) == 0,
+		      "LL src must not stay as inbound MAC");
+
+	route_eth_tx_capture.armed = false;
+	net_ipv6_nbr_rm(outbound_if, &rp_nexthop);
+}
+
+ZTEST_SUITE(route_packet_suite, NULL, NULL, NULL, NULL, NULL);
+
+#endif /* CONFIG_NET_L2_ETHERNET && !CONFIG_ETH_DRIVER */
