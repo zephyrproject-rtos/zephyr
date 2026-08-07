@@ -8422,7 +8422,7 @@ ZTESTABLE_STATIC int quic_parse_long_header(struct quic_long_header_info *info,
 
 	info->dst_conn_id = &data[pos];
 	pos += info->dst_conn_id_len;
-	if (pos > data_len) {
+	if (pos >= data_len) {
 		return -EINVAL;
 	}
 
