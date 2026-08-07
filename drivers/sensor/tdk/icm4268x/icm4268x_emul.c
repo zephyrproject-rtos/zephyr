@@ -164,7 +164,7 @@ static void icm4268x_emul_get_accel_settings(const struct emul *target, int *fs_
 		shift_out = 5;
 		break;
 	default:
-		__ASSERT_UNREACHABLE;
+		CODE_UNREACHABLE;
 	}
 
 	if (fs_g) {
@@ -255,7 +255,7 @@ static void icm4268x_emul_get_gyro_settings(const struct emul *target, int *fs_m
 		shift_out = -1; /* +/- 0.27256 */
 		break;
 	default:
-		__ASSERT_UNREACHABLE;
+		CODE_UNREACHABLE;
 	}
 
 	if (fs_mdps) {
@@ -367,7 +367,7 @@ static int icm4268x_emul_backend_set_channel(const struct emul *target, struct s
 			reg_addr = REG_ACCEL_DATA_Z1;
 			break;
 		default:
-			__ASSERT_UNREACHABLE;
+			CODE_UNREACHABLE;
 		}
 		icm4268x_emul_get_accel_settings(target, NULL, &sensitivity, NULL);
 		reg_val = ((value_unshifted * sensitivity / Q31_SCALE) * 1000000LL) / SENSOR_G;
@@ -386,7 +386,7 @@ static int icm4268x_emul_backend_set_channel(const struct emul *target, struct s
 			reg_addr = REG_GYRO_DATA_Z1;
 			break;
 		default:
-			__ASSERT_UNREACHABLE;
+			CODE_UNREACHABLE;
 		}
 		icm4268x_emul_get_gyro_settings(target, NULL, &sensitivity, NULL);
 		reg_val =
