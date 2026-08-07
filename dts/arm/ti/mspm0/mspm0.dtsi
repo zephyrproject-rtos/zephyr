@@ -77,39 +77,39 @@
 	};
 
 	ckm: clock-module {
-		compatible = "ti,mspm0-clk";
+		compatible = "ti,mspm0-ckm";
 		#clock-cells = <1>;
 	};
 
 	clocks: clocks {
 		hfclk: hfclk {
-			#clock-cells = <1>;
+			#clock-cells = <0>;
 			compatible = "ti,mspm0-clk";
 			status = "disabled";
 		};
 
 		lfclk: lfclk {
-			#clock-cells = <1>;
+			#clock-cells = <0>;
 			compatible = "ti,mspm0-clk";
 			clock-frequency = <32768>;
 			clocks = <&lfosc>;
 		};
 
 		ulpclk: ulpclk {
-			#clock-cells = <1>;
+			#clock-cells = <0>;
 			compatible = "ti,mspm0-clk";
 			clock-frequency = <DT_FREQ_M(32)>;
 		};
 
 		mclk: mclk {
-			#clock-cells = <1>;
+			#clock-cells = <0>;
 			compatible = "ti,mspm0-clk";
 			clock-frequency = <DT_FREQ_M(32)>;
 			clocks = <&sysosc>;
 		};
 
 		mfpclk: mfpclk {
-			#clock-cells = <1>;
+			#clock-cells = <0>;
 			compatible = "ti,mspm0-clk";
 			clock-frequency = <DT_FREQ_M(4)>;
 			clocks = <&sysosc>;
@@ -117,7 +117,7 @@
 		};
 
 		canclk: canclk {
-			#clock-cells = <1>;
+			#clock-cells = <0>;
 			compatible = "ti,mspm0-clk";
 			status = "disabled";
 		};
