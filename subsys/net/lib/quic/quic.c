@@ -2703,7 +2703,9 @@ static int quic_context_unref_debug(struct quic_context *ctx, const char *caller
 static int quic_context_unref(struct quic_context *ctx)
 #endif
 {
+	struct quic_endpoint *released[CONFIG_QUIC_MAX_ENDPOINTS] = { 0 };
 	struct quic_endpoint *ep, *tmp;
+	int released_count = 0;
 #if defined(CONFIG_QUIC_STATS_HISTORY)
 	struct quic_closed_context_stats closed_stats;
 	bool keep_closed_stats;
@@ -2731,6 +2733,15 @@ static int quic_context_unref(struct quic_context *ctx)
 		quic_get_by_conn(ctx), ctx->sock, caller, line);
 #endif
 
+	/* quic_endpoint_unref() takes contexts_lock and then endpoints_lock,
+	 * so take them in that order here too; taking them the other way
+	 * round deadlocks against the RX path. The references themselves are
+	 * dropped only after both locks are released: the final unref cancels
+	 * the endpoint's PTO work synchronously, and the PTO handler takes
+	 * contexts_lock, so unreferencing under the lock can deadlock against
+	 * a PTO that is firing at the same time.
+	 */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 
 #if defined(CONFIG_QUIC_STATS_HISTORY)
@@ -2741,7 +2752,7 @@ static int quic_context_unref(struct quic_context *ctx)
 		quic_stats_merge_endpoint(ctx, ep);
 		sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
 		quic_endpoint_send_connection_close(ep, 0, NULL);
-		quic_endpoint_unref(ep);
+		released[released_count++] = ep;
 
 		if (ctx->listen == ep) {
 			ctx->listen = NULL;
@@ -2749,11 +2760,19 @@ static int quic_context_unref(struct quic_context *ctx)
 	}
 
 	if (ctx->listen != NULL) {
-		quic_endpoint_unref(ctx->listen);
+		released[released_count++] = ctx->listen;
 		ctx->listen = NULL;
 	}
 
 	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
+
+	/* The detached endpoints stay alive until these drops: each still
+	 * carries the reference the context list held for it.
+	 */
+	for (int i = 0; i < released_count; i++) {
+		quic_endpoint_unref(released[i]);
+	}
 
 #if defined(CONFIG_QUIC_STATS_HISTORY)
 	if (keep_closed_stats) {
@@ -3024,6 +3043,7 @@ static int quic_endpoint_unref_debug(struct quic_endpoint *ep, const char *calle
 static int quic_endpoint_unref(struct quic_endpoint *ep)
 #endif
 {
+	struct quic_endpoint *parent = NULL;
 	atomic_val_t ref;
 	int ret;
 
@@ -3133,9 +3153,12 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 
 	if (ep->parent != NULL) {
 		/* The ref was taken in process_long_header() when we assigned
-		 * the parent, so unref it here
+		 * the parent. Drop it after the locks below are released: if
+		 * it is the parent's final reference, releasing it cancels
+		 * the parent's PTO work synchronously, which can deadlock
+		 * under contexts_lock against a PTO handler taking that lock.
 		 */
-		quic_endpoint_unref(ep->parent);
+		parent = ep->parent;
 		ep->parent = NULL;
 	}
 
@@ -3161,6 +3184,10 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 
 	k_mutex_unlock(&endpoints_lock);
 	k_mutex_unlock(&contexts_lock);
+
+	if (parent != NULL) {
+		quic_endpoint_unref(parent);
+	}
 
 	return 0;
 }
@@ -3415,9 +3442,19 @@ static struct quic_endpoint *find_endpoint_by_sock(int sock)
 static void quic_check_idle_timeouts(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct quic_endpoint *expired[CONFIG_QUIC_MAX_ENDPOINTS];
 	int64_t now = k_uptime_get();
 	int64_t shortest = 0;
+	int expired_count = 0;
 
+	/* This sweep releases endpoints, and quic_endpoint_unref() takes
+	 * contexts_lock before endpoints_lock. Follow the same order here,
+	 * but drop the references only after both locks are released: the
+	 * final unref cancels the endpoint's PTO work synchronously, and the
+	 * PTO handler takes contexts_lock, so releasing under the lock can
+	 * deadlock against a PTO that is firing at the same time.
+	 */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 
 	for (int i = 0; i < CONFIG_QUIC_MAX_ENDPOINTS; i++) {
@@ -3450,7 +3487,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 								    QUIC_ERROR_PROTOCOL_VIOLATION,
 								    "Handshake timeout");
 
-				quic_endpoint_unref(ep);
+				expired[expired_count++] = ep;
 				continue;
 			}
 		}
@@ -3472,7 +3509,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 				 ep, quic_get_by_ep(ep), idle_time);
 
 			/* Per RFC 9000: No CONNECTION_CLOSE is sent for idle timeout */
-			quic_endpoint_unref(ep);
+			expired[expired_count++] = ep;
 			continue;
 		}
 
@@ -3484,6 +3521,11 @@ static void quic_check_idle_timeouts(struct k_work *work)
 	}
 
 	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
+
+	for (int i = 0; i < expired_count; i++) {
+		quic_endpoint_unref(expired[i]);
+	}
 
 	if (shortest > 0) {
 		k_work_reschedule(dwork, K_MSEC(shortest));

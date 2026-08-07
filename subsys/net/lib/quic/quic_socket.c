@@ -11,6 +11,23 @@ static int quic_connection_init(struct quic_context *ctx,
 	struct quic_endpoint *ep;
 	int ret;
 
+	if (remote_addr != NULL) {
+		/*
+		 * Drop any orphaned client endpoints for this remote first so
+		 * we do not exhaust the endpoint pool or leave stale UDP
+		 * sockets behind from a prior failed client open. This must
+		 * happen before contexts_lock is taken: releasing an endpoint
+		 * cancels its PTO work synchronously and the PTO handler
+		 * itself takes contexts_lock, so running the cleanup with the
+		 * lock held can deadlock against a PTO that is firing.
+		 */
+		quic_release_orphan_client_endpoints(remote_addr);
+	}
+
+	/* Take the locks in the same order as quic_endpoint_unref():
+	 * contexts_lock before endpoints_lock.
+	 */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 
 	if (remote_addr == NULL) {
@@ -20,6 +37,7 @@ static int quic_connection_init(struct quic_context *ctx,
 			ep = alloc_local_endpoint(ctx, local_addr);
 			if (ep == NULL) {
 				k_mutex_unlock(&endpoints_lock);
+				k_mutex_unlock(&contexts_lock);
 				return -ENOMEM;
 			}
 
@@ -33,19 +51,13 @@ static int quic_connection_init(struct quic_context *ctx,
 						&net_sin(local_addr)->sin_addr));
 		}
 	} else {
-		/*
-		 * Always allocate a dedicated client endpoint per connection
-		 * context. Drop any orphaned client endpoints for this remote
-		 * first so we do not exhaust the endpoint pool or leave stale
-		 * UDP sockets behind from a prior failed client open.
+		/* Always allocate a dedicated client endpoint per connection
+		 * context. Orphans from prior failed opens were dropped above.
 		 */
-		k_mutex_unlock(&endpoints_lock);
-		quic_release_orphan_client_endpoints(remote_addr);
-		k_mutex_lock(&endpoints_lock, K_FOREVER);
-
 		ep = alloc_endpoint(ctx, remote_addr, local_addr);
 		if (ep == NULL) {
 			k_mutex_unlock(&endpoints_lock);
+			k_mutex_unlock(&contexts_lock);
 			return -ENOMEM;
 		}
 
@@ -133,6 +145,7 @@ static int quic_connection_init(struct quic_context *ctx,
 	}
 
 	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
 
 	NET_DBG("[CO:%p/%d] Connection initialized", ctx, quic_get_by_conn(ctx));
 
@@ -140,9 +153,15 @@ static int quic_connection_init(struct quic_context *ctx,
 
 fail:
 	sys_slist_find_and_remove(&ctx->endpoints, &ep->node);
-	quic_endpoint_unref(ep);
 
 	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
+
+	/* Release only after the locks are dropped: the final unref cancels
+	 * the endpoint's PTO work synchronously, and the PTO handler takes
+	 * contexts_lock, so releasing under the lock can deadlock.
+	 */
+	quic_endpoint_unref(ep);
 
 	NET_DBG("[CO:%p/%d] Connection initialization failed (%d)",
 		ctx, quic_get_by_conn(ctx), ret);
