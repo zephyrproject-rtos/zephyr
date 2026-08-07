@@ -483,6 +483,15 @@ Other notable changes
     key. The first entry is the key the application is signed with and the rest are
     verification-only public keys. See :ref:`build-signing`.
 
+* NXP
+
+  * The NXP Kinetis DTSI files have been reorganized from the flat
+    ``dts/arm/nxp/kinetis/`` directory into per-series subdirectories
+    (``k2x/``, ``k32lx/``, ``k6x/``, ``k8x/``, ``ke1xf/``, ``ke1xz/``,
+    ``kl2x/``, ``kv5x/``, ``kwx/``).
+    See the :ref:`migration guide <migration_4.5>` for how to update
+    out-of-tree board includes.
+
 * Arm
 
   * The non-secure variant of
