@@ -425,6 +425,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_aon_lpadc)
+	if ((uint32_t)sub_system == MCUX_AON_LPADC_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateAonLPADC);
+	}
+#endif
+
 	return 0;
 }
 

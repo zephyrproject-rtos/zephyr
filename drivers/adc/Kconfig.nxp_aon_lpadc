@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_NXP_AON_LPADC
+	bool "NXP AON_LPADC driver"
+	default y
+	depends on DT_HAS_NXP_AON_LPADC_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	select PINCTRL
+	help
+	  Enable the NXP always-on LPADC (AON_LPADC) driver.

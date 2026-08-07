@@ -86,6 +86,10 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateAonPORT);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpadc0))
+	RESET_ReleasePeripheralReset(kAonLPADC_RST_SHIFT_RSTn);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(portb))
 	RESET_ReleasePeripheralReset(kPORT1_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_GatePORT1);
