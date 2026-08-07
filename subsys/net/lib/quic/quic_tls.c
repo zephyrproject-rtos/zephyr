@@ -1255,9 +1255,9 @@ out:
 	return ret;
 }
 
-static int parse_client_hello(struct quic_tls_context *ctx,
-			      const uint8_t *data, size_t len,
-			      const uint8_t *full_msg, size_t full_msg_len)
+ZTESTABLE_STATIC int parse_client_hello(struct quic_tls_context *ctx,
+					const uint8_t *data, size_t len,
+					const uint8_t *full_msg, size_t full_msg_len)
 {
 #define MIN_TLS_CLIENT_HELLO_SIZE 38
 	size_t pos = 0;
@@ -1295,6 +1295,10 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 	pos += 32;
 
 	/* Legacy session ID */
+	if (pos + 1 > len) {
+		return -EINVAL;
+	}
+
 	session_id_len = data[pos++];
 	if (pos + session_id_len > len) {
 		return -EINVAL;
@@ -1302,10 +1306,17 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 	pos += session_id_len;
 
 	/* Cipher suites */
+	if (pos + 2 > len) {
+		return -EINVAL;
+	}
+
 	cipher_suites_len = (data[pos] << 8) | data[pos + 1];
 	pos += 2;
 
-	if (pos + cipher_suites_len > len) {
+	/* The list is a sequence of 2-byte suites, so an odd length is
+	 * malformed and would make the loop below read one byte too far.
+	 */
+	if ((cipher_suites_len % 2U) != 0U || pos + cipher_suites_len > len) {
 		return -EINVAL;
 	}
 
@@ -1335,7 +1346,14 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 	pos += cipher_suites_len;
 
 	/* Legacy compression methods */
+	if (pos + 1 > len) {
+		return -EINVAL;
+	}
+
 	compression_len = data[pos++];
+	if (pos + compression_len > len) {
+		return -EINVAL;
+	}
 	pos += compression_len;
 
 	/* Extensions */
@@ -1345,6 +1363,10 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 
 	extensions_len = (data[pos] << 8) | data[pos + 1];
 	pos += 2;
+
+	if (pos + extensions_len > len) {
+		return -EINVAL;
+	}
 
 	/* Parse extensions */
 	ext_end = pos + extensions_len;
@@ -4183,6 +4205,9 @@ ZTESTABLE_STATIC int parse_certificate(struct quic_tls_context *ctx,
 
 	/* Certificate request context */
 	context_len = data[pos++];
+	if (pos + context_len > len) {
+		return -EINVAL;
+	}
 
 	/* If we sent a CertificateRequest, verify the context matches */
 	if (ctx->expecting_client_cert && ctx->cert_request_context_len > 0) {
@@ -4323,6 +4348,10 @@ static int parse_certificate_request(struct quic_tls_context *ctx,
 
 	extensions_len = ((uint16_t)data[pos] << 8) | data[pos + 1];
 	pos += 2;
+
+	if (pos + extensions_len > len) {
+		return -EINVAL;
+	}
 
 	/* Parse extensions to find signature_algorithms */
 	ext_end = pos + extensions_len;
