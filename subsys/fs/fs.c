@@ -16,6 +16,7 @@
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/minmax.h>
+#include <zephyr/sys/clock.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(fs, CONFIG_FS_LOG_LEVEL);
@@ -128,8 +129,20 @@ static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
 	return 0;
 }
 
+/* backends that record no timestamps leave the extended fields alone: start them at zero */
+static inline void fs_dirent_ext_reset(struct fs_dirent *entry)
+{
+#ifdef CONFIG_FS_DIRENT_EXT
+	entry->atime = (struct timespec){0};
+	entry->mtime = (struct timespec){0};
+#else
+	ARG_UNUSED(entry);
+#endif
+}
+
 static inline void fs_copy_mnt_point_to_entry(struct fs_mount_t *mnt, struct fs_dirent *entry)
 {
+	fs_dirent_ext_reset(entry);
 	entry->type = FS_DIR_ENTRY_DIR;
 	memcpy(entry->name, &mnt->mnt_point[1], min(sizeof(entry->name) - 1, mnt->mountp_len));
 	entry->name[sizeof(entry->name) - 1] = 0;
@@ -425,6 +438,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 
 		/* Loop until error or not special directory */
 		while (true) {
+			fs_dirent_ext_reset(entry);
 			rc = zdp->mp->fs->readdir(zdp, entry);
 			if (rc < 0) {
 				break;
@@ -488,6 +502,40 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 
 	zdp->dirp = next;
 	return 0;
+}
+
+
+int fs_rewinddir(struct fs_dir_t *zdp)
+{
+	int rc;
+
+	if (zdp->mp == NULL) {
+		if (zdp->dirp == NULL) {
+			return -EINVAL;
+		}
+
+		/* VFS root dir: restart the mount point list walk */
+		k_mutex_lock(&mutex, K_FOREVER);
+		zdp->dirp = sys_dlist_peek_head(&fs_mnt_list);
+		k_mutex_unlock(&mutex);
+
+		return 0;
+	}
+
+	if (zdp->mp->fs == NULL) {
+		return -EINVAL;
+	}
+
+	CHECKIF(zdp->mp->fs->rewinddir == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = zdp->mp->fs->rewinddir(zdp);
+	if (rc < 0) {
+		LOG_ERR("directory rewind error (%d)", rc);
+	}
+
+	return rc;
 }
 
 int fs_closedir(struct fs_dir_t *zdp)
@@ -635,6 +683,7 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 	path_len = strlen(abs_path);
 	if (path_len == 1) {
 		/* Stat on the root directory */
+		fs_dirent_ext_reset(entry);
 		entry->type = FS_DIR_ENTRY_DIR;
 		entry->name[0] = '/';
 		entry->name[1] = '\0';
@@ -659,6 +708,7 @@ int fs_stat(const char *abs_path, struct fs_dirent *entry)
 		return -ENOTSUP;
 	}
 
+	fs_dirent_ext_reset(entry);
 	rc = mp->fs->stat(mp, abs_path, entry);
 	if (rc == -ENOENT) {
 		/* File doesn't exist, which is a valid stat response */
@@ -758,6 +808,48 @@ int fs_normalize_path(const char *path, char *buf, size_t len)
 	buf[dst_len] = '\0';
 
 	return 0;
+}
+
+int fs_utime(const char *abs_path, const struct timespec times[2])
+{
+	struct fs_mount_t *mp;
+	struct timespec now[2];
+	int rc = -EINVAL;
+
+	if ((abs_path == NULL) || (abs_path[0] != '/') || (abs_path[1] == '\0')) {
+		LOG_ERR("invalid file or dir name!!");
+		return -EINVAL;
+	}
+
+	rc = fs_get_mnt_point(&mp, abs_path, NULL);
+	if (rc < 0) {
+		LOG_ERR("mount point not found!!");
+		return rc;
+	}
+
+	if (mp->flags & FS_MOUNT_FLAG_READ_ONLY) {
+		return -EROFS;
+	}
+
+	CHECKIF(mp->fs->utime == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (times == NULL) {
+		rc = sys_clock_gettime(SYS_CLOCK_REALTIME, &now[0]);
+		if (rc < 0) {
+			return rc;
+		}
+		now[1] = now[0];
+		times = now;
+	}
+
+	rc = mp->fs->utime(mp, abs_path, times);
+	if (rc < 0) {
+		LOG_ERR("failed set file or dir time (%d)", rc);
+	}
+
+	return rc;
 }
 
 #if defined(CONFIG_FILE_SYSTEM_GC)

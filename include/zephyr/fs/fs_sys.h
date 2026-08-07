@@ -13,6 +13,8 @@
 #ifndef ZEPHYR_INCLUDE_FS_FS_SYS_H_
 #define ZEPHYR_INCLUDE_FS_FS_SYS_H_
 
+#include <time.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -126,6 +128,14 @@ struct fs_file_system_t {
 	 * @return 0 on success, negative errno code on fail.
 	 */
 	int (*closedir)(struct fs_dir_t *dirp);
+	/**
+	 * Resets an open directory to its first entry. Optional; when NULL,
+	 * fs_rewinddir() reports -ENOTSUP.
+	 *
+	 * @param dirp Directory to rewind.
+	 * @return 0 on success, negative errno code on fail.
+	 */
+	int (*rewinddir)(struct fs_dir_t *dirp);
 	/** @} */
 
 	/**
@@ -192,6 +202,17 @@ struct fs_file_system_t {
 	 */
 	int (*statvfs)(struct fs_mount_t *mountp, const char *path,
 					struct fs_statvfs *stat);
+	/**
+	 * Sets file or directory access and modification times. Optional;
+	 * when NULL, fs_utime() reports -ENOTSUP.
+	 *
+	 * @param mountp Mount point.
+	 * @param name Path to the file or directory.
+	 * @param times Access time in times[0], modification time in times[1].
+	 * @return 0 on success, negative errno code on fail.
+	 */
+	int (*utime)(struct fs_mount_t *mountp, const char *name,
+					const struct timespec times[2]);
 #if defined(CONFIG_FILE_SYSTEM_GC) || defined(__DOXYGEN__)
 	/**
 	 * Attempt to proactively clean file system

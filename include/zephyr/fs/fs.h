@@ -15,6 +15,7 @@
 #define ZEPHYR_INCLUDE_FS_FS_H_
 
 #include <sys/types.h>
+#include <time.h>
 
 #include <zephyr/sys/dlist.h>
 #include <zephyr/fs/fs_interface.h>
@@ -138,6 +139,21 @@ struct fs_dirent {
 	char name[MAX_FILE_NAME + 1];
 	/** Size of file (0 if directory). */
 	size_t size;
+#if defined(CONFIG_FS_DIRENT_EXT) || defined(__DOXYGEN__)
+	/**
+	 * Time of last access, zero when the file system does not record it.
+	 *
+	 * @kconfig_dep{CONFIG_FS_DIRENT_EXT}
+	 */
+	struct timespec atime;
+	/**
+	 * Time of last modification, zero when the file system does not
+	 * record it.
+	 *
+	 * @kconfig_dep{CONFIG_FS_DIRENT_EXT}
+	 */
+	struct timespec mtime;
+#endif
 };
 
 /**
@@ -551,6 +567,20 @@ int fs_opendir(struct fs_dir_t *zdp, const char *path);
 int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
 
 /**
+ * @brief Directory rewind
+ *
+ * Resets an open directory so that the next fs_readdir() returns the first
+ * directory entry again.
+ *
+ * @param zdp Pointer to the directory object
+ *
+ * @retval 0 on success;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 a negative errno code on error.
+ */
+int fs_rewinddir(struct fs_dir_t *zdp);
+
+/**
  * @brief Directory close
  *
  * Closes an open directory.
@@ -691,6 +721,26 @@ int fs_statvfs(const char *path, struct fs_statvfs *stat);
  * @retval <0 another negative errno code on error.
  */
 int fs_normalize_path(const char *path, char *buf, size_t len);
+
+/**
+ * @brief Set file or directory timestamps
+ *
+ * Sets the access and modification times of the file or directory named by
+ * @p path.
+ *
+ * @param path Path to the file or directory
+ * @param times Access time in <tt>times[0]</tt> and modification time in
+ * <tt>times[1]</tt>, or NULL to set both to the current time as reported by
+ * @ref SYS_CLOCK_REALTIME.
+ *
+ * @retval 0 on success;
+ * @retval -EINVAL when a bad file name is given;
+ * @retval -ENOENT when no such file or directory is found;
+ * @retval -EROFS when the file system is read-only;
+ * @retval -ENOTSUP when not implemented by underlying file system driver;
+ * @retval <0 a negative errno code on error.
+ */
+int fs_utime(const char *path, const struct timespec times[2]);
 
 /**
  * @brief Create fresh file system

@@ -42,6 +42,13 @@ config FILE_SYSTEM_MAX_FILE_NAME
 	  supported by a file system may result in memory access
 	  violations.
 
+config FS_DIRENT_EXT
+	bool "Report file timestamps in struct fs_dirent"
+	help
+	  Extend struct fs_dirent with access and modification timestamps.
+	  File systems that record timestamps fill them in fs_stat() and
+	  fs_readdir() results; others leave them zero.
+
 config FILE_SYSTEM_INIT_PRIORITY
 	int "File system initialization priority"
 	default 99
