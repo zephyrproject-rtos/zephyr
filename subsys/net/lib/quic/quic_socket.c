@@ -1095,6 +1095,14 @@ static ssize_t quic_stream_replay_pending_data(struct quic_stream *stream)
 		return -EAGAIN;
 	}
 
+	/* Without a free sent-packet slot the packet could not be tracked,
+	 * and its stream data would never be released from the TX buffer
+	 * once acknowledged. Back off until an acknowledgment frees a slot.
+	 */
+	if (!quic_recovery_tx_slot_available(ep, level)) {
+		return -EAGAIN;
+	}
+
 	max_payload_size = MIN(sizeof(frame), ep->max_tx_payload_size);
 
 	{
@@ -1324,6 +1332,17 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 
 		NET_DBG("[ST:%p/%d] Window is full (stream=%zu, conn=%zu)",
 			stream, quic_get_by_stream(stream), stream_window, conn_window);
+		return -EAGAIN;
+	}
+
+	/* Without a free sent-packet slot the packet could not be tracked,
+	 * and its stream data would never be released from the TX buffer
+	 * once acknowledged. Back off until an acknowledgment frees a slot;
+	 * the ACK processing raises the send signal so poll() wakes up.
+	 */
+	if (!quic_recovery_tx_slot_available(ep, level)) {
+		NET_DBG("[ST:%p/%d] Sent packet history full on stream %" PRIu64,
+			stream, quic_get_by_stream(stream), stream->id);
 		return -EAGAIN;
 	}
 
