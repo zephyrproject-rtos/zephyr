@@ -2963,7 +2963,7 @@ static int tls_opt_mfl_set(struct tls_context *context,
 	}
 
 	mfl = (const int *)optval;
-	if (*mfl < ZSOCK_TLS_MFL_DISABLED || *mfl > ZSOCK_TLS_MFL_4096) {
+	if (*mfl < ZSOCK_TLS_MFL_DEFAULT || *mfl > ZSOCK_TLS_MFL_4096) {
 		return -EINVAL;
 	}
 

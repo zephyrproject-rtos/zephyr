@@ -100,11 +100,11 @@ config MBEDTLS_SSL_ENCRYPT_THEN_MAC
 
 config MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
 	bool "Maximum Fragment Length (MFL) extension support (RFC 6066)"
-	default y
 	depends on !MBEDTLS_SSL_PROTO_TLS1_3
+	default y
 	help
 	  Enable support for negotiating a Maximum Fragment Length (MFL)
-	  extension (RFC 6066), allowing a smaller fragment size to be
+	  (RFC 6066), allowing a smaller fragment size to be
 	  requested than the configured buffer size. Not supported by
 	  Mbed TLS in TLS 1.3 mode.
 
@@ -114,9 +114,6 @@ config MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
 	help
 	  When this option is enabled, the SSL buffer will be resized automatically
 	  based on the negotiated maximum fragment length in each direction.
-
-	  Requires MBEDTLS_SSL_MAX_FRAGMENT_LENGTH, which is available when
-	  TLS 1.3 is disabled.
 
 endif # MBEDTLS_SSL_PROTO_TLS1_2
 

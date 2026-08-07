@@ -274,12 +274,15 @@ extern "C" {
  *
  *  By default (option not set) the socket advertises an MFL derived from
  *  CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN / CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN.
+ *  Pass ZSOCK_TLS_MFL_DEFAULT to revert a socket back to this default after
+ *  a previous call has overridden it.
  *
  *  Requires CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH.
  */
 #define ZSOCK_TLS_MAX_FRAGMENT_LENGTH 21
 
 /* Valid values for @ref ZSOCK_TLS_MAX_FRAGMENT_LENGTH option */
+#define ZSOCK_TLS_MFL_DEFAULT -1 /**< Use the global Kconfig-derived MFL. */
 #define ZSOCK_TLS_MFL_DISABLED 0 /**< Do not send the MFL extension. */
 #define ZSOCK_TLS_MFL_512 1      /**< Advertise 512-byte max fragment. */
 #define ZSOCK_TLS_MFL_1024 2     /**< Advertise 1024-byte max fragment. */
