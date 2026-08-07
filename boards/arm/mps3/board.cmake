@@ -1,5 +1,5 @@
 # Copyright (c) 2021 Linaro
-# Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2024-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # Copyright (c) 2026 Andrei-Edward Popa
 # SPDX-License-Identifier: Apache-2.0
 
@@ -11,6 +11,15 @@
 #     FVP  is used by default for corstone300/fvp.
 #     FVP  is used by default for corstone310/fvp.
 #
+
+board_set_debugger_ifnset(pyocd)
+board_set_flasher_ifnset(pyocd)
+
+if(CONFIG_CPU_CORTEX_M)
+  board_runner_args(pyocd "--target=cortex_m")
+endif()
+
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 
 if(CONFIG_BOARD_MPS3_AN536_CPU0)
   set(SUPPORTED_EMU_PLATFORMS qemu)
