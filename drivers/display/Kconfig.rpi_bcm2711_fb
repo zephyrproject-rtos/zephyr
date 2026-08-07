@@ -6,5 +6,6 @@ config RASPBERRYPI_BCM2711_FRAMEBUFFER
 	default y
 	depends on DT_HAS_RASPBERRYPI_BCM2711_FRAMEBUFFER_ENABLED
 	select RASPBERRYPI_FIRMWARE
+	select DISPLAY_FRAMEBUFFER
 	help
 	  Enable Raspberry Pi BCM2711 framebuffer display driver.
