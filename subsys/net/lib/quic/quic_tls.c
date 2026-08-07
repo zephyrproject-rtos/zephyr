@@ -1595,7 +1595,10 @@ static int build_client_hello(struct quic_tls_context *ctx,
 
 	/* Client random (32 bytes) */
 	if (!ctx->client_hello_prepared) {
-		sys_rand_get(ctx->client_random, 32);
+		ret = sys_csrand_get(ctx->client_random, 32);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 	memcpy(&buf[pos], ctx->client_random, 32);
 	pos += 32;
@@ -1898,6 +1901,7 @@ static int build_server_hello(struct quic_tls_context *ctx,
 	size_t ext_start;
 	size_t ks_len;
 	size_t ext_len;
+	int ret;
 
 	if (buf_size < 128) {
 		return -ENOBUFS;
@@ -1908,7 +1912,10 @@ static int build_server_hello(struct quic_tls_context *ctx,
 	buf[pos++] = 0x03;
 
 	/* Server random */
-	sys_rand_get(ctx->server_random, 32);
+	ret = sys_csrand_get(ctx->server_random, 32);
+	if (ret != 0) {
+		return ret;
+	}
 	memcpy(&buf[pos], ctx->server_random, 32);
 	pos += 32;
 
@@ -2851,11 +2858,17 @@ static int build_certificate_request(struct quic_tls_context *ctx,
 	size_t sig_algs_len_pos;
 	size_t sig_algs_data_len;
 	size_t ext_len;
+	int ret;
 
-	/* Certificate request context (can be used to correlate request/response) */
-	/* Using a random 8-byte context */
+	/* Certificate request context (can be used to correlate request/response).
+	 * Using a random 8-byte context. The peer echoes this back, so it must
+	 * not expose the state of a non-cryptographic generator.
+	 */
 	buf[pos++] = QUIC_CERT_REQ_CONTEXT_LEN;  /* context length */
-	sys_rand_get(&buf[pos], QUIC_CERT_REQ_CONTEXT_LEN);
+	ret = sys_csrand_get(&buf[pos], QUIC_CERT_REQ_CONTEXT_LEN);
+	if (ret != 0) {
+		return ret;
+	}
 
 	/* Save context for later verification */
 	memcpy(ctx->cert_request_context, &buf[pos], QUIC_CERT_REQ_CONTEXT_LEN);
@@ -3369,9 +3382,20 @@ static int quic_tls_send_new_session_ticket(struct quic_tls_context *ctx)
 		return ret;
 	}
 
-	sys_rand_get(ticket_nonce, sizeof(ticket_nonce));
-	sys_rand_get(ticket, sizeof(ticket));
-	sys_rand_get(&ticket_age_add, sizeof(ticket_age_add));
+	ret = sys_csrand_get(ticket_nonce, sizeof(ticket_nonce));
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = sys_csrand_get(ticket, sizeof(ticket));
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = sys_csrand_get(&ticket_age_add, sizeof(ticket_age_add));
+	if (ret != 0) {
+		return ret;
+	}
 
 	ret = tls_derive_resumption_psk(ctx, ticket_nonce, sizeof(ticket_nonce),
 					ticket_psk, sizeof(ticket_psk));
