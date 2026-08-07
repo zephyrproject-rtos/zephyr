@@ -63,22 +63,22 @@ else()
     version.c
     )
 
-  # Toolchain workaround: on ARM Thumb, gcc will normally enable
-  # -fomit-frame-pointer at all optimization levels except -O0.  When
-  # frame pointers ARE enabled, gcc will also infuriatingly disallow a
-  # clobber of the r7 frame pointer register in inline assembly
-  # (vs. just spilling filling as needed).  Our optimized arch_switch
-  # requires the ability to clobber this (callee-saved) register.  Turn
-  # the flag back on for the two files that need it.  (The error
-  # behavior only gets modified at the level of a whole file, I tried
-  # #pragmas and attributes to change the code generation for the
-  # specific functions without success).
+  # Toolchain workaround: on ARM Thumb, when frame pointers are enabled,
+  # both gcc and clang disallow clobbering the r7 frame pointer register
+  # in inline assembly (vs. just spilling/filling as needed). Our
+  # optimized arch_switch requires the ability to clobber this
+  # (callee-saved) register. Turn the flag back on for the files that
+  # need it. gcc enables frame pointers only at -O0; clang (pre-v20)
+  # enables them at all optimization levels. (The error behavior only
+  # gets modified at the level of a whole file, I tried #pragmas and
+  # attributes to change the code generation for the specific functions
+  # without success).
   if(CONFIG_CPU_CORTEX_M)
-    if(CONFIG_NO_OPTIMIZATIONS)
-      if(${COMPILER} STREQUAL "gcc")
-        set_source_files_properties(init.c PROPERTIES COMPILE_OPTIONS -fomit-frame-pointer)
-        set_source_files_properties(sched.c PROPERTIES COMPILE_OPTIONS -fomit-frame-pointer)
-      endif()
+    if((${COMPILER} STREQUAL "gcc" AND CONFIG_NO_OPTIMIZATIONS) OR ${COMPILER} STREQUAL "clang")
+      set_source_files_properties(init.c PROPERTIES COMPILE_OPTIONS -fomit-frame-pointer)
+      set_source_files_properties(sched.c PROPERTIES COMPILE_OPTIONS -fomit-frame-pointer)
+      set_source_files_properties(sleep.c PROPERTIES COMPILE_OPTIONS -fomit-frame-pointer)
+      set_source_files_properties(thread.c PROPERTIES COMPILE_OPTIONS -fomit-frame-pointer)
     endif()
   endif()
 
