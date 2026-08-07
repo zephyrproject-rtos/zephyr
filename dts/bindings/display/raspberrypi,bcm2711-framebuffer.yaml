@@ -10,9 +10,12 @@ description: |
 
 compatible: "raspberrypi,bcm2711-framebuffer"
 
-include: display-controller.yaml
+include: simple-framebuffer.yaml
 
 properties:
+  firmware:
+    required: true
+
   pixel-format:
     type: int
     required: true
