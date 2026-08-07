@@ -279,7 +279,8 @@ typedef uint64_t timer_core_cycles_t;
  * can still resolve, or what the alarm can express, whichever binds first.
  */
 #define TIMER_CORE_MAX_UNANNOUNCED_CYCLES                                                          \
-	MIN((uint64_t)TIMER_CORE_COUNTER_SAFE_SPAN, (uint64_t)TIMER_CORE_ALARM_MAX_CYCLES)
+	((timer_core_cycles_t)MIN((uint64_t)TIMER_CORE_COUNTER_SAFE_SPAN,                          \
+				  (uint64_t)TIMER_CORE_ALARM_MAX_CYCLES))
 
 /*
  * Announce baseline, private to this translation unit.
@@ -340,6 +341,22 @@ static inline uint32_t timer_core_ticks_clamp(timer_core_ticks_t ticks)
 }
 #endif
 static timer_core_ticks_t timer_core_last_elapsed;
+
+/*
+ * The arm span ceiling, in ticks: TIMER_CORE_MAX_UNANNOUNCED_CYCLES expressed in
+ * the tick domain so the arm path can clamp there and never form a product
+ * wider than the counter.
+ *
+ * The division folds where both terms are build constants, which is the common
+ * case. Where the rate is only known at run time it would be a real division on
+ * every arm, so precompute it once alongside the cycles per tick instead.
+ */
+#if defined(TIMER_CORE_PRECOMPUTE_CYC_PER_TICK)
+static timer_core_ticks_t timer_core_max_span_ticks;
+#define TIMER_CORE_MAX_SPAN_TICKS timer_core_max_span_ticks
+#else
+#define TIMER_CORE_MAX_SPAN_TICKS (TIMER_CORE_MAX_UNANNOUNCED_CYCLES / TIMER_CORE_CYC_PER_TICK)
+#endif
 
 #if defined(TIMER_CORE_BACKEND_RELOAD)
 /* A catch-up reload (floored at TIMER_CORE_ALARM_MIN_CYCLES because the deadline is
@@ -464,9 +481,9 @@ static inline timer_core_ticks_t timer_core_delta_ticks(void)
  */
 static void timer_core_arm(uint32_t ticks)
 {
+#if defined(TIMER_CORE_BACKEND_RELOAD)
 	uint64_t deadline_tick = timer_core_last_tick + timer_core_last_elapsed + ticks;
 
-#if defined(TIMER_CORE_BACKEND_RELOAD)
 	if (deadline_tick == timer_core_armed_deadline) {
 		return;
 	}
@@ -476,29 +493,38 @@ static void timer_core_arm(uint32_t ticks)
 	 * Relative reload: the cycles from the last announce to the tick-aligned
 	 * deadline, minus what has already elapsed since then. Both terms are in
 	 * the counter's cycle domain (the elapsed part masked to TIMER_CORE_COUNTER_WIDTH),
-	 * so this stays correct across a counter wrap, and a starved ISR (elapsed
-	 * past the deadline) yields a non-positive value pulled up to the floor.
+	 * so this stays correct across a counter wrap.
+	 *
+	 * The span is clamped in the tick domain, before the multiply, so the
+	 * product stays inside that width.
+	 *
+	 * Capping it is what keeps a stream of set_timeout() calls with no
+	 * intervening announce from pushing the fire point out indefinitely:
+	 * re-arming restarts the counter, `done` would grow past
+	 * TIMER_CORE_COUNTER_MASK and the masked delta would wrap, silently losing
+	 * the elapsed span. Once `done` reaches the span the subtraction below
+	 * saturates and the ALARM_MIN_CYCLES floor forces a near-immediate fire,
+	 * hence an announce that resets the baseline. The COMPARE path gets the same
+	 * invariant from clamping its absolute deadline.
 	 */
-	uint64_t want = ((uint64_t)timer_core_last_elapsed + ticks) * TIMER_CORE_CYC_PER_TICK;
+	timer_core_ticks_t span = TIMER_CORE_MAX_SPAN_TICKS;
+
+	if ((ticks <= span) && (timer_core_last_elapsed <= (span - ticks))) {
+		span = timer_core_last_elapsed + ticks;
+	}
+
+	timer_core_cycles_t want = (timer_core_cycles_t)span * TIMER_CORE_CYC_PER_TICK;
 	timer_core_cycles_t done = timer_core_cycles_since(timer_core_last_cycle);
-	int64_t rel = (int64_t)(want - done);
 
 	/*
-	 * Clamp against the budget left before the baseline would be
-	 * TIMER_CORE_MAX_UNANNOUNCED_CYCLES behind, not against that span alone.
-	 * Re-arming restarts the counter, so without accounting `done` a stream of
-	 * set_timeout() calls with no intervening announce would push the fire point
-	 * out indefinitely and let `done` grow past TIMER_CORE_COUNTER_MASK, wrapping
-	 * the masked delta and silently losing the elapsed span. Once `done` reaches
-	 * the span the budget goes non-positive and the ALARM_MIN_CYCLES floor forces
-	 * a near-immediate fire, hence an announce that resets the baseline. This
-	 * keeps the same invariant the COMPARE path gets from clamping its absolute
-	 * deadline.
+	 * Saturate rather than go signed: only the sign of want - done matters, and
+	 * its magnitude when positive. A starved ISR, elapsed past the deadline,
+	 * lands on the floor below whether the difference is zero or hugely
+	 * negative, so zero stands in for every negative value.
 	 */
-	if (rel > (int64_t)TIMER_CORE_MAX_UNANNOUNCED_CYCLES - (int64_t)done) {
-		rel = (int64_t)TIMER_CORE_MAX_UNANNOUNCED_CYCLES - (int64_t)done;
-	}
-	if (rel < (int64_t)TIMER_CORE_ALARM_MIN_CYCLES) {
+	timer_core_cycles_t rel = (want > done) ? (want - done) : 0;
+
+	if (rel < TIMER_CORE_ALARM_MIN_CYCLES) {
 		/*
 		 * The announce is due (or overdue): fire as soon as the floor
 		 * allows. If a floored reload is already in flight, leave it
@@ -515,20 +541,44 @@ static void timer_core_arm(uint32_t ticks)
 		timer_core_catchup = true;
 		rel = TIMER_CORE_ALARM_MIN_CYCLES;
 	}
-	timer_driver_set_reload((uint64_t)rel);
+	timer_driver_set_reload(rel);
 #else /* compare backends */
 	/*
-	 * Absolute, tick-aligned deadline. last_cycle is linear (its low
-	 * TIMER_CORE_COUNTER_WIDTH bits track the counter), and a narrow-register driver
-	 * truncates the value to its comparator width when it writes it, so a
-	 * linear deadline is correct for both wide and narrow counters.
+	 * Absolute, tick-aligned deadline, reached as the announce baseline plus a
+	 * relative span. last_cycle is last_tick * TIMER_CORE_CYC_PER_TICK exactly,
+	 * which timer_core_init() establishes and the announce and the rescale
+	 * maintain, so the deadline is
+	 *
+	 *   (last_tick + last_elapsed + ticks) * CYC = last_cycle + (last_elapsed + ticks) * CYC
+	 *
+	 * and the clamp, which subtracts last_cycle straight back off, is on that
+	 * span alone. Forming it directly keeps the arithmetic in the counter's own
+	 * width instead of the baseline's: on a 32-bit target with a 32-bit counter
+	 * the multiply, the compare and the clamp are all single-register work.
+	 *
+	 * The span is clamped in the tick domain, before the multiply, so the
+	 * product cannot overflow that width.
 	 */
-	uint64_t deadline = deadline_tick * TIMER_CORE_CYC_PER_TICK;
+#if TIMER_CORE_COUNTER_WIDTH <= 32
+	timer_core_ticks_t span = TIMER_CORE_MAX_SPAN_TICKS;
+
+	if ((ticks <= span) && (timer_core_last_elapsed <= (span - ticks))) {
+		span = timer_core_last_elapsed + ticks;
+	}
+	timer_core_set_compare(timer_core_last_cycle +
+			       (timer_core_cycles_t)span * TIMER_CORE_CYC_PER_TICK);
+#else
+	/* Nothing to narrow to: the span and the baseline are the same width, so
+	 * form the deadline directly and let the clamp subtract the baseline off.
+	 */
+	uint64_t deadline =
+		(timer_core_last_tick + timer_core_last_elapsed + ticks) * TIMER_CORE_CYC_PER_TICK;
 
 	if ((deadline - timer_core_last_cycle) > TIMER_CORE_MAX_UNANNOUNCED_CYCLES) {
 		deadline = timer_core_last_cycle + TIMER_CORE_MAX_UNANNOUNCED_CYCLES;
 	}
 	timer_core_set_compare(deadline);
+#endif
 #endif
 }
 
@@ -568,7 +618,7 @@ static void timer_core_announce_from(k_spinlock_key_t key)
 {
 	timer_core_ticks_t dticks = timer_core_delta_ticks();
 
-	timer_core_last_cycle += (uint64_t)dticks * TIMER_CORE_CYC_PER_TICK;
+	timer_core_last_cycle += (timer_core_cycles_t)dticks * TIMER_CORE_CYC_PER_TICK;
 	timer_core_last_tick += dticks;
 	timer_core_last_elapsed = 0;
 #if defined(TIMER_CORE_BACKEND_RELOAD)
@@ -737,6 +787,7 @@ static inline void timer_core_init(void)
 	 * fix the cycles-per-tick the tick math will divide by.
 	 */
 	timer_core_cyc_per_tick = TIMER_CORE_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	timer_core_max_span_ticks = TIMER_CORE_MAX_UNANNOUNCED_CYCLES / TIMER_CORE_CYC_PER_TICK;
 #endif
 #if defined(TIMER_CORE_PRECOMPUTE_CYC_PER_TICK) || defined(TIMER_CORE_CHECK_CYC_PER_TICK_AT_INIT)
 	/* Runtime-rate cases: TIMER_CORE_CYC_PER_TICK is not a constant expression, so the
@@ -744,8 +795,13 @@ static inline void timer_core_init(void)
 	 */
 	__ASSERT(TIMER_CORE_CYC_PER_TICK != 0, "timer counter rate is below the tick rate");
 #endif
-	timer_core_last_tick = timer_driver_cycle_get() / TIMER_CORE_CYC_PER_TICK;
-	timer_core_last_cycle = timer_core_last_tick * TIMER_CORE_CYC_PER_TICK;
+	/* The counter read is inside the counter's width, so the tick count it
+	 * divides down to and the cycle count that multiplies back up both are too.
+	 */
+	timer_core_cycles_t seed = timer_driver_cycle_get() / TIMER_CORE_CYC_PER_TICK;
+
+	timer_core_last_tick = seed;
+	timer_core_last_cycle = seed * TIMER_CORE_CYC_PER_TICK;
 	timer_core_last_elapsed = 0;
 
 #if defined(TIMER_CORE_BACKEND_RELOAD)
