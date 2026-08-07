@@ -3276,6 +3276,13 @@ static struct quic_endpoint *find_endpoint_lock(const struct net_sockaddr *remot
 	return ep;
 }
 
+/*
+ * Look up an endpoint by address and connection ID.
+ *
+ * The endpoint is returned without taking a reference, so the caller must
+ * not release one. Callers run on the RX path, where the endpoint is kept
+ * alive by the reference its owning context holds.
+ */
 static struct quic_endpoint *quic_endpoint_lookup(const struct net_sockaddr *remote_addr,
 						  const struct net_sockaddr *local_addr,
 						  uint8_t *peer_cid, uint8_t peer_cid_len,
@@ -8296,7 +8303,6 @@ static int process_short_header(struct quic_endpoint *ep,
 			NET_DBG("Cannot allocate QUIC packet for short header");
 			QUIC_EP_STAT_INC(target_ep, alloc_failed);
 			QUIC_EP_STAT_INC(target_ep, drop_rx);
-			quic_endpoint_unref(target_ep);
 			return -ENOMEM;
 		}
 
@@ -8327,7 +8333,6 @@ static int process_short_header(struct quic_endpoint *ep,
 	if (ret != 0) {
 		NET_ERR("[EP:%p/%d] Failed to decrypt short header packet: %d",
 			target_ep, quic_get_by_ep(target_ep), ret);
-		quic_endpoint_unref(target_ep);
 		return ret;
 	}
 
@@ -8347,7 +8352,6 @@ static int process_short_header(struct quic_endpoint *ep,
 		NET_DBG("Short header packet handling failure (%d)", ret);
 		QUIC_EP_STAT_INC(target_ep, drop_rx);
 		quic_endpoint_notify_streams_closed(target_ep);
-		quic_endpoint_unref(target_ep);
 		goto out;
 	} else if (ret > 0) {
 		QUIC_EP_STAT_INC(target_ep, valid_rx);
@@ -8358,7 +8362,6 @@ static int process_short_header(struct quic_endpoint *ep,
 		quic_send_ack(target_ep, QUIC_SECRET_LEVEL_APPLICATION,
 			      decrypted.packet_number);
 		quic_endpoint_notify_streams_closed(target_ep);
-		quic_endpoint_unref(target_ep);
 		ret = 0;
 		goto out;
 	}
