@@ -16,6 +16,9 @@ if DSA_DRIVERS
 # Used by sourced files
 DSA_PORT_COMPAT := zephyr,dsa-port
 
+# zephyr-keep-sorted-start
+rsource "Kconfig.ksz8463"
 rsource "Kconfig.nxp_imx_netc"
+# zephyr-keep-sorted-stop
 
 endif # DSA_DRIVERS
