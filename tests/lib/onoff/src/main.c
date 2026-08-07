@@ -216,7 +216,7 @@ static void isr_reset(struct k_timer *timer)
 static void reset_cli(void)
 {
 	onoff_cli = (struct onoff_client){};
-	sys_notify_init_callback(&onoff_cli.notify, callback);
+	sys_notify_init_callback(&onoff_cli.notify, (sys_notify_generic_callback)callback);
 }
 
 static void reset_callback(void)

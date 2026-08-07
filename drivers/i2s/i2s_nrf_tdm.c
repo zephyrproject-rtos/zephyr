@@ -869,7 +869,8 @@ static int trigger_start(const struct device *dev)
 	 * first. If not, start the transfer directly.
 	 */
 	if (drv_data->request_clock) {
-		sys_notify_init_callback(&drv_data->clk_cli.notify, clock_started_callback);
+		sys_notify_init_callback(&drv_data->clk_cli.notify,
+					 (sys_notify_generic_callback)clock_started_callback);
 		ret = audio_clock_request(drv_data);
 		if (ret < 0) {
 			tdm_uninit(drv_data);

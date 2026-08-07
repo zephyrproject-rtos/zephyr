@@ -151,7 +151,7 @@ ZTEST(clock_control_onoff, test_clock_release_from_callback)
 	clock_off();
 	k_busy_wait(100);
 
-	sys_notify_init_callback(&cli.notify, request_cb);
+	sys_notify_init_callback(&cli.notify, (sys_notify_generic_callback)request_cb);
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	err = onoff_request(mgr, &cli);
 #else

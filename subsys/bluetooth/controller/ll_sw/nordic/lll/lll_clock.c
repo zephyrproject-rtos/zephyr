@@ -56,7 +56,7 @@ static int blocking_on(const struct device *dev, uint32_t timeout)
 	int err;
 
 	k_sem_init(&state.sem, 0, 1);
-	sys_notify_init_callback(&state.cli.notify, clock_ready);
+	sys_notify_init_callback(&state.cli.notify, (sys_notify_generic_callback)clock_ready);
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	err = onoff_request(mgr, &state.cli);
 #else
