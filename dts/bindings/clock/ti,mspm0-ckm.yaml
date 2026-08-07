@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Texas Instruments Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 Clock Control Module
+
+compatible: "ti,mspm0-ckm"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clk
