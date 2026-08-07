@@ -574,7 +574,6 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 				   chunk_usable_bytes(h, c) - mem_align_gap(h, mem));
 #endif
 
-	IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS, (heap_sanitizer_on_alloc(heap, mem, bytes)));
 	IF_ENABLED(CONFIG_MSAN, (__msan_allocated_memory(mem, bytes)));
 	IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS, (heap_sanitizer_on_alloc(heap, mem, bytes)));
 	return mem;
