@@ -5728,6 +5728,570 @@ ZTEST(net_socket_quic, test_470_connection_statistics_track_traffic)
 #endif
 }
 
+static struct quic_endpoint *quic_test_sock_endpoint(int sock)
+{
+	struct quic_context *ctx;
+	struct quic_endpoint *ep;
+
+	ctx = quic_get_context(sock);
+	zassert_not_null(ctx, "Failed to get QUIC context for socket %d", sock);
+	ep = SYS_SLIST_PEEK_HEAD_CONTAINER(&ctx->endpoints, ep, node);
+	zassert_not_null(ep, "Failed to get QUIC endpoint for socket %d", sock);
+
+	return ep;
+}
+
+static void quic_test_echo_round(int stream_sock, const uint8_t *tx, size_t tx_len,
+				 uint8_t *rx, size_t rx_size)
+{
+	struct zsock_pollfd pfd = {
+		.fd = stream_sock,
+		.events = ZSOCK_POLLIN,
+	};
+	size_t rcvd = 0;
+	int ret;
+
+	ret = quic_test_send_all(stream_sock, tx, tx_len);
+	zassert_ok(ret, "Failed to send data (%d)", ret);
+
+	while (rcvd < tx_len) {
+		pfd.revents = 0;
+
+		ret = zsock_poll(&pfd, 1, POLL_TIMEOUT_MS);
+		zassert_true(ret > 0, "Poll failed or timed out (%d)",
+			     ret < 0 ? -errno : 0);
+
+		ret = zsock_recv(stream_sock, rx + rcvd, rx_size - rcvd, 0);
+		zassert_true(ret > 0, "Failed to receive data (%d)", -errno);
+		rcvd += ret;
+	}
+
+	zassert_equal(rcvd, tx_len, "Echo length mismatch");
+	zassert_mem_equal(tx, rx, tx_len, "Echo payload mismatch");
+}
+
+/* Test 471: RFC 9001 Section 6 key update. The client initiates an update,
+ * data still flows in both directions afterwards, the server follows to the
+ * new phase, and repeated updates keep working.
+ */
+ZTEST(net_socket_quic, test_471_key_update_round_trips)
+{
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	sec_tag_t server_sec_tags[] = {
+		SERVER_CERTIFICATE_TAG,
+	};
+	sec_tag_t client_sec_tags[] = {
+		CA_CERTIFICATE_TAG,
+	};
+	static const char * const alpn_list[] = {
+		"test-quic",
+		NULL
+	};
+	static uint8_t tx_buf[] = "Hello across a key update!";
+	static uint8_t rx_buf[64];
+	struct quic_endpoint *client_ep;
+	struct quic_endpoint *server_ep;
+	int server_sock, client_sock, client_stream_sock, server_stream_sock;
+	int server_connected_sock;
+	k_tid_t tid;
+	int ret;
+
+	static K_THREAD_STACK_DEFINE(server_ku_thread_stack, STACK_SIZE);
+	static struct k_thread server_ku_thread_data;
+	static struct config server_ku_data;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	ret = k_sem_init(&server_ku_data.sem, 0, 1);
+	zassert_ok(ret, "Failed to initialize semaphore (%d)", ret);
+
+	ret = net_ipaddr_parse(LOCAL_ADDR_IPV4_STR4, strlen(LOCAL_ADDR_IPV4_STR4),
+			       (struct net_sockaddr *)&server_addr);
+	zassert_true(ret, "Failed to parse server IP address");
+
+	ret = net_ipaddr_parse(REMOTE_ADDR_IPV4_STR4, strlen(REMOTE_ADDR_IPV4_STR4),
+			       (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client IP address");
+
+	prepare_quic_socket(&server_sock, NULL,
+			    (const struct net_sockaddr *)&server_addr);
+	prepare_quic_socket(&client_sock,
+			    (const struct net_sockaddr *)&server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+
+	zassert_true(server_sock >= 0, "Failed to create server socket");
+	zassert_true(client_sock >= 0, "Failed to create client socket");
+
+	setup_quic_certs(server_sock, server_sec_tags, ARRAY_SIZE(server_sec_tags));
+	setup_alpn(server_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	server_ku_data.sock = server_sock;
+	server_ku_data.counter = 1;
+	server_ku_data.error = 0;
+	server_ku_data.connected_sock = -1;
+	server_ku_data.stream_recv_sock = -1;
+	server_ku_data.accept_delay_ms = 0;
+	server_ku_data.test_done = false;
+
+	tid = k_thread_create(&server_ku_thread_data, server_ku_thread_stack,
+			      K_THREAD_STACK_SIZEOF(server_ku_thread_stack),
+			      server_thread, &server_ku_data, NULL, NULL,
+			      K_PRIO_PREEMPT(1), 0, K_FOREVER);
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		k_thread_name_set(&server_ku_thread_data, "quic_srv_ku");
+	}
+
+	k_thread_start(tid);
+
+	ret = k_sem_take(&server_ku_data.sem, K_FOREVER);
+	zassert_ok(ret, "Failed to take semaphore (%d)", ret);
+
+	setup_quic_certs(client_sock, client_sec_tags, ARRAY_SIZE(client_sec_tags));
+	setup_alpn(client_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	client_stream_sock = quic_stream_open(client_sock, QUIC_STREAM_CLIENT,
+					      QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_true(client_stream_sock >= 0, "Failed to open client stream (%d)",
+		     client_stream_sock);
+
+	/* Generation 0 exchange, both phases 0 */
+	quic_test_echo_round(client_stream_sock, tx_buf, sizeof(tx_buf),
+			     rx_buf, sizeof(rx_buf));
+
+	client_ep = quic_test_sock_endpoint(client_sock);
+	zassert_true(client_ep->crypto.ku.initialized,
+		     "Key update state not initialized after handshake");
+	zassert_equal(client_ep->crypto.ku.tx_phase, 0U, "Unexpected initial TX phase");
+	zassert_equal(client_ep->crypto.ku.rx_phase, 0U, "Unexpected initial RX phase");
+
+	for (int round = 1; round <= 3; round++) {
+		uint8_t expected_phase = round & 1;
+
+		/* Let in-flight acknowledgements drain so the RX thread is
+		 * not sending with the TX key the update replaces.
+		 */
+		k_msleep(50);
+
+		ret = quic_endpoint_initiate_key_update(client_ep);
+		zassert_ok(ret, "Failed to initiate key update %d (%d)", round, ret);
+		zassert_equal(client_ep->crypto.ku.tx_phase, expected_phase,
+			      "TX phase did not flip on update %d", round);
+
+		/* RFC 9001 Section 6.1: no new update until the peer caught
+		 * up with this one.
+		 */
+		ret = quic_endpoint_initiate_key_update(client_ep);
+		zassert_equal(ret, -EBUSY,
+			      "Second initiate before completion returned %d", ret);
+
+		quic_test_echo_round(client_stream_sock, tx_buf, sizeof(tx_buf),
+				     rx_buf, sizeof(rx_buf));
+
+		/* The echo came back protected with the server's updated
+		 * keys, so receiving it means our RX side followed.
+		 */
+		zassert_equal(client_ep->crypto.ku.rx_phase, expected_phase,
+			      "RX phase did not follow on update %d", round);
+	}
+
+	server_ku_data.test_done = true;
+
+	ret = zsock_close(client_stream_sock);
+	zassert_equal(ret, 0, "Failed to close client stream (%d)", ret);
+
+	ret = k_thread_join(&server_ku_thread_data, K_MSEC(500));
+	zassert_equal(ret, 0, "Cannot join thread (%d)", ret);
+
+	zassert_equal(server_ku_data.error, 0, "Server thread reported error (%d)",
+		      server_ku_data.error);
+
+	server_connected_sock = server_ku_data.connected_sock;
+	zassert_true(server_connected_sock >= 0, "Invalid connected socket (%d)",
+		     server_connected_sock);
+
+	/* The server followed the client through every update */
+	server_ep = quic_test_sock_endpoint(server_connected_sock);
+	zassert_equal(server_ep->crypto.ku.tx_phase, 1U,
+		      "Server TX phase did not follow the updates");
+	zassert_equal(server_ep->crypto.ku.rx_phase, 1U,
+		      "Server RX phase did not follow the updates");
+
+	server_stream_sock = server_ku_data.stream_recv_sock;
+	zassert_true(server_stream_sock >= 0, "Invalid server stream socket (%d)",
+		     server_stream_sock);
+
+	ret = quic_stream_close(server_stream_sock);
+	zassert_equal(ret, 0, "Failed to close server stream %d (%d)",
+		      server_stream_sock, ret);
+
+	ret = quic_connection_close(server_connected_sock);
+	zassert_equal(ret, 0, "Failed to close server connection %d (%d)",
+		      server_connected_sock, ret);
+
+	ret = quic_connection_close(client_sock);
+	zassert_equal(ret, 0, "Failed to close client connection (%d)", ret);
+
+	ret = quic_connection_close(server_sock);
+	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
+}
+
+/* Test 472: a key update cannot start before the handshake has produced
+ * application keys.
+ */
+ZTEST(net_socket_quic, test_472_key_update_requires_application_keys)
+{
+	struct quic_endpoint *ep;
+	int ret, sock;
+
+	sock = quic_connection_open((struct net_sockaddr *)&remote_addr_ipv4,
+				    (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(sock >= 0, "Failed to open QUIC connection (%d)", sock);
+
+	ep = quic_test_sock_endpoint(sock);
+
+	ret = quic_endpoint_initiate_key_update(ep);
+	zassert_equal(ret, -ENOTCONN,
+		      "Key update before handshake returned %d", ret);
+
+	ret = quic_connection_close(sock);
+	zassert_ok(ret, "Failed to close connection (%d)", ret);
+}
+
+/* Give the endpoint 1-RTT keys and key update state derived from a known
+ * secret, as the TLS secret callback would after a real handshake.
+ */
+static void quic_test_setup_app_keys(struct quic_endpoint *ep,
+				     const uint8_t *secret, size_t secret_len)
+{
+	struct quic_key_update *ku = &ep->crypto.ku;
+
+	memset(ep, 0, sizeof(*ep));
+
+	/* Model an endpoint whose handshake is confirmed: quic_ku_advance_tx()
+	 * takes send_lock, and the receive path only rotates keys once the
+	 * handshake is confirmed.
+	 */
+	k_mutex_init(&ep->send_lock);
+	ep->handshake_confirmed = true;
+
+	zassert_true(quic_setup_ciphers_ex(&ep->crypto.application.rx,
+					   PSA_ALG_SHA_256,
+					   QUIC_CIPHER_AES_128_GCM,
+					   secret, secret_len),
+		     "Failed to set up RX ciphers");
+	zassert_true(quic_setup_ciphers_ex(&ep->crypto.application.tx,
+					   PSA_ALG_SHA_256,
+					   QUIC_CIPHER_AES_128_GCM,
+					   secret, secret_len),
+		     "Failed to set up TX ciphers");
+	ep->crypto.application.initialized = true;
+
+	memcpy(ku->rx_secret, secret, secret_len);
+	memcpy(ku->tx_secret, secret, secret_len);
+	ku->secret_len = secret_len;
+	ku->hash_alg = PSA_ALG_SHA_256;
+	ku->cipher_algo = QUIC_CIPHER_AES_128_GCM;
+	ku->rx_phase_first_pn = UINT64_MAX;
+	ku->initialized = true;
+}
+
+/* Build a protected 1-RTT packet the way a peer would: payload protection
+ * from the given generation's keys, header protection always from the
+ * original one (the HP key never rotates, RFC 9001 Section 6).
+ */
+static size_t quic_test_build_1rtt_packet(struct quic_pp_cipher *pp,
+					  struct quic_hp_cipher *hp,
+					  uint64_t pn, bool phase,
+					  const uint8_t *payload, size_t payload_len,
+					  uint8_t *out, size_t out_size)
+{
+	const size_t pn_offset = 1;
+	const size_t pn_len = 2;
+	size_t header_len = pn_offset + pn_len;
+	size_t ct_len = 0;
+	int ret;
+
+	out[0] = 0x40 | (phase ? QUIC_SHORT_KEY_PHASE_MASK : 0) | (pn_len - 1);
+	out[1] = (pn >> 8) & 0xFF;
+	out[2] = pn & 0xFF;
+
+	ret = quic_encrypt_payload(pp, pn, out, header_len,
+				   payload, payload_len,
+				   &out[header_len], out_size - header_len,
+				   &ct_len);
+	zassert_ok(ret, "Failed to encrypt payload (%d)", ret);
+
+	ret = quic_encrypt_header(out, header_len + ct_len, pn_offset, pn_len,
+				  hp->key_id, hp->cipher_algo);
+	zassert_ok(ret, "Failed to protect header (%d)", ret);
+
+	return header_len + ct_len;
+}
+
+static void quic_test_destroy_ciphers(struct quic_ciphers *ciphers)
+{
+	if (ciphers->hp.initialized) {
+		psa_destroy_key(ciphers->hp.key_id);
+		ciphers->hp.initialized = false;
+	}
+
+	if (ciphers->pp.initialized) {
+		psa_destroy_key(ciphers->pp.key_id);
+		ciphers->pp.initialized = false;
+	}
+}
+
+/* Test 473: after a peer-initiated key update commits, a reordered packet
+ * from before the update still decrypts with the retained
+ * previous-generation keys and does not disturb the new phase.
+ */
+ZTEST(net_socket_quic, test_473_key_update_keeps_previous_generation_keys)
+{
+	static const uint8_t secret[32] = {
+		0x3a, 0x5c, 0x11, 0xe9, 0x27, 0x80, 0x4d, 0xb2,
+		0x66, 0x0f, 0xc4, 0x39, 0x9d, 0x71, 0x28, 0x5e,
+		0xaa, 0x13, 0xf6, 0x42, 0x8b, 0xd0, 0x37, 0x6c,
+		0x91, 0x2e, 0x58, 0xc7, 0x04, 0xbf, 0x6a, 0xd5,
+	};
+	static const uint8_t msg0[16] = "generation zero";
+	static const uint8_t msg1[16] = "generation one.";
+	struct quic_endpoint *ep = &test_ep_a;
+	struct quic_ciphers peer_gen0 = { 0 };
+	struct quic_ciphers peer_gen1 = { 0 };
+	struct quic_decrypted_packet result;
+	uint8_t s1[QUIC_HASH_MAX_LEN];
+	uint8_t packet[128];
+	uint8_t plaintext[128];
+	size_t len;
+	int ret;
+
+	quic_test_setup_app_keys(ep, secret, sizeof(secret));
+
+	zassert_true(quic_setup_ciphers_ex(&peer_gen0, PSA_ALG_SHA_256,
+					   QUIC_CIPHER_AES_128_GCM,
+					   secret, sizeof(secret)),
+		     "Failed to set up peer generation 0 ciphers");
+
+	ret = quic_ku_next_secret(&ep->crypto.ku, secret, s1);
+	zassert_ok(ret, "Failed to derive the next-generation secret (%d)", ret);
+
+	zassert_true(quic_setup_ciphers_ex(&peer_gen1, PSA_ALG_SHA_256,
+					   QUIC_CIPHER_AES_128_GCM,
+					   s1, sizeof(secret)),
+		     "Failed to set up peer generation 1 ciphers");
+
+	/* Plain generation 0 packet */
+	len = quic_test_build_1rtt_packet(&peer_gen0.pp, &peer_gen0.hp, 1, false,
+					  msg0, sizeof(msg0),
+					  packet, sizeof(packet));
+	ret = quic_decrypt_packet(ep, packet, len, 1, QUIC_PACKET_TYPE_1RTT,
+				  plaintext, sizeof(plaintext), &result);
+	zassert_ok(ret, "Failed to decrypt generation 0 packet (%d)", ret);
+	zassert_mem_equal(result.payload, msg0, sizeof(msg0),
+			  "Generation 0 payload mismatch");
+
+	/* The peer initiates a key update: flipped phase bit, generation 1
+	 * payload keys, unchanged header protection.
+	 */
+	len = quic_test_build_1rtt_packet(&peer_gen1.pp, &peer_gen0.hp, 5, true,
+					  msg1, sizeof(msg1),
+					  packet, sizeof(packet));
+	ret = quic_decrypt_packet(ep, packet, len, 1, QUIC_PACKET_TYPE_1RTT,
+				  plaintext, sizeof(plaintext), &result);
+	zassert_ok(ret, "Failed to decrypt generation 1 packet (%d)", ret);
+	zassert_mem_equal(result.payload, msg1, sizeof(msg1),
+			  "Generation 1 payload mismatch");
+	zassert_equal(ep->crypto.ku.rx_phase, 1U, "RX phase did not advance");
+	zassert_equal(ep->crypto.ku.tx_phase, 1U, "TX keys did not follow the peer");
+	zassert_equal(ep->crypto.ku.rx_phase_first_pn, 5U,
+		      "Wrong first packet number for the new phase");
+	zassert_true(ep->crypto.ku.prev_rx_pp.initialized,
+		     "Previous-generation keys were not kept");
+
+	/* A generation 0 packet reordered to after the update */
+	len = quic_test_build_1rtt_packet(&peer_gen0.pp, &peer_gen0.hp, 2, false,
+					  msg0, sizeof(msg0),
+					  packet, sizeof(packet));
+	ret = quic_decrypt_packet(ep, packet, len, 1, QUIC_PACKET_TYPE_1RTT,
+				  plaintext, sizeof(plaintext), &result);
+	zassert_ok(ret, "Failed to decrypt reordered previous-generation packet (%d)",
+		   ret);
+	zassert_mem_equal(result.payload, msg0, sizeof(msg0),
+			  "Previous-generation payload mismatch");
+	zassert_equal(ep->crypto.ku.rx_phase, 1U,
+		      "A reordered old packet must not change the phase");
+	zassert_equal(ep->crypto.ku.rx_phase_first_pn, 5U,
+		      "A reordered old packet must not move the phase boundary");
+
+	quic_test_destroy_ciphers(&peer_gen0);
+	quic_test_destroy_ciphers(&peer_gen1);
+	quic_crypto_context_destroy(&ep->crypto.application);
+	quic_key_update_destroy(&ep->crypto.ku);
+}
+
+/* Test 474: a forged key phase flip fails the trial decrypt and leaves the
+ * whole key update state untouched, while the derived candidate keys are
+ * retained (RFC 9001 Section 6.3) and used when the real update arrives.
+ */
+ZTEST(net_socket_quic, test_474_forged_key_phase_flip_leaves_state_untouched)
+{
+	static const uint8_t secret[32] = {
+		0xd5, 0x6a, 0xbf, 0x04, 0xc7, 0x58, 0x2e, 0x91,
+		0x6c, 0x37, 0xd0, 0x8b, 0x42, 0xf6, 0x13, 0xaa,
+		0x5e, 0x28, 0x71, 0x9d, 0x39, 0xc4, 0x0f, 0x66,
+		0xb2, 0x4d, 0x80, 0x27, 0xe9, 0x11, 0x5c, 0x3a,
+	};
+	static const uint8_t msg0[16] = "generation zero";
+	static const uint8_t msg1[16] = "generation one.";
+	struct quic_endpoint *ep = &test_ep_a;
+	struct quic_ciphers peer_gen0 = { 0 };
+	struct quic_ciphers peer_gen1 = { 0 };
+	struct quic_decrypted_packet result;
+	uint8_t rx_secret_snapshot[QUIC_HASH_MAX_LEN];
+	uint8_t s1[QUIC_HASH_MAX_LEN];
+	uint8_t packet[128];
+	uint8_t plaintext[128];
+	size_t len;
+	int ret;
+
+	quic_test_setup_app_keys(ep, secret, sizeof(secret));
+
+	zassert_true(quic_setup_ciphers_ex(&peer_gen0, PSA_ALG_SHA_256,
+					   QUIC_CIPHER_AES_128_GCM,
+					   secret, sizeof(secret)),
+		     "Failed to set up peer generation 0 ciphers");
+
+	ret = quic_ku_next_secret(&ep->crypto.ku, secret, s1);
+	zassert_ok(ret, "Failed to derive the next-generation secret (%d)", ret);
+
+	zassert_true(quic_setup_ciphers_ex(&peer_gen1, PSA_ALG_SHA_256,
+					   QUIC_CIPHER_AES_128_GCM,
+					   s1, sizeof(secret)),
+		     "Failed to set up peer generation 1 ciphers");
+
+	len = quic_test_build_1rtt_packet(&peer_gen0.pp, &peer_gen0.hp, 1, false,
+					  msg0, sizeof(msg0),
+					  packet, sizeof(packet));
+	ret = quic_decrypt_packet(ep, packet, len, 1, QUIC_PACKET_TYPE_1RTT,
+				  plaintext, sizeof(plaintext), &result);
+	zassert_ok(ret, "Failed to decrypt generation 0 packet (%d)", ret);
+
+	memcpy(rx_secret_snapshot, ep->crypto.ku.rx_secret,
+	       sizeof(rx_secret_snapshot));
+
+	/* Forged flip: the phase bit is set but the payload is still
+	 * protected with generation 0 keys, so the trial decrypt with the
+	 * generation 1 keys must fail.
+	 */
+	len = quic_test_build_1rtt_packet(&peer_gen0.pp, &peer_gen0.hp, 6, true,
+					  msg0, sizeof(msg0),
+					  packet, sizeof(packet));
+	ret = quic_decrypt_packet(ep, packet, len, 1, QUIC_PACKET_TYPE_1RTT,
+				  plaintext, sizeof(plaintext), &result);
+	zassert_equal(ret, -EBADMSG, "Forged phase flip must fail AEAD (%d)", ret);
+	zassert_equal(ep->crypto.ku.rx_phase, 0U,
+		      "A failed trial must not change the RX phase");
+	zassert_equal(ep->crypto.ku.tx_phase, 0U,
+		      "A failed trial must not change the TX phase");
+	zassert_false(ep->crypto.ku.prev_rx_pp.initialized,
+		      "A failed trial must not shift the generations");
+	zassert_true(ep->crypto.ku.next_rx_pp.initialized,
+		     "The derived candidate keys should be retained");
+	zassert_mem_equal(ep->crypto.ku.rx_secret, rx_secret_snapshot,
+			  sizeof(rx_secret_snapshot),
+			  "A failed trial must not advance the RX secret");
+
+	/* The real update commits with the retained candidate keys */
+	len = quic_test_build_1rtt_packet(&peer_gen1.pp, &peer_gen0.hp, 6, true,
+					  msg1, sizeof(msg1),
+					  packet, sizeof(packet));
+	ret = quic_decrypt_packet(ep, packet, len, 1, QUIC_PACKET_TYPE_1RTT,
+				  plaintext, sizeof(plaintext), &result);
+	zassert_ok(ret, "Failed to decrypt the real generation 1 packet (%d)", ret);
+	zassert_mem_equal(result.payload, msg1, sizeof(msg1),
+			  "Generation 1 payload mismatch");
+	zassert_equal(ep->crypto.ku.rx_phase, 1U, "RX phase did not advance");
+	zassert_false(ep->crypto.ku.next_rx_pp.initialized,
+		      "The candidate keys must be consumed on commit");
+
+	quic_test_destroy_ciphers(&peer_gen0);
+	quic_test_destroy_ciphers(&peer_gen1);
+	quic_crypto_context_destroy(&ep->crypto.application);
+	quic_key_update_destroy(&ep->crypto.ku);
+}
+
+/* Test 475: a peer must not initiate a key update before the handshake is
+ * confirmed (RFC 9001 Section 6.1). A phase flip received while the handshake
+ * is not yet confirmed is rejected without rotating either the receive or the
+ * send keys, so the connection can be closed with KEY_UPDATE_ERROR.
+ */
+ZTEST(net_socket_quic, test_475_key_update_before_handshake_confirmed_is_rejected)
+{
+	static const uint8_t secret[32] = {
+		0x27, 0x6b, 0xd4, 0x0a, 0x8f, 0x13, 0xc9, 0x52,
+		0xe0, 0x7d, 0x31, 0xaa, 0x64, 0xb8, 0x1f, 0x46,
+		0x9c, 0x02, 0xf5, 0x7e, 0x38, 0xd1, 0x6a, 0x23,
+		0xbc, 0x49, 0x85, 0x0e, 0x71, 0xa6, 0x5d, 0xf2,
+	};
+	static const uint8_t msg[16] = "premature updte";
+	struct quic_endpoint *ep = &test_ep_a;
+	struct quic_ciphers peer_gen0 = { 0 };
+	struct quic_ciphers peer_gen1 = { 0 };
+	struct quic_decrypted_packet result;
+	uint8_t s1[QUIC_HASH_MAX_LEN];
+	uint8_t packet[128];
+	uint8_t plaintext[128];
+	uint8_t rx_phase_before;
+	uint8_t tx_phase_before;
+	size_t len;
+	int ret;
+
+	quic_test_setup_app_keys(ep, secret, sizeof(secret));
+
+	/* Model a connection whose handshake is not yet confirmed. */
+	ep->handshake_confirmed = false;
+	rx_phase_before = ep->crypto.ku.rx_phase;
+	tx_phase_before = ep->crypto.ku.tx_phase;
+
+	/* Header protection never rotates; payload protection uses the next
+	 * generation, and the key phase bit is flipped: a key update.
+	 */
+	zassert_true(quic_setup_ciphers_ex(&peer_gen0, PSA_ALG_SHA_256,
+					   QUIC_CIPHER_AES_128_GCM,
+					   secret, sizeof(secret)),
+		     "Failed to set up peer generation 0 ciphers");
+
+	ret = quic_ku_next_secret(&ep->crypto.ku, secret, s1);
+	zassert_ok(ret, "Failed to derive the next-generation secret (%d)", ret);
+
+	zassert_true(quic_setup_ciphers_ex(&peer_gen1, PSA_ALG_SHA_256,
+					   QUIC_CIPHER_AES_128_GCM,
+					   s1, sizeof(secret)),
+		     "Failed to set up peer generation 1 ciphers");
+
+	len = quic_test_build_1rtt_packet(&peer_gen1.pp, &peer_gen0.hp, 1, true,
+					  msg, sizeof(msg), packet, sizeof(packet));
+
+	ret = quic_decrypt_packet(ep, packet, len, 1, QUIC_PACKET_TYPE_1RTT,
+				  plaintext, sizeof(plaintext), &result);
+	zassert_equal(ret, -EPROTO,
+		      "A pre-confirmation key update must be rejected (%d)", ret);
+	zassert_equal(ep->crypto.ku.rx_phase, rx_phase_before,
+		      "The RX phase must not rotate before handshake confirmation");
+	zassert_equal(ep->crypto.ku.tx_phase, tx_phase_before,
+		      "The TX phase must not advance before handshake confirmation");
+	zassert_false(ep->crypto.ku.next_rx_pp.initialized,
+		      "No candidate keys should be committed for a rejected update");
+
+	quic_test_destroy_ciphers(&peer_gen0);
+	quic_test_destroy_ciphers(&peer_gen1);
+	quic_crypto_context_destroy(&ep->crypto.application);
+	quic_key_update_destroy(&ep->crypto.ku);
+}
+
 ZTEST(net_socket_quic, test_480_retry_token_round_trip)
 {
 	static const uint8_t orig_dcid[] = {
