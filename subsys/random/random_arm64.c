@@ -18,7 +18,7 @@ void z_impl_sys_rand_get(void *dst, size_t outlen)
 
 		if (__builtin_aarch64_rndr(&value) != 0) {
 			if (++failure_counter > CONFIG_ARM64_RANDOM_GENERATOR_MAX_RETRIES) {
-				__ASSERT_PRINT("ARM64 RNDR keeps failing\n");
+				__ASSERT(false, "ARM64 RNDR keeps failing");
 				k_panic();
 			}
 			k_usleep(CONFIG_ARM64_RANDOM_GENERATOR_RETRY_WAIT_USEC);
