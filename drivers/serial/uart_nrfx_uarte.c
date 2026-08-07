@@ -3242,7 +3242,7 @@ static int uarte_instance_deinit(const struct device *dev)
 		 },									\
 		 .bounce_buf_len = sizeof(uart##idx##_bounce_buf) / 2,			\
 		 .bounce_buf_swap_len = UARTE_BUF_SWAP_LEN(sizeof(uart##idx##_bounce_buf) / 2,\
-				UARTE_US_TO_BYTES(UARTE_PROP(idx, current_speed))),	\
+				UARTE_PROP(idx, current_speed)),	\
 		 .cbwt_data = &uart##idx##_bounce_data,))
 
 #define UARTE_COUNT_BYTES_WITH_TIMER_VALIDATE_CONFIG(idx) \
