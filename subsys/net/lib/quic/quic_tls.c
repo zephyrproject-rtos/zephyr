@@ -6893,8 +6893,8 @@ static int tls_opt_alpn_list_set(struct quic_tls_context *context,
 
 	alpn_cnt = optlen / sizeof(const char *);
 
-	/* alpn list must be NULL terminated. */
-	if (alpn_cnt > ARRAY_SIZE(context->options.alpn_list)) {
+	/* alpn list must be NULL terminated, so leave room for the terminator. */
+	if (alpn_cnt + 1 > ARRAY_SIZE(context->options.alpn_list)) {
 		return -EINVAL;
 	}
 
