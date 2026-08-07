@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Google LLC
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/device_runtime_internal.h>
 
 #include <zephyr/logging/log.h>
 
@@ -21,8 +23,9 @@ struct pd_gpio_monitor_config {
 
 struct pd_gpio_monitor_data {
 	struct gpio_callback callback;
+	struct k_work work;
 	const struct device *dev;
-	bool is_powered;
+	atomic_t is_powered;
 };
 
 #ifdef CONFIG_POWER_DOMAIN_GPIO_MONITOR_INITIAL_READ
@@ -46,15 +49,15 @@ static int pd_on_domain_visitor(const struct device *dev, void *context)
 		return 0;
 	}
 
-	dev->pm->base.usage = 0;
-	(void)pm_device_action_run(dev, visitor_context->action);
+	(void)z_pm_device_runtime_power_domain_action_run(dev, visitor_context->action);
 	return 0;
 }
 
-static void pd_update_power_state(const struct device *dev)
+static void pd_update_power_state(struct k_work *work)
 {
+	struct pd_gpio_monitor_data *data = CONTAINER_OF(work, struct pd_gpio_monitor_data, work);
+	const struct device *dev = data->dev;
 	const struct pd_gpio_monitor_config *config = dev->config;
-	struct pd_gpio_monitor_data *data = dev->data;
 	struct pd_visitor_context context = {.domain = dev};
 	int rc;
 
@@ -64,25 +67,23 @@ static void pd_update_power_state(const struct device *dev)
 		return;
 	}
 
-	data->is_powered = rc;
+	atomic_set(&data->is_powered, rc);
 	if (rc == 0) {
-		context.action = PM_DEVICE_ACTION_SUSPEND;
-		(void)device_supported_foreach(dev, pd_on_domain_visitor, &context);
 		context.action = PM_DEVICE_ACTION_TURN_OFF;
 		(void)device_supported_foreach(dev, pd_on_domain_visitor, &context);
 		return;
 	}
 
-	pm_device_children_action_run(data->dev, PM_DEVICE_ACTION_TURN_ON, NULL);
+	context.action = PM_DEVICE_ACTION_TURN_ON;
+	(void)device_supported_foreach(dev, pd_on_domain_visitor, &context);
 }
 
 static void pd_gpio_monitor_callback(const struct device *port, struct gpio_callback *cb,
 				     gpio_port_pins_t pins)
 {
 	struct pd_gpio_monitor_data *data = CONTAINER_OF(cb, struct pd_gpio_monitor_data, callback);
-	const struct device *dev = data->dev;
 
-	pd_update_power_state(dev);
+	(void)k_work_submit(&data->work);
 }
 
 static int pd_gpio_monitor_pm_action(const struct device *dev, enum pm_device_action action)
@@ -94,7 +95,7 @@ static int pd_gpio_monitor_pm_action(const struct device *dev, enum pm_device_ac
 	case PM_DEVICE_ACTION_TURN_OFF:
 		return -ENOTSUP;
 	case PM_DEVICE_ACTION_RESUME:
-		if (!data->is_powered) {
+		if (atomic_get(&data->is_powered) == 0) {
 			return -EAGAIN;
 		}
 		break;
@@ -114,7 +115,9 @@ static int pd_gpio_monitor_initial_read(void)
 			continue;
 		}
 		/* read GPIO and handle state */
-		pd_update_power_state(domain_devs[i]);
+		struct pd_gpio_monitor_data *data = domain_devs[i]->data;
+
+		(void)k_work_submit(&data->work);
 	}
 
 	return 0;
@@ -134,6 +137,7 @@ static int pd_gpio_monitor_init(const struct device *dev)
 	int rc;
 
 	data->dev = dev;
+	k_work_init(&data->work, pd_update_power_state);
 
 	if (!gpio_is_ready_dt(&config->power_good_gpio)) {
 		LOG_ERR("GPIO port %s is not ready", config->power_good_gpio.port->name);
