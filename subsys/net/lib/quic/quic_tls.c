@@ -3103,6 +3103,83 @@ static int build_client_finished(struct quic_tls_context *ctx,
 }
 
 /*
+ * Verify a Finished message received from the peer (RFC 8446 Section 4.4.4)
+ *
+ * verify_data = HMAC(finished_key, transcript_hash), where finished_key comes
+ * from the peer's handshake traffic secret and the transcript covers every
+ * handshake message up to but not including this one. The caller must not have
+ * added the Finished message to the transcript yet.
+ */
+static int verify_peer_finished(struct quic_tls_context *ctx,
+				const uint8_t *msg, size_t msg_len)
+{
+	const uint8_t *peer_secret;
+	uint8_t finished_key[QUIC_HASH_MAX_LEN];
+	uint8_t transcript[QUIC_HASH_MAX_LEN];
+	size_t transcript_len;
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t hmac_key_id;
+	psa_status_t status;
+	int ret;
+
+	if (msg_len != ctx->ks.hash_len) {
+		NET_DBG("Finished is %zu bytes, expected %zu", msg_len, ctx->ks.hash_len);
+		return -EBADMSG;
+	}
+
+	/* A server verifies the client's Finished and vice versa. */
+	peer_secret = ctx->ep->is_server ? ctx->ks.client_hs_traffic_secret :
+					   ctx->ks.server_hs_traffic_secret;
+
+	ret = quic_hkdf_expand_label_ex(ctx->ks.hash_alg,
+					peer_secret, ctx->ks.hash_len,
+					(const uint8_t *)TLS13_LABEL_FINISHED,
+					strlen(TLS13_LABEL_FINISHED),
+					NULL, 0,
+					finished_key, ctx->ks.hash_len);
+	if (ret != 0) {
+		NET_DBG("Failed to derive peer finished_key: %d", ret);
+		return ret;
+	}
+
+	ret = transcript_hash_get(ctx, transcript, &transcript_len);
+	if (ret != 0) {
+		NET_DBG("Failed to get transcript hash: %d", ret);
+		goto out;
+	}
+
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_VERIFY_MESSAGE);
+	psa_set_key_algorithm(&attr, PSA_ALG_HMAC(ctx->ks.hash_alg));
+	psa_set_key_type(&attr, PSA_KEY_TYPE_HMAC);
+
+	status = psa_import_key(&attr, finished_key, ctx->ks.hash_len, &hmac_key_id);
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Failed to import HMAC key: %d", status);
+		ret = -EIO;
+		goto out;
+	}
+
+	/* psa_mac_verify() compares in constant time. */
+	status = psa_mac_verify(hmac_key_id, PSA_ALG_HMAC(ctx->ks.hash_alg),
+				transcript, transcript_len, msg, msg_len);
+
+	psa_destroy_key(hmac_key_id);
+
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Peer Finished did not verify (%d)", status);
+		ret = -EBADMSG;
+		goto out;
+	}
+
+	ret = 0;
+out:
+	crypto_zero(finished_key, sizeof(finished_key));
+	crypto_zero(transcript, sizeof(transcript));
+
+	return ret;
+}
+
+/*
  * Send client's Certificate and CertificateVerify messages
  * Called when server requested client authentication via CertificateRequest
  *
@@ -4807,6 +4884,16 @@ ZTESTABLE_STATIC int process_handshake_message(struct quic_tls_context *ctx,
 			NET_DBG("Peer certificate required but not provided");
 			return -EACCES;
 		}
+
+		/* Verify before the transcript is extended, since verify_data
+		 * covers everything up to but not including this message.
+		 */
+		ret = verify_peer_finished(ctx, msg, msg_len);
+		if (ret != 0) {
+			NET_DBG("Finished verification failed: %d", ret);
+			return ret;
+		}
+
 		/* Update transcript with Finished message */
 		ret = transcript_update(ctx, full_msg, full_msg_len);
 		if (ret != 0) {
