@@ -426,7 +426,7 @@ static inline int z_impl_haptics_select_source(const struct device *dev,
  * @param[in] dev Pointer to the device structure for the haptic device instance
  * @param[in] src Playback source (of type @ref haptics_source)
  * @param[in] cfg Source configuration (of type @ref haptics_config) or NULL
- * @param[in] level Device-specific output level value, rfer to the device driver for details
+ * @param[in] level Device-specific output level value, refer to the device driver for details
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOSYS if not implemented
