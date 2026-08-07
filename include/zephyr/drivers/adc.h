@@ -1422,7 +1422,7 @@ static inline int adc_raw_to_millivolts(int32_t ref_mv, enum adc_gain gain, uint
 	if (ret == 0) {
 		adc_mv = adc_mv >> resolution;
 		if (adc_mv > INT32_MAX || adc_mv < INT32_MIN) {
-			__ASSERT_MSG_INFO("conversion result is out of range");
+			__ASSERT(false, "conversion result is out of range");
 		}
 
 		*valp = (int32_t)adc_mv;
