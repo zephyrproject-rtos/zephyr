@@ -120,9 +120,18 @@ enum cs40l26_monitor {
 };
 
 static const struct cs40l26_sensor cs40l26_sensors[] = {
-	[HAPTICS_MONITOR_BEMF] = {.is_signed = true, .n = 23, .m = 0, .full_scale = 24},
-	[HAPTICS_MONITOR_VBST] = {.is_signed = false, .n = 24, .m = 0, .full_scale = 14},
-	[HAPTICS_MONITOR_VOUT] = {.is_signed = true, .n = 23, .m = 0, .full_scale = 24},
+	[HAPTICS_MONITOR_BEMF] = {.is_signed = true,
+				  .n = 23,
+				  .m = 0,
+				  .full_scale = {.val1 = 12, .val2 = 300000}},
+	[HAPTICS_MONITOR_VBST] = {.is_signed = false,
+				  .n = 24,
+				  .m = 0,
+				  .full_scale = {.val1 = 14, .val2 = 0}},
+	[HAPTICS_MONITOR_VOUT] = {.is_signed = true,
+				  .n = 23,
+				  .m = 0,
+				  .full_scale = {.val1 = 12, .val2 = 300000}},
 };
 
 static const struct cs40lxx_multi_write cs40l26_irq_clear[] = {
@@ -1052,6 +1061,7 @@ static int cs40l26_monitor_get(const struct device *dev, const enum haptics_moni
 {
 	__maybe_unused const struct cs40l26_config *const config = dev->config;
 	struct cs40l26_data *const data = dev->data;
+	struct sensor_value full_scale;
 	uint32_t reading;
 	int offset, ret;
 
@@ -1104,7 +1114,9 @@ error_pm:
 			return ret;
 		}
 
-		ret = sensor_value_scale(val, cs40l26_sensors[monitor].full_scale, val);
+		full_scale = cs40l26_sensors[monitor].full_scale;
+
+		ret = sensor_value_multiply(val, &full_scale, val);
 	}
 
 	return ret;
