@@ -10,7 +10,7 @@ description: |
 
 compatible: "raspberrypi,bcm2711-framebuffer"
 
-include: display-controller.yaml
+include: simple-framebuffer.yaml
 
 properties:
   pixel-format:
@@ -25,7 +25,7 @@ properties:
   red-blue-swap:
     type: boolean
     description: |
-      Flip RGB color channels order for compatibility with VideoCore firmware.
+      Flip RGB color channels order for compatibility with Videocore firmware.
 
 examples:
   - |

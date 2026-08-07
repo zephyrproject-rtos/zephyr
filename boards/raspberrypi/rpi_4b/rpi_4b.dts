@@ -71,19 +71,11 @@
 		};
 	};
 
-	firmware: firmware {
+	rpi_fw: firmware {
 		compatible = "raspberrypi,bcm283x-firmware";
 		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
 		mbox-names = "vc";
 		shared-memory = <&vc_mem>;
-
-		fb0: framebuffer {
-			compatible = "raspberrypi,bcm2711-framebuffer";
-			pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
-			width = <640>;
-			height = <480>;
-			red-blue-swap;
-		};
 
 		exp_gpio: gpio {
 			compatible = "raspberrypi,bcm283x-gpio";
@@ -93,10 +85,19 @@
 		};
 	};
 
+	fb0: framebuffer {
+		compatible = "raspberrypi,bcm2711-framebuffer";
+		firmware = <&rpi_fw>;
+		pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
+		width = <640>;
+		height = <480>;
+		red-blue-swap;
+	};
+
 	power-domains {
 		usb_hcd: power-domain-usb {
 			compatible = "raspberrypi,bcm283x-power";
-			firmware = <&firmware>;
+			firmware = <&rpi_fw>;
 			#power-domain-cells = <0>;
 			power-domain-id = <RPI_POWER_DOMAIN_USB_HCD>;
 		};
