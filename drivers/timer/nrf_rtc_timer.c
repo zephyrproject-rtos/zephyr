@@ -63,8 +63,6 @@ extern void rtc_pretick_rtc1_isr_hook(void);
 
 static volatile uint32_t overflow_cnt;
 static volatile uint64_t anchor;
-static uint64_t last_count;
-static uint32_t last_elapsed;
 static bool sys_busy;
 
 struct z_nrf_rtc_timer_chan_data {
@@ -496,26 +494,46 @@ static inline void anchor_update(uint32_t cc_value)
 
 static void sys_clock_timeout_handler(int32_t chan,
 				      uint64_t expire_time,
+				      void *user_data);
+
+/*
+ * A free-running counter, software-extended to 64 bits by
+ * z_nrf_rtc_timer_read(), plus an absolute compare: a COMPARE_ORDERED backend.
+ * compare_set() raises the interrupt straight away for a target the counter has
+ * already passed, so the core's single write is enough. The arm range is the
+ * driver's own MAX_CYCLES, half the 24-bit counter span, which is set by the
+ * compare register rather than by the extended count the core reads.
+ */
+#define TIMER_CORE_BACKEND_COMPARE_ORDERED
+#define TIMER_CORE_COUNTER_WIDTH 64
+#define TIMER_CORE_ALARM_MAX_CYCLES MAX_CYCLES
+
+static inline uint64_t timer_driver_cycle_get(void)
+{
+	return z_nrf_rtc_timer_read();
+}
+
+static inline void timer_driver_set_compare(uint64_t cycles)
+{
+	/* A deadline is pending again, so the overflow-trigger helper must
+	 * keep out of the way (see z_nrf_rtc_timer_trigger_overflow()).
+	 */
+	sys_busy = true;
+	compare_set(SYS_CLOCK_CH, cycles, sys_clock_timeout_handler, NULL, false);
+}
+
+#include "system_timer_generic.h"
+
+static void sys_clock_timeout_handler(int32_t chan,
+				      uint64_t expire_time,
 				      void *user_data)
 {
-	uint32_t cc_value = absolute_time_to_cc(expire_time);
-	uint64_t now = z_nrf_rtc_timer_read();
-	uint32_t dticks = (uint32_t)(now - last_count) / CYC_PER_TICK;
+	ARG_UNUSED(chan);
+	ARG_UNUSED(user_data);
 
-	last_count += dticks * CYC_PER_TICK;
-	last_elapsed = 0;
+	anchor_update(absolute_time_to_cc(expire_time));
 
-	anchor_update(cc_value);
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* protection is not needed because we are in the RTC interrupt
-		 * so it won't get preempted by the interrupt.
-		 */
-		compare_set(chan, last_count + CYC_PER_TICK,
-					  sys_clock_timeout_handler, NULL, false);
-	}
-
-	sys_clock_announce(dticks);
+	timer_core_announce();
 }
 
 static bool channel_processing_check_and_clear(int32_t chan)
@@ -667,50 +685,19 @@ bail:
 	return err;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_no_timeout(void)
 {
-	ARG_UNUSED(idle);
-	uint64_t target_time;
-
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		target_time = last_count + MAX_CYCLES;
-		sys_busy = false;
-	} else {
-		target_time = last_count +
-			      ((uint64_t)last_elapsed + (uint64_t)ticks) * CYC_PER_TICK;
-		/* Clamp to fit the 24-bit compare register and keep the
-		 * anchor in its valid range (see anchor_update). A resulting
-		 * target in the past is fine: compare_set forces an immediate
-		 * IRQ and the handler catches up in one shot.
-		 */
-		if ((target_time - last_count) > MAX_CYCLES) {
-			target_time = last_count + MAX_CYCLES;
-		}
-		sys_busy = true;
-	}
-
-	compare_set(SYS_CLOCK_CH, target_time, sys_clock_timeout_handler, NULL, false);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-
-	uint32_t dticks = (uint32_t)(z_nrf_rtc_timer_read() - last_count) / CYC_PER_TICK;
-
-	last_elapsed = dticks;
-	return dticks;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return (uint32_t)z_nrf_rtc_timer_read();
+	/* No timeout pending: push the compare as far out as the counter
+	 * allows and drop the busy flag consumed by the overflow-trigger
+	 * path.
+	 */
+	sys_busy = false;
+	compare_set(SYS_CLOCK_CH, z_nrf_rtc_timer_read() + MAX_CYCLES,
+		    sys_clock_timeout_handler, NULL, false);
 }
 
 static void int_event_disable_rtc(void)
@@ -768,10 +755,7 @@ static int sys_clock_driver_init(void)
 		alloc_mask = BIT_MASK(CHAN_COUNT) & ~BIT(SYS_CLOCK_CH);
 	}
 
-	uint32_t initial_timeout = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
-		MAX_CYCLES : CYC_PER_TICK;
-
-	compare_set(SYS_CLOCK_CH, initial_timeout, sys_clock_timeout_handler, NULL, false);
+	timer_core_init();
 
 #if defined(CONFIG_CLOCK_CONTROL_NRF) ||                                                           \
 	(defined(CONFIG_CLOCK_CONTROL_NRF_COMMON) &&                                               \
