@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The node lives under a container that fixes the address/size cell counts so
+ * that the overlay is valid on both 32-bit and 64-bit boards, whose root nodes
+ * disagree on those.
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_anchored_dev: gpio@f0f0f0 {
+			compatible = "vnd,gpio-device";
+			status = "okay";
+			reg = <0xf0f0f0 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+		};
+	};
+};
