@@ -55,6 +55,8 @@ static uint64_t cyc_sys_compensated;
 #define MCUX_OS_TIMER_LPM_GENERIC 1
 /* Indicates the low-power companion has been armed for the current sleep. */
 static bool lpm_companion_armed;
+/* Reports whether the current handoff state has a valid wake deadline. */
+static bool lpm_companion_ready = true;
 #elif DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby)) && CONFIG_PM
 /* Legacy deep-sleep-counter path (see comment above). */
 #define MCUX_OS_TIMER_LPM_LEGACY 1
@@ -132,8 +134,11 @@ void mcux_lpc_ostick_isr(const void *arg)
 static uint32_t mcux_lpc_ostick_set_counter_timeout(uint64_t timeout_us)
 {
 	/* Arm the system-timer low-power companion to wake the system. */
-	z_sys_clock_lpm_enter(timeout_us);
-	lpm_companion_armed = true;
+	lpm_companion_armed = z_sys_clock_lpm_enter(timeout_us);
+	lpm_companion_ready = lpm_companion_armed;
+	if (!lpm_companion_armed) {
+		return 0;
+	}
 
 	/* Capture the OS Timer value; it loses its state in a handoff-power-state. */
 	cyc_sys_compensated += OSTIMER_GetCurrentTimerValue(base);
@@ -147,6 +152,11 @@ static uint32_t mcux_lpc_ostick_set_counter_timeout(uint64_t timeout_us)
 	base->OSEVENT_CTRL &= ~OSTIMER_OSEVENT_CTRL_OSTIMER_INTENA_MASK;
 
 	return 0;
+}
+
+bool z_sys_clock_lpm_companion_ready(void)
+{
+	return lpm_companion_ready;
 }
 
 static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
@@ -334,6 +344,7 @@ static void mcux_os_timer_set_lp_counter_timeout(void)
 	 * from low power modes.
 	 */
 	if (!os_timer_state_needs_handoff(pm_state_next_get(0)->state)) {
+		lpm_companion_ready = true;
 		return;
 	}
 

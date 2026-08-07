@@ -130,6 +130,14 @@ static volatile uint32_t overflow_cyc;
  */
 static bool timeout_idle;
 
+/* Result of the most recent low-power companion arm attempt. */
+static bool lpm_companion_ready = true;
+
+bool z_sys_clock_lpm_companion_ready(void)
+{
+	return lpm_companion_ready;
+}
+
 #if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
 /* Cycle counter before entering the idle state. */
 static uint32_t cycle_pre_idle;
@@ -443,11 +451,18 @@ void sys_clock_idle_enter(uint32_t ticks)
 
 	timeout_idle = true;
 
-	/**
+	/*
 	 * Invoke platform-specific layer to configure LPTIM
 	 * such that system wakes up after timeout elapses.
 	 */
-	z_sys_clock_lpm_enter(timeout_us);
+	lpm_companion_ready = z_sys_clock_lpm_enter(timeout_us);
+	if (!lpm_companion_ready) {
+		/* Keep the primary timer configured, but make the idle request
+		 * visible to PM as unsafe for STOP entry.
+		 */
+		timeout_idle = false;
+		return;
+	}
 
 #if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
 	/* Store current value of SysTick counter to be able to

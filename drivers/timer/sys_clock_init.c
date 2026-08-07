@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/drivers/timer/system_timer_lpm.h>
 
 /* Weak-linked noop defaults for optional driver interfaces*/
 
@@ -47,4 +48,9 @@ void __weak sys_clock_idle_enter(uint32_t ticks)
 	 * that does.
 	 */
 	sys_clock_set_timeout(ticks, true);
+}
+
+bool __weak z_sys_clock_lpm_companion_ready(void)
+{
+	return true;
 }

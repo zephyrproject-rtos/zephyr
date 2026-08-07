@@ -155,7 +155,7 @@ bool rp2350_powman_had_powerdown(void)
 /* POWMAN timer value (ms) captured on entry; used to report elapsed time on exit. */
 static uint64_t lpm_enter_ms;
 
-void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
+bool z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 {
 	uint64_t deadline_ms;
 
@@ -174,6 +174,8 @@ void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 	}
 
 	powman_enable_alarm_wakeup_at_ms(deadline_ms);
+
+	return true;
 }
 
 uint64_t z_sys_clock_lpm_exit(void)

@@ -116,9 +116,12 @@ static void lpm_timer_isr(void)
 	Cy_MCWDT_SetInterruptMask(mcwdt_base, 0U);
 }
 
-void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
+bool z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 {
 	uint32_t delay_ticks;
+	const uint64_t min_delay_us =
+		((uint64_t)LPM_MIN_DELAY_TICKS * 1000000ULL + LPM_TIMER_SRC_FREQ - 1U) /
+		LPM_TIMER_SRC_FREQ;
 	uint16_t c0_now;
 	uint16_t c0_match;
 	uint16_t c0_settle;
@@ -126,6 +129,10 @@ void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 	uint16_t c1_match;
 	uint32_t timeout;
 	uint32_t key;
+
+	if (max_lpm_time_us < min_delay_us) {
+		return false;
+	}
 
 	/* Convert microseconds to LFCLK ticks, clamped to the programmable range. */
 	if (max_lpm_time_us > ((uint64_t)LPM_MAX_DELAY_TICKS * 1000000ULL / LPM_TIMER_SRC_FREQ)) {
@@ -213,6 +220,8 @@ void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 	Cy_MCWDT_ClearInterrupt(mcwdt_base, CY_MCWDT_CTR1);
 	Cy_MCWDT_SetInterruptMask(mcwdt_base, CY_MCWDT_CTR1);
 	irq_enable(MCWDT_IRQ_NUM);
+
+	return true;
 }
 
 uint64_t z_sys_clock_lpm_exit(void)
