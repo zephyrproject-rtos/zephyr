@@ -781,6 +781,17 @@ struct quic_endpoint {
 	} anti_amplification;
 #endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 
+	/** RETIRE_CONNECTION_ID frames that could not be sent when their CID
+	 * was dropped, because the reply budget of the payload that retired
+	 * them was used up or the send itself failed. They are sent from the
+	 * budget of later payloads, so the retirement is delayed, never lost.
+	 */
+	struct {
+		struct k_spinlock lock;
+		uint64_t seq[CONFIG_QUIC_MAX_PEER_CIDS];
+		uint8_t count;
+	} retire_backlog;
+
 	/** Stream-count limits, how many streams we allow the peer to open.
 	 * Mirrored from our own transport parameters and grown in response to
 	 * STREAMS_BLOCKED frames (RFC 9000 ch. 19.14 / 4.6).
@@ -1376,6 +1387,12 @@ int parse_certificate(struct quic_tls_context *ctx,
 int parse_client_hello(struct quic_tls_context *ctx,
 		       const uint8_t *data, size_t len,
 		       const uint8_t *full_msg, size_t full_msg_len);
+int handle_crypto_level_packet(struct quic_endpoint *ep,
+			       enum quic_secret_level level,
+			       const uint8_t *payload,
+			       size_t payload_len,
+			       size_t total_packet_len,
+			       bool *ack_only);
 int process_handshake_message(struct quic_tls_context *ctx,
 			      uint8_t msg_type,
 			      const uint8_t *msg, size_t msg_len,
@@ -1399,6 +1416,11 @@ int quic_validate_address_token(const struct net_sockaddr *addr,
 void quic_token_cache_clear(void);
 uint64_t quic_token_now_sec(void);
 bool quic_token_claim_nonce(const uint8_t *nonce, uint64_t expires_at_sec);
+
+/* Snapshot of the reply budget consumed by the last payload parse, so tests
+ * can observe the per-payload cap without reaching into the parser's stack.
+ */
+extern uint16_t quic_test_reply_budget_spent;
 void quic_token_cache_store(const struct net_sockaddr *remote_addr,
 			    const uint8_t *token, size_t token_len);
 size_t quic_token_cache_take(const struct net_sockaddr *remote_addr,
