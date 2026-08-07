@@ -1,6 +1,6 @@
 # Search paths(s) for tests which will be run in the nrf5340 net core (both app, host and controller
 # built in the net core)
-# This file is used in CI to select which tests are run
+# This file is deprecated and will be removed in a future release. Please use twister directly
 tests/bsim/bluetooth/ll/
 tests/bsim/bluetooth/host/att/eatt_notif
 tests/bsim/bluetooth/host/misc/disable

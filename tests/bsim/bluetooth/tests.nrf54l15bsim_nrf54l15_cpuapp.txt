@@ -1,5 +1,5 @@
 # Search paths(s) for tests which will be run in the nrf54l15 app core
-# This file is used in CI to select which tests are run
+# This file is deprecated and will be removed in a future release. Please use twister directly
 tests/bsim/bluetooth/ll/advx/
 tests/bsim/bluetooth/ll/conn/tests_scripts/basic_conn_encrypted_split.sh
 tests/bsim/bluetooth/ll/conn/tests_scripts/basic_conn_encrypted_split_privacy.sh
