@@ -4,24 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ITE_IT8XXX2_SOC_TIMER_H_
-#define _ITE_IT8XXX2_SOC_TIMER_H_
+#ifndef _ITE_EC_SOC_TIMER_H_
+#define _ITE_EC_SOC_TIMER_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifdef CONFIG_SOC_IT8XXX2
-bool ite_ec_timer_block_idle(void);
-#else
-static inline bool ite_ec_timer_block_idle(void)
-{
-	return false;
-}
-#endif /* CONFIG_SOC_IT8XXX2 */
+#include <stdint.h>
+#include <stdbool.h>
+
+bool ite_it8xxx2_timer_block_idle(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _ITE_IT8XXX2_SOC_TIMER_H_ */
+#endif /* _ITE_EC_SOC_TIMER_H_ */
