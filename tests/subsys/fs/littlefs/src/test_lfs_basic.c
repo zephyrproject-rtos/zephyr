@@ -221,6 +221,40 @@ static int num_dirs(struct fs_mount_t *mp)
 	return TC_PASS;
 }
 
+static int dir_rewind_and_utime(struct fs_mount_t *mp)
+{
+	struct testfs_path path;
+	struct fs_dir_t dir;
+	struct fs_dirent entry;
+	int rc;
+
+	fs_dir_t_init(&dir);
+
+	rc = fs_opendir(&dir, testfs_path_init(&path, mp, TESTFS_PATH_END));
+	zassert_equal(rc, 0, "opendir failed: %d", rc);
+
+	do {
+		rc = fs_readdir(&dir, &entry);
+		zassert_equal(rc, 0, "readdir failed: %d", rc);
+	} while (entry.name[0] != '\0');
+
+	rc = fs_rewinddir(&dir);
+	zassert_equal(rc, 0, "rewinddir failed: %d", rc);
+
+	rc = fs_readdir(&dir, &entry);
+	zassert_equal(rc, 0, "readdir after rewind failed: %d", rc);
+	zassert_not_equal(entry.name[0], '\0', "rewound dir is empty");
+
+	rc = fs_closedir(&dir);
+	zassert_equal(rc, 0, "closedir failed: %d", rc);
+
+	/* littlefs records no timestamps */
+	rc = fs_utime(testfs_path_init(&path, mp, "any", TESTFS_PATH_END), NULL);
+	zassert_equal(rc, -ENOTSUP, "expected -ENOTSUP got %d", rc);
+
+	return TC_PASS;
+}
+
 void test_fs_basic(void);
 
 /* Mount structure needed by test_fs_basic tests. */
@@ -251,6 +285,9 @@ ZTEST(littlefs, test_lfs_basic)
 
 	zassert_equal(num_dirs(mp), TC_PASS,
 		      "num_dirs failed");
+
+	zassert_equal(dir_rewind_and_utime(mp), TC_PASS,
+		      "dir_rewind_and_utime failed");
 
 	TC_PRINT("unmounting %s\n", mp->mnt_point);
 	zassert_equal(fs_unmount(mp), 0,

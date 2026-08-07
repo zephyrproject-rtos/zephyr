@@ -521,6 +521,18 @@ static int littlefs_readdir(struct fs_dir_t *dp, struct fs_dirent *entry)
 	return lfs_to_errno(ret);
 }
 
+static int littlefs_rewinddir(struct fs_dir_t *dp)
+{
+	struct fs_littlefs *fs = dp->mp->fs_data;
+	int ret;
+
+	fs_lock(fs);
+	ret = lfs_dir_rewind(&fs->lfs, dp->dirp);
+	fs_unlock(fs);
+
+	return lfs_to_errno(ret);
+}
+
 static int littlefs_closedir(struct fs_dir_t *dp)
 {
 	struct fs_littlefs *fs = dp->mp->fs_data;
@@ -1076,6 +1088,7 @@ static const struct fs_file_system_t littlefs_fs = {
 	.opendir = littlefs_opendir,
 	.readdir = littlefs_readdir,
 	.closedir = littlefs_closedir,
+	.rewinddir = littlefs_rewinddir,
 	.mount = littlefs_mount,
 	.unmount = littlefs_unmount,
 	.unlink = littlefs_unlink,
