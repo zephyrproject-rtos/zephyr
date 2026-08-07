@@ -431,6 +431,12 @@ struct quic_tls_context {
 	uint8_t peer_cert[CONFIG_QUIC_TLS_MAX_CERT_SIZE];
 	size_t peer_cert_len;
 
+	/* Set once the peer's CertificateVerify has been checked against
+	 * peer_cert. Without it a certificate proves nothing, since anyone can
+	 * replay someone else's certificate.
+	 */
+	bool peer_cert_verified;
+
 	/* QUIC transport parameters */
 #define MAX_QUIC_TP_LEN 256
 	uint8_t local_tp[MAX_QUIC_TP_LEN];
