@@ -3472,6 +3472,61 @@ ZTEST(net_socket_quic, test_336_quic_unsupported_version_before_initial_validati
 		      ret);
 }
 
+ZTEST(net_socket_quic, test_338_long_header_truncated_at_scid_len)
+{
+	/* DCID consumes the last byte of the datagram, so the SCID length
+	 * byte that follows lies exactly one past the end of the buffer.
+	 */
+	uint8_t packet[] = {
+		0xc0,                         /* Long header, Initial packet */
+		0x00, 0x00, 0x00, 0x01,       /* Version 1 */
+		0x01, 0xaa,                   /* DCID len=1, DCID byte */
+	};
+	struct quic_long_header_info info;
+	int ret;
+
+	ret = quic_parse_long_header(&info, packet, sizeof(packet));
+	zassert_not_equal(ret, 0,
+			  "Header truncated at the SCID length byte must be rejected");
+}
+
+ZTEST(net_socket_quic, test_337_long_header_every_truncation_is_safe)
+{
+	/* A well-formed Initial packet. Parsing any prefix of it must either
+	 * fail, or report a total length that stays inside the buffer it was
+	 * given. Anything else means the parser walked off the end.
+	 */
+	uint8_t packet[] = {
+		0xc0,                         /* Long header, Initial packet */
+		0x00, 0x00, 0x00, 0x01,       /* Version 1 */
+		0x08, 0x83, 0x94, 0xc8, 0xf0, /* DCID len=8, DCID bytes */
+		0x3e, 0x51, 0x57, 0x08,
+		0x08, 0x10, 0x11, 0x12, 0x13, /* SCID len=8, SCID bytes */
+		0x14, 0x15, 0x16, 0x17,
+		0x00,                         /* Token length = 0 */
+		0x01,                         /* Payload length = 1 (PN only) */
+		0x00,                         /* Packet number = 0 */
+	};
+	struct quic_long_header_info info;
+	int ret;
+
+	ret = quic_parse_long_header(&info, packet, sizeof(packet));
+	zassert_ok(ret, "Reference packet must parse (%d)", ret);
+
+	for (size_t prefix = 0; prefix < sizeof(packet); prefix++) {
+		memset(&info, 0, sizeof(info));
+
+		ret = quic_parse_long_header(&info, packet, prefix);
+		if (ret != 0) {
+			continue;
+		}
+
+		zassert_true(info.total_len <= prefix,
+			     "Prefix of %zu bytes accepted with total_len %zu",
+			     prefix, info.total_len);
+	}
+}
+
 ZTEST(net_socket_quic, test_340_quic_check_retransmissions)
 {
 	static uint8_t tx_buf[sizeof(LOREM_IPSUM_LONG)];
