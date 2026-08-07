@@ -1935,7 +1935,14 @@ class Node:
                 _LOG.warning(msg)
 
         if not prop:
-            if required and self.status == "okay":
+            if (
+                required and self.status == "okay"
+                # "interrupts" may be implemented as "interrupts-extended"
+                and (
+                    name != "interrupts"
+                    or not node.props.get("interrupts-extended")
+                )
+            ):
                 _err(
                     f"'{name}' is marked as required in 'properties:' in "
                     f"'{binding_path}', but does not appear in {node!r}"
