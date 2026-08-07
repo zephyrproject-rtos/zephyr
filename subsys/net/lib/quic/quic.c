@@ -2040,27 +2040,20 @@ ZTESTABLE_STATIC int quic_hp_mask(psa_key_id_t hp_key_id,
 
 	if (cipher_algo == QUIC_CIPHER_CHACHA20_POLY1305) {
 		/*
-		 * ChaCha20 header protection (RFC 9001 Section 5.4.4):
-		 * The first 4 bytes of sample are the block counter.
-		 * The remaining 12 bytes are the nonce.
-		 * Encrypt 5 zero bytes to produce the mask.
+		 * ChaCha20 header protection (RFC 9001 Section 5.4.4) needs the
+		 * mask to be ChaCha20(hp_key, counter=sample[0..3],
+		 * nonce=sample[4..15]) over five zero bytes.
+		 *
+		 * The PSA one-shot cipher API cannot express that: it generates
+		 * its own IV for a stream cipher and always starts the block
+		 * counter at zero, and psa_cipher_set_iv() only accepts a
+		 * 12 byte IV, so the sample counter cannot be supplied at all.
+		 *
+		 * Refuse rather than return a mask that is not derived from the
+		 * sample. The cipher suite is not offered or accepted during the
+		 * handshake, so this is only reached if that changes.
 		 */
-		uint8_t counter_nonce[16];
-		uint8_t plaintext[5] = {0, 0, 0, 0, 0};
-		uint8_t output[5 + 16]; /* May need extra space for some PSA implementations */
-
-		/* sample[0..3] = counter (little-endian), sample[4..15] = nonce */
-		memcpy(counter_nonce, sample, 16);
-
-		status = psa_cipher_encrypt(hp_key_id,
-					    PSA_ALG_STREAM_CIPHER,
-					    plaintext, sizeof(plaintext),
-					    output, sizeof(output),
-					    &output_length);
-
-		if (status == PSA_SUCCESS && output_length >= QUIC_HP_MASK_LEN) {
-			memcpy(mask, output, QUIC_HP_MASK_LEN);
-		}
+		return -ENOTSUP;
 	} else {
 		/*
 		 * AES header protection (RFC 9001 Section 5.4.3):
