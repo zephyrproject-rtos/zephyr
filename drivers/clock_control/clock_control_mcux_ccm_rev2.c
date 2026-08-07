@@ -106,6 +106,14 @@ static int mcux_ccm_on(const struct device *dev,
 		CLOCK_EnableClock(kCLOCK_Xbar1 + instance);
 		return 0;
 #endif
+#if defined(CONFIG_EQDC_MCUX) && defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_ENC1_CLK:
+	case IMX_CCM_ENC2_CLK:
+	case IMX_CCM_ENC3_CLK:
+	case IMX_CCM_ENC4_CLK:
+		CLOCK_EnableClock(kCLOCK_Enc1 + instance);
+		return 0;
+#endif
 #ifdef CONFIG_MEMC_MCUX_FLEXSPI
 #ifdef CONFIG_SOC_MIMX9352
 	case IMX_CCM_FLEXSPI_CLK:
@@ -461,6 +469,15 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		*rate = 32768U;
 		return 0;
 #endif
+#endif
+
+#if defined(CONFIG_EQDC_MCUX) && defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_ENC1_CLK:
+	case IMX_CCM_ENC2_CLK:
+	case IMX_CCM_ENC3_CLK:
+	case IMX_CCM_ENC4_CLK:
+		clock_root = kCLOCK_Root_Bus_Wakeup;
+		break;
 #endif
 
 	default:
