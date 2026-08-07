@@ -955,8 +955,13 @@ class QEMUHandlerBase(Handler):
         handler.instance.status = status
         if reason:
             handler.instance.reason = reason
-        else:
+        elif status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
             handler.instance.reason = "Unknown Error"
+        else:
+            # Not a failure (e.g. a pass): no reason to report. Clear it
+            # rather than keep it, so a stale reason from an earlier retry
+            # iteration cannot stick to a now-passing instance.
+            handler.instance.reason = None
 
     @staticmethod
     def _extend_timeout_on_status(harness):
