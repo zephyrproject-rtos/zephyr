@@ -569,3 +569,113 @@ ZTEST(route_test_suite, test_route)
 }
 
 ZTEST_SUITE(route_test_suite, NULL, NULL, NULL, NULL, NULL);
+
+#if defined(CONFIG_NET_L2_ETHERNET) && !defined(CONFIG_ETH_DRIVER)
+
+/*
+ * Packet-forwarding tests for net_route_packet(). These require a real
+ * link-layer (Ethernet) because the DUMMY L2 used above skips LL handling.
+ */
+
+static struct in6_addr ul_nexthop = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					     0, 0, 0, 0, 0, 0, 0, 0x02 } } };
+
+struct route_eth_test {
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
+	struct net_linkaddr ll_addr;
+};
+
+static struct route_eth_test route_eth_data;
+
+static uint8_t *route_eth_get_mac(const struct device *dev)
+{
+	struct route_eth_test *data = dev->data;
+
+	if (data->mac_addr[2] == 0x00) {
+		data->mac_addr[0] = 0x00;
+		data->mac_addr[1] = 0x00;
+		data->mac_addr[2] = 0x5E;
+		data->mac_addr[3] = 0x00;
+		data->mac_addr[4] = 0x53;
+		data->mac_addr[5] = 0x02;
+	}
+
+	data->ll_addr.addr = data->mac_addr;
+	data->ll_addr.len = sizeof(data->mac_addr);
+
+	return data->mac_addr;
+}
+
+static void route_eth_iface_init(struct net_if *iface)
+{
+	uint8_t *mac = route_eth_get_mac(net_if_get_device(iface));
+
+	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
+			     NET_LINK_ETHERNET);
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
+}
+
+static int route_eth_send(const struct device *dev, struct net_pkt *pkt)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static struct ethernet_api route_eth_if_api = {
+	.iface_api.init = route_eth_iface_init,
+	.send = route_eth_send,
+};
+
+#define _ROUTE_ETH_L2_LAYER ETHERNET_L2
+#define _ROUTE_ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
+
+NET_DEVICE_INIT_INSTANCE(route_eth_test, "route_eth", eth0,
+			 net_route_dev_init, NULL,
+			 &route_eth_data, NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &route_eth_if_api, _ROUTE_ETH_L2_LAYER,
+			 _ROUTE_ETH_L2_CTX_TYPE, 128);
+
+/*
+ * An Ethernet nexthop neighbor with NET_NBR_LLADDR_UNKNOWN must make
+ * net_route_packet() return -ESRCH instead of calling net_nbr_get_lladdr()
+ * (which asserts on idx 0xff).
+ */
+ZTEST(route_packet_suite, test_route_unknown_ll_nbr)
+{
+	struct net_if *eth_if;
+	struct net_nbr *nbr;
+	struct net_pkt *pkt;
+	int ret;
+
+	eth_if = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	zassert_not_null(eth_if, "Ethernet test iface missing");
+
+	nbr = net_ipv6_nbr_add(eth_if, &ul_nexthop, NULL, false,
+			       NET_IPV6_NBR_STATE_INCOMPLETE);
+	zassert_not_null(nbr, "Cannot seed INCOMPLETE neighbor");
+	zassert_equal(nbr->idx, NET_NBR_LLADDR_UNKNOWN,
+		      "INCOMPLETE neighbor should have unknown LL idx");
+
+	pkt = net_pkt_alloc_with_buffer(eth_if, 64, AF_INET6,
+					IPPROTO_ICMPV6, K_FOREVER);
+	zassert_not_null(pkt, "Cannot allocate test packet");
+
+	net_pkt_set_orig_iface(pkt, eth_if);
+	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(eth_if)->addr;
+	net_pkt_lladdr_src(pkt)->len = net_if_get_link_addr(eth_if)->len;
+	net_pkt_lladdr_src(pkt)->type = net_if_get_link_addr(eth_if)->type;
+
+	ret = net_route_packet(pkt, &ul_nexthop);
+	zassert_equal(ret, -ESRCH,
+		      "net_route_packet must fail when neighbor LL is unknown");
+
+	net_pkt_unref(pkt);
+	net_ipv6_nbr_rm(eth_if, &ul_nexthop);
+}
+
+ZTEST_SUITE(route_packet_suite, NULL, NULL, NULL, NULL, NULL);
+
+#endif /* CONFIG_NET_L2_ETHERNET && !CONFIG_ETH_DRIVER */
