@@ -199,6 +199,8 @@
 			vtf_region_default: memory@fdfe0 {
 				compatible = "zephyr,memory-region", "mmio-sram";
 				reg = <0xfdfe0 0x20>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				ranges = <0x0 0xfdfe0 0x20>;
 				zephyr,memory-region = "NRF_VTF_REGION";
 			};
