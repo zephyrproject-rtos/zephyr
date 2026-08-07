@@ -510,9 +510,6 @@ struct ppp_context {
 	/** Network interface related to this PPP connection */
 	struct net_if *iface;
 
-	/** Network management callback structure */
-	struct net_mgmt_event_callback mgmt_evt_cb;
-
 	/** Current phase of PPP link */
 	enum ppp_phase phase;
 

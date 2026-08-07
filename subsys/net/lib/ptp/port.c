@@ -1592,17 +1592,22 @@ int port_state_update(struct ptp_port *port, enum ptp_port_event event, bool tt_
 	return 0;
 }
 
-static __maybe_unused void port_link_monitor(struct net_mgmt_event_callback *cb,
-			      uint64_t mgmt_event,
-			      struct net_if *iface)
+/* In the test, only part of the subsystem is included, exclude this. */
+#ifdef CONFIG_PTP
+static void port_link_monitor(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+			      size_t info_length __unused, void *user_data __unused)
 {
-	ARG_UNUSED(cb);
-
 	enum ptp_port_event event = PTP_EVT_NONE;
-	struct ptp_port *port = ptp_clock_port_from_iface(iface);
+	struct ptp_port *port;
 	uint8_t iface_state = mgmt_event == NET_EVENT_IF_UP ? PORT_LINK_UP : PORT_LINK_DOWN;
 
-	if (!port) {
+	if ((mgmt_event != NET_EVENT_IF_UP) && (mgmt_event != NET_EVENT_IF_DOWN)) {
+		return;
+	}
+
+	port = ptp_clock_port_from_iface(iface);
+
+	if (port == NULL) {
 		return;
 	}
 
@@ -1627,6 +1632,9 @@ static __maybe_unused void port_link_monitor(struct net_mgmt_event_callback *cb,
 
 	ptp_port_event_handle(port, event, false);
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(ptp_iface_events, PORT_LINK_EVENT_MASK, port_link_monitor, NULL);
+#endif /* CONFIG_PTP */
 
 void ptp_port_init(struct net_if *iface, void *user_data)
 {
@@ -1681,9 +1689,6 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 
 	ptp_clock_pollfd_invalidate();
 	ptp_clock_port_add(port);
-
-	net_mgmt_init_event_callback(&port->link_cb, port_link_monitor, PORT_LINK_EVENT_MASK);
-	net_mgmt_add_event_callback(&port->link_cb);
 
 	LOG_DBG("Port %d initialized", port->port_ds.id.port_number);
 }
