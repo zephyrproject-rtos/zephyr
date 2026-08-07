@@ -755,6 +755,39 @@ ZTEST(net_socket_quic, test_010_open_connection_and_close)
 		      "Invalid refcount %d after close", (int)atomic_get(&ctx->refcount));
 }
 
+ZTEST(net_socket_quic, test_015_alpn_list_must_leave_room_for_terminator)
+{
+	/* One more protocol than alpn_list can hold together with its NULL
+	 * terminator. Accepting this writes the terminator past the array.
+	 */
+	static const char * const too_many[ALPN_MAX_PROTOCOLS + 1] = {
+		[0 ... ALPN_MAX_PROTOCOLS] = "h3",
+	};
+	static const char * const just_right[ALPN_MAX_PROTOCOLS] = {
+		[0 ... ALPN_MAX_PROTOCOLS - 1] = "h3",
+	};
+	int sock;
+	int ret;
+
+	ret = quic_connection_open((struct net_sockaddr *)&remote_addr_ipv4,
+				   (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
+	sock = ret;
+
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
+			       too_many, sizeof(too_many));
+	zassert_equal(ret, -1, "Oversized ALPN list must be rejected");
+	zassert_equal(errno, EINVAL, "Expected EINVAL, got %d", errno);
+
+	/* A full list that still leaves room for the terminator is fine. */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
+			       just_right, sizeof(just_right));
+	zassert_equal(ret, 0, "Maximum sized ALPN list must be accepted (%d)", -errno);
+
+	ret = quic_connection_close(sock);
+	zassert_equal(0, ret, "Failed to close QUIC connection (%d)", ret);
+}
+
 /* Test 020: Stream open/close */
 ZTEST(net_socket_quic, test_020_open_stream_and_close)
 {
