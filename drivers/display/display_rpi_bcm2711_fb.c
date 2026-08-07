@@ -49,6 +49,7 @@ struct rpi_bcm2711_fb_config {
 struct rpi_bcm2711_fb_data {
 	mem_addr_t fb_addr;
 	uint32_t pitch;
+	enum display_pixel_format pixel_format;
 };
 
 static int rpi_bcm2711_fb_write(const struct device *dev, const uint16_t x, const uint16_t y,
@@ -84,20 +85,26 @@ static void rpi_bcm2711_fb_get_capabilities(const struct device *dev,
 					    struct display_capabilities *capabilities)
 {
 	const struct rpi_bcm2711_fb_config *config = dev->config;
+	struct rpi_bcm2711_fb_data *data = dev->data;
 
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888;
-	capabilities->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
+	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_ABGR_8888;
+	capabilities->current_pixel_format = data->pixel_format;
 	capabilities->screen_info = 0;
 }
 
 static int rpi_bcm2711_fb_set_pixel_format(const struct device *dev,
 					   const enum display_pixel_format pixel_format)
 {
-	ARG_UNUSED(dev);
+	struct rpi_bcm2711_fb_data *data = dev->data;
 
-	if (pixel_format != PIXEL_FORMAT_ARGB_8888) {
+	switch (pixel_format) {
+	case PIXEL_FORMAT_ARGB_8888:
+	case PIXEL_FORMAT_ABGR_8888:
+		data->pixel_format = pixel_format;
+		return 0;
+	default:
 		LOG_ERR("Pixel format not supported");
 		return -ENOTSUP;
 	}
@@ -147,7 +154,7 @@ static int rpi_bcm2711_fb_init(const struct device *dev)
 
 	fb.display.width = config->width;
 	fb.display.height = config->height;
-	fb.depth = DISPLAY_BITS_PER_PIXEL(PIXEL_FORMAT_ARGB_8888);
+	fb.depth = DISPLAY_BITS_PER_PIXEL(data->pixel_format);
 	fb.pixel_order = RPI_BCM2711_FB_PIXEL_ORDER_RGB;
 	fb.alloc.buffer = 16;
 	fb.alloc.size = 0;
@@ -201,7 +208,9 @@ static DEVICE_API(display, rpi_bcm2711_fb_api) = {
 		.height = DT_INST_PROP(n, height),                                                 \
 	};                                                                                         \
                                                                                                    \
-	static struct rpi_bcm2711_fb_data rpi_bcm2711_fb_data_##n;                                 \
+	static struct rpi_bcm2711_fb_data rpi_bcm2711_fb_data_##n = {                              \
+		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &rpi_bcm2711_fb_init, NULL, &rpi_bcm2711_fb_data_##n,             \
 			      &rpi_bcm2711_fb_config_##n, POST_KERNEL,                             \
