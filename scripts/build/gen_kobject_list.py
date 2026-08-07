@@ -319,6 +319,13 @@ class ConstType:
     def __repr__(self):
         return f"<const {self.child_type}>"
 
+    @property
+    def size(self):
+        # A const qualifier does not change the storage size, so delegate
+        # to the underlying type. Needed when a const-qualified type is
+        # used as an array member and ArrayType computes element strides.
+        return type_env[self.child_type].size
+
     def has_kobject(self):
         if self.child_type not in type_env:
             return False
