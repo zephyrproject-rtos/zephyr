@@ -4436,6 +4436,7 @@ NXP Platforms (MCU):
         - henrikbrixandersen
       files:
         - boards/nxp/twr_ke18f/
+        - dts/arm/nxp/kinetis/ke1xf/
         - soc/nxp/kinetis/ke1xf/
       files-regex:
         - .*ke1*f.*
