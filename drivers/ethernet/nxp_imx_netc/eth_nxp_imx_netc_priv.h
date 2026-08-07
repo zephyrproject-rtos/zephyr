@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_
 
-#include <zephyr/drivers/ethernet/nxp_imx_netc.h>
+#include "nxp_imx_netc.h"
 #include "fsl_netc_endpoint.h"
 #if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(CONFIG_PTP_CLOCK_NXP_NETC)
 #include "fsl_netc_switch.h"
