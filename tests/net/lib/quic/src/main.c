@@ -5194,6 +5194,35 @@ ZTEST(net_socket_quic, test_451_client_hello_chacha20_only_is_refused)
 		      "A ChaCha20-only ClientHello must not be accepted (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_458_configured_cipher_suite_list_is_enforced)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t hello[sizeof(test_client_hello)];
+	struct quic_tls_context ctx = { 0 };
+	int ret;
+
+	ep->is_server = true;
+	ctx.ep = ep;
+
+	/* Application restricts the server to AES-256 only. */
+	ctx.options.ciphersuites[0] = TLS_AES_256_GCM_SHA384;
+
+	memcpy(hello, test_client_hello, sizeof(hello));
+	/* The client offers AES-128, which is now excluded. */
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_equal(ret, -ENOTSUP,
+		      "A suite outside the configured list must not be selected (%d)",
+		      ret);
+
+	/* With the offered suite allowed, selection proceeds normally. */
+	ctx.options.ciphersuites[0] = TLS_AES_128_GCM_SHA256;
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_not_equal(ret, -ENOTSUP,
+			  "An allowed suite must still be selectable (%d)", ret);
+}
+
 ZTEST(net_socket_quic, test_453_client_hello_odd_cipher_suites_length)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
