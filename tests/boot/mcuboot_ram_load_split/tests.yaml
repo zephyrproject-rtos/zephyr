@@ -1,0 +1,24 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  sysbuild: true
+  timeout: 120
+  tags:
+    - linker
+    - mcuboot
+    - pytest
+  platform_allow:
+    - mps2/an385
+  integration_platforms:
+    - mps2/an385
+  harness: pytest
+  harness_config:
+    pytest_root:
+      - "pytest/test_ram_load_split.py"
+tests:
+  bootloader.mcuboot.ram_load_split: {}
+  bootloader.mcuboot.ram_load_split.linker_generator:
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y

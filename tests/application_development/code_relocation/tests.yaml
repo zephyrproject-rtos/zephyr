@@ -31,6 +31,21 @@ tests:
       - sam_e70_xplained/same70q21
     integration_platforms:
       - qemu_cortex_m3
+  buildsystem.app_dev.code_relocation.split_ram_load:
+    filter: not CONFIG_CPU_HAS_NXP_SYSMPU and not dt_chosen_enabled("zephyr,itcm")
+    arch_allow: arm
+    build_only: true
+    extra_args: CONF_FILE="prj.conf;prj_split_ram_load.conf"
+    extra_sections:
+      - _SRAM2_RODATA_SECTION_NAME
+      - _SRAM_TEXT_SECTION_NAME
+      - _SRAM_RODATA_SECTION_NAME
+      - _SRAM_DATA_SECTION_NAME
+      - _CUSTOM_SECTION_NAME2
+    platform_allow:
+      - mps2/an385
+    integration_platforms:
+      - mps2/an385
   buildsystem.app_dev.code_relocation.riscv:
     extra_args: CONF_FILE="prj_riscv.conf"
     platform_allow:

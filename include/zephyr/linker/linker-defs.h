@@ -84,7 +84,7 @@
 /* Assembly FILES: declaration defined by the linker script */
 GDATA(__bss_start)
 GDATA(__bss_num_words)
-#ifdef CONFIG_XIP
+#if defined(CONFIG_XIP) || defined(CONFIG_ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT)
 GDATA(__data_region_load_start)
 GDATA(__data_region_start)
 GDATA(__data_region_num_words)
@@ -129,11 +129,11 @@ extern char __bss_start[];
 extern char __bss_end[];
 
 /* Used by arch_data_copy() or arch-specific implementation */
-#ifdef CONFIG_XIP
+#if defined(CONFIG_XIP) || defined(CONFIG_ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT)
 extern char __data_region_load_start[];
 extern char __data_region_start[];
 extern char __data_region_end[];
-#endif /* CONFIG_XIP */
+#endif /* CONFIG_XIP || CONFIG_ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT */
 
 #ifdef CONFIG_MMU
 /* Virtual addresses of page-aligned kernel image mapped into RAM at boot */
