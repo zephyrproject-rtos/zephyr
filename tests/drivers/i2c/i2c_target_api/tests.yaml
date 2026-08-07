@@ -94,6 +94,8 @@ tests:
       - sam_e54_xpro
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52
+      - pic32ck_gc01_cult
+      - pic32ck_sg01_cult
     integration_platforms:
       - max32690evkit/max32690/m4
       - nrf54l15dk/nrf54l15/cpuapp
