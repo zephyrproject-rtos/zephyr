@@ -3,6 +3,7 @@
 
 config MODEM_CELLULAR
 	bool "Generic cellular modem support"
+	select GPIO
 	select MODEM_MODULES
 	select MODEM_PPP
 	select MODEM_CMUX
