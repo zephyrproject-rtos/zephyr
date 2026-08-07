@@ -796,6 +796,8 @@ struct quic_endpoint {
 		uint64_t max_uni;    /* Current uni stream limit advertised to peer */
 		uint64_t open_bidi;  /* peer-initiated bidi streams currently open */
 		uint64_t open_uni;   /* peer-initiated uni  streams currently open */
+		uint64_t total_bidi; /* peer-initiated bidi streams ever opened */
+		uint64_t total_uni;  /* peer-initiated uni  streams ever opened */
 	} rx_sl;
 
 	/** Peer's transport parameters */
