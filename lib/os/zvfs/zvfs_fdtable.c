@@ -511,27 +511,7 @@ int zvfs_fileno(FILE *file)
 	return (struct fd_entry *)file - fdtable;
 }
 
-int zvfs_unlink(const char *path)
-{
-	int res = fs_unlink(path);
 
-	if (res < 0) {
-		errno = -res;
-		return -1;
-	}
-	return 0;
-}
-
-int zvfs_rename(const char *old, const char *newp)
-{
-	int res = fs_rename(old, newp);
-
-	if (res < 0) {
-		errno = -res;
-		return -1;
-	}
-	return 0;
-}
 
 #if defined(CONFIG_POSIX_DEVICE_IO) || defined(CONFIG_ZVFS_RESERVE_STDIO_FDS)
 /*

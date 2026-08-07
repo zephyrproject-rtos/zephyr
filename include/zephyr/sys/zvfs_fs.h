@@ -74,6 +74,25 @@ void zvfs_fs_desc_free(struct zvfs_fs_desc *ptr);
  */
 void zvfs_record_lock_drop_obj(void *obj);
 
+/**
+ * @brief Delete file or directory.
+ *
+ * @param path Path or name of file to be removed.
+ *
+ * @return 0 on success, -1 with errno set on error.
+ */
+int zvfs_unlink(const char *path);
+
+/**
+ * @brief Rename file or directory, moving it if necessary.
+ *
+ * @param old Current name
+ * @param newp Target name
+ *
+ * @return 0 on success, -1 with errno set on error.
+ */
+int zvfs_rename(const char *old, const char *newp);
+
 #ifdef __cplusplus
 }
 #endif

@@ -366,25 +366,6 @@ ssize_t zvfs_write_vmeth(void *obj, const void *buffer, size_t count);
 ssize_t zvfs_read_vmeth(void *obj, void *buffer, size_t count);
 #endif
 
-/**
- * @brief Delete file or directory.
- *
- * @param path Path or name of file to be removed.
- *
- * @return 0 on success, -1 with errno set on error.
- */
-int zvfs_unlink(const char *path);
-
-/**
- * @brief Rename file or directory, moving it if necessary.
- *
- * @param old Current name
- * @param newp Target name
- *
- * @return 0 on success, -1 with errno set on error.
- */
-int zvfs_rename(const char *old, const char *newp);
-
 #if defined(CONFIG_ZTEST) && defined(CONFIG_USERSPACE)
 /**
  * @brief Return the kernel object backing a file descriptor slot (tests only).
