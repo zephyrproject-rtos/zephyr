@@ -378,12 +378,17 @@ struct quic_tls_context {
 	uint16_t offered_suites[3];
 	uint8_t offered_suite_count;
 
-	/* External PSK configuration and negotiated use */
+	/* PSK configuration and negotiated use. The PSK is either externally
+	 * provisioned (TLS_CREDENTIAL_PSK) or carried over from a session
+	 * ticket; psk_is_resumption records which, as the binder label
+	 * depends on it (RFC 8446 Section 7.1).
+	 */
 	const uint8_t *psk;
 	size_t psk_len;
 	const uint8_t *psk_identity;
 	size_t psk_identity_len;
 	bool psk_configured;
+	bool psk_is_resumption;
 	bool psk_offered;
 	bool use_psk_key_schedule;
 	bool early_data_offered;
