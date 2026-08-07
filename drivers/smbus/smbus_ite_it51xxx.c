@@ -174,6 +174,10 @@ struct smbus_it51xxx_data {
 	const struct device *dev;
 	struct k_sem bus_lock;
 	struct k_sem xfer_done;
+	/* Host Notify work, deferred out of ISR context */
+	struct k_work host_notify_work;
+	/* Host Notify callback list */
+	sys_slist_t host_notify_cbs;
 	/* Configured mode flags */
 	uint32_t dev_config;
 	/* Current transaction error bits captured from HOSTA */
@@ -182,9 +186,13 @@ struct smbus_it51xxx_data {
 	uint8_t *g_w_buf;
 	uint8_t *g_r_buf;
 	uint16_t xfer_addr;
+	/* Host Notify data captured from NDHB (high) / NDLB (low) */
+	uint16_t notify_data;
 	uint8_t xfer_protocol;
 	uint8_t blk_idx;
 	uint8_t blk_len;
+	/* Host Notify peripheral address captured from NDADR */
+	uint8_t notify_addr;
 	bool blk_is_write;
 	bool blk_active;
 };
@@ -194,14 +202,21 @@ static void it51xxx_smb_reset(const struct device *dev)
 	const struct smbus_it51xxx_config *cfg = dev->config;
 	struct smbus_it51xxx_data *data = dev->data;
 
-	irq_disable(cfg->smbus_irq);
+	if (!(data->dev_config & SMBUS_MODE_HOST_NOTIFY)) {
+		irq_disable(cfg->smbus_irq);
+	}
 	/* bit1, kill current transaction. */
 	sys_write8(SMB_KILL, cfg->host_base + SMB_HOCTLRn);
 	sys_write8(0, cfg->host_base + SMB_HOCTLRn);
 
 	/* W/C host status register */
 	sys_write8(HOSTA_ALL_WC, cfg->host_base + SMB_HOSTARn);
-	sys_write8(0, cfg->host_base + SMB_HOCTL2Rn);
+
+	/* Keep host notify listening */
+	if (!(data->dev_config & SMBUS_MODE_HOST_NOTIFY)) {
+		sys_write8(0, cfg->host_base + SMB_HOCTL2Rn);
+	}
+
 	data->blk_active = false;
 }
 
@@ -287,9 +302,12 @@ static void it51xxx_smb_host_disable(const struct device *dev, uint8_t status)
 	const struct smbus_it51xxx_config *cfg = dev->config;
 	struct smbus_it51xxx_data *data = dev->data;
 
-	irq_disable(cfg->smbus_irq);
-	/* Disable SMBus host controller */
-	sys_write8(0, cfg->host_base + SMB_HOCTL2Rn);
+	/* Keep host notify listening */
+	if (!(data->dev_config & SMBUS_MODE_HOST_NOTIFY)) {
+		irq_disable(cfg->smbus_irq);
+		/* Disable SMBus host controller */
+		sys_write8(0, cfg->host_base + SMB_HOCTL2Rn);
+	}
 
 	data->blk_active = false;
 	/* W/C */
@@ -660,6 +678,19 @@ static int smbus_it51xxx_configure(const struct device *dev, uint32_t config_val
 		return -EIO;
 	}
 
+	if (config_value & SMBUS_MODE_HOST_NOTIFY) {
+		if (cfg->port > IT51XXX_SMBUS_HOST_NOTIFY_MAX_PORT) {
+			LOG_ERR("%s: Host Notify only available on host A/B/C", dev->name);
+			return -EIO;
+		}
+
+		/* Enable Host Notify command reception + its interrupt source */
+		sys_write8(sys_read8(cfg->host_base + SMB_HOCTL2Rn) | SMB_HTIFYEN | SMB_SMH_EN,
+			   cfg->host_base + SMB_HOCTL2Rn);
+		sys_write8(sys_read8(cfg->host_base + SMB_I2CW2RFn) | SMB_HONOIN,
+			   cfg->host_base + SMB_I2CW2RFn);
+	}
+
 	if (config_value & SMBUS_MODE_SMBALERT) {
 		LOG_ERR("%s: SMBALERT# is not support", dev->name);
 		return -EIO;
@@ -668,8 +699,15 @@ static int smbus_it51xxx_configure(const struct device *dev, uint32_t config_val
 	data->dev_config = config_value;
 
 	ret = it51xxx_smbus_set_port_frequency(dev);
+	if (ret) {
+		return ret;
+	}
 
-	return ret;
+	if (config_value & SMBUS_MODE_HOST_NOTIFY) {
+		irq_enable(cfg->smbus_irq);
+	}
+
+	return 0;
 }
 
 static int smbus_it51xxx_get_config(const struct device *dev, uint32_t *config)
@@ -977,6 +1015,51 @@ static void it51xxx_smb_isr_byte_done(const struct device *dev)
 	}
 }
 
+static int smbus_it51xxx_host_notify_set_cb(const struct device *dev, struct smbus_callback *cb)
+{
+	struct smbus_it51xxx_data *data = dev->data;
+
+	LOG_DBG("%s: Host notify set: dev %p cb %p", dev->name, dev, cb);
+
+	return smbus_callback_set(&data->host_notify_cbs, cb);
+}
+
+static int smbus_it51xxx_host_notify_remove_cb(const struct device *dev, struct smbus_callback *cb)
+{
+	struct smbus_it51xxx_data *data = dev->data;
+
+	LOG_DBG("%s: Host notify remove: dev %p cb %p", dev->name, dev, cb);
+
+	return smbus_callback_remove(&data->host_notify_cbs, cb);
+}
+
+static void it51xxx_smb_host_notify_work(struct k_work *work)
+{
+	struct smbus_it51xxx_data *data =
+		CONTAINER_OF(work, struct smbus_it51xxx_data, host_notify_work);
+	const struct device *dev = data->dev;
+
+	LOG_DBG("%s: Host notify callback addr=0x%02x", dev->name, data->notify_addr);
+
+	smbus_fire_callbacks(&data->host_notify_cbs, dev, data->notify_addr);
+}
+
+static void it51xxx_smb_host_notify_handle(const struct device *dev)
+{
+	const struct smbus_it51xxx_config *cfg = dev->config;
+	struct smbus_it51xxx_data *data = dev->data;
+
+	/* NDADR[7:1] = 7-bit peripheral address, bit0 reserved. */
+	data->notify_addr = sys_read8(cfg->host_base + SMB_NDADRn) >> 1;
+	data->notify_data = sys_read8(cfg->host_base + SMB_NDLBn);
+	data->notify_data |= (uint16_t)sys_read8(cfg->host_base + SMB_NDHBn) << 8;
+
+	LOG_DBG("%s: Host notify from addr=0x%02x data=0x%04x", dev->name, data->notify_addr,
+		data->notify_data);
+
+	k_work_submit(&data->host_notify_work);
+}
+
 static void smbus_it51xxx_isr(const struct device *dev)
 {
 	const struct smbus_it51xxx_config *cfg = dev->config;
@@ -989,6 +1072,17 @@ static void smbus_it51xxx_isr(const struct device *dev)
 	if (status & HOSTA_ANY_ERROR) {
 		data->err = status & HOSTA_ANY_ERROR;
 		goto done;
+	}
+
+	if (data->dev_config & SMBUS_MODE_HOST_NOTIFY) {
+		uint8_t ndadr;
+
+		ndadr = sys_read8(cfg->host_base + SMB_NDADRn);
+		if (ndadr & SMB_HONOST) {
+			it51xxx_smb_host_notify_handle(dev);
+			sys_write8(SMB_HONOST, cfg->host_base + SMB_NDADRn);
+			return;
+		}
 	}
 
 	/* Byte done status */
@@ -1019,6 +1113,11 @@ static int smbus_it51xxx_init(const struct device *dev)
 	/* Initialize bus lock (mutex) and transfer-done semaphore */
 	k_sem_init(&data->bus_lock, 1, 1);
 	k_sem_init(&data->xfer_done, 0, 1);
+
+	/* Initialize work structures */
+	data->dev = dev;
+	sys_slist_init(&data->host_notify_cbs);
+	k_work_init(&data->host_notify_work, it51xxx_smb_host_notify_work);
 
 	cfg->irq_config_func(dev);
 
@@ -1060,6 +1159,9 @@ static DEVICE_API(smbus, smbus_it51xxx_api) = {
 	.smbus_pcall = smbus_it51xxx_pcall,
 	.smbus_block_write = smbus_it51xxx_block_write,
 	.smbus_block_read = smbus_it51xxx_block_read,
+
+	.smbus_host_notify_set_cb = smbus_it51xxx_host_notify_set_cb,
+	.smbus_host_notify_remove_cb = smbus_it51xxx_host_notify_remove_cb,
 };
 
 #define IT51XXX_I2C_COMPAT ite_it51xxx_i2c
