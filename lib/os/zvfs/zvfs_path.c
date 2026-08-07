@@ -96,14 +96,21 @@ int z_impl_zvfs_unlink(const char *path)
 {
 	int res;
 	struct fs_dirent entry;
+	char r[CONFIG_ZVFS_PATH_MAX];
+	int rrc = zvfs_resolve_path(path, r, sizeof(r));
 
-	res = fs_stat(path, &entry);
+	if (rrc < 0) {
+		errno = -rrc;
+		return -1;
+	}
+
+	res = fs_stat(r, &entry);
 	if (res == 0 && entry.type == FS_DIR_ENTRY_DIR) {
 		errno = EISDIR;
 		return -1;
 	}
 
-	return zvfs_err(fs_unlink(path));
+	return zvfs_err(fs_unlink(r));
 }
 
 #ifdef CONFIG_USERSPACE
@@ -122,7 +129,20 @@ static int z_vrfy_zvfs_unlink(const char *path)
 
 int z_impl_zvfs_rename(const char *old, const char *newp)
 {
-	return zvfs_err(fs_rename(old, newp));
+	int rrc;
+	char rold[CONFIG_ZVFS_PATH_MAX];
+	char rnew[CONFIG_ZVFS_PATH_MAX];
+
+	rrc = zvfs_resolve_path(old, rold, sizeof(rold));
+	if (rrc == 0) {
+		rrc = zvfs_resolve_path(newp, rnew, sizeof(rnew));
+	}
+	if (rrc < 0) {
+		errno = -rrc;
+		return -1;
+	}
+
+	return zvfs_err(fs_rename(rold, rnew));
 }
 
 #ifdef CONFIG_USERSPACE
@@ -142,8 +162,16 @@ static int z_vrfy_zvfs_rename(const char *old, const char *newp)
 
 int z_impl_zvfs_remove(const char *path)
 {
+	char r[CONFIG_ZVFS_PATH_MAX];
+	int rrc = zvfs_resolve_path(path, r, sizeof(r));
+
+	if (rrc < 0) {
+		errno = -rrc;
+		return -1;
+	}
+
 	/* Zephyr fs_unlink() removes files and empty directories alike */
-	return zvfs_err(fs_unlink(path));
+	return zvfs_err(fs_unlink(r));
 }
 
 #ifdef CONFIG_USERSPACE
@@ -166,8 +194,15 @@ int z_impl_zvfs_stat(const char *path, struct zvfs_stat *buf)
 	struct fs_dirent entry;
 	struct fs_statvfs vfs;
 	bool is_dir;
+	char r[CONFIG_ZVFS_PATH_MAX];
+	int rrc = zvfs_resolve_path(path, r, sizeof(r));
 
-	res = fs_stat(path, &entry);
+	if (rrc < 0) {
+		errno = -rrc;
+		return -1;
+	}
+
+	res = fs_stat(r, &entry);
 	if (res < 0) {
 		return zvfs_err(res);
 	}
@@ -176,7 +211,7 @@ int z_impl_zvfs_stat(const char *path, struct zvfs_stat *buf)
 
 	*buf = (struct zvfs_stat){0};
 	buf->size = entry.size;
-	buf->mode = zvfs_synth_mode(is_dir, zvfs_mount_rdonly(path));
+	buf->mode = zvfs_synth_mode(is_dir, zvfs_mount_rdonly(r));
 	buf->nlink = 1;
 #ifdef CONFIG_FS_DIRENT_EXT
 	buf->atime = entry.atime;
@@ -186,7 +221,7 @@ int z_impl_zvfs_stat(const char *path, struct zvfs_stat *buf)
 #endif
 
 	/* block accounting is best-effort: not every backend supports statvfs */
-	if (fs_statvfs(path, &vfs) == 0) {
+	if (fs_statvfs(r, &vfs) == 0) {
 		buf->blksize = vfs.f_bsize;
 		buf->blocks = DIV_ROUND_UP(entry.size, 512);
 	}
@@ -247,17 +282,24 @@ int z_impl_zvfs_statvfs(const char *path, struct zvfs_statvfs *buf)
 	int res;
 	struct fs_statvfs vfs;
 
-	if ((path[0] == '/') && (path[1] == '\0')) {
+	char r[CONFIG_ZVFS_PATH_MAX];
+	int rrc = zvfs_resolve_path(path, r, sizeof(r));
+
+	if (rrc < 0) {
+		errno = -rrc;
+		return -1;
+	}
+	if (r[1] == '\0') {
 		zvfs_statvfs_root(buf);
 		return 0;
 	}
 
-	res = fs_statvfs(path, &vfs);
+	res = fs_statvfs(r, &vfs);
 	if (res < 0) {
 		return zvfs_err(res);
 	}
 
-	zvfs_statvfs_from_fs(buf, &vfs, zvfs_mount_rdonly(path));
+	zvfs_statvfs_from_fs(buf, &vfs, zvfs_mount_rdonly(r));
 
 	return 0;
 }
@@ -304,9 +346,17 @@ static int z_vrfy_zvfs_fstatvfs(int fd, struct zvfs_statvfs *buf)
 
 int z_impl_zvfs_mkdir(const char *path, uint32_t mode)
 {
+	char r[CONFIG_ZVFS_PATH_MAX];
+	int rrc = zvfs_resolve_path(path, r, sizeof(r));
+
+	if (rrc < 0) {
+		errno = -rrc;
+		return -1;
+	}
+
 	ARG_UNUSED(mode);
 
-	return zvfs_err(fs_mkdir(path));
+	return zvfs_err(fs_mkdir(r));
 }
 
 #ifdef CONFIG_USERSPACE
@@ -327,8 +377,15 @@ int z_impl_zvfs_rmdir(const char *path)
 {
 	int res;
 	struct fs_dirent entry;
+	char r[CONFIG_ZVFS_PATH_MAX];
+	int rrc = zvfs_resolve_path(path, r, sizeof(r));
 
-	res = fs_stat(path, &entry);
+	if (rrc < 0) {
+		errno = -rrc;
+		return -1;
+	}
+
+	res = fs_stat(r, &entry);
 	if (res < 0) {
 		return zvfs_err(res);
 	}
@@ -338,7 +395,7 @@ int z_impl_zvfs_rmdir(const char *path)
 		return -1;
 	}
 
-	return zvfs_err(fs_unlink(path));
+	return zvfs_err(fs_unlink(r));
 }
 
 #ifdef CONFIG_USERSPACE
@@ -366,6 +423,14 @@ int z_impl_zvfs_truncate(const char *path, off_t length)
 		return -1;
 	}
 
+	char r[CONFIG_ZVFS_PATH_MAX];
+	int rrc = zvfs_resolve_path(path, r, sizeof(r));
+
+	if (rrc < 0) {
+		errno = -rrc;
+		return -1;
+	}
+
 	/* struct fs_file_t is too large for the privileged stack */
 	ptr = zvfs_fs_desc_alloc(false);
 	if (ptr == NULL) {
@@ -375,7 +440,7 @@ int z_impl_zvfs_truncate(const char *path, off_t length)
 
 	fs_file_t_init(&ptr->file);
 
-	res = fs_open(&ptr->file, path, FS_O_WRITE);
+	res = fs_open(&ptr->file, r, FS_O_WRITE);
 	if (res < 0) {
 		zvfs_fs_desc_free(ptr);
 		return zvfs_err(res);
@@ -453,7 +518,15 @@ static int z_vrfy_zvfs_access(const char *path, int amode)
 
 int z_impl_zvfs_utime(const char *path, const struct timespec *times)
 {
-	return zvfs_err(fs_utime(path, times));
+	char r[CONFIG_ZVFS_PATH_MAX];
+	int rrc = zvfs_resolve_path(path, r, sizeof(r));
+
+	if (rrc < 0) {
+		errno = -rrc;
+		return -1;
+	}
+
+	return zvfs_err(fs_utime(r, times));
 }
 
 #ifdef CONFIG_USERSPACE

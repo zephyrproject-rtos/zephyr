@@ -48,6 +48,13 @@ struct zvfs_dirstream *z_impl_zvfs_opendir(const char *path)
 	void *obj = NULL;
 	struct zvfs_dirstream *d = NULL;
 	struct zvfs_fs_desc *ptr = NULL;
+	char r[CONFIG_ZVFS_PATH_MAX];
+
+	rc = zvfs_resolve_path(path, r, sizeof(r));
+	if (rc < 0) {
+		errno = -rc;
+		return NULL;
+	}
 
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {
@@ -69,7 +76,7 @@ struct zvfs_dirstream *z_impl_zvfs_opendir(const char *path)
 
 	fs_dir_t_init(&ptr->dir);
 
-	rc = fs_opendir(&ptr->dir, path);
+	rc = fs_opendir(&ptr->dir, r);
 	if (rc < 0) {
 		goto out_err;
 	}
@@ -77,6 +84,7 @@ struct zvfs_dirstream *z_impl_zvfs_opendir(const char *path)
 	memset(d, 0, sizeof(*d));
 	d->fd = fd;
 	ptr->stream = d;
+	strcpy(ptr->path, r);
 
 	zvfs_finalize_typed_fd(fd, ptr, &fs_dir_fd_op_vtable, ZVFS_MODE_IFDIR);
 

@@ -12,6 +12,7 @@
 #define ZEPHYR_LIB_OS_ZVFS_ZVFS_FS_PRIV_H_
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,6 +32,24 @@ extern const struct fd_op_vtable fs_dir_fd_op_vtable;
  * @param d Stream previously returned by zvfs_opendir().
  */
 void zvfs_dirstream_free(struct zvfs_dirstream *d);
+
+/**
+ * @brief Resolve @p in against the ZVFS current working directory.
+ *
+ * Lexically normalizes the path: collapses repeated separators, drops "."
+ * components, pops on "..", and prefixes the working directory when @p in is
+ * relative. The output always begins with '/'.
+ *
+ * @param in Input path.
+ * @param out Destination buffer, which must not alias @p in.
+ * @param outsz Size of @p out.
+ *
+ * @retval 0 on success;
+ * @retval -EFAULT when @p in is NULL;
+ * @retval -ENOENT when @p in is empty;
+ * @retval -ENAMETOOLONG when the result does not fit @p outsz.
+ */
+int zvfs_resolve_path(const char *in, char *out, size_t outsz);
 
 /**
  * @brief Map Zephyr file system statistics into ZVFS statistics.

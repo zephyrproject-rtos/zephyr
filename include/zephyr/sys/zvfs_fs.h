@@ -41,6 +41,10 @@ struct zvfs_fs_desc {
 	};
 	/** Stream object returned by zvfs_opendir(), NULL for plain fds. */
 	struct zvfs_dirstream *stream;
+#if defined(CONFIG_ZVFS_FS) || defined(__DOXYGEN__)
+	/** Resolved absolute path of directory descriptors, for zvfs_fchdir(). */
+	char path[CONFIG_ZVFS_PATH_MAX];
+#endif
 	/** Open flags (ZVFS_O_*) reported by F_GETFL */
 	int flags;
 	bool is_dir: 1;
@@ -286,6 +290,39 @@ __syscall int zvfs_access(const char *path, int amode);
  * @return 0 on success, -1 with errno set on error.
  */
 __syscall int zvfs_utime(const char *path, const struct timespec *times);
+
+/**
+ * @brief Change the ZVFS current working directory.
+ *
+ * The working directory is system-wide, matching POSIX per-process semantics
+ * on a single-process system, and seeds relative path resolution for every
+ * ZVFS path operation.
+ *
+ * @param path Absolute or relative path of an existing directory.
+ *
+ * @return 0 on success, -1 with errno set on error.
+ */
+__syscall int zvfs_chdir(const char *path);
+
+/**
+ * @brief Change the ZVFS current working directory to an open directory.
+ *
+ * @param fd Directory file descriptor from zvfs_opendir() or
+ *           zvfs_open() with ZVFS_O_DIRECTORY.
+ *
+ * @return 0 on success, -1 with errno set on error.
+ */
+__syscall int zvfs_fchdir(int fd);
+
+/**
+ * @brief Copy the ZVFS current working directory into @p buf.
+ *
+ * @param buf Destination buffer.
+ * @param size Size of @p buf; ERANGE when the path does not fit.
+ *
+ * @return 0 on success, -1 with errno set on error.
+ */
+__syscall int zvfs_getcwd(char *buf, size_t size);
 
 #ifdef __cplusplus
 }

@@ -15,6 +15,7 @@ zephyr_library_sources_ifdef(CONFIG_ZVFS_FDTABLE
 )
 zephyr_library_sources_ifdef(CONFIG_ZVFS_DEFAULT_FILE_VMETHODS zvfs_file_vmethods.c)
 zephyr_library_sources_ifdef(CONFIG_ZVFS_FS
+  zvfs_cwd.c
   zvfs_dirent.c
   zvfs_fs.c
   zvfs_path.c

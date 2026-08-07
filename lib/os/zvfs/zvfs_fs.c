@@ -92,9 +92,18 @@ int z_impl_zvfs_open(const char *name, int flags, int mode)
 	struct zvfs_fs_desc *ptr = NULL;
 	int zmode = posix_mode_to_zephyr(flags);
 
+	char r[CONFIG_ZVFS_PATH_MAX];
+
 	if (zmode < 0) {
 		return zmode;
 	}
+
+	rc = zvfs_resolve_path(name, r, sizeof(r));
+	if (rc < 0) {
+		errno = -rc;
+		return -1;
+	}
+	name = r;
 
 	if ((flags & ZVFS_O_DIRECTORY) != 0) {
 		fd = zvfs_reserve_fd();
@@ -117,6 +126,7 @@ int z_impl_zvfs_open(const char *name, int flags, int mode)
 
 		ptr->stream = NULL;
 		ptr->flags = flags & (ZVFS_O_ACCMODE | ZVFS_O_DIRECTORY);
+		strcpy(ptr->path, name);
 		zvfs_finalize_typed_fd(fd, ptr, &fs_dir_fd_op_vtable, ZVFS_MODE_IFDIR);
 
 		return fd;
