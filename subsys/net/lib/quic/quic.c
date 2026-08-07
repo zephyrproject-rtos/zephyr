@@ -2476,6 +2476,7 @@ struct quic_decrypted_packet {
 	size_t payload_len;         /* Length of decrypted payload */
 	uint64_t packet_number;     /* Full reconstructed packet number */
 	enum quic_packet_type type; /* Packet type */
+	uint8_t first_byte;         /* Header byte with protection removed */
 };
 
 /**
@@ -2638,6 +2639,7 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 	result->payload = plaintext;
 	result->packet_number = full_pn;
 	result->type = ptype;
+	result->first_byte = first_byte;
 
 	return 0;
 }
@@ -8418,6 +8420,31 @@ static int process_short_header(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] Short header packet %" PRIu64 ", payload %zu bytes",
 		target_ep, quic_get_by_ep(target_ep), decrypted.packet_number,
 		decrypted.payload_len);
+
+	/*
+	 * RFC 9001 Section 6: a peer signals a key update by flipping the key
+	 * phase bit. A conforming update protects the packet with the
+	 * next-generation keys, so it fails AEAD above and never reaches this
+	 * check; until key update support lands such packets are dropped, as
+	 * unauthenticated data must not tear the connection down, and the
+	 * connection goes quiet until the idle timeout. What this catches is
+	 * a packet that decrypted with the current keys yet carries a flipped
+	 * phase bit: only a peer that changed the bit without rotating its
+	 * keys produces that, which Section 6 does not permit, so tell it why
+	 * we are closing.
+	 */
+	if ((decrypted.first_byte & QUIC_SHORT_KEY_PHASE_MASK) != 0) {
+		NET_DBG("[EP:%p/%d] Peer started a key update, which is not supported",
+			target_ep, quic_get_by_ep(target_ep));
+		QUIC_EP_STAT_INC(target_ep, drop_rx);
+		quic_endpoint_send_transport_close(target_ep,
+						   QUIC_ERROR_KEY_UPDATE_ERROR, 0,
+						   "Key update not supported");
+		quic_endpoint_notify_streams_closed(target_ep);
+
+		ret = -EPROTO;
+		goto out;
+	}
 
 	/* Process frames at APPLICATION level */
 	ret = handle_crypto_level_packet(target_ep, QUIC_SECRET_LEVEL_APPLICATION,
