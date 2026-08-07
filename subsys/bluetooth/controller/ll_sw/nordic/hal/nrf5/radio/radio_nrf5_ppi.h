@@ -296,7 +296,7 @@ static inline void hal_trigger_aar_ppi_config(void)
  */
 static inline void hal_sw_switch_timer_start_ppi_config(void)
 {
-	nrf_ppi_fork_endpoint_setup(NRF_PPI, HAL_EVENT_TIMER_START_PPI,
+	nrf_ppi_fork_endpoint_setup(NRF_PPI, HAL_SW_SWITCH_TIMER_CLEAR_PPI,
 				    (uint32_t)&(SW_SWITCH_TIMER->TASKS_START));
 }
 
@@ -418,6 +418,11 @@ static inline void hal_radio_txen_on_sw_switch(uint8_t compare_reg_index, uint8_
 
 	nrf_ppi_task_endpoint_setup(NRF_PPI, radio_enable_ppi,
 				    HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX);
+
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	nrf_ppi_fork_endpoint_setup(NRF_PPI, radio_enable_ppi,
+				    (uint32_t)&(SW_SWITCH_TIMER->TASKS_STOP));
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
 static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t compare_reg_index,
@@ -444,6 +449,11 @@ static inline void hal_radio_rxen_on_sw_switch(uint8_t compare_reg_index, uint8_
 
 	nrf_ppi_task_endpoint_setup(NRF_PPI, radio_enable_ppi,
 				    HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX);
+
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	nrf_ppi_fork_endpoint_setup(NRF_PPI, radio_enable_ppi,
+				    (uint32_t)&(SW_SWITCH_TIMER->TASKS_STOP));
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
 static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t compare_reg_index,
