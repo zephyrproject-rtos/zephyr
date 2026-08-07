@@ -5194,6 +5194,78 @@ ZTEST(net_socket_quic, test_451_client_hello_chacha20_only_is_refused)
 		      "A ChaCha20-only ClientHello must not be accepted (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_458_configured_cipher_suite_list_is_enforced)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t hello[sizeof(test_client_hello)];
+	struct quic_tls_context ctx = { 0 };
+	int ret;
+
+	ep->is_server = true;
+	ctx.ep = ep;
+
+	/* Application restricts the server to AES-256 only. */
+	ctx.options.ciphersuites[0] = TLS_AES_256_GCM_SHA384;
+
+	memcpy(hello, test_client_hello, sizeof(hello));
+	/* The client offers AES-128, which is now excluded. */
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_equal(ret, -ENOTSUP,
+		      "A suite outside the configured list must not be selected (%d)",
+		      ret);
+
+	/* With the offered suite allowed, selection proceeds normally. */
+	ctx.options.ciphersuites[0] = TLS_AES_128_GCM_SHA256;
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_not_equal(ret, -ENOTSUP,
+			  "An allowed suite must still be selectable (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_459_server_hello_suite_must_come_from_our_offer)
+{
+	struct quic_tls_context ctx = { 0 };
+	uint8_t hello[40];
+	size_t pos = 0;
+	int ret;
+
+	/* Minimal ServerHello: version, random, empty session id echo, the
+	 * selected suite, compression, empty extensions.
+	 */
+	hello[pos++] = 0x03;
+	hello[pos++] = 0x03;
+	memset(&hello[pos], 0xab, 32);
+	pos += 32;
+	hello[pos++] = 0x00; /* Session ID echo length */
+	hello[pos++] = (TLS_AES_256_GCM_SHA384 >> 8) & 0xFF;
+	hello[pos++] = TLS_AES_256_GCM_SHA384 & 0xFF;
+	hello[pos++] = 0x00; /* Compression */
+	hello[pos++] = 0x00; /* Extensions length */
+	hello[pos++] = 0x00;
+
+	/* With an external PSK the ClientHello offers AES-128 only. A server
+	 * that declines the PSK must still not select a suite the offer left
+	 * out, even if the configured list would permit it.
+	 */
+	ctx.offered_suites[0] = TLS_AES_128_GCM_SHA256;
+	ctx.offered_suite_count = 1;
+
+	ret = parse_server_hello(&ctx, hello, sizeof(hello));
+	zassert_equal(ret, -ENOTSUP,
+		      "A suite absent from our offer must be rejected (%d)", ret);
+
+	/* The same suite passes the check once it is part of the offer; the
+	 * parse then fails later on the missing extensions instead.
+	 */
+	ctx.offered_suites[1] = TLS_AES_256_GCM_SHA384;
+	ctx.offered_suite_count = 2;
+
+	ret = parse_server_hello(&ctx, hello, sizeof(hello));
+	zassert_not_equal(ret, -ENOTSUP,
+			  "An offered suite must pass the offer check (%d)", ret);
+}
+
 ZTEST(net_socket_quic, test_453_client_hello_odd_cipher_suites_length)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
