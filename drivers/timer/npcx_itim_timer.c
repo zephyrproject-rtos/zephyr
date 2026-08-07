@@ -65,12 +65,6 @@ static struct itim32_reg *const evt_tmr = (struct itim32_reg *)
 
 static const struct npcx_clk_cfg itim_clk_cfg[] = NPCX_DT_CLK_CFG_ITEMS_LIST(0);
 
-static struct k_spinlock lock;
-/* Announced cycles in system timer before executing sys_clock_announce() */
-static uint64_t cyc_sys_announced;
-static uint64_t last_ticks;
-static uint32_t last_elapsed;
-
 /* Current target cycles of time-out signal in event timer */
 static uint32_t cyc_evt_timeout;
 /* Total cycles of system timer stopped in "sleep/deep sleep" mode */
@@ -139,34 +133,35 @@ static inline void npcx_itim_evt_disable(void)
 	evt_tmr->ITCTS32 &= ~BIT(NPCX_ITCTSXX_ITEN);
 }
 
-/* ITIM local functions */
-static int npcx_itim_start_evt_tmr_by_tick(int32_t ticks)
+/*
+ * The counter and the alarm are two different timers here. The cycle domain is
+ * the free-running 64-bit ITIM64, while the wakeup comes from a separate 32-bit
+ * ITIM32 counting down at the low-frequency clock, so this is a RELOAD backend
+ * whose range is set by that second timer rather than by the counter: at most
+ * NPCX_ITIM32_MAX_CNT of its own cycles, expressed here in the counter's.
+ *
+ * Reading ITIM64 is a two-register sequence that the power-management path also
+ * adds a compensation to, so the core takes the clock lock around the public
+ * cycle getters.
+ */
+#define TIMER_CORE_BACKEND_RELOAD
+#define TIMER_CORE_COUNTER_WIDTH 64
+#define TIMER_CORE_COUNTER_NONATOMIC
+#define TIMER_CORE_ALARM_MAX_CYCLES ((uint64_t)NPCX_ITIM32_MAX_CNT * SYS_CYC_PER_EVT_CYC)
+#define TIMER_CORE_ALARM_MIN_CYCLES SYS_CYC_PER_EVT_CYC
+
+static inline uint64_t timer_driver_cycle_get(void)
 {
-	/*
-	 * Get desired cycles of event timer from the requested ticks which
-	 * round up to next tick boundary.
-	 */
+	return npcx_itim_get_sys_cyc64();
+}
 
-	uint64_t next_cycs;
-	uint64_t curr = npcx_itim_get_sys_cyc64();
-	uint64_t dcycles;
+static void timer_driver_set_reload(uint64_t cycles)
+{
+	/* Convert the delay from the counter's cycles to the event timer's. */
+	uint64_t evt_cycles = DIV_ROUND_UP(cycles * EVT_CYCLES_PER_SEC,
+					   sys_clock_hw_cycles_per_sec());
 
-	if (ticks == 0) {
-		ticks = 1;
-	}
-
-	next_cycs = (last_ticks + last_elapsed + ticks) * SYS_CYCLES_PER_TICK;
-	if (unlikely(next_cycs <= curr)) {
-		cyc_evt_timeout = 1;
-	} else {
-		uint32_t dticks;
-
-		dcycles = next_cycs - curr;
-		dticks = DIV_ROUND_UP(dcycles * EVT_CYCLES_PER_SEC,
-				      sys_clock_hw_cycles_per_sec());
-		cyc_evt_timeout = CLAMP(dticks, 1, NPCX_ITIM32_MAX_CNT);
-	}
-	LOG_DBG("ticks %x, cyc_evt_timeout %x", ticks, cyc_evt_timeout);
+	cyc_evt_timeout = CLAMP(evt_cycles, 1, NPCX_ITIM32_MAX_CNT);
 
 	/* Disable event timer if needed before configuring counter */
 	if (IS_BIT_SET(evt_tmr->ITCTS32, NPCX_ITCTSXX_ITEN)) {
@@ -177,8 +172,10 @@ static int npcx_itim_start_evt_tmr_by_tick(int32_t ticks)
 	evt_tmr->ITCNT32 = npcx_itim_evt_counter_val();
 
 	/* Enable event timer and start ticking */
-	return npcx_itim_evt_enable();
+	(void)npcx_itim_evt_enable();
 }
+
+#include "system_timer_generic.h"
 
 static void npcx_itim_evt_isr(const struct device *dev)
 {
@@ -189,25 +186,15 @@ static void npcx_itim_evt_isr(const struct device *dev)
 	/* Clear timeout status for event */
 	evt_tmr->ITCTS32 |= BIT(NPCX_ITCTSXX_TO_STS);
 
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		k_spinlock_key_t key = k_spin_lock(&lock);
-		uint64_t curr = npcx_itim_get_sys_cyc64();
-		uint32_t delta_ticks = (uint32_t)((curr - cyc_sys_announced) / SYS_CYCLES_PER_TICK);
-
-		cyc_sys_announced += delta_ticks * SYS_CYCLES_PER_TICK;
-		last_ticks += delta_ticks;
-		last_elapsed = 0;
-		k_spin_unlock(&lock, key);
-
-		/* Informs kernel that specified number of ticks have elapsed */
-		sys_clock_announce(delta_ticks);
-	} else {
-		/* Enable event timer for ticking and wait to it take effect */
-		npcx_itim_evt_enable();
-
-		/* Informs kernel that one tick has elapsed */
-		sys_clock_announce(1);
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/* The event timer is one-shot, so a ticked kernel re-arms it
+		 * here: the core leaves a reload backend alone, expecting the
+		 * hardware to reload itself.
+		 */
+		(void)npcx_itim_evt_enable();
 	}
+
+	timer_core_announce();
 }
 
 #if defined(CONFIG_PM)
@@ -248,64 +235,6 @@ static uint32_t npcx_itim_evt_elapsed_cyc32(void)
 	return cnt2;
 }
 #endif /* CONFIG_PM */
-
-/* System timer api functions */
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	ARG_UNUSED(idle);
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Only for tickless kernel system */
-		return;
-	}
-
-	LOG_DBG("timeout is %d", ticks);
-	/* Start a event timer in ticks */
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	npcx_itim_start_evt_tmr_by_tick(ticks);
-	k_spin_unlock(&lock, key);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Always return 0 for tickful kernel system */
-		return 0;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t delta_cycle = npcx_itim_get_sys_cyc64() - cyc_sys_announced;
-	uint32_t delta_ticks = (uint32_t)(delta_cycle / SYS_CYCLES_PER_TICK);
-
-	last_elapsed = delta_ticks;
-	k_spin_unlock(&lock, key);
-
-	/* Return how many ticks elapsed since last sys_clock_announce() call */
-	return delta_ticks;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t current = npcx_itim_get_sys_cyc64();
-
-	k_spin_unlock(&lock, key);
-
-	/* Return how many cycles since system kernel timer start counting */
-	return (uint32_t)(current);
-}
-
-uint64_t sys_clock_cycle_get_64(void)
-{
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t current = npcx_itim_get_sys_cyc64();
-
-	k_spin_unlock(&lock, key);
-
-	/* Return how many cycles since system kernel timer start counting */
-	return current;
-}
 
 /* Platform specific system timer functions */
 #if defined(CONFIG_PM)
@@ -404,12 +333,14 @@ static int sys_clock_driver_init(void)
 	/* Enable event timer interrupt */
 	irq_enable(DT_INST_IRQN(0));
 
+	/* Seed the announce baseline and arm the first tick. */
+	timer_core_init();
+
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Start a event timer in one tick */
-		ret = npcx_itim_start_evt_tmr_by_tick(1);
-		if (ret < 0) {
-			return ret;
-		}
+		/* The core leaves the period of a reload backend to the driver,
+		 * so start the periodic tick here. The ISR re-arms it.
+		 */
+		timer_driver_set_reload(SYS_CYCLES_PER_TICK);
 	}
 
 	return 0;
