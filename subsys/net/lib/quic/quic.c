@@ -3490,6 +3490,17 @@ static void quic_check_idle_timeouts(struct k_work *work)
 				expired[expired_count++] = ep;
 				continue;
 			}
+
+			/* An endpoint that is still handshaking has no negotiated
+			 * idle timeout yet, so it would contribute nothing below
+			 * and this work would stop rescheduling itself. Its own
+			 * handshake timeout would then never fire and the slot
+			 * would be held until reboot.
+			 */
+			remaining = (int64_t)ep->handshake.timeout_ms - handshake_time;
+			if (shortest == 0 || shortest > remaining) {
+				shortest = remaining;
+			}
 		}
 
 		if (ep->idle.idle_timeout_disabled) {
