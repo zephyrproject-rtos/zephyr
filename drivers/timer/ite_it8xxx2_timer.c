@@ -396,7 +396,7 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	return 0;
 }
 
-bool ite_ec_timer_block_idle(void)
+bool ite_it8xxx2_timer_block_idle(void)
 {
 	return (IT8XXX2_EXT_CNTOX(EVENT_TIMER) < IDLE_BLOCK_TIMER_TICKS) ||
 	       (IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER) < IDLE_BLOCK_TIMER_TICKS);
