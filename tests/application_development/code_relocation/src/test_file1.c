@@ -53,6 +53,8 @@ ZTEST(code_relocation, test_function_in_sram2)
 		(uintptr_t)&__sram2_data_reloc_start,
 		(uintptr_t)&__sram2_data_reloc_end,
 		"var_sram2_data not in sram2 region");
+	zassert_equal(var_sram2_data, 10U, "var_sram2_data was not initialized");
+	zassert_equal(var_sram2_bss, 0U, "var_sram2_bss was not zeroed");
 	zassert_between_inclusive((uintptr_t)&k_sem_give,
 		(uintptr_t)&__sram2_text_reloc_start,
 		(uintptr_t)&__sram2_text_reloc_end,
