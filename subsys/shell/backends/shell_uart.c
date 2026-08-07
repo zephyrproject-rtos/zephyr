@@ -79,21 +79,20 @@ static void async_callback(const struct device *dev, struct uart_event *evt, voi
 		uart_async_rx_on_buf_rel(&sh_uart->async_rx, evt->data.rx_buf.buf);
 		break;
 	case  UART_RX_DISABLED:
-	{
-		uint8_t *buf = uart_async_rx_buf_req(&sh_uart->async_rx);
-		size_t len;
-		int err;
+		if (sh_uart->shell_enabled) {
+			uint8_t *buf = uart_async_rx_buf_req(&sh_uart->async_rx);
+			size_t len;
+			int err;
 
-		sh_uart->rx_enabled = false;
-		if (buf) {
-			len = uart_async_rx_get_buf_len(&sh_uart->async_rx);
-			err = rx_enable(dev, sh_uart, buf, len);
-			(void)err;
-			__ASSERT_NO_MSG(err == 0);
+			sh_uart->rx_enabled = false;
+			if (buf) {
+				len = uart_async_rx_get_buf_len(&sh_uart->async_rx);
+				err = rx_enable(dev, sh_uart, buf, len);
+				(void)err;
+				__ASSERT_NO_MSG(err == 0);
+			}
 		}
-
 		break;
-	}
 	default:
 		break;
 	};
@@ -272,18 +271,19 @@ static void async_init(struct shell_uart_async *sh_uart)
 	k_sem_init(&sh_uart->tx_sem, 0, 1);
 
 	err = uart_async_rx_init(async_rx, &sh_uart->async_rx_config);
-	(void)err;
 	__ASSERT_NO_MSG(err == 0);
 
 	uint8_t *buf = uart_async_rx_buf_req(async_rx);
 
 	err = uart_callback_set(dev, async_callback, (void *)sh_uart);
-	(void)err;
 	__ASSERT_NO_MSG(err == 0);
 
 	err = rx_enable(dev, sh_uart, buf, uart_async_rx_get_buf_len(async_rx));
-	(void)err;
 	__ASSERT_NO_MSG(err == 0);
+
+	if (err == 0) {
+		sh_uart->shell_enabled = true;
+	}
 }
 
 static void polling_rx_timeout_handler(struct k_timer *timer)
@@ -355,6 +355,9 @@ static void async_uninit(struct shell_uart_async *sh_uart)
 {
 	const struct device *dev = sh_uart->common.dev;
 
+	sh_uart->shell_enabled = false;
+
+	(void)uart_tx_abort(dev);
 	(void)uart_rx_disable(dev);
 }
 
@@ -612,9 +615,7 @@ static int enable_shell_uart(void)
 		smp_shell_init();
 	}
 
-	shell_init(&shell_uart, dev, cfg_flags, log_backend, level);
-
-	return 0;
+	return shell_init(&shell_uart, dev, cfg_flags, log_backend, level);
 }
 
 SYS_INIT(enable_shell_uart, POST_KERNEL,
