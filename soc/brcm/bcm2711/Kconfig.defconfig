@@ -7,7 +7,7 @@ config NUM_IRQS
 	default 260
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+	default $(dt_node_int_prop_int,/soc/timer,clock-frequency)
 
 configdefault CACHE_MANAGEMENT
 	default y

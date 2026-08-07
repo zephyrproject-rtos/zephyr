@@ -13,7 +13,6 @@
 
 / {
 	cpus {
-		clock-frequency = <DT_FREQ_M(540)>;
 		enable-method = "spin-table";
 		i-cache-line-size = <64>;
 		d-cache-line-size = <64>;
@@ -53,6 +52,7 @@
 
 	timer {
 		compatible = "arm,armv8-timer";
+		clock-frequency = <DT_FREQ_M(54)>;
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 14 IRQ_TYPE_LEVEL

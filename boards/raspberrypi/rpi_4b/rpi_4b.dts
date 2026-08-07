@@ -99,10 +99,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <DT_FREQ_M(1500)>;
-};
-
 &rng {
 	status = "okay";
 };
