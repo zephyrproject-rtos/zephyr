@@ -44,6 +44,8 @@ struct rpi_bcm2711_fb_config {
 	const struct device *fw_dev;
 	uint16_t width;
 	uint16_t height;
+	enum display_pixel_format pixel_format;
+	bool red_blue_swap;
 };
 
 struct rpi_bcm2711_fb_data {
@@ -87,22 +89,22 @@ static void rpi_bcm2711_fb_get_capabilities(const struct device *dev,
 
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888;
-	capabilities->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
+	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_ABGR_8888;
+	capabilities->current_pixel_format = config->pixel_format;
 	capabilities->screen_info = 0;
 }
 
 static int rpi_bcm2711_fb_set_pixel_format(const struct device *dev,
 					   const enum display_pixel_format pixel_format)
 {
-	ARG_UNUSED(dev);
+	const struct rpi_bcm2711_fb_config *config = dev->config;
 
-	if (pixel_format != PIXEL_FORMAT_ARGB_8888) {
-		LOG_ERR("Pixel format not supported");
-		return -ENOTSUP;
+	if (config->pixel_format == pixel_format) {
+		return 0;
 	}
 
-	return 0;
+	LOG_WRN("Changing pixel format is not supported");
+	return -ENOTSUP;
 }
 
 static int rpi_bcm2711_fb_configure(const struct device *fw_dev,
@@ -147,11 +149,16 @@ static int rpi_bcm2711_fb_init(const struct device *dev)
 
 	fb.display.width = config->width;
 	fb.display.height = config->height;
-	fb.depth = DISPLAY_BITS_PER_PIXEL(PIXEL_FORMAT_ARGB_8888);
-	fb.pixel_order = RPI_BCM2711_FB_PIXEL_ORDER_RGB;
+	fb.depth = DISPLAY_BITS_PER_PIXEL(config->pixel_format);
+	fb.pixel_order = config->red_blue_swap ? 0 : RPI_BCM2711_FB_PIXEL_ORDER_RGB;
 	fb.alloc.buffer = 16;
 	fb.alloc.size = 0;
 	fb.pitch = 0;
+
+	if (!device_is_ready(fw_dev)) {
+		LOG_ERR_DEVICE_NOT_READY(fw_dev);
+		return -ENODEV;
+	}
 
 	ret = rpi_bcm2711_fb_configure(fw_dev, &fb);
 	if (ret < 0) {
@@ -199,6 +206,8 @@ static DEVICE_API(display, rpi_bcm2711_fb_api) = {
 		.fw_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                        \
 		.width = DT_INST_PROP(n, width),                                                   \
 		.height = DT_INST_PROP(n, height),                                                 \
+		.pixel_format = DT_INST_PROP(n, pixel_format),                                     \
+		.red_blue_swap = DT_INST_PROP(n, red_blue_swap),                                   \
 	};                                                                                         \
                                                                                                    \
 	static struct rpi_bcm2711_fb_data rpi_bcm2711_fb_data_##n;                                 \
