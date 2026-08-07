@@ -126,7 +126,9 @@ static int regulator_mspm0_vref_disable(const struct device *dev)
 static int regulator_mspm0_vref_get_voltage(const struct device *dev, int32_t *volt_uv)
 {
 	const struct regulator_mspm0_vref_config *config = dev->config;
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	struct regulator_mspm0_vref_data *data = dev->data;
+#endif
 
 	if (volt_uv == NULL) {
 		return -EINVAL;
@@ -193,7 +195,9 @@ out:
 static int regulator_mspm0_vref_get_mode(const struct device *dev, regulator_mode_t *mode)
 {
 	const struct regulator_mspm0_vref_config *config = dev->config;
+#ifdef CONFIG_REGULATOR_THREAD_SAFE_REFCNT
 	struct regulator_mspm0_vref_data *data = dev->data;
+#endif
 
 	if (mode == NULL) {
 		return -EINVAL;
