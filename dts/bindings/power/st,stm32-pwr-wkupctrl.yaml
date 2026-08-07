@@ -1,0 +1,142 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32 wake-up lines controller
+
+description: |
+  Control logic for wake-up lines in STM32 SoCs. This control logic is located
+  inside the Power Controller (PWR) and configured using PWR MMIO registers.
+
+  In STM32 SoCs, several "wake-up lines" (also known as "wake-up pins") are
+  connected to the Power Controller. An event on these lines can wake up SoCs
+  from low-power modes in which the main power domain is turned off, such as
+  Standby or Shutdown modes on STM32U5.
+
+compatible: "st,stm32-pwr-wkupctrl"
+
+properties:
+  st,max-wkup-line-idx:
+    type: int
+    required: true
+    description: |
+      Index of the highest wake-up line `WKUPn` supported by the SoC.
+
+      NOTE: only wake-up lines connected to a GPIO pin, which are usually
+      named `WKUPn`, should be taken into account for this property, and
+      lines connected only to internal sources should be ignored.
+
+      For example, this property should be set equal to 8 on a series where
+      WKUP8 is the highest wake-up line connected to a GPIO pin.
+
+  st,has-multi-source-lines:
+    type: boolean
+    description: |
+      If present, indicates that the event source for each wake-up line
+      can be configured by software and selected among multiple sources
+      (which can be internal sources or a GPIO pin).
+
+      If not present, the event source for each wake-up line is hardwired
+      to a specific source (GPIO pin) and cannot be changed by software.
+
+  st,has-pwr-full-pupd:
+    type: boolean
+    description: |
+      If present, indicates that the Power Controller is capable of managing
+      the internal pull-up/pull-down resistors of all GPIO pins in the SoC.
+
+      This feature can be identified by the presence of a pair of registers
+      (`PWR_PUCRx`/`PWR_PDCRx`, `x` = A/B/C/...) in the PWR register map for
+      each GPIO port in the SoC. Note that there are some series where some
+      of these registers exist, but not for all GPIO ports: in this case,
+      the property must NOT be present.
+
+child-binding:
+  description: |
+    STM32 wake-up line node.
+
+    Nodes using this binding should be named `wkup@[n]`, where `n` is
+    the wake-up line index as found in its name `WKUPn` (starting from 1).
+
+  include:
+    - name: base.yaml
+      property-allowlist:
+        - reg
+
+  properties:
+    reg:
+      required: true
+      description: Wake-up line index
+
+    wkup-gpios:
+      type: phandle-array
+      description: |
+        Specifies which GPIO pin(s) can trigger this wake-up line.
+
+        The `flags` cell of each entry in this property has a particular meaning:
+        - if the property `st,has-multi-source-lines` is present in the parent node,
+          it indicates which of the line's wake-up sources corresponds to the
+          specific GPIO pin (`STM32_PWR_WKUP_EVT_SRC_n`)
+        - otherwise, it must be set to `STM32_PWR_WKUP_PIN_NOT_MUXED` to indicate
+          that the wake-up source selection is hardwired.
+
+        Refer to `include/zephyr/dt-bindings/power/stm32_pwr.h` for more details
+        and see the examples below for an overview of the different use cases.
+
+examples:
+  - |
+    /* Example: STM32WBA series */
+    power@46020800 {
+      /* ...PWR properties omitted for brevity... */
+
+      wakeup-controller {
+        compatible = "st,stm32-pwr-wkupctrl";
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        st,max-wkup-line-idx = <8>;
+        st,has-multi-source-lines;
+
+        wkup@1 {
+          /*
+           * Wake-up line 1, triggerable by two different GPIOs:
+           *  - source 0: PA0
+           *  - source 1: PB2
+           */
+          reg = <0x1>;
+          wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_EVT_SRC_0>,
+                       <&gpiob 2 STM32_PWR_WKUP_EVT_SRC_1>;
+        };
+
+        wkup@2 {
+          /*
+           * Wake-up line 2, triggerable by only one GPIO: PC13.
+           * Regardless, the appropriate `STM32_PWR_WKUP_EVT_SRC_n`
+           * value must still be set in the `flags` cell.
+           */
+          reg = <0x2>;
+          wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_EVT_SRC_1>;
+        };
+
+        /* ...other lines omitted for brevity... */
+      };
+    };
+
+  - |
+    /* Example: STM32F1 series */
+    pwr: power@40007000 {
+      /* ...PWR properties omitted for brevity... */
+
+      wakeup-controller {
+        compatible = "st,stm32f1-pwr-wkupctrl", "st,stm32-pwr-wkupctrl";
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        st,max-wkup-line-idx = <1>;
+        /* Note the absence of `st,has-multi-source-lines` property... */
+
+        wkup@1 {
+          /* ...and use of the `STM32_PWR_WKUP_PIN_NOT_MUXED` value. */
+          reg = <0x1>;
+          wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+        };
+    };

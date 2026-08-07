@@ -25,6 +25,21 @@
 #define STM32_GPIO_PORTS_LIST_UPR \
 	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
 
+/**
+ * Checks that the node is active AND has compatible handled by STM32 code.
+ * It is possible for DT nodes to use a `gpioX` nodelabel despite not being
+ * an in-SoC GPIO controller, in which case we could try to operate on them
+ * even though we don't actually know how to handle them.
+ *
+ * @param port GPIO port name (lowercase letter)
+ * @return 1 if the GPIO port is active and compatible, 0 otherwise
+ */
+#define STM32_GPIO_PORT_DEVICE_IS_ACTIVE(port)				\
+	UTIL_OR(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
+					  st_stm32_gpio, okay),		\
+		DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
+					  st_stm32mp2_gpio, okay))
+
 /*
  * STM32 GPIO port configuration block and data block structures
  */
@@ -118,19 +133,16 @@ int stm32_gpioport_configure_pin(const struct device *port,
 
 #if defined(CONFIG_STM32_WKUP_PINS)
 /**
- * @brief Configure a GPIO pin as a source for STM32 PWR wake-up pins
+ * @brief Enable and configure the wake-up line associated to a GPIO pin.
  *
- * @param gpio Container for GPIO pin information specified in devicetree
- *
- * @return 0 on success, -EINVAL on invalid values
+ * @param port_idx GPIO port index (STM32_PORTx)
+ * @param pin GPIO pin number
+ * @param flags GPIO configuration flags
+ * @retval 0 Success
+ * @retval -ENODEV No wake-up line associated to specified GPIO pin
+ * @retval <0 Unspecified error
  */
-int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio);
-
-/**
- * @brief Enable or Disable pull-up and pull-down configuration for
- * GPIO Ports that are associated with STM32 PWR wake-up pins
- */
-void stm32_pwr_wkup_pin_cfg_pupd(void);
+int stm32_gpiomgr_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t flags);
 #endif /* defined(CONFIG_STM32_WKUP_PINS) */
 
 /*
