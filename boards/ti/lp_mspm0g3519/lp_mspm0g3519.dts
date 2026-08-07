@@ -23,6 +23,7 @@
 		led2 = &led2;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		rtc = &rtc;
 	};
 
 	chosen {
@@ -143,4 +144,8 @@
 	status = "okay";
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
 };
