@@ -5315,6 +5315,11 @@ static struct quic_context *quic_context_init(struct quic_context *ctx)
 	sys_slist_init(&ctx->endpoints);
 	sys_slist_init(&ctx->streams);
 
+	/* Contexts live in bss, so an unused slot reads back as fd 0. Mark it
+	 * invalid until a socket is assigned, otherwise an early teardown
+	 * closes fd 0.
+	 */
+	ctx->sock = -1;
 	ctx->error_code = 0;
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
