@@ -24,7 +24,9 @@
 #define MR_AI			0x02 /* Address Auto-Increment */
 #define MR_IND			0x01 /* Indirect mode */
 #define W5500_SHAR		0x0009 /* Source MAC address */
+#define W5500_INTLEVEL		0x0013 /* (Interrupt Low Level Timer Register */
 #define W5500_IR		0x0015 /* Interrupt Register */
+#define W5500_IRMASK		0x0016 /* Interrupt Mask Register */
 #define W5500_COMMON_REGS_LEN	0x0040
 #define W5500_PHYCFGR		0x002E /* PHY Configuration register */
 
@@ -56,8 +58,8 @@
 #define S0_CR_SEND		0x20 /* SEND command */
 #define S0_CR_RECV		0x40 /* RECV command */
 #define W5500_S0_IR		(W5500_S0_REGS + W5500_Sn_IR)
-#define S0_IR_SENDOK		0x10 /* complete sending */
-#define S0_IR_RECV		0x04 /* receiving data */
+#define S0_IR_SENDOK		0x10 /* complete sending BIT(4) */
+#define S0_IR_RECV		0x04 /* receiving data BIT(2) */
 #define W5500_S0_SR		(W5500_S0_REGS + W5500_Sn_SR)
 #define S0_SR_MACRAW		0x42 /* mac raw mode */
 #define W5500_S0_TX_FSR		(W5500_S0_REGS + W5500_Sn_TX_FSR)
@@ -69,7 +71,9 @@
 
 #define W5500_S0_MR_MF		7 /* MAC Filter for W5500 */
 #define W5500_Sn_REGS_LEN	0x0040
+#define W5500_SIR		0x0017 /* Socket Interrupt Register */
 #define W5500_SIMR		0x0018 /* Socket Interrupt Mask Register */
+#define IR_S0_BIT		(0)
 #define IR_S0			0x01
 #define RTR_DEFAULT		2000
 #define W5500_RTR		0x0019 /* Retry Time-value Register */
@@ -97,18 +101,29 @@ struct w5500_config {
 	const struct device *phy_dev;
 };
 
+#define INT_THREAD_STACK_SIZE (CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE/2)
+
 struct w5500_runtime {
 	struct net_if *iface;
 
-	K_KERNEL_STACK_MEMBER(thread_stack,
+	K_KERNEL_STACK_MEMBER(thread_stack_int,
+			      INT_THREAD_STACK_SIZE);
+	K_KERNEL_STACK_MEMBER(thread_stack_rx,
 			      CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE);
-	struct k_thread thread;
+	K_KERNEL_STACK_MEMBER(thread_stack_tx,
+			      CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE);
+	struct k_thread thread_int;
+	struct k_thread thread_rx;
+	struct k_thread thread_tx;
 	uint8_t mac_addr[6];
 	struct gpio_callback gpio_cb;
+	struct k_sem rx_sem;
 	struct k_sem tx_sem;
 	struct k_sem int_sem;
+	struct k_spinlock sync_lock;
 	struct phy_link_state state;
-	uint8_t buf[NET_ETH_MAX_FRAME_SIZE];
+	uint8_t txbuf[NET_ETH_MAX_FRAME_SIZE];
+	uint16_t txlen;
 };
 
 #endif /*_W5500_*/
