@@ -139,6 +139,7 @@
 		status = "disabled";
 		#mux-control-cells = <1>;
 		#mux-state-cells = <2>;
+		#inputmux-cells = <2>;
 	};
 
 	porta: pinmux@116000 {
