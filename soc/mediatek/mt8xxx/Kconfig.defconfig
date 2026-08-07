@@ -3,7 +3,7 @@
 
 orsource "*/Kconfig.defconfig"
 
-if SOC_FAMILY_MTK
+if SOC_MTK_ADSP
 
 config INTC_MTK_ADSP
 	default y
@@ -111,4 +111,4 @@ config GEN_SW_ISR_TABLE
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
-endif # SOC_FAMILY_MTK
+endif # SOC_MTK_ADSP

@@ -1,7 +1,9 @@
 # Copyright 2024 The ChromiumOS Authors
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_FAMILY_MTK
+config SOC_MTK_ADSP
 	select XTENSA
 	select CPU_HAS_DCACHE
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+
+orsource "*/Kconfig"

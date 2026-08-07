@@ -4,27 +4,37 @@
 config SOC_FAMILY_MTK
 	bool
 
-config SOC_SERIES_MT8195
+config SOC_FAMILY
+	default "mt8xxx" if SOC_FAMILY_MTK
+
+# Selected by every Xtensa audio DSP cluster in this family.  The family also
+# hosts Arm application processor clusters, so everything specific to the audio
+# DSPs hangs off this symbol rather than off the family itself.
+config SOC_MTK_ADSP
 	bool
 	select SOC_FAMILY_MTK
+
+config SOC_SERIES_MT8195
+	bool
+	select SOC_MTK_ADSP
 	help
 	  Mediatek MT8195 Audio DSP
 
 config SOC_SERIES_MT818X
 	bool
-	select SOC_FAMILY_MTK
+	select SOC_MTK_ADSP
 	help
 	  Mediatek MT818x Audio DSPs
 
 config SOC_SERIES_MT8196
 	bool
-	select SOC_FAMILY_MTK
+	select SOC_MTK_ADSP
 	help
 	  Mediatek MT8196 Audio DSPs
 
 config SOC_SERIES_MT8365
 	bool
-	select SOC_FAMILY_MTK
+	select SOC_MTK_ADSP
 	help
 	  Mediatek MT8365 Audio DSP
 
@@ -60,3 +70,5 @@ config SOC
 	default "mt8188" if SOC_MT8188
 	default "mt8196" if SOC_MT8196
 	default "mt8365" if SOC_MT8365
+
+orsource "*/Kconfig.soc"
