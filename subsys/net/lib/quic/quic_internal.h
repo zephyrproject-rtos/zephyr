@@ -1397,6 +1397,8 @@ int quic_validate_address_token(const struct net_sockaddr *addr,
 				const uint8_t *token, size_t token_len,
 				struct quic_token_validation *validation);
 void quic_token_cache_clear(void);
+uint64_t quic_token_now_sec(void);
+bool quic_token_claim_nonce(const uint8_t *nonce, uint64_t expires_at_sec);
 void quic_token_cache_store(const struct net_sockaddr *remote_addr,
 			    const uint8_t *token, size_t token_len);
 size_t quic_token_cache_take(const struct net_sockaddr *remote_addr,
