@@ -126,16 +126,16 @@
  *
  * Route memory for read-write sections that are loaded.
  *
- * Used for initialized data sections that on XIP platforms must be copied at
- * startup.
+ * Used for initialized data sections whose load and runtime addresses differ.
  *
  * @param vregion Output VMA
- * @param lregion Output LMA (only used if CONFIG_MMU if VMA != LMA,
- *		  or CONFIG_XIP)
+ * @param lregion Output LMA (used for CONFIG_MMU when VMA != LMA,
+ *		  CONFIG_XIP, or CONFIG_ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT)
  */
 #if defined(CONFIG_ARCH_POSIX)
 #define GROUP_DATA_LINK_IN(vregion, lregion)
-#elif defined(CONFIG_XIP) || defined(K_MEM_IS_VM_KERNEL)
+#elif defined(CONFIG_XIP) || defined(K_MEM_IS_VM_KERNEL) || \
+	defined(CONFIG_ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT)
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
 #else
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
@@ -187,20 +187,19 @@
  * @def SECTION_DATA_PROLOGUE
  *
  * Same as for SECTION_PROLOGUE(), except that this one must be used
- * for data sections which on XIP platforms will have differing
- * virtual and load addresses (i.e. they'll be copied into RAM at
- * program startup).  Such a section must also use
- * GROUP_DATA_LINK_IN to specify the correct output load address.
+ * for data sections which will have differing virtual and load addresses
+ * (i.e. they'll be copied into RAM at program startup). Such a section must
+ * also use GROUP_DATA_LINK_IN to specify the correct output load address.
  *
- * This is equivalent to SECTION_PROLOGUE() on non-XIP systems.
- * On XIP systems there is an implicit ALIGN_WITH_INPUT specified.
+ * This is equivalent to SECTION_PROLOGUE() when load and runtime addresses
+ * are identical. Otherwise, there is an implicit ALIGN_WITH_INPUT specified.
  *
  * @param name Name of the output section
  * @param options Section options, or left blank
  * @param align Alignment directives, such as SUBALIGN(). ALIGN() itself is
  *              not allowed. May be blank.
  */
-#if defined(CONFIG_XIP)
+#if defined(CONFIG_XIP) || defined(CONFIG_ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT)
 #define SECTION_DATA_PROLOGUE(name, options, align) \
 	name options : ALIGN_WITH_INPUT
 #else

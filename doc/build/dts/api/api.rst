@@ -436,11 +436,17 @@ device.
 
    * - Property
      - Purpose
+   * - mcuboot,image-ram
+     - Selects the memory region where MCUboot loads a RAM-load application.
+       Cortex-M applications in RAM-load or RAM-load-with-revert mode are linked
+       to execute from this node's ``reg`` address. Initialized data may use a
+       different runtime region selected by ``zephyr,sram``.
    * - mcuboot,ram-load-dev
-     - When a Zephyr application is built to be loaded to RAM by MCUboot, with
-       :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD`,
-       this property is used to tell MCUboot the load address of the image, which
-       will be the ``reg`` of the chosen node.
+     - Selects the memory region where MCUboot loads a single-app RAM-load
+       application. Cortex-M applications built with
+       :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD` are
+       linked to execute from this node's ``reg`` address. Initialized data may
+       use a different runtime region selected by ``zephyr,sram``.
    * - zephyr,boot-mode
      - Used for :ref:`boot_mode_api` selection, part of :ref:`retention_api`, which specifies
        what image on a device should be booted.

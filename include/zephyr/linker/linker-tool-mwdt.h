@@ -47,15 +47,14 @@
 /*
  * As GROUP_LINK_IN(), but takes a second argument indicating the
  * memory region (e.g. "ROM") for the load address.  Used for
- * initialized data sections that on XIP platforms must be copied at
- * startup.
+ * initialized data sections whose load and runtime addresses differ.
  *
  * And, because output directives in GNU ld are "sticky", this must
  * also be used on the first section *after* such an initialized data
  * section, specifying the same memory region (e.g. "RAM") for both
  * vregion and lregion.
  */
-#ifdef CONFIG_XIP
+#if defined(CONFIG_XIP) || defined(CONFIG_ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT)
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
 #else
 #define GROUP_DATA_LINK_IN(vregion, lregion) > vregion
@@ -82,12 +81,12 @@
 
 /*
  * As for SECTION_PROLOGUE(), except that this one must (!) be used
- * for data sections which on XIP platforms will have differing
- * virtual and load addresses (i.e. they'll be copied into RAM at
- * program startup).  Such a section must (!) also use
+ * for data sections which will have differing virtual and load addresses
+ * (i.e. they'll be copied into RAM at program startup). Such a section must
+ * (!) also use
  * GROUP_LINK_IN_LMA to specify the correct output load address.
  */
-#ifdef CONFIG_XIP
+#if defined(CONFIG_XIP) || defined(CONFIG_ARCH_DATA_COPY_FOR_RAM_LOAD_SPLIT)
 #define SECTION_DATA_PROLOGUE(name, options, align) \
 	name options ALIGN(8) : align
 #else
