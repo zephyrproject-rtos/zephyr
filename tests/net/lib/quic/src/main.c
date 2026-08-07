@@ -5702,6 +5702,49 @@ ZTEST(net_socket_quic, test_480_retry_token_round_trip)
 		      "Token must be bound to client address (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_485_streams_blocked_does_not_inflate_the_limit)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	/* Repeated STREAMS_BLOCKED (bidi) frames claiming a huge blocked
+	 * limit. Each is two bytes: frame type plus a one byte varint.
+	 */
+	uint8_t payload[16];
+	uint64_t limit_after_first;
+	bool ack_only = false;
+	int ret;
+
+	for (size_t i = 0; i < sizeof(payload); i += 2) {
+		payload[i] = QUIC_FRAME_TYPE_STREAMS_BLOCKED_BIDI;
+		payload[i + 1] = 0x3f; /* varint 63 */
+	}
+
+	ep->rx_sl.max_bidi = 0;
+	ep->rx_sl.open_bidi = 0;
+	ep->rx_sl.total_bidi = 0;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, 2, 2, &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	limit_after_first = ep->rx_sl.max_bidi;
+	zassert_equal(limit_after_first, CONFIG_QUIC_MAX_STREAMS_BIDI,
+		      "First frame should open the whole pool, got %" PRIu64,
+		      limit_after_first);
+
+	/* The peer has neither opened nor closed anything, so further frames
+	 * must not raise the limit any further.
+	 */
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload),
+					 sizeof(payload), &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	zassert_equal(ep->rx_sl.max_bidi, limit_after_first,
+		      "Stream limit grew from %" PRIu64 " to %" PRIu64
+		      " without any stream being opened or closed",
+		      limit_after_first, ep->rx_sl.max_bidi);
+}
+
 ZTEST(net_socket_quic, test_486_replies_per_payload_are_capped)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
