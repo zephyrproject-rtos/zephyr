@@ -8068,6 +8068,17 @@ ZTESTABLE_STATIC int process_long_header(struct quic_endpoint *ep,
 		NET_DBG("[EP:%p/%d] Unsupported QUIC version: 0x%08x",
 			ep, quic_get_by_ep(ep), info->version);
 
+		/* RFC 9000 Section 6.1: do not answer a datagram smaller than
+		 * the minimum Initial size. Replying to a tiny datagram makes
+		 * this a free packet generator aimed at any spoofed address.
+		 */
+		if (datagram_len < MAX_QUIC_MIN_INITIAL_SIZE) {
+			NET_DBG("[EP:%p/%d] Not sending Version Negotiation for a "
+				"%zu byte datagram", ep, quic_get_by_ep(ep), datagram_len);
+			QUIC_EP_STAT_INC(ep, drop_rx);
+			return 1;
+		}
+
 		if (quic_send_version_negotiation(ep, addr, addrlen,
 						  src_conn_id, src_conn_id_len,
 						  dst_conn_id, dst_conn_id_len) < 0) {
