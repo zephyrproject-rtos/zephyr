@@ -5022,6 +5022,93 @@ ZTEST(net_socket_quic, test_450_client_can_disable_server_verification)
 						false, true);
 }
 
+/* A ClientHello whose fixed part is well formed. The extensions length is
+ * filled in per test so the parser can be pushed past the end of the buffer.
+ */
+#define TEST_CH_EXT_LEN_OFFSET 41U
+
+static const uint8_t test_client_hello[] = {
+	0x03, 0x03,                   /* Legacy version TLS 1.2 */
+	0x00, 0x01, 0x02, 0x03, 0x04, /* Client random (32 bytes) */
+	0x05, 0x06, 0x07, 0x08, 0x09,
+	0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
+	0x0f, 0x10, 0x11, 0x12, 0x13,
+	0x14, 0x15, 0x16, 0x17, 0x18,
+	0x19, 0x1a, 0x1b, 0x1c, 0x1d,
+	0x1e, 0x1f,
+	0x00,                         /* Legacy session ID length = 0 */
+	0x00, 0x02, 0x13, 0x01,       /* Cipher suites: TLS_AES_128_GCM_SHA256 */
+	0x01, 0x00,                   /* Compression methods: null */
+	0x00, 0x00,                   /* Extensions length (patched per test) */
+};
+
+ZTEST(net_socket_quic, test_452_client_hello_extensions_length_must_fit)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t hello[sizeof(test_client_hello)];
+	struct quic_tls_context ctx = { 0 };
+	int ret;
+
+	ep->is_server = true;
+	ctx.ep = ep;
+
+	memcpy(hello, test_client_hello, sizeof(hello));
+
+	/* Claim 65535 bytes of extensions in a buffer that holds none. */
+	hello[TEST_CH_EXT_LEN_OFFSET] = 0xff;
+	hello[TEST_CH_EXT_LEN_OFFSET + 1] = 0xff;
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_equal(ret, -EINVAL,
+		      "Extensions length past the end of the message must be rejected (%d)",
+		      ret);
+}
+
+ZTEST(net_socket_quic, test_453_client_hello_odd_cipher_suites_length)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t hello[sizeof(test_client_hello)];
+	struct quic_tls_context ctx = { 0 };
+	int ret;
+
+	ep->is_server = true;
+	ctx.ep = ep;
+
+	memcpy(hello, test_client_hello, sizeof(hello));
+
+	/* An odd cipher suite list length makes the 2-byte read at the last
+	 * entry run one byte past the list.
+	 */
+	hello[35] = 0x00;
+	hello[36] = 0x01;
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_equal(ret, -EINVAL,
+		      "Odd cipher suites length must be rejected (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_454_client_hello_every_truncation_is_safe)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t hello[sizeof(test_client_hello)];
+
+	ep->is_server = true;
+
+	memcpy(hello, test_client_hello, sizeof(hello));
+
+	/* No prefix of a ClientHello may make the parser read past the length
+	 * it was handed. The return value is not interesting here; the point
+	 * is that none of these run off the end under a sanitizer.
+	 */
+	for (size_t prefix = 0; prefix <= sizeof(hello); prefix++) {
+		struct quic_tls_context ctx = { 0 };
+
+		ctx.ep = ep;
+
+		(void)parse_client_hello(&ctx, hello, prefix, hello, prefix);
+	}
+}
+
 ZTEST(net_socket_quic, test_455_required_peer_verification_rejects_empty_certificate)
 {
 	static const uint8_t empty_certificate[] = { 0, 0, 0, 0 };
