@@ -370,6 +370,14 @@ struct quic_tls_context {
 	uint8_t server_random[32];
 	bool client_hello_prepared;
 
+	/* Cipher suites actually offered in the ClientHello we sent. The
+	 * ServerHello must select one of these (RFC 8446 ch. 4.1.3); the
+	 * offer can be narrower than the configured list, e.g. an external
+	 * PSK excludes suites whose hash does not match the key.
+	 */
+	uint16_t offered_suites[3];
+	uint8_t offered_suite_count;
+
 	/* External PSK configuration and negotiated use */
 	const uint8_t *psk;
 	size_t psk_len;
@@ -1389,6 +1397,8 @@ int parse_certificate(struct quic_tls_context *ctx,
 int parse_client_hello(struct quic_tls_context *ctx,
 		       const uint8_t *data, size_t len,
 		       const uint8_t *full_msg, size_t full_msg_len);
+int parse_server_hello(struct quic_tls_context *ctx,
+		       const uint8_t *msg, size_t msg_len);
 int handle_crypto_level_packet(struct quic_endpoint *ep,
 			       enum quic_secret_level level,
 			       const uint8_t *payload,
