@@ -421,13 +421,19 @@ static int tls_compute_hmac(psa_algorithm_t hash_alg,
 	return 0;
 }
 
-static int tls_compute_external_psk_binder(const uint8_t *psk, size_t psk_len,
-					   psa_algorithm_t hash_alg,
-					   size_t hash_len,
-					   const uint8_t *truncated_ch,
-					   size_t truncated_ch_len,
-					   uint8_t *binder, size_t binder_len)
+static int tls_compute_psk_binder(const uint8_t *psk, size_t psk_len,
+				  bool resumption,
+				  psa_algorithm_t hash_alg,
+				  size_t hash_len,
+				  const uint8_t *truncated_ch,
+				  size_t truncated_ch_len,
+				  uint8_t *binder, size_t binder_len)
 {
+	/* RFC 8446 Section 7.1: the binder key label depends on where the
+	 * PSK came from - "res binder" for a session ticket PSK and
+	 * "ext binder" for an externally provisioned one.
+	 */
+	const char *label = resumption ? TLS13_LABEL_RES_BINDER : TLS13_LABEL_EXT_BINDER;
 	uint8_t early_secret[QUIC_HASH_MAX_LEN];
 	uint8_t binder_key[QUIC_HASH_MAX_LEN];
 	uint8_t finished_key[QUIC_HASH_MAX_LEN];
@@ -459,8 +465,7 @@ static int tls_compute_external_psk_binder(const uint8_t *psk, size_t psk_len,
 
 	ret = quic_hkdf_expand_label_ex(hash_alg,
 					early_secret, hash_len,
-					(const uint8_t *)TLS13_LABEL_EXT_BINDER,
-					strlen(TLS13_LABEL_EXT_BINDER),
+					(const uint8_t *)label, strlen(label),
 					empty_hash, empty_hash_len,
 					binder_key, hash_len);
 	if (ret != 0) {
@@ -810,6 +815,7 @@ static int quic_tls_set_session_state(struct quic_tls_context *ctx,
 	ctx->psk_identity = ctx->session_state.ticket;
 	ctx->psk_identity_len = ctx->session_state.ticket_len;
 	ctx->psk_configured = true;
+	ctx->psk_is_resumption = true;
 	quic_tls_restore_session_transport_params(ctx);
 
 	return 0;
@@ -1258,10 +1264,11 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 	 * end of the identities field (before the binders vector), regardless of
 	 * which identity matched.
 	 */
-	if (tls_compute_external_psk_binder(matched_psk, matched_psk_len,
-					    psk_hash_alg, psk_hash_len,
-					    full_msg, 4U + identities_end,
-					    expected_binder, sizeof(expected_binder)) != 0) {
+	if (tls_compute_psk_binder(matched_psk, matched_psk_len,
+				   offer->matched_session_ticket,
+				   psk_hash_alg, psk_hash_len,
+				   full_msg, 4U + identities_end,
+				   expected_binder, sizeof(expected_binder)) != 0) {
 		ret = -EIO;
 		goto out;
 	}
@@ -1278,6 +1285,7 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 		ctx->psk = ctx->session_state.psk;
 		ctx->psk_len = matched_ticket_psk_len;
 		ctx->psk_configured = true;
+		ctx->psk_is_resumption = true;
 	}
 
 out:
@@ -6400,12 +6408,13 @@ static int quic_tls_send_client_hello(struct quic_tls_context *ctx,
 		 * identities field, i.e. before the binders vector length and
 		 * binder length prefix that precede the binder value.
 		 */
-		ret = tls_compute_external_psk_binder(ctx->psk, ctx->psk_len,
-						      ctx->ks.hash_alg, ctx->ks.hash_len,
-						      wrapped,
-						      4U + binder_offset -
-							      QUIC_TLS_PSK_BINDERS_HEADER_LEN,
-						      binder, sizeof(binder));
+		ret = tls_compute_psk_binder(ctx->psk, ctx->psk_len,
+					     ctx->psk_is_resumption,
+					     ctx->ks.hash_alg, ctx->ks.hash_len,
+					     wrapped,
+					     4U + binder_offset -
+						     QUIC_TLS_PSK_BINDERS_HEADER_LEN,
+					     binder, sizeof(binder));
 		if (ret != 0) {
 			NET_DBG("Failed to compute PSK binder: %d", ret);
 			return ret;
@@ -6682,6 +6691,7 @@ static int tls_set_psk(struct quic_tls_context *tls,
 	tls->psk_identity = psk_id->buf;
 	tls->psk_identity_len = psk_id->len;
 	tls->psk_configured = true;
+	tls->psk_is_resumption = false;
 
 	return 0;
 #else
