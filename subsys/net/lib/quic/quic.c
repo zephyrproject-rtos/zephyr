@@ -1008,6 +1008,29 @@ ZTESTABLE_STATIC void quic_crypto_context_destroy(struct quic_crypto_context *ct
 }
 
 /*
+ * Destroy the key update state: the previous- and next-generation RX keys
+ * and the current traffic secrets, which could otherwise be used to derive
+ * every future generation.
+ */
+ZTESTABLE_STATIC void quic_key_update_destroy(struct quic_key_update *ku)
+{
+	if (ku->prev_rx_pp.initialized) {
+		psa_destroy_key(ku->prev_rx_pp.key_id);
+	}
+
+	if (ku->next_rx_pp.initialized) {
+		psa_destroy_key(ku->next_rx_pp.key_id);
+	}
+
+	crypto_zero(&ku->prev_rx_pp, sizeof(ku->prev_rx_pp));
+	crypto_zero(&ku->next_rx_pp, sizeof(ku->next_rx_pp));
+	crypto_zero(ku->next_rx_secret, sizeof(ku->next_rx_secret));
+	crypto_zero(ku->rx_secret, sizeof(ku->rx_secret));
+	crypto_zero(ku->tx_secret, sizeof(ku->tx_secret));
+	ku->initialized = false;
+}
+
+/*
  * HKDF-Extract (RFC 5869 Section 2.2)
  * PRK = HMAC-Hash(salt, IKM)
  */
@@ -2039,6 +2062,116 @@ static bool quic_pp_setup_ex(struct quic_pp_cipher *pp_cipher,
 }
 
 /*
+ * RFC 9001 Section 6.1: the next-generation traffic secret is derived from
+ * the current one with the "quic ku" label. The header protection key is
+ * not updated.
+ */
+ZTESTABLE_STATIC int quic_ku_next_secret(const struct quic_key_update *ku,
+					 const uint8_t *secret, uint8_t *next)
+{
+	return quic_hkdf_expand_label_ex(ku->hash_alg,
+					 secret, ku->secret_len,
+					 (const uint8_t *)"quic ku",
+					 sizeof("quic ku") - 1,
+					 NULL, 0,
+					 next, ku->secret_len);
+}
+
+/*
+ * Move the send direction to the next key generation: derive the next TX
+ * traffic secret, replace the TX packet protection cipher with one keyed
+ * from it, and flip the TX key phase bit. The old send keys are destroyed;
+ * unlike receive keys they are never needed again.
+ */
+static int quic_ku_advance_tx(struct quic_endpoint *ep)
+{
+	struct quic_key_update *ku = &ep->crypto.ku;
+	struct quic_pp_cipher next_pp = { 0 };
+	uint8_t next_secret[QUIC_HASH_MAX_LEN];
+	int ret = 0;
+
+	if (quic_ku_next_secret(ku, ku->tx_secret, next_secret) != 0) {
+		ret = -EIO;
+		goto out;
+	}
+
+	if (!quic_pp_setup_ex(&next_pp, ku->hash_alg, ku->cipher_algo,
+			      next_secret, ku->secret_len)) {
+		ret = -EIO;
+		goto out;
+	}
+
+	/* The send path reads the TX key phase while building the header and
+	 * the TX cipher while encrypting, both under send_lock. A peer-initiated
+	 * update runs this transition on the RX thread, so serialize the whole
+	 * generation swap with sends (and with a concurrent local initiation);
+	 * otherwise a send can emit a header for one generation and encrypt with
+	 * the other, or use the cipher after it was destroyed.
+	 */
+	k_mutex_lock(&ep->send_lock, K_FOREVER);
+
+	psa_destroy_key(ep->crypto.application.tx.pp.key_id);
+	ep->crypto.application.tx.pp = next_pp;
+
+	memcpy(ku->tx_secret, next_secret, ku->secret_len);
+	ku->tx_phase ^= 1U;
+	ku->tx_phase_first_pn = ep->tx_pn.application;
+	ku->tx_phase_acked = false;
+
+	k_mutex_unlock(&ep->send_lock);
+
+out:
+	crypto_zero(next_secret, sizeof(next_secret));
+	crypto_zero(&next_pp, sizeof(next_pp));
+
+	return ret;
+}
+
+/*
+ * Start a key update (RFC 9001 Section 6.1). Packets sent from here on are
+ * protected with the next-generation keys and carry a flipped key phase
+ * bit; the peer is expected to move its own send keys to the same phase.
+ *
+ * Runs in whatever thread the caller is in; like the rest of the endpoint
+ * crypto state it relies on the caller not racing the RX path for the
+ * same endpoint.
+ *
+ * TODO: there is no production caller yet, so a Zephyr endpoint can follow a
+ * peer-initiated update but never starts one itself. RFC 9001 Section 6.6
+ * requires initiating an update before the AEAD confidentiality limit is
+ * reached; wire this to packet-protection usage accounting so keys rotate
+ * before their usage limit rather than only in response to the peer.
+ */
+int quic_endpoint_initiate_key_update(struct quic_endpoint *ep)
+{
+	struct quic_key_update *ku = &ep->crypto.ku;
+
+	/* RFC 9001 Section 6.1: an endpoint must not initiate a key update
+	 * prior to having confirmed the handshake. The application keys
+	 * alone are not enough; a client installs them before
+	 * HANDSHAKE_DONE arrives.
+	 */
+	if (!ku->initialized || !ep->crypto.application.initialized ||
+	    !ep->handshake_confirmed) {
+		return -ENOTCONN;
+	}
+
+	/* RFC 9001 Section 6.1: an endpoint must not initiate another
+	 * update until the peer has acknowledged a packet sent in the
+	 * current phase. A phase comparison is not enough: with
+	 * simultaneous updates the phases align while the peer has not
+	 * decrypted anything of ours in this generation, and updating
+	 * again would put the phase bit back where the peer expects it
+	 * while skipping a generation, silently ending the connection.
+	 */
+	if (!ku->tx_phase_acked) {
+		return -EBUSY;
+	}
+
+	return quic_ku_advance_tx(ep);
+}
+
+/*
  * Initialize connection with Initial encryption level.
  *
  * Called when a connection is established, using the Destination Connection ID
@@ -2557,13 +2690,85 @@ static struct quic_crypto_context *quic_get_crypto_context(struct quic_endpoint 
 /*
  * Result structure for fully decrypted packet.
  */
-struct quic_decrypted_packet {
-	uint8_t *payload;           /* Decrypted frames */
-	size_t payload_len;         /* Length of decrypted payload */
-	uint64_t packet_number;     /* Full reconstructed packet number */
-	enum quic_packet_type type; /* Packet type */
-	uint8_t first_byte;         /* Header byte with protection removed */
-};
+/*
+ * Trial-decrypt a 1-RTT packet whose key phase bit does not match the
+ * current RX phase with the next-generation keys (RFC 9001 Section 6.3).
+ * The phase bit is attacker controlled until the AEAD check passes, so
+ * nothing changes on failure: the packet is dropped and every key stays
+ * as it was. On success the update commits atomically: the send keys
+ * follow the peer to the new phase first if needed, then the current RX
+ * keys become the previous generation, kept for reordered packets.
+ */
+static int quic_ku_rx_try_next(struct quic_endpoint *ep,
+			       uint64_t full_pn,
+			       const uint8_t *header, size_t header_len,
+			       const uint8_t *ciphertext, size_t ciphertext_len,
+			       uint8_t *plaintext, size_t plaintext_size,
+			       size_t *plaintext_len)
+{
+	struct quic_key_update *ku = &ep->crypto.ku;
+	struct quic_crypto_context *crypto = &ep->crypto.application;
+	int ret;
+
+	/* The next-generation keys are derived once per generation and kept
+	 * across failed trials (RFC 9001 Section 6.3), so a forged phase bit
+	 * costs one AEAD check like any other forged packet instead of a key
+	 * derivation per packet.
+	 */
+	if (!ku->next_rx_pp.initialized) {
+		ret = quic_ku_next_secret(ku, ku->rx_secret, ku->next_rx_secret);
+		if (ret != 0) {
+			return ret;
+		}
+
+		if (!quic_pp_setup_ex(&ku->next_rx_pp, ku->hash_alg,
+				      ku->cipher_algo, ku->next_rx_secret,
+				      ku->secret_len)) {
+			crypto_zero(ku->next_rx_secret, sizeof(ku->next_rx_secret));
+			return -EIO;
+		}
+	}
+
+	ret = quic_decrypt_payload(&ku->next_rx_pp, full_pn, header, header_len,
+				   ciphertext, ciphertext_len,
+				   plaintext, plaintext_size, plaintext_len);
+	if (ret != 0) {
+		/* Unauthenticated phase flip: drop the packet, keep every
+		 * key as it was, retain the derived candidate.
+		 */
+		return ret;
+	}
+
+	if (ku->tx_phase == ku->rx_phase) {
+		/* The peer initiated this update, so move our send keys to
+		 * the new phase too (RFC 9001 Section 6.2). Do it before
+		 * committing the RX side so a failure leaves the whole
+		 * state untouched and the peer's next packet retries the
+		 * update from scratch.
+		 */
+		ret = quic_ku_advance_tx(ep);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	if (ku->prev_rx_pp.initialized) {
+		psa_destroy_key(ku->prev_rx_pp.key_id);
+	}
+	ku->prev_rx_pp = crypto->rx.pp;
+	crypto->rx.pp = ku->next_rx_pp;
+	crypto_zero(&ku->next_rx_pp, sizeof(ku->next_rx_pp));
+
+	memcpy(ku->rx_secret, ku->next_rx_secret, ku->secret_len);
+	crypto_zero(ku->next_rx_secret, sizeof(ku->next_rx_secret));
+	ku->rx_phase ^= 1U;
+	ku->rx_phase_first_pn = full_pn;
+
+	NET_DBG("[EP:%p/%d] Key update committed, RX phase %u from pn %" PRIu64,
+		ep, quic_get_by_ep(ep), ku->rx_phase, full_pn);
+
+	return 0;
+}
 
 /**
  * Decrypt a complete QUIC packet (header protection + AEAD).
@@ -2584,16 +2789,19 @@ struct quic_decrypted_packet {
  *
  * @return 0 on success, <0 on failure
  */
-static int quic_decrypt_packet(struct quic_endpoint *ep,
-			       const uint8_t *packet,
-			       size_t packet_len,
-			       size_t pn_offset,
-			       enum quic_packet_type ptype,
-			       uint8_t *plaintext,
-			       size_t plaintext_size,
-			       struct quic_decrypted_packet *result)
+ZTESTABLE_STATIC int quic_decrypt_packet(struct quic_endpoint *ep,
+					 const uint8_t *packet,
+					 size_t packet_len,
+					 size_t pn_offset,
+					 enum quic_packet_type ptype,
+					 uint8_t *plaintext,
+					 size_t plaintext_size,
+					 struct quic_decrypted_packet *result)
 {
 	struct quic_crypto_context *crypto;
+	struct quic_key_update *ku = &ep->crypto.ku;
+	struct quic_pp_cipher *rx_pp;
+	bool try_next_generation = false;
 	uint8_t first_byte;
 	uint32_t truncated_pn;
 	size_t pn_length;
@@ -2696,13 +2904,51 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 		NET_HEXDUMP_DBG(ciphertext, MIN(ciphertext_len, 48), "ciphertext (first 48):");
 	}
 
-	/* Step 5: Decrypt payload */
-	ret = quic_decrypt_payload(&crypto->rx.pp,
-				   full_pn,
-				   header_aad, header_len,
-				   ciphertext, ciphertext_len,
-				   plaintext, plaintext_size,
-				   &result->payload_len);
+	/* Step 5: Select the RX keys by the key phase bit (RFC 9001
+	 * Section 6.3) and decrypt the payload
+	 */
+	rx_pp = &crypto->rx.pp;
+
+	if (ptype == QUIC_PACKET_TYPE_1RTT && ku->initialized &&
+	    ((first_byte & QUIC_SHORT_KEY_PHASE_MASK) != 0U) != (ku->rx_phase != 0U)) {
+		bool reordered = full_pn < ku->rx_phase_first_pn &&
+				 ku->prev_rx_pp.initialized;
+
+		/* A conformant peer does not initiate a key update before the
+		 * handshake is confirmed (RFC 9001 Section 6.1), and responding
+		 * to one would advance our own send keys before confirmation.
+		 * Reject the packet without rotating; the caller closes the
+		 * connection with KEY_UPDATE_ERROR.
+		 */
+		if (!reordered && !ep->handshake_confirmed) {
+			NET_DBG("[EP:%p/%d] Key phase flip before handshake confirmed",
+				ep, quic_get_by_ep(ep));
+			QUIC_EP_STAT_INC(ep, drop_rx);
+			return -EPROTO;
+		}
+
+		if (reordered) {
+			/* Reordered packet from before the last update */
+			rx_pp = &ku->prev_rx_pp;
+		} else {
+			try_next_generation = true;
+		}
+	}
+
+	if (try_next_generation) {
+		ret = quic_ku_rx_try_next(ep, full_pn,
+					  header_aad, header_len,
+					  ciphertext, ciphertext_len,
+					  plaintext, plaintext_size,
+					  &result->payload_len);
+	} else {
+		ret = quic_decrypt_payload(rx_pp,
+					   full_pn,
+					   header_aad, header_len,
+					   ciphertext, ciphertext_len,
+					   plaintext, plaintext_size,
+					   &result->payload_len);
+	}
 	if (ret != 0) {
 		NET_DBG("Payload decryption failed (%d)", ret);
 		if (ret == -EBADMSG) {
@@ -2719,6 +2965,16 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 	/* Step 6: Update largest packet number */
 	if (full_pn > *largest_pn) {
 		*largest_pn = full_pn;
+	}
+
+	/* Track the lowest packet number seen in the current phase so
+	 * reordered previous-generation packets keep resolving to the
+	 * previous keys after an update.
+	 */
+	if (ptype == QUIC_PACKET_TYPE_1RTT && ku->initialized &&
+	    !try_next_generation && rx_pp == &crypto->rx.pp &&
+	    full_pn < ku->rx_phase_first_pn) {
+		ku->rx_phase_first_pn = full_pn;
 	}
 
 	/* Fill result */
@@ -3236,6 +3492,7 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 	quic_crypto_context_destroy(&ep->crypto.handshake);
 	quic_crypto_context_destroy(&ep->crypto.application);
 	quic_crypto_context_destroy(&ep->crypto.early);
+	quic_key_update_destroy(&ep->crypto.ku);
 
 	if (ep->parent != NULL) {
 		/* The ref was taken in process_long_header() when we assigned
@@ -5776,11 +6033,11 @@ static int tls_suite_to_quic_cipher(uint16_t cipher_suite)
 /*
  * Setup ciphers with explicit hash algorithm for handshake/application levels
  */
-static bool quic_setup_ciphers_ex(struct quic_ciphers *ciphers,
-				  psa_algorithm_t hash_alg,
-				  int cipher_algo,
-				  const uint8_t *secret,
-				  size_t secret_len)
+ZTESTABLE_STATIC bool quic_setup_ciphers_ex(struct quic_ciphers *ciphers,
+					    psa_algorithm_t hash_alg,
+					    int cipher_algo,
+					    const uint8_t *secret,
+					    size_t secret_len)
 {
 	if (!quic_hp_setup_ex(&ciphers->hp, hash_alg, cipher_algo,
 			      secret, secret_len)) {
@@ -5919,6 +6176,29 @@ static int quic_tls_secret_callback(void *user_data,
 	}
 
 	crypto_ctx->initialized = true;
+
+	if (level == QUIC_SECRET_LEVEL_APPLICATION) {
+		struct quic_key_update *ku = &ep->crypto.ku;
+
+		/* Keep the generation 0 traffic secrets so later key
+		 * updates can derive the next generations (RFC 9001
+		 * Section 6). QUIC_HASH_MAX_LEN covers every negotiable
+		 * hash, so the length always fits.
+		 */
+		memcpy(ku->rx_secret, rx_secret, secret_len);
+		memcpy(ku->tx_secret, tx_secret, secret_len);
+		ku->secret_len = secret_len;
+		ku->hash_alg = hash_alg;
+		ku->cipher_algo = cipher_algo;
+		ku->rx_phase = 0U;
+		ku->tx_phase = 0U;
+		ku->rx_phase_first_pn = UINT64_MAX;
+		ku->tx_phase_first_pn = 0U;
+		ku->tx_phase_acked = false;
+		ku->prev_rx_pp.initialized = false;
+		ku->next_rx_pp.initialized = false;
+		ku->initialized = true;
+	}
 
 	NET_DBG("Crypto context for level %d initialized successfully", level);
 
@@ -6739,8 +7019,13 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 		return ret;
 	}
 
-	/* Send HANDSHAKE_DONE frame (only server sends this) */
+	/* Send HANDSHAKE_DONE frame (only server sends this). The server
+	 * confirms the handshake as soon as it completes (RFC 9001
+	 * Section 4.1.2).
+	 */
 	if (ep->is_server) {
+		ep->handshake_confirmed = true;
+
 		ret = quic_send_handshake_done(ep);
 		if (ret != 0) {
 			NET_ERR("Failed to send HANDSHAKE_DONE");
@@ -8562,6 +8847,15 @@ static int process_short_header(struct quic_endpoint *ep,
 				  plaintext, sizeof(plaintext),
 				  &decrypted);
 	if (ret != 0) {
+		if (ret == -EPROTO) {
+			/* Peer flipped the key phase before the handshake was
+			 * confirmed (RFC 9001 Section 6.1). Terminate the
+			 * connection instead of rotating keys.
+			 */
+			quic_endpoint_send_transport_close(
+				target_ep, QUIC_ERROR_KEY_UPDATE_ERROR, 0,
+				"Key update before handshake confirmed");
+		}
 		NET_ERR("[EP:%p/%d] Failed to decrypt short header packet: %d",
 			target_ep, quic_get_by_ep(target_ep), ret);
 		goto out;
@@ -8570,31 +8864,6 @@ static int process_short_header(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] Short header packet %" PRIu64 ", payload %zu bytes",
 		target_ep, quic_get_by_ep(target_ep), decrypted.packet_number,
 		decrypted.payload_len);
-
-	/*
-	 * RFC 9001 Section 6: a peer signals a key update by flipping the key
-	 * phase bit. A conforming update protects the packet with the
-	 * next-generation keys, so it fails AEAD above and never reaches this
-	 * check; until key update support lands such packets are dropped, as
-	 * unauthenticated data must not tear the connection down, and the
-	 * connection goes quiet until the idle timeout. What this catches is
-	 * a packet that decrypted with the current keys yet carries a flipped
-	 * phase bit: only a peer that changed the bit without rotating its
-	 * keys produces that, which Section 6 does not permit, so tell it why
-	 * we are closing.
-	 */
-	if ((decrypted.first_byte & QUIC_SHORT_KEY_PHASE_MASK) != 0) {
-		NET_DBG("[EP:%p/%d] Peer started a key update, which is not supported",
-			target_ep, quic_get_by_ep(target_ep));
-		QUIC_EP_STAT_INC(target_ep, drop_rx);
-		quic_endpoint_send_transport_close(target_ep,
-						   QUIC_ERROR_KEY_UPDATE_ERROR, 0,
-						   "Key update not supported");
-		quic_endpoint_notify_streams_closed(target_ep);
-
-		ret = -EPROTO;
-		goto out;
-	}
 
 	/* Process frames at APPLICATION level */
 	ret = handle_crypto_level_packet(target_ep, QUIC_SECRET_LEVEL_APPLICATION,

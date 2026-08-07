@@ -5592,14 +5592,16 @@ static int build_short_header(struct quic_endpoint *ep,
 	 * Fixed Bit = 1
 	 * Spin Bit = 0 (TODO: implement latency spin bit)
 	 * Reserved = 0 (will be protected)
-	 * Key Phase = 0 (TODO: implement key update)
+	 * Key Phase = current TX key phase (RFC 9001 Section 6)
 	 * Packet Number Length = pn_len - 1
 	 */
 	if (pos >= out_size) {
 		return -ENOBUFS;
 	}
 
-	out[pos++] = 0x40 | ((pn_len - 1) & 0x03);
+	out[pos++] = 0x40 |
+		     (ep->crypto.ku.tx_phase != 0U ? QUIC_SHORT_KEY_PHASE_MASK : 0U) |
+		     ((pn_len - 1) & 0x03);
 
 	/* Destination Connection ID (no length prefix in short header) */
 	if (pos + ep->peer_cid_len > out_size) {

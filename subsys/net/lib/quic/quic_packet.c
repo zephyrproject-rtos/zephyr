@@ -1345,6 +1345,17 @@ static int handle_ack_frame(struct quic_endpoint *ep,
 	ranges[range_idx].start = largest_ack - first_ack_range;
 	range_idx++;
 
+	/* RFC 9001 Section 6.1: a new key update may only be initiated once
+	 * the peer has acknowledged a packet sent in the current key phase.
+	 * The peer acknowledging a packet number from this phase means it
+	 * decrypted it, so record that the gate is open.
+	 */
+	if (level == QUIC_SECRET_LEVEL_APPLICATION && ep->crypto.ku.initialized &&
+	    !ep->crypto.ku.tx_phase_acked &&
+	    largest_ack >= ep->crypto.ku.tx_phase_first_pn) {
+		ep->crypto.ku.tx_phase_acked = true;
+	}
+
 	NET_DBG("[EP:%p/%d] ACK frame: largest=%" PRIu64 ", delay=%" PRIu64
 		", ranges=%" PRIu64 ", first_range=%" PRIu64,
 		ep, quic_get_by_ep(ep), largest_ack, ack_delay, ack_range_count,
@@ -2167,9 +2178,12 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 			NET_DBG("[EP:%p/%d] Received HANDSHAKE_DONE frame", ep, quic_get_by_ep(ep));
 			pos++;
 
-			/* Mark handshake as complete on client side */
+			/* Mark handshake as complete and confirmed on client
+			 * side (RFC 9001 Section 4.1.2)
+			 */
 			if (!ep->is_server) {
 				ep->crypto.tls.state = QUIC_TLS_STATE_CONNECTED;
+				ep->handshake_confirmed = true;
 			}
 
 			break;
@@ -2422,6 +2436,7 @@ ZTESTABLE_STATIC int handle_crypto_level_packet(struct quic_endpoint *ep,
 				saw_other_frame = true;
 				if (!ep->is_server) {
 					ep->crypto.tls.state = QUIC_TLS_STATE_CONNECTED;
+					ep->handshake_confirmed = true;
 
 					/* Discard Initial and Handshake spaces */
 					quic_recovery_discard_pn_space(ep,
