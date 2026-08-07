@@ -286,6 +286,12 @@
 	status = "okay";
 };
 
+&pit64b1 {
+	top-alarm;
+	prescaler-period = <15>;
+	status = "okay";
+};
+
 &rtc {
 	status = "okay";
 };
