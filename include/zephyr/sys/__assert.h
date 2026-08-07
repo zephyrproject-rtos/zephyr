@@ -129,9 +129,4 @@ void assert_post_action(const char *file, unsigned int line);
 
 #endif
 
-#ifdef CONFIG_ASSERT_CUSTOM_HEADER
-/* This include must always be at the end of __assert.h */
-#include <zephyr_custom_assert.h>
-#endif
-
 #endif /* ZEPHYR_INCLUDE_SYS___ASSERT_H_ */
