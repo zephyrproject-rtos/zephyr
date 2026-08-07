@@ -18,5 +18,5 @@ tests:
     extra_args:
       CONF_FILE=prj_llcp.conf
     required_applications:
-      - name: bluetooth.ll.edtt.hci_test_app.dut
+      - application: bluetooth.ll.edtt.hci_test_app.dut
         path: ../hci_test_app
