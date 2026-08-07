@@ -83,6 +83,17 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define OT_JOINER_PSKD ""
 #endif
 
+#if defined(CONFIG_OPENTHREAD_JOINER_AUTOSTART)
+/* Thread specification: a PSKd is 6 to 32 base32-thread characters. */
+#define OT_JOINER_PSKD_MIN_LENGTH 6
+#define OT_JOINER_PSKD_MAX_LENGTH 32
+
+BUILD_ASSERT(sizeof(OT_JOINER_PSKD) - 1 >= OT_JOINER_PSKD_MIN_LENGTH &&
+	     sizeof(OT_JOINER_PSKD) - 1 <= OT_JOINER_PSKD_MAX_LENGTH,
+	     "CONFIG_OPENTHREAD_JOINER_PSKD must be set to 6 to 32 uppercase alphanumeric "
+	     "characters (0-9, A-Z excluding I, O, Q, Z) that are unique to this device.");
+#endif
+
 #if defined(CONFIG_OPENTHREAD_PLATFORM_INFO)
 #define OT_PLATFORM_INFO CONFIG_OPENTHREAD_PLATFORM_INFO
 #else
