@@ -257,6 +257,21 @@ config QUIC_TOKEN_MAX_LEN
 	  Maximum token length that the stack stores locally for Retry and
 	  NEW_TOKEN handling. Larger received tokens are ignored or rejected.
 
+config QUIC_TOKEN_REPLAY_CACHE_SIZE
+	int "Number of address-validation tokens tracked against replay"
+	default 8
+	range 1 128
+	help
+	  How many accepted address-validation tokens to remember so they
+	  cannot be used a second time. Tokens travel in the clear in the
+	  Initial packet header, so an observer can copy one and replay it
+	  from a spoofed address to obtain an endpoint that skips the
+	  anti-amplification limit.
+
+	  Entries are dropped once the token they describe is too old to pass
+	  the age check, so this only has to cover the tokens that can be in
+	  flight at once. When every slot is in use the oldest is evicted.
+
 config QUIC_TOKEN_CACHE_SIZE
 	int "Number of NEW_TOKEN cache entries"
 	default QUIC_MAX_CONTEXTS
