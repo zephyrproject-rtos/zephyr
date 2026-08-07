@@ -2731,6 +2731,12 @@ static int quic_context_unref(struct quic_context *ctx)
 		quic_get_by_conn(ctx), ctx->sock, caller, line);
 #endif
 
+	/* quic_endpoint_unref() below takes contexts_lock and then
+	 * endpoints_lock, so take them in that order here too. Zephyr mutexes
+	 * are recursive per thread, so the nested acquisition is fine; taking
+	 * them the other way round deadlocks against the RX path.
+	 */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 
 #if defined(CONFIG_QUIC_STATS_HISTORY)
@@ -2754,6 +2760,7 @@ static int quic_context_unref(struct quic_context *ctx)
 	}
 
 	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
 
 #if defined(CONFIG_QUIC_STATS_HISTORY)
 	if (keep_closed_stats) {
@@ -3376,6 +3383,11 @@ static void quic_check_idle_timeouts(struct k_work *work)
 	int64_t now = k_uptime_get();
 	int64_t shortest = 0;
 
+	/* This sweep releases endpoints, and quic_endpoint_unref() takes
+	 * contexts_lock before endpoints_lock. Follow the same order so an
+	 * expiring endpoint here cannot deadlock against a teardown elsewhere.
+	 */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 
 	for (int i = 0; i < CONFIG_QUIC_MAX_ENDPOINTS; i++) {
@@ -3442,6 +3454,7 @@ static void quic_check_idle_timeouts(struct k_work *work)
 	}
 
 	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
 
 	if (shortest > 0) {
 		k_work_reschedule(dwork, K_MSEC(shortest));
