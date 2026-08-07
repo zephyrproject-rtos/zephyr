@@ -30,6 +30,29 @@ config COAP_OSCORE_MAX_CONTEXTS
 	  and verify messages for one CoAP client or service. Increase this if
 	  your application uses more than one OSCORE-enabled endpoint at a time.
 
+config COAP_OSCORE_MASTER_SECRET_MAX_LEN
+	int "Maximum OSCORE Master Secret length in bytes"
+	default 16
+	range 16 64
+	help
+	  Size of the per-context buffer that stores the OSCORE Master Secret.
+	  The Master Secret is application-chosen HKDF input keying material of
+	  variable length (RFC 8613 Section 3.1); the common case for the
+	  AES-CCM-16-64-128 profile is 16 bytes. Increase this if your deployment
+	  provisions longer secrets. Each of the CONFIG_COAP_OSCORE_MAX_CONTEXTS
+	  contexts reserves this many bytes.
+
+config COAP_OSCORE_MASTER_SALT_MAX_LEN
+	int "Maximum OSCORE Master Salt length in bytes"
+	default 8
+	range 0 64
+	help
+	  Size of the per-context buffer that stores the OSCORE Master Salt.
+	  The Master Salt is optional (RFC 8613 Section 3.1) and may be empty;
+	  when present it is commonly 8 bytes. Set to 0 to disable Master Salt
+	  storage entirely (contexts may then only be provisioned with an empty
+	  salt). Increase this if your deployment provisions a longer salt. Each
+	  of the CONFIG_COAP_OSCORE_MAX_CONTEXTS contexts reserves this many bytes.
 
 config COAP_OSCORE_EXCHANGE_CACHE_SIZE
 	int "OSCORE exchange cache size per service"
@@ -41,20 +64,21 @@ config COAP_OSCORE_EXCHANGE_CACHE_SIZE
 	  Each entry stores client address and token information to match
 	  responses to OSCORE requests per RFC 8613 Section 8.3.
 
-	  Synchronous responses and Observe notifications do NOT rely on this
-	  cache for response but still temporarily need a slot in it due to the
-	  fact, that asynchronous behaviour cannot be predicted.
+	  Synchronous responses also go through the cache (the entry is added
+	  before the handler runs and removed after the response is sent).
+	  Observe notifications bypass the cache entirely and use the per-observer
+	  OSCORE context instead. Size the cache to the maximum number of
+	  concurrent in-flight requests you expect.
 
 config COAP_OSCORE_EXCHANGE_LIFETIME_MS
 	int "OSCORE exchange lifetime in milliseconds"
 	default 247000
 	help
-	  Lifetime of a tracked OSCORE exchange entry. These entries are only
-	  used to protect deferred (separate) responses, i.e. responses produced
-	  after the request handler has already returned.
-
-	  Synchronous responses and Observe notifications do NOT rely on this
-	  expiry and are therefore never affected by it.
+	  Lifetime of a tracked OSCORE exchange entry. In practice, expiry only
+	  affects deferred (separate) responses, i.e. responses produced after
+	  the request handler has already returned. Synchronous responses always
+	  find a live entry (it was just created), and Observe notifications
+	  bypass the cache entirely.
 
 	  After this time a deferred exchange entry is considered expired and
 	  removed. A separate response produced later is treated as invalid: on an

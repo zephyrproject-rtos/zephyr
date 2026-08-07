@@ -36,29 +36,10 @@ extern "C" {
  */
 
 /**
- * @brief OSCORE exchange entry.
- *
- * Tracks which server responses need OSCORE protection by matching the client
- * address and request token (RFC 8613 Section 8.3). A CoAP service defined with
- * @ref COAP_SERVICE_DEFINE_OSCORE owns a statically allocated cache of these
- * entries.
- *
- * @kconfig_dep{CONFIG_COAP_OSCORE}
- */
-struct coap_oscore_exchange {
-	struct net_sockaddr_storage addr;  /**< Client address */
-	net_socklen_t addr_len;            /**< Address length */
-	uint8_t token[COAP_TOKEN_MAX_LEN]; /**< Token from the request */
-	uint8_t tkl;                       /**< Token length */
-	int64_t timestamp;                 /**< Creation timestamp */
-};
-
-/**
  * @brief Opaque OSCORE security context.
  *
- * Created with coap_oscore_context_init() and attached to a CoAP client or
- * service. The internal representation is private to the CoAP OSCORE
- * implementation.
+ * Created with coap_oscore_context_add() and used in the internal context pool.
+ * The internal representation is private to the CoAP OSCORE implementation.
  *
  * @kconfig_dep{CONFIG_COAP_OSCORE}
  */
@@ -79,10 +60,9 @@ enum coap_oscore_hkdf {
 /**
  * @brief OSCORE security context derivation parameters (RFC 8613 Section 3.2).
  *
- * @note The buffers referenced by @c master_secret, @c master_salt,
- *       @c id_context and @c sender_id must remain valid for the entire
- *       lifetime of the derived context (until coap_oscore_context_free()).
- *       @c recipient_id is copied internally.
+ * @note coap_oscore_context_add() copies all referenced buffers into the
+ *       context pool, so the caller may free or reuse them as soon as the call
+ *       returns; they need not outlive the derived context.
  *
  * @kconfig_dep{CONFIG_COAP_OSCORE}
  */
@@ -127,13 +107,14 @@ struct coap_oscore_init_params {
 };
 
 /**
- * @brief Initialize an OSCORE security context.
+ * @brief Add an OSCORE security context.
  *
  * Derives the common, sender and recipient contexts from @p params
- * (RFC 8613 Section 3.2) and returns an opaque handle that can be attached to
- * a CoAP client or service. Contexts are allocated from a fixed pool sized by
+ * (RFC 8613 Section 3.2) and adds them to the pool of contexts that can be used with
+ * the CoAP server. Contexts are allocated from a fixed pool sized by
  * @kconfig{CONFIG_COAP_OSCORE_MAX_CONTEXTS} and released with
- * coap_oscore_context_free().
+ * coap_oscore_context_remove(). Each context corresponds to one client identity
+ * (Recipient ID); add one context per client to serve multiple clients concurrently.
  *
  * @kconfig_dep{CONFIG_COAP_OSCORE}
  *
@@ -141,25 +122,52 @@ struct coap_oscore_init_params {
  * @param  ctx    On success, set to the newly created context handle.
  *
  * @retval 0 on success.
- * @retval -EINVAL if @p params or @p ctx is NULL, or a required parameter is
- *         missing, or the context could not be derived.
+ * @retval -EINVAL if @p params is NULL, a required parameter is missing or has
+ *         an invalid size, or the context could not be derived.
+ * @retval -ENOTSUP if @c fresh_master_secret_salt is false while
+ *         @kconfig{CONFIG_COAP_OSCORE_CONTEXT_REUSE} is disabled.
  * @retval -ENOMEM if no free context slot is available.
  */
-int coap_oscore_context_init(struct coap_oscore_init_params *params,
-			     struct coap_oscore_context **ctx);
+int coap_oscore_context_add(const struct coap_oscore_init_params *params,
+			    struct coap_oscore_context **ctx);
 
 /**
- * @brief Release an OSCORE security context.
+ * @brief Remove an OSCORE security context.
  *
- * Returns the context to the pool. The caller must ensure the context is no
- * longer attached to any CoAP client or service before freeing it. Passing
- * NULL is a no-op.
+ * Removes the context from the pool of contexts that can be used with the CoAP
+ * server. The context is reference-counted: if an in-flight request, an active
+ * exchange, or an observer still references it, the context is retained and
+ * -EAGAIN is returned. Retry once those references have been released. Passing
+ * NULL returns -EINVAL.
  *
  * @kconfig_dep{CONFIG_COAP_OSCORE}
  *
- * @param ctx Context previously returned by coap_oscore_context_init().
+ * @param ctx Context handle to remove.
+ *
+ * @retval 0 on success.
+ * @retval -EAGAIN if the context is in use and cannot be removed.
+ * @retval -EINVAL if @p ctx is NULL or not a valid context handle.
  */
-void coap_oscore_context_free(struct coap_oscore_context *ctx);
+int coap_oscore_context_remove(struct coap_oscore_context *ctx);
+
+/**
+ * @brief OSCORE exchange entry.
+ *
+ * Tracks which server responses need OSCORE protection by matching the client
+ * address and request token (RFC 8613 Section 8.3). A CoAP service defined with
+ * @ref COAP_SERVICE_DEFINE_OSCORE owns a statically allocated cache of these
+ * entries.
+ *
+ * @kconfig_dep{CONFIG_COAP_OSCORE}
+ */
+struct coap_oscore_exchange {
+	struct net_sockaddr_storage addr;  /**< Client address */
+	net_socklen_t addr_len;            /**< Address length */
+	uint8_t token[COAP_TOKEN_MAX_LEN]; /**< Token from the request */
+	uint8_t tkl;                       /**< Token length */
+	int64_t timestamp;                 /**< Creation timestamp */
+	struct coap_oscore_context *ctx;   /**< OSCORE context used for this exchange */
+};
 
 /** @} */
 
