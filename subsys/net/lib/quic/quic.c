@@ -497,11 +497,24 @@ struct quic_token_cache_entry {
 	bool valid;
 };
 
+/* Nonce of an address validation token that has already been accepted. */
+struct quic_token_seen_entry {
+	uint8_t nonce[QUIC_TOKEN_NONCE_LEN];
+	uint64_t expires_at_sec;
+	bool valid;
+};
+
 static uint8_t quic_token_secret[QUIC_TOKEN_SECRET_LEN];
 static struct quic_token_cache_entry quic_token_cache[CONFIG_QUIC_TOKEN_CACHE_SIZE];
 /* Protected by quic_token_lock together with quic_token_cache[] updates. */
 static size_t quic_token_cache_replace_idx;
 static K_MUTEX_DEFINE(quic_token_lock);
+
+static struct quic_token_seen_entry quic_token_seen[CONFIG_QUIC_TOKEN_REPLAY_CACHE_SIZE];
+static size_t quic_token_seen_replace_idx;
+static K_MUTEX_DEFINE(quic_token_seen_lock);
+
+ZTESTABLE_STATIC bool quic_token_claim_nonce(const uint8_t *nonce, uint64_t expires_at_sec);
 
 static int quic_get_by_ep(struct quic_endpoint *ep)
 {
@@ -1304,6 +1317,15 @@ ZTESTABLE_STATIC int quic_validate_address_token(const struct net_sockaddr *addr
 		return -EADDRNOTAVAIL;
 	}
 
+	/* Only now that the token is known to be ours, unexpired and issued for
+	 * this address, check that it has not been used before. Doing it last
+	 * keeps forged tokens from occupying replay slots.
+	 */
+	if (!quic_token_claim_nonce(&token[4 + sizeof(uint64_t)],
+				    issued_at + lifetime)) {
+		return -EALREADY;
+	}
+
 	validation->orig_dcid_len = orig_dcid_len;
 	if (orig_dcid_len > 0U) {
 		memcpy(validation->orig_dcid,
@@ -1312,6 +1334,59 @@ ZTESTABLE_STATIC int quic_validate_address_token(const struct net_sockaddr *addr
 	}
 
 	return 0;
+}
+
+/*
+ * Record an address validation token as used.
+ *
+ * Returns true if the token had not been seen before, false if it is a replay.
+ * Entries are dropped once the token they describe can no longer pass the age
+ * check, so the table only ever has to hold tokens that are still live.
+ */
+ZTESTABLE_STATIC bool quic_token_claim_nonce(const uint8_t *nonce, uint64_t expires_at_sec)
+{
+	struct quic_token_seen_entry *slot = NULL;
+	uint64_t now_sec = quic_token_now_sec();
+	bool claimed = false;
+
+	k_mutex_lock(&quic_token_seen_lock, K_FOREVER);
+
+	ARRAY_FOR_EACH_PTR(quic_token_seen, entry) {
+		if (entry->valid && entry->expires_at_sec <= now_sec) {
+			entry->valid = false;
+		}
+
+		if (entry->valid) {
+			if (memcmp(entry->nonce, nonce, QUIC_TOKEN_NONCE_LEN) == 0) {
+				goto out;
+			}
+		} else if (slot == NULL) {
+			slot = entry;
+		}
+	}
+
+	/*
+	 * With every slot in use, drop the oldest tracked token rather than
+	 * refuse the connection. That lets a flood of distinct valid tokens
+	 * push earlier ones out and replay them again, but forging a token
+	 * still requires the secret, so this only weakens replay protection
+	 * for a peer that already holds many live tokens.
+	 */
+	if (slot == NULL) {
+		slot = &quic_token_seen[quic_token_seen_replace_idx];
+		quic_token_seen_replace_idx =
+			(quic_token_seen_replace_idx + 1U) % ARRAY_SIZE(quic_token_seen);
+	}
+
+	memcpy(slot->nonce, nonce, QUIC_TOKEN_NONCE_LEN);
+	slot->expires_at_sec = expires_at_sec;
+	slot->valid = true;
+	claimed = true;
+
+out:
+	k_mutex_unlock(&quic_token_seen_lock);
+
+	return claimed;
 }
 
 ZTESTABLE_STATIC void quic_token_cache_store(const struct net_sockaddr *remote_addr,
