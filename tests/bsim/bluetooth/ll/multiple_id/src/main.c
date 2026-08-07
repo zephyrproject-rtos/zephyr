@@ -57,8 +57,7 @@ static void test_central_main(void)
 	k_sleep(K_SECONDS(1));
 
 	PASS("Central tests passed\n");
-
-	return;
+	bs_trace_silent_exit(0);
 
 exit:
 	FAIL("Central tests failed (%d)\n", err);
@@ -98,8 +97,7 @@ static void test_central_multiple_main(void)
 	k_sleep(K_SECONDS(1));
 
 	PASS("Central tests passed\n");
-
-	return;
+	bs_trace_silent_exit(0);
 
 exit:
 	FAIL("Central tests failed (%d)\n", err);
@@ -151,11 +149,12 @@ static void test_peripheral_multilink_main(void)
 		goto exit;
 	}
 
-	k_sleep(K_SECONDS(3));
-
 	PASS("Peripheral tests passed\n");
 
-	return;
+	/* Wait a little so all centrals complete */
+	k_sleep(K_SECONDS(8));
+
+	bs_trace_silent_exit(0);
 
 exit:
 	FAIL("Peripheral tests failed (%d)\n", err);
