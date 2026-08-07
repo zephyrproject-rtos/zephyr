@@ -544,9 +544,198 @@ struct i3c_i2c_device_desc;
 struct i3c_target_config;
 struct i3c_config_target;
 
+/** @endcond */
+
+/**
+ * @def_driverbackendgroup{I3C,i3c_interface}
+ * @{
+ */
+
+/**
+ * @brief Configure the I3C hardware.
+ * See i3c_configure() for argument description.
+ */
+typedef int (*i3c_api_configure_t)(const struct device *dev,
+				   enum i3c_config_type type, void *config);
+
+/**
+ * @brief Get configuration of the I3C hardware.
+ * See i3c_config_get() for argument description.
+ */
+typedef int (*i3c_api_config_get_t)(const struct device *dev,
+				    enum i3c_config_type type, void *config);
+
+/**
+ * @brief Attempt bus recovery on the I3C bus.
+ * See i3c_recover_bus() for argument description.
+ */
+typedef int (*i3c_api_recover_bus_t)(const struct device *dev);
+
+/**
+ * @brief Attach an I3C device to the controller.
+ * See i3c_attach_i3c_device() for argument description.
+ */
+typedef int (*i3c_api_attach_i3c_device_t)(const struct device *dev,
+					   struct i3c_device_desc *target);
+
+/**
+ * @brief Reattach an I3C device to the controller after an address change.
+ * See i3c_reattach_i3c_device() for argument description.
+ */
+typedef int (*i3c_api_reattach_i3c_device_t)(const struct device *dev,
+					     struct i3c_device_desc *target,
+					     uint8_t old_dyn_addr);
+
+/**
+ * @brief Detach an I3C device from the controller.
+ * See i3c_detach_i3c_device() for argument description.
+ */
+typedef int (*i3c_api_detach_i3c_device_t)(const struct device *dev,
+					   struct i3c_device_desc *target);
+
+/**
+ * @brief Attach an I2C device to the controller.
+ * See i3c_attach_i2c_device() for argument description.
+ */
+typedef int (*i3c_api_attach_i2c_device_t)(const struct device *dev,
+					   struct i3c_i2c_device_desc *target);
+
+/**
+ * @brief Detach an I2C device from the controller.
+ * See i3c_detach_i2c_device() for argument description.
+ */
+typedef int (*i3c_api_detach_i2c_device_t)(const struct device *dev,
+					   struct i3c_i2c_device_desc *target);
+
+/**
+ * @brief Perform Dynamic Address Assignment via ENTDAA.
+ * See i3c_do_daa() for argument description.
+ */
+typedef int (*i3c_api_do_daa_t)(const struct device *dev);
+
+/**
+ * @brief Send a Common Command Code (CCC) to the bus.
+ * See i3c_do_ccc() for argument description.
+ */
+typedef int (*i3c_api_do_ccc_t)(const struct device *dev,
+				struct i3c_ccc_payload *payload);
+
+/**
+ * @brief Transfer messages in I3C mode.
+ * See i3c_transfer() for argument description.
+ */
+typedef int (*i3c_api_i3c_xfers_t)(const struct device *dev,
+				   struct i3c_device_desc *target,
+				   struct i3c_msg *msgs,
+				   uint8_t num_msgs);
+
+/**
+ * @brief Send an async Common Command Code (CCC) with a callback.
+ * See i3c_do_ccc_cb() for argument description.
+ */
+typedef int (*i3c_api_do_ccc_cb_t)(const struct device *dev,
+				   struct i3c_ccc_payload *payload,
+				   i3c_callback_t cb,
+				   void *userdata);
+
+/**
+ * @brief Transfer async messages in I3C mode with a callback.
+ * See i3c_transfer_cb() for argument description.
+ */
+typedef int (*i3c_api_i3c_xfers_cb_t)(const struct device *dev,
+				      struct i3c_device_desc *target,
+				      struct i3c_msg *msgs,
+				      uint8_t num_msgs,
+				      i3c_callback_t cb,
+				      void *userdata);
+
+/**
+ * @brief Find a registered I3C target device.
+ * See i3c_device_find() for argument description.
+ */
+typedef struct i3c_device_desc *(*i3c_api_i3c_device_find_t)(const struct device *dev,
+							     const struct i3c_device_id *id);
+
+/**
+ * @brief Raise an In-Band Interrupt (IBI).
+ * See i3c_ibi_raise() for argument description.
+ */
+typedef int (*i3c_api_ibi_raise_t)(const struct device *dev,
+				   struct i3c_ibi *request);
+
+/**
+ * @brief ACK or NACK In-Band Interrupt Hot-Join (HJ) requests.
+ * See i3c_ibi_hj_response() for argument description.
+ */
+typedef int (*i3c_api_ibi_hj_response_t)(const struct device *dev,
+					 bool ack);
+
+/**
+ * @brief ACK or NACK In-Band Interrupt Controller Role Requests.
+ * See i3c_ibi_crr_response() for argument description.
+ */
+typedef int (*i3c_api_ibi_crr_response_t)(struct i3c_device_desc *target,
+					  bool ack);
+
+/**
+ * @brief Enable receiving IBI from a target.
+ * See i3c_ibi_enable() for argument description.
+ */
+typedef int (*i3c_api_ibi_enable_t)(const struct device *dev,
+				    struct i3c_device_desc *target);
+
+/**
+ * @brief Disable receiving IBI from a target.
+ * See i3c_ibi_disable() for argument description.
+ */
+typedef int (*i3c_api_ibi_disable_t)(const struct device *dev,
+				     struct i3c_device_desc *target);
+
+/**
+ * @brief Register config as target device of a controller.
+ * See i3c_target_register() for argument description.
+ */
+typedef int (*i3c_api_target_register_t)(const struct device *dev,
+					 struct i3c_target_config *cfg);
+
+/**
+ * @brief Unregister config as target device of a controller.
+ * See i3c_target_unregister() for argument description.
+ */
+typedef int (*i3c_api_target_unregister_t)(const struct device *dev,
+					   struct i3c_target_config *cfg);
+
+/**
+ * @brief Write to the target's TX FIFO.
+ * See i3c_target_tx_write() for argument description.
+ */
+typedef int (*i3c_api_target_tx_write_t)(const struct device *dev,
+					 uint8_t *buf, uint16_t len, uint8_t hdr_mode);
+
+/**
+ * @brief Accept or decline controller handoffs.
+ * See i3c_target_controller_handoff() for argument description.
+ */
+typedef int (*i3c_api_target_controller_handoff_t)(const struct device *dev,
+						   bool accept);
+
+/**
+ * @brief Submit request(s) to the I3C controller with RTIO.
+ * See i3c_iodev_submit() for argument description.
+ */
+typedef void (*i3c_api_iodev_submit_t)(const struct device *dev,
+				       struct rtio_iodev_sqe *iodev_sqe);
+
+/**
+ * @driver_ops{I3C}
+ */
 __subsystem struct i3c_driver_api {
 	/**
-	 * For backward compatibility to I2C API.
+	 * @driver_ops_optional I2C driver operations, for backward
+	 * compatibility to the I2C API.
+	 *
+	 * Must be implemented for the controller to communicate with
+	 * I2C devices on the I3C bus.
 	 *
 	 * @see i2c_driver_api for more information.
 	 *
@@ -557,396 +746,176 @@ __subsystem struct i3c_driver_api {
 	struct i2c_driver_api i2c_api;
 
 	/**
-	 * Configure the I3C hardware.
-	 *
-	 * @see i3c_configure()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param type Type of configuration parameters being passed
-	 *             in @p config.
-	 * @param config Pointer to the configuration parameters.
-	 *
-	 * @return See i3c_configure()
+	 * @driver_ops_optional @copybrief i3c_configure
 	 */
-	int (*configure)(const struct device *dev,
-			 enum i3c_config_type type, void *config);
+	i3c_api_configure_t configure;
 
 	/**
-	 * Get configuration of the I3C hardware.
-	 *
-	 * @see i3c_config_get()
-	 *
-	 * @param[in] dev Pointer to controller device driver instance.
-	 * @param[in] type Type of configuration parameters being passed
-	 *                 in @p config.
-	 * @param[in, out] config Pointer to the configuration parameters.
-	 *
-	 * @return See i3c_config_get()
+	 * @driver_ops_optional @copybrief i3c_config_get
 	 */
-	int (*config_get)(const struct device *dev,
-			  enum i3c_config_type type, void *config);
+	i3c_api_config_get_t config_get;
 #if defined(CONFIG_I3C_CONTROLLER) || defined(__DOXYGEN__)
 	/**
-	 * Perform bus recovery
-	 *
-	 * Controller only API.
-	 *
-	 * @see i3c_recover_bus()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 *
-	 * @return See i3c_recover_bus()
+	 * @driver_ops_optional @copybrief i3c_recover_bus
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER}
 	 */
-	int (*recover_bus)(const struct device *dev);
+	i3c_api_recover_bus_t recover_bus;
 
 	/**
-	 * I3C Device Attach
-	 *
-	 * Optional API.
-	 *
-	 * @see i3c_attach_i3c_device()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param target Pointer to target device descriptor.
-	 *
-	 * @return See i3c_attach_i3c_device()
+	 * @driver_ops_optional @copybrief i3c_attach_i3c_device
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER}
 	 */
-	int (*attach_i3c_device)(const struct device *dev,
-				 struct i3c_device_desc *target);
+	i3c_api_attach_i3c_device_t attach_i3c_device;
 
 	/**
-	 * I3C Address Update
-	 *
-	 * Optional API.
-	 *
-	 * @see i3c_reattach_i3c_device()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param target Pointer to target device descriptor.
-	 * @param old_dyn_addr Old dynamic address
-	 *
-	 * @return See i3c_reattach_i3c_device()
+	 * @driver_ops_optional @copybrief i3c_reattach_i3c_device
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER}
 	 */
-	int (*reattach_i3c_device)(const struct device *dev,
-				   struct i3c_device_desc *target,
-				   uint8_t old_dyn_addr);
+	i3c_api_reattach_i3c_device_t reattach_i3c_device;
 
 	/**
-	 * I3C Device Detach
-	 *
-	 * Optional API.
-	 *
-	 * @see i3c_detach_i3c_device()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param target Pointer to target device descriptor.
-	 *
-	 * @return See i3c_detach_i3c_device()
+	 * @driver_ops_optional @copybrief i3c_detach_i3c_device
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER}
 	 */
-	int (*detach_i3c_device)(const struct device *dev,
-				 struct i3c_device_desc *target);
+	i3c_api_detach_i3c_device_t detach_i3c_device;
 
 	/**
-	 * I2C Device Attach
-	 *
-	 * Optional API.
-	 *
-	 * @see i3c_attach_i2c_device()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param target Pointer to target device descriptor.
-	 *
-	 * @return See i3c_attach_i2c_device()
+	 * @driver_ops_optional @copybrief i3c_attach_i2c_device
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER}
 	 */
-	int (*attach_i2c_device)(const struct device *dev,
-				 struct i3c_i2c_device_desc *target);
+	i3c_api_attach_i2c_device_t attach_i2c_device;
 
 	/**
-	 * I2C Device Detach
-	 *
-	 * Optional API.
-	 *
-	 * @see i3c_detach_i2c_device()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param target Pointer to target device descriptor.
-	 *
-	 * @return See i3c_detach_i2c_device()
+	 * @driver_ops_optional @copybrief i3c_detach_i2c_device
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER}
 	 */
-	int (*detach_i2c_device)(const struct device *dev,
-				 struct i3c_i2c_device_desc *target);
+	i3c_api_detach_i2c_device_t detach_i2c_device;
 
 	/**
-	 * Perform Dynamic Address Assignment via ENTDAA.
-	 *
-	 * Controller only API.
-	 *
-	 * @see i3c_do_daa()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 *
-	 * @return See i3c_do_daa()
+	 * @driver_ops_optional @copybrief i3c_do_daa
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER}
 	 */
-	int (*do_daa)(const struct device *dev);
+	i3c_api_do_daa_t do_daa;
 
 	/**
-	 * Send Common Command Code (CCC).
-	 *
-	 * Controller only API.
-	 *
-	 * @see i3c_do_ccc()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param payload Pointer to the CCC payload.
-	 *
-	 * @return See i3c_do_ccc()
+	 * @driver_ops_optional @copybrief i3c_do_ccc
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER}
 	 */
-	int (*do_ccc)(const struct device *dev,
-		      struct i3c_ccc_payload *payload);
+	i3c_api_do_ccc_t do_ccc;
 
 	/**
-	 * Transfer messages in I3C mode.
-	 *
-	 * @see i3c_transfer()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param target Pointer to target device descriptor.
-	 * @param msg Pointer to I3C messages.
-	 * @param num_msgs Number of messages to transfer.
-	 *
-	 * @return See i3c_transfer()
+	 * @driver_ops_mandatory @copybrief i3c_transfer
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER}
 	 */
-	int (*i3c_xfers)(const struct device *dev,
-			 struct i3c_device_desc *target,
-			 struct i3c_msg *msgs,
-			 uint8_t num_msgs);
+	i3c_api_i3c_xfers_t i3c_xfers;
 #if defined(CONFIG_I3C_CALLBACK) || defined(__DOXYGEN__)
 	/**
-	 * Send async Common Command Code (CCC) with a callback.
-	 *
-	 * Controller only API.
-	 *
-	 * @see i3c_do_ccc_cb()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param payload Pointer to the CCC payload.
-	 * @param cb Function pointer for completion callback.
-	 * @param userdata Userdata passed to callback.
-	 *
-	 * @return See i3c_do_ccc_cb()
+	 * @driver_ops_optional @copybrief i3c_do_ccc_cb
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER,CONFIG_I3C_CALLBACK}
 	 */
-	int (*do_ccc_cb)(const struct device *dev,
-			 struct i3c_ccc_payload *payload,
-			 i3c_callback_t cb,
-			 void *userdata);
+	i3c_api_do_ccc_cb_t do_ccc_cb;
 
 	/**
-	 * Transfer async messages in I3C mode with a callback.
-	 *
-	 * @see i3c_transfer_cb()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param target Pointer to target device descriptor.
-	 * @param msg Pointer to I3C messages.
-	 * @param num_msgs Number of messages to transfer.
-	 * @param cb Function pointer for completion callback.
-	 * @param userdata Userdata passed to callback.
-	 *
-	 * @return See i3c_transfer_cb()
+	 * @driver_ops_optional @copybrief i3c_transfer_cb
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER,CONFIG_I3C_CALLBACK}
 	 */
-	int (*i3c_xfers_cb)(const struct device *dev,
-			    struct i3c_device_desc *target,
-			    struct i3c_msg *msgs,
-			    uint8_t num_msgs,
-			    i3c_callback_t cb,
-			    void *userdata);
+	i3c_api_i3c_xfers_cb_t i3c_xfers_cb;
 #endif
 	/**
-	 * Find a registered I3C target device.
-	 *
-	 * Controller only API.
-	 *
-	 * This returns the I3C device descriptor of the I3C device
-	 * matching the incoming @p id.
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param id Pointer to I3C device ID.
-	 *
-	 * @return See i3c_device_find().
+	 * @driver_ops_optional Find a registered I3C target device.
+	 * @kconfig_dep{CONFIG_I3C_CONTROLLER}
 	 */
-	struct i3c_device_desc *(*i3c_device_find)(const struct device *dev,
-						   const struct i3c_device_id *id);
+	i3c_api_i3c_device_find_t i3c_device_find;
 #endif /* CONFIG_I3C_CONTROLLER */
-#ifdef CONFIG_I3C_USE_IBI
+#if defined(CONFIG_I3C_USE_IBI) || defined(__DOXYGEN__)
 #if defined(CONFIG_I3C_TARGET) || defined(__DOXYGEN__)
 	/**
-	 * Raise In-Band Interrupt (IBI).
-	 *
-	 * Target device only API.
-	 *
-	 * @see i3c_ibi_request()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param request Pointer to IBI request struct.
-	 *
-	 * @return See i3c_ibi_request()
+	 * @driver_ops_optional @copybrief i3c_ibi_raise
+	 * @kconfig_dep{CONFIG_I3C_USE_IBI,CONFIG_I3C_TARGET}
 	 */
-	int (*ibi_raise)(const struct device *dev,
-			 struct i3c_ibi *request);
+	i3c_api_ibi_raise_t ibi_raise;
 #endif /* CONFIG_I3C_TARGET */
 #if defined(CONFIG_I3C_CONTROLLER) || defined(__DOXYGEN__)
 	/**
-	 * ACK or NACK IBI HJ Requests
-	 *
-	 * @see ibi_hj_response()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param ack True to ack, False to nack
-	 *
-	 * @return See ibi_hj_response()
+	 * @driver_ops_optional @copybrief i3c_ibi_hj_response
+	 * @kconfig_dep{CONFIG_I3C_USE_IBI,CONFIG_I3C_CONTROLLER}
 	 */
-	int (*ibi_hj_response)(const struct device *dev,
-			       bool ack);
+	i3c_api_ibi_hj_response_t ibi_hj_response;
 
 	/**
-	 * ACK or NACK IBI Controller Role Requests
-	 *
-	 * @see i3c_ibi_crr_response()
-	 *
-	 * @param target Pointer to target device descriptor.
-	 * @param ack True to ack, False to nack
-	 *
-	 * @return See i3c_ibi_crr_response()
+	 * @driver_ops_optional @copybrief i3c_ibi_crr_response
+	 * @kconfig_dep{CONFIG_I3C_USE_IBI,CONFIG_I3C_CONTROLLER}
 	 */
-	int (*ibi_crr_response)(struct i3c_device_desc *target,
-				bool ack);
+	i3c_api_ibi_crr_response_t ibi_crr_response;
 
 	/**
-	 * Enable receiving IBI from a target.
-	 *
-	 * Controller only API.
-	 *
-	 * @see i3c_ibi_enable()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param target Pointer to target device descriptor.
-	 *
-	 * @return See i3c_ibi_enable()
+	 * @driver_ops_optional @copybrief i3c_ibi_enable
+	 * @kconfig_dep{CONFIG_I3C_USE_IBI,CONFIG_I3C_CONTROLLER}
 	 */
-	int (*ibi_enable)(const struct device *dev,
-			  struct i3c_device_desc *target);
+	i3c_api_ibi_enable_t ibi_enable;
 
 	/**
-	 * Disable receiving IBI from a target.
-	 *
-	 * Controller only API.
-	 *
-	 * @see i3c_ibi_disable()
-	 *
-	 * @param dev Pointer to controller device driver instance.
-	 * @param target Pointer to target device descriptor.
-	 *
-	 * @return See i3c_ibi_disable()
+	 * @driver_ops_optional @copybrief i3c_ibi_disable
+	 * @kconfig_dep{CONFIG_I3C_USE_IBI,CONFIG_I3C_CONTROLLER}
 	 */
-	int (*ibi_disable)(const struct device *dev,
-			   struct i3c_device_desc *target);
+	i3c_api_ibi_disable_t ibi_disable;
 #endif /* CONFIG_I3C_CONTROLLER */
 #endif /* CONFIG_I3C_USE_IBI */
 #if defined(CONFIG_I3C_TARGET) || defined(__DOXYGEN__)
 	/**
-	 * Register config as target device of a controller.
+	 * @driver_ops_optional @copybrief i3c_target_register
 	 *
 	 * This tells the controller to act as a target device
 	 * on the I3C bus.
 	 *
-	 * Target device only API.
-	 *
-	 * @see i3c_target_register()
-	 *
-	 * @param dev Pointer to the controller device driver instance.
-	 * @param cfg I3C target device configuration
-	 *
-	 * @return See i3c_target_register()
+	 * @kconfig_dep{CONFIG_I3C_TARGET}
 	 */
-	int (*target_register)(const struct device *dev,
-			       struct i3c_target_config *cfg);
+	i3c_api_target_register_t target_register;
 
 	/**
-	 * Unregister config as target device of a controller.
+	 * @driver_ops_optional @copybrief i3c_target_unregister
 	 *
 	 * This tells the controller to stop acting as a target device
 	 * on the I3C bus.
 	 *
-	 * Target device only API.
-	 *
-	 * @see i3c_target_unregister()
-	 *
-	 * @param dev Pointer to the controller device driver instance.
-	 * @param cfg I3C target device configuration
-	 *
-	 * @return See i3c_target_unregister()
+	 * @kconfig_dep{CONFIG_I3C_TARGET}
 	 */
-	int (*target_unregister)(const struct device *dev,
-				 struct i3c_target_config *cfg);
+	i3c_api_target_unregister_t target_unregister;
 
 	/**
-	 * Write to the TX FIFO
-	 *
-	 * This writes to the target tx fifo
-	 *
-	 * Target device only API.
-	 *
-	 * @see i3c_target_tx_write()
-	 *
-	 * @param dev Pointer to the controller device driver instance.
-	 * @param buf Pointer to the buffer
-	 * @param len Length of the buffer
-	 * @param hdr_mode HDR mode
-	 *
-	 * @return See i3c_target_tx_write()
+	 * @driver_ops_optional @copybrief i3c_target_tx_write
+	 * @kconfig_dep{CONFIG_I3C_TARGET}
 	 */
-	int (*target_tx_write)(const struct device *dev,
-			       uint8_t *buf, uint16_t len, uint8_t hdr_mode);
+	i3c_api_target_tx_write_t target_tx_write;
 
 	/**
-	 * ACK or NACK controller handoffs
+	 * @driver_ops_optional @copybrief i3c_target_controller_handoff
 	 *
 	 * This will tell the target to ACK or NACK controller handoffs
-	 * from the CCC GETACCCR
+	 * from the CCC GETACCCR.
 	 *
-	 * Target device only API.
-	 *
-	 * @see i3c_target_controller_handoff()
-	 *
-	 * @param dev Pointer to the controller device driver instance.
-	 * @param accept True to ACK controller handoffs, False to NACK.
-	 *
-	 * @return See i3c_target_controller_handoff()
+	 * @kconfig_dep{CONFIG_I3C_TARGET}
 	 */
-	int (*target_controller_handoff)(const struct device *dev,
-					 bool accept);
+	i3c_api_target_controller_handoff_t target_controller_handoff;
 #endif /* CONFIG_I3C_TARGET */
 #if defined(CONFIG_I3C_RTIO) || defined(__DOXYGEN__)
 	/**
-	 * RTIO
+	 * @driver_ops_optional @copybrief i3c_iodev_submit
 	 *
-	 * @see i3c_iodev_submit()
+	 * Drivers without native RTIO support may set this to
+	 * i3c_iodev_submit_fallback().
 	 *
-	 * @param dev Pointer to the controller device driver instance.
-	 * @param iodev_sqe Pointer to the
-	 *
-	 * @return See i3c_iodev_submit()
+	 * @kconfig_dep{CONFIG_I3C_RTIO}
 	 */
-	void (*iodev_submit)(const struct device *dev,
-			     struct rtio_iodev_sqe *iodev_sqe);
+	i3c_api_iodev_submit_t iodev_submit;
 #endif /* CONFIG_I3C_RTIO */
 };
 
-DEVICE_API_EXTENDS(i3c, i2c, i2c_api);
+/** @} */
 
-/**
- * @endcond
- */
+/** @cond INTERNAL_HIDDEN */
+DEVICE_API_EXTENDS(i3c, i2c, i2c_api);
+/** @endcond */
 
 /**
  * @brief Structure used for matching I3C devices.
