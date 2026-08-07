@@ -6,6 +6,43 @@
 
 static int quic_send_max_stream_data(struct quic_endpoint *ep,
 				     struct quic_stream *stream);
+
+/*
+ * Several frame types are answered with a packet of their own, and a single
+ * datagram can carry hundreds of them. Cap how many such replies one received
+ * payload may produce, so a peer cannot turn one small datagram into hundreds
+ * of encrypted sends.
+ *
+ * The budget lives on the parser's stack, not on the endpoint: payloads for
+ * one endpoint can be parsed concurrently by the socket-service thread and
+ * the QUIC service thread, and a counter shared between them would let one
+ * parser reset the budget the other is still consuming.
+ *
+ * Frames whose reply is required for correctness, such as CONNECTION_CLOSE and
+ * the ACK for the packet as a whole, are sent outside this budget.
+ */
+struct quic_reply_budget {
+	uint16_t used;
+};
+
+#if defined(CONFIG_NET_TEST)
+uint16_t quic_test_reply_budget_spent;
+#endif
+
+static bool quic_reply_budget_take(struct quic_reply_budget *budget)
+{
+	if (budget->used >= CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD) {
+		return false;
+	}
+
+	budget->used++;
+
+#if defined(CONFIG_NET_TEST)
+	quic_test_reply_budget_spent = budget->used;
+#endif
+
+	return true;
+}
 static int quic_send_frame_close(struct quic_endpoint *ep, uint8_t frame_type,
 				 uint64_t error_code, const char *reason)
 {
@@ -827,7 +864,8 @@ static int quic_send_stream_data_blocked(struct quic_endpoint *ep,
 }
 
 static int handle_data_blocked_frame(struct quic_endpoint *ep,
-				     const uint8_t *buf, size_t len)
+				     const uint8_t *buf, size_t len,
+				     struct quic_reply_budget *budget)
 {
 	uint64_t max_data;
 	int pos = 1;
@@ -844,7 +882,7 @@ static int handle_data_blocked_frame(struct quic_endpoint *ep,
 		ep, quic_get_by_ep(ep), max_data);
 
 	/* Peer is blocked, send MAX_DATA to increase their limit */
-	if (ep->rx_fc.max_data > max_data) {
+	if (ep->rx_fc.max_data > max_data && quic_reply_budget_take(budget)) {
 		quic_send_max_data(ep);
 	}
 
@@ -852,7 +890,8 @@ static int handle_data_blocked_frame(struct quic_endpoint *ep,
 }
 
 static int handle_stream_data_blocked_frame(struct quic_endpoint *ep,
-					    const uint8_t *buf, size_t len)
+					    const uint8_t *buf, size_t len,
+					    struct quic_reply_budget *budget)
 {
 	struct quic_stream *stream;
 	uint64_t stream_id, max_stream_data;
@@ -878,7 +917,8 @@ static int handle_stream_data_blocked_frame(struct quic_endpoint *ep,
 
 	/* Find the stream and send MAX_STREAM_DATA */
 	stream = quic_find_stream_by_id(ep, stream_id);
-	if (stream != NULL && stream->local_max_data > max_stream_data) {
+	if (stream != NULL && stream->local_max_data > max_stream_data &&
+	    quic_reply_budget_take(budget)) {
 		quic_send_max_stream_data(ep, stream);
 	}
 
@@ -910,7 +950,8 @@ static int quic_send_max_streams(struct quic_endpoint *ep, bool bidi)
 }
 
 static int handle_streams_blocked_frame(struct quic_endpoint *ep,
-					const uint8_t *buf, size_t len)
+					const uint8_t *buf, size_t len,
+					struct quic_reply_budget *budget)
 {
 	bool is_bidi = (buf[0] == QUIC_FRAME_TYPE_STREAMS_BLOCKED_BIDI);
 	uint64_t max_streams;
@@ -937,7 +978,8 @@ static int handle_streams_blocked_frame(struct quic_endpoint *ep,
 		uint64_t free_slots = (uint64_t)CONFIG_QUIC_MAX_STREAMS_BIDI
 							- ep->rx_sl.open_bidi;
 
-		if (free_slots > 0 && ep->rx_sl.max_bidi <= max_streams) {
+		if (free_slots > 0 && ep->rx_sl.max_bidi <= max_streams &&
+		    quic_reply_budget_take(budget)) {
 			ep->rx_sl.max_bidi += free_slots;
 			quic_send_max_streams(ep, true);
 
@@ -953,7 +995,8 @@ static int handle_streams_blocked_frame(struct quic_endpoint *ep,
 	} else {
 		uint64_t free_slots = (uint64_t)CONFIG_QUIC_MAX_STREAMS_UNI - ep->rx_sl.open_uni;
 
-		if (free_slots > 0 && ep->rx_sl.max_uni <= max_streams) {
+		if (free_slots > 0 && ep->rx_sl.max_uni <= max_streams &&
+		    quic_reply_budget_take(budget)) {
 			ep->rx_sl.max_uni += free_slots;
 			quic_send_max_streams(ep, false);
 		}
@@ -982,8 +1025,60 @@ static int send_retire_connection_id(struct quic_endpoint *ep, uint64_t seq_num)
 	return quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, pos);
 }
 
+/* Remember a RETIRE_CONNECTION_ID that could not be sent right away */
+static void quic_cid_retire_defer(struct quic_endpoint *ep, uint64_t seq_num)
+{
+	k_spinlock_key_t key = k_spin_lock(&ep->retire_backlog.lock);
+
+	if (ep->retire_backlog.count == ARRAY_SIZE(ep->retire_backlog.seq)) {
+		NET_WARN("[EP:%p/%d] Retire backlog full, dropping seq=%" PRIu64,
+			 ep, quic_get_by_ep(ep), ep->retire_backlog.seq[0]);
+		ep->retire_backlog.count--;
+		memmove(&ep->retire_backlog.seq[0], &ep->retire_backlog.seq[1],
+			ep->retire_backlog.count * sizeof(uint64_t));
+	}
+
+	ep->retire_backlog.seq[ep->retire_backlog.count++] = seq_num;
+
+	k_spin_unlock(&ep->retire_backlog.lock, key);
+}
+
+/* Send retirements deferred by earlier payloads, using this payload's budget */
+static void quic_cid_retire_flush(struct quic_endpoint *ep,
+				  struct quic_reply_budget *budget)
+{
+	while (true) {
+		k_spinlock_key_t key;
+		uint64_t seq_num;
+
+		key = k_spin_lock(&ep->retire_backlog.lock);
+		if (ep->retire_backlog.count == 0U) {
+			k_spin_unlock(&ep->retire_backlog.lock, key);
+			return;
+		}
+		seq_num = ep->retire_backlog.seq[0];
+		k_spin_unlock(&ep->retire_backlog.lock, key);
+
+		if (!quic_reply_budget_take(budget) ||
+		    send_retire_connection_id(ep, seq_num) != 0) {
+			/* Keep it queued and try again with a later payload */
+			return;
+		}
+
+		key = k_spin_lock(&ep->retire_backlog.lock);
+		if (ep->retire_backlog.count > 0U &&
+		    ep->retire_backlog.seq[0] == seq_num) {
+			ep->retire_backlog.count--;
+			memmove(&ep->retire_backlog.seq[0], &ep->retire_backlog.seq[1],
+				ep->retire_backlog.count * sizeof(uint64_t));
+		}
+		k_spin_unlock(&ep->retire_backlog.lock, key);
+	}
+}
+
 static int handle_new_connection_id_frame(struct quic_endpoint *ep,
-					  const uint8_t *buf, size_t len)
+					  const uint8_t *buf, size_t len,
+					  struct quic_reply_budget *budget)
 {
 	uint64_t seq_num, retire_prior_to;
 	uint8_t cid_len;
@@ -1044,8 +1139,21 @@ static int handle_new_connection_id_frame(struct quic_endpoint *ep,
 			    ep->peer_cid_pool[i].seq_num < retire_prior_to) {
 				NET_DBG("[EP:%p/%d] Retiring peer CID seq=%" PRIu64,
 					ep, quic_get_by_ep(ep), ep->peer_cid_pool[i].seq_num);
-				/* Send RETIRE_CONNECTION_ID frame */
-				send_retire_connection_id(ep, ep->peer_cid_pool[i].seq_num);
+				/* RFC 9000 ch. 5.1.2: the peer counts this CID
+				 * as active until it sees RETIRE_CONNECTION_ID,
+				 * and the packet carrying this frame is ACKed
+				 * whether or not we manage to reply. When the
+				 * reply budget is used up or the send fails,
+				 * remember the sequence number and send it with
+				 * a later payload's budget instead of dropping
+				 * the retirement.
+				 */
+				if (!quic_reply_budget_take(budget) ||
+				    send_retire_connection_id(
+					    ep, ep->peer_cid_pool[i].seq_num) != 0) {
+					quic_cid_retire_defer(
+						ep, ep->peer_cid_pool[i].seq_num);
+				}
 				ep->peer_cid_pool[i].active = false;
 			}
 		}
@@ -1096,7 +1204,8 @@ static int handle_retire_connection_id_frame(struct quic_endpoint *ep,
 }
 
 static int handle_path_challenge_frame(struct quic_endpoint *ep,
-				       const uint8_t *buf, size_t len)
+				       const uint8_t *buf, size_t len,
+				       struct quic_reply_budget *budget)
 {
 	uint8_t response[9];
 	int pos = 1;
@@ -1109,6 +1218,12 @@ static int handle_path_challenge_frame(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] PATH_CHALLENGE received", ep, quic_get_by_ep(ep));
 
 	/* Must respond with PATH_RESPONSE containing same 8 bytes */
+	if (!quic_reply_budget_take(budget)) {
+		NET_DBG("[EP:%p/%d] PATH_RESPONSE budget for this payload used up",
+			ep, quic_get_by_ep(ep));
+		return pos + 8;
+	}
+
 	response[0] = QUIC_FRAME_TYPE_PATH_RESPONSE;
 	memcpy(&response[1], &buf[pos], 8);
 
@@ -1727,6 +1842,7 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 	int pending_pos = pkt->pos;
 	size_t len = pkt->len;
 	uint8_t *buf = &pkt->data[pending_pos];
+	struct quic_reply_budget budget = { 0 };
 	size_t consumed;
 	int pos = 0;
 	int ret = 0;
@@ -1735,7 +1851,11 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 	NET_DBG("[EP:%p/%d] Processing 1-RTT packet, pn=%" PRIu64 ", len=%zu",
 		ep, quic_get_by_ep(ep), pkt->pkt_num, len);
 
+	/* Retirements deferred by earlier payloads go out under this budget */
+	quic_cid_retire_flush(ep, &budget);
+
 	/* Parse frames in the packet */
+
 	while (pos < (int)len) {
 		uint8_t frame_type = buf[pos];
 
@@ -1900,7 +2020,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 			break;
 
 		case QUIC_FRAME_TYPE_DATA_BLOCKED:
-			ret = handle_data_blocked_frame(ep, &buf[pos], len - pos);
+			ret = handle_data_blocked_frame(ep, &buf[pos], len - pos,
+							&budget);
 			if (ret < 0) {
 				ret = quic_handle_frame_error(ep, frame_type, ret);
 				if (ret == -EPROTO) {
@@ -1913,7 +2034,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 			break;
 
 		case QUIC_FRAME_TYPE_STREAM_DATA_BLOCKED:
-			ret = handle_stream_data_blocked_frame(ep, &buf[pos], len - pos);
+			ret = handle_stream_data_blocked_frame(ep, &buf[pos], len - pos,
+							       &budget);
 			if (ret < 0) {
 				ret = quic_handle_frame_error(ep, frame_type, ret);
 				if (ret == -EPROTO) {
@@ -1927,7 +2049,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 
 		case QUIC_FRAME_TYPE_STREAMS_BLOCKED_BIDI:
 		case QUIC_FRAME_TYPE_STREAMS_BLOCKED_UNI:
-			ret = handle_streams_blocked_frame(ep, &buf[pos], len - pos);
+			ret = handle_streams_blocked_frame(ep, &buf[pos], len - pos,
+							   &budget);
 			if (ret < 0) {
 				ret = quic_handle_frame_error(ep, frame_type, ret);
 				if (ret == -EPROTO) {
@@ -1940,7 +2063,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 			break;
 
 		case QUIC_FRAME_TYPE_NEW_CONNECTION_ID:
-			ret = handle_new_connection_id_frame(ep, &buf[pos], len - pos);
+			ret = handle_new_connection_id_frame(ep, &buf[pos], len - pos,
+							     &budget);
 			if (ret < 0) {
 				ret = quic_handle_frame_error(ep, frame_type, ret);
 				if (ret == -EPROTO) {
@@ -1966,7 +2090,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 			break;
 
 		case QUIC_FRAME_TYPE_PATH_CHALLENGE:
-			ret = handle_path_challenge_frame(ep, &buf[pos], len - pos);
+			ret = handle_path_challenge_frame(ep, &buf[pos], len - pos,
+							  &budget);
 			if (ret < 0) {
 				ret = quic_handle_frame_error(ep, frame_type, ret);
 				if (ret == -EPROTO) {
@@ -2074,13 +2199,14 @@ fail:
  * - PING frames (0x01): Keep-alive
  * - CONNECTION_CLOSE frames (0x1c, 0x1d): Connection termination
  */
-static int handle_crypto_level_packet(struct quic_endpoint *ep,
-				      enum quic_secret_level level,
-				      const uint8_t *payload,
-				      size_t payload_len,
-				      size_t total_packet_len,
-				      bool *ack_only)
+ZTESTABLE_STATIC int handle_crypto_level_packet(struct quic_endpoint *ep,
+						enum quic_secret_level level,
+						const uint8_t *payload,
+						size_t payload_len,
+						size_t total_packet_len,
+						bool *ack_only)
 {
+	struct quic_reply_budget budget = { 0 };
 	size_t pos = 0;
 	int ret;
 	bool saw_ack_frame = false;
@@ -2092,6 +2218,13 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 		level == QUIC_SECRET_LEVEL_HANDSHAKE ? "Handshake" :
 		level == QUIC_SECRET_LEVEL_EARLY ? "0-RTT" : "Application",
 		payload_len);
+
+	if (level == QUIC_SECRET_LEVEL_APPLICATION) {
+		/* Retirements deferred by earlier payloads go out under this
+		 * budget; they need the 1-RTT keys this level guarantees.
+		 */
+		quic_cid_retire_flush(ep, &budget);
+	}
 
 	while (pos < payload_len) {
 		uint8_t frame_type = payload[pos];
@@ -2208,7 +2341,8 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 			switch (frame_type) {
 			case QUIC_FRAME_TYPE_NEW_CONNECTION_ID:
 				ret = handle_new_connection_id_frame(ep, &payload[pos],
-								     payload_len - pos);
+								     payload_len - pos,
+								     &budget);
 				if (ret < 0) {
 					ret = quic_handle_frame_error(ep, frame_type, ret);
 					return ret;
@@ -2230,7 +2364,8 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 
 			case QUIC_FRAME_TYPE_PATH_CHALLENGE:
 				ret = handle_path_challenge_frame(ep, &payload[pos],
-								  payload_len - pos);
+								  payload_len - pos,
+								  &budget);
 				if (ret < 0) {
 					ret = quic_handle_frame_error(ep, frame_type, ret);
 					return ret;
@@ -2315,7 +2450,8 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 
 			case QUIC_FRAME_TYPE_DATA_BLOCKED:
 				ret = handle_data_blocked_frame(ep, &payload[pos],
-								payload_len - pos);
+								payload_len - pos,
+								&budget);
 				if (ret < 0) {
 					ret = quic_handle_frame_error(ep, frame_type, ret);
 					return ret;
@@ -2326,7 +2462,8 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 
 			case QUIC_FRAME_TYPE_STREAM_DATA_BLOCKED:
 				ret = handle_stream_data_blocked_frame(ep, &payload[pos],
-								       payload_len - pos);
+								       payload_len - pos,
+								       &budget);
 				if (ret < 0) {
 					ret = quic_handle_frame_error(ep, frame_type, ret);
 					return ret;
@@ -2338,7 +2475,8 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 			case QUIC_FRAME_TYPE_STREAMS_BLOCKED_BIDI:
 			case QUIC_FRAME_TYPE_STREAMS_BLOCKED_UNI:
 				ret = handle_streams_blocked_frame(ep, &payload[pos],
-								   payload_len - pos);
+								   payload_len - pos,
+								   &budget);
 				if (ret < 0) {
 					ret = quic_handle_frame_error(ep, frame_type, ret);
 					return ret;
