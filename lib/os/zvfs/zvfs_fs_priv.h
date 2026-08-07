@@ -19,6 +19,18 @@ extern "C" {
 
 struct fs_statvfs;
 struct zvfs_statvfs;
+struct zvfs_dirstream;
+struct fd_op_vtable;
+
+/** File-descriptor vtable for ZVFS directory streams. */
+extern const struct fd_op_vtable fs_dir_fd_op_vtable;
+
+/**
+ * @brief Release a directory stream object to the pool.
+ *
+ * @param d Stream previously returned by zvfs_opendir().
+ */
+void zvfs_dirstream_free(struct zvfs_dirstream *d);
 
 /**
  * @brief Map Zephyr file system statistics into ZVFS statistics.

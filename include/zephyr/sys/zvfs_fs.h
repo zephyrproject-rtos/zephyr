@@ -32,11 +32,15 @@ extern "C" {
  * Used by zvfs_open() for files (registered in the fd table) and by POSIX
  * opendir() for directory streams (not fd-backed).
  */
+struct zvfs_dirstream;
+
 struct zvfs_fs_desc {
 	union {
 		struct fs_file_t file;
 		struct fs_dir_t dir;
 	};
+	/** Stream object returned by zvfs_opendir(), NULL for plain fds. */
+	struct zvfs_dirstream *stream;
 	/** Open flags (ZVFS_O_*) reported by F_GETFL */
 	int flags;
 	bool is_dir: 1;
@@ -75,6 +79,68 @@ struct zvfs_statvfs {
 	/** Timestamp resolution in nanoseconds, 0 when unknown. */
 	unsigned long f_timestamp_resolution;
 };
+
+/**
+ * Longest directory entry name zvfs_readdir() reports. A fixed constant, not
+ * MAX_FILE_NAME, so struct zvfs_dirent has a configuration-independent layout
+ * that POSIX struct dirent can mirror; longer backend names are truncated.
+ */
+#define ZVFS_NAME_MAX 255
+
+/**
+ * @brief Directory entry as reported by zvfs_readdir().
+ */
+struct zvfs_dirent {
+	uint32_t d_type;                 /**< ZVFS_MODE_IFDIR or ZVFS_MODE_IFREG */
+	unsigned long d_ino;             /**< Serial number, 0 (untracked) */
+	size_t d_size;                   /**< Entry size in bytes, 0 for directories */
+	char d_name[ZVFS_NAME_MAX + 1];  /**< NUL-terminated entry name */
+};
+
+/**
+ * @brief Directory stream state backing a POSIX DIR.
+ *
+ * Allocated by zvfs_opendir() from storage that is user-accessible under
+ * CONFIG_USERSPACE (zvfs_dir_partition) and released when the stream's file
+ * descriptor is closed.
+ */
+struct zvfs_dirstream {
+	int fd;                  /**< Directory file descriptor (a K_OBJ_FILE) */
+	struct zvfs_dirent ent;  /**< Storage for the current entry */
+};
+
+/**
+ * @brief Open a directory stream.
+ *
+ * The stream's descriptor closes through zvfs_close(), which also releases
+ * the stream object.
+ *
+ * @param path Absolute path of the directory.
+ *
+ * @return Stream pointer on success, or NULL on error (errno is set).
+ */
+__syscall struct zvfs_dirstream *zvfs_opendir(const char *path);
+
+/**
+ * @brief Read the next directory entry.
+ *
+ * @param fd Directory file descriptor.
+ * @param ent Destination for the entry.
+ *
+ * @retval 0 when an entry was read;
+ * @retval 1 at end of directory (@p ent is not modified, errno is unchanged);
+ * @retval -1 on error (errno is set).
+ */
+__syscall int zvfs_readdir(int fd, struct zvfs_dirent *ent);
+
+/**
+ * @brief Reset a directory stream to its first entry.
+ *
+ * @param fd Directory file descriptor.
+ *
+ * @return 0 on success, -1 with errno set on error.
+ */
+__syscall int zvfs_rewinddir(int fd);
 
 /**
  * @brief Open a path on a mounted Zephyr file system and return an fd.

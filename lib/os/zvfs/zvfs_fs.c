@@ -96,6 +96,32 @@ int z_impl_zvfs_open(const char *name, int flags, int mode)
 		return zmode;
 	}
 
+	if ((flags & ZVFS_O_DIRECTORY) != 0) {
+		fd = zvfs_reserve_fd();
+		if (fd < 0) {
+			return -1;
+		}
+
+		ptr = zvfs_fs_desc_alloc(true);
+		if (ptr == NULL) {
+			rc = -EMFILE;
+			goto out_err;
+		}
+
+		fs_dir_t_init(&ptr->dir);
+
+		rc = fs_opendir(&ptr->dir, name);
+		if (rc < 0) {
+			goto out_err;
+		}
+
+		ptr->stream = NULL;
+		ptr->flags = flags & (ZVFS_O_ACCMODE | ZVFS_O_DIRECTORY);
+		zvfs_finalize_typed_fd(fd, ptr, &fs_dir_fd_op_vtable, ZVFS_MODE_IFDIR);
+
+		return fd;
+	}
+
 	fd = zvfs_reserve_fd();
 	if (fd < 0) {
 		return -1;
@@ -140,6 +166,7 @@ int z_impl_zvfs_open(const char *name, int flags, int mode)
 		goto out_err;
 	}
 
+	ptr->stream = NULL;
 	ptr->flags = flags & (ZVFS_O_ACCMODE | ZVFS_O_APPEND | ZVFS_O_NONBLOCK);
 	zvfs_finalize_typed_fd(fd, ptr, &fs_fd_op_vtable, ZVFS_MODE_IFREG);
 
@@ -154,6 +181,130 @@ out_err:
 	errno = -rc;
 	return -1;
 }
+
+static int fs_dir_close_vmeth(void *obj)
+{
+	struct zvfs_fs_desc *ptr = obj;
+	int rc;
+
+	rc = fs_closedir(&ptr->dir);
+	if (ptr->stream != NULL) {
+		zvfs_dirstream_free(ptr->stream);
+		ptr->stream = NULL;
+	}
+	zvfs_fs_desc_free(ptr);
+
+	return rc;
+}
+
+static ssize_t fs_dir_rw_vmeth(void *obj, void *buffer, size_t count)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(buffer);
+	ARG_UNUSED(count);
+
+	errno = EISDIR;
+	return -1;
+}
+
+static ssize_t fs_dir_write_vmeth(void *obj, const void *buffer, size_t count)
+{
+	return fs_dir_rw_vmeth(obj, (void *)buffer, count);
+}
+
+static int fs_dir_ioctl_vmeth(void *obj, unsigned int request, va_list args)
+{
+	int rc;
+	struct zvfs_fs_desc *ptr = obj;
+
+	switch (request) {
+	case ZFD_IOCTL_STAT: {
+		struct zvfs_stat *buf = va_arg(args, struct zvfs_stat *);
+
+		*buf = (struct zvfs_stat){0};
+		buf->mode = zvfs_synth_mode(true, (ptr->dir.mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0);
+		return 0;
+	}
+	case ZFD_IOCTL_STATVFS: {
+		struct zvfs_statvfs *buf = va_arg(args, struct zvfs_statvfs *);
+		struct fs_statvfs vfs;
+		const struct fs_mount_t *mp = ptr->dir.mp;
+
+		if (mp == NULL) {
+			/* the root directory */
+			zvfs_statvfs_root(buf);
+			return 0;
+		}
+		if (mp->mnt_point == NULL) {
+			errno = EBADF;
+			return -1;
+		}
+
+		/* fs_statvfs() rejects a bare "/"; the backend ignores the path */
+		rc = fs_statvfs(mp->mnt_point[1] == '\0' ? "/." : mp->mnt_point, &vfs);
+		if (rc < 0) {
+			break;
+		}
+
+		zvfs_statvfs_from_fs(buf, &vfs,
+				     (mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0);
+		return 0;
+	}
+	case ZFD_IOCTL_READDIR: {
+		struct zvfs_dirent *ent = va_arg(args, struct zvfs_dirent *);
+		struct fs_dirent entry;
+
+		rc = fs_readdir(&ptr->dir, &entry);
+		if (rc < 0) {
+			break;
+		}
+
+		if (entry.name[0] == '\0') {
+			/* end of directory: errno stays untouched */
+			return 1;
+		}
+
+		ent->d_type = (entry.type == FS_DIR_ENTRY_DIR) ? ZVFS_MODE_IFDIR
+							       : ZVFS_MODE_IFREG;
+		ent->d_ino = 0;
+		ent->d_size = entry.size;
+		strncpy(ent->d_name, entry.name, ZVFS_NAME_MAX);
+		ent->d_name[ZVFS_NAME_MAX] = '\0';
+		return 0;
+	}
+	case ZFD_IOCTL_REWINDDIR: {
+		rc = fs_rewinddir(&ptr->dir);
+		break;
+	}
+	case ZVFS_F_GETFL:
+		return ptr->flags;
+	case ZVFS_F_SETFL: {
+		int set = va_arg(args, int);
+
+		/* the file system honors neither append nor non-blocking mode */
+		ptr->flags = (ptr->flags & ZVFS_O_ACCMODE) |
+			     (set & (ZVFS_O_APPEND | ZVFS_O_NONBLOCK));
+		return 0;
+	}
+	default:
+		errno = EOPNOTSUPP;
+		return -1;
+	}
+
+	if (rc < 0) {
+		errno = -rc;
+		return -1;
+	}
+
+	return rc;
+}
+
+const struct fd_op_vtable fs_dir_fd_op_vtable = {
+	.read = fs_dir_rw_vmeth,
+	.write = fs_dir_write_vmeth,
+	.close = fs_dir_close_vmeth,
+	.ioctl = fs_dir_ioctl_vmeth,
+};
 
 #ifdef CONFIG_USERSPACE
 static int z_vrfy_zvfs_open(const char *name, int flags, int mode)

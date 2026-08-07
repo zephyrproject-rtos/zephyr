@@ -52,6 +52,7 @@ config ZVFS_LIBC_FILE_ALIGN
 config ZVFS_FS
 	bool "ZVFS path open via Zephyr file system"
 	depends on FILE_SYSTEM
+	select SYS_ELASTIPOOL
 	default y
 	help
 	  Build the ZVFS path opener (zvfs_open) that wraps Zephyr fs_open() and
@@ -111,6 +112,25 @@ config ZVFS_OPEN_ADD_SIZE_FS
 	help
 	  Number of file descriptors reserved for ZVFS path opens via zvfs_open()
 	  (ISO C fopen()/freopen() and POSIX open() on a mounted file system).
+
+config ZVFS_DIR_MAX
+	int "Maximum number of ZVFS directory streams"
+	depends on ZVFS_FS
+	default 2
+	help
+	  Number of statically allocated directory stream objects returned by
+	  zvfs_opendir(). Each open stream also consumes one file descriptor
+	  and one ZVFS_FS_DESC_MAX slot. Under CONFIG_USERSPACE the storage
+	  lives in zvfs_dir_partition, which a user thread's memory domain
+	  must include.
+
+config ZVFS_OPEN_ADD_SIZE_DIR
+	int
+	depends on ZVFS_FS
+	default ZVFS_DIR_MAX
+	help
+	  Number of file descriptors reserved for ZVFS directory streams in
+	  the fd table size calculation.
 
 config ZVFS_RESERVE_STDIO_FDS
 	bool

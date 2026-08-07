@@ -32,6 +32,8 @@
 #define ZVFS_O_EXCL     0x0800
 #define ZVFS_O_NONBLOCK 0x4000
 
+#define ZVFS_O_DIRECTORY 0x80000
+
 #define ZVFS_F_DUPFD 0
 #define ZVFS_F_GETFD 1
 #define ZVFS_F_SETFD 2
@@ -350,6 +352,8 @@ enum {
 	ZFD_IOCTL_TRUNCATE,
 	ZFD_IOCTL_MMAP,
 	ZFD_IOCTL_STATVFS,
+	ZFD_IOCTL_READDIR,
+	ZFD_IOCTL_REWINDDIR,
 
 	/* Codes above 0x5400 and below 0x5500 are reserved for termios, FIO, etc */
 	/** Get the number of bytes available to read */
