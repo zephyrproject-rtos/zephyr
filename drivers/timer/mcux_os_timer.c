@@ -30,11 +30,7 @@
 		    (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define CYC_PER_US ((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() / (uint64_t)USEC_PER_SEC))
 #define MAX_CYC    INT_MAX
-#define MAX_TICKS  ((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK)
-#define MIN_DELAY  CONFIG_MCUX_OS_TIMER_MIN_DELAY
 
-static struct k_spinlock lock;
-static uint64_t last_count;
 static OSTIMER_Type *base = (OSTIMER_Type *)DT_INST_REG_ADDR(0);
 /* Total cycles of the timer compensated to include the time lost in "sleep/deep sleep" modes.
  * This maintains the timer count to account for the case if the OS Timer is reset in
@@ -80,47 +76,75 @@ static uint64_t mcux_lpc_ostick_get_compensated_timer_value(void)
 	return (OSTIMER_GetCurrentTimerValue(base) + cyc_sys_compensated);
 }
 
-void mcux_os_timer_set_next_tick_match(void)
-{
-	uint64_t adjustment = CYC_PER_TICK < MIN_DELAY ? 2 * CYC_PER_TICK : CYC_PER_TICK;
-	uint64_t next_tick_cycles_match = last_count + adjustment;
+/*
+ * A free-running counter and a match register whose match is on equality: a
+ * COMPARE_EXACT backend.
+ *
+ * The cycle domain is the counter plus the compensation the low-power paths
+ * add for the time it was stopped, so the match register, which knows nothing
+ * of that, is written with the compensation taken back off. That compensation
+ * is shared with those paths, hence TIMER_CORE_COUNTER_NONATOMIC.
+ */
+#define TIMER_CORE_BACKEND_COMPARE_EXACT
+#define TIMER_CORE_COUNTER_WIDTH 64
+#define TIMER_CORE_COUNTER_NONATOMIC
+#define TIMER_CORE_ALARM_MAX_CYCLES MAX_CYC
 
-	OSTIMER_SetMatchValue(base, next_tick_cycles_match, NULL);
+static inline uint64_t timer_driver_cycle_get(void)
+{
+	return mcux_lpc_ostick_get_compensated_timer_value();
 }
 
-static uint32_t mcux_os_timer_calc_elapsed_ticks(uint64_t current_cycles)
+/* The match write crosses into the OSTimer clock domain, and a match set nearer
+ * than that window is passed before it takes effect. fsl_ostimer.c puts the
+ * window at 11 us on a 1 MHz OSTimer, so 16 us covers it with margin. On the
+ * parts clocked from the 32 kHz oscillator that is below one cycle, where the
+ * floor stands in for the domain crossing itself.
+ */
+#define TIMER_CORE_ALARM_LEAD_CYCLES MAX(2U, 16U * CYC_PER_US)
+
+/* Bound for the write-sync spin below, in iterations. Orders of magnitude
+ * beyond the window, so it is reached only if the OSTimer is not clocked.
+ */
+#define MATCH_WR_SPIN_MAX 100000U
+
+static inline void timer_driver_set_compare(uint64_t cycles)
 {
-	uint64_t elapsed_cycles = current_cycles - last_count;
-	uint32_t elapsed_ticks = (uint32_t)elapsed_cycles / CYC_PER_TICK;
-	return elapsed_ticks;
+	uint32_t spins = 0;
+
+	/* A new deadline supersedes an overflow remainder carried from the last
+	 * one, so the companion recomputes from MATCH rather than resuming a
+	 * chain the kernel has just replaced.
+	 */
+	counter_remaining_ticks = 0;
+
+	OSTIMER_SetMatchValue(base, cycles - cyc_sys_compensated, NULL);
+
+	/* Wait for the write to cross into the OSTimer clock domain, so the
+	 * counter the core reads next cannot predate the match going live. This
+	 * runs with the clock lock held, so it is bounded rather than able to
+	 * hang the system on an unclocked timer.
+	 */
+	while ((base->OSEVENT_CTRL & OSTIMER_OSEVENT_CTRL_MATCH_WR_RDY_MASK) != 0U) {
+		if (++spins > MATCH_WR_SPIN_MAX) {
+			__ASSERT(false, "OSTimer match write did not complete");
+			break;
+		}
+	}
 }
+
+#include "system_timer_generic.h"
 
 void mcux_lpc_ostick_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = sys_clock_lock();
 
 	/* Clear interrupt flag by writing 1. */
 	base->OSEVENT_CTRL &= ~OSTIMER_OSEVENT_CTRL_OSTIMER_INTENA_MASK;
 
-	uint64_t now = mcux_lpc_ostick_get_compensated_timer_value();
-	uint32_t elapsed_ticks = mcux_os_timer_calc_elapsed_ticks(now);
-
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/*
-		 * Advance in whole ticks to avoid accumulating sub-tick latency in
-		 * last_count (which would otherwise show up as long-term drift).
-		 */
-		last_count += (uint64_t)elapsed_ticks * CYC_PER_TICK;
-	} else {
-		last_count = now;
-		mcux_os_timer_set_next_tick_match();
-	}
-
-	k_spin_unlock(&lock, key);
-
-	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? elapsed_ticks : 1);
+	timer_core_announce_from(key);
 }
 
 #if defined(MCUX_OS_TIMER_LPM_GENERIC)
@@ -264,7 +288,7 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
 	slept_time_us = counter_ticks_to_us(counter_dev, slept_time_ticks);
 	/* Compensate for PM3 exit overhead not tracked by the counter */
 	slept_time_us += pm_state_next_get(0)->exit_latency_us;
-	cyc_sys_compensated += CYC_PER_US * slept_time_us;
+	cyc_sys_compensated += k_us_to_cyc_floor64(slept_time_us);
 
 	if (IS_ENABLED(CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF)) {
 		/* Reset the OS Timer to a known state */
@@ -367,80 +391,53 @@ bool z_nxp_os_timer_ignore_timer_wakeup(void)
 	return (wait_forever || counter_remaining_ticks);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_no_timeout(void)
 {
+	/* Called from reprogram_next() and from sys_clock_idle_enter(), both
+	 * with the clock lock already held.
+	 */
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Only for tickless kernel system */
 		return;
 	}
 
+	/* Program the longest wait the hardware can hold. wait_forever records
+	 * the state for the counter-overflow wakeup path, which the core knows
+	 * nothing about, and is why this hook exists at all.
+	 */
+	timer_driver_set_compare(timer_driver_cycle_get() + MAX_CYC);
+	counter_remaining_ticks = 0;
 #if defined(MCUX_OS_TIMER_LPM)
-	/* We intercept calls from idle with a 0 tick count when PM=y */
-	if (idle && (ticks == 0)) {
+	wait_forever = true;
+#endif
+}
+
+void sys_clock_idle_enter(uint32_t ticks)
+{
+#if defined(MCUX_OS_TIMER_LPM)
+	/* We intercept idle entry with a 0 tick count when PM=y */
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && (ticks == 0)) {
 		mcux_os_timer_set_lp_counter_timeout();
 		/* A low power counter has been started. No need to
 		 * go further, simply return
 		 */
 		return;
 	}
-	/* When using a counter for certain low power modes, set this flag when the requested
-	 * delay is forever. This is to keep track of wakeup sources in case of counter overflows.
-	 */
-	wait_forever = (ticks == SYS_CLOCK_MAX_WAIT);
-#else
-	ARG_UNUSED(idle);
-#endif /* MCUX_OS_TIMER_LPM */
-	ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint64_t now = mcux_lpc_ostick_get_compensated_timer_value();
-	uint32_t adj, cyc = ticks * CYC_PER_TICK;
-
-	/* Round up to next tick boundary. */
-	adj = (uint32_t)(now - last_count) + (CYC_PER_TICK - 1);
-	if (cyc <= MAX_CYC - adj) {
-		cyc += adj;
-	} else {
-		cyc = MAX_CYC;
-	}
-	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
-
-	if ((int32_t)(cyc + last_count - now) < MIN_DELAY) {
-		cyc += CYC_PER_TICK;
+#endif
+	if (ticks == SYS_CLOCK_IDLE_FOREVER) {
+		/* Nothing to wake up for: same handling as on the running path,
+		 * which also leaves the wait_forever bookkeeping set.
+		 */
+		sys_clock_no_timeout();
+		return;
 	}
 
-	OSTIMER_SetMatchValue(base, cyc + last_count - cyc_sys_compensated, NULL);
-
+	sys_clock_set_timeout(ticks, false);
+#if defined(MCUX_OS_TIMER_LPM)
+	wait_forever = false;
+#endif
 	counter_remaining_ticks = 0;
-
-	k_spin_unlock(&lock, key);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Always return 0 for tickful kernel system */
-		return 0;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	uint64_t now = mcux_lpc_ostick_get_compensated_timer_value();
-	uint32_t elapsed_ticks = mcux_os_timer_calc_elapsed_ticks(now);
-
-	k_spin_unlock(&lock, key);
-
-	return elapsed_ticks;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return (uint32_t)mcux_lpc_ostick_get_compensated_timer_value();
-}
-
-uint64_t sys_clock_cycle_get_64(void)
-{
-	return mcux_lpc_ostick_get_compensated_timer_value();
 }
 
 void sys_clock_idle_exit(void)
@@ -460,12 +457,12 @@ static int sys_clock_driver_init(void)
 	/* Initialize the OS timer, setting clock configuration. */
 	OSTIMER_Init(base);
 
-	last_count = mcux_lpc_ostick_get_compensated_timer_value();
-	OSTIMER_SetMatchValue(base, last_count + CYC_PER_TICK, NULL);
-
 	/* Configure and enable event timer interrupt */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), mcux_lpc_ostick_isr, NULL, 0);
 	irq_enable(DT_INST_IRQN(0));
+
+	/* Seed the announce baseline and arm the first tick. */
+	timer_core_init();
 
 /* On some SoC's, OS Timer cannot wakeup from low power mode in standby modes */
 #if defined(MCUX_OS_TIMER_LPM_LEGACY)
