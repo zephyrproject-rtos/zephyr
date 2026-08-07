@@ -5280,6 +5280,65 @@ ZTEST(net_socket_quic, test_460_required_peer_verification_rejects_finished_with
 			  "Handshake must not reach CONNECTED without peer certificate");
 }
 
+ZTEST(net_socket_quic, test_462_forged_finished_is_rejected)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_tls_context ctx = { 0 };
+	/* Right length for SHA-256, wrong contents. */
+	static const uint8_t finished_body[32] = { 0 };
+	static const uint8_t finished_msg[4 + 32] = { 0 };
+	int ret;
+
+	ep->is_server = false;
+	ctx.ep = ep;
+	/* No peer verification, so the certificate check cannot be what
+	 * rejects this. The Finished MAC has to.
+	 */
+	ctx.options.verify_level = MBEDTLS_SSL_VERIFY_NONE;
+	ctx.peer_cert_len = 0;
+	ctx.ks.cipher_suite = TLS_AES_128_GCM_SHA256;
+	ctx.ks.hash_alg = PSA_ALG_SHA_256;
+	ctx.ks.hash_len = 32;
+
+	/* A running transcript is needed, otherwise the hash lookup fails
+	 * before the MAC is ever compared.
+	 */
+	zassert_equal(psa_hash_setup(&ctx.ks.transcript_hash, PSA_ALG_SHA_256),
+		      PSA_SUCCESS, "Failed to start transcript hash");
+
+	ret = process_handshake_message(&ctx, TLS_HS_FINISHED,
+					finished_body, sizeof(finished_body),
+					finished_msg, sizeof(finished_msg));
+	zassert_equal(ret, -EBADMSG,
+		      "Expected a Finished with a bad MAC to be rejected (%d)", ret);
+	zassert_not_equal(ctx.state, QUIC_TLS_STATE_CONNECTED,
+			  "Handshake must not reach CONNECTED on a forged Finished");
+
+	psa_hash_abort(&ctx.ks.transcript_hash);
+}
+
+ZTEST(net_socket_quic, test_463_finished_wrong_length_is_rejected)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_tls_context ctx = { 0 };
+	static const uint8_t finished_body[8] = { 0 };
+	static const uint8_t finished_msg[4 + 8] = { 0 };
+	int ret;
+
+	ep->is_server = false;
+	ctx.ep = ep;
+	ctx.options.verify_level = MBEDTLS_SSL_VERIFY_NONE;
+	ctx.ks.cipher_suite = TLS_AES_128_GCM_SHA256;
+	ctx.ks.hash_alg = PSA_ALG_SHA_256;
+	ctx.ks.hash_len = 32;
+
+	ret = process_handshake_message(&ctx, TLS_HS_FINISHED,
+					finished_body, sizeof(finished_body),
+					finished_msg, sizeof(finished_msg));
+	zassert_equal(ret, -EBADMSG,
+		      "Expected a short Finished to be rejected (%d)", ret);
+}
+
 /* RFC 9001 6: the TLS KeyUpdate message is prohibited in QUIC and must be
  * rejected as a protocol violation, not silently ignored.
  */
