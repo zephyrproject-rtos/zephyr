@@ -11,6 +11,7 @@ config SOC_FAMILY_SILABS_SIWX91X
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
 	select HAS_PM
 	select PM_STATE_SET_IRQ_UNLOCKED
+	select CLOCK_CONTROL_SILABS_SIWX91X if PM
 	select SILABS_SIWX91X_NWP if PM
 	select SILABS_SLEEPTIMER_TIMER if PM
 	select CPU_HAS_ICACHE
@@ -130,5 +131,17 @@ config SIWX91X_VERSION_SHELL
 	  Adds a "silabs nwp_version [-c]" shell command that prints the NWP
 	  firmware version. With -c, verifies that it matches the expected
 	  version and returns an error if it does not.
+
+config SIWX91X_CLOCK_SHELL
+	bool "Shell command to list SiWx91x clocks"
+	depends on CLOCK_CONTROL_SILABS_SIWX91X
+	depends on SHELL
+	select SILABS_SHELL
+	default y
+	help
+	  Adds a "silabs clocks" shell command that prints all SiWx91x clock
+	  domains with their on/off status and frequency when available.
+	  For a devicetree wiring diagram at build time, run:
+	  west build -t clock_tree
 
 endif # SOC_FAMILY_SILABS_SIWX91X

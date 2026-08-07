@@ -1,0 +1,30 @@
+# Copyright (c) 2024-2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiWx91x High Power (HP) clock manager.
+
+  Controls clocks for the HP (High Power) subsystem: UARTs, I2Cs, SPI,
+  I2S, DMA, PWM, QSPI, GPDMA, and RNG.
+
+compatible: "silabs,siwx91x-cmu-hp"
+
+include: [clock-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    type: string-array
+    required: true
+    description: |
+      Register blocks for the HP clock manager:
+        - m4clk: M4SS (HP) peripheral clock enable and configuration
+        - misc_config: HP miscellaneous control registers (e.g. I2S master mode)
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clkid

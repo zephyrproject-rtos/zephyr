@@ -9,10 +9,10 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
 #include <sl_si91x_power_manager.h>
-#include <sli_si91x_clock_manager.h>
 #include <sli_siwx917_soc.h>
 #include <sl_rsi_utility.h>
 #include <sl_si91x_m4_ps.h>
+#include <siwx91x_clock_pm.h>
 
 LOG_MODULE_REGISTER(soc_power, CONFIG_SOC_LOG_LEVEL);
 
@@ -32,7 +32,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	/* Set BASEPRI to 0. */
 	irq_unlock(0);
 
-
 	if (state == PM_STATE_RUNTIME_IDLE) {
 		sl_si91x_power_manager_standby();
 	} else {
@@ -41,7 +40,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 			goto out;
 		}
 
-		if (sli_si91x_config_clocks_to_mhz_rc() != 0) {
+		if (siwx91x_clk_prepare_sleep() != 0) {
 			LOG_ERR("Failed to configure clocks for sleep mode");
 			goto out;
 		}

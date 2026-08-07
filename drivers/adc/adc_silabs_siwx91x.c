@@ -57,15 +57,22 @@ int adc_siwx91x_channel_config(const struct device *dev, uint8_t channel)
 	struct adc_siwx91x_data *data = dev->data;
 	float min_sampl_time = 100e-9f;
 	uint32_t f_sample_rate = max_sample_rate_achive(min_sampl_time);
+	uint32_t ref_clk_rate;
 	uint16_t total_clk;
 	uint16_t on_clk;
 	uint16_t min_total_clk;
+	int ret;
+	
+	ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &ref_clk_rate);
+	if (ret < 0) {
+		return ret;
+	}
 
-	total_clk = system_clocks.ulpss_ref_clk / f_sample_rate;
+	total_clk = ref_clk_rate / f_sample_rate;
 
-	on_clk = min_sampl_time * system_clocks.ulpss_ref_clk;
+	on_clk = min_sampl_time * ref_clk_rate;
 
-	min_total_clk = system_clocks.ulpss_ref_clk / cfg->sampling_rate;
+	min_total_clk = ref_clk_rate / cfg->sampling_rate;
 
 	if (total_clk < min_total_clk) {
 		total_clk = min_total_clk;
@@ -412,7 +419,7 @@ static void adc_siwx91x_isr(const struct device *dev)
 	static const struct adc_siwx91x_config adc_cfg_##inst = {                                  \
 		.reg = (AUX_ADC_DAC_COMP_Type *)DT_INST_REG_ADDR(inst),                            \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, clkid),                                      \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.irq_configure = siwx91x_adc_irq_configure_##inst,                                 \
 		.ref_voltage = DT_INST_PROP(inst, silabs_adc_ref_voltage),                         \

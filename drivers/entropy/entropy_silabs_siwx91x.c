@@ -99,7 +99,7 @@ static DEVICE_API(entropy, rng_siwx91x_api) = {
 	static const struct rng_siwx91x_config rng_siwx91x_cfg##n = {                           \
 		.reg = (HWRNG_Type *)DT_INST_REG_ADDR(n),                                       \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                             \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(n, clocks, clkid),          \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, clkid),                                \
 	};                                                                                      \
 	PM_DEVICE_DT_INST_DEFINE(n, rng_siwx91x_pm_action);                                     \
 	DEVICE_DT_INST_DEFINE(n, rng_siwx91x_init, PM_DEVICE_DT_INST_GET(n), NULL,              \
