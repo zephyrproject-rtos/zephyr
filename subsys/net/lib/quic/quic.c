@@ -2476,6 +2476,7 @@ struct quic_decrypted_packet {
 	size_t payload_len;         /* Length of decrypted payload */
 	uint64_t packet_number;     /* Full reconstructed packet number */
 	enum quic_packet_type type; /* Packet type */
+	uint8_t first_byte;         /* Header byte with protection removed */
 };
 
 /**
@@ -2638,6 +2639,7 @@ static int quic_decrypt_packet(struct quic_endpoint *ep,
 	result->payload = plaintext;
 	result->packet_number = full_pn;
 	result->type = ptype;
+	result->first_byte = first_byte;
 
 	return 0;
 }
@@ -8332,6 +8334,24 @@ static int process_short_header(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] Short header packet %" PRIu64 ", payload %zu bytes",
 		target_ep, quic_get_by_ep(target_ep), decrypted.packet_number,
 		decrypted.payload_len);
+
+	/*
+	 * RFC 9001 Section 6: a peer signals a key update by flipping the key
+	 * phase bit. We always send phase 0 and never rotate keys, so a set bit
+	 * means the peer moved on and every later packet would fail to decrypt.
+	 * Tell it why instead of going quiet until the idle timeout.
+	 */
+	if ((decrypted.first_byte & QUIC_SHORT_KEY_PHASE_MASK) != 0) {
+		NET_DBG("[EP:%p/%d] Peer started a key update, which is not supported",
+			target_ep, quic_get_by_ep(target_ep));
+		QUIC_EP_STAT_INC(target_ep, drop_rx);
+		quic_endpoint_send_transport_close(target_ep,
+						   QUIC_ERROR_KEY_UPDATE_ERROR, 0,
+						   "Key update not supported");
+		quic_endpoint_notify_streams_closed(target_ep);
+
+		return -EPROTO;
+	}
 
 	/* Keep endpoint alive for the duration of crypto API call */
 	quic_endpoint_ref(target_ep);
