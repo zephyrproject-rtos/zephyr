@@ -5702,6 +5702,87 @@ ZTEST(net_socket_quic, test_480_retry_token_round_trip)
 		      "Token must be bound to client address (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_488_token_replay_entry_survives_the_expiry_second)
+{
+	uint8_t nonce[8] = {
+		0x51, 0x3a, 0x7b, 0x00, 0x21, 0x9c, 0xde, 0x5f,
+	};
+
+	/* A token is still accepted during the second it expires, so its
+	 * replay entry must survive that second too. Retry with a fresh nonce
+	 * if the clock ticks over between the two claims, as that expires the
+	 * entry legitimately.
+	 */
+	for (int attempt = 0; attempt < 10; attempt++) {
+		uint64_t now;
+		bool replayed;
+
+		nonce[0] = (uint8_t)attempt;
+		now = quic_token_now_sec();
+
+		zassert_true(quic_token_claim_nonce(nonce, now),
+			     "First use of a live token must be accepted");
+		replayed = !quic_token_claim_nonce(nonce, now);
+
+		if (quic_token_now_sec() == now) {
+			zassert_true(replayed,
+				     "A token replayed in its expiry second must be rejected");
+			return;
+		}
+	}
+
+	zassert_unreachable("Clock ticked between the claims on every attempt");
+}
+
+ZTEST(net_socket_quic, test_487_address_token_cannot_be_replayed)
+{
+	static const uint8_t orig_dcid[] = {
+		0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+	};
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4446),
+	};
+	struct quic_token_validation validation;
+	uint8_t token[CONFIG_QUIC_TOKEN_MAX_LEN];
+	uint8_t second[CONFIG_QUIC_TOKEN_MAX_LEN];
+	size_t token_len, second_len;
+	int ret;
+
+	ret = net_addr_pton(NET_AF_INET, REMOTE_ADDR_IPV4, &addr.sin_addr);
+	zassert_equal(ret, 0, "Failed to parse token address (%d)", ret);
+
+	ret = quic_build_address_token(QUIC_TOKEN_NEW,
+				       (struct net_sockaddr *)&addr,
+				       orig_dcid, sizeof(orig_dcid),
+				       token, sizeof(token), &token_len);
+	zassert_ok(ret, "Failed to build NEW_TOKEN (%d)", ret);
+
+	ret = quic_validate_address_token((struct net_sockaddr *)&addr,
+					  token, token_len, &validation);
+	zassert_ok(ret, "First use of the token must be accepted (%d)", ret);
+
+	/* Tokens travel in the clear, so an observer can copy one and send it
+	 * again from a spoofed address. The second use must be refused.
+	 */
+	ret = quic_validate_address_token((struct net_sockaddr *)&addr,
+					  token, token_len, &validation);
+	zassert_equal(ret, -EALREADY, "Replayed token must be refused (%d)", ret);
+
+	/* A freshly issued token for the same address still works, so the
+	 * check is on the token and not on the address.
+	 */
+	ret = quic_build_address_token(QUIC_TOKEN_NEW,
+				       (struct net_sockaddr *)&addr,
+				       orig_dcid, sizeof(orig_dcid),
+				       second, sizeof(second), &second_len);
+	zassert_ok(ret, "Failed to build second NEW_TOKEN (%d)", ret);
+
+	ret = quic_validate_address_token((struct net_sockaddr *)&addr,
+					  second, second_len, &validation);
+	zassert_ok(ret, "A newly issued token must still be accepted (%d)", ret);
+}
+
 ZTEST(net_socket_quic, test_490_new_token_cache_round_trip)
 {
 	struct net_sockaddr_in addr = {
