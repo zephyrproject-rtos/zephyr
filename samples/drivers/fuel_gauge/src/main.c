@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 Alvaro Garcia Gomez <maxpowel@gmail.com>
- * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
+ * Copyright (c) 2025 Philipp Steiner
  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * Copyright (c) 2026 Analog Devices Inc.
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
+ * Copyright (c) 2025 Philipp Steiner
  *
  * SPDX-License-Identifier: Apache-2.0
  */

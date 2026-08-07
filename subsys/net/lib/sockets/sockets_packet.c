@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2019 Intel Corporation
  * Copyright (c) 2021 Nordic Semiconductor
- * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
+ * Copyright (c) 2026 Philipp Steiner
  *
  * SPDX-License-Identifier: Apache-2.0
  */

@@ -1,7 +1,7 @@
 /*
  * Copyright 2022 Google LLC
  * Copyright 2023 Microsoft Corporation
- * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
+ * Copyright (c) 2025 Philipp Steiner
  * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  * Copyright (c) 2026 Analog Devices Inc.
  *
