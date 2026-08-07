@@ -5702,6 +5702,38 @@ ZTEST(net_socket_quic, test_480_retry_token_round_trip)
 		      "Token must be bound to client address (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_486_replies_per_payload_are_capped)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	/* A payload packed with DATA_BLOCKED frames. Each one is two bytes and
+	 * would otherwise be answered with a MAX_DATA packet of its own.
+	 */
+	uint8_t payload[128];
+	bool ack_only = false;
+	int ret;
+
+	for (size_t i = 0; i < sizeof(payload); i += 2) {
+		payload[i] = QUIC_FRAME_TYPE_DATA_BLOCKED;
+		payload[i + 1] = 0x00;
+	}
+
+	/* Advertise a window above the blocked limit so every frame would
+	 * otherwise trigger a reply.
+	 */
+	ep->rx_fc.max_data = 1000;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload),
+					 sizeof(payload), &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	zassert_equal(ep->reply_budget_used, CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD,
+		      "Expected replies to stop at %d, got %u",
+		      CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD, ep->reply_budget_used);
+	zassert_true(sizeof(payload) / 2 > CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD,
+		     "Test payload must carry more frames than the budget allows");
+}
+
 ZTEST(net_socket_quic, test_487_address_token_cannot_be_replayed)
 {
 	static const uint8_t orig_dcid[] = {
