@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(eth_nxp_enet_qos_mac, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/drivers/hwinfo.h>
 #endif
 #include <ethernet/eth_stats.h>
-#include "../eth.h"
+#include "../../eth.h"
 #include "nxp_enet_qos_priv.h"
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
 #include <zephyr/drivers/ptp_clock.h>

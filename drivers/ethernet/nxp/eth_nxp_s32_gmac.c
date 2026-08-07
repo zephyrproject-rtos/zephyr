@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(nxp_s32_eth, CONFIG_ETHERNET_LOG_LEVEL);
 #include <Gmac_Ip_Irq.h>
 #include <Clock_Ip.h>
 
-#include "eth.h"
+#include "../eth.h"
 
 #define ETH_NXP_S32_BUF_TIMEOUT		K_MSEC(20)
 #define ETH_NXP_S32_DMA_TX_TIMEOUT	K_MSEC(20)
