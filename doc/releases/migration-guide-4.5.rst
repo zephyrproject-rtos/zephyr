@@ -1131,6 +1131,17 @@ Networking
   keys. Use ``samples/net/wifi/test_certs/rsa2k_no_des`` instead, or set
   :envvar:`WIFI_TEST_CERTS_DIR` to another AES-encrypted certificate directory.
 
+* :kconfig:option:`CONFIG_OPENTHREAD_JOINER_PSKD` no longer defaults to the publicly
+  documented ``"J01NME"`` credential, and now has no default at all. Builds that enable
+  :kconfig:option:`CONFIG_OPENTHREAD_JOINER_AUTOSTART` fail until a PSKd of 6 to 32
+  uppercase alphanumeric characters (0-9 and A-Z excluding I, O, Q and Z) is configured.
+
+  A PSKd set through Kconfig is compiled into the image and is therefore identical on
+  every unit running that firmware, which lets any commissioner in range enrol an
+  uncommissioned device into its own network. Treat the option as a development aid:
+  product firmware should read a per-device PSKd from factory data and call
+  ``otJoinerStart()`` from the application instead.
+
 * ``net_if_config_get`` was removed as it was a duplicate of :c:func:`net_if_get_config`.
   (:github:`110930`)
 
