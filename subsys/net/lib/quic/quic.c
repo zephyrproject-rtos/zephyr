@@ -1214,6 +1214,13 @@ ZTESTABLE_STATIC int quic_build_address_token(enum quic_address_token_type type,
 	size_t pos = 0U;
 	int ret;
 
+	/* Check this before the subtraction below, which would otherwise wrap
+	 * and hand the address copy a huge length.
+	 */
+	if (out_len < QUIC_TOKEN_FIXED_PART_LEN + QUIC_TOKEN_TAG_LEN) {
+		return -ENOBUFS;
+	}
+
 	if (!quic_token_copy_addr(&out[QUIC_TOKEN_FIXED_PART_LEN],
 				  out_len - QUIC_TOKEN_FIXED_PART_LEN,
 				  addr, &addr_len)) {
