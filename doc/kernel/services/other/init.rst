@@ -252,6 +252,36 @@ An anchor key encodes one chain of dependencies. A service that depends on
 several others extends the key of the one initialized last; the remaining
 dependencies are checked at build time (see below).
 
+Devices in an anchor chain
+==========================
+
+The devicetree cannot describe every dependency a device has: a bus controller
+may need an interconnect or a firmware transport that the SoC brings up as a
+plain service, with no node of its own. Such a device carries an anchor key
+just like a service does, and is registered with
+:c:macro:`DEVICE_DT_DEFINE_ANCHORED`:
+
+.. code-block:: c
+
+   #define SYS_ANCHOR_my_uart SYS_ANCHOR_AFTER(SYS_ANCHOR_my_service, my_uart)
+
+   DEVICE_DT_INST_DEFINE_ANCHORED(inst, my_uart_init, NULL, &data, &config,
+                                  POST_KERNEL, SYS_ANCHOR_my_uart, &my_uart_api);
+
+Every instance of the driver publishes ``SYS_ANCHOR_my_uart`` and is placed
+under it, keyed by its devicetree ordinal. Instances therefore keep their
+devicetree order relative to each other, and an entry anchored after
+``SYS_ANCHOR_my_uart`` runs after *all* of them. Because the device is in the
+automatic-ordering slot of its level, its devicetree dependencies are satisfied
+as well.
+
+.. note::
+
+   The reverse relation does not hold: an anchored device cannot be depended on
+   with :c:macro:`SYS_INIT_DEPENDS`, because ordinal-keyed entries are sorted
+   ahead of anchored ones. Order after its anchor key instead. This mistake is
+   reported at build time.
+
 The mechanisms compose: a chain may start at a device ordered by the
 devicetree, continue with a service ordered after that device, and end with a
 service anchored after that service.
@@ -286,6 +316,8 @@ Choosing a mechanism
 | must run after another service            | :c:macro:`SYS_INIT_ANCHORED` with        |
 |                                           | :c:macro:`SYS_ANCHOR_AFTER`              |
 +-------------------------------------------+------------------------------------------+
+| is a device that must run after a service | :c:macro:`DEVICE_DT_DEFINE_ANCHORED`     |
++-------------------------------------------+------------------------------------------+
 | must run after everything else in a level | :c:macro:`SYS_INIT_ANCHORED` with        |
 |                                           | :c:macro:`SYS_ANCHOR`                    |
 +-------------------------------------------+------------------------------------------+
@@ -304,7 +336,8 @@ the build also validates the sequence and fails on ordering errors:
 * a device that is initialized before a device it depends on in the
   devicetree, or that shares its priority;
 * an anchored entry whose dependency is not linked into the image, or which
-  runs at an earlier level than that dependency.
+  runs at an earlier level than that dependency;
+* an entry ordered after a device that is itself ordered by an anchor.
 
 Because the checks read the linked image, they validate the order that will
 actually be executed, whatever mechanism produced it.

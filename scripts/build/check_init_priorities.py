@@ -274,9 +274,14 @@ class ZephyrInitLevels:
 
         Anchored entries (SYS_INIT_ANCHORED()) each leave a "<level>:<key>"
         string record in a non-allocated section, where the key is the
-        entry's full dependency chain of anchor names.
+        entry's full dependency chain of anchor names. Devices ordered by an
+        anchor (DEVICE_DT_DEFINE_ANCHORED()) leave the same record with their
+        devicetree dependency ordinal appended: "<level>:<key>:<ordinal>".
+        Several instances of the same driver may publish one key, so a device
+        record is not necessarily unique.
         """
         self.anchors = []
+        self.anchored_device_ords = set()
 
         section = self._elf.get_section_by_name(_ANCHOR_INFO_SECTION)
         if section is None:
@@ -285,8 +290,12 @@ class ZephyrInitLevels:
         for record in section.data().split(b"\x00"):
             if not record:
                 continue
-            level, _, key = record.decode("ascii").partition(":")
-            self.anchors.append((level, key))
+            level, _, rest = record.decode("ascii").partition(":")
+            key, _, ordinal = rest.partition(":")
+            ordinal = int(ordinal) if ordinal else None
+            self.anchors.append((level, key, ordinal))
+            if ordinal is not None:
+                self.anchored_device_ords.add(ordinal)
 
     def _load_depends_records(self):
         """Load the records of init entries ordered after a device.
@@ -434,6 +443,14 @@ class Validator:
                 )
                 continue
 
+            if dep_ord in self._obj.anchored_device_ords:
+                self._flag_anchor_error(
+                    f"init entry {name} ({level}) is ordered after {dep_path}, which is "
+                    "itself ordered by an anchor: ordinal-keyed entries run ahead of "
+                    "anchored ones, use SYS_INIT_ANCHORED() with the device's anchor key"
+                )
+                continue
+
             dep_prio, dep_init = dep
             if dep_prio.level > _DEVICE_INIT_LEVELS.index(level):
                 self._flag_anchor_error(
@@ -457,10 +474,15 @@ class Validator:
         """
         keys = {}
         names = {}
+        device_keys = set()
 
-        for level, key in self._obj.anchors:
+        for level, key, ordinal in self._obj.anchors:
             name = key.split(_ANCHOR_KEY_SEPARATOR)[-1]
             if key in keys:
+                # Every instance of a multi-instance driver publishes the
+                # same key: only the first one defines the anchor.
+                if ordinal is not None and key in device_keys:
+                    continue
                 self._flag_anchor_error(
                     f"anchored init entry {name} ({level}:{key}) is defined more than once"
                 )
@@ -471,8 +493,10 @@ class Validator:
                 )
             keys[key] = level
             names[name] = key
+            if ordinal is not None:
+                device_keys.add(key)
 
-        for level, key in self._obj.anchors:
+        for key, level in keys.items():
             segments = key.split(_ANCHOR_KEY_SEPARATOR)
             if len(segments) < 2:
                 continue

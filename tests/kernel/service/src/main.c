@@ -13,8 +13,9 @@
  *
  * Dependency chain (arrows = "depends on"):
  *
- *   PRE_KERNEL:   charlie -> bravo -> alpha
- *   POST_KERNEL:  delta   -> charlie   (cross-level; charlie already ran)
+ *   PRE_KERNEL:   charlie  -> bravo -> alpha
+ *   POST_KERNEL:  delta    -> charlie   (cross-level; charlie already ran)
+ *   POST_KERNEL:  test_dev -> echo      (a device ordered after a service)
  *
  * The services are declared in an order that does not match their run order,
  * so only the anchor keys can produce the expected sequence. A plain numeric
@@ -24,6 +25,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/init.h>
+#include <zephyr/device.h>
 
 #define MAX_ENTRIES 8
 
@@ -96,6 +98,20 @@ static int foxtrot_init(void)
 }
 SYS_INIT_ANCHORED(foxtrot, foxtrot_init, POST_KERNEL);
 
+/* A device carries an anchor key just like a service does, so it can be
+ * ordered after one (DEVICE_DT_DEFINE_ANCHORED()). Its key extends echo's, so
+ * it runs between echo and the unrelated foxtrot.
+ */
+#define SYS_ANCHOR_test_dev SYS_ANCHOR_AFTER(SYS_ANCHOR_echo, test_dev)
+static int test_dev_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	record("test_dev");
+	return 0;
+}
+DEVICE_DT_DEFINE_ANCHORED(DT_NODELABEL(test_anchored_dev), test_dev_init, NULL, NULL, NULL,
+			  POST_KERNEL, SYS_ANCHOR_test_dev, NULL);
+
 /* Numeric-priority entry at the lowest possible priority of the same level:
  * must still run before every anchored entry of the level.
  */
@@ -109,7 +125,8 @@ SYS_INIT(fixed_init, PRE_KERNEL, 999);
 ZTEST(service, test_anchored_ordering)
 {
 	static const char *const expected[] = {
-		"fixed", "alpha", "bravo", "charlie", "delta", "echo", "foxtrot",
+		"fixed", "alpha", "bravo",    "charlie",
+		"delta", "echo",  "test_dev", "foxtrot",
 	};
 
 	zassert_equal(run_count, ARRAY_SIZE(expected),
