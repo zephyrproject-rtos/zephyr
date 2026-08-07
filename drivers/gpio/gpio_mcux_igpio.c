@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
+#include <zephyr/kernel.h>
 #if __has_include("soc.h")
 #include <soc.h>
 #endif
@@ -42,6 +43,9 @@ struct mcux_igpio_data {
 
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
+
+	/* serializes the read-modify-write of DR and GDIR */
+	struct k_spinlock lock;
 };
 
 static GPIO_Type *get_base(const struct device *dev)
@@ -53,6 +57,7 @@ static int mcux_igpio_configure(const struct device *dev,
 				gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct mcux_igpio_config *config = dev->config;
+	struct mcux_igpio_data *data = dev->data;
 	GPIO_Type *base = get_base(dev);
 
 	struct pinctrl_soc_pin pin_cfg;
@@ -212,15 +217,17 @@ static int mcux_igpio_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (flags & GPIO_OUTPUT_INIT_HIGH) {
-		GPIO_WritePinOutput(base, pin, 1);
-	}
+	K_SPINLOCK(&data->lock) {
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			GPIO_PinWrite(base, pin, 1);
+		}
 
-	if (flags & GPIO_OUTPUT_INIT_LOW) {
-		GPIO_WritePinOutput(base, pin, 0);
-	}
+		if (flags & GPIO_OUTPUT_INIT_LOW) {
+			GPIO_PinWrite(base, pin, 0);
+		}
 
-	WRITE_BIT(base->GDIR, pin, flags & GPIO_OUTPUT);
+		WRITE_BIT(base->GDIR, pin, flags & GPIO_OUTPUT);
+	}
 
 	return 0;
 }
@@ -239,9 +246,12 @@ static int mcux_igpio_port_set_masked_raw(const struct device *dev,
 					  uint32_t mask,
 					  uint32_t value)
 {
+	struct mcux_igpio_data *data = dev->data;
 	GPIO_Type *base = get_base(dev);
 
-	base->DR = (base->DR & ~mask) | (mask & value);
+	K_SPINLOCK(&data->lock) {
+		base->DR = (base->DR & ~mask) | (mask & value);
+	}
 
 	return 0;
 }
@@ -249,9 +259,12 @@ static int mcux_igpio_port_set_masked_raw(const struct device *dev,
 static int mcux_igpio_port_set_bits_raw(const struct device *dev,
 					uint32_t mask)
 {
+	struct mcux_igpio_data *data = dev->data;
 	GPIO_Type *base = get_base(dev);
 
-	GPIO_PortSet(base, mask);
+	K_SPINLOCK(&data->lock) {
+		GPIO_PortSet(base, mask);
+	}
 
 	return 0;
 }
@@ -259,9 +272,12 @@ static int mcux_igpio_port_set_bits_raw(const struct device *dev,
 static int mcux_igpio_port_clear_bits_raw(const struct device *dev,
 					  uint32_t mask)
 {
+	struct mcux_igpio_data *data = dev->data;
 	GPIO_Type *base = get_base(dev);
 
-	GPIO_PortClear(base, mask);
+	K_SPINLOCK(&data->lock) {
+		GPIO_PortClear(base, mask);
+	}
 
 	return 0;
 }
@@ -269,9 +285,12 @@ static int mcux_igpio_port_clear_bits_raw(const struct device *dev,
 static int mcux_igpio_port_toggle_bits(const struct device *dev,
 				       uint32_t mask)
 {
+	struct mcux_igpio_data *data = dev->data;
 	GPIO_Type *base = get_base(dev);
 
-	GPIO_PortToggle(base, mask);
+	K_SPINLOCK(&data->lock) {
+		GPIO_PortToggle(base, mask);
+	}
 
 	return 0;
 }
