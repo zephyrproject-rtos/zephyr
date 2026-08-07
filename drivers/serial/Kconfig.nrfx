@@ -76,6 +76,7 @@ config UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
 config UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER_LEGACY
 	bool "Use TIMER to count RX bytes on legacy platforms"
 	depends on UART_ASYNC_API
+	depends on !$(dt_compat_any_has_prop,$(DT_COMPAT_NORDIC_NRF_UARTE),frame-timeout-supported)
 	select NRFX_GPPI
 	help
 	  Method used on nRF52x, nRF53x and nRF91x series.
