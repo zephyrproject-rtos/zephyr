@@ -4068,6 +4068,46 @@ ZTESTABLE_STATIC void quic_recovery_init(struct quic_endpoint *ep)
 		ep, quic_get_by_ep(ep), ep->recovery.smoothed_rtt);
 }
 
+/*
+ * Whether the sent-packet history can track one more in-flight stream data
+ * packet at this level. The stream data send paths back off with -EAGAIN
+ * when it cannot: an untracked packet could never be declared lost, and its
+ * stream data would never be released from the TX buffer once acknowledged.
+ *
+ * QUIC_SENT_PKT_HISTORY_RESERVE slots are kept free of stream data so that
+ * ack-eliciting control packets (window updates and the like), which are
+ * sent from paths that cannot back off, do not have to evict an in-flight
+ * stream entry either.
+ */
+bool quic_recovery_tx_slot_available(struct quic_endpoint *ep,
+				     enum quic_secret_level level)
+{
+	int pn_space = level_to_pn_space(level);
+	int free_slots = 0;
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[pn_space][i];
+
+		/* A lost stream entry still awaiting retransmit is not in flight
+		 * but is not free either: it holds the only record of what must be
+		 * re-sent until the retransmit queue drains it. Recording over it
+		 * would drop that retransmission, so treat it as occupied.
+		 */
+		if (!info->in_flight && !info->retransmit_pending) {
+			free_slots++;
+			if (free_slots > QUIC_SENT_PKT_HISTORY_RESERVE) {
+				break;
+			}
+		}
+	}
+
+	k_mutex_unlock(&ep->recovery.lock);
+
+	return free_slots > QUIC_SENT_PKT_HISTORY_RESERVE;
+}
+
 ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 						   enum quic_secret_level level,
 						   uint64_t pkt_num,
@@ -4090,8 +4130,52 @@ ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 	idx = ep->recovery.sent_pkts_idx[pn_space];
 	info = &ep->recovery.sent_pkts[pn_space][idx];
 
+	/* Never overwrite an in-flight entry while a free slot exists.
+	 * Losing an in-flight entry forgets its loss-recovery state, and for
+	 * a packet carrying stream data it also drops the annotation that
+	 * releases the stream TX buffer when the packet is acknowledged; the
+	 * buffer then stays occupied forever and the stream wedges. The data
+	 * send paths refuse to send without free slots to spare, so a full
+	 * history only happens for control packets sent from paths that
+	 * cannot back off; those overwrites prefer a victim without a stream
+	 * annotation, whose loss is recoverable.
+	 *
+	 * A slot marked retransmit_pending is a stream entry that loss
+	 * detection has taken out of flight but whose data has not yet been
+	 * copied to the retransmit queue. It is the only remaining record of
+	 * that pending retransmission, so it must be preserved exactly like an
+	 * in-flight entry until the queue drains it.
+	 */
+	if (info->in_flight || info->retransmit_pending) {
+		struct quic_sent_pkt_info *victim = NULL;
+
+		for (int i = 1; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+			uint16_t probe = (idx + i) % CONFIG_QUIC_SENT_PKT_HISTORY_SIZE;
+			struct quic_sent_pkt_info *entry =
+				&ep->recovery.sent_pkts[pn_space][probe];
+
+			if (!entry->in_flight && !entry->retransmit_pending) {
+				idx = probe;
+				info = entry;
+				break;
+			}
+
+			if (victim == NULL && !entry->has_stream_frame) {
+				victim = entry;
+			}
+		}
+
+		if ((info->in_flight || info->retransmit_pending) && victim != NULL &&
+		    info->has_stream_frame) {
+			info = victim;
+		}
+	}
+
 	/* If we're overwriting a packet still in flight, decrement bytes_in_flight */
 	if (info->in_flight) {
+		NET_WARN("[EP:%p/%d] Sent packet history full, dropping state of pn=%" PRIu64
+			 " (stream frame: %d)",
+			 ep, quic_get_by_ep(ep), info->pkt_num, (int)info->has_stream_frame);
 		ep->recovery.bytes_in_flight -= info->sent_bytes;
 	}
 
@@ -4308,10 +4392,12 @@ ZTESTABLE_STATIC void quic_stream_advance_tx_acked_for_stream(struct quic_stream
 unlock:
 	k_mutex_unlock(&stream->tx_lock);
 
-	if (advance > 0U) {
-		/* Signal that the stream is now writable (TX buffer has space) */
-		k_poll_signal_raise(&stream->send.signal, 0);
-	}
+	/* Signal that the stream may be writable again. Even when no buffer
+	 * bytes were released (advance == 0), the acknowledged packet freed a
+	 * sent-packet history slot, and a sender gated on the full history
+	 * must be woken up to retry.
+	 */
+	k_poll_signal_raise(&stream->send.signal, 0);
 }
 
 static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,

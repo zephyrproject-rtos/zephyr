@@ -119,6 +119,17 @@ struct quic_buffer {
 #define QUIC_MAX_ACK_DELAY_MS   25
 
 /**
+ * Sent-packet history slots kept free of stream data packets, so that
+ * ack-eliciting control packets sent from paths that cannot back off never
+ * have to evict an in-flight stream entry. Stream data sends refuse to use
+ * these slots and return -EAGAIN instead.
+ */
+#define QUIC_SENT_PKT_HISTORY_RESERVE 4
+
+BUILD_ASSERT(QUIC_SENT_PKT_HISTORY_RESERVE < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE,
+	     "The reserve must leave room for stream data packets");
+
+/**
  * Information about a sent packet for RTT measurement and loss detection.
  * This is stored in a ring buffer per packet number space.
  */
@@ -1449,6 +1460,8 @@ int quic_decrypt_payload(struct quic_pp_cipher *pp, uint64_t packet_number,
 			 size_t *plaintext_len);
 
 int quic_flush_deferred_crypto(struct quic_endpoint *ep);
+bool quic_recovery_tx_slot_available(struct quic_endpoint *ep,
+				     enum quic_secret_level level);
 void quic_crypto_context_destroy(struct quic_crypto_context *ctx);
 void quic_key_update_destroy(struct quic_key_update *ku);
 bool quic_setup_ciphers_ex(struct quic_ciphers *ciphers,
