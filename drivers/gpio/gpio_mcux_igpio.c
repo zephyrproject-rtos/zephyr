@@ -329,7 +329,7 @@ static int mcux_igpio_pin_interrupt_configure(const struct device *dev,
 	}
 
 	WRITE_BIT(base->EDGE_SEL, pin, trig == GPIO_INT_TRIG_BOTH);
-	WRITE_BIT(base->ISR, pin, 1);
+	base->ISR = BIT(pin);
 	WRITE_BIT(base->IMR, pin, 1);
 
 	irq_unlock(key);
