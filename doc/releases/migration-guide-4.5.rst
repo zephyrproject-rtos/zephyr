@@ -617,34 +617,6 @@ NXP
   ``zephyr,system-timer`` chosen property, so boards that added the overlay
   described in the Zephyr 4.4 migration guide can remove it.
 
-* The i.MX RT118x series DTSI files were moved from ``dts/arm/nxp/imxrt/`` into
-  the series-specific subdirectory ``dts/arm/nxp/imxrt/rt118x/``, and boards now
-  include a single part-core composer file ``nxp_rt118<part>_cm<core>.dtsi``
-  instead of the series-core file plus a separate part overlay. Out-of-tree
-  boards must update their devicetree includes accordingly (:github:`110228`).
-
-  Example for a part that previously needed the series file plus a part
-  overlay:
-
-  .. code-block:: dts
-
-    /* Before */
-    #include <nxp/imxrt/nxp_rt118x_cm7.dtsi>
-    #include <nxp/imxrt/nxp_rt1186.dtsi>
-
-    /* After */
-    #include <nxp/imxrt/rt118x/nxp_rt1186_cm7.dtsi>
-
-  Example for a part that previously used the series file directly:
-
-  .. code-block:: dts
-
-    /* Before */
-    #include <nxp/imxrt/nxp_rt118x_cm33.dtsi>
-
-    /* After */
-    #include <nxp/imxrt/rt118x/nxp_rt1189_cm33.dtsi>
-
 * The NXP LPC DTSI files were reorganized from the flat directory
   ``dts/arm/nxp/lpc/`` into per-series subdirectories. Out-of-tree boards that
   include these files directly must update their includes.
@@ -670,6 +642,107 @@ NXP
 
     /* After */
     #include <nxp/lpc/lpc55xxx/nxp_lpc55S6x.dtsi>
+
+* The NXP Kinetis DTSI files were reorganized from the flat directory
+  ``dts/arm/nxp/kinetis/`` into per-series subdirectories. Out-of-tree
+  boards that include these files directly must update their includes.
+
+  The new subdirectory layout is:
+
+  ========================  ========================================
+  Kinetis series            New location
+  ========================  ========================================
+  K2X                       ``dts/arm/nxp/kinetis/k2x/``
+  K32Lx                     ``dts/arm/nxp/kinetis/k32lx/``
+  K6X                       ``dts/arm/nxp/kinetis/k6x/``
+  K8X                       ``dts/arm/nxp/kinetis/k8x/``
+  KE1xF                     ``dts/arm/nxp/kinetis/ke1xf/``
+  KE1xZ                     ``dts/arm/nxp/kinetis/ke1xz/``
+  KL2X                      ``dts/arm/nxp/kinetis/kl2x/``
+  KV5X                      ``dts/arm/nxp/kinetis/kv5x/``
+  KWX                       ``dts/arm/nxp/kinetis/kwx/``
+  ========================  ========================================
+
+  Example:
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/kinetis/nxp_k66.dtsi>
+
+    /* After */
+    #include <nxp/kinetis/k6x/nxp_k66.dtsi>
+
+* The NXP MCX DTSI files were reorganized from the flat directory
+  ``dts/arm/nxp/mcx/`` into per-series subdirectories. Out-of-tree boards
+  that include these files directly must update their includes.
+
+  The new subdirectory layout is:
+
+  ========================  ========================================
+  MCX series                New location
+  ========================  ========================================
+  MCXA                      ``dts/arm/nxp/mcx/mcxa/``
+  MCXC                      ``dts/arm/nxp/mcx/mcxc/``
+  MCXE                      ``dts/arm/nxp/mcx/mcxe/``
+  MCXL                      ``dts/arm/nxp/mcx/mcxl/``
+  MCXN                      ``dts/arm/nxp/mcx/mcxn/``
+  MCXW                      ``dts/arm/nxp/mcx/mcxw/``
+  ========================  ========================================
+
+  Example:
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/mcx/nxp_mcxc242.dtsi>
+
+    /* After */
+    #include <nxp/mcx/mcxc/nxp_mcxc242.dtsi>
+
+* The NXP i.MX RT DTSI files were reorganized from the flat directory
+  ``dts/arm/nxp/imxrt/`` into per-series subdirectories, Out-of-tree
+  boards that include these files directly must update their includes.
+
+  The new subdirectory layout is:
+
+  ========================  ========================================
+  i.MX RT series            New location
+  ========================  ========================================
+  RT10xx                    ``dts/arm/nxp/imxrt/imxrt10xx/``
+  RT11xx                    ``dts/arm/nxp/imxrt/imxrt11xx/``
+  RT5xx                     ``dts/arm/nxp/imxrt/imxrt5xx/``
+  RT6xx                     ``dts/arm/nxp/imxrt/imxrt6xx/``
+  RT7xx                     ``dts/arm/nxp/imxrt/imxrt7xx/``
+  RT118x                    ``dts/arm/nxp/imxrt/imxrt118x/``
+  ========================  ========================================
+
+  Example:
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/imxrt/nxp_rt1060.dtsi>
+
+    /* After */
+    #include <nxp/imxrt/imxrt10xx/nxp_rt1060.dtsi>
+
+* The i.MX RT118x boards now include a single part-core composer file
+  ``nxp_rt118<part>_cm<core>.dtsi`` instead of the series-core file plus
+  a separate part overlay. Out-of-tree boards must update their devicetree
+  includes accordingly (:github:`110228`).
+
+  Example for a part that previously needed the series file plus a part
+  overlay:
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/imxrt/nxp_rt118x_cm7.dtsi>
+    #include <nxp/imxrt/nxp_rt1186.dtsi>
+
+    /* After */
+    #include <nxp/imxrt/imxrt118x/nxp_rt1186_cm7.dtsi>
 
 PWM
 ===
