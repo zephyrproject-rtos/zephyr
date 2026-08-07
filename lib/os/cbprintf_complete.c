@@ -1153,6 +1153,11 @@ static char *encode_float(double value,
 	}
 
 	if ((c == 'g') || (c == 'G')) {
+		/* ISO C: a precision of zero is taken as one. */
+		if (precision == 0) {
+			precision = 1;
+		}
+
 		/* Use the specified precision and exponent to select the
 		 * representation and correct the precision and zero-pruning
 		 * in accordance with the ISO C rule.
