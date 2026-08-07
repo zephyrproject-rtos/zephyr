@@ -47,7 +47,7 @@ static volatile bool test_exited;
 static K_SEM_DEFINE(test_exit_sem, 0, 1);
 
 /*
- * Low priority DSP load/store worker for test_load_store().
+ * Low priority DSP load/store worker for test_dsp_load_store().
  *
  * Loads all DSP registers with a known byte pattern, busy-waits to let the
  * high priority thread preempt and use the DSP registers, then stores and
@@ -127,7 +127,7 @@ static void load_store_low(void)
 }
 
 /*
- * High priority DSP load/store worker for test_load_store().
+ * High priority DSP load/store worker for test_dsp_load_store().
  *
  * Repeatedly loads all DSP registers with its own distinct byte pattern and
  * sleeps, forcing context switches to/from the low priority thread. Runs for
@@ -242,7 +242,7 @@ K_THREAD_DEFINE(load_high, THREAD_STACK_SIZE, load_store_high, NULL, NULL, NULL,
  * @see _load_all_dsp_registers()
  * @see _store_all_dsp_registers()
  */
-ZTEST(dsp_sharing, test_load_store)
+ZTEST(dsp_sharing, test_dsp_load_store)
 {
 	/* Initialise test states */
 	test_exited = false;
