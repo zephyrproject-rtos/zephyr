@@ -672,10 +672,6 @@
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
-"./tests/misc/check_init_priorities/validate_check_init_priorities_output.py" = [
-    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
-    "UP015",    # https://docs.astral.sh/ruff/rules/redundant-open-modes
-]
 "./tests/net/lib/lwm2m/interop/pytest/conftest.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -941,7 +937,6 @@ exclude = [
     "./tests/kernel/timer/timer_behavior/pytest/saleae_logic2.py",
     "./tests/kernel/timer/timer_behavior/pytest/test_timer.py",
     "./tests/lib/devicetree/memory_region_flags/pytest/test_memory_region_flags.py",
-    "./tests/misc/check_init_priorities/validate_check_init_priorities_output.py",
     "./tests/net/lib/lwm2m/interop/pytest/conftest.py",
     "./tests/net/lib/lwm2m/interop/pytest/leshan.py",
     "./tests/net/lib/lwm2m/interop/pytest/test_blockwise.py",
