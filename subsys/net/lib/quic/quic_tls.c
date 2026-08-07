@@ -4325,6 +4325,7 @@ ZTESTABLE_STATIC int parse_certificate(struct quic_tls_context *ctx,
 	}
 
 	ctx->peer_cert_len = 0;
+	ctx->peer_cert_verified = false;
 
 	/* Empty certificate list is only valid when peer auth is optional. */
 	if (cert_list_len == 0) {
@@ -4851,6 +4852,8 @@ ZTESTABLE_STATIC int process_handshake_message(struct quic_tls_context *ctx,
 			return ret;
 		}
 
+		ctx->peer_cert_verified = true;
+
 		ret = transcript_update(ctx, full_msg, full_msg_len);
 		if (ret != 0) {
 			return ret;
@@ -4882,6 +4885,16 @@ ZTESTABLE_STATIC int process_handshake_message(struct quic_tls_context *ctx,
 		    quic_tls_effective_verify_level(ctx) == MBEDTLS_SSL_VERIFY_REQUIRED &&
 		    ctx->peer_cert_len == 0) {
 			NET_DBG("Peer certificate required but not provided");
+			return -EACCES;
+		}
+
+		/* A certificate on its own proves nothing: it is public, so
+		 * anyone can replay it. Only CertificateVerify shows the peer
+		 * holds the matching private key, and nothing else in this
+		 * switch enforces that it arrived.
+		 */
+		if (ctx->peer_cert_len > 0 && !ctx->peer_cert_verified) {
+			NET_DBG("Peer sent a certificate but no CertificateVerify");
 			return -EACCES;
 		}
 
