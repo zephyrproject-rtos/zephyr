@@ -1392,6 +1392,7 @@
 				interrupts = <16 0>;
 				clocks = <&rcc STM32_CLOCK(APB4, 16)>;
 				alarms-count = <2>;
+				alrm-exti-line = <17>;
 				status = "disabled";
 			};
 

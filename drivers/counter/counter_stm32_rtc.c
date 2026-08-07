@@ -744,7 +744,13 @@ void rtc_stm32_isr(const struct device *dev)
 	}
 
 #if defined(RTC_EXTI_LINE_NUM)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	/* RTC EXTI17 is a secure direct line on STM32N6. */
+	LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_17);
+	LL_EXTI_ClearFallingFlag_0_31(LL_EXTI_LINE_17);
+#else
 	stm32_exti_clear_pending(RTC_EXTI_LINE_NUM);
+#endif
 #endif /* defined(RTC_EXTI_LINE_NUM) */
 }
 
@@ -814,6 +820,13 @@ static int rtc_stm32_init(const struct device *dev)
 #endif /* RTC_CR_BYPSHAD */
 
 #if defined(RTC_EXTI_LINE_NUM)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	/* RTC EXTI17 is a secure direct line without configurable triggers. */
+	LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_17);
+	LL_EXTI_ClearFallingFlag_0_31(LL_EXTI_LINE_17);
+	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_17);
+	ret = 0;
+#else
 	/* Trigger NVIC IRQ on RTC EXTI line rising edge */
 	ret = stm32_exti_enable(RTC_EXTI_LINE_NUM,
 				STM32_EXTI_TRIG_RISING,
@@ -822,6 +835,7 @@ static int rtc_stm32_init(const struct device *dev)
 		LOG_ERR("Failed to enable RTC EXTI line");
 		goto out_disable_bkup_access;
 	}
+#endif
 #endif /* defined(RTC_EXTI_LINE_NUM) */
 
 out_disable_bkup_access:
