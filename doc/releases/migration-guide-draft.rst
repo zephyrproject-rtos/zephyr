@@ -431,6 +431,10 @@ Timers
   ``z_cms_lptim_hook_on_lpm_entry`` and ``z_cms_lptim_hook_on_lpm_exit`` with
   :c:func:`z_sys_clock_lpm_enter` and :c:func:`z_sys_clock_lpm_exit`, respectively. (:github:`124238`).
 
+* The ``CONFIG_MCUX_OS_TIMER_MIN_DELAY`` Kconfig option has been removed. The NXP OS Timer driver
+  now uses the generic system timer core, which keeps the match value at least 16 timer cycles
+  ahead of the counter. Remove the option from application and board configurations.
+
 W1
 ==
 
