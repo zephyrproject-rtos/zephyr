@@ -2302,6 +2302,40 @@ ZTEST(net_socket_quic, test_210_rfc9001_hp_mask)
 	psa_destroy_key(hp_key_id);
 }
 
+ZTEST(net_socket_quic, test_215_chacha20_header_protection_is_refused)
+{
+	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t hp_key_id;
+	psa_status_t status;
+	uint8_t mask[5] = { 0xa5, 0xa5, 0xa5, 0xa5, 0xa5 };
+	uint8_t untouched[5] = { 0xa5, 0xa5, 0xa5, 0xa5, 0xa5 };
+	const uint8_t sample[] = {
+		0xd1, 0xb1, 0xc9, 0x8d, 0xd7, 0x68, 0x9f, 0xb8,
+		0xec, 0x11, 0xd2, 0x42, 0xb1, 0x23, 0xdc, 0x9b
+	};
+	int ret;
+
+	/* An AES key is fine here; the ChaCha20 branch must bail out before it
+	 * ever reaches the key.
+	 */
+	psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
+	psa_set_key_algorithm(&attributes, PSA_ALG_ECB_NO_PADDING);
+	psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+	psa_set_key_bits(&attributes, 128);
+
+	status = psa_import_key(&attributes, rfc9001_client_hp,
+				sizeof(rfc9001_client_hp), &hp_key_id);
+	zassert_equal(status, PSA_SUCCESS, "Failed to import HP key");
+
+	ret = quic_hp_mask(hp_key_id, QUIC_CIPHER_CHACHA20_POLY1305, sample, mask);
+	zassert_equal(ret, -ENOTSUP,
+		      "ChaCha20 header protection must be refused, got %d", ret);
+	zassert_mem_equal(mask, untouched, sizeof(mask),
+			  "Refused header protection must not write a mask");
+
+	psa_destroy_key(hp_key_id);
+}
+
 /* Test 220: RFC 9001 A.2 - Header decryption */
 ZTEST(net_socket_quic, test_220_rfc9001_header_decryption)
 {
@@ -5095,6 +5129,29 @@ ZTEST(net_socket_quic, test_452_client_hello_extensions_length_must_fit)
 	zassert_equal(ret, -EINVAL,
 		      "Extensions length past the end of the message must be rejected (%d)",
 		      ret);
+}
+
+ZTEST(net_socket_quic, test_451_client_hello_chacha20_only_is_refused)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t hello[sizeof(test_client_hello)];
+	struct quic_tls_context ctx = { 0 };
+	int ret;
+
+	ep->is_server = true;
+	ctx.ep = ep;
+
+	memcpy(hello, test_client_hello, sizeof(hello));
+
+	/* Offer only TLS_CHACHA20_POLY1305_SHA256. Header protection for it is
+	 * not implemented, so the server must not select it.
+	 */
+	hello[37] = 0x13;
+	hello[38] = 0x03;
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_equal(ret, -ENOTSUP,
+		      "A ChaCha20-only ClientHello must not be accepted (%d)", ret);
 }
 
 ZTEST(net_socket_quic, test_453_client_hello_odd_cipher_suites_length)
