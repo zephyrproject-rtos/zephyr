@@ -2820,36 +2820,52 @@ static bool valid_unicast_group_stream_param(const struct bt_bap_unicast_group *
 		if (cig_param->c_to_p_interval == 0) {
 			cig_param->c_to_p_interval = qos->interval;
 		} else if (cig_param->c_to_p_interval != qos->interval) {
+			LOG_DBG("Group %p c_to_p_interval does not match stream %p: %u != %u",
+				unicast_group, param->stream, cig_param->c_to_p_interval,
+				qos->interval);
 			return false;
 		}
 
 		if (cig_param->c_to_p_latency == 0) {
 			cig_param->c_to_p_latency = qos->latency;
 		} else if (cig_param->c_to_p_latency != qos->latency) {
+			LOG_DBG("Group %p c_to_p_latency does not match stream %p: %u != %u",
+				unicast_group, param->stream, cig_param->c_to_p_latency,
+				qos->latency);
 			return false;
 		}
 
 		if (*pd == BT_BAP_PD_UNSET) {
 			*pd = qos->pd;
 		} else if (*pd != qos->pd) {
+			LOG_DBG("Group %p sink PD does not match stream %p: %u != %u",
+				unicast_group, param->stream, *pd, qos->pd);
 			return false;
 		}
 	} else {
 		if (cig_param->p_to_c_interval == 0) {
 			cig_param->p_to_c_interval = qos->interval;
 		} else if (cig_param->p_to_c_interval != qos->interval) {
+			LOG_DBG("Group %p p_to_c_interval does not match stream %p: %u != %u",
+				unicast_group, param->stream, cig_param->p_to_c_interval,
+				qos->interval);
 			return false;
 		}
 
 		if (cig_param->p_to_c_latency == 0) {
 			cig_param->p_to_c_latency = qos->latency;
 		} else if (cig_param->p_to_c_latency != qos->latency) {
+			LOG_DBG("Group %p p_to_c_latency does not match stream %p: %u != %u",
+				unicast_group, param->stream, cig_param->p_to_c_latency,
+				qos->latency);
 			return false;
 		}
 
 		if (*pd == BT_BAP_PD_UNSET) {
 			*pd = qos->pd;
 		} else if (*pd != qos->pd) {
+			LOG_DBG("Group %p source PD does not match stream %p: %u != %u",
+				unicast_group, param->stream, *pd, qos->pd);
 			return false;
 		}
 	}
@@ -2864,6 +2880,8 @@ static bool valid_unicast_group_stream_param(const struct bt_bap_unicast_group *
 		    cig_param->framing != BT_ISO_FRAMING_UNFRAMED) ||
 		   (qos->framing == BT_BAP_QOS_CFG_FRAMING_FRAMED &&
 		    cig_param->framing != BT_ISO_FRAMING_FRAMED)) {
+		LOG_DBG("Group %p framing does not match stream %p: %u != %u", unicast_group,
+			param->stream, cig_param->framing, qos->framing);
 		return false;
 	}
 
