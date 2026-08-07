@@ -118,6 +118,21 @@
 		/* Remove SEMC, it doesn't exist on RT1010 */
 		/delete-node/ semc0@402f0000;
 
+		/* Fixup DCP, it has a different base address on RT1010.
+		 * The shared nxp_rt10xx.dtsi places DCP at 0x402fc000
+		 * (valid for RT105x/RT106x), but on the RT1011 the DCP
+		 * lives at 0x400f0000. Accessing 0x402fc000 hits an
+		 * unimplemented AIPS slot and faults during DCP_Init.
+		 */
+		/delete-node/ dcp@402fc000;
+
+		dcp: dcp@400f0000 {
+			compatible = "nxp,mcux-dcp";
+			reg = <0x400f0000 0x4000>;
+			interrupts = <50 0>, <51 0>;
+			status = "okay";
+		};
+
 		/* Fixup LPI2C1 and LPI2C2, they have different base addr on RT1010 */
 		/delete-node/ i2c@403f0000;
 		/delete-node/ i2c@403f4000;
