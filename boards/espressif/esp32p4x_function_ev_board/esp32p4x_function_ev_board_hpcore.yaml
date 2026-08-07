@@ -11,6 +11,7 @@ supported:
   - gpio
   - hwinfo
   - netif:eth
+  - pulse_io
   - sdhc
   - spi
   - uart
