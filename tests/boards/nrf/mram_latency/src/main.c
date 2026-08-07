@@ -53,13 +53,13 @@ ZTEST(mram_latency, test_basic_requests)
 	k_sem_init(&req1.sem, 0, 1);
 	k_sem_init(&req2.sem, 0, 1);
 
-	sys_notify_init_callback(&req1.cli.notify, basic_cb);
+	sys_notify_init_callback(&req1.cli.notify, (sys_notify_generic_callback)basic_cb);
 	exp_state = ONOFF_STATE_OFF;
 	/* Req: 0->1 trigger to on */
 	rv = mram_no_latency_request(&req1.cli);
 	zassert_equal(rv, exp_state, "Unexpected rv:%d (exp:%d)", rv, exp_state);
 
-	sys_notify_init_callback(&req2.cli.notify, basic_cb);
+	sys_notify_init_callback(&req2.cli.notify, (sys_notify_generic_callback)basic_cb);
 	exp_state = ONOFF_STATE_TO_ON;
 	/* Req: 1->2 */
 	rv = mram_no_latency_request(&req2.cli);
@@ -84,7 +84,7 @@ ZTEST(mram_latency, test_basic_requests)
 	rv = mram_no_latency_cancel_or_release(&req1.cli);
 	zassert_equal(rv, exp_state, "Unexpected rv:%d (exp:%d)", rv, exp_state);
 
-	sys_notify_init_callback(&req1.cli.notify, basic_cb);
+	sys_notify_init_callback(&req1.cli.notify, (sys_notify_generic_callback)basic_cb);
 	exp_state = ONOFF_STATE_OFF;
 
 	/* Req: 0->1 triggered to on while in to off. */
@@ -105,7 +105,7 @@ static void timeout(struct k_timer *timer)
 	uint32_t exp_state;
 	int rv;
 
-	sys_notify_init_callback(&req->cli.notify, basic_cb);
+	sys_notify_init_callback(&req->cli.notify, (sys_notify_generic_callback)basic_cb);
 	exp_state = ONOFF_STATE_OFF;
 	rv = mram_no_latency_request(&req->cli);
 	zassert_equal(rv, exp_state, "Unexpected rv:%d (exp:%d)", rv, exp_state);
