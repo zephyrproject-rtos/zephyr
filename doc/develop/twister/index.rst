@@ -1233,9 +1233,13 @@ A sidecar has a small lifecycle, driven by Twister for each test instance:
 
 #. **configure** -- the sidecar reads what it needs from the instance and its
    ``sidecar_config`` block before anything is provisioned.
+#. **host check** -- at test-plan time the sidecar reports whether the host
+   provides what it needs (for example, that a required daemon binary is
+   installed). When it does not, the test is *built only* and not executed,
+   exactly like a platform whose simulator is not installed.
 #. **setup** -- called just before the handler runs the test image; it brings
    the host resource up (starts a daemon, creates an interface, ...). If the
-   host side is unavailable -- a required tool is not installed, or bringing the
+   host side still turns out to be unavailable -- for example bringing the
    resource up needs privileges that are not present -- setup reports this and
    Twister *skips* execution instead of failing the test.
 #. **teardown** -- called after the handler returns, in a ``finally`` block, so
