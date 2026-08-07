@@ -6,9 +6,10 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_x86
+      - sf32lb52_devkit_lcd
     tags: bluetooth
     integration_platforms:
-      - qemu_cortex_m3
+      - sf32lb52_devkit_lcd
   sample.bluetooth.handsfree.no_blobs:
     platform_allow:
       - mimxrt1170_evk@B/mimxrt1176/cm7
