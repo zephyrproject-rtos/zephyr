@@ -27,13 +27,17 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(RTC_NODE, nxp_rtc_jdp),
 #define RTC_PRESCALER DT_PROP(RTC_NODE, prescaler)
 #define RTC_CLK_FREQ  DT_PROP(RTC_NODE, clock_frequency)
 
-/*
- * The RTC counter rate (clock-frequency / prescaler) is published at runtime
- * through z_clock_hw_cycles_per_sec (the driver selects
- * TIMER_READS_ITS_FREQUENCY_AT_RUNTIME), so the devicetree prescaler is the
- * single source of truth for the tick rate.
- */
-extern unsigned int z_clock_hw_cycles_per_sec;
+/* The counter rate. Devicetree is the source of truth; the kernel has to agree. */
+#define RTC_JDP_RATE (RTC_CLK_FREQ / RTC_PRESCALER)
+
+BUILD_ASSERT(RTC_JDP_RATE * RTC_PRESCALER == RTC_CLK_FREQ,
+	     "rtc prescaler must divide clock-frequency exactly");
+BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == RTC_JDP_RATE,
+	     "CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC must be the rtc clock-frequency "
+	     "divided by its prescaler");
+BUILD_ASSERT(RTC_JDP_RATE % CONFIG_SYS_CLOCK_TICKS_PER_SEC == 0,
+	     "CONFIG_SYS_CLOCK_TICKS_PER_SEC must divide the rtc counter rate, or a "
+	     "tick is not a whole number of cycles and uptime runs off");
 
 /* Map the numeric prescaler (1/32/512/16384) to the SDK clock-divide enum */
 #define RTC_JDP_DIV_ENUM						\
@@ -44,8 +48,9 @@ extern unsigned int z_clock_hw_cycles_per_sec;
 
 /*
  * Bounded spin waiting for an in-flight RTCVAL synchronization to finish (see
- * rtc_jdp_set_compare). A sync takes a few RTC cycles (~100 us at 32 kHz); this
- * bound is far larger and only prevents an unbounded spin on a stuck peripheral.
+ * timer_driver_set_compare). A sync takes a few RTC cycles (~100 us at
+ * 32 kHz); this bound is far larger and only prevents an unbounded spin on a
+ * stuck peripheral.
  */
 #define RTC_JDP_SYNC_SPIN 100000U
 
@@ -57,15 +62,6 @@ extern unsigned int z_clock_hw_cycles_per_sec;
  */
 #define RTC_JDP_COMPARE_MARGIN (2U * MINIMUM_RTCVAL)
 
-/* Runtime cycle-domain values derived from the RTC rate in init. */
-static uint32_t cycles_per_tick;
-static uint32_t cycles_max;
-
-/* Absolute RTC count at the last announced tick boundary. */
-static uint32_t last_count;
-/* Ticks last reported by sys_clock_elapsed(), consumed by sys_clock_set_timeout(). */
-static uint32_t last_elapsed;
-
 static inline void rtc_jdp_wait_inv_clear(void)
 {
 	for (uint32_t i = 0U; i < RTC_JDP_SYNC_SPIN; i++) {
@@ -76,96 +72,45 @@ static inline void rtc_jdp_wait_inv_clear(void)
 }
 
 /*
- * Program the next compare (RTCVAL). RTCVAL is a one-shot equality compare
- * against the free-running 32-bit counter, so it must be programmed strictly
- * ahead of the count, otherwise the match is missed and only recurs after a
- * full 32-bit wrap (~36 h at 32 kHz).
+ * A free-running 32-bit counter and RTCVAL, a one-shot equality compare, so a
+ * COMPARE_EXACT backend. The core keeps a target whose distance equals the lead,
+ * so the lead is one past the margin the compare has to clear.
  */
-static void rtc_jdp_set_compare(uint32_t compare)
+#define TIMER_CORE_BACKEND_COMPARE_EXACT
+#define TIMER_CORE_ALARM_LEAD_CYCLES (RTC_JDP_COMPARE_MARGIN + 1U)
+
+static uint32_t timer_driver_cycle_get(void)
 {
-	uint32_t bump = RTC_JDP_COMPARE_MARGIN + 1U;
-	uint32_t now;
-
-	for (;;) {
-		/* RTCVAL must be greater than MINIMUM_RTCVAL. */
-		if (compare <= MINIMUM_RTCVAL) {
-			compare = MINIMUM_RTCVAL + 1U;
-		}
-
-		/*
-		 * An RTCVAL write starts a synchronization into the RTC clock
-		 * domain and sets INV_RTC; while INV_RTC is set the hardware
-		 * ignores further RTCVAL writes (RM ch. 66 "Invalid RTC write").
-		 * Wait for a previous write to synchronize before programming.
-		 */
-		rtc_jdp_wait_inv_clear();
-		RTC_ClearInterruptFlags(RTC_JDP_BASE, kRTC_RTCInterruptFlag);
-		RTC_SetRTCValue(RTC_JDP_BASE, compare);
-
-		/*
-		 * Re-read the counter and, like the retry in mcux_stm_timer.c,
-		 * bump the compare forward if the count has already reached (or is
-		 * within the sync margin of) it, so the equality match is not lost
-		 * to the sync latency sampled above.
-		 */
-		now = RTC_GetCountValue(RTC_JDP_BASE);
-		if (likely((int32_t)(compare - now) > (int32_t)RTC_JDP_COMPARE_MARGIN)) {
-			break;
-		}
-
-		compare = now + bump;
-		bump *= 2U;
-	}
-}
-
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	ARG_UNUSED(idle);
-
-	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	uint32_t cycles;
-
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		/*
-		 * No pending timeout and no future timer interrupt required:
-		 * wait as long as the hardware allows.
-		 */
-		cycles = cycles_max;
-	} else {
-		uint64_t wait_ticks = (uint64_t)last_elapsed + (uint64_t)ticks;
-		uint64_t wait_cycles = wait_ticks * (uint64_t)cycles_per_tick;
-
-		cycles = (wait_cycles > cycles_max) ? cycles_max : (uint32_t)wait_cycles;
-	}
-
-	rtc_jdp_set_compare(last_count + cycles);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-
-	uint32_t now = RTC_GetCountValue(RTC_JDP_BASE);
-	uint32_t delta_ticks = (now - last_count) / cycles_per_tick;
-
-	last_elapsed = delta_ticks;
-	return delta_ticks;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	/* The free-running 32-bit RTC counter is the hardware cycle counter. */
 	return RTC_GetCountValue(RTC_JDP_BASE);
 }
+
+static void timer_driver_set_compare(uint32_t cycles)
+{
+	/*
+	 * An RTCVAL write starts a synchronization into the RTC clock domain
+	 * and sets INV_RTC; while INV_RTC is set the hardware ignores further
+	 * RTCVAL writes (RM ch. 66 "Invalid RTC write"). Wait for a previous
+	 * write to synchronize before programming.
+	 */
+	rtc_jdp_wait_inv_clear();
+	RTC_ClearInterruptFlags(RTC_JDP_BASE, kRTC_RTCInterruptFlag);
+
+	/*
+	 * RTCVAL only raises RTCF above MINIMUM_RTCVAL (fsl_rtc.h, which also
+	 * asserts on it). That bounds the register value rather than the distance
+	 * to the count, so a tick-aligned target landing just past the counter
+	 * wrap has to be nudged clear of it.
+	 */
+	if (cycles <= MINIMUM_RTCVAL) {
+		cycles = MINIMUM_RTCVAL + 1U;
+	}
+	RTC_SetRTCValue(RTC_JDP_BASE, cycles);
+}
+
+#include "system_timer_generic.h"
+
+BUILD_ASSERT(TIMER_CORE_CYC_PER_TICK > TIMER_CORE_ALARM_LEAD_CYCLES,
+	     "tick period is shorter than the rtc compare-sync margin");
 
 void sys_clock_disable(void)
 {
@@ -184,50 +129,15 @@ static void mcux_rtc_jdp_timer_isr(const void *arg)
 	ARG_UNUSED(arg);
 
 	k_spinlock_key_t key = sys_clock_lock();
-	uint32_t now = RTC_GetCountValue(RTC_JDP_BASE);
-	uint32_t delta_ticks = (now - last_count) / cycles_per_tick;
 
 	RTC_ClearInterruptFlags(RTC_JDP_BASE, kRTC_RTCInterruptFlag);
 
-	last_count += delta_ticks * cycles_per_tick;
-	last_elapsed = 0U;
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* RTCVAL is one-shot; arm the next periodic tick. */
-		rtc_jdp_set_compare(last_count + cycles_per_tick);
-	}
-
-	sys_clock_announce_locked((int32_t)delta_ticks, key);
+	timer_core_announce_from(key);
 }
 
 static int sys_clock_driver_init(void)
 {
 	rtc_config_t config;
-	uint32_t cycle_rate = RTC_CLK_FREQ / RTC_PRESCALER;
-
-	/*
-	 * The RTC rate must divide the tick rate exactly; this also rejects a
-	 * rate below the tick rate, which would make cycles_per_tick zero and
-	 * fault the divisions below.
-	 */
-	if ((cycle_rate == 0U) || ((cycle_rate % CONFIG_SYS_CLOCK_TICKS_PER_SEC) != 0U)) {
-		return -EINVAL;
-	}
-
-	cycles_per_tick = cycle_rate / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-	if (cycles_per_tick <= RTC_JDP_COMPARE_MARGIN) {
-		/* Tick period too short for the RTC compare-sync margin. */
-		return -EINVAL;
-	}
-
-	z_clock_hw_cycles_per_sec = cycle_rate;
-	/*
-	 * Schedule at most half the counter range ahead; a compare further out
-	 * would wrap past the 32-bit counter and be indistinguishable from a
-	 * value already in the past under wrap-around arithmetic, stalling the
-	 * tick. Keep it tick-aligned. Mirrors mcux_stm_timer.c.
-	 */
-	cycles_max = (INT32_MAX / cycles_per_tick) * cycles_per_tick;
 
 	RTC_GetDefaultConfig(&config);
 	config.clockSource = (rtc_clock_source_t)RTC_CLK_SRC;
@@ -244,12 +154,12 @@ static int sys_clock_driver_init(void)
 	 * resets the RTC logic and starts the count from zero, committing the
 	 * RTCVAL written here (RM ch. 66).
 	 */
-	RTC_SetRTCValue(RTC_JDP_BASE, cycles_per_tick);
+	RTC_SetRTCValue(RTC_JDP_BASE, TIMER_CORE_CYC_PER_TICK);
 	RTC_EnableInterrupts(RTC_JDP_BASE, kRTC_RTCInterruptEnable);
 	RTC_EnableRTC(RTC_JDP_BASE);
 
-	last_count = 0U;
-	last_elapsed = 0U;
+	/* Seed the announce baseline and arm the first tick. */
+	timer_core_init();
 
 	return 0;
 }
