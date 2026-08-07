@@ -582,6 +582,7 @@ const struct shell_transport_api shell_uart_transport_api = {
 #endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 };
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_shell_uart))
 SHELL_UART_DEFINE(shell_transport_uart);
 SHELL_DEFINE(shell_uart, CONFIG_SHELL_PROMPT_UART, &shell_transport_uart,
 	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_SIZE,
@@ -620,8 +621,13 @@ static int enable_shell_uart(void)
 
 SYS_INIT(enable_shell_uart, POST_KERNEL,
 	 CONFIG_SHELL_BACKEND_SERIAL_INIT_PRIORITY);
+#endif
 
 const struct shell *shell_backend_uart_get_ptr(void)
 {
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_shell_uart))
 	return &shell_uart;
+#else
+	return NULL;
+#endif
 }
