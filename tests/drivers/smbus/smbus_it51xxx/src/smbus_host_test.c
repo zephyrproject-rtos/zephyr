@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(smbus_api_test, LOG_LEVEL_INF);
  *
  * Test groups:
  *   - protocol coverage: one test per SMBus API entry point
+ *   - Host Notify: callback registration mechanics
  *   - error paths: address NACK, invalid block params, target NACK
  */
 
@@ -235,6 +236,41 @@ ZTEST(smbus_api, test_block_pcall_not_supported)
 
 	/* smbus_it51xxx_block_pcall() is not currently supported */
 	zassert_equal(ret, -ENOSYS, "expected -ENOSYS, got %d", ret);
+}
+
+/* Host Notify test */
+static void host_notify_cb_handler(const struct device *dev, struct smbus_callback *cb,
+				   uint8_t addr)
+{
+	ARG_UNUSED(cb);
+
+	LOG_INF("%s: Host Notify fired, addr=0x%02x", dev->name, addr);
+}
+
+ZTEST(smbus_api, test_host_notify_cb_register)
+{
+	struct smbus_callback cb = {
+		.handler = host_notify_cb_handler,
+		.addr = SMBUS_TEST_TARGET_ADDR,
+	};
+	int ret;
+
+	ret = smbus_configure(host, SMBUS_MODE_CONTROLLER | SMBUS_MODE_HOST_NOTIFY);
+#if DT_PROP(DT_ALIAS(smbus_host), port_num) > SMBUS_HOST_NOTIFY_MAX_PORT
+	zassert_equal(ret, -EIO,
+		      "expected -EIO enabling Host Notify on an unsupported port, got %d", ret);
+#else
+	zassert_equal(ret, 0, "smbus_configure(HOST_NOTIFY) failed: %d", ret);
+#endif
+
+	ret = smbus_host_notify_set_cb(host, &cb);
+	zassert_equal(ret, 0, "smbus_host_notify_set_cb failed: %d", ret);
+
+	ret = smbus_host_notify_remove_cb(host, &cb);
+	zassert_equal(ret, 0, "smbus_host_notify_remove_cb failed: %d", ret);
+
+	ret = smbus_configure(host, SMBUS_MODE_CONTROLLER);
+	zassert_equal(ret, 0, "smbus_configure(restore) failed: %d", ret);
 }
 
 /* Generic API-contract / error paths */
