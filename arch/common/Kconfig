@@ -38,8 +38,22 @@ config ARCH_SUPPORTS_ROM_OFFSET
 	  script, which will place a block of 0x0 of size
 	  CONFIG_ROM_START_OFFSET at the start of the ROM region.
 
+config EXCEPTION_DUMP
+	bool "Exception dump"
+	default y
+	help
+	  Print the register, fault cause and stack trace information
+	  collected by the architecture fault handlers.
+
+	  Disabling this removes the dump call sites and their format
+	  strings from the image. This is useful for size constrained
+	  builds such as bootloaders, where the dump would otherwise be
+	  compiled in unconditionally whenever LOG is disabled, because
+	  the printk fallback has no level filtering of its own.
+
 config EXCEPTION_DUMP_HOOK
 	bool "Exceptions printing hooks"
+	depends on EXCEPTION_DUMP
 	help
 	  Enables hook for configuring an additional method for delivering
 	  exeption prints through similar interface as printk or LOG.
