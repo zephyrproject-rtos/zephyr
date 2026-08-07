@@ -349,6 +349,7 @@ enum {
 	ZFD_IOCTL_STAT,
 	ZFD_IOCTL_TRUNCATE,
 	ZFD_IOCTL_MMAP,
+	ZFD_IOCTL_STATVFS,
 
 	/* Codes above 0x5400 and below 0x5500 are reserved for termios, FIO, etc */
 	/** Get the number of bytes available to read */

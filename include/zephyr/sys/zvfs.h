@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include <time.h>
 
 #include <zephyr/kernel.h>
 
@@ -27,6 +28,18 @@ extern "C" {
 struct zvfs_stat {
 	off_t size;
 	uint32_t mode;
+	/** Preferred I/O block size, 0 when unknown. */
+	unsigned long blksize;
+	/** Number of 512 B blocks allocated, 0 when unknown. */
+	unsigned long blocks;
+	/** Number of hard links. */
+	unsigned long nlink;
+	/** Time of last access, zero when the backend does not record it. */
+	struct timespec atime;
+	/** Time of last modification, zero when the backend does not record it. */
+	struct timespec mtime;
+	/** Time of last status change, zero when the backend does not record it. */
+	struct timespec ctime;
 };
 
 /**

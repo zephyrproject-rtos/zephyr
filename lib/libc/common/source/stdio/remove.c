@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/sys/zvfs_fs.h>
 
 /**
  *
@@ -19,17 +20,22 @@
 
 int remove(const char *path)
 {
-	if (!IS_ENABLED(CONFIG_FILE_SYSTEM)) {
-		errno = ENOTSUP;
-		return -1;
+	if (IS_ENABLED(CONFIG_ZVFS_FS)) {
+		/* zvfs_remove() handles files and empty directories, as ISO C requires */
+		return zvfs_remove(path);
 	}
 
-	int ret = fs_unlink(path);
+	if (IS_ENABLED(CONFIG_FILE_SYSTEM)) {
+		int ret = fs_unlink(path);
 
-	if (ret < 0) {
-		errno = -ret;
-		return -1;
+		if (ret < 0) {
+			errno = -ret;
+			return -1;
+		}
+
+		return 0;
 	}
 
-	return 0;
+	errno = ENOTSUP;
+	return -1;
 }

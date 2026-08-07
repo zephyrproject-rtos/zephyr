@@ -723,6 +723,18 @@ int fs_statvfs(const char *path, struct fs_statvfs *stat);
 int fs_normalize_path(const char *path, char *buf, size_t len);
 
 /**
+ * @brief Get the mount flags of the file system containing a path
+ *
+ * @param path Path to the file or directory
+ * @param flags Destination for the mount's FS_MOUNT_FLAG_* bits
+ *
+ * @retval 0 on success;
+ * @retval -EINVAL when a bad file name is given;
+ * @retval -ENOENT when no mount point contains @p path.
+ */
+int fs_mount_flags(const char *path, uint8_t *flags);
+
+/**
  * @brief Set file or directory timestamps
  *
  * Sets the access and modification times of the file or directory named by

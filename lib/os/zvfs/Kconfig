@@ -58,6 +58,17 @@ config ZVFS_FS
 	  registers a file in the fd table. Required for ISO C fopen() and for POSIX
 	  open() when a mounted file system is present.
 
+config ZVFS_PATH_MAX
+	int "Maximum ZVFS path length"
+	depends on ZVFS_FS
+	range 16 512
+	default 64
+	help
+	  Longest path, including the terminating NUL, accepted by the ZVFS
+	  path system calls. Each system call verifier places this many bytes
+	  on the privileged stack (twice for zvfs_rename()), so large values
+	  need a matching CONFIG_PRIVILEGED_STACK_SIZE.
+
 config ZVFS_LIBC_FILE
 	bool
 	default y if ZVFS_FS && !MINIMAL_LIBC

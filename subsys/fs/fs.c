@@ -810,6 +810,25 @@ int fs_normalize_path(const char *path, char *buf, size_t len)
 	return 0;
 }
 
+int fs_mount_flags(const char *abs_path, uint8_t *flags)
+{
+	struct fs_mount_t *mp;
+	int rc;
+
+	if ((abs_path == NULL) || (abs_path[0] != '/')) {
+		return -EINVAL;
+	}
+
+	rc = fs_get_mnt_point(&mp, abs_path, NULL);
+	if (rc < 0) {
+		return rc;
+	}
+
+	*flags = mp->flags;
+
+	return 0;
+}
+
 int fs_utime(const char *abs_path, const struct timespec times[2])
 {
 	struct fs_mount_t *mp;

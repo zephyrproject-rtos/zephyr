@@ -24,8 +24,11 @@
 
 #include <zephyr/fs/fs.h>
 #include <zephyr/kernel.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/zvfs_fs.h>
+
+#include "zvfs_fs_priv.h"
 
 #define ZVFS_O_ACCMODE (ZVFS_O_RDONLY | ZVFS_O_WRONLY | ZVFS_O_RDWR)
 
@@ -83,7 +86,7 @@ static int posix_mode_to_zephyr(int mf)
 	return mode;
 }
 
-int zvfs_open(const char *name, int flags, int mode)
+int z_impl_zvfs_open(const char *name, int flags, int mode)
 {
 	int rc, fd;
 	struct zvfs_fs_desc *ptr = NULL;
@@ -105,6 +108,19 @@ int zvfs_open(const char *name, int flags, int mode)
 	}
 
 	fs_file_t_init(&ptr->file);
+
+	if ((flags & (ZVFS_O_CREAT | ZVFS_O_EXCL)) == (ZVFS_O_CREAT | ZVFS_O_EXCL)) {
+		struct fs_dirent entry;
+
+		rc = fs_stat(name, &entry);
+		if (rc == 0) {
+			rc = -EEXIST;
+			goto out_err;
+		}
+		if (rc != -ENOENT) {
+			goto out_err;
+		}
+	}
 
 	if (flags & ZVFS_O_CREAT) {
 		flags &= ~ZVFS_O_CREAT;
@@ -138,6 +154,20 @@ out_err:
 	errno = -rc;
 	return -1;
 }
+
+#ifdef CONFIG_USERSPACE
+static int z_vrfy_zvfs_open(const char *name, int flags, int mode)
+{
+	char kname[CONFIG_ZVFS_PATH_MAX];
+
+	if (zvfs_copy_user_path(kname, name) < 0) {
+		return -1;
+	}
+
+	return z_impl_zvfs_open(kname, flags, mode);
+}
+#include <zephyr/syscalls/zvfs_open_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 static int fs_close_vmeth(void *obj)
 {
@@ -176,7 +206,8 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		current = fs_tell(&ptr->file);
 		if (current >= 0) {
 			buf->size = current;
-			buf->mode = ptr->is_dir ? ZVFS_MODE_IFDIR : ZVFS_MODE_IFREG;
+			buf->mode = zvfs_synth_mode(ptr->is_dir,
+						    (ptr->file.mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0);
 		}
 
 		rc = fs_seek(&ptr->file, offset, FS_SEEK_SET);
@@ -184,6 +215,26 @@ static int fs_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		if (current < 0) {
 			rc = current;
 		}
+		break;
+	}
+	case ZFD_IOCTL_STATVFS: {
+		struct zvfs_statvfs *buf = va_arg(args, struct zvfs_statvfs *);
+		struct fs_statvfs vfs;
+		const struct fs_mount_t *mp = ptr->file.mp;
+
+		if (mp == NULL || mp->mnt_point == NULL) {
+			errno = EBADF;
+			return -1;
+		}
+
+		/* fs_statvfs() rejects a bare "/"; the backend ignores the path */
+		rc = fs_statvfs(mp->mnt_point[1] == '\0' ? "/." : mp->mnt_point, &vfs);
+		if (rc < 0) {
+			break;
+		}
+
+		zvfs_statvfs_from_fs(buf, &vfs,
+				     (mp->flags & FS_MOUNT_FLAG_READ_ONLY) != 0);
 		break;
 	}
 	case ZFD_IOCTL_FSYNC: {
