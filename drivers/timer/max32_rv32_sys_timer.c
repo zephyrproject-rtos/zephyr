@@ -35,25 +35,6 @@ static const struct max32_perclk perclk = {
 #define PRESCALER   DT_INST_PROP(0, prescaler)
 
 #define COMPARE_VAL ((CYC_PER_TICK))
-#define MAX_TIMEOUT ((UINT32_MAX / COMPARE_VAL) - 1)
-
-static struct k_spinlock lock;
-static uint32_t last_cycle;
-static uint32_t last_tick;
-static uint32_t last_elapsed;
-
-#define CYCLE_DIFF_MAX (~(uint32_t)0)
-
-/*
- * Maximum number of cycles to wait between two sys_clock_announce() reports:
- * the elapsed cycle count must fit in CYCLE_DIFF_MAX before it is divided down
- * to ticks. Reserve 1/4 of the range as headroom for the unavoidable IRQ
- * servicing latency so a late report still fits, then add the LSB so the value
- * clears a run of low set bits for a nicer literal in the generated assembly.
- */
-#define CYCLES_MAX_1 ((uint64_t)CYCLE_DIFF_MAX)
-#define CYCLES_MAX_2 (CYCLES_MAX_1 / 2 + CYCLES_MAX_1 / 4)
-#define CYCLES_MAX   (CYCLES_MAX_2 + LSB_GET(CYCLES_MAX_2))
 
 #if PRESCALER == 0
 #define PRES_VAL TMR_PRES_1
@@ -61,90 +42,49 @@ static uint32_t last_elapsed;
 #define PRES_VAL CONCAT(TMR_PRES_, PRESCALER)
 #endif
 
+/*
+ * Free-running counter plus a compare register whose match is on equality, so
+ * a value written after the counter has passed it is missed for a whole
+ * counter period: a COMPARE_EXACT backend. The core writes the comparator
+ * through its verify loop, which replaces the driver's own push-forward and
+ * its sixth-of-a-tick minimum. The compare register is as wide as the counter,
+ * so there is no arm range to state and the core's own bound applies.
+ *
+ * The counter runs behind the prescaler, so the driver states that rate and
+ * the core derives the same cycles per tick CYC_PER_TICK is. The kernel's
+ * cycle unit is the pre-prescaler one, so the driver keeps its own
+ * sys_clock_cycle_get_32().
+ */
+#define TIMER_CORE_BACKEND_COMPARE_EXACT
+#define TIMER_CORE_CYCLES_PER_SEC (CYC_PER_SEC / PRESCALER)
+#define TIMER_CORE_HAVE_CYCLE_GET_32
+
+static inline uint32_t timer_driver_cycle_get(void)
+{
+	return MXC_TMR_GetCount(regs);
+}
+
+static inline void timer_driver_set_compare(uint32_t cycles)
+{
+	MXC_TMR_SetCompare(regs, cycles);
+}
+
+#include "system_timer_generic.h"
+
 static void rv32_sys_timer_irq_handler(const struct device *unused)
 {
 	ARG_UNUSED(unused);
-	k_spinlock_key_t key;
-
-	key = k_spin_lock(&lock);
-
-	uint32_t curr_cycle = MXC_TMR_GetCount(regs);
-	uint32_t delta_cycles = curr_cycle - last_cycle;
-	uint32_t delta_ticks = (uint32_t)delta_cycles / CYC_PER_TICK;
-
-	last_cycle += (uint32_t)delta_ticks * CYC_PER_TICK;
-	last_tick += delta_ticks;
-	last_elapsed = 0;
 
 	MXC_TMR_ClearFlags(regs);
 	/* The IRQ will re-assert until the flags on the timer are cleared. */
 	intc_max32_rv32_irq_clear_pending(DT_INST_IRQN(0));
 
-#if !IS_ENABLED(CONFIG_TICKLESS_KERNEL)
-	MXC_TMR_SetCompare(regs, last_cycle + CYC_PER_TICK);
-#endif
-
-	k_spin_unlock(&lock, key);
-
-	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : 1);
+	timer_core_announce();
 }
 
 uint32_t sys_clock_cycle_get_32(void)
 {
 	return MXC_TMR_GetCount(regs) * DT_INST_PROP(0, prescaler);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-
-	uint32_t curr_cycle = MXC_TMR_GetCount(regs);
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	int32_t delta_cycles = curr_cycle - last_cycle;
-	int32_t delta_ticks = (uint32_t)delta_cycles / CYC_PER_TICK;
-
-	last_elapsed = delta_ticks;
-	k_spin_unlock(&lock, key);
-
-	return delta_ticks;
-}
-
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-	uint32_t next_cycle;
-	uint32_t count;
-
-	if (ticks == SYS_CLOCK_MAX_WAIT) {
-		next_cycle = (last_tick * CYC_PER_TICK) + CYCLES_MAX;
-	} else if (ticks == 0) {
-		next_cycle = MXC_TMR_GetCount(regs) + (CYC_PER_TICK * 3 / 2);
-		next_cycle -= (next_cycle % CYC_PER_TICK);
-	} else {
-		next_cycle = (last_tick + last_elapsed + ticks) * CYC_PER_TICK;
-		if ((next_cycle - last_cycle) > CYCLES_MAX) {
-			next_cycle = (last_tick * CYC_PER_TICK) + CYCLES_MAX;
-		} else {
-			count = MXC_TMR_GetCount(regs);
-			if (next_cycle < count) {
-				ticks = DIV_ROUND_UP(count - next_cycle, CYC_PER_TICK);
-				ticks += 1;
-				next_cycle += ticks * CYC_PER_TICK;
-			} else if (next_cycle - count < CYC_PER_TICK / 6) {
-				next_cycle += CYC_PER_TICK;
-			}
-		}
-	}
-
-	MXC_TMR_SetCompare(regs, next_cycle);
-	k_spin_unlock(&lock, key);
 }
 
 static int sys_clock_driver_init(void)
@@ -156,11 +96,8 @@ static int sys_clock_driver_init(void)
 
 	tmr_cfg.pres = PRES_VAL;
 	tmr_cfg.mode = TMR_MODE_COMPARE;
-#if IS_ENABLED(CONFIG_TICKLESS_KERNEL)
-	tmr_cfg.cmp_cnt = (MAX_TIMEOUT * COMPARE_VAL);
-#else
+	/* Placeholder: timer_core_init() below arms the first real deadline. */
 	tmr_cfg.cmp_cnt = COMPARE_VAL;
-#endif
 
 	tmr_cfg.bitMode = 0; /* Timer Mode 32 bit */
 	tmr_cfg.pol = 0;
@@ -190,6 +127,9 @@ static int sys_clock_driver_init(void)
 	Wrap_MXC_TMR_EnableInt(regs);
 
 	MXC_TMR_Start(regs);
+
+	/* Seed the announce baseline and arm the first tick. */
+	timer_core_init();
 
 	irq_enable(DT_INST_IRQN(0));
 
