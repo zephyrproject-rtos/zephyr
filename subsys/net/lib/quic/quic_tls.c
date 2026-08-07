@@ -365,6 +365,30 @@ static bool tls_external_psk_cipher_supported(uint16_t cipher_suite)
 	return cipher_suite == TLS_AES_128_GCM_SHA256;
 }
 
+/*
+ * Check a cipher suite against the list the application set with
+ * TLS_CIPHERSUITE_LIST. An empty list means the application did not restrict
+ * anything, so every suite we implement is allowed.
+ */
+static bool tls_suite_allowed(const struct quic_tls_context *ctx, uint16_t cipher_suite)
+{
+	if (ctx->options.ciphersuites[0] == 0) {
+		return true;
+	}
+
+	ARRAY_FOR_EACH(ctx->options.ciphersuites, i) {
+		if (ctx->options.ciphersuites[i] == 0) {
+			break;
+		}
+
+		if ((uint16_t)ctx->options.ciphersuites[i] == cipher_suite) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int tls_compute_hmac(psa_algorithm_t hash_alg,
 			    const uint8_t *key, size_t key_len,
 			    const uint8_t *data, size_t data_len,
@@ -1337,6 +1361,10 @@ ZTESTABLE_STATIC int parse_client_hello(struct quic_tls_context *ctx,
 	for (size_t i = 0; i < cipher_suites_len; i += 2) {
 		uint16_t suite = (data[pos + i] << 8) | data[pos + i + 1];
 
+		if (!tls_suite_allowed(ctx, suite)) {
+			continue;
+		}
+
 		if (suite == TLS_AES_128_GCM_SHA256 ||
 		    suite == TLS_AES_256_GCM_SHA384) {
 			if (selected_cipher_suite == 0U) {
@@ -1644,15 +1672,41 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	 * TLS_CHACHA20_POLY1305_SHA256 is deliberately not offered, see
 	 * quic_hp_mask().
 	 */
-	cipher_suites_len = ctx->psk_configured ? 2U : 4U;
-	buf[pos++] = (cipher_suites_len >> 8) & 0xFF;
-	buf[pos++] = cipher_suites_len & 0xFF;
-	buf[pos++] = (TLS_AES_128_GCM_SHA256 >> 8) & 0xFF;
-	buf[pos++] = TLS_AES_128_GCM_SHA256 & 0xFF;
-	if (!ctx->psk_configured) {
-		buf[pos++] = (TLS_AES_256_GCM_SHA384 >> 8) & 0xFF;
-		buf[pos++] = TLS_AES_256_GCM_SHA384 & 0xFF;
+	static const uint16_t candidate_suites[] = {
+		TLS_AES_128_GCM_SHA256,
+		TLS_AES_256_GCM_SHA384,
+	};
+	size_t suites_len_pos;
+
+	suites_len_pos = pos;
+	pos += 2;
+	cipher_suites_len = 0U;
+
+	ARRAY_FOR_EACH(candidate_suites, i) {
+		/* An external PSK constrains the suite to one whose hash
+		 * matches the configured key.
+		 */
+		if (ctx->psk_configured &&
+		    !tls_external_psk_cipher_supported(candidate_suites[i])) {
+			continue;
+		}
+
+		if (!tls_suite_allowed(ctx, candidate_suites[i])) {
+			continue;
+		}
+
+		buf[pos++] = (candidate_suites[i] >> 8) & 0xFF;
+		buf[pos++] = candidate_suites[i] & 0xFF;
+		cipher_suites_len += 2U;
 	}
+
+	if (cipher_suites_len == 0U) {
+		NET_DBG("No cipher suite left after applying the configured list");
+		return -ENOTSUP;
+	}
+
+	buf[suites_len_pos] = (cipher_suites_len >> 8) & 0xFF;
+	buf[suites_len_pos + 1] = cipher_suites_len & 0xFF;
 
 	/* Legacy compression methods (single null byte) */
 	buf[pos++] = 0x01;  /* length */
@@ -3825,6 +3879,15 @@ static int parse_server_hello(struct quic_tls_context *ctx,
 	if (cipher_suite != TLS_AES_128_GCM_SHA256 &&
 	    cipher_suite != TLS_AES_256_GCM_SHA384) {
 		NET_DBG("Unsupported cipher suite 0x%04x", cipher_suite);
+		return -ENOTSUP;
+	}
+
+	/* A server must not pick something the application excluded, and a
+	 * suite outside our offer is a protocol violation in any case.
+	 */
+	if (!tls_suite_allowed(ctx, cipher_suite)) {
+		NET_DBG("Server selected cipher suite 0x%04x which was not offered",
+			cipher_suite);
 		return -ENOTSUP;
 	}
 	ctx->ks.cipher_suite = cipher_suite;
