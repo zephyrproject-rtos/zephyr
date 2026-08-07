@@ -10,3 +10,4 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE clock_monitor_handlers.c)
 
 zephyr_library_sources_ifdef(CONFIG_CLOCK_MONITOR_NXP_CMU_FC clock_monitor_nxp_cmu_fc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_MONITOR_NXP_CMU_FM clock_monitor_nxp_cmu_fm.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_MONITOR_NXP_ANACTRL clock_monitor_nxp_anactrl.c)

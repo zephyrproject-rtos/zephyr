@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/clock-monitor/nxp-anactrl.h>
 #include <freq.h>
 #include <mem.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
@@ -127,6 +128,47 @@
 		reset: reset {
 			compatible = "nxp,lpc-syscon-reset";
 			#reset-cells = <1>;
+		};
+	};
+
+	inputmux: inputmux@6000 {
+		compatible = "nxp,inputmux";
+		reg = <0x6000 0x1000>;
+		#inputmux-cells = <2>;
+		status = "okay";
+	};
+
+	anactrl: anactrl@13000 {
+		compatible = "nxp,anactrl-freqme";
+		reg = <0x13000 0x1000>;
+		clocks = <&syscon MCUX_ANALOG_CTRL_CLK>;
+		status = "disabled";
+
+		reference-sources {
+			ref-ahb {
+				default-source;
+				inputmux-connection = <&inputmux 0
+						       NXP_ANACTRL_MCXW2XX_REF_MAIN_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
+			};
+
+			ref-fro-1m {
+				inputmux-connection = <&inputmux 0 NXP_ANACTRL_MCXW2XX_REF_FRO_1M>;
+				clocks = <&syscon MCUX_FRO_1M_CLK>;
+			};
+		};
+
+		target-sources {
+			tar-fro-1m {
+				default-source;
+				inputmux-connection = <&inputmux 0 NXP_ANACTRL_MCXW2XX_TAR_FRO_1M>;
+				clocks = <&syscon MCUX_FRO_1M_CLK>;
+			};
+
+			tar-osc32k {
+				inputmux-connection = <&inputmux 0 NXP_ANACTRL_MCXW2XX_TAR_OSC32K>;
+				clocks = <&syscon MCUX_OSC32K_CLK>;
+			};
 		};
 	};
 
