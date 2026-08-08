@@ -35,6 +35,7 @@ struct max3421e_data {
 	struct uhc_transfer *last_xfer;
 	struct k_sem irq_sem;
 	atomic_t state;
+	enum usb_port_speed speed;
 	uint16_t tog_in;
 	uint16_t tog_out;
 	uint8_t addr;
@@ -569,14 +570,9 @@ static void max3421e_handle_condet(const struct device *dev)
 		type = UHC_EVT_DEV_REMOVED;
 	}
 
-	if (jk == MAX3421E_JSTATUS) {
+	if (jk == MAX3421E_JSTATUS || jk == MAX3421E_KSTATUS) {
 		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_FS;
-	}
-
-	if (jk == MAX3421E_KSTATUS) {
-		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_LS;
+		type = UHC_EVT_DEV_CONNECTED;
 	}
 
 	uhc_submit_event(dev, type, 0);
@@ -810,6 +806,22 @@ static int max3421e_dequeue(const struct device *dev,
 	irq_unlock(key);
 
 	return 0;
+}
+
+static enum usb_port_speed max3421e_get_speed(const struct device *dev)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+	const uint8_t jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
+
+	if (jk == MAX3421E_JSTATUS) {
+		return USB_PORT_SPEED_FS;
+	}
+
+	if (jk == MAX3421E_KSTATUS) {
+		return USB_PORT_SPEED_LS;
+	}
+
+	return USB_PORT_SPEED_UNKNOWN;
 }
 
 static int max3421e_reset(const struct device *dev)
@@ -1103,6 +1115,8 @@ static DEVICE_API(uhc, max3421e_uhc_api) = {
 	.enable = uhc_max3421e_enable,
 	.disable = uhc_max3421e_disable,
 	.shutdown = uhc_max3421e_shutdown,
+
+	.get_speed = max3421e_get_speed,
 
 	.bus_reset = max3421e_bus_reset,
 	.sof_enable  = max3421e_sof_enable,
