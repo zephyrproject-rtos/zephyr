@@ -1,5 +1,5 @@
 # Copyright (c) 2023 Fabian Blatz <fabianblatz@gmail.com>
-# Copyright 2023 NXP
+# Copyright 2023, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config ZEPHYR_LVGL_MODULE
@@ -226,6 +226,30 @@ config LV_Z_PXP_INTERRUPT_PRIORITY
 	default 3
 	help
 	  Sets the interrupt priority for PXP
+
+config LV_USE_DRAW_VG_LITE
+	bool
+
+config LV_USE_GPU_VG_LITE
+	bool
+	default y if LV_USE_DRAW_VG_LITE
+
+config LV_Z_VGLITE_HEAP_SIZE
+	int "VG Lite driver internal heap bytes"
+	depends on LV_USE_DRAW_VG_LITE
+	default 2097152
+	help
+	  Sets the internal heap for VG Lite driver allocations
+	  This area is separated from LVGL heap.
+
+config LV_USE_VG_LITE_DRIVER
+	bool "VG-Lite GPU acceleration"
+	default n
+	help
+	  Select vglite driver.
+
+	  If enabled, Use internal VGLite Driver from inside LVGL.
+	  If disabled, the external vglite driver is used instead.
 
 rsource "Kconfig.memory"
 rsource "Kconfig.input"

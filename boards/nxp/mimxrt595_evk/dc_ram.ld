@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,5 +12,6 @@ GROUP_START(FLEXSPI2)
 	{
 		__flexspi2_start = .;
 		*(.lvgl_buf);
+		*(.vg_lite_heap);
 		__flexspi2_end = .;
 	} GROUP_LINK_IN(FLEXSPI2)
