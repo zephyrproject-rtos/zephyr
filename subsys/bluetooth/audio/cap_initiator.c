@@ -895,11 +895,8 @@ get_next_proc_param(struct bt_cap_common_proc *active_proc)
 		case BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE:
 			__ASSERT_NO_MSG(active_proc->proc_type == BT_CAP_COMMON_PROC_TYPE_UPDATE);
 
-			if ((state == BT_BAP_EP_STATE_ENABLING ||
-			     state == BT_BAP_EP_STATE_STREAMING) &&
-			    !util_eq(bap_stream->codec_cfg->meta, bap_stream->codec_cfg->meta_len,
-				     proc_param->meta_update.meta,
-				     proc_param->meta_update.meta_len)) {
+			if (state == BT_BAP_EP_STATE_ENABLING ||
+			    state == BT_BAP_EP_STATE_STREAMING) {
 				return proc_param;
 			}
 			break;
