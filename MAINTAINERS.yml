@@ -931,6 +931,7 @@ Bouffalolab Platforms:
     - boards/**/*bflb*/
     - boards/aithinker/ai_*/
     - boards/doiting/
+    - boards/others/bl704l_dvk/
     - boards/thirdreality/
     - boards/sipeed/m0sense/
     - boards/sipeed/m1s_dock/
