@@ -227,6 +227,11 @@ mikrobus_i2c: &flexcomm4 {};
 	pinctrl-names = "default";
 };
 
+/* PowerQuad uses SRAM4 as private working memory when enabled */
+&powerquad {
+	status = "okay";
+};
+
 &sc_timer {
 	pinctrl-0 = <&pinmux_sctimer_default>;
 	pinctrl-names = "default";
