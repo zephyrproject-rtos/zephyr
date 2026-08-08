@@ -1073,8 +1073,10 @@ static char *encode_float(double value,
 	fract <<= EXPONENT_BITS;
 	fract &= ~SIGN_MASK;
 
+	bool is_zero = (expo | fract) == 0;
+
 	/* Non-zero values need normalization. */
-	if ((expo | fract) != 0) {
+	if (!is_zero) {
 		if (is_subnormal) {
 			/* Fraction is subnormal.  Normalize it and correct
 			 * the exponent.
@@ -1142,7 +1144,20 @@ static char *encode_float(double value,
 	 */
 	fract >>= (4 - expo);
 
+	/* The scaling loops can land just below 0.1, where the leading digit
+	 * would come out as a zero.  Restore 0.1 <= fract < 1.0.
+	 */
+	while (!is_zero && (fract < (BIT64(60) / 10U))) {
+		fract *= 10U;
+		decexp--;
+	}
+
 	if ((c == 'g') || (c == 'G')) {
+		/* ISO C: a precision of zero is taken as one. */
+		if (precision == 0) {
+			precision = 1;
+		}
+
 		/* Use the specified precision and exponent to select the
 		 * representation and correct the precision and zero-pruning
 		 * in accordance with the ISO C rule.
@@ -1185,6 +1200,7 @@ static char *encode_float(double value,
 	fract += round;
 	/* Make sure rounding didn't make fract >= 1.0 */
 	if (fract >= BIT64(60)) {
+		fract += 5U; /* Round to nearest rather than truncate */
 		_ldiv10(&fract);
 		decexp++;
 	}
