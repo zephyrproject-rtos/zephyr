@@ -1,0 +1,7 @@
+# Copyright (c) 2026 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "heimann,htpa-160x120"
+
+include:
+  - name: heimann,htpa-common.yaml

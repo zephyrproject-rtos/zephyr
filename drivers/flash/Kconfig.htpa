@@ -1,0 +1,10 @@
+# Copyright (c) 2026 sensryio
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_HEIMANN_HTPA
+	bool "HTPA family calibration flash driver"
+	default y
+	depends on DT_HAS_HEIMANN_HTPA_FLASH_ENABLED
+	select SPI
+	help
+	  Read-only calibration flash driver for HTPA family chips.
