@@ -24,6 +24,25 @@ message(STATUS "Application: ${APPLICATION_SOURCE_DIR}")
 # to CMake 3.20; this produces different binaries.
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 
+# Some individual CMake releases contain regressions that break the Zephyr
+# build in ways that are hard to diagnose. Reject them here with a helpful
+# message instead of letting the build fail later in a confusing way. Add a
+# zephyr_reject_cmake_version() call below for each unsupported release.
+function(zephyr_reject_cmake_version version reason)
+  if(CMAKE_VERSION VERSION_EQUAL ${version})
+    message(FATAL_ERROR
+      "CMake ${CMAKE_VERSION} is not supported by Zephyr due to ${reason}. "
+      "Please use a different CMake version.")
+  endif()
+endfunction()
+
+# CMake 4.1.0 has a regression in string(GENEX_STRIP) that fails to strip
+# nested generator expressions, corrupting the flags computed by
+# compiler_simple_options() into bogus linker arguments such as ':>' and
+# ':-Os>'. See https://gitlab.kitware.com/cmake/cmake/-/work_items/27133
+zephyr_reject_cmake_version(4.1.0
+  "a regression in string(GENEX_STRIP) that produces invalid linker arguments (fixed in CMake 4.1.1)")
+
 # Find and execute workspace build configuration
 find_package(ZephyrBuildConfiguration
   QUIET NO_POLICY_SCOPE
