@@ -745,7 +745,7 @@ void log_output_dropped_process(const struct log_output *output, uint32_t cnt)
 	len = snprintk(buf, sizeof(buf), "%d", cnt);
 
 	log_output_write(outf, (uint8_t *)prefix, sizeof(prefix) - 1, output->control_block->ctx);
-	log_output_write(outf, buf, len, output->control_block->ctx);
+	log_output_write(outf, (uint8_t *)buf, len, output->control_block->ctx);
 	log_output_write(outf, (uint8_t *)postfix, sizeof(postfix) - 1, output->control_block->ctx);
 }
 

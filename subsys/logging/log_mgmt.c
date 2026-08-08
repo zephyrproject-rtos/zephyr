@@ -229,7 +229,7 @@ static const char *link_source_name_get(uint8_t domain_id, uint32_t source_id)
 		__ASSERT_NO_MSG(link != NULL);
 
 		err = log_link_get_source_name(link, rel_domain_id, source_id,
-					       cached, &cache_size);
+					       (char *)cached, &cache_size);
 		if (err < 0) {
 			return NULL;
 		}
@@ -276,7 +276,7 @@ static const char *link_domain_name_get(uint8_t domain_id)
 
 		__ASSERT_NO_MSG(link != NULL);
 
-		err = log_link_get_domain_name(link, rel_domain_id, cached, &cache_size);
+		err = log_link_get_domain_name(link, rel_domain_id, (char *)cached, &cache_size);
 		if (err < 0) {
 			log_cache_release(&dname_cache, cached);
 			return invalid_domain;
