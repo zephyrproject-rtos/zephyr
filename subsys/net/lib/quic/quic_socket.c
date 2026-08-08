@@ -11,6 +11,10 @@ static int quic_connection_init(struct quic_context *ctx,
 	struct quic_endpoint *ep;
 	int ret;
 
+	/* The failure path releases an endpoint, and quic_endpoint_unref()
+	 * takes contexts_lock before endpoints_lock. Follow that order.
+	 */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 
 	if (remote_addr == NULL) {
@@ -20,6 +24,7 @@ static int quic_connection_init(struct quic_context *ctx,
 			ep = alloc_local_endpoint(ctx, local_addr);
 			if (ep == NULL) {
 				k_mutex_unlock(&endpoints_lock);
+				k_mutex_unlock(&contexts_lock);
 				return -ENOMEM;
 			}
 
@@ -46,6 +51,7 @@ static int quic_connection_init(struct quic_context *ctx,
 		ep = alloc_endpoint(ctx, remote_addr, local_addr);
 		if (ep == NULL) {
 			k_mutex_unlock(&endpoints_lock);
+			k_mutex_unlock(&contexts_lock);
 			return -ENOMEM;
 		}
 
@@ -53,7 +59,12 @@ static int quic_connection_init(struct quic_context *ctx,
 		ctx->listen = NULL;
 		ctx->is_listening = false;
 
-		quic_client_endpoint_init_cids(ep, remote_addr);
+		ret = quic_client_endpoint_init_cids(ep, remote_addr);
+		if (ret < 0) {
+			NET_DBG("[EP:%p/%d] Cannot generate connection IDs (%d)",
+				ep, quic_get_by_ep(ep), ret);
+			goto fail;
+		}
 
 		NET_DBG("[EP:%p/%d] Created new endpoint from %s to %s", ep,
 			quic_get_by_ep(ep), local_addr == NULL ? "ANY" :
@@ -128,6 +139,7 @@ static int quic_connection_init(struct quic_context *ctx,
 	}
 
 	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
 
 	NET_DBG("[CO:%p/%d] Connection initialized", ctx, quic_get_by_conn(ctx));
 
@@ -138,6 +150,7 @@ fail:
 	quic_endpoint_unref(ep);
 
 	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
 
 	NET_DBG("[CO:%p/%d] Connection initialization failed (%d)",
 		ctx, quic_get_by_conn(ctx), ret);

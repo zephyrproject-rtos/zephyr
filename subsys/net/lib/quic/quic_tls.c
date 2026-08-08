@@ -212,8 +212,22 @@ static int verify_peer_certificate(struct quic_tls_context *ctx,
 
 	/* Verify against CA chain if available */
 	if (ctx->ca_cert) {
+		const char *cn = NULL;
+
+		/* Match the certificate against the name we asked for. Only a
+		 * client has a name to check; a server authenticates its peer
+		 * by the certificate alone.
+		 */
+		if (!ctx->ep->is_server && ctx->options.hostname[0] != '\0') {
+			cn = ctx->options.hostname;
+		} else if (!ctx->ep->is_server &&
+			   verify_level == MBEDTLS_SSL_VERIFY_REQUIRED) {
+			NET_WARN("No TLS_HOSTNAME set, peer certificate is accepted for "
+				 "any name it was issued for");
+		}
+
 		ret = mbedtls_x509_crt_verify(&peer_crt, &ctx->ca_chain, NULL,
-					      NULL, &flags, NULL, NULL);
+					      cn, &flags, NULL, NULL);
 		if (ret != 0) {
 			NET_WARN("Certificate verification failed: -0x%04x, flags=0x%08x",
 				 -ret, flags);
@@ -348,8 +362,31 @@ static int tls_cipher_suite_hash_params(uint16_t cipher_suite,
 
 static bool tls_external_psk_cipher_supported(uint16_t cipher_suite)
 {
-	return cipher_suite == TLS_AES_128_GCM_SHA256 ||
-	       cipher_suite == TLS_CHACHA20_POLY1305_SHA256;
+	return cipher_suite == TLS_AES_128_GCM_SHA256;
+}
+
+/*
+ * Check a cipher suite against the list the application set with
+ * TLS_CIPHERSUITE_LIST. An empty list means the application did not restrict
+ * anything, so every suite we implement is allowed.
+ */
+static bool tls_suite_allowed(const struct quic_tls_context *ctx, uint16_t cipher_suite)
+{
+	if (ctx->options.ciphersuites[0] == 0) {
+		return true;
+	}
+
+	ARRAY_FOR_EACH(ctx->options.ciphersuites, i) {
+		if (ctx->options.ciphersuites[i] == 0) {
+			break;
+		}
+
+		if ((uint16_t)ctx->options.ciphersuites[i] == cipher_suite) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static int tls_compute_hmac(psa_algorithm_t hash_alg,
@@ -384,13 +421,19 @@ static int tls_compute_hmac(psa_algorithm_t hash_alg,
 	return 0;
 }
 
-static int tls_compute_external_psk_binder(const uint8_t *psk, size_t psk_len,
-					   psa_algorithm_t hash_alg,
-					   size_t hash_len,
-					   const uint8_t *truncated_ch,
-					   size_t truncated_ch_len,
-					   uint8_t *binder, size_t binder_len)
+static int tls_compute_psk_binder(const uint8_t *psk, size_t psk_len,
+				  bool resumption,
+				  psa_algorithm_t hash_alg,
+				  size_t hash_len,
+				  const uint8_t *truncated_ch,
+				  size_t truncated_ch_len,
+				  uint8_t *binder, size_t binder_len)
 {
+	/* RFC 8446 Section 7.1: the binder key label depends on where the
+	 * PSK came from - "res binder" for a session ticket PSK and
+	 * "ext binder" for an externally provisioned one.
+	 */
+	const char *label = resumption ? TLS13_LABEL_RES_BINDER : TLS13_LABEL_EXT_BINDER;
 	uint8_t early_secret[QUIC_HASH_MAX_LEN];
 	uint8_t binder_key[QUIC_HASH_MAX_LEN];
 	uint8_t finished_key[QUIC_HASH_MAX_LEN];
@@ -422,8 +465,7 @@ static int tls_compute_external_psk_binder(const uint8_t *psk, size_t psk_len,
 
 	ret = quic_hkdf_expand_label_ex(hash_alg,
 					early_secret, hash_len,
-					(const uint8_t *)TLS13_LABEL_EXT_BINDER,
-					strlen(TLS13_LABEL_EXT_BINDER),
+					(const uint8_t *)label, strlen(label),
 					empty_hash, empty_hash_len,
 					binder_key, hash_len);
 	if (ret != 0) {
@@ -546,6 +588,7 @@ ZTESTABLE_STATIC bool tls_server_ticket_cache_lookup(const uint8_t *ticket, size
 
 		if (tls_server_ticket_entry_expired(entry)) {
 			entry->valid = false;
+			crypto_zero(entry->psk, sizeof(entry->psk));
 			continue;
 		}
 
@@ -631,6 +674,7 @@ ZTESTABLE_STATIC void tls_server_ticket_cache_consume(const uint8_t *ticket, siz
 		if (entry->valid && entry->ticket_len == ticket_len &&
 		    mbedtls_ct_memcmp(entry->ticket, ticket, ticket_len) == 0) {
 			entry->valid = false;
+			crypto_zero(entry->psk, sizeof(entry->psk));
 			break;
 		}
 	}
@@ -773,6 +817,7 @@ static int quic_tls_set_session_state(struct quic_tls_context *ctx,
 	ctx->psk_identity = ctx->session_state.ticket;
 	ctx->psk_identity_len = ctx->session_state.ticket_len;
 	ctx->psk_configured = true;
+	ctx->psk_is_resumption = true;
 	quic_tls_restore_session_transport_params(ctx);
 
 	return 0;
@@ -1221,10 +1266,11 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 	 * end of the identities field (before the binders vector), regardless of
 	 * which identity matched.
 	 */
-	if (tls_compute_external_psk_binder(matched_psk, matched_psk_len,
-					    psk_hash_alg, psk_hash_len,
-					    full_msg, 4U + identities_end,
-					    expected_binder, sizeof(expected_binder)) != 0) {
+	if (tls_compute_psk_binder(matched_psk, matched_psk_len,
+				   offer->matched_session_ticket,
+				   psk_hash_alg, psk_hash_len,
+				   full_msg, 4U + identities_end,
+				   expected_binder, sizeof(expected_binder)) != 0) {
 		ret = -EIO;
 		goto out;
 	}
@@ -1241,6 +1287,7 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 		ctx->psk = ctx->session_state.psk;
 		ctx->psk_len = matched_ticket_psk_len;
 		ctx->psk_configured = true;
+		ctx->psk_is_resumption = true;
 	}
 
 out:
@@ -1255,9 +1302,9 @@ out:
 	return ret;
 }
 
-static int parse_client_hello(struct quic_tls_context *ctx,
-			      const uint8_t *data, size_t len,
-			      const uint8_t *full_msg, size_t full_msg_len)
+ZTESTABLE_STATIC int parse_client_hello(struct quic_tls_context *ctx,
+					const uint8_t *data, size_t len,
+					const uint8_t *full_msg, size_t full_msg_len)
 {
 #define MIN_TLS_CLIENT_HELLO_SIZE 38
 	size_t pos = 0;
@@ -1295,6 +1342,10 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 	pos += 32;
 
 	/* Legacy session ID */
+	if (pos + 1 > len) {
+		return -EINVAL;
+	}
+
 	session_id_len = data[pos++];
 	if (pos + session_id_len > len) {
 		return -EINVAL;
@@ -1302,10 +1353,17 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 	pos += session_id_len;
 
 	/* Cipher suites */
+	if (pos + 2 > len) {
+		return -EINVAL;
+	}
+
 	cipher_suites_len = (data[pos] << 8) | data[pos + 1];
 	pos += 2;
 
-	if (pos + cipher_suites_len > len) {
+	/* The list is a sequence of 2-byte suites, so an odd length is
+	 * malformed and would make the loop below read one byte too far.
+	 */
+	if ((cipher_suites_len % 2U) != 0U || pos + cipher_suites_len > len) {
 		return -EINVAL;
 	}
 
@@ -1313,9 +1371,12 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 	for (size_t i = 0; i < cipher_suites_len; i += 2) {
 		uint16_t suite = (data[pos + i] << 8) | data[pos + i + 1];
 
+		if (!tls_suite_allowed(ctx, suite)) {
+			continue;
+		}
+
 		if (suite == TLS_AES_128_GCM_SHA256 ||
-		    suite == TLS_AES_256_GCM_SHA384 ||
-		    suite == TLS_CHACHA20_POLY1305_SHA256) {
+		    suite == TLS_AES_256_GCM_SHA384) {
 			if (selected_cipher_suite == 0U) {
 				selected_cipher_suite = suite;
 			}
@@ -1335,7 +1396,14 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 	pos += cipher_suites_len;
 
 	/* Legacy compression methods */
+	if (pos + 1 > len) {
+		return -EINVAL;
+	}
+
 	compression_len = data[pos++];
+	if (pos + compression_len > len) {
+		return -EINVAL;
+	}
 	pos += compression_len;
 
 	/* Extensions */
@@ -1345,6 +1413,10 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 
 	extensions_len = (data[pos] << 8) | data[pos + 1];
 	pos += 2;
+
+	if (pos + extensions_len > len) {
+		return -EINVAL;
+	}
 
 	/* Parse extensions */
 	ext_end = pos + extensions_len;
@@ -1595,7 +1667,10 @@ static int build_client_hello(struct quic_tls_context *ctx,
 
 	/* Client random (32 bytes) */
 	if (!ctx->client_hello_prepared) {
-		sys_rand_get(ctx->client_random, 32);
+		ret = sys_csrand_get(ctx->client_random, 32);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 	memcpy(&buf[pos], ctx->client_random, 32);
 	pos += 32;
@@ -1603,18 +1678,45 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	/* Legacy session ID (empty for QUIC) */
 	buf[pos++] = 0;
 
-	/* Cipher suites (2 bytes length + suites) */
-	cipher_suites_len = ctx->psk_configured ? 4U : 6U;
-	buf[pos++] = (cipher_suites_len >> 8) & 0xFF;
-	buf[pos++] = cipher_suites_len & 0xFF;
-	buf[pos++] = (TLS_AES_128_GCM_SHA256 >> 8) & 0xFF;
-	buf[pos++] = TLS_AES_128_GCM_SHA256 & 0xFF;
-	if (!ctx->psk_configured) {
-		buf[pos++] = (TLS_AES_256_GCM_SHA384 >> 8) & 0xFF;
-		buf[pos++] = TLS_AES_256_GCM_SHA384 & 0xFF;
+	/* Cipher suites (2 bytes length + suites).
+	 * TLS_CHACHA20_POLY1305_SHA256 is deliberately not offered, see
+	 * quic_hp_mask().
+	 */
+	static const uint16_t candidate_suites[] = {
+		TLS_AES_128_GCM_SHA256,
+		TLS_AES_256_GCM_SHA384,
+	};
+	size_t suites_len_pos;
+
+	suites_len_pos = pos;
+	pos += 2;
+	cipher_suites_len = 0U;
+
+	ARRAY_FOR_EACH(candidate_suites, i) {
+		/* An external PSK constrains the suite to one whose hash
+		 * matches the configured key.
+		 */
+		if (ctx->psk_configured &&
+		    !tls_external_psk_cipher_supported(candidate_suites[i])) {
+			continue;
+		}
+
+		if (!tls_suite_allowed(ctx, candidate_suites[i])) {
+			continue;
+		}
+
+		buf[pos++] = (candidate_suites[i] >> 8) & 0xFF;
+		buf[pos++] = candidate_suites[i] & 0xFF;
+		cipher_suites_len += 2U;
 	}
-	buf[pos++] = (TLS_CHACHA20_POLY1305_SHA256 >> 8) & 0xFF;
-	buf[pos++] = TLS_CHACHA20_POLY1305_SHA256 & 0xFF;
+
+	if (cipher_suites_len == 0U) {
+		NET_DBG("No cipher suite left after applying the configured list");
+		return -ENOTSUP;
+	}
+
+	buf[suites_len_pos] = (cipher_suites_len >> 8) & 0xFF;
+	buf[suites_len_pos + 1] = cipher_suites_len & 0xFF;
 
 	/* Legacy compression methods (single null byte) */
 	buf[pos++] = 0x01;  /* length */
@@ -1898,6 +2000,7 @@ static int build_server_hello(struct quic_tls_context *ctx,
 	size_t ext_start;
 	size_t ks_len;
 	size_t ext_len;
+	int ret;
 
 	if (buf_size < 128) {
 		return -ENOBUFS;
@@ -1908,7 +2011,10 @@ static int build_server_hello(struct quic_tls_context *ctx,
 	buf[pos++] = 0x03;
 
 	/* Server random */
-	sys_rand_get(ctx->server_random, 32);
+	ret = sys_csrand_get(ctx->server_random, 32);
+	if (ret != 0) {
+		return ret;
+	}
 	memcpy(&buf[pos], ctx->server_random, 32);
 	pos += 32;
 
@@ -2851,11 +2957,17 @@ static int build_certificate_request(struct quic_tls_context *ctx,
 	size_t sig_algs_len_pos;
 	size_t sig_algs_data_len;
 	size_t ext_len;
+	int ret;
 
-	/* Certificate request context (can be used to correlate request/response) */
-	/* Using a random 8-byte context */
+	/* Certificate request context (can be used to correlate request/response).
+	 * Using a random 8-byte context. The peer echoes this back, so it must
+	 * not expose the state of a non-cryptographic generator.
+	 */
 	buf[pos++] = QUIC_CERT_REQ_CONTEXT_LEN;  /* context length */
-	sys_rand_get(&buf[pos], QUIC_CERT_REQ_CONTEXT_LEN);
+	ret = sys_csrand_get(&buf[pos], QUIC_CERT_REQ_CONTEXT_LEN);
+	if (ret != 0) {
+		return ret;
+	}
 
 	/* Save context for later verification */
 	memcpy(ctx->cert_request_context, &buf[pos], QUIC_CERT_REQ_CONTEXT_LEN);
@@ -3052,6 +3164,83 @@ static int build_client_finished(struct quic_tls_context *ctx,
 	*out_len = verify_data_len;
 
 	return 0;
+}
+
+/*
+ * Verify a Finished message received from the peer (RFC 8446 Section 4.4.4)
+ *
+ * verify_data = HMAC(finished_key, transcript_hash), where finished_key comes
+ * from the peer's handshake traffic secret and the transcript covers every
+ * handshake message up to but not including this one. The caller must not have
+ * added the Finished message to the transcript yet.
+ */
+static int verify_peer_finished(struct quic_tls_context *ctx,
+				const uint8_t *msg, size_t msg_len)
+{
+	const uint8_t *peer_secret;
+	uint8_t finished_key[QUIC_HASH_MAX_LEN];
+	uint8_t transcript[QUIC_HASH_MAX_LEN];
+	size_t transcript_len;
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t hmac_key_id;
+	psa_status_t status;
+	int ret;
+
+	if (msg_len != ctx->ks.hash_len) {
+		NET_DBG("Finished is %zu bytes, expected %zu", msg_len, ctx->ks.hash_len);
+		return -EBADMSG;
+	}
+
+	/* A server verifies the client's Finished and vice versa. */
+	peer_secret = ctx->ep->is_server ? ctx->ks.client_hs_traffic_secret :
+					   ctx->ks.server_hs_traffic_secret;
+
+	ret = quic_hkdf_expand_label_ex(ctx->ks.hash_alg,
+					peer_secret, ctx->ks.hash_len,
+					(const uint8_t *)TLS13_LABEL_FINISHED,
+					strlen(TLS13_LABEL_FINISHED),
+					NULL, 0,
+					finished_key, ctx->ks.hash_len);
+	if (ret != 0) {
+		NET_DBG("Failed to derive peer finished_key: %d", ret);
+		return ret;
+	}
+
+	ret = transcript_hash_get(ctx, transcript, &transcript_len);
+	if (ret != 0) {
+		NET_DBG("Failed to get transcript hash: %d", ret);
+		goto out;
+	}
+
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_VERIFY_MESSAGE);
+	psa_set_key_algorithm(&attr, PSA_ALG_HMAC(ctx->ks.hash_alg));
+	psa_set_key_type(&attr, PSA_KEY_TYPE_HMAC);
+
+	status = psa_import_key(&attr, finished_key, ctx->ks.hash_len, &hmac_key_id);
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Failed to import HMAC key: %d", status);
+		ret = -EIO;
+		goto out;
+	}
+
+	/* psa_mac_verify() compares in constant time. */
+	status = psa_mac_verify(hmac_key_id, PSA_ALG_HMAC(ctx->ks.hash_alg),
+				transcript, transcript_len, msg, msg_len);
+
+	psa_destroy_key(hmac_key_id);
+
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Peer Finished did not verify (%d)", status);
+		ret = -EBADMSG;
+		goto out;
+	}
+
+	ret = 0;
+out:
+	crypto_zero(finished_key, sizeof(finished_key));
+	crypto_zero(transcript, sizeof(transcript));
+
+	return ret;
 }
 
 /*
@@ -3369,9 +3558,20 @@ static int quic_tls_send_new_session_ticket(struct quic_tls_context *ctx)
 		return ret;
 	}
 
-	sys_rand_get(ticket_nonce, sizeof(ticket_nonce));
-	sys_rand_get(ticket, sizeof(ticket));
-	sys_rand_get(&ticket_age_add, sizeof(ticket_age_add));
+	ret = sys_csrand_get(ticket_nonce, sizeof(ticket_nonce));
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = sys_csrand_get(ticket, sizeof(ticket));
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = sys_csrand_get(&ticket_age_add, sizeof(ticket_age_add));
+	if (ret != 0) {
+		return ret;
+	}
 
 	ret = tls_derive_resumption_psk(ctx, ticket_nonce, sizeof(ticket_nonce),
 					ticket_psk, sizeof(ticket_psk));
@@ -3687,9 +3887,17 @@ static int parse_server_hello(struct quic_tls_context *ctx,
 
 	/* Verify cipher suite matches what we offered */
 	if (cipher_suite != TLS_AES_128_GCM_SHA256 &&
-	    cipher_suite != TLS_AES_256_GCM_SHA384 &&
-	    cipher_suite != TLS_CHACHA20_POLY1305_SHA256) {
+	    cipher_suite != TLS_AES_256_GCM_SHA384) {
 		NET_DBG("Unsupported cipher suite 0x%04x", cipher_suite);
+		return -ENOTSUP;
+	}
+
+	/* A server must not pick something the application excluded, and a
+	 * suite outside our offer is a protocol violation in any case.
+	 */
+	if (!tls_suite_allowed(ctx, cipher_suite)) {
+		NET_DBG("Server selected cipher suite 0x%04x which was not offered",
+			cipher_suite);
 		return -ENOTSUP;
 	}
 	ctx->ks.cipher_suite = cipher_suite;
@@ -4159,6 +4367,9 @@ ZTESTABLE_STATIC int parse_certificate(struct quic_tls_context *ctx,
 
 	/* Certificate request context */
 	context_len = data[pos++];
+	if (pos + context_len > len) {
+		return -EINVAL;
+	}
 
 	/* If we sent a CertificateRequest, verify the context matches */
 	if (ctx->expecting_client_cert && ctx->cert_request_context_len > 0) {
@@ -4187,6 +4398,7 @@ ZTESTABLE_STATIC int parse_certificate(struct quic_tls_context *ctx,
 	}
 
 	ctx->peer_cert_len = 0;
+	ctx->peer_cert_verified = false;
 
 	/* Empty certificate list is only valid when peer auth is optional. */
 	if (cert_list_len == 0) {
@@ -4299,6 +4511,10 @@ static int parse_certificate_request(struct quic_tls_context *ctx,
 
 	extensions_len = ((uint16_t)data[pos] << 8) | data[pos + 1];
 	pos += 2;
+
+	if (pos + extensions_len > len) {
+		return -EINVAL;
+	}
 
 	/* Parse extensions to find signature_algorithms */
 	ext_end = pos + extensions_len;
@@ -4709,6 +4925,8 @@ ZTESTABLE_STATIC int process_handshake_message(struct quic_tls_context *ctx,
 			return ret;
 		}
 
+		ctx->peer_cert_verified = true;
+
 		ret = transcript_update(ctx, full_msg, full_msg_len);
 		if (ret != 0) {
 			return ret;
@@ -4742,6 +4960,26 @@ ZTESTABLE_STATIC int process_handshake_message(struct quic_tls_context *ctx,
 			NET_DBG("Peer certificate required but not provided");
 			return -EACCES;
 		}
+
+		/* A certificate on its own proves nothing: it is public, so
+		 * anyone can replay it. Only CertificateVerify shows the peer
+		 * holds the matching private key, and nothing else in this
+		 * switch enforces that it arrived.
+		 */
+		if (ctx->peer_cert_len > 0 && !ctx->peer_cert_verified) {
+			NET_DBG("Peer sent a certificate but no CertificateVerify");
+			return -EACCES;
+		}
+
+		/* Verify before the transcript is extended, since verify_data
+		 * covers everything up to but not including this message.
+		 */
+		ret = verify_peer_finished(ctx, msg, msg_len);
+		if (ret != 0) {
+			NET_DBG("Finished verification failed: %d", ret);
+			return ret;
+		}
+
 		/* Update transcript with Finished message */
 		ret = transcript_update(ctx, full_msg, full_msg_len);
 		if (ret != 0) {
@@ -4829,10 +5067,13 @@ static void quic_tls_free(struct quic_tls_context *ctx)
 	}
 
 	/* Clear sensitive data */
-	memset(ctx->shared_secret, 0, sizeof(ctx->shared_secret));
-	memset(ctx->resumption_master_secret, 0, sizeof(ctx->resumption_master_secret));
-	memset(&ctx->session_state, 0, sizeof(ctx->session_state));
-	memset(&ctx->ks, 0, sizeof(ctx->ks));
+	/* These are the last writes to this memory before the endpoint slot is
+	 * released, so a plain memset() is a dead store the compiler may drop.
+	 */
+	crypto_zero(ctx->shared_secret, sizeof(ctx->shared_secret));
+	crypto_zero(ctx->resumption_master_secret, sizeof(ctx->resumption_master_secret));
+	crypto_zero(&ctx->session_state, sizeof(ctx->session_state));
+	crypto_zero(&ctx->ks, sizeof(ctx->ks));
 	ctx->client_hello_prepared = false;
 	ctx->session_state_valid = false;
 	ctx->resumption_master_secret_len = 0U;
@@ -6172,12 +6413,13 @@ static int quic_tls_send_client_hello(struct quic_tls_context *ctx,
 		 * identities field, i.e. before the binders vector length and
 		 * binder length prefix that precede the binder value.
 		 */
-		ret = tls_compute_external_psk_binder(ctx->psk, ctx->psk_len,
-						      ctx->ks.hash_alg, ctx->ks.hash_len,
-						      wrapped,
-						      4U + binder_offset -
-							      QUIC_TLS_PSK_BINDERS_HEADER_LEN,
-						      binder, sizeof(binder));
+		ret = tls_compute_psk_binder(ctx->psk, ctx->psk_len,
+					     ctx->psk_is_resumption,
+					     ctx->ks.hash_alg, ctx->ks.hash_len,
+					     wrapped,
+					     4U + binder_offset -
+						     QUIC_TLS_PSK_BINDERS_HEADER_LEN,
+					     binder, sizeof(binder));
 		if (ret != 0) {
 			NET_DBG("Failed to compute PSK binder: %d", ret);
 			return ret;
@@ -6454,6 +6696,7 @@ static int tls_set_psk(struct quic_tls_context *tls,
 	tls->psk_identity = psk_id->buf;
 	tls->psk_identity_len = psk_id->len;
 	tls->psk_configured = true;
+	tls->psk_is_resumption = false;
 
 	return 0;
 #else
@@ -6840,8 +7083,8 @@ static int tls_opt_alpn_list_set(struct quic_tls_context *context,
 
 	alpn_cnt = optlen / sizeof(const char *);
 
-	/* alpn list must be NULL terminated. */
-	if (alpn_cnt > ARRAY_SIZE(context->options.alpn_list)) {
+	/* alpn list must be NULL terminated, so leave room for the terminator. */
+	if (alpn_cnt + 1 > ARRAY_SIZE(context->options.alpn_list)) {
 		return -EINVAL;
 	}
 

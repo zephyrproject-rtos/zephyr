@@ -755,6 +755,39 @@ ZTEST(net_socket_quic, test_010_open_connection_and_close)
 		      "Invalid refcount %d after close", (int)atomic_get(&ctx->refcount));
 }
 
+ZTEST(net_socket_quic, test_015_alpn_list_must_leave_room_for_terminator)
+{
+	/* One more protocol than alpn_list can hold together with its NULL
+	 * terminator. Accepting this writes the terminator past the array.
+	 */
+	static const char * const too_many[ALPN_MAX_PROTOCOLS + 1] = {
+		[0 ... ALPN_MAX_PROTOCOLS] = "h3",
+	};
+	static const char * const just_right[ALPN_MAX_PROTOCOLS] = {
+		[0 ... ALPN_MAX_PROTOCOLS - 1] = "h3",
+	};
+	int sock;
+	int ret;
+
+	ret = quic_connection_open((struct net_sockaddr *)&remote_addr_ipv4,
+				   (struct net_sockaddr *)&local_addr_ipv4);
+	zassert_true(ret >= 0, "Failed to open QUIC connection (%d)", ret);
+	sock = ret;
+
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
+			       too_many, sizeof(too_many));
+	zassert_equal(ret, -1, "Oversized ALPN list must be rejected");
+	zassert_equal(errno, EINVAL, "Expected EINVAL, got %d", errno);
+
+	/* A full list that still leaves room for the terminator is fine. */
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
+			       just_right, sizeof(just_right));
+	zassert_equal(ret, 0, "Maximum sized ALPN list must be accepted (%d)", -errno);
+
+	ret = quic_connection_close(sock);
+	zassert_equal(0, ret, "Failed to close QUIC connection (%d)", ret);
+}
+
 /* Test 020: Stream open/close */
 ZTEST(net_socket_quic, test_020_open_stream_and_close)
 {
@@ -2269,6 +2302,40 @@ ZTEST(net_socket_quic, test_210_rfc9001_hp_mask)
 	psa_destroy_key(hp_key_id);
 }
 
+ZTEST(net_socket_quic, test_215_chacha20_header_protection_is_refused)
+{
+	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t hp_key_id;
+	psa_status_t status;
+	uint8_t mask[5] = { 0xa5, 0xa5, 0xa5, 0xa5, 0xa5 };
+	uint8_t untouched[5] = { 0xa5, 0xa5, 0xa5, 0xa5, 0xa5 };
+	const uint8_t sample[] = {
+		0xd1, 0xb1, 0xc9, 0x8d, 0xd7, 0x68, 0x9f, 0xb8,
+		0xec, 0x11, 0xd2, 0x42, 0xb1, 0x23, 0xdc, 0x9b
+	};
+	int ret;
+
+	/* An AES key is fine here; the ChaCha20 branch must bail out before it
+	 * ever reaches the key.
+	 */
+	psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
+	psa_set_key_algorithm(&attributes, PSA_ALG_ECB_NO_PADDING);
+	psa_set_key_type(&attributes, PSA_KEY_TYPE_AES);
+	psa_set_key_bits(&attributes, 128);
+
+	status = psa_import_key(&attributes, rfc9001_client_hp,
+				sizeof(rfc9001_client_hp), &hp_key_id);
+	zassert_equal(status, PSA_SUCCESS, "Failed to import HP key");
+
+	ret = quic_hp_mask(hp_key_id, QUIC_CIPHER_CHACHA20_POLY1305, sample, mask);
+	zassert_equal(ret, -ENOTSUP,
+		      "ChaCha20 header protection must be refused, got %d", ret);
+	zassert_mem_equal(mask, untouched, sizeof(mask),
+			  "Refused header protection must not write a mask");
+
+	psa_destroy_key(hp_key_id);
+}
+
 /* Test 220: RFC 9001 A.2 - Header decryption */
 ZTEST(net_socket_quic, test_220_rfc9001_header_decryption)
 {
@@ -3472,6 +3539,61 @@ ZTEST(net_socket_quic, test_336_quic_unsupported_version_before_initial_validati
 		      ret);
 }
 
+ZTEST(net_socket_quic, test_338_long_header_truncated_at_scid_len)
+{
+	/* DCID consumes the last byte of the datagram, so the SCID length
+	 * byte that follows lies exactly one past the end of the buffer.
+	 */
+	uint8_t packet[] = {
+		0xc0,                         /* Long header, Initial packet */
+		0x00, 0x00, 0x00, 0x01,       /* Version 1 */
+		0x01, 0xaa,                   /* DCID len=1, DCID byte */
+	};
+	struct quic_long_header_info info;
+	int ret;
+
+	ret = quic_parse_long_header(&info, packet, sizeof(packet));
+	zassert_not_equal(ret, 0,
+			  "Header truncated at the SCID length byte must be rejected");
+}
+
+ZTEST(net_socket_quic, test_337_long_header_every_truncation_is_safe)
+{
+	/* A well-formed Initial packet. Parsing any prefix of it must either
+	 * fail, or report a total length that stays inside the buffer it was
+	 * given. Anything else means the parser walked off the end.
+	 */
+	uint8_t packet[] = {
+		0xc0,                         /* Long header, Initial packet */
+		0x00, 0x00, 0x00, 0x01,       /* Version 1 */
+		0x08, 0x83, 0x94, 0xc8, 0xf0, /* DCID len=8, DCID bytes */
+		0x3e, 0x51, 0x57, 0x08,
+		0x08, 0x10, 0x11, 0x12, 0x13, /* SCID len=8, SCID bytes */
+		0x14, 0x15, 0x16, 0x17,
+		0x00,                         /* Token length = 0 */
+		0x01,                         /* Payload length = 1 (PN only) */
+		0x00,                         /* Packet number = 0 */
+	};
+	struct quic_long_header_info info;
+	int ret;
+
+	ret = quic_parse_long_header(&info, packet, sizeof(packet));
+	zassert_ok(ret, "Reference packet must parse (%d)", ret);
+
+	for (size_t prefix = 0; prefix < sizeof(packet); prefix++) {
+		memset(&info, 0, sizeof(info));
+
+		ret = quic_parse_long_header(&info, packet, prefix);
+		if (ret != 0) {
+			continue;
+		}
+
+		zassert_true(info.total_len <= prefix,
+			     "Prefix of %zu bytes accepted with total_len %zu",
+			     prefix, info.total_len);
+	}
+}
+
 ZTEST(net_socket_quic, test_340_quic_check_retransmissions)
 {
 	static uint8_t tx_buf[sizeof(LOREM_IPSUM_LONG)];
@@ -4367,7 +4489,8 @@ static void quic_server_and_client_with_server_cert(const char *server,
 						    const char *client,
 						    int client_verify_mode,
 						    bool setup_client_ca,
-						    bool expect_success)
+						    bool expect_success,
+						    const char *client_hostname)
 {
 	struct net_sockaddr_storage server_addr;
 	struct net_sockaddr_storage client_addr;
@@ -4453,6 +4576,13 @@ static void quic_server_and_client_with_server_cert(const char *server,
 				       ZSOCK_TLS_PEER_VERIFY,
 				       &client_verify_mode, sizeof(client_verify_mode));
 		zassert_equal(ret, 0, "Failed to set client verify mode (%d)", -errno);
+	}
+
+	if (client_hostname != NULL) {
+		ret = zsock_setsockopt(client_sock, ZSOCK_SOL_TLS,
+				       ZSOCK_TLS_HOSTNAME,
+				       client_hostname, strlen(client_hostname));
+		zassert_equal(ret, 0, "Failed to set client hostname (%d)", -errno);
 	}
 
 	setup_alpn(client_sock, alpn_list, ARRAY_SIZE(alpn_list));
@@ -4951,7 +5081,7 @@ ZTEST(net_socket_quic, test_440_client_requires_server_ca_by_default)
 
 	quic_server_and_client_with_server_cert(LOCAL_ADDR_IPV4_STR3,
 						REMOTE_ADDR_IPV4_STR3,
-						-1, false, false);
+						-1, false, false, NULL);
 }
 
 ZTEST(net_socket_quic, test_450_client_can_disable_server_verification)
@@ -4964,7 +5094,178 @@ ZTEST(net_socket_quic, test_450_client_can_disable_server_verification)
 	quic_server_and_client_with_server_cert(LOCAL_ADDR_IPV4_STR3,
 						REMOTE_ADDR_IPV4_STR3,
 						MBEDTLS_SSL_VERIFY_NONE,
-						false, true);
+						false, true, NULL);
+}
+
+ZTEST(net_socket_quic, test_456_server_cert_matching_hostname_is_accepted)
+{
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	/* The test server certificate carries CN=localhost and a matching
+	 * subjectAltName.
+	 */
+	quic_server_and_client_with_server_cert(LOCAL_ADDR_IPV4_STR3,
+						REMOTE_ADDR_IPV4_STR3,
+						MBEDTLS_SSL_VERIFY_REQUIRED,
+						true, true, "localhost");
+}
+
+ZTEST(net_socket_quic, test_457_server_cert_wrong_hostname_is_rejected)
+{
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	/* Same certificate, issued by a CA the client trusts, but for a
+	 * different name. Required verification must reject it.
+	 */
+	quic_server_and_client_with_server_cert(LOCAL_ADDR_IPV4_STR3,
+						REMOTE_ADDR_IPV4_STR3,
+						MBEDTLS_SSL_VERIFY_REQUIRED,
+						true, false, "not-the-server.example.com");
+}
+
+/* A ClientHello whose fixed part is well formed. The extensions length is
+ * filled in per test so the parser can be pushed past the end of the buffer.
+ */
+#define TEST_CH_EXT_LEN_OFFSET 41U
+
+static const uint8_t test_client_hello[] = {
+	0x03, 0x03,                   /* Legacy version TLS 1.2 */
+	0x00, 0x01, 0x02, 0x03, 0x04, /* Client random (32 bytes) */
+	0x05, 0x06, 0x07, 0x08, 0x09,
+	0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
+	0x0f, 0x10, 0x11, 0x12, 0x13,
+	0x14, 0x15, 0x16, 0x17, 0x18,
+	0x19, 0x1a, 0x1b, 0x1c, 0x1d,
+	0x1e, 0x1f,
+	0x00,                         /* Legacy session ID length = 0 */
+	0x00, 0x02, 0x13, 0x01,       /* Cipher suites: TLS_AES_128_GCM_SHA256 */
+	0x01, 0x00,                   /* Compression methods: null */
+	0x00, 0x00,                   /* Extensions length (patched per test) */
+};
+
+ZTEST(net_socket_quic, test_452_client_hello_extensions_length_must_fit)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t hello[sizeof(test_client_hello)];
+	struct quic_tls_context ctx = { 0 };
+	int ret;
+
+	ep->is_server = true;
+	ctx.ep = ep;
+
+	memcpy(hello, test_client_hello, sizeof(hello));
+
+	/* Claim 65535 bytes of extensions in a buffer that holds none. */
+	hello[TEST_CH_EXT_LEN_OFFSET] = 0xff;
+	hello[TEST_CH_EXT_LEN_OFFSET + 1] = 0xff;
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_equal(ret, -EINVAL,
+		      "Extensions length past the end of the message must be rejected (%d)",
+		      ret);
+}
+
+ZTEST(net_socket_quic, test_451_client_hello_chacha20_only_is_refused)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t hello[sizeof(test_client_hello)];
+	struct quic_tls_context ctx = { 0 };
+	int ret;
+
+	ep->is_server = true;
+	ctx.ep = ep;
+
+	memcpy(hello, test_client_hello, sizeof(hello));
+
+	/* Offer only TLS_CHACHA20_POLY1305_SHA256. Header protection for it is
+	 * not implemented, so the server must not select it.
+	 */
+	hello[37] = 0x13;
+	hello[38] = 0x03;
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_equal(ret, -ENOTSUP,
+		      "A ChaCha20-only ClientHello must not be accepted (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_458_configured_cipher_suite_list_is_enforced)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t hello[sizeof(test_client_hello)];
+	struct quic_tls_context ctx = { 0 };
+	int ret;
+
+	ep->is_server = true;
+	ctx.ep = ep;
+
+	/* Application restricts the server to AES-256 only. */
+	ctx.options.ciphersuites[0] = TLS_AES_256_GCM_SHA384;
+
+	memcpy(hello, test_client_hello, sizeof(hello));
+	/* The client offers AES-128, which is now excluded. */
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_equal(ret, -ENOTSUP,
+		      "A suite outside the configured list must not be selected (%d)",
+		      ret);
+
+	/* With the offered suite allowed, selection proceeds normally. */
+	ctx.options.ciphersuites[0] = TLS_AES_128_GCM_SHA256;
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_not_equal(ret, -ENOTSUP,
+			  "An allowed suite must still be selectable (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_453_client_hello_odd_cipher_suites_length)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t hello[sizeof(test_client_hello)];
+	struct quic_tls_context ctx = { 0 };
+	int ret;
+
+	ep->is_server = true;
+	ctx.ep = ep;
+
+	memcpy(hello, test_client_hello, sizeof(hello));
+
+	/* An odd cipher suite list length makes the 2-byte read at the last
+	 * entry run one byte past the list.
+	 */
+	hello[35] = 0x00;
+	hello[36] = 0x01;
+
+	ret = parse_client_hello(&ctx, hello, sizeof(hello), hello, sizeof(hello));
+	zassert_equal(ret, -EINVAL,
+		      "Odd cipher suites length must be rejected (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_454_client_hello_every_truncation_is_safe)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	uint8_t hello[sizeof(test_client_hello)];
+
+	ep->is_server = true;
+
+	memcpy(hello, test_client_hello, sizeof(hello));
+
+	/* No prefix of a ClientHello may make the parser read past the length
+	 * it was handed. The return value is not interesting here; the point
+	 * is that none of these run off the end under a sanitizer.
+	 */
+	for (size_t prefix = 0; prefix <= sizeof(hello); prefix++) {
+		struct quic_tls_context ctx = { 0 };
+
+		ctx.ep = ep;
+
+		(void)parse_client_hello(&ctx, hello, prefix, hello, prefix);
+	}
 }
 
 ZTEST(net_socket_quic, test_455_required_peer_verification_rejects_empty_certificate)
@@ -5006,6 +5307,113 @@ ZTEST(net_socket_quic, test_460_required_peer_verification_rejects_finished_with
 		      ret);
 	zassert_not_equal(ctx.state, QUIC_TLS_STATE_CONNECTED,
 			  "Handshake must not reach CONNECTED without peer certificate");
+}
+
+ZTEST(net_socket_quic, test_462_forged_finished_is_rejected)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_tls_context ctx = { 0 };
+	/* Right length for SHA-256, wrong contents. */
+	static const uint8_t finished_body[32] = { 0 };
+	static const uint8_t finished_msg[4 + 32] = { 0 };
+	int ret;
+
+	ep->is_server = false;
+	ctx.ep = ep;
+	/* No peer verification, so the certificate check cannot be what
+	 * rejects this. The Finished MAC has to.
+	 */
+	ctx.options.verify_level = MBEDTLS_SSL_VERIFY_NONE;
+	ctx.peer_cert_len = 0;
+	ctx.ks.cipher_suite = TLS_AES_128_GCM_SHA256;
+	ctx.ks.hash_alg = PSA_ALG_SHA_256;
+	ctx.ks.hash_len = 32;
+
+	/* A running transcript is needed, otherwise the hash lookup fails
+	 * before the MAC is ever compared.
+	 */
+	zassert_equal(psa_hash_setup(&ctx.ks.transcript_hash, PSA_ALG_SHA_256),
+		      PSA_SUCCESS, "Failed to start transcript hash");
+
+	ret = process_handshake_message(&ctx, TLS_HS_FINISHED,
+					finished_body, sizeof(finished_body),
+					finished_msg, sizeof(finished_msg));
+	zassert_equal(ret, -EBADMSG,
+		      "Expected a Finished with a bad MAC to be rejected (%d)", ret);
+	zassert_not_equal(ctx.state, QUIC_TLS_STATE_CONNECTED,
+			  "Handshake must not reach CONNECTED on a forged Finished");
+
+	psa_hash_abort(&ctx.ks.transcript_hash);
+}
+
+ZTEST(net_socket_quic, test_464_certificate_without_certificate_verify_is_rejected)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_tls_context ctx = { 0 };
+	static const uint8_t finished_body[32] = { 0 };
+	static const uint8_t finished_msg[4 + 32] = { 0 };
+	int ret;
+
+	ep->is_server = false;
+	ctx.ep = ep;
+	ctx.options.verify_level = MBEDTLS_SSL_VERIFY_NONE;
+	ctx.ks.cipher_suite = TLS_AES_128_GCM_SHA256;
+	ctx.ks.hash_alg = PSA_ALG_SHA_256;
+	ctx.ks.hash_len = 32;
+
+	/* The peer presented a certificate but never proved it holds the
+	 * matching private key.
+	 */
+	ctx.peer_cert_len = 64;
+	ctx.peer_cert_verified = false;
+
+	zassert_equal(psa_hash_setup(&ctx.ks.transcript_hash, PSA_ALG_SHA_256),
+		      PSA_SUCCESS, "Failed to start transcript hash");
+
+	ret = process_handshake_message(&ctx, TLS_HS_FINISHED,
+					finished_body, sizeof(finished_body),
+					finished_msg, sizeof(finished_msg));
+	zassert_equal(ret, -EACCES,
+		      "Finished must be refused when CertificateVerify is missing (%d)",
+		      ret);
+	zassert_not_equal(ctx.state, QUIC_TLS_STATE_CONNECTED,
+			  "Handshake must not reach CONNECTED without CertificateVerify");
+
+	/* With CertificateVerify accounted for, the handshake gets past this
+	 * check and is only stopped by the Finished MAC, confirming the check
+	 * above is specific to CertificateVerify.
+	 */
+	ctx.peer_cert_verified = true;
+
+	ret = process_handshake_message(&ctx, TLS_HS_FINISHED,
+					finished_body, sizeof(finished_body),
+					finished_msg, sizeof(finished_msg));
+	zassert_equal(ret, -EBADMSG,
+		      "Expected the Finished MAC to be what fails now (%d)", ret);
+
+	psa_hash_abort(&ctx.ks.transcript_hash);
+}
+
+ZTEST(net_socket_quic, test_463_finished_wrong_length_is_rejected)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_tls_context ctx = { 0 };
+	static const uint8_t finished_body[8] = { 0 };
+	static const uint8_t finished_msg[4 + 8] = { 0 };
+	int ret;
+
+	ep->is_server = false;
+	ctx.ep = ep;
+	ctx.options.verify_level = MBEDTLS_SSL_VERIFY_NONE;
+	ctx.ks.cipher_suite = TLS_AES_128_GCM_SHA256;
+	ctx.ks.hash_alg = PSA_ALG_SHA_256;
+	ctx.ks.hash_len = 32;
+
+	ret = process_handshake_message(&ctx, TLS_HS_FINISHED,
+					finished_body, sizeof(finished_body),
+					finished_msg, sizeof(finished_msg));
+	zassert_equal(ret, -EBADMSG,
+		      "Expected a short Finished to be rejected (%d)", ret);
 }
 
 /* RFC 9001 6: the TLS KeyUpdate message is prohibited in QUIC and must be
@@ -5321,6 +5729,130 @@ ZTEST(net_socket_quic, test_480_retry_token_round_trip)
 					  token, token_len, &validation);
 	zassert_equal(ret, -EADDRNOTAVAIL,
 		      "Token must be bound to client address (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_485_streams_blocked_does_not_inflate_the_limit)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	/* Repeated STREAMS_BLOCKED (bidi) frames claiming a huge blocked
+	 * limit. Each is two bytes: frame type plus a one byte varint.
+	 */
+	uint8_t payload[16];
+	uint64_t limit_after_first;
+	bool ack_only = false;
+	int ret;
+
+	for (size_t i = 0; i < sizeof(payload); i += 2) {
+		payload[i] = QUIC_FRAME_TYPE_STREAMS_BLOCKED_BIDI;
+		payload[i + 1] = 0x3f; /* varint 63 */
+	}
+
+	ep->rx_sl.max_bidi = 0;
+	ep->rx_sl.open_bidi = 0;
+	ep->rx_sl.total_bidi = 0;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, 2, 2, &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	limit_after_first = ep->rx_sl.max_bidi;
+	zassert_equal(limit_after_first, CONFIG_QUIC_MAX_STREAMS_BIDI,
+		      "First frame should open the whole pool, got %" PRIu64,
+		      limit_after_first);
+
+	/* The peer has neither opened nor closed anything, so further frames
+	 * must not raise the limit any further.
+	 */
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload),
+					 sizeof(payload), &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	zassert_equal(ep->rx_sl.max_bidi, limit_after_first,
+		      "Stream limit grew from %" PRIu64 " to %" PRIu64
+		      " without any stream being opened or closed",
+		      limit_after_first, ep->rx_sl.max_bidi);
+}
+
+ZTEST(net_socket_quic, test_486_replies_per_payload_are_capped)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	/* A payload packed with DATA_BLOCKED frames. Each one is two bytes and
+	 * would otherwise be answered with a MAX_DATA packet of its own.
+	 */
+	uint8_t payload[128];
+	bool ack_only = false;
+	int ret;
+
+	for (size_t i = 0; i < sizeof(payload); i += 2) {
+		payload[i] = QUIC_FRAME_TYPE_DATA_BLOCKED;
+		payload[i + 1] = 0x00;
+	}
+
+	/* Advertise a window above the blocked limit so every frame would
+	 * otherwise trigger a reply.
+	 */
+	ep->rx_fc.max_data = 1000;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					 payload, sizeof(payload),
+					 sizeof(payload), &ack_only);
+	zassert_true(ret >= 0, "Payload handling failed (%d)", ret);
+
+	zassert_equal(ep->reply_budget_used, CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD,
+		      "Expected replies to stop at %d, got %u",
+		      CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD, ep->reply_budget_used);
+	zassert_true(sizeof(payload) / 2 > CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD,
+		     "Test payload must carry more frames than the budget allows");
+}
+
+ZTEST(net_socket_quic, test_487_address_token_cannot_be_replayed)
+{
+	static const uint8_t orig_dcid[] = {
+		0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+	};
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4446),
+	};
+	struct quic_token_validation validation;
+	uint8_t token[CONFIG_QUIC_TOKEN_MAX_LEN];
+	uint8_t second[CONFIG_QUIC_TOKEN_MAX_LEN];
+	size_t token_len, second_len;
+	int ret;
+
+	ret = net_addr_pton(NET_AF_INET, REMOTE_ADDR_IPV4, &addr.sin_addr);
+	zassert_equal(ret, 0, "Failed to parse token address (%d)", ret);
+
+	ret = quic_build_address_token(QUIC_TOKEN_NEW,
+				       (struct net_sockaddr *)&addr,
+				       orig_dcid, sizeof(orig_dcid),
+				       token, sizeof(token), &token_len);
+	zassert_ok(ret, "Failed to build NEW_TOKEN (%d)", ret);
+
+	ret = quic_validate_address_token((struct net_sockaddr *)&addr,
+					  token, token_len, &validation);
+	zassert_ok(ret, "First use of the token must be accepted (%d)", ret);
+
+	/* Tokens travel in the clear, so an observer can copy one and send it
+	 * again from a spoofed address. The second use must be refused.
+	 */
+	ret = quic_validate_address_token((struct net_sockaddr *)&addr,
+					  token, token_len, &validation);
+	zassert_equal(ret, -EALREADY, "Replayed token must be refused (%d)", ret);
+
+	/* A freshly issued token for the same address still works, so the
+	 * check is on the token and not on the address.
+	 */
+	ret = quic_build_address_token(QUIC_TOKEN_NEW,
+				       (struct net_sockaddr *)&addr,
+				       orig_dcid, sizeof(orig_dcid),
+				       second, sizeof(second), &second_len);
+	zassert_ok(ret, "Failed to build second NEW_TOKEN (%d)", ret);
+
+	ret = quic_validate_address_token((struct net_sockaddr *)&addr,
+					  second, second_len, &validation);
+	zassert_ok(ret, "A newly issued token must still be accepted (%d)", ret);
 }
 
 ZTEST(net_socket_quic, test_490_new_token_cache_round_trip)

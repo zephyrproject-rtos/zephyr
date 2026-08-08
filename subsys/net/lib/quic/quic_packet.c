@@ -6,6 +6,26 @@
 
 static int quic_send_max_stream_data(struct quic_endpoint *ep,
 				     struct quic_stream *stream);
+
+/*
+ * Several frame types are answered with a packet of their own, and a single
+ * datagram can carry hundreds of them. Cap how many such replies one received
+ * payload may produce, so a peer cannot turn one small datagram into hundreds
+ * of encrypted sends.
+ *
+ * Frames whose reply is required for correctness, such as CONNECTION_CLOSE and
+ * the ACK for the packet as a whole, are sent outside this budget.
+ */
+static bool quic_reply_budget_take(struct quic_endpoint *ep)
+{
+	if (ep->reply_budget_used >= CONFIG_QUIC_MAX_REPLIES_PER_PAYLOAD) {
+		return false;
+	}
+
+	ep->reply_budget_used++;
+
+	return true;
+}
 static int quic_send_frame_close(struct quic_endpoint *ep, uint8_t frame_type,
 				 uint64_t error_code, const char *reason)
 {
@@ -273,8 +293,10 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 			/* Consume one slot from the open-stream budget */
 			if (is_bidi) {
 				ep->rx_sl.open_bidi++;
+				ep->rx_sl.total_bidi++;
 			} else {
 				ep->rx_sl.open_uni++;
+				ep->rx_sl.total_uni++;
 			}
 		}
 
@@ -844,7 +866,7 @@ static int handle_data_blocked_frame(struct quic_endpoint *ep,
 		ep, quic_get_by_ep(ep), max_data);
 
 	/* Peer is blocked, send MAX_DATA to increase their limit */
-	if (ep->rx_fc.max_data > max_data) {
+	if (ep->rx_fc.max_data > max_data && quic_reply_budget_take(ep)) {
 		quic_send_max_data(ep);
 	}
 
@@ -878,7 +900,8 @@ static int handle_stream_data_blocked_frame(struct quic_endpoint *ep,
 
 	/* Find the stream and send MAX_STREAM_DATA */
 	stream = quic_find_stream_by_id(ep, stream_id);
-	if (stream != NULL && stream->local_max_data > max_stream_data) {
+	if (stream != NULL && stream->local_max_data > max_stream_data &&
+	    quic_reply_budget_take(ep)) {
 		quic_send_max_stream_data(ep, stream);
 	}
 
@@ -936,9 +959,17 @@ static int handle_streams_blocked_frame(struct quic_endpoint *ep,
 	if (is_bidi) {
 		uint64_t free_slots = (uint64_t)CONFIG_QUIC_MAX_STREAMS_BIDI
 							- ep->rx_sl.open_bidi;
+		/* MAX_STREAMS is a cumulative limit, so derive it from how many
+		 * streams the peer has actually opened. Adding the free slots
+		 * to the current limit instead would let a peer raise it once
+		 * per frame without ever opening or closing anything.
+		 */
+		uint64_t new_limit = ep->rx_sl.total_bidi + free_slots;
 
-		if (free_slots > 0 && ep->rx_sl.max_bidi <= max_streams) {
-			ep->rx_sl.max_bidi += free_slots;
+		if (free_slots > 0 && new_limit > ep->rx_sl.max_bidi &&
+		    ep->rx_sl.max_bidi <= max_streams &&
+		    quic_reply_budget_take(ep)) {
+			ep->rx_sl.max_bidi = new_limit;
 			quic_send_max_streams(ep, true);
 
 			NET_DBG("[EP:%p/%d] STREAMS_BLOCKED: advanced bidi limit to "
@@ -946,15 +977,19 @@ static int handle_streams_blocked_frame(struct quic_endpoint *ep,
 				ep, quic_get_by_ep(ep),
 				ep->rx_sl.max_bidi, free_slots);
 		} else {
-			NET_DBG("[EP:%p/%d] STREAMS_BLOCKED: pool full "
-				"(open=%" PRIu64 "), not advancing limit",
-				ep, quic_get_by_ep(ep), ep->rx_sl.open_bidi);
+			NET_DBG("[EP:%p/%d] STREAMS_BLOCKED: not advancing bidi limit "
+				"(open=%" PRIu64 ", limit=%" PRIu64 ")",
+				ep, quic_get_by_ep(ep), ep->rx_sl.open_bidi,
+				ep->rx_sl.max_bidi);
 		}
 	} else {
 		uint64_t free_slots = (uint64_t)CONFIG_QUIC_MAX_STREAMS_UNI - ep->rx_sl.open_uni;
+		uint64_t new_limit = ep->rx_sl.total_uni + free_slots;
 
-		if (free_slots > 0 && ep->rx_sl.max_uni <= max_streams) {
-			ep->rx_sl.max_uni += free_slots;
+		if (free_slots > 0 && new_limit > ep->rx_sl.max_uni &&
+		    ep->rx_sl.max_uni <= max_streams &&
+		    quic_reply_budget_take(ep)) {
+			ep->rx_sl.max_uni = new_limit;
 			quic_send_max_streams(ep, false);
 		}
 	}
@@ -1045,7 +1080,10 @@ static int handle_new_connection_id_frame(struct quic_endpoint *ep,
 				NET_DBG("[EP:%p/%d] Retiring peer CID seq=%" PRIu64,
 					ep, quic_get_by_ep(ep), ep->peer_cid_pool[i].seq_num);
 				/* Send RETIRE_CONNECTION_ID frame */
-				send_retire_connection_id(ep, ep->peer_cid_pool[i].seq_num);
+				if (quic_reply_budget_take(ep)) {
+					send_retire_connection_id(
+						ep, ep->peer_cid_pool[i].seq_num);
+				}
 				ep->peer_cid_pool[i].active = false;
 			}
 		}
@@ -1109,6 +1147,12 @@ static int handle_path_challenge_frame(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] PATH_CHALLENGE received", ep, quic_get_by_ep(ep));
 
 	/* Must respond with PATH_RESPONSE containing same 8 bytes */
+	if (!quic_reply_budget_take(ep)) {
+		NET_DBG("[EP:%p/%d] PATH_RESPONSE budget for this payload used up",
+			ep, quic_get_by_ep(ep));
+		return pos + 8;
+	}
+
 	response[0] = QUIC_FRAME_TYPE_PATH_RESPONSE;
 	memcpy(&response[1], &buf[pos], 8);
 
@@ -1246,11 +1290,19 @@ static int handle_ack_frame(struct quic_endpoint *ep,
 			uint64_t smallest = ranges[range_idx - 1].start;
 
 			if (smallest < gap + 2) {
-				/* Malformed: gap exceeds available PN space */
-				break;
+				/* Malformed: gap exceeds available PN space
+				 * (RFC 9000 19.3.1, FRAME_ENCODING_ERROR)
+				 */
+				return -EINVAL;
 			}
 
 			ranges[range_idx].end = smallest - gap - 2;
+
+			if (ranges[range_idx].end < ack_range) {
+				/* Malformed: the range extends below zero */
+				return -EINVAL;
+			}
+
 			ranges[range_idx].start = ranges[range_idx].end - ack_range;
 			range_idx++;
 		}
@@ -1736,6 +1788,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 		ep, quic_get_by_ep(ep), pkt->pkt_num, len);
 
 	/* Parse frames in the packet */
+	ep->reply_budget_used = 0;
+
 	while (pos < (int)len) {
 		uint8_t frame_type = buf[pos];
 
@@ -2074,12 +2128,12 @@ fail:
  * - PING frames (0x01): Keep-alive
  * - CONNECTION_CLOSE frames (0x1c, 0x1d): Connection termination
  */
-static int handle_crypto_level_packet(struct quic_endpoint *ep,
-				      enum quic_secret_level level,
-				      const uint8_t *payload,
-				      size_t payload_len,
-				      size_t total_packet_len,
-				      bool *ack_only)
+ZTESTABLE_STATIC int handle_crypto_level_packet(struct quic_endpoint *ep,
+						enum quic_secret_level level,
+						const uint8_t *payload,
+						size_t payload_len,
+						size_t total_packet_len,
+						bool *ack_only)
 {
 	size_t pos = 0;
 	int ret;
@@ -2092,6 +2146,8 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 		level == QUIC_SECRET_LEVEL_HANDSHAKE ? "Handshake" :
 		level == QUIC_SECRET_LEVEL_EARLY ? "0-RTT" : "Application",
 		payload_len);
+
+	ep->reply_budget_used = 0;
 
 	while (pos < payload_len) {
 		uint8_t frame_type = payload[pos];
