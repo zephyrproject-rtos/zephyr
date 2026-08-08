@@ -408,6 +408,11 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 			}
 
 			block_size = block->block_size;
+
+			if (block_size == 0) {
+				LOG_ERR("Zero-length DMA block is not allowed");
+				return -EINVAL;
+			}
 		}
 
 		uint32_t buffer_size;
@@ -767,6 +772,11 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 
 	dma_channel = &config->dma_channel[channel];
 	desc_iter = dma_channel->desc_list;
+
+	if (size == 0) {
+		LOG_ERR("Zero-length DMA block is not allowed for a reload");
+		return -EINVAL;
+	}
 
 	if (size > ARRAY_SIZE(dma_channel->desc_list) *
 		   DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
