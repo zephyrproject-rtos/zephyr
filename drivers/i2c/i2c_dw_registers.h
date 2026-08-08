@@ -8,27 +8,11 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_DW_REGISTERS_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_DW_REGISTERS_H_
 
+#include "i2c_dw_con.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/*  IC_CON bits */
-union ic_con_register {
-	uint32_t raw;
-	struct {
-		uint32_t master_mode: 1 __packed;
-		uint32_t speed: 2 __packed;
-		uint32_t addr_slave_10bit: 1 __packed;
-		uint32_t addr_master_10bit: 1 __packed;
-		uint32_t restart_en: 1 __packed;
-		uint32_t slave_disable: 1 __packed;
-		uint32_t stop_det: 1 __packed;
-		uint32_t tx_empty_ctl: 1 __packed;
-		uint32_t rx_fifo_full: 1 __packed;
-		uint32_t stop_det_mstactive: 1 __packed;
-		uint32_t bus_clear: 1 __packed;
-	} bits;
-};
 
 /* IC_DATA_CMD bits */
 #define IC_DATA_CMD_DAT_MASK 0xFF
