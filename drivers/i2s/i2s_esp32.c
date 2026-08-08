@@ -1374,8 +1374,16 @@ static int i2s_esp32_trigger_check(const struct device *dev, enum i2s_dir dir,
 			return -ENOSYS;
 		}
 	} else if (dir == I2S_DIR_RX) {
+		if (!dev_cfg->rx.conf || !dev_cfg->rx.data) {
+			LOG_DBG("I2S_DIR_RX not supported");
+			return -ENOSYS;
+		}
 		configured = dev_cfg->rx.data->configured;
 	} else if (dir == I2S_DIR_TX) {
+		if (!dev_cfg->tx.conf || !dev_cfg->tx.data) {
+			LOG_DBG("I2S_DIR_TX not supported");
+			return -ENOSYS;
+		}
 		configured = dev_cfg->tx.data->configured;
 	} else {
 		LOG_DBG("Invalid dir: %d", dir);
