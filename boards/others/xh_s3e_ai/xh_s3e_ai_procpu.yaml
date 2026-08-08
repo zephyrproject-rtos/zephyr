@@ -1,0 +1,19 @@
+identifier: xh_s3e_ai/esp32s3/procpu
+name: XH-S3E-AI PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - i2s
+  - spi
+  - watchdog
+  - entropy
+  - dma
+  - input
+  - led_strip
+  - netif:wifi
+vendor: others
