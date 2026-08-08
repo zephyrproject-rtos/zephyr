@@ -1,0 +1,53 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ARM L2C-310 (PL310) outer (L2) cache controller.
+
+  Generic ARM IP found on multiple platforms (Zynq-7000, i.MX6, ST-Ericsson
+  Ux500, Renesas RZA2M, ...). It sits below the CPU-integrated L1 cache and is
+  not snooped by device-side DMA, so on a Cortex-A/R core its maintenance
+  operations must be paired with the L1 ones. The driver provides the
+  z_arm_outer_cache_* hooks called by the arch cache layer when CONFIG_OUTER_CACHE
+  is set; it does not implement the cache_data_* API (L1 keeps owning that).
+
+  SoC-specific values (aux control straps, RAM latencies) are supplied as
+  properties.
+
+compatible: "arm,pl310-cache"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  data-ram-latency:
+    type: int
+    description: |
+      Raw value written to the Data RAM Latency Control register (offset 0x10C),
+      carrying the setup/read/write latency fields pre-packed for this SoC. This
+      is a register image rather than a cycle count, so it is not the ARM-defined
+      arm,data-latency property. SoC default.
+
+  tag-ram-latency:
+    type: int
+    description: |
+      Raw value written to the Tag RAM Latency Control register (offset 0x108),
+      carrying the setup/read/write latency fields pre-packed for this SoC. This
+      is a register image rather than a cycle count, so it is not the ARM-defined
+      arm,tag-latency property. SoC default.
+
+  arm,shared-override:
+    type: boolean
+    description: |
+      Set the Shared Attribute Override Enable bit (aux control bit 22). Without
+      it the PL310 treats Normal Shareable Cacheable transactions as
+      non-cacheable, which hangs at MMU enable on Zynq-7000.
+
+  arm,num-ways:
+    type: int
+    description: |
+      Number of cache ways. Used to build the way mask for the invalidate-by-way
+      reset sequence. If omitted the driver derives it from the associativity
+      strap in the aux control register.

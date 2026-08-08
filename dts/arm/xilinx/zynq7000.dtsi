@@ -70,6 +70,19 @@
 			fifo-depth = <16>;
 		};
 
+		l2: cache-controller@f8f02000 {
+			compatible = "arm,pl310-cache";
+			reg = <0xf8f02000 0x1000>;
+			/* Zynq-7000: 8 ways x 64 KB = 512 KB */
+			arm,num-ways = <8>;
+			/* Xilinx defaults for Zynq-7000 (raw RAM latency ctrl regs) */
+			tag-ram-latency = <0x00000111>;
+			data-ram-latency = <0x00000121>;
+			/* required or the core hangs at MMU enable */
+			arm,shared-override;
+			status = "okay";
+		};
+
 		gem0: ethernet@e000b000 {
 			compatible = "xlnx,gem";
 			status = "disabled";
