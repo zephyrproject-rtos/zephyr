@@ -14,6 +14,8 @@ family:
     - name: mimxrt1064
   - name: imxrt11xx
     socs:
+    - name: mimxrt1151
+    - name: mimxrt1152
     - name: mimxrt1166
       cpuclusters:
       - name: cm7
@@ -80,6 +82,8 @@ runners:
       - qualifiers:
         - mimxrt1062/(qspi|hyperflash)
       - qualifiers:
+        - mimxrt115([12])
+      - qualifiers:
         - mimxrt1166/cm7
         - mimxrt1166/cm4
       - qualifiers:
@@ -123,6 +127,8 @@ runners:
         - mimxrt1052/(qspi|hyperflash)
       - qualifiers:
         - mimxrt1062/(qspi|hyperflash)
+      - qualifiers:
+        - mimxrt115([12])
       - qualifiers:
         - mimxrt1166/cm7
         - mimxrt1166/cm4
