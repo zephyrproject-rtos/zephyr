@@ -260,6 +260,27 @@ To enable and build with Wi-Fi NAN support:
 
     $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_NAN=y
 
+External PMKSA cache
+********************
+
+Applications can transfer one PMKSA cache entry at a time through
+:kconfig:option:`CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL` using
+:c:macro:`NET_REQUEST_WIFI_PMKSA_GET` and
+:c:macro:`NET_REQUEST_WIFI_PMKSA_ADD`. A GET request asks the driver for its
+current entry; an ADD request supplies an application-owned entry. The
+application owns storage, ageing, and binding entries to the connection
+profile. PMKs and PMKIDs are secret key material and must not be logged.
+
+Persist entries only in protected storage; bind each entry to both the
+connection profile and station identity, and discard it after station-address,
+credential, or security-policy changes. Deduct powered-off time from
+lifetimes, or discard the entry when trustworthy ageing is unavailable; wipe
+temporary copies after use.
+
+The backend may limit the number or form of entries it can retain. If a
+cached entry cannot be used, the connection should fall back to a full
+authentication.
+
 API Reference
 *************
 

@@ -1,0 +1,9 @@
+common:
+  tags:
+    - net
+    - wifi
+tests:
+  net.wifi.pmksa:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

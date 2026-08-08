@@ -151,6 +151,8 @@ enum net_request_wifi_cmd {
 	/** Wi-Fi Direct (P2P) operations*/
 	NET_REQUEST_WIFI_CMD_P2P_OPER,
 	/** @cond INTERNAL_HIDDEN */
+	NET_REQUEST_WIFI_CMD_PMKSA_GET,
+	NET_REQUEST_WIFI_CMD_PMKSA_ADD,
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
 };
@@ -319,6 +321,20 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BTM_QUERY);
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_FLUSH)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH);
+
+#ifdef CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL
+/** Request a Wi-Fi PMKSA cache entry */
+#define NET_REQUEST_WIFI_PMKSA_GET \
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_GET)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_GET);
+
+/** Add a Wi-Fi PMKSA cache entry */
+#define NET_REQUEST_WIFI_PMKSA_ADD \
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_PMKSA_ADD)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_ADD);
+#endif /* CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL */
 
 /** Set Wi-Fi enterprise mode CA/client Cert and key */
 #define NET_REQUEST_WIFI_ENTERPRISE_CREDS                               \
@@ -1167,6 +1183,32 @@ struct wifi_ps_config {
 	struct wifi_twt_flow_info twt_flows[WIFI_MAX_TWT_FLOWS];
 	/** Power save configuration */
 	struct wifi_ps_params ps_params;
+};
+
+/** PMKID length in bytes. */
+#define WIFI_PMKSA_PMKID_LEN 16U
+/** Maximum PMK length in bytes. */
+#define WIFI_PMKSA_PMK_MAX_LEN 64U
+
+/** @brief Wi-Fi PMKSA cache entry transfer object
+ *
+ * This is an API transfer object, not a stable serialized format.
+ */
+struct wifi_pmksa_cache_entry {
+	/** BSSID associated with this cache entry */
+	uint8_t bssid[WIFI_MAC_ADDR_LEN];
+	/** PMK identifier */
+	uint8_t pmkid[WIFI_PMKSA_PMKID_LEN];
+	/** Pairwise master key */
+	uint8_t pmk[WIFI_PMKSA_PMK_MAX_LEN];
+	/** Length of the pairwise master key */
+	uint8_t pmk_len;
+	/** IEEE 802.11 AKM suite selector in native-endian integer form */
+	uint32_t akm_suite;
+	/** Remaining reauthentication lifetime in seconds */
+	uint32_t reauth_remaining_s;
+	/** Remaining expiration lifetime in seconds */
+	uint32_t expiration_remaining_s;
 };
 
 /** @brief Generic get/set operation for any command*/
@@ -2301,6 +2343,33 @@ struct wifi_mgmt_ops {
 		       struct net_if *iface,
 		       struct wifi_nan_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
+#if defined(CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL) || defined(__DOXYGEN__)
+	/** Get the current PMKSA cache entry while associated
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the PMKSA operation.
+	 * @param entry Entry to fill with the cached key material.
+	 *
+	 * @return 0 if an entry was returned, < 0 if error
+	 */
+	int (*pmksa_get)(const struct device *dev, struct net_if *iface,
+			 struct wifi_pmksa_cache_entry *entry);
+	/** Stage a PMKSA cache entry while disconnected before CONNECT
+	 *
+	 * The backend must synchronously copy entry before returning; the caller
+	 * may wipe its buffer afterward. Unsupported backend AKM, PMK-length, or
+	 * lifetime combinations return -ENOTSUP.
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the PMKSA operation.
+	 * @param entry Entry to add to the cache.
+	 *
+	 * @return 0 if the entry was added, < 0 if error
+	 */
+	int (*pmksa_add)(const struct device *dev, struct net_if *iface,
+			 const struct wifi_pmksa_cache_entry *entry);
+#endif /* CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL */
 
 	/** Flush PMKSA cache entries
 	 *

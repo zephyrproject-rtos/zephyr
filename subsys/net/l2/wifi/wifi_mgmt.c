@@ -1479,6 +1479,73 @@ static int wifi_pmksa_flush(uint64_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH, wifi_pmksa_flush);
 
+#ifdef CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL
+static int wifi_pmksa_get(uint64_t mgmt_request, struct net_if *iface,
+			  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_pmksa_cache_entry *entry = data;
+	int ret;
+
+	if (!data || len != sizeof(*entry)) {
+		return -EINVAL;
+	}
+
+	memset(entry, 0, sizeof(*entry));
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->pmksa_get == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	ret = wifi_mgmt_api->pmksa_get(dev, iface, entry);
+	if (ret < 0) {
+		memset(entry, 0, sizeof(*entry));
+	}
+
+	return ret;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_GET, wifi_pmksa_get);
+
+static int wifi_pmksa_add(uint64_t mgmt_request, struct net_if *iface,
+			  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	const struct wifi_pmksa_cache_entry *entry = data;
+	struct net_eth_addr bssid;
+
+	if (!data || len != sizeof(*entry)) {
+		return -EINVAL;
+	}
+
+	memcpy(bssid.addr, entry->bssid, sizeof(bssid.addr));
+	if (!net_eth_is_addr_valid(&bssid) ||
+	    entry->pmk_len == 0U || entry->pmk_len > WIFI_PMKSA_PMK_MAX_LEN ||
+	    entry->akm_suite == 0U || entry->expiration_remaining_s == 0U ||
+	    entry->reauth_remaining_s > entry->expiration_remaining_s) {
+		return -EINVAL;
+	}
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->pmksa_add == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	return wifi_mgmt_api->pmksa_add(dev, iface, entry);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_ADD, wifi_pmksa_add);
+#endif /* CONFIG_WIFI_MGMT_PMKSA_CACHE_EXTERNAL */
+
 static int wifi_config_params(uint64_t mgmt_request, struct net_if *iface,
 				 void *data, size_t len)
 {
