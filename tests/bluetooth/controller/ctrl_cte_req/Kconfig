@@ -5,6 +5,7 @@
 # the following configs been set
 
 config SOC_COMPATIBLE_NRF
+	bool
 	default y
 
 config BT_CTLR_DATA_LEN_UPDATE_SUPPORT
