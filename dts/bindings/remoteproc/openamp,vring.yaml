@@ -1,0 +1,41 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for an OpenAMP virtio vring.
+
+  A vring represents a virtqueue used for communication between processors.
+  It defines the shared memory region, notification mechanism, and buffer
+  configuration used by OpenAMP.
+
+compatible: "openamp,vring"
+
+include: base.yaml
+
+properties:
+  notify-id:
+    type: int
+    required: true
+    description: |
+      Identifier used for notifications (e.g. mailbox or interrupt ID)
+      associated with this vring.
+
+  device-address:
+    type: int
+    default: -1
+    description: |
+      Device address of the vring in the remote processor address space.
+      A value of -1 indicates that the address is assigned dynamically.
+
+  memory-region:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the shared memory region used to store the vring
+      descriptors, available ring, and used ring.
+
+  num-buffers:
+    type: int
+    required: true
+    description: |
+      Number of buffers (descriptors) in the vring.

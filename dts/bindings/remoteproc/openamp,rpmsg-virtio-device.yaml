@@ -1,0 +1,47 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for an OpenAMP RPMsg VirtIO device.
+
+  This node represents a VirtIO device implementing the RPMsg protocol
+  over OpenAMP. It defines the shared memory used for RPMsg buffers and
+  configuration parameters for the associated worker thread.
+
+compatible: "openamp,rpmsg-virtio-device"
+
+include: openamp,virtio-device.yaml
+
+bus: rpmsg
+
+properties:
+  device-id:
+    default: 7
+    description: |
+      VirtIO device identifier. Defaults to 7 (VIRTIO_ID_RPMSG)
+      as defined by the VirtIO specification.
+
+  memory-region:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the shared memory region used for RPMsg buffers.
+
+  zephyr,priority:
+    type: array
+    description: |
+      Workqueue thread priority for this RPMsg instance.
+
+      The value is an array consisting of:
+        - priority level
+        - priority type
+
+      The priority type must be one of:
+        - PRIO_COOP     (cooperative priority)
+        - PRIO_PREEMPT  (preemptive priority)
+
+      Examples:
+        K_PRIO_COOP(1)     -> <1 PRIO_COOP>
+        K_PRIO_PREEMPT(2)  -> <2 PRIO_PREEMPT>
+
+      If not specified, a default priority of <0 PRIO_PREEMPT> is used.
