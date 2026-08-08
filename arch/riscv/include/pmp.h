@@ -22,8 +22,10 @@ void z_riscv_pmp_kernelmode_prepare(struct k_thread *thread);
 void z_riscv_pmp_kernelmode_enable(struct k_thread *thread);
 void z_riscv_pmp_kernelmode_disable(void);
 void z_riscv_pmp_usermode_init(struct k_thread *thread);
+#ifndef CONFIG_RISCV_MMU
 void z_riscv_pmp_usermode_prepare(struct k_thread *thread);
 void z_riscv_pmp_usermode_enable(struct k_thread *thread);
+#endif /* !CONFIG_RISCV_MMU */
 
 #ifdef CONFIG_ZTEST
 void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size);
