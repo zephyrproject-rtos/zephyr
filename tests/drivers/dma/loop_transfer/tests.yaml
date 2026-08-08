@@ -7,4 +7,4 @@ tests:
     integration_platforms:
       - native_sim
       - native_sim/native/64
-    filter: dt_nodelabel_enabled("tst_dma0")
+    filter: dt_node_has_prop("/zephyr,user", "dma-test-devs")

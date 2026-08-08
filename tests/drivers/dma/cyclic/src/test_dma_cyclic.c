@@ -20,10 +20,19 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/test_devices.h>
 #include <zephyr/ztest.h>
 
-#define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
+/* Boards list the DMA controllers to test in a zephyr,user dma-test-devs
+ * phandle list.
+ */
+#define DMA_DATA_ALIGNMENT                                                                         \
+	DT_PROP_OR(TEST_DEVS_NODE_BY_IDX(dma_test_devs, 0), dma_buf_addr_alignment, 32)
 #define GUARD_BUF_SIZE (16)
+
+TEST_DEVS_REQUIRE(dma_test_devs);
+
+static const struct device *const dma_test_devs[] = TEST_DEVS_ARRAY(dma_test_devs);
 
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_CYCLIC_XFER_SIZE];
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t rx_data[CONFIG_DMA_CYCLIC_XFER_SIZE + GUARD_BUF_SIZE];
@@ -51,9 +60,8 @@ static void dma_callback(const struct device *dma_dev, void *user_data,
 }
 
 
-static int test_cyclic(void)
+static int test_cyclic(const struct device *dma)
 {
-	const struct device *dma;
 	int chan_id;
 
 	TC_PRINT("Preparing DMA Controller\n");
@@ -63,7 +71,6 @@ static int test_cyclic(void)
 	}
 	(void)memset(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, 0xA5, GUARD_BUF_SIZE);
 
-	dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
@@ -161,8 +168,14 @@ static int test_cyclic(void)
 	return TC_PASS;
 }
 
-/* export test cases */
-ZTEST(dma_m2m_cyclic, test_dma_m2m_cyclic)
-{
-	zassert_true((test_cyclic() == TC_PASS));
-}
+/* Generate one test case per DMA controller under test so a failure on one
+ * controller does not prevent the remaining controllers from running.
+ */
+#define DEFINE_DMA_M2M_CYCLIC_TESTS(idx, prop)                                                     \
+	ZTEST(dma_m2m_cyclic, test_dma##idx##_m2m_cyclic)                                          \
+	{                                                                                          \
+		zassert_true(test_cyclic(dma_test_devs[idx]) == TC_PASS,                           \
+			     "%s failed cyclic transfer", dma_test_devs[idx]->name);               \
+	}
+
+TEST_DEVS_FOR_EACH_IDX(dma_test_devs, DEFINE_DMA_M2M_CYCLIC_TESTS)
