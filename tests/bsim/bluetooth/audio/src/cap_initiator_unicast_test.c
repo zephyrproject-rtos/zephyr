@@ -1142,6 +1142,34 @@ static void test_cap_initiator_unicast_ase_error(void)
 	PASS("CAP initiator unicast ASE error passed\n");
 }
 
+static void test_cap_initiator_unicast_disconnect(void)
+{
+	struct bt_cap_unicast_group *unicast_group;
+
+	init();
+
+	scan_and_connect();
+
+	WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+	update_security(default_conn);
+
+	discover_cas(default_conn);
+	discover_sink(default_conn);
+	discover_source(default_conn);
+
+	unicast_group_create(&unicast_group);
+
+	unicast_audio_start(unicast_group, false);
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+	WAIT_FOR_FLAG(flag_start_failed);
+
+	unicast_group_delete(unicast_group);
+	unicast_group = NULL;
+
+	PASS("CAP initiator unicast disconnect passed\n");
+}
+
 static const struct named_lc3_preset *cap_get_named_preset(const char *preset_arg)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(lc3_unicast_presets); i++) {
@@ -1856,6 +1884,12 @@ static const struct bst_test_instance test_cap_initiator_unicast[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_unicast_ase_error,
+	},
+	{
+		.test_id = "cap_initiator_unicast_disconnect",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_initiator_unicast_disconnect,
 	},
 	{
 		.test_id = "cap_initiator_unicast_inval",
