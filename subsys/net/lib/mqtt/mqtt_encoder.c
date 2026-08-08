@@ -1349,6 +1349,36 @@ static int subscribe_properties_encode(const struct mqtt_subscription_list *para
 }
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 
+int subscribe_options_encode(const struct mqtt_client *client, const struct mqtt_topic *topic,
+			     struct buf_ctx *buf)
+{
+	int err;
+	uint8_t subscribe_options;
+
+	/*In both v3.1.1 and v5.0 QoS should be masked to avoid
+	 * it overflowing into the reserved bits, leading to the server
+	 * flagging the SUBSCRIBE packet as malformed.
+	 */
+	if (topic->qos > MQTT_QOS_2_EXACTLY_ONCE) {
+		return -EINVAL;
+	}
+	subscribe_options = topic->qos & 0x03;
+#if defined(CONFIG_MQTT_VERSION_5_0)
+	if (mqtt_is_version_5_0(client)) {
+		subscribe_options |= (topic->no_local & 0x01) << 2;
+		subscribe_options |= (topic->retain_as_published & 0x01) << 3;
+		subscribe_options |= (topic->retain_handling & 0x03) << 4;
+	}
+#endif /* CONFIG_MQTT_VERSION_5_0 */
+
+	err = pack_uint8(subscribe_options, buf);
+	if (err != 0) {
+		return err;
+	}
+
+	return 0;
+}
+
 int subscribe_encode(const struct mqtt_client *client,
 		     const struct mqtt_subscription_list *param,
 		     struct buf_ctx *buf)
@@ -1385,7 +1415,7 @@ int subscribe_encode(const struct mqtt_client *client,
 			return err_code;
 		}
 
-		err_code = pack_uint8(param->list[i].qos, buf);
+		err_code = subscribe_options_encode(client, &param->list[i], buf);
 		if (err_code != 0) {
 			return err_code;
 		}

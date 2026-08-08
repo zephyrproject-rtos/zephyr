@@ -266,6 +266,14 @@ struct mqtt_topic {
 	 *  @ref mqtt_qos for details.
 	 */
 	uint8_t qos;
+#if defined(CONFIG_MQTT_VERSION_5_0) || defined(__DOXYGEN__)
+	/** MQTT 5.0, chapter 3.8.3.1 No Local subscription option. */
+	uint8_t no_local;
+	/** MQTT 5.0, chapter 3.8.3.1 Retain As Published subscription option. */
+	uint8_t retain_as_published;
+	/** MQTT 5.0, chapter 3.8.3.1 Retain Handling subscription option. */
+	uint8_t retain_handling;
+#endif
 };
 
 /** @brief Abstracts MQTT UTF-8 encoded string pair.
