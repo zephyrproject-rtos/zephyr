@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT jedec_nor
 
+#include <zephyr/cache.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
@@ -388,6 +389,51 @@ static uint8_t get_rx_dummy(const struct device *dev)
 	       dev_data->cmd_info.read_dummy_cycles;
 }
 
+#if defined(CONFIG_FLASH_MSPI_MEMMAP_READ)
+static int read_memmap(const struct device *dev, off_t addr, void *dest,
+		       size_t size)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	struct flash_mspi_nor_data *dev_data = dev->data;
+	uint8_t *src;
+	int rc;
+
+	/* Preceding commands may have switched the controller away from
+	 * the configuration the mapping was set up with, and any indirect
+	 * transfer may have caused the controller to abort the mapping;
+	 * restore both before accessing the mapped region.
+	 */
+	rc = mspi_dev_config(dev_config->bus, &dev_config->mspi_id,
+			     XIP_DEV_CFG_MASK, &dev_data->xip_cfg);
+	if (rc < 0) {
+		return rc;
+	}
+	dev_data->last_applied_cfg = NULL;
+
+	rc = mspi_memmap_config(dev_config->bus, &dev_config->mspi_id,
+				&dev_config->memmap_cfg);
+	if (rc < 0) {
+		return rc;
+	}
+
+	src = (uint8_t *)(dev_config->memmap_base_addr +
+			  dev_config->memmap_cfg.address_offset + addr);
+
+	/* Cache lines covering the mapped region may hold stale data from
+	 * before the most recent erase or program operation. Invalidating
+	 * the source range is safe also when addr/size are not cache line
+	 * aligned: the mapped region is only ever read, so the extra lines
+	 * covered by the outward rounding of the invalidation cannot hold
+	 * dirty data.
+	 */
+	sys_cache_data_invd_range(src, size);
+
+	memcpy(dest, src, size);
+
+	return 0;
+}
+#endif /* CONFIG_FLASH_MSPI_MEMMAP_READ */
+
 static int api_read(const struct device *dev, off_t addr, void *dest,
 		    size_t size)
 {
@@ -408,6 +454,16 @@ static int api_read(const struct device *dev, off_t addr, void *dest,
 	if (rc < 0) {
 		return rc;
 	}
+
+#if defined(CONFIG_FLASH_MSPI_MEMMAP_READ)
+	if (dev_config->memmap_cfg.enable &&
+	    (addr + size) <= dev_config->memmap_cfg.size &&
+	    read_memmap(dev, addr, dest, size) == 0) {
+		release(dev);
+		return 0;
+	}
+	/* The mapping could not be used; fall back to indirect read. */
+#endif
 
 	while (size > 0) {
 		uint32_t to_read;
@@ -1349,6 +1405,13 @@ static int flash_chip_init(const struct device *dev)
 			LOG_ERR("Failed to enable XIP: %d", rc);
 			return rc;
 		}
+
+#if defined(CONFIG_FLASH_MSPI_MEMMAP_READ)
+		/* Keep this configuration so the memory-mapped read path
+		 * can restore it before re-enabling the mapping.
+		 */
+		dev_data->xip_cfg = mspi_cfg;
+#endif
 	}
 #endif
 
@@ -1527,6 +1590,13 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		     FLASH_PAGE_SIZE_INST(inst) <= PACKET_DATA_LIMIT(inst),	\
 		"Page size for " DT_NODE_FULL_NAME(DT_DRV_INST(inst))		\
 		" exceeds controller packet data limit");			\
+	IF_ENABLED(CONFIG_FLASH_MSPI_MEMMAP_READ,				\
+		(BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(inst, memmap_config) ||	\
+			      DT_REG_HAS_IDX(DT_INST_BUS(inst), 1),		\
+			"Memory-mapped read for "				\
+			DT_NODE_FULL_NAME(DT_DRV_INST(inst))			\
+			" requires the mapped region as the second reg "	\
+			"entry of the MSPI bus");))				\
 	SFDP_BUILD_ASSERTS(inst);						\
 	PM_DEVICE_DT_INST_DEFINE(inst, dev_pm_action_cb);			\
 	DEFAULT_ERASE_TYPES_DEFINE(inst);					\
@@ -1542,6 +1612,11 @@ BUILD_ASSERT((FLASH_SIZE_INST(inst) % CONFIG_FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE) ==
 		.mspi_control_cfg = FLASH_CONTROL_CMD_CONFIG(inst),		\
 	IF_ENABLED(CONFIG_MSPI_MEMMAP,						\
 		(.memmap_cfg = MSPI_MEMMAP_CONFIG_DT_INST(inst),))		\
+	IF_ENABLED(CONFIG_FLASH_MSPI_MEMMAP_READ,				\
+		(.memmap_base_addr =						\
+			COND_CODE_1(DT_REG_HAS_IDX(DT_INST_BUS(inst), 1),	\
+				(DT_REG_ADDR_BY_IDX(DT_INST_BUS(inst), 1)),	\
+				(0)),))						\
 	IF_ENABLED(WITH_SUPPLY_GPIO,						\
 		(.supply = GPIO_DT_SPEC_INST_GET_OR(inst, supply_gpios, {0}),))	\
 	IF_ENABLED(WITH_RESET_GPIO,						\

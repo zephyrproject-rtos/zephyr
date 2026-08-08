@@ -13,7 +13,6 @@
  */
 #define DT_DRV_COMPAT st_stm32_ospi_controller
 
-#include <zephyr/cache.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -278,35 +277,6 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 	return 0;
 }
 
-static int mspi_stm32_ospi_memmap_read(const struct device *dev,
-				       const struct mspi_xfer_packet *packet)
-{
-	struct mspi_stm32_data *dev_data = dev->data;
-	int ret = 0;
-
-	if (!mspi_stm32_ospi_is_memorymap(dev)) {
-		ret = mspi_stm32_ospi_memmap_on(dev);
-		if (ret != 0) {
-			LOG_ERR("Failed to set memory-mapped before read");
-			return ret;
-		}
-		k_usleep(50);
-	}
-#ifdef CONFIG_DCACHE
-	uint32_t addr = dev_data->memmap_base_addr + packet->address;
-	uint32_t size = packet->num_bytes;
-
-	__ASSERT_NO_MSG(IS_ALIGNED(addr, CONFIG_DCACHE_LINE_SIZE) &&
-			IS_ALIGNED(size, CONFIG_DCACHE_LINE_SIZE));
-
-	sys_cache_data_invd_range((void *)addr, size);
-#endif
-	memcpy(packet->data_buf, (uint8_t *)dev_data->memmap_base_addr + packet->address,
-	       packet->num_bytes);
-
-	return ret;
-}
-
 static int mspi_stm32_ospi_abort_memmap(const struct device *dev)
 {
 	struct mspi_stm32_data *dev_data = dev->data;
@@ -331,10 +301,6 @@ static int mspi_stm32_ospi_access(const struct device *dev, const struct mspi_xf
 
 	HAL_StatusTypeDef hal_ret;
 	int ret;
-
-	if (dev_data->memmap_cfg.enable && packet->dir == MSPI_RX) {
-		return mspi_stm32_ospi_memmap_read(dev, packet);
-	}
 
 	ret = mspi_stm32_ospi_abort_memmap(dev);
 	if (ret != 0) {

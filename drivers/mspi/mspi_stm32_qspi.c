@@ -322,20 +322,6 @@ static int mspi_stm32_qspi_memmap_on(const struct device *controller)
 }
 
 /**
- * @brief Check if command requires indirect mode in XIP configuration
- *
- * @param packet Pointer to transfer packet
- * @return true if command needs indirect mode.
- * @return false if command can use memory-mapped mode.
- */
-static bool mspi_stm32_qspi_needs_indirect_mode(const struct mspi_xfer_packet *packet)
-{
-	return (packet->cmd == MSPI_NOR_CMD_WREN) || (packet->cmd == MSPI_NOR_CMD_SE) ||
-	       (packet->cmd == MSPI_NOR_CMD_SE_4B) || (packet->cmd == MSPI_NOR_CMD_RDSR) ||
-	       (packet->dir == MSPI_TX);
-}
-
-/**
  * @brief Execute data transfer (TX or RX) in indirect mode
  *
  * @param dev Pointer to device structure
@@ -423,40 +409,6 @@ static int mspi_stm32_qspi_execute_transfer(const struct device *dev,
 }
 
 /**
- * @brief Read data in memory-mapped mode (XIP)
- *
- * Note: Write operations are NOT supported in memory-mapped mode for QSPI.
- * Writes must use indirect mode .
- *
- * @param dev Pointer to the device structure
- * @param packet Pointer to transfer packet (must be RX direction)
- * @return 0 on success.
- * @return A negative errno value upon failure.
- */
-static int mspi_stm32_qspi_memory_mapped_read(const struct device *dev,
-					      const struct mspi_xfer_packet *packet)
-{
-	struct mspi_stm32_data *dev_data = dev->data;
-	int ret;
-
-	if (!mspi_stm32_qspi_is_memmap(dev)) {
-		ret = mspi_stm32_qspi_memmap_on(dev);
-		if (ret != 0) {
-			LOG_ERR("Failed to enable memory mapped mode");
-			return ret;
-		}
-	}
-
-	uintptr_t mmap_addr = dev_data->memmap_base_addr + packet->address;
-
-	/* Memory-mapped mode is READ-ONLY for QSPI */
-	LOG_DBG("Memory-mapped read from 0x%08lx, len %zu", mmap_addr, packet->num_bytes);
-	memcpy(packet->data_buf, (void *)mmap_addr, packet->num_bytes);
-
-	return 0;
-}
-
-/**
  * @brief Send a Command to the NOR and Receive/Transceive data if relevant in IT or DMA mode.
  *
  * @param dev Pointer to device structure
@@ -472,14 +424,11 @@ static int mspi_stm32_qspi_access(const struct device *dev, const struct mspi_xf
 	HAL_StatusTypeDef hal_ret;
 	int ret;
 
-	/* === XIP Mode: Handle memory-mapped or indirect mode switching === */
+	/* Abort the memory mapping, if active, before any indirect
+	 * transfer; it is re-established by the device driver through
+	 * mspi_memmap_config().
+	 */
 	if (dev_data->memmap_cfg.enable) {
-		/* Read operations can use memory-mapped mode */
-		if (!mspi_stm32_qspi_needs_indirect_mode(packet)) {
-			return mspi_stm32_qspi_memory_mapped_read(dev, packet);
-		}
-
-		/* Commands that need indirect mode*/
 		ret = mspi_stm32_qspi_memmap_off(dev);
 		if (ret != 0) {
 			LOG_ERR("Failed to abort memory-mapped mode");
