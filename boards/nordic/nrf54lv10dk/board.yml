@@ -1,0 +1,43 @@
+board:
+  name: nrf54lv10dk
+  full_name: nRF54LV10 DK
+  vendor: nordic
+  socs:
+  - name: nrf54lv10a
+    variants:
+    - name: ns
+      cpucluster: cpuapp
+runners:
+  run_once:
+    '--recover':
+    - runners:
+      - nrfjprog
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - nrf54lv10dk/nrf54lv10a/cpuapp
+        - nrf54lv10dk/nrf54lv10a/cpuapp/ns
+        - nrf54lv10dk/nrf54lv10a/cpuflpr
+    '--erase':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - nrf54lv10dk/nrf54lv10a/cpuapp
+        - nrf54lv10dk/nrf54lv10a/cpuapp/ns
+        - nrf54lv10dk/nrf54lv10a/cpuflpr
+    '--reset':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: last
+      groups:
+      - boards:
+        - nrf54lv10dk/nrf54lv10a/cpuapp
+        - nrf54lv10dk/nrf54lv10a/cpuapp/ns
+        - nrf54lv10dk/nrf54lv10a/cpuflpr
