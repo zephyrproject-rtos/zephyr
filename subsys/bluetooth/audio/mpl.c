@@ -2081,10 +2081,66 @@ static int8_t get_playback_speed(void)
 	return media_player.playback_speed_param;
 }
 
+static int8_t get_supported_playback_speed(int8_t speed)
+{
+	if (speed > media_player.playback_speed_param) {
+		/* MCS spec section 3.8.1 states:
+		 * If the value written is not supported and is greater than the existing Playback
+		 * Speed characteristic, then the server should set the Playback Speed
+		 * characteristic to the next higher supported playback speed
+		 */
+		if (speed > MEDIA_PROXY_PLAYBACK_SPEED_UNITY) {
+			return MEDIA_PROXY_PLAYBACK_SPEED_DOUBLE;
+		} else if (speed > MEDIA_PROXY_PLAYBACK_SPEED_HALF) {
+			return MEDIA_PROXY_PLAYBACK_SPEED_UNITY;
+		} else if (speed > MEDIA_PROXY_PLAYBACK_SPEED_QUARTER) {
+			return MEDIA_PROXY_PLAYBACK_SPEED_HALF;
+		} else {
+			return MEDIA_PROXY_PLAYBACK_SPEED_QUARTER;
+		}
+	} else if (speed < media_player.playback_speed_param) {
+		/* MCS spec section 3.8.1 states:
+		 * If the value written is not supported and is less than the existing Playback
+		 * Speed characteristic, then the server should set the Playback Speed
+		 * characteristic to the next lower supported playback speed
+		 */
+		if (speed < MEDIA_PROXY_PLAYBACK_SPEED_HALF) {
+			return MEDIA_PROXY_PLAYBACK_SPEED_QUARTER;
+		} else if (speed < MEDIA_PROXY_PLAYBACK_SPEED_UNITY) {
+			return MEDIA_PROXY_PLAYBACK_SPEED_HALF;
+		} else if (speed < MEDIA_PROXY_PLAYBACK_SPEED_DOUBLE) {
+			return MEDIA_PROXY_PLAYBACK_SPEED_UNITY;
+		} else {
+			return MEDIA_PROXY_PLAYBACK_SPEED_DOUBLE;
+		}
+	} else {
+		return speed;
+	}
+}
+
 static void set_playback_speed(int8_t speed)
 {
 	/* Set new speed parameter and notify, if different from current */
 	if (speed != media_player.playback_speed_param) {
+		/* This MPL only supports MEDIA_PROXY_PLAYBACK_SPEED_QUARTER,
+		 * MEDIA_PROXY_PLAYBACK_SPEED_HALF, MEDIA_PROXY_PLAYBACK_SPEED_UNITY and
+		 * MEDIA_PROXY_PLAYBACK_SPEED_DOUBLE.
+		 * For unsupported values the MCS specification states:
+		 *
+		 * MCS spec section 3.8.1 states:
+		 * If the server does not support the value written, the server shall set
+		 * the Playback Speed characteristic to a supported value.
+		 */
+		int8_t supported_playback_speed = get_supported_playback_speed(speed);
+
+		if (speed != supported_playback_speed) {
+			if (speed != supported_playback_speed) {
+				LOG_DBG("Changed speed from %d to %d", speed,
+					supported_playback_speed);
+			}
+			speed = supported_playback_speed;
+		}
+
 		media_player.playback_speed_param = speed;
 		media_proxy_pl_playback_speed_cb(media_player.playback_speed_param);
 	}
@@ -2330,6 +2386,23 @@ static uint8_t get_content_ctrl_id(void)
 	return media_player.content_ctrl_id;
 }
 
+static float get_playing_speed(void)
+{
+	switch (media_player.playback_speed_param) {
+	case MEDIA_PROXY_PLAYBACK_SPEED_QUARTER:
+		return 0.25F;
+	case MEDIA_PROXY_PLAYBACK_SPEED_HALF:
+		return 0.50F;
+	case MEDIA_PROXY_PLAYBACK_SPEED_UNITY:
+		return 1.00F;
+	case MEDIA_PROXY_PLAYBACK_SPEED_DOUBLE:
+		return 2.00F;
+	default:
+		LOG_WRN("Unexpected playback_speed_param: %d", media_player.playback_speed_param);
+		return 1.00F;
+	}
+}
+
 static void pos_work_cb(struct k_work *work)
 {
 	const int32_t pos_diff_cs = TRACK_POS_WORK_DELAY_MS / 10; /* position is in centiseconds*/
@@ -2340,7 +2413,7 @@ static void pos_work_cb(struct k_work *work)
 		/* When seeking, apply the seeking speed factor */
 		set_relative_track_position(pos_diff_cs * media_player.seeking_speed_factor);
 	} else if (media_player.state == MEDIA_PROXY_STATE_PLAYING) {
-		set_relative_track_position(pos_diff_cs);
+		set_relative_track_position((int32_t)(pos_diff_cs * get_playing_speed()));
 	}
 
 	if (media_player.track_pos == media_player.group->track->duration) {
