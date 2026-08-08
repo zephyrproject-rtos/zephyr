@@ -5,3 +5,4 @@ zephyr_library_sources_ifdef(CONFIG_DSA_MICROCHIP_KSZ8463 dsa_ksz8463.c)
 
 # DSA tag protocol drivers
 zephyr_library_sources_ifdef(CONFIG_DSA_TAG_PROTOCOL_NETC dsa_tag_netc.c)
+zephyr_library_sources_ifdef(CONFIG_DSA_TAG_PROTOCOL_KSZ8463 dsa_tag_ksz8463.c)
