@@ -1,0 +1,22 @@
+description: Microchip MPFS Watchdog
+
+compatible: "microchip,mpfs-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  reset-capable:
+    description: |
+      The Microchip MPFS provides 5 watchdogs, of which only one (watchdog 0) is able,
+      when properly configured, to cause a system reset. The remaining 4 (1-4) can only
+      trigger an interrupt to the E51 core.
+    type: boolean
+
+  clock-frequency:
+    type: int
+    description: AXI clock frequency information (Hz) for watchdog operation.
+      The watchdog is fed by the same clock as the AXI, divided by a prescaling factor of 256.
+    default: 300000000
