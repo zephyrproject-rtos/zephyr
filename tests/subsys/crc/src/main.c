@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +17,12 @@
  */
 ZTEST(crc_subsys, test_crc_8)
 {
+	/* Some CRC engines (most notably STM32's) don't support even polynomials,
+	 * and CRC8_REFLECT_POLY is even
+	 */
+#if !defined(CONFIG_CRC_DRIVER_HAS_EVEN_POLY)
+	ztest_test_skip();
+#endif
 	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
 
 	zassert_equal(crc8(data, sizeof(data), CRC8_REFLECT_POLY, 0x00, true), RESULT_CRC8);
