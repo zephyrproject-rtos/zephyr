@@ -15,22 +15,22 @@ enum adc_npcx_threshold_param_l_h {
 };
 
 enum adc_npcx_threshold_param_type {
-	/* Selects ADC channel to be used for measurement */
+	/** Selects ADC channel to be used for measurement */
 	ADC_NPCX_THRESHOLD_PARAM_CHNSEL,
-	/* Sets relation between measured value and assetion threshold value.*/
+	/** Sets relation between measured value and assertion threshold value */
 	ADC_NPCX_THRESHOLD_PARAM_L_H,
-	/* Sets the threshold value to which measured data is compared. */
+	/** Sets the threshold value to which measured data is compared */
 	ADC_NPCX_THRESHOLD_PARAM_THVAL,
-	/* Sets worker queue thread to be notified */
+	/** Sets worker queue thread to be notified */
 	ADC_NPCX_THRESHOLD_PARAM_WORK,
-
+	/** Enum value bound */
 	ADC_NPCX_THRESHOLD_PARAM_MAX,
 };
 
 struct adc_npcx_threshold_param {
-	/* Threshold ocntrol parameter */
+	/** Threshold control parameter */
 	enum adc_npcx_threshold_param_type type;
-	/* Parameter value */
+	/** Parameter value */
 	uint32_t val;
 };
 
