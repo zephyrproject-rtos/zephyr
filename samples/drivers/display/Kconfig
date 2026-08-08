@@ -19,7 +19,48 @@ config SAMPLE_PITCH_ALIGN
 
 config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
 	int "Sample maximum heap allocated buffer size"
+	default 20971520 if SAMPLE_DISPLAY_DOUBLE_BUFFER
+	default 10485760 if SAMPLE_DISPLAY_FULL_FRAME
 	default 196608 if QEMU_RAMFB_DISPLAY
 	default 65536
 	help
-	  Maximum size of the buffer for rendering rectangles
+	  Maximum size of the buffer for rendering rectangles.
+	  When SAMPLE_DISPLAY_FULL_FRAME is enabled this must be at least
+	  width x height x bytes-per-pixel (e.g. 4 MB for 1280x800 ARGB8888).
+	  When SAMPLE_DISPLAY_DOUBLE_BUFFER is enabled it must cover two frames.
+
+config SAMPLE_DISPLAY_FULL_FRAME
+	bool "Render and submit a complete frame on each update"
+	default n
+	depends on DISPLAY
+	help
+	  When enabled the sample renders all visible elements into a single
+	  full-screen buffer and submits it as one display_write() call per
+	  frame.  This is required for hardware-scanout drivers such as TI DSS
+	  (display_tidss) that treat the write buffer as a framebuffer base
+	  address and ignore partial x/y/width/height parameters.
+	  The full-frame buffer is allocated from the heap; ensure
+	  CONFIG_HEAP_MEM_POOL_ADD_SIZE_SAMPLE is large enough.
+
+config SAMPLE_DISPLAY_DOUBLE_BUFFER
+	bool "Use two full-frame buffers with VSYNC-driven swap"
+	default n
+	depends on SAMPLE_DISPLAY_FULL_FRAME
+	help
+	  Allocates two full-screen buffers.  The animation loop renders into
+	  the back buffer and submits it; on each VSYNC callback the indices are
+	  swapped so the next frame is rendered into the buffer that is no longer
+	  being scanned out.  This eliminates any risk of writing to a buffer
+	  while the display hardware is reading it.
+
+config SAMPLE_DISPLAY_VSYNC_CALLBACK
+	bool "Use VSYNC callback for tear-free frame pacing"
+	default n
+	depends on DISPLAY
+	help
+	  When enabled the sample registers a VSYNC event callback via
+	  display_register_event_cb() and waits on a semaphore posted from
+	  the callback instead of calling k_msleep() between frames.
+	  This synchronises frame submission to the display refresh rate and
+	  avoids tearing on drivers that support DISPLAY_EVENT_VSYNC
+	  callbacks (e.g. the TI DSS driver).

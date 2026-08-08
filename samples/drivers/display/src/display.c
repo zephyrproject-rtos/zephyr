@@ -17,12 +17,56 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #include <zephyr/drivers/display.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/cache.h>
 
 #ifdef CONFIG_ARCH_POSIX
 #include "posix_board_if.h"
 #endif
 
 #include "display.h"
+
+static inline void flush_buf(void *addr, size_t size)
+{
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	sys_cache_data_flush_range(addr, size);
+#else
+	ARG_UNUSED(addr);
+	ARG_UNUSED(size);
+#endif
+}
+
+#ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+static void blit_rect(uint8_t *frame, uint16_t frame_w,
+		      uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+		      const uint8_t *src, uint8_t bpp_bytes)
+{
+	size_t row_bytes = (size_t)w * bpp_bytes;
+
+	for (uint16_t row = 0; row < h; row++) {
+		memcpy(frame + ((size_t)(y + row) * frame_w + x) * bpp_bytes,
+		       src + (size_t)row * row_bytes,
+		       row_bytes);
+	}
+}
+#endif /* CONFIG_SAMPLE_DISPLAY_FULL_FRAME */
+
+#ifdef CONFIG_SAMPLE_DISPLAY_VSYNC_CALLBACK
+static K_SEM_DEFINE(vsync_sem, 0, 1);
+
+static enum display_event_result on_vsync(const struct device *dev,
+					  uint32_t evt,
+					  const struct display_event_data *data,
+					  void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(evt);
+	ARG_UNUSED(data);
+	ARG_UNUSED(user_data);
+
+	k_sem_give(&vsync_sem);
+	return DISPLAY_EVENT_RESULT_CONTINUE;
+}
+#endif /* CONFIG_SAMPLE_DISPLAY_VSYNC_CALLBACK */
 
 enum corner {
 	TOP_LEFT,
@@ -295,6 +339,20 @@ int sample_display_draw(void)
 	size_t buf_size = 0;
 	fill_buffer fill_buffer_fnc = NULL;
 	int ret = 0;
+#ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+	uint8_t full_bpp;
+	size_t full_frame_size;
+	struct display_buffer_descriptor full_desc;
+#ifdef CONFIG_SAMPLE_DISPLAY_DOUBLE_BUFFER
+	uint8_t *full_buf[2] = {NULL, NULL};
+	int render_idx = 0;
+#else
+	uint8_t *full_buf = NULL;
+#endif
+#endif
+#ifdef CONFIG_SAMPLE_DISPLAY_VSYNC_CALLBACK
+	uint32_t vsync_handle = 0;
+#endif
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
@@ -418,6 +476,42 @@ int sample_display_draw(void)
 
 	(void)memset(buf, bg_color, buf_size);
 
+#ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+	full_bpp = DIV_ROUND_UP(
+		DISPLAY_BITS_PER_PIXEL(capabilities.current_pixel_format),
+		NUM_BITS(uint8_t));
+	full_frame_size = (size_t)capabilities.x_resolution *
+			  capabilities.y_resolution * full_bpp;
+	full_buf[0] = k_aligned_alloc(64, full_frame_size);
+	if (full_buf[0] == NULL) {
+		LOG_ERR("Could not allocate full frame buffer (%zu B). "
+			"Increase CONFIG_HEAP_MEM_POOL_ADD_SIZE_SAMPLE.",
+			full_frame_size);
+		ret = -ENOMEM;
+		goto end;
+	}
+	(void)memset(full_buf[0], bg_color, full_frame_size);
+
+#ifdef CONFIG_SAMPLE_DISPLAY_DOUBLE_BUFFER
+	full_buf[1] = k_aligned_alloc(64, full_frame_size);
+	if (full_buf[1] == NULL) {
+		LOG_ERR("Could not allocate second frame buffer (%zu B). "
+			"Increase CONFIG_HEAP_MEM_POOL_ADD_SIZE_SAMPLE.",
+			full_frame_size);
+		ret = -ENOMEM;
+		goto end;
+	}
+	(void)memset(full_buf[1], bg_color, full_frame_size);
+#endif /* CONFIG_SAMPLE_DISPLAY_DOUBLE_BUFFER */
+
+	full_desc.buf_size        = full_frame_size;
+	full_desc.pitch           = ROUND_UP(capabilities.x_resolution,
+					     CONFIG_SAMPLE_PITCH_ALIGN);
+	full_desc.width           = capabilities.x_resolution;
+	full_desc.height          = capabilities.y_resolution;
+	full_desc.frame_incomplete = false;
+#endif /* CONFIG_SAMPLE_DISPLAY_FULL_FRAME */
+
 	buf_desc.buf_size = buf_size;
 	buf_desc.pitch = ROUND_UP(capabilities.x_resolution, CONFIG_SAMPLE_PITCH_ALIGN);
 	buf_desc.width = capabilities.x_resolution;
@@ -431,6 +525,8 @@ int sample_display_draw(void)
 	 */
 	buf_desc.frame_incomplete = true;
 
+#ifndef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+	flush_buf(buf, buf_size);
 	for (uint16_t idx = 0; idx < capabilities.y_resolution; idx += h_step) {
 		/*
 		 * Tweaking the height value not to draw outside of the display.
@@ -446,6 +542,7 @@ int sample_display_draw(void)
 			goto end;
 		}
 	}
+#endif /* !CONFIG_SAMPLE_DISPLAY_FULL_FRAME */
 
 	buf_desc.pitch = ROUND_UP(rect_w, CONFIG_SAMPLE_PITCH_ALIGN);
 	buf_desc.width = rect_w;
@@ -454,20 +551,40 @@ int sample_display_draw(void)
 	fill_buffer_fnc(TOP_LEFT, 0, buf, buf_size, capabilities.current_pixel_format);
 	x = 0;
 	y = 0;
+#ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+	blit_rect(full_buf[0], capabilities.x_resolution, x, y,
+		  rect_w, rect_h, buf, full_bpp);
+#ifdef CONFIG_SAMPLE_DISPLAY_DOUBLE_BUFFER
+	blit_rect(full_buf[1], capabilities.x_resolution, x, y,
+		  rect_w, rect_h, buf, full_bpp);
+#endif
+#else
+	flush_buf(buf, buf_size);
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
 	if (ret < 0) {
 		LOG_ERR("Failed to write to display (error %d)", ret);
 		goto end;
 	}
+#endif
 
 	fill_buffer_fnc(TOP_RIGHT, 0, buf, buf_size, capabilities.current_pixel_format);
 	x = capabilities.x_resolution - rect_w;
 	y = 0;
+#ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+	blit_rect(full_buf[0], capabilities.x_resolution, x, y,
+		  rect_w, rect_h, buf, full_bpp);
+#ifdef CONFIG_SAMPLE_DISPLAY_DOUBLE_BUFFER
+	blit_rect(full_buf[1], capabilities.x_resolution, x, y,
+		  rect_w, rect_h, buf, full_bpp);
+#endif
+#else
+	flush_buf(buf, buf_size);
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
 	if (ret < 0) {
 		LOG_ERR("Failed to write to display (error %d)", ret);
 		goto end;
 	}
+#endif
 
 	/*
 	 * This is the last write of the frame, so turn this off.
@@ -479,17 +596,38 @@ int sample_display_draw(void)
 	fill_buffer_fnc(BOTTOM_RIGHT, 0, buf, buf_size, capabilities.current_pixel_format);
 	x = capabilities.x_resolution - rect_w;
 	y = capabilities.y_resolution - rect_h;
+#ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+	blit_rect(full_buf[0], capabilities.x_resolution, x, y,
+		  rect_w, rect_h, buf, full_bpp);
+#ifdef CONFIG_SAMPLE_DISPLAY_DOUBLE_BUFFER
+	blit_rect(full_buf[1], capabilities.x_resolution, x, y,
+		  rect_w, rect_h, buf, full_bpp);
+#endif
+#else
+	flush_buf(buf, buf_size);
 	ret = display_write(display_dev, x, y, &buf_desc, buf);
 	if (ret < 0) {
 		LOG_ERR("Failed to write to display (error %d)", ret);
 		goto end;
 	}
+#endif
 
 	ret = display_blanking_off(display_dev);
 	if (ret < 0 && ret != -ENOSYS) {
 		LOG_ERR("Failed to turn blanking off (error %d)", ret);
 		goto end;
 	}
+
+#ifdef CONFIG_SAMPLE_DISPLAY_VSYNC_CALLBACK
+	ret = display_register_event_cb(display_dev, on_vsync, NULL,
+					DISPLAY_EVENT_VSYNC, true, &vsync_handle);
+	if (ret < 0) {
+		LOG_WRN("VSYNC callback not supported (%d), falling back to polling", ret);
+		vsync_handle = 0;
+	} else {
+		LOG_INF("VSYNC callback registered (handle %u)", vsync_handle);
+	}
+#endif
 
 	grey_count = 0;
 	x = 0;
@@ -499,14 +637,40 @@ int sample_display_draw(void)
 	while (1) {
 		fill_buffer_fnc(BOTTOM_LEFT, grey_count, buf, buf_size,
 			capabilities.current_pixel_format);
+#ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+#ifdef CONFIG_SAMPLE_DISPLAY_DOUBLE_BUFFER
+		blit_rect(full_buf[render_idx], capabilities.x_resolution, x, y,
+			  rect_w, rect_h, buf, full_bpp);
+		flush_buf(full_buf[render_idx], full_frame_size);
+		ret = display_write(display_dev, 0, 0, &full_desc, full_buf[render_idx]);
+#else
+		blit_rect(full_buf[0], capabilities.x_resolution, x, y,
+			  rect_w, rect_h, buf, full_bpp);
+		flush_buf(full_buf[0], full_frame_size);
+		ret = display_write(display_dev, 0, 0, &full_desc, full_buf[0]);
+#endif
+#else
+		flush_buf(buf, buf_size);
 		ret = display_write(display_dev, x, y, &buf_desc, buf);
+#endif
 		if (ret < 0) {
 			LOG_ERR("Failed to write to display (error %d)", ret);
 			goto end;
 		}
 
 		++grey_count;
+#ifdef CONFIG_SAMPLE_DISPLAY_VSYNC_CALLBACK
+		if (vsync_handle != 0) {
+			k_sem_take(&vsync_sem, K_FOREVER);
+		} else {
+			k_msleep(grey_scale_sleep);
+		}
+#else
 		k_msleep(grey_scale_sleep);
+#endif
+#ifdef CONFIG_SAMPLE_DISPLAY_DOUBLE_BUFFER
+			render_idx ^= 1;
+#endif
 #if CONFIG_TEST
 		if (grey_count >= 30) {
 			LOG_INF("Display sample test mode done %s", display_dev->name);
@@ -516,6 +680,17 @@ int sample_display_draw(void)
 	}
 
 end:
+#ifdef CONFIG_SAMPLE_DISPLAY_VSYNC_CALLBACK
+	if (vsync_handle != 0) {
+		(void)display_unregister_event_cb(display_dev, vsync_handle);
+	}
+#endif
+#ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+	k_free(full_buf[0]);
+#ifdef CONFIG_SAMPLE_DISPLAY_DOUBLE_BUFFER
+	k_free(full_buf[1]);
+#endif
+#endif
 #if CONFIG_TEST
 	if (ret == 0) {
 		LOG_INF("PROJECT EXECUTION SUCCESSFUL");
