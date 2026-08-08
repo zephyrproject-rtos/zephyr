@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import shlex
 import subprocess
 import time
 from pathlib import Path
@@ -116,6 +117,8 @@ class HardwareAdapter(DeviceAdapter):
 
     def _device_launch(self) -> None:
         """Flash and run application on a device and connect with serial port."""
+        if self.device_config.pre_script:
+            self._run_custom_script(self.device_config.pre_script, self.base_timeout)
         if self.device_config.flash_before:
             # For hardware devices with shared USB or software USB, connect after flashing.
             # Retry for up to 10 seconds for USB-CDC based devices to enumerate.
@@ -144,8 +147,8 @@ class HardwareAdapter(DeviceAdapter):
             logger.error(msg)
             raise TwisterHarnessException(msg)
 
-        if self.device_config.pre_script:
-            self._run_custom_script(self.device_config.pre_script, self.base_timeout)
+        if self.device_config.pre_flash_script:
+            self._run_custom_script(self.device_config.pre_flash_script, self.base_timeout)
 
         if self.device_config.id:
             logger.debug('Flashing device %s', self.device_config.id)
@@ -189,7 +192,7 @@ class HardwareAdapter(DeviceAdapter):
     @staticmethod
     def _run_custom_script(script_path: str | Path, timeout: float) -> None:
         with subprocess.Popen(
-            str(script_path), stderr=subprocess.PIPE, stdout=subprocess.PIPE
+            shlex.split(str(script_path)), stderr=subprocess.PIPE, stdout=subprocess.PIPE
         ) as proc:
             try:
                 stdout, stderr = proc.communicate(timeout=timeout)
