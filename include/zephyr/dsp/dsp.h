@@ -1,4 +1,5 @@
 /* Copyright (c) 2022 Google LLC
+ * Copyright (c) 2026 James Roy <rruuaanng@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -42,6 +43,8 @@
 #include <zephyr/dsp/basicmath.h>
 
 #include <zephyr/dsp/print_format.h>
+
+#include <zephyr/dsp/fastmath.h>
 
 #include "zdsp_backend.h"
 
