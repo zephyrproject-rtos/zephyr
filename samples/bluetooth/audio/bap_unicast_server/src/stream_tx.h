@@ -16,6 +16,9 @@
 
 #include "stream_lc3.h"
 
+#define STREAM_TX_MIN_SDU_SIZE 40U
+#define STREAM_TX_MAX_SDU_SIZE 120U
+
 struct tx_stream {
 	struct bt_bap_stream *bap_stream;
 	uint16_t seq_num;
@@ -40,7 +43,7 @@ void stream_tx_init(void);
  *
  * @retval 0 on success
  * @retval -EINVAL if @p bap_stream is NULL
- * @retval -EINVAL if @p bap_stream.codec_cfg contains invalid values
+ * @retval -EINVAL if @p bap_stream.codec_cfg or @p bap_stream.qos contains invalid values
  * @retval -ENOEXEC if the LC3 encoder failed to initialize
  * @retval -ENOMEM if not more streams can be registered
  */

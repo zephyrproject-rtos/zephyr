@@ -25,28 +25,28 @@ LOG_MODULE_REGISTER(iso_broadcast_broadcaster, LOG_LEVEL_DBG);
 #define DEFAULT_BIS_INTERVAL_US   7500
 #define DEFAULT_BIS_LATENCY_MS    10
 #define DEFAULT_BIS_PHY           BT_GAP_LE_PHY_2M
-#define DEFAULT_BIS_SDU           CONFIG_BT_ISO_TX_MTU
+#define DEFAULT_BIS_SDU           247U
 #define DEFAULT_BIS_PACKING       0
 #define DEFAULT_BIS_FRAMING       0
 #define DEFAULT_BIS_COUNT         CONFIG_BT_ISO_MAX_CHAN
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 #define DEFAULT_BIS_NSE           BT_ISO_NSE_MIN
 #define DEFAULT_BIS_BN            BT_ISO_BN_MIN
-#define DEFAULT_BIS_PDU_SIZE      CONFIG_BT_ISO_TX_MTU
+#define DEFAULT_BIS_PDU_SIZE      DEFAULT_BIS_SDU
 #define DEFAULT_BIS_IRC           BT_ISO_IRC_MIN
 #define DEFAULT_BIS_PTO           BT_ISO_PTO_MIN
 #define DEFAULT_BIS_ISO_INTERVAL  DEFAULT_BIS_INTERVAL_US / 1250U /* N * 10 ms */
 #endif /* CONFIG_BT_ISO_TEST_PARAMS */
 
 NET_BUF_POOL_FIXED_DEFINE(bis_tx_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+			  BT_ISO_SDU_BUF_SIZE(DEFAULT_BIS_SDU), CONFIG_BT_CONN_TX_USER_DATA_SIZE,
+			  NULL);
 
 static K_SEM_DEFINE(sem_big_complete, 0, 1);
 static K_SEM_DEFINE(sem_big_term, 0, 1);
 static struct k_work_delayable iso_send_work;
 static uint32_t iso_send_count;
-static uint8_t iso_data[CONFIG_BT_ISO_TX_MTU];
+static uint8_t iso_data[DEFAULT_BIS_SDU];
 static uint8_t connected_bis;
 
 static struct bt_iso_chan bis_iso_chans[CONFIG_BT_ISO_MAX_CHAN];

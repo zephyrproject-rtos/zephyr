@@ -38,9 +38,9 @@ LOG_MODULE_REGISTER(cap_acceptor, LOG_LEVEL_INF);
 
 #define SUPPORTED_DURATION (BT_AUDIO_CODEC_CAP_DURATION_7_5 | BT_AUDIO_CODEC_CAP_DURATION_10)
 #define SUPPORTED_FREQ     BT_AUDIO_CODEC_CAP_FREQ_ANY
+#define SUPPORTED_FRAME_SIZE_MIN 30U
+#define SUPPORTED_FRAME_SIZE_MAX 155U
 #define SEM_TIMEOUT        K_SECONDS(5U)
-#define MAX_SDU            155U
-#define MIN_SDU            30U
 #define FRAMES_PER_SDU     2U
 
 static const struct bt_data ad[] = {
@@ -289,10 +289,10 @@ static int init_cap_acceptor(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
-		static const struct bt_audio_codec_cap lc3_codec_cap_sink =
-			BT_AUDIO_CODEC_CAP_LC3(SUPPORTED_FREQ, SUPPORTED_DURATION,
-					       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(2), MIN_SDU,
-					       MAX_SDU, FRAMES_PER_SDU, SINK_CONTEXT);
+		static const struct bt_audio_codec_cap lc3_codec_cap_sink = BT_AUDIO_CODEC_CAP_LC3(
+			SUPPORTED_FREQ, SUPPORTED_DURATION,
+			BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2), SUPPORTED_FRAME_SIZE_MIN,
+			SUPPORTED_FRAME_SIZE_MAX, FRAMES_PER_SDU, SINK_CONTEXT);
 		static struct bt_pacs_cap sink_cap = {
 			.codec_cap = &lc3_codec_cap_sink,
 		};
@@ -310,8 +310,9 @@ static int init_cap_acceptor(void)
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
 		static const struct bt_audio_codec_cap lc3_codec_cap_source =
 			BT_AUDIO_CODEC_CAP_LC3(SUPPORTED_FREQ, SUPPORTED_DURATION,
-					       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1), MIN_SDU,
-					       MAX_SDU, FRAMES_PER_SDU, SOURCE_CONTEXT);
+					       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1),
+					       CAP_ACCEPTOR_MIN_SDU, CAP_ACCEPTOR_MAX_SDU,
+					       FRAMES_PER_SDU, SOURCE_CONTEXT);
 		static struct bt_pacs_cap source_cap = {
 			.codec_cap = &lc3_codec_cap_source,
 		};

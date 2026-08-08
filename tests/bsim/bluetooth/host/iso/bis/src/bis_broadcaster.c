@@ -150,6 +150,9 @@ static void init(void)
 	iso_qos.tx->sdu =
 		MIN(local_features.iso_mtu - BT_HCI_ISO_SDU_HDR_SIZE, ARRAY_SIZE(mock_iso_data));
 
+	LOG_INF("local_features.iso_mtu %u (iso_qos.tx->sdu set to %u)", local_features.iso_mtu,
+		iso_qos.tx->sdu);
+
 	for (size_t i = 0U; i < ARRAY_SIZE(iso_chans); i++) {
 		iso_chans[i].ops = &iso_ops;
 		iso_chans[i].qos = &iso_qos;
@@ -314,7 +317,9 @@ static void test_main_fragment(void)
 	 */
 	new_sdu_size = iso_qos.tx->sdu * 3U;
 
-	if (new_sdu_size > BT_ISO_MAX_SDU) {
+	LOG_INF("new_sdu_size %u", new_sdu_size);
+
+	if (new_sdu_size > ISO_TX_SDU_SIZE) {
 		TEST_FAIL("Not possible to use SDU size of 0x%08X (default SDU is 0x%04X)",
 			  new_sdu_size, iso_qos.tx->sdu);
 		return;
