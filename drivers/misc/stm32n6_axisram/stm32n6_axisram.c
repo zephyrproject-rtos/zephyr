@@ -53,9 +53,9 @@ static int axisram_stm32_init(const struct device *dev)
 		.pclken_ramcfg = STM32_DT_INST_CLOCK_INFO_BY_NAME(idx, ramcfg),		\
 	};										\
 											\
-	DEVICE_DT_INST_DEFINE(idx, &axisram_stm32_init, NULL,				\
-			      NULL, &axisram_stm32_cfg_##idx,				\
-			      PRE_KERNEL_2, 0, NULL);
+	DEVICE_DT_INST_DEFINE_AUTO(idx, &axisram_stm32_init, NULL,			\
+				   NULL, &axisram_stm32_cfg_##idx,			\
+				   PRE_KERNEL, NULL);
 
 /**
  * On other series which have no RAMCFG, whether RAMs are enabled

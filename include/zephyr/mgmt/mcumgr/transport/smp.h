@@ -21,6 +21,20 @@ extern "C" {
  * @{
  */
 
+/**
+ * @brief Anchor left by the SMP transport core initialization.
+ *
+ * The SMP work queue is started at boot by an anchored init entry (see
+ * SYS_INIT_ANCHORED()). Transports, which hand received data to that work
+ * queue, order their own initialization after it by extending this key:
+ *
+ * @code{.c}
+ * #define SYS_ANCHOR_smp_uart SYS_ANCHOR_AFTER(SYS_ANCHOR_smp_transport, smp_uart)
+ * SYS_INIT_ANCHORED(smp_uart, smp_uart_init, APPLICATION);
+ * @endcode
+ */
+#define SYS_ANCHOR_smp_transport SYS_ANCHOR(smp_transport)
+
 struct smp_transport;
 struct zephyr_smp_transport;
 struct net_buf;

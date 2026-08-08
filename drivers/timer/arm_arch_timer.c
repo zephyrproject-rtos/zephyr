@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/arm_arch_timer.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -220,5 +221,9 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+/*
+ * The timer enables a PPI through the interrupt controller it hangs off (the
+ * timer node's interrupt-parent, i.e. the GIC), so order the init after that
+ * device via the timer node's devicetree ordinal.
+ */
+SYS_INIT_DEPENDS(sys_clock_driver_init, PRE_KERNEL, ARM_TIMER_NODE);

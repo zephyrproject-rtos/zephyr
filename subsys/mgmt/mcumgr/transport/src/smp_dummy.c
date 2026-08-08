@@ -739,4 +739,6 @@ bool smp_dummy_get_status(void)
 	return enable_dummy_smp;
 }
 
-SYS_INIT(smp_dummy_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+/* Run after the SMP work queue this transport feeds exists. */
+#define SYS_ANCHOR_smp_dummy SYS_ANCHOR_AFTER(SYS_ANCHOR_smp_transport, smp_dummy)
+SYS_INIT_ANCHORED(smp_dummy, smp_dummy_init, APPLICATION);

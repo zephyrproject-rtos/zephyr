@@ -39,10 +39,6 @@ config PTP_STACK_SIZE
 	  Set the PTP thread stack size in bytes. The PTP thread handles the
 	  PTP state machine. There is one PTP thread in the system.
 
-config PTP_INIT_PRIO
-	int "Startup priority for the PTP stack init"
-	default 96
-
 config PTP_SERVICE_THREAD_PRIO
 	int "Priority of the PTP service thread"
 	default NUM_PREEMPT_PRIORITIES

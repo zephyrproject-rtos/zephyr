@@ -1468,9 +1468,9 @@ static const struct espi_xec_config espi_xec_config = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, &espi_xec_init, NULL,
+DEVICE_DT_INST_DEFINE_AUTO(0, &espi_xec_init, NULL,
 		    &espi_xec_data, &espi_xec_config,
-		    PRE_KERNEL_2, CONFIG_ESPI_INIT_PRIORITY,
+		    PRE_KERNEL,
 		    &espi_xec_driver_api);
 
 static int espi_xec_init(const struct device *dev)

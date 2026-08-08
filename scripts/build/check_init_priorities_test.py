@@ -33,16 +33,16 @@ class TestPriority(unittest.TestCase):
         prios = [
             check_init_priorities.Priority("EARLY", 0),
             check_init_priorities.Priority("EARLY", 1),
-            check_init_priorities.Priority("PRE_KERNEL_1", 0),
-            check_init_priorities.Priority("PRE_KERNEL_1", 1),
+            check_init_priorities.Priority("PRE_KERNEL", 0),
+            check_init_priorities.Priority("PRE_KERNEL", 1),
             check_init_priorities.Priority("PRE_KERNEL_2", 0),
             check_init_priorities.Priority("PRE_KERNEL_2", 1),
             check_init_priorities.Priority("POST_KERNEL", 0),
             check_init_priorities.Priority("POST_KERNEL", 1),
             check_init_priorities.Priority("APPLICATION", 0),
             check_init_priorities.Priority("APPLICATION", 1),
-            check_init_priorities.Priority("SMP", 0),
-            check_init_priorities.Priority("SMP", 1),
+            check_init_priorities.Priority("PRE_MAIN", 0),
+            check_init_priorities.Priority("PRE_MAIN", 1),
         ]
 
         self.assertListEqual(prios, sorted(prios))
@@ -102,7 +102,7 @@ class testZephyrInitLevels(unittest.TestCase):
         s0.entry.st_value = 0x00
 
         s1 = mock.Mock()
-        s1.name = "__init_PRE_KERNEL_1_start"
+        s1.name = "__init_PRE_KERNEL_start"
         s1.entry.st_value = 0x11
 
         s2 = mock.Mock()
@@ -118,7 +118,7 @@ class testZephyrInitLevels(unittest.TestCase):
         s4.entry.st_value = 0x44
 
         s5 = mock.Mock()
-        s5.name = "__init_SMP_start"
+        s5.name = "__init_PRE_MAIN_start"
         s5.entry.st_value = 0x55
 
         s6 = mock.Mock()
@@ -135,11 +135,11 @@ class testZephyrInitLevels(unittest.TestCase):
             obj._init_level_addr,
             {
                 "EARLY": 0x00,
-                "PRE_KERNEL_1": 0x11,
+                "PRE_KERNEL": 0x11,
                 "PRE_KERNEL_2": 0x22,
                 "POST_KERNEL": 0x33,
                 "APPLICATION": 0x44,
-                "SMP": 0x55,
+                "PRE_MAIN": 0x55,
             },
         )
         self.assertEqual(obj._init_level_end, 0x66)
@@ -202,11 +202,11 @@ class testZephyrInitLevels(unittest.TestCase):
         obj = check_init_priorities.ZephyrInitLevels("", None)
         obj._init_level_addr = {
             "EARLY": 0x00,
-            "PRE_KERNEL_1": 0x00,
+            "PRE_KERNEL": 0x00,
             "PRE_KERNEL_2": 0x00,
             "POST_KERNEL": 0x08,
             "APPLICATION": 0x0C,
-            "SMP": 0x0C,
+            "PRE_MAIN": 0x0C,
         }
         obj._init_level_end = 0x0C
         obj._objects = {
@@ -240,11 +240,11 @@ class testZephyrInitLevels(unittest.TestCase):
             obj.initlevels,
             {
                 "EARLY": [],
-                "PRE_KERNEL_1": [],
+                "PRE_KERNEL": [],
                 "PRE_KERNEL_2": ["a: i0(__device_dts_ord_11)", "b: i1(__device_dts_ord_22)"],
                 "POST_KERNEL": ["c: name_8_0(name_8_1)"],
                 "APPLICATION": [],
-                "SMP": [],
+                "PRE_MAIN": [],
             },
         )
         self.assertDictEqual(
@@ -253,6 +253,41 @@ class testZephyrInitLevels(unittest.TestCase):
                 11: (check_init_priorities.Priority("PRE_KERNEL_2", 0), "i0"),
                 22: (check_init_priorities.Priority("PRE_KERNEL_2", 1), "i1"),
             },
+        )
+
+
+    @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
+    def test_load_anchor_records(self, mock_zilinit):
+        obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._elf = mock.Mock()
+
+        obj._elf.get_section_by_name.return_value = None
+        obj._load_anchor_records()
+        self.assertListEqual(obj.anchors, [])
+
+        section = mock.Mock()
+        section.data.return_value = b"PRE_KERNEL:alpha\x00POST_KERNEL:alpha~bravo\x00"
+        obj._elf.get_section_by_name.return_value = section
+        obj._load_anchor_records()
+        self.assertListEqual(
+            obj.anchors, [("PRE_KERNEL", "alpha"), ("POST_KERNEL", "alpha~bravo")]
+        )
+
+    @mock.patch("check_init_priorities.ZephyrInitLevels.__init__", return_value=None)
+    def test_load_depends_records(self, mock_zilinit):
+        obj = check_init_priorities.ZephyrInitLevels("", None)
+        obj._elf = mock.Mock()
+
+        obj._elf.get_section_by_name.return_value = None
+        obj._load_depends_records()
+        self.assertListEqual(obj.depends, [])
+
+        section = mock.Mock()
+        section.data.return_value = b"PRE_KERNEL:12:my_init\x00POST_KERNEL:34:other\x00"
+        obj._elf.get_section_by_name.return_value = section
+        obj._load_depends_records()
+        self.assertListEqual(
+            obj.depends, [("PRE_KERNEL", 12, "my_init"), ("POST_KERNEL", 34, "other")]
         )
 
 
@@ -445,6 +480,150 @@ class testValidator(unittest.TestCase):
                 mock.call(3, 3),
             ],
         )
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_anchors_ok(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.anchors = [
+            ("PRE_KERNEL", "alpha"),
+            ("PRE_KERNEL", "alpha~bravo"),
+            ("POST_KERNEL", "alpha~bravo~charlie"),
+        ]
+
+        validator.check_anchors()
+
+        self.assertFalse(validator.log.error.called)
+        self.assertEqual(validator.errors, 0)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_anchors_missing_dep(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.anchors = [
+            ("POST_KERNEL", "ghost~echo"),
+        ]
+
+        validator.check_anchors()
+
+        validator.log.error.assert_called_once_with(
+            "anchored init entry echo (POST_KERNEL) depends on ghost, which is not linked in"
+        )
+        self.assertEqual(validator.errors, 1)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_anchors_later_level_dep(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.anchors = [
+            ("POST_KERNEL", "delta"),
+            ("PRE_KERNEL", "delta~foxtrot"),
+        ]
+
+        validator.check_anchors()
+
+        validator.log.error.assert_called_once_with(
+            "anchored init entry foxtrot (PRE_KERNEL) runs before its "
+            "dependency delta (POST_KERNEL)"
+        )
+        self.assertEqual(validator.errors, 1)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_anchors_duplicate_name(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.anchors = [
+            ("PRE_KERNEL", "alpha"),
+            ("PRE_KERNEL", "bravo"),
+            ("PRE_KERNEL", "alpha~golf"),
+            ("PRE_KERNEL", "bravo~golf"),
+        ]
+
+        validator.check_anchors()
+
+        validator.log.error.assert_called_once_with(
+            "anchor name golf is used by more than one entry: alpha~golf and bravo~golf"
+        )
+        self.assertEqual(validator.errors, 1)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_depends_ok(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.depends = [("POST_KERNEL", 1, "my_init")]
+        validator._obj.devices = {1: (check_init_priorities.Priority("PRE_KERNEL", 50), "dev_init")}
+        validator._ord2node = {1: mock.Mock(path="/dev")}
+
+        validator.check_depends()
+
+        self.assertFalse(validator.log.error.called)
+        self.assertEqual(validator.errors, 0)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_depends_missing_device(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.depends = [("PRE_KERNEL", 7, "my_init")]
+        validator._obj.devices = {}
+        validator._ord2node = {7: mock.Mock(path="/nodev")}
+
+        validator.check_depends()
+
+        validator.log.error.assert_called_once_with(
+            "init entry my_init (PRE_KERNEL) is ordered after /nodev, "
+            "which has no device in this build"
+        )
+        self.assertEqual(validator.errors, 1)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_depends_later_level(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.depends = [("PRE_KERNEL", 2, "my_init")]
+        validator._obj.devices = {
+            2: (check_init_priorities.Priority("POST_KERNEL", 10), "dev_init")
+        }
+        validator._ord2node = {2: mock.Mock(path="/late")}
+
+        validator.check_depends()
+
+        validator.log.error.assert_called_once_with(
+            "init entry my_init (PRE_KERNEL) runs before /late <dev_init> "
+            "(POST_KERNEL+10), the device it is ordered after"
+        )
+        self.assertEqual(validator.errors, 1)
+
+    @mock.patch("check_init_priorities.Validator.__init__", return_value=None)
+    def test_check_anchors_duplicate_key(self, mock_vinit):
+        validator = check_init_priorities.Validator("", "", None, None)
+        validator.log = mock.Mock()
+        validator.errors = 0
+        validator._obj = mock.Mock()
+        validator._obj.anchors = [
+            ("PRE_KERNEL", "alpha"),
+            ("PRE_KERNEL", "alpha"),
+        ]
+
+        validator.check_anchors()
+
+        validator.log.error.assert_called_once_with(
+            "anchored init entry alpha (PRE_KERNEL:alpha) is defined more than once"
+        )
+        self.assertEqual(validator.errors, 1)
 
 
 if __name__ == "__main__":

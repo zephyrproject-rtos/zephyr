@@ -43,6 +43,36 @@ Kernel
 * ``_k_neg_eagain`` has been renamed to ``_errno_neg_egain`` as ``errno`` has been migrated out of
   kernel into ``lib/libc/common``.
 
+* The ``PRE_KERNEL_1`` and ``PRE_KERNEL_2`` initialization levels have been deprecated in favor of
+  a single ``PRE_KERNEL`` level. ``PRE_KERNEL_1`` is now an alias of ``PRE_KERNEL``: its entries
+  share the ``PRE_KERNEL`` level and are ordered together with its entries, by priority.
+  ``PRE_KERNEL_2`` entries keep running after all ``PRE_KERNEL`` (and ``PRE_KERNEL_1``) entries
+  while the level is phased out, so existing initialization ordering is unchanged. Replace
+  ``SYS_INIT(fn, PRE_KERNEL_1, prio)`` and ``DEVICE_DT_DEFINE(..., PRE_KERNEL_1, prio, ...)`` with
+  ``PRE_KERNEL``; migrate ``PRE_KERNEL_2`` users to ``PRE_KERNEL`` with a priority that orders the
+  entry after its dependencies. The linker symbol ``__init_PRE_KERNEL_1_start`` has been renamed
+  to ``__init_PRE_KERNEL_start``; tooling that inspects init sections by name must be updated.
+
+* The ``SMP`` initialization level has been renamed to ``PRE_MAIN``. Despite its name the level
+  was never specific to SMP: it is the last level of the boot sequence, run on the boot thread
+  once the static threads have been created and, on SMP systems, every secondary CPU has been
+  started, immediately before ``main()`` is entered. ``PRE_MAIN`` is available unconditionally,
+  whereas the ``SMP`` level only existed when :kconfig:option:`CONFIG_SMP` was enabled. Replace
+  ``SYS_INIT(my_fn, SMP, prio)`` with ``SYS_INIT(my_fn, PRE_MAIN, prio)``. ``SMP`` is kept as a
+  deprecated alias sharing the ``PRE_MAIN`` band, so existing registrations keep working and keep
+  their relative ordering. Note one behavior change: an entry registered at ``SMP`` in a non-SMP
+  build used to be linked but never run, and now runs before ``main()`` like any other
+  ``PRE_MAIN`` entry. The linker symbol ``__init_SMP_start`` has been renamed to
+  ``__init_PRE_MAIN_start``; tooling that inspects init sections by name must be updated.
+
+* The ``CONFIG_SMP_BOOT_DELAY`` Kconfig option has been removed. Deferring the start of secondary
+  CPUs to run time is now expressed per CPU in the devicetree: add the ``zephyr,deferred-start``
+  flag to the corresponding ``cpu`` node under ``/cpus`` (typically in a board overlay) and start
+  the CPU later with :c:func:`k_smp_cpu_start` or :c:func:`k_smp_cpu_resume`, as before. Unlike
+  the removed option, which skipped every secondary CPU, deferral can now be chosen for each CPU
+  individually. Note that the flag only takes effect on cpu nodes whose devicetree binding
+  includes ``cpu.yaml``; a node without such a binding cannot be deferred.
+
 * When :kconfig:option:`CONFIG_SCHED_CPU_MASK_PIN_ONLY` is enabled, calling
   :c:func:`k_thread_cpu_mask_clear`, :c:func:`k_thread_cpu_mask_enable_all`,
   or :c:func:`k_thread_cpu_mask_disable` now triggers an assertion instead of

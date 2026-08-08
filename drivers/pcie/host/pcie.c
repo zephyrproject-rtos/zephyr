@@ -553,12 +553,17 @@ static int pcie_init(void)
 
 /*
  * If a pcie controller is employed, pcie_scan() depends on it for working.
- * Thus, pcie must be bumped to the next level
+ * Thus, pcie must run after the controller.
+ *
+ * The controller is a generic device (many possible compatibles) with no
+ * single devicetree node this file can name, so there is nothing to
+ * SYS_INIT_DEPENDS() on. A dependency-free anchored entry runs after every
+ * numeric-priority and devicetree-ordered entry of the level, i.e. after
+ * whichever controller device is in the build.
  */
 #ifdef CONFIG_PCIE_CONTROLLER
-#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_2
+#define SYS_ANCHOR_pcie SYS_ANCHOR(pcie)
+SYS_INIT_ANCHORED(pcie, pcie_init, PRE_KERNEL);
 #else
-#define PCIE_SYS_INIT_LEVEL	PRE_KERNEL_1
+SYS_INIT(pcie_init, PRE_KERNEL, CONFIG_PCIE_INIT_PRIORITY);
 #endif
-
-SYS_INIT(pcie_init, PCIE_SYS_INIT_LEVEL, CONFIG_PCIE_INIT_PRIORITY);

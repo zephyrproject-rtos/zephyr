@@ -448,5 +448,11 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
-	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+/*
+ * Under SMP this timer reads the ARC-Connect global free-running counter
+ * that arch_smp_init() starts, so order the init after its anchor; without
+ * SMP there is no dependency and the entry stays at the end of the level.
+ */
+#define SYS_ANCHOR_sys_clock_driver                                            \
+	SYS_ANCHOR_AFTER_IF(CONFIG_SMP, SYS_ANCHOR_arch_smp_init, sys_clock_driver)
+SYS_INIT_ANCHORED(sys_clock_driver, sys_clock_driver_init, PRE_KERNEL);

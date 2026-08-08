@@ -13,6 +13,15 @@ properties:
       Standard device_type identifying this node as a cpu. Required to maintain compatibility
       with the IEEE 1275 standard as well as for DT_FOREACH_CPU family of devicetree macros to
       identify cpu nodes within the "/cpus" parent node
+
+  zephyr,deferred-start:
+    type: boolean
+    description: |
+      Do not start this CPU during kernel boot. By default, with CONFIG_SMP
+      the kernel starts every available CPU during start up. When this flag
+      is set the CPU is left un-started until architecture, SoC, board or
+      application code brings it up at run time with k_smp_cpu_start() (or
+      k_smp_cpu_resume()). The flag has no effect on the boot CPU.
   clock-frequency:
     type: int
     description: Clock frequency in Hz

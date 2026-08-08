@@ -185,13 +185,12 @@ static int gpio_davinci_init(const struct device *dev)
 										  \
 	static struct gpio_davinci_data gpio_davinci_##n##_data;		  \
 										  \
-	DEVICE_DT_INST_DEFINE(n,						  \
+	DEVICE_DT_INST_DEFINE_AUTO(n,						  \
 		gpio_davinci_init,						  \
 		NULL,								  \
 		&gpio_davinci_##n##_data,					  \
 		&gpio_davinci_##n##_config,					  \
-		PRE_KERNEL_2,							  \
-		CONFIG_GPIO_INIT_PRIORITY,					  \
+		PRE_KERNEL,							  \
 		&gpio_davinci_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DAVINCI_INIT)

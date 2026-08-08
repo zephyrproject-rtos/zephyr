@@ -934,8 +934,8 @@ static int can_renesas_rz_global_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_rz_canfd_global), can_renesas_rz_global_init,
-		 NULL, NULL, NULL, PRE_KERNEL_2, CONFIG_CAN_INIT_PRIORITY, NULL)
+DEVICE_DT_DEFINE_AUTO(DT_COMPAT_GET_ANY_STATUS_OKAY(renesas_rz_canfd_global),
+		      can_renesas_rz_global_init, NULL, NULL, NULL, PRE_KERNEL, NULL)
 
 #define CAN_RENESAS_RZ_CHANNEL_IRQ_INIT(index)                                                     \
 	{                                                                                          \
