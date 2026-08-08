@@ -78,13 +78,13 @@ extern "C" {
  * The value of 8 correspond to page 0 in the LE Controller supported features.
  * 24 bytes are required for all subsequent supported feature pages.
  */
-#define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE                         \
-	(BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE +                      \
-	 COND_CODE_1(CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE, \
-		(CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE      \
-			* BT_HCI_LE_BYTES_PER_FEATURE_PAGE),        \
-		(0U)))
-
+ #if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+ #define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE \
+	 (BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE + \
+	  (CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE * BT_HCI_LE_BYTES_PER_FEATURE_PAGE))
+ #else
+ #define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE
+ #endif
 /**
  * @struct bt_le_ext_adv
  * @brief Opaque type representing an advertiser.
