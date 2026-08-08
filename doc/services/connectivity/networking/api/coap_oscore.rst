@@ -1,7 +1,7 @@
 .. _coap_oscore_interface:
 
-OSCORE Support (RFC 8613)
-#########################
+OSCORE Support (:rfc:`8613`)
+############################
 
 .. contents::
     :local:
@@ -112,11 +112,11 @@ service.
 When a service is OSCORE-enabled (its context provider returns a context):
 
 1. **Incoming requests**: The server automatically verifies and decrypts OSCORE-protected
-   requests (RFC 8613 Section 8.2). Resource handlers receive decrypted CoAP messages
+   requests (:rfc:`8613` Section 8.2). Resource handlers receive decrypted CoAP messages
    with Inner options visible.
 
 2. **Outgoing responses**: The server automatically OSCORE-protects responses and
-   notifications that originate from an OSCORE exchange (RFC 8613 Section 8.3).
+   notifications that originate from an OSCORE exchange (:rfc:`8613` Section 8.3).
    Whether a given outgoing message must be protected is decided as follows:
 
    - **Synchronous responses**, produced while the request is being handled, are matched
@@ -134,7 +134,7 @@ When a service is OSCORE-enabled (its context provider returns a context):
       cache entry has expired will result in a plaintext response.
 
 3. **Error handling**: OSCORE verification errors are sent as simple CoAP responses
-    **without** OSCORE processing (RFC 8613 Section 8.2):
+    **without** OSCORE processing (:rfc:`8613` Section 8.2):
     - COSE decode failure → 4.02 Bad Option
     - Security context not found → 4.01 Unauthorized
     - Decryption failure → 4.00 Bad Request
@@ -160,19 +160,7 @@ Known Limitations
    contexts within a service. Each service can use only one OSCORE context at a time,
    so all clients share that context. This is sufficient for many use cases, but it
    does not allow separate contexts per client.
-2. **Context Reuse Across Reboots**: Only freshly derived security contexts are
-   supported, i.e. contexts created with ``fresh_master_secret_salt = true`` where the
-   Master Secret / Master Salt combination is unique at every boot (for example, derived
-   via EDHOC). Applications that cannot guarantee a fresh context at every boot
-   must not enable OSCORE for the time being.
-3. **Reboot Replay Recovery (Echo)**: The Echo-based freshness exchange for restored
-   contexts (RFC 8613 Appendix B.1.2, RFC 9175) is not implemented. When uoscore reports
-   the first request after a reboot, the server rejects it with 4.01 Unauthorized instead
-   of answering with an Echo challenge, so a client cannot automatically re-synchronize.
-   This is fail-closed meaning no unprotected or replayed request is accepted but a
-   reused or restored context cannot recover after a reboot without re-establishing the
-   context out of band.
-4. **Mixed-Service Expired-Exchange Plaintext**: On a mixed service (one that serves
+2. **Mixed-Service Expired-Exchange Plaintext**: On a mixed service (one that serves
    both OSCORE and non-OSCORE clients), a response whose exchange cache entry has
    expired can no longer be matched to its OSCORE state and is sent as plaintext. This
    affects both synchronous and deferred (separate) responses (see
@@ -185,7 +173,7 @@ Known Limitations
 Security Context Derivation
 ============================
 
-OSCORE security contexts are derived from a small set of parameters (RFC 8613 Section 3):
+OSCORE security contexts are derived from a small set of parameters (:rfc:`8613` Section 3):
 
 **Required parameters**:
 
@@ -214,21 +202,19 @@ Security Considerations
 2. **Master secret protection**: Master secrets must be stored securely (e.g., in
    secure storage or derived from EDHOC).
 
-3. **Replay window**: The uoscore library maintains a replay window to detect and reject
-   replayed requests. This does not protect against replays across reboots, so the SSN
-   must be persisted to non-volatile memory if the same master secret is reused after a
-   reboot.
-
-4. **Fresh master secrets**: If master secrets are not re-derived after reboot (e.g.,
-   using EDHOC), the sender sequence number must be persisted to non-volatile memory
-   to prevent reuse.
+3. **Persistence across reboots**: If the same master secret is reused after a reboot
+   (i.e., master secrets are not re-derived, e.g., via EDHOC), the sender sequence
+   number must be persisted to non-volatile memory to prevent nonce reuse, which would
+   break confidentiality and integrity. The receiver's replay window does not need to
+   be persisted: it is kept in memory and, after a reboot, is re-synchronized using the
+   Echo option as described in :rfc:`8613` Appendix B.1.2.
 
 Handling OSCORE When Not Supported
 -----------------------------------
 
 When OSCORE support is not enabled (:kconfig:option:`CONFIG_COAP_OSCORE` is not set),
 the Zephyr CoAP stack implements fail-closed behavior for the OSCORE option per
-RFC 7252 Section 5.4.1:
+:rfc:`7252` Section 5.4.1:
 
 **Server behavior** (when ``CONFIG_COAP_OSCORE=n``):
 

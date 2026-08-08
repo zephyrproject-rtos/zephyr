@@ -59,11 +59,13 @@ int coap_oscore_protect(uint8_t *coap_msg, uint32_t coap_msg_len, uint8_t *oscor
  * @param coap_msg_len On input: size of output buffer; on output: length of decrypted message
  * @param ctx OSCORE security context
  * @param error_code If verification fails, this is set to the appropriate CoAP error code
+ * @param needs_echo_challenge Optional; if non-NULL, set to true when the failure requires
+ *        an Echo challenge response for replay window synchronization (RFC 8613 Appendix B.1.2)
  * @return 0 on success, negative errno on error
  */
 int coap_oscore_verify(uint8_t *oscore_msg, uint32_t oscore_msg_len, uint8_t *coap_msg,
 		       uint32_t *coap_msg_len, struct coap_oscore_context *ctx,
-		       uint8_t *error_code);
+		       uint8_t *error_code, bool *needs_echo_challenge);
 
 /**
  * @brief Find OSCORE exchange entry

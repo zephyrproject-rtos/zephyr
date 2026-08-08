@@ -108,6 +108,21 @@ static uint8_t oscore_err_to_coap_code(enum err oscore_err)
 	}
 }
 
+/* RFC 8613 Appendix B.1.2: the recipient replay window is lost on reboot when the
+ * context is reused. These errors mean the server must answer with an Echo challenge
+ * to re-synchronize the replay window rather than a plain error response.
+ */
+static bool oscore_err_needs_echo_challenge(enum err oscore_err)
+{
+	switch (oscore_err) {
+	case first_request_after_reboot:
+	case echo_validation_failed:
+		return true;
+	default:
+		return false;
+	}
+}
+
 int coap_oscore_protect(uint8_t *coap_msg, uint32_t coap_msg_len, uint8_t *oscore_msg,
 			uint32_t *oscore_msg_len, struct coap_oscore_context *ctx)
 {
@@ -129,9 +144,14 @@ int coap_oscore_protect(uint8_t *coap_msg, uint32_t coap_msg_len, uint8_t *oscor
 }
 
 int coap_oscore_verify(uint8_t *oscore_msg, uint32_t oscore_msg_len, uint8_t *coap_msg,
-		       uint32_t *coap_msg_len, struct coap_oscore_context *ctx, uint8_t *error_code)
+		       uint32_t *coap_msg_len, struct coap_oscore_context *ctx, uint8_t *error_code,
+		       bool *needs_echo_challenge)
 {
 	enum err result;
+
+	if (needs_echo_challenge != NULL) {
+		*needs_echo_challenge = false;
+	}
 
 	if (oscore_msg == NULL || coap_msg == NULL || coap_msg_len == NULL || ctx == NULL) {
 		if (error_code != NULL) {
@@ -146,6 +166,9 @@ int coap_oscore_verify(uint8_t *oscore_msg, uint32_t oscore_msg_len, uint8_t *co
 		LOG_ERR("OSCORE verification failed: %d", result);
 		if (error_code != NULL) {
 			*error_code = oscore_err_to_coap_code(result);
+		}
+		if (needs_echo_challenge != NULL) {
+			*needs_echo_challenge = oscore_err_needs_echo_challenge(result);
 		}
 		return -EACCES;
 	}
@@ -185,11 +208,14 @@ int coap_oscore_context_init(struct coap_oscore_init_params *params,
 		return -EINVAL;
 	}
 
-	/* Currently session reuse is not supported */
+#if !defined(CONFIG_COAP_OSCORE_CONTEXT_REUSE)
+	/* If context reuse is not enabled, the master secret and salt must be unique at every boot.
+	 */
 	if (!params->fresh_master_secret_salt) {
-		LOG_ERR("Session reuse is not supported; fresh_master_secret_salt must be true");
+		LOG_ERR("Session reuse is not activated. fresh_master_secret_salt must be true");
 		return -ENOTSUP;
 	}
+#endif
 
 	/* Map the Zephyr parameters onto the uoscore initialization parameters.
 	 * uoscore keeps pointers to master_secret, master_salt, id_context and

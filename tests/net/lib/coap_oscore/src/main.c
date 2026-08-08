@@ -33,6 +33,9 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #define COAP_OSCORE_OPTION 9
 
 #if defined(CONFIG_COAP_OSCORE)
+
+#include "oscore/nvm.h"
+
 /*
  * Shared OSCORE test infrastructure.
  *
@@ -57,9 +60,9 @@ static const uint8_t oscore_deferred_payload[] = "deferred-response";
 static const uint8_t oscore_mixed_payload[] = "mixed-response";
 static const uint8_t oscore_secure_payload[] = "encrypted-response";
 
-static int oscore_make_ctx(const uint8_t *sender_id, size_t sender_id_len,
-			   const uint8_t *recipient_id, size_t recipient_id_len,
-			   struct coap_oscore_context **ctx)
+static int oscore_make_ctx_detailed(const uint8_t *sender_id, size_t sender_id_len,
+				    const uint8_t *recipient_id, size_t recipient_id_len,
+				    bool fresh, struct coap_oscore_context **ctx)
 {
 	struct coap_oscore_init_params params = {
 		.master_secret = oscore_master_secret,
@@ -72,10 +75,18 @@ static int oscore_make_ctx(const uint8_t *sender_id, size_t sender_id_len,
 		.master_salt_len = sizeof(oscore_master_salt),
 		.aead_alg = COAP_OSCORE_AEAD_AES_CCM_16_64_128,
 		.hkdf = COAP_OSCORE_HKDF_SHA_256,
-		.fresh_master_secret_salt = true,
+		.fresh_master_secret_salt = fresh,
 	};
 
 	return coap_oscore_context_init(&params, ctx);
+}
+
+static int oscore_make_ctx(const uint8_t *sender_id, size_t sender_id_len,
+			   const uint8_t *recipient_id, size_t recipient_id_len,
+			   struct coap_oscore_context **ctx)
+{
+	return oscore_make_ctx_detailed(sender_id, sender_id_len, recipient_id, recipient_id_len,
+					true, ctx);
 }
 
 static net_socklen_t oscore_addr_len(const struct net_sockaddr *addr)
@@ -194,7 +205,8 @@ static int oscore_recv_verify(int sock, int timeout_ms, struct coap_oscore_conte
 		return -ENOMSG;
 	}
 
-	ret = coap_oscore_verify(recv_buf, outer.offset, inner_buf, inner_len, ctx, &oscore_error);
+	ret = coap_oscore_verify(recv_buf, outer.offset, inner_buf, inner_len, ctx, &oscore_error,
+				 NULL);
 	if (ret < 0) {
 		return ret;
 	}
@@ -506,6 +518,14 @@ COAP_RESOURCE_DEFINE(oscore_separate_mixed_resource, oscore_mixed_service,
 			}
 );
 /* clang-format on */
+
+/*
+ * nvm_read_ssn()/nvm_write_ssn() are declared in oscore/nvm.h behind
+ * OSCORE_NVM_SUPPORT, which is only defined when building the uoscore library.
+ * Re-declare them here so the test can seed and inspect the persisted SSN.
+ */
+enum err nvm_write_ssn(const struct nvm_key_t *nvm_key, uint64_t ssn);
+enum err nvm_read_ssn(const struct nvm_key_t *nvm_key, uint64_t *ssn);
 
 /* Test OSCORE option number is correctly defined */
 ZTEST(coap_oscore, test_oscore_option_number)
@@ -1328,6 +1348,205 @@ ZTEST(coap_oscore, test_oscore_empty_ack_does_not_clear_exchange)
 					  sizeof(token));
 	zassert_not_null(entry, "tkl=0 removal must not clear the real (tkl>0) entry");
 }
+
+/*
+ * SSN is persisted to NVM so nvm state is updated.
+ */
+ZTEST(coap_oscore, test_oscore_ssn_persisted_to_nvm)
+{
+	uint8_t reqbuf[COAP_BUF_SIZE];
+	uint8_t innerbuf[COAP_BUF_SIZE];
+	uint32_t inner_len;
+	uint8_t token[] = {0xC1, 0xC2, 0xC3, 0xC4};
+	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
+	struct coap_oscore_context *client_ctx;
+	struct coap_packet req;
+	struct coap_packet inner;
+	int sock;
+	int ret;
+	struct nvm_key_t nvm_key = {
+		.sender_id = {.len = sizeof(oscore_client_id), .ptr = (uint8_t *)oscore_client_id},
+		.recipient_id = {.len = sizeof(oscore_server_id),
+				 .ptr = (uint8_t *)oscore_server_id},
+		.id_context = {.len = 0, .ptr = NULL},
+	};
+	uint64_t stored_ssn = 0;
+
+	/* Seed a prior SSN so the reused (non-fresh) context can initialize from NVM
+	 * and to make the stored value deterministic across runs.
+	 */
+	zassert_equal(nvm_write_ssn(&nvm_key, 0), ok, "Failed to seed SSN in NVM");
+
+	ret = oscore_make_ctx_detailed(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				       sizeof(oscore_server_id), false, &client_ctx);
+	zassert_ok(ret, "Client context init failed (%d)", ret);
+	ret = oscore_make_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+			      sizeof(oscore_client_id), &oscore_secure_service_ctx);
+	zassert_ok(ret, "Server context init failed (%d)", ret);
+
+	ret = coap_service_start(&oscore_secure_service);
+	zassert_ok(ret, "Failed to start service (%d)", ret);
+
+	sock = oscore_client_socket();
+	zassert_true(sock >= 0, "Failed to create socket (%d)", -errno);
+
+	/* Register the observation. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token, sizeof(token), 0x4001, "observe", 0);
+	zassert_ok(ret, "Failed to build observe request (%d)", ret);
+	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
+	zassert_ok(ret, "Failed to send observe request (%d)", ret);
+
+	/* Initial notification must be OSCORE-protected. */
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Initial notification verify/parse failed (%d)", ret);
+	zassert_true(coap_get_option_int(&inner, COAP_OPTION_OBSERVE) >= 0,
+		     "Initial notification must carry the Observe option");
+
+	/* Asynchronous notification must be OSCORE-protected. */
+	ret = coap_resource_notify(&oscore_observe_resource);
+	zassert_ok(ret, "coap_resource_notify failed (%d)", ret);
+
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Async notification verify/parse failed (%d)", ret);
+	zassert_true(coap_get_option_int(&inner, COAP_OPTION_OBSERVE) >= 0,
+		     "Async notification must carry the Observe option");
+
+	/* Deregister and drain the final response. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token, sizeof(token), 0x4002, "observe", 1);
+	zassert_ok(ret, "Failed to build deregister request (%d)", ret);
+	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
+	zassert_ok(ret, "Failed to send deregister request (%d)", ret);
+
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Deregister response verify/parse failed (%d)", ret);
+
+	/* No further notifications once the observation is gone. */
+	ret = coap_resource_notify(&oscore_observe_resource);
+	zassert_ok(ret, "coap_resource_notify after deregister failed (%d)", ret);
+	ret = oscore_recv(sock, SHORT_TIMEOUT, innerbuf, sizeof(innerbuf));
+	zassert_equal(ret, -ETIMEDOUT, "No notification expected after deregister (%d)", ret);
+
+	zassert_ok(zsock_close(sock), "Failed to close socket");
+	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
+	coap_oscore_context_free(client_ctx);
+	coap_oscore_context_free(oscore_secure_service_ctx);
+	oscore_secure_service_ctx = NULL;
+
+	zassert_equal(nvm_read_ssn(&nvm_key, &stored_ssn), ok, "Failed to read SSN from NVM");
+	LOG_INF("SSN after request: %" PRIu64, stored_ssn);
+	zassert_true(stored_ssn > 0, "Client SSN should be persisted and incremented");
+}
+
+/* RFC 8613 Appendix B.1.2: after a reboot with a reused context the server has lost its
+ * recipient replay window and must re-synchronize it with an Echo challenge before
+ * accepting requests again.
+ */
+ZTEST(coap_oscore, test_oscore_replay_window_echo_resync)
+{
+	uint8_t reqbuf[COAP_BUF_SIZE];
+	uint8_t innerbuf[COAP_BUF_SIZE];
+	uint32_t inner_len;
+	uint8_t token1[] = {0xD1, 0xD2, 0xD3, 0xD4};
+	uint8_t token2[] = {0xE1, 0xE2, 0xE3, 0xE4};
+	uint8_t echo_val[16];
+	uint16_t echo_len;
+	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
+	struct coap_oscore_context *client_ctx;
+	struct coap_packet req;
+	struct coap_packet inner;
+	struct coap_option echo_opt;
+	const uint8_t *payload;
+	uint16_t payload_len;
+	int sock;
+	int ret;
+	/* The non-fresh context here is the server, so seed under its key
+	 * (sender = server ID, recipient = client ID).
+	 */
+	struct nvm_key_t nvm_key = {
+		.sender_id = {.len = sizeof(oscore_server_id), .ptr = (uint8_t *)oscore_server_id},
+		.recipient_id = {.len = sizeof(oscore_client_id),
+				 .ptr = (uint8_t *)oscore_client_id},
+		.id_context = {.len = 0, .ptr = NULL},
+	};
+	uint64_t stored_ssn = 0;
+
+	/* Seed a prior SSN so the reused (non-fresh) context can initialize from NVM
+	 * and to make the stored value deterministic across runs.
+	 */
+	zassert_equal(nvm_write_ssn(&nvm_key, stored_ssn), ok, "Failed to seed SSN in NVM");
+
+	/* Fresh client, but a server whose reused context lost its replay window
+	 * (fresh_master_secret_salt = false => starts in the ECHO_REBOOT state).
+	 */
+	ret = oscore_make_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+			      sizeof(oscore_server_id), &client_ctx);
+	zassert_ok(ret, "Client context init failed (%d)", ret);
+	ret = oscore_make_ctx_detailed(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				       sizeof(oscore_client_id), false, &oscore_secure_service_ctx);
+	zassert_ok(ret, "Server context init failed (%d)", ret);
+
+	ret = coap_service_start(&oscore_secure_service);
+	zassert_ok(ret, "Failed to start service (%d)", ret);
+
+	sock = oscore_client_socket();
+	zassert_true(sock >= 0, "Failed to create socket (%d)", -errno);
+
+	/* First request after reboot: the server answers with a protected 4.01 carrying an
+	 * Echo option instead of the resource response.
+	 */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token1, sizeof(token1), 0x5001, "e2e", -1);
+	zassert_ok(ret, "Failed to build first request (%d)", ret);
+	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
+	zassert_ok(ret, "Failed to send first request (%d)", ret);
+
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Echo challenge verify/parse failed (%d)", ret);
+	zassert_equal(coap_header_get_code(&inner), COAP_RESPONSE_CODE_UNAUTHORIZED,
+		      "Echo challenge must be 4.01 Unauthorized, got %u",
+		      coap_header_get_code(&inner));
+
+	ret = coap_find_options(&inner, COAP_OPTION_ECHO, &echo_opt, 1);
+	zassert_equal(ret, 1, "Echo challenge must carry an Echo option (%d)", ret);
+	zassert_true(echo_opt.len > 0 && echo_opt.len <= sizeof(echo_val),
+		     "Unexpected Echo option length %u", echo_opt.len);
+	echo_len = echo_opt.len;
+	memcpy(echo_val, echo_opt.value, echo_len);
+
+	/* Resend the request echoing the challenge value back to prove freshness. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token2, sizeof(token2), 0x5002, "e2e", -1);
+	zassert_ok(ret, "Failed to build echo request (%d)", ret);
+	ret = coap_packet_append_option(&req, COAP_OPTION_ECHO, echo_val, echo_len);
+	zassert_ok(ret, "Failed to append Echo option (%d)", ret);
+	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
+	zassert_ok(ret, "Failed to send echo request (%d)", ret);
+
+	/* Replay window re-synchronized: the resource response is now delivered. */
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Resynchronized response verify/parse failed (%d)", ret);
+	zassert_equal(coap_header_get_code(&inner), COAP_RESPONSE_CODE_CONTENT,
+		      "Expected 2.05 Content after resync, got %u", coap_header_get_code(&inner));
+
+	payload = coap_packet_get_payload(&inner, &payload_len);
+	zassert_not_null(payload, "Missing decrypted payload");
+	zassert_equal(payload_len, sizeof(oscore_secure_payload) - 1, "Unexpected payload length");
+	zassert_mem_equal(payload, oscore_secure_payload, payload_len, "Unexpected payload");
+
+	zassert_ok(zsock_close(sock), "Failed to close socket");
+	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
+	coap_oscore_context_free(client_ctx);
+	coap_oscore_context_free(oscore_secure_service_ctx);
+	oscore_secure_service_ctx = NULL;
+}
+
 #else
 static uint16_t coap_service_port = 56839;
 static const uint8_t plain_payload[] = "encrypted-response";

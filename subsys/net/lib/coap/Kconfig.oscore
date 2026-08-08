@@ -6,6 +6,7 @@
 config COAP_OSCORE
 	bool "OSCORE support for CoAP (RFC 8613)"
 	depends on UOSCORE
+	depends on PSA_CRYPTO
 	help
 	  Enable Object Security for Constrained RESTful Environments (OSCORE)
 	  support for CoAP server. OSCORE provides end-to-end protection of
@@ -64,5 +65,23 @@ config COAP_OSCORE_EXCHANGE_LIFETIME_MS
 
 	  The default of 247 seconds matches the CoAP EXCHANGE_LIFETIME
 	  (RFC 7252 Section 4.8.2).
+
+config COAP_OSCORE_CONTEXT_REUSE
+	bool "OSCORE support for context reuse across reboots"
+	select UOSCORE_NVM_SUPPORT
+	help
+	  Enable support for reusing OSCORE security contexts across device
+	  reboots. When a context is reused, the sender sequence number (SSN)
+	  must be persisted to non-volatile memory to prevent AEAD nonce reuse,
+	  which is cryptographically catastrophic.
+
+	  The SSN is persisted automatically through the Zephyr settings
+	  subsystem (selected via UOSCORE_NVM_SUPPORT), so the application
+	  needs a working settings backend, e.g. a storage partition and its
+	  matching backend such as CONFIG_SETTINGS_NVS.
+
+	  Applications that cannot guarantee a fresh context at every boot
+	  (e.g., via EDHOC key derivation) require this option. All other
+	  deployments should leave this disabled.
 
 endif # COAP_OSCORE
