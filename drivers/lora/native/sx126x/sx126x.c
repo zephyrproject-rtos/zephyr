@@ -20,6 +20,9 @@ LOG_MODULE_REGISTER(sx126x, CONFIG_LORA_LOG_LEVEL);
 
 #define SX126X_SF56_MIN_PREAMBLE_LEN	12
 
+/* Safety bound for the internal CAD (LBT / CAD-before-RX); CAD self-terminates. */
+#define SX126X_CAD_INTERNAL_TIMEOUT	K_SECONDS(2)
+
 static int bandwidth_to_reg(enum lora_signal_bandwidth bw, uint8_t *reg)
 {
 	switch (bw) {
@@ -114,6 +117,65 @@ static bool should_enable_ldro(enum lora_datarate sf, enum lora_signal_bandwidth
 	uint32_t symbol_time_us = ((1 << sf) * 1000000UL) / bw_hz;
 
 	return symbol_time_us > 16380;
+}
+
+static uint8_t cad_symbol_num_to_idx(enum lora_cad_symbol_num symbol_num)
+{
+	switch (symbol_num) {
+	case LORA_CAD_SYMB_1:
+		return SX126X_CAD_SYMB_1;
+	case LORA_CAD_SYMB_2:
+		return SX126X_CAD_SYMB_2;
+	case LORA_CAD_SYMB_4:
+		return SX126X_CAD_SYMB_4;
+	case LORA_CAD_SYMB_8:
+		return SX126X_CAD_SYMB_8;
+	case LORA_CAD_SYMB_16:
+		return SX126X_CAD_SYMB_16;
+	default:
+		/* 0 (unset) or unknown -> driver default */
+		return SX126X_CAD_DEFAULT_SYMB;
+	}
+}
+
+/* Recommended detection peak per SF, narrow/wide BW columns (Semtech RAL). */
+static uint8_t cad_default_det_peak(enum lora_datarate sf,
+				    enum lora_signal_bandwidth bw,
+				    uint8_t symb_idx)
+{
+	static const uint8_t det_peak[2][SF_12 - SF_5 + 1] = {
+		/* BW < 500 kHz:  SF5  SF6  SF7  SF8  SF9 SF10 SF11 SF12 */
+		{		 20,  21,  22,  24,  24,  25,  27,  27 },
+		/* BW >= 500 kHz: SF5  SF6  SF7  SF8  SF9 SF10 SF11 SF12 */
+		{		 22,  23,  25,  26,  30,  31,  33,  35 },
+	};
+	uint8_t peak = det_peak[(bw >= BW_500_KHZ) ? 1 : 0][sf - SF_5];
+
+	/* More integration symbols allow a lower (more sensitive) peak. */
+	if (symb_idx == SX126X_CAD_SYMB_4) {
+		peak -= 1;
+	} else if (symb_idx >= SX126X_CAD_SYMB_8) {
+		peak -= 2;
+	}
+
+	return peak;
+}
+
+static void sx126x_compute_cad_params(const struct device *dev,
+				      uint8_t *symb_idx, uint8_t *det_peak,
+				      uint8_t *det_min)
+{
+	struct sx126x_data *data = dev->data;
+	const struct lora_modem_config *config = &data->config;
+
+	*symb_idx = cad_symbol_num_to_idx(config->cad.symbol_num);
+
+	*det_peak = config->cad.detection_peak ? config->cad.detection_peak :
+		cad_default_det_peak(config->datarate, config->bandwidth,
+				     *symb_idx);
+
+	*det_min = config->cad.detection_minimum ? config->cad.detection_minimum :
+		SX126X_CAD_DET_MIN_DEFAULT;
 }
 
 static int sx126x_validate_config(const struct lora_modem_config *config)
@@ -394,6 +456,26 @@ static int sx126x_set_rx(const struct device *dev, uint32_t timeout_ms)
 	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_RX, buf, 3);
 }
 
+static int sx126x_set_cad_params(const struct device *dev, uint8_t symb_num,
+				 uint8_t det_peak, uint8_t det_min,
+				 uint8_t exit_mode, uint32_t timeout)
+{
+	uint8_t buf[7];
+
+	buf[0] = symb_num;
+	buf[1] = det_peak;
+	buf[2] = det_min;
+	buf[3] = exit_mode;
+	sys_put_be24(timeout, &buf[4]);
+
+	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_CAD_PARAMS, buf, 7);
+}
+
+static int sx126x_set_cad(const struct device *dev)
+{
+	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_CAD, NULL, 0);
+}
+
 static int sx126x_get_rx_buffer_status(const struct device *dev,
 				       uint8_t *payload_len, uint8_t *offset)
 {
@@ -527,9 +609,10 @@ static int sx126x_chip_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Configure IRQs on DIO1: TX done, RX done, timeout */
+	/* Configure IRQs on DIO1: TX done, RX done, timeout, CAD done */
 	uint16_t irq_mask = SX126X_IRQ_TX_DONE | SX126X_IRQ_RX_DONE |
-			    SX126X_IRQ_RX_TX_TIMEOUT | SX126X_IRQ_CRC_ERR;
+			    SX126X_IRQ_RX_TX_TIMEOUT | SX126X_IRQ_CRC_ERR |
+			    SX126X_IRQ_CAD_DONE | SX126X_IRQ_CAD_ACTIVITY_DETECTED;
 	ret = sx126x_set_dio_irq_params(dev, irq_mask, irq_mask, 0, 0);
 	if (ret < 0) {
 		LOG_ERR("Set IRQ params failed: %d", ret);
@@ -804,6 +887,35 @@ static void sx126x_handle_irq_timeout(const struct device *dev)
 	}
 }
 
+static void sx126x_handle_irq_cad_done(const struct device *dev,
+				       uint16_t irq_status)
+{
+	struct sx126x_data *data = dev->data;
+	bool detected = (irq_status & SX126X_IRQ_CAD_ACTIVITY_DETECTED) != 0;
+	struct sx126x_cad_result result = {
+		.detected = detected,
+		.status = 0,
+	};
+
+	LOG_DBG("CAD done: %s", detected ? "activity" : "clear");
+
+	/* CAD self-terminates to STDBY_RC; return to rest (also resets state). */
+	sx126x_set_sleep(dev);
+
+	if (data->cad_cb != NULL) {
+		/* Async: clear cb before invoking so it may start a new op. */
+		lora_cad_cb cb = data->cad_cb;
+		void *user_data = data->cad_cb_user_data;
+
+		data->cad_cb = NULL;
+		data->cad_cb_user_data = NULL;
+		cb(dev, detected, user_data);
+		return;
+	}
+
+	k_msgq_put(&data->cad_msgq, &result, K_NO_WAIT);
+}
+
 static void sx126x_irq_work_handler(struct k_work *work)
 {
 	struct sx126x_data *data = CONTAINER_OF(work, struct sx126x_data, irq_work);
@@ -832,6 +944,10 @@ static void sx126x_irq_work_handler(struct k_work *work)
 
 	if (irq_status & SX126X_IRQ_RX_TX_TIMEOUT) {
 		sx126x_handle_irq_timeout(dev);
+	}
+
+	if (irq_status & SX126X_IRQ_CAD_DONE) {
+		sx126x_handle_irq_cad_done(dev, irq_status);
 	}
 
 	/* Re-enable the DIO1 interrupt for the next event (unless sleeping) */
@@ -938,6 +1054,107 @@ out:
 	return ret;
 }
 
+static int sx126x_cad_start(const struct device *dev, lora_cad_cb cb,
+			    void *user_data)
+{
+	struct sx126x_data *data = dev->data;
+	uint8_t symb_idx, det_peak, det_min;
+	int ret;
+
+	if (!data->config_valid) {
+		LOG_ERR("Not configured");
+		return -EINVAL;
+	}
+
+	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_CAD)) {
+		LOG_ERR("Busy");
+		return -EBUSY;
+	}
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+
+	ret = sx126x_ensure_ready(dev);
+	if (ret < 0) {
+		k_mutex_unlock(&data->lock);
+		atomic_set(&data->state, SX126X_REST_STATE);
+		return ret;
+	}
+
+	data->cad_cb = cb;
+	data->cad_cb_user_data = user_data;
+	k_msgq_purge(&data->cad_msgq);
+
+	sx126x_compute_cad_params(dev, &symb_idx, &det_peak, &det_min);
+
+	ret = sx126x_set_cad_params(dev, symb_idx, det_peak, det_min,
+				    SX126X_CAD_EXIT_ONLY, 0);
+	if (ret < 0) {
+		goto out_error;
+	}
+
+	sx126x_set_rf_path(dev, true, false);
+
+	ret = sx126x_set_cad(dev);
+	if (ret < 0) {
+		goto out_error;
+	}
+
+	k_mutex_unlock(&data->lock);
+	return 0;
+
+out_error:
+	data->cad_cb = NULL;
+	data->cad_cb_user_data = NULL;
+	sx126x_set_sleep(dev);
+	k_mutex_unlock(&data->lock);
+	return ret;
+}
+
+static int sx126x_lora_cad(const struct device *dev, k_timeout_t timeout)
+{
+	struct sx126x_data *data = dev->data;
+	struct sx126x_cad_result result;
+	int ret;
+
+	ret = sx126x_cad_start(dev, NULL, NULL);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* IRQ handler returns the radio to rest on completion. */
+	ret = k_msgq_get(&data->cad_msgq, &result, timeout);
+	if (ret < 0) {
+		LOG_DBG("CAD timeout");
+		sx126x_set_standby(dev, SX126X_STANDBY_RC);
+		sx126x_set_sleep(dev);
+		return -ETIMEDOUT;
+	}
+
+	return result.detected ? 1 : 0;
+}
+
+static int sx126x_lora_cad_async(const struct device *dev, lora_cad_cb cb,
+				 void *user_data)
+{
+	struct sx126x_data *data = dev->data;
+
+	if (cb == NULL) {
+		/* Cancel a pending CAD. */
+		k_mutex_lock(&data->lock, K_FOREVER);
+		data->cad_cb = NULL;
+		data->cad_cb_user_data = NULL;
+		if (atomic_cas(&data->state, SX126X_STATE_CAD,
+			       SX126X_STATE_IDLE)) {
+			sx126x_set_standby(dev, SX126X_STANDBY_RC);
+			sx126x_set_sleep(dev);
+		}
+		k_mutex_unlock(&data->lock);
+		return 0;
+	}
+
+	return sx126x_cad_start(dev, cb, user_data);
+}
+
 static int sx126x_lora_send_async(const struct device *dev,
 				  uint8_t *data_buf, uint32_t data_len,
 				  struct k_poll_signal *async)
@@ -953,6 +1170,18 @@ static int sx126x_lora_send_async(const struct device *dev,
 	if (data_len > SX126X_MAX_PAYLOAD_LEN) {
 		LOG_ERR("Payload too long: %u", data_len);
 		return -EINVAL;
+	}
+
+	/* Listen Before Talk: refuse to transmit if the channel is busy. */
+	if (data->config.cad.mode == LORA_CAD_MODE_LBT) {
+		ret = sx126x_lora_cad(dev, SX126X_CAD_INTERNAL_TIMEOUT);
+		if (ret < 0) {
+			return ret;
+		}
+		if (ret == 1) {
+			LOG_DBG("LBT: channel busy");
+			return -EBUSY;
+		}
 	}
 
 	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_TX)) {
@@ -1052,6 +1281,18 @@ static int sx126x_lora_recv(const struct device *dev, uint8_t *data_buf,
 	if (!data->config_valid) {
 		LOG_ERR("Not configured");
 		return -EINVAL;
+	}
+
+	/* CAD before receive: return immediately if the channel is idle. */
+	if (data->config.cad.mode == LORA_CAD_MODE_RX) {
+		ret = sx126x_lora_cad(dev, SX126X_CAD_INTERNAL_TIMEOUT);
+		if (ret < 0) {
+			return ret;
+		}
+		if (ret == 0) {
+			LOG_DBG("CAD: channel idle, skipping RX");
+			return 0;
+		}
 	}
 
 	if (!atomic_cas(&data->state, SX126X_REST_STATE, SX126X_STATE_RX)) {
@@ -1515,6 +1756,8 @@ static DEVICE_API(lora, sx126x_lora_api) = {
 	.send_async = sx126x_lora_send_async,
 	.recv = sx126x_lora_recv,
 	.recv_async = sx126x_lora_recv_async,
+	.cad = sx126x_lora_cad,
+	.cad_async = sx126x_lora_cad_async,
 	.recv_duty_cycle = sx126x_lora_recv_duty_cycle,
 	.recv_duty_cycle_async = sx126x_lora_recv_duty_cycle_async,
 	.airtime = sx126x_lora_airtime,
@@ -1548,6 +1791,8 @@ static int sx126x_init(const struct device *dev)
 		    sizeof(struct sx126x_tx_result), 1);
 	k_msgq_init(&data->rx_msgq, (char *)&data->rx_result,
 		    sizeof(struct sx126x_rx_result), 1);
+	k_msgq_init(&data->cad_msgq, (char *)&data->cad_result,
+		    sizeof(struct sx126x_cad_result), 1);
 	k_work_init(&data->irq_work, sx126x_irq_work_handler);
 	data->dev = dev;
 	atomic_set(&data->state, SX126X_STATE_IDLE);

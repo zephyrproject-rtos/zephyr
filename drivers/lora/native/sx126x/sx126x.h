@@ -19,6 +19,7 @@ enum sx126x_state {
 	SX126X_STATE_TX,
 	SX126X_STATE_RX,
 	SX126X_STATE_RX_DUTY_CYCLE,
+	SX126X_STATE_CAD,
 };
 
 struct sx126x_tx_result {
@@ -29,6 +30,11 @@ struct sx126x_rx_result {
 	int16_t rssi;
 	int8_t snr;
 	uint8_t len;
+	int status;
+};
+
+struct sx126x_cad_result {
+	bool detected;
 	int status;
 };
 
@@ -50,6 +56,14 @@ struct sx126x_data {
 	/* RX completion via message queue */
 	struct k_msgq rx_msgq;
 	struct sx126x_rx_result rx_result;
+
+	/* CAD completion via message queue (blocking CAD/LBT/RX-gate) */
+	struct k_msgq cad_msgq;
+	struct sx126x_cad_result cad_result;
+
+	/* Async CAD callback */
+	lora_cad_cb cad_cb;
+	void *cad_cb_user_data;
 
 	/* RX data buffer (shared between IRQ handler and recv) */
 	uint8_t rx_buf[SX126X_MAX_PAYLOAD_LEN];
