@@ -122,6 +122,23 @@ resetwait:
 	/* Mask all exceptions */
 	msr	DAIFSet, #0xf
 
+#ifdef CONFIG_ARM64_SAVE_BOOT_FDT
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+	/*
+	 * Only the boot CPU receives the boot FDT pointer in x0. Secondary CPUs
+	 * may receive a different startup context in x0, so identify CPU0
+	 * before treating x0 as an FDT address.
+	 */
+	get_cpu_logic_id	x1, x2, x3, x4	/* x2: logic id */
+	cbnz	x2, .Lskip_boot_fdt
+#endif
+	ldr	x1, =z_arm64_boot_fdt_addr
+	str	x0, [x1]
+#if CONFIG_MP_MAX_NUM_CPUS > 1
+.Lskip_boot_fdt:
+#endif
+#endif /* CONFIG_ARM64_SAVE_BOOT_FDT */
+
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 
 	/*
