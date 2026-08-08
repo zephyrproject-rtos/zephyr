@@ -23,6 +23,7 @@ examples:
       clock-names = "clksrc1";
       clk-source = <1>;
       number-of-mb = <64>;
+      timing-registers = "cbt";
       pinctrl-0 = <&pinmux_flexcan3>;
       pinctrl-names = "default";
 

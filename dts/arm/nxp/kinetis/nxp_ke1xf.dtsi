@@ -419,6 +419,7 @@
 			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
 			number-of-mb = <16>;
+			timing-registers = "cbt";
 			status = "disabled";
 		};
 
@@ -431,6 +432,7 @@
 			clock-names = "clksrc0", "clksrc1";
 			clk-source = <1>;
 			number-of-mb = <16>;
+			timing-registers = "cbt";
 			status = "disabled";
 		};
 
