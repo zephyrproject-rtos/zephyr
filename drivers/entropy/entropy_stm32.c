@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stddef.h>
+#include <stdbool.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
@@ -121,7 +122,7 @@ static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
 	.rng = (RNG_TypeDef *)DT_INST_REG_ADDR(0),
 };
 
-static int entropy_stm32_suspend(void)
+static int entropy_stm32_suspend(bool pm_caller)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
@@ -143,33 +144,34 @@ static int entropy_stm32_suspend(void)
 	LL_RNG_SetAesReset(rng, 1);
 #endif /* CONFIG_SOC_STM32WB09XX */
 
-/*
- * The PKA IP is currently not supported by Zephyr but may be used by
- * external code, such as wireless stack for example. Since the RNG
- * clock must be enabled when PKA is used on certain series, check if
- * the PKA is in use and keep RNG clock active if so.
- *
- * A notable exception is the STM32WB0 series where PKA can operate
- * autonomously and, on certain SoCs, lacks PKA_CR.EN and corresponding
- * LL_PKA_IsEnabled(). Since RNG clock is not required by PKA, we can
- * ignore the check on this series.
- */
-#if defined(PKA) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
-#if defined(CONFIG_STM32_HAL2)
-	uint32_t pka_clock_enabled = HAL_RCC_PKA_IsEnabledClock();
-#else /* CONFIG_STM32_HAL2 */
-	uint32_t pka_clock_enabled = __HAL_RCC_PKA_IS_CLK_ENABLED();
-#endif /* CONFIG_STM32_HAL2 */
+	/* While the entropy driver is the primary user of the RNG
+	 * peripheral, it is possible that other drivers may also use
+	 * it as a pre-requisite for their own operations, such as the
+	 * PKA or SAES on some STM32 series.
+	 *
+	 * Such drivers, either in Zephyr or in external code, may
+	 * request the activation of the RNG peripheral to ensure it
+	 * is up-and-clocked when they need it, and release it when
+	 * they are done.
+	 */
 
-	if (pka_clock_enabled && LL_PKA_IsEnabled(PKA)) {
+	if (!pm_caller) {
+		/* entropy_stm32_suspend() is not called from the PM callback,
+		 * so we should not release the RNG peripheral if it is still
+		 * needed by other drivers.
+		 */
+
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 		z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
-		/* PKA needs RNG clock, so exit here if in use */
+		/* Some other HW IPs need RNG to be clocked, so exit here. */
 		return 0;
 	}
-#endif /* PKA && !CONFIG_SOC_SERIES_STM32WB0X */
+
+	/* Called from the PM callback, so we can safely release the RNG
+	 * peripheral.
+	 */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
@@ -196,16 +198,23 @@ static int entropy_stm32_suspend(void)
 	return res;
 }
 
-static int entropy_stm32_resume(void)
+static int entropy_stm32_resume(bool pm_caller)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_data->rng;
-	int res;
+	int res = 0;
 
-	res = clock_control_on(dev_data->clock,
-			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+	if (pm_caller) {
+		/* entropy_stm32_resume() is called from the PM callback,
+		 * so we should enable the RNG peripheral as it may still be
+		 * needed by other drivers.
+		 */
+		res = clock_control_on(dev_data->clock,
+				(clock_control_subsys_t)&dev_cfg->pclken[0]);
+	}
+
 #if defined(CONFIG_SOC_STM32WB09XX)
 	/**
 	 * STM32WB09 RNG clock domain runs at (16 MHz / CLKDIV).
@@ -293,7 +302,7 @@ static void acquire_rng(void)
 	z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
-	entropy_stm32_resume();
+	entropy_stm32_resume(false);
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	/* RNG configuration could have been changed by the other core */
@@ -301,9 +310,9 @@ static void acquire_rng(void)
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 }
 
-static void release_rng(void)
+static void release_rng(bool pm_caller)
 {
-	entropy_stm32_suspend();
+	entropy_stm32_suspend(pm_caller);
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
@@ -694,7 +703,7 @@ static int perform_pool_refill(void)
 #if !IRQLESS_TRNG
 				irq_disable(IRQN);
 #endif /* !IRQLESS_TRNG */
-				release_rng();
+				release_rng(false);
 				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
 					PM_ALL_SUBSTATES);
 				if (IS_ENABLED(CONFIG_PM_S2RAM)) {
@@ -838,7 +847,7 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 
 		/* Restore the state of the RNG lock and IRQ */
 		if (!rng_already_acquired) {
-			release_rng();
+			release_rng(false);
 		}
 
 #if IRQLESS_TRNG
@@ -959,12 +968,12 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 		z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
 	/* Call release_rng instead of entropy_stm32_suspend to avoid double hsem_unlock */
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
-		release_rng();
+		release_rng(true);
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
-			entropy_stm32_resume();
+			entropy_stm32_resume(true);
 #if DT_INST_NODE_HAS_PROP(0, health_test_magic)
 			LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health_test_magic));
 #endif /* health_test_magic */
@@ -981,13 +990,13 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 				 * to avoid double hsem_unlock
 				 */
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
-				release_rng();
+				release_rng(true);
 			}
 #endif /* health_test_config */
 		} else {
 			/* Resume RNG only if it was suspended during filling pool */
 			if (entropy_stm32_rng_data.filling_pools) {
-				res = entropy_stm32_resume();
+				res = entropy_stm32_resume(true);
 			}
 		}
 		break;
