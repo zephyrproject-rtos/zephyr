@@ -19,4 +19,6 @@ config CAN_TRANSCEIVER_GPIO
 	help
 	  Enable support for GPIO controlled CAN transceivers.
 
+source "drivers/can/transceiver/Kconfig.tle927x"
+
 endmenu
