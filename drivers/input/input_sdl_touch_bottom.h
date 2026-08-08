@@ -26,8 +26,13 @@ struct sdl_input_data {
 	void (*callback)(struct sdl_input_data *data);
 	int x;
 	int y;
+	int wheel;
 	bool pressed;
 	bool just_released;
+	bool middle;
+	bool middle_pending;
+	bool right;
+	bool right_pending;
 };
 
 void sdl_input_init_bottom(struct sdl_input_data *data);

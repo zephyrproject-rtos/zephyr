@@ -21,6 +21,8 @@ static bool event_targets_display(SDL_Event *event, struct sdl_input_data *data)
 		window = SDL_GetWindowFromID(event->button.windowID);
 	} else if (event->type == SDL_MOUSEMOTION) {
 		window = SDL_GetWindowFromID(event->motion.windowID);
+	} else if (event->type == SDL_MOUSEWHEEL) {
+		window = SDL_GetWindowFromID(event->wheel.windowID);
 	} else {
 		return false;
 	}
@@ -44,16 +46,38 @@ static int sdl_filter(void *arg, SDL_Event *event)
 	}
 
 	switch (event->type) {
-	case SDL_MOUSEBUTTONUP:
-		data->pressed = false;
-		data->just_released = true;
-		break;
 	case SDL_MOUSEBUTTONDOWN:
-		data->pressed = true;
+	case SDL_MOUSEBUTTONUP: {
+		bool down = (event->type == SDL_MOUSEBUTTONDOWN);
+
+		switch (event->button.button) {
+		case SDL_BUTTON_LEFT:
+			/* The left button emulates a touch/press. */
+			data->pressed = down;
+			if (!down) {
+				data->just_released = true;
+			}
+			break;
+		case SDL_BUTTON_MIDDLE:
+			data->middle = down;
+			data->middle_pending = true;
+			break;
+		case SDL_BUTTON_RIGHT:
+			data->right = down;
+			data->right_pending = true;
+			break;
+		default:
+			/* Ignore additional buttons (e.g. X1/X2). */
+			return 1;
+		}
 		break;
+	}
 	case SDL_MOUSEMOTION:
 		data->x = event->button.x;
 		data->y = event->button.y;
+		break;
+	case SDL_MOUSEWHEEL:
+		data->wheel = event->wheel.y;
 		break;
 	default:
 		return 1;
