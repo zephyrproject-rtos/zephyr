@@ -41,7 +41,7 @@ Setup
    uart:~$ ccp_call_control_server init
    Registered GTBS bearer
    Registered bearer[1]
-   uart:~$ bt connect xx:xx:xx:xx:xx:xx public
+   uart:~$ bt connect P:xx:xx:xx:xx:xx:xx
 
 Setting and getting the bearer name
 -----------------------------------
