@@ -6,6 +6,7 @@
 /**
  * @file stepper_tmcm3216.h
  * @brief Public API for ADI TMCM-3216 stepper motor controller
+ * @ingroup stepper_interface_ext
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_TMCM3216_H_
