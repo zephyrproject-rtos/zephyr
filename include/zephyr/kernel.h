@@ -4133,7 +4133,7 @@ static inline bool k_work_is_pending(const struct k_work *work);
  * * @p queue is draining; or
  * * @p queue is plugged.
  * @retval -EINVAL if @p queue is null and the work item has never been run.
- * @retval -ENODEV if @p queue has not been started.
+ * @retval -ENODEV if @p queue has not been initialized.
  */
 int k_work_submit_to_queue(struct k_work_q *queue,
 			   struct k_work *work);
@@ -4657,6 +4657,8 @@ enum {
 	K_WORK_QUEUE_PLUGGED = BIT(K_WORK_QUEUE_PLUGGED_BIT),
 	K_WORK_QUEUE_STOP_BIT = 4,
 	K_WORK_QUEUE_STOP = BIT(K_WORK_QUEUE_STOP_BIT),
+	K_WORK_QUEUE_INITIALIZED_BIT = 5,
+	K_WORK_QUEUE_INITIALIZED = BIT(K_WORK_QUEUE_INITIALIZED_BIT),
 
 	/* Static work queue flags */
 	K_WORK_QUEUE_NO_YIELD_BIT = 8,
