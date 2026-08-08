@@ -1,0 +1,42 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# Copyright (c) 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Common properties shared by Zephyr IPC service backends.
+
+include: base.yaml
+
+properties:
+  role:
+    description: IPC instance role (host is the master side, remote is the slave side)
+    required: true
+    type: string
+    enum:
+      - host
+      - remote
+
+  memory-region:
+    description: phandle to the shared memory region used by this IPC instance
+    required: true
+    type: phandle
+
+  zephyr,priority:
+    type: array
+    description: |
+      Work-queue priority for the instance RX thread. This is an array of
+      [priority-level, priority-type] where priority-type is PRIO_COOP for
+      cooperative or PRIO_PREEMPT for preemptive scheduling.
+
+      Examples:
+        zephyr,priority = <1 PRIO_COOP>;    /* K_PRIO_COOP(1)    */
+        zephyr,priority = <2 PRIO_PREEMPT>; /* K_PRIO_PREEMPT(2) */
+
+      When this property is missing a default priority of <0 PRIO_PREEMPT> is
+      assumed.
+
+  zephyr,buffer-size:
+    type: int
+    description: |
+      Size of the buffer used to send data between host and remote. This
+      property must be the same for host and remote. Preferably a multiple
+      of the cache line size.
