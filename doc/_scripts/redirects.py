@@ -14,6 +14,7 @@ Notes:
 
 REDIRECTS = (
     # zephyr-keep-sorted-start
+    ('boards/aesc/elemrv/doc/index', 'boards/aesc/elemrv_flask/doc/index'),
     ('boards/arm/fvp_baser_aemv8r/doc/aarch32', 'boards/arm/fvp_baser_aemv8r/doc/index'),
     ('boards/arm/fvp_baser_aemv8r/doc/aarch64', 'boards/arm/fvp_baser_aemv8r/doc/index'),
     ('boards/arm/fvp_baser_aemv8r/doc/debug-with-arm-ds', 'boards/arm/fvp_baser_aemv8r/doc/index'),

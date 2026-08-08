@@ -85,3 +85,6 @@ set(bl54l15u_dvk/nrf54l15/cpuapp_DEPRECATED
 set(bl54l15u_dvk/nrf54l15/cpuflpr_DEPRECATED
     bl54l15_dvk/nrf54l15/cpuflpr
 )
+set(elemrv/elemrv_n_DEPRECATED
+    elemrv_flask/elemrv_n
+)

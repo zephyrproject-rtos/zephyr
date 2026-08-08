@@ -1,4 +1,7 @@
-.. zephyr:board:: elemrv
+.. _elemrv_flask_elemrv_n:
+
+ElemRV-N (Nitrogen)
+###################
 
 Overview
 ********
@@ -7,15 +10,11 @@ ElemRV-N is an end-to-end open-source RISC-V microcontroller designed using Spin
 
 Version 0.2 of ElemRV-N was successfully fabricated using `IHP's Open PDK`_, a 130nm open semiconductor process, with support from `FMD-QNC`_.
 
-For more details, refer to the official `GitHub Project`_.
-
 .. note::
    The currently supported silicon version is ElemRV-N 0.2.
 
 Supported Features
 ******************
-
-.. zephyr:board-supported-hw::
 
 System Clock
 ============
@@ -58,7 +57,7 @@ By default, ``uart0`` operates at a baud rate of ``115200``, which can be adjust
 To evaluate the UART interface, build and run the following sample:
 
 .. zephyr-app-commands::
-   :board: elemrv/elemrv_n
+   :board: elemrv_flask/elemrv_n
    :zephyr-app: samples/hello_world
    :goals: build
 
@@ -74,12 +73,9 @@ setting the direction of data flow.
 The Blinky sample provides a simple way to explore how a GPIO can be used to control an external LED.
 
 .. zephyr-app-commands::
-   :board: elemrv/elemrv_n
+   :board: elemrv_flask/elemrv_n
    :zephyr-app: samples/basic/blinky
    :goals: build
-
-.. _GitHub Project:
-   https://github.com/aesc-silicon/elemrv
 
 .. _IHP's Open PDK:
    https://github.com/IHP-GmbH/IHP-Open-PDK
