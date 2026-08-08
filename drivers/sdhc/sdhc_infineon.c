@@ -42,7 +42,7 @@
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/cache.h>
-#include "sdhc_helpers.h"
+#include "sdhc_priv.h"
 
 #include "cy_sd_host.h"
 #include "cy_sysclk.h"

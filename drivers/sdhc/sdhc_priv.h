@@ -1,11 +1,42 @@
 /*
  * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
- *
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_SDHC_SDHC_HELPERS_H_
-#define ZEPHYR_DRIVERS_SDHC_SDHC_HELPERS_H_
+#ifndef ZEPHYR_DRIVERS_SDHC_SDHC_PRIV_H_
+#define ZEPHYR_DRIVERS_SDHC_SDHC_PRIV_H_
+
+#include <zephyr/drivers/sdhc.h>
+
+struct sdhc_config {
+	uint32_t max_current_330;
+	uint32_t max_current_300;
+	uint32_t max_current_180;
+	uint32_t min_bus_freq;
+	uint32_t max_bus_freq;
+	uint32_t power_delay_ms;
+	bool mmc_hs200_1_8v;
+	bool mmc_hs400_1_8v;
+	bool mmc_hs400_enhanced_strobe;
+};
+
+struct sdhc_drv_data {
+	struct sdhc_host_props props;
+};
+
+#define SDHC_CONFIG_DT_INST_INIT(n) \
+	{ \
+		.max_current_330 = DT_INST_PROP(n, max_current_330),                     \
+		.max_current_300 = DT_INST_PROP(n, max_current_300),                     \
+		.max_current_180 = DT_INST_PROP(n, max_current_180),                     \
+		.min_bus_freq = DT_INST_PROP(n, min_bus_freq),                           \
+		.max_bus_freq = DT_INST_PROP(n, max_bus_freq),                           \
+		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                       \
+		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                       \
+		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                       \
+		.mmc_hs400_enhanced_strobe = DT_INST_PROP(n, mmc_hs400_enhanced_strobe), \
+	}
 
 /**
  * @brief Convert enum sd_voltage to a human-readable string
@@ -58,4 +89,6 @@ static inline const char *sdhc_timing_mode_str(enum sdhc_timing_mode timing)
 	}
 }
 
-#endif /* ZEPHYR_DRIVERS_SDHC_SDHC_HELPERS_H_ */
+int sdhc_host_props_init(struct sdhc_host_props *props, const struct sdhc_config *cfg);
+
+#endif /* ZEPHYR_DRIVERS_SDHC_SDHC_PRIV_H_ */

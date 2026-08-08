@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2022, 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,15 +8,15 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/sdhc.h>
-#include <zephyr/sd/sd_spec.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
-#include "sdhc_helpers.h"
+
+#include "sdhc_priv.h"
+
 #define PINCTRL_STATE_SLOW   PINCTRL_STATE_PRIV_START
 #define PINCTRL_STATE_MED    (PINCTRL_STATE_PRIV_START + 1U)
 #define PINCTRL_STATE_FAST   (PINCTRL_STATE_PRIV_START + 2U)
@@ -62,6 +62,7 @@ struct usdhc_host_transfer {
 struct usdhc_config {
 	DEVICE_MMIO_NAMED_ROM(usdhc_mmio);
 
+	struct sdhc_config sdhc;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	uint8_t nusdhc;
@@ -75,14 +76,6 @@ struct usdhc_config {
 	uint32_t data_timeout;
 	uint32_t read_watermark;
 	uint32_t write_watermark;
-	uint32_t max_current_330;
-	uint32_t max_current_300;
-	uint32_t max_current_180;
-	uint32_t power_delay_ms;
-	uint32_t min_bus_freq;
-	uint32_t max_bus_freq;
-	bool mmc_hs200_1_8v;
-	bool mmc_hs400_1_8v;
 	const struct pinctrl_dev_config *pincfg;
 	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
@@ -91,8 +84,8 @@ struct usdhc_config {
 struct usdhc_data {
 	DEVICE_MMIO_NAMED_RAM(usdhc_mmio);
 
+	struct sdhc_drv_data sdhc;
 	const struct device *dev;
-	struct sdhc_host_props props;
 	bool card_present;
 	struct k_sem transfer_sem;
 	volatile uint32_t transfer_status;
@@ -260,15 +253,11 @@ static void imx_usdhc_init_host_props(const struct device *dev)
 	const struct usdhc_config *cfg = dev->config;
 	struct usdhc_data *data = dev->data;
 	usdhc_capability_t caps;
-	struct sdhc_host_props *props = &data->props;
+	struct sdhc_host_props *props = &data->sdhc.props;
 	USDHC_Type *base = get_base(dev);
 
-	memset(props, 0, sizeof(struct sdhc_host_props));
-	props->f_max = cfg->max_bus_freq;
-	props->f_min = cfg->min_bus_freq;
-	props->max_current_330 = cfg->max_current_330;
-	props->max_current_180 = cfg->max_current_180;
-	props->power_delay = cfg->power_delay_ms;
+	sdhc_host_props_init(props, &cfg->sdhc);
+
 	/* Read host capabilities */
 	USDHC_GetCapability(base, &caps);
 #if !(defined(FSL_FEATURE_USDHC_HAS_NO_VS18) && FSL_FEATURE_USDHC_HAS_NO_VS18)
@@ -298,8 +287,6 @@ static void imx_usdhc_init_host_props(const struct device *dev)
 	props->host_caps.sdr50_support = (bool)(caps.flags & kUSDHC_SupportSDR50Flag);
 	props->host_caps.bus_8_bit_support = (bool)(caps.flags & kUSDHC_Support8BitFlag);
 	props->bus_4_bit_support = (bool)(caps.flags & kUSDHC_Support4BitFlag);
-	props->hs200_support = (bool)(cfg->mmc_hs200_1_8v);
-	props->hs400_support = (bool)(cfg->mmc_hs400_1_8v);
 }
 
 /*
@@ -355,7 +342,8 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 		return -EINVAL;
 	}
 
-	if (ios->clock && (ios->clock > data->props.f_max || ios->clock < data->props.f_min)) {
+	if (ios->clock &&
+	    (ios->clock > data->sdhc.props.f_max || ios->clock < data->sdhc.props.f_min)) {
 		return -EINVAL;
 	}
 
@@ -982,7 +970,7 @@ static int imx_usdhc_get_host_props(const struct device *dev, struct sdhc_host_p
 {
 	struct usdhc_data *data = dev->data;
 
-	memcpy(props, &data->props, sizeof(struct sdhc_host_props));
+	memcpy(props, &data->sdhc.props, sizeof(struct sdhc_host_props));
 	return 0;
 }
 
@@ -1246,6 +1234,7 @@ static DEVICE_API(sdhc, usdhc_api) = {
                                                                                                    \
 	static const struct usdhc_config usdhc_##n##_config = {                                    \
 		DEVICE_MMIO_NAMED_ROM_INIT(usdhc_mmio, DT_DRV_INST(n)),                            \
+		.sdhc = SDHC_CONFIG_DT_INST_INIT(n),                                               \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
 		.nusdhc = n,                                                                       \
@@ -1259,13 +1248,6 @@ static DEVICE_API(sdhc, usdhc_api) = {
 		.no_300_vol = DT_INST_PROP(n, no_3_0_v),                                           \
 		.read_watermark = DT_INST_PROP(n, read_watermark),                                 \
 		.write_watermark = DT_INST_PROP(n, write_watermark),                               \
-		.max_current_330 = DT_INST_PROP(n, max_current_330),                               \
-		.max_current_180 = DT_INST_PROP(n, max_current_180),                               \
-		.min_bus_freq = DT_INST_PROP(n, min_bus_freq),                                     \
-		.max_bus_freq = DT_INST_PROP(n, max_bus_freq),                                     \
-		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                                 \
-		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                                 \
-		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                                 \
 		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),                                        \
 		.irq_config_func = usdhc_##n##_irq_config_func,                                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \

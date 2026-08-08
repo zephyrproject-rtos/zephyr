@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
 #include <zephyr/drivers/regulator.h>
-#include "sdhc_helpers.h"
+#include "sdhc_priv.h"
 
 #include "rcar_mmc_registers.h"
 
