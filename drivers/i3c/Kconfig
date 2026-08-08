@@ -223,6 +223,7 @@ comment "Device Drivers"
 # zephyr-keep-sorted-start
 rsource "Kconfig.cdns"
 rsource "Kconfig.dw"
+rsource "Kconfig.emul"
 rsource "Kconfig.it51xxx"
 rsource "Kconfig.max32"
 rsource "Kconfig.npcx"
