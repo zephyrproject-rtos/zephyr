@@ -1,0 +1,19 @@
+tests:
+
+  mp.core.build:
+    tags:
+      - subsys
+      - mp
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+
+  mp.img.build:
+    tags:
+      - subsys
+      - mp
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_MP_IMG=y
