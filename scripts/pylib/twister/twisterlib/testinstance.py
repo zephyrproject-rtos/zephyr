@@ -304,7 +304,8 @@ class TestInstance(StatusMixin):
         if testsuite_runnable := self.testsuite.harness in SUPPORTED_HARNESSES:
             if device_testing:
                 testsuite_runnable = HardwareReservationManager(
-                    hardware_map, self.platform.name, self.testsuite.harness_config).is_runnable()
+                    hardware_map, self.platform.name, self.testsuite.harness_config
+                ).is_runnable()
 
             elif fixture := self.testsuite.harness_config.fixture:
                 # if we have a fixture that is also being supplied on the
