@@ -5,6 +5,7 @@ zephyr_library_property(ALLOW_EMPTY TRUE)
 zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/l2)
 
 add_subdirectory_ifdef(CONFIG_MDIO mdio)
+add_subdirectory(usb)
 
 if(CONFIG_ETH_NXP_S32_NETC)
   zephyr_library_sources(eth_nxp_s32_netc.c)
