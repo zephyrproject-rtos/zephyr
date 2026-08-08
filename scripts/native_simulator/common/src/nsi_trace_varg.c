@@ -5,7 +5,7 @@
  */
 
 #include <stdarg.h>
-#include "nsi_tracing.h"
+#include <nsi_tracing.h>
 
 void nsi_print_error_and_exit(const char *format, ...)
 {

@@ -6,10 +6,10 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include "nsi_cpu0_interrupts.h"
-#include "irq_ctrl.h"
-#include "nsi_tasks.h"
-#include "nsi_hws_models_if.h"
+#include <nsi_cpu0_interrupts.h>
+#include <irq_ctrl.h>
+#include <nsi_tasks.h>
+#include <nsi_hws_models_if.h>
 
 static uint64_t hw_counter_timer;
 

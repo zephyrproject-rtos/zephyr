@@ -15,11 +15,11 @@
 #include <signal.h>
 #include <stddef.h>
 #include <inttypes.h>
-#include "nsi_tracing.h"
-#include "nsi_main.h"
+#include <nsi_tracing.h>
+#include <nsi_main.h>
 #include "nsi_safe_call.h"
-#include "nsi_hw_scheduler.h"
-#include "nsi_hws_models_if.h"
+#include <nsi_hw_scheduler.h>
+#include <nsi_hws_models_if.h>
 
 uint64_t nsi_simu_time; /* The actual time as known by the HW models */
 static uint64_t end_of_time = NSI_NEVER; /* When will this device stop */

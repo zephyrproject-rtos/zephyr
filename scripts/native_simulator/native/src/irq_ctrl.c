@@ -9,12 +9,12 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "nsi_internal.h"
-#include "nsi_cpu_if.h"
-#include "nsi_cpu0_interrupts.h"
-#include "irq_ctrl.h"
-#include "nsi_tasks.h"
-#include "nsi_hws_models_if.h"
+#include <nsi_internal.h>
+#include <nsi_cpu_if.h>
+#include <nsi_cpu0_interrupts.h>
+#include <irq_ctrl.h>
+#include <nsi_tasks.h>
+#include <nsi_hws_models_if.h>
 
 static uint64_t irq_ctrl_timer = NSI_NEVER;
 

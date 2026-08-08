@@ -6,10 +6,10 @@
  */
 
 #include <stdint.h>
-#include "nsi_tracing.h"
-#include "native_rtc.h"
-#include "nsi_hw_scheduler.h"
-#include "nsi_timer_model.h"
+#include <nsi_tracing.h>
+#include <native_rtc.h>
+#include <nsi_hw_scheduler.h>
+#include <nsi_timer_model.h>
 
 /**
  * Return the (simulation) time in microseconds

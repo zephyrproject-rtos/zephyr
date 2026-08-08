@@ -22,8 +22,8 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <errno.h>
-#include "nsi_utils.h"
-#include "nce_if.h"
+#include <nsi_utils.h>
+#include <nce_if.h>
 #include "nsi_safe_call.h"
 
 struct nce_status_t {

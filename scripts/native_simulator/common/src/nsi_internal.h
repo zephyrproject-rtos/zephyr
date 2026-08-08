@@ -8,7 +8,7 @@
 #define NSI_COMMON_SRC_NSI_INTERNAL_H
 
 #include <stdint.h>
-#include "nsi_utils.h"
+#include <nsi_utils.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -27,11 +27,11 @@
 #include <zephyr/arch/posix/posix_soc_if.h>
 #include "posix_soc.h"
 #include "posix_board_if.h"
-#include "posix_core.h"
-#include "posix_arch_internal.h"
-#include "kernel_internal.h"
+#include <posix_core.h>
+#include <posix_arch_internal.h>
+#include <kernel_internal.h>
 #include "soc.h"
-#include "nce_if.h"
+#include <nce_if.h>
 
 static void *nce_st;
 

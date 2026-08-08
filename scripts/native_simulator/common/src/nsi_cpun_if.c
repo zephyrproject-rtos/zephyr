@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nsi_cpu_if.h"
+#include <nsi_cpu_if.h>
 
 /*
  * These trampolines forward a call from the runner into the corresponding embedded CPU hook

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nsi_cpu_if.h"
-#include "nsi_tracing.h"
+#include <nsi_cpu_if.h>
+#include <nsi_tracing.h>
 
 /*
  * Stubbed embedded CPU images, which do nothing:

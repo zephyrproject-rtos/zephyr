@@ -8,7 +8,7 @@
 #define NSI_COMMON_SRC_NSI_SAFE_CALLL_H
 
 #include <stdbool.h>
-#include "nsi_tracing.h"
+#include <nsi_tracing.h>
 
 #ifdef __cplusplus
 extern "C" {

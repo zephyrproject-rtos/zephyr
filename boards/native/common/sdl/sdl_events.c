@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "posix_board_if.h"
-#include "soc.h"
+#include <posix_board_if.h>
+#include <soc.h>
 #include <zephyr/arch/posix/posix_trace.h>
 #include <zephyr/kernel.h>
 #include "sdl_events_bottom.h"
