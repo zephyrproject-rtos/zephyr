@@ -686,8 +686,8 @@ int char2hex(char c, uint8_t *x);
 /**
  * @brief      Convert a single hexadecimal nibble into a character.
  *
- * @param c     The number to convert
- * @param x     The address of storage for the converted character.
+ * @param x     The number to convert
+ * @param c     The address of storage for the converted character.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */

@@ -116,8 +116,8 @@ bool uuid_is_nil(const struct uuid *data);
  * @param data Input data to copy.
  * @param out Destination for the copy.
  *
- * @retval 0 The UUID has been correctly copied in @p dst
- * @retval -EINVAL @p dst is not acceptable
+ * @retval 0 The UUID has been correctly copied in @p out
+ * @retval -EINVAL @p out is not acceptable
  */
 int uuid_copy(const struct uuid *data, struct uuid *out);
 
@@ -139,18 +139,18 @@ int uuid_from_buffer(const uint8_t data[UUID_SIZE], struct uuid *out);
  * @param out The UUID where the result will be written.
  *
  * @retval 0 The UUID has been correctly parsed and stored in @p out
- * @retval -EINVAL @p input or @p out are not acceptable
+ * @retval -EINVAL @p data or @p out are not acceptable
  */
 int uuid_from_string(const char data[UUID_STR_LEN], struct uuid *out);
 
 /**
- * @brief Create a uuid_t from a binary (big-endian) formatted UUID.
+ * @brief Store a UUID into a binary (big-endian) formatted buffer.
  *
  * @param data The input UUID to store in the buffer.
  * @param out The buffer where the binary UUID is stored in a big-endian order.
  *
- * @retval 0 The UUID has been correctly parsed and stored in @p buff
- * @retval -EINVAL @p buff is not acceptable
+ * @retval 0 The UUID has been correctly parsed and stored in @p out
+ * @retval -EINVAL @p out is not acceptable
  */
 int uuid_to_buffer(const struct uuid *data, uint8_t out[UUID_SIZE]);
 

@@ -103,6 +103,8 @@ extern "C" {
  *
  * @param x argument.
  *
+ * @param flags Package flags.
+ *
  * @return 1 if char * or wchar_t *, 0 otherwise.
  */
 #ifdef __cplusplus
@@ -535,6 +537,8 @@ extern "C" {
 
 /** @brief Calculate number of char * or wchar_t * arguments in the arguments.
  *
+ * @param flags Flags. See @p CBPRINTF_PACKAGE_FLAGS.
+ *
  * @param fmt string.
  *
  * @param ... string arguments.
@@ -693,6 +697,8 @@ extern "C" {
  * Argument is put into the buffer if capable buffer is provided. Length is
  * incremented even if data is not packaged.
  *
+ * @param arg_idx Argument index.
+ *
  * @param _buf buffer.
  *
  * @param _idx index. Index is postincremented.
@@ -746,6 +752,8 @@ do { \
 /** @brief Package single argument.
  *
  * Macro is called in a loop for each argument in the string.
+ *
+ * @param arg_idx Argument index.
  *
  * @param arg argument.
  */
