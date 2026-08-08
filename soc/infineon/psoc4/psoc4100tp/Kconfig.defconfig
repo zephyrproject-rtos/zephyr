@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -14,7 +14,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 if PM
 
 choice SYSTEM_TIMER_LPM_COMPANION
-	default SYSTEM_TIMER_LPM_COMPANION_HOOKS if !WDT_INFINEON_CAT1
+	default SYSTEM_TIMER_LPM_COMPANION_HOOKS
 endchoice
 
 endif # PM

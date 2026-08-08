@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,8 @@
 #include <cy_wdt.h>
 
 #include <soc.h>
+
+#include "power.h"
 
 LOG_MODULE_REGISTER(soc_power, CONFIG_SOC_LOG_LEVEL);
 
@@ -86,11 +88,13 @@ static void wdt_lpm_calibrate_ilo(void)
 	}
 }
 
+#if !defined(CONFIG_WDT_INFINEON_CAT1)
 static void wdt_lpm_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	Cy_WDT_ClearInterrupt();
 }
+#endif
 
 static void wdt_lpm_arm_window(uint32_t from_count, uint64_t remaining_cycles)
 {
@@ -111,9 +115,21 @@ static void wdt_lpm_arm_window(uint32_t from_count, uint64_t remaining_cycles)
 void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 {
 	wdt_target_cycles = (max_lpm_time_us * (uint64_t)ilo_freq_hz) / USEC_PER_SEC;
+
 	if (wdt_target_cycles < MIN_WDT_CYCLES) {
 		wdt_target_cycles = MIN_WDT_CYCLES;
 	}
+
+#if defined(CONFIG_WDT_INFINEON_CAT1)
+	if (ifx_wdt_pm_active()) {
+		uint64_t budget_cycles = ifx_wdt_pm_budget_cycles();
+
+		if (wdt_target_cycles > budget_cycles) {
+			wdt_target_cycles = budget_cycles;
+		}
+	}
+#endif
+
 	wdt_elapsed_cycles = 0U;
 
 	Cy_WDT_ClearInterrupt();
@@ -161,16 +177,22 @@ uint64_t z_sys_clock_lpm_exit(void)
 {
 	uint32_t end_count;
 	uint64_t total_cycles;
+	bool restored = false;
 
 	end_count = Cy_WDT_GetCount();
 
-	Cy_WDT_MaskInterrupt();
-	Cy_WDT_ClearInterrupt();
-
-	irq_disable(WDT_IRQ_NUM);
-	NVIC_ClearPendingIRQ(WDT_IRQ_NUM);
-
 	total_cycles = wdt_elapsed_cycles + ((end_count - wdt_start_count) & UINT16_MAX);
+
+#if defined(CONFIG_WDT_INFINEON_CAT1)
+	if (ifx_wdt_pm_active()) {
+		ifx_wdt_pm_resume(total_cycles);
+		restored = true;
+	}
+#endif
+
+	if (!restored) {
+		irq_disable(WDT_IRQ_NUM);
+	}
 
 	return (total_cycles * USEC_PER_SEC) / ilo_freq_hz;
 }
@@ -200,6 +222,18 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 				break;
 			}
 		} while (wdt_lpm_continue());
+
+#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
+		/*
+		 * Clear it here, before pm_state_exit_post_ops re-enables interrupts;
+		 * otherwise in shared mode, WDT ISR would run and fire the application
+		 * any other timeout callback for what was only a wakeup.
+		 */
+		Cy_WDT_MaskInterrupt();
+		Cy_WDT_ClearInterrupt();
+		NVIC_ClearPendingIRQ(WDT_IRQ_NUM);
+#endif
+
 		SCB_SCR &= (uint32_t)~SCB_SCR_SLEEPDEEP_Msk;
 		break;
 	default:
@@ -221,7 +255,9 @@ int pm_init(void)
 #if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
 	wdt_lpm_calibrate_ilo();
 
+#if !defined(CONFIG_WDT_INFINEON_CAT1)
 	IRQ_CONNECT(WDT_IRQ_NUM, WDT_IRQ_PRIO, wdt_lpm_isr, NULL, 0);
+#endif
 #else
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 #endif
