@@ -610,6 +610,37 @@ test_i2c_fdc2x1x: fdc2x1x@54 {
 	};
 };
 
+test_i2c_ldc1x1x: ldc1x1x@4d {
+	compatible = "ti,ldc1x1x";
+	reg = <0x4d>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	intb-gpios = <&test_gpio 0 0>;
+	sd-gpios = <&test_gpio 0 0>;
+	deglitch = <4>;
+	fref = <40000>;
+	autoscan;
+	rr-sequence = <0>;
+
+	channel@0 {
+		reg = <0>;
+		rcount = <1238>;
+		settlecount = <10>;
+		fref-divider = <2>;
+		fin-divider = <1>;
+		idrive = <16>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		rcount = <1238>;
+		settlecount = <10>;
+		fref-divider = <2>;
+		fin-divider = <1>;
+		idrive = <16>;
+	};
+};
+
 test_i2c_bmp388: bmp388@55 {
 	compatible = "bosch,bmp388";
 	reg = <0x55>;
