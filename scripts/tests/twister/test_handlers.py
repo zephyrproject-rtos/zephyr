@@ -944,28 +944,36 @@ def test_devicehandler_create_command(
 
 
 TESTDATA_14 = [
-    ('success', Handler.FailureType.NONE, 'success', None, False),
-    (TwisterStatus.FAIL, Handler.FailureType.NONE, TwisterStatus.FAIL,
+    ('success', Handler.FailureType.NONE, None, 'success', None, False),
+    (TwisterStatus.FAIL, Handler.FailureType.NONE, None, TwisterStatus.FAIL,
         "foobar", True),
-    (TwisterStatus.ERROR, Handler.FailureType.NONE, TwisterStatus.ERROR, 'foobar', True),
-    (TwisterStatus.NONE, Handler.FailureType.NONE, TwisterStatus.FAIL, 'Unknown Error', True),
+    (TwisterStatus.ERROR, Handler.FailureType.NONE, None, TwisterStatus.ERROR, 'foobar', True),
+    (TwisterStatus.NONE, Handler.FailureType.NONE, None, TwisterStatus.FAIL,
+        'Unknown Error', True),
+    (TwisterStatus.NONE, Handler.FailureType.FLASH, 'Device issue (Flash timeout)',
+        TwisterStatus.ERROR, 'Device issue (Flash timeout)', True),
+    (TwisterStatus.NONE, Handler.FailureType.FLASH, None, TwisterStatus.ERROR,
+        'Flash failure', True),
 ]
 
 @pytest.mark.parametrize(
-    'harness_status, failure_type,' \
+    'harness_status, failure_type, initial_reason,' \
     ' expected_status, expected_reason, do_add_missing',
     TESTDATA_14,
-    ids=['custom success', 'failed', 'error', 'no status']
+    ids=['custom success', 'failed', 'error', 'no status',
+         'flash error reason kept', 'flash failure fallback']
 )
 def test_devicehandler_update_instance_info(
         mocked_instance,
         harness_status,
         failure_type,
+        initial_reason,
         expected_status,
         expected_reason,
         do_add_missing
         ):
     handler = DeviceHandler(mocked_instance, 'build', mock.Mock())
+    handler.instance.reason = initial_reason
     missing_mock = mock.Mock()
     handler.instance.add_missing_case_status = missing_mock
     mocked_harness = mock.Mock(status=harness_status, reason="foobar")
