@@ -1,0 +1,23 @@
+tests:
+
+  mp.core.build:
+    tags:
+      - subsys
+      - mp
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+
+  mp.net.build:
+    tags:
+      - subsys
+      - mp
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_NETWORKING=y
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_TCP=y
+      - CONFIG_NET_SOCKETS=y
+      - CONFIG_MP_NET=y
