@@ -9,6 +9,7 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/devicetree/dma.h>
+#include <zephyr/drivers/dma.h>
 
 /* @brief linked_channel value to inform zephyr dma driver that
  * DMA channel will be handled by HAL
@@ -104,5 +105,30 @@
 #define STM32_DMA_GET_INSTANCE(reg, channel)				\
 		STM32_DMA_GET_CHANNEL_INSTANCE((reg), (channel) - STM32_DMA_STREAM_OFFSET);
 #endif
+
+/** @cond INTERNAL_HIDDEN */
+/**
+ * @brief Convert Zephyr DMA configuration to STM32 HAL DMA init structure.
+ *
+ * This is a private STM32 DMA helper intended for direct-DMA users which
+ * prepare DMA_InitTypeDef manually, typically when using HAL override.
+ *
+ * The function initializes all common DMA_InitTypeDef fields that can be
+ * derived from @p zephyr_config. Callers may still override or fill additional
+ * STM32-specific fields afterward if required by the peripheral.
+ *
+ * @warning This function is PRIVATE and intended for STM32 drivers only.  No
+ * guarantee is provided to any external caller.
+ *
+ * @param zephyr_config Pointer to Zephyr DMA configuration
+ * @param hal_config Pointer to HAL DMA init structure to initialize
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if parameters are invalid or the configuration is inconsistent
+ * @retval -ENOTSUP if the configuration cannot be represented with STM32 HAL DMA
+ */
+int dma_stm32_zcfg_to_halcfg(const struct dma_config *zephyr_config,
+			     DMA_InitTypeDef *hal_config);
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_STM32_H_ */

@@ -2252,6 +2252,10 @@ static int flash_stm32_ospi_init(const struct device *dev)
 	 * how to route callbacks.
 	 */
 	struct dma_config *dma_cfg = &dev_data->dma.cfg;
+	struct dma_block_config dma_block = {
+		.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+		.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	};
 	static DMA_HandleTypeDef hdma;
 
 	if (!device_is_ready(dev_data->dma.dev)) {
@@ -2261,6 +2265,8 @@ static int flash_stm32_ospi_init(const struct device *dev)
 
 	/* Proceed to the minimum Zephyr DMA driver init */
 	dma_cfg->user_data = &hdma;
+	dma_cfg->channel_direction = PERIPHERAL_TO_MEMORY;
+	dma_cfg->head_block = &dma_block;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
 	ret = dma_config(dev_data->dma.dev, dev_data->dma.channel, dma_cfg);
@@ -2269,34 +2275,16 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Proceed to the HAL DMA driver init */
-	if (dma_cfg->source_data_size != dma_cfg->dest_data_size) {
-		LOG_ERR("Source and destination data sizes not aligned");
-		return -EINVAL;
+	ret = dma_stm32_zcfg_to_halcfg(dma_cfg, &hdma.Init);
+	if (ret < 0) {
+		return ret;
 	}
 
-	int index = find_lsb_set(dma_cfg->source_data_size) - 1;
-
 #if CONFIG_DMA_STM32U5
-	/* Fill the structure for dma init */
-	hdma.Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
-	hdma.Init.SrcInc = DMA_SINC_FIXED;
-	hdma.Init.DestInc = DMA_DINC_INCREMENTED;
-	hdma.Init.SrcDataWidth = table_src_size[index];
-	hdma.Init.DestDataWidth = table_dest_size[index];
 	hdma.Init.SrcBurstLength = 4;
 	hdma.Init.DestBurstLength = 4;
 	hdma.Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_DEST_ALLOCATED_PORT1;
-	hdma.Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
-#else
-	hdma.Init.PeriphDataAlignment = table_p_size[index];
-	hdma.Init.MemDataAlignment = table_m_size[index];
-	hdma.Init.PeriphInc = DMA_PINC_DISABLE;
-	hdma.Init.MemInc = DMA_MINC_ENABLE;
 #endif /* CONFIG_DMA_STM32U5 */
-	hdma.Init.Mode = DMA_NORMAL;
-	hdma.Init.Priority = table_priority[dma_cfg->channel_priority];
-	hdma.Init.Direction = DMA_PERIPH_TO_MEMORY;
 	hdma.Instance = STM32_DMA_GET_INSTANCE(dev_data->dma.reg, dev_data->dma.channel);
 #ifdef CONFIG_DMA_STM32_V1
 	/* TODO: Not tested in this configuration */

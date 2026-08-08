@@ -10,6 +10,8 @@
 
 #include "dma_stm32_bdma.h"
 
+#include <string.h>
+
 #include <zephyr/init.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
@@ -439,6 +441,285 @@ static int bdma_stm32_get_periph_increment(enum dma_addr_adj increment,
 
 	return 0;
 }
+
+#if !defined(CONFIG_DMA_STM32_V1) && !defined(CONFIG_DMA_STM32_V2)
+static int bdma_stm32_hal_map_direction(uint32_t z_dir, uint32_t *hal_dir)
+{
+	switch (z_dir) {
+	case MEMORY_TO_MEMORY:
+		*hal_dir = DMA_MEMORY_TO_MEMORY;
+		return 0;
+	case MEMORY_TO_PERIPHERAL:
+		*hal_dir = DMA_MEMORY_TO_PERIPH;
+		return 0;
+	case PERIPHERAL_TO_MEMORY:
+		*hal_dir = DMA_PERIPH_TO_MEMORY;
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int bdma_stm32_hal_map_priority(uint32_t z_prio, uint32_t *hal_prio)
+{
+	switch (z_prio) {
+	case 0:
+#ifdef DMA_PRIORITY_LOW
+		*hal_prio = DMA_PRIORITY_LOW;
+#else
+		*hal_prio = DMA_LOW_PRIORITY_LOW_WEIGHT;
+#endif
+		return 0;
+	case 1:
+#ifdef DMA_PRIORITY_MEDIUM
+		*hal_prio = DMA_PRIORITY_MEDIUM;
+#else
+		*hal_prio = DMA_LOW_PRIORITY_MID_WEIGHT;
+#endif
+		return 0;
+	case 2:
+#ifdef DMA_PRIORITY_HIGH
+		*hal_prio = DMA_PRIORITY_HIGH;
+#else
+		*hal_prio = DMA_LOW_PRIORITY_HIGH_WEIGHT;
+#endif
+		return 0;
+	case 3:
+#ifdef DMA_PRIORITY_VERY_HIGH
+		*hal_prio = DMA_PRIORITY_VERY_HIGH;
+#else
+		*hal_prio = DMA_HIGH_PRIORITY;
+#endif
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int bdma_stm32_hal_map_data_size(uint32_t z_size,
+						uint32_t *hal_size,
+						uint32_t hal_byte,
+						uint32_t hal_halfword,
+						uint32_t hal_word)
+{
+	switch (z_size) {
+	case 1:
+		*hal_size = hal_byte;
+		return 0;
+	case 2:
+		*hal_size = hal_halfword;
+		return 0;
+	case 4:
+		*hal_size = hal_word;
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int bdma_stm32_hal_map_mode(const struct dma_config *cfg, uint32_t *hal_mode)
+{
+	if (cfg->cyclic) {
+#ifdef DMA_CIRCULAR
+		*hal_mode = DMA_CIRCULAR;
+#else
+		return -ENOTSUP;
+#endif
+	} else {
+		*hal_mode = DMA_NORMAL;
+	}
+
+	return 0;
+}
+
+static int bdma_stm32_hal_map_addr_adj(enum dma_addr_adj z_adj,
+					       uint32_t *hal_inc,
+					       uint32_t hal_inc_val,
+					       uint32_t hal_noinc_val)
+{
+	switch (z_adj) {
+	case DMA_ADDR_ADJ_INCREMENT:
+		*hal_inc = hal_inc_val;
+		return 0;
+	case DMA_ADDR_ADJ_NO_CHANGE:
+		*hal_inc = hal_noinc_val;
+		return 0;
+	case DMA_ADDR_ADJ_DECREMENT:
+		return -ENOTSUP;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int bdma_stm32_hal_config_widths(const struct dma_config *cfg,
+						DMA_InitTypeDef *hal_config)
+{
+	int ret;
+
+	switch (cfg->channel_direction) {
+	case PERIPHERAL_TO_MEMORY:
+		ret = bdma_stm32_hal_map_data_size(cfg->source_data_size,
+						      &hal_config->PeriphDataAlignment,
+						      DMA_PDATAALIGN_BYTE,
+						      DMA_PDATAALIGN_HALFWORD,
+						      DMA_PDATAALIGN_WORD);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return bdma_stm32_hal_map_data_size(cfg->dest_data_size,
+						   &hal_config->MemDataAlignment,
+						   DMA_MDATAALIGN_BYTE,
+						   DMA_MDATAALIGN_HALFWORD,
+						   DMA_MDATAALIGN_WORD);
+	case MEMORY_TO_PERIPHERAL:
+		ret = bdma_stm32_hal_map_data_size(cfg->dest_data_size,
+						      &hal_config->PeriphDataAlignment,
+						      DMA_PDATAALIGN_BYTE,
+						      DMA_PDATAALIGN_HALFWORD,
+						      DMA_PDATAALIGN_WORD);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return bdma_stm32_hal_map_data_size(cfg->source_data_size,
+						   &hal_config->MemDataAlignment,
+						   DMA_MDATAALIGN_BYTE,
+						   DMA_MDATAALIGN_HALFWORD,
+						   DMA_MDATAALIGN_WORD);
+	case MEMORY_TO_MEMORY:
+		if (cfg->source_data_size != cfg->dest_data_size) {
+			return -ENOTSUP;
+		}
+
+		ret = bdma_stm32_hal_map_data_size(cfg->source_data_size,
+						      &hal_config->PeriphDataAlignment,
+						      DMA_PDATAALIGN_BYTE,
+						      DMA_PDATAALIGN_HALFWORD,
+						      DMA_PDATAALIGN_WORD);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return bdma_stm32_hal_map_data_size(cfg->dest_data_size,
+						   &hal_config->MemDataAlignment,
+						   DMA_MDATAALIGN_BYTE,
+						   DMA_MDATAALIGN_HALFWORD,
+						   DMA_MDATAALIGN_WORD);
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int bdma_stm32_hal_config_increments(const struct dma_config *cfg,
+						   DMA_InitTypeDef *hal_config)
+{
+	int ret;
+	const struct dma_block_config *block = cfg->head_block;
+
+	switch (cfg->channel_direction) {
+	case MEMORY_TO_PERIPHERAL:
+		ret = bdma_stm32_hal_map_addr_adj(block->source_addr_adj,
+					       &hal_config->MemInc,
+					       DMA_MINC_ENABLE,
+					       DMA_MINC_DISABLE);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return bdma_stm32_hal_map_addr_adj(block->dest_addr_adj,
+					      &hal_config->PeriphInc,
+					      DMA_PINC_ENABLE,
+					      DMA_PINC_DISABLE);
+	case PERIPHERAL_TO_MEMORY:
+		ret = bdma_stm32_hal_map_addr_adj(block->source_addr_adj,
+					       &hal_config->PeriphInc,
+					       DMA_PINC_ENABLE,
+					       DMA_PINC_DISABLE);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return bdma_stm32_hal_map_addr_adj(block->dest_addr_adj,
+					      &hal_config->MemInc,
+					      DMA_MINC_ENABLE,
+					      DMA_MINC_DISABLE);
+	case MEMORY_TO_MEMORY:
+		ret = bdma_stm32_hal_map_addr_adj(block->source_addr_adj,
+					       &hal_config->PeriphInc,
+					       DMA_PINC_ENABLE,
+					       DMA_PINC_DISABLE);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return bdma_stm32_hal_map_addr_adj(block->dest_addr_adj,
+					      &hal_config->MemInc,
+					      DMA_MINC_ENABLE,
+					      DMA_MINC_DISABLE);
+	default:
+		return -ENOTSUP;
+	}
+}
+
+int dma_stm32_zcfg_to_halcfg(const struct dma_config *zephyr_config,
+				     DMA_InitTypeDef *hal_config)
+{
+	int ret;
+
+	if ((zephyr_config == NULL) || (zephyr_config->head_block == NULL) ||
+	    (hal_config == NULL)) {
+		return -EINVAL;
+	}
+
+	memset(hal_config, 0, sizeof(*hal_config));
+
+	ret = bdma_stm32_hal_map_direction(zephyr_config->channel_direction,
+					    &hal_config->Direction);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = bdma_stm32_hal_map_priority(zephyr_config->channel_priority,
+					   &hal_config->Priority);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = bdma_stm32_hal_config_widths(zephyr_config, hal_config);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = bdma_stm32_hal_map_mode(zephyr_config, &hal_config->Mode);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = bdma_stm32_hal_config_increments(zephyr_config, hal_config);
+	if (ret < 0) {
+		return ret;
+	}
+
+#ifdef DMA_FIFOMODE_DISABLE
+	hal_config->FIFOMode = DMA_FIFOMODE_DISABLE;
+#endif
+
+#ifdef DMA_FIFO_THRESHOLD_FULL
+	hal_config->FIFOThreshold = DMA_FIFO_THRESHOLD_FULL;
+#endif
+
+#ifdef DMA_MBURST_SINGLE
+	hal_config->MemBurst = DMA_MBURST_SINGLE;
+#endif
+
+#ifdef DMA_PBURST_SINGLE
+	hal_config->PeriphBurst = DMA_PBURST_SINGLE;
+#endif
+
+	return 0;
+}
+#endif /* !CONFIG_DMA_STM32_V1 && !CONFIG_DMA_STM32_V2 */
 
 static int bdma_stm32_disable_channel(BDMA_TypeDef *bdma, uint32_t id)
 {

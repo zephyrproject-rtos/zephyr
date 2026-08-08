@@ -14,6 +14,8 @@
 
 #include "dma_stm32.h"
 
+#include <string.h>
+
 #include <zephyr/init.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma/dma_stm32.h>
@@ -362,6 +364,152 @@ static int dma_stm32_get_direction(enum dma_channel_direction direction,
 		LOG_ERR("Direction error. %d", direction);
 		return -EINVAL;
 	}
+
+	return 0;
+}
+
+static int dma_stm32_hal_map_data_size(uint32_t z_size,
+					       uint32_t *hal_size,
+					       uint32_t hal_byte,
+					       uint32_t hal_halfword,
+					       uint32_t hal_word)
+{
+	switch (z_size) {
+	case 1:
+		*hal_size = hal_byte;
+		return 0;
+	case 2:
+		*hal_size = hal_halfword;
+		return 0;
+	case 4:
+		*hal_size = hal_word;
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static int dma_stm32_hal_map_mode(const struct dma_config *cfg, uint32_t *hal_mode)
+{
+	if (cfg->cyclic) {
+#ifdef DMA_CIRCULAR
+		*hal_mode = DMA_CIRCULAR;
+#else
+		return -ENOTSUP;
+#endif
+	} else {
+		*hal_mode = DMA_NORMAL;
+	}
+
+	return 0;
+}
+
+static int dma_stm32_hal_map_addr_adj(enum dma_addr_adj z_adj,
+					      uint32_t *hal_inc,
+					      uint32_t hal_inc_val,
+					      uint32_t hal_noinc_val)
+{
+	switch (z_adj) {
+	case DMA_ADDR_ADJ_INCREMENT:
+		*hal_inc = hal_inc_val;
+		return 0;
+	case DMA_ADDR_ADJ_NO_CHANGE:
+		*hal_inc = hal_noinc_val;
+		return 0;
+	case DMA_ADDR_ADJ_DECREMENT:
+		return -ENOTSUP;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int dma_stm32_hal_config_widths(const struct dma_config *cfg,
+					       DMA_InitTypeDef *hal_config)
+{
+	int ret;
+
+	ret = dma_stm32_hal_map_data_size(cfg->source_data_size,
+					      &hal_config->SrcDataWidth,
+					      DMA_SRC_DATAWIDTH_BYTE,
+					      DMA_SRC_DATAWIDTH_HALFWORD,
+					      DMA_SRC_DATAWIDTH_WORD);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return dma_stm32_hal_map_data_size(cfg->dest_data_size,
+					   &hal_config->DestDataWidth,
+					   DMA_DEST_DATAWIDTH_BYTE,
+					   DMA_DEST_DATAWIDTH_HALFWORD,
+					   DMA_DEST_DATAWIDTH_WORD);
+}
+
+static int dma_stm32_hal_config_increments(const struct dma_config *cfg,
+						  DMA_InitTypeDef *hal_config)
+{
+	int ret;
+	const struct dma_block_config *block = cfg->head_block;
+
+	ret = dma_stm32_hal_map_addr_adj(block->source_addr_adj,
+					  &hal_config->SrcInc,
+					  DMA_SINC_INCREMENTED,
+					  DMA_SINC_FIXED);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return dma_stm32_hal_map_addr_adj(block->dest_addr_adj,
+					   &hal_config->DestInc,
+					   DMA_DINC_INCREMENTED,
+					   DMA_DINC_FIXED);
+}
+
+int dma_stm32_zcfg_to_halcfg(const struct dma_config *zephyr_config,
+				     DMA_InitTypeDef *hal_config)
+{
+	int ret;
+
+	if ((zephyr_config == NULL) || (zephyr_config->head_block == NULL) ||
+	    (hal_config == NULL)) {
+		return -EINVAL;
+	}
+
+	memset(hal_config, 0, sizeof(*hal_config));
+
+	ret = dma_stm32_get_direction(zephyr_config->channel_direction,
+				       &hal_config->Direction);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dma_stm32_get_priority(zephyr_config->channel_priority,
+				      &hal_config->Priority);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dma_stm32_hal_config_widths(zephyr_config, hal_config);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dma_stm32_hal_map_mode(zephyr_config, &hal_config->Mode);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dma_stm32_hal_config_increments(zephyr_config, hal_config);
+	if (ret < 0) {
+		return ret;
+	}
+
+#ifdef DMA_BREQ_SINGLE_BURST
+	hal_config->BlkHWRequest = DMA_BREQ_SINGLE_BURST;
+#endif
+
+#ifdef DMA_TCEM_BLOCK_TRANSFER
+	hal_config->TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
+#endif
 
 	return 0;
 }
