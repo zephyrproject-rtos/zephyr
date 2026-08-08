@@ -444,7 +444,7 @@ MODEM_CHAT_MATCH_DEFINE(cgmm_match, "Quectel", "_", on_cgmm);
 /* SIM info */
 MODEM_CHAT_MATCH_DEFINE(cgsn_imei_match, "+CGSN: ", "", on_cgsn_imei);
 MODEM_CHAT_MATCH_DEFINE(cgsn_imeisv_match, "+CGSN: ", "", on_cgsn_imeisv);
-MODEM_CHAT_MATCH_DEFINE(cgsn_svn_match, "+CGSN: ", "", on_cgsn_svn);
+MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(cgsn_svn_match, "+CGSN: ", "", on_cgsn_svn);
 MODEM_CHAT_MATCH_DEFINE(cimi_match, "", "", on_cimi);
 MODEM_CHAT_MATCH_DEFINE(qccid_match, "+QCCID: ", "", on_qccid);
 
@@ -517,9 +517,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(bc66x_get_sim_info_cmds,
 
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN=2", cgsn_imeisv_match),
 
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN=3", cgsn_svn_match),
-
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN=3", cgsn_svn_match),
 
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
 

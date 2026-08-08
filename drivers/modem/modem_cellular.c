@@ -695,8 +695,10 @@ MODEM_CHAT_MATCHES_DEFINE(__maybe_unused allow_match,
 
 MODEM_CHAT_MATCH_DEFINE(imei_match __maybe_unused, "", "", modem_cellular_chat_on_imei);
 MODEM_CHAT_MATCH_DEFINE(cgmm_match __maybe_unused, "", "", modem_cellular_chat_on_cgmm);
-MODEM_CHAT_MATCH_DEFINE(csq_match __maybe_unused, "+CSQ: ", ",", modem_cellular_chat_on_csq);
-MODEM_CHAT_MATCH_DEFINE(cesq_match __maybe_unused, "+CESQ: ", ",", modem_cellular_chat_on_cesq);
+MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused csq_match, "+CSQ: ", ",",
+				    modem_cellular_chat_on_csq);
+MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cesq_match, "+CESQ: ", ",",
+				    modem_cellular_chat_on_cesq);
 MODEM_CHAT_MATCH_DEFINE(qccid_match __maybe_unused, "+QCCID: ", "", modem_cellular_chat_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(iccid_match __maybe_unused, "+ICCID: ", "", modem_cellular_chat_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(ccid_match __maybe_unused, "+CCID: ", "", modem_cellular_chat_on_iccid);
@@ -2395,8 +2397,7 @@ static void modem_cellular_cmux_handler(struct modem_cmux *cmux, enum modem_cmux
 }
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(get_signal_csq_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSQ", csq_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CSQ", csq_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(get_signal_csq_chat_script, get_signal_csq_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 2);
@@ -2418,8 +2419,7 @@ static inline int modem_cellular_csq_parse_rssi(uint8_t rssi, int16_t *value)
 }
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(get_signal_cesq_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CESQ", cesq_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CESQ", cesq_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(get_signal_cesq_chat_script, get_signal_cesq_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 2);
