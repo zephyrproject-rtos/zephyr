@@ -11,6 +11,9 @@
 
 static int testing_domain_on_notitication;
 static int testing_domain_off_notitication;
+static int testing_dev_suspend;
+static int testing_dev_resume;
+static bool testing_dev_fail_turn_on;
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -44,17 +47,56 @@ static int dev_pm_action(const struct device *dev, enum pm_device_action pm_acti
 
 	if (pm_action == PM_DEVICE_ACTION_TURN_ON) {
 		testing_domain_on_notitication++;
+		if (testing_dev_fail_turn_on) {
+			return -EIO;
+		}
 	}
 
 	if (pm_action == PM_DEVICE_ACTION_TURN_OFF) {
 		testing_domain_off_notitication++;
 	}
 
+	if (pm_action == PM_DEVICE_ACTION_SUSPEND) {
+		testing_dev_suspend++;
+	}
+
+	if (pm_action == PM_DEVICE_ACTION_RESUME) {
+		testing_dev_resume++;
+	}
+
 	return 0;
 }
 
 PM_DEVICE_DT_DEFINE(TEST_DEV, dev_pm_action);
-DEVICE_DT_DEFINE(TEST_DEV, NULL, PM_DEVICE_DT_GET(TEST_DEV), NULL, NULL, POST_KERNEL, 20, NULL);
+/* Same init priority as the domain: the init-entry ordinal still orders the
+ * child after the domain (its power-domain dependency), while the device list
+ * the suspend sweep walks has no such ordinal, so the domain is reached first
+ * and force-suspends the still-active child, exercising the resume path.
+ */
+DEVICE_DT_DEFINE(TEST_DEV, NULL, PM_DEVICE_DT_GET(TEST_DEV), NULL, NULL, PRE_KERNEL_1,
+		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+static void check_forced_resume(int expected)
+{
+	const struct device *dev = DEVICE_DT_GET(TEST_DEV);
+	enum pm_device_state state;
+
+	zassert_equal(testing_dev_suspend, expected);
+	zassert_equal(testing_dev_resume, expected);
+	zassert_ok(pm_device_state_get(dev, &state));
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+}
+
+static void check_not_resumed(int suspend_expected, int resume_expected)
+{
+	const struct device *dev = DEVICE_DT_GET(TEST_DEV);
+	enum pm_device_state state;
+
+	zassert_equal(testing_dev_suspend, suspend_expected);
+	zassert_equal(testing_dev_resume, resume_expected);
+	zassert_ok(pm_device_state_get(dev, &state));
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+}
 
 ZTEST(power_domain_soc_state_change_1cpu, test_power_domain_soc_state_change)
 {
@@ -68,6 +110,7 @@ ZTEST(power_domain_soc_state_change_1cpu, test_power_domain_soc_state_change)
 
 	zassert_equal(testing_domain_on_notitication, 1);
 	zassert_equal(testing_domain_off_notitication, 1);
+	check_forced_resume(1);
 
 	state = &cpu_states[1];
 	/* Sleep to transition to STATE: SUSPEND-TO-IDLE */
@@ -75,6 +118,7 @@ ZTEST(power_domain_soc_state_change_1cpu, test_power_domain_soc_state_change)
 
 	zassert_equal(testing_domain_on_notitication, 2);
 	zassert_equal(testing_domain_off_notitication, 2);
+	check_forced_resume(2);
 
 	state = &cpu_states[0];
 	/* Sleep to transition to STATE: RUNTIME-IDLE */
@@ -85,6 +129,21 @@ ZTEST(power_domain_soc_state_change_1cpu, test_power_domain_soc_state_change)
 	 */
 	zassert_equal(testing_domain_on_notitication, 2);
 	zassert_equal(testing_domain_off_notitication, 2);
+	check_forced_resume(2);
+
+	/* A child whose TURN_ON fails is left in SUSPENDED with
+	 * PM_DEVICE_FLAG_TURN_ON_FAILED set, and must not be resumed onto
+	 * hardware that was never powered.
+	 */
+	testing_dev_fail_turn_on = true;
+
+	state = &cpu_states[2];
+	/* Sleep to transition to STATE: STANDBY */
+	k_usleep(state->min_residency_us + state->exit_latency_us);
+
+	zassert_equal(testing_domain_on_notitication, 3);
+	zassert_equal(testing_domain_off_notitication, 3);
+	check_not_resumed(3, 2);
 }
 
 ZTEST_SUITE(power_domain_soc_state_change_1cpu, NULL, NULL, ztest_simple_1cpu_before,
