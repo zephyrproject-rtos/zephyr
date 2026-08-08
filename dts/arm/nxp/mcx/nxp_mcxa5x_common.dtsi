@@ -867,7 +867,7 @@
 		enet_mdio: mdio {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "nxp,enet-qos-mdio";
+			compatible = "snps,dwmac-mdio";
 			status = "disabled";
 		};
 	};
