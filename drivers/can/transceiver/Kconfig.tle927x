@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Deere & Company
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_TRANSCEIVER_TLE927X
+	bool "Infineon TLE927x CAN transceiver driver"
+	default y
+	depends on DT_HAS_INFINEON_TLE927X_CAN_ENABLED
+	select MFD
+	help
+	  Enable Infineon TLE927x CAN transceiver driver.
+
+if CAN_TRANSCEIVER_TLE927X
+
+config CAN_TRANSCEIVER_TLE927X_INIT_PRIORITY
+	int "TLE927x CAN transceiver driver init priority"
+	default 78
+	help
+	  Init priority for the TLE927x CAN transceiver driver. It must be
+	  greater than MFD_TLE927X_INIT_PRIORITY and lower than
+	  CAN_INIT_PRIORITY.
+
+endif # CAN_TRANSCEIVER_TLE927X
