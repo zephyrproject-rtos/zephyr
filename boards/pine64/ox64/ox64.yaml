@@ -1,0 +1,27 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ox64
+name: Pine64 Ox64
+vendor: pine64
+type: mcu
+arch: riscv
+ram: 224
+flash: 8000
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - pinctrl
+  - uart
+  - i2c
+  - watchdog
+  - counter
+  - entropy
+  - crypto
+  - sdhc
