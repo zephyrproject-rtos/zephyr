@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Qingsong Gou <gouqs@hotmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/sf32lb58x-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <PA31_UART1_TXD>;
+		};
+
+		group2 {
+			pinmux = <PA32_UART1_RXD>;
+			input-enable;
+			bias-pull-up;
+		};
+	};
+};
