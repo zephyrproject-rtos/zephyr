@@ -241,6 +241,7 @@ extern "C" {
  *
  */
 struct spi_cs_control {
+	/** Chip select control parameters, interpreted according to @c cs_is_gpio */
 	union {
 		struct {
 			/**
@@ -271,7 +272,11 @@ struct spi_cs_control {
 			uint32_t hold_ns;
 		};
 	};
-	/* To keep track of which form of this struct is valid */
+	/**
+	 * True when the chip select is controlled by a GPIO (@c gpio and @c delay
+	 * fields), false when it is handled by the SPI controller itself
+	 * (@c setup_ns and @c hold_ns fields).
+	 */
 	bool cs_is_gpio;
 };
 
@@ -803,11 +808,15 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
 
 /** @} */
 
+/** @cond INTERNAL_HIDDEN */
+
 #define SPI_STATS_RX_BYTES_INC(dev_)
 #define SPI_STATS_TX_BYTES_INC(dev_)
 #define SPI_STATS_TRANSFER_ERROR_INC(dev_)
 
 #define spi_transceive_stats(dev, error, tx_bufs, rx_bufs)
+
+/** @endcond */
 
 #endif /*CONFIG_SPI_STATS*/
 

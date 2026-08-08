@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public APIs for the system initialization infrastructure.
+ * @ingroup sys_init
+ */
+
 #ifndef ZEPHYR_INCLUDE_INIT_H_
 #define ZEPHYR_INCLUDE_INIT_H_
 

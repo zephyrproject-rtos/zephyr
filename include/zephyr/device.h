@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief APIs and macros for the Zephyr device model.
+ * @ingroup device_model
+ */
+
 #ifndef ZEPHYR_INCLUDE_DEVICE_H_
 #define ZEPHYR_INCLUDE_DEVICE_H_
 
@@ -542,12 +548,19 @@ struct device {
 	 * @kconfig{CONFIG_PM_DEVICE} is enabled).
 	 */
 	union {
+		/** Info common to all device PM variants */
 		struct pm_device_base *pm_base;
+		/** Info for a device using generic PM */
 		struct pm_device *pm;
+		/** Info for a device using synchronous PM */
 		struct pm_device_isr *pm_isr;
 	};
 #endif
 #if defined(CONFIG_DEVICE_DT_METADATA) || defined(__DOXYGEN__)
+	/**
+	 * Devicetree metadata associated with the device (only available if
+	 * @kconfig{CONFIG_DEVICE_DT_METADATA} is enabled).
+	 */
 	const struct device_dt_metadata *dt_meta;
 #endif /* CONFIG_DEVICE_DT_METADATA */
 };
