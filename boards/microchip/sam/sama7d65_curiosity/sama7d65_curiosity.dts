@@ -249,3 +249,7 @@
 &rtc {
 	status = "okay";
 };
+
+&trng {
+	status = "okay";
+};
