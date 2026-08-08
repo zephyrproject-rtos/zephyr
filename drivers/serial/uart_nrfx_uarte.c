@@ -3060,10 +3060,15 @@ static int uarte_pm_suspend(const struct device *dev)
 			}
 #endif
 			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPRX);
-			while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO)) {
-				/* Busy wait for event to register */
-				Z_SPIN_DELAY(2);
-			}
+			/* RXSTARTED may be a stale event from a previous firmware (e.g. a
+			 * chain-loading bootloader), in which case STOPRX yields no RXTO.
+			 * The wait should be bounded to avoid hanging forever.
+			 */
+			bool got_rxto;
+
+			NRFX_WAIT_FOR(nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXTO),
+				      1000, 1, got_rxto);
+
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXTO);
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
