@@ -1091,6 +1091,13 @@ static void obex_client_clear_active_state(struct bt_obex_client *client)
 	atomic_ptr_clear(&client->obex->_active_client);
 }
 
+static void obex_client_restore_active_state(struct bt_obex_client *client,
+					      struct bt_obex_client *active_client, uint8_t opcode)
+{
+	atomic_set(&client->_opcode, opcode);
+	(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
+}
+
 static void obex_client_req_complete(struct bt_obex_client *client)
 {
 	obex_client_save_last_operation(client, (uint8_t)atomic_get(&client->_opcode));
@@ -1791,10 +1798,12 @@ int bt_obex_connect(struct bt_obex_client *client, uint16_t mopl, struct net_buf
 {
 	struct bt_obex_conn_req_hdr *req_hdr;
 	struct bt_obex_req_hdr *hdr;
+	const uint8_t *target_data;
 	int err;
 	bool allocated = false;
 	uint16_t target_len;
-	const uint8_t *target_data;
+	atomic_val_t flags;
+	bool appended = false;
 
 	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
@@ -1834,9 +1843,11 @@ int bt_obex_connect(struct bt_obex_client *client, uint16_t mopl, struct net_buf
 
 	if (!atomic_cas(&client->_opcode, 0, BT_OBEX_OPCODE_CONNECT)) {
 		LOG_WRN("Operation inprogress");
+		atomic_ptr_clear(&client->obex->_active_client);
 		return -EBUSY;
 	}
 
+	flags = atomic_get(&client->_flags);
 	atomic_set_bit_to(&client->_flags, BT_OBEX_HAS_TARGET,
 			  bt_obex_has_header(buf, BT_OBEX_HEADER_ID_TARGET));
 
@@ -1844,13 +1855,13 @@ int bt_obex_connect(struct bt_obex_client *client, uint16_t mopl, struct net_buf
 		err = bt_obex_get_header_target(buf, &target_len, &target_data);
 		if (err != 0) {
 			LOG_ERR("Invalid target header");
-			return err;
+			goto failed;
 		}
 
 		err = bt_obex_make_uuid(&client->_target, target_data, target_len);
 		if (err != 0) {
 			LOG_WRN("Unsupported target header len %u", target_len);
-			return err;
+			goto failed;
 		}
 	}
 
@@ -1858,7 +1869,8 @@ int bt_obex_connect(struct bt_obex_client *client, uint16_t mopl, struct net_buf
 		buf = obex_alloc_buf(client->obex);
 		if (buf == NULL) {
 			LOG_WRN("No buffers");
-			return -ENOBUFS;
+			err = -ENOBUFS;
+			goto failed;
 		}
 		allocated = true;
 	}
@@ -1869,6 +1881,7 @@ int bt_obex_connect(struct bt_obex_client *client, uint16_t mopl, struct net_buf
 	atomic_set(&client->_state, BT_OBEX_CONNECTING);
 
 	if (!sys_slist_find(&client->obex->_clients, &client->_node, NULL)) {
+		appended = true;
 		sys_slist_append(&client->obex->_clients, &client->_node);
 	}
 
@@ -1881,14 +1894,20 @@ int bt_obex_connect(struct bt_obex_client *client, uint16_t mopl, struct net_buf
 	hdr->len = sys_cpu_to_be16(buf->len);
 
 	err = obex_send(client->obex, client->tx.mopl, buf);
-	if (err != 0) {
-		atomic_set(&client->_state, BT_OBEX_DISCONNECTED);
-		obex_client_clear_active_state(client);
-		sys_slist_find_and_remove(&client->obex->_clients, &client->_node);
+	if (err == 0) {
+		return 0;
+	}
 
-		if (allocated) {
-			net_buf_unref(buf);
-		}
+failed:
+	atomic_set(&client->_state, BT_OBEX_DISCONNECTED);
+	if (appended) {
+		sys_slist_find_and_remove(&client->obex->_clients, &client->_node);
+	}
+	atomic_set(&client->_flags, flags);
+	obex_client_clear_active_state(client);
+
+	if (allocated) {
+		net_buf_unref(buf);
 	}
 	return err;
 }
@@ -2041,6 +2060,7 @@ int bt_obex_disconnect(struct bt_obex_client *client, struct net_buf *buf)
 
 	if (!atomic_cas(&client->_opcode, 0, BT_OBEX_OPCODE_DISCONN)) {
 		LOG_WRN("Operation inprogress");
+		atomic_ptr_clear(&client->obex->_active_client);
 		return -EBUSY;
 	}
 
@@ -2048,7 +2068,8 @@ int bt_obex_disconnect(struct bt_obex_client *client, struct net_buf *buf)
 		buf = obex_alloc_buf(client->obex);
 		if (buf == NULL) {
 			LOG_WRN("No buffers");
-			return -ENOBUFS;
+			err = -ENOBUFS;
+			goto failed;
 		}
 		allocated = true;
 	}
@@ -2058,14 +2079,16 @@ int bt_obex_disconnect(struct bt_obex_client *client, struct net_buf *buf)
 	hdr->len = sys_cpu_to_be16(buf->len);
 
 	err = obex_send(client->obex, client->tx.mopl, buf);
-	if (err != 0) {
-		obex_client_clear_active_state(client);
-
-		if (allocated) {
-			net_buf_unref(buf);
-		}
-	} else {
+	if (err == 0) {
 		atomic_set(&client->_state, BT_OBEX_DISCONNECTING);
+		return 0;
+	}
+
+failed:
+	obex_client_clear_active_state(client);
+
+	if (allocated) {
+		net_buf_unref(buf);
 	}
 	return err;
 }
@@ -2170,10 +2193,10 @@ static int obex_client_req_check(struct bt_obex_client *client, bool first)
 int bt_obex_put(struct bt_obex_client *client, bool final, struct net_buf *buf)
 {
 	struct bt_obex_req_hdr *hdr;
-	struct bt_obex_client *active_client;
+	struct bt_obex_client *active_client = NULL;
 	int err;
 	uint8_t req_code;
-	uint8_t opcode;
+	uint8_t opcode = 0;
 	bool allocated = false;
 	atomic_val_t flags;
 
@@ -2192,45 +2215,47 @@ int bt_obex_put(struct bt_obex_client *client, bool final, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
-	active_client = atomic_ptr_get(&client->obex->_active_client);
-	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client) &&
-	    (active_client != client)) {
-		LOG_WRN("One OBEX request is executing");
-		return -EBUSY;
-	}
-
-	if (buf == NULL) {
-		buf = obex_alloc_buf(client->obex);
-		if (buf == NULL) {
-			LOG_WRN("No buffers");
-			return -ENOBUFS;
+	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client)) {
+		active_client = atomic_ptr_get(&client->obex->_active_client);
+		if (active_client != client) {
+			LOG_WRN("One OBEX request is executing");
+			return -EBUSY;
 		}
-		allocated = true;
 	}
-
-	opcode = atomic_get(&client->_opcode);
-	flags = atomic_get(&client->_flags);
 
 	req_code = final ? BT_OBEX_OPCODE_PUT_F : BT_OBEX_OPCODE_PUT;
 	if (!atomic_cas(&client->_opcode, 0, req_code)) {
+		opcode = atomic_get(&client->_opcode);
 		if ((opcode != BT_OBEX_OPCODE_PUT_F) && (opcode != BT_OBEX_OPCODE_PUT)) {
 			LOG_WRN("Operation inprogress");
-			err = -EBUSY;
-			goto failed;
+			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
+			return -EBUSY;
 		}
 
 		if (!final && (opcode == BT_OBEX_OPCODE_PUT_F)) {
 			LOG_WRN("Unexpected put request without final bit");
-			err = -EBUSY;
-			goto failed;
+			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
+			return -EBUSY;
 		}
 
 		if ((opcode != req_code) && !atomic_cas(&client->_opcode, opcode, req_code)) {
 			LOG_WRN("OP code mismatch %u != %u", (uint8_t)atomic_get(&client->_opcode),
 				opcode);
-			err = -EINVAL;
+			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
+			return -EINVAL;
+		}
+	}
+
+	flags = atomic_get(&client->_flags);
+
+	if (buf == NULL) {
+		buf = obex_alloc_buf(client->obex);
+		if (buf == NULL) {
+			LOG_WRN("No buffers");
+			err = -ENOBUFS;
 			goto failed;
 		}
+		allocated = true;
 	}
 
 	err = obex_client_req_check(client, opcode == 0);
@@ -2265,8 +2290,7 @@ int bt_obex_put(struct bt_obex_client *client, bool final, struct net_buf *buf)
 
 failed:
 	atomic_set(&client->_flags, flags);
-	atomic_set(&client->_opcode, opcode);
-	atomic_ptr_set(&client->obex->_active_client, active_client);
+	obex_client_restore_active_state(client, active_client, opcode);
 
 	if (allocated) {
 		net_buf_unref(buf);
@@ -2365,10 +2389,10 @@ failed:
 int bt_obex_get(struct bt_obex_client *client, bool final, struct net_buf *buf)
 {
 	struct bt_obex_req_hdr *hdr;
-	struct bt_obex_client *active_client;
+	struct bt_obex_client *active_client = NULL;
 	int err;
 	uint8_t req_code;
-	uint8_t opcode;
+	uint8_t opcode = 0;
 	bool allocated = false;
 	atomic_val_t flags;
 
@@ -2387,45 +2411,47 @@ int bt_obex_get(struct bt_obex_client *client, bool final, struct net_buf *buf)
 		return -ENOTCONN;
 	}
 
-	active_client = atomic_ptr_get(&client->obex->_active_client);
-	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client) &&
-	    (active_client != client)) {
-		LOG_WRN("One OBEX request is executing");
-		return -EBUSY;
-	}
-
-	if (buf == NULL) {
-		buf = obex_alloc_buf(client->obex);
-		if (buf == NULL) {
-			LOG_WRN("No buffers");
-			return -ENOBUFS;
+	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client)) {
+		active_client = atomic_ptr_get(&client->obex->_active_client);
+		if (active_client != client) {
+			LOG_WRN("One OBEX request is executing");
+			return -EBUSY;
 		}
-		allocated = true;
 	}
-
-	opcode = atomic_get(&client->_opcode);
-	flags = atomic_get(&client->_flags);
 
 	req_code = final ? BT_OBEX_OPCODE_GET_F : BT_OBEX_OPCODE_GET;
 	if (!atomic_cas(&client->_opcode, 0, req_code)) {
+		opcode = atomic_get(&client->_opcode);
 		if ((opcode != BT_OBEX_OPCODE_GET_F) && (opcode != BT_OBEX_OPCODE_GET)) {
 			LOG_WRN("Operation inprogress");
-			err = -EBUSY;
-			goto failed;
+			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
+			return -EBUSY;
 		}
 
 		if (!final && (opcode == BT_OBEX_OPCODE_GET_F)) {
 			LOG_WRN("Unexpected get request without final bit");
-			err = -EBUSY;
-			goto failed;
+			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
+			return -EBUSY;
 		}
 
 		if ((opcode != req_code) && !atomic_cas(&client->_opcode, opcode, req_code)) {
 			LOG_WRN("OP code mismatch %u != %u", (uint8_t)atomic_get(&client->_opcode),
 				opcode);
-			err = -EINVAL;
+			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
+			return -EINVAL;
+		}
+	}
+
+	flags = atomic_get(&client->_flags);
+
+	if (buf == NULL) {
+		buf = obex_alloc_buf(client->obex);
+		if (buf == NULL) {
+			LOG_WRN("No buffers");
+			err = -ENOBUFS;
 			goto failed;
 		}
+		allocated = true;
 	}
 
 	err = obex_client_req_check(client, opcode == 0);
@@ -2460,8 +2486,7 @@ int bt_obex_get(struct bt_obex_client *client, bool final, struct net_buf *buf)
 
 failed:
 	atomic_set(&client->_flags, flags);
-	atomic_set(&client->_opcode, opcode);
-	atomic_ptr_set(&client->obex->_active_client, active_client);
+	obex_client_restore_active_state(client, active_client, opcode);
 
 	if (allocated) {
 		net_buf_unref(buf);
@@ -2583,6 +2608,7 @@ int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf)
 	int err;
 	uint8_t opcode;
 	bool allocated = false;
+	atomic_val_t pre_opcode;
 
 	if (client == NULL || client->obex == NULL) {
 		LOG_WRN("Invalid parameter");
@@ -2626,7 +2652,7 @@ int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf)
 	}
 
 	opcode = atomic_set(&client->_opcode, BT_OBEX_OPCODE_ABORT);
-	atomic_clear(&client->_pre_opcode);
+	pre_opcode = atomic_clear(&client->_pre_opcode);
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
 	hdr->code = BT_OBEX_OPCODE_ABORT;
@@ -2634,8 +2660,8 @@ int bt_obex_abort(struct bt_obex_client *client, struct net_buf *buf)
 
 	err = obex_send(client->obex, client->tx.mopl, buf);
 	if (err != 0) {
-		atomic_set(&client->_opcode, opcode);
-		atomic_ptr_set(&client->obex->_active_client, active_client);
+		atomic_set(&client->_pre_opcode, pre_opcode);
+		obex_client_restore_active_state(client, active_client, opcode);
 
 		if (allocated) {
 			net_buf_unref(buf);
@@ -2726,6 +2752,7 @@ int bt_obex_setpath(struct bt_obex_client *client, uint8_t flags, struct net_buf
 
 	if (!atomic_cas(&client->_opcode, 0, BT_OBEX_OPCODE_SETPATH)) {
 		LOG_WRN("Operation inprogress");
+		atomic_ptr_clear(&client->obex->_active_client);
 		return -EINPROGRESS;
 	}
 
@@ -2733,7 +2760,8 @@ int bt_obex_setpath(struct bt_obex_client *client, uint8_t flags, struct net_buf
 		buf = obex_alloc_buf(client->obex);
 		if (buf == NULL) {
 			LOG_WRN("No buffers");
-			return -ENOBUFS;
+			err = -ENOBUFS;
+			goto failed;
 		}
 		allocated = true;
 	}
@@ -2746,12 +2774,15 @@ int bt_obex_setpath(struct bt_obex_client *client, uint8_t flags, struct net_buf
 	hdr->len = sys_cpu_to_be16(buf->len);
 
 	err = obex_send(client->obex, client->tx.mopl, buf);
-	if (err != 0) {
-		obex_client_clear_active_state(client);
+	if (err == 0) {
+		return 0;
+	}
 
-		if (allocated) {
-			net_buf_unref(buf);
-		}
+failed:
+	obex_client_clear_active_state(client);
+
+	if (allocated) {
+		net_buf_unref(buf);
 	}
 	return err;
 }
@@ -2810,10 +2841,10 @@ int bt_obex_setpath_rsp(struct bt_obex_server *server, uint8_t rsp_code, struct 
 int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *buf)
 {
 	struct bt_obex_req_hdr *hdr;
-	struct bt_obex_client *active_client;
+	struct bt_obex_client *active_client = NULL;
 	int err;
 	uint8_t req_code;
-	uint8_t opcode;
+	uint8_t opcode = 0;
 	bool allocated = false;
 
 	if (client == NULL || client->obex == NULL) {
@@ -2831,41 +2862,45 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 		return -ENOTCONN;
 	}
 
-	active_client = atomic_ptr_get(&client->obex->_active_client);
-	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client) &&
-	    (active_client != client)) {
-		LOG_WRN("One OBEX request is executing");
-		return -EBUSY;
-	}
-
-	if (buf == NULL) {
-		buf = obex_alloc_buf(client->obex);
-		if (buf == NULL) {
-			LOG_WRN("No buffers");
-			return -ENOBUFS;
+	if (!atomic_ptr_cas(&client->obex->_active_client, NULL, client)) {
+		active_client = atomic_ptr_get(&client->obex->_active_client);
+		if (active_client != client) {
+			LOG_WRN("One OBEX request is executing");
+			return -EBUSY;
 		}
-		allocated = true;
 	}
-
-	opcode = atomic_get(&client->_opcode);
 
 	req_code = final ? BT_OBEX_OPCODE_ACTION_F : BT_OBEX_OPCODE_ACTION;
 	if (!atomic_cas(&client->_opcode, 0, req_code)) {
+		opcode = atomic_get(&client->_opcode);
 		if ((opcode != BT_OBEX_OPCODE_ACTION_F) && (opcode != BT_OBEX_OPCODE_ACTION)) {
 			LOG_WRN("Operation inprogress");
+			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
 			return -EBUSY;
 		}
 
 		if (!final && (opcode == BT_OBEX_OPCODE_ACTION_F)) {
 			LOG_WRN("Unexpected get request without final bit");
+			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
 			return -EBUSY;
 		}
 
 		if ((opcode != req_code) && !atomic_cas(&client->_opcode, opcode, req_code)) {
 			LOG_WRN("OP code mismatch %u != %u", (uint8_t)atomic_get(&client->_opcode),
 				opcode);
+			(void)atomic_ptr_cas(&client->obex->_active_client, client, active_client);
 			return -EINVAL;
 		}
+	}
+
+	if (buf == NULL) {
+		buf = obex_alloc_buf(client->obex);
+		if (buf == NULL) {
+			LOG_WRN("No buffers");
+			err = -ENOBUFS;
+			goto failed;
+		}
+		allocated = true;
 	}
 
 	hdr = net_buf_push(buf, sizeof(*hdr));
@@ -2873,13 +2908,15 @@ int bt_obex_action(struct bt_obex_client *client, bool final, struct net_buf *bu
 	hdr->len = sys_cpu_to_be16(buf->len);
 
 	err = obex_send(client->obex, client->tx.mopl, buf);
-	if (err != 0) {
-		atomic_set(&client->_opcode, opcode);
-		atomic_ptr_set(&client->obex->_active_client, active_client);
+	if (err == 0) {
+		return 0;
+	}
 
-		if (allocated) {
-			net_buf_unref(buf);
-		}
+failed:
+	obex_client_restore_active_state(client, active_client, opcode);
+
+	if (allocated) {
+		net_buf_unref(buf);
 	}
 	return err;
 }
