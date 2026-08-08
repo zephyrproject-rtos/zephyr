@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Synaptics, Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -585,10 +585,12 @@
 
 			/omit-if-no-ref/ i2c0_ms_sda: i2c0-ms-sda {
 				pinmux = <SRXXX_LPS_PINMUX(0, 0, 1, 0x00)>;
+				bias-pull-up;
 			};
 
 			/omit-if-no-ref/ i3c_ms_sda: i3c-ms-sda {
 				pinmux = <SRXXX_LPS_PINMUX(0, 0, 2, 0x00)>;
+				bias-pull-up;
 			};
 
 			/omit-if-no-ref/ dm0_data_c: dm0-data-c {
@@ -602,10 +604,12 @@
 
 			/omit-if-no-ref/ i2c0_ms_scl: i2c0-ms-scl {
 				pinmux = <SRXXX_LPS_PINMUX(0, 3, 1, 0x04)>;
+				bias-pull-up;
 			};
 
 			/omit-if-no-ref/ i3c_ms_scl: i3c-ms-scl {
 				pinmux = <SRXXX_LPS_PINMUX(0, 3, 2, 0x04)>;
+				bias-pull-up;
 			};
 
 			/omit-if-no-ref/ dm0_clk_c: dm0-clk-c {
@@ -663,6 +667,7 @@
 			/omit-if-no-ref/ i2c1_ms_scl: i2c1-ms-scl {
 				pinmux = <SRXXX_LPS_PINMUX(0, 12, 3, 0x10)>;
 				port = <SRXXX_PORT_PINMUX(0x14, 0, 0, 1)>;
+				bias-pull-up;
 			};
 
 			/omit-if-no-ref/ gpio_22: gpio-22 {
@@ -714,6 +719,7 @@
 			/omit-if-no-ref/ i2c1_ms_sda: i2c1-ms-sda {
 				pinmux = <SRXXX_LPS_PINMUX(0, 21, 3, 0x1c)>;
 				port = <SRXXX_PORT_PINMUX(0x14, 1, 0, 1)>;
+				bias-pull-up;
 			};
 
 			/omit-if-no-ref/ jtag_tms: jtag-tms {
@@ -783,6 +789,7 @@
 			/omit-if-no-ref/ i2c1_ms_scl_b: i2c1-ms-scl-b {
 				pinmux = <SRXXX_SWIRE_PINMUX(24, 1)>;
 				port = <SRXXX_PORT_PINMUX(0x14, 0, 1, 1)>;
+				bias-pull-up;
 			};
 
 			/omit-if-no-ref/ swire_dat: swire-dat {
@@ -796,6 +803,7 @@
 			/omit-if-no-ref/ i2c1_ms_sda_b: i2c1-ms-sda-b {
 				pinmux = <SRXXX_SWIRE_PINMUX(25, 1)>;
 				port = <SRXXX_PORT_PINMUX(0x14, 1, 1, 1)>;
+				bias-pull-up;
 			};
 		};
 	};
