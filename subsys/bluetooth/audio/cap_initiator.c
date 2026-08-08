@@ -1368,7 +1368,7 @@ static void cap_initiator_unicast_audio_proc_complete(struct bt_cap_common_proc 
 	err = active_proc->err;
 	proc_type = active_proc->proc_type;
 
-	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_handover_is_active()) {
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_active_proc_is_handover()) {
 		/* Clear initiator parameters. Normally this is done just before the
 		 * application callbacks with bt_cap_common_clear_proc, but
 		 * since that is not happening here, we clear them manually. They
@@ -2336,6 +2336,15 @@ int bt_cap_initiator_unicast_audio_cancel(void)
 		LOG_DBG("No CAP procedure is in progress");
 
 		return -EALREADY;
+	}
+
+	if ((IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_active_proc_is_handover()) ||
+	    !bt_cap_common_active_proc_is_initiator()) {
+		bt_cap_common_unlock_proc();
+
+		LOG_DBG("No CAP initiator procedure is in progress");
+
+		return -EOPNOTSUPP;
 	}
 
 	bt_cap_common_abort_proc(NULL, -ECANCELED);
