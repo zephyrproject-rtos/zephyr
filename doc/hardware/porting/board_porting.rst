@@ -364,6 +364,36 @@ If multiple boards are placed in the same board folder, then the file
      ...
    ...
 
+.. _board_porting_requires:
+
+Boards pairing several SoC trees
+================================
+
+A build only loads the Kconfig and CMake trees of the SoC the board target selects, together with
+whatever that SoC declares in its own ``requires`` property, see :ref:`soc_porting_requires`.
+
+A few boards need a SoC tree that neither of those covers, because the board itself is what pairs
+two otherwise independent SoCs. The simulated BabbleSim boards are the in-tree example: they build
+on the ``native`` SoC while using the Kconfig of the Nordic SoC they simulate. Such a board
+declares the extra trees with the same ``requires`` property, on the board rather than on the SoC:
+
+.. code-block:: yaml
+
+   boards:
+   - name: <board-name>
+     vendor: <board-vendor>
+     socs:
+     - name: <soc>
+     requires:
+     - <other-soc>
+
+As in :file:`soc.yml`, ``requires`` names SoCs as written in a :file:`soc.yml` file, not Kconfig
+symbols, the referenced SoC may live in any SoC root, and requirements are resolved transitively.
+
+Prefer declaring the requirement on the SoC when it holds for every board using that SoC. Put it
+on the board only when the pairing is a property of that board, as it is for the simulated boards
+above: neither ``native`` nor the Nordic SoCs need each other in general.
+
 
 .. _default_board_configuration:
 
