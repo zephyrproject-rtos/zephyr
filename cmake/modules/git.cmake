@@ -14,7 +14,7 @@ find_package(Git QUIET)
 function(git_describe DIR OUTPUT)
   if(GIT_FOUND)
     execute_process(
-      COMMAND ${GIT_EXECUTABLE} describe --abbrev=12 --always
+      COMMAND ${GIT_EXECUTABLE} describe --abbrev=12 --always --dirty
       WORKING_DIRECTORY                ${DIR}
       OUTPUT_VARIABLE                  DESCRIPTION
       OUTPUT_STRIP_TRAILING_WHITESPACE
