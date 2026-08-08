@@ -42,6 +42,8 @@ LOG_MODULE_REGISTER(mcpwm_esp32, CONFIG_PWM_LOG_LEVEL);
 #define DUTY_MODE_FORCE_LOW   2
 #define DUTY_MODE_FORCE_HIGH  3
 
+#define DUTY_SUB_PERCENT (16ULL)
+
 #ifdef CONFIG_PWM_CAPTURE
 #define SKIP_IRQ_NUM        4U
 #define CAP_INT_MASK        7U
@@ -117,7 +119,7 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 
 	if (channel->duty == 0) {
 		duty_mode = channel->inverted ? DUTY_MODE_FORCE_HIGH : DUTY_MODE_FORCE_LOW;
-	} else if (channel->duty == 100) {
+	} else if (channel->duty == 100 * DUTY_SUB_PERCENT) {
 		duty_mode = channel->inverted ? DUTY_MODE_FORCE_LOW : DUTY_MODE_FORCE_HIGH;
 	} else {
 		duty_mode = channel->inverted ? DUTY_MODE_ACTIVE_LOW : DUTY_MODE_ACTIVE_HIGH;
@@ -125,7 +127,7 @@ static void mcpwm_esp32_duty_set(const struct device *dev,
 
 	uint32_t timer_clk_hz = data->mcpwm_clk_hz / config->prescale / channel->prescale;
 
-	set_duty = (timer_clk_hz / channel->freq) * channel->duty / 100;
+	set_duty = (timer_clk_hz * channel->duty) / (channel->freq * 100 * DUTY_SUB_PERCENT);
 	mcpwm_ll_operator_connect_timer(data->hal.dev, channel->operator_id, channel->timer_id);
 	mcpwm_ll_operator_set_compare_value(data->hal.dev, channel->operator_id,
 					    channel->generator_id, set_duty);
@@ -211,7 +213,7 @@ static int mcpwm_esp32_get_cycles_per_sec(const struct device *dev, uint32_t cha
 	if (channel->idx >= CAPTURE_CHANNEL_IDX) {
 #if SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
 		/* Capture prescaler is disabled by default (equals 1) */
-		*cycles = (uint64_t)data->mcpwm_clk_hz / (config->prescale + 1) / 1;
+		*cycles = (uint64_t)data->mcpwm_clk_hz / config->prescale / 1;
 #else
 		*cycles = (uint64_t)APB_CLK_FREQ;
 #endif
@@ -220,7 +222,7 @@ static int mcpwm_esp32_get_cycles_per_sec(const struct device *dev, uint32_t cha
 #endif /* CONFIG_PWM_CAPTURE */
 
 	*cycles =
-		(uint64_t)data->mcpwm_clk_hz / (config->prescale + 1) / (channel->prescale + 1);
+		(uint64_t)data->mcpwm_clk_hz / config->prescale / channel->prescale;
 
 	return 0;
 }
@@ -255,7 +257,7 @@ static int mcpwm_esp32_set_cycles(const struct device *dev, uint32_t channel_idx
 		return ret;
 	}
 
-	channel->duty = DIV_ROUND_CLOSEST((uint64_t)pulse_cycles * 100ULL, period_cycles);
+	channel->duty = DIV_ROUND_CLOSEST((uint64_t)pulse_cycles * 100ULL * DUTY_SUB_PERCENT, period_cycles);
 
 	channel->inverted = (flags & PWM_POLARITY_INVERTED);
 
