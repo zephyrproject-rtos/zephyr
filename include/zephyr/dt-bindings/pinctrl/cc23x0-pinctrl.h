@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CC23X0_PINCTRL_COMMON_H_
-#define CC23X0_PINCTRL_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_CC23X0_PINCTRL_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_CC23X0_PINCTRL_H_
 
 /*
  * The whole TI CC23X0 pin configuration information is encoded in a 32-bit
@@ -224,4 +224,4 @@
 #define DIO25_T2_C2N    IOC_PORTCFG_PFUNC3
 #define DIO25_ADC6      IOC_PORTCFG_ANA
 
-#endif /* CC23X0_PINCTRL_COMMON_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_CC23X0_PINCTRL_H_ */
