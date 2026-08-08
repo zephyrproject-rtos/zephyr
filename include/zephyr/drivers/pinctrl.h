@@ -79,8 +79,10 @@ struct pinctrl_dev_config {
 
 /** @cond INTERNAL_HIDDEN */
 
-#if !defined(CONFIG_PINCTRL_KEEP_SLEEP_STATE)
-/** Out of power management configurations, ignore "sleep" state. */
+#if !defined(CONFIG_PINCTRL_KEEP_SLEEP_STATE) || defined(__DOXYGEN__)
+/** Out of power management configurations, ignore "sleep" state.
+ * Defined only when @kconfig{CONFIG_PINCTRL_KEEP_SLEEP_STATE} is disabled.
+ */
 #define PINCTRL_SKIP_SLEEP 1
 #endif
 
@@ -369,6 +371,8 @@ static inline int pinctrl_apply_state(const struct pinctrl_dev_config *config,
  * The name of the defined state pins variable is the same used by @p prop. This
  * macro is expected to be used in conjunction with #PINCTRL_DT_STATE_INIT.
  *
+ * @kconfig_dep{CONFIG_PINCTRL_DYNAMIC}
+ *
  * @param node_id Node identifier containing @p prop.
  * @param prop Property within @p node_id containing state configuration.
  *
@@ -384,6 +388,8 @@ static inline int pinctrl_apply_state(const struct pinctrl_dev_config *config,
  * This macro should be used in conjunction with #PINCTRL_DT_STATE_PINS_DEFINE
  * when using dynamic pin control to define an alternative state configuration
  * stored in Devicetree.
+ *
+ * @kconfig_dep{CONFIG_PINCTRL_DYNAMIC}
  *
  * Example:
  *
@@ -427,6 +433,8 @@ static inline int pinctrl_apply_state(const struct pinctrl_dev_config *config,
  * have to be provided. For example, if @c default and @c sleep are in the
  * current list of states, it is expected that the new array of states also
  * contains both.
+ *
+ * @kconfig_dep{CONFIG_PINCTRL_DYNAMIC}
  *
  * @param config Pin control configuration.
  * @param states New states to be set.
