@@ -35,8 +35,6 @@ extern "C" {
 #define BT_A2DP_MPEG_1_2_IE_LENGTH (4U)
 /** MPEG2,4 IE length */
 #define BT_A2DP_MPEG_2_4_IE_LENGTH (6U)
-/** The max IE (Codec Info Element) length */
-#define BT_A2DP_MAX_IE_LENGTH      (8U)
 
 /** @brief define the audio endpoint
  *  @param _role BT_AVDTP_SOURCE or BT_AVDTP_SINK.
@@ -328,7 +326,7 @@ struct bt_a2dp_codec_ie {
 	/** Length of codec_cap */
 	uint8_t len;
 	/** codec information element */
-	uint8_t codec_ie[BT_A2DP_MAX_IE_LENGTH];
+	uint8_t codec_ie[CONFIG_BT_A2DP_CODEC_MAX_IE_LEN];
 };
 
 /** @brief The endpoint configuration */
