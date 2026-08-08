@@ -26,15 +26,28 @@ LOG_MODULE_REGISTER(flash_img, CONFIG_IMG_MANAGER_LOG_LEVEL);
 #define PARTITION_IS_RUNNING_APP_PARTITION(label) \
 	DT_SAME_NODE(DT_CHOSEN(zephyr_code_partition), DT_NODELABEL(label))
 
-#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) && (CONFIG_TFM_MCUBOOT_IMAGE_NUMBER == 2)
-#define UPLOAD_FLASH_AREA_LABEL slot1_ns_partition
+#define PARTITION_EXISTS_AND_IS_RUNNING_APP_PARTITION(label) \
+	(PARTITION_EXISTS(label) && PARTITION_IS_RUNNING_APP_PARTITION(label))
+
+#if PARTITION_EXISTS_AND_IS_RUNNING_APP_PARTITION(slot1_partition) || \
+	PARTITION_EXISTS_AND_IS_RUNNING_APP_PARTITION(slot1_ns_partition)
+#define TARGET_SLOT slot0
 #else
-#if PARTITION_EXISTS(slot1_partition) && \
-	PARTITION_IS_RUNNING_APP_PARTITION(slot0_partition)
-#define UPLOAD_FLASH_AREA_LABEL slot1_partition
-#else
-#define UPLOAD_FLASH_AREA_LABEL slot0_partition
+#define TARGET_SLOT slot1
 #endif
+
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#if CONFIG_TFM_MCUBOOT_IMAGE_NUMBER == 2
+/* TF-M build with split image updating */
+#define UPLOAD_FLASH_AREA_LABEL UTIL_CAT(TARGET_SLOT, _ns_partition)
+#elif CONFIG_TFM_MCUBOOT_IMAGE_NUMBER == 1
+/* TF-M build with combined image updating */
+#define UPLOAD_FLASH_AREA_LABEL UTIL_CAT(TARGET_SLOT, _partition)
+#else
+#error Unexpected image count
+#endif
+#else /* !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) */
+#define UPLOAD_FLASH_AREA_LABEL UTIL_CAT(TARGET_SLOT, _partition)
 #endif
 
 #ifdef CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD
