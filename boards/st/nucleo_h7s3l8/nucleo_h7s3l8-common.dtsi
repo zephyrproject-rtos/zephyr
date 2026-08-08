@@ -239,12 +239,9 @@
 			reg = <0x0 DT_SIZE_M(32)>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
-
-			partitions {
-				compatible = "fixed-partitions";
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 	};
 };
