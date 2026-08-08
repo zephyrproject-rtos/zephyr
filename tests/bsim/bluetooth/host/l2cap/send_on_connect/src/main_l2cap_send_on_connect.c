@@ -123,7 +123,7 @@ static const struct bt_l2cap_chan_ops l2cap_ops = {
 };
 
 static struct bt_l2cap_le_chan dyn_chan;
-static struct bt_l2cap_chan fixed_chan;
+static struct bt_l2cap_le_chan fixed_chan;
 
 static int accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 		  struct bt_l2cap_chan **l2cap_chan)
@@ -142,7 +142,7 @@ static struct bt_l2cap_server server = {
 
 static int l2cap_fixed_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
-	*chan = &fixed_chan;
+	*chan = &fixed_chan.chan;
 
 	**chan = (struct bt_l2cap_chan){
 		.ops = &l2cap_ops,
