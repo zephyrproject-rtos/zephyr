@@ -31,7 +31,7 @@ void soc_early_init_hook(void)
 {
 	/* Enable ART Flash cache accelerator */
 	LL_AHB1_GRP1_EnableClock(LL_AHB1_GRP1_PERIPH_ART);
-	LL_ART_SetBaseAddress(DT_REG_ADDR(DT_CHOSEN(zephyr_flash)));
+	LL_ART_SetBaseAddress(DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)));
 	LL_ART_Enable();
 
 	/* Enable hardware semaphore clock */
