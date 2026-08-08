@@ -15,16 +15,16 @@
 
 &slcd {
 	status = "okay";
-	lcd-duty = <0x0000000c>;
-	lcd-bias = <0x00000040>;
-	lcd-mux-segment = <0>;
-	lcd-voltage-source = <0>;
-	lcd-prescaler = <0>;
-	lcd-divider = <0x003c0000>;
-	lcd-contrast = <0x00001400>;
-	lcd-pulse-on-duration = <0x00000040>;
-	lcd-dead-time = <0>;
-	lcd-high-drive = <0>;
-	lcd-blink-mode = <0>;
-	lcd-blink-frequency = <0x00004000>;
+	lcd-duty = "LCD_DUTY_1_4";
+	lcd-bias = "LCD_BIAS_1_3";
+	lcd-mux-segment = "LCD_MUXSEGMENT_DISABLE";
+	lcd-voltage-source = "LCD_VOLTAGESOURCE_INTERNAL";
+	lcd-prescaler = "LCD_PRESCALER_1";
+	lcd-divider = "LCD_DIVIDER_31";
+	lcd-contrast = "LCD_CONTRASTLEVEL_5";
+	lcd-pulse-on-duration = "LCD_PULSEONDURATION_4";
+	lcd-dead-time = "LCD_DEADTIME_0";
+	lcd-high-drive = "LCD_HIGHDRIVE_DISABLE";
+	lcd-blink-mode = "LCD_BLINKMODE_OFF";
+	lcd-blink-frequency = "LCD_BLINKFREQUENCY_DIV32";
 };
