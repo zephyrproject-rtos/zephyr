@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Canonical Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PINECIL_V2
+	select SOC_BL706C10Q2I
