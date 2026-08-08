@@ -19,5 +19,14 @@
 				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
 			};
 		};
+
+		pwr: power@40030800 {
+			wkup-pin@8 {
+				/* PF2 is also available on these variants */
+				wkup-gpios = <&gpiof 2 STM32_PWR_WKUP_EVT_SRC_0>,
+					     <&gpioa 7 STM32_PWR_WKUP_EVT_SRC_1>,
+					     <&gpiob 10 STM32_PWR_WKUP_EVT_SRC_2>;
+			};
+		};
 	};
 };
