@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+#
+# Fake module.yml used only by the tests/cmake/module_path test, to
+# check that the build system resolves 'zephyr/module.yml' relative to
+# the project's 'module-path' userdata entry ('custom'), and not
+# relative to the project's checkout root ('module/').
+
+name: module
+
+build:
+  cmake: .
+  kconfig: Kconfig

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+
+# This is a throwaway, self-contained west workspace used only by
+# tests/cmake/module_path/CMakeLists.txt to exercise west's
+# generic project 'userdata' attribute with a 'module-path' key,
+# independently of the real Zephyr workspace this test lives in.
+[manifest]
+path = main_project
+file = west.yml
