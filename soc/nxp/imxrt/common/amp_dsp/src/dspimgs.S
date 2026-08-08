@@ -12,7 +12,7 @@
 .type dsp_img_reset_start, %object
 .align 2
 dsp_img_reset_start:
-.incbin HIFI4_BIN_RESET
+.incbin DSP_BIN_RESET
 
 .global dsp_img_reset_end
 .type dsp_img_reset_end, %object
@@ -22,7 +22,7 @@ dsp_img_reset_end:
 .type dsp_img_text_start, %object
 .align 2
 dsp_img_text_start:
-.incbin HIFI4_BIN_TEXT
+.incbin DSP_BIN_TEXT
 
 .global dsp_img_text_end
 .type dsp_img_text_end, %object
@@ -32,7 +32,7 @@ dsp_img_text_end:
 .type dsp_img_data_end, %object
 .align 2
 dsp_img_data_start:
-.incbin HIFI4_BIN_DATA
+.incbin DSP_BIN_DATA
 
 .global dsp_img_data_end
 .type dsp_img_data_end, %object
