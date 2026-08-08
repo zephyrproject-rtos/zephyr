@@ -198,6 +198,10 @@ void bt_sco_disconnected(struct bt_conn *sco)
 		chan->ops->disconnected(chan, sco->err);
 	}
 
+#if defined(CONFIG_BT_SCO_OVER_HCI)
+	chan->recv = NULL;
+#endif
+
 	chan->sco = NULL;
 }
 

@@ -28,6 +28,10 @@ After flashing, the device works as a Hands-Free unit. After the Bluetooth Host 
 initialized, connectable and discoverable modes will be automatically enabled. The peer device AG
 (Audio Gateway) can discover and connect to the device.
 
+Incoming calls are answered automatically :kconfig:option:`CONFIG_HFP_HF_AUTO_ANSWER_DELAY` seconds
+after the AG reports them. Disable :kconfig:option:`CONFIG_HFP_HF_AUTO_ANSWER` to only report calls
+without answering, in which case the AG terminates the call once its alerting timeout expires.
+
 When the SCO connection is established, the application will initialize the codec and pcm interface
 for voice streaming if the codec and pcm configurations are available.
 
