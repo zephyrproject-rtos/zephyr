@@ -299,7 +299,7 @@ single set of IPIs may be insufficient to result in any of these valid sets.
     To better illustrate the distinction, consider a 2-CPU system with ready
     threads T1 and T2 at priorities 1 and 2 respectively. Let T2 be pinned to
     CPU0 and T1 not be pinned. If CPU0 is executing T2 and CPU1 executing T1,
-    then this set is is both valid and optimal. However, if CPU0 is executing
+    then this set is both valid and optimal. However, if CPU0 is executing
     T1 and CPU1 is idling, then this too would be valid though not optimal.
 
 In those cases where a single set of IPIs is not sufficient to generate a valid
