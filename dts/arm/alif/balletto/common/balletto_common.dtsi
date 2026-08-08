@@ -401,6 +401,31 @@
 			interrupts = <171 0>, <172 0>;
 			status = "disabled";
 		};
+
+		/*
+		 * LPTIMER channels. Both channels share one 4 KB register block
+		 * at 0x42001000, each occupying a 0x14 byte slice of it.
+		 * The LPTIMER interrupts reach the NVIC twice: directly on
+		 * inputs 60 and 61, and through the IRQRTR on inputs 346 and
+		 * 347. The direct inputs are used here as they are the ones
+		 * wired to the EWIC, so they can wake the core from a
+		 * low-power state.
+		 */
+		lptimer0: timer@42001000 {
+			compatible = "snps,dw-timers";
+			reg = <0x42001000 0x14>;
+			clocks = <&clockctrl ALIF_LPTIMER0_S32K_CLK>;
+			interrupts = <60 0>;
+			status = "disabled";
+		};
+
+		lptimer1: timer@42001014 {
+			compatible = "snps,dw-timers";
+			reg = <0x42001014 0x14>;
+			clocks = <&clockctrl ALIF_LPTIMER1_S32K_CLK>;
+			interrupts = <61 0>;
+			status = "disabled";
+		};
 	};
 };
 
