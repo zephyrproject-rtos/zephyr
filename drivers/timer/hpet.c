@@ -349,6 +349,57 @@ void smp_timer_init(void)
 	 */
 }
 
+void sys_clock_no_timeout(void)
+{
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	/* Mask the comparator interrupt and leave the main counter alone. An
+	 * empty timeout queue does not mean the CPU is idle, so k_cycle_get_32()
+	 * must keep advancing. Clearing GCONF_ENABLE is not an option either
+	 * way: the HPET counter is shared by every CPU.
+	 */
+	uint32_t reg = hpet_timer_conf_get();
+
+	reg &= ~TIMER_CONF_INT_ENABLE;
+	hpet_timer_conf_set(reg);
+}
+
+void sys_clock_idle_enter(uint32_t ticks)
+{
+	uint32_t reg;
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || ticks != (uint32_t)K_TICKS_FOREVER) {
+		sys_clock_set_timeout(ticks, false);
+		return;
+	}
+
+	if (IS_ENABLED(CONFIG_SMP)) {
+		/* The HPET counter is shared by every CPU and only this one is
+		 * going idle. Stopping it would freeze sys_clock_cycle_get_32()
+		 * for the others, so only mask the comparator interrupt.
+		 */
+		reg = hpet_timer_conf_get();
+		reg &= ~TIMER_CONF_INT_ENABLE;
+		hpet_timer_conf_set(reg);
+		return;
+	}
+
+	/* Nothing to wake up for and the uptime may drift: stop the main
+	 * counter, which saves more than masking the interrupt. There is one
+	 * CPU here, so nothing else can observe it standing still.
+	 * sys_clock_idle_exit() starts it again, and it resumes where it
+	 * stopped: last_count and the comparator stay coherent, only real time
+	 * is lost.
+	 */
+	reg = hpet_gconf_get();
+	reg &= ~GCONF_ENABLE;
+	hpet_gconf_set(reg);
+}
+
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -358,17 +409,15 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t reg;
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		reg = hpet_gconf_get();
-		reg &= ~GCONF_ENABLE;
-		hpet_gconf_set(reg);
-		return;
-	}
-
 	/* The comparator is 64-bit, so the requested timeout needs no clamp. */
 	uint64_t cyc = (last_tick + last_elapsed + ticks) * cyc_per_tick;
 
 	hpet_timer_comparator_set_safe(cyc);
+
+	/* Re-arm what sys_clock_no_timeout() may have masked. */
+	reg = hpet_timer_conf_get();
+	reg |= TIMER_CONF_INT_ENABLE;
+	hpet_timer_conf_set(reg);
 #endif
 }
 

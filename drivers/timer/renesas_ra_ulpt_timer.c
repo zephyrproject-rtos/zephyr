@@ -82,17 +82,25 @@ static void ra_ulpt_timer_isr(void)
 	}
 }
 
+void sys_clock_no_timeout(void)
+{
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	/* The counter reloads and fires again on every underflow, so leaving
+	 * it alone would keep waking the CPU at whatever rate the last deadline
+	 * set. Ask for the longest interval instead, which clamps to MAX_TICKS.
+	 */
+	sys_clock_set_timeout(UINT32_MAX, false);
+}
+
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
 	/* Timeout configuration is unsupported in tickful mode. */
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	/* No timeout change when the kernel has no near deadline to schedule. */
-	if (ticks == SYS_CLOCK_MAX_WAIT) {
 		return;
 	}
 

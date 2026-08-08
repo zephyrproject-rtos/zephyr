@@ -147,20 +147,19 @@ bool sys_clock_is_locked(void);
  * Similarly a ticks value of zero is legal: it simply indicates the
  * kernel would like the next tick announcement as soon as possible.
  *
- * Note that ticks can also be passed the special value K_TICKS_FOREVER,
- * indicating that no future timer interrupts are expected or required
- * and that the system is permitted to enter an indefinite sleep even
- * if this could cause rollover of the internal counter (i.e. the
- * system uptime counter is allowed to be wrong
+ * The kernel never asks for more than SYS_CLOCK_MAX_WAIT ticks.  That is a
+ * plain upper bound and not a signal: it is indistinguishable from any other
+ * tick count, and the driver must not read a meaning into it.  A driver whose
+ * hardware cannot hold a wait that long clamps to what it can and announces
+ * the ticks that did elapse.
  *
- * Note also that it is conventional for the kernel to pass INT_MAX
- * for ticks if it wants to preserve the uptime tick count but doesn't
- * have a specific event to await.  The intent here is that the driver
- * will schedule any needed timeout as far into the future as
- * possible.  For the specific case of INT_MAX, the next call to
- * sys_clock_announce() may occur at any point in the future, not just
- * at INT_MAX ticks.  But the correspondence between the announced
- * ticks and real-world time must be correct.
+ * The two conditions a driver used to infer from the tick value now have
+ * their own entry points: sys_clock_no_timeout() for "no timeout is pending"
+ * and sys_clock_idle_enter() for "the CPU is going to sleep".  The special
+ * value K_TICKS_FOREVER is deprecated as an argument to this function.  It
+ * reaches a driver only through the default sys_clock_no_timeout(), on behalf
+ * of drivers that do not implement that hook, and that is the one place a
+ * value above SYS_CLOCK_MAX_WAIT is still passed.
  *
  * A final note about SMP: note that the call to sys_clock_set_timeout()
  * is made on any CPU, and reflects the next timeout desired globally.
@@ -174,8 +173,12 @@ bool sys_clock_is_locked(void);
  * lock held.
  *
  * @param ticks Timeout in tick units
- * @param idle Hint to the driver that the system is about to enter
- *        the idle state immediately after setting the timeout
+ * @param idle Deprecated, and always false when the kernel calls this
+ *        function: idle entry is notified through sys_clock_idle_enter(),
+ *        whose default implementation passes true here so that a driver
+ *        keying its low-power handling on this argument still works. Retained
+ *        for source compatibility and scheduled for removal in a future
+ *        release; new code must ignore it.
  */
 void sys_clock_set_timeout(uint32_t ticks, bool idle);
 
@@ -251,6 +254,56 @@ uint32_t sys_clock_elapsed(void);
  * check if the system timer has the capability of being disabled.
  */
 void sys_clock_disable(void);
+
+/**
+ * @brief Notify the timer driver that no timeout is pending.
+ *
+ * Called by the kernel in place of sys_clock_set_timeout() when the timeout
+ * queue is empty and @kconfig{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} is enabled.
+ * The kernel is not asking for a deadline here: the driver may stop
+ * announcing ticks until the next sys_clock_set_timeout(). The ticks missed
+ * in the meantime are the uptime drift that option permits. Mask the wakeup,
+ * program the longest interval the hardware can hold, or both.
+ *
+ * The CPU keeps running, so sys_clock_cycle_get_32() and
+ * sys_clock_cycle_get_64() must keep counting: a thread can still call
+ * k_cycle_get_32() or k_busy_wait(). A driver whose cycle counter is driven by
+ * the timer it would stop can therefore only mask the interrupt. One whose
+ * cycle counter lives in a different clock or power domain may stop more.
+ * Stopping the time base belongs in sys_clock_idle_enter().
+ *
+ * Unlike sys_clock_disable(), this is a resumable pause and not a teardown.
+ * The next sys_clock_set_timeout() resumes normal operation.
+ *
+ * The default implementation calls sys_clock_set_timeout() with
+ * K_TICKS_FOREVER, which a driver that has not been converted still reads as
+ * the request to stop. That default is a compatibility shim: it goes away
+ * together with the deprecated @p idle argument of sys_clock_set_timeout(),
+ * and a driver implementing this hook must not rely on the tick value.
+ */
+void sys_clock_no_timeout(void);
+
+/**
+ * @brief Notify the timer driver that the CPU is entering low-power idle.
+ *
+ * Called from the power-management idle path when the CPU is about to sleep.
+ * A driver that hands off to a low-power wakeup timer, or otherwise
+ * reconfigures itself for sleep, does so here. sys_clock_idle_exit() undoes
+ * it on the way out. A driver with no low-power handling does not need to
+ * implement this hook.
+ *
+ * The default implementation calls sys_clock_set_timeout() with the
+ * deprecated @p idle argument set to true, which keeps a driver keying its
+ * low-power handling on that argument working. That default is a
+ * compatibility shim and goes away together with the argument.
+ *
+ * @param ticks Ticks until the next expected wakeup, or K_TICKS_FOREVER when
+ *        nothing needs to wake the CPU and the uptime is allowed to drift, in
+ *        which case the driver may stop its time base. Only the calling CPU is
+ *        going idle: a driver whose time base is shared between CPUs must
+ *        account for the others itself.
+ */
+void sys_clock_idle_enter(uint32_t ticks);
 
 /**
  * @brief Hardware cycle counter

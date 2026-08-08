@@ -181,6 +181,20 @@ static void rtc_isr(const void *arg)
 #endif /* CONFIG_TICKLESS_KERNEL */
 }
 
+#ifndef CONFIG_TICKLESS_KERNEL
+void sys_clock_no_timeout(void)
+{
+	/* Disable the comparator. Nothing is pending and sloppy idle lets the
+	 * uptime drift, so the periodic tick can stop.
+	 *
+	 * Only the ticking configuration needs this hook. The tickless one is
+	 * left with the default, which forwards K_TICKS_FOREVER to
+	 * sys_clock_set_timeout() and gets clamped to MAX_TICKS there.
+	 */
+	rtc_timeout = rtc_counter;
+}
+#endif /* !CONFIG_TICKLESS_KERNEL */
+
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -204,12 +218,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	RTC0->COMP[0].reg = count + timeout;
 
 #else /* !CONFIG_TICKLESS_KERNEL */
-
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		/* Disable comparator when the kernel has no pending timeout. */
-		rtc_timeout = rtc_counter;
-		return;
-	}
 
 	if (ticks < 1) {
 		ticks = 1;

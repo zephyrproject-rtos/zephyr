@@ -44,7 +44,6 @@
  * overflow,e.g, 0xffffffff + any value will cause overflow
  */
 #define COUNTER_MAX 0x7fffffff
-#define TIMER_STOPPED 0x0
 #define CYC_PER_TICK (sys_clock_hw_cycles_per_sec()	\
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
@@ -258,24 +257,9 @@ static void timer_int_handler(const void *unused)
 
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
-	/* If the kernel allows us to miss tick announcements in idle,
-	 * then shut off the counter. (Note: we can assume if idle==true
-	 * that interrupts are already disabled)
-	 */
-#if SMP_TIMER_DRIVER
-	/* as 64-bits GFRC is used as wall clock, it's ok to ignore idle
-	 * systick will not be missed.
-	 * However for single core using 32-bits arc timer, idle cannot
-	 * be ignored, as 32-bits timer will overflow in a not-long time.
-	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
-	    ticks == SYS_CLOCK_MAX_WAIT) {
-		timer0_control_register_set(0);
-		timer0_count_register_set(0);
-		timer0_limit_register_set(0);
-		return;
-	}
+	ARG_UNUSED(idle);
 
+#if SMP_TIMER_DRIVER
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t delay;
 	uint32_t key;
@@ -299,15 +283,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	arch_irq_unlock(key);
 #endif
 #else
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
-	    ticks == SYS_CLOCK_MAX_WAIT) {
-		timer0_control_register_set(0);
-		timer0_count_register_set(0);
-		timer0_limit_register_set(0);
-		last_load = TIMER_STOPPED;
-		return;
-	}
-
 #if defined(CONFIG_TICKLESS_KERNEL)
 	uint32_t delay;
 	uint32_t unannounced;

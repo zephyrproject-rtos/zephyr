@@ -372,67 +372,94 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 }
 ARCH_ISR_DIAG_ON
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_no_timeout(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
-	/* Fast CPUs and a 24 bit counter mean that even idle systems
-	 * need to wake up multiple times per second.  If the kernel
-	 * allows us to miss tick announcements while nothing is pending
-	 * (sloppy idle), then shut off the counter.
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	/* Program the longest interval the counter can hold, then mask the
+	 * interrupt. Wraps that happen while it is masked never reach
+	 * elapsed(), so they are never added to overflow_cyc: the longer the
+	 * interval, the fewer of them and the less uptime drift.
+	 *
+	 * The counter keeps running. An empty timeout queue does not mean the
+	 * CPU is idle, and sys_clock_cycle_get_32() must keep advancing for
+	 * k_busy_wait() to work.
 	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
-	    ticks == SYS_CLOCK_MAX_WAIT) {
+	sys_clock_set_timeout(UINT32_MAX, false);
+	SysTick->CTRL &= ~SysTick_CTRL_TICKINT_Msk;
+}
+
+void sys_clock_idle_enter(uint32_t ticks)
+{
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && ticks == (uint32_t)K_TICKS_FOREVER) {
+		/* Nothing to wake up for and the uptime may drift: stop the
+		 * counter. SysTick is per-CPU, so only the CPU going idle is
+		 * affected. sys_clock_idle_exit() restarts it.
+		 */
+		cycle_count += elapsed(NULL);
+		overflow_cyc = 0U;
 		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 		last_load = TIMER_STOPPED;
 		return;
 	}
 
 #if !defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE)
-	if (idle) {
-		uint64_t timeout_us =
-			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	uint64_t timeout_us = k_ticks_to_us_ceil64(ticks);
 
-		timeout_idle = true;
+	timeout_idle = true;
 
-		/**
-		 * Invoke platform-specific layer to configure LPTIM
-		 * such that system wakes up after timeout elapses.
-		 */
-		z_sys_clock_lpm_enter(timeout_us);
+	/**
+	 * Invoke platform-specific layer to configure LPTIM
+	 * such that system wakes up after timeout elapses.
+	 */
+	z_sys_clock_lpm_enter(timeout_us);
 
 #if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
-		/* Store current value of SysTick counter to be able to
-		 * calculate a difference in measurements after exiting
-		 * the low-power state.
-		 */
-		cycle_pre_idle = cycle_count + elapsed(NULL);
+	/* Store current value of SysTick counter to be able to
+	 * calculate a difference in measurements after exiting
+	 * the low-power state.
+	 */
+	cycle_pre_idle = cycle_count + elapsed(NULL);
 #else /* CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
-		/**
-		 * SysTick will be placed under reset once we enter
-		 * low-power mode. Turn it off right now then update
-		 * the cycle counter now, since we won't be able to
-		 * to it after waking up.
-		 */
-		sys_clock_disable();
-		/* Ensure the SysTick interrupt is not pending. This is safe
-		 * as we just did the ISR's job, and MUST be done because
-		 * a pending interrupt could inhibit low-power mode entry.
-		 * Note: On Armv8-M, ICSR.STTNS is R/W, so preserve it while
-		 * writing the write-1-to-clear PENDSTCLR bit.
-		 */
+	/**
+	 * SysTick will be placed under reset once we enter
+	 * low-power mode. Turn it off right now then update
+	 * the cycle counter now, since we won't be able to
+	 * to it after waking up.
+	 */
+	sys_clock_disable();
+	/* Ensure the SysTick interrupt is not pending. This is safe
+	 * as we just did the ISR's job, and MUST be done because
+	 * a pending interrupt could inhibit low-power mode entry.
+	 * Note: On Armv8-M, ICSR.STTNS is R/W, so preserve it while
+	 * writing the write-1-to-clear PENDSTCLR bit.
+	 */
 #ifdef SCB_ICSR_STTNS_Msk
-		SCB->ICSR = (SCB->ICSR & SCB_ICSR_STTNS_Msk) | SCB_ICSR_PENDSTCLR_Msk;
+	SCB->ICSR = (SCB->ICSR & SCB_ICSR_STTNS_Msk) | SCB_ICSR_PENDSTCLR_Msk;
 #else
-		SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
+	SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
 #endif
 
-		cycle_count += elapsed(NULL);
-		overflow_cyc = 0;
+	cycle_count += elapsed(NULL);
+	overflow_cyc = 0;
 #endif /* !CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
-		return;
-	}
+#else
+	sys_clock_set_timeout(ticks, false);
 #endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
+}
+
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
+{
+	ARG_UNUSED(idle);
+
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+	__ASSERT(!idle, "the idle argument is deprecated");
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 	/*
@@ -528,6 +555,9 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #else
 	SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
 #endif
+
+	/* Re-arm what sys_clock_no_timeout() may have masked. */
+	SysTick->CTRL |= SysTick_CTRL_TICKINT_Msk;
 
 	if (val1 < val2) {
 		cycle_count += val1 + (old_load - val2);
@@ -653,7 +683,11 @@ void sys_clock_idle_exit(void)
 		SysTick->LOAD = last_load - 1;
 		SysTick->VAL = 0; /* resets timer to last_load */
 		if (!IS_ENABLED(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)) {
-			SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+			/* TICKINT too: sys_clock_no_timeout() may have masked it,
+			 * and LOAD is back to one tick so every wrap must be
+			 * announced again.
+			 */
+			SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk | SysTick_CTRL_TICKINT_Msk;
 		} else {
 			NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
 			SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |

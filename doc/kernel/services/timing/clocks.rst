@@ -265,6 +265,54 @@ comparatively simple API.
   :c:func:`sys_clock_announce`, which the kernel needs to test newly
   arriving timeouts for expiration.
 
+* The driver may optionally provide a :c:func:`sys_clock_no_timeout` call.
+  The kernel invokes it in place of :c:func:`sys_clock_set_timeout` when no
+  timeout is pending, that is when the timeout queue is empty, and
+  :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE` is enabled.
+
+  It is a hint that the driver may stop announcing ticks until the next
+  :c:func:`sys_clock_set_timeout`.  The ticks left unannounced are the uptime
+  drift that option explicitly allows.  Unlike :c:func:`sys_clock_disable`,
+  this is a resumable pause and not a teardown.
+
+  The timer *counter* must not be stopped.  :c:func:`sys_clock_cycle_get_32`
+  and :c:func:`sys_clock_cycle_get_64` must keep counting up as if the call had
+  never happened.
+
+  .. note::
+
+     The CPU keeps running with an empty timeout queue, for instance because
+     the ready queue still holds threads, or because an interrupt fires.  Those
+     threads and ISRs may call :c:func:`k_cycle_get_32` or
+     :c:func:`k_busy_wait`.  That limits what an implementation may do: masking
+     the timer interrupt is safe, gating the timer's clock most likely is not.
+     Exactly what is safe is hardware specific.
+
+  The default implementation calls :c:func:`sys_clock_set_timeout` with
+  ``K_TICKS_FOREVER``, the long-standing "no deadline" signal, so a driver that
+  has not been converted keeps working.  That default is a compatibility shim
+  and is removed together with the deprecated ``idle`` argument.
+
+* The driver may optionally provide a :c:func:`sys_clock_idle_enter` call,
+  which the power-management path uses in place of
+  :c:func:`sys_clock_set_timeout` when the CPU is about to enter low-power
+  idle.  It receives the number of ticks until the next expected wakeup, or
+  ``K_TICKS_FOREVER`` when there is none and the uptime may drift.
+
+  A driver that hands off to a low-power wakeup timer, or otherwise
+  reconfigures itself for sleep, does so here.  Told ``K_TICKS_FOREVER`` it may
+  also stop its time base, which :c:func:`sys_clock_no_timeout` does not allow,
+  because the CPU is on its way out and :c:func:`sys_clock_idle_exit` is
+  guaranteed to run on the way back in.  Only the calling CPU goes idle, so a
+  driver whose time base is shared between CPUs must account for the others
+  itself.
+
+  The default implementation calls :c:func:`sys_clock_set_timeout` with its
+  deprecated ``idle`` argument set to ``true``, so a driver still keying its
+  low-power handling on that argument keeps working.  A driver with no
+  low-power handling needs no implementation.  That default is a compatibility
+  shim and is removed together with the argument.
+
 Timer Driver Locking
 --------------------
 

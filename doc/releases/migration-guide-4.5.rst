@@ -782,6 +782,16 @@ Syscon
 Timer
 =====
 
+* The ``bool idle`` argument of :c:func:`sys_clock_set_timeout` is deprecated. The
+  kernel now calls the new :c:func:`sys_clock_idle_enter` hook instead of
+  :c:func:`sys_clock_set_timeout` with ``idle=true``. For backwards compatibility, the
+  default implementation of :c:func:`sys_clock_idle_enter` emulates the old behavior by
+  calling :c:func:`sys_clock_set_timeout` with ``idle=true``, so timer drivers that
+  still examine ``idle`` keep working unchanged. Such drivers should be updated to
+  implement :c:func:`sys_clock_idle_enter` and move their ``idle``-specific handling
+  there. The argument and that default implementation are both removed in a future
+  release (:github:`114901`).
+
 * :c:func:`sys_clock_set_timeout`, :c:func:`sys_clock_announce` and
   :c:func:`sys_clock_announce_locked` now take their tick count as an unsigned
   ``uint32_t`` rather than a signed ``int32_t``. Out-of-tree system timer drivers must
@@ -791,6 +801,23 @@ Timer
   drivers no longer need to clamp the request against the :c:func:`sys_clock_announce`
   range or special-case ``K_TICKS_FOREVER``; only their own hardware cycle-count limits
   still need enforcing (:github:`111022`).
+
+* When :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE` is enabled, the kernel now
+  calls the new :c:func:`sys_clock_no_timeout` hook when no timeout is pending, instead
+  of :c:func:`sys_clock_set_timeout` with ``ticks=K_TICKS_FOREVER``. For backwards
+  compatibility, the default implementation of :c:func:`sys_clock_no_timeout` emulates
+  the old behavior by calling :c:func:`sys_clock_set_timeout` with that same value, so
+  drivers expecting it as the "no deadline" signal keep working unchanged, whether they
+  stop their clock or program a maximal wait. Such drivers should be updated to
+  implement :c:func:`sys_clock_no_timeout` instead. Every in-tree driver has been.
+
+  Note the split between the two new hooks. Masking the wakeups while the CPU still
+  runs belongs in :c:func:`sys_clock_no_timeout`, which must leave
+  :c:func:`sys_clock_cycle_get_32` working. Stopping the time base belongs in
+  :c:func:`sys_clock_idle_enter` when it is passed ``K_TICKS_FOREVER``. Refer to the
+  :ref:`kernel timing documentation <kernel_timing>` for the precise semantics. The
+  ``ticks=K_TICKS_FOREVER`` signal and the default implementation that still forwards
+  it are both removed in a future release (:github:`114901`).
 
 USB
 ===

@@ -70,46 +70,30 @@ static uint32_t elapsed(uint32_t *val_out)
 	return data->load - value;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+/* Add the cycles counted down under the current reload to cycle_count and
+ * return the ticks not announced yet. *val_out and *load_out carry the counter
+ * value and the reload it was read against, which cmsdk_apb_program() needs.
+ */
+static uint32_t cmsdk_apb_sync(uint32_t *val_out, uint32_t *load_out)
 {
-	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
+	*load_out = data->load;
+	data->cycle_count += elapsed(val_out);
 
-	ARG_UNUSED(idle);
+	return data->cycle_count - data->announced_cycles;
+}
 
+/* Install a new reload, picking up the cycles that pass while the registers
+ * are rewritten: val1 and last_load come from the preceding cmsdk_apb_sync().
+ */
+static void cmsdk_apb_program(uint32_t load, uint32_t val1, uint32_t last_load)
+{
 	const struct tmr_cmsdk_apb_cfg *const cfg = &cfg_inst0;
 	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
-	uint32_t last_load = data->load;
-	uint32_t val1;
 	uint32_t val2;
 
-	/* store the current cfg->timer->value in val1 */
-	uint32_t pending_cycles = elapsed(&val1);
-	uint32_t load_to_be_set = 0;
-	uint32_t unannounced_cycles = 0;
-
-	data->cycle_count += pending_cycles;
-	unannounced_cycles = data->cycle_count - data->announced_cycles;
-
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		/*
-		 * No pending timeout and no future timer interrupt required:
-		 * wait as long as the hardware allows.
-		 */
-		load_to_be_set = MAX_CYC;
-	} else if ((int32_t)unannounced_cycles < 0) {
-		load_to_be_set = MIN_DELAY_CYCLES;
-	} else {
-		int64_t want = ((uint64_t)data->last_elapsed + ticks) * CYC_PER_TICK;
-		int64_t delta_cycles = want - unannounced_cycles;
-
-		load_to_be_set = CLAMP(delta_cycles, (int64_t)MIN_DELAY_CYCLES, (int64_t)MAX_CYC);
-	}
-
-	data->load = load_to_be_set;
+	data->load = load;
 
 	val2 = cfg->timer->value;
 
@@ -122,6 +106,59 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	} else {
 		data->cycle_count += (val1 - val2);
 	}
+}
+
+void sys_clock_no_timeout(void)
+{
+	uint32_t val1;
+	uint32_t last_load;
+
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	/* Program the longest interval. An auto-reload down-counter cannot be
+	 * left alone the way a free-running compare can: it keeps firing at
+	 * whatever interval was programmed last, which may be a short one.
+	 *
+	 * Clearing TIMER_CTRL_EN and re-enabling it from
+	 * sys_clock_set_timeout() would drop the wakeup entirely. That is the
+	 * next step once the accounting tolerates a stopped counter.
+	 */
+	(void)cmsdk_apb_sync(&val1, &last_load);
+	cmsdk_apb_program(MAX_CYC, val1, last_load);
+}
+
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
+{
+	struct tmr_cmsdk_apb_dev_data *data = &data_inst0;
+	uint32_t unannounced_cycles;
+	uint32_t load_to_be_set;
+	uint32_t val1;
+	uint32_t last_load;
+
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
+	ARG_UNUSED(idle);
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	unannounced_cycles = cmsdk_apb_sync(&val1, &last_load);
+
+	if ((int32_t)unannounced_cycles < 0) {
+		load_to_be_set = MIN_DELAY_CYCLES;
+	} else {
+		int64_t want = ((uint64_t)data->last_elapsed + ticks) * CYC_PER_TICK;
+		int64_t delta_cycles = want - unannounced_cycles;
+
+		load_to_be_set = CLAMP(delta_cycles, (int64_t)MIN_DELAY_CYCLES, (int64_t)MAX_CYC);
+	}
+
+	cmsdk_apb_program(load_to_be_set, val1, last_load);
 }
 
 uint32_t sys_clock_elapsed(void)

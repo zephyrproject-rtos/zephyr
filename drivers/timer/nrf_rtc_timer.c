@@ -667,6 +667,25 @@ bail:
 	return err;
 }
 
+void sys_clock_no_timeout(void)
+{
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return;
+	}
+
+	/* No timeout pending: push the compare as far out as the counter
+	 * allows and drop the busy flag consumed by the overflow-trigger
+	 * path.
+	 *
+	 * Not reprogramming at all would be the natural improvement: the
+	 * compare already in place covers the counter wrap, so this wakeup
+	 * is redundant.
+	 */
+	sys_busy = false;
+	compare_set(SYS_CLOCK_CH, last_count + MAX_CYCLES,
+		    sys_clock_timeout_handler, NULL, false);
+}
+
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
@@ -676,22 +695,17 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+	target_time = last_count +
+		      ((uint64_t)last_elapsed + (uint64_t)ticks) * CYC_PER_TICK;
+	/* Clamp to fit the 24-bit compare register and keep the
+	 * anchor in its valid range (see anchor_update). A resulting
+	 * target in the past is fine: compare_set forces an immediate
+	 * IRQ and the handler catches up in one shot.
+	 */
+	if ((target_time - last_count) > MAX_CYCLES) {
 		target_time = last_count + MAX_CYCLES;
-		sys_busy = false;
-	} else {
-		target_time = last_count +
-			      ((uint64_t)last_elapsed + (uint64_t)ticks) * CYC_PER_TICK;
-		/* Clamp to fit the 24-bit compare register and keep the
-		 * anchor in its valid range (see anchor_update). A resulting
-		 * target in the past is fine: compare_set forces an immediate
-		 * IRQ and the handler catches up in one shot.
-		 */
-		if ((target_time - last_count) > MAX_CYCLES) {
-			target_time = last_count + MAX_CYCLES;
-		}
-		sys_busy = true;
 	}
+	sys_busy = true;
 
 	compare_set(SYS_CLOCK_CH, target_time, sys_clock_timeout_handler, NULL, false);
 }

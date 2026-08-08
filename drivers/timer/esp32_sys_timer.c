@@ -99,6 +99,10 @@ static void IRAM_ATTR sys_timer_isr(void *arg)
 
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(idle);
+
+	__ASSERT(!idle, "the idle argument is deprecated");
+
 #if defined(CONFIG_TICKLESS_KERNEL)
 	if (systimer_hal.dev == NULL) {
 		return;
@@ -125,22 +129,35 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 
 	set_systimer_alarm(cyc + last_count);
 
-#if defined(CONFIG_PM)
-	if (idle) {
-		uint64_t timeout_us =
-			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-
-		lptim_pre_idle = esp32_lptim_hook_on_lpm_entry(timeout_us);
-		systimer_pre_idle = get_systimer_alarm();
-		timeout_idle = true;
-	}
-#else
-	ARG_UNUSED(idle);
-#endif
-
 	k_spin_unlock(&lock, key);
+#else
+	ARG_UNUSED(ticks);
 #endif
 }
+
+#if defined(CONFIG_PM)
+void sys_clock_idle_enter(uint32_t ticks)
+{
+	sys_clock_set_timeout(ticks, false);
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || systimer_hal.dev == NULL) {
+		return;
+	}
+
+	/* Same tick count sys_clock_set_timeout() programmed the systimer with
+	 * above, so the low-power timer is armed for the same deadline.
+	 */
+	uint32_t lp_ticks = CLAMP(ticks, 1, MAX_TICKS) - 1;
+	uint64_t timeout_us = ((uint64_t)lp_ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	lptim_pre_idle = esp32_lptim_hook_on_lpm_entry(timeout_us);
+	systimer_pre_idle = get_systimer_alarm();
+	timeout_idle = true;
+
+	k_spin_unlock(&lock, key);
+}
+#endif
 
 uint32_t sys_clock_elapsed(void)
 {
