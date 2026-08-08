@@ -443,6 +443,12 @@ config WIFI_NM_WPA_SUPPLICANT_P2P_PROV_DISC_REQ_RETRIES
 	  Maximum number of retries for P2P provision discovery requests
 	  when the peer is not listening.
 
+config WIFI_NM_WPA_SUPPLICANT_P2P_DEVICE_NAME
+	string "Wi-Fi P2P static device name"
+	default "Zephyr_P2P_Dev"
+	help
+	  Set the static device name for the Wi-Fi P2P interface.
+
 endif # WIFI_NM_WPA_SUPPLICANT_P2P
 
 config WIFI_NM_WPA_SUPPLICANT_EAPOL
