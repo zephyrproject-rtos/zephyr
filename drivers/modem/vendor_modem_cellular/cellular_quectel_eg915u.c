@@ -20,11 +20,11 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=1", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CREG?", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN", imei_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMI", cgmi_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMR", cgmr_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5,127", ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_init_chat_script, quectel_eg915u_init_chat_script_cmds,
@@ -44,7 +44,7 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_dial_chat_script, quectel_eg915u_dial_ch
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg915u_periodic_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CSQ", csq_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CSQ", csq_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_eg915u_periodic_chat_script,
 			 quectel_eg915u_periodic_chat_script_cmds, abort_matches,
