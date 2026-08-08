@@ -6,23 +6,42 @@
  * @file zephyr/dsp/dsp.h
  *
  * @brief Public APIs for Digital Signal Processing (DSP) math.
+ * @ingroup math_dsp
  */
 
 #ifndef ZEPHYR_INCLUDE_DSP_DSP_H_
 #define ZEPHYR_INCLUDE_DSP_DSP_H_
 
+/**
+ * @brief Storage class specifier of the DSP functions.
+ *
+ * Expands to `static` when @kconfig{CONFIG_DSP_BACKEND_HAS_STATIC} is enabled,
+ * and to nothing otherwise.
+ */
 #ifdef CONFIG_DSP_BACKEND_HAS_STATIC
 #define DSP_FUNC_SCOPE static
 #else
 #define DSP_FUNC_SCOPE
 #endif
 
+/**
+ * @brief Qualifier for data buffers passed to the DSP functions.
+ *
+ * Expands to a backend specific qualifier when
+ * @kconfig{CONFIG_DSP_BACKEND_HAS_AGU} is enabled, and to nothing otherwise.
+ */
 #ifdef CONFIG_DSP_BACKEND_HAS_AGU
 #define DSP_DATA __agu
 #else
 #define DSP_DATA
 #endif
 
+/**
+ * @brief Qualifier for statically allocated data used by the DSP functions.
+ *
+ * Same as @ref DSP_DATA, and additionally places the data in a dedicated
+ * section when @kconfig{CONFIG_DSP_BACKEND_HAS_XDATA_SECTION} is enabled.
+ */
 #ifdef CONFIG_DSP_BACKEND_HAS_XDATA_SECTION
 #define DSP_STATIC_DATA DSP_DATA __attribute__((section(".Xdata")))
 #else
