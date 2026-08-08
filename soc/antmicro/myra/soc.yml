@@ -1,2 +1,6 @@
 socs:
   - name: myra
+    # The Myra is a SiP built around an STMicroelectronics STM32G491RE die, so the STM32 SoC
+    # tree has to be loaded together with this one.
+    requires:
+      - stm32g491xx
