@@ -180,6 +180,15 @@ int usbh_req_desc_cfg(struct usb_device *const udev,
 	return ret;
 }
 
+int usbh_req_desc_str(struct usb_device *const udev,
+		      const uint8_t index, const uint16_t lang_id,
+		      struct net_buf *const desc_buf)
+{
+	uint16_t len = MIN(net_buf_tailroom(desc_buf), UINT8_MAX);
+
+	return usbh_req_desc(udev, USB_DESC_STRING, index, lang_id, len, desc_buf);
+}
+
 int usbh_req_set_address(struct usb_device *const udev,
 			 const uint8_t addr)
 {
