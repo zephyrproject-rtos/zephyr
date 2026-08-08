@@ -63,12 +63,28 @@ static inline void sock_set_error(struct net_context *ctx, int err)
 	sock_set_flag(ctx, SOCK_ERROR, SOCK_ERROR);
 }
 
-/* Retrieve the pending socket error (positive errno) previously recorded
- * by sock_set_error(). Only meaningful while sock_is_error() is true.
+/* Clear a pending socket error, so the context is not left permanently
+ * flagged after a transient error (e.g. a listening socket surviving an
+ * interface bounce).
+ */
+static inline void sock_clear_error(struct net_context *ctx)
+{
+	sock_set_flag(ctx, SOCK_ERROR, 0);
+}
+
+/* Retrieve and consume the pending socket error (positive errno) previously
+ * recorded by sock_set_error(). Only meaningful while sock_is_error() is
+ * true. The error is one-shot: reading it clears the SOCK_ERROR flag, both
+ * so the context can recover once the error has been delivered to the
+ * application, and so callers cannot forget to clear it.
  */
 static inline int sock_get_error(struct net_context *ctx)
 {
-	return ctx->sock_error;
+	int err = ctx->sock_error;
+
+	sock_clear_error(ctx);
+
+	return err;
 }
 
 size_t msghdr_non_empty_iov_count(const struct net_msghdr *msg);
