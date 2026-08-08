@@ -13,6 +13,7 @@
 #include <zephyr/cache.h>
 #include "intel_emmc_host.h"
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
+BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE_HOST), "DT need CONFIG_PCIE_HOST");
 #include <zephyr/drivers/pcie/pcie.h>
 #endif
 

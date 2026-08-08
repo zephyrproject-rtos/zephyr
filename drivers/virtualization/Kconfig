@@ -14,7 +14,7 @@ if VIRTUALIZATION
 
 config IVSHMEM
 	bool "Inter-VM shared memory device (ivshmem)"
-	depends on PCIE
+	depends on PCIE_HOST
 	help
 	  This will enable support of qemu's ivshmem device, which is also
 	  present in ACRN hypervisor, and lets VM sharing memory with each

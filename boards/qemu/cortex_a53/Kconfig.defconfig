@@ -27,15 +27,15 @@ endif # NETWORKING
 
 # QEMU PCI requires at least 256M of virtual space
 config KERNEL_VM_SIZE
-	default 0x80000000 if PCIE
+	default 0x80000000 if PCIE_HOST
 
 # QEMU PCI requires physical addresses with more than 32 bits
 choice ARM64_VA_BITS
-	default ARM64_VA_BITS_40 if PCIE
+	default ARM64_VA_BITS_40 if PCIE_HOST
 endchoice
 
 choice ARM64_PA_BITS
-	default ARM64_PA_BITS_40 if PCIE
+	default ARM64_PA_BITS_40 if PCIE_HOST
 endchoice
 
 if QEMU_ICOUNT

@@ -5,7 +5,7 @@ config SOC_APOLLO_LAKE
 	select X86
 	select X86_64
 	select CPU_APOLLO_LAKE
-	select PCIE
+	select PCIE_HOST
 	select PCIE_MSI
 	select DYNAMIC_INTERRUPTS
 	select X86_MMU

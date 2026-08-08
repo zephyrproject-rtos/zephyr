@@ -1,5 +1,43 @@
+# SPDX-FileCopyrightText: Copyright (c) 2019 Intel Corporation
+# SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
 # PCIe RC/EP drivers configuration options
+
+ZEPHYR_PCIE_CONTROLLER := zephyr,pcie-controller
+
+config PCIE_HOST_CONTROLLER_HAS_DRIVER
+	bool
+
+config PCIE_ENDPOINT_CONTROLLER_HAS_DRIVER
+	bool
+
+config PCIE_HOST
+	bool "PCIe Root Complex support"
+	depends on (X86 || PCIE_HOST_CONTROLLER_HAS_DRIVER)
+	select PCIE
+	help
+	  This option enables support for PCI/PCIe drivers.
+
+config PCIE_ENDPOINT
+	bool "PCIe Endpoint support"
+	depends on PCIE_ENDPOINT_CONTROLLER_HAS_DRIVER
+	select PCIE
+	help
+	  This option enables PCI/PCIe Endpoint support.
+
+config PCIE
+	bool "PCIe support"
+	help
+	  Enables PCI/PCIe driver configuration
+
+# Sourced outside "if PCIE" so controller drivers can set *_HAS_DRIVER before
+# PCIE_HOST/PCIE_ENDPOINT (and thus PCIE) are resolved.
+source "drivers/pcie/controller/Kconfig"
+
+if PCIE
 
 source "drivers/pcie/host/Kconfig"
 source "drivers/pcie/endpoint/Kconfig"
-source "drivers/pcie/controller/Kconfig"
+
+endif # PCIE

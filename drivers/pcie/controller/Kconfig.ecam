@@ -4,6 +4,7 @@
 config PCIE_ECAM
 	bool "Support for PCIe ECAM Controllers"
 	depends on DT_HAS_PCI_HOST_ECAM_GENERIC_ENABLED
+	select PCIE_HOST_CONTROLLER_HAS_DRIVER
 	default y
 	help
 	  Add support for Enhanced Configuration Address Mapping configured

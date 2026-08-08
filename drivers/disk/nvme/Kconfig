@@ -3,7 +3,7 @@
 
 menuconfig NVME
 	bool "NVMe disk"
-	select PCIE
+	select PCIE_HOST
 	select PCIE_MSI
 	select PCIE_MSI_X
 	select PCIE_MSI_MULTI_VECTOR
