@@ -20,6 +20,11 @@
  * @version 0.8.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup comparator_interface_ext Device-specific Comparator API extensions
+ *
+ * @{
+ * @}
  */
 
 #include <zephyr/device.h>
