@@ -45,12 +45,15 @@ static void scan_for_broadcast_sink(void);
 /* Struct to collect information from scanning
  * for Broadcast Source or Sink
  */
-struct scan_recv_info {
+struct broadcast_source_info {
 	char bt_name[NAME_LEN];
 	char broadcast_name[NAME_LEN];
 	uint32_t broadcast_id;
-	bool has_bass;
-	bool has_pacs;
+};
+
+struct scan_delegator_info {
+	char bt_name[NAME_LEN];
+	bool has_svc_data;
 };
 
 static struct bt_conn *broadcast_sink_conn;
@@ -79,18 +82,18 @@ static K_SEM_DEFINE(sem_pa_synced, 0U, 1U);
 static K_SEM_DEFINE(sem_pa_sync_terminted, 0U, 1U);
 static K_SEM_DEFINE(sem_received_base_subgroups, 0U, 1U);
 
-static bool device_found(struct bt_data *data, void *user_data)
+static bool parse_broadcast_source_data(struct bt_data *data, void *user_data)
 {
-	struct scan_recv_info *sr_info = (struct scan_recv_info *)user_data;
+	struct broadcast_source_info *info = (struct broadcast_source_info *)user_data;
 	struct bt_uuid_16 adv_uuid;
 
 	switch (data->type) {
 	case BT_DATA_NAME_SHORTENED:
 	case BT_DATA_NAME_COMPLETE:
-		memcpy(sr_info->bt_name, data->data, MIN(data->data_len, NAME_LEN - 1));
+		memcpy(info->bt_name, data->data, MIN(data->data_len, NAME_LEN - 1));
 		return true;
 	case BT_DATA_BROADCAST_NAME:
-		memcpy(sr_info->broadcast_name, data->data, MIN(data->data_len, NAME_LEN - 1));
+		memcpy(info->broadcast_name, data->data, MIN(data->data_len, NAME_LEN - 1));
 		return true;
 	case BT_DATA_SVC_DATA16:
 		/* Check for Broadcast ID */
@@ -102,49 +105,41 @@ static bool device_found(struct bt_data *data, void *user_data)
 			return true;
 		}
 
-		if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO) != 0) {
-			return true;
+		if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BROADCAST_AUDIO) == 0) {
+			info->broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 		}
 
-		sr_info->broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 		return true;
-	case BT_DATA_UUID16_SOME:
-	case BT_DATA_UUID16_ALL:
-		/* NOTE: According to the BAP 1.0.1 Spec,
+	default:
+		return true;
+	}
+}
+
+static bool parse_scan_delegator_data(struct bt_data *data, void *user_data)
+{
+	struct scan_delegator_info *info = (struct scan_delegator_info *)user_data;
+	struct bt_uuid_16 adv_uuid;
+
+	switch (data->type) {
+	case BT_DATA_SVC_DATA16:
+		/* NOTE: According to the BAP 1.0.2 Spec,
 		 * Section 3.9.2. Additional Broadcast Audio Scan Service requirements,
-		 * If the Scan Delegator implements a Broadcast Sink, it should also
-		 * advertise a Service Data field containing the Broadcast Audio
-		 * Scan Service (BASS) UUID.
-		 *
-		 * However, it seems that this is not the case with the sinks available
-		 * while developing this sample application.  Therefore, we instead,
-		 * search for the existence of BASS and PACS in the list of service UUIDs,
-		 * which does seem to exist in the sinks available.
+		 * If the Scan Delegator implements a Broadcast Sink, it shall transmit the BASS
+		 * UUID as service data.
 		 */
 
-		/* Check for BASS and PACS */
-		if (data->data_len % sizeof(uint16_t) != 0U) {
-			printk("UUID16 AD malformed\n");
+		if (data->data_len < BT_UUID_SIZE_16) {
 			return true;
 		}
 
-		for (size_t i = 0U; i < data->data_len; i += sizeof(uint16_t)) {
-			const struct bt_uuid *uuid;
-			uint16_t u16;
-
-			memcpy(&u16, &data->data[i], sizeof(u16));
-			uuid = BT_UUID_DECLARE_16(sys_le16_to_cpu(u16));
-
-			if (bt_uuid_cmp(uuid, BT_UUID_BASS) == 0) {
-				sr_info->has_bass = true;
-				continue;
-			}
-
-			if (bt_uuid_cmp(uuid, BT_UUID_PACS) == 0) {
-				sr_info->has_pacs = true;
-				continue;
-			}
+		if (!bt_uuid_create(&adv_uuid.uuid, data->data, BT_UUID_SIZE_16)) {
+			return true;
 		}
+
+		if (bt_uuid_cmp(&adv_uuid.uuid, BT_UUID_BASS) == 0) {
+			info->has_svc_data = true;
+		}
+
 		return true;
 	default:
 		return true;
@@ -313,12 +308,13 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			 struct net_buf_simple *ad)
 {
 	int err;
-	struct scan_recv_info sr_info = {0};
 
 	if (scanning_for_broadcast_source) {
+		struct broadcast_source_info bsrc_info = {0};
+
 		/* Scan for and select Broadcast Source */
 
-		sr_info.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
+		bsrc_info.broadcast_id = BT_BAP_INVALID_BROADCAST_ID;
 
 		/* We are only interested in non-connectable periodic advertisers */
 		if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0 ||
@@ -326,20 +322,20 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			return;
 		}
 
-		bt_data_parse(ad, device_found, (void *)&sr_info);
+		bt_data_parse(ad, parse_broadcast_source_data, (void *)&bsrc_info);
 
-		if (sr_info.broadcast_id != BT_BAP_INVALID_BROADCAST_ID) {
+		if (bsrc_info.broadcast_id != BT_BAP_INVALID_BROADCAST_ID) {
 			printk("Broadcast Source Found:\n");
-			printk("  BT Name:        %s\n", sr_info.bt_name);
-			printk("  Broadcast Name: %s\n", sr_info.broadcast_name);
-			printk("  Broadcast ID:   0x%06x\n\n", sr_info.broadcast_id);
+			printk("  BT Name:        %s\n", bsrc_info.bt_name);
+			printk("  Broadcast Name: %s\n", bsrc_info.broadcast_name);
+			printk("  Broadcast ID:   0x%06x\n\n", bsrc_info.broadcast_id);
 
 #if defined(CONFIG_SELECT_SOURCE_NAME)
 			if (strlen(CONFIG_SELECT_SOURCE_NAME) > 0U) {
 				/* Compare names with CONFIG_SELECT_SOURCE_NAME */
-				if (is_substring(CONFIG_SELECT_SOURCE_NAME, sr_info.bt_name) ||
+				if (is_substring(CONFIG_SELECT_SOURCE_NAME, bsrc_info.bt_name) ||
 				    is_substring(CONFIG_SELECT_SOURCE_NAME,
-						 sr_info.broadcast_name)) {
+						 bsrc_info.broadcast_name)) {
 					printk("Match found for '%s'\n", CONFIG_SELECT_SOURCE_NAME);
 				} else {
 					printk("'%s' not found in names\n\n",
@@ -359,9 +355,9 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			 * the sink when adding a broadcast source (see in main function below).
 			 */
 
-			printk("Selecting Broadcast ID: 0x%06x\n", sr_info.broadcast_id);
+			printk("Selecting Broadcast ID: 0x%06x\n", bsrc_info.broadcast_id);
 
-			selected_broadcast_id = sr_info.broadcast_id;
+			selected_broadcast_id = bsrc_info.broadcast_id;
 			selected_sid = info->sid;
 			selected_pa_interval = info->interval;
 			bt_addr_le_copy(&selected_addr, info->addr);
@@ -372,22 +368,23 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 			       selected_broadcast_id);
 		}
 	} else {
-		/* Scan for and connect to Broadcast Sink */
+		/* Scan for and connect to Broadcast Sink / Scan Delegator */
+		struct scan_delegator_info sd_info = {0};
 
 		/* We are only interested in connectable advertisers */
 		if ((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) == 0) {
 			return;
 		}
 
-		bt_data_parse(ad, device_found, (void *)&sr_info);
+		bt_data_parse(ad, parse_scan_delegator_data, (void *)&sd_info);
 
-		if (sr_info.has_bass && sr_info.has_pacs) {
+		if (sd_info.has_svc_data) {
 			printk("Broadcast Sink Found:\n");
-			printk("  BT Name:        %s\n", sr_info.bt_name);
+			printk("  BT Name:        %s\n", sd_info.bt_name);
 
 			if (strlen(CONFIG_SELECT_SINK_NAME) > 0U) {
 				/* Compare names with CONFIG_SELECT_SINK_NAME */
-				if (is_substring(CONFIG_SELECT_SINK_NAME, sr_info.bt_name)) {
+				if (is_substring(CONFIG_SELECT_SINK_NAME, sd_info.bt_name)) {
 					printk("Match found for '%s'\n", CONFIG_SELECT_SINK_NAME);
 				} else {
 					printk("'%s' not found in names\n\n",
@@ -401,7 +398,7 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info,
 				printk("bt_le_scan_stop failed with %d\n", err);
 			}
 
-			printk("Connecting to Broadcast Sink: %s\n", sr_info.bt_name);
+			printk("Connecting to Broadcast Sink: %s\n", sd_info.bt_name);
 
 			err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN,
 						BT_BAP_CONN_PARAM_RELAXED, &broadcast_sink_conn);
