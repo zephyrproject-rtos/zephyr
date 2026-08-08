@@ -41,6 +41,7 @@ extern "C" {
 #define TID_QUEUE_CANCEL_WAIT   (20u + TID_OFFSET)
 #define TID_QUEUE_PEAK_HEAD     (21u + TID_OFFSET)
 #define TID_QUEUE_PEAK_TAIL     (22u + TID_OFFSET)
+#define TID_QUEUE_PEAK_NEXT     (51u + TID_OFFSET)
 
 #define TID_STACK_INIT          (23u + TID_OFFSET)
 #define TID_STACK_PUSH          (24u + TID_OFFSET)
@@ -140,6 +141,7 @@ extern "C" {
 #define TID_FIFO_PUT_SLIST   (114u + TID_OFFSET)
 #define TID_FIFO_PEAK_HEAD   (115u + TID_OFFSET)
 #define TID_FIFO_PEAK_TAIL   (116u + TID_OFFSET)
+#define TID_FIFO_PEAK_NEXT   (137u + TID_OFFSET)
 #define TID_FIFO_PUT         (117u + TID_OFFSET)
 #define TID_FIFO_GET         (118u + TID_OFFSET)
 
@@ -166,7 +168,7 @@ extern "C" {
 #define TID_TIMER_EXPIRY (135u + TID_OFFSET)
 #define TID_TIMER_STOP_EXPIRY (136u + TID_OFFSET)
 
-/* latest ID is 136 */
+/* latest ID is 137 */
 
 #ifdef __cplusplus
 }

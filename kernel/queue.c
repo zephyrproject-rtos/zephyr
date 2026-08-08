@@ -416,6 +416,33 @@ void *z_impl_k_queue_peek_tail(struct k_queue *queue)
 	return ret;
 }
 
+void *z_impl_k_queue_peek_next(struct k_queue *queue, void *data)
+{
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
+	void *ret = NULL;
+	sys_sfnode_t *cur = NULL;
+
+	if (data == NULL) {
+		goto out;
+	}
+
+	SYS_SFLIST_FOR_EACH_NODE(&queue->data_q, cur) {
+		ret = z_queue_node_peek(cur, false);
+		if (ret == data) {
+			break;
+		}
+	}
+
+	ret = z_queue_node_peek(sys_sflist_peek_next(cur), false);
+
+out:
+	k_spin_unlock(&queue->lock, key);
+
+	SYS_PORT_TRACING_OBJ_FUNC(k_queue, peek_next, queue, data, ret);
+
+	return ret;
+}
+
 #ifdef CONFIG_USERSPACE
 static inline void *z_vrfy_k_queue_get(struct k_queue *queue,
 				       k_timeout_t timeout)
@@ -445,6 +472,13 @@ static inline void *z_vrfy_k_queue_peek_tail(struct k_queue *queue)
 	return z_impl_k_queue_peek_tail(queue);
 }
 #include <zephyr/syscalls/k_queue_peek_tail_mrsh.c>
+
+static inline void *z_vrfy_k_queue_peek_next(struct k_queue *queue, void *data)
+{
+	K_OOPS(K_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
+	return z_impl_k_queue_peek_next(queue, data);
+}
+#include <zephyr/syscalls/k_queue_peek_next_mrsh.c>
 
 #endif /* CONFIG_USERSPACE */
 
