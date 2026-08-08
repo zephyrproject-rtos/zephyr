@@ -56,6 +56,16 @@ flashMem: Memory.MappedMemory @ sysbus 0x90000000
 dwt: Miscellaneous.DWT @ sysbus 0xE0001000
     frequency: 72000000
 
+phy: Network.EthernetPhysicalLayer @ ethernet 0
+    BasicControl: 0x3100
+    BasicStatus: 0x782D
+    Id1: 0x0007
+    Id2: 0xC130
+    AutoNegotiationAdvertisement: 0x01E1
+    AutoNegotiationLinkPartnerBasePageAbility: 0x0001
+    AutoNegotiationExpansion: 0x0064
+    AutoNegotiationNextPageTransmit: 0x2001
+
 sysbus:
     init:
         Tag <0x58024800 4> "PWR_CR1_DBP_SET" 0x100
