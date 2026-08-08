@@ -860,6 +860,18 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
         help="Call multiple times to increase verbosity.")
 
     parser.add_argument(
+        "--console-monitor", action="store_true",
+        help="Show a live full-screen dashboard for the run in this terminal "
+             "instead of the normal scrolling output: progress, in-flight "
+             "jobs with their pipeline stage, and a filterable instance "
+             "table with per-instance details and logs. Requires an "
+             "interactive terminal (ignored otherwise). Press q to leave "
+             "the dashboard; while the run is still going, normal console "
+             "output resumes, and after it finishes, reports are written as "
+             "usual. Normal log output goes to twister.log while the "
+             "dashboard is shown.")
+
+    parser.add_argument(
         "-ll",
         "--log-level",
         type=str.upper,

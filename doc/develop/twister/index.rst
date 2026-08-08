@@ -1946,6 +1946,50 @@ contain:
     Data fields captured by the ``record`` option of the
     :ref:`console harness <twister_console_harness>`, when configured.
 
+.. _twister_console_monitor:
+
+Live Run Monitoring
+*******************
+
+For long runs it can be hard to tell from the scrolling console output what
+twister is actually doing: what is queued, what each job is building or
+running right now, and which tests have already failed and why. The
+``--console-monitor`` option replaces the normal output with a live
+full-screen dashboard in the terminal for the duration of the run:
+
+.. code-block:: console
+
+   $ west twister -T tests/kernel --console-monitor
+
+The dashboard shows overall progress with pass/fail/error/filtered
+breakdowns and an estimated time to completion, the set of test instances
+currently *in flight* with the pipeline stage each one is in (``cmake``,
+``build``, ``run``, ...), and a scrollable table of every test instance in
+the plan, including statically filtered ones. Normal log output goes to
+:file:`twister.log` in the meantime.
+
+Navigation: :kbd:`Tab` cycles the table filter
+(all/active/failures/passed/queued/filtered), :kbd:`f` jumps straight to
+the failures view, and :kbd:`/` starts an incremental text search over
+instance names and failure reasons (:kbd:`Esc` clears it). Move the
+selection with the arrow keys or :kbd:`j`/:kbd:`k` and press :kbd:`Enter`
+to open the detail view for an instance: its pipeline stage timeline, the
+list of failing test cases with their reasons, and the tail of its log
+files (:kbd:`l` switches between the available logs, :kbd:`j`/:kbd:`k` or
+the arrow keys scroll, :kbd:`g`/:kbd:`G` jump to the top/end, and the view
+follows new output while pinned to the end) -- particularly useful for
+inspecting failures while the rest of the run continues.
+
+When the run finishes the dashboard stays up so failures can be inspected;
+pressing :kbd:`q` leaves it, after which reports are written and twister
+exits as usual. Pressing :kbd:`q` while the run is still going leaves the
+dashboard early and resumes the normal console output. The option requires
+an interactive terminal and is ignored otherwise (e.g. in CI).
+
+The monitor observes the run without influencing it: monitoring events are
+delivered on a best-effort basis and are dropped rather than ever delaying
+the build/run pipeline.
+
 .. _twister_test_config:
 
 Twister Configuration File

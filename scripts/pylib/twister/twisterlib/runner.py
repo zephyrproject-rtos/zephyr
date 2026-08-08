@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
 import traceback
 from collections import deque
@@ -56,6 +57,7 @@ from twisterlib.environment import TwisterEnv
 from twisterlib.harness import Harness, HarnessImporter
 from twisterlib.log_helper import log_command
 from twisterlib.platform import Platform
+from twisterlib.runmonitor import console_ui_active, make_event
 from twisterlib.sidecars import SidecarImporter
 from twisterlib.testinstance import TestInstance
 from twisterlib.testplan import change_skip_to_error_if_integration
@@ -1459,7 +1461,11 @@ class ProjectBuilder(FilterBuilder):
 
             if instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]:
                 self.log_info_file(self.options.inline_logs)
-        else:
+        elif not console_ui_active():
+            # The single-line progress ticker owns stdout; skip it while the
+            # full-screen console monitor owns the terminal. The gate is the
+            # live UI flag, not the option, so the ticker resumes as soon as
+            # the user leaves the dashboard mid-run.
             completed_perc = 0
             if total_to_do > 0:
                 completed_perc = int(
@@ -1876,6 +1882,99 @@ class TwisterRunner:
         self.jobs = 1
         self.results = None
         self.jobserver = None
+        # multiprocessing.Queue carrying run-monitor events from the worker
+        # processes; stays None unless monitoring is enabled.
+        self.event_queue = None
+
+    def _emit_event(self, kind, op, instance, **extra):
+        '''Post a monitoring event; never let monitoring break the pipeline.'''
+        if self.event_queue is None:
+            return
+        with contextlib.suppress(Exception):
+            self.event_queue.put_nowait(make_event(kind, op, instance, **extra))
+
+    def _console_monitor_wanted(self):
+        '''--console-monitor requested and usable in this environment.'''
+        if getattr(self.options, 'console_monitor', False) is not True:
+            return False
+        if not (sys.stdout.isatty() and sys.stdin.isatty()):
+            logger.warning(
+                "console monitor requires an interactive terminal, "
+                "continuing with normal output"
+            )
+            return False
+        try:
+            import curses  # noqa: F401
+        except ImportError:
+            logger.warning(
+                "console monitor requires curses (unavailable on this "
+                "platform), continuing with normal output"
+            )
+            return False
+        return True
+
+    def _start_monitors(self):
+        '''Start the run monitor and console UI if --console-monitor is on.
+
+        Returns (monitor, console_ui, console_ui_thread), all None when
+        monitoring is off. The monitor and UI objects hold threads, so they
+        are deliberately NOT stored on self: self is pickled/forked into the
+        worker processes, which only need the picklable event_queue.
+        '''
+        if not self._console_monitor_wanted():
+            return None, None, None
+        from twisterlib.runmonitor import RunMonitor
+
+        self.event_queue = mp.Queue()
+        monitor = RunMonitor(self.event_queue, self.results)
+        monitor.state.init_plan(self.instances, self.options.outdir)
+        monitor.state.set_meta(
+            jobs=self.jobs,
+            version=getattr(self.env, 'version', ''),
+            iteration=1,
+        )
+        if not monitor.start():
+            self.event_queue = None
+            return None, None, None
+
+        console_ui, ui_thread = self._start_console_ui(monitor)
+        return monitor, console_ui, ui_thread
+
+    def _start_console_ui(self, monitor):
+        '''Run the console dashboard in a thread of this (main) process.
+
+        Console logging is muted while the UI owns the terminal (everything
+        still goes to twister.log) and restored when the UI exits, whether
+        the user left with 'q' or the run ended.
+        '''
+        from twisterlib.consolemonitor import ConsoleUI, LocalMonitorSource
+        from twisterlib.log_helper import mute_console_logging, restore_console_logging
+
+        ui = ConsoleUI(LocalMonitorSource(monitor), interval=1.0)
+        ui.embedded = True
+        muted = mute_console_logging()
+        # Arm the shared UI-active flag the worker processes watch: while it
+        # is set they skip the progress ticker and terminal resets. It is
+        # cleared the moment the UI exits so normal output resumes
+        # immediately, even when the user leaves the dashboard mid-run. Must
+        # be created here, before execute() forks the workers.
+        from twisterlib.runmonitor import clear_ui_active_flag, create_ui_active_flag
+
+        create_ui_active_flag()
+
+        def run_ui():
+            try:
+                ui.run()
+            except Exception as e:
+                logger.error(f"console monitor UI failed: {e}")
+            finally:
+                clear_ui_active_flag()
+                restore_console_logging(muted)
+                logger.info("Console monitor closed")
+
+        thread = threading.Thread(target=run_ui, name='twister-console-ui', daemon=True)
+        thread.start()
+        return ui, thread
 
     def run(self):
 
@@ -1914,10 +2013,15 @@ class TwisterRunner:
 
         self.update_counting_before_pipeline()
 
+        monitor, console_ui, console_ui_thread = self._start_monitors()
+
+        aborted = False
         while True:
             self.results.iteration_increment()
 
             if self.results.iteration > 1:
+                if monitor:
+                    monitor.state.note_iteration(self.results.iteration)
                 logger.info(f"{self.results.iteration} Iteration:")
                 time.sleep(self.options.retry_interval)  # waiting for the system to settle down
                 self.results.done = self.results.total - self.results.failed
@@ -1928,13 +2032,18 @@ class TwisterRunner:
             else:
                 self.results.done = self.results.filtered_static + self.results.skipped
 
-            self.execute(processing_queue, processing_ready)
+            aborted = self.execute(processing_queue, processing_ready) is True
 
             for inst in processing_ready.values():
                 inst.metrics["handler_time"] = inst.execution_time
                 self.instances[inst.name] = inst
 
-            print("")
+            if console_ui is None:
+                print("")
+
+            if aborted:
+                # The user interrupted the run; do not start retry iterations.
+                break
 
             retry_errors = False
             if self.results.error and self.options.retry_build_errors:
@@ -1943,6 +2052,24 @@ class TwisterRunner:
             retries = retries - 1
             if retries == 0 or ( self.results.failed == 0 and not retry_errors):
                 break
+
+        if monitor:
+            monitor.finish()
+        if console_ui_thread and console_ui_thread.is_alive():
+            if aborted or not sys.stdout.isatty():
+                # The run was interrupted (or the terminal went away): shut
+                # the dashboard down instead of waiting for a keypress.
+                console_ui.stop_requested.set()
+                console_ui_thread.join(timeout=5)
+            else:
+                # Leave the dashboard up so failures can be inspected; the
+                # user exits it with 'q', then reports are written as usual.
+                # A Ctrl-C here counts as that exit, not as a hang.
+                try:
+                    console_ui_thread.join()
+                except KeyboardInterrupt:
+                    console_ui.stop_requested.set()
+                    console_ui_thread.join(timeout=5)
 
         self.show_brief()
 
@@ -2043,8 +2170,14 @@ class TwisterRunner:
                 break
             else:
                 instance: TestInstance = task['test']
+                op = task.get('op')
                 pb = ProjectBuilder(instance, self.env, self.jobserver)
+                self._emit_event('op_start', op, instance)
+                op_start_time = time.time()
                 pb.process(processing_queue, processing_ready, task, lock, results)
+                self._emit_event(
+                    'op_done', op, pb.instance, duration=time.time() - op_start_time
+                )
                 if (
                     self.env.options.quit_on_failure
                     and pb.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]
@@ -2068,7 +2201,11 @@ class TwisterRunner:
             logger.error(f"General exception: {e}\n{traceback.format_exc()}")
             sys.exit(1)
 
-    def execute(self, processing_queue: deque, processing_ready: dict[str, TestInstance]):
+    def execute(self, processing_queue: deque, processing_ready: dict[str, TestInstance]) -> bool:
+        '''Run the worker processes to completion.
+
+        Returns True if the execution was interrupted by the user.
+        '''
         lock = Lock()
         logger.info("Adding tasks to the queue...")
         self.add_tasks_to_queue(processing_queue, self.options.build_only, self.options.test_only,
@@ -2096,6 +2233,8 @@ class TwisterRunner:
             logger.info("Execution interrupted")
             for p in processes:
                 p.terminate()
+            return True
+        return False
 
     @staticmethod
     def get_cmake_filter_stages(filt, logic_keys):
