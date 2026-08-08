@@ -34,6 +34,9 @@
 /** I2C3 control register offset in CLKCTL_PER_SLV */
 #define ALIF_I2C3_CTRL_REG		0x5CU
 
+/** LPTIMER clock select register offset in VBAT */
+#define ALIF_TIMER_CLKSEL_REG		0x04U
+
 /** @} */
 
 /**
@@ -85,6 +88,42 @@
 /** I2C3 clock sourced from system PCLK */
 #define ALIF_I2C3_SYST_PCLK         \
 	ALIF_CLK_CFG(CLKCTL_PER_SLV, I2C3_CTRL, 0U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_SYST_PCLK)
+
+/** @} */
+
+/**
+ * @name LPTIMER peripheral clocks
+ *
+ * The channels have no clock enable bit; only the source selection is
+ * programmed.
+ *
+ * @{
+ */
+
+/** LPTIMER0 clock sourced from S32K_CLK */
+#define ALIF_LPTIMER0_S32K_CLK      \
+	ALIF_CLK_CFG(VBAT, TIMER_CLKSEL, 0U, 0U, 0U, 2U, 0U, ALIF_PARENT_CLK_S32K)
+/** LPTIMER0 clock sourced from 128K_CLK */
+#define ALIF_LPTIMER0_128K_CLK      \
+	ALIF_CLK_CFG(VBAT, TIMER_CLKSEL, 0U, 0U, 1U, 2U, 0U, ALIF_PARENT_CLK_128K)
+/** LPTIMER1 clock sourced from S32K_CLK */
+#define ALIF_LPTIMER1_S32K_CLK      \
+	ALIF_CLK_CFG(VBAT, TIMER_CLKSEL, 0U, 0U, 0U, 2U, 4U, ALIF_PARENT_CLK_S32K)
+/** LPTIMER1 clock sourced from 128K_CLK */
+#define ALIF_LPTIMER1_128K_CLK      \
+	ALIF_CLK_CFG(VBAT, TIMER_CLKSEL, 0U, 0U, 1U, 2U, 4U, ALIF_PARENT_CLK_128K)
+/** LPTIMER2 clock sourced from S32K_CLK */
+#define ALIF_LPTIMER2_S32K_CLK      \
+	ALIF_CLK_CFG(VBAT, TIMER_CLKSEL, 0U, 0U, 0U, 2U, 8U, ALIF_PARENT_CLK_S32K)
+/** LPTIMER2 clock sourced from 128K_CLK */
+#define ALIF_LPTIMER2_128K_CLK      \
+	ALIF_CLK_CFG(VBAT, TIMER_CLKSEL, 0U, 0U, 1U, 2U, 8U, ALIF_PARENT_CLK_128K)
+/** LPTIMER3 clock sourced from S32K_CLK */
+#define ALIF_LPTIMER3_S32K_CLK      \
+	ALIF_CLK_CFG(VBAT, TIMER_CLKSEL, 0U, 0U, 0U, 2U, 12U, ALIF_PARENT_CLK_S32K)
+/** LPTIMER3 clock sourced from 128K_CLK */
+#define ALIF_LPTIMER3_128K_CLK      \
+	ALIF_CLK_CFG(VBAT, TIMER_CLKSEL, 0U, 0U, 1U, 2U, 12U, ALIF_PARENT_CLK_128K)
 
 /** @} */
 
