@@ -11,6 +11,9 @@
 #include <zephyr/net/phy.h>
 #include <zephyr/net/mii.h>
 
+/* Offset to align capabilities bits of 1000BASE-T Control and Status regs */
+#define MII_1KSTSR_OFFSET 2
+
 #define PHY_INST_GENERATE_DEFAULT_SPEEDS(n)							\
 ((DT_INST_ENUM_HAS_VALUE(n, default_speeds, 10base_half_duplex) ? LINK_HALF_10BASE : 0) |	\
 (DT_INST_ENUM_HAS_VALUE(n, default_speeds, 10base_full_duplex) ? LINK_FULL_10BASE : 0) |	\
@@ -180,4 +183,92 @@ static inline enum phy_link_speed phy_mii_get_link_speed_bmcr_reg(const struct d
 
 	return speed;
 }
+
+static inline int phy_mii_check_autoneg(const struct device *dev)
+{
+	uint32_t bmsr_reg = 0;
+
+	if (phy_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+		return -EIO;
+	}
+
+	if (!IS_BIT_SET(bmsr_reg, MII_BMSR_AUTONEG_COMPLETE_BIT)) {
+		return -EINPROGRESS;
+	}
+
+	/* Link status bit is latched low, so read it again to get current status */
+	if (likely(IS_BIT_SET(bmsr_reg, MII_BMSR_LINK_STATUS_BIT))) {
+		return 0;
+	}
+	/* Second read, clears the latched bits and gives the correct status */
+	if (phy_read(dev, MII_BMSR, &bmsr_reg) < 0) {
+		return -EIO;
+	}
+
+	if (!IS_BIT_SET(bmsr_reg, MII_BMSR_LINK_STATUS_BIT)) {
+		return -EAGAIN;
+	}
+
+	return 0;
+}
+
+static inline int phy_mii_get_autoneg_speed(const struct device *dev, struct phy_link_state *state,
+					    bool gigabit_supported)
+{
+	uint32_t anar_reg = 0;
+	uint32_t anlpar_reg = 0;
+	uint16_t mutual_capabilities;
+
+	if (gigabit_supported) {
+		uint32_t c1kt_reg = 0;
+		uint32_t s1kt_reg = 0;
+
+		if (phy_read(dev, MII_1KTCR, &c1kt_reg) < 0) {
+			return -EIO;
+		}
+		if (phy_read(dev, MII_1KSTSR, &s1kt_reg) < 0) {
+			return -EIO;
+		}
+		mutual_capabilities = (uint16_t)(s1kt_reg >> MII_1KSTSR_OFFSET);
+		mutual_capabilities &= (uint16_t)c1kt_reg;
+
+		if (IS_BIT_SET(mutual_capabilities, MII_ADVERTISE_1000_FULL_BIT)) {
+			state->speed = LINK_FULL_1000BASE;
+			state->is_up = true;
+			return 0;
+		}
+		if (IS_BIT_SET(mutual_capabilities, MII_ADVERTISE_1000_HALF_BIT)) {
+			state->speed = LINK_HALF_1000BASE;
+			state->is_up = true;
+			return 0;
+		}
+	}
+
+	/* Read PHY default advertising parameters */
+	if (phy_read(dev, MII_ANAR, &anar_reg) < 0) {
+		return -EIO;
+	}
+
+	/** Read peer device capability */
+	if (phy_read(dev, MII_ANLPAR, &anlpar_reg) < 0) {
+		return -EIO;
+	}
+
+	mutual_capabilities = (uint16_t)(anar_reg & anlpar_reg);
+
+	if (IS_BIT_SET(mutual_capabilities, MII_ADVERTISE_100_FULL_BIT)) {
+		state->speed = LINK_FULL_100BASE;
+	} else if (IS_BIT_SET(mutual_capabilities, MII_ADVERTISE_100_HALF_BIT)) {
+		state->speed = LINK_HALF_100BASE;
+	} else if (IS_BIT_SET(mutual_capabilities, MII_ADVERTISE_10_FULL_BIT)) {
+		state->speed = LINK_FULL_10BASE;
+	} else {
+		state->speed = LINK_HALF_10BASE;
+	}
+
+	state->is_up = true;
+
+	return 0;
+}
+
 #endif /* ZEPHYR_PHY_MII_H_ */
