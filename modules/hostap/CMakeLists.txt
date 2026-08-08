@@ -157,6 +157,10 @@ zephyr_library_sources(
   src/supp_events.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_OFFLOAD_OPS
+  src/supp_cmd_wq.c
+)
+
 # Advanced features
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_RRM
   ${WIFI_NM_WPA_SUPPLICANT_BASE}/op_classes.c
