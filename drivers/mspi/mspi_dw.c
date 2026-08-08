@@ -1741,7 +1741,7 @@ static int api_transceive(const struct device *dev,
 
 	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, rc);
 		return rc;
 	}
 
@@ -1774,7 +1774,7 @@ static int finalize_transceive(const struct device *dev, int rc)
 
 	rc2 = pm_device_runtime_put(dev);
 	if (rc2 < 0) {
-		LOG_ERR("pm_device_runtime_put() failed: %d", rc2);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, rc2);
 		rc = (rc < 0 ? rc : rc2);
 	}
 
@@ -1860,7 +1860,7 @@ static int _api_xip_config(const struct device *dev,
 			 */
 			rc = pm_device_runtime_put(dev);
 			if (rc < 0) {
-				LOG_ERR("pm_device_runtime_put() failed: %d", rc);
+				LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, rc);
 				return rc;
 			}
 		}
@@ -1892,7 +1892,7 @@ static int _api_xip_config(const struct device *dev,
 		 */
 		rc = pm_device_runtime_get(dev);
 		if (rc < 0) {
-			LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+			LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, rc);
 			return rc;
 		}
 
@@ -1921,7 +1921,7 @@ static int _api_xip_config(const struct device *dev,
 			LOG_ERR("XIP write access not supported by this controller");
 			rc = pm_device_runtime_put(dev);
 			if (rc < 0) {
-				LOG_ERR("pm_device_runtime_put() failed: %d", rc);
+				LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, rc);
 			}
 			return -ENOTSUP;
 #endif
@@ -1972,7 +1972,7 @@ static int api_memmap_config(const struct device *dev,
 
 	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, rc);
 		return rc;
 	}
 
@@ -1992,7 +1992,7 @@ static int api_memmap_config(const struct device *dev,
 
 	rc2 = pm_device_runtime_put(dev);
 	if (rc2 < 0) {
-		LOG_ERR("pm_device_runtime_put() failed: %d", rc2);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, rc2);
 		rc = (rc < 0 ? rc : rc2);
 	}
 
