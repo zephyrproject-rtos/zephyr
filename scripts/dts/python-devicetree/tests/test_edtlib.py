@@ -781,6 +781,33 @@ def test_cpu_props_fallback_from_cpus_node():
     # CPU-local value takes precedence.
     assert cpu1.props["clock-frequency"].val == 2000
 
+def test_cpus():
+    """Test that edt.cpus contains the /cpus/cpu@N nodes."""
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    cpu0 = edt.get_node("/cpus/cpu@0")
+    cpu1 = edt.get_node("/cpus/cpu@1")
+    cpu2 = edt.get_node("/cpus/cpu@2")
+
+    assert edt.cpus == [cpu0, cpu1, cpu2]
+
+def test_cpu_default_binding():
+    """CPU nodes without a matching 'compatible' get a synthesized binding
+    with the general properties from DT spec section 3.8."""
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    cpu2 = edt.get_node("/cpus/cpu@2")
+
+    assert cpu2.binding_path is None
+    assert cpu2.props["device_type"].val == "cpu"
+    assert cpu2.props["reg"].val == [2]
+    assert cpu2.props["clock-frequency"].val == [3000]
+    assert cpu2.props["enable-method"].val == ["spin-table"]
+    assert cpu2.props["cpu-release-addr"].val == 0xa0000000
+    assert cpu2.props["status"].val == "disabled"
+
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
     with from_here():

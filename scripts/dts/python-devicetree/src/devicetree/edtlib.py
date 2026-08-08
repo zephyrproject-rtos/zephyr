@@ -1683,8 +1683,10 @@ class Node:
                 self._binding = binding_from_parent
                 return
 
-        # No binding found
-        self._binding = None
+        # No binding found. Fall back to a synthesized default binding, if
+        # this node matches one of the well-known default node kinds. Otherwise,
+        # return None
+        self._binding = _default_binding_for(self)
 
     def _binding_from_properties(self) -> None:
         # Sets up a Binding object synthesized from the properties in the node.
@@ -2404,6 +2406,7 @@ class EDT:
 
         # Public attributes (the rest are properties)
         self.nodes: list[Node] = []
+        self.cpus: list[Node] = []
         self.compat2nodes: dict[str, list[Node]] = defaultdict(list)
         self.compat2okay: dict[str, list[Node]] = defaultdict(list)
         self.compat2notokay: dict[str, list[Node]] = defaultdict(list)
@@ -2735,6 +2738,11 @@ class EDT:
 
             self.nodes.append(node)
             self._node2enode[dt_node] = node
+
+            if (node.parent
+                    and node.parent.path == "/cpus"
+                    and node.name.split("@", 1)[0] == "cpu"):
+                self.cpus.append(node)
 
         for node in self.nodes:
             # Initialize properties that may depend on other Node objects having
@@ -3936,3 +3944,94 @@ _DEFAULT_PROP_SPECS: dict[str, PropertySpec] = {
     name: PropertySpec(name, _DEFAULT_PROP_BINDING)
     for name in _DEFAULT_PROP_TYPES
 }
+
+#
+# Synthesized bindings for well-known "default" nodes that commonly appear
+# without a 'compatible' property, and therefore would otherwise end up with
+# no binding at all (and hence an empty Node.props).
+#
+
+_CPU_BINDING_RAW: dict = {
+    'description': 'Standin binding for /cpus/cpu* nodes without a matching '
+                    'binding, synthesized per Devicetree Specification '
+                    'v0.4 SS3.8 (Tables 3.9-3.12).',
+    'properties': {
+        # Table 3.9: General Properties
+        'device_type': {'type': 'string', 'required': True},
+        'reg': {'type': 'array', 'required': True},
+        'clock-frequency': {'type': 'array'},
+        'timebase-frequency': {'type': 'array'},
+        'status': {'type': 'string', 'enum': _STATUS_ENUM},
+        'enable-method': {'type': 'string-array'},
+        'cpu-release-addr': {'type': 'int'},
+
+        # Table 3.10: Power ISA Properties. The wildcard 'power-isa-*'
+        # category-flag properties (e.g. 'power-isa-e.hv') can't be
+        # expressed here since Binding properties are matched by literal
+        # name, not pattern.
+        'power-isa-version': {'type': 'string'},
+        'cache-op-block-size': {'type': 'int'},
+        'reservation-granule-size': {'type': 'int'},
+        'mmu-type': {'type': 'string', 'enum': [
+            'mpc8xx', 'ppc40x', 'ppc440', 'ppc476', 'power-embedded',
+            'powerpc-classic', 'power-server-stab', 'power-server-slb',
+            'none',
+        ]},
+
+        # Table 3.11: TLB Properties
+        'tlb-split': {'type': 'boolean'},
+        'tlb-size': {'type': 'int'},
+        'tlb-sets': {'type': 'int'},
+        'd-tlb-size': {'type': 'int'},
+        'd-tlb-sets': {'type': 'int'},
+        'i-tlb-size': {'type': 'int'},
+        'i-tlb-sets': {'type': 'int'},
+
+        # Table 3.12: Internal (L1) Cache Properties
+        'cache-unified': {'type': 'boolean'},
+        'cache-size': {'type': 'int'},
+        'cache-sets': {'type': 'int'},
+        'cache-block-size': {'type': 'int'},
+        'cache-line-size': {'type': 'int'},
+        'i-cache-size': {'type': 'int'},
+        'i-cache-sets': {'type': 'int'},
+        'i-cache-block-size': {'type': 'int'},
+        'i-cache-line-size': {'type': 'int'},
+        'd-cache-size': {'type': 'int'},
+        'd-cache-sets': {'type': 'int'},
+        'd-cache-block-size': {'type': 'int'},
+        'd-cache-line-size': {'type': 'int'},
+        'next-level-cache': {'type': 'phandle'},
+        # Deprecated pre-DTSpec form of 'next-level-cache'.
+        'l2-cache': {'type': 'phandle'},
+    },
+}
+
+_CPU_BINDING: Binding = Binding(
+    None, {},
+    raw=_CPU_BINDING_RAW,
+    require_compatible=False,
+    require_description=False,
+)
+
+def _is_cpu_node(node: "Node") -> bool:
+    # A /cpus/cpu* node per DT spec SS3.8 ("The node name for every CPU
+    # node should be cpu"). Mirrors the EDT.cpus check.
+    return bool(node.parent
+                and node.parent.path == "/cpus"
+                and node.name.split("@", 1)[0] == "cpu")
+
+# Predicate -> synthesized Binding, tried in order. Add an entry here to give
+# another well-known kind of binding-less node (identified structurally, not
+# via 'compatible') a fallback Binding, without touching Node._init_binding().
+_DEFAULT_NODE_BINDINGS: list[tuple[Callable[["Node"], bool], Binding]] = [
+    (_is_cpu_node, _CPU_BINDING),
+]
+
+def _default_binding_for(node: "Node") -> Optional[Binding]:
+    # Returns a synthesized fallback Binding if 'node' matches one of the
+    # well-known default node kinds in _DEFAULT_NODE_BINDINGS, else None.
+    for is_match, binding in _DEFAULT_NODE_BINDINGS:
+        if is_match(node):
+            return binding
+    return None
