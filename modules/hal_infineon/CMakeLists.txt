@@ -113,6 +113,14 @@ endif()
 ## Add BT assets for AIROC devices
 if(CONFIG_BT_AIROC)
   add_subdirectory(btstack-integration)
+
+  # On CYW20829/CYW89829 B0 silicon the BLE controller boot leaves CLK_HF0 on
+  # the 48 MHz BLE ECO path. The btstack-integration HCI layer restores CLK_HF0
+  # to the 96 MHz FLL path on CY_BT_IPC_BOOT_FULLY_UP, but only when
+  # COMPONENT_CYW20829B0 / COMPONENT_CYW89829B0 is defined. Scope the macro to
+  # this HAL library (not a global define) so the restore is compiled in.
+  zephyr_library_compile_definitions_ifdef(CONFIG_SOC_CYW20829_B0 COMPONENT_CYW20829B0)
+  zephyr_library_compile_definitions_ifdef(CONFIG_SOC_CYW89829_B0 COMPONENT_CYW89829B0)
 endif()
 
 if(CONFIG_BT_PSOC6_BLESS)
