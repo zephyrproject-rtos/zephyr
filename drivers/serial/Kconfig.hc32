@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Liu Changjie <liucj1228@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_HC32
+	bool "XHSC HC32 USART driver"
+	default y
+	depends on DT_HAS_XHSC_HC32_USART_ENABLED
+	depends on HAS_HC32_DDL
+	select PINCTRL
+	select HC32_LL_FCG
+	select HC32_LL_GPIO
+	select HC32_LL_USART
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable polling UART support for XHSC HC32 USART peripherals.

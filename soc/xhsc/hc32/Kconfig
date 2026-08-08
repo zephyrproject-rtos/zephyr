@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Liu Changjie <liucj1228@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_XHSC_HC32
+	select BUILD_OUTPUT_HEX
+	select HAS_HC32_DDL
+
+if SOC_FAMILY_XHSC_HC32
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_XHSC_HC32

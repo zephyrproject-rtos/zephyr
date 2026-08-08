@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Liu Changjie <liucj1228@outlook.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_HC32_PINCTRL_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_HC32_PINCTRL_H_
+
+#define HC32_PORT_A 0U
+#define HC32_PORT_B 1U
+#define HC32_PORT_C 2U
+#define HC32_PORT_D 3U
+#define HC32_PORT_E 4U
+#define HC32_PORT_F 5U
+#define HC32_PORT_G 6U
+#define HC32_PORT_H 7U
+#define HC32_PORT_I 8U
+
+#define HC32_GPIO_FUNC_USART 20U
+
+#define HC32_PINMUX_PORT_SHIFT 0U
+#define HC32_PINMUX_PORT_MASK  0x0FU
+#define HC32_PINMUX_PIN_SHIFT  4U
+#define HC32_PINMUX_PIN_MASK   0x0FU
+#define HC32_PINMUX_FUNC_SHIFT 8U
+#define HC32_PINMUX_FUNC_MASK  0x1FU
+
+#define HC32_PINMUX(port, pin, func)                                                               \
+	(((port) << HC32_PINMUX_PORT_SHIFT) | ((pin) << HC32_PINMUX_PIN_SHIFT) |                   \
+	 ((func) << HC32_PINMUX_FUNC_SHIFT))
+
+#define HC32_PINMUX_GET_PORT(pinmux) (((pinmux) >> HC32_PINMUX_PORT_SHIFT) & HC32_PINMUX_PORT_MASK)
+#define HC32_PINMUX_GET_PIN(pinmux)  (((pinmux) >> HC32_PINMUX_PIN_SHIFT) & HC32_PINMUX_PIN_MASK)
+#define HC32_PINMUX_GET_FUNC(pinmux) (((pinmux) >> HC32_PINMUX_FUNC_SHIFT) & HC32_PINMUX_FUNC_MASK)
+
+#define HC32_USART1_TX_PA9  HC32_PINMUX(HC32_PORT_A, 9, HC32_GPIO_FUNC_USART)
+#define HC32_USART1_RX_PA10 HC32_PINMUX(HC32_PORT_A, 10, HC32_GPIO_FUNC_USART)
+
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_HC32_PINCTRL_H_ */
