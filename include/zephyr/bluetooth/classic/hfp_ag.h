@@ -256,7 +256,7 @@ struct bt_hfp_ag_cb {
 	 *
 	 *  @param ag HFP AG object.
 	 *  @param number Buffer to store the last dialed phone number.
-	 *                The buffer size is @kconfig{BT_HFP_AG_PHONE_NUMBER_MAX_LEN} + 1,
+	 *                The buffer size is @kconfig{CONFIG_BT_HFP_AG_PHONE_NUMBER_MAX_LEN} + 1,
 	 *                and should be null-terminated.
 	 *
 	 *  @return 0 in case of success or negative value in case of error.

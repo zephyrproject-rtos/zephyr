@@ -285,7 +285,27 @@ TAB_SIZE               = 8
 # with the commands \{ and \} for these it is advised to use the version @{ and
 # @} or use a double escape (\\{ and \\})
 
-ALIASES                = "kconfig{1}=\c \1" \
+# The kconfig, dtcompatible and rstref aliases expand to HTML placeholders
+# that are resolved into links pointing back to the Sphinx-based documentation
+# (e.g. docs.zephyrproject.org) by the 'zephyr.doxyxref' Sphinx extension (see
+# doc/_extensions/zephyr/doxyxref.py). When left unresolved, the placeholders
+# gracefully degrade to plain text.
+#
+# - kconfig{1}:      reference a Kconfig option, e.g. @kconfig{CONFIG_GPIO}
+# - kconfig_regex{1}: reference all Kconfig options matching a regular
+#                    expression, linking to the Kconfig search page, e.g.
+#                    @kconfig_regex{CONFIG_SECURE_STORAGE_ITS_.*_CUSTOM}
+# - dtcompatible{1}: reference a Devicetree binding by compatible string,
+#                    e.g. @dtcompatible{zephyr\,input-longpress} (note the
+#                    escaped comma)
+# - rstref{1}:       reference any Sphinx ':ref:' target, with optional custom
+#                    text, e.g. @rstref{coding_guidelines} or
+#                    @rstref{the coding guidelines <coding_guidelines>}
+
+ALIASES                = "kconfig{1}=\htmlonly<code class='doxyxref' data-stype='kconfig:option' data-starget='\1'>\1</code>\endhtmlonly" \
+                         "kconfig_regex{1}=\htmlonly<code class='doxyxref' data-stype='kconfig:option-regex' data-starget='\1'>\1</code>\endhtmlonly" \
+                         "dtcompatible{1}=\htmlonly<code class='doxyxref' data-stype='std:dtcompatible' data-starget='\1'>\1</code>\endhtmlonly" \
+                         "rstref{1}=\htmlonly<span class='doxyxref' data-stype='std:ref' data-starget='\1'>\1</span>\endhtmlonly" \
                          "kconfig_dep{1}=\attention Available only when the following Kconfig option is enabled: \kconfig{\1}." \
                          "kconfig_dep{2}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}." \
                          "kconfig_dep{3}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}, \kconfig{\3}." \
