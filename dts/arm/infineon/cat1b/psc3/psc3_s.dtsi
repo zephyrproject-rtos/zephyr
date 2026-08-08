@@ -359,6 +359,7 @@
 			reg = <0x5220c000 0x10>;
 			interrupts = <28 4>;
 			status = "disabled";
+			infineon,wdt-lock;
 		};
 
 		mcwdt0: mcwdt@5220d000 {

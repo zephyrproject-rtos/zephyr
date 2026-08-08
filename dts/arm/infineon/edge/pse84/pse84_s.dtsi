@@ -529,6 +529,7 @@
 			interrupts = <54 4>;
 			status = "disabled";
 			wakeup-source;
+			infineon,wdt-lock;
 		};
 
 		mcwdt0: mcwdt@5240d000 {
