@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
@@ -16,6 +19,8 @@ LOG_MODULE_DECLARE(net_shell);
 #include <zephyr/drivers/ptp_clock.h>
 #include "ptp/clock.h"
 #include "ptp/port.h"
+
+#include <time.h>
 #endif
 
 #include "net_shell_private.h"
@@ -165,12 +170,42 @@ static bool ptp_read_hw_timestamp(struct net_if *iface, struct net_ptp_time *ts)
 	return ptp_clock_get(phc, ts) == 0;
 }
 
+static void ptp_print_hw_timestamp_formated(const struct shell *sh, struct net_ptp_time ts,
+					    const char *name, const char *suffix)
+{
+	uint32_t ms = (ts.nanosecond / 1000000U) % 1000U;
+	uint32_t us = (ts.nanosecond / 1000U) % 1000U;
+	uint32_t ns = ts.nanosecond % 1000U;
+	struct tm tm_timestamp = {0};
+	time_t time_seconds = ts.second;
+
+	gmtime_r(&time_seconds, &tm_timestamp);
+
+#if defined(CONFIG_REQUIRES_FULL_LIBC)
+	char time_str[sizeof("1970-01-01 00:00:00")];
+
+	strftime(time_str, sizeof(time_str), "%F %T", &tm_timestamp);
+
+	PR("%s: %s.%03u,%03u,%03u %s\n", name, time_str, ms, us, ns, suffix);
+#else  /* CONFIG_REQUIRES_FULL_LIBC */
+	PR("%s: %04u-%02u-%02u %02u:%02u:%02u.%03u,%03u,%03u %s\n", name,
+	   tm_timestamp.tm_year + 1900, tm_timestamp.tm_mon + 1, tm_timestamp.tm_mday,
+	   tm_timestamp.tm_hour, tm_timestamp.tm_min, tm_timestamp.tm_sec, ms, us, ns, suffix);
+#endif /* CONFIG_REQUIRES_FULL_LIBC */
+}
+
 static void ptp_print_hw_timestamp(const struct shell *sh, struct net_if *iface, const char *name)
 {
 	struct net_ptp_time ts;
 
 	if (ptp_read_hw_timestamp(iface, &ts)) {
 		PR("%s: %" PRIu64 ".%09u\n", name, ts.second, ts.nanosecond);
+
+		ptp_print_hw_timestamp_formated(sh, ts, name, "(TAI)");
+
+		ts.second -= ptp_clock_time_prop_ds()->current_utc_offset; /* TAI-UTC offset */
+
+		ptp_print_hw_timestamp_formated(sh, ts, name, "(UTC)");
 	} else {
 		PR("%s: unavailable\n", name);
 	}
