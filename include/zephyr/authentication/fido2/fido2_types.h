@@ -55,6 +55,27 @@ extern "C" {
 /** @brief PIN hash size */
 #define FIDO2_PIN_HASH_SIZE 16
 
+/** @brief Maximum encrypted PIN hash size */
+#define FIDO2_PIN_HASH_ENC_MAX_SIZE 32
+
+/** @brief Maximum encrypted PIN size */
+#define FIDO2_PIN_ENC_MAX_SIZE 80
+
+/** @brief PIN Protocol 1 auth param size */
+#define FIDO2_PIN_AUTH_SIZE_P1 16
+
+/** @brief PIN Protocol 2 auth param size */
+#define FIDO2_PIN_AUTH_SIZE_P2 32
+
+/** @brief Maximum PIN auth param size */
+#define FIDO2_PIN_AUTH_MAX_SIZE 32
+
+/** @brief Padded PIN size */
+#define FIDO2_PIN_PADDED_SIZE 64
+
+/** @brief Encrypted PIN token size */
+#define FIDO2_PIN_TOKEN_ENC_MAX_SIZE 48
+
 /** @brief Size of a discoverable credential ID */
 #define FIDO2_DISCOVERABLE_CRED_ID_SIZE 32
 
