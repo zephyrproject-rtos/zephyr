@@ -1544,7 +1544,6 @@ static int uart_mchp_irq_rx_ready(const struct device *dev)
  * @param rx_data Pointer to the buffer to store received data.
  * @param size Size of the buffer.
  * @return Number of bytes read from the FIFO.
- * @retval -EINVAL for invalid argument.
  */
 static int uart_mchp_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
 {
@@ -1553,18 +1552,19 @@ static int uart_mchp_fifo_read(const struct device *dev, uint8_t *rx_data, const
 	bool is_clock_external = cfg->is_clock_external;
 	int retval = 0;
 
-	if (uart_is_rx_complete(regs, is_clock_external) == true) {
-		uint8_t ch = uart_get_received_char(
-			/* Get the received character */
-			regs, is_clock_external);
+	/*
+	 * Check the requested size before reading the received character:
+	 * reading it pops the byte out of the receiver, so doing so with no
+	 * room to store the byte would discard received data.
+	 */
+	if (size < 1) {
+		return 0;
+	}
 
-		if (size >= 1) {
-			/* Store the received character in the buffer */
-			*rx_data = ch;
-			retval = 1;
-		} else {
-			retval = -EINVAL;
-		}
+	if (uart_is_rx_complete(regs, is_clock_external) == true) {
+		/* Store the received character in the buffer */
+		*rx_data = uart_get_received_char(regs, is_clock_external);
+		retval = 1;
 	}
 
 	return retval;
