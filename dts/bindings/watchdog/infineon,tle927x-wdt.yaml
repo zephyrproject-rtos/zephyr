@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Deere & Company
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon TLE927x SBC watchdog.
+
+  The watchdog cannot be stopped while the SBC is in Normal mode, so
+  wdt_disable() always fails.
+
+  Only the exact hardware periods 10, 20, 50, 100, 200, 500 and 1000 ms are
+  accepted for window.max.
+
+  A non-zero window.min selects the window watchdog and must be at least 72%
+  of window.max (datasheet 13.2.2 safe trigger area).
+
+compatible: "infineon,tle927x-wdt"
+
+include: base.yaml
+
+on-bus: tle927x
+
+properties:
+  max-3-resets:
+    type: boolean
+    description: |
+      Set WD_CTRL.MAX_3_RST. After 3 consecutive watchdog-failure resets the
+      SBC stops generating further resets and stays in Normal or Stop mode.
+      Leave unset for a safety watchdog that always resets.
