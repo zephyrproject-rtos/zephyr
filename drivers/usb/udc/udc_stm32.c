@@ -182,6 +182,8 @@ struct udc_stm32_data  {
 };
 
 struct udc_stm32_config {
+	/* Whether or not VBUS sensing should be enabled */
+	bool vbus_sensing_en;
 	/* Controller MMIO base address */
 	void *base;
 	/* # of bidirectional endpoints supported */
@@ -1054,6 +1056,7 @@ int udc_stm32_init(const struct device *dev)
 	priv->pcd.Init.phy_itface = cfg->selected_phy;
 	priv->pcd.Init.speed = cfg->selected_speed;
 	priv->pcd.Init.Sof_enable = IS_ENABLED(CONFIG_UDC_ENABLE_SOF);
+	priv->pcd.Init.vbus_sensing_enable = cfg->vbus_sensing_en;
 
 	status = HAL_PCD_Init(&priv->pcd);
 	if (status != HAL_OK) {
@@ -1568,6 +1571,7 @@ static int udc_stm32_driver_preinit(const struct device *dev)
 		STM32_DT_CLOCKS(node_id);							\
 												\
 	static const struct udc_stm32_config CONCAT(udc, ord, _cfg) = {				\
+		.vbus_sensing_en = DT_PROP(node_id, st_vbus_sensing),				\
 		.base = (void *)DT_REG_ADDR(node_id),						\
 		.num_endpoints = DT_PROP(node_id, num_bidir_endpoints),				\
 		.dram_size = DT_PROP(node_id, ram_size),					\
