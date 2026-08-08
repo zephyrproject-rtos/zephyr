@@ -207,6 +207,110 @@
 		status = "disabled";
 	};
 
+	lpspi1: spi@44360000 {
+		compatible = "nxp,lpspi";
+		reg = <0x44360000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX943_CLK_LPSPI1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		status = "disabled";
+	};
+
+	lpspi2: spi@44370000 {
+		compatible = "nxp,lpspi";
+		reg = <0x44370000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX943_CLK_LPSPI2>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		status = "disabled";
+	};
+
+	lpspi3: spi@42550000 {
+		compatible = "nxp,lpspi";
+		reg = <0x42550000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 71 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX943_CLK_LPSPI3>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		status = "disabled";
+	};
+
+	lpspi4: spi@42560000 {
+		compatible = "nxp,lpspi";
+		reg = <0x42560000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX943_CLK_LPSPI4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		status = "disabled";
+	};
+
+	lpspi5: spi@426f0000 {
+		compatible = "nxp,lpspi";
+		reg = <0x426f0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 104 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX943_CLK_LPSPI5>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		status = "disabled";
+	};
+
+	lpspi6: spi@42700000 {
+		compatible = "nxp,lpspi";
+		reg = <0x42700000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 105 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX943_CLK_LPSPI6>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		status = "disabled";
+	};
+
+	lpspi7: spi@42710000 {
+		compatible = "nxp,lpspi";
+		reg = <0x42710000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 106 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX943_CLK_LPSPI7>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		status = "disabled";
+	};
+
+	lpspi8: spi@42720000 {
+		compatible = "nxp,lpspi";
+		reg = <0x42720000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 107 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX943_CLK_LPSPI8>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		tx-fifo-size = <16>;
+		rx-fifo-size = <16>;
+		status = "disabled";
+	};
+
 	lpuart3: serial@42570000 {
 		compatible = "nxp,imx-lpuart", "nxp,lpuart";
 		reg = <0x42570000 DT_SIZE_K(64)>;

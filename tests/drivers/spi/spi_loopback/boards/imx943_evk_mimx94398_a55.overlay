@@ -1,0 +1,27 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* To test this sample, connect
+ * LPSPI3 MOSI(J47-8) --> LPSPI3 MISO(J47-10)
+ */
+
+&lpspi3 {
+	status = "okay";
+	pinctrl-0 = <&lpspi3_default>;
+	pinctrl-names = "default";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@1 {
+		compatible = "test-spi-loopback-fast";
+		reg = <1>;
+		spi-max-frequency = <1000000>;
+	};
+};

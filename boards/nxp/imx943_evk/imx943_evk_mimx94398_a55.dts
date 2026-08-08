@@ -203,3 +203,9 @@
 	phys = <&can_phy2>;
 	status = "okay";
 };
+
+&lpspi3 {
+	pinctrl-0 = <&lpspi3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
