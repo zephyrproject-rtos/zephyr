@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "openthread/platform/mdns_socket.h"
+#include <openthread/platform/mdns_socket.h>
 #include <openthread/nat64.h>
 #include <openthread/platform/messagepool.h>
-#include "openthread/instance.h"
-#include "openthread_border_router.h"
+#include <openthread/instance.h>
+#include <openthread_border_router.h>
 #include "platform-zephyr.h"
 #include <common/code_utils.hpp>
 #include <zephyr/net/mld.h>
@@ -19,7 +19,7 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/openthread.h>
 #include <zephyr/net/socket_service.h>
-#include "sockets_internal.h"
+#include <sockets_internal.h>
 #include <errno.h>
 
 #define MULTICAST_PORT 5353

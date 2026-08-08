@@ -34,10 +34,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net/hdlc_rcp_if/hdlc_rcp_if.h>
 
-#include "lib/url/url.hpp"
-#include "lib/hdlc/hdlc.hpp"
-#include "lib/spinel/spinel.h"
-#include "lib/spinel/spinel_interface.hpp"
+#include <lib/url/url.hpp>
+#include <lib/hdlc/hdlc.hpp>
+#include <lib/spinel/spinel.h>
+#include <lib/spinel/spinel_interface.hpp>
 
 namespace ot {
 

@@ -11,8 +11,8 @@
 #include <openthread/thread.h>
 #include <openthread/verhoeff_checksum.h>
 #include <openthread/platform/entropy.h>
-#include "common/code_utils.hpp"
-#include "openthread_border_router.h"
+#include <common/code_utils.hpp>
+#include <openthread_border_router.h>
 #include <zephyr/sys/byteorder.h>
 #include <string.h>
 #include <stdlib.h>
