@@ -1,0 +1,30 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX Image Sensing Interface (ISI) channel
+
+compatible: "nxp,imx-isi-channel"
+
+# Note: This is a logical channel node; 'reg' is the channel index, not a MMIO
+# address range, so we do not include base.yaml.
+
+properties:
+  reg:
+    required: true
+    type: int
+    description: ISI channel index
+
+  interrupts:
+    type: array
+    required: true
+
+  input-port:
+    type: int
+    description: |
+      ISI input port number for this channel. If omitted, the parent ISI node
+      'input-port' value (or its default) is used.
+
+child-binding:
+  child-binding:
+    child-binding:
+      include: video-interfaces.yaml
