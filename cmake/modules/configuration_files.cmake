@@ -16,6 +16,7 @@
 # - EXTRA_DTC_OVERLAY_FILE  List of additional devicetree overlay files
 # - DTS_EXTRA_CPPFLAGS      List of additional devicetree preprocessor defines
 # - APPLICATION_CONFIG_DIR: Root folder for application configuration
+# - EXTRA_APPLICATION_CONFIG_DIRS: List of additional application configuration directories
 #
 # If any of the above variables are already set when this CMake module is
 # loaded, then no changes to the variable will happen.
@@ -35,11 +36,19 @@ zephyr_file(APPLICATION_ROOT APPLICATION_CONFIG_DIR)
 set_ifndef(APPLICATION_CONFIG_DIR ${APPLICATION_SOURCE_DIR})
 string(CONFIGURE ${APPLICATION_CONFIG_DIR} APPLICATION_CONFIG_DIR)
 
+zephyr_get(EXTRA_APPLICATION_CONFIG_DIRS SYSBUILD GLOBAL)
+
 zephyr_get(CONF_FILE SYSBUILD LOCAL)
 if(NOT DEFINED CONF_FILE)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR} KCONF CONF_FILE NAMES "prj.conf" SUFFIX ${FILE_SUFFIX} REQUIRED)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/socs KCONF CONF_FILE QUALIFIERS SUFFIX ${FILE_SUFFIX})
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards KCONF CONF_FILE SUFFIX ${FILE_SUFFIX})
+  foreach(extra_dir ${EXTRA_APPLICATION_CONFIG_DIRS})
+    # Note that prj.conf is not required in extra directories, but can be supplied to add options
+    zephyr_file(CONF_FILES ${extra_dir} KCONF CONF_FILE NAMES "prj.conf" SUFFIX ${FILE_SUFFIX})
+    zephyr_file(CONF_FILES ${extra_dir}/boards KCONF CONF_FILE SUFFIX ${FILE_SUFFIX})
+    zephyr_file(CONF_FILES ${extra_dir}/socs KCONF CONF_FILE SUFFIX ${FILE_SUFFIX})
+  endforeach()
 else()
   string(CONFIGURE "${CONF_FILE}" CONF_FILE_EXPANDED)
   string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE_EXPANDED}")
@@ -53,6 +62,7 @@ else()
 endif()
 
 set(APPLICATION_CONFIG_DIR ${APPLICATION_CONFIG_DIR} CACHE PATH "The application configuration folder" FORCE)
+set(EXTRA_APPLICATION_CONFIG_DIRS ${EXTRA_APPLICATION_CONFIG_DIRS} CACHE STRING "Additional application configuration folders" FORCE)
 set(CONF_FILE ${CONF_FILE} CACHE STRING "If desired, you can build the application using\
 the configuration settings specified in an alternate .conf file using this parameter. \
 These settings will override the settings in the application’s .config file or its default .conf file.\
@@ -70,6 +80,10 @@ zephyr_get(DTC_OVERLAY_FILE SYSBUILD LOCAL)
 if(NOT DEFINED DTC_OVERLAY_FILE)
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/socs DTS DTC_OVERLAY_FILE QUALIFIERS SUFFIX ${FILE_SUFFIX})
   zephyr_file(CONF_FILES ${APPLICATION_CONFIG_DIR}/boards DTS DTC_OVERLAY_FILE SUFFIX ${FILE_SUFFIX})
+  foreach(extra_dir ${EXTRA_APPLICATION_CONFIG_DIRS})
+    zephyr_file(CONF_FILES ${extra_dir}/socs DTS DTC_OVERLAY_FILE QUALIFIERS SUFFIX ${FILE_SUFFIX})
+    zephyr_file(CONF_FILES ${extra_dir}/boards DTS DTC_OVERLAY_FILE SUFFIX ${FILE_SUFFIX})
+  endforeach()
 endif()
 
 # If still not found, search for other overlays in the configuration directory.
