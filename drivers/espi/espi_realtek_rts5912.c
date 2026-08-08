@@ -314,6 +314,18 @@ static int lpc_request_write_8042(const struct device *dev, enum lpc_peripheral_
  * =========================================================================
  */
 
+static uint8_t emi_dummy[256] __aligned(256) = {0};
+
+static void espi_emi_map_init(const struct espi_rts5912_config *const espi_config)
+{
+	uint8_t *emi_base = (uint8_t *)espi_config->emi0_reg;
+
+	for (int i = 0; i <= 7; i++) {
+		volatile uint32_t *sar_reg = (volatile uint32_t *)(emi_base + (0x20 * i) + 0x0C);
+		*sar_reg = (uint32_t)&emi_dummy[0];
+	}
+}
+
 #ifdef CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION
 #define ESPI_RTK_PERIPHERAL_ACPI_SHD_MEM_SIZE 256
 
@@ -2447,6 +2459,8 @@ static int espi_rts5912_init(const struct device *dev)
 
 	/* Setup eSPI bus reset */
 	espi_bus_reset_setup(dev);
+
+	espi_emi_map_init(espi_config);
 
 #ifdef CONFIG_ESPI_PERIPHERAL_8042_KBC
 	/* Setup KBC */
