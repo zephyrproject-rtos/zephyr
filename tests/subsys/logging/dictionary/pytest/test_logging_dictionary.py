@@ -14,6 +14,7 @@ import os
 import re
 import shlex
 import subprocess
+import time
 
 from twister_harness import DeviceAdapter
 
@@ -193,38 +194,69 @@ def _strip_boot_preamble(raw):
     return raw
 
 
-def process_binary_logs(build_dir):
+def process_binary_logs(dut: DeviceAdapter, build_dir):
     '''
-    Run QEMU with serial output to file, strip boot preamble,
-    and parse the binary log through the dictionary logging parser.
+    Capture binary dictionary log output and parse it through
+    the dictionary logging parser.
 
     Returns the decoded log lines.
     '''
     uart_bin = os.path.join(build_dir, "uart.bin")
 
-    qemu_cmd = _extract_qemu_cmd(build_dir)
-    assert qemu_cmd, "Could not find QEMU command in build.ninja"
+    if dut.device_config.type == "hardware":
+        import serial
 
-    # Build intermediate targets (e.g. objcopy ELFs needed by x86_64).
-    # This target may not exist on all platforms; failure is non-fatal.
-    subprocess.run(
-        ["west", "build", "-d", build_dir, "-t", "zephyr/qemu_kernel_target"],
-        capture_output=True,
-        timeout=60,
-    )
+        serial_cfg = dut.device_config.serial_configs[0]
+        port = serial_cfg.port
+        baud = serial_cfg.baud
 
-    # Replace pipe chardev with file-based serial output
-    qemu_cmd = re.sub(r'-chardev pipe,id=con,mux=on,path=\S+', '', qemu_cmd)
-    qemu_cmd = qemu_cmd.replace('-serial chardev:con', f'-serial file:{uart_bin}')
-    qemu_cmd = qemu_cmd.replace('-mon chardev=con,mode=readline', '-monitor none')
-    qemu_cmd = re.sub(r'-pidfile \S+', '', qemu_cmd)
-    qemu_cmd = re.sub(r'-S -gdb \S+', '', qemu_cmd)
+        subprocess.run(
+            ["west", "flash", "-d", build_dir],
+            capture_output=True,
+            timeout=60,
+            check=True,
+        )
 
-    cmd = shlex.split(qemu_cmd)
-    logger.info(f'Running QEMU: {shlex.join(cmd)}')
-    # QEMU exits when the sample finishes; timeout is a safety net.
-    with contextlib.suppress(subprocess.TimeoutExpired):
-        subprocess.run(cmd, capture_output=True, timeout=30)
+        # Open serial after flash to avoid capturing flash tool noise
+        ser = serial.Serial(port, baud, timeout=1)
+        try:
+            ser.reset_input_buffer()
+            raw = b''
+            # 5s window is long enough for the logging sample to complete
+            deadline = time.monotonic() + 5
+            while time.monotonic() < deadline:
+                chunk = ser.read(ser.in_waiting or 1)
+                if chunk:
+                    raw += chunk
+        finally:
+            ser.close()
+
+        with open(uart_bin, 'wb') as f:
+            f.write(raw)
+    else:
+        qemu_cmd = _extract_qemu_cmd(build_dir)
+        assert qemu_cmd, "Could not find QEMU command in build.ninja"
+
+        # Build intermediate targets (e.g. objcopy ELFs needed by x86_64).
+        # This target may not exist on all platforms; failure is non-fatal.
+        subprocess.run(
+            ["west", "build", "-d", build_dir, "-t", "zephyr/qemu_kernel_target"],
+            capture_output=True,
+            timeout=60,
+        )
+
+        # Replace pipe chardev with file-based serial output
+        qemu_cmd = re.sub(r'-chardev pipe,id=con,mux=on,path=\S+', '', qemu_cmd)
+        qemu_cmd = qemu_cmd.replace('-serial chardev:con', f'-serial file:{uart_bin}')
+        qemu_cmd = qemu_cmd.replace('-mon chardev=con,mode=readline', '-monitor none')
+        qemu_cmd = re.sub(r'-pidfile \S+', '', qemu_cmd)
+        qemu_cmd = re.sub(r'-S -gdb \S+', '', qemu_cmd)
+
+        cmd = shlex.split(qemu_cmd)
+        logger.info(f'Running QEMU: {shlex.join(cmd)}')
+        # QEMU exits when the sample finishes; timeout is a safety net.
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            subprocess.run(cmd, capture_output=True, timeout=30)
 
     assert os.path.isfile(uart_bin), f"Binary log file not found: {uart_bin}"
     logger.info(f'Binary log: {uart_bin} ({os.path.getsize(uart_bin)} bytes)')
@@ -264,7 +296,7 @@ def test_logging_dictionary(unlaunched_dut: DeviceAdapter, is_fpu_build, is_bin_
     logger.info(f'FPU build? {is_fpu_build}, BIN build? {is_bin_build}')
 
     if is_bin_build:
-        decoded_logs = process_binary_logs(build_dir)
+        decoded_logs = process_binary_logs(unlaunched_dut, build_dir)
     else:
         unlaunched_dut.launch()
         decoded_logs = process_logs(unlaunched_dut, build_dir)
