@@ -278,3 +278,7 @@
 &wdog {
 	status = "okay";
 };
+
+&mpu {
+	status = "okay";
+};
