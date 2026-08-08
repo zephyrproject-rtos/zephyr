@@ -269,6 +269,16 @@ K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t main_entry,
 							    void *p1, void *p2, void *p3)
 {
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+/*
+ * Stack descriptor shim handed to z_riscv_custom_stack_guard_enable(),
+ * whose contract expects a k_thread *. No thread object exists in
+ * no-multithreading mode (z_main_thread is only defined with
+ * CONFIG_MULTITHREADING), so this stands in for the main thread and
+ * only its stack_info is meaningful.
+ */
+static struct k_thread main_thread;
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
 	void *main_stack;
 
 	ARG_UNUSED(p1);
@@ -287,12 +297,24 @@ FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(k_thread_entry_t mai
 
 	irq_unlock(RV_STATUS_IE);
 
+	main_thread.stack_info.start = (uintptr_t)K_KERNEL_STACK_BUFFER(z_main_stack);
+	main_thread.stack_info.size = K_KERNEL_STACK_SIZEOF(z_main_stack);
+	register struct k_thread *a0 __asm__("a0") = &main_thread;
+
+	/*
+	 * Bind main_entry to a callee-saved register: the call below
+	 * clobbers the caller-saved registers, and jalr consumes %1 only
+	 * after the call returns. %0 is safe anywhere because mv sp
+	 * consumes it before the call.
+	 */
+	register k_thread_entry_t s1 __asm__("s1") = main_entry;
+
 	__asm__ volatile (
 	"mv sp, %0\n"
 	"call z_riscv_custom_stack_guard_enable\n"
 	"jalr ra, %1, 0\n"
 	:
-	: "r" (main_stack), "r" (main_entry)
+	: "r" (main_stack), "r" (s1), "r" (a0)
 	: "memory");
 #else
 	irq_unlock(RV_STATUS_IE);
