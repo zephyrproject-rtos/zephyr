@@ -245,8 +245,8 @@ static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *
 		}
 
 		/* reload the DMA */
-		ret = dma_reload(dev_data->dev_dma, strm->dma_channel, (uint32_t)q_entry.mem_block,
-				 (uint32_t)&base->TDR[strm->start_channel], q_entry.size);
+		ret = dma_reload(dev_data->dev_dma, strm->dma_channel, (uintptr_t)q_entry.mem_block,
+				 (uintptr_t)&base->TDR[strm->start_channel], q_entry.size);
 		if (ret != 0) {
 			LOG_ERR("dma_reload() failed with error 0x%x", ret);
 			break;
@@ -412,7 +412,7 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 	uint32_t data_path = strm->start_channel;
 
 	ret = dma_reload(dev_data->dev_dma, strm->dma_channel,
-			 (uint32_t)&base->RDR[data_path], (uint32_t)q_entry.mem_block,
+			 (uintptr_t)&base->RDR[data_path], (uintptr_t)q_entry.mem_block,
 			 q_entry.size);
 	if (ret != 0) {
 		LOG_ERR("dma_reload() failed with error 0x%x", ret);
@@ -437,7 +437,7 @@ static void enable_mclk_direction(const struct device *dev, bool dir)
 	uint32_t control_base = dev_cfg->mclk_control_base;
 	uint32_t offset = dev_cfg->mclk_pin_offset;
 	uint32_t mask = dev_cfg->mclk_pin_mask;
-	uint32_t *base = (uint32_t *)(control_base + offset);
+	uint32_t *base = (uint32_t *)(uintptr_t)(control_base + offset);
 
 	if (control_base == 0 && offset == 0 && mask == 0) {
 		return;
@@ -476,7 +476,7 @@ static void set_mclk_rate(const struct device *dev, uint32_t rate)
 
 	if (device_is_ready(ccm_dev)) {
 		clock_control_set_rate(ccm_dev, clk_sub_sys,
-					(clock_control_subsys_rate_t)rate);
+					(clock_control_subsys_rate_t)(uintptr_t)rate);
 		clock_control_on(ccm_dev, clk_sub_sys);
 	} else {
 		LOG_ERR("CCM driver is not installed");
@@ -545,6 +545,30 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	if (dev_cfg->mclk_control_base) {
 		enable_mclk_direction(dev, dev_cfg->mclk_output);
 	}
+
+#ifndef CONFIG_I2S_HAS_PLL_SETTING
+	/*
+	 * Re-tune the SAI root clock to a value that matches the requested
+	 * sample rate's clock family. The default value programmed at driver
+	 * initialization (12.288MHz, 48kHz-family) cannot generate a valid
+	 * 44.1kHz LRCK via any integer bit-clock divider, so leaving it in
+	 * place for a 44.1kHz stream produces silence at the codec (the SAI
+	 * rounds LRCK to 48kHz and the codec's SYSCLK:LRCK ratio falls out
+	 * of its supported range). Pick the closest MCLK that is an integer
+	 * multiple of 256 * frame_clk_freq; the platform's CCM driver is
+	 * responsible for reconfiguring the underlying audio PLL family.
+	 */
+	{
+		uint32_t desired_mclk;
+
+		if ((i2s_cfg->frame_clk_freq % 11025U) == 0U) {
+			desired_mclk = 11289600U;   /* 44.1kHz family */
+		} else {
+			desired_mclk = 12288000U;   /* 48kHz family (default) */
+		}
+		set_mclk_rate(dev, desired_mclk);
+	}
+#endif
 
 	get_mclk_rate(dev, &mclk);
 	LOG_DBG("mclk is %d", mclk);
@@ -664,10 +688,10 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 
 	if (dir == I2S_DIR_TX) {
 		memcpy(&dev_data->tx.cfg, i2s_cfg, sizeof(struct i2s_config));
-		LOG_DBG("tx slab free_list = 0x%x", (uint32_t)i2s_cfg->mem_slab->free_list);
+		LOG_DBG("tx slab free_list = %p", (void *)i2s_cfg->mem_slab->free_list);
 		LOG_DBG("tx slab num_blocks = %d", (uint32_t)i2s_cfg->mem_slab->info.num_blocks);
 		LOG_DBG("tx slab block_size = %d", (uint32_t)i2s_cfg->mem_slab->info.block_size);
-		LOG_DBG("tx slab buffer = 0x%x", (uint32_t)i2s_cfg->mem_slab->buffer);
+		LOG_DBG("tx slab buffer = %p", (void *)i2s_cfg->mem_slab->buffer);
 
 		config.fifo.fifoWatermark = (uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base) - 1;
 #if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE
@@ -696,10 +720,10 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 #endif
 
 		memcpy(&dev_data->rx.cfg, i2s_cfg, sizeof(struct i2s_config));
-		LOG_DBG("rx slab free_list = 0x%x", (uint32_t)i2s_cfg->mem_slab->free_list);
+		LOG_DBG("rx slab free_list = %p", (void *)i2s_cfg->mem_slab->free_list);
 		LOG_DBG("rx slab num_blocks = %d", (uint32_t)i2s_cfg->mem_slab->info.num_blocks);
 		LOG_DBG("rx slab block_size = %d", (uint32_t)i2s_cfg->mem_slab->info.block_size);
-		LOG_DBG("rx slab buffer = 0x%x", (uint32_t)i2s_cfg->mem_slab->buffer);
+		LOG_DBG("rx slab buffer = %p", (void *)i2s_cfg->mem_slab->buffer);
 
 		/* set bit clock divider */
 		SAI_RxSetConfig(base, &config);
@@ -771,8 +795,8 @@ static int i2s_tx_stream_start(const struct device *dev)
 
 	uint32_t data_path = strm->start_channel;
 
-	blk_cfg->dest_address = (uint32_t)&base->TDR[data_path];
-	blk_cfg->source_address = (uint32_t)q_entry.mem_block;
+	blk_cfg->dest_address = (uintptr_t)&base->TDR[data_path];
+	blk_cfg->source_address = (uintptr_t)q_entry.mem_block;
 	blk_cfg->block_size = q_entry.size;
 	blk_cfg->dest_scatter_en = 1;
 
@@ -858,8 +882,8 @@ static int i2s_rx_stream_start(const struct device *dev)
 
 	uint32_t data_path = strm->start_channel;
 
-	blk_cfg->dest_address = (uint32_t)q_entry.mem_block;
-	blk_cfg->source_address = (uint32_t)&base->RDR[data_path];
+	blk_cfg->dest_address = (uintptr_t)q_entry.mem_block;
+	blk_cfg->source_address = (uintptr_t)&base->RDR[data_path];
 	blk_cfg->block_size = q_entry.size;
 
 	blk_cfg->source_gather_en = 1;
@@ -888,8 +912,8 @@ static int i2s_rx_stream_start(const struct device *dev)
 		}
 		q_entry.size = blk_cfg->block_size;
 
-		ret = dma_reload(dev_dma, strm->dma_channel, (uint32_t)&base->RDR[data_path],
-				 (uint32_t)q_entry.mem_block, q_entry.size);
+		ret = dma_reload(dev_dma, strm->dma_channel, (uintptr_t)&base->RDR[data_path],
+				 (uintptr_t)q_entry.mem_block, q_entry.size);
 		if (ret != 0) {
 			LOG_ERR("dma_reload() failed with error 0x%x", ret);
 			return ret;

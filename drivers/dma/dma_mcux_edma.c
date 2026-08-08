@@ -365,8 +365,8 @@ static int dma_mcux_edma_configure_sg_loop(const struct device *dev,
 	data->transfer_settings.empty_tcds = CONFIG_DMA_TCD_QUEUE_SIZE;
 
 	EDMA_PrepareTransfer(
-		&data->transferConfig, (void *)block_config->source_address,
-		config->source_data_size, (void *)block_config->dest_address,
+		&data->transferConfig, (void *)(uintptr_t)block_config->source_address,
+		config->source_data_size, (void *)(uintptr_t)block_config->dest_address,
 		config->dest_data_size, config->source_burst_length,
 		block_config->block_size, transfer_type);
 
@@ -456,9 +456,9 @@ static inline int dma_mcux_edma_configure_sg_dynamic(const struct device *dev,
 		}
 
 		EDMA_PrepareTransfer(&(data->transferConfig),
-				     (void *)block_config->source_address,
+				     (void *)(uintptr_t)block_config->source_address,
 				     config->source_data_size,
-				     (void *)block_config->dest_address,
+				     (void *)(uintptr_t)block_config->dest_address,
 				     config->dest_data_size,
 				     config->source_burst_length,
 				     block_config->block_size, block_transfer_type);
@@ -504,9 +504,9 @@ static int dma_mcux_edma_configure_basic(const struct device *dev,
 	/* block_count shall be 1 */
 	LOG_DBG("block size is: %d", block_config->block_size);
 	EDMA_PrepareTransfer(&(data->transferConfig),
-			     (void *)block_config->source_address,
+			     (void *)(uintptr_t)block_config->source_address,
 			     config->source_data_size,
-			     (void *)block_config->dest_address,
+			     (void *)(uintptr_t)block_config->dest_address,
 			     config->dest_data_size,
 			     xfer_settings->source_burst_length,
 			     block_config->block_size, transfer_type);
@@ -889,7 +889,7 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 			~DMA_CSR_DREQ(1U);
 
 		if (data->transfer_settings.empty_tcds == CONFIG_DMA_TCD_QUEUE_SIZE - 1 ||
-		    hw_id == (uint32_t)tcd) {
+		    hw_id == (uint32_t)(uintptr_t)tcd) {
 			/* DMA is running on last transfer. HW has loaded the last one,
 			 * we need ensure it's DREQ is cleared.
 			 */
@@ -936,8 +936,8 @@ static int edma_reload_dynamic(const struct device *dev, uint32_t channel,
 		return -EBUSY;
 	}
 
-	EDMA_PrepareTransfer(&(data->transferConfig), (void *)src,
-			     data->transfer_settings.source_data_size, (void *)dst,
+	EDMA_PrepareTransfer(&(data->transferConfig), (void *)(uintptr_t)src,
+			     data->transfer_settings.source_data_size, (void *)(uintptr_t)dst,
 			     data->transfer_settings.dest_data_size,
 			     data->transfer_settings.source_burst_length, size,
 			     data->transfer_settings.transfer_type);

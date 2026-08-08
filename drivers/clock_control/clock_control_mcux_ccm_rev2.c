@@ -529,33 +529,58 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 	defined(CONFIG_SOC_MIMX9111)) && defined(CONFIG_I2S_MCUX_SAI)
 	case IMX_CCM_SAI1_CLK:
 	case IMX_CCM_SAI2_CLK:
-	case IMX_CCM_SAI3_CLK:
+	case IMX_CCM_SAI3_CLK: {
 		uint32_t clock_root, instance;
 		clock_root_config_t saiClkCfg;
 		fracn_pll_init_t g_audioPllCfg;
+		uint32_t audio_pll_freq;
 
 		instance = (clock_name & IMX_CCM_INSTANCE_MASK);
 		clock_root = kCLOCK_Root_Sai1 + instance;
 
-		/* Fixed AUDIO_PLL's frequency at 393216000 Hz */
-#define AUDIO_PLL_CLK_FREQ 393216000
-		g_clockSourceFreq[kCLOCK_AudioPll1Out] = AUDIO_PLL_CLK_FREQ;
-		g_clockSourceFreq[kCLOCK_AudioPll1] = AUDIO_PLL_CLK_FREQ;
-		g_audioPllCfg.rdiv = 1;
-		g_audioPllCfg.mfi = 163;
-		g_audioPllCfg.mfn = 84;
-		g_audioPllCfg.mfd = 100;
-		g_audioPllCfg.odiv = 10;
+		/*
+		 * Select AUDIO_PLL family based on the requested SAI root clock.
+		 * The i.MX93 AUDIO_PLL frequency has to be integer-divided down
+		 * to the SAI MCLK, so a 48kHz-family MCLK (12.288MHz, 24.576MHz,
+		 * ...) requires AUDIO_PLL = 393.216MHz and a 44.1kHz-family MCLK
+		 * (11.2896MHz, 22.5792MHz, ...) requires AUDIO_PLL = 361.2672MHz.
+		 * Detect which family the caller is asking for by checking
+		 * divisibility. Fall back to the 48kHz-family PLL if the rate is
+		 * neither.
+		 */
+#define AUDIO_PLL_FREQ_48K_FAMILY  393216000U   /* 24MHz * (163 + 84/100) / 10 */
+#define AUDIO_PLL_FREQ_44K1_FAMILY 361267200U   /* 24MHz * (150 + 66/125) / 10 */
+
+		if ((clock_rate != 0U) &&
+		    ((AUDIO_PLL_FREQ_44K1_FAMILY % (uint32_t)clock_rate) == 0U)) {
+			audio_pll_freq = AUDIO_PLL_FREQ_44K1_FAMILY;
+			g_audioPllCfg.rdiv = 1;
+			g_audioPllCfg.mfi  = 150;
+			g_audioPllCfg.mfn  = 66;
+			g_audioPllCfg.mfd  = 125;
+			g_audioPllCfg.odiv = 10;
+		} else {
+			audio_pll_freq = AUDIO_PLL_FREQ_48K_FAMILY;
+			g_audioPllCfg.rdiv = 1;
+			g_audioPllCfg.mfi  = 163;
+			g_audioPllCfg.mfn  = 84;
+			g_audioPllCfg.mfd  = 100;
+			g_audioPllCfg.odiv = 10;
+		}
+
+		g_clockSourceFreq[kCLOCK_AudioPll1Out] = audio_pll_freq;
+		g_clockSourceFreq[kCLOCK_AudioPll1] = audio_pll_freq;
 
 		CLOCK_PllInit(AUDIOPLL, &g_audioPllCfg);
 
 		saiClkCfg.clockOff = false;
 		saiClkCfg.mux = 1;
-		saiClkCfg.div = (AUDIO_PLL_CLK_FREQ + (clock_rate - 1)) / clock_rate;
+		saiClkCfg.div = (audio_pll_freq + (clock_rate - 1)) / clock_rate;
 
 		CLOCK_SetRootClock(clock_root, &saiClkCfg);
 
 		return 0;
+	}
 #endif
 
 #if defined(CONFIG_UDC_NXP_EHCI) && defined(CONFIG_SOC_MIMX9352_A55)
