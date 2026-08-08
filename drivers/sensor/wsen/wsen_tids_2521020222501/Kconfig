@@ -5,6 +5,7 @@ menuconfig WSEN_TIDS_2521020222501
 	bool "WSEN-TIDS-2521020222501 temperature sensor"
 	default y
 	depends on DT_HAS_WE_WSEN_TIDS_2521020222501_ENABLED
+	depends on ZEPHYR_HAL_WURTHELEKTRONIK_MODULE
 	select I2C
 	select HAS_WESENSORS
 	help
