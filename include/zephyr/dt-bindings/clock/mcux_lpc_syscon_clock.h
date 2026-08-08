@@ -59,6 +59,8 @@
 #define MCUX_USDHC2_CLK     MCUX_LPC_CLK_ID(0x02, 0x01)
 
 #define MCUX_MCAN_CLK MCUX_LPC_CLK_ID(0x03, 0x00)
+/** M_CAN1 peripheral clock identifier. */
+#define MCUX_MCAN1_CLK MCUX_LPC_CLK_ID(0x03, 0x01)
 
 #define MCUX_BUS_CLK MCUX_LPC_CLK_ID(0x04, 0x00)
 

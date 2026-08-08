@@ -22,6 +22,10 @@ config SOC_LPC54114_M0
 	bool
 	select SOC_LPC54114
 
+config SOC_LPC54628
+	bool
+	select SOC_SERIES_LPC54XXX
+
 # The NXP HAL expects the SOC to just be lpc54114 if targeting
 # the M4. When targeting M0 it expects lpc54114_m0.
 #
@@ -30,9 +34,14 @@ config SOC_LPC54114_M0
 config SOC
 	default "lpc54114" if SOC_LPC54114_M4
 	default "lpc54114" if SOC_LPC54114_M0
+	default "lpc54628" if SOC_LPC54628
 
 config SOC_PART_NUMBER_LPC54114J256BD64
 	bool
 
+config SOC_PART_NUMBER_LPC54628J512ET180
+	bool
+
 config SOC_PART_NUMBER
 	default "LPC54114J256BD64" if SOC_PART_NUMBER_LPC54114J256BD64
+	default "LPC54628J512ET180" if SOC_PART_NUMBER_LPC54628J512ET180

@@ -10,6 +10,10 @@ config GPIO
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
+	default 57 if SOC_LPC54628
 	default 40
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if SOC_LPC54628
 
 endif # SOC_SERIES_LPC54XXX
