@@ -233,6 +233,44 @@ function(zephyr_get_compile_options_for_lang_as_string lang i)
   set(${i} ${str_of_flags} PARENT_SCOPE)
 endfunction()
 
+# Materialize a (possibly very long, generator-expression) flag string into a
+# GCC/LD '@file' response file and return the "@<path>" token to use on a
+# command line.
+#
+# This exists because CMake/Ninja only auto-spills its *own* compile/link rules
+# into response files; a flag list inlined into an add_custom_command() is not
+# covered and, on hosts with a restrictive command-line length limit, can
+# overflow when the workspace accumulates many long -I include paths.
+#
+# out_var   - variable that receives "@<rsp_path>"
+# rsp_path  - absolute path of the response file to (re)generate
+# content   - flag string, may contain generator expressions; it is expanded at
+#             generate-time via file(GENERATE)
+function(zephyr_flags_response_file out_var rsp_path content)
+  # file(GENERATE) evaluates generator expressions (e.g. the $<JOIN:...> that
+  # zephyr_get_*_for_lang() produces) at the end of the configure stage.
+  file(GENERATE OUTPUT ${rsp_path} CONTENT "${content}\n")
+  set(${out_var} "@${rsp_path}" PARENT_SCOPE)
+endfunction()
+
+# Write all <lang> include directories to the response file <rsp_path> (one -I
+# entry per line) and return the "@<rsp_path>" token in <out_var>.
+#
+# The linker-script preprocessing custom commands use this instead of inlining
+# the include flags, so that the (potentially thousands of characters of) -I
+# paths live in a file and do not overflow the host command-line length limit.
+# One flag per line keeps the file human-diffable.
+#
+# NOTE: callers should add <rsp_path> to their add_custom_command(DEPENDS ...)
+# so the command re-runs when the include set changes (the '@file' token on the
+# command line is invariant, so the generator cannot detect the change itself).
+function(zephyr_include_directories_response_file lang rsp_path out_var)
+  string(ASCII 10 newline)
+  zephyr_get_include_directories_for_lang(${lang} content DELIMITER "${newline}")
+  zephyr_flags_response_file(token "${rsp_path}" "${content}")
+  set(${out_var} "${token}" PARENT_SCOPE)
+endfunction()
+
 function(zephyr_get_include_directories_for_lang lang i)
   zephyr_get_parse_args(args ${ARGN})
   get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
