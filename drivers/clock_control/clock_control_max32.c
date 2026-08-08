@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -156,6 +156,13 @@ static int max32_clkctrl_init(const struct device *dev)
 #if DT_NODE_HAS_PROP(DT_NODELABEL(gcr), sysclk_prescaler)
 	/* Setup divider */
 	Wrap_MXC_SYS_SetClockDiv(sysclk_prescaler(ADI_MAX32_SYSCLK_PRESCALER));
+#endif
+
+#if DT_NODE_HAS_PROP(DT_NODELABEL(clk_erfo), capacitance_erfoctrl)
+	/* Setup capacitance for ERFO */
+	int erfo_cap = DT_PROP(DT_NODELABEL(clk_erfo), capacitance_erfoctrl);
+
+	MXC_FCR->erfoctrl = erfo_cap;
 #endif
 
 	return 0;

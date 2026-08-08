@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "adi,max32-erfo"
+
+include: fixed-clock.yaml
+
+properties:
+  capacitance-erfoctrl:
+    type: int
+    description: ERFO load capacitance in pF. Refer to documentation on the
+                 ERFO Control register for guidance on how to set the register.
