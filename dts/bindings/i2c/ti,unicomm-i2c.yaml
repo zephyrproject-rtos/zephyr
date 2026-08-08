@@ -1,0 +1,44 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI UNICOMM I2C Controller
+
+compatible: "ti,unicomm-i2c"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  rxfifo-threshold:
+    type: int
+    description: |
+      Trigger level for the RX FIFO. Default is FIFO length, i.e. 16 bytes.
+
+  txfifo-threshold:
+    type: int
+    description: |
+      Trigger level for the TX FIFO. Default is FIFO length, i.e. 16 bytes.
+
+  unicomm-clock-freq:
+    type: int
+    default: 100000000
+    description: |
+      BUSCLK input frequency in Hz fed into the I2CC module before
+      the internal clock divider (CLKDIV). Defaults to 100 MHz.
+
+  unicomm-advanced-i2c:
+    type: boolean
+    description: |
+      Whether or not the UNICOMM instance supports automatic
+      STOP generation for I2C among other things (refer to TRM).
