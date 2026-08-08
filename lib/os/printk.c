@@ -64,6 +64,22 @@ printk_hook_fn_t __printk_get_hook(void)
 	return _char_out;
 }
 
+#if defined(CONFIG_PRINTK_SYNC)
+/*
+ * Set once the system is known to be crashing, see printk_panic(). Plain
+ * bool rather than an atomic: the only transition is false to true, and a
+ * reader that misses it simply takes the lock as before.
+ */
+static bool panic_mode;
+#endif
+
+void printk_panic(void)
+{
+#if defined(CONFIG_PRINTK_SYNC)
+	panic_mode = true;
+#endif
+}
+
 struct buf_out_context {
 #ifdef CONFIG_PICOLIBC
 	FILE file;
@@ -97,6 +113,42 @@ static int char_out(int c, void *ctx_p)
 	return _char_out(c);
 }
 
+/*
+ * Format and emit through an I/O path we fully control: a private,
+ * unbuffered stream (or a direct callback) wired to the character output
+ * hook installed by the platform. Never stdout and never the logging
+ * subsystem, so there is no shared buffer and no lock other than the
+ * one the caller may be holding.
+ */
+static void vprintk_core(const char *fmt, va_list ap)
+{
+#ifdef CONFIG_PICOLIBC
+	FILE console = FDEV_SETUP_STREAM((int(*)(char, FILE *))char_out,
+					 NULL, NULL, _FDEV_SETUP_WRITE);
+	(void) vfprintf(&console, fmt, ap);
+#else
+	cbvprintf(char_out, NULL, fmt, ap);
+#endif
+}
+
+void vprintk_unlocked(const char *fmt, va_list ap)
+{
+	vprintk_core(fmt, ap);
+}
+EXPORT_SYMBOL(vprintk_unlocked);
+
+void printk_unlocked(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+
+	vprintk_core(fmt, ap);
+
+	va_end(ap);
+}
+EXPORT_SYMBOL(printk_unlocked);
+
 void vprintk(const char *fmt, va_list ap)
 {
 	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
@@ -125,37 +177,41 @@ void vprintk(const char *fmt, va_list ap)
 	} else {
 		compiler_barrier();
 #ifdef CONFIG_PRINTK_SYNC
-		k_spinlock_key_t key = k_spin_lock(&lock);
-#endif
+		if (!panic_mode) {
+			k_spinlock_key_t key = k_spin_lock(&lock);
 
-#ifdef CONFIG_PICOLIBC
-		FILE console = FDEV_SETUP_STREAM((int(*)(char, FILE *))char_out,
-						 NULL, NULL, _FDEV_SETUP_WRITE);
-		(void) vfprintf(&console, fmt, ap);
+			vprintk_core(fmt, ap);
+			k_spin_unlock(&lock, key);
+		} else {
+			vprintk_core(fmt, ap);
+		}
 #else
-		cbvprintf(char_out, NULL, fmt, ap);
-#endif
-
-#ifdef CONFIG_PRINTK_SYNC
-		k_spin_unlock(&lock, key);
+		vprintk_core(fmt, ap);
 #endif
 	}
 }
 EXPORT_SYMBOL(vprintk);
 
-void z_impl_k_str_out(char *c, size_t n)
+static void str_out_chars(const char *c, size_t n)
 {
-	size_t i;
-#ifdef CONFIG_PRINTK_SYNC
-	k_spinlock_key_t key = k_spin_lock(&lock);
-#endif
-
-	for (i = 0; i < n; i++) {
+	for (size_t i = 0; i < n; i++) {
 		_char_out(c[i]);
 	}
+}
 
+void z_impl_k_str_out(char *c, size_t n)
+{
 #ifdef CONFIG_PRINTK_SYNC
-	k_spin_unlock(&lock, key);
+	if (!panic_mode) {
+		k_spinlock_key_t key = k_spin_lock(&lock);
+
+		str_out_chars(c, n);
+		k_spin_unlock(&lock, key);
+	} else {
+		str_out_chars(c, n);
+	}
+#else
+	str_out_chars(c, n);
 #endif
 }
 

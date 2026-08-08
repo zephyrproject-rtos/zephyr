@@ -59,12 +59,13 @@ static uint64_t *new_table(void)
 			if (xlat_used_count > xlat_peak_count) {
 				xlat_peak_count = xlat_used_count;
 #ifdef CONFIG_ARM64_MMU_REPORT_XLAT_TABLES_USAGE
-				LOG_INF("xlat tables: peak %u of %d allocated",
-					xlat_used_count, CONFIG_MAX_XLAT_TABLES);
+				printk_unlocked("xlat tables: peak %u of %d allocated\n",
+						xlat_used_count, CONFIG_MAX_XLAT_TABLES);
 #endif
 				if (xlat_used_count == XLAT_LOW_WATER_THRESHOLD) {
-					LOG_WRN("xlat tables low: %u of %d in use",
-						xlat_used_count, CONFIG_MAX_XLAT_TABLES);
+					printk_unlocked("xlat tables low: %u of %d in use\n",
+							xlat_used_count,
+							CONFIG_MAX_XLAT_TABLES);
 				}
 			}
 			MMU_DEBUG("allocating table [%d]%p\n", i, table);
@@ -72,11 +73,7 @@ static uint64_t *new_table(void)
 		}
 	}
 
-#if defined(CONFIG_LOG)
-	LOG_ERR("CONFIG_MAX_XLAT_TABLES is too small");
-#else
-	printk("ERROR: CONFIG_MAX_XLAT_TABLES is too small\n");
-#endif
+	printk_unlocked("ERROR: CONFIG_MAX_XLAT_TABLES is too small\n");
 
 	/* Unfortunately many code paths are not ready for failure */
 	k_panic();
@@ -363,9 +360,9 @@ static int set_mapping(uint64_t *top_table, uintptr_t virt, size_t size,
 		}
 
 		if (!may_overwrite && !is_free_desc(*pte)) {
-			LOG_ERR("entry already in use: "
-				"level %d pte %p *pte 0x%016llx",
-				level, pte, *pte);
+			printk_unlocked("ERROR: entry already in use: "
+					"level %d pte %p *pte 0x%016llx\n",
+					level, pte, *pte);
 			return -EBUSY;
 		}
 
