@@ -49,6 +49,7 @@ tests:
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853
+
   pm.soc.measure:
     tags: pm
     harness: power
@@ -68,6 +69,42 @@ tests:
         regex:
           - "not used"
         as_json: ['metrics']
+    platform_allow:
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+    integration_platforms:
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+
+  pm.soc.measure.general_adc:
+    tags:
+      - pm
+      - pytest
+      - multidut
+    harness: pytest
+    harness_config:
+      # Reserve the main DUT plus one monitor DUT from the same
+      # hardware-map pair for the general ADC measurement path.
+      #
+      # Use a parameterized fixture so Twister can match both boards
+      # from the same hardware-map pair, e.g. power_pair:lab1.
+      fixture: power_pair:general_adc
+      pytest_dut_scope: session
+      pytest_root:
+        - "$ZEPHYR_BASE/scripts/pylib/power-twister-harness/test_power.py"
+      pytest_args:
+        - --probe-class
+        - general_powershield
+        - --testdata
+        - >-
+          {"elements_to_trim":100,"min_peak_distance":40,
+          "min_peak_height":0.008,"peak_padding":40,
+          "measurement_duration":20,"num_of_transitions":6,
+          "expected_rms_values":[],"tolerance_percentage":20}
+      required_devices:
+        # Reserve one additional UART-accessible monitor DUT from the same
+        # hardware-map pair. The monitor image is expected to be pre-installed
+        # on that board, so do not force a specific monitor platform here.
+        - fixture:
+            - power_pair:general_adc
     platform_allow:
       - mimxrt1060_evk@C/mimxrt1062/qspi
     integration_platforms:
