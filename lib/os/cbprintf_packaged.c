@@ -935,10 +935,11 @@ int cbprintf_package_convert(void *in_packaged,
 	uint8_t *buf = in_packaged;
 	uint32_t *buf32 = in_packaged;
 	unsigned int args_size, ros_nbr, rws_nbr;
-	bool fmt_present = flags & CBPRINTF_PACKAGE_CONVERT_PTR_CHECK ? true : false;
 	bool rw_cpy;
 	bool ro_cpy;
 	struct cbprintf_package_desc *in_desc = in_packaged;
+	int out_len;
+	int rv;
 
 	in_len = in_len != 0 ? in_len : get_package_len(in_packaged);
 
@@ -946,15 +947,14 @@ int cbprintf_package_convert(void *in_packaged,
 	 * includes appending those strings.
 	 */
 	ros_nbr = in_desc->ro_str_cnt;
-	ro_cpy = ros_nbr &&
-		(flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) == CBPRINTF_PACKAGE_CONVERT_RO_STR;
+	ro_cpy = ros_nbr && (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR);
 
 	/* Get number of RW string indexes in the package and check if copying
 	 * includes appending those strings.
 	 */
 	rws_nbr = in_desc->rw_str_cnt;
-	rw_cpy = rws_nbr > 0 &&
-		 (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) == CBPRINTF_PACKAGE_CONVERT_RW_STR;
+	rw_cpy = rws_nbr > 0 && (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR);
+
 
 	/* If flags are not set or appending request without rw string indexes
 	 * present is chosen, just do a simple copy (or length calculation).
@@ -962,247 +962,165 @@ int cbprintf_package_convert(void *in_packaged,
 	 */
 	if (!rw_cpy && !ro_cpy) {
 		if (cb) {
-			cb(in_packaged, in_len, ctx);
+			(void)cb(in_packaged, in_len, ctx);
+			(void)cb(NULL, 0, ctx);
 		}
-
 		return in_len;
 	}
 
-	/* If we got here, it means that coping will be more complex and will be
-	 * done with strings appending.
-	 * Retrieve the size of the arg list.
-	 */
 	args_size = in_desc->len * sizeof(int);
-
-	int out_len;
-
 	/* Pointer to array with string locations. Array starts with read-only
 	 * string locations.
 	 */
 	const char *fmt = *(const char **)(buf + sizeof(void *));
-	uint8_t *str_pos = &buf[args_size];
-	size_t strl_cnt = 0;
+	uint8_t *rw_str_pos = &buf[args_size + ros_nbr];
+	uint32_t keep_loc_mask;
+	uint32_t append_mask;
+	size_t keep_loc_cnt = 0;
+	size_t append_cnt = 0;
+	size_t rw_loc_cnt = 0;
 
-	/* If null destination, just calculate output length. */
-	if (cb == NULL) {
-		out_len = (int)in_len;
-		if (ro_cpy) {
-			for (unsigned int i = 0; i < ros_nbr; i++) {
-				const char *str = *(const char **)&buf32[*str_pos];
-				int len = append_string(cb, NULL, str, 0);
-
-				/* If possible store calculated string length. */
-				if (strl && strl_cnt < strl_len) {
-					strl[strl_cnt++] = (uint16_t)len;
-				}
-				out_len += len;
-				str_pos++;
-			}
-		} else {
-			str_pos += ros_nbr;
-		}
-
-		bool drop_ro_str_pos = !(flags &
-					(CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR |
-					 CBPRINTF_PACKAGE_CONVERT_RO_STR));
-
-		/* Handle RW strings. */
-		for (unsigned int i = 0; i < rws_nbr; i++) {
-			uint8_t arg_idx = *str_pos++;
-			uint8_t arg_pos = *str_pos++;
-			const char *str = *(const char **)&buf32[arg_pos];
-			bool is_ro = ptr_in_rodata(str);
-			int len;
-
-			if (IS_ENABLED(CONFIG_CBPRINTF_CONVERT_CHECK_PTR) &&
-			    fmt_present && is_ptr(fmt, arg_idx)) {
-				LOG_WRN("(unsigned) char * used for %%p argument. "
-					"It's recommended to cast it to void * because "
-					"it may cause misbehavior in certain "
-					"configurations. String:\"%s\" argument:%d", fmt, arg_idx);
-				/* Since location is being dropped, decrement
-				 * output length by 2 (argument index + position)
-				 */
-				out_len -= 2;
-				continue;
-			}
-
-			if (is_ro) {
-				if (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) {
-					goto calculate_string_length;
-				} else {
-					out_len -= drop_ro_str_pos ? 2 : 1;
-				}
-			} else if (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) {
-calculate_string_length:
-				len = append_string(cb, NULL, str, 0);
-
-				/* If possible store calculated string length. */
-				if (strl && strl_cnt < strl_len) {
-					strl[strl_cnt++] = (uint16_t)len;
-				}
-				/* string length decremented by 1 because argument
-				 * index is dropped.
-				 */
-				out_len += (len - 1);
-			}
-		}
-
-		return out_len;
+	/* As we want to use bit mask to keep that data, assert if 32 bit mask is not enough. */
+	__ASSERT_NO_MSG(ros_nbr + 2 * rws_nbr <= 32);
+	if (ros_nbr + 2 * rws_nbr > 32) {
+		return -ENOSPC;
 	}
 
-	struct cbprintf_package_desc out_desc;
-	/* At least one is copied in. */
-	uint8_t cpy_str_pos[16];
-	/* Up to one will be kept since if both types are kept it returns earlier. */
-	uint8_t keep_str_pos[16];
-	uint8_t scpy_cnt;
-	uint8_t keep_cnt;
-	uint8_t *dst;
-	int rv;
-
-	/* If read-only strings shall be appended to the output package copy
-	 * their indexes to the local array, otherwise indicate that indexes
-	 * shall remain in the output package.
-	 */
-	if (ro_cpy) {
-		__ASSERT_NO_MSG(ros_nbr <= sizeof(cpy_str_pos));
-		if (ros_nbr > sizeof(cpy_str_pos)) {
-			/* If assertions are not enabled, silently truncate
-			 * number of strings to avoid buffer overflow.
-			 */
-			ros_nbr = sizeof(cpy_str_pos);
-		}
-		scpy_cnt = ros_nbr;
-		keep_cnt = 0;
-		dst = cpy_str_pos;
-	} else if (ros_nbr && flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) {
-		__ASSERT_NO_MSG(ros_nbr <= sizeof(keep_str_pos));
-		if (ros_nbr > sizeof(keep_str_pos)) {
-			/* If assertions are not enabled, silently truncate
-			 * number of strings to avoid buffer overflow.
-			 */
-			ros_nbr = sizeof(keep_str_pos);
-		}
-		scpy_cnt = 0;
-		keep_cnt = ros_nbr;
-		dst = keep_str_pos;
+	/* Figure out what indexes to keep and what strings to append. */
+	if (flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) {
+		/* Read-only strings locations are kept in the package. */
+		keep_loc_mask = BIT_MASK(ros_nbr);
+		keep_loc_cnt += ros_nbr;
+		append_mask = 0;
+	} else if (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) {
+		/* Read-only strings locations are appended to the package. */
+		append_mask = BIT_MASK(ros_nbr);
+		keep_loc_mask = 0;
+		append_cnt += ros_nbr;
 	} else {
-		scpy_cnt = 0;
-		keep_cnt = 0;
-		dst = NULL;
-	}
-	if (dst) {
-		memcpy(dst, str_pos, ros_nbr);
+		/* Read-only strings locations are discarded. */
+		keep_loc_mask = 0;
+		append_mask = 0;
 	}
 
-	/* As 'ros_nbr' may have been capped to prevent overflowing on local
-	 * arrays, adjust 'str_pos' by the actual number of strings.
-	 */
-	str_pos += in_desc->ro_str_cnt;
-
-	/* Go through read-write strings and identify which shall be appended.
-	 * Note that there may be read-only strings there. Use address evaluation
-	 * to determine if strings is read-only.
+	/* Figure out which supposed RW strings are read-only and which are read-write.
+	 * Optionally, check if %p argument is used for a string and warn if it is.
+	 * Build a mask with all bytes that should be kept in the output package.
 	 */
 	for (unsigned int i = 0; i < rws_nbr; i++) {
-		uint8_t arg_idx = *str_pos++;
-		uint8_t arg_pos = *str_pos++;
+		uint8_t arg_idx = *rw_str_pos++;
+		uint8_t arg_pos = *rw_str_pos++;
 		const char *str = *(const char **)&buf32[arg_pos];
 		bool is_ro = ptr_in_rodata(str);
 
-		if (IS_ENABLED(CONFIG_CBPRINTF_CONVERT_CHECK_PTR) &&
-		    fmt_present && is_ptr(fmt, arg_idx)) {
-			continue;
-		}
-
-		if (is_ro) {
+		if (IS_ENABLED(CONFIG_CBPRINTF_CONVERT_CHECK_PTR) && cb && is_ptr(fmt, arg_idx)) {
+			LOG_WRN("(unsigned) char * used for %%p argument. "
+				"It's recommended to cast it to void * because "
+				"it may cause misbehavior in certain "
+				"configurations. String:\"%s\" argument:%d", fmt, arg_idx);
+		} else if (is_ro) {
 			if (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) {
-				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
-				if (scpy_cnt < sizeof(cpy_str_pos)) {
-					cpy_str_pos[scpy_cnt++] = arg_pos;
-				}
+				append_mask |= BIT(2 * i + 1 + ros_nbr);
+				append_cnt++;
 			} else if (flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) {
-				__ASSERT_NO_MSG(keep_cnt < sizeof(keep_str_pos));
-				if (keep_cnt < sizeof(keep_str_pos)) {
-					keep_str_pos[keep_cnt++] = arg_pos;
-				}
-			} else {
-				/* Drop information about ro_str location. */
+				keep_loc_mask |= BIT(2 * i + 1 + ros_nbr);
+				keep_loc_cnt++;
 			}
+		} else if (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) {
+			append_mask |= BIT(2 * i + 1 + ros_nbr);
+			append_cnt++;
 		} else {
-			if (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) {
-				__ASSERT_NO_MSG(scpy_cnt < sizeof(cpy_str_pos));
-				if (scpy_cnt < sizeof(cpy_str_pos)) {
-					cpy_str_pos[scpy_cnt++] = arg_pos;
-				}
-			} else {
-				__ASSERT_NO_MSG(keep_cnt < sizeof(keep_str_pos));
-				if (keep_cnt < sizeof(keep_str_pos)) {
-					keep_str_pos[keep_cnt++] = arg_idx;
-					keep_str_pos[keep_cnt++] = arg_pos;
-				}
-			}
+			/* Keep read-write string locations and argument index. */
+			keep_loc_mask |= BIT_MASK(2) << (2 * i + ros_nbr);
+			rw_loc_cnt++;
 		}
 	}
 
-	/* Set amount of strings appended to the package. */
+	struct cbprintf_package_desc out_desc;
+
 	out_desc.len = in_desc->len;
-	out_desc.str_cnt = in_desc->str_cnt + scpy_cnt;
-	out_desc.rw_str_cnt = (flags & CBPRINTF_PACKAGE_CONVERT_RW_STR) ? 0 : (keep_cnt / 2);
-	out_desc.ro_str_cnt = (flags & CBPRINTF_PACKAGE_CONVERT_RO_STR) ? 0 :
-			((flags & CBPRINTF_PACKAGE_CONVERT_KEEP_RO_STR) ? keep_cnt : 0);
-
-	/* Temporary overwrite input descriptor to allow bulk transfer */
-	struct cbprintf_package_desc in_desc_backup = *in_desc;
-	*in_desc = out_desc;
-
+	out_desc.str_cnt = in_desc->str_cnt + append_cnt;
+	out_desc.rw_str_cnt = rw_loc_cnt;
+	out_desc.ro_str_cnt = keep_loc_cnt;
 	/* Copy package header and arguments. */
-	rv = cb(in_packaged, args_size, ctx);
-	if (rv < 0) {
-		return rv;
+	if (cb) {
+		rv = cb(&out_desc, sizeof(out_desc), ctx);
+		if (rv < 0) {
+			return rv;
+		}
+		rv = cb(buf + sizeof(out_desc), args_size - sizeof(out_desc), ctx);
+		if (rv < 0) {
+			return rv;
+		}
 	}
-	out_len = rv;
-	/* Restore input descriptor. */
-	*in_desc = in_desc_backup;
+	out_len = args_size;
 
-	/* Copy string positions which are kept. */
-	rv = cb(keep_str_pos, keep_cnt, ctx);
-	if (rv < 0) {
-		return rv;
+	uint8_t *loc_pos = &buf[args_size];
+
+	/* Copy read-only string locations. */
+	while (keep_loc_mask != 0) {
+		uint32_t bit = __builtin_ctz(keep_loc_mask);
+		uint8_t loc = loc_pos[bit];
+
+		keep_loc_mask &= ~BIT(bit);
+		if (cb) {
+			rv = cb(&loc, 1, ctx);
+			if (rv < 0) {
+				return rv;
+			}
+		}
+		out_len++;
 	}
-	out_len += rv;
 
-	/* Copy appended strings from source package to destination. */
+	size_t strl_cnt = 0;
+
+	/* Copy read-write string locations. */
+	while (append_mask != 0) {
+		uint32_t bit = __builtin_ctz(append_mask);
+		uint8_t loc = loc_pos[bit];
+		const char *str = *(const char **)&buf32[loc];
+		int len = 0;
+
+		append_mask &= ~BIT(bit);
+		if (cb) {
+			rv = cb(&loc, 1, ctx);
+			if (rv < 0) {
+				return rv;
+			}
+			if (strl && strl_cnt < strl_len) {
+				len = strl[strl_cnt++];
+			}
+		}
+		out_len++;
+
+		len = append_string(cb, ctx, str, len);
+		if (len < 0) {
+			return len;
+		}
+		out_len += len;
+		/* If possible store calculated string length. */
+		if (!cb && strl && strl_cnt < strl_len) {
+			strl[strl_cnt++] = (uint16_t)len;
+		}
+	}
+
+	/* Copy strings that were already appended to the input package. */
 	size_t strs_len = in_len - (args_size + ros_nbr + 2 * rws_nbr);
 
-	rv = cb(str_pos, strs_len, ctx);
-	if (rv < 0) {
-		return rv;
-	}
-	out_len += rv;
-
-	/* Append strings */
-	for (unsigned int i = 0; i < scpy_cnt; i++) {
-		uint8_t loc = cpy_str_pos[i];
-		const char *str = *(const char **)&buf32[loc];
-		uint16_t str_len = (strl && (i < strl_len)) ? strl[i] : 0;
-
-		rv = cb(&loc, 1, ctx);
-		if (rv < 0) {
-			return rv;
+	if (strs_len > 0) {
+		if (cb) {
+			rv = cb(&buf[args_size + ros_nbr + 2 * rws_nbr], strs_len, ctx);
+			if (rv < 0) {
+				return rv;
+			}
 		}
-		out_len += rv;
-
-		rv = append_string(cb, ctx, str, str_len);
-		if (rv < 0) {
-			return rv;
-		}
-		out_len += rv;
+		out_len += strs_len;
 	}
 
 	/* Empty call (can be interpreted as flushing) */
-	(void)cb(NULL, 0, ctx);
+	if (cb) {
+		(void)cb(NULL, 0, ctx);
+	}
 
 	return out_len;
 }
