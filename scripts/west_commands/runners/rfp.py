@@ -191,5 +191,10 @@ class RfpBinaryRunner(ZephyrBinaryRunner):
         flash_option += ['boundary-file', rpd_path]
         flash_option += ['-p']
 
+        if self.interface:
+            flash_option += ['-interface', self.interface]
+        if self.speed:
+            flash_option += ['-s', self.speed]
+
         cmd = self.rfp_cmd + device + connection + flash_option
         self.check_call(cmd)
