@@ -1,0 +1,12 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	ipc0: ipc0 {
+		compatible = "ipc-service-backend";
+		status = "okay";
+	};
+};
