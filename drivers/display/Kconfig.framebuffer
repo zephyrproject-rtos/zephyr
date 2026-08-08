@@ -1,0 +1,7 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_FRAMEBUFFER
+	bool
+	help
+	  Enable library used for framebuffer drivers.
