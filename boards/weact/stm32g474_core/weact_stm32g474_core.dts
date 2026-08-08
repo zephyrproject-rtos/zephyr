@@ -1,0 +1,144 @@
+/dts-v1/;
+#include <st/g4/stm32g474Xb.dtsi>
+#include <st/g4/stm32g474c(b-c-e)ux-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "WeAct Studio STM32G474 Core Board";
+	compatible = "st,stm32g474";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,system-timer = &lptim1;
+	};
+
+	/* Standard GPIO LED definition, with led0 at PC6 */
+	leds {
+		compatible = "gpio-leds";
+		user_led: led_0 {
+			gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	/* PWM LED definition, with pwmled0 also at PC6 (via pwm3) - can only use this or led0, not simultaneous */
+	pwmleds {
+		compatible = "pwm-leds";
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm3 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			label = "User PWM LED";
+		};
+	};
+
+	/* Onboard WeAct User Key Profile */
+	buttons {
+		compatible = "gpio-keys";
+		user_button: button_0 {
+			gpios = <&gpioc 13 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			label = "User Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/* Global Application Software Aliases */
+	aliases {
+		led0 = &user_led;
+		pwm-led0 = &pwm_led0; /* Required by blinky_pwm application */
+		sw0 = &user_button;
+	};
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(512)>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(128)>;
+};
+
+/* High-Speed External: Configures the Physical 8MHz External Crystal (HSE) Oscillator */
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+};
+
+/* Configures the PLL to step up the 8MHz input cleanly to 170MHz (and to 42M5Hz for Q) */
+/* HSE / M * N / {R, Q} */
+/*  VCO Frequency: Input(8MHz) / div-m(2) x mul-n(85) = 340MHz
+    System Clock (PLLCLK via R): VCO(340MHz) / div-r(2) = 170MHz
+    USB Clock (PLLQ): VCO(340MHz) / div-q(8) = 42.5MHz (Note: USB requires 48 MHz, so HSI48 must be used for USB instead)
+*/
+&pll {
+	div-m = <2>;
+	mul-n = <85>;
+	div-p = <2>;
+	div-q = <8>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+
+&lptim1 {
+	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
+		     <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(170)>; /* Sets core CPU to 128MHz; works up to 170MHz */
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+};
+
+/* Pin Assignment for 48-Pin Package */
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&clk_hsi48 {
+    status = "okay";
+};
+
+/* Low-Speed Internal: 32 kHz */
+&clk_lsi {
+    status = "okay";
+};
+
+&i2c1 {
+    pinctrl-0 = <&i2c1_scl_pa15 &i2c1_sda_pb7>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+   /* 
+	scl-gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+	clock-frequency = <I2C_BITRATE_FAST>; */
+};
+
+/* Enable Timer 3 and multiplex Channel 1 onto PC6 */
+&timers3 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm3: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim3_ch1_pc6>; /* STM32 Multiplexing Rule for PC6 */
+		pinctrl-names = "default";
+	};
+};
+
+zephyr_udc0: &usb {
+	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
