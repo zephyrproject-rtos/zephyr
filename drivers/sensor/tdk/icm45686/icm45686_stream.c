@@ -148,6 +148,8 @@ static void icm45686_complete_handler(struct rtio *ctx, const struct rtio_sqe *s
 	buf->header.events = REG_INT1_STATUS0_DRDY(data->stream.data.events.drdy) |
 			     REG_INT1_STATUS0_FIFO_THS(data->stream.data.events.fifo_ths) |
 			     REG_INT1_STATUS0_FIFO_FULL(data->stream.data.events.fifo_full);
+	buf->header.accel_odr = cfg->settings.accel.odr;
+	buf->header.gyro_odr = cfg->settings.gyro.odr;
 
 	if (should_flush_fifo(read_cfg, int_status)) {
 		uint8_t write_reg = REG_FIFO_CONFIG2_FIFO_FLUSH(true) |
@@ -501,6 +503,26 @@ void icm45686_stream_submit(const struct device *dev, struct rtio_iodev_sqe *iod
 			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG3, &val, 1);
 			if (err) {
 				LOG_ERR("Failed to enable FIFO: %d", err);
+				icm45686_stream_result(dev, err);
+				return;
+			}
+
+			/* Enable per-packet hardware timestamp insertion (20-byte hires packets).
+			 * Use 16μs resolution so that batches up to ~500ms fit in the signed
+			 * 16-bit delta used for correlation in the decoder.
+			 */
+			val = REG_FIFO_CONFIG4_TMST_FSYNC_EN(true);
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG4, &val, 1);
+			if (err) {
+				LOG_ERR("Failed to enable FIFO timestamp: %d", err);
+				icm45686_stream_result(dev, err);
+				return;
+			}
+
+			val = REG_TMST_WOM_CONFIG_TMST_RESOL(1); /* 16μs */
+			err = icm45686_reg_write_rtio(&data->bus, TMST_WOM_CONFIG, &val, 1);
+			if (err) {
+				LOG_ERR("Failed to set timestamp resolution: %d", err);
 				icm45686_stream_result(dev, err);
 				return;
 			}
