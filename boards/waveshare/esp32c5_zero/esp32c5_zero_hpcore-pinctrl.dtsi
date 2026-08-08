@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32c5-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO11>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO12>;
+			bias-pull-up;
+		};
+	};
+
+	i2s_default: i2s_default {
+		group1 {
+			pinmux = <I2S_MCLK_GPIO0>,
+				 <I2S_O_WS_GPIO3>,
+				 <I2S_O_BCK_GPIO4>,
+				 <I2S_O_SD_GPIO5>,
+				 <I2S_I_SD_GPIO8>;
+		};
+	};
+};
