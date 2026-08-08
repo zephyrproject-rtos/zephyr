@@ -11,7 +11,7 @@
 #ifndef _SOC_H_
 #define _SOC_H_
 
-#include "reg_protection.h"
+#include <reg_protection.h>
 #include <mcu_clocks.h>
 
 #endif /* _SOC_H_ */

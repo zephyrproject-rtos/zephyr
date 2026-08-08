@@ -12,7 +12,7 @@
 #include <zephyr/input/input_renesas_rx_ctsu.h>
 
 #ifdef CONFIG_INPUT_RENESAS_RX_QE_TOUCH_CFG
-#include "qe_touch_config.h"
+#include <qe_touch_config.h>
 #endif /* CONFIG_INPUT_RENESAS_RX_QE_TOUCH_CFG */
 
 static const struct device *const test_touch_dev = DEVICE_DT_GET(DT_NODELABEL(ctsu));
