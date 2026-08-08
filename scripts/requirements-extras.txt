@@ -29,3 +29,6 @@ PyGithub
 
 # used to generate devicetree dependency graphs
 graphviz
+
+# used to generate ECDSA signature for MAX32657 MCUBoot that validated by BootROM
+ecdsa>=0.19.0
