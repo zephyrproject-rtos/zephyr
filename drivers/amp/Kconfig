@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# AMP options
+#
+menuconfig AMP
+	bool "Asynchronous Multiprocessing drivers"
+
+if AMP
+
+module = AMP
+module-str = AMP
+source "subsys/logging/Kconfig.template.log_config"
+
+# TODO: Find a good default init priority
+config AMP_INIT_PRIORITY
+	int "AMP init priority"
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	help
+	  AMP driver device initialization priority.
+
+config AMP_IDENTIFICATION_INCLUDES_CLUSTER_NUMBER
+	bool "AMP core identification includes a cluster number"
+	default n
+
+config AMP_IDENTIFICATION_INCLUDES_CLUSTER_TYPE
+	bool "AMP core identificaiton includes a cluster type"
+	default n
+
+source "drivers/amp/Kconfig.openamp_ops"
+
+# zephyr-keep-sorted-start
+source "drivers/amp/Kconfig.ti_k3"
+# zephyr-keep-sorted-stop
+
+endif # AMP

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+title: Generic AMP cluster instance
+
+description: |
+  A cluster consistent of one or multiple CPU cores, e.g. two Cortex-R cores. A
+  cluster can have a single core, if there are multiple cluster types inside the
+  SoC.
+
+compatible: "amp-cluster-instance"
+
+include: base.yaml

@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config AMP_TI_K3
+	bool "TI K3 AMP Driver"
+	default y
+	depends on DT_HAS_TI_AMP_K3_ENABLED
+	depends on TISCI
+	imply POWER_DOMAIN
+	imply PM_DEVICE
+	imply PM_DEVICE_RUNTIME
+	select AMP_IDENTIFICATION_INCLUDES_CLUSTER_NUMBER
+	select AMP_IDENTIFICATION_INCLUDES_CLUSTER_TYPE

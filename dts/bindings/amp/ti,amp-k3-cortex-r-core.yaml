@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+description: Texas Instruments Keystone 3 Cortex-R core
+
+compatible: "ti,amp-k3-cortex-r-core"
+
+include: ti,amp-k3-tisci-controlled-core.yaml
+
+properties:
+  atcm-address:
+    type: int
+    required: true
+    description: |
+      External address of the ATCM interface so other cores can load into the ATCM memory
+
+  btcm-address:
+    type: int
+    required: true
+    description: |
+      External address of the BTCM interface so other cores can load into the ATCM memory
+
+  config-set-flags:
+    type: int
+    required: false
+    description: |
+      Config flags that should be set. When combined with config_clear_flags
+      must contain all possible flags for the target core
+
+  config-clear-flags:
+    type: int
+    required: false
+    description: |
+      Config flags that should be set. When combined with config_set_flags
+      must contain all possible flags for the target core
+
+  boot-vec:
+    type: int
+    required: false
+    description: |
+      Boot address where the core starts to boot. Can be omitted and will default to 0.
