@@ -452,6 +452,7 @@ def test_cmake_run_cmake(
     instance_mock.testsuite = mock.Mock()
     instance_mock.testsuite.name = 'testcase'
     instance_mock.testsuite.required_snippets = ['dummy snippet 1', 'ds2']
+    instance_mock.sidecar = None
     instance_mock.testcases = [mock.Mock(), mock.Mock()]
     instance_mock.testcases[0].status = TwisterStatus.NONE
     instance_mock.testcases[1].status = TwisterStatus.NONE
@@ -2589,6 +2590,7 @@ def test_projectbuilder_run(
     instance_mock.platform.name = platform_name
     instance_mock.platform.arch = platform_arch
     instance_mock.testsuite.harness = harness
+    instance_mock.sidecar = None
     env_mock = mock.Mock()
 
     pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
@@ -2616,6 +2618,101 @@ def test_projectbuilder_run(
 
     if expect_handle:
         pb.instance.handler.handle.assert_called_once_with(harness_mock)
+
+
+TESTDATA_SIDECAR = [
+    # The harness delegates to the handler: the test runs, sidecar wraps it.
+    (False, True, True, True),
+    # The harness executes the test itself: the sidecar must still be set up
+    # around it, and the handler is not used.
+    (True, True, True, False),
+    # Setup failed (e.g. a missing host tool): nothing is executed, but the
+    # sidecar is still torn down so it cannot leak what it already provisioned.
+    (False, False, False, False),
+]
+
+
+@pytest.mark.parametrize(
+    'harness_self_executes, setup_ok, expect_run, expect_handle',
+    TESTDATA_SIDECAR,
+    ids=['handler path', 'self-executing harness', 'setup failed']
+)
+def test_projectbuilder_run_sidecar(
+    mocked_jobserver,
+    harness_self_executes,
+    setup_ok,
+    expect_run,
+    expect_handle
+):
+    """The sidecar is provisioned before whichever path executes the test, and
+    is torn down afterwards even when setup() failed."""
+    harness_mock = mock.Mock()
+    harness_mock.run = mock.Mock(return_value=harness_self_executes)
+
+    sidecar_mock = mock.Mock()
+    sidecar_mock.setup = mock.Mock(return_value=setup_ok)
+
+    instance_mock = mock.Mock()
+    instance_mock.handler.get_test_timeout = mock.Mock(return_value=60)
+    instance_mock.handler.ready = True
+    instance_mock.handler.type_str = 'not device'
+    instance_mock.platform.name = 'native_sim'
+    instance_mock.platform.arch = 'not posix'
+    instance_mock.testsuite.harness = 'not pytest'
+    instance_mock.sidecar = 'virtiofs'
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb.options.extra_test_args = []
+    pb.options.seed = None
+    pb.defconfig = {}
+    pb.parse_generated = mock.Mock()
+
+    with mock.patch('twisterlib.runner.HarnessImporter.get_harness',
+                    return_value=harness_mock), \
+         mock.patch('twisterlib.runner.SidecarImporter.get_sidecar',
+                    return_value=sidecar_mock):
+        pb.run()
+
+    sidecar_mock.configure.assert_called_once_with(instance_mock)
+    # Set up before the test is executed by either path ...
+    sidecar_mock.setup.assert_called_once()
+    # ... and always torn down once configured, even if setup() failed.
+    sidecar_mock.teardown.assert_called_once()
+
+    assert harness_mock.run.called is expect_run
+    assert instance_mock.handler.handle.called is expect_handle
+
+
+def test_projectbuilder_run_unknown_sidecar(mocked_jobserver):
+    """An unresolvable sidecar name (e.g. a typo) errors the instance rather
+    than silently running the test without its host resource."""
+    harness_mock = mock.Mock()
+    harness_mock.run = mock.Mock(return_value=False)
+
+    instance_mock = mock.Mock()
+    instance_mock.handler.get_test_timeout = mock.Mock(return_value=60)
+    instance_mock.handler.ready = True
+    instance_mock.handler.type_str = 'not device'
+    instance_mock.platform.name = 'native_sim'
+    instance_mock.platform.arch = 'not posix'
+    instance_mock.testsuite.harness = 'not pytest'
+    instance_mock.sidecar = 'virtiofs_typo'
+    env_mock = mock.Mock()
+
+    pb = ProjectBuilder(instance_mock, env_mock, mocked_jobserver)
+    pb.options.extra_test_args = []
+    pb.options.seed = None
+    pb.defconfig = {}
+    pb.parse_generated = mock.Mock()
+
+    with mock.patch('twisterlib.runner.HarnessImporter.get_harness',
+                    return_value=harness_mock):
+        pb.run()
+
+    assert instance_mock.status == TwisterStatus.ERROR
+    assert 'virtiofs_typo' in instance_mock.reason
+    instance_mock.handler.handle.assert_not_called()
 
 
 TESTDATA_SIM_UNAVAILABLE = [

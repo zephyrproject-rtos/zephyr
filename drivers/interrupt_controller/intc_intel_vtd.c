@@ -369,7 +369,7 @@ static int vtd_ictl_remap(const struct device *dev,
 	}
 
 	delivery_mode = (flags & IOAPIC_DELIVERY_MODE_MASK);
-	if ((delivery_mode != IOAPIC_FIXED) ||
+	if ((delivery_mode != IOAPIC_FIXED) &&
 	    (delivery_mode != IOAPIC_LOW)) {
 		delivery_mode = IOAPIC_LOW;
 	}

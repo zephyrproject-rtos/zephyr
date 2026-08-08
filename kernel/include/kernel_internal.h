@@ -146,7 +146,9 @@ extern void z_early_rand_get(uint8_t *buf, size_t length);
 extern int z_stack_adjust_initialized;
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 
+#ifdef CONFIG_MULTITHREADING
 extern struct k_thread z_main_thread;
+#endif /* CONFIG_MULTITHREADING */
 
 
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,

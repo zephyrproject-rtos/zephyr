@@ -22,8 +22,11 @@
 		cam-led-g = &cam_led_g;
 		cam-led-b = &cam_led_b;
 		cam-on = &cam_on;
+		/* compatibility to sample applications */
+		led0 = &led_g;
 		sw0 = &sw0_user_button;
 		watchdog0 = &wdt;
+		eeprom-0 = &eeprom;
 	};
 
 	chosen {
@@ -172,4 +175,24 @@
 
 &pioc {
 	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&twihs0 {
+	status = "okay";
+
+	pinctrl-0 = <&twihs0_default>;
+	pinctrl-names = "default";
+
+	eeprom: eeprom@50 {
+		compatible = "atmel,at24", "atmel,24mac402";
+		reg = <0x50>;
+		size = <256>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+	};
 };

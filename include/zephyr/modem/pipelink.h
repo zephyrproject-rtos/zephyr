@@ -8,8 +8,8 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 
-#ifndef ZEPHYR_MODEM_PIPELINK_
-#define ZEPHYR_MODEM_PIPELINK_
+#ifndef ZEPHYR_INCLUDE_MODEM_PIPELINK_H_
+#define ZEPHYR_INCLUDE_MODEM_PIPELINK_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -167,4 +167,4 @@ void modem_pipelink_notify_disconnected(struct modem_pipelink *link);
 }
 #endif
 
-#endif /* ZEPHYR_MODEM_PIPELINK_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_PIPELINK_H_ */

@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CH570
+
+config VECTOR_TABLE_SIZE
+	default 35
+
+config NUM_IRQS
+	default 36
+
+endif # SOC_CH570

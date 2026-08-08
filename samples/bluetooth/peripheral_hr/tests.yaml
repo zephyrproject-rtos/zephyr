@@ -1,6 +1,9 @@
 sample:
   name: Bluetooth Peripheral HR
   description: Demonstrates the HR (Heart Rate) GATT Service
+common:
+  tags:
+    - bluetooth
 tests:
   sample.bluetooth.peripheral_hr:
     harness: bluetooth
@@ -27,8 +30,18 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
-    tags: bluetooth
     sysbuild: true
+  sample.bluetooth.peripheral_hr.bsim:
+    harness: bsim
+    depends_on: bsim
+    build_only: true
+    sysbuild: true
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
+    harness_config:
+      bsim_exe_name: samples_bluetooth_peripheral_hr_prj_conf
   sample.bluetooth.peripheral_hr.minimal:
     harness: bluetooth
     platform_allow:
@@ -37,7 +50,6 @@ tests:
       - qemu_cortex_m3
     extra_args:
       - CONF_FILE=prj_minimal.conf
-    tags: bluetooth
   sample.bluetooth.peripheral_hr.bt_ll_sw_split.minimal:
     harness: bluetooth
     platform_allow:
@@ -51,7 +63,6 @@ tests:
     extra_args:
       - CONF_FILE=prj_minimal.conf
       - EXTRA_CONF_FILE=overlay-bt_ll_sw_split-minimal.conf
-    tags: bluetooth
   sample.bluetooth.peripheral_hr.bt_ll_sw_split.extended:
     harness: bluetooth
     platform_allow:
@@ -63,7 +74,6 @@ tests:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
     extra_args: EXTRA_CONF_FILE=overlay-extended.conf
-    tags: bluetooth
   sample.bluetooth.peripheral_hr.multicore.bt_ll_sw_split.extended:
     harness: bluetooth
     platform_allow:
@@ -73,8 +83,20 @@ tests:
       - nrf5340bsim/nrf5340/cpuapp
       - nrf5340dk/nrf5340/cpuapp
     extra_args: CONFIG_BT_EXT_ADV=y
-    tags: bluetooth
     sysbuild: true
+  sample.bluetooth.peripheral_hr.extended.bsim:
+    harness: bsim
+    depends_on: bsim
+    build_only: true
+    sysbuild: true
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
+    harness_config:
+      bsim_exe_name: samples_bluetooth_peripheral_hr_prj_conf_overlay-extended_conf
+    extra_conf_files:
+      - overlay-extended.conf
   sample.bluetooth.peripheral_hr.bt_ll_sw_split.phy_coded:
     harness: bluetooth
     platform_allow:
@@ -86,7 +108,6 @@ tests:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
     extra_args: EXTRA_CONF_FILE=overlay-phy_coded.conf
-    tags: bluetooth
     sysbuild: true
   sample.bluetooth.peripheral_hr.multicore.bt_ll_sw_split.phy_coded:
     harness: bluetooth
@@ -98,8 +119,33 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
     extra_args:
       - CONFIG_BT_EXT_ADV=y
-    tags: bluetooth
     sysbuild: true
+  sample.bluetooth.peripheral_hr.phy_coded.bsim:
+    harness: bsim
+    depends_on: bsim
+    build_only: true
+    sysbuild: true
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
+    harness_config:
+      bsim_exe_name: samples_bluetooth_peripheral_hr_prj_conf_overlay-phy_coded_conf
+    extra_conf_files:
+      - overlay-phy_coded.conf
+  sample.bluetooth.peripheral_hr.static_callbacks.bsim:
+    harness: bsim
+    depends_on: bsim
+    build_only: true
+    sysbuild: true
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
+    harness_config:
+      bsim_exe_name: samples_bluetooth_peripheral_hr_prj_conf_overlay-static_callbacks_conf
+    extra_conf_files:
+      - overlay-static_callbacks.conf
   sample.bluetooth.peripheral_hr_rv32m1_vega_openisa_rv32m1_ri5cy:
     platform_allow: rv32m1_vega/openisa_rv32m1/ri5cy
     tags: bluetooth
@@ -107,5 +153,4 @@ tests:
   sample.bluetooth.peripheral_hr.frdm_kw41z_shield:
     harness: bluetooth
     depends_on: arduino_serial
-    tags: bluetooth
     extra_args: SHIELD=frdm_kw41z

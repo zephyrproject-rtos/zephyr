@@ -36,6 +36,9 @@
 #define ALPN_MAX_PROTOCOLS 0
 #endif /* CONFIG_QUIC_TLS_MAX_APP_PROTOCOLS */
 
+/* Maximum client SNI hostname (RFC 6066 server_name), including NUL. */
+#define QUIC_TLS_MAX_HOSTNAME_LEN 128
+
 #define MAX_CONN_ID_LEN 20
 #define MAX_MY_CONN_ID_LEN 8
 
@@ -344,6 +347,9 @@ struct quic_tls_context {
 		 */
 		const char *alpn_list[ALPN_MAX_PROTOCOLS + 1];
 
+		/** Client SNI hostname (RFC 6066 server_name); empty = not sent. */
+		char hostname[QUIC_TLS_MAX_HOSTNAME_LEN];
+
 #if defined(CONFIG_QUIC_TLS_CERT_VERIFY_CALLBACK)
 		struct tls_cert_verify_cb cert_verify;
 #endif /* CONFIG_NET_SOCKETS_TLS_CERT_VERIFY_CALLBACK */
@@ -393,6 +399,13 @@ struct quic_tls_context {
 	size_t ecdh_public_key_len;
 	uint8_t peer_public_key[65];
 	size_t peer_public_key_len;
+	/* Second client key_share offer (secp256r1), held alongside the primary
+	 * x25519 offer in ecdh_key_id until the ServerHello selects a group; the
+	 * unselected key is then destroyed. Server side leaves this unused.
+	 */
+	psa_key_id_t ecdh_key_id2;
+	uint8_t ecdh_public_key2[65];
+	size_t ecdh_public_key2_len;
 	uint8_t shared_secret[32];
 
 	/* Certificates (for server or client auth) */

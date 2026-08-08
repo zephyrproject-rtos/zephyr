@@ -27,7 +27,11 @@ struct temp_nrf5_data {
 	struct k_sem device_sync_sem;
 	struct k_mutex mutex;
 	int32_t sample;
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	struct onoff_manager *clk_mgr;
+#else
+	const struct device *clk_dev;
+#endif
 };
 
 static void hfclk_on_callback(struct onoff_manager *mgr,
@@ -46,7 +50,11 @@ static int temp_nrf5_sample_fetch(const struct device *dev,
 	int r;
 
 	/* Error if before sensor initialized */
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	if (data->clk_mgr == NULL) {
+#else
+	if (data->clk_dev == NULL) {
+#endif
 		return -EAGAIN;
 	}
 
@@ -57,12 +65,20 @@ static int temp_nrf5_sample_fetch(const struct device *dev,
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	sys_notify_init_callback(&cli.notify, hfclk_on_callback);
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	r = onoff_request(data->clk_mgr, &cli);
+#else
+	r = nrf_clock_control_request(data->clk_dev, NULL, &cli);
+#endif
 	__ASSERT_NO_MSG(r >= 0);
 
 	k_sem_take(&data->device_sync_sem, K_FOREVER);
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	r = onoff_release(data->clk_mgr);
+#else
+	r = nrf_clock_control_release(data->clk_dev, NULL);
+#endif
 	__ASSERT_NO_MSG(r >= 0);
 
 	data->sample = nrf_temp_result_get(NRF_TEMP);
@@ -113,10 +129,17 @@ static int temp_nrf5_init(const struct device *dev)
 {
 	struct temp_nrf5_data *data = dev->data;
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	/* A null clk_mgr indicates sensor has not been initialized */
 	data->clk_mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	__ASSERT_NO_MSG(data->clk_mgr);
+#else
+	data->clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1(NRF_CLOCK_HAS_HFCLK,
+						      (nordic_nrf_clock_hfclk),
+						      (nordic_nrf_clock_xo)));
+	__ASSERT_NO_MSG(data->clk_dev);
+#endif
 
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 	k_mutex_init(&data->mutex);

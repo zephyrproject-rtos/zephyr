@@ -71,7 +71,7 @@ struct quic_endpoint *endpoint_alloc_from_slab_debug(struct k_mem_slab *slab,
 #endif /* CONFIG_QUIC_LOG_LEVEL_DBG */
 
 static struct quic_context contexts[CONFIG_QUIC_MAX_CONTEXTS];
-static struct k_mutex contexts_lock;
+static K_MUTEX_DEFINE(contexts_lock);
 
 static const struct socket_op_vtable quic_ctx_fd_op_vtable;
 static const struct socket_op_vtable quic_stream_fd_op_vtable;
@@ -82,11 +82,11 @@ static const struct smf_state quic_stream_bidirectional_states[];
 K_MEM_SLAB_DEFINE_STATIC_TYPE(endpoints_slab, struct quic_endpoint,
 			      CONFIG_QUIC_MAX_ENDPOINTS);
 static struct quic_endpoint *endpoints[CONFIG_QUIC_MAX_ENDPOINTS];
-static struct k_mutex endpoints_lock;
+static K_MUTEX_DEFINE(endpoints_lock);
 
 static struct quic_stream streams[CONFIG_QUIC_MAX_STREAMS_BIDI +
 				  CONFIG_QUIC_MAX_STREAMS_UNI];
-static struct k_mutex streams_lock;
+static K_MUTEX_DEFINE(streams_lock);
 ZTESTABLE_STATIC struct quic_context *quic_get_context(int sock);
 
 static int connection_ids;
@@ -8710,10 +8710,6 @@ static void init_quic_recovery_service(void)
  */
 void net_quic_init(void)
 {
-	k_mutex_init(&contexts_lock);
-	k_mutex_init(&endpoints_lock);
-	k_mutex_init(&streams_lock);
-
 #if defined(CONFIG_NET_IPV4)
 	ARRAY_FOR_EACH_PTR(quic_ipv4_pollfds, sockfd) {
 		sockfd->fd = -1;

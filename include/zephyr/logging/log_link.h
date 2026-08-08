@@ -292,7 +292,7 @@ static inline int log_link_get_levels(const struct log_link *link,
  * @param[in] link	Log link instance.
  * @param[in] domain_id	Relative domain ID.
  * @param[in] source_id	Source ID.
- * @param[out] level	Requested level.
+ * @param[in] level	Requested level.
  *
  * @return 0 on success or error code.
  */

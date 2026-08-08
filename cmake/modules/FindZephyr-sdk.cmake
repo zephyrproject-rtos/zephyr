@@ -78,8 +78,13 @@ if((${ZEPHYR_TOOLCHAIN_VARIANT} MATCHES "^zephyr/?") OR
     # To support Zephyr SDK tools (DTC, and other tools) with 3rd party toolchains
     # then we keep track of current toolchain variant.
     set(ZEPHYR_CURRENT_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT})
+    # When ZEPHYR_SDK_INSTALL_DIR is set, the Zephyr SDK must be located there.
+    # Restrict the search to this location with NO_DEFAULT_PATH so that an
+    # explicitly selected, but incompatible, SDK results in a clear error
+    # instead of silently falling back to another SDK found elsewhere (for
+    # example in the CMake package registry).
     find_package(Zephyr-sdk ${Zephyr-sdk_FIND_VERSION_COMPLETE}
-                 REQUIRED QUIET CONFIG HINTS ${ZEPHYR_SDK_INSTALL_DIR}
+                 REQUIRED QUIET CONFIG HINTS ${ZEPHYR_SDK_INSTALL_DIR} NO_DEFAULT_PATH
     )
     if(DEFINED ZEPHYR_CURRENT_TOOLCHAIN_VARIANT)
       set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_CURRENT_TOOLCHAIN_VARIANT})

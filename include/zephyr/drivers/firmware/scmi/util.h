@@ -13,8 +13,8 @@
  * transport "registration".
  */
 
-#ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_UTIL_H_
-#define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_UTIL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_UTIL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_UTIL_H_
 
 /**
  * @brief Helper macros and utilities for SCMI drivers
@@ -451,4 +451,4 @@
  * @}
  */
 
-#endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_UTIL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_UTIL_H_ */

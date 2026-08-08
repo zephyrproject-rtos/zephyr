@@ -337,7 +337,7 @@ static int rzt2m_uart_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	if (data->uart_cfg.baudrate > ARRAY_SIZE(baud_settings)) {
+	if (data->uart_cfg.baudrate >= ARRAY_SIZE(baud_settings)) {
 		LOG_ERR("Selected baudrate variant is not supported: %u.", data->uart_cfg.baudrate);
 		return -ENOTSUP;
 	}

@@ -25,7 +25,7 @@ int sdmmc_read_status(struct sd_card *card)
 	cmd.opcode = SD_SEND_STATUS;
 	cmd.arg = 0;
 	if (!card->host_props.is_spi) {
-		cmd.arg = (card->relative_addr << 16U);
+		cmd.arg = ((uint32_t)card->relative_addr << 16U);
 	}
 	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R2);
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
@@ -440,7 +440,7 @@ int sdmmc_select_card(struct sd_card *card)
 	int ret;
 
 	cmd.opcode = SD_SELECT_CARD;
-	cmd.arg = ((card->relative_addr) << 16U);
+	cmd.arg = ((uint32_t)card->relative_addr << 16U);
 	cmd.response_type = SD_RSP_TYPE_R1;
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
@@ -465,7 +465,7 @@ int card_app_command(struct sd_card *card, int relative_card_address)
 	int ret;
 
 	cmd.opcode = SD_APP_CMD;
-	cmd.arg = relative_card_address << 16U;
+	cmd.arg = (uint32_t)relative_card_address << 16U;
 	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;

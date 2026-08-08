@@ -18,9 +18,6 @@ config SYS_CLOCK_TICKS_PER_SEC
 config TIMESLICE_SIZE
 	default 10
 
-config ARCH_HAS_CUSTOM_BUSY_WAIT
-	default y
-
 if BT
 
 config NUM_METAIRQ_PRIORITIES

@@ -11,6 +11,9 @@ tests:
     depends_on:
       - gpio
       - i2c
+    integration_toolchains:
+      - host/gcc
+      - host/llvm
   drivers.video.spi.build:
     extra_args: DTC_OVERLAY_FILE="spi_devices.overlay"
     extra_configs:
@@ -21,6 +24,9 @@ tests:
     depends_on:
       - gpio
       - spi
+    integration_toolchains:
+      - host/gcc
+      - host/llvm
   drivers.video.mcux_csi.build:
     platform_allow:
       - mimxrt1064_evk

@@ -69,6 +69,7 @@ enum net_dhcpv4_msg_type {
 };
 
 struct net_dhcpv4_option_callback;
+struct net_in_addr;
 
 /**
  * @typedef net_dhcpv4_option_callback_handler_t
@@ -233,6 +234,28 @@ void net_dhcpv4_stop(struct net_if *iface);
  *  @param iface A valid pointer on an interface
  */
 void net_dhcpv4_restart(struct net_if *iface);
+
+/**
+ * @brief Set the address requested in INIT-REBOOT.
+ *
+ * @details Seed the DHCPv4 client with a previously leased address, for
+ * example one restored from non-volatile storage, so that the next
+ * @ref net_dhcpv4_start begins in INIT-REBOOT state and requests it
+ * directly instead of performing a full discovery. Must be called while
+ * the DHCPv4 client is stopped. Requires
+ * @kconfig{CONFIG_NET_DHCPV4_INIT_REBOOT}.
+ *
+ * @param iface DHCPv4 interface.
+ * @param requested_ip Address to request, or an unspecified address to clear
+ *                     the hint.
+ *
+ * @retval 0 On success.
+ * @retval -EINVAL Invalid argument.
+ * @retval -EBUSY DHCPv4 client is active.
+ * @retval -ENOTSUP INIT-REBOOT support is disabled.
+ */
+int net_dhcpv4_set_reboot_hint(struct net_if *iface,
+			       const struct net_in_addr *requested_ip);
 
 /** @cond INTERNAL_HIDDEN */
 

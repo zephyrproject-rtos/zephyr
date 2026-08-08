@@ -7,7 +7,6 @@
 #include <zephyr/device.h>
 #include <xtensa/xtruntime.h>
 #include <zephyr/irq_nextlevel.h>
-#include <xtensa/hal.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
@@ -137,9 +136,20 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	uint32_t cpu = arch_proc_id();
 
 	if (state == PM_STATE_SOFT_OFF) {
+		int32_t a0save;
+
 		core_desc[cpu].intenable = XTENSA_RSR("INTENABLE");
 		z_xt_ints_off(0xffffffff);
-		xthal_window_spill();
+
+		/* Use Zephyr's own window spill routine instead of the
+		 * Xtensa HAL's xthal_window_spill(), entered via CALL0 as
+		 * required by its ABI (only A0 needs saving/restoring).
+		 */
+		__asm__ volatile("mov %0, a0;"
+				 "call0 xtensa_spill_reg_windows;"
+				 "mov a0, %0"
+				 : "=r"(a0save));
+
 		_save_core_context();
 		soc_cpus_active[cpu] = false;
 		sys_cache_data_flush_and_invd_all();
@@ -207,7 +217,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 __no_optimization
 void arch_cpu_idle(void)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 

@@ -536,7 +536,7 @@ ZTEST(dns_sd, test_dns_sd_handle_ptr_query)
 						 NULL,
 						 &actual_rsp[0],
 						 sizeof(actual_rsp) -
-						 sizeof(struct dns_header));
+						 sizeof(struct dns_header), false);
 
 	zassert_true(actual_int > 0,
 		     "dns_sd_handle_ptr_query() failed (%d)",
@@ -551,7 +551,7 @@ ZTEST(dns_sd, test_dns_sd_handle_ptr_query)
 	nonconst_port = 0;
 	zassert_equal(-EHOSTDOWN, dns_sd_handle_ptr_query(NULL, &nasxxxxxx_ephemeral,
 		&addr, NULL, &actual_rsp[0], sizeof(actual_rsp) -
-		sizeof(struct dns_header)), "port zero should not "
+		sizeof(struct dns_header), false), "port zero should not "
 		"produce any DNS-SD query response");
 
 	/* show advertisement for initialized port */
@@ -559,12 +559,44 @@ ZTEST(dns_sd, test_dns_sd_handle_ptr_query)
 	expected_int = sizeof(expected_rsp);
 	zassert_equal(expected_int, dns_sd_handle_ptr_query(NULL, &nasxxxxxx_ephemeral,
 		&addr, NULL, &actual_rsp[0], sizeof(actual_rsp) -
-		sizeof(struct dns_header)), "");
+		sizeof(struct dns_header), false), "");
 
 	zassert_equal(-EINVAL, dns_sd_handle_ptr_query(
 		NULL, &invalid_dns_sd_record,
 		&addr, NULL, &actual_rsp[0], sizeof(actual_rsp) -
-		sizeof(struct dns_header)), "");
+		sizeof(struct dns_header), false), "");
+}
+
+/* RFC 6762 Section 8.3: unsolicited announcements must place every record in the
+ * Answer Section, not the Additional Record Section. Same wire bytes as
+ * test_dns_sd_handle_ptr_query's expected_rsp, except ancount/arcount in the header
+ * (offsets 6-7 and 10-11): all 4 non-PTR records move from arcount into ancount.
+ */
+ZTEST(dns_sd, test_dns_sd_handle_ptr_query_announce)
+{
+	struct net_in_addr addr = {{{177, 5, 240, 13}}};
+	static uint8_t actual_rsp[512];
+	static uint8_t expected_rsp[] = {
+		0x00, 0x00, 0x84, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00, 0x05,
+		0x5f, 0x68, 0x74, 0x74, 0x70, 0x04, 0x5f, 0x74, 0x63, 0x70, 0x05, 0x6c, 0x6f,
+		0x63, 0x61, 0x6c, 0x00, 0x00, 0x0c, 0x00, 0x01, 0x00, 0x00, 0x11, 0x94, 0x00,
+		0x0c, 0x09, 0x4e, 0x41, 0x53, 0x58, 0x58, 0x58, 0x58, 0x58, 0x58, 0xc0, 0x0c,
+		0xc0, 0x28, 0x00, 0x10, 0x80, 0x01, 0x00, 0x00, 0x11, 0x94, 0x00, 0x07, 0x06,
+		0x70, 0x61, 0x74, 0x68, 0x3d, 0x2f, 0xc0, 0x28, 0x00, 0x21, 0x80, 0x01, 0x00,
+		0x00, 0x00, 0x78, 0x00, 0x12, 0x00, 0x00, 0x00, 0x00, 0x1f, 0x90, 0x09, 0x4e,
+		0x41, 0x53, 0x58, 0x58, 0x58, 0x58, 0x58, 0x58, 0xc0, 0x17, 0xc0, 0x59, 0x00,
+		0x01, 0x80, 0x01, 0x00, 0x00, 0x00, 0x78, 0x00, 0x04, 0xb1, 0x05, 0xf0, 0x0d,
+	};
+	int expected_int = sizeof(expected_rsp);
+	int actual_int =
+		dns_sd_handle_ptr_query(NULL, &nasxxxxxx, &addr, NULL, &actual_rsp[0],
+					sizeof(actual_rsp) - sizeof(struct dns_header), true);
+
+	zassert_true(actual_int > 0, "dns_sd_handle_ptr_query() failed (%d)", actual_int);
+
+	zassert_equal(actual_int, expected_int, "act: %d exp: %d", actual_int, expected_int);
+
+	zassert_mem_equal(actual_rsp, expected_rsp, MIN(actual_int, expected_int), "");
 }
 
 /** Test for @ref dns_sd_handle_ptr_query */
@@ -751,11 +783,7 @@ ZTEST(dns_sd, test_is_service_type_enumeration)
 
 ZTEST(dns_sd, test_extract_service_type_enumeration)
 {
-	static const uint8_t query[] = {
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x09, 0x5f,
-		0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x07, 0x5f, 0x64, 0x6e, 0x73, 0x2d,
-		0x73, 0x64, 0x04, 0x5f, 0x75, 0x64, 0x70, 0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00,
-	};
+	static const char name[] = "_services._dns-sd._udp.local";
 
 	struct dns_sd_rec record;
 	char instance[DNS_SD_INSTANCE_MAX_SIZE + 1];
@@ -782,11 +810,153 @@ ZTEST(dns_sd, test_extract_service_type_enumeration)
 	label[2] = proto;
 	label[3] = domain;
 
-	zassert_equal(ARRAY_SIZE(query),
-		      dns_sd_query_extract(query, ARRAY_SIZE(query), &record, label, size, &n),
+	zassert_equal(strlen(name),
+		      dns_sd_query_extract(name, strlen(name), &record, label, size, &n),
 		      "failed to extract service type enumeration");
 
 	zassert_true(dns_sd_is_service_type_enumeration(&record), "");
+}
+
+/* Buffers are all sized DNS_SD_DOMAIN_MAX_SIZE + 1 (rather than named per field,
+ * e.g. a tight DNS_SD_PROTO_SIZE-sized buffer) because which field lands in which
+ * label[] slot depends on the label *count*, not any fixed field-to-slot mapping --
+ * see mdns_responder.c's send_sd_response(), which sizes its own third buffer the
+ * same oversized way for exactly this reason. Shared by every test_extract_name_*
+ * case below that doesn't need a deliberately mis-sized buffer of its own.
+ */
+static int extract_name(const char *name, struct dns_sd_rec *record, size_t *n)
+{
+	static char buf[4][DNS_SD_DOMAIN_MAX_SIZE + 1];
+	char *label[4] = {buf[0], buf[1], buf[2], buf[3]};
+	size_t size[] = {sizeof(buf[0]), sizeof(buf[1]), sizeof(buf[2]), sizeof(buf[3])};
+
+	*n = ARRAY_SIZE(label);
+	return dns_sd_query_extract(name, strlen(name), record, label, size, n);
+}
+
+ZTEST(dns_sd, test_extract_name_basic)
+{
+	static const char name[] = "_zephyr._tcp.local";
+
+	struct dns_sd_rec record;
+	size_t n;
+
+	zassert_equal(strlen(name), extract_name(name, &record, &n),
+		      "failed to extract 3-label name");
+	zassert_equal(3, n, "wrong label count");
+	zassert_str_equal("_zephyr", record.service, "");
+	zassert_str_equal("_tcp", record.proto, "");
+	zassert_str_equal("local", record.domain, "");
+}
+
+ZTEST(dns_sd, test_extract_name_with_instance)
+{
+	static const char name[] = "Zephyr 42._zephyr._tcp.local";
+
+	struct dns_sd_rec record;
+	size_t n;
+
+	zassert_equal(strlen(name), extract_name(name, &record, &n),
+		      "failed to extract 4-label name");
+	zassert_equal(4, n, "wrong label count");
+	zassert_str_equal("Zephyr 42", record.instance, "");
+	zassert_str_equal("_zephyr", record.service, "");
+	zassert_str_equal("_tcp", record.proto, "");
+	zassert_str_equal("local", record.domain, "");
+}
+
+ZTEST(dns_sd, test_extract_name_too_few_labels)
+{
+	static const char name[] = "local";
+
+	struct dns_sd_rec record;
+	size_t n;
+
+	zassert_equal(-EINVAL, extract_name(name, &record, &n),
+		      "single-label name should be rejected");
+}
+
+/* A 5-label name must be rejected as unsupported even when the caller supplies
+ * enough buffer capacity to hold all 5 labels, and even when the first 4
+ * labels alone would form a valid instance/service/proto/domain record.
+ * dns_sd_validate_and_assign()'s DNS_SD_MAX_LABELS branch previously matched
+ * on qlabels >= DNS_SD_MAX_LABELS, which silently accepted and truncated any
+ * qlabels beyond 4 -- discarding the trailing "extra" label below and
+ * returning success -- as long as label_capacity covered them. The chosen
+ * name deliberately makes the first 4 labels individually valid so that this
+ * test only passes on the count check itself, not on an incidental
+ * validation failure elsewhere. Distinct from the ENOBUFS case below, which
+ * only triggers when capacity is too small to reach validation at all.
+ */
+ZTEST(dns_sd, test_extract_name_too_many_labels_with_capacity)
+{
+	static const char name[] = "Zephyr 42._zephyr._tcp.local.extra";
+
+	struct dns_sd_rec record;
+	char buf[5][DNS_SD_DOMAIN_MAX_SIZE + 1];
+	char *label[5] = {buf[0], buf[1], buf[2], buf[3], buf[4]};
+	size_t size[] = {sizeof(buf[0]), sizeof(buf[1]), sizeof(buf[2]), sizeof(buf[3]),
+			 sizeof(buf[4])};
+	size_t n = ARRAY_SIZE(label);
+
+	zassert_equal(-EINVAL,
+		      dns_sd_query_extract(name, strlen(name), &record, label, size, &n),
+		      "5-label name should be rejected even with enough buffer capacity");
+}
+
+/* Consecutive dots (empty label) must be rejected, not silently skipped -- an
+ * empty label is not a valid DNS name segment.
+ */
+ZTEST(dns_sd, test_extract_name_empty_label)
+{
+	static const char name[] = "_zephyr..local";
+
+	struct dns_sd_rec record;
+	size_t n;
+
+	zassert_equal(-EINVAL, extract_name(name, &record, &n),
+		      "empty label (consecutive dots) should be rejected");
+}
+
+ZTEST(dns_sd, test_extract_name_enobufs_too_many_labels)
+{
+	static const char name[] = "sub._sub._zephyr._tcp.local";
+
+	struct dns_sd_rec record;
+	/* Only room for DNS_SD_MAX_LABELS (4); this name has 5 labels. */
+	char buf[DNS_SD_MAX_LABELS][DNS_SD_DOMAIN_MAX_SIZE + 1];
+	char *label[DNS_SD_MAX_LABELS] = {buf[0], buf[1], buf[2], buf[3]};
+	size_t size[] = {sizeof(buf[0]), sizeof(buf[1]), sizeof(buf[2]), sizeof(buf[3])};
+	size_t n = ARRAY_SIZE(label);
+
+	zassert_equal(-ENOBUFS,
+		      dns_sd_query_extract(name, strlen(name), &record, label, size, &n),
+		      "too many labels for the buffer count should be rejected");
+}
+
+/* A 3-label name goes through dns_sd_validate_and_assign()'s DNS_SD_MIN_LABELS
+ * branch, which writes the first segment ("_zephyr") into label[0]. Shrink just
+ * that slot so the label doesn't fit, while leaving the other two slots (which
+ * hold "_tcp" and "local") comfortably sized, so a failure here can only be
+ * attributed to the first slot's bounds check.
+ */
+ZTEST(dns_sd, test_extract_name_enobufs_label_too_long)
+{
+	static const char name[] = "_zephyr._tcp.local";
+
+	struct dns_sd_rec record;
+	/* "_zephyr" is 7 chars; a 7-byte buffer has no room for the NUL. */
+	char buf0[7];
+	char buf1[DNS_SD_DOMAIN_MAX_SIZE + 1];
+	char buf2[DNS_SD_DOMAIN_MAX_SIZE + 1];
+	char buf3[DNS_SD_DOMAIN_MAX_SIZE + 1];
+	char *label[4] = {buf0, buf1, buf2, buf3};
+	size_t size[] = {sizeof(buf0), sizeof(buf1), sizeof(buf2), sizeof(buf3)};
+	size_t n = ARRAY_SIZE(label);
+
+	zassert_equal(-ENOBUFS,
+		      dns_sd_query_extract(name, strlen(name), &record, label, size, &n),
+		      "label that doesn't fit its buffer should be rejected");
 }
 
 ZTEST(dns_sd, test_wildcard_comparison)

@@ -17,18 +17,24 @@ include: zephyr,lvgl-common-input.yaml
 properties:
   swap-xy:
     type: boolean
+    deprecated: true
     description: |
       Swap x-y axes to align input with the display.
+      Deprecated: Use the swap-xy property of the underlying input device instead.
 
   invert-x:
     type: boolean
+    deprecated: true
     description: |
       Invert x axes to align input with the display.
+      Deprecated: Use the invert-x property of the underlying input device instead.
 
   invert-y:
     type: boolean
+    deprecated: true
     description: |
       Invert y axes to align input with the display.
+      Deprecated: Use the invert-y property of the underlying input device instead.
 
 examples:
   - |

@@ -6,6 +6,13 @@
 include: base.yaml
 
 properties:
+  device_type:
+    type: string
+    default: "cpu"
+    description: |
+      Standard device_type identifying this node as a cpu. Required to maintain compatibility
+      with the IEEE 1275 standard as well as for DT_FOREACH_CPU family of devicetree macros to
+      identify cpu nodes within the "/cpus" parent node
   clock-frequency:
     type: int
     description: Clock frequency in Hz
@@ -20,4 +27,10 @@ properties:
     description: d-cache line size
   enable-method:
     type: string
+    enum:
+      - "psci"
+      - "spin-table"
     description: Enable method for cpu, either it is "psci" or "spin-table"
+  cpu-release-addr:
+    type: array
+    description: Address of the release mailbox used by the spin-table enable-method.

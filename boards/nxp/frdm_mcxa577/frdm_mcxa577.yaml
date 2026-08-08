@@ -30,4 +30,6 @@ supported:
   - can
   - dac
   - rtc
+  - crc
+  - pwm
 vendor: nxp

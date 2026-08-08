@@ -181,6 +181,12 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					vref_sc1_otp: vref-sc1@30 {
+						reg = <0x30 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
 					ts_cal1_otp: ts-cal1@a8 {
 						reg = <0xa8 0x2>;
 						#nvmem-cell-cells = <0>;
@@ -195,6 +201,12 @@
 
 					ts_cal2_otp: ts-cal2@ca {
 						reg = <0xca 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					vref_sc0_otp: vref-sc0@f0 {
+						reg = <0xf0 0x2>;
 						#nvmem-cell-cells = <0>;
 						read-only;
 					};
@@ -233,6 +245,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x48000000 0x2000>;
+			ranges;
 
 			gpioa: gpio@48000000 {
 				compatible = "st,stm32-gpio";
@@ -506,7 +519,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
-			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-requests = <7>;
 			dma-offset = <0>;
@@ -517,7 +530,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020400 0x400>;
-			interrupts = <55 0 56 0 57 0 58 0 59 0 60 0 61 0>;
+			interrupts = <55 0>, <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <61 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			dma-requests = <7>;
 			dma-offset = <7>;
@@ -555,7 +568,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xa0001000 0x400>, <0x90000000 DT_SIZE_M(256)>;
-			interrupts = <0x32 0x0>;
+			interrupts = <50 0>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 8)>;
 			status = "disabled";
 		};
@@ -581,6 +594,8 @@
 			compatible = "st,stm32-vrefbuf";
 			reg = <0x40010030 0xd0>;
 			ref-voltages = <2048000>, <2500000>;
+			st,has-active-scale-change;
+			nvmem-cells = <&vref_sc0_otp>, <&vref_sc1_otp>;
 			status = "disabled";
 		};
 

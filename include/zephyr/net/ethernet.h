@@ -1,7 +1,6 @@
-/** @file
- @brief Ethernet
-
- This is not to be included by the application.
+/**
+ * @file
+ * @brief Ethernet
  */
 
 /*
@@ -166,9 +165,6 @@ enum ethernet_hw_caps {
 
 	/** 5 Gbits link supported */
 	ETHERNET_LINK_5000BASE		= BIT(7),
-
-	/** IEEE 802.1AS (gPTP) clock supported */
-	ETHERNET_PTP			= BIT(8),
 
 	/** IEEE 802.1Qav (credit-based shaping) supported */
 	ETHERNET_QAV			= BIT(9),

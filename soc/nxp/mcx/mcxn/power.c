@@ -51,6 +51,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		break;
 
 	case PM_STATE_SUSPEND_TO_IDLE:
+		SPC_SetLowPowerWakeUpDelay(SPC0, MCXN_WAKEUP_DELAY);
 		CMC_SetClockMode(MCXN_CMC_ADDR, kCMC_GateAllSystemClocksEnterLowPowerMode);
 		CMC_SetMAINPowerMode(MCXN_CMC_ADDR, kCMC_DeepSleepMode);
 		CMC_SetWAKEPowerMode(MCXN_CMC_ADDR, kCMC_DeepSleepMode);

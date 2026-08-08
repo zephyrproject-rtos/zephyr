@@ -108,52 +108,52 @@ ZTEST(lib_word_granular_access, test_mem_is_word_granular_access)
 	ztest_test_fail();
 }
 
-ZTEST(lib_word_granular_access, test_memset_word_granular_access)
+ZTEST(lib_word_granular_access, test_sys_memset_word_granular_access)
 {
 	uint8_t *wga_ptr;
 
 	/* adjacent byte preservation */
 	memset((uint8_t *)(expected_dst_buf + 4) + 2, 0xAB, 1);
 	wga_ptr = (uint8_t *)(wga_buf + 4) + 2;
-	memset_word_granular_access(wga_ptr, 0xAB, 1);
+	sys_memset_word_granular_access(wga_ptr, 0xAB, 1);
 	CHECK_DATA_MEMSET(wga_buf, expected_dst_buf, "memset", 0xAB, wga_ptr, 1);
 
 	/* word-aligned destination, word-aligned end */
 	memset((uint8_t *)(expected_dst_buf + 5), 0xCD, 8);
 	wga_ptr = (uint8_t *)(wga_buf + 5);
-	memset_word_granular_access(wga_ptr, 0xCD, 8);
+	sys_memset_word_granular_access(wga_ptr, 0xCD, 8);
 	CHECK_DATA_MEMSET(wga_buf, expected_dst_buf, "memset", 0xCD, wga_ptr, 8);
 
 	/* word-aligned destination, length is 1 byte under word boundary */
 	memset((uint8_t *)(expected_dst_buf + 7), 0xEF, 7);
 	wga_ptr = (uint8_t *)(wga_buf + 7);
-	memset_word_granular_access(wga_ptr, 0xEF, 7);
+	sys_memset_word_granular_access(wga_ptr, 0xEF, 7);
 	CHECK_DATA_MEMSET(wga_buf, expected_dst_buf, "memset", 0xEF, wga_ptr, 7);
 
 	/* half-aligned destination, length is 1 byte over word boundary */
 	memset((uint8_t *)(expected_dst_buf + 9) + 2, 0x12, 9);
 	wga_ptr = (uint8_t *)(wga_buf + 9) + 2;
-	memset_word_granular_access(wga_ptr, 0x12, 9);
+	sys_memset_word_granular_access(wga_ptr, 0x12, 9);
 	CHECK_DATA_MEMSET(wga_buf, expected_dst_buf, "memset", 0x12, wga_ptr, 9);
 
 	/* byte-aligned destination, spanning two words */
 	memset((uint8_t *)(expected_dst_buf + 12) + 1, 0x34, 4);
 	wga_ptr = (uint8_t *)(wga_buf + 12) + 1;
-	memset_word_granular_access(wga_ptr, 0x34, 4);
+	sys_memset_word_granular_access(wga_ptr, 0x34, 4);
 	CHECK_DATA_MEMSET(wga_buf, expected_dst_buf, "memset", 0x34, wga_ptr, 4);
 
 	/* zero length */
-	memset_word_granular_access(wga_buf, 0x00, 0);
+	sys_memset_word_granular_access(wga_buf, 0x00, 0);
 	CHECK_DATA_MEMSET(wga_buf, expected_dst_buf, "memset", 0x00, wga_buf, 0);
 
 	/* fill buffer with repeating pattern */
 	memset(expected_dst_buf, 0xAB, ARR_SIZE * sizeof(uint32_t));
-	memset_word_granular_access(wga_buf, 0xAB, ARR_SIZE * sizeof(uint32_t));
+	sys_memset_word_granular_access(wga_buf, 0xAB, ARR_SIZE * sizeof(uint32_t));
 	CHECK_DATA_MEMSET(wga_buf, expected_dst_buf, "memset", 0xAB, wga_buf,
 			  ARR_SIZE * sizeof(uint32_t));
 }
 
-ZTEST(lib_word_granular_access, test_memcpy_to_word_granular_access)
+ZTEST(lib_word_granular_access, test_sys_memcpy_to_word_granular_access)
 {
 	uint8_t *non_wga_ptr;
 	uint8_t *wga_ptr;
@@ -162,7 +162,7 @@ ZTEST(lib_word_granular_access, test_memcpy_to_word_granular_access)
 	memcpy((uint8_t *)(expected_dst_buf + 4) + 3, (uint8_t *)expected_src_buf + 1, 1);
 	non_wga_ptr = (uint8_t *)non_wga_buf + 1;
 	wga_ptr = (uint8_t *)(wga_buf + 4) + 3;
-	memcpy_to_word_granular_access(wga_ptr, non_wga_ptr, 1);
+	sys_memcpy_to_word_granular_access(wga_ptr, non_wga_ptr, 1);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_src_buf, "memcpy", non_wga_ptr, wga_ptr, 1);
 	CHECK_DATA_MEMCPY(wga_buf, expected_dst_buf, "memcpy", non_wga_ptr, wga_ptr, 1);
 
@@ -170,7 +170,7 @@ ZTEST(lib_word_granular_access, test_memcpy_to_word_granular_access)
 	memcpy((uint8_t *)(expected_dst_buf + 5), (uint8_t *)(expected_src_buf + 1), 9);
 	non_wga_ptr = (uint8_t *)(non_wga_buf + 1);
 	wga_ptr = (uint8_t *)(wga_buf + 5);
-	memcpy_to_word_granular_access(wga_ptr, non_wga_ptr, 9);
+	sys_memcpy_to_word_granular_access(wga_ptr, non_wga_ptr, 9);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_src_buf, "memcpy", non_wga_ptr, wga_ptr, 9);
 	CHECK_DATA_MEMCPY(wga_buf, expected_dst_buf, "memcpy", non_wga_ptr, wga_ptr, 9);
 
@@ -178,7 +178,7 @@ ZTEST(lib_word_granular_access, test_memcpy_to_word_granular_access)
 	memcpy((uint8_t *)(expected_dst_buf + 7) + 2, (uint8_t *)(expected_src_buf + 2) + 2, 9);
 	non_wga_ptr = (uint8_t *)(non_wga_buf + 2) + 2;
 	wga_ptr = (uint8_t *)(wga_buf + 7) + 2;
-	memcpy_to_word_granular_access(wga_ptr, non_wga_ptr, 9);
+	sys_memcpy_to_word_granular_access(wga_ptr, non_wga_ptr, 9);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_src_buf, "memcpy", non_wga_ptr, wga_ptr, 9);
 	CHECK_DATA_MEMCPY(wga_buf, expected_dst_buf, "memcpy", non_wga_ptr, wga_ptr, 9);
 
@@ -186,12 +186,12 @@ ZTEST(lib_word_granular_access, test_memcpy_to_word_granular_access)
 	memcpy((uint8_t *)(expected_dst_buf + 9) + 1, (uint8_t *)(expected_src_buf + 3) + 3, 6);
 	non_wga_ptr = (uint8_t *)(non_wga_buf + 3) + 3;
 	wga_ptr = (uint8_t *)(wga_buf + 9) + 1;
-	memcpy_to_word_granular_access(wga_ptr, non_wga_ptr, 6);
+	sys_memcpy_to_word_granular_access(wga_ptr, non_wga_ptr, 6);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_src_buf, "memcpy", non_wga_ptr, wga_ptr, 6);
 	CHECK_DATA_MEMCPY(wga_buf, expected_dst_buf, "memcpy", non_wga_ptr, wga_ptr, 6);
 
 	/* zero length */
-	memcpy_to_word_granular_access(wga_buf, non_wga_buf, 0);
+	sys_memcpy_to_word_granular_access(wga_buf, non_wga_buf, 0);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_src_buf, "memcpy", non_wga_buf, wga_buf, 0);
 	CHECK_DATA_MEMCPY(wga_buf, expected_dst_buf, "memcpy", non_wga_buf, wga_buf, 0);
 
@@ -200,14 +200,14 @@ ZTEST(lib_word_granular_access, test_memcpy_to_word_granular_access)
 	       (ARR_SIZE * sizeof(uint32_t)) - 4);
 	non_wga_ptr = (uint8_t *)non_wga_buf + 1;
 	wga_ptr = (uint8_t *)(wga_buf) + 3;
-	memcpy_to_word_granular_access(wga_ptr, non_wga_ptr, (ARR_SIZE * sizeof(uint32_t)) - 4);
+	sys_memcpy_to_word_granular_access(wga_ptr, non_wga_ptr, (ARR_SIZE * sizeof(uint32_t)) - 4);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_src_buf, "memcpy", non_wga_ptr, wga_ptr,
 			  (ARR_SIZE * sizeof(uint32_t)) - 4);
 	CHECK_DATA_MEMCPY(wga_buf, expected_dst_buf, "memcpy", non_wga_ptr, wga_ptr,
 			  (ARR_SIZE * sizeof(uint32_t)) - 4);
 }
 
-ZTEST(lib_word_granular_access, test_memcpy_from_word_granular_access)
+ZTEST(lib_word_granular_access, test_sys_memcpy_from_word_granular_access)
 {
 	uint8_t *wga_ptr;
 	uint8_t *non_wga_ptr;
@@ -216,7 +216,7 @@ ZTEST(lib_word_granular_access, test_memcpy_from_word_granular_access)
 	memcpy((uint8_t *)(expected_dst_buf + 4) + 3, (uint8_t *)expected_src_buf + 1, 1);
 	wga_ptr = (uint8_t *)wga_buf + 1;
 	non_wga_ptr = (uint8_t *)(non_wga_buf + 4) + 3;
-	memcpy_from_word_granular_access(non_wga_ptr, wga_ptr, 1);
+	sys_memcpy_from_word_granular_access(non_wga_ptr, wga_ptr, 1);
 	CHECK_DATA_MEMCPY(wga_buf, expected_src_buf, "memcpy", wga_ptr, non_wga_ptr, 1);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_dst_buf, "memcpy", wga_ptr, non_wga_ptr, 1);
 
@@ -224,7 +224,7 @@ ZTEST(lib_word_granular_access, test_memcpy_from_word_granular_access)
 	memcpy((uint8_t *)(expected_dst_buf + 5), (uint8_t *)(expected_src_buf + 1), 7);
 	wga_ptr = (uint8_t *)(wga_buf + 1);
 	non_wga_ptr = (uint8_t *)(non_wga_buf + 5);
-	memcpy_from_word_granular_access(non_wga_ptr, wga_ptr, 7);
+	sys_memcpy_from_word_granular_access(non_wga_ptr, wga_ptr, 7);
 	CHECK_DATA_MEMCPY(wga_buf, expected_src_buf, "memcpy", wga_ptr, non_wga_ptr, 7);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_dst_buf, "memcpy", wga_ptr, non_wga_ptr, 7);
 
@@ -232,7 +232,7 @@ ZTEST(lib_word_granular_access, test_memcpy_from_word_granular_access)
 	memcpy((uint8_t *)(expected_dst_buf + 7) + 2, (uint8_t *)(expected_src_buf + 2) + 2, 7);
 	wga_ptr = (uint8_t *)(wga_buf + 2) + 2;
 	non_wga_ptr = (uint8_t *)(non_wga_buf + 7) + 2;
-	memcpy_from_word_granular_access(non_wga_ptr, wga_ptr, 7);
+	sys_memcpy_from_word_granular_access(non_wga_ptr, wga_ptr, 7);
 	CHECK_DATA_MEMCPY(wga_buf, expected_src_buf, "memcpy", wga_ptr, non_wga_ptr, 7);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_dst_buf, "memcpy", wga_ptr, non_wga_ptr, 7);
 
@@ -240,12 +240,12 @@ ZTEST(lib_word_granular_access, test_memcpy_from_word_granular_access)
 	memcpy((uint8_t *)(expected_dst_buf + 9) + 1, (uint8_t *)(expected_src_buf + 3) + 3, 6);
 	wga_ptr = (uint8_t *)(wga_buf + 3) + 3;
 	non_wga_ptr = (uint8_t *)(non_wga_buf + 9) + 1;
-	memcpy_from_word_granular_access(non_wga_ptr, wga_ptr, 6);
+	sys_memcpy_from_word_granular_access(non_wga_ptr, wga_ptr, 6);
 	CHECK_DATA_MEMCPY(wga_buf, expected_src_buf, "memcpy", wga_ptr, non_wga_ptr, 6);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_dst_buf, "memcpy", wga_ptr, non_wga_ptr, 6);
 
 	/* zero length */
-	memcpy_from_word_granular_access(non_wga_buf, wga_buf, 0);
+	sys_memcpy_from_word_granular_access(non_wga_buf, wga_buf, 0);
 	CHECK_DATA_MEMCPY(wga_buf, expected_src_buf, "memcpy", wga_buf, non_wga_buf, 0);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_dst_buf, "memcpy", wga_buf, non_wga_buf, 0);
 
@@ -254,7 +254,8 @@ ZTEST(lib_word_granular_access, test_memcpy_from_word_granular_access)
 	       (ARR_SIZE * sizeof(uint32_t)) - 4);
 	wga_ptr = (uint8_t *)wga_buf + 1;
 	non_wga_ptr = (uint8_t *)(non_wga_buf) + 3;
-	memcpy_from_word_granular_access(non_wga_ptr, wga_ptr, (ARR_SIZE * sizeof(uint32_t)) - 4);
+	sys_memcpy_from_word_granular_access(non_wga_ptr, wga_ptr,
+					     (ARR_SIZE * sizeof(uint32_t)) - 4);
 	CHECK_DATA_MEMCPY(wga_buf, expected_src_buf, "memcpy", wga_ptr, non_wga_ptr,
 			  (ARR_SIZE * sizeof(uint32_t)) - 4);
 	CHECK_DATA_MEMCPY(non_wga_buf, expected_dst_buf, "memcpy", wga_ptr, non_wga_ptr,

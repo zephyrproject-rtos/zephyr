@@ -35,6 +35,13 @@ endif # COVERAGE_GCOV
 
 endif # BOARD_MPS2_AN383 || BOARD_MPS2_AN385 || BOARD_MPS2_AN386 || BOARD_MPS2_AN500
 
+if BOARD_MPS2_AN385
+
+configdefault QEMU_ICOUNT_SHIFT
+	default 7
+
+endif # BOARD_MPS2_AN385
+
 if BOARD_MPS2_AN521_CPU0 || BOARD_MPS2_AN521_CPU0_NS || BOARD_MPS2_AN521_CPU1
 
 # MPU-based null-pointer dereferencing detection cannot

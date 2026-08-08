@@ -27,9 +27,15 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_log.h>
+#include <zephyr/net/ppp.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
+#if defined(CONFIG_NET_STATISTICS)
+#include "net_stats.h"
+#endif
+
+#include "ppp_internal.h"
 
 typedef enum net_verdict (*ppp_l2_callback_t)(struct net_if *iface,
 					      struct net_pkt *pkt);
@@ -336,8 +342,8 @@ static void ppp_verify_fcs(uint8_t *buf, int len)
 
 	net_pkt_read_be16(pkt, &addr_and_ctrl);
 
-	/* Currently we do not support compressed Address and Control
-	 * fields so they must always be present.
+	/* The test vectors handled here are uncompressed frames, so the
+	 * Address and Control fields must be present.
 	 */
 	if (addr_and_ctrl != (0xff << 8 | 0x03)) {
 		zassert_true(false, "Invalid address / control bytes");
@@ -407,8 +413,8 @@ static void ppp_calc_fcs(uint8_t *buf, int len)
 
 	net_pkt_read_be16(pkt, &addr_and_ctrl);
 
-	/* Currently we do not support compressed Address and Control
-	 * fields so they must always be present.
+	/* The test vectors handled here are uncompressed frames, so the
+	 * Address and Control fields must be present.
 	 */
 	if (addr_and_ctrl != (0xff << 8 | 0x03)) {
 		zassert_true(false, "Invalid address / control bytes");
@@ -537,6 +543,346 @@ static void test_send_ppp_8(void)
 		zassert_true(false, "Timeout, packet not received");
 	}
 }
+
+/* HDLC-wrap a frame: append the FCS, delimit with 0x7e and escape the body. */
+static size_t hdlc_wrap(uint8_t *out, const uint8_t *frame, size_t len)
+{
+	uint16_t fcs = crc16_ccitt(0xffff, frame, len) ^ 0xffff;
+	size_t pos = 0;
+
+	out[pos++] = 0x7e;
+	for (size_t i = 0; i < len + 2; i++) {
+		uint8_t b;
+
+		if (i < len) {
+			b = frame[i];
+		} else if (i == len) {
+			/* FCS is transmitted low octet first */
+			b = fcs & 0xff;
+		} else {
+			b = fcs >> 8;
+		}
+
+		if (b == 0x7e || b == 0x7d || b < 0x20) {
+			out[pos++] = 0x7d;
+			out[pos++] = b ^ 0x20;
+		} else {
+			out[pos++] = b;
+		}
+	}
+	out[pos++] = 0x7e;
+
+	return pos;
+}
+
+/* 0x0023 has the even-high/odd-low octets required of a PPP protocol number
+ * and PFC compresses it to the single octet 0x23.
+ */
+#define TEST_PFC_PROTOCOL 0x0023
+
+static struct k_sem proto_handler_sem;
+static uint8_t proto_handler_data[32];
+static size_t proto_handler_data_len;
+
+static void test_proto_init(struct ppp_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+
+static enum net_verdict test_proto_handler(struct ppp_context *ctx, struct net_if *iface,
+					   struct net_pkt *pkt)
+{
+	size_t len = net_pkt_remaining_data(pkt);
+
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(iface);
+
+	proto_handler_data_len = 0;
+	if (len <= sizeof(proto_handler_data) && net_pkt_read(pkt, proto_handler_data, len) == 0) {
+		proto_handler_data_len = len;
+	}
+
+	k_sem_give(&proto_handler_sem);
+
+	return NET_OK;
+}
+
+PPP_PROTOCOL_REGISTER(TEST_PFC, TEST_PFC_PROTOCOL, test_proto_init, test_proto_handler, NULL, NULL,
+		      NULL, NULL);
+
+static void pfc_iface_setup(void)
+{
+	net_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
+	zassert_not_null(net_iface, "PPP interface not found!");
+
+	/* Drive the real L2 receive path, not the HDLC-decode capture
+	 * callback.
+	 */
+	ppp_l2_register_pkt_cb(NULL);
+	net_if_up(net_iface);
+}
+
+/* Longest test frame body used by the ACFC tests: Protocol field plus payload */
+#define ACFC_MAX_FRAME 16
+
+/* Payload including octets that need HDLC escaping */
+static const uint8_t acfc_payload[] = {0x7e, 0x7d, 0x11, 0x00, 0x23, 0x45, 0xff, 0x03};
+
+/* Append an HDLC-wrapped frame to a wire buffer. Frames after the first share
+ * the flag octet that closes the previous one, which is what a peer sending a
+ * burst of frames does.
+ */
+static size_t hdlc_append(uint8_t *out, size_t off, const uint8_t *frame, size_t len)
+{
+	uint8_t tmp[2 * (ACFC_MAX_FRAME + 2) + 2];
+	size_t n;
+
+	zassert_true(len <= ACFC_MAX_FRAME, "Test frame too long");
+
+	n = hdlc_wrap(tmp, frame, len);
+
+	if (off == 0) {
+		memcpy(out, tmp, n);
+		return n;
+	}
+
+	memcpy(&out[off], &tmp[1], n - 1);
+
+	return off + n - 1;
+}
+
+static void expect_acfc_payload(const char *what)
+{
+	zassert_ok(k_sem_take(&proto_handler_sem, WAIT_TIME_LONG),
+		   "Timeout, %s frame not received", what);
+	zassert_equal(proto_handler_data_len, sizeof(acfc_payload),
+		      "%s payload length incorrect", what);
+	zassert_mem_equal(proto_handler_data, acfc_payload, sizeof(acfc_payload),
+			  "%s payload incorrect", what);
+}
+
+ZTEST(net_ppp_test_suite, test_acfc_frame_receive)
+{
+	/* 23 | payload: no Address and Control fields, and the Protocol field
+	 * compressed to a single octet.
+	 */
+	uint8_t frame[1 + sizeof(acfc_payload)] = {0x23};
+	uint8_t wire[2 * (sizeof(frame) + 2) + 2];
+	size_t wire_len;
+
+	memcpy(&frame[1], acfc_payload, sizeof(acfc_payload));
+
+	pfc_iface_setup();
+	k_sem_init(&proto_handler_sem, 0, 1);
+
+	wire_len = hdlc_wrap(wire, frame, sizeof(frame));
+	ppp_driver_feed_data(wire, wire_len);
+
+	expect_acfc_payload("ACFC");
+}
+
+ZTEST(net_ppp_test_suite, test_acfc_uncompressed_protocol_receive)
+{
+	/* 00 23 | payload: no Address and Control fields, but a full two octet
+	 * Protocol field. The 0x00 goes on the wire escaped, so this only
+	 * decodes if the first octet of a frame is unescaped like any other.
+	 */
+	uint8_t frame[2 + sizeof(acfc_payload)] = {0x00, 0x23};
+	uint8_t wire[2 * (sizeof(frame) + 2) + 2];
+	size_t wire_len;
+
+	memcpy(&frame[2], acfc_payload, sizeof(acfc_payload));
+
+	pfc_iface_setup();
+	k_sem_init(&proto_handler_sem, 0, 1);
+
+	wire_len = hdlc_wrap(wire, frame, sizeof(frame));
+	zassert_equal(wire[1], 0x7d, "Expected the first frame octet to be escaped");
+
+	ppp_driver_feed_data(wire, wire_len);
+
+	expect_acfc_payload("ACFC with uncompressed protocol");
+}
+
+ZTEST(net_ppp_test_suite, test_acfc_interleaved_with_full_header)
+{
+	uint8_t compressed[1 + sizeof(acfc_payload)] = {0x23};
+	uint8_t full[4 + sizeof(acfc_payload)] = {0xff, 0x03, 0x00, 0x23};
+	uint8_t wire[3 * (2 * (ACFC_MAX_FRAME + 2) + 2)];
+	size_t wire_len;
+
+	memcpy(&compressed[1], acfc_payload, sizeof(acfc_payload));
+	memcpy(&full[4], acfc_payload, sizeof(acfc_payload));
+
+	pfc_iface_setup();
+	k_sem_init(&proto_handler_sem, 0, 3);
+
+	/* Both forms must be decoded when they arrive back to back, sharing
+	 * the flag octet between them.
+	 */
+	wire_len = hdlc_append(wire, 0, full, sizeof(full));
+	wire_len = hdlc_append(wire, wire_len, compressed, sizeof(compressed));
+	wire_len = hdlc_append(wire, wire_len, full, sizeof(full));
+
+	ppp_driver_feed_data(wire, wire_len);
+
+	expect_acfc_payload("first uncompressed");
+	expect_acfc_payload("ACFC");
+	expect_acfc_payload("second uncompressed");
+}
+
+ZTEST(net_ppp_test_suite, test_acfc_frame_after_aborted_frame)
+{
+	uint8_t full[4 + sizeof(acfc_payload)] = {0xff, 0x03, 0x00, 0x23};
+	uint8_t compressed[1 + sizeof(acfc_payload)] = {0x23};
+	uint8_t wire[2 * (2 * (ACFC_MAX_FRAME + 2) + 2)];
+	size_t wire_len;
+
+	memcpy(&full[4], acfc_payload, sizeof(acfc_payload));
+	memcpy(&compressed[1], acfc_payload, sizeof(acfc_payload));
+
+	pfc_iface_setup();
+	k_sem_init(&proto_handler_sem, 0, 2);
+
+	wire_len = hdlc_append(wire, 0, full, sizeof(full));
+
+	/* Turn the closing flag into a dangling escape followed by the flag.
+	 * RFC 1662 ch. 4.2 calls that an aborted frame; this receiver does not
+	 * discard it and still delivers the octets it collected, which is what
+	 * the first check below expects. What matters here is that the pending
+	 * escape must not be carried over into the next frame.
+	 */
+	wire[wire_len - 1] = 0x7d;
+	wire[wire_len++] = 0x7e;
+
+	wire_len = hdlc_append(wire, wire_len, compressed, sizeof(compressed));
+
+	ppp_driver_feed_data(wire, wire_len);
+
+	expect_acfc_payload("uncompressed");
+	expect_acfc_payload("ACFC after a dangling escape");
+}
+
+ZTEST(net_ppp_test_suite, test_pfc_protocol_receive)
+{
+	/* Payload including bytes that need HDLC escaping */
+	static const uint8_t payload[] = {0x7e, 0x7d, 0x11, 0x00, 0x23, 0x45, 0xff, 0x03};
+	/* FF 03 | 23 | payload: PFC-compressed 1-octet protocol */
+	uint8_t compressed[3 + sizeof(payload)] = {0xff, 0x03, 0x23};
+	/* FF 03 | 00 23 | payload: full 2-octet protocol */
+	uint8_t uncompressed[4 + sizeof(payload)] = {0xff, 0x03, 0x00, 0x23};
+	uint8_t wire[2 * (sizeof(uncompressed) + 2) + 2];
+	size_t wire_len;
+
+	memcpy(&compressed[3], payload, sizeof(payload));
+	memcpy(&uncompressed[4], payload, sizeof(payload));
+
+	pfc_iface_setup();
+	k_sem_init(&proto_handler_sem, 0, 1);
+
+	/* A PFC-compressed frame must reach the protocol handler */
+	wire_len = hdlc_wrap(wire, compressed, sizeof(compressed));
+	ppp_driver_feed_data(wire, wire_len);
+
+	zassert_ok(k_sem_take(&proto_handler_sem, WAIT_TIME_LONG),
+		   "Timeout, PFC frame not received");
+	zassert_equal(proto_handler_data_len, sizeof(payload), "PFC payload length incorrect");
+	zassert_mem_equal(proto_handler_data, payload, sizeof(payload), "PFC payload incorrect");
+
+	/* The uncompressed form must decode to the same payload */
+	wire_len = hdlc_wrap(wire, uncompressed, sizeof(uncompressed));
+	ppp_driver_feed_data(wire, wire_len);
+
+	zassert_ok(k_sem_take(&proto_handler_sem, WAIT_TIME_LONG),
+		   "Timeout, uncompressed frame not received");
+	zassert_equal(proto_handler_data_len, sizeof(payload),
+		      "Uncompressed payload length incorrect");
+	zassert_mem_equal(proto_handler_data, payload, sizeof(payload),
+			  "Uncompressed payload incorrect");
+}
+
+#if defined(CONFIG_NET_STATISTICS) && defined(CONFIG_NET_STATISTICS_IPV4)
+ZTEST(net_ppp_test_suite, test_pfc_ip_frame_receive)
+{
+	/* IPv4/UDP packet; net_ipv4_input() counts it in ipv4.recv before any
+	 * further checks, which only happens if the compressed protocol octet
+	 * alone was removed and the packet still starts with the 0x45 version
+	 * nibble.
+	 */
+	static const uint8_t ip_packet[] = {
+		0x45, 0x00, 0x00, 0x29, 0x87, 0x6e, 0x40, 0x00, 0xe8, 0x11, 0xc1, 0xe9, 0x03, 0xfb,
+		0x05, 0x20, 0x0a, 0x2b, 0x36, 0x26, 0x25, 0x12, 0x8c, 0x3e, 0x00, 0x15, 0xbd, 0xf3,
+		0x2d, 0x00, 0x0b, 0x00, 0x07, 0x00, 0x04, 0x00, 0x04, 0x0a, 0x00, 0x0a, 0x00,
+	};
+	/* FF 03 | 21 | IPv4 packet: IP protocol 0x0021 PFC-compressed */
+	uint8_t frame[3 + sizeof(ip_packet)] = {0xff, 0x03, 0x21};
+	uint8_t wire[2 * (sizeof(frame) + 2) + 2];
+	uint32_t recv_before;
+	size_t wire_len;
+
+	memcpy(&frame[3], ip_packet, sizeof(ip_packet));
+
+	pfc_iface_setup();
+
+	recv_before = GET_STAT(net_iface, ipv4.recv);
+
+	wire_len = hdlc_wrap(wire, frame, sizeof(frame));
+	ppp_driver_feed_data(wire, wire_len);
+
+	for (int i = 0; i < 20; i++) {
+		if (GET_STAT(net_iface, ipv4.recv) != recv_before) {
+			break;
+		}
+		k_msleep(50);
+	}
+
+	zassert_equal(GET_STAT(net_iface, ipv4.recv), recv_before + 1,
+		      "PFC IP frame did not reach IPv4 processing");
+}
+#endif /* CONFIG_NET_STATISTICS && CONFIG_NET_STATISTICS_IPV4 */
+
+#if defined(CONFIG_NET_L2_PPP_OPTION_PFC) && defined(CONFIG_NET_L2_PPP_OPTION_ACFC)
+ZTEST(net_ppp_test_suite, test_lcp_peer_pfc_acfc_options)
+{
+	/* LCP Configure-Request carrying only the PFC (07 02) and ACFC (08 02)
+	 * options, so the whole request is acceptable and acknowledged:
+	 * FF 03 | C0 21 | code=01 id=01 len=0008 | 07 02 | 08 02
+	 */
+	static const uint8_t req[] = {
+		0xff, 0x03, 0xc0, 0x21, 0x01, 0x01, 0x00, 0x08, 0x07, 0x02, 0x08, 0x02,
+	};
+	uint8_t wire[2 * (sizeof(req) + 2) + 2];
+	struct ppp_context *ctx;
+	size_t wire_len;
+
+	pfc_iface_setup();
+
+	ctx = net_if_l2_data(net_iface);
+
+	/* LCP is opened from a net_mgmt event handler, so wait for the FSM to
+	 * reach a state that processes a Configure-Request. With no peer to
+	 * answer our own request it settles in PPP_REQUEST_SENT.
+	 */
+	zassert_true(WAIT_FOR(ctx->lcp.fsm.state == PPP_REQUEST_SENT,
+			      WAIT_TIME * USEC_PER_MSEC, k_msleep(1)),
+		     "LCP did not reach PPP_REQUEST_SENT");
+
+	ctx->lcp.peer_options.pfc = false;
+	ctx->lcp.peer_options.acfc = false;
+
+	wire_len = hdlc_wrap(wire, req, sizeof(req));
+	ppp_driver_feed_data(wire, wire_len);
+
+	/* Let the net RX thread run the frame through the LCP FSM */
+	(void)WAIT_FOR(ctx->lcp.peer_options.pfc && ctx->lcp.peer_options.acfc,
+		       WAIT_TIME * USEC_PER_MSEC, k_msleep(1));
+
+	zassert_true(ctx->lcp.peer_options.pfc,
+		     "Peer Protocol-Field-Compression request not recorded");
+	zassert_true(ctx->lcp.peer_options.acfc,
+		     "Peer Address-and-Control-Field-Compression request not recorded");
+}
+#endif /* CONFIG_NET_L2_PPP_OPTION_PFC && CONFIG_NET_L2_PPP_OPTION_ACFC */
 
 ZTEST(net_ppp_test_suite, test_net_ppp)
 {

@@ -5008,6 +5008,26 @@ ZTEST(net_socket_quic, test_460_required_peer_verification_rejects_finished_with
 			  "Handshake must not reach CONNECTED without peer certificate");
 }
 
+/* RFC 9001 6: the TLS KeyUpdate message is prohibited in QUIC and must be
+ * rejected as a protocol violation, not silently ignored.
+ */
+ZTEST(net_socket_quic, test_461_tls_keyupdate_is_rejected)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_tls_context ctx = { 0 };
+	static const uint8_t body[] = { 0x00 }; /* update_not_requested */
+	static const uint8_t full_msg[] = { TLS_HS_KEY_UPDATE, 0x00, 0x00, 0x01, 0x00 };
+	int ret;
+
+	ep->is_server = true;
+	ctx.ep = ep;
+
+	ret = process_handshake_message(&ctx, TLS_HS_KEY_UPDATE,
+					body, sizeof(body), full_msg, sizeof(full_msg));
+	zassert_equal(ret, -EPROTO,
+		      "TLS KeyUpdate must be rejected with -EPROTO (%d)", ret);
+}
+
 ZTEST(net_socket_quic, test_465_external_psk_handshake_can_exchange_data)
 {
 	int ret;

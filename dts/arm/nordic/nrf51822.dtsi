@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2020 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <arm/armv6-m.dtsi>
 #include <nordic/nrf_common.dtsi>
@@ -78,6 +82,16 @@
 			reg = <0x40000000 0x1000>;
 			interrupts = <0 NRF_DEFAULT_IRQ_PRIORITY>;
 			status = "okay";
+
+			hfclk: hfclk {
+				compatible = "nordic,nrf-clock-hfclk";
+				status = "okay";
+			};
+
+			lfclk: lfclk {
+				compatible = "nordic,nrf-clock-lfclk";
+				status = "okay";
+			};
 		};
 
 		nrf_mpu: nrf-mpu@40000000 {

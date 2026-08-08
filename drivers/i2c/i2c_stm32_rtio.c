@@ -27,13 +27,6 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_rtio);
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
 
-/* This symbol takes the value 1 if one of the device instances */
-/* is configured in dts with a domain clock */
-#if STM32_DT_INST_DEV_DOMAIN_CLOCK_SUPPORT
-#define I2C_STM32_DOMAIN_CLOCK_SUPPORT 1
-#else
-#define I2C_STM32_DOMAIN_CLOCK_SUPPORT 0
-#endif
 
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 {
@@ -44,7 +37,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	uint32_t i2c_clock = 0U;
 	int ret;
 
-	if (IS_ENABLED(I2C_STM32_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+	if (cfg->pclk_len > 1) {
 		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
 					   &i2c_clock) < 0) {
 			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
@@ -86,9 +79,6 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	return ret;
 }
 
-/* Return true when message is started and will complete from an interrupt
- * handler, otherwise return false and set return status in @param status.
- */
 static bool i2c_stm32_start(const struct device *dev, int *status)
 {
 	struct i2c_stm32_data *data = dev->data;
@@ -126,7 +116,10 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 		return false;
 #if CONFIG_I2C_STM32_BUS_RECOVERY
 	case RTIO_OP_I2C_RECOVER:
-		k_work_submit(&data->recovery_work);
+		error = k_work_submit(&data->recovery_work);
+		if (error < 0) {
+			break;
+		}
 		return true;
 #endif
 	default:
@@ -144,29 +137,16 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 	return true;
 }
 
-static void i2c_stm32_start_or_complete(const struct device *dev)
-{
-	struct i2c_stm32_data *data = dev->data;
-	int status;
-
-	/* Process all synchronous sequences until an async one is started (which will complete
-	 * from an asynchronous handler) or the synchronous sequence is the last queued one.
-	 */
-	while (!i2c_stm32_start(dev, &status)) {
-		if (!i2c_rtio_complete(data->ctx, status)) {
-			i2c_stm32_pm_put(dev);
-			return;
-		}
-	}
-}
-
 void i2c_stm32_rtio_complete(const struct device *dev, int status)
 {
 	struct i2c_stm32_data *data = dev->data;
+	bool async_started = false;
 
 	if (i2c_rtio_complete(data->ctx, status)) {
-		i2c_stm32_start_or_complete(dev);
-	} else {
+		async_started = i2c_rtio_run_sync_start_async(dev, data->ctx, i2c_stm32_start);
+	}
+
+	if (!async_started) {
 		i2c_stm32_pm_put(dev);
 	}
 }
@@ -253,7 +233,9 @@ static void i2c_stm32_submit(const struct device *dev, struct rtio_iodev_sqe *io
 			do {
 			} while (i2c_rtio_complete(data->ctx, ret));
 		} else {
-			i2c_stm32_start_or_complete(dev);
+			if (!i2c_rtio_run_sync_start_async(dev, data->ctx, i2c_stm32_start)) {
+				i2c_stm32_pm_put(dev);
+			}
 		}
 	}
 }
@@ -306,7 +288,7 @@ int i2c_stm32_init(const struct device *dev)
 
 	i2c_stm32_activate(dev);
 
-	if (IS_ENABLED(I2C_STM32_DOMAIN_CLOCK_SUPPORT) && (cfg->pclk_len > 1)) {
+	if (cfg->pclk_len > 1) {
 		/* Enable I2C clock source */
 		ret = clock_control_configure(clk,
 					(clock_control_subsys_t) &cfg->pclken[1],

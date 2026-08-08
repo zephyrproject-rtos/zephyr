@@ -34,6 +34,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   doxygen-checks:
     name: "Doxygen Checks"
@@ -58,23 +62,16 @@ jobs:
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout PR Branch
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          persist-credentials: false
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
       - name: Environment Setup
-        run: |
-          git config --global user.email "bot@zephyrproject.org"
-          git config --global user.name "Zephyr Builder"
-          git rebase origin/${BASE_REF}
-          git clean -f -d
-
-          west init -l . || true
-          west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || west update --path-cache /repo-cache/zephyrproject 2>&1 1> west.update.log || ( rm -rf ../modules ../bootloader ../tools && west update --path-cache /repo-cache/zephyrproject)
-          west forall -c 'git reset --hard HEAD'
-
-          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
+        uses: ./.github/actions/zephyr-ci-env
+        with:
+          base-ref: ${{ github.base_ref }}
 
       - name: Install Python packages
         run: |
@@ -90,13 +87,14 @@ jobs:
         run: |
           git worktree add --detach ../base-branch origin/${BASE_REF}
           echo "BASE_ROOT=$(readlink -f ../base-branch)" >> $GITHUB_ENV
-          cd ../base-branch
-          west update
-          # Use the PR branch's doc build configuration to ensure consistent
-          # coverage generation between branches (plus, the target may not exist in base)
-          cp ${GITHUB_WORKSPACE}/doc/CMakeLists.txt ${GITHUB_WORKSPACE}/doc/Makefile doc/
-          make -C doc doxygen-coverage-json
-          cp doc/_build/doc-coverage.json ${GITHUB_WORKSPACE}/base-coverage.json
+          # Build the base tree's API documentation with the PR branch's doc build
+          # system, by pointing ZEPHYR_BASE at the base worktree and running the build
+          # from the PR checkout. Everything the Doxygen configuration refers to is
+          # ZEPHYR_BASE-relative, so both coverage reports are produced by an identical
+          # configuration, while the scanned sources come from the base branch.
+          ZEPHYR_BASE=$(readlink -f ../base-branch) \
+            make -C doc doxygen-coverage-json BUILDDIR=_build-base
+          mv doc/_build-base/doc-coverage.json base-coverage.json
 
       - name: Check for undocumented new API
         run: |

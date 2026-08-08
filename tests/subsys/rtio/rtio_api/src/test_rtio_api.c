@@ -747,6 +747,189 @@ ZTEST(rtio_api, test_rtio_delay)
 		zassert_is_null(cqe, "There should not be a cqe since next delay has not expired");
 	}
 }
+
+#define RTIO_DELAY_TIMING_ELEMS 6
+
+RTIO_DEFINE(r_delay_timing, RTIO_DELAY_TIMING_ELEMS, RTIO_DELAY_TIMING_ELEMS);
+
+/**
+ * @brief Interlaced short/long delays expire in sorted order, at or after their tick
+ *
+ * Delays are submitted out of expiration order (shorter and longer durations
+ * interlaced). They must complete in ascending-delay order (proving the timeout
+ * iodev reorders them) and each must be observed at or after its scheduled tick
+ * (proving the shared timeout is armed no earlier than the nearest deadline).
+ */
+ZTEST(rtio_api, test_rtio_delay_reorder_timing)
+{
+	struct rtio *r = &r_delay_timing;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe cqe;
+
+	/* Interlaced short/long delays, submitted out of expiration order. */
+	const uint32_t delay_ms[RTIO_DELAY_TIMING_ELEMS] = {60, 10, 50, 20, 40, 30};
+	/* Ids sorted by delay: the order completions must arrive in. */
+	const size_t expected_order[RTIO_DELAY_TIMING_ELEMS] = {1, 3, 5, 4, 2, 0};
+	int64_t start = k_uptime_ticks();
+	int64_t scheduled_tick[RTIO_DELAY_TIMING_ELEMS];
+
+	for (size_t i = 0; i < RTIO_DELAY_TIMING_ELEMS; i++) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe, "Expected a valid sqe");
+		rtio_sqe_prep_delay(sqe, K_MSEC(delay_ms[i]), (void *)i);
+		/* Lower bound on the expiration tick (the kernel arms no earlier). */
+		scheduled_tick[i] = start + (int64_t)k_ms_to_ticks_floor64(delay_ms[i]);
+	}
+
+	zassert_ok(rtio_submit(r, 0), "Submit should succeed");
+
+	for (size_t n = 0; n < RTIO_DELAY_TIMING_ELEMS; n++) {
+		int got = rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER);
+		int64_t now = k_uptime_ticks();
+		size_t id = (size_t)(cqe.userdata);
+
+		zassert_equal(1, got, "Expected to consume a completion");
+		zassert_ok(cqe.result, "Delay completion should be ok");
+		zassert_equal(expected_order[n], id,
+			      "Delays expired out of order at %zu: got id %zu, expected %zu",
+			      n, id, expected_order[n]);
+		zassert_true(now >= scheduled_tick[id],
+			     "Delay id %zu completed before its scheduled tick "
+			     "(now %lld < scheduled %lld)",
+			     id, (long long)now, (long long)scheduled_tick[id]);
+	}
+
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
+		      "No further completions expected");
+}
+
+#define RTIO_DELAY_CANCEL_ELEMS 4
+
+RTIO_DEFINE(r_delay_cancel, RTIO_DELAY_CANCEL_ELEMS, RTIO_DELAY_CANCEL_ELEMS);
+
+/**
+ * @brief Best-effort cancellation of pending delays suppresses their completion
+ *
+ * An interlaced subset of pending delays is canceled after being dispatched to
+ * the timeout iodev. Cancellation is currently best-effort: the shared timer is
+ * not aborted, but a canceled delay produces no completion. Non-canceled delays
+ * still complete normally.
+ */
+ZTEST(rtio_api, test_rtio_delay_cancel)
+{
+	struct rtio *r = &r_delay_cancel;
+	struct rtio_sqe *sqe;
+	struct rtio_sqe *handle[RTIO_DELAY_CANCEL_ELEMS];
+	struct rtio_cqe cqe;
+
+	const uint32_t delay_ms[RTIO_DELAY_CANCEL_ELEMS] = {20, 30, 40, 50};
+	/* Cancel an interlaced subset of the pending delays. */
+	const bool canceled[RTIO_DELAY_CANCEL_ELEMS] = {false, true, true, false};
+	size_t expected_completions = 0;
+
+	for (size_t i = 0; i < RTIO_DELAY_CANCEL_ELEMS; i++) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe, "Expected a valid sqe");
+		rtio_sqe_prep_delay(sqe, K_MSEC(delay_ms[i]), (void *)i);
+		handle[i] = sqe;
+		if (!canceled[i]) {
+			expected_completions++;
+		}
+	}
+
+	zassert_ok(rtio_submit(r, 0), "Submit should succeed");
+
+	/* Cancel the selected delays while they are pending in the timeout iodev's
+	 * sorted queue (dispatched, not yet expired). No simulated time has passed
+	 * since submit, so no timer can have fired yet.
+	 */
+	for (size_t i = 0; i < RTIO_DELAY_CANCEL_ELEMS; i++) {
+		if (canceled[i]) {
+			zassert_ok(rtio_sqe_cancel(handle[i]), "Cancel should succeed");
+		}
+	}
+
+	/* Wait past the longest delay so every timer has fired. */
+	k_sleep(K_MSEC(delay_ms[RTIO_DELAY_CANCEL_ELEMS - 1] + 20));
+
+	size_t completions = 0;
+
+	while (rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT) == 1) {
+		size_t id = (size_t)(cqe.userdata);
+
+		zassert_false(canceled[id],
+			      "Canceled delay id %zu should not produce a completion", id);
+		zassert_ok(cqe.result, "Non-canceled delay should complete ok");
+		completions++;
+	}
+
+	zassert_equal(expected_completions, completions,
+		      "Expected %zu completions, got %zu", expected_completions, completions);
+}
+
+#define RTIO_DELAY_CHAIN_ELEMS 4
+
+RTIO_DEFINE(r_delay_chain, RTIO_DELAY_CHAIN_ELEMS, RTIO_DELAY_CHAIN_ELEMS);
+
+/**
+ * @brief Chained delays complete sequentially, exercising timeout-handler reentrancy
+ *
+ * The delays are chained, so each link is only dispatched to the timeout iodev once
+ * its predecessor completes. Because a delay completes from the shared timeout
+ * handler (the system clock announce context), dispatching the next link re-enters
+ * rtio_timeout_iodev_submit() from within rtio_tq_expired(). This proves completions
+ * are delivered with the instance lock released -- completing under the lock would
+ * recursively deadlock on it -- and that chained delays are timed cumulatively and
+ * complete strictly in submission order.
+ */
+ZTEST(rtio_api, test_rtio_delay_chained)
+{
+	struct rtio *r = &r_delay_chain;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe cqe;
+
+	const uint32_t delay_ms[RTIO_DELAY_CHAIN_ELEMS] = {20, 20, 20, 20};
+	int64_t start = k_uptime_ticks();
+	int64_t earliest_tick[RTIO_DELAY_CHAIN_ELEMS];
+	int64_t cumulative_ms = 0;
+
+	for (size_t i = 0; i < RTIO_DELAY_CHAIN_ELEMS; i++) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe, "Expected a valid sqe");
+		rtio_sqe_prep_delay(sqe, K_MSEC(delay_ms[i]), (void *)i);
+		if (i < RTIO_DELAY_CHAIN_ELEMS - 1) {
+			sqe->flags |= RTIO_SQE_CHAINED;
+		}
+		/* A chained link only begins timing after its predecessor completes, so
+		 * expirations are cumulative rather than concurrent.
+		 */
+		cumulative_ms += delay_ms[i];
+		earliest_tick[i] = start + (int64_t)k_ms_to_ticks_floor64(cumulative_ms);
+	}
+
+	zassert_ok(rtio_submit(r, 0), "Submit should succeed");
+
+	/* A chain completes strictly in submission order; each link is submitted from
+	 * within the previous link's completion (timeout-handler reentrancy).
+	 */
+	for (size_t i = 0; i < RTIO_DELAY_CHAIN_ELEMS; i++) {
+		int got = rtio_cqe_copy_out(r, &cqe, 1, K_FOREVER);
+		int64_t now = k_uptime_ticks();
+		size_t id = (size_t)(cqe.userdata);
+
+		zassert_equal(1, got, "Expected to consume a completion");
+		zassert_ok(cqe.result, "Chained delay completion should be ok");
+		zassert_equal(i, id,
+			      "Chained delays completed out of order at %zu: got id %zu", i, id);
+		zassert_true(now >= earliest_tick[id],
+			     "Chained delay id %zu completed before its cumulative tick "
+			     "(now %lld < earliest %lld)",
+			     id, (long long)now, (long long)earliest_tick[id]);
+	}
+
+	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_NO_WAIT),
+		      "No further completions expected");
+}
 #endif /* CONFIG_RTIO_OP_DELAY */
 
 #define THROUGHPUT_ITERS 100000

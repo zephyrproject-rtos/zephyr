@@ -43,6 +43,7 @@ config ARM
 	select ARCH_HAS_SEMIHOST
 	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ARCH_SUPPORTS_ROM_OFFSET
+	select ARCH_HAS_CPU_IDLE_HOOKS if CPU_CORTEX_M
 	help
 	  ARM architecture
 
@@ -66,6 +67,7 @@ config ARM64
 	select ARCH_HAS_SEMIHOST
 	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ARCH_SUPPORTS_ROM_OFFSET
+	select ARCH_HAS_CPU_IDLE_HOOKS
 	help
 	  ARM64 (AArch64) architecture
 
@@ -126,6 +128,9 @@ config X86
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	select ARCH_SUPPORTS_ROM_OFFSET
+	# Only the 32-bit (ia32) interrupt stub emits the ISR entry hook that
+	# closes the idle window; intel64 does not have one yet.
+	select ARCH_HAS_CPU_IDLE_HOOKS if !X86_64
 	help
 	  x86 architecture
 
@@ -156,6 +161,7 @@ config RISCV
 	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ARCH_SUPPORTS_ROM_OFFSET
 	depends on DT_HAS_RISCV_ENABLED
+	select ARCH_HAS_CPU_IDLE_HOOKS
 	help
 	  RISCV architecture
 
@@ -167,7 +173,6 @@ config XTENSA
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
-	select ARCH_HAS_DIRECTED_IPIS
 	select THREAD_STACK_INFO
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
@@ -175,6 +180,7 @@ config XTENSA
 	imply ARCH_HAS_RESERVED_PAGE_FRAMES if XTENSA_MMU
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED
 	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_CPU_IDLE_HOOKS
 	help
 	  Xtensa architecture
 
@@ -850,6 +856,27 @@ config ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	  declaration of interrupt tables placed by the linker. It is a
 	  prerequisite for CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED.
 
+config ARCH_HAS_CPU_IDLE_HOOKS
+	bool
+	help
+	  This option is selected by architectures that can tell the CPU load
+	  module when the CPU enters and leaves idle (gated by
+	  CONFIG_SYS_IDLE_HOOKS). It requires the idle path to emit
+	  sys_trace_idle() on entry, and the idle window to be closed again by
+	  either of:
+
+	  - sys_trace_idle_exit() after the wait, for architectures that wait with
+	    interrupts locked (Arm, RISC-V). The wait returns without servicing the
+	    interrupt, so the exit hook runs before any ISR.
+	  - sys_trace_isr_enter() at ISR entry, for architectures that wait with
+	    interrupts enabled (x86 "sti; hlt", Xtensa "waiti 0"). There the wake-up
+	    ISR runs first and may reschedule away from the idle thread, which would
+	    defer the exit hook long past the end of idle, so the ISR entry closes
+	    the window instead.
+
+	  It is a prerequisite for the idle-hook CPU load backend
+	  (CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK).
+
 config ARCH_SUPPORTS_COREDUMP
 	bool
 
@@ -1286,7 +1313,8 @@ config DCACHE_LINE_SIZE
 	depends on !DCACHE_LINE_SIZE_DETECT
 	default $(dt_node_int_prop_int,/cpus/cpu@0,d-cache-line-size) \
 		  if $(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
-	default 0
+	default 64 if 64BIT
+	default 32
 	help
 	  Size in bytes of a CPU d-cache line.
 
@@ -1313,7 +1341,8 @@ config ICACHE_LINE_SIZE
 	depends on !ICACHE_LINE_SIZE_DETECT
 	default $(dt_node_int_prop_int,/cpus/cpu@0,i-cache-line-size) \
 		  if $(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
-	default 0
+	default 64 if 64BIT
+	default 32
 	help
 	  Size in bytes of a CPU i-cache line.
 

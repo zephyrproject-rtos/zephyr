@@ -193,7 +193,7 @@
 		address-length = "ADDR_4_BYTE";
 		rx-dummy = <7>;
 		tx-dummy = <8>;
-		xip-config = <1 0 DT_SIZE_M(64) 0>;
+		memmap-config = <1 0 DT_SIZE_M(64) 0>;
 		ce-break-config = <1024 4>;
 		ambiq,timing-config-mask = <0x62>;
 		ambiq,timing-config = <8 7 1 0 0 3 10>;
@@ -232,7 +232,7 @@
 		address-length = "ADDR_4_BYTE"; /* Avoid use of 3 byte address if Ambiq MSPI */
 		rx-dummy = <16>;
 		tx-dummy = <0>;
-		xip-config = <1 0 DT_SIZE_M(8) 0>;
+		memmap-config = <1 0 DT_SIZE_M(8) 0>;
 		ce-break-config = <0 0>;
 		ambiq,timing-config-mask = <0x62>;
 		ambiq,timing-config = <0 16 1 0 0 5 20>;

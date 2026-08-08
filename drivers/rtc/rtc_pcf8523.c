@@ -718,14 +718,14 @@ unlock:
 static int pcf8523_set_calibration(const struct device *dev, int32_t freq_ppb)
 {
 	int32_t period_ppb = freq_ppb * -1;
-	int8_t offset;
+	uint8_t offset;
 
 	if (period_ppb < PCF8523_OFFSET_PPB_MIN || period_ppb > PCF8523_OFFSET_PPB_MAX) {
 		LOG_WRN("calibration value (%d ppb) out of range", freq_ppb);
 		return -EINVAL;
 	}
 
-	offset = period_ppb / PCF8523_OFFSET_PPB_PER_LSB;
+	offset = (period_ppb / PCF8523_OFFSET_PPB_PER_LSB) & PCF8523_OFFSET_MASK;
 
 	if (IS_ENABLED(CONFIG_RTC_PCF8523_OFFSET_MODE_FAST)) {
 		offset |= PCF8523_OFFSET_MODE;
@@ -739,7 +739,7 @@ static int pcf8523_set_calibration(const struct device *dev, int32_t freq_ppb)
 static int pcf8523_get_calibration(const struct device *dev, int32_t *freq_ppb)
 {
 	int32_t period_ppb;
-	int8_t offset;
+	uint8_t offset;
 	int err;
 
 	err = pcf8523_read_reg8(dev, PCF8523_OFFSET, &offset);
@@ -747,8 +747,8 @@ static int pcf8523_get_calibration(const struct device *dev, int32_t *freq_ppb)
 		return err;
 	}
 
-	/* Clear mode bit and sign extend the offset */
-	period_ppb = (offset << 1U) >> 1U;
+	/* Clear the mode bit and sign extend the signed 7-bit offset field */
+	period_ppb = sign_extend(offset & PCF8523_OFFSET_MASK, 6);
 
 	period_ppb = period_ppb * PCF8523_OFFSET_PPB_PER_LSB;
 	*freq_ppb = period_ppb * -1;

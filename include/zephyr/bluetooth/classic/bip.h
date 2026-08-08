@@ -1780,7 +1780,7 @@ int bt_bip_get_partial_image_rsp(struct bt_bip_server *server, uint8_t rsp_code,
  * The following OBEX headers should be included for the first request,
  * @ref BT_OBEX_HEADER_ID_CONN_ID, @ref BT_OBEX_HEADER_ID_TYPE,
  * and @ref BT_OBEX_HEADER_ID_APP_PARAM.
- * And the value of type header is @ref BT_BIP_HDR_TYPE_GET_PARTIAL_IMAGE.
+ * And the value of type header is @ref BT_BIP_HDR_TYPE_GET_MONITORING_IMAGE.
  * The application parameter should include ID @ref BT_BIP_APPL_PARAM_TAG_ID_STORE_FLAG.
  *
  * @param client BIP client instance

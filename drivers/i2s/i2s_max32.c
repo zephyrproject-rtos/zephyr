@@ -732,8 +732,8 @@ static int i2s_max32_init(const struct device *dev)
 #define MAX32_DT_INST_DMA_CELL(n, name, cell) DT_INST_DMAS_CELL_BY_NAME(n, name, cell)
 
 #define I2S_MAX32_STREAM_DATA_CREATE_AND_INIT(n, dir)                                              \
-	K_MSGQ_DEFINE(i2s_max32_##dir##_q_##n, sizeof(struct i2s_mem_block),                       \
-		      CONFIG_I2S_MAX32_QUEUE_SIZE, 1);                                             \
+	K_MSGQ_DEFINE_STATIC_TYPE(i2s_max32_##dir##_q_##n, struct i2s_mem_block,                   \
+				  CONFIG_I2S_MAX32_QUEUE_SIZE);                                    \
 	static struct i2s_max32_stream_data i2s_max32_##dir##_data_##n = {                         \
 		.state = I2S_STATE_NOT_READY,                                                      \
 		.drain = false,                                                                    \

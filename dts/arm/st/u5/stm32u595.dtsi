@@ -27,11 +27,6 @@
 		compatible = "st,stm32u595", "st,stm32u5", "simple-bus";
 
 		pinctrl: pin-controller@42020000 {
-			compatible = "st,stm32-pinctrl";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			reg = <0x42020000 0x2800>;
-
 			gpioj: gpio@42022400 {
 				compatible = "st,stm32-gpio";
 				gpio-controller;

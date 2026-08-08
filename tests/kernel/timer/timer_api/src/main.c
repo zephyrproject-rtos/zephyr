@@ -206,6 +206,35 @@ ZTEST_USER(timer_api, test_timer_duration_period)
 }
 
 /**
+ * @brief Verify run-time initialization of a timer.
+ *
+ * @details A timer initialized at run time with k_timer_init() must start
+ * out inactive -- no expiries recorded and no time remaining -- and be
+ * immediately usable: starting it as a one-shot makes it expire once.
+ *
+ * @ingroup kernel_timer_tests
+ *
+ * @see k_timer_init(), k_timer_start(), k_timer_status_get()
+ */
+ZTEST(timer_api, test_timer_init_runtime)
+{
+	static struct k_timer runtime_timer;
+
+	k_timer_init(&runtime_timer, NULL, NULL);
+
+	/* freshly initialized: inactive, no expiries */
+	zassert_equal(k_timer_status_get(&runtime_timer), 0);
+	zassert_equal(k_timer_remaining_get(&runtime_timer), 0);
+
+	/* immediately usable as a one-shot timer */
+	k_timer_start(&runtime_timer, K_MSEC(DURATION), K_NO_WAIT);
+	busy_wait_ms(DURATION + 50);
+	zassert_equal(k_timer_status_get(&runtime_timer), 1);
+
+	k_timer_stop(&runtime_timer);
+}
+
+/**
  *
  * @brief Test restart the timer
  *

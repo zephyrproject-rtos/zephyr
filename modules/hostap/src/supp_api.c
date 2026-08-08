@@ -448,6 +448,7 @@ enum wifi_security_type wpas_key_mgmt_to_zephyr(bool is_hapd, void *config, int 
 	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK_SHA256:
 	case WPA_KEY_MGMT_SAE | WPA_KEY_MGMT_PSK_SHA256 | WPA_KEY_MGMT_PSK:
 		return WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL;
+	case WPA_KEY_MGMT_PSK | WPA_KEY_MGMT_FT_PSK:
 	case WPA_KEY_MGMT_FT_PSK:
 		return WIFI_SECURITY_TYPE_FT_PSK;
 	case WPA_KEY_MGMT_FT_SAE:
@@ -803,8 +804,11 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			goto out;
 		}
 
-		/* SAP - only open and WPA2-PSK are supported for now */
-		if (mode_ap && params->security != WIFI_SECURITY_TYPE_PSK) {
+		/* SAP - only open, WPA2-PSK and WPA3-SAE are supported for now */
+		if (mode_ap && params->security != WIFI_SECURITY_TYPE_PSK &&
+		    params->security != WIFI_SECURITY_TYPE_SAE &&
+		    params->security != WIFI_SECURITY_TYPE_SAE_H2E &&
+		    params->security != WIFI_SECURITY_TYPE_SAE_AUTO) {
 			ret = -1;
 			wpa_printf(MSG_ERROR, "Unsupported security type: %d",
 				params->security);
@@ -881,6 +885,16 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			}
 
 			if (!wpa_cli_cmd_v("set_network %d pairwise CCMP", resp.network_id)) {
+				goto out;
+			}
+
+			/*
+			 * WPA3-SAE mandates management-frame protection; honor
+			 * the requested MFP level (callers must request at least
+			 * WIFI_MFP_OPTIONAL for SAE).
+			 */
+			if (!wpa_cli_cmd_v("set_network %d ieee80211w %d",
+					   resp.network_id, params->mfp)) {
 				goto out;
 			}
 		}
@@ -1504,6 +1518,17 @@ int supplicant_disconnect(const struct device *dev __unused, struct net_if *ifac
 
 enum wifi_mfp_options get_mfp(enum mfp_options supp_mfp_option)
 {
+	/*
+	 * MGMT_FRAME_PROTECTION_DEFAULT is not an enum mfp_options member, so
+	 * it has to be checked before the switch. It marks a network with no
+	 * explicit ieee80211w setting, whose effective value is only known
+	 * after resolving it against the global "pmf" setting, the key
+	 * management and the driver capabilities (see wpas_get_ssid_pmf()).
+	 */
+	if (supp_mfp_option == MGMT_FRAME_PROTECTION_DEFAULT) {
+		return WIFI_MFP_UNKNOWN;
+	}
+
 	switch (supp_mfp_option) {
 	case NO_MGMT_FRAME_PROTECTION:
 		return WIFI_MFP_DISABLE;
@@ -1608,7 +1633,12 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 			}
 		}
 #endif
-		status->mfp = get_mfp(ssid->ieee80211w);
+		/*
+		 * Resolve a network without an explicit ieee80211w setting
+		 * (MGMT_FRAME_PROTECTION_DEFAULT) the same way the supplicant
+		 * does when associating.
+		 */
+		status->mfp = get_mfp(wpas_get_ssid_pmf(wpa_s, ssid));
 		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
 		status->channel = channel;
 

@@ -152,9 +152,15 @@ x86_ap_start:
 	 */
 
 #ifdef CONFIG_X2APIC
-	/* In x2APIC mode the MMIO registers are inaccessible; read the
-	 * 32-bit x2APIC ID from MSR 0x802 instead.
+	/*
+	 * x2APIC: read the ID from the MSR (MMIO is inaccessible). An AP may
+	 * still be in xAPIC mode, where that MSR faults, so enable x2APIC
+	 * first -- faults can't be handled this early.
 	 */
+	movl $X86_APIC_BASE_MSR, %ecx
+	rdmsr
+	orl $X86_APIC_BASE_MSR_X2APIC, %eax
+	wrmsr
 	movl $(X86_X2APIC_BASE_MSR + (LOAPIC_ID >> 4)), %ecx
 	rdmsr
 #else

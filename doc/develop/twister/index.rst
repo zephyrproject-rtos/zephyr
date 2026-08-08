@@ -45,10 +45,9 @@ To run Twister in the local tree, follow the steps below:
    operating systems. The following invocations are equivalent:
 
    * ``west twister ...`` (recommended).
-   * ``./scripts/twister ...`` (Linux/macOS) or ``python .\scripts\twister ...``
-     (Windows): invoking the script directly. This requires the Zephyr
-     environment to be set up first (``source zephyr-env.sh`` or
-     ``zephyr-env.cmd``).
+   * ``python .\scripts\twister ...`` (Windows): invoking the script
+     directly. This requires the Zephyr environment to be set up first (``source
+     zephyr-env.sh`` or ``zephyr-env.cmd``).
 
    All forms accept the same command line options.
 
@@ -157,7 +156,31 @@ arch:
   Architecture of the board
 toolchain:
   The list of supported toolchains that can build this board. This should match
-  one of the values used for :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` when building on the command line
+  one of the values used for :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` when building on the command line.
+  Twister filters out any test instance whose toolchain is not in this list, unless
+  ``--force-toolchain`` is given. This list says which toolchains *may* build the
+  board, it does not select one; see :ref:`twister_toolchain_selection`.
+preferred_toolchain:
+  The toolchain Twister should use for this platform when nothing else selects one.
+  This is useful for boards that are nominally buildable with several toolchains but
+  should be tested with a specific one. See :ref:`twister_toolchain_selection`.
+build_toolchains:
+  An optional list of toolchains that every test assigned to this platform should
+  be built with. Twister creates one test instance per toolchain in the list, each
+  in its own build directory, instead of picking a single toolchain for the
+  platform. For example, to build everything on ``native_sim`` with both GCC and
+  Clang:
+
+  .. code-block:: yaml
+
+      build_toolchains:
+        - host/gnu
+        - host/llvm
+
+  Because this multiplies build time, it is usually better to leave it out of the
+  board definition and enable it only for CI, using the ``build_toolchains``
+  option of the :ref:`Twister configuration file <twister_test_config>`.
+  See :ref:`twister_toolchain_selection`.
 ram:
   Available RAM on the board (specified in KB). This is used to match test scenario
   requirements.  If not specified we default to 128KB.
@@ -237,6 +260,54 @@ variants:
   entry is itself a platform definition and may override any of the keys above
   for that specific variant, while inheriting the remaining values from the
   top-level definition.
+
+.. _twister_toolchain_selection:
+
+Toolchain Selection
+*******************
+
+Several options influence which toolchain a test is built with. They fall into
+three groups: options that *select* a toolchain, options that *filter* out test
+instances whose toolchain is not usable, and options that *multiply* a test into
+several builds.
+
+Twister first determines a default toolchain for the whole run by invoking
+``cmake/verify-toolchain.cmake``, which honors the :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`
+environment variable. This value is reported at the start of the run as
+``Using '<toolchain>' toolchain variant.``
+
+For every test scenario and platform pair, the toolchain is then selected using
+the first of the following that applies:
+
+#. The test scenario's ``integration_toolchains``, if set. The test is built once
+   per listed toolchain.
+#. The platform's ``build_toolchains``, if set, either in the board configuration
+   or in the :ref:`Twister configuration file <twister_test_config>`. The test is
+   built once per listed toolchain.
+#. For ``posix`` and ``unit`` platforms, ``host/llvm`` if the run default is
+   ``host/llvm``, otherwise ``host/gnu``.
+#. The platform's ``preferred_toolchain``, if set.
+#. The run default described above, or ``zephyr`` if it could not be determined.
+
+Note that :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` only changes the run default, which
+is the last entry in this list. It does not override a platform's
+``preferred_toolchain`` or ``build_toolchains``, nor a scenario's
+``integration_toolchains``.
+
+Once a toolchain is selected, the resulting test instance can still be filtered
+out:
+
+* If the toolchain is not in the platform's ``toolchain`` list of supported
+  toolchains, the instance is filtered. ``--force-toolchain`` disables this check
+  and uses the selected toolchain unconditionally. The comparison also succeeds
+  on the part before the ``/``, so ``host/gnu`` matches a platform listing ``host``.
+* The scenario's ``toolchain_allow`` and ``toolchain_exclude`` options filter
+  instances by the selected toolchain.
+
+Because ``integration_toolchains`` and ``build_toolchains`` produce one test
+instance per toolchain, they multiply build time. ``build_toolchains`` is
+therefore normally left out of the board configuration and enabled only for the
+configuration file used by CI.
 
 .. _twister_tests_long_version:
 
@@ -546,6 +617,10 @@ integration_toolchains: <YML list of toolchain variants>
 
       This functionality is evaluated always and is not limited to the
       ``--integration`` option.
+
+    This option takes precedence over a platform's ``build_toolchains``. To expand
+    the toolchain scope for every test on a platform instead of per test scenario,
+    use ``build_toolchains``. See :ref:`twister_toolchain_selection`.
 
 platform_exclude: <list of platforms>
     Set of platforms that this test scenario should not run on.
@@ -1131,6 +1206,62 @@ The following is an example yaml file with a few harness_config options.
    harness/script
    harness/bsim
    harness/shell
+
+
+.. _twister_sidecars:
+
+Sidecars
+********
+
+Some tests need a host-side resource to exist for the duration of a run: a
+daemon the emulated guest talks to, a shared memory region the host reads back
+afterwards, or a network interface the guest attaches to. A *sidecar* models
+this. It is selected with the ``sidecar:`` entry in a test scenario's
+:file:`tests.yaml` and is orthogonal to the harness: the
+harness interprets the guest's output while the sidecar provisions the host side
+around the run. Any harness (``console`` for a sample, ``ztest`` for a test,
+...) can therefore be paired with any sidecar.
+
+.. code-block:: yaml
+
+   tests:
+     some.test:
+       harness: ztest
+       sidecar: <name>
+
+A sidecar has a small lifecycle, driven by Twister for each test instance:
+
+#. **configure** -- the sidecar reads what it needs from the instance and its
+   ``sidecar_config`` block before anything is provisioned.
+#. **setup** -- called just before the handler runs the test image; it brings
+   the host resource up (starts a daemon, creates an interface, ...). If the
+   host side is unavailable -- a required tool is not installed, or bringing the
+   resource up needs privileges that are not present -- setup reports this and
+   Twister *skips* execution instead of failing the test.
+#. **teardown** -- called after the handler returns, in a ``finally`` block, so
+   it always runs even if the test failed or timed out. It releases the resource
+   and may also collect data the guest left behind (for example reading a shared
+   memory region back into the build directory).
+
+Because provisioning is decoupled from output processing, Twister can also
+attach a sidecar to an instance itself, without the test opting in -- for
+example to route coverage data off a guest that has no other host transport.
+
+Each sidecar defines its own configuration keys under a block of
+``sidecar_config`` named after the sidecar. Namespacing by sidecar name keeps
+each sidecar's keys separate, so only the block matching the scenario's
+``sidecar:`` value is consumed. For example, the ``virtiofs`` sidecar shares a
+host directory seeded from a template with:
+
+.. code-block:: yaml
+
+   tests:
+     some.test:
+       harness: console
+       sidecar: virtiofs
+       sidecar_config:
+         virtiofs:
+           shared: shared
 
 
 Selecting platform scope
@@ -1876,6 +2007,14 @@ The following options control platform filtering in twister:
 - ``default_platforms``: A list of additional default platforms to add. This list
   can either be used to replace the existing default platforms or can extend it
   depending on the value of ``override_default_platforms``.
+- ``build_toolchains``: A mapping of platform names to the list of toolchains
+  every test assigned to that platform should be built with. Twister creates one
+  test instance per toolchain, each in its own build directory. This sets, or
+  overrides, the ``build_toolchains`` option of the board definition; an empty
+  list disables multi-toolchain builds for a platform that requests them. Since
+  this multiplies build time, it is typically enabled only in the configuration
+  file used by CI (``tests/test_config_ci.yaml``) so that local runs keep
+  building each test once. See :ref:`twister_toolchain_selection`.
 
 And example platforms configuration:
 
@@ -1886,6 +2025,10 @@ And example platforms configuration:
 	  increased_platform_scope: false
 	  default_platforms:
 	    - qemu_x86
+	  build_toolchains:
+	    native_sim:
+	      - host/gnu
+	      - host/llvm
 
 
 Test Level Configuration

@@ -45,6 +45,11 @@
 		bias-disable;
 	};
 
+	gpio9_14_default: gpio9_14_default {
+		pin = <PIN_RSW3_PPS>;
+		bias-disable;
+	};
+
 	i2c5_scl_default: i2c5_scl_default {
 		pin = <PIN_SCL5 FUNC_SCL5>;
 	};

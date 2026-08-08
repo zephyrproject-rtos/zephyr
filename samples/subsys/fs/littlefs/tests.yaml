@@ -12,6 +12,7 @@ tests:
       - particle_xenon
       - disco_l475_iot1
       - mimxrt685_evk/mimxrt685s/cm33
+      - mimxrt685_aud_evk/mimxrt685s/cm33
       - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1064_evk
       - qemu_x86
@@ -59,8 +60,6 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE=stm32_blk.conf
       - CONF_FILE=prj_blk.conf
-    extra_configs:
-      - CONFIG_SDMMC_STM32_HWFC=y
   sample.filesystem.littlefs.nucleo_h743zi_qspi:
     build_only: true
     platform_allow: nucleo_h743zi
@@ -83,8 +82,6 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE=stm32_blk.conf
       - CONF_FILE=prj_blk.conf
-    extra_configs:
-      - CONFIG_SDMMC_STM32_HWFC=y
   sample.filesystem.littlefs.frdm_rw612_nand:
     build_only: true
     platform_allow: frdm_rw612

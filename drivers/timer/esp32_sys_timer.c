@@ -15,7 +15,7 @@
 
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/drivers/timer/system_timer.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <soc.h>
 #include <zephyr/init.h>
 #include <zephyr/spinlock.h>

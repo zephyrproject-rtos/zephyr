@@ -366,7 +366,7 @@ information across a set of CPUs as a result of one CPU handling an ISR.
 
         k_ipi_work_add(&my_work, cpu_mask, remote_cpu_action);
 
-        k_ipi_signal();
+        k_ipi_work_signal();
     }
 
 

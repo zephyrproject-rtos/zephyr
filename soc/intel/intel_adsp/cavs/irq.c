@@ -13,7 +13,7 @@
 #include <adsp_shim.h>
 #include <cavs-idc.h>
 #include <adsp_interrupt.h>
-#include "soc.h"
+#include <soc.h>
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 

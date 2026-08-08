@@ -13,6 +13,10 @@ if(CONFIG_ETH_NXP_S32_NETC)
 endif()
 
 if(CONFIG_ETH_STM32_HAL)
+  if(CONFIG_ETH_STM32_HAL_RX_DESC_COUNT)
+    zephyr_compile_definitions(ETH_RX_DESC_CNT=${CONFIG_ETH_STM32_HAL_RX_DESC_COUNT})
+  endif()
+
   if(CONFIG_STM32_HAL2)
     zephyr_library_sources_ifdef(CONFIG_ETH_STM32_HAL2_API eth_stm32_hal2.c)
   else()
@@ -35,9 +39,11 @@ add_subdirectory(nxp_imx_netc)
 add_subdirectory(dwc_mac)
 add_subdirectory(dwc_xgmac)
 add_subdirectory(intel)
+add_subdirectory(offload)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ETH_ADIN2111 eth_adin2111.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_BCMGENET eth_bcmgenet.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_CYCLONEV eth_cyclonev.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_DM9051 eth_dm9051.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_DRIVER_RAW_MODE eth_raw.c)

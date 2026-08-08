@@ -31,17 +31,18 @@ K_SEM_DEFINE(sema, 0, NUM_THREAD);
 /* Reference timestamp (in ticks) for each measurement */
 static uint64_t elapsed_slice;
 static int thread_idx;
+static struct k_thread t[NUM_THREAD];
 
 static void thread_time_slice(void *p1, void *p2, void *p3)
 {
-	uint32_t tick_delta = ticks_delta(&elapsed_slice);
+	__maybe_unused uint32_t tick_delta = ticks_delta(&elapsed_slice);
 	/*
 	 * Thread 0 picks up CPU when the main test thread voluntarily
 	 * yields halfway through its slice, so its elapsed measurement
 	 * spans the busy-wait of half a slice. The remaining threads see
 	 * the previous thread's full slice between successive wakeups.
 	 */
-	uint32_t expected = (thread_idx == 0) ? HALF_SLICE_TICKS : SLICE_TICKS;
+	__maybe_unused uint32_t expected = (thread_idx == 0) ? HALF_SLICE_TICKS : SLICE_TICKS;
 
 #ifdef CONFIG_DEBUG
 	TC_PRINT("thread[%d] elapsed: %u ticks, expected ~%u\n",
@@ -60,8 +61,6 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 	zassert_between_inclusive(tick_delta, expected, expected + 1,
 				  "elapsed %u ticks, expected ~%u",
 				  tick_delta, expected);
-#else
-	(void)tick_delta;
 #endif /* CONFIG_COVERAGE_GCOV */
 
 	/* Keep this thread busy past one slice so the slicer fires and
@@ -94,7 +93,6 @@ ZTEST(threads_scheduling, test_slice_reset)
 #ifdef CONFIG_TIMESLICING
 	uint32_t t32;
 	k_tid_t tid[NUM_THREAD];
-	struct k_thread t[NUM_THREAD];
 	int old_prio = k_thread_priority_get(k_current_get());
 
 	thread_idx = 0;

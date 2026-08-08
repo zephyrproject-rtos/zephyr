@@ -50,19 +50,19 @@
 
 		m33s_allocatable_shared: memory@340fd000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "SHARED_MEMORY_SEC";
+			zephyr,memory-region = "SECSHARED";
 			reg = <0x340fd000 DT_SIZE_K(4)>;
 		};
 
 		m33_allocatable_shared: memory@240fe000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "SHARED_MEMORY_M33";
+			zephyr,memory-region = "M33SHARED";
 			reg = <0x240fe000 DT_SIZE_K(4)>;
 		};
 
 		m55_allocatable_shared: memory@240ff000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "SHARED_MEMORY_M55";
+			zephyr,memory-region = "M55SHARED";
 			reg = <0x240ff000 DT_SIZE_K(4)>;
 		};
 
@@ -97,7 +97,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x08000000 DT_SIZE_M(64)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <DT_SIZE_K(256)>;
 
 			partitions {
@@ -132,7 +132,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x18000000 DT_SIZE_M(64)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {
@@ -167,7 +167,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x70000000 DT_SIZE_M(64)>;
-			write-block-size = <256>;
+			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {

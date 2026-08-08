@@ -11,6 +11,7 @@
 
 /* PCR hardware registers for MEC SoC */
 #define XEC_CC_PCR_MAX_SCR 5
+#define XEC_CC_SCR_BITPOS_MAX 31u
 
 #define XEC_CC_SLP_CR_OFS              0
 #define XEC_CC_SLP_CR_MODE_DS_POS      0 /* if set enter deep sleep when sleep is triggered */
@@ -53,6 +54,12 @@
 /* System Reset */
 #define XEC_CC_SYS_RST_OFS        0x18u
 #define XEC_CC_SYS_RST_ASSERT_POS 8
+
+/* Turbo clock MEC172x only */
+#ifdef CONFIG_SOC_SERIES_MEC172X
+#define XEC_CC_TURBO_CLK_OFS    0x1cu
+#define XEC_CC_TURBO_CLK_EN_POS 2
+#endif
 
 /* Privilege/Protection Lock */
 #define XEC_CC_PP_LOCK_OFS    0x24u

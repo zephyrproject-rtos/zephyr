@@ -10,8 +10,18 @@ Overview
 This sample demonstrates how to use the :ref:`MBOX API <mbox_api>` in data transfer mode.
 It can be used only with mbox driver which supports data transfer mode.
 
-Sample will ping-pong up to 4 bytes of data between two cores via two mbox channels.
-After each core receives data, it increments it by one and sends it back to other core.
+Sample will ping-pong data between two cores via two mbox channels. The data size
+depends on the driver's MTU (Maximum Transmission Unit), which varies by platform.
+After each core receives data, it increments the counter by one and sends it back to other core.
+
+Configuration
+*************
+
+The sample sizes its message buffers using the :kconfig:option:`CONFIG_MBOX_DATA_MAX_MSG_SIZE`
+option (default 4 bytes). Boards whose mbox driver supports a larger MTU should override this
+value in a board-specific configuration fragment
+(``boards/<board>.conf``), for example ``CONFIG_MBOX_DATA_MAX_MSG_SIZE=32``. The actual MTU is
+queried at runtime with :c:func:`mbox_mtu_get_dt` and validated against this configured capacity.
 
 Building and Running
 ********************
@@ -81,6 +91,7 @@ serial port, one is the main core another is the remote core:
 
    *** Booting Zephyr OS build zephyr-v3.5.0-4051-g12f4f4dc8679 ***
    mbox_data Client demo started
+   Using MTU: 4 bytes
    Client send (on channel 3) value: 0
    Client received (on channel 2) value: 1
    Client send (on channel 3) value: 2
@@ -99,6 +110,7 @@ serial port, one is the main core another is the remote core:
 
    *** Booting Zephyr OS build zephyr-v3.5.0-4051-g12f4f4dc8679 ***
    mbox_data Server demo started
+   Using MTU: 4 bytes
    Server receive (on channel 3) value: 0
    Server send (on channel 2) value: 1
    Server receive (on channel 3) value: 2

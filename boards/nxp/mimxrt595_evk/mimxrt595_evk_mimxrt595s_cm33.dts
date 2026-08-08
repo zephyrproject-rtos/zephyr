@@ -28,7 +28,7 @@
 		accel0 = &fxos8700;
 		sdhc0 = &usdhc0;
 		pwm-0 = &sc_timer;
-		dmic-dev = &dmic0;
+		dmic0 = &dmic0;
 		mcuboot-button0 = &user_button_1;
 	};
 

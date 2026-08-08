@@ -18,7 +18,7 @@
 			clock-names = "mac", "tx", "rx";
 
 			mac: ethernet {
-				compatible = "wch,ethernet";
+				compatible = "wch,ethernet", "snps,dwmac";
 				interrupt-parent = <&pfic>;
 				interrupts = <77>, <78>;
 				internal-phy-pllmul = "15";
@@ -141,10 +141,6 @@
 			#size-cells = <0>;
 		};
 	};
-};
-
-&clk_hse {
-	clock-frequency = <DT_FREQ_M(8)>;
 };
 
 &pll {

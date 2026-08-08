@@ -8,6 +8,7 @@
 /**
  * @file
  * @brief IEEE 802.11 protocol and general Wi-Fi definitions.
+ * @ingroup wifi_mgmt
  */
 
 /**
@@ -175,6 +176,7 @@ enum wifi_wpa3_enterprise_type {
 	/** @endcond */
 };
 
+/** @brief EAP TLS cipher types. */
 enum wifi_eap_tls_cipher_type {
 	/** EAP TLS with NONE */
 	WIFI_EAP_TLS_NONE,
@@ -210,6 +212,7 @@ enum wifi_group_mgmt_cipher_type {
 	WPA_CAPA_ENC_BIP_GMAC_256,
 };
 
+/** @brief Cipher capability and name description. */
 struct wifi_cipher_desc {
 	/** Cipher capability. */
 	unsigned int capa;
@@ -217,6 +220,7 @@ struct wifi_cipher_desc {
 	char *name;
 };
 
+/** @brief EAP cipher configuration. */
 struct wifi_eap_cipher_config {
 	/** Key management type string. */
 	char *key_mgmt;
@@ -232,6 +236,7 @@ struct wifi_eap_cipher_config {
 	char *tls_flags;
 };
 
+/** @brief EAP method configuration. */
 struct wifi_eap_config {
 	/**  Security type. */
 	enum wifi_security_type type;
@@ -314,6 +319,7 @@ enum wifi_frequency_bandwidths {
 	WIFI_FREQ_BANDWIDTH_UNKNOWN
 };
 
+/** Helper function to get user-friendly frequency bandwidth name. */
 const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 
 /** Max SSID length */

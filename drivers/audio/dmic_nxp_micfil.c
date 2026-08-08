@@ -639,8 +639,8 @@ static DEVICE_API(dmic, dmic_ops) = {
 
 #define NXP_MICFIL_DEFINE(inst)								\
 	PINCTRL_DT_INST_DEFINE(inst);							\
-	K_MSGQ_DEFINE(nxp_micfil_msgq##inst, sizeof(void *),				\
-			CONFIG_DMIC_NXP_MICFIL_QUEUE_SIZE, 4);				\
+	K_MSGQ_DEFINE_STATIC_TYPE(nxp_micfil_msgq##inst, void *,			\
+				  CONFIG_DMIC_NXP_MICFIL_QUEUE_SIZE);			\
 											\
 	NXP_MICFIL_IRQ_CONFIG(inst)							\
 											\

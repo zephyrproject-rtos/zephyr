@@ -33,19 +33,61 @@ static int quic_handle_frame_error(struct quic_endpoint *ep, uint8_t frame_type,
 
 static int quic_handle_crypto_frame_error(struct quic_endpoint *ep, int ret)
 {
-	if (ret == -EPROTO) {
-		return quic_send_frame_close(ep, QUIC_FRAME_TYPE_CRYPTO,
-					     QUIC_ERROR_PROTOCOL_VIOLATION,
-					     "CRYPTO overlap mismatch");
+	uint64_t error_code;
+	const char *reason;
+
+	switch (ret) {
+	/* Transport-level errors kept as-is. -EPROTO covers a CRYPTO overlap
+	 * mismatch and a prohibited TLS KeyUpdate (RFC 9001 Section 6).
+	 */
+	case -EPROTO:
+		error_code = QUIC_ERROR_PROTOCOL_VIOLATION;
+		reason = "CRYPTO protocol violation";
+		break;
+	case -ENOMEM:
+		error_code = QUIC_ERROR_CRYPTO_BUFFER_EXCEEDED;
+		reason = "CRYPTO reassembly exceeded";
+		break;
+	/* RFC 9001 Section 4.8: surface TLS handshake failures as a
+	 * CONNECTION_CLOSE with error 0x0100 + TLS alert so a standard peer
+	 * gets a meaningful reason instead of a generic frame-encoding error.
+	 *
+	 * -EACCES means the peer certificate was required but not
+	 * provided/verifiable, which maps to the "certificate_required" alert
+	 * (116), not "bad_certificate" (42).
+	 */
+	case -EACCES:
+		error_code = QUIC_ERROR_CRYPTO_BASE + QUIC_CRYPTO_ERROR_CERTIFICATE_REQUIRED;
+		reason = "certificate required";
+		break;
+	case -EBADMSG:
+		error_code = QUIC_ERROR_CRYPTO_BASE + QUIC_CRYPTO_ERROR_DECRYPT_ERROR;
+		reason = "decrypt error";
+		break;
+	case -ENOPROTOOPT:
+		error_code = QUIC_ERROR_CRYPTO_BASE + QUIC_CRYPTO_ERROR_NO_APPLICATION_PROTOCOL;
+		reason = "no application protocol";
+		break;
+	case -ENOTSUP:
+		error_code = QUIC_ERROR_CRYPTO_BASE + QUIC_CRYPTO_ERROR_HANDSHAKE_FAILURE;
+		reason = "handshake failure";
+		break;
+	case -EIO:
+		error_code = QUIC_ERROR_CRYPTO_BASE + QUIC_CRYPTO_ERROR_INTERNAL_ERROR;
+		reason = "internal error";
+		break;
+	case -EINVAL:
+		error_code = QUIC_ERROR_CRYPTO_BASE + QUIC_CRYPTO_ERROR_DECODE_ERROR;
+		reason = "decode error";
+		break;
+	default:
+		/* Not a recognized crypto/handshake failure: let the caller
+		 * decide (no CONNECTION_CLOSE emitted here).
+		 */
+		return ret;
 	}
 
-	if (ret == -ENOMEM) {
-		return quic_send_frame_close(ep, QUIC_FRAME_TYPE_CRYPTO,
-					     QUIC_ERROR_CRYPTO_BUFFER_EXCEEDED,
-					     "CRYPTO reassembly exceeded");
-	}
-
-	return quic_handle_frame_error(ep, QUIC_FRAME_TYPE_CRYPTO, ret);
+	return quic_send_frame_close(ep, QUIC_FRAME_TYPE_CRYPTO, error_code, reason);
 }
 
 static int quic_handle_stream_frame_error(struct quic_endpoint *ep, uint8_t frame_type,

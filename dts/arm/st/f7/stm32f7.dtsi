@@ -236,6 +236,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x40020000 0x2400>;
+			ranges;
 
 			gpioa: gpio@40020000 {
 				compatible = "st,stm32-gpio";
@@ -950,7 +951,7 @@
 			compatible = "st,stm32-dma-v1";
 			#dma-cells = <4>;
 			reg = <0x40026000 0x400>;
-			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0 47 0>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>, <47 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 21)>;
 			status = "disabled";
 		};
@@ -959,7 +960,7 @@
 			compatible = "st,stm32-dma-v1";
 			#dma-cells = <4>;
 			reg = <0x40026400 0x400>;
-			interrupts = <56 0 57 0 58 0 59 0 60 0 68 0 69 0 70 0>;
+			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <68 0>, <69 0>, <70 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 22)>;
 			st,mem2mem;
 			status = "disabled";
@@ -1076,20 +1077,21 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		reg = <0x40015800 0x400>;
-		ranges = <0x0 0x40015800 0x400>;
+		ranges;
 		clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+		clock-names = "sai_ck";
 		status = "disabled";
 
-		sai1_a: sai1a@4 {
-			reg = <0x4 0x20>;
+		sai1_a: sai1a@40015804 {
+			reg = <0x40015804 0x20>;
 			dmas = <&dma2 1 0 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
 		};
 
-		sai1_b: sai1b@24 {
-			reg = <0x24 0x20>;
+		sai1_b: sai1b@40015824 {
+			reg = <0x40015824 0x20>;
 			dmas = <&dma2 5 0 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;

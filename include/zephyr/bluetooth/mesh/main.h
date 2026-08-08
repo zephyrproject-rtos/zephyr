@@ -221,7 +221,7 @@ struct bt_mesh_prov {
 	 *  once the data has been acquired from the user.
 	 *
 	 *  @param act Action for inputting data.
-	 *  @param num Maximum size of the inputted data.
+	 *  @param size Maximum size of the inputted data.
 	 *
 	 *  @return Zero on success or negative error code otherwise
 	 */

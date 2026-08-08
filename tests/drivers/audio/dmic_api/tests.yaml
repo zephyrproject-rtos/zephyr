@@ -3,6 +3,6 @@ tests:
     depends_on: dmic
     tags: dmic
     harness: ztest
-    filter: dt_alias_exists("dmic-dev")
+    filter: dt_alias_exists("dmic0")
     integration_platforms:
       - mimxrt595_evk/mimxrt595s/cm33

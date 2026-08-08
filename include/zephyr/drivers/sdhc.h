@@ -128,7 +128,7 @@ enum sdhc_timing_mode {
 	SDHC_TIMING_SDR25 = 4U,
 	/*!< High speed mode & SDR25 */
 	SDHC_TIMING_SDR50 = 5U,
-	/*!< SDR49 mode*/
+	/*!< SDR50 mode*/
 	SDHC_TIMING_SDR104 = 6U,
 	/*!< SDR104 mode */
 	SDHC_TIMING_DDR50 = 7U,

@@ -5,8 +5,8 @@
  * Author: Lin Yu-Cheng <lin_yu_cheng@realtek.com>
  */
 
-#ifndef ZEPHYR_DRIVERS_GPIO_GPIO_RTS5912_H_
-#define ZEPHYR_DRIVERS_GPIO_GPIO_RTS5912_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_RTS5912_H_
+#define ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_RTS5912_H_
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
@@ -36,4 +36,4 @@ uint32_t *gpio_rts5912_get_port_address(const struct gpio_dt_spec *gpio);
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_GPIO_GPIO_RTS5912_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_GPIO_GPIO_RTS5912_H_ */

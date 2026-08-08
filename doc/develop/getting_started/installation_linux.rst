@@ -87,7 +87,8 @@ need one.
 
          sudo dnf group install development-tools c-development
          sudo dnf install cmake ninja-build gperf dfu-util dtc wget which \
-           python3-pip python3-tkinter xz file python3-devel SDL2-devel
+           python3-pip python3-tkinter xz file python3-devel SDL2-devel \
+           libusb1-devel
 
    .. group-tab:: Clear Linux
 

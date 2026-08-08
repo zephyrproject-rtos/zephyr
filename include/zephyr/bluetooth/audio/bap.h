@@ -499,8 +499,6 @@ struct bt_bap_scan_delegator_cb {
 	 * @param conn       Pointer to the connection to a remote device if
 	 *                   the change was caused by it, otherwise NULL.
 	 * @param recv_state Pointer to the receive state that was updated.
-	 *
-	 * @return 0 in case of success or negative value in case of error.
 	 */
 	void (*recv_state_updated)(struct bt_conn *conn,
 				   const struct bt_bap_scan_delegator_recv_state *recv_state);
@@ -753,24 +751,26 @@ struct bt_bap_stream {
 struct bt_bap_stream_ops {
 #if defined(CONFIG_BT_BAP_UNICAST) || defined(__DOXYGEN__)
 	/**
-	 * @brief Stream configured callback
+	 * @brief Stream codec configured callback
 	 *
-	 * Configured callback is called whenever an Audio Stream has been configured.
+	 * Codec configured callback is called whenever an Audio Stream has been configured with a
+	 * codec configuration.
 	 *
 	 * @param stream Stream object that has been configured.
 	 * @param pref   Remote QoS preferences.
 	 */
-	void (*configured)(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref);
+	void (*codec_configured)(struct bt_bap_stream *stream,
+				 const struct bt_bap_qos_cfg_pref *pref);
 
 	/**
-	 * @brief Stream QoS set callback
+	 * @brief Stream QoS configured callback
 	 *
-	 * QoS set callback is called whenever an Audio Stream Quality of Service has been set or
-	 * updated.
+	 * QoS configured callback is called whenever an Audio Stream Quality of Service has been
+	 * set or updated.
 	 *
 	 * @param stream Stream object that had its QoS updated.
 	 */
-	void (*qos_set)(struct bt_bap_stream *stream);
+	void (*qos_configured)(struct bt_bap_stream *stream);
 
 	/**
 	 * @brief Stream enabled callback
@@ -929,7 +929,7 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream, struct bt_bap_strea
  * @param ep Remote Audio Endpoint being configured
  * @param codec_cfg Codec configuration
  *
- * @return Allocated Audio Stream object or NULL in case of error.
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
 			 const struct bt_audio_codec_cfg *codec_cfg);

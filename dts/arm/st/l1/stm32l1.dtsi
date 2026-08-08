@@ -245,6 +245,19 @@
 			status = "disabled";
 		};
 
+		usb: usb@40005c00 {
+			compatible = "st,stm32-usb";
+			reg = <0x40005c00 0x400>;
+			interrupts = <20 0>;
+			interrupt-names = "usb";
+			num-bidir-endpoints = <8>;
+			ram-size = <512>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
+			phys = <&usb_fs_phy>;
+			status = "disabled";
+		};
+
 		pwr: power@40007000 {
 			compatible = "st,stm32-pwr";
 			reg = <0x40007000 0x400>; /* PWR register bank */
@@ -539,6 +552,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x40020000 0x2000>;
+			ranges;
 
 			gpioa: gpio@40020000 {
 				compatible = "st,stm32-gpio";
@@ -613,9 +627,14 @@
 			#dma-cells = <2>;
 			reg = <0x40026000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 24)>;
-			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>;
 			status = "disabled";
 		};
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 
 	die_temp: dietemp {

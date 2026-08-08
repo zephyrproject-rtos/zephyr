@@ -113,7 +113,7 @@ static void test_send(void *p1, void *p2, void *p3)
  * @see k_mbox_get()
  * @see k_mbox_put()
  */
-ZTEST(mbox_usage, test_msg_receiver)
+ZTEST(mbox_usage_1cpu, test_msg_receiver)
 {
 	static k_tid_t tid;
 

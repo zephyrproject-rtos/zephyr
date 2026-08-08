@@ -24,7 +24,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 /** Special drive_column argument for not driving any column */
@@ -103,7 +103,7 @@ struct input_kbd_matrix_api {
 	 * interrupts row pin changes.
 	 *
 	 * @param dev Pointer to the keyboard matrix device.
-	 * @param enable Whether detection mode has to be enabled or disabled.
+	 * @param enabled Whether detection mode has to be enabled or disabled.
 	 */
 	void (*set_detect_mode)(const struct device *dev, bool enabled);
 };

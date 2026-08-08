@@ -6,14 +6,15 @@
 /**
  * @file
  * @brief Helper functions to use by the TCPCI-compliant drivers
+ * @ingroup usb_type_c_port_controller_api
  *
  * This file contains generic TCPCI functions that may be used by the drivers to TCPCI-compliant
  * devices that want to implement vendor-specific functionality without the need to reimplement the
  * TCPCI generic functionality and register operations.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_USBC_TCPCI_PRIV_H_
-#define ZEPHYR_INCLUDE_DRIVERS_USBC_TCPCI_PRIV_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USB_C_TCPCI_PRIV_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USB_C_TCPCI_PRIV_H_
 
 #include <stdint.h>
 #include <zephyr/drivers/i2c.h>
@@ -326,4 +327,4 @@ int tcpci_tcpm_set_debug_accessory(const struct i2c_dt_spec *bus, bool enable);
  */
 int tcpci_tcpm_set_low_power_mode(const struct i2c_dt_spec *bus, bool enable);
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_USBC_TCPCI_PRIV_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USB_C_TCPCI_PRIV_H_ */

@@ -19,7 +19,6 @@ LOG_MODULE_REGISTER(net_ethernet, CONFIG_NET_L2_ETHERNET_LOG_LEVEL);
 #if defined(CONFIG_NET_DSA)
 #include <zephyr/net/dsa_core.h>
 #endif
-#include <zephyr/net/gptp.h>
 #include <zephyr/random/random.h>
 
 #if defined(CONFIG_NET_LLDP)
@@ -808,6 +807,8 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *eth = dev->api;
+	struct net_linkaddr *mac_addr;
+	int ret;
 
 	NET_ASSERT(eth != NULL);
 
@@ -817,10 +818,31 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 		if (eth->stop) {
 			return eth->stop(dev, iface);
 		}
-	} else {
-		if (eth->start) {
-			return eth->start(dev, iface);
+
+		return 0;
+	}
+
+	if (eth->start) {
+		ret = eth->start(dev, iface);
+		if (ret < 0) {
+			return ret;
 		}
+	}
+
+	/* Validate the MAC address after the driver has started so that
+	 * companion chipsets which fetch their address from firmware/OTP
+	 * during bring-up have a valid link address by this point. A failure
+	 * here is terminal: net_if_up() fails and the interface is left
+	 * unusable, the same as if eth->start() itself had failed, so there
+	 * is no need to roll back with eth->stop() (which not every driver
+	 * implements).
+	 */
+	mac_addr = net_if_get_link_addr(iface);
+
+	if ((mac_addr->len != NET_ETH_ADDR_LEN) ||
+	    !net_eth_is_addr_valid((struct net_eth_addr *)mac_addr->addr)) {
+		NET_ERR("Invalid MAC address for iface %d (%p)", net_if_get_by_iface(iface), iface);
+		return -EINVAL;
 	}
 
 	return 0;
@@ -924,10 +946,6 @@ const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 		return NULL;
 	}
 
-	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_PTP)) {
-		return NULL;
-	}
-
 	if (!api->get_ptp_clock) {
 		return NULL;
 	}
@@ -1019,6 +1037,7 @@ int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
 void ethernet_init(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
+	enum ethernet_hw_caps caps;
 
 	NET_DBG("Initializing Ethernet L2 %p for iface %d (%p)", ctx,
 		net_if_get_by_iface(iface), iface);
@@ -1037,15 +1056,21 @@ void ethernet_init(struct net_if *iface)
 	ctx->iface = iface;
 	k_work_init(&ctx->carrier_work, carrier_on_off);
 
-	if (net_eth_get_hw_capabilities(iface) & ETHERNET_PROMISC_MODE) {
+	caps = net_eth_get_hw_capabilities(iface);
+
+	if ((caps & ETHERNET_PROMISC_MODE) != 0) {
 		ctx->ethernet_l2_flags |= NET_L2_PROMISC_MODE;
 	}
 
 #if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
-	if (net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING) {
+	if ((caps & ETHERNET_HW_FILTERING) != 0) {
 		net_if_mcast_mon_register(&mcast_monitor, NULL, ethernet_mcast_monitor_cb);
 	}
 #endif
+
+	if ((caps & ETHERNET_LLDP) != 0) {
+		net_lldp_set_lldpdu(iface);
+	}
 
 	ctx->is_init = true;
 }

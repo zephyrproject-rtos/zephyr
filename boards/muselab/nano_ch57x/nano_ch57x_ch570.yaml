@@ -1,0 +1,13 @@
+identifier: nano_ch57x/ch570
+name: MuseLab nanoCH57x (CH570)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 12
+flash: 256
+vendor: muselab
+supported:
+  - uart
+  - gpio

@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 
 #ifdef CONFIG_LOG_FRONTEND_STMESP
 #include <zephyr/logging/log_frontend_stmesp.h>

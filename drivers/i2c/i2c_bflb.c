@@ -201,7 +201,7 @@ static int i2c_bflb_configure_freqs(const struct device *dev, uint32_t frequency
 	phase0 = (phase0 >= 256) ? 256 : phase0;
 	phase1 = (phase1 >= 256) ? 256 : phase1;
 	phase2 = (phase2 >= 256) ? 256 : phase2;
-	phase3 = (phase0 >= 256) ? 256 : phase3;
+	phase3 = (phase3 >= 256) ? 256 : phase3;
 
 	/* calculate data phase */
 	tmp = (phase0 - 1) << I2C_CR_I2C_PRD_D_PH_0_SHIFT;
@@ -429,7 +429,7 @@ static inline bool i2c_bflb_errored(const struct device *dev)
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp = sys_read32(config->base + I2C_INT_STS_OFFSET);
 
-	return (tmp & I2C_ARB_INT) != 0 || (tmp & I2C_FER_INT) != 0;
+	return (tmp & (I2C_ARB_INT | I2C_FER_INT)) != 0;
 }
 
 static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)

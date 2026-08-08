@@ -178,6 +178,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 		buf_size = 3 * buf_nbr_pixels;
 		break;
 	case PIXEL_FORMAT_RGB_565:
+	case PIXEL_FORMAT_RGB_565X:
 		buf_size = 2 * buf_nbr_pixels;
 		break;
 	case PIXEL_FORMAT_L_8:

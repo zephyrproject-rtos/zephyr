@@ -12,6 +12,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/toolchain.h>
 
 #include <stm32_bitops.h>
 #include <stm32_ll_system.h>
@@ -77,6 +78,7 @@ struct wkup_pin_dt_cfg_t {
 
 #define WKUP_PIN_NODE_ID_BY_IDX(idx) DT_CHILD(STM32_PWR_NODE, WKUP_PIN_NODE_LABEL(idx))
 
+__maybe_unused
 static const struct gpio_dt_spec empty_gpio = {.port = NULL, .pin = 0, .dt_flags = 0};
 
 /* cell_idx starts from 0 */
@@ -258,8 +260,6 @@ int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio)
 	bool found_gpio = false;
 	int i;
 	int j;
-
-	UNUSED(empty_gpio);
 
 	/* Look for a wake-up pin that has this GPIO pin as a source, if any */
 	for (i = 0; i < PWR_STM32_MAX_NB_WKUP_PINS; i++) {

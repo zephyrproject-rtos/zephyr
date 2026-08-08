@@ -49,24 +49,61 @@ enum comparator_trigger {
  */
 typedef void (*comparator_callback_t)(const struct device *dev, void *user_data);
 
-/** @cond INTERNAL_HIDDEN */
+/**
+ * @def_driverbackendgroup{Comparator,comparator_interface}
+ * @{
+ */
 
+/**
+ * @brief Get comparator's output state.
+ * See comparator_get_output() for argument description.
+ */
 typedef int (*comparator_api_get_output)(const struct device *dev);
+
+/**
+ * @brief Set comparator's trigger.
+ * See comparator_set_trigger() for argument description.
+ */
 typedef int (*comparator_api_set_trigger)(const struct device *dev,
 					  enum comparator_trigger trigger);
+
+/**
+ * @brief Set comparator's trigger callback.
+ * See comparator_set_trigger_callback() for argument description.
+ */
 typedef int (*comparator_api_set_trigger_callback)(const struct device *dev,
 						   comparator_callback_t callback,
 						   void *user_data);
+
+/**
+ * @brief Check if comparator's trigger is pending and clear it.
+ * See comparator_trigger_is_pending() for argument description.
+ */
 typedef int (*comparator_api_trigger_is_pending)(const struct device *dev);
 
+/**
+ * @driver_ops{Comparator}
+ */
 __subsystem struct comparator_driver_api {
+	/**
+	 * @driver_ops_mandatory @copybrief comparator_get_output
+	 */
 	comparator_api_get_output get_output;
+	/**
+	 * @driver_ops_mandatory @copybrief comparator_set_trigger
+	 */
 	comparator_api_set_trigger set_trigger;
+	/**
+	 * @driver_ops_mandatory @copybrief comparator_set_trigger_callback
+	 */
 	comparator_api_set_trigger_callback set_trigger_callback;
+	/**
+	 * @driver_ops_mandatory @copybrief comparator_trigger_is_pending
+	 */
 	comparator_api_trigger_is_pending trigger_is_pending;
 };
 
-/** @endcond */
+/** @} */
 
 /**
  * @brief Get comparator's output state

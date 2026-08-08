@@ -719,6 +719,38 @@ static inline unsigned int arch_num_cpus(void);
 
 
 /**
+ * @addtogroup arch-mmu
+ * @{
+ */
+
+/**
+ * Get the physical address mapped at a virtual address.
+ *
+ * The query is answered from the caller's currently active page tables.
+ * Only mappings that are active in the caller's context are reliably
+ * reported: a virtual address whose mapping is not part of that context
+ * (for example memory belonging to a memory domain that is not currently
+ * active, or per-context data pages such as the scratch page) may be
+ * reported as unmapped or resolve differently. Calling this function on
+ * such addresses is undefined behavior.
+ *
+ * From an implementation standpoint, only the currently installed page
+ * tables need to be consulted, without iterating over other page tables
+ * in the system: anything legitimately queried through this API maps
+ * identically in all of them.
+ *
+ * @param virt Page-aligned virtual address
+ * @param[out] phys Mapped physical address (can be NULL if only checking
+ *                  if virtual address is mapped)
+ *
+ * @retval 0 if mapping is found and valid
+ * @retval -EFAULT if virtual address is not mapped
+ */
+int arch_page_phys_get(void *virt, uintptr_t *phys);
+
+/** @} */
+
+/**
  * @defgroup arch-userspace Architecture-specific userspace APIs
  * @ingroup arch-interface
  * @{

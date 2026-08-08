@@ -1,0 +1,145 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Sanitizer run on native_sim, reported to the Security dashboard.
+#
+name: Sanitizers
+
+on:
+  schedule:
+    # Run at 06:00 UTC on every day.
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sanitize:
+    name: Run under ${{ matrix.name }}
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.3.20260727
+      options: '--entrypoint /bin/bash'
+    timeout-minutes: 600
+    permissions:
+      contents: read
+      actions: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: AddressSanitizer
+            sanitizer: asan
+            # LSan only reports at exit and needs ASan, so they pair.
+            twister-args: '--enable-asan --enable-lsan'
+
+          - name: UndefinedBehaviorSanitizer
+            sanitizer: ubsan
+            twister-args: '--enable-ubsan'
+
+    env:
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      # The subsystems worth the runtime cost: the parsers and state machines
+      # that process attacker-controlled input, plus the libraries under them.
+      TEST_ROOTS: '-T tests/net -T tests/bluetooth -T tests/subsys -T tests/lib'
+
+    steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone --shared /repo-cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Zephyr environment
+        uses: ./.github/actions/zephyr-ci-env
+        with:
+          group-filter: '+ci,+optional,+testing'
+          run-checks: 'true'
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
+      - name: Run tests under ${{ matrix.name }}
+        run: |
+          export ZEPHYR_BASE=${PWD}
+
+          # A sanitizer finding fails its test, so a non-zero exit is the
+          # expected outcome of a productive run and must not fail the job --
+          # the findings are the point. twister.yaml remains the gate.
+          set +e
+          ./scripts/twister \
+            -p native_sim \
+            --inline-logs --force-color -v \
+            --outdir twister-out-${{ matrix.sanitizer }} \
+            -j 16 \
+            ${{ matrix.twister-args }} \
+            ${TEST_ROOTS}
+          status=$?
+          set -e
+
+          if [ ${status} -ne 0 ]; then
+            echo "::notice title=${{ matrix.name }} run had failures::twister exited" \
+                 "${status}; this is expected when the sanitizer reports. See the" \
+                 "uploaded SARIF for the findings."
+          fi
+
+      - name: Convert findings to SARIF
+        run: |
+          python3 scripts/ci/sanitizer_sarif.py twister-out-${{ matrix.sanitizer }} \
+            --source-root "${PWD}" \
+            -o results-${{ matrix.sanitizer }}.sarif
+
+      - name: Write job summary
+        run: python3 scripts/ci/sarif_summary.py results-${{ matrix.sanitizer }}.sarif
+
+      - name: Upload SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@f205ea1c3313d32999d8d6a48b4f6530d4437b38 # v4.37.4
+        with:
+          sarif_file: results-${{ matrix.sanitizer }}.sarif
+          # One category per sanitizer. They report disjoint rule sets, and a
+          # shared category would let whichever job finished last close the
+          # other's alerts.
+          category: sanitizers-${{ matrix.sanitizer }}
+
+      - name: Upload SARIF as artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sanitizer-sarif-${{ matrix.sanitizer }}
+          if-no-files-found: ignore
+          retention-days: 30
+          path: results-${{ matrix.sanitizer }}.sarif
+
+      - name: Upload sanitizer logs
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: sanitizer-logs-${{ matrix.sanitizer }}
+          if-no-files-found: ignore
+          retention-days: 7
+          path: |
+            twister-out-${{ matrix.sanitizer }}/twister.log
+            twister-out-${{ matrix.sanitizer }}/twister.json

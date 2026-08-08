@@ -54,10 +54,10 @@ static inline void vendor_specific_irq_clear(const struct device *dev)
 	NRF_EXMIF->EVENTS_CORE = 0;
 }
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 static inline int vendor_specific_xip_enable(const struct device *dev,
 					     const struct mspi_dev_id *dev_id,
-					     const struct mspi_xip_cfg *cfg)
+					     const struct mspi_memmap_cfg *cfg)
 {
 	ARG_UNUSED(dev);
 
@@ -80,7 +80,7 @@ static inline int vendor_specific_xip_enable(const struct device *dev,
 
 static inline int vendor_specific_xip_disable(const struct device *dev,
 					      const struct mspi_dev_id *dev_id,
-					      const struct mspi_xip_cfg *cfg)
+					      const struct mspi_memmap_cfg *cfg)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(cfg);
@@ -95,7 +95,7 @@ static inline int vendor_specific_xip_disable(const struct device *dev,
 
 	return 0;
 }
-#endif /* defined(CONFIG_MSPI_XIP) */
+#endif /* defined(CONFIG_MSPI_MEMMAP) */
 
 #elif DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_mspi)
 #include <nrfx.h>
@@ -138,10 +138,10 @@ static inline void vendor_specific_irq_clear(const struct device *dev)
 	preg->EVENTS_DMA.DONE = 0;
 }
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 static inline int vendor_specific_xip_enable(const struct device *dev,
 					     const struct mspi_dev_id *dev_id,
-					     const struct mspi_xip_cfg *cfg)
+					     const struct mspi_memmap_cfg *cfg)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(dev_id);
@@ -152,7 +152,7 @@ static inline int vendor_specific_xip_enable(const struct device *dev,
 
 static inline int vendor_specific_xip_disable(const struct device *dev,
 					      const struct mspi_dev_id *dev_id,
-					      const struct mspi_xip_cfg *cfg)
+					      const struct mspi_memmap_cfg *cfg)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(dev_id);
@@ -160,7 +160,7 @@ static inline int vendor_specific_xip_disable(const struct device *dev,
 
 	return 0;
 }
-#endif /* defined(CONFIG_MSPI_XIP) */
+#endif /* defined(CONFIG_MSPI_MEMMAP) */
 
 #if defined(CONFIG_MSPI_DMA)
 /* DMA support */
@@ -342,7 +342,7 @@ static inline void vendor_specific_irq_clear(const struct device *dev)
 }
 static inline int vendor_specific_xip_enable(const struct device *dev,
 					     const struct mspi_dev_id *dev_id,
-					     const struct mspi_xip_cfg *cfg)
+					     const struct mspi_memmap_cfg *cfg)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(dev_id);
@@ -352,7 +352,7 @@ static inline int vendor_specific_xip_enable(const struct device *dev,
 }
 static inline int vendor_specific_xip_disable(const struct device *dev,
 					      const struct mspi_dev_id *dev_id,
-					      const struct mspi_xip_cfg *cfg)
+					      const struct mspi_memmap_cfg *cfg)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(dev_id);

@@ -18,9 +18,9 @@
 #define DT_DRV_COMPAT zephyr_dma_emul
 
 #ifdef CONFIG_DMA_64BIT
-#define dma_addr_t uint64_t
+typedef uint64_t dma_addr_t;
 #else
-#define dma_addr_t uint32_t
+typedef uint32_t dma_addr_t;
 #endif
 
 enum dma_emul_channel_state {

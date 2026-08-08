@@ -4,6 +4,7 @@ Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 SPDX-License-Identifier: Apache-2.0
 -->
 {% extends "base.html" %}
+{% from "macros.html" import copy_button %}
 
 {% block head %}
 
@@ -93,11 +94,17 @@ SPDX-License-Identifier: Apache-2.0
       <ul class="list-group list-group-flush">
         <li class="list-group-item">
           <div class="bold-lt">Output Directory</div>
-          <div><code>{{build.build_path.absolute()}}</code></div>
+          <div class="d-flex align-items-center">
+            <code id="buildPath">{{build.build_path.absolute()}}</code>
+            {{ copy_button("buildPath") }}
+          </div>
         </li>
         <li class="list-group-item">
           <div class="bold-lt">Command</div>
-          <div><code>{{build.command}}</code></div>
+          <div class="d-flex align-items-center">
+            <code id="buildCommand">{{build.command}}</code>
+            {{ copy_button("buildCommand") }}
+          </div>
         </li>
       </ul>
     </div>

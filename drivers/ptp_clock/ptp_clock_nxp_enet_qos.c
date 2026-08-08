@@ -225,6 +225,9 @@ static int ptp_clock_nxp_enet_qos_init(const struct device *dev)
 	while (data->base->MAC_TIMESTAMP_CONTROL & ENET_MAC_TIMESTAMP_CONTROL_TSADDREG_MASK) {
 	}
 
+	/* Allow the timestamp configuration to propagate to the MAC clock domain. */
+	k_busy_wait(10);
+
 	return 0;
 }
 

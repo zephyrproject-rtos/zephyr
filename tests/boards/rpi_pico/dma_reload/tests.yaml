@@ -1,0 +1,7 @@
+common:
+  tags:
+    - dma
+tests:
+  boards.rpi_pico.dma_reload:
+    platform_allow:
+      - rpi_pico2/rp2350a/m33

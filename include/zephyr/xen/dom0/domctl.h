@@ -13,9 +13,10 @@
 #ifndef __XEN_DOM0_DOMCTL_H__
 #define __XEN_DOM0_DOMCTL_H__
 
+#include <xen/public/xen.h>
+#include <xen/public/domctl.h>
+
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/domctl.h>
-#include <zephyr/xen/public/xen.h>
 
 #include <zephyr/kernel.h>
 
@@ -224,6 +225,26 @@ int xen_domctl_assign_dt_device(int domid, char *dtdev_path);
 int xen_domctl_deassign_dt_device(int domid, char *dtdev_path);
 
 /**
+ * @brief Physical interrupt passthrough descriptor.
+ */
+struct xen_domctl_pt_irq {
+	/** Machine IRQ number to bind or unbind. */
+	uint32_t machine_irq;
+	/** Xen passthrough IRQ type. */
+	uint8_t irq_type;
+	/** PCI bus number for PCI passthrough modes. */
+	uint8_t bus;
+	/** PCI device number for PCI passthrough modes. */
+	uint8_t device;
+	/** PCI INTx line for PCI passthrough modes. */
+	uint8_t intx;
+	/** ISA IRQ number for ISA passthrough modes. */
+	uint8_t isa_irq;
+	/** SPI number used with ``PT_IRQ_TYPE_SPI``. */
+	uint16_t spi;
+};
+
+/**
  * @brief Bind a physical interrupt to a guest domain.
  *
  * Only ``PT_IRQ_TYPE_SPI`` is currently supported.
@@ -244,6 +265,22 @@ int xen_domctl_deassign_dt_device(int domid, char *dtdev_path);
  */
 int xen_domctl_bind_pt_irq(int domid, uint32_t machine_irq, uint8_t irq_type, uint8_t bus,
 			   uint8_t device, uint8_t intx, uint8_t isa_irq, uint16_t spi);
+
+/**
+ * @brief Unbind a physical interrupt from a guest domain.
+ *
+ * Only ``PT_IRQ_TYPE_SPI`` is currently supported.
+ *
+ * @kconfig_dep{CONFIG_XEN_DOM0}
+ *
+ * @param domid Target domain identifier.
+ * @param irq Physical interrupt passthrough descriptor.
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL @p irq is NULL.
+ * @retval -ENOTSUP @p irq->irq_type is not supported by the current implementation.
+ */
+int xen_domctl_unbind_pt_irq(int domid, const struct xen_domctl_pt_irq *irq);
 
 /**
  * @brief Set the maximum number of vCPUs available to a domain.

@@ -28,6 +28,8 @@ extern "C" {
  * @brief Interfaces for Enhanced Serial Peripheral Interface (eSPI)
  *        target hardware.
  * @defgroup espi_interface ESPI
+ * @since 2.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -1052,7 +1054,7 @@ static inline int z_impl_espi_write_flash(const struct device *dev,
 }
 
 /**
- * @brief Sends a write request packet for shared flash.
+ * @brief Sends an erase request packet for shared flash.
  *
  * This routine provides an interface to send a request to erase the flash
  * components shared between the eSPI controller and eSPI targets.

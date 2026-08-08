@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config NET_LATMON
-	bool "Latency monitoring support"
+	bool "Latency monitoring support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select NET_SOCKETS
 	depends on NET_TCP

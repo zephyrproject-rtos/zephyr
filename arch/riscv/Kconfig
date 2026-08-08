@@ -586,6 +586,9 @@ config MAIN_STACK_SIZE
 config PRIVILEGED_STACK_SIZE
 	default 2048 if 64BIT && ASSERT
 
+config IDLE_STACK_SIZE
+	default 1024 if 64BIT && SMP
+
 config TEST_EXTRA_STACK_SIZE
 	default 4096 if CPP_EXCEPTIONS
 	default 1536

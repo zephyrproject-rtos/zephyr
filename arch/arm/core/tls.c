@@ -39,16 +39,22 @@ size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 	stack_ptr -= z_tls_data_size();
 	z_tls_copy(stack_ptr);
 
+	size_t toolchain_tls_size = 0;
 #ifndef __IAR_SYSTEMS_ICC__
 	/* Skip two pointers due to toolchain */
-	stack_ptr -= sizeof(uintptr_t) * 2;
+	toolchain_tls_size = sizeof(uintptr_t) * 2;
+	stack_ptr -= toolchain_tls_size;
 #endif
 
+#if defined(CONFIG_MULTITHREADING)
 	/*
 	 * Set thread TLS pointer which is used in
 	 * context switch to point to TLS area.
 	 */
 	new_thread->tls = POINTER_TO_UINT(stack_ptr);
+#else
+	ARG_UNUSED(new_thread);
+#endif /* CONFIG_MULTITHREADING */
 
-	return (z_tls_data_size() + (sizeof(uintptr_t) * 2));
+	return (z_tls_data_size() + toolchain_tls_size);
 }

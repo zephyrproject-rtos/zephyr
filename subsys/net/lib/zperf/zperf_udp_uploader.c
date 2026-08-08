@@ -24,15 +24,14 @@ static uint8_t sample_packet[sizeof(struct zperf_udp_datagram) +
 static struct zperf_async_upload_context udp_async_upload_ctx;
 #endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
-static inline void zperf_upload_decode_stat(const uint8_t *data,
-					    size_t datalen,
+static inline void zperf_upload_decode_stat(const uint8_t *data, size_t datalen,
 					    struct zperf_results *results)
 {
 	struct zperf_server_hdr *stat;
+	uint32_t total_datagrams;
 	uint32_t flags;
 
-	if (datalen < sizeof(struct zperf_udp_datagram) +
-		      sizeof(struct zperf_server_hdr)) {
+	if (datalen < sizeof(struct zperf_udp_datagram) + sizeof(struct zperf_server_hdr)) {
 		NET_WARN("Network packet too short");
 	}
 
@@ -43,27 +42,26 @@ static inline void zperf_upload_decode_stat(const uint8_t *data,
 		NET_WARN("Unexpected response flags");
 	}
 
-	results->nb_packets_rcvd = net_ntohl(UNALIGNED_GET(&stat->datagrams));
 	results->nb_packets_lost = net_ntohl(UNALIGNED_GET(&stat->error_cnt));
-	results->nb_packets_outorder =
-		net_ntohl(UNALIGNED_GET(&stat->outorder_cnt));
+	total_datagrams = net_ntohl(UNALIGNED_GET(&stat->datagrams));
+	/* Keep the public result as the number of datagrams actually received. */
+	results->nb_packets_rcvd = total_datagrams >= results->nb_packets_lost
+					   ? total_datagrams - results->nb_packets_lost
+					   : 0U;
+	results->nb_packets_outorder = net_ntohl(UNALIGNED_GET(&stat->outorder_cnt));
 	results->total_len = (((uint64_t)net_ntohl(UNALIGNED_GET(&stat->total_len1))) << 32) +
-		net_ntohl(UNALIGNED_GET(&stat->total_len2));
+			     net_ntohl(UNALIGNED_GET(&stat->total_len2));
 	results->time_in_us = net_ntohl(UNALIGNED_GET(&stat->stop_usec)) +
-		net_ntohl(UNALIGNED_GET(&stat->stop_sec)) * USEC_PER_SEC;
+			      net_ntohl(UNALIGNED_GET(&stat->stop_sec)) * USEC_PER_SEC;
 	results->jitter_in_us = net_ntohl(UNALIGNED_GET(&stat->jitter2)) +
-		net_ntohl(UNALIGNED_GET(&stat->jitter1)) * USEC_PER_SEC;
+				net_ntohl(UNALIGNED_GET(&stat->jitter1)) * USEC_PER_SEC;
 }
 
-static inline int zperf_upload_fin(int sock,
-				   uint32_t nb_packets,
-				   uint64_t end_time_us,
-				   uint32_t packet_size,
-				   struct zperf_results *results,
+static inline int zperf_upload_fin(int sock, uint32_t nb_packets, uint64_t end_time_us,
+				   uint32_t packet_size, struct zperf_results *results,
 				   bool is_mcast_pkt)
 {
-	uint8_t stats[sizeof(struct zperf_udp_datagram) +
-		      sizeof(struct zperf_server_hdr)] = { 0 };
+	uint8_t stats[sizeof(struct zperf_udp_datagram) + sizeof(struct zperf_server_hdr)] = {0};
 	struct zperf_udp_datagram *datagram;
 	struct zperf_client_hdr_v1 *hdr;
 	uint32_t secs = end_time_us / USEC_PER_SEC;

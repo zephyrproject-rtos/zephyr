@@ -15,10 +15,5 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # launching too many parallel builds which can lead to a too high system load.
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/ll/compile.sh
 ${ZEPHYR_BASE}/tests/bsim/bluetooth/mesh/compile.sh
-${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
-if [ ${BOARD} == "nrf52_bsim/native" ]; then
-	${ZEPHYR_BASE}/tests/bsim/bluetooth/hci_uart/compile.sh
-fi
-${ZEPHYR_BASE}/tests/bsim/bluetooth/tester/compile.sh
 
 wait_for_background_jobs

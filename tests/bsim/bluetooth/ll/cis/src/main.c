@@ -17,7 +17,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"

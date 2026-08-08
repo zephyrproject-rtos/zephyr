@@ -11,7 +11,7 @@
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include "timer_cmsdk_apb.h"
 
 #define TIMER_NODE DT_CHOSEN(zephyr_system_timer)
@@ -29,8 +29,6 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(TIMER_NODE, arm_cmsdk_timer),
 	((uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() /                                      \
 		    (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define MAX_CYC UINT32_MAX
-#define MAX_TICKS                                                                                  \
-	(int32_t)MIN((uint64_t)((MAX_CYC - CYC_PER_TICK) / CYC_PER_TICK), (uint64_t)INT32_MAX)
 
 #ifdef CONFIG_CMSDK_APB_TIMER_MIN_DELAY_OVERRIDE
 #define MIN_DELAY_CYCLES CONFIG_CMSDK_APB_TIMER_MIN_DELAY_CYCLES

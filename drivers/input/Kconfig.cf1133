@@ -6,6 +6,7 @@ menuconfig INPUT_CF1133
 	default y
 	depends on DT_HAS_SITRONIX_CF1133_ENABLED
 	select I2C
+	select INPUT_TOUCH
 	help
 	  Enable driver for Sitronix capacitive touch panel
 	  controller. This driver should support CF1133.

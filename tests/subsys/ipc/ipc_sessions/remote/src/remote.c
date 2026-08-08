@@ -70,8 +70,7 @@ static int reboot_by_wdt(void)
 		.window.max = 10,
 	};
 	static const uint8_t wdt_options[] = {
-		WDT_OPT_PAUSE_HALTED_BY_DBG | WDT_OPT_PAUSE_IN_SLEEP,
-		WDT_OPT_PAUSE_IN_SLEEP,
+		WDT_OPT_PAUSE_HALTED_BY_DBG,
 		0
 	};
 
@@ -185,7 +184,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 		break;
 	}
 	case IPC_TEST_CMD_REBOND: {
-		LOG_INF("Command processing: REBOOT");
+		LOG_INF("Command processing: REBOND");
 
 		struct ipc_test_cmd_rebond *cmd_rebond = (struct ipc_test_cmd_rebond *)cmd;
 

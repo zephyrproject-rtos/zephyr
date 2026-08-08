@@ -34,9 +34,17 @@ int arch_dcache_flush_all(void)
 
 int arch_dcache_invd_all(void)
 {
-	SCB_InvalidateDCache();
-
-	return 0;
+	/*
+	 * CMSIS provides SCB_InvalidateDCache() to invalidate the entire
+	 * D-cache. However, using it while the system is running can also
+	 * invalidate dirty cache lines belonging to the current stack or other
+	 * runtime state, resulting in data loss or corruption. Since it is
+	 * difficult for this backend to provide a correct runtime
+	 * implementation of arch_dcache_invd_all(), report the operation as
+	 * -ENOTSUP instead. The whole-cache clean and clean-invalidate paths
+	 * remain available for callers that need safe maintenance.
+	 */
+	return -ENOTSUP;
 }
 
 int arch_dcache_flush_and_invd_all(void)

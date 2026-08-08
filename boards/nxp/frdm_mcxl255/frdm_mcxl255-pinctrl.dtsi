@@ -16,10 +16,44 @@
 		};
 	};
 
+	pinmux_lpuart1: pinmux_lpuart1 {
+		group0 {
+			pinmux = <LPUART1_RXD_P3_4>,
+				 <LPUART1_TXD_P2_6>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
 	pinmux_aon_lpuart0: pinmux_aon_lpuart0 {
 		group0 {
 			pinmux = <AON_LPUART0_TX_P0_6>,
 				 <AON_LPUART0_RX_P0_7>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpspi0: pinmux_lpspi0 {
+		group0 {
+			pinmux = <LPSPI0_SDO_P2_0>,
+				 <LPSPI0_SCK_P2_1>,
+				 <LPSPI0_SDI_P2_2>,
+				 <LPSPI0_PCS0_P2_3>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpspi1: pinmux_lpspi1 {
+		group0 {
+			pinmux = <LPSPI1_SDO_P1_17>,
+				 <LPSPI1_SCK_P1_18>,
+				 <LPSPI1_SDI_P1_19>,
+				 <LPSPI1_PCS0_P1_20>;
 			drive-strength = "low";
 			slew-rate = "fast";
 			input-enable;

@@ -153,8 +153,8 @@ size_t hl78xx_get_allow_match_size(void);
 int hl78xx_run_init_script(struct hl78xx_data *data);
 int hl78xx_run_periodic_script(struct hl78xx_data *data);
 int hl78xx_run_post_restart_script(struct hl78xx_data *data);
-int hl78xx_run_init_fail_script_async(struct hl78xx_data *data);
-int hl78xx_run_enable_ksup_urc_script_async(struct hl78xx_data *data);
+int hl78xx_run_init_fail_script(struct hl78xx_data *data);
+int hl78xx_run_enable_ksup_urc_script(struct hl78xx_data *data);
 int hl78xx_run_pwroff_script_async(struct hl78xx_data *data);
 int hl78xx_run_post_restart_script_async(struct hl78xx_data *data);
 /* Run the LTE disable GSM enable registration status script */

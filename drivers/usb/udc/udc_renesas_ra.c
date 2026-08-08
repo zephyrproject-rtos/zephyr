@@ -10,7 +10,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/renesas_ra_cgc.h>
 #include <zephyr/drivers/usb/udc.h>
-#include "r_usb_device.h"
+#include <r_usb_device.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_renesas_ra, CONFIG_UDC_DRIVER_LOG_LEVEL);

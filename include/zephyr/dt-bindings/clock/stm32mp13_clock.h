@@ -28,6 +28,11 @@
 #define STM32_SRC_PLL4_Q	(STM32_SRC_PLL4_P + 1)
 #define STM32_SRC_PLL4_R	(STM32_SRC_PLL4_Q + 1)
 
+/** Timer group kernel clocks */
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PLL4_R + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
+#define STM32_SRC_TIMPCLK6	(STM32_SRC_TIMPCLK2 + 1)
+
 /** Bus clocks */
 #define STM32_CLOCK_BUS_APB1    0x700
 #define STM32_CLOCK_BUS_APB2    0x708

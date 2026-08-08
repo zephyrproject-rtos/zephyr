@@ -80,51 +80,63 @@ static struct k_mutex *get_posix_mutex(pthread_mutex_t mu)
 struct k_mutex *to_posix_mutex(pthread_mutex_t *mu)
 {
 	size_t bit;
+	struct k_mutex *m = NULL;
 
 	if (*mu != PTHREAD_MUTEX_INITIALIZER) {
 		return get_posix_mutex(*mu);
 	}
 
-	/* Try and automatically associate a posix_mutex */
-	if (sys_bitarray_alloc(&posix_mutex_bitarray, 1, &bit) < 0) {
-		LOG_DBG("Unable to allocate pthread_mutex_t");
-		return NULL;
+	/*
+	 * Auto-associate a posix_mutex. Only this lazy-init path needs to be
+	 * serialized, so that two threads racing on the same static mutex do not
+	 * each allocate a slot.
+	 */
+	SYS_SEM_LOCK(&lock) {
+		if (*mu != PTHREAD_MUTEX_INITIALIZER) {
+			/* lost the race; another thread already associated a slot */
+			m = get_posix_mutex(*mu);
+			SYS_SEM_LOCK_BREAK;
+		}
+
+		if (sys_bitarray_alloc(&posix_mutex_bitarray, 1, &bit) < 0) {
+			LOG_DBG("Unable to allocate pthread_mutex_t");
+			SYS_SEM_LOCK_BREAK;
+		}
+
+		/* Record the associated posix_mutex in mu and mark as initialized */
+		*mu = mark_pthread_obj_initialized(bit);
+		m = &posix_mutex_pool[bit];
 	}
 
-	/* Record the associated posix_mutex in mu and mark as initialized */
-	*mu = mark_pthread_obj_initialized(bit);
-
-	return &posix_mutex_pool[bit];
+	return m;
 }
 
 static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
 {
 	int type = -1;
 	size_t bit = -1;
-	int ret = EINVAL;
+	int ret = 0;
 	size_t lock_count = -1;
-	struct k_mutex *m = NULL;
-	struct k_thread *owner = NULL;
+	struct k_mutex *m;
+	struct k_thread *owner;
 
-	SYS_SEM_LOCK(&lock) {
-		m = to_posix_mutex(mu);
-		if (m == NULL) {
-			ret = EINVAL;
-			SYS_SEM_LOCK_BREAK;
-		}
-
-		LOG_DBG("Locking mutex %p with timeout %" PRIx64, m, (int64_t)timeout.ticks);
-
-		ret = 0;
-		bit = posix_mutex_to_offset(m);
-		type = posix_mutex_type[bit];
-		owner = m->owner;
-		lock_count = m->lock_count;
-	}
-
-	if (ret != 0) {
+	/*
+	 * An already-initialized mutex needs no global lock here: get_posix_mutex()
+	 * only reads the (internally locked) bitarray, and the snapshot below is no
+	 * more racy than pthread_mutex_unlock(), which is also lock-free.
+	 */
+	m = to_posix_mutex(mu);
+	if (m == NULL) {
+		ret = EINVAL;
 		goto handle_error;
 	}
+
+	LOG_DBG("Locking mutex %p with timeout %" PRIx64, m, (int64_t)timeout.ticks);
+
+	bit = posix_mutex_to_offset(m);
+	type = posix_mutex_type[bit];
+	owner = m->owner;
+	lock_count = m->lock_count;
 
 	if (owner == k_current_get()) {
 		switch (type) {

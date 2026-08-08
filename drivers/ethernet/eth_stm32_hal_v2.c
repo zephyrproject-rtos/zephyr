@@ -22,7 +22,13 @@
 
 LOG_MODULE_DECLARE(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
-#define ETH_DMA_TX_TIMEOUT_MS	20U  /* transmit timeout in milliseconds */
+/* transmit timeout in milliseconds */
+#define ETH_DMA_TX_TIMEOUT_MS	20U
+
+/* context allocation timeout: larger than DMA timeout to allow the driver
+ * to free buffers after DMA completion/transmission timeout
+ */
+#define ETH_TX_CONTEXT_TIMEOUT_MS (ETH_DMA_TX_TIMEOUT_MS * 5)
 
 /* We separate the cases where HAL API uses heth or not */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32mp13_ethernet)
@@ -35,6 +41,12 @@ LOG_MODULE_DECLARE(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 #ifndef ETH_STM32_HAL_CB_HAS_HETH
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "Multiple Ethernet instances are not supported on this platform");
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+#define STM32_ETH_RX_DESC_LIST(heth) ((heth)->RxDescList[(heth)->RxOpCH])
+#else
+#define STM32_ETH_RX_DESC_LIST(heth) ((heth)->RxDescList)
 #endif
 
 #ifdef ETH_STM32_HAL_CB_HAS_HETH
@@ -176,10 +188,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		.CRCPadCtrl = ETH_CRC_PAD_INSERT,
 	};
 
-#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	bool timestamped_frame;
-#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
-
 	__ASSERT_NO_MSG(pkt != NULL);
 	__ASSERT_NO_MSG(pkt->frags != NULL);
 
@@ -200,9 +208,7 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	buf_header = &dev_data->tx_buffer_header[ctx->first_tx_buffer_index];
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	timestamped_frame = eth_stm32_is_ptp_pkt(net_pkt_iface(pkt), pkt) ||
-		net_pkt_is_tx_timestamping(pkt);
-	if (timestamped_frame) {
+	if (net_pkt_is_tx_timestamping(pkt)) {
 		/* Enable transmit timestamp */
 		if (HAL_ETH_PTP_InsertTxTimestamp(heth) != HAL_OK) {
 			res = -EIO;
@@ -259,6 +265,8 @@ error:
 static inline struct eth_stm32_tx_context *
 allocate_tx_context(struct eth_stm32_hal_dev_data *dev_data, struct net_pkt *pkt)
 {
+	k_timepoint_t deadline = sys_timepoint_calc(K_MSEC(ETH_TX_CONTEXT_TIMEOUT_MS));
+
 	for (;;) {
 		for (uint16_t index = 0; index < ETH_TX_DESC_CNT; index++) {
 			if (!dev_data->tx_context[index].used) {
@@ -269,6 +277,13 @@ allocate_tx_context(struct eth_stm32_hal_dev_data *dev_data, struct net_pkt *pkt
 				return &dev_data->tx_context[index];
 			}
 		}
+
+		/* Check if the timepoint deadline expired (TX stall or hardware failure) */
+		if (sys_timepoint_expired(deadline)) {
+			LOG_ERR("TX context allocation timeout. Hardware may be disconnected");
+			return NULL;
+		}
+
 		k_yield();
 	}
 }
@@ -289,9 +304,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 			ETH_CHECKSUM_IPHDR_PAYLOAD_INSERT_PHDR_CALC : ETH_CHECKSUM_DISABLE,
 		.CRCPadCtrl = ETH_CRC_PAD_INSERT,
 	};
-#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	bool timestamped_frame;
-#endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 	__ASSERT_NO_MSG(pkt != NULL);
 	__ASSERT_NO_MSG(pkt->frags != NULL);
@@ -303,12 +315,14 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	ctx = allocate_tx_context(dev_data, pkt);
+	if (ctx == NULL) {
+		return -ETIMEDOUT;
+	}
+
 	buf_header = &dev_data->tx_buffer_header[ctx->first_tx_buffer_index];
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	timestamped_frame = eth_stm32_is_ptp_pkt(net_pkt_iface(pkt), pkt) ||
-			    net_pkt_is_tx_timestamping(pkt);
-	if (timestamped_frame) {
+	if (net_pkt_is_tx_timestamping(pkt)) {
 		/* Enable transmit timestamp */
 		if (HAL_ETH_PTP_InsertTxTimestamp(heth) != HAL_OK) {
 			return -EIO;
@@ -431,9 +445,21 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	struct net_ptp_time timestamp;
 	ETH_TimeStampTypeDef ts_registers;
+	bool timestamp_valid = false;
+
 	/* Default to invalid value. */
 	timestamp.second = UINT64_MAX;
 	timestamp.nanosecond = UINT32_MAX;
+	ts_registers.TimeStampHigh = UINT32_MAX;
+	ts_registers.TimeStampLow = UINT32_MAX;
+
+	/* HAL_ETH_PTP_GetRxTimestamp() returns a cached timestamp without
+	 * indicating whether the current packet actually refreshed it. Poison the
+	 * cache before HAL_ETH_ReadData() so a missing timestamp is not mistaken
+	 * for a stale, valid hardware timestamp.
+	 */
+	STM32_ETH_RX_DESC_LIST(heth).TimeStamp.TimeStampHigh = UINT32_MAX;
+	STM32_ETH_RX_DESC_LIST(heth).TimeStamp.TimeStampLow = UINT32_MAX;
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 	if (HAL_ETH_ReadData(heth, &appbuf) != HAL_OK) {
@@ -448,9 +474,11 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 	}
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	if (HAL_ETH_PTP_GetRxTimestamp(heth, &ts_registers) == HAL_OK) {
+	if (HAL_ETH_PTP_GetRxTimestamp(heth, &ts_registers) == HAL_OK &&
+	    (ts_registers.TimeStampHigh != UINT32_MAX || ts_registers.TimeStampLow != UINT32_MAX)) {
 		timestamp.second = ts_registers.TimeStampHigh;
 		timestamp.nanosecond = ts_registers.TimeStampLow;
+		timestamp_valid = true;
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
@@ -487,7 +515,7 @@ release_desc:
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	pkt->timestamp.second = timestamp.second;
 	pkt->timestamp.nanosecond = timestamp.nanosecond;
-	if (timestamp.second != UINT64_MAX) {
+	if (timestamp_valid) {
 		net_pkt_set_rx_timestamping(pkt, true);
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
@@ -528,12 +556,10 @@ static void eth_stm32_update_dma_error(struct eth_stm32_hal_dev_data *dev_data, 
 		eth_stats_update_errors_tx(dev_data->iface);
 	}
 #else
-	if ((dma_error & ETH_DMASR_RWTS) || (dma_error & ETH_DMASR_RPSS) ||
-	    (dma_error & ETH_DMASR_RBUS)) {
+	if (dma_error & (ETH_DMASR_RWTS | ETH_DMASR_RPSS | ETH_DMASR_RBUS)) {
 		eth_stats_update_errors_rx(dev_data->iface);
 	}
-	if ((dma_error & ETH_DMASR_ETS) || (dma_error & ETH_DMASR_TPSS) ||
-	    (dma_error & ETH_DMASR_TJTS)) {
+	if (dma_error & (ETH_DMASR_ETS | ETH_DMASR_TPSS | ETH_DMASR_TJTS)) {
 		eth_stats_update_errors_tx(dev_data->iface);
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet) */

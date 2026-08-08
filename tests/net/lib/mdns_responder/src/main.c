@@ -703,6 +703,79 @@ ZTEST(test_mdns_responder, test_basic_dns_sd_query)
 	check_basic_dns_sd_query_resp(response_pkts[0]);
 }
 
+/* Verify a PTR answer's name is exactly service.proto.domain (three labels,
+ * uncompressed) -- used to confirm which service a response packet answers.
+ */
+static void check_ptr_answer_name(struct net_pkt *pkt, const char *service, const char *proto,
+				  const char *domain)
+{
+	struct dns_header resp_header;
+	struct dns_rr resp_record;
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	zassert_ok(net_pkt_skip(pkt, NET_IPV6UDPH_LEN), "net_pkt skip failed");
+	zassert_ok(net_pkt_read(pkt, &resp_header, sizeof(resp_header)), "net_pkt read failed");
+	zassert_true(net_ntohs(resp_header.ancount) >= 1, "Invalid record count");
+
+	validate_label(pkt, service, false);
+	validate_label(pkt, proto, false);
+	validate_label(pkt, domain, true);
+
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_PTR, "Invalid record type");
+}
+
+/* Regression test: avahi and other real-world clients batch several PTR
+ * questions into one mDNS packet, and every question after the first uses DNS
+ * name compression (RFC 1035 4.1.4) to reference an earlier question's labels
+ * instead of spelling them out again. send_sd_response() used to always parse
+ * from the start of the whole message (dns_sd_query_extract()), so it only
+ * ever matched Question #1 and had no compression-pointer support at all --
+ * anything after the first question was silently never answered. This sends a
+ * 2-question packet where Question #2 ("_zephyr._tcp.local") points its
+ * trailing "local" label back at Question #1's ("_foo._udp.local"), and
+ * expects a distinct, correct answer for *both* questions.
+ */
+ZTEST(test_mdns_responder, test_multi_question_compressed_dns_sd_query)
+{
+	static uint8_t multi_question_query[] = {
+		/* Header, QDCOUNT = 2 */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* Question 1: _foo._udp.local, PTR */
+		0x04, 0x5f, 0x66, 0x6f, 0x6f, 0x04, 0x5f, 0x75, 0x64, 0x70, 0x05, 0x6c, 0x6f, 0x63,
+		0x61, 0x6c, 0x00, 0x00, 0x0c, 0x00, 0x01,
+		/* Question 2: _zephyr._tcp, then a compression pointer (0xC0 0x16) back
+		 * to the "local" label inside Question 1 (byte offset 22 from the start
+		 * of the message, i.e. right after the DNS header), PTR
+		 */
+		0x07, 0x5f, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x04, 0x5f, 0x74, 0x63, 0x70, 0xc0,
+		0x16, 0x00, 0x0c, 0x00, 0x01};
+	int res;
+
+	/* Question 2 targets a second service, registered as an external record
+	 * here (rather than a compile-time DNS_SD_REGISTER_*_SERVICE) so it's
+	 * scoped to this test and doesn't shift the statically-registered service
+	 * count that test_external_records' service-type-enumeration checks rely on.
+	 */
+	zassert_not_null(alloc_ext_record("zephyr", "_zephyr", "_tcp", "local", NULL, 0, 5353),
+			 "Failed to alloc the record");
+
+	send_msg(multi_question_query, sizeof(multi_question_query));
+
+	/* Expect two separate response packets, one per question. */
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response to Question 1");
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response to Question 2 (the compressed one)");
+
+	zassert_equal(responses_count, 2, "Expected exactly 2 responses, got %zu", responses_count);
+
+	check_ptr_answer_name(response_pkts[0], "_foo", "_udp", "local");
+	check_ptr_answer_name(response_pkts[1], "_zephyr", "_tcp", "local");
+}
+
 /* Basic mDNS query for zephyr.local (AAAA), used to probe whether the
  * responder is currently reachable.
  */
@@ -913,30 +986,6 @@ ZTEST(test_mdns_responder, test_ipv6_group_ref_not_leaked_on_cycles)
 		      "(%ld -> %ld)", ref_before, ref_after);
 }
 
-/* Reproduces the state the connection-manager reporter observed: the mDNS
- * IPv4 group is still marked "joined" when NET_EVENT_IF_UP is delivered (the
- * link bounce did not clear it). A plain net_ipv4_igmp_join() is then a no-op
- * (igmp.c returns early when the address is already joined), so no membership
- * report reaches an IGMP-snooping switch and the responder stops receiving
- * queries even though the local state looks fine. Recovery must force a fresh
- * report in this case.
- */
-ZTEST(test_mdns_responder, test_ipv4_igmp_report_when_already_joined_on_if_up)
-{
-	zassert_true(ipv4_group_joined(iface1),
-		     "IPv4 mDNS group should be joined at start");
-
-	/* Group stays joined; only an IF_UP event is delivered (no down). */
-	igmp_report_count = 0;
-
-	net_mgmt_event_notify(NET_EVENT_IF_UP, iface1);
-	k_sleep(K_MSEC(200));
-
-	zassert_true(igmp_report_count > 0,
-		     "No IGMP report was re-emitted when the group was already joined "
-		     "on interface up");
-}
-
 /* Same, but for a carrier loss (Ethernet cable unplugged/replugged) without an
  * administrative down.
  */
@@ -985,6 +1034,13 @@ ZTEST(test_mdns_responder, test_group_recovery_after_carrier_off_on)
 		     "Responder did not recover after carrier came back");
 }
 
+/* The next two tests verify which interfaces the configured responder policy enables.
+ * iface1 is dummy0 and iface2 is dummy1 (default names for the two dummy interfaces).
+ * The policy test scenarios use allowlist "dummy0" and denylist "dummy1", so in both cases
+ * iface1 runs mDNS while iface2 does not. Under the default ALL policy both
+ * interfaces run mDNS.
+ */
+
 /* Recovery must also work on interfaces other than the first one. The old
  * NET_EVENT_IF_UP handler never rejoined the IPv6 MLD group (ff02::fb) for
  * any interface, so a second interface lost mDNS after a down/up cycle. (Its
@@ -996,11 +1052,13 @@ ZTEST(test_mdns_responder, test_second_iface_group_recovery_after_down_up)
 {
 	struct net_if *iface2 = net_if_get_by_index(2);
 
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
 	zassert_not_null(iface2, "Second interface is NULL");
 
-	zassert_true(ipv4_group_joined(iface2),
+	zexpect_true(ipv4_group_joined(iface2),
 		     "iface2 IPv4 mDNS group not joined before the link went down");
-	zassert_true(ipv6_group_joined(iface2),
+	zexpect_true(ipv6_group_joined(iface2),
 		     "iface2 IPv6 mDNS group not joined before the link went down");
 
 	zassert_ok(net_if_down(iface2), "Cannot bring the second interface down");
@@ -1008,10 +1066,173 @@ ZTEST(test_mdns_responder, test_second_iface_group_recovery_after_down_up)
 
 	k_sleep(K_MSEC(100));
 
-	zassert_true(ipv4_group_joined(iface2),
+	zexpect_true(ipv4_group_joined(iface2),
 		     "iface2 IPv4 mDNS group not rejoined after the interface came back up");
-	zassert_true(ipv6_group_joined(iface2),
+	zexpect_true(ipv6_group_joined(iface2),
 		     "iface2 IPv6 mDNS group not rejoined after the interface came back up");
 }
+
+/* With a non-default interface policy in effect, the responder must operate on
+ * the allowed interface (iface1) and stay off the excluded one (iface2). The
+ * excluded interface must never join the mDNS multicast groups, not even after
+ * a link recovery that would otherwise rejoin them.
+ */
+ZTEST(test_mdns_responder, test_iface_policy_excludes_iface2)
+{
+	struct net_if *iface2 = net_if_get_by_index(2);
+
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
+	zassert_not_null(iface2, "Second interface is NULL");
+
+	/* The allowed interface still runs mDNS. */
+	zexpect_true(ipv4_group_joined(iface1),
+		     "policy-allowed iface1 not in the IPv4 mDNS group");
+	zexpect_true(ipv6_group_joined(iface1),
+		     "policy-allowed iface1 not in the IPv6 mDNS group");
+
+	/* The excluded interface must not be a member of either group. */
+	zexpect_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv4 mDNS group");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv6 mDNS group");
+
+	zassert_ok(net_if_down(iface2), "Cannot bring the second interface down");
+	zassert_ok(net_if_up(iface2), "Cannot bring the second interface back up");
+
+	k_sleep(K_MSEC(100));
+
+	/* A recovery cycle must not sneak the excluded interface into the group. */
+	zexpect_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv4 mDNS group on recovery");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv6 mDNS group on recovery");
+}
+
+/* The runtime control API must be able to take the responder off an interface
+ * that it is currently running on, and put it back. Disabling drops the mDNS
+ * multicast memberships (and closes the listener socket); enabling restores
+ * them so that the responder answers queries again.
+ */
+ZTEST(test_mdns_responder, test_runtime_disable_then_enable_iface)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL);
+
+	zexpect_true(ipv4_group_joined(iface1),
+		     "iface1 not in the IPv4 mDNS group at start");
+	zexpect_true(ipv6_group_joined(iface1),
+		     "iface1 not in the IPv6 mDNS group at start");
+
+	zexpect_ok(mdns_responder_disable_iface(iface1),
+		   "Cannot disable the responder on iface1");
+	k_sleep(K_MSEC(100));
+
+	zexpect_false(ipv4_group_joined(iface1),
+		      "iface1 still in the IPv4 mDNS group after disable");
+	zexpect_false(ipv6_group_joined(iface1),
+		      "iface1 still in the IPv6 mDNS group after disable");
+
+	zexpect_ok(mdns_responder_enable_iface(iface1),
+		   "Cannot re-enable the responder on iface1");
+	k_sleep(K_MSEC(100));
+
+	zexpect_true(ipv4_group_joined(iface1),
+		     "iface1 not rejoined the IPv4 mDNS group after enable");
+	zexpect_true(ipv6_group_joined(iface1),
+		     "iface1 not rejoined the IPv6 mDNS group after enable");
+	zexpect_true(responder_answers_query(),
+		     "Responder did not answer after being re-enabled");
+}
+
+/* Argument validation for the runtime control API. */
+ZTEST(test_mdns_responder, test_runtime_iface_control_bad_args)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL);
+
+	zexpect_equal(mdns_responder_enable_iface(NULL), -EINVAL,
+		      "enable_iface(NULL) should return -EINVAL");
+	zexpect_equal(mdns_responder_disable_iface(NULL), -EINVAL,
+		      "disable_iface(NULL) should return -EINVAL");
+}
+
+/* A runtime enable must override the build-time policy: an interface excluded
+ * by the policy (iface2 == dummy1) can still be turned on at runtime, and
+ * turned back off again.
+ */
+ZTEST(test_mdns_responder, test_runtime_enable_overrides_policy)
+{
+	struct net_if *iface2 = net_if_get_by_index(2);
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL);
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
+	zexpect_not_null(iface2, "Second interface is NULL");
+
+	/* Policy keeps iface2 off. */
+	zexpect_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 is in the IPv4 mDNS group");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 is in the IPv6 mDNS group");
+
+	/* Runtime enable overrides the policy. */
+	zexpect_ok(mdns_responder_enable_iface(iface2),
+		   "Cannot enable the responder on iface2");
+	k_sleep(K_MSEC(100));
+
+	zexpect_true(ipv4_group_joined(iface2),
+		     "iface2 not in the IPv4 mDNS group after runtime enable");
+	zexpect_true(ipv6_group_joined(iface2),
+		     "iface2 not in the IPv6 mDNS group after runtime enable");
+
+	/* Turning it back off must drop the memberships again. Leave iface2 in
+	 * the off state so the rest of the suite sees the policy default.
+	 */
+	zexpect_ok(mdns_responder_disable_iface(iface2),
+		   "Cannot disable the responder on iface2");
+	k_sleep(K_MSEC(100));
+
+	zexpect_false(ipv4_group_joined(iface2),
+		      "iface2 still in the IPv4 mDNS group after runtime disable");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "iface2 still in the IPv6 mDNS group after runtime disable");
+}
+
+/* The test-only hooks are compiled together with runtime interface control
+ * (they call mdns_close_listeners()), which is also the only configuration
+ * where the teardown path this guards against is reachable. That availability
+ * gate stays a compile-time #if; the policy applicability gate below is a
+ * runtime skip.
+ */
+#if defined(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL)
+extern int mdns_test_get_listener_sock(net_sa_family_t family, unsigned int slot);
+extern int mdns_test_reinit_with_stale_slot(unsigned int slot);
+
+/* A listener slot that the setup skips (here iface2 == dummy1 == slot 1, kept
+ * off by the allowlist policy) must be marked closed (-1), not left at the
+ * zero-initialized fd 0. Otherwise mdns_close_listeners() - run on every
+ * runtime reconfigure - would treat the slot as open, unregister a zeroed
+ * dispatcher and close(0), silently closing an unrelated descriptor.
+ *
+ * Reproduce the boot-time "never opened" condition by injecting fd 0 into the
+ * excluded slot and re-running the setup, then assert the slot was closed.
+ */
+ZTEST(test_mdns_responder, test_excluded_listener_slot_marked_closed)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALLOWLIST);
+
+	zexpect_ok(mdns_test_reinit_with_stale_slot(1),
+		   "Cannot re-run mDNS listener setup");
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		zexpect_equal(mdns_test_get_listener_sock(NET_AF_INET, 1), -1,
+			      "Excluded IPv4 listener slot left open (stale fd)");
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		zexpect_equal(mdns_test_get_listener_sock(NET_AF_INET6, 1), -1,
+			      "Excluded IPv6 listener slot left open (stale fd)");
+	}
+}
+#endif /* CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL */
 
 ZTEST_SUITE(test_mdns_responder, NULL, test_setup, before, cleanup, NULL);

@@ -384,13 +384,12 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
     robot.option = option
     robot.instance = instance
     proc_mock = mock.Mock(
-        returncode=returncode, communicate=mock.Mock(return_value=(b"output", None))
+        returncode=returncode,
+        communicate=mock.Mock(return_value=(b"output", None)),
     )
-    popen_mock = mock.Mock(
-        return_value=mock.Mock(
-            __enter__=mock.Mock(return_value=proc_mock), __exit__=mock.Mock()
-        )
-    )
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock()
+    popen_mock = mock.Mock(return_value=proc_mock)
 
     # Act
     with mock.patch("subprocess.Popen", popen_mock) as mock.mock_popen, mock.patch(
@@ -562,16 +561,15 @@ def test_pytest__generate_parameters_for_hardware(tmp_path):
     assert pytest_test.pytest_params.flash_command == "flash_command"
 
 
-def test_pytest__update_command_with_env_dependencies():
-    cmd = ["cmd"]
+def test_pytest_get_run_env():
     pytest_test = Pytest()
-    mock.patch.object(Pytest, "PYTEST_PLUGIN_INSTALLED", False)
 
     # Act
-    result_cmd, _ = pytest_test._update_command_with_env_dependencies(cmd)
+    with mock.patch("twisterlib.harness.PYTEST_PLUGIN_INSTALLED", False):
+        env = pytest_test._get_run_env()
 
     # Assert
-    assert result_cmd == ["cmd", "-p", "twister_harness.plugin"]
+    assert "pytest-twister-harness" in env["PYTHONPATH"]
 
 
 def test_pytest_run(tmp_path, caplog):

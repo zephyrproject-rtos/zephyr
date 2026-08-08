@@ -266,7 +266,7 @@ static inline uint8_t log_backend_id_get(const struct log_backend *const backend
 /**
  * @brief Get backend.
  *
- * @param[in] idx  Pointer to the backend instance.
+ * @param[in] idx  Index of the backend instance.
  *
  * @return    Pointer to the backend instance.
  */

@@ -1,0 +1,23 @@
+<!--
+Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+{#
+  copy_button(target_id)
+
+  Renders a small copy-to-clipboard button that copies the text content of the
+  element with id="{{ target_id }}" when clicked.  The button shows a check icon
+  briefly on success. Code in clipboard.js (loaded globally by base.html)
+  enables all copy buttons via the data-copy-target attribute.
+
+  Usage:
+    {% from "macros.html" import copy_button %}
+    <code id="myElement">some text</code>{{ copy_button("myElement") }}
+#}
+{% macro copy_button(target_id) %}<button class="btn btn-sm btn-outline-light text-secondary border-0 p-1 flex-shrink-0 ms-1"
+        data-copy-target="{{ target_id }}" title="Copy to clipboard">
+  <i class="bi bi-copy"></i>
+  <i class="bi bi-check2 text-success d-none"></i>
+</button>{% endmacro %}

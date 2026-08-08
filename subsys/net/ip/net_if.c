@@ -1266,7 +1266,7 @@ static void leave_mcast_all(struct net_if *iface)
 			continue;
 		}
 
-		net_ipv6_mld_leave(iface, &ipv6->mcast[i].address.in6_addr);
+		net_ipv6_mld_send_leave(iface, &ipv6->mcast[i]);
 	}
 }
 
@@ -1746,11 +1746,9 @@ out:
  */
 static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 {
-	struct net_in6_addr solicit_addrs[NET_IF_MAX_IPV6_ADDR];
 	struct net_if_mcast_addr *ifaddr, *next;
 	struct net_if_ipv6 *ipv6;
 	sys_slist_t rejoin_needed;
-	int solicit_count = 0;
 
 	sys_slist_init(&rejoin_needed);
 
@@ -1762,24 +1760,6 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 
 	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
 		goto out;
-	}
-
-	/* Collect the addresses whose solicited node multicast groups need to
-	 * be (re)joined if the interface has ND enabled. The join itself is
-	 * done below without the iface lock held: join_mcast_nodes() transmits
-	 * MLD reports, whose TX path locks other interfaces, so doing it under
-	 * net_if_lock() could deadlock (ABBA) when two interfaces are brought
-	 * up concurrently.
-	 */
-	if (!net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
-		ARRAY_FOR_EACH(ipv6->unicast, i) {
-			if (!ipv6->unicast[i].is_used) {
-				continue;
-			}
-
-			solicit_addrs[solicit_count++] =
-				ipv6->unicast[i].address.in6_addr;
-		}
 	}
 
 	/* If MLD is disabled on the interface, skip rejoining. */
@@ -1800,13 +1780,6 @@ static void rejoin_ipv6_mcast_groups(struct net_if *iface)
 out:
 	net_if_unlock(iface);
 
-	/* Join the solicited node multicast groups without holding the iface
-	 * lock, see the comment above.
-	 */
-	for (int i = 0; i < solicit_count; i++) {
-		join_mcast_nodes(iface, &solicit_addrs[i]);
-	}
-
 	/* Rejoin multicast groups without holding the iface lock to avoid any
 	 * possible mutex deadlock issues.
 	 */
@@ -1814,7 +1787,7 @@ out:
 					  ifaddr, next, rejoin_node) {
 		int ret;
 
-		ret = net_ipv6_mld_rejoin(iface, &ifaddr->address.in6_addr);
+		ret = net_ipv6_mld_rejoin(iface, ifaddr);
 		if (ret < 0) {
 			NET_ERR("Cannot join mcast address %s for %d (%d)",
 				net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
@@ -1980,8 +1953,16 @@ struct net_if_addr *net_if_ipv6_addr_lookup_raw(const uint8_t *addr,
 				}
 
 				ifaddr = &ipv6->unicast[i];
-				net_if_unlock(iface);
-				goto out;
+
+				/* If the interface is up, return the result immediately.
+				 * Otherwise, keep searching and return the result only after
+				 * checking there's no other interface that is up with given
+				 * address.
+				 */
+				if (net_if_is_up(iface)) {
+					net_if_unlock(iface);
+					goto out;
+				}
 			}
 		}
 
@@ -3353,6 +3334,10 @@ static struct net_in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 	uint8_t len, temp_addr_len = 0;
 	bool ret;
 
+	if (!net_if_is_up(iface)) {
+		return src;
+	}
+
 	net_if_lock(iface);
 
 	ipv6 = iface->config.ip.ipv6;
@@ -3913,14 +3898,10 @@ bool net_if_ipv4_addr_onlink(struct net_if **iface, const struct net_in_addr *ad
 	struct net_if *best_iface = NULL;
 	uint8_t best_len = 0U;
 
-	if (iface == NULL || *iface == NULL) {
-		return false;
-	}
-
 	STRUCT_SECTION_FOREACH(net_if, tmp) {
 		struct net_if_ipv4 *ipv4;
 
-		if (*iface != tmp) {
+		if (iface != NULL && *iface != NULL && *iface != tmp) {
 			continue;
 		}
 
@@ -3962,7 +3943,10 @@ bool net_if_ipv4_addr_onlink(struct net_if **iface, const struct net_in_addr *ad
 	}
 
 	if (best_iface != NULL) {
-		*iface = best_iface;
+		if (iface != NULL) {
+			*iface = best_iface;
+		}
+
 		return true;
 	}
 
@@ -4151,6 +4135,10 @@ static struct net_in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 	struct net_if_ipv4 *ipv4;
 	struct net_in_addr *src = NULL;
 	uint8_t len;
+
+	if (!net_if_is_up(iface)) {
+		return src;
+	}
 
 	net_if_lock(iface);
 
@@ -4411,8 +4399,16 @@ struct net_if_addr *net_if_ipv4_addr_lookup_raw(const uint8_t *addr,
 				}
 
 				ifaddr = &ipv4->unicast[i].ipv4;
-				net_if_unlock(iface);
-				goto out;
+
+				/* If the interface is up, return the result immediately.
+				 * Otherwise, keep searching and return the result only after
+				 * checking there's no other interface that is up with given
+				 * address.
+				 */
+				if (net_if_is_up(iface)) {
+					net_if_unlock(iface);
+					goto out;
+				}
 			}
 		}
 
@@ -4427,6 +4423,44 @@ struct net_if_addr *net_if_ipv4_addr_lookup(const struct net_in_addr *addr,
 					    struct net_if **ret)
 {
 	return net_if_ipv4_addr_lookup_raw(addr->s4_addr, ret);
+}
+
+struct net_if_addr *net_if_ipv4_addr_lookup_by_iface_raw(struct net_if *iface,
+							 const uint8_t *addr)
+{
+	struct net_if_addr *ifaddr = NULL;
+	struct net_if_ipv4 *ipv4;
+
+	net_if_lock(iface);
+
+	ipv4 = iface->config.ip.ipv4;
+	if (ipv4 == NULL) {
+		goto out;
+	}
+
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		if (!ipv4->unicast[i].ipv4.is_used ||
+		    ipv4->unicast[i].ipv4.address.family != NET_AF_INET) {
+			continue;
+		}
+
+		if (UNALIGNED_GET((uint32_t *)addr) ==
+		    ipv4->unicast[i].ipv4.address.in_addr.s_addr) {
+			ifaddr = &ipv4->unicast[i].ipv4;
+			goto out;
+		}
+	}
+
+out:
+	net_if_unlock(iface);
+
+	return ifaddr;
+}
+
+struct net_if_addr *net_if_ipv4_addr_lookup_by_iface(struct net_if *iface,
+						     const struct net_in_addr *addr)
+{
+	return net_if_ipv4_addr_lookup_by_iface_raw(iface, addr->s4_addr);
 }
 
 int z_impl_net_if_ipv4_addr_lookup_by_index(const struct net_in_addr *addr)
@@ -5432,7 +5466,7 @@ static void leave_ipv4_mcast_all(struct net_if *iface)
 			continue;
 		}
 
-		net_ipv4_igmp_leave(iface, &ipv4->mcast[i].address.in_addr);
+		net_ipv4_igmp_send_leave(iface, &ipv4->mcast[i]);
 	}
 }
 
@@ -5483,7 +5517,7 @@ static void rejoin_ipv4_mcast_groups(struct net_if *iface)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&rejoin_needed, ifaddr, next, rejoin_node) {
 		int ret;
 
-		ret = net_ipv4_igmp_rejoin(iface, &ifaddr->address.in_addr);
+		ret = net_ipv4_igmp_rejoin(iface, ifaddr);
 		if (ret < 0) {
 			NET_ERR("Cannot join mcast address %s for %d (%d)",
 				net_sprint_ipv4_addr(&ifaddr->address.in_addr),

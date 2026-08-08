@@ -110,12 +110,10 @@ Zephyr's implementation of the ITS API
 (:kconfig:option:`CONFIG_SECURE_STORAGE_ITS_IMPLEMENTATION_ZEPHYR`)
 makes use of the ITS transform and store modules, which can be configured and customized separately.
 Have a look at the :kconfig:option-regex:`ITS transform and store Kconfig options
-<CONFIG_SECURE_STORAGE_ITS_(STORE|TRANSFORM)_.*_CUSTOM>` to see the different customization
-possibilities.
+<CONFIG_SECURE_STORAGE_ITS_(TRANSFORM|STORE)_.*>` to see the different configuration possibilities.
 
-It's especially recommended to implement a custom encryption key provider
-(:kconfig:option:`CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_CUSTOM`)
-that is more secure than the available options, if possible.
+It's especially recommended to use or implement a secure :kconfig:option-regex:`encryption
+key provider <CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_.*>`.
 
 Samples
 *******

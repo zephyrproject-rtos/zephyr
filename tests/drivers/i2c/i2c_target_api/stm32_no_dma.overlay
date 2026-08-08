@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Disable use of DMAs on both I2C interfaces */
+
+&i2c_test_0 {
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
+};
+
+&i2c_test_1 {
+	/delete-property/ dmas;
+	/delete-property/ dma-names;
+};

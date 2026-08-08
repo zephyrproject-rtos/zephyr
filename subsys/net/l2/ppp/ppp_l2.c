@@ -77,15 +77,30 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 	struct ppp_context *ctx = net_if_l2_data(iface);
 	enum net_verdict verdict = NET_DROP;
 	uint16_t protocol;
+	bool pfc = false;
+	uint8_t hi;
 	int ret;
 
 	if (!ctx->is_ready_to_serve) {
 		goto quit;
 	}
 
-	ret = net_pkt_read_be16(pkt, &protocol);
+	ret = net_pkt_read_u8(pkt, &hi);
 	if (ret < 0) {
 		goto quit;
+	}
+
+	if (hi & 0x01U) {
+		protocol = hi;
+		pfc = true;
+	} else {
+		uint8_t lo;
+
+		ret = net_pkt_read_u8(pkt, &lo);
+		if (ret < 0) {
+			goto quit;
+		}
+		protocol = ((uint16_t)hi << 8) | lo;
 	}
 
 	if ((IS_ENABLED(CONFIG_NET_IPV4) && protocol == PPP_IP) ||
@@ -93,7 +108,11 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 		/* Remove the protocol field so that IP packet processing
 		 * continues properly in net_core.c:process_data()
 		 */
-		(void)net_buf_pull_be16(pkt->buffer);
+		if (pfc) {
+			(void)net_buf_pull_u8(pkt->buffer);
+		} else {
+			(void)net_buf_pull_be16(pkt->buffer);
+		}
 		net_pkt_cursor_init(pkt);
 		return NET_CONTINUE;
 	}
@@ -106,18 +125,25 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 		return proto->handler(ctx, iface, pkt);
 	}
 
-	switch (protocol) {
-	case PPP_IP:
-	case PPP_IPV6:
-	case PPP_ECP:
-	case PPP_CCP:
-	case PPP_LCP:
-	case PPP_IPCP:
-	case PPP_IPV6CP:
-		ppp_send_proto_rej(iface, pkt, protocol);
-		break;
-	default:
-		break;
+	/* The Rejected-Protocol field of a Protocol-Reject is copied verbatim
+	 * from the received frame, but RFC 1661 ch. 5.7 requires it to be two
+	 * octets. There is no headroom to expand a compressed Protocol field
+	 * in place, so stay silent rather than send a malformed reject.
+	 */
+	if (!pfc) {
+		switch (protocol) {
+		case PPP_IP:
+		case PPP_IPV6:
+		case PPP_ECP:
+		case PPP_CCP:
+		case PPP_LCP:
+		case PPP_IPCP:
+		case PPP_IPV6CP:
+			ppp_send_proto_rej(iface, pkt, protocol);
+			break;
+		default:
+			break;
+		}
 	}
 
 	NET_DBG("%s protocol %s%s(0x%02x)",
@@ -490,8 +516,8 @@ static void tx_handler(void *p1, void *p2, void *p3)
 	}
 }
 
-static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
-				     struct net_if *iface)
+static void net_ppp_mgmt_evt_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+				     size_t info_length __unused, void *user_data __unused)
 {
 	struct ppp_context *ctx;
 
@@ -521,6 +547,9 @@ static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint64_
 	}
 }
 
+NET_MGMT_REGISTER_EVENT_HANDLER(net_ppp_mgmt_events, NET_EVENT_IF_UP | NET_EVENT_IF_DOWN,
+				net_ppp_mgmt_evt_handler, NULL);
+
 void net_ppp_init(struct net_if *iface)
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
@@ -538,11 +567,6 @@ void net_ppp_init(struct net_if *iface)
 #if defined(CONFIG_NET_SHELL)
 	k_sem_init(&ctx->shell.wait_echo_reply, 0, K_SEM_MAX_LIMIT);
 #endif
-
-	net_mgmt_init_event_callback(&ctx->mgmt_evt_cb, net_ppp_mgmt_evt_handler,
-				     (NET_EVENT_IF_UP | NET_EVENT_IF_DOWN));
-
-	net_mgmt_add_event_callback(&ctx->mgmt_evt_cb);
 
 	STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_LCP) {

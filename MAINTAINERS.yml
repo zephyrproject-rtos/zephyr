@@ -121,6 +121,25 @@
 #         are the ones used in test case definitions, and in test suite definitions in
 #         testcase.yaml.
 #
+#     meta:
+#         Boolean (default false). Set to true for areas that cut across the
+#         whole tree (documentation, samples, tests, benchmarks, the release
+#         process, ...) rather than owning one subsystem, and whose file
+#         patterns therefore match large parts of it.
+#
+#         Tooling treats such areas differently:
+#
+#         * scripts/ci/set_assignees.py does not weight them when picking a
+#           pull request assignee, so a meta-area maintainer is only assigned
+#           when the meta-area is the sole area a pull request touches.
+#
+#         * scripts/ci/sync_maintainer_tests.py does not auto-generate 'tests'
+#           entries for them, as the identifiers derived from their broad file
+#           patterns would be too generic to be useful.
+#
+#         This is the single place where meta-areas are declared; add the key
+#         to an area to classify it as one.
+#
 #
 # All areas must have a 'files' and/or 'files-regex' key. The other keys are
 # optional.
@@ -214,6 +233,7 @@ ADI Platforms:
     - drivers/ethernet/eth_adin*
     - drivers/ethernet/phy/phy_adin*
     - drivers/ethernet/mdio/mdio_adin*
+    - drivers/misc/tmc6460/
     - drivers/sensor/adi/
     - drivers/stepper/adi_tmc/
     - drivers/usb/udc/*max*
@@ -222,6 +242,8 @@ ADI Platforms:
     - dts/bindings/*/lltc,*
     - dts/bindings/*/maxim,*
     - dts/vendor/adi/
+    - include/zephyr/drivers/misc/tmc6460/
+    - samples/drivers/misc/tmc6460/
     - soc/adi/
   files-regex:
     - ^drivers/(adc|dac|gpio|mfd|regulator)/.*adp?\d+
@@ -261,14 +283,21 @@ ARM Platforms:
     - boards/arm/mps*/
     - boards/arm/v2m_*/
     - boards/arm/fvp_base*/
+    - boards/qemu/cortex_a53/
+    - boards/qemu/kvm_arm64/
     - soc/arm/mps*/
     - soc/arm/musca/
     - soc/arm/beetle/
     - soc/arm/designstart/
     - soc/arm/fvp_aemv8*/
+    - soc/arm/qemu_cortex_a53/
+    - soc/arm/qemu_virt_arm64/
     - dts/arm/armv*.dtsi
+    - dts/arm64/fvp/
+    - dts/arm64/qemu/
     - dts/bindings/arm/arm*.yaml
     - drivers/interrupt_controller/intc_gic*
+    - tests/arch/arm64/arm64_gicv3_its/boards/fvp_*.conf
   labels:
     - "platform: ARM"
 
@@ -291,11 +320,11 @@ ARM SiP SVC:
 ARM arch:
   status: maintained
   maintainers:
-    - wearyzen
     - ithinuel
   collaborators:
     - MaureenHelm
     - stephanosio
+    - wearyzen
   files:
     - arch/arm/
     - arch/arm/core/offsets/
@@ -322,9 +351,9 @@ ARM64 arch:
     - arch/arm64/
     - include/zephyr/arch/arm64/
     - tests/arch/arm64/
-    - dts/arm64/
-    - boards/qemu/kvm_arm64/
-    - boards/qemu/cortex_a53/
+    - dts/arm64/armv*.dtsi
+  files-exclude:
+    - tests/arch/arm64/arm64_gicv3_its/boards/
   labels:
     - "area: ARM64"
   tests:
@@ -376,6 +405,15 @@ Alif Semiconductor Platforms:
   description: >-
     Alif Semiconductor SoCs, device tree files, and related drivers.
 
+Allwinner Platforms:
+  status: odd fixes
+  files:
+    - dts/arm/allwinner/
+    - dts/arm64/allwinner/
+    - soc/allwinner/
+  labels:
+    - "platform: Allwinner"
+
 Ambiq Platforms:
   status: maintained
   maintainers:
@@ -398,8 +436,6 @@ AndesTech Platforms:
   status: maintained
   maintainers:
     - jimmyzhe
-  collaborators:
-    - kevinwang821020
   files:
     - boards/andestech/
     - drivers/*/*andes*
@@ -469,6 +505,15 @@ Authentication:
   tests:
     - sample.authentication.fido2
 
+BLIIoT Platforms:
+  status: maintained
+  maintainers:
+    - tinegachris
+  files:
+    - boards/bliiot/
+  labels:
+    - "platform: BLIIoT"
+
 Base OS:
   status: maintained
   maintainers:
@@ -517,6 +562,7 @@ BeagleBoard Platforms:
 
 Benchmarks:
   status: maintained
+  meta: true
   maintainers:
     - peter-mitsis
   collaborators:
@@ -574,7 +620,6 @@ Bluetooth Audio:
     - asbjornsabo
     - fredrikdanebjer
     - larsgk
-    - pin-zephyr
     - niym-ot
     - jthm-ot
     - alexsven
@@ -637,6 +682,7 @@ Bluetooth Controller:
     - wopu-ot
     - erbr-ot
     - Tronil
+    - Thalley
   files:
     - doc/services/connectivity/bluetooth/bluetooth-ctlr-arch.rst
     - doc/services/connectivity/bluetooth/img/ctlr*
@@ -667,7 +713,7 @@ Bluetooth HCI:
     - HoZHel
     - cvinayak
     - HaavardRei
-    - merin-infineon
+    - MerinMGeorge
   files:
     - include/zephyr/drivers/bluetooth/
     - include/zephyr/drivers/bluetooth.h
@@ -791,6 +837,7 @@ Bluetooth Mesh:
     - HaavardRei
     - omkar3141
     - KyraLengfeld
+    - ludvigsj
   files:
     - doc/services/connectivity/bluetooth/api/mesh/
     - include/zephyr/bluetooth/mesh/
@@ -1362,7 +1409,6 @@ Disk:
     - tests/drivers/build_all/disk/
     - include/zephyr/sd/
     - dts/bindings/sd/
-    - dts/bindings/mmc/
     - dts/bindings/disk/
   file-groups:
     - name: eMMC
@@ -1408,6 +1454,7 @@ Display drivers:
 
 Documentation:
   status: maintained
+  meta: true
   maintainers:
     - kartben
   collaborators:
@@ -1449,12 +1496,13 @@ Documentation Infrastructure:
     - nashif
   files:
     - doc/404.rst
+    - doc/CMakeLists.txt
+    - doc/Makefile
+    - doc/_*/
+    - doc/conf.py
+    - doc/package*.json
     - doc/requirements.in
     - doc/requirements.txt
-    - doc/_*/
-    - doc/CMakeLists.txt
-    - doc/conf.py
-    - doc/Makefile
     - doc/zephyr.doxyfile.in
   labels:
     - "area: Documentation Infrastructure"
@@ -1941,6 +1989,7 @@ Documentation Infrastructure:
     - lmajewski
     - pdgendt
     - ClaCodes
+    - tpambor
   files:
     - drivers/ethernet/
     - include/zephyr/dt-bindings/ethernet/
@@ -1960,6 +2009,7 @@ Documentation Infrastructure:
   tests:
     - net.ethernet
     - sample.drivers.ethernet
+    - net.ethernet.build
 
 "Drivers: FPGA":
   status: maintained
@@ -2751,6 +2801,21 @@ Documentation Infrastructure:
     - doc/hardware/peripherals/sensor/
     - tests/drivers/build_all/sensor/
     - include/zephyr/drivers/sensor_*
+  file-groups:
+    - name: Vendor-owned sensor drivers
+      defer-to-other-areas: true
+      files:
+        - drivers/sensor/adi/
+        - drivers/sensor/espressif/
+        - drivers/sensor/infineon/
+        - drivers/sensor/ite/
+        - drivers/sensor/microchip/
+        - drivers/sensor/nordic/
+        - drivers/sensor/nxp/
+        - drivers/sensor/silabs/
+        - drivers/sensor/st/
+        - drivers/sensor/tdk/
+        - drivers/sensor/wsen/
   labels:
     - "area: Sensors"
   tests:
@@ -2835,6 +2900,8 @@ Documentation Infrastructure:
     - "area: Timer"
   tests:
     - drivers.timer
+    - kernel
+    - arch
 
 "Drivers: Time Aware GPIO":
   status: maintained
@@ -2880,13 +2947,10 @@ Documentation Infrastructure:
     - drivers/video/
     - include/zephyr/drivers/video.h
     - include/zephyr/drivers/video/
-    - include/zephyr/drivers/video-controls.h
     - include/zephyr/dt-bindings/video/
     - doc/hardware/peripherals/video.rst
     - tests/drivers/*/video/
     - dts/bindings/video/
-    - samples/drivers/video/
-    - tests/drivers/video/
   labels:
     - "area: Video"
   tests:
@@ -2959,6 +3023,7 @@ Documentation Infrastructure:
     - kludentwo
     - krish2718
     - MaochenWang1
+    - maass-hamburg
   files:
     - drivers/wifi/
     - dts/bindings/wifi/
@@ -3280,6 +3345,15 @@ Heap Management:
     - libraries.multi_heap
     - libraries.shared_multi_heap
 
+Heimann Platforms:
+  status: maintained
+  maintainers:
+    - tswaehn
+  files:
+    - boards/heimann/
+  labels:
+    - "platform: heimann"
+
 IPC:
   status: maintained
   maintainers:
@@ -3339,7 +3413,7 @@ Infineon Platforms:
     - jsbatch
     - Peterson-Brett
     - lauracarlesso
-    - merin-infineon
+    - MerinMGeorge
     - ifx-rmcs
     - parthitce
   files:
@@ -3994,6 +4068,7 @@ Microchip SmartFusion2 platform:
   collaborators:
     - AntonVynohradov
   files:
+    - boards/microchip/m2s_hello_fpga_kit/
     - boards/microchip/m2s010_mkr_kit/
     - drivers/clock_control/*smartfusion2*
     - dts/arm/microchip/smartfusion2*/
@@ -4052,7 +4127,7 @@ Modem:
     - subsys/modem/
     - include/zephyr/modem/
     - tests/subsys/modem/
-    - doc/services/modem/
+    - doc/services/connectivity/modem/
     - samples/net/cellular_modem/
     - include/zephyr/drivers/cellular.h
   labels:
@@ -4098,12 +4173,12 @@ NXP Platform Drivers:
   status: maintained
   maintainers:
     - zejiang0jason
-    - mmahadevan108
+    - butok
   collaborators:
-    - manuargue
+    - iuliana-prodan
     - dbaluta
     - Holt-Sun
-    - butok
+    - mmahadevan108
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
@@ -4199,9 +4274,10 @@ NXP Platforms (MCU):
   status: maintained
   maintainers:
     - iuliana-prodan
-    - mmahadevan108
-  collaborators:
     - butok
+    - zejiang0jason
+  collaborators:
+    - mmahadevan108
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
@@ -4362,6 +4438,7 @@ NXP Platforms (MPU):
     - soc/nxp/imx/
     - soc/nxp/layerscape/
     - boards/nxp/ls1046ardb/
+    - tests/arch/arm64/arm64_gicv3_its/boards/imx*.conf
   files-regex:
     - boards/nxp/.*m?imx[^(rt)].*/
   labels:
@@ -4452,6 +4529,7 @@ Networking:
   files-exclude:
     - doc/services/connectivity/networking/api/gptp.rst
     - doc/services/connectivity/networking/api/ieee802154.rst
+    - doc/services/connectivity/networking/api/mcp.rst
     - doc/services/connectivity/networking/api/ocpp.rst
     - doc/services/connectivity/networking/api/ptp.rst
     - doc/services/connectivity/networking/api/wifi.rst
@@ -4463,6 +4541,7 @@ Networking:
     - doc/services/connectivity/networking/eth_*.rst
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
+    - include/zephyr/net/mcp/
     - include/zephyr/net/ptp.h
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/dhcpv4*.h
@@ -4474,6 +4553,7 @@ Networking:
     - samples/net/sockets/coap_*/
     - samples/net/sockets/*http*/
     - samples/net/lwm2m_client/
+    - samples/net/mcp/
     - samples/net/ocpp/
     - samples/net/wifi/
     - samples/net/dhcpv4_client/
@@ -4484,12 +4564,14 @@ Networking:
     - subsys/net/lib/config/ieee802154*
     - subsys/net/lib/http/
     - subsys/net/lib/lwm2m/
+    - subsys/net/lib/mcp/
     - subsys/net/lib/ocpp/
     - subsys/net/lib/ptp/
     - subsys/net/lib/tls_credentials/
     - subsys/net/lib/dhcpv4/
     - tests/net/dhcpv4/
     - tests/net/ieee802154/
+    - tests/net/lib/mcp/
     - tests/net/lib/ocpp/
     - tests/net/lib/http*/
     - tests/net/wifi/
@@ -5215,6 +5297,7 @@ Raspberry Pi Pico Platforms:
   collaborators:
     - threeeights
     - ajf58
+    - dsseng
   files:
     - boards/raspberrypi/rpi_pico*/
     - boards/adafruit/kb2040/
@@ -5227,6 +5310,7 @@ Raspberry Pi Pico Platforms:
     - boards/sparkfun/rp2040_mikrobus/
     - boards/waveshare/rp2040_zero/
     - boards/wiznet/w5500_evb_pico*/
+    - boards/wiznet/w55rp20_evb_pico*/
     - boards/wiznet/w6100_evb_pico*/
     - boards/wiznet/w6300_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
@@ -5308,6 +5392,7 @@ Realtek Fingerprint Platforms:
 
 Release:
   status: maintained
+  meta: true
   maintainers:
     - henrikbrixandersen
     - teburd
@@ -5452,6 +5537,15 @@ Retention:
   labels:
     - "area: Retention"
 
+Rockchip Platforms:
+  status: odd fixes
+  files:
+    - dts/arm/rockchip/
+    - dts/arm64/rockchip/
+    - soc/rockchip/
+  labels:
+    - "platform: Rockchip"
+
 SPARC arch:
   status: odd fixes
   collaborators:
@@ -5481,6 +5575,15 @@ SPDX Tooling:
     - "area: SPDX Tooling"
   tests:
     - buildsystem.sbom.spdx
+
+ST Sensors:
+  status: maintained
+  maintainers:
+    - avisconti
+  files:
+    - drivers/sensor/st/
+  tests:
+    - drivers.sensor
 
 STM32 Platforms:
   status: maintained
@@ -5571,6 +5674,7 @@ Safety:
     - parphane
   collaborators:
     - jkey-eng
+    - anobli
   files:
     - doc/safety/
   labels:
@@ -5578,6 +5682,7 @@ Safety:
 
 Samples:
   status: maintained
+  meta: true
   maintainers:
     - kartben
   collaborators:
@@ -5926,6 +6031,19 @@ TDK Sensors:
   tests:
     - drivers.sensor
 
+TI AM13 Platforms:
+  status: maintained
+  maintainers:
+    - glneo
+  collaborators:
+    - s-m33r
+  files:
+    - boards/ti/*am13*/
+    - dts/arm/ti/am13*/
+    - soc/ti/am13*/
+  labels:
+    - "platform: TI AM13"
+
 TI K3 Platforms:
   status: maintained
   maintainers:
@@ -5948,24 +6066,29 @@ TI K3 Platforms:
     - dts/arm/ti/j7*
     - dts/bindings/*/ti,k3*
     - dts/vendor/ti/
+    - dts/arm64/ti/
     - soc/ti/k3/
   labels:
     - "platform: TI K3"
 
-TI MSPM0 Platforms:
+TI MSPM Platforms:
   status: maintained
   maintainers:
     - ssekar15
+    - glneo
+  collaborators:
     - d-philpot
+    - Aman-Lachhiramka-ti
+    - Alex9360
   files:
-    - soc/ti/mspm0/
-    - boards/ti/*mspm0*/
-    - dts/arm/ti/mspm0/
+    - soc/ti/mspm/
+    - boards/ti/*mspm*/
+    - dts/arm/ti/mspm*/
     - dts/bindings/*/*mspm0*
     - drivers/*/*_mspm0*
     - modules/Kconfig.mspm0
   labels:
-    - "platform: Texas Instruments MSPM0"
+    - "platform: TI MSPM"
 
 TI SimpleLink Platforms:
   status: maintained
@@ -6076,6 +6199,7 @@ Testing with Renode:
 
 Tests:
   status: maintained
+  meta: true
   maintainers:
     - nashif
   files:
@@ -6345,6 +6469,7 @@ Utilities:
     - tests/lib/ringbuffer/
     - tests/lib/notify/
     - tests/lib/linear_range/
+    - tests/lib/cobs/
   file-groups:
     - name: COBS
       collaborators:
@@ -6372,6 +6497,24 @@ VFS:
     - "area: File System"
   tests:
     - filesystem
+
+Video Subsystem:
+  status: maintained
+  maintainers:
+    - josuah
+    - ngphibang
+  collaborators:
+    - loicpoulain
+    - avolmat-st
+  files:
+    - include/zephyr/video/
+    - samples/subsys/video/
+    - subsys/video/
+    - tests/subsys/video/
+  labels:
+    - "area: Video"
+  tests:
+    - video
 
 WCH Platforms:
   status: maintained
@@ -6673,6 +6816,7 @@ West:
     - LucasTambor
     - marekmatej
     - raffarost
+    - tmedicci
     - wmrsouza
   files:
     - modules/Kconfig.esp32
@@ -6716,7 +6860,7 @@ West:
     - jsbatch
     - Peterson-Brett
     - lauracarlesso
-    - merin-infineon
+    - MerinMGeorge
     - ifx-rmcs
   files:
     - modules/Kconfig.infineon
@@ -6795,16 +6939,15 @@ West:
 "West project: hal_nxp":
   status: maintained
   maintainers:
-    - ZhaoxiangJin
     - mmahadevan108
+    - zejiang0jason
+    - axelnxp
   collaborators:
     - manuargue
     - PetervdPerk-NXP
     - bperseghetti
     - JiafeiPan
     - MaochenWang1
-    - axelnxp
-    - zejiang0jason
     - Holt-Sun
     - lucien-nxp
   files:
@@ -6868,6 +7011,7 @@ West:
   collaborators:
     - threeeights
     - ajf58
+    - dsseng
   files:
     - modules/hal_rpi_pico/
   labels:
@@ -7377,6 +7521,18 @@ West:
   labels:
     - "area: Rust"
 
+"West project: zephyr-xenlib":
+  status: maintained
+  maintainers:
+    - firscity
+  collaborators:
+    - lorc
+    - luca-fancellu
+    - soburi
+  files: []
+  labels:
+    - "area: Xen Platform"
+
 Wiki:
   status: maintained
   maintainers:
@@ -7405,6 +7561,7 @@ Xen Platform:
   collaborators:
     - lorc
     - luca-fancellu
+    - soburi
   files:
     - include/zephyr/xen/
     - drivers/xen/
@@ -7420,10 +7577,10 @@ Xilinx Platforms:
   status: maintained
   maintainers:
     - michalsimek
+    - kedareswararao
   collaborators:
     - henrikbrixandersen
     - ibirnbaum
-    - kedareswararao
     - neeliajay
     - venodela
   files:

@@ -76,6 +76,7 @@ static const struct modem_cellular_vendor_config nrf91_slm_vendor = {
 		.size = ARRAY_SIZE(nordic_nrf91_slm_unsol),
 	},
 	/* clang-format on */
+	.chat_delimiter = "\r\n",
 	.power_pulse_duration_ms = 0,
 	.reset_pulse_duration_ms = 500,
 	.startup_time_ms = 5000,
@@ -85,10 +86,7 @@ static const struct modem_cellular_vendor_config nrf91_slm_vendor = {
 #define MODEM_CELLULAR_DEVICE_NORDIC_NRF91_SLM(inst)                                               \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 1500);     \
                                                                                                    \
-	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.chat_delimiter = "\r\n",                                                          \
-		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
-	};                                                                                         \
+	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 3))                            \
                                                                                                    \

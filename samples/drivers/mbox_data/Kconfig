@@ -9,3 +9,11 @@ config INCLUDE_REMOTE_DIR
 	help
 	  Include remote build header files. Can be used if primary image
 	  needs to be aware of size or base address of secondary image
+
+config MBOX_DATA_MAX_MSG_SIZE
+	int "Maximum mbox message size in bytes"
+	default 4
+	help
+	  Maximum supported message size for the sample buffers. Defaults to
+	  4 bytes; boards whose mbox driver supports a larger MTU can override
+	  this via a board-specific config fragment.

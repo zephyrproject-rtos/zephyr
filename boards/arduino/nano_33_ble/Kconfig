@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ARDUINO_NANO_33_BLE
-	select BOARD_LATE_INIT_HOOK
+	select BOARD_EARLY_INIT_HOOK

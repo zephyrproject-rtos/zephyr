@@ -1237,4 +1237,56 @@ ZTEST(net_pmtu_test_suite, test_pmtu_13_ipv6_dplpmtud_blackhole)
 	run_dplpmtud_blackhole_test((struct net_sockaddr *)&dest_ipv6, 1650U);
 }
 
+ZTEST(net_pmtu_test_suite, test_pmtu_15_ipv4_arp_no_entry)
+{
+	static const struct net_in_addr src_addr = { { { 192, 0, 2, 1 } } };
+	static const struct net_in_addr arp_dst = { { { 198, 51, 100, 88 } } };
+	struct net_sockaddr_in query = { .sin_family = NET_AF_INET };
+	struct net_pkt *pkt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_PMTU);
+
+	net_ipaddr_copy(&query.sin_addr, &arp_dst);
+
+	zassert_is_null(net_pmtu_get_entry((struct net_sockaddr *)&query),
+			"Stale PMTU entry for the test destination");
+
+	/* ARP packets share the AF_INET family and are identified by their L2
+	 * protocol type (NET_ETH_PTYPE_ARP). Sending one must NOT create a PMTU
+	 * entry, since its payload is not an IPv4 header. The body is a valid
+	 * IPv4 header here only so the rest of net_ipv4_prepare_for_send()
+	 * behaves normally; the fix keys solely on the L2 protocol type.
+	 */
+	pkt = net_pkt_alloc_with_buffer(target_iface, sizeof(struct net_ipv4_hdr),
+					NET_AF_INET, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "Out of mem");
+	zassert_ok(net_ipv4_create(pkt, &src_addr, &arp_dst), "Cannot create header");
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
+	net_pkt_cursor_init(pkt);
+
+	(void)net_ipv4_prepare_for_send(pkt);
+	net_pkt_unref(pkt);
+
+	zassert_is_null(net_pmtu_get_entry((struct net_sockaddr *)&query),
+			"ARP packet created a bogus PMTU entry");
+
+	/* Positive control: the same datagram marked as IPv4 does seed a PMTU
+	 * entry, confirming the send path is actually exercised.
+	 */
+	pkt = net_pkt_alloc_with_buffer(target_iface, sizeof(struct net_ipv4_hdr),
+					NET_AF_INET, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "Out of mem");
+	zassert_ok(net_ipv4_create(pkt, &src_addr, &arp_dst), "Cannot create header");
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
+	net_pkt_cursor_init(pkt);
+
+	(void)net_ipv4_prepare_for_send(pkt);
+	net_pkt_unref(pkt);
+
+	zassert_not_null(net_pmtu_get_entry((struct net_sockaddr *)&query),
+			 "IPv4 packet did not create a PMTU entry");
+
+	k_sleep(SMALL_SLEEP);
+}
+
 ZTEST_SUITE(net_pmtu_test_suite, NULL, test_setup, NULL, NULL, NULL);

@@ -23,6 +23,7 @@
 #include "hl78xx.h"
 #include "hl78xx_at_monitor/hl78xx_at_monitor.h"
 #include "hl78xx_chat.h"
+#include "hl78xx_cfg.h"
 #include <zephyr/modem/chat.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util_macro.h>
@@ -35,6 +36,8 @@ void hl78xx_gnss_on_gnssev(struct modem_chat *chat, char **argv, uint16_t argc, 
 #endif /* CONFIG_HL78XX_GNSS */
 
 LOG_MODULE_DECLARE(hl78xx_dev, CONFIG_MODEM_LOG_LEVEL);
+
+#define HL78XX_SCRIPT_CHAT_INDEX_ANY UINT16_MAX
 
 /* Forward declarations of handlers implemented in hl78xx.c (extern linkage) */
 #ifdef CONFIG_MODEM_HL78XX_HAS_CTZEU_URC
@@ -152,6 +155,10 @@ void hl78xx_on_gnssad(struct modem_chat *chat, char **argv, uint16_t argc, void 
 
 static void hl78xx_on_unsol_monitored(struct modem_chat *chat, char **argv, uint16_t argc,
 				      void *user_data);
+static const struct hl78xx_script_recovery_rule *
+hl78xx_find_script_recovery_rule(enum hl78xx_state state,
+				 const struct modem_chat_script_chat *script_chat,
+				 uint16_t script_chat_index, enum modem_chat_script_result result);
 
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ok_match, "OK", "", NULL);
 MODEM_CHAT_MATCHES_DEFINE(hl78xx_allow_match, MODEM_CHAT_MATCH(MDM_HL78XX_OK_STRING, "", NULL),
@@ -408,7 +415,9 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGEREP=2", hl78xx_ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSELACQ?", hl78xx_kselacq_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSRAT?", hl78xx_ksrat_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KBNDCFG?", hl78xx_ok_match),
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 #if (CONFIG_MODEM_HL78XX_WDSI_PROFILE_VALUE > 0)
@@ -451,16 +460,15 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_post_restart_chat_script, hl78xx_post_restart_ch
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(init_fail_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSREP?", hl78xx_ksrep_match));
 
-MODEM_CHAT_SCRIPT_DEFINE(init_fail_script, init_fail_script_cmds, hl78xx_abort_matches,
-			 hl78xx_chat_callback_handler, HL78XX_CMD_TIMEOUT_SHORT);
+MODEM_CHAT_SCRIPT_DEFINE(init_fail_script, init_fail_script_cmds, hl78xx_abort_matches, NULL,
+			 HL78XX_CMD_TIMEOUT_SHORT);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_enable_ksup_urc_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSREP=1", hl78xx_ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSREP?", hl78xx_ksrep_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_enable_ksup_urc_script, hl78xx_enable_ksup_urc_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
-			 HL78XX_CMD_TIMEOUT_SHORT);
+			 hl78xx_abort_matches, NULL, HL78XX_CMD_TIMEOUT_SHORT);
 
 /* power-off script moved from hl78xx.c */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_pwroff_cmds,
@@ -671,6 +679,33 @@ size_t hl78xx_get_ktcp_state_matches_size(void)
 	return (size_t)ARRAY_SIZE(ktcp_state_matches);
 }
 
+/* Capture script failure information */
+static void hl78xx_capture_script_failure(struct hl78xx_data *data, struct modem_chat *chat,
+					  enum modem_chat_script_result result)
+{
+	const struct modem_chat_script_chat *script_chat;
+	uint16_t script_chat_index;
+	enum hl78xx_state origin_state;
+
+	origin_state = data->status.state;
+
+	script_chat = modem_chat_callback_script_chat(chat);
+	script_chat_index = modem_chat_callback_script_chat_index(chat);
+
+	data->script_failure.recovery_rule = hl78xx_find_script_recovery_rule(
+		origin_state, script_chat, script_chat_index, result);
+
+	data->script_failure.script_chat_index = script_chat_index;
+	data->script_failure.result = result;
+	data->script_failure.origin_state = origin_state;
+
+	/*
+	 * A failure callback was received. A NULL recovery_rule means that
+	 * no command-specific recovery rule matched the failure.
+	 */
+	data->script_failure.valid = true;
+}
+
 /* modem_init_chat is implemented in hl78xx.c so it can construct the
  * modem_chat_config with device-local buffer sizes (argv_size) without
  * relying on ARRAY_SIZE at file scope inside this translation unit.
@@ -682,11 +717,17 @@ void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_scrip
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 
+	if (data->status.state == MODEM_HL78XX_STATE_RECOVERY) {
+		return;
+	}
+
 	if (result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) {
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
 	} else if (result == MODEM_CHAT_SCRIPT_RESULT_TIMEOUT) {
+		hl78xx_capture_script_failure(data, chat, result);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT);
 	} else {
+		hl78xx_capture_script_failure(data, chat, result);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
 	}
 }
@@ -815,20 +856,20 @@ int hl78xx_run_post_restart_script_async(struct hl78xx_data *data)
 	return modem_chat_run_script_async(&data->chat, &hl78xx_post_restart_chat_script);
 }
 
-int hl78xx_run_init_fail_script_async(struct hl78xx_data *data)
+int hl78xx_run_init_fail_script(struct hl78xx_data *data)
 {
 	if (!data) {
 		return -EINVAL;
 	}
-	return modem_chat_run_script_async(&data->chat, &init_fail_script);
+	return modem_chat_run_script(&data->chat, &init_fail_script);
 }
 
-int hl78xx_run_enable_ksup_urc_script_async(struct hl78xx_data *data)
+int hl78xx_run_enable_ksup_urc_script(struct hl78xx_data *data)
 {
 	if (!data) {
 		return -EINVAL;
 	}
-	return modem_chat_run_script_async(&data->chat, &hl78xx_enable_ksup_urc_script);
+	return modem_chat_run_script(&data->chat, &hl78xx_enable_ksup_urc_script);
 }
 
 int hl78xx_run_pwroff_script_async(struct hl78xx_data *data)
@@ -973,3 +1014,62 @@ int hl78xx_disable_pmc(struct hl78xx_data *data)
 	return modem_chat_run_script_async(&data->chat, &hl78xx_disable_pmc_chat_script);
 }
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
+/* Don't forget if a restart is required after the recovery, the resume state has to be
+ * MODEM_HL78XX_STATE_SOFT_RESET
+ */
+static const struct hl78xx_script_recovery_rule hl78xx_script_recovery_rules[] = {
+	{
+		.failed_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
+		.failed_request = "AT+KBNDCFG?",
+		.failed_script_chat_index = HL78XX_SCRIPT_CHAT_INDEX_ANY,
+		.result_mask = HL78XX_SCRIPT_RESULT_BIT(MODEM_CHAT_SCRIPT_RESULT_ABORT),
+		.action = hl78xx_recover_kbndcfg,
+		.success_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
+		.success_event = MODEM_HL78XX_EVENT_SCRIPT_SUCCESS,
+		.resume_state = MODEM_HL78XX_STATE_SOFT_RESET,
+		.max_attempts = 1U,
+	},
+	{
+		.failed_state = MODEM_HL78XX_STATE_AWAIT_POWER_ON,
+		.failed_request = "",
+		.failed_script_chat_index = 0U,
+		.result_mask = HL78XX_SCRIPT_RESULT_BIT(MODEM_CHAT_SCRIPT_RESULT_TIMEOUT),
+		.action = hl78xx_recover_post_restart_timeout,
+		.success_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
+		.success_event = MODEM_HL78XX_EVENT_SCRIPT_SUCCESS,
+		.resume_state = MODEM_HL78XX_STATE_SOFT_RESET,
+		.max_attempts = 1U,
+	},
+};
+
+static const struct hl78xx_script_recovery_rule *
+hl78xx_find_script_recovery_rule(enum hl78xx_state state,
+				 const struct modem_chat_script_chat *script_chat,
+				 uint16_t script_chat_index, enum modem_chat_script_result result)
+{
+	const char *request;
+
+	if (script_chat == NULL) {
+		return NULL;
+	}
+
+	request = script_chat->request;
+	if (request == NULL) {
+		return NULL;
+	}
+
+	for (size_t i = 0U; i < ARRAY_SIZE(hl78xx_script_recovery_rules); i++) {
+		const struct hl78xx_script_recovery_rule *rule = &hl78xx_script_recovery_rules[i];
+
+		if ((rule->failed_state == state) &&
+		    ((rule->result_mask & HL78XX_SCRIPT_RESULT_BIT(result)) != 0U) &&
+		    (strcmp(rule->failed_request, request) == 0) &&
+		    ((rule->failed_script_chat_index == HL78XX_SCRIPT_CHAT_INDEX_ANY) ||
+		     (rule->failed_script_chat_index == script_chat_index))) {
+			return rule;
+		}
+	}
+
+	return NULL;
+}

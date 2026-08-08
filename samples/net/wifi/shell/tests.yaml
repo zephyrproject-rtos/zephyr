@@ -130,3 +130,8 @@ tests:
       - CONFIG_NXP_WIFI_OWE=y
     platform_allow:
       - frdm_rw612
+  sample.net.wifi.hwsim:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

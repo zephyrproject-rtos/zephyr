@@ -1,4 +1,4 @@
-# DHCPv4 server implementation for Zephyr
+# DHCPv6 client implementation for Zephyr
 
 # Copyright (c) 2024 Nordic Semiconductor ASA
 #

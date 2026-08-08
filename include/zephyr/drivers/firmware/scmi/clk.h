@@ -10,8 +10,8 @@
  * @brief Header file for the SCMI Clock Protocol.
  */
 
-#ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CLK_H_
-#define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CLK_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_CLK_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_CLK_H_
 
 #include <zephyr/drivers/firmware/scmi/protocol.h>
 
@@ -200,4 +200,4 @@ int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
  * @}
  */
 
-#endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_CLK_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_CLK_H_ */

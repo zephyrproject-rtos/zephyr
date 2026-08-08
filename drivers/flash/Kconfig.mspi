@@ -134,11 +134,11 @@ config FLASH_MSPI_RANGE_HANDLE_CACHE_SIZE
 	  If size is larger than this number, it is uneconomical to handle cache in range.
 	  However, this is a number by experience and could be platform specific.
 
-config FLASH_MSPI_XIP_READ
-	bool "Turn on XIP read in flash_read"
-	depends on MSPI_XIP
+config FLASH_MSPI_MEMMAP_READ
+	bool "Turn on memory mapped read in flash_read"
+	depends on MSPI_MEMMAP
 	help
-	  Enable this for those controllers that supports XIP and wishes to
-	  flash_read using XIP.
+	  Enable this for those controllers that support memory mapping the
+	  device and wish to flash_read through the memory mapped region.
 
 endif # FLASH_MSPI

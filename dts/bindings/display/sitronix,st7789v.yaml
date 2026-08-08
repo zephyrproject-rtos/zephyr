@@ -25,12 +25,10 @@ properties:
 
   vcom:
     type: int
-    required: true
     description: VCOM Setting
 
   gctrl:
     type: int
-    required: true
     description: Gate Control
 
   vrhs:
@@ -48,12 +46,10 @@ properties:
 
   lcm:
     type: int
-    required: true
     description: LCM Setting
 
   gamma:
     type: int
-    required: true
     description: Gamma Setting
 
   inversion-off:
@@ -62,37 +58,30 @@ properties:
 
   porch-param:
     type: uint8-array
-    required: true
     description: Porch Setting
 
   cmd2en-param:
     type: uint8-array
-    required: true
     description: Command 2 Enable Parameter
 
   pwctrl1-param:
     type: uint8-array
-    required: true
     description: Power Control 1 Parameter
 
   pvgam-param:
     type: uint8-array
-    required: true
     description: Positive Voltage Gamma Control Parameter
 
   nvgam-param:
     type: uint8-array
-    required: true
     description: Negative Voltage Gamma Control Parameter
 
   ram-param:
     type: uint8-array
-    required: true
     description: RAM Control Parameter
 
   rgb-param:
     type: uint8-array
-    required: true
     description: RGB Interface Control Parameter
 
   ready-time-ms:

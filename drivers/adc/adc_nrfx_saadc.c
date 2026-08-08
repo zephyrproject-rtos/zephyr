@@ -628,7 +628,7 @@ static int adc_nrfx_read(const struct device *dev,
 	adc_context_release(&m_data.ctx, error);
 
 	if (pm_device_runtime_put(dev)) {
-		LOG_ERR("PM put failed");
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev);
 	}
 
 	return error;

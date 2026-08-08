@@ -31,4 +31,6 @@ supported:
   - usbd
   - edac
   - pwm
+  - rtc
+  - crc
 vendor: nxp

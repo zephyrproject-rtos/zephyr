@@ -219,7 +219,7 @@ static void test_thread_put_timeout(void *p1, void *p2, void *p3)
  * @see k_lifo_put()
  * @see k_lifo_get()
  */
-ZTEST(lifo_usage, test_lifo_nowait)
+ZTEST(lifo_usage_1cpu, test_lifo_nowait)
 {
 	k_lifo_init(&lifo);
 

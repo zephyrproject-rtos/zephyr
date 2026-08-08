@@ -17,6 +17,7 @@ jobs:
   cleanup:
     name: Cleanup
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     if: github.ref == 'refs/heads/main'
     permissions:
       actions: write # to delete stale workflow runs

@@ -11,6 +11,17 @@ zephyr_library_sources(
 zephyr_library_sources_ifdef(CONFIG_OPENTHREAD_SHELL shell.c)
 zephyr_include_directories(include)
 
+# Zephyr logging options
+if(CONFIG_LOG_BACKEND_SPINEL)
+  add_definitions(-DOPENTHREAD_CONFIG_LOG_OUTPUT=OPENTHREAD_CONFIG_LOG_OUTPUT_APP)
+endif()
+
+# Other options
+add_definitions(
+  -DOPENTHREAD_CONFIG_LOG_LEVEL=${CONFIG_OPENTHREAD_LOG_LEVEL}
+  -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE="openthread-core-zephyr-config.h"
+)
+
 add_subdirectory(platform)
 
 if(NOT CONFIG_OPENTHREAD_SOURCES)
@@ -173,18 +184,6 @@ endif()
 
 set(BUILD_TESTING OFF CACHE BOOL "Disable openthread cmake testing targets" FORCE)
 
-# Zephyr logging options
-
-if(CONFIG_LOG_BACKEND_SPINEL)
-  add_definitions(-DOPENTHREAD_CONFIG_LOG_OUTPUT=OPENTHREAD_CONFIG_LOG_OUTPUT_APP)
-endif()
-
-# Other options
-add_definitions(
-  -DOPENTHREAD_CONFIG_LOG_LEVEL=${CONFIG_OPENTHREAD_LOG_LEVEL}
-  -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE="openthread-core-zephyr-config.h"
-)
-
 # Need to specify build directory as well
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR} build)
 
@@ -293,11 +292,16 @@ if(CONFIG_HDLC_RCP_IF)
   )
 endif()
 
-if(CONFIG_OPENTHREAD_SETTINGS_RAM)
+if(CONFIG_OPENTHREAD_SETTINGS_RAM OR CONFIG_OPENTHREAD_RADIO_VENDOR_IMPLEMENTATION)
   target_compile_options(openthread-platform-utils PRIVATE
     $<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>
     $<TARGET_PROPERTY:compiler,no_builtin>)
   add_dependencies(openthread-platform-utils syscall_list_h_target)
+
+  if(CONFIG_PICOLIBC OR CONFIG_MINIMAL_LIBCPP)
+    target_compile_options(openthread-platform-utils PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:-fno-threadsafe-statics>)
+  endif()
 
   list(APPEND ot_libs openthread-platform-utils-static)
 endif()

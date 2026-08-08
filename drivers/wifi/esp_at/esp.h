@@ -15,9 +15,9 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/wifi_mgmt.h>
 
-#include "modem_context.h"
-#include "modem_cmd_handler.h"
-#include "modem_iface_uart.h"
+#include <modem_context.h>
+#include <modem_cmd_handler.h>
+#include <modem_iface_uart.h>
 
 #ifdef __cplusplus
 extern "C" {

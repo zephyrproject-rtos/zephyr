@@ -212,7 +212,12 @@ alreadyOnIntStack:
 
 	push	%eax	/* interrupt handler argument */
 
-#if defined(CONFIG_TRACING_ISR)
+/* CONFIG_SYS_IDLE_HOOKS also needs this hook: x86 halts with interrupts enabled
+ * ("sti; hlt"), so this ISR may have interrupted the idle thread and can
+ * reschedule away from it before the idle-exit hook runs. Notifying here closes
+ * the idle window at the instant idle actually ended.
+ */
+#if defined(CONFIG_TRACING_ISR) || defined(CONFIG_SYS_IDLE_HOOKS)
 	/* Save these as we are using to keep track of isr and isr_param */
 	pushl	%eax
 	pushl	%edx

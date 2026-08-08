@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,12 +69,16 @@
 			interrupts = <0 0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 
 				write-block-size = <8>;
 				erase-block-size = <512>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
 			};
 
 			/*

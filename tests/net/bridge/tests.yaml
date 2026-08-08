@@ -18,3 +18,26 @@ tests:
     extra_configs:
       - CONFIG_NET_IPV4=y
       - CONFIG_NET_IPV6=y
+  # Exercise the bridge with a link address max length larger than an Ethernet
+  # MAC (as happens when another L2 or a custom length is enabled). This is the
+  # configuration where an over-long bridge link address broke local unicast
+  # RX (e.g. ARP replies) and thus address resolution.
+  net.eth_bridge.ip.custom_lladdr_len:
+    extra_configs:
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_LINK_ADDR_CUSTOM_LENGTH=8
+  # Exercise the stable (device-id derived) bridge MAC address option.
+  net.eth_bridge.ip.unique_mac:
+    extra_configs:
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=y
+      - CONFIG_HWINFO=y
+      - CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC=y
+  # Exercise the configured bridge MAC prefix option.
+  net.eth_bridge.ip.prefix_mac:
+    extra_configs:
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_ETHERNET_BRIDGE_PREFIX_MAC=y
+      - CONFIG_NET_ETHERNET_BRIDGE_MAC_PREFIX="02:34:56:78:9a"

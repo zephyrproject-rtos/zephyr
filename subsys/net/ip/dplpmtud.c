@@ -229,8 +229,12 @@ static inline void sync_search_bounds_locked(struct net_dplpmtud_entry *entry)
 {
 	entry->validated_plpmtu = MIN(entry->validated_plpmtu, entry->max_plpmtu);
 	entry->search_low = entry->validated_plpmtu;
-	entry->search_high = MIN(entry->search_high, entry->max_plpmtu);
-	entry->search_high = MAX(entry->search_high, entry->search_low);
+	/* Track the ceiling both up and down: raising max_plpmtu (e.g. once the
+	 * transport supplies the link capability or the PMTU cache reports a
+	 * larger limit) must reopen the search above the validated size, not
+	 * just clamp it down on PTB-style reductions.
+	 */
+	entry->search_high = MAX(entry->max_plpmtu, entry->search_low);
 
 	if (entry->probe_size <= entry->validated_plpmtu ||
 	    entry->probe_size > entry->search_high) {
@@ -446,11 +450,63 @@ int net_dplpmtud_init_path(struct net_dplpmtud_path *path,
 void net_dplpmtud_set_path_max_plpmtu(struct net_dplpmtud_path *path,
 				      uint16_t max_plpmtu)
 {
+	struct net_dplpmtud_entry *entry;
+
 	if (path == NULL || !path->in_use) {
 		return;
 	}
 
+	k_mutex_lock(&lock, K_FOREVER);
+
 	path->max_plpmtu = normalize_path_max_plpmtu(max_plpmtu);
+
+	/* Raise the shared per-destination ceiling so the search can extend up
+	 * to this path's capability. The entry is created at BASE_PLPMTU and
+	 * get_path_limit() still clamps each probe to this path's own limit, so
+	 * only ever grow the entry here, never shrink it (another path/transport
+	 * to the same destination may support more).
+	 */
+	if (max_plpmtu != 0U) {
+		entry = get_path_entry(path, false, false);
+		if (entry != NULL &&
+		    normalize_max_plpmtu(entry->base_plpmtu, max_plpmtu) >
+			    entry->max_plpmtu) {
+			entry->max_plpmtu =
+				normalize_max_plpmtu(entry->base_plpmtu, max_plpmtu);
+			sync_search_bounds_locked(entry);
+			update_state_locked(entry);
+		}
+	}
+
+	k_mutex_unlock(&lock);
+}
+
+void net_dplpmtud_reopen_path_search(struct net_dplpmtud_path *path)
+{
+	struct net_dplpmtud_entry *entry;
+
+	if (path == NULL || !path->in_use) {
+		return;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	entry = get_path_entry(path, false, false);
+	if (entry != NULL) {
+		/* Restart the search from the base PLPMTU up to the entry's
+		 * current ceiling. A previous run may have left the shared entry
+		 * in a terminal state that yields no further probes: either the
+		 * search completed (validated == max, e.g. a looped-back or
+		 * responsive path) or it collapsed the search range down to the
+		 * validated size (all probes lost with no responder). Both cases
+		 * would make a plain re-enable send nothing, so re-validate the
+		 * path from scratch while keeping the configured base/ceiling.
+		 */
+		init_entry_defaults_locked(entry, entry->base_plpmtu,
+					   entry->max_plpmtu);
+	}
+
+	k_mutex_unlock(&lock);
 }
 
 int net_dplpmtud_get_path_mtu(struct net_dplpmtud_path *path)

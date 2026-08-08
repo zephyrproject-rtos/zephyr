@@ -5,8 +5,14 @@
  *
  */
 
-#ifndef ZEPHYR_MCTP_I2C_GPIO_COMMON_H_
-#define ZEPHYR_MCTP_I2C_GPIO_COMMON_H_
+/**
+ * @file
+ * @brief Internal definitions shared by the MCTP I2C GPIO controller and target bindings.
+ * @ingroup mctp
+ */
+
+#ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_COMMON_H_
+#define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_COMMON_H_
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -22,4 +28,4 @@
 
 /** INTERNAL_HIDDEN @endcond */
 
-#endif /* ZEPHYR_MCTP_I2C_GPIO_COMMON_H_ */
+#endif /* ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_COMMON_H_ */

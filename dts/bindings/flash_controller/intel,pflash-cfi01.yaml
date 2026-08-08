@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Analog Devices, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel CFI01 parallel flash (QEMU pflash)
+
+compatible: "intel,pflash-cfi01"
+
+include: flash-controller.yaml
+
+properties:
+  bank-width:
+    type: int
+    description: |
+      Data bus width in bytes. Valid values are 1, 2, or 4.
+      Determines the width of memory-mapped reads and writes.
+    enum:
+      - 1
+      - 2
+      - 4
+    default: 1
+  device-width:
+    type: int
+    description: |
+      Width of the flash device in bytes for x8/x16/x32 mode handling.
+    enum:
+      - 1
+      - 2
+      - 4
+    default: 1
+
+  max-device-width:
+    type: int
+    description: |
+      Maximum device width in bytes for x8/x16/x32 mode handling.
+      Defaults to bank-width if not specified.
+      Rarely needed; kept for compatibility with real CFI implementations.

@@ -62,7 +62,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 #endif
 	} else if (energy_mode != SL_POWER_MANAGER_EM0) {
 		/* Calling the tracing and hook functions provided in arch_cpu_idle(). */
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 		sys_trace_idle();
 #endif
 #if CONFIG_ARM_ON_ENTER_CPU_IDLE_PREPARE_HOOK

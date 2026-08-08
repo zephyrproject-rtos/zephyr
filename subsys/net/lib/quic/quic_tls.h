@@ -17,6 +17,7 @@
 #define TLS_HS_CERTIFICATE_VERIFY    15
 #define TLS_HS_NEW_SESSION_TICKET    4
 #define TLS_HS_FINISHED              20
+#define TLS_HS_KEY_UPDATE            24
 
 /* Key schedule labels */
 #define TLS13_LABEL_DERIVED        "derived"
@@ -36,6 +37,7 @@
 #define TLS_CHACHA20_POLY1305_SHA256 0x1303
 
 /* TLS extension types */
+#define TLS_EXT_SERVER_NAME           0x00
 #define TLS_EXT_ALPN                  0x10
 #define TLS_EXT_PRE_SHARED_KEY        0x29
 #define TLS_EXT_EARLY_DATA            0x2a

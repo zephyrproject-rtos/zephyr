@@ -29,7 +29,9 @@
  * STM32 GPIO port configuration block and data block structures
  */
 struct gpio_stm32_config {
+#if defined(CONFIG_GPIO_STM32)
 	struct gpio_driver_config common;
+#endif /* CONFIG_GPIO_STM32 */
 
 	/* GPIO port base address */
 	void *base;
@@ -41,21 +43,25 @@ struct gpio_stm32_config {
 	struct stm32_pclken pclken;
 };
 
+#if defined(CONFIG_GPIO_STM32)
+/*
+ * Fields in the instance data are only useful to the GPIO driver.
+ * If not enabled, we don't create the instance data: don't define
+ * the structure to prevent accidental usage (which would be wrong).
+ */
 struct gpio_stm32_data {
 	struct gpio_driver_data common;
 
-#if defined(CONFIG_GPIO_STM32)
 	/*
 	 * Keeps track of pins which are used as GPIOs
 	 * and need the GPIO port clock to remain enabled.
 	 */
 	gpio_port_pins_t pin_has_clock_enabled;
-#endif /* CONFIG_GPIO_STM32 */
 
 	/* User callbacks list */
 	sys_slist_t cb;
 };
-
+#endif /* CONFIG_GPIO_STM32 */
 
 /**
  * @brief Translate pin to pinval that the LL library needs
@@ -115,6 +121,23 @@ int stm32_gpioport_configure_pin(const struct device *port,
 				 gpio_pin_t pin,
 				 pinctrl_soc_pin_t config,
 				 bool apply_out_level);
+
+#if defined(CONFIG_STM32_WKUP_PINS)
+/**
+ * @brief Configure a GPIO pin as a source for STM32 PWR wake-up pins
+ *
+ * @param gpio Container for GPIO pin information specified in devicetree
+ *
+ * @return 0 on success, -EINVAL on invalid values
+ */
+int stm32_pwr_wkup_pin_cfg_gpio(const struct gpio_dt_spec *gpio);
+
+/**
+ * @brief Enable or Disable pull-up and pull-down configuration for
+ * GPIO Ports that are associated with STM32 PWR wake-up pins
+ */
+void stm32_pwr_wkup_pin_cfg_pupd(void);
+#endif /* defined(CONFIG_STM32_WKUP_PINS) */
 
 /*
  * GPIO port device API

@@ -186,7 +186,7 @@ static const struct mcux_llwu_config llwu_config = {
 
 static struct mcux_llwu_data llwu_data;
 
-static const DEVICE_API(wuc, mcux_llwu_api) = {
+static DEVICE_API(wuc, mcux_llwu_api) = {
 	.enable = mcux_llwu_enable_wakeup_source,
 	.disable = mcux_llwu_disable_wakeup_source,
 	.triggered = mcux_llwu_check_wakeup_source_triggered,

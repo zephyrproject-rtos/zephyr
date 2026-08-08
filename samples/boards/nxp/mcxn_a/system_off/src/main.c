@@ -16,8 +16,6 @@
 
 #define WAKEUP_DELAY_S 5U
 static const struct device *const lptmr = DEVICE_DT_GET(DT_NODELABEL(lptmr0));
-/* LPTMR0 reaches the core as a WUU internal-module wakeup source. */
-static const struct wuc_dt_spec wakeup = WUC_DT_SPEC_GET(DT_NODELABEL(lptmr0));
 #else
 /* The wakeup button (a WUU external pin) is described per board and aliased as
  * "wakeup-button".
@@ -129,29 +127,32 @@ int main(void)
 		return 0;
 	}
 
-	if (!device_is_ready(wakeup.dev)) {
-		printk("WUC device %s not ready\n", wakeup.dev->name);
-		return 0;
-	}
-
 #if defined(CONFIG_SAMPLE_SYSTEM_OFF_WAKEUP_TIMER)
 	if (!device_is_ready(lptmr)) {
 		printk("LPTMR counter device not ready\n");
 		return 0;
 	}
 
+	/* LPTMR0 is the system-timer companion, so the counter driver arms it as
+	 * a wakeup source when the alarm is set - nothing else is needed here.
+	 */
 	ret = arm_timer_wakeup();
 	if (ret < 0) {
 		printk("Failed to arm LPTMR wakeup (%d)\n", ret);
 		return 0;
 	}
-#endif
+#else
+	if (!device_is_ready(wakeup.dev)) {
+		printk("WUC device %s not ready\n", wakeup.dev->name);
+		return 0;
+	}
 
 	ret = wuc_enable_wakeup_source_dt(&wakeup);
 	if (ret < 0) {
 		printk("Failed to enable wakeup source (%d)\n", ret);
 		return 0;
 	}
+#endif
 
 	cycles++;
 	retain_counter_ram();

@@ -36,8 +36,7 @@ struct udc_ambiq_event {
 	uint8_t ep;
 };
 
-K_MSGQ_DEFINE(drv_msgq, sizeof(struct udc_ambiq_event), CONFIG_UDC_AMBIQ_MAX_QMESSAGES,
-	      sizeof(void *));
+K_MSGQ_DEFINE_STATIC_TYPE(drv_msgq, struct udc_ambiq_event, CONFIG_UDC_AMBIQ_MAX_QMESSAGES);
 
 /* USB device controller access from devicetree */
 #define DT_DRV_COMPAT ambiq_usb

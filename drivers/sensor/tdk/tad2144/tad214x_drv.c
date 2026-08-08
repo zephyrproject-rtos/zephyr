@@ -65,7 +65,7 @@ static void tad214x_convert_encoder(struct sensor_value *val, uint16_t raw_val)
 
 static void tad214x_convert_angle(struct sensor_value *val, uint16_t raw_val)
 {
-	raw_val = (raw_val*36000/65635+18000) % 36000;
+	raw_val = ((uint32_t)raw_val*36000/65535+18000) % 36000;
 	val->val1 = raw_val / 100;
 	val->val2 = (raw_val % 100) * 1000;
 }

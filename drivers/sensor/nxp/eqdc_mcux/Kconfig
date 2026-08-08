@@ -6,11 +6,11 @@ config EQDC_MCUX
 	bool "NXP eQDC driver"
 	default y
 	depends on DT_HAS_NXP_MCUX_EQDC_ENABLED
-	select NXP_INPUTMUX
+	select MUX
 	select PINCTRL
 	help
 	  Enable the NXP eQDC driver. The EQDC phase inputs are routed
-	  through the on-chip INPUTMUX.
+	  through the on-chip INPUTMUX via the generic mux subsystem.
 
 if EQDC_MCUX
 

@@ -74,7 +74,8 @@
 		manual_flash_1k: manual-flash-1k@f010a6 {
 			compatible = "ite,it51xxx-manual-flash-1k";
 			reg = <0x00f010a6 0x5a
-			       0x00f01000 0xa6>;
+			       0x00f01000 0xa6
+			       0x00f04800 0xff>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "disabled";
@@ -563,8 +564,6 @@
 
 		pinctrl: pin-controller {
 			compatible = "ite,it8xxx2-pinctrl";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			status = "okay";
 		};
 
@@ -1282,6 +1281,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04600 0xf
 			       0x00f04680 0x80>;
+			channel = <0>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1290,6 +1290,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04610 0xf
 			       0x00f04680 0x80>;
+			channel = <1>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1298,6 +1299,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04620 0xf
 			       0x00f04680 0x80>;
+			channel = <2>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1306,6 +1308,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04630 0xf
 			       0x00f04680 0x80>;
+			channel = <3>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1314,6 +1317,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04640 0xf
 			       0x00f04680 0x80>;
+			channel = <4>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1322,6 +1326,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04650 0xf
 			       0x00f04680 0x80>;
+			channel = <5>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1330,6 +1335,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04660 0xf
 			       0x00f04680 0x80>;
+			channel = <6>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1338,6 +1344,7 @@
 			compatible = "ite,it51xxx-pwm";
 			reg = <0x00f04670 0xf
 			       0x00f04680 0x80>;
+			channel = <7>;
 			status = "disabled";
 			#pwm-cells = <3>;
 		};
@@ -1442,6 +1449,114 @@
 			interrupt-parent = <&intc>;
 			alarms-count = <2>;
 			status = "disabled";
+		};
+
+		smbus0: smbus@f04100 {
+			compatible = "ite,it51xxx-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04100 0x0028>;
+			interrupts = <IT51XXX_IRQ_SMB_A IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_A>;
+			fifo-enable;   /* FIFO1 */
+		};
+
+		smbus1: smbus@f04128 {
+			compatible = "ite,it51xxx-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04128 0x0028>;
+			interrupts = <IT51XXX_IRQ_SMB_B IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_B>;
+			fifo-enable;   /* FIFO2 */
+		};
+
+		smbus2: smbus@f04150 {
+			compatible = "ite,it51xxx-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04150 0x0028>;
+			interrupts = <IT51XXX_IRQ_SMB_C IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_C>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		smbus3: smbus@f04178 {
+			compatible = "ite,it51xxx-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04178 0x0028>;
+			interrupts = <IT51XXX_IRQ_SMB_D IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_D>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		smbus4: smbus@f041a0 {
+			compatible = "ite,it51xxx-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f041a0 0x0028>;
+			interrupts = <IT51XXX_IRQ_SMB_E IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_E>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		smbus5: smbus@f041c8 {
+			compatible = "ite,it51xxx-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f041c8 0x0028>;
+			interrupts = <IT51XXX_IRQ_SMB_F IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_F>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		smbus6: smbus@f04260 {
+			compatible = "ite,it51xxx-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04260 0x0028>;
+			interrupts = <IT51XXX_IRQ_SMB_G IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_G>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		smbus7: smbus@f04288 {
+			compatible = "ite,it51xxx-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f04288 0x0028>;
+			interrupts = <IT51XXX_IRQ_SMB_H IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_H>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
+		};
+
+		smbus8: smbus@f042b0 {
+			compatible = "ite,it51xxx-smbus";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+			reg = <0x00f042b0 0x0028>;
+			interrupts = <IT51XXX_IRQ_SMB_I IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			port-num = <SMB_CHANNEL_H>;
+			/delete-property/ fifo-enable;   /* FIFO2 */
 		};
 	};
 };

@@ -53,6 +53,9 @@ static int nxp_acomp_set_trigger(const struct device *dev, enum comparator_trigg
 	struct nxp_acomp_data *data = dev->data;
 	uint32_t ctrl = config->base->CTRL0;
 
+	/* Mask interrupts while reconfiguring; re-enabled below if needed. */
+	config->base->IMR0 |= ACOMP_IMR0_OUTA_INT_MASK_MASK | ACOMP_IMR0_OUT_INT_MASK_MASK;
+
 	ctrl &= ~(ACOMP_CTRL0_INT_ACT_HI_MASK | ACOMP_CTRL0_EDGE_LEVL_SEL_MASK);
 
 	switch (trigger) {
@@ -266,8 +269,8 @@ static DEVICE_API(comparator, nxp_acomp_api) = {
 		.base = (ACOMP_Type *)DT_INST_REG_ADDR(inst),					\
 		.positive_input = DT_ENUM_IDX(DT_DRV_INST(inst), positive_input),		\
 		.negative_input = DT_ENUM_IDX(DT_DRV_INST(inst), negative_input),		\
-		.positive_hysteresis = DT_INST_PROP_OR(inst, positive_hysteresis_mv / 10, 0),	\
-		.negative_hysteresis = DT_INST_PROP_OR(inst, negative_hysteresis_mv / 10, 0),	\
+		.positive_hysteresis = DT_INST_PROP_OR(inst, positive_hysteresis_mv, 0) / 10,	\
+		.negative_hysteresis = DT_INST_PROP_OR(inst, negative_hysteresis_mv, 0) / 10,	\
 		.warmup_time_us = DT_INST_PROP_OR(inst, warmup_time_us, 0),			\
 		.response_mode = DT_ENUM_IDX_OR(DT_DRV_INST(inst), response_mode, 0),		\
 		.inactive_value_high = DT_INST_PROP_OR(inst, inactive_value_high, 0),		\

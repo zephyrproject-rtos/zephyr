@@ -19,3 +19,5 @@ supported:
   - pinctrl
   - uart
   - watchdog
+  - counter
+  - gpio

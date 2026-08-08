@@ -10,8 +10,8 @@
  * @brief Header file for the SCMI (System Control and Management Interface) driver API.
  */
 
-#ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_
-#define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_
 
 /**
  * @brief Interfaces for ARM System Control and Management Interface (SCMI)
@@ -295,4 +295,4 @@ int scmi_read_message(struct scmi_protocol *proto, struct scmi_message *msg);
  * @ingroup scmi_interface
  */
 
-#endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_PROTOCOL_H_ */

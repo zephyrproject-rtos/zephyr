@@ -120,6 +120,9 @@ J-Link Setup
    - Connect the other end of the J32 Debug Probe to your **host machine (PC)** via USB.
    - Connect the DEBUG USB port on the board to your host machine to **power up the board**.
 
+Flash Using MPLAB IPE
+=====================
+For instructions on flashing using MPLAB IPE see :ref:`microchip-mplab-ipe-flashing`.
 
 Building and Flashing the Application
 =====================================

@@ -27,4 +27,5 @@ supported:
   - edac
   - pwm
   - opamp
+  - crc
 vendor: nxp

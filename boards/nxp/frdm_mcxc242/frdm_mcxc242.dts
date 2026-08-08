@@ -121,6 +121,10 @@
 	status = "okay";
 };
 
+&gpiod {
+	status = "okay";
+};
+
 &gpioe {
 	status = "okay";
 };

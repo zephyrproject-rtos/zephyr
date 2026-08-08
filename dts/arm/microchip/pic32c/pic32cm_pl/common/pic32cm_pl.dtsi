@@ -28,6 +28,7 @@
 			write-block-size = <4>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges = <0x0 0xc000000 DT_SIZE_K(64)>;
 		};
 
 		sram0: memory@20000000 {

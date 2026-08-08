@@ -1842,7 +1842,8 @@ static void i3c_stm32_event_isr_tx(const struct device *dev)
 		/* Mark the static address as free */
 		if ((target != NULL) && (target->static_addr != 0) &&
 		    (dyn_addr != target->static_addr)) {
-			i3c_addr_slots_mark_free(&data->drv_data.attached_dev.addr_slots, dyn_addr);
+			i3c_addr_slots_mark_free(&data->drv_data.attached_dev.addr_slots,
+						 target->static_addr);
 		}
 
 		break;

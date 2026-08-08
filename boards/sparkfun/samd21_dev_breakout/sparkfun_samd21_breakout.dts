@@ -1,5 +1,6 @@
 /*
  * Copyright The Zephyr Project Contributors
+ * Copyright (c) 2026 Microchip Technology Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -103,9 +104,9 @@ zephyr_udc0: &usb0 {
 
 &flash0 {
 	partitions {
-		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";

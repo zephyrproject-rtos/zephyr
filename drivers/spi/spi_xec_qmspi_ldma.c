@@ -13,6 +13,9 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/dt-bindings/spi/spi.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 
@@ -54,6 +57,13 @@ struct mec5_qspi_config {
 #define MEC5_QSPI_XFR_FLAG_BUSY  BIT(1)
 #define MEC5_QSPI_XFR_FLAG_LDMA  BIT(2)
 
+#ifdef CONFIG_PM_DEVICE
+enum mec5_qspi_pm_policy_state_flag {
+	MEC5_QSPI_PM_POLICY_STATE_XFR_FLAG,
+	MEC5_QSPI_PM_POLICY_STATE_FLAG_COUNT,
+};
+#endif
+
 /* Device run time data */
 struct mec5_qspi_data {
 	struct spi_context ctx; /* has pointer to struct spi_config */
@@ -72,7 +82,28 @@ struct mec5_qspi_data {
 	uint32_t freq;
 	uint32_t operation;
 	uint8_t cs;
+#ifdef CONFIG_PM_DEVICE
+	ATOMIC_DEFINE(pm_policy_state_flags, MEC5_QSPI_PM_POLICY_STATE_FLAG_COUNT);
+#endif
 };
+
+#ifdef CONFIG_PM_DEVICE
+static void mec5_qspi_pm_policy_state_lock_get(struct mec5_qspi_data *data,
+					       enum mec5_qspi_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_set_bit(data->pm_policy_state_flags, flag) == 0) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+
+static void mec5_qspi_pm_policy_state_lock_put(struct mec5_qspi_data *data,
+					       enum mec5_qspi_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flags, flag) == 1) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+#endif
 
 static int spi_feature_support(const struct spi_config *config)
 {
@@ -420,6 +451,10 @@ static int mec5_qspi_do_xfr(const struct device *dev, const struct spi_config *c
 
 	spi_context_lock(ctx, async, cb, userdata, config);
 
+#ifdef CONFIG_PM_DEVICE
+	mec5_qspi_pm_policy_state_lock_get(data, MEC5_QSPI_PM_POLICY_STATE_XFR_FLAG);
+#endif
+
 	ret = mec5_qspi_configure(dev, config);
 	if (ret != 0) {
 		goto do_xfr_exit;
@@ -446,6 +481,9 @@ static int mec5_qspi_do_xfr(const struct device *dev, const struct spi_config *c
 	}
 
 do_xfr_exit:
+#ifdef CONFIG_PM_DEVICE
+	mec5_qspi_pm_policy_state_lock_put(data, MEC5_QSPI_PM_POLICY_STATE_XFR_FLAG);
+#endif
 	spi_context_release(ctx, 0);
 
 	return ret;
@@ -659,6 +697,10 @@ static void mec5_qspi_ctx_next(const struct device *dev)
 		rc = qspi_uldma_fd2(dev, (const uint8_t *)txb, rxb, xlen, qflags);
 		if (rc != 0) {
 			spi_context_cs_control(ctx, false);
+#ifdef CONFIG_PM_DEVICE
+			mec5_qspi_pm_policy_state_lock_put(data,
+						MEC5_QSPI_PM_POLICY_STATE_XFR_FLAG);
+#endif
 			spi_context_complete(&data->ctx, dev, -EIO);
 		}
 	} else {
@@ -666,6 +708,9 @@ static void mec5_qspi_ctx_next(const struct device *dev)
 			spi_context_cs_control(ctx, false);
 		}
 
+#ifdef CONFIG_PM_DEVICE
+		mec5_qspi_pm_policy_state_lock_put(data, MEC5_QSPI_PM_POLICY_STATE_XFR_FLAG);
+#endif
 		spi_context_complete(&data->ctx, dev, 0);
 	}
 }
@@ -699,6 +744,9 @@ static void mec5_qspi_isr(const struct device *dev)
 	soc_ecia_girq_status_clear(devcfg->girq, devcfg->girq_pos);
 
 	if (status == -EIO) {
+#ifdef CONFIG_PM_DEVICE
+		mec5_qspi_pm_policy_state_lock_put(data, MEC5_QSPI_PM_POLICY_STATE_XFR_FLAG);
+#endif
 		spi_context_complete(&data->ctx, dev, -EIO);
 		return;
 	}
@@ -764,6 +812,36 @@ static int mec5_qspi_init(const struct device *dev)
 	return ret;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int mec5_qspi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct mec5_qspi_config *devcfg = dev->config;
+	mm_reg_t qb = devcfg->regbase;
+	int ret = 0;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		sys_clear_bit(qb + XEC_QSPI_MODE_OFS, XEC_QSPI_MODE_ACTV_POS);
+		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret == -ENOENT) {
+			ret = 0;
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(devcfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+		sys_set_bit(qb + XEC_QSPI_MODE_OFS, XEC_QSPI_MODE_ACTV_POS);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(spi, mec5_qspi_driver_api) = {
 	.transceive = mec5_qspi_xfr_sync,
 #ifdef CONFIG_SPI_ASYNC
@@ -808,7 +886,8 @@ static DEVICE_API(spi, mec5_qspi_driver_api) = {
 		.dcsda = DT_INST_PROP_OR(i, dcsda, 6u),                                            \
 		.ovrc = (uint32_t)DT_INST_PROP_OR(i, overrun_character, 0),                        \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(i, &mec5_qspi_init, NULL, &mec5_qspi_data_##i,                       \
+	PM_DEVICE_DT_INST_DEFINE(i, mec5_qspi_pm_action);                                          \
+	DEVICE_DT_INST_DEFINE(i, &mec5_qspi_init, PM_DEVICE_DT_INST_GET(i), &mec5_qspi_data_##i,   \
 			      &mec5_qspi_config_##i, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,        \
 			      &mec5_qspi_driver_api);
 

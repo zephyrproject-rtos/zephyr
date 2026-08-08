@@ -80,8 +80,7 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 	K_OOPS(K_SYSCALL_DRIVER_SPI(dev, transceive));
 
 	if (tx_bufs) {
-		const struct spi_buf_set *tx =
-			(const struct spi_buf_set *)tx_bufs;
+		const struct spi_buf_set *tx = tx_bufs;
 
 		K_OOPS(K_SYSCALL_MEMORY_READ(tx_bufs,
 					     sizeof(struct spi_buf_set)));
@@ -93,7 +92,7 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 
 	if (rx_bufs) {
 		const struct spi_buf_set *rx =
-			(const struct spi_buf_set *)rx_bufs;
+			rx_bufs;
 
 		K_OOPS(K_SYSCALL_MEMORY_READ(rx_bufs,
 					     sizeof(struct spi_buf_set)));
@@ -109,7 +108,7 @@ static inline int z_vrfy_spi_transceive(const struct device *dev,
 				     K_OBJ_DRIVER_GPIO));
 	}
 
-	return copy_bufs_and_transceive((const struct device *)dev,
+	return copy_bufs_and_transceive(dev,
 					&config_copy,
 					&tx_bufs_copy,
 					&rx_bufs_copy);
@@ -121,6 +120,6 @@ static inline int z_vrfy_spi_release(const struct device *dev,
 {
 	K_OOPS(K_SYSCALL_MEMORY_READ(config, sizeof(*config)));
 	K_OOPS(K_SYSCALL_DRIVER_SPI(dev, release));
-	return z_impl_spi_release((const struct device *)dev, config);
+	return z_impl_spi_release(dev, config);
 }
 #include <zephyr/syscalls/spi_release_mrsh.c>

@@ -46,6 +46,8 @@
 /**
  * @brief Interfaces to work with Trusted Execution Environment (TEE).
  * @defgroup tee_interface TEE
+ * @since 3.7
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  *

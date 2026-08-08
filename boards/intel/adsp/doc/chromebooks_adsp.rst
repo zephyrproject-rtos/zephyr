@@ -205,7 +205,7 @@ place it in the home directory here for simplicity:
     dev$ cd $HOME
     dev$ git clone https://chromium.googlesource.com/chromiumos/third_party/kernel
     dev$ cd kernel
-    dev$ git checkout chromeos-5.10
+    dev$ git switch chromeos-5.10
 
 (*Once again, we are typing into a different shell.  We introduce the
 hostname "dev" here to represent the development machine on which you

@@ -20,3 +20,9 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+
+  drivers.net.wifi.build.st67w611m1:
+    extra_args: DTC_OVERLAY_FILE="st67w611m1.overlay"
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

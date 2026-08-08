@@ -10,7 +10,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/timer/system_timer.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <hal/nrf_timer.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/irq.h>
@@ -208,6 +208,13 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	 */
 	event_clear();
 	NVIC_ClearPendingIRQ(TIMER0_IRQn);
+
+	uint32_t now = counter();
+
+	while ((counter_sub(get_comparator(), now) - 1U) >= COUNTER_HALF_SPAN) {
+		set_comparator(now + 2U);
+		now = counter();
+	}
 }
 
 uint32_t sys_clock_elapsed(void)

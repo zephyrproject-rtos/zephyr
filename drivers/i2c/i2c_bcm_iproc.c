@@ -210,7 +210,7 @@ static int iproc_i2c_target_set_address(const struct device *dev, uint16_t addr)
 	mem_addr_t base = DEV_BASE(dev);
 	uint32_t val;
 
-	if ((addr == 0) && (addr > I2C_MAX_TARGET_ADDR)) {
+	if ((addr == 0) || (addr > I2C_MAX_TARGET_ADDR)) {
 		LOG_ERR("Invalid target address(0x%x) received", addr);
 		return -EINVAL;
 	}

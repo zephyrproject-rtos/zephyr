@@ -473,7 +473,7 @@ static int mspi_stm32_qspi_access(const struct device *dev, const struct mspi_xf
 	int ret;
 
 	/* === XIP Mode: Handle memory-mapped or indirect mode switching === */
-	if (dev_data->xip_cfg.enable) {
+	if (dev_data->memmap_cfg.enable) {
 		/* Read operations can use memory-mapped mode */
 		if (!mspi_stm32_qspi_needs_indirect_mode(packet)) {
 			return mspi_stm32_qspi_memory_mapped_read(dev, packet);
@@ -961,6 +961,10 @@ static int mspi_stm32_qspi_dev_config(const struct device *controller,
 
 	/* Check if device ID has changed and lock accordingly */
 	if (data->dev_id != dev_id) {
+		/* The controller lock is taken here and kept for the whole
+		 * session, until the device releases it through
+		 * mspi_get_channel_status().
+		 */
 		if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
 			LOG_ERR("Failed to acquire lock for device config");
 			return -EBUSY;
@@ -974,21 +978,25 @@ static int mspi_stm32_qspi_dev_config(const struct device *controller,
 		goto e_return;
 	}
 
+	data->dev_id = dev_id;
+
 	if (param_mask == MSPI_DEVICE_CONFIG_NONE && !cfg->mspicfg.sw_multi_periph) {
 		/* Nothing to do but saving the device ID */
-		data->dev_id = dev_id;
-		goto e_return;
+		return 0;
 	}
 
-	data->dev_id = dev_id;
 	/* Validate and save device configuration */
 	ret = mspi_stm32_qspi_dev_cfg_save(controller, param_mask, dev_cfg);
 	if (ret != 0) {
 		LOG_ERR("failed to change device cfg");
+		goto e_return;
 	}
+
+	return 0;
 
 e_return:
 	if (locked) {
+		data->dev_id = NULL;
 		k_mutex_unlock(&data->lock);
 	}
 
@@ -996,24 +1004,24 @@ e_return:
 }
 
 /**
- * API implementation of mspi_xip_config : XIP configuration
+ * API implementation of mspi_memmap_config : XIP configuration
  *
  * @param controller Pointer to the device structure for the driver instance.
  * @param dev_id Pointer to the device ID structure from a device.
- * @param xip_cfg The controller XIP configuration for MSPI.
+ * @param memmap_cfg The controller XIP configuration for MSPI.
  *
  * @retval 0 if successful.
  * @retval -ESTALE device ID don't match, need to call mspi_dev_config first.
  */
-static int mspi_stm32_qspi_xip_config(const struct device *controller,
-				      const struct mspi_dev_id *dev_id,
-				      const struct mspi_xip_cfg *xip_cfg)
+static int mspi_stm32_qspi_memmap_config(const struct device *controller,
+					 const struct mspi_dev_id *dev_id,
+					 const struct mspi_memmap_cfg *memmap_cfg)
 {
 	struct mspi_stm32_data *dev_data = controller->data;
 	int ret = 0;
 
 	if (dev_id != dev_data->dev_id) {
-		LOG_ERR("xip_config: dev_id don't match");
+		LOG_ERR("memmap_config: dev_id don't match");
 		return -ESTALE;
 	}
 
@@ -1025,7 +1033,7 @@ static int mspi_stm32_qspi_xip_config(const struct device *controller,
 
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
-	if (!xip_cfg->enable) {
+	if (!memmap_cfg->enable) {
 		/* This is for aborting memory mapped mode */
 		ret = mspi_stm32_qspi_memmap_off(controller);
 	} else {
@@ -1033,8 +1041,8 @@ static int mspi_stm32_qspi_xip_config(const struct device *controller,
 	}
 
 	if (ret == 0) {
-		dev_data->xip_cfg = *xip_cfg;
-		LOG_INF("QSPI XIP configured %d", xip_cfg->enable);
+		dev_data->memmap_cfg = *memmap_cfg;
+		LOG_INF("QSPI XIP configured %d", memmap_cfg->enable);
 	}
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -1058,17 +1066,20 @@ static int mspi_stm32_qspi_get_channel_status(const struct device *controller, u
 {
 	struct mspi_stm32_data *data = controller->data;
 	QSPI_HandleTypeDef *hmspi = &data->hmspi.qspi;
-	int ret = 0;
 
 	ARG_UNUSED(ch);
 
 	if (mspi_is_inp(controller) || (hmspi->Instance->SR & QUADSPI_SR_BUSY) != 0) {
-		ret = -EBUSY;
+		return -EBUSY;
 	}
 
+	/* The controller is idle: end the session started by
+	 * mspi_dev_config() and release the controller lock.
+	 */
 	data->dev_id = NULL;
+	k_mutex_unlock(&data->lock);
 
-	return ret;
+	return 0;
 }
 
 /**
@@ -1213,7 +1224,7 @@ static int mspi_stm32_qspi_pm_action(const struct device *dev, enum pm_device_ac
 		}
 
 		/* Check if XIP is enabled or if controller is in use */
-		if (dev_data->xip_cfg.enable || k_mutex_lock(&dev_data->lock, K_NO_WAIT) != 0) {
+		if (dev_data->memmap_cfg.enable || k_mutex_lock(&dev_data->lock, K_NO_WAIT) != 0) {
 			LOG_ERR("Controller in use, cannot be suspended");
 			return -EBUSY;
 		}
@@ -1261,7 +1272,7 @@ static int mspi_stm32_qspi_init(const struct device *controller)
 static DEVICE_API(mspi, mspi_stm32_qspi_driver_api) = {
 	.config = mspi_stm32_qspi_config,
 	.dev_config = mspi_stm32_qspi_dev_config,
-	.xip_config = mspi_stm32_qspi_xip_config,
+	.memmap_config = mspi_stm32_qspi_memmap_config,
 	.get_channel_status = mspi_stm32_qspi_get_channel_status,
 	.transceive = mspi_stm32_qspi_transceive,
 };
@@ -1358,7 +1369,7 @@ static DEVICE_API(mspi, mspi_stm32_qspi_driver_api) = {
 		.lock = Z_MUTEX_INITIALIZER(mspi_stm32_qspi_dev_data_##index.lock),            \
 		.sync = Z_SEM_INITIALIZER(mspi_stm32_qspi_dev_data_##index.sync, 0, 1),        \
 		.dev_cfg = {0},                                                                \
-		.xip_cfg = {0},                                                                \
+		.memmap_cfg = {0},                                                             \
 		.ctx.lock = Z_SEM_INITIALIZER(mspi_stm32_qspi_dev_data_##index.ctx.lock, 0, 1),\
 		QSPI_DMA_CHANNEL(DT_DRV_INST(index), tx_rx)                                    \
 	};                                                                                     \

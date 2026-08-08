@@ -700,7 +700,7 @@ static const struct uc81xx_quirks uc8176_quirks = {
 };
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8151d)
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8151d) || DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8253)
 static int uc8151d_set_tres(const struct device *dev)
 {
 	const struct uc81xx_config *config = dev->config;
@@ -764,13 +764,29 @@ static int uc8151d_set_cdi(const struct device *dev, bool border)
 	LOG_DBG("CDI: %#hhx", cdi);
 	return uc81xx_write_cmd_uint8(dev, UC81XX_CMD_CDI, cdi);
 }
+#endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8151d)
 static const struct uc81xx_quirks uc8151d_quirks = {
 	.max_width = 160,      /* Actual max from datasheet */
 	.max_height = 296,     /* Actual max from datasheet */
 
 	.auto_copy = false,    /* Manual copy required */
 	.pon_after_softstart = true,
+
+	.set_cdi = uc8151d_set_cdi,
+	.set_tres = uc8151d_set_tres,
+	.set_ptl = uc8151d_set_ptl,
+};
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8253)
+static const struct uc81xx_quirks uc8253_quirks = {
+	.max_width = 240,
+	.max_height = 480,
+
+	.auto_copy = false,
+	.pon_after_softstart = false,
 
 	.set_cdi = uc8151d_set_cdi,
 	.set_tres = uc8151d_set_tres,
@@ -914,6 +930,9 @@ DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8176, UC81XX_DEFINE,
 
 DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8151d, UC81XX_DEFINE,
 			     &uc8151d_quirks);
+
+DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8253, UC81XX_DEFINE,
+			     &uc8253_quirks);
 
 DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8179, UC81XX_DEFINE,
 			     &uc8179_quirks);

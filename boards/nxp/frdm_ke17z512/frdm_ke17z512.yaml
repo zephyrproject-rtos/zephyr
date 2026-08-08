@@ -25,4 +25,5 @@ supported:
   - spi
   - dma
   - watchdog
+  - crc
 vendor: nxp

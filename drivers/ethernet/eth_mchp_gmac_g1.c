@@ -207,7 +207,7 @@ static void gmac_free_rx_bufs(struct net_buf **rx_frag_list, uint16_t len)
 {
 	for (int i = 0; i < len; i++) {
 		if (rx_frag_list[i] != NULL) {
-			net_buf_unref(rx_frag_list[i]);
+			net_pkt_frag_unref(rx_frag_list[i]);
 			rx_frag_list[i] = NULL;
 		}
 	}
@@ -589,9 +589,8 @@ static struct net_pkt *gmac_extract_and_replace_buffers(struct gmac_queue *queue
 		frag = new_frag;
 		rx_frag_list[tail] = frag;
 		rx_desc->status = 0U;
-		rx_desc->addr &= (~GMAC_RXW0_ADDR);
-		rx_desc->addr |= ((uint32_t)frag->data & GMAC_RXW0_ADDR);
-		rx_desc->addr &= (~GMAC_RXW0_OWNERSHIP);
+		rx_desc->addr = ((uint32_t)frag->data & GMAC_RXW0_ADDR) |
+				(rx_desc->addr & GMAC_RXW0_WRAP);
 
 		MODULO_INC(tail, rx_desc_list->len);
 		rx_desc = &rx_desc_list->buf_desc[tail];

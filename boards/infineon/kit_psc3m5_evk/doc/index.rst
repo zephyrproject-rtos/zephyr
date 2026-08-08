@@ -277,6 +277,65 @@ Debugging
 Once the GDB console starts, you may set breakpoints and perform standard
 GDB debugging on the PSOC™ Control C3M5 Cortex-M33 core.
 
+Secure Boot
+***********
+
+The PSOC™ Control C3M5 MCU includes a ROM boot stage (FLASH_BOOT) that
+authenticates and launches the first OEM application from internal flash.
+
+The device operates in ``BOOT_SIMPLE_APP`` mode: FLASH_BOOT loads the
+application at the start of internal flash with no cryptographic signature
+verification. The image uses a basic Cortex-M33 format (interrupt vector
+table followed by code). Standard Zephyr builds work without any signing
+in this mode.
+
+When the MCUboot bootloader is used via sysbuild, MCUboot itself is the first
+application launched by FLASH_BOOT. MCUboot then independently authenticates
+the Zephyr application image in ``slot0_partition`` using the standard Zephyr
+``imgtool`` signing flow. No OEM key provisioning is required for this
+configuration; ``BOOT_SIMPLE_APP`` mode applies and the MCUboot binary runs
+without BootROM signature verification.
+
+Enabling Secure Boot
+====================
+
+To enable BootROM signature verification the device must be provisioned.
+Follow the `AN240106 PSoC Control C3 Security`_ application note to
+initialise an `Infineon EdgeProtect Tools`_ project, generate the OEM key
+pairs, and run ``provision-device``.
+
+.. warning::
+
+   ``provision-device`` is **irreversible**. The OEM key hash is written to
+   SFLASH and the lifecycle state is advanced. Use a dedicated development
+   board.
+
+After provisioning, the first image that FLASH_BOOT verifies must be signed
+with the OEM key. When using MCUboot via sysbuild this is the MCUboot binary;
+the same ``sign-image`` steps apply to a standalone Zephyr application when
+MCUboot is not used, adjusting ``--image`` and ``--slot-size`` to match the
+application binary and its partition size. Use the PSC3-specific parameters
+derived from the Zephyr partition layout and flash the signed image:
+
+.. code-block:: console
+
+   edgeprotecttools sign-image \
+     --image  <build>/mcuboot/zephyr/zephyr.hex \
+     --output <build>/mcuboot/zephyr/zephyr.signed.hex \
+     --key    <oem-private-key>.pem \
+     --hex-addr 0x32000000 \
+     --header-size 0x400 --slot-size 0x10000 \
+     --align 1 --min-erase-size 0x200 --erased-val 0 --overwrite-only
+
+   west flash --hex-file <build>/mcuboot/zephyr/zephyr.signed.hex
+
+``--hex-addr 0x32000000`` is required because the SAHB window is the
+writable data-access path to the flash; the CBUS window
+(``0x12000000``) is read-only and cannot be written.
+When using MCUboot, the Zephyr application in ``slot0_partition`` is
+signed by the standard ``imgtool`` sysbuild flow and does not require
+EPT signing.
+
 References
 **********
 
@@ -297,3 +356,9 @@ References
 
 .. _KitProg3:
     https://github.com/Infineon/KitProg3
+
+.. _AN240106 PSoC Control C3 Security:
+    https://www.infineon.com/assets/row/public/documents/30/42/infineon-an240106-getting-started-psoc-control-c3-security-applicationnotes-en.pdf?fileId=8ac78c8c93956f500193d7bf85926689
+
+.. _Infineon EdgeProtect Tools:
+    https://pypi.org/project/edgeprotecttools/

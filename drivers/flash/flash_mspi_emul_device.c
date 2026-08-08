@@ -30,7 +30,7 @@ struct flash_mspi_emul_device_config {
 
 	struct mspi_dev_id                  dev_id;
 	struct mspi_dev_cfg                 tar_dev_cfg;
-	struct mspi_xip_cfg                 tar_xip_cfg;
+	struct mspi_memmap_cfg              tar_memmap_cfg;
 	struct mspi_scramble_cfg            tar_scramble_cfg;
 
 	bool                                sw_multi_periph;
@@ -39,7 +39,7 @@ struct flash_mspi_emul_device_config {
 struct flash_mspi_emul_device_data {
 	const struct device                 *bus;
 	struct mspi_dev_cfg                 dev_cfg;
-	struct mspi_xip_cfg                 xip_cfg;
+	struct mspi_memmap_cfg              memmap_cfg;
 	struct mspi_scramble_cfg            scramble_cfg;
 	mspi_timing_cfg                     timing_cfg;
 
@@ -374,13 +374,13 @@ static int emul_mspi_device_init(const struct emul *emul_flash, const struct dev
 	}
 	data->dev_cfg = cfg->tar_dev_cfg;
 
-#if CONFIG_MSPI_XIP
-	if (cfg->tar_xip_cfg.enable) {
-		if (mspi_xip_config(data->bus, &cfg->dev_id, &cfg->tar_xip_cfg)) {
+#if CONFIG_MSPI_MEMMAP
+	if (cfg->tar_memmap_cfg.enable) {
+		if (mspi_memmap_config(data->bus, &cfg->dev_id, &cfg->tar_memmap_cfg)) {
 			LOG_ERR("%u, Failed to enable XIP.", __LINE__);
 			return -EIO;
 		}
-		data->xip_cfg = cfg->tar_xip_cfg;
+		data->memmap_cfg = cfg->tar_memmap_cfg;
 	}
 #endif
 
@@ -429,7 +429,7 @@ static int flash_mspi_emul_device_init_stub(const struct device *dev)
 			},                                                                        \
 		.dev_id                   = MSPI_DEVICE_ID_DT_INST(n),                            \
 		.tar_dev_cfg              = MSPI_DEVICE_CONFIG_DT_INST(n),                        \
-		.tar_xip_cfg              = MSPI_XIP_CONFIG_DT_INST(n),                           \
+		.tar_memmap_cfg           = MSPI_MEMMAP_CONFIG_DT_INST(n),                        \
 		.tar_scramble_cfg         = MSPI_SCRAMBLE_CONFIG_DT_INST(n),                      \
 		.sw_multi_periph          = DT_PROP(DT_INST_BUS(n), software_multiperipheral)     \
 	};                                                                                        \

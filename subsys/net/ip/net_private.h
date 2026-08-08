@@ -94,7 +94,6 @@ static inline void socket_service_init(void) { }
 #endif
 
 #if defined(CONFIG_NET_NATIVE) || defined(CONFIG_NET_OFFLOAD)
-extern void net_context_init(void);
 extern const char *net_context_state(struct net_context *context);
 extern bool net_context_is_reuseaddr_set(struct net_context *context);
 extern bool net_context_is_reuseport_set(struct net_context *context);
@@ -107,7 +106,6 @@ int net_context_get_local_addr(struct net_context *context,
 			       struct net_sockaddr *addr,
 			       net_socklen_t *addrlen);
 #else
-static inline void net_context_init(void) { }
 static inline void net_pkt_init(void) { }
 static inline const char *net_context_state(struct net_context *context)
 {
@@ -150,12 +148,6 @@ static inline int net_context_get_local_addr(struct net_context *context,
 
 	return -ENOTSUP;
 }
-#endif
-
-#if defined(CONFIG_DNS_SOCKET_DISPATCHER)
-extern void dns_dispatcher_init(void);
-#else
-static inline void dns_dispatcher_init(void) { }
 #endif
 
 #if defined(CONFIG_MDNS_RESPONDER)
@@ -290,15 +282,6 @@ struct sock_obj {
 void net_if_ipv6_start_dad(struct net_if *iface,
 			   struct net_if_addr *ifaddr);
 #endif
-
-#if defined(CONFIG_NET_GPTP)
-/**
- * @brief Initialize Precision Time Protocol Layer.
- */
-void net_gptp_init(void);
-#else
-#define net_gptp_init()
-#endif /* CONFIG_NET_GPTP */
 
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
 int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
@@ -471,14 +454,32 @@ void net_pkt_tx_init(struct net_pkt *pkt);
 
 /** Rejoin IGMP mcast group w/o registering address, for internal use only. */
 #if defined(CONFIG_NET_IPV4_IGMP)
-int net_ipv4_igmp_rejoin(struct net_if *iface, const struct net_in_addr *addr);
+int net_ipv4_igmp_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr);
 #else
 #define net_ipv4_igmp_rejoin(...) -ENOSYS
 #endif
 
 /** Rejoin MLD mcast group w/o registering address, for internal use only. */
 #if defined(CONFIG_NET_IPV6_MLD)
-int net_ipv6_mld_rejoin(struct net_if *iface, const struct net_in6_addr *addr);
+int net_ipv6_mld_rejoin(struct net_if *iface, struct net_if_mcast_addr *addr);
 #else
 #define net_ipv6_mld_rejoin(...) -ENOSYS
 #endif
+
+#if defined(CONFIG_NET_IPV4_IGMP)
+void net_ipv4_igmp_send_leave(struct net_if *iface, const struct net_if_mcast_addr *addr);
+#else
+static inline void net_ipv4_igmp_send_leave(struct net_if *iface __unused,
+					    const struct net_if_mcast_addr *addr __unused)
+{
+}
+#endif
+
+#if defined(CONFIG_NET_IPV6_MLD)
+void net_ipv6_mld_send_leave(struct net_if *iface, const struct net_if_mcast_addr *addr);
+#else
+static inline void net_ipv6_mld_send_leave(struct net_if *iface __unused,
+					   const struct net_if_mcast_addr *addr __unused)
+{
+}
+#endif /* CONFIG_NET_IPV6_MLD */

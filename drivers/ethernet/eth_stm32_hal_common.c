@@ -224,8 +224,6 @@ static void eth_iface_init(struct net_if *iface)
 
 	net_if_carrier_off(iface);
 
-	net_lldp_set_lldpdu(iface);
-
 	if (device_is_ready(cfg->phy_dev)) {
 		phy_link_callback_set(cfg->phy_dev, phy_link_state_changed, (void *)dev);
 	} else {
@@ -257,9 +255,6 @@ static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(const struct device 
 #endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	       | ETHERNET_PROMISC_MODE
-#endif
-#if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	       | ETHERNET_PTP
 #endif
 #if defined(CONFIG_NET_LLDP)
 	       | ETHERNET_LLDP

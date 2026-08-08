@@ -47,7 +47,7 @@ static K_THREAD_STACK_DEFINE(sextra2, STACK_SIZE);
 
 static K_EVENT_DEFINE(test_event);
 static K_EVENT_DEFINE(sync_event);
-static struct k_event deliver_event;
+static K_EVENT_DEFINE(deliver_event);
 static K_EVENT_DEFINE(clear_event);
 
 static K_SEM_DEFINE(receiver_sem, 0, 1);
@@ -206,13 +206,16 @@ static void reset_on_wait(void)
 }
 
 /**
- * receiver helper task
+ * receiver helper task entry points, one per test scenario
  */
 
-static void receiver(void *p1, void *p2, void *p3)
+static void receiver_existing(void *p1, void *p2, void *p3)
 {
 	receive_existing_events();
+}
 
+static void receiver_reset(void *p1, void *p2, void *p3)
+{
 	reset_on_wait();
 }
 
@@ -221,7 +224,7 @@ static void receiver(void *p1, void *p2, void *p3)
  * when some events have already been sent. No additional events are sent
  * to the event object during this block of testing.
  */
-static void test_receive_existing_events(void)
+static void drive_receive_existing_events(void)
 {
 	int  rv;
 
@@ -291,7 +294,7 @@ static void test_receive_existing_events(void)
  * event object are reset at the appropriate time.
  */
 
-static void test_reset_on_wait(void)
+static void drive_reset_on_wait(void)
 {
 	int  rv;
 
@@ -348,73 +351,42 @@ static void test_reset_on_wait(void)
 	zassert_true(test_event.events  == 0x123456);
 
 	k_event_set(&test_event, 0x0);  /* Reset events */
-	k_sem_give(&sync_sem);
-}
-
-void test_wake_multiple_threads(void)
-{
-	uint32_t  events;
-
-	/*
-	 * The extra threads are expected to be waiting on <sync_event>
-	 * Wake them both up.
-	 */
-
-	k_event_set(&sync_event, 0xfff);
-
-	/*
-	 * The extra threads send back the events they received. Wait
-	 * for all of them.
-	 */
-
-	events = k_event_wait_all(&test_event, 0x333, false, SHORT_TIMEOUT);
-
-	zassert_true(events == 0x333);
 }
 
 /**
- * @brief Verify event posting and clearing primitives update stored events.
+ * @brief Verify k_event_post() ORs new events into the stored set.
  *
  * @details
- * Exercises the value-manipulation event system calls without any waking or
- * blocking, validating both the resulting set of posted events and the
- * previous value each call returns. Runs as a user-mode test so the event
- * system calls are also exercised from an unprivileged thread.
+ * Exercises the posting system call without any waking or blocking,
+ * validating both the resulting set of posted events and the previous
+ * value each call returns. Runs as a user-mode test so the post system
+ * call is also exercised from an unprivileged thread.
  *
  * Test steps:
- * - Initialize an event object and confirm it holds no events.
- * - Post events and verify k_event_post() returns the prior set and ORs in
- *   the new bits.
- * - Overwrite events with k_event_set() and verify it returns the prior set.
- * - Use k_event_set_masked() to selectively set/clear bits and verify only
- *   the masked bits change while the returned value reports their prior state.
- *
- * Expected result:
- * - After each call the stored events (read via k_event_test()) match the
- *   expected value, and each call returns the previous state of the affected
+ * - Empty the event object and confirm it holds no events.
+ * - Post a first set of events and verify it is stored verbatim and that
+ *   the call reports no prior events.
+ * - Post an overlapping second set and verify the new bits are ORed into
+ *   the stored set while the call returns the prior state of the posted
  *   bits.
  *
+ * Expected result:
+ * - After each call the stored events (read via k_event_test()) are the
+ *   union of everything posted so far, and each call returns the previous
+ *   state of the affected bits.
+ *
  * @see k_event_post()
- * @see k_event_set()
- * @see k_event_set_masked()
  * @see k_event_test()
  */
-
-ZTEST_USER(events_api, test_event_deliver)
+ZTEST_USER(events_api, test_event_post)
 {
 	struct k_event *event = &deliver_event;
 	uint32_t  events;
-	uint32_t  events_mask;
 	uint32_t  previous;
 
-	k_event_init(event);
+	(void)k_event_set(event, 0);
 
 	zassert_equal(k_event_test(event, ~0), 0);
-
-	/*
-	 * Verify k_event_post()  and k_event_set() update the
-	 * events stored in the event object as expected.
-	 */
 
 	events = 0xAAAA;
 	previous = k_event_post(event, events);
@@ -425,16 +397,80 @@ ZTEST_USER(events_api, test_event_deliver)
 	previous = k_event_post(event, events);
 	zassert_equal(previous, events & 0xAAAA);
 	zassert_equal(k_event_test(event, ~0), events);
+}
 
-	events = 0xAAAA0000;
-	previous = k_event_set(event, events);
+/**
+ * @brief Verify k_event_set() overwrites the stored set of events.
+ *
+ * @details
+ * Exercises the set system call without any waking or blocking, validating
+ * that the stored events are replaced (not merged) and that the previous
+ * set is returned. Runs as a user-mode test so the set system call is also
+ * exercised from an unprivileged thread.
+ *
+ * Test steps:
+ * - Empty the event object and post a known set of events.
+ * - Overwrite the events with k_event_set() and verify the stored set is
+ *   exactly the new value while the call returns the prior set.
+ * - Set a second value and verify the first one is reported back.
+ *
+ * Expected result:
+ * - After each call the stored events (read via k_event_test()) match the
+ *   set value exactly, and each call returns the complete previous set.
+ *
+ * @see k_event_set()
+ * @see k_event_test()
+ */
+ZTEST_USER(events_api, test_event_set)
+{
+	struct k_event *event = &deliver_event;
+	uint32_t  previous;
+
+	(void)k_event_set(event, 0);
+
+	(void)k_event_post(event, 0xAAAA | 0x55555ABC);
+
+	previous = k_event_set(event, 0xAAAA0000);
 	zassert_equal(previous, 0xAAAA | 0x55555ABC);
-	zassert_equal(k_event_test(event, ~0), events);
+	zassert_equal(k_event_test(event, ~0), 0xAAAA0000);
 
-	/*
-	 * Verify k_event_set_masked() update the events
-	 * stored in the event object as expected
-	 */
+	previous = k_event_set(event, 0x33333333);
+	zassert_equal(previous, 0xAAAA0000);
+	zassert_equal(k_event_test(event, ~0), 0x33333333);
+}
+
+/**
+ * @brief Verify k_event_set_masked() changes only the masked events.
+ *
+ * @details
+ * Exercises the masked-set system call without any waking or blocking,
+ * validating that only the events selected by the mask are set or cleared,
+ * that all other events are untouched, and that the previous state of the
+ * masked events is returned. Runs as a user-mode test so the masked-set
+ * system call is also exercised from an unprivileged thread.
+ *
+ * Test steps:
+ * - Set a known pattern of events (0x33333333).
+ * - Clear one masked subset at a time and verify only those bits drop out
+ *   while their prior state is returned.
+ * - Set masked subsets and verify only the masked bits change, including a
+ *   mask that simultaneously sets some bits and clears others.
+ *
+ * Expected result:
+ * - After each call the stored events (read via k_event_test()) differ from
+ *   the prior state only in the masked bits, and each call returns the
+ *   previous state of the masked bits.
+ *
+ * @see k_event_set_masked()
+ * @see k_event_test()
+ */
+ZTEST_USER(events_api, test_event_set_masked)
+{
+	struct k_event *event = &deliver_event;
+	uint32_t  events;
+	uint32_t  events_mask;
+	uint32_t  previous;
+
 	events = 0x33333333;
 	(void)k_event_set(event, events);
 	zassert_equal(k_event_test(event, ~0), events);
@@ -522,46 +558,171 @@ ZTEST_USER(events_api, test_k_event_clear)
 }
 
 /**
- * @brief Verify multi-threaded waiting, reset-on-wait and waking of waiters.
+ * @brief Verify any/all matching of a wait against already-posted events.
  *
  * @details
- * Drives a receiver thread and two extra waiter threads through a scripted
- * sequence of synchronization points to validate the blocking event APIs end
- * to end: matching all-vs-any conditions, returning only the matching bits,
- * optionally resetting the event before waiting, and waking multiple threads
- * blocked on a single event object at once.
+ * Drives a receiver thread through a scripted sequence of synchronization
+ * points to validate the matching rules of the blocking event APIs against
+ * a pre-loaded event object: an any-match wait completes when at least one
+ * requested event is present, an all-match wait completes only when every
+ * requested event is present, and a completed wait reports exactly the
+ * matching events. No events are posted while the receiver is waiting.
  *
  * Test steps:
- * - Pre-load the event object and start a receiver thread plus two extra
- *   threads waiting with k_event_wait()/k_event_wait_all().
- * - Walk the receiver through waits that should miss, partially match and
- *   fully match the posted events, checking the returned bits each time.
- * - Repeat with the reset flag set and confirm the event is cleared before
- *   the new bits are posted.
- * - Wake both extra threads via k_event_set() and collect the events they
- *   report back.
+ * - Pre-load the event object with a known set of events (0x1234) and start
+ *   the receiver thread.
+ * - Walk the receiver through k_event_wait() and k_event_wait_all() calls
+ *   that should miss (no overlap, incomplete overlap) and verify each
+ *   reports no events.
+ * - Walk the receiver through a partially matching k_event_wait() and a
+ *   fully matching k_event_wait_all() and verify the returned bits.
  *
  * Expected result:
- * - Each wait returns exactly the matching bits (0 when the condition is not
- *   satisfied), reset-on-wait clears prior events, and all woken threads
- *   report the expected events.
+ * - Waits whose condition is not met return 0, a matching any-wait returns
+ *   only the overlapping bits (0x0234), and a matching all-wait returns
+ *   exactly the requested bits (0x1234).
+ *
+ * @see k_event_wait()
+ * @see k_event_wait_all()
+ */
+ZTEST(events_api, test_event_receive_existing)
+{
+	k_sem_init(&sync_sem, 0, 1);
+	k_sem_init(&receiver_sem, 0, 1);
+	k_event_set(&test_event, 0x1234);
+
+	(void) k_thread_create(&treceiver, sreceiver, STACK_SIZE,
+			       receiver_existing, NULL, NULL, NULL,
+			       K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+
+	drive_receive_existing_events();
+
+	zassert_equal(k_thread_join(&treceiver, LONG_TIMEOUT), 0);
+}
+
+/**
+ * @brief Verify waiting for events accepts and honors a timeout.
+ *
+ * @details
+ * Focused test for the timeout behavior of the blocking event APIs: a wait
+ * whose condition is not satisfied within the given timeout returns no
+ * events, and only after the timeout has elapsed. Runs as a user-mode test
+ * so the wait system calls are also exercised from an unprivileged thread.
+ *
+ * Test steps:
+ * - Empty the event object.
+ * - Wait for events with K_NO_WAIT and verify the immediate no-event return.
+ * - Wait for events with a finite timeout and verify no events are returned
+ *   and at least the timeout duration elapsed.
+ * - Post a partial match and verify an all-match wait still times out.
+ *
+ * Expected result:
+ * - Each unsatisfied wait returns 0, the timed waits only return once their
+ *   timeout has expired.
+ *
+ * @see k_event_wait()
+ * @see k_event_wait_all()
+ */
+ZTEST_USER(events_api, test_event_wait_timeout)
+{
+	uint32_t  events;
+	int64_t   reftime;
+	int64_t   elapsed;
+
+	k_event_set(&test_event, 0);
+
+	events = k_event_wait(&test_event, 0xFFF, false, K_NO_WAIT);
+	zassert_equal(events, 0);
+
+	reftime = k_uptime_get();
+	events = k_event_wait(&test_event, 0xFFF, false, SHORT_TIMEOUT);
+	elapsed = k_uptime_delta(&reftime);
+	zassert_equal(events, 0);
+	zassert_true(elapsed >= 100, "wait returned after %d ms", (int)elapsed);
+
+	/* A partial match must not satisfy an all-match wait */
+	k_event_set(&test_event, 0x00F);
+	reftime = k_uptime_get();
+	events = k_event_wait_all(&test_event, 0xFFF, false, SHORT_TIMEOUT);
+	elapsed = k_uptime_delta(&reftime);
+	zassert_equal(events, 0);
+	zassert_true(elapsed >= 100, "wait returned after %d ms", (int)elapsed);
+
+	k_event_set(&test_event, 0);
+}
+
+/**
+ * @brief Verify the reset option clears prior events before waiting.
+ *
+ * @details
+ * Drives a receiver thread through waits issued with the reset flag set,
+ * posting fresh events after each wait has started. Because the event
+ * object is cleared when the wait begins, only the newly posted events can
+ * satisfy the wait condition, and threads whose condition is met by the
+ * post are woken while others time out.
+ *
+ * Test steps:
+ * - Pre-load the event object and start the receiver thread.
+ * - Have the receiver wait with reset=true while events that do not satisfy
+ *   the condition are posted; verify the wait times out, the pre-existing
+ *   events were discarded and only the new post remains stored.
+ * - Repeat with posts that fully or partially satisfy the condition and
+ *   verify the receiver is woken with exactly the matching events.
+ *
+ * Expected result:
+ * - Each wait observes only events posted after it started (prior events
+ *   are reset), unsatisfied waits time out, and satisfied waits wake the
+ *   receiver and return the matching events.
  *
  * @see k_event_post()
+ * @see k_event_wait()
+ * @see k_event_wait_all()
+ */
+ZTEST(events_api, test_event_reset_on_wait)
+{
+	k_sem_init(&sync_sem, 0, 1);
+	k_sem_init(&receiver_sem, 0, 1);
+	k_event_set(&test_event, 0x1234);
+
+	(void) k_thread_create(&treceiver, sreceiver, STACK_SIZE,
+			       receiver_reset, NULL, NULL, NULL,
+			       K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+
+	drive_reset_on_wait();
+
+	zassert_equal(k_thread_join(&treceiver, LONG_TIMEOUT), 0);
+}
+
+/**
+ * @brief Verify a single event delivery wakes all matching waiters.
+ *
+ * @details
+ * Parks two threads on the same event object -- one waiting for any of its
+ * events, one waiting for all of them -- and wakes both with a single
+ * k_event_set() call. Each woken thread posts the events it received back
+ * to a second event object so the test can confirm both were unpended with
+ * their expected events.
+ *
+ * Test steps:
+ * - Empty both event objects and start the two waiter threads.
+ * - Give the waiters time to pend on the sync event object.
+ * - Deliver events matching both wait conditions with one k_event_set().
+ * - Collect the events each waiter reports back and join the waiters.
+ *
+ * Expected result:
+ * - Both waiting threads are woken by the single delivery and report
+ *   exactly the events that matched their respective wait conditions.
+ *
  * @see k_event_set()
  * @see k_event_wait()
  * @see k_event_wait_all()
  */
-
-ZTEST(events_api, test_event_receive)
+ZTEST(events_api, test_event_wake_multiple)
 {
+	uint32_t  events;
 
-	/* Create helper threads */
-
-	k_event_set(&test_event, 0x1234);
-
-	(void) k_thread_create(&treceiver, sreceiver, STACK_SIZE,
-			       receiver, NULL, NULL, NULL,
-			       K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	k_event_set(&test_event, 0);
+	k_event_set(&sync_event, 0);
 
 	(void) k_thread_create(&textra1, sextra1, STACK_SIZE,
 			       entry_extra1, NULL, NULL, NULL,
@@ -571,11 +732,19 @@ ZTEST(events_api, test_event_receive)
 			       entry_extra2, NULL, NULL, NULL,
 			       K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 
-	test_receive_existing_events();
+	/* Let both waiters pend on <sync_event>, then wake them together. */
+	k_sleep(DELAY);
+	k_event_set(&sync_event, 0xfff);
 
-	test_reset_on_wait();
+	/*
+	 * The extra threads send back the events they received. Wait
+	 * for all of them.
+	 */
+	events = k_event_wait_all(&test_event, 0x333, false, SHORT_TIMEOUT);
+	zassert_true(events == 0x333);
 
-	test_wake_multiple_threads();
+	zassert_equal(k_thread_join(&textra1, LONG_TIMEOUT), 0);
+	zassert_equal(k_thread_join(&textra2, LONG_TIMEOUT), 0);
 }
 
 /**

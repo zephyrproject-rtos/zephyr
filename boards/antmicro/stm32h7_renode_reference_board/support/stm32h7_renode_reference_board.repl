@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+using "platforms/cpus/stm32h753.repl"
+
+redRgbLed: Miscellaneous.LED @ gpioPortD 13
+
+greenRgbLed: Miscellaneous.LED @ gpioPortD 14
+
+blueRgbLed: Miscellaneous.LED @ gpioPortD 15
+
+gpioPortD:
+    13 -> redRgbLed@0
+    14 -> greenRgbLed@0
+    15 -> blueRgbLed@0
+
+sw1: Miscellaneous.Button @ gpioPortG 7
+    invert: true
+    -> gpioPortG@7
+
+sw2: Miscellaneous.Button @ gpioPortG 8
+    invert: true
+    -> gpioPortG@8
+
+sw3: Miscellaneous.Button @ gpioPortG 9
+    invert: true
+    -> gpioPortG@9
+
+sw4: Miscellaneous.Button @ gpioPortG 10
+    invert: true
+    -> gpioPortG@10
+
+veml7700: Sensors.VEML7700 @ i2c1 0x10
+
+tmp108: Sensors.TMP108 @ i2c1 0x48
+
+lps25hb: Sensors.LPS25HB @ i2c1 0x5D
+
+usart2:
+    frequency: 200000000
+
+timer3:
+    frequency: 10000000
+
+watchdog:
+    frequency: 32000
+
+qspiFlash: SPI.Micron_MT25Q @ qspi
+    underlyingMemory: flashMem
+
+flashMem: Memory.MappedMemory @ sysbus 0x90000000
+    size: 0x8000000
+
+dwt: Miscellaneous.DWT @ sysbus 0xE0001000
+    frequency: 72000000
+
+sysbus:
+    init:
+        Tag <0x58024800 4> "PWR_CR1_DBP_SET" 0x100
+        Tag <0x58024808 4> "PWR_CR2_BREN_SET" 0x1
+        Tag <0x58024818 4> "D3CR.VOSRDY" 0x2000
+        Tag <0x58026410 4> "HSEM_UNLOCK" 0x80000000 overridePeripheralAccesses=True

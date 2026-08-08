@@ -1112,9 +1112,20 @@ static void resync_pmp_domain(struct k_thread *thread,
 				   PMP_U_MODE(thread));
 #endif
 
-		__ASSERT(ok,
-			 "no PMP slot left for %d remaining partitions in domain %p",
-			 remaining_partitions + 1, domain);
+		/*
+		 * The available slot count is an optimistic estimate (see
+		 * arch_mem_domain_max_partitions_get), so a domain may hold more
+		 * partitions than fit in this thread's remaining PMP entries. If we
+		 * run out, stop programming rather than asserting: the thread runs
+		 * with the partitions that fit and faults - only that thread - on an
+		 * access to an unmapped one, which is recoverable, whereas an assert
+		 * here runs during a context switch and takes down the whole system.
+		 */
+		if (!ok) {
+			LOG_ERR("no PMP slot left for %d remaining partitions in domain %p",
+				remaining_partitions + 1, domain);
+			break;
+		}
 	}
 
 	thread->arch.u_mode_pmp_end_index = index;
@@ -1260,6 +1271,21 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 		size_t ro_size = (size_t)__rom_region_size;
 
 		if (IS_WITHIN(start, size, ro_start, ro_size)) {
+			return 0;
+		}
+
+		/*
+		 * On SoCs whose flash-mapped read-only data lives in a window
+		 * separate from the executable text (so __rom_region only spans
+		 * the text), the rodata - which holds const data and string
+		 * literals passed to syscalls - is covered by its own globally
+		 * readable region. Accept it here too.
+		 */
+		uintptr_t rodata_start = (uintptr_t)__rodata_region_start;
+		uintptr_t rodata_end = (uintptr_t)__rodata_region_end;
+
+		if (rodata_end > rodata_start &&
+		    IS_WITHIN(start, size, rodata_start, rodata_end - rodata_start)) {
 			return 0;
 		}
 	}

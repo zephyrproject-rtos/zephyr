@@ -186,6 +186,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x42020000 0x2000>;
+			ranges;
 
 			gpioa: gpio@42020000 {
 				compatible = "st,stm32-gpio";
@@ -268,6 +269,15 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
 			resets = <&rctl STM32_RESET(APB1L, 19)>;
 			interrupts = <64 0>;
+			status = "disabled";
+		};
+
+		uart5: serial@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
+			resets = <&rctl STM32_RESET(APB1L, 20)>;
+			interrupts = <65 0>;
 			status = "disabled";
 		};
 
@@ -411,8 +421,8 @@
 			compatible = "st,stm32u5-dma";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
-			interrupts = <29 0 30 0 31 0 32 0 33 0 34 0 35 0 36 0
-				      80 0 81 0 82 0 83 0>;
+			interrupts = <29 0>, <30 0>, <31 0>, <32 0>, <33 0>, <34 0>, <35 0>, <36 0>,
+				     <80 0>, <81 0>, <82 0>, <83 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-channels = <12>;
 			dma-requests = <114>;
@@ -502,20 +512,21 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x40015400 0x400>;
-			ranges = <0x0 0x40015400 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
+			clock-names = "sai_ck";
 			status = "disabled";
 
-			sai1_a: sai1a@4 {
-				reg = <0x4 0x20>;
+			sai1_a: sai1a@40015404 {
+				reg = <0x40015404 0x20>;
 				dmas = <&gpdma1 1 36 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
 			};
 
-			sai1_b: sai1b@24 {
-				reg = <0x24 0x20>;
+			sai1_b: sai1b@40015424 {
+				reg = <0x40015424 0x20>;
 				dmas = <&gpdma1 0 37 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;

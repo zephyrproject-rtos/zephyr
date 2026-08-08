@@ -1109,12 +1109,14 @@ int usbd_ep_buf_free(struct usbd_context *uds_ctx, struct net_buf *buf);
  *
  * @param[in] uds_ctx Pointer to USB device support context
  *
- * @return true if endpoint is halted, false otherwise
+ * @return true if the device is suspended, false otherwise
  */
 bool usbd_is_suspended(struct usbd_context *uds_ctx);
 
 /**
  * @brief Initiate the USB remote wakeup (TBD)
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
  *
  * @return 0 on success, other values on fail.
  */

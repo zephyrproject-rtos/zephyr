@@ -3,9 +3,9 @@
 
 if(CONFIG_BT_BFLB_BL70XL)
   zephyr_include_directories(
-    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/ble)
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${CONFIG_SOC_SERIES}/ble)
   zephyr_include_directories(
-    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/rf)
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${CONFIG_SOC_SERIES}/rf)
 
   # Select controller library and per-variant parameters
   if(CONFIG_BFLB_BL70XL_BLE_M0S1P)
@@ -35,9 +35,9 @@ if(CONFIG_BT_BFLB_BL70XL)
       set(BL70XL_ROM_LIB libbl702l_rom_a0.a)
     endif()
     zephyr_link_libraries(
-      ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES}/${BLE_VARIANT_LIB}
-      ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES}/libbl702l_rf.a
-      ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES}/${BL70XL_ROM_LIB}
+      ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${CONFIG_SOC_SERIES}/${BLE_VARIANT_LIB}
+      ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${CONFIG_SOC_SERIES}/libbl702l_rf.a
+      ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${CONFIG_SOC_SERIES}/${BL70XL_ROM_LIB}
     )
   endif()
 endif()

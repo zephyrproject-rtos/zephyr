@@ -68,6 +68,12 @@ test_sara_r4: sara_r4 {
 	mdm-reset-gpios = <&test_gpio 0 0>;
 };
 
+test_fibocom_le250: fibocom_le250 {
+	compatible = "fibocom,le250";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+};
+
 test_simcom_sim7080: sim7080 {
 	compatible = "simcom,sim7080";
 
@@ -79,6 +85,14 @@ test_quectel_bg9x: quectel_bg9x {
 
 	mdm-power-gpios = <&test_gpio 0 0>;
 	mdm-reset-gpios = <&test_gpio 0 0>;
+};
+
+test_quectel_bc660k: bc660k {
+	compatible = "quectel,bc660k";
+
+	mdm-boot-gpios = <&test_gpio 0 0>;
+	mdm-rst-gpios = <&test_gpio 0 0>;
+	mdm-psm-gpios = <&test_gpio 0 0>;
 };
 
 test_quectel_eg25_g: quectel_eg25_g {
@@ -107,6 +121,10 @@ test_nordic_nrf91_slm: nordic_nrf91_slm {
 	mdm-power-gpios = <&test_gpio 0 0>;
 };
 
+test_nordic_nrf91_sm_v2: nordic_nrf91_sm_v2 {
+	compatible = "nordic,nrf91-sm-v2";
+};
+
 test_sqn_gm02s: sqn_gm02s {
 	compatible = "sqn,gm02s";
 
@@ -122,6 +140,13 @@ test_st_st87mxx: st87mxx {
 
 test_trasna_lexi_r10: trasna_lexi_r10 {
 	compatible = "trasna,lexi-r10";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+	mdm-reset-gpios = <&test_gpio 0 0>;
+};
+
+test_telit_lex10q1: telit_lex10q1 {
+	compatible = "telit,lex10q1";
 
 	mdm-power-gpios = <&test_gpio 0 0>;
 	mdm-reset-gpios = <&test_gpio 0 0>;

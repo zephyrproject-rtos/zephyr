@@ -48,6 +48,8 @@ struct ifx_tcpwm_counter_data {
 	struct counter_top_cfg top_value_cfg_counter;
 	uint32_t guard_period;
 	struct ifx_cat1_clock clock;
+	/* Counter input frequency, cached at init (see ifx_tcpwm_counter_get_freq) */
+	uint32_t freq;
 };
 
 static const cy_stc_tcpwm_counter_config_t counter_default_config = {
@@ -179,6 +181,18 @@ static int ifx_tcpwm_counter_init(const struct device *dev)
 	/* This must be called after Cy_TCPWM_Counter_Init */
 	Cy_TCPWM_Counter_SetCounter(config->reg_base, config->index, data->value);
 
+	/*
+	 * Cache the fixed input frequency here (POST_KERNEL, thread context) so
+	 * get_freq() can return it from ISR context. On non-secure builds this
+	 * clock query is a secure round-trip; on the CM55 it is relayed over IPC
+	 * and blocks on a semaphore, so it must run after the kernel and that
+	 * relay are up rather than at PRE_KERNEL_1.
+	 */
+	data->freq = ifx_cat1_utils_peri_pclk_get_frequency(config->clk_dst, &data->clock);
+	if (data->freq == 0U) {
+		return -EIO;
+	}
+
 	/* enable the counter interrupt */
 	config->irq_enable_func(dev);
 
@@ -216,11 +230,13 @@ static int ifx_tcpwm_counter_stop(const struct device *dev)
 static uint32_t ifx_tcpwm_counter_get_freq(const struct device *dev)
 {
 	struct ifx_tcpwm_counter_data *const data = dev->data;
-	const struct ifx_tcpwm_counter_config *config = dev->config;
 
-	uint32_t frequency = ifx_cat1_utils_peri_pclk_get_frequency(config->clk_dst, &data->clock);
-
-	return frequency;
+	/*
+	 * Cached at init: on non-secure builds the PDL clock query is a secure
+	 * round-trip (IPC-relayed on the CM55) that is not allowed from the ISR
+	 * context this API may run in.
+	 */
+	return data->freq;
 }
 
 static int ifx_tcpwm_counter_get_value(const struct device *dev, uint32_t *ticks)
@@ -545,7 +561,7 @@ static DEVICE_API(counter, counter_api) = {
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, ifx_tcpwm_counter_init, NULL, &ifx_tcpwm_counter##n##_data,       \
-			      &ifx_tcpwm_counter##n##_config, PRE_KERNEL_1,                        \
+			      &ifx_tcpwm_counter##n##_config, POST_KERNEL,                         \
 			      CONFIG_COUNTER_INIT_PRIORITY, &counter_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_TCPWM_COUNTER_INIT);

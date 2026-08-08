@@ -29,10 +29,12 @@ config ESP_SIMPLE_BOOT
 
 config ESP32_TIMER_TASK_STACK_SIZE
 	int "Stack size of the high resolution ESP Timer"
-	default 4096
+	default 1536
 	help
 	  Set the stack size for the internal high resolution ESP Timer
-	  used in Wi-Fi and BLE peripherals.
+	  used in Wi-Fi and BLE peripherals. Registered timer callbacks
+	  run in this task's context, including Wi-Fi, BLE, mesh, PHY and
+	  coexistence callbacks that dispatch here.
 
 config ESP32_TIMER_TASK_PRIO
 	int "Task priority of the high resolution ESP Timer"

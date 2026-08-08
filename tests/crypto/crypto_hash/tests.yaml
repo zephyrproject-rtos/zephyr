@@ -22,8 +22,11 @@ tests:
       - nucleo_c562re
       - nucleo_h753zi
       - sf32lb52_devkit_lcd
+      - stm32h573i_dk
       - kit_psc3m5_evk
       - cyw920829m2evk_02/cyw20829b1340
       - cyw920829m2evk_02/cyw20829b1010
       - cyw920829m2evk_02/cyw20829b0lkml
+      - rtl8752h_evb/rtl8752hjl
+      - rtl87x2g_evb_a/rtl8762gku
     tags: crypto

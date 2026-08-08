@@ -1,6 +1,9 @@
 sample:
   name: Bluetooth Peripheral GAP service non default implementation
   description: Demonstrates the GAP service implementation on application side.
+common:
+  tags:
+    - bluetooth
 tests:
   sample.bluetooth.peripheral_gap_svc:
     harness: bluetooth
@@ -11,4 +14,14 @@ tests:
       - ophelia4ev/nrf54l15/cpuapp
     integration_platforms:
       - qemu_cortex_m3
-    tags: bluetooth
+  sample.bluetooth.peripheral_gap_svc.bsim:
+    depends_on: bsim
+    build_only: true
+    sysbuild: true
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
+    harness: bsim
+    harness_config:
+      bsim_exe_name: samples_bluetooth_peripheral_gap_svc_prj_conf

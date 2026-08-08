@@ -12,9 +12,10 @@
 #ifndef ZEPHYR_XEN_MEMORY_H_
 #define ZEPHYR_XEN_MEMORY_H_
 
+#include <xen/public/xen.h>
+#include <xen/public/memory.h>
+
 #include <zephyr/kernel.h>
-#include <zephyr/xen/public/memory.h>
-#include <zephyr/xen/public/xen.h>
 
 /**
  * @defgroup xen_memory_management Xen memory management
@@ -68,6 +69,47 @@ int xendom_add_to_physmap_batch(int domid, int foreign_domid,
  * @return 0 on success, negative errno value on failure.
  */
 int xendom_remove_from_physmap(int domid, xen_pfn_t gpfn);
+
+/**
+ * @brief Increase a domain memory reservation.
+ *
+ * This asks Xen to allocate extents for a domain. On success, Xen writes the
+ * allocated machine frame bases into @p extent_start.
+ *
+ * @param domid Domain whose reservation is increased. Unprivileged callers must
+ *              use ``DOMID_SELF``.
+ * @param extent_order Extent order used by Xen, where each extent covers
+ *                     ``2^extent_order`` pages.
+ * @param nr_extents Number of extents requested.
+ * @param mem_flags Xen memory flags, for example the ``XENMEMF_*`` constants.
+ * @param[out] extent_start Array that receives the allocated machine frame
+ *                          bases.
+ *
+ * @return Number of allocated extents on success, negative errno value on
+ *         failure.
+ */
+int xendom_increase_reservation(int domid, unsigned int extent_order,
+				unsigned int nr_extents, unsigned int mem_flags,
+				xen_pfn_t *extent_start);
+
+/**
+ * @brief Decrease a domain memory reservation.
+ *
+ * This asks Xen to free guest frame extents from a domain reservation.
+ *
+ * @param domid Domain whose reservation is decreased. Unprivileged callers must
+ *              use ``DOMID_SELF``.
+ * @param extent_order Extent order used by Xen, where each extent covers
+ *                     ``2^extent_order`` pages.
+ * @param nr_extents Number of extents to free.
+ * @param mem_flags Xen memory flags, for example the ``XENMEMF_*`` constants.
+ * @param extent_start Array of guest frame bases to free.
+ *
+ * @return Number of freed extents on success, negative errno value on failure.
+ */
+int xendom_decrease_reservation(int domid, unsigned int extent_order,
+				unsigned int nr_extents, unsigned int mem_flags,
+				xen_pfn_t *extent_start);
 
 /**
  * @brief Populate guest frames with memory.

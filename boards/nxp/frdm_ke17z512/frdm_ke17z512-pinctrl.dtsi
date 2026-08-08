@@ -16,6 +16,15 @@
 	};
 
 	/* Configures pin routing and optionally pin electrical features. */
+	lpuart0_default: lpuart0_default {
+		group0 {
+			pinmux = <LPUART0_RX_PTB0>,
+				 <LPUART0_TX_PTB1>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
 	lpuart2_default: lpuart2_default {
 		group0 {
 			pinmux = <LPUART2_TX_PTE12>,

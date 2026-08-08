@@ -37,6 +37,7 @@ set_variable_ifdef(CONFIG_DMA_MCUX_LPC          CONFIG_MCUX_COMPONENT_driver.lpc
 set_variable_ifdef(CONFIG_GPIO_MCUX_LPC         CONFIG_MCUX_COMPONENT_driver.lpc_gpio)
 set_variable_ifdef(CONFIG_NXP_PINT              CONFIG_MCUX_COMPONENT_driver.pint)
 set_variable_ifdef(CONFIG_NXP_INPUTMUX          CONFIG_MCUX_COMPONENT_driver.inputmux)
+set_variable_ifdef(CONFIG_MUX_NXP_TRGMUX        CONFIG_MCUX_COMPONENT_driver.trgmux)
 set_variable_ifdef(CONFIG_I2C_MCUX_FLEXCOMM     CONFIG_MCUX_COMPONENT_driver.flexcomm)
 set_variable_ifdef(CONFIG_I2C_MCUX_FLEXCOMM     CONFIG_MCUX_COMPONENT_driver.flexcomm_i2c)
 set_variable_ifdef(CONFIG_I2S_MCUX_FLEXCOMM     CONFIG_MCUX_COMPONENT_driver.flexcomm)
@@ -180,6 +181,7 @@ set_variable_ifdef(CONFIG_CRC_DRIVER_NXP        CONFIG_MCUX_COMPONENT_driver.crc
 set_variable_ifdef(CONFIG_CRC_DRIVER_NXP_LPC    CONFIG_MCUX_COMPONENT_driver.lpc_crc)
 set_variable_ifdef(CONFIG_CLOCK_MONITOR_NXP_CMU_FC CONFIG_MCUX_COMPONENT_driver.cmu_fc)
 set_variable_ifdef(CONFIG_CLOCK_MONITOR_NXP_CMU_FM CONFIG_MCUX_COMPONENT_driver.cmu_fm)
+set_variable_ifdef(CONFIG_CLOCK_MONITOR_NXP_FREQME CONFIG_MCUX_COMPONENT_driver.lpc_freqme)
 set_variable_ifdef(CONFIG_PHY_NXP_T1S           CONFIG_MCUX_COMPONENT_driver.tenbaset_phy)
 set_variable_ifdef(CONFIG_AUXDISPLAY_NXP_SLCD CONFIG_MCUX_COMPONENT_driver.slcd)
 

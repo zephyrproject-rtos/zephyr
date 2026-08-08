@@ -306,6 +306,13 @@ void board_early_init_hook(void)
 
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
+	/* OSC32k is not available on this device; the RTC is clocked from the
+	 * FRO16K in the VBAT domain.
+	 */
+	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
 	CLOCK_SetClockDiv(kCLOCK_DivFLEXIO0, 2u);
 	CLOCK_AttachClk(kFRO_HF_to_FLEXIO0);

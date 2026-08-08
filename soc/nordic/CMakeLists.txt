@@ -52,6 +52,6 @@ if(CONFIG_BUILD_WITH_TFM)
   )
 endif()
 
-add_subdirectory(${SOC_SERIES})
+add_subdirectory(${CONFIG_SOC_SERIES})
 
 add_subdirectory(common)

@@ -429,11 +429,17 @@ void gcov_coverage_dump_tagged(const char *tag)
 	int fd;
 
 #if defined(CONFIG_REBOOT)
-	if (gcov_filename_key != GCOV_FILENAME_KEY) {
-		gcov_filename_key = GCOV_FILENAME_KEY;
-		gcov_filename_idx = 0;
-	} else {
-		gcov_filename_idx += 1;
+	/* The reboot index only uniquifies successive untagged dumps; a tag already
+	 * makes the path unique, and appending an index to it would break the
+	 * "<canonical>.gcda@@<tag>" name the host tooling matches on.
+	 */
+	if (tag == NULL) {
+		if (gcov_filename_key != GCOV_FILENAME_KEY) {
+			gcov_filename_key = GCOV_FILENAME_KEY;
+			gcov_filename_idx = 0;
+		} else {
+			gcov_filename_idx += 1;
+		}
 	}
 #endif /* defined(CONFIG_REBOOT) */
 
@@ -457,9 +463,13 @@ void gcov_coverage_dump_tagged(const char *tag)
 		}
 
 #if defined(CONFIG_REBOOT)
-		snprintf(gcov_filename, sizeof(gcov_filename), "%s.%d", gcov_list->filename,
-			 gcov_filename_idx);
-		filename = gcov_filename;
+		if (tag == NULL) {
+			snprintf(gcov_filename, sizeof(gcov_filename), "%s.%d",
+				 gcov_list->filename, gcov_filename_idx);
+			filename = gcov_filename;
+		} else {
+			filename = gcov_list->filename;
+		}
 #else
 		filename = gcov_list->filename;
 #endif /* defined(CONFIG_REBOOT) */

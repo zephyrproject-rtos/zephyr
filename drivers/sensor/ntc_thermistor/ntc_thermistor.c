@@ -262,7 +262,7 @@ static __unused const struct ntc_compensation comp_murata_ncp15xh103[] = {
 	{  35,  6947 },
 	{  45,  4916 },
 	{  55,  3535 },
-	{  64,  2586 },
+	{  65,  2586 },
 	{  75,  1924 },
 	{  85,  1452 },
 	{  95,  1109 },

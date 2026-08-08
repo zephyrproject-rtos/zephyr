@@ -83,7 +83,7 @@ static const char *ipv4_gw_cmd_opt;
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_NATIVE)
-static void update_pkt_timestamp(struct eth_context *ctx, struct net_pkt *pkt)
+static bool update_pkt_timestamp(struct eth_context *ctx, struct net_pkt *pkt)
 {
 	struct net_ptp_time timestamp = {
 		.second = UINT64_MAX,
@@ -91,20 +91,24 @@ static void update_pkt_timestamp(struct eth_context *ctx, struct net_pkt *pkt)
 	};
 
 	if (ctx->ptp_clock == NULL) {
-		return;
+		return false;
 	}
 
 	if (ptp_clock_get(ctx->ptp_clock, &timestamp) < 0) {
 		LOG_DBG("Failed to retrieve PTP clock timestamp");
+		return false;
 	}
 
 	net_pkt_set_timestamp(pkt, &timestamp);
+	return true;
 }
 #else
-static void update_pkt_timestamp(struct eth_context *ctx, struct net_pkt *pkt)
+static bool update_pkt_timestamp(struct eth_context *ctx, struct net_pkt *pkt)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(pkt);
+
+	return false;
 }
 #endif
 
@@ -238,7 +242,7 @@ static int eth_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* Native TAP can only provide an approximate host-side TX timestamp. */
-	update_pkt_timestamp(ctx, pkt);
+	(void)update_pkt_timestamp(ctx, pkt);
 	bool timestamp_queued = update_gptp(net_pkt_iface(pkt), pkt, true);
 
 	if (!timestamp_queued && net_pkt_is_tx_timestamping(pkt)) {
@@ -290,7 +294,9 @@ static int read_data(struct eth_context *ctx, int fd)
 		return status;
 	}
 
-	update_pkt_timestamp(ctx, pkt);
+	if (update_pkt_timestamp(ctx, pkt)) {
+		net_pkt_set_rx_timestamping(pkt, true);
+	}
 	(void)update_gptp(iface, pkt, false);
 
 	if (net_recv_data(iface, pkt) < 0) {
@@ -362,8 +368,6 @@ static void eth_iface_init(struct net_if *iface)
 	if (ctx->init_done) {
 		return;
 	}
-
-	net_lldp_set_lldpdu(iface);
 
 	ctx->init_done = true;
 
@@ -455,9 +459,6 @@ static enum ethernet_hw_caps eth_native_tap_get_capabilities(const struct device
 #endif
 #if defined(CONFIG_ETH_NATIVE_TAP_VLAN_TAG_STRIP)
 		| ETHERNET_HW_VLAN_TAG_STRIP
-#endif
-#if defined(CONFIG_PTP_CLOCK_NATIVE)
-		| ETHERNET_PTP
 #endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE

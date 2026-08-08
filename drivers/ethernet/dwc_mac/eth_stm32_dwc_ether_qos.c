@@ -136,13 +136,13 @@ int dwmac_platform_init(const struct device *dev)
 	p->rx_descs = dwmac_rx_descs;
 
 	/* basic configuration for this platform */
-	REG_WRITE(MAC_CONF,
-		  MAC_CONF_PS |
-		  MAC_CONF_FES |
-		  MAC_CONF_DM);
-	REG_WRITE(DMA_SYSBUS_MODE,
-		  DMA_SYSBUS_MODE_AAL |
-		  DMA_SYSBUS_MODE_FB);
+	DWMAC_REG_WRITE(MAC_CONF,
+			MAC_CONF_PS |
+			MAC_CONF_FES |
+			MAC_CONF_DM);
+	DWMAC_REG_WRITE(DMA_SYSBUS_MODE,
+			DMA_SYSBUS_MODE_AAL |
+			DMA_SYSBUS_MODE_FB);
 
 	/* set up IRQs (still masked for now) */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), dwmac_isr,
@@ -158,6 +158,10 @@ static const struct dwmac_config dwmac_config = {
 	.phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, phy_handle)),
 	.clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 	.mac_clk = (clock_control_subsys_t)&pclken[0],
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+	.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(0, ptp_clock)),
+	.ptp_clk = (clock_control_subsys_t)&pclken[ETH_STM32_PTP_CLK_IDX(0)],
+#endif
 };
 
 static struct dwmac_priv dwmac_instance;

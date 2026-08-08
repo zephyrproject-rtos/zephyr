@@ -35,7 +35,7 @@ CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT must be selected"
 
 void arch_cpu_idle(void)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 	posix_irq_full_unlock();
@@ -44,7 +44,7 @@ void arch_cpu_idle(void)
 
 void arch_cpu_atomic_idle(unsigned int key)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 	posix_atomic_halt_cpu(key);

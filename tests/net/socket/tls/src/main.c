@@ -35,7 +35,7 @@ uint32_t ztls_get_session_count(void);
 
 #define TCP_TEARDOWN_TIMEOUT K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY)
 
-#define TLS_TEST_WORK_QUEUE_STACK_SIZE 3072
+#define TLS_TEST_WORK_QUEUE_STACK_SIZE 4096
 
 K_THREAD_STACK_DEFINE(tls_test_work_queue_stack, TLS_TEST_WORK_QUEUE_STACK_SIZE);
 static struct k_work_q tls_test_work_queue;

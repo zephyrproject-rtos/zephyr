@@ -218,8 +218,8 @@ static void paw32xx_motion_work_handler(struct k_work *work)
 
 	LOG_DBG("x=%4d y=%4d", x, y);
 
-	input_report_rel(data->dev, cfg->axis_x, x, false, K_FOREVER);
-	input_report_rel(data->dev, cfg->axis_y, y, true, K_FOREVER);
+	input_report_rel(dev, cfg->axis_x, x, false, K_FOREVER);
+	input_report_rel(dev, cfg->axis_y, y, true, K_FOREVER);
 
 	/* Trigger one more scan if more data is available. */
 	if (gpio_pin_get_dt(&cfg->motion_gpio)) {

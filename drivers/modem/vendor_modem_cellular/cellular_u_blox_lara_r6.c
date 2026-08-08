@@ -95,6 +95,8 @@ static const struct modem_cellular_vendor_config u_blox_lara_r6_vendor = {
 		.size = ARRAY_SIZE(u_blox_lara_r6_unsol),
 	},
 	/* clang-format on */
+	.chat_delimiter = "\r",
+	.chat_filter = "\n",
 	.power_pulse_duration_ms = 1500,
 	.reset_pulse_duration_ms = 100,
 	.startup_time_ms = 9000,
@@ -104,11 +106,7 @@ static const struct modem_cellular_vendor_config u_blox_lara_r6_vendor = {
 #define MODEM_CELLULAR_DEVICE_U_BLOX_LARA_R6(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);       \
                                                                                                    \
-	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst) = {                 \
-		.chat_delimiter = "\r",                                                            \
-		.chat_filter = "\n",                                                               \
-		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
-	};                                                                                         \
+	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 3), (user_pipe_0, 4))          \
                                                                                                    \

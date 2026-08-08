@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2026 Intercreate, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * mps2/an385 memory map for the MCUboot RAM_LOAD fixture, and the single
+ * source of the flash-simulator layout: sysbuild/mcuboot.overlay includes
+ * this file so both images agree on the partition table.
+ *
+ * This is the application image. MCUboot copies slot0 into the sram0 exec
+ * region defined here and jumps to it. sram0 is declared before the FlashSim
+ * and RetainedMem regions (also mmio-sram) so it stays mmio-sram instance 0.
+ * The image slots use zephyr,mapped-partition, so flash_sim0's inherited
+ * fixed-partitions node is deleted first.
+ *
+ * Adapted from github.com/intercreate/smp-server-fixtures
+ */
+
+/delete-node/ &sram0;
+/delete-node/ &{/sim_flash_controller/flash_sim@0/partitions};
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,bootloader-info = &boot_info0;
+
+		/delete-property/ zephyr,code-partition;
+	};
+
+	sram0: memory@20240000 {
+		compatible = "mmio-sram";
+		reg = <0x20240000 0x001bf000>;
+	};
+
+	flash_sim_region: memory@20040000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20040000 0x00200000>;	/* 2 MB sim-flash backing store */
+		ranges = <0x0 0x20040000 0x00200000>;
+		zephyr,memory-region = "FlashSim";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+
+	sram_retained: memory@203ffc00 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x203ffc00 0x00000400>;
+		ranges = <0x0 0x203ffc00 0x00000400>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_info0: boot_info@0 {
+				compatible = "zephyr,retention";
+				status = "okay";
+				reg = <0x0 0x100>;
+			};
+		};
+	};
+};
+
+&sim_flash_controller {
+	memory-region = <&flash_sim_region>;
+};
+
+&flash_sim0 {
+	reg = <0x00000000 0x00200000>;
+	erase-block-size = <4096>;
+	write-block-size = <4>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x0 0x00200000>;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 0x00010000>;
+		};
+
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00010000 0x00080000>;
+		};
+
+		slot1_partition: partition@90000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x00090000 0x00080000>;
+		};
+	};
+};

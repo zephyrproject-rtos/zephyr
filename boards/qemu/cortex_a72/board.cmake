@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
-set(QEMU_ARCH aarch64)
+set(QEMU_BINARY_SUFFIX aarch64)
 
-set(QEMU_CPU_TYPE_${ARCH} cortex-a72)
+set(QEMU_CPU_TYPE cortex-a72)
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -machine raspi4b
 )
 

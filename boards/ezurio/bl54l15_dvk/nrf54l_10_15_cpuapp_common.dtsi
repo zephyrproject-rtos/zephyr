@@ -96,6 +96,14 @@
 	status = "okay";
 };
 
+&xo {
+	status = "okay";
+};
+
+&lfclk {
+	status = "okay";
+};
+
 &i2c22 {
 	status = "okay";
 

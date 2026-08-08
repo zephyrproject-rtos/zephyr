@@ -19,4 +19,5 @@ supported:
   - spi
   - uart
   - watchdog
+  - crc
 vendor: nxp

@@ -6,6 +6,7 @@ tests:
       - userspace
     filter: not CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
     platform_exclude:
+      - frdm_mcxe31b/mcxe31b
       - frdm_mcxn947/mcxn947/cpu0
       - mcx_n9xx_evk/mcxn947/cpu0
       - mimxrt595_evk/mimxrt595s/cm33

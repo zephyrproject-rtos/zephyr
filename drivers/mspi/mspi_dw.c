@@ -23,7 +23,7 @@
 
 LOG_MODULE_REGISTER(mspi_dw, CONFIG_MSPI_LOG_LEVEL);
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 struct xip_params {
 	uint32_t read_cmd;
 	uint32_t write_cmd;
@@ -59,7 +59,7 @@ struct mspi_dw_data {
 	/* Active sub-packet fed to start_next_packet(). */
 	struct mspi_xfer_packet sub_pkt;
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 	uint32_t xip_freq;
 	struct xip_params xip_params_stored;
 	struct xip_params xip_params_active;
@@ -159,7 +159,7 @@ DEFINE_MM_REG_WR(dmatdlr,	0x50)
 DEFINE_MM_REG_WR(dmardlr,	0x54)
 #endif
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 DEFINE_MM_REG_WR(xip_incr_inst,		0x100)
 DEFINE_MM_REG_WR(xip_wrap_inst,		0x104)
 DEFINE_MM_REG_WR(xip_ctrl,		0x108)
@@ -712,7 +712,7 @@ static bool apply_addr_length(struct mspi_dw_data *dev_data,
 	return true;
 }
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 static bool apply_xip_io_mode(const struct mspi_dw_data *dev_data,
 			      struct xip_ctrl *ctrl)
 {
@@ -839,7 +839,7 @@ static bool apply_xip_addr_length(const struct mspi_dw_data *dev_data,
 
 	return true;
 }
-#endif /* defined(CONFIG_MSPI_XIP) */
+#endif /* defined(CONFIG_MSPI_MEMMAP) */
 
 static int _api_dev_config(const struct device *dev,
 			   const enum mspi_dev_cfg_mask param_mask,
@@ -875,7 +875,7 @@ static int _api_dev_config(const struct device *dev,
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_IO_MODE) {
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 		dev_data->xip_params_stored.io_mode = cfg->io_mode;
 #endif
 
@@ -885,7 +885,7 @@ static int _api_dev_config(const struct device *dev,
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_CPP) {
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 		/* Make sure the new setting is compatible with the one used
 		 * for XIP if it is enabled.
 		 */
@@ -929,7 +929,7 @@ static int _api_dev_config(const struct device *dev,
 			return -EINVAL;
 		}
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 		/* Make sure the new setting is compatible with the one used
 		 * for XIP if it is enabled.
 		 */
@@ -974,7 +974,7 @@ static int _api_dev_config(const struct device *dev,
 		}
 	}
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 	if (param_mask & MSPI_DEVICE_CONFIG_READ_CMD) {
 		dev_data->xip_params_stored.read_cmd = cfg->read_cmd;
 	}
@@ -1118,7 +1118,7 @@ static int start_next_packet(const struct device *dev)
 	const struct mspi_xfer_packet *packet = &dev_data->sub_pkt;
 	bool data_only_packet = dev_data->xfer.cmd_length == 0 &&
 				dev_data->xfer.addr_length == 0;
-	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_XIP,
+	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_MEMMAP,
 				       (dev_data->xip_enabled != 0),
 				       (false));
 	unsigned int key;
@@ -1603,7 +1603,7 @@ static int run_one_packet(const struct device *dev, const struct mspi_xfer_packe
 static int finalize_packet(const struct device *dev, int rc)
 {
 	struct mspi_dw_data *dev_data = dev->data;
-	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_XIP,
+	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_MEMMAP,
 				       (dev_data->xip_enabled != 0),
 				       (false));
 
@@ -1832,10 +1832,10 @@ static int api_timing_config(const struct device *dev,
 }
 #endif /* defined(CONFIG_MSPI_TIMING) */
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 static int _api_xip_config(const struct device *dev,
 			   const struct mspi_dev_id *dev_id,
-			   const struct mspi_xip_cfg *cfg)
+			   const struct mspi_memmap_cfg *cfg)
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	int rc;
@@ -1912,7 +1912,7 @@ static int _api_xip_config(const struct device *dev,
 		write_xip_wrap_inst(dev, params->read_cmd);
 		write_xip_ctrl(dev, ctrl.read);
 
-		if (cfg->permission == MSPI_XIP_READ_WRITE) {
+		if (cfg->permission == MSPI_MEMMAP_READ_WRITE) {
 #if MEMMAP_WRITE_SUPPORT_INSTANCES != 0
 			write_xip_write_incr_inst(dev, params->write_cmd);
 			write_xip_write_wrap_inst(dev, params->write_cmd);
@@ -1958,9 +1958,9 @@ static int _api_xip_config(const struct device *dev,
 	return 0;
 }
 
-static int api_xip_config(const struct device *dev,
-			  const struct mspi_dev_id *dev_id,
-			  const struct mspi_xip_cfg *cfg)
+static int api_memmap_config(const struct device *dev,
+			     const struct mspi_dev_id *dev_id,
+			     const struct mspi_memmap_cfg *cfg)
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	int rc, rc2;
@@ -1998,7 +1998,7 @@ static int api_xip_config(const struct device *dev,
 
 	return rc;
 }
-#endif /* defined(CONFIG_MSPI_XIP) */
+#endif /* defined(CONFIG_MSPI_MEMMAP) */
 
 static int dev_pm_action_cb(const struct device *dev,
 			    enum pm_device_action action)
@@ -2025,7 +2025,7 @@ static int dev_pm_action_cb(const struct device *dev,
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE) &&
 	    action == PM_DEVICE_ACTION_SUSPEND) {
-		bool xip_enabled = COND_CODE_1(CONFIG_MSPI_XIP,
+		bool xip_enabled = COND_CODE_1(CONFIG_MSPI_MEMMAP,
 					       (dev_data->xip_enabled != 0),
 					       (false));
 
@@ -2141,8 +2141,8 @@ static DEVICE_API(mspi, drv_api) = {
 #if defined(CONFIG_MSPI_TIMING)
 	.timing_config      = api_timing_config,
 #endif
-#if defined(CONFIG_MSPI_XIP)
-	.xip_config         = api_xip_config,
+#if defined(CONFIG_MSPI_MEMMAP)
+	.memmap_config      = api_memmap_config,
 #endif
 };
 

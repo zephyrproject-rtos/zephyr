@@ -208,6 +208,13 @@ ifx_serial_memory_flash_get_parameters(const struct device *dev)
 	return &ifx_serial_memory_flash_parameters;
 }
 
+static int ifx_serial_memory_flash_get_size(const struct device *dev, uint64_t *size)
+{
+	ARG_UNUSED(dev);
+	*size = DT_REG_SIZE(SOC_NV_FLASH_NODE);
+	return 0;
+}
+
 #ifdef CONFIG_PM
 cy_en_syspm_status_t
 ifx_serial_memory_flash_pm_callback(cy_stc_syspm_callback_params_t *callbackParams,
@@ -359,6 +366,7 @@ static DEVICE_API(flash, ifx_serial_memory_flash_driver_api) = {
 	.write = ifx_serial_memory_flash_write,
 	.erase = ifx_serial_memory_flash_erase,
 	.get_parameters = ifx_serial_memory_flash_get_parameters,
+	.get_size = ifx_serial_memory_flash_get_size,
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = ifx_serial_memory_flash_page_layout,
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */

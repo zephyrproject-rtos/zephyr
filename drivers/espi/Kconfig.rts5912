@@ -10,6 +10,20 @@ config ESPI_RTS5912
 
 if ESPI_RTS5912
 
+config ESPI_RTS5912_PRESERVED_DATA_HOOKS
+	bool "Functions for saving and restoring internal state"
+	help
+	  Some of the RTS5912 ESPI driver's state is cached by software and
+	  cannot be deduced from hardware registers. When this driver is
+	  used in multi-image (e.g. A/B, RO/RW) firmware products that jump
+	  between images without a full hardware reset, the cache is cleared
+	  and no longer reflects the hardware state.
+
+	  This option enables a pair of driver-specific functions that can be
+	  called to export state data to be preserved ahead of soft-reboots
+	  and then restore it. It is the caller's responsibility to retain the
+	  state data somewhere safe in the meantime (e.g. BBRAM, NVRAM, etc)
+
 config ESPI_PERIPHERAL_8042_KBC
 	default y
 

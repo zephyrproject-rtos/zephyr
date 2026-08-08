@@ -15,6 +15,8 @@
 
 #if defined CONFIG_SEGGER_SYSTEMVIEW
 #include "tracing_sysview_syscall.h"
+#elif defined CONFIG_TRACING_CTF
+#include "tracing_ctf_syscall.h"
 #elif defined CONFIG_TRACING_TEST
 #include "tracing_test_syscall.h"
 #else

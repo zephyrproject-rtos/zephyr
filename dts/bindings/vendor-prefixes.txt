@@ -115,6 +115,7 @@ bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
 blackberry	BlackBerry Limited
+bliiot	BLIIoT Technology Co., Ltd.
 blues	Blues Wireless
 blutek	BluTek Power
 boe	BOE Technology Group Co., Ltd.
@@ -260,6 +261,7 @@ fcs	Fairchild Semiconductor
 feixin	Shenzhen Feixin Photoelectic Co., Ltd
 feiyang	Shenzhen Fly Young Technology Co.,LTD.
 festo	Festo SE & Co. KG
+fibocom	Fibocom Wireless Inc.
 fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
@@ -368,6 +370,7 @@ jdi	Japan Display Inc.
 jedec	JEDEC Solid State Technology Association
 jesurun	Shenzhen Jesurun Electronics Business Dept.
 jhd	Shenzhen Jinghua Displays Electronics Co., Ltd.
+jhoinrch	Jhoinrch
 jianda	Jiandangjing Technology Co., Ltd.
 jlc	Shenzhen JLC Technology Group Co., Ltd.
 kaga-fei	KAGA FEI Co., Ltd.
@@ -401,6 +404,7 @@ leez	Leez
 lego	LEGO Systems A/S
 lemaker	Shenzhen LeMaker Technology Co., Ltd.
 lenovo	Lenovo Group Ltd.
+levetop	LeveTop Semiconductor
 lg	LG Corporation
 lgphilips	LG Display
 libretech	Shenzhen Libre Technology Co., Ltd
@@ -432,6 +436,7 @@ macnica	Macnica Americas
 madmachine	Shenzhen FeiKaiTe Technology Co., Ltd.
 makerbase	Makerbase Co., Ltd.
 makerdiary	Shenzhen Zaowubang Technology Co., Ltd.
+makerfabs	Makerfabs
 mantix	Mantix Display Technology Co.,Ltd.
 mapleboard	Mapleboard.org
 marvell	Marvell Technology Group Ltd.

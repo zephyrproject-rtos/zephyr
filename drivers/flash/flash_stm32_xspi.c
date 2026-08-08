@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <soc.h>
 #include <stm32_bitops.h>
+#include <zephyr/cache.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -870,7 +871,7 @@ static int stm32_xspi_mem_reset(const struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_STM32_MEMMAP
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
 /* Function to configure the octoflash in MemoryMapped mode */
 static int stm32_xspi_set_memorymap(const struct device *dev)
 {
@@ -987,7 +988,7 @@ static int stm32_xspi_set_memorymap(const struct device *dev)
 	LOG_DBG("MemoryMap mode enabled");
 	return 0;
 }
-#endif /* CONFIG_STM32_MEMMAP */
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP */
 
 static int stm32_xspi_abort(const struct device *dev)
 {
@@ -1007,6 +1008,21 @@ static bool stm32_xspi_is_memorymap(const struct device *dev)
 	struct flash_stm32_xspi_data *dev_data = dev->data;
 
 	return stm32_reg_read_bits(&dev_data->hxspi.Instance->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
+}
+
+static void stm32_xspi_invalidate_mmap_cache(const struct device *dev, off_t addr, size_t size)
+{
+	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
+	size_t line_size = sys_cache_data_line_size_get();
+
+	if (line_size != 0 && IS_ENABLED(CONFIG_DCACHE) &&
+	    IS_ENABLED(CONFIG_FLASH_STM32_NOR_MEMMAP) &&
+	    IS_ENABLED(CONFIG_CACHE_MANAGEMENT)) {
+		uintptr_t start = ROUND_DOWN(dev_cfg->mem_map_based_address + addr, line_size);
+		uintptr_t end = ROUND_UP(dev_cfg->mem_map_based_address + addr + size, line_size);
+
+		sys_cache_data_invd_range((void *)start, end - start);
+	}
 }
 
 /*
@@ -1043,9 +1059,12 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 		return -ENOTSUP;
 	}
 
+	const off_t erase_addr = addr;
+	const size_t erase_size = size;
+
 	xspi_lock_thread(dev);
 
-#ifdef CONFIG_STM32_MEMMAP
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
 	if (stm32_xspi_is_memorymap(dev)) {
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		ret = stm32_xspi_abort(dev);
@@ -1054,7 +1073,7 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 			goto erase_end;
 		}
 	}
-#endif /* CONFIG_STM32_MEMMAP */
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP */
 
 	XSPI_RegularCmdTypeDef cmd_erase = {
 		.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG,
@@ -1181,6 +1200,8 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 	/* Ends the erase operation */
 
 erase_end:
+	stm32_xspi_invalidate_mmap_cache(dev, erase_addr, erase_size);
+
 	xspi_unlock_thread(dev);
 
 	return ret;
@@ -1205,12 +1226,13 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-#if defined(CONFIG_STM32_MEMMAP) || (defined(CONFIG_STM32_APP_IN_EXT_FLASH) && defined(CONFIG_XIP))
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || (defined(CONFIG_STM32_APP_IN_EXT_FLASH) \
+	&& defined(CONFIG_XIP))
 	/*
 	 * When the call is made by an app executing in external flash,
 	 * skip the memory-mapped mode check
 	 */
-#ifdef CONFIG_STM32_MEMMAP
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
 
 	/* Do reads through memory-mapping instead of indirect */
 	if (!stm32_xspi_is_memorymap(dev)) {
@@ -1225,14 +1247,14 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 	}
 
 	__ASSERT_NO_MSG(stm32_xspi_is_memorymap(dev));
-#endif /* CONFIG_STM32_MEMMAP */
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP */
 	uintptr_t mmap_addr = dev_cfg->mem_map_based_address + addr;
 
 	LOG_DBG("Memory-mapped read from 0x%08lx, len %zu", mmap_addr, size);
 	memcpy(data, (void *)mmap_addr, size);
 	return ret;
 
-#else /* CONFIG_STM32_MEMMAP || (CONFIG_STM32_APP_IN_EXT_FLASH && CONFIG_XIP) */
+#else /* CONFIG_FLASH_STM32_NOR_MEMMAP || (CONFIG_STM32_APP_IN_EXT_FLASH && CONFIG_XIP) */
 
 	XSPI_RegularCmdTypeDef cmd = xspi_prepare_cmd(dev_cfg->data_mode, dev_cfg->data_rate);
 
@@ -1301,7 +1323,7 @@ static int flash_stm32_xspi_read(const struct device *dev, off_t addr,
 	xspi_unlock_thread(dev);
 
 	return ret;
-#endif /* CONFIG_STM32_MEMMAP || (CONFIG_STM32_APP_IN_EXT_FLASH && CONFIG_XIP) */
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || (CONFIG_STM32_APP_IN_EXT_FLASH && CONFIG_XIP) */
 }
 
 /* Function to write the flash (page program) : with possible OCTO/SPI and STR/DTR */
@@ -1324,9 +1346,12 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 		return 0;
 	}
 
+	const off_t write_addr = addr;
+	const size_t write_size = size;
+
 	xspi_lock_thread(dev);
 
-#ifdef CONFIG_STM32_MEMMAP
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
 	if (stm32_xspi_is_memorymap(dev)) {
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		ret = stm32_xspi_abort(dev);
@@ -1435,6 +1460,8 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 	/* Ends the write operation */
 
 write_end:
+	stm32_xspi_invalidate_mmap_cache(dev, write_addr, write_size);
+
 	xspi_unlock_thread(dev);
 
 	return ret;
@@ -2401,7 +2428,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		LOG_DBG("Write Un-protected");
 	}
 
-#ifdef CONFIG_STM32_MEMMAP
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
 	ret = stm32_xspi_set_memorymap(dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable memory-mapped mode: %d", ret);
@@ -2414,7 +2441,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	LOG_INF("NOR external-flash at 0x%lx (0x%x bytes)",
 		(long)(dev_cfg->mem_map_based_address),
 		dev_cfg->flash_size);
-#endif /* CONFIG_STM32_MEMMAP*/
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP*/
 	return 0;
 }
 

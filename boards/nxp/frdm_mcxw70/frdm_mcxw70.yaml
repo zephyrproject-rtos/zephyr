@@ -19,4 +19,6 @@ supported:
   - pinctrl
   - uart
   - trng
+  - crc
+  - netif:openthread
 vendor: nxp

@@ -99,7 +99,7 @@ int r8a779g0_cpg_mssr_on_off(const struct device *dev, clock_control_subsys_t sy
 	} else if (clk->domain == CPG_CORE) {
 		if (is_on && clk->rate > 0) {
 			ret = rcar_cpg_set_rate(dev, (clock_control_subsys_t)clk,
-						(clock_control_subsys_rate_t)clk->rate);
+						(clock_control_subsys_rate_t)(uintptr_t)clk->rate);
 		}
 	} else {
 		ret = -EINVAL;

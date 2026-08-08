@@ -20,6 +20,7 @@ common:
     - mimxrt1170_evk/mimxrt1176/cm7
     - mimxrt1180_evk/mimxrt1189/cm33
     - mimxrt595_evk/mimxrt595s/cm33
+    - mimxrt685_aud_evk/mimxrt685s/cm33
     - mimxrt685_evk/mimxrt685s/cm33
   integration_platforms:
     - native_sim

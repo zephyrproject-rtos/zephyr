@@ -364,7 +364,7 @@ static int submit_to_queue_locked(struct k_work *work,
 	return ret;
 }
 
-/* Submit work to a queue but do not yield the current thread.
+/* Submit work to a queue
  *
  * Intended for internal use.
  *
@@ -385,7 +385,12 @@ int z_work_submit_to_queue(struct k_work_q *queue,
 
 	int ret = submit_to_queue_locked(work, &queue);
 
-	k_spin_unlock(&work_lock, key);
+	/* No need to reschedule if the submission failed. */
+	if (ret > 0) {
+		z_reschedule(&work_lock, key);
+	} else {
+		k_spin_unlock(&work_lock, key);
+	}
 
 	return ret;
 }
@@ -397,15 +402,6 @@ int k_work_submit_to_queue(struct k_work_q *queue,
 
 	int ret = z_work_submit_to_queue(queue, work);
 
-	/* submit_to_queue_locked() won't reschedule on its own
-	 * (really it should, otherwise this process will result in
-	 * spurious calls to z_swap() due to the race), so do it here
-	 * if the queue state changed.
-	 */
-	if (ret > 0) {
-		z_reschedule_unlocked();
-	}
-
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work, submit_to_queue, queue, work, ret);
 
 	return ret;
@@ -415,7 +411,7 @@ int k_work_submit(struct k_work *work)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, submit, work);
 
-	int ret = k_work_submit_to_queue(&k_sys_work_q, work);
+	int ret = z_work_submit_to_queue(&k_sys_work_q, work);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work, submit, work, ret);
 

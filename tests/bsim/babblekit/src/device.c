@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "argparse.h"
-#include "bs_types.h"
+#include "bsim_args_runner.h"
 
 unsigned int bk_device_get_number(void)
 {

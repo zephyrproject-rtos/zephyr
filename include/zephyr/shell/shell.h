@@ -186,9 +186,9 @@ const struct device *shell_device_lookup_non_ready(size_t idx,
 						   const char *prefix);
 
 /**
- * @brief Filter callback type, for use with shell_device_lookup_filter
+ * @brief Filter callback type, for use with shell_device_filter
  *
- * This is used as an argument of shell_device_lookup_filter to only return
+ * This is used as an argument of shell_device_filter to only return
  * devices that match a specific condition, implemented by the filter.
  *
  * @param dev pointer to a struct device.
@@ -848,6 +848,7 @@ typedef void (*shell_uninit_cb_t)(const struct shell *sh, int res);
  * @param sh Shell instance.
  * @param data  Raw data from transport.
  * @param len   Data length.
+ * @param user_data User data passed to the callback.
  */
 typedef void (*shell_bypass_cb_t)(const struct shell *sh,
 				  uint8_t *data,
@@ -1246,7 +1247,10 @@ int shell_start(const struct shell *sh);
  *
  * @param sh Pointer to shell instance.
  *
- * @return Standard error code.
+ * @retval 0 On success.
+ * @retval -ENOTSUP If the shell is already stopped or not yet started.
+ * @retval -EBUSY If the shell thread is currently processing received data
+ *  (e.g. executing a command). Retry once processing completes.
  */
 int shell_stop(const struct shell *sh);
 

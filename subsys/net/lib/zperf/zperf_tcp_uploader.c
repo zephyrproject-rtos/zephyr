@@ -225,7 +225,7 @@ static void tcp_upload_async_work(struct k_work *work)
 		uint32_t rounds = (duration + report_interval - 1) / report_interval;
 		uint32_t last_round_duration = duration - ((rounds - 1) * report_interval);
 
-		struct zperf_results periodic_result;
+		struct zperf_results periodic_result = { 0 };
 
 		for (; rounds > 0; rounds--) {
 			uint32_t round_duration;
