@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# SD/SDIO/MMC device framework (device-side)
+#
+
+menuconfig SD_DEV
+	bool "SD Device Framework (SDIO/MMC device-side)"
+	help
+	  Enable the SD device-side framework including:
+
+	  * SDIO device-side protocol model
+	  * MMC optional protocol model
+	  * RX FIFO per SDIO function
+	  * Core runtime worker threads
+	  * Optional PM state machine
+
+	  This framework is used for SDIO-Slave and MMC-Slave style devices.
+
+if SD_DEV
+
+config SDIO_DEV
+	bool "SDIO device protocol stack support"
+	help
+	  Enable SDIO device-side support. This includes:
+
+	  - struct sdio_func / struct sdio_dev
+	  - block size / bus width setters
+	  - per-function RX FIFO
+	  - rx_handler (provided by HAL) and set_rx_handler (provided by subsys)
+	  - RX worker threads dispatching data
+
+config SDMMC_DEV
+	bool "MMC device protocol stack support"
+	default n
+	help
+	  Enable MMC device-side protocol support.
+
+	  Currently only has basic placeholders.
+
+config SDIO_DEV_MAX_FUNCS
+	int "Maximum SDIO functions supported"
+	default 3
+	range 1 7
+	help
+	  The number of SDIO functions your device implements.
+
+	  E.g. FN0 + FN1 + FN2 = 3.
+
+config SDEV_PKT_POOL_SIZE
+	int "SDEV packet pool size"
+	default 16
+	help
+	  Number of packets in the pool for TX and RX operations.
+
+	  Each direction (TX/RX) has its own pool of this size.
+
+config SDEV_PKT_BUF_SIZE
+	int "SDEV packet buffer size"
+	default 4096
+	help
+	  Size of each packet buffer in bytes.
+
+	  This should be large enough to accommodate the maximum
+	  SDIO block size used by your device.
+
+config SDEV_DMA_ALIGN
+	int "SDEV DMA alignment"
+	default 32
+	help
+	  DMA alignment size in bytes (typically cache line size).
+
+	  Packet structures and buffers will be aligned to this
+	  boundary to ensure DMA compatibility.
+
+config SDEV_HEAP_SIZE
+	int "SD device heap buffer size"
+	default 4096
+	help
+	  Size of the heap buffer used by SD device-side drivers in bytes.
+	  This buffer is used for internal memory allocations during SD
+	  device operations. Increase this value if you experience memory
+	  allocation failures or if your application requires more buffer
+	  space for SD device operations.
+
+endif # SD_DEV
