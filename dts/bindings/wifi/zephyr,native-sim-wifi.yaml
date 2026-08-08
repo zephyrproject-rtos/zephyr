@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Native sim Wi-Fi driver. Presents a Wi-Fi station interface in Zephyr that is
+  backed by a Linux host network interface (AF_PACKET + nl80211, typically a
+  mac80211_hwsim radio). The presence of a node with this compatible enables the
+  driver; without one the driver is not built.
+
+  The MAC address is taken from the standard "local-mac-address" /
+  "zephyr,random-mac-address" properties. Note the driver overrides it at init
+  with the host interface's MAC (the station must share the host radio MAC), so
+  these properties only act as a fallback when the host MAC cannot be read.
+
+compatible: "zephyr,native-sim-wifi"
+
+include: ethernet-controller.yaml
+
+properties:
+  host-interface:
+    type: string
+    required: true
+    description: |
+      Name of the Linux host network interface the driver binds to with
+      AF_PACKET and nl80211 (e.g. "zwifi"). It must already exist on the host.
