@@ -3998,19 +3998,53 @@ ssize_t ztls_recvfrom_ctx(struct tls_context *ctx, void *buf, size_t max_len,
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 }
 
+static int tls_data_check(struct tls_context *ctx);
+
 static int ztls_poll_prepare_pollin(struct tls_context *ctx)
 {
+	int ret;
+
+	if (ctx->is_listening) {
+		return 0;
+	}
+
 	/* If there already is Mbed TLS data to read, there is no
 	 * need to set the k_poll_event object. Return EALREADY
 	 * so we won't block in the k_poll.
 	 */
-	if (!ctx->is_listening) {
-		if (mbedtls_ssl_get_bytes_avail(&ctx->active_session->ssl) > 0) {
-			return -EALREADY;
-		}
+	if (mbedtls_ssl_get_bytes_avail(&ctx->active_session->ssl) > 0) {
+		return -EALREADY;
 	}
 
-	return 0;
+	if (!ctx->is_initialized) {
+		return 0;
+	}
+
+	/* Mbed TLS can hold a message that it already read from the underlying
+	 * socket but did not process yet, for example a further record of a
+	 * datagram that carried several. The socket has no readiness left to
+	 * report in that case, so waiting on it alone can sleep while data is
+	 * available. Advance such a message here instead.
+	 */
+	if (mbedtls_ssl_check_pending(&ctx->active_session->ssl) == 0) {
+		return 0;
+	}
+
+	ret = tls_data_check(ctx);
+	if (ret == 0) {
+		return 0;
+	}
+
+	/* Either plaintext is now exposed, or the session was closed or
+	 * failed. All three have to wake the poll. Latch the failure so that
+	 * the update path can turn it into POLLHUP or POLLERR, as the
+	 * underlying socket will never report it.
+	 */
+	if (ret < 0 && ret != -ENOTCONN) {
+		ctx->error = -ret;
+	}
+
+	return -EALREADY;
 }
 
 static int ztls_poll_prepare_ctx(struct tls_context *ctx,
@@ -4134,7 +4168,18 @@ static int tls_update_pollin(int fd, struct tls_context *ctx,
 	}
 
 	if ((pfd->revents & ZSOCK_POLLIN) == 0) {
-		/* No new data on a socket. */
+		/* No new data on a socket. A poll prepare probe may still have
+		 * left a closed session or a fatal error behind, which the
+		 * underlying socket will never report.
+		 */
+		if (!ctx->is_listening) {
+			if (ctx->active_session->session_closed) {
+				pfd->revents |= ZSOCK_POLLHUP;
+			} else if (ctx->error != 0) {
+				pfd->revents |= ZSOCK_POLLERR;
+			}
+		}
+
 		goto next;
 	}
 
