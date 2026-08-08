@@ -10,7 +10,13 @@
  * Short Pin PB9 to PB11, and PB8 to PB10, for the test to pass.
  */
 
-&i2c1 {
+#define IC2_TEST_0_DMA_TX <&dma1 6 6 STM32_DMA_PERIPH_TX>
+#define IC2_TEST_0_DMA_RX <&dma1 7 6 STM32_DMA_PERIPH_RX>
+
+i2c_test_0: &i2c1 {
+	dmas = IC2_TEST_0_DMA_TX, IC2_TEST_0_DMA_RX;
+	dma-names = "tx", "rx";
+
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
@@ -18,10 +24,20 @@
 	};
 };
 
-&i2c2 {
+#define IC2_TEST_1_DMA_TX <&dma1 4 7 STM32_DMA_PERIPH_TX>
+#define IC2_TEST_1_DMA_RX <&dma1 5 7 STM32_DMA_PERIPH_RX>
+
+i2c_test_1: &i2c2 {
+	dmas = IC2_TEST_1_DMA_TX, IC2_TEST_1_DMA_RX;
+	dma-names = "tx", "rx";
+
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;
 		size = <256>;
 	};
+};
+
+&dma1 {
+	status = "okay";
 };
