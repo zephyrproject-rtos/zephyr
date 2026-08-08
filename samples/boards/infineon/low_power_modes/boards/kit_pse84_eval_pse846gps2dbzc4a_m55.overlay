@@ -1,0 +1,267 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
+
+/ {
+	aliases {
+		pwm-led0 = &pwm_led_blue;
+		counter0 = &counter0_1;
+		spi-loopback = &spi10;
+		dmic0 = &dmic0;
+		i2s-tx = &i2s1;
+		uart-test = &uart5;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led_blue: pwm_led_blue {
+			label = "PWM Blue LED";
+			pwms = <&pwm0_5 0 PWM_MSEC(500) PWM_POLARITY_NORMAL>;
+		};
+	};
+};
+
+/* DeepSleep-RAM is disabled by default in the SoC devicetree so a plain
+ * application only sees runtime-idle and regular DeepSleep.  This sample
+ * exercises the suspend-to-RAM warm-boot path, so re-enable the state here.
+ */
+&deepsleep_ram {
+	status = "okay";
+};
+
+/* Use blue LED (P16.5) as PWM output on TCPWM0_5.
+ * During deepsleep, HF clocks stop and the PWM output freezes.
+ * This provides a visual indicator of deepsleep entry.
+ */
+&tcpwm0_5 {
+	status = "okay";
+
+	pwm0_5: pwm0_5 {
+		clocks = <&peri0_group1_16bit_1>;
+		compatible = "infineon,tcpwm-pwm";
+		status = "okay";
+		pinctrl-0 = <&p16_5_pwm0_5>;
+		pinctrl-names = "default";
+	};
+};
+
+&p16_5_pwm0_5 {
+	drive-push-pull;
+};
+
+&peri0_group1_16bit_1 {
+	status = "okay";
+	/* 400 MHz HF / 400 = 1 MHz PWM input clock.
+	 * With a 32-bit counter and period = 500000, gives 2 Hz blink.
+	 */
+	clock-div = <400>;
+};
+
+/* Free-running 16-bit TCPWM counter used to demonstrate that the counter
+ * driver's pm_action restarts the counter after regular DeepSleep.  The
+ * counter stops while HF clocks are gated during DeepSleep and resumes
+ * counting on wake via the device PM resume callback.
+ */
+&tcpwm0_1 {
+	status = "okay";
+
+	counter0_1 {
+		status = "okay";
+		clocks = <&peri0_group1_16bit_2>;
+	};
+};
+
+&peri0_group1_16bit_2 {
+	status = "okay";
+	/* 400 MHz HF / 4000 = 100 kHz counter input clock. */
+	clock-div = <4000>;
+};
+
+/* SPI loopback on SCB10: jumper P16.1 (MOSI) to P16.2 (MISO).
+ * Exercises the SPI driver's pm_action across DeepSleep: after a regular
+ * DeepSleep the SCB config is retained, and after a DeepSleep-RAM warm boot
+ * the resume callback re-applies pinctrl / clock divider / CS GPIO and forces
+ * the next transfer to re-init the block, so the loopback still matches.
+ */
+spi10: &scb10 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	compatible = "infineon,spi";
+	status = "okay";
+
+	pinctrl-0 = <&p16_1_scb10_spi_m_mosi &p16_2_scb10_spi_m_miso &p16_0_scb10_spi_m_clk>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt16 3 GPIO_ACTIVE_LOW>;
+
+	/* i2c0 already uses peri0_group1_16bit_3, so use a separate divider. */
+	clocks = <&peri0_group1_16bit_0>;
+
+	loopback_dev: loopback@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};
+
+&peri0_group1_16bit_0 {
+	status = "okay";
+};
+
+&p16_1_scb10_spi_m_mosi {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&p16_2_scb10_spi_m_miso {
+	drive-strength = "full";
+	input-enable;
+};
+
+&p16_0_scb10_spi_m_clk {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+/* PDM/PCM microphone on PDM3 (P8.5 clk, P8.6 data) routed through DMA0 ch0.
+ * Exercises the DMIC driver's pm_action: a regular DeepSleep is refused while
+ * a capture is active (so audio is never corrupted mid-stream), and a
+ * DeepSleep-RAM warm boot re-initializes the PDM block via the resume
+ * callback.  The DMA driver's pm_action re-enables the DMA controller on the
+ * same warm-boot path so the next capture can reprogram its channel.
+ */
+&dmic0 {
+	pinctrl-0 = <&p8_5_pdm3_pdm_clk &p8_6_pdm3_pdm_data>;
+	pinctrl-names = "default";
+	clocks = <&peri1_group1_16_5bit_2>;
+	status = "okay";
+
+	dmas = <&dma0 0>;
+	dma-names = "rx";
+};
+
+&dmic0_ch2 {
+	status = "okay";
+	use-alt-io;
+};
+
+&dmic0_ch3 {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&clk_hf7 {
+	status = "okay";
+	source-path = <IFX_CLK_HF_IN_CLKPATH3>;
+};
+
+&peri1_group1_16_5bit_2 {
+	status = "okay";
+	clock-div = <2>;
+	div-frac-value = <7>;
+};
+
+&p8_5_pdm3_pdm_clk {
+	drive-strength = "half";
+	drive-push-pull;
+};
+
+&p8_6_pdm3_pdm_data {
+	drive-strength = "half";
+	input-enable;
+};
+
+/* I2S transmitter on TDM I2S1 (P11.0 tx_sck, P11.1 tx_fsync, P11.2 tx_sd)
+ * driven by DMA0 channel 1.  Configured as controller so it generates its own
+ * bit and frame clocks and can stream out without an external codec.
+ *
+ * Exercises the I2S driver's pm_action: a regular DeepSleep is refused while a
+ * transmit stream is active (so audio is never corrupted mid-stream), and a
+ * DeepSleep-RAM warm boot re-initializes the TDM block via the resume callback.
+ * The DMA driver's pm_action re-enables the DMA controller on the same
+ * warm-boot path so the next transfer can reprogram its channel.
+ */
+&i2s1 {
+	pinctrl-0 = <&p11_0_tdm_i2s1_tx_sck &p11_1_tdm_i2s1_tx_fsync &p11_2_tdm_i2s1_tx_sd>;
+	pinctrl-names = "default";
+	clocks = <&peri0_group1_16_5bit_0>;
+	status = "okay";
+
+	dmas = <&dma0 1>;
+	dma-names = "tx";
+};
+
+&peri0_group1_16_5bit_0 {
+	status = "okay";
+	/* 400 MHz HF / 40 = 10 MHz I2S source clock.  The driver derives the
+	 * TDM bit-clock divider from this for the requested sample rate.
+	 */
+	clock-div = <40>;
+};
+
+&p11_0_tdm_i2s1_tx_sck {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&p11_1_tdm_i2s1_tx_fsync {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&p11_2_tdm_i2s1_tx_sd {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+/* Second UART instance on SCB5 (P17.1 TX, P17.0 RX) used purely to exercise the
+ * UART driver's restricted-scope device runtime PM.  The console stays on its
+ * own separate UART; this instance opts in to runtime management via the
+ * zephyr,pm-device-runtime-auto property, so the interrupt-driven TX/RX enable
+ * paths take a pm_device_runtime_get() reference and the disable paths drop it,
+ * letting the block be runtime suspended between transfers.  poll_out() is
+ * deliberately never instrumented, which is why the console UART is left
+ * unmanaged.
+ *
+ * Loopback needs a physical jumper from P17.1 (TX) to P17.0 (RX): the SCB UART
+ * driver has no internal loopback.  The interrupt-driven API is used (no DMA)
+ * so this test never competes with the DMIC/I2S DMA channels.
+ */
+uart5: &scb5 {
+	compatible = "infineon,uart";
+	status = "okay";
+	current-speed = <115200>;
+	zephyr,pm-device-runtime-auto;
+
+	/* The driver derives the real clock divider from the target baud, so the
+	 * clock-div on the divider node below is only an initial placeholder.  A
+	 * dedicated 16.5-bit channel is used so it never collides with the other
+	 * peripherals in this overlay.
+	 */
+	clocks = <&peri0_group1_16_5bit_1>;
+
+	pinctrl-0 = <&p17_1_scb5_uart_tx &p17_0_scb5_uart_rx>;
+	pinctrl-names = "default";
+};
+
+&peri0_group1_16_5bit_1 {
+	status = "okay";
+};
+
+&p17_1_scb5_uart_tx {
+	drive-push-pull;
+};
+
+&p17_0_scb5_uart_rx {
+	input-enable;
+};
