@@ -737,7 +737,8 @@ static int parse_getconfig_msg(char *json, char *key)
 
 	/* key is optional so return success*/
 	if (payload.key[0] != NULL) {
-		strcpy(key, payload.key[0]);
+		strncpy(key, payload.key[0], CISTR50 - 1);
+		key[CISTR50 - 1] = '\0';
 	}
 
 	return 0;
@@ -795,7 +796,8 @@ static int parse_remote_start_txn_msg(char *json,
 		return -EINVAL;
 	}
 
-	strncpy(idtag, payload.val2, CISTR50);
+	strncpy(idtag, payload.val2, CISTR50 - 1);
+	idtag[CISTR50 - 1] = '\0';
 	*idcon = payload.val1;
 
 	return 0;
