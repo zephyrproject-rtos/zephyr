@@ -295,6 +295,18 @@
 				status = "disabled";
 			};
 		};
+
+		usb0: usb@50040000 {
+			compatible = "infineon,xmc4xxx-usb", "snps,dwc2";
+			reg = <0x50040000 0x8000>;
+			interrupts = <107 1>;
+			num-in-eps = <7>;
+			num-out-eps = <7>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x228f5930>;
+			ghwcfg4 = <0xdbf08030>;
+			status = "disabled";
+		};
 	};
 };
 
