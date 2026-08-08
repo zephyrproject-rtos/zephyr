@@ -836,10 +836,17 @@
 			compatible = "renesas,ra-ulpt";
 			reg = <0x40220000 0x100>;
 			channel = <0>;
+			count-source = "ULPT_CLOCK_LOCO";
+			prescaler = <0>;
 			status = "disabled";
 
 			timer {
 				compatible = "renesas,ra-ulpt-timer";
+				status = "disabled";
+			};
+
+			counter {
+				compatible = "renesas,ra-ulpt-counter";
 				status = "disabled";
 			};
 		};
@@ -848,10 +855,17 @@
 			compatible = "renesas,ra-ulpt";
 			reg = <0x40220100 0x100>;
 			channel = <1>;
+			count-source = "ULPT_CLOCK_LOCO";
+			prescaler = <0>;
 			status = "disabled";
 
 			timer {
 				compatible = "renesas,ra-ulpt-timer";
+				status = "disabled";
+			};
+
+			counter {
+				compatible = "renesas,ra-ulpt-counter";
 				status = "disabled";
 			};
 		};
