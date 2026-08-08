@@ -18,7 +18,7 @@
 
 	chosen {
 		zephyr,sram = &ddr;
-		zephyr,flash = &at25ql128a;
+		zephyr,flash = &header;
 		zephyr,console = &scif0;
 		zephyr,shell-uart = &scif0;
 		zephyr,code-partition = &slot0_partition;
@@ -71,36 +71,53 @@
 &spibsc {
 	status = "okay";
 
-	at25ql128a: qspi-nor-flash@20000000 {
+	ext_flash_ctrl: flash-controller@0 {
 		compatible = "renesas,rz-qspi-spibsc";
-		reg = <0x20000000 DT_SIZE_M(16)>; /* 128 Mbits */
-		ranges = <0x0 0x20000000 DT_SIZE_M(16)>;
-		write-block-size = <1>;
-		erase-block-size = <4096>;
+		reg = <0>;
 		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges = <0x0 0x20000000 DT_SIZE_M(16)>;
 
-		partitions {
-			compatible = "fixed-partitions";
+		at25ql128a: qspi-nor-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(16)>;
+			write-block-size = <1>;
+			erase-block-size = <4096>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
-			reserved: partition@0 {
-				reg = <0x00000000 0x20000>;
-				read-only;
-			};
+			partitions {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			header: partition@20000 {
-				label = "header";
-				reg = <0x00020000 0x200>;
-				read-only;
-			};
+				reserved: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00000000 0x20000>;
+					read-only;
+				};
 
-			slot0_partition: partition@20200 {
-				label = "image-0";
-				reg = <0x00020200 (DT_SIZE_M(16) - 0x20200)>;
-				read-only;
+				header: partition@20000 {
+					label = "header";
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00020000 0x200>;
+					read-only;
+				};
+
+				slot0_partition: partition@20200 {
+					label = "image-0";
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00020200 DT_SIZE_M(4)>;
+					read-only;
+				};
+
+				storage_partition: partition@420200 {
+					label = "storage";
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00420200 (DT_SIZE_M(16) - DT_SIZE_M(4) - 0x20200)>;
+				};
 			};
 		};
 	};
