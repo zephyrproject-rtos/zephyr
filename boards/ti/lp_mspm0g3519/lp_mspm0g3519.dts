@@ -74,19 +74,32 @@
 };
 
 &ulpclk {
-	clock-frequency = <DT_FREQ_M(40)>;
 	clk-div = <2>;
 };
 
 &mclk {
 	clock-frequency = <DT_FREQ_M(80)>;
+	clocks = <&hsclk>;
+};
+
+&hsclk {
 	clocks = <&syspll>;
+	status = "okay";
 };
 
 &canclk {
 	clocks = <&syspll>;
-	clock-frequency = <DT_FREQ_M(40)>;
 	status = "okay";
+};
+
+&hfxt {
+	clock-frequency = <DT_FREQ_M(48)>;
+	ti,xtal-startup-delay-us = <500>;
+};
+
+&lfxt {
+	clock-frequency = <32768>;
+	ti,xtal-startup-delay-us = <1000000>;
 };
 
 &pinctrl {
