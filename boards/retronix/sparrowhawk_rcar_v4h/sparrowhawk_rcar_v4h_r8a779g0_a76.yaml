@@ -8,4 +8,5 @@ toolchain:
 supported:
   - pinctrl
   - clock_control
+  - sdhc
   - uart
