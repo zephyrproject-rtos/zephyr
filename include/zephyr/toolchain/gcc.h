@@ -330,7 +330,6 @@ do {                                                                    \
 #define HAS_BUILTIN___builtin_add_overflow 1
 #define HAS_BUILTIN___builtin_sub_overflow 1
 #define HAS_BUILTIN___builtin_mul_overflow 1
-#define HAS_BUILTIN___builtin_div_overflow 1
 #endif
 #if TOOLCHAIN_GCC_VERSION >= 40800
 #define HAS_BUILTIN___builtin_bswap16 1
