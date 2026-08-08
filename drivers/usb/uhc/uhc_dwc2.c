@@ -2152,4 +2152,9 @@ static DEVICE_API(uhc, uhc_dwc2_api) = {
 		POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 		&uhc_dwc2_api);
 
-DT_INST_FOREACH_STATUS_OKAY(UHC_DWC2_DEVICE_DEFINE)
+#define UHC_DWC2_DEVICE_DEFINE_DR(n)						\
+	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, dr_mode, peripheral),		\
+		    (/* skip peripheral role controller */),			\
+		    (UHC_DWC2_DEVICE_DEFINE(n)))
+
+DT_INST_FOREACH_STATUS_OKAY(UHC_DWC2_DEVICE_DEFINE_DR)

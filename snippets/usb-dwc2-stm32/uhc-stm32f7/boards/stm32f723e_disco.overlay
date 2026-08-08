@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OTG_HS VBUS is switched by an STMPS2151 power switch enabled from PH12.
+ */
+
+&usbotg_hs {
+	vbus-gpios = <&gpioh 12 GPIO_ACTIVE_HIGH>;
+};
