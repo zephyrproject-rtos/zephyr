@@ -1,4 +1,22 @@
 # Copyright (c) 2024 Martin Stumpf <finomnis@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
+mainmenu "LVGL screen transparency sample"
+
+config APP_DRAW_BACKGROUND_CHECKERBOARD
+	bool "Draw an opaque checkerboard behind the transparent screen"
+	# The SDL (native_sim) display driver already composites its own
+	# transparency checkerboard behind the framebuffer, so drawing one in the
+	# application there would be redundant. No other display driver provides a
+	# background, so default to drawing one everywhere else.
+	default y if !SDL_DISPLAY
+	help
+	  Draw an opaque black/white checkerboard on the bottom layer so the
+	  transparent screen has a defined background to composite over. This is
+	  needed on displays that do NOT have a separate hardware layer (e.g. a
+	  video plane) behind the LVGL framebuffer; otherwise the background is
+	  whatever happens to be in the framebuffer. Disable it on boards where an
+	  underlying hardware layer provides the background (the on-screen-display
+	  / OSD use case), or under the SDL display which draws its own grid.
+
 source "Kconfig.zephyr"
