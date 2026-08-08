@@ -1,0 +1,21 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Copyright 2026 Hayashi Takuma */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	servo: servo {
+		compatible = "pwm-servo";
+		pwms = <&mcpwm0 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		min-pulse = <PWM_USEC(1450)>;
+		max-pulse = <PWM_USEC(2400)>;
+	};
+};
+
+&mcpwm0 {
+	pinctrl-0 = <&mcpwm0_default>;
+	pinctrl-names = "default";
+	prescale = <0>;
+	prescale-timer0 = <255>;
+	status = "okay";
+};
