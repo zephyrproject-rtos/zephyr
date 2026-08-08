@@ -279,6 +279,52 @@ static int video_read_reg_retry(const struct i2c_dt_spec *i2c, uint8_t *buf_w, s
 	return 0;
 }
 
+static uint64_t video_get_be_uint(void *data, size_t size)
+{
+	switch (size) {
+	case 1:
+		return ((uint8_t *)data)[0];
+	case 2:
+		return sys_get_be16(data);
+	case 3:
+		return sys_get_be24(data);
+	case 4:
+		return sys_get_be32(data);
+	case 5:
+		return sys_get_be40(data);
+	case 6:
+		return sys_get_be48(data);
+	case 8:
+		return sys_get_be64(data);
+	default:
+		CODE_UNREACHABLE;
+		return 0;
+	}
+}
+
+static uint64_t video_get_le_uint(void *data, size_t size)
+{
+	switch (size) {
+	case 1:
+		return ((uint8_t *)data)[0];
+	case 2:
+		return sys_get_le16(data);
+	case 3:
+		return sys_get_le24(data);
+	case 4:
+		return sys_get_le32(data);
+	case 5:
+		return sys_get_le40(data);
+	case 6:
+		return sys_get_le48(data);
+	case 8:
+		return sys_get_le64(data);
+	default:
+		CODE_UNREACHABLE;
+		return 0;
+	}
+}
+
 int video_read_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_t *reg_data)
 {
 	size_t addr_size = FIELD_GET(VIDEO_REG_ADDR_SIZE_MASK, reg_addr);
@@ -286,41 +332,53 @@ int video_read_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32_
 	bool big_endian = FIELD_GET(VIDEO_REG_ENDIANNESS_MASK, reg_addr);
 	uint16_t addr = FIELD_GET(VIDEO_REG_ADDR_MASK, reg_addr);
 	uint8_t buf_w[sizeof(uint16_t)] = {0};
-	uint8_t *data_ptr;
+	uint8_t buf_r[sizeof(uint64_t)] = {0};
 	int ret;
 
 	if (i2c == NULL || reg_data == NULL || addr_size == 0 || data_size == 0) {
 		return -EINVAL;
 	}
 
-	*reg_data = 0;
-
-	if (big_endian) {
-		/* Casting between data sizes in big-endian requires re-aligning */
-		data_ptr = (uint8_t *)reg_data + sizeof(*reg_data) - data_size;
-	} else {
-		/* Casting between data sizes in little-endian is a no-op */
-		data_ptr = (uint8_t *)reg_data;
-	}
-
-	for (int i = 0; i < data_size; i++) {
+	if (reg_addr & VIDEO_REG_SINGLE_XFER) {
+		/* Read register value in one transaction */
 		if (addr_size == 1) {
-			buf_w[0] = addr + i;
+			buf_w[0] = addr;
 		} else {
-			sys_put_be16(addr + i, &buf_w[0]);
+			sys_put_be16(addr, &buf_w[0]);
 		}
 
-		ret = video_read_reg_retry(i2c, buf_w, addr_size, &data_ptr[i], 1);
+		ret = video_read_reg_retry(i2c, buf_w, addr_size, buf_r, data_size);
 		if (ret < 0) {
-			LOG_ERR("Failed to read from register 0x%x", addr + i);
+			LOG_ERR("Failed to read from register 0x%x", addr);
 			return ret;
 		}
 
 		LOG_HEXDUMP_DBG(buf_w, addr_size, "Data written to the I2C device...");
-		LOG_HEXDUMP_DBG(&data_ptr[i], 1, "... data read back from the I2C device");
+		LOG_HEXDUMP_DBG(buf_r, data_size, "... data read back from the I2C device");
+	} else {
+		for (size_t i = 0U; i < data_size; i++) {
+			if (addr_size == 1) {
+				buf_w[0] = addr + (uint16_t)i;
+			} else {
+				sys_put_be16(addr + (uint16_t)i, &buf_w[0]);
+			}
+
+			ret = video_read_reg_retry(i2c, buf_w, addr_size, &buf_r[i], 1U);
+			if (ret < 0) {
+				LOG_ERR("Failed to read from register 0x%x", addr + (uint16_t)i);
+				return ret;
+			}
+
+			LOG_HEXDUMP_DBG(buf_w, addr_size, "Data written to the I2C device...");
+			LOG_HEXDUMP_DBG(&buf_r[i], 1, "... data read back from the I2C device");
+		}
 	}
 
-	*reg_data = big_endian ? sys_be32_to_cpu(*reg_data) : sys_le32_to_cpu(*reg_data);
+	if (big_endian) {
+		*reg_data = video_get_be_uint(buf_r, data_size);
+	} else {
+		*reg_data = video_get_le_uint(buf_r, data_size);
+	}
 
 	return 0;
 }
@@ -374,22 +432,42 @@ int video_write_cci_reg(const struct i2c_dt_spec *i2c, uint32_t reg_addr, uint32
 		data_ptr = (uint8_t *)&reg_data;
 	}
 
-	for (int i = 0; i < data_size; i++) {
+	if (reg_addr & VIDEO_REG_SINGLE_XFER) {
+		/* Write register value in one transaction */
 		/* The address is always big-endian as per CCI standard */
 		if (addr_size == 1) {
-			buf_w[0] = addr + i;
+			buf_w[0] = addr;
 		} else {
-			sys_put_be16(addr + i, &buf_w[0]);
+			sys_put_be16(addr, &buf_w[0]);
 		}
 
-		buf_w[addr_size] = data_ptr[i];
+		memcpy(&buf_w[addr_size], data_ptr, data_size);
 
-		LOG_HEXDUMP_DBG(buf_w, addr_size + 1, "Data written to the I2C device");
+		LOG_HEXDUMP_DBG(buf_w, addr_size + data_size, "Data written to the I2C device");
 
-		ret = video_write_reg_retry(i2c, buf_w, addr_size + 1);
+		ret = video_write_reg_retry(i2c, buf_w, addr_size + data_size);
 		if (ret < 0) {
-			LOG_ERR("Failed to write to register 0x%x", addr + i);
+			LOG_ERR("Failed to write to register 0x%x", addr);
 			return ret;
+		}
+	} else {
+		for (int i = 0; i < data_size; i++) {
+			/* The address is always big-endian as per CCI standard */
+			if (addr_size == 1) {
+				buf_w[0] = addr + i;
+			} else {
+				sys_put_be16(addr + i, &buf_w[0]);
+			}
+
+			buf_w[addr_size] = data_ptr[i];
+
+			LOG_HEXDUMP_DBG(buf_w, addr_size + 1, "Data written to the I2C device");
+
+			ret = video_write_reg_retry(i2c, buf_w, addr_size + 1);
+			if (ret < 0) {
+				LOG_ERR("Failed to write to register 0x%x", addr + i);
+				return ret;
+			}
 		}
 	}
 
