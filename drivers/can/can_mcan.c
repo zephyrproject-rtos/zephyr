@@ -1377,6 +1377,7 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 		return err;
 	}
 
+#ifdef CONFIG_CAN_FD_MODE
 	/* 64 byte Tx Buffer data fields size */
 	reg = CAN_MCAN_TXESC_TBDS;
 	err = can_mcan_write_reg(dev, CAN_MCAN_TXESC, reg);
@@ -1390,6 +1391,7 @@ int can_mcan_configure_mram(const struct device *dev, uintptr_t mrba, uintptr_t 
 	if (err != 0) {
 		return err;
 	}
+#endif /* CONFIG_CAN_FD_MODE */
 
 	return 0;
 }
