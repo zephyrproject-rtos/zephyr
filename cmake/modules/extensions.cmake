@@ -1308,6 +1308,7 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    Subsequent calls to zephyr_linker_sources with the same file(s) will remove
 #    these from the original location. Only the last call is considered.
 # <location> is one of
+#    BSS           Inside the bss output section.
 #    NOINIT        Inside the noinit output section.
 #    RWDATA        Inside the data output section.
 #    RODATA        Inside the rodata output section.
@@ -1327,9 +1328,9 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    be alphanumeric, and the keys are sorted alphabetically. If no key is
 #    given, the key 'default' is used. Keys are case-sensitive.
 #
-# Use NOINIT, RWDATA, and RODATA unless they don't work for your use case.
+# Use BSS, NOINIT, RWDATA, and RODATA unless they don't work for your use case.
 #
-# When placing into NOINIT, RWDATA, RODATA, ROM_START, RAMFUNC_SECTION,
+# When placing into BSS, NOINIT, RWDATA, RODATA, ROM_START, RAMFUNC_SECTION,
 # NOCACHE_SECTION, DTCM_SECTION or ITCM_SECTION the contents of the files will
 # be placed inside an output section, so assume the section definition is
 # already present, e.g.:
@@ -1364,6 +1365,7 @@ function(zephyr_linker_sources location)
   set(data_sections_path "${snippet_base}/snippets-data-sections.ld")
   set(text_sections_path "${snippet_base}/snippets-text-sections.ld")
   set(rom_start_path     "${snippet_base}/snippets-rom-start.ld")
+  set(bss_path           "${snippet_base}/snippets-bss.ld")
   set(noinit_path        "${snippet_base}/snippets-noinit.ld")
   set(rwdata_path        "${snippet_base}/snippets-rwdata.ld")
   set(rodata_path        "${snippet_base}/snippets-rodata.ld")
@@ -1381,6 +1383,7 @@ function(zephyr_linker_sources location)
     file(WRITE ${data_sections_path} "")
     file(WRITE ${text_sections_path} "")
     file(WRITE ${rom_start_path} "")
+    file(WRITE ${bss_path} "")
     file(WRITE ${noinit_path} "")
     file(WRITE ${rwdata_path} "")
     file(WRITE ${rodata_path} "")
@@ -1404,6 +1407,8 @@ function(zephyr_linker_sources location)
     set(snippet_path "${text_sections_path}")
   elseif("${location}" STREQUAL "ROM_START")
     set(snippet_path "${rom_start_path}")
+  elseif("${location}" STREQUAL "BSS")
+    set(snippet_path "${bss_path}")
   elseif("${location}" STREQUAL "NOINIT")
     set(snippet_path "${noinit_path}")
   elseif("${location}" STREQUAL "RWDATA")
