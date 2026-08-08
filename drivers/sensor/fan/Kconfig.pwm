@@ -1,0 +1,17 @@
+config FAN_PWM
+	bool "Generic PWM fan driver"
+	default y
+	depends on DT_HAS_ZEPHYR_PWM_FAN_ENABLED
+	depends on PWM
+	help
+	  Enable the generic PWM fan driver. The fan is driven by a PWM
+	  channel and may optionally reference an arbitrary tachometer
+	  sensor (any device reporting SENSOR_CHAN_RPM) for RPM feedback.
+
+config FAN_PWM_START_PERCENT
+    int "Start percentage for fan pwm"
+	default 50
+	range 0 100
+	depends on FAN_PWM
+	help
+	  Set the starting percentage of a fan pwm. Default is 50 percent

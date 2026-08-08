@@ -1,0 +1,41 @@
+# Copyright (c) 2026 Kasper Sloth
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic PWM fan.
+
+  The fan is driven by a single PWM channel. Its speed may optionally be
+  monitored through an arbitrary tachometer, referenced by phandle. Any
+  device that reports SENSOR_CHAN_RPM (for example zephyr,tach-gpio,
+  nuvoton,npcx-tach, ite,it8xxx2-tach, microchip,xec-tach,
+  maxim,max31790-fan-speed, ...) can be used.
+
+  Example:
+
+    fan_tach: fan-tach {
+        compatible = "zephyr,tach-gpio";
+        gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+        pulses-per-round = <2>;
+    };
+
+    fan0: fan {
+        compatible = "zephyr,pwm-fan";
+        pwms = <&pwm1 1 PWM_KHZ(25) PWM_POLARITY_INVERTED>;
+        tach = <&fan_tach>;
+    };
+
+compatible: "zephyr,pwm-fan"
+
+include: sensor-device.yaml
+
+properties:
+  pwms:
+    type: phandle-array
+    required: true
+    description: PWM channel used to drive the fan.
+
+  tach:
+    type: phandle
+    description: |
+      Optional phandle to a tachometer sensor device that reports
+      SENSOR_CHAN_RPM. Omit for open-loop fans without RPM feedback.
