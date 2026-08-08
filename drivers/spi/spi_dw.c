@@ -151,7 +151,12 @@ static void pull_data(const struct device *dev)
 	const struct spi_dw_config *info = dev->config;
 	struct spi_dw_data *spi = dev->data;
 
-	while (read_rxflr(dev)) {
+	/*
+	 * Use SR.RFNE instead of RXFLR.  RXFLR is a CDC-crossed counter
+	 * that may read stale zero after RXFIS; RFNE is a single-bit
+	 * status flag that settles faster on any bus interface.
+	 */
+	while (test_bit_sr_rfne(dev)) {
 		uint32_t data = read_dr(dev);
 
 		if (spi_context_rx_buf_on(&spi->ctx)) {
@@ -168,14 +173,19 @@ static void pull_data(const struct device *dev)
 			}
 		}
 
-		spi_context_update_rx(&spi->ctx, spi->dfs, 1);
+		if (spi_context_rx_on(&spi->ctx)) {
+			spi_context_update_rx(&spi->ctx, spi->dfs, 1);
+		}
 		spi->fifo_diff--;
 	}
 
 	if (!spi->ctx.rx_len && spi->ctx.tx_len < info->fifo_depth) {
 		write_rxftlr(dev, spi->ctx.tx_len - 1);
-	} else if (read_rxftlr(dev) >= spi->ctx.rx_len) {
-		write_rxftlr(dev, spi->ctx.rx_len - 1);
+	} else {
+		if (spi->ctx.rx_len > 0 &&
+		    read_rxftlr(dev) >= spi->ctx.rx_len) {
+			write_rxftlr(dev, spi->ctx.rx_len - 1);
+		}
 	}
 }
 
@@ -453,19 +463,33 @@ static int transceive(const struct device *dev,
 	reg_data = !rx_bufs ?
 		DW_SPI_IMR_UNMASK & DW_SPI_IMR_MASK_RX :
 		DW_SPI_IMR_UNMASK;
-	write_imr(dev, reg_data);
 
 	if (!spi_dw_is_slave(spi)) {
+		/*Controller enable the interrupt */
+		write_imr(dev, reg_data);
+
 		/* if cs is not defined as gpio, use hw cs */
 		if (spi_cs_is_gpio(config)) {
 			spi_context_cs_control(&spi->ctx, true);
 		} else {
 			write_ser(dev, BIT(config->slave));
 		}
+	} else {
+		/* Mask IRQs until prefill; avoid empty TX if waiting on TXEIS. */
+		write_imr(dev, DW_SPI_IMR_MASK);
 	}
 
 	LOG_DBG("Enabling controller");
 	set_bit_ssienr(dev);
+
+	/* Prefill TX FIFO after SSIENR=1 (some IPs gate DR until then). */
+	if (spi_dw_is_slave(spi)) {
+		if (tx_bufs && tx_bufs->buffers) {
+			push_data(dev);
+		}
+		/* SSI is enabled and any TX prefill is done: enable interrupts. */
+		write_imr(dev, reg_data);
+	}
 
 	ret = spi_context_wait_for_completion(&spi->ctx);
 
