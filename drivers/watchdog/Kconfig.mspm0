@@ -7,3 +7,8 @@ config WDT_MSPM0
 	bool "MSPM0 Windowed Watchdog (WWDT) Driver"
 	default y
 	depends on DT_HAS_TI_MSPM0_WATCHDOG_ENABLED
+
+config WDT_MSPM0_IWDT
+	bool "MSPM0 Independent Watchdog (IWDT) Driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_IWDT_ENABLED

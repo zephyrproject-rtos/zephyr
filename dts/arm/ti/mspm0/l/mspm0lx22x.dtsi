@@ -122,6 +122,12 @@
 				status = "disabled";
 			};
 		};
+
+		iwdt: iwdt@40095300 {
+			compatible = "ti,mspm0-iwdt";
+			reg = <0x40095300 0x100>;
+			status = "disabled";
+		};
 	};
 };
 
