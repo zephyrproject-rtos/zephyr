@@ -569,6 +569,7 @@
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
 		};
 
 		i2c_1: i2c@4000d200 {
@@ -582,6 +583,7 @@
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
 		};
 
 		i2c_2: i2c@4000d400 {
@@ -595,6 +597,7 @@
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
 		};
 
 		i2c_3: i2c@4000d600 {
@@ -608,6 +611,7 @@
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
 		};
 
 		i2c_4: i2c@4000d800 {
@@ -621,6 +625,7 @@
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
 		};
 
 		i2c_5: i2c@4000da00 {
@@ -634,6 +639,7 @@
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
 		};
 
 		i2c_6: i2c@4000dc00 {
@@ -647,6 +653,7 @@
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
 		};
 
 		i2c_7: i2c@4000de00 {
@@ -660,6 +667,7 @@
 			#size-cells = <0>;
 			lcnt-offset = <35>;
 			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
 		};
 
 		sha0: crypto@40000000 {
