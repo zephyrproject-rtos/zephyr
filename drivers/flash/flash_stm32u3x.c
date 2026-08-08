@@ -47,7 +47,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset,
 static int write_nwords(const struct device *dev, off_t offset, const uint32_t *buff, size_t n)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	volatile uint32_t *flash = (uint32_t *)(offset
+	volatile uint32_t *flash = (uint32_t *)((uintptr_t)offset
 						+ FLASH_STM32_BASE_ADDRESS);
 	bool full_zero = true;
 	uint32_t tmp;

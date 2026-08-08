@@ -221,7 +221,7 @@ static int sam_flash_read(const struct device *dev, off_t offset, void *data, si
 	}
 
 	key = k_spin_lock(&sam_data->lock);
-	memcpy(data, (uint8_t *)(sam_config->area_address + offset), len);
+	memcpy(data, (uint8_t *)(uintptr_t)(sam_config->area_address + offset), len);
 	k_spin_unlock(&sam_data->lock, key);
 	return 0;
 }
@@ -244,7 +244,7 @@ static int sam_flash_write_latch_buffer_to_previous_page(const struct device *de
 
 static void sam_flash_write_dword_to_latch_buffer(off_t offset, uint32_t dword)
 {
-	*((uint32_t *)offset) = dword;
+	*((uint32_t *)(uintptr_t)offset) = dword;
 	barrier_dsync_fence_full();
 }
 

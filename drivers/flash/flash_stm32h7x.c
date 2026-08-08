@@ -329,7 +329,7 @@ bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t le
 		if ((offset % (FLASH_NB_32BITWORD_IN_FLASHWORD * 4)) != 0) {
 			LOG_ERR("Write offset not aligned on flashword length. "
 				"Offset: 0x%lx, flashword length: %d",
-				(unsigned long)offset, FLASH_NB_32BITWORD_IN_FLASHWORD * 4);
+				(long)offset, FLASH_NB_32BITWORD_IN_FLASHWORD * 4);
 			return false;
 		}
 	}
@@ -570,7 +570,7 @@ static int wait_write_queue(const struct flash_stm32_sector_t *sector)
 
 static int write_ndwords(const struct device *dev, off_t offset, const uint64_t *data, uint8_t n)
 {
-	volatile uint64_t *flash = (uint64_t *)(offset + FLASH_STM32_BASE_ADDRESS);
+	volatile uint64_t *flash = (uint64_t *)((uintptr_t)offset + FLASH_STM32_BASE_ADDRESS);
 	int rc;
 	int i;
 	struct flash_stm32_sector_t sector = get_sector(dev, offset);
@@ -709,7 +709,8 @@ static void flash_stm32h7_flush_caches(const struct device *dev, off_t offset, s
 		return; /* Cache not enabled */
 	}
 
-	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS + offset), len);
+	SCB_InvalidateDCache_by_Addr((uint32_t *)(uintptr_t)(FLASH_STM32_BASE_ADDRESS +
+							     offset), len);
 }
 #endif /* CONFIG_CPU_CORTEX_M7 */
 

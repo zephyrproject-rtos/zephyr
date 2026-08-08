@@ -169,7 +169,7 @@ static int flash_nrf_read(const struct device *dev, off_t addr,
 #endif
 
 	if (soc_secure_flash_range_is_secure((uintptr_t)addr, len)) {
-		return soc_secure_mem_read(data, (void *)addr, len);
+		return soc_secure_mem_read(data, (void *)(uintptr_t)addr, len);
 	}
 
 	nrf_nvmc_buffer_read(data, (uint32_t)addr, len);

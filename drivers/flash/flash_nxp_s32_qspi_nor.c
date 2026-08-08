@@ -473,7 +473,7 @@ static int nxp_s32_qspi_sfdp_read(const struct device *dev, off_t offset, void *
 	status = Qspi_Ip_RunReadCommand(data->instance, data->read_sfdp_lut_idx,
 					(uint32_t)offset, (uint8_t *)buf, NULL, (uint32_t)len);
 	if (status != STATUS_QSPI_IP_SUCCESS) {
-		LOG_ERR("Failed to read SFDP at 0x%lx (%d)", offset, status);
+		LOG_ERR("Failed to read SFDP at 0x%lx (%d)", (long)offset, status);
 		ret = -EIO;
 	}
 

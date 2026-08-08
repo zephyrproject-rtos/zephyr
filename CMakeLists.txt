@@ -276,6 +276,17 @@ add_link_options(${LINKER_OPTIMIZATION_FLAG})
 compiler_simple_options(simple_options)
 toolchain_linker_add_compiler_options(${simple_options})
 
+set(cmake_c_compiler_command ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS})
+
+list(APPEND cmake_c_compiler_command ${simple_options})
+list(APPEND cmake_c_compiler_command -I$<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>, -I>)
+list(APPEND cmake_c_compiler_command -isystem $<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_SYSTEM_INCLUDE_DIRECTORIES>, -isystem >)
+list(APPEND cmake_c_compiler_command -D$<JOIN:$<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_DEFINITIONS>, -D> ${C_compile_options})
+
+if(CMAKE_HOST_UNIX)
+  set(cmake_c_compiler_command "'${cmake_c_compiler_command}'")
+endif()
+
 if(CONFIG_LTO)
   if(CONFIG_LTO_SINGLE_THREADED)
     zephyr_compile_options($<TARGET_PROPERTY:compiler,optimization_lto_st>)
@@ -973,6 +984,7 @@ add_custom_command(
   --syscall-exports-llext  include/generated/zephyr/syscall_exports_llext.c
   --syscall-weakdefs-llext syscall_weakdefs_llext.c # compiled in CMake library 'syscall_weakdefs'
   --syscall-list     ${syscall_list_h}
+  --c-compiler       "${cmake_c_compiler_command}"
   $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
   ${SYSCALL_LONG_REGISTERS_ARG}
   ${SYSCALL_SPLIT_TIMEOUT_ARG}
@@ -2422,6 +2434,7 @@ if(CONFIG_LLEXT_EDK)
       --base-output      edk/include/generated/zephyr/syscalls           # Write to this dir
       --syscall-dispatch edk/include/generated/zephyr/syscall_dispatch.c # Write this file
       --syscall-list     ${edk_syscall_list_h}
+      --c-compiler       "${cmake_c_compiler_command}"
       $<$<BOOL:${CONFIG_LLEXT_EDK_USERSPACE_ONLY}>:--userspace-only>
       ${SYSCALL_LONG_REGISTERS_ARG}
       ${SYSCALL_SPLIT_TIMEOUT_ARG}

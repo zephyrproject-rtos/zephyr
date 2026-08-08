@@ -49,7 +49,7 @@ BUILD_ASSERT((FLASH_WRITE_BLK_SZ % sizeof(uint32_t)) == 0, "unsupported write-bl
 
 #define PAGES_PER_ROW (ROW_SIZE / FLASH_PAGE_SIZE)
 
-#define FLASH_MEM(_a) ((uint32_t *)((uint8_t *)((_a) + CONFIG_FLASH_BASE_ADDRESS)))
+#define FLASH_MEM(_a) ((uint32_t *)((uint8_t *)((uintptr_t)(_a) + CONFIG_FLASH_BASE_ADDRESS)))
 
 struct flash_sam0_data {
 #if CONFIG_SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
