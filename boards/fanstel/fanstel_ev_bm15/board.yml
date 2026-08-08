@@ -1,0 +1,51 @@
+board:
+  name: fanstel_ev_bm15
+  full_name: Fanstel EV-BM15 Evaluation Board
+  vendor: fanstel
+  socs:
+    - name: nrf54l15
+      variants:
+        - name: xip
+          cpucluster: cpuflpr
+        - name: ns
+          cpucluster: cpuapp
+
+runners:
+  run_once:
+    '--recover':
+      - runners:
+          - nrfjprog
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - fanstel_ev_bm15/nrf54l15/cpuapp
+              - fanstel_ev_bm15/nrf54l15/cpuapp/ns
+              - fanstel_ev_bm15/nrf54l15/cpuflpr
+              - fanstel_ev_bm15/nrf54l15/cpuflpr/xip
+
+    '--erase':
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - fanstel_ev_bm15/nrf54l15/cpuapp
+              - fanstel_ev_bm15/nrf54l15/cpuapp/ns
+              - fanstel_ev_bm15/nrf54l15/cpuflpr
+              - fanstel_ev_bm15/nrf54l15/cpuflpr/xip
+
+    '--reset':
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+        run: last
+        groups:
+          - boards:
+              - fanstel_ev_bm15/nrf54l15/cpuapp
+              - fanstel_ev_bm15/nrf54l15/cpuapp/ns
+              - fanstel_ev_bm15/nrf54l15/cpuflpr
+              - fanstel_ev_bm15/nrf54l15/cpuflpr/xip
