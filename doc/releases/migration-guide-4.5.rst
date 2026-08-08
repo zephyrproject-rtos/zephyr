@@ -217,6 +217,16 @@ Controller Area Network (CAN)
   are processed in the order received on the bus. Out-of-tree users may want to update any
   ``bosch,mram-cfg`` devicetree property overrides to allocate all FIFO elements to RX FIFO0.
 
+Counter
+=======
+
+* :dtcompatible:`nxp,lpc-ctimer` now routes its input capture signal through the generic
+  :ref:`mux <mux_api>` subsystem. The ``inputmux-connections`` property has been removed; describe
+  the routing with an INPUTMUX controller node (:dtcompatible:`nxp,inputmux`) and reference it from
+  the timer node's ``mux-states`` property instead. The cell layout is unchanged, so an existing
+  ``inputmux-connections = <&inputmux0 0 0x06000024>;`` becomes
+  ``mux-states = <&inputmux0 0 0x06000024>;`` (:github:`112088`)
+
 Devicetree
 ==========
 
