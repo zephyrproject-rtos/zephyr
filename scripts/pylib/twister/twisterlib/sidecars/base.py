@@ -124,6 +124,18 @@ class Sidecar:
         """
         return []
 
+    def pytest_params(self) -> dict[str, str]:
+        """Values a ``pytest`` test may need about the provisioned resource.
+
+        Returns what the host side of a test has to know to talk to this sidecar
+        -- for example the name of the CAN interface it created, so the test can
+        open a socket on it. They reach the test through the ``sidecar_params``
+        fixture of the twister pytest plugin. Queried after :meth:`setup`, so
+        values only known once the resource exists can be reported too; the
+        default reports nothing.
+        """
+        return {}
+
     def setup(self) -> bool:
         """Provision the resource before the test is executed.
 

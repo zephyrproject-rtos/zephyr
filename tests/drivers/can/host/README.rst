@@ -46,11 +46,31 @@ Building and Running
 Running on native_sim
 =====================
 
-Running the test suite on :zephyr:board:`native_sim` relies on the `Linux SocketCAN`_ virtual CAN driver
-(vcan) providing a virtual CAN interface named ``zcan0``.
+Running the test suite on :zephyr:board:`native_sim` relies on the `Linux SocketCAN`_ virtual CAN
+driver (vcan) providing a virtual CAN interface.
 
-On the host PC, a virtual SocketCAN interface needs to be created and brought up before running the
-test suite:
+Letting Twister set up the bus
+------------------------------
+
+The ``drivers.can.host.sidecar`` test scenario needs no setup at all: the :ref:`can sidecar
+<twister_sidecars>` creates a virtual CAN interface before the test runs, hands the test the name of
+the interface it created, and removes it again afterwards. Neither the ``can`` fixture nor a
+python-can configuration context is needed:
+
+.. code-block:: shell
+
+   west twister -v -p native_sim/native/64 -s drivers.can.host.sidecar -T tests/drivers/can/host/
+
+Creating a virtual CAN interface requires root privileges, so the sidecar invokes ``ip`` through
+``sudo``. The test is skipped, rather than failing, if that is not available without a password
+prompt.
+
+Setting up the bus manually
+---------------------------
+
+The ``drivers.can.host`` scenario expects the CAN bus to already exist, which is what running on
+hardware requires. On the host PC, a virtual SocketCAN interface named ``zcan0`` needs to be created
+and brought up before running the test suite:
 
 .. code-block:: shell
 

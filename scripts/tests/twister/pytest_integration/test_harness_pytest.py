@@ -39,6 +39,8 @@ def testinstance(tmp_path: Path) -> TestInstance:
     )
     testinstance.handler.options.fixture = ['fixture1:option1', 'fixture2']
     testinstance.handler.type_str = 'native'
+    # Real handlers default this to None; a sidecar may set it per instance.
+    testinstance.handler.extra_test_args = None
     testinstance.build_dir = tmp_path
     return testinstance
 
@@ -95,6 +97,33 @@ def test_pytest_command_extra_test_args(testinstance: TestInstance):
     pytest_harness.configure(testinstance)
     pytest_harness.generate_command()
     assert pytest_harness.pytest_params.extra_test_args == ' '.join(extra_test_args)
+
+
+def test_pytest_command_sidecar_extra_test_args(testinstance: TestInstance):
+    # A sidecar sets run args on this instance's handler (e.g. the can sidecar
+    # passes the host interface it created). They must reach the pytest harness
+    # as well, appended after any given on the command line.
+    pytest_harness = Pytest()
+    testinstance.handler.options.extra_test_args = ['-no-rt']
+    testinstance.handler.extra_test_args = ['--can-if=zcan0']
+    pytest_harness.configure(testinstance)
+    pytest_harness.generate_command()
+    assert pytest_harness.pytest_params.extra_test_args == '-no-rt --can-if=zcan0'
+
+
+def test_pytest_command_sidecar_params(testinstance: TestInstance):
+    # What the sidecar provisioned must reach the test through the parameters
+    # file the plugin reads.
+    pytest_harness = Pytest()
+    testinstance.sidecar_obj = mock.Mock(
+        pytest_params=mock.Mock(return_value={'iface': 'zcan0'})
+    )
+    pytest_harness.configure(testinstance)
+    pytest_harness.generate_command()
+
+    assert pytest_harness.pytest_params.sidecar_params == {'iface': 'zcan0'}
+    with open(pytest_harness.pytest_config_file) as f:
+        assert yaml.safe_load(f)['sidecar_params'] == {'iface': 'zcan0'}
 
 
 def test_pytest_command_extra_args_in_options(testinstance: TestInstance):
