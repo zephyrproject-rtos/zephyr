@@ -1,3 +1,4 @@
+/* SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors */
 /* SPDX-License-Identifier: Apache-2.0 */
 /* Please keep in sync with cmake/linker_script/common/debug-sections.cmake */
 
@@ -12,6 +13,12 @@
 	SECTION_PROLOGUE(.stab.indexstr, 0,)   { *(.stab.indexstr) }
 	SECTION_PROLOGUE(.gnu.build.attributes, 0,) { *(.gnu.build.attributes .gnu.build.attributes.*) }
 	SECTION_PROLOGUE(.comment, 0,)         { *(.comment) }
+	/* Init entry validation records (see SYS_INIT_ANCHORED() and
+	 * SYS_INIT_DEPENDS()), consumed by check_init_priorities.py. Not
+	 * loaded into memory.
+	 */
+	SECTION_PROLOGUE(.zinit_anchor_info, 0,) { KEEP(*(.zinit_anchor_info)) }
+	SECTION_PROLOGUE(.zinit_depends_info, 0,) { KEEP(*(.zinit_depends_info)) }
 	/* DWARF debug sections.
 	   Symbols in the DWARF debugging sections are relative to the beginning
 	   of the section so we begin them at 0. */

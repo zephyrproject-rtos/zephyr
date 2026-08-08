@@ -10,26 +10,35 @@ import sys
 
 REFERENCE_OUTPUT = [
         "ERROR: Device initialization priority validation failed, the sequence of initialization calls does not match the devicetree dependencies.",
-        "ERROR: /i2c@11112222/test-i2c-dev@10 <NULL> is initialized before its dependency /gpio@ffff <init_fn_0> (PRE_KERNEL_1+0 < PRE_KERNEL_1+1)",
-        "ERROR: /i2c@11112222/test-i2c-dev@10 <NULL> is initialized before its dependency /i2c@11112222 <init_fn_1> (PRE_KERNEL_1+0 < PRE_KERNEL_1+2)",
-        "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL_1+3 > /gpio@ffff <init_fn_0> PRE_KERNEL_1+1",
-        "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL_1+3 > /i2c@11112222 <init_fn_1> PRE_KERNEL_1+2",
+        "ERROR: /i2c@11112222/test-i2c-dev@10 <NULL> is initialized before its dependency /gpio@ffff <init_fn_0> (PRE_KERNEL+0 < PRE_KERNEL+1)",
+        "ERROR: /i2c@11112222/test-i2c-dev@10 <NULL> is initialized before its dependency /i2c@11112222 <init_fn_1> (PRE_KERNEL+0 < PRE_KERNEL+2)",
+        "ERROR: init entry init_fn_3 (PRE_KERNEL) runs before /i2c@11112222/test-i2c-dev@13 <NULL> (PRE_KERNEL_2+1), the device it is ordered after",
+        "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL+3 > /gpio@ffff <init_fn_0> PRE_KERNEL+1",
+        "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL+3 > /i2c@11112222 <init_fn_1> PRE_KERNEL+2",
+        "INFO: /i2c@11112222/test-i2c-dev@12 <NULL> PRE_KERNEL+6 > /gpio@ffff <init_fn_0> PRE_KERNEL+1",
+        "INFO: /i2c@11112222/test-i2c-dev@12 <NULL> PRE_KERNEL+6 > /i2c@11112222 <init_fn_1> PRE_KERNEL+2",
+        "INFO: /i2c@11112222/test-i2c-dev@13 <NULL> PRE_KERNEL_2+1 > /gpio@ffff <init_fn_0> PRE_KERNEL+1",
+        "INFO: /i2c@11112222/test-i2c-dev@13 <NULL> PRE_KERNEL_2+1 > /i2c@11112222 <init_fn_1> PRE_KERNEL+2",
 ]
 
 REFERENCE_OUTPUT_INITLEVELS = [
         "EARLY",
-        "PRE_KERNEL_1",
+        "PRE_KERNEL",
         "__init___device_dts_ord_<ord>: init_fn_0(__device_dts_ord_<ord>)",
         "__init___device_dts_ord_<ord>: init_fn_1(__device_dts_ord_<ord>)",
         "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
         "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
         "__init_posix_arch_console_init: posix_arch_console_init(NULL)",
+        "__init_init_fn_2: init_fn_2(NULL)",
+        "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
+        "__init_init_fn_3: init_fn_3(NULL)",
         "PRE_KERNEL_2",
         "__init_sys_clock_driver_init: sys_clock_driver_init(NULL)",
+        "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
         "POST_KERNEL",
         "APPLICATION",
         "__init_boot_banner: boot_banner(NULL)",
-        "SMP",
+        "PRE_MAIN",
 ]
 
 if len(sys.argv) != 3:
