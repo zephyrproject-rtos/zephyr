@@ -239,6 +239,29 @@ static void dma_finish(const struct device *dev, struct i2c_msg *msg)
 	}
 }
 
+#define I2C_STM32_NODE_HAS_DMA(node_id) DT_NODE_HAS_PROP(node_id, dmas) &&
+/* 1 if every status-okay controller has a `dmas` property - so no bus can ever
+ * need the interrupt-mode fallback. A controller has both tx & rx DMA channels
+ * or neither (BUILD_ASSERT in I2C_STM32_INIT), so the presence of `dmas` alone
+ * is a sufficient per-node check.
+ */
+#define I2C_STM32_ALL_INST_USE_DMA							\
+	(DT_FOREACH_STATUS_OKAY(st_stm32_i2c_v2, I2C_STM32_NODE_HAS_DMA) 1)
+
+/* True - this controller uses DMA. False - interrupt-mode fallback is required. */
+static inline bool i2c_stm32_uses_dma(const struct i2c_stm32_config *cfg)
+{
+#if I2C_STM32_ALL_INST_USE_DMA
+	ARG_UNUSED(cfg);
+	return true;
+#else
+	/* A controller has both tx & rx DMA channels or neither (BUILD_ASSERT in I2C_STM32_INIT),
+	 * so check for the tx channel alone is a sufficient.
+	 */
+	return cfg->tx_dma.dev_dma != NULL;
+#endif
+}
+
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 
 #ifdef CONFIG_I2C_STM32_INTERRUPT
@@ -661,11 +684,15 @@ void i2c_stm32_event(const struct device *dev)
 		 */
 		uint32_t cr2 = stm32_reg_read(&regs->CR2);
 #ifdef CONFIG_I2C_STM32_V2_DMA
-		/* Get number of bytes bytes transferred by DMA */
-		uint32_t xfer_len = (cr2 & I2C_CR2_NBYTES_Msk) >> I2C_CR2_NBYTES_Pos;
+		if (i2c_stm32_uses_dma(cfg)) {
+			/* DMA moved the bytes, so current.len/buf were not advanced
+			 * per byte — catch them up by the transferred chunk here.
+			 */
+			uint32_t xfer_len = (cr2 & I2C_CR2_NBYTES_Msk) >> I2C_CR2_NBYTES_Pos;
 
-		data->current.len -= xfer_len;
-		data->current.buf += xfer_len;
+			data->current.len -= xfer_len;
+			data->current.buf += xfer_len;
+		}
 #endif
 
 		if (data->current.len == 0U) {
@@ -819,7 +846,9 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
 	/* Stop DMA and invalidate cache if needed */
-	dma_finish(dev, msg);
+	if (i2c_stm32_uses_dma(cfg)) {
+		dma_finish(dev, msg);
+	}
 #endif
 
 	/* Check for transfer errors or timeout */
@@ -899,16 +928,20 @@ static int i2c_stm32_irq_prepare_start(const struct device *dev, struct i2c_msg 
 
 	if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
 		*cr2 &= ~I2C_CR2_RD_WRN;
-#ifndef CONFIG_I2C_STM32_V2_DMA
 		/* Prepare first byte in TX buffer before transfer start as a
-		 * workaround for errata: "Transmission stalled after first byte transfer"
+		 * workaround for errata: "Transmission stalled after first byte
+		 * transfer". DMA feeds the TX data register itself, so this preload
+		 * only applies to interrupt-mode (non-DMA) transfers.
 		 */
-		if (data->current.len > 0U) {
+		bool preload_first_tx = data->current.len > 0U;
+#ifdef CONFIG_I2C_STM32_V2_DMA
+		preload_first_tx = preload_first_tx && !i2c_stm32_uses_dma(dev->config);
+#endif
+		if (preload_first_tx) {
 			LL_I2C_TransmitData8(regs, *data->current.buf);
 			data->current.len--;
 			data->current.buf++;
 		}
-#endif
 	} else {
 		*cr2 |= I2C_CR2_RD_WRN;
 	}
@@ -968,7 +1001,7 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	data->current.msg = msg;
 
 #if defined(CONFIG_I2C_STM32_V2_DMA)
-	if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len) &&
+	if (i2c_stm32_uses_dma(cfg) && !stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len) &&
 	    ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE)) {
 		sys_cache_data_flush_range(msg->buf, msg->len);
 	}
@@ -1030,14 +1063,17 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	uint32_t cr1 = I2C_CR1_ERRIE | I2C_CR1_STOPIE | I2C_CR1_TCIE | I2C_CR1_NACKIE;
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
-	ret = i2c_stm32_irq_start_dma(dev, msg, regs);
-	if (ret != 0) {
-		return ret;
-	}
-#else
-	/* If not using DMA, also enable RX and TX empty interrupts */
-	cr1 |= I2C_CR1_TXIE | I2C_CR1_RXIE;
+	if (i2c_stm32_uses_dma(cfg)) {
+		ret = i2c_stm32_irq_start_dma(dev, msg, regs);
+		if (ret != 0) {
+			return ret;
+		}
+	} else
 #endif /* CONFIG_I2C_STM32_V2_DMA */
+	{
+		/* If not using DMA, also enable RX and TX empty interrupts */
+		cr1 |= I2C_CR1_TXIE | I2C_CR1_RXIE;
+	}
 
 #if defined(CONFIG_I2C_TARGET)
 	if (starting_controller_session) {
