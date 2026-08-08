@@ -146,6 +146,9 @@ __weak void clock_init(void)
 		.numerator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), numerator),
 		.denominator = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), denominator),
 		.src = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), src),
+		.ss_enable = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), ss_enable),
+		.ss_step = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), ss_step),
+		.ss_stop = DT_PROP(DT_CHILD(CCM_NODE, sys_pll), ss_stop),
 	};
 
 	if (IS_ENABLED(CONFIG_INIT_SYS_PLL)) {

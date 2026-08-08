@@ -32,6 +32,21 @@ properties:
     description: |
       Denominator of PLL multiplier fraction
 
+  ss-step:
+    type: int
+    description: |
+      Step value to get frequency change step
+
+  ss-stop:
+    type: int
+    description: |
+      Stop value to get frequency change
+
+  ss-enable:
+    type: int
+    description: |
+      Enable spread spectrum modulation
+
   src:
     type: int
     required: true
