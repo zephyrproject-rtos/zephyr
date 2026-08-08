@@ -618,6 +618,30 @@ config RISCV_TRAP_HANDLER_ALIGNMENT
 config GEN_IRQ_VECTOR_TABLE
 	select RISCV_VECTORED_MODE if RISCV_PRIVILEGED
 
+config RISCV_HAS_DEBUG_TRIGGER
+	bool "RISC-V debug trigger module"
+	default y if QEMU_TARGET
+	default y if RISCV_ISA_EXT_SDTRIG
+	help
+	  Select this when the hart implements the tselect, tdata1, and tdata2
+	  trigger CSRs. Accessing these optional CSRs on unsupported hardware
+	  raises an illegal instruction exception.
+
+config ARCH_HAS_WATCHPOINT
+	default y if RISCV_HAS_DEBUG_TRIGGER && RISCV_M_MODE
+
+config RISCV_HAS_TCONTROL
+	bool "RISC-V platform implements the tcontrol CSR"
+	depends on DEBUGPOINT && RISCV_HAS_DEBUG_TRIGGER
+	help
+	  The tcontrol CSR (0x7a5) is optional per the RISC-V Debug Spec.
+	  Accessing an unimplemented CSR raises an illegal instruction exception,
+	  so this must be explicitly declared by the platform rather than probed.
+	  When enabled, the debugpoint backend sets TCONTROL_MPTE and TCONTROL_MTE
+	  at init to allow triggers to fire in M-mode.
+	  Most chips do not require this; enable only if the datasheet documents
+	  the tcontrol CSR (e.g. some SiFive and Andes cores).
+
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP
 
