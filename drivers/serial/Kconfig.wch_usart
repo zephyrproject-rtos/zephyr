@@ -8,5 +8,6 @@ config UART_WCH_USART
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
 	select PINCTRL
+	select RESET
 	help
 	  This option enables the USART driver for CH32V00x SoC family.

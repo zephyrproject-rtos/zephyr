@@ -10,6 +10,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
 
 #include <hal_ch32fun.h>
@@ -17,6 +18,7 @@
 struct usart_wch_config {
 	USART_TypeDef *regs;
 	const struct device *clock_dev;
+	const struct reset_dt_spec reset;
 	uint32_t current_speed;
 	uint8_t parity;
 	uint8_t clock_id;
@@ -42,6 +44,12 @@ static int usart_wch_init(const struct device *dev)
 	int err;
 
 	clock_control_on(config->clock_dev, clock_sys);
+
+	if (!device_is_ready(config->reset.dev)) {
+		return -ENODEV;
+	}
+
+	(void)reset_line_toggle_dt(&config->reset);
 
 	err = pinctrl_apply_state(config->pin_cfg, PINCTRL_STATE_DEFAULT);
 	if (err != 0) {
@@ -327,6 +335,7 @@ static DEVICE_API(uart, usart_wch_driver_api) = {
 		.parity = DT_INST_ENUM_IDX(idx, parity),                                           \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                              \
 		.clock_id = DT_INST_CLOCKS_CELL(idx, id),                                          \
+		.reset = RESET_DT_SPEC_GET(DT_DRV_INST(idx)),                                      \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                    \
 		USART_WCH_IRQ_HANDLER_FUNC(idx)};                                                  \
 	DEVICE_DT_INST_DEFINE(idx, &usart_wch_init, NULL, &usart_wch_##idx##_data,                 \
