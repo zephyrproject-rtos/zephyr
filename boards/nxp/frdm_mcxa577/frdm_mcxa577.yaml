@@ -32,4 +32,5 @@ supported:
   - rtc
   - crc
   - pwm
+  - usbd
 vendor: nxp
