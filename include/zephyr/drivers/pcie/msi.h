@@ -24,6 +24,8 @@
 extern "C" {
 #endif
 
+/**  @cond INTERNAL_HIDDEN */
+
 #ifdef CONFIG_PCIE_CONTROLLER
 struct msi_vector_generic {
 	unsigned int irq;
@@ -57,12 +59,16 @@ struct msi_vector {
 #endif /* CONFIG_PCIE_MSI_X */
 };
 
+/** @endcond */
+
+/** Type for MSI interrupt vector */
 typedef struct msi_vector msi_vector_t;
 
-#ifdef CONFIG_PCIE_MSI_MULTI_VECTOR
 
 /**
  * @brief Allocate vector(s) for the endpoint MSI message(s)
+ *
+ * @kconfig_dep{CONFIG_PCIE_MSI_MULTI_VECTOR}
  *
  * @param bdf the target PCI endpoint
  * @param priority the MSI vectors base interrupt priority
@@ -79,6 +85,8 @@ extern uint8_t pcie_msi_vectors_allocate(pcie_bdf_t bdf,
 /**
  * @brief Connect the MSI vector to the handler
  *
+ * @kconfig_dep{CONFIG_PCIE_MSI_MULTI_VECTOR}
+ *
  * @param bdf the target PCI endpoint
  * @param vector the MSI vector to connect
  * @param routine Interrupt service routine
@@ -92,8 +100,6 @@ extern bool pcie_msi_vector_connect(pcie_bdf_t bdf,
 				    void (*routine)(const void *parameter),
 				    const void *parameter,
 				    uint32_t flags);
-
-#endif /* CONFIG_PCIE_MSI_MULTI_VECTOR */
 
 /**
  * @brief Compute the target address for an MSI posted write.
@@ -142,6 +148,8 @@ extern bool pcie_msi_enable(pcie_bdf_t bdf,
  * @return true if the endpoint support MSI/MSI-X
  */
 extern bool pcie_is_msi(pcie_bdf_t bdf);
+
+/**  @cond INTERNAL_HIDDEN */
 
 /*
  * The first word of the MSI capability is shared with the
@@ -192,6 +200,8 @@ extern bool pcie_is_msi(pcie_bdf_t bdf);
 #define PCIE_VTBL_MUA			4U /* Msg Upper Address offset */
 #define PCIE_VTBL_MD			8U /* Msg Data offset */
 #define PCIE_VTBL_VCTRL			12U /* Vector control offset */
+
+/** @endcond */
 
 #ifdef __cplusplus
 }
