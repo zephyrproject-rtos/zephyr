@@ -1,0 +1,27 @@
+identifier: stm32h7_hdmi_board/stm32h747xx/m7
+name: STM32H7 HDMI Board (M7)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 1024
+supported:
+  - can
+  - crc
+  - entropy
+  - flash
+  - gpio
+  - i2c
+  - input
+  - led
+  - memc
+  - netif:eth
+  - nvs
+  - qspi
+  - spi
+  - uart
+  - usb_device
+  - usbd
+vendor: antmicro
