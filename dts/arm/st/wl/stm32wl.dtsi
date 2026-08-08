@@ -386,7 +386,6 @@
 			clocks = <&rcc STM32_CLOCK(APB3, 0)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
-			use-subghzspi-nss;
 
 			radio@0 {
 				compatible = "st,stm32wl-subghz-radio";
