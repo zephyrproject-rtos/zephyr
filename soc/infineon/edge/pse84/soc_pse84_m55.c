@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,15 @@
 #define CY_IPC_MAX_ENDPOINTS (8UL)
 #define PSE84_CPU_FREQ_HZ    DT_PROP(DT_PATH(cpus, cpu_1), clock_frequency)
 #define CM55_STARTUP_WAIT_MS 50U
+
+/*
+ * IPC pipe endpoint table consumed by Cy_IPC_Pipe_Config() during SoC
+ * bring-up.  Declared outside the SRF guard because both the SRF
+ * (pse84_srf_bringup()) and the non-SRF soc_early_init_hook() paths configure
+ * the IPC pipe.  The type comes from cy_pdl.h, which is included in every
+ * build.
+ */
+static cy_stc_ipc_pipe_ep_t system_ipc_pipe_ep_array[CY_IPC_MAX_ENDPOINTS];
 
 /* -------------------------------------------------------------------------- */
 /* CM55 SRF client                                                            */
@@ -148,6 +157,46 @@ static void pse84_srf_ipc_init(void)
 	}
 }
 
+/*
+ * Bring up the CM55 SRF/IPC client: initialize the IPC semaphore, the SRF
+ * request pool and the IPC/SRF client, publish the system clock and configure
+ * the IPC pipe.  Shared verbatim by the cold-boot path (soc_early_init_hook())
+ * and the DS-RAM warm-boot re-init (ifx_soc_srf_client_reinit()).  The caller
+ * owns any wait needed for the CM33 to publish its endpoint first.
+ */
+static void pse84_srf_bringup(void)
+{
+	Cy_IPC_Sema_Init(IPC0_SEMA_CH_NUM, 0, NULL);
+	pse84_srf_pool_init();
+	pse84_srf_ipc_init();
+
+	SystemCoreClockSetup(PSE84_CPU_FREQ_HZ, PSE84_CPU_FREQ_HZ);
+
+	Cy_IPC_Pipe_Config(system_ipc_pipe_ep_array);
+}
+
+#if defined(CONFIG_PM_S2RAM)
+void ifx_soc_srf_client_reinit(void)
+{
+	/*
+	 * DeepSleep-RAM warm-boot re-establishment of the CM55 SRF/IPC client.
+	 *
+	 * On DS-RAM the CM33 secure image cold-boots from scratch at the same time
+	 * this core resumes from retained RAM.  soc_early_init_hook() is not re-run
+	 * on the warm-boot path, so the SRF client, IPC handle and shared memory are
+	 * never re-synchronized with the freshly published CM33 endpoint and the
+	 * first secure request faults.  Re-run the same SRF bring-up the cold-boot
+	 * path uses to rebuild the client.  Runs in thread context, where the
+	 * blocking IPC handle handshake (mtb_ipc_get_handle) is allowed.
+	 *
+	 * No CM33 startup delay is needed here (unlike cold boot): by the time the
+	 * application reaches its post-wake resume the CM33 has long finished
+	 * booting, and mtb_ipc_get_handle() blocks until the CM33 endpoint is up.
+	 */
+	pse84_srf_bringup();
+}
+#endif /* CONFIG_PM_S2RAM */
+
 #endif /* CONFIG_PSOC_EDGE_M55_SRF_SUPPORT */
 
 /* -------------------------------------------------------------------------- */
@@ -156,8 +205,6 @@ static void pse84_srf_ipc_init(void)
 
 void soc_early_init_hook(void)
 {
-	static cy_stc_ipc_pipe_ep_t system_ipc_pipe_ep_array[CY_IPC_MAX_ENDPOINTS];
-
 	/* Enable Loop and branch info cache */
 	__DMB();
 	__ISB();
@@ -171,22 +218,17 @@ void soc_early_init_hook(void)
 	 */
 	Cy_SysLib_Delay(CM55_STARTUP_WAIT_MS);
 
-	/* Init is done on CM33 NS; this call only retrieves the configuration. */
-	Cy_IPC_Sema_Init(IPC0_SEMA_CH_NUM, 0, NULL);
-
-	pse84_srf_pool_init();
-	pse84_srf_ipc_init();
+	/* IPC semaphore, SRF pool/client, system clock and IPC pipe. */
+	pse84_srf_bringup();
 #else
 	/* Initializes the system */
 	ifx_cycfg_init();
-#endif
 
 	/* Initialize SystemCoreClock variable. */
 	SystemCoreClockSetup(PSE84_CPU_FREQ_HZ, PSE84_CPU_FREQ_HZ);
 
 	Cy_IPC_Pipe_Config(system_ipc_pipe_ep_array);
 
-#if !defined(CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
 	/*
 	 * Wait for the CM33 to finish configuring peripherals before the CM55
 	 * application proceeds.
