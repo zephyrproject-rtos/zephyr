@@ -69,6 +69,27 @@ config MCUMGR_TRANSPORT_NETBUF_USER_DATA_SIZE
 	  is sufficient for UART and shell, a value of 8 is sufficient for Bluetooth. For UDP, the
 	  userdata must be large enough to hold IPv4/IPv6 addresses.
 
+if NET_BUF_POOL_USAGE
+
+config MCUMGR_TRANSPORT_NETBUF_OUTGOING_RESERVE
+	bool "Reserve outgoing buffer"
+	help
+	  If enabled, will reserve one net buffer for usage exclusively for SMP responses, this
+	  ensures that if a command is received and processed correctly then an error response
+	  is guaranteed to be able to be output.
+
+config MCUMGR_TRANSPORT_NETBUF_OUTGOING_RESERVE_WAIT_TIME_MSEC
+	int "Buffer semaphore wait time"
+	depends on MCUMGR_TRANSPORT_NETBUF_OUTGOING_RESERVE
+	default 30
+	range 0 3000
+	help
+	  Maximum time to wait for the SMP buffer allocation semaphore to become available, if
+	  set to 0 then will not wait. This maximum wait time applies to both incoming and
+	  outgoing buffer requests.
+
+endif # NET_BUF_POOL_USAGE
+
 module = MCUMGR_TRANSPORT
 module-str = mcumgr_transport
 source "subsys/logging/Kconfig.template.log_config"
