@@ -32,10 +32,6 @@ LOG_MODULE_DECLARE(wifi_nrf, CONFIG_WIFI_NRF70_LOG_LEVEL);
 #include "wpa_supp_if.h"
 #include "net_if.h"
 
-#ifdef CONFIG_NRF70_STA_MODE
-static struct net_if_mcast_monitor mcast_monitor;
-#endif /* CONFIG_NRF70_STA_MODE */
-
 void nrf_wifi_set_iface_event_handler(void *os_vif_ctx,
 						struct nrf_wifi_umac_event_set_interface *event,
 						unsigned int event_len)
@@ -382,6 +378,9 @@ enum ethernet_hw_caps nrf_wifi_if_caps_get(const struct device *dev __unused,
 #ifdef CONFIG_NRF70_PROMISC_DATA_RX
 	caps |= ETHERNET_PROMISC_MODE;
 #endif
+#ifdef CONFIG_NRF70_STA_MODE
+	caps |= ETHERNET_HW_FILTERING;
+#endif /* CONFIG_NRF70_STA_MODE */
 	return caps;
 }
 
@@ -644,85 +643,6 @@ out:
 	return ret;
 }
 
-#ifdef CONFIG_NRF70_STA_MODE
-static void ip_maddr_event_handler(struct net_if *iface,
-	const struct net_addr *addr, bool is_joined)
-{
-	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
-	struct net_eth_addr mac_addr;
-	struct nrf_wifi_umac_mcast_cfg *mcast_info = NULL;
-	enum nrf_wifi_status status;
-	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	int ret;
-
-	vif_ctx_zep = nrf_wifi_get_vif_ctx(iface);
-	if (!vif_ctx_zep) {
-		return;
-	}
-
-	ret = k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
-	if (ret != 0) {
-		LOG_ERR("%s: Failed to lock vif_lock", __func__);
-		return;
-	}
-
-	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
-	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
-		LOG_DBG("%s: rpu_ctx_zep or rpu_ctx is NULL",
-			__func__);
-		goto unlock;
-	}
-
-	mcast_info = nrf_wifi_osal_mem_zalloc(sizeof(*mcast_info));
-
-	if (!mcast_info) {
-		LOG_ERR("%s: Unable to allocate memory of size %d "
-			"for mcast_info", __func__, sizeof(*mcast_info));
-		goto unlock;
-	}
-
-	switch (addr->family) {
-	case NET_AF_INET:
-		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
-		break;
-	case NET_AF_INET6:
-		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
-		break;
-	default:
-		LOG_ERR("%s: Invalid address family %d", __func__, addr->family);
-		break;
-	}
-
-	if (is_joined) {
-		mcast_info->type = MCAST_ADDR_ADD;
-	} else {
-		mcast_info->type = MCAST_ADDR_DEL;
-	}
-
-	memcpy(((char *)(mcast_info->mac_addr)),
-		   &mac_addr,
-		   NRF_WIFI_ETH_ADDR_LEN);
-
-	status = nrf_wifi_sys_fmac_set_mcast_addr(rpu_ctx_zep->rpu_ctx,
-					      vif_ctx_zep->vif_idx,
-					      mcast_info);
-	if (status == NRF_WIFI_STATUS_FAIL) {
-		char mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
-
-		LOG_ERR("%s: nrf_wifi_fmac_set_multicast failed	for"
-			" mac addr=%s",
-			__func__,
-			nrf_wifi_sprint_ll_addr_buf(mac_addr.addr,
-						   WIFI_MAC_ADDR_LEN,
-						   mac_string_buf,
-						   sizeof(mac_string_buf)));
-	}
-unlock:
-	nrf_wifi_osal_mem_free(mcast_info);
-	k_mutex_unlock(&vif_ctx_zep->vif_lock);
-}
-#endif /* CONFIG_NRF70_STA_MODE */
-
 #ifdef CONFIG_WIFI_FIXED_MAC_ADDRESS_ENABLED
 BUILD_ASSERT(sizeof(CONFIG_WIFI_FIXED_MAC_ADDRESS) - 1 == ((WIFI_MAC_ADDR_LEN * 2) + 5),
 					"Invalid fixed MAC address length");
@@ -854,9 +774,6 @@ void nrf_wifi_if_init_zep(struct net_if *iface)
 	net_eth_carrier_on(iface);
 	net_if_dormant_on(iface);
 
-#ifdef CONFIG_NRF70_STA_MODE
-	net_if_mcast_mon_register(&mcast_monitor, iface, ip_maddr_event_handler);
-#endif /* CONFIG_NRF70_STA_MODE */
 #ifdef CONFIG_NRF70_DATA_TX
 	k_work_init(&vif_ctx_zep->nrf_wifi_net_iface_work,
 		    nrf_wifi_net_iface_work_handler);
@@ -1366,6 +1283,27 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 		}
 	}
 #endif
+#ifdef CONFIG_NRF70_STA_MODE
+	else if (type == ETHERNET_CONFIG_TYPE_FILTER) {
+		struct nrf_wifi_umac_mcast_cfg mcast_info;
+		enum nrf_wifi_status status;
+
+		if (config->filter.set) {
+			mcast_info.type = MCAST_ADDR_ADD;
+		} else {
+			mcast_info.type = MCAST_ADDR_DEL;
+		}
+
+		memcpy(mcast_info.mac_addr, config->filter.mac_address.addr, NRF_WIFI_ETH_ADDR_LEN);
+
+		status = nrf_wifi_sys_fmac_set_mcast_addr(rpu_ctx_zep->rpu_ctx,
+							  vif_ctx_zep->vif_idx, &mcast_info);
+		if (status == NRF_WIFI_STATUS_FAIL) {
+			ret = -EIO;
+			goto unlock;
+		}
+	}
+#endif /* CONFIG_NRF70_STA_MODE */
 	ret = 0;
 unlock:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
