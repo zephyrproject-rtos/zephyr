@@ -27,5 +27,6 @@ supported:
   - reset
   - rtc
   - uart
+  - usbd
   - watchdog
 vendor: microchip
