@@ -21,12 +21,15 @@ to :code:`0` which is the GTBS bearer.
    ccp_call_control_server --help
    ccp_call_control_server - Bluetooth CCP Call Control Server shell commands
    Subcommands:
-     init             : Initialize CCP Call Control Server
-     set_bearer_name  : Set bearer name [index] <name>
-     get_bearer_name  : Get bearer name [index]
-     get_bearer_uci   : Get bearer UCI [index]
-     set_bearer_tech  : Set bearer technology [index] <technology>
-     get_bearer_tech  : Get bearer technology [index]
+     init                    : Initialize CCP Call Control Server
+     set_bearer_name         : Set bearer name [index] <name>
+     get_bearer_name         : Get bearer name [index]
+     get_bearer_uci          : Get bearer UCI [index]
+     set_bearer_tech         : Set bearer technology [index] <technology>
+     get_bearer_tech         : Get bearer technology [index]
+     set_bearer_uri_schemes  : Set bearer URI schemes supported list [index] <URI schemes>
+                              (e.g. "tel,skype")
+     get_bearer_uri_schemes  : Get bearer URI schemes supported list [index]
 
 
 Example Usage
@@ -82,6 +85,16 @@ Setting and getting the bearer technology
    uart:~$ ccp_call_control_server set_bearer_tech 0x02
    Bearer[0] new technology: 4G (0x02)
 
+Setting and getting the bearer URI supported schemes list
+---------------------------------------------------------
+
+.. code-block:: console
+
+   uart:~$ ccp_call_control_server get_bearer_uri_schemes
+   Bearer[0] URI schemes supported list: tel,skype
+   uart:~$ ccp_call_control_server set_bearer_uri_schemes "tel,teamspeak"
+   Bearer[0] new URI schemes supported list: tel,teamspeak
+
 Call Control Client
 *******************
 The Call Control Client is a role that typically resides on resource constrained devices such as
@@ -97,7 +110,12 @@ For example a remote device may have an incoming call that can be accepted by th
    uart:~$ ccp_call_control_client --help
    ccp_call_control_client - Bluetooth CCP Call Control Client shell commands
    Subcommands:
-     discover  : Discover GTBS and TBS on remote device
+     discover          : Discover GTBS and TBS on remote device
+     read_bearer_name  : Read bearer name [index]
+     read_bearer_uci   : Read bearer UCI [index]
+     read_bearer_tech  : Read bearer technology [index]
+     read_bearer_tech  : Read bearer URI schemes supported list [index]
+
 
 Example Usage when connected
 ============================
