@@ -38,7 +38,7 @@ int dwmac_bus_init(const struct device *dev __unused)
 static struct dwmac_dma_desc __aligned(CONFIG_DCACHE_LINE_SIZE)
 			dwmac_tx_rx_descriptors[NB_TX_DESCS + NB_RX_DESCS];
 
-static struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
+static const struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 
 int dwmac_platform_init(const struct device *dev)
 {

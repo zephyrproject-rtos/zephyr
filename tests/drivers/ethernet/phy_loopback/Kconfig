@@ -1,0 +1,11 @@
+# Copyright (c) 2026, Ylhyra ehf.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Ethernet PHY loopback test"
+
+config TEST_ETH_PHY_LOOPBACK_REQUIRE_PRESSURE
+	bool "Require receive-buffer pressure"
+	help
+	  Require the burst test to lose at least one accepted frame.
+
+source "Kconfig.zephyr"
