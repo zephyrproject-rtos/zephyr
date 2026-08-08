@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Clovis Corde
+# SPDX-License-Identifier: Apache-2.0
+
+config DELTA_BACKEND_BSDIFFHS
+	bool "bsdiff + heatshrink delta backend"
+	select HEATSHRINK
+	help
+	  Ships delta_backend_bsdiffhs: a delta backend using bsdiff for
+	  binary diffing and heatshrink for stream compression.
