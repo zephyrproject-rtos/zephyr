@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  tags:
+    - drivers
+    - sensor
+tests:
+  drivers.sensor.photosensor.a:
+    extra_args: FILE_SUFFIX=a
+  drivers.sensor.photosensor.b:
+    extra_args: FILE_SUFFIX=b
+  drivers.sensor.photosensor.c:
+    extra_args: FILE_SUFFIX=c
+  drivers.sensor.photosensor.d:
+    extra_args: FILE_SUFFIX=d

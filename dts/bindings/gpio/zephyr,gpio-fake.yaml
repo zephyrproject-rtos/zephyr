@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fake GPIO device used as stub or mock for testing
+
+compatible: "zephyr,gpio-fake"
+
+include:
+  - base.yaml
+  - gpio-controller.yaml
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

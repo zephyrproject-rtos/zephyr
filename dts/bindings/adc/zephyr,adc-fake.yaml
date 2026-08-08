@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fake ADC device used as stub or mock for testing
+
+compatible: "zephyr,adc-fake"
+
+include: adc-controller.yaml
+
+io-channel-cells:
+  - input
