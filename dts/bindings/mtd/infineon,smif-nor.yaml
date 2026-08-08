@@ -1,0 +1,150 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon SMIF NOR flash device.
+
+  One node per external NOR flash device attached to an infineon,smif
+  controller. This node must be a child of an infineon,smif controller node
+  (on the "smif" bus); it exposes the Zephyr flash API for the memory in the
+  slot selected by "infineon,chip-select".
+
+  SFDP auto-discovery is intentionally not used, as it issues command-mode
+  transactions that are unsafe on a device that is executed in place from and
+  already configured by the boot ROM. The device geometry advertised to the
+  Zephyr flash API is taken from the properties below.
+
+compatible: "infineon,smif-nor"
+
+include: [flash-controller.yaml]
+
+on-bus: smif
+
+properties:
+  reg:
+    required: true
+    description: |
+      Base address and size of the device's memory-mapped XIP window.
+
+  infineon,chip-select:
+    type: int
+    required: true
+    enum: [0, 1, 2, 3]
+    description: |
+      SMIF chip-select / slave-select slot index (0..3) that addresses this
+      memory device on the parent SMIF controller.
+
+  infineon,data-select:
+    type: int
+    required: true
+    enum: [0, 1, 2, 3]
+    description: |
+      SMIF data-line selection (CY_SMIF_DATA_SELx) routing this slot's data
+      signals to a group of SMIF I/O pads.
+
+  infineon,address-bytes:
+    type: int
+    required: true
+    enum: [3, 4]
+    description: Number of address bytes used by the memory device.
+
+  infineon,protocol:
+    type: string
+    required: true
+    enum:
+      - "single-spi"
+      - "quad-spi"
+    description: |
+      Bus protocol used for the read command. "quad-spi" issues a
+      1-4-4 quad read with a mode byte, "single-spi" issues a plain
+      single-line (1-1-1) read, for a device driven in legacy SPI mode.
+      Program, erase and status commands are single-line for both protocols,
+      so devices with different protocols can share one SMIF instance without
+      changing controller-wide settings.
+
+  infineon,read-command:
+    type: int
+    required: true
+    description: |
+      Read opcode used in command mode (0xEB 1-4-4 quad read with mode byte
+      0x01 for "quad-spi", 0x0C single-line fast read for "single-spi"), with
+      dummy cycles given by "infineon,read-dummy-cycles".
+
+  infineon,read-dummy-cycles:
+    type: int
+    required: true
+    description: Number of dummy cycles for the read command.
+
+  infineon,program-command:
+    type: int
+    required: true
+    description: |
+      Single-line page-program opcode.
+
+  infineon,erase-command:
+    type: int
+    required: true
+    description: |
+      Block-erase opcode used for a sector erase of "erase-block-size" bytes.
+
+  infineon,page-size:
+    type: int
+    required: true
+    description: Program page size in bytes used by the page-program command.
+
+  infineon,erase-time-ms:
+    type: int
+    required: true
+    description: |
+      Maximum sector-erase time in milliseconds, used as the busy-wait timeout
+      after a sector erase. Increase for large sectors / high-density parts.
+
+  infineon,chip-erase-time-ms:
+    type: int
+    required: true
+    description: Maximum chip-erase time in milliseconds (busy-wait timeout).
+
+  infineon,program-time-us:
+    type: int
+    required: true
+    description: Maximum page-program time in microseconds (busy-wait timeout).
+
+  infineon,hybrid-region-address:
+    type: array
+    description: |
+      Start address of each hybrid (mixed-size) erase region, one entry per
+      region. When present, the five "infineon,hybrid-region-*" arrays
+      describe a device whose sectors are not uniform. Each region is erased
+      with its own opcode and sector size, overriding the uniform
+      "infineon,erase-command" / "erase-block-size" for addresses it covers.
+      All five arrays must have the same number of entries.
+
+  infineon,hybrid-region-sectors:
+    type: array
+    description: Number of sectors in each hybrid erase region.
+
+  infineon,hybrid-region-erase-command:
+    type: array
+    description: Sector-erase opcode used within each hybrid erase region.
+
+  infineon,hybrid-region-erase-size:
+    type: array
+    description: Sector size in bytes within each hybrid erase region.
+
+  infineon,hybrid-region-erase-time-ms:
+    type: array
+    description: Per-sector erase time in milliseconds for each hybrid region.
+
+  write-block-size:
+    type: int
+    required: true
+    description: |
+      Minimum write alignment exposed to the Zephyr flash API.
+
+  erase-block-size:
+    type: int
+    required: true
+    description: Smallest erasable sector size in bytes. For hybrid devices,
+      this is the most prevalent sector size of all hybrid regions.

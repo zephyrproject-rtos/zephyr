@@ -162,6 +162,19 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		uint32_t port_num = CAT1_PINMUX_GET_PORT_NUM(pins[i].pinmux);
 		uint32_t pin_num = CAT1_PINMUX_GET_PIN_NUM(pins[i].pinmux);
 
+#if defined(CONFIG_BUILD_WITH_TFM) && defined(CY_IP_MXSMIF)
+		/* Under TF-M the dedicated SMIF GPIO pins (flash / PSRAM data and
+		 * clock lines) are attributed secure and are configured by the
+		 * secure firmware / boot ROM; a non-secure access to them would
+		 * fault. Skip them here. Regular GPIO pins (for example a SMIF
+		 * chip-select routed through a normal port) stay non-secure and are
+		 * configured normally.
+		 */
+		if (CY_GPIO_IS_SMIF_GPIO(gpio_ports[port_num])) {
+			continue;
+		}
+#endif /* defined(CONFIG_BUILD_WITH_TFM) && defined(CY_IP_MXSMIF) */
+
 		/* Initialize pin */
 #if defined(CY_PDL_TZ_ENABLED)
 		Cy_GPIO_Pin_SecFastInit(gpio_ports[port_num], pin_num, drv_mode, 1, hsiom);
@@ -191,8 +204,29 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		}
 
 #if defined(CY_IP_MXS22IOSS)
-		Cy_GPIO_SetDriveSel(gpio_ports[port_num], pin_num,
-				    soc_gpio_get_drv_strength(pins[i].pincfg));
+		{
+			uint32_t drv_sel = soc_gpio_get_drv_strength(pins[i].pincfg);
+
+			/* SMIF GPIO ports use CFG_DRIVE_EXT{0,1} (8 bits/pin, 4 pins/reg)
+			 * rather than GPIO_PRT_CFG_EXT targeted by Cy_GPIO_SetDriveSel.
+			 */
+			if (CY_GPIO_IS_SMIF_GPIO(gpio_ports[port_num])) {
+				volatile SMIF_CORE_SMIF_GPIO_SMIF_PRT_Type *sp =
+					(volatile SMIF_CORE_SMIF_GPIO_SMIF_PRT_Type *)
+					gpio_ports[port_num];
+				uint32_t shift = (pin_num & 3U) * 8U;
+				uint32_t mask = ~(0xFFU << shift);
+				uint32_t bval = (drv_sel & 0xFFU) << shift;
+
+				if (pin_num < 4U) {
+					sp->CFG_DRIVE_EXT0 = (sp->CFG_DRIVE_EXT0 & mask) | bval;
+				} else {
+					sp->CFG_DRIVE_EXT1 = (sp->CFG_DRIVE_EXT1 & mask) | bval;
+				}
+			} else {
+				Cy_GPIO_SetDriveSel(gpio_ports[port_num], pin_num, drv_sel);
+			}
+		}
 
 		/* CFGOUT3 internal pull-up: value from DT, 0 = disabled. */
 		if (drv_mode == CY_GPIO_DM_CFGOUT3_STRONG_PULLUP_HIGHZ) {
