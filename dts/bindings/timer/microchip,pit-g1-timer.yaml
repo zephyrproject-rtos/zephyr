@@ -1,0 +1,30 @@
+# Copyright (C) 2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip G1 PIT
+
+description: |
+  Microchip Periodic Interval Timer driver.
+
+  Group G1 PIT driver supports following hardware peripherals:
+    - module name="PIT" id="6079" version="C"
+
+compatible: "microchip,pit-g1-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: Clock frequency in Hz
