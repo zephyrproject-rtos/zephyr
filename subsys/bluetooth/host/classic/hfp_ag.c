@@ -794,7 +794,7 @@ static void hfp_ag_close_sco(struct bt_hfp_ag *ag)
 
 	if (sco != NULL) {
 		LOG_DBG("Disconnect sco %p", sco);
-		bt_conn_disconnect(sco, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+		bt_conn_disconnect(sco, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 }
 
