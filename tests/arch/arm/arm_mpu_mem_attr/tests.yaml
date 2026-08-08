@@ -1,0 +1,11 @@
+tests:
+  arch.arm.mpu_mem_attr:
+    platform_allow:
+      - zynqmp_rpu
+      - versal2_rpu
+    integration_platforms:
+      - zynqmp_rpu
+      - versal2_rpu
+    tags:
+      - arm
+      - mpu

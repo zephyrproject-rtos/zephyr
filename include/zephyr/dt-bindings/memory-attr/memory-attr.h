@@ -52,6 +52,20 @@
 #define  DT_MEM_OOO			BIT(2)
 /** @brief Memory is usable for DMA. */
 #define  DT_MEM_DMA			BIT(3)
+/** @brief Memory is readable. */
+#define  DT_MEM_READABLE		BIT(4)
+/** @brief Memory is writable. */
+#define  DT_MEM_WRITABLE		BIT(5)
+/** @brief Memory is executable. */
+#define  DT_MEM_EXECUTABLE		BIT(6)
+/** @brief Memory has architecture-defined shareability. */
+#define  DT_MEM_SHAREABLE		BIT(7)
+/** @brief Memory is explicitly non-cacheable. */
+#define  DT_MEM_NON_CACHEABLE		BIT(8)
+/** @brief Memory is accessible from unprivileged mode. */
+#define  DT_MEM_USERSPACE		BIT(9)
+/** @brief Mask for generic memory permission attributes. */
+#define  DT_MEM_PERM_MASK		(DT_MEM_READABLE | DT_MEM_WRITABLE | DT_MEM_EXECUTABLE)
 /** @brief Generic memory attributes are unknown. */
 #define  DT_MEM_UNKNOWN			BIT(15)
 /* to be continued */

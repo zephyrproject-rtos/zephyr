@@ -49,11 +49,15 @@ static int ram_console_out(int character)
 static int ram_console_init(void)
 {
 #ifdef CONFIG_RAM_CONSOLE_BUFFER_SECTION
+#ifdef CONFIG_MMU
 	mm_reg_t ram_console_va;
 
 	device_map((mm_reg_t *)&ram_console_va, DT_REG_ADDR(DT_CHOSEN(zephyr_ram_console)),
 		   CONFIG_RAM_CONSOLE_BUFFER_SIZE, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 	ram_console = (char *)ram_console_va;
+#else
+	ram_console = ram_console_buf;
+#endif
 #else
 	ram_console = ram_console_buf;
 #endif
