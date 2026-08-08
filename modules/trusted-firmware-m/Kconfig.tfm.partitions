@@ -29,8 +29,8 @@ config TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
 	  repository.
 
 config TFM_PARTITION_CRYPTO
-	bool "Secure partition 'Crypto'"
-	default y
+	def_bool y
+	depends on PSA_CRYPTO_PROVIDER_TFM
 	help
 	  Setting this option will cause '-DTFM_PARTITION_CRYPTO'
 	  to be passed to the TF-M build system. Look at 'config_default.cmake'
