@@ -1,0 +1,16 @@
+# Copyright (c) 2026, Bana Tawalbeh
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_OPENTITAN_AES
+	bool "OpenTitan AES driver"
+	default y
+	depends on DT_HAS_LOWRISC_OPENTITAN_AES_ENABLED
+	help
+	  Enable this option to use OpenTitan AES hardware accelerator
+
+config CRYPTO_OPENTITAN_MAX_SESSION
+	int "Maximum number of concurrent sessions"
+	default 2
+	help
+	  This determines the number of pre-allocated session structures
+	  available in RAM.
