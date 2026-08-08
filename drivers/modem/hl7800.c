@@ -1851,7 +1851,7 @@ static bool on_cmd_atcmdinfo_iccid(struct net_buf **buf, uint16_t len)
 	int iccid_len;
 	size_t out_len;
 
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 
 	LOG_DBG("+CCID: %s", value);
@@ -1903,7 +1903,7 @@ static bool on_cmd_atcmdinfo_imsi(struct net_buf **buf, uint16_t len)
 		len = MDM_HL7800_IMSI_MAX_STRLEN;
 	}
 
-	out_len = net_buf_linearize(iface_ctx.mdm_imsi, MDM_HL7800_IMSI_MAX_STR_SIZE,
+	out_len = net_buf_linearize(iface_ctx.mdm_imsi, MDM_HL7800_IMSI_MAX_STR_SIZE - 1,
 				    *buf, 0, len);
 	iface_ctx.mdm_imsi[out_len] = 0;
 
@@ -2075,7 +2075,7 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	char temp_addr_str[HL7800_IPV6_ADDR_LEN];
 	k_timeout_t delay;
 
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 	search_start = value;
 	LOG_DBG("IP info: %s", value);
@@ -2123,6 +2123,13 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 
 	/* get new IP addr */
 	addr_len = sm_start - addr_start;
+	/* addr_len is derived from delimiter positions in the network-supplied
+	 * response and must not exceed the fixed temp_addr_str buffer.
+	 */
+	if (addr_len >= sizeof(temp_addr_str)) {
+		LOG_ERR("IP addr too long");
+		return true;
+	}
 	strncpy(temp_addr_str, addr_start, addr_len);
 	temp_addr_str[addr_len] = 0;
 	LOG_DBG("IP addr: %s", temp_addr_str);
@@ -2141,6 +2148,10 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		sm_start += 1;
 		/* store new subnet mask */
 		addr_len = delims[3] - sm_start;
+		if (addr_len >= sizeof(temp_addr_str)) {
+			LOG_ERR("Subnet too long");
+			return true;
+		}
 		strncpy(temp_addr_str, sm_start, addr_len);
 		temp_addr_str[addr_len] = 0;
 		ret = net_addr_pton(AF_INET, temp_addr_str, &iface_ctx.subnet);
@@ -2152,6 +2163,10 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		/* store new gateway */
 		addr_start = delims[3] + 1;
 		addr_len = delims[4] - addr_start;
+		if (addr_len >= sizeof(temp_addr_str)) {
+			LOG_ERR("Gateway too long");
+			return true;
+		}
 		strncpy(temp_addr_str, addr_start, addr_len);
 		temp_addr_str[addr_len] = 0;
 		ret = net_addr_pton(AF_INET, temp_addr_str, &iface_ctx.gateway);
@@ -2164,9 +2179,20 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	/* store new dns */
 	addr_start = delims[4] + 1;
 	addr_len = delims[5] - addr_start;
+	if (addr_len >= sizeof(temp_addr_str)) {
+		LOG_ERR("DNS addr too long");
+		return true;
+	}
 	strncpy(temp_addr_str, addr_start, addr_len);
 	temp_addr_str[addr_len] = 0;
 	if (is_ipv4) {
+		/* dns_v4_string is smaller than temp_addr_str, so it needs its
+		 * own bound before the copy below.
+		 */
+		if (addr_len >= sizeof(iface_ctx.dns_v4_string)) {
+			LOG_ERR("IPv4 DNS addr too long");
+			return true;
+		}
 		ret = strncmp(temp_addr_str, iface_ctx.dns_v4_string, addr_len);
 		if (ret != 0) {
 			iface_ctx.dns_ready = false;
@@ -2259,7 +2285,7 @@ static bool on_cmd_atcmdinfo_operator_status(struct net_buf **buf, uint16_t len)
 	char *search_start;
 	int i;
 
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 
 	/* For AT+COPS=?, result is most likely longer than size of log string */
@@ -2319,7 +2345,7 @@ static bool on_cmd_atcmdinfo_serial_number(struct net_buf **buf, uint16_t len)
 	}
 
 	/* get msg data */
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 
 	/* find ':' */
@@ -2352,7 +2378,7 @@ static bool on_cmd_radio_tech_status(struct net_buf **buf, uint16_t len)
 	size_t out_len;
 	char value[MDM_MAX_RESP_SIZE];
 
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 	iface_ctx.mdm_rat = strtol(value, NULL, 10);
 	LOG_INF("+KSRAT: %d", iface_ctx.mdm_rat);
@@ -2368,7 +2394,7 @@ static bool on_cmd_radio_band_configuration(struct net_buf **buf, uint16_t len)
 	char value[MDM_MAX_RESP_SIZE];
 	char n_tmp[sizeof("#########")];
 
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 
 	if (value[0] != (iface_ctx.mdm_rat == MDM_RAT_CAT_M1 ? '0' : '1')) {
@@ -2411,7 +2437,7 @@ static bool on_cmd_radio_active_bands(struct net_buf **buf, uint16_t len)
 	size_t out_len;
 	char value[MDM_MAX_RESP_SIZE];
 
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 
 	if (strlen(value) < sizeof("#,###################")) {
@@ -2654,7 +2680,7 @@ static bool on_cmd_startup_report(struct net_buf **buf, uint16_t len)
 	char value[MDM_MAX_RESP_SIZE];
 
 	memset(value, 0, sizeof(value));
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	if (out_len > 0) {
 		set_startup_state(strtol(value, NULL, 10));
 	} else {
@@ -2958,7 +2984,7 @@ static bool on_cmd_gps_event(struct net_buf **buf, uint16_t len)
 	int8_t status = -1;
 
 	memset(value, 0, sizeof(value));
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	if (out_len > 0) {
 		start = value;
 		event = strtol(start, &end, 10);
@@ -3490,7 +3516,7 @@ static bool on_cmd_network_report_query(struct net_buf **buf, uint16_t len)
 	int l;
 	char val[MDM_MAX_RESP_SIZE];
 
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	pos = strchr(value, ',');
 	if (pos) {
 		l = (value + out_len) - pos;
@@ -3778,7 +3804,7 @@ static bool on_cmd_atcmdinfo_rssi(struct net_buf **buf, uint16_t len)
 	char *search_start;
 	int i;
 
-	out_len = net_buf_linearize(value, len, *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 	search_start = value;
 
@@ -3839,7 +3865,7 @@ static bool on_cmd_sock_ind(struct net_buf **buf, uint16_t len, const char *cons
 
 	iface_ctx.last_error = 0;
 
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 
 	/* find ',' because this is the format we expect */
@@ -3903,7 +3929,7 @@ static bool on_cmd_sock_error_code(struct net_buf **buf, uint16_t len)
 	char value[MDM_MAX_RESP_SIZE];
 	size_t out_len;
 
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 	iface_ctx.last_error = strtol(value, NULL, 10);
 	LOG_ERR("Error code: %s", value);
@@ -3956,7 +3982,7 @@ static bool on_cmd_sock_notif(struct net_buf **buf, uint16_t len)
 	bool trigger_sem = true;
 	int id;
 
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 
 	/* find ',' because this is the format we expect */
@@ -4055,7 +4081,7 @@ static bool on_cmd_sockcreate(enum net_sock_type type, struct net_buf **buf, uin
 	char value[MDM_MAX_RESP_SIZE];
 	struct hl7800_socket *sock = NULL;
 
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	value[out_len] = 0;
 	iface_ctx.last_socket_id = strtol(value, NULL, 10);
 	if (type == SOCK_STREAM) {
@@ -4453,7 +4479,7 @@ static bool on_cmd_device_service_ind(struct net_buf **buf, uint16_t len)
 	size_t out_len;
 
 	memset(value, 0, sizeof(value));
-	out_len = net_buf_linearize(value, sizeof(value), *buf, 0, len);
+	out_len = net_buf_linearize(value, sizeof(value) - 1, *buf, 0, len);
 	if (out_len > 0) {
 		iface_ctx.device_services_ind = strtol(value, NULL, 10);
 	}
@@ -4862,7 +4888,7 @@ static void hl7800_rx(void *p1, void *p2, void *p3)
 			/* Handle unhandled commands */
 			if (IS_ENABLED(HL7800_LOG_UNHANDLED_RX_MSGS) &&
 			    !cmd_handled && frag && len > 1) {
-				out_len = net_buf_linearize(msg, sizeof(msg),
+				out_len = net_buf_linearize(msg, sizeof(msg) - 1,
 							    rx_buf, 0, len);
 				msg[out_len] = 0;
 				LOG_HEXDUMP_DBG((const uint8_t *)&msg, len,
