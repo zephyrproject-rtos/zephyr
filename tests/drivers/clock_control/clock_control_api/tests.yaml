@@ -16,6 +16,8 @@ tests:
       - bg29_rb4420a
       - sam_e54_xpro
       - pic32cm_jh01_cpro
+      - pic32cz_ca80_cult
+      - pic32cz_ca90_cult
     integration_platforms:
       - esp32_devkitc/esp32/procpu
   drivers.clock.clock_control_nrf5:
