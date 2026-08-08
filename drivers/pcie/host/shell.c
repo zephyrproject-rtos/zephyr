@@ -391,12 +391,132 @@ static int cmd_pcie_ls(const struct shell *sh, size_t argc, char **argv)
 
 	return 0;
 }
+
+/* Subcommand: pcie link set_speed <bus:dev.func> <gen1|gen2|gen3|gen4> */
+static int cmd_pcie_link_set_speed(const struct shell *sh, size_t argc, char **argv)
+{
+	pcie_bdf_t bdf;
+	uint32_t id;
+	uint32_t pcie_cap_offset;
+	uint32_t target_speed;
+	uint32_t pcie_cap;
+	uint32_t pcie_cap_ver;
+	uint32_t lnkcap2_reg;
+	uint32_t lnkcap2;
+	uint32_t supported_speeds;
+	uint32_t link_ctrl2_reg;
+	uint32_t link_ctrl2;
+	uint32_t link_ctrl_reg;
+	uint32_t link_ctrl;
+	uint32_t link_status;
+	uint32_t negotiated_speed;
+
+	if (argc < 3) {
+		shell_error(sh, "Usage: pcie link set_speed <bus:dev.func> "
+				"<gen1|gen2|gen3|gen4>");
+		return -EINVAL;
+	}
+
+	bdf = get_bdf(argv[1]);
+	if (bdf == PCIE_BDF_NONE) {
+		shell_error(sh, "Invalid BDF layout format specification.");
+		return -EINVAL;
+	}
+
+	id = pcie_conf_read(bdf, PCIE_CONF_ID);
+	if (id == 0xFFFFFFFFU || !PCIE_ID_IS_VALID(id)) {
+		shell_error(sh, "No responsive endpoint found at target BDF.");
+		return -ENODEV;
+	}
+
+	pcie_cap_offset = pcie_get_cap(bdf, PCI_CAP_ID_EXP);
+	if (pcie_cap_offset == 0) {
+		shell_error(sh, "Target device does not support native "
+				"PCIe Capability structures.");
+		return -EOPNOTSUPP;
+	}
+
+	if (strcmp(argv[2], "gen1") == 0) {
+		target_speed = 0x1;
+	} else if (strcmp(argv[2], "gen2") == 0) {
+		target_speed = 0x2;
+	} else if (strcmp(argv[2], "gen3") == 0) {
+		target_speed = 0x3;
+	} else if (strcmp(argv[2], "gen4") == 0) {
+		target_speed = 0x4;
+	} else {
+		shell_error(sh, "Invalid speed argument. Supported values: "
+				"gen1, gen2, gen3, gen4");
+		return -EINVAL;
+	}
+
+	pcie_cap = pcie_conf_read(bdf, pcie_cap_offset);
+	pcie_cap_ver = (pcie_cap >> 16) & 0xFU;
+
+	if (pcie_cap_ver < 2U) {
+		shell_error(sh, "PCIe cap v%u does not support Link Control 2.", pcie_cap_ver);
+		return -EOPNOTSUPP;
+	}
+
+	lnkcap2_reg = pcie_cap_offset + (0x2CU / 4U);
+	lnkcap2 = pcie_conf_read(bdf, lnkcap2_reg);
+	supported_speeds = lnkcap2 & 0x0FU;
+
+	if ((supported_speeds & (1U << (target_speed - 1U))) == 0U) {
+		shell_error(sh, "Target speed %s is not supported by this link.", argv[2]);
+		return -EINVAL;
+	}
+
+	link_ctrl2_reg = pcie_cap_offset + (0x30U / 4U);
+	link_ctrl2 = pcie_conf_read(bdf, link_ctrl2_reg);
+
+	link_ctrl2 &= ~0x0FU;
+	link_ctrl2 |= target_speed;
+	pcie_conf_write(bdf, link_ctrl2_reg, link_ctrl2);
+
+	shell_print(sh,
+		    "Target speed configured to %s (Value: 0x%X) inside "
+		    "Link Control 2.",
+		    argv[2], target_speed);
+
+	link_ctrl_reg = pcie_cap_offset + (0x10U / 4U);
+	link_ctrl = pcie_conf_read(bdf, link_ctrl_reg);
+
+	shell_print(sh, "Issuing Retrain Link command (Setting Bit 5)...");
+	link_ctrl |= (1U << 5);
+	pcie_conf_write(bdf, link_ctrl_reg, link_ctrl);
+
+	/* Poll Link Status until retraining completes (Link Training bit clears) */
+	link_status = 0U;
+	for (int i = 0; i < 1000; i++) {
+		link_status = pcie_conf_read(bdf, link_ctrl_reg);
+		if (((link_status >> 27) & 0x1U) == 0U) {
+			break;
+		}
+	}
+
+	negotiated_speed = (link_status >> 16) & 0x0FU;
+
+	shell_print(sh, "Active Negotiated Link Speed reported by hardware: Gen%u",
+		    negotiated_speed);
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_pcie_link_cmds,
+			       SHELL_CMD_ARG(set_speed, NULL,
+					     "Scale the target PCIe bus lane speed dynamically",
+					     cmd_pcie_link_set_speed, 3, 0),
+			       SHELL_SUBCMD_SET_END);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_pcie_cmds,
-	SHELL_CMD_ARG(ls, NULL,
-		      "List PCIE devices\n"
-		      "Usage: ls [bus:device:function] [dump]",
-		      cmd_pcie_ls, 1, 2),
-	SHELL_SUBCMD_SET_END /* Array terminated. */
-);
+			       SHELL_CMD_ARG(ls, NULL,
+					     "List PCIE devices\n"
+					     "Usage: ls [bus:device:function] [dump]",
+					     cmd_pcie_ls, 1, 2),
+			       SHELL_CMD(link, &sub_pcie_link_cmds,
+					 "Manage PCIe hardware link performance and power metrics",
+					 NULL),
+			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(pcie, &sub_pcie_cmds, "PCI(e) device information", cmd_pcie_ls);
