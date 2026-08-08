@@ -241,6 +241,10 @@ uart3: &scb3 {
 	clock-div = <2>;
 };
 
+&adc0 {
+	status = "okay";
+};
+
 &csg0 {
 	status = "okay";
 	clocks = <&peri0_group5_16bit_0>;
