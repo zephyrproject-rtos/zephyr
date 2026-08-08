@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "ox64_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,flash = &gd25lq16e;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&clk_flash {
+	clocks = <&clk_bclk>;
+	divider = <2>;
+};
+
+&sf_bank1 {
+	reg = <0x58000000 DT_SIZE_M(2)>;
+	ranges = <0x0 0x58000000 DT_SIZE_M(2)>;
+
+	gd25lq16e: flash@0 {
+		compatible = "bflb,sf-flash", "soc-nv-flash";
+		reg = <0 DT_SIZE_M(2)>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		write-block-size = <4>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		spi-bus-mode = <2>;
+		sf-pad = <2>;
+		jedec-id = [c8 60 15];
+		use-sfdp;
+
+		partitions {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_header_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "boot_header";
+				reg = <0x00000000 0x2000>;
+				read-only;
+			};
+
+			slot0_partition: partition@2000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0";
+				reg = <0x00002000 (DT_SIZE_K(1536) - 0x2000)>;
+				read-only;
+			};
+
+			storage_partition: partition@100000 {
+				compatible = "zephyr,mapped-partition";
+				label = "storage";
+				reg = <0x00100000 DT_SIZE_K(512)>;
+			};
+		};
+	};
+};

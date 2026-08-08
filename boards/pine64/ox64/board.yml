@@ -1,0 +1,8 @@
+board:
+  name: ox64
+  full_name: Pine64 Ox64
+  vendor: pine64
+  socs:
+    - name: bl808c09q2i
+      variants:
+        - name: 2mb

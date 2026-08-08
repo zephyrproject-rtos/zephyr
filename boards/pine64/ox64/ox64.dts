@@ -1,0 +1,80 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "ox64_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,flash = &w25q128jwsq;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	aliases {
+		sdhc0 = &sdhc0;
+	};
+};
+
+&sf_bank1 {
+	reg = <0x58000000 DT_SIZE_M(16)>;
+	ranges = <0x0 0x58000000 DT_SIZE_M(16)>;
+
+	w25q128jwsq: flash@0 {
+		compatible = "bflb,sf-flash", "soc-nv-flash";
+		reg = <0 DT_SIZE_M(16)>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		write-block-size = <4>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		/* Refuses to do DIO or QIO */
+		spi-bus-mode = <2>;
+		sf-pad = <2>;
+		jedec-id = [ef 60 18];
+		use-sfdp;
+
+		partitions {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_header_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "boot_header";
+				reg = <0x00000000 0x2000>;
+				read-only;
+			};
+
+			slot0_partition: partition@2000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0";
+				reg = <0x00002000 (DT_SIZE_M(8) - 0x2000)>;
+				read-only;
+			};
+
+			storage_partition: partition@800000 {
+				compatible = "zephyr,mapped-partition";
+				label = "storage";
+				reg = <0x00800000 DT_SIZE_M(8)>;
+			};
+		};
+	};
+};
+
+/* SD card slot is only populated on 16MB version */
+&sdhc0 {
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
