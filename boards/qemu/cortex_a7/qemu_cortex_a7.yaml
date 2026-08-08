@@ -1,0 +1,17 @@
+identifier: qemu_cortex_a7
+name: QEMU Emulation for Cortex-A7
+type: qemu
+simulation:
+  - name: qemu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 131072
+flash: 65536
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: qemu

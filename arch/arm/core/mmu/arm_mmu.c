@@ -75,7 +75,7 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 	  .attrs = MT_NORMAL | MATTR_SHARED |
 		   MPERM_R | MPERM_W |
 		   MATTR_CACHE_OUTER_WB_WA | MATTR_CACHE_INNER_WB_WA},
-#if defined(CONFIG_AARCH32_ARMV8_A)
+#if defined(CONFIG_AARCH32_ARMV8_A) || defined(CONFIG_CPU_CORTEX_A7)
 	/* The ARMv8-A AArch32 implementation uses VBAR to hold the final vector
 	 * table address (_vector_start); map it here rather than requiring
 	 * each SoC to provide its own entry in mmu_regions.c.
@@ -740,15 +740,16 @@ static void arm_mmu_l2_unmap_page(uint32_t va)
 }
 
 /**
- * @brief MMU boot-time initialization function
- * Initializes the MMU at boot time. Sets up the page tables and
- * applies any specified memory mappings for either the different
- * sections of the Zephyr binary image, or for device memory as
- * specified at the SoC level.
+ * @brief Sets up the L1/L2 page tables for the initial MMU configuration
+ * Maps the image-defined and SoC-defined memory regions into the
+ * page tables.
  *
- * @retval Always 0, errors are handled by assertions.
+ * @retval Attribute flags (MATTR_*) of the memory region which contains
+ * the L1 page table, or 0 if the L1 page table is not located within any
+ * of the image-defined memory regions. These attributes are needed when
+ * writing to the TTBR0 register.
  */
-int z_arm_mmu_init(void)
+static uint32_t setup_page_tables(void)
 {
 	uint32_t mem_range;
 	uint32_t pa;
@@ -756,12 +757,7 @@ int z_arm_mmu_init(void)
 	uint32_t attrs;
 	uint32_t pt_attrs = 0;
 	uint32_t rem_size;
-	uint32_t reg_val = 0;
 	struct arm_mmu_perms_attrs perms_attrs;
-
-	__ASSERT(KB(4) == CONFIG_MMU_PAGE_SIZE,
-		 "MMU_PAGE_SIZE value %u is invalid, only 4 kB pages are supported\n",
-		 CONFIG_MMU_PAGE_SIZE);
 
 	/* Set up the memory regions pre-defined by the image */
 	for (mem_range = 0; mem_range < ARRAY_SIZE(mmu_zephyr_ranges); mem_range++) {
@@ -830,6 +826,33 @@ int z_arm_mmu_init(void)
 				pa += KB(4);
 			}
 		}
+	}
+
+	return pt_attrs;
+}
+
+/**
+ * @brief MMU boot-time initialization function
+ * Initializes the MMU at boot time. Sets up the page tables and
+ * applies any specified memory mappings for either the different
+ * sections of the Zephyr binary image, or for device memory as
+ * specified at the SoC level.
+ *
+ * @param is_primary_core Whether this is the primary (booting) core.
+ *
+ * @retval Always 0, errors are handled by assertions.
+ */
+int z_arm_mmu_init(bool is_primary_core)
+{
+	uint32_t reg_val = 0;
+	static uint32_t pt_attrs;
+
+	__ASSERT(KB(4) == CONFIG_MMU_PAGE_SIZE,
+		 "MMU_PAGE_SIZE value %u is invalid, only 4 kB pages are supported\n",
+		 CONFIG_MMU_PAGE_SIZE);
+
+	if (is_primary_core) {
+		pt_attrs = setup_page_tables();
 	}
 
 	/* Clear TTBR1 */
