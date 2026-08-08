@@ -257,19 +257,19 @@ static struct bt_bap_stream_ops stream_ops = {
 	.sent = bap_stream_tx_sent_cb,
 };
 
-static void source_started_cb(struct bt_bap_broadcast_source *source)
+void bap_common_broadcast_source_started_cb(struct bt_bap_broadcast_source *source)
 {
 	LOG_INF("Broadcast source %p started", source);
 	SET_FLAG(flag_source_started);
 }
 
-static void source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t reason)
+void bap_common_broadcast_source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t reason)
 {
 	LOG_INF("Broadcast source %p stopped with reason 0x%02X", source, reason);
 	UNSET_FLAG(flag_source_started);
 }
 
-static int setup_broadcast_source(struct bt_bap_broadcast_source **source, bool encryption)
+int bap_common_broadcast_source_setup(struct bt_bap_broadcast_source **source, bool encryption)
 {
 	struct bt_bap_broadcast_source_stream_param
 		stream_params[ARRAY_SIZE(broadcast_source_streams)];
@@ -341,19 +341,20 @@ static void test_broadcast_source_get_base(struct bt_bap_broadcast_source *sourc
 	}
 }
 
-static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_le_ext_adv **adv)
+int bap_common_broadcast_source_setup_ext_adv(struct bt_bap_broadcast_source *source,
+					      struct bt_le_ext_adv **adv, uint32_t *broadcast_id)
 {
 	/* Broadcast Audio Streaming Endpoint advertising data */
 	NET_BUF_SIMPLE_DEFINE(ad_buf, BT_UUID_SIZE_16 + BT_AUDIO_BROADCAST_ID_SIZE);
 	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
 	struct bt_data ext_ad;
 	struct bt_data per_ad;
-	uint32_t broadcast_id;
 	int err;
 
 	setup_broadcast_adv(adv);
 
-	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
+	*broadcast_id = 0U;
+	err = bt_rand(broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	if (err != 0) {
 		LOG_ERR("Unable to generate broadcast ID: %d", err);
 		return err;
@@ -361,7 +362,7 @@ static int setup_extended_adv(struct bt_bap_broadcast_source *source, struct bt_
 
 	/* Setup extended advertising data */
 	net_buf_simple_add_le16(&ad_buf, BT_UUID_BROADCAST_AUDIO_VAL);
-	net_buf_simple_add_le24(&ad_buf, broadcast_id);
+	net_buf_simple_add_le24(&ad_buf, *broadcast_id);
 	ext_ad.type = BT_DATA_SVC_DATA16;
 	ext_ad.data_len = ad_buf.len;
 	ext_ad.data = ad_buf.data;
@@ -446,8 +447,8 @@ static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *sourc
 	}
 }
 
-static void test_broadcast_source_start(struct bt_bap_broadcast_source *source,
-					struct bt_le_ext_adv *adv)
+void bap_common_broadcast_source_start(struct bt_bap_broadcast_source *source,
+				       struct bt_le_ext_adv *adv)
 {
 	const unsigned long stream_cnt = subgroup_cnt_arg * streams_per_subgroup_cnt_arg;
 	int err;
@@ -499,7 +500,7 @@ static void test_broadcast_source_update_metadata(struct bt_bap_broadcast_source
 	}
 }
 
-static void test_broadcast_source_stop(struct bt_bap_broadcast_source *source)
+void bap_common_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 {
 	const unsigned long stream_cnt = subgroup_cnt_arg * streams_per_subgroup_cnt_arg;
 	int err;
@@ -522,7 +523,7 @@ static void test_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 	WAIT_FOR_UNSET_FLAG(flag_source_started);
 }
 
-static void test_broadcast_source_delete(struct bt_bap_broadcast_source *source)
+void bap_common_broadcast_source_delete(struct bt_bap_broadcast_source *source)
 {
 	int err;
 
@@ -535,7 +536,7 @@ static void test_broadcast_source_delete(struct bt_bap_broadcast_source *source)
 	}
 }
 
-static int stop_extended_adv(struct bt_le_ext_adv *adv)
+int bap_common_broadcast_source_stop_ext_adv(struct bt_le_ext_adv *adv)
 {
 	int err;
 
@@ -563,8 +564,8 @@ static int stop_extended_adv(struct bt_le_ext_adv *adv)
 static void init(void)
 {
 	static struct bt_bap_broadcast_source_cb broadcast_source_cb = {
-		.started = source_started_cb,
-		.stopped = source_stopped_cb,
+		.started = bap_common_broadcast_source_started_cb,
+		.stopped = bap_common_broadcast_source_stopped_cb,
 	};
 	int err;
 
@@ -588,23 +589,24 @@ static void test_main(void)
 {
 	struct bt_bap_broadcast_source *source;
 	struct bt_le_ext_adv *adv;
+	uint32_t broadcast_id;
 	int err;
 
 	init();
 
-	err = setup_broadcast_source(&source, false);
+	err = bap_common_broadcast_source_setup(&source, false);
 	if (err != 0) {
 		FAIL("Unable to setup broadcast source: %d\n", err);
 		return;
 	}
 
-	err = setup_extended_adv(source, &adv);
+	err = bap_common_broadcast_source_setup_ext_adv(source, &adv, &broadcast_id);
 	if (err != 0) {
 		FAIL("Failed to setup extended advertising: %d\n", err);
 		return;
 	}
 
-	test_broadcast_source_start(source, adv);
+	bap_common_broadcast_source_start(source, adv);
 
 	/* Wait for other devices to have received data */
 	backchannel_sync_wait_any();
@@ -612,12 +614,12 @@ static void test_main(void)
 	/* Wait for other devices to let us know when we can stop the source */
 	backchannel_sync_wait_any();
 
-	test_broadcast_source_stop(source);
+	bap_common_broadcast_source_stop(source);
 
-	test_broadcast_source_delete(source);
+	bap_common_broadcast_source_delete(source);
 	source = NULL;
 
-	err = stop_extended_adv(adv);
+	err = bap_common_broadcast_source_stop_ext_adv(adv);
 	if (err != 0) {
 		FAIL("Unable to stop extended advertising: %d\n", err);
 		return;
@@ -626,14 +628,14 @@ static void test_main(void)
 
 	/* Recreate broadcast source to verify that it's possible */
 	LOG_INF("Recreating broadcast source");
-	err = setup_broadcast_source(&source, false);
+	err = bap_common_broadcast_source_setup(&source, false);
 	if (err != 0) {
 		FAIL("Unable to setup broadcast source: %d\n", err);
 		return;
 	}
 
 	LOG_INF("Deleting broadcast source");
-	test_broadcast_source_delete(source);
+	bap_common_broadcast_source_delete(source);
 	source = NULL;
 
 	PASS("Broadcast source passed\n");
@@ -643,17 +645,18 @@ static void test_main_update(void)
 {
 	struct bt_bap_broadcast_source *source;
 	struct bt_le_ext_adv *adv;
+	uint32_t broadcast_id;
 	int err;
 
 	init();
 
-	err = setup_broadcast_source(&source, false);
+	err = bap_common_broadcast_source_setup(&source, false);
 	if (err != 0) {
 		FAIL("Unable to setup broadcast source: %d\n", err);
 		return;
 	}
 
-	err = setup_extended_adv(source, &adv);
+	err = bap_common_broadcast_source_setup_ext_adv(source, &adv, &broadcast_id);
 	if (err != 0) {
 		FAIL("Failed to setup extended advertising: %d\n", err);
 		return;
@@ -661,7 +664,7 @@ static void test_main_update(void)
 
 	test_broadcast_source_reconfig(source, adv);
 
-	test_broadcast_source_start(source, adv);
+	bap_common_broadcast_source_start(source, adv);
 
 	/* Wait for other devices to have received data */
 	backchannel_sync_wait_any();
@@ -675,12 +678,12 @@ static void test_main_update(void)
 	/* Wait for other devices to let us know when we can stop the source */
 	backchannel_sync_wait_any();
 
-	test_broadcast_source_stop(source);
+	bap_common_broadcast_source_stop(source);
 
-	test_broadcast_source_delete(source);
+	bap_common_broadcast_source_delete(source);
 	source = NULL;
 
-	err = stop_extended_adv(adv);
+	err = bap_common_broadcast_source_stop_ext_adv(adv);
 	if (err != 0) {
 		FAIL("Unable to stop extended advertising: %d\n", err);
 		return;
@@ -694,23 +697,24 @@ static void test_main_encrypted(void)
 {
 	struct bt_bap_broadcast_source *source;
 	struct bt_le_ext_adv *adv;
+	uint32_t broadcast_id;
 	int err;
 
 	init();
 
-	err = setup_broadcast_source(&source, true);
+	err = bap_common_broadcast_source_setup(&source, true);
 	if (err != 0) {
 		FAIL("Unable to setup broadcast source: %d\n", err);
 		return;
 	}
 
-	err = setup_extended_adv(source, &adv);
+	err = bap_common_broadcast_source_setup_ext_adv(source, &adv, &broadcast_id);
 	if (err != 0) {
 		FAIL("Failed to setup extended advertising: %d\n", err);
 		return;
 	}
 
-	test_broadcast_source_start(source, adv);
+	bap_common_broadcast_source_start(source, adv);
 
 	/* Wait for other devices to have received data */
 	backchannel_sync_wait_any();
@@ -718,12 +722,12 @@ static void test_main_encrypted(void)
 	/* Wait for other devices to let us know when we can stop the source */
 	backchannel_sync_wait_any();
 
-	test_broadcast_source_stop(source);
+	bap_common_broadcast_source_stop(source);
 
-	test_broadcast_source_delete(source);
+	bap_common_broadcast_source_delete(source);
 	source = NULL;
 
-	err = stop_extended_adv(adv);
+	err = bap_common_broadcast_source_stop_ext_adv(adv);
 	if (err != 0) {
 		FAIL("Unable to stop extended advertising: %d\n", err);
 		return;
