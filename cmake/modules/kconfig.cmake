@@ -385,15 +385,16 @@ if(EXISTS ${DOTCONFIG} AND EXISTS ${merge_config_files_checksum_file})
   endif()
 endif()
 
+zephyr_get(SNIPPET_POST_CONF_FILE MERGE)
 if(CREATE_NEW_DOTCONFIG)
   if(NOT KCONFIG_VARIANT_SOURCE)
     set(input_configs_flags --handwritten-input-configs)
   endif()
 
-  set(input_configs ${merge_config_files} ${FORCED_CONF_FILE})
+  set(input_configs ${merge_config_files} ${SNIPPET_POST_CONF_FILE} ${FORCED_CONF_FILE})
   build_info(kconfig files PATH ${input_configs})
 else()
-  set(input_configs ${DOTCONFIG} ${FORCED_CONF_FILE})
+  set(input_configs ${DOTCONFIG} ${SNIPPET_POST_CONF_FILE} ${FORCED_CONF_FILE})
 endif()
 
 if(DEFINED FORCED_CONF_FILE)
