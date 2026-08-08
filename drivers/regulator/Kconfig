@@ -62,6 +62,7 @@ source "drivers/regulator/Kconfig.rts5817"
 source "drivers/regulator/Kconfig.sf32lb"
 source "drivers/regulator/Kconfig.stm32_vrefbuf"
 source "drivers/regulator/Kconfig.ti_tp6287x"
+source "drivers/regulator/Kconfig.tle927x"
 source "drivers/regulator/Kconfig.tps55287"
 # zephyr-keep-sorted-stop
 

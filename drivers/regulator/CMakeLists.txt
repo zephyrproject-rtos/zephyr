@@ -44,5 +44,6 @@ zephyr_library_sources_ifdef(CONFIG_REGULATOR_RTS5817 regulator_rts5817.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_SF32LB_LDO regulator_sf32lb_ldo.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_STM32_VREFBUF regulator_stm32_vrefbuf.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_TI_TPS6287X regulator_ti_tps6287x.c)
+zephyr_library_sources_ifdef(CONFIG_REGULATOR_TLE927X regulator_tle927x_vcc2.c)
 zephyr_library_sources_ifdef(CONFIG_REGULATOR_TPS55287 regulator_tps55287.c)
 # zephyr-keep-sorted-stop
