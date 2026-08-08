@@ -170,11 +170,29 @@ struct llext {
 	/** @endcond */
 };
 
+/**
+ * @brief Get the ELF section headers of an extension.
+ *
+ * The section headers are only available if the extension was loaded with
+ * @ref llext_load_param.keep_section_info set, and until
+ * @ref llext_free_inspection_data is called for it.
+ *
+ * @param ext Extension to inspect.
+ *
+ * @return Pointer to the first of @ref llext_section_count section headers.
+ */
 static inline const elf_shdr_t *llext_section_headers(const struct llext *ext)
 {
 	return ext->sect_hdrs;
 }
 
+/**
+ * @brief Get the number of ELF sections of an extension.
+ *
+ * @param ext Extension to inspect.
+ *
+ * @return Number of sections.
+ */
 static inline unsigned int llext_section_count(const struct llext *ext)
 {
 	return ext->sect_cnt;
