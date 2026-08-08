@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Open Device Partnership and Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: ISSI IS31FL3743B LED Matrix Driver
+
+compatible: "issi,is31fl3743b"
+
+include: "spi-device.yaml"
+
+properties:
+  sdb-gpios:
+    type: phandle-array
+    description: |
+      Hardware shutdown pin. If routed on the board, this property must be
+      present. Set to a logical 1 at boot to exit the device from hardware
+      shutdown.
+
+  current-limit:
+    type: int
+    default: 0xFF
+    min: 0
+    max: 0xFF
+    description: |
+      Global current limit. Sets the global current control (GCC) register of
+      the LED driver. Limits the global output current based on the following
+      formula: (343/R_ISET) * (current-limit/256). Defaults to the max value
+      of 0xFF, so LED output is still enabled if the property is not provided.
+
+  sync-mode:
+    type: string
+    default: "none"
+    enum:
+      - "none"
+      - "source"
+      - "receiver"
+    description: |
+      This property configures the device to generate the synchronization clock
+      as a source or accept an external synchronization clock as a receiver.
+      This can synchronize the output of multiple LED controllers sharing a
+      SYNC line. See the SYNC bits in the spread spectrum register for more
+      information.
