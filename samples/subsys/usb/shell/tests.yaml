@@ -24,6 +24,8 @@ tests:
       - FILE_SUFFIX=host
     platform_allow:
       - rd_rw612_bga
+      - qemu_riscv32
+      - qemu_riscv32/qemu_virt_riscv32/smp
     build_only: true
   sample.usbh.shell.shield:
     depends_on:
