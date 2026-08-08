@@ -41,6 +41,7 @@ extern int esp_rom_gpio_matrix_out(uint32_t gpio, uint32_t signal_index,
 
 extern void esp_rom_Cache_Flush(int cpu);
 extern void esp_rom_Cache_Read_Enable(int cpu);
+extern void esp_rom_Cache_Read_Disable(int cpu);
 extern void esp_rom_ets_set_appcpu_boot_addr(void *addr);
 void esp_appcpu_start(void *entry_point);
 
