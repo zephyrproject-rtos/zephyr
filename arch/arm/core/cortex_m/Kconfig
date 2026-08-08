@@ -514,6 +514,26 @@ config ARM_GCC_FP_WORKAROUND
 	  want this, but in at least one case it's necessary.  See
 	  comment in arm-m-switch.h
 
+config ARM_ERRATUM_838869
+	bool "Cortex-M4: 838869: exception return operation might vector to incorrect interrupt"
+	depends on CPU_CORTEX_M4
+	help
+	  Enable ARM's recommended workaround for erratum 838869:
+	  "Store immediate overlapping exception return operation
+	  might vector to incorrect interrupt"
+
+	  Under specific timing conditions during an exception return,
+	  while the Cortex-M4's write buffer is still in use by a store
+	  instruction, a late-arriving interrupt may cause the processor
+	  to execute an incorrect interrupt handler, which can notably
+	  result in the loss of a pulse-based interrupt request. Note
+	  that whether a given interrupt is level-based or pulse-based
+	  is implementation defined.
+
+	  The workaround depends on whether the MPU is used:
+	  - CONFIG_MPU=n: disable the Cortex-M4 write buffer entirely
+	  - CONFIG_MPU=y: execute a DSB before returning from exceptions
+
 rsource "tz/Kconfig"
 
 endif # CPU_CORTEX_M

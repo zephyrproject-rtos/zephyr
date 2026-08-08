@@ -86,6 +86,18 @@ TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_NONNULL)
 
 #endif /* CONFIG_CPU_CORTEX_M_HAS_VTOR */
 
+void apply_errata_workarounds(void)
+{
+#if defined(CONFIG_ARM_ERRATUM_838869) && !defined(CONFIG_MPU)
+/*
+ * Cortex-M4 r0p1 erratum 838869 (ES0182 §2.1.3):
+ * "Store immediate overlapping exception return operation might
+ *  vector to incorrect interrupt."
+ */
+SCnSCB->ACTLR |= SCnSCB_ACTLR_DISDEFWBUF_Msk;
+#endif
+}
+
 #if defined(CONFIG_CPU_HAS_FPU)
 static inline void z_arm_floating_point_init(void)
 {
@@ -218,6 +230,7 @@ FUNC_NORETURN void z_prep_c(void)
 #ifdef CONFIG_NULL_POINTER_EXCEPTION_DETECTION_DWT
 	z_arm_debug_enable_null_pointer_detection();
 #endif
+	apply_errata_workarounds();
 	z_cstart();
 	CODE_UNREACHABLE;
 }
