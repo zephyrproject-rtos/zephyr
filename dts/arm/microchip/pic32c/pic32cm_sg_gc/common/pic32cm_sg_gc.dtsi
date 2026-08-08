@@ -27,6 +27,10 @@
 		};
 	};
 
+	chosen {
+		zephyr,romstart = &boot_flash;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -44,9 +48,10 @@
 			ranges;
 
 			boot_flash: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "zephyr,memory-region", "soc-nv-flash";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				zephyr,memory-region = "BOOT_FLASH";
 			};
 
 			config_flash: flash@a000000 {

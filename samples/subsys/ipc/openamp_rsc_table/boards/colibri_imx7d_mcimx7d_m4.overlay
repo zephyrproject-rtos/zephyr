@@ -12,6 +12,7 @@
 		zephyr,flash = &ocram_code;
 		zephyr,ipc_shm = &ddr_shm;
 		zephyr,ipc = &mub;
+		zephyr,romstart = &ocram_s_code;
 	};
 
 	ddr_shm: memory1@90000000 {

@@ -151,6 +151,13 @@ Boards
   used by the other NXP board options and by frdm_imxrt1186. Configurations setting
   ``CONFIG_NXP_BOARD_SPECIFIC_MPU_SETTINGS`` must be updated to the new name.
 
+* :kconfig:option:`CONFIG_ROMSTART_RELOCATION_ROM`, :kconfig:option:`CONFIG_ROMSTART_REGION_ADDRESS`
+  and :kconfig:option:`CONFIG_ROMSTART_REGION_SIZE` have been deprecated in favour of the new chosen
+  ``zephyr,romstart`` property that should be used instead. If an overwrite over
+  the board defaults is detected the Kconfig option
+  :kconfig:option:`CONFIG_ROMSTART_DEPRECATED_SET` is set and old behaviour is
+  preserved while indicating the deprecation.
+
 Device Drivers and Devicetree
 *****************************
 

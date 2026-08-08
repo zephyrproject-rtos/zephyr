@@ -26,6 +26,10 @@
 		};
 	};
 
+	chosen {
+		zephyr,romstart = &flash0;
+	};
+
 	soc {
 		nvmctrl: flash-controller@44004000 {
 			reg = <0x44004000 0x7c>;
@@ -34,9 +38,10 @@
 			ranges;
 
 			flash0: flash@8000000 {
-				compatible = "soc-nv-flash";
+				compatible = "zephyr,memory-region", "soc-nv-flash";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				zephyr,memory-region = "BOOT_FLASH";
 			};
 
 			flash1: flash@c000000 {
