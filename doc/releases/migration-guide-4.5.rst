@@ -928,6 +928,11 @@ Bluetooth Audio
     to ``codec_configured`` and from ``qos_set`` to ``qos_configured`` where the callbacks are
     assigned. (:github:`114835`)
 
+  * :c:func:`bt_bap_scan_delegator_mod_src` no longer treats ``metadata_len = 0`` as "keep existing"
+    and will now set the metadata length to 0 for the subgroup. To keep existing data, the
+    ``metadata_len`` field needs to be set to the existing length and the existing metadata
+    shall be copied.
+
 * CAP
 
   * :c:func:`bt_cap_commander_broadcast_reception_start` now waits for the CAP acceptors to sync to
