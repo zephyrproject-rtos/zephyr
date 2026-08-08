@@ -29,6 +29,10 @@
 
 #include <mgmt/mcumgr/transport/smp_internal.h>
 
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+#include <zephyr/mgmt/mcumgr/grp/transport_mgmt/transport_mgmt.h>
+#endif
+
 BUILD_ASSERT(CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE != 0,
 	     "CONFIG_MCUMGR_TRANSPORT_DUMMY_RX_BUF_SIZE must be > 0");
 
@@ -54,6 +58,16 @@ static struct uart_mcumgr_rx_buf *dummy_mcumgr_cur_buf;
  * the line is too long or if there is no buffer available to hold it.
  */
 static bool dummy_mcumgr_ignoring;
+
+#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
+static struct smp_client_transport_entry smp_client_transport = {
+	.smpt = &smp_dummy_transport,
+	.smpt_type = SMP_SERIAL_TRANSPORT,
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS
+	.name = "Dummy",
+#endif
+};
+#endif
 
 static void smp_dummy_process_rx_queue(struct k_work *work);
 static void dummy_mcumgr_free_rx_buf(struct uart_mcumgr_rx_buf *rx_buf);
@@ -185,6 +199,83 @@ static int smp_dummy_tx_pkt_int(struct net_buf *nb)
 	return rc;
 }
 
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+static bool smp_dummy_bridge_connect(struct smp_transport_bridge *bridge, bool outgoing,
+				     uint32_t mode, bool same_transport, zcbor_state_t *input_data,
+				     zcbor_state_t *output_data)
+{
+	ARG_UNUSED(bridge);
+	ARG_UNUSED(outgoing);
+	ARG_UNUSED(input_data);
+	ARG_UNUSED(output_data);
+
+	if (mode != 0) {
+		smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_INVALID_MODE);
+
+		return false;
+	}
+
+	if (same_transport == true) {
+		smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT,
+				TRANSPORT_MGMT_ERR_SAME_BRIDGE_DEVICE_DISALLOWED);
+
+		return false;
+	}
+
+	return true;
+}
+
+static void smp_dummy_bridge_disconnect(struct smp_transport_bridge *bridge, bool outgoing)
+{
+	ARG_UNUSED(bridge);
+	ARG_UNUSED(outgoing);
+}
+
+static int smp_dummy_bridge_tx(const struct smp_transport_bridge *bridge, struct net_buf *nb,
+			       bool outgoing)
+{
+	ARG_UNUSED(bridge);
+	ARG_UNUSED(outgoing);
+
+	return smp_dummy_tx_pkt_int(nb);
+}
+
+#if defined(CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS)
+static bool smp_dummy_bridge_modes(zcbor_state_t *output_data, int *rc)
+{
+	bool ok;
+
+	ok = zcbor_map_start_encode(output_data, 2) &&
+	     zcbor_tstr_put_lit(output_data, "id") &&
+	     zcbor_uint32_put(output_data, 0) &&
+	     zcbor_tstr_put_lit(output_data, "description") &&
+	     zcbor_tstr_put_lit(output_data, "Dummy") &&
+	     zcbor_tstr_put_lit(output_data, "incoming") &&
+	     zcbor_bool_put(output_data, true) &&
+	     zcbor_tstr_put_lit(output_data, "outgoing") &&
+	     zcbor_bool_put(output_data, true) &&
+	     zcbor_map_end_encode(output_data, 2);
+
+	*rc = MGMT_RETURN_CHECK(ok);
+	return ok;
+}
+
+static bool smp_dummy_bridge_config_details(uint32_t mode, zcbor_state_t *output_data, int *rc)
+{
+	if (mode == 0) {
+		return true;
+	}
+
+	smp_mgmt_reset_zse_writer(output_data);
+	smp_add_cmd_err(output_data, MGMT_GROUP_ID_TRANSPORT, TRANSPORT_MGMT_ERR_INVALID_MODE);
+	*rc = 0;
+
+	return false;
+}
+#endif
+#endif
+
 static int smp_dummy_init(void)
 {
 	int rc;
@@ -194,6 +285,16 @@ static int smp_dummy_init(void)
 	smp_dummy_transport.functions.output = smp_dummy_tx_pkt_int;
 	smp_dummy_transport.functions.get_mtu = smp_dummy_get_mtu;
 
+#ifdef CONFIG_MCUMGR_GRP_TRANSPORT
+	smp_dummy_transport.functions.bridge_connect = smp_dummy_bridge_connect;
+	smp_dummy_transport.functions.bridge_disconnect = smp_dummy_bridge_disconnect;
+	smp_dummy_transport.functions.bridge_output = smp_dummy_bridge_tx;
+#if defined(CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS)
+	smp_dummy_transport.functions.bridge_modes = smp_dummy_bridge_modes;
+	smp_dummy_transport.functions.bridge_config_details = smp_dummy_bridge_config_details;
+#endif
+#endif
+
 	rc = smp_transport_init(&smp_dummy_transport);
 
 	if (rc != 0) {
@@ -201,6 +302,10 @@ static int smp_dummy_init(void)
 	}
 
 	dummy_mgumgr_recv_cb = smp_dummy_rx_frag;
+
+#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
+	smp_client_transport_register(&smp_client_transport);
+#endif
 
 	return 0;
 }
