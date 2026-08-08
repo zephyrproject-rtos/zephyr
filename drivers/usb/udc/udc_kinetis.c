@@ -607,15 +607,15 @@ static int usbfsotg_ep_clear_halt(const struct device *dev,
 		LOG_DBG("bd %p: %x", bd, bd->set.bd_ctrl);
 		bd->set.bd_ctrl = USBFSOTG_BD_DTS;
 	} else {
-		LOG_WRN("bd %p is not halted", bd);
+		LOG_DBG("bd %p is not halted", bd);
 	}
 
 	cfg->stat.data1 = false;
-	cfg->stat.halted = false;
 	base->ENDPOINT[ep_idx].ENDPT &= ~USB_ENDPT_EPSTALL_MASK;
 
-	if (USB_EP_GET_IDX(cfg->addr) != 0) {
+	if (USB_EP_GET_IDX(cfg->addr) != 0 && cfg->stat.halted) {
 		/* trigger queued transfers */
+		udc_ep_set_busy(cfg, false);
 		usbfsotg_event_submit(dev, cfg->addr, USBFSOTG_EVT_XFER);
 	}
 
