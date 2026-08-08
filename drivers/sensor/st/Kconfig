@@ -45,4 +45,5 @@ source "drivers/sensor/st/stts22h/Kconfig"
 source "drivers/sensor/st/stts751/Kconfig"
 source "drivers/sensor/st/vl53l0x/Kconfig"
 source "drivers/sensor/st/vl53l1x/Kconfig"
+source "drivers/sensor/st/vl53l5cx/Kconfig"
 # zephyr-keep-sorted-stop
