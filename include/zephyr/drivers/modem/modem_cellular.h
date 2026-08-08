@@ -466,6 +466,21 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 	);
 
 /**
+ * @brief Define a multiple match object that expects a single response followed by an "OK"
+ *
+ * Replaces a MODEM_CHAT_MATCH_DEFINE followed by MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match)
+ *
+ * @param _sym Name of the matches array object
+ * @param _match Match string per @ref MODEM_CHAT_MATCH_DEFINE
+ * @param _separators Separators string per @ref MODEM_CHAT_MATCH_DEFINE
+ * @param _callback Callback on match per @ref MODEM_CHAT_MATCH_DEFINE
+ */
+#define MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(_sym, _match, _separators, _callback)                  \
+	MODEM_CHAT_MATCHES_DEFINE(_sym,                                                            \
+		MODEM_CHAT_MATCH_INITIALIZER(_match, _separators, _callback, false, true),         \
+		MODEM_CHAT_MATCH("OK", "", NULL))
+
+/**
  * @brief Define common chat matches used by cellular modem scripts.
  *
  * Invoke this macro once at file scope. It defines matches for successful commands, common command
