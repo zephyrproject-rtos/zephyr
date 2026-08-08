@@ -672,23 +672,24 @@ static int mmc_read_ext_csd(struct sd_card *card, struct mmc_ext_csd *card_ext_c
 
 static inline void mmc_decode_ext_csd(struct mmc_ext_csd *ext, uint8_t *raw)
 {
-	ext->sec_count = sys_get_le32(&raw[212U]);
-	ext->bus_width = raw[183U];
-	ext->enhanced_strobe_support = (raw[184U] & BIT(0)) != 0U;
-	ext->hs_timing = raw[185U];
-	ext->device_type.MMC_HS400_DDR_1200MV = ((1 << 7U) & raw[196U]);
-	ext->device_type.MMC_HS400_DDR_1800MV = ((1 << 6U) & raw[196U]);
-	ext->device_type.MMC_HS200_SDR_1200MV = ((1 << 5U) & raw[196U]);
-	ext->device_type.MMC_HS200_SDR_1800MV = ((1 << 4U) & raw[196U]);
-	ext->device_type.MMC_HS_DDR_1200MV = ((1 << 3U) & raw[196U]);
-	ext->device_type.MMC_HS_DDR_1800MV = ((1 << 2U) & raw[196U]);
-	ext->device_type.MMC_HS_52_DV = ((1 << 1U) & raw[196U]);
-	ext->device_type.MMC_HS_26_DV = ((1 << 0U) & raw[196U]);
-	ext->rev = raw[192U];
-	ext->power_class = (raw[187] & 0x0F);
-	ext->mmc_driver_strengths = raw[197U];
-	ext->pwr_class_200MHZ_VCCQ195 = raw[237U];
-	ext->cache_size = sys_get_le32(&raw[249]);
+	ext->sec_count = sys_get_le32(&raw[MMC_EXT_CSD_SEC_COUNT]);
+	ext->bus_width = raw[MMC_EXT_CSD_BUS_WIDTH];
+	ext->enhanced_strobe_support = (raw[MMC_EXT_CSD_STROBE_SUPPORT] & BIT(0)) != 0U;
+	ext->hs_timing = raw[MMC_EXT_CSD_HS_TIMING];
+	ext->device_type.MMC_HS400_DDR_1200MV = BIT(7) & raw[MMC_EXT_CSD_CARD_TYPE];
+	ext->device_type.MMC_HS400_DDR_1800MV = BIT(6) & raw[MMC_EXT_CSD_CARD_TYPE];
+	ext->device_type.MMC_HS200_SDR_1200MV = BIT(5) & raw[MMC_EXT_CSD_CARD_TYPE];
+	ext->device_type.MMC_HS200_SDR_1800MV = BIT(4) & raw[MMC_EXT_CSD_CARD_TYPE];
+	ext->device_type.MMC_HS_DDR_1200MV = BIT(3) & raw[MMC_EXT_CSD_CARD_TYPE];
+	ext->device_type.MMC_HS_DDR_1800MV = BIT(2) & raw[MMC_EXT_CSD_CARD_TYPE];
+	ext->device_type.MMC_HS_52_DV = BIT(1) & raw[MMC_EXT_CSD_CARD_TYPE];
+	ext->device_type.MMC_HS_26_DV = BIT(0) & raw[MMC_EXT_CSD_CARD_TYPE];
+	ext->rev = raw[MMC_EXT_CSD_REV];
+	ext->power_class = raw[MMC_EXT_CSD_PWR_CLASS] & 0x0F;
+	ext->mmc_driver_strengths = raw[MMC_EXT_CSD_DRIVER_STRENGTH];
+	ext->pwr_class_200MHZ_VCCQ195 = raw[MMC_EXT_CSD_PWR_CL_200_195];
+	ext->pwr_class_HS400 = raw[MMC_EXT_CSD_PWR_CL_DDR_200_360];
+	ext->cache_size = sys_get_le32(&raw[MMC_EXT_CSD_CACHE_SIZE]);
 }
 
 static int mmc_set_cache(struct sd_card *card, struct mmc_ext_csd *card_ext_csd)

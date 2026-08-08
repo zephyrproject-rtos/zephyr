@@ -1,0 +1,19 @@
+# Copyright 2026 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Zephyr SDHC emulated card peripheral.
+
+  Emulates SD, SDHC, SDXC, eMMC, or SDIO card personalities.
+  Must be a child of a "zephyr,sdhc-emul-controller" node.
+
+compatible: "zephyr,sdhc-emul-card"
+
+include: sdhc-emul-common.yaml
+
+on-bus: sd
+
+properties:
+  reg:
+    type: array
+    required: true

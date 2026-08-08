@@ -1,0 +1,4 @@
+# Copyright 2026 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"

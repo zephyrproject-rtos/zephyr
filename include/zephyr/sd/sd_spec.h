@@ -663,6 +663,70 @@ enum mmc_ext_csd_rev {
 };
 
 /**
+ * @name MMC EXT_CSD byte offsets
+ *
+ * Byte offsets into the 512 byte EXT_CSD register (JEDEC JESD84-B51 7.4).
+ * @{
+ */
+/** Background operations enable [163] */
+#define MMC_EXT_CSD_BKOPS_EN              163
+/** Bus width mode [183] */
+#define MMC_EXT_CSD_BUS_WIDTH             183
+/** Enhanced strobe support [184] */
+#define MMC_EXT_CSD_STROBE_SUPPORT        184
+/** High speed interface timing [185] */
+#define MMC_EXT_CSD_HS_TIMING             185
+/** Selected power class [187] */
+#define MMC_EXT_CSD_PWR_CLASS             187
+/** Extended CSD revision [192] */
+#define MMC_EXT_CSD_REV                   192
+/** Extended CSD structure version [194] */
+#define MMC_EXT_CSD_STRUCTURE             194
+/** Device type, supported timing modes [196] */
+#define MMC_EXT_CSD_CARD_TYPE             196
+/** I/O driver strength [197] */
+#define MMC_EXT_CSD_DRIVER_STRENGTH       197
+/** Partition switch timeout [199] */
+#define MMC_EXT_CSD_PARTITION_SWITCH_TIME 199
+/** Sector count, device capacity in 512 byte sectors [212] */
+#define MMC_EXT_CSD_SEC_COUNT             212
+/** Sleep/awake timeout [217] */
+#define MMC_EXT_CSD_S_A_TIMEOUT           217
+/** High capacity write protect group size [221] */
+#define MMC_EXT_CSD_HC_WP_GRP_SIZE        221
+/** Reliable write sector count [222] */
+#define MMC_EXT_CSD_REL_WR_SEC_C          222
+/** Erase timeout multiplier [223] */
+#define MMC_EXT_CSD_ERASE_TIMEOUT_MULT    223
+/** High capacity erase group size [224] */
+#define MMC_EXT_CSD_HC_ERASE_GRP_SIZE     224
+/** Boot partition size multiplier [226] */
+#define MMC_EXT_CSD_BOOT_MULT             226
+/** Boot information [228] */
+#define MMC_EXT_CSD_BOOT_INFO             228
+/** Power class for HS200 at VCCQ 1.95V [236] */
+#define MMC_EXT_CSD_PWR_CL_200_195        236
+/** Power class for HS200 at VCC 3.6V [237] */
+#define MMC_EXT_CSD_PWR_CL_200_360        237
+/** Power class for DDR52 at VCCQ 1.95V [238] */
+#define MMC_EXT_CSD_PWR_CL_DDR_52_195     238
+/** Power class for DDR52 at VCC 3.6V [239] */
+#define MMC_EXT_CSD_PWR_CL_DDR_52_360     239
+/** Cache flushing policy [240] */
+#define MMC_EXT_CSD_CACHE_FLUSH_POLICY    240
+/** Generic CMD6 timeout [248] */
+#define MMC_EXT_CSD_GENERIC_CMD6_TIME     248
+/** Cache size, in kibibits [252:249] */
+#define MMC_EXT_CSD_CACHE_SIZE            249
+/** Power class for HS400 DDR at VCC 3.6V [253] */
+#define MMC_EXT_CSD_PWR_CL_DDR_200_360    253
+/** Background operations support [502] */
+#define MMC_EXT_CSD_BKOPS_SUPPORT         502
+/** Supported command sets [504] */
+#define MMC_EXT_CSD_S_CMD_SET             504
+/** @} */
+
+/**
  * @brief MMC extended card specific data register
  *
  * Extended card specific data register.
