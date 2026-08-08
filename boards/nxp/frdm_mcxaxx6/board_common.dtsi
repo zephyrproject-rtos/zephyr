@@ -101,6 +101,16 @@
 			   <ARDUINO_HEADER_R3_D14 0 &gpio1 8 0>,  /* SDA */
 			   <ARDUINO_HEADER_R3_D15 0 &gpio1 9 0>;  /* SCL */
 	};
+
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <9 0 &gpio2 24 0>,	/* Touch INT */
+			   <10 0 &gpio4 4 0>,	/* Backlight */
+			   <11 0 &gpio4 3 0>;	/* Reset */
+	};
 };
 
 /* Port configurations */
