@@ -1680,3 +1680,9 @@ test_i2c_icm56686: icm56686@68 {
 	gyro-lpf = <1>;
 	gyro-pwr-mode = <2>;
 };
+
+test_i2c_scd30: scd30@d9 {
+	compatible = "sensirion,scd30";
+	reg = <0xd9>;
+	measurement-interval = <2>;
+};
