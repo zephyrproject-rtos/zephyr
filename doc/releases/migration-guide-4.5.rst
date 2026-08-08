@@ -37,6 +37,11 @@ Build System
 * :kconfig:option:`CONFIG_LEGACY_GENERATED_INCLUDE_PATH` has been deprecated, and disabled by
   default, includes must now be prefixed with ``zephyr/`` for zephyr files.
 
+* CMake variables ``SOC_NAME``, ``SOC_SERIES``, ``SOC_FAMILY`` and ``SOC_V2_DIR`` have been
+  deprecated as they duplicate variables already, the replacement variables are as follows:
+  :kconfig:option:`CONFIG_SOC`, :kconfig:option:`CONFIG_SOC_SERIES`,
+  :kconfig:option:`CONFIG_SOC_FAMILY` and ``SOC_FULL_DIR``.
+
 Kernel
 ******
 

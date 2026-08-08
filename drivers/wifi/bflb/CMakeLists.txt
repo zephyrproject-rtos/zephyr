@@ -5,9 +5,9 @@
 set(BFLB_HAL ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR})
 
 zephyr_include_directories(
-  ${BFLB_HAL}/include/bouffalolab/${SOC_SERIES}
-  ${BFLB_HAL}/include/bouffalolab/${SOC_SERIES}/wifi
-  ${BFLB_HAL}/include/bouffalolab/${SOC_SERIES}/rfparam
+  ${BFLB_HAL}/include/bouffalolab/${CONFIG_SOC_SERIES}
+  ${BFLB_HAL}/include/bouffalolab/${CONFIG_SOC_SERIES}/wifi
+  ${BFLB_HAL}/include/bouffalolab/${CONFIG_SOC_SERIES}/rfparam
   ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
