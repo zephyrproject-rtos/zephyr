@@ -118,10 +118,10 @@ ZTEST(no_multithreading, test_cpu_idle)
 				  "Unexpected time passed: %d ms", (int)diff);
 }
 
-/* TODO: Remove CONFIG_ARM check once TLS is supported on all architectures
+/* TODO: Remove checks once TLS is supported on all architectures and compilers
  * See https://github.com/zephyrproject-rtos/zephyr/issues/114503
  */
-#if defined(CONFIG_ARM)
+#if !defined(__CCAC__)
 ZTEST(no_multithreading, test_tls)
 {
 	static volatile Z_THREAD_LOCAL int i = 42;

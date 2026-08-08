@@ -126,6 +126,8 @@ extern FUNC_NORETURN void z_riscv_switch_to_main_no_multithreading(
 
 #endif /* !CONFIG_MULTITHREADING */
 
+void FUNC_NO_STACK_PROTECTOR arch_riscv_early_tls_stack_update(char *stack_ptr, size_t tls_size);
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
