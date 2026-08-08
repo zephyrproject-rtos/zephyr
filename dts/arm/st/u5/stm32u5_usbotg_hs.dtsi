@@ -14,6 +14,7 @@
 			reg = <0x42040000 0x20000>;
 			interrupts = <73 0>;
 			interrupt-names = "otghs";
+			num-host-channels = <16>;
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "high-speed";
