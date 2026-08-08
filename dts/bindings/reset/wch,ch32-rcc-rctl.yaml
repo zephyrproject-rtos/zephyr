@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Fiona Behrens
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  CH32 Reset and Clock Control (RCC) Reset Controller.
+  
+  This node is in charge of reset control for peripherals.
+  
+  To specify the reset line an a peripheral, the standard reset property needs
+  to be used, e.g.:
+  
+    usart1: serial@xxx {
+      ...
+      /* Cell contains information about Reset register offset and bit */
+      resets = <&rctl CH32_RESET(APB2, 14)>;
+      ...
+    };
+
+compatible: "wch,ch32-rcc-rctl"
+
+include: [reset-controller.yaml, base.yaml]
+
+properties:
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+  - id
