@@ -1,0 +1,94 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI / Cadence MIPI DSI host controller (ti,j721e-dsi).
+
+  Found on TI K3 SoCs.  Integrates:
+    - Cadence DSI TX core  ("dsi"  MMIO region, e.g. 0x30500000)
+    - TI DSI wrapper       ("wrap" MMIO region, e.g. 0x30270000 — 256 B)
+    - Cadence DPHY TX      ("dphy" MMIO region, e.g. 0x301c0000 — 4 KB)
+
+  The DPHY is not a separate Zephyr device; its registers and clocks are
+  embedded inside this node.  Four clocks must be provided:
+
+    "dsi_p_clk"   — peripheral/bus clock for Cadence DSI TX
+    "dsi_sys_clk" — DSI system / functional clock
+    "psm_clk"     — DPHY PSM clock (state-machine base timing)
+    "pll_ref_clk" — DPHY PLL reference clock (typically 25 MHz)
+
+  The number of active MIPI DSI data lanes is set by the 'data-lanes'
+  property (1–4).  'ti,pll-ref-clk-rate-hz' must match the rate
+  configured on the "pll_ref_clk" clock entry (via assigned-clock-rates
+  or firmware).
+
+compatible: "ti,j721e-dsi"
+
+include: mipi-dsi-host.yaml
+
+properties:
+
+  # ------------------------------------------------------------------
+  # MMIO register regions
+  # ------------------------------------------------------------------
+  reg:
+    required: true
+    description: |
+      Three MMIO regions, always in this order:
+        [0] dsi  — Cadence DSI TX core base address
+        [1] wrap — TI DSI wrapper base address
+        [2] dphy — Cadence DPHY TX base address
+
+  reg-names:
+    required: true
+    type: string-array
+    description: |
+      Names for each reg entry.  Must be exactly:
+        "dsi", "wrap", "dphy"
+
+  # ------------------------------------------------------------------
+  # Clocks
+  # ------------------------------------------------------------------
+  clocks:
+    required: true
+    description: |
+      Four clock phandles named by clock-names (in any order):
+        "dsi_p_clk"   — Cadence DSI TX peripheral clock
+        "dsi_sys_clk" — DSI system / functional clock
+        "psm_clk"     — DPHY PSM state-machine clock
+        "pll_ref_clk" — DPHY PLL reference clock
+
+  clock-names:
+    required: true
+    type: string-array
+    description: |
+      Clock names.  Must include all of:
+        "dsi_p_clk", "dsi_sys_clk", "psm_clk", "pll_ref_clk"
+
+  # ------------------------------------------------------------------
+  # Interrupt
+  # ------------------------------------------------------------------
+  interrupts:
+    required: true
+    description: DSI TX interrupt line.
+
+  # ------------------------------------------------------------------
+  # MIPI DSI configuration
+  # ------------------------------------------------------------------
+  data-lanes:
+    type: int
+    required: true
+    description: |
+      Number of active MIPI DSI data lanes (1 to 4).
+
+  # ------------------------------------------------------------------
+  # DPHY PLL reference clock
+  # ------------------------------------------------------------------
+  ti,pll-ref-clk-rate-hz:
+    type: int
+    required: true
+    description: |
+      DPHY PLL reference clock frequency in Hz.
+      Must match the rate configured on the "pll_ref_clk" clock
+      entry (via assigned-clock-rates or firmware pre-configuration).
+      Typically 25000000 (25 MHz) on AM62L and AM62P.
