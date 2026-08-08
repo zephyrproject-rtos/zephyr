@@ -75,6 +75,9 @@ class Filters:
     MODULE = 'Module filter'
     # in case of missing env. variable required for a platform
     ENVIRONMENT = 'Environment filter'
+    # instance marked filtered from a precomputed --load-filter map, so its
+    # CMake configure filter step is skipped this run.
+    CACHED = 'cached filter'
 
 
 class TestLevel:
@@ -186,6 +189,11 @@ class TestPlan:
         self.instance_fail_count = 0
         self.warnings = 0
 
+        # (testsuite_name, platform_name) -> reason, populated from --load-filter.
+        # Any pair in here is marked filtered in apply_filters() so its CMake
+        # configure filter step is skipped.
+        self.load_filter_map: dict[tuple[str, str], str] = {}
+
         self.scenarios = []
 
         self.hwm: HardwareMap = env.hwm
@@ -244,6 +252,11 @@ class TestPlan:
 
         self.report_duplicates()
         self.levels = self.test_config.get_levels(self.scenarios)
+
+        # Load a precomputed filter map so apply_filters() can short-circuit
+        # CMake configure for known-filtered (testsuite, platform) pairs.
+        if self.options.load_filter:
+            self.load_filter_from_file(self.options.load_filter)
 
         # handle quarantine
         ql = self.options.quarantine_list
@@ -765,6 +778,33 @@ class TestPlan:
             if not matched_quarantine and self.options.quarantine_verify:
                 instance.add_filter("Not under quarantine", Filters.CMD_LINE)
 
+    def load_filter_from_file(self, file):
+        """Populate self.load_filter_map from a prior twister.json/testplan.json.
+
+        Every testsuite entry whose status is 'filtered' is recorded as a
+        (testsuite_name, platform_name) -> reason pair. apply_filters() then
+        marks the matching instances filtered up front, so their CMake configure
+        filter step is skipped this run.
+        """
+        try:
+            with open(file) as json_filter:
+                jf = json.load(json_filter)
+        except FileNotFoundError as e:
+            logger.error(f"{e}")
+            return 1
+        count = 0
+        for ts in jf.get("testsuites", []):
+            if TwisterStatus(ts.get("status")) != TwisterStatus.FILTER:
+                continue
+            name = ts.get("name")
+            platform = ts.get("platform")
+            if not name or not platform:
+                continue
+            self.load_filter_map[(name, platform)] = ts.get("reason") or Filters.CACHED
+            count += 1
+        logger.info(f"Loaded {count} cached filter entries from {file}")
+        return 0
+
     def load_from_file(self, file, filter_platform=None):
         if filter_platform is None:
             filter_platform = []
@@ -1037,6 +1077,14 @@ class TestPlan:
                     self.options,
                     self.hwm
                 )
+
+                # --load-filter: if a prior run recorded this (testsuite,
+                # platform) pair as filtered, mark it filtered now so it skips
+                # the CMake configure filter step below.
+                if self.load_filter_map:
+                    cached_reason = self.load_filter_map.get((ts.name, plat.name))
+                    if cached_reason is not None:
+                        instance.add_filter(cached_reason, Filters.CACHED)
 
                 if not force_platform and self.check_platform(plat,exclude_platform):
                     instance.add_filter("Platform is excluded on command line.", Filters.CMD_LINE)

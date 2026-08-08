@@ -146,6 +146,20 @@ Artificially long but functional example:
     )
 
     case_select.add_argument(
+        "--load-filter",
+        metavar="FILENAME",
+        action="store",
+        help="Load a precomputed set of filtered test instances from a prior "
+             "'twister.json'/'testplan.json' ('%(metavar)s'). Any (testsuite, "
+             "platform) pair marked 'filtered' there is treated as filtered "
+             "immediately, skipping its CMake configure filter step. This trades "
+             "a small staleness risk for a large reduction in configure time on "
+             "boards where most configurations filter out. Regenerate the file "
+             "(e.g. from a prior run's 'twister.json') whenever Kconfig or "
+             "devicetree that affects filtering changes."
+    )
+
+    case_select.add_argument(
         "-T", "--testsuite-root", action="append", default=[], type = norm_path,
         help="Base directory to recursively search for test cases. All "
              "testcase.yaml files under here will be processed. May be "
