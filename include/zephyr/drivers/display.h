@@ -340,6 +340,8 @@ struct display_capabilities {
 	enum display_pixel_format current_pixel_format;
 	/** Current display orientation */
 	enum display_orientation current_orientation;
+	/** Supported callback events mask, 0 when callbacks are unsupported */
+	uint32_t supported_events;
 #if defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__)
 	/** Color palette supported by the display, indexed by pixel value */
 	struct display_palette_color color_palette[CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE];
@@ -850,9 +852,15 @@ static inline int display_register_event_cb(const struct device *dev,
 	__ASSERT(cb != NULL, "Registration failed: callback function pointer is NULL");
 
 	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
+	struct display_capabilities capas;
 
 	if (api->register_event_cb == NULL) {
 		return -ENOSYS;
+	}
+
+	api->get_capabilities(dev, &capas);
+	if (~capas.supported_events & event_mask) {
+		return -ENOTSUP;
 	}
 
 	return api->register_event_cb(dev, cb, user_data, event_mask, in_isr, out_reg_handle);

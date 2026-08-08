@@ -238,6 +238,7 @@ static void stm32_ltdc_get_capabilities(const struct device *dev,
 
 	capabilities->current_pixel_format = data->current_pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->supported_events = DISPLAY_EVENT_VSYNC | DISPLAY_EVENT_LINE_INT;
 }
 
 static void stm32_ltdc_partial_write(const struct device *dev,
@@ -466,10 +467,6 @@ static int stm32_ltdc_display_register_event_cb(const struct device *dev, displa
 	}
 	if (!in_isr) {
 		LOG_ERR("Registration failed: only ISR context is supported for this driver");
-		return -ENOSYS;
-	}
-	if (event_mask & ~(DISPLAY_EVENT_VSYNC | DISPLAY_EVENT_LINE_INT)) {
-		LOG_ERR("Registration failed: Unsupported event requested");
 		return -ENOSYS;
 	}
 
