@@ -21,6 +21,21 @@ the length of the packet it receives. After that it sends a dummy
 packet every 5 seconds. You can use Wireshark to observe these
 sent and received packets.
 
+The receiving socket also joins an Ethernet multicast group so that the
+network interface starts to listen to one extra multicast MAC address. This
+is done with the ``PACKET_ADD_MEMBERSHIP`` socket option, and the group is
+left again with ``PACKET_DROP_MEMBERSHIP`` when the sample stops. Set
+:kconfig:option:`CONFIG_NET_SAMPLE_MCAST_ADDR` to pick the address, or
+disable :kconfig:option:`CONFIG_NET_SAMPLE_MCAST_MEMBERSHIP` to skip
+joining altogether.
+
+The join and the leave are also reported as network management events, which
+can be seen from the shell with:
+
+.. code-block:: console
+
+   uart:~$ net events on
+
 See the `net-tools`_ project for more details.
 
 This sample can be built and executed on QEMU or native_sim board as

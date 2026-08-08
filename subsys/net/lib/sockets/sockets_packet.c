@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_sock_packet, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/net_context.h>
+#include <zephyr/net/net_event.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
@@ -592,9 +593,270 @@ int zpacket_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					    optval, optlen);
 }
 
-int zpacket_setsockopt_ctx(struct net_context *ctx, int level, int optname,
-			const void *optval, net_socklen_t optlen)
+#if defined(CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP)
+/* L2 multicast group memberships of the packet sockets. An entry is owned by
+ * the socket that joined the group, so that the memberships can be dropped
+ * when the socket is closed. Each socket reports its own first join and last
+ * leave of a group, and the L2 keeps track of how many users a group has so
+ * that the device is only told when it has to start or stop listening to it.
+ */
+struct packet_mcast_membership {
+	/** Socket owning this membership, NULL if the entry is free */
+	struct net_context *ctx;
+
+	/** Network interface the group was joined on */
+	struct net_if *iface;
+
+	/** L2 multicast address of the group */
+	struct net_linkaddr addr;
+
+	/** How many times the owner has joined this group */
+	uint16_t count;
+};
+
+static struct packet_mcast_membership
+	mcast_memberships[CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT];
+
+static K_MUTEX_DEFINE(mcast_lock);
+
+static bool mcast_membership_match(const struct packet_mcast_membership *member,
+				   struct net_if *iface,
+				   const struct net_linkaddr *addr)
 {
+	return member->iface == iface && member->addr.len == addr->len &&
+		memcmp(member->addr.addr, addr->addr, addr->len) == 0;
+}
+
+static void mcast_membership_notify(struct net_if *iface,
+				    const struct net_linkaddr *addr,
+				    bool add_membership)
+{
+	struct net_event_packet_mcast info;
+
+	net_if_mcast_monitor_l2(iface, addr, add_membership);
+
+	memset(&info, 0, sizeof(info));
+	(void)net_linkaddr_copy(&info.addr, addr);
+	info.type = NET_PACKET_MR_MULTICAST;
+
+	net_mgmt_event_notify_with_info(add_membership ?
+					NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD :
+					NET_EVENT_PACKET_MCAST_MEMBERSHIP_DROP,
+					iface, &info, sizeof(info));
+}
+
+static int mcast_membership_add(struct net_context *ctx, struct net_if *iface,
+				const struct net_linkaddr *addr)
+{
+	struct packet_mcast_membership *free_entry = NULL;
+	bool notify = false;
+	int ret = 0;
+
+	k_mutex_lock(&mcast_lock, K_FOREVER);
+
+	ARRAY_FOR_EACH_PTR(mcast_memberships, member) {
+		if (member->ctx == NULL) {
+			if (free_entry == NULL) {
+				free_entry = member;
+			}
+
+			continue;
+		}
+
+		if (member->ctx == ctx &&
+		    mcast_membership_match(member, iface, addr)) {
+			if (member->count == UINT16_MAX) {
+				ret = -ENOBUFS;
+			} else {
+				member->count++;
+			}
+
+			goto out;
+		}
+	}
+
+	if (free_entry == NULL) {
+		ret = -ENOBUFS;
+		goto out;
+	}
+
+	free_entry->ctx = ctx;
+	free_entry->iface = iface;
+	free_entry->count = 1;
+	(void)net_linkaddr_copy(&free_entry->addr, addr);
+	notify = true;
+
+out:
+	k_mutex_unlock(&mcast_lock);
+
+	if (notify) {
+		mcast_membership_notify(iface, addr, true);
+	}
+
+	return ret;
+}
+
+static int mcast_membership_drop(struct net_context *ctx, struct net_if *iface,
+				 const struct net_linkaddr *addr)
+{
+	int ret = -EADDRNOTAVAIL;
+	bool notify = false;
+
+	k_mutex_lock(&mcast_lock, K_FOREVER);
+
+	ARRAY_FOR_EACH_PTR(mcast_memberships, member) {
+		if (member->ctx != ctx ||
+		    !mcast_membership_match(member, iface, addr)) {
+			continue;
+		}
+
+		ret = 0;
+		member->count--;
+
+		if (member->count == 0) {
+			member->ctx = NULL;
+			notify = true;
+		}
+
+		break;
+	}
+
+	k_mutex_unlock(&mcast_lock);
+
+	if (notify) {
+		mcast_membership_notify(iface, addr, false);
+	}
+
+	return ret;
+}
+
+static void mcast_membership_drop_all(struct net_context *ctx)
+{
+	/* One entry is released per round so that the monitors are never
+	 * called with the lock held and the table is not walked across the
+	 * callbacks, which are free to change the memberships.
+	 */
+	while (true) {
+		struct net_if *iface = NULL;
+		struct net_linkaddr addr;
+
+		k_mutex_lock(&mcast_lock, K_FOREVER);
+
+		ARRAY_FOR_EACH_PTR(mcast_memberships, member) {
+			if (member->ctx != ctx) {
+				continue;
+			}
+
+			iface = member->iface;
+			(void)net_linkaddr_copy(&addr, &member->addr);
+
+			member->ctx = NULL;
+			member->count = 0;
+			break;
+		}
+
+		k_mutex_unlock(&mcast_lock);
+
+		if (iface == NULL) {
+			break;
+		}
+
+		mcast_membership_notify(iface, &addr, false);
+	}
+}
+
+static int mcast_setsockopt(struct net_context *ctx, int optname,
+			    const void *optval, net_socklen_t optlen)
+{
+	const struct net_packet_mreq *maddr = optval;
+	struct net_linkaddr addr;
+	struct net_linkaddr *lladdr;
+	bool add_membership;
+	struct net_if *iface;
+	int ret;
+
+	if (optname == ZSOCK_PACKET_ADD_MEMBERSHIP) {
+		add_membership = true;
+	} else if (optname == ZSOCK_PACKET_DROP_MEMBERSHIP) {
+		add_membership = false;
+	} else {
+		errno = ENOPROTOOPT;
+		return -1;
+	}
+
+	if (optval == NULL || optlen != sizeof(struct net_packet_mreq)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* Only the membership of one specific multicast group can be
+	 * changed. NET_PACKET_MR_PROMISC and NET_PACKET_MR_ALLMULTI would
+	 * change how the interface filters received frames as a whole,
+	 * which the L2 multicast monitors cannot express.
+	 */
+	if (maddr->mr_type != NET_PACKET_MR_MULTICAST) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	iface = net_if_get_by_index(maddr->mr_ifindex);
+	if (iface == NULL) {
+		errno = ENODEV;
+		return -1;
+	}
+
+	if (net_if_l2(iface) == NULL || net_if_l2(iface)->get_flags == NULL ||
+	    !(net_if_l2(iface)->get_flags(iface) & NET_L2_MULTICAST)) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	lladdr = net_if_get_link_addr(iface);
+
+	if (maddr->mr_alen != lladdr->len) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	memset(&addr, 0, sizeof(addr));
+
+	if (net_linkaddr_set(&addr, maddr->mr_address,
+			     (uint8_t)maddr->mr_alen) < 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	addr.type = lladdr->type;
+
+	if (add_membership) {
+		ret = mcast_membership_add(ctx, iface, &addr);
+	} else {
+		ret = mcast_membership_drop(ctx, iface, &addr);
+	}
+
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	return 0;
+}
+#else /* CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP */
+static void mcast_membership_drop_all(struct net_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+#endif /* CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP */
+
+int zpacket_setsockopt_ctx(struct net_context *ctx, int level, int optname,
+			   const void *optval, net_socklen_t optlen)
+{
+#if defined(CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP)
+	if (level == ZSOCK_SOL_PACKET) {
+		return mcast_setsockopt(ctx, optname, optval, optlen);
+	}
+#endif
+
 	return sock_fd_op_vtable.setsockopt(ctx, level, optname,
 					    optval, optlen);
 }
@@ -689,6 +951,8 @@ static int packet_sock_setsockopt_vmeth(void *obj, int level, int optname,
 
 static int packet_sock_close2_vmeth(void *obj, int fd)
 {
+	mcast_membership_drop_all(obj);
+
 	return zsock_close_ctx(obj, fd);
 }
 

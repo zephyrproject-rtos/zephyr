@@ -1271,6 +1271,29 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 
 /** @} */
 
+/**
+ * @defgroup packet_socket_options Socket options for packet socket
+ * @ingroup bsd_sockets
+ * @{
+ */
+
+/**
+ * @name Socket level options (ZSOCK_SOL_PACKET)
+ * @{
+ */
+
+/** Packet socket-level option */
+#define ZSOCK_SOL_PACKET 263
+
+/** Add multicast group membership to a packet socket. */
+#define ZSOCK_PACKET_ADD_MEMBERSHIP           1
+
+/** Drop multicast group membership from a packet socket. */
+#define ZSOCK_PACKET_DROP_MEMBERSHIP          2
+
+/** @} */ /* for @name */
+/** @} */ /* for @defgroup */
+
 /** @cond INTERNAL_HIDDEN */
 /**
  * @brief Registration information for a given BSD socket family.

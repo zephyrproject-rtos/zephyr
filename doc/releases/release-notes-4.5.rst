@@ -284,6 +284,39 @@ New APIs and options
     :c:func:`mdns_responder_disable_iface`
     (:kconfig:option:`CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL`) to enable or
     disable the mDNS responder on a network interface at runtime.
+  * Add :c:func:`net_eth_mcast_addr_add`, :c:func:`net_eth_mcast_addr_rm` and
+    :c:func:`net_eth_mcast_addr_foreach`. The Ethernet L2 now keeps track of the
+    link layer multicast addresses that an interface listens to, so an Ethernet
+    driver is asked to change its receive filter only when a group is joined by
+    its first user or left by its last one. Previously the IP level joins and
+    the packet socket memberships were forwarded to the driver separately, and
+    leaving one group could stop the device from listening to another group that
+    needs the same link layer address. This happens easily as IPv4 multicast
+    addresses map 32:1 to link layer addresses. A driver can also treat
+    ``ETHERNET_CONFIG_TYPE_FILTER`` as a hint that the addresses changed and
+    reprogram its filter by iterating them with
+    :c:func:`net_eth_mcast_addr_foreach`, which suits devices that filter by a
+    hash of the address. How many addresses an interface can track is the sum
+    of what the enabled subsystems ask for, and
+    :kconfig:option:`CONFIG_NET_L2_ETHERNET_MCAST_FILTER_COUNT` can raise it if
+    an application needs more. A multicast destination
+    address given to :c:func:`net_eth_mac_filter` or to
+    ``NET_REQUEST_ETHERNET_SET_MAC_FILTER`` is counted the same way, so each
+    such filter that an application sets must now also be unset by it, and
+    unsetting one that was never set fails with ``-ENOENT``.
+  * Add ``ZSOCK_PACKET_ADD_MEMBERSHIP`` and ``ZSOCK_PACKET_DROP_MEMBERSHIP``
+    socket options at the ``ZSOCK_SOL_PACKET`` level
+    (:kconfig:option:`CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP`), so that a
+    packet socket can ask the network interface to start or stop listening to
+    an extra L2 multicast address. On Ethernet the address is programmed to the
+    receive filter of the device if it supports filtering.
+    The membership changes are reported by the L2 multicast
+    monitors registered with :c:func:`net_if_mcast_mon_register_l2` and by the
+    :c:macro:`NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD` and
+    :c:macro:`NET_EVENT_PACKET_MCAST_MEMBERSHIP_DROP` network management events.
+    Memberships still held when the socket is closed are dropped automatically,
+    and :kconfig:option:`CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT` sets
+    how many memberships can be active at the same time.
 
 * Power Management
 
