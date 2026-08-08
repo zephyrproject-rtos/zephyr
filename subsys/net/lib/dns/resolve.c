@@ -729,8 +729,10 @@ static int idx_of_server_addr(struct dns_resolve_context *ctx,
 {
 	ARRAY_FOR_EACH(ctx->servers, i) {
 		if (ctx->servers[i].dns_server.sa_family == addr->sa_family &&
-		    memcmp(&ctx->servers[i].dns_server, addr,
-			   sizeof(ctx->servers[i].dns_server)) == 0) {
+		    memcmp(&ctx->servers[i].dns_server_storage, addr,
+			   ctx->servers[i].dns_server.sa_family == NET_AF_INET6 ?
+			   sizeof(struct net_sockaddr_in6) :
+			   sizeof(struct net_sockaddr_in)) == 0) {
 			if (if_index == 0 ||
 			    (if_index > 0 &&
 			     ctx->servers[i].if_index != if_index)) {
@@ -952,8 +954,10 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 
 		ctx->servers[idx].source = source;
 
-		memcpy(&ctx->servers[idx].dns_server, servers_sa[i],
-		       sizeof(ctx->servers[idx].dns_server));
+		memcpy(&ctx->servers[idx].dns_server_storage, servers_sa[i],
+		       servers_sa[i]->sa_family == NET_AF_INET6 ?
+		       sizeof(struct net_sockaddr_in6) :
+		       sizeof(struct net_sockaddr_in));
 
 		if (interfaces != NULL) {
 			ctx->servers[idx].if_index = interfaces[i];
@@ -1125,8 +1129,8 @@ static int dns_resolve_init_locked(struct dns_resolve_context *ctx,
 		if (IS_ENABLED(CONFIG_NET_MGMT_EVENT_INFO)) {
 			net_mgmt_event_notify_with_info(
 				NET_EVENT_DNS_SERVER_ADD,
-				iface, (void *)&ctx->servers[i].dns_server,
-				sizeof(struct net_sockaddr));
+				iface, (void *)&ctx->servers[i].dns_server_storage,
+				sizeof(ctx->servers[i].dns_server_storage));
 		} else {
 			net_mgmt_event_notify(NET_EVENT_DNS_SERVER_ADD, iface);
 		}
@@ -2348,7 +2352,8 @@ int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 	k_timeout_t tout;
 	struct net_buf *dns_data = NULL;
 	struct net_buf *dns_qname = NULL;
-	struct net_sockaddr addr;
+	struct net_sockaddr_storage addr;
+	struct net_sockaddr *sa = net_sad(&addr);
 	int ret, i = -1;
 	bool mdns_query = false;
 #ifdef CONFIG_DNS_RESOLVER_CACHE
@@ -2371,7 +2376,7 @@ int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 		return -EINVAL;
 	}
 
-	ret = net_ipaddr_parse(query, strlen(query), &addr);
+	ret = net_ipaddr_parse(query, strlen(query), sa);
 	if (ret) {
 		/* The query name was already in numeric form, no
 		 * need to continue further.
@@ -2379,11 +2384,11 @@ int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 		struct dns_addrinfo info = { 0 };
 
 		if (type == DNS_QUERY_TYPE_A) {
-			if (net_sin(&addr)->sin_family == NET_AF_INET6) {
+			if (net_sin(sa)->sin_family == NET_AF_INET6) {
 				return -EPFNOSUPPORT;
 			}
 
-			memcpy(net_sin(&info.ai_addr), net_sin(&addr),
+			memcpy(net_sin(&info.ai_addr), net_sin(sa),
 			       sizeof(struct net_sockaddr_in));
 			info.ai_family = NET_AF_INET;
 			info.ai_addr.sa_family = NET_AF_INET;
@@ -2395,12 +2400,12 @@ int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 			 * the error to EINVAL, the EPFNOSUPPORT is returned
 			 * here so that we can find it easily.
 			 */
-			if (net_sin(&addr)->sin_family == NET_AF_INET) {
+			if (net_sin(sa)->sin_family == NET_AF_INET) {
 				return -EPFNOSUPPORT;
 			}
 
 #if defined(CONFIG_NET_IPV6)
-			memcpy(net_sin6(&info.ai_addr), net_sin6(&addr),
+			memcpy(net_sin6(&info.ai_addr), net_sin6(sa),
 			       sizeof(struct net_sockaddr_in6));
 			info.ai_family = NET_AF_INET6;
 			info.ai_addr.sa_family = NET_AF_INET6;
@@ -2693,8 +2698,8 @@ static int dns_server_close(struct dns_resolve_context *ctx,
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_DNS_SERVER_DEL,
 			iface,
-			(void *)&ctx->servers[server_idx].dns_server,
-			sizeof(struct net_sockaddr));
+			(void *)&ctx->servers[server_idx].dns_server_storage,
+			sizeof(ctx->servers[server_idx].dns_server_storage));
 	} else {
 		net_mgmt_event_notify(NET_EVENT_DNS_SERVER_DEL, iface);
 	}
@@ -2788,13 +2793,14 @@ static bool dns_servers_exists(struct dns_resolve_context *ctx,
 {
 	if (servers) {
 		for (int i = 0; i < SERVER_COUNT && servers[i]; i++) {
-			struct net_sockaddr addr;
+			struct net_sockaddr_storage addr;
+			struct net_sockaddr *sa = net_sad(&addr);
 
-			if (!net_ipaddr_parse(servers[i], strlen(servers[i]), &addr)) {
+			if (!net_ipaddr_parse(servers[i], strlen(servers[i]), sa)) {
 				continue;
 			}
 
-			if (!dns_server_exists(ctx, &addr)) {
+			if (!dns_server_exists(ctx, sa)) {
 				return false;
 			}
 		}

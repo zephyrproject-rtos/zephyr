@@ -269,7 +269,13 @@ typedef void (*ftp_client_callback_t)(const uint8_t *msg, uint16_t len);
 
 /** FTP client context. */
 struct ftp_client {
-	struct net_sockaddr remote; /**< Server address */
+	/** Remote server address storage */
+	union {
+		struct net_sockaddr remote; /**< Server address */
+/** @cond INTERNAL_HIDDEN */
+		struct net_sockaddr_storage remote_storage;
+/** @endcond */
+	};
 	bool connected; /**< Server connected flag */
 	int ctrl_sock; /**< Control socket */
 	int data_sock; /**< Data socket */

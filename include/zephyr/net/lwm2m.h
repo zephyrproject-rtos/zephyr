@@ -209,7 +209,13 @@ enum lwm2m_socket_states {
  */
 struct lwm2m_ctx {
 	/** Destination address storage */
-	struct net_sockaddr remote_addr;
+	union {
+		/** Destination address */
+		struct net_sockaddr remote_addr;
+/** @cond INTERNAL_HIDDEN */
+		struct net_sockaddr_storage remote_addr_storage;
+/** @endcond */
+	};
 
 	/** @cond INTERNAL_HIDDEN
 	 * Private CoAP and networking structures + 1 is for RD Client own message

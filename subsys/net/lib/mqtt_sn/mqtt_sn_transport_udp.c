@@ -79,7 +79,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
 	int err;
 	int errno_backup;
-	struct net_sockaddr addrm;
+	struct net_sockaddr_storage addrm;
 	int optval;
 	struct net_if *iface;
 
@@ -125,7 +125,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	switch (udp->bcaddr.sa_family) {
 	case NET_AF_INET:
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
-			addrm.sa_family = NET_AF_INET;
+			addrm.ss_family = NET_AF_INET;
 			((struct net_sockaddr_in *)&addrm)->sin_port =
 				((struct net_sockaddr_in *)&udp->bcaddr)->sin_port;
 			((struct net_sockaddr_in *)&addrm)->sin_addr.s_addr = NET_INADDR_ANY;
@@ -133,7 +133,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 		break;
 	case NET_AF_INET6:
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
-			addrm.sa_family = NET_AF_INET6;
+			addrm.ss_family = NET_AF_INET6;
 			((struct net_sockaddr_in6 *)&addrm)->sin6_port =
 				((struct net_sockaddr_in6 *)&udp->bcaddr)->sin6_port;
 			memcpy(&((struct net_sockaddr_in6 *)&addrm)->sin6_addr, &net_in6addr_any,
@@ -145,7 +145,7 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 		return -EINVAL;
 	}
 
-	err = zsock_bind(udp->sock, &addrm, sizeof(addrm));
+	err = zsock_bind(udp->sock, net_sad(&addrm), sizeof(addrm));
 	if (err) {
 		errno_backup = errno;
 		LOG_ERR("Error during bind: %d", errno_backup);

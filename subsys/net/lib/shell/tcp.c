@@ -102,8 +102,10 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 			struct net_context **ctx)
 {
 	struct net_if *iface = net_if_get_default();
-	struct net_sockaddr myaddr;
-	struct net_sockaddr addr;
+	struct net_sockaddr_storage myaddr;
+	struct net_sockaddr_storage addr;
+	struct net_sockaddr *my_sa = net_sad(&myaddr);
+	struct net_sockaddr *sa = net_sad(&addr);
 	struct net_nbr *nbr;
 	int addrlen;
 	int family;
@@ -111,73 +113,73 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && !IS_ENABLED(CONFIG_NET_IPV4)) {
 		ret = net_addr_pton(NET_AF_INET6, host,
-				    &net_sin6(&addr)->sin6_addr);
+				    &net_sin6(sa)->sin6_addr);
 		if (ret < 0) {
 			PR_WARNING("Invalid IPv6 address\n");
 			return;
 		}
 
-		net_sin6(&addr)->sin6_port = net_htons(port);
+		net_sin6(sa)->sin6_port = net_htons(port);
 		addrlen = sizeof(struct net_sockaddr_in6);
 
-		nbr = net_ipv6_nbr_lookup(NULL, &net_sin6(&addr)->sin6_addr);
+		nbr = net_ipv6_nbr_lookup(NULL, &net_sin6(sa)->sin6_addr);
 		if (nbr) {
 			iface = nbr->iface;
 		}
 
-		get_my_ipv6_addr(iface, &myaddr);
-		family = addr.sa_family = myaddr.sa_family = NET_AF_INET6;
+		get_my_ipv6_addr(iface, my_sa);
+		family = sa->sa_family = my_sa->sa_family = NET_AF_INET6;
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   !IS_ENABLED(CONFIG_NET_IPV6)) {
 		ARG_UNUSED(nbr);
 
-		ret = net_addr_pton(NET_AF_INET, host, &net_sin(&addr)->sin_addr);
+		ret = net_addr_pton(NET_AF_INET, host, &net_sin(sa)->sin_addr);
 		if (ret < 0) {
 			PR_WARNING("Invalid IPv4 address\n");
 			return;
 		}
 
-		get_my_ipv4_addr(iface, &myaddr);
-		net_sin(&addr)->sin_port = net_htons(port);
+		get_my_ipv4_addr(iface, my_sa);
+		net_sin(sa)->sin_port = net_htons(port);
 		addrlen = sizeof(struct net_sockaddr_in);
-		family = addr.sa_family = myaddr.sa_family = NET_AF_INET;
+		family = sa->sa_family = my_sa->sa_family = NET_AF_INET;
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   IS_ENABLED(CONFIG_NET_IPV4)) {
 		ret = net_addr_pton(NET_AF_INET6, host,
-				    &net_sin6(&addr)->sin6_addr);
+				    &net_sin6(sa)->sin6_addr);
 		if (ret < 0) {
 			ret = net_addr_pton(NET_AF_INET, host,
-					    &net_sin(&addr)->sin_addr);
+					    &net_sin(sa)->sin_addr);
 			if (ret < 0) {
 				PR_WARNING("Invalid IP address\n");
 				return;
 			}
 
-			net_sin(&addr)->sin_port = net_htons(port);
+			net_sin(sa)->sin_port = net_htons(port);
 			addrlen = sizeof(struct net_sockaddr_in);
 
-			get_my_ipv4_addr(iface, &myaddr);
-			family = addr.sa_family = myaddr.sa_family = NET_AF_INET;
+			get_my_ipv4_addr(iface, my_sa);
+			family = sa->sa_family = my_sa->sa_family = NET_AF_INET;
 		} else {
-			net_sin6(&addr)->sin6_port = net_htons(port);
+			net_sin6(sa)->sin6_port = net_htons(port);
 			addrlen = sizeof(struct net_sockaddr_in6);
 
 			nbr = net_ipv6_nbr_lookup(NULL,
-						  &net_sin6(&addr)->sin6_addr);
+						  &net_sin6(sa)->sin6_addr);
 			if (nbr) {
 				iface = nbr->iface;
 			}
 
-			get_my_ipv6_addr(iface, &myaddr);
-			family = addr.sa_family = myaddr.sa_family = NET_AF_INET6;
+			get_my_ipv6_addr(iface, my_sa);
+			family = sa->sa_family = my_sa->sa_family = NET_AF_INET6;
 		}
 	} else {
 		PR_WARNING("No IPv6 nor IPv4 is enabled\n");
 		return;
 	}
 
-	print_connect_info(sh, family, &myaddr, &addr);
+	print_connect_info(sh, family, my_sa, sa);
 
 	ret = net_context_get(family, NET_SOCK_STREAM, NET_IPPROTO_TCP, ctx);
 	if (ret < 0) {
@@ -185,7 +187,7 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 		return;
 	}
 
-	ret = net_context_bind(*ctx, &myaddr, addrlen);
+	ret = net_context_bind(*ctx, my_sa, addrlen);
 	if (ret < 0) {
 		PR_WARNING("Cannot bind TCP (%d)\n", ret);
 		return;
@@ -205,7 +207,7 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 
 	net_context_ref(*ctx);
 
-	ret = net_context_connect(*ctx, &addr, addrlen, tcp_connected,
+	ret = net_context_connect(*ctx, sa, addrlen, tcp_connected,
 				  CONNECT_TIMEOUT, NULL);
 	if (ret < 0) {
 		PR_WARNING("Connect failed!\n");

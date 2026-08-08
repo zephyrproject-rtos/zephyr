@@ -858,7 +858,10 @@ struct mqtt_transport {
 
 #if defined(CONFIG_SOCKS)
 	struct {
-		struct net_sockaddr addr;
+		union {
+			struct net_sockaddr addr;
+			struct net_sockaddr_storage addr_storage;
+		};
 		net_socklen_t addrlen;
 	} proxy;
 #endif
