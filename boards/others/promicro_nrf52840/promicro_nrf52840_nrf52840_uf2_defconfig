@@ -21,3 +21,8 @@ CONFIG_BUILD_OUTPUT_UF2=y
 # UF2 Bootloader can use DT offset
 CONFIG_BOARD_HAS_NRF5_BOOTLOADER=n
 CONFIG_USE_DT_CODE_PARTITION=y
+
+# Delay enabling of the USBD CDC ACM interface to allow installing
+# a custom callback that allows switching to Adafruit nRF52 Bootloader
+CONFIG_CDC_ACM_SERIAL_ENABLE_AT_BOOT=n
+CONFIG_UART_LINE_CTRL=y
