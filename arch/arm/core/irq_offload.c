@@ -11,7 +11,13 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/irq_offload.h>
+/* cmsis_core.h is only needed for the ARMv6-M __get_PRIMASK() assert below.
+ * Including it unconditionally breaks non-CMSIS AArch32 targets (e.g. ARM1176).
+ */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && !defined(CONFIG_ARMV8_M_BASELINE) &&               \
+	defined(CONFIG_ASSERT)
 #include <cmsis_core.h>
+#endif
 
 volatile irq_offload_routine_t offload_routine;
 static const void *offload_param;

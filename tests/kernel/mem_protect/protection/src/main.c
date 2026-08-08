@@ -26,6 +26,17 @@
 #define SKIP_EXECUTE_TESTS
 #endif
 
+/*
+ * QEMU's ARMv6 (ARM1176) MMU model does not implement the execute-never
+ * (XN) bit: get_S1prot() forces XN to 0 for non-ARMv7 cores. Execution
+ * protection faults are therefore not observable under emulation even
+ * though the page tables set XN correctly and real ARM1176 silicon
+ * enforces it. Skip the exec tests for ARMv6 until validated on hardware.
+ */
+#if defined(CONFIG_CPU_AARCH32_ARMV6)
+#define SKIP_EXECUTE_TESTS
+#endif
+
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
