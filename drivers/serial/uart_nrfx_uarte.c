@@ -2992,7 +2992,8 @@ static void uarte_pm_resume(const struct device *dev)
 	int err;
 
 	k_sem_reset(&data->hfxo_ready);
-	sys_notify_init_callback(&data->hfxo_client.notify, uarte_hfxo_active);
+	sys_notify_init_callback(&data->hfxo_client.notify,
+				 (sys_notify_generic_callback)uarte_hfxo_active);
 	err = onoff_request(mgr, &data->hfxo_client);
 	__ASSERT_NO_MSG(err >= 0);
 
@@ -3080,7 +3081,8 @@ static int uarte_pm_suspend(const struct device *dev)
 	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
 	int onoff_err;
 
-	sys_notify_init_callback(&data->hfxo_client.notify, uarte_hfxo_active);
+	sys_notify_init_callback(&data->hfxo_client.notify,
+				 (sys_notify_generic_callback)uarte_hfxo_active);
 	onoff_err = onoff_cancel_or_release(mgr, &data->hfxo_client);
 	__ASSERT_NO_MSG(onoff_err >= 0);
 #endif

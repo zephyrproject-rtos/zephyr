@@ -89,7 +89,7 @@ static void clk_request(const struct device *dev, struct onoff_client *cli,
 {
 	int err;
 
-	sys_notify_init_callback(&cli->notify, callback);
+	sys_notify_init_callback(&cli->notify, (sys_notify_generic_callback)callback);
 #ifdef CONFIG_CLOCK_CONTROL_NRF
 	err = onoff_request(mgr, cli);
 #else
