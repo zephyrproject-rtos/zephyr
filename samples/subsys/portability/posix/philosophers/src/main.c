@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "posix_internal.h"
+#include <posix_internal.h>
 
 #include <pthread.h>
 #include <stdbool.h>
