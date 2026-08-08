@@ -372,6 +372,14 @@
 		/* first index is the imu interrupt, the second is the wakeup done interrupt */
 		interrupts = <72 2>, <64 2>;
 		power-domains = <&peripheral_domain>;
+
+		/* New subnode to pass antenna data down to the driver */
+		wifi_antenna: wifi-antenna {
+			antenna-gain-2ghz = <0>;
+			antenna-gain-5ghz-sb1 = <0>;
+			antenna-gain-5ghz-sb2 = <0>;
+			antenna-gain-5ghz-sb3 = <0>;
+		};
 	};
 
 	dma0: dma-controller@104000 {
