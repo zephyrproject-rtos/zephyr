@@ -883,6 +883,14 @@ config ARCH_SUPPORTS_COREDUMP
 config ARCH_SUPPORTS_COREDUMP_THREADS
 	bool
 
+config ARCH_SUPPORTS_COREDUMP_SMP_FREEZE
+	bool
+	help
+	  Architecture can freeze other CPUs during a coredump and capture
+	  their live register state (not just each thread's last-swapped-out
+	  callee-saved context), for accurate backtraces of threads that were
+	  actively running elsewhere at panic time.
+
 config ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
 	bool
 
