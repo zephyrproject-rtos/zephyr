@@ -313,6 +313,9 @@ static void rd_client_event(struct lwm2m_ctx *client,
 	case LWM2M_RD_CLIENT_EVENT_DEREGISTER:
 		LOG_DBG("Client De-register");
 		break;
+	case LWM2M_RD_CLIENT_EVENT_CONTEXT_CLOSED:
+		LOG_DBG("Client context closed");
+		break;
 	}
 }
 

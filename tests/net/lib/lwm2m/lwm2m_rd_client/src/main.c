@@ -113,6 +113,9 @@ static void lwm2m_event_cb(struct lwm2m_ctx *client, enum lwm2m_rd_client_event 
 	case LWM2M_RD_CLIENT_EVENT_DEREGISTER:
 		LOG_INF("*** LWM2M_RD_CLIENT_EVENT_DEREGISTER");
 		break;
+	case LWM2M_RD_CLIENT_EVENT_CONTEXT_CLOSED:
+		LOG_INF("*** LWM2M_RD_CLIENT_EVENT_CONTEXT_CLOSED");
+		break;
 	}
 
 	show_lwm2m_event(client_event);
