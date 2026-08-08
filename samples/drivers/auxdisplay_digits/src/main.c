@@ -18,9 +18,12 @@ LOG_MODULE_REGISTER(auxdisplay_sample, LOG_LEVEL_DBG);
 #define AUXDISPLAY_NODE        DT_NODELABEL(auxdisplay_0)
 #if DT_NODE_HAS_COMPAT(AUXDISPLAY_NODE, gpio_7_segment)
 #define AUXDISPLAY_DIGIT_COUNT DT_PROP_LEN(AUXDISPLAY_NODE, digit_gpios)
-#else
+#elif DT_NODE_EXISTS(DT_NODELABEL(slcd_panel))
 #define AUXDISPLAY_DIGIT_COUNT (DT_PROP(DT_NODELABEL(slcd_panel), columns) * \
 	DT_PROP(DT_NODELABEL(slcd_panel), rows))
+#else
+#define AUXDISPLAY_DIGIT_COUNT (DT_PROP(AUXDISPLAY_NODE, columns) * \
+	DT_PROP(AUXDISPLAY_NODE, rows))
 #endif
 
 static const struct device *const dev = DEVICE_DT_GET(AUXDISPLAY_NODE);

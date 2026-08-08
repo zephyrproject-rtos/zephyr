@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Smile
+
+description: TM1650 7-segment LED display GPIO controller
+
+compatible: "titanmec,tm1650"
+
+include: ["titanmec,tm1650-common.yaml"]
+
+properties:
+  clk-gpios:
+    type: phandle-array
+    required: true
+    description: Clock GPIO pin
+
+  dio-gpios:
+    type: phandle-array
+    required: true
+    description: Data I/O GPIO pin
+
+  bit-delay-us:
+    type: int
+    default: 100
+    description: |
+      Bit delay in microseconds for GPIO bit banging protocol.
+      TM1650 datasheet specifies minimum timings of 100ns (setup/hold).
+      Default of 100µs provides safe margin for software GPIO operations
+      across different platforms.
+
+examples:
+  - |
+    auxdisplay_0: auxdisplay {
+      compatible = "titanmec,tm1650";
+      status = "okay";
+      clk-gpios = <&gpio 0 0>;
+      dio-gpios = <&gpio 1 0>;
+      columns = <4>;
+      rows = <1>;
+    };

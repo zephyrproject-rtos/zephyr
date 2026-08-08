@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 Smile
+
+description: TM1650 7-segment LED display controller
+
+include: [auxdisplay-device.yaml]
+
+properties:
+  rows:
+    type: int
+    enum: [1]
+    description: TM1650 only supports 1 row (up to 4 digits).
+
+  columns:
+    type: int
+    enum: [1, 2, 3, 4]
+    required: true
+    description: |
+      Number of digits connected to the TM1650. The TM1650 supports up
+      to 4 of 7-segment digits.
