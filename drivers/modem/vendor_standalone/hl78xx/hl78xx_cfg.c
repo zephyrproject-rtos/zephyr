@@ -429,10 +429,12 @@ int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t 
 		safe_strncpy(data->identity.apn, apn, sizeof(data->identity.apn));
 	}
 	k_mutex_unlock(&data->api_lock);
-
+#if defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
+	snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"\"", MODEM_HL78XX_ADDRESS_FAMILY);
+#else
 	snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"%s\"", MODEM_HL78XX_ADDRESS_FAMILY,
 		 apn);
-
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_string, strlen(cmd_string),
 				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
 				     MDM_CMD_TIMEOUT, false);
