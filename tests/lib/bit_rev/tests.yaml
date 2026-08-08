@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - bit_rev
+    - sys_util
+
+tests:
+  libraries.bit_rev: {}
+  libraries.bit_rev.llvm:
+    integration_toolchains:
+      - zephyr/llvm
+    arch_allow:
+      - arm
+      - arm64
