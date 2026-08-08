@@ -65,11 +65,31 @@ static int ptp_clock_rate_adjust_native(const struct device *clk, double ratio)
 	return 0;
 }
 
+static int ptp_clock_get_caps_native(const struct device *clk, struct ptp_clock_caps *caps)
+{
+	ARG_UNUSED(clk);
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	*caps = (struct ptp_clock_caps){
+		.flags = PTP_CLOCK_CAP_READ,
+		.resolution_ns = 1,
+		.max_adjust_ns = 0,
+		.min_rate_ppb = 0,
+		.max_rate_ppb = 0,
+	};
+
+	return 0;
+}
+
 static DEVICE_API(ptp_clock, api) = {
 	.set = ptp_clock_set_native,
 	.get = ptp_clock_get_native,
 	.adjust = ptp_clock_adjust_native,
 	.rate_adjust = ptp_clock_rate_adjust_native,
+	.get_caps = ptp_clock_get_caps_native,
 };
 
 #define PTP_CLOCK_NATIVE_INIT(inst)                                                                \

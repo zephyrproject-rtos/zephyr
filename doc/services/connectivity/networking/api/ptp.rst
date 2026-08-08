@@ -26,6 +26,20 @@ Zephyr's implementation of PTP stack consist following items:
 
 The implementation automatically creates PTP Ports (each PTP Port corresponds to unique interface).
 
+Precision timing integration
+****************************
+
+PTP disciplines its hardware clock through the experimental
+:ref:`precision_timing` helpers. Sync observations are converted into
+domain-qualified source and local time points, processed by the shared PI
+discipline, and then applied through the PTP-clock precision adapter. Existing
+PTP datasets, management messages, timestamp storage, and application-facing
+APIs are preserved.
+
+The PTP stack invalidates its precision-time mapping and delay samples after a
+hard clock step, synchronization source change, discipline fault, or expired
+holdover interval.
+
 Supported features
 ******************
 

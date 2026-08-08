@@ -5,6 +5,7 @@ menuconfig NET_GPTP
 	bool "IEEE 802.1AS (gPTP) support"
 	select PTP_CLOCK
 	select NET_L2_PTP_TIMESTAMPING
+	select PRECISION_TIMING
 	help
 	  Enable gPTP driver that send and receives gPTP packets
 	  and handles network packet timestamps.
@@ -77,6 +78,22 @@ config NET_GPTP_INIT_LOG_SYNC_ITV
 	  Defines the interval at which a Sync message will be sent.
 	  The value is the converted in nanoseconds as follow:
 	  nanoseconds = (10^9) * 2^(value)
+
+config NET_GPTP_SERVO_KP
+	int "PI servo proportional gain in thousandths"
+	default 700
+	range 0 10000
+	help
+	  Proportional gain used by the gPTP clock PI servo, expressed in
+	  thousandths. For example, 700 configures a gain of 0.7.
+
+config NET_GPTP_SERVO_KI
+	int "PI servo integral gain in thousandths"
+	default 300
+	range 0 10000
+	help
+	  Integral gain used by the gPTP clock PI servo, expressed in
+	  thousandths. For example, 300 configures a gain of 0.3.
 
 config NET_GPTP_INIT_LOG_ANNOUNCE_ITV
 	int "Set initial announce interval in Log2 base"

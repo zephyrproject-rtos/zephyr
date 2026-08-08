@@ -102,6 +102,19 @@ struct zsock_pollfd *ptp_clock_poll_sockets(void);
 void ptp_clock_handle_state_decision_evt(void);
 
 /**
+ * @brief Function checking whether the current synchronization source timed out.
+ */
+void ptp_clock_check_source_timeout(void);
+
+/**
+ * @brief Function updating the synchronization source timeout from the Sync rate.
+ *
+ * @param[in] log_sync_interval Base-2 logarithm of the Sync interval announced by the
+ *			        current PTP Time Transmitter, in seconds.
+ */
+void ptp_clock_sync_interval_update(int8_t log_sync_interval);
+
+/**
  * @brief Function processing received PTP Management message at the PTP Clock level.
  *
  * @param[in] port PTP Port that received the message.

@@ -23,6 +23,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <errno.h>
 #include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
@@ -41,6 +42,32 @@ extern "C" {
  * @def_driverbackendgroup{PTP Clock,ptp_clock_interface}
  * @{
  */
+
+/** @brief PTP clock capability flags. */
+enum ptp_clock_caps_flags {
+	/** The clock time can be read with ptp_clock_get(). */
+	PTP_CLOCK_CAP_READ = BIT(0),
+	/** The clock time can be set with ptp_clock_set(). */
+	PTP_CLOCK_CAP_SET = BIT(1),
+	/** The clock supports phase adjustment with ptp_clock_adjust(). */
+	PTP_CLOCK_CAP_ADJUST = BIT(2),
+	/** The clock supports rate adjustment with ptp_clock_rate_adjust(). */
+	PTP_CLOCK_CAP_RATE_ADJUST = BIT(3),
+};
+
+/** @brief PTP clock capabilities and adjustment limits. */
+struct ptp_clock_caps {
+	/** Combination of @ref ptp_clock_caps_flags. */
+	uint32_t flags;
+	/** Smallest representable clock increment in nanoseconds. */
+	uint32_t resolution_ns;
+	/** Largest supported absolute phase adjustment in nanoseconds. */
+	int32_t max_adjust_ns;
+	/** Minimum supported rate adjustment in parts per billion. */
+	int32_t min_rate_ppb;
+	/** Maximum supported rate adjustment in parts per billion. */
+	int32_t max_rate_ppb;
+};
 
 /**
  * @brief Set the time of the PTP clock.
@@ -67,6 +94,12 @@ typedef int (*ptp_clock_api_adjust_t)(const struct device *dev, int increment);
 typedef int (*ptp_clock_api_rate_adjust_t)(const struct device *dev, double ratio);
 
 /**
+ * @brief Query PTP clock capabilities and limits.
+ * See ptp_clock_get_caps() for argument description.
+ */
+typedef int (*ptp_clock_api_get_caps_t)(const struct device *dev, struct ptp_clock_caps *caps);
+
+/**
  * @driver_ops{PTP Clock}
  */
 __subsystem struct ptp_clock_driver_api {
@@ -86,6 +119,10 @@ __subsystem struct ptp_clock_driver_api {
 	 * @driver_ops_mandatory @copybrief ptp_clock_rate_adjust
 	 */
 	ptp_clock_api_rate_adjust_t rate_adjust;
+	/**
+	 * @driver_ops_optional @copybrief ptp_clock_get_caps
+	 */
+	ptp_clock_api_get_caps_t get_caps;
 };
 
 /** @} */
@@ -144,6 +181,31 @@ static inline int ptp_clock_adjust(const struct device *dev, int increment)
 static inline int ptp_clock_rate_adjust(const struct device *dev, double rate)
 {
 	return DEVICE_API_GET(ptp_clock, dev)->rate_adjust(dev, rate);
+}
+
+/**
+ * @brief Query PTP clock capabilities and limits.
+ *
+ * @param dev PTP clock device
+ * @param caps Where to store capabilities
+ *
+ * @return 0 if ok, -ENOTSUP if the driver does not report capabilities,
+ *	   <0 if error
+ */
+static inline int ptp_clock_get_caps(const struct device *dev, struct ptp_clock_caps *caps)
+{
+	const struct ptp_clock_driver_api *api;
+
+	if (dev == NULL || caps == NULL) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(ptp_clock, dev);
+	if (api == NULL || api->get_caps == NULL) {
+		return -ENOTSUP;
+	}
+
+	return api->get_caps(dev, caps);
 }
 
 #ifdef __cplusplus

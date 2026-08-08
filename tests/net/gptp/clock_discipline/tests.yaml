@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Philipp Steiner
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - net
+    - gptp
+    - timing
+    - unit
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native/64
+tests:
+  net.gptp.clock_discipline: {}

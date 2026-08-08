@@ -7,6 +7,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
+#include <stdint.h>
+
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/drivers/ptp_clock.h>
@@ -14,6 +16,7 @@ LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 #include <zephyr/random/random.h>
 
 #include <zephyr/net/gptp.h>
+#include <zephyr/timing/precision_timing.h>
 
 #include "gptp_messages.h"
 #include "gptp_mi.h"
@@ -37,6 +40,12 @@ static k_tid_t tid;
 static struct k_thread gptp_thread_data;
 struct gptp_domain gptp_domain;
 struct gptp_clock_data gptp_clock;
+
+#define GPTP_SERVO_STEP_THRESHOLD_NS (50LL * NSEC_PER_MSEC)
+/* CONFIG_NET_GPTP_SERVO_KP and CONFIG_NET_GPTP_SERVO_KI express gains in thousandths. */
+#define GPTP_SERVO_GAIN_DEN          1000
+#define GPTP_SERVO_MIN_RATE_PPB      (-999999999)
+#define GPTP_SERVO_MAX_RATE_PPB      INT32_MAX
 
 int gptp_get_port_number(struct net_if *iface)
 {
@@ -571,6 +580,7 @@ static void gptp_state_machine(void)
 	}
 
 	gptp_mi_state_machines();
+	gptp_clock_check_source_timeout();
 }
 
 static void gptp_thread(void *p1, void *p2, void *p3)
@@ -928,17 +938,54 @@ int gptp_get_port_data(struct gptp_domain *domain,
 	return 0;
 }
 
-double gptp_servo_pi(int64_t nanosecond_diff)
+static void gptp_clock_discipline_init(void)
 {
-	double kp = 0.7;
-	double ki = 0.3;
-	double ppb;
+	struct precision_pi_config config = {
+		.source_domain = {.type = PRECISION_TIME_DOMAIN_GPTP, .id = 0},
+		.local_domain = {.type = PRECISION_TIME_DOMAIN_PHC, .id = 0},
+		.step_threshold_ns = GPTP_SERVO_STEP_THRESHOLD_NS,
+		.source_timeout_ns = 0,
+		.holdover_ns = 0,
+		.lock_sample_count = 0,
+		.outlier_sample_count = 0,
+		.min_rate_ppb = GPTP_SERVO_MIN_RATE_PPB,
+		.max_rate_ppb = GPTP_SERVO_MAX_RATE_PPB,
+		.kp_num = CONFIG_NET_GPTP_SERVO_KP,
+		.ki_num = CONFIG_NET_GPTP_SERVO_KI,
+		.gain_den = GPTP_SERVO_GAIN_DEN,
+	};
 
-	gptp_clock.pi_drift += ki * nanosecond_diff;
-	ppb = kp * nanosecond_diff + gptp_clock.pi_drift;
+	int ret;
 
-	return ppb;
+	ret = precision_pi_init(&gptp_clock.discipline, &config);
+	if (ret < 0) {
+		NET_ERR("Failed to initialize gPTP clock discipline (err %d)", ret);
+		precision_pi_fault(&gptp_clock.discipline);
+		return;
+	}
+
+	precision_time_mapping_init(&gptp_clock.mapping, config.source_domain, config.local_domain);
+	gptp_clock.active_clock = NULL;
+	gptp_clock.active_port = 0U;
+	gptp_clock.active_source_valid = false;
+	memset(gptp_clock.active_gm_id, 0, sizeof(gptp_clock.active_gm_id));
 }
+
+#if defined(CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE)
+void gptp_clock_update_rate_caps(const struct precision_clock *precision_clk)
+{
+	struct precision_clock_caps caps;
+	int32_t min_rate_ppb = GPTP_SERVO_MIN_RATE_PPB;
+	int32_t max_rate_ppb = GPTP_SERVO_MAX_RATE_PPB;
+
+	if (precision_clk != NULL && precision_clock_get_caps(precision_clk, &caps) == 0) {
+		min_rate_ppb = MAX(min_rate_ppb, caps.min_rate_ppb);
+		max_rate_ppb = MIN(max_rate_ppb, caps.max_rate_ppb);
+	}
+
+	(void)precision_pi_set_rate_limits(&gptp_clock.discipline, min_rate_ppb, max_rate_ppb);
+}
+#endif
 
 static void init_ports(void)
 {
@@ -959,7 +1006,7 @@ void net_gptp_init(void)
 	gptp_domain.default_ds.nb_ports = 0U;
 
 	gptp_clock.domain = &gptp_domain;
-	gptp_clock.pi_drift = 0.0;
+	gptp_clock_discipline_init();
 
 	init_ports();
 }

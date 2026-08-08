@@ -6,6 +6,7 @@ project(ptp_clock_decision)
 
 target_sources(app PRIVATE
   src/main.c
+  ${ZEPHYR_BASE}/drivers/ptp_clock/precision_ptp_clock.c
   ${ZEPHYR_BASE}/subsys/net/lib/ptp/clock.c
 )
 
