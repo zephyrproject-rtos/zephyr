@@ -12,13 +12,15 @@
 int main(void)
 {
 	const struct device *dev;
+	struct cfb_display *disp;
+	struct cfb_framebuffer *fb;
 	uint16_t x_res;
 	uint16_t y_res;
 	uint16_t rows;
 	uint8_t ppt;
 	uint8_t font_width;
 	uint8_t font_height;
-	int ret;
+	int ret = 0;
 
 	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(dev)) {
@@ -35,16 +37,19 @@ int main(void)
 
 	printf("Initialized %s\n", dev->name);
 
-	if (cfb_framebuffer_init(dev)) {
-		printf("Framebuffer initialization failed!\n");
+	disp = cfb_display_alloc(dev);
+	if (!disp) {
+		printf("Framebuffer allocation failed!\n");
 		return 0;
 	}
 
-	ret = cfb_framebuffer_clear(dev, true);
+	fb = cfb_display_get_framebuffer(disp);
 	if (ret < 0) {
 		printf("cfb_framebuffer_clear(%s, true) failed: %d\n", dev->name, ret);
 		return 0;
 	}
+
+	cfb_framebuffer_clear(fb, true);
 
 	ret = display_blanking_off(dev);
 	if (ret < 0 && ret != -ENOSYS) {
@@ -52,16 +57,16 @@ int main(void)
 		return 0;
 	}
 
-	x_res = cfb_get_display_parameter(dev, CFB_DISPLAY_WIDTH);
-	y_res = cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGHT);
-	rows = cfb_get_display_parameter(dev, CFB_DISPLAY_ROWS);
-	ppt = cfb_get_display_parameter(dev, CFB_DISPLAY_PPT);
+	x_res = cfb_get_display_parameter(disp, CFB_DISPLAY_WIDTH);
+	y_res = cfb_get_display_parameter(disp, CFB_DISPLAY_HEIGHT);
+	rows = cfb_get_display_parameter(disp, CFB_DISPLAY_ROWS);
+	ppt = cfb_get_display_parameter(disp, CFB_DISPLAY_PPT);
 
 	for (int idx = 0; idx < 42; idx++) {
-		if (cfb_get_font_size(dev, idx, &font_width, &font_height)) {
+		if (cfb_get_font_size(fb, idx, &font_width, &font_height)) {
 			break;
 		}
-		ret = cfb_framebuffer_set_font(dev, idx);
+		ret = cfb_framebuffer_set_font(fb, idx);
 		if (ret < 0) {
 			printf("cfb_framebuffer_set_font(%s, %d) failed: %d\n", dev->name, idx,
 			       ret);
@@ -76,15 +81,15 @@ int main(void)
 	       y_res,
 	       ppt,
 	       rows,
-	       cfb_get_display_parameter(dev, CFB_DISPLAY_COLS));
+	       cfb_get_display_parameter(disp, CFB_DISPLAY_COLS));
 
-	ret = cfb_framebuffer_invert(dev);
+	ret = cfb_framebuffer_invert(fb);
 	if (ret < 0) {
 		printf("cfb_framebuffer_invert(%s) failed: %d\n", dev->name, ret);
 		return 0;
 	}
 
-	ret = cfb_set_kerning(dev, 3);
+	ret = cfb_set_kerning(fb, 3);
 	if (ret < 0) {
 		printf("cfb_set_kerning(%s, 3) failed: %d\n", dev->name, ret);
 		return 0;
@@ -96,19 +101,19 @@ int main(void)
 			k_sleep(K_MSEC(20));
 #endif
 
-			ret = cfb_framebuffer_clear(dev, false);
+			ret = cfb_framebuffer_clear(fb, false);
 			if (ret < 0) {
 				printf("Failed to clear the framebuffer: %d\n", ret);
 				continue;
 			}
 
-			ret = cfb_print(dev, "0123456789mMgj!\"\xc2\xA7$%&/()=", i, i);
+			ret = cfb_print(fb, "0123456789mMgj!\"\xc2\xA7$%&/()=", i, i);
 			if (ret < 0) {
 				printf("Failed to print a string: %d\n", ret);
 				continue;
 			}
 
-			ret = cfb_framebuffer_finalize(dev);
+			ret = cfb_framebuffer_finalize(fb);
 			if (ret < 0) {
 				printf("Finalize failed: %d\n", ret);
 				continue;
