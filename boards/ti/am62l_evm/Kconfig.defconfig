@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_AM62L_EVM
+
+if FLASH
+
+config BOARD_TI_MSPI_FLASH_BOOT_MODE_RESET
+	default y if MSPI
+
+config FLASH_PAGE_LAYOUT
+	default y
+
+if FLASH_MSPI_NOR
+
+config FLASH_MSPI_NOR_LAYOUT_PAGE_SIZE
+	default 262144
+
+endif # FLASH_MSPI_NOR
+
+endif # FLASH
+
+endif # BOARD_AM62L_EVM
