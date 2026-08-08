@@ -9,6 +9,12 @@ from unittest import mock
 
 import pytest
 from twisterlib.sidecars import Sidecar, SidecarImporter, sidecar_config_schema
+from twisterlib.sidecars.net_tools import (
+    NET_TOOLS_SHARED_SUBNET,
+    NetToolsSidecar,
+    get_net_addresses,
+    get_net_iface_name,
+)
 from twisterlib.sidecars.virtiofs import (
     VirtiofsSidecar,
     get_virtiofs_socket_path,
@@ -215,3 +221,159 @@ def test_virtiofs_teardown_terminates_daemon(tmp_path):
     proc.wait.assert_called_once()
     assert sidecar._virtiofsd_proc is None
     assert not os.path.exists(sidecar.socket_path)
+
+
+# --- net-tools --------------------------------------------------------------
+
+
+def test_net_tools_is_registered():
+    assert isinstance(SidecarImporter.get_sidecar('net-tools'), NetToolsSidecar)
+
+
+def test_net_iface_and_addresses_are_unique_and_valid():
+    iface = get_net_iface_name("/some/long/build/dir")
+    assert iface.startswith("zeth") and len(iface) <= 15
+    assert iface == get_net_iface_name("/some/long/build/dir")
+    assert get_net_iface_name("/other") != iface
+
+    host, guest, prefix = get_net_addresses("/some/long/build/dir")
+    assert host.endswith(".2") and guest.endswith(".1") and prefix == 24
+    assert host.rsplit(".", 1)[0] == guest.rsplit(".", 1)[0]
+    assert get_net_addresses("/other")[0] != host
+
+
+def test_net_shared_subnet_uses_fixed_addresses(tmp_path):
+    # Without the flag, each instance gets its own private subnet.
+    (tmp_path / "a").mkdir()
+    private = NetToolsSidecar()
+    private.configure(_make_instance(tmp_path / "a"))
+    assert private.host_ip.startswith("10.")
+
+    # With it, the fixed 192.0.2.x addresses the companion expects are used.
+    (tmp_path / "b").mkdir()
+    shared = NetToolsSidecar()
+    shared.configure(_make_instance(tmp_path / "b", {"net-tools": {"shared_subnet": True}}))
+    assert (shared.host_ip, shared.guest_ip, shared.prefix) == NET_TOOLS_SHARED_SUBNET
+
+
+def test_net_tools_cmake_args_bakes_iface_and_addresses(tmp_path):
+    instance = _make_instance(tmp_path, {"net-tools": {"iface": "zeth7"}})
+    sidecar = NetToolsSidecar()
+    sidecar.configure(instance)
+
+    args = sidecar.cmake_args(instance.build_dir)
+    assert '-DCONFIG_ETH_QEMU_IFACE_NAME="zeth7"' in args
+    assert f'-DCONFIG_NET_CONFIG_MY_IPV4_ADDR="{sidecar.guest_ip}"' in args
+    assert f'-DCONFIG_NET_CONFIG_PEER_IPV4_ADDR="{sidecar.host_ip}"' in args
+
+
+def test_net_tools_cmake_args_omits_addresses_on_shared_subnet(tmp_path):
+    # A shared subnet means the test keeps the fixed addresses; only the
+    # interface name is baked so the guest still attaches to this instance's tap.
+    instance = _make_instance(tmp_path, {"net-tools": {"shared_subnet": True}})
+    sidecar = NetToolsSidecar()
+    sidecar.configure(instance)
+
+    args = sidecar.cmake_args(instance.build_dir)
+    assert any(a.startswith('-DCONFIG_ETH_QEMU_IFACE_NAME=') for a in args)
+    assert not any('IPV4_ADDR' in a for a in args)
+
+
+def test_net_tools_uses_sudo_when_not_root(tmp_path):
+    instance = _make_instance(tmp_path)
+    sidecar = NetToolsSidecar()
+    sidecar.configure(instance)
+    sidecar.net_setup = "/opt/net-tools/net-setup.sh"
+
+    with mock.patch("os.geteuid", return_value=1000):
+        cmd = sidecar._net_setup_cmd("start")
+
+    assert cmd[:2] == ["sudo", "-n"]
+    assert cmd[-1] == "start"
+
+
+def test_net_tools_setup_skips_when_script_missing(tmp_path):
+    instance = _make_instance(tmp_path)
+    sidecar = NetToolsSidecar()
+    sidecar.configure(instance)
+    sidecar.net_setup = None
+
+    with mock.patch("subprocess.run") as run_mock:
+        proceed = sidecar.setup()
+
+    assert proceed is False
+    run_mock.assert_not_called()
+    assert instance.status == TwisterStatus.SKIP
+
+
+def test_net_tools_start_stop_commands(tmp_path):
+    instance = _make_instance(tmp_path, {"net-tools": {"iface": "zeth7"}})
+    os.makedirs(instance.build_dir, exist_ok=True)
+    sidecar = NetToolsSidecar()
+    sidecar.configure(instance)
+    sidecar.net_setup = "/opt/net-tools/net-setup.sh"
+
+    calls = []
+
+    def _fake_run(cmd, **_kwargs):
+        calls.append(cmd)
+        return mock.Mock(returncode=0, stderr="", stdout="")
+
+    with mock.patch("os.geteuid", return_value=0), \
+         mock.patch("subprocess.run", side_effect=_fake_run):
+        assert sidecar.setup() is True
+        sidecar.teardown()
+
+    # A stale-cleanup stop, then start, then the teardown stop, all on zeth7 with
+    # the generated per-instance config.
+    conf = os.path.join(instance.build_dir, "net-tools.conf")
+    assert [c[-1] for c in calls] == ["stop", "start", "stop"]
+    for c in calls:
+        assert c == ["/opt/net-tools/net-setup.sh", "--iface", "zeth7",
+                     "--config", conf, c[-1]]
+    # The generated config puts the host on this instance's own subnet.
+    with open(conf) as f:
+        assert sidecar.host_ip in f.read()
+
+
+def test_net_tools_launches_and_stops_companion(tmp_path):
+    instance = _make_instance(
+        tmp_path, {"net-tools": {"iface": "zeth7", "apps": ["echo-server"]}}
+    )
+    os.makedirs(instance.build_dir, exist_ok=True)
+    sidecar = NetToolsSidecar()
+    sidecar.configure(instance)
+    sidecar.net_setup = "/opt/net-tools/net-setup.sh"
+
+    app_proc = mock.Mock()
+
+    with mock.patch("os.geteuid", return_value=0), \
+         mock.patch("subprocess.run", return_value=mock.Mock(returncode=0, stderr="", stdout="")), \
+         mock.patch("os.path.exists", return_value=True), \
+         mock.patch("subprocess.Popen", return_value=app_proc) as popen_mock:
+        assert sidecar.setup() is True
+        # The known "echo-server" shortcut expands and binds to this iface.
+        assert popen_mock.call_args.args[0] == ["/opt/net-tools/echo-server", "-i", "zeth7"]
+
+    with mock.patch("twisterlib.sidecars.net_tools.terminate_process") as term_mock:
+        sidecar.teardown()
+
+    term_mock.assert_called_once_with(app_proc)
+
+
+def test_net_tools_skips_when_companion_missing(tmp_path):
+    instance = _make_instance(tmp_path, {"net-tools": {"apps": ["echo-server"]}})
+    os.makedirs(instance.build_dir, exist_ok=True)
+    sidecar = NetToolsSidecar()
+    sidecar.configure(instance)
+    sidecar.net_setup = "/opt/net-tools/net-setup.sh"
+
+    with mock.patch("os.geteuid", return_value=0), \
+         mock.patch("subprocess.run", return_value=mock.Mock(returncode=0, stderr="", stdout="")), \
+         mock.patch("os.path.exists", return_value=False), \
+         mock.patch("subprocess.Popen") as popen_mock:
+        proceed = sidecar.setup()
+
+    assert proceed is False
+    popen_mock.assert_not_called()
+    assert instance.status == TwisterStatus.SKIP
