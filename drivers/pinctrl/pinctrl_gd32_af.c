@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021 Teslabs Engineering S.L.
+ * Copyright (c) 2026 GigaDevice Semiconductor Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,12 +20,18 @@ BUILD_ASSERT((GD32_OTYPE_PP == GPIO_OTYPE_PP) &&
 	     (GD32_OTYPE_OD == GPIO_OTYPE_OD),
 	     "pinctrl output type definitions != HAL definitions");
 
-BUILD_ASSERT((GD32_OSPEED_2MHZ == GPIO_OSPEED_2MHZ) &&
+BUILD_ASSERT(
+#if !defined(CONFIG_SOC_SERIES_GD32C2X1)
+	      (GD32_OSPEED_2MHZ == GPIO_OSPEED_2MHZ) &&
+#endif
 #if defined(CONFIG_SOC_SERIES_GD32F3X0) || \
 	defined(CONFIG_SOC_SERIES_GD32A50X) || \
 	defined(CONFIG_SOC_SERIES_GD32L23X)
 	     (GD32_OSPEED_10MHZ == GPIO_OSPEED_10MHZ) &&
 	     (GD32_OSPEED_50MHZ == GPIO_OSPEED_50MHZ) &&
+#elif defined(CONFIG_SOC_SERIES_GD32C2X1)
+	     (GD32_OSPEED_LEVEL_0 == GPIO_OSPEED_LEVEL_0) &&
+	     (GD32_OSPEED_LEVEL_1 == GPIO_OSPEED_LEVEL_1) &&
 #else
 	     (GD32_OSPEED_25MHZ == GPIO_OSPEED_25MHZ) &&
 	     (GD32_OSPEED_50MHZ == GPIO_OSPEED_50MHZ) &&
