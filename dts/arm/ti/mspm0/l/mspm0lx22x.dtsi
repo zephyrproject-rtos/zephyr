@@ -89,6 +89,12 @@
 				resolution = <16>;
 				status = "disabled";
 			};
+
+			pwmg8: pwmg8 {
+				compatible = "ti,mspm0-timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		timg12: timg12@40870000 {
