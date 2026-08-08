@@ -1,5 +1,5 @@
 /** @file
- *  @brief Internal APIs for Bluetooth HID Device handling.
+ *  @brief Internal APIs shared by the Bluetooth HID Device and Host profiles.
  */
 
 /*
@@ -8,7 +8,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/classic/hid_device.h>
 #include <zephyr/bluetooth/l2cap.h>
 
 /** @brief HID header size (1 byte). */
@@ -52,8 +51,12 @@
 
 /** @brief Report type field mask (lower two bits of parameter). */
 #define BT_HID_PARAM_REPORT_TYPE_MASK GENMASK(1, 0)
-/** @brief Report size present flag in parameter field. */
-#define BT_HID_PARAM_REPORT_SIZE_MASK BIT(2)
+/** @brief Report size present flag in parameter field.
+ *
+ *  HID spec v1.1.2 Table 3.4: within the GET_REPORT header octet bit 3 is the
+ *  Size flag and bit 2 is reserved, so the flag is bit 3 of the parameter.
+ */
+#define BT_HID_PARAM_REPORT_SIZE_MASK BIT(3)
 
 /** @brief Report type values used in GET/SET/DATA messages. */
 #define BT_HID_PAR_REP_TYPE_OTHER   0x00
@@ -135,4 +138,42 @@ struct bt_hid_device {
 
 	struct k_work_delayable intr_timeout;
 	struct k_work vcu_disconnect;
+};
+
+/** @brief HID Host session wrapper for an L2CAP channel.
+ *
+ * Each HID Host connection maintains two sessions: control and interrupt.
+ */
+struct bt_hid_host_session {
+	/** Underlying BR/EDR L2CAP channel. */
+	struct bt_l2cap_br_chan br_chan;
+	/** Channel type: control or interrupt. */
+	uint8_t type;
+};
+
+/** @brief HID Host instance (opaque to applications) */
+struct bt_hid_host {
+	/** Role: whether we initiated or accepted the connection. */
+	uint8_t role;
+	/** Control channel session (PSM 0x0011). */
+	struct bt_hid_host_session ctrl_session;
+	/** Interrupt channel session (PSM 0x0013). */
+	struct bt_hid_host_session intr_session;
+
+	/** True when the remote device is in Boot Protocol Mode. */
+	bool boot_mode;
+	/** True when SUSPEND has been sent. */
+	bool suspended;
+	/** Runtime connection state. */
+	uint8_t state;
+
+	/** True while the control channel is connected. */
+	bool ctrl_connected;
+	/** True while the interrupt channel is connected. */
+	bool intr_connected;
+	/** Protocol mode requested by the last SET_PROTOCOL. */
+	uint8_t pending_protocol;
+	struct k_work_delayable timeout_work;
+	struct k_work vcu_disconnect;
+	uint8_t w4_response;
 };
