@@ -1,0 +1,48 @@
+# Bluetooth HID over GATT Profile (HOGP)
+
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BT_HOGP_DEVICE
+	bool "HID over GATT Profile Device (HOGP Device)"
+	depends on BT_PERIPHERAL
+	depends on BT_SMP
+	select BT_GATT_DYNAMIC_DB
+	help
+	  Enable HID over GATT Profile Device role (HIDS Server).
+	  Provides a reusable HID Service implementation with configurable
+	  Report Map and report characteristics.
+
+if BT_HOGP_DEVICE
+
+config BT_HOGP_DEVICE_MAX_CONNECTIONS
+	int "Maximum simultaneous HOGP Device connections"
+	default 2
+	range 1 8
+	help
+	  Maximum number of simultaneous Host connections the HOGP Device
+	  can maintain.
+
+config BT_HOGP_DEVICE_MAX_REPORTS
+	int "Maximum HID reports per device"
+	default 8
+	range 1 16
+	help
+	  Maximum number of HID Report characteristics (Input + Output + Feature)
+	  supported by the HOGP Device.
+
+config BT_HOGP_DEVICE_MAX_REPORT_LEN
+	int "Maximum single report data length (bytes)"
+	default 64
+	range 8 256
+	help
+	  Maximum length of a single HID report data payload. Used as
+	  stack buffer size in the GET_REPORT read callback.
+
+config BT_HOGP_DEVICE_BOOT
+	bool "Support Boot Protocol Mode"
+	help
+	  Enable Boot Keyboard and/or Boot Mouse Input/Output Report
+	  characteristics for Boot Protocol Mode support.
+
+endif # BT_HOGP_DEVICE
