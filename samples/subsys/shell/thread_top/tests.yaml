@@ -1,0 +1,14 @@
+sample:
+  name: thread_top
+  description: Demonstrate the 'kernel thread top' shell command with
+    synthetic CPU load threads
+common:
+  harness: keyboard
+  tags:
+    - shell
+tests:
+  sample.shell.thread_top:
+    filter: CONFIG_SERIAL and dt_chosen_enabled("zephyr,shell-uart")
+    integration_platforms:
+      - qemu_cortex_m3
+      - nucleo_l432kc
