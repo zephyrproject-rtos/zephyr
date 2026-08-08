@@ -32,4 +32,14 @@ config MEMC_MSPI_IS66WV
 	depends on $(dt_compat_on_bus,$(DT_COMPAT_IS66WV),mspi)
 	select MEMC_MSPI
 
+config MEMC_MSPI_QSPI_PSRAM
+	bool "MSPI generic QPI PSRAM driver"
+	default y
+	depends on DT_HAS_MSPI_QSPI_PSRAM_ENABLED
+	select MEMC_MSPI
+	help
+	  Enable driver for QPI PSRAM devices sharing the standard
+	  SPI/QPI command set: Espressif ESP-PSRAM64H, ISSI IS66WVS4M8BLL,
+	  IS66WVS8M8BLL and compatible chips.
+
 endmenu
