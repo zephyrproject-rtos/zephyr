@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Anuj Deshpande
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  C-DAC THEJAS32 GPIO controller.
+
+  Each controller handles 16 pins. Pin data is accessed through address
+  masking: bits [17:2] of the address select which pins a data access
+  operates on, so individual pins can be set and cleared without
+  read-modify-write. The direction register sits above the data window.
+
+compatible: "cdac,thejas32-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ngpios:
+    const: 16
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
