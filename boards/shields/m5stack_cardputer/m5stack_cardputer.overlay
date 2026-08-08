@@ -33,16 +33,15 @@
 			reg = <0>;
 			mipi-max-frequency = <20000000>;
 
-			width = <135>;
-			height = <240>;
-			x-offset = <52>;
-			y-offset = <40>;
-
+			width = <240>;
+			height = <135>;
+			x-offset = <40>;
+			y-offset = <53>;
 			vcom = <0x28>;
 			gctrl = <0x35>;
 			vrhs = <0x10>;
 			vdvs = <0x20>;
-			mdac = <0x00>;
+			mdac = <0x60>;
 			gamma = <0x01>;
 			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			lcm = <0x2c>;
