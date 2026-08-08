@@ -1,0 +1,11 @@
+# Infineon CAT1 MBOX configuration options
+
+# Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_PDL_INFINEON_CAT1
+	bool "Infineon CAT1 I2C driver (PDL)"
+	default y
+	depends on DT_HAS_INFINEON_CAT1_MBOX_PDL_ENABLED
+	help
+	  This option enables the MBOX driver for the Infineon CAT1 family.
