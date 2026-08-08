@@ -20,7 +20,17 @@ description: |
 
       with f(VCOx clock) = f(REFx_CK) × (PLLNx / PLLMx)
 
-  The PLL output frequency must not exceed 80 MHz.
+  The VCO output frequency must lie within one of the two VCO ranges: the wide
+  range (192 to 960 MHz) or the medium range (150 to 420 MHz). div-m must be
+  chosen so the PLL input (f(REFx_CK) / PLLMx) is in the 1 to 16 MHz range, and
+  mul-n so the VCO output falls in a valid range. The driver selects the VCO
+  range from the resulting VCO output frequency: wide above 420 MHz, medium
+  below 192 MHz, and in the 192 to 420 MHz overlap the choice follows the PLL
+  input range instead.
+
+  The maximum PLL output frequency (e.g. pll1_p_ck = sys_ck) is device
+  dependent, for example 480 MHz on STM32H743 - refer to the reference manual
+  and datasheet of the target device.
 
 compatible: "st,stm32h7-pll-clock"
 
