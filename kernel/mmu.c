@@ -533,7 +533,10 @@ static int map_anon_page(void *addr, uint32_t flags)
 		int ret;
 
 		pf = k_mem_paging_eviction_select(&dirty);
-		__ASSERT(pf != NULL, "failed to get a page frame");
+		if (pf == NULL) {
+			/* Every evictable page frame is pinned or busy */
+			return -ENOMEM;
+		}
 		LOG_DBG("evicting %p at 0x%lx",
 			k_mem_page_frame_to_virt(pf),
 			k_mem_page_frame_to_phys(pf));
@@ -1387,7 +1390,6 @@ static int do_mem_evict(void *addr)
 		goto out;
 	}
 
-	__ASSERT(ret == 0, "failed to prepare page frame");
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	k_spin_unlock(&z_mm_lock, key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
@@ -1690,7 +1692,13 @@ static bool do_page_fault(void *addr, bool pin)
 	if (pf == NULL) {
 		/* Need to evict a page frame */
 		pf = do_eviction_select(&dirty);
-		__ASSERT(pf != NULL, "failed to get a page frame");
+		if (pf == NULL) {
+			/* Every evictable page frame is pinned or busy.
+			 * Fail the fault so it is reported as fatal.
+			 */
+			result = false;
+			goto out;
+		}
 		LOG_DBG("evicting %p at 0x%lx",
 			k_mem_page_frame_to_virt(pf),
 			k_mem_page_frame_to_phys(pf));
@@ -1698,7 +1706,13 @@ static bool do_page_fault(void *addr, bool pin)
 		paging_stats_eviction_inc(faulting_thread, dirty);
 	}
 	ret = page_frame_prepare_locked(pf, &dirty, true, &page_out_location);
-	__ASSERT(ret == 0, "failed to prepare page frame");
+	if (ret != 0) {
+		/* Backing store is full. Fail the fault so it is
+		 * reported as fatal.
+		 */
+		result = false;
+		goto out;
+	}
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	k_spin_unlock(&z_mm_lock, key);
@@ -1745,8 +1759,14 @@ static void do_page_in(void *addr)
 	bool ret;
 
 	ret = do_page_fault(addr, false);
-	__ASSERT(ret, "unmapped memory address %p", addr);
-	(void)ret;
+	if (!ret) {
+		/* There is no error reporting channel to the caller, and
+		 * continuing would defer the failure to an arbitrary later
+		 * access.
+		 */
+		LOG_ERR("cannot page in unmapped address %p", addr);
+		k_panic();
+	}
 }
 
 void k_mem_page_in(void *addr, size_t size)
@@ -1762,8 +1782,15 @@ static void do_mem_pin(void *addr)
 	bool ret;
 
 	ret = do_page_fault(addr, true);
-	__ASSERT(ret, "unmapped memory address %p", addr);
-	(void)ret;
+	if (!ret) {
+		/* There is no error reporting channel to the caller, and
+		 * continuing with the memory not actually pinned would
+		 * defer the failure to an arbitrary later access, possibly
+		 * from a context that cannot handle a page fault.
+		 */
+		LOG_ERR("cannot pin unmapped address %p", addr);
+		k_panic();
+	}
 }
 
 void k_mem_pin(void *addr, size_t size)
