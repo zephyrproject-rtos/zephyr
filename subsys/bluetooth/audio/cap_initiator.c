@@ -1067,15 +1067,16 @@ static void cap_to_bap_unicast_group_param(const struct bt_cap_unicast_group_par
 }
 
 int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
-				struct bt_cap_unicast_group **unicast_group)
+				struct bt_cap_unicast_group **out_unicast_group)
 {
+	struct bt_cap_unicast_group *unicast_group = NULL;
 	struct cap_to_bap_unicast_params bap_param = {0};
 	int err;
 
 	static K_MUTEX_DEFINE(list_mutex);
 
-	if (unicast_group == NULL) {
-		LOG_DBG("unicast_group is NULL");
+	if (out_unicast_group == NULL) {
+		LOG_DBG("out_unicast_group is NULL");
 		return -EINVAL;
 	}
 
@@ -1083,17 +1084,17 @@ int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
 		return -EINVAL;
 	}
 
-	*unicast_group = NULL;
+	*out_unicast_group = NULL;
 
 	(void)k_mutex_lock(&list_mutex, K_FOREVER);
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_groups); i++) {
 		if (unicast_groups[i].bap_unicast_group == NULL) {
-			*unicast_group = &unicast_groups[i];
+			unicast_group = &unicast_groups[i];
 			break;
 		}
 	}
 
-	if (*unicast_group == NULL) {
+	if (unicast_group == NULL) {
 		LOG_DBG("Could not allocate more unicast groups");
 		(void)k_mutex_unlock(&list_mutex);
 		return -ENOMEM;
@@ -1103,9 +1104,11 @@ int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
 	cap_to_bap_unicast_group_param(param, &bap_param);
 
 	err = bt_bap_unicast_group_create(&bap_param.group_param,
-					  &(*unicast_group)->bap_unicast_group);
+					  &unicast_group->bap_unicast_group);
 	if (err != 0) {
 		LOG_DBG("Failed to create unicast group: %d", err);
+	} else {
+		*out_unicast_group = unicast_group;
 	}
 	(void)k_mutex_unlock(&list_mutex);
 

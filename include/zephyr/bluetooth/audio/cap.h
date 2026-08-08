@@ -371,13 +371,13 @@ struct bt_cap_unicast_group_param {
  * All streams in the same direction shall share the same interval and latency (see
  * @ref bt_bap_qos_cfg).
  *
- * @param[in]  param          The unicast group create parameters.
- * @param[out] unicast_group  Pointer to the unicast group created.
+ * @param[in]  param              The unicast group create parameters.
+ * @param[out] out_unicast_group  Pointer to the unicast group created.
  *
  * @return Zero on success or (negative) error code otherwise.
  */
 int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
-				struct bt_cap_unicast_group **unicast_group);
+				struct bt_cap_unicast_group **out_unicast_group);
 
 /**
  * @brief Reconfigure unicast group.
