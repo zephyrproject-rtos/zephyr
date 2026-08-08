@@ -9,12 +9,14 @@
 #define DT_DRV_COMPAT nxp_kinetis_trng
 
 #include <errno.h>
+#include <string.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/random/random.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/util.h>
 
 #include "fsl_trng.h"
 
@@ -29,9 +31,27 @@ static int entropy_mcux_trng_get_entropy(const struct device *dev,
 	const struct mcux_entropy_config *config = dev->config;
 	status_t status;
 
-	status = TRNG_GetRandomData(config->base, buffer, length);
-	if (status != kStatus_Success) {
-		return -EIO;
+	/*
+	 * TRNG_GetRandomData() may write random data in 32-bit word
+	 * granularity into the destination buffer. When the SDK is built
+	 * with TRNG_SW_HEALTH_TESTS enabled it always copies full words,
+	 * which would overflow a caller buffer whose length is not a
+	 * multiple of 4 bytes. Use a word-aligned bounce buffer and copy
+	 * only the requested number of bytes to guarantee we never write
+	 * past buffer[length - 1].
+	 */
+	while (length > 0U) {
+		uint32_t word;
+		uint16_t chunk = MIN(length, (uint16_t)sizeof(word));
+
+		status = TRNG_GetRandomData(config->base, &word, sizeof(word));
+		if (status != kStatus_Success) {
+			return -EIO;
+		}
+
+		memcpy(buffer, &word, chunk);
+		buffer += chunk;
+		length -= chunk;
 	}
 
 	return 0;
