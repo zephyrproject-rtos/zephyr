@@ -28,7 +28,7 @@ properties:
       - 6   # x6
       - 7   # x7
       - 8   # x8
-      - 9   # x2
+      - 9   # x9
       - 10  # x10
       - 11  # x11
       - 12  # x12
@@ -37,3 +37,17 @@ properties:
       - 15  # x15
       - 16  # x16
       - 18  # x18
+
+  hsi-prediv:
+    type: int
+    default: 1
+    description: |
+        HSI predivider value before PLL input. Controls the EXTEN_PLL_HSI_PRE
+        bit in the EXTEN_CTR register. Only applicable when the PLL clock source
+        is HSI. The HSI predivider has a hardware default of /2, but we use a default
+        of /1 to allow for mul values to be interchangeable with HSE.
+        1 = HSI fed directly to PLL (no division, matches HSE behavior)
+        2 = HSI divided by 2 before PLL (hardware reset default)
+    enum:
+      - 1
+      - 2
