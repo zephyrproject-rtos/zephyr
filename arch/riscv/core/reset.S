@@ -211,6 +211,9 @@ wait_secondary_wake_flag:
 	lr t0, 0(t0)
 	bne a0, t0, wait_secondary_wake_flag
 
+	/* Acquire fence: orders our loads after the primary's stores */
+	fence r, rw
+
 	/* Set up stack */
 	la t0, riscv_cpu_sp
 	lr sp, 0(t0)

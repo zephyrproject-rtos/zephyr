@@ -12,6 +12,7 @@
 #include <zephyr/arch/riscv/irq.h>
 #include <zephyr/drivers/pm_cpu_ops.h>
 #include <zephyr/platform/hooks.h>
+#include <zephyr/sys/barrier.h>
 #if defined(CONFIG_RISCV_IMSIC)
 #include <zephyr/drivers/interrupt_controller/riscv_imsic.h>
 #endif
@@ -39,6 +40,9 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 
 	riscv_cpu_sp = K_KERNEL_STACK_BUFFER(stack) + sz;
 	riscv_cpu_boot_flag = 0U;
+
+	/* Release fence: publish the handshake stores before the wake flag */
+	barrier_dsync_fence_full();
 
 #ifdef CONFIG_PM_CPU_OPS
 	if (pm_cpu_on(cpu_num, (uintptr_t)&__start)) {
