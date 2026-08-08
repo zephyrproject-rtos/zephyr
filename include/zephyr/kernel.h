@@ -23,6 +23,7 @@
 #include <zephyr/sys/mem_stats.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/thread_safety.h>
 
 #ifdef __cplusplus
 extern "C" {

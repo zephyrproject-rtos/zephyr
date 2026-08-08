@@ -139,6 +139,6 @@ static inline bool z_sched_wake_all(_wait_q_t *wait_q, int swap_retval,
  *         expired without being woken up.
  */
 int z_sched_wait(struct k_spinlock *lock, k_spinlock_key_t key,
-		 _wait_q_t *wait_q, k_timeout_t timeout, void **data);
+		 _wait_q_t *wait_q, k_timeout_t timeout, void **data) Z_RELEASES(*lock);
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_SCHEDULER_H_ */
