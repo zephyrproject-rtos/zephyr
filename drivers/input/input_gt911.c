@@ -13,6 +13,7 @@
 #include <zephyr/input/input.h>
 #include <zephyr/input/input_touch.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/pm/pm.h>
 
 #include <zephyr/logging/log.h>
@@ -143,9 +144,10 @@ static int gt911_process(const struct device *dev)
 	/*
 	 * Note- since we program the max number of touch inputs during init,
 	 * the controller won't report more than the maximum number of touch
-	 * points we are configured to support
+	 * points we are configured to support. Clamp anyway so that corrupted
+	 * data on the bus cannot overflow the point array.
 	 */
-	points = status & GT911_TOUCH_POINTS_MSK;
+	points = min(status & GT911_TOUCH_POINTS_MSK, CONFIG_INPUT_GT911_MAX_TOUCH_POINTS);
 
 	/* need to clear the status */
 	static const uint8_t clear_buffer[3] = {(uint8_t)GT911_REG_STATUS,
