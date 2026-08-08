@@ -309,6 +309,10 @@ manifest:
     - name: libsbc
       revision: 8e1beda02acb8972e29e6edbb423f7cafe16e445
       path: modules/lib/libsbc
+    - name: libsrtp
+      url: https://github.com/seyednasermoravej/libsrtp.git
+      revision: d45f23c068022c2853ecf08f1fcd48af5b3ee07c
+      path: modules/lib/libsrtp
     - name: littlefs
       path: modules/fs/littlefs
       groups:
