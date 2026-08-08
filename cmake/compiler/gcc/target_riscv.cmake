@@ -137,6 +137,10 @@ if(CONFIG_RISCV_ISA_EXT_ZBS)
   string(APPEND riscv_march "_zbs")
 endif()
 
+if(CONFIG_RISCV_ISA_EXT_ZICFILP)
+  string(APPEND riscv_march "_zicfilp")
+endif()
+
 # Check whether we already imply Zmmul by selecting the M extension; if not - enable it
 if(NOT CONFIG_RISCV_ISA_EXT_M AND
    CONFIG_RISCV_ISA_EXT_ZMMUL AND
@@ -201,6 +205,10 @@ list(APPEND RISCV_C_FLAGS
      -march=${riscv_march}
      -mcmodel=${riscv_mcmodel}
      )
+if(CONFIG_RISCV_LANDING_PADS)
+  list(APPEND RISCV_C_FLAGS -fcf-protection=branch)
+endif()
+
 list(APPEND TOOLCHAIN_C_FLAGS ${RISCV_C_FLAGS})
 list(APPEND TOOLCHAIN_GROUPED_LD_FLAGS RISCV_C_FLAGS)
 

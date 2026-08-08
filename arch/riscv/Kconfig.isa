@@ -183,7 +183,7 @@ config RISCV_ISA_EXT_ZCA
 	bool
 	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zca)
 	help
-	  (Zca) - Zba Extension for Compressed Instructions
+	  (Zca) - Zca Extension for Compressed Instructions
 
 	  The Zca extension is a subset of the C extension that does not include
 	  the floating-point load and store instructions.
@@ -353,3 +353,13 @@ config RISCV_ISA_EXT_ZKS
 	  standards. It includes sub-extensions Zbkb, Zbkc, Zbkx
 	  (shared with Zk), Zksed (SM4 block cipher), and Zksh
 	  (SM3 hash function).
+
+config RISCV_ISA_EXT_ZICFILP
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zicfilp)
+	help
+	  (Zicfilp) - Zicfilp Extensions for Landing Pads
+
+	  The Zicfilp extension introduces landing pad (lpad) instructions to enforce
+	  forward-edge control-flow integrity, ensuring indirect calls and jumps target
+	  valid, predefined locations.

@@ -53,7 +53,7 @@ uintptr_t z_riscv_get_sp_before_exc(const struct arch_esf *esf)
 
 const char *z_riscv_mcause_str(unsigned long cause)
 {
-	static const char *const mcause_str[17] = {
+	static const char *const mcause_str[20] = {
 		[0] = "Instruction address misaligned",
 		[1] = "Instruction Access fault",
 		[2] = "Illegal instruction",
@@ -70,7 +70,10 @@ const char *z_riscv_mcause_str(unsigned long cause)
 		[13] = "Load page fault",
 		[14] = "unknown",
 		[15] = "Store/AMO page fault",
-		[16] = "unknown",
+		[16] = "Double Trap",
+		[17] = "unknown",
+		[18] = "Software Check Exception",
+		[19] = "unknown",
 	};
 
 	return mcause_str[MIN(cause, ARRAY_SIZE(mcause_str) - 1)];

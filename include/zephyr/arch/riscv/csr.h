@@ -133,6 +133,8 @@
 #define SATP_MODE_SV57	10
 #define SATP_MODE_SV64	11
 
+#define MSECCFG_MLPE	0x400
+
 /**
  * PMPCFG CSR base address
  */

@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2026 Zephyr Project
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		cpu@0 {
+			riscv,isa-extensions = "i", "m", "a", "c", "s",
+					       "zicsr", "zifencei",
+					       "zicfilp";
+		};
+
+		cpu@1 {
+			riscv,isa-extensions = "i", "m", "a", "c", "s",
+					       "zicsr", "zifencei",
+					       "zicfilp";
+		};
+
+		cpu@2 {
+			riscv,isa-extensions = "i", "m", "a", "c", "s",
+					       "zicsr", "zifencei",
+					       "zicfilp";
+		};
+
+		cpu@3 {
+			riscv,isa-extensions = "i", "m", "a", "c", "s",
+					       "zicsr", "zifencei",
+					       "zicfilp";
+		};
+
+		cpu@4 {
+			riscv,isa-extensions = "i", "m", "a", "c", "s",
+					       "zicsr", "zifencei",
+					       "zicfilp";
+		};
+
+		cpu@5 {
+			riscv,isa-extensions = "i", "m", "a", "c", "s",
+					       "zicsr", "zifencei",
+					       "zicfilp";
+		};
+
+		cpu@6 {
+			riscv,isa-extensions = "i", "m", "a", "c", "s",
+					       "zicsr", "zifencei",
+					       "zicfilp";
+		};
+
+		cpu@7 {
+			riscv,isa-extensions = "i", "m", "a", "c", "s",
+					       "zicsr", "zifencei",
+					       "zicfilp";
+		};
+	};
+};
