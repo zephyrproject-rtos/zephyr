@@ -121,6 +121,9 @@ static inline bool spi_context_is_slave(struct spi_context *ctx)
  * The purpose of the context lock is to synchronize the usage of the driver/hardware.
  * The driver should call this function to claim or wait for ownership of the spi resource.
  * Usually the appropriate time to call this is at the start of the transceive API implementation.
+ *
+ * May block (and so must not be called from ISR) unless the lock is already
+ * held via SPI_LOCK_ON.
  */
 static inline void spi_context_lock(struct spi_context *ctx,
 				    bool asynchronous,
@@ -134,6 +137,10 @@ static inline void spi_context_lock(struct spi_context *ctx,
 			      (ctx->owner == spi_cfg);
 
 	if (!already_locked) {
+		__ASSERT(!k_is_in_isr(),
+			 "%s would block from ISR; "
+			 "use the RTIO submit path for chained async",
+			 __func__);
 		k_sem_take(&ctx->lock, K_FOREVER);
 		ctx->owner = spi_cfg;
 	}
