@@ -29,6 +29,7 @@
 		zephyr,entropy = &trng;
 		zephyr,canbus = &canfd0;
 		zephyr,crc = &crc;
+		zephyr,system-timer-companion = &idle_counter;
 	};
 
 	leds {
@@ -253,19 +254,11 @@
 };
 
 &ulpt0 {
-	interrupt-names = "ulpti";
+	interrupt-names = "ulptcmai";
 	interrupts = <3 12>;
 	status = "okay";
 
-	timer {
-		status = "okay";
-	};
-};
-
-&ulpt1 {
-	status = "okay";
-
-	timer {
+	idle_counter: counter {
 		status = "okay";
 	};
 };

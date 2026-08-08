@@ -263,8 +263,7 @@ config USE_RA_FSP_ULPT
 
 config USE_RA_FSP_LPM
 	bool
-	default y
-	depends on PM
+	default y if PM || POWEROFF
 	help
 	  Enable RA FSP LPM driver
 
