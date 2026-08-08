@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: cy8cproto_040t_auto
+name: CY8CPROTO-040T-AUTO Prototyping Kit
+type: mcu
+arch: arm
+ram: 8
+flash: 64
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+  - clock_control
+  - pinctrl
+vendor: infineon

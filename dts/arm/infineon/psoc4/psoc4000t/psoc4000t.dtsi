@@ -1,0 +1,168 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include "psoc4000t.cm0p.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	flash_controller: flash-controller@40100004 {
+		compatible = "infineon,flash-controller";
+		reg = <0x40100004 0x104>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x00000000 DT_SIZE_K(64)>;  /* 64 KB Flash */
+			write-block-size = <256>;
+			erase-block-size = <256>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 DT_SIZE_K(8)>;  /* 8 KB SRAM */
+	};
+
+	soc {
+		pinctrl: pinctrl@40020000 {
+			compatible = "infineon,pinctrl";
+			reg = <0x40020000 0x24000>;
+		};
+
+		gpio_prt0: gpio@40040000 {
+			compatible = "infineon,gpio";
+			reg = <0x40040000 0x100>;
+			interrupts = <0 3>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt1: gpio@40040100 {
+			compatible = "infineon,gpio";
+			reg = <0x40040100 0x100>;
+			interrupts = <1 3>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt2: gpio@40040200 {
+			compatible = "infineon,gpio";
+			reg = <0x40040200 0x100>;
+			interrupts = <2 3>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		gpio_prt3: gpio@40040300 {
+			compatible = "infineon,gpio";
+			reg = <0x40040300 0x100>;
+			interrupts = <3 3>;
+			gpio-controller;
+			ngpios = <8>;
+			status = "disabled";
+			#gpio-cells = <2>;
+		};
+
+		/* Port 4 shares the "all ports" GPIO interrupt */
+		gpio_shared: gpio_shared@40040400 {
+			compatible = "infineon,shared-gpio";
+			reg = <0x40040400 0x100>;
+			interrupts = <4 3>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpio_prt4: gpio@40040400 {
+				compatible = "infineon,gpio";
+				reg = <0x40040400 0x100>;
+				gpio-controller;
+				ngpios = <8>;
+				status = "disabled";
+				#gpio-cells = <2>;
+			};
+		};
+
+		scb0: scb@40240000 {
+			compatible = "infineon,scb";
+			reg = <0x40240000 0xfcc>;
+			interrupts = <6 3>;
+			clk-dst = <0x0>;
+			status = "disabled";
+		};
+
+		scb1: scb@40250000 {
+			compatible = "infineon,scb";
+			reg = <0x40250000 0xfcc>;
+			interrupts = <7 3>;
+			clk-dst = <0x1>;
+			status = "disabled";
+		};
+
+		watchdog0: watchdog@40030000 {
+			compatible = "infineon,watchdog";
+			reg = <0x40030000 0xf1c>;
+			interrupts = <5 0>;
+			status = "disabled";
+		};
+
+		tcpwm0: tcpwm0@40200000 {
+			reg = <0x40200000 0x180>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			tcpwm0_0: tcpwm0_0@40200100 {
+				compatible = "infineon,tcpwm";
+				reg = <0x40200100 0x40>;
+				interrupts = <11 3>;
+				resolution = <16>;
+				index = <0>;
+				clk-dst = <0x2>;
+				status = "disabled";
+
+				pwm0_0: pwm0_0 {
+					compatible = "infineon,tcpwm-pwm";
+					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				counter0_0: counter0_0 {
+					compatible = "infineon,tcpwm-counter";
+					status = "disabled";
+				};
+			};
+
+			tcpwm0_1: tcpwm0_1@40200140 {
+				compatible = "infineon,tcpwm";
+				reg = <0x40200140 0x40>;
+				interrupts = <12 3>;
+				resolution = <16>;
+				index = <1>;
+				clk-dst = <0x3>;
+				status = "disabled";
+
+				pwm0_1: pwm0_1 {
+					compatible = "infineon,tcpwm-pwm";
+					#pwm-cells = <3>;
+					status = "disabled";
+				};
+
+				counter0_1: counter0_1 {
+					compatible = "infineon,tcpwm-counter";
+					status = "disabled";
+				};
+			};
+		};
+	};
+};
