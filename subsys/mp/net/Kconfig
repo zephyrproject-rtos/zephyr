@@ -1,0 +1,49 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MP_NET
+	bool "Network plugin support"
+	depends on NETWORKING && NET_TCP && NET_SOCKETS
+	select NET_IPV4_MAPPING_TO_IPV6 if NET_IPV6
+	help
+	  Enable the network plugin, which provides TCP server sink and source
+	  elements. Each element listens on its own port, accepts one client, and
+	  moves pipeline buffers as a raw byte stream.
+	  When IPv6 is enabled a single socket serves both IPv4 and IPv6 clients
+	  through IPv4-mapped addresses.
+
+if MP_NET
+
+config MP_NET_SINK_PORT
+	int "Default TCP port the sink listens on"
+	range 1 65535
+	default 5000
+	help
+	  Port tcpsink binds to when the application does not set
+	  MP_PROP_NET_SINK_PORT.
+
+config MP_NET_SRC_PORT
+	int "Default TCP port the source listens on"
+	range 1 65535
+	default 5001
+	help
+	  Port tcpsrc binds to when the application does not set
+	  MP_PROP_NET_SRC_PORT.
+
+config MP_NET_SRC_BUF_SIZE
+	int "Size of a receive buffer in bytes"
+	range 64 65536
+	default 4096
+	help
+	  Size of each buffer in the tcpsrc internal net_buf pool. One recv() call
+	  fills at most this many bytes.
+
+config MP_NET_SRC_NUM_BUFS
+	int "Number of buffers in the receive pool"
+	range 1 255
+	default 4
+	help
+	  Number of buffers in the tcpsrc internal net_buf pool. Use more than one
+	  if downstream can retain buffers asynchronously.
+
+endif # MP_NET
