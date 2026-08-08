@@ -1458,6 +1458,27 @@ ZTEST(mcp_server_tests, test_11_health_monitor)
 	printk("=== Health monitor test completed ===\n");
 }
 
+/* A tools/call argument object with an unbalanced brace inside a string value
+ * must reach the tool intact. A byte-level brace counter closes the object early
+ * at the in-string '}'; the JSON object walker is string-aware, so the whole
+ * object is delivered.
+ */
+ZTEST(mcp_server_tests, test_12_tools_call_arguments_braces_in_string)
+{
+	reset_tool_execution_tracking();
+	register_test_tools();
+
+	send_tools_call_request(valid_client_binding, 3200, "test_success_tool",
+				"{\"filter\":\"a}b\"}");
+
+	zassert_equal(tool_execution_count, 1, "tool should execute once");
+	zassert_true(strcmp(last_execution_arguments, "{\"filter\":\"a}b\"}") == 0,
+		     "arguments with a brace in a string must reach the tool intact, got '%s'",
+		     last_execution_arguments);
+
+	cleanup_test_tools();
+}
+
 static void *mcp_server_tests_setup(void)
 {
 	int ret;
