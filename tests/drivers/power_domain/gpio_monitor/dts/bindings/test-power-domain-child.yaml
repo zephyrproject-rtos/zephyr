@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test device on a GPIO-monitored power domain
+
+compatible: "test-power-domain-child"
+
+include: [base.yaml, pm.yaml]
