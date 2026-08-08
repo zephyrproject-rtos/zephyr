@@ -2,6 +2,7 @@
  * Copyright (c) 2016 Jean-Paul Etienne <fractalclone@gmail.com>
  * Copyright (c) 2018 Foundries.io Ltd
  * Copyright (c) 2020 BayLibre, SAS
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,7 +104,7 @@
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
 	csrr \dst, RV_SCRATCH
 #else
-	la \dst, _kernel + ___kernel_t_cpus_OFFSET
+	la_abs \dst, _kernel + ___kernel_t_cpus_OFFSET
 #endif
 	.endm
 

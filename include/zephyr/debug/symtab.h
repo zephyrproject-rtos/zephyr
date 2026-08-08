@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2024 Meta Platforms
  *
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -24,7 +26,7 @@ extern "C" {
  */
 
 struct z_symtab_entry {
-	const uint32_t offset;
+	const uintptr_t offset;
 	const char *const name;
 };
 

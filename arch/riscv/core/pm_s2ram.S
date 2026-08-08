@@ -1,5 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -140,7 +141,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_suspend)
 
 	.option push
 	.option norelax
-	la a1, _cpu_context
+	la_abs a1, _cpu_context
 	.option pop
 	sr sp, ___cpu_context_t_sp_OFFSET(a1)
 	csrr t0, mstatus
@@ -200,7 +201,7 @@ SECTION_FUNC(TEXT, arch_pm_s2ram_resume)
 .L_resume:
 	.option push
 	.option norelax
-	la a0, _cpu_context
+	la_abs a0, _cpu_context
 	.option pop
 
 	/* Defer mstatus write until after FP restore: the saved FS bits
