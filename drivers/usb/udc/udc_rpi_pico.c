@@ -108,6 +108,65 @@ static void ALWAYS_INLINE rpi_pico_bit_clr(const mm_reg_t reg, const uint32_t bi
 	sys_write32(bit, REG_ALIAS_CLR_BITS | reg);
 }
 
+/*
+ * The USB DPRAM endpoint buffers are in the peripheral (Device) memory region.
+ * On this SoC, Device memory must be accessed naturally aligned (verified on
+ * RP2350/Cortex-M33): a byte access is allowed at any address, a 16-bit access
+ * only on a 2-byte boundary and a 32-bit access only on a 4-byte boundary; any
+ * unaligned half-word/word access raises a UsageFault (independent of
+ * CCR.UNALIGN_TRP).
+ *
+ * Copy the DPRAM side strictly word-wise (32-bit) via sys_{read,write}32(), the
+ * same way setup packets are already handled. The RAM side may be unaligned as
+ * it is Normal memory.
+ *
+ * The DPRAM destination is always 4-byte aligned: endpoint buffers come from a
+ * 64-byte-block pool (usb_dpram->epx_data at offset 0x180; EP0 at 0x100) and
+ * sys_mem_blocks_alloc() returns block-aligned pointers. Each endpoint gets at
+ * least one full 64-byte block (DIV_ROUND_UP(mps, 64)), so the trailing
+ * partial-word write, which rounds up to the next word boundary, always stays
+ * inside the endpoint's own allocation and never touches a neighbouring buffer.
+ */
+static void rpi_pico_read_dpram(uint8_t *dst, const void *dpram, size_t len)
+{
+	mm_reg_t src = (mm_reg_t)dpram;
+	size_t i;
+
+	for (i = 0; i + 4 <= len; i += 4) {
+		sys_put_le32(sys_read32(src + i), &dst[i]);
+	}
+
+	if (i < len) {
+		uint32_t last = sys_read32(src + i);
+		size_t base = i;
+
+		for (; i < len; i++) {
+			dst[i] = (uint8_t)(last >> (8 * (i - base)));
+		}
+	}
+}
+
+static void rpi_pico_write_dpram(void *dpram, const uint8_t *src, size_t len)
+{
+	mm_reg_t dst = (mm_reg_t)dpram;
+	size_t i;
+
+	for (i = 0; i + 4 <= len; i += 4) {
+		sys_write32(sys_get_le32(&src[i]), dst + i);
+	}
+
+	if (i < len) {
+		uint32_t last = 0;
+		size_t base = i;
+
+		for (; i < len; i++) {
+			last |= (uint32_t)src[i] << (8 * (i - base));
+		}
+
+		sys_write32(last, dst + base);
+	}
+}
+
 
 static void sie_dp_pullup(const struct device *dev, const bool enable)
 {
@@ -290,7 +349,7 @@ static int rpi_pico_prep_tx(const struct device *dev,
 	lock_key = irq_lock();
 
 	len = MIN(cfg->mps, buf->len);
-	memcpy(ep_data->buf, buf->data, len);
+	rpi_pico_write_dpram(ep_data->buf, buf->data, len);
 
 	LOG_DBG("Prepare TX ep 0x%02x len %u pid: %u",
 		cfg->addr, len, ep_data->next_pid);
@@ -521,7 +580,10 @@ static void rpi_pico_handle_buff_status_out(const struct device *dev, const uint
 	}
 
 	len = read_buf_ctrl_reg(dev, ep) & USB_BUF_CTRL_LEN_MASK;
-	net_buf_add_mem(buf, ep_data->buf, MIN(len, net_buf_tailroom(buf)));
+
+	const size_t copy_len = MIN(len, net_buf_tailroom(buf));
+
+	rpi_pico_read_dpram(net_buf_add(buf, copy_len), ep_data->buf, copy_len);
 
 	if (net_buf_tailroom(buf) && len == udc_mps_ep_size(ep_cfg)) {
 		__unused int err;
