@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/reset/intel_socfpga_reset.h>
 #include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm64.h>
 #include <mem.h>
 
 / {
@@ -97,6 +98,14 @@
 	mem0: memory@80100000 {
 		device_type = "memory";
 		reg = <0x80100000 DT_SIZE_M(8)>;
+	};
+
+	/* SiP mailbox buffers for TF-A (must be >= BL31_LIMIT) */
+	mbox_ddr: memory@82000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x82000000 0x10000>;
+		zephyr,memory-region = "MBOX_DDR";
+		zephyr,memory-attr = <DT_MEM_ARM64_MMU_NORMAL>;
 	};
 
 	fpga0: bridges {

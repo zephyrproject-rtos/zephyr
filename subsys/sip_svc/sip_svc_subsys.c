@@ -117,6 +117,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sip_svc_subsys, CONFIG_ARM_SIP_SVC_SUBSYS_LOG_LEVEL);
 
+#define SIP_SVC_CLOSE_DRAIN_TIMEOUT K_MSEC(1000)
+
 static uint32_t sip_svc_generate_c_token(void)
 {
 	uint32_t c_token = k_cycle_get_32();
@@ -339,10 +341,49 @@ int sip_svc_open(void *ct, uint32_t c_token, k_timeout_t k_timeout)
 	return -ETIMEDOUT;
 }
 
+static int sip_svc_wait_client_idle(struct sip_svc_controller *ctrl, uint32_t c_token,
+				    k_timeout_t k_timeout)
+{
+	uint32_t c_idx;
+	int ret;
+	struct k_timer timer;
+
+	k_timer_init(&timer, NULL, NULL);
+
+	for (bool first_iteration = false; get_timer_status(&first_iteration, &timer, k_timeout);
+	     k_usleep(CONFIG_ARM_SIP_SVC_SUBSYS_ASYNC_POLLING_DELAY)) {
+		ret = k_mutex_lock(&ctrl->data_mutex, K_NO_WAIT);
+		if (ret != 0) {
+			continue;
+		}
+
+		c_idx = sip_svc_get_c_idx(ctrl, c_token);
+		if (c_idx == SIP_SVC_ID_INVALID) {
+			k_mutex_unlock(&ctrl->data_mutex);
+			k_timer_stop(&timer);
+			return -EINVAL;
+		}
+
+		if (ctrl->clients[c_idx].active_trans_cnt == 0 &&
+		    ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_IDLE) {
+			k_mutex_unlock(&ctrl->data_mutex);
+			k_timer_stop(&timer);
+			return 0;
+		}
+
+		k_mutex_unlock(&ctrl->data_mutex);
+	}
+
+	k_timer_stop(&timer);
+	LOG_ERR("Timed out waiting for client 0x%x to become idle", c_token);
+	return -ETIMEDOUT;
+}
+
 int sip_svc_close(void *ct, uint32_t c_token, struct sip_svc_request *pre_close_req)
 {
 	uint32_t c_idx;
 	int err;
+	bool need_drain = false;
 
 	if (ct == NULL || !is_sip_svc_controller(ct)) {
 		return -EINVAL;
@@ -379,6 +420,7 @@ int sip_svc_close(void *ct, uint32_t c_token, struct sip_svc_request *pre_close_
 
 	if (ctrl->clients[c_idx].active_trans_cnt != 0) {
 		ctrl->clients[c_idx].state = SIP_SVC_CLIENT_ST_ABORT;
+		need_drain = true;
 	} else {
 		ctrl->clients[c_idx].state = SIP_SVC_CLIENT_ST_IDLE;
 	}
@@ -388,7 +430,14 @@ int sip_svc_close(void *ct, uint32_t c_token, struct sip_svc_request *pre_close_
 #endif
 	k_mutex_unlock(&ctrl->data_mutex);
 
-	LOG_INF("Close the client channel 0x%x", ctrl->clients[c_idx].token);
+	if (need_drain) {
+		err = sip_svc_wait_client_idle(ctrl, c_token, SIP_SVC_CLOSE_DRAIN_TIMEOUT);
+		if (err != 0) {
+			return err;
+		}
+	}
+
+	LOG_INF("Close the client channel 0x%x", c_token);
 	return 0;
 }
 
@@ -663,7 +712,7 @@ static void sip_svc_thread(void *ctrl_ptr, void *arg2, void *arg3)
 			}
 		}
 		LOG_INF("Suspend thread, all transactions are completed");
-		k_thread_suspend(ctrl->tid);
+		k_sem_take(&ctrl->thread_sem, K_FOREVER);
 	}
 }
 
@@ -756,7 +805,7 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 	}
 
 	LOG_INF("Wakeup sip_svc thread");
-	k_thread_resume(ctrl->tid);
+	k_sem_give(&ctrl->thread_sem);
 	k_mutex_unlock(&ctrl->data_mutex);
 
 	return (int)trans_id;
@@ -837,21 +886,14 @@ static int sip_svc_subsys_init(void)
 
 		LOG_INF("Got registered conduit %.*s", (int)sizeof(ctrl->method), ctrl->method);
 
-		ctrl->async_resp_data = k_malloc(ctrl->resp_size);
-		if (ctrl->async_resp_data == NULL) {
-			return -ENOMEM;
-		}
-
 		ctrl->client_id_pool = sip_svc_id_mgr_create(ctrl->num_clients);
 		if (!ctrl->client_id_pool) {
-			k_free(ctrl->async_resp_data);
 			return -ENOMEM;
 		}
 
 		ctrl->trans_id_map = sip_svc_id_map_create(ctrl->max_transactions);
 		if (!ctrl->trans_id_map) {
 			sip_svc_id_mgr_delete(ctrl->client_id_pool);
-			k_free(ctrl->async_resp_data);
 			return -ENOMEM;
 		}
 
@@ -861,7 +903,6 @@ static int sip_svc_subsys_init(void)
 		if (!msgq_buf) {
 			sip_svc_id_mgr_delete(ctrl->client_id_pool);
 			sip_svc_id_map_delete(ctrl->trans_id_map);
-			k_free(ctrl->async_resp_data);
 			return -ENOMEM;
 		}
 
@@ -870,7 +911,6 @@ static int sip_svc_subsys_init(void)
 			sip_svc_id_mgr_delete(ctrl->client_id_pool);
 			sip_svc_id_map_delete(ctrl->trans_id_map);
 			k_free(msgq_buf);
-			k_free(ctrl->async_resp_data);
 			return -ENOMEM;
 		}
 
@@ -901,7 +941,6 @@ static int sip_svc_subsys_init(void)
 			sip_svc_id_map_delete(ctrl->trans_id_map);
 			k_free(msgq_buf);
 			k_free(ctrl->clients);
-			k_free(ctrl->async_resp_data);
 
 			for (uint32_t i = 0; i < ctrl->num_clients; i++) {
 				client = &ctrl->clients[i];
@@ -918,6 +957,7 @@ static int sip_svc_subsys_init(void)
 			sip_svc_thread, ctrl, NULL, NULL, CONFIG_ARM_SIP_SVC_SUBSYS_THREAD_PRIORITY,
 			K_ESSENTIAL, K_NO_WAIT);
 		k_thread_name_set(ctrl->tid, "sip_svc");
+		k_sem_init(&ctrl->thread_sem, 0, 1);
 
 		ctrl->active_job_cnt = 0;
 		ctrl->active_async_job_cnt = 0;
