@@ -8,9 +8,13 @@ toolchain:
 ram: 2
 flash: 16
 supported:
+  - adc
   - dma
   - gpio
   - i2c
+  - pinctrl
   - pwm
+  - spi
   - uart
   - watchdog
+vendor: wch
