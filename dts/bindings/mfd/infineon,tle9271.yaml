@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Deere & Company
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon TLE9271 System Basis Chip (SBC), a member of the TLE927x family.
+
+  The node must list both compatibles so the family driver binds:
+
+    compatible = "infineon,tle9271", "infineon,tle927x";
+
+  See infineon,tle927x.yaml for the properties and the child nodes.
+
+compatible: "infineon,tle9271"
+
+include: infineon,tle927x.yaml
