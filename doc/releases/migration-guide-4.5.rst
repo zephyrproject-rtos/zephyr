@@ -37,6 +37,15 @@ Build System
 * :kconfig:option:`CONFIG_LEGACY_GENERATED_INCLUDE_PATH` has been deprecated, and disabled by
   default, includes must now be prefixed with ``zephyr/`` for zephyr files.
 
+* A build now only loads the Kconfig and CMake trees of the SoC it targets, instead of the trees of
+  every SoC in every SoC root. A SoC whose definition refers to a SoC from another :file:`soc.yml`
+  tree, such as a SiP modelled as a SoC wrapping a die from another vendor, must now declare that
+  dependency with the ``requires`` property in its :file:`soc.yml` entry, see
+  :ref:`soc_porting_requires`. A board that pairs two otherwise independent SoC trees declares the
+  same property in its :file:`board.yml`, see :ref:`board_porting_requires`. As a temporary escape
+  hatch, setting the CMake variable ``HWM_LOAD_ALL_SOCS`` restores the previous behaviour of
+  loading all SoC trees.
+
 Kernel
 ******
 

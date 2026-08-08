@@ -108,6 +108,8 @@ class Board:
     revisions: list[str] = field(default_factory=list, compare=False)
     socs: list[Soc] = field(default_factory=list, compare=False)
     variants: list[str] = field(default_factory=list, compare=False)
+    # Names of SoCs whose trees must be loaded in addition to the one the board target selects.
+    requires: list[str] = field(default_factory=list, compare=False)
 
     @property
     def dir(self):
@@ -195,6 +197,7 @@ def load_v2_boards(board_name, board_yml, systems):
                            board.get('revision', {}).get('revisions', [])],
                 socs=socs,
                 variants=[Variant.from_dict(v) for v in board.get('variants', [])],
+                requires=list(board.get('requires', [])),
                 hwm='v2',
             )
             board_qualifiers = board_v2_qualifiers(boards[board['name']])
@@ -213,6 +216,7 @@ def extend_v2_boards(boards, board_extensions):
         if board is None:
             continue
         board.directories.append(e['dir'])
+        board.requires.extend(r for r in e.get('requires', []) if r not in board.requires)
 
         for v in e.get('variants', []):
             node = board.from_qualifier(v['qualifier'])
@@ -347,6 +351,7 @@ def dump_v2_boards(args):
                 REVISIONS='REVISIONS;' + ';'.join(
                           [x.name for x in b.revisions]),
                 SOCS='SOCS;' + ';'.join([s.name for s in b.socs]),
+                SOC_REQUIRES='SOC_REQUIRES;' + ';'.join(b.requires),
                 QUALIFIERS='QUALIFIERS;' + ';'.join(qualifiers_list)
             )
             print(info)
