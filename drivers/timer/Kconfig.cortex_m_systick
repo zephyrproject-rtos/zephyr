@@ -42,6 +42,39 @@ config CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
 	  This is set to y by default when the hardware clock is fast enough
 	  to wrap sys_clock_cycle_get_32() in about a minute or less.
 
+config CORTEX_M_SYSTICK_INTERRUPT_PRIORITY
+	int "Cortex-M SYSTICK timer interrupt priority"
+	depends on CORTEX_M_SYSTICK
+	default 0
+	help
+	  This option specifies the interrupt priority used by the Cortex-M
+	  SysTick timer, expressed the same way as any priority passed to
+	  IRQ_CONNECT(): 0 is the most urgent (kernel) level and the kernel
+	  reserved-level offset (_IRQ_PRIO_OFFSET) is applied internally.
+
+	  Valid values range from 0 up to the lowest usable IRQ priority for
+	  the target core (IRQ_PRIO_LOWEST).
+
+	  The default (0) preserves the historical behavior of running
+	  SysTick at the highest maskable/kernel IRQ priority level.
+
+	  WARNING: The timekeeping code in the SysTick driver tolerates at
+	  most one counter wrap between successive updates; the wrap period
+	  is floored at MIN_DELAY (the larger of 1024 cycles or
+	  CYC_PER_TICK/16, unless overridden by zephyr,min-timeout-cycles on
+	  the systick node). If the SysTick interrupt is held off longer than
+	  one wrap period, a full last_load worth of uptime is silently lost
+	  with no diagnostic.
+	  Raising the priority number (lowering SysTick's priority) reduces
+	  the latency impact on higher-priority interrupts, but it also makes
+	  the worst-case SysTick hold-off equal to the total nested run time
+	  of every higher-priority interrupt in the system. It is therefore
+	  safe ONLY while that worst-case hold-off remains below the wrap
+	  period.
+	  IMPORTANT: In practice, any non-default value MUST be paired with a
+	  larger zephyr,min-timeout-cycles on the systick node so that
+	  MIN_DELAY (and thus the wrap period) covers the worst-case hold-off.
+
 if CORTEX_M_SYSTICK
 
 # Deprecated SysTick-specific Kconfig symbols.
