@@ -97,3 +97,19 @@
 	pinctrl-0 = <&lpgpio_default>;
 	pinctrl-names = "default";
 };
+
+&lptimer0 {
+	status = "okay";
+};
+
+&lptimer1 {
+	status = "okay";
+};
+
+&lptimer2 {
+	status = "okay";
+};
+
+&lptimer3 {
+	status = "okay";
+};
