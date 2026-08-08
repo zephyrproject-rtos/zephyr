@@ -42,6 +42,16 @@
 #elif defined(CONFIG_SOC_SERIES_NRF54L)
 #include <hal/nrf_ppib.h>
 #include "radio_nrf54lx.h"
+#elif defined(CONFIG_SOC_SERIES_NRF54H)
+#include <hal/nrf_lrcconf.h>
+#include <hal/nrf_ppib.h>
+#include <hal/nrf_ipct.h>
+#include <hal/nrf_spu.h>
+#include "radio_nrf54hx.h"
+#elif defined(CONFIG_SOC_SERIES_NRF71)
+#include <hal/nrf_ppib.h>
+#include <hal/nrf_lrcconf.h>
+#include "radio_nrf7120.h"
 #elif defined(CONFIG_BOARD_NRF52_BSIM)
 #include "radio_sim_nrf52.h"
 #elif defined(CONFIG_BOARD_NRF5340BSIM_NRF5340_CPUNET)
@@ -117,3 +127,11 @@
 
 /* This is the minimum prepare duration required to setup radio for deferred transmission */
 #define HAL_RADIO_TMR_DEFERRED_TX_DELAY_US 50U
+
+/* Fallback: SW switch timer uses the same prescaler as the event timer.
+ * SoC-specific headers may override this (e.g. nRF54L dual-timer mode where
+ * SW_SWITCH_TIMER and EVENT_TIMER use different clocks and prescalers).
+ */
+#ifndef HAL_SW_SWITCH_TIMER_PRESCALER_VALUE
+#define HAL_SW_SWITCH_TIMER_PRESCALER_VALUE HAL_EVENT_TIMER_PRESCALER_VALUE
+#endif

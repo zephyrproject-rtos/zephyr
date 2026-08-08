@@ -175,8 +175,8 @@ int lll_conn_central_is_abort_cb(void *next, void *curr,
 
 	if (next != curr) {
 		/* Do not be aborted by a different event if near supervision timeout */
-		if ((lll->forced == 1U) && (trx_cnt < 1U)) {
-			return 0;
+		if ((lll->forced != 0U) && ((next == NULL) || (trx_cnt < 1U))) {
+			return -EBUSY;
 		}
 
 	} else if ((next == curr) && (trx_cnt < 1U) &&
@@ -209,8 +209,8 @@ int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
 
 	if (next != curr) {
 		/* Do not be aborted by a different event if near supervision timeout */
-		if ((lll->forced == 1U) && (tx_cnt < 1U)) {
-			return 0;
+		if ((lll->forced != 0U) && ((next == NULL) || (tx_cnt < 1U))) {
+			return -EBUSY;
 		}
 
 	} else if ((next == curr) && (tx_cnt < 1U) &&
@@ -301,7 +301,7 @@ void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	e->mic_state = LLL_CONN_MIC_NONE;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	lll_done(param);
+	lll_done(prepare_param->param);
 }
 
 void lll_conn_isr_rx(void *param)
@@ -535,8 +535,12 @@ void lll_conn_isr_rx(void *param)
 
 	/* assert if radio packet ptr is not set and radio started tx */
 	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
-		LL_ASSERT_MSG(!radio_is_ready(), "%s: Radio ISR latency: %u", __func__,
-			      lll_prof_latency_get());
+		if (radio_is_ready()) {
+			lll_prof_cputime_capture();
+			LL_ASSERT_MSG(false, "%s: %u %u %u Radio ISR latency: %u (%u)", __func__,
+				      trx_cnt, crc_ok, pdu_data_rx->len,
+				      lll_prof_latency_get(), lll_prof_cputime_get());
+		}
 	} else {
 		LL_ASSERT_ERR(!radio_is_ready());
 	}
@@ -767,18 +771,18 @@ void lll_conn_isr_tx(void *param)
 	 *       use for Rx Chain Delay in BabbleSIM? or is there a bug in
 	 *       target implementation?
 	 */
-	hcto += radio_rx_chain_delay_get(lll->phy_tx, PHY_FLAGS_S8);
+	hcto += radio_rx_address_delay_get(lll->phy_tx, PHY_FLAGS_S8);
 #endif /* FIXME: Why different for BabbleSIM? */
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
 	hcto += cte_len;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 #if defined(CONFIG_BT_CTLR_PHY)
-	hcto += radio_rx_chain_delay_get(lll->phy_rx, 1);
+	hcto += radio_rx_address_delay_get(lll->phy_rx, 1);
 	hcto += addr_us_get(lll->phy_rx);
 	hcto -= radio_tx_chain_delay_get(lll->phy_tx, lll->phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY */
-	hcto += radio_rx_chain_delay_get(0, 0);
+	hcto += radio_rx_address_delay_get(0, 0);
 	hcto += addr_us_get(0);
 	hcto -= radio_tx_chain_delay_get(0, 0);
 #endif /* !CONFIG_BT_CTLR_PHY */

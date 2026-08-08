@@ -64,8 +64,14 @@
 
 static int init_reset(void);
 static struct ll_adv_iso_set *adv_iso_get(uint8_t handle);
-static struct stream *adv_iso_stream_acquire(void);
-static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream);
+static bool is_multiple(uint32_t interval1_us, uint32_t interval2_us);
+static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
+			  uint32_t sdu_interval, uint16_t max_sdu,
+			  uint16_t max_latency, uint8_t rtn, uint8_t phy,
+			  uint8_t packing, uint8_t framing, uint8_t encryption,
+			  uint8_t *bcode,
+			  uint16_t iso_interval, uint8_t nse, uint16_t max_pdu,
+			  uint8_t bn, uint8_t irc, uint8_t pto, bool test_config);
 static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 			uint32_t event_spacing_max);
 static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max);
@@ -97,586 +103,10 @@ static struct lll_adv_iso_stream
 			stream_pool[CONFIG_BT_CTLR_ADV_ISO_STREAM_COUNT];
 static void *stream_free;
 
-static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
-			  uint32_t sdu_interval, uint16_t max_sdu,
-			  uint16_t max_latency, uint8_t rtn, uint8_t phy,
-			  uint8_t packing, uint8_t framing, uint8_t encryption,
-			  uint8_t *bcode,
-			  uint16_t iso_interval, uint8_t nse, uint16_t max_pdu,
-			  uint8_t bn, uint8_t irc, uint8_t pto, bool test_config)
-{
-	uint8_t bi_ad[PDU_BIG_INFO_ENCRYPTED_SIZE + 2U];
-	struct lll_adv_sync *lll_adv_sync;
-	struct lll_adv_iso *lll_adv_iso;
-	struct ll_adv_iso_set *adv_iso;
-	struct pdu_adv *pdu_prev, *pdu;
-	struct pdu_big_info *big_info;
-	uint32_t ticks_slot_overhead;
-	struct ll_adv_sync_set *sync;
-	struct ll_adv_aux_set *aux;
-	uint32_t event_spacing_max;
-	uint8_t pdu_big_info_size;
-	uint32_t iso_interval_us;
-	uint32_t latency_packing;
-	uint32_t ticks_slot_sync;
-	uint32_t ticks_slot_aux;
-	memq_link_t *link_cmplt;
-	memq_link_t *link_term;
-	struct ll_adv_set *adv;
-	uint32_t slot_overhead;
-	uint32_t event_spacing;
-	uint16_t ctrl_spacing;
-	uint8_t sdu_per_event;
-	uint8_t ter_idx;
-	uint32_t ret;
-	uint8_t err;
-	int res;
-
-	adv_iso = adv_iso_get(big_handle);
-
-	/* Already created */
-	if (!adv_iso || adv_iso->lll.adv) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	/* No advertising set created */
-	adv = ull_adv_is_created_get(adv_handle);
-	if (!adv) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
-	}
-
-	/* Does not identify a periodic advertising train or
-	 * the periodic advertising trains is already associated
-	 * with another BIG.
-	 */
-	lll_adv_sync = adv->lll.sync;
-	if (!lll_adv_sync || lll_adv_sync->iso) {
-		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
-	}
-
-	/* Check if encryption supported */
-	if (!IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
-	    encryption) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	};
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
-		if (num_bis == 0U || num_bis > 0x1F) {
-			return BT_HCI_ERR_INVALID_PARAM;
-		}
-
-		if (sdu_interval < 0x000100 || sdu_interval > 0x0FFFFF) {
-			return BT_HCI_ERR_INVALID_PARAM;
-		}
-
-		if (max_sdu < 0x0001 || max_sdu > 0x0FFF) {
-			return BT_HCI_ERR_INVALID_PARAM;
-		}
-
-		if (phy > (BT_HCI_LE_EXT_SCAN_PHY_1M |
-			   BT_HCI_LE_EXT_SCAN_PHY_2M |
-			   BT_HCI_LE_EXT_SCAN_PHY_CODED)) {
-			return BT_HCI_ERR_INVALID_PARAM;
-		}
-
-		if (packing > 1U) {
-			return BT_HCI_ERR_INVALID_PARAM;
-		}
-
-		if (framing > 1U) {
-			return BT_HCI_ERR_INVALID_PARAM;
-		}
-
-		if (encryption > 1U) {
-			return BT_HCI_ERR_INVALID_PARAM;
-		}
-
-		if (test_config) {
-			if (!IN_RANGE(iso_interval, 0x0004, 0x0C80)) {
-				return BT_HCI_ERR_INVALID_PARAM;
-			}
-
-			if (!IN_RANGE(nse, 0x01, 0x1F)) {
-				return BT_HCI_ERR_INVALID_PARAM;
-			}
-
-			if (!IN_RANGE(max_pdu, 0x01, MIN(0xFB, LL_BIS_OCTETS_TX_MAX))) {
-				return BT_HCI_ERR_INVALID_PARAM;
-			}
-
-			if (!IN_RANGE(bn, 0x01, 0x07)) {
-				return BT_HCI_ERR_INVALID_PARAM;
-			}
-
-			if (!IN_RANGE(irc, 0x01, 0x0F)) {
-				return BT_HCI_ERR_INVALID_PARAM;
-			}
-
-			if (pto > 0x0F) {
-				return BT_HCI_ERR_INVALID_PARAM;
-			}
-
-			if (pto && !(bn * irc < nse)) {
-				return BT_HCI_ERR_INVALID_PARAM;
-			}
-		} else {
-			if (max_latency > 0x0FA0) {
-				return BT_HCI_ERR_INVALID_PARAM;
-			}
-
-			if (rtn > 0x0F) {
-				return BT_HCI_ERR_INVALID_PARAM;
-			}
-		}
-	}
-
-	/* Check if free BISes available */
-	if (mem_free_count_get(stream_free) < num_bis) {
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-	}
-
-	/* Allocate link buffer for created event */
-	link_cmplt = ll_rx_link_alloc();
-	if (!link_cmplt) {
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-	}
-
-	/* Allocate link buffer for sync lost event */
-	link_term = ll_rx_link_alloc();
-	if (!link_term) {
-		ll_rx_link_release(link_cmplt);
-
-		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-	}
-
-	/* Check if aux context allocated before we are creating ISO */
-	if (adv->lll.aux) {
-		aux = HDR_LLL2ULL(adv->lll.aux);
-	} else {
-		aux = NULL;
-	}
-
-	/* Calculate overheads due to extended advertising. */
-	if (aux && aux->is_started) {
-		ticks_slot_aux = aux->ull.ticks_slot;
-		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-			ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-		} else {
-			ticks_slot_overhead = 0U;
-		}
-	} else {
-		uint32_t time_us;
-
-		time_us = PDU_AC_US(PDU_AC_PAYLOAD_SIZE_MAX, adv->lll.phy_s,
-				    adv->lll.phy_flags) +
-			  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-		ticks_slot_aux = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
-		if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-			/* Assume primary overheads may be inherited by aux */
-			ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-		} else {
-			ticks_slot_overhead = 0U;
-		}
-	}
-	ticks_slot_aux += ticks_slot_overhead;
-
-	/* Calculate overheads due to periodic advertising. */
-	sync = HDR_LLL2ULL(lll_adv_sync);
-	if (sync->is_started) {
-		ticks_slot_sync = sync->ull.ticks_slot;
-	} else {
-		uint32_t time_us;
-
-		time_us = PDU_AC_US(PDU_AC_PAYLOAD_SIZE_MAX,
-				    sync->lll.adv->phy_s,
-				    sync->lll.adv->phy_flags) +
-			  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-		ticks_slot_sync = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
-		ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
-	} else {
-		ticks_slot_overhead = 0U;
-	}
-
-	ticks_slot_sync += ticks_slot_overhead;
-
-	/* Calculate total overheads due to extended and periodic advertising */
-	if (false) {
-
-#if defined(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET)
-	} else if (CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET > 0U) {
-		ticks_slot_overhead = MAX(ticks_slot_aux, ticks_slot_sync);
-#endif /* CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET */
-
-	} else {
-		ticks_slot_overhead = ticks_slot_aux + ticks_slot_sync;
-	}
-
-	/* Store parameters in LLL context */
-	/* TODO: Move parameters to ULL if only accessed by ULL */
-	lll_adv_iso = &adv_iso->lll;
-	lll_adv_iso->handle = big_handle;
-	lll_adv_iso->phy = phy;
-	lll_adv_iso->phy_flags = PHY_FLAGS_S8;
-
-	/* Mandatory Num_BIS = 1 */
-	lll_adv_iso->num_bis = num_bis;
-
-	/* Allocate streams */
-	for (uint8_t i = 0U; i < num_bis; i++) {
-		struct lll_adv_iso_stream *stream;
-
-		stream = (void *)adv_iso_stream_acquire();
-		stream->big_handle = big_handle;
-		stream->dp = NULL;
-
-		if (!stream->link_tx_free) {
-			stream->link_tx_free = &stream->link_tx;
-		}
-		memq_init(stream->link_tx_free, &stream->memq_tx.head,
-			  &stream->memq_tx.tail);
-		stream->link_tx_free = NULL;
-
-		stream->pkt_seq_num = 0U;
-
-		lll_adv_iso->stream_handle[i] =
-			adv_iso_stream_handle_get(stream);
-	}
-
-	if (test_config) {
-		lll_adv_iso->bn = bn;
-		lll_adv_iso->iso_interval = iso_interval;
-		lll_adv_iso->irc = irc;
-		lll_adv_iso->nse = nse;
-		lll_adv_iso->max_pdu = max_pdu;
-		iso_interval_us = iso_interval * PERIODIC_INT_UNIT_US;
-
-	} else {
-		if (framing) {
-			/* Try to allocate room for one SDU + header */
-			lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX,
-						   max_sdu + PDU_ISO_SEG_HDR_SIZE +
-						    PDU_ISO_SEG_TIMEOFFSET_SIZE);
-		} else {
-			lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX, max_sdu);
-		}
-
-		/* FIXME: SDU per max latency, consider how to use Pre-transmission in the
-		 *        calculations.
-		 *        Take decision based on how ptc_calc function forces the use of
-		 *        Pre-Transmission when not using test command. Refer to comments in
-		 *        ptc_calc function.
-		 */
-		sdu_per_event = MAX((max_latency * USEC_PER_MSEC / sdu_interval), 2U) -
-				1U;
-
-		/* BN (Burst Count), Mandatory BN = 1 */
-		bn = DIV_ROUND_UP(max_sdu, lll_adv_iso->max_pdu) * sdu_per_event;
-		if (bn > PDU_BIG_BN_MAX) {
-			/* Restrict each BIG event to maximum burst per BIG event */
-			lll_adv_iso->bn = PDU_BIG_BN_MAX;
-
-			/* Ceil the required burst count per SDU to next maximum burst
-			 * per BIG event.
-			 */
-			bn = DIV_ROUND_UP(bn, PDU_BIG_BN_MAX) * PDU_BIG_BN_MAX;
-		} else {
-			lll_adv_iso->bn = bn;
-		}
-
-		/* Calculate ISO interval */
-		/* iso_interval shall be at least SDU interval,
-		 * or integer multiple of SDU interval for unframed PDUs
-		 */
-		iso_interval_us = ((sdu_interval * lll_adv_iso->bn * sdu_per_event) /
-				(bn * PERIODIC_INT_UNIT_US)) * PERIODIC_INT_UNIT_US;
-		lll_adv_iso->iso_interval = iso_interval_us / PERIODIC_INT_UNIT_US;
-	}
-
-	/* Calculate max available ISO event spacing */
-	slot_overhead = HAL_TICKER_TICKS_TO_US(ticks_slot_overhead);
-	if (slot_overhead < iso_interval_us) {
-		event_spacing_max = iso_interval_us - slot_overhead;
-	} else {
-		event_spacing_max = 0U;
-	}
-
-	/* Negotiate event spacing */
-	do {
-		if (!test_config) {
-			/* Immediate Repetition Count (IRC), Mandatory IRC = 1 */
-			lll_adv_iso->irc = rtn + 1U;
-
-			/* Calculate NSE (No. of Sub Events), Mandatory NSE = 1,
-			 * without PTO added.
-			 */
-			lll_adv_iso->nse = lll_adv_iso->bn * lll_adv_iso->irc;
-		}
-
-		/* NOTE: Calculate sub_interval, if interleaved then it is Num_BIS x
-		 *       BIS_Spacing (by BT Spec.)
-		 *       else if sequential, then by our implementation, lets keep it
-		 *       max_tx_time for Max_PDU + tMSS.
-		 */
-		lll_adv_iso->sub_interval = PDU_BIS_US(lll_adv_iso->max_pdu, encryption,
-						phy, lll_adv_iso->phy_flags) +
-						EVENT_MSS_US;
-		ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), encryption, phy,
-					lll_adv_iso->phy_flags);
-		latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse *
-					lll_adv_iso->num_bis;
-		event_spacing = latency_packing + ctrl_spacing +
-				EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
-
-		/* Check if ISO interval too small to fit the calculated BIG event
-		 * timing required for the supplied BIG create parameters.
-		 */
-		if (event_spacing > event_spacing_max) {
-			/* Check if we can reduce RTN to meet eventing spacing */
-			if (!test_config && rtn) {
-				rtn--;
-			} else {
-				break;
-			}
-		}
-	} while (event_spacing > event_spacing_max);
-
-	/* Check if ISO interval too small to fit the calculated BIG event
-	 * timing required for the supplied BIG create parameters.
-	 */
-	if (event_spacing > event_spacing_max) {
-		/* Release allocated link buffers */
-		ll_rx_link_release(link_cmplt);
-		ll_rx_link_release(link_term);
-
-		return BT_HCI_ERR_INVALID_PARAM;
-	}
-
-	/* Decision to use requested Pre-Transmission Offset or force Pre-Transmission when
-	 * possible (Zephyr Controller decision).
-	 */
-	lll_adv_iso->ptc = ptc_calc(lll_adv_iso, event_spacing, event_spacing_max);
-
-	if (test_config) {
-		lll_adv_iso->pto = pto;
-
-		if (pto && !lll_adv_iso->ptc) {
-			return BT_HCI_ERR_INVALID_PARAM;
-		}
-	} else {
-		/* Pre-Transmission Offset (PTO) */
-		if (lll_adv_iso->ptc) {
-			lll_adv_iso->pto = MAX((bn / lll_adv_iso->bn), BT_CTLR_ADV_ISO_PTO_MIN);
-		} else {
-			lll_adv_iso->pto = 0U;
-		}
-
-		/* Make room for pre-transmissions */
-		lll_adv_iso->nse += lll_adv_iso->ptc;
-	}
-
-	/* Based on packing requested, sequential or interleaved */
-	if (false) {
-
-#if defined(CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED)
-	} else if (packing) {
-		/* Interleaved Packing */
-		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
-		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
-					    lll_adv_iso->num_bis;
-#endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
-
-#if defined(CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL)
-	} else if (true) {
-		/* Sequential Packing */
-		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval *
-					   lll_adv_iso->nse;
-#endif /* CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL */
-
-	} else {
-		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
-	}
-
-	/* TODO: Group count, GC = NSE / BN; PTO = GC - IRC;
-	 *       Is this required?
-	 */
-
-	lll_adv_iso->sdu_interval = sdu_interval;
-	lll_adv_iso->max_sdu = max_sdu;
-
-	res = util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
-	LL_ASSERT_DBG(!res);
-
-	(void)lll_csrand_get(lll_adv_iso->base_crc_init,
-			     sizeof(lll_adv_iso->base_crc_init));
-	lll_adv_iso->data_chan_count =
-		ull_chan_map_get(lll_adv_iso->data_chan_map);
-	lll_adv_iso->payload_count = 0U;
-	lll_adv_iso->latency_prepare = 0U;
-	lll_adv_iso->latency_event = 0U;
-	lll_adv_iso->term_req = 0U;
-	lll_adv_iso->term_ack = 0U;
-	lll_adv_iso->chm_req = 0U;
-	lll_adv_iso->chm_ack = 0U;
-	lll_adv_iso->ctrl_expire = 0U;
-
-	/* TODO: framing support */
-	lll_adv_iso->framing = framing;
-
-	/* Allocate next PDU */
-	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
-				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
-	if (err) {
-		/* Insufficient Advertising PDU buffers to allocate new PDU
-		 * to add BIGInfo into the ACAD of the Periodic Advertising.
-		 */
-
-		/* Release allocated link buffers */
-		ll_rx_link_release(link_cmplt);
-		ll_rx_link_release(link_term);
-
-		return err;
-	}
-
-	/* Add ACAD to AUX_SYNC_IND */
-	if (encryption) {
-		pdu_big_info_size = PDU_BIG_INFO_ENCRYPTED_SIZE;
-	} else {
-		pdu_big_info_size = PDU_BIG_INFO_CLEARTEXT_SIZE;
-	}
-	bi_ad[PDU_ADV_DATA_HEADER_LEN_OFFSET] = pdu_big_info_size + (PDU_ADV_DATA_HEADER_SIZE -
-						PDU_ADV_DATA_HEADER_LEN_SIZE);
-	bi_ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = BT_DATA_BIG_INFO;
-	big_info = (void *)&bi_ad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
-
-	/* big_info->offset, big_info->offset_units and
-	 * big_info->payload_count_framing[] will be filled by periodic
-	 * advertising event.
-	 */
-
-	PDU_BIG_INFO_ISO_INTERVAL_SET(big_info, iso_interval_us / PERIODIC_INT_UNIT_US);
-	PDU_BIG_INFO_NUM_BIS_SET(big_info, lll_adv_iso->num_bis);
-	PDU_BIG_INFO_NSE_SET(big_info, lll_adv_iso->nse);
-	PDU_BIG_INFO_BN_SET(big_info, lll_adv_iso->bn);
-	PDU_BIG_INFO_SUB_INTERVAL_SET(big_info, lll_adv_iso->sub_interval);
-	PDU_BIG_INFO_PTO_SET(big_info, lll_adv_iso->pto);
-	PDU_BIG_INFO_SPACING_SET(big_info, lll_adv_iso->bis_spacing);
-	PDU_BIG_INFO_IRC_SET(big_info, lll_adv_iso->irc);
-
-	big_info->max_pdu = lll_adv_iso->max_pdu;
-	big_info->rfu = 0U;
-
-	(void)memcpy(&big_info->seed_access_addr, lll_adv_iso->seed_access_addr,
-		     sizeof(big_info->seed_access_addr));
-	PDU_BIG_INFO_SDU_INTERVAL_SET(big_info, sdu_interval);
-	PDU_BIG_INFO_MAX_SDU_SET(big_info, max_sdu);
-	(void)memcpy(&big_info->base_crc_init, lll_adv_iso->base_crc_init,
-		     sizeof(big_info->base_crc_init));
-	pdu_big_info_chan_map_phy_set(big_info->chm_phy,
-				      lll_adv_iso->data_chan_map,
-				      phy);
-	/* Assign the 39-bit payload count, and 1-bit framing */
-	big_info->payload_count_framing[0] = lll_adv_iso->payload_count;
-	big_info->payload_count_framing[1] = lll_adv_iso->payload_count >> 8;
-	big_info->payload_count_framing[2] = lll_adv_iso->payload_count >> 16;
-	big_info->payload_count_framing[3] = lll_adv_iso->payload_count >> 24;
-	big_info->payload_count_framing[4] = lll_adv_iso->payload_count >> 32;
-	big_info->payload_count_framing[4] &= ~BIT(7);
-	big_info->payload_count_framing[4] |= ((framing & 0x01) << 7);
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) && encryption) {
-		const uint8_t BIG1[16] = {0x31, 0x47, 0x49, 0x42, };
-		const uint8_t BIG2[4]  = {0x32, 0x47, 0x49, 0x42};
-		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};
-		struct ccm *ccm_tx;
-		uint8_t igltk[16];
-		uint8_t gltk[16];
-		uint8_t gsk[16];
-
-		/* Fill GIV and GSKD */
-		(void)lll_csrand_get(lll_adv_iso->giv,
-				     sizeof(lll_adv_iso->giv));
-		(void)memcpy(big_info->giv, lll_adv_iso->giv,
-			     sizeof(big_info->giv));
-		(void)lll_csrand_get(big_info->gskd, sizeof(big_info->gskd));
-
-		/* Calculate GSK */
-		err = bt_crypto_h7(BIG1, bcode, igltk);
-		LL_ASSERT_DBG(!err);
-		err = bt_crypto_h6(igltk, BIG2, gltk);
-		LL_ASSERT_DBG(!err);
-		err = bt_crypto_h8(gltk, big_info->gskd, BIG3, gsk);
-		LL_ASSERT_DBG(!err);
-
-		/* Prepare the CCM parameters */
-		ccm_tx = &lll_adv_iso->ccm_tx;
-		ccm_tx->direction = 1U;
-		(void)memcpy(&ccm_tx->iv[4], &lll_adv_iso->giv[4], 4U);
-		(void)mem_rcopy(ccm_tx->key, gsk, sizeof(ccm_tx->key));
-
-		/* NOTE: counter is filled in LLL */
-
-		lll_adv_iso->enc = 1U;
-	} else {
-		lll_adv_iso->enc = 0U;
-	}
-
-	err = ull_adv_sync_add_to_acad(lll_adv_sync, pdu_prev, pdu, bi_ad,
-				       pdu_big_info_size + PDU_ADV_DATA_HEADER_SIZE);
-	if (err) {
-		/* Failed to add BIGInfo into the ACAD of the Periodic
-		 * Advertising.
-		 */
-
-		/* Release allocated link buffers */
-		ll_rx_link_release(link_cmplt);
-		ll_rx_link_release(link_term);
-
-		return err;
-	}
-
-	/* Associate the ISO instance with an Extended Advertising instance */
-	lll_adv_iso->adv = &adv->lll;
-
-	/* Store the link buffer for ISO create and terminate complete event */
-	adv_iso->node_rx_complete.hdr.link = link_cmplt;
-	adv_iso->node_rx_terminate.rx.hdr.link = link_term;
-
-	/* Initialise LLL header members */
-	lll_hdr_init(lll_adv_iso, adv_iso);
-
-	/* Start sending BIS empty data packet for each BIS */
-	ret = adv_iso_start(adv_iso, iso_interval_us);
-	if (ret) {
-		/* Failed to schedule BIG events */
-
-		/* Reset the association of ISO instance with the Extended
-		 * Advertising Instance
-		 */
-		lll_adv_iso->adv = NULL;
-
-		/* Release allocated link buffers */
-		ll_rx_link_release(link_cmplt);
-		ll_rx_link_release(link_term);
-
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	/* Associate the ISO instance with a Periodic Advertising */
-	lll_adv_sync->iso = lll_adv_iso;
-
-#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
-	/* Notify the sync instance */
-	ull_adv_sync_iso_created(HDR_LLL2ULL(lll_adv_sync));
-#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
-
-	/* Commit the BIGInfo in the ACAD field of Periodic Advertising */
-	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
-
-	return BT_HCI_ERR_SUCCESS;
-}
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+static struct ticker_ext normal_ticker_ext[CONFIG_BT_CTLR_ADV_ISO_SET];
+static struct ticker_ext resume_ticker_ext[CONFIG_BT_CTLR_ADV_ISO_SET];
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 uint8_t ll_big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
 		      uint32_t sdu_interval, uint16_t max_sdu,
@@ -716,7 +146,7 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	struct ll_adv_iso_set *adv_iso;
 	struct pdu_adv *pdu_prev, *pdu;
 	struct node_rx_pdu *node_rx;
-	struct lll_adv *lll_adv;
+	struct lll_adv *adv_lll;
 	struct ll_adv_set *adv;
 	uint16_t stream_handle;
 	uint16_t handle;
@@ -730,8 +160,8 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 	}
 
 	lll_adv_iso = &adv_iso->lll;
-	lll_adv = lll_adv_iso->adv;
-	if (!lll_adv) {
+	adv_lll = lll_adv_iso->adv;
+	if (!adv_lll) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
 	}
 
@@ -748,8 +178,8 @@ uint8_t ll_big_terminate(uint8_t big_handle, uint8_t reason)
 					 BIT(BT_HCI_DATAPATH_DIR_HOST_TO_CTLR));
 	}
 
-	lll_adv_sync = lll_adv->sync;
-	adv = HDR_LLL2ULL(lll_adv);
+	lll_adv_sync = adv_lll->sync;
+	adv = HDR_LLL2ULL(adv_lll);
 
 	/* Allocate next PDU */
 	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
@@ -1174,6 +604,626 @@ static uint16_t adv_iso_stream_handle_get(struct lll_adv_iso_stream *stream)
 	return mem_index_get(stream, stream_pool, sizeof(*stream));
 }
 
+static bool is_multiple(uint32_t interval1_us, uint32_t interval2_us)
+{
+	if (interval1_us > interval2_us) {
+		uint32_t swap;
+
+		swap = interval1_us;
+		interval1_us = interval2_us;
+		interval2_us = swap;
+	}
+
+	while (interval2_us >= interval1_us) {
+		interval2_us -= interval1_us;
+	}
+
+	return interval2_us == 0U;
+}
+
+static uint8_t big_create(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
+			  uint32_t sdu_interval, uint16_t max_sdu,
+			  uint16_t max_latency, uint8_t rtn, uint8_t phy,
+			  uint8_t packing, uint8_t framing, uint8_t encryption,
+			  uint8_t *bcode,
+			  uint16_t iso_interval, uint8_t nse, uint16_t max_pdu,
+			  uint8_t bn, uint8_t irc, uint8_t pto, bool test_config)
+{
+	uint8_t bi_ad[PDU_BIG_INFO_ENCRYPTED_SIZE + 2U];
+	struct lll_adv_sync *lll_adv_sync;
+	struct lll_adv_iso *lll_adv_iso;
+	struct ll_adv_iso_set *adv_iso;
+	struct pdu_adv *pdu_prev, *pdu;
+	struct pdu_big_info *big_info;
+	uint32_t ticks_slot_overhead;
+	struct ll_adv_sync_set *sync;
+	struct ll_adv_aux_set *aux;
+	uint32_t event_spacing_max;
+	uint8_t pdu_big_info_size;
+	uint32_t iso_interval_us;
+	uint32_t latency_packing;
+	uint32_t ticks_slot_sync;
+	uint32_t ticks_slot_adv;
+	uint32_t ticks_slot_aux;
+	memq_link_t *link_cmplt;
+	memq_link_t *link_term;
+	struct ll_adv_set *adv;
+	uint32_t slot_overhead;
+	uint32_t event_spacing;
+	uint16_t ctrl_spacing;
+	uint8_t sdu_per_event;
+	uint8_t ter_idx;
+	uint32_t ret;
+	uint8_t err;
+	int res;
+
+	adv_iso = adv_iso_get(big_handle);
+
+	/* Already created */
+	if (!adv_iso || adv_iso->lll.adv) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* No advertising set created */
+	adv = ull_adv_is_created_get(adv_handle);
+	if (!adv) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	/* Does not identify a periodic advertising train or
+	 * the periodic advertising trains is already associated
+	 * with another BIG.
+	 */
+	lll_adv_sync = adv->lll.sync;
+	if (!lll_adv_sync || lll_adv_sync->iso) {
+		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
+	}
+
+	/* Check if encryption supported */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) &&
+	    encryption) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	};
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_PARAM_CHECK)) {
+		if (num_bis == 0U || num_bis > 0x1F) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+
+		if (sdu_interval < 0x000100 || sdu_interval > 0x0FFFFF) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+
+		if (max_sdu < 0x0001 || max_sdu > 0x0FFF) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+
+		if (phy > (BT_HCI_LE_EXT_SCAN_PHY_1M |
+			   BT_HCI_LE_EXT_SCAN_PHY_2M |
+			   BT_HCI_LE_EXT_SCAN_PHY_CODED)) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+
+		if (packing > 1U) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+
+		if (framing > 1U) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+
+		if (encryption > 1U) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+
+		if (test_config) {
+			if (!IN_RANGE(iso_interval, 0x0004, 0x0C80)) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+
+			if (!IN_RANGE(nse, 0x01, 0x1F)) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+
+			if (!IN_RANGE(max_pdu, 0x01, MIN(0xFB, LL_BIS_OCTETS_TX_MAX))) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+
+			if (!IN_RANGE(bn, 0x01, 0x07)) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+
+			if (!IN_RANGE(irc, 0x01, 0x0F)) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+
+			if (pto > 0x0F) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+
+			if (pto && !(bn * irc < nse)) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+		} else {
+			if (max_latency > 0x0FA0) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+
+			if (rtn > 0x0F) {
+				return BT_HCI_ERR_INVALID_PARAM;
+			}
+		}
+	}
+
+	/* Check if free BISes available */
+	if (mem_free_count_get(stream_free) < num_bis) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
+	/* Allocate link buffer for created event */
+	link_cmplt = ll_rx_link_alloc();
+	if (!link_cmplt) {
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
+	/* Allocate link buffer for sync lost event */
+	link_term = ll_rx_link_alloc();
+	if (!link_term) {
+		ll_rx_link_release(link_cmplt);
+
+		return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+	}
+
+	/* Calculate overheads due to primary advertising. */
+	if (adv->is_enabled) {
+		ticks_slot_adv = adv->ull.ticks_slot;
+	} else {
+		/* TODO: Calculate/Get the primary channel ticks slot */
+		ticks_slot_adv = 0U;
+	}
+
+	/* Check if aux context allocated before we are creating ISO */
+	if (adv->lll.aux) {
+		aux = HDR_LLL2ULL(adv->lll.aux);
+	} else {
+		aux = NULL;
+	}
+
+	/* Calculate overheads due to extended advertising. */
+	if (aux && aux->is_started) {
+		ticks_slot_aux = aux->ull.ticks_slot;
+	} else {
+		uint32_t time_us;
+
+		time_us = PDU_AC_US(PDU_AC_PAYLOAD_SIZE_MAX, adv->lll.phy_s,
+				    adv->lll.phy_flags) +
+			  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+		ticks_slot_aux = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
+	}
+
+	/* Calculate overheads due to periodic advertising. */
+	sync = HDR_LLL2ULL(lll_adv_sync);
+	if (sync->is_started) {
+		ticks_slot_sync = sync->ull.ticks_slot;
+	} else {
+		uint32_t time_us;
+
+		time_us = PDU_AC_US(PDU_AC_PAYLOAD_SIZE_MAX,
+				    sync->lll.adv->phy_s,
+				    sync->lll.adv->phy_flags) +
+			  EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+		ticks_slot_sync = HAL_TICKER_US_TO_TICKS_CEIL(time_us);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	} else {
+		ticks_slot_overhead = 0U;
+	}
+
+	/* Add ticker coarse timing jitter overhead */
+	ticks_slot_adv += ticks_slot_overhead;
+	ticks_slot_adv += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
+	ticks_slot_aux += ticks_slot_overhead;
+	ticks_slot_aux += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
+	ticks_slot_sync += ticks_slot_overhead;
+	ticks_slot_sync += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
+
+	/* Calculate total overheads due to extended advertising */
+	if (IS_ENABLED(CONFIG_BT_CTLR_ADV_SLOT_WINDOW) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT)) {
+		ticks_slot_overhead = MAX(ticks_slot_adv, ticks_slot_aux);
+	} else {
+		ticks_slot_overhead = ticks_slot_adv + ticks_slot_aux;
+	}
+
+	/* Calculate total overheads due to periodic advertising */
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET)
+	} else if (CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET > 0U) {
+		if (ticks_slot_sync > ticks_slot_overhead) {
+			ticks_slot_overhead = ticks_slot_sync;
+		}
+#endif /* CONFIG_BT_CTLR_ADV_AUX_SYNC_OFFSET */
+
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_ADV_AUX_SLOT_WINDOW_DRIFT) && (aux != NULL) &&
+		   is_multiple(sdu_interval, (aux->interval * PERIODIC_INT_UNIT_US)) &&
+		   is_multiple(sdu_interval, (sync->interval * PERIODIC_INT_UNIT_US))) {
+		if (ticks_slot_sync > ticks_slot_overhead) {
+			ticks_slot_overhead = ticks_slot_sync;
+		}
+	} else {
+		ticks_slot_overhead += ticks_slot_sync;
+	}
+
+	/* Add ticker coarse timing jitter for the overhead */
+	ticks_slot_overhead += HAL_TICKER_US_TO_TICKS_CEIL(EVENT_TICKER_RES_MARGIN_US << 1);
+
+	/* Store parameters in LLL context */
+	/* TODO: Move parameters to ULL if only accessed by ULL */
+	lll_adv_iso = &adv_iso->lll;
+	lll_adv_iso->handle = big_handle;
+	lll_adv_iso->phy = phy;
+	lll_adv_iso->phy_flags = PHY_FLAGS_S8;
+
+	/* Mandatory Num_BIS = 1 */
+	lll_adv_iso->num_bis = num_bis;
+
+	/* Allocate streams */
+	for (uint8_t i = 0U; i < num_bis; i++) {
+		struct lll_adv_iso_stream *stream;
+
+		stream = (void *)adv_iso_stream_acquire();
+		stream->big_handle = big_handle;
+		stream->dp = NULL;
+
+		if (!stream->link_tx_free) {
+			stream->link_tx_free = &stream->link_tx;
+		}
+		memq_init(stream->link_tx_free, &stream->memq_tx.head,
+			  &stream->memq_tx.tail);
+		stream->link_tx_free = NULL;
+
+		stream->pkt_seq_num = 0U;
+
+		lll_adv_iso->stream_handle[i] =
+			adv_iso_stream_handle_get(stream);
+	}
+
+	if (test_config) {
+		lll_adv_iso->bn = bn;
+		lll_adv_iso->iso_interval = iso_interval;
+		lll_adv_iso->irc = irc;
+		lll_adv_iso->nse = nse;
+		lll_adv_iso->max_pdu = max_pdu;
+		iso_interval_us = iso_interval * PERIODIC_INT_UNIT_US;
+
+	} else {
+		if (framing) {
+			/* Try to allocate room for one SDU + header */
+			lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX,
+						   max_sdu + PDU_ISO_SEG_HDR_SIZE +
+						    PDU_ISO_SEG_TIMEOFFSET_SIZE);
+		} else {
+			lll_adv_iso->max_pdu = MIN(LL_BIS_OCTETS_TX_MAX, max_sdu);
+		}
+
+		/* FIXME: SDU per max latency, consider how to use Pre-transmission in the
+		 *        calculations.
+		 *        Take decision based on how ptc_calc function forces the use of
+		 *        Pre-Transmission when not using test command. Refer to comments in
+		 *        ptc_calc function.
+		 */
+		sdu_per_event = MAX((max_latency * USEC_PER_MSEC / sdu_interval), 2U) -
+				1U;
+
+		/* BN (Burst Count), Mandatory BN = 1 */
+		bn = DIV_ROUND_UP(max_sdu, lll_adv_iso->max_pdu) * sdu_per_event;
+		if (bn > PDU_BIG_BN_MAX) {
+			/* Restrict each BIG event to maximum burst per BIG event */
+			lll_adv_iso->bn = PDU_BIG_BN_MAX;
+
+			/* Ceil the required burst count per SDU to next maximum burst
+			 * per BIG event.
+			 */
+			bn = DIV_ROUND_UP(bn, PDU_BIG_BN_MAX) * PDU_BIG_BN_MAX;
+		} else {
+			lll_adv_iso->bn = bn;
+		}
+
+		/* Calculate ISO interval */
+		/* iso_interval shall be at least SDU interval,
+		 * or integer multiple of SDU interval for unframed PDUs
+		 */
+		iso_interval_us = ((sdu_interval * lll_adv_iso->bn * sdu_per_event) /
+				(bn * PERIODIC_INT_UNIT_US)) * PERIODIC_INT_UNIT_US;
+		lll_adv_iso->iso_interval = iso_interval_us / PERIODIC_INT_UNIT_US;
+	}
+
+	/* Calculate max available ISO event spacing */
+	slot_overhead = HAL_TICKER_TICKS_TO_US(ticks_slot_overhead);
+	if (slot_overhead < iso_interval_us) {
+		event_spacing_max = iso_interval_us - slot_overhead;
+	} else {
+		event_spacing_max = 0U;
+	}
+
+	/* Negotiate event spacing */
+	do {
+		if (!test_config) {
+			/* Immediate Repetition Count (IRC), Mandatory IRC = 1 */
+			lll_adv_iso->irc = rtn + 1U;
+
+			/* Calculate NSE (No. of Sub Events), Mandatory NSE = 1,
+			 * without PTO added.
+			 */
+			lll_adv_iso->nse = lll_adv_iso->bn * lll_adv_iso->irc;
+		}
+
+		/* NOTE: Calculate sub_interval, if interleaved then it is Num_BIS x
+		 *       BIS_Spacing (by BT Spec.)
+		 *       else if sequential, then by our implementation, lets keep it
+		 *       max_tx_time for Max_PDU + tMSS.
+		 */
+		lll_adv_iso->sub_interval = PDU_BIS_US(lll_adv_iso->max_pdu, encryption,
+						phy, lll_adv_iso->phy_flags) +
+						EVENT_MSS_US;
+		ctrl_spacing = PDU_BIS_US(sizeof(struct pdu_big_ctrl), encryption, phy,
+					lll_adv_iso->phy_flags);
+		latency_packing = lll_adv_iso->sub_interval * lll_adv_iso->nse *
+					lll_adv_iso->num_bis;
+		event_spacing = latency_packing + ctrl_spacing;
+		event_spacing += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+
+		/* Check if ISO interval too small to fit the calculated BIG event
+		 * timing required for the supplied BIG create parameters.
+		 */
+		if (event_spacing > event_spacing_max) {
+			/* Check if we can reduce RTN to meet eventing spacing */
+			if (!test_config && rtn) {
+				rtn--;
+			} else {
+				break;
+			}
+		}
+	} while (event_spacing > event_spacing_max);
+
+	/* Check if ISO interval too small to fit the calculated BIG event
+	 * timing required for the supplied BIG create parameters.
+	 */
+	if (event_spacing > event_spacing_max) {
+		/* Release allocated link buffers */
+		ll_rx_link_release(link_cmplt);
+		ll_rx_link_release(link_term);
+
+		return BT_HCI_ERR_INVALID_PARAM;
+	}
+
+	/* Decision to use requested Pre-Transmission Offset or force Pre-Transmission when
+	 * possible (Zephyr Controller decision).
+	 */
+	lll_adv_iso->ptc = ptc_calc(lll_adv_iso, event_spacing, event_spacing_max);
+
+	if (test_config) {
+		lll_adv_iso->pto = pto;
+
+		if (pto && !lll_adv_iso->ptc) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+	} else {
+		/* Pre-Transmission Offset (PTO) */
+		if (lll_adv_iso->ptc) {
+			lll_adv_iso->pto = MAX((bn / lll_adv_iso->bn), BT_CTLR_ADV_ISO_PTO_MIN);
+		} else {
+			lll_adv_iso->pto = 0U;
+		}
+
+		/* Make room for pre-transmissions */
+		lll_adv_iso->nse += lll_adv_iso->ptc;
+	}
+
+	/* Based on packing requested, sequential or interleaved */
+	if (false) {
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED)
+	} else if (packing) {
+		/* Interleaved Packing */
+		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval;
+		lll_adv_iso->sub_interval = lll_adv_iso->bis_spacing *
+					    lll_adv_iso->num_bis;
+#endif /* CONFIG_BT_CTLR_ADV_ISO_INTERLEAVED */
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL)
+	} else if (true) {
+		/* Sequential Packing */
+		lll_adv_iso->bis_spacing = lll_adv_iso->sub_interval *
+					   lll_adv_iso->nse;
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SEQUENTIAL */
+
+	} else {
+		return BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+	}
+
+	/* TODO: Group count, GC = NSE / BN; PTO = GC - IRC;
+	 *       Is this required?
+	 */
+
+	lll_adv_iso->sdu_interval = sdu_interval;
+	lll_adv_iso->max_sdu = max_sdu;
+
+	res = util_saa_le32(lll_adv_iso->seed_access_addr, big_handle);
+	LL_ASSERT_DBG(!res);
+
+	(void)lll_csrand_get(lll_adv_iso->base_crc_init,
+			     sizeof(lll_adv_iso->base_crc_init));
+	lll_adv_iso->data_chan_count =
+		ull_chan_map_get(lll_adv_iso->data_chan_map);
+	lll_adv_iso->payload_count = 0U;
+	lll_adv_iso->latency_prepare = 0U;
+	lll_adv_iso->latency_event = 0U;
+	lll_adv_iso->term_req = 0U;
+	lll_adv_iso->term_ack = 0U;
+	lll_adv_iso->chm_req = 0U;
+	lll_adv_iso->chm_ack = 0U;
+	lll_adv_iso->ctrl_expire = 0U;
+
+	/* TODO: framing support */
+	lll_adv_iso->framing = framing;
+
+	/* Allocate next PDU */
+	err = ull_adv_sync_pdu_alloc(adv, ULL_ADV_PDU_EXTRA_DATA_ALLOC_IF_EXIST,
+				     &pdu_prev, &pdu, NULL, NULL, &ter_idx);
+	if (err) {
+		/* Insufficient Advertising PDU buffers to allocate new PDU
+		 * to add BIGInfo into the ACAD of the Periodic Advertising.
+		 */
+
+		/* Release allocated link buffers */
+		ll_rx_link_release(link_cmplt);
+		ll_rx_link_release(link_term);
+
+		return err;
+	}
+
+	/* Add ACAD to AUX_SYNC_IND */
+	if (encryption) {
+		pdu_big_info_size = PDU_BIG_INFO_ENCRYPTED_SIZE;
+	} else {
+		pdu_big_info_size = PDU_BIG_INFO_CLEARTEXT_SIZE;
+	}
+	bi_ad[PDU_ADV_DATA_HEADER_LEN_OFFSET] = pdu_big_info_size + (PDU_ADV_DATA_HEADER_SIZE -
+						PDU_ADV_DATA_HEADER_LEN_SIZE);
+	bi_ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = BT_DATA_BIG_INFO;
+	big_info = (void *)&bi_ad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
+
+	/* big_info->offset, big_info->offset_units and
+	 * big_info->payload_count_framing[] will be filled by periodic
+	 * advertising event.
+	 */
+
+	PDU_BIG_INFO_ISO_INTERVAL_SET(big_info, iso_interval_us / PERIODIC_INT_UNIT_US);
+	PDU_BIG_INFO_NUM_BIS_SET(big_info, lll_adv_iso->num_bis);
+	PDU_BIG_INFO_NSE_SET(big_info, lll_adv_iso->nse);
+	PDU_BIG_INFO_BN_SET(big_info, lll_adv_iso->bn);
+	PDU_BIG_INFO_SUB_INTERVAL_SET(big_info, lll_adv_iso->sub_interval);
+	PDU_BIG_INFO_PTO_SET(big_info, lll_adv_iso->pto);
+	PDU_BIG_INFO_SPACING_SET(big_info, lll_adv_iso->bis_spacing);
+	PDU_BIG_INFO_IRC_SET(big_info, lll_adv_iso->irc);
+
+	big_info->max_pdu = lll_adv_iso->max_pdu;
+	big_info->rfu = 0U;
+
+	(void)memcpy(&big_info->seed_access_addr, lll_adv_iso->seed_access_addr,
+		     sizeof(big_info->seed_access_addr));
+	PDU_BIG_INFO_SDU_INTERVAL_SET(big_info, sdu_interval);
+	PDU_BIG_INFO_MAX_SDU_SET(big_info, max_sdu);
+	(void)memcpy(&big_info->base_crc_init, lll_adv_iso->base_crc_init,
+		     sizeof(big_info->base_crc_init));
+	pdu_big_info_chan_map_phy_set(big_info->chm_phy,
+				      lll_adv_iso->data_chan_map,
+				      phy);
+	/* Assign the 39-bit payload count, and 1-bit framing */
+	big_info->payload_count_framing[0] = lll_adv_iso->payload_count;
+	big_info->payload_count_framing[1] = lll_adv_iso->payload_count >> 8;
+	big_info->payload_count_framing[2] = lll_adv_iso->payload_count >> 16;
+	big_info->payload_count_framing[3] = lll_adv_iso->payload_count >> 24;
+	big_info->payload_count_framing[4] = lll_adv_iso->payload_count >> 32;
+	big_info->payload_count_framing[4] &= ~BIT(7);
+	big_info->payload_count_framing[4] |= ((framing & 0x01) << 7);
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_BROADCAST_ISO_ENC) && encryption) {
+		const uint8_t BIG1[16] = {0x31, 0x47, 0x49, 0x42, };
+		const uint8_t BIG2[4]  = {0x32, 0x47, 0x49, 0x42};
+		const uint8_t BIG3[4]  = {0x33, 0x47, 0x49, 0x42};
+		struct ccm *ccm_tx;
+		uint8_t igltk[16];
+		uint8_t gltk[16];
+		uint8_t gsk[16];
+
+		/* Fill GIV and GSKD */
+		(void)lll_csrand_get(lll_adv_iso->giv,
+				     sizeof(lll_adv_iso->giv));
+		(void)memcpy(big_info->giv, lll_adv_iso->giv,
+			     sizeof(big_info->giv));
+		(void)lll_csrand_get(big_info->gskd, sizeof(big_info->gskd));
+
+		/* Calculate GSK */
+		err = bt_crypto_h7(BIG1, bcode, igltk);
+		LL_ASSERT_DBG(!err);
+		err = bt_crypto_h6(igltk, BIG2, gltk);
+		LL_ASSERT_DBG(!err);
+		err = bt_crypto_h8(gltk, big_info->gskd, BIG3, gsk);
+		LL_ASSERT_DBG(!err);
+
+		/* Prepare the CCM parameters */
+		ccm_tx = &lll_adv_iso->ccm_tx;
+		ccm_tx->direction = 1U;
+		(void)memcpy(&ccm_tx->iv[4], &lll_adv_iso->giv[4], 4U);
+		(void)mem_rcopy(ccm_tx->key, gsk, sizeof(ccm_tx->key));
+
+		/* NOTE: counter is filled in LLL */
+
+		lll_adv_iso->enc = 1U;
+	} else {
+		lll_adv_iso->enc = 0U;
+	}
+
+	err = ull_adv_sync_add_to_acad(lll_adv_sync, pdu_prev, pdu, bi_ad,
+				       pdu_big_info_size + PDU_ADV_DATA_HEADER_SIZE);
+	if (err) {
+		/* Failed to add BIGInfo into the ACAD of the Periodic
+		 * Advertising.
+		 */
+
+		/* Release allocated link buffers */
+		ll_rx_link_release(link_cmplt);
+		ll_rx_link_release(link_term);
+
+		return err;
+	}
+
+	/* Associate the ISO instance with an Extended Advertising instance */
+	lll_adv_iso->adv = &adv->lll;
+
+	/* Store the link buffer for ISO create and terminate complete event */
+	adv_iso->node_rx_complete.hdr.link = link_cmplt;
+	adv_iso->node_rx_terminate.rx.hdr.link = link_term;
+
+	/* Initialise LLL header members */
+	lll_hdr_init(lll_adv_iso, adv_iso);
+
+	/* Start sending BIS empty data packet for each BIS */
+	ret = adv_iso_start(adv_iso, iso_interval_us);
+	if (ret) {
+		/* Failed to schedule BIG events */
+
+		/* Reset the association of ISO instance with the Extended
+		 * Advertising Instance
+		 */
+		lll_adv_iso->adv = NULL;
+
+		/* Release allocated link buffers */
+		ll_rx_link_release(link_cmplt);
+		ll_rx_link_release(link_term);
+
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Associate the ISO instance with a Periodic Advertising */
+	lll_adv_sync->iso = lll_adv_iso;
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+	/* Notify the sync instance */
+	ull_adv_sync_iso_created(HDR_LLL2ULL(lll_adv_sync));
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+	/* Commit the BIGInfo in the ACAD field of Periodic Advertising */
+	lll_adv_sync_data_enqueue(lll_adv_sync, ter_idx);
+
+	return BT_HCI_ERR_SUCCESS;
+}
+
 static uint8_t ptc_calc(const struct lll_adv_iso *lll, uint32_t event_spacing,
 			uint32_t event_spacing_max)
 {
@@ -1263,11 +1313,15 @@ static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max)
 
 	} else if (lll_iso->bis_spacing >=
 		   (lll_iso->sub_interval * lll_iso->nse)) {
-		/* Time reservation omitting PTC subevents in sequential
-		 * packing.
-		 */
-		time_us = pdu_spacing * ((lll_iso->nse * lll_iso->num_bis) -
-					 lll_iso->ptc);
+		if (IS_ENABLED(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)) {
+			time_us = pdu_spacing * lll_iso->bn;
+		} else {
+			/* Time reservation omitting PTC subevents in sequential
+			 * packing.
+			 */
+			time_us = pdu_spacing * ((lll_iso->nse * lll_iso->num_bis) -
+						 lll_iso->ptc);
+		}
 
 	} else {
 		/* Time reservation omitting PTC subevents in interleaved
@@ -1276,6 +1330,9 @@ static uint32_t adv_iso_time_get(const struct ll_adv_iso_set *adv_iso, bool max)
 		time_us = pdu_spacing * ((lll_iso->nse - lll_iso->ptc) *
 					 lll_iso->num_bis);
 	}
+
+	/* Add radio tx ready delay */
+	time_us += lll_radio_tx_ready_delay_get(lll_iso->phy, lll_iso->phy_flags);
 
 	/* Add implementation defined radio event overheads */
 	time_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
@@ -1289,7 +1346,9 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	uint32_t ticks_slot_overhead;
 	uint32_t ticks_slot_offset;
 	volatile uint32_t ret_cb;
+	uint32_t ticks_slot_max;
 	uint32_t ticks_anchor;
+	uint32_t slot_max_us;
 	uint32_t ticks_slot;
 	uint32_t slot_us;
 	uint32_t ret;
@@ -1310,11 +1369,12 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	ticks_slot = adv_iso->ull.ticks_slot + ticks_slot_overhead;
 
 	/* Find the slot after Periodic Advertisings events */
-	ticks_anchor = ticker_ticks_now_get() +
-		       HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
-	err = ull_sched_adv_aux_sync_free_anchor_get(ticks_slot, &ticks_anchor);
+	ticks_anchor = ticker_ticks_now_get();
+	slot_max_us = adv_iso_time_get(adv_iso, true);
+	ticks_slot_max = HAL_TICKER_US_TO_TICKS_CEIL(slot_max_us) + ticks_slot_overhead;
+	err = ull_sched_adv_aux_sync_free_anchor_get(ticks_slot_max, &ticks_anchor);
 	if (!err) {
-		ticks_anchor += HAL_TICKER_US_TO_TICKS(
+		ticks_anchor += HAL_TICKER_US_TO_TICKS_CEIL(
 					MAX(EVENT_MAFS_US,
 					    EVENT_OVERHEAD_START_US) -
 					EVENT_OVERHEAD_START_US +
@@ -1325,6 +1385,41 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 	mfy_lll_prepare.fp = lll_adv_iso_create_prepare;
 
 	ret_cb = TICKER_STATUS_BUSY;
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+	{
+		const struct lll_adv_iso *lll_iso = &adv_iso->lll;
+		uint32_t jitter_us;
+		uint8_t index;
+
+		if (lll_iso->bis_spacing >=
+		    (lll_iso->sub_interval * lll_iso->nse)) {
+			/* Sequential packing jitter */
+			jitter_us = lll_iso->sub_interval * lll_iso->bn *
+				    (lll_iso->irc - 1U);
+		} else {
+			/* Interleaved packing jitter */
+			jitter_us = lll_iso->bis_spacing * lll_iso->num_bis * lll_iso->bn *
+				    (lll_iso->irc - 1U);
+		}
+
+		index = ARRAY_INDEX(ll_adv_iso, adv_iso);
+		normal_ticker_ext[index].ticks_slot_window =
+			HAL_TICKER_US_TO_TICKS(jitter_us + slot_us);
+		normal_ticker_ext[index].is_jitter_in_window = 1U;
+
+		ret = ticker_start_ext(
+				TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+				(TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
+				ticks_anchor, 0U,
+				HAL_TICKER_US_TO_TICKS(iso_interval_us),
+				HAL_TICKER_REMAINDER(iso_interval_us),
+				TICKER_NULL_LAZY, ticks_slot, ticker_cb, adv_iso,
+				ull_ticker_status_give, (void *)&ret_cb,
+				&normal_ticker_ext[index]);
+	}
+
+#else /* !CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			   (TICKER_ID_ADV_ISO_BASE + adv_iso->lll.handle),
 			   ticks_anchor, 0U,
@@ -1332,6 +1427,8 @@ static uint32_t adv_iso_start(struct ll_adv_iso_set *adv_iso,
 			   HAL_TICKER_REMAINDER(iso_interval_us),
 			   TICKER_NULL_LAZY, ticks_slot, ticker_cb, adv_iso,
 			   ull_ticker_status_give, (void *)&ret_cb);
+#endif /* !CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
+
 	ret = ull_ticker_status_take(ret, &ret_cb);
 
 	return ret;
@@ -1572,12 +1669,30 @@ static inline void big_info_offset_fill(struct pdu_big_info *bi,
 	}
 }
 
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+static void ticker_resume_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
+			     uint32_t remainder, uint16_t lazy, uint8_t force,
+			     void *param)
+{
+	/* TODO: Add implementation to place ULL time reservation for subsequent BIS spacing */
+}
+
+static void ticker_op_start_cb(uint32_t status, void *param)
+{
+	ARG_UNUSED(status);
+	ARG_UNUSED(param);
+
+	/* FIXME: Handle the skipped ULL scheduling of the subevent used to reserve time. */
+}
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
+
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param)
 {
 	static struct lll_prepare_param p;
-	struct ll_adv_iso_set *adv_iso = param;
+	struct ll_adv_iso_set *adv_iso;
+	struct lll_adv_iso *lll;
 	uint32_t remainder_us;
 	uint64_t event_count;
 	uint32_t ret;
@@ -1585,9 +1700,11 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	DEBUG_RADIO_PREPARE_A(1);
 
-	event_count = adv_iso->lll.payload_count / adv_iso->lll.bn;
-	for (int i = 0; i < adv_iso->lll.num_bis; i++)  {
-		uint16_t stream_handle = adv_iso->lll.stream_handle[i];
+	adv_iso = param;
+	lll = &adv_iso->lll;
+	event_count = lll->payload_count / lll->bn;
+	for (int i = 0; i < lll->num_bis; i++)  {
+		uint16_t stream_handle = lll->stream_handle[i];
 
 		ull_iso_lll_event_prepare(LL_BIS_ADV_HANDLE_FROM_IDX(stream_handle), event_count);
 	}
@@ -1598,10 +1715,13 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 
 	/* Append timing parameters */
 	p.ticks_at_expire = ticks_at_expire;
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+	p.ticks_drift = ticks_drift;
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 	p.remainder = remainder;
 	p.lazy = lazy;
 	p.force = force;
-	p.param = &adv_iso->lll;
+	p.param = lll;
 	mfy_lll_prepare.param = &p;
 
 	/* Kick LLL prepare */
@@ -1616,6 +1736,47 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	adv_iso->big_ref_point = isoal_get_wrapped_time_us(HAL_TICKER_TICKS_TO_US(ticks_at_expire),
 							   (remainder_us +
 							    EVENT_OVERHEAD_START_US));
+
+#if defined(CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER)
+	if (lll->num_bis > 1U) {
+		uint32_t bis_offset;
+		uint32_t jitter_us;
+		uint32_t slot_us;
+		uint8_t index;
+
+		bis_offset = lll->bis_spacing;
+
+		/* TODO: below is for sequential packing, interleaved packing need to be
+		 *       implemented in future.
+		 */
+		jitter_us = lll->sub_interval * lll->bn * (lll->irc - 1U);
+
+		slot_us = HAL_TICKER_TICKS_TO_US(adv_iso->ull.ticks_slot);
+
+		index = ARRAY_INDEX(ll_adv_iso, adv_iso);
+
+		resume_ticker_ext[index].ticks_slot_window =
+			HAL_TICKER_US_TO_TICKS(jitter_us + slot_us);
+		resume_ticker_ext[index].is_jitter_in_window = 1U;
+
+#if defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
+		resume_ticker_ext[index].expire_info_id = TICKER_NULL;
+#endif /* CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+		ret = ticker_start_ext(
+				   TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
+				   (TICKER_ID_ADV_ISO_RESUME_BASE + index),
+				   p.ticks_at_expire, HAL_TICKER_US_TO_TICKS(bis_offset),
+				   TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
+				   TICKER_NULL_LAZY, adv_iso->ull.ticks_slot,
+				   ticker_resume_cb, lll, ticker_op_start_cb,
+				   (void *)__LINE__,
+				   &resume_ticker_ext[index]
+				  );
+		LL_ASSERT_ERR((ret == TICKER_STATUS_SUCCESS) ||
+			      (ret == TICKER_STATUS_BUSY));
+	}
+#endif /* CONFIG_BT_CTLR_ADV_ISO_SLOT_WINDOW_JITTER */
 
 	DEBUG_RADIO_PREPARE_A(1);
 }

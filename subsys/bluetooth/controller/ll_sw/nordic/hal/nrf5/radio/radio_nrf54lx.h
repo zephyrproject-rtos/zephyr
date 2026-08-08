@@ -15,23 +15,112 @@
 #undef EVENT_TIMER
 #define EVENT_TIMER _CONCAT(NRF_TIMER, EVENT_TIMER_ID)
 
+#undef EVENT_TIMER_IRQn
+#define EVENT_TIMER_IRQn _CONCAT_2(TIMER, EVENT_TIMER_ID, _IRQn)
+
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 #undef SW_SWITCH_TIMER
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 #define SW_SWITCH_TIMER EVENT_TIMER
 #else  /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
-/* TODO: Using NRF_TIMER from another domain needs DPPIC and PPIB setup */
-#error "SW tIFS switching using dedicated second timer not supported yet."
+/* Dual-timer mode: EVENT_TIMER = NRF_TIMER00 (MCU power domain, HFPLL 128 MHz)
+ *                  SW_SWITCH_TIMER = NRF_TIMER10 (Radio power domain, HFXO 32 MHz)
+ * Cross-domain DPPI connections use PPIB bridges:
+ *   PPIB00/PPIB10: MCU domain <-> Radio domain
+ *   PPIB01/PPIB20: Peripheral domain -> MCU domain (for GRTC -> TIMER00)
+ *   PPIB11/PPIB21: Peripheral domain -> Radio domain (for GRTC -> TIMER10)
+ */
+#undef EVENT_TIMER_ID
+#define EVENT_TIMER_ID 00
+#undef EVENT_TIMER
+#define EVENT_TIMER _CONCAT(NRF_TIMER, EVENT_TIMER_ID)
+#define SW_SWITCH_TIMER NRF_TIMER10
+/* HAL abstraction of SW switch timer prescaler value.
+ * NRF_TIMER10 uses HFXO (32 MHz): 32 MHz / 2^5 = 1 MHz.
+ */
+#define HAL_SW_SWITCH_TIMER_PRESCALER_VALUE 5U
 #endif  /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
-/* HAL abstraction of event timer prescaler value */
+/* Dual-timer mode requires GRTC: the PPIB01/PPIB20 bridge (Peripheral<->MCU domain)
+ * is only configured in the GRTC event path. RTC-based event timing does not support
+ * cross-domain bridging to NRF_TIMER00 in the MCU power domain.
+ */
+#if !defined(CONFIG_BT_CTLR_TIFS_HW) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER) && \
+	!defined(CONFIG_BT_CTLR_NRF_GRTC)
+#error "nRF54L dual-timer mode (EVENT_TIMER=NRF_TIMER00) requires CONFIG_BT_CTLR_NRF_GRTC"
+#endif
+
+/* HAL abstraction of event timer prescaler value.
+ * In dual-timer mode, EVENT_TIMER = NRF_TIMER00 uses HFPLL (128 MHz): 128 MHz / 2^7 = 1 MHz.
+ * In single-timer mode, EVENT_TIMER = NRF_TIMER10 uses HFXO (32 MHz): 32 MHz / 2^5 = 1 MHz.
+ */
+#if !defined(CONFIG_BT_CTLR_TIFS_HW) && !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+#define HAL_EVENT_TIMER_PRESCALER_VALUE 7U
+#else
 #define HAL_EVENT_TIMER_PRESCALER_VALUE 5U
+#endif
 
 /* NRF Radio HW timing constants
  * - provided in US and NS (for higher granularity)
  * - based on empirical measurements and sniffer logs
  */
+
+/* TXEN->TXIDLE + TXIDLE->TX (with PLLEN Radio ramp-up mode)
+ * in microseconds for LE 1M PHY.
+ */
+#define HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_1M_PLLEN_NS 10115 /* 10.115 */
+#define HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_1M_PLLEN_US \
+	HAL_RADIO_NS2US_ROUND(10115) /* 10115 */
+
+/* TXEN->TXIDLE + TXIDLE->TX (with PLLEN Radio ramp-up mode)
+ * in microseconds for LE 2M PHY.
+ */
+#define HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_2M_PLLEN_NS 10115 /* 10.115 */
+#define HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_2M_PLLEN_US \
+	HAL_RADIO_NS2US_ROUND(10115) /* 10115 */
+
+/* TXEN->TXIDLE + TXIDLE->TX (with PLLEN Radio ramp-up mode)
+ * in microseconds for LE CODED PHY [S2].
+ */
+#define HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_S2_PLLEN_NS 10115 /* 10.115 */
+#define HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_S2_PLLEN_US \
+	HAL_RADIO_NS2US_ROUND(10115) /* 10115 */
+
+/* TXEN->TXIDLE + TXIDLE->TX (with PLLEN Radio ramp-up mode)
+ * in microseconds for LE CODED PHY [S8].
+ */
+#define HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_S8_PLLEN_NS 10115 /* 10.115 */
+#define HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_S8_PLLEN_US \
+	HAL_RADIO_NS2US_ROUND(10115) /* 10115 */
+
+/* RXEN->RXIDLE + RXIDLE->RX (with PLLEN Radio ramp-up mode)
+ * in microseconds for LE 1M PHY.
+ */
+#define HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_1M_PLLEN_NS 10115 /* 10.115 */
+#define HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_1M_PLLEN_US \
+	HAL_RADIO_NS2US_CEIL(10115) /* 10115 */
+
+/* RXEN->RXIDLE + RXIDLE->RX (with PLLEN Radio ramp-up mode)
+ * in microseconds for LE 2M PHY.
+ */
+#define HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_2M_PLLEN_NS 10115 /* 10.115 */
+#define HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_2M_PLLEN_US \
+	HAL_RADIO_NS2US_CEIL(10115) /* 10115 */
+
+/* RXEN->RXIDLE + RXIDLE->RX (with PLLEN Radio ramp-up mode)
+ * in microseconds for LE Coded PHY [S2].
+ */
+#define HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_S2_PLLEN_NS 10115 /* 10.115 */
+#define HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_S2_PLLEN_US \
+	HAL_RADIO_NS2US_CEIL(10115) /* 10115 */
+
+/* RXEN->RXIDLE + RXIDLE->RX (with PLLEN Radio ramp-up mode)
+ * in microseconds for LE Coded PHY [S8].
+ */
+#define HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_S8_PLLEN_NS 10115 /* 10.115 */
+#define HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_S8_PLLEN_US \
+	HAL_RADIO_NS2US_CEIL(10115) /* 10115 */
 
 /* TXEN->TXIDLE + TXIDLE->TX (with fast Radio ramp-up mode)
  * in microseconds for LE 1M PHY.
@@ -225,13 +314,21 @@
 #define HAL_RADIO_NRF54LX_TX_CHAIN_DELAY_S8_US  1 /* ceil(0.6) */
 #define HAL_RADIO_NRF54LX_TX_CHAIN_DELAY_S8_NS  600 /* 0.6 */
 
+#define HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_1M_US  10 /* ceil(9.4) */
 #define HAL_RADIO_NRF54LX_RX_CHAIN_DELAY_1M_US  10 /* ceil(9.4) */
+#define HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_1M_NS  9400 /* 9.4 */
 #define HAL_RADIO_NRF54LX_RX_CHAIN_DELAY_1M_NS  9400 /* 9.4 */
+#define HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_2M_US  5 /* ceil(5.0) */
 #define HAL_RADIO_NRF54LX_RX_CHAIN_DELAY_2M_US  5 /* ceil(5.0) */
+#define HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_2M_NS  5000 /* 5.0 */
 #define HAL_RADIO_NRF54LX_RX_CHAIN_DELAY_2M_NS  5000 /* 5.0 */
+#define HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_S2_US  19
 #define HAL_RADIO_NRF54LX_RX_CHAIN_DELAY_S2_US  25 /* ceil(19.6) */
+#define HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_S2_NS  19000
 #define HAL_RADIO_NRF54LX_RX_CHAIN_DELAY_S2_NS  24600 /* 19.6 */
+#define HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_S8_US  19
 #define HAL_RADIO_NRF54LX_RX_CHAIN_DELAY_S8_US  30 /* ceil(29.6) */
+#define HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_S8_NS  19000
 #define HAL_RADIO_NRF54LX_RX_CHAIN_DELAY_S8_NS  29600 /* 29.6 */
 
 #if defined(CONFIG_BT_CTLR_RADIO_ENABLE_FAST)
@@ -367,9 +464,11 @@
 #define HAL_NRF_RADIO_EVENT_PHYEND                NRF_RADIO_EVENT_PHYEND
 #define HAL_RADIO_EVENTS_PHYEND                   EVENTS_PHYEND
 #define HAL_RADIO_PUBLISH_PHYEND                  PUBLISH_PHYEND
+#define HAL_RADIO_INTENSET_END_Msk                RADIO_INTENSET00_END_Msk
 #define HAL_RADIO_INTENSET_DISABLED_Msk           RADIO_INTENSET00_DISABLED_Msk
 #define HAL_RADIO_SHORTS_TRX_END_DISABLE_Msk      RADIO_SHORTS_PHYEND_DISABLE_Msk
 #define HAL_RADIO_SHORTS_TRX_PHYEND_DISABLE_Msk   RADIO_SHORTS_PHYEND_DISABLE_Msk
+#define HAL_RADIO_SHORTS_TRX_PHYEND_PLLEN_Msk     RADIO_SHORTS_PHYEND_PLLEN_Msk
 #define HAL_RADIO_CLEARPATTERN_CLEARPATTERN_Clear (1UL)
 
 /* HAL abstraction of Radio IRQ number */
@@ -734,6 +833,26 @@ static inline uint32_t hal_radio_tx_chain_delay_us_get(uint8_t phy, uint8_t flag
 	}
 }
 
+static inline uint32_t hal_radio_rx_address_delay_us_get(uint8_t phy, uint8_t flags)
+{
+	switch (phy) {
+	default:
+	case BIT(0):
+		return HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_1M_US;
+	case BIT(1):
+		return HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_2M_US;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	case BIT(2):
+		if (flags & 0x01) {
+			return HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_S8_US;
+		} else {
+			return HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_S2_US;
+		}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+	}
+}
+
 static inline uint32_t hal_radio_rx_chain_delay_us_get(uint8_t phy, uint8_t flags)
 {
 	switch (phy) {
@@ -754,7 +873,49 @@ static inline uint32_t hal_radio_rx_chain_delay_us_get(uint8_t phy, uint8_t flag
 	}
 }
 
-static inline uint32_t hal_radio_tx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
+#if defined(CONFIG_BT_CTLR_TIFS_PLLEN)
+static inline uint32_t hal_radio_tifs_tx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
+{
+	switch (phy) {
+	default:
+	case BIT(0):
+		return HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_1M_PLLEN_NS;
+	case BIT(1):
+		return HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_2M_PLLEN_NS;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	case BIT(2):
+		if (flags & 0x01) {
+			return HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_S8_PLLEN_NS;
+		} else {
+			return HAL_RADIO_NRF54LX_TXEN_TXIDLE_TX_S2_PLLEN_NS;
+		}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+	}
+}
+
+static inline uint32_t hal_radio_tifs_rx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
+{
+	switch (phy) {
+	default:
+	case BIT(0):
+		return HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_1M_PLLEN_NS;
+	case BIT(1):
+		return HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_2M_PLLEN_NS;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	case BIT(2):
+		if (flags & 0x01) {
+			return HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_S8_PLLEN_NS;
+		} else {
+			return HAL_RADIO_NRF54LX_RXEN_RXIDLE_RX_S2_PLLEN_NS;
+		}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+	}
+}
+
+#else /* !CONFIG_BT_CTLR_TIFS_PLLEN */
+static inline uint32_t hal_radio_tifs_tx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
 {
 	switch (phy) {
 	default:
@@ -774,7 +935,7 @@ static inline uint32_t hal_radio_tx_ready_delay_ns_get(uint8_t phy, uint8_t flag
 	}
 }
 
-static inline uint32_t hal_radio_rx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
+static inline uint32_t hal_radio_tifs_rx_ready_delay_ns_get(uint8_t phy, uint8_t flags)
 {
 	switch (phy) {
 	default:
@@ -793,6 +954,7 @@ static inline uint32_t hal_radio_rx_ready_delay_ns_get(uint8_t phy, uint8_t flag
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}
 }
+#endif /* !CONFIG_BT_CTLR_TIFS_PLLEN */
 
 static inline uint32_t hal_radio_tx_chain_delay_ns_get(uint8_t phy, uint8_t flags)
 {
@@ -809,6 +971,26 @@ static inline uint32_t hal_radio_tx_chain_delay_ns_get(uint8_t phy, uint8_t flag
 			return HAL_RADIO_NRF54LX_TX_CHAIN_DELAY_S8_NS;
 		} else {
 			return HAL_RADIO_NRF54LX_TX_CHAIN_DELAY_S2_NS;
+		}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+	}
+}
+
+static inline uint32_t hal_radio_rx_address_delay_ns_get(uint8_t phy, uint8_t flags)
+{
+	switch (phy) {
+	default:
+	case BIT(0):
+		return HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_1M_NS;
+	case BIT(1):
+		return HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_2M_NS;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	case BIT(2):
+		if (flags & 0x01) {
+			return HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_S8_NS;
+		} else {
+			return HAL_RADIO_NRF54LX_RX_ADDRESS_DELAY_S2_NS;
 		}
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 	}

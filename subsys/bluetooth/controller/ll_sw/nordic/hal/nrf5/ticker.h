@@ -14,11 +14,15 @@
 /* Macro defining the HW supported counter bits */
 #define HAL_TICKER_CNTR_MASK 0xFFFFFFFF
 
-/* Macro defining the minimum counter compare offset */
-#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 1
+/* Macro defining the minimum counter compare offset.
+ * GRTC minimum syscounter compare offset.
+ */
+#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 1U
 
-/* Macro defining the max. counter update latency in ticks */
-#define HAL_TICKER_CNTR_SET_LATENCY 5
+/* Macro defining the max. counter update latency in ticks.
+ * Lets account for below defined us as maximum CPU usage latency.
+ */
+#define HAL_TICKER_CNTR_SET_LATENCY 10U
 
 #else /* !CONFIG_BT_CTLR_NRF_GRTC */
 #define HAL_TICKER_CNTR_CLK_UNIT_FSEC 30517578125UL
@@ -29,11 +33,15 @@
 /* Macro defining the HW supported counter bits */
 #define HAL_TICKER_CNTR_MASK 0x00FFFFFF
 
-/* Macro defining the minimum counter compare offset */
-#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 2
+/* Macro defining the minimum counter compare offset.
+ * RTC minimum counter compare offset.
+ */
+#define HAL_TICKER_CNTR_CMP_OFFSET_MIN 2U
 
-/* Macro defining the max. counter update latency in ticks */
-#define HAL_TICKER_CNTR_SET_LATENCY 1
+/* Macro defining the max. counter update latency in ticks.
+ * Lets account for a ~30.517 us in RTC's one tick as the maximum CPU usage latency.
+ */
+#define HAL_TICKER_CNTR_SET_LATENCY 1U
 #endif /* !CONFIG_BT_CTLR_NRF_GRTC */
 
 #define HAL_TICKER_FSEC_PER_USEC      1000000000UL
@@ -86,8 +94,13 @@
 #define HAL_TICKER_REMAINDER_RANGE \
 	HAL_TICKER_TICKS_TO_US(HAL_TICKER_PSEC_PER_USEC)
 
+/* Macro defining the minimum ticks_slot needed for unreserved tickers */
+#define HAL_TICKER_TICKS_SLOT_MARGIN_US 153U
+#define HAL_TICKER_TICKS_SLOT_MARGIN \
+	HAL_TICKER_US_TO_TICKS(HAL_TICKER_TICKS_SLOT_MARGIN_US)
+
 /* Macro defining the margin for positioning re-scheduled nodes */
-#define HAL_TICKER_RESCHEDULE_MARGIN_US 150U
+#define HAL_TICKER_RESCHEDULE_MARGIN_US 0U
 #define HAL_TICKER_RESCHEDULE_MARGIN \
 	HAL_TICKER_US_TO_TICKS(HAL_TICKER_RESCHEDULE_MARGIN_US)
 
