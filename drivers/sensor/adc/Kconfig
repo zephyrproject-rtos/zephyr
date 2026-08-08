@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SENSOR_ADC
+	bool "Sensor ADC virtual device driver support"
+	default y
+	depends on DT_HAS_SENSOR_ADC_ENABLED
+	select ADC
+	select ADC_ASYNC
+	select SENSOR_ASYNC_API
+	help
+	  The sensor ADC is a virtual device which exposes ADC device's channels as
+	  SENSOR_CHAN_VOLTAGE sensor channels.

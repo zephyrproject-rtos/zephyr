@@ -160,3 +160,19 @@ test_nordic_nrf_vbat: test_nordic_nrf_vbat {
 	io-channels = <&test_adc 0>;
 	invert-voltage;
 };
+
+test_sensor_adc0: sensor_adc0 {
+	status = "okay";
+	compatible = "sensor-adc";
+	io-channels = <&test_adc 0>;
+	fifo-depth = <16>;
+};
+
+test_sensor_adc1: sensor_adc1 {
+	status = "okay";
+	compatible = "sensor-adc";
+	io-channels = <&test_adc 0>, <&test_adc 1>, <&test_adc 2>;
+	fifo-watermark = <24>;
+	fifo-depth = <32>;
+	calibrate;
+};
