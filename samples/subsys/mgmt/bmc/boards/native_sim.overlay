@@ -1,0 +1,39 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		host-console-uart = &uart1;
+		bmc-host-power = &host_power;
+		bmc-host-reset = &host_reset;
+		bmc-status-led = &bmc_status;
+	};
+
+	/*
+	 * On real hardware these are the BMC pins wired to the host power
+	 * button, its reset line and a status indicator. Here they are just
+	 * emulated GPIOs so the sample can be exercised on the host.
+	 */
+	bmc_gpios {
+		compatible = "gpio-leds";
+
+		host_power: host_power {
+			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		host_reset: host_reset {
+			gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		};
+
+		bmc_status: bmc_status {
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&uart1 {
+	current-speed = <115200>;
+	status = "okay";
+};
