@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2026 Embracecactus
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <zephyr/dt-bindings/clock/beken_bk7258_clock.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			clock-frequency = <120000000>;
+		};
+	};
+
+	/* On-chip flash application region. */
+	flash0: flash@2010000 {
+		compatible = "soc-nv-flash";
+		reg = <0x02010000 0x003f0000>;
+	};
+
+	/* SRAM0 and SRAM1 contiguous region: 128 KB. */
+	sram0: memory@28000000 {
+		compatible = "mmio-sram";
+		reg = <0x28000000 0x00020000>;
+	};
+
+	sysclk: clock-system {
+		compatible = "fixed-clock";
+		clock-frequency = <120000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		clk: clock-controller@44010030 {
+			compatible = "beken,bk7258-clock-controller";
+			reg = <0x44010030 0x4>;
+			#clock-cells = <1>;
+		};
+
+		uart1: serial@45830000 {
+			compatible = "beken,bk7258-uart";
+			reg = <0x45830000 0x100>;
+			current-speed = <115200>;
+			clocks = <&clk BK7258_CLK_UART1>;
+			interrupts = <15 3>;
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

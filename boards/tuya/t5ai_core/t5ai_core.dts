@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Embracecactus
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <beken/bk7258.dtsi>
+#include "t5ai_core-pinctrl.dtsi"
+
+/ {
+	model = "Tuya T5AI Core";
+	compatible = "tuya,t5ai-core";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &sram0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+};
+
+&uart1 {
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

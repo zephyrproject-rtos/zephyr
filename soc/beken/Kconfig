@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Embracecactus
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_BK7258
+
+rsource "*/Kconfig"
+
+endif # SOC_BK7258

@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Beken BK7258 clock controller
+
+compatible: "beken,bk7258-clock-controller"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - id

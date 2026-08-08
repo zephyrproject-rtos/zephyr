@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Embracecactus
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/bk7258-pinctrl.h>
+
+/ {
+	pinctrl: pin-controller {
+		compatible = "beken,bk7258-pinctrl";
+
+		uart1_default: uart1-default {
+			/* GPIO0: UART1 TX, GPIO1: UART1 RX */
+			pinmux = <(BK7258_PINMUX(BK7258_PIN_0, FUNC_UART1_TX) |
+				   BK7258_FLAG_SECOND_FUNC | BK7258_FLAG_OUTPUT)>,
+				 <(BK7258_PINMUX(BK7258_PIN_1, FUNC_UART1_RX) |
+				   BK7258_FLAG_SECOND_FUNC | BK7258_FLAG_INPUT)>;
+		};
+	};
+};
