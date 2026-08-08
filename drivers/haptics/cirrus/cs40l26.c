@@ -901,52 +901,6 @@ static int cs40l26_bringup(const struct device *const dev)
 	return cs40l26_dsp_config(dev);
 }
 
-#if CONFIG_PM_DEVICE
-static int cs40l26_disable_irq(const struct device *const dev)
-{
-	const struct cs40l26_config *const config = dev->config;
-	struct cs40l26_data *const data = dev->data;
-	int ret;
-
-	ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_DISABLE);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return gpio_remove_callback_dt(&config->interrupt_gpio, &data->interrupt_callback);
-}
-
-static int cs40l26_teardown(const struct device *const dev)
-{
-	const struct cs40l26_config *const config = dev->config;
-	int ret;
-
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_INTERRUPT) && config->interrupt_gpio.port != NULL) {
-		ret = cs40l26_disable_irq(dev);
-		if (ret < 0) {
-			LOG_INST_DBG(config->log, "failed to disable IRQ (%d)", ret);
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_RESET) && config->reset_gpio.port != NULL) {
-		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
-		if (ret < 0) {
-			return ret;
-		}
-
-		if (gpio_pin_configure_dt(&config->reset_gpio, GPIO_DISCONNECTED) < 0) {
-			/*
-			 * If unable to disconnect the reset GPIO, configure as input to prevent the
-			 * device from being erroneously powered on.
-			 */
-			(void)gpio_pin_configure_dt(&config->reset_gpio, GPIO_INPUT);
-		}
-	}
-
-	return 0;
-}
-#endif /* CONFIG_PM_DEVICE */
-
 static int cs40l26_calibrate(const struct device *dev, const uint32_t routine)
 {
 	const struct cs40l26_config *const config = dev->config;
@@ -1291,34 +1245,43 @@ static DEVICE_API(haptics, cs40l26_driver_api) = {
 
 static int cs40l26_pm_resume(const struct device *const dev)
 {
-	__maybe_unused const struct cs40l26_config *const config = dev->config;
+	const struct cs40l26_config *const config = dev->config;
 	int ret;
 
 	ret = pm_device_runtime_get(cs40lxx_get_control_port(&config->io_bus));
 	if (ret < 0) {
+		LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(config->log,
+						   cs40lxx_get_control_port(&config->io_bus), ret);
 		return ret;
 	}
 
 	ret = cs40l26_write_mailbox(dev, CS40L26_MBOX_PREVENT_HIBERNATION);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to disable hibernation (%d)", ret);
-		return ret;
+		goto cleanup_control_port;
 	}
 
-	LOG_INST_DBG(config->log, "disabling hibernation");
+	ret = cs40l26_firmware_poll(dev, CS40L26_REG_HALO_STATE, CS40L26_DSP_STANDBY, CS40L26_T_IW);
+	if (ret >= 0) {
+		LOG_INST_DBG(config->log, "disabling hibernation");
+	}
 
-	return 0;
+cleanup_control_port:
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "failed to disable hibernation (%d)", ret);
+
+		(void)pm_device_runtime_put(cs40lxx_get_control_port(&config->io_bus));
+	}
+
+	return ret;
 }
 
-#ifdef CONFIG_PM_DEVICE
-static int cs40l26_pm_suspend(const struct device *const dev)
+__maybe_unused static int cs40l26_pm_suspend(const struct device *const dev)
 {
 	const struct cs40l26_config *const config = dev->config;
 	int ret;
 
 	ret = cs40l26_write_mailbox(dev, CS40L26_MBOX_ALLOW_HIBERNATION);
 	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed to allow hibernation (%d)", ret);
 		return ret;
 	}
 
@@ -1326,37 +1289,51 @@ static int cs40l26_pm_suspend(const struct device *const dev)
 
 	(void)pm_device_runtime_put(cs40lxx_get_control_port(&config->io_bus));
 
-	return ret;
+	return 0;
 }
 
-static int cs40l26_pm_turn_off(const struct device *const dev)
+__maybe_unused static int cs40l26_pm_turn_off(const struct device *const dev)
 {
 	const struct cs40l26_config *const config = dev->config;
+	struct cs40l26_data *const data = dev->data;
 	int ret;
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_RESET) && config->reset_gpio.port != NULL) {
 		ret = pm_device_runtime_get(config->reset_gpio.port);
 		if (ret < 0) {
+			LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(config->log, config->reset_gpio.port,
+							   ret);
+			return ret;
+		}
+
+		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
+		if (ret >= 0 && gpio_pin_configure_dt(&config->reset_gpio, GPIO_DISCONNECTED) < 0) {
+			ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_INPUT);
+		}
+
+		(void)pm_device_runtime_put(config->reset_gpio.port);
+
+		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	ret = cs40l26_teardown(dev);
-	if (ret < 0) {
-		LOG_INST_DBG(config->log, "failed device teardown (%d)", ret);
-	}
-
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_RESET) && config->reset_gpio.port != NULL) {
-		(void)pm_device_runtime_put(config->reset_gpio.port);
-	}
-
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_INTERRUPT) && config->interrupt_gpio.port != NULL) {
+		ret = gpio_pin_interrupt_configure_dt(&config->interrupt_gpio, GPIO_INT_DISABLE);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = gpio_remove_callback_dt(&config->interrupt_gpio, &data->interrupt_callback);
+		if (ret < 0) {
+			return ret;
+		}
+
 		(void)pm_device_runtime_put(config->interrupt_gpio.port);
 	}
 
-	return ret;
+	return 0;
 }
-#endif /* CONFIG_PM_DEVICE */
 
 static int cs40l26_pm_turn_on(const struct device *const dev)
 {
@@ -1366,31 +1343,42 @@ static int cs40l26_pm_turn_on(const struct device *const dev)
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_RESET) && config->reset_gpio.port != NULL) {
 		ret = pm_device_runtime_get(config->reset_gpio.port);
 		if (ret < 0) {
+			LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(config->log, config->reset_gpio.port,
+							   ret);
 			return ret;
 		}
-	}
-
-	ret = pm_device_runtime_get(cs40lxx_get_control_port(&config->io_bus));
-	if (ret < 0) {
-		goto error_pm_reset;
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_INTERRUPT) && config->interrupt_gpio.port != NULL) {
 		ret = pm_device_runtime_get(config->interrupt_gpio.port);
 		if (ret < 0) {
-			goto error_pm_io;
+			LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(config->log, config->interrupt_gpio.port,
+							   ret);
+			goto cleanup_reset;
 		}
+	}
+
+	ret = pm_device_runtime_get(cs40lxx_get_control_port(&config->io_bus));
+	if (ret < 0) {
+		LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(config->log,
+						   cs40lxx_get_control_port(&config->io_bus), ret);
+		goto cleanup_interrupt;
 	}
 
 	ret = cs40l26_bringup(dev);
 	if (ret < 0) {
-		LOG_INST_ERR(config->log, "failed device bringup (%d)", ret);
+		LOG_INST_ERR(config->log, "failed bringup (%d)", ret);
 	}
 
-error_pm_io:
 	(void)pm_device_runtime_put(cs40lxx_get_control_port(&config->io_bus));
 
-error_pm_reset:
+cleanup_interrupt:
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_INTERRUPT) && config->interrupt_gpio.port != NULL &&
+	    ret < 0) {
+		(void)pm_device_runtime_put(config->interrupt_gpio.port);
+	}
+
+cleanup_reset:
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_RESET) && config->reset_gpio.port != NULL) {
 		(void)pm_device_runtime_put(config->reset_gpio.port);
 	}
@@ -1462,12 +1450,10 @@ static int cs40l26_init(const struct device *dev)
 	return pm_device_driver_init(dev, cs40l26_pm_action);
 }
 
-#if CONFIG_PM_DEVICE
 __maybe_unused static int cs40l26_deinit(const struct device *dev)
 {
 	return pm_device_driver_deinit(dev, cs40l26_pm_action);
 }
-#endif /* CONFIG_PM_DEVICE */
 
 #define HAPTICS_CS40L26_DATA(inst, name)                                                           \
 	static struct cs40l26_data name##_data_##inst = {.dev = DEVICE_DT_INST_GET(inst),          \
