@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Advanced Micro Devices, Inc.
+ * Copyright (c) 2026, Advanced Micro Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,4 +38,319 @@
 	status = "okay";
 	current-speed = <115200>;
 	clock-frequency = <100000000>;
+};
+
+&sysmon0 {
+	status = "okay";
+	xlnx,numchannels = <0x3e>;
+
+	vccaux {
+		xlnx,name = "vccaux";
+		xlnx,register = <0x1>;
+	};
+
+	vccaux_smon {
+		xlnx,name = "vccaux_smon";
+		xlnx,register = <0x3>;
+	};
+
+	vccint {
+		xlnx,name = "vccint";
+		xlnx,register = <0x0>;
+	};
+
+	vcc_ram {
+		xlnx,name = "vcc_ram";
+		xlnx,register = <0x8>;
+	};
+
+	vcc_soc {
+		xlnx,name = "vcc_soc";
+		xlnx,register = <0x9>;
+	};
+
+	gty_avccaux_206 {
+		xlnx,name = "gty_avccaux_206";
+		xlnx,register = <0x31>;
+	};
+
+	gty_avcc_206 {
+		xlnx,name = "gty_avcc_206";
+		xlnx,register = <0x26>;
+	};
+
+	gty_avtt_206 {
+		xlnx,name = "gty_avtt_206";
+		xlnx,register = <0x3c>;
+	};
+
+	gty_avccaux_205 {
+		xlnx,name = "gty_avccaux_205";
+		xlnx,register = <0x30>;
+	};
+
+	gty_avcc_205 {
+		xlnx,name = "gty_avcc_205";
+		xlnx,register = <0x25>;
+	};
+
+	gty_avtt_205 {
+		xlnx,name = "gty_avtt_205";
+		xlnx,register = <0x3b>;
+	};
+
+	gty_avccaux_204 {
+		xlnx,name = "gty_avccaux_204";
+		xlnx,register = <0x2f>;
+	};
+
+	gty_avcc_204 {
+		xlnx,name = "gty_avcc_204";
+		xlnx,register = <0x24>;
+	};
+
+	gty_avtt_204 {
+		xlnx,name = "gty_avtt_204";
+		xlnx,register = <0x3a>;
+	};
+
+	gty_avccaux_203 {
+		xlnx,name = "gty_avccaux_203";
+		xlnx,register = <0x2e>;
+	};
+
+	gty_avcc_203 {
+		xlnx,name = "gty_avcc_203";
+		xlnx,register = <0x23>;
+	};
+
+	gty_avtt_203 {
+		xlnx,name = "gty_avtt_203";
+		xlnx,register = <0x39>;
+	};
+
+	gty_avccaux_202 {
+		xlnx,name = "gty_avccaux_202";
+		xlnx,register = <0x2d>;
+	};
+
+	gty_avcc_202 {
+		xlnx,name = "gty_avcc_202";
+		xlnx,register = <0x22>;
+	};
+
+	gty_avtt_202 {
+		xlnx,name = "gty_avtt_202";
+		xlnx,register = <0x38>;
+	};
+
+	gty_avccaux_201 {
+		xlnx,name = "gty_avccaux_201";
+		xlnx,register = <0x2c>;
+	};
+
+	gty_avcc_201 {
+		xlnx,name = "gty_avcc_201";
+		xlnx,register = <0x21>;
+	};
+
+	gty_avtt_201 {
+		xlnx,name = "gty_avtt_201";
+		xlnx,register = <0x37>;
+	};
+
+	vccaux_pmc {
+		xlnx,name = "vccaux_pmc";
+		xlnx,register = <0x2>;
+	};
+
+	vcco_500 {
+		xlnx,name = "vcco_500";
+		xlnx,register = <0xc>;
+	};
+
+	vcco_501 {
+		xlnx,name = "vcco_501";
+		xlnx,register = <0xd>;
+	};
+
+	vcco_503 {
+		xlnx,name = "vcco_503";
+		xlnx,register = <0xf>;
+	};
+
+	vcc_batt {
+		xlnx,name = "vcc_batt";
+		xlnx,register = <0x4>;
+	};
+
+	vcc_pmc {
+		xlnx,name = "vcc_pmc";
+		xlnx,register = <0x5>;
+	};
+
+	vcc_psfp {
+		xlnx,name = "vcc_psfp";
+		xlnx,register = <0x6>;
+	};
+
+	vcc_pslp {
+		xlnx,name = "vcc_pslp";
+		xlnx,register = <0x7>;
+	};
+
+	vp_vn {
+		xlnx,name = "vp_vn";
+		xlnx,register = <0xa>;
+	};
+
+	gty_avccaux_200 {
+		xlnx,name = "gty_avccaux_200";
+		xlnx,register = <0x2b>;
+	};
+
+	gty_avcc_200 {
+		xlnx,name = "gty_avcc_200";
+		xlnx,register = <0x20>;
+	};
+
+	gty_avtt_200 {
+		xlnx,name = "gty_avtt_200";
+		xlnx,register = <0x36>;
+	};
+
+	vcco_700 {
+		xlnx,name = "vcco_700";
+		xlnx,register = <0x10>;
+	};
+
+	vcco_701 {
+		xlnx,name = "vcco_701";
+		xlnx,register = <0x11>;
+	};
+
+	vcco_702 {
+		xlnx,name = "vcco_702";
+		xlnx,register = <0x12>;
+	};
+
+	gty_avccaux_106 {
+		xlnx,name = "gty_avccaux_106";
+		xlnx,register = <0x2a>;
+	};
+
+	gty_avcc_106 {
+		xlnx,name = "gty_avcc_106";
+		xlnx,register = <0x1f>;
+	};
+
+	gty_avtt_106 {
+		xlnx,name = "gty_avtt_106";
+		xlnx,register = <0x35>;
+	};
+
+	vcco_306 {
+		xlnx,name = "vcco_306";
+		xlnx,register = <0x3d>;
+	};
+
+	gty_avccaux_105 {
+		xlnx,name = "gty_avccaux_105";
+		xlnx,register = <0x29>;
+	};
+
+	gty_avcc_105 {
+		xlnx,name = "gty_avcc_105";
+		xlnx,register = <0x1e>;
+	};
+
+	gty_avtt_105 {
+		xlnx,name = "gty_avtt_105";
+		xlnx,register = <0x34>;
+	};
+
+	vcco_703 {
+		xlnx,name = "vcco_703";
+		xlnx,register = <0x13>;
+	};
+
+	vcco_704 {
+		xlnx,name = "vcco_704";
+		xlnx,register = <0x14>;
+	};
+
+	vcco_705 {
+		xlnx,name = "vcco_705";
+		xlnx,register = <0x15>;
+	};
+
+	gty_avccaux_104 {
+		xlnx,name = "gty_avccaux_104";
+		xlnx,register = <0x28>;
+	};
+
+	gty_avcc_104 {
+		xlnx,name = "gty_avcc_104";
+		xlnx,register = <0x1d>;
+	};
+
+	gty_avtt_104 {
+		xlnx,name = "gty_avtt_104";
+		xlnx,register = <0x33>;
+	};
+
+	gty_avccaux_103 {
+		xlnx,name = "gty_avccaux_103";
+		xlnx,register = <0x27>;
+	};
+
+	gty_avcc_103 {
+		xlnx,name = "gty_avcc_103";
+		xlnx,register = <0x1c>;
+	};
+
+	gty_avtt_103 {
+		xlnx,name = "gty_avtt_103";
+		xlnx,register = <0x32>;
+	};
+
+	vcco_706 {
+		xlnx,name = "vcco_706";
+		xlnx,register = <0x16>;
+	};
+
+	vcco_707 {
+		xlnx,name = "vcco_707";
+		xlnx,register = <0x17>;
+	};
+
+	vcco_708 {
+		xlnx,name = "vcco_708";
+		xlnx,register = <0x18>;
+	};
+
+	vcco_709 {
+		xlnx,name = "vcco_709";
+		xlnx,register = <0x19>;
+	};
+
+	vcco_710 {
+		xlnx,name = "vcco_710";
+		xlnx,register = <0x1a>;
+	};
+
+	vcco_711 {
+		xlnx,name = "vcco_711";
+		xlnx,register = <0x1b>;
+	};
+
+	vcco_502 {
+		xlnx,name = "vcco_502";
+		xlnx,register = <0xe>;
+	};
+
+	vcco_406 {
+		xlnx,name = "vcco_406";
+		xlnx,register = <0xb>;
+	};
 };
