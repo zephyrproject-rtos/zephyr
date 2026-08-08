@@ -31,3 +31,13 @@ config	DMAC_DESC_COUNT
 	  Number of descriptors to preallocate.
 
 endif # DMA_MCHP_DMAC_G3
+
+config DMA_MCHP_XDMAC_G1
+	bool "Microchip XDMAC G1 DMA driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XDMAC_G1_DMA_ENABLED
+	help
+	  Enable the XDMAC G1 DMA driver for Microchip MPU.
+	  The XDMAC G1 peripheral supports up to 32 channels per instance with
+	  memory-to-memory, memory-to-peripheral and peripheral-to-memory
+	  transfer modes. All register access uses MMIO operations.
