@@ -83,7 +83,7 @@ ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 
 	k_msgq_alloc_init(mq, MSGQ_MSG_SIZE, MSGQ_MAX_MSGS);
 
-	k_pipe_write(&no_wait_pipe, PIPE_DATA, sizeof(PIPE_DATA), K_NO_WAIT);
+	k_pipe_write(&no_wait_pipe, (const uint8_t *)PIPE_DATA, sizeof(PIPE_DATA), K_NO_WAIT);
 
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SEM_AVAILABLE,
@@ -170,7 +170,8 @@ ZTEST_USER(poll_api_1cpu, test_poll_no_wait)
 	zassert_false(memcmp(msgq_msg, msgq_recv_buf, MSGQ_MSG_SIZE), "");
 
 	zassert_equal(events[5].state, K_POLL_STATE_PIPE_DATA_AVAILABLE);
-	result = k_pipe_read(&no_wait_pipe, pipe_recv_buf, sizeof(pipe_recv_buf), K_NO_WAIT);
+	result = k_pipe_read(&no_wait_pipe, (uint8_t *)pipe_recv_buf,
+			     sizeof(pipe_recv_buf), K_NO_WAIT);
 	zassert_equal(result, sizeof(PIPE_DATA));
 	zassert_str_equal(pipe_recv_buf, PIPE_DATA);
 
@@ -264,7 +265,7 @@ static void poll_wait_helper(void *use_queuelike, void *msgq, void *p3)
 	}
 
 	if (flags & USE_PIPE) {
-		k_pipe_write(&wait_pipe, PIPE_DATA, sizeof(PIPE_DATA), K_NO_WAIT);
+		k_pipe_write(&wait_pipe, (const uint8_t *)PIPE_DATA, sizeof(PIPE_DATA), K_NO_WAIT);
 	}
 }
 
@@ -349,7 +350,7 @@ void check_results(struct k_poll_event *events, uint32_t event_type,
 	case K_POLL_TYPE_PIPE_DATA_AVAILABLE:
 		if (is_available) {
 			zassert_equal(events->state, K_POLL_STATE_PIPE_DATA_AVAILABLE);
-			result = k_pipe_read(&wait_pipe, pipe_recv_buf,
+			result = k_pipe_read(&wait_pipe, (uint8_t *)pipe_recv_buf,
 					     sizeof(pipe_recv_buf), K_NO_WAIT);
 			zassert_equal(result, sizeof(PIPE_DATA));
 			zassert_str_equal(pipe_recv_buf, PIPE_DATA);

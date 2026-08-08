@@ -235,7 +235,7 @@ ZTEST(obj_core, test_obj_core_lifo)
 
 ZTEST(obj_core, test_obj_core_pipe)
 {
-	k_pipe_init(&pipe2, pipe2_buffer, sizeof(pipe2_buffer));
+	k_pipe_init(&pipe2, (uint8_t *)pipe2_buffer, sizeof(pipe2_buffer));
 	common_obj_core_test(K_OBJ_TYPE_PIPE_ID, "pipe",
 			     K_OBJ_CORE(&pipe1), K_OBJ_CORE(&pipe2));
 }

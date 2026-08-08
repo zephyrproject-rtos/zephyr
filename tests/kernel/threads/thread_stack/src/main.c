@@ -99,7 +99,7 @@ void stack_buffer_scenarios(void)
 	uint8_t val = 0;
 	char *stack_start, *stack_ptr, *stack_end, *obj_start, *obj_end;
 	char *stack_buf;
-	volatile char *pos;
+	volatile uint8_t *pos;
 	int ret, expected;
 	uintptr_t base;
 	bool is_usermode;
@@ -175,8 +175,10 @@ void stack_buffer_scenarios(void)
 	 * stack pointer up to the highest addresses in the buffer
 	 * Starting from &val which is close enough to stack pointer
 	 */
-	stack_ptr = &val;
-	for (pos = stack_ptr; pos < stack_end; pos++) {
+	stack_ptr = (char *)&val;
+	for (pos = (volatile uint8_t *)stack_ptr;
+	     pos < (volatile uint8_t *)stack_end;
+	     pos++) {
 		/* pos is volatile so this doesn't get optimized out */
 		val = *pos;
 		*pos = val;
@@ -187,7 +189,9 @@ void stack_buffer_scenarios(void)
 		/* If we're in user mode, check every byte in the stack buffer
 		 * to ensure that the thread has permissions on it.
 		 */
-		for (pos = stack_start; pos < stack_end; pos++) {
+		for (pos = (volatile uint8_t *)stack_start;
+		     pos < (volatile uint8_t *)stack_end;
+		     pos++) {
 			zassert_false(check_perms((void *)pos, 1, 1),
 				      "bad MPU/MMU permission on stack buffer at address %p",
 				      pos);
