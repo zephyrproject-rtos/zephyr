@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  VIRTIO SPI controller device (ID:45)
+
+compatible: "virtio,spi"
+
+include: [spi-controller.yaml]
+
+examples:
+  - |
+    virtio_mmio0: virtio_mmio@a000000 {
+            compatible = "virtio,mmio";
+            reg = <0xa000000 0x200>;
+            interrupts = <0 16 4>;
+            status = "okay";
+
+            virtio_spi0: virtio-spi {
+                    compatible = "virtio,spi";
+                    #address-cells = <1>;
+                    #size-cells = <0>;
+                    status = "okay";
+            };
+    };
