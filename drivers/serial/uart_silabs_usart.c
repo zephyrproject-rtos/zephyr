@@ -167,17 +167,18 @@ static int uart_silabs_err_check(const struct device *dev)
 
 	if (flags & USART_IF_RXOF) {
 		err |= UART_ERROR_OVERRUN;
+		USART_IntClear(config->base, USART_IF_RXOF);
 	}
 
 	if (flags & USART_IF_PERR) {
 		err |= UART_ERROR_PARITY;
+		USART_IntClear(config->base, USART_IF_PERR);
 	}
 
 	if (flags & USART_IF_FERR) {
 		err |= UART_ERROR_FRAMING;
+		USART_IntClear(config->base, USART_IF_FERR);
 	}
-
-	USART_IntClear(config->base, USART_IF_RXOF | USART_IF_PERR | USART_IF_FERR);
 
 	return err;
 }
@@ -228,9 +229,12 @@ static int uart_silabs_irq_tx_complete(const struct device *dev)
 	const struct uart_silabs_config *config = dev->config;
 	uint32_t flags = USART_IntGet(config->base);
 
-	USART_IntClear(config->base, USART_IF_TXC);
+	if (flags & USART_IF_TXC) {
+		USART_IntClear(config->base, USART_IF_TXC);
+		return 1;
+	}
 
-	return !!(flags & USART_IF_TXC);
+	return 0;
 }
 
 static int uart_silabs_irq_tx_ready(const struct device *dev)
