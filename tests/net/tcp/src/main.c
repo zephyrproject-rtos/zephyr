@@ -159,6 +159,20 @@ static void verify_flags(struct tcphdr *th, uint8_t flags,
 #define test_verify_flags(_th, _flags) \
 	verify_flags(_th, _flags, __func__, __LINE__)
 
+/* Payload length of the last data (PSH) segment seen on TX, as computed from
+ * the wire format (IP total length minus IP and TCP headers). Used to detect
+ * any gap between the TCP header and the payload.
+ */
+static size_t tx_last_data_payload_len;
+
+/* State captured by the tcp_send_cb TX intercept hook (see
+ * test_contiguous_tx_send_cb).
+ */
+static int send_cb_total_calls;
+static int send_cb_data_calls;
+static int send_cb_data_frags;
+static size_t send_cb_data_payload_len;
+
 struct net_tcp_context {
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 	struct net_linkaddr ll_addr;
@@ -431,6 +445,44 @@ fail:
 	return -EINVAL;
 }
 
+/* TX intercept hook used by test_contiguous_tx_send_cb. It exercises the
+ * tcp_send_cb branch of tcp_out_ext(), records how the data segment was
+ * assembled, and then hands the packet to the normal send path. The hook
+ * takes ownership of pkt: net_send_data() consumes the reference on success,
+ * and we release it explicitly on failure. On the contiguous TX path pkt is
+ * the payload net_pkt itself, so a stray extra unref elsewhere would free it
+ * from under this hook.
+ */
+static int test_tcp_send_cb(struct net_pkt *pkt)
+{
+	struct tcphdr th;
+	int ret;
+
+	send_cb_total_calls++;
+
+	if (read_tcp_header(pkt, &th) == 0 && (th.th_flags & PSH)) {
+		size_t hdr_len = net_pkt_ip_hdr_len(pkt) +
+				 net_pkt_ip_opts_len(pkt) + (th.th_off * 4U);
+
+		send_cb_data_calls++;
+		send_cb_data_frags = tcp_test_last_data_tx_frags;
+		send_cb_data_payload_len = net_pkt_get_len(pkt) - hdr_len;
+	}
+
+	/* Restore the packet state that read_tcp_header() changed before the
+	 * packet continues down the send path.
+	 */
+	net_pkt_set_overwrite(pkt, false);
+	net_pkt_cursor_init(pkt);
+
+	ret = net_send_data(pkt);
+	if (ret < 0) {
+		net_pkt_unref(pkt);
+	}
+
+	return ret;
+}
+
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct tcphdr th;
@@ -444,6 +496,13 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	ret = read_tcp_header(pkt, &th);
 	if (ret < 0) {
 		goto fail;
+	}
+
+	if (th.th_flags & PSH) {
+		size_t hdr_len = net_pkt_ip_hdr_len(pkt) +
+				 net_pkt_ip_opts_len(pkt) + (th.th_off * 4U);
+
+		tx_last_data_payload_len = net_pkt_get_len(pkt) - hdr_len;
 	}
 
 	switch (test_case_no) {
@@ -3271,4 +3330,155 @@ ZTEST(net_tcp, test_server_fin_ack_after_data)
 	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
 }
 
-ZTEST_SUITE(net_tcp, NULL, presetup, NULL, NULL, NULL);
+static int tx_frag_count;
+
+/* Verify TCP data segment net_buf fragment count with contiguous TX option */
+ZTEST(net_tcp, test_contiguous_tx_frag_count)
+{
+	struct net_context *ctx;
+	uint8_t data = 0x41;
+	int ret;
+
+	tcp_test_last_data_tx_frags = 0;
+	tx_last_data_payload_len = 0;
+
+	t_state = T_SYN;
+	test_case_no = TEST_CLIENT_IPV4;
+	seq = ack = 0;
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_ok(ret, "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct net_sockaddr *)&peer_addr_s,
+				  sizeof(struct net_sockaddr_in),
+				  NULL, K_MSEC(100), NULL);
+	zassert_ok(ret, "Failed to connect to peer");
+
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	ret = net_context_send(ctx, &data, 1, NULL, K_NO_WAIT, NULL);
+	if (ret < 0) {
+		zassert_true(false, "Failed to send data to peer (%d)", ret);
+	}
+
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	tx_frag_count = tcp_test_last_data_tx_frags;
+
+#if defined(CONFIG_NET_TCP_CONTIGUOUS_TX)
+	zassert_equal(tx_frag_count, 1, "Expected single net_buf fragment");
+#else
+	zassert_equal(tx_frag_count, 2, "Expected two net_buf fragments");
+#endif
+
+	/* Regardless of the buffer layout, the segment must carry exactly the
+	 * bytes we sent with no gap between the TCP header and the payload.
+	 */
+	zassert_equal(tx_last_data_payload_len, 1,
+		      "Unexpected data segment payload length %zu (expected 1)",
+		      tx_last_data_payload_len);
+
+	net_context_put(ctx);
+
+	/* Peer will release the semaphore after it receives ACK to FIN | ACK */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+}
+
+/* Exercise the tcp_send_cb TX intercept together with the contiguous TX path.
+ * The hook takes ownership of the outgoing packet, so this verifies that
+ * tcp_out_ext() hands off the packet cleanly (the contiguous path reuses the
+ * payload net_pkt as the outgoing packet, and tcp_send_data() must not unref
+ * it again) and that the intercepted data segment is a single, gap-free
+ * fragment.
+ */
+ZTEST(net_tcp, test_contiguous_tx_send_cb)
+{
+	struct net_context *ctx;
+	uint8_t data = 0x41;
+	int data_frags;
+	size_t data_payload_len;
+	int data_calls;
+	int total_calls;
+	int ret;
+
+	send_cb_total_calls = 0;
+	send_cb_data_calls = 0;
+	send_cb_data_frags = 0;
+	send_cb_data_payload_len = 0;
+	tcp_test_last_data_tx_frags = 0;
+
+	t_state = T_SYN;
+	test_case_no = TEST_CLIENT_IPV4;
+	seq = ack = 0;
+
+	/* Install the TX intercept hook. The net_tcp_after() teardown clears it
+	 * again so it never leaks into another test, even if an assertion below
+	 * aborts this one.
+	 */
+	tcp_send_cb = test_tcp_send_cb;
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_ok(ret, "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	ret = net_context_connect(ctx, (struct net_sockaddr *)&peer_addr_s,
+				  sizeof(struct net_sockaddr_in),
+				  NULL, K_MSEC(100), NULL);
+	zassert_ok(ret, "Failed to connect to peer");
+
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	ret = net_context_send(ctx, &data, 1, NULL, K_NO_WAIT, NULL);
+	if (ret < 0) {
+		zassert_true(false, "Failed to send data to peer (%d)", ret);
+	}
+
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	net_context_put(ctx);
+
+	/* Peer will release the semaphore after it receives ACK to FIN | ACK */
+	test_sem_take(K_MSEC(100), __LINE__);
+
+	k_sleep(K_MSEC(CONFIG_NET_TCP_TIME_WAIT_DELAY));
+
+	/* Snapshot the captured state and uninstall the hook before asserting,
+	 * so a failed assertion cannot leave the hook installed.
+	 */
+	total_calls = send_cb_total_calls;
+	data_calls = send_cb_data_calls;
+	data_frags = send_cb_data_frags;
+	data_payload_len = send_cb_data_payload_len;
+	tcp_send_cb = NULL;
+
+	zassert_true(total_calls > 0, "TX intercept hook was never invoked");
+	zassert_equal(data_calls, 1, "Expected exactly one data segment, got %d",
+		      data_calls);
+
+#if defined(CONFIG_NET_TCP_CONTIGUOUS_TX)
+	zassert_equal(data_frags, 1, "Expected single net_buf fragment");
+#else
+	zassert_equal(data_frags, 2, "Expected two net_buf fragments");
+#endif
+
+	zassert_equal(data_payload_len, 1,
+		      "Unexpected data segment payload length %zu (expected 1)",
+		      data_payload_len);
+}
+
+/* Always clear the TX intercept hook after every test so a test that installs
+ * it (and possibly aborts) cannot affect the following tests.
+ */
+static void net_tcp_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	tcp_send_cb = NULL;
+}
+
+ZTEST_SUITE(net_tcp, NULL, presetup, NULL, net_tcp_after, NULL);
