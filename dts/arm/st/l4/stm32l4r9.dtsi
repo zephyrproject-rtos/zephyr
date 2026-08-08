@@ -11,6 +11,13 @@
 	soc {
 		compatible = "st,stm32l4r9", "st,stm32l4", "simple-bus";
 
+		slcd: display-controller@40002400 {
+			compatible = "st,slcd";
+			reg = <0x40002400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 9)>;
+			status = "disabled";
+		};
+
 		ltdc: display-controller@40016800 {
 			compatible = "st,stm32-ltdc";
 			reg = <0x40016800 0x200>;
