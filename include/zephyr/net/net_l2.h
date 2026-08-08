@@ -50,6 +50,32 @@ enum net_l2_flags {
 	NET_L2_POINT_TO_POINT			= BIT(3),
 } __packed;
 
+/** Type of address to update */
+enum net_l2_addr_update_type {
+	/** Update IP address */
+	NET_L2_ADDR_UPDATE_IP,
+
+	/** Update L2 address */
+	NET_L2_ADDR_UPDATE_L2,
+};
+
+/**
+ * @brief Network L2 address update structure
+ */
+struct net_l2_addr_update {
+	/** Type of address to add/remove */
+	enum net_l2_addr_update_type type;
+	/** Add or remove address */
+	bool add;
+	/** Union of addresses to add/remove */
+	union {
+		/** IP address to add/remove */
+		struct net_addr *ifaddr;
+		/** L2 address to add/remove */
+		struct net_linkaddr *linkaddr;
+	};
+};
+
 /**
  * @brief Network L2 structure
  *
@@ -87,6 +113,11 @@ struct net_l2 {
 	int (*alloc)(struct net_if *iface, struct net_pkt *pkt,
 		     size_t size, enum net_ip_protocol proto,
 		     k_timeout_t timeout);
+
+	/**
+	 * Optional function for updating L2 address or IP address for this technology.
+	 */
+	int (*addr_update)(struct net_if *iface, struct net_l2_addr_update *update);
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -129,9 +160,10 @@ NET_L2_DECLARE_PUBLIC(CANBUS_RAW_L2);
 NET_L2_DECLARE_PUBLIC(CUSTOM_IEEE802154_L2);
 #endif /* CONFIG_NET_L2_CUSTOM_IEEE802154 */
 
+#define NET_L2_INIT_DEFINE(_name) const STRUCT_SECTION_ITERABLE(net_l2, NET_L2_GET_NAME(_name))
+
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _enable_fn, _get_flags_fn, ...) \
-	const STRUCT_SECTION_ITERABLE(net_l2,				\
-				      NET_L2_GET_NAME(_name)) = {	\
+	NET_L2_INIT_DEFINE(_name) = {					\
 		.recv = (_recv_fn),					\
 		.send = (_send_fn),					\
 		.enable = (_enable_fn),					\

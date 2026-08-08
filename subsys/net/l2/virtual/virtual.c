@@ -244,8 +244,21 @@ extern int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt, size_t s
 #define virtual_l2_alloc NULL
 #endif
 
-NET_L2_INIT(VIRTUAL_L2, virtual_recv, virtual_send, virtual_enable,
-	    virtual_flags, virtual_l2_alloc);
+#if defined(CONFIG_NET_VLAN) && CONFIG_NET_VLAN_COUNT > 0
+extern int vlan_addr_update(struct net_if *iface, struct net_l2_addr_update *update);
+
+#define virtual_l2_addr_update vlan_addr_update
+#else
+#define virtual_l2_addr_update NULL
+
+NET_L2_INIT_DEFINE(VIRTUAL_L2) = {
+	.recv = virtual_recv,
+	.send = virtual_send,
+	.enable = virtual_enable,
+	.get_flags = virtual_flags,
+	.alloc = virtual_l2_alloc,
+	.addr_update = virtual_l2_addr_update,
+};
 
 static void random_linkaddr(uint8_t *linkaddr, size_t len)
 {
