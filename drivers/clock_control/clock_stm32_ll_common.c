@@ -22,6 +22,25 @@
 
 #include "clock_stm32_ll_common.h"
 
+#if defined(CONFIG_SOC_SERIES_STM32F4X) && \
+	DT_NODE_HAS_PROP(DT_NODELABEL(rcc), st_supply_microvolt)
+#include "clock_stm32_f4_flash_latency.h"
+/* Opt-in: computed from actual VDD (RM0090 Table 11) instead of VOS alone. */
+static inline void stm32_set_flash_latency(uint32_t freq)
+{
+	ARG_UNUSED(freq);
+	LL_FLASH_SetLatency(STM32F4_FLASH_LATENCY);
+	while (LL_FLASH_GetLatency() != STM32F4_FLASH_LATENCY) {
+	}
+}
+#else
+/* Default: unchanged, VOS-only vendor helper. */
+static inline void stm32_set_flash_latency(uint32_t freq)
+{
+	LL_SetFlashLatency(freq);
+}
+#endif
+
 /* Macros to fill up prescaler values */
 #define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)
 
@@ -1124,7 +1143,7 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* If HCLK increases, set flash latency before any clock setting */
 	if (old_flash_freq < new_flash_freq) {
-		LL_SetFlashLatency(new_flash_freq);
+		stm32_set_flash_latency(new_flash_freq);
 	}
 #endif /* FLASH_ACR_LATENCY */
 
@@ -1170,7 +1189,7 @@ int stm32_clock_control_init(const struct device *dev)
 #if defined(FLASH_ACR_LATENCY)
 	/* If HCLK not increased, set flash latency after all clock setting */
 	if (old_flash_freq >= new_flash_freq) {
-		LL_SetFlashLatency(new_flash_freq);
+		stm32_set_flash_latency(new_flash_freq);
 	}
 #endif /* FLASH_ACR_LATENCY */
 
