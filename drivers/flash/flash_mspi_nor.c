@@ -273,7 +273,7 @@ static int _acquire(const struct device *dev)
 
 	rc = pm_device_runtime_get(dev_config->bus);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get() for bus failed: %d", rc);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev_config->bus, rc);
 	} else {
 		enum mspi_dev_cfg_mask mask;
 
@@ -314,7 +314,7 @@ static int acquire(const struct device *dev)
 
 	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, rc);
 		return rc;
 	}
 
@@ -1373,7 +1373,7 @@ static int drv_init(const struct device *dev)
 
 	rc = pm_device_runtime_get(dev_config->bus);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev_config->bus, rc);
 		return rc;
 	}
 
