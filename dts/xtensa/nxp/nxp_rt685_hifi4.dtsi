@@ -145,7 +145,7 @@
 				#interrupt-cells = <1>;
 				#address-cells = <0>;
 				interrupts = <7 0 0>, <8 0 0>, <9 0 0>, <10 0 0>,
-					     <11 0 0>, <12 0 0>, <13 0 0>, <14 0 0>;
+					     <11 0 0>, <12 0 0>;
 				num-lines = <8>;
 				num-inputs = <64>;
 			};
@@ -168,7 +168,7 @@
 			dma1: dma-controller@105000 {
 				compatible = "nxp,lpc-dma";
 				reg = <0x105000 0x1000>;
-				interrupts = <29 0 0>;
+				interrupts = <21 0 0>;
 				dma-channels = <33>;
 				status = "disabled";
 				#dma-cells = <1>;
@@ -198,7 +198,7 @@
 			flexcomm1: flexcomm@107000 {
 				compatible = "nxp,lpc-flexcomm";
 				reg = <0x107000 0x1000>;
-				interrupts = <31 0 0>;
+				interrupts = <23 0 0>;
 				clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK>;
 				status = "disabled";
 			};
@@ -206,7 +206,7 @@
 			flexcomm3: flexcomm@109000 {
 				compatible = "nxp,lpc-flexcomm";
 				reg = <0x109000 0x1000>;
-				interrupts = <30 0 0>;
+				interrupts = <22 0 0>;
 				clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK>;
 				status = "disabled";
 			};
@@ -217,7 +217,7 @@
 				compatible = "nxp,mbox-imx-mu";
 				reg = <0x111000 0x1000>;
 
-				interrupts = <27 0 0>;
+				interrupts = <19 0 0>;
 				rx-channels = <4>;
 
 				status = "disabled";
