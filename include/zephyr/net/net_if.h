@@ -1580,6 +1580,14 @@ int net_if_config_ipv6_get(struct net_if *iface,
 /**
  * @brief Release network interface IPv6 config.
  *
+ * @details The config is returned to the pool so that it can be re-used by
+ * another interface. Any unicast and multicast addresses, prefixes and routers
+ * the interface still has are removed first, and the config is reset to its
+ * default values. The address removal is forced, i.e. it is done even if there
+ * are still references to the addresses, so the caller must make sure the
+ * addresses are no longer used. No MLD leave messages are sent, so the
+ * interface must be brought down before calling this.
+ *
  * @param iface Interface to use.
  *
  * @return 0 if ok, <0 if error
@@ -2450,6 +2458,14 @@ int net_if_config_ipv4_get(struct net_if *iface,
 
 /**
  * @brief Release network interface IPv4 config.
+ *
+ * @details The config is returned to the pool so that it can be re-used by
+ * another interface. Any unicast and multicast addresses and routers the
+ * interface still has are removed first, and the config is reset to its
+ * default values. The address removal is forced, i.e. it is done even if there
+ * are still references to the addresses, so the caller must make sure the
+ * addresses are no longer used. No IGMP leave messages are sent, so the
+ * interface must be brought down before calling this.
  *
  * @param iface Interface to use.
  *
