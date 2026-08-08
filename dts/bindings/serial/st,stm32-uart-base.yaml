@@ -108,3 +108,9 @@ properties:
       allows more reliable communication with UART devices sensitive to variation of inter-frames
       delays.
       In RX, FIFO reduces overrun occurrences.
+      
+  zephyr,zli:
+    type: boolean
+    description: |
+      Enable event handler in the ZLI (Zero latency interrupt) context.
+      ATTENTION: Zero latency interrupt handlers must not use OS functions!
