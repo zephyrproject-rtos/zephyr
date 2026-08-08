@@ -1,0 +1,24 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Reassign the entire on-chip SRAM (1216 KB) to the data partition.
+ *
+ * By default the RW612 SRAM is split between a code-bus partition
+ * (sram_code, 256 KB) and a data-bus partition (sram_data, 960 KB).
+ * This sample executes in place from external flash (XIP), so no SRAM
+ * is needed for the code bus. Handing the full 1216 KB to sram_data
+ * (the chosen zephyr,sram node) maximizes the RAM available for the
+ * large UVC video buffer pool.
+ */
+
+/* Relinquish the code-bus SRAM partition; all of it goes to sram_data */
+/delete-node/ &sram_code;
+
+&sram_data {
+	/* 256 KB (former code) + 960 KB = 1216 KB, based at offset 0x0 */
+	reg = <0x0 DT_SIZE_K(1216)>;
+};

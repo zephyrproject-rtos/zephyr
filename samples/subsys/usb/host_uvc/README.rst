@@ -21,6 +21,10 @@ This sample uses the USB host stack and requires the USB host controller driver.
 
 A USB camera supporting UVC (USB Video Class) specification is required.
 
+The following USB cameras have been tested with this sample:
+
+- A4TECH PK-910H USB camera
+
 Building and Running
 ********************
 
