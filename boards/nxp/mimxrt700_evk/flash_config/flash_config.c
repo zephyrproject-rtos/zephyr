@@ -8,6 +8,73 @@
 #if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && (CONFIG_NXP_IMXRT_BOOT_HEADER == 1)
 __attribute__((section(".flash_conf"), used))
 
+#if defined(CONFIG_BOARD_REVISION_W25Q512NW)
+/*
+ * W25Q512NWEIQ — Winbond quad SPI NOR, 64 MB, no DQS pin. Boot-from-QSPI flash
+ * configuration block (FCB) used by the boot ROM to bring up XSPI0 for quad XIP.
+ */
+const fc_static_platform_config_t flash_config = {
+	.xspi_fcb_block = {
+		.mem_config = {
+			.tag = FC_XSPI_CFG_BLK_TAG,
+			.version = FC_XSPI_CFG_BLK_VERSION,
+			.read_sample_clk_src = FC_XSPI_READ_SAMPLE_CLK_LOOPBACK_FROM_DQS_PAD,
+			.cs_hold_time = 3,
+			.cs_setup_time = 3,
+			/*
+			 * W25Q512NW ships with the non-volatile Quad Enable bit set,
+			 * so the boot ROM does not run a device-mode config sequence
+			 * before the first 1-4-4 read.
+			 */
+			.device_mode_cfg_enable = 0,
+			.device_mode_type = 0,
+			.wait_time_cfg_commands = 1,
+			.controller_misc_option =
+				(1u << FC_XSPI_MISC_OFFSET_SAFE_CONFIG_FREQ_ENABLE),
+			.device_type = 1,
+			.sflash_pad_type = 4,
+			.serial_clk_freq = FC_XSPI_SERIAL_CLK_133MHZ,
+			.sflash_a1_size = 64ul * 1024u * 1024u,
+			.busy_offset = 0u,
+			.busy_bit_polarity = 0u,
+			.lut_custom_seq_enable = 0u,
+			.lookup_table = {
+				/* Read: 0xEC 4-byte quad I/O fast read (1-4-4), 32-bit address */
+				[0] = FC_XSPI_LUT_SEQ(FC_CMD_SDR, FC_XSPI_1PAD,
+					0xEC, FC_CMD_RADDR_SDR, FC_XSPI_4PAD, 0x20),
+				[1] = FC_XSPI_LUT_SEQ(FC_CMD_MODE_SDR, FC_XSPI_4PAD,
+					0x00, FC_CMD_DUMMY_SDR, FC_XSPI_4PAD, 0x04),
+				[2] = FC_XSPI_LUT_SEQ(FC_CMD_READ_SDR, FC_XSPI_4PAD,
+					0x04, FC_CMD_STOP, FC_XSPI_1PAD, 0x00),
+
+				/*
+				 * Read status register-1 (0x05). Read data size must be
+				 * >= 8 (ERR052528: XSPI read commands, including RDSR,
+				 * fail with a LUT read-data size below 8 bytes).
+				 */
+				[5 * 1 + 0] = FC_XSPI_LUT_SEQ(FC_CMD_SDR, FC_XSPI_1PAD,
+					0x05, FC_CMD_READ_SDR, FC_XSPI_1PAD, 0x08),
+
+				/* Write enable (0x06) */
+				[5 * 3 + 0] = FC_XSPI_LUT_SEQ(FC_CMD_SDR, FC_XSPI_1PAD,
+					0x06, FC_CMD_STOP, FC_XSPI_1PAD, 0x00),
+			},
+		},
+		.page_size = 256u,
+		.sector_size = 4u * 1024u,
+		.ipcmd_serial_clk_freq = 1u,
+		.serial_nor_type = 0u,
+		.block_size = 64u * 1024u,
+		/*
+		 * FLASH_run_context_t (fsl_reset.h): tells the boot ROM the flash's
+		 * running mode and how to restore it to 1-bit SPI on the next boot.
+		 * current_mode = 0x41 (kFlashInstMode_QPI_SDR), restore_sequence = 0x06
+		 * (kRestoreSeqence_Send_66_99 = 0x66/0x99 software reset).
+		 */
+		.flash_state_ctx = 0x06004100u,
+	},
+};
+#else
 const fc_static_platform_config_t flash_config = {
 	.xspi_fcb_block = {
 		.mem_config = {
@@ -138,5 +205,6 @@ const fc_static_platform_config_t flash_config = {
 	},
 #endif
 };
+#endif /* CONFIG_BOARD_REVISION_W25Q512NW */
 
 #endif /* defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && (CONFIG_NXP_IMXRT_BOOT_HEADER == 1) */
