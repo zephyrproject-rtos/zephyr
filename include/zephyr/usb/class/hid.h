@@ -557,12 +557,12 @@ extern "C" {
 		HID_REPORT_SIZE(8),				\
 		HID_REPORT_COUNT(6),				\
 		HID_LOGICAL_MIN8(0),				\
-		HID_LOGICAL_MAX8(101),				\
+		HID_LOGICAL_MAX8(255),				\
 		HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP_KEYPAD),	\
 		/* HID_USAGE_MIN8(Reserved) */			\
 		HID_USAGE_MIN8(0),				\
-		/* HID_USAGE_MAX8(Keyboard Application) */	\
-		HID_USAGE_MAX8(101),				\
+		/* HID_USAGE_MAX8(Reserved) */			\
+		HID_USAGE_MAX8(255),				\
 		/* HID_INPUT (Data,Ary,Abs) */			\
 		HID_INPUT(0x00),				\
 	HID_END_COLLECTION,					\
@@ -669,6 +669,18 @@ enum hid_kbd_code {
 	HID_KEY_KP_0		= 98,
 	HID_KEY_KPDOT		= 99,
 	HID_KEY_MENU		= 101,
+	HID_KEY_F13		= 104,
+	HID_KEY_F14		= 105,
+	HID_KEY_F15		= 106,
+	HID_KEY_F16		= 107,
+	HID_KEY_F17		= 108,
+	HID_KEY_F18		= 109,
+	HID_KEY_F19		= 110,
+	HID_KEY_F20		= 111,
+	HID_KEY_F21		= 112,
+	HID_KEY_F22		= 113,
+	HID_KEY_F23		= 114,
+	HID_KEY_F24		= 115,
 };
 
 /**
