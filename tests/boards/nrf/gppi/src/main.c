@@ -11,94 +11,37 @@
 #include <hal/nrf_timer.h>
 #include <hal/nrf_egu.h>
 #include <helpers/nrfx_gppi.h>
-#if DT_NODE_EXISTS(DT_NODELABEL(pdm0)) && DT_NODE_HAS_STATUS(DT_NODELABEL(pdm0), reserved)
-#include <hal/nrf_pdm.h>
-#elif DT_NODE_EXISTS(DT_NODELABEL(comp)) && DT_NODE_HAS_STATUS(DT_NODELABEL(comp), reserved)
-#include <hal/nrf_lpcomp.h>
-#elif defined(CONFIG_SOC_NRF54H20_CPURAD)
-#include <hal/nrf_ecb.h>
+
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+/* included to support converting real addresses to simulated peripheral address */
+#include "NHW_misc.h"
 #endif
 
-NRF_TIMER_Type *timer0 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer0));
-NRF_TIMER_Type *timer1 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer1));
-NRF_TIMER_Type *timer2 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer2));
-
-#if DT_NODE_EXISTS(DT_NODELABEL(pdm0)) && DT_NODE_HAS_STATUS(DT_NODELABEL(pdm0), reserved)
-NRF_PDM_Type *pdm = (NRF_PDM_Type *)DT_REG_ADDR(DT_NODELABEL(pdm0));
+static NRF_TIMER_Type * timer0;
+static NRF_TIMER_Type *timer1;
+static NRF_TIMER_Type *timer2;
+static NRF_EGU_Type *egu;
 
 static void sink_setup(void)
 {
-	nrf_pdm_task_trigger(pdm, NRF_PDM_TASK_STOP);
-	nrf_pdm_event_clear(pdm, NRF_PDM_EVENT_STARTED);
-	nrf_pdm_enable(pdm);
+	nrf_egu_task_trigger(egu, NRF_EGU_TASK_TRIGGER0);
+	nrf_egu_event_clear(egu, NRF_EGU_EVENT_TRIGGERED0);
 }
 
 static void sink_cleanup(void)
 {
-	nrf_pdm_task_trigger(pdm, NRF_PDM_TASK_STOP);
-	nrf_pdm_disable(pdm);
+	nrf_egu_event_clear(egu, NRF_EGU_EVENT_TRIGGERED0);
 }
 
 static bool sink_evt_check(void)
 {
-	return nrf_pdm_event_check(pdm, NRF_PDM_EVENT_STARTED);
+	return nrf_egu_event_check(egu, NRF_EGU_EVENT_TRIGGERED0);
 }
 
 static uint32_t sink_tsk_addr(void)
 {
-	return nrf_pdm_task_address_get(pdm, NRF_PDM_TASK_START);
+	return nrf_egu_task_address_get(egu, NRF_EGU_TASK_TRIGGER0);
 }
-
-#elif DT_NODE_EXISTS(DT_NODELABEL(comp)) && DT_NODE_HAS_STATUS(DT_NODELABEL(comp), reserved)
-NRF_LPCOMP_Type *lpcomp = (NRF_LPCOMP_Type *)DT_REG_ADDR(DT_NODELABEL(comp));
-
-static void sink_setup(void)
-{
-	nrf_lpcomp_task_trigger(lpcomp, NRF_LPCOMP_TASK_STOP);
-	nrf_lpcomp_event_clear(lpcomp, NRF_LPCOMP_EVENT_READY);
-	nrf_lpcomp_enable(lpcomp);
-}
-
-static void sink_cleanup(void)
-{
-	nrf_lpcomp_task_trigger(lpcomp, NRF_LPCOMP_TASK_STOP);
-	nrf_lpcomp_disable(lpcomp);
-}
-
-static bool sink_evt_check(void)
-{
-	return nrf_lpcomp_event_check(lpcomp, NRF_LPCOMP_EVENT_READY);
-}
-
-static uint32_t sink_tsk_addr(void)
-{
-	return nrf_lpcomp_task_address_get(lpcomp, NRF_LPCOMP_TASK_START);
-}
-
-#elif defined(CONFIG_SOC_NRF54H20_CPURAD)
-
-static uint32_t sink_tsk_addr(void)
-{
-	return nrf_ecb_task_address_get(NRF_ECB030, NRF_ECB_TASK_START);
-}
-static void sink_setup(void)
-{
-	nrf_ecb_event_clear(NRF_ECB030, NRF_ECB_EVENT_ERROR);
-}
-
-static void sink_cleanup(void)
-{
-	nrf_ecb_event_clear(NRF_ECB030, NRF_ECB_EVENT_ERROR);
-}
-
-static bool sink_evt_check(void)
-{
-	return nrf_ecb_event_check(NRF_ECB030, NRF_ECB_EVENT_ERROR);
-}
-
-#else
-#error "Target not supported"
-#endif
 
 /* Setup a single PPI connection TIMER_COMPARE->sink task. Use various timers. */
 static void test_single_connection(NRF_TIMER_Type *timer)
@@ -239,6 +182,10 @@ ZTEST(gppi, test_attach_event)
 
 	nrf_timer_cc_set(timer0, NRF_TIMER_CC_CHANNEL0, 100);
 	nrf_timer_cc_set(timer0, NRF_TIMER_CC_CHANNEL1, 200);
+	nrf_timer_prescaler_set(timer0,
+				NRF_TIMER_PRESCALER_CALCULATE(
+					NRF_TIMER_BASE_FREQUENCY_GET(timer0),
+					NRFX_MHZ_TO_HZ(1)));
 	nrf_timer_mode_set(timer1, NRF_TIMER_MODE_COUNTER);
 	nrf_timer_event_clear(timer0, NRF_TIMER_EVENT_COMPARE0);
 	nrf_timer_event_clear(timer0, NRF_TIMER_EVENT_COMPARE1);
@@ -317,6 +264,10 @@ ZTEST(gppi, test_group)
 	nrf_timer_cc_set(timer0, NRF_TIMER_CC_CHANNEL1, 110);
 	nrf_timer_cc_set(timer0, NRF_TIMER_CC_CHANNEL2, 120);
 	nrf_timer_cc_set(timer0, NRF_TIMER_CC_CHANNEL3, 130);
+	nrf_timer_prescaler_set(timer0,
+				NRF_TIMER_PRESCALER_CALCULATE(
+					NRF_TIMER_BASE_FREQUENCY_GET(timer0),
+					NRFX_MHZ_TO_HZ(1)));
 	nrf_timer_mode_set(timer1, NRF_TIMER_MODE_COUNTER);
 	nrf_timer_event_clear(timer0, NRF_TIMER_EVENT_COMPARE0);
 	nrf_timer_event_clear(timer0, NRF_TIMER_EVENT_COMPARE1);
@@ -438,4 +389,22 @@ ZTEST(gppi, test_cpurad_slow_fast_domain)
 }
 #endif
 
-ZTEST_SUITE(gppi, NULL, NULL, NULL, NULL, NULL);
+static void *setup(void)
+{
+	timer0 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer0));
+	timer1 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer1));
+	timer2 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer2));
+	egu = (NRF_EGU_Type *)DT_REG_ADDR(DT_NODELABEL(dut_egu));
+
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+	/* Convert real hw addresses to simulated peripheral addresses */
+	timer0 = nhw_convert_per_addr_hw_to_sim(timer0);
+	timer1 = nhw_convert_per_addr_hw_to_sim(timer1);
+	timer2 = nhw_convert_per_addr_hw_to_sim(timer2);
+	egu = nhw_convert_per_addr_hw_to_sim(egu);
+#endif
+
+	return NULL;
+}
+
+ZTEST_SUITE(gppi, NULL, setup, NULL, NULL, NULL);
