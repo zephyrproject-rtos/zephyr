@@ -110,21 +110,6 @@ def pytest_addoption(parser: pytest.Parser):
         help='Use a custom flash command for flashing.'
     )
     twister_harness_group.addoption(
-        '--pre-script',
-        metavar='PATH',
-        help='Script executed before flashing and connecting to serial.'
-    )
-    twister_harness_group.addoption(
-        '--post-flash-script',
-        metavar='PATH',
-        help='Script executed after flashing.'
-    )
-    twister_harness_group.addoption(
-        '--post-script',
-        metavar='PATH',
-        help='Script executed after closing serial connection.'
-    )
-    twister_harness_group.addoption(
         '--dut-scope',
         choices=('function', 'class', 'module', 'package', 'session'),
         help='The scope for which `dut` and `shell` fixtures are shared.'
@@ -172,9 +157,6 @@ def _normalize_paths(config: pytest.Config) -> None:
     """Normalize paths provided by user via CLI"""
     config.option.build_dir = _normalize_path(config.option.build_dir)
     config.option.twister_config = _normalize_path(config.option.twister_config)
-    config.option.pre_script = _normalize_path(config.option.pre_script)
-    config.option.post_script = _normalize_path(config.option.post_script)
-    config.option.post_flash_script = _normalize_path(config.option.post_flash_script)
 
 
 def _normalize_path(path: str | None) -> str:
