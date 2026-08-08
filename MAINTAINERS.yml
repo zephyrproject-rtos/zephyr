@@ -7404,6 +7404,18 @@ West:
   labels:
     - "area: TF-M"
 
+"West project: reqmgmt":
+  status: maintained
+  maintainers:
+    - tobiaskaestner
+    - parphane
+  collaborators:
+    - nashif
+    - kartben
+  files: []
+  labels:
+    - "area: ReqMgmt"
+
 "West project: segger":
   status: odd fixes
   collaborators:
