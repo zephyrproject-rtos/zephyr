@@ -13,6 +13,7 @@ supported:
   - can
   - crypto
   - eeprom
+  - ethernet
   - gpio
   - i2c
   - led
