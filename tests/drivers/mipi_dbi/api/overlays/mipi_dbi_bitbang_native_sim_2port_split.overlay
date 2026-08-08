@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2026 Andrew Yong <me@ndoo.sg>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Data bus split 4+4 across two distinct GPIO controllers, mirroring a real
+ * downstream out-of-tree board (TYT MD-UV390 PLUS, GPIOD/GPIOE 4+4) whose
+ * 8-bit bitbang bus never took the single-port LUT fast path upstream.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	gpio1: gpio1 {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <2>;
+		status = "okay";
+		gpio-controller;
+	};
+
+	gpio2: gpio2 {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <2>;
+		status = "okay";
+		gpio-controller;
+	};
+
+	mipi_dbi: mipi_dbi {
+		compatible = "zephyr,mipi-dbi-bitbang";
+		status = "okay";
+		dc-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		wr-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		rd-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		data-gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>, <&gpio1 1 GPIO_ACTIVE_HIGH>,
+			     <&gpio1 2 GPIO_ACTIVE_HIGH>, <&gpio1 3 GPIO_ACTIVE_HIGH>,
+			     <&gpio2 0 GPIO_ACTIVE_HIGH>, <&gpio2 1 GPIO_ACTIVE_HIGH>,
+			     <&gpio2 2 GPIO_ACTIVE_HIGH>, <&gpio2 3 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};

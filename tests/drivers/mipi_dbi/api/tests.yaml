@@ -54,3 +54,13 @@ tests:
       - rpi_pico2/rp2350a/hazard3
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_rpi_pico_pio2_4_splits.overlay
+  drivers.mipi_dbi.bitbang.single_port:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_bitbang_native_sim_single_port.overlay
+  drivers.mipi_dbi.bitbang.2port_split:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_bitbang_native_sim_2port_split.overlay
