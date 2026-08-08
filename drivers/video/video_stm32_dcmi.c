@@ -429,6 +429,18 @@ static int video_stm32_dcmi_get_caps(const struct device *dev, struct video_caps
 	return video_get_caps(config->sensor_dev, caps);
 }
 
+#define STM32_DCMI_MAX_FRAME_DROP 4
+
+/* Lengthen an interval by the maximum frame drop rate, saturating rather than wrapping */
+static void video_stm32_dcmi_apply_frame_drop(struct video_frmival *frmival)
+{
+	if (frmival->numerator > UINT32_MAX / STM32_DCMI_MAX_FRAME_DROP) {
+		frmival->numerator = UINT32_MAX;
+	} else {
+		frmival->numerator *= STM32_DCMI_MAX_FRAME_DROP;
+	}
+}
+
 static int video_stm32_dcmi_enum_frmival(const struct device *dev, struct video_frmival_enum *fie)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
@@ -439,25 +451,26 @@ static int video_stm32_dcmi_enum_frmival(const struct device *dev, struct video_
 		return ret;
 	}
 
-	/* Adapt the interval in order to report the frame drop capabilities */
+	/*
+	 * Adapt the interval in order to report the frame drop capabilities. Dropping
+	 * frames only ever lengthens the interval, so it raises the upper bound and
+	 * leaves the lower bound and the step as the sensor reported them. A discrete
+	 * sensor interval is the whole range on its own before that.
+	 */
 	if (fie->type == VIDEO_FRMIVAL_TYPE_DISCRETE) {
 		struct video_frmival discrete = fie->discrete;
 
 		fie->type = VIDEO_FRMIVAL_TYPE_STEPWISE;
+		fie->stepwise.min = discrete;
 		fie->stepwise.max = discrete;
-		fie->stepwise.min.denominator = discrete.denominator;
-		fie->stepwise.min.numerator = discrete.numerator * 4;
-		fie->stepwise.step.denominator = discrete.denominator;
-		fie->stepwise.step.numerator = discrete.numerator * 2;
-	} else {
-		fie->stepwise.min.numerator *= 4;
-		fie->stepwise.step.numerator *= 2;
+		fie->stepwise.step = discrete;
 	}
+
+	video_stm32_dcmi_apply_frame_drop(&fie->stepwise.max);
 
 	return 0;
 }
 
-#define STM32_DCMI_MAX_FRAME_DROP	4
 static int video_stm32_dcmi_set_frmival(const struct device *dev, struct video_frmival *frmival)
 {
 	const struct video_stm32_dcmi_config *config = dev->config;
