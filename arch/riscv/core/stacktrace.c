@@ -134,40 +134,15 @@ static void walk_stackframe(riscv_stacktrace_cb cb, void *cookie, const struct k
 		/* Unwind to the previous frame */
 		frame = (struct stackframe *)fp - 1;
 
-		if ((i == 0) && (esf != NULL)) {
-			/* Print `esf->ra` if we are at the top of the stack */
-			if (in_text_region(esf->ra) && !cb(cookie, esf->ra, fp)) {
-				break;
-			}
-			/**
-			 * For the first stack frame, the `ra` is not stored in the frame if the
-			 * preempted function doesn't call any other function, we can observe:
-			 *
-			 *                     .-------------.
-			 *   frame[0]->fp ---> | frame[0] fp |
-			 *                     :-------------:
-			 *   frame[0]->ra ---> | frame[1] fp |
-			 *                     | frame[1] ra |
-			 *                     :~~~~~~~~~~~~~:
-			 *                     | frame[N] fp |
-			 *
-			 * Instead of:
-			 *
-			 *                     .-------------.
-			 *   frame[0]->fp ---> | frame[0] fp |
-			 *   frame[0]->ra ---> | frame[1] ra |
-			 *                     :-------------:
-			 *                     | frame[1] fp |
-			 *                     | frame[1] ra |
-			 *                     :~~~~~~~~~~~~~:
-			 *                     | frame[N] fp |
-			 *
-			 * Check if `frame->ra` actually points to a `fp`, and adjust accordingly
-			 */
-			if (vrfy(frame->ra, thread, esf)) {
-				fp = frame->ra;
-				frame = (struct stackframe *)fp;
-			}
+		/*
+		 * frame->ra is a return address in a regular frame. A compact
+		 * leaf frame stores the caller's frame pointer there instead.
+		 */
+		if ((i == 0) && (esf != NULL) && (frame->ra > fp) &&
+		    vrfy(frame->ra, thread, esf)) {
+			fp = frame->ra;
+			ra = esf->ra;
+			continue;
 		}
 
 		fp = frame->fp;
