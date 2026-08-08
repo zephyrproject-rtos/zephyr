@@ -139,6 +139,9 @@
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_K(630)>;
+			ranges = <0x0 0x0 DT_SIZE_K(630)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			erase-block-size = <512>;
 			write-block-size = <512>;
 		};
