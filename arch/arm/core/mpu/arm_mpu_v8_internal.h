@@ -15,22 +15,16 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/barrier.h>
 
+#if defined(CONFIG_MPU_GAP_FILLING)
 /**
- * @brief internal structure holding information of
- *        memory areas where dynamic MPU programming
- *        is allowed.
+ * Global array holding a backup of the descriptors for static regions.
  */
-struct dynamic_region_info {
-	int index;
-	struct arm_mpu_region region_conf;
-};
+static struct {
+	uint32_t rbar;
+	uint32_t rlar;
+} static_region_descriptors[Z_ARM_MPU_MAX_REGIONS];
+#endif /* CONFIG_MPU_GAP_FILLING */
 
-/**
- * Global array, holding the MPU region index of
- * the memory region inside which dynamic memory
- * regions may be configured.
- */
-static struct dynamic_region_info dyn_reg_info[MPU_DYNAMIC_REGION_AREAS_NUM];
 #if defined(CONFIG_CPU_CORTEX_M23) || defined(CONFIG_CPU_CORTEX_M33) || \
 	defined(CONFIG_CPU_CORTEX_M52) || defined(CONFIG_CPU_CORTEX_M55) || \
 	defined(CONFIG_CPU_CORTEX_M85)
@@ -329,31 +323,6 @@ static inline void get_region_attr_from_mpu_partition_info(
 }
 
 #if defined(CONFIG_USERSPACE)
-
-/**
- * This internal function returns the minimum HW MPU region index
- * that may hold the configuration of a dynamic memory region.
- *
- * Browse through the memory areas marked for dynamic MPU programming,
- * pick the one with the minimum MPU region index. Return that index.
- *
- * The function is optimized for the (most common) use-case of a single
- * marked area for dynamic memory regions.
- */
-static inline int get_dyn_region_min_index(void)
-{
-	int dyn_reg_min_index = dyn_reg_info[0].index;
-#if MPU_DYNAMIC_REGION_AREAS_NUM > 1
-	for (int i = 1; i < MPU_DYNAMIC_REGION_AREAS_NUM; i++) {
-		if ((dyn_reg_info[i].index != -EINVAL) &&
-			(dyn_reg_info[i].index < dyn_reg_min_index)
-		) {
-			dyn_reg_min_index = dyn_reg_info[i].index;
-		}
-	}
-#endif
-	return dyn_reg_min_index;
-}
 
 static inline uint32_t mpu_region_get_size(uint32_t index)
 {
@@ -684,48 +653,26 @@ static int mpu_configure_static_mpu_regions(const struct z_arm_mpu_partition
 
 	static_regions_num = mpu_reg_index;
 
-	return mpu_reg_index;
-}
-
-/* This internal function marks and stores the configuration of memory areas
- * where dynamic region programming is allowed. Return zero on success, or
- * -EINVAL on error.
- */
-static int mpu_mark_areas_for_dynamic_regions(
-		const struct z_arm_mpu_partition dyn_region_areas[],
-		const uint8_t dyn_region_areas_num)
-{
-	/* In ARMv8-M architecture we need to store the index values
-	 * and the default configuration of the MPU regions, inside
-	 * which dynamic memory regions may be programmed at run-time.
+#if defined(CONFIG_MPU_GAP_FILLING)
+	/*
+	 * On PMSAv8 MPUs, the regions cannot overlap so "static" regions
+	 * may actually be modified at runtime; more precisely, they are
+	 * split in smaller pieces to allow creation of dynamic regions.
+	 *
+	 * Save the original descriptors for these static regions so we can
+	 * restore them later on, when the value in MPU registers have been
+	 * modified to create dynamic regions. This is only needed when
+	 * gap filling is enabled as otherwise, the static regions are not
+	 * used at all.
 	 */
-	for (int i = 0; i < dyn_region_areas_num; i++) {
-		if (dyn_region_areas[i].size == 0U) {
-			continue;
-		}
-		/* Non-empty area */
-
-		/* Retrieve HW MPU region index */
-		dyn_reg_info[i].index =
-			get_region_index(dyn_region_areas[i].start,
-					dyn_region_areas[i].size);
-
-		if (dyn_reg_info[i].index == -EINVAL) {
-
-			return -EINVAL;
-		}
-
-		if (dyn_reg_info[i].index >= static_regions_num) {
-
-			return -EINVAL;
-		}
-
-		/* Store default configuration */
-		mpu_region_get_conf(dyn_reg_info[i].index,
-			&dyn_reg_info[i].region_conf);
+	for (int i = 0; i < static_regions_num; i++) {
+		mpu_set_rnr(i);
+		static_region_descriptors[i].rbar = mpu_get_rbar();
+		static_region_descriptors[i].rlar = mpu_get_rlar();
 	}
+#endif /* CONFIG_MPU_GAP_FILLING */
 
-	return 0;
+	return mpu_reg_index;
 }
 
 /**
@@ -747,6 +694,7 @@ static inline uint8_t get_num_regions(void)
 static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 	dynamic_regions[], uint8_t regions_num)
 {
+#if defined(CONFIG_MPU_GAP_FILLING)
 	int mpu_reg_index = static_regions_num;
 
 	/* Disable all MPU regions except for the static ones. */
@@ -754,13 +702,11 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 		mpu_clear_region(i);
 	}
 
-#if defined(CONFIG_MPU_GAP_FILLING)
-	/* Reset MPU regions inside which dynamic memory regions may
-	 * be programmed.
-	 */
-	for (int i = 0; i < MPU_DYNAMIC_REGION_AREAS_NUM; i++) {
-		region_init(dyn_reg_info[i].index,
-			&dyn_reg_info[i].region_conf);
+	/* Restore the configuration of all static regions */
+	for (int i = 0; i < static_regions_num; i++) {
+		mpu_set_rnr(i);
+		mpu_set_rbar(static_region_descriptors[i].rbar);
+		mpu_set_rlar(static_region_descriptors[i].rlar);
 	}
 
 	/* In ARMv8-M architecture the dynamic regions are programmed on SRAM,
@@ -769,23 +715,19 @@ static int mpu_configure_dynamic_mpu_regions(const struct z_arm_mpu_partition
 	 */
 	mpu_reg_index = mpu_configure_regions_and_partition(dynamic_regions,
 		regions_num, mpu_reg_index, true);
-#else
-
-	/* We are going to skip the full partition of the background areas.
-	 * So we can disable MPU regions inside which dynamic memory regions
-	 * may be programmed.
+#else /* CONFIG_MPU_GAP_FILLING */
+	/* When gap filling is disabled, MPU regions are simply programmed
+	 * on top of the background map. Clear all regions before programming.
 	 */
-	for (int i = 0; i < MPU_DYNAMIC_REGION_AREAS_NUM; i++) {
-		mpu_clear_region(dyn_reg_info[i].index);
+	for (int i = 0; i < get_num_regions(); i++) {
+		mpu_clear_region(i);
 	}
 
-	/* The dynamic regions are now programmed on top of
-	 * existing SRAM region configuration.
-	 */
+	/* Then program dynamic regions on top of the background map. */
 	mpu_reg_index = mpu_configure_regions(dynamic_regions,
-		regions_num, mpu_reg_index, true);
-
+		regions_num, 0, true);
 #endif /* CONFIG_MPU_GAP_FILLING */
+
 	return mpu_reg_index;
 }
 

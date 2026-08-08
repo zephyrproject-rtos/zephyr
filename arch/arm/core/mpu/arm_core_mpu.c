@@ -34,17 +34,6 @@ LOG_MODULE_REGISTER(mpu);
 	(IS_ENABLED(CONFIG_MPU_STACK_GUARD) ? 1 : 0)
 #endif /* CONFIG_USERSPACE */
 
-/* Convenience macros to denote the start address and the size of the system
- * memory area, where dynamic memory regions may be programmed at run-time.
- */
-#if defined(CONFIG_USERSPACE)
-#define _MPU_DYNAMIC_REGIONS_AREA_START ((uint32_t)&_app_smem_start)
-#else
-#define _MPU_DYNAMIC_REGIONS_AREA_START ((uint32_t)&__kernel_ram_start)
-#endif /* CONFIG_USERSPACE */
-#define _MPU_DYNAMIC_REGIONS_AREA_SIZE ((uint32_t)&__kernel_ram_end - \
-		_MPU_DYNAMIC_REGIONS_AREA_START)
-
 #if !defined(CONFIG_MULTITHREADING) && defined(CONFIG_MPU_STACK_GUARD)
 K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 #endif
@@ -166,24 +155,6 @@ void z_arm_configure_static_mpu_regions(void)
 #ifdef CONFIG_AARCH32_ARMV8_R
 	arm_core_mpu_enable();
 #endif
-
-#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS) && \
-	defined(CONFIG_MULTITHREADING)
-	/* Define a constant array of z_arm_mpu_partition objects that holds the
-	 * boundaries of the areas, inside which dynamic region programming
-	 * is allowed. The information is passed to the underlying driver at
-	 * initialization.
-	 */
-	const struct z_arm_mpu_partition dyn_region_areas[] = {
-		{
-		.start = _MPU_DYNAMIC_REGIONS_AREA_START,
-		.size =  _MPU_DYNAMIC_REGIONS_AREA_SIZE,
-		}
-	};
-
-	arm_core_mpu_mark_areas_for_dynamic_regions(dyn_region_areas,
-		ARRAY_SIZE(dyn_region_areas));
-#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
 }
 
 /**

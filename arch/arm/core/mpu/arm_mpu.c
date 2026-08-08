@@ -371,23 +371,6 @@ void arm_core_mpu_configure_static_mpu_regions(const struct z_arm_mpu_partition
 	}
 }
 
-#if defined(CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS)
-/**
- * @brief mark memory areas for dynamic region configuration
- */
-void arm_core_mpu_mark_areas_for_dynamic_regions(
-	const struct z_arm_mpu_partition dyn_region_areas[],
-	const uint8_t dyn_region_areas_num)
-{
-	if (mpu_mark_areas_for_dynamic_regions(dyn_region_areas,
-						 dyn_region_areas_num) == -EINVAL) {
-
-		__ASSERT(0, "Marking %u areas for dynamic regions failed\n",
-			dyn_region_areas_num);
-	}
-}
-#endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
-
 /**
  * @brief configure dynamic MPU regions.
  */
