@@ -16,3 +16,9 @@ shields:
     vendor: st
     supported_features:
       - sensor
+
+  - name: x_nucleo_iks4a1_i3c
+    full_name: X-NUCLEO-IKS4A1 (Mode 1 + I3C)
+    vendor: st
+    supported_features:
+      - sensor
