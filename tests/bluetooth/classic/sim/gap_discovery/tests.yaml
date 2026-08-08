@@ -1,0 +1,14 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - native_sim
+  harness: script
+
+tests:
+  bluetooth.classic.sim.gap.discovery:
+    timeout: 300
+    harness_config:
+      tests_scripts:
+        - tests_scripts/general_discovery.sh
+        - tests_scripts/limited_discovery.sh
