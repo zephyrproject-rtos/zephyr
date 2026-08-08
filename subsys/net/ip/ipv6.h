@@ -138,6 +138,27 @@ int net_ipv6_send_ns(struct net_if *iface, struct net_pkt *pending,
 int net_ipv6_send_rs(struct net_if *iface);
 int net_ipv6_start_rs(struct net_if *iface);
 
+#if defined(CONFIG_NET_IPV6_ND_RA_TX)
+/**
+ * @brief Send an IPv6 Router Advertisement on the given interface.
+ *
+ * @param iface Network interface to send on
+ * @param dst Destination address, or NULL to use the all-nodes multicast
+ *            address (unsolicited advertisement).
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+int net_ipv6_send_ra(struct net_if *iface, const struct net_in6_addr *dst);
+
+/**
+ * @brief Start or stop the unsolicited Router Advertisement timer depending
+ * on whether any interface currently has the router role enabled.
+ *
+ * Called when the router role of an interface changes.
+ */
+void net_ipv6_ra_update_timer(void);
+#endif
+
 int net_ipv6_send_na(struct net_if *iface, const struct net_in6_addr *src,
 		     const struct net_in6_addr *dst, const struct net_in6_addr *tgt,
 		     uint8_t flags);
