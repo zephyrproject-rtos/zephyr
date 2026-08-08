@@ -449,6 +449,10 @@ HWSPINLOCK
 I2C
 ===
 
+* On controller based on :kconfig:option:`CONFIG_I2C_DW` the
+  ``CONFIG_I2C_DW_RW_TIMEOUT_MS`` option has been replaced with
+  :kconfig:option:`CONFIG_I2C_TRANSFER_TIMEOUT_MS`, with a default of 500ms.
+
 * The ITE I2C controllers :dtcompatible:`ite,enhance-i2c`
   :dtcompatible:`ite,it51xxx-i2c` :dtcompatible:`ite,it8xxx2-i2c` transfer
   timeout is now using the generic ``zephyr,transfer-timeout-ms`` property
