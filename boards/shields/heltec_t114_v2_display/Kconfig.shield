@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Yeray Lois Sanchez
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_HELTEC_T114_V2_DISPLAY
+	def_bool $(shields_list_contains,heltec_t114_v2_display)
