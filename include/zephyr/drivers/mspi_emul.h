@@ -17,6 +17,7 @@
  * @file
  *
  * @brief Public APIs for the MSPI emulation drivers.
+ * @ingroup mspi_emul_interface
  */
 
 /**
@@ -81,11 +82,13 @@ typedef int (*emul_mspi_dev_api_transceive)(const struct emul *target,
 
 /** Definition of the MSPI device emulator API */
 struct emul_mspi_device_api {
+	/** Passes MSPI transceive requests to the device emulator */
 	emul_mspi_dev_api_transceive transceive;
 };
 
 /** Node in a linked list of emulators for MSPI devices */
 struct mspi_emul {
+	/** Node in the controller's linked list of emulators */
 	sys_snode_t                  node;
 	/** Target emulator - REQUIRED for all emulated bus nodes of any type */
 	const struct emul            *target;
@@ -97,12 +100,14 @@ struct mspi_emul {
 
 /** Definition of the MSPI controller emulator API */
 __subsystem struct emul_mspi_driver_api {
-	/* The struct mspi_driver_api has to be first in
+	/**
+	 * The struct mspi_driver_api has to be first in
 	 * struct emul_mspi_driver_api to make pointer casting working
 	 */
 	struct mspi_driver_api       mspi_api;
-	/* The rest, emulator specific functions */
+	/** Emulator specific: triggers an event on the emulated MSPI controller */
 	mspi_emul_trigger_event      trigger_event;
+	/** Emulator specific: finds an emulator present on the MSPI bus */
 	mspi_emul_find_emul          find_emul;
 };
 
