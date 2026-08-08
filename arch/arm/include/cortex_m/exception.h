@@ -24,14 +24,9 @@
 
 #include <cmsis_core.h>
 #include <zephyr/arch/arm/exception.h>
-#include <zephyr/irq_offload.h>
 
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifdef CONFIG_IRQ_OFFLOAD
-extern volatile irq_offload_routine_t offload_routine;
 #endif
 
 /* Writes to the AIRCR must be accompanied by a write of the value 0x05FA
