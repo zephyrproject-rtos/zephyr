@@ -34,6 +34,7 @@ message("  rom_plot     - Build and create ROM usage in a sunburst chart as a vi
 message("  traceconfig  - Generate a file in the build directory that details how each symbol got its final value")
 message("  footprint    - Create JSON RAM/ROM usage report in the build directory")
 message("  dashboard    - Generate an HTML dashboard with footprint, traceconfig, initlevels, devicetree, and other details")
+message("  partition_map - Generate an HTML RAM/NVM partition map from devicetree")
 message("  initlevels   - Display the initialization sequence")
 message("  boards       - Display supported boards")
 message("  shields      - Display supported shields")

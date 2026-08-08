@@ -48,3 +48,13 @@ sysbuild_module_call(POST_CMAKE MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES
 sysbuild_module_call(PRE_DOMAINS MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
 include(${sysbuild_toplevel_SOURCE_DIR}/cmake/domains.cmake)
 sysbuild_module_call(POST_DOMAINS MODULES ${SYSBUILD_MODULE_NAMES} IMAGES ${IMAGES})
+
+add_custom_target(
+  partition_map
+  ${PYTHON_EXECUTABLE}
+  ${ZEPHYR_BASE}/scripts/build/partition_map.py
+  --build-dir ${CMAKE_BINARY_DIR}
+  --output ${CMAKE_BINARY_DIR}/partition_map
+  USES_TERMINAL
+  WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+  )
