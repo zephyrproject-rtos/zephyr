@@ -337,15 +337,18 @@ config EXCEPTION_STACK_TRACE
 #
 config DEBUG_THREAD_INFO
 	bool "Thread awareness support"
-	depends on !SMP
 	select THREAD_MONITOR
 	select THREAD_NAME
 	help
 	  This option exports an array of offsets to kernel structs to allow
 	  for debugger RTOS plugins to determine the state of running threads.
-	  Not supported on SMP: thread_info.c exports K_CURR_THREAD which
-	  only reflects cpus[0].current, confusing live RTOS debugger plugins
-	  on multi-core systems.
+	  On SMP, thread_info.c's K_CURR_THREAD offset by itself only reflects
+	  cpus[0].current; CPU_STRIDE and NUM_CPUS are also exported so a
+	  debugger plugin that knows about them can read every CPU's current
+	  thread (cpus[i].current = K_CURR_THREAD + i * CPU_STRIDE). A plugin
+	  that doesn't know about them simply keeps seeing cpus[0] only, same
+	  as before -- these two entries are additions, not a change to the
+	  meaning of any existing one.
 
 rsource "coredump/Kconfig"
 rsource "symtab/Kconfig"
