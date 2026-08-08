@@ -18,3 +18,14 @@ tests:
              dt_label_compat_enabled("slot1_partition", "zephyr,mapped-partition"))
     integration_platforms:
       - imx95_evk/mimx9596/m7
+  drivers.flash.interface_test.spi_nand.w25n01gv.nrf7120dk:
+    harness_config:
+      fixture: w25n01gv
+    extra_configs:
+      - CONFIG_TEST_SEQUENTIAL_READ_PATTERN_AMOUNT=50000
+      - CONFIG_TEST_SEQUENTIAL_ALTERNATING_READ_PATTERN_AMOUNT=25000
+    extra_args:
+      - DTC_OVERLAY_FILE="./boards/nrf7120dk_nrf7120_cpuapp_w25n01gv.overlay"
+    platform_allow:
+      - nrf7120dk/nrf7120/cpuapp
+    timeout: 900
