@@ -187,6 +187,13 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* ADC
+
+  * Optional :c:member:`adc_driver_api.ref_internal_get` callback so
+    :c:func:`adc_ref_internal` can return a driver-owned runtime millivolt
+    scale (static :c:member:`adc_driver_api.ref_internal` remains the
+    fallback when the callback is NULL)
+
 * Architectures
 
   * :kconfig:option:`CONFIG_ARM_MPU_CM7_UNMAPPED_REGION` (Arm Cortex-M7 catch-all MPU region
