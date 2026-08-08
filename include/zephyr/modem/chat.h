@@ -47,41 +47,45 @@ typedef void (*modem_chat_match_callback)(struct modem_chat *chat, char **argv, 
 struct modem_chat_match {
 	/** Match array */
 	const uint8_t *match;
-	/** Size of match */
-	uint8_t match_size;
 	/** Separators array */
 	const uint8_t *separators;
+	/** Callback run on a match */
+	modem_chat_match_callback callback;
+	/** Size of match */
+	uint8_t match_size;
 	/** Size of separators array */
 	uint8_t separators_size;
 	/** Set if modem chat instance shall use wildcards when matching */
 	bool wildcards;
 	/** Set if script shall not continue to next step in case of match */
 	bool partial;
-	/** Type of modem chat instance */
-	modem_chat_match_callback callback;
 };
 
 #define MODEM_CHAT_MATCH(_match, _separators, _callback)                                           \
 	{                                                                                          \
-		.match = (uint8_t *)(_match), .match_size = (uint8_t)(sizeof(_match) - 1),         \
+		.match = (uint8_t *)(_match),                                                      \
 		.separators = (uint8_t *)(_separators),                                            \
-		.separators_size = (uint8_t)(sizeof(_separators) - 1), .wildcards = false,         \
+		.match_size = (uint8_t)(sizeof(_match) - 1),                                       \
+		.separators_size = (uint8_t)(sizeof(_separators) - 1),                             \
+		.wildcards = false,                                                                \
 		.callback = _callback,                                                             \
 	}
 
 #define MODEM_CHAT_MATCH_WILDCARD(_match, _separators, _callback)                                  \
 	{                                                                                          \
-		.match = (uint8_t *)(_match), .match_size = (uint8_t)(sizeof(_match) - 1),         \
+		.match = (uint8_t *)(_match),                                                      \
 		.separators = (uint8_t *)(_separators),                                            \
-		.separators_size = (uint8_t)(sizeof(_separators) - 1), .wildcards = true,          \
+		.match_size = (uint8_t)(sizeof(_match) - 1),                                       \
+		.separators_size = (uint8_t)(sizeof(_separators) - 1),                             \
+		.wildcards = true,                                                                 \
 		.callback = _callback,                                                             \
 	}
 
 #define MODEM_CHAT_MATCH_INITIALIZER(_match, _separators, _callback, _wildcards, _partial)         \
 	{                                                                                          \
 		.match = (uint8_t *)(_match),                                                      \
-		.match_size = (uint8_t)(sizeof(_match) - 1),                                       \
 		.separators = (uint8_t *)(_separators),                                            \
+		.match_size = (uint8_t)(sizeof(_match) - 1),                                       \
 		.separators_size = (uint8_t)(sizeof(_separators) - 1),                             \
 		.wildcards = _wildcards,                                                           \
 		.partial = _partial,                                                               \
