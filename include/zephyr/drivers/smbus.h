@@ -333,75 +333,151 @@ struct smbus_dt_spec {
 #define SMBUS_DT_SPEC_INST_GET(inst) SMBUS_DT_SPEC_GET(DT_DRV_INST(inst))
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * These are for internal use only, so skip these in
- * public documentation.
+ * @def_driverbackendgroup{SMBus,smbus_interface}
+ * @{
  */
 
+/**
+ * @brief Configure operation of a SMBus host controller.
+ * See smbus_configure() for argument description.
+ */
 typedef int (*smbus_api_configure_t)(const struct device *dev,
 				     uint32_t dev_config);
+/**
+ * @brief Get configuration of a SMBus host controller.
+ * See smbus_get_config() for argument description.
+ */
 typedef int (*smbus_api_get_config_t)(const struct device *dev,
 				      uint32_t *dev_config);
+/**
+ * @brief Perform SMBus Quick operation.
+ * See smbus_quick() for argument description.
+ */
 typedef int (*smbus_api_quick_t)(const struct device *dev,
 				 uint16_t addr, enum smbus_direction);
+/**
+ * @brief Perform SMBus Byte Write operation.
+ * See smbus_byte_write() for argument description.
+ */
 typedef int (*smbus_api_byte_write_t)(const struct device *dev,
 				      uint16_t addr, uint8_t byte);
+/**
+ * @brief Perform SMBus Byte Read operation.
+ * See smbus_byte_read() for argument description.
+ */
 typedef int (*smbus_api_byte_read_t)(const struct device *dev,
 				     uint16_t addr, uint8_t *byte);
+/**
+ * @brief Perform SMBus Byte Data Write operation.
+ * See smbus_byte_data_write() for argument description.
+ */
 typedef int (*smbus_api_byte_data_write_t)(const struct device *dev,
 					   uint16_t addr, uint8_t cmd,
 					   uint8_t byte);
+/**
+ * @brief Perform SMBus Byte Data Read operation.
+ * See smbus_byte_data_read() for argument description.
+ */
 typedef int (*smbus_api_byte_data_read_t)(const struct device *dev,
 					  uint16_t addr, uint8_t cmd,
 					  uint8_t *byte);
+/**
+ * @brief Perform SMBus Word Data Write operation.
+ * See smbus_word_data_write() for argument description.
+ */
 typedef int (*smbus_api_word_data_write_t)(const struct device *dev,
 					   uint16_t addr, uint8_t cmd,
 					   uint16_t word);
+/**
+ * @brief Perform SMBus Word Data Read operation.
+ * See smbus_word_data_read() for argument description.
+ */
 typedef int (*smbus_api_word_data_read_t)(const struct device *dev,
 					  uint16_t addr, uint8_t cmd,
 					  uint16_t *word);
+/**
+ * @brief Perform SMBus Process Call operation.
+ * See smbus_pcall() for argument description.
+ */
 typedef int (*smbus_api_pcall_t)(const struct device *dev,
 				 uint16_t addr, uint8_t cmd,
 				 uint16_t send_word, uint16_t *recv_word);
+/**
+ * @brief Perform SMBus Block Write operation.
+ * See smbus_block_write() for argument description.
+ */
 typedef int (*smbus_api_block_write_t)(const struct device *dev,
 				       uint16_t addr, uint8_t cmd,
 				       uint8_t count, uint8_t *buf);
+/**
+ * @brief Perform SMBus Block Read operation.
+ * See smbus_block_read() for argument description.
+ */
 typedef int (*smbus_api_block_read_t)(const struct device *dev,
 				      uint16_t addr, uint8_t cmd,
 				      uint8_t *count, uint8_t *buf);
+/**
+ * @brief Perform SMBus Block Process Call operation.
+ * See smbus_block_pcall() for argument description.
+ */
 typedef int (*smbus_api_block_pcall_t)(const struct device *dev,
 				       uint16_t addr, uint8_t cmd,
 				       uint8_t send_count, uint8_t *send_buf,
 				       uint8_t *recv_count, uint8_t *recv_buf);
+/**
+ * @brief Add or remove a SMBALERT callback.
+ * See smbus_smbalert_set_cb() and smbus_smbalert_remove_cb() for argument description.
+ */
 typedef int (*smbus_api_smbalert_cb_t)(const struct device *dev,
 				       struct smbus_callback *cb);
+/**
+ * @brief Add or remove a Host Notify callback.
+ * See smbus_host_notify_set_cb() and smbus_host_notify_remove_cb() for argument description.
+ */
 typedef int (*smbus_api_host_notify_cb_t)(const struct device *dev,
 					  struct smbus_callback *cb);
 
+/**
+ * @driver_ops{SMBus}
+ */
 __subsystem struct smbus_driver_api {
+	/** @driver_ops_mandatory @copybrief smbus_configure */
 	smbus_api_configure_t configure;
+	/** @driver_ops_optional @copybrief smbus_get_config */
 	smbus_api_get_config_t get_config;
+	/** @driver_ops_optional Perform SMBus Quick operation. */
 	smbus_api_quick_t smbus_quick;
+	/** @driver_ops_optional Perform SMBus Byte Write operation. */
 	smbus_api_byte_write_t smbus_byte_write;
+	/** @driver_ops_optional Perform SMBus Byte Read operation. */
 	smbus_api_byte_read_t smbus_byte_read;
+	/** @driver_ops_optional Perform SMBus Byte Data Write operation. */
 	smbus_api_byte_data_write_t smbus_byte_data_write;
+	/** @driver_ops_optional Perform SMBus Byte Data Read operation. */
 	smbus_api_byte_data_read_t smbus_byte_data_read;
+	/** @driver_ops_optional Perform SMBus Word Data Write operation. */
 	smbus_api_word_data_write_t smbus_word_data_write;
+	/** @driver_ops_optional Perform SMBus Word Data Read operation. */
 	smbus_api_word_data_read_t smbus_word_data_read;
+	/** @driver_ops_optional Perform SMBus Process Call operation. */
 	smbus_api_pcall_t smbus_pcall;
+	/** @driver_ops_optional Perform SMBus Block Write operation. */
 	smbus_api_block_write_t smbus_block_write;
+	/** @driver_ops_optional Perform SMBus Block Read operation. */
 	smbus_api_block_read_t smbus_block_read;
+	/** @driver_ops_optional Perform SMBus Block Process Call operation. */
 	smbus_api_block_pcall_t smbus_block_pcall;
+	/** @driver_ops_optional Add SMBUSALERT callback for a SMBus host controller. */
 	smbus_api_smbalert_cb_t smbus_smbalert_set_cb;
+	/** @driver_ops_optional Remove SMBUSALERT callback from a SMBus host controller. */
 	smbus_api_smbalert_cb_t smbus_smbalert_remove_cb;
+	/** @driver_ops_optional Add Host Notify callback for a SMBus host controller. */
 	smbus_api_host_notify_cb_t smbus_host_notify_set_cb;
+	/** @driver_ops_optional Remove Host Notify callback from a SMBus host controller. */
 	smbus_api_host_notify_cb_t smbus_host_notify_remove_cb;
 };
 
-/**
- * @endcond
- */
+/** @} */
 
 #if defined(CONFIG_SMBUS_STATS) || defined(__DOXYGEN__)
 
