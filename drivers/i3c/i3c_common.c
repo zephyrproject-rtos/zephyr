@@ -429,7 +429,7 @@ int i3c_sec_get_basic_info(const struct device *dev, uint8_t dynamic_addr, uint8
 			return -ENOMEM;
 		}
 		desc->pid = id.pid;
-		temp_desc.static_addr = (uint16_t)static_addr;
+		desc->static_addr = (uint16_t)static_addr;
 	}
 	desc->dynamic_addr = dynamic_addr;
 	desc->bcr = bcr;
