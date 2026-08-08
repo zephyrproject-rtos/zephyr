@@ -253,7 +253,6 @@ static int siwx91x_send(const struct device *dev, struct net_pkt *pkt)
 		return -EIO;
 	}
 
-	net_pkt_unref(pkt);
 	net_buf_unref(buf);
 
 	return 0;
