@@ -1,0 +1,52 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Samsung SEC MIPI DSIM controller.
+  Serialises parallel RGB input from a display controller to a MIPI DSI panel.
+
+  The PLL parameters (P, M, S) are computed at runtime from the reference
+  clock frequency and target burst clock frequency using a brute-force search
+  that respects i.MX8MP hardware constraints (M in [64, 1023], Fvco in
+  [1050, 2100] MHz, fin in [2, 30] MHz).
+
+  D-PHY timing parameters are computed automatically from the burst clock
+  using MIPI D-PHY specification formulas.
+
+  The pixel clock frequency is read at runtime from the "pixel" clock (the
+  display controller's DISP1_PIX root) and is used to compute video-mode
+  blanking word counts.
+
+compatible: "nxp,mipi-dsim"
+
+include: mipi-dsi-host.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      Must contain "phy_ref" (D-PHY PLL reference clock) and "pixel" (the
+      display controller's DISP1_PIX pixel clock, used for blanking math).
+
+  samsung,burst-clock-frequency:
+    type: int
+    required: true
+    description: |
+      Target D-PHY bit clock (burst clock) frequency in Hz. The PLL search
+      will compute P, M, S to achieve this frequency (or the closest match
+      within hardware constraints). Typical value: 864000000 (864 Mbps).
+
+  samsung,esc-clock-frequency:
+    type: int
+    required: true
+    description: |
+      Escape clock frequency in Hz. Used to compute the ESC prescaler
+      (EscClk = ByteClk / EscPrescaler). The D-PHY specification allows up to
+      20 MHz; 10000000 (10 MHz) is a conservative typical value.
+      The prescaler is computed as ceil(ByteClk / esc_clk_freq).

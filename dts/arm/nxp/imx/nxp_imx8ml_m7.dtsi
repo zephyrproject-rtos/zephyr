@@ -323,6 +323,15 @@
 			mclk-is-output;
 			status = "disabled";
 		};
+
+		mipi_dsi: dsi@32e60000 {
+			compatible = "nxp,mipi-dsim";
+			reg = <0x32e60000 DT_SIZE_K(64)>;
+			clocks = <&ccm IMX_CCM_MIPI_PHY1_REF_CLK 0 0>,
+				 <&ccm IMX_CCM_DISP1_PIX_CLK 0 0>;
+			clock-names = "phy_ref", "pixel";
+			status = "disabled";
+		};
 	};
 };
 
