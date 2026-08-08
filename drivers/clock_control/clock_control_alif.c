@@ -220,15 +220,17 @@ static uint32_t alif_get_clock_freq(uint32_t clock_id)
 }
 
 /**
- * @brief Enable a peripheral clock
+ * @brief Select the clock source and enable a peripheral clock
  *
- * Enables the specified peripheral clock. For clocks with source selection,
- * this also configures the clock source based on the device tree encoding.
- * Always-on clocks return success immediately.
+ * Programs the clock source for peripherals fed by a source mux and enables
+ * the clock for peripherals that have an enable bit. Both are described by
+ * the device tree encoding and either may be absent for a given clock ID:
+ * a clock with a fixed source has no mux to program, and an always-on clock
+ * has no enable bit.
  *
- * @param dev Clock control device (unused)
+ * @param dev Clock control device
  * @param sub_system Encoded clock ID from device tree
- * @return 0 on success, -ENOTSUP if clock is not controllable
+ * @return 0 on success
  */
 static int alif_clock_control_on(const struct device *dev,
 			clock_control_subsys_t sub_system)
@@ -236,20 +238,18 @@ static int alif_clock_control_on(const struct device *dev,
 	uint32_t clk_id = (uint32_t)sub_system;
 	mem_addr_t reg_addr;
 	uint32_t reg_value;
-	uint32_t enable_mask;
 
-	if (!ALIF_CLOCK_CFG_EN_MASK(clk_id)) {
-		/* Clock is always-on, already enabled */
+	if (!ALIF_CLOCK_CFG_EN_MASK(clk_id) && !ALIF_CLOCK_CFG_SRC_FIELD_WIDTH(clk_id)) {
+		/* Always-on clock with a fixed source, nothing to program */
 		return 0;
 	}
 
 	reg_addr = alif_get_clk_reg_addr(dev, clk_id);
-	enable_mask = 1U << ALIF_CLOCK_CFG_ENABLE(clk_id);
 
 	reg_value = sys_read32(reg_addr);
 
 	/*
-	 * Set the default clock source if mux is available.
+	 * Set the clock source if a mux is available.
 	 */
 	if (ALIF_CLOCK_CFG_SRC_FIELD_WIDTH(clk_id)) {
 		uint32_t src_bit = ALIF_CLOCK_CFG_SRC_FIELD_POS(clk_id);
@@ -261,8 +261,10 @@ static int alif_clock_control_on(const struct device *dev,
 		reg_value |= (src_value << src_bit);
 	}
 
-	/* Enable the clock */
-	reg_value |= enable_mask;
+	/* Enable the clock if it has an enable bit */
+	if (ALIF_CLOCK_CFG_EN_MASK(clk_id)) {
+		reg_value |= BIT(ALIF_CLOCK_CFG_ENABLE(clk_id));
+	}
 
 	sys_write32(reg_value, reg_addr);
 
