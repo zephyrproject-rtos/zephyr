@@ -7,3 +7,15 @@ config DMA_EMUL
 	select EXPERIMENTAL
 	help
 	  Emulated DMA Driver
+
+if DMA_EMUL
+
+# Transfer addresses are native pointers; on 64-bit targets the
+# dma_block_config address fields must be 64 bits wide. The driver
+# hard-asserts this at build time, so the default is safe to override:
+# forcing it off fails the build instead of truncating addresses.
+config DMA_64BIT
+	default y
+	depends on 64BIT
+
+endif # DMA_EMUL
