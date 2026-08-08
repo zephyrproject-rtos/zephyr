@@ -164,6 +164,7 @@ tests:
       - xg24_rb4187c
       - xg29_rb4412a
       - bg29_rb4420a
+      - kg100s_rb4332a
     extra_configs:
       - CONFIG_DMA=y
   drivers.flash.common.silabs.dma.lpwrite:
@@ -171,6 +172,7 @@ tests:
       - xg24_rb4187c
       - xg29_rb4412a
       - bg29_rb4420a
+      - kg100s_rb4332a
     extra_configs:
       - CONFIG_DMA=y
     extra_args:
@@ -180,6 +182,7 @@ tests:
       - xg24_rb4187c
       - xg29_rb4412a
       - bg29_rb4420a
+      - kg100s_rb4332a
     extra_configs:
       - CONFIG_DMA=y
       - CONFIG_SOC_FLASH_SILABS_S2_DMA_READ=y
