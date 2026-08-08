@@ -2,6 +2,7 @@ tests:
   pmci.mctp.i3c.ping_pong:
     platform_allow:
       - npcx4m8f_evb
+      - nucleo_u385rg_q
     tags:
       - mctp
       - i3c
