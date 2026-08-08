@@ -251,6 +251,10 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t 
 	}
 
 	return match_count;
+#elif defined(CY_IP_MXS40SRSS) && (CY_IP_MXS40SRSS_VERSION >= 2)
+	ARG_UNUSED(ignore_bits);
+	ARG_UNUSED(dev_data);
+	return (uint32_t)(((uint64_t)timeout_ms * CY_SYSCLK_ILO_FREQ) / 1000ULL);
 #else
 	ARG_UNUSED(dev_data);
 
@@ -262,6 +266,7 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t 
 #endif
 }
 
+#if !(defined(CY_IP_MXS40SRSS) && (CY_IP_MXS40SRSS_VERSION >= 2))
 /* Rounds up *timeout_ms if it's outside of the valid timeout range (ifx_wdt_ignore_data) */
 __STATIC_INLINE uint32_t ifx_wdt_timeout_to_ignore_bits(uint32_t *timeout_ms)
 {
@@ -275,6 +280,7 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_ignore_bits(uint32_t *timeout_ms)
 	}
 	return IFX_WDT_MAX_IGNORE_BITS; /* Ideally should never reach this */
 }
+#endif
 
 #ifdef IFX_WDT_IS_IRQ_EN
 static void ifx_cat1_wdt_isr_handler(const struct device *dev)
@@ -463,8 +469,12 @@ static int ifx_cat1_wdt_feed(const struct device *dev, int channel_id)
 	ifx_wdt_unlock();
 	Cy_WDT_ClearWatchdog(); /* Clear to prevent reset from WDT */
 
+#if !(defined(CY_IP_MXS40SRSS) && (CY_IP_MXS40SRSS_VERSION >= 2))
 	Cy_WDT_SetMatch(ifx_wdt_timeout_to_match(data->wdt_rounded_timeout_ms,
 						 data->wdt_ignore_bits, data));
+#else
+	ARG_UNUSED(data);
+#endif
 
 	ifx_wdt_lock();
 
