@@ -4,3 +4,26 @@ tests:
       - kernel
       - smp
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
+
+  kernel.ipi_optimize.smp_idle:
+    tags:
+      - kernel
+      - smp
+    extra_configs:
+      - CONFIG_IPI_OPTIMIZE_IDLE=y
+      - CONFIG_SCHED_CPU_MASK=y
+    filter: >-
+      (CONFIG_MP_MAX_NUM_CPUS > 2) and
+      CONFIG_ARCH_HAS_DIRECTED_IPIS
+
+  kernel.ipi_optimize.smp_idle_metairq:
+    tags:
+      - kernel
+      - smp
+    extra_configs:
+      - CONFIG_IPI_OPTIMIZE_IDLE=y
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_NUM_METAIRQ_PRIORITIES=1
+    filter: >-
+      (CONFIG_MP_MAX_NUM_CPUS > 2) and
+      CONFIG_ARCH_HAS_DIRECTED_IPIS
