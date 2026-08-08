@@ -381,6 +381,29 @@ static void send_receive_rtr(const struct can_filter *filter, const struct can_f
 	can_remove_rx_filter(can_dev, filter_id);
 }
 
+static void send_and_expect_rx_msgq(const struct can_frame *frame)
+{
+	struct can_frame frame_buffer;
+	int err;
+
+	send_test_frame(can_dev, frame);
+
+	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
+	zassert_ok(err, "receive timeout");
+	assert_frame_equal(&frame_buffer, frame, 0);
+}
+
+static void send_and_expect_no_rx_msgq(const struct can_frame *frame)
+{
+	struct can_frame frame_buffer;
+	int err;
+
+	send_test_frame(can_dev, frame);
+
+	err = k_msgq_get(&can_msgq, &frame_buffer, TEST_RECEIVE_TIMEOUT);
+	zassert_equal(err, -EAGAIN, "received unexpected frame");
+}
+
 /**
  * @brief Test getting the CAN core clock rate.
  */
@@ -1365,6 +1388,94 @@ ZTEST_USER(can_classic, test_set_mode_while_started)
 	err = can_set_mode(can_dev, CAN_MODE_NORMAL);
 	zassert_not_equal(err, 0, "changed mode while started");
 	zassert_equal(err, -EBUSY, "wrong error return code (err %d)", err);
+}
+
+/**
+ * @brief Test that removing first of two paired standard filters does not drop ID 0 frames.
+ */
+ZTEST_USER(can_classic, test_remove_std_filter_pair_first_keeps_other_filters)
+{
+	const struct can_filter filter_0 = {
+		.flags = 0U,
+		.id = 0x000,
+		.mask = CAN_STD_ID_MASK,
+	};
+	const struct can_frame frame_0 = {
+		.id = filter_0.id,
+		.dlc = 1,
+		.data = {0x00},
+	};
+	int filter_id_1;
+	int filter_id_2;
+	int filter_id_3;
+	int filter_id_0;
+
+	if (can_get_max_filters(can_dev, false) < 3) {
+		ztest_test_skip();
+	}
+
+	filter_id_1 = can_common_add_rx_msgq(can_dev, &test_std_masked_filter_1);
+	filter_id_2 = can_common_add_rx_msgq(can_dev, &test_std_masked_filter_2);
+	filter_id_3 = can_common_add_rx_msgq(can_dev, &test_std_some_filter);
+	filter_id_0 = can_common_add_rx_msgq(can_dev, &filter_0);
+
+	send_and_expect_rx_msgq(&test_std_frame_1);
+	send_and_expect_rx_msgq(&test_std_frame_2);
+	send_and_expect_rx_msgq(&frame_0);
+
+	can_remove_rx_filter(can_dev, filter_id_1);
+
+	send_and_expect_no_rx_msgq(&test_std_frame_1);
+	send_and_expect_rx_msgq(&test_std_frame_2);
+	send_and_expect_rx_msgq(&frame_0);
+
+	can_remove_rx_filter(can_dev, filter_id_2);
+	can_remove_rx_filter(can_dev, filter_id_3);
+	can_remove_rx_filter(can_dev, filter_id_0);
+}
+
+/**
+ * @brief Test that removing second of two paired standard filters does not drop ID 0 frames.
+ */
+ZTEST_USER(can_classic, test_remove_std_filter_pair_second_keeps_other_filters)
+{
+	const struct can_filter filter_0 = {
+		.flags = 0U,
+		.id = 0x000,
+		.mask = CAN_STD_ID_MASK,
+	};
+	const struct can_frame frame_0 = {
+		.id = filter_0.id,
+		.dlc = 1,
+		.data = {0x00},
+	};
+	int filter_id_1;
+	int filter_id_2;
+	int filter_id_3;
+	int filter_id_0;
+
+	if (can_get_max_filters(can_dev, false) < 3) {
+		ztest_test_skip();
+	}
+
+	filter_id_1 = can_common_add_rx_msgq(can_dev, &test_std_masked_filter_1);
+	filter_id_2 = can_common_add_rx_msgq(can_dev, &test_std_masked_filter_2);
+	filter_id_3 = can_common_add_rx_msgq(can_dev, &test_std_some_filter);
+	filter_id_0 = can_common_add_rx_msgq(can_dev, &filter_0);
+
+	send_and_expect_rx_msgq(&test_std_frame_1);
+	send_and_expect_rx_msgq(&test_std_frame_2);
+	send_and_expect_rx_msgq(&frame_0);
+
+	can_remove_rx_filter(can_dev, filter_id_2);
+
+	send_and_expect_rx_msgq(&test_std_frame_1);
+	send_and_expect_no_rx_msgq(&test_std_frame_2);
+	send_and_expect_rx_msgq(&frame_0);
+
+	can_remove_rx_filter(can_dev, filter_id_1);
+	can_remove_rx_filter(can_dev, filter_id_3);
+	can_remove_rx_filter(can_dev, filter_id_0);
 }
 
 void *can_classic_setup(void)
