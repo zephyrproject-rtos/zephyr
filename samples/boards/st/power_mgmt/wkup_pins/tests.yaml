@@ -17,5 +17,6 @@ tests:
       - nucleo_wba65ri
       - nucleo_wl55jc
       - stm32l1_disco
+      - stm32u083c_dk
     integration_platforms:
       - nucleo_l4r5zi
