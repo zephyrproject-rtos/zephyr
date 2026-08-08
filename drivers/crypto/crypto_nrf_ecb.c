@@ -6,6 +6,7 @@
 
 #include <string.h>
 #include <zephyr/crypto/crypto.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <hal/nrf_ecb.h>
 
@@ -24,10 +25,14 @@ struct ecb_data {
 
 struct nrf_ecb_drv_state {
 	struct ecb_data data;
-	bool in_use;
 };
 
 static struct nrf_ecb_drv_state drv_state;
+
+/* Serializes access to the single shared ECB peripheral and its DMA buffer.
+ * Acquired (non-blocking) on session setup, released on session free.
+ */
+static K_SEM_DEFINE(drv_sem, 1, 1);
 
 static int do_ecb_encrypt(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 {
@@ -70,7 +75,6 @@ static int nrf_ecb_driver_init(const struct device *dev)
 	ARG_UNUSED(dev);
 
 	nrf_ecb_data_pointer_set(NRF_ECB, &drv_state.data);
-	drv_state.in_use = false;
 	return 0;
 }
 
@@ -103,12 +107,10 @@ static int nrf_ecb_session_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (drv_state.in_use) {
+	if (k_sem_take(&drv_sem, K_NO_WAIT) != 0) {
 		LOG_ERR("Peripheral in use");
 		return -EBUSY;
 	}
-
-	drv_state.in_use = true;
 
 	ctx->ops.block_crypt_hndlr = do_ecb_encrypt;
 	ctx->ops.cipher_mode = mode;
@@ -127,7 +129,7 @@ static int nrf_ecb_session_free(const struct device *dev,
 	ARG_UNUSED(dev);
 	ARG_UNUSED(sessn);
 
-	drv_state.in_use = false;
+	k_sem_give(&drv_sem);
 
 	return 0;
 }
