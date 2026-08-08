@@ -460,11 +460,14 @@ static unsigned int set_pmp_mem_attr(unsigned int *index_p,
 
 		uint8_t perm = DT_MEM_RISCV_TO_PMP_PERM(region[idx].dt_attr);
 
-		if (perm || (region[idx].dt_attr & DT_MEM_RISCV_TYPE_EMPTY)) {
-			set_pmp_entry(index_p, perm,
-				(uintptr_t)(region[idx].dt_addr),
-				(size_t)(region[idx].dt_size),
-				pmp_addr, pmp_cfg, index_limit);
+		if ((perm || (region[idx].dt_attr & DT_MEM_RISCV_TYPE_EMPTY)) &&
+		    !set_pmp_entry(index_p, perm, (uintptr_t)(region[idx].dt_addr),
+				   (size_t)(region[idx].dt_size), pmp_addr, pmp_cfg, index_limit)) {
+			LOG_ERR("cannot install mem-attr region %zu "
+				"(start=%#lx size=%#zx)",
+				idx, (unsigned long)region[idx].dt_addr,
+				(size_t)region[idx].dt_size);
+			k_panic();
 		}
 	}
 
