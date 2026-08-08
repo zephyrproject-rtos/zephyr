@@ -927,27 +927,55 @@ static const struct espi_vw_signal_t vw_idx2_signals[] = {
 	{ESPI_VWIRE_SIGNAL_SLP_S5, vw_slp5_handler},
 };
 
-static void espi_vw_idx2_isr(const struct device *dev)
-{
-	const struct espi_rts5912_config *const espi_config = dev->config;
-	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
-	uint8_t cur_idx_data = espi_reg->EVIDX2;
-	uint8_t updated_bit = cur_idx_data ^ espi_vw_ch_cached_data.idx2;
+struct vw_idx2_msg {
+	const struct device *dev;
+	uint8_t data;
+};
 
-	if (espi_reg->EVSTS & ESPI_EVSTS_IDX2CHG) {
-		espi_vw_ch_cached_data.idx2 = cur_idx_data;
+/* using quesu to store vw status */
+K_MSGQ_DEFINE(espi_vw_idx2_msgq, sizeof(struct vw_idx2_msg), 8, 4);
+
+static void espi_vw_idx2_thread(void *p1, void *p2, void *p3)
+{
+	struct vw_idx2_msg msg;
+	uint8_t updated_bit;
+
+	while (1) {
+
+		k_msgq_get(&espi_vw_idx2_msgq, &msg, K_FOREVER);
+
+		updated_bit = msg.data ^ espi_vw_ch_cached_data.idx2;
+		espi_vw_ch_cached_data.idx2 = msg.data;
 
 		for (int i = 0; i < ARRAY_SIZE(vw_idx2_signals); i++) {
 			enum espi_vwire_signal vw_signal = vw_idx2_signals[i].signal;
 
-			if (updated_bit & vw_channel_list[vw_signal].level_mask &&
-			    vw_idx2_signals[i].vw_signal_callback != NULL) {
-				vw_idx2_signals[i].vw_signal_callback(dev);
+			if ((updated_bit & vw_channel_list[vw_signal].level_mask) &&
+			    (vw_idx2_signals[i].vw_signal_callback != NULL)) {
+				vw_idx2_signals[i].vw_signal_callback(msg.dev);
 			}
 		}
-		if (espi_vw_ch_cached_data.idx2 == espi_reg->EVIDX2) {
-			espi_reg->EVSTS = ESPI_EVSTS_IDX2CHG;
-		}
+	}
+}
+
+K_THREAD_DEFINE(vw_idx2_thread_id, 1024, espi_vw_idx2_thread, NULL, NULL, NULL,
+		K_PRIO_COOP(5), 0, 0);
+
+static void espi_vw_idx2_isr(const struct device *dev)
+{
+	const struct espi_rts5912_config *const espi_config = dev->config;
+	volatile struct espi_reg *const espi_reg = espi_config->espi_reg;
+
+	if (espi_reg->EVSTS & ESPI_EVSTS_IDX2CHG) {
+		uint8_t cur_idx_data = espi_reg->EVIDX2;
+
+		espi_reg->EVSTS = ESPI_EVSTS_IDX2CHG;
+
+		struct vw_idx2_msg msg = {
+			.dev = dev,
+			.data = cur_idx_data
+		};
+		k_msgq_put(&espi_vw_idx2_msgq, &msg, K_NO_WAIT);
 	}
 }
 
