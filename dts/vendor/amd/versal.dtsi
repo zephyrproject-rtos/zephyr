@@ -168,5 +168,19 @@
 				status = "disabled";
 			};
 		};
+
+		sdhci0: mmc@f1040000 {
+			compatible = "xlnx,versal-8.9a";
+			reg = <0xf1040000 0x10000>;
+			interrupts = <GIC_SPI 126 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		sdhci1: mmc@f1050000 {
+			compatible = "xlnx,versal-8.9a";
+			reg = <0xf1050000 0x10000>;
+			interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
 	};
 };

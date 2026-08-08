@@ -15,8 +15,9 @@ config XLNX_SDHC
 
 if XLNX_SDHC
 
-# sdhc needs 32 byte aligned buffers
+# Xilinx SDHC DMA buffers require cache-line alignment
 config SDHC_BUFFER_ALIGNMENT
+	default DCACHE_LINE_SIZE if DCACHE_LINE_SIZE > 32
 	default 32
 
 config HOST_ADMA2_DESC_SIZE
