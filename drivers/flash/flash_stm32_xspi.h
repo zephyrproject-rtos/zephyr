@@ -90,6 +90,10 @@ struct flash_stm32_xspi_config {
 	bool four_byte_opcodes;
 	bool requires_ulbpr;
 	uint32_t mem_map_based_address;
+#if defined(CONFIG_STM32_HAL2)
+	uint32_t sample_shift;
+	uint32_t dlyb_state;
+#endif /* CONFIG_STM32_HAL2 */
 #if STM32_XSPI_RESET_GPIO
 	const struct gpio_dt_spec reset;
 	int reset_gpios_duration;
@@ -99,7 +103,11 @@ struct flash_stm32_xspi_config {
 
 struct flash_stm32_xspi_data {
 	/* XSPI handle is modifiable ; so part of data struct */
+#if defined(CONFIG_STM32_HAL2)
+	hal_xspi_handle_t hxspi;
+#else
 	XSPI_HandleTypeDef hxspi;
+#endif /* CONFIG_STM32_HAL2 */
 	struct k_sem sem;
 	struct k_sem sync;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)

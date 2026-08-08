@@ -49,6 +49,126 @@ LOG_MODULE_REGISTER(flash_stm32_xspi, CONFIG_FLASH_LOG_LEVEL);
 
 #include "flash_stm32_xspi.h"
 
+#if defined(CONFIG_STM32_HAL2)
+#define STM32_XSPI_TIMEOUT_DEFAULT_VALUE 5000U
+
+#define XSPI_HandleTypeDef hal_xspi_handle_t
+#define XSPI_RegularCmdTypeDef hal_xspi_regular_cmd_t
+#define XSPI_AutoPollingTypeDef hal_xspi_auto_polling_config_t
+#define XSPI_MemoryMappedTypeDef hal_xspi_memory_mapped_config_t
+#define HAL_StatusTypeDef hal_status_t
+
+#define HAL_XSPI_TIMEOUT_DEFAULT_VALUE STM32_XSPI_TIMEOUT_DEFAULT_VALUE
+#define HAL_XSPI_Command HAL_XSPI_SendRegularCmd
+#define HAL_XSPI_AutoPolling_IT HAL_XSPI_ExecRegularAutoPoll_IT
+#define HAL_XSPI_MemoryMapped HAL_XSPI_StartMemoryMappedMode
+#define HAL_XSPI_Abort(hxspi) HAL_XSPI_Abort((hxspi), STM32_XSPI_TIMEOUT_DEFAULT_VALUE)
+
+#define HAL_XSPI_OPTYPE_COMMON_CFG HAL_XSPI_OPERATION_COMMON_CFG
+#define HAL_XSPI_OPTYPE_READ_CFG HAL_XSPI_OPERATION_READ_CFG
+#define HAL_XSPI_OPTYPE_WRITE_CFG HAL_XSPI_OPERATION_WRITE_CFG
+#define HAL_XSPI_INSTRUCTION_1_LINE HAL_XSPI_INSTRUCTION_1LINE
+#define HAL_XSPI_INSTRUCTION_2_LINES HAL_XSPI_INSTRUCTION_2LINES
+#define HAL_XSPI_INSTRUCTION_4_LINES HAL_XSPI_INSTRUCTION_4LINES
+#define HAL_XSPI_INSTRUCTION_8_LINES HAL_XSPI_INSTRUCTION_8LINES
+#define HAL_XSPI_INSTRUCTION_8_BITS HAL_XSPI_INSTRUCTION_8BIT
+#define HAL_XSPI_INSTRUCTION_16_BITS HAL_XSPI_INSTRUCTION_16BIT
+#define HAL_XSPI_INSTRUCTION_DTR_DISABLE HAL_XSPI_INSTRUCTION_DTR_DISABLED
+#define HAL_XSPI_INSTRUCTION_DTR_ENABLE HAL_XSPI_INSTRUCTION_DTR_ENABLED
+#define HAL_XSPI_ADDRESS_NONE HAL_XSPI_ADDR_NONE
+#define HAL_XSPI_ADDRESS_1_LINE HAL_XSPI_ADDR_1LINE
+#define HAL_XSPI_ADDRESS_2_LINES HAL_XSPI_ADDR_2LINES
+#define HAL_XSPI_ADDRESS_4_LINES HAL_XSPI_ADDR_4LINES
+#define HAL_XSPI_ADDRESS_8_LINES HAL_XSPI_ADDR_8LINES
+#define HAL_XSPI_ADDRESS_24_BITS HAL_XSPI_ADDR_24BIT
+#define HAL_XSPI_ADDRESS_32_BITS HAL_XSPI_ADDR_32BIT
+#define HAL_XSPI_ADDRESS_DTR_DISABLE HAL_XSPI_ADDR_DTR_DISABLED
+#define HAL_XSPI_ADDRESS_DTR_ENABLE HAL_XSPI_ADDR_DTR_ENABLED
+#define HAL_XSPI_ALT_BYTES_NONE HAL_XSPI_ALTERNATE_BYTES_NONE
+#define HAL_XSPI_DATA_NONE HAL_XSPI_REGULAR_DATA_NONE
+#define HAL_XSPI_DATA_1_LINE HAL_XSPI_REGULAR_DATA_1LINE
+#define HAL_XSPI_DATA_2_LINES HAL_XSPI_REGULAR_DATA_2LINES
+#define HAL_XSPI_DATA_4_LINES HAL_XSPI_REGULAR_DATA_4LINES
+#define HAL_XSPI_DATA_8_LINES HAL_XSPI_REGULAR_DATA_8LINES
+#define HAL_XSPI_DATA_DTR_DISABLE HAL_XSPI_DATA_DTR_DISABLED
+#define HAL_XSPI_DATA_DTR_ENABLE HAL_XSPI_DATA_DTR_ENABLED
+#define HAL_XSPI_DQS_DISABLE HAL_XSPI_DQS_DISABLED
+#define HAL_XSPI_DQS_ENABLE HAL_XSPI_DQS_ENABLED
+#define HAL_XSPI_AUTOMATIC_STOP_ENABLE HAL_XSPI_AUTOMATIC_STOP_ENABLED
+#define HAL_XSPI_TIMEOUT_COUNTER_DISABLE HAL_XSPI_TIMEOUT_DISABLE
+#define HAL_XSPI_MEMTYPE_MACRONIX HAL_XSPI_MEMORY_TYPE_MACRONIX
+#define HAL_XSPI_DHQC_ENABLE HAL_XSPI_DELAY_HOLD_QUARTCYCLE
+#define OperationType operation_type
+#define Instruction instruction
+#define InstructionMode instruction_mode
+#define InstructionWidth instruction_width
+#define InstructionDTRMode instruction_dtr_mode_status
+#define Address addr
+#define AddressMode addr_mode
+#define AddressWidth addr_width
+#define AddressDTRMode addr_dtr_mode_status
+#define AlternateBytes alternate_bytes
+#define AlternateBytesMode alternate_bytes_mode
+#define AlternateBytesWidth alternate_bytes_width
+#define AlternateBytesDTRMode alternate_bytes_dtr_mode_status
+#define DataMode data_mode
+#define DataDTRMode data_dtr_mode_status
+#define DQSMode dqs_mode_status
+#define DummyCycles dummy_cycle
+#define DataLength size_byte
+#define MatchValue match_value
+#define MatchMask match_mask
+#define MatchMode match_mode
+#define IntervalTime interval_cycle
+#define AutomaticStop automatic_stop_status
+#define TimeOutActivation timeout_activation
+#define TimeOutPeriod timeout_period_cycle
+
+static inline XSPI_TypeDef *stm32_xspi_hal2_instance(hal_xspi_handle_t *hxspi)
+{
+	return (XSPI_TypeDef *)((uint32_t)hxspi->instance);
+}
+
+static int stm32_xspi_hal2_init(const struct device *dev, uint32_t prescaler,
+				uint32_t hold)
+{
+	const struct flash_stm32_xspi_config *dev_cfg = dev->config;
+	struct flash_stm32_xspi_data *dev_data = dev->data;
+	hal_xspi_config_t xspi_config = {
+		.memory = {
+			.mode = HAL_XSPI_MEMORY_SINGLE,
+			.type = (hold == HAL_XSPI_DELAY_HOLD_QUARTCYCLE)
+				? HAL_XSPI_MEMORY_TYPE_MACRONIX
+				: HAL_XSPI_MEMORY_TYPE_MICRON,
+			.size_bit = (find_lsb_set(dev_cfg->flash_size) - 2U)
+				<< XSPI_DCR1_DEVSIZE_Pos,
+			.wrap_size_byte = HAL_XSPI_WRAP_NOT_SUPPORTED,
+			.cs_boundary = HAL_XSPI_CS_BOUNDARY_NONE,
+		},
+		.timing = {
+			.clk_prescaler = prescaler,
+			.shift = dev_cfg->sample_shift,
+			.hold = hold,
+			.cs_high_time_cycle = 2U,
+			.cs_refresh_time_cycle = 0U,
+			.dlyb_state = dev_cfg->dlyb_state,
+		},
+	};
+
+	if (HAL_XSPI_Init(&dev_data->hxspi, dev_data->hxspi.instance) != HAL_OK) {
+		LOG_ERR("XSPI HAL2 init failed");
+		return -EIO;
+	}
+
+	if (HAL_XSPI_SetConfig(&dev_data->hxspi, &xspi_config) != HAL_OK) {
+		LOG_ERR("XSPI HAL2 config failed");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_STM32_HAL2 */
+
 static inline void xspi_lock_thread(const struct device *dev)
 {
 	struct flash_stm32_xspi_data *dev_data = dev->data;
@@ -77,7 +197,11 @@ static int xspi_send_cmd(const struct device *dev, XSPI_RegularCmdTypeDef *cmd)
 		LOG_ERR("%d: Failed to send XSPI instruction", hal_ret);
 		return -EIO;
 	}
+#if defined(CONFIG_STM32_HAL2)
+	LOG_DBG("CCR 0x%x", stm32_xspi_hal2_instance(&dev_data->hxspi)->CCR);
+#else
 	LOG_DBG("CCR 0x%x", dev_data->hxspi.Instance->CCR);
+#endif /* CONFIG_STM32_HAL2 */
 
 	return dev_data->cmd_status;
 }
@@ -736,9 +860,14 @@ static int stm32_xspi_config_mem(const struct device *dev)
 	k_busy_wait(STM32_XSPI_WRITE_REG_MAX_TIME * USEC_PER_MSEC);
 
 	/* Reconfigure the memory type of the peripheral */
+#if defined(CONFIG_STM32_HAL2)
+	if (stm32_xspi_hal2_init(dev, HAL_XSPI_GetPrescaler(&dev_data->hxspi),
+				 HAL_XSPI_DELAY_HOLD_QUARTCYCLE) != 0) {
+#else
 	dev_data->hxspi.Init.MemoryType            = HAL_XSPI_MEMTYPE_MACRONIX;
 	dev_data->hxspi.Init.DelayHoldQuarterCycle = HAL_XSPI_DHQC_ENABLE;
 	if (HAL_XSPI_Init(&dev_data->hxspi) != HAL_OK) {
+#endif /* CONFIG_STM32_HAL2 */
 		LOG_ERR("XSPI mem type MACRONIX failed");
 		return -EIO;
 	}
@@ -1007,7 +1136,12 @@ static bool stm32_xspi_is_memorymap(const struct device *dev)
 {
 	struct flash_stm32_xspi_data *dev_data = dev->data;
 
+#if defined(CONFIG_STM32_HAL2)
+	return stm32_reg_read_bits(&stm32_xspi_hal2_instance(&dev_data->hxspi)->CR,
+				   XSPI_CR_FMODE) == XSPI_CR_FMODE;
+#else
 	return stm32_reg_read_bits(&dev_data->hxspi.Instance->CR, XSPI_CR_FMODE) == XSPI_CR_FMODE;
+#endif /* CONFIG_STM32_HAL2 */
 }
 
 static void stm32_xspi_invalidate_mmap_cache(const struct device *dev, off_t addr, size_t size)
@@ -1487,7 +1621,7 @@ static void flash_stm32_xspi_isr(const struct device *dev)
 	HAL_XSPI_IRQHandler(&dev_data->hxspi);
 }
 
-#if !defined(CONFIG_SOC_SERIES_STM32H7X)
+#if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_STM32_HAL2)
 /* weak function required for HAL compilation */
 __weak HAL_StatusTypeDef HAL_DMA_Abort_IT(DMA_HandleTypeDef *hdma)
 {
@@ -1500,6 +1634,23 @@ __weak HAL_StatusTypeDef HAL_DMA_Abort(DMA_HandleTypeDef *hdma)
 	return HAL_OK;
 }
 #endif /* !CONFIG_SOC_SERIES_STM32H7X */
+
+#if defined(CONFIG_STM32_HAL2)
+/* weak functions required by the HAL2 XSPI module when DMA support is compiled in */
+__weak hal_status_t HAL_DMA_Abort_IT(hal_dma_handle_t *hdma)
+{
+	ARG_UNUSED(hdma);
+
+	return HAL_OK;
+}
+
+__weak hal_status_t HAL_DMA_Abort(hal_dma_handle_t *hdma)
+{
+	ARG_UNUSED(hdma);
+
+	return HAL_OK;
+}
+#endif /* CONFIG_STM32_HAL2 */
 
 /* This function is executed in the interrupt context */
 #ifdef CONFIG_FLASH_STM32_XSPI_DMA
@@ -2140,8 +2291,13 @@ static int flash_stm32_xspi_init(const struct device *dev)
 				return -ENODEV;
 			}
 #endif
+
 			/* Force HAL instance in correct state */
+#if defined(CONFIG_STM32_HAL2)
+			dev_data->hxspi.global_state = HAL_XSPI_STATE_MEMORY_MAPPED_ACTIVE;
+#else
 			dev_data->hxspi.State = HAL_XSPI_STATE_BUSY_MEM_MAPPED;
+#endif /* CONFIG_STM32_HAL2 */
 			return 0;
 		}
 	}
@@ -2204,6 +2360,15 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_STM32_HAL2)
+	ret = stm32_xspi_hal2_init(dev, prescaler,
+				   (dev_cfg->data_rate == XSPI_DTR_TRANSFER)
+				   ? HAL_XSPI_DELAY_HOLD_QUARTCYCLE
+				   : HAL_XSPI_DELAY_HOLD_NONE);
+	if (ret != 0) {
+		return ret;
+	}
+#else
 	/* Initialize XSPI HAL structure completely */
 	dev_data->hxspi.Init.ClockPrescaler = prescaler;
 	/* The stm32 hal_xspi driver does not reduce DEVSIZE before writing the DCR1 */
@@ -2228,10 +2393,11 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		LOG_ERR("XSPI Init failed");
 		return -EIO;
 	}
+#endif /* CONFIG_STM32_HAL2 */
 
 	LOG_DBG("XSPI Init'd");
 
-#if defined(XSPI_DCR1_DLYBYP)
+#if !defined(CONFIG_STM32_HAL2) && defined(XSPI_DCR1_DLYBYP)
 	/* XSPI delay block init Function */
 	HAL_XSPI_DLYB_CfgTypeDef xspi_delay_block_cfg = {0};
 
@@ -2551,6 +2717,14 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		.data_rate = DT_INST_PROP(inst, data_rate),			/* DTR or STR */\
 		.four_byte_opcodes = DT_INST_PROP_OR(inst, four_byte_opcodes, 0),		\
 		.requires_ulbpr = DT_INST_PROP_OR(inst, requires_ulbpr, 0),			\
+		IF_ENABLED(CONFIG_STM32_HAL2, (						\
+			.sample_shift = (DT_PROP(STM32_XSPI_NODE(inst), ssht_enable)		\
+					? HAL_XSPI_SAMPLE_SHIFT_HALFCYCLE			\
+					: HAL_XSPI_SAMPLE_SHIFT_NONE),			\
+			.dlyb_state = (DT_PROP(STM32_XSPI_NODE(inst), dlyb_bypass)		\
+					? HAL_XSPI_DLYB_BYPASS				\
+					: HAL_XSPI_DLYB_ON),				\
+		))										\
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, reset_gpios), (				\
 			.reset = GPIO_DT_SPEC_INST_GET(0, reset_gpios),				\
 			.reset_gpios_duration = DT_INST_PROP_OR(inst, reset_gpios_duration, 1),	\
@@ -2558,24 +2732,28 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	};											\
 												\
 	static struct flash_stm32_xspi_data flash_stm32_xspi_dev_data_##inst = {		\
-		.hxspi = {									\
-			.Instance = (XSPI_TypeDef *)DT_REG_ADDR(STM32_XSPI_NODE(inst)),		\
-			.Init = {								\
-				.FifoThresholdByte = STM32_XSPI_FIFO_THRESHOLD,			\
-				.SampleShifting = (DT_PROP(STM32_XSPI_NODE(inst), ssht_enable)	\
-						? HAL_XSPI_SAMPLE_SHIFT_HALFCYCLE		\
-						: HAL_XSPI_SAMPLE_SHIFT_NONE),			\
-				.ChipSelectHighTimeCycle = 2,					\
-				.ClockMode = HAL_XSPI_CLOCK_MODE_0,				\
-				.ChipSelectBoundary = 0,					\
-				.MemoryMode = HAL_XSPI_SINGLE_MEM,				\
-				.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,		\
-				DT_XSPI_STM32_MEMORY_SELECT(inst)				\
-				DT_XSPI_STM32_DELAY_BLOCK_BYPASS(inst)				\
-				XSPI_STM32_MAXTRAN						\
-				XSPI_STM32_REFRESH						\
-			},									\
-		},										\
+		COND_CODE_1(IS_ENABLED(CONFIG_STM32_HAL2),				\
+			(.hxspi = {							\
+				.instance = (hal_xspi_t)DT_REG_ADDR(STM32_XSPI_NODE(inst)),	\
+			},),								\
+		(.hxspi = {							\
+			.Instance = (XSPI_TypeDef *)DT_REG_ADDR(STM32_XSPI_NODE(inst)),	\
+			.Init = {							\
+				.FifoThresholdByte = STM32_XSPI_FIFO_THRESHOLD,		\
+				.SampleShifting = (DT_PROP(STM32_XSPI_NODE(inst), ssht_enable)\
+						? HAL_XSPI_SAMPLE_SHIFT_HALFCYCLE	\
+						: HAL_XSPI_SAMPLE_SHIFT_NONE),		\
+				.ChipSelectHighTimeCycle = 2,				\
+				.ClockMode = HAL_XSPI_CLOCK_MODE_0,			\
+				.ChipSelectBoundary = 0,				\
+				.MemoryMode = HAL_XSPI_SINGLE_MEM,			\
+				.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,	\
+				DT_XSPI_STM32_MEMORY_SELECT(inst)			\
+				DT_XSPI_STM32_DELAY_BLOCK_BYPASS(inst)			\
+				XSPI_STM32_MAXTRAN					\
+				XSPI_STM32_REFRESH					\
+				},								\
+			},))									\
 												\
 		.qer_type = DT_QER_PROP_OR(inst, JESD216_DW15_QER_VAL_S1B6),			\
 		.write_opcode = DT_WRITEOC_PROP_OR(inst, SPI_NOR_WRITEOC_NONE),			\
