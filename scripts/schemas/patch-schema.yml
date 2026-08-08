@@ -84,6 +84,23 @@ schema;patch-schema:
           type: str
           default: "git apply"
 
+        # This command is used to guess whether the patch was already applied.
+        # This may also be replaced with a no-op command if so desired to skip the check.
+        revert-test-command:
+          type: str
+          default: "git apply --reverse --check"
+
+        # The command used to revert the change represented by the patch
+        revert-command:
+          type: str
+          default: "git apply --reverse"
+
+        # This command is used to guess whether the patch was already reverted (or never applied).
+        # This may also be replaced with a no-op command if so desired to skip the check.
+        apply-test-command:
+          type: str
+          default: "git apply --check"
+
         # Comments useful to other developers about the patch,
         # e.g. "This is a workaround for xyz and probably should not go upstream"
         comments:
