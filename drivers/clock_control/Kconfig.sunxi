@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Khai Do
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SUNXI
+	bool "Allwinner sunXi clock control driver"
+	default y
+	depends on DT_HAS_ALLWINNER_SUN50I_H618_CCU_ENABLED
+	help
+	  Enable support for the Allwinner sunXi clock control unit (CCU).
