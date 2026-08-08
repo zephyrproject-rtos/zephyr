@@ -97,6 +97,7 @@ source "drivers/interrupt_controller/Kconfig.vim"
 source "drivers/interrupt_controller/Kconfig.wch_exti"
 source "drivers/interrupt_controller/Kconfig.wch_pfic"
 source "drivers/interrupt_controller/Kconfig.xec"
+source "drivers/interrupt_controller/Kconfig.xlnx"
 source "drivers/interrupt_controller/Kconfig.xmc4xxx"
 # zephyr-keep-sorted-stop
 
