@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Luke Bugbee <lbugbee@protonmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# Top-level configuration file for RFID drivers.
+
+menuconfig RFID
+	bool "RFID drivers"
+	help
+	  Include RFID drivers in the system configuration.
+
+if RFID
+
+module = RFID
+module-str = RFID
+source "subsys/logging/Kconfig.template.log_config"
+
+config RFID_INIT_PRIORITY
+	int "RFID initialization priority"
+	default 90
+	help
+	  System initialization priority for RFID drivers.
+
+# zephyr-keep-sorted-start
+source "drivers/rfid/mfrc522/Kconfig"
+# zephyr-keep-sorted-stop
+
+endif # RFID
