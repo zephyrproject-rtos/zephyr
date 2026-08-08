@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Embeint Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_sensor: test_sensor {
+		compatible = "zephyr,generic-sim-sensor";
+		status = "okay";
+	};
+
+	fail_sensor: fail_sensor {
+		compatible = "zephyr,generic-sim-sensor";
+		status = "okay";
+		negated-init-rc = <2>;
+	};
+
+	test_sensor_pm: test_sensor_pm {
+		compatible = "zephyr,generic-sim-sensor";
+		status = "okay";
+		zephyr,pm-device-runtime-auto;
+	};
+};

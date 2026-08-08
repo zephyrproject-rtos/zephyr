@@ -1,0 +1,10 @@
+# Flow meter sensor driver configuration
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config SENSOR_GENERIC_SIM
+	bool "Generic simulated sensor"
+	depends on DT_HAS_ZEPHYR_GENERIC_SIM_SENSOR_ENABLED
+	default y
+	help
+	  Simulated sensor that can expose any configured channel.
