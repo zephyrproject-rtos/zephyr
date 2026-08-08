@@ -22,4 +22,7 @@ configdefault CORTEX_M_SYSTICK
 configdefault SILABS_GECKO_POWER_MANAGER
 	default y if PM && SILABS_SLEEPTIMER_TIMER
 
+configdefault NUM_METAIRQ_PRIORITIES
+	default 1 if BT_SILABS_EFR32
+
 endif # SOC_FAMILY_SILABS_S1
