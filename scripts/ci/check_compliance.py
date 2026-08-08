@@ -21,6 +21,7 @@ import tempfile
 import textwrap
 import traceback
 from collections.abc import Iterable
+from dataclasses import dataclass, field
 from itertools import takewhile
 from pathlib import Path, PurePath
 
@@ -2693,6 +2694,225 @@ def added_lines(fname):
             count = int(m.group(2)) if m.group(2) is not None else 1
             added.update(range(start, start + count))
     return added
+
+
+@dataclass(frozen=True)
+class FirstStructMemberRule:
+    member_re: re.Pattern
+    desc: str
+    file_re: re.Pattern
+
+
+@dataclass
+class _PreprocessorConditionalFrame:
+    entry_states: set[bool]
+    branch_states: list[set[bool]] = field(default_factory=list)
+    saw_else: bool = False
+
+
+def first_struct_member_type_re(type_name: str, *, allow_const: bool = True) -> re.Pattern:
+    const_prefix = r'(?:const\s+)?' if allow_const else ''
+    return re.compile(rf'^\s*{const_prefix}{re.escape(type_name)}\s+\w+\s*;')
+
+
+class FirstStructMemberCheck(ComplianceTest):
+    """
+    Check that selected struct members are introduced only in first position.
+
+    The rules are intentionally data-driven so additional first-member
+    requirements can be added by appending to RULES.
+    """
+
+    name = "FirstStructMemberCheck"
+    doc = zephyr_doc_detail_builder("/hardware/peripherals/index.html")
+
+    PP_CONDITIONAL_RE = re.compile(r'^\s*#\s*(if|ifdef|ifndef|elif|else|endif)\b')
+    STRUCT_START_RE = re.compile(r'\b(?:typedef\s+)?struct\b[^{;]*\{')
+    STRUCT_ATTRIBUTE_RE = re.compile(r'^\s*__\w+(?:\s*\([^)]*\))?\s*$')
+
+    RULES = (
+        FirstStructMemberRule(
+            member_re=re.compile(r'^\s*DEVICE_MMIO_(ROM|RAM)\s*;'),
+            desc="DEVICE_MMIO_ROM and DEVICE_MMIO_RAM must be the first member of their struct.",
+            file_re=re.compile(r'^drivers/.*\.(c|h)$'),
+        ),
+        FirstStructMemberRule(
+            member_re=first_struct_member_type_re('struct gpio_driver_config'),
+            desc="struct gpio_driver_config must be the first member of its struct.",
+            file_re=re.compile(r'^drivers/gpio/.*\.(c|h)$'),
+        ),
+        FirstStructMemberRule(
+            member_re=first_struct_member_type_re('struct gpio_driver_data'),
+            desc="struct gpio_driver_data must be the first member of its struct.",
+            file_re=re.compile(r'^drivers/gpio/.*\.(c|h)$'),
+        ),
+        FirstStructMemberRule(
+            member_re=first_struct_member_type_re('struct counter_config_info'),
+            desc="struct counter_config_info must be the first member of its struct.",
+            file_re=re.compile(r'^drivers/counter/.*\.(c|h)$'),
+        ),
+        FirstStructMemberRule(
+            member_re=first_struct_member_type_re('struct dma_context'),
+            desc="struct dma_context must be the first member of its struct.",
+            file_re=re.compile(r'^drivers/dma/.*\.(c|h)$'),
+        ),
+    )
+
+    @staticmethod
+    def _strip_comments(line, in_block_comment):
+        """Strip C comments from a single line."""
+        out = []
+        idx = 0
+
+        while idx < len(line):
+            if in_block_comment:
+                end = line.find('*/', idx)
+                if end == -1:
+                    return ''.join(out), True
+                idx = end + 2
+                in_block_comment = False
+                continue
+
+            if line.startswith('/*', idx):
+                in_block_comment = True
+                idx += 2
+                continue
+
+            out.append(line[idx])
+            idx += 1
+
+        return ''.join(out), in_block_comment
+
+    @classmethod
+    def _is_ignorable_struct_line(cls, line):
+        stripped = line.strip()
+        return (
+            not stripped
+            or stripped.startswith('#')
+            or stripped.startswith('}')
+            or cls.STRUCT_ATTRIBUTE_RE.fullmatch(stripped) is not None
+        )
+
+    @classmethod
+    def _handle_preprocessor_line(cls, line, context):
+        match = cls.PP_CONDITIONAL_RE.match(line)
+        if not match:
+            return False
+
+        directive = match.group(1)
+        pp_stack = context['pp_stack']
+
+        if directive in ('if', 'ifdef', 'ifndef'):
+            pp_stack.append(_PreprocessorConditionalFrame(set(context['states'])))
+            return True
+
+        if not pp_stack:
+            return True
+
+        frame = pp_stack[-1]
+
+        if directive == 'elif':
+            frame.branch_states.append(set(context['states']))
+            context['states'] = set(frame.entry_states)
+        elif directive == 'else':
+            frame.branch_states.append(set(context['states']))
+            frame.saw_else = True
+            context['states'] = set(frame.entry_states)
+        elif directive == 'endif':
+            frame = pp_stack.pop()
+            merged_states = set(context['states'])
+            for branch_states in frame.branch_states:
+                merged_states.update(branch_states)
+            if not frame.saw_else:
+                merged_states.update(frame.entry_states)
+            context['states'] = merged_states
+
+        return True
+
+    @classmethod
+    def _process_struct_line(cls, line, line_no, added, context, violations):
+        if cls._handle_preprocessor_line(line, context):
+            return
+
+        if cls._is_ignorable_struct_line(line):
+            return
+
+        matched = [rule for rule in context['rules'] if rule.member_re.match(line)]
+        if matched:
+            if line_no in added and any(context['states']):
+                for rule in matched:
+                    violations.append((line_no, rule))
+            context['states'] = {True}
+            return
+
+        context['states'] = {True}
+
+    @classmethod
+    def _find_first_member_violations(cls, lines, added, rules):
+        """Return added first-member violations for the provided rules."""
+        violations = []
+        struct_stack = []
+        brace_depth = 0
+        in_block_comment = False
+
+        for line_no, raw_line in enumerate(lines, start=1):
+            line, in_block_comment = cls._strip_comments(raw_line, in_block_comment)
+            current_depth = brace_depth
+
+            if struct_stack and current_depth == struct_stack[-1]['body_depth']:
+                cls._process_struct_line(line, line_no, added, struct_stack[-1], violations)
+
+            for match in cls.STRUCT_START_RE.finditer(line):
+                brace_pos = line.find('{', match.start(), match.end())
+                if brace_pos == -1:
+                    continue
+
+                body_depth = (
+                    current_depth
+                    + line[: brace_pos + 1].count('{')
+                    - line[: brace_pos + 1].count('}')
+                )
+                context = {
+                    'body_depth': body_depth,
+                    'states': {False},
+                    'pp_stack': [],
+                    'rules': rules,
+                }
+                struct_stack.append(context)
+                cls._process_struct_line(line[brace_pos + 1 :], line_no, added, context, violations)
+
+            brace_depth = current_depth + line.count('{') - line.count('}')
+            while struct_stack and brace_depth < struct_stack[-1]['body_depth']:
+                struct_stack.pop()
+
+        return violations
+
+    @classmethod
+    def _rules_for_file(cls, fname):
+        return [rule for rule in cls.RULES if rule.file_re.match(fname)]
+
+    def run(self):
+        for fname in get_files(filter='d'):
+            rules = self._rules_for_file(fname)
+            if not rules:
+                continue
+
+            added = added_lines(fname)
+            if not added:
+                continue
+
+            path = GIT_TOP / fname
+            with open(path, encoding='utf-8', errors='ignore') as f:
+                lines = list(f)
+
+            for line_no, rule in self._find_first_member_violations(lines, added, rules):
+                self.fmtd_failure(
+                    "error",
+                    'FirstStructMemberCheck',
+                    fname,
+                    line=line_no,
+                    desc=rule.desc,
+                )
 
 
 class MmuRegionsCheck(ComplianceTest):
