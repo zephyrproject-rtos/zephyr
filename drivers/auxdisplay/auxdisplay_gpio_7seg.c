@@ -13,7 +13,16 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(auxdisplay_gpio_7seg, CONFIG_AUXDISPLAY_LOG_LEVEL);
 
-static const uint8_t DIGITS[] = {
+#ifdef CONFIG_AUXDISPLAY_GPIO_7SEG_USE_16BIT_FONT
+typedef uint16_t font_char_t;
+#define DP (BIT(15))
+#else
+typedef uint8_t font_char_t;
+#define DP (BIT(7))
+#endif
+
+#ifdef CONFIG_AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_DIGITS7
+static const font_char_t DIGITS[] = {
 	[0] = BIT(0) | BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5),
 	[1] = BIT(1) | BIT(2),
 	[2] = BIT(0) | BIT(1) | BIT(3) | BIT(4) | BIT(6),
@@ -25,8 +34,78 @@ static const uint8_t DIGITS[] = {
 	[8] = BIT(0) | BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(6),
 	[9] = BIT(0) | BIT(1) | BIT(2) | BIT(3) | BIT(5) | BIT(6),
 };
+#endif
+#ifdef CONFIG_AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_DIGITS15
+static const font_char_t DIGITS[] = {
+	[0] = BIT(0) | BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5),
+	[1] = BIT(1) | BIT(2),
+	[2] = BIT(0) | BIT(1) | BIT(3) | BIT(4) | BIT(9) | BIT(13),
+	[3] = BIT(0) | BIT(1) | BIT(2) | BIT(3) | BIT(9) | BIT(13),
+	[4] = BIT(1) | BIT(2) | BIT(5) | BIT(9) | BIT(13),
+	[5] = BIT(0) | BIT(2) | BIT(3) | BIT(5) | BIT(9) | BIT(13),
+	[6] = BIT(0) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(9) | BIT(13),
+	[7] = BIT(0) | BIT(1) | BIT(2),
+	[8] = BIT(0) | BIT(1) | BIT(2) | BIT(3) | BIT(4) | BIT(5) | BIT(9) | BIT(13),
+	[9] = BIT(0) | BIT(1) | BIT(2) | BIT(3) | BIT(5) | BIT(9) | BIT(13),
+};
+#endif
+#ifdef CONFIG_AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_ALPHA7
+static const font_char_t ALPHA[] = {
+	/* SP  !     "     #     $     %     &     '  */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	/* (   )     *     +     ,     -     .     /  */
+	0x39, 0x0F, 0x00, 0x00, 0x00, 0x40, 0x80, 0x52,
+	/* 0   1     2     3     4     5     6     7  */
+	0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07,
+	/* 8   9     :     ;     <     =     >     ?  */
+	0x7F, 0x67, 0x00, 0x00, 0x00, 0x48, 0x00, 0x00,
+	/* 64  A     B     C     D     E     F     G  */
+	0x00, 0x77, 0x7F, 0x39, 0x5E, 0x79, 0x71, 0x3D,
+	/* H   I     J     K     L     M     N     O  */
+	0x76, 0x06, 0x0E, 0x00, 0x38, 0x00, 0x37, 0x3F,
+	/* P   Q     R     S     T     U     V     W  */
+	0x73, 0x67, 0x50, 0x6D, 0x78, 0x3E, 0x00, 0x00,
+	/* X   Y     Z     [     \     ]     ^     _  */
+	0x00, 0x6E, 0x00, 0x39, 0x64, 0x0F, 0x00, 0x08,
+	/* 96  a     b     c     d     e     f     g  */
+	0x63, 0x5F, 0x7C, 0x58, 0x5E, 0x7B, 0x71, 0x6F,
+	/* h   i     j     k     l     m     n     o  */
+	0x74, 0x04, 0x0E, 0x00, 0x18, 0x00, 0x54, 0x5C,
+	/* p   q     r     s     t     u     v     w  */
+	0x73, 0x67, 0x50, 0x6D, 0x78, 0x1C, 0x00, 0x00,
+	/* x   y     z     {     |     }     ~    DEL */
+	0x00, 0x6E, 0x00, 0x39, 0x30, 0x0F, 0x22, 0x01,
+};
+#endif
+#ifdef CONFIG_AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_ALPHA15
+static const font_char_t ALPHA[] = {
+	/* SP    !       "       #(all)  $       %       &       '   */
+	0x0000, 0x0080, 0x0082, 0x3FFF, 0x2AAD, 0x1124, 0x2B1A, 0x0002,
+	/* (     )       *       +       ,       -       .       /   */
+	0x0039, 0x000F, 0x3FC0, 0x2A80, 0x0400, 0x2200, 0x4000, 0x1100,
+	/* 0     1       2       3       4       5       6       7   */
+	0x003F, 0x0006, 0x221B, 0x220F, 0x2226, 0x222D, 0x223D, 0x0007,
+	/* 8     9       :       ;       <       =       >       ?   */
+	0x223F, 0x2227, 0x0880, 0x1080, 0x0500, 0x2208, 0x1040, 0x0A03,
+	/* @     A       B       C       D       E       F       G   */
+	0x02BB, 0x2237, 0x2539, 0x0039, 0x1070, 0x2039, 0x2231, 0x023D,
+	/* H     I       J       K       L       M       N       O   */
+	0x2236, 0x0889, 0x001E, 0x2530, 0x0038, 0x0176, 0x0476, 0x003F,
+	/* P     Q       R       S       T       U       V       W   */
+	0x2233, 0x043F, 0x2633, 0x222D, 0x0881, 0x003E, 0x0446, 0x1436,
+	/* X     Y       Z       [       \       ]       ^(dlta) _   */
+	0x1540, 0x0940, 0x1109, 0x0039, 0x0440, 0x000F, 0x1408, 0x0008,
+	/* `     a       b       c       d       e       f       g   */
+	0x2223, 0x120F, 0x223C, 0x2218, 0x221E, 0x223B, 0x2A41, 0x222F,
+	/* h     i       j       k       l       m       n       o   */
+	0x2430, 0x0800, 0x100E, 0x0D80, 0x0880, 0x2A14, 0x2214, 0x221C,
+	/* p     q       r       s       t       u       v       w   */
+	0x2233, 0x0247, 0x2010, 0x024D, 0x2038, 0x001C, 0x0404, 0x081C,
+	/* x     y       z       {       |       }       ~       UP- */
+	0x1540, 0x1140, 0x1109, 0x2500, 0x0880, 0x1240, 0x0160, 0x0001,
+};
+#endif
 
-#define DP    (BIT(7))
 #define BLANK (0x00)
 
 struct auxdisplay_gpio_7seg_data {
@@ -43,7 +122,7 @@ struct auxdisplay_gpio_7seg_config {
 	uint32_t segment_count;
 	uint32_t digit_count;
 	uint32_t refresh_period_ms;
-	uint8_t *buffer;
+	font_char_t *buffer;
 };
 
 static int auxdisplay_gpio_7seg_display_on(const struct device *dev)
@@ -118,7 +197,7 @@ static int auxdisplay_gpio_7seg_clear(const struct device *dev)
 	const struct auxdisplay_gpio_7seg_config *cfg = dev->config;
 	struct auxdisplay_gpio_7seg_data *data = dev->data;
 
-	memset(cfg->buffer, 0, cfg->digit_count);
+	memset(cfg->buffer, 0, cfg->digit_count * sizeof(font_char_t));
 	data->cursor_x = 0;
 	data->cursor_y = 0;
 
@@ -147,13 +226,21 @@ static int auxdisplay_gpio_7seg_write(const struct device *dev, const uint8_t *c
 			break;
 		}
 
-		if (ch[i] >= '0' && ch[i] <= '9') {
-			cfg->buffer[cursor] = DIGITS[ch[i] - '0'];
-		} else if (ch[i] == '.') {
+		if (ch[i] == '.') {
 			/* Leading dot, leave the digit blank */
 			cfg->buffer[cursor] = DP;
 		} else {
-			cfg->buffer[cursor] = BLANK;
+#if defined(CONFIG_AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_ALPHA7) || \
+	defined(CONFIG_AUXDISPLAY_GPIO_7SEG_INTERNAL_FONT_ALPHA15)
+			if (ch[i] >= ' ' && ch[i] <= '~') {
+				cfg->buffer[cursor] = ALPHA[ch[i] - ' '];
+#else
+			if (ch[i] >= '0' && ch[i] <= '9') {
+				cfg->buffer[cursor] = DIGITS[ch[i] - '0'];
+#endif
+			} else {
+				cfg->buffer[cursor] = BLANK;
+			}
 		}
 
 		/* Move the cursor */
@@ -243,7 +330,7 @@ static DEVICE_API(auxdisplay, auxdisplay_gpio_7seg_api) = {
 	static const struct gpio_dt_spec auxdisplay_gpio_7seg_digit_gpios_##n[] = {                \
 		DT_INST_FOREACH_PROP_ELEM_SEP(n, digit_gpios, GPIO_DT_SPEC_GET_BY_IDX, (,))};      \
                                                                                                    \
-	static uint8_t auxdisplay_gpio_7seg_buffer_##n[DT_INST_PROP_LEN(n, digit_gpios)];          \
+	static font_char_t auxdisplay_gpio_7seg_buffer_##n[DT_INST_PROP_LEN(n, digit_gpios)];      \
                                                                                                    \
 	static const struct auxdisplay_gpio_7seg_config auxdisplay_gpio_7seg_config_##n = {        \
 		.capabilities =                                                                    \
