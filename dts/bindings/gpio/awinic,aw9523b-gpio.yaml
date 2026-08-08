@@ -18,6 +18,7 @@ properties:
 
   reset-gpios:
     type: phandle-array
+    deprecated: true
     description: |
       Set GPIO connected to the controller RSTN pin.
       This is used for controlling resets via GPIO.

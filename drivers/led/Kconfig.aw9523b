@@ -1,0 +1,11 @@
+# Copyright 2026 Smartbox Assistive Technology Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_AW9523B
+	bool "AW9523B LED driver"
+	default y
+	depends on DT_HAS_AWINIC_AW9523B_LED_ENABLED
+	select I2C
+	select MFD
+	help
+	  Enable the AW9523B LED controller.
