@@ -1258,8 +1258,8 @@ size_t arch_virt_region_align(uintptr_t phys, size_t size)
 	size_t level_size;
 	int level;
 
-	for (level = XLAT_LAST_LEVEL; level >= BASE_XLAT_LEVEL; level--) {
-		level_size = 1 << LEVEL_TO_VA_SIZE_SHIFT(level);
+	for (level = XLAT_LAST_LEVEL; level >= (int)BASE_XLAT_LEVEL; level--) {
+		level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
 
 		if (size < level_size) {
 			break;
