@@ -43,6 +43,7 @@ extern "C" {
  * @name Base class control IDs
  * @{
  */
+/** Base ID of the base class control IDs */
 #define VIDEO_CID_BASE 0x00980900
 
 /** Picture brightness, or more precisely, the black level. */
@@ -179,6 +180,7 @@ enum video_colorfx {
  * @name Stateful codec controls IDs
  * @{
  */
+/** Base ID of the stateful codec class control IDs */
 #define VIDEO_CID_CODEC_CLASS_BASE 0x00990900
 
 /**
@@ -189,6 +191,7 @@ enum video_colorfx {
  * @name Camera class controls IDs
  * @{
  */
+/** Base ID of the camera class control IDs */
 #define VIDEO_CID_CAMERA_CLASS_BASE 0x009a0900
 
 /** Enables automatic adjustments of the exposure time and/or iris aperture.
@@ -367,6 +370,7 @@ enum video_camera_orientation {
  * @name Camera Flash class control IDs
  * @{
  */
+/** Base ID of the camera flash class control IDs */
 #define VIDEO_CID_FLASH_CLASS_BASE 0x009c0900
 
 /**
@@ -377,6 +381,7 @@ enum video_camera_orientation {
  * @name JPEG class control IDs
  * @{
  */
+/** Base ID of the JPEG class control IDs */
 #define VIDEO_CID_JPEG_CLASS_BASE 0x009d0900
 
 /** Quality (Q) factor of the JPEG algorithm, also increasing the data size */
@@ -390,6 +395,7 @@ enum video_camera_orientation {
  * @name Image Source class control IDs
  * @{
  */
+/** Base ID of the image source class control IDs */
 #define VIDEO_CID_IMAGE_SOURCE_CLASS_BASE 0x009e0900
 
 /**
@@ -409,6 +415,7 @@ enum video_camera_orientation {
  * @name Image Processing class control IDs
  * @{
  */
+/** Base ID of the image processing class control IDs */
 #define VIDEO_CID_IMAGE_PROC_CLASS_BASE 0x009f0900
 
 /** Link frequency, applicable for the CSI2 based devices */
@@ -439,6 +446,7 @@ enum video_camera_orientation {
  * @name Vendor-specific class control IDs
  * @{
  */
+/** Base ID of the vendor specific class control IDs */
 #define VIDEO_CID_PRIVATE_BASE 0x08000000
 
 /**
@@ -448,6 +456,10 @@ enum video_camera_orientation {
 /**
  * @name Query flags, to be ORed with the control ID
  * @{
+ */
+/**
+ * When ORed with the control ID of a query, the next supported control with an ID greater
+ * than the one given is returned instead of that exact control.
  */
 #define VIDEO_CTRL_FLAG_NEXT_CTRL 0x80000000
 

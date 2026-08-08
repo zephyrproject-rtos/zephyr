@@ -175,25 +175,25 @@ struct video_caps {
 struct video_ctrl_range {
 	/** control minimum value, inclusive */
 	union {
-		int32_t min;
-		int64_t min64;
+		int32_t min;   /**< Value for 32 bit control types */
+		int64_t min64; /**< Value for 64 bit control types */
 	};
 	/** control maximum value, inclusive */
 	union {
-		int32_t max;
-		int64_t max64;
+		int32_t max;   /**< Value for 32 bit control types */
+		int64_t max64; /**< Value for 64 bit control types */
 	};
 	/** control value step */
 	union {
-		int32_t step;
-		int64_t step64;
+		int32_t step;   /**< Value for 32 bit control types */
+		int64_t step64; /**< Value for 64 bit control types */
 	};
 	/** control default value for VIDEO_CTRL_TYPE_INTEGER, _BOOLEAN, _MENU or
 	 * _INTEGER_MENU, not valid for other types
 	 */
 	union {
-		int32_t def;
-		int64_t def64;
+		int32_t def;   /**< Value for 32 bit control types */
+		int64_t def64; /**< Value for 64 bit control types */
 	};
 };
 
@@ -208,8 +208,8 @@ struct video_control {
 	uint32_t id;
 	/** control value */
 	union {
-		int32_t val;
-		int64_t val64;
+		int32_t val;   /**< Value for 32 bit control types */
+		int64_t val64; /**< Value for 64 bit control types */
 	};
 };
 
@@ -233,8 +233,8 @@ struct video_ctrl_query {
 	struct video_ctrl_range range;
 	/** menu if control is of menu type */
 	union {
-		const char *const *menu;
-		const int64_t *int_menu;
+		const char *const *menu;  /**< Entries of a VIDEO_CTRL_TYPE_MENU control */
+		const int64_t *int_menu;  /**< Entries of a VIDEO_CTRL_TYPE_INTEGER_MENU control */
 	};
 };
 
@@ -347,7 +347,9 @@ struct video_frmival_enum {
 	enum video_frmival_type type;
 	/** the actual frame interval */
 	union {
+		/** Interval of a VIDEO_FRMIVAL_TYPE_DISCRETE device */
 		struct video_frmival discrete;
+		/** Interval range of a VIDEO_FRMIVAL_TYPE_STEPWISE device */
 		struct video_frmival_stepwise stepwise;
 	};
 };
