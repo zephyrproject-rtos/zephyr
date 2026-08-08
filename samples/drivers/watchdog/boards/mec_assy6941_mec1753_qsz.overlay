@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	aliases {
+		watchdog0 = &watchdog0;
+	};
+};
+
+&watchdog0 {
+	compatible = "microchip,xec-watchdog";
+	status = "okay";
+};
