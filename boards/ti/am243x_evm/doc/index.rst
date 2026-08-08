@@ -34,14 +34,24 @@ On the board it additionally features
 - 2GB DDR4 RAM
 - XDS110 based JTAG
 
-Inside Zephyr it configures
+Board Targets
+=============
+The following board targets are available:
 
-- a 4KB Resource Table at 0xa4100000 for the M4
-- a 4KB Resource Table at 0xa0100000 for the R5F0_0
-- 8MB of Shared Memory at 0xa5000000 for inter-processor communication
-- MAIN domain UART0 for the R5F0_0
-- MCU domain UART0 (MCU_UART0) for the M4
+- ``am243x_evm/am2434/r5f0_0`` - R5F cluster 0, core 0
+- ``am243x_evm/am2434/r5f0_1`` - R5F cluster 0, core 1
+- ``am243x_evm/am2434/r5f1_0`` - R5F cluster 1, core 0
+- ``am243x_evm/am2434/r5f1_1`` - R5F cluster 1, core 1
+- ``am243x_evm/am2434/m4`` - Cortex-M4F core
 
+SRAM Allocation
+===============
+The 2MB MSRAM is divided into eight 256KB regions:
+
+- **R5F0_0**: msram2 at 0x70080000
+- **R5F0_1**: msram3 at 0x700c0000
+- **R5F1_0**: msram4 at 0x70100000
+- **R5F1_1**: msram5 at 0x70140000
 
 Supported Features
 ==================

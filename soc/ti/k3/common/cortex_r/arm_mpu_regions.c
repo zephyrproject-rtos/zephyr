@@ -17,7 +17,7 @@
 #endif
 
 static const struct arm_mpu_region mpu_regions[] = {
-#if defined CONFIG_SOC_AM2434_R5F0_0
+#if defined SOC_SERIES_AM64X_R5
 	MPU_REGION_ENTRY("Device", 0x0, REGION_2G, {MPU_RASR_S_Msk | NOT_EXEC | PERM_Msk}),
 #endif
 

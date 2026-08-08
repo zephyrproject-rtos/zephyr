@@ -1,0 +1,37 @@
+/* SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <ti/am64x_r5f1_0.dtsi>
+
+/ {
+	model = "TI AM243x EVM R5F Cluster 1 Core 0";
+	compatible = "ti,am243x-evm-r5f-cluster-1-core-0";
+
+	chosen {
+		zephyr,sram = &msram4;
+	};
+
+	aliases {
+		watchdog0 = &main_rti10;
+	};
+};
+
+&secure_proxy_main {
+	status = "okay";
+};
+
+&dmsc {
+	status = "okay";
+};
+
+/* system timer */
+&main_timer10 {
+	status = "okay";
+};
+
+&main_rti10 {
+	status = "okay";
+};
