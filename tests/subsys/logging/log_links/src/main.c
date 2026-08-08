@@ -59,53 +59,53 @@ static void log_setup(bool backend2_enable)
 }
 
 
-struct mock_log_link_source domain1_sources[] = {
+static struct mock_log_link_source domain1_sources[] = {
 	{ .source = "abc", .clevel = 4, .rlevel = 4},
 	{ .source = "xxx", .clevel = 3, .rlevel = 3},
 	{ .source = "yyy", .clevel = 2, .rlevel = 2},
 	{ .source = "zzz", .clevel = 4, .rlevel = 1},
 };
 
-struct mock_log_link_source domain2_sources[] = {
+static struct mock_log_link_source domain2_sources[] = {
 	{ .source = "abc2", .clevel = 2, .rlevel = 1},
 	{ .source = "xxx2", .clevel = 2, .rlevel = 2},
 	{ .source = "yyy2", .clevel = 3, .rlevel = 3},
 	{ .source = "zzz2", .clevel = 4, .rlevel = 4},
 };
 
-struct mock_log_link_source domain3_sources[] = {
+static struct mock_log_link_source domain3_sources[] = {
 	{ .source = "abc", .clevel = 4, .rlevel = 4},
 	{ .source = "xxx", .clevel = 3, .rlevel = 3},
 	{ .source = "yyy", .clevel = 2, .rlevel = 2},
 	{ .source = "zzz", .clevel = 2, .rlevel = 1},
 };
 
-struct mock_log_link_domain domain1 = {
+static struct mock_log_link_domain domain1 = {
 	.source_cnt = ARRAY_SIZE(domain1_sources),
 	.sources = domain1_sources,
 	.name = "domain1"
 };
 
-struct mock_log_link_domain domain2 = {
+static struct mock_log_link_domain domain2 = {
 	.source_cnt = ARRAY_SIZE(domain2_sources),
 	.sources = domain2_sources,
 	.name = "domain2"
 };
 
-struct mock_log_link_domain domain3 = {
+static struct mock_log_link_domain domain3 = {
 	.source_cnt = ARRAY_SIZE(domain3_sources),
 	.sources = domain3_sources,
 	.name = "domain3"
 };
 
-struct mock_log_link_domain *domains_a[] = {&domain1, &domain2};
-struct mock_log_link mock_link_a = {
+static struct mock_log_link_domain *domains_a[] = {&domain1, &domain2};
+static struct mock_log_link mock_link_a = {
 	.domain_cnt = ARRAY_SIZE(domains_a),
 	.domains = domains_a
 };
 
-struct mock_log_link_domain *domains_b[] = {&domain3};
-struct mock_log_link mock_link_b = {
+static struct mock_log_link_domain *domains_b[] = {&domain3};
+static struct mock_log_link mock_link_b = {
 	.domain_cnt = ARRAY_SIZE(domains_b),
 	.domains = domains_b
 };
@@ -226,18 +226,34 @@ static void test_single_log_source_name_get(uint8_t d, uint16_t s,
 {
 	const char *name = log_source_name_get(d, s);
 
+	if (exp_name == NULL) {
+		zassert_equal(name, exp_name);
+		return;
+	}
+
 	zassert_equal(strcmp(name, exp_name), 0, "%d:%d Unexpected source name",
 			d, s);
 }
 
 ZTEST(log_links, test_log_source_name_get)
 {
+	const char *exp_name = domains_a[0]->sources[0].source;
+
 	log_setup(false);
 
-	test_single_log_source_name_get(1, 0, domains_a[0]->sources[0].source);
+	test_single_log_source_name_get(1, 0, exp_name);
 	test_single_log_source_name_get(1, 1, domains_a[0]->sources[1].source);
 	test_single_log_source_name_get(2, 2, domains_a[1]->sources[2].source);
 	test_single_log_source_name_get(3, 3, domains_b[0]->sources[3].source);
+
+	/* Try fetching invalid sources, it should not change the cached name */
+	for (uint16_t s = 0; s < CONFIG_LOG_SOURCE_NAME_CACHE_ENTRY_COUNT; s++) {
+		test_single_log_source_name_get(1, s + 100, NULL);
+	}
+
+	domains_a[0]->sources[0].source = "new_name";
+	/* Even though source name changed, the cached name should not change. */
+	test_single_log_source_name_get(1, 0, exp_name);
 }
 
 ZTEST_SUITE(log_links, NULL, NULL, NULL, NULL, NULL);
