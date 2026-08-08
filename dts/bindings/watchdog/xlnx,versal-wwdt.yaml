@@ -1,7 +1,24 @@
-# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# Copyright (c) 2025-2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Xilinx window watchdog
+description: |
+  Xilinx window watchdog
+  The WWDT implements a two-window (closed + open) watchdog. It must be
+  fed only during the open window. A feed in the closed window, or a
+  missed feed by the end of the open window, is treated as a watchdog
+  failure.
+  The action taken on a failure (no reset, CPU/subsystem reset, or SoC
+  reset) is routed through the platform Error Aggregation Module and
+  configured by firmware (PLM) via the boot-time CDO. Zephyr running on
+  the APU/RPU cannot observe or change this routing, so the driver does
+  not honor the WDT_FLAG_RESET_* flags (including WDT_FLAG_RESET_NONE)
+  passed to wdt_install_timeout(); the reset behavior is defined entirely
+  by platform firmware.
+  The same IP also contains an independent generic watchdog (GWDT): a
+  two-stage timer whose stage-1 timeout raises an interrupt and, if the
+  watchdog is not refreshed, firmware issues the stage-2 reset. The window
+  and generic engines are separate counters with their own enable bits and
+  interrupt lines.
 
 compatible: "xlnx,versal-wwdt"
 
@@ -13,4 +30,20 @@ properties:
 
   clocks:
     required: true
-    description: Reference to clock for window watchdog core.
+    description: Reference to the clock that drives the watchdog counters.
+
+  interrupts:
+    description: |
+      Watchdog interrupt lines. The node may expose more than one interrupt.
+      The window interrupt (WINT) is asserted when the second (open) window
+      is entered, i.e. as soon as the watchdog may be serviced, so the
+      timeout can be handled from the installed callback. The generic
+      watchdog also provides a stage-1 timeout interrupt. This property is
+      optional; the names required for each line are documented under
+      interrupt-names.
+
+  interrupt-names:
+    description: |
+      Names for the interrupts specified in the "interrupts" property. The
+      window watchdog interrupt (WINT) must be named "wdt" and the generic
+      watchdog stage-1 interrupt must be named "gwdt".

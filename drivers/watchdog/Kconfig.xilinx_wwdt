@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Advanced Micro Devices, Inc.
+# Copyright (c) 2025-2026 Advanced Micro Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config XILINX_WINDOW_WATCHDOG
@@ -14,3 +14,25 @@ config XILINX_WINDOW_WATCHDOG
 	  late. The WWDT has to be restarted within the open window time.
 	  If software tries to restart WWDT outside of the open window
 	  time period, it generates a SOC reset.
+
+if XILINX_WINDOW_WATCHDOG
+
+choice
+	prompt "Watchdog mode"
+	default XILINX_VERSAL_WDT_WINDOW_MODE
+	help
+	  Select which watchdog engine of the IP the driver operates.
+
+config XILINX_VERSAL_WDT_WINDOW_MODE
+	bool "Window watchdog mode"
+	help
+	  Enable the window watchdog.
+
+config XILINX_VERSAL_WDT_GENERIC_MODE
+	bool "Generic watchdog (GWDT) mode"
+	help
+	  Enable the generic watchdog.
+
+endchoice
+
+endif # XILINX_WINDOW_WATCHDOG
