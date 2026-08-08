@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Canonical Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &storage_partition;
+/delete-node/ &scratch_partition;
+
+&flash0 {
+	write-block-size = <8>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@70000 {
+			label = "storage";
+			reg = <0x00070000 0x10000>;
+		};
+	};
+};
