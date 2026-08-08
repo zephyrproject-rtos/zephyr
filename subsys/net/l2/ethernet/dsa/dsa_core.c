@@ -9,6 +9,8 @@ LOG_MODULE_REGISTER(net_dsa_core, CONFIG_NET_DSA_LOG_LEVEL);
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dsa_core.h>
 #include <zephyr/net/dsa_tag.h>
+#include <zephyr/net/net_log.h>
+#include <zephyr/net/promiscuous.h>
 
 struct net_if *dsa_recv(struct net_if *iface, struct net_pkt *pkt)
 {
@@ -67,6 +69,7 @@ int dsa_xmit(const struct device *dev, struct net_pkt *pkt)
 
 int dsa_eth_init(struct net_if *iface)
 {
+	int ret = 0;
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
 	if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
@@ -74,5 +77,11 @@ int dsa_eth_init(struct net_if *iface)
 		net_if_flag_clear(iface, NET_IF_IPV6);
 	}
 
-	return 0;
+	if (IS_ENABLED(CONFIG_DSA_PROMISC_ON_CONDUIT) && eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
+		NET_DBG("Enabling promiscuous mode on iface %d (%p)", net_if_get_by_iface(iface),
+			(void *)iface);
+		ret = net_promisc_mode_on(iface);
+	}
+
+	return ret;
 }
