@@ -1,0 +1,17 @@
+sample:
+  name: MediaPipe filesystem sample
+
+tests:
+  sample.mp.fs:
+    tags:
+      - mp
+      - filesystem
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "EOS message from element"
