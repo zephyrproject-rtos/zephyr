@@ -40,6 +40,8 @@ tests:
       - ek_ra2a1
       - ek_ra2l1
       - sam_e54_xpro
+      - pic32cx_sg41_cult
+      - pic32cx_sg61_cult
   drivers.adc.accuracy.ref_volt:
     extra_configs:
       - CONFIG_REFERENCE_VOLTAGE_TEST=y
