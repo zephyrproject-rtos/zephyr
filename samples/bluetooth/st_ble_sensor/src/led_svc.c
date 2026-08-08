@@ -1,5 +1,5 @@
 /** @file
- *  @brief Button Service sample
+ *  @brief LED Service sample
  */
 
 /*
