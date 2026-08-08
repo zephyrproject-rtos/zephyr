@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT adi_tmc51xx
+#define DT_DRV_COMPAT adi_tmc524x
 
 #include <stdlib.h>
 
@@ -17,44 +17,44 @@
 #include <adi_tmc_uart.h>
 #include <adi_tmc5xxx_common.h>
 
-#include "tmc51xx.h"
-#include "tmc51xx_reg.h"
+#include "tmc524x.h"
+#include "tmc524x_reg.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);
+LOG_MODULE_REGISTER(tmc524x, CONFIG_STEPPER_LOG_LEVEL);
 
 /* Check for supported bus types */
-#define TMC51XX_BUS_SPI  DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#define TMC51XX_BUS_UART DT_ANY_INST_ON_BUS_STATUS_OKAY(uart)
+#define TMC524X_BUS_SPI  DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#define TMC524X_BUS_UART DT_ANY_INST_ON_BUS_STATUS_OKAY(uart)
 
-/* Common configuration structure for TMC51xx */
-struct tmc51xx_config {
+/* Common configuration structure for TMC524x */
+struct tmc524x_config {
 	union tmc_bus bus;
 	const struct tmc_bus_io *bus_io;
 	uint8_t comm_type;
 	const uint32_t gconf;
 	const uint32_t clock_frequency;
-#if TMC51XX_BUS_UART
+#if TMC524X_BUS_UART
 	const struct gpio_dt_spec sw_sel_gpio;
 	uint8_t uart_addr;
 #endif
-#if TMC51XX_BUS_SPI
+#if TMC524X_BUS_SPI
 	struct gpio_dt_spec diag0_gpio;
 #endif
 	const struct device *motion_controller;
 	const struct device *stepper_driver;
 };
 
-struct tmc51xx_data {
+struct tmc524x_data {
 	struct k_sem sem;
 	struct k_work_delayable rampstat_callback_dwork;
 	struct gpio_callback diag0_cb;
 	const struct device *dev;
 };
 
-#if TMC51XX_BUS_SPI
+#if TMC524X_BUS_SPI
 
-static int tmc51xx_bus_check_spi(const union tmc_bus *bus, uint8_t comm_type)
+static int tmc524x_bus_check_spi(const union tmc_bus *bus, uint8_t comm_type)
 {
 	if (comm_type != TMC_COMM_SPI) {
 		return -ENOTSUP;
@@ -68,10 +68,10 @@ static int tmc51xx_bus_check_spi(const union tmc_bus *bus, uint8_t comm_type)
 	return 0;
 }
 
-static int tmc51xx_reg_write_spi(const struct device *dev, const uint8_t reg_addr,
+static int tmc524x_reg_write_spi(const struct device *dev, const uint8_t reg_addr,
 				 const uint32_t reg_val)
 {
-	const struct tmc51xx_config *config = dev->config;
+	const struct tmc524x_config *config = dev->config;
 	int err;
 
 	err = tmc_spi_write_register(&config->bus.spi, TMC5XXX_WRITE_BIT, reg_addr, reg_val);
@@ -82,9 +82,9 @@ static int tmc51xx_reg_write_spi(const struct device *dev, const uint8_t reg_add
 	return err;
 }
 
-static int tmc51xx_reg_read_spi(const struct device *dev, const uint8_t reg_addr, uint32_t *reg_val)
+static int tmc524x_reg_read_spi(const struct device *dev, const uint8_t reg_addr, uint32_t *reg_val)
 {
-	const struct tmc51xx_config *config = dev->config;
+	const struct tmc524x_config *config = dev->config;
 	int err;
 
 	err = tmc_spi_read_register(&config->bus.spi, TMC5XXX_ADDRESS_MASK, reg_addr, reg_val);
@@ -95,16 +95,16 @@ static int tmc51xx_reg_read_spi(const struct device *dev, const uint8_t reg_addr
 	return err;
 }
 
-const struct tmc_bus_io tmc51xx_spi_bus_io = {
-	.check = tmc51xx_bus_check_spi,
-	.read = tmc51xx_reg_read_spi,
-	.write = tmc51xx_reg_write_spi,
+const struct tmc_bus_io tmc524x_spi_bus_io = {
+	.check = tmc524x_bus_check_spi,
+	.read = tmc524x_reg_read_spi,
+	.write = tmc524x_reg_write_spi,
 };
-#endif /* TMC51XX_BUS_SPI */
+#endif /* TMC524X_BUS_SPI */
 
-#if TMC51XX_BUS_UART
+#if TMC524X_BUS_UART
 
-static int tmc51xx_bus_check_uart(const union tmc_bus *bus, uint8_t comm_type)
+static int tmc524x_bus_check_uart(const union tmc_bus *bus, uint8_t comm_type)
 {
 	if (comm_type != TMC_COMM_UART) {
 		return -ENOTSUP;
@@ -117,10 +117,10 @@ static int tmc51xx_bus_check_uart(const union tmc_bus *bus, uint8_t comm_type)
 	return 0;
 }
 
-static int tmc51xx_reg_write_uart(const struct device *dev, const uint8_t reg_addr,
+static int tmc524x_reg_write_uart(const struct device *dev, const uint8_t reg_addr,
 				  const uint32_t reg_val)
 {
-	const struct tmc51xx_config *config = dev->config;
+	const struct tmc524x_config *config = dev->config;
 	int err;
 
 	/* Route to the adi_tmc_uart.h implementation */
@@ -132,10 +132,10 @@ static int tmc51xx_reg_write_uart(const struct device *dev, const uint8_t reg_ad
 	return err;
 }
 
-static int tmc51xx_reg_read_uart(const struct device *dev, const uint8_t reg_addr,
+static int tmc524x_reg_read_uart(const struct device *dev, const uint8_t reg_addr,
 				 uint32_t *reg_val)
 {
-	const struct tmc51xx_config *config = dev->config;
+	const struct tmc524x_config *config = dev->config;
 	int err;
 
 	/* Route to the adi_tmc_uart.h implementation */
@@ -147,30 +147,30 @@ static int tmc51xx_reg_read_uart(const struct device *dev, const uint8_t reg_add
 	return err;
 }
 
-const struct tmc_bus_io tmc51xx_uart_bus_io = {
-	.check = tmc51xx_bus_check_uart,
-	.read = tmc51xx_reg_read_uart,
-	.write = tmc51xx_reg_write_uart,
+const struct tmc_bus_io tmc524x_uart_bus_io = {
+	.check = tmc524x_bus_check_uart,
+	.read = tmc524x_reg_read_uart,
+	.write = tmc524x_reg_write_uart,
 };
-#endif /* TMC51XX_BUS_UART */
+#endif /* TMC524X_BUS_UART */
 
-static inline int tmc51xx_bus_check(const struct device *dev)
+static inline int tmc524x_bus_check(const struct device *dev)
 {
-	const struct tmc51xx_config *config = dev->config;
+	const struct tmc524x_config *config = dev->config;
 
 	return config->bus_io->check(&config->bus, config->comm_type);
 }
 
-int tmc51xx_get_clock_frequency(const struct device *dev)
+int tmc524x_get_clock_frequency(const struct device *dev)
 {
-	const struct tmc51xx_config *config = dev->config;
+	const struct tmc524x_config *config = dev->config;
 
 	return config->clock_frequency;
 }
 
-int tmc51xx_read_actual_position(const struct device *dev, int32_t *position)
+int tmc524x_read_actual_position(const struct device *dev, int32_t *position)
 {
-	const struct tmc51xx_config *config = dev->config;
+	const struct tmc524x_config *config = dev->config;
 	const struct device *motion_controller = config->motion_controller;
 	int err;
 	uint32_t raw_value;
@@ -191,7 +191,7 @@ int tmc51xx_read_actual_position(const struct device *dev, int32_t *position)
 		}
 	}
 
-	err = tmc51xx_read(dev, TMC51XX_XACTUAL, &raw_value);
+	err = tmc524x_read(dev, TMC524X_XACTUAL, &raw_value);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -200,11 +200,11 @@ int tmc51xx_read_actual_position(const struct device *dev, int32_t *position)
 	return 0;
 }
 
-bool tmc51xx_is_interrupt_driven(const struct device *dev)
+bool tmc524x_is_interrupt_driven(const struct device *dev)
 {
-	__maybe_unused const struct tmc51xx_config *config = dev->config;
+	__maybe_unused const struct tmc524x_config *config = dev->config;
 
-	IF_ENABLED(TMC51XX_BUS_SPI, ({
+	IF_ENABLED(TMC524X_BUS_SPI, ({
 if (config->comm_type == TMC_COMM_SPI && config->diag0_gpio.port) {
 	/* Using interrupt-driven approach - no polling needed */
 	return true;
@@ -213,18 +213,18 @@ if (config->comm_type == TMC_COMM_SPI && config->diag0_gpio.port) {
 	return false;
 }
 
-void tmc51xx_reschedule_rampstat_callback(const struct device *dev)
+void tmc524x_reschedule_rampstat_callback(const struct device *dev)
 {
-	struct tmc51xx_data *data = dev->data;
+	struct tmc524x_data *data = dev->data;
 
 	k_work_reschedule(&data->rampstat_callback_dwork,
-			  K_MSEC(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+			  K_MSEC(CONFIG_STEPPER_ADI_TMC524X_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
 }
 
-int tmc51xx_write(const struct device *dev, const uint8_t reg_addr, const uint32_t reg_val)
+int tmc524x_write(const struct device *dev, const uint8_t reg_addr, const uint32_t reg_val)
 {
-	const struct tmc51xx_config *config = dev->config;
-	struct tmc51xx_data *data = dev->data;
+	const struct tmc524x_config *config = dev->config;
+	struct tmc524x_data *data = dev->data;
 	int err;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -240,10 +240,10 @@ int tmc51xx_write(const struct device *dev, const uint8_t reg_addr, const uint32
 	return 0;
 }
 
-int tmc51xx_read(const struct device *dev, const uint8_t reg_addr, uint32_t *reg_val)
+int tmc524x_read(const struct device *dev, const uint8_t reg_addr, uint32_t *reg_val)
 {
-	const struct tmc51xx_config *config = dev->config;
-	struct tmc51xx_data *data = dev->data;
+	const struct tmc524x_config *config = dev->config;
+	struct tmc524x_data *data = dev->data;
 	int err;
 
 	k_sem_take(&data->sem, K_FOREVER);
@@ -259,14 +259,14 @@ int tmc51xx_read(const struct device *dev, const uint8_t reg_addr, uint32_t *reg
 	return 0;
 }
 
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_STALLGUARD_LOG
+#ifdef CONFIG_STEPPER_ADI_TMC524X_RAMPSTAT_POLL_STALLGUARD_LOG
 
 static void log_stallguard(const struct device *dev, const uint32_t drv_status)
 {
 	int32_t position;
 	int err;
 
-	err = tmc51xx_read_actual_position(dev, &position);
+	err = tmc524x_read_actual_position(dev, &position);
 	if (err != 0) {
 		LOG_ERR("%s: Failed to read XACTUAL register", dev->name);
 		return;
@@ -281,15 +281,15 @@ static void log_stallguard(const struct device *dev, const uint32_t drv_status)
 		sg_status);
 }
 
-#endif /* CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_STALLGUARD_LOG */
+#endif /* CONFIG_STEPPER_ADI_TMC524X_RAMPSTAT_POLL_STALLGUARD_LOG */
 
 static int rampstat_read_clear(const struct device *dev, uint32_t *rampstat_value)
 {
 	int err;
 
-	err = tmc51xx_read(dev, TMC51XX_RAMPSTAT, rampstat_value);
+	err = tmc524x_read(dev, TMC524X_RAMPSTAT, rampstat_value);
 	if (err == 0) {
-		err = tmc51xx_write(dev, TMC51XX_RAMPSTAT, *rampstat_value);
+		err = tmc524x_write(dev, TMC524X_RAMPSTAT, *rampstat_value);
 	}
 	return err;
 }
@@ -298,10 +298,10 @@ static void rampstat_work_handler(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 
-	struct tmc51xx_data *stepper_data =
-		CONTAINER_OF(dwork, struct tmc51xx_data, rampstat_callback_dwork);
+	struct tmc524x_data *stepper_data =
+		CONTAINER_OF(dwork, struct tmc524x_data, rampstat_callback_dwork);
 	const struct device *dev = stepper_data->dev;
-	__maybe_unused const struct tmc51xx_config *config = dev->config;
+	__maybe_unused const struct tmc524x_config *config = dev->config;
 	const struct device *motion_controller = config->motion_controller;
 	const struct device *stepper_driver = config->stepper_driver;
 
@@ -310,17 +310,17 @@ static void rampstat_work_handler(struct k_work *work)
 	uint32_t drv_status;
 	int err;
 
-	err = tmc51xx_read(dev, TMC51XX_DRVSTATUS, &drv_status);
+	err = tmc524x_read(dev, TMC524X_DRVSTATUS, &drv_status);
 	if (err != 0) {
 		LOG_ERR("%s: Failed to read DRVSTATUS register", dev->name);
 		return;
 	}
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_STALLGUARD_LOG
+#ifdef CONFIG_STEPPER_ADI_TMC524X_RAMPSTAT_POLL_STALLGUARD_LOG
 	log_stallguard(dev, drv_status);
 #endif
 	if (FIELD_GET(TMC5XXX_DRV_STATUS_SG_STATUS_MASK, drv_status) == 1U) {
 		LOG_INF("%s: Stall detected", dev->name);
-		err = tmc51xx_write(dev, TMC51XX_RAMPMODE, TMC5XXX_RAMPMODE_HOLD_MODE);
+		err = tmc524x_write(dev, TMC524X_RAMPMODE, TMC5XXX_RAMPMODE_HOLD_MODE);
 		if (err != 0) {
 			LOG_ERR("%s: Failed to stop motor", dev->name);
 			return;
@@ -339,16 +339,16 @@ static void rampstat_work_handler(struct k_work *work)
 
 	if (ramp_stat_values > 0) {
 		switch (ramp_stat_values) {
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_STEPPER_CTRL
+#ifdef CONFIG_STEPPER_ADI_TMC524X_STEPPER_CTRL
 		case TMC5XXX_STOP_LEFT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Left end-stop detected", dev->name);
-			tmc51xx_stepper_ctrl_trigger_cb(motion_controller,
+			tmc524x_stepper_ctrl_trigger_cb(motion_controller,
 						     STEPPER_CTRL_EVENT_LEFT_END_STOP_DETECTED);
 			break;
 
 		case TMC5XXX_STOP_RIGHT_EVENT:
 			LOG_DBG("RAMPSTAT %s:Right end-stop detected", dev->name);
-			tmc51xx_stepper_ctrl_trigger_cb(motion_controller,
+			tmc524x_stepper_ctrl_trigger_cb(motion_controller,
 						     STEPPER_CTRL_EVENT_RIGHT_END_STOP_DETECTED);
 			break;
 
@@ -356,25 +356,25 @@ static void rampstat_work_handler(struct k_work *work)
 		case TMC5XXX_POS_REACHED:
 		case TMC5XXX_POS_REACHED_AND_EVENT:
 			LOG_DBG("RAMPSTAT %s:Position reached", dev->name);
-			tmc51xx_stepper_ctrl_trigger_cb(motion_controller,
+			tmc524x_stepper_ctrl_trigger_cb(motion_controller,
 						     STEPPER_CTRL_EVENT_STEPS_COMPLETED);
 			break;
-#endif /* CONFIG_STEPPER_ADI_TMC51XX_STEPPER_CTRL */
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_STEPPER_DRIVER
+#endif /* CONFIG_STEPPER_ADI_TMC524X_STEPPER_CTRL */
+#ifdef CONFIG_STEPPER_ADI_TMC524X_STEPPER_DRIVER
 		case TMC5XXX_STOP_SG_EVENT:
 			LOG_DBG("RAMPSTAT %s:Stall detected", dev->name);
-			tmc51xx_stepper_ctrl_stallguard_enable(dev, false);
-			tmc51xx_stepper_driver_trigger_cb(stepper_driver,
+			tmc524x_stepper_ctrl_stallguard_enable(dev, false);
+			tmc524x_stepper_driver_trigger_cb(stepper_driver,
 				STEPPER_EVENT_STALL_DETECTED);
 			break;
-#endif /* CONFIG_STEPPER_ADI_TMC51XX_STEPPER_DRIVER */
+#endif /* CONFIG_STEPPER_ADI_TMC524X_STEPPER_DRIVER */
 		default:
 			LOG_ERR("Illegal ramp stat bit field 0x%x", ramp_stat_values);
 			break;
 		}
 	} else {
 		/* For SPI with DIAG0 pin, we use interrupt-driven approach */
-		IF_ENABLED(TMC51XX_BUS_SPI, ({
+		IF_ENABLED(TMC524X_BUS_SPI, ({
 			if (config->comm_type == TMC_COMM_SPI && config->diag0_gpio.port) {
 				/* Using interrupt-driven approach - no polling needed */
 				return;
@@ -382,44 +382,44 @@ static void rampstat_work_handler(struct k_work *work)
 			}))
 
 		/* For UART or SPI without DIAG0, reschedule RAMPSTAT polling */
-#ifdef CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC
+#ifdef CONFIG_STEPPER_ADI_TMC524X_RAMPSTAT_POLL_INTERVAL_IN_MSEC
 		k_work_reschedule(
 			&stepper_data->rampstat_callback_dwork,
-			K_MSEC(CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
-#endif /* CONFIG_STEPPER_ADI_TMC51XX_RAMPSTAT_POLL_INTERVAL_IN_MSEC */
+			K_MSEC(CONFIG_STEPPER_ADI_TMC524X_RAMPSTAT_POLL_INTERVAL_IN_MSEC));
+#endif /* CONFIG_STEPPER_ADI_TMC524X_RAMPSTAT_POLL_INTERVAL_IN_MSEC */
 	}
 }
 
-static void __maybe_unused tmc51xx_diag0_gpio_callback_handler(const struct device *port,
+static void __maybe_unused tmc524x_diag0_gpio_callback_handler(const struct device *port,
 							       struct gpio_callback *cb,
 							       gpio_port_pins_t pins)
 {
 	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
 
-	struct tmc51xx_data *stepper_data = CONTAINER_OF(cb, struct tmc51xx_data, diag0_cb);
+	struct tmc524x_data *stepper_data = CONTAINER_OF(cb, struct tmc524x_data, diag0_cb);
 
 	k_work_reschedule(&stepper_data->rampstat_callback_dwork, K_NO_WAIT);
 }
 
-static int tmc51xx_init(const struct device *dev)
+static int tmc524x_init(const struct device *dev)
 {
-	const struct tmc51xx_config *config = dev->config;
-	struct tmc51xx_data *data = dev->data;
+	const struct tmc524x_config *config = dev->config;
+	struct tmc524x_data *data = dev->data;
 	int err;
 
-	LOG_DBG("Initializing TMC51XX stepper motor controller %s, stepper motor driver %s",
+	LOG_DBG("Initializing TMC524X stepper motor controller %s, stepper motor driver %s",
 		config->motion_controller->name, config->stepper_driver->name);
 
 	k_sem_init(&data->sem, 1, 1);
 
-	err = tmc51xx_bus_check(dev);
+	err = tmc524x_bus_check(dev);
 	if (err < 0) {
 		LOG_ERR("Bus not ready for '%s'", dev->name);
 		return err;
 	}
 
-#if TMC51XX_BUS_UART
+#if TMC524X_BUS_UART
 	/* Initialize SW_SEL GPIO if using UART and GPIO is specified */
 	if (config->comm_type == TMC_COMM_UART && config->sw_sel_gpio.port) {
 		if (!gpio_is_ready_dt(&config->sw_sel_gpio)) {
@@ -436,7 +436,7 @@ static int tmc51xx_init(const struct device *dev)
 #endif
 
 	/* Configure DIAG0 GPIO interrupt pin */
-	IF_ENABLED(TMC51XX_BUS_SPI, ({
+	IF_ENABLED(TMC524X_BUS_SPI, ({
 	if ((config->comm_type == TMC_COMM_SPI) && config->diag0_gpio.port) {
 		LOG_INF("Configuring DIAG0 GPIO interrupt pin");
 		if (!gpio_is_ready_dt(&config->diag0_gpio)) {
@@ -458,7 +458,7 @@ static int tmc51xx_init(const struct device *dev)
 		}
 
 		/* Initialize and add GPIO callback */
-		gpio_init_callback(&data->diag0_cb, tmc51xx_diag0_gpio_callback_handler,
+		gpio_init_callback(&data->diag0_cb, tmc524x_diag0_gpio_callback_handler,
 				   BIT(config->diag0_gpio.pin));
 
 		err = gpio_add_callback(config->diag0_gpio.port, &data->diag0_cb);
@@ -477,7 +477,7 @@ static int tmc51xx_init(const struct device *dev)
 	}}))
 
 	LOG_DBG("GCONF: %d", config->gconf);
-	err = tmc51xx_write(dev, TMC5XXX_GCONF, config->gconf);
+	err = tmc524x_write(dev, TMC5XXX_GCONF, config->gconf);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -485,12 +485,12 @@ static int tmc51xx_init(const struct device *dev)
 	/* Read and write GSTAT register to clear any SPI Datagram errors. */
 	uint32_t gstat_value;
 
-	err = tmc51xx_read(dev, TMC5XXX_GSTAT, &gstat_value);
+	err = tmc524x_read(dev, TMC5XXX_GSTAT, &gstat_value);
 	if (err != 0) {
 		return -EIO;
 	}
 
-	err = tmc51xx_write(dev, TMC5XXX_GSTAT, gstat_value);
+	err = tmc524x_write(dev, TMC5XXX_GSTAT, gstat_value);
 	if (err != 0) {
 		return -EIO;
 	}
@@ -508,43 +508,43 @@ static int tmc51xx_init(const struct device *dev)
 #define _DT_CHILD_BY_COMPAT_HELPER(node_id, compat)                                                \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, compat), (node_id), ())
 
-/* Initializes a struct tmc51xx_config for an instance on a SPI bus. */
-#define TMC51XX_CONFIG_SPI(inst)                                                                   \
+/* Initializes a struct tmc524x_config for an instance on a SPI bus. */
+#define TMC524X_CONFIG_SPI(inst)                                                                   \
 	.comm_type = TMC_COMM_SPI,                                                                 \
 	.bus.spi = SPI_DT_SPEC_INST_GET(inst, (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |             \
 					       SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8))),  \
-	.bus_io = &tmc51xx_spi_bus_io,                                                             \
+	.bus_io = &tmc524x_spi_bus_io,                                                             \
 	.diag0_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, diag0_gpios, {0})
 
-/* Initializes a struct tmc51xx_config for an instance on a UART bus. */
-#define TMC51XX_CONFIG_UART(inst)                                                                  \
+/* Initializes a struct tmc524x_config for an instance on a UART bus. */
+#define TMC524X_CONFIG_UART(inst)                                                                  \
 	.comm_type = TMC_COMM_UART, .bus.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                  \
-	.bus_io = &tmc51xx_uart_bus_io, .uart_addr = DT_INST_PROP_OR(inst, uart_device_addr, 1U),  \
+	.bus_io = &tmc524x_uart_bus_io, .uart_addr = DT_INST_PROP_OR(inst, uart_device_addr, 1U),  \
 	.sw_sel_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, sw_sel_gpios, {0})
 
 /* Device initialization macros */
-#define TMC51XX_DEFINE(inst)                                                                       \
+#define TMC524X_DEFINE(inst)                                                                       \
 	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) > 0),                                    \
 		     "clock frequency must be non-zero positive value");                           \
-	static struct tmc51xx_data tmc51xx_data_##inst = {                                         \
+	static struct tmc524x_data tmc524x_data_##inst = {                                         \
 		.dev = DEVICE_DT_GET(DT_DRV_INST(inst))};                                          \
-	static const struct tmc51xx_config tmc51xx_config_##inst = {COND_CODE_1			   \
+	static const struct tmc524x_config tmc524x_config_##inst = {COND_CODE_1			   \
 		(DT_INST_ON_BUS(inst, spi),							   \
-		(TMC51XX_CONFIG_SPI(inst)),							   \
-		(TMC51XX_CONFIG_UART(inst))),                                                      \
-		 .gconf = ((DT_INST_PROP(inst, en_pwm_mode) << TMC51XX_GCONF_EN_PWM_MODE_SHIFT) |  \
-			   (DT_INST_PROP(inst, test_mode) << TMC51XX_GCONF_TEST_MODE_SHIFT) |      \
-			   (DT_INST_PROP(inst, shaft) << TMC51XX_GCONF_SHAFT_SHIFT) |              \
+		(TMC524X_CONFIG_SPI(inst)),							   \
+		(TMC524X_CONFIG_UART(inst))),                                                      \
+		 .gconf = ((DT_INST_PROP(inst, en_pwm_mode) << TMC524X_GCONF_EN_PWM_MODE_SHIFT) |  \
+			   (DT_INST_PROP(inst, test_mode) << TMC524X_GCONF_TEST_MODE_SHIFT) |      \
+			   (DT_INST_PROP(inst, shaft) << TMC524X_GCONF_SHAFT_SHIFT) |              \
 			   (DT_INST_NODE_HAS_PROP(inst, diag0_gpios)                               \
-				    ? BIT(TMC51XX_GCONF_DIAG0_INT_PUSHPULL_SHIFT)                  \
+				    ? BIT(TMC524X_GCONF_DIAG0_INT_PUSHPULL_SHIFT)                  \
 				    : 0)),                                                         \
 		 .clock_frequency = DT_INST_PROP(inst, clock_frequency),                           \
 		 .motion_controller = DEVICE_DT_GET_OR_NULL(DT_CHILD_BY_COMPATIBLE(                \
-			 DT_DRV_INST(inst), adi_tmc51xx_stepper_ctrl)),                           \
+			 DT_DRV_INST(inst), adi_tmc524x_stepper_ctrl)),                           \
 		 .stepper_driver = DEVICE_DT_GET_OR_NULL(                                          \
-			 DT_CHILD_BY_COMPATIBLE(DT_DRV_INST(inst), adi_tmc51xx_stepper_driver))};  \
-	DEVICE_DT_INST_DEFINE(inst, tmc51xx_init, NULL, &tmc51xx_data_##inst,                      \
-			      &tmc51xx_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,   \
+			 DT_CHILD_BY_COMPATIBLE(DT_DRV_INST(inst), adi_tmc524x_stepper_driver))};  \
+	DEVICE_DT_INST_DEFINE(inst, tmc524x_init, NULL, &tmc524x_data_##inst,                      \
+			      &tmc524x_config_##inst, POST_KERNEL, CONFIG_STEPPER_INIT_PRIORITY,   \
 			      NULL);
 
-DT_INST_FOREACH_STATUS_OKAY(TMC51XX_DEFINE)
+DT_INST_FOREACH_STATUS_OKAY(TMC524X_DEFINE)
