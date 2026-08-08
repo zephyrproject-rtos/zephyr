@@ -1,0 +1,83 @@
+# Copyright (C) 2026, Savoir-faire Linux
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP i.MX8M Plus Media Block Control (MEDIA_BLK_CTRL).
+
+  Top-level MEDIAMIX controller at 0x32ec0000 that gates clocks, asserts and
+  releases active-low soft resets (SFT_RSTN, offset 0x00), releases MIPI D-PHY
+  resets (MIPI_RESET_DIV, offset 0x08), and programs the LCDIF1 read-hurry
+  priority (LCDIF_ARCACHE_CTRL 0x4c, bits 12:10) for the i.MX8MP media
+  subsystem (LCDIF, MIPI-DSI/CSI, ISI, ISP, DWE).
+
+  Programs the NIC-301 Media NOC AXI arbiter to give LCDIF1 the BSP-canonical
+  bus priority by default. Boards with tighter display-under-load margins can
+  raise the LCDIF1 NOC priority through devicetree.
+
+  Acts as a Zephyr power-domain provider: each media sub-domain is represented as
+  a child node (compatible "nxp,imx8mp-media-blk-ctrl-domain") that media
+  peripherals reference through the standard "power-domains" property.
+
+  The parent brings up the always-on "bus" sub-domain (CLK_EN/SFT_RSTN bit 8)
+  and programs QoS at initialization.
+
+examples:
+  - |
+    media_blk_ctrl: media-blk-ctrl@32ec0000 {
+        compatible = "nxp,imx8mp-media-blk-ctrl";
+        reg = <0x32ec0000 0x10000>, <0x32700000 0x10000>;
+        reg-names = "ctrl", "noc";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        status = "okay";
+
+        mbc_mipi_dsi1: power-domain@0 {
+            compatible = "nxp,imx8mp-media-blk-ctrl-domain";
+            reg = <IMX8MP_MEDIABLK_PD_MIPI_DSI_1>;
+            nxp,rst-mask = <0x3>;
+            nxp,clk-mask = <0x3>;
+            nxp,mipi-phy-rst-mask = <0x20000>;
+            #power-domain-cells = <0>;
+            status = "okay";
+        };
+    };
+
+compatible: "nxp,imx8mp-media-blk-ctrl"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      MEDIA_BLK_CTRL register block and NIC-301 Media NOC register block.
+
+  reg-names:
+    required: true
+    description: Must contain "ctrl" and "noc", in that order.
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  nxp,lcdif-rd-hurry:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    default: 7
+    description: |
+      LCDIF1 read-hurry priority level written to LCDIF_ARCACHE_CTRL bits 12:10
+      (i.MX8MP RM §13.2.2, §13.2.3). Range 0-7; level 7 gives maximum urgency
+      signalling to the NoC.
+
+  nxp,lcdif-noc-priority:
+    type: int
+    default: 0x80000202
+    description: |
+      LCDIF1 read/write NIC-301 priority value written to the LCDIF1 RD/WR QoS
+      priority registers. The default is the BSP-canonical i.MX8MP value used by
+      Arm TF-A and Linux imx8m-blk-ctrl. Boards that observe LCDIF starvation
+      under heavy DDR load may raise this value, for example to 0x80000f0f.
