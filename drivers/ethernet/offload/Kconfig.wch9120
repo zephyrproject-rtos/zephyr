@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Madhab Sharma <madhabsharma94@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+# CH9120 ethernet driver options
+
+menuconfig ETH_CH9120
+	bool "ch9120 ethernet driver"
+	depends on DT_HAS_WCH_CH9120_ENABLED
+	depends on SERIAL_SUPPORT_INTERRUPT
+	select UART_INTERRUPT_DRIVEN
+	select NET_SOCKETS_OFFLOAD
+	select UART_USE_RUNTIME_CONFIGURE
+	help
+	  This offloads ethernet driver to ch9120 chip. Note: the
+	  chip only supports only a single TCP/UDP client connection at
+	  a time. Attempting to open a second socket will fail.
+
+if ETH_CH9120
+
+config ETH_CH9120_RX_BUF_SIZE
+	int "RX ring buffer size in bytes"
+	default 1024
+	range 256 4096
+	help
+	  Size of the receive ring buffer. Increase if dropping
+	  data at high throughput.
+
+endif # ETH_CH9120
