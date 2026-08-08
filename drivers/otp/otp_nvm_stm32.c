@@ -1,12 +1,14 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Metratec GmbH
  * SPDX-License-Identifier: Apache-2.0
  *
  * Driver for one-time programmable areas inside STM32 embedded NVM.
  *
- * "OTP for user data" area programming is not supported yet.
- * It shall be implemented as a dedicated, externally visible function
- * in the flash driver(s) called from this driver.
+ * When CONFIG_OTP_PROGRAM is enabled, "OTP for user data" area programming is
+ * performed by a dedicated, externally visible function in the flash driver(s)
+ * - flash_stm32_otp_program() - which is called from this driver. This keeps
+ * the read path free of any dependency on the flash driver.
  */
 
 #include <string.h>
@@ -17,13 +19,18 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
+#include <flash/flash_stm32.h>
 
 #define DT_DRV_COMPAT st_stm32_nvm_otp
 
 struct otp_stm32_nvm_config {
 	/* Base address and size of OTP area */
-	const uint8_t *base;
+	uint8_t *base;
 	size_t size;
+#if CONFIG_OTP_PROGRAM
+	/* Flash controller (parent) device used to program the OTP area */
+	const struct device *flash_dev;
+#endif
 };
 
 static void slow_otp_readout(void *buf, const uint8_t *src, size_t len)
@@ -117,18 +124,54 @@ static int otp_stm32_nvm_read(const struct device *dev, off_t offset, void *buf,
 	return 0;
 }
 
+#if CONFIG_OTP_PROGRAM
+static int otp_stm32_nvm_program(const struct device *dev, off_t offset, const void *buf,
+				 size_t len)
+{
+	const struct otp_stm32_nvm_config *config = dev->config;
+	const size_t start = (size_t)offset;
+	size_t end;
+
+	/* 16-bit alignment, half-words only. */
+	if ((offset % sizeof(uint16_t)) != 0 || (len % sizeof(uint16_t)) != 0) {
+		return -EINVAL;
+	}
+
+	if (size_add_overflow(start, len, &end) || end > config->size) {
+		return -EINVAL;
+	}
+
+	/*
+	 * The actual programming is done by the flash driver, which serializes
+	 * it against regular flash operations on the shared NVM peripheral.
+	 */
+	return flash_stm32_otp_program(config->flash_dev, config->base, offset, buf, len);
+}
+#endif /* CONFIG_OTP_PROGRAM */
+
 static DEVICE_API(otp, otp_stm32_nvm_api) = {
 	.read = otp_stm32_nvm_read,
+#if CONFIG_OTP_PROGRAM
+	.program = otp_stm32_nvm_program,
+#endif
 };
+
+#if CONFIG_OTP_PROGRAM
+#define OTP_STM32_NVM_FLASH_DEV(inst) .flash_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),
+#else
+#define OTP_STM32_NVM_FLASH_DEV(inst)
+#endif
 
 #define OTP_STM32_NVM_INIT_INNER(inst, _cfg)							\
 	static const struct otp_stm32_nvm_config _cfg = {					\
 		.base = (void *)DT_INST_REG_ADDR(inst),						\
 		.size = DT_INST_REG_SIZE(inst),							\
+		OTP_STM32_NVM_FLASH_DEV(inst)							\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &_cfg,					\
-			      PRE_KERNEL_1, CONFIG_OTP_INIT_PRIORITY, &otp_stm32_nvm_api);
+			      PRE_KERNEL_1, CONFIG_OTP_INIT_PRIORITY,				\
+			      &otp_stm32_nvm_api);
 
 #define OTP_STM32_NVM_INIT(inst)								\
 	OTP_STM32_NVM_INIT_INNER(inst, CONCAT(otp_stm32_nvm_cfg, inst))

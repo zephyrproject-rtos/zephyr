@@ -13,8 +13,15 @@ config OTP_STM32_NVM
 	bool "STM32 embedded NVM OTP driver"
 	default y
 	depends on DT_HAS_ST_STM32_NVM_OTP_ENABLED
+	select SOC_FLASH_STM32 if OTP_PROGRAM
 	help
 	  Enable driver for OTP regions inside embedded non-volatile memory
 	  found in STM32 SoCs.
 
-	  N.B.: the "program" operation is currently not supported.
+	  Note: the "program" operation (CONFIG_OTP_PROGRAM) is not implemented
+	  in this driver but in each STM32 series' flash driver instead. This
+	  driver merely acts as a shim redirecting otp_program() to the proper
+	  "backend" driver. It is possible that some series do not provide an
+	  implementation for the program operation: in this case, otp_program()
+	  will return -ENOSYS. Check the appropriate flash driver to determine
+	  if the program operation is implemented or not.

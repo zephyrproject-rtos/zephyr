@@ -117,6 +117,24 @@ int flash_stm32_wait_flash_idle(const struct device *dev)
 	return 0;
 }
 
+#if defined(CONFIG_OTP_PROGRAM)
+/*
+ * Default (weak) OTP programming implementation. Series whose flash driver
+ * supports programming OTP-in-NVM override this with a strong definition.
+ */
+__weak int flash_stm32_otp_program(const struct device *dev, uint8_t *otp_base, off_t offset,
+				   const void *data, size_t len)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(otp_base);
+	ARG_UNUSED(offset);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+
+	return -ENOSYS;
+}
+#endif
+
 static void flash_stm32_flush_caches(const struct device *dev, off_t offset, size_t len)
 {
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) ||                  \
@@ -565,5 +583,5 @@ static int stm32_flash_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL, &flash_data, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, stm32_flash_init, NULL, &flash_data, NULL, PRE_KERNEL_1,
 		      CONFIG_FLASH_INIT_PRIORITY, &flash_stm32_api);

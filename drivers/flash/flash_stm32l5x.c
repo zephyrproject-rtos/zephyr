@@ -15,6 +15,8 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <string.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/init.h>
 #include <soc.h>
 #include <stm32_ll_icache.h>
@@ -275,6 +277,95 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 
 	return rc;
 }
+
+#if defined(CONFIG_OTP_PROGRAM) && defined(CONFIG_SOC_SERIES_STM32H5X)
+/* Size in bytes of one OTP block guarded by a single OTPBLR_CUR lock bit. */
+#define STM32H5_OTP_BLOCK_SIZE 64U
+
+static int otp_write_halfwords(const struct device *dev, uint8_t *otp_base, off_t offset,
+			       const void *data, size_t len)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	const uint8_t *src = data;
+	size_t written = 0;
+	uint32_t lock_mask;
+	int rc;
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* Refuse to program any OTP block that is already lock-protected. */
+	lock_mask = BIT_MASK(DIV_ROUND_UP(len, STM32H5_OTP_BLOCK_SIZE))
+		    << (offset / STM32H5_OTP_BLOCK_SIZE);
+	if (regs->OTPBLR_CUR & lock_mask) {
+		return -EACCES;
+	}
+
+	/*
+	 * OTP is programmed one half-word at a time using the standard NVM
+	 * half-word programming mode (see RM0481 "FLASH OTP area").
+	 */
+	regs->NSCR |= FLASH_STM32_NSPG;
+	barrier_dsync_fence_full();
+
+	while (written < len) {
+		sys_write16(UNALIGNED_GET((uint16_t *)(src + written)),
+			    (uintptr_t)otp_base + offset + written);
+
+		rc = flash_stm32_wait_flash_idle(dev);
+		if (rc < 0) {
+			break;
+		}
+
+		written += sizeof(uint16_t);
+	}
+
+	regs->NSCR &= ~FLASH_STM32_NSPG;
+
+	return rc;
+}
+
+int flash_stm32_otp_program(const struct device *dev, uint8_t *otp_base, off_t offset,
+			    const void *data, size_t len)
+{
+	bool cache_enabled;
+	int rc, rc2;
+
+	/* OTP is programmed by half-words only. */
+	if ((offset % sizeof(uint16_t)) || (len % sizeof(uint16_t))) {
+		return -EINVAL;
+	}
+
+	flash_stm32_sem_take(dev);
+
+	/*
+	 * As for regular flash writes, the i-cache must be disabled while
+	 * programming or the controller raises the ERRF error flag.
+	 */
+	cache_enabled = LL_ICACHE_IsEnabled();
+	sys_cache_instr_disable();
+
+	rc = flash_stm32_cr_lock(dev, false);
+	if (rc == 0) {
+		rc = otp_write_halfwords(dev, otp_base, offset, data, len);
+	}
+
+	rc2 = flash_stm32_cr_lock(dev, true);
+	if (!rc) {
+		rc = rc2;
+	}
+
+	if (cache_enabled) {
+		sys_cache_instr_enable();
+	}
+
+	flash_stm32_sem_give(dev);
+
+	return rc;
+}
+#endif /* CONFIG_OTP_PROGRAM && CONFIG_SOC_SERIES_STM32H5X */
 
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
 
