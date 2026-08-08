@@ -318,7 +318,8 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 
 	/*
 	 * get clock rate from clock_frequency property if valid,
-	 * otherwise, get clock rate from clock manager
+	 * otherwise, request the clock from the clock manager and get its
+	 * rate
 	 */
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
 	struct counter_dw_timer_drv_data *const data = DEV_DATA(timer_dev);
@@ -327,6 +328,13 @@ static int counter_dw_timer_init(const struct device *timer_dev)
 		LOG_ERR("clock controller device not ready");
 		return -ENODEV;
 	}
+
+	ret = clock_control_on(timer_config->clk_dev, timer_config->clkid);
+	if (ret != 0 && ret != -ENOSYS && ret != -EALREADY) {
+		LOG_ERR("Unable to enable clock: err:%d", ret);
+		return ret;
+	}
+
 	ret = clock_control_get_rate(timer_config->clk_dev,
 					timer_config->clkid, &data->freq);
 	if (ret != 0) {
